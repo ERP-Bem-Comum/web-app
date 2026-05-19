@@ -1,0 +1,50 @@
+export enum PaymentType {
+  CONTRACT = 'COM CONTRATO',
+  NO_CONTRACT = 'SEM CONTRATO',
+  REFOUND = 'REEMBOLSO',
+  DISTRATO = 'DISTRATO',
+  TERMO = 'TERMO DE QUITAÇÃO',
+  CARDBILL = 'FATURA CARTÃO',
+}
+
+export enum PayableStatus {
+  PENDING = 'PENDENTE',
+  APPROVING = 'EM APROVAÇÃO',
+  APPROVED = 'LANÇADO',
+  REJECTED = 'NÃO EFETIVADO',
+  PAID = 'EFETIVADO',
+  DUE = 'ATRASADO',
+  CONCLUDED = 'CONCLUIDO',
+}
+
+export enum PaymentMethod {
+  TED = 'TED',
+  DOC = 'DOC',
+  PIX = 'PIX',
+  BILL = 'BOLETO',
+}
+
+export enum DOCType {
+  NF = 'NOTA FISCAL',
+  FATURA = 'FATURA',
+  RECIBO = 'RECIBO',
+  RPA = 'RPA',
+  BOLETO = 'BOLETO BANCÁRIO',
+  REEMBOLSO = 'REEMBOLSO',
+  OS = 'ORDEM DE SERVIÇO',
+  PEDIDO = 'PEDIDO DE COMPRA',
+  OUTROS = 'OUTROS',
+}
+
+export enum RecurenceType {
+  MONTHLY = 'MENSAL',
+  BIMONTLY = 'BIMESTRAL',
+  QUARTERLY = 'TRIMESTRAL',
+  BIANNUAL = 'SEMESTRAL',
+  ANNUALLY = 'ANUAL',
+}
+
+export enum DebtorType {
+  COLLABORATOR = 'COLABORADOR',
+  SUPPLIER = 'FORNECEDOR',
+}

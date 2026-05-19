@@ -1,0 +1,16 @@
+{
+  "extends": [
+    "next/core-web-vitals",
+    "@rocketseat/eslint-config/next"
+  ],
+  "rules": {
+    "prettier/prettier": ["warn",
+    {
+      "singleQuote": true,
+      "trailingComma": "all",
+      "endOfLine": "auto",
+      "semi": false,
+      "printWidth": 100
+    }]
+  }
+}

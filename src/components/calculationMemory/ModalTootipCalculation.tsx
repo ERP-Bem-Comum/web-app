@@ -1,0 +1,40 @@
+import { Box, Modal } from '@mui/material'
+import { MdOutlineClose, MdOutlineInfo } from 'react-icons/md'
+
+interface Props {
+  open: boolean
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onClose: any
+  title: string
+  text: string | any
+}
+
+export function ModalTootipCalculation({ open, onClose, title, text }: Props) {
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      aria-labelledby="modal-modal-title"
+      aria-describedby="modal-modal-description"
+      className=""
+    >
+      <Box
+        className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white flex flex-col justify-center items-center w-[480px] pt-2 pb-6`}
+      >
+        <div className="w-full border-b border-b-[#E0E0E0] flex justify-between p-3">
+          <div className="flex items-center">
+            <MdOutlineInfo color={'#3B70BF'} size={26} />
+            <div className="text-[#4d4d4d] ml-3">Memória de cálculo</div>
+          </div>
+          <div>
+            <MdOutlineClose size={16} color={'#828282'} onClick={onClose} />
+          </div>
+        </div>
+        <div className="p-3">
+          <div className="font-bold mb-5">{title}</div>
+          <div>{text}</div>
+        </div>
+      </Box>
+    </Modal>
+  )
+}

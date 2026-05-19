@@ -1,0 +1,19 @@
+{
+  "hosting": {
+    "source": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "frameworksBackend": {
+      "region": "us-central1",
+      "invoker": "public",
+      "secrets": ["NEXTAUTH_SECRET", "NEXTAUTH_URL"],
+      "memory": "256MiB",
+      "runtime": "nodejs20",
+      "minInstances": 0,
+      "maxInstances": 10
+    }
+  }
+}

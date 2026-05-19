@@ -1,0 +1,29 @@
+services:
+  mock-api:
+    image: stoplight/prism:4
+    container_name: erp-frontend-mock-api
+    command: mock -h 0.0.0.0 /tmp/doc.yaml
+    ports:
+      - "4010:4010"
+    volumes:
+      - ./handbook/doc.yaml:/tmp/doc.yaml:ro
+
+  frontend:
+    build:
+      context: .
+      args:
+        NODE_ENV: production
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4010}
+        NEXTAUTH_URL: http://localhost:3000
+        NEXTAUTH_SECRET: troque-por-uma-chave-segura
+    container_name: erp-frontend
+    depends_on:
+      - mock-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:4010}
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=troque-por-uma-chave-segura

@@ -1,0 +1,502 @@
+.app {
+  --ink-1: rgb(31, 28, 26);
+  --ink-2: rgb(51, 46, 41);
+  --ink-3: rgb(77, 71, 64);
+  --ink-4: rgb(115, 107, 97);
+  --ink-5: rgb(153, 145, 135);
+  --ink-6: rgb(199, 191, 178);
+  --paper: rgb(255, 255, 255);
+  --paper-warm: rgb(250, 247, 242);
+  --paper-beige: rgb(242, 237, 229);
+  --paper-rule: rgb(229, 222, 212);
+  --teal-bg: rgb(232, 245, 250);
+  --teal-line: rgb(140, 199, 222);
+  --teal: rgb(41, 140, 171);
+  --teal-deep: rgb(26, 112, 140);
+  --green: rgb(51, 178, 102);
+  --green-bg: rgba(51, 178, 102, 0.1);
+  --orange-bg: rgba(217, 119, 6, 0.07);
+  --orange-line: rgba(217, 119, 6, 0.35);
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --t-fast: 120ms;
+  display: grid;
+  grid-template-rows: 44px minmax(0, 1fr);
+  height: calc(100vh - 32px);
+  min-height: 720px;
+  min-width: 1320px;
+  margin: -16px;
+  color: var(--ink-2);
+  background: var(--teal-bg);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow: hidden;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 24px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(14px);
+  border-bottom: 0.5px solid var(--paper-rule);
+  position: relative;
+  z-index: 10;
+}
+
+.topbar h1 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-1);
+}
+
+.back,
+.close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: var(--teal-deep);
+  font-size: 17px;
+  transition: background var(--t-fast) var(--ease);
+}
+
+.close {
+  color: var(--ink-5);
+  font-size: 14px;
+}
+
+.back:hover,
+.close:hover {
+  background: var(--teal-bg);
+  color: var(--ink-2);
+}
+
+.crumb {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 11px;
+  color: var(--ink-4);
+}
+
+.body {
+  display: grid;
+  grid-template-columns: 480px minmax(0, 1fr) 340px;
+  min-height: 0;
+  background: var(--paper);
+  overflow: hidden;
+}
+
+.preview {
+  background: var(--teal-bg);
+  padding: 20px;
+  overflow-y: auto;
+  border-right: 0.5px solid var(--paper-rule);
+}
+
+.previewHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.previewLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-5);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.tools {
+  display: flex;
+  gap: 4px;
+}
+
+.tools button {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  color: var(--ink-4);
+  font-size: 13px;
+}
+
+.tools button:hover {
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--ink-2);
+}
+
+.pdf {
+  min-height: 720px;
+  padding: 28px 32px;
+  background: var(--paper);
+  border-radius: 8px;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 8px 24px rgba(31, 28, 26, 0.04);
+}
+
+.pdfHead {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+  border-bottom: 1.5px solid var(--ink-1);
+}
+
+.seal {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid var(--paper-rule);
+  background: var(--paper-beige);
+  color: var(--ink-4);
+  font-family: Georgia, serif;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.pdf h2 {
+  margin: 0 0 2px;
+  color: var(--ink-1);
+  font-family: Georgia, serif;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.pdfSub,
+.pdfNum {
+  font-size: 10px;
+  color: var(--ink-4);
+}
+
+.pdfNum {
+  margin-left: auto;
+  text-align: right;
+  line-height: 1.6;
+}
+
+.pdfNum strong {
+  display: block;
+  color: var(--ink-1);
+  font-family: Georgia, serif;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.pdfSection {
+  margin-bottom: 14px;
+}
+
+.pdfSectionTitle {
+  padding-bottom: 3px;
+  margin-bottom: 7px;
+  border-bottom: 0.5px solid var(--paper-rule);
+  color: var(--ink-4);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.pdfRow {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 12px;
+  margin-bottom: 4px;
+  font-size: 10.5px;
+}
+
+.pdfRow span {
+  color: var(--ink-5);
+}
+
+.pdfRow strong {
+  color: var(--ink-2);
+  font-weight: 500;
+}
+
+.pdfTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+}
+
+.pdfTable td {
+  padding: 6px 8px;
+  border-bottom: 0.5px dashed var(--paper-rule);
+  color: var(--ink-2);
+}
+
+.pdfTable td:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.pdfTotals {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
+  font-size: 11px;
+}
+
+.pdfTotals div {
+  display: flex;
+  justify-content: space-between;
+  width: 220px;
+  padding-top: 8px;
+  border-top: 1.5px solid var(--ink-1);
+}
+
+.form {
+  min-width: 0;
+  padding: 22px 28px 110px;
+  overflow-y: auto;
+  background: var(--paper);
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  padding: 22px 20px;
+  overflow-y: auto;
+  background: var(--paper-warm);
+  border-left: 0.5px solid var(--paper-rule);
+}
+
+.sidebar h4 {
+  margin: 0 0 10px;
+  color: var(--ink-1);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.composition {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 0.5px dashed var(--paper-rule);
+}
+
+.composition div,
+.titleCard {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--ink-4);
+}
+
+.composition strong,
+.titleCard strong {
+  color: var(--ink-1);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.netBlock {
+  margin-top: 14px;
+  padding: 14px;
+  border: 0.5px solid var(--teal-line);
+  border-radius: 8px;
+  background: var(--teal-bg);
+}
+
+.netBlock span {
+  display: block;
+  color: var(--ink-4);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.netBlock strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--teal-deep);
+  font-family: Georgia, serif;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.netBlock small {
+  display: block;
+  margin-top: 4px;
+  color: var(--ink-4);
+  font-size: 10.5px;
+}
+
+.titleCard,
+.validations span {
+  padding: 10px 12px;
+  border: 0.5px solid var(--paper-rule);
+  border-radius: 6px;
+  background: var(--paper);
+}
+
+.validations {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.validations span {
+  position: relative;
+  padding-left: 24px;
+  color: var(--ink-4);
+  font-size: 11px;
+}
+
+.validations span::before {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 2px var(--green-bg);
+  transform: translateY(-50%);
+}
+
+.form :global(.bc-document-form) {
+  color: var(--ink-2);
+}
+
+.form :global(.bc-document-form .MuiGrid-container) {
+  row-gap: 18px;
+}
+
+.form :global(.bc-document-form .MuiGrid-root) {
+  margin-top: 0;
+}
+
+.form :global(.bc-document-form label[class*='text-black']) {
+  display: block;
+  width: 100%;
+  margin: 0 0 2px;
+  padding-top: 18px;
+  border-top: 0.5px solid var(--paper-rule);
+  color: var(--ink-1);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.form :global(.bc-document-form .MuiFormControl-root) {
+  margin-bottom: 0;
+}
+
+.form :global(.bc-document-form .MuiInputLabel-root) {
+  color: var(--ink-5);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.form :global(.bc-document-form .MuiOutlinedInput-root) {
+  min-height: 34px;
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--ink-1);
+  font-size: 12.5px;
+}
+
+.form :global(.bc-document-form .MuiOutlinedInput-notchedOutline) {
+  border-color: var(--paper-rule);
+}
+
+.form :global(.bc-document-form .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline) {
+  border-color: var(--ink-6);
+}
+
+.form :global(.bc-document-form .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(41, 140, 171, 0.15);
+}
+
+.form :global(.bc-document-form .MuiInputBase-input) {
+  height: auto;
+  padding: 8px 11px;
+  color: var(--ink-1);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.form :global(.bc-document-form .MuiFormHelperText-root) {
+  margin-left: 0;
+  font-size: 10px;
+}
+
+.form :global(.bc-document-form .border-y-2) {
+  margin-top: 0;
+  padding: 18px 0;
+  border-color: var(--paper-rule);
+  border-width: 0 0 0.5px;
+  color: var(--ink-3);
+  font-size: 11.5px;
+}
+
+.form :global(.bc-document-form .border-y-2 h1) {
+  margin-bottom: 6px;
+  color: var(--ink-5);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.form :global(.bc-document-form .border-y-2 .border-r-2),
+.form :global(.bc-document-form .border-y-2 .border-l-2) {
+  border-color: var(--paper-rule);
+}
+
+.form :global(.bc-document-form .bc-document-footer) {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  height: 56px;
+  padding: 0 24px;
+  background: rgba(250, 247, 242, 0.96);
+  backdrop-filter: blur(14px);
+  border-top: 0.5px solid var(--paper-rule);
+}
+
+.form :global(.bc-document-form .bc-document-footer button) {
+  min-height: 34px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+@media (max-width: 1400px) {
+  .body {
+    grid-template-columns: 420px minmax(0, 1fr) 300px;
+  }
+
+  .preview {
+    padding: 16px;
+  }
+
+  .form {
+    padding-inline: 22px;
+  }
+}

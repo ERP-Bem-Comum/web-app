@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lançar Documento · Bem Comum ERP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400..600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ─────────── Top bar ─────────── -->
+  <header class="topbar">
+    <button class="back" title="Voltar">←</button>
+    <h1>Lançar Documento</h1>
+    <div class="crumb">
+      <span>Contas a Pagar</span>
+    </div>
+    <button class="close" title="Fechar">✕</button>
+  </header>
+
+  <!-- ─────────── Body ─────────── -->
+  <div class="body">
+
+    <!-- PDF preview -->
+    <aside class="preview">
+      <div class="preview-head">
+        <span class="label"><span class="doc-emoji">📄</span> NFS-e_2026_0847.pdf · página 1/1</span>
+        <div class="tools">
+          <button title="Reduzir zoom">−</button>
+          <button title="Ampliar zoom">+</button>
+          <button title="Baixar">⤓</button>
+        </div>
+      </div>
+
+      <div class="pdf">
+        <div class="pdf-head">
+          <div class="seal">SF</div>
+          <div style="flex:1">
+            <h2>Nota Fiscal de Serviço Eletrônica</h2>
+            <div class="pdf-sub">Prefeitura Municipal de Fortaleza · SEFIN</div>
+          </div>
+          <div class="pdf-num">
+            <div>Número</div>
+            <strong>0847</strong>
+            <div>Série A1</div>
+          </div>
+        </div>
+
+        <div class="pdf-section">
+          <div class="pdf-section-title">Prestador de Serviços</div>
+          <div class="pdf-row"><span class="k">Razão Social</span><span class="v">Patricia Brun Ribeiro da Frota</span></div>
+          <div class="pdf-row"><span class="k">Nome Fantasia</span><span class="v">Bambu Educação</span></div>
+          <div class="pdf-row"><span class="k">CNPJ</span><span class="v">37.364.305/0001-92</span></div>
+          <div class="pdf-row"><span class="k">Inscrição Mun.</span><span class="v">85.4729.001-1</span></div>
+          <div class="pdf-row"><span class="k">Endereço</span><span class="v">Av. Antônio Sales, 1854 · Fortaleza/CE</span></div>
+        </div>
+
+        <div class="pdf-section">
+          <div class="pdf-section-title">Tomador</div>
+          <div class="pdf-row"><span class="k">Razão Social</span><span class="v">Bem Comum Tecnologia S/A</span></div>
+          <div class="pdf-row"><span class="k">CNPJ</span><span class="v">48.295.610/0001-44</span></div>
+        </div>
+
+        <div class="pdf-section">
+          <div class="pdf-section-title">Discriminação do Serviço</div>
+          <table class="pdf-table">
+            <thead>
+              <tr><th>Item</th><th>Descrição</th><th class="right">Valor (R$)</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1.</td>
+                <td>Consultoria técnica em arquitetura de software — maio/2026</td>
+                <td class="right">10.000,00</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pdf-section">
+          <div class="pdf-section-title">Datas e Identificação</div>
+          <div class="pdf-row"><span class="k">Data de Emissão</span><span class="v">02/05/2026</span></div>
+          <div class="pdf-row"><span class="k">Competência</span><span class="v">Maio / 2026</span></div>
+          <div class="pdf-row"><span class="k">Local Prestação</span><span class="v">Fortaleza / CE</span></div>
+          <div class="pdf-row"><span class="k">Cód. Serviço</span><span class="v">01.05 — Consultoria em TI</span></div>
+        </div>
+
+        <div class="pdf-section">
+          <div class="pdf-section-title">Retenções (sobre R$ 10.000,00)</div>
+          <table class="pdf-table">
+            <tbody>
+              <tr><td>ISS retido na fonte (<strong>3,5%</strong>)</td><td class="right">350,00</td></tr>
+              <tr><td>IRRF (1,5%)</td><td class="right">150,00</td></tr>
+              <tr><td>INSS (11%)</td><td class="right">1.100,00</td></tr>
+              <tr><td>PIS (0,65%)</td><td class="right">65,00</td></tr>
+              <tr><td>COFINS (3%)</td><td class="right">300,00</td></tr>
+              <tr><td>CSLL (1%)</td><td class="right">100,00</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pdf-totals">
+          <div class="line"><span class="k">Valor Bruto</span><span class="v">R$ 10.000,00</span></div>
+          <div class="line"><span class="k">Total Retenções</span><span class="v">- R$ 2.065,00</span></div>
+          <div class="line net"><span class="k">Valor Líquido</span><span class="v">R$ 7.935,00</span></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Form -->
+    <main class="form">
+
+      <!-- Hero — Fornecedor -->
+      <div class="hero">
+        <div class="info">
+          <div class="overline" id="hero-overline">Fornecedor · PJ</div>
+          <h2 class="name">Patricia Brun Ribeiro da Frota</h2>
+          <div class="cnpj">CNPJ 37.364.305/0001-92</div>
+        </div>
+        <button class="alter" id="open-fornecedor-modal" type="button">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 14l1-3 8-8 2 2-8 8-3 1z"/><path d="M9.5 4.5L11.5 6.5"/></svg>
+          <span id="hero-alter-label">Alterar fornecedor</span>
+        </button>
+      </div>
+
+      <!-- IDENTIFICAÇÃO -->
+      <section class="section">
+        <div class="section-head">
+          <h3>Identificação</h3>
+        </div>
+
+        <div class="field-row cols-6">
+          <div class="field">
+            <label>Tipo</label>
+            <div class="input ocr-ok is-select" data-field="tipo" id="open-tipo">
+              <span class="value">NFS-e</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Nº / Série</label>
+            <div class="input ocr-ok" data-field="numero">
+              <input type="text" value="0847 · A1" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Competência</label>
+            <div class="input" data-field="competencia">
+              <input type="text" value="05/2026" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Emissão</label>
+            <div class="input ocr-ok" data-field="emissao">
+              <input type="text" value="02/05/2026" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Vencimento</label>
+            <div class="input ocr-ok" data-field="vencimento">
+              <input type="text" value="10/06/2026" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Valor Bruto</label>
+            <div class="input ocr-ok" data-field="valor-bruto">
+              <input type="text" value="R$ 10.000,00" id="input-bruto" />
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row wide">
+          <div class="field">
+            <label>Descrição</label>
+            <div class="input ocr-ok" data-field="descricao">
+              <input type="text" value="Consultoria técnica · maio/2026" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RETENÇÕES -->
+      <section class="section">
+        <div class="section-head">
+          <h3>Retenções</h3>
+        </div>
+
+        <div class="field-row cols-6">
+          <div class="field">
+            <label>ISS</label>
+            <div class="input ocr-divergent" id="field-iss" data-retencao="iss">
+              <input type="text" value="R$ 350,00" id="input-iss" />
+            </div>
+          </div>
+          <div class="field">
+            <label>IRRF</label>
+            <div class="input ocr-ok" data-retencao="irrf">
+              <input type="text" value="R$ 150,00" id="input-irrf" />
+            </div>
+          </div>
+          <div class="field">
+            <label>INSS</label>
+            <div class="input ocr-ok" data-retencao="inss">
+              <input type="text" value="R$ 1.100,00" id="input-inss" />
+            </div>
+          </div>
+          <div class="field">
+            <label>PIS</label>
+            <div class="input ocr-ok" data-retencao="pis">
+              <input type="text" value="R$ 65,00" id="input-pis" />
+            </div>
+          </div>
+          <div class="field">
+            <label>COFINS</label>
+            <div class="input ocr-ok" data-retencao="cofins">
+              <input type="text" value="R$ 300,00" id="input-cofins" />
+            </div>
+          </div>
+          <div class="field">
+            <label>CSLL</label>
+            <div class="input ocr-ok" data-retencao="csll">
+              <input type="text" value="R$ 100,00" id="input-csll" />
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row cols-6" style="margin-top: 10px;">
+          <div class="field">
+            <label>CBS</label>
+            <div class="input is-info">
+              <input type="text" value="R$ 0,00" readonly tabindex="-1" />
+            </div>
+          </div>
+          <div class="field">
+            <label>IBS Municipal</label>
+            <div class="input is-info">
+              <input type="text" value="R$ 0,00" readonly tabindex="-1" />
+            </div>
+          </div>
+          <div class="field">
+            <label>IBS Estadual</label>
+            <div class="input is-info">
+              <input type="text" value="R$ 0,00" readonly tabindex="-1" />
+            </div>
+          </div>
+          <div></div>
+          <div></div>
+          <div></div>
+        </div>
+      </section>
+
+      <!-- PAGAMENTO -->
+      <section class="section">
+        <div class="section-head">
+          <h3>Pagamento</h3>
+        </div>
+
+        <div class="field-row pagto-row">
+          <div class="field">
+            <label>Forma</label>
+            <div class="input is-select" id="open-forma" data-field="forma">
+              <span class="value">PIX</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Pagar da Conta</label>
+            <div class="input is-select with-menu" data-field="conta" data-options='[
+              {"label":"Bradesco · CC 64335-3","sub":"Ag 1234 · saldo R$ 482.500,00"},
+              {"label":"Itaú · CC 91827-4","sub":"Ag 0500 · saldo R$ 1.245.000,00"},
+              {"label":"Banco do Brasil · CC 30221-9","sub":"Ag 2147 · saldo R$ 837.200,00"},
+              {"label":"Santander · CC 55718-2","sub":"Ag 0388 · saldo R$ 124.700,00"},
+              {"label":"Caixa · CC 12903-6","sub":"Ag 4501 · saldo R$ 53.200,00"},
+              {"label":"Banco Inter · CC 88471-0","sub":"Ag 0001 · saldo R$ 287.600,00"}
+            ]'>
+              <span class="value">Bradesco · CC 64335-3</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row cols-2" style="margin-top: 10px;">
+          <div class="entity-card is-static">
+            <span class="ic is-svg">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 3 L21 3 L21 13 L13 21 L3 11 Z" />
+                <circle cx="16.5" cy="7.5" r="1.5" />
+              </svg>
+            </span>
+            <span class="info">
+              <span class="top">Conta do fornecedor</span>
+              <span class="bot">Inter · Ag 0001 · CC 6433553-4 · PIX</span>
+            </span>
+            <span class="tag">do contrato</span>
+          </div>
+
+          <button class="entity-card" id="open-aprovador-modal" data-aprovador="ana">
+            <span class="ic is-init" id="aprovador-initials">AC</span>
+            <span class="info">
+              <span class="top">Aprovador</span>
+              <span class="bot" id="aprovador-name">Ana Carvalho</span>
+            </span>
+            <span class="tag" id="aprovador-role">Gerente Fin.</span>
+          </button>
+        </div>
+
+        <!-- container para extras dependentes da Forma -->
+        <div class="pay-extras-host" id="pay-extras-host"></div>
+      </section>
+
+      <!-- CATEGORIZAÇÃO -->
+      <section class="section">
+        <div class="section-head">
+          <h3>Categorização</h3>
+          <div class="contrato-inline" id="open-contract">
+            <span>
+              <span class="cn-label">Contrato</span>
+              <span class="cn-id">0001/2026</span>
+            </span>
+            <span class="situ">
+              <span class="ss-dot"></span>
+              <span class="situ-text">Em andamento</span>
+            </span>
+            <button class="btn-link">Alterar</button>
+          </div>
+        </div>
+
+        <div class="field-row cols-3">
+          <div class="field">
+            <label>Centro de Custo</label>
+            <div class="input is-select with-menu" data-field="cc" data-options='[
+              {"label":"ADM — Administrativo"},
+              {"label":"FIN — Financeiro"},
+              {"label":"TI — Tecnologia"},
+              {"label":"OP — Operações"},
+              {"label":"COM — Comercial"},
+              {"label":"RH — Recursos Humanos"}
+            ]'>
+              <span class="value">ADM — Administrativo</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Categoria</label>
+            <div class="input is-select with-menu" data-field="cat" data-options='[
+              {"label":"Consultoria"},
+              {"label":"Manutenção"},
+              {"label":"Materiais"},
+              {"label":"Software"},
+              {"label":"Treinamento"},
+              {"label":"Outros"}
+            ]'>
+              <span class="value">Consultoria</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Subcategoria</label>
+            <div class="input is-select with-menu" data-field="subcat" data-options='[
+              {"label":"Técnica","sub":"Arquitetura, engenharia de software, infra"},
+              {"label":"Estratégica","sub":"Planejamento, advisory, gestão"},
+              {"label":"Jurídica","sub":"Pareceres, contratos, compliance"},
+              {"label":"Contábil","sub":"Auditoria, fiscal, tributária"}
+            ]'>
+              <span class="value">Técnica</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row cols-2">
+          <div class="field">
+            <label>Programa</label>
+            <div class="input is-select with-menu" data-field="programa" data-options='[
+              {"label":"PARC — Apoio Regional"},
+              {"label":"EXP — Expansão de Mercado"},
+              {"label":"INV — Investimento"},
+              {"label":"MAN — Manutenção Operacional"},
+              {"label":"INO — Inovação"}
+            ]'>
+              <span class="value">PARC — Apoio Regional</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Plano Orçamentário</label>
+            <div class="input is-select with-menu" data-field="plano" data-options='[
+              {"label":"2026-OP-003 — Consultorias","sub":"Saldo R$ 482.500,00"},
+              {"label":"2026-OP-001 — Pessoal e Encargos","sub":"Saldo R$ 1.245.000,00"},
+              {"label":"2026-OP-007 — Infraestrutura de TI","sub":"Saldo R$ 87.300,00"},
+              {"label":"2026-OP-012 — Marketing Institucional","sub":"Saldo R$ 124.700,00"},
+              {"label":"2026-OP-018 — Treinamento e Desenvolvimento","sub":"Saldo R$ 53.200,00"}
+            ]'>
+              <span class="value">2026-OP-003 — Consultorias</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+
+      <!-- COMPOSIÇÃO -->
+      <div>
+        <h4>Composição</h4>
+        <div class="composition" id="composition">
+          <div class="row bruto"><span class="k">Valor Bruto</span><span class="v">R$ 10.000,00</span></div>
+          <div class="sep"></div>
+          <div class="row tax divergent" data-retencao="iss" data-anchor="field-iss" title="Clique para revisar"><span class="k">ISS (3,5%)</span><span class="v">- R$ 350,00</span></div>
+          <div class="row tax" data-retencao="irrf"><span class="k">IRRF (1,5%)</span><span class="v">- R$ 150,00</span></div>
+          <div class="row tax" data-retencao="inss"><span class="k">INSS (11%)</span><span class="v">- R$ 1.100,00</span></div>
+          <div class="row tax" data-retencao="pis"><span class="k">PIS (0,65%)</span><span class="v">- R$ 65,00</span></div>
+          <div class="row tax" data-retencao="cofins"><span class="k">COFINS (3%)</span><span class="v">- R$ 300,00</span></div>
+          <div class="row tax" data-retencao="csll"><span class="k">CSLL (1%)</span><span class="v">- R$ 100,00</span></div>
+          <div class="sep"></div>
+          <div class="row"><span class="k">Descontos</span><span class="v">R$ 0,00</span></div>
+          <div class="row"><span class="k">Juros / Multa</span><span class="v">R$ 0,00</span></div>
+        </div>
+
+        <div class="net-block">
+          <div class="lbl">Líquido a pagar</div>
+          <div class="num" id="sidebar-net">R$ 7.935,00</div>
+          <div class="due">vence em <span class="due-date">10/06/2026</span></div>
+        </div>
+      </div>
+
+      <!-- TÍTULOS PREVISTOS -->
+      <div>
+        <h4>Títulos Previstos</h4>
+        <div class="titles">
+          <div class="title-parent">
+            <span class="kind">NFS-e</span>
+            <span class="name">Bambu Educação</span>
+            <span class="amt" id="titulo-principal">R$ 7.935,00</span>
+          </div>
+          <div class="title-children">
+            <div class="title-child divergent">
+              <span class="kind">ISS</span>
+              <span class="to">SEFIN Fortaleza</span>
+              <span class="amt">R$ 350,00</span>
+            </div>
+            <div class="title-child">
+              <span class="kind">IRRF</span>
+              <span class="to">Receita Federal</span>
+              <span class="amt">R$ 150,00</span>
+            </div>
+            <div class="title-child">
+              <span class="kind">INSS</span>
+              <span class="to">Receita Federal</span>
+              <span class="amt">R$ 1.100,00</span>
+            </div>
+            <div class="title-child">
+              <span class="kind">CSRF</span>
+              <span class="to">Receita Federal</span>
+              <span class="amt">R$ 465,00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VALIDAÇÃO -->
+      <div>
+        <h4>Validação</h4>
+        <div class="validations">
+          <button class="val ok"><span class="dot"></span><span class="label-txt">Fornecedor identificado</span></button>
+          <button class="val ok"><span class="dot"></span><span class="label-txt">Cálculo bruto → líquido íntegro</span></button>
+          <button class="val ok"><span class="dot"></span><span class="label-txt">Dados bancários válidos</span></button>
+          <button class="val warn" id="val-iss" data-anchor="input-iss">
+            <span class="dot"></span>
+            <span class="label-txt">Alíquota ISS divergente do padrão SEFIN</span>
+            <span class="arrow">→</span>
+          </button>
+          <button class="val pending"><span class="dot"></span><span class="label-txt">Aguarda aprovação do gestor</span></button>
+        </div>
+      </div>
+
+    </aside>
+  </div>
+
+  <!-- ─────────── Bottombar ─────────── -->
+  <footer class="bottombar">
+    <div class="status">
+      <span class="save-dot"></span>
+      <span id="save-status">Auto-salvo · há um instante</span>
+      <span class="stage" id="stage-pill">Rascunho</span>
+    </div>
+    <div class="quick-actions">
+      <button class="btn-quick" id="btn-add-fornecedor">+ Adicionar fornecedor</button>
+    </div>
+    <div class="actions">
+      <button class="btn btn-ghost" id="btn-discard">Descartar</button>
+      <button class="btn btn-secondary" id="btn-draft">Salvar rascunho <span class="kbd">⌘S</span></button>
+      <button class="btn btn-primary" id="btn-approve">Salvar Documento <span class="kbd">⌘↵</span></button>
+    </div>
+  </footer>
+
+</div>
+
+<!-- ═══════════════ MODAIS ═══════════════ -->
+
+<!-- Buscar Fornecedor -->
+<div class="modal-backdrop" id="modal-fornecedor">
+  <div class="modal" style="width: 560px;">
+    <div class="modal-head">
+      <h3>Buscar Fornecedor</h3>
+      <button class="x" data-close>✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="search-input">
+        <span class="ic">🔍</span>
+        <input type="text" placeholder="Digite nome, CNPJ ou apelido…" id="forn-search" autocomplete="off" />
+        <span class="kbd-hint">↑↓ ↵</span>
+      </div>
+      <div class="results" id="forn-results">
+        <button class="result focused"><span class="av">BE</span><div class="info"><div class="nm">Bambu Educação</div><div class="id-row">37.364.305/0001-92 · Fortaleza/CE</div></div><span class="arrow">↵</span></button>
+        <button class="result"><span class="av">TC</span><div class="info"><div class="nm">Tech Consultoria S/S</div><div class="id-row">23.456.789/0001-12 · São Paulo/SP</div></div><span class="arrow">↵</span></button>
+        <button class="result"><span class="av">TI</span><div class="info"><div class="nm">Techin Sistemas Ltda ME</div><div class="id-row">34.567.890/0001-23 · Recife/PE</div></div><span class="arrow">↵</span></button>
+        <button class="result"><span class="av">TF</span><div class="info"><div class="nm">Tech Force Engenharia</div><div class="id-row">45.678.901/0001-34 · Belo Horizonte/MG</div></div><span class="arrow">↵</span></button>
+      </div>
+      <div style="margin-top: 14px; padding-top: 12px; border-top: 0.5px dashed var(--paper-rule); font-size: 11px; color: var(--ink-4); display: flex; justify-content: space-between; align-items: center;">
+        <span>Não encontrou?</span>
+        <button class="btn btn-secondary" id="open-novo-forn-from-search" style="padding: 6px 12px; font-size: 11px;">+ Cadastrar novo fornecedor</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Alíquota Divergente -->
+<div class="modal-backdrop" id="modal-divergencia">
+  <div class="modal" style="width: 540px;">
+    <div class="modal-head">
+      <h3>Alíquota ISS Divergente</h3>
+      <button class="x" data-close>✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="intro">
+        O documento traz ISS de <strong style="color: var(--orange-deep);">3,5%</strong>, mas a alíquota padrão da SEFIN Fortaleza para o código de serviço <span style="font-family: 'JetBrains Mono'; background: var(--paper-beige); padding: 1px 5px; border-radius: 3px;">01.05</span> é <strong>5,0%</strong>. O sistema respeita o documento (Princípio de Soberania), mas exige escolha consciente.
+      </p>
+
+      <div class="diverge-card">
+        <div class="diverge-row">
+          <div class="diverge-cell expected">
+            <div class="lbl">Padrão SEFIN</div>
+            <div class="v">R$ 500,00</div>
+            <div class="pct">5,0% sobre R$ 10.000</div>
+          </div>
+          <div class="arr">→</div>
+          <div class="diverge-cell actual">
+            <div class="lbl">No documento</div>
+            <div class="v">R$ 350,00</div>
+            <div class="pct">3,5% sobre R$ 10.000</div>
+          </div>
+        </div>
+        <div class="diverge-meta">
+          Diferença de <strong>R$ 150,00</strong>. Possíveis causas: regime especial, código de serviço específico, ou erro de emissão.
+        </div>
+      </div>
+
+      <div class="choice-list">
+        <div class="choice selected" data-choice="aceitar">
+          <div class="radio"></div>
+          <div class="body">
+            <div class="ttl">Aceitar o documento (R$ 350,00)</div>
+            <div class="desc">Respeitar o que está escrito na nota. A divergência fica registrada na trilha de auditoria com sua assinatura.</div>
+          </div>
+        </div>
+        <div class="choice" data-choice="corrigir">
+          <div class="radio"></div>
+          <div class="body">
+            <div class="ttl">Corrigir para o padrão SEFIN (R$ 500,00)</div>
+            <div class="desc">Sobrescrever o valor lido pelo OCR. Use quando tem certeza de que a nota está com erro de emissão.</div>
+          </div>
+        </div>
+        <div class="choice" data-choice="contatar">
+          <div class="radio"></div>
+          <div class="body">
+            <div class="ttl">Solicitar nota corrigida ao fornecedor</div>
+            <div class="desc">Coloca o documento em "Aguarda Correção" e bloqueia o lançamento. Envia notificação ao contato do fornecedor.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" data-close>Cancelar</button>
+      <button class="btn btn-primary" id="confirm-divergence">Confirmar escolha</button>
+    </div>
+  </div>
+</div>
+
+<!-- Dados Bancários -->
+
+
+<!-- Forma de Pagamento -->
+<div class="modal-backdrop" id="modal-forma">
+  <div class="modal" style="width: 500px;">
+    <div class="modal-head">
+      <h3>Forma de Pagamento</h3>
+      <button class="x" data-close>✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="intro">
+        A forma escolhida controla os campos complementares (chave PIX, código de barras, dados bancários).
+      </p>
+      <div class="forma-grid">
+        <button class="forma-card selected" data-forma="PIX"><div class="f-ic">⚡</div><div class="f-info"><div class="f-nm">PIX</div><div class="f-desc">Transferência instantânea · chave do fornecedor</div></div></button>
+        <button class="forma-card" data-forma="Boleto"><div class="f-ic">⠇</div><div class="f-info"><div class="f-nm">Boleto</div><div class="f-desc">Código de barras / linha digitável</div></div></button>
+        <button class="forma-card" data-forma="TED"><div class="f-ic">→</div><div class="f-info"><div class="f-nm">TED</div><div class="f-desc">Transferência eletrônica entre bancos</div></div></button>
+        <button class="forma-card" data-forma="Transferência"><div class="f-ic">⇄</div><div class="f-info"><div class="f-nm">Transferência bancária</div><div class="f-desc">DOC / TEF · mesma instituição ou interbancária</div></div></button>
+        <button class="forma-card" data-forma="Cartão"><div class="f-ic">▢</div><div class="f-info"><div class="f-nm">Cartão corporativo</div><div class="f-desc">Débito ou crédito na fatura da empresa</div></div></button>
+        <button class="forma-card" data-forma="Outro"><div class="f-ic">·</div><div class="f-info"><div class="f-nm">Outro</div><div class="f-desc">Cheque, dinheiro, compensação</div></div></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Aprovador -->
+<div class="modal-backdrop" id="modal-aprovador">
+  <div class="modal" style="width: 540px;">
+    <div class="modal-head">
+      <h3>Selecionar Aprovador</h3>
+      <button class="x" data-close>✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="intro">
+        Toda forma de pagamento exige um aprovador antes do envio bancário. O valor líquido <strong>R$ 7.935,00</strong> requer aprovação de gerência ou superior.
+      </p>
+      <div class="results">
+        <button class="result focused" data-aprovador="ana" data-name="Ana Carvalho" data-role="Gerente Fin." data-initials="AC"><span class="av">AC</span><div class="info"><div class="nm">Ana Carvalho</div><div class="id-row">Gerência Financeira · alçada R$ 50.000,00</div></div><span class="arrow">↵</span></button>
+        <button class="result" data-aprovador="ricardo" data-name="Ricardo Mendes" data-role="Diretor Fin." data-initials="RM"><span class="av">RM</span><div class="info"><div class="nm">Ricardo Mendes</div><div class="id-row">Diretoria Financeira · alçada R$ 500.000,00</div></div><span class="arrow">↵</span></button>
+        <button class="result" data-aprovador="patricia" data-name="Patrícia Lopes" data-role="Coord. Pagto" data-initials="PL"><span class="av">PL</span><div class="info"><div class="nm">Patrícia Lopes <span style="font-size:9px;color:var(--red);text-transform:uppercase;letter-spacing:0.06em;margin-left:6px;">· Acima da alçada</span></div><div class="id-row">Coordenação · alçada R$ 10.000,00</div></div><span class="arrow">↵</span></button>
+        <button class="result" data-aprovador="leonardo" data-name="Leonardo Salles" data-role="CFO" data-initials="LS"><span class="av">LS</span><div class="info"><div class="nm">Leonardo Salles</div><div class="id-row">CFO · sem limite de alçada</div></div><span class="arrow">↵</span></button>
+      </div>
+      <div class="rn-box">
+        <strong>Alçada de aprovação:</strong> o aprovador escolhido precisa ter alçada ≥ valor líquido. Caso contrário, o título será encaminhado em cascata para o nível imediatamente superior.
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" data-close>Cancelar</button>
+      <button class="btn btn-primary" id="confirm-aprovador">Confirmar aprovador</button>
+    </div>
+  </div>
+</div>
+
+<!-- Novo Fornecedor -->
+<div class="modal-backdrop" id="modal-novo-fornecedor">
+  <div class="modal" style="width: 560px;">
+    <div class="modal-head">
+      <h3>Adicionar Fornecedor</h3>
+      <button class="x" data-close>✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="intro">
+        Cadastro rápido — os campos abaixo são o mínimo exigido. Demais dados (endereço, contatos, alçadas tributárias) podem ser preenchidos depois no módulo de Cadastros.
+      </p>
+      <div class="field-row cols-2" style="margin-bottom: 14px;">
+        <div class="field">
+          <label>Tipo</label>
+          <div class="seg-radio" id="novo-forn-tipo">
+            <button class="on" data-val="PJ">Pessoa Jurídica</button>
+            <button data-val="PF">Pessoa Física</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>CNPJ / CPF <span class="req">*</span></label>
+          <div class="input"><input type="text" id="novo-forn-doc" placeholder="00.000.000/0000-00" /></div>
+        </div>
+      </div>
+      <div class="field-row wide" style="margin-bottom: 14px;">
+        <div class="field">
+          <label>Razão Social / Nome Completo <span class="req">*</span></label>
+          <div class="input"><input type="text" id="novo-forn-nome" placeholder="Empresa Ltda" /></div>
+        </div>
+      </div>
+      <div class="field-row cols-2" style="margin-bottom: 0;">
+        <div class="field">
+          <label>Email de Contato</label>
+          <div class="input"><input type="email" placeholder="contato@empresa.com.br" /></div>
+        </div>
+        <div class="field">
+          <label>Telefone</label>
+          <div class="input"><input type="tel" placeholder="(85) 0000-0000" /></div>
+        </div>
+      </div>
+      <div class="rn-box">
+        <strong>RN-01:</strong> todo lançamento nasce vinculado a um documento. Cadastrar o fornecedor aqui não cria título — apenas registra a entidade no cadastro mestre.
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" data-close>Cancelar</button>
+      <button class="btn btn-primary" id="confirm-novo-fornecedor">Cadastrar fornecedor</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tipo de Documento -->
+<div class="modal-backdrop" id="modal-tipo">
+  <div class="modal" style="width: 640px;">
+    <div class="modal-head">
+      <h3>Tipo de Documento</h3>
+      <button class="x" data-close>✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="intro">
+        Tipos fiscais (NFS-e, DANFE, RPA) habilitam a seção de retenções e o motor de regras tributárias. Demais tipos são tratados como lançamentos manuais.
+      </p>
+      <div class="tipo-grid" id="tipo-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast & Tooltip -->
+<div class="toast" id="toast">
+  <span class="ic-ok">✓</span>
+  <span id="toast-msg">Auto-salvo</span>
+</div>
+<div class="tip" id="tip">Origem: PDF</div>
+
+
+
+<script src="app.js" defer></script>
+</body>
+</html>
