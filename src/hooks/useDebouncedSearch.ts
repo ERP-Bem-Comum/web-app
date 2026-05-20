@@ -1,4 +1,4 @@
-import { debounce } from 'lodash-es'
+import { debounce } from '@/utils/debounce'
 import { useCallback, useEffect, useState } from 'react'
 
 export function UseDebouncedSearch(search: string) {

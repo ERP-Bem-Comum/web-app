@@ -14,7 +14,7 @@ import { useEffect, useState } from 'react'
 import { MdNavigateBefore, MdNavigateNext } from 'react-icons/md'
 import useDebounce from '@/utils/use-debounce'
 import { LoadingTable } from '../table/loadingTable'
-import { saveAs } from 'file-saver'
+import { saveBlob } from '@/utils/saveBlob'
 
 import { educationCalculationList, genderList, raceList, roleList } from '@/utils/enums'
 import { getExportCollaborator } from '@/services/collaborator'
@@ -177,7 +177,7 @@ export default function TeamReport() {
       roles: filterRole,
       active: filterStatus,
     })
-    saveAs(resp?.data, 'Colaboradores.csv')
+    saveBlob(resp?.data, 'Colaboradores.csv')
   }
 
   const handleExportPDF = () => {

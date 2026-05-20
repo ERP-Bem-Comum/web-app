@@ -1,0 +1,7 @@
+interface:
+  display_name: "Next.js Docs First"
+  short_description: "Lê a doc local do Next antes de qualquer decisão de framework."
+  brand_color: "#111827"
+
+policy:
+  allow_implicit_invocation: true

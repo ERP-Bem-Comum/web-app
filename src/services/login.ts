@@ -1,4 +1,6 @@
-import axios from 'axios'
+import { createHttpClient, isHttpError } from './http-client'
+
+const publicApi = createHttpClient({ baseURL: process.env.NEXT_PUBLIC_API_URL })
 
 export type ILogin = {
   email?: string
@@ -6,53 +8,45 @@ export type ILogin = {
 }
 
 export async function Login(data: ILogin) {
-  const response = await axios
-    .post(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, data)
-    .then((response) => {
-      return response
-    })
-    .catch((error) => {
-      console.error('error: ', error.response.data.message)
+  try {
+    return await publicApi.post('/auth/login', data)
+  } catch (error) {
+    if (isHttpError(error)) {
+      const body = error.response?.data as { message?: string } | undefined
+      console.error('error: ', body?.message)
       return {
         status: 400,
         data: {
-          message: error.response.data.message,
+          message: body?.message,
         },
       }
-    })
-  return response
+    }
+    return {
+      status: 400,
+      data: { message: 'Erro inesperado' },
+    }
+  }
 }
 
 export async function RecoveryPassword(email: string) {
-  return await axios
-    .post(`${process.env.NEXT_PUBLIC_API_URL}/auth/forgot-password/`, {
-      email,
-    })
-    .then((response) => {
-      console.log('response: ', response)
-    })
-    .catch((error) => {
-      console.error('error: ', error)
-    })
+  try {
+    const response = await publicApi.post('/auth/forgot-password/', { email })
+    console.log('response: ', response)
+  } catch (error) {
+    console.error('error: ', error)
+  }
 }
 
 export async function newPasswordRequest(token: string | undefined, password: string) {
-  const response = await axios
-    .post(`${process.env.NEXT_PUBLIC_API_URL}/auth/reset-password`, {
-      token,
-      password,
-    })
-    .then((response) => {
-      return response
-    })
-    .catch((error) => {
-      console.error('error: ', error)
-      return {
-        status: 401,
-        data: {
-          message: 'Link de redefinição de senha expirado. Por favor, solicite outro.',
-        },
-      }
-    })
-  return response
+  try {
+    return await publicApi.post('/auth/reset-password', { token, password })
+  } catch (error) {
+    console.error('error: ', error)
+    return {
+      status: 401,
+      data: {
+        message: 'Link de redefinição de senha expirado. Por favor, solicite outro.',
+      },
+    }
+  }
 }

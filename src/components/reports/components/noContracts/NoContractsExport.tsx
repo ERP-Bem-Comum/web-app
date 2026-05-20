@@ -1,4 +1,4 @@
-import { saveAs } from 'file-saver'
+import { saveBlob } from '@/utils/saveBlob'
 import { ExportButtonReports } from '../ExportButtonRelatory'
 import { filterReportParams } from '@/types/reports/filters'
 import { getNoContractsCSV, getNoContractsPDF } from '@/services/reports'
@@ -11,14 +11,14 @@ const noContractsExportButton = ({ currentParams }: noContractsExportButtonProps
   const handleExportCSV = async () => {
     const resp = await getNoContractsCSV(currentParams)
     if (resp.data) {
-      saveAs(resp.data, 'sem_contratos.csv')
+      saveBlob(resp.data, 'sem_contratos.csv')
     }
   }
 
   const handleExportPDF = async () => {
     const resp = await getNoContractsPDF(currentParams)
     if (resp.data) {
-      saveAs(resp.data, 'sem_contratos.pdf')
+      saveBlob(resp.data, 'sem_contratos.pdf')
     }
   }
 

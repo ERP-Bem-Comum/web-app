@@ -1,0 +1,7 @@
+interface:
+  display_name: "Frontend Quality Gate"
+  short_description: "Roda lint, format:check e build do frontend."
+  brand_color: "#1D4ED8"
+
+policy:
+  allow_implicit_invocation: true

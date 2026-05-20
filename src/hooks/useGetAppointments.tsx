@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { searchAppointmentsSchema } from '@/validators/searchAppointments'
 import { useGetAppointments } from '@/services/reconciliation'
 import { useCallback, useEffect, useState } from 'react'
-import { debounce } from 'lodash-es'
+import { debounce } from '@/utils/debounce'
 import { parseISO } from 'date-fns'
 import { useForm } from 'react-hook-form'
 

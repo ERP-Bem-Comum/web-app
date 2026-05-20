@@ -13,7 +13,7 @@ import { IReceivable, Receivable, ReceivablesContextProps } from '@/types/receiv
 import { handleDates } from '@/utils/dates'
 import { pickProps } from '@/utils/pickProps'
 import { useMutation } from '@tanstack/react-query'
-import { HttpStatusCode } from 'axios'
+import { HttpStatusCode } from '@/services/http-status'
 import { queryClient } from 'lib/react-query'
 import { createContext, ReactNode, useEffect, useState } from 'react'
 import { SubmitHandler } from 'react-hook-form'

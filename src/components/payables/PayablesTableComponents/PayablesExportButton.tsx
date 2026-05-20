@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button'
 import { getPayablesCsv, getPayablesPDF } from '@/services/payables'
 import { ParamsPayables } from '@/types/Payables'
 import { Menu, MenuItem } from '@mui/material'
-import { saveAs } from 'file-saver'
+import { saveBlob } from '@/utils/saveBlob'
 import { Fragment, useState } from 'react'
 
 interface PayablesExportButtonProps {
@@ -17,14 +17,14 @@ const PayablesExportButton = ({ currentParams, onExportCNAB }: PayablesExportBut
   const handleExportCSV = async () => {
     const resp = await getPayablesCsv(currentParams)
     if (resp.data) {
-      saveAs(resp.data, 'pagamentos.csv')
+      saveBlob(resp.data, 'pagamentos.csv')
     }
   }
 
   const handleExportPDF = async () => {
     const resp = await getPayablesPDF(currentParams)
     if (resp.data) {
-      saveAs(resp.data, 'pagamentos.pdf')
+      saveBlob(resp.data, 'pagamentos.pdf')
     }
   }
 

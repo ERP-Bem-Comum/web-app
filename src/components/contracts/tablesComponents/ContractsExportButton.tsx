@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button'
 import { getContractsPDF, getCotnractsCSV } from '@/services/contracts'
 import { ParamsContracts } from '@/types/contracts'
 import { Menu, MenuItem } from '@mui/material'
-import { saveAs } from 'file-saver'
+import { saveBlob } from '@/utils/saveBlob'
 import { Fragment, useState } from 'react'
 
 interface ContractsExportButtonProps {
@@ -16,14 +16,14 @@ const ContractsExportButton = ({ currentParams }: ContractsExportButtonProps) =>
   const handleExportCSV = async () => {
     const resp = await getCotnractsCSV(currentParams)
     if (resp.data) {
-      saveAs(resp.data, 'contratos.csv')
+      saveBlob(resp.data, 'contratos.csv')
     }
   }
 
   const handleExportPDF = async () => {
     const resp = await getContractsPDF(currentParams)
     if (resp.data) {
-      saveAs(resp.data, 'contratos.pdf')
+      saveBlob(resp.data, 'contratos.pdf')
     }
   }
 

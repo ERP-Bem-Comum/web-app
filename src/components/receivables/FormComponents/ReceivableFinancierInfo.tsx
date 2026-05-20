@@ -7,7 +7,7 @@ import { ModalChangeContract } from '../../modals/financeiro/ModalChangeContract
 import { ModalNotFound } from '../../modals/ModalNotFound'
 import { defaultAccounts } from '../consts'
 import SearchByCPForCNPJ from '../../layout/shared/searchByCPForCNPJ'
-import { debounce } from 'lodash-es'
+import { debounce } from '@/utils/debounce'
 import SubjectInfo from '../../layout/financeiro/SubjectInfo'
 import { Receivable } from '@/types/receivables'
 import { UseFormSetValue } from 'react-hook-form'

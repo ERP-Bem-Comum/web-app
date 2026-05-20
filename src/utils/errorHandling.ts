@@ -1,18 +1,18 @@
+import { isHttpError } from '@/services/http-client'
 import { Response } from '@/types/global'
-import { isAxiosError } from 'axios'
 
 export const handleError = <T>(error: unknown): Response<T> => {
-  if (isAxiosError(error)) {
+  if (isHttpError(error)) {
+    const data = error.response?.data as { message?: string } | undefined
     return {
-      status: error.response?.status || 500, // Fallback to 500 if status is undefined
-      error: error.response?.data?.message || 'An unknown error occurred',
+      status: error.response?.status || 500,
+      error: data?.message || 'An unknown error occurred',
       meta: null,
     }
-  } else {
-    return {
-      status: 500,
-      error: 'An unexpected error occurred',
-      meta: null,
-    }
+  }
+  return {
+    status: 500,
+    error: 'An unexpected error occurred',
+    meta: null,
   }
 }

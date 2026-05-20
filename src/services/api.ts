@@ -1,45 +1,28 @@
 'use client'
 import { AUTH_BYPASS_ENABLED, authBypassSession } from '@/utils/authBypass'
-import axios from 'axios'
 import { getSession, signOut } from 'next-auth/react'
-import formDataAxiosTransformer from './formDataAxiosTransformer'
+import { createHttpClient } from './http-client'
+
 const baseURL = process.env.NEXT_PUBLIC_API_URL
 
-const ApiClient = () => {
-  const defaultOptions = {
-    baseURL,
-    transformRequest: [formDataAxiosTransformer].concat(
-      axios.defaults.transformRequest ? axios.defaults.transformRequest : [],
-    ),
-  }
-
-  const instance = axios.create(defaultOptions)
-
-  instance.interceptors.request.use(async (request) => {
+const api = createHttpClient({
+  baseURL,
+  onRequest: async (init) => {
     const session = AUTH_BYPASS_ENABLED ? authBypassSession : await getSession()
     if (session) {
-      request.headers.Authorization = `Bearer ${session.user.token}`
+      const headers = new Headers(init.headers)
+      headers.set('Authorization', `Bearer ${session.user.token}`)
+      return { ...init, headers }
     }
-    return request
-  })
+    return init
+  },
+  onUnauthorized: (error) => {
+    if (AUTH_BYPASS_ENABLED) return
+    const data = error.response?.data as { message?: string } | undefined
+    if (data?.message === 'Unauthorized') {
+      signOut({ callbackUrl: '/login' })
+    }
+  },
+})
 
-  instance.interceptors.response.use(
-    (response) => {
-      return response
-    },
-    (error) => {
-      if (
-        !AUTH_BYPASS_ENABLED &&
-        error?.response?.status === 401 &&
-        error?.response?.data?.message === 'Unauthorized'
-      ) {
-        signOut({ callbackUrl: '/login' })
-      }
-      return Promise.reject(error)
-    },
-  )
-
-  return instance
-}
-
-export default ApiClient()
+export default api

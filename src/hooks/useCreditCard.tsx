@@ -14,7 +14,7 @@ import {
   ParamsCreditCardMov,
   useCreditCardReturn,
 } from '@/types/creditCard'
-import { HttpStatusCode } from 'axios'
+import { HttpStatusCode } from '@/services/http-status'
 
 const useCreditCard = (): useCreditCardReturn => {
   const [isDisabled, setIsDisabled] = useState(false)

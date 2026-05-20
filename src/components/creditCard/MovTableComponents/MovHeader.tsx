@@ -10,7 +10,7 @@ import { useForm } from 'react-hook-form'
 import { ExportButtonMov } from './exportButton'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { creditCardMovParamsSchema } from '@/validators/creditCard'
-import { saveAs } from 'file-saver'
+import { saveBlob } from '@/utils/saveBlob'
 import { Dispatch, SetStateAction, useState } from 'react'
 import { ModalNewMov } from '@/components/modals/creditCard/ModalNewMov'
 import useCreditCard from '@/hooks/useCreditCard'
@@ -66,14 +66,14 @@ const MovHeader = ({
   const handleExportCSV = async () => {
     const resp = await getMovCsv(values)
     if (resp.data) {
-      saveAs(resp?.data, 'movimentações.csv')
+      saveBlob(resp?.data, 'movimentações.csv')
     }
   }
 
   const handleExportPDF = async () => {
     const resp = await getMovPDF(values)
     if (resp.data) {
-      saveAs(resp.data, 'movimentações.pdf')
+      saveBlob(resp.data, 'movimentações.pdf')
     }
   }
 

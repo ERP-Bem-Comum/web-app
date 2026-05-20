@@ -1,6 +1,6 @@
 # ERP Frontend
 
-Frontend do sistema ERP financeiro, construido com [Next.js](https://nextjs.org/) 13 (App Router) e [TypeScript](https://www.typescriptlang.org/).
+Frontend do sistema ERP financeiro, construido com [Next.js](https://nextjs.org/) (App Router) e [TypeScript](https://www.typescriptlang.org/).
 
 ## Funcionalidades
 
@@ -14,34 +14,34 @@ Frontend do sistema ERP financeiro, construido com [Next.js](https://nextjs.org/
 
 ## Tech Stack
 
-- **Framework:** Next.js 13 (App Router)
+- **Framework:** Next.js (App Router)
 - **Linguagem:** TypeScript
 - **UI:** Material UI + TailwindCSS
 - **Formularios:** React Hook Form + Zod
 - **Data Fetching:** TanStack Query (React Query) + Axios
 - **Autenticacao:** NextAuth.js
 - **Graficos:** Recharts, Chart.js, Highcharts
-- **Package Manager:** Yarn
+- **Package Manager:** pnpm
 
 ## Pre-requisitos
 
-- [Node.js](https://nodejs.org/) v20+
-- [Yarn](https://yarnpkg.com/)
-- Backend rodando (veja o repositorio [ERP-BACKEND](https://github.com/desenvolvedorabc/ERP-BACKEND))
+- [Node.js](https://nodejs.org/) v24+ (use `nvm use` para alinhar com `.nvmrc`)
+- [pnpm](https://pnpm.io/) v10+ (habilite via `corepack enable` ou instale globalmente)
+- Backend rodando
 
 ## Instalacao
 
 1. Clone o repositorio:
 
 ```bash
-git clone https://github.com/desenvolvedorabc/ERP-FRONTEND.git
-cd ERP-FRONTEND
+git clone <url-do-repositorio>
+cd frontend
 ```
 
 2. Instale as dependencias:
 
 ```bash
-yarn install
+pnpm install
 ```
 
 3. Configure as variaveis de ambiente:
@@ -68,31 +68,31 @@ Edite o `.env.local` com as configuracoes do seu ambiente:
 
 ```bash
 # Desenvolvimento (com hot-reload)
-yarn dev
+pnpm dev
 ```
 
 Acesse [http://localhost:3000](http://localhost:3000).
 
 ```bash
 # Producao
-yarn build
-yarn start
+pnpm build
+pnpm start
 ```
 
 ## Scripts disponiveis
 
 | Comando | Descricao |
 |---------|-----------|
-| `yarn dev` | Inicia servidor de desenvolvimento |
-| `yarn build` | Compila para producao |
-| `yarn start` | Inicia servidor de producao |
-| `yarn lint` | Executa o linter |
+| `pnpm dev` | Inicia servidor de desenvolvimento |
+| `pnpm build` | Compila para producao |
+| `pnpm start` | Inicia servidor de producao |
+| `pnpm lint` | Executa o linter |
 
 ## Docker
 
 ### Subir com Docker Compose
 
-1. Edite as variaveis no `docker-compose.yml` (ou crie um `.env.local`).
+1. Edite as variaveis no `docker-compose.yml` (ou defina `NEXT_PUBLIC_API_URL` no ambiente).
 
 2. Suba o container:
 
@@ -102,50 +102,7 @@ docker compose up -d
 
 O frontend estara disponivel em [http://localhost:3000](http://localhost:3000).
 
-> O backend precisa estar rodando para o frontend funcionar. Veja as instrucoes no repositorio [ERP-BACKEND](https://github.com/desenvolvedorabc/ERP-BACKEND).
-
-### Mock da API via OpenAPI
-
-Enquanto o backend nao estiver disponivel, o projeto pode servir a API documentada em `handbook/doc.yaml` com Prism:
-
-```bash
-docker compose up mock-api
-```
-
-O mock fica disponivel em:
-
-```text
-http://localhost:4010
-```
-
-Por padrao, o `docker-compose.yml` aponta o frontend para esse mock:
-
-```text
-NEXT_PUBLIC_API_URL=http://localhost:4010
-```
-
-Para usar o backend real, sobrescreva a variavel antes de subir/buildar:
-
-```bash
-NEXT_PUBLIC_API_URL=http://localhost:3003 docker compose up -d --build frontend
-```
-
-### Gerar services a partir do OpenAPI
-
-O Orval esta configurado em `orval.config.cjs` para ler `handbook/doc.yaml` e gerar clients, hooks React Query e tipos em:
-
-```text
-src/services/generated/
-src/types/generated/
-```
-
-Execute:
-
-```bash
-npm run api:generate
-```
-
-Os services gerados usam o mutator `src/services/generated/mutator.ts`, que reaproveita o Axios configurado em `src/services/api.ts`.
+> O backend precisa estar rodando para o frontend funcionar.
 
 ### Build manual (sem docker-compose)
 

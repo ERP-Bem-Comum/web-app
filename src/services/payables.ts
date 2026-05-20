@@ -17,7 +17,7 @@ import {
 } from '@/types/Payables'
 import { handleError } from '@/utils/errorHandling'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { HttpStatusCode } from 'axios'
+import { HttpStatusCode } from '@/services/http-status'
 import { queryClient } from 'lib/react-query'
 import api from './api'
 import { updateFile, uploadFile } from './files'

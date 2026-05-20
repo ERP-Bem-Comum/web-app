@@ -117,7 +117,6 @@ const config: Config = {
     },
   },
   plugins: [
-    require('tailwindcss-animate'),
     plugin(({ addComponents }) => {
       addComponents({
         '.reconciled-border': {

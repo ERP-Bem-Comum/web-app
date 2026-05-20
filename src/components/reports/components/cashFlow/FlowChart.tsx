@@ -1,8 +1,18 @@
-import HighchartsReact from 'highcharts-react-official'
-import Highcharts from 'highcharts'
+'use client'
+import {
+  Brush,
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  TooltipProps,
+  XAxis,
+  YAxis,
+} from 'recharts'
 import { maskMonetaryValue } from '@/utils/masks'
 import { CashFlowDataForChart } from '@/types/reports/cashFlow'
-import { useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { COLOR_EXPECTED, COLOR_REALIZED } from '@/configurations/colors'
 
@@ -10,85 +20,40 @@ interface FlowChartDataProps {
   data?: CashFlowDataForChart
 }
 
-const FlowChartData = ({ data }: FlowChartDataProps) => {
-  const options: Highcharts.Options = {
-    chart: {
-      type: 'line',
-      renderTo: 'container',
-      backgroundColor: '#F6FAFB',
-      panning: {
-        enabled: true,
-        type: 'x',
-      },
-      panKey: 'shift',
-    },
-    title: {
-      text: '',
-    },
-    xAxis: {
-      visible: true,
-      categories: data?.map((item) => item.Installments_dueDate),
-      scrollbar: {
-        enabled: true,
-        height: 5,
-        showFull: true,
-      },
+type ChartRow = {
+  label: string
+  EXPECTED: number
+  REALIZED: number
+  SALDO: number
+}
 
-      min: 0,
-      max: 10,
-    },
-    yAxis: [
-      {
-        visible: true,
-        type: 'linear',
-      },
-    ],
-    legend: {
-      shadow: false,
-      enabled: true,
-    },
-    tooltip: {
-      enabled: true,
-      formatter: function () {
-        // Add the formatter function
-        return `${this.series.name}<br/>${this.x}: <b>${maskMonetaryValue(Number(this.y))}</b>`
-      },
-    },
-    /* series: cashFlow.data.map((item) => ({
-      type: 'column',
-      name: item.Category_name,
-      color: '##E18282',
-      data: cashFlow?.data?.map((item) => item.EXPECTED),
-      pointPadding: 0,
-    })), */
-    plotOptions: {
-      column: {
-        pointWidth: 15,
-        groupPadding: 0.1,
-        minPointLength: 3,
-      },
-    },
-    series: [
-      {
-        type: 'line',
-        name: 'Esperado',
-        color: COLOR_EXPECTED,
-        data: data?.map((item) => item.EXPECTED),
-      },
-      {
-        type: 'line',
-        name: 'Realizado',
-        color: COLOR_REALIZED,
-        data: data?.map((item) => item.REALIZED),
-      },
-      {
-        type: 'line',
-        name: 'Saldo',
-        color: '#78f876',
-        data: data?.map((item) => item.EXPECTED - item.REALIZED),
-      },
-    ],
-  }
+const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
+  if (!active || !payload || payload.length === 0) return null
+  return (
+    <div className="rounded border border-slate-200 bg-white px-3 py-2 text-xs shadow-md">
+      <div className="mb-1 font-medium text-slate-600">{label}</div>
+      {payload.map((entry) => (
+        <div key={entry.dataKey as string} className="flex items-center gap-2">
+          <span
+            className="inline-block h-2 w-2 rounded-sm"
+            style={{ backgroundColor: entry.color }}
+          />
+          <span className="text-slate-500">{entry.name}:</span>
+          <span className="font-semibold">{maskMonetaryValue(Number(entry.value ?? 0))}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+const FlowChartData = ({ data }: FlowChartDataProps) => {
+  const chartData: ChartRow[] =
+    data?.map((item) => ({
+      label: item.Installments_dueDate,
+      EXPECTED: item.EXPECTED,
+      REALIZED: item.REALIZED,
+      SALDO: item.EXPECTED - item.REALIZED,
+    })) ?? []
 
   return (
     <Card>
@@ -97,8 +62,53 @@ const FlowChartData = ({ data }: FlowChartDataProps) => {
         <CardDescription>Previsto vs Realizado</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="w-full h-[30%]">
-          <HighchartsReact highcharts={Highcharts} options={options} />
+        <div className="w-full" style={{ height: 360, backgroundColor: '#F6FAFB' }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ top: 16, right: 24, bottom: 24, left: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#E0E4E4" />
+              <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#666' }} />
+              <YAxis
+                tick={{ fontSize: 11, fill: '#666' }}
+                tickFormatter={(v) => maskMonetaryValue(Number(v))}
+                width={90}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey="EXPECTED"
+                name="Esperado"
+                stroke={COLOR_EXPECTED}
+                strokeWidth={2}
+                dot={false}
+              />
+              <Line
+                type="monotone"
+                dataKey="REALIZED"
+                name="Realizado"
+                stroke={COLOR_REALIZED}
+                strokeWidth={2}
+                dot={false}
+              />
+              <Line
+                type="monotone"
+                dataKey="SALDO"
+                name="Saldo"
+                stroke="#78f876"
+                strokeWidth={2}
+                dot={false}
+              />
+              {chartData.length > 10 && (
+                <Brush
+                  dataKey="label"
+                  height={20}
+                  stroke="#32C6F4"
+                  startIndex={0}
+                  endIndex={Math.min(10, chartData.length - 1)}
+                />
+              )}
+            </LineChart>
+          </ResponsiveContainer>
         </div>
       </CardContent>
     </Card>

@@ -8,7 +8,7 @@ import {
   TransactionCardProps,
 } from '@/types/reconciliation'
 import { useMutation } from '@tanstack/react-query'
-import { HttpStatusCode } from 'axios'
+import { HttpStatusCode } from '@/services/http-status'
 import { parseISO } from 'date-fns'
 import { queryClient } from 'lib/react-query'
 import { useState } from 'react'

@@ -10,7 +10,7 @@ import { TextField } from '@mui/material'
 import { ModalConfirm } from '@/components/modals/ModalConfirm'
 import { Loader2 } from 'lucide-react'
 import { checkCredentialsBudgetPlan } from '@/services/budgetPlan'
-import { setCookie } from 'nookies'
+import { setCookie } from '@/utils/cookies'
 
 interface Props {
   id: number

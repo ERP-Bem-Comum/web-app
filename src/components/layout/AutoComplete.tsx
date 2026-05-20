@@ -1,6 +1,5 @@
 import { Options } from '@/types/global'
 import { Autocomplete, Chip, TextField } from '@mui/material'
-import { isBoolean } from 'lodash-es'
 import { Control, Controller, FieldValues, Path } from 'react-hook-form'
 
 interface AutoCompleteProps<T extends FieldValues> {
@@ -28,7 +27,7 @@ export const AutoComplete = <T extends FieldValues>({
   hideButtonDropdown = false,
 }: AutoCompleteProps<T>) => {
   const transformValue = (value: string | boolean | number) => {
-    return isBoolean(value) ? Number(value) : value
+    return typeof value === 'boolean' ? Number(value) : value
   }
   const findValue = (value: string | boolean | number) => {
     return options?.find((op) => op.id === transformValue(value)) ?? null

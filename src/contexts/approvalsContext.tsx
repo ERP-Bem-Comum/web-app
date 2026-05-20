@@ -3,9 +3,9 @@ import { approveAccess, approvePayable, getPayableForApprovalById } from '@/serv
 import { approval, ApprovalsContextProps, credentials, IApproval } from '@/types/approvals'
 import { IPayables } from '@/types/Payables'
 import { handleDates } from '@/utils/dates'
-import { HttpStatusCode } from 'axios'
+import { HttpStatusCode } from '@/services/http-status'
 import { useRouter } from 'next/navigation'
-import { setCookie } from 'nookies'
+import { setCookie } from '@/utils/cookies'
 import { createContext, ReactNode, useContext, useState } from 'react'
 import { SubmitHandler } from 'react-hook-form'
 

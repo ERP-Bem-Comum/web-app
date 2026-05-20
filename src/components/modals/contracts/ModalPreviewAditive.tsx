@@ -5,7 +5,10 @@ import { TranslatedFields } from '@/enums/contracts'
 import { IContract } from '@/types/contracts'
 import { maskCNPJ, maskCPF, maskMonetaryValue } from '@/utils/masks'
 import { mountPeriod } from '@/utils/UI/contracts'
-import { isArray, isObject } from 'lodash-es'
+// lodash#isObject considera typeof 'object' OU 'function' (e exclui null) — replicado abaixo.
+const isObject = (v: unknown): boolean =>
+  v !== null && (typeof v === 'object' || typeof v === 'function')
+const isArray = Array.isArray
 import { Fragment, useState } from 'react'
 import { ModalPreviewBase } from '../ModalPreviewBase'
 import { PreviewSection } from '../PreviewSection'

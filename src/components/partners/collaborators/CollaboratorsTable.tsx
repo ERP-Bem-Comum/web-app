@@ -27,9 +27,9 @@ import useDebounce from '@/utils/use-debounce'
 import { LoadingTable } from '../../table/loadingTable'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
-import { saveAs } from 'file-saver'
+import { saveBlob } from '@/utils/saveBlob'
 import { ptBR } from 'date-fns/locale'
-import { HttpStatusCode } from 'axios'
+import { HttpStatusCode } from '@/services/http-status'
 import { useQueryClient } from '@tanstack/react-query'
 
 import {
@@ -886,7 +886,7 @@ export default function CollaboratorsTable() {
           (originalFile?.name
             ? `erros-${originalFile.name.replace(/\.(csv|xlsx|xls)$/i, '.csv')}`
             : 'erros-importacao-colaboradores.csv')
-        saveAs(errorBlob, fileName)
+        saveBlob(errorBlob, fileName)
         return
       }
 
@@ -896,7 +896,7 @@ export default function CollaboratorsTable() {
         const fileName = originalFile?.name
           ? `erros-${originalFile.name.replace(/\.(csv|xlsx|xls)$/i, '.csv')}`
           : 'erros-importacao-colaboradores.csv'
-        saveAs(errorCSV, fileName)
+        saveBlob(errorCSV, fileName)
         return
       }
 
@@ -1020,21 +1020,21 @@ export default function CollaboratorsTable() {
   const handleExport = async () => {
     setExportMenuAnchor(null)
     const resp = await getExportCollaborator(exportFilters)
-    saveAs(resp?.data, 'Colaboradores.csv')
-    saveAs(generateDicionarioCSV(), 'colaboradores_dicionario.csv')
+    saveBlob(resp?.data, 'Colaboradores.csv')
+    saveBlob(generateDicionarioCSV(), 'colaboradores_dicionario.csv')
   }
 
   const handleExportTimeline = async () => {
     setExportMenuAnchor(null)
     const resp = await getExportCollaboratorTimeline(exportFilters)
-    saveAs(resp?.data, 'Colaboradores-Historico.csv')
+    saveBlob(resp?.data, 'Colaboradores-Historico.csv')
   }
 
   const handleExportTemplate = () => {
     setExportMenuAnchor(null)
     const csvContent = COLLABORATOR_CSV_TEMPLATE_HEADERS.join(',')
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    saveAs(blob, 'Template-Colaboradores.csv')
+    saveBlob(blob, 'Template-Colaboradores.csv')
   }
 
   return (

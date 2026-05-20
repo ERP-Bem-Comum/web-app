@@ -3,7 +3,7 @@ import { useOptions } from '@/hooks/useOptions'
 import { getFinancierByNameOrCNPJ, IFinancier } from '@/services/financier'
 import { maskCNPJ } from '@/utils/masks'
 import { Grid } from '@mui/material'
-import { debounce } from 'lodash-es'
+import { debounce } from '@/utils/debounce'
 import { Fragment, useEffect, useState } from 'react'
 import SearchByCPForCNPJ from '@/components/layout/shared/searchByCPForCNPJ'
 

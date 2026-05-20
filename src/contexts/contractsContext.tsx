@@ -4,7 +4,7 @@ import { createAditive, createContract, deleteContract, updateContract } from '@
 import { deletePayable } from '@/services/payables'
 import { Contract, IContract } from '@/types/contracts'
 import { useMutation } from '@tanstack/react-query'
-import { HttpStatusCode } from 'axios'
+import { HttpStatusCode } from '@/services/http-status'
 import { queryClient } from 'lib/react-query'
 import { useSession } from 'next-auth/react'
 import { BaseSyntheticEvent, createContext, ReactNode, useState } from 'react'

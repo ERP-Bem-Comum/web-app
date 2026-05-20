@@ -2,7 +2,6 @@ import { RecurenceType } from '@/enums/payables'
 import { handleDates } from '@/utils/dates'
 import { getInstallmentInfo } from '@/utils/installments'
 import { format } from 'date-fns'
-import { isNaN } from 'lodash-es'
 
 interface ExtraInfoProps {
   totalValue: number
@@ -30,7 +29,7 @@ export const ExtraInfoField = ({
   const installmentsValue = () => {
     if (!recurrent || !recurrenceData) return totalValue
 
-    if (isNaN(totalValue) || installments.totalInstallments === 0) return 0
+    if (Number.isNaN(totalValue) || installments.totalInstallments === 0) return 0
 
     return (totalValue / installments.totalInstallments).toLocaleString('pt-br', {
       style: 'currency',
@@ -49,7 +48,7 @@ export const ExtraInfoField = ({
 
   const getTotalValue = () => {
     const defaultValue = 0
-    if (isNaN(totalValue)) {
+    if (Number.isNaN(totalValue)) {
       return (
         defaultValue.toLocaleString('pt-br', {
           style: 'currency',

@@ -5,7 +5,7 @@ import { BancaryInfo, PixInfo } from '@/types/global'
 import { ISupplier } from '@/types/supplier'
 import { maskCNPJ } from '@/utils/masks'
 import { Grid } from '@mui/material'
-import { debounce } from 'lodash-es'
+import { debounce } from '@/utils/debounce'
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import SearchByCPForCNPJ from '@/components/layout/shared/searchByCPForCNPJ'
 

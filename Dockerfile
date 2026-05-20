@@ -1,14 +1,14 @@
-ARG NODE_ENV 
-ARG NEXT_PUBLIC_API_URL 
-ARG NEXTAUTH_SECRET 
+ARG NODE_ENV
+ARG NEXT_PUBLIC_API_URL
+ARG NEXTAUTH_SECRET
 ARG NEXTAUTH_URL
 
 # Etapa 1: Build
-FROM node:20 AS builder
+FROM node:24-alpine AS builder
 
-ARG NODE_ENV 
-ARG NEXT_PUBLIC_API_URL 
-ARG NEXTAUTH_SECRET 
+ARG NODE_ENV
+ARG NEXT_PUBLIC_API_URL
+ARG NEXTAUTH_SECRET
 ARG NEXTAUTH_URL
 
 ENV NODE_ENV=$NODE_ENV
@@ -16,26 +16,24 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXTAUTH_SECRET=$NEXTAUTH_SECRET
 ENV NEXTAUTH_URL=$NEXTAUTH_URL
 
+RUN corepack enable
+
 WORKDIR /app
 
-# Copia os arquivos de dependência
-COPY package.json yarn.lock ./
+COPY package.json pnpm-lock.yaml ./
 
-# Instala dependências (inclusive dev)
-RUN yarn install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
-# Copia o restante do projeto
 COPY . .
 
-# Compila o projeto Next.js
-RUN yarn build
+RUN pnpm build
 
 # Etapa 2: Runtime
-FROM node:20-alpine AS runner
+FROM node:24-alpine AS runner
 
-ARG NODE_ENV 
-ARG NEXT_PUBLIC_API_URL 
-ARG NEXTAUTH_SECRET 
+ARG NODE_ENV
+ARG NEXT_PUBLIC_API_URL
+ARG NEXTAUTH_SECRET
 ARG NEXTAUTH_URL
 
 ENV NODE_ENV=$NODE_ENV
@@ -45,12 +43,9 @@ ENV NEXTAUTH_URL=$NEXTAUTH_URL
 
 WORKDIR /app
 
-# Copia apenas o necessário
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/yarn.lock ./yarn.lock
-COPY --from=builder /app/package.json ./package.json
 
 EXPOSE 3000
 

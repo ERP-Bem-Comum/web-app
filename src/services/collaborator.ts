@@ -5,7 +5,6 @@ import { useQuery } from '@tanstack/react-query'
 import api from './api'
 import apiOptions from './apiOptions'
 import { queryClient } from 'lib/react-query'
-import { AxiosResponseHeaders, RawAxiosResponseHeaders } from 'axios'
 
 export type ICreatePreCollaborator = {
   name: string
@@ -243,7 +242,7 @@ export const useGetCollaboratorByNameOrCPF = (nameOrCNPJ: string, payableId?: nu
 
 export type ImportCollaboratorsResponse = {
   status: number
-  headers: AxiosResponseHeaders | RawAxiosResponseHeaders
+  headers: Record<string, string>
   jsonData: any | null
   blob: Blob
 }

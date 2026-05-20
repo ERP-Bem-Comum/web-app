@@ -1,6 +1,6 @@
 import { useDisclosure } from './useDisclosure'
 import { useState } from 'react'
-import { HttpStatusCode } from 'axios'
+import { HttpStatusCode } from '@/services/http-status'
 import { approveManyPayable } from '@/services/payables'
 import { ApproveManyPayables } from '@/types/approvals'
 import { queryClient } from 'lib/react-query'

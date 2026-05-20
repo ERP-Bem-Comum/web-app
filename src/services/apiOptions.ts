@@ -1,47 +1,37 @@
 'use client'
 import { AUTH_BYPASS_ENABLED, authBypassSession } from '@/utils/authBypass'
-import axios from 'axios'
 import { getSession } from 'next-auth/react'
-import { destroyCookie, parseCookies } from 'nookies'
+import { destroyCookie, parseCookies } from '@/utils/cookies'
+import { createHttpClient } from './http-client'
 
 const baseURL = process.env.NEXT_PUBLIC_API_URL
 
-const ApiOptions = () => {
-  const defaultOptions = {
-    baseURL,
-  }
-
-  const instance = axios.create(defaultOptions)
-
-  instance.interceptors.request.use(async (request) => {
+const apiOptions = createHttpClient({
+  baseURL,
+  onRequest: async (init) => {
     const session = AUTH_BYPASS_ENABLED ? authBypassSession : await getSession()
+    const headers = new Headers(init.headers)
     if (session) {
-      request.headers.Authorization = `Bearer ${session.user.token}`
+      headers.set('Authorization', `Bearer ${session.user.token}`)
     } else {
       const cookies = parseCookies()
       if (cookies) {
-        request.headers.Authorization =
-          'Basic ' + btoa(cookies?.ApprovalsPayableId + ':' + cookies?.ApprovalsPassword)
+        headers.set(
+          'Authorization',
+          'Basic ' + btoa(cookies?.ApprovalsPayableId + ':' + cookies?.ApprovalsPassword),
+        )
       }
     }
-    return request
-  })
+    return { ...init, headers }
+  },
+  onUnauthorized: (error) => {
+    const data = error.response?.data as { message?: string } | undefined
+    if (data?.message === 'Unauthorized') {
+      destroyCookie(null, 'ApprovalsPayableId')
+      destroyCookie(null, 'ApprovalsPassword')
+      console.log('password expired')
+    }
+  },
+})
 
-  instance.interceptors.response.use(
-    (response) => {
-      return response
-    },
-    (error) => {
-      if (error?.response?.status === 401 && error?.response?.data?.message === 'Unauthorized') {
-        destroyCookie(null, 'ApprovalsPayableId')
-        destroyCookie(null, 'ApprovalsPassword')
-        console.log('password expired')
-      }
-      return Promise.reject(error)
-    },
-  )
-
-  return instance
-}
-
-export default ApiOptions()
+export default apiOptions

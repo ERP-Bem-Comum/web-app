@@ -1,4 +1,4 @@
-import { saveAs } from 'file-saver'
+import { saveBlob } from '@/utils/saveBlob'
 import { ExportButtonReports } from '../ExportButtonRelatory'
 import { filterReportParams } from '@/types/reports/filters'
 import { getAnalysisCSV, getAnalysisPDF } from '@/services/reports'
@@ -20,14 +20,14 @@ const analysisExportButton = ({ isOpenChart, currentParams, type }: analysisExpo
   const handleExportCSV = async () => {
     const resp = await getAnalysisCSV(currentParams, type)
     if (resp.data) {
-      saveAs(resp?.data, `analise-${fileNames[type]}.csv`)
+      saveBlob(resp?.data, `analise-${fileNames[type]}.csv`)
     }
   }
 
   const handleExportPDF = async () => {
     const resp = await getAnalysisPDF(currentParams, type)
     if (resp.data) {
-      saveAs(resp?.data, `analise-${fileNames[type]}.pdf`)
+      saveBlob(resp?.data, `analise-${fileNames[type]}.pdf`)
     }
   }
 

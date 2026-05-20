@@ -1,0 +1,15 @@
+interface:
+  display_name: "Codex Config Maintenance"
+  short_description: "Evolui a configuração do Codex com base na doc oficial."
+  brand_color: "#7C3AED"
+
+policy:
+  allow_implicit_invocation: true
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "openaiDeveloperDocs"
+      description: "OpenAI Developer Docs MCP server"
+      transport: "streamable_http"
+      url: "https://developers.openai.com/mcp"

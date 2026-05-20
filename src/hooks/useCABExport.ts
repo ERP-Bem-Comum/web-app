@@ -1,7 +1,7 @@
 import { generateCnab } from '@/services/exportCNAB'
 import { useDisclosure } from './useDisclosure'
 import { useState } from 'react'
-import { HttpStatusCode } from 'axios'
+import { HttpStatusCode } from '@/services/http-status'
 
 const useCNABExport = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)

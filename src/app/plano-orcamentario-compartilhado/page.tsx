@@ -4,7 +4,7 @@ import AccessBudgetPlanShared from '@/components/budgetPlan/budgetPlanShared/Acc
 import BudgetPlanDetailShared from '@/components/budgetPlan/budgetPlanShared/BudgetPlanDetailShared'
 import { useGetBudgetPlanByIdShared } from '@/services/budgetPlanShared'
 import Image from 'next/image'
-import { destroyCookie, parseCookies } from 'nookies'
+import { destroyCookie, parseCookies } from '@/utils/cookies'
 import { Fragment, useEffect, useState } from 'react'
 import { AiOutlineEye } from 'react-icons/ai'
 

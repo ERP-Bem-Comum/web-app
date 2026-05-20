@@ -3,7 +3,7 @@ import CardLogin from '@/components/auth/CardLogin'
 import AccessBudgetPlanShared from '@/components/budgetPlan/budgetPlanShared/AccessBudgetPlanShared'
 import ConsolidatedTable from '@/components/consolidated/ConsolidatedTable'
 import Image from 'next/image'
-import { destroyCookie, parseCookies } from 'nookies'
+import { destroyCookie, parseCookies } from '@/utils/cookies'
 import { Fragment, useEffect, useState } from 'react'
 import { AiOutlineEye } from 'react-icons/ai'
 

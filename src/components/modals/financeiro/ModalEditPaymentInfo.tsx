@@ -10,7 +10,8 @@ import { ISupplier } from '@/types/supplier'
 import { editPaymentInfoSchema } from '@/validators/global'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Box, FormHelperText, Grid, Modal } from '@mui/material'
-import { HttpStatusCode, isAxiosError } from 'axios'
+import { isHttpError } from '@/services/http-client'
+import { HttpStatusCode } from '@/services/http-status'
 import { useSession } from 'next-auth/react'
 import { Fragment, useEffect, useState } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
@@ -100,7 +101,7 @@ export function ModalEditPaymentInfo({
       }
     } catch (error) {
       console.error(error)
-      if (isAxiosError(error)) {
+      if (isHttpError(error)) {
         setErrorMessage(error.message)
       }
     } finally {

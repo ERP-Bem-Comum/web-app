@@ -1,4 +1,4 @@
-import { saveAs } from 'file-saver'
+import { saveBlob } from '@/utils/saveBlob'
 import { ExportButtonReports } from '../ExportButtonRelatory'
 import { filterReportParams } from '@/types/reports/filters'
 import { getCashFlowCSV, getCashFlowPDF } from '@/services/reports'
@@ -13,14 +13,14 @@ const FlowExportButton = ({ currentParams, isOpenChart }: FlowExportButtonProps)
   const handleExportCSV = async () => {
     const resp = await getCashFlowCSV(currentParams)
     if (resp.data) {
-      saveAs(resp.data, 'fluxo_caixa.csv')
+      saveBlob(resp.data, 'fluxo_caixa.csv')
     }
   }
 
   const handleExportPDF = async () => {
     const resp = await getCashFlowPDF(currentParams)
     if (resp.data) {
-      saveAs(resp.data, 'fluxo_caixa.pdf')
+      saveBlob(resp.data, 'fluxo_caixa.pdf')
     }
   }
 

@@ -16,7 +16,7 @@ import { GhostButton } from '../layout/Buttons/GhostButton'
 import { SubmitButton } from '../layout/Buttons/SubmitButton'
 import { pickProps } from '@/utils/pickProps'
 import { useCallback, useEffect, useState } from 'react'
-import { debounce } from 'lodash-es'
+import { debounce } from '@/utils/debounce'
 import { ModalAwait } from '../modals/ModalAwait'
 import { AgencyComponent } from '../layout/AgencyComponent'
 

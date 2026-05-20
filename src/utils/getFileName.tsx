@@ -1,15 +1,21 @@
-import { AxiosResponseHeaders } from 'axios'
-
 export type BlobResponse = {
   blob: Blob
   filename: string
 }
 
-export const getFileNameFromHeader = ({ headers, data }: { headers: unknown; data: Blob }) => {
+export const getFileNameFromHeader = ({
+  headers,
+  data,
+}: {
+  headers: Record<string, string> | Headers | unknown
+  data: Blob
+}) => {
   let filename = 'download.pdf'
 
-  const castedHeader = headers as AxiosResponseHeaders
-  const contentDisposition = castedHeader['content-disposition']
+  const contentDisposition =
+    headers instanceof Headers
+      ? headers.get('content-disposition')
+      : (headers as Record<string, string> | undefined)?.['content-disposition']
 
   if (contentDisposition) {
     const filenameMatch = contentDisposition.match(/filename="([^"]+)"/)

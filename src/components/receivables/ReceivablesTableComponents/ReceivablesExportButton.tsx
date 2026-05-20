@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button'
 import { getReceivablesCsv, getReceivablesPDF } from '@/services/receivable'
 import { ParamsReceivables } from '@/types/receivables'
 import { Menu, MenuItem } from '@mui/material'
-import { saveAs } from 'file-saver'
+import { saveBlob } from '@/utils/saveBlob'
 import { Fragment, useState } from 'react'
 
 interface ReceivablesExportButtonProps {
@@ -16,14 +16,14 @@ const ReceivablesExportButton = ({ currentParams }: ReceivablesExportButtonProps
   const handleExportCSV = async () => {
     const resp = await getReceivablesCsv(currentParams)
     if (resp.data) {
-      saveAs(resp.data, `receivables.csv`)
+      saveBlob(resp.data, `receivables.csv`)
     }
   }
 
   const handleExportPDF = async () => {
     const resp = await getReceivablesPDF(currentParams)
     if (resp.data) {
-      saveAs(resp.data, `receivables.pdf`)
+      saveBlob(resp.data, `receivables.pdf`)
     }
   }
 

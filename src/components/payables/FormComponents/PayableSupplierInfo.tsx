@@ -9,7 +9,7 @@ import { ModalChangeContract } from '../../modals/financeiro/ModalChangeContract
 import { ModalEditPaymentInfo } from '../../modals/financeiro/ModalEditPaymentInfo'
 import SubjectInfo from '../../layout/financeiro/SubjectInfo'
 import { Payable } from '@/types/Payables'
-import { debounce } from 'lodash-es'
+import { debounce } from '@/utils/debounce'
 import { UseFormSetValue } from 'react-hook-form'
 import { useOptions } from '@/hooks/useOptions'
 import SearchByCPForCNPJ from '@/components/layout/shared/searchByCPForCNPJ'

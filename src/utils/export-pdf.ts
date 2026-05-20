@@ -1,7 +1,7 @@
 'use client'
 
 import { jsPDF as JsPDF } from 'jspdf'
-import html2canvas from 'html2canvas'
+import { toCanvas } from 'html-to-image'
 import backgroundImageUrl from '../asset/watermark-abc.png'
 
 const loadImageAsBase64 = async (url: string) => {
@@ -19,7 +19,7 @@ export const exportChartPDF = async (fileName: string) => {
 
   const chartContainer = document.getElementById('chart-pdf-export-container')
   if (chartContainer) {
-    html2canvas(chartContainer).then((canvas) => {
+    toCanvas(chartContainer).then((canvas) => {
       const imgData = canvas.toDataURL('image/png')
       const pdf = new JsPDF('p', 'mm', 'a4')
       const imgWidth = 210

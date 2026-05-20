@@ -1,6 +1,5 @@
 import { z } from 'zod'
 import { requiredCategorizationSchema } from './categorization'
-import { omit } from 'lodash-es'
 
 export const filterDateSchema = z.object({
   period: z
@@ -39,6 +38,4 @@ export const createBankRecordApischema = z
       })
     }
   })
-  .transform((data) => {
-    return omit(data, 'accountId')
-  })
+  .transform(({ accountId: _accountId, ...rest }) => rest)

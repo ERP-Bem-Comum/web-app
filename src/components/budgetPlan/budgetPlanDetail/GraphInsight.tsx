@@ -1,119 +1,53 @@
+'use client'
 import { useEffect, useState } from 'react'
-import Highcharts from 'highcharts'
-import HighchartsReact from 'highcharts-react-official'
+import { Bar, BarChart, Cell, ReferenceLine } from 'recharts'
 
 interface IGraphInsight {
   averageValue: number
   listData: any[]
-  changeColumnSelect: any
+  changeColumnSelect: (index: number) => void
 }
 
+const SELECTED_COLOR = '#32C6F4'
+const UNSELECTED_COLOR = '#AFB2B2'
+
 export function GraphInsight({ averageValue, listData, changeColumnSelect }: IGraphInsight) {
-  const [selectedColumn, setSelectedColumn] = useState(0)
-
-  const getDataSeries = () => {
-    const series = [] as number[]
-    series.push(0)
-    listData.forEach((data) => {
-      series.push(data?.totalInCents)
-    })
-    series.push(0)
-
-    return series
-  }
+  const [selectedColumn, setSelectedColumn] = useState<number>(listData.length - 1)
 
   useEffect(() => {
-    getDataSeries()
     setSelectedColumn(listData.length - 1)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listData])
 
-  const options = {
-    chart: {
-      type: 'column',
-      backgroundColor: '#F6FAFB',
-      height: 100,
-      width: 180,
-    },
-    title: {
-      text: '',
-    },
-    xAxis: {
-      visible: false,
-    },
-    yAxis: [
-      {
-        min: 0,
-        title: {
-          text: '',
-        },
-        visible: false,
-      },
-    ],
-    legend: {
-      shadow: false,
-      enabled: false,
-    },
-    tooltip: {
-      shared: true,
-      enabled: false,
-    },
-    plotOptions: {
-      column: {
-        grouping: false,
-        shadow: false,
-        borderWidth: 0,
-        cursor: 'pointer',
-        point: {
-          events: {
-            click: function (this: any) {
-              this.series?.points.forEach((point: any) => {
-                point.update({ color: '#AFB2B2' })
-              })
-              setSelectedColumn(this?.index)
-              changeColumnSelect(this?.index - 1)
-              this.update({ color: '#32C6F4' })
-              // eslint-disable-next-line @typescript-eslint/no-this-alias
-            },
-          },
-        },
-      },
-    },
-    series: [
-      {
-        name: 'Planejado',
-        color: '#E0E4E4',
-        data: getDataSeries(),
-        pointPadding: 0,
-      },
-      {
-        name: 'Realizado',
-        color: '#AFB2B2',
-        data: getDataSeries(),
-        pointPadding: 0,
-      },
-      {
-        name: 'Average',
-        type: 'line',
-        data: [
-          averageValue,
-          averageValue,
-          averageValue,
-          averageValue,
-          averageValue,
-          averageValue,
-          averageValue,
-        ],
-        color: '#000',
-        dashStyle: 'Dash',
-        marker: {
-          enabled: false,
-        },
-        lineWidth: 1,
-        enableMouseTracking: false,
-      },
-    ],
+  // Espelha o shape original (0 sentinel no início e no fim) para preservar visual.
+  const chartData = [
+    { name: 'start', value: 0 },
+    ...listData.map((d) => ({ name: String(d?.id ?? ''), value: d?.totalInCents ?? 0 })),
+    { name: 'end', value: 0 },
+  ]
+
+  const handleBarClick = (_: unknown, index: number) => {
+    setSelectedColumn(index)
+    // -1 para compensar o sentinel inicial — mesmo offset do código antigo.
+    changeColumnSelect(index - 1)
   }
 
-  return <HighchartsReact highcharts={Highcharts} options={options} />
+  return (
+    <BarChart
+      width={180}
+      height={100}
+      data={chartData}
+      style={{ backgroundColor: '#F6FAFB' }}
+      margin={{ top: 4, right: 4, bottom: 4, left: 4 }}
+    >
+      <Bar dataKey="value" onClick={handleBarClick} cursor="pointer">
+        {chartData.map((_, index) => (
+          <Cell
+            key={`cell-${index}`}
+            fill={index === selectedColumn ? SELECTED_COLOR : UNSELECTED_COLOR}
+          />
+        ))}
+      </Bar>
+      <ReferenceLine y={averageValue} stroke="#000" strokeDasharray="4 4" strokeWidth={1} />
+    </BarChart>
+  )
 }

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Frontend Feature Module"
+  short_description: "Scaffold e expansão de features no padrão do frontend."
+  brand_color: "#0F766E"
+
+policy:
+  allow_implicit_invocation: true

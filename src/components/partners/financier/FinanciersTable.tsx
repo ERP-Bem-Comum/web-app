@@ -21,7 +21,7 @@ import { MdNavigateBefore, MdNavigateNext } from 'react-icons/md'
 import TableCellStyled from '../../table/TableCellStyled'
 import useDebounce from '@/utils/use-debounce'
 import { LoadingTable } from '../../table/loadingTable'
-import { saveAs } from 'file-saver'
+import { saveBlob } from '@/utils/saveBlob'
 import { servicesList, statusContractList } from '@/utils/enums'
 import { getExportFinancier, useGetFinanciers } from '@/services/financier'
 import { maskCNPJ } from '@/utils/masks'
@@ -176,7 +176,7 @@ export default function FinanciersTable() {
   //     active: filterStatus,
   //     categories: filterCategory,
   //   })
-  //   saveAs(resp?.data, 'Fornecedores.csv')
+  //   saveBlob(resp?.data, 'Fornecedores.csv')
   // }
 
   const setRow = (row: Data, index: number) => {

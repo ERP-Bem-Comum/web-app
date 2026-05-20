@@ -3,7 +3,7 @@ import { BankAccount, useBankAccountsReturn } from '@/types/bankAccount'
 import { BaseSyntheticEvent, useState } from 'react'
 import { useDisclosure } from './useDisclosure'
 import { queryClient } from 'lib/react-query'
-import { HttpStatusCode } from 'axios'
+import { HttpStatusCode } from '@/services/http-status'
 import { getBalance } from '@/services/apiBradesco'
 
 const useBankAccounts = (): useBankAccountsReturn => {

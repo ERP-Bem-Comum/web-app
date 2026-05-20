@@ -4,7 +4,7 @@ import { useGetCollaboratorByNameOrCPF, ICollaborator } from '@/services/collabo
 import { BancaryInfo, PixInfo } from '@/types/global'
 import { maskCPF } from '@/utils/masks'
 import { Grid } from '@mui/material'
-import { debounce } from 'lodash-es'
+import { debounce } from '@/utils/debounce'
 import { Fragment, useCallback, useEffect, useState } from 'react'
 import SearchByCPForCNPJ from '@/components/layout/shared/searchByCPForCNPJ'
 

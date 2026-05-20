@@ -1,7 +1,7 @@
 import { handleError } from '@/utils/errorHandling'
 import api from './api'
 import { Response } from '@/types/global'
-import { HttpStatusCode } from 'axios'
+import { HttpStatusCode } from '@/services/http-status'
 
 export const generateCnab = async (selectedIds: Array<number>): Promise<Response<boolean>> => {
   try {
