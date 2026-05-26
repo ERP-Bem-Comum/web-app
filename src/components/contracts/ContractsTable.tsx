@@ -162,7 +162,7 @@ export default function ContractsTable() {
                 display: 'flex',
                 flexDirection: 'column',
                 boxShadow: 'none',
-                overflow: 'hidden',
+                overflow: 'visible',
               }}
             >
               {isLoading && <LoadingTable />}

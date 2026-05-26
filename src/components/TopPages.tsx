@@ -22,7 +22,9 @@ export default function TopPages({ text, isReturn = true, path }: Props) {
           <MdKeyboardArrowLeft className="text-erp-primary" size={32} />
         </Button>
       )}
-      <div className="text-2xl ml-2 font-bold">{text}</div>
+      <div className="text-2xl ml-2 font-bold font-heading text-brand-ink tracking-tight">
+        {text}
+      </div>
     </div>
   )
 }
