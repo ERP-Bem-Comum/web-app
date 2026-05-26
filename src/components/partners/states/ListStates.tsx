@@ -12,7 +12,7 @@ export default function ListStates() {
     <div>
       {!isLoadingStates && (
         <Grid container spacing={3}>
-          <Grid item xs={6}>
+          <Grid size={{ xs: 6 }}>
             <Card className="min-h-[605px]">
               <CardHeader>
                 <div className="text-xl">Lista Geral de Estados</div>
@@ -22,7 +22,7 @@ export default function ListStates() {
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={6}>
+          <Grid size={{ xs: 6 }}>
             <Card className="min-h-[605px]">
               <CardHeader>
                 <div className="text-xl">Estados Parceiros Adicionados</div>

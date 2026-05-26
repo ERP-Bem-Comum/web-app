@@ -20,7 +20,7 @@ import { Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 import { ModalAlert } from '../../modals/ModalAlert'
 import { ModalConfirm } from '../../modals/ModalConfirm'
 import { ModalQuestion } from '../../modals/ModalQuestion'
@@ -180,7 +180,7 @@ export default function FormPreCollaborator({ collaborator, edit }: Props) {
           <CardContent className="pt-8">
             <div className="mb-5">Pré-Cadastro de colaborador(a)</div>
             <Grid container spacing={2}>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="name"
                   control={control}
@@ -199,7 +199,7 @@ export default function FormPreCollaborator({ collaborator, edit }: Props) {
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   data-test="email"
                   name="email"
@@ -219,7 +219,7 @@ export default function FormPreCollaborator({ collaborator, edit }: Props) {
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   data-test="occupationArea"
                   name="occupationArea"
@@ -249,7 +249,7 @@ export default function FormPreCollaborator({ collaborator, edit }: Props) {
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="role"
                   control={control}
@@ -283,7 +283,7 @@ export default function FormPreCollaborator({ collaborator, edit }: Props) {
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="startOfContract"
                   control={control}
@@ -316,7 +316,7 @@ export default function FormPreCollaborator({ collaborator, edit }: Props) {
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="employmentRelationship"
                   control={control}
@@ -348,7 +348,7 @@ export default function FormPreCollaborator({ collaborator, edit }: Props) {
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="cpf"
                   control={control}

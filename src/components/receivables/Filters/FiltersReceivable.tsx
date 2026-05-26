@@ -18,7 +18,7 @@ export const FilterReceivable = ({ control, errors, handleFilter }: FilterReceiv
 
   return (
     <Grid container spacing={2} className="bg-[#F6FAFB] p-4 w-full m-0">
-      <Grid item xs={12 / 5}>
+      <Grid size={{ xs: 12 / 5 }}>
         <AutoComplete
           control={control}
           options={options.BudgetPlan()}
@@ -28,7 +28,7 @@ export const FilterReceivable = ({ control, errors, handleFilter }: FilterReceiv
           error={errors.receivableParams?.budgetPlanId?.message}
         />
       </Grid>
-      <Grid item xs={12 / 5}>
+      <Grid size={{ xs: 12 / 5 }}>
         <FilterDate
           control={control}
           label="Vencimento:"
@@ -42,7 +42,7 @@ export const FilterReceivable = ({ control, errors, handleFilter }: FilterReceiv
         name="receivableParams.valueBetween"
         label="Valor (R$):"
       />
-      <Grid item xs={12 / 5}>
+      <Grid size={{ xs: 12 / 5 }}>
         <AutoComplete
           control={control}
           options={options.receivableType}
@@ -52,7 +52,7 @@ export const FilterReceivable = ({ control, errors, handleFilter }: FilterReceiv
           error={errors.receivableParams?.receivableType?.message}
         />
       </Grid>
-      <Grid item xs={12 / 5}>
+      <Grid size={{ xs: 12 / 5 }}>
         <AutoComplete
           control={control}
           options={options.Accounts()}
@@ -62,7 +62,7 @@ export const FilterReceivable = ({ control, errors, handleFilter }: FilterReceiv
           error={errors.receivableParams?.accountId?.message}
         />
       </Grid>
-      <Grid item xs={12 / 5}>
+      <Grid size={{ xs: 12 / 5 }}>
         <AutoComplete
           control={control}
           options={options.statusOptionsReceivables}
@@ -72,7 +72,7 @@ export const FilterReceivable = ({ control, errors, handleFilter }: FilterReceiv
           error={errors.receivableParams?.receivableStatus?.message}
         />
       </Grid>
-      <Grid item xs={12 / 5}>
+      <Grid size={{ xs: 12 / 5 }}>
         <AutoComplete
           control={control}
           options={options.CostCenter()}
@@ -82,7 +82,7 @@ export const FilterReceivable = ({ control, errors, handleFilter }: FilterReceiv
           error={errors.receivableParams?.costCenterId?.message}
         />
       </Grid>
-      <Grid item xs={12 / 5}>
+      <Grid size={{ xs: 12 / 5 }}>
         <AutoComplete
           control={control}
           options={options.Categories()}
@@ -92,7 +92,7 @@ export const FilterReceivable = ({ control, errors, handleFilter }: FilterReceiv
           error={errors.receivableParams?.categoryId?.message}
         />
       </Grid>
-      <Grid item xs={12 / 5}>
+      <Grid size={{ xs: 12 / 5 }}>
         <AutoComplete
           control={control}
           options={options.SubCategories()}
@@ -102,7 +102,7 @@ export const FilterReceivable = ({ control, errors, handleFilter }: FilterReceiv
           error={errors.receivableParams?.subCategoryId?.message}
         />
       </Grid>
-      <Grid item xs={12} container justifyContent="flex-end">
+      <Grid size={{ xs: 12 }} container justifyContent="flex-end">
         <Button variant="erpSecondary" className="mr-4" onClick={handleFilter}>
           Filtrar
         </Button>

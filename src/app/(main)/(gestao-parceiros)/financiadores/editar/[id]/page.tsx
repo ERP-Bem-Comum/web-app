@@ -6,7 +6,7 @@ import { useGetFinancierById } from '@/services/financier'
 import { useParams } from 'next/navigation'
 
 export default function EditFinanciers() {
-  const params = useParams()
+  const params = useParams<{ id: string }>()
   const { data, isLoading: isLoadingFinancier } = useGetFinancierById(params?.id)
 
   return (

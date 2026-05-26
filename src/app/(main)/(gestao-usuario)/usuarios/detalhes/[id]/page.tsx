@@ -5,7 +5,7 @@ import { useGetUserById } from '@/services/user'
 import { useParams } from 'next/navigation'
 
 export default function UserDetails() {
-  const params = useParams()
+  const params = useParams<{ id: string }>()
 
   const { data, isLoading: isLoadingUsers } = useGetUserById(params?.id)
 

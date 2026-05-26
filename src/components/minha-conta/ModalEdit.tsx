@@ -13,7 +13,7 @@ import { useRouter } from 'next/navigation'
 import { Fragment, useRef, useState } from 'react'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
 import { MdOutlineClose } from 'react-icons/md'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 import { ModalConfirm } from '../modals/ModalConfirm'
 import { Card, CardContent, CardFooter, CardHeader } from '../ui/card'
 

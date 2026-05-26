@@ -1,5 +1,9 @@
 import { ContractStatus } from '@/enums/contracts'
-import { downloadFile } from '@/services/files'
+import { ContractRow } from '@/types/contracts'
+import {
+  downloadPaymentHistoryDocument,
+  downloadSettlementDocument,
+} from '@/utils/contracts/documents'
 
 type FileLink = {
   withdrawalUrl: string
@@ -16,6 +20,7 @@ export const contractActionsFactory = ({
   onOpenNotFoundModal,
   handleCreateAditive,
   onOpenDeleteModal,
+  contractData,
 }: {
   onOpenAnnexSettleModal: () => void
   onOpenConfirmModal: () => void
@@ -25,76 +30,43 @@ export const contractActionsFactory = ({
   onOpenNotFoundModal: () => void
   handleCreateAditive: () => void
   onOpenDeleteModal?: () => void
+  contractData?: ContractRow
 }) => {
   return {
     getActionsForStatus: (status: ContractStatus) => {
       switch (status) {
+        case ContractStatus.RASCUNHO:
+          return [
+            {
+              name: 'Excluir',
+              onClick: onOpenDeleteModal ?? (() => {}),
+            },
+          ]
         case ContractStatus.PENDING:
-          return [
-            { name: 'Excluir', onClick: onOpenDeleteModal ?? onOpenConfirmModal },
-            { name: 'Anexar contrato assinado', onClick: onOpenAnnexSigned },
-          ]
         case ContractStatus.ONGOING:
-          return [
-            {
-              name: 'Criar aditivo',
-              onClick: handleCreateAditive,
-            },
-          ]
         case ContractStatus.SIGNED:
-          return [
-            {
-              name: 'Histórico de pagamentos',
-              onClick: onOpenPaymentHistoryModal,
-            },
-            {
-              name: 'Baixar modelo Termo de Quitação',
-              onClick: () => downloadFile('models/blank.pdf'),
-            },
-            {
-              name: 'Baixar modelo Distrato',
-              onClick: () => downloadFile('models/blank.pdf'),
-            },
-            { name: 'Quitar contrato', onClick: onOpenConfirmModal },
-            { name: 'Distrato', onClick: onOpenConfirmModal },
-            {
-              name: 'Baixar Contrato assinado',
-              onClick: ({ signedContractUrl }: FileLink) =>
-                !signedContractUrl?.length
-                  ? onOpenNotFoundModal()
-                  : downloadFile(signedContractUrl),
-            },
-            {
-              name: 'Criar aditivo',
-              onClick: handleCreateAditive,
-            },
-          ]
         case ContractStatus.FINISHED:
+        case ContractStatus.DISTRATO:
           return [
             {
-              name: 'Baixar Termo de Quitação',
-              onClick: ({ settleTermUrl }: FileLink) =>
-                !settleTermUrl?.length ? onOpenNotFoundModal() : downloadFile(settleTermUrl),
-            },
-            {
-              name: 'Baixar Distrato',
-              onClick: ({ withdrawalUrl }: FileLink) =>
-                !withdrawalUrl?.length ? onOpenNotFoundModal() : downloadFile(withdrawalUrl),
-            },
-            {
               name: 'Histórico de pagamentos',
-              onClick: onOpenPaymentHistoryModal,
+              onClick: async () => {
+                if (contractData) {
+                  await downloadPaymentHistoryDocument(contractData)
+                } else if (onOpenPaymentHistoryModal) {
+                  onOpenPaymentHistoryModal()
+                }
+              },
             },
             {
-              name: 'Baixar Contrato assinado',
-              onClick: ({ signedContractUrl }: FileLink) =>
-                !signedContractUrl?.length
-                  ? onOpenNotFoundModal()
-                  : downloadFile(signedContractUrl),
-            },
-            {
-              name: 'Anexar Termo de Quitação assinado',
-              onClick: onOpenAnnexSettleModal,
+              name: 'Termo de Quitação',
+              onClick: () => {
+                if (contractData) {
+                  downloadSettlementDocument(contractData)
+                } else if (onOpenAnnexSettleModal) {
+                  onOpenAnnexSettleModal()
+                }
+              },
             },
           ]
         default:

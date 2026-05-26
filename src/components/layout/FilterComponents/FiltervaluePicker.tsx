@@ -51,7 +51,7 @@ export const FilterValuePicker = <T extends FieldValues>({
     },
   ]
   return (
-    <Grid item xs={12 / 5}>
+    <Grid size={{ xs: 12 / 5 }}>
       <Controller
         name={name as Path<T>}
         control={control}

@@ -90,7 +90,6 @@ const SubjectInfo = ({
       <p>Código: {contract?.contractCode ?? ''}</p>
       <p>Serviço: {contract?.object ?? ''}</p>
       <p>Plano Orçamentário: {mountBudgetPlanName(contract?.program, contract?.budgetPlan)} </p>
-      <p>Acordo: {contract?.agreement ? 'SIM' : 'NÃO'}</p>
       {editable && (
         <div
           className="cursor-pointer flex gap-3 items-center justify-center w-fit mt-1"
@@ -154,13 +153,13 @@ const SubjectInfo = ({
 
   return (
     <Grid container className="border-y-2 h-fit py-5 gap-5 flex mt-2">
-      <Grid item xs={4} className="flex">
+      <Grid size={{ xs: 4 }} className="flex">
         {supplier && renderSubject(supplier, 'Fornecedor')}
         {collaborator && renderSubject(collaborator, 'Colaborador')}
         {financier && renderSubject(financier, 'Financiador')}
         {!supplier && !collaborator && !financier && renderSubject(null, 'Fornecedor')}
       </Grid>
-      <Grid item xs={7} sx={{ display: 'flex', justifyContent: 'space-between' }}>
+      <Grid size={{ xs: 7 }} sx={{ display: 'flex', justifyContent: 'space-between' }}>
         {(receivableType === ReceivableType.CONTRACT || paymentType === PaymentType.CONTRACT) &&
           contract &&
           renderContractDetails(contract)}

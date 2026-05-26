@@ -5,6 +5,24 @@ import { useQuery } from '@tanstack/react-query'
 import api from './api'
 import { queryClient } from 'lib/react-query'
 import apiOptions from './apiOptions'
+import { handleOptionsError } from './handleOptionsError'
+import {
+  localDbGetSupplierOptions,
+  localDbGetSupplierByCNPJ,
+  seedLocalDb,
+} from '@/mocks/localDb'
+
+/* ═════════════════════════════════════
+   SEED
+   ═════════════════════════════════════ */
+
+let seeded = false
+function ensureSeeded() {
+  if (typeof window !== 'undefined' && !seeded) {
+    seedLocalDb()
+    seeded = true
+  }
+}
 
 export async function createSupplier(data: ICreateSupplier): Promise<Response<null>> {
   try {
@@ -107,6 +125,17 @@ const getSupplierByNameOrCNPJ = async (
       meta: null,
     }
   } catch (error) {
+    ensureSeeded()
+    console.warn('[LOCAL DB] Buscando fornecedor local:', nameOrCNPJ)
+    const local = localDbGetSupplierByCNPJ(nameOrCNPJ)
+    if (local) {
+      return {
+        status: 200,
+        data: local,
+        error: '',
+        meta: null,
+      }
+    }
     return handleError(error)
   }
 }
@@ -169,7 +198,8 @@ export const getSupplierOptions = async () => {
     const resp = await apiOptions.get<Options[]>(`/suppliers/options`)
     return resp.data ?? []
   } catch (error) {
-    console.error(error)
-    return []
+    ensureSeeded()
+    console.warn('[LOCAL DB] Usando fornecedores locais.')
+    return localDbGetSupplierOptions()
   }
 }

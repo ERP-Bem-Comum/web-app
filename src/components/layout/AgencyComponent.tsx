@@ -7,6 +7,7 @@ interface AgencyComponentProps<T extends FieldValues> {
   editable: boolean
   error?: string
   name: Path<T>
+  onChange?: (value: string) => void
 }
 
 export const AgencyComponent = <T extends FieldValues>({
@@ -14,6 +15,7 @@ export const AgencyComponent = <T extends FieldValues>({
   editable,
   error,
   name,
+  onChange: externalOnChange,
 }: AgencyComponentProps<T>) => {
   return (
     <Controller
@@ -23,7 +25,9 @@ export const AgencyComponent = <T extends FieldValues>({
         <TextField
           {...field}
           onChange={(e) => {
-            field.onChange(maskAgency(e.target.value))
+            const masked = maskAgency(e.target.value)
+            field.onChange(masked)
+            externalOnChange?.(masked)
           }}
           id={name}
           className="mb-6"

@@ -35,8 +35,8 @@ const ReceivablesRow = ({
       <TableCellStyled border={false}>{formatDate(row.createdAt)}</TableCellStyled>
       <TableCellStyled>
         <div className={cn('flex flex-col')}>
-          <FormLabel className={cn(className)}>{row.financier.name}</FormLabel>
-          <FormLabel className={cn(className)}>{maskCNPJ(row.financier.cnpj)}</FormLabel>
+          <FormLabel className={cn(className)}>{row.financier?.name || '-'}</FormLabel>
+          <FormLabel className={cn(className)}>{maskCNPJ(row.financier?.cnpj || '')}</FormLabel>
         </div>
       </TableCellStyled>
       <TableCellStyled>{row.receivableStatus}</TableCellStyled>

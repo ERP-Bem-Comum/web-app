@@ -41,7 +41,7 @@ export const PixData = <T extends FieldValues>({
 
   return (
     <Fragment>
-      <Grid item xs={12 / 4}>
+      <Grid size={{ xs: 12 / 4 }}>
         <AutoComplete
           error={errors?.pixInfo?.key_type?.message || errors?.pixInfo?.root?.message}
           control={control}
@@ -52,7 +52,7 @@ export const PixData = <T extends FieldValues>({
           aditionalOnChangeBehavior={resetKey}
         />
       </Grid>
-      <Grid item xs={12 / 4}>
+      <Grid size={{ xs: 12 / 4 }}>
         <PixKeyComponent
           control={control}
           editable={editable}

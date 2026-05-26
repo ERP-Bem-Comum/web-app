@@ -14,7 +14,7 @@ import { Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 import { ModalAlert } from '../../modals/ModalAlert'
 import { ModalConfirm } from '../../modals/ModalConfirm'
 import { ModalQuestion } from '../../modals/ModalQuestion'
@@ -137,7 +137,7 @@ export default function FormFinancier({ financier, edit }: Props) {
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="pt-8">
             <Grid container spacing={2}>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="name"
                   control={control}
@@ -157,7 +157,7 @@ export default function FormFinancier({ financier, edit }: Props) {
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="corporateName"
                   control={control}
@@ -177,7 +177,7 @@ export default function FormFinancier({ financier, edit }: Props) {
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="cnpj"
                   control={control}
@@ -199,7 +199,7 @@ export default function FormFinancier({ financier, edit }: Props) {
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="telephone"
                   control={control}
@@ -220,7 +220,7 @@ export default function FormFinancier({ financier, edit }: Props) {
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="legalRepresentative"
                   control={control}
@@ -242,7 +242,7 @@ export default function FormFinancier({ financier, edit }: Props) {
                   )}
                 />
               </Grid>
-              <Grid item xs={9}>
+              <Grid size={{ xs: 9 }}>
                 <Controller
                   name="address"
                   control={control}

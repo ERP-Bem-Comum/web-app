@@ -6,6 +6,24 @@ import api from './api'
 import apiOptions from './apiOptions'
 import { queryClient } from 'lib/react-query'
 import { AxiosResponseHeaders, RawAxiosResponseHeaders } from 'axios'
+import {
+  localDbGetCollaboratorOptions,
+  localDbGetCollaboratorByCPF,
+  seedLocalDb,
+} from '@/mocks/localDb'
+import { handleOptionsError } from './handleOptionsError'
+
+/* ═════════════════════════════════════
+   SEED
+   ═════════════════════════════════════ */
+
+let seeded = false
+function ensureSeeded() {
+  if (typeof window !== 'undefined' && !seeded) {
+    seedLocalDb()
+    seeded = true
+  }
+}
 
 export type ICreatePreCollaborator = {
   name: string
@@ -169,8 +187,9 @@ export const getCollaboratorsOptions = async () => {
     const resp = await apiOptions.get<Options[]>('/collaborators/options')
     return resp.data ?? []
   } catch (error) {
-    console.error(error)
-    return []
+    ensureSeeded()
+    const result = handleOptionsError(error)
+    return result.length > 0 ? result : localDbGetCollaboratorOptions()
   }
 }
 
@@ -258,7 +277,7 @@ export const importCollaborators = async (file: File): Promise<ImportCollaborato
     },
   )
 
-  const contentType = response.headers['content-type'] || ''
+  const contentType = String(response.headers['content-type'] || '')
   let jsonData: any = null
   let blob: Blob | null = null
 
@@ -309,6 +328,17 @@ const getCollaboratorByNameOrCPF = async (
       meta: null,
     }
   } catch (error) {
+    ensureSeeded()
+    console.warn('[LOCAL DB] Buscando colaborador local:', nameOrCPF)
+    const local = localDbGetCollaboratorByCPF(nameOrCPF)
+    if (local) {
+      return {
+        status: 200,
+        data: local,
+        error: '',
+        meta: null,
+      }
+    }
     return handleError(error)
   }
 }

@@ -1,7 +1,9 @@
 import { Options } from '@/types/global'
+import { localDbGetProgramOptions } from '@/mocks/localDb'
 import { useQuery } from '@tanstack/react-query'
 import api from './api'
 import apiOptions from './apiOptions'
+import { handleOptionsError } from './handleOptionsError'
 
 export type ICreateProgram = {
   name?: string
@@ -124,8 +126,8 @@ export const getProgramOptions = async () => {
     const resp = await apiOptions.get<Options[]>('/programs/options')
     return resp.data ?? []
   } catch (error) {
-    console.error(error)
-    return []
+    const result = handleOptionsError(error)
+    return result.length > 0 ? result : localDbGetProgramOptions()
   }
 }
 

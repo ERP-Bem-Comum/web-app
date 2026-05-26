@@ -2,7 +2,7 @@
 import axios from 'axios'
 import { destroyCookie, parseCookies } from 'nookies'
 
-const baseURL = process.env.NEXT_PUBLIC_API_URL
+const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4010'
 
 const ApiClientShared = () => {
   const defaultOptions = {

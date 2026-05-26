@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'zod/v3'
 import { requiredCategorizationSchema } from './categorization'
 import { omit } from 'lodash-es'
 

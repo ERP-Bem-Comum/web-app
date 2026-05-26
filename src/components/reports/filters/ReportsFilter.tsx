@@ -83,7 +83,7 @@ export const ReportsFilter = ({
     <div className="w-full h-full p-5">
       <Grid container spacing={2} className="bg-[#F6FAFB] p-4 w-full m-0">
         {program && (
-          <Grid item xs={12 / 5}>
+          <Grid size={{ xs: 12 / 5 }}>
             <AutoComplete
               control={control}
               options={options.Program()}
@@ -94,7 +94,7 @@ export const ReportsFilter = ({
             />
           </Grid>
         )}
-        <Grid item xs={12 / 5}>
+        <Grid size={{ xs: 12 / 5 }}>
           <AutoComplete
             control={control}
             options={
@@ -110,7 +110,7 @@ export const ReportsFilter = ({
             error={errors.reportsParams?.budgetPlanId?.message}
           />
         </Grid>
-        <Grid item xs={12 / 5}>
+        <Grid size={{ xs: 12 / 5 }}>
           <FilterDate
             control={control}
             label="Periodo:"
@@ -120,7 +120,7 @@ export const ReportsFilter = ({
         </Grid>
 
         {limit && (
-          <Grid item xs={12 / 5}>
+          <Grid size={{ xs: 12 / 5 }}>
             <TextField
               name="limit"
               label="Limite:"
@@ -135,7 +135,7 @@ export const ReportsFilter = ({
           </Grid>
         )}
         {account && (
-          <Grid item xs={12 / 5}>
+          <Grid size={{ xs: 12 / 5 }}>
             <AutoComplete
               control={control}
               options={options.Accounts()}
@@ -147,7 +147,7 @@ export const ReportsFilter = ({
           </Grid>
         )}
         {status && (
-          <Grid item xs={12 / 5}>
+          <Grid size={{ xs: 12 / 5 }}>
             <AutoComplete
               control={control}
               options={
@@ -165,7 +165,7 @@ export const ReportsFilter = ({
           </Grid>
         )}
         {reportType && (
-          <Grid item xs={12 / 5}>
+          <Grid size={{ xs: 12 / 5 }}>
             <AutoComplete
               control={control}
               options={options.reportTypeOption}
@@ -176,7 +176,7 @@ export const ReportsFilter = ({
             />
           </Grid>
         )}
-        <Grid item xs={12 / 5}>
+        <Grid size={{ xs: 12 / 5 }}>
           <AutoComplete
             control={control}
             options={
@@ -190,7 +190,7 @@ export const ReportsFilter = ({
             error={errors.reportsParams?.costCenterId?.message}
           />
         </Grid>
-        <Grid item xs={12 / 5}>
+        <Grid size={{ xs: 12 / 5 }}>
           <AutoComplete
             control={control}
             editable={!!values.reportsParams.costCenterId}
@@ -204,7 +204,7 @@ export const ReportsFilter = ({
             error={errors.reportsParams?.categoryId?.message}
           />
         </Grid>
-        <Grid item xs={12 / 5}>
+        <Grid size={{ xs: 12 / 5 }}>
           <AutoComplete
             control={control}
             editable={!!values.reportsParams?.categoryId}
@@ -219,7 +219,7 @@ export const ReportsFilter = ({
           />
         </Grid>
         {type !== 'none' && (
-          <Grid item xs={12 / 5}>
+          <Grid size={{ xs: 12 / 5 }}>
             <AutoComplete
               control={control}
               editable={true}
@@ -230,7 +230,7 @@ export const ReportsFilter = ({
             />
           </Grid>
         )}
-        <Grid item xs={24 / 5} justifyContent="flex-start" gap={5}>
+        <Grid size={{ xs: 24 / 5 }} justifyContent="flex-start" gap={5}>
           <Button variant="erpSecondary" className="mr-4" onClick={handleFilter}>
             Filtrar
           </Button>

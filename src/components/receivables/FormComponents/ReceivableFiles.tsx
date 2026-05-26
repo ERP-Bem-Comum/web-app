@@ -9,7 +9,7 @@ interface ReceivableFilesProps {
 
 export const ReceivableFiles = ({ onChange, currentFiles, edit }: ReceivableFilesProps) => {
   return (
-    <Grid item xs={12}>
+    <Grid size={{ xs: 12 }}>
       <InputFileV2 onChange={onChange} initialValue={currentFiles} disabled={!edit} />
     </Grid>
   )

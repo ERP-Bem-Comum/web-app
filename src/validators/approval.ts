@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'zod/v3'
 
 export const credentialsSchema = z.object({
   payableId: z.number(),

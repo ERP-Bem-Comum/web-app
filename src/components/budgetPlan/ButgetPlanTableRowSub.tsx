@@ -213,8 +213,10 @@ export default function BudgetPlanTableRowSub({ row, fatherStatus, budgetTotals,
               vertical: 'top',
               horizontal: 'right',
             }}
-            MenuListProps={{
-              'aria-labelledby': 'basic-button',
+            slotProps={{
+              list: {
+                'aria-labelledby': 'basic-button',
+              },
             }}
           >
             <MenuItem

@@ -8,7 +8,7 @@ interface ReceivableExtraInfoFieldProps {
 
 export const ReceivableExtraInfoField = ({ values }: ReceivableExtraInfoFieldProps) => {
   return (
-    <Grid item xs={12}>
+    <Grid size={{ xs: 12 }}>
       <ExtraInfoField
         totalValue={values.totalValue}
         recurrent={values.recurrent}

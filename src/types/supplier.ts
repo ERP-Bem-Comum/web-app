@@ -1,5 +1,5 @@
 import { supplierSchema } from '@/validators/supplier'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 import { ContractForAccounts } from './contracts'
 
 export type Supplier = z.input<typeof supplierSchema>
@@ -19,6 +19,7 @@ export type ISupplier = {
   id: number
   name: string
   email: string
+  telephone?: string
   cnpj: string
   corporateName: string
   fantasyName: string

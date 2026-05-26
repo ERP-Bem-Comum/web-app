@@ -9,7 +9,7 @@ import { useParams } from 'next/navigation'
 import Loading from './loading'
 
 export default function BudgetDetails() {
-  const params = useParams()
+  const params = useParams<{ id: string; idOrcamento: string }>()
   const { data: dataBudgetPlan } = useGetBudgetPlanById(params?.id)
   const { data: dataBudget } = useGetBudgetById(params?.idOrcamento)
   const { data: dataProgram } = useGetProgramById(dataBudgetPlan?.budgetPlan?.programId)

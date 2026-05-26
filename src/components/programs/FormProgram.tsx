@@ -8,7 +8,7 @@ import { Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 import InputFile from '../InputFile'
 import { ModalAlert } from '../modals/ModalAlert'
 import { ModalConfirm } from '../modals/ModalConfirm'
@@ -129,7 +129,7 @@ export default function FormProgram({ program, edit }: Props) {
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="pt-8">
             <Grid container spacing={2}>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <InputFile
                   label="Logo do Programa"
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangeFile(e)}
@@ -139,7 +139,7 @@ export default function FormProgram({ program, edit }: Props) {
                   disabled={!edit}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="name"
                   control={control}
@@ -158,7 +158,7 @@ export default function FormProgram({ program, edit }: Props) {
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="abbreviation"
                   control={control}
@@ -177,7 +177,7 @@ export default function FormProgram({ program, edit }: Props) {
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="director"
                   control={control}
@@ -196,7 +196,7 @@ export default function FormProgram({ program, edit }: Props) {
                   )}
                 />
               </Grid>
-              <Grid item xs={6}>
+              <Grid size={{ xs: 6 }}>
                 <Controller
                   name="description"
                   control={control}

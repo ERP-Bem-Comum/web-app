@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 import api from './api'
 import apiOptions from './apiOptions'
 import { handleError } from '@/utils/errorHandling'
+import { handleOptionsError } from './handleOptionsError'
 
 export function useGetCostCenterById(id: string | any) {
   const { data, isLoading } = useQuery({
@@ -96,8 +97,7 @@ export const getCostCenterOptions = async () => {
     const resp = await apiOptions.get<Options[]>('/cost-centers/options')
     return resp.data ?? []
   } catch (error) {
-    console.error(error)
-    return []
+    return handleOptionsError(error)
   }
 }
 
@@ -106,8 +106,7 @@ export const getCategoriesOptions = async () => {
     const resp = await apiOptions.get<Options[]>('/cost-centers/categories/options')
     return resp.data ?? []
   } catch (error) {
-    console.error(error)
-    return []
+    return handleOptionsError(error)
   }
 }
 
@@ -116,8 +115,7 @@ export const getSubCategoriesOptions = async () => {
     const resp = await apiOptions.get<Options[]>('/cost-centers/categories/sub/options')
     return resp.data ?? []
   } catch (error) {
-    console.error(error)
-    return []
+    return handleOptionsError(error)
   }
 }
 

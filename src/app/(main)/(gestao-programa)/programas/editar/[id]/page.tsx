@@ -6,7 +6,7 @@ import { useGetProgramById } from '@/services/programs'
 import { useParams } from 'next/navigation'
 
 export default function AddProgram() {
-  const params = useParams()
+  const params = useParams<{ id: string }>()
   const { data, isLoading: isLoadingPrograms } = useGetProgramById(params?.id)
 
   return (

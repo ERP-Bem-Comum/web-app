@@ -1,5 +1,5 @@
 import { searchAppointmentsSchema } from '@/validators/searchAppointments'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 import { PaginateParams } from './paginateParams'
 import { Control, FieldErrors, UseFormReset, UseFormSetValue } from 'react-hook-form'
 import { Response } from '@/types/global'

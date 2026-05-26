@@ -1,5 +1,5 @@
 import { handleErrorMessage } from '@/utils/handleTypeErrorMessage'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 import { objectRequiredCategorizationSchema } from './categorization'
 
 export const creditCardSchema = z.object({

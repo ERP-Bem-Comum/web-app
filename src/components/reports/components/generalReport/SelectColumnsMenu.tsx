@@ -45,9 +45,11 @@ const SelectColumnsMenu = ({ setValue, values }: SelectColumnsMenuProps) => {
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
-        MenuListProps={{
-          'aria-labelledby': 'lock-button',
-          role: 'listbox',
+        slotProps={{
+          list: {
+            'aria-labelledby': 'lock-button',
+            role: 'listbox',
+          },
         }}
       >
         {Object.entries(DISPONIBLE_COLUMNS).map(([key, value], index) => (

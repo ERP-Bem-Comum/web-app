@@ -15,7 +15,7 @@ export default function ListCities() {
     <div>
       {!isLoadingCity && (
         <Grid container spacing={3}>
-          <Grid item xs={6}>
+          <Grid size={{ xs: 6 }}>
             <Card className="min-h-[605px]">
               <CardHeader>
                 <div className="text-xl">Lista Geral de Municípios</div>
@@ -25,7 +25,7 @@ export default function ListCities() {
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={6}>
+          <Grid size={{ xs: 6 }}>
             <Card className="min-h-[605px]">
               <CardHeader>
                 <div className="text-xl">Municípios Parceiros Adicionados</div>

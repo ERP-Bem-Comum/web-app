@@ -1,7 +1,7 @@
 import { BankReconciliationType } from '@/enums/reconciliation'
 import { categorizationSchema, requiredCategorizationSchema } from '@/validators/categorization'
 import { createBankRecordApischema, filterDateSchema } from '@/validators/reconciliation'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 
 export type ReconciliationRadioValue = 'find' | 'transfer'
 

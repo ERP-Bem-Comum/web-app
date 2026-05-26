@@ -67,11 +67,11 @@ export const CategorizationComponent = <T extends Categorization>({
 
   return (
     <Fragment>
-      <Grid item xs={12} marginBottom={2}>
+      <Grid size={{ xs: 12 }} marginBottom={2}>
         <TitleLabel>Categorização:</TitleLabel>
       </Grid>
       <Grid container rowSpacing={2} columnSpacing={2}>
-        <Grid item xs={2.4}>
+        <Grid size={{ xs: 2.4 }}>
           <AutoComplete
             error={errors.categorization?.programId?.message as string}
             control={control}
@@ -82,7 +82,7 @@ export const CategorizationComponent = <T extends Categorization>({
             label="Programa:"
           />
         </Grid>
-        <Grid item xs={2.4}>
+        <Grid size={{ xs: 2.4 }}>
           <AutoComplete
             error={errors.categorization?.budgetPlanId?.message as string}
             control={control}
@@ -97,7 +97,7 @@ export const CategorizationComponent = <T extends Categorization>({
             aditionalOnChangeBehavior={() => clearFieldsFrom("budgetPlanId")}
           />
         </Grid>
-        <Grid item xs={2.4}>
+        <Grid size={{ xs: 2.4 }}>
           <AutoComplete
             error={errors.categorization?.costCenterId?.message as string}
             control={control}
@@ -112,7 +112,7 @@ export const CategorizationComponent = <T extends Categorization>({
             aditionalOnChangeBehavior={() => clearFieldsFrom("costCenterId")}
           />
         </Grid>
-        <Grid item xs={2.4}>
+        <Grid size={{ xs: 2.4 }}>
           <AutoComplete
             error={errors.categorization?.categoryId?.message as string}
             control={control}
@@ -127,7 +127,7 @@ export const CategorizationComponent = <T extends Categorization>({
             aditionalOnChangeBehavior={() => clearFieldsFrom("categoryId")}
           />
         </Grid>
-        <Grid item xs={2.4}>
+        <Grid size={{ xs: 2.4 }}>
           <AutoComplete
             error={errors.categorization?.subCategoryId?.message as string}
             control={control}

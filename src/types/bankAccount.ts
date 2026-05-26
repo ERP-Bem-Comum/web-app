@@ -1,6 +1,6 @@
 import { bankAccountSchema } from '@/validators/account'
 import { abstractType } from './global'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 import { BaseSyntheticEvent } from 'react'
 
 export type BankAccountRow = abstractType & {

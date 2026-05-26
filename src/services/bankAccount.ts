@@ -5,6 +5,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import api from './api'
 import { queryClient } from 'lib/react-query'
 import apiOptions from './apiOptions'
+import { handleOptionsError } from './handleOptionsError'
 
 export const useGetBankAccounts = () => {
   const {
@@ -95,8 +96,7 @@ export const getBankAccountOptions = async () => {
     const resp = await apiOptions.get<Options[]>(`/accounts/options`)
     return resp.data
   } catch (error) {
-    console.error(error)
-    return []
+    return handleOptionsError(error)
   }
 }
 

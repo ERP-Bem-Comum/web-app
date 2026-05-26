@@ -5,6 +5,8 @@ import { useQuery } from '@tanstack/react-query'
 import api from './api'
 import { queryClient } from 'lib/react-query'
 import apiOptions from './apiOptions'
+import { localDbGetFinancierOptions } from '@/mocks/localDb'
+import { handleOptionsError } from './handleOptionsError'
 
 export type ICreateFinancier = {
   name: string
@@ -166,7 +168,7 @@ export const getFinancierOptions = async () => {
     const resp = await apiOptions.get<Options[]>(`/financiers/options`)
     return resp.data ?? []
   } catch (error) {
-    console.error(error)
-    return []
+    const result = handleOptionsError(error)
+    return result.length > 0 ? result : localDbGetFinancierOptions()
   }
 }

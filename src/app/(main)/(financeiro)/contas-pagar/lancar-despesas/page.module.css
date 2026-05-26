@@ -14,7 +14,7 @@
   --teal: rgb(41, 140, 171);
   --teal-deep: rgb(26, 112, 140);
   --green: rgb(51, 178, 102);
-  --green-bg: rgba(51, 178, 102, 0.1);
+  --green-bg: rgba(31, 125, 85, 0.1);
   --orange-bg: rgba(217, 119, 6, 0.07);
   --orange-line: rgba(217, 119, 6, 0.35);
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
@@ -428,7 +428,7 @@
 
 .form :global(.bc-document-form .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
   border-color: var(--teal);
-  box-shadow: 0 0 0 3px rgba(41, 140, 171, 0.15);
+  box-shadow: 0 0 0 3px rgba(57, 100, 150, 0.15);
 }
 
 .form :global(.bc-document-form .MuiInputBase-input) {

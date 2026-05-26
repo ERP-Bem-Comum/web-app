@@ -1,5 +1,5 @@
 import { abstractType } from './global'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 import {
   creditCardMovimentationSchema,
   creditCardMovParamsSchema,

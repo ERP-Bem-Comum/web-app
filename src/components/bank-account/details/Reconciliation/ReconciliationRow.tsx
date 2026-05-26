@@ -16,7 +16,7 @@ import { ReconciliationButtons } from './ReconciliationButton'
 import { useForm } from 'react-hook-form'
 import { AutoComplete } from '@/components/layout/AutoComplete'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 import EditModal from '@/components/modals/bank-account/EditModal'
 
 interface BankReconciliationRowProps {
@@ -114,13 +114,13 @@ export function BankReconciliationRow({
 
   return (
     <Grid container columnSpacing={2}>
-      <Grid item xs={5}>
+      <Grid size={{ xs: 5 }}>
         <TransactionCard
           {...extract}
           className={cn('w-full h-full', reconciled && 'reconciled-border')}
         />
       </Grid>
-      <Grid item xs={2} flexGrow={1}>
+      <Grid size={{ xs: 2 }} flexGrow={1}>
         <ReconciliationButtons
           isReconciliating={isPendingReconcile}
           isUnlinking={isPendingUnlink}
@@ -138,7 +138,7 @@ export function BankReconciliationRow({
         />
       </Grid>
 
-      <Grid item xs={5}>
+      <Grid size={{ xs: 5 }}>
         {system && transactionType !== BankReconciliationType.TRANSFER ? (
           <TransactionCard
             {...system}

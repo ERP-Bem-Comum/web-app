@@ -10,7 +10,7 @@ import { Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 import InputFile from '../InputFile'
 import { ModalAlert } from '../modals/ModalAlert'
 import { ModalConfirm } from '../modals/ModalConfirm'
@@ -140,7 +140,7 @@ export default function FormUser({ user, edit }: Props) {
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="pt-8">
             <Grid container spacing={2}>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="name"
                   control={control}
@@ -159,7 +159,7 @@ export default function FormUser({ user, edit }: Props) {
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="cpf"
                   control={control}
@@ -181,7 +181,7 @@ export default function FormUser({ user, edit }: Props) {
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="email"
                   control={control}
@@ -200,7 +200,7 @@ export default function FormUser({ user, edit }: Props) {
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="telephone"
                   control={control}
@@ -221,7 +221,7 @@ export default function FormUser({ user, edit }: Props) {
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <InputFile
                   label="Foto de Perfil"
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChangeFile(e)}
@@ -231,7 +231,7 @@ export default function FormUser({ user, edit }: Props) {
                   disabled={!edit}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <Controller
                   name="massApprovalPermission"
                   control={control}

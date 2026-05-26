@@ -8,7 +8,7 @@ interface PayableExtraInfoFieldProps {
 
 export const PayableExtraInfoField = ({ values }: PayableExtraInfoFieldProps) => {
   return (
-    <Grid item xs={12}>
+    <Grid size={{ xs: 12 }}>
       <ExtraInfoField
         totalValue={values.liquidValue + values.taxValue}
         recurrent={values.recurrent}

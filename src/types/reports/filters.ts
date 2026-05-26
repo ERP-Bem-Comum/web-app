@@ -1,5 +1,5 @@
 import { reportsFilterSchema } from '@/validators/reports/filters'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 import { Control, FieldErrors, UseFormSetValue, UseFormWatch } from 'react-hook-form'
 import { PaginateParams } from '../paginateParams'
 import { DISPONIBLE_COLUMNS } from '@/enums/generalReport'

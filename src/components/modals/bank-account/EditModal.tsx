@@ -61,7 +61,7 @@ const EditModal = ({ isOpen, onClose, defaultValues, rowCallBack }: EditModalPro
   return (
     <EditModalComponents.Root open={isOpen} onClose={onClose}>
       <Grid container spacing={1}>
-        <Grid item xs={12 / 4}>
+        <Grid size={{ xs: 12 / 4 }}>
           <AutoComplete
             control={control}
             editable={false}
@@ -72,7 +72,7 @@ const EditModal = ({ isOpen, onClose, defaultValues, rowCallBack }: EditModalPro
             defaultValue={options.Accounts()?.find((op) => op.id === defaultValues.accountId)}
           />
         </Grid>
-        <Grid item xs={12 / 4}>
+        <Grid size={{ xs: 12 / 4 }}>
           <CustomTextField
             control={control}
             name="documentNumber"
@@ -81,7 +81,7 @@ const EditModal = ({ isOpen, onClose, defaultValues, rowCallBack }: EditModalPro
             error={errors.documentNumber?.message}
           />
         </Grid>
-        <Grid item xs={12 / 4}>
+        <Grid size={{ xs: 12 / 4 }}>
           <CustomTextField
             control={control}
             name="transactionAmount"
@@ -91,7 +91,7 @@ const EditModal = ({ isOpen, onClose, defaultValues, rowCallBack }: EditModalPro
             currency
           />
         </Grid>
-        <Grid item xs={12 / 4}>
+        <Grid size={{ xs: 12 / 4 }}>
           <CustomDatePicker
             control={control}
             name="transactionDate"
@@ -100,7 +100,7 @@ const EditModal = ({ isOpen, onClose, defaultValues, rowCallBack }: EditModalPro
             error={errors.transactionDate ? errors.transactionDate.message : ''}
           />
         </Grid>
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <CustomTextField
             control={control}
             name="fullTransactionDescription"

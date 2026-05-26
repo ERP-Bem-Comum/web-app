@@ -1,7 +1,7 @@
 import { approvalSchema, credentialsSchema } from '@/validators/approval'
 import { Dispatch, SetStateAction } from 'react'
 import { SubmitHandler } from 'react-hook-form'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 import { IPayables } from './Payables'
 
 export interface ICredentialsApprovePayable {

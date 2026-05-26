@@ -113,10 +113,10 @@ export default function FormSupplier({ supplier, edit }: Props) {
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="pt-8">
             <Grid container spacing={2}>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <div className="text-md ml-1">Dados cadastrais do fornecedor:</div>
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="name"
                   control={control}
@@ -136,7 +136,7 @@ export default function FormSupplier({ supplier, edit }: Props) {
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="email"
                   control={control}
@@ -155,7 +155,7 @@ export default function FormSupplier({ supplier, edit }: Props) {
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="cnpj"
                   control={control}
@@ -177,7 +177,7 @@ export default function FormSupplier({ supplier, edit }: Props) {
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="corporateName"
                   control={control}
@@ -197,7 +197,7 @@ export default function FormSupplier({ supplier, edit }: Props) {
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="fantasyName"
                   control={control}
@@ -217,7 +217,7 @@ export default function FormSupplier({ supplier, edit }: Props) {
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <AutoComplete
                   control={control}
                   editable={edit}
@@ -227,7 +227,7 @@ export default function FormSupplier({ supplier, edit }: Props) {
                   error={errors.serviceCategory?.message}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <AutoComplete
                   control={control}
                   editable={edit}
@@ -243,7 +243,7 @@ export default function FormSupplier({ supplier, edit }: Props) {
                   error={errors.serviceEvaluation?.message}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="commentEvaluation"
                   control={control}
@@ -263,10 +263,10 @@ export default function FormSupplier({ supplier, edit }: Props) {
                   )}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <div className="text-md ml-1">Dados Bancários:</div>
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <AutoComplete
                   control={control}
                   editable={edit}
@@ -276,7 +276,7 @@ export default function FormSupplier({ supplier, edit }: Props) {
                   error={errors.bancaryInfo?.root?.message || errors?.bancaryInfo?.bank?.message}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <AgencyComponent
                   control={control}
                   editable={edit}
@@ -284,7 +284,7 @@ export default function FormSupplier({ supplier, edit }: Props) {
                   name="bancaryInfo.agency"
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="bancaryInfo.accountNumber"
                   control={control}
@@ -310,7 +310,7 @@ export default function FormSupplier({ supplier, edit }: Props) {
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="bancaryInfo.dv"
                   control={control}
@@ -330,7 +330,7 @@ export default function FormSupplier({ supplier, edit }: Props) {
                   )}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <div className="text-md ml-1">Dados PIX:</div>
               </Grid>
               <PixData

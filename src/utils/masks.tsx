@@ -52,7 +52,9 @@ export function formatLink(text: string): string {
 
 export const maskAgency = (value: string | undefined | null) => {
   if (!value) return ''
-  return value.replace(/(\d{4})(\d{1})/g, '$1-$2')
+  const digits = value.replace(/\D/g, '').slice(0, 5)
+  if (digits.length <= 4) return digits
+  return digits.replace(/(\d{4})(\d{1,})/, '$1-$2')
 }
 
 export const maskAccount = (value: string) => {

@@ -28,11 +28,11 @@ export const ReceivableReceiption = ({
   const { options } = useOptions()
   return (
     <Fragment>
-      <Grid item xs={12}>
+      <Grid size={{ xs: 12 }}>
         <TitleLabel>Recebimento:</TitleLabel>
       </Grid>
       <Grid container rowSpacing={2} columnSpacing={2}>
-        <Grid item xs={4}>
+        <Grid size={{ xs: 4 }}>
           <AutoComplete
             error={errors.receivableType?.message}
             control={control}
@@ -51,7 +51,7 @@ export const ReceivableReceiption = ({
             label="Tipo de recebimento:"
           />
         </Grid>
-        <Grid item xs={4}>
+        <Grid size={{ xs: 4 }}>
           <CustomTextField
             error={errors.totalValue?.message}
             control={control}
@@ -64,7 +64,7 @@ export const ReceivableReceiption = ({
             currency
           />
         </Grid>
-        <Grid item xs={4}>
+        <Grid size={{ xs: 4 }}>
           <AutoComplete
             error={errors.receiptMethod?.message}
             control={control}
@@ -74,7 +74,7 @@ export const ReceivableReceiption = ({
             label="Forma de recebimento:"
           />
         </Grid>
-        <Grid item xs={4}>
+        <Grid size={{ xs: 4 }}>
           <CustomTextField
             error={errors.description?.message}
             control={control}
@@ -83,7 +83,7 @@ export const ReceivableReceiption = ({
             label="Descrição:"
           />
         </Grid>
-        <Grid item xs={2}>
+        <Grid size={{ xs: 2 }}>
           <AutoComplete
             error={errors.docType?.message}
             control={control}
@@ -93,7 +93,7 @@ export const ReceivableReceiption = ({
             label="Documento identificador:"
           />
         </Grid>
-        <Grid item xs={2}>
+        <Grid size={{ xs: 2 }}>
           <CustomTextField
             error={errors.identifierCode?.message}
             control={control}
@@ -102,7 +102,7 @@ export const ReceivableReceiption = ({
             label="Código identificador:"
           />
         </Grid>
-        <Grid item xs={4}>
+        <Grid size={{ xs: 4 }}>
           <AutoComplete
             error={errors.accountId?.message}
             control={control}

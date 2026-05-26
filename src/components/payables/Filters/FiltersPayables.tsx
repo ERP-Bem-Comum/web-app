@@ -17,7 +17,7 @@ export const FilterPayables = ({ control, errors, handleFilter }: FilterPayables
 
   return (
     <Grid container spacing={2} className="bg-[#F6FAFB] p-4 w-full m-0">
-      <Grid item xs={12 / 5}>
+      <Grid size={{ xs: 12 / 5 }}>
         <AutoComplete
           control={control}
           options={options.BudgetPlan()}
@@ -27,7 +27,7 @@ export const FilterPayables = ({ control, errors, handleFilter }: FilterPayables
           error={errors.payableParams?.budgetPlanId?.message}
         />
       </Grid>
-      <Grid item xs={12 / 5}>
+      <Grid size={{ xs: 12 / 5 }}>
         <FilterDate
           control={control}
           label="Vencimento:"
@@ -37,7 +37,7 @@ export const FilterPayables = ({ control, errors, handleFilter }: FilterPayables
       </Grid>
 
       <FilterValuePicker control={control} name="payableParams.valueBetween" label="Valor (R$):" />
-      <Grid item xs={12 / 5}>
+      <Grid size={{ xs: 12 / 5 }}>
         <AutoComplete
           control={control}
           options={options.typeOptions}
@@ -47,7 +47,7 @@ export const FilterPayables = ({ control, errors, handleFilter }: FilterPayables
           error={errors.payableParams?.paymentType?.message}
         />
       </Grid>
-      <Grid item xs={12 / 5}>
+      <Grid size={{ xs: 12 / 5 }}>
         <AutoComplete
           control={control}
           options={options.Accounts()}
@@ -57,7 +57,7 @@ export const FilterPayables = ({ control, errors, handleFilter }: FilterPayables
           error={errors.payableParams?.accountId?.message}
         />
       </Grid>
-      <Grid item xs={12 / 5}>
+      <Grid size={{ xs: 12 / 5 }}>
         <AutoComplete
           control={control}
           options={options.statusOptions}
@@ -67,7 +67,7 @@ export const FilterPayables = ({ control, errors, handleFilter }: FilterPayables
           error={errors.payableParams?.payableStatus?.message}
         />
       </Grid>
-      <Grid item xs={12 / 5}>
+      <Grid size={{ xs: 12 / 5 }}>
         <AutoComplete
           control={control}
           options={options.CostCenter()}
@@ -77,7 +77,7 @@ export const FilterPayables = ({ control, errors, handleFilter }: FilterPayables
           error={errors.payableParams?.costCenterId?.message}
         />
       </Grid>
-      <Grid item xs={12 / 5}>
+      <Grid size={{ xs: 12 / 5 }}>
         <AutoComplete
           control={control}
           options={options.Categories()}
@@ -87,7 +87,7 @@ export const FilterPayables = ({ control, errors, handleFilter }: FilterPayables
           error={errors.payableParams?.categoryId?.message}
         />
       </Grid>
-      <Grid item xs={12 / 5}>
+      <Grid size={{ xs: 12 / 5 }}>
         <AutoComplete
           control={control}
           options={options.SubCategories()}
@@ -97,7 +97,7 @@ export const FilterPayables = ({ control, errors, handleFilter }: FilterPayables
           error={errors.payableParams?.subCategoryId?.message}
         />
       </Grid>
-      <Grid item xs={12 / 5}>
+      <Grid size={{ xs: 12 / 5 }}>
         <AutoComplete
           control={control}
           options={options.Collaborators()}
@@ -107,7 +107,7 @@ export const FilterPayables = ({ control, errors, handleFilter }: FilterPayables
           error={errors.payableParams?.approver?.message}
         />
       </Grid>
-      <Grid item xs={12} container justifyContent="flex-end">
+      <Grid size={{ xs: 12 }} container justifyContent="flex-end">
         <Button variant="erpSecondary" className="mr-4" onClick={handleFilter}>
           Filtrar
         </Button>

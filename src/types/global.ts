@@ -1,6 +1,6 @@
 import { IProgram } from '@/services/programs'
 import { bancaryInfoRefined, editPaymentInfoSchema, pixInfoRefined } from '@/validators/global'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 import { BudgetPlan } from './budgetPlan'
 import { ICostCenter } from './costCenter'
 import { ICostCenterCategory } from './category'
@@ -37,6 +37,7 @@ export type HeadCell = {
   id: string
   label: string
   align: string
+  width?: string | number
   sortable?: boolean
   onSort?: () => void
   selected?: boolean

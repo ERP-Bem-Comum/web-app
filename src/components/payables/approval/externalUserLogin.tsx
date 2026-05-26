@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { TextField } from '@mui/material'
 import { Loader2 } from 'lucide-react'
 import { Controller, useForm } from 'react-hook-form'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 import { ModalNotFound } from '../../modals/ModalNotFound'
 
 interface ApprovePayableLoginProps {

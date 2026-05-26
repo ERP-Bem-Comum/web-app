@@ -7,7 +7,7 @@ import { useGetCollaboratorById } from '@/services/collaborator'
 import { useParams } from 'next/navigation'
 
 export default function AddCollaborators() {
-  const params = useParams()
+  const params = useParams<{ id: string }>()
   const { data, isLoading: isLoadingCollaborators } = useGetCollaboratorById(params?.id)
 
   return (

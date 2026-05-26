@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'zod/v3'
 
 const searchAppointmentsSchema = z.object({
   accountId: z.number({ required_error: 'Campo Obrigatório' }),

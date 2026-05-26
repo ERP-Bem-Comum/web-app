@@ -6,7 +6,7 @@ import { useGetBudgetPlanById } from '@/services/budgetPlan'
 import { useParams } from 'next/navigation'
 
 export default function BudgetPlanDetails() {
-  const params = useParams()
+  const params = useParams<{ id: string }>()
   const { data, isLoading } = useGetBudgetPlanById(params?.id)
 
   return (

@@ -54,7 +54,7 @@ export const RealizedReportsFilter = ({
   return (
     <div className="w-full h-full p-5">
       <Grid container spacing={2} className="bg-[#F6FAFB] p-4 w-full m-0">
-        <Grid item xs={12 / 5}>
+        <Grid size={{ xs: 12 / 5 }}>
           <AutoComplete
             control={control}
             options={options.Program()}
@@ -64,7 +64,7 @@ export const RealizedReportsFilter = ({
             error={errors?.programId?.message}
           />
         </Grid>
-        <Grid item xs={12 / 5}>
+        <Grid size={{ xs: 12 / 5 }}>
           <AutoComplete
             control={control}
             options={options.BudgetPlan()?.filter((cc) => cc.parentId === values?.programId) ?? []}
@@ -75,7 +75,7 @@ export const RealizedReportsFilter = ({
           />
         </Grid>
 
-        <Grid item xs={12 / 5}>
+        <Grid size={{ xs: 12 / 5 }}>
           <AutoComplete
             control={control}
             label="Estado"
@@ -85,7 +85,7 @@ export const RealizedReportsFilter = ({
             editable={true}
           />
         </Grid>
-        <Grid item xs={12 / 5}>
+        <Grid size={{ xs: 12 / 5 }}>
           <AutoComplete
             control={control}
             label="Municipio"
@@ -104,11 +104,11 @@ export const RealizedReportsFilter = ({
           />
         </Grid>
 
-        <Grid item xs={12 / 5}>
+        <Grid size={{ xs: 12 / 5 }}>
           <YearPicker control={control} label="Ano:" error={errors?.year?.message} field="year" />
         </Grid>
 
-        <Grid item xs={24 / 5} justifyContent="flex-start" gap={5}>
+        <Grid size={{ xs: 24 / 5 }} justifyContent="flex-start" gap={5}>
           <Button variant="erpSecondary" className="mr-4" onClick={handleFilter}>
             Filtrar
           </Button>

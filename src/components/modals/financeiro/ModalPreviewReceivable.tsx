@@ -94,10 +94,10 @@ export function ModalPreviewReceivable({
         </PreviewSection>
         <PreviewSection>
           <p className="font-bold">Financiador:</p>
-          <p>{receivable.financier.corporateName}</p>
-          <p>{maskCNPJ(receivable.financier.cnpj)}</p>
-          <p>{receivable.financier.address}</p>
-          <p>{maskPhone(receivable.financier.telephone)}</p>
+          <p>{receivable.financier?.corporateName || 'N/A'}</p>
+          <p>{maskCNPJ(receivable.financier?.cnpj || '')}</p>
+          <p>{receivable.financier?.address || 'N/A'}</p>
+          <p>{maskPhone(receivable.financier?.telephone || '')}</p>
         </PreviewSection>
         <PreviewSection>
           <p className="font-bold mb-1">Dados Bancários:</p>

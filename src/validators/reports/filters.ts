@@ -1,6 +1,6 @@
 import { MergedStatusForReportFilter } from '@/types/reports/filters'
 import { ReportType } from '@/types/reports/generalReport'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 
 export const reportsFilterSchema = z.object({
   budgetPlanId: z.coerce.number().optional(),

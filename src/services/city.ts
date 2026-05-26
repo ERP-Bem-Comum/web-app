@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import api from './api'
 import { Options } from '@/types/global'
 import apiOptions from './apiOptions'
+import { handleOptionsError } from './handleOptionsError'
 
 export type IAddCity = {
   name: string
@@ -120,7 +121,6 @@ export const getCitiesOptions = async () => {
     const resp = await apiOptions.get<Options[]>(`/partner-municipalities/options`)
     return resp.data ?? []
   } catch (error) {
-    console.error(error)
-    return []
+    return handleOptionsError(error)
   }
 }

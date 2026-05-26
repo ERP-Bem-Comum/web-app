@@ -52,9 +52,11 @@ const PayablesExportButton = ({ currentParams, onExportCNAB }: PayablesExportBut
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
-        MenuListProps={{
-          'aria-labelledby': 'lock-button',
-          role: 'listbox',
+        slotProps={{
+          list: {
+            'aria-labelledby': 'lock-button',
+            role: 'listbox',
+          },
         }}
       >
         <MenuItem disabled={false} onClick={handleExportCSV}>

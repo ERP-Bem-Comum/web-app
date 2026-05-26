@@ -257,8 +257,10 @@ export default function BudgetPlanDetail({ budget }: Params) {
                   vertical: 'top',
                   horizontal: 'right',
                 }}
-                MenuListProps={{
-                  'aria-labelledby': 'basic-button',
+                slotProps={{
+                  list: {
+                    'aria-labelledby': 'basic-button',
+                  },
                 }}
               >
                 <MenuItem

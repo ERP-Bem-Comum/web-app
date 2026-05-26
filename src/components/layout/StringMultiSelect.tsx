@@ -1,24 +1,25 @@
-import { Options } from '@/types/global'
 import { Autocomplete, TextField } from '@mui/material'
 import { Control, Controller, FieldValues, Path } from 'react-hook-form'
 
-interface AutoCompleteProps<T extends FieldValues> {
+interface Props<T extends FieldValues> {
   control: Control<T>
-  options: Array<Options> | null
   name: Path<T>
   label: string
+  options: string[]
   editable: boolean
-  error: string | undefined
+  error?: string
+  placeholder?: string
 }
 
-export const AutoCompleteMultiple = <T extends FieldValues>({
+export const StringMultiSelect = <T extends FieldValues>({
   control,
   name,
   label,
   options,
   editable = true,
   error,
-}: AutoCompleteProps<T>) => {
+  placeholder,
+}: Props<T>) => {
   return (
     <Controller
       name={name}
@@ -28,32 +29,43 @@ export const AutoCompleteMultiple = <T extends FieldValues>({
           id={name as string}
           size="small"
           multiple
-          value={options?.filter((op) => field.value?.includes(op.id)) ?? []}
-          options={options ?? []}
+          freeSolo={false}
+          value={field.value ?? []}
+          options={options}
           fullWidth
-          getOptionLabel={(option) => option.name ?? 'NA'}
           onChange={(_event, newValue) => {
-            field.onChange(newValue.map((val) => val.id) || [])
+            field.onChange(newValue || [])
           }}
           renderInput={(params) => (
             <TextField
               {...params}
-              key={params.id}
               label={label}
               error={!!error}
               helperText={error ?? ''}
+              placeholder={placeholder}
               fullWidth
             />
           )}
-          renderOption={(props, option) => {
-            return (
-              <li {...props} key={option.id}>
-                {option.name}
-              </li>
-            )
+          slotProps={{
+            chip: {
+              size: 'small',
+              sx: {
+                backgroundColor: '#e8eef5',
+                color: '#2d4f75',
+                fontSize: '11px',
+                fontWeight: 600,
+                height: '22px',
+              },
+            },
           }}
-          slotProps={{ chip: { size: 'small' } }}
           disabled={!editable}
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              borderRadius: '6px',
+              background: '#fff',
+              fontSize: '12.5px',
+            },
+          }}
         />
       )}
     />

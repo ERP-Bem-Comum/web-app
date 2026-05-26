@@ -114,16 +114,16 @@ export function ModalPreviewPayable({
         {payable.debtorType === DebtorType.SUPPLIER ? (
           <PreviewSection>
             <p className="font-bold">Fornecedor:</p>
-            <p>{payable.supplier.fantasyName}</p>
-            <p>{maskCNPJ(payable.supplier.cnpj)}</p>
-            <p>{payable.supplier.serviceCategory}</p>
+            <p>{payable.supplier?.fantasyName || 'N/A'}</p>
+            <p>{maskCNPJ(payable.supplier?.cnpj || '')}</p>
+            <p>{payable.supplier?.serviceCategory || 'N/A'}</p>
           </PreviewSection>
         ) : (
           <PreviewSection>
             <p className="font-bold">Colaborador:</p>
-            <p>{payable.collaborator.name}</p>
-            <p>{maskCPF(payable.collaborator.cpf)}</p>
-            <p>{payable.collaborator.email}</p>
+            <p>{payable.collaborator?.name || 'N/A'}</p>
+            <p>{maskCPF(payable.collaborator?.cpf || '')}</p>
+            <p>{payable.collaborator?.email || 'N/A'}</p>
           </PreviewSection>
         )}
 

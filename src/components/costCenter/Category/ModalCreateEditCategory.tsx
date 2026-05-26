@@ -5,7 +5,7 @@ import { TextField } from '@mui/material'
 import { queryClient } from 'lib/react-query'
 import { useEffect, useState } from 'react'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 import { ModalBase } from '../Base/ModalCreateEditBase'
 import { useOptions } from '@/hooks/useOptions'
 

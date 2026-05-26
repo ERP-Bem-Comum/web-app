@@ -9,7 +9,7 @@ import {
 } from '@/enums/payables'
 import { handleErrorMessage } from '@/utils/handleTypeErrorMessage'
 import { getInstallmentInfo, getMinimumDaysBetween } from '@/utils/installments'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 import {
   categorizationSchema,
   objectCategorizationSchema,

@@ -9,7 +9,7 @@ interface PayableFilesProps {
 
 export const PayableFiles = ({ onChange, currentFiles, edit }: PayableFilesProps) => {
   return (
-    <Grid item xs={12}>
+    <Grid size={{ xs: 12 }}>
       <InputFileV2 onChange={onChange} initialValue={currentFiles} disabled={!edit} />
     </Grid>
   )

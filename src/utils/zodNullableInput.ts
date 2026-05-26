@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { z, ZodTypeAny } from "zod";
+import { z, ZodTypeAny } from "zod/v3";
 
 export const nullableInput = <T extends ZodTypeAny>(
   schema: T,

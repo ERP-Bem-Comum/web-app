@@ -120,7 +120,7 @@ export function ModalEditPaymentInfo({
               Dados Bancários: {contract ? 'contrato' : supplier ? 'fornecedor' : 'nenhum'}{' '}
             </label>
             <Grid container columnSpacing={1}>
-              <Grid item xs={6 / 2}>
+              <Grid size={{ xs: 6 / 2 }}>
                 <AutoComplete
                   control={control}
                   editable
@@ -130,7 +130,7 @@ export function ModalEditPaymentInfo({
                   error={errors.bancaryInfo?.bank?.message || errors.bancaryInfo?.bank?.message}
                 />
               </Grid>
-              <Grid item xs={6 / 2}>
+              <Grid size={{ xs: 6 / 2 }}>
                 <AgencyComponent
                   control={control}
                   editable
@@ -139,7 +139,7 @@ export function ModalEditPaymentInfo({
                 />
               </Grid>
 
-              <Grid item xs={6 / 2}>
+              <Grid size={{ xs: 6 / 2 }}>
                 <CustomTextField
                   control={control}
                   label="Número da Conta"
@@ -152,7 +152,7 @@ export function ModalEditPaymentInfo({
                 />
               </Grid>
 
-              <Grid item xs={6 / 2}>
+              <Grid size={{ xs: 6 / 2 }}>
                 <CustomTextField
                   control={control}
                   label="Dígito"

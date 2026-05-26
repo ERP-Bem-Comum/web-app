@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 import { AutoComplete } from '../AutoComplete'
 import { Options } from '@/types/global'
 import { FaSearch } from 'react-icons/fa'
@@ -10,6 +10,8 @@ interface SearchByCPForCNPJProps {
   options: Array<Options> | undefined
   defaultId: number | undefined
   handleRefetch: (value: string) => void
+  label?: string
+  className?: string
 }
 type SearchInput = {
   id: number
@@ -17,7 +19,7 @@ type SearchInput = {
 const searchSchema = z.object({
   id: z.number().nullish(),
 })
-const SearchByCPForCNPJ = ({ options = [], defaultId, handleRefetch }: SearchByCPForCNPJProps) => {
+const SearchByCPForCNPJ = ({ options = [], defaultId, handleRefetch, label = 'Buscar nome ou CNPJ', className = '' }: SearchByCPForCNPJProps) => {
   const {
     control,
     reset,
@@ -43,17 +45,18 @@ const SearchByCPForCNPJ = ({ options = [], defaultId, handleRefetch }: SearchByC
   }, [options])
 
   return (
-    <div className="flex relative w-full align-top">
+    <div className={`flex relative w-full align-top search-by-cpfcnpj ${className}`}>
       <AutoComplete
         control={control}
         options={options}
         name="id"
-        label="Buscar nome ou CNPJ"
+        label={label}
         editable
         error={errors.id?.message}
         hideButtonDropdown
         defaultValue={options.find((op) => op.id === defaultId)}
         aditionalOnChangeBehavior={onChange}
+        placeholder={label}
       />
       <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
         <FaSearch />

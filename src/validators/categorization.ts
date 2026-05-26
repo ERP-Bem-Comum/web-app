@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { handleErrorMessage } from "@/utils/handleTypeErrorMessage";
 import { nullableInput } from "@/utils/zodNullableInput";
-import { z } from "zod";
+import { z } from "zod/v3";
 
 export const categorizationSchema = z.object({
   programId: z.number(handleErrorMessage("Programa")).nullable().optional(),

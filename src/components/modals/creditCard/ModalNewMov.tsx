@@ -109,7 +109,7 @@ const ModalNewMov = ({
             </div>
 
             <Grid container spacing={1}>
-              <Grid item xs={12 / 4}>
+              <Grid size={{ xs: 12 / 4 }}>
                 <CustomDatePicker
                   control={control}
                   editable={edit}
@@ -118,7 +118,7 @@ const ModalNewMov = ({
                   name="purchaseDate"
                 />
               </Grid>
-              <Grid item xs={12 / 4}>
+              <Grid size={{ xs: 12 / 4 }}>
                 <CustomTextField
                   control={control}
                   editable={edit}
@@ -128,7 +128,7 @@ const ModalNewMov = ({
                   currency
                 />
               </Grid>
-              <Grid item xs={12 / 8}>
+              <Grid size={{ xs: 12 / 8 }}>
                 <CustomToggle
                   control={control}
                   editable={!movimentation?.id}
@@ -137,7 +137,7 @@ const ModalNewMov = ({
                   className="flex flex-col items-center justify-start -mt-1"
                 />
               </Grid>
-              <Grid item xs={9 / 2} display={"flex"} gap={2}>
+              <Grid size={{ xs: 9 / 2 }} display={"flex"} gap={2}>
               {!movimentation?.id ? (
                 <Fragment>
                 <CustomTextField
@@ -177,7 +177,7 @@ const ModalNewMov = ({
               />
               )}
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <CustomTextField
                   control={control}
                   editable={edit}

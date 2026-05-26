@@ -66,7 +66,7 @@ export function ModalCreditCard({ open, onClose, creditCard }: Props) {
         >
           <label>Dados do cartão</label>
           <Grid container columnSpacing={1} rowSpacing={2}>
-            <Grid item xs={12 / 3}>
+            <Grid size={{ xs: 12 / 3 }}>
               <CustomTextField
                 control={control}
                 editable
@@ -75,7 +75,7 @@ export function ModalCreditCard({ open, onClose, creditCard }: Props) {
                 error={errors.name?.message}
               />
             </Grid>
-            <Grid item xs={12 / 3}>
+            <Grid size={{ xs: 12 / 3 }}>
               <CustomTextField
                 control={control}
                 editable
@@ -86,7 +86,7 @@ export function ModalCreditCard({ open, onClose, creditCard }: Props) {
               />
             </Grid>
 
-            <Grid item xs={12 / 3}>
+            <Grid size={{ xs: 12 / 3 }}>
               <CustomTextField
                 control={control}
                 label="Nome do responsável"
@@ -96,7 +96,7 @@ export function ModalCreditCard({ open, onClose, creditCard }: Props) {
               />
             </Grid>
 
-            <Grid item xs={12 / 3}>
+            <Grid size={{ xs: 12 / 3 }}>
               <AutoComplete
                 control={control}
                 label="Instituição emissora"
@@ -106,7 +106,7 @@ export function ModalCreditCard({ open, onClose, creditCard }: Props) {
                 editable={false}
               />
             </Grid>
-            <Grid item xs={12 / 3}>
+            <Grid size={{ xs: 12 / 3 }}>
               <AutoComplete
                 control={control}
                 label="Conta de faturamento"
@@ -116,7 +116,7 @@ export function ModalCreditCard({ open, onClose, creditCard }: Props) {
                 editable={true}
               />
             </Grid>
-            <Grid item xs={12 / 3}>
+            <Grid size={{ xs: 12 / 3 }}>
               <AutoComplete
                 error={errors.dueDay?.message}
                 control={control}

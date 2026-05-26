@@ -48,10 +48,10 @@ export const SearchTableHeader = ({
 
   return (
     <Grid container rowGap={1.5} columnSpacing={1}>
-      <Grid item xs={12}>
+      <Grid size={{ xs: 12 }}>
         <TitleLabel>Filtros:</TitleLabel>
       </Grid>
-      <Grid item sx={{ width: 'fit-content', minWidth: '180px' }}>
+      <Grid sx={{ width: 'fit-content', minWidth: '180px' }}>
         <AutoComplete
           control={control}
           editable={false}
@@ -62,7 +62,7 @@ export const SearchTableHeader = ({
           defaultValue={options.Accounts()?.find((op) => op.id === accountId)}
         />
       </Grid>
-      <Grid item sx={{ width: 'fit-content' }}>
+      <Grid sx={{ width: 'fit-content' }}>
         <DoubleButton
           labelLeft="A Pagar"
           labelRight="A Receber"
@@ -70,18 +70,18 @@ export const SearchTableHeader = ({
           onClickRight={() => handleReset('Receivable')}
         />
       </Grid>
-      <Grid item sx={{ flex: 1 }}>
+      <Grid sx={{ flex: 1 }}>
         <SearchByCPForCNPJ
           defaultId={undefined}
           handleRefetch={onFilter}
           options={handleOptions()}
         />
       </Grid>
-      <Grid item xs={12} sx={{ borderTop: 1, borderColor: '#C4DADF' }} />
-      <Grid item xs={12}>
+      <Grid size={{ xs: 12 }} sx={{ borderTop: 1, borderColor: '#C4DADF' }} />
+      <Grid size={{ xs: 12 }}>
         <TitleLabel>Apontamentos encontrados</TitleLabel>
       </Grid>
-      <Grid item xs={3.5} sx={{ paddingBottom: 2 }}>
+      <Grid size={{ xs: 3.5 }} sx={{ paddingBottom: 2 }}>
         <Controller
           name={'searchAppointmentParams.identificationCodeSearch'}
           control={control}

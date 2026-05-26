@@ -4,7 +4,7 @@ import { Box, IconButton, InputAdornment, Modal, TextField } from '@mui/material
 import { MdCheckCircleOutline, MdHighlightOff, MdOutlineClose } from 'react-icons/md'
 import { Card, CardContent, CardFooter, CardHeader } from '../ui/card'
 import { useState } from 'react'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ModalConfirm } from '../modals/ModalConfirm'

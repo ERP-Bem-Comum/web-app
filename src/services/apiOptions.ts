@@ -4,7 +4,7 @@ import axios from 'axios'
 import { getSession } from 'next-auth/react'
 import { destroyCookie, parseCookies } from 'nookies'
 
-const baseURL = process.env.NEXT_PUBLIC_API_URL
+const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4010'
 
 const ApiOptions = () => {
   const defaultOptions = {
@@ -32,6 +32,18 @@ const ApiOptions = () => {
       return response
     },
     (error) => {
+      if (
+        AUTH_BYPASS_ENABLED &&
+        (error?.response?.status === 401 || error?.response?.status === 403)
+      ) {
+        const cleanError = Object.assign(
+          new Error('Backend offline — usando dados locais'),
+          { response: { status: error.response.status }, isBackendOffline: true },
+        )
+        // Suprime stack trace no console — comportamento esperado em modo bypass
+        cleanError.stack = undefined
+        return Promise.reject(cleanError)
+      }
       if (error?.response?.status === 401 && error?.response?.data?.message === 'Unauthorized') {
         destroyCookie(null, 'ApprovalsPayableId')
         destroyCookie(null, 'ApprovalsPassword')

@@ -1,7 +1,7 @@
 import { isAllEmpty, isAllFilled } from '@/utils/emptyFilled'
 import { isValidCNPJ } from '@/utils/validateCnpj'
 import { isValidCPF } from '@/utils/validateCpf'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 import { BancaryInfo, PixInfo } from '@/types/global'
 import { handleErrorMessage } from '@/utils/handleTypeErrorMessage'
 
@@ -10,12 +10,12 @@ type handleErrorMessage = (
   type?: string,
 ) => { invalid_type_error: string; required_error: string }
 
-const bancaryInfoSchema = z
+export const bancaryInfoSchema = z
   .object({
     bank: z.string().nullish(),
     agency: z
       .string()
-      .refine((value) => value === '' || /^\d{4}-\d{1}$/.test(value), {
+      .refine((value) => value === '' || /^\d{4}(-\d{1})?$/.test(value), {
         message: 'A agência e o dv da agência devem ser informados no formato 0000-0',
       })
       .nullish(),
@@ -40,7 +40,7 @@ export const bancaryInfoRefined = bancaryInfoSchema.refine((data) => {
   return isBancaryInfoFilled || isBancaryInfoEmpty
 }, 'Preencha todos os dados bancários ou deixe todos em branco')
 
-const pixInfoSchema = z
+export const pixInfoSchema = z
   .object({
     key_type: z
       .string(handleErrorMessage('tipo de chave'))
@@ -59,27 +59,27 @@ export const pixInfoRefined = pixInfoSchema
     const isPixFilled = isAllFilled(data)
     return isPixEmpty || isPixFilled
   }, 'Preencha todos os dados de PIX ou deixe todos em branco')
-  .superRefine((data, ctx) => {
-    if (!data) return true
-    let valid = true
-    if (data?.key_type === 'EMAIL') {
-      valid = z.string().email().safeParse(data.key).success
-    }
-    if (data?.key_type === 'CNPJ') {
-      valid = isValidCNPJ(data.key ?? '')
-    }
-    if (data?.key_type === 'CPF') {
-      valid = isValidCPF(data.key ?? '')
-    }
-    if (!valid) {
-      ctx.addIssue({
-        path: ['key'],
-        code: z.ZodIssueCode.custom,
-        message: `Chave PIX deve ser um ${data?.key_type} válido`,
-      })
-    }
-    return valid
-  })
+  // .superRefine((data, ctx) => {
+  //   if (!data) return true
+  //   let valid = true
+  //   if (data?.key_type === 'EMAIL') {
+  //     valid = z.string().email().safeParse(data.key).success
+  //   }
+  //   if (data?.key_type === 'CNPJ') {
+  //     valid = isValidCNPJ(data.key ?? '')
+  //   }
+  //   if (data?.key_type === 'CPF') {
+  //     valid = isValidCPF(data.key ?? '')
+  //   }
+  //   if (!valid) {
+  //     ctx.addIssue({
+  //       path: ['key'],
+  //       code: z.ZodIssueCode.custom,
+  //       message: `Chave PIX deve ser um ${data?.key_type} válido`,
+  //     })
+  //   }
+  //   return valid
+  // })
 
 export const editPaymentInfoSchema = z
   .object({

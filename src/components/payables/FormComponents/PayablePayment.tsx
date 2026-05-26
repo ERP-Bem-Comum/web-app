@@ -43,11 +43,11 @@ export const PayablePayment = ({
 
   return (
     <Fragment>
-      <Grid item xs={12}>
+      <Grid size={{ xs: 12 }}>
         <TitleLabel>Pagamento:</TitleLabel>
       </Grid>
       <Grid container rowSpacing={2} columnSpacing={2}>
-        <Grid item xs={3}>
+        <Grid size={{ xs: 3 }}>
           <AutoComplete
             error={errors.paymentType?.message}
             control={control}
@@ -61,7 +61,7 @@ export const PayablePayment = ({
             label="Tipo de pagamento:"
           />
         </Grid>
-        <Grid item xs={2}>
+        <Grid size={{ xs: 2 }}>
           <CustomTextField
             error={errors.liquidValue?.message}
             control={control}
@@ -71,7 +71,7 @@ export const PayablePayment = ({
             currency
           />
         </Grid>
-        <Grid item xs={2}>
+        <Grid size={{ xs: 2 }}>
           <CustomTextField
             error={errors.taxValue?.message}
             control={control}
@@ -81,7 +81,7 @@ export const PayablePayment = ({
             currency
           />
         </Grid>
-        <Grid item xs={2}>
+        <Grid size={{ xs: 2 }}>
           <AutoComplete
             error={errors.paymentMethod?.message}
             control={control}
@@ -91,7 +91,7 @@ export const PayablePayment = ({
             label="Forma de pagamento:"
           />
         </Grid>
-        <Grid item xs={3}>
+        <Grid size={{ xs: 3 }}>
           <AutoCompleteMultipleWithMassApprover
             error={errors.approvers?.message}
             control={control}
@@ -102,7 +102,7 @@ export const PayablePayment = ({
           />
         </Grid>
 
-        <Grid item xs={3.8}>
+        <Grid size={{ xs: 3.8 }}>
           <CustomTextField
             error={errors.obs?.message}
             control={control}
@@ -111,7 +111,7 @@ export const PayablePayment = ({
             label="Descrição:"
           />
         </Grid>
-        <Grid item xs={2.2}>
+        <Grid size={{ xs: 2.2 }}>
           <AutoComplete
             error={errors.docType?.message}
             control={control}
@@ -121,7 +121,7 @@ export const PayablePayment = ({
             label="Documento identificador:"
           />
         </Grid>
-        <Grid item xs={2.2}>
+        <Grid size={{ xs: 2.2 }}>
           <CustomTextField
             error={errors.identifierCode?.message}
             control={control}
@@ -130,7 +130,7 @@ export const PayablePayment = ({
             label="Código identificador:"
           />
         </Grid>
-        <Grid item xs={2}>
+        <Grid size={{ xs: 2 }}>
           <CustomDatePicker
             error={errors.competenceDate?.message}
             control={control}
@@ -139,7 +139,7 @@ export const PayablePayment = ({
             label="Competência:"
           />
         </Grid>
-        <Grid item xs={3.8}>
+        <Grid size={{ xs: 3.8 }}>
           <AutoComplete
             error={errors.accountId?.message}
             control={control}

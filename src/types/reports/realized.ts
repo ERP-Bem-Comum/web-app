@@ -1,5 +1,5 @@
 import { realizedFilterSchema } from '@/validators/reports/realizedFilters'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 import { Control, FieldErrors, UseFormWatch } from 'react-hook-form'
 
 export type FilterRealizedReportParams = z.infer<typeof realizedFilterSchema>

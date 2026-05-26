@@ -2,7 +2,7 @@ import { DOCType, RecurenceType } from '@/enums/payables'
 import { ReceiptMethod, ReceivableStatus, ReceivableType } from '@/enums/receivables'
 import { handleErrorMessage } from '@/utils/handleTypeErrorMessage'
 import { getInstallmentInfo, getMinimumDaysBetween } from '@/utils/installments'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 import { categorizationSchema, objectCategorizationSchema } from './categorization'
 import '../configurations/globalZodConfig'
 

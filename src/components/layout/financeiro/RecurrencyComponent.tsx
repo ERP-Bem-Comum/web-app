@@ -62,7 +62,7 @@ export const RecurrencyComponent = <T extends FieldValues>({
 
   return (
     <Fragment>
-      <Grid item xs={12} display={'flex'}>
+      <Grid size={{ xs: 12 }} display={'flex'}>
         <CustomToggle
           control={control}
           editable={(() => {
@@ -76,7 +76,7 @@ export const RecurrencyComponent = <T extends FieldValues>({
       </Grid>
       {!values.recurrent ? (
         <Grid container rowSpacing={2} columnSpacing={2}>
-          <Grid item xs={3}>
+          <Grid size={{ xs: 3 }}>
             <CustomDatePicker
               error={errors.dueDate?.message as string}
               control={control}
@@ -86,7 +86,7 @@ export const RecurrencyComponent = <T extends FieldValues>({
             />
           </Grid>
           {values.paymentMethod === PaymentMethod.BILL && (
-            <Grid item xs={2.2}>
+            <Grid size={{ xs: 2.2 }}>
               <CustomTextField
                 error={errors.barcode?.message as string}
                 control={control}
@@ -100,7 +100,7 @@ export const RecurrencyComponent = <T extends FieldValues>({
         </Grid>
       ) : (
         <Grid container rowSpacing={2} columnSpacing={2}>
-          <Grid item xs={3.8}>
+          <Grid size={{ xs: 3.8 }}>
             <AutoComplete
               error={getRecurrenceError(errors, 'recurrenceType')}
               control={control}
@@ -111,7 +111,7 @@ export const RecurrencyComponent = <T extends FieldValues>({
             />
           </Grid>
 
-          <Grid item xs={2.73}>
+          <Grid size={{ xs: 2.73 }}>
             <CustomDatePicker
               error={getRecurrenceError(errors, 'startDate')}
               control={control}
@@ -120,7 +120,7 @@ export const RecurrencyComponent = <T extends FieldValues>({
               label="Data inicio:"
             />
           </Grid>
-          <Grid item xs={2.73}>
+          <Grid size={{ xs: 2.73 }}>
             <CustomDatePicker
               error={getRecurrenceError(errors, 'endDate')}
               control={control}
@@ -129,7 +129,7 @@ export const RecurrencyComponent = <T extends FieldValues>({
               label="Data final:"
             />
           </Grid>
-          <Grid item xs={2.73}>
+          <Grid size={{ xs: 2.73 }}>
             <AutoComplete
               error={getRecurrenceError(errors, 'dueDay')}
               control={control}

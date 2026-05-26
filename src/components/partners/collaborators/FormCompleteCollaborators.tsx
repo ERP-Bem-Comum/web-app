@@ -28,7 +28,7 @@ import { Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Fragment, useState } from 'react'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 import { ModalAlert } from '../../modals/ModalAlert'
 import { ModalConfirm } from '../../modals/ModalConfirm'
 import { ModalQuestion } from '../../modals/ModalQuestion'
@@ -294,7 +294,7 @@ export default function FormCompleteCollaborators({ collaborator, first, edit }:
           <CardContent className="pt-8">
             <div className="mb-5">Dados pré-preenchidos pela ABC:</div>
             <Grid container spacing={2} className="mb-8 pb-4 border-b border-[#C4DADF]">
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="name"
                   control={control}
@@ -318,7 +318,7 @@ export default function FormCompleteCollaborators({ collaborator, first, edit }:
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="email"
                   control={control}
@@ -337,7 +337,7 @@ export default function FormCompleteCollaborators({ collaborator, first, edit }:
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="occupationArea"
                   control={control}
@@ -367,7 +367,7 @@ export default function FormCompleteCollaborators({ collaborator, first, edit }:
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="role"
                   control={control}
@@ -402,7 +402,7 @@ export default function FormCompleteCollaborators({ collaborator, first, edit }:
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="startOfContract"
                   control={control}
@@ -435,7 +435,7 @@ export default function FormCompleteCollaborators({ collaborator, first, edit }:
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="employmentRelationship"
                   control={control}
@@ -467,7 +467,7 @@ export default function FormCompleteCollaborators({ collaborator, first, edit }:
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="cpf"
                   control={control}
@@ -492,7 +492,7 @@ export default function FormCompleteCollaborators({ collaborator, first, edit }:
             </Grid>
             <div className="mt-8 mb-5">Complete seu cadastro:</div>
             <Grid container spacing={2}>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="rg"
                   control={control}
@@ -511,7 +511,7 @@ export default function FormCompleteCollaborators({ collaborator, first, edit }:
                   )}
                 />
               </Grid>
-              <Grid item xs={6}>
+              <Grid size={{ xs: 6 }}>
                 <Controller
                   name="completeAddress"
                   control={control}
@@ -531,7 +531,7 @@ export default function FormCompleteCollaborators({ collaborator, first, edit }:
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="dateOfBirth"
                   control={control}
@@ -564,7 +564,7 @@ export default function FormCompleteCollaborators({ collaborator, first, edit }:
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="telephone"
                   control={control}
@@ -585,7 +585,7 @@ export default function FormCompleteCollaborators({ collaborator, first, edit }:
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="emergencyContactName"
                   control={control}
@@ -607,7 +607,7 @@ export default function FormCompleteCollaborators({ collaborator, first, edit }:
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="emergencyContactTelephone"
                   control={control}
@@ -632,7 +632,7 @@ export default function FormCompleteCollaborators({ collaborator, first, edit }:
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="genderIdentity"
                   control={control}
@@ -661,7 +661,7 @@ export default function FormCompleteCollaborators({ collaborator, first, edit }:
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="race"
                   control={control}
@@ -690,7 +690,7 @@ export default function FormCompleteCollaborators({ collaborator, first, edit }:
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Autocomplete
                   id="haveAllergies"
                   size="small"
@@ -719,7 +719,7 @@ export default function FormCompleteCollaborators({ collaborator, first, edit }:
                   disabled={!edit}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="allergies"
                   control={control}
@@ -742,7 +742,7 @@ export default function FormCompleteCollaborators({ collaborator, first, edit }:
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="foodCategory"
                   control={control}
@@ -771,7 +771,7 @@ export default function FormCompleteCollaborators({ collaborator, first, edit }:
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="education"
                   control={control}
@@ -800,7 +800,7 @@ export default function FormCompleteCollaborators({ collaborator, first, edit }:
                   )}
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <Controller
                   name="experienceInThePublicSector"
                   control={control}
@@ -834,7 +834,7 @@ export default function FormCompleteCollaborators({ collaborator, first, edit }:
                   )}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <Controller
                   name="biography"
                   control={control}

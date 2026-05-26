@@ -1,6 +1,6 @@
 import { InstallmentStatus, InstallmentType } from '@/enums/installments'
 import { postergateInstallmentsSchema } from '@/validators/installments'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 
 export type Installments = {
   id?: number

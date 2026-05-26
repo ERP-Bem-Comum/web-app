@@ -1,7 +1,7 @@
 import { InstallmentStatus, InstallmentType } from '@/enums/installments'
 import { Installments } from '@/types/installments'
 import { maskMonetaryValue } from '@/utils/masks'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 
 const installmentSchema = z.object({
   id: z.number().nullish(), // Was optional()

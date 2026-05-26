@@ -1,5 +1,5 @@
 import { isValidCNPJ } from '@/utils/validateCnpj'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 import { bancaryInfoRefined, pixInfoRefined } from './global'
 import { isAllEmpty } from '@/utils/emptyFilled'
 import { BancaryInfo, PixInfo } from '@/types/global'

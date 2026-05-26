@@ -1,5 +1,5 @@
 import { Options } from '@/types/global'
-import { Autocomplete, Chip, TextField } from '@mui/material'
+import { Autocomplete, TextField } from '@mui/material'
 import { Control, Controller, FieldValues, Path } from 'react-hook-form'
 import { useMassApprover } from '@/hooks/useMassApprover'
 import { useEffect } from 'react'
@@ -88,29 +88,7 @@ export const AutoCompleteMultipleWithMassApprover = <T extends FieldValues>({
                 </li>
               )
             }}
-            renderTags={(tagValue, getTagProps) => {
-              return tagValue.map((option, index) => {
-                const isMassApprover = massApproverOptions.some(massApproverOption => massApproverOption.id === option.id)
-                return (
-                  <Chip 
-                    size="small" 
-                    {...getTagProps({ index })} 
-                    key={option.id} 
-                    label={option.name}
-                    onDelete={isMassApprover ? undefined : getTagProps({ index }).onDelete}
-                    color={isMassApprover ? "primary" : "default"}
-                    variant="outlined"
-                    sx={{
-                      backgroundColor: isMassApprover ? '#e3f2fd' : '#e0e0e0',
-                      border: 'none',
-                      '& .MuiChip-deleteIcon': {
-                        color: isMassApprover ? 'transparent' : '#666',
-                      }
-                    }}
-                  />
-                )
-              })
-            }}
+            slotProps={{ chip: { size: 'small' } }}
             disabled={!editable}
           />
         )

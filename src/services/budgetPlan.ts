@@ -6,10 +6,12 @@ import {
   IGetConsolidated,
 } from '@/types/budgetPlan'
 import { Options } from '@/types/global'
+import { localDbGetBudgetPlanOptions } from '@/mocks/localDb'
 import { IShareBudgetPlan, IShareBudgetPlanConsolidated } from '@/types/sharedBudgetPlan'
 import { useQuery } from '@tanstack/react-query'
 import api from './api'
 import apiOptions from './apiOptions'
+import { handleOptionsError } from './handleOptionsError'
 
 export async function createBudgetPlan(data: ICreateBudgetPlan) {
   const response = await api
@@ -290,8 +292,8 @@ export const getBudgetPlanOptions = async () => {
     const resp = await apiOptions.get<Options[]>('/budget-plans/options')
     return resp.data ?? []
   } catch (error) {
-    console.error(error)
-    return []
+    const result = handleOptionsError(error)
+    return result.length > 0 ? result : localDbGetBudgetPlanOptions()
   }
 }
 

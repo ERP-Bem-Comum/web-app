@@ -90,7 +90,7 @@ export default function FormBankAccount({ account }: FormBankAccountProps) {
             <TitleLabel>Dados cadastrais do fornecedor:</TitleLabel>
 
             <Grid container spacing={2}>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <CustomTextField
                   control={control}
                   editable={true}
@@ -99,7 +99,7 @@ export default function FormBankAccount({ account }: FormBankAccountProps) {
                   name="name"
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <CustomTextField
                   control={control}
                   editable={edit && enableInitialBalance}
@@ -115,7 +115,7 @@ export default function FormBankAccount({ account }: FormBankAccountProps) {
             <TitleLabel>Dados da Conta:</TitleLabel>
 
             <Grid container spacing={2}>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <CustomTextField
                   control={control}
                   editable={false}
@@ -124,7 +124,7 @@ export default function FormBankAccount({ account }: FormBankAccountProps) {
                   name="bank"
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <AgencyComponent
                   control={control}
                   editable={edit}
@@ -132,7 +132,7 @@ export default function FormBankAccount({ account }: FormBankAccountProps) {
                   name="agency"
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <CustomTextField
                   control={control}
                   editable={edit}
@@ -141,7 +141,7 @@ export default function FormBankAccount({ account }: FormBankAccountProps) {
                   name="accountNumber"
                 />
               </Grid>
-              <Grid item xs={3}>
+              <Grid size={{ xs: 3 }}>
                 <CustomTextField
                   control={control}
                   editable={edit}
