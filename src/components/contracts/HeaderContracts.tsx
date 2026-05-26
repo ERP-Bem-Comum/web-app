@@ -1,37 +1,89 @@
-import { ParamsContracts } from '@/types/contracts'
-import { InputAdornment, TextField } from '@mui/material'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
-import { Control, Controller, FieldErrors } from 'react-hook-form'
-import { BiFilterAlt, BiSearch } from 'react-icons/bi'
-import { AutoComplete } from '../layout/AutoComplete'
+import { ParamsContracts, ContractRow } from '@/types/contracts'
+import { InputAdornment, TextField, TextFieldProps } from '@mui/material'
+import { useState, useMemo } from 'react'
+import { Control, Controller, FieldErrors, UseFormSetValue } from 'react-hook-form'
+import { Download, Filter, Search } from 'lucide-react'
 import { Button } from '../ui/button'
 import { CardHeader } from '../ui/card'
 import { FilterContracts } from './Filters/FiltersContracts'
 import { ContractsExportButton } from './tablesComponents/ContractsExportButton'
+import { deriveStatus, getMostRecentChild } from '@/utils/contracts/status'
+import styles from './contractsGrid.module.css'
 
-interface headerPayablesProps {
+export type StatusFilterKey = 'todos' | 'em-andamento' | 'pendente' | 'finalizado' | 'distrato' | 'rascunho' | 'vencendo'
+
+interface HeaderContractsProps {
   control: Control<ParamsContracts>
   errors: FieldErrors<ParamsContracts>
   values: ParamsContracts
-  handleFilter: () => void
+  handleFilter: (nextParams?: ParamsContracts['payableParams']) => void
+  setValue: UseFormSetValue<ParamsContracts>
+  contracts: ContractRow[] | undefined
+  selectedStatus: StatusFilterKey
+  onStatusChange: (status: StatusFilterKey) => void
 }
 
-export const HeaderContracts = ({ control, errors, values, handleFilter }: headerPayablesProps) => {
-  const router = useRouter()
+const STATUS_OPTIONS: { key: StatusFilterKey; label: string }[] = [
+  { key: 'todos', label: 'Todos' },
+  { key: 'em-andamento', label: 'Em Andamento' },
+  { key: 'pendente', label: 'Pendente' },
+  { key: 'finalizado', label: 'Finalizado' },
+  { key: 'distrato', label: 'Distrato' },
+  { key: 'rascunho', label: 'Rascunho' },
+  { key: 'vencendo', label: 'Vencendo' },
+]
+
+export const HeaderContracts = ({
+  control,
+  errors,
+  values,
+  handleFilter,
+  contracts,
+  selectedStatus,
+  onStatusChange,
+}: HeaderContractsProps) => {
   const [openFilter, setOpenFilter] = useState(false)
 
+  const counts = useMemo(() => {
+    const result: Record<string, number> = { todos: 0, 'em-andamento': 0, pendente: 0, finalizado: 0, distrato: 0, rascunho: 0, vencendo: 0 }
+    if (!contracts) return result
+
+    result.todos = contracts.length
+
+    const now = new Date()
+    const threshold = 45 * 24 * 60 * 60 * 1000
+
+    contracts.forEach((row) => {
+      const info = getMostRecentChild(row)
+      const derived = deriveStatus(info, !!row.children?.length)
+      if (result[derived.key] !== undefined) {
+        result[derived.key]++
+      }
+
+      // Contagem para Vencendo (≤ 45 dias)
+      if (info?.contractPeriod?.end) {
+        const end = new Date(info.contractPeriod.end)
+        const diff = end.getTime() - now.getTime()
+        if (diff > 0 && diff <= threshold) {
+          result.vencendo++
+        }
+      }
+    })
+    return result
+  }, [contracts])
+
   return (
-    <CardHeader>
-      <section className="p-4 flex items-center flex-row justify-between">
-        <div className="flex items-center w-3/5 gap-3">
+    <CardHeader className="space-y-0 p-0">
+      <section className={styles.header}>
+        <div className={styles.searchGroup}>
           <Button
             size="none"
-            variant="erpReturn"
-            className="border-[#E0E4E4] me-4"
+            variant="ghost"
+            className={`${styles.filterButton} ${openFilter ? styles.filterButtonActive : ''}`}
             onClick={() => setOpenFilter(!openFilter)}
+            title="Filtros"
           >
-            <BiFilterAlt size={20} color={'#155366'} />
+            <Filter size={16} />
           </Button>
           <Controller
             name={'search'}
@@ -42,41 +94,45 @@ export const HeaderContracts = ({ control, errors, values, handleFilter }: heade
                 name="search"
                 value={field.value}
                 onChange={(e) => field.onChange(e.target.value)}
-                label="Pesquise"
+                placeholder="Buscar por contratado, número, CNPJ/CPF"
                 size="small"
-                sx={{ backgroundColor: '#fff', width: '392px' }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <BiSearch size={20} color={'#155366'} />
-                    </InputAdornment>
-                  ),
+                className={styles.searchField}
+                variant="outlined"
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Search size={15} color={'#396496'} />
+                      </InputAdornment>
+                    ),
+                  },
                 }}
               />
             )}
           />
-          <div className="w-[250px]">
-            <AutoComplete
-              control={control}
-              options={[
-                { id: 1, name: 'Sim' },
-                { id: 0, name: 'Não' },
-              ]}
-              name="payableParams.agreement"
-              label="Acordo de cooperação:"
-              editable
-              error={errors.payableParams?.budgetPlanId?.message}
-            />
-          </div>
         </div>
-        <div className="flex gap-3">
-          <Button variant="erpPrimary" onClick={() => router.push('/contratos/adicionar')}>
-            Novo contrato
-          </Button>
-          <ContractsExportButton currentParams={values} />
+
+        <div className={styles.statusChips}>
+          {STATUS_OPTIONS.map((opt) => (
+            <Button
+              key={opt.key}
+              type="button"
+              variant="ghost"
+              className={`${styles.statusChip} ${selectedStatus === opt.key ? styles.statusChipActive : ''} ${opt.key === 'vencendo' ? styles.nearExpiryChip : ''}`}
+              onClick={() => onStatusChange(opt.key)}
+              title={opt.key === 'vencendo' ? 'Contratos com vigência de 45 dias ou menos' : undefined}
+            >
+              {opt.label}
+              <span className={styles.statusChipCount}>{counts[opt.key] ?? 0}</span>
+            </Button>
+          ))}
+        </div>
+
+        <div className={styles.actions}>
+          <ContractsExportButton currentParams={values} icon={<Download size={14} />} />
         </div>
       </section>
-      <section hidden={!openFilter}>
+      <section className={styles.filterPanel} hidden={!openFilter}>
         <FilterContracts control={control} errors={errors} handleFilter={handleFilter} />
       </section>
     </CardHeader>

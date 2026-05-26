@@ -1,3 +1,6 @@
 import test from "node:test";
 
-test("contractsApi", async (t) => {});
+test("contractsApi", async (t) => {
+    
+
+});

@@ -45,6 +45,8 @@ export const mountStatusBox = ({ contractStatus }: Pick<ContractRow, 'contractSt
       return <StatusBox color="#ffffff" backgroundColor="#64BC47" label="Em andamento" />
     case ContractStatus.FINISHED:
       return <StatusBox color="#ffffff" backgroundColor="#3B70BF" label="Finalizado" />
+    case ContractStatus.DISTRATO:
+      return <StatusBox color="#ffffff" backgroundColor="#8B5A2B" label="Distrato" />
   }
 }
 
@@ -64,10 +66,21 @@ export const mountBudgetPlanName = (
 export const mountPeriod = ({ contractPeriod: data }: Pick<ContractRow, 'contractPeriod'>) => {
   if (data) {
     const startDate = formatDate(data.start)
-    const isIndefinite = data.isIndefinite ?? data.end === null
-    const endDate = isIndefinite ? 'Prazo Indeterminado' : formatDate(data.end)
+    const endDate = formatDate(data.end)
     return `${startDate} - ${endDate}`
   }
+}
+
+/**
+ * Formata o código do contrato para exibição no grid.
+ * CNT-2024-0001 → 0001/2024
+ */
+export const formatContractNumber = (code: string): string => {
+  const match = code.match(/(\d{4})-(\d{4})/)
+  if (match) {
+    return `${match[2]}/${match[1]}`
+  }
+  return code
 }
 
 export const switchContractedComponent = (
@@ -76,6 +89,8 @@ export const switchContractedComponent = (
   onChange: (id: number) => void,
   bancaryDataCallback: (pix: Required<PixInfo>, account: Required<BancaryInfo>) => void,
   contract?: IContract,
+  showSearch?: boolean,
+  onContractorData?: (data: any) => void,
 ) => {
   let item: ReactNode
   switch (type) {
@@ -85,6 +100,8 @@ export const switchContractedComponent = (
           defaultFinancier={contract?.financier}
           editable={editable}
           onFinancierChange={onChange}
+          showSearch={showSearch}
+          onContractorData={onContractorData}
         />
       )
       break
@@ -95,6 +112,8 @@ export const switchContractedComponent = (
           editable={editable}
           onCollaboratorChange={onChange}
           bancaryDataCallback={bancaryDataCallback}
+          showSearch={showSearch}
+          onContractorData={onContractorData}
         />
       )
       break
@@ -105,6 +124,8 @@ export const switchContractedComponent = (
           editable={editable}
           onSupplierChange={onChange}
           bancaryDataCallback={bancaryDataCallback}
+          showSearch={showSearch}
+          onContractorData={onContractorData}
         />
       )
       break
@@ -112,9 +133,11 @@ export const switchContractedComponent = (
 
   return (
     <Fragment>
-      <Grid item xs={12}>
-        <TitleLabel className="pb-1">Contratado:</TitleLabel>
-      </Grid>
+      {!showSearch && (
+        <div style={{ marginBottom: 8 }}>
+          <TitleLabel className="pb-1">Contratado:</TitleLabel>
+        </div>
+      )}
       {item}
     </Fragment>
   )

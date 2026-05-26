@@ -1,20 +1,21 @@
 import { ModalAnnex } from '@/components/modals/contracts/ModalAnnex'
+import { ModalDeleteContract } from '@/components/modals/contracts/ModalDeleteContract'
 import { ModalPaymentHistory } from '@/components/modals/contracts/ModalPaymentHistory'
-// import { ModalPaymentHistory } from '@/components/modals/contracts/ModalPaymentHistory'
 import { ModalConfirm } from '@/components/modals/ModalConfirm'
 import { ModalNotFound } from '@/components/modals/ModalNotFound'
 import { ModalQuestion } from '@/components/modals/ModalQuestion'
 import { ContractStatus } from '@/enums/contracts'
-import { useContractContext } from '@/hooks/useContractsContext'
+import { ContractRow } from '@/types/contracts'
 import { useDisclosure } from '@/hooks/useDisclosure'
-import { settleContract, signContract, withdrawalContract } from '@/services/files'
+import { deleteContract } from '@/services/contracts'
+import { settleContract, withdrawalContract } from '@/services/files'
 import { contractActionsFactory } from '@/utils/UI/actionsFactory'
 import { Menu, MenuItem } from '@mui/material'
 import { HttpStatusCode } from 'axios'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
 import { Fragment, useState } from 'react'
 import { BiDotsHorizontalRounded } from 'react-icons/bi'
+import styles from '../contractsGrid.module.css'
 
 type FileLink = {
   withdrawalUrl: string
@@ -27,6 +28,7 @@ interface ActionButtonProps {
   contractId: number
   aditiveId: number | undefined
   fileLinks: FileLink
+  contractData?: ContractRow
 }
 
 export const ActionButton = ({
@@ -34,92 +36,23 @@ export const ActionButton = ({
   contractId,
   aditiveId,
   fileLinks,
+  contractData,
 }: ActionButtonProps) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
-
   const [openFunction, setOpenFunction] = useState<(() => void) | null>(null)
-
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-
   const { data: session } = useSession()
-
   const open = Boolean(anchorEl)
 
-  const router = useRouter()
-  
-  const { onDelete, setIsDeleting, errorMessage: contextErrorMessage } = useContractContext()
-
-  const {
-    isOpen: isOpenAnnexSigned,
-    onOpen: onOpenAnnexSigned,
-    onClose: onCloseAnnexSigned,
-  } = useDisclosure()
-
-  const {
-    isOpen: isOpenConfirmModal,
-    onOpen: onOpenConfirmModal,
-    onClose: onCloseConfirmModal,
-  } = useDisclosure()
-  
-  const {
-    isOpen: isOpenDeleteModal,
-    onOpen: onOpenDeleteModal,
-    onClose: onCloseDeleteModal,
-  } = useDisclosure()
-
-  const {
-    isOpen: isOpenSuccessDeleteModal,
-    onOpen: onOpenSuccessDeleteModal,
-    onClose: onCloseSuccessDeleteModal,
-  } = useDisclosure()
-
-  const {
-    isOpen: isOpenAnnexSettleModal,
-    onOpen: onOpenAnnexSettleModal,
-    onClose: onCloseAnnexSettleModal,
-  } = useDisclosure()
-
-  const {
-    isOpen: isOpenSuccessSettleModal,
-    onOpen: onOpenSuccessSettleModal,
-    onClose: onCloseSuccessSettleModal,
-  } = useDisclosure()
-
-  const {
-    isOpen: isOpenSuccessWithDrawalModal,
-    onOpen: onOpenSuccessWithDrawalModa,
-    onClose: onCloseSuccessWithDrawalModa,
-  } = useDisclosure()
-
-  const {
-    isOpen: isOpenSuccessSignModal,
-    onOpen: onOpenSuccessSignModa,
-    onClose: onCloseSuccessSignModa,
-  } = useDisclosure()
-
-  const {
-    isOpen: isOpenAnnexWithDrawalModal,
-    onOpen: onOpenAnnexWithDrawalModal,
-    onClose: onCloseAnnexWithDrawalModal,
-  } = useDisclosure()
-
-  const {
-    isOpen: isOpenPaymentHistoryModal,
-    onOpen: onOpenPaymentHistoryModal,
-    onClose: onClosePaymentHistoryModal,
-  } = useDisclosure()
-
-  const {
-    isOpen: isOpenNotFoundModal,
-    onOpen: onOpenNotFoundModal,
-    onClose: onCloseNotFoundModal,
-  } = useDisclosure()
-
-  const {
-    isOpen: isOpenErrorModal,
-    onOpen: onOpenErrorModal,
-    onClose: onCloseErrorModal,
-  } = useDisclosure()
+  const { isOpen: isOpenConfirmModal, onOpen: onOpenConfirmModal, onClose: onCloseConfirmModal } = useDisclosure()
+  const { isOpen: isOpenAnnexSettleModal, onOpen: onOpenAnnexSettleModal, onClose: onCloseAnnexSettleModal } = useDisclosure()
+  const { isOpen: isOpenSuccessSettleModal, onOpen: onOpenSuccessSettleModal, onClose: onCloseSuccessSettleModal } = useDisclosure()
+  const { isOpen: isOpenSuccessWithDrawalModal, onOpen: onOpenSuccessWithDrawalModa, onClose: onCloseSuccessWithDrawalModa } = useDisclosure()
+  const { isOpen: isOpenAnnexWithDrawalModal, onOpen: onOpenAnnexWithDrawalModal, onClose: onCloseAnnexWithDrawalModal } = useDisclosure()
+  const { isOpen: isOpenPaymentHistoryModal, onOpen: onOpenPaymentHistoryModal, onClose: onClosePaymentHistoryModal } = useDisclosure()
+  const { isOpen: isOpenNotFoundModal, onOpen: onOpenNotFoundModal, onClose: onCloseNotFoundModal } = useDisclosure()
+  const { isOpen: isOpenErrorModal, onOpen: onOpenErrorModal, onClose: onCloseErrorModal } = useDisclosure()
+  const { isOpen: isOpenDeleteModal, onOpen: onOpenDeleteModal, onClose: onCloseDeleteModal } = useDisclosure()
 
   const handleClickListItem = (event: React.MouseEvent<HTMLElement>) => {
     event.stopPropagation()
@@ -131,46 +64,46 @@ export const ActionButton = ({
     setAnchorEl(null)
   }
 
-  const handleCreateAditive = () => {
-    router.push(`/contratos/aditivo/${contractId}`)
-  }
-  
-  const handleDeleteContract = async () => {
-    setIsDeleting(true)
-    await onDelete(aditiveId ?? contractId, status)
-    onCloseDeleteModal()
-    onOpenSuccessDeleteModal()
-  }
-
   const actionsFactory = contractActionsFactory({
     onOpenAnnexSettleModal,
     onOpenPaymentHistoryModal,
     onOpenAnnexWithDrawalModal,
     onOpenConfirmModal,
-    onOpenAnnexSigned,
     onOpenNotFoundModal,
-    handleCreateAditive,
+    onOpenAnnexSigned: () => {},
+    handleCreateAditive: () => {},
     onOpenDeleteModal,
+    contractData,
   })
 
   const actionOptions = actionsFactory.getActionsForStatus(status)
 
   return (
     <Fragment>
-      <div
-        className="border border-[#E0E4E4] bg-[#EBF9FE] flex items-center justify-center text-sm rounded-sm py-1 px-2 w-fit aspect-square z-10"
-        onClick={handleClickListItem}
-      >
-        <BiDotsHorizontalRounded size={20} />
+      <div className={styles.rowAct} onClick={handleClickListItem}>
+        <BiDotsHorizontalRounded size={16} />
       </div>
       <Menu
         id="lock-menu"
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
-        MenuListProps={{
-          'aria-labelledby': 'lock-button',
-          role: 'listbox',
+        slotProps={{
+          list: {
+            'aria-labelledby': 'lock-button',
+            role: 'listbox',
+          },
+        }}
+        slotProps={{
+          paper: {
+            sx: {
+              border: '0.5px solid #e5ded4',
+              borderRadius: '8px',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.10), 0 1px 3px rgba(0,0,0,0.06)',
+              padding: '4px',
+              minWidth: '180px',
+            },
+          },
         }}
       >
         {actionOptions.map((op, index) => (
@@ -182,6 +115,15 @@ export const ActionButton = ({
               op.onClick(fileLinks)
               setOpenFunction(() => actionsFactory.openModalForAction(op.name))
               handleClose(e)
+            }}
+            sx={{
+              fontSize: '12px',
+              color: '#332e29',
+              borderRadius: '4px',
+              padding: '7px 10px',
+              '&:hover': {
+                background: '#e8eef5',
+              },
             }}
           >
             {op.name}
@@ -200,14 +142,6 @@ export const ActionButton = ({
         text="Ao continuar, o saldo restante lançado em contas a pagar será liquidado. Deseja prosseguir?"
         textConfirm="Sim"
       />
-      <ModalQuestion
-        onClose={onCloseDeleteModal}
-        open={isOpenDeleteModal}
-        onConfirm={handleDeleteContract}
-        text="Tem certeza que deseja excluir este contrato? Esta ação não pode ser desfeita."
-        textConfirm="Sim, excluir"
-        textCancel="Cancelar"
-      />
       <ModalConfirm
         onClose={onCloseSuccessSettleModal}
         open={isOpenSuccessSettleModal}
@@ -219,46 +153,6 @@ export const ActionButton = ({
         open={isOpenSuccessWithDrawalModal}
         text="Distrato anexado com sucesso!"
         textConfirm="Fechar"
-      />
-      <ModalConfirm
-        onClose={onCloseSuccessSignModa}
-        open={isOpenSuccessSignModal}
-        text="Contrato assinado anexado com sucesso!"
-        textConfirm="Fechar"
-      />
-      <ModalConfirm
-        onClose={() => {
-          onCloseSuccessDeleteModal()
-          setIsDeleting(false)
-          if (!contextErrorMessage) {
-            router.push('/contratos')
-          }
-        }}
-        open={isOpenSuccessDeleteModal}
-        text={contextErrorMessage || 'Contrato deletado com sucesso!'}
-        success={!contextErrorMessage}
-        textConfirm="Fechar"
-      />
-      <ModalAnnex
-        onClose={onCloseAnnexSigned}
-        onSubmit={async (file) => {
-          const resp = await signContract(
-            { contractId: aditiveId ?? contractId, userId: session?.user.id },
-            file,
-          )
-          if (resp.status === HttpStatusCode.Created) {
-            onCloseAnnexSigned()
-            onOpenSuccessSignModa()
-            setErrorMessage(null)
-          } else {
-            onOpenErrorModal()
-            setErrorMessage(resp.data)
-          }
-        }}
-        open={isOpenAnnexSigned}
-        title="Anexar Contrato"
-        text="Anexar contrato e marcar como assinado:"
-        confirmButton="Anexar contrato"
       />
       <ModalAnnex
         onClose={onCloseAnnexSettleModal}
@@ -307,6 +201,15 @@ export const ActionButton = ({
         contractId={contractId}
         onClose={onClosePaymentHistoryModal}
         open={isOpenPaymentHistoryModal}
+      />
+      <ModalDeleteContract
+        open={isOpenDeleteModal}
+        onClose={onCloseDeleteModal}
+        onConfirm={async () => {
+          await deleteContract(contractId)
+          onCloseDeleteModal()
+        }}
+        contractCode={contractData?.contractCode}
       />
       <ModalConfirm
         onClose={onCloseErrorModal}

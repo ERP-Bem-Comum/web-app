@@ -13,11 +13,15 @@ interface ContractCollaboratorProps {
   onCollaboratorChange: (id: number) => void
   defaultCollaborator?: Pick<ICollaborator, 'id' | 'cpf' | 'name' | 'email' | 'role'>
   bancaryDataCallback: (pix: Required<PixInfo>, account: Required<BancaryInfo>) => void
+  showSearch?: boolean
+  onContractorData?: (data: any) => void
 }
 export const ContractCollaboratorInfo = ({
   editable,
   onCollaboratorChange,
   defaultCollaborator,
+  showSearch,
+  onContractorData,
 }: ContractCollaboratorProps) => {
   const [collaborator, setCollaborator] = useState<typeof defaultCollaborator>(defaultCollaborator)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -29,6 +33,7 @@ export const ContractCollaboratorInfo = ({
   useEffect(() => {
     if (collaborator?.id) {
       onCollaboratorChange(collaborator.id)
+      onContractorData?.(collaborator)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collaborator])
@@ -56,22 +61,16 @@ export const ContractCollaboratorInfo = ({
 
   return (
     <Fragment>
-      {editable && (
-        <SearchByCPForCNPJ
-          options={options.Collaborators()}
-          defaultId={collaborator?.id}
-          handleRefetch={handleRefetch}
-        />
-      )}
-      <Grid item xs={12} className="flex">
-        <div className="w-full h-full p-3 ">
-          <h1 className="font-black mb-2">Colaborador:</h1>
-          <p>Nome: {collaborator?.name}</p>
-          <p>Email: {collaborator?.email}</p>
-          <p>CPF: {maskCPF(collaborator?.cpf ?? '')}</p>
-          <p>Cargo: {collaborator?.role}</p>
+      {showSearch && (
+        <div className="mb-2">
+          <SearchByCPForCNPJ
+            options={options.Collaborators()}
+            defaultId={collaborator?.id}
+            handleRefetch={handleRefetch}
+            label="Buscar nome ou CPF"
+          />
         </div>
-      </Grid>
+      )}
       <ModalNotFound
         open={!!errorMessage}
         text={errorMessage ?? 'Colaborador não encontrado'}

@@ -87,7 +87,37 @@ export const ContractsProvider = ({ children }: { children: ReactNode }) => {
         res = await createAditive(data, files, session?.user.id)
       } else {
         setOperationType('create')
-        res = await createContract(data, files)
+        const payload = { ...data }
+        console.log('[onSubmit create] data.signedContractUrl:', data.signedContractUrl?.length)
+        const hasFile = !!payload.signedContractUrl || !!(files && files.length > 0)
+        console.log('[onSubmit create] hasFile:', hasFile, 'files.length:', files?.length)
+        if (hasFile) {
+          payload.contractStatus = ContractStatus.ONGOING
+        } else {
+          payload.contractStatus = ContractStatus.PENDING
+        }
+        console.log('[onSubmit create] payload.contractStatus:', payload.contractStatus)
+
+        // Fallback robusto: se há arquivo mas signedContractUrl está vazio, converte aqui
+        if (!payload.signedContractUrl && files && files.length > 0 && files[0].file) {
+          try {
+            const base64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader()
+              reader.onloadend = () => {
+                if (reader.result) resolve(reader.result as string)
+                else reject(new Error('Falha ao converter'))
+              }
+              reader.onerror = reject
+              reader.readAsDataURL(files[0].file as File)
+            })
+            payload.signedContractUrl = base64
+            console.log('[onSubmit create] Convertido no contexto, tamanho:', base64.length)
+          } catch (err) {
+            console.error('[onSubmit create] Falha ao converter arquivo no contexto:', err)
+          }
+        }
+
+        res = await createContract(payload, files)
       }
 
       if (res.data) {

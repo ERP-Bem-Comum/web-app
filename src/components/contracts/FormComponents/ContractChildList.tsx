@@ -28,7 +28,7 @@ export const ContractsChildList = ({ contract }: ContractsChildListProps) => {
 
   return (
     <Fragment>
-      <Grid item xs={12}>
+      <Grid size={{ xs: 12 }}>
         <TitleLabel>Aditivos:</TitleLabel>
       </Grid>
       {children.map((child, index) => (

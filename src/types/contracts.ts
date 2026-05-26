@@ -10,7 +10,7 @@ import {
   defaultFullContractSchema,
   filterContractsSchema,
 } from '@/validators/contracts'
-import { z } from 'zod'
+import { z } from 'zod/v3'
 import { ActionTypes } from './../enums/historys'
 import { BudgetPlan } from './budgetPlan'
 import { abstractType } from './global'
@@ -24,7 +24,6 @@ import { IProgram } from '@/services/programs'
 export type ParamsContracts = {
   paginationParams: PaginateParams
   search: string
-  agreement?: number | null
   payableParams: z.infer<typeof filterContractsSchema>
 }
 
@@ -34,7 +33,7 @@ export type otherContractSchema = z.infer<typeof defaultFullContractSchema>
 
 export type IContract = Omit<
   Contract,
-  'supplierId' | 'finnancierId' | 'collaboratorId' | 'budgetPlanId'
+  'supplierId' | 'financierId' | 'collaboratorId' | 'budgetPlanId'
 > &
   abstractType &
   Pick<otherContractSchema, 'pixInfo' | 'bancaryInfo'> & {
@@ -42,7 +41,7 @@ export type IContract = Omit<
       ISupplier,
       'name' | 'id' | 'cnpj' | 'serviceCategory' | 'fantasyName' | 'bancaryInfo' | 'pixInfo'
     >
-    financier: Pick<IFinancier, 'id' | 'name' | 'cnpj' | 'address' | 'telephone'>
+    financier: Pick<IFinancier, 'id' | 'name' | 'cnpj' | 'corporateName' | 'address' | 'telephone'>
     program: Pick<IProgram, 'id' | 'name'>
     collaborator: Pick<ICollaborator, 'id' | 'cpf' | 'name' | 'email' | 'role'>
     budgetPlan: Pick<BudgetPlan, 'id' | 'scenarioName' | 'year' | 'version'>
@@ -55,15 +54,31 @@ export type IContract = Omit<
     receivable: Pick<IReceivable, 'id'>
     currentFiles: CustomFile[]
     contractCode: string
+    withdrawalUrl: string
+    settleTermUrl: string
+    signedContractUrl: string
     children?: IContract[]
+    /** Tipo do aditivo: prazo | valor | escopo | outro | distrato */
+    aditivoType?: 'prazo' | 'valor' | 'escopo' | 'outro' | 'distrato'
+    /** Status do aditivo: Rascunho | Pendente | Homologado */
+    aditivoStatus?: 'Rascunho' | 'Pendente' | 'Homologado'
+    /** Data da assinatura do aditivo (dd/mm/aaaa) */
+    dataAssinatura?: string
+    /** Observações gerais / notas internas do contrato */
+    observations?: string
+    /** Categorização do contrato */
+    categorizacao?: string[]
+    /** Centro de custo do contrato */
+    centroDeCusto?: string[]
   }
 
 export type Children = abstractType &
   Pick<Contract, 'contractType' | 'object' | 'contractPeriod' | 'totalValue' | 'contractModel'> & {
-    supplier: Pick<ISupplier, 'id' | 'name'> | null
-    financier: Pick<IFinancier, 'id' | 'name'> | null
+    contractCode: string
+    supplier: Pick<ISupplier, 'id' | 'name' | 'cnpj' | 'corporateName'> | null
+    financier: Pick<IFinancier, 'id' | 'name' | 'cnpj' | 'corporateName'> | null
     program: Pick<IFinancier, 'id' | 'name'>
-    collaborator: Pick<ICollaborator, 'id' | 'name'> | null
+    collaborator: Pick<ICollaborator, 'id' | 'name' | 'cpf'> | null
     budgetPlan: Pick<BudgetPlan, 'id' | 'scenarioName' | 'year' | 'version'>
     contractStatus: ContractStatus
     withdrawalUrl: string
@@ -71,6 +86,16 @@ export type Children = abstractType &
     signedContractUrl: string
     parentId?: number
     pending: number
+    /** Valor pago/executado para cálculo de saldo */
+    paidValue?: number
+    /** Tipo do aditivo: prazo | valor | escopo | outro | distrato */
+    aditivoType?: 'prazo' | 'valor' | 'escopo' | 'outro' | 'distrato'
+    /** Status do aditivo: Rascunho | Pendente | Homologado */
+    aditivoStatus?: 'Rascunho' | 'Pendente' | 'Homologado'
+    /** Data da assinatura do aditivo (dd/mm/aaaa) */
+    dataAssinatura?: string
+    /** Observações gerais / notas internas do contrato */
+    observations?: string
   }
 
 export type ContractRow = Omit<Children, 'parentId'> & {
@@ -112,7 +137,6 @@ export type ContractForAccounts = Pick<
   | 'contractPeriod'
   | 'supplier'
   | 'totalValue'
-  | 'agreement'
   | 'program'
 > & {
   contractCode: string

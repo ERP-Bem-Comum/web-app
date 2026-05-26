@@ -19,6 +19,8 @@ interface ContractSupplierProps {
         'name' | 'id' | 'cnpj' | 'serviceCategory' | 'fantasyName' | 'pixInfo' | 'bancaryInfo'
       >
     | undefined
+  showSearch?: boolean
+  onContractorData?: (data: any) => void
 }
 
 export const ContractSupplierInfo = ({
@@ -26,6 +28,8 @@ export const ContractSupplierInfo = ({
   onSupplierChange,
   defaultSupplier,
   bancaryDataCallback,
+  showSearch,
+  onContractorData,
 }: ContractSupplierProps) => {
   const [supplier, setSupplier] = useState<typeof defaultSupplier>(defaultSupplier)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -47,6 +51,7 @@ export const ContractSupplierInfo = ({
           dv: '',
         },
       )
+      onContractorData?.(supplier)
     } else {
       isMounted.current = true
     }
@@ -77,22 +82,16 @@ export const ContractSupplierInfo = ({
 
   return (
     <Fragment>
-      {editable && (
-        <SearchByCPForCNPJ
-          options={options.Suppliers()}
-          defaultId={supplier?.id}
-          handleRefetch={handleRefetch}
-        />
-      )}
-      <Grid item xs={12} className="flex">
-        <div className="w-full h-full p-3 ">
-          <h1 className="font-black mb-2">Fornecedor:</h1>
-          <p>Nome: {supplier?.name}</p>
-          <p>Fome fantasia: {supplier?.fantasyName}</p>
-          <p>CNPJ: {maskCNPJ(supplier?.cnpj ?? '')}</p>
-          <p>Categoria do serviço: {supplier?.serviceCategory}</p>
+      {showSearch && (
+        <div className="mb-2">
+          <SearchByCPForCNPJ
+            options={options.Suppliers()}
+            defaultId={supplier?.id}
+            handleRefetch={handleRefetch}
+            label="Buscar nome ou CNPJ"
+          />
         </div>
-      </Grid>
+      )}
       <ModalNotFound
         open={!!errorMessage}
         text={errorMessage ?? 'Fornecedor não encontrado'}

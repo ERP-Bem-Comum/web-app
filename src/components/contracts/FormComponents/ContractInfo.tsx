@@ -19,10 +19,10 @@ export const ContractInfo = ({ control, editable, errors, isAditive }: ContractI
 
   return (
     <Fragment>
-      <Grid item xs={12}>
+      <Grid size={{ xs: 12 }}>
         <TitleLabel>Contrato:</TitleLabel>
       </Grid>
-      <Grid item xs={12 / 5}>
+      <Grid size={{ xs: 12 / 5 }}>
         <AutoComplete
           error={errors.contractType?.message}
           control={control}
@@ -32,7 +32,7 @@ export const ContractInfo = ({ control, editable, errors, isAditive }: ContractI
           label="Tipo:"
         />
       </Grid>
-      <Grid item xs={12 / 5}>
+      <Grid size={{ xs: 12 / 5 }}>
         <AutoComplete
           error={errors.contractModel?.message as string}
           control={control}
@@ -42,7 +42,7 @@ export const ContractInfo = ({ control, editable, errors, isAditive }: ContractI
           label="Modelo:"
         />
       </Grid>
-      <Grid item xs={12 / 5}>
+      <Grid size={{ xs: 12 / 5 }}>
         <CustomTextField
           error={errors.object?.message}
           control={control}
@@ -51,7 +51,7 @@ export const ContractInfo = ({ control, editable, errors, isAditive }: ContractI
           label="Objeto:"
         />
       </Grid>
-      <Grid item xs={12 / 5}>
+      <Grid size={{ xs: 12 / 5 }}>
         <CustomTextField
           error={errors.totalValue?.message}
           control={control}
@@ -59,19 +59,6 @@ export const ContractInfo = ({ control, editable, errors, isAditive }: ContractI
           name="totalValue"
           label="R$ Valor"
           currency
-        />
-      </Grid>
-      <Grid item xs={12 / 5}>
-        <AutoComplete
-          error={errors.agreement?.message}
-          control={control}
-          editable={editable}
-          options={[
-            { id: 1, name: 'Sim' },
-            { id: 0, name: 'Não' },
-          ]}
-          name={'agreement'}
-          label="Acordo de Cooperação?"
         />
       </Grid>
     </Fragment>

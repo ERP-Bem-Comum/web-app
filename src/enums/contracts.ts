@@ -2,6 +2,7 @@ export enum ContractType {
   SUPPLIER = 'Fornecedor',
   FINANCIER = 'Financiador',
   COLLABORATOR = 'Colaborador',
+  ACT = 'ACT',
 }
 
 export enum ContractModel {
@@ -10,10 +11,18 @@ export enum ContractModel {
 }
 
 export enum ContractStatus {
+  RASCUNHO = 'Rascunho',
   PENDING = 'Pendente',
   SIGNED = 'Assinado',
   ONGOING = 'Em andamento',
   FINISHED = 'Finalizado',
+  DISTRATO = 'Distrato',
+}
+
+export enum AditivoStatus {
+  RASCUNHO = 'Rascunho',
+  PENDENTE = 'Pendente',
+  HOMOLOGADO = 'Homologado',
 }
 
 export enum TranslatedFields {
@@ -29,6 +38,5 @@ export enum TranslatedFields {
   pixInfo = 'dados PIX',
   contractPeriod = 'periodo',
   program = 'programa',
-  agreement = 'acordo',
   totalValue = 'valor',
 }

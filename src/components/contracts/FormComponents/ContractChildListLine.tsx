@@ -34,8 +34,7 @@ export const ContractsChildListLine = ({
   return (
     <Fragment key={'child' + index}>
       <Grid
-        item
-        xs={12}
+        size={{ xs: 12 }}
         sx={{
           display: 'flex',
           alignItems: 'center',

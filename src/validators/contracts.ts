@@ -1,8 +1,8 @@
 import { ContractModel, ContractStatus, ContractType } from '@/enums/contracts'
-import { z } from 'zod'
-import { bancaryInfoRefined, pixInfoRefined } from './global'
+import { z } from 'zod/v3'
+import { bancaryInfoRefined, pixInfoRefined, bancaryInfoSchema, pixInfoSchema } from './global'
 import { isAllEmpty } from '@/utils/emptyFilled'
-import { BancaryInfo, PixInfo } from '@/types/global'
+
 
 const handleTypeError = (field: string, type: string) => {
   return `O campo ${field} deve ser um(a) ${type}.`
@@ -27,35 +27,37 @@ export const filterContractsSchema = z.object({
       end: z.date(),
     })
     .nullish(),
-  agreement: z.coerce.number().nullish(),
   contractType: z.nativeEnum(ContractType).nullish(),
   contractStatus: z.nativeEnum(ContractStatus).nullish(),
+})
+
+const contractorSchema = z.object({
+  id: z.number().nullish(),
+  name: z.string().nullish(),
+  email: z.string().nullish(),
+  telephone: z.string().nullish(),
+  cnpj: z.string().nullish(),
+  cpf: z.string().nullish(),
+  corporateName: z.string().nullish(),
+  fantasyName: z.string().nullish(),
+  serviceCategory: z.string().nullish(),
+  role: z.string().nullish(),
+  address: z.string().nullish(),
+  bancaryInfo: bancaryInfoSchema.nullish(),
+  pixInfo: pixInfoSchema.nullish(),
 })
 
 const commonContractSchema = z.object({
   contractModel: z.nativeEnum(ContractModel, handleErrorMessage('Modelo de contrato')),
   object: z.string().min(1, 'Objeto é obrigatório.'),
   totalValue: z.number(handleErrorMessage('valor total')),
-  agreement: z.coerce.boolean(handleErrorMessage('acordo')),
   contractPeriod: z
     .object({
       start: z.date(handleErrorMessage('Inicio do periodo', 'data')),
-      end: z.date(handleErrorMessage('Fim do periodo', 'data')).nullable().optional(),
-      isIndefinite: z
-        .boolean()
-        .nullable()
-        .optional()
-        .transform((val) => val ?? false),
+      end: z.date(handleErrorMessage('Fim do periodo', 'data')),
     })
     .refine(
-      (data) => data.isIndefinite || data.end !== null,
-      {
-        message: 'Fim do periodo é obrigatório quando não for prazo indeterminado.',
-        path: ['end'],
-      },
-    )
-    .refine(
-      (data) => !data.end || !data.start || data.end > data.start,
+      (data) => data.end > data.start,
       {
         message: 'Fim do periodo deve ser posterior ao início.',
         path: ['end'],
@@ -64,11 +66,20 @@ const commonContractSchema = z.object({
   supplierId: z.number(handleErrorMessage('Fornecedor')).nullish(),
   financierId: z.number(handleErrorMessage('Financiador')).nullish(),
   collaboratorId: z.number(handleErrorMessage('Colaborador')).nullish(),
+  supplier: contractorSchema.nullish(),
+  financier: contractorSchema.nullish(),
+  collaborator: contractorSchema.nullish(),
   parentId: z.number().nullish(),
   pixInfo: pixInfoRefined.nullish(),
   bancaryInfo: bancaryInfoRefined.nullish(),
   createdById: z.number().nullish(),
   updatedBy: z.number().nullish(),
+  contractStatus: z.nativeEnum(ContractStatus).nullish(),
+  dataAssinatura: z.string().nullish(),
+  signedContractUrl: z.string().nullish(),
+  observations: z.string().nullish(),
+  categorizacao: z.array(z.string()).nullish(),
+  centroDeCusto: z.array(z.string()).nullish(),
 })
 
 export const defaultFullContractSchema = z
@@ -90,6 +101,12 @@ export const supplierContractSchema = z
   })
   .merge(defaultFullContractSchema)
 
+const actContractSchema = z
+  .object({
+    contractType: z.literal(ContractType.ACT),
+  })
+  .merge(defaultFullContractSchema)
+
 const financierContractSchema = z
   .object({
     contractType: z.literal(ContractType.FINANCIER),
@@ -101,11 +118,13 @@ export const contractSchema = z
     financierContractSchema,
     collaboratorContractSchema,
     supplierContractSchema,
+    actContractSchema,
   ])
   .superRefine((values, ctx) => {
     if (
       values.contractType === ContractType.COLLABORATOR ||
-      values.contractType === ContractType.SUPPLIER
+      values.contractType === ContractType.SUPPLIER ||
+      values.contractType === ContractType.ACT
     ) {
       const isPixInfoEmpty = isAllEmpty(values.pixInfo)
       const { accountNumber, agency, bank } = values.bancaryInfo || {}
@@ -127,7 +146,8 @@ export const contractSchema = z
   .transform((data) => {
     if (
       data.contractType === ContractType.COLLABORATOR ||
-      data.contractType === ContractType.SUPPLIER
+      data.contractType === ContractType.SUPPLIER ||
+      data.contractType === ContractType.ACT
     ) {
       const { accountNumber, agency, bank } = data.bancaryInfo || {}
 
@@ -135,14 +155,14 @@ export const contractSchema = z
         return {
           ...data,
           pixInfo: data.pixInfo,
-          bancaryInfo: { accountNumber: null, agency: null, bank: null, dv: null } as BancaryInfo,
+          bancaryInfo: { accountNumber: null, agency: null, bank: null, dv: null },
         }
       }
       if (isAllEmpty(data.pixInfo)) {
         return {
           ...data,
           bancaryInfo: data.bancaryInfo,
-          pixInfo: { key: null, key_type: null } as PixInfo,
+          pixInfo: { key: null, key_type: null },
         }
       }
     } else {

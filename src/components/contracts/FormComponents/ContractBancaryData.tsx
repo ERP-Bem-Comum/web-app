@@ -22,10 +22,10 @@ export const ContractBancaryData = ({ control, editable, errors }: ContractBanca
 
   return (
     <Fragment>
-      <Grid item xs={12}>
+      <Grid size={{ xs: 12 }}>
         <TitleLabel>Dados bancários:</TitleLabel>
       </Grid>
-      <Grid item xs={12 / 4}>
+      <Grid size={{ xs: 12 / 4 }}>
         <AutoComplete
           control={control}
           editable={editable}
@@ -35,7 +35,7 @@ export const ContractBancaryData = ({ control, editable, errors }: ContractBanca
           error={errors.bancaryInfo?.bank?.message || errors.bancaryInfo?.root?.message}
         />
       </Grid>
-      <Grid item xs={12 / 4}>
+      <Grid size={{ xs: 12 / 4 }}>
         <AgencyComponent
           control={control}
           editable={editable}
@@ -43,7 +43,7 @@ export const ContractBancaryData = ({ control, editable, errors }: ContractBanca
           name="bancaryInfo.agency"
         />
       </Grid>
-      <Grid item xs={12 / 4}>
+      <Grid size={{ xs: 12 / 4 }}>
         <CustomTextField
           error={errors.bancaryInfo?.accountNumber?.message || errors.bancaryInfo?.root?.message}
           control={control}
@@ -52,7 +52,7 @@ export const ContractBancaryData = ({ control, editable, errors }: ContractBanca
           label="Número da Conta"
         />
       </Grid>
-      <Grid item xs={12 / 4}>
+      <Grid size={{ xs: 12 / 4 }}>
         <CustomTextField
           error={undefined}
           control={control}

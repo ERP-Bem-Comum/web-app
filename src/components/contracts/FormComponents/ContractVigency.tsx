@@ -3,9 +3,9 @@ import { TitleLabel } from '@/components/layout/TitleLabel'
 import { ContractType } from '@/enums/contracts'
 import { useOptions } from '@/hooks/useOptions'
 import { Contract, otherContractSchema } from '@/types/contracts'
-import { Grid, Checkbox, FormControlLabel } from '@mui/material'
+import { Grid } from '@mui/material'
 import { Fragment } from 'react'
-import { Control, FieldErrors, Controller, UseFormSetValue } from 'react-hook-form'
+import { Control, FieldErrors, Controller } from 'react-hook-form'
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers'
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { ptBR as brLocale } from 'date-fns/locale'
@@ -16,7 +16,6 @@ interface ContractVigencyProps {
   errors: FieldErrors<otherContractSchema>
   contractType: ContractType
   values: otherContractSchema
-  setValue: UseFormSetValue<Contract>
 }
 
 export const ContractVigency = ({
@@ -25,18 +24,16 @@ export const ContractVigency = ({
   errors,
   contractType,
   values,
-  setValue,
 }: ContractVigencyProps) => {
   const { options } = useOptions()
   const disableWhenIsFinancier = contractType === ContractType.FINANCIER
-  const isIndefinite = values.contractPeriod?.isIndefinite ?? false
 
   return (
     <Fragment>
-      <Grid item xs={12}>
+      <Grid size={{ xs: 12 }}>
         <TitleLabel>Vigência:</TitleLabel>
       </Grid>
-      <Grid item xs={12 / 3}>
+      <Grid size={{ xs: 12 / 3 }}>
         <AutoComplete
           error={errors.programId?.message as string}
           control={control}
@@ -46,7 +43,7 @@ export const ContractVigency = ({
           label="Programa:"
         />
       </Grid>
-      <Grid item xs={12 / 3}>
+      <Grid size={{ xs: 12 / 3 }}>
         <AutoComplete
           error={errors.budgetPlanId?.message}
           control={control}
@@ -56,7 +53,7 @@ export const ContractVigency = ({
           label="Plano orçamentário:"
         />
       </Grid>
-      <Grid item xs={12 / 6}>
+      <Grid size={{ xs: 12 / 6 }}>
         <Controller
           name="contractPeriod.start"
           control={control}
@@ -80,7 +77,7 @@ export const ContractVigency = ({
           )}
         />
       </Grid>
-      <Grid item xs={12 / 6}>
+      <Grid size={{ xs: 12 / 6 }}>
         <Controller
           name="contractPeriod.end"
           control={control}
@@ -90,7 +87,7 @@ export const ContractVigency = ({
                 label="Data Fim:"
                 value={field.value ?? null}
                 onChange={(date) => field.onChange(date)}
-                disabled={!editable || isIndefinite}
+                disabled={!editable}
                 slotProps={{
                   textField: {
                     size: 'small',
@@ -104,33 +101,6 @@ export const ContractVigency = ({
           )}
         />
       </Grid>
-      {contractType === ContractType.COLLABORATOR && (
-        <Grid item xs={12}>
-          <Controller
-            name="contractPeriod.isIndefinite"
-            control={control}
-            render={({ field }) => (
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={field.value ?? false}
-                    onChange={(e) => {
-                      const isChecked = e.target.checked
-                      field.onChange(isChecked)
-
-                      if (isChecked) {
-                        setValue('contractPeriod.end', null)
-                      }
-                    }}
-                    disabled={!editable}
-                  />
-                }
-                label="Prazo Indeterminado (CLT)"
-              />
-            )}
-          />
-        </Grid>
-      )}
     </Fragment>
   )
 }

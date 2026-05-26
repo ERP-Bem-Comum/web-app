@@ -9,7 +9,7 @@ interface ContractFileInput {
 
 export const ContractFileInput = ({ onChange, initialValue }: ContractFileInput) => {
   return (
-    <Grid item xs={12}>
+    <Grid size={{ xs: 12 }}>
       <InputFileV2 onChange={onChange} initialValue={initialValue} />
     </Grid>
   )

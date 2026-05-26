@@ -15,12 +15,74 @@ import api from './api'
 import { updateFile, uploadFile } from './files'
 import { UseDebouncedSearch } from '@/hooks/useDebouncedSearch'
 import { flattenParams } from '@/utils/flattenParams'
+import {
+  localDbGetContracts,
+  localDbGetContractById,
+  localDbSaveContract,
+  localDbUpdateContract,
+  localDbAddAditive,
+  localDbDeleteContract,
+  seedLocalDb,
+  type LocalContract,
+} from '@/mocks/localDb'
+
+/* ═════════════════════════════════════
+   HELPERS
+   ═════════════════════════════════════ */
+
+function isBackendOfflineError(error: unknown): error is { isBackendOffline: boolean } {
+  return typeof error === 'object' && error !== null && 'isBackendOffline' in error
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onloadend = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
+async function enrichContractWithFiles(contract: Contract, files: CustomFile[] | null): Promise<Contract> {
+  // Se o contrato já tem signedContractUrl preenchido, não precisa converter
+  if (contract.signedContractUrl) return contract
+  if (!files || files.length === 0) return contract
+  const first = files[0]
+  if (first.file) {
+    try {
+      const base64 = await fileToBase64(first.file)
+      return { ...contract, signedContractUrl: base64 }
+    } catch (err) {
+      console.error('[enrichContractWithFiles] Erro na conversão:', err)
+      return contract
+    }
+  }
+  if (first.fileUrl) {
+    return { ...contract, signedContractUrl: first.fileUrl }
+  }
+  return contract
+}
+
+/* ═════════════════════════════════════
+   SEED (executa uma vez no client)
+   ═════════════════════════════════════ */
+
+let seeded = false
+function ensureSeeded() {
+  if (typeof window !== 'undefined' && !seeded) {
+    seedLocalDb()
+    seeded = true
+  }
+}
+
+/* ═════════════════════════════════════
+   HOOKS
+   ═════════════════════════════════════ */
 
 export const useGetAllFilteredContracts = ({
   paginationParams,
   payableParams,
   search,
-  agreement,
 }: ParamsContracts) => {
   const searchOnHold = UseDebouncedSearch(search)
 
@@ -31,8 +93,8 @@ export const useGetAllFilteredContracts = ({
     refetch: refetchFilteredContracts,
     isRefetching,
   } = useQuery({
-    queryKey: ['contracts', payableParams, paginationParams, searchOnHold, agreement],
-    queryFn: () => getAllFilteredContracts({ paginationParams, payableParams, search, agreement }),
+    queryKey: ['contracts', payableParams, paginationParams, searchOnHold],
+    queryFn: () => getAllFilteredContracts({ paginationParams, payableParams, search }),
     refetchOnWindowFocus: false,
     refetchOnMount: true,
     placeholderData: keepPreviousData,
@@ -85,6 +147,10 @@ export const useGetHistoryById = (id: number | null, open: boolean) => {
   }
 }
 
+/* ═════════════════════════════════════
+   API + LOCAL DB FALLBACK
+   ═════════════════════════════════════ */
+
 const getAllFilteredContracts = async (
   params?: ParamsContracts,
 ): Promise<Response<ContractRow[]>> => {
@@ -99,8 +165,21 @@ const getAllFilteredContracts = async (
       meta: resp.data.meta,
     }
   } catch (error) {
-    console.error(error)
-    return handleError<ContractRow[]>(error)
+    ensureSeeded()
+    console.warn('[LOCAL DB] Backend indisponível. Usando contratos locais.')
+    const rows = localDbGetContracts()
+    return {
+      status: 200,
+      data: rows as unknown as ContractRow[], // LocalContract → ContractRow (campos compatíveis em runtime)
+      error: '',
+      meta: {
+        itemCount: rows.length,
+        totalItems: rows.length,
+        itemsPerPage: 10,
+        totalPages: 1,
+        currentPage: 1,
+      },
+    }
   }
 }
 
@@ -112,6 +191,7 @@ export const createContract = async (
     const resp = await api.post('/contracts', contract)
     await uploadFile({ contractId: resp.data }, files, 'contracts')
     queryClient.invalidateQueries({ queryKey: ['contracts'] })
+    queryClient.refetchQueries({ queryKey: ['contracts'], type: 'all' })
 
     return {
       status: resp.status,
@@ -120,8 +200,18 @@ export const createContract = async (
       meta: null,
     }
   } catch (error) {
-    console.error(error)
-    return handleError<boolean | string>(error)
+    ensureSeeded()
+    console.warn('[LOCAL DB] Salvando contrato localmente.')
+    const enriched = await enrichContractWithFiles(contract, files)
+    localDbSaveContract(enriched as unknown as Partial<LocalContract>)
+    queryClient.invalidateQueries({ queryKey: ['contracts'] })
+    queryClient.refetchQueries({ queryKey: ['contracts'], type: 'all' })
+    return {
+      status: 201,
+      data: true,
+      error: '',
+      meta: null,
+    }
   }
 }
 
@@ -134,6 +224,7 @@ export const createAditive = async (
     const resp = await api.post('/contracts/aditive', contract)
     await uploadFile({ contractId: resp.data, userId }, files, 'contracts')
     queryClient.invalidateQueries({ queryKey: ['contracts'] })
+    queryClient.refetchQueries({ queryKey: ['contracts'], type: 'all' })
 
     return {
       status: resp.status,
@@ -142,8 +233,20 @@ export const createAditive = async (
       meta: null,
     }
   } catch (error) {
-    console.error(error)
-    return handleError<boolean | string>(error)
+    ensureSeeded()
+    console.warn('[LOCAL DB] Salvando aditivo localmente.')
+    const enriched = await enrichContractWithFiles(contract, files)
+    if (enriched.parentId) {
+      localDbAddAditive(enriched.parentId, enriched as unknown as Partial<LocalContract>)
+    }
+    queryClient.invalidateQueries({ queryKey: ['contracts'] })
+    queryClient.refetchQueries({ queryKey: ['contracts'], type: 'all' })
+    return {
+      status: 201,
+      data: true,
+      error: '',
+      meta: null,
+    }
   }
 }
 
@@ -171,8 +274,18 @@ export const updateContract = async ({
       meta: null,
     }
   } catch (error) {
-    console.error(error)
-    return handleError<boolean | string>(error)
+    ensureSeeded()
+    console.warn('[LOCAL DB] Atualizando contrato localmente. ID:', id)
+    if (id) {
+      const enriched = await enrichContractWithFiles(contract, files)
+      localDbUpdateContract(id, enriched as unknown as Partial<LocalContract>)
+    }
+    return {
+      status: 200,
+      data: true,
+      error: '',
+      meta: null,
+    }
   }
 }
 
@@ -191,12 +304,23 @@ export const editContractPaymentInfo = async (
       meta: null,
     }
   } catch (error) {
-    console.error(error)
-    return handleError<boolean | string>(error)
+    ensureSeeded()
+    console.warn('[LOCAL DB] Atualizando dados bancários localmente. ID:', id)
+    localDbUpdateContract(id, {
+      bancaryInfo: contract.bancaryInfo,
+      pixInfo: contract.pixInfo,
+    } as unknown as Partial<LocalContract>)
+    queryClient.refetchQueries({ queryKey: ['ContractById', id] })
+    return {
+      status: 200,
+      data: true,
+      error: '',
+      meta: null,
+    }
   }
 }
 
-export const getContractById = async (id: number | null): Promise<Response<IContract> | void> => {
+export const getContractById = async (id: number | null): Promise<Response<IContract> | null> => {
   if (id) {
     try {
       const resp = await api.get<IContract>(`/contracts/${id}`)
@@ -207,10 +331,21 @@ export const getContractById = async (id: number | null): Promise<Response<ICont
         meta: null,
       }
     } catch (error) {
-      console.error(error)
+      ensureSeeded()
+      console.warn('[LOCAL DB] Buscando contrato local. ID:', id)
+      const local = localDbGetContractById(id)
+      if (local) {
+        return {
+          status: 200,
+          data: local,
+          error: '',
+          meta: null,
+        }
+      }
       return handleError<IContract>(error)
     }
   }
+  return null
 }
 
 export const getHistoryById = async (
@@ -227,7 +362,7 @@ export const getHistoryById = async (
         meta: null,
       }
     } catch (error) {
-      console.error(error)
+      if (!isBackendOfflineError(error)) console.error(error)
       return handleError<ContractPaymentHistory>(error)
     }
   }
@@ -246,8 +381,17 @@ export const deleteContract = async (id: number): Promise<Response<void>> => {
       meta: null,
     }
   } catch (error) {
-    console.error(error)
-    return handleError<void>(error)
+    ensureSeeded()
+    console.warn('[LOCAL DB] Removendo contrato local. ID:', id)
+    localDbDeleteContract(id)
+    queryClient.invalidateQueries({ queryKey: ['contracts'] })
+    queryClient.removeQueries({ queryKey: ['ContractById', id] })
+    return {
+      status: 200,
+      data: undefined,
+      error: '',
+      meta: null,
+    }
   }
 }
 
@@ -264,7 +408,7 @@ export const getCotnractsCSV = async (params: ParamsContracts): Promise<Response
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<Blob>(error)
   }
 }
@@ -282,7 +426,7 @@ export const getContractsPDF = async (params: ParamsContracts): Promise<Response
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<Blob>(error)
   }
 }

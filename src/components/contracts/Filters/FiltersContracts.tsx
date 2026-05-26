@@ -17,28 +17,30 @@ export const FilterContracts = ({ control, errors, handleFilter }: FilterPayable
   const { options, contractsOp } = useOptions()
 
   return (
-    <Grid container spacing={2} className="bg-[#F6FAFB] p-4 w-full m-0 items-center">
-      <Grid item xs={13.8 / 5}>
+    <Grid container spacing={2} className="p-4 w-full m-0 items-center">
+      <Grid size={{ xs: 13.8 / 5 }}>
         <AutoComplete
           control={control}
           options={options.BudgetPlan()}
           name="payableParams.budgetPlanId"
           label="Plano Orçamentário:"
+          placeholder="Selecione o plano"
           editable
           error={errors.payableParams?.budgetPlanId?.message}
         />
       </Grid>
-      <Grid item xs={13.8 / 5}>
+      <Grid size={{ xs: 13.8 / 5 }}>
         <AutoComplete
           control={control}
           options={contractsOp.contractType}
           name="payableParams.contractType"
           label="Tipo de contrato:"
+          placeholder="Selecione o tipo"
           editable
           error={errors.payableParams?.contractType?.message}
         />
       </Grid>
-      <Grid item xs={13.8 / 5}>
+      <Grid size={{ xs: 13.8 / 5 }}>
         <FilterDate
           control={control}
           label="Vigência:"
@@ -46,17 +48,7 @@ export const FilterContracts = ({ control, errors, handleFilter }: FilterPayable
           error={errors.payableParams?.contractPeriod?.message}
         />
       </Grid>
-      <Grid item xs={13.8 / 5}>
-        <AutoComplete
-          control={control}
-          options={contractsOp.contractStatus}
-          name="payableParams.contractStatus"
-          label="Status:"
-          editable
-          error={errors.payableParams?.contractStatus?.message}
-        />
-      </Grid>
-      <Grid item sx={{ width: 'fit-content' }} container justifyContent="flex-end">
+      <Grid sx={{ width: 'fit-content', justifyContent: 'flex-end' }} container>
         <Button
           variant="erpSecondary"
           className="mr-4"

@@ -11,12 +11,16 @@ interface ContractFinancierProps {
   editable: boolean
   onFinancierChange: (id: number) => void
   defaultFinancier: Pick<IFinancier, 'id' | 'name' | 'cnpj' | 'address' | 'telephone'> | undefined
+  showSearch?: boolean
+  onContractorData?: (data: any) => void
 }
 
 export const ContractFinancierInfo = ({
   editable,
   onFinancierChange,
   defaultFinancier,
+  showSearch,
+  onContractorData,
 }: ContractFinancierProps) => {
   const [financier, setFinancier] = useState<typeof defaultFinancier>(defaultFinancier)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -25,6 +29,7 @@ export const ContractFinancierInfo = ({
   useEffect(() => {
     if (financier?.id) {
       onFinancierChange(financier.id)
+      onContractorData?.(financier)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [financier])
@@ -45,22 +50,16 @@ export const ContractFinancierInfo = ({
 
   return (
     <Fragment>
-      {editable && (
-        <SearchByCPForCNPJ
-          options={options.Financiers()}
-          defaultId={defaultFinancier?.id}
-          handleRefetch={handleRefetch}
-        />
-      )}
-      <Grid item xs={12}>
-        <div className="w-full h-full p-3">
-          <h1 className=" font-black mb-2">Financiador:</h1>
-          <p>Nome: {financier?.name}</p>
-          <p>CNPJ: {maskCNPJ(financier?.cnpj ?? '')}</p>
-          <p>Endereço: {financier?.address}</p>
-          <p>Telefone: {financier?.telephone}</p>
+      {showSearch && (
+        <div className="mb-2">
+          <SearchByCPForCNPJ
+            options={options.Financiers()}
+            defaultId={financier?.id}
+            handleRefetch={handleRefetch}
+            label="Buscar nome ou CNPJ"
+          />
         </div>
-      </Grid>
+      )}
       <ModalNotFound
         open={!!errorMessage}
         text={errorMessage ?? 'Financiador não encontrado'}
