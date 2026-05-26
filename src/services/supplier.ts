@@ -1,6 +1,6 @@
 import { EditPaymentInfo, Options, Response } from '@/types/global'
 import { ICreateSupplier, IGetSupplier, ISupplier } from '@/types/supplier'
-import { handleError } from '@/utils/errorHandling'
+import { handleError, isBackendOfflineError } from '@/utils/errorHandling'
 import { useQuery } from '@tanstack/react-query'
 import api from './api'
 import { queryClient } from 'lib/react-query'
@@ -36,7 +36,7 @@ export async function createSupplier(data: ICreateSupplier): Promise<Response<nu
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<null>(error)
   }
 }

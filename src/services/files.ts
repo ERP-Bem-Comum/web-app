@@ -19,7 +19,7 @@ export const uploadFile = async (data: ICreateFile, files: CustomFile[] | null, 
       },
     )
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError(error)
   }
 }
@@ -38,7 +38,7 @@ export const updateFile = async (data: IUpdateFile, files: CustomFile[] | null, 
       },
     )
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError(error)
   }
 }
@@ -65,7 +65,7 @@ export const signContract = async (data: ICreateFile, file: File) => {
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError(error)
   }
 }
@@ -91,7 +91,7 @@ export const settleContract = async (data: ICreateFile, file: File) => {
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<string>(error)
   }
 }
@@ -117,7 +117,7 @@ export const withdrawalContract = async (data: ICreateFile, file: File) => {
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError(error)
   }
 }
@@ -148,7 +148,7 @@ export const downloadFile = async (fileUrl: string) => {
 
     window.URL.revokeObjectURL(url)
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError(error)
   }
 }

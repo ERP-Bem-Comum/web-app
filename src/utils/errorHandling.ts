@@ -16,3 +16,11 @@ export const handleError = <T>(error: unknown): Response<T> => {
     }
   }
 }
+
+/**
+ * Verifica se o erro é o esperado quando o backend está offline
+ * em modo AUTH_BYPASS_ENABLED (401/403 interceptado).
+ */
+export function isBackendOfflineError(error: unknown): error is { isBackendOffline: boolean } {
+  return typeof error === 'object' && error !== null && 'isBackendOffline' in error
+}

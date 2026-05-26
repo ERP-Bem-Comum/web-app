@@ -15,7 +15,7 @@ async function getDashboardStatistics(): Promise<Response<DashboardStatistics>> 
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<DashboardStatistics>(error)
   }
 }

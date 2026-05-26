@@ -1,7 +1,7 @@
 import { Response } from '@/types/global'
 import { AppointmentRow, SearchAppointmentParams } from '@/types/searchAppointments'
 import api from './api'
-import { handleError } from '@/utils/errorHandling'
+import { handleError, isBackendOfflineError } from '@/utils/errorHandling'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { CreateBankReconciliation, CreatebankRecordApiOutput } from '@/types/reconciliation'
 import { responseNewConciliation } from './bankDetails'
@@ -42,7 +42,7 @@ const getAppointments = async (
       meta: resp.data.meta,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) if (!isBackendOfflineError(error)) console.error(error)
     return handleError<AppointmentRow[]>(error)
   }
 }
@@ -64,7 +64,7 @@ export const createReconciliation = async (
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) if (!isBackendOfflineError(error)) console.error(error)
     return handleError<responseNewConciliation>(error)
   } finally {
     queryClient.invalidateQueries({ queryKey: ['filteredPayables'] })
@@ -85,7 +85,7 @@ export const deleteReconciliation = async (
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) if (!isBackendOfflineError(error)) console.error(error)
     return handleError<{ newBalance: number }>(error)
   } finally {
     queryClient.invalidateQueries({ queryKey: ['filteredPayables'] })

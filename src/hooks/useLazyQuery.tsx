@@ -11,7 +11,7 @@ const useLazyQuery = (key: string, queryFn: () => Promise<Options[] | undefined>
     refetchOnMount: false,
     refetchOnReconnect: false,
     refetchOnWindowFocus: false,
-    enabled: true,
+    enabled: false,
   })
 
   const { data, refetch } = queryInstance

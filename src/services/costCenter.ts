@@ -5,7 +5,7 @@ import { ICreateCostCenterSubCategory } from '@/types/subCategory'
 import { useQuery } from '@tanstack/react-query'
 import api from './api'
 import apiOptions from './apiOptions'
-import { handleError } from '@/utils/errorHandling'
+import { handleError, isBackendOfflineError } from '@/utils/errorHandling'
 import { handleOptionsError } from './handleOptionsError'
 
 export function useGetCostCenterById(id: string | any) {
@@ -123,11 +123,11 @@ export const createCostCenter = async (data: ICreateCostCenter) => {
   try {
     return await api.post('cost-centers', data)
   } catch (error: any) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return {
-      status: error.response.data.status,
+      status: error.response?.data?.status ?? 500,
       data: {
-        message: error.response.data.message,
+        message: error.response?.data?.message ?? 'Erro ao criar centro de custo',
       },
     }
   }
@@ -137,11 +137,11 @@ export const editCostCenter = async (data: Omit<IEditCostCenter, 'id'>, id: numb
   try {
     return await api.put(`cost-centers/${id}`, data)
   } catch (error: any) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return {
-      status: error.response.data.status,
+      status: error.response?.data?.status ?? 500,
       data: {
-        message: error.response.data.message,
+        message: error.response?.data?.message ?? 'Erro ao editar centro de custo',
       },
     }
   }
@@ -151,11 +151,11 @@ export const createCostCenterCategory = async (data: ICreateCostCenterCategory) 
   try {
     return await api.post('cost-centers/categories', data)
   } catch (error: any) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return {
-      status: error.response.data.status,
+      status: error.response?.data?.status ?? 500,
       data: {
-        message: error.response.data.message,
+        message: error.response?.data?.message ?? 'Erro ao criar categoria',
       },
     }
   }
@@ -168,11 +168,11 @@ export const editCostCenterCategory = async (
   try {
     return await api.put(`cost-centers/categories/${id}`, data)
   } catch (error: any) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return {
-      status: error.response.data.status,
+      status: error.response?.data?.status ?? 500,
       data: {
-        message: error.response.data.message,
+        message: error.response?.data?.message ?? 'Erro ao editar categoria',
       },
     }
   }
@@ -217,7 +217,7 @@ export async function toggleActiveCostCenter(id: number) {
     const response = await api.patch(`/cost-centers/${id}/toggle-active`)
     return response.data
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     handleError<null>(error)
   }
 }

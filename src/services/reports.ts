@@ -471,7 +471,7 @@ export function useGetTeamReport(params: IGetCollaborator) {
           return response
         })
         .catch((error) => {
-          console.error(error)
+          if (!isBackendOfflineError(error)) console.error(error)
           return handleError<TeamReportResponse>(error)
         })
       return resp.data

@@ -15,7 +15,7 @@ import {
   Payable,
   PayableRow,
 } from '@/types/Payables'
-import { handleError } from '@/utils/errorHandling'
+import { handleError, isBackendOfflineError } from '@/utils/errorHandling'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { HttpStatusCode } from 'axios'
 import { queryClient } from 'lib/react-query'
@@ -109,7 +109,7 @@ const getAllFilteredPayables = async (params?: ParamsPayables): Promise<Response
       meta: resp.data.meta,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<PayableRow[]>(error)
   }
 }
@@ -128,7 +128,7 @@ const getAllPayablesForApproval = async (
       meta: resp.data.meta,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<PayableRow[]>(error)
   }
 }
@@ -146,7 +146,7 @@ export const getPayablesCsv = async (params: ParamsPayables): Promise<Response<B
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<Blob>(error)
   }
 }
@@ -164,7 +164,7 @@ export const getPayablesPDF = async (params: ParamsPayables): Promise<Response<B
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<Blob>(error)
   }
 }
@@ -186,7 +186,7 @@ export const createPayable = async (
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<boolean | string>(error)
   }
 }
@@ -213,7 +213,7 @@ export const updatePayable = async ({
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<boolean | string>(error)
   }
 }
@@ -234,7 +234,7 @@ export const updatePayableinstallments = async (
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<boolean | string>(error)
   }
 }
@@ -256,7 +256,7 @@ export const updateCategoryPayable = async (
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<boolean | string>(error)
   }
 }
@@ -273,7 +273,7 @@ export const getPayableById = async (id: number | null): Promise<Response<IPayab
         meta: null,
       }
     } catch (error) {
-      console.error(error)
+      if (!isBackendOfflineError(error)) console.error(error)
       return handleError<IPayables>(error)
     }
   }
@@ -288,7 +288,7 @@ export const approveAccess = async (credentials: ICredentialsApprovePayable) => 
       error: '',
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<IApproval>(error)
   }
 }
@@ -304,7 +304,7 @@ export const approvePayable = async (id: number, data: IApprove) => {
       error: '',
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<IApprove>(error)
   }
 }
@@ -321,7 +321,7 @@ export const approveManyPayable = async (ids: number[], data: ApproveManyPayable
       error: '',
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<ApproveManyPayables>(error)
   }
 }
@@ -340,7 +340,7 @@ export const getPayableForApprovalById = async (
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<IPayables>(error)
   }
 }
@@ -357,7 +357,7 @@ export const deletePayable = async (id: number): Promise<Response<void>> => {
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<void>(error)
   }
 }

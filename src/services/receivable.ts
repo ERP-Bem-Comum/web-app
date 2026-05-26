@@ -2,7 +2,7 @@ import { CustomFile } from '@/components/files/fileItem'
 import { Response } from '@/types/global'
 import { Installments } from '@/types/installments'
 import { IReceivable, ParamsReceivables, Receivable, ReceivableRow } from '@/types/receivables'
-import { handleError } from '@/utils/errorHandling'
+import { handleError, isBackendOfflineError } from '@/utils/errorHandling'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { HttpStatusCode } from 'axios'
 import { queryClient } from 'lib/react-query'
@@ -74,7 +74,7 @@ const getAllFilteredReceivables = async (
       meta: resp.data.meta,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) if (!isBackendOfflineError(error)) console.error(error)
     return handleError<ReceivableRow[]>(error)
   }
 }
@@ -92,7 +92,7 @@ export const getReceivablesCsv = async (params: ParamsReceivables): Promise<Resp
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) if (!isBackendOfflineError(error)) console.error(error)
     return handleError<Blob>(error)
   }
 }
@@ -110,7 +110,7 @@ export const getReceivablesPDF = async (params: ParamsReceivables): Promise<Resp
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) if (!isBackendOfflineError(error)) console.error(error)
     return handleError<Blob>(error)
   }
 }
@@ -131,7 +131,7 @@ export const createReceivable = async (
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) if (!isBackendOfflineError(error)) console.error(error)
     return handleError<boolean | string>(error)
   }
 }
@@ -159,7 +159,7 @@ export const updateReceivable = async ({
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) if (!isBackendOfflineError(error)) console.error(error)
     return handleError<boolean | string>(error)
   }
 }
@@ -178,7 +178,7 @@ export const getReceivableById = async (
         meta: null,
       }
     } catch (error) {
-      console.error(error)
+      if (!isBackendOfflineError(error)) if (!isBackendOfflineError(error)) console.error(error)
       return handleError<IReceivable>(error)
     }
   }
@@ -200,7 +200,7 @@ export const updateCategoryReceivable = async (
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) if (!isBackendOfflineError(error)) console.error(error)
     return handleError<boolean | string>(error)
   }
 }
@@ -221,7 +221,7 @@ export const updateReceivableInstallments = async (
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) if (!isBackendOfflineError(error)) console.error(error)
     return handleError<boolean | string>(error)
   }
 }
@@ -237,7 +237,7 @@ export const deleteReceivable = async (id: number): Promise<Response<void>> => {
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) if (!isBackendOfflineError(error)) console.error(error)
     return handleError<void>(error)
   }
 }

@@ -16,7 +16,7 @@ export const generateCnab = async (selectedIds: Array<number>): Promise<Response
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<boolean>(error)
   }
 }

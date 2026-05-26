@@ -109,7 +109,7 @@ const getCreditCards = async (params: ParamsCreditCard): Promise<Response<Credit
       meta: resp.data?.meta ?? null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<CreditCard[]>(error)
   }
 }
@@ -125,7 +125,7 @@ const getCreditCardById = async ({ id }: dataParams<unknown>): Promise<Response<
       meta: resp.data.meta,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<CreditCard>(error)
   }
 }
@@ -147,7 +147,7 @@ export const CreateCard = async ({
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<void>(error)
   }
 }
@@ -165,7 +165,7 @@ export const updateCard = async ({ data, id }: dataParams<CreditCard>): Promise<
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<void>(error)
   }
 }
@@ -184,7 +184,7 @@ export const deleteCard = async ({ id }: dataParams<unknown>): Promise<Response<
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<void>(error)
   }
 }
@@ -204,7 +204,7 @@ const getMovimentations = async (
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<CreditCardMov[]>(error)
   }
 }
@@ -222,7 +222,7 @@ const getMovimentationById = async ({
       meta: resp.data.meta,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<CreditCardMov>(error)
   }
 }
@@ -244,7 +244,7 @@ export const CreateMovimentation = async ({
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<void>(error)
   }
 }
@@ -269,7 +269,7 @@ export const updateMovimentation = async ({
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<void>(error)
   }
 }
@@ -288,7 +288,7 @@ export const deleteMovimentation = async ({ id }: dataParams<unknown>): Promise<
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<void>(error)
   }
 }
@@ -306,7 +306,7 @@ export const getMovCsv = async (params: ParamsCreditCardMov): Promise<Response<B
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<Blob>(error)
   }
 }
@@ -324,7 +324,7 @@ export const getMovPDF = async (params: ParamsCreditCardMov): Promise<Response<B
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<Blob>(error)
   }
 }
@@ -346,7 +346,7 @@ export const ProcessMovimentations = async (
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<{ payableId: number }>(error)
   }
 }

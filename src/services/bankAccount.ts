@@ -1,6 +1,6 @@
 import { BankAccount, BankAccountRow, EditBankAccount } from '@/types/bankAccount'
 import { Options, Response } from '@/types/global'
-import { handleError } from '@/utils/errorHandling'
+import { handleError, isBackendOfflineError } from '@/utils/errorHandling'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import api from './api'
 import { queryClient } from 'lib/react-query'
@@ -70,7 +70,7 @@ const getBankAccounts = async (): Promise<Response<BankAccountRow[]>> => {
       meta: resp.data.meta,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<BankAccountRow[]>(error)
   }
 }
@@ -86,7 +86,7 @@ const getBankAccountById = async (id: number): Promise<Response<EditBankAccount>
       meta: resp.data.meta,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<EditBankAccount>(error)
   }
 }
@@ -116,7 +116,7 @@ export const createBankAccount = async (data: BankAccount): Promise<Response<voi
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<void>(error)
   }
 }
@@ -134,7 +134,7 @@ export const updateBankAccount = async (id: number, data: BankAccount): Promise<
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<void>(error)
   }
 }
@@ -150,7 +150,7 @@ export const deleteBankAccount = async (id: number): Promise<Response<void>> => 
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) console.error(error)
     return handleError<void>(error)
   }
 }

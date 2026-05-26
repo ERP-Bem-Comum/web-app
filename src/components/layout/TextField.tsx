@@ -13,6 +13,9 @@ interface FilterPickerProps<T extends FieldValues> {
   type?: HTMLInputTypeAttribute
 }
 
+const isBackendOfflineMessage = (msg: string | undefined): boolean =>
+  !!msg && msg.toLowerCase().includes('backend offline')
+
 export const CustomTextField = <T extends FieldValues>({
   control,
   name,
@@ -23,6 +26,7 @@ export const CustomTextField = <T extends FieldValues>({
   maxLength = 40,
   type = 'text',
 }: FilterPickerProps<T>) => {
+  const safeError = isBackendOfflineMessage(error) ? undefined : error
   const formatOnChange = (value: string) => {
     if (currency) return Number(value.replace(/\D/g, '')) / 100
     if (type === 'number') return Number(value.replace(/\D/g, ''))
@@ -53,8 +57,8 @@ export const CustomTextField = <T extends FieldValues>({
           label={label}
           size="small"
           fullWidth
-          error={!!error}
-          helperText={error ?? ''}
+          error={!!safeError}
+          helperText={safeError ?? ''}
           disabled={!editable}
         />
       )}

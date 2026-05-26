@@ -17,6 +17,9 @@ interface AutoCompleteProps<T extends FieldValues> {
 }
 // teste commit
 
+const isBackendOfflineMessage = (msg: string | undefined): boolean =>
+  !!msg && msg.toLowerCase().includes('backend offline')
+
 export const AutoComplete = <T extends FieldValues>({
   control,
   name,
@@ -29,6 +32,7 @@ export const AutoComplete = <T extends FieldValues>({
   hideButtonDropdown = false,
   placeholder,
 }: AutoCompleteProps<T>) => {
+  const safeError = isBackendOfflineMessage(error) ? undefined : error
   const transformValue = (value: string | boolean | number) => {
     return isBoolean(value) ? Number(value) : value
   }
@@ -64,8 +68,8 @@ export const AutoComplete = <T extends FieldValues>({
             <TextField
               {...params}
               label={label}
-              error={!!error}
-              helperText={error ?? ''}
+              error={!!safeError}
+              helperText={safeError ?? ''}
               placeholder={placeholder}
               fullWidth
             />

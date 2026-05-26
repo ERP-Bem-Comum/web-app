@@ -1,6 +1,6 @@
 import { Response } from '@/types/global'
 import api from './api'
-import { handleError } from '@/utils/errorHandling'
+import { handleError, isBackendOfflineError } from '@/utils/errorHandling'
 import { Balance, BalanceParams } from '@/types/apiBradesco'
 
 export const getBalance = async (params: BalanceParams): Promise<Response<Balance>> => {
@@ -16,7 +16,7 @@ export const getBalance = async (params: BalanceParams): Promise<Response<Balanc
       meta: null,
     }
   } catch (error) {
-    console.error(error)
+    if (!isBackendOfflineError(error)) if (!isBackendOfflineError(error)) console.error(error)
     return handleError<Balance>(error)
   }
 }
