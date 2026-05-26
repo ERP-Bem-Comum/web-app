@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
-    "baseUrl": "./",
-    "target": "es5",
+    "target": "ES2017",
     "lib": [
       "dom",
       "dom.iterable",
@@ -25,6 +24,9 @@
       }
     ],
     "paths": {
+      "lib/*": [
+        "./lib/*"
+      ],
       "@/*": [
         "./src/*"
       ],
@@ -38,7 +40,7 @@
         "/src/utils/*"
       ]
     },
-    "forceConsistentCasingInFileNames": false
+    "forceConsistentCasingInFileNames": true
   },
   "include": [
     "next-env.d.ts",

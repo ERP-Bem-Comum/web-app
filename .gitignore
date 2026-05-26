@@ -48,3 +48,12 @@ sonar-project.properties
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# next-agents-md
+.next-docs/
+
+# agent AI configs
+.claude/
+.kimi/
+
+# package-lock (project uses yarn)
+package-lock.json
