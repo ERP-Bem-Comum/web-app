@@ -1,6 +1,32 @@
 @import "tailwindcss";
 
 @theme {
+  /* ── Fontes ── */
+  --font-sans: var(--font-nunito), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, 'SF Mono', 'Menlo', monospace;
+  --font-heading: var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: var(--font-nunito), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-label: var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* ── Cores Institucionais ── */
+  --color-brand-blue: #396496;
+  --color-brand-blue-deep: #2d4f75;
+  --color-brand-blue-bg: #e8eef5;
+  --color-brand-blue-line: #8bb0d6;
+  --color-brand-green: #1f7d55;
+  --color-brand-green-deep: #176642;
+  --color-brand-green-bg: rgba(31, 125, 85, 0.10);
+  --color-brand-ink: #292820;
+  --color-brand-ink-2: #332e29;
+  --color-brand-ink-3: #4d4740;
+  --color-brand-ink-4: #736b61;
+  --color-brand-ink-5: #999187;
+  --color-brand-ink-6: #c7bfb2;
+  --color-brand-paper: #ffffff;
+  --color-brand-paper-warm: #faf7f2;
+  --color-brand-paper-beige: #f2ede5;
+  --color-brand-paper-rule: #e5ded4;
+
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
 
@@ -35,8 +61,8 @@
 }
 
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 .highcharts-credits {
@@ -48,12 +74,13 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: #7c7c7c;
-  border-radius: 20px;
+  background-color: rgb(229, 222, 212);
+  border-radius: 3px;
 }
 
 @layer base {
   :root {
+    --paper-rule: rgb(229, 222, 212);
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
 

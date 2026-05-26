@@ -58,6 +58,27 @@ const config: Config = {
           foreground: 'hsl(var(--card-foreground))',
         },
         erp: {
+          /* ── Cores Institucionais (Contratos) ── */
+          institutional: {
+            blue: '#396496',
+            blueDeep: '#2d4f75',
+            blueBg: '#e8eef5',
+            blueLine: '#8bb0d6',
+            green: '#1f7d55',
+            greenDeep: '#176642',
+            greenBg: 'rgba(31, 125, 85, 0.10)',
+            ink: '#292820',
+            ink2: '#332e29',
+            ink3: '#4d4740',
+            ink4: '#736b61',
+            ink5: '#999187',
+            ink6: '#c7bfb2',
+            paper: '#ffffff',
+            paperWarm: '#faf7f2',
+            paperBeige: '#f2ede5',
+            paperRule: '#e5ded4',
+          },
+          /* ── Cores legadas ── */
           primary: '#32C6F4',
           secondary: '#FAA21A',
           gradient: '#B0B0B0',
