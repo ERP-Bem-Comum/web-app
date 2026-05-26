@@ -18,7 +18,7 @@
   font-family: var(--font-nunito), 'Nunito', ui-sans-serif, system-ui, sans-serif;
   color: var(--contract-ink-2);
   font-variant-numeric: tabular-nums;
-  padding-bottom: 72px;
+  padding-bottom: 88px;
 }
 
 .panel {
@@ -198,11 +198,11 @@
   flex: 1;
   width: 100%;
   min-height: 0;
-  max-height: calc(100vh - 270px);
   overflow: auto;
   border: 1px solid var(--contract-rule);
-  border-radius: 8px;
+  border-radius: 8px 8px 0 0;
   background: var(--contract-paper);
+  padding-bottom: 16px;
 }
 
 /* Scrollbar horizontal mais visível na parte inferior */

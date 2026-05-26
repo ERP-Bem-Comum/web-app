@@ -77,7 +77,7 @@ function ScrollableTable({ items }: { items: ContractRow[] | undefined }) {
   }, [])
 
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div ref={tableWrapRef} className={styles.tableWrap}>
         <Table
           className={styles.table}
