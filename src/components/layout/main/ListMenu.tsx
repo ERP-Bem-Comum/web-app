@@ -44,49 +44,6 @@ export default function ListMenu() {
       sx={{ width: '100%' }}
       className="bg-erp-nav text-white "
     >
-      <ListItemButton
-        key={'dashboard'}
-        data-test="dashboard"
-        sx={{
-          width: '100%',
-          height: '50px',
-          py: '10px',
-          backgroundColor: selectedPage === 'dashboard' ? '#E8EEF0' : '#464E78',
-          color: selectedPage === 'dashboard' ? '#464E78' : 'white',
-          '&:hover': {
-            backgroundColor: '#009FD0',
-            color: 'white',
-          },
-          '&:active': {
-            backgroundColor: 'white',
-            color: '#464E78',
-          },
-        }}
-        onClick={() => {
-          router.push('/')
-          setSelectedPage('dashboard')
-          setSelectedPageBorder('dashboard')
-        }}
-      >
-        <ListItemIcon sx={{ pl: '4px', minWidth: 0, width: '40px !important' }}>
-          <MdOutlineNightShelter
-            size={20}
-            color={selectedPage === 'dashboard' ? '#464E78' : '#FFF'}
-          />
-        </ListItemIcon>
-        {onHover && (
-          <ListItemText
-            primary="Dashboard"
-            primaryTypographyProps={{
-              style: {
-                fontFamily: 'Inter, sans-serif',
-                fontSize: 14,
-                fontWeight: '500',
-              },
-            }}
-          />
-        )}
-      </ListItemButton>
       {PAGES.map((page, index) => {
         return (
           <Fragment key={index}>
@@ -125,11 +82,13 @@ export default function ListMenu() {
                     sx={{
                       whiteSpace: 'nowrap',
                     }}
-                    primaryTypographyProps={{
-                      style: {
-                        fontFamily: 'Inter, sans-serif',
-                        fontSize: 14,
-                        fontWeight: '500',
+                    slotProps={{
+                      primary: {
+                        style: {
+                          fontFamily: 'Inter, sans-serif',
+                          fontSize: 14,
+                          fontWeight: '500',
+                        },
                       },
                     }}
                   />
@@ -177,11 +136,13 @@ export default function ListMenu() {
                       >
                         <ListItemText
                           primary={item.name}
-                          primaryTypographyProps={{
-                            style: {
-                              fontFamily: 'Inter, sans-serif',
-                              fontSize: 14,
-                              fontWeight: '500',
+                          slotProps={{
+                            primary: {
+                              style: {
+                                fontFamily: 'Inter, sans-serif',
+                                fontSize: 14,
+                                fontWeight: '500',
+                              },
                             },
                           }}
                         />
@@ -228,11 +189,13 @@ export default function ListMenu() {
                                   >
                                     <ListItemText
                                       primary={sub?.name}
-                                      primaryTypographyProps={{
-                                        style: {
-                                          fontFamily: 'Inter, sans-serif',
-                                          fontSize: 14,
-                                          fontWeight: '500',
+                                      slotProps={{
+                                        primary: {
+                                          style: {
+                                            fontFamily: 'Inter, sans-serif',
+                                            fontSize: 14,
+                                            fontWeight: '500',
+                                          },
                                         },
                                       }}
                                     />

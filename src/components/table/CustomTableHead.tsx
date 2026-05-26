@@ -27,27 +27,35 @@ export const EnhancedTableHead = ({ headCells, selectComponent }: EnhancedTableH
             </div>
           </TableHeadCellStyled>
         )}
-        {headCells.map((headCell) => (
-          <TableHeadCellStyled key={headCell.id} align={headCell.align}>
-            <div
-              style={{
-                fontWeight: 600,
-                display: 'flex',
-                justifyContent: 'space-between',
-              }}
-            >
-              {headCell.label}
-              {headCell.sortable && headCell.onSort && (
-                <Image
-                  src={sortButton}
-                  alt="teste"
-                  className="aspect-square object-cover cursor-pointer"
-                  onClick={headCell.onSort}
-                />
-              )}
-            </div>
-          </TableHeadCellStyled>
-        ))}
+        {headCells.map((headCell) => {
+          const justifyContent =
+            headCell.align === 'center'
+              ? 'center'
+              : headCell.align === 'right'
+                ? 'flex-end'
+                : 'space-between'
+          return (
+            <TableHeadCellStyled key={headCell.id} align={headCell.align} width={headCell.width}>
+              <div
+                style={{
+                  fontWeight: 600,
+                  display: 'flex',
+                  justifyContent,
+                }}
+              >
+                {headCell.label}
+                {headCell.sortable && headCell.onSort && (
+                  <Image
+                    src={sortButton}
+                    alt="teste"
+                    className="aspect-square object-cover cursor-pointer"
+                    onClick={headCell.onSort}
+                  />
+                )}
+              </div>
+            </TableHeadCellStyled>
+          )
+        })}
       </TableRow>
     </TableHead>
   )

@@ -1,26 +1,26 @@
 import { IPaginationMeta } from '@/types/global'
 import { useEffect, useState, useCallback } from 'react'
 import { FieldValues, Path, UseFormSetValue } from 'react-hook-form'
-import { MdNavigateBefore, MdNavigateNext } from 'react-icons/md'
 
 interface PropsPaginator<T extends FieldValues> {
-  children: React.ReactNode
+  children?: React.ReactNode
   setValue?: UseFormSetValue<T>
   meta?: IPaginationMeta | null
+  filteredCount?: number
 }
 
 export const Paginator = <T extends FieldValues>({
   children,
   setValue,
   meta,
+  filteredCount,
 }: PropsPaginator<T>) => {
   const [page, setPage] = useState(1)
   const [qntPage, setQntPage] = useState(1)
-  const [limit, setLimit] = useState(5)
+  const [limit, setLimit] = useState(12)
   const [disablePrev, setDisablePrev] = useState(false)
   const [disableNext, setDisableNext] = useState(false)
 
-  // Use useCallback to memoize this function
   const handleSetValue = useCallback(
     (field: string, value: any) => {
       if (setValue) {
@@ -42,7 +42,6 @@ export const Paginator = <T extends FieldValues>({
     setDisableNext(page === qntPage)
   }, [page, qntPage])
 
-  // Use useCallback for all handlers
   const handlePrevPage = useCallback(() => {
     if (page > 1) {
       const newPage = page - 1
@@ -70,38 +69,48 @@ export const Paginator = <T extends FieldValues>({
     [handleSetValue],
   )
 
+  const totalItems = meta?.totalItems ?? 0
+  const showing = filteredCount !== undefined ? filteredCount : totalItems
+  const effectiveTotal = filteredCount !== undefined ? filteredCount : totalItems
+  const rangeStart = effectiveTotal === 0 ? 0 : (page - 1) * limit + 1
+  const rangeEnd = Math.min(page * limit, effectiveTotal)
+
   return (
-    <div>
-      {children}
-      <div className="flex justify-end items-center text-sm bg-[#F5F5F5] py-4 px-3 text-[#248DAD] flex-wrap">
-        Itens por página:
-        <select value={limit} onChange={handleChangeLimit}>
-          <option value={5} key={5}>
-            5
-          </option>
-          <option value={10} key={10}>
-            10
-          </option>
-          <option value={25} key={25}>
-            25
-          </option>
+    <div className="flex items-center gap-3 text-[11.5px] text-[#736b61]">
+      <span className="font-mono text-[11px] font-medium text-[#332e29]">
+        {showing === 0 ? '0' : `${rangeStart}–${rangeEnd}`} de {showing}
+      </span>
+      <span>·</span>
+      <div className="flex items-center gap-1.5">
+        <span>{limit} por página</span>
+        <select
+          value={limit}
+          onChange={handleChangeLimit}
+          className="bg-transparent border border-[#e5ded4] rounded px-1.5 py-0.5 text-[11px] font-mono cursor-pointer outline-none focus:border-[#396496]"
+        >
+          <option value={5}>5</option>
+          <option value={10}>10</option>
+          <option value={12}>12</option>
+          <option value={25}>25</option>
+          <option value={50}>50</option>
         </select>
-        <p
-          style={{
-            marginLeft: '25px',
-          }}
-        ></p>
-        {page} - {qntPage}
-        <p
-          style={{
-            marginRight: '25px',
-          }}
-        ></p>
-        <button onClick={handlePrevPage} disabled={disablePrev} className="disabled:text-[#A1E5FA]">
-          <MdNavigateBefore size={24} />
+      </div>
+      <div className="flex items-center gap-0.5 ml-2 pl-3 border-l border-[#e5ded4]">
+        <button
+          onClick={handlePrevPage}
+          disabled={disablePrev}
+          className="w-[26px] h-[26px] rounded-[5px] flex items-center justify-center text-[13px] text-[#736b61] transition-all hover:bg-[#faf7f2] hover:text-[#332e29] disabled:text-[#c7bfb2] disabled:cursor-not-allowed"
+          title="Página anterior"
+        >
+          ‹
         </button>
-        <button onClick={handleNextPage} disabled={disableNext} className="disabled:text-[#A1E5FA]">
-          <MdNavigateNext size={24} />
+        <button
+          onClick={handleNextPage}
+          disabled={disableNext}
+          className="w-[26px] h-[26px] rounded-[5px] flex items-center justify-center text-[13px] text-[#736b61] transition-all hover:bg-[#faf7f2] hover:text-[#332e29] disabled:text-[#c7bfb2] disabled:cursor-not-allowed"
+          title="Próxima página"
+        >
+          ›
         </button>
       </div>
     </div>

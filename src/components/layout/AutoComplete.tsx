@@ -1,5 +1,5 @@
 import { Options } from '@/types/global'
-import { Autocomplete, Chip, TextField } from '@mui/material'
+import { Autocomplete, TextField } from '@mui/material'
 import { isBoolean } from 'lodash-es'
 import { Control, Controller, FieldValues, Path } from 'react-hook-form'
 
@@ -13,6 +13,7 @@ interface AutoCompleteProps<T extends FieldValues> {
   defaultValue?: Options
   aditionalOnChangeBehavior?: (newValue: unknown) => void
   hideButtonDropdown?: boolean
+  placeholder?: string
 }
 // teste commit
 
@@ -26,6 +27,7 @@ export const AutoComplete = <T extends FieldValues>({
   defaultValue,
   aditionalOnChangeBehavior,
   hideButtonDropdown = false,
+  placeholder,
 }: AutoCompleteProps<T>) => {
   const transformValue = (value: string | boolean | number) => {
     return isBoolean(value) ? Number(value) : value
@@ -37,13 +39,19 @@ export const AutoComplete = <T extends FieldValues>({
     <Controller
       name={name}
       control={control}
-      render={({ field }) => (
+      render={({ field: { value, onChange, onBlur, name: fieldName } }) => (
         <Autocomplete
-          {...field}
-          id={name as string}
+          id={fieldName}
           size="small"
           multiple={false}
-          value={findValue(field.value)}
+          value={findValue(value)}
+          onChange={(_event, newValue) => {
+            onChange(newValue?.id ?? null)
+            if (aditionalOnChangeBehavior) {
+              aditionalOnChangeBehavior(newValue?.id)
+            }
+          }}
+          onBlur={onBlur}
           defaultValue={defaultValue}
           options={options ?? []}
           slotProps={{
@@ -52,16 +60,13 @@ export const AutoComplete = <T extends FieldValues>({
           }}
           fullWidth
           getOptionLabel={(option) => option.name ?? 'NA'}
-          onChange={(_event, newValue) => {
-            field.onChange(newValue?.id ?? null)
-            aditionalOnChangeBehavior && aditionalOnChangeBehavior(newValue?.id)
-          }}
           renderInput={(params) => (
             <TextField
               {...params}
               label={label}
               error={!!error}
               helperText={error ?? ''}
+              placeholder={placeholder}
               fullWidth
             />
           )}
@@ -71,11 +76,6 @@ export const AutoComplete = <T extends FieldValues>({
                 {option.name}
               </li>
             )
-          }}
-          renderTags={(tagValue, getTagProps) => {
-            return tagValue.map((option, index) => (
-              <Chip size="small" {...getTagProps({ index })} key={option.id} label={option.name} />
-            ))
           }}
           disabled={!editable}
         />
