@@ -37,6 +37,22 @@ export const Paginator = <T extends FieldValues>({
     }
   }, [meta])
 
+  /* ═══════════════════════════════════════
+     Quando filteredCount muda (ex: filtro
+     de status reduz os itens), volta para
+     página 1 se a página atual ficar vazia.
+     ═══════════════════════════════════════ */
+  useEffect(() => {
+    if (filteredCount !== undefined) {
+      const maxPage = Math.max(1, Math.ceil(filteredCount / limit))
+      if (page > maxPage) {
+        setPage(1)
+        handleSetValue('paginationParams.page', 1)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredCount, limit])
+
   useEffect(() => {
     setDisablePrev(page === 1)
     setDisableNext(page === qntPage)
@@ -72,7 +88,9 @@ export const Paginator = <T extends FieldValues>({
   const totalItems = meta?.totalItems ?? 0
   const showing = filteredCount !== undefined ? filteredCount : totalItems
   const effectiveTotal = filteredCount !== undefined ? filteredCount : totalItems
-  const rangeStart = effectiveTotal === 0 ? 0 : (page - 1) * limit + 1
+
+  /* range nunca pode começar depois de terminar */
+  const rangeStart = effectiveTotal === 0 ? 0 : Math.min((page - 1) * limit + 1, effectiveTotal)
   const rangeEnd = Math.min(page * limit, effectiveTotal)
 
   return (
@@ -113,6 +131,7 @@ export const Paginator = <T extends FieldValues>({
           ›
         </button>
       </div>
+      {children}
     </div>
   )
 }

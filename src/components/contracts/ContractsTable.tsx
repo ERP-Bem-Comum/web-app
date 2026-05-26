@@ -6,7 +6,7 @@ import { filterContractsSchema } from '@/validators/contracts'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Box, Paper, Table } from '@mui/material'
 import { useRouter } from 'next/navigation'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { Plus } from 'lucide-react'
 import { Paginator } from '../layout/paginator'
@@ -43,6 +43,69 @@ function filterByDerivedStatus(
     const derived = deriveStatus(info, !!row.children?.length)
     return derived.key === statusFilter
   })
+}
+
+/* ═══════════════════════════════════════
+   Tabela com scroll horizontal sincronizado
+   — garante que o scrollbar horizontal
+   esteja sempre visível na parte inferior,
+   mesmo quando o usuário scrollou verticalmente.
+   ═══════════════════════════════════════ */
+function ScrollableTable({ items }: { items: ContractRow[] | undefined }) {
+  const router = useRouter()
+  const tableWrapRef = useRef<HTMLDivElement>(null)
+  const shadowRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const tableWrap = tableWrapRef.current
+    const shadow = shadowRef.current
+    if (!tableWrap || !shadow) return
+
+    const syncTableToShadow = () => {
+      shadow.scrollLeft = tableWrap.scrollLeft
+    }
+    const syncShadowToTable = () => {
+      tableWrap.scrollLeft = shadow.scrollLeft
+    }
+
+    tableWrap.addEventListener('scroll', syncTableToShadow)
+    shadow.addEventListener('scroll', syncShadowToTable)
+    return () => {
+      tableWrap.removeEventListener('scroll', syncTableToShadow)
+      shadow.removeEventListener('scroll', syncShadowToTable)
+    }
+  }, [])
+
+  return (
+    <div>
+      <div ref={tableWrapRef} className={styles.tableWrap}>
+        <Table
+          className={styles.table}
+          aria-labelledby="tableTitle"
+          size={'medium'}
+          stickyHeader
+        >
+          <EnhancedTableHead headCells={headCellsContracts} />
+          <CustomTableBody items={items}>
+            {(row, index) => (
+              <CustomContractRow
+                key={'contractRow' + index}
+                row={row}
+                index={index}
+                onClick={(id) => {
+                  router.push(`/contratos/detalhes/${id}`)
+                }}
+              />
+            )}
+          </CustomTableBody>
+        </Table>
+      </div>
+      {/* Scroll horizontal dedicado na parte inferior */}
+      <div ref={shadowRef} className={styles.scrollShadow}>
+        <div className={styles.scrollShadowInner} style={{ minWidth: 1420 }} />
+      </div>
+    </div>
+  )
 }
 
 export default function ContractsTable() {
@@ -103,28 +166,7 @@ export default function ContractsTable() {
               }}
             >
               {isLoading && <LoadingTable />}
-              <div className={styles.tableWrap}>
-                <Table
-                  className={styles.table}
-                  aria-labelledby="tableTitle"
-                  size={'medium'}
-                  stickyHeader
-                >
-                  <EnhancedTableHead headCells={headCellsContracts} />
-                  <CustomTableBody items={filteredContracts}>
-                    {(row, index) => (
-                      <CustomContractRow
-                        key={'contractRow' + index}
-                        row={row}
-                        index={index}
-                        onClick={(id) => {
-                          router.push(`/contratos/detalhes/${id}`)
-                        }}
-                      />
-                    )}
-                  </CustomTableBody>
-                </Table>
-              </div>
+              <ScrollableTable items={filteredContracts} />
             </Paper>
           </Box>
         </CardContent>

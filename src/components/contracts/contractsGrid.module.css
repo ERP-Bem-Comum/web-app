@@ -200,15 +200,55 @@
   min-height: 0;
   max-height: calc(100vh - 270px);
   overflow: auto;
-  padding-bottom: 29px;
   border: 1px solid var(--contract-rule);
   border-radius: 8px;
   background: var(--contract-paper);
 }
-.tableWrap::-webkit-scrollbar { width: 6px; height: 6px; }
+
+/* Scrollbar horizontal mais visível na parte inferior */
+.tableWrap::-webkit-scrollbar {
+  width: 6px;
+  height: 10px;
+}
+.tableWrap::-webkit-scrollbar-track {
+  background: var(--contract-paper-warm);
+  border-radius: 4px;
+}
 .tableWrap::-webkit-scrollbar-thumb {
-  background: var(--contract-rule);
-  border-radius: 3px;
+  background: #c7bfb2;
+  border-radius: 4px;
+}
+.tableWrap::-webkit-scrollbar-thumb:hover {
+  background: #999187;
+}
+
+/* Scrollbar horizontal dedicado: container shadow */
+.scrollShadow {
+  width: 100%;
+  height: 14px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: var(--contract-paper-warm);
+  border: 1px solid var(--contract-rule);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+}
+.scrollShadow::-webkit-scrollbar {
+  height: 10px;
+}
+.scrollShadow::-webkit-scrollbar-track {
+  background: var(--contract-paper-warm);
+  border-radius: 4px;
+}
+.scrollShadow::-webkit-scrollbar-thumb {
+  background: #c7bfb2;
+  border-radius: 4px;
+}
+.scrollShadow::-webkit-scrollbar-thumb:hover {
+  background: #999187;
+}
+.scrollShadowInner {
+  height: 1px;
 }
 
 .table {
