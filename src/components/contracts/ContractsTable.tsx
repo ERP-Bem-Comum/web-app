@@ -153,7 +153,7 @@ export default function ContractsTable() {
           selectedStatus={statusFilter}
           onStatusChange={setStatusFilter}
         />
-        <CardContent className="p-0">
+        <CardContent className="p-0 flex-1 flex flex-col">
           <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Paper
               sx={{
