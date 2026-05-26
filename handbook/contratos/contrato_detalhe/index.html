@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Contrato 0001/2026 · Bem Comum ERP · Módulo de Contratos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400..600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- SVG icon library -->
+<svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+  <defs>
+    <symbol id="i-pen" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 14l1-3 8-8 2 2-8 8-3 1z"/><path d="M9.5 4.5L11.5 6.5"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3.5v9M3.5 8h9"/></symbol>
+    <symbol id="i-history" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8a6 6 0 1 0 1.8-4.3"/><path d="M2 2v3.5h3.5"/><path d="M8 5v3.5l2 1.5"/></symbol>
+    <symbol id="i-share" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8"/><path d="M4 5.5L8 2l4 3.5"/><path d="M3 10v3.5h10V10"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M2 6h12M5 2v2M11 2v2"/></symbol>
+    <symbol id="i-money" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="12" height="8" rx="1"/><circle cx="8" cy="8" r="1.6"/><path d="M4.5 8h.01M11.5 8h.01"/></symbol>
+    <symbol id="i-scope" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h10M3 8h7M3 12h10"/></symbol>
+    <symbol id="i-dots" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="8" r="0.8"/><circle cx="8" cy="8" r="0.8"/><circle cx="12" cy="8" r="0.8"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 11V3"/><path d="M4.5 6.5L8 3l3.5 3.5"/><path d="M3 12v1.5h10V12"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2h5l3 3v9H4z"/><path d="M9 2v3h3"/><path d="M6 8h4M6 11h4"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5h10"/><path d="M5.5 4.5V3a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1.5"/><path d="M4.5 4.5l.7 8a1 1 0 0 0 1 .9h3.6a1 1 0 0 0 1-.9l.7-8"/><path d="M6.5 7v4M9.5 7v4"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></symbol>
+    <symbol id="i-download" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8"/><path d="M4.5 7.5L8 11l3.5-3.5"/><path d="M3 13h10"/></symbol>
+  </defs>
+</svg>
+
+<div class="app">
+
+  <!-- ═════════ TOPBAR ═════════ -->
+  <header class="topbar">
+    <button class="back" title="Voltar">←</button>
+    <h1>Contrato <span class="num">0001 / 2026</span></h1>
+    <span class="status-pill"><span class="dot"></span>Em andamento</span>
+  </header>
+
+  <!-- ═════════ BODY ═════════ -->
+  <div class="body">
+
+    <!-- ─── FORM ─── -->
+    <main class="form">
+
+      <!-- HERO Contratado -->
+      <div class="hero">
+        <div class="info">
+          <div class="overline">
+            Contratado
+            <span class="pill">PJ · Fornecedor</span>
+          </div>
+          <h2 class="name">
+            Patricia Brun Ribeiro da Frota<span class="fantasia">· Bambu Educação</span>
+          </h2>
+          <div class="meta">
+            <span>CNPJ 37.364.305/0001-92</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- DADOS VIGENTES — calculados, somente leitura -->
+      <section class="section">
+        <div class="section-head">
+          <h3>Dados Vigentes</h3>
+        </div>
+
+        <div class="field-row vigentes">
+          <div class="field">
+            <label>Valor Atual</label>
+            <div class="input is-calc is-mono" title="R$ 180.000,00 + R$ 35.358,00 (Aditivo 01) = R$ 215.358,00">
+              <span class="value">R$ 215.358,00</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Vigência Atual</label>
+            <div class="input is-calc is-mono" title="Início preservado do contrato original. Fim estendido pelo Aditivo 02 (prazo), homologado em 12/12/2025.">
+              <span class="value">31/01/2025 → 31/12/2026</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Status Vigente</label>
+            <div class="input is-calc">
+              <span class="value">Em andamento</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- DADOS DO CONTRATO — originais -->
+      <section class="section">
+        <div class="section-head">
+          <h3>Dados do Contrato</h3>
+        </div>
+
+        <div class="field-row cols-4">
+          <div class="field">
+            <label>Tipo</label>
+            <div class="input is-select">
+              <span class="value">Fornecedor</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Modelo</label>
+            <div class="input is-select">
+              <span class="value">Serviço</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Acordo Cooperativo?</label>
+            <div class="input is-select">
+              <span class="value">Não</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Origem</label>
+            <div class="input">
+              <span class="value">Manual</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row wide">
+          <div class="field">
+            <label>Objeto</label>
+            <div class="input">
+              <input type="text" value="Serviços de assessoria técnica em desenvolvimento curricular e acompanhamento pedagógico — Programa EPV." />
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row contrato-base">
+          <div class="field">
+            <label>Valor Original <span class="req">*</span></label>
+            <div class="input is-mono">
+              <input type="text" value="R$ 180.000,00" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Início Original</label>
+            <div class="input is-mono">
+              <input type="text" value="31/01/2025" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Fim Original</label>
+            <div class="input is-mono">
+              <input type="text" value="31/12/2025" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Status Base</label>
+            <div class="input">
+              <span class="value">Vigente</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row cols-2">
+          <div class="field">
+            <label>Programa</label>
+            <div class="input is-select">
+              <span class="value">EPV — Apoio Regional</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Plano Orçamentário</label>
+            <div class="input is-select">
+              <span class="value">2025 EPV 1.0 · Consultorias</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- DOCUMENTOS (contrato base + aditivos) -->
+      <section class="section">
+        <div class="section-head">
+          <h3>Documentos</h3>
+          <button class="action" data-open="novo-aditivo">+ Novo Aditivo</button>
+        </div>
+
+        <div class="aditivos">
+          <div class="adit-row adit-head">
+            <span class="h">Nº</span>
+            <span class="h">Tipo</span>
+            <span class="h">Assinatura</span>
+            <span class="h">Resumo</span>
+            <span class="h" style="text-align:right">Impacto</span>
+            <span class="h">Status</span>
+            <span class="h" style="text-align:right">Doc</span>
+          </div>
+
+          <div class="adit-row" data-doc='{"num":"AD 03-001/2026","tipo":"escopo","assinatura":"12/05/2026","inicio":"12/05/2026","resumo":"Ajuste de plano de trabalho — inclusão de relatórios mensais","impactoTipo":"","impactoValor":"","fileName":"aditivo_03_assinado.pdf","fileSize":"1.4 MB"}'>
+            <span class="num">AD 03-001/2026</span>
+            <span class="tipo escopo">Escopo</span>
+            <span class="data">12/05/2026</span>
+            <span class="resumo">Ajuste de plano de trabalho — inclusão de relatórios mensais</span>
+            <span class="impacto neutral">sem impacto</span>
+            <span class="status pendente">Pendente</span>
+            <span class="actions">
+              <button class="doc-act js-open-selado" title="Visualizar documento"><svg><use href="#i-eye"/></svg></button>
+              <button class="doc-act" title="Baixar documento"><svg><use href="#i-download"/></svg></button>
+            </span>
+          </div>
+
+          <div class="adit-row" data-doc='{"num":"AD 02-001/2025","tipo":"prazo","assinatura":"02/12/2025","inicio":"01/01/2026","resumo":"Prorrogação da vigência até 31/12/2026","novaDataFim":"31/12/2026","fileName":"aditivo_02_assinado.pdf","fileSize":"982 KB"}'>
+            <span class="num">AD 02-001/2025</span>
+            <span class="tipo prazo">Prazo</span>
+            <span class="data">02/12/2025</span>
+            <span class="resumo">Prorrogação da vigência até 31/12/2026</span>
+            <span class="impacto neutral">+ 12 meses</span>
+            <span class="status homologado">Homologado</span>
+            <span class="actions">
+              <button class="doc-act js-open-selado" title="Visualizar documento"><svg><use href="#i-eye"/></svg></button>
+              <button class="doc-act" title="Baixar documento"><svg><use href="#i-download"/></svg></button>
+            </span>
+          </div>
+
+          <div class="adit-row" data-doc='{"num":"AD 01-001/2025","tipo":"valor","assinatura":"02/04/2025","inicio":"02/04/2025","resumo":"Acréscimo para inclusão de oficinas regionais (Sertão Central)","impactoTipo":"acrescimo","impactoValor":"R$ 35.358,00","fileName":"aditivo_01_assinado.pdf","fileSize":"1.1 MB"}'>
+            <span class="num">AD 01-001/2025</span>
+            <span class="tipo valor">Valor</span>
+            <span class="data">02/04/2025</span>
+            <span class="resumo">Acréscimo para inclusão de oficinas regionais (Sertão Central)</span>
+            <span class="impacto pos">+ R$ 35.358,00</span>
+            <span class="status homologado">Homologado</span>
+            <span class="actions">
+              <button class="doc-act js-open-selado" title="Visualizar documento"><svg><use href="#i-eye"/></svg></button>
+              <button class="doc-act" title="Baixar documento"><svg><use href="#i-download"/></svg></button>
+            </span>
+          </div>
+
+          <div class="adit-row is-base" data-doc='{"num":"CT 0001/2026","tipo":"base","assinatura":"31/01/2025","inicio":"31/01/2025","resumo":"Contrato original — assessoria técnica em desenvolvimento curricular","fileName":"contrato_0001_2026_assinado.pdf","fileSize":"2.3 MB"}'>
+            <span class="num">CT 0001/2026</span>
+            <span class="tipo base">Base</span>
+            <span class="data">31/01/2025</span>
+            <span class="resumo">Contrato original — assessoria técnica em desenvolvimento curricular</span>
+            <span class="impacto base">R$ 180.000,00</span>
+            <span class="status vigente">Vigente</span>
+            <span class="actions">
+              <button class="doc-act js-open-selado" title="Visualizar documento"><svg><use href="#i-eye"/></svg></button>
+              <button class="doc-act" title="Baixar documento"><svg><use href="#i-download"/></svg></button>
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- DADOS BANCÁRIOS -->
+      <section class="section">
+        <div class="section-head">
+          <h3>Dados Bancários</h3>
+        </div>
+
+        <div class="field-row bank">
+          <div class="field">
+            <label>Banco</label>
+            <div class="input is-select">
+              <span class="value">077 — Banco Inter S.A.</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Agência · DV</label>
+            <div class="input is-mono">
+              <input type="text" value="0001-9" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Conta</label>
+            <div class="input is-mono">
+              <input type="text" value="6433553" />
+            </div>
+          </div>
+          <div class="field">
+            <label>DV</label>
+            <div class="input is-mono">
+              <input type="text" value="4" />
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row cols-2">
+          <div class="field">
+            <label>Tipo de chave PIX</label>
+            <div class="input is-select">
+              <span class="value">CNPJ</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Chave PIX</label>
+            <div class="input is-mono">
+              <input type="text" value="37.364.305/0001-92" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ─── SIDEBAR ─── -->
+    <aside class="sidebar">
+
+      <!-- HERO Valor Atual -->
+      <div class="sb-hero">
+        <div class="overline">Valor Atual</div>
+        <div class="number">
+          <span class="currency">R$</span>
+          <span class="main">215.358</span>
+          <span class="cents">,00</span>
+        </div>
+      </div>
+
+      <!-- COMPOSIÇÃO -->
+      <div>
+        <h4>Composição</h4>
+        <div class="composition">
+          <div class="row">
+            <span class="k">Valor Original</span>
+            <span class="v">R$ 180.000,00</span>
+          </div>
+          <div class="row gain">
+            <span class="k">Aditivo 01<span class="ref">AD 01-001/2025</span></span>
+            <span class="v">+ R$ 35.358,00</span>
+          </div>
+          <div class="row muted">
+            <span class="k">Aditivo 03 · Pendente<span class="ref">não computado</span></span>
+            <span class="v">R$ 0,00</span>
+          </div>
+          <div class="row total">
+            <span class="k">Valor Atual</span>
+            <span class="v">R$ 215.358,00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIGÊNCIA ATUAL -->
+      <div>
+        <h4>Vigência Atual</h4>
+        <div class="viga-block">
+          <div class="viga-bar">
+            <div class="fill"></div>
+            <span class="marker orig"></span>
+            <span class="marker now"><span class="lbl">hoje</span></span>
+            <span class="marker new"></span>
+          </div>
+
+          <div class="viga-rem">
+            Faltam <strong>230 dias</strong> · prazo estendido em <strong>+12 meses</strong> pelo Aditivo 02
+          </div>
+        </div>
+      </div>
+
+      <!-- TIMELINE -->
+      <div>
+        <h4>Timeline</h4>
+        <div class="timeline">
+          <div class="tl-item is-current">
+            <div class="tl-date">12/05/2026</div>
+            <div class="tl-text">Aditivo 03 incluído. Aguarda homologação.</div>
+          </div>
+          <div class="tl-item is-ok">
+            <div class="tl-date">12/12/2025</div>
+            <div class="tl-text">Aditivo 02 homologado. Vigência estendida em 12 meses.</div>
+          </div>
+          <div class="tl-item is-ok">
+            <div class="tl-date">10/04/2025</div>
+            <div class="tl-text">Aditivo 01 homologado. + R$ 35.358,00.</div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-date">31/01/2025</div>
+            <div class="tl-text">Contrato assinado.</div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-date">28/01/2025</div>
+            <div class="tl-text">Contrato criado.</div>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+  </div>
+
+  <!-- ═════════ BOTTOMBAR ═════════ -->
+  <footer class="bottombar">
+    <div class="status">
+      <span class="save-dot"></span>
+      <span>Sincronizado · há 2 min</span>
+      <span class="stage">Em andamento</span>
+    </div>
+    <div class="actions">
+      <button class="btn btn-secondary"><svg><use href="#i-pen"/></svg>Editar documento</button>
+      <button class="btn btn-primary">
+        <svg><use href="#i-plus"/></svg>
+        Novo contrato
+      </button>
+    </div>
+  </footer>
+
+</div>
+
+<!-- ═════════ MODAL · NOVO ADITIVO / DOCUMENTO SELADO ═════════ -->
+<div class="modal-backdrop" id="modal-novo-aditivo">
+  <div class="modal" data-mode="novo">
+
+    <div class="modal-head">
+      <div class="mh-l">
+        <h3 class="title-novo">Novo Aditivo</h3>
+        <h3 class="title-selado">Documento</h3>
+        <span class="auto-num">AD 03-001/2026</span>
+      </div>
+      <button class="x" data-close title="Fechar">✕</button>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- TIPO -->
+      <div class="modal-section">
+        <div class="modal-section-label">Tipo</div>
+        <div class="tipo-grid">
+          <button class="tipo-card" data-tipo="prazo" type="button">
+            <span class="ic"><svg><use href="#i-calendar"/></svg></span>
+            <span class="nm">Prazo</span>
+            <span class="ds">Prorrogação de vigência</span>
+          </button>
+          <button class="tipo-card" data-tipo="valor" type="button">
+            <span class="ic"><svg><use href="#i-money"/></svg></span>
+            <span class="nm">Valor</span>
+            <span class="ds">Acréscimo ou supressão</span>
+          </button>
+          <button class="tipo-card" data-tipo="escopo" type="button">
+            <span class="ic"><svg><use href="#i-scope"/></svg></span>
+            <span class="nm">Escopo</span>
+            <span class="ds">Sem impacto financeiro</span>
+          </button>
+          <button class="tipo-card" data-tipo="outro" type="button">
+            <span class="ic"><svg><use href="#i-dots"/></svg></span>
+            <span class="nm">Outro</span>
+            <span class="ds">Reajuste, reequilíbrio…</span>
+          </button>
+        </div>
+
+        <!-- Conditional: Prazo -->
+        <div class="cond-row" data-cond="prazo">
+          <div class="cond-head">Detalhes do Prazo</div>
+          <div class="field">
+            <label>Nova Data Fim</label>
+            <div class="input is-mono">
+              <input type="text" placeholder="dd/mm/aaaa" data-field="novaDataFim" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Conditional: Valor -->
+        <div class="cond-row" data-cond="valor">
+          <div class="cond-head">Detalhes do Valor</div>
+          <div class="field-row cols-2">
+            <div class="field">
+              <label>Impacto</label>
+              <div class="toggle-bar" id="impacto-toggle">
+                <button type="button" data-impacto="acrescimo" class="active">Acréscimo</button>
+                <button type="button" data-impacto="supressao">Supressão</button>
+              </div>
+            </div>
+            <div class="field">
+              <label>Valor</label>
+              <div class="input is-mono">
+                <input type="text" placeholder="R$ 0,00" data-field="impactoValor" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DATAS -->
+      <div class="modal-section">
+        <div class="modal-section-label">Datas</div>
+        <div class="field-row cols-2">
+          <div class="field">
+            <label>Data da Assinatura</label>
+            <div class="input is-mono">
+              <input type="text" placeholder="dd/mm/aaaa" data-field="assinatura" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Início do Efeito</label>
+            <div class="input is-mono">
+              <input type="text" placeholder="dd/mm/aaaa" data-field="inicio" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESUMO -->
+      <div class="modal-section">
+        <div class="modal-section-label">Resumo</div>
+        <textarea class="textarea" placeholder="Descreva brevemente o que motivou e o que altera o aditivo. Esse resumo aparece na lista do contrato e na timeline." data-field="resumo"></textarea>
+      </div>
+
+      <!-- DOCUMENTO -->
+      <div class="modal-section">
+        <div class="modal-section-label">Documento Principal</div>
+        <div class="upload" id="upload-aditivo">
+          <span class="up-ic"><svg><use href="#i-upload"/></svg></span>
+          <span class="up-info">
+            <span class="up-title">Solte o arquivo aqui ou clique para escolher</span>
+            <span class="up-sub">PDF assinado · até 20MB</span>
+          </span>
+          <span class="up-action">Escolher</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="modal-foot">
+      <!-- Modo NOVO -->
+      <div class="foot-novo">
+        <div class="spacer"></div>
+        <button class="btn btn-ghost" data-close>Cancelar</button>
+        <button class="btn btn-secondary" data-close>Salvar como rascunho</button>
+        <button class="btn btn-primary" data-close>Enviar para Homologação</button>
+      </div>
+      <!-- Modo SELADO -->
+      <div class="foot-selado">
+        <button class="btn btn-descartar" id="btn-excluir-doc"><svg><use href="#i-trash"/></svg>Excluir</button>
+        <div class="spacer"></div>
+        <button class="btn btn-secondary" data-close>Fechar</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═════════ MODAL · CONFIRMAR EXCLUSÃO ═════════ -->
+<div class="modal-backdrop modal-on-top" id="modal-confirm-delete">
+  <div class="modal modal-sm">
+    <div class="modal-head">
+      <div class="mh-l">
+        <h3>Excluir documento</h3>
+      </div>
+      <button class="x" data-close title="Fechar">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="confirm-intro">Esta ação remove o documento e registra um evento de exclusão na auditoria do contrato.</p>
+      <div class="field">
+        <label>Motivo da exclusão</label>
+        <textarea class="textarea" id="motivo-exclusao" placeholder="Descreva o motivo. Esse texto fica registrado permanentemente no histórico do contrato." rows="4"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <div class="spacer"></div>
+      <button class="btn btn-ghost" data-close>Cancelar</button>
+      <button class="btn btn-descartar" id="btn-confirm-delete"><svg><use href="#i-trash"/></svg>Excluir</button>
+    </div>
+  </div>
+</div>
+
+
+
+<script src="app.js" defer></script>
+</body>
+</html>
