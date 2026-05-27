@@ -1,31 +1,40 @@
 import { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { createContract } from '@/server/contracts.server'
+import { createContract, updateContract } from '@/server/contracts.server'
 import { usePartnerOptions } from '../hooks/use-partner-options'
 import {
   ContractClassification,
   ContractModel,
   ContractType,
-  ContractStatus,
 } from '../../domain/types'
 
-export function ContractForm() {
+interface Props {
+  initialData?: any
+}
+
+export function ContractForm({ initialData }: Props) {
   const navigate = useNavigate()
   const { suppliers, financiers, collaborators, budgetPlans } = usePartnerOptions()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  const isEdit = !!initialData
+
   const [form, setForm] = useState({
-    classification: ContractClassification.CONTRACT,
-    contractModel: ContractModel.SERVICE,
-    object: '',
-    totalValue: 0,
-    contractType: ContractType.SUPPLIER,
-    contractPeriodStart: '',
-    contractPeriodEnd: '',
-    supplierId: null as number | null,
-    financierId: null as number | null,
-    collaboratorId: null as number | null,
-    budgetPlanId: null as number | null,
+    classification: initialData?.classification || ContractClassification.CONTRACT,
+    contractModel: initialData?.contractModel || ContractModel.SERVICE,
+    object: initialData?.object || '',
+    totalValue: initialData?.totalValue || 0,
+    contractType: initialData?.contractType || ContractType.SUPPLIER,
+    contractPeriodStart: initialData?.contractPeriod?.start
+      ? new Date(initialData.contractPeriod.start).toISOString().split('T')[0]
+      : '',
+    contractPeriodEnd: initialData?.contractPeriod?.end
+      ? new Date(initialData.contractPeriod.end).toISOString().split('T')[0]
+      : '',
+    supplierId: initialData?.supplierId || null,
+    financierId: initialData?.financierId || null,
+    collaboratorId: initialData?.collaboratorId || null,
+    budgetPlanId: initialData?.budgetPlanId || null,
   })
 
   const handleChange = (field: string, value: unknown) => {
@@ -36,23 +45,27 @@ export function ContractForm() {
     e.preventDefault()
     setIsSubmitting(true)
     try {
-      await createContract({
-        data: {
-          classification: form.classification,
-          contractModel: form.contractModel,
-          object: form.object,
-          totalValue: form.totalValue,
-          contractType: form.contractType,
-          contractPeriod: {
-            start: new Date(form.contractPeriodStart),
-            end: new Date(form.contractPeriodEnd),
-          },
-          supplierId: form.supplierId,
-          financierId: form.financierId,
-          collaboratorId: form.collaboratorId,
-          budgetPlanId: form.budgetPlanId,
+      const payload = {
+        classification: form.classification,
+        contractModel: form.contractModel,
+        object: form.object,
+        totalValue: form.totalValue,
+        contractType: form.contractType,
+        contractPeriod: {
+          start: new Date(form.contractPeriodStart),
+          end: new Date(form.contractPeriodEnd),
         },
-      })
+        supplierId: form.supplierId,
+        financierId: form.financierId,
+        collaboratorId: form.collaboratorId,
+        budgetPlanId: form.budgetPlanId,
+      }
+
+      if (isEdit) {
+        await updateContract({ data: { id: initialData.id, ...payload } })
+      } else {
+        await createContract({ data: payload })
+      }
       navigate({ to: '/contratos' })
     } catch (err) {
       alert('Erro ao criar contrato: ' + (err instanceof Error ? err.message : 'unknown'))

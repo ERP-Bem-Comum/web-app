@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedContratosIndexRouteImport } from './routes/_authenticated/contratos/index'
 import { Route as AuthenticatedContratosAdicionarRouteImport } from './routes/_authenticated/contratos/adicionar'
+import { Route as AuthenticatedContratosEditarIdRouteImport } from './routes/_authenticated/contratos/editar.$id'
 import { Route as AuthenticatedContratosDetalhesIdRouteImport } from './routes/_authenticated/contratos/detalhes.$id'
 
 const LoginRoute = LoginRouteImport.update({
@@ -36,6 +37,12 @@ const AuthenticatedContratosAdicionarRoute =
     path: '/contratos/adicionar',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedContratosEditarIdRoute =
+  AuthenticatedContratosEditarIdRouteImport.update({
+    id: '/contratos/editar/$id',
+    path: '/contratos/editar/$id',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedContratosDetalhesIdRoute =
   AuthenticatedContratosDetalhesIdRouteImport.update({
     id: '/contratos/detalhes/$id',
@@ -49,6 +56,7 @@ export interface FileRoutesByFullPath {
   '/contratos/adicionar': typeof AuthenticatedContratosAdicionarRoute
   '/contratos/': typeof AuthenticatedContratosIndexRoute
   '/contratos/detalhes/$id': typeof AuthenticatedContratosDetalhesIdRoute
+  '/contratos/editar/$id': typeof AuthenticatedContratosEditarIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AuthenticatedRouteWithChildren
@@ -56,6 +64,7 @@ export interface FileRoutesByTo {
   '/contratos/adicionar': typeof AuthenticatedContratosAdicionarRoute
   '/contratos': typeof AuthenticatedContratosIndexRoute
   '/contratos/detalhes/$id': typeof AuthenticatedContratosDetalhesIdRoute
+  '/contratos/editar/$id': typeof AuthenticatedContratosEditarIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -64,6 +73,7 @@ export interface FileRoutesById {
   '/_authenticated/contratos/adicionar': typeof AuthenticatedContratosAdicionarRoute
   '/_authenticated/contratos/': typeof AuthenticatedContratosIndexRoute
   '/_authenticated/contratos/detalhes/$id': typeof AuthenticatedContratosDetalhesIdRoute
+  '/_authenticated/contratos/editar/$id': typeof AuthenticatedContratosEditarIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -73,6 +83,7 @@ export interface FileRouteTypes {
     | '/contratos/adicionar'
     | '/contratos/'
     | '/contratos/detalhes/$id'
+    | '/contratos/editar/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -80,6 +91,7 @@ export interface FileRouteTypes {
     | '/contratos/adicionar'
     | '/contratos'
     | '/contratos/detalhes/$id'
+    | '/contratos/editar/$id'
   id:
     | '__root__'
     | '/_authenticated'
@@ -87,6 +99,7 @@ export interface FileRouteTypes {
     | '/_authenticated/contratos/adicionar'
     | '/_authenticated/contratos/'
     | '/_authenticated/contratos/detalhes/$id'
+    | '/_authenticated/contratos/editar/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -124,6 +137,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedContratosAdicionarRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/contratos/editar/$id': {
+      id: '/_authenticated/contratos/editar/$id'
+      path: '/contratos/editar/$id'
+      fullPath: '/contratos/editar/$id'
+      preLoaderRoute: typeof AuthenticatedContratosEditarIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/contratos/detalhes/$id': {
       id: '/_authenticated/contratos/detalhes/$id'
       path: '/contratos/detalhes/$id'
@@ -138,12 +158,14 @@ interface AuthenticatedRouteChildren {
   AuthenticatedContratosAdicionarRoute: typeof AuthenticatedContratosAdicionarRoute
   AuthenticatedContratosIndexRoute: typeof AuthenticatedContratosIndexRoute
   AuthenticatedContratosDetalhesIdRoute: typeof AuthenticatedContratosDetalhesIdRoute
+  AuthenticatedContratosEditarIdRoute: typeof AuthenticatedContratosEditarIdRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedContratosAdicionarRoute: AuthenticatedContratosAdicionarRoute,
   AuthenticatedContratosIndexRoute: AuthenticatedContratosIndexRoute,
   AuthenticatedContratosDetalhesIdRoute: AuthenticatedContratosDetalhesIdRoute,
+  AuthenticatedContratosEditarIdRoute: AuthenticatedContratosEditarIdRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

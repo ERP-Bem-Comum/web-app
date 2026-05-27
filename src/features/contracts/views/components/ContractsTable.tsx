@@ -1,5 +1,8 @@
 import { Link } from '@tanstack/react-router'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { deleteContract } from '@/server/contracts.server'
 import type { ContractRow } from '../../domain/types'
+import { contractKeys } from '../../adapters/queries'
 
 interface Props {
   rows: ContractRow[]
@@ -47,13 +50,23 @@ export function ContractsTable({ rows }: Props) {
               </td>
               <td className="px-4 py-3">{row.supplier?.name || '-'}</td>
               <td className="px-4 py-3">
-                <Link
-                  to="/contratos/detalhes/$id"
-                  params={{ id: String(row.id) }}
-                  className="text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  Ver
-                </Link>
+                <div className="flex gap-2">
+                  <Link
+                    to="/contratos/detalhes/$id"
+                    params={{ id: String(row.id) }}
+                    className="text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    Ver
+                  </Link>
+                  <Link
+                    to="/contratos/editar/$id"
+                    params={{ id: String(row.id) }}
+                    className="text-green-600 hover:text-green-800 font-medium"
+                  >
+                    Editar
+                  </Link>
+                  <DeleteButton id={row.id} />
+                </div>
               </td>
             </tr>
           ))}
@@ -76,5 +89,31 @@ function StatusBadge({ status }: { status: string }) {
     <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status] || 'bg-gray-100'}`}>
       {status}
     </span>
+  )
+}
+
+function DeleteButton({ id }: { id: number }) {
+  const qc = useQueryClient()
+  const mutation = useMutation({
+    mutationFn: () => deleteContract({ data: { id } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: contractKeys.lists() })
+    },
+  })
+
+  const handleClick = () => {
+    if (confirm('Tem certeza que deseja excluir este contrato?')) {
+      mutation.mutate()
+    }
+  }
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={mutation.isPending}
+      className="text-red-600 hover:text-red-800 font-medium disabled:opacity-50"
+    >
+      {mutation.isPending ? 'Excluindo...' : 'Excluir'}
+    </button>
   )
 }

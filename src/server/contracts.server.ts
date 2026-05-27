@@ -80,3 +80,50 @@ export const createContract = createServerFn({ method: 'POST' })
 
     return res.value.json()
   })
+
+export const updateContract = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware])
+  .inputValidator(
+    ContractCreateInputSchema.extend({ id: z.number() }),
+  )
+  .handler(async ({ data, context }) => {
+    const { id, ...body } = data
+    const res = await resultFetch(`${env.API_URL}/contracts/${id}`, {
+      method: 'PUT',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${context.session.token}`,
+      },
+      body: JSON.stringify(body),
+    })
+
+    if (!res.ok) {
+      if (res.error.kind === 'http') {
+        throw new Response(JSON.stringify(res.error.body), { status: res.error.status })
+      }
+      throw new Response('Failed to update contract', { status: 500 })
+    }
+
+    return res.value.json()
+  })
+
+export const deleteContract = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware])
+  .inputValidator(z.object({ id: z.number() }))
+  .handler(async ({ data, context }) => {
+    const res = await resultFetch(`${env.API_URL}/contracts/${data.id}`, {
+      method: 'DELETE',
+      headers: {
+        authorization: `Bearer ${context.session.token}`,
+      },
+    })
+
+    if (!res.ok) {
+      if (res.error.kind === 'http') {
+        throw new Response(JSON.stringify(res.error.body), { status: res.error.status })
+      }
+      throw new Response('Failed to delete contract', { status: 500 })
+    }
+
+    return { success: true }
+  })
