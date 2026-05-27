@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { getSuppliers, getFinanciers, getCollaborators } from '@/server/partners.server'
-import { getBudgetPlans } from '@/server/budget-plans.server'
+import { getSuppliers, getFinanciers, getCollaborators } from '@/server/partners'
+import { getBudgetPlans } from '@/server/budget-plans'
 
 export function usePartnerOptions() {
   const suppliers = useQuery({

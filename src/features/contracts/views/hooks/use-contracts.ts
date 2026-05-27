@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
-import { getContracts } from '@/server/contracts.server'
+import { getContracts } from '@/server/contracts'
 import { contractKeys } from '../../adapters/queries'
 import type { ContractListFilters } from '../../domain/schemas'
 

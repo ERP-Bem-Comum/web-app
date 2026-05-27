@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
-import { getContractById } from '@/server/contracts.server'
+import { getContractById } from '@/server/contracts'
 import { contractKeys } from '../../adapters/queries'
 
 export function useContract(id: number) {

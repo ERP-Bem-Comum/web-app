@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { createContract, updateContract } from '@/server/contracts.server'
+import { createContract, updateContract } from '@/server/contracts'
 import { usePartnerOptions } from '../hooks/use-partner-options'
 import {
   ContractClassification,

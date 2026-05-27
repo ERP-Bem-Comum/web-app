@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { deleteContract } from '@/server/contracts.server'
+import { deleteContract } from '@/server/contracts'
 import type { ContractRow } from '../../domain/types'
 import { contractKeys } from '../../adapters/queries'
 

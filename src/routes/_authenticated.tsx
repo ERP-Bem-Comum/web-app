@@ -1,31 +1,17 @@
-import { createFileRoute, Outlet, redirect, Link } from '@tanstack/react-router'
-import { getSession } from '@/server/auth.server'
+import { createFileRoute, Outlet, Link } from '@tanstack/react-router'
+import { useAuth } from '@/hooks/useAuth'
 import PageContainer from '@/components/layout/main/PageContainer'
-import { logout } from '@/server/auth.server'
-import { useNavigate } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_authenticated')({
-  beforeLoad: async () => {
-    try {
-      const session = await getSession()
-      if (!session?.user) {
-        throw redirect({ to: '/login' })
-      }
-      return { session }
-    } catch {
-      throw redirect({ to: '/login' })
-    }
-  },
   component: AuthenticatedLayout,
 })
 
 function AuthenticatedLayout() {
-  const { session } = Route.useRouteContext()
-  const navigate = useNavigate()
+  const { user, logout } = useAuth()
 
   const handleLogout = async () => {
-    await logout()
-    navigate({ to: '/login' })
+    await logout({ data: undefined })
+    window.location.href = '/login'
   }
 
   return (
@@ -35,7 +21,7 @@ function AuthenticatedLayout() {
           <img src="/images/logo-bem-comum.png" alt="Logo" width={32} height={32} />
         </div>
         <div className="h-full flex justify-end items-center gap-4 z-10">
-          <span className="text-sm">Olá, {session?.user?.name ?? 'Visitante'}</span>
+          <span className="text-sm">Olá, {user?.name ?? 'Visitante'}</span>
           <button
             onClick={handleLogout}
             className="text-sm text-red-500 hover:text-red-700 font-medium"

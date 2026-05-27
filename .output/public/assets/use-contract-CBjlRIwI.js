@@ -1,0 +1,1 @@
+import{n as e,t}from"./queries-CMgZM7IH.js";import{r as n}from"./contracts-BE2Bwq5h.js";function r(r){return e({queryKey:t.detail(r),queryFn:()=>n({data:{id:r}})})}export{r as t};
