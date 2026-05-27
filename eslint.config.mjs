@@ -1,14 +1,15 @@
 import { defineConfig, globalIgnores } from 'eslint/config'
 import prettierConfig from 'eslint-config-prettier'
-import nextVitals from 'eslint-config-next/core-web-vitals'
-import nextTs from 'eslint-config-next/typescript'
 import prettierPlugin from 'eslint-plugin-prettier'
 
 const eslintConfig = defineConfig([
-  ...nextVitals,
-  ...nextTs,
-  prettierConfig,
   {
+    files: ['**/*.{js,jsx,ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        ecmaFeatures: { jsx: true },
+      },
+    },
     plugins: {
       prettier: prettierPlugin,
     },
@@ -25,11 +26,11 @@ const eslintConfig = defineConfig([
       'prefer-const': 'off',
     },
   },
+  prettierConfig,
   globalIgnores([
-    '.next/**',
+    '.output/**',
     'out/**',
     'build/**',
-    'next-env.d.ts',
     'src/services/generated/**',
     'src/types/generated/**',
   ]),

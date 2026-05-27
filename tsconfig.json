@@ -18,11 +18,7 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
+    "plugins": [],
     "paths": {
       "lib/*": [
         "./lib/*"
@@ -43,16 +39,13 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": [
-    "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts",
-    "src/types",
-    ".next/dev/types/**/*.ts"
+    "src/types"
   ],
   "exclude": [
     "node_modules",
-    ".next",
+    ".output",
     "node_modules/**",
     "node_modules/*"
   ]
