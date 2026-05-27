@@ -154,7 +154,7 @@
       },
       "post": {
         "summary": "Criar contrato",
-        "description": "Cria um novo contrato ou ordem de serviço.\nValidações:\n- Ordem de Serviço tem teto máximo de R$ 9.999,99\n- Colaborador/Fornecedor/ACT exigem informação bancária OU PIX\n",
+        "description": "Cria um novo contrato ou ordem de serviço.\nRegras de negócio:\n- O contrato é registrado diretamente em status Pendente (sem documento assinado)\n  ou Em andamento (com documento assinado + data de assinatura). Não existe Rascunho.\n- Ordem de Serviço tem teto máximo de R$ 9.999,99.\n- Dados bancários e PIX são herdados do cadastro do parceiro selecionado\n  (fornecedor/colaborador/financiador/ACT) e NÃO podem ser editados no contrato.\n",
         "tags": [
           "Contratos"
         ],
@@ -304,7 +304,7 @@
       },
       "delete": {
         "summary": "Remover contrato",
-        "description": "Remove um contrato e seus arquivos associados.",
+        "description": "Remove um contrato e seus arquivos associados.\n**Restrição:** exclusão permitida apenas para contratos com status Pendente.\nContratos com status Em andamento, Assinado, Finalizado ou Distrato não podem ser excluídos.\n",
         "tags": [
           "Contratos"
         ],
@@ -329,6 +329,16 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "description": "Operação não permitida. Apenas contratos com status Pendente podem ser excluídos.\n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
@@ -381,64 +391,6 @@
           },
           "422": {
             "$ref": "#/components/responses/UnprocessableEntity"
-          },
-          "500": {
-            "$ref": "#/components/responses/InternalServerError"
-          }
-        }
-      }
-    },
-    "/contracts/bancaryInfo/{id}": {
-      "put": {
-        "summary": "Atualizar dados bancários/PIX",
-        "description": "Atualiza apenas as informações bancárias e PIX de um contrato.\nÚtil para edição inline na tela de detalhes.\n",
-        "tags": [
-          "Contratos"
-        ],
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EditPaymentInfo"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Dados atualizados com sucesso",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/InternalServerError"
@@ -983,14 +935,13 @@
       "ContractStatus": {
         "type": "string",
         "enum": [
-          "Rascunho",
           "Pendente",
           "Assinado",
           "Em andamento",
           "Finalizado",
           "Distrato"
         ],
-        "description": "Status do ciclo de vida do contrato.\nRascunho → Pendente → Assinado → Em andamento → Finalizado/Distrato.\n"
+        "description": "Status do ciclo de vida do contrato.\nPendente → Assinado → Em andamento → Finalizado/Distrato.\nNão existe status Rascunho. O contrato é registrado diretamente como Pendente\n(sem documento assinado) ou Em andamento (com documento assinado + data de assinatura).\n"
       },
       "AditivoStatus": {
         "type": "string",
@@ -1219,14 +1170,6 @@
             "nullable": true,
             "description": "ID do contrato pai (quando é aditivo)"
           },
-          "pixInfo": {
-            "$ref": "#/components/schemas/PixInfo",
-            "nullable": true
-          },
-          "bancaryInfo": {
-            "$ref": "#/components/schemas/BancaryInfo",
-            "nullable": true
-          },
           "contractStatus": {
             "$ref": "#/components/schemas/ContractStatus",
             "nullable": true
@@ -1383,6 +1326,16 @@
               },
               "aditivoStatus": {
                 "$ref": "#/components/schemas/AditivoStatus"
+              },
+              "bancaryInfo": {
+                "$ref": "#/components/schemas/BancaryInfo",
+                "readOnly": true,
+                "description": "Dados bancários herdados do cadastro do parceiro. Imutável no contrato."
+              },
+              "pixInfo": {
+                "$ref": "#/components/schemas/PixInfo",
+                "readOnly": true,
+                "description": "Dados PIX herdados do cadastro do parceiro. Imutável no contrato."
               }
             }
           }
@@ -1445,6 +1398,16 @@
               },
               "aditivoStatus": {
                 "$ref": "#/components/schemas/AditivoStatus"
+              },
+              "bancaryInfo": {
+                "$ref": "#/components/schemas/BancaryInfo",
+                "readOnly": true,
+                "description": "Dados bancários herdados do cadastro do parceiro. Imutável no contrato."
+              },
+              "pixInfo": {
+                "$ref": "#/components/schemas/PixInfo",
+                "readOnly": true,
+                "description": "Dados PIX herdados do cadastro do parceiro. Imutável no contrato."
               },
               "dataAssinatura": {
                 "type": "string",
@@ -1619,23 +1582,6 @@
                 "type": "integer"
               }
             }
-          }
-        }
-      },
-      "EditPaymentInfo": {
-        "type": "object",
-        "properties": {
-          "bancaryInfo": {
-            "$ref": "#/components/schemas/BancaryInfo",
-            "nullable": true
-          },
-          "pixInfo": {
-            "$ref": "#/components/schemas/PixInfo",
-            "nullable": true
-          },
-          "updatedBy": {
-            "type": "integer",
-            "nullable": true
           }
         }
       },

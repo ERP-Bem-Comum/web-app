@@ -103,9 +103,12 @@ paths:
       summary: Criar contrato
       description: |
         Cria um novo contrato ou ordem de serviço.
-        Validações:
-        - Ordem de Serviço tem teto máximo de R$ 9.999,99
-        - Colaborador/Fornecedor/ACT exigem informação bancária OU PIX
+        Regras de negócio:
+        - O contrato é registrado diretamente em status Pendente (sem documento assinado)
+          ou Em andamento (com documento assinado + data de assinatura). Não existe Rascunho.
+        - Ordem de Serviço tem teto máximo de R$ 9.999,99.
+        - Dados bancários e PIX são herdados do cadastro do parceiro selecionado
+          (fornecedor/colaborador/financiador/ACT) e NÃO podem ser editados no contrato.
       tags: [Contratos]
       security:
         - BearerAuth: []
@@ -199,7 +202,10 @@ paths:
 
     delete:
       summary: Remover contrato
-      description: Remove um contrato e seus arquivos associados.
+      description: |
+        Remove um contrato e seus arquivos associados.
+        **Restrição:** exclusão permitida apenas para contratos com status Pendente.
+        Contratos com status Em andamento, Assinado, Finalizado ou Distrato não podem ser excluídos.
       tags: [Contratos]
       security:
         - BearerAuth: []
@@ -214,6 +220,13 @@ paths:
           description: Contrato removido com sucesso
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: |
+            Operação não permitida. Apenas contratos com status Pendente podem ser excluídos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -251,42 +264,6 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /contracts/bancaryInfo/{id}:
-    put:
-      summary: Atualizar dados bancários/PIX
-      description: |
-        Atualiza apenas as informações bancárias e PIX de um contrato.
-        Útil para edição inline na tela de detalhes.
-      tags: [Contratos]
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/EditPaymentInfo'
-      responses:
-        '200':
-          description: Dados atualizados com sucesso
-          content:
-            application/json:
-              schema:
-                type: boolean
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
 
   /contracts/history/{id}:
     get:
@@ -614,7 +591,6 @@ components:
     ContractStatus:
       type: string
       enum:
-        - Rascunho
         - Pendente
         - Assinado
         - 'Em andamento'
@@ -622,7 +598,9 @@ components:
         - Distrato
       description: |
         Status do ciclo de vida do contrato.
-        Rascunho → Pendente → Assinado → Em andamento → Finalizado/Distrato.
+        Pendente → Assinado → Em andamento → Finalizado/Distrato.
+        Não existe status Rascunho. O contrato é registrado diretamente como Pendente
+        (sem documento assinado) ou Em andamento (com documento assinado + data de assinatura).
 
     AditivoStatus:
       type: string
@@ -802,12 +780,6 @@ components:
           type: integer
           nullable: true
           description: ID do contrato pai (quando é aditivo)
-        pixInfo:
-          $ref: '#/components/schemas/PixInfo'
-          nullable: true
-        bancaryInfo:
-          $ref: '#/components/schemas/BancaryInfo'
-          nullable: true
         contractStatus:
           $ref: '#/components/schemas/ContractStatus'
           nullable: true
@@ -916,6 +888,14 @@ components:
               $ref: '#/components/schemas/AditivoType'
             aditivoStatus:
               $ref: '#/components/schemas/AditivoStatus'
+            bancaryInfo:
+              $ref: '#/components/schemas/BancaryInfo'
+              readOnly: true
+              description: Dados bancários herdados do cadastro do parceiro. Imutável no contrato.
+            pixInfo:
+              $ref: '#/components/schemas/PixInfo'
+              readOnly: true
+              description: Dados PIX herdados do cadastro do parceiro. Imutável no contrato.
 
     Children:
       allOf:
@@ -957,6 +937,14 @@ components:
               $ref: '#/components/schemas/AditivoType'
             aditivoStatus:
               $ref: '#/components/schemas/AditivoStatus'
+            bancaryInfo:
+              $ref: '#/components/schemas/BancaryInfo'
+              readOnly: true
+              description: Dados bancários herdados do cadastro do parceiro. Imutável no contrato.
+            pixInfo:
+              $ref: '#/components/schemas/PixInfo'
+              readOnly: true
+              description: Dados PIX herdados do cadastro do parceiro. Imutável no contrato.
             dataAssinatura:
               type: string
               nullable: true
@@ -1064,20 +1052,6 @@ components:
               type: integer
             currentPage:
               type: integer
-
-    # ─── Dados bancários (edição parcial) ───
-    EditPaymentInfo:
-      type: object
-      properties:
-        bancaryInfo:
-          $ref: '#/components/schemas/BancaryInfo'
-          nullable: true
-        pixInfo:
-          $ref: '#/components/schemas/PixInfo'
-          nullable: true
-        updatedBy:
-          type: integer
-          nullable: true
 
     # ─── Histórico de pagamentos ───
     ContractPaymentHistory:
