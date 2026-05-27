@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { env } from './env'
 import { resultFetch } from '@/shared/http/result-fetch'
 import { authMiddleware } from './middleware/auth'
-import { ContractListFiltersSchema } from '@/features/contracts/domain/schemas'
+import { ContractListFiltersSchema, ContractCreateInputSchema } from '@/features/contracts/domain/schemas'
 
 export const getContracts = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
@@ -53,6 +53,29 @@ export const getContractById = createServerFn({ method: 'GET' })
         throw new Response('Contract not found', { status: 404 })
       }
       throw new Response('Failed to fetch contract', { status: 500 })
+    }
+
+    return res.value.json()
+  })
+
+export const createContract = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware])
+  .inputValidator(ContractCreateInputSchema)
+  .handler(async ({ data, context }) => {
+    const res = await resultFetch(`${env.API_URL}/contracts`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${context.session.token}`,
+      },
+      body: JSON.stringify(data),
+    })
+
+    if (!res.ok) {
+      if (res.error.kind === 'http') {
+        throw new Response(JSON.stringify(res.error.body), { status: res.error.status })
+      }
+      throw new Response('Failed to create contract', { status: 500 })
     }
 
     return res.value.json()
