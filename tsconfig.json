@@ -26,13 +26,13 @@
         "./src/*"
       ],
       "@components/*": [
-        "/src/components/*"
+        "./src/components/*"
       ],
       "@public/*": [
         "./public/*"
       ],
       "@utils/*": [
-        "/src/utils/*"
+        "./src/utils/*"
       ]
     },
     "forceConsistentCasingInFileNames": true
