@@ -1,4 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
+import { z } from 'zod'
 import { env } from './env'
 import { resultFetch } from '@/shared/http/result-fetch'
 import { authMiddleware } from './middleware/auth'
@@ -35,17 +36,11 @@ export const getContracts = createServerFn({ method: 'GET' })
     return res.value.json()
   })
 
+const GetByIdSchema = z.object({ id: z.number() })
+
 export const getContractById = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
-  .inputValidator(
-    // Inline validator for id
-    (input: unknown) => {
-      if (typeof input === 'object' && input !== null && 'id' in input) {
-        return input as { id: number }
-      }
-      throw new Error('Invalid input')
-    },
-  )
+  .inputValidator(GetByIdSchema)
   .handler(async ({ data, context }) => {
     const res = await resultFetch(`${env.API_URL}/contracts/${data.id}`, {
       headers: {
