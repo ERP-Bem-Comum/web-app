@@ -3,6 +3,7 @@ import {
   createRootRoute,
   HeadContent,
   Scripts,
+  redirect,
 } from '@tanstack/react-router'
 import appCss from '../app/globals.css?url'
 
@@ -23,6 +24,11 @@ export const Route = createRootRoute({
       },
     ],
   }),
+  beforeLoad: ({ location }) => {
+    if (location.pathname === '/') {
+      throw redirect({ to: '/login' })
+    }
+  },
   component: RootLayout,
 })
 
