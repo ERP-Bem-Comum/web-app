@@ -1,19 +1,13 @@
-'use client'
-
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import { IUser } from '@/services/user'
+import { useAuth } from '@/hooks/useAuth'
 import { getLetters } from '@/utils/getLetters'
 import { Menu, MenuItem } from '@mui/material'
-import { signOut } from 'next-auth/react'
 import React, { useState } from 'react'
 import { MdOutlineArrowDropDown, MdOutlineLogout } from 'react-icons/md'
 
-interface Params {
-  user: IUser | undefined
-}
-
-export default function TopMain({ user }: Params) {
+export default function TopMain() {
+  const { user, logout } = useAuth()
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const open = Boolean(anchorEl)
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -30,7 +24,7 @@ export default function TopMain({ user }: Params) {
         <Avatar className="ml-3">
           <AvatarImage
             src={
-              user?.imageUrl && `${process.env.NEXT_PUBLIC_API_URL}/users/files/${user.imageUrl}`
+              user?.imageUrl && `${import.meta.env.VITE_API_URL || ''}/users/files/${user.imageUrl}`
             }
           />
           <AvatarFallback>{getLetters(user?.name ?? 'Visitante')}</AvatarFallback>
@@ -56,7 +50,7 @@ export default function TopMain({ user }: Params) {
           },
         }}
       >
-        <MenuItem onClick={() => signOut()}>
+        <MenuItem onClick={() => logout({ data: undefined })}>
           <MdOutlineLogout color={'#FF5353'} className="mr-3" size={20} /> Sair
         </MenuItem>
       </Menu>

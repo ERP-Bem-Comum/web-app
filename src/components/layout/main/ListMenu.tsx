@@ -1,9 +1,8 @@
-'use client'
 import { PAGES } from '@/utils/menu'
 import { Collapse, List, ListItemButton, ListItemIcon, ListItemText } from '@mui/material'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from '@tanstack/react-router'
 import { Fragment, useState } from 'react'
-import { MdOutlineExpandLess, MdOutlineExpandMore, MdOutlineNightShelter } from 'react-icons/md'
+import { MdOutlineExpandLess, MdOutlineExpandMore } from 'react-icons/md'
 
 export default function ListMenu() {
   const [open, setOpen] = useState('')
@@ -11,7 +10,7 @@ export default function ListMenu() {
   const [selectedPage, setSelectedPage] = useState('')
   const [selectedPageBorder, setSelectedPageBorder] = useState('')
   const [onHover, setOnHover] = useState(false)
-  const router = useRouter()
+  const navigate = useNavigate()
 
   const handleOpen = (name: string) => {
     if (open === name) {
@@ -129,7 +128,7 @@ export default function ListMenu() {
                         onClick={() =>
                           item.subPages.length > 0
                             ? handleOpenSub(item.ARE_NOME)
-                            : (router.push(item.path),
+                            : (navigate({ to: item.path }),
                               setSelectedPage(item.ARE_NOME),
                               setSelectedPageBorder(page.ARE_NOME))
                         }
@@ -182,7 +181,7 @@ export default function ListMenu() {
                                     }}
                                     key={sub.ARE_NOME}
                                     onClick={() => {
-                                      router.push(sub?.path)
+                                      navigate({ to: sub?.path })
                                       setSelectedPage(sub?.ARE_NOME)
                                       setSelectedPageBorder(page.ARE_NOME)
                                     }}

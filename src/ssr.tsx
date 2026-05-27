@@ -4,8 +4,10 @@ import {
 } from '@tanstack/react-start/server'
 import { getRouter } from './router'
 
-const requestHandler = createRequestHandler({
-  createRouter: getRouter,
-})
-
-export default requestHandler(defaultStreamHandler)
+export default async function handler(request: Request) {
+  const requestHandler = createRequestHandler({
+    createRouter: getRouter,
+    request,
+  })
+  return requestHandler(defaultStreamHandler)
+}

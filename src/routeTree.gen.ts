@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as AuthenticatedContratosIndexRouteImport } from './routes/_authenticated/contratos/index'
+import { Route as AuthenticatedContratosDetalhesIdRouteImport } from './routes/_authenticated/contratos/detalhes.$id'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -21,30 +23,53 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedContratosIndexRoute =
+  AuthenticatedContratosIndexRouteImport.update({
+    id: '/contratos/',
+    path: '/contratos/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedContratosDetalhesIdRoute =
+  AuthenticatedContratosDetalhesIdRouteImport.update({
+    id: '/contratos/detalhes/$id',
+    path: '/contratos/detalhes/$id',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AuthenticatedRoute
+  '/': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
+  '/contratos/': typeof AuthenticatedContratosIndexRoute
+  '/contratos/detalhes/$id': typeof AuthenticatedContratosDetalhesIdRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof AuthenticatedRoute
+  '/': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
+  '/contratos': typeof AuthenticatedContratosIndexRoute
+  '/contratos/detalhes/$id': typeof AuthenticatedContratosDetalhesIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/_authenticated': typeof AuthenticatedRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
+  '/_authenticated/contratos/': typeof AuthenticatedContratosIndexRoute
+  '/_authenticated/contratos/detalhes/$id': typeof AuthenticatedContratosDetalhesIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login'
+  fullPaths: '/' | '/login' | '/contratos/' | '/contratos/detalhes/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login'
-  id: '__root__' | '/_authenticated' | '/login'
+  to: '/' | '/login' | '/contratos' | '/contratos/detalhes/$id'
+  id:
+    | '__root__'
+    | '/_authenticated'
+    | '/login'
+    | '/_authenticated/contratos/'
+    | '/_authenticated/contratos/detalhes/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  AuthenticatedRoute: typeof AuthenticatedRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
 }
 
@@ -64,11 +89,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/contratos/': {
+      id: '/_authenticated/contratos/'
+      path: '/contratos'
+      fullPath: '/contratos/'
+      preLoaderRoute: typeof AuthenticatedContratosIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/contratos/detalhes/$id': {
+      id: '/_authenticated/contratos/detalhes/$id'
+      path: '/contratos/detalhes/$id'
+      fullPath: '/contratos/detalhes/$id'
+      preLoaderRoute: typeof AuthenticatedContratosDetalhesIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedContratosIndexRoute: typeof AuthenticatedContratosIndexRoute
+  AuthenticatedContratosDetalhesIdRoute: typeof AuthenticatedContratosDetalhesIdRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedContratosIndexRoute: AuthenticatedContratosIndexRoute,
+  AuthenticatedContratosDetalhesIdRoute: AuthenticatedContratosDetalhesIdRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
-  AuthenticatedRoute: AuthenticatedRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
