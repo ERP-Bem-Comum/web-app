@@ -6,8 +6,8 @@ import { t as createSsrRpc } from "./createSsrRpc-D75-wYbG.mjs";
 import { t as authMiddleware } from "./auth-BjaVwf5E.mjs";
 import { t as require_jsx_dev_runtime } from "../_libs/react.mjs";
 import { a as ContractType, i as ContractModel, t as ContractClassification } from "./schemas-B7PGPTHM.mjs";
-import { a as updateContract, t as createContract } from "./contracts-BScQWtEL.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/ContractForm-DCvYMcvD.js
+import { a as updateContract, t as createContract } from "./contracts-BJ_B_piw.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/ContractForm-DHdC7c5o.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_dev_runtime = require_jsx_dev_runtime();
 var getSuppliers = createServerFn({ method: "GET" }).middleware([authMiddleware]).handler(createSsrRpc("0d9b80a34af217f62297b399d76eb7313d7df3d6925d21bdd62062ad8058708f"));

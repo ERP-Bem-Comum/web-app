@@ -1,7 +1,7 @@
 import { t as require_jsx_dev_runtime } from "../_libs/react.mjs";
-import { t as Route } from "./detalhes._id-Cq4b8gkA.mjs";
-import { t as useContract } from "./use-contract-B-Vr_aP1.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/detalhes._id-Cgn8d7cp.js
+import { t as Route } from "./detalhes._id-n0bseNnB.mjs";
+import { t as useContract } from "./use-contract-C1AYeEKd.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/detalhes._id-CZS_egMM.js
 var import_jsx_dev_runtime = require_jsx_dev_runtime();
 var _jsxFileName = "/Users/alessandracastro/dev/ERP-FRONTEND/src/routes/_authenticated/contratos/detalhes.$id.tsx?tsr-split=component";
 function ContractDetailsPage() {

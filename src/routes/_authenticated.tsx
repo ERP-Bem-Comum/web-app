@@ -10,7 +10,7 @@ function AuthenticatedLayout() {
   const { user, logout } = useAuth()
 
   const handleLogout = async () => {
-    await logout({ data: undefined })
+    await logout()
     window.location.href = '/login'
   }
 

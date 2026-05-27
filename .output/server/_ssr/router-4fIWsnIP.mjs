@@ -1,9 +1,9 @@
 import { T as redirect, a as createRouter, c as createFileRoute, l as createRootRoute, n as Scripts, o as Outlet, r as HeadContent, s as lazyRouteComponent } from "../_libs/@tanstack/react-router+[...].mjs";
 import { t as require_jsx_dev_runtime } from "../_libs/react.mjs";
-import { t as Route$4 } from "./contratos-Bf9T_aur.mjs";
-import { t as Route$5 } from "./detalhes._id-Cq4b8gkA.mjs";
-import { t as Route$6 } from "./editar._id-Bun6LI-H.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/router-C65V4Osg.js
+import { t as Route$4 } from "./contratos-CnF_yVY1.mjs";
+import { t as Route$5 } from "./detalhes._id-n0bseNnB.mjs";
+import { t as Route$6 } from "./editar._id-BmuOPjng.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/router-4fIWsnIP.js
 var import_jsx_dev_runtime = require_jsx_dev_runtime();
 var globals_default = "/assets/globals-oPjg1nyp.css";
 var _jsxFileName = "/Users/alessandracastro/dev/ERP-FRONTEND/src/routes/__root.tsx";
@@ -57,11 +57,11 @@ function RootLayout() {
 		columnNumber: 5
 	}, this);
 }
-var $$splitComponentImporter$2 = () => import("./login-Bm0HbqIJ.mjs");
+var $$splitComponentImporter$2 = () => import("./login-Bx62YzOs.mjs");
 var Route$2 = createFileRoute("/login")({ component: lazyRouteComponent($$splitComponentImporter$2, "component") });
-var $$splitComponentImporter$1 = () => import("../_authenticated-C-K7Aoq8.mjs");
+var $$splitComponentImporter$1 = () => import("../_authenticated-Dbxpgdqd.mjs");
 var Route$1 = createFileRoute("/_authenticated")({ component: lazyRouteComponent($$splitComponentImporter$1, "component") });
-var $$splitComponentImporter = () => import("./adicionar-zeC8wnGY.mjs");
+var $$splitComponentImporter = () => import("./adicionar-DvD0kfj9.mjs");
 var Route = createFileRoute("/_authenticated/contratos/adicionar")({ component: lazyRouteComponent($$splitComponentImporter, "component") });
 var LoginRoute = Route$2.update({
 	id: "/login",

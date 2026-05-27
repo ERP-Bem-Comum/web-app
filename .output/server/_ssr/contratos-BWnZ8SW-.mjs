@@ -2,10 +2,10 @@ import { i as __toESM } from "../_runtime.mjs";
 import { i as useQueryClient, n as useSuspenseQuery, o as require_react, t as useMutation } from "../_libs/react+tanstack__react-query.mjs";
 import { u as Link } from "../_libs/@tanstack/react-router+[...].mjs";
 import { t as require_jsx_dev_runtime } from "../_libs/react.mjs";
-import { i as getContracts, n as deleteContract } from "./contracts-BScQWtEL.mjs";
-import { t as Route } from "./contratos-Bf9T_aur.mjs";
+import { i as getContracts, n as deleteContract } from "./contracts-BJ_B_piw.mjs";
+import { t as Route } from "./contratos-CnF_yVY1.mjs";
 import { t as contractKeys } from "./queries-Cub9KT5_.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/contratos-DxLNQ0pY.js
+//#region node_modules/.nitro/vite/services/ssr/assets/contratos-BWnZ8SW-.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_dev_runtime = require_jsx_dev_runtime();
 function useContracts(filters) {

@@ -3,7 +3,7 @@ import { t as authMiddleware } from "./auth-BjaVwf5E.mjs";
 import { c as object, s as number } from "../_libs/zod.mjs";
 import { n as ContractCreateInputSchema, r as ContractListFiltersSchema } from "./schemas-B7PGPTHM.mjs";
 import { n as env, r as resultFetch, t as createServerRpc } from "./result-fetch-eo8vxO5I.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/contracts-DZKj3SYV.js
+//#region node_modules/.nitro/vite/services/ssr/assets/contracts-Fi7ynkrn.js
 var getContracts_createServerFn_handler = createServerRpc({
 	id: "21733bb734508896bbab990a0be92be590eda23a3dc18baa44f8b5be6a987915",
 	name: "getContracts",
@@ -98,5 +98,25 @@ var deleteContract = createServerFn({ method: "POST" }).middleware([authMiddlewa
 	}
 	return { success: true };
 });
+var createAditive_createServerFn_handler = createServerRpc({
+	id: "362cb3e91c809b23fa9aa028a9af6edeee9f16e7e614ba712b3b4e936d33854a",
+	name: "createAditive",
+	filename: "src/server/contracts.ts"
+}, (opts) => createAditive.__executeServer(opts));
+var createAditive = createServerFn({ method: "POST" }).middleware([authMiddleware]).inputValidator(ContractCreateInputSchema).handler(createAditive_createServerFn_handler, async ({ data, context }) => {
+	const res = await resultFetch(`${env.API_URL}/contracts/aditive`, {
+		method: "POST",
+		headers: {
+			"content-type": "application/json",
+			authorization: `Bearer ${context.session.token}`
+		},
+		body: JSON.stringify(data)
+	});
+	if (!res.ok) {
+		if (res.error.kind === "http") throw new Response(JSON.stringify(res.error.body), { status: res.error.status });
+		throw new Response("Failed to create aditive", { status: 500 });
+	}
+	return res.value.json();
+});
 //#endregion
-export { createContract_createServerFn_handler, deleteContract_createServerFn_handler, getContractById_createServerFn_handler, getContracts_createServerFn_handler, updateContract_createServerFn_handler };
+export { createAditive_createServerFn_handler, createContract_createServerFn_handler, deleteContract_createServerFn_handler, getContractById_createServerFn_handler, getContracts_createServerFn_handler, updateContract_createServerFn_handler };

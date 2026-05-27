@@ -127,3 +127,26 @@ export const deleteContract = createServerFn({ method: 'POST' })
 
     return { success: true }
   })
+
+export const createAditive = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware])
+  .inputValidator(ContractCreateInputSchema)
+  .handler(async ({ data, context }) => {
+    const res = await resultFetch(`${env.API_URL}/contracts/aditive`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${context.session.token}`,
+      },
+      body: JSON.stringify(data),
+    })
+
+    if (!res.ok) {
+      if (res.error.kind === 'http') {
+        throw new Response(JSON.stringify(res.error.body), { status: res.error.status })
+      }
+      throw new Response('Failed to create aditive', { status: 500 })
+    }
+
+    return res.value.json()
+  })

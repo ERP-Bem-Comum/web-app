@@ -1,6 +1,6 @@
 import { t as require_jsx_dev_runtime } from "../_libs/react.mjs";
-import { t as ContractForm } from "./ContractForm-DCvYMcvD.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/adicionar-zeC8wnGY.js
+import { t as ContractForm } from "./ContractForm-DHdC7c5o.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/adicionar-DvD0kfj9.js
 var import_jsx_dev_runtime = require_jsx_dev_runtime();
 var _jsxFileName = "/Users/alessandracastro/dev/ERP-FRONTEND/src/routes/_authenticated/contratos/adicionar.tsx?tsr-split=component";
 function AddContractPage() {

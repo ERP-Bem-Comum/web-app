@@ -1,8 +1,8 @@
 import { t as require_jsx_dev_runtime } from "../_libs/react.mjs";
-import { t as ContractForm } from "./ContractForm-DCvYMcvD.mjs";
-import { t as useContract } from "./use-contract-B-Vr_aP1.mjs";
-import { t as Route } from "./editar._id-Bun6LI-H.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/editar._id-DHgQR5aM.js
+import { t as ContractForm } from "./ContractForm-DHdC7c5o.mjs";
+import { t as useContract } from "./use-contract-C1AYeEKd.mjs";
+import { t as Route } from "./editar._id-BmuOPjng.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/editar._id-R_3HU31J.js
 var import_jsx_dev_runtime = require_jsx_dev_runtime();
 var _jsxFileName = "/Users/alessandracastro/dev/ERP-FRONTEND/src/routes/_authenticated/contratos/editar.$id.tsx?tsr-split=component";
 function EditContractPage() {

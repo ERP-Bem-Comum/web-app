@@ -1,9 +1,9 @@
 import { i as __toESM } from "../_runtime.mjs";
 import { o as require_react } from "../_libs/react+tanstack__react-query.mjs";
 import { d as useNavigate } from "../_libs/@tanstack/react-router+[...].mjs";
-import { n as login } from "./auth-DbW2AatT.mjs";
+import { n as login } from "./auth-D2t3jt42.mjs";
 import { t as require_jsx_dev_runtime } from "../_libs/react.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/login-Bm0HbqIJ.js
+//#region node_modules/.nitro/vite/services/ssr/assets/login-Bx62YzOs.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_dev_runtime = require_jsx_dev_runtime();
 var _jsxFileName = "/Users/alessandracastro/dev/ERP-FRONTEND/src/routes/login.tsx?tsr-split=component";

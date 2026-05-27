@@ -1,21 +1,30 @@
-import { r as useQuery } from "./_libs/react+tanstack__react-query.mjs";
+import { i as useQueryClient, r as useQuery, t as useMutation } from "./_libs/react+tanstack__react-query.mjs";
 import { o as Outlet, u as Link } from "./_libs/@tanstack/react-router+[...].mjs";
-import { t as getSession } from "./_ssr/auth-DbW2AatT.mjs";
+import { r as logout, t as getSession } from "./_ssr/auth-D2t3jt42.mjs";
 import { t as require_jsx_dev_runtime } from "./_libs/react.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/_authenticated-C-K7Aoq8.js
+//#region node_modules/.nitro/vite/services/ssr/assets/_authenticated-Dbxpgdqd.js
 var import_jsx_dev_runtime = require_jsx_dev_runtime();
 function useAuth() {
+	const qc = useQueryClient();
 	const { data, isLoading, error } = useQuery({
 		queryKey: ["auth", "session"],
-		queryFn: () => getSession(),
+		queryFn: () => getSession({ data: void 0 }),
 		retry: false,
 		refetchOnWindowFocus: false
 	});
+	const logoutMutation = useMutation({
+		mutationFn: () => logout(),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ["auth", "session"] });
+		}
+	});
 	return {
+		user: data?.user ?? null,
 		session: data ?? null,
 		isLoading,
 		isAuthenticated: !!data?.user,
-		error
+		error,
+		logout: logoutMutation.mutateAsync
 	};
 }
 var _jsxFileName$1 = "/Users/alessandracastro/dev/ERP-FRONTEND/src/components/layout/main/PageContainer.tsx";
@@ -40,7 +49,7 @@ var _jsxFileName = "/Users/alessandracastro/dev/ERP-FRONTEND/src/routes/_authent
 function AuthenticatedLayout() {
 	const { user, logout } = useAuth();
 	const handleLogout = async () => {
-		await logout({ data: void 0 });
+		await logout();
 		window.location.href = "/login";
 	};
 	return /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)("div", {
@@ -54,11 +63,11 @@ function AuthenticatedLayout() {
 				height: 32
 			}, void 0, false, {
 				fileName: _jsxFileName,
-				lineNumber: 18,
+				lineNumber: 16,
 				columnNumber: 11
 			}, this) }, void 0, false, {
 				fileName: _jsxFileName,
-				lineNumber: 17,
+				lineNumber: 15,
 				columnNumber: 9
 			}, this), /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)("div", {
 				className: "h-full flex justify-end items-center gap-4 z-10",
@@ -67,7 +76,7 @@ function AuthenticatedLayout() {
 					children: ["Olá, ", user?.name ?? "Visitante"]
 				}, void 0, true, {
 					fileName: _jsxFileName,
-					lineNumber: 21,
+					lineNumber: 19,
 					columnNumber: 11
 				}, this), /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)("button", {
 					onClick: handleLogout,
@@ -75,17 +84,17 @@ function AuthenticatedLayout() {
 					children: "Sair"
 				}, void 0, false, {
 					fileName: _jsxFileName,
-					lineNumber: 22,
+					lineNumber: 20,
 					columnNumber: 11
 				}, this)]
 			}, void 0, true, {
 				fileName: _jsxFileName,
-				lineNumber: 20,
+				lineNumber: 18,
 				columnNumber: 9
 			}, this)]
 		}, void 0, true, {
 			fileName: _jsxFileName,
-			lineNumber: 16,
+			lineNumber: 14,
 			columnNumber: 7
 		}, this), /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)("div", {
 			className: "flex",
@@ -100,39 +109,39 @@ function AuthenticatedLayout() {
 						children: "Contratos"
 					}, void 0, false, {
 						fileName: _jsxFileName,
-						lineNumber: 33,
+						lineNumber: 31,
 						columnNumber: 15
 					}, this) }, void 0, false, {
 						fileName: _jsxFileName,
-						lineNumber: 32,
+						lineNumber: 30,
 						columnNumber: 13
 					}, this)
 				}, void 0, false, {
 					fileName: _jsxFileName,
-					lineNumber: 31,
+					lineNumber: 29,
 					columnNumber: 11
 				}, this)
 			}, void 0, false, {
 				fileName: _jsxFileName,
-				lineNumber: 30,
+				lineNumber: 28,
 				columnNumber: 9
 			}, this), /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(PageContainer, { children: /* @__PURE__ */ (0, import_jsx_dev_runtime.jsxDEV)(Outlet, {}, void 0, false, {
 				fileName: _jsxFileName,
-				lineNumber: 40,
+				lineNumber: 38,
 				columnNumber: 11
 			}, this) }, void 0, false, {
 				fileName: _jsxFileName,
-				lineNumber: 39,
+				lineNumber: 37,
 				columnNumber: 9
 			}, this)]
 		}, void 0, true, {
 			fileName: _jsxFileName,
-			lineNumber: 27,
+			lineNumber: 25,
 			columnNumber: 7
 		}, this)]
 	}, void 0, true, {
 		fileName: _jsxFileName,
-		lineNumber: 15,
+		lineNumber: 13,
 		columnNumber: 10
 	}, this);
 }
