@@ -136,6 +136,11 @@
   background: rgba(229, 77, 64, 0.10);
   color: #c0392b;
 }
+.statusPillRascunho {
+  background: var(--paper-beige);
+  color: var(--ink-4);
+  border: 0.5px solid var(--ink-5);
+}
 
 .dot {
   width: 5px;
@@ -157,6 +162,10 @@
 .statusPillDistrato .dot {
   background: #e54d40;
   box-shadow: 0 0 0 2px rgba(229, 77, 64, 0.10);
+}
+.statusPillRascunho .dot {
+  background: var(--ink-5);
+  box-shadow: 0 0 0 2px var(--paper-beige);
 }
 
 .statusBadgeFooter {

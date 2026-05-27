@@ -73,12 +73,14 @@ export const mountPeriod = ({ contractPeriod: data }: Pick<ContractRow, 'contrac
 
 /**
  * Formata o código do contrato para exibição no grid.
- * CNT-2024-0001 → 0001/2024
+ * CT-2024-0001 → CT 0001/2024
+ * OS-2024-0001 → OS 0001/2024
  */
 export const formatContractNumber = (code: string): string => {
-  const match = code.match(/(\d{4})-(\d{4})/)
+  const match = code.match(/(CT|OS|CNT)-(\d{4})-(\d{4})/)
   if (match) {
-    return `${match[2]}/${match[1]}`
+    const prefix = match[1] === 'CNT' ? 'CT' : match[1]
+    return `${prefix} ${match[3]}/${match[2]}`
   }
   return code
 }

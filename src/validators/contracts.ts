@@ -1,4 +1,4 @@
-import { ContractModel, ContractStatus, ContractType } from '@/enums/contracts'
+import { ContractClassification, ContractModel, ContractStatus, ContractType } from '@/enums/contracts'
 import { z } from 'zod/v3'
 import { bancaryInfoRefined, pixInfoRefined, bancaryInfoSchema, pixInfoSchema } from './global'
 import { isAllEmpty } from '@/utils/emptyFilled'
@@ -48,9 +48,13 @@ const contractorSchema = z.object({
 })
 
 const commonContractSchema = z.object({
+  classification: z.nativeEnum(ContractClassification, handleErrorMessage('Classificação da contratação')).default(ContractClassification.CONTRACT),
   contractModel: z.nativeEnum(ContractModel, handleErrorMessage('Modelo de contrato')),
   object: z.string().min(1, 'Objeto é obrigatório.'),
-  totalValue: z.number(handleErrorMessage('valor total')),
+  totalValue: z.number(handleErrorMessage('valor total')).refine(
+    (val) => val !== undefined && val !== null,
+    { message: 'Valor original é obrigatório.' }
+  ),
   contractPeriod: z
     .object({
       start: z.date(handleErrorMessage('Inicio do periodo', 'data')),
@@ -113,6 +117,8 @@ const financierContractSchema = z
   })
   .merge(commonContractSchema)
 
+const MAX_SERVICE_ORDER_VALUE = 9999.99
+
 export const contractSchema = z
   .discriminatedUnion('contractType', [
     financierContractSchema,
@@ -121,6 +127,14 @@ export const contractSchema = z
     actContractSchema,
   ])
   .superRefine((values, ctx) => {
+    // Validação de teto para Ordem de Serviço
+    if (values.classification === ContractClassification.SERVICE_ORDER && values.totalValue > MAX_SERVICE_ORDER_VALUE) {
+      ctx.addIssue({
+        path: ['totalValue'],
+        code: z.ZodIssueCode.custom,
+        message: 'Para Ordem de Serviço, o valor original máximo permitido é R$ 9.999,99.',
+      })
+    }
     if (
       values.contractType === ContractType.COLLABORATOR ||
       values.contractType === ContractType.SUPPLIER ||

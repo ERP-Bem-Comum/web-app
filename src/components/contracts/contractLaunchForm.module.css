@@ -881,6 +881,79 @@
   background: var(--green);
 }
 
+.statusRascunho {
+  color: var(--ink-4);
+  background: var(--paper-warm);
+}
+.statusRascunho::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ink-5);
+}
+
+.statusSaved {
+  color: var(--green-deep);
+  background: var(--green-bg);
+}
+.statusSaved::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+.statusSaving {
+  color: var(--teal-deep);
+  background: var(--teal-bg);
+}
+.statusSaving::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--teal);
+  animation: subtle-pulse 1.2s ease-in-out infinite;
+}
+
+.statusAssinado {
+  color: #2d4f75;
+  background: var(--teal-bg);
+}
+.statusAssinado::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--teal);
+}
+
+.statusFinalizado {
+  color: var(--ink-3);
+  background: var(--paper-beige);
+}
+.statusFinalizado::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ink-4);
+}
+
+.statusDistrato {
+  color: #a82f24;
+  background: rgba(229, 77, 64, 0.08);
+}
+.statusDistrato::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #e54d40;
+}
+
 /* Accordion — Contratado */
 .accordionSection {
   padding: 0;
@@ -1085,7 +1158,80 @@
   flex-shrink: 0;
 }
 
+/* Classificação da Contratação — Radio Cards */
+.classificationCards {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+.classCard {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--paper-rule);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--ink-4);
+  font-family: var(--font-nunito), 'Nunito', ui-sans-serif, system-ui, sans-serif;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--t-fast) var(--ease);
+  text-align: center;
+}
+.classCard:hover {
+  border-color: var(--teal-line);
+  background: var(--teal-bg);
+  color: var(--teal-deep);
+}
+.classCardActive {
+  border-color: var(--teal);
+  background: var(--teal-bg);
+  color: var(--teal-deep);
+  box-shadow: 0 0 0 1px var(--teal-line);
+  font-weight: 600;
+}
+.classCardLabel {
+  white-space: nowrap;
+}
+
+/* Ordem de Serviço — badges e erros */
+.osLimitBadge {
+  font-family: var(--font-inter), 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-size: 9.5px;
+  font-weight: 600;
+  color: #9a5402;
+  background: #fff7e0;
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-left: auto;
+}
+.osError {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: #c53b32;
+  margin-top: 6px;
+  padding: 6px 10px;
+  background: rgba(197, 59, 50, 0.06);
+  border-radius: 6px;
+  border: 0.5px solid rgba(197, 59, 50, 0.15);
+}
+
 /* Hero — estilo detail page */
+.contratadoCtaGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+@media (max-width: 1100px) {
+  .contratadoCtaGrid { grid-template-columns: 1fr; }
+}
+
 .contratadoCta {
   display: flex;
   align-items: center;
@@ -1094,7 +1240,7 @@
   background: var(--paper-warm);
   border: 1.5px dashed var(--paper-rule);
   border-radius: 10px;
-  margin-bottom: 22px;
+  margin-bottom: 18px;
   cursor: pointer;
   transition: all var(--t-fast) var(--ease);
   width: 100%;
@@ -1139,6 +1285,33 @@
   align-items: center;
   gap: 5px;
   flex-shrink: 0;
+}
+
+.contratadoCadastrarLink {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 10px;
+  margin-bottom: 22px;
+  font-size: 11.5px;
+  color: var(--ink-4);
+}
+.contratadoCadastrarLink span { color: var(--ink-5); }
+.contratadoCadastrarLink button {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  font-family: inherit;
+  color: var(--teal);
+  font-weight: 500;
+  cursor: pointer;
+  transition: color var(--t-fast) var(--ease);
+}
+.contratadoCadastrarLink button:hover {
+  color: var(--teal-deep);
+  text-decoration: underline;
 }
 
 .hero {

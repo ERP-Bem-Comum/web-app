@@ -1,5 +1,5 @@
 import { CustomFile } from '@/components/files/InputFIleV2'
-import { ContractStatus } from '@/enums/contracts'
+import { ContractClassification, ContractStatus } from '@/enums/contracts'
 import { PaymentType } from '@/enums/payables'
 import { ReceivableType } from '@/enums/receivables'
 import { ICollaborator } from '@/services/collaborator'
@@ -73,7 +73,7 @@ export type IContract = Omit<
   }
 
 export type Children = abstractType &
-  Pick<Contract, 'contractType' | 'object' | 'contractPeriod' | 'totalValue' | 'contractModel'> & {
+  Pick<Contract, 'classification' | 'contractType' | 'object' | 'contractPeriod' | 'totalValue' | 'contractModel'> & {
     contractCode: string
     supplier: Pick<ISupplier, 'id' | 'name' | 'cnpj' | 'corporateName'> | null
     financier: Pick<IFinancier, 'id' | 'name' | 'cnpj' | 'corporateName'> | null

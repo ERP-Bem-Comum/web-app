@@ -3,7 +3,7 @@
  * Quando o backend retorna 403/erro, o frontend opera sobre essa "base local".
  */
 
-import { ContractModel, ContractStatus, ContractType } from '@/enums/contracts'
+import { ContractClassification, ContractModel, ContractStatus, ContractType } from '@/enums/contracts'
 import { ContractRow, IContract } from '@/types/contracts'
 import { ISupplier } from '@/types/supplier'
 import { ICollaborator } from '@/services/collaborator'
@@ -17,6 +17,7 @@ const KEYS = {
   suppliers: 'erp_local_suppliers',
   collaborators: 'erp_local_collaborators',
   nextContractSeq: 'erp_local_next_contract_seq',
+  nextServiceOrderSeq: 'erp_local_next_service_order_seq',
 }
 
 /* ═════════════════════════════════════
@@ -42,15 +43,21 @@ function write<T>(key: string, value: T) {
   }
 }
 
-function generateContractCode(year: number, seq: number): string {
-  return `CNT-${year}-${String(seq).padStart(4, '0')}`
+function generateContractCode(
+  year: number,
+  seq: number,
+  classification: ContractClassification = ContractClassification.CONTRACT
+): string {
+  const prefix = classification === ContractClassification.SERVICE_ORDER ? 'OS' : 'CT'
+  return `${prefix}-${year}-${String(seq).padStart(4, '0')}`
 }
 
-function getNextSeq(year: number): number {
-  const map = read<Record<string, number>>(KEYS.nextContractSeq, {})
+function getNextSeq(year: number, classification: ContractClassification = ContractClassification.CONTRACT): number {
+  const key = classification === ContractClassification.SERVICE_ORDER ? KEYS.nextServiceOrderSeq : KEYS.nextContractSeq
+  const map = read<Record<string, number>>(key, {})
   const current = map[String(year)] ?? 0
   map[String(year)] = current + 1
-  write(KEYS.nextContractSeq, map)
+  write(key, map)
   return current + 1
 }
 
@@ -1051,17 +1058,26 @@ export function seedLocalDb() {
   }
 
   // Garante que o contador de sequência respeite os contratos já existentes
+  // (inclui CNT legado, CT e OS)
   const allContracts = read<LocalContract[]>(KEYS.contracts, [])
-  const seqMap = read<Record<string, number>>(KEYS.nextContractSeq, {})
+  const ctSeqMap = read<Record<string, number>>(KEYS.nextContractSeq, {})
+  const osSeqMap = read<Record<string, number>>(KEYS.nextServiceOrderSeq, {})
   allContracts.forEach((c) => {
-    const match = c.contractCode.match(/CNT-(\d{4})-(\d{4})/)
-    if (match) {
-      const year = match[1]
-      const num = parseInt(match[2], 10)
-      seqMap[year] = Math.max(seqMap[year] ?? 0, num)
+    const ctMatch = c.contractCode.match(/(?:CT|CNT)-(\d{4})-(\d{4})/)
+    if (ctMatch) {
+      const year = ctMatch[1]
+      const num = parseInt(ctMatch[2], 10)
+      ctSeqMap[year] = Math.max(ctSeqMap[year] ?? 0, num)
+    }
+    const osMatch = c.contractCode.match(/OS-(\d{4})-(\d{4})/)
+    if (osMatch) {
+      const year = osMatch[1]
+      const num = parseInt(osMatch[2], 10)
+      osSeqMap[year] = Math.max(osSeqMap[year] ?? 0, num)
     }
   })
-  write(KEYS.nextContractSeq, seqMap)
+  write(KEYS.nextContractSeq, ctSeqMap)
+  write(KEYS.nextServiceOrderSeq, osSeqMap)
 }
 
 /* ═════════════════════════════════════
@@ -1193,12 +1209,13 @@ export function localDbSaveContract(payload: Partial<LocalContract>): LocalContr
   const year = enriched.contractPeriod
     ? new Date(enriched.contractPeriod.start as unknown as string).getFullYear()
     : new Date().getFullYear()
-  const seq = getNextSeq(year)
+  const classification = enriched.classification ?? ContractClassification.CONTRACT
+  const seq = getNextSeq(year, classification)
 
   const newContract: LocalContract = {
     ...(enriched as LocalContract),
     id: Date.now() + Math.floor(Math.random() * 1000),
-    contractCode: generateContractCode(year, seq),
+    contractCode: generateContractCode(year, seq, classification),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     contractStatus: enriched.contractStatus ?? ContractStatus.PENDING,
@@ -1255,7 +1272,7 @@ export function localDbAddAditive(
   const parent = contracts[parentIdx]
   const siblings = parent.children ?? []
   const seq = siblings.length + 1
-  const yearMatch = parent.contractCode.match(/CNT-(\d{4})-/)
+  const yearMatch = parent.contractCode.match(/(?:CT|OS|CNT)-(\d{4})-/)
   const year = yearMatch ? yearMatch[1] : String(new Date().getFullYear())
 
   const aditive: LocalContract = {

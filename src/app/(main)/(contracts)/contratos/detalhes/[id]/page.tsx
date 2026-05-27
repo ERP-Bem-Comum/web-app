@@ -10,6 +10,7 @@ import { formatContractNumber } from '@/utils/UI/contracts'
 import { deriveStatus, getMostRecentChild } from '@/utils/contracts/status'
 import { localDbUpdateContract } from '@/mocks/localDb'
 import { ArrowLeft, Download, Eye, Lock, Pencil, Plus } from 'lucide-react'
+import { queryClient } from 'lib/react-query'
 import { useParams, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { ModalNovoAditivo, AditivoFormData } from '@/components/modals/contracts/ModalNovoAditivo'
@@ -106,15 +107,9 @@ export default function ContractDetailPage() {
     'pendente': styles.statusPillPendente,
     'finalizado': styles.statusPillFinalizado,
     'distrato': styles.statusPillDistrato,
+    'rascunho': styles.statusPillRascunho,
   }
   const derivedStatusPillClass = statusClassMap[derived.key] || styles.statusPillVigente
-
-  const docBadgeClassMap: Record<string, string> = {
-    'em-andamento': styles.statusVigente,
-    'pendente': styles.statusPendente,
-    'finalizado': styles.statusFinalizado,
-    'distrato': styles.statusDistrato,
-  }
 
   const hasDistratoHomologado = children.some(
     (c) => c.aditivoType === 'distrato' && c.aditivoStatus === 'Homologado'
@@ -224,27 +219,8 @@ export default function ContractDetailPage() {
                   ? 'Distrato'
                   : 'Aditivo'
 
-      // Evento 1: Criação em Rascunho
-      events.push({
-        dateStr: formatDate(child.createdAt) || '-',
-        text: `Aditivo ${num} criado em rascunho (${tipo}).`,
-        state: 'past',
-        sortTs: parseTs(child.createdAt),
-        tipo: child.aditivoType || undefined,
-      })
-
-      // Evento 2: Movido para Pendente (se aplicável)
-      if (child.aditivoStatus === 'Pendente' || child.aditivoStatus === 'Homologado') {
-        events.push({
-          dateStr: formatDate(child.updatedAt) || formatDate(child.createdAt) || '-',
-          text: `Aditivo ${num} movido para Pendente. Aguarda documentação.`,
-          state: 'past',
-          sortTs: parseTs(child.updatedAt) || parseTs(child.createdAt),
-        })
-      }
-
-      // Evento 3: Homologado (se aplicável)
       if (child.aditivoStatus === 'Homologado') {
+        // Aditivo homologado: registra apenas a homologação (não mostra passos intermediários que nunca ocorreram)
         let desc = ''
         if (child.aditivoType === 'valor') {
           const sinal = (child.totalValue ?? 0) >= 0 ? '+' : ''
@@ -260,16 +236,40 @@ export default function ContractDetailPage() {
           desc = 'ajuste de escopo'
         }
         events.push({
-          dateStr: child.dataAssinatura || formatDate(child.updatedAt) || '-',
+          dateStr: child.dataAssinatura || formatDate(child.createdAt) || '-',
           text: `Aditivo ${num} homologado. ${desc}.`,
           state: 'ok',
-          sortTs: parseBrDate(child.dataAssinatura || '') || parseTs(child.updatedAt),
+          sortTs: parseBrDate(child.dataAssinatura || '') || parseTs(child.createdAt),
+          tipo: child.aditivoType || undefined,
+        })
+      } else if (child.aditivoStatus === 'Pendente') {
+        // Aditivo pendente (sem documento): criação + status pendente
+        events.push({
+          dateStr: formatDate(child.createdAt) || '-',
+          text: `Aditivo ${num} criado (${tipo}).`,
+          state: 'past',
+          sortTs: parseTs(child.createdAt),
+          tipo: child.aditivoType || undefined,
+        })
+        events.push({
+          dateStr: formatDate(child.updatedAt) || formatDate(child.createdAt) || '-',
+          text: `Aditivo ${num} aguarda documentação (Pendente).`,
+          state: 'past',
+          sortTs: parseTs(child.updatedAt) || parseTs(child.createdAt),
+        })
+      } else {
+        // Rascunho
+        events.push({
+          dateStr: formatDate(child.createdAt) || '-',
+          text: `Aditivo ${num} criado em rascunho (${tipo}).`,
+          state: 'past',
+          sortTs: parseTs(child.createdAt),
           tipo: child.aditivoType || undefined,
         })
       }
     })
 
-    // Contrato base
+    // Contrato base — impreterivelmente o primeiro nó (mais antigo)
     events.push({
       dateStr: formatDate(contract.createdAt) || '-',
       text: 'Contrato criado no sistema.',
@@ -293,8 +293,12 @@ export default function ContractDetailPage() {
       })
     }
 
-    // Ordena do mais recente para o mais antigo
-    events.sort((a, b) => b.sortTs - a.sortTs)
+    // Ordena do mais recente para o mais antigo, mas o contrato base é sempre o último (primeiro nó)
+    events.sort((a, b) => {
+      if (a.tipo === 'base' && b.tipo !== 'base') return 1
+      if (a.tipo !== 'base' && b.tipo === 'base') return -1
+      return b.sortTs - a.sortTs
+    })
 
     // O evento mais recente fica como 'current'
     if (events.length > 0) {
@@ -336,17 +340,45 @@ export default function ContractDetailPage() {
   }
 
   const handleUpdateAditivo = (
-    aditivoId: number,
+    id: number,
     updates: Partial<IContract>
   ) => {
     if (!localContract) return
 
     setLocalContract((prev) => {
-      if (!prev || !prev.children) return prev
-      return {
+      if (!prev) return prev
+      // Se o ID é o do contrato base, atualiza o contrato base
+      if (id === prev.id) {
+        const next = { ...prev, ...updates, updatedAt: new Date().toISOString() }
+        localDbUpdateContract(next.id, next as any)
+        queryClient.invalidateQueries({ queryKey: ['contracts'] })
+        queryClient.invalidateQueries({ queryKey: ['ContractById'] })
+        return next
+      }
+      // Senão, atualiza nos children
+      if (!prev.children) return prev
+
+      // Se um aditivo foi homologado com documento, promove o contrato base
+      const isHomologating = updates.aditivoStatus === 'Homologado' || !!updates.signedContractUrl
+      const aditivoBeingUpdated = prev.children.find((c) => c.id === id)
+      const isDistrato =
+        aditivoBeingUpdated?.aditivoType === 'distrato' || updates.aditivoType === 'distrato'
+
+      let baseUpdates: Partial<IContract> = {}
+      if (isHomologating && !isDistrato) {
+        if (
+          prev.contractStatus === ContractStatus.RASCUNHO ||
+          prev.contractStatus === ContractStatus.PENDING
+        ) {
+          baseUpdates.contractStatus = ContractStatus.ONGOING
+        }
+      }
+
+      const next = {
         ...prev,
+        ...baseUpdates,
         children: prev.children.map((child) => {
-          if (child.id !== aditivoId) return child
+          if (child.id !== id) return child
           return {
             ...child,
             ...updates,
@@ -354,6 +386,10 @@ export default function ContractDetailPage() {
           }
         }),
       }
+      localDbUpdateContract(next.id, next as any)
+      queryClient.invalidateQueries({ queryKey: ['contracts'] })
+      queryClient.invalidateQueries({ queryKey: ['ContractById'] })
+      return next
     })
   }
 
@@ -380,6 +416,8 @@ export default function ContractDetailPage() {
     next.updatedAt = new Date().toISOString()
     setLocalContract(next)
     localDbUpdateContract(next.id, next as any)
+    queryClient.invalidateQueries({ queryKey: ['contracts'] })
+    queryClient.invalidateQueries({ queryKey: ['ContractById'] })
     setIsEditing(false)
   }
 
@@ -402,11 +440,11 @@ export default function ContractDetailPage() {
       (localContract.children?.reduce((max, c) => Math.max(max, c.id), localContract.id) ??
         localContract.id) + 1
 
-    // Converte valor string (R$ 0,00) para número em centavos
+    // Converte valor string (R$ 0,00) para número em reais
     const parseValor = (val: string | undefined): number => {
       if (!val) return 0
       const clean = val.replace(/[^\d]/g, '')
-      return clean ? parseInt(clean, 10) : 0
+      return clean ? parseInt(clean, 10) / 100 : 0
     }
 
     const valorNumerico =
@@ -420,7 +458,7 @@ export default function ContractDetailPage() {
       if (!str) return undefined
       const [d, m, y] = str.split('/')
       if (!d || !m || !y) return undefined
-      return new Date(`${y}-${m}-${d}T00:00:00.000Z`)
+      return new Date(Number(y), Number(m) - 1, Number(d))
     }
 
     const dataAssinatura = parseDate(formData.assinatura)
@@ -510,7 +548,7 @@ export default function ContractDetailPage() {
         if (d && m && y) {
           updatedContract.contractPeriod = {
             ...updatedContract.contractPeriod,
-            end: new Date(`${y}-${m}-${d}T00:00:00.000Z`),
+            end: new Date(Number(y), Number(m) - 1, Number(d)),
           }
         }
       }
@@ -519,6 +557,8 @@ export default function ContractDetailPage() {
 
     setLocalContract(updatedContract)
     localDbUpdateContract(localContract.id, updatedContract as any)
+    queryClient.invalidateQueries({ queryKey: ['contracts'] })
+    queryClient.invalidateQueries({ queryKey: ['ContractById'] })
   }
 
   return (
@@ -1282,11 +1322,21 @@ export default function ContractDetailPage() {
           ) : (
             <button
               className={`${styles.btn} ${styles.btnSecondary} ${isEditDisabled ? styles.btnDisabled : ''}`}
-              onClick={() => setIsEditing(true)}
+              onClick={() => {
+                if (contract.contractStatus === ContractStatus.RASCUNHO) {
+                  // Continua o cadastro na tela de novo contrato, preservando o rascunho
+                  if (typeof window !== 'undefined') {
+                    sessionStorage.setItem('contract_draft_id', String(contract.id))
+                  }
+                  router.push('/contratos/adicionar')
+                } else {
+                  setIsEditing(true)
+                }
+              }}
               disabled={isEditDisabled}
             >
               <Pencil size={13} />
-              Editar contrato
+              {contract.contractStatus === ContractStatus.RASCUNHO ? 'Continuar cadastro' : 'Editar contrato'}
             </button>
           )}
           <button
@@ -1321,6 +1371,7 @@ export default function ContractDetailPage() {
         data={viewRegistroData}
         isBase={viewRegistroIsBase}
         seqNum={viewRegistroSeq}
+        contractStatus={contract.contractStatus}
         onUpdate={handleUpdateAditivo}
         onDelete={handleDeleteAditivo}
       />

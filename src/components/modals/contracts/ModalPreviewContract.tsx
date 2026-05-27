@@ -68,11 +68,11 @@ export function ModalPreviewContract({ open, contract, handleOnClose }: Props) {
         </section>
 
         <PreviewSection className="flex-row py-3">
-          {contract?.contractStatus === ContractStatus.PENDING ? (
+          {contract?.contractStatus === ContractStatus.PENDING || contract?.contractStatus === ContractStatus.RASCUNHO ? (
             <OutlineButton
               disabled={false}
-              label="Editar contrato"
-              onClick={() => router.replace('/contratos/editar')}
+              label="Ver contrato"
+              onClick={() => router.replace(`/contratos/detalhes/${contract.id}`)}
             />
           ) : null}
           <Button

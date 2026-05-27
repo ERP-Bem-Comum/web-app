@@ -5,7 +5,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { queryClient } from 'lib/react-query'
 import { SessionProvider } from 'next-auth/react'
-import { ReactNode } from 'react'
+import { ReactNode, useEffect } from 'react'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 
 
@@ -41,10 +41,35 @@ interface Props {
   children: ReactNode
 }
 function Providers({ children }: Props) {
+  // Intercepta fetch do next-auth no modo bypass para evitar
+  // CLIENT_FETCH_ERROR causado por incompatibilidade next-auth v4 + Next.js 16
+  useEffect(() => {
+    if (!AUTH_BYPASS_ENABLED || typeof window === 'undefined') return
+    const originalFetch = window.fetch
+    window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      if (url.includes('/api/auth/session')) {
+        return new Response(JSON.stringify(authBypassSession), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }
+      return originalFetch(input, init)
+    }
+    return () => {
+      window.fetch = originalFetch
+    }
+  }, [])
+
   return (
     <QueryClientProvider client={queryClient}>
       <ReactQueryDevtools initialIsOpen={false} />
-      <SessionProvider session={AUTH_BYPASS_ENABLED ? authBypassSession : undefined}>
+      <SessionProvider
+        session={AUTH_BYPASS_ENABLED ? authBypassSession : undefined}
+        refetchOnWindowFocus={false}
+        refetchInterval={0}
+        basePath="/api/auth"
+      >
         <ApprovalsProvider>
           <ThemeProvider theme={muiTheme}>
             {children}

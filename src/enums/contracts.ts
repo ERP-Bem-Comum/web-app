@@ -1,3 +1,8 @@
+export enum ContractClassification {
+  CONTRACT = 'Contrato',
+  SERVICE_ORDER = 'Ordem de Serviço',
+}
+
 export enum ContractType {
   SUPPLIER = 'Fornecedor',
   FINANCIER = 'Financiador',

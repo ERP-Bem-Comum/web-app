@@ -17,6 +17,7 @@ import {
   FileText as IconScope,
   MoreHorizontal as IconDots,
 } from 'lucide-react'
+import { ContractStatus } from '@/enums/contracts'
 import { IContract } from '@/types/contracts'
 import { formatDate } from '@/utils/dates'
 import { maskMonetaryValue } from '@/utils/masks'
@@ -28,6 +29,7 @@ interface Props {
   data: IContract | null
   isBase: boolean
   seqNum?: number
+  contractStatus?: ContractStatus
   onUpdate?: (id: number, updates: Partial<IContract>, file?: File | null) => void
   onDelete?: (id: number) => void
 }
@@ -44,7 +46,7 @@ const maskMoneyInput = (raw: string): string => {
 
 const unmaskMoney = (masked: string): number => {
   const digits = masked.replace(/\D/g, '')
-  return digits ? parseInt(digits, 10) : 0
+  return digits ? parseInt(digits, 10) / 100 : 0
 }
 
 const maskDateInput = (raw: string): string => {
@@ -60,7 +62,7 @@ const parseDateStr = (str: string): Date | undefined => {
   const date = new Date(y, m - 1, d)
   if (date.getDate() !== d || date.getMonth() !== m - 1 || date.getFullYear() !== y)
     return undefined
-  return new Date(`${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}T00:00:00.000Z`)
+  return date
 }
 
 const formatDateToBR = (date: Date | string | undefined): string => {
@@ -76,6 +78,7 @@ export const ModalViewRegistro = ({
   data,
   isBase,
   seqNum,
+  contractStatus,
   onUpdate,
   onDelete,
 }: Props) => {
@@ -92,13 +95,14 @@ export const ModalViewRegistro = ({
   const [file, setFile] = useState<File | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const canEdit = !isBase && onUpdate && data && data.aditivoStatus !== 'Homologado'
+  const baseIsRascunho = isBase && contractStatus === ContractStatus.RASCUNHO
+  const canEdit = onUpdate && data && (baseIsRascunho || (!isBase && data.aditivoStatus !== 'Homologado'))
   const isHomologado = !isBase && data?.aditivoStatus === 'Homologado'
 
   /* Inicializa estados quando abre */
   useEffect(() => {
     if (open && data) {
-      const shouldEdit = !isBase && data.aditivoStatus !== 'Homologado'
+      const shouldEdit = baseIsRascunho || (!isBase && data.aditivoStatus !== 'Homologado')
       setEditMode(shouldEdit)
 
       setTipo((data.aditivoType as 'prazo' | 'valor' | 'escopo' | 'outro' | 'distrato') ?? 'valor')
@@ -107,7 +111,7 @@ export const ModalViewRegistro = ({
       setAssinatura(data.dataAssinatura ?? '')
       setInicio(formatDateToBR(data.contractPeriod?.start))
       setNovaDataFim(formatDateToBR(data.contractPeriod?.end))
-      setValorInput(data.totalValue ? maskMoneyInput(String(Math.abs(data.totalValue))) : '')
+      setValorInput(data.totalValue ? maskMoneyInput(String(Math.round(Math.abs(data.totalValue) * 100))) : '')
       setFile(null)
       setErrors({})
     }
@@ -158,11 +162,14 @@ export const ModalViewRegistro = ({
     if (file && !parseDateStr(assinatura)) {
       nextErrors.assinatura = 'Data de assinatura obrigatória quando há arquivo anexado'
     }
-    if (tipo === 'valor' && unmaskMoney(valorInput) === 0) {
-      nextErrors.valor = 'Informe o valor do aditivo'
-    }
-    if (tipo === 'prazo' && !parseDateStr(novaDataFim)) {
-      nextErrors.novaDataFim = 'Informe a nova data fim'
+    // Aditivos exigem valor/prazo; registro base em rascunho não exige
+    if (!isBase) {
+      if (tipo === 'valor' && unmaskMoney(valorInput) === 0) {
+        nextErrors.valor = 'Informe o valor do aditivo'
+      }
+      if (tipo === 'prazo' && !parseDateStr(novaDataFim)) {
+        nextErrors.novaDataFim = 'Informe a nova data fim'
+      }
     }
     setErrors(nextErrors)
     return Object.keys(nextErrors).length === 0
@@ -174,19 +181,8 @@ export const ModalViewRegistro = ({
 
     const updates: Partial<IContract> = {}
 
-    // Tipo
-    updates.aditivoType = tipo
-
     // Resumo / Objeto
     updates.object = resumo.trim() || data.object
-
-    // Valor
-    if (tipo === 'valor') {
-      const valorCents = unmaskMoney(valorInput)
-      updates.totalValue = impacto === 'supressao' ? -valorCents : valorCents
-    } else {
-      updates.totalValue = 0
-    }
 
     // Datas
     const dtAssinatura = parseDateStr(assinatura)
@@ -201,12 +197,33 @@ export const ModalViewRegistro = ({
     // Data assinatura
     updates.dataAssinatura = assinatura || undefined
 
-    // Status + arquivo
-    if (file && dtAssinatura) {
-      updates.aditivoStatus = 'Homologado'
-      updates.signedContractUrl = URL.createObjectURL(file)
-    } else if (data.aditivoStatus === 'Rascunho') {
-      updates.aditivoStatus = 'Pendente'
+    if (isBase) {
+      // Registro base: segue regras de Pendente / Em Andamento
+      if (tipo === 'valor') {
+        const valorCents = unmaskMoney(valorInput)
+        updates.totalValue = impacto === 'supressao' ? -valorCents : valorCents
+      }
+      if (file && dtAssinatura) {
+        updates.contractStatus = ContractStatus.ONGOING
+        updates.signedContractUrl = URL.createObjectURL(file)
+      } else {
+        updates.contractStatus = ContractStatus.PENDING
+      }
+    } else {
+      // Aditivo: mantém comportamento original
+      updates.aditivoType = tipo
+      if (tipo === 'valor') {
+        const valorCents = unmaskMoney(valorInput)
+        updates.totalValue = impacto === 'supressao' ? -valorCents : valorCents
+      } else {
+        updates.totalValue = 0
+      }
+      if (file && dtAssinatura) {
+        updates.aditivoStatus = 'Homologado'
+        updates.signedContractUrl = URL.createObjectURL(file)
+      } else if (data.aditivoStatus === 'Rascunho') {
+        updates.aditivoStatus = 'Pendente'
+      }
     }
 
     onUpdate(data.id, updates, file)
@@ -262,22 +279,40 @@ export const ModalViewRegistro = ({
             : '#e5ded4'
 
   const statusLabel = isBase
-    ? 'Vigente'
+    ? data.signedContractUrl &&
+      contractStatus !== ContractStatus.FINISHED &&
+      contractStatus !== ContractStatus.DISTRATO
+      ? 'Homologado'
+      : contractStatus === ContractStatus.PENDING
+        ? 'Pendente'
+        : contractStatus === ContractStatus.FINISHED
+          ? 'Finalizado'
+          : contractStatus === ContractStatus.DISTRATO
+            ? 'Distrato'
+            : 'Rascunho'
     : data.aditivoStatus ?? '—'
 
   const statusColor =
-    statusLabel === 'Homologado' || statusLabel === 'Vigente'
+    statusLabel === 'Homologado'
       ? '#176642'
       : statusLabel === 'Pendente'
         ? '#9a5402'
-        : '#736b61'
+        : statusLabel === 'Finalizado'
+          ? '#332e29'
+          : statusLabel === 'Distrato'
+            ? '#c0392b'
+            : '#736b61'
 
   const statusBg =
-    statusLabel === 'Homologado' || statusLabel === 'Vigente'
+    statusLabel === 'Homologado'
       ? 'rgba(31, 125, 85, 0.10)'
       : statusLabel === 'Pendente'
         ? 'rgba(217, 119, 6, 0.07)'
-        : '#faf7f2'
+        : statusLabel === 'Finalizado'
+          ? 'rgb(242, 237, 229)'
+          : statusLabel === 'Distrato'
+            ? 'rgba(229, 77, 64, 0.10)'
+            : '#faf7f2'
 
   const start = formatDate(data.contractPeriod?.start)
   const end = formatDate(data.contractPeriod?.end)
@@ -459,11 +494,15 @@ export const ModalViewRegistro = ({
                   height: '5px',
                   borderRadius: '50%',
                   background:
-                    statusLabel === 'Homologado' || statusLabel === 'Vigente'
+                    statusLabel === 'Homologado'
                       ? '#1f7d55'
                       : statusLabel === 'Pendente'
                         ? '#d97706'
-                        : '#999187',
+                        : statusLabel === 'Finalizado'
+                          ? '#999187'
+                          : statusLabel === 'Distrato'
+                            ? '#e54d40'
+                            : '#999187',
                 }}
               />
               {statusLabel}
@@ -473,64 +512,66 @@ export const ModalViewRegistro = ({
           {/* ═════════ MODO EDIÇÃO ═════════ */}
           {editMode && canEdit && (
             <>
-              {/* Seletor de Tipo */}
-              <div>
-                <div
-                  style={{
-                    fontSize: '9px',
-                    fontWeight: 700,
-                    color: '#999187',
-                    letterSpacing: '0.08em',
-                    textTransform: 'uppercase',
-                    marginBottom: '10px',
-                  }}
-                >
-                  Tipo
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
-                  {tipoCards.map((t) => {
-                    const Icon = t.icon
-                    const isActive = tipo === t.key
-                    return (
-                      <button
-                        key={t.key}
-                        onClick={() => setTipo(t.key)}
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          gap: '6px',
-                          padding: '14px 8px',
-                          borderRadius: '8px',
-                          border: isActive ? '1.5px solid #396496' : '1px solid #e5ded4',
-                          background: isActive ? '#e8eef5' : '#fff',
-                          color: isActive ? '#2d4f75' : '#332e29',
-                          cursor: 'pointer',
-                          transition: 'all 120ms',
-                        }}
-                      >
-                        <Icon size={18} />
-                        <span style={{ fontSize: '11px', fontWeight: 600, lineHeight: 1 }}>
-                          {t.label}
-                        </span>
-                        <span
+              {/* Seletor de Tipo — somente para aditivos */}
+              {!isBase && (
+                <div>
+                  <div
+                    style={{
+                      fontSize: '9px',
+                      fontWeight: 700,
+                      color: '#999187',
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      marginBottom: '10px',
+                    }}
+                  >
+                    Tipo
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
+                    {tipoCards.map((t) => {
+                      const Icon = t.icon
+                      const isActive = tipo === t.key
+                      return (
+                        <button
+                          key={t.key}
+                          onClick={() => setTipo(t.key)}
                           style={{
-                            fontSize: '9.5px',
-                            fontWeight: 400,
-                            color: isActive ? '#396496' : '#736b61',
-                            lineHeight: 1.2,
-                            textAlign: 'center',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '14px 8px',
+                            borderRadius: '8px',
+                            border: isActive ? '1.5px solid #396496' : '1px solid #e5ded4',
+                            background: isActive ? '#e8eef5' : '#fff',
+                            color: isActive ? '#2d4f75' : '#332e29',
+                            cursor: 'pointer',
+                            transition: 'all 120ms',
                           }}
                         >
-                          {t.desc}
-                        </span>
-                      </button>
-                    )
-                  })}
+                          <Icon size={18} />
+                          <span style={{ fontSize: '11px', fontWeight: 600, lineHeight: 1 }}>
+                            {t.label}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: '9.5px',
+                              fontWeight: 400,
+                              color: isActive ? '#396496' : '#736b61',
+                              lineHeight: 1.2,
+                              textAlign: 'center',
+                            }}
+                          >
+                            {t.desc}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Resumo */}
+              {/* Resumo -->
               <div>
                 <div
                   style={{
@@ -563,8 +604,8 @@ export const ModalViewRegistro = ({
                 />
               </div>
 
-              {/* Condicional: Prazo */}
-              {tipo === 'prazo' && (
+              {/* Condicional: Prazo — somente para aditivos */}
+              {!isBase && tipo === 'prazo' && (
                 <div>
                   <div
                     style={{
@@ -635,8 +676,8 @@ export const ModalViewRegistro = ({
                 </div>
               )}
 
-              {/* Condicional: Valor */}
-              {tipo === 'valor' && (
+              {/* Condicional: Valor — somente para aditivos */}
+              {!isBase && tipo === 'valor' && (
                 <div>
                   <div
                     style={{

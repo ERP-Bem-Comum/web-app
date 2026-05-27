@@ -1,6 +1,6 @@
 import { Children, ContractRow } from '@/types/contracts'
 import { formatDate } from '@/utils/dates'
-import { maskMonetaryValue } from '@/utils/masks'
+import { maskCNPJ, maskCPF, maskMonetaryValue } from '@/utils/masks'
 import { formatContractNumber } from '@/utils/UI/contracts'
 import { deriveStatus } from '@/utils/contracts/status'
 import { TableCell, TableRow } from '@mui/material'
@@ -69,15 +69,15 @@ export const CustomContractRow = ({ row, index, onClick }: ContractRowProps) => 
 
     if (data.supplier?.name) {
       name = data.supplier.name
-      document = data.supplier.cnpj || '-'
+      document = data.supplier.cnpj ? maskCNPJ(data.supplier.cnpj) : '-'
       isPf = false
     } else if (data.collaborator?.name) {
       name = data.collaborator.name
-      document = data.collaborator.cpf || '-'
+      document = data.collaborator.cpf ? maskCPF(data.collaborator.cpf) : '-'
       isPf = true
     } else if (data.financier?.name) {
       name = data.financier.name
-      document = data.financier.cnpj || '-'
+      document = data.financier.cnpj ? maskCNPJ(data.financier.cnpj) : '-'
       isPf = false
     }
 
@@ -143,7 +143,9 @@ export const CustomContractRow = ({ row, index, onClick }: ContractRowProps) => 
     >
       {/* Número */}
       <TableCell className={styles.cell}>
-        <span className={styles.docNum}>{formatContractNumber(row.contractCode)}</span>
+        <span className={styles.docNum}>
+          {row.contractCode ? formatContractNumber(row.contractCode) : '—'}
+        </span>
       </TableCell>
 
       {/* Contratado */}
@@ -161,13 +163,13 @@ export const CustomContractRow = ({ row, index, onClick }: ContractRowProps) => 
 
       {/* Objeto */}
       <TableCell className={styles.cell}>
-        <span className={styles.objetoCell} title={mostRecentInfo.object}>
-          {mostRecentInfo.object}
+        <span className={styles.objetoCell} title={row.object}>
+          {row.object}
         </span>
       </TableCell>
 
       {/* Tipo */}
-      <TableCell className={styles.cell}>
+      <TableCell className={styles.cell} align="center">
         <span className={`${styles.tipoTag} ${tipoBadgeClass(mostRecentInfo.contractType)}`}>
           {mostRecentInfo.contractType}
         </span>
@@ -188,15 +190,12 @@ export const CustomContractRow = ({ row, index, onClick }: ContractRowProps) => 
         {maskMonetaryValue(saldo)}
       </TableCell>
 
-      {/* Início */}
-      <TableCell className={styles.cell}>
-        <span className={styles.dtCell}>{formatDate(mostRecentInfo.contractPeriod?.start) ?? '-'}</span>
-      </TableCell>
-
-      {/* Vigência */}
-      <TableCell className={styles.cell}>
+      {/* Período */}
+      <TableCell className={styles.cell} align="center">
         <span className={styles.dtCell}>
-          {formatDate(mostRecentInfo.contractPeriod?.end) ?? '-'}
+          {mostRecentInfo.contractPeriod?.start && mostRecentInfo.contractPeriod?.end
+            ? `${formatDate(mostRecentInfo.contractPeriod.start)?.slice(0, 6)}${formatDate(mostRecentInfo.contractPeriod.start)?.slice(8)} — ${formatDate(mostRecentInfo.contractPeriod.end)?.slice(0, 6)}${formatDate(mostRecentInfo.contractPeriod.end)?.slice(8)}`
+            : '-'}
         </span>
       </TableCell>
 
@@ -232,7 +231,7 @@ export const CustomContractRow = ({ row, index, onClick }: ContractRowProps) => 
       </TableCell>
 
       {/* Ações */}
-      <TableCell className={`${styles.cell} ${styles.actionCell}`}>
+      <TableCell className={`${styles.cell} ${styles.actionCell}`} align="center">
         <ActionButton
           status={mostRecentInfo.contractStatus}
           contractId={row.id}

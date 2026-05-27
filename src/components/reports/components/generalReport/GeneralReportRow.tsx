@@ -58,7 +58,7 @@ export function GeneralReportRow({ row, visibleColumns }: GeneralReportRowParams
         {rowValue ? (
           <a
             href={
-              row.numero_contrato ? `${origin}/contratos/editar/${row.ID.replace('C', '')}` : ''
+              row.numero_contrato ? `${origin}/contratos/detalhes/${row.ID.replace('C', '')}` : ''
             }
             target="_blank"
             rel="noopener noreferrer"

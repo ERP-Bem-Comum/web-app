@@ -1,5 +1,5 @@
 'use client'
-import { ContractStatus, ContractType } from '@/enums/contracts'
+import { ContractClassification, ContractStatus, ContractType } from '@/enums/contracts'
 import { useContractContext } from '@/hooks/useContractsContext'
 import { useOptions } from '@/hooks/useOptions'
 import { Contract, IContract, otherContractSchema } from '@/types/contracts'
@@ -18,10 +18,11 @@ import { ModalQuestion } from '../modals/ModalQuestion'
 import { Card, CardContent, CardFooter } from '../ui/card'
 import { Contracts } from './FormComponents'
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, Plus, Search, Check, Upload } from 'lucide-react'
-import { formatDate } from '@/utils/dates'
+import { ArrowLeft, Plus, Search, Check, Upload, UserPlus } from 'lucide-react'
+import { formatDate, handleDates } from '@/utils/dates'
 import { maskCNPJ, maskCPF, maskMonetaryValue, maskPhone } from '@/utils/masks'
-import { localDbGetProgramOptions, localDbGetBudgetPlanOptions, localDbSaveContract, localDbUpdateContract, localDbDeleteContract } from '@/mocks/localDb'
+import { queryClient } from 'lib/react-query'
+import { localDbGetProgramOptions, localDbGetBudgetPlanOptions, localDbGetContractById, localDbGetContracts, localDbSaveContract, localDbUpdateContract, localDbDeleteContract } from '@/mocks/localDb'
 import styles from './contractLaunchForm.module.css'
 import { AutoComplete } from '@/components/layout/AutoComplete'
 import { CustomTextField } from '@/components/layout/TextField'
@@ -34,6 +35,7 @@ interface Props {
   edit: boolean
   parentId?: number
   layout?: 'default' | 'launch'
+  onSaveSuccess?: () => void
 }
 
 export const getMostRecentInfo = (contract?: IContract, parentId?: number) => {
@@ -56,7 +58,7 @@ export const getMostRecentInfo = (contract?: IContract, parentId?: number) => {
   return mostRecentInfo
 }
 
-export default function FormContract({ contract, edit, parentId, layout = 'default' }: Props) {
+export default function FormContract({ contract, edit, parentId, layout = 'default', onSaveSuccess }: Props) {
   const router = useRouter()
   const mostRecentInfo = getMostRecentInfo(contract, parentId)
   const { data: session } = useSession()
@@ -104,6 +106,7 @@ export default function FormContract({ contract, edit, parentId, layout = 'defau
         }
       : {
           contractType: ContractType.SUPPLIER,
+          classification: ContractClassification.CONTRACT,
         },
   })
 
@@ -113,6 +116,16 @@ export default function FormContract({ contract, edit, parentId, layout = 'defau
   const [contactTelephone, setContactTelephone] = useState('')
   const [hasFiles, setHasFiles] = useState(!!contract?.files?.length)
   const [contractorData, setContractorData] = useState<ISupplier | ICollaborator | IFinancier | null>(null)
+
+  // Validação de teto para Ordem de Serviço
+  const isServiceOrder = values.classification === ContractClassification.SERVICE_ORDER
+  const serviceOrderValueError = useMemo(() => {
+    if (isServiceOrder && values.totalValue && values.totalValue > 9999.99) {
+      return 'Para Ordem de Serviço, o valor original máximo permitido é R$ 9.999,99.'
+    }
+    return ''
+  }, [isServiceOrder, values.totalValue])
+  const isSaveDisabled = isDisabled || !!serviceOrderValueError
 
   // Inicializa email/telefone ao carregar contrato existente
   useEffect(() => {
@@ -138,6 +151,12 @@ export default function FormContract({ contract, edit, parentId, layout = 'defau
   const [modalError, setModalError] = useState<string>('')
   const [startDateInput, setStartDateInput] = useState(formatDate(values.contractPeriod?.start))
   const [endDateInput, setEndDateInput] = useState(formatDate(values.contractPeriod?.end))
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
+  const [isAutoSaving, setIsAutoSaving] = useState(false)
+  const draftIdRef = useRef<number | null>(null)
+  const valuesRef = useRef(values)
+  const isNavigatingAwayRef = useRef(false)
+  const beforeUnloadDisabledRef = useRef(false)
   const [draftId, setDraftId] = useState<number | null>(() => {
     if (typeof window === 'undefined') return null
     const raw = sessionStorage.getItem('contract_draft_id')
@@ -145,6 +164,34 @@ export default function FormContract({ contract, edit, parentId, layout = 'defau
   })
 
   const isMounted = useRef(false)
+
+  // Sincroniza refs para uso síncrono em beforeunload
+  useEffect(() => { draftIdRef.current = draftId }, [draftId])
+  useEffect(() => { valuesRef.current = values }, [values])
+
+  // Recupera rascunho salvo ao montar a tela de novo contrato
+  useEffect(() => {
+    if (layout !== 'launch' || contract) return
+    const raw = typeof window !== 'undefined' ? sessionStorage.getItem('contract_draft_id') : null
+    if (!raw) return
+    const savedDraftId = Number(raw)
+    const draft = localDbGetContractById(savedDraftId)
+    if (!draft) return
+
+    reset({
+      ...draft,
+      contractPeriod: draft.contractPeriod
+        ? {
+            start: draft.contractPeriod.start ? handleDates(draft.contractPeriod.start) : undefined,
+            end: draft.contractPeriod.end ? handleDates(draft.contractPeriod.end) : undefined,
+            isIndefinite: draft.contractPeriod.isIndefinite ?? (draft.contractPeriod.end === null ? true : false),
+          }
+        : undefined,
+      updatedBy: session?.user.id,
+    } as unknown as Contract)
+    setDraftId(savedDraftId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleFilesChange = (attachments: Parameters<typeof handleChangeFile>[0]) => {
     setHasFiles(!!attachments?.length)
@@ -170,18 +217,24 @@ export default function FormContract({ contract, edit, parentId, layout = 'defau
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mostRecentInfo?.bancaryInfo?.agency, mostRecentInfo?.bancaryInfo?.dv])
 
-  // Autosave — salva rascunho a cada 30 segundos quando há dados preenchidos
+  // Autosave com debounce de 3s — salva rascunho em segundo plano toda vez que um campo é alterado
   useEffect(() => {
     if (layout !== 'launch') return
-    if (!values.contractType && !values.object && !values.supplierId) return
+    if (contract) return
+    if (isNavigatingAwayRef.current) return
 
-    const timer = setInterval(() => {
+    setIsAutoSaving(true)
+    const timer = setTimeout(() => {
+      if (isNavigatingAwayRef.current) {
+        setIsAutoSaving(false)
+        return
+      }
       const draftData = {
         ...values,
         contractStatus: ContractStatus.RASCUNHO,
       }
-      if (draftId) {
-        localDbUpdateContract(draftId, draftData)
+      if (draftIdRef.current) {
+        localDbUpdateContract(draftIdRef.current, draftData)
       } else {
         const saved = localDbSaveContract(draftData)
         setDraftId(saved.id)
@@ -189,15 +242,65 @@ export default function FormContract({ contract, edit, parentId, layout = 'defau
           sessionStorage.setItem('contract_draft_id', String(saved.id))
         }
       }
-    }, 30000)
+      setLastSavedAt(new Date())
+      setIsAutoSaving(false)
+    }, 3000)
 
-    return () => clearInterval(timer)
+    return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [values, draftId, layout])
+  }, [values, draftId, layout, contract])
+
+  // Autosave antes de fechar/sair da página
+  useEffect(() => {
+    if (layout !== 'launch') return
+    if (contract) return
+    const handleBeforeUnload = () => {
+      if (beforeUnloadDisabledRef.current) return
+      const currentValues = valuesRef.current
+      const draftData = {
+        ...currentValues,
+        contractStatus: ContractStatus.RASCUNHO,
+      }
+      if (draftIdRef.current) {
+        localDbUpdateContract(draftIdRef.current, draftData)
+      } else {
+        const saved = localDbSaveContract(draftData)
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('contract_draft_id', String(saved.id))
+        }
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [layout, contract])
+
+  // Atualiza contractCode do rascunho quando a classificação muda
+  useEffect(() => {
+    if (layout !== 'launch' || !draftId) return
+    const draft = localDbGetContractById(draftId)
+    if (!draft?.contractCode) return
+    const expectedPrefix = values.classification === ContractClassification.SERVICE_ORDER ? 'OS' : 'CT'
+    if (!draft.contractCode.startsWith(expectedPrefix)) {
+      const year = values.contractPeriod?.start
+        ? new Date(values.contractPeriod.start).getFullYear()
+        : new Date().getFullYear()
+      const allContracts = localDbGetContracts()
+      const sameType = allContracts.filter((c) =>
+        c.contractCode?.startsWith(expectedPrefix) && c.contractCode?.includes(`-${year}-`)
+      )
+      const maxSeq = sameType.reduce((max, c) => {
+        const match = c.contractCode?.match(new RegExp(`${expectedPrefix}-${year}-(\\d{4})`))
+        return match ? Math.max(max, parseInt(match[1], 10)) : max
+      }, 0)
+      const newCode = `${expectedPrefix}-${year}-${String(maxSeq + 1).padStart(4, '0')}`
+      localDbUpdateContract(draftId, { contractCode: newCode })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [values.classification, draftId, layout])
 
   // Limpa o rascunho temporário quando o contrato é salvo com sucesso
   useEffect(() => {
-    if (layout === 'launch' && showModalConfirm && draftId) {
+    if (layout === 'launch' && showModalConfirm && draftId && errorMessage === '') {
       localDbDeleteContract(draftId)
       setDraftId(null)
       if (typeof window !== 'undefined') {
@@ -205,12 +308,13 @@ export default function FormContract({ contract, edit, parentId, layout = 'defau
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showModalConfirm])
+  }, [showModalConfirm, errorMessage])
 
   // Redireciona para o grid após salvar com sucesso no layout launch
   useEffect(() => {
     if (layout === 'launch' && showModalConfirm && errorMessage === '') {
-      router.push('/contratos')
+      if (onSaveSuccess) onSaveSuccess()
+      else router.push('/contratos')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showModalConfirm, errorMessage])
@@ -277,6 +381,9 @@ export default function FormContract({ contract, edit, parentId, layout = 'defau
       if (modalFileBase64 && !payload.signedContractUrl) {
         payload.signedContractUrl = modalFileBase64
       }
+      // Define o status conforme regra: com arquivo = Em Andamento, sem arquivo = Pendente
+      const hasFile = !!modalFileBase64 || !!modalFile
+      payload.contractStatus = hasFile ? ContractStatus.ONGOING : ContractStatus.PENDING
       // Adiciona email e telefone ao contratado no payload
       if (payload.contractType === ContractType.SUPPLIER || payload.contractType === ContractType.ACT) {
         if (payload.supplier) {
@@ -296,11 +403,40 @@ export default function FormContract({ contract, edit, parentId, layout = 'defau
     (error) => console.error(error),
   )
 
+  const submitPreviewStatus = useMemo(() => {
+    const hasFile = !!modalFileBase64 || !!modalFile
+    const status = hasFile ? ContractStatus.ONGOING : ContractStatus.PENDING
+    switch (status) {
+      case ContractStatus.PENDING:
+        return { label: 'Pendente', className: styles.statusPendente }
+      case ContractStatus.ONGOING:
+        return { label: 'Em Andamento', className: styles.statusOngoing }
+      default:
+        return { label: 'Pendente', className: styles.statusPendente }
+    }
+  }, [modalFile, modalFileBase64])
+
   const disableWhenIsFinancier = values.contractType === ContractType.FINANCIER
 
-  const homologStatus = hasFiles
-    ? { label: 'Em Andamento', className: styles.statusOngoing }
-    : { label: 'Pendente', className: styles.statusPendente }
+  const homologStatus = useMemo(() => {
+    const status = values.contractStatus ?? contract?.contractStatus
+    switch (status) {
+      case ContractStatus.RASCUNHO:
+        return { label: 'Rascunho', className: styles.statusRascunho }
+      case ContractStatus.PENDING:
+        return { label: 'Pendente', className: styles.statusPendente }
+      case ContractStatus.SIGNED:
+        return { label: 'Assinado', className: styles.statusAssinado }
+      case ContractStatus.ONGOING:
+        return { label: 'Em Andamento', className: styles.statusOngoing }
+      case ContractStatus.FINISHED:
+        return { label: 'Finalizado', className: styles.statusFinalizado }
+      case ContractStatus.DISTRATO:
+        return { label: 'Distrato', className: styles.statusDistrato }
+      default:
+        return { label: 'Rascunho', className: styles.statusRascunho }
+    }
+  }, [values.contractStatus, contract?.contractStatus])
 
   const contractedTypeLabel =
     values.contractType === ContractType.FINANCIER
@@ -355,6 +491,66 @@ export default function FormContract({ contract, edit, parentId, layout = 'defau
     }
     return undefined
   }, [values.contractType, contract, actEntityType])
+
+  // Próximo número sequencial de preview (CT ou OS)
+  const nextSequentialNumber = useMemo(() => {
+    if (typeof window === 'undefined') return '0001'
+    const year = values.contractPeriod?.start
+      ? new Date(values.contractPeriod.start).getFullYear()
+      : new Date().getFullYear()
+    const isOS = values.classification === ContractClassification.SERVICE_ORDER
+    const prefix = isOS ? 'OS' : 'CT'
+    // Para CT, também considera contratos antigos no formato CNT-YYYY-NNNN
+    const oldPrefix = isOS ? null : 'CNT'
+    const allContracts = localDbGetContracts()
+    const sameType = allContracts.filter((c) => {
+      if (!c.contractCode) return false
+      const hasPrefix = c.contractCode.startsWith(prefix)
+      const hasOldPrefix = oldPrefix ? c.contractCode.startsWith(oldPrefix) : false
+      return (hasPrefix || hasOldPrefix) && c.contractCode.includes(`-${year}-`)
+    })
+    const maxSeq = sameType.reduce((max, c) => {
+      const regex = isOS
+        ? new RegExp(`OS-${year}-(\\d{4})`)
+        : new RegExp(`(?:CT|CNT)-${year}-(\\d{4})`)
+      const match = c.contractCode?.match(regex)
+      return match ? Math.max(max, parseInt(match[1], 10)) : max
+    }, 0)
+    return String(maxSeq + 1).padStart(4, '0')
+  }, [values.classification, values.contractPeriod?.start])
+
+  const partnerAddRoute = useMemo(() => {
+    switch (values.contractType) {
+      case ContractType.SUPPLIER:
+        return '/fornecedores/adicionar'
+      case ContractType.COLLABORATOR:
+        return '/colaboradores/adicionar'
+      case ContractType.FINANCIER:
+        return '/financiadores/adicionar'
+      case ContractType.ACT:
+        return actEntityType === 'PF' ? '/colaboradores/adicionar' : '/fornecedores/adicionar'
+      default:
+        return '/fornecedores/adicionar'
+    }
+  }, [values.contractType, actEntityType])
+
+  const autoSaveStatus = useMemo(() => {
+    if (isAutoSaving) {
+      return { label: 'Salvando', sublabel: '...', variant: 'saving' as const }
+    }
+    if (lastSavedAt) {
+      const seconds = Math.floor((Date.now() - lastSavedAt.getTime()) / 1000)
+      if (seconds < 10) {
+        return { label: 'Salvo', sublabel: 'agora', variant: 'saved' as const }
+      }
+      const timeStr = lastSavedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      return { label: 'Salvo', sublabel: `às ${timeStr}`, variant: 'saved' as const }
+    }
+    if (draftId) {
+      return { label: 'Rascunho', sublabel: 'recuperado', variant: 'rascunho' as const }
+    }
+    return { label: 'Rascunho', sublabel: 'não salvo', variant: 'rascunho' as const }
+  }, [isAutoSaving, lastSavedAt, draftId])
 
   const launchFormContent = (
     <Fragment>
@@ -452,6 +648,12 @@ export default function FormContract({ contract, edit, parentId, layout = 'defau
               )}
             </div>
           )}
+          <div className={styles.contratadoCadastrarLink}>
+            <span>Não encontrou?</span>
+            <button type="button" onClick={() => router.push(partnerAddRoute)}>
+              Cadastrar novo contratado →
+            </button>
+          </div>
         </Fragment>
       ) : (
         <div className={styles.hero}>
@@ -502,6 +704,22 @@ export default function FormContract({ contract, edit, parentId, layout = 'defau
         </div>
 
         <div className={`${styles.fieldRow} ${styles.cols4}`}>
+          <div className={styles.field}>
+            <div className={styles.fieldLabelRow}>
+              <label className={styles.fieldLabel}>Classificação da Contratação</label>
+            </div>
+            <AutoComplete
+              error={errors.classification?.message}
+              control={control}
+              editable={edit}
+              options={[
+                { id: ContractClassification.CONTRACT, name: ContractClassification.CONTRACT },
+                { id: ContractClassification.SERVICE_ORDER, name: ContractClassification.SERVICE_ORDER },
+              ]}
+              name="classification"
+              label="Classificação"
+            />
+          </div>
           <div className={styles.field}>
             <div className={styles.fieldLabelRow}>
               <label className={styles.fieldLabel}>Tipo</label>
@@ -559,7 +777,7 @@ export default function FormContract({ contract, edit, parentId, layout = 'defau
               <label className={styles.fieldLabel}>Valor Original</label>
             </div>
             <CustomTextField
-              error={errors.totalValue?.message}
+              error={errors.totalValue?.message || serviceOrderValueError}
               control={control}
               editable={edit}
               name="totalValue"
@@ -851,7 +1069,10 @@ export default function FormContract({ contract, edit, parentId, layout = 'defau
             <ArrowLeft size={18} />
           </button>
           <h1 className={styles.title}>
-            Novo Contrato <span className={styles.num}>CT 0002/2026</span>
+            {contract ? 'Continuar Cadastro' : (values.classification === ContractClassification.SERVICE_ORDER ? 'Nova Ordem de Serviço' : 'Novo Contrato')}
+            <span className={styles.num}>
+              {contract?.contractCode || `${values.classification === ContractClassification.SERVICE_ORDER ? 'OS' : 'CT'} ${nextSequentialNumber}/${values.contractPeriod?.start ? new Date(values.contractPeriod.start).getFullYear() : new Date().getFullYear()}`}
+            </span>
           </h1>
           <span className={`${styles.statusPill} ${styles.statusPillPendente}`}>
             <span className={styles.dot} />
@@ -916,10 +1137,21 @@ export default function FormContract({ contract, edit, parentId, layout = 'defau
         {edit && (
           <footer className={styles.bottombar}>
             <div className={styles.bottomStatus}>
-              <span className={`${styles.statusBadge} ${styles.statusPendente}`}>
-                Rascunho
+              <span className={styles.saveDot} />
+              <span>
+                {autoSaveStatus.variant === 'saving'
+                  ? 'Salvando rascunho...'
+                  : autoSaveStatus.variant === 'saved'
+                    ? `Sincronizado · ${autoSaveStatus.sublabel}`
+                    : `Rascunho · ${autoSaveStatus.sublabel}`}
               </span>
-              <span>não salvo</span>
+              <span className={`${styles.statusBadge} ${
+                autoSaveStatus.variant === 'saved' ? styles.statusSaved :
+                autoSaveStatus.variant === 'saving' ? styles.statusSaving :
+                styles.statusRascunho
+              }`}>
+                {autoSaveStatus.variant === 'saved' ? 'Salvo' : autoSaveStatus.label}
+              </span>
             </div>
             <div className={styles.bottomActions}>
               <button
@@ -927,7 +1159,19 @@ export default function FormContract({ contract, edit, parentId, layout = 'defau
                 className={`${styles.btn} ${styles.btnGhost}`}
                 disabled={isDisabled}
                 onClick={() => {
-                  // Salva o rascunho atual antes de sair
+                  isNavigatingAwayRef.current = true
+                  router.push('/contratos')
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className={`${styles.btn} ${styles.btnSecondary}`}
+                disabled={isDisabled}
+                onClick={() => {
+                  isNavigatingAwayRef.current = true
+                  beforeUnloadDisabledRef.current = true
                   const draftData = {
                     ...values,
                     contractStatus: ContractStatus.RASCUNHO,
@@ -938,16 +1182,21 @@ export default function FormContract({ contract, edit, parentId, layout = 'defau
                     const saved = localDbSaveContract(draftData)
                     setDraftId(saved.id)
                   }
+                  setLastSavedAt(new Date())
+                  setDraftId(null)
+                  if (typeof window !== 'undefined') {
+                    sessionStorage.removeItem('contract_draft_id')
+                  }
+                  queryClient.invalidateQueries({ queryKey: ['contracts'] })
                   router.push('/contratos')
                 }}
               >
-                Cancelar
+                Salvar rascunho
               </button>
-              {/* Botão "Salvar como rascunho" removido — autosave já cuida do rascunho */}
               <button
                 type="button"
                 className={`${styles.btn} ${styles.btnPrimary}`}
-                disabled={isDisabled}
+                disabled={isSaveDisabled}
                 onClick={(e) => {
                   e.preventDefault()
                   e.stopPropagation()
@@ -955,7 +1204,7 @@ export default function FormContract({ contract, edit, parentId, layout = 'defau
                 }}
               >
                 <Plus size={13} />
-                Salvar contrato
+                {values.classification === ContractClassification.SERVICE_ORDER ? 'Salvar ordem de serviço' : 'Salvar contrato'}
               </button>
             </div>
           </footer>
@@ -1042,8 +1291,8 @@ export default function FormContract({ contract, edit, parentId, layout = 'defau
 
                 <div className={styles.field}>
                   <label className={styles.fieldLabel}>Status que será aplicado</label>
-                  <div className={`${styles.statusBadge} ${homologStatus.className}`}>
-                    {homologStatus.label}
+                  <div className={`${styles.statusBadge} ${submitPreviewStatus.className}`}>
+                    {submitPreviewStatus.label}
                   </div>
                 </div>
               </div>
@@ -1185,7 +1434,10 @@ export default function FormContract({ contract, edit, parentId, layout = 'defau
         open={showModalConfirm}
         onClose={() => {
           setShowModalConfirm(false)
-          errorMessage === '' && router.push('/contratos')
+          if (errorMessage === '') {
+            if (onSaveSuccess) onSaveSuccess()
+            else router.push('/contratos')
+          }
         }}
         text={
           errorMessage === ''
@@ -1207,7 +1459,8 @@ export default function FormContract({ contract, edit, parentId, layout = 'defau
         onConfirm={() => {
           setShowModalQuestion(false)
           setIsDeleting(false)
-          router.push('/contratos')
+          if (onSaveSuccess) onSaveSuccess()
+          else router.push('/contratos')
         }}
         onClose={() => {
           setShowModalQuestion(false)

@@ -1,4 +1,5 @@
 import { CustomFile } from '@/components/files/fileItem'
+import { ContractClassification } from '@/enums/contracts'
 import {
   Contract,
   ContractPaymentHistory,
@@ -29,6 +30,22 @@ import {
 /* ═════════════════════════════════════
    HELPERS
    ═════════════════════════════════════ */
+
+const MAX_SERVICE_ORDER_VALUE = 9999.99
+
+function validateServiceOrderValue(contract: Contract | IContract | Partial<Contract>): void {
+  if (
+    'classification' in contract &&
+    contract.classification === ContractClassification.SERVICE_ORDER &&
+    contract.totalValue !== undefined &&
+    contract.totalValue !== null &&
+    contract.totalValue > MAX_SERVICE_ORDER_VALUE
+  ) {
+    throw new Error(
+      `Para Ordem de Serviço, o valor original máximo permitido é R$ ${MAX_SERVICE_ORDER_VALUE.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.`
+    )
+  }
+}
 
 function isBackendOfflineError(error: unknown): error is { isBackendOffline: boolean } {
   return typeof error === 'object' && error !== null && 'isBackendOffline' in error
@@ -188,6 +205,7 @@ export const createContract = async (
   files: CustomFile[] | null,
 ): Promise<Response<boolean | string>> => {
   try {
+    validateServiceOrderValue(contract)
     const resp = await api.post('/contracts', contract)
     await uploadFile({ contractId: resp.data }, files, 'contracts')
     queryClient.invalidateQueries({ queryKey: ['contracts'] })
@@ -200,6 +218,9 @@ export const createContract = async (
       meta: null,
     }
   } catch (error) {
+    if (error instanceof Error && error.message.includes('Ordem de Serviço')) {
+      return { status: 400, data: false, error: error.message, meta: null }
+    }
     ensureSeeded()
     console.warn('[LOCAL DB] Salvando contrato localmente.')
     const enriched = await enrichContractWithFiles(contract, files)
@@ -264,6 +285,7 @@ export const updateContract = async ({
   userId: number | undefined
 }): Promise<Response<boolean | string>> => {
   try {
+    validateServiceOrderValue(contract)
     const resp = await api.put(`/contracts/${id}`, contract)
     await updateFile({ contractId: id, currentFiles, userId }, files, 'contracts')
 
@@ -274,6 +296,9 @@ export const updateContract = async ({
       meta: null,
     }
   } catch (error) {
+    if (error instanceof Error && error.message.includes('Ordem de Serviço')) {
+      return { status: 400, data: false, error: error.message, meta: null }
+    }
     ensureSeeded()
     console.warn('[LOCAL DB] Atualizando contrato localmente. ID:', id)
     if (id) {
