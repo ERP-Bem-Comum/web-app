@@ -150,3 +150,23 @@ export const createAditive = createServerFn({ method: 'POST' })
 
     return res.value.json()
   })
+
+export const getContractHistory = createServerFn({ method: 'GET' })
+  .middleware([authMiddleware])
+  .inputValidator(z.object({ id: z.number() }))
+  .handler(async ({ data, context }) => {
+    const res = await resultFetch(`${env.API_URL}/contracts/history/${data.id}`, {
+      headers: {
+        authorization: `Bearer ${context.session.token}`,
+      },
+    })
+
+    if (!res.ok) {
+      if (res.error.kind === 'http' && res.error.status === 404) {
+        throw new Response('Contract not found', { status: 404 })
+      }
+      throw new Response('Failed to fetch contract history', { status: 500 })
+    }
+
+    return res.value.json()
+  })

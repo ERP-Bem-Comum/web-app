@@ -1,1 +1,0 @@
-import{i as e,n as t,t as n}from"./useBaseQuery-D_vk3-Uh.js";function r(r,i){return n({...r,enabled:!0,suspense:!0,throwOnError:t,placeholderData:void 0},e,i)}var i={all:[`contracts`],lists:()=>[...i.all,`list`],list:e=>[...i.lists(),e],details:()=>[...i.all,`detail`],detail:e=>[...i.details(),e]};export{r as n,i as t};

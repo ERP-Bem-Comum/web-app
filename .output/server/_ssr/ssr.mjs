@@ -92,7 +92,7 @@ var HEADERS = { TSS_SHELL: "X-TSS_SHELL" };
 * the dev styles URL for route-scoped CSS collection.
 */
 async function getStartManifest(matchedRoutes) {
-	const { tsrStartManifest } = await import("../_tanstack-start-manifest_v-BK1hyzfr.mjs");
+	const { tsrStartManifest } = await import("../_tanstack-start-manifest_v-CrBK_O1X.mjs");
 	const startManifest = tsrStartManifest();
 	let routes = startManifest.routes;
 	routes[rootRouteId];
@@ -121,19 +121,23 @@ var manifest = {
 	},
 	"21733bb734508896bbab990a0be92be590eda23a3dc18baa44f8b5be6a987915": {
 		functionName: "getContracts_createServerFn_handler",
-		importer: () => import("./contracts-Fi7ynkrn.mjs")
+		importer: () => import("./contracts-oc8XREmR.mjs")
 	},
 	"2c5d88086f299976e460e81001cd34c04430a9183d8dc21948bb4170c781b47b": {
 		functionName: "createContract_createServerFn_handler",
-		importer: () => import("./contracts-Fi7ynkrn.mjs")
+		importer: () => import("./contracts-oc8XREmR.mjs")
 	},
 	"362cb3e91c809b23fa9aa028a9af6edeee9f16e7e614ba712b3b4e936d33854a": {
 		functionName: "createAditive_createServerFn_handler",
-		importer: () => import("./contracts-Fi7ynkrn.mjs")
+		importer: () => import("./contracts-oc8XREmR.mjs")
 	},
 	"3842accf9e7e47a59d74742faf0e58ae1b9d1c3aae28536d1c848b9ef60c2cc7": {
 		functionName: "deleteContract_createServerFn_handler",
-		importer: () => import("./contracts-Fi7ynkrn.mjs")
+		importer: () => import("./contracts-oc8XREmR.mjs")
+	},
+	"3ad6ac5a0a6984a4132c4eed501205fa0c56f2e1c01a6eeec70870aa8f2f0a55": {
+		functionName: "getContractHistory_createServerFn_handler",
+		importer: () => import("./contracts-oc8XREmR.mjs")
 	},
 	"58d482668ee4f1bd4655ddc09985d343aa3f4b6ab65073bd9357cdaf12c68656": {
 		functionName: "logout_createServerFn_handler",
@@ -145,7 +149,7 @@ var manifest = {
 	},
 	"757f217f9735179dc68295ed6e2e2f300587be0b0c2d6c7e6bbc1c6dbad7d672": {
 		functionName: "getContractById_createServerFn_handler",
-		importer: () => import("./contracts-Fi7ynkrn.mjs")
+		importer: () => import("./contracts-oc8XREmR.mjs")
 	},
 	"88b31d291b303759492a92f08c8227473d8bce7cd77b41cf5af04c5d3dfc3f47": {
 		functionName: "getBudgetPlans_createServerFn_handler",
@@ -165,7 +169,7 @@ var manifest = {
 	},
 	"fed5490d1d1091454d5fe759b357ccec82911572e748dc87b8cf48551d1c7ad4": {
 		functionName: "updateContract_createServerFn_handler",
-		importer: () => import("./contracts-Fi7ynkrn.mjs")
+		importer: () => import("./contracts-oc8XREmR.mjs")
 	}
 };
 async function getServerFnById(id, access) {
@@ -1460,7 +1464,7 @@ var getBaseManifest = getProdBaseManifest;
 var createEarlyHintsForRequest = createEarlyHintsCollector;
 async function loadEntries() {
 	const [routerEntry, startEntry, pluginAdapters] = await Promise.all([
-		import("./router-4fIWsnIP.mjs"),
+		import("./router-FiWaBr10.mjs"),
 		import("./start-5Z2QO8AU.mjs"),
 		import("./empty-plugin-adapters-D9UWiqvJ.mjs")
 	]);
