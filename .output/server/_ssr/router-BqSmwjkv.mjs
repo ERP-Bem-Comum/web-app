@@ -4,9 +4,9 @@ import { t as Route$4 } from "./contratos-BiehLyWQ.mjs";
 import { t as Route$5 } from "./detalhes._id-B-p3EH-I.mjs";
 import { t as Route$6 } from "./editar._id-DqHIY1Dk.mjs";
 import { t as Route$7 } from "./historico._id-BiWvSgQe.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/router-CmCbB577.js
+//#region node_modules/.nitro/vite/services/ssr/assets/router-BqSmwjkv.js
 var import_jsx_dev_runtime = require_jsx_dev_runtime();
-var globals_default = "/assets/globals-Bsm8C4Td.css";
+var globals_default = "/assets/globals-BH60ilQN.css";
 var _jsxFileName = "/Users/alessandracastro/dev/ERP-FRONTEND/src/routes/__root.tsx";
 var Route$3 = createRootRoute({
 	head: () => ({

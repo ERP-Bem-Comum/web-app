@@ -1,10 +1,10 @@
-//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-q-Zif3lk.js
+//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-C8SvqGO7.js
 var tsrStartManifest = () => ({
 	routes: {
 		__root__: {
 			filePath: "/Users/alessandracastro/dev/ERP-FRONTEND/src/routes/__root.tsx",
 			children: ["/_authenticated", "/login"],
-			preloads: ["/assets/index-Dy2igzsP.js"]
+			preloads: ["/assets/index-ieOPWqPW.js"]
 		},
 		"/_authenticated": {
 			filePath: "/Users/alessandracastro/dev/ERP-FRONTEND/src/routes/_authenticated.tsx",
@@ -16,58 +16,58 @@ var tsrStartManifest = () => ({
 				"/_authenticated/contratos/historico/$id"
 			],
 			preloads: [
-				"/assets/_authenticated-DSszS7mg.js",
-				"/assets/useBaseQuery-CDl06UAY.js",
-				"/assets/useMutation-WR-8RDCr.js",
-				"/assets/useQuery-s99wqSnU.js",
-				"/assets/auth-D8e1xzqO.js"
+				"/assets/_authenticated-BgbEQgYt.js",
+				"/assets/useBaseQuery-CUNzJ4Qr.js",
+				"/assets/useMutation-DJIf9XFs.js",
+				"/assets/useQuery-DJA-dZR7.js",
+				"/assets/auth-3euWRt9O.js"
 			]
 		},
 		"/login": {
 			filePath: "/Users/alessandracastro/dev/ERP-FRONTEND/src/routes/login.tsx",
 			children: void 0,
-			preloads: ["/assets/login-DI8vc2pN.js", "/assets/auth-D8e1xzqO.js"]
+			preloads: ["/assets/login-Du4Rn-pk.js", "/assets/auth-3euWRt9O.js"]
 		},
 		"/_authenticated/contratos/adicionar": {
 			filePath: "/Users/alessandracastro/dev/ERP-FRONTEND/src/routes/_authenticated/contratos/adicionar.tsx",
 			children: void 0,
-			preloads: ["/assets/adicionar-CzikvIQs.js", "/assets/ContractForm-ORItVw8b.js"]
+			preloads: ["/assets/adicionar-DzuN8vln.js", "/assets/ContractForm-ClOLyBBI.js"]
 		},
 		"/_authenticated/contratos/": {
 			filePath: "/Users/alessandracastro/dev/ERP-FRONTEND/src/routes/_authenticated/contratos/index.tsx",
 			children: void 0,
 			preloads: [
-				"/assets/contratos-CzgDDn0v.js",
-				"/assets/useSuspenseQuery-Ba5FyjNJ.js",
+				"/assets/contratos-dcKgeka9.js",
+				"/assets/useSuspenseQuery-DFulLCnP.js",
 				"/assets/queries-D0YZd_1A.js",
-				"/assets/contracts-DcHSrXBf.js"
+				"/assets/contracts-DxpyFB-y.js"
 			]
 		},
 		"/_authenticated/contratos/detalhes/$id": {
 			filePath: "/Users/alessandracastro/dev/ERP-FRONTEND/src/routes/_authenticated/contratos/detalhes.$id.tsx",
 			children: void 0,
-			preloads: ["/assets/detalhes._id-mpyYeG9Q.js", "/assets/use-contract-DLPL-CRj.js"]
+			preloads: ["/assets/detalhes._id-Dbq_afwk.js", "/assets/use-contract-C99WYGIN.js"]
 		},
 		"/_authenticated/contratos/editar/$id": {
 			filePath: "/Users/alessandracastro/dev/ERP-FRONTEND/src/routes/_authenticated/contratos/editar.$id.tsx",
 			children: void 0,
 			preloads: [
-				"/assets/editar._id-HPXt8Sv0.js",
-				"/assets/ContractForm-ORItVw8b.js",
-				"/assets/use-contract-DLPL-CRj.js"
+				"/assets/editar._id-CbmYp8Us.js",
+				"/assets/ContractForm-ClOLyBBI.js",
+				"/assets/use-contract-C99WYGIN.js"
 			]
 		},
 		"/_authenticated/contratos/historico/$id": {
 			filePath: "/Users/alessandracastro/dev/ERP-FRONTEND/src/routes/_authenticated/contratos/historico.$id.tsx",
 			children: void 0,
 			preloads: [
-				"/assets/historico._id-BVI1_InP.js",
-				"/assets/useSuspenseQuery-Ba5FyjNJ.js",
-				"/assets/contracts-DcHSrXBf.js"
+				"/assets/historico._id-CZQa4v5M.js",
+				"/assets/useSuspenseQuery-DFulLCnP.js",
+				"/assets/contracts-DxpyFB-y.js"
 			]
 		}
 	},
-	clientEntry: "/assets/index-Dy2igzsP.js"
+	clientEntry: "/assets/index-ieOPWqPW.js"
 });
 //#endregion
 export { tsrStartManifest };
