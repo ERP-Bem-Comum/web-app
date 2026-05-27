@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, Link } from '@tanstack/react-router'
+import { createFileRoute, Outlet, Link, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '@/hooks/useAuth'
 import PageContainer from '@/components/layout/main/PageContainer'
 
@@ -7,7 +7,14 @@ export const Route = createFileRoute('/_authenticated')({
 })
 
 function AuthenticatedLayout() {
-  const { user, logout } = useAuth()
+  const { user, logout, isLoading, isAuthenticated } = useAuth()
+  const navigate = useNavigate()
+
+  // Proteção de rota: redireciona para login se não autenticado
+  if (!isLoading && !isAuthenticated) {
+    navigate({ to: '/login', replace: true })
+    return null
+  }
 
   const handleLogout = async () => {
     await logout()

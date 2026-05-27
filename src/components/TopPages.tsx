@@ -1,5 +1,4 @@
-'use client'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from '@tanstack/react-router'
 import { MdKeyboardArrowLeft } from 'react-icons/md'
 import { Button } from './ui/button'
 
@@ -9,7 +8,7 @@ type Props = {
   path?: string
 }
 export default function TopPages({ text, isReturn = true, path }: Props) {
-  const router = useRouter()
+  const navigate = useNavigate()
   return (
     <div className="flex items-center mb-8">
       {isReturn && (
@@ -17,7 +16,7 @@ export default function TopPages({ text, isReturn = true, path }: Props) {
           data-test="return"
           variant="erpReturn"
           size="none"
-          onClick={() => (path ? router.push(path) : router.back())}
+          onClick={() => (path ? navigate({ to: path }) : navigate({ to: '..' }))}
         >
           <MdKeyboardArrowLeft className="text-erp-primary" size={32} />
         </Button>
