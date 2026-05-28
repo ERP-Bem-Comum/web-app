@@ -175,7 +175,7 @@
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 12 to break down)
+- [x] 12-1-PLAN.md — Integração com Backend core-api (detailed plan created)
 
 ---
 
