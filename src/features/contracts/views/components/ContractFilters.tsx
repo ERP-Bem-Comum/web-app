@@ -1,77 +1,118 @@
-import { useState, useEffect } from 'react'
 import type { ContractListFilters } from '../../domain/schemas'
-import { ContractType, ContractStatus } from '../../domain/types'
 
 interface Props {
   filters: ContractListFilters
   onChange: (filters: ContractListFilters) => void
 }
 
+function formatDateInput(dateStr: string | undefined): string {
+  if (!dateStr) return ''
+  try {
+    const d = new Date(dateStr)
+    const yyyy = d.getFullYear()
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    const dd = String(d.getDate()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd}`
+  } catch {
+    return ''
+  }
+}
+
 export function ContractFilters({ filters, onChange }: Props) {
-  const [search, setSearch] = useState(filters.search || '')
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onChange({ ...filters, search: search || undefined, page: 1 })
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [search])
-
   return (
-    <div className="flex flex-wrap gap-3 mb-6">
-      <div className="flex-1 min-w-[200px]">
+    <div className="flex flex-wrap items-end gap-3 px-4 py-3 border-b border-[#e5ded4] bg-[#faf7f2]">
+      {/* Período de Vigência — Data Início */}
+      <div className="flex flex-col gap-1">
+        <label className="text-[9.5px] font-bold text-[#999187] uppercase tracking-[0.04em]">
+          Vigência de
+        </label>
         <input
-          type="text"
-          placeholder="Buscar por objeto, código ou fornecedor..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#32C6F4]"
+          type="date"
+          autoComplete="off"
+          placeholder=" "
+          value={formatDateInput(filters.contractPeriodStart)}
+          onChange={(e) =>
+            onChange({
+              ...filters,
+              contractPeriodStart: e.target.value || undefined,
+              page: 1,
+            })
+          }
+          className="h-8 px-2 text-[12.5px] rounded-md border border-[#e5ded4] bg-white text-[#4d4740] outline-none focus:border-[#8bb0d6] transition-colors [color-scheme:light]"
         />
       </div>
 
-      <select
-        value={filters.contractType || ''}
-        onChange={(e) =>
-          onChange({
-            ...filters,
-            contractType: (e.target.value as ContractType) || undefined,
-            page: 1,
-          })
-        }
-        className="px-3 py-2 border rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#32C6F4]"
-      >
-        <option value="">Todos os tipos</option>
-        <option value={ContractType.SUPPLIER}>Fornecedor</option>
-        <option value={ContractType.FINANCIER}>Financiador</option>
-        <option value={ContractType.COLLABORATOR}>Colaborador</option>
-        <option value={ContractType.ACT}>ACT</option>
-      </select>
+      {/* Período de Vigência — Data Fim */}
+      <div className="flex flex-col gap-1">
+        <label className="text-[9.5px] font-bold text-[#999187] uppercase tracking-[0.04em]">
+          até
+        </label>
+        <input
+          type="date"
+          autoComplete="off"
+          placeholder=" "
+          value={formatDateInput(filters.contractPeriodEnd)}
+          onChange={(e) =>
+            onChange({
+              ...filters,
+              contractPeriodEnd: e.target.value || undefined,
+              page: 1,
+            })
+          }
+          className="h-8 px-2 text-[12.5px] rounded-md border border-[#e5ded4] bg-white text-[#4d4740] outline-none focus:border-[#8bb0d6] transition-colors [color-scheme:light]"
+        />
+      </div>
 
-      <select
-        value={filters.contractStatus || ''}
-        onChange={(e) =>
-          onChange({
-            ...filters,
-            contractStatus: (e.target.value as ContractStatus) || undefined,
-            page: 1,
-          })
-        }
-        className="px-3 py-2 border rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#32C6F4]"
-      >
-        <option value="">Todos os status</option>
-        <option value={ContractStatus.PENDING}>Pendente</option>
-        <option value={ContractStatus.SIGNED}>Assinado</option>
-        <option value={ContractStatus.ONGOING}>Em andamento</option>
-        <option value={ContractStatus.FINISHED}>Finalizado</option>
-        <option value={ContractStatus.DISTRATO}>Distrato</option>
-      </select>
+      {/* Valor Mínimo */}
+      <div className="flex flex-col gap-1">
+        <label className="text-[9.5px] font-bold text-[#999187] uppercase tracking-[0.04em]">
+          Valor mín.
+        </label>
+        <input
+          type="number"
+          min={0}
+          step={0.01}
+          placeholder="R$ 0,00"
+          value={filters.minValue ?? ''}
+          onChange={(e) =>
+            onChange({
+              ...filters,
+              minValue: e.target.value ? Number(e.target.value) : undefined,
+              page: 1,
+            })
+          }
+          className="h-8 px-2 text-[12.5px] rounded-md border border-[#e5ded4] bg-white text-[#4d4740] outline-none focus:border-[#8bb0d6] transition-colors w-[130px]"
+        />
+      </div>
 
+      {/* Valor Máximo */}
+      <div className="flex flex-col gap-1">
+        <label className="text-[9.5px] font-bold text-[#999187] uppercase tracking-[0.04em]">
+          Valor máx.
+        </label>
+        <input
+          type="number"
+          min={0}
+          step={0.01}
+          placeholder="R$ 0,00"
+          value={filters.maxValue ?? ''}
+          onChange={(e) =>
+            onChange({
+              ...filters,
+              maxValue: e.target.value ? Number(e.target.value) : undefined,
+              page: 1,
+            })
+          }
+          className="h-8 px-2 text-[12.5px] rounded-md border border-[#e5ded4] bg-white text-[#4d4740] outline-none focus:border-[#8bb0d6] transition-colors w-[130px]"
+        />
+      </div>
+
+      {/* Limpar filtros */}
       <button
         onClick={() => {
-          setSearch('')
-          onChange({ page: 1, limit: 10, order: 'DESC' })
+          onChange({ page: 1, limit: filters.limit || 10, order: 'DESC' })
         }}
-        className="px-4 py-2 border rounded-md text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+        className="h-8 px-3 text-[12px] font-medium rounded-md border border-[#e5ded4] bg-white text-[#736b61] hover:bg-[#faf7f2] hover:border-[#c7bfb2] transition-colors ml-auto"
       >
         Limpar filtros
       </button>

@@ -80,6 +80,9 @@
 
 @layer base {
   :root {
+    --font-nunito: 'Nunito', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-inter: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-jetbrains-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', 'Menlo', monospace;
     --paper-rule: rgb(229, 222, 212);
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
@@ -156,4 +159,25 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* ── Animações ── */
+@keyframes subtle-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+/* ── Classes utilitárias do mockup ── */
+.viga-rem {
+  font-size: 10.5px;
+  color: rgb(115, 107, 97);
+  padding: 8px 12px;
+  background: rgb(250, 247, 242);
+  border: 0.5px solid rgb(229, 222, 212);
+  border-radius: 6px;
+  line-height: 1.5;
+}
+.viga-rem strong {
+  color: rgb(31, 28, 26);
+  font-weight: 600;
 }

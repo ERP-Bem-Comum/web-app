@@ -8,7 +8,23 @@ import {
   MdInsights,
 } from 'react-icons/md'
 
-export const PAGES = [
+export type SubPage = { ARE_NOME: string; path: string; name: string }
+
+export type MenuItem = {
+  name: string
+  ARE_NOME: string
+  path: string
+  subPages: SubPage[]
+}
+
+export type MenuPage = {
+  grupo: string
+  ARE_NOME: string
+  icon: React.ReactNode
+  items: MenuItem[]
+}
+
+export const PAGES: MenuPage[] = [
   {
     grupo: 'Gestão de Contratos',
     ARE_NOME: 'CONTR',

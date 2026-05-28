@@ -8,6 +8,11 @@ export type Session = {
   token: string
 }
 
+export type AuthContext = {
+  session: Session
+  rawToken: string
+}
+
 export const authMiddleware = createMiddleware().server(async ({ request, next }) => {
   const cookieHeader = request.headers.get('cookie') || ''
   const sessionToken = cookieHeader
@@ -40,6 +45,7 @@ export const authMiddleware = createMiddleware().server(async ({ request, next }
     return next({
       context: {
         session: user,
+        rawToken: sessionToken,
       },
     })
   } catch {

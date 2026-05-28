@@ -39,6 +39,7 @@ describe('ContractCreateInputSchema', () => {
       contractType: ContractType.SUPPLIER,
       supplierId: 1,
       budgetPlanId: 2,
+      bancaryInfo: { bank: 'Banco do Brasil', agency: '1234', accountNumber: '56789-0', dv: '1' },
     })
     expect(result.object).toBe('Prestação de serviços de TI')
     expect(result.totalValue).toBe(50000)

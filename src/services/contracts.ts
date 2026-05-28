@@ -314,37 +314,6 @@ export const updateContract = async ({
   }
 }
 
-export const editContractPaymentInfo = async (
-  contract: EditPaymentInfo,
-  id: number,
-): Promise<Response<boolean | string>> => {
-  try {
-    const resp = await api.put(`/contracts/bancaryInfo/${id}`, contract)
-    queryClient.refetchQueries({ queryKey: ['ContractById', id] })
-
-    return {
-      status: resp.status,
-      data: resp.status === HttpStatusCode.Ok,
-      error: '',
-      meta: null,
-    }
-  } catch (error) {
-    ensureSeeded()
-    console.warn('[LOCAL DB] Atualizando dados bancários localmente. ID:', id)
-    localDbUpdateContract(id, {
-      bancaryInfo: contract.bancaryInfo,
-      pixInfo: contract.pixInfo,
-    } as unknown as Partial<LocalContract>)
-    queryClient.refetchQueries({ queryKey: ['ContractById', id] })
-    return {
-      status: 200,
-      data: true,
-      error: '',
-      meta: null,
-    }
-  }
-}
-
 export const getContractById = async (id: number | null): Promise<Response<IContract> | null> => {
   if (id) {
     try {

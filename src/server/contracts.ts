@@ -3,7 +3,11 @@ import { z } from 'zod'
 import { env } from './env'
 import { resultFetch } from '@/shared/http/result-fetch'
 import { authMiddleware } from './middleware/auth'
-import { ContractListFiltersSchema, ContractCreateInputSchema } from '@/features/contracts/domain/schemas'
+import {
+  ContractListFiltersSchema,
+  ContractCreateInputSchema,
+  AditiveCreateInputSchema,
+} from '@/features/contracts/domain/schemas'
 
 export const getContracts = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
@@ -83,9 +87,7 @@ export const createContract = createServerFn({ method: 'POST' })
 
 export const updateContract = createServerFn({ method: 'POST' })
   .middleware([authMiddleware])
-  .inputValidator(
-    ContractCreateInputSchema.extend({ id: z.number() }),
-  )
+  .inputValidator(ContractCreateInputSchema.extend({ id: z.number() }))
   .handler(async ({ data, context }) => {
     const { id, ...body } = data
     const res = await resultFetch(`${env.API_URL}/contracts/${id}`, {
@@ -130,7 +132,7 @@ export const deleteContract = createServerFn({ method: 'POST' })
 
 export const createAditive = createServerFn({ method: 'POST' })
   .middleware([authMiddleware])
-  .inputValidator(ContractCreateInputSchema)
+  .inputValidator(AditiveCreateInputSchema)
   .handler(async ({ data, context }) => {
     const res = await resultFetch(`${env.API_URL}/contracts/aditive`, {
       method: 'POST',
@@ -146,6 +148,61 @@ export const createAditive = createServerFn({ method: 'POST' })
         throw new Response(JSON.stringify(res.error.body), { status: res.error.status })
       }
       throw new Response('Failed to create aditive', { status: 500 })
+    }
+
+    return res.value.json()
+  })
+
+export const updateAditive = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware])
+  .inputValidator(AditiveCreateInputSchema.extend({ id: z.number() }))
+  .handler(async ({ data, context }) => {
+    const { id, ...body } = data
+    const res = await resultFetch(`${env.API_URL}/contracts/aditive/${id}`, {
+      method: 'PUT',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${context.session.token}`,
+      },
+      body: JSON.stringify(body),
+    })
+
+    if (!res.ok) {
+      if (res.error.kind === 'http') {
+        throw new Response(JSON.stringify(res.error.body), { status: res.error.status })
+      }
+      throw new Response('Failed to update aditive', { status: 500 })
+    }
+
+    return res.value.json()
+  })
+
+export const updateContractStatusAndDoc = createServerFn({ method: 'POST' })
+  .middleware([authMiddleware])
+  .inputValidator(
+    z.object({
+      id: z.number(),
+      signedContractUrl: z.string(),
+      dataAssinatura: z.string(),
+      contractStatus: z.string(),
+    })
+  )
+  .handler(async ({ data, context }) => {
+    const { id, ...body } = data
+    const res = await resultFetch(`${env.API_URL}/contracts/${id}`, {
+      method: 'PUT',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${context.session.token}`,
+      },
+      body: JSON.stringify(body),
+    })
+
+    if (!res.ok) {
+      if (res.error.kind === 'http') {
+        throw new Response(JSON.stringify(res.error.body), { status: res.error.status })
+      }
+      throw new Response('Erro ao homologar contrato base', { status: 500 })
     }
 
     return res.value.json()

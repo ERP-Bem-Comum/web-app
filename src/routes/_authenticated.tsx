@@ -1,24 +1,21 @@
-import { createFileRoute, Outlet, Link, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, Outlet } from '@tanstack/react-router'
 import { useAuth } from '@/hooks/useAuth'
 import PageContainer from '@/components/layout/main/PageContainer'
+import TopMain from '@/components/layout/main/TopMain'
+import Navigation from '@/components/layout/main/Navigation'
 
 export const Route = createFileRoute('/_authenticated')({
   component: AuthenticatedLayout,
 })
 
 function AuthenticatedLayout() {
-  const { user, logout, isLoading, isAuthenticated } = useAuth()
-  const navigate = useNavigate()
+  const { isLoading, isAuthenticated } = useAuth()
+  const navigate = Route.useNavigate()
 
   // Proteção de rota: redireciona para login se não autenticado
   if (!isLoading && !isAuthenticated) {
     navigate({ to: '/login', replace: true })
     return null
-  }
-
-  const handleLogout = async () => {
-    await logout()
-    window.location.href = '/login'
   }
 
   return (
@@ -27,29 +24,10 @@ function AuthenticatedLayout() {
         <div>
           <img src="/images/logo-bem-comum.png" alt="Logo" width={32} height={32} />
         </div>
-        <div className="h-full flex justify-end items-center gap-4 z-10">
-          <span className="text-sm">Olá, {user?.name ?? 'Visitante'}</span>
-          <button
-            onClick={handleLogout}
-            className="text-sm text-red-500 hover:text-red-700 font-medium"
-          >
-            Sair
-          </button>
-        </div>
+        <TopMain />
       </div>
       <div className="flex" style={{ height: 'calc(100vh - 56px)' }}>
-        <nav className="flex bg-erp-nav w-fit hover:w-fit transition-all ease-in-out duration-300 shadow-[0_4px_16px_0px_rgba(0,0,0,0.10)]">
-          <ul className="text-white py-4 px-2 space-y-2 min-w-[200px]">
-            <li>
-              <Link
-                to="/contratos"
-                className="block px-4 py-2 rounded hover:bg-[#009FD0] transition-colors [&.active]:bg-[#E8EEF0] [&.active]:text-erp-nav"
-              >
-                Contratos
-              </Link>
-            </li>
-          </ul>
-        </nav>
+        <Navigation />
         <PageContainer>
           <Outlet />
         </PageContainer>

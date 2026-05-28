@@ -44,9 +44,27 @@ export enum AditivoType {
   DISTRATO = 'distrato',
 }
 
+export enum Categoria {
+  AVALIACAO = 'Avaliação',
+  OPERACIONAL = 'Operacional',
+  PROCESSO = 'Processo',
+}
+
+export enum CentroDeCusto {
+  RH = 'RH',
+  SERVICOS_GERAIS = 'Serviços Gerais',
+  EVENTOS = 'Eventos',
+}
+
 export type ContractPeriod = {
   start: Date
   end: Date
+  isIndefinite?: boolean
+}
+
+export type OriginalContractPeriod = {
+  start: string
+  end: string
   isIndefinite?: boolean
 }
 
@@ -107,10 +125,23 @@ export type Contract = {
   children?: Contract[]
   createdAt: Date
   updatedAt: Date
+  // Campos adicionais presentes no mock/formulário
+  originalContractPeriod?: ContractPeriod | null
+  categorizacao?: string | null
+  centroDeCusto?: string | null
+  email?: string | null
+  telephone?: string | null
+  observations?: string | null
+  dataAssinatura?: string | null
+  signedContractUrl?: string | null
+  origin?: string | null
+  bancaryInfo?: BancaryInfo | null
+  pixInfo?: PixInfo | null
 }
 
 export type ContractRow = Omit<Contract, 'children'> & {
   children?: Contract[] | null
+  childrenCount?: number
 }
 
 export type ContractListFilters = {

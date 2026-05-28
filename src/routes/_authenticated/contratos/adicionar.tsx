@@ -7,9 +7,8 @@ export const Route = createFileRoute('/_authenticated/contratos/adicionar')({
 
 function AddContractPage() {
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Novo Contrato</h1>
-      <ContractForm />
+    <div className="flex flex-col flex-1 w-full min-w-0 h-full overflow-hidden pb-[56px]">
+      <ContractForm mode="create" />
     </div>
   )
 }

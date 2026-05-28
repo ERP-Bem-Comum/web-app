@@ -2,7 +2,6 @@ import { AutoComplete } from '@/components/layout/AutoComplete'
 import { CustomTextField } from '@/components/layout/TextField'
 import { Button } from '@/components/ui/button'
 import { useOptions } from '@/hooks/useOptions'
-import { editContractPaymentInfo } from '@/services/contracts'
 import { editSupplier } from '@/services/supplier'
 import { ContractForAccounts } from '@/types/contracts'
 import { EditPaymentInfo } from '@/types/global'
@@ -87,9 +86,7 @@ export function ModalEditPaymentInfo({
     setIsLoading(true)
     try {
       let res
-      if (contract?.id) {
-        res = await editContractPaymentInfo(data, contract.id)
-      } else if (supplier?.id) {
+      if (supplier?.id) {
         res = await editSupplier(supplier.id, data)
       }
       if (res?.status === HttpStatusCode.Ok) {

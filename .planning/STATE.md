@@ -58,6 +58,18 @@ See: .planning/PROJECT.md (updated 2026-05-27)
   - Distrato mapeado como aditivo `kind: 'Misc'` + descrição + término de contrato
   - Auth real: JWT ES256 + refresh tokens rotacionados do backend core-api
   - Upload de PDF via `application/octet-stream` para S3/MinIO (não mais base64 em JSON)
+  - **Stack definida (2026-05-28):**
+    - `neverthrow` → Domain + Application (Result<T,E> puro)
+    - `fp-ts` → Adapters / Borda (TaskEither, composição IO)
+    - `newtype-ts` → Branded types (iso, prism)
+    - `zod` → Validação na fronteira (input + response)
+    - `xstate` → UI state machines
+    - `ofetch` → HTTP client (retry, auto-parse)
+    - `iron-session` + `jose` → Cookie criptografado + JWT ES256
+    - `unstorage` → SessionStore port (memory → Redis)
+    - `@t3-oss/env-core` → Env validation
+    - `eslint-plugin-boundaries` → Import restrictions entre camadas
+    - `vitest` → Test runner
 
 ## Blockers
 

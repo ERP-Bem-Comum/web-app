@@ -137,10 +137,10 @@ const SubjectInfo = ({
               <p>Chave: {maskPixType(pixInfo.key, pixInfo.key_type)}</p>
             </Fragment>
           )}
-          {editable && (
+          {editable && supplier && (
             <div
               className="cursor-pointer flex gap-3 items-center justify-center w-fit"
-              onClick={() => (supplier || contract) && editable && onOpenModalEditInfo?.()}
+              onClick={() => supplier && editable && onOpenModalEditInfo?.()}
             >
               <Edit2Icon size={16} color="#155366" />
               <p className="text-[#155366] font-semibold">Editar dados bancários</p>

@@ -19,10 +19,15 @@ function LoginPage() {
     setLoading(true)
 
     try {
-      await login({ data: { email, password } })
+      const result = await login({ data: { email, password } })
+      if (result && 'error' in result) {
+        setError(result.error as string)
+        return
+      }
       navigate({ to: '/contratos' })
     } catch (err: any) {
-      setError(err?.message || 'Erro ao fazer login')
+      const message = err?.message || err?.statusMessage || 'Erro ao fazer login. Verifique suas credenciais.'
+      setError(message)
     } finally {
       setLoading(false)
     }

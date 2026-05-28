@@ -29,6 +29,71 @@ O frontend ERP-FRONTEND migrou de Next.js para TanStack Start (Phases 1–6) e o
 - Backend requer `contract:read` / `contract:write` permissions (RBAC)
 - Backend auth retorna JWT ES256 (15 min) + refresh token opaco (30 dias)
 
+## Stack & Architecture
+
+### Libs Instaladas
+
+| Lib | Camada | Uso |
+|-----|--------|-----|
+| `neverthrow` | Domain + Application | `Result<T,E>`, `ok()`, `err()`, `ResultAsync` em use-cases e regras de negócio puros |
+| `fp-ts` | Adapters / Borda | `TaskEither`, `Option`, `Reader`, `pipe` para composição complexa de IO, async, efeitos |
+| `newtype-ts` | Domain + Adapters | Branded types com `iso`, `prism` — usado com `fp-ts` na borda e com smart constructors no domain |
+| `zod` | Borda (validação) | Input validation (server fn) + response schema validation (backend DTOs) |
+| `xstate` | UI (views) | State machines para fluxos complexos de UI (wizards, modais multi-step) |
+| `ofetch` | Adapters (HTTP) | HTTP client com retry, interceptors, auto-parse JSON — base do `resultFetch` refatorado |
+| `iron-session` | Server (auth) | Cookie criptografado (seal/unseal) para sessão HttpOnly opaca |
+| `jose` | Server (auth) | JWT sign/verify ES256 — mesma lib do backend |
+| `unstorage` | Server (auth) | `SessionStore` port — memory em dev, Redis em prod |
+| `@t3-oss/env-core` | Config | Env validation com Zod + autocomplete TypeScript |
+| `eslint-plugin-boundaries` | Dev | Import restrictions entre camadas (`domain` → `adapters` proibido) |
+| `vitest` | Testes | Test runner — já instalado |
+
+### Divisão Arquitetural: neverthrow vs fp-ts
+
+```
+┌────────────────────────────────────────────────────────────┐
+│  Domain + Application (use-cases)                          │
+│  ─────────────────────────────────                         │
+│  neverthrow: Result<T,E>, ok(), err(), ResultAsync         │
+│  Puro, legível, sem efeitos colaterais                     │
+├────────────────────────────────────────────────────────────┤
+│  Fronteira: Port (interface)                               │
+│  ────────────────────────────                              │
+│  Promise<Result<T,E>> ou ResultAsync<T,E>                  │
+│  neverthrow — contrato entre app e adapter                 │
+├────────────────────────────────────────────────────────────┤
+│  Adapters / Infrastructure / Borda                         │
+│  ───────────────────────────────────                       │
+│  fp-ts: TaskEither<E,T>, Option, Reader, pipe              │
+│  Composição complexa, async, IO, efeitos                   │
+│  Converte para neverthrow ao retornar pela port            │
+└────────────────────────────────────────────────────────────┘
+```
+
+### Ponte neverthrow ↔ fp-ts na fronteira
+
+Adapters usam `fp-ts` internamente para composição, mas **convertem para `neverthrow` ao cruzar a port**:
+
+```ts
+// Adapter interno (fp-ts)
+const taskEither = pipe(
+  TE.tryCatch(() => http.post('/contracts', contract), mapHttpError),
+  TE.chain(parseContractResponse)
+)
+
+// Fronteira: converte TaskEither → ResultAsync (neverthrow)
+return ResultAsync.fromPromise(
+  taskEither().then(result =>
+    E.isLeft(result)
+      ? Promise.reject(result.left)
+      : Promise.resolve(result.right)
+  ),
+  e => e as ContractError
+)
+```
+
+Helper reutilizável: `lib/fp-ts-neverthrow-bridge.ts`
+
 ## Requirements
 
 1. **Subir ambiente backend local**

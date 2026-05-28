@@ -2,6 +2,7 @@ import { env } from '@/server/env'
 import { resultFetch } from '@/shared/http/result-fetch'
 import type { Contract, ContractId, ContractListFilters, PaginatedContractRows } from '../../domain/types'
 import { ContractId as MakeContractId } from '../../domain/types'
+import type { AditiveCreateInput } from '../../domain/schemas'
 
 export async function fetchContracts(
   filters: ContractListFilters,
@@ -69,4 +70,24 @@ function parseContract(dto: any): Contract {
     createdAt: new Date(dto.createdAt),
     updatedAt: new Date(dto.updatedAt),
   }
+}
+
+export async function createAditive(
+  input: AditiveCreateInput,
+  token: string,
+): Promise<{ id: number }> {
+  const res = await resultFetch(`${env.API_URL}/contracts/aditive`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(input),
+  })
+
+  if (!res.ok) {
+    throw new Error(`Failed to create aditive: ${res.error.kind}`)
+  }
+
+  return res.value.json()
 }

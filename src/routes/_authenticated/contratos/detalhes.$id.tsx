@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { Suspense } from 'react'
 import { useContract } from '@/features/contracts/views/hooks/use-contract'
+import { ContractDetail } from '@/features/contracts/views/components/ContractDetail'
 
 export const Route = createFileRoute('/_authenticated/contratos/detalhes/$id')({
   component: ContractDetailsPage,
@@ -8,42 +10,30 @@ export const Route = createFileRoute('/_authenticated/contratos/detalhes/$id')({
 function ContractDetailsPage() {
   const { id } = Route.useParams()
   const numericId = Number(id)
-  const { data: contract } = useContract(numericId)
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold">Detalhes do Contrato</h1>
-      <div className="mt-6 bg-white rounded-lg shadow p-6 space-y-4">
-        <div>
-          <span className="text-sm text-gray-500">Código</span>
-          <p className="font-medium">{contract?.contractCode}</p>
+    <Suspense
+      fallback={
+        <div className="flex flex-col flex-1 w-full min-w-0 h-full items-center justify-center">
+          <div className="w-8 h-8 border-2 border-[#32C6F4] border-t-transparent rounded-full animate-spin" />
+          <span className="mt-3 text-[13px] text-[#999187]">Carregando detalhes...</span>
         </div>
-        <div>
-          <span className="text-sm text-gray-500">Objeto</span>
-          <p className="font-medium">{contract?.object}</p>
-        </div>
-        <div>
-          <span className="text-sm text-gray-500">Tipo</span>
-          <p className="font-medium">{contract?.contractType}</p>
-        </div>
-        <div>
-          <span className="text-sm text-gray-500">Status</span>
-          <p className="font-medium">{contract?.contractStatus}</p>
-        </div>
-        <div>
-          <span className="text-sm text-gray-500">Valor Total</span>
-          <p className="font-medium">
-            {contract?.totalValue?.toLocaleString('pt-BR', {
-              style: 'currency',
-              currency: 'BRL',
-            })}
-          </p>
-        </div>
-        <div>
-          <span className="text-sm text-gray-500">Fornecedor</span>
-          <p className="font-medium">{contract?.supplier?.name || '-'}</p>
-        </div>
-      </div>
-    </div>
+      }
+    >
+      <ContractDetailLoader id={numericId} />
+    </Suspense>
   )
+}
+
+function ContractDetailLoader({ id }: { id: number }) {
+  const { data: contract } = useContract(id)
+  if (!contract) {
+    return (
+      <div className="flex flex-col flex-1 w-full min-w-0 h-full items-center justify-center">
+        <p className="text-[15px] font-medium text-[#1f1c1a]">Contrato não encontrado</p>
+        <p className="text-[12px] text-[#999187] mt-1">Verifique o número e tente novamente.</p>
+      </div>
+    )
+  }
+  return <ContractDetail contract={contract} />
 }
