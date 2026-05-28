@@ -90,17 +90,20 @@
 
 ---
 
-### Phase 7: Atualizar Dados Bancários (US6)
+### Phase 7: ~~Atualizar Dados Bancários (US6)~~ — CANCELADA
 
-**Goal:** Editar PIX e dados bancários na tela de detalhes.
+**Status:** ❌ Cancelled
 
-**Dependencies:** Phase 5 (can run parallel with Phase 6)
+**Reason:** Regra de domínio definitiva — edição de dados bancários/PIX pertence exclusivamente ao módulo de **Cadastros**. Em Contratos, esses dados aparecem apenas como **leitura**. Nenhum modal, botão ou server function de edição bancária é permitido no módulo de Contratos.
 
-**UI hint:** yes
+**Artefatos removidos:**
 
-**Tasks:** updateContractPaymentInfo adapter + Server Function, modal ContractBankInfoModal, validação PIX ou bancário obrigatório.
+- `ContractBankInfoModal.tsx` (modal de edição bancária)
+- `editContractPaymentInfo()` em `services/contracts.ts`
+- Gatilho de edição bancária via `contract` em `ModalEditPaymentInfo.tsx`
+- Botão "Editar dados bancários" quando contexto é contrato em `SubjectInfo.tsx`
 
-**Spec ref:** `specs/001-contratos-tanstack-start/tasks.md` T055–T057
+**Spec ref:** ~~T055–T057~~ — removido do escopo
 
 ---
 
@@ -157,6 +160,22 @@
 **Tasks:** format:check, lint, typecheck, test:run (domain ≥80%, adapters happy+erro), build.
 
 **Spec ref:** `specs/001-contratos-tanstack-start/tasks.md` T070–T074
+
+### Phase 12: Integração com Backend core-api
+
+**Goal:** Integrar o módulo de Contratos do frontend TanStack Start com o backend real core-api (Fastify + MySQL + MinIO), substituindo a mock API H3 pela API REST real. Manter UX existente enquanto adapta domain model, auth real JWT ES256 + refresh tokens, e storage S3/MinIO.
+
+**Depends on:** Phase 11
+
+**UI hint:** no
+
+**Tasks:** Subir backend local (Docker Compose), mapear domain model backend→frontend, atualizar auth (login/register/refresh/me), refatorar Server Functions de contratos (list/get/create/amendments/homologate/documents), adaptar upload/download de PDF para octet-stream + S3, manter campos de parceiros/PIX para futura integração Gestão de Parceiros.
+
+**Spec ref:** TBD
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 12 to break down)
 
 ---
 

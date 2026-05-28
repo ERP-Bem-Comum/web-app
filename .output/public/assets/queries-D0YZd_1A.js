@@ -1,1 +1,0 @@
-var e={all:[`contracts`],lists:()=>[...e.all,`list`],list:t=>[...e.lists(),t],details:()=>[...e.all,`detail`],detail:t=>[...e.details(),t]};export{e as t};
