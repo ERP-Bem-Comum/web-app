@@ -19,17 +19,17 @@ export async function fetchContracts(
   if (filters.contractStatus) params.set('contractStatus', filters.contractStatus)
   if (filters.order) params.set('order', filters.order)
 
-  const res = await resultFetch(`${env.API_URL}/contracts?${params.toString()}`, {
+  const result = await resultFetch<any>(`${env.API_URL}/contracts?${params.toString()}`, {
     headers: {
       authorization: `Bearer ${token}`,
     },
   })
 
-  if (!res.ok) {
-    throw new Error(`Failed to fetch contracts: ${res.error.kind}`)
+  if (result.isErr()) {
+    throw new Error(`Failed to fetch contracts: ${result.error.kind}`)
   }
 
-  const json = await res.value.json()
+  const json = await result.value
 
   return {
     items: (json.items || []).map(parseContractRow),
@@ -41,18 +41,18 @@ export async function fetchContractById(
   id: ContractId,
   token: string,
 ): Promise<Contract | null> {
-  const res = await resultFetch(`${env.API_URL}/contracts/${id}`, {
+  const result = await resultFetch<any>(`${env.API_URL}/contracts/${id}`, {
     headers: {
       authorization: `Bearer ${token}`,
     },
   })
 
-  if (!res.ok) {
-    if (res.error.kind === 'http' && res.error.status === 404) return null
-    throw new Error(`Failed to fetch contract: ${res.error.kind}`)
+  if (result.isErr()) {
+    if (result.error.kind === 'http' && result.error.status === 404) return null
+    throw new Error(`Failed to fetch contract: ${result.error.kind}`)
   }
 
-  const json = await res.value.json()
+  const json = await result.value
   return parseContract(json)
 }
 
@@ -76,7 +76,7 @@ export async function createAditive(
   input: AditiveCreateInput,
   token: string,
 ): Promise<{ id: number }> {
-  const res = await resultFetch(`${env.API_URL}/contracts/aditive`, {
+  const result = await resultFetch<any>(`${env.API_URL}/contracts/aditive`, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
@@ -85,9 +85,9 @@ export async function createAditive(
     body: JSON.stringify(input),
   })
 
-  if (!res.ok) {
-    throw new Error(`Failed to create aditive: ${res.error.kind}`)
+  if (result.isErr()) {
+    throw new Error(`Failed to create aditive: ${result.error.kind}`)
   }
 
-  return res.value.json()
+  return result.value
 }

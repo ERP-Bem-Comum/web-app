@@ -6,14 +6,14 @@ import { authMiddleware } from './middleware/auth'
 export const getBudgetPlans = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
-    const res = await resultFetch(`${env.API_URL}/budget-plans`, {
+    const result = await resultFetch<any>(`${env.API_URL}/budget-plans`, {
       headers: { authorization: `Bearer ${context.session.token}` },
     })
-    if (!res.ok) {
-      if (res.error.kind === 'http') {
-        throw new Response(JSON.stringify(res.error.body), { status: res.error.status })
+    if (result.isErr()) {
+      if (result.error.kind === 'http') {
+        throw new Response(JSON.stringify(result.error.body), { status: result.error.status })
       }
       throw new Response('Failed to fetch budget plans', { status: 500 })
     }
-    return res.value.json()
+    return result.value
   })

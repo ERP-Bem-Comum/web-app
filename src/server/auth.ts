@@ -43,23 +43,23 @@ const loginInputSchema = z.object({
 export const login = createServerFn({ method: 'POST' })
   .inputValidator(loginInputSchema)
   .handler(async ({ data }) => {
-    const res = await resultFetch(`${env.API_URL}/auth/login`, {
+    const result = await resultFetch<any>(`${env.API_URL}/auth/login`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(data),
     })
 
-    if (!res.ok) {
-      if (res.error.kind === 'http') {
-        const body = typeof res.error.body === 'string'
-          ? res.error.body
-          : JSON.stringify(res.error.body)
-        throw new Error(body || `Login failed: ${res.error.status}`)
+    if (result.isErr()) {
+      if (result.error.kind === 'http') {
+        const body = typeof result.error.body === 'string'
+          ? result.error.body
+          : JSON.stringify(result.error.body)
+        throw new Error(body || `Login failed: ${result.error.status}`)
       }
       throw new Error('Login failed: network error')
     }
 
-    const responseData = await res.value.json()
+    const responseData = await result.value
     const user = responseData.user
     const token = responseData.token
 

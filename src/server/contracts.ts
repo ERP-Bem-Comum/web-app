@@ -24,20 +24,20 @@ export const getContracts = createServerFn({ method: 'GET' })
     if (data.contractStatus) params.set('contractStatus', data.contractStatus)
     if (data.order) params.set('order', data.order)
 
-    const res = await resultFetch(`${env.API_URL}/contracts?${params.toString()}`, {
+    const result = await resultFetch<any>(`${env.API_URL}/contracts?${params.toString()}`, {
       headers: {
         authorization: `Bearer ${context.session.token}`,
       },
     })
 
-    if (!res.ok) {
-      if (res.error.kind === 'http') {
-        throw new Response(JSON.stringify(res.error.body), { status: res.error.status })
+    if (result.isErr()) {
+      if (result.error.kind === 'http') {
+        throw new Response(JSON.stringify(result.error.body), { status: result.error.status })
       }
       throw new Response('Failed to fetch contracts', { status: 500 })
     }
 
-    return res.value.json()
+    return result.value
   })
 
 const GetByIdSchema = z.object({ id: z.number() })
@@ -46,27 +46,27 @@ export const getContractById = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
   .inputValidator(GetByIdSchema)
   .handler(async ({ data, context }) => {
-    const res = await resultFetch(`${env.API_URL}/contracts/${data.id}`, {
+    const result = await resultFetch<any>(`${env.API_URL}/contracts/${data.id}`, {
       headers: {
         authorization: `Bearer ${context.session.token}`,
       },
     })
 
-    if (!res.ok) {
-      if (res.error.kind === 'http' && res.error.status === 404) {
+    if (result.isErr()) {
+      if (result.error.kind === 'http' && result.error.status === 404) {
         throw new Response('Contract not found', { status: 404 })
       }
       throw new Response('Failed to fetch contract', { status: 500 })
     }
 
-    return res.value.json()
+    return result.value
   })
 
 export const createContract = createServerFn({ method: 'POST' })
   .middleware([authMiddleware])
   .inputValidator(ContractCreateInputSchema)
   .handler(async ({ data, context }) => {
-    const res = await resultFetch(`${env.API_URL}/contracts`, {
+    const result = await resultFetch<any>(`${env.API_URL}/contracts`, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
@@ -75,14 +75,14 @@ export const createContract = createServerFn({ method: 'POST' })
       body: JSON.stringify(data),
     })
 
-    if (!res.ok) {
-      if (res.error.kind === 'http') {
-        throw new Response(JSON.stringify(res.error.body), { status: res.error.status })
+    if (result.isErr()) {
+      if (result.error.kind === 'http') {
+        throw new Response(JSON.stringify(result.error.body), { status: result.error.status })
       }
       throw new Response('Failed to create contract', { status: 500 })
     }
 
-    return res.value.json()
+    return result.value
   })
 
 export const updateContract = createServerFn({ method: 'POST' })
@@ -90,7 +90,7 @@ export const updateContract = createServerFn({ method: 'POST' })
   .inputValidator(ContractCreateInputSchema.extend({ id: z.number() }))
   .handler(async ({ data, context }) => {
     const { id, ...body } = data
-    const res = await resultFetch(`${env.API_URL}/contracts/${id}`, {
+    const result = await resultFetch<any>(`${env.API_URL}/contracts/${id}`, {
       method: 'PUT',
       headers: {
         'content-type': 'application/json',
@@ -99,30 +99,30 @@ export const updateContract = createServerFn({ method: 'POST' })
       body: JSON.stringify(body),
     })
 
-    if (!res.ok) {
-      if (res.error.kind === 'http') {
-        throw new Response(JSON.stringify(res.error.body), { status: res.error.status })
+    if (result.isErr()) {
+      if (result.error.kind === 'http') {
+        throw new Response(JSON.stringify(result.error.body), { status: result.error.status })
       }
       throw new Response('Failed to update contract', { status: 500 })
     }
 
-    return res.value.json()
+    return result.value
   })
 
 export const deleteContract = createServerFn({ method: 'POST' })
   .middleware([authMiddleware])
   .inputValidator(z.object({ id: z.number() }))
   .handler(async ({ data, context }) => {
-    const res = await resultFetch(`${env.API_URL}/contracts/${data.id}`, {
+    const result = await resultFetch<any>(`${env.API_URL}/contracts/${data.id}`, {
       method: 'DELETE',
       headers: {
         authorization: `Bearer ${context.session.token}`,
       },
     })
 
-    if (!res.ok) {
-      if (res.error.kind === 'http') {
-        throw new Response(JSON.stringify(res.error.body), { status: res.error.status })
+    if (result.isErr()) {
+      if (result.error.kind === 'http') {
+        throw new Response(JSON.stringify(result.error.body), { status: result.error.status })
       }
       throw new Response('Failed to delete contract', { status: 500 })
     }
@@ -134,7 +134,7 @@ export const createAditive = createServerFn({ method: 'POST' })
   .middleware([authMiddleware])
   .inputValidator(AditiveCreateInputSchema)
   .handler(async ({ data, context }) => {
-    const res = await resultFetch(`${env.API_URL}/contracts/aditive`, {
+    const result = await resultFetch<any>(`${env.API_URL}/contracts/aditive`, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
@@ -143,14 +143,14 @@ export const createAditive = createServerFn({ method: 'POST' })
       body: JSON.stringify(data),
     })
 
-    if (!res.ok) {
-      if (res.error.kind === 'http') {
-        throw new Response(JSON.stringify(res.error.body), { status: res.error.status })
+    if (result.isErr()) {
+      if (result.error.kind === 'http') {
+        throw new Response(JSON.stringify(result.error.body), { status: result.error.status })
       }
       throw new Response('Failed to create aditive', { status: 500 })
     }
 
-    return res.value.json()
+    return result.value
   })
 
 export const updateAditive = createServerFn({ method: 'POST' })
@@ -158,7 +158,7 @@ export const updateAditive = createServerFn({ method: 'POST' })
   .inputValidator(AditiveCreateInputSchema.extend({ id: z.number() }))
   .handler(async ({ data, context }) => {
     const { id, ...body } = data
-    const res = await resultFetch(`${env.API_URL}/contracts/aditive/${id}`, {
+    const result = await resultFetch<any>(`${env.API_URL}/contracts/aditive/${id}`, {
       method: 'PUT',
       headers: {
         'content-type': 'application/json',
@@ -167,14 +167,14 @@ export const updateAditive = createServerFn({ method: 'POST' })
       body: JSON.stringify(body),
     })
 
-    if (!res.ok) {
-      if (res.error.kind === 'http') {
-        throw new Response(JSON.stringify(res.error.body), { status: res.error.status })
+    if (result.isErr()) {
+      if (result.error.kind === 'http') {
+        throw new Response(JSON.stringify(result.error.body), { status: result.error.status })
       }
       throw new Response('Failed to update aditive', { status: 500 })
     }
 
-    return res.value.json()
+    return result.value
   })
 
 export const updateContractStatusAndDoc = createServerFn({ method: 'POST' })
@@ -189,7 +189,7 @@ export const updateContractStatusAndDoc = createServerFn({ method: 'POST' })
   )
   .handler(async ({ data, context }) => {
     const { id, ...body } = data
-    const res = await resultFetch(`${env.API_URL}/contracts/${id}`, {
+    const result = await resultFetch<any>(`${env.API_URL}/contracts/${id}`, {
       method: 'PUT',
       headers: {
         'content-type': 'application/json',
@@ -198,32 +198,32 @@ export const updateContractStatusAndDoc = createServerFn({ method: 'POST' })
       body: JSON.stringify(body),
     })
 
-    if (!res.ok) {
-      if (res.error.kind === 'http') {
-        throw new Response(JSON.stringify(res.error.body), { status: res.error.status })
+    if (result.isErr()) {
+      if (result.error.kind === 'http') {
+        throw new Response(JSON.stringify(result.error.body), { status: result.error.status })
       }
       throw new Response('Erro ao homologar contrato base', { status: 500 })
     }
 
-    return res.value.json()
+    return result.value
   })
 
 export const getContractHistory = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
   .inputValidator(z.object({ id: z.number() }))
   .handler(async ({ data, context }) => {
-    const res = await resultFetch(`${env.API_URL}/contracts/history/${data.id}`, {
+    const result = await resultFetch<any>(`${env.API_URL}/contracts/history/${data.id}`, {
       headers: {
         authorization: `Bearer ${context.session.token}`,
       },
     })
 
-    if (!res.ok) {
-      if (res.error.kind === 'http' && res.error.status === 404) {
+    if (result.isErr()) {
+      if (result.error.kind === 'http' && result.error.status === 404) {
         throw new Response('Contract not found', { status: 404 })
       }
       throw new Response('Failed to fetch contract history', { status: 500 })
     }
 
-    return res.value.json()
+    return result.value
   })
