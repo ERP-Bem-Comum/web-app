@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-05-27)
 - Phase 7: ❌ Cancelled — Atualizar Dados Bancários (US6) — removida por regra de domínio
 - Phase 8: ⏸️ On Hold — Auth Integração será absorvido pela Phase 12 (auth real com backend)
 - Phase 9–11: ⏸️ On Hold — serão revisitados após integração com backend real
-- Phase 12: 📝 Spec Ready — Integração com Backend core-api (8 requisitos, ambiguidade 0.14)
+- Phase 12: 📝 Context Ready — Integração com Backend core-api (8 requisitos, 5 decisões de implementação, pronto para planning)
 
 ## Phase State
 
