@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getSession, logout as logoutFn } from '@/server/auth'
+import { getMe } from '@/features/auth/infrastructure/me.server-fn'
+import { logout as logoutFn } from '@/features/auth/infrastructure/logout.server-fn'
 
 export function useAuth() {
   const qc = useQueryClient()
   const { data, isLoading, error } = useQuery({
     queryKey: ['auth', 'session'],
-    queryFn: () => getSession({ data: undefined }),
+    queryFn: () => getMe({ data: undefined }),
     retry: false,
     refetchOnWindowFocus: false,
   })
