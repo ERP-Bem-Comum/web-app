@@ -3,7 +3,7 @@ import type { ContractRow } from './types'
 export type TimelineStatus = 'past' | 'current' | 'ok'
 
 export type TimelineItem = {
-  id: number
+  id: string
   title: string
   subtitle: string
   date: string
@@ -32,14 +32,14 @@ export function buildContractTimeline(contract: ContractRow): TimelineItem[] {
 
   // Aditivos ordenados por createdAt descendente (mais recente primeiro)
   const sortedChildren = [...children].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   )
 
   const aditivoItems: TimelineItem[] = sortedChildren.map((child, idx) => {
     const status = deriveTimelineStatus(child, idx, sortedChildren.length + 1)
     const isHomologado = (child as any).aditivoStatus === 'Homologado'
     return {
-      id: child.id as number,
+      id: String(child.id),
       title: `Aditivo de ${(child as any).aditivoType || 'alteração'}`,
       subtitle: child.object || '—',
       date: fmtDate(child.createdAt),
@@ -54,14 +54,14 @@ export function buildContractTimeline(contract: ContractRow): TimelineItem[] {
 
   // Contrato base sempre por último (primeiro cronologicamente)
   const baseItem: TimelineItem = {
-    id: contract.id as number,
+    id: String(contract.id),
     title: 'Contrato Base',
     subtitle: contract.object || '—',
     date: fmtDate(contract.createdAt),
     status: 'past',
     kind: 'base',
     badge: contract.contractStatus || undefined,
-    badgeColor: contract.contractStatus === 'Em andamento'
+    badgeColor: contract.contractStatus === 'Vigente'
       ? 'text-[#176642] bg-[rgba(31,125,85,0.10)]'
       : contract.contractStatus === 'Pendente'
         ? 'text-[#9a5402] bg-[rgba(217,119,6,0.08)]'

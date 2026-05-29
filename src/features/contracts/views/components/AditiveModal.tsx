@@ -30,7 +30,7 @@ function formatDateInput(date: Date | string | null | undefined): string {
 
 // Schema frontend: mais permissivo — resumo opcional, tipo inicia em branco, datas tipadas como Date
 const AditiveModalSchema = z.object({
-  parentId: z.number(),
+  parentId: z.string().uuid(),
   aditivoType: AditiveTypeSchema.optional(),
   object: z.string().optional(),
   totalValue: z.number().optional(),
@@ -52,7 +52,7 @@ interface Props {
   mode: 'novo' | 'selado' | 'editar'
   docData?: any
   docNumber?: string
-  contractId: number
+  contractId: string
   onClose: () => void
   onDelete?: () => void
 }

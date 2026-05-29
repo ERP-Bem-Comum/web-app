@@ -1,5 +1,5 @@
-export type ContractId = number & { readonly __brand: 'ContractId' }
-export const ContractId = (raw: number): ContractId => raw as ContractId
+export type ContractId = string & { readonly __brand: 'ContractId' }
+export const ContractId = (raw: string): ContractId => raw as ContractId
 
 export type ContractCode = string & { readonly __brand: 'ContractCode' }
 
@@ -24,10 +24,9 @@ export enum ContractModel {
 
 export enum ContractStatus {
   PENDING = 'Pendente',
-  SIGNED = 'Assinado',
-  ONGOING = 'Em andamento',
-  FINISHED = 'Finalizado',
-  DISTRATO = 'Distrato',
+  ACTIVE = 'Vigente',
+  EXPIRED = 'Encerrado',
+  TERMINATED = 'Distrato',
 }
 
 export enum AditivoStatus {
@@ -81,7 +80,7 @@ export type PixInfo = {
 }
 
 export type Contractor = {
-  id?: number | null
+  id?: string | null
   name?: string | null
   email?: string | null
   telephone?: string | null
@@ -97,7 +96,7 @@ export type Contractor = {
 }
 
 export type FileAttachment = {
-  id: number
+  id: string
   fileUrl: string
 }
 
@@ -109,17 +108,18 @@ export type Contract = {
   totalValue: Money
   contractPeriod: ContractPeriod
   contractType: ContractType
-  supplierId?: number | null
-  financierId?: number | null
-  collaboratorId?: number | null
-  budgetPlanId?: number | null
-  programId?: number | null
+  supplierId?: string | null
+  financierId?: string | null
+  collaboratorId?: string | null
+  budgetPlanId?: string | null
+  programId?: string | null
   supplier?: Contractor | null
   financier?: Contractor | null
   collaborator?: Contractor | null
-  program?: { id: number; name: string } | null
-  budgetPlan?: { id: number; scenarioName: string; year: number; version: number } | null
+  program?: { id: string; name: string } | null
+  budgetPlan?: { id: string; scenarioName: string; year: number; version: number } | null
   contractStatus: ContractStatus
+  backendStatus?: string | null
   contractCode: ContractCode
   files: FileAttachment[]
   children?: Contract[]
@@ -148,7 +148,7 @@ export type ContractListFilters = {
   page?: number
   limit?: number
   search?: string
-  budgetPlanId?: number | null
+  budgetPlanId?: string | null
   contractPeriodStart?: string
   contractPeriodEnd?: string
   contractType?: ContractType
@@ -164,5 +164,20 @@ export type PaginatedContractRows = {
     itemsPerPage: number
     totalPages: number
     currentPage: number
+  }
+}
+
+export function mapBackendStatus(backend: string): ContractStatus {
+  switch (backend) {
+    case 'Pending':
+      return ContractStatus.PENDING
+    case 'Active':
+      return ContractStatus.ACTIVE
+    case 'Expired':
+      return ContractStatus.EXPIRED
+    case 'Terminated':
+      return ContractStatus.TERMINATED
+    default:
+      return ContractStatus.PENDING
   }
 }

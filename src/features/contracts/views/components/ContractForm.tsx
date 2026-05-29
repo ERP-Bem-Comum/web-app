@@ -405,7 +405,7 @@ export function ContractForm({ initialData, mode = 'create' }: Props) {
     try {
       const hasFile = !!file
       const hasDataAssinatura = !!dataAssinatura
-      const status = hasFile && hasDataAssinatura ? ContractStatus.ONGOING : ContractStatus.PENDING
+      const status = hasFile && hasDataAssinatura ? ContractStatus.ACTIVE : ContractStatus.PENDING
 
       const signedContractUrl = file ? await fileToBase64(file) : null
       // eslint-disable-next-line no-console

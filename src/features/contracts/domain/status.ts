@@ -7,13 +7,13 @@ export type DerivedStatus = {
 
 export function deriveStatus(data: Partial<ContractRow>, hasChildren: boolean): DerivedStatus {
   // Prioridade 0: respeitar o contractStatus persistido pelo backend quando explícito
-  if (data.contractStatus === 'Em andamento') {
+  if (data.contractStatus === 'Vigente') {
     return { label: 'EM ANDAMENTO', key: 'em-andamento' }
   }
   if (data.contractStatus === 'Pendente') {
     return { label: 'PENDENTE', key: 'pendente' }
   }
-  if (data.contractStatus === 'Finalizado') {
+  if (data.contractStatus === 'Encerrado') {
     return { label: 'FINALIZADO', key: 'finalizado' }
   }
   if (data.contractStatus === 'Distrato') {
@@ -61,7 +61,9 @@ export function deriveStatus(data: Partial<ContractRow>, hasChildren: boolean): 
 
 export function getMostRecentChild(row: ContractRow): ContractRow {
   if (row.children && row.children.length > 0) {
-    const sorted = [...row.children].sort((a, b) => (b.id as number) - (a.id as number))
+    const sorted = [...row.children].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
     return sorted[0]
   }
   return row

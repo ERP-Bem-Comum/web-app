@@ -12,7 +12,7 @@ export async function fetchContracts(
   if (filters.page) params.set('page', String(filters.page))
   if (filters.limit) params.set('limit', String(filters.limit))
   if (filters.search) params.set('search', filters.search)
-  if (filters.budgetPlanId) params.set('budgetPlanId', String(filters.budgetPlanId))
+  if (filters.budgetPlanId) params.set('budgetPlanId', filters.budgetPlanId)
   if (filters.contractPeriodStart) params.set('contractPeriodStart', filters.contractPeriodStart)
   if (filters.contractPeriodEnd) params.set('contractPeriodEnd', filters.contractPeriodEnd)
   if (filters.contractType) params.set('contractType', filters.contractType)
@@ -59,14 +59,14 @@ export async function fetchContractById(
 function parseContractRow(dto: any): any {
   return {
     ...dto,
-    id: MakeContractId(dto.id),
+    id: MakeContractId(String(dto.id)),
   }
 }
 
 function parseContract(dto: any): Contract {
   return {
     ...dto,
-    id: MakeContractId(dto.id),
+    id: MakeContractId(String(dto.id)),
     createdAt: new Date(dto.createdAt),
     updatedAt: new Date(dto.updatedAt),
   }
@@ -75,7 +75,7 @@ function parseContract(dto: any): Contract {
 export async function createAditive(
   input: AditiveCreateInput,
   token: string,
-): Promise<{ id: number }> {
+): Promise<{ id: string }> {
   const result = await resultFetch<any>(`${env.API_URL}/contracts/aditive`, {
     method: 'POST',
     headers: {

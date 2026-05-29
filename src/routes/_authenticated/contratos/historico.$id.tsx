@@ -7,8 +7,7 @@ export const Route = createFileRoute('/_authenticated/contratos/historico/$id')(
 
 function ContractHistoryPage() {
   const { id } = Route.useParams()
-  const numericId = Number(id)
-  const { data: history } = useContractHistory(numericId)
+  const { data: history } = useContractHistory(id)
 
   return (
     <div className="p-6">

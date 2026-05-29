@@ -8,8 +8,7 @@ export const Route = createFileRoute('/_authenticated/contratos/editar/$id')({
 
 function EditContractPage() {
   const { id } = Route.useParams()
-  const numericId = Number(id)
-  const { data: contract, isLoading } = useContract(numericId)
+  const { data: contract, isLoading } = useContract(id)
 
   if (isLoading) {
     return (

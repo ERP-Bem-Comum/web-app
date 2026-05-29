@@ -5,7 +5,7 @@ import { ContractId } from './types'
 
 function makeContract(overrides: Partial<ContractRow> = {}): ContractRow {
   return {
-    id: ContractId(1),
+    id: ContractId('550e8400-e29b-41d4-a716-446655440001'),
     contractCode: 'C-2024-0001' as any,
     classification: 'Contrato' as any,
     contractModel: 'Serviço' as any,
@@ -13,7 +13,7 @@ function makeContract(overrides: Partial<ContractRow> = {}): ContractRow {
     totalValue: 10000 as any,
     contractPeriod: { start: new Date('2024-01-01'), end: new Date('2024-12-31') },
     contractType: 'Fornecedor' as any,
-    contractStatus: 'Em andamento' as any,
+    contractStatus: 'Vigente' as any,
     files: [],
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
@@ -35,7 +35,7 @@ describe('buildContractTimeline', () => {
     const contract = makeContract({
       children: [
         {
-          id: 2,
+          id: ContractId('550e8400-e29b-41d4-a716-446655440002'),
           contractCode: 'A-2024-0002',
           classification: 'Contrato',
           contractModel: 'Serviço',
@@ -43,16 +43,16 @@ describe('buildContractTimeline', () => {
           totalValue: 0,
           contractPeriod: { start: new Date('2024-06-01'), end: new Date('2024-12-31') },
           contractType: 'Fornecedor',
-          contractStatus: 'Em andamento',
+          contractStatus: 'Vigente',
           files: [],
           createdAt: new Date('2024-06-01'),
           updatedAt: new Date('2024-06-01'),
           aditivoType: 'prazo',
           aditivoStatus: 'Homologado',
-          parentId: 1,
+          parentId: '550e8400-e29b-41d4-a716-446655440001',
         } as any,
         {
-          id: 3,
+          id: ContractId('550e8400-e29b-41d4-a716-446655440003'),
           contractCode: 'A-2024-0003',
           classification: 'Contrato',
           contractModel: 'Serviço',
@@ -60,13 +60,13 @@ describe('buildContractTimeline', () => {
           totalValue: 5000,
           contractPeriod: { start: new Date('2024-08-01'), end: new Date('2025-06-30') },
           contractType: 'Fornecedor',
-          contractStatus: 'Em andamento',
+          contractStatus: 'Vigente',
           files: [],
           createdAt: new Date('2024-08-01'),
           updatedAt: new Date('2024-08-01'),
           aditivoType: 'valor',
           aditivoStatus: 'Pendente',
-          parentId: 1,
+          parentId: '550e8400-e29b-41d4-a716-446655440001',
         } as any,
       ],
     })
@@ -75,11 +75,11 @@ describe('buildContractTimeline', () => {
 
     expect(timeline).toHaveLength(3)
     // Mais recente primeiro
-    expect(timeline[0].id).toBe(3)
+    expect(timeline[0].id).toBe('550e8400-e29b-41d4-a716-446655440003')
     expect(timeline[0].title).toBe('Aditivo de valor')
     expect(timeline[0].status).toBe('current')
     // Segundo aditivo
-    expect(timeline[1].id).toBe(2)
+    expect(timeline[1].id).toBe('550e8400-e29b-41d4-a716-446655440002')
     expect(timeline[1].title).toBe('Aditivo de prazo')
     expect(timeline[1].status).toBe('ok')
     // Base sempre por último
@@ -91,7 +91,7 @@ describe('buildContractTimeline', () => {
     const contract = makeContract({
       children: [
         {
-          id: 2,
+          id: ContractId('550e8400-e29b-41d4-a716-446655440002'),
           contractCode: 'A-2024-0002',
           classification: 'Contrato',
           contractModel: 'Serviço',
@@ -99,13 +99,13 @@ describe('buildContractTimeline', () => {
           totalValue: 0,
           contractPeriod: { start: new Date('2024-06-01'), end: new Date('2024-12-31') },
           contractType: 'Fornecedor',
-          contractStatus: 'Em andamento',
+          contractStatus: 'Vigente',
           files: [],
           createdAt: new Date('2024-06-01'),
           updatedAt: new Date('2024-06-01'),
           aditivoType: 'prazo',
           aditivoStatus: 'Homologado',
-          parentId: 1,
+          parentId: '550e8400-e29b-41d4-a716-446655440001',
         } as any,
       ],
     })
@@ -119,7 +119,7 @@ describe('buildContractTimeline', () => {
     const contract = makeContract({
       children: [
         {
-          id: 2,
+          id: ContractId('550e8400-e29b-41d4-a716-446655440002'),
           contractCode: 'A-2024-0002',
           classification: 'Contrato',
           contractModel: 'Serviço',
@@ -127,13 +127,13 @@ describe('buildContractTimeline', () => {
           totalValue: 0,
           contractPeriod: { start: new Date('2024-06-01'), end: new Date('2024-12-31') },
           contractType: 'Fornecedor',
-          contractStatus: 'Em andamento',
+          contractStatus: 'Vigente',
           files: [],
           createdAt: new Date('2024-06-01'),
           updatedAt: new Date('2024-06-01'),
           aditivoType: 'prazo',
           aditivoStatus: 'Pendente',
-          parentId: 1,
+          parentId: '550e8400-e29b-41d4-a716-446655440001',
         } as any,
       ],
     })

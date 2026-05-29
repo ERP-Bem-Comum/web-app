@@ -9,7 +9,6 @@ export const Route = createFileRoute('/_authenticated/contratos/aditivo/$id')({
 
 function AditivePage() {
   const { id } = Route.useParams()
-  const numericId = Number(id)
 
   return (
     <Suspense
@@ -20,12 +19,12 @@ function AditivePage() {
         </div>
       }
     >
-      <AditiveLoader parentId={numericId} />
+      <AditiveLoader parentId={id} />
     </Suspense>
   )
 }
 
-function AditiveLoader({ parentId }: { parentId: number }) {
+function AditiveLoader({ parentId }: { parentId: string }) {
   const navigate = useNavigate()
   const { data: contract } = useContract(parentId)
 
@@ -39,7 +38,7 @@ function AditiveLoader({ parentId }: { parentId: number }) {
   }
 
   const handleClose = () => {
-    navigate({ to: '/contratos/detalhes/$id', params: { id: String(parentId) } })
+    navigate({ to: '/contratos/detalhes/$id', params: { id: parentId } })
   }
 
   return (

@@ -7,6 +7,7 @@ import {
   ContractListFiltersSchema,
   ContractCreateInputSchema,
   AditiveCreateInputSchema,
+  GetByIdSchema,
 } from '@/features/contracts/domain/schemas'
 
 export const getContracts = createServerFn({ method: 'GET' })
@@ -17,7 +18,7 @@ export const getContracts = createServerFn({ method: 'GET' })
     if (data.page) params.set('page', String(data.page))
     if (data.limit) params.set('limit', String(data.limit))
     if (data.search) params.set('search', data.search)
-    if (data.budgetPlanId) params.set('budgetPlanId', String(data.budgetPlanId))
+    if (data.budgetPlanId) params.set('budgetPlanId', data.budgetPlanId)
     if (data.contractPeriodStart) params.set('contractPeriodStart', data.contractPeriodStart)
     if (data.contractPeriodEnd) params.set('contractPeriodEnd', data.contractPeriodEnd)
     if (data.contractType) params.set('contractType', data.contractType)
@@ -39,8 +40,6 @@ export const getContracts = createServerFn({ method: 'GET' })
 
     return result.value
   })
-
-const GetByIdSchema = z.object({ id: z.number() })
 
 export const getContractById = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
@@ -87,7 +86,7 @@ export const createContract = createServerFn({ method: 'POST' })
 
 export const updateContract = createServerFn({ method: 'POST' })
   .middleware([authMiddleware])
-  .inputValidator(ContractCreateInputSchema.extend({ id: z.number() }))
+  .inputValidator(ContractCreateInputSchema.extend({ id: z.string().uuid() }))
   .handler(async ({ data, context }) => {
     const { id, ...body } = data
     const result = await resultFetch<any>(`${env.API_URL}/contracts/${id}`, {
@@ -111,7 +110,7 @@ export const updateContract = createServerFn({ method: 'POST' })
 
 export const deleteContract = createServerFn({ method: 'POST' })
   .middleware([authMiddleware])
-  .inputValidator(z.object({ id: z.number() }))
+  .inputValidator(z.object({ id: z.string().uuid() }))
   .handler(async ({ data, context }) => {
     const result = await resultFetch<any>(`${env.API_URL}/contracts/${data.id}`, {
       method: 'DELETE',
@@ -155,7 +154,7 @@ export const createAditive = createServerFn({ method: 'POST' })
 
 export const updateAditive = createServerFn({ method: 'POST' })
   .middleware([authMiddleware])
-  .inputValidator(AditiveCreateInputSchema.extend({ id: z.number() }))
+  .inputValidator(AditiveCreateInputSchema.extend({ id: z.string().uuid() }))
   .handler(async ({ data, context }) => {
     const { id, ...body } = data
     const result = await resultFetch<any>(`${env.API_URL}/contracts/aditive/${id}`, {
@@ -181,7 +180,7 @@ export const updateContractStatusAndDoc = createServerFn({ method: 'POST' })
   .middleware([authMiddleware])
   .inputValidator(
     z.object({
-      id: z.number(),
+      id: z.string().uuid(),
       signedContractUrl: z.string(),
       dataAssinatura: z.string(),
       contractStatus: z.string(),
@@ -210,7 +209,7 @@ export const updateContractStatusAndDoc = createServerFn({ method: 'POST' })
 
 export const getContractHistory = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
-  .inputValidator(z.object({ id: z.number() }))
+  .inputValidator(z.object({ id: z.string().uuid() }))
   .handler(async ({ data, context }) => {
     const result = await resultFetch<any>(`${env.API_URL}/contracts/history/${data.id}`, {
       headers: {

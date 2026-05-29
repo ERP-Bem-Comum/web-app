@@ -9,7 +9,6 @@ export const Route = createFileRoute('/_authenticated/contratos/detalhes/$id')({
 
 function ContractDetailsPage() {
   const { id } = Route.useParams()
-  const numericId = Number(id)
 
   return (
     <Suspense
@@ -20,12 +19,12 @@ function ContractDetailsPage() {
         </div>
       }
     >
-      <ContractDetailLoader id={numericId} />
+      <ContractDetailLoader id={id} />
     </Suspense>
   )
 }
 
-function ContractDetailLoader({ id }: { id: number }) {
+function ContractDetailLoader({ id }: { id: string }) {
   const { data: contract } = useContract(id)
   if (!contract) {
     return (

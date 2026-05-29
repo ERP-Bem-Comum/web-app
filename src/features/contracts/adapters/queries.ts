@@ -6,7 +6,7 @@ export const contractKeys = {
   lists: () => [...contractKeys.all, 'list'] as const,
   list: (filters: ContractListFilters) => [...contractKeys.lists(), filters] as const,
   details: () => [...contractKeys.all, 'detail'] as const,
-  detail: (id: number) => [...contractKeys.details(), id] as const,
+  detail: (id: string) => [...contractKeys.details(), id] as const,
 } as const
 
 // queryOptions serão preenchidas pelas views/hooks que chamam as Server Functions
