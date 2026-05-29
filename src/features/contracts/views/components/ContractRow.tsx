@@ -125,7 +125,7 @@ function ActionMenu({ row }: { row: ContractRow }) {
   const statusKey = derived.key
 
   const deleteMutation = useMutation({
-    mutationFn: () => deleteContract({ data: { id: row.id as number } }),
+    mutationFn: () => deleteContract({ data: { id: row.id } }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: contractKeys.lists() })
       setShowDeleteDialog(false)
@@ -231,7 +231,7 @@ export default function ContractRowComponent({ row, index }: Props) {
   const paidValue = (mostRecentInfo as any).paidValue ?? (() => {
     const status = deriveStatus(mostRecentInfo, !!row.children?.length).key
     if (status === 'pendente') return 0
-    if (status === 'finalizado') return valorAtual
+    if (status === 'encerrado') return valorAtual
     if (status === 'distrato') return valorAtual * 0.5
     return valorAtual * 0.4
   })()

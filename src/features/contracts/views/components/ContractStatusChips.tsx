@@ -12,9 +12,9 @@ export function ContractStatusChips({ contracts, selected, onChange }: Props) {
   const counts = useMemo(() => {
     const result: Record<string, number> = {
       todos: 0,
-      'em-andamento': 0,
+      vigente: 0,
       pendente: 0,
-      finalizado: 0,
+      encerrado: 0,
       distrato: 0,
       vencendo: 0,
     }

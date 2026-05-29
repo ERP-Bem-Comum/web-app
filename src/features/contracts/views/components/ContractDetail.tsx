@@ -624,7 +624,7 @@ export function ContractDetail({ contract }: Props) {
     key: string,
   ): { text: string; bg: string; dot: string; shadow: string } => {
     const map: Record<string, { text: string; bg: string; dot: string; shadow: string }> = {
-      'em-andamento': {
+      vigente: {
         text: 'text-[#176642]',
         bg: 'bg-[rgba(31,125,85,0.10)]',
         dot: 'bg-[#1f7d55]',
@@ -636,7 +636,7 @@ export function ContractDetail({ contract }: Props) {
         dot: 'bg-[#d97706]',
         shadow: 'shadow-[0_0_0_2px_rgba(217,119,6,0.08)]',
       },
-      finalizado: {
+      encerrado: {
         text: 'text-[#332e29]',
         bg: 'bg-[rgb(242,237,229)]',
         dot: 'bg-[#4d4740]',
@@ -649,7 +649,7 @@ export function ContractDetail({ contract }: Props) {
         shadow: 'shadow-[0_0_0_2px_rgba(229,77,64,0.08)]',
       },
     }
-    return map[key] || map['em-andamento']
+    return map[key] || map['vigente']
   }
 
   const s = statusBadgeStyle(statusKey)
@@ -687,7 +687,7 @@ export function ContractDetail({ contract }: Props) {
     totalValue: contract.totalValue,
     signedContractUrl: contract.signedContractUrl,
     aditivoStatus:
-      statusKey === 'vigente' || statusKey === 'em-andamento' ? 'Vigente' : statusLabel,
+      statusKey === 'vigente' ? 'Vigente' : statusLabel,
   }
   const sortedChildrenDesc = [...children].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
@@ -850,7 +850,7 @@ export function ContractDetail({ contract }: Props) {
               <FieldReadOnly
                 label="Status Base"
                 value={
-                  statusKey === 'vigente' || statusKey === 'em-andamento' ? 'Vigente' : statusLabel
+                  statusKey === 'vigente' ? 'Vigente' : statusLabel
                 }
               />
             </div>
@@ -903,7 +903,7 @@ export function ContractDetail({ contract }: Props) {
                 const aditiveIndex = isBase ? 0 : doc._aditiveIndex || i
                 const hasSigned = isBase ? !!contract.signedContractUrl : !!doc.signedContractUrl
                 const docStatus = isBase
-                  ? statusKey === 'vigente' || statusKey === 'em-andamento'
+                  ? statusKey === 'vigente'
                     ? 'Vigente'
                     : statusLabel
                   : doc.aditivoStatus || 'Pendente'

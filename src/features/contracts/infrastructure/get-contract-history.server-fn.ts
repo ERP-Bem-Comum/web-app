@@ -13,7 +13,7 @@ const backendHistoryEventSchema = z.object({
   description: z.string().optional(),
   createdAt: z.string(),
   userName: z.string().optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 })
 
 const backendHistoryResponseSchema = z.object({
