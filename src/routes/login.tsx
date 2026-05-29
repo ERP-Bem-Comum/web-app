@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
-import { login } from '@/server/auth'
+import { login } from '@/features/auth/infrastructure/login.server-fn'
 
 export const Route = createFileRoute('/login')({
   component: LoginPage,
@@ -26,7 +26,17 @@ function LoginPage() {
       }
       navigate({ to: '/contratos' })
     } catch (err: any) {
-      const message = err?.message || err?.statusMessage || 'Erro ao fazer login. Verifique suas credenciais.'
+      const status = err?.status || err?.statusCode
+      let message = err?.message || err?.statusMessage || 'Erro ao fazer login. Verifique suas credenciais.'
+
+      if (status === 401) {
+        message = 'Credenciais inválidas. Verifique seu email e senha.'
+      } else if (status === 403) {
+        message = 'Acesso negado. Entre em contato com o administrador.'
+      } else if (status === 503) {
+        message = 'Serviço temporariamente indisponível. Tente novamente mais tarde.'
+      }
+
       setError(message)
     } finally {
       setLoading(false)
