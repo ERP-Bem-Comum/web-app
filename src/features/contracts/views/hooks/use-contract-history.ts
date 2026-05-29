@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
-import { getContractHistory } from '@/server/contracts'
+import { getContractHistory } from '@/features/contracts/infrastructure/get-contract-history.server-fn'
 
 export function useContractHistory(id: string) {
   return useSuspenseQuery({
