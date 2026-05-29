@@ -12,7 +12,7 @@ export const ContractListFiltersSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(10),
   search: z.string().optional(),
-  budgetPlanId: z.number().nullish(),
+  budgetPlanId: z.string().nullish(),
   contractPeriodStart: z.string().date().optional(),
   contractPeriodEnd: z.string().date().optional(),
   contractType: z.nativeEnum(ContractType).optional(),
@@ -23,6 +23,8 @@ export const ContractListFiltersSchema = z.object({
 })
 
 export type ContractListFilters = z.infer<typeof ContractListFiltersSchema>
+
+export const GetByIdSchema = z.object({ id: z.string().uuid() })
 
 /* ── Dados bancários ── */
 export const BancaryInfoSchema = z.object({
@@ -48,15 +50,15 @@ const BaseContractCreateSchema = z.object({
     end: z.date().optional(),
   }).optional(),
   contractType: z.nativeEnum(ContractType),
-  supplierId: z.number().nullish(),
-  financierId: z.number().nullish(),
-  collaboratorId: z.number().nullish(),
-  budgetPlanId: z.number().nullish(),
-  programId: z.number().nullish(),
+  supplierId: z.string().nullish(),
+  financierId: z.string().nullish(),
+  collaboratorId: z.string().nullish(),
+  budgetPlanId: z.string().nullish(),
+  programId: z.string().nullish(),
   supplier: z.any().nullish(),
   financier: z.any().nullish(),
   collaborator: z.any().nullish(),
-  parentId: z.number().nullish(),
+  parentId: z.string().nullish(),
   contractStatus: z.nativeEnum(ContractStatus).optional(),
   dataAssinatura: z.string().nullish(),
   signedContractUrl: z.string().nullish(),
@@ -161,7 +163,7 @@ export const AditiveTypeSchema = z.enum(['prazo', 'valor', 'escopo', 'outro', 'd
 export type AditiveType = z.infer<typeof AditiveTypeSchema>
 
 export const AditiveCreateInputSchema = z.object({
-  parentId: z.number(),
+  parentId: z.string().uuid(),
   aditivoType: AditiveTypeSchema,
   object: z.string().min(1, 'Resumo é obrigatório'),
   totalValue: z.number().optional(),
