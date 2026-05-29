@@ -7,7 +7,7 @@ export const getSuppliers = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
     const result = await resultFetch<any>(`${env.API_URL}/suppliers`, {
-      headers: { authorization: `Bearer ${context.session.token}` },
+      headers: { authorization: `Bearer ${context.accessToken}` },
     })
     if (result.isErr()) {
       if (result.error.kind === 'http') {
@@ -22,7 +22,7 @@ export const getFinanciers = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
     const result = await resultFetch<any>(`${env.API_URL}/financiers`, {
-      headers: { authorization: `Bearer ${context.session.token}` },
+      headers: { authorization: `Bearer ${context.accessToken}` },
     })
     if (result.isErr()) {
       if (result.error.kind === 'http') {
@@ -37,7 +37,7 @@ export const getCollaborators = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
     const result = await resultFetch<any>(`${env.API_URL}/collaborators`, {
-      headers: { authorization: `Bearer ${context.session.token}` },
+      headers: { authorization: `Bearer ${context.accessToken}` },
     })
     if (result.isErr()) {
       if (result.error.kind === 'http') {

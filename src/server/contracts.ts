@@ -26,7 +26,7 @@ export const getContracts = createServerFn({ method: 'GET' })
 
     const result = await resultFetch<any>(`${env.API_URL}/contracts?${params.toString()}`, {
       headers: {
-        authorization: `Bearer ${context.session.token}`,
+        authorization: `Bearer ${context.accessToken}`,
       },
     })
 
@@ -48,7 +48,7 @@ export const getContractById = createServerFn({ method: 'GET' })
   .handler(async ({ data, context }) => {
     const result = await resultFetch<any>(`${env.API_URL}/contracts/${data.id}`, {
       headers: {
-        authorization: `Bearer ${context.session.token}`,
+        authorization: `Bearer ${context.accessToken}`,
       },
     })
 
@@ -70,7 +70,7 @@ export const createContract = createServerFn({ method: 'POST' })
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        authorization: `Bearer ${context.session.token}`,
+        authorization: `Bearer ${context.accessToken}`,
       },
       body: JSON.stringify(data),
     })
@@ -94,7 +94,7 @@ export const updateContract = createServerFn({ method: 'POST' })
       method: 'PUT',
       headers: {
         'content-type': 'application/json',
-        authorization: `Bearer ${context.session.token}`,
+        authorization: `Bearer ${context.accessToken}`,
       },
       body: JSON.stringify(body),
     })
@@ -116,7 +116,7 @@ export const deleteContract = createServerFn({ method: 'POST' })
     const result = await resultFetch<any>(`${env.API_URL}/contracts/${data.id}`, {
       method: 'DELETE',
       headers: {
-        authorization: `Bearer ${context.session.token}`,
+        authorization: `Bearer ${context.accessToken}`,
       },
     })
 
@@ -138,7 +138,7 @@ export const createAditive = createServerFn({ method: 'POST' })
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        authorization: `Bearer ${context.session.token}`,
+        authorization: `Bearer ${context.accessToken}`,
       },
       body: JSON.stringify(data),
     })
@@ -162,7 +162,7 @@ export const updateAditive = createServerFn({ method: 'POST' })
       method: 'PUT',
       headers: {
         'content-type': 'application/json',
-        authorization: `Bearer ${context.session.token}`,
+        authorization: `Bearer ${context.accessToken}`,
       },
       body: JSON.stringify(body),
     })
@@ -193,7 +193,7 @@ export const updateContractStatusAndDoc = createServerFn({ method: 'POST' })
       method: 'PUT',
       headers: {
         'content-type': 'application/json',
-        authorization: `Bearer ${context.session.token}`,
+        authorization: `Bearer ${context.accessToken}`,
       },
       body: JSON.stringify(body),
     })
@@ -214,7 +214,7 @@ export const getContractHistory = createServerFn({ method: 'GET' })
   .handler(async ({ data, context }) => {
     const result = await resultFetch<any>(`${env.API_URL}/contracts/history/${data.id}`, {
       headers: {
-        authorization: `Bearer ${context.session.token}`,
+        authorization: `Bearer ${context.accessToken}`,
       },
     })
 

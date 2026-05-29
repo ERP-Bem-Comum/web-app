@@ -7,7 +7,7 @@ export const getBudgetPlans = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
     const result = await resultFetch<any>(`${env.API_URL}/budget-plans`, {
-      headers: { authorization: `Bearer ${context.session.token}` },
+      headers: { authorization: `Bearer ${context.accessToken}` },
     })
     if (result.isErr()) {
       if (result.error.kind === 'http') {

@@ -85,7 +85,7 @@ export const getSession = createServerFn({ method: 'GET' })
       user: {
         id: context.session.userId,
         email: context.session.email,
-        name: context.session.name,
+        name: (context.session as any).name ?? 'User',
       },
     }
   })

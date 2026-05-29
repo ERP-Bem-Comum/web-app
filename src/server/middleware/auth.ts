@@ -1,54 +1,68 @@
 import { createMiddleware } from '@tanstack/react-start'
-import { env } from '../env'
+import { decodeJwt } from 'jose'
+import { getAuthSession, destroyAuthSession } from '@/features/auth/infrastructure/auth-session'
+import { getSession, deleteSession } from '@/features/auth/infrastructure/session-store'
+import { refreshAccessToken } from '@/features/auth/infrastructure/refresh-token.server-fn'
 
 export type Session = {
-  userId: number
+  userId: string
   email: string
-  name: string
-  token: string
 }
 
 export type AuthContext = {
   session: Session
-  rawToken: string
+  accessToken: string
+}
+
+function isTokenExpired(token: string): boolean {
+  try {
+    const payload = decodeJwt(token)
+    if (!payload.exp) return false
+    return payload.exp * 1000 < Date.now()
+  } catch {
+    return true
+  }
 }
 
 export const authMiddleware = createMiddleware().server(async ({ request, next }) => {
-  const cookieHeader = request.headers.get('cookie') || ''
-  const sessionToken = cookieHeader
-    .split(';')
-    .map((c) => c.trim())
-    .find((c) => c.startsWith('session-token='))
-    ?.split('=')[1]
+  const authSession = await getAuthSession()
 
-  if (!sessionToken) {
+  if (!authSession) {
     throw new Response('Unauthorized', { status: 401 })
   }
 
-  try {
-    // JWT simples decode (base64 payload)
-    const payload = JSON.parse(
-      Buffer.from(sessionToken.split('.')[1], 'base64').toString('utf-8'),
-    )
+  let session = await getSession(authSession.sessionId)
 
-    // Verifica expiração
-    if (payload.exp && payload.exp * 1000 < Date.now()) {
+  if (!session) {
+    await destroyAuthSession()
+    throw new Response('Unauthorized', { status: 401 })
+  }
+
+  // Refresh access token if expired
+  if (isTokenExpired(session.accessToken)) {
+    const refreshResult = await refreshAccessToken(authSession.sessionId)
+
+    if (!refreshResult.success) {
+      await deleteSession(authSession.sessionId)
+      await destroyAuthSession()
       throw new Response('Session expired', { status: 401 })
     }
 
-    const user = payload.user as Session
-
-    if (!user?.token) {
-      throw new Response('Invalid session', { status: 401 })
+    // Reload session with updated tokens
+    session = await getSession(authSession.sessionId)
+    if (!session) {
+      await destroyAuthSession()
+      throw new Response('Unauthorized', { status: 401 })
     }
-
-    return next({
-      context: {
-        session: user,
-        rawToken: sessionToken,
-      },
-    })
-  } catch {
-    throw new Response('Invalid session', { status: 401 })
   }
+
+  return next({
+    context: {
+      session: {
+        userId: session.userId,
+        email: session.email,
+      },
+      accessToken: session.accessToken,
+    },
+  })
 })
