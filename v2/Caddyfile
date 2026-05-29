@@ -1,0 +1,16 @@
+# Caddy — borda HTTPS local. CA interna gera certs para *.localhost
+# (na 1ª subida o Caddy instala a CA; aceite no navegador ou rode `caddy trust`).
+
+# Front + BFF — o que o browser realmente acessa.
+app.localhost {
+	tls internal
+	encode gzip
+	reverse_proxy web:3000
+}
+
+# DEV-ONLY — atalho para o Swagger/health do core-api. Em produção o backend
+# NUNCA é exposto ao browser (a arquitetura BFF proíbe). Útil só para debugar.
+api.localhost {
+	tls internal
+	reverse_proxy core-api:3000
+}

@@ -1,0 +1,181 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Stack local — ERP Bem Comum (frontend v2)
+#
+#   Caddy (HTTPS, único exposto)
+#     └─► web        : Front + BFF (TanStack Start)         [interno]
+#            └─► core-api : Back HTTP (submódulo core-api)   [interno]
+#                  └─► mysql : Infra (persistência auth)     [interno]
+#
+# O browser SÓ fala com o Caddy. O core-api nunca é exposto ao browser
+# (arquitetura BFF). `api.localhost` é um atalho DEV-ONLY para o /docs do back.
+#
+#   docker compose up -d mysql core-api core-api-seed   # sobe só Infra + Back
+#   docker compose up -d                                # sobe tudo (+ web + caddy)
+#   https://app.localhost        → Front + BFF
+#   https://api.localhost/docs   → Swagger do core-api (DEV-ONLY)
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: bemcomum
+
+services:
+  # ── Infra ─────────────────────────────────────────────────────────────────
+  mysql:
+    image: mysql:8.4
+    container_name: bemcomum-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootdev}
+      MYSQL_DATABASE: core
+      MYSQL_USER: ${MYSQL_USER:-core_app}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-coredev}
+    ports:
+      - '${MYSQL_PORT:-3306}:3306' # exposto p/ debug local (GUI); o back fala via rede interna
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      # SELECT 1 real via TCP com o user de app — evita falso-positivo do `ping` durante o initdb.
+      test:
+        - CMD-SHELL
+        - mysql -h127.0.0.1 -u"$$MYSQL_USER" -p"$$MYSQL_PASSWORD" -e 'SELECT 1' core
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - bemcomum
+
+  # ── Back ──────────────────────────────────────────────────────────────────
+  # Imagem buildada do submódulo. O Dockerfile deles roda a CLI por padrão;
+  # sobrescrevemos o entrypoint para subir o servidor HTTP (src/server.ts).
+  # NODE_OPTIONS=--experimental-strip-types já vem setado na imagem.
+  core-api:
+    build:
+      context: ./core-api
+      dockerfile: Dockerfile
+    image: core-api:dev
+    container_name: bemcomum-core-api
+    restart: unless-stopped
+    entrypoint: ['tini', '--', 'node', 'src/server.ts']
+    command: []
+    environment:
+      PORT: '3000'
+      HOST: 0.0.0.0
+      # Auth → MySQL. Migrations auth_* aplicadas no boot (applyMigrations: true).
+      AUTH_DRIVER: mysql
+      AUTH_DATABASE_URL: mysql://${MYSQL_USER:-core_app}:${MYSQL_PASSWORD:-coredev}@mysql:3306/core
+      # Contracts fica em memória (não é o foco do login). Sem CONTRACTS_DRIVER → memory.
+      # Chaves ES256 do JWT: ausentes → par efêmero gerado em dev (tokens não sobrevivem a restart).
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - bemcomum
+
+  # One-shot: registra o usuário de dev assim que o back fica healthy.
+  # 409 (já existe) é tratado como sucesso — idempotente entre restarts.
+  core-api-seed:
+    image: curlimages/curl:8.11.1
+    container_name: bemcomum-core-api-seed
+    depends_on:
+      core-api:
+        condition: service_healthy
+    entrypoint: ['sh', '-c']
+    command:
+      - |
+        echo "Registrando usuário de dev (idempotente)…";
+        code=$$(curl -s -o /dev/null -w '%{http_code}' -X POST \
+          http://core-api:3000/api/v2/auth/register \
+          -H 'content-type: application/json' \
+          -d '{"email":"'"$${SEED_EMAIL:-admin@bemcomum.dev}"'","password":"'"$${SEED_PASSWORD:-DevPassw0rd!2024}"'"}');
+        echo "register → HTTP $$code";
+        case "$$code" in
+          201) echo "seed: usuário criado." ;;
+          409) echo "seed: usuário já existe (ok)." ;;
+          *)   echo "seed: resposta inesperada ($$code)"; exit 1 ;;
+        esac
+    environment:
+      SEED_EMAIL: ${SEED_EMAIL:-admin@bemcomum.dev}
+      SEED_PASSWORD: ${SEED_PASSWORD:-DevPassw0rd!2024}
+    restart: 'no'
+    networks:
+      - bemcomum
+
+  # ── Front + BFF ─────────────────────────────────────────────────────────────
+  # TanStack Start: front e BFF no mesmo processo. Fala com o core-api pela rede
+  # interna (CORE_API_URL). Nunca exposto direto — só via Caddy.
+  # Base = PRODUÇÃO (target runtime, Nitro). HMR/dev vem do docker-compose.override.yml.
+  web:
+    build:
+      context: .
+      dockerfile: web.Dockerfile
+      target: runtime
+    image: bemcomum-web:prod
+    container_name: bemcomum-web
+    restart: unless-stopped
+    environment:
+      # base URL do backend, server-side (BFF). O browser nunca vê isto.
+      # ⚠ É CORE_API_URL (validado por Zod fail-fast em src/external/config/env.config.ts), não API_URL.
+      CORE_API_URL: http://core-api:3000/api/v2
+      PORT: '3000'
+    depends_on:
+      core-api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - bemcomum
+
+  # ── Borda HTTPS ──────────────────────────────────────────────────────────────
+  # Único serviço exposto ao host. TLS via CA interna do Caddy (*.localhost).
+  caddy:
+    image: caddy:2-alpine
+    container_name: bemcomum-caddy
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      web:
+        condition: service_healthy
+      core-api:
+        condition: service_healthy
+    networks:
+      - bemcomum
+
+volumes:
+  mysql-data:
+  caddy-data:
+  caddy-config:
+
+networks:
+  bemcomum:
+    name: bemcomum
+    driver: bridge

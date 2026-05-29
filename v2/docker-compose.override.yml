@@ -1,0 +1,26 @@
+# Override de DESENVOLVIMENTO — carregado automaticamente por `docker compose up`.
+# Sobrepõe o serviço `web` (que no base é produção/Nitro) para rodar dev com HMR,
+# e expõe o core-api ao host para dev local fora do Docker.
+# Em CI/prod use só o base: `docker compose -f docker-compose.yml up`.
+
+name: bemcomum
+
+services:
+  web:
+    build:
+      target: dev
+    image: bemcomum-web:dev
+    command: ['pnpm', 'dev', '--host', '0.0.0.0', '--port', '3000']
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./src:/app/src
+      - ./vite.config.ts:/app/vite.config.ts
+      - ./tsconfig.json:/app/tsconfig.json
+      - /app/node_modules # volume anônimo: protege o node_modules da imagem (macOS/arm)
+
+  # DEV-LOCAL: expõe o core-api em :3001 para `pnpm dev` no host alcançar o backend
+  # (CORE_API_URL=http://localhost:3001/api/v2). No base o core-api é só interno.
+  core-api:
+    ports:
+      - '3001:3000'
