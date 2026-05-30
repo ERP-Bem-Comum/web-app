@@ -5,6 +5,18 @@
 app.localhost {
 	tls internal
 	encode gzip
+
+	# Security headers — defesa em camadas (ADR-0006). A CSP dinâmica vive no middleware do BFF
+	# (src/start.ts); aqui ficam os estáticos redundantes da borda. Caddy já faz redirect HTTP→HTTPS
+	# por padrão (FR-002). header_down injeta na resposta ao browser.
+	header {
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+		-Server
+	}
+
 	reverse_proxy web:3000
 }
 

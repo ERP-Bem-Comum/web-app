@@ -23,6 +23,11 @@ Decisões técnicas que destravam o plano. Fontes: `tanstack-start-expert` (sobr
 
 **Alternativas rejeitadas**: só Caddy (não cobre dev nem CSP-nonce; foge da constituição); só `src/server.ts` entry handler (mais baixo nível que o necessário; middleware é o idiomático).
 
+**Trust-proxy & HTTPS detection (resolve C2/I1 do /speckit-analyze)**:
+- **Premissa de trust-proxy**: em produção/docker o **Caddy é o único exposto** e termina TLS; o `web` (BFF) só recebe tráfego do Caddy. Logo o BFF **pode** confiar no `x-forwarded-proto` que o Caddy injeta — mas **somente** porque está atrás de um proxy confiável. Em `pnpm dev` puro (sem Caddy) não há esse header → tratamos como **http** (HSTS omitido, correto p/ localhost).
+- **Edge case "header forjável"**: o `x-forwarded-proto` só é confiável atrás do Caddy. Se o BFF um dia for exposto direto, essa premissa quebra. Mitigação: a decisão de HTTPS afeta **apenas emitir/omitir HSTS** (header de hardening) — um atacante forjando `x-forwarded-proto: http` só conseguiria **suprimir** o próprio HSTS dele, não escalar acesso. Risco baixo e contido; documentado aqui.
+- **Redirect HTTP→HTTPS (FR-002)**: garantido pelo **Caddy** — o site `app.localhost` com `tls internal` já faz o redirect 308 HTTP→HTTPS por padrão (comportamento nativo do Caddy). O BFF não precisa redirecionar; a verificação entra no runbook (RB-HDR-03). Em dev puro (http) não há HTTPS para redirecionar — aceitável.
+
 ---
 
 ## R2 — CSP estrita e o problema do nonce nos scripts

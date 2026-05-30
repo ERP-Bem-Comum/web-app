@@ -81,7 +81,9 @@ Como responsável pela segurança, quero que toda mutação valide a origem e qu
 
 ---
 
-### User Story 5 - Defesa contra automação no BFF (rate-limit) (Priority: P3)
+### User Story 5 - Defesa contra automação no BFF (rate-limit) (Priority: P3) — ⏸️ DEFERRED
+
+> **Deferred (decisão do Tech Lead, 2026-05-30)**: NÃO implementada nesta entrega. O lugar correto do rate-limit/lockout é o core-api — ver **BE-REC-001** em [`backend-recommendations.md`](./backend-recommendations.md). Mantida aqui como registro de escopo; FR-015 fica como `SHOULD` não-implementado.
 
 Como responsável pela segurança, quero um limite de tentativas no BFF para login/refresh, para reduzir brute force/spraying mesmo enquanto o backend não tem rate-limit específico de auth.
 
@@ -121,7 +123,7 @@ Como responsável pela segurança, quero um limite de tentativas no BFF para log
 - **FR-012**: O v2 MUST garantir que JWT, refresh token, `CORE_API_URL` e segredos nunca apareçam no browser (JS, storage, estado, network) — apenas o cookie opaco.
 - **FR-013**: Mensagens/tags de falha de autenticação MUST ser genéricas e uniformes (status e forma) entre "conta inexistente" e "senha incorreta".
 - **FR-014**: Redirects pós-login MUST rejeitar destinos externos/protocol-relative (`//host`, `http(s)://…`), caindo em rota interna segura.
-- **FR-015**: O BFF SHOULD aplicar rate-limit/throttling em login e refresh por origem, com resposta genérica e sem permitir lockout permanente de conta-alvo (lockout-as-DoS).
+- **FR-015** (⏸️ DEFERRED — ver US5/BE-REC-001): O BFF SHOULD aplicar rate-limit/throttling em login e refresh por origem, com resposta genérica e sem permitir lockout permanente de conta-alvo (lockout-as-DoS). **Não implementado nesta entrega** — correção definitiva é no core-api.
 
 ### Recomendações ao backend core-api (registrar — fora do escopo de implementação)
 

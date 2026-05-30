@@ -33,6 +33,9 @@ as alternativas **rejeitadas** e por quê. É a fonte que um dev novo (ou um age
 | [0003](./0003-pnpm-v11-supply-chain.md) | pnpm v11 pinado + supply-chain hardening | Accepted |
 | [0004](./0004-client-server-split-mvvm-ddd.md) | Separação client (MVVM) × server (BFF/DDD) + Event Bus + Controller | Accepted |
 | [0005](./0005-auth-session-refresh-decisions.md) | Auth: sessão opaca, refresh single-flight, JWT decode-only, /me só userId | Accepted |
+| [0006](./0006-security-headers-csp.md) | Security headers & CSP (middleware global em src/start.ts + Caddy; script-src 'self') | Accepted |
+| [0007](./0007-design-system-vanilla-extract.md) | vanilla-extract como engine do design system (zero-runtime, type-safe; Panda/Tailwind rejeitados) | Accepted |
+| [0008](./0008-self-host-webfonts-fontsource.md) | Self-host de webfonts via @fontsource (assets puros + provenance; CDN/woff2-manual rejeitados) | Accepted |
 
 > Próximos ADRs a registrar conforme as decisões surgirem (ex.: i18n, módulo de usuários Zero Trust).
 > Decisões já tomadas e ainda não "adritizadas" vivem na constituição e em `specs/*/research.md`.

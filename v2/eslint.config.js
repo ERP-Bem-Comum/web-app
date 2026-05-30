@@ -161,8 +161,9 @@ export default tseslint.config(
       'import/resolver': { typescript: { alwaysTryTypes: true } },
       'boundaries/include': ['src/**/*'],
       // Composition root / framework glue — fora da matriz de camadas.
-      // src/app/ = bootstrap (router, query-client, routeTree gerado); src/routes/ = file-based routing.
-      'boundaries/ignore': ['src/app/**', 'src/routes/**'],
+      // src/app/ = bootstrap (router, query-client, routeTree gerado); src/routes/ = file-based routing;
+      // src/start.ts = Start instance (middleware global). Compõem camadas, não são uma delas.
+      'boundaries/ignore': ['src/app/**', 'src/routes/**', 'src/start.ts'],
       'boundaries/elements': boundaryElements,
     },
     rules: {
