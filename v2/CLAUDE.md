@@ -59,10 +59,10 @@ Em `.claude/agents/` — consultores read-only, cada um com fonte de verdade em 
 - Edição de `*.ts/*.tsx` dispara `eslint --fix` automático — `.claude/hooks/eslint-fix.sh`.
 
 <!-- SPECKIT START -->
-**Spec ativa:** `specs/002-auth/` — Autenticação (feature-MODELO de referência).
-Plano: [`specs/002-auth/plan.md`](specs/002-auth/plan.md) · Contrato backend: [`specs/002-auth/contracts/`](specs/002-auth/contracts/).
-Constituição (normativa): [`.specify/memory/constitution.md`](.specify/memory/constitution.md) **v1.2.0** —
+**Spec ativa:** `specs/003-auth-security-hardening/` — Endurecimento de segurança da Auth (headers/CSP + sessão + guard; runbook OWASP).
+Plano: [`specs/003-auth-security-hardening/plan.md`](specs/003-auth-security-hardening/plan.md) · Recomendações ao backend: [`specs/003-auth-security-hardening/backend-recommendations.md`](specs/003-auth-security-hardening/backend-recommendations.md).
+Constituição (normativa): [`.specify/memory/constitution.md`](.specify/memory/constitution.md) **v1.2.1** —
 módulo = `server/` (BFF/DDD) + `client/` (FRONT/MVVM) + `public-api`; fronteira = server function;
-Event Bus + Controller oficiais. ADRs em [`handbook/adr/`](handbook/adr/) (0001-0004).
-Fundação concluída: `specs/001-v2-foundation/` (shared/ + external/ + bootstrap).
+Event Bus + Controller oficiais. ADRs em [`handbook/adr/`](handbook/adr/) (0001-0005).
+Concluídas: `specs/001-v2-foundation/` (shared/ + external/ + bootstrap) · `specs/002-auth/` (Auth, feature-MODELO).
 <!-- SPECKIT END -->
