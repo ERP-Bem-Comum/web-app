@@ -57,8 +57,8 @@ Web app (front+BFF unificado). Design system em `src/shared/ui/tokens/`; testes 
 
 **Independent Test**: ler `tokens.values.ts` + `contract.css.ts` e confirmar 1 paleta de marca, nomes por papel, zero valores institucionais (o teste T003 já trava isso automaticamente).
 
-- [ ] T011 [US2] Reforçar/confirmar no `tests/shared/ui/tokens/tokens.values.test.ts` (já criado em T003) o assert de governança: NENHUM valor de cor pertence à paleta institucional proibida e existe exatamente UMA família de marca (ciano). Se já coberto em T003, marcar como verificado; senão, complementar.
-- [ ] T012 [P] [US2] Criar `src/shared/ui/tokens/README.md` descrevendo a paleta/escala de tokens disponível, apontando para `specs/004-design-tokens/data-model.md` e reforçando "nunca hex/px cru — sempre `vars`". (Atualizar também 1 linha em `src/shared/ui/README.md` apontando para `tokens/`.)
+- [X] T011 [US2] Reforçar/confirmar no `tests/shared/ui/tokens/tokens.values.test.ts` (já criado em T003) o assert de governança: NENHUM valor de cor pertence à paleta institucional proibida e existe exatamente UMA família de marca (ciano). Se já coberto em T003, marcar como verificado; senão, complementar.
+- [X] T012 [P] [US2] Criar `src/shared/ui/tokens/README.md` descrevendo a paleta/escala de tokens disponível, apontando para `specs/004-design-tokens/data-model.md` e reforçando "nunca hex/px cru — sempre `vars`". (Atualizar também 1 linha em `src/shared/ui/README.md` apontando para `tokens/`.)
 
 ---
 

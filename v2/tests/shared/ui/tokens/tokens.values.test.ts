@@ -59,4 +59,25 @@ describe('design tokens — valores (fidelidade v1)', () => {
       assert.notEqual(value.trim(), '', 'token com valor vazio encontrado')
     }
   })
+
+  // T011 (US2 — governança): UMA paleta de marca. O contrato de cor NÃO deve ganhar uma
+  // segunda família concorrente (a dívida da v1: institutional azul/verde). Trava por nome.
+  it('governança: papéis de cor semânticos, sem segunda paleta concorrente', () => {
+    const colorRoles = Object.keys(tokenValues.color)
+    const allowedRoles = ['brand', 'surface', 'text', 'border', 'feedback']
+    assert.deepEqual(
+      colorRoles.toSorted(),
+      [...allowedRoles].toSorted(),
+      'color tem papéis inesperados (possível segunda paleta). Esperado: ' + allowedRoles.join(', '),
+    )
+    // nenhum papel nomeado por cor/contexto cru (ex.: "blue", "green", "institutional")
+    const FORBIDDEN_ROLE_NAMES = /blue|green|institutional|cyan|legacy/i
+    for (const role of colorRoles) {
+      assert.equal(
+        FORBIDDEN_ROLE_NAMES.test(role),
+        false,
+        `papel de cor não-semântico (nomeado por cor/contexto): "${role}"`,
+      )
+    }
+  })
 })
