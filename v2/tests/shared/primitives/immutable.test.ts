@@ -25,7 +25,7 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 
-import { immutable, deepImmutable } from '../../../src/shared/primitives/immutable.ts';
+import { immutable, deepImmutable } from '#shared/primitives/immutable.ts';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // CA-3 — `immutable` retorna o objeto congelado em modo shallow.

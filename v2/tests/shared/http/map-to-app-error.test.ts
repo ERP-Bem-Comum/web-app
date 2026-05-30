@@ -8,8 +8,8 @@
 import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
 
-import type { HttpError } from '../../../src/shared/http/http-error.types.ts'
-import { mapToAppError } from '../../../src/shared/http/map-to-app-error.ts'
+import type { HttpError } from '#shared/http/http-error.types.ts'
+import { mapToAppError } from '#shared/http/map-to-app-error.ts'
 
 const http = (status: number, body: unknown = null): HttpError => ({ kind: 'http', status, body })
 

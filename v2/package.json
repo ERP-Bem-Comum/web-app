@@ -4,6 +4,12 @@
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.5.0",
+  "imports": {
+    "#app/*": "./src/app/*",
+    "#shared/*": "./src/shared/*",
+    "#external/*": "./src/external/*",
+    "#modules/*": "./src/modules/*"
+  },
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",

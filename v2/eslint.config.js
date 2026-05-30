@@ -78,7 +78,7 @@ export default tseslint.config(
       '.tanstack/**',
       'node_modules/**',
       'core-api/**',
-      'src/routeTree.gen.ts',
+      '**/routeTree.gen.ts',
     ],
   },
 
@@ -157,11 +157,12 @@ export default tseslint.config(
     files: ['src/**/*.{ts,tsx}'],
     plugins: { boundaries },
     settings: {
-      // Resolver TS p/ o boundaries enxergar imports .ts/.tsx (e futuros aliases @/).
+      // Resolver TS p/ o boundaries enxergar imports .ts/.tsx e os subpath imports (#shared, #modules, …).
       'import/resolver': { typescript: { alwaysTryTypes: true } },
       'boundaries/include': ['src/**/*'],
       // Composition root / framework glue — fora da matriz de camadas.
-      'boundaries/ignore': ['src/routes/**', 'src/router*', 'src/client*', 'src/ssr*', 'src/start*'],
+      // src/app/ = bootstrap (router, query-client, routeTree gerado); src/routes/ = file-based routing.
+      'boundaries/ignore': ['src/app/**', 'src/routes/**'],
       'boundaries/elements': boundaryElements,
     },
     rules: {

@@ -5,7 +5,7 @@
 import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
 
-import { createEventBus } from '../../../src/shared/bus/bus.ts'
+import { createEventBus } from '#shared/bus/bus.ts'
 
 type TestEvent =
   | { type: 'UsuarioAutenticado'; userId: string }

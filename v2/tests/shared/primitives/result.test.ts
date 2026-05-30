@@ -23,7 +23,7 @@ import {
   isErr,
   mapErr,
   combine,
-} from '../../../src/shared/primitives/result.ts';
+} from '#shared/primitives/result.ts';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // CA-1 / shape básico: `ok` / `err` produzem o discriminated union correto.

@@ -6,7 +6,7 @@
  */
 import * as z from 'zod';
 
-import { ok, err, isErr, type Result } from '../../shared/primitives/result.ts'
+import { ok, err, isErr, type Result } from '#shared/primitives/result.ts'
 
 const EnvSchema = z.object({
   CORE_API_URL: z.url(),

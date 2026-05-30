@@ -5,7 +5,7 @@
 import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
 
-import { createTranslator } from '../../../src/shared/i18n/index.ts'
+import { createTranslator } from '#shared/i18n/index.ts'
 
 describe('createTranslator', () => {
   it('resolve uma chave conhecida para o texto do catálogo', () => {

@@ -30,7 +30,7 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 
-import type { Brand, BrandOf } from '../../../src/shared/primitives/brand.ts';
+import type { Brand, BrandOf } from '#shared/primitives/brand.ts';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // CA-1 — Importação. O módulo deve exportar AMBOS `Brand` e `BrandOf`.

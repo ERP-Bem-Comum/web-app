@@ -23,9 +23,9 @@ export function getRouter() {
     defaultPreload: 'intent',
   })
 
-  // TODO(auth): a feature Auth troca o destino por '/auth/login' com search `redirect`.
+  // 401/auth:expired → manda ao login preservando o destino atual (FR-006). safeRedirect na volta.
   onAuthExpired = () => {
-    void router.navigate({ to: '/' })
+    void router.navigate({ to: '/login', search: { redirect: router.state.location.href } })
   }
 
   // Dehydrate/hydrate + streaming + redirect handling automáticos; injeta QueryClientProvider.

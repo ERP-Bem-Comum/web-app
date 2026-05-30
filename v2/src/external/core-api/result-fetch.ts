@@ -4,8 +4,8 @@
  * feature Auth). Base: globalThis.fetch (constituição §VIII — preferir nativo).
  * Fonte do padrão: handbook/arquiteture.md §2.
  */
-import type { HttpError } from '../../shared/http/http-error.types.ts'
-import { ok, err, type Result } from '../../shared/primitives/result.ts'
+import type { HttpError } from '#shared/http/http-error.types.ts'
+import { ok, err, type Result } from '#shared/primitives/result.ts'
 
 export type ResultFetchOptions = Readonly<{
   method?: string

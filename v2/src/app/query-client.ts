@@ -6,7 +6,7 @@
  */
 import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query'
 
-import { isQueryError } from './shared/http/query-error.ts'
+import { isQueryError } from '#shared/http/query-error.ts'
 
 export const createAppQueryClient = (onAuthExpired: () => void): QueryClient => {
   const queryClient = new QueryClient({

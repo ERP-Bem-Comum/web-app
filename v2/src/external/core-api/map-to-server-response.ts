@@ -4,7 +4,7 @@
  * em AppError (via map-to-app-error). `switch` exaustivo com guarda `never`.
  * Fonte: handbook/arquiteture.md §2 + specs/001-v2-foundation/contracts/error-envelope.md.
  */
-import type { HttpError } from '../../shared/http/http-error.types.ts'
+import type { HttpError } from '#shared/http/http-error.types.ts'
 
 const JSON_HEADERS = { 'content-type': 'application/json' } as const
 

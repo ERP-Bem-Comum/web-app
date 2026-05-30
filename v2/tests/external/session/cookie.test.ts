@@ -9,7 +9,7 @@ import {
   SESSION_COOKIE_NAME,
   buildSessionCookie,
   serializeCookie,
-} from '../../../src/external/session/cookie.ts'
+} from '#external/session/cookie.ts'
 
 describe('buildSessionCookie', () => {
   it('atributos seguros + nome __Host-session', () => {

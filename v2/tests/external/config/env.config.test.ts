@@ -6,8 +6,8 @@
 import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
 
-import { parseEnv } from '../../../src/external/config/env.config.ts'
-import { isOk, isErr } from '../../../src/shared/primitives/result.ts'
+import { parseEnv } from '#external/config/env.config.ts'
+import { isOk, isErr } from '#shared/primitives/result.ts'
 
 describe('parseEnv — sucesso', () => {
   it('aceita CORE_API_URL como URL válida', () => {

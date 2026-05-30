@@ -5,8 +5,8 @@
 import { describe, it, beforeEach } from 'node:test'
 import { strict as assert } from 'node:assert'
 
-import { createMemorySessionStore } from '../../../src/external/session/session-store.memory.ts'
-import { isOk, isErr } from '../../../src/shared/primitives/result.ts'
+import { createMemorySessionStore } from '#external/session/session-store.memory.ts'
+import { isOk, isErr } from '#shared/primitives/result.ts'
 
 let nowMs = 1_000
 const advance = (ms: number): void => {

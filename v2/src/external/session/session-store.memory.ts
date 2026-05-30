@@ -3,8 +3,8 @@
  * (testabilidade). Para prod/escala horizontal, trocar por uma impl compartilhada (Redis-like) com a
  * MESMA interface — o módulo auth não muda (ADR-0004 / Clarifications: sessão stateful, store compartilhável).
  */
-import { ok, err, type Result } from '../../shared/primitives/result.ts'
-import type { SessionStore } from '../../shared/ports/session-store.port.ts'
+import { ok, err, type Result } from '#shared/primitives/result.ts'
+import type { SessionStore } from '#shared/ports/session-store.port.ts'
 
 type Entry<T> = Readonly<{ value: T; expiresAt: number }>
 

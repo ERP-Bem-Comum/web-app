@@ -6,7 +6,7 @@
 import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
 
-import { mapToServerResponse } from '../../../src/external/core-api/map-to-server-response.ts'
+import { mapToServerResponse } from '#external/core-api/map-to-server-response.ts'
 
 describe('mapToServerResponse — preserva status', () => {
   it('http 404 → Response 404 com o body original', async () => {

@@ -6,8 +6,8 @@
 import { describe, it, afterEach } from 'node:test'
 import { strict as assert } from 'node:assert'
 
-import { resultFetch } from '../../../src/external/core-api/result-fetch.ts'
-import { isOk, isErr } from '../../../src/shared/primitives/result.ts'
+import { resultFetch } from '#external/core-api/result-fetch.ts'
+import { isOk, isErr } from '#shared/primitives/result.ts'
 
 const realFetch = globalThis.fetch
 afterEach(() => {

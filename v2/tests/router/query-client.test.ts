@@ -6,8 +6,8 @@
 import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
 
-import { createAppQueryClient } from '../../src/query-client.ts'
-import { QueryError } from '../../src/shared/http/query-error.ts'
+import { createAppQueryClient } from '#app/query-client.ts'
+import { QueryError } from '#shared/http/query-error.ts'
 
 describe('createAppQueryClient — política de auth:expired', () => {
   it('chama onAuthExpired quando QueryError(auth:expired)', () => {

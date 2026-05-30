@@ -7,7 +7,7 @@
 import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
 
-import { parseErrorEnvelope } from '../../../src/shared/http/error-envelope.ts'
+import { parseErrorEnvelope } from '#shared/http/error-envelope.ts'
 
 describe('parseErrorEnvelope — envelope válido', () => {
   it('extrai code/message/requestId de um envelope completo', () => {

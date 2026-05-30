@@ -5,7 +5,7 @@
 import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
 
-import { isSameOriginRequest } from '../../../src/shared/http/csrf-origin.ts'
+import { isSameOriginRequest } from '#shared/http/csrf-origin.ts'
 
 describe('isSameOriginRequest', () => {
   it('Sec-Fetch-Site: same-origin → true', () => {

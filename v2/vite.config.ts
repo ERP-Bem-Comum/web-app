@@ -11,7 +11,15 @@ export default defineConfig({
     tsconfigPaths: true,
   },
   plugins: [
-    tanstackStart(),
+    // Bootstrap movido p/ src/app/ (organização visual): aponta o router entry e o
+    // routeTree gerado p/ lá. `routesDirectory` segue default ('routes' → src/routes).
+    // Chaves confirmadas no schema do start-plugin-core (router.entry / router.generatedRouteTree).
+    tanstackStart({
+      router: {
+        entry: 'app/router.tsx',
+        generatedRouteTree: 'app/routeTree.gen.ts',
+      },
+    }),
     // preset 'node-server' (default do Nitro) → emite .output/server/index.mjs que escuta sozinho
     nitro(),
     // react's vite plugin must come after start's vite plugin

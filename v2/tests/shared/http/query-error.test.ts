@@ -6,8 +6,8 @@
 import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
 
-import type { AppError } from '../../../src/shared/http/app-error.types.ts'
-import { QueryError, isQueryError } from '../../../src/shared/http/query-error.ts'
+import type { AppError } from '#shared/http/app-error.types.ts'
+import { QueryError, isQueryError } from '#shared/http/query-error.ts'
 
 describe('QueryError', () => {
   it('carrega o AppError e é uma instância de Error', () => {
