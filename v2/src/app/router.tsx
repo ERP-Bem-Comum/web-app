@@ -1,6 +1,11 @@
 import { createRouter } from '@tanstack/react-router'
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query'
 
+// Design system (side-effects de registro, 1×): tema aplica os tokens no :root e as
+// webfonts self-host registram seus @font-face. Devem rodar no boot, antes do render.
+import '#shared/ui/tokens/theme.css.ts'
+import '#shared/ui/tokens/fonts.ts'
+
 import { createAppQueryClient } from './query-client.ts'
 import { routeTree } from './routeTree.gen'
 
