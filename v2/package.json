@@ -23,6 +23,9 @@
     "test:all": "pnpm test && pnpm test:dom"
   },
   "dependencies": {
+    "@fontsource-variable/inter": "^5.2.8",
+    "@fontsource-variable/nunito": "^5.2.7",
+    "@fontsource/jetbrains-mono": "^5.2.8",
     "@tanstack/react-query": "^5.100.14",
     "@tanstack/react-router": "^1.170.9",
     "@tanstack/react-router-ssr-query": "^1.167.0",
