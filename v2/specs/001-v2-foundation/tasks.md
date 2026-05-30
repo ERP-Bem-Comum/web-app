@@ -31,10 +31,10 @@ Runner: `node --test` (puro `shared/`/`external/`), Vitest (DOM/rotas). Testes d
 
 **Purpose**: dependências, scripts e esqueleto de pastas; app mínimo rodável. (Sem lógica testável → sem TDD; T004 é validado por smoke manual.)
 
-- [ ] T001 [P] Instalar TanStack Query: `pnpm add @tanstack/react-query` (atualiza `package.json` + `pnpm-lock.yaml`)
-- [ ] T002 [P] Adicionar script de teste em `package.json`: `"test": "node --experimental-strip-types --test"` (Node 22+; imports relativos nos testes)
-- [ ] T003 Criar esqueleto de pastas: `src/shared/{primitives,http,ports,utils,ui}`, `src/external/{config,core-api}`, `src/routes`, e `tests/` espelhando `src/` (+ `src/shared/ui/README.md` placeholder)
-- [ ] T004 Bootstrap mínimo TanStack Start (sem QueryClient): `src/router.tsx`, `src/routes/__root.tsx`, `src/routes/index.tsx`. Validar `http://localhost:3000/` renderiza
+- [x] T001 [P] Instalar TanStack Query: `pnpm add @tanstack/react-query` (atualiza `package.json` + `pnpm-lock.yaml`)
+- [x] T002 [P] Adicionar script de teste em `package.json`: `"test": "node --experimental-strip-types --test"` (Node 22+; imports relativos nos testes)
+- [x] T003 Criar esqueleto de pastas: `src/shared/{primitives,http,ports,utils,ui}`, `src/external/{config,core-api}`, `src/routes`, e `tests/` espelhando `src/` (+ `src/shared/ui/README.md` placeholder)
+- [x] T004 Bootstrap mínimo TanStack Start (sem QueryClient): `src/router.tsx`, `src/routes/__root.tsx`, `src/routes/index.tsx`. Validar `http://localhost:3000/` renderiza
 
 ---
 
@@ -46,15 +46,15 @@ Runner: `node --test` (puro `shared/`/`external/`), Vitest (DOM/rotas). Testes d
 
 ### Tests (TDD — vendorizar/ver falhar primeiro)
 
-- [ ] T005 [P] Vendorizar teste de `Result` → `tests/shared/primitives/result.test.ts` (de `core-api/tests/shared/result.test.ts`)
-- [ ] T006 [P] Vendorizar teste de `Brand` → `tests/shared/primitives/brand.test.ts` (de `core-api/tests/shared/brand.test.ts`)
-- [ ] T007 [P] Vendorizar teste de imutabilidade → `tests/shared/primitives/immutable.test.ts` (de `core-api/tests/shared/immutable.test.ts`)
+- [x] T005 [P] Vendorizar teste de `Result` → `tests/shared/primitives/result.test.ts` (de `core-api/tests/shared/result.test.ts`)
+- [x] T006 [P] Vendorizar teste de `Brand` → `tests/shared/primitives/brand.test.ts` (de `core-api/tests/shared/brand.test.ts`)
+- [x] T007 [P] Vendorizar teste de imutabilidade → `tests/shared/primitives/immutable.test.ts` (de `core-api/tests/shared/immutable.test.ts`)
 
 ### Implementation (green)
 
-- [ ] T008 [P] Vendorizar `Result<T,E>` → `src/shared/primitives/result.ts` (cópia fiel; `.ok` + `ok`/`err`/`isOk`/`isErr`/`mapErr`/`combine`)
-- [ ] T009 [P] Vendorizar `Brand<T,K>` → `src/shared/primitives/brand.ts` (`unique symbol __brand` + `BrandOf`; **remover** `// eslint-disable @typescript-eslint/naming-convention` órfão)
-- [ ] T010 [P] Vendorizar `immutable`/`deepImmutable` → `src/shared/primitives/immutable.ts`
+- [x] T008 [P] Vendorizar `Result<T,E>` → `src/shared/primitives/result.ts` (cópia fiel; `.ok` + `ok`/`err`/`isOk`/`isErr`/`mapErr`/`combine`)
+- [x] T009 [P] Vendorizar `Brand<T,K>` → `src/shared/primitives/brand.ts` (`unique symbol __brand` + `BrandOf`; **remover** `// eslint-disable @typescript-eslint/naming-convention` órfão)
+- [x] T010 [P] Vendorizar `immutable`/`deepImmutable` → `src/shared/primitives/immutable.ts`
 
 **Checkpoint**: `node --test` verde nos primitivos — US2 pode começar.
 
@@ -68,17 +68,17 @@ Runner: `node --test` (puro `shared/`/`external/`), Vitest (DOM/rotas). Testes d
 
 ### Tests (TDD — escrever/ver falhar primeiro) ⚠️ perguntar tipo (unit/BDD)
 
-- [ ] T011 [US2] Teste de `parseErrorEnvelope` → `tests/shared/http/error-envelope.test.ts` (envelope válido, parcial, não-objeto → null)
-- [ ] T012 [US2] Teste de `map-to-app-error` → `tests/shared/http/map-to-app-error.test.ts` (cada variante de HttpError + status 401/403/404/409/400/5xx → AppError esperado)
-- [ ] T013 [US2] Teste de `QueryError` → `tests/shared/http/query-error.test.ts` (`isQueryError`, carrega `AppError`, `name`)
+- [x] T011 [US2] Teste de `parseErrorEnvelope` → `tests/shared/http/error-envelope.test.ts` (envelope válido, parcial, não-objeto → null)
+- [x] T012 [US2] Teste de `map-to-app-error` → `tests/shared/http/map-to-app-error.test.ts` (cada variante de HttpError + status 401/403/404/409/400/5xx → AppError esperado)
+- [x] T013 [US2] Teste de `QueryError` → `tests/shared/http/query-error.test.ts` (`isQueryError`, carrega `AppError`, `name`)
 
 ### Implementation (green)
 
-- [ ] T014 [P] [US2] `HttpError` → `src/shared/http/http-error.types.ts` (network | http{status,body} | parse | timeout | aborted)
-- [ ] T015 [P] [US2] `AppError` → `src/shared/http/app-error.types.ts` (auth:expired | auth:forbidden | not-found | validation{issues} | conflict | server | connectivity | bad-gateway | unknown{status?})
-- [ ] T016 [US2] `parseErrorEnvelope` → `src/shared/http/error-envelope.ts` (narrowing seguro, sem throw) — green p/ T011
-- [ ] T017 [US2] `map-to-app-error` → `src/shared/http/map-to-app-error.ts` (`switch` por status + guarda `never`; extrai code/message/requestId) — green p/ T012 (depende T014, T015, T016)
-- [ ] T018 [US2] `QueryError` → `src/shared/http/query-error.ts` (única subclasse de `Error`; `isQueryError`) — green p/ T013 (depende T015)
+- [x] T014 [P] [US2] `HttpError` → `src/shared/http/http-error.types.ts` (network | http{status,body} | parse | timeout | aborted)
+- [x] T015 [P] [US2] `AppError` → `src/shared/http/app-error.types.ts` (auth:expired | auth:forbidden | not-found | validation{issues} | conflict | server | connectivity | bad-gateway | unknown{status?})
+- [x] T016 [US2] `parseErrorEnvelope` → `src/shared/http/error-envelope.ts` (narrowing seguro, sem throw) — green p/ T011
+- [x] T017 [US2] `map-to-app-error` → `src/shared/http/map-to-app-error.ts` (`switch` por status + guarda `never`; extrai code/message/requestId) — green p/ T012 (depende T014, T015, T016)
+- [x] T018 [US2] `QueryError` → `src/shared/http/query-error.ts` (única subclasse de `Error`; `isQueryError`) — green p/ T013 (depende T015)
 
 **Checkpoint**: cadeia de erro modelada e verde — US3 pode começar.
 
@@ -92,15 +92,15 @@ Runner: `node --test` (puro `shared/`/`external/`), Vitest (DOM/rotas). Testes d
 
 ### Tests (TDD — escrever/ver falhar primeiro) ⚠️ perguntar tipo (unit/BDD)
 
-- [ ] T019 [US3] Teste de `env.config` → `tests/external/config/env.config.test.ts` (fail-fast sem `CORE_API_URL`; aceita URL válida)
-- [ ] T020 [US3] Teste de `result-fetch` → `tests/external/core-api/result-fetch.test.ts` (stub `globalThis.fetch`: 200/JSON, 404, 500, timeout, abort, 204, corpo vazio, não-JSON → sempre `Result`)
-- [ ] T021 [US3] Teste de `map-to-server-response` → `tests/external/core-api/map-to-server-response.test.ts` (cada variante → status: http→original, network/timeout→504, parse→502, aborted→499)
+- [x] T019 [US3] Teste de `env.config` → `tests/external/config/env.config.test.ts` (fail-fast sem `CORE_API_URL`; aceita URL válida)
+- [x] T020 [US3] Teste de `result-fetch` → `tests/external/core-api/result-fetch.test.ts` (stub `globalThis.fetch`: 200/JSON, 404, 500, timeout, abort, 204, corpo vazio, não-JSON → sempre `Result`)
+- [x] T021 [US3] Teste de `map-to-server-response` → `tests/external/core-api/map-to-server-response.test.ts` (cada variante → status: http→original, network/timeout→504, parse→502, aborted→499)
 
 ### Implementation (green)
 
-- [ ] T022 [US3] `env.config` → `src/external/config/env.config.ts` (Zod, fail-fast, **server-only** — sem `VITE_`, nunca em client/UI; expõe `CORE_API_URL`) — green p/ T019
-- [ ] T023 [US3] `result-fetch` → `src/external/core-api/result-fetch.ts` (`globalThis.fetch` → `Result<T,HttpError>`; `AbortController`+timeout 10s; `token?`; leitura segura; 204→ok(undefined)) — green p/ T020 (depende T008, T014)
-- [ ] T024 [US3] `map-to-server-response` → `src/external/core-api/map-to-server-response.ts` (preserva status; guarda `never`) — green p/ T021 (depende T014)
+- [x] T022 [US3] `env.config` → `src/external/config/env.config.ts` (Zod, fail-fast, **server-only** — sem `VITE_`, nunca em client/UI; expõe `CORE_API_URL`) — green p/ T019
+- [x] T023 [US3] `result-fetch` → `src/external/core-api/result-fetch.ts` (`globalThis.fetch` → `Result<T,HttpError>`; `AbortController`+timeout 10s; `token?`; leitura segura; 204→ok(undefined)) — green p/ T020 (depende T008, T014)
+- [x] T024 [US3] `map-to-server-response` → `src/external/core-api/map-to-server-response.ts` (preserva status; guarda `never`) — green p/ T021 (depende T014)
 
 **Checkpoint**: ponte com o backend verde — US1 pode fechar a cadeia.
 
@@ -114,14 +114,14 @@ Runner: `node --test` (puro `shared/`/`external/`), Vitest (DOM/rotas). Testes d
 
 ### Tests (TDD — escrever/ver falhar primeiro) ⚠️ perguntar tipo (unit/BDD/smoke)
 
-- [ ] T025 [US1] Teste da rota `/health` → `tests/routes/health.test.ts` (responde/exibe `{status:'ok'}`)
-- [ ] T026 [US1] Teste da política do QueryClient → `tests/router/query-client.test.ts` (`onError` com `QueryError(auth:expired)` → `clear()` + navigate; `onSuccess` → invalidate)
+- [x] T025 [US1] Teste da rota `/health` → `tests/routes/health.test.ts` (responde/exibe `{status:'ok'}`)
+- [x] T026 [US1] Teste da política do QueryClient → `tests/router/query-client.test.ts` (`onError` com `QueryError(auth:expired)` → `clear()` + navigate; `onSuccess` → invalidate)
 
 ### Implementation (green)
 
-- [ ] T027 [US1] `src/routes/health.tsx` — rota `/health` do front → `{status:'ok'}` (FR-002) — green p/ T025
-- [ ] T028 [US1] Configurar `QueryClient` em `src/router.tsx` — `QueryCache.onError` (auth:expired → `clear()` + `navigate /auth/login {redirect}`) + `MutationCache.onSuccess` (`invalidateQueries`) — green p/ T026 (depende T017, T018)
-- [ ] T029 [US1] `QueryClientProvider` em `src/routes/__root.tsx` + expor `queryClient` no router context (depende T028)
+- [x] T027 [US1] `src/routes/health.tsx` — rota `/health` do front → `{status:'ok'}` (FR-002) — green p/ T025
+- [x] T028 [US1] Configurar `QueryClient` em `src/router.tsx` — `QueryCache.onError` (auth:expired → `clear()` + `navigate /auth/login {redirect}`) + `MutationCache.onSuccess` (`invalidateQueries`) — green p/ T026 (depende T017, T018)
+- [x] T029 [US1] `QueryClientProvider` em `src/routes/__root.tsx` + expor `queryClient` no router context (depende T028)
 
 **Checkpoint**: app de pé, health OK, cadeia server→ui demonstrável (FR-019).
 
@@ -129,10 +129,10 @@ Runner: `node --test` (puro `shared/`/`external/`), Vitest (DOM/rotas). Testes d
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T030 [P] (OPCIONAL — C1) `src/shared/ports/session-store.port.ts` apenas como contrato (type), terreno p/ feature Auth
-- [ ] T031 Verificar **env server-only** (SC-005/FR-015): inspecionar bundle do browser (`pnpm build`) — `CORE_API_URL`/segredos não vazam
-- [ ] T032 Quality gate: `pnpm lint` (boundaries + MVVM) · `pnpm typecheck` · `node --test` · `pnpm build` — todos verdes
-- [ ] T033 Validar `quickstart.md` ponta-a-ponta (dev local OU dockerizado): `/` e `/health`; `CORE_API_URL` conforme o modo
+- [x] T030 [P] (OPCIONAL — C1) `src/shared/ports/session-store.port.ts` apenas como contrato (type), terreno p/ feature Auth
+- [x] T031 Verificar **env server-only** (SC-005/FR-015): inspecionar bundle do browser (`pnpm build`) — `CORE_API_URL`/segredos não vazam
+- [x] T032 Quality gate: `pnpm lint` (boundaries + MVVM) · `pnpm typecheck` · `node --test` · `pnpm build` — todos verdes
+- [x] T033 Validar `quickstart.md` ponta-a-ponta (dev local OU dockerizado): `/` e `/health`; `CORE_API_URL` conforme o modo
 
 ---
 

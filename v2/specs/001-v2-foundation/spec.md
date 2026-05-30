@@ -6,7 +6,7 @@
 
 **Created**: 2026-05-29
 
-**Status**: Draft
+**Status**: Concluída ✅ (implementada — 2026-05-29)
 
 **Input**: User description: "Fundação técnica do frontend v2 (ERP Bem Comum). Estabelecer a base que todo módulo do v2 vai consumir, seguindo a constituição v1.1.0 (arquitetura vertical-modular espelhando o core-api): bootstrap TanStack Start rodável; camada src/shared/ (cross-cutting puro); camada src/external/ (adapters de I/O real + segredos). Permanecer na branch atual."
 

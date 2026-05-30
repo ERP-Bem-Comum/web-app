@@ -6,7 +6,7 @@
 
 **Created**: 2026-05-29
 
-**Status**: Draft
+**Status**: Concluída ✅ (feature-modelo de referência)
 
 **Input**: User description: "Feature de Autenticação (Auth) do v2 — slice BFF completo (login, logout, me, refresh, sessão + guard), a feature-modelo documentada que devs e agentes de IA usarão como referência."
 
