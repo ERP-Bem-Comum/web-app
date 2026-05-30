@@ -3,7 +3,18 @@
     "ESLint": {
       "type": "stdio",
       "command": "npx",
-      "args": ["@eslint/mcp@latest"]
+      "args": [
+        "@eslint/mcp@latest"
+      ]
+    },
+    "chrome-devtools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "chrome-devtools-mcp@latest",
+        "--acceptInsecureCerts"
+      ],
+      "env": {}
     }
   }
 }
