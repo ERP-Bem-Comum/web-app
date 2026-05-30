@@ -82,3 +82,16 @@ export const tokenValues = {
 } as const
 
 export type TokenValues = typeof tokenValues
+
+/**
+ * Forma (estrutura) do tema, sem amarrar aos literais — todo valor-folha é `string`.
+ * Útil para provar que um tema alternativo (ex.: dark) satisfaz o MESMO contrato
+ * sem precisar repetir os valores exatos do tema claro. Ver contract-extensibility.test.ts.
+ */
+export type TokenShape = {
+  readonly [G in keyof TokenValues]: {
+    readonly [K in keyof TokenValues[G]]: TokenValues[G][K] extends Record<string, unknown>
+      ? { readonly [L in keyof TokenValues[G][K]]: string }
+      : string
+  }
+}

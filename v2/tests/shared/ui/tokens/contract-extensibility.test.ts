@@ -7,7 +7,7 @@ import assert from 'node:assert/strict'
 //
 // Não importa `contract.css.ts` (exige o compilador do vanilla-extract; não roda em node:test
 // puro). A extensibilidade é provada contra a FORMA de `tokens.values.ts`, que É o contrato.
-import { tokenValues, type TokenValues } from '../../../../src/shared/ui/tokens/tokens.values.ts'
+import { tokenValues, type TokenShape } from '../../../../src/shared/ui/tokens/tokens.values.ts'
 
 // Caminhos de todas as folhas (ex.: "color.brand.normal"), ordenados — a "forma" do objeto.
 function leafPaths(node: unknown, prefix = '', acc: string[] = []): string[] {
@@ -47,9 +47,9 @@ describe('contract — extensibilidade (tema alternativo)', () => {
         weight: { regular: '400', medium: '500', semibold: '600', bold: '700' },
       },
       shadow: { card: 'none' },
-    } satisfies TokenValues
+    } satisfies TokenShape
 
     // Em runtime, confirma que as duas formas têm exatamente os mesmos caminhos de folha.
-    assert.deepEqual(leafPaths(darkValues).toSorted(), leafPaths(tokenValues).toSorted())
+    assert.deepEqual([...leafPaths(darkValues)].sort(), [...leafPaths(tokenValues)].sort())
   })
 })

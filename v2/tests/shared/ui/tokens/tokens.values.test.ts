@@ -66,8 +66,8 @@ describe('design tokens — valores (fidelidade v1)', () => {
     const colorRoles = Object.keys(tokenValues.color)
     const allowedRoles = ['brand', 'surface', 'text', 'border', 'feedback']
     assert.deepEqual(
-      colorRoles.toSorted(),
-      [...allowedRoles].toSorted(),
+      [...colorRoles].sort(),
+      [...allowedRoles].sort(),
       'color tem papéis inesperados (possível segunda paleta). Esperado: ' + allowedRoles.join(', '),
     )
     // nenhum papel nomeado por cor/contexto cru (ex.: "blue", "green", "institutional")
