@@ -34,15 +34,15 @@
 
 ## Estrutura de pastas
 
-> ⚠️ **DIVERGÊNCIA (v2, desde 2026-05-29 — constituição v1.1.0):** a estrutura abaixo
-> (`features/` + `lib/` + `server/` + `components/ui/`) foi **substituída** no frontend v2 por
-> uma arquitetura **vertical-modular espelhando o `core-api`** (ADR-0006): `src/modules/<módulo>/`
-> com `domain/application/adapters/ui/public-api`, `src/shared/` (puro) e `src/external/`
-> (adapters de I/O real). A fonte de verdade da estrutura é
-> [`.specify/memory/constitution.md`](../.specify/memory/constitution.md) §"Technology Constraints
-> & Stack". Os princípios e snippets de código abaixo (Result, HttpError→AppError→QueryError,
-> server functions, MVVM presenter) **continuam válidos** — só os nomes de pasta mudaram
-> (`lib`→`shared`, `infrastructure`→`adapters`, `features`→`modules`, + `public-api` e `external`).
+> ⚠️ **DIVERGÊNCIA (v2 — constituição v1.2.0):** a estrutura abaixo (`features/`+`lib/`+`server/`)
+> foi **substituída**. O frontend v2 usa módulos verticais com **separação client × server** (ADR-0004):
+> `src/modules/<m>/server/{domain,application,adapters}` (BFF, **DDD**) + `src/modules/<m>/client/{data,
+> usecase,view-model,ui}` (FRONT, **MVVM**) + `public-api/`; `src/shared/` (puro, inclui `bus`/`i18n`) e
+> `src/external/` (I/O real + segredos, server-only). **Fronteira client↔server = a server function.**
+> Fonte de verdade: [`.specify/memory/constitution.md`](../.specify/memory/constitution.md) (v1.2.0) +
+> [`handbook/adr/`](./adr/) (ADR-0001/0004). Os princípios e snippets abaixo (Result,
+> HttpError→AppError→QueryError, server functions, MVVM) **continuam válidos** — mudou a organização
+> (split client/server, `view-model`/`controller`, Event Bus em `shared/bus`).
 
 ```
 src/

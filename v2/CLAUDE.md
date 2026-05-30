@@ -59,8 +59,10 @@ Em `.claude/agents/` — consultores read-only, cada um com fonte de verdade em 
 - Edição de `*.ts/*.tsx` dispara `eslint --fix` automático — `.claude/hooks/eslint-fix.sh`.
 
 <!-- SPECKIT START -->
-**Spec ativa:** `specs/001-v2-foundation/` — Fundação Técnica do v2.
-Plano de implementação: [`specs/001-v2-foundation/plan.md`](specs/001-v2-foundation/plan.md).
-Constituição (normativa): [`.specify/memory/constitution.md`](.specify/memory/constitution.md) (v1.1.0 —
-arquitetura vertical-modular `modules/shared/external` + `public-api`; MVVM com views burras).
+**Spec ativa:** `specs/002-auth/` — Autenticação (feature-MODELO de referência).
+Plano: [`specs/002-auth/plan.md`](specs/002-auth/plan.md) · Contrato backend: [`specs/002-auth/contracts/`](specs/002-auth/contracts/).
+Constituição (normativa): [`.specify/memory/constitution.md`](.specify/memory/constitution.md) **v1.2.0** —
+módulo = `server/` (BFF/DDD) + `client/` (FRONT/MVVM) + `public-api`; fronteira = server function;
+Event Bus + Controller oficiais. ADRs em [`handbook/adr/`](handbook/adr/) (0001-0004).
+Fundação concluída: `specs/001-v2-foundation/` (shared/ + external/ + bootstrap).
 <!-- SPECKIT END -->

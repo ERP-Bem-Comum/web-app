@@ -1,282 +1,251 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: (template, unversioned) → 1.0.0 → 1.1.0 (same-session amendment)
+Version change: (template) → 1.0.0 → 1.1.0 → 1.2.0 → 1.2.1
 Bump rationale:
-  - 1.0.0: first concrete ratification (template → governing principles); establishment release.
-  - 1.1.0 (MINOR): adopted the core-api-mirrored vertical-modular structure
-    (`modules/` + `shared/` + `external/` + per-module `public-api`) and added Principle XI
-    (Dumb Views, Orchestrating ViewModels — MVVM). Materially expanded guidance, no removals.
+  - 1.2.1 (PATCH): clarificação do §XII — localização dos tipos de evento (client→`client/data`,
+    server→`server/domain`), resolvendo tensão com os boundaries (client não importa server/domain).
+    Origem: /speckit-analyze da Auth (finding K1).
+  - 1.0.0: first ratification (template → governing principles).
+  - 1.1.0 (MINOR): adopted vertical-modular structure mirroring core-api + Principle XI (MVVM).
+  - 1.2.0 (MINOR): refined the per-module internal structure into a CLIENT × SERVER split — the
+    server side (BFF) is DDD; the client side (FRONT) is MVVM; the boundary is the server function.
+    Made Event Bus (Observer) and Controller (transient form state) official patterns. Rewrote
+    Principle III and XI; added Principle XII (Reactive Flow via Event Bus); rewrote folder structure.
+    Materially expanded guidance, no principle removed. See ADR-0004 (refines ADR-0001's internal layout).
 
-Modified principles (template slot → ratified name):
-  - [PRINCIPLE_1_NAME] → I. BFF-Orchestrated Boundary
-  - [PRINCIPLE_2_NAME] → II. Errors Are Values
-  - [PRINCIPLE_3_NAME] → III. Vertical-Modular Architecture with Enforced Boundaries (rewritten in 1.1.0)
-  - [PRINCIPLE_4_NAME] → IV. Make Illegal States Unrepresentable
-  - [PRINCIPLE_5_NAME] → V. Server-State Is Not UI-State
-  Added principles (beyond the 5 template slots):
-  - VI. Validation at the Boundary
-  - VII. Strict TypeScript & Healthy 6→7 Migration
-  - VIII. Minimal Dependencies
-  - IX. pnpm Only
-  - X. Spec-Driven Development
-  - XI. Dumb Views, Orchestrating ViewModels (MVVM) — added in 1.1.0
-
-Added sections:
-  - "Technology Constraints & Stack" (was [SECTION_2_NAME]) — folder structure rewritten in 1.1.0
-  - "Development Workflow & Quality Gates" (was [SECTION_3_NAME])
-
-Removed sections: none.
+Principles:
+  - I. BFF-Orchestrated Boundary · II. Errors Are Values · III. Client×Server Modular Architecture
+    (rewritten 1.2.0) · IV. Make Illegal States Unrepresentable · V. Server-State Is Not UI-State ·
+    VI. Validation at the Boundary · VII. Strict TypeScript & 6→7 · VIII. Minimal Dependencies ·
+    IX. pnpm Only · X. Spec-Driven Development · XI. Dumb Views, Smart ViewModels — MVVM (rewritten 1.2.0) ·
+    XII. Reactive Flow via Event Bus (added 1.2.0).
 
 Templates & config requiring updates:
-  - eslint.config.js ................................ ⚠ pending (boundaries elements/rules must be
-    rewritten for modules/shared/external + public-api + MVVM dumb-view enforcement)
-  - handbook/arquiteture.md ......................... ⚠ pending (divergence note: structure adopted
-    is modules/shared/external, mirroring core-api, not features/lib/server)
-  - .specify/templates/plan-template.md ............. ✅ dynamic Constitution Check placeholder, no change
-  - .specify/templates/spec-template.md ............. ✅ no change required (tech-agnostic)
-  - .specify/templates/tasks-template.md ............ ✅ no change required
-  - .specify/templates/checklist-template.md ........ ✅ no change required
+  - eslint.config.js ................................ ⚠ pending (boundary elements for server/* vs
+    client/* + shared/bus + MVVM rule scoped to *.page.tsx/*.component.tsx)
+  - handbook/adr/0004-*.md .......................... ⚠ pending (new ADR for the client×server split)
+  - handbook/adr/0001-*.md .......................... ⚠ note: internal layout refined by ADR-0004
+  - handbook/arquiteture.md ......................... ⚠ divergence note already present (update layout)
+  - .specify/templates/* ............................ ✅ no change (tech-agnostic / dynamic gates)
 
-Follow-up TODOs: none. RATIFICATION_DATE set to first adoption date (2026-05-29).
-
-Sources of truth consolidated: CLAUDE.md (v2), handbook/arquiteture.md and the core-api
-modular-monolith architecture (handbook/core-api/01-architecture.md; ADR-0006).
+Sources of truth: CLAUDE.md (v2), handbook/adr/, core-api modular-monolith (ADR-0006), and the
+Tech Lead's front-end architecture guide (client=MVVM, server=DDD) consolidated here.
 -->
 
 # ERP Bem Comum — Frontend v2 Constitution
 
-> Front + BFF unificado em TanStack Start. Fontes normativas consolidadas:
-> `CLAUDE.md` e `handbook/arquiteture.md`. Esta constituição governa o código de
-> `src/`; conflitos com outras práticas são resolvidos a favor deste documento.
+> Front + BFF unificado em TanStack Start. Fonte de verdade: este documento + `handbook/adr/`.
+> Governa o código de `src/`; conflitos com outras práticas são resolvidos a favor deste documento
+> (e dos ADRs aceitos, que estão acima dele na hierarquia).
 
 ## Core Principles
 
 ### I. BFF-Orchestrated Boundary
 
-Um app = front + BFF no mesmo processo. O browser **NUNCA** fala direto com o
-`core-api` ou qualquer microserviço — fala apenas com as server functions do próprio
-BFF, que autenticam, orquestram e normalizam. Tokens, refresh tokens, client secrets
-e a URL do backend **NUNCA** chegam ao browser: o cookie carrega só um `sessionId`
-opaco (`HttpOnly; SameSite=Strict; Secure`); os tokens vivem num `SessionStore`
-server-side. Toda I/O e todo segredo ficam atrás da fronteira do BFF.
+Um app = front + BFF no mesmo processo. O browser **NUNCA** fala direto com o `core-api` — fala apenas
+com as **server functions** do próprio BFF, que autenticam, orquestram e normalizam. Tokens, refresh
+tokens, client secrets e a URL do backend **NUNCA** chegam ao browser: o cookie carrega só um
+`sessionId` opaco (`HttpOnly; SameSite=Strict; Secure`); os tokens vivem num `SessionStore` server-side.
+Toda I/O e todo segredo ficam atrás da fronteira do BFF.
 
-**Rationale:** centralizar I/O e segredos elimina classes inteiras de vazamento e
-de acoplamento cliente↔backend, e dá um único ponto de auditoria de segurança.
+**Rationale:** centralizar I/O e segredos elimina classes inteiras de vazamento e de acoplamento
+cliente↔backend, e dá um único ponto de auditoria de segurança.
 
 ### II. Errors Are Values
 
-Erros são valores, não exceções: toda operação falível retorna `Result<T, E>` com
-unions de erro em string-literal kebab-case. `throw` é **proibido** fora da borda de
-infraestrutura; quando uma API nativa lança, o `catch` converte para `Result`
-**imediatamente**, no mesmo módulo de borda. A **única** subclasse de `Error`
-permitida é `QueryError`, que existe só para fazer a ponte entre `Result` e a API de
-erro do TanStack Query (vive em `lib/http`, usada só por `queryFn`/`mutationFn`).
-Engolir erros é proibido — todo `E` é propagado e tratado exaustivamente.
+Erros são valores, não exceções: toda operação falível retorna `Result<T, E>` com unions de erro em
+string-literal kebab-case. `throw` é **proibido** fora da borda de infraestrutura; quando uma API nativa
+lança, o `catch` converte para `Result` **imediatamente**. A **única** subclasse de `Error` permitida é
+`QueryError` (vive em `shared/http`, ponte entre `Result` e a API de erro do TanStack Query, usada só por
+`queryFn`/`mutationFn`). Engolir erros é proibido — todo `E` é propagado e tratado exaustivamente.
 
-**Rationale:** erros-como-valores tornam o fluxo de falha visível ao compilador e à
-revisão, eliminando caminhos de exceção invisíveis.
+**Rationale:** erros-como-valores tornam o fluxo de falha visível ao compilador e à revisão.
 
-### III. Vertical-Modular Architecture with Enforced Boundaries
+### III. Client × Server Modular Architecture with Enforced Boundaries
 
-A arquitetura é **vertical e modular**, espelhando o modular-monolith do `core-api`
-(ADR-0006). Cada módulo de negócio é um slice isolado em `src/modules/<módulo>/` com as
-camadas `domain → application → adapters → ui`, e expõe um **`public-api/`** como único
-ponto de import externo. O compartilhado vai para `src/shared/` (puro) ou `src/external/`
-(adapters de I/O real). As fronteiras são **enforçadas por lint** (`eslint-plugin-boundaries`):
+Cada módulo de negócio é um slice vertical isolado em `src/modules/<módulo>/` e **separa explicitamente
+client de server** (decisão do Tech Lead; ver ADR-0004):
 
-- `shared/` é **puro** e cross-cutting (`primitives`, `kernel`, `http` types, `ports`, `utils`,
-  `ui` design-system); importa só `shared`. É a base que qualquer camada pode usar.
-- `external/` são **adapters de I/O real** e segredos (`core-api` client, `session`, `config`);
-  importa `shared` + `external`. Nunca importa módulos.
-- `domain` é **puro**: VOs branded, tipos, regras, errors, repository ports; ZERO I/O, ZERO
-  framework. Importa só `shared` + `domain` da mesma feature.
-- `application` (use cases puros, factory functions + ports) importa `shared` + `domain`/`application`
-  da mesma feature.
-- `adapters` (server functions/BFF, http clients, schemas Zod, queries) importa `shared` + `external`
-  + camadas da mesma feature + o `public-api` de qualquer outro módulo.
-- `ui` (componentes + ViewModels) importa `shared` (incl. design-system) + camadas da mesma feature
-  + o `public-api` de qualquer outro módulo.
-- `public-api` re-exporta as camadas da própria feature; é o **único** ponto pelo qual outro
-  módulo pode importar este.
-- **Um módulo NUNCA importa internals de outro módulo** — cruzamento só via `public-api`,
-  `shared`, `external` ou server function.
+- **`server/` — BFF, server-side, DDD.** É "tudo que definimos pro BFF": orquestração real, sessão,
+  tokens, chamada ao `core-api`. Camadas: `domain/` (puro: VOs branded, `Result`, regras, ports, event
+  types), `application/` (use cases — orquestram core-api + sessão), `adapters/` (server functions
+  `*.server-fn.ts` + client do core-api + `*.schema.ts` Zod + mappers). Usa `external/` para I/O/segredos.
+- **`client/` — FRONT, client-side, MVVM.** É o que roda no browser e **consome** o BFF. Camadas:
+  `data/` (Model = Zod do que o BFF já devolveu + **Repository = porta** para a server function),
+  `usecase/` (intenção de UI, opcional), `view-model/` (TanStack Query + store; `{estado, ações}`),
+  `ui/` (`*.page.tsx` template burro + `*.controller.ts` form + `*.component.tsx`).
+- **`public-api/`** — único ponto de import **cross-módulo**.
 
-Violar a matriz de import é erro de lint, não convenção opcional.
+**Fronteira client↔server = a server function.** O `client/` só toca o `server/` chamando server
+functions (RPC); **nunca** importa `server/domain` ou `server/application`. A **dependência aponta para
+dentro**: `client/ui → client/view-model → client/usecase → client/data`; `server/adapters →
+server/application → server/domain`; `domain` (qualquer lado) é puro. `external/` é server-only e nunca
+importa módulos. Cross-módulo só via `public-api`.
 
-**Rationale:** slices verticais com `public-api` mantêm cada módulo extraível e testável de
-forma isolada, e impedem que o acoplamento entre módulos apodreça silenciosamente — o mesmo
-contrato que o backend `core-api` já adota.
+Compartilhado: `src/shared/` (puro) e `src/external/` (I/O real + segredos, server-only). Violar a matriz
+de import é **erro de lint**, não convenção.
+
+**Rationale:** separar client (apresentação/consumo, MVVM) de server (domínio/orquestração, DDD) deixa
+claro onde vive o quê, mantém o núcleo testável e cada lado evoluível sem vazar o outro — e o `public-api`
+mantém os módulos extraíveis (como o `core-api`, ADR-0006).
 
 ### IV. Make Illegal States Unrepresentable
 
 O domínio usa **branded types + smart constructors** (`type CPF = Brand<string,'CPF'>`;
-`CPF = (raw) => Result<CPF, CPFError>`) — estado inválido é irrepresentável. Toda
-estrutura é imutável (`Readonly<>`, `readonly T[]`, `as const`); mudança de estado é
-cópia por spread, nunca mutação. Commands, eventos e estados são **discriminated
-unions** com campo discriminante, tratados por `switch` **exaustivo** com guarda
-`const _: never = x` no `default`. `as` só é permitido dentro do smart constructor (ou
-com comentário justificando); `any` é proibido — use `unknown` + narrowing.
+`CPF = (raw) => Result<CPF, CPFError>`) — estado inválido é irrepresentável. Toda estrutura é imutável
+(`Readonly<>`, `readonly T[]`, `as const`); mudança de estado é cópia por spread. Commands, eventos e
+estados são **discriminated unions** com campo discriminante, tratados por `switch` **exaustivo** com
+guarda `const _: never = x`. `as` só dentro do smart constructor (ou com comentário); `any` é proibido.
 
-**Rationale:** o compilador vira a primeira linha de defesa; bugs de estado inválido
-deixam de compilar em vez de chegar em produção.
+**Rationale:** o compilador vira a primeira linha de defesa; estado inválido deixa de compilar.
 
 ### V. Server-State Is Not UI-State
 
-Estado remoto (dados do backend) vive **somente** no cache do TanStack Query. Estado
-de UI efêmero (wizard, formulário, toggles) vive em `useReducer`/state machine tagged.
-**Nunca** misturar os dois: não copiar dados de Query para `useState`, não guardar
-estado de UI no cache de Query. A cadeia de erro server→ui é fixa:
-`resultFetch → HttpError → mapToServerResponse → queryFn lança QueryError(mapToAppError) → AppError → switch na UI`.
-A UI **nunca** inspeciona status HTTP — só `AppError` semântico.
+Estado remoto vive **somente** no cache do TanStack Query (na `view-model`). Estado de UI efêmero vive em
+`useReducer`/state machine (na `view-model`) ou estado transiente de form (no `controller`). **Nunca**
+misturar. A cadeia de erro é fixa: `server/` (`resultFetch → HttpError → mapToServerResponse`) →
+`client/data` Repository (valida Zod, converte) → `queryFn` lança `QueryError(mapToAppError)` → `AppError`
+→ `switch` na `view-model`/UI. A UI **nunca** inspeciona status HTTP — só `AppError` semântico (resolvido
+em tag de i18n).
 
-**Rationale:** separar as duas naturezas de estado elimina sincronização manual,
-cache stale e a maior fonte de bugs de re-render.
+**Rationale:** separar as duas naturezas de estado elimina sincronização manual e bugs de re-render.
 
 ### VI. Validation at the Boundary
 
-A validação com **Zod 4** acontece na fronteira, em dois pontos: no **input** da
-server function E no **response do backend** (`*.schema.ts`). Para dentro da fronteira,
-tudo é total e tipado via tipos do domínio (branded + smart constructors). Zod é
-permitido apenas em `infrastructure` e `server` — nunca no `domain` nem na `ui`.
+Validação com **Zod 4** acontece na fronteira: no **input** da server function E no **response do backend**
+(`server/adapters/*.schema.ts`), e novamente quando o **Repository do client** recebe o retorno da server
+function (Model). Para dentro da fronteira, tudo é total e tipado. Zod só em `server/adapters`,
+`client/data` e `external` — **nunca** em `domain` nem em `ui`.
 
-**Rationale:** a borda é o único lugar onde dados não confiáveis entram; validar ali
-e converter para tipos do domínio mantém o núcleo livre de checagens defensivas.
+**Rationale:** a borda é o único lugar onde dados não confiáveis entram; validar ali mantém o núcleo limpo.
 
 ### VII. Strict TypeScript & Healthy 6→7 Migration
 
-TypeScript em modo estrito máximo. Proibido sintaxe não-apagável visando a migração
-6→7 (`erasableSyntaxOnly`): **sem `enum`**, **sem `namespace`**, **sem parameter
-properties**, **sem `import =`** — use union de literais + objeto `as const` e módulos
-ESM. `import type` / `inline-type-imports` obrigatório (`verbatimModuleSyntax`).
-Proibidos: `any`, `class` (exceto `QueryError` — ver Princípio II) e `this`. Extensões
-`.ts`/`.tsx` explícitas em imports relativos quando exigido pelo resolver.
+TypeScript estrito máximo. Proibido sintaxe não-apagável (`erasableSyntaxOnly`): **sem `enum`/`namespace`/
+parameter-properties/`import =`** — use union de literais + `as const` e ESM. `import type` obrigatório
+(`verbatimModuleSyntax`). Proibidos `any`, `class` (exceto `QueryError`) e `this`.
 
-**Rationale:** alinhar com o compilador nativo do TS 7 desde já evita uma migração
-dolorosa e mantém o output previsível (strip-types).
+**Rationale:** alinhar com o compilador nativo do TS 7 evita migração dolorosa e mantém output previsível.
 
 ### VIII. Minimal Dependencies
 
-Preferir APIs nativas a bibliotecas: `Intl`/`Temporal`, `crypto.randomUUID`,
-`EventTarget`, `AbortController`, `fetch`. Adicionar uma dependência exige
-justificativa explícita (custo, manutenção, superfície de ataque) — não é o default.
+Preferir APIs nativas (`Intl`/`Temporal`, `crypto.randomUUID`, `EventTarget`, `AbortController`, `fetch`).
+Adicionar dependência exige justificativa explícita — não é o default.
 
-**Rationale:** cada dependência é superfície de ataque e dívida de manutenção; o nativo
-é gratuito, auditado e estável.
+**Rationale:** cada dependência é superfície de ataque e dívida de manutenção.
 
 ### IX. pnpm Only
 
-O gerenciador de pacotes é **pnpm**. `npm` e `yarn` são **proibidos** (há hook que
-bloqueia comandos `npm`/`yarn`). Mudanças de dependência atualizam `pnpm-lock.yaml`.
+pnpm (pinado via `packageManager`); `npm`/`yarn` proibidos (hook bloqueia). Supply-chain hardening em
+`pnpm-workspace.yaml` (ADR-0003). Lockfile commitado.
 
-**Rationale:** um único gerenciador garante lockfile determinístico e instalação
-reproduzível em dev, CI e Docker.
+**Rationale:** lockfile determinístico e instalação reproduzível em dev/CI/Docker.
 
 ### X. Spec-Driven Development
 
-Toda feature segue o fluxo spec-kit: **constitution → specify → (clarify) → plan →
-(checklist) → tasks → (analyze) → implement**. Código de produção não nasce antes de
-uma spec versionada em `specs/`. Templates em `.specify/`; este documento é o piso de
-conformidade verificado no "Constitution Check" do plano.
+Toda feature segue o spec-kit: **constitution → specify → (clarify) → plan → (checklist) → tasks →
+(analyze) → implement**. Código de produção não nasce antes de uma spec versionada em `specs/`. Decisões
+arquiteturais viram **ADRs** (`handbook/adr/`).
 
-**Rationale:** especificar antes de implementar torna intenção, escopo e critérios de
-aceite explícitos e revisáveis — e versiona a decisão, não só o código.
+**Rationale:** especificar e registrar a decisão (não só o código) torna intenção/escopo revisáveis.
 
-### XI. Dumb Views, Orchestrating ViewModels (MVVM)
+### XI. Dumb Views, Smart ViewModels (MVVM)
 
-A camada `ui` segue **MVVM**: as **views/pages são burras** (presentational, dumb) — recebem
-dados e callbacks por props, renderizam JSX e encaminham eventos; nada além disso. **Toda** a
-orquestração da tela e **todos** os estados vivem na **ViewModel** (presenter hook
-`*.presenter.hook.ts`, ou store), que é o único lugar que liga server-state (TanStack Query) e
-UI-state (`useReducer`/state machine) e expõe à view um modelo já pronto para render. É
-**proibido** em arquivos de view/page (`*.component.tsx`, rotas): `useQuery`/`useMutation`,
-importar `adapters`/server functions, ou carregar estado de negócio. `useState` em componente,
-quando existir, é só toggle visual local e trivial — qualquer estado não-trivial sobe para a
-ViewModel. Pages compõem ViewModels + views burras; não contêm lógica.
+A camada `client/ui` segue **MVVM** com 4 papéis:
 
-**Rationale:** separar View (render) de ViewModel (orquestração) torna a tela testável sem DOM,
-elimina god-components e dá um único ponto de verdade para o estado de cada tela.
+- **`*.page.tsx` (PageView/template)** e **`*.component.tsx` (Components)** são **BURROS** — recebem dados
+  e callbacks por props, renderizam JSX, encaminham eventos. **Proibido** neles: `useQuery`/`useMutation`,
+  importar `data`/`usecase`/server functions, ou carregar estado de negócio.
+- **`*.view-model.ts` (ViewModel)** — verdade reativa da tela: liga server-state (TanStack Query) e
+  UI-state, expõe `{estado, ações}` (ex.: `idle/submitting/error`), devolve **dados, nunca JSX**; assina
+  o Event Bus.
+- **`*.controller.ts` (Controller)** — estado **transiente** de form/grupo (valores antes do submit),
+  **por exceção** (form é o caso canônico). No submit, entrega ao ViewModel.
+
+ViewModel e Controller **podem** usar hooks/estado (não são "views burras"). Strings de UI são **tags de
+i18n** (catálogo centralizado) — **nenhum literal de UI hardcoded**.
+
+**Rationale:** separar render (View) de orquestração (ViewModel) e de interação de form (Controller) torna
+a tela testável sem DOM e elimina god-components.
+
+### XII. Reactive Flow via Event Bus
+
+Reações cross-feature no client usam um **Event Bus** (Observer, `shared/bus`, `EventTarget` nativo).
+Eventos são **fatos no passado** (particípio: `UsuarioAutenticado`, nunca `AutenticarUsuario`). **Localização
+dos tipos de evento:** eventos **client** vivem em `client/data` (acessíveis ao client — que não importa
+`server/domain`); eventos **server** vivem em `server/domain`. **`client/usecase` emite**; **`view-model`
+assina** para reagir (ex.: invalidar query). O bus é **opt-in** (chamada direta é o normal — use o bus só
+para efeito cross-feature); handlers **delegam** (não decidem regra) e **não** podem criar loops.
+
+**Rationale:** desacopla quem causa o fato de quem reage a ele, sem CQRS/event-store — reatividade simples
+e declarativa.
 
 ## Technology Constraints & Stack
 
-Stack mandatória (substituições exigem amenda desta constituição):
+Stack mandatória (substituições exigem amenda):
 
-- **Meta-framework:** Vite 8 + `@tanstack/react-start` (SSR + server functions).
-- **Router:** `@tanstack/react-router` (file-based em `src/routes/`).
-- **Server-state:** TanStack Query (cache client-only). **Forms:** TanStack Form + Zod.
-- **Validação:** Zod 4 (só na borda). **UI:** React 19. **Tipos:** TypeScript estrito máximo.
-- **Testes:** runner híbrido — `node:test` para puro (domain/lib/server), Vitest para DOM,
-  Playwright + MSW para integração. ⚠ o alias `~/` resolve só no bundler: código testado
-  por `node:test` usa imports relativos.
+- **Meta-framework:** Vite + `@tanstack/react-start` (SSR + server functions) · **Router:**
+  `@tanstack/react-router` (file-based) · **Server-state:** TanStack Query · **Validação:** Zod 4 (na borda)
+  · **UI:** React 19 · **Tipos:** TS estrito máximo · **pnpm** (ADR-0003).
+- **Testes:** runner híbrido — `node:test` para puro (`server/domain`, `server/application`, `shared`,
+  `external`, `client/data`/`usecase`), Vitest para DOM (`client/ui`, `view-model`). ⚠ código testado por
+  `node:test` usa **imports relativos** (alias só no bundler).
 
-Estrutura de pastas (normativa — vertical-modular espelhando o `core-api`, ADR-0006):
+Estrutura de pastas (normativa — ver ADR-0004):
 
 ```
 src/
-├── modules/<módulo>/        # vertical slice isolado (contracts, auth, ...)
-│   ├── domain/              # PURO: VOs branded, tipos, regras, errors, repository.port
-│   ├── application/         # use cases puros (factory functions) + ports (type)
-│   │   ├── ports/
-│   │   └── use-cases/
-│   ├── adapters/            # I/O do módulo (única camada que toca infra)
-│   │   ├── server/          # *.server-fn.ts (endpoints BFF)
-│   │   ├── http/            # client do core-api
-│   │   ├── schema/          # *.schema.ts (Zod do response do backend)
-│   │   └── queries/         # *.queries.ts (queryKey factory + queryFn)
-│   ├── ui/                  # *.component.tsx (views burras) + *.presenter.hook.ts (ViewModel)
-│   └── public-api/          # index.ts — ÚNICO ponto de import externo ao módulo
-├── shared/                  # cross-cutting PURO (sem framework/I/O)
-│   ├── primitives/          # result.ts, brand.ts, immutable.ts
-│   ├── kernel/              # VOs de domínio compartilhados (money, cpf, period, ...)
-│   ├── http/                # http-error / app-error / query-error / map-to-app-error (tipos)
-│   ├── ports/               # contratos cross-cutting (clock, session-store)
-│   ├── ui/                  # design system
-│   └── utils/               # id, date, string
-├── external/                # EXTERNAL ADAPTERS (I/O real + segredos)
-│   ├── core-api/            # result-fetch (baseURL), map-to-server-response
-│   ├── session/             # session store + cookie HttpOnly
-│   └── config/              # env.config
-└── routes/ + router.tsx     # TanStack file-based router (composition root / framework glue)
+├── modules/<módulo>/
+│   ├── server/                 # BFF (server-side, DDD) — usa external/, nunca vai ao browser
+│   │   ├── domain/             # PURO: VOs branded, Result, regras, *.repository.port.ts, *.events.ts
+│   │   ├── application/         # *.use-case.ts (orquestra core-api + sessão) + ports
+│   │   └── adapters/            # *.server-fn.ts (fronteira RPC) + client core-api + *.schema.ts (Zod) + mappers
+│   ├── client/                  # FRONT (client-side, MVVM) — consome o BFF
+│   │   ├── data/                # *.model.ts (Zod do retorno do BFF) + *.repository.ts (porta → server-fn)
+│   │   ├── usecase/             # *.use-case.ts (intenção de UI; opcional) — emite eventos no bus
+│   │   ├── view-model/          # *.view-model.ts (TanStack + store; {estado, ações}; assina o bus)
+│   │   └── ui/                  # *.page.tsx (template burro) + *.controller.ts (form) + *.component.tsx
+│   └── public-api/              # index.ts — ÚNICO import externo ao módulo
+├── shared/                      # cross-cutting PURO (sem framework/I/O)
+│   ├── primitives/              # result.ts, brand.ts, immutable.ts
+│   ├── http/                    # http-error / app-error / query-error / map-to-app-error
+│   ├── bus/                     # Event Bus (Observer, EventTarget nativo)
+│   ├── i18n/                    # catálogo de strings (tags) — l10n-ready
+│   ├── ports/ · ui/ · utils/    # contratos cross-cutting · design system · helpers
+├── external/                    # EXTERNAL ADAPTERS (I/O real + segredos; server-only)
+│   ├── core-api/                # result-fetch, map-to-server-response
+│   ├── session/                 # SessionStore (compartilhável p/ escala horizontal) + cookie
+│   └── config/                  # env.config (Zod fail-fast)
+└── routes/ + router.tsx         # TanStack file-based (composition root / framework glue)
 ```
 
-> Divergência consciente do `handbook/arquiteture.md` (que descreve `features/lib/server`):
-> o v2 adota a nomenclatura e a verticalidade do `core-api` (`modules/shared/external` +
-> `public-api`). O handbook deve registrar essa divergência.
-
-Segurança obrigatória: cookie `__Host-session` HttpOnly/SameSite=Strict/Secure; CSRF via
-SameSite + validação `Sec-Fetch-Site`/`Origin`; CSP com nonce, HSTS, `nosniff`, frame-deny
-via global middleware. 401 → signOut automático + limpeza de cache.
+Segurança obrigatória: cookie `__Host-session`/sessionId opaco (HttpOnly/SameSite=Strict/Secure); CSRF via
+SameSite + validação de origem; CSP/HSTS/nosniff/frame-deny via middleware. 401 → signOut + limpeza de cache.
 
 ## Development Workflow & Quality Gates
 
-- **Convenções de naming:** postfix por tipo de arquivo (`.value-object.ts`, `.aggregate.ts`,
-  `.errors.ts`, `.repository.port.ts`, `.use-case.ts`, `.server-fn.ts`, `.client.ts`,
-  `.schema.ts`, `.queries.ts`, `.component.tsx`, `.presenter.hook.ts`). `tests/` espelha `src/`.
-- **Idioma:** código em EN; strings de UI via i18n; erros internos = literais kebab-case EN.
-- **Quality gate (obrigatório antes de concluir qualquer tarefa de código):**
-  `pnpm lint` (inclui boundaries) · `pnpm typecheck` (`tsc --noEmit`) · testes verdes ·
-  `pnpm build` passa. Lint e typecheck são bloqueantes, não advisory.
-- **Automações (hooks):** comandos `npm`/`yarn` são bloqueados; edição de `*.ts`/`*.tsx`
-  dispara `eslint --fix` automático.
-- **Backend `core-api`:** submódulo interno; dúvidas de contrato são delegadas ao agente
-  `core-api-consultant`. Consultores read-only especialistas vivem em `.claude/agents/`.
+- **Naming (postfix por papel):** `*.value-object.ts`, `*.repository.port.ts`, `*.events.ts`,
+  `*.use-case.ts`, `*.server-fn.ts`, `*.schema.ts`, `*.model.ts`, `*.repository.ts`, `*.queries.ts`,
+  `*.view-model.ts`, `*.controller.ts`, `*.page.tsx`, `*.component.tsx`. `tests/` espelha `src/`.
+- **Idioma:** código em EN; strings de UI via **i18n (tags)**; erros internos = literais kebab-case EN.
+- **Quality gate (bloqueante):** `pnpm lint` (boundaries + MVVM) · `pnpm typecheck` · testes verdes ·
+  `pnpm build`.
+- **Automações:** `npm`/`yarn` bloqueados; `eslint --fix` ao salvar `*.ts/*.tsx`.
+- **Backend `core-api`:** submódulo; contratos via agente `core-api-consultant`.
 
 ## Governance
 
-Esta constituição **supersede** outras práticas e convenções do projeto. Em conflito
-entre este documento, `CLAUDE.md` e `handbook/arquiteture.md`, prevalece o mais restritivo;
-divergências reais devem ser resolvidas por amenda aqui.
+Esta constituição **supersede** outras práticas, **abaixo apenas dos ADRs aceitos** (`handbook/adr/`).
+Em conflito, prevalece o mais restritivo; divergências reais se resolvem por amenda aqui ou por novo ADR.
 
-**Procedimento de amenda:** mudança proposta via PR alterando este arquivo, com Sync
-Impact Report atualizado e propagação aos templates dependentes em `.specify/templates/`.
+**Procedimento de amenda:** PR alterando este arquivo, com Sync Impact Report atualizado e propagação aos
+templates/eslint/ADRs dependentes.
 
-**Política de versionamento (semver da constituição):** MAJOR = remoção/redefinição
-incompatível de princípio ou governança; MINOR = novo princípio/seção ou expansão
-material de guidance; PATCH = clarificações e ajustes não-semânticos.
+**Versionamento (semver):** MAJOR = remoção/redefinição incompatível; MINOR = novo princípio/seção ou
+expansão material; PATCH = clarificações.
 
-**Conformidade:** o "Constitution Check" do `/speckit-plan` verifica aderência antes do
-design. Os gates de lint (boundaries, no-any, erasableSyntaxOnly) e typecheck enforçam
-os princípios automaticamente em cada mudança. Complexidade fora do padrão deve ser
-justificada na spec/plan.
+**Conformidade:** o "Constitution Check" do `/speckit-plan` verifica aderência. Os gates de lint
+(boundaries, no-any, erasableSyntaxOnly, MVVM) e typecheck enforçam os princípios automaticamente.
 
-**Version**: 1.1.0 | **Ratified**: 2026-05-29 | **Last Amended**: 2026-05-29
+**Version**: 1.2.1 | **Ratified**: 2026-05-29 | **Last Amended**: 2026-05-29

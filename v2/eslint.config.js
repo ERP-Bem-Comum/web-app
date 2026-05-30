@@ -10,55 +10,61 @@ import boundaries from 'eslint-plugin-boundaries'
 import pluginZod from 'eslint-plugin-zod'
 import globals from 'globals'
 
-// Camadas da constituição (v1.1.0) → tipos de elemento para o eslint-plugin-boundaries.
-// Arquitetura vertical-modular espelhando o core-api (ADR-0006): modules/shared/external
-// + public-api por módulo. modo 'folder' (default): o pattern casa a PASTA da camada.
-// ORDEM IMPORTA: padrões mais específicos (src/shared/ui) antes dos genéricos (src/shared).
+// Camadas da constituição v1.2.0 (ADR-0004) → tipos de elemento p/ eslint-plugin-boundaries.
+// Módulo = server/ (BFF, DDD) + client/ (FRONT, MVVM) + public-api. Fronteira client↔server = server fn.
+// modo 'folder': o pattern casa a PASTA. ORDEM IMPORTA: mais específico antes do genérico.
+const F = { capture: ['feature'] }
 const boundaryElements = [
   { type: 'shared-ui', pattern: 'src/shared/ui' },
-  { type: 'shared', pattern: 'src/shared' },
+  { type: 'shared', pattern: 'src/shared' }, // inclui primitives/http/bus/i18n/ports/utils
   { type: 'external', pattern: 'src/external' },
-  { type: 'domain', pattern: 'src/modules/*/domain', capture: ['feature'] },
-  { type: 'application', pattern: 'src/modules/*/application', capture: ['feature'] },
-  { type: 'adapters', pattern: 'src/modules/*/adapters', capture: ['feature'] },
-  { type: 'ui', pattern: 'src/modules/*/ui', capture: ['feature'] },
-  { type: 'public-api', pattern: 'src/modules/*/public-api', capture: ['feature'] },
+  // server-side (BFF, DDD)
+  { type: 'server-domain', pattern: 'src/modules/*/server/domain', ...F },
+  { type: 'server-application', pattern: 'src/modules/*/server/application', ...F },
+  { type: 'server-adapters', pattern: 'src/modules/*/server/adapters', ...F },
+  // client-side (FRONT, MVVM)
+  { type: 'client-data', pattern: 'src/modules/*/client/data', ...F },
+  { type: 'client-usecase', pattern: 'src/modules/*/client/usecase', ...F },
+  { type: 'client-view-model', pattern: 'src/modules/*/client/view-model', ...F },
+  { type: 'client-ui', pattern: 'src/modules/*/client/ui', ...F },
+  { type: 'public-api', pattern: 'src/modules/*/public-api', ...F },
 ]
 
-// Matriz de dependências (sintaxe v6: from/allow.to). `{{from.captured.feature}}` força
-// isolamento de módulo: um módulo só importa as próprias camadas — cruzar módulos só via
-// `public-api` (sem captura de feature = qualquer módulo). Regras `allow` são aditivas;
-// o resto é `disallow`.
+// Dependência aponta pra dentro; mesma feature via {{from.captured.feature}}; cross-módulo só `public-api`.
+const sameFeature = (types) => ({ to: { type: types, captured: { feature: '{{from.captured.feature}}' } } })
 const boundaryRules = [
-  // shared é puro: só importa shared.
+  // --- cross-cutting ---
   { from: { type: 'shared' }, allow: { to: { type: 'shared' } } },
-  // design system: shared + ele mesmo.
   { from: { type: 'shared-ui' }, allow: { to: { type: ['shared', 'shared-ui'] } } },
-  // external (adapters de I/O real): shared + external. Nunca importa módulos.
-  { from: { type: 'external' }, allow: { to: { type: ['shared', 'external'] } } },
-  // domain: shared + domain do MESMO módulo (puro).
-  { from: { type: 'domain' }, allow: { to: { type: 'shared' } } },
-  { from: { type: 'domain' }, allow: { to: { type: 'domain', captured: { feature: '{{from.captured.feature}}' } } } },
-  // application: shared + domain/application do MESMO módulo.
-  { from: { type: 'application' }, allow: { to: { type: 'shared' } } },
-  { from: { type: 'application' }, allow: { to: { type: ['domain', 'application'], captured: { feature: '{{from.captured.feature}}' } } } },
-  // adapters: shared + external + domain/application/adapters do MESMO módulo + public-api de qualquer módulo.
-  { from: { type: 'adapters' }, allow: { to: { type: ['shared', 'external', 'public-api'] } } },
-  {
-    from: { type: 'adapters' },
-    allow: { to: { type: ['domain', 'application', 'adapters'], captured: { feature: '{{from.captured.feature}}' } } },
-  },
-  // ui: shared + design system + todas as camadas do MESMO módulo + public-api de qualquer módulo.
-  { from: { type: 'ui' }, allow: { to: { type: ['shared', 'shared-ui', 'public-api'] } } },
-  {
-    from: { type: 'ui' },
-    allow: { to: { type: ['domain', 'application', 'adapters', 'ui'], captured: { feature: '{{from.captured.feature}}' } } },
-  },
-  // public-api: re-exporta as camadas do PRÓPRIO módulo (+ shared).
+  { from: { type: 'external' }, allow: { to: { type: ['shared', 'external'] } } }, // server-only; nunca módulos
+
+  // --- SERVER (DDD): domain puro → application → adapters ---
+  { from: { type: 'server-domain' }, allow: { to: { type: 'shared' } } },
+  { from: { type: 'server-domain' }, allow: sameFeature('server-domain') },
+  { from: { type: 'server-application' }, allow: { to: { type: 'shared' } } },
+  { from: { type: 'server-application' }, allow: sameFeature(['server-domain', 'server-application']) },
+  { from: { type: 'server-adapters' }, allow: { to: { type: ['shared', 'external', 'public-api'] } } },
+  { from: { type: 'server-adapters' }, allow: sameFeature(['server-domain', 'server-application', 'server-adapters']) },
+
+  // --- CLIENT (MVVM): data → usecase → view-model → ui ---
+  // data: Repository é a PORTA → chama a server function (server-adapters da MESMA feature). Não toca server/domain|application.
+  { from: { type: 'client-data' }, allow: { to: { type: 'shared' } } },
+  { from: { type: 'client-data' }, allow: sameFeature(['client-data', 'server-adapters']) },
+  // usecase: shared + data/usecase própria + public-api (emite no bus de shared).
+  { from: { type: 'client-usecase' }, allow: { to: { type: ['shared', 'public-api'] } } },
+  { from: { type: 'client-usecase' }, allow: sameFeature(['client-data', 'client-usecase']) },
+  // view-model: shared + data/usecase/view-model própria + public-api (TanStack Query, assina o bus).
+  { from: { type: 'client-view-model' }, allow: { to: { type: ['shared', 'public-api'] } } },
+  { from: { type: 'client-view-model' }, allow: sameFeature(['client-data', 'client-usecase', 'client-view-model']) },
+  // ui: shared + design system + view-model/data(tipos)/ui própria + public-api. NÃO importa server/* nem repository direto.
+  { from: { type: 'client-ui' }, allow: { to: { type: ['shared', 'shared-ui', 'public-api'] } } },
+  { from: { type: 'client-ui' }, allow: sameFeature(['client-data', 'client-view-model', 'client-ui']) },
+
+  // --- public-api: re-exporta as camadas do PRÓPRIO módulo (client p/ consumo externo) ---
   { from: { type: 'public-api' }, allow: { to: { type: 'shared' } } },
   {
     from: { type: 'public-api' },
-    allow: { to: { type: ['domain', 'application', 'adapters', 'ui'], captured: { feature: '{{from.captured.feature}}' } } },
+    allow: sameFeature(['server-domain', 'server-application', 'server-adapters', 'client-data', 'client-usecase', 'client-view-model', 'client-ui']),
   },
 ]
 
@@ -117,6 +123,8 @@ export default tseslint.config(
     rules: {
       // --- Invariantes de tipo (TS handbook + arquiteture.md) ---
       '@typescript-eslint/no-explicit-any': 'error',
+      // Params/vars prefixados com `_` são intencionalmente não-usados (assinatura exigida pelo tipo).
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' }],
       '@typescript-eslint/consistent-type-imports': ['error', { fixStyle: 'inline-type-imports' }],
       '@typescript-eslint/consistent-type-exports': 'error',
       '@typescript-eslint/switch-exhaustiveness-check': 'error',
@@ -161,14 +169,18 @@ export default tseslint.config(
     },
   },
 
-  // MVVM (constituição §XI): views/pages são BURRAS. Proibido em *.component.tsx e rotas:
-  // data-hooks (useQuery/useMutation), useReducer e import de adapters/server functions.
-  // Toda orquestração e estado vive na ViewModel (*.presenter.hook.ts).
+  // MVVM (constituição §XI, ADR-0004): VIEWS BURRAS = *.page.tsx + *.component.tsx (e rotas).
+  // ViewModel (*.view-model.ts) e Controller (*.controller.ts) PODEM ter estado — não entram aqui.
+  // Proibido nas views burras: data-hooks (useQuery/useMutation), useReducer, e import de
+  // server/data/usecase/repository/server-fn (passe pela ViewModel).
   {
-    files: ['src/modules/*/ui/**/*.component.tsx', 'src/routes/**/*.tsx'],
+    files: [
+      'src/modules/*/client/ui/**/*.page.tsx',
+      'src/modules/*/client/ui/**/*.component.tsx',
+      'src/routes/**/*.tsx',
+    ],
     rules: {
-      // ⚠ flat config substitui (não mescla) a mesma regra: re-inclui os selectors globais
-      // de migração TS 6→7 + XSS além dos selectors específicos de MVVM.
+      // ⚠ flat config substitui (não mescla): re-inclui os selectors globais TS 6→7 + XSS.
       'no-restricted-syntax': [
         'error',
         { selector: 'TSEnumDeclaration', message: 'enum não é apagável (TS native / strip-types). Use union de literais + objeto `as const`.' },
@@ -176,16 +188,30 @@ export default tseslint.config(
         { selector: 'TSParameterProperty', message: 'parameter property não é apagável. Declare o campo explicitamente.' },
         { selector: 'TSImportEquals', message: '`import =` é CommonJS. Use import ESM.' },
         { selector: 'JSXAttribute[name.name="dangerouslySetInnerHTML"]', message: 'dangerouslySetInnerHTML é vetor de XSS — evite ou sanitize e desabilite por linha.' },
-        { selector: 'CallExpression[callee.name=/^use(Query|Mutation|InfiniteQuery|Queries|SuspenseQuery)$/]', message: 'View burra (§XI MVVM): data-hooks do TanStack Query vivem na ViewModel (*.presenter.hook.ts), não na view/page.' },
-        { selector: 'CallExpression[callee.name="useReducer"]', message: 'View burra (§XI MVVM): estado complexo (useReducer) vive na ViewModel, não na view/page.' },
+        { selector: 'CallExpression[callee.name=/^use(Query|Mutation|InfiniteQuery|Queries|SuspenseQuery)$/]', message: 'View burra (§XI MVVM): data-hooks do TanStack Query vivem na ViewModel (*.view-model.ts), não na page/component.' },
+        { selector: 'CallExpression[callee.name="useReducer"]', message: 'View burra (§XI MVVM): estado complexo (useReducer) vive na ViewModel/Controller, não na page/component.' },
       ],
+    },
+  },
+
+  // Ban de import server/data/usecase SÓ em views burras (page/component) — NÃO em rotas:
+  // a rota é composition root e o `beforeLoad` legitimamente chama server functions (padrão do framework).
+  {
+    files: ['src/modules/*/client/ui/**/*.page.tsx', 'src/modules/*/client/ui/**/*.component.tsx'],
+    rules: {
       'no-restricted-imports': [
         'error',
         { patterns: [
-          { group: ['**/adapters/**', '**/*.server-fn', '**/*.queries'], message: 'View burra (§XI MVVM): não importe adapters/server functions/queries direto na view/page — passe pela ViewModel.' },
+          { group: ['**/server/**', '**/client/data/**', '**/client/usecase/**', '**/*.server-fn', '**/*.repository'], message: 'View burra (§XI MVVM): page/component não importa server/data/usecase/repository — receba tudo da ViewModel por props.' },
         ] },
       ],
     },
+  },
+
+  // TanStack lança `redirect()`/`notFound()` (não-Error) por design — em rotas e server functions.
+  {
+    files: ['src/routes/**/*.{ts,tsx}', 'src/modules/*/server/adapters/*.server-fn.ts'],
+    rules: { '@typescript-eslint/only-throw-error': 'off' },
   },
 
   // Testes (node:test): relaxa regras que conflitam com o idioma do runner.

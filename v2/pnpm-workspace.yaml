@@ -45,3 +45,5 @@ minimumReleaseAgeExclude:
 trustPolicy: no-downgrade
 trustPolicyExclude:
   - 'semver@6.3.1'
+  # dev-tooling (vitest tree): trust-downgrade = trusted-publisher → provenance (falso-positivo conhecido)
+  - 'tinyexec@1.2.2'
