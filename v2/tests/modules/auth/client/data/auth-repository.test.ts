@@ -5,10 +5,10 @@
 import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
 
-import { createAuthRepository } from '../../../../../src/modules/auth/client/data/auth.repository.ts'
-import { isOk, isErr } from '../../../../../src/shared/primitives/result.ts'
-import type { LoginFnResult } from '../../../../../src/modules/auth/server/adapters/login.server-fn.ts'
-import type { LoginInput } from '../../../../../src/modules/auth/client/data/auth.model.ts'
+import { createAuthRepository } from '#modules/auth/client/data/repository/auth.repository.ts'
+import { isOk, isErr } from '#shared/primitives/result.ts'
+import type { LoginFnResult } from '#modules/auth/server/adapters/server-fns/login.server-fn.ts'
+import type { LoginInput } from '#modules/auth/client/data/model/auth.model.ts'
 
 const input: LoginInput = { email: 'a@b.com', password: 'p', rememberDevice: false }
 

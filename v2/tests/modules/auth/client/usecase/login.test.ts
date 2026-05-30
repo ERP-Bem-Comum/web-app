@@ -4,11 +4,11 @@
 import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
 
-import { createLoginUseCase } from '../../../../../src/modules/auth/client/usecase/login.use-case.ts'
-import { ok, err, type Result } from '../../../../../src/shared/primitives/result.ts'
-import type { AuthRepository, AuthError } from '../../../../../src/modules/auth/client/data/auth.repository.ts'
-import type { CurrentUser } from '../../../../../src/modules/auth/client/data/auth.model.ts'
-import type { AuthEvent } from '../../../../../src/modules/auth/client/data/auth.events.ts'
+import { createLoginUseCase } from '#modules/auth/client/usecase/login/login.use-case.ts'
+import { ok, err, type Result } from '#shared/primitives/result.ts'
+import type { AuthRepository, AuthError } from '#modules/auth/client/data/repository/auth.repository.ts'
+import type { CurrentUser } from '#modules/auth/client/data/model/auth.model.ts'
+import type { AuthEvent } from '#modules/auth/client/data/events/auth.events.ts'
 
 const repoWith = (r: Result<CurrentUser, AuthError>): AuthRepository => ({ login: () => Promise.resolve(r) })
 

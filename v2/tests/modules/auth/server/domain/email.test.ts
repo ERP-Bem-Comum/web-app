@@ -5,8 +5,8 @@
 import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
 
-import { Email } from '../../../../../src/modules/auth/server/domain/email.value-object.ts'
-import { isOk, isErr } from '../../../../../src/shared/primitives/result.ts'
+import { Email } from '#modules/auth/server/domain/value-objects/email.value-object.ts'
+import { isOk, isErr } from '#shared/primitives/result.ts'
 
 describe('Email', () => {
   it('vazio → err(empty)', () => {

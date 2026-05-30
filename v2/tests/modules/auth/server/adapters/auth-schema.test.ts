@@ -4,7 +4,7 @@
 import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
 
-import { AuthTokensSchema, MeSchema } from '../../../../../src/modules/auth/server/adapters/auth.schema.ts'
+import { AuthTokensSchema, MeSchema } from '#modules/auth/server/adapters/core-api/auth.schema.ts'
 
 describe('AuthTokensSchema', () => {
   it('aceita { accessToken, refreshToken, userId }', () => {

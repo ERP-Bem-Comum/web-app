@@ -8,7 +8,7 @@ import { strict as assert } from 'node:assert'
 import {
   LoginInputSchema,
   CurrentUserSchema,
-} from '../../../../../src/modules/auth/client/data/auth.model.ts'
+} from '#modules/auth/client/data/model/auth.model.ts'
 
 describe('LoginInputSchema', () => {
   it('aceita email + senha + rememberDevice', () => {

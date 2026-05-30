@@ -4,7 +4,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, cleanup } from '@testing-library/react'
 
-import { LoginView, type LoginViewProps } from '../../../../../src/modules/auth/client/ui/login-view.component.tsx'
+import { LoginView, type LoginViewProps } from '#modules/auth/client/ui/login/login-view.component.tsx'
 
 afterEach(() => {
   cleanup()

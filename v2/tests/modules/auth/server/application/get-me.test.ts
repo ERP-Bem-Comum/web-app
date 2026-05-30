@@ -4,10 +4,10 @@
 import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
 
-import { createGetMe } from '../../../../../src/modules/auth/server/application/get-me.use-case.ts'
-import { ok, err, isOk, isErr, type Result } from '../../../../../src/shared/primitives/result.ts'
-import type { AuthUser } from '../../../../../src/modules/auth/server/domain/session.types.ts'
-import type { AuthError } from '../../../../../src/modules/auth/server/domain/auth.errors.ts'
+import { createGetMe } from '#modules/auth/server/application/queries/get-me.use-case.ts'
+import { ok, err, isOk, isErr, type Result } from '#shared/primitives/result.ts'
+import type { AuthUser } from '#modules/auth/server/domain/session/session.types.ts'
+import type { AuthError } from '#modules/auth/server/domain/errors/auth.errors.ts'
 
 describe('get-me', () => {
   it('ok → { userId }', async () => {

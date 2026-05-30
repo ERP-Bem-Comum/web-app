@@ -114,12 +114,12 @@ description: "Task list — Autenticação (Auth), feature-modelo (TDD)"
 **Goal**: rotas protegidas exigem sessão; sem sessão→`/login?redirect=`; pós-login volta. **Independent Test**:
 acessar rota protegida sem sessão redireciona preservando destino; com sessão acessa.
 
-- [ ] T044 [US2] Teste `node:test` do validador de redirect → `tests/.../client/redirect.test.ts` (aceita `/x`; rejeita `//x`, `http://...`, externo → cai em `/`) — **anti open-redirect**
-- [ ] T045 [US2] Impl helper `src/modules/auth/client/data/safe-redirect.ts` (green)
-- [ ] T046 [US2] Teste `node:test` do guard de rota → `tests/.../guard.test.ts` (sem sessão→redirect login c/ destino; com sessão→ok; auth:expired→login)
-- [ ] T046a [US2] Criar `src/modules/auth/public-api/index.ts` com o **mínimo p/ o guard** (helper de guard/sessão + `use-current-user`) — **antes** do T047 consumir (O1). Finalizado/expandido em T059.
-- [ ] T047 [US2] Impl guard `src/routes/_authenticated/route.tsx` (`beforeLoad` usa o `public-api` da auth — T046a) (green)
-- [ ] T047a [US2] (C2 / FR-006) Atualizar `onAuthExpired` no `src/router.tsx` (fundação) → `navigate('/login', { search: { redirect } })` em vez de `'/'`; teste `node:test` em `tests/router/query-client.test.ts` ajustado (auth:expired → /login)
+- [x] T044 [US2] Teste `node:test` do validador de redirect → `tests/.../client/redirect.test.ts` (aceita `/x`; rejeita `//x`, `http://...`, externo → cai em `/`) — **anti open-redirect**
+- [x] T045 [US2] Impl helper `src/modules/auth/client/data/safe-redirect.ts` (green)
+- [x] T046 [US2] Teste `node:test` do guard de rota → `tests/.../guard.test.ts` (sem sessão→redirect login c/ destino; com sessão→ok; auth:expired→login)
+- [x] T046a [US2] Criar `src/modules/auth/public-api/index.ts` com o **mínimo p/ o guard** (helper de guard/sessão + `use-current-user`) — **antes** do T047 consumir (O1). Finalizado/expandido em T059.
+- [x] T047 [US2] Impl guard `src/routes/_authenticated/route.tsx` (`beforeLoad` usa o `public-api` da auth — T046a) (green)
+- [x] T047a [US2] (C2 / FR-006) Atualizar `onAuthExpired` no `src/router.tsx` (fundação) → `navigate('/login', { search: { redirect } })` em vez de `'/'`; teste `node:test` em `tests/router/query-client.test.ts` ajustado (auth:expired → /login)
 
 **Checkpoint**: conteúdo protegido de fato; 401 leva ao login.
 
@@ -129,8 +129,8 @@ acessar rota protegida sem sessão redireciona preservando destino; com sessão 
 
 **Goal**: access expira → refresh transparente; falha→login. (Impl em Foundational T022/T026; aqui valida UX+borda.)
 
-- [ ] T048 [US3] Teste de integração `node:test` → `tests/.../refresh-flow.test.ts` (access expirado + ação autenticada → refresh single-flight → ação conclui SEM novo login; refresh inválido → auth:expired→signOut)
-- [ ] T049 [US3] Garantir wiring: `me.server-fn`/guard chamam `session.guard` (refresh silencioso) — ajustar se T048 revelar gap
+- [x] T048 [US3] Teste de integração `node:test` → `tests/.../refresh-flow.test.ts` (access expirado + ação autenticada → refresh single-flight → ação conclui SEM novo login; refresh inválido → auth:expired→signOut)
+- [x] T049 [US3] Garantir wiring: `me.server-fn`/guard chamam `session.guard` (refresh silencioso) — ajustar se T048 revelar gap
 
 **Checkpoint**: sessão "não cai" durante o trabalho; corrida não mata a sessão.
 
@@ -140,12 +140,12 @@ acessar rota protegida sem sessão redireciona preservando destino; com sessão 
 
 **Goal**: logout revoga refresh no backend + apaga sessão + limpa cookie; limpa local mesmo se remoto falhar.
 
-- [ ] T050 [US4] Teste `node:test` `logout.use-case` → `tests/.../application/logout.test.ts` (core-api logout(refresh)→apaga sessão; falha remota→ainda limpa local)
-- [ ] T051 [US4] Impl `src/modules/auth/server/application/logout.use-case.ts` (green)
-- [ ] T052 [US4] Teste `node:test` `logout.server-fn` → `tests/.../adapters/logout-server-fn.test.ts` (limpa cookie; idempotente)
-- [ ] T053 [US4] Impl `src/modules/auth/server/adapters/logout.server-fn.ts` (green)
-- [ ] T054 [US4] Teste `node:test` `client/usecase/logout` → `tests/.../client/usecase/logout.test.ts` (orquestra repository.logout; emite `SessaoEncerrada` no bus)
-- [ ] T054a [US4] Impl `src/modules/auth/client/usecase/logout.use-case.ts` (green p/ T054)
+- [x] T050 [US4] Teste `node:test` `logout.use-case` → `tests/.../application/logout.test.ts` (core-api logout(refresh)→apaga sessão; falha remota→ainda limpa local)
+- [x] T051 [US4] Impl `src/modules/auth/server/application/logout.use-case.ts` (green)
+- [x] T052 [US4] Teste `node:test` `logout.server-fn` → `tests/.../adapters/logout-server-fn.test.ts` (limpa cookie; idempotente)
+- [x] T053 [US4] Impl `src/modules/auth/server/adapters/logout.server-fn.ts` (green)
+- [x] T054 [US4] Teste `node:test` `client/usecase/logout` → `tests/.../client/usecase/logout.test.ts` (orquestra repository.logout; emite `SessaoEncerrada` no bus)
+- [x] T054a [US4] Impl `src/modules/auth/client/usecase/logout.use-case.ts` (green p/ T054)
 
 **Checkpoint**: sair encerra a sessão de verdade.
 
@@ -155,10 +155,10 @@ acessar rota protegida sem sessão redireciona preservando destino; com sessão 
 
 **Goal**: UI reflete autenticado + `userId` (limitação R3: /me só tem userId).
 
-- [ ] T055 [US5] Teste `node:test` `me.server-fn` → `tests/.../adapters/me-server-fn.test.ts` (sessão→{userId}; sem sessão→auth:expired)
-- [ ] T056 [US5] Impl `src/modules/auth/server/adapters/me.server-fn.ts` (green)
-- [ ] T057 [US5] Teste `use-current-user.view-model` (Vitest/jsdom — **perguntar tipo**) → query `me`; assina bus (`UsuarioAutenticado`/`SessaoEncerrada` invalida); `{ user?, isAuthenticated }`
-- [ ] T058 [US5] Impl `src/modules/auth/client/view-model/use-current-user.view-model.ts` (green)
+- [x] T055 [US5] Teste `node:test` `me.server-fn` → `tests/.../adapters/me-server-fn.test.ts` (sessão→{userId}; sem sessão→auth:expired)
+- [x] T056 [US5] Impl `src/modules/auth/server/adapters/me.server-fn.ts` (green)
+- [x] T057 [US5] Teste `use-current-user.view-model` (Vitest/jsdom — **perguntar tipo**) → query `me`; assina bus (`UsuarioAutenticado`/`SessaoEncerrada` invalida); `{ user?, isAuthenticated }`
+- [x] T058 [US5] Impl `src/modules/auth/client/view-model/use-current-user.view-model.ts` (green)
 
 **Checkpoint**: estado autenticado visível na UI.
 
@@ -166,13 +166,13 @@ acessar rota protegida sem sessão redireciona preservando destino; com sessão 
 
 ## Phase 8: Polish & Cross-Cutting (feature-modelo)
 
-- [ ] T059 **Finalizar/expandir** `src/modules/auth/public-api/index.ts` (criado no T046a) — expõe guard/route helpers, `use-current-user`, tipos públicos (nada de server/domain)
-- [ ] T060 [P] **`src/modules/auth/README.md`** — "anatomia da feature": papel de cada camada, fluxo de login ponta-a-ponta, server×client, como replicar (FR-016; SC-008). Didático.
-- [ ] T061 [P] Comentários inline didáticos (o *porquê*) nos arquivos-chave (server-fn, session.guard, view-model, controller)
-- [ ] T062 [P] ADRs novos das decisões da Auth → `handbook/adr/0005-*` (sessão/cookie + single-flight refresh + JWT decode-only) e atualizar índice
-- [ ] T063 Verificar **nenhum token vaza no browser** (SC-002): `pnpm build` + grep no bundle client por token/refresh/CORE_API_URL; inspeção DevTools no quickstart
-- [ ] T064 Quality gate: `pnpm lint` (boundaries server/client + MVVM) · `pnpm typecheck` · `pnpm test` (node:test) · `pnpm test:dom` (Vitest) · `pnpm build` — tudo verde
-- [ ] T065 Validar `quickstart.md` ponta-a-ponta com credenciais reais (login/refresh/logout/guard)
+- [x] T059 **Finalizar/expandir** `src/modules/auth/public-api/index.ts` (criado no T046a) — expõe guard/route helpers, `use-current-user`, tipos públicos (nada de server/domain)
+- [x] T060 [P] **`src/modules/auth/README.md`** — "anatomia da feature": papel de cada camada, fluxo de login ponta-a-ponta, server×client, como replicar (FR-016; SC-008). Didático.
+- [x] T061 [P] Comentários inline didáticos (o *porquê*) nos arquivos-chave (server-fn, session.guard, view-model, controller)
+- [x] T062 [P] ADRs novos das decisões da Auth → `handbook/adr/0005-*` (sessão/cookie + single-flight refresh + JWT decode-only) e atualizar índice
+- [x] T063 Verificar **nenhum token vaza no browser** (SC-002): `pnpm build` + grep no bundle client por token/refresh/CORE_API_URL; inspeção DevTools no quickstart
+- [x] T064 Quality gate: `pnpm lint` (boundaries server/client + MVVM) · `pnpm typecheck` · `pnpm test` (node:test) · `pnpm test:dom` (Vitest) · `pnpm build` — tudo verde
+- [x] T065 Validar `quickstart.md` ponta-a-ponta com credenciais reais (login/refresh/logout/guard)
 
 ---
 

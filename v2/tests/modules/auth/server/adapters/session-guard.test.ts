@@ -5,11 +5,11 @@
 import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
 
-import { createResolveSession } from '../../../../../src/modules/auth/server/adapters/session.guard.ts'
-import { createMemorySessionStore } from '../../../../../src/external/session/session-store.memory.ts'
-import { ok, err, isOk, isErr, type Result } from '../../../../../src/shared/primitives/result.ts'
-import type { Session, SessionId } from '../../../../../src/modules/auth/server/domain/session.types.ts'
-import type { AuthError } from '../../../../../src/modules/auth/server/domain/auth.errors.ts'
+import { createResolveSession } from '#modules/auth/server/adapters/session.guard.ts'
+import { createMemorySessionStore } from '#external/session/session-store.memory.ts'
+import { ok, err, isOk, isErr, type Result } from '#shared/primitives/result.ts'
+import type { Session, SessionId } from '#modules/auth/server/domain/session/session.types.ts'
+import type { AuthError } from '#modules/auth/server/domain/errors/auth.errors.ts'
 
 const SID = 's1' as SessionId
 const session = (over: Partial<Session>): Session => ({

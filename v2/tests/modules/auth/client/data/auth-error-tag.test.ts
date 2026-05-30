@@ -4,7 +4,7 @@
 import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
 
-import { authErrorTag } from '../../../../../src/modules/auth/client/data/auth-error-tag.ts'
+import { authErrorTag } from '#modules/auth/client/data/helpers/auth-error-tag.ts'
 
 describe('authErrorTag', () => {
   it('invalid-credentials → tag específica', () => {

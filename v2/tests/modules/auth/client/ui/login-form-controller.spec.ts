@@ -4,7 +4,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 
-import { useLoginFormController } from '../../../../../src/modules/auth/client/ui/login-form.controller.ts'
+import { useLoginFormController } from '#modules/auth/client/ui/login/login-form.controller.ts'
 
 describe('useLoginFormController', () => {
   it('submit com dados válidos entrega o input parseado', () => {

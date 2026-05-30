@@ -32,6 +32,7 @@ as alternativas **rejeitadas** e por quê. É a fonte que um dev novo (ou um age
 | [0002](./0002-errors-as-values.md) | Erros como valores (Result) + QueryError como única subclasse de Error | Accepted |
 | [0003](./0003-pnpm-v11-supply-chain.md) | pnpm v11 pinado + supply-chain hardening | Accepted |
 | [0004](./0004-client-server-split-mvvm-ddd.md) | Separação client (MVVM) × server (BFF/DDD) + Event Bus + Controller | Accepted |
+| [0005](./0005-auth-session-refresh-decisions.md) | Auth: sessão opaca, refresh single-flight, JWT decode-only, /me só userId | Accepted |
 
-> Próximos ADRs a registrar conforme as decisões surgirem (ex.: feature Auth, sessão/cookie, i18n).
+> Próximos ADRs a registrar conforme as decisões surgirem (ex.: i18n, módulo de usuários Zero Trust).
 > Decisões já tomadas e ainda não "adritizadas" vivem na constituição e em `specs/*/research.md`.

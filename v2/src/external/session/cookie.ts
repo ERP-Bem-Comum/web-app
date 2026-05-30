@@ -36,3 +36,7 @@ export const serializeCookie = (c: CookieAttrs): string => {
   if (c.maxAge !== undefined) parts.push(`Max-Age=${String(c.maxAge)}`)
   return parts.join('; ')
 }
+
+/** Header Set-Cookie que EXPIRA o cookie de sessão (logout / sessão morta). */
+export const clearSessionCookieHeader = (): string =>
+  `${SESSION_COOKIE_NAME}=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0`

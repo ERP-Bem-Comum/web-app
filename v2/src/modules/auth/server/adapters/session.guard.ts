@@ -4,10 +4,10 @@
  * silencioso single-flight** (injetado). Sem sessão / refresh falho → erro (a server fn limpa o cookie).
  * `refreshSession` é injetado (port-like) p/ testabilidade — a composição (server fn) wira o use-case.
  */
-import { ok, err, isErr, type Result } from '../../../../shared/primitives/result.ts'
-import type { SessionStore } from '../../../../shared/ports/session-store.port.ts'
-import type { Session, SessionId } from '../domain/session.types.ts'
-import type { AuthError } from '../domain/auth.errors.ts'
+import { ok, err, isErr, type Result } from '#shared/primitives/result.ts'
+import type { SessionStore } from '#shared/ports/session-store.port.ts'
+import type { Session, SessionId } from '#modules/auth/server/domain/session/session.types.ts'
+import type { AuthError } from '#modules/auth/server/domain/errors/auth.errors.ts'
 
 type Deps = Readonly<{
   store: SessionStore<Session>

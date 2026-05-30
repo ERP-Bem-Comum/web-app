@@ -5,7 +5,7 @@
 import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
 
-import { decodeAccessExp } from '../../../../../src/modules/auth/server/adapters/decode-access-exp.ts'
+import { decodeAccessExp } from '#modules/auth/server/adapters/core-api/decode-access-exp.ts'
 
 const makeJwt = (payload: object): string => {
   const b64 = (o: object): string => Buffer.from(JSON.stringify(o)).toString('base64url')

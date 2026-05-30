@@ -4,8 +4,8 @@
 import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
 
-import { deriveLoginView } from '../../../../../src/modules/auth/client/view-model/login-view.ts'
-import { ok, err } from '../../../../../src/shared/primitives/result.ts'
+import { deriveLoginView } from '#modules/auth/client/view-model/login/login-view.ts'
+import { ok, err } from '#shared/primitives/result.ts'
 
 describe('deriveLoginView', () => {
   it('Given mutation em andamento, Then status = submitting', () => {

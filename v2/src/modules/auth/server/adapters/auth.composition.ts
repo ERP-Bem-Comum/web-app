@@ -5,15 +5,16 @@
  *   bundle / edge avalia antes do request).
  * - `refreshSession` é singleton (o single-flight precisa do MESMO closure entre requests).
  */
-import { createMemorySessionStore } from '../../../../external/session/session-store.memory.ts'
-import { loadEnvOrThrow } from '../../../../external/config/env.config.ts'
-import type { Session, SessionId } from '../domain/session.types.ts'
-import { createLogin } from '../application/login.use-case.ts'
-import { createGetMe } from '../application/get-me.use-case.ts'
-import { createRefreshSession } from '../application/refresh-session.use-case.ts'
-import { createCoreApiAuthClient } from './core-api-auth.ts'
+import { createMemorySessionStore } from '#external/session/session-store.memory.ts'
+import { loadEnvOrThrow } from '#external/config/env.config.ts'
+import type { Session, SessionId } from '#modules/auth/server/domain/session/session.types.ts'
+import { createLogin } from '#modules/auth/server/application/commands/login.use-case.ts'
+import { createGetMe } from '#modules/auth/server/application/queries/get-me.use-case.ts'
+import { createLogout } from '#modules/auth/server/application/commands/logout.use-case.ts'
+import { createRefreshSession } from '#modules/auth/server/application/commands/refresh-session.use-case.ts'
+import { createCoreApiAuthClient } from '#modules/auth/server/adapters/core-api/core-api-auth.ts'
 import { createResolveSession } from './session.guard.ts'
-import { decodeAccessExp } from './decode-access-exp.ts'
+import { decodeAccessExp } from '#modules/auth/server/adapters/core-api/decode-access-exp.ts'
 
 const store = createMemorySessionStore<Session>({ now: () => Date.now() })
 const now = (): number => Date.now()
@@ -29,6 +30,7 @@ const build = () => {
     store,
     login: createLogin({ client, store, now, decodeExp: decodeAccessExp, genId }),
     getMe: createGetMe({ client }),
+    logout: createLogout({ client, store }),
     resolveSession: createResolveSession({ store, refreshSession, now }),
   }
 }

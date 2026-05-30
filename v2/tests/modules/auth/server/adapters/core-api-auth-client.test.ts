@@ -5,8 +5,8 @@
 import { describe, it, afterEach } from 'node:test'
 import { strict as assert } from 'node:assert'
 
-import { createCoreApiAuthClient } from '../../../../../src/modules/auth/server/adapters/core-api-auth.ts'
-import { isOk, isErr } from '../../../../../src/shared/primitives/result.ts'
+import { createCoreApiAuthClient } from '#modules/auth/server/adapters/core-api/core-api-auth.ts'
+import { isOk, isErr } from '#shared/primitives/result.ts'
 
 const BASE = 'http://core/api/v2'
 const realFetch = globalThis.fetch
