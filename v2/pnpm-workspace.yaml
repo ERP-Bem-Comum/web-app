@@ -8,6 +8,9 @@
 # binários pré-compilados (napi) — o lint roda sem rodar o script de install, então
 # bloqueamos (false). NUNCA usar dangerouslyAllowAllBuilds.
 allowBuilds:
+  # esbuild: binário via napi/optional deps (`esbuild --version` roda sem o script de
+  # install). Vem do vite/TanStack; bloqueamos o build script (mesmo padrão do unrs).
+  esbuild: false
   unrs-resolver: false
 
 # --- 2. Bloquear sources exóticas em trans-deps (default já true) ---

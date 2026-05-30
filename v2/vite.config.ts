@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite'
+import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin'
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import { nitro } from 'nitro/vite'
 import viteReact from '@vitejs/plugin-react'
@@ -11,6 +12,9 @@ export default defineConfig({
     tsconfigPaths: true,
   },
   plugins: [
+    // vanilla-extract: extrai .css.ts → CSS estático no build (zero-runtime, SSR-safe).
+    // Vem ANTES do tanstackStart/react para transformar os .css.ts primeiro.
+    vanillaExtractPlugin(),
     // Bootstrap movido p/ src/app/ (organização visual): aponta o router entry e o
     // routeTree gerado p/ lá. `routesDirectory` segue default ('routes' → src/routes).
     // Chaves confirmadas no schema do start-plugin-core (router.entry / router.generatedRouteTree).
