@@ -74,7 +74,7 @@ Web app (front+BFF unificado). Design system em `src/shared/ui/tokens/`; testes 
 
 ## Phase 6: Polish & Cross-Cutting
 
-- [ ] T014 [P] Quality gate completo: `pnpm lint` (boundaries — confirmar que `tokens/` é `shared-ui` e não importa de feature/server/external), `pnpm typecheck`, `pnpm test` (node:test verdes), `pnpm build`. Todos verdes.
+- [X] T014 [P] (+ENFORCEMENT lint: só-tokens via no-restricted-syntax zero-dep + Atomic via boundaries; provado c/ iscas; guia em handbook/reference/design-system/lint-enforcement.md) Quality gate completo: `pnpm lint` (boundaries — confirmar que `tokens/` é `shared-ui` e não importa de feature/server/external), `pnpm typecheck`, `pnpm test` (node:test verdes), `pnpm build`. Todos verdes.
 - [ ] T015 [P] (Docker) Validar no stack local que o app sobe com as fontes self-host servidas pelo próprio app (sem requisição a `fonts.gstatic.com`/`googleapis`): subir `web` e checar que não há chamada externa de fonte (cumpre ADR-0008/LGPD). Atenção ao `--renew-anon-volumes` se deps mudaram.
 
 ---

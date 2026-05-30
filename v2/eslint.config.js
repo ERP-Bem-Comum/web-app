@@ -15,6 +15,13 @@ import globals from 'globals'
 // modo 'folder': o pattern casa a PASTA. ORDEM IMPORTA: mais específico antes do genérico.
 const F = { capture: ['feature'] }
 const boundaryElements = [
+  // Design system — Atomic Design. ORDEM IMPORTA: estes patterns (mais específicos)
+  // vêm ANTES do 'shared-ui' genérico, senão tudo em src/shared/ui casaria como shared-ui.
+  // Hierarquia: tokens ← atoms ← molecules ← organisms (dependência só "para baixo").
+  { type: 'ds-tokens', pattern: 'src/shared/ui/tokens' },
+  { type: 'ds-atom', pattern: 'src/shared/ui/atoms' },
+  { type: 'ds-molecule', pattern: 'src/shared/ui/molecules' },
+  { type: 'ds-organism', pattern: 'src/shared/ui/organisms' },
   { type: 'shared-ui', pattern: 'src/shared/ui' },
   { type: 'shared', pattern: 'src/shared' }, // inclui primitives/http/bus/i18n/ports/utils
   { type: 'external', pattern: 'src/external' },
@@ -35,7 +42,13 @@ const sameFeature = (types) => ({ to: { type: types, captured: { feature: '{{fro
 const boundaryRules = [
   // --- cross-cutting ---
   { from: { type: 'shared' }, allow: { to: { type: 'shared' } } },
-  { from: { type: 'shared-ui' }, allow: { to: { type: ['shared', 'shared-ui'] } } },
+  // Design system (Atomic Design): cada nível só importa de níveis ABAIXO + tokens + shared.
+  // atom ↛ molecule ↛ organism; ninguém importa "para cima". (ds-* listados antes de shared-ui.)
+  { from: { type: 'ds-tokens' }, allow: { to: { type: ['shared', 'ds-tokens'] } } },
+  { from: { type: 'ds-atom' }, allow: { to: { type: ['shared', 'ds-tokens', 'ds-atom'] } } },
+  { from: { type: 'ds-molecule' }, allow: { to: { type: ['shared', 'ds-tokens', 'ds-atom', 'ds-molecule'] } } },
+  { from: { type: 'ds-organism' }, allow: { to: { type: ['shared', 'ds-tokens', 'ds-atom', 'ds-molecule', 'ds-organism'] } } },
+  { from: { type: 'shared-ui' }, allow: { to: { type: ['shared', 'shared-ui', 'ds-tokens', 'ds-atom', 'ds-molecule', 'ds-organism'] } } },
   { from: { type: 'external' }, allow: { to: { type: ['shared', 'external'] } } }, // server-only; nunca módulos
 
   // --- SERVER (DDD): domain puro → application → adapters ---
@@ -234,5 +247,24 @@ export default tseslint.config(
   {
     files: ['**/*.{js,mjs,cjs}'],
     extends: [tseslint.configs.disableTypeChecked],
+  },
+
+  // Design system — "SÓ TOKENS" (zero-dep, ADR-0007/0008): proíbe cor/medida crua nos
+  // componentes; force `vars.*` de #shared/ui/tokens. Cobre o que o vanilla-extract não
+  // enforça sozinho. Escopo: UI do design system (atoms/molecules/organisms) + UI de feature.
+  // EXCLUI tokens/ (definem os valores) e *.values.ts (a fonte de verdade dos literais).
+  {
+    files: ['src/shared/ui/{atoms,molecules,organisms}/**/*.{ts,tsx}', 'src/modules/*/client/ui/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        // hex cru (#fff, #32C6F4, #aabbccdd) em qualquer literal string
+        { selector: 'Literal[value=/#(?:[0-9a-fA-F]{3,4}){1,2}\\b/]', message: 'Cor crua proibida (design system). Use vars.color.* de #shared/ui/tokens.' },
+        // medida em px crua ("8px", "1.5px")
+        { selector: 'Literal[value=/^-?\\d*\\.?\\d+px$/]', message: 'Medida em px crua proibida (design system). Use vars.space.*/vars.radius.* de #shared/ui/tokens.' },
+        // rgb()/rgba()/hsl()/hsla() cruas
+        { selector: 'Literal[value=/(?:rgb|rgba|hsl|hsla)\\(/i]', message: 'Cor crua (rgb/hsl) proibida (design system). Use vars.color.* de #shared/ui/tokens.' },
+      ],
+    },
   },
 )
