@@ -68,7 +68,7 @@ Web app (front+BFF unificado). Design system em `src/shared/ui/tokens/`; testes 
 
 **Independent Test**: criar (em teste/rascunho) um segundo conjunto de valores que satisfaça o mesmo `vars` (contrato) — deve type-checar sem alterar quem consome `vars`.
 
-- [ ] T013 [US3] Adicionar `tests/shared/ui/tokens/contract-extensibility.test.ts` (`node:test`) — typecheck/asserção de que um objeto de valores alternativo (dark fictício) satisfaz a MESMA forma do contrato (mesmas chaves), provando extensibilidade sem tocar consumidores. (Não cria tema dark real — só prova o contrato.)
+- [X] T013 [US3] Adicionar `tests/shared/ui/tokens/contract-extensibility.test.ts` (`node:test`) — typecheck/asserção de que um objeto de valores alternativo (dark fictício) satisfaz a MESMA forma do contrato (mesmas chaves), provando extensibilidade sem tocar consumidores. (Não cria tema dark real — só prova o contrato.)
 
 ---
 
