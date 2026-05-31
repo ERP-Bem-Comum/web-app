@@ -59,9 +59,9 @@ Em `.claude/agents/` — consultores read-only, cada um com fonte de verdade em 
 - Edição de `*.ts/*.tsx` dispara `eslint --fix` automático — `.claude/hooks/eslint-fix.sh`.
 
 <!-- SPECKIT START -->
-**Spec ativa:** `specs/004-design-tokens/` — Design tokens fundacionais do design system (vanilla-extract em `src/shared/ui/tokens/`; fidelidade visual à v1).
-Plano: [`specs/004-design-tokens/plan.md`](specs/004-design-tokens/plan.md) · Spec: [`specs/004-design-tokens/spec.md`](specs/004-design-tokens/spec.md).
-Anterior: `specs/003-auth-security-hardening/` — Endurecimento de segurança da Auth ([plan](specs/003-auth-security-hardening/plan.md)).
+**Spec ativa:** `specs/005-design-system-atoms/` — Átomos do design system (Button/Input/Checkbox/Logo/Card + molécula Field) consumindo `vars`; fidelidade visual à v1.
+Plano: [`specs/005-design-system-atoms/plan.md`](specs/005-design-system-atoms/plan.md) · Spec: [`specs/005-design-system-atoms/spec.md`](specs/005-design-system-atoms/spec.md).
+Anterior: `specs/004-design-tokens/` — Design tokens (vanilla-extract em `src/shared/ui/tokens/`) ✅ + enforcement de lint (só-tokens + Atomic).
 Constituição (normativa): [`.specify/memory/constitution.md`](.specify/memory/constitution.md) **v1.2.1** —
 módulo = `server/` (BFF/DDD) + `client/` (FRONT/MVVM) + `public-api`; fronteira = server function;
 Event Bus + Controller oficiais. ADRs em [`handbook/adr/`](handbook/adr/) (0001-0005).
