@@ -79,6 +79,13 @@ export const tokenValues = {
   shadow: {
     card: '0 4px 22px 0 rgba(0, 0, 0, 0.05)',
   },
+  // Anel de foco (acessibilidade): largura do traço + distância. Conceito semântico próprio —
+  // um tema de alto contraste pode engrossar o anel sem tocar nos componentes. A cor vive em
+  // color.border.focus. Não há degrau de 2px em `space` (xs já é 4px), por isso token dedicado.
+  focusRing: {
+    width: '2px',
+    offset: '2px',
+  },
 } as const
 
 export type TokenValues = typeof tokenValues

@@ -23,8 +23,8 @@ const base = style({
   selectors: {
     '&:hover:not(:disabled)': { background: vars.color.brand.hover },
     '&:focus-visible': {
-      outline: `2px solid ${vars.color.border.focus}`,
-      outlineOffset: '2px',
+      outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
+      outlineOffset: vars.focusRing.offset,
     },
   },
 })

@@ -27,4 +27,5 @@ createGlobalTheme(':root', vars, {
     weight: { ...tokenValues.font.weight },
   },
   shadow: { ...tokenValues.shadow },
+  focusRing: { ...tokenValues.focusRing },
 })

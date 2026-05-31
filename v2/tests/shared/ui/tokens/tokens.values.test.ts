@@ -33,6 +33,11 @@ describe('design tokens — valores (fidelidade v1)', () => {
     assert.equal(tokenValues.radius.lg, '0.5rem')
   })
 
+  it('anel de foco: largura e offset = 2px (acessibilidade, semântico)', () => {
+    assert.equal(tokenValues.focusRing.width, '2px')
+    assert.equal(tokenValues.focusRing.offset, '2px')
+  })
+
   it('NÃO herda a paleta institucional duplicada da v1', () => {
     const leaves = collectLeaves(tokenValues.color).map((s) => s.toLowerCase())
     for (const forbidden of FORBIDDEN_INSTITUTIONAL) {

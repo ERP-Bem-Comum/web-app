@@ -264,6 +264,12 @@ export default tseslint.config(
         { selector: 'Literal[value=/^-?\\d*\\.?\\d+px$/]', message: 'Medida em px crua proibida (design system). Use vars.space.*/vars.radius.* de #shared/ui/tokens.' },
         // rgb()/rgba()/hsl()/hsla() cruas
         { selector: 'Literal[value=/(?:rgb|rgba|hsl|hsla)\\(/i]', message: 'Cor crua (rgb/hsl) proibida (design system). Use vars.color.* de #shared/ui/tokens.' },
+        // MESMAS proibições dentro de template literals (`2px solid ${vars...}`) — o seletor
+        // `Literal` não casa `TemplateLiteral`; sem isto, qualquer px/hex/rgb cru ao lado de uma
+        // interpolação fura a governança silenciosamente. `TemplateElement` = trechos literais.
+        { selector: 'TemplateElement[value.raw=/#(?:[0-9a-fA-F]{3,4}){1,2}\\b/]', message: 'Cor crua proibida (design system). Use vars.color.* de #shared/ui/tokens.' },
+        { selector: 'TemplateElement[value.raw=/-?\\d*\\.?\\d+px\\b/]', message: 'Medida em px crua proibida (design system). Use vars.space.*/vars.radius.* de #shared/ui/tokens.' },
+        { selector: 'TemplateElement[value.raw=/(?:rgb|rgba|hsl|hsla)\\(/i]', message: 'Cor crua (rgb/hsl) proibida (design system). Use vars.color.* de #shared/ui/tokens.' },
       ],
     },
   },

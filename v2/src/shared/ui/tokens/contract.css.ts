@@ -70,4 +70,8 @@ export const vars = createThemeContract({
   shadow: {
     card: null,
   },
+  focusRing: {
+    width: null,
+    offset: null,
+  },
 })

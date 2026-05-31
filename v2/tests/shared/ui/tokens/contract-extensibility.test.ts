@@ -47,6 +47,7 @@ describe('contract — extensibilidade (tema alternativo)', () => {
         weight: { regular: '400', medium: '500', semibold: '600', bold: '700' },
       },
       shadow: { card: 'none' },
+      focusRing: { width: '3px', offset: '1px' },
     } satisfies TokenShape
 
     // Em runtime, confirma que as duas formas têm exatamente os mesmos caminhos de folha.
