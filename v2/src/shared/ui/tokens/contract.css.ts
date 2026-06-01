@@ -30,6 +30,7 @@ export const vars = createThemeContract({
     border: {
       default: null,
       focus: null,
+      subtle: null,
     },
     feedback: {
       errorBg: null,
@@ -70,6 +71,7 @@ export const vars = createThemeContract({
   },
   shadow: {
     card: null,
+    cardElevated: null,
   },
   focusRing: {
     width: null,

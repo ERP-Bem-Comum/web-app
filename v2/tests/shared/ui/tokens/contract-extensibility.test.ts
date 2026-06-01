@@ -36,7 +36,7 @@ describe('contract — extensibilidade (tema alternativo)', () => {
         },
         surface: { default: '#1c1c1e', raised: '#2c2c2e', canvas: '#0d1b1f' },
         text: { primary: '#f2f2f7', secondary: '#c7c7cc', muted: '#8e8e93', onBrand: '#ffffff' },
-        border: { default: '#38383a', focus: '#0a84ff' },
+        border: { default: '#38383a', focus: '#0a84ff', subtle: '#2a3a40' },
         feedback: { errorBg: '#3a1f1f', errorText: '#ff6961' },
       },
       radius: { sm: '0.25rem', md: '0.375rem', lg: '0.5rem' },
@@ -46,7 +46,7 @@ describe('contract — extensibilidade (tema alternativo)', () => {
         size: { xs: '0.75rem', sm: '0.875rem', md: '1rem', lg: '1.25rem', xl: '1.5rem' },
         weight: { regular: '400', medium: '500', semibold: '600', bold: '700' },
       },
-      shadow: { card: 'none' },
+      shadow: { card: 'none', cardElevated: 'none' },
       focusRing: { width: '3px', offset: '1px' },
       borderWidth: { thin: '0.5px' },
     } satisfies TokenShape

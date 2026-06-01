@@ -41,6 +41,10 @@ export const tokenValues = {
     border: {
       default: '#e5ded4',
       focus: '#32C6F4',
+      // Hairline neutra-fria (~oklab 14% da marca sobre branco): define a aresta de superfícies
+      // elevadas sobre fundo claro de baixo contraste (ex.: card de login sobre o canvas ciano)
+      // sem a dissonância quente do `default`. Harmoniza com branco E com o canvas.
+      subtle: '#d6e4ea',
     },
     feedback: {
       errorBg: '#fef2f2',
@@ -80,7 +84,11 @@ export const tokenValues = {
     },
   },
   shadow: {
+    // Elevação base do átomo Card (sobre fundo branco): discreta.
     card: '0 4px 22px 0 rgba(0, 0, 0, 0.05)',
+    // Elevação em CAMADAS (ambient de contato + key light com spread negativo): separa a superfície
+    // de um fundo claro de baixo contraste. Usada na variante `elevated` (card do login).
+    cardElevated: '0 1px 2px 0 rgba(0, 0, 0, 0.06), 0 8px 24px -4px rgba(0, 0, 0, 0.12)',
   },
   // Anel de foco (acessibilidade): largura do traço + distância. Conceito semântico próprio —
   // um tema de alto contraste pode engrossar o anel sem tocar nos componentes. A cor vive em

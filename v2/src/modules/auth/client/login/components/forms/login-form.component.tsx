@@ -42,7 +42,7 @@ export type LoginFormProps = Readonly<{
 export function LoginForm(props: LoginFormProps): ReactNode {
   return (
     <div className={cardShell}>
-      <Card as="section">
+      <Card as="section" elevation="elevated">
         <div className={content}>
           <div className={header}>
             <Logo src="/images/logo-bem-comum.png" alt="Bem Comum" size={48} />
