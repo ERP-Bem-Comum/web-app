@@ -48,6 +48,7 @@ describe('contract — extensibilidade (tema alternativo)', () => {
       },
       shadow: { card: 'none' },
       focusRing: { width: '3px', offset: '1px' },
+      borderWidth: { thin: '0.5px' },
     } satisfies TokenShape
 
     // Em runtime, confirma que as duas formas têm exatamente os mesmos caminhos de folha.

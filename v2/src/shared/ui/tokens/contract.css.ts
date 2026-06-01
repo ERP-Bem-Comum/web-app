@@ -74,4 +74,7 @@ export const vars = createThemeContract({
     width: null,
     offset: null,
   },
+  borderWidth: {
+    thin: null,
+  },
 })

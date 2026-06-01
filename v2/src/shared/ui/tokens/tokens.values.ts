@@ -86,6 +86,13 @@ export const tokenValues = {
     width: '2px',
     offset: '2px',
   },
+  // Largura de traço de borda. `thin` (1px, hairline) é a borda padrão de input/superfície.
+  // Vira token porque o lint "só-tokens" do DS proíbe `px` cru — INCLUSIVE 1px e dentro de
+  // template literal (não há exceção). Um tema de alto contraste pode engrossar sem tocar
+  // componentes. A COR da borda vive em color.border.*; aqui é só a espessura.
+  borderWidth: {
+    thin: '1px',
+  },
 } as const
 
 export type TokenValues = typeof tokenValues

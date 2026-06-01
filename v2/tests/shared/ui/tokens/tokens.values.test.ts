@@ -38,6 +38,10 @@ describe('design tokens — valores (fidelidade v1)', () => {
     assert.equal(tokenValues.focusRing.offset, '2px')
   })
 
+  it('largura de borda: thin = 1px (hairline; token p/ não furar o lint só-tokens)', () => {
+    assert.equal(tokenValues.borderWidth.thin, '1px')
+  })
+
   it('NÃO herda a paleta institucional duplicada da v1', () => {
     const leaves = collectLeaves(tokenValues.color).map((s) => s.toLowerCase())
     for (const forbidden of FORBIDDEN_INSTITUTIONAL) {

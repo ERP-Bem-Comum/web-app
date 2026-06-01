@@ -28,4 +28,5 @@ createGlobalTheme(':root', vars, {
   },
   shadow: { ...tokenValues.shadow },
   focusRing: { ...tokenValues.focusRing },
+  borderWidth: { ...tokenValues.borderWidth },
 })
