@@ -29,8 +29,9 @@ todas já no projeto. **Nenhuma dependência nova** (Princípio VIII).
 
 **Storage**: N/A (feature de apresentação; sem dados novos)
 
-**Testing**: Vitest + @testing-library (DOM, `*.spec.tsx`) para comportamento/estrutura; node:test
-(`*.test.ts`) para lógica pura (tokens). TDD obrigatório.
+**Testing**: Vitest + @testing-library (DOM, `*.spec.tsx`) para adapters/comportamento
+(`*.page`/`*.component`/`*.binding`/`*.controller`); node:test (`*.test.ts`) para o **núcleo agnóstico**
+(`*.view-model.ts`/`*.mutation.ts` + tokens). TDD obrigatório.
 
 **Target Platform**: Browser (SSR via TanStack Start/Nitro). Baseline: features Widely available.
 
