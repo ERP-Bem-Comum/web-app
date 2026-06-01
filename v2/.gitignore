@@ -11,3 +11,9 @@ count.txt
 .env
 .env.*
 !.env.example
+
+# Playwright (E2E) — artefatos de execução
+/playwright-report
+/test-results
+/blob-report
+/playwright/.cache

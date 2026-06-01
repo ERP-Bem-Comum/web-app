@@ -20,7 +20,8 @@
     "test": "node --experimental-strip-types --test \"tests/**/*.test.ts\"",
     "test:watch": "node --experimental-strip-types --test --watch \"tests/**/*.test.ts\"",
     "test:dom": "vitest run",
-    "test:all": "pnpm test && pnpm test:dom"
+    "test:all": "pnpm test && pnpm test:dom",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.2.8",
@@ -37,6 +38,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "1.60.0",
     "@tanstack/eslint-plugin-query": "^5.100.14",
     "@tanstack/eslint-plugin-router": "^1.162.0",
     "@tanstack/eslint-plugin-start": "^0.1.0",

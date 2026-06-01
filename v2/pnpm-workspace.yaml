@@ -12,6 +12,10 @@ allowBuilds:
   # install). Vem do vite/TanStack; bloqueamos o build script (mesmo padrão do unrs).
   esbuild: false
   unrs-resolver: false
+  # playwright: o pacote npm NÃO precisa rodar build script no install — os browsers são
+  # baixados explicitamente via `pnpm exec playwright install chromium` (CDN MS, fora do
+  # registry/quarentena). Bloqueamos o script (mesmo padrão), download é passo consciente.
+  playwright: false
 
 # --- 2. Bloquear sources exóticas em trans-deps (default já true) ---
 blockExoticSubdeps: true

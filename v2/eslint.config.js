@@ -109,6 +109,10 @@ export default tseslint.config(
       'node_modules/**',
       'core-api/**',
       '**/routeTree.gen.ts',
+      // E2E (Playwright): runtime/tsconfig próprios, fora das camadas/boundaries do app.
+      // Transpilado e validado pelo próprio Playwright em runtime (ver e2e/README.md).
+      'e2e/**',
+      'playwright.config.ts',
     ],
   },
 
