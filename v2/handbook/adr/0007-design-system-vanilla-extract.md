@@ -36,7 +36,7 @@ build) como engine de estilização do design system.
 ## Consequências
 
 **Positivas:**
-- CSS estático → sem FOUC, sem runtime de estilização, SSR previsível.
+- CSS estático **em produção** → sem FOUC, sem runtime de estilização, SSR previsível (ver trade-off de dev abaixo).
 - Tokens tipados → guard-rail contra regressão visual (uso inválido não compila).
 - Footprint pequeno e sem postinstall próprio → aderente ao §VIII e ao §IX.
 - Contrato ≠ valores → tema dark futuro sem reescrever consumidores.
@@ -46,6 +46,15 @@ build) como engine de estilização do design system.
   (`style`/`styleVariants`/`recipe`).
 - Anti-regressão de "só tokens" exige regra de lint própria (não há MCP/plugin oficial de tokens do VE);
   avaliar `@antebudimir/eslint-plugin-vanilla-extract` (`prefer-theme-tokens`) ou regra interna.
+- **FOUC em desenvolvimento é esperado (não é bug).** Em `pnpm dev` o Vite **não** extrai `.css` estático:
+  cada `*.css.ts` vira um módulo JS que injeta `<style>` no `<head>` em runtime (boot/HMR). Logo o HTML do
+  SSR chega sem estilo e o CSS só "pinta" quando o bundle do client roda → um flash breve na primeira carga.
+  Some no build de produção, onde o VE extrai `.css` real e o `HeadContent` do Start o referencia via
+  `<link rel="stylesheet">` no `<head>` do SSR ("styled before hydration"). **Teste discriminante:** o FOUC
+  some em `pnpm build && pnpm start`; confirme via *View Source* / `curl -s <url> | grep -i '<link\|<style'`
+  (e não pelo DevTools/Elements, que mostra o DOM já hidratado). É o trade-off aceito do zero-runtime — não
+  há correção a fazer em dev. O `'unsafe-inline'` em `style-src` da CSP existe exatamente para permitir esses
+  `<style>` injetados em dev (ver `src/shared/http/security-headers.ts` e ADR-0006).
 
 ## Alternativas consideradas
 
