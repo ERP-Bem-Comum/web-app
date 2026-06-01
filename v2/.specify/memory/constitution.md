@@ -1,8 +1,15 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: (template) → 1.0.0 → 1.1.0 → 1.2.0 → 1.2.1
+Version change: (template) → 1.0.0 → 1.1.0 → 1.2.0 → 1.2.1 → 1.3.0
 Bump rationale:
+  - 1.3.0 (MINOR): cliente agnóstico de framework (ADR-0009). §III: client vira feature-first FLAT
+    (pastas por comportamento + data/domain compartilhados; camada = SUFIXO); núcleo agnóstico (data/
+    domain/view-model sem React) × adapter (ui). §XI reescrito: ViewModel = objeto PURO; binding hook
+    (useXxxBinding) é o adapter; Command padroniza ação+estado; saída da VM = "UI state" (não "view");
+    componente burro nomeado pelo papel (Form/Card). §XII: o ViewModel (efeito do command) emite — o
+    client/usecase deixa de ser camada (vira domain opcional). Pendente: recalibrar eslint boundaries
+    (pasta→sufixo) + lint anti-react no núcleo. Ver ADR-0009.
   - 1.2.1 (PATCH): clarificação do §XII — localização dos tipos de evento (client→`client/data`,
     server→`server/domain`), resolvendo tensão com os boundaries (client não importa server/domain).
     Origem: /speckit-analyze da Auth (finding K1).
@@ -16,10 +23,11 @@ Bump rationale:
 
 Principles:
   - I. BFF-Orchestrated Boundary · II. Errors Are Values · III. Client×Server Modular Architecture
-    (rewritten 1.2.0) · IV. Make Illegal States Unrepresentable · V. Server-State Is Not UI-State ·
-    VI. Validation at the Boundary · VII. Strict TypeScript & 6→7 · VIII. Minimal Dependencies ·
-    IX. pnpm Only · X. Spec-Driven Development · XI. Dumb Views, Smart ViewModels — MVVM (rewritten 1.2.0) ·
-    XII. Reactive Flow via Event Bus (added 1.2.0).
+    (rewritten 1.2.0; client → feature-first agnóstico 1.3.0) · IV. Make Illegal States Unrepresentable ·
+    V. Server-State Is Not UI-State · VI. Validation at the Boundary · VII. Strict TypeScript & 6→7 ·
+    VIII. Minimal Dependencies · IX. pnpm Only · X. Spec-Driven Development · XI. Framework-Agnostic Client —
+    MVVM (View · ViewModel · Command · Binding) (rewritten 1.3.0) · XII. Reactive Flow via Event Bus
+    (refined 1.3.0).
 
 Templates & config requiring updates:
   - eslint.config.js ................................ ⚠ pending (boundary elements for server/* vs
@@ -71,15 +79,19 @@ client de server** (decisão do Tech Lead; ver ADR-0004):
   tokens, chamada ao `core-api`. Camadas: `domain/` (puro: VOs branded, `Result`, regras, ports, event
   types), `application/` (use cases — orquestram core-api + sessão), `adapters/` (server functions
   `*.server-fn.ts` + client do core-api + `*.schema.ts` Zod + mappers). Usa `external/` para I/O/segredos.
-- **`client/` — FRONT, client-side, MVVM.** É o que roda no browser e **consome** o BFF. Camadas:
-  `data/` (Model = Zod do que o BFF já devolveu + **Repository = porta** para a server function),
-  `usecase/` (intenção de UI, opcional), `view-model/` (TanStack Query + store; `{estado, ações}`),
-  `ui/` (`*.page.tsx` template burro + `*.controller.ts` form + `*.component.tsx`).
+- **`client/` — FRONT, client-side, MVVM, AGNÓSTICO de framework (ADR-0009).** Organizado **por
+  comportamento** (feature-first FLAT): cada tela/ação é uma pasta sob `client/` (`login/`,
+  `current-user/`…), ao lado de **dois nomes reservados compartilhados** — `data/` (Repository = porta →
+  server fn, Model Zod, events) e `domain/` (use-cases compartilhados, **opcional**). Dentro do
+  comportamento, **a camada é o SUFIXO**: `*.mutation.ts`/`*.view-model.ts` (núcleo **agnóstico**, sem
+  React — ViewModel = objeto puro com commands + derivações + efeitos) × `*.binding.ts`/`*.page.tsx`/
+  `*.component.tsx`/`*.controller.ts` (**adapter** React). Trocar React→Solid mexe só nos adapters.
 - **`public-api/`** — único ponto de import **cross-módulo**.
 
 **Fronteira client↔server = a server function.** O `client/` só toca o `server/` chamando server
 functions (RPC); **nunca** importa `server/domain` ou `server/application`. A **dependência aponta para
-dentro**: `client/ui → client/view-model → client/usecase → client/data`; `server/adapters →
+dentro**: `view (page/component) → binding → view-model → data`; o **núcleo agnóstico**
+(`data`/`domain`/`*.view-model`/`*.mutation`) **não importa React**; `server/adapters →
 server/application → server/domain`; `domain` (qualquer lado) é puro. `external/` é server-only e nunca
 importa módulos. Cross-módulo só via `public-api`.
 
@@ -150,32 +162,37 @@ arquiteturais viram **ADRs** (`handbook/adr/`).
 
 **Rationale:** especificar e registrar a decisão (não só o código) torna intenção/escopo revisáveis.
 
-### XI. Dumb Views, Smart ViewModels (MVVM)
+### XI. Framework-Agnostic Client — MVVM (View · ViewModel · Command · Binding)
 
-A camada `client/ui` segue **MVVM** com 4 papéis:
+O `client/` é **agnóstico de framework**: só os adapters mudam entre React/Solid (ADR-0009). Papéis:
 
-- **`*.page.tsx` (PageView/template)** e **`*.component.tsx` (Components)** são **BURROS** — recebem dados
-  e callbacks por props, renderizam JSX, encaminham eventos. **Proibido** neles: `useQuery`/`useMutation`,
-  importar `data`/`usecase`/server functions, ou carregar estado de negócio.
-- **`*.view-model.ts` (ViewModel)** — verdade reativa da tela: liga server-state (TanStack Query) e
-  UI-state, expõe `{estado, ações}` (ex.: `idle/submitting/error`), devolve **dados, nunca JSX**; assina
-  o Event Bus.
-- **`*.controller.ts` (Controller)** — estado **transiente** de form/grupo (valores antes do submit),
-  **por exceção** (form é o caso canônico). No submit, entrega ao ViewModel.
+- **View** — `*.page.tsx` (raiz que compõe) e `*.component.tsx` (componentes) são **BURROS**: props → JSX,
+  encaminham eventos. **Proibido**: data-hooks (`useQuery`/`useMutation`), `useReducer`, importar
+  `data`/server/`*.binding`. Nomeie pelo **papel** que rendem (`LoginForm`, `PatientCard`) — **nunca**
+  `...View` (a palavra "View" é a UI, não um sufixo de widget).
+- **ViewModel** — `*.view-model.ts` é um **objeto PURO** (`xxxViewModel`), **agnóstico** (sem React):
+  define os **Command(s)**, as **derivações** de UI state (ex.: `toErrorTag`) e os **efeitos** (`onSuccess`).
+  Devolve **dados, nunca JSX**. Testável em `node:test`.
+- **Command** — uma ação do usuário + seu estado: `{ running, errorTag, result, execute }`. O binding mapeia
+  `useMutation`/`useQuery` → Command; a View liga declarativo (`command.running` → spinner).
+- **Binding** — `*.binding.ts` (`useXxxBinding()`) é o **único** ponto que toca o framework: assina a
+  reatividade (TanStack) e expõe os commands. É fino e burro (não decide regra). É o **adapter** trocável.
+- **Controller** — `*.controller.ts` (`useXxxController`): estado **transiente** de form local (categoria
+  "Hook"); no submit entrega ao ViewModel.
 
-ViewModel e Controller **podem** usar hooks/estado (não são "views burras"). Strings de UI são **tags de
-i18n** (catálogo centralizado) — **nenhum literal de UI hardcoded**.
+A saída do ViewModel chama-se **UI state** (nunca "view"). Strings de UI são **tags i18n** — nenhum literal.
 
-**Rationale:** separar render (View) de orquestração (ViewModel) e de interação de form (Controller) torna
-a tela testável sem DOM e elimina god-components.
+**Rationale:** isolar a lógica (ViewModel puro + Command) do framework (binding) torna o cliente portável e
+testável sem DOM, e dá nomes sem colisão (View = UI; ViewModel = objeto; UI state = dado).
 
 ### XII. Reactive Flow via Event Bus
 
 Reações cross-feature no client usam um **Event Bus** (Observer, `shared/bus`, `EventTarget` nativo).
 Eventos são **fatos no passado** (particípio: `UsuarioAutenticado`, nunca `AutenticarUsuario`). **Localização
 dos tipos de evento:** eventos **client** vivem em `client/data` (acessíveis ao client — que não importa
-`server/domain`); eventos **server** vivem em `server/domain`. **`client/usecase` emite**; **`view-model`
-assina** para reagir (ex.: invalidar query). O bus é **opt-in** (chamada direta é o normal — use o bus só
+`server/domain`); eventos **server** vivem em `server/domain`. O **ViewModel emite** (efeito do command,
+ex.: `onSuccess` — o antigo `client/usecase` deixa de ser camada); **outro `view-model` assina** para
+reagir (ex.: invalidar query). O bus é **opt-in** (chamada direta é o normal — use o bus só
 para efeito cross-feature); handlers **delegam** (não decidem regra) e **não** podem criar loops.
 
 **Rationale:** desacopla quem causa o fato de quem reage a ele, sem CQRS/event-store — reatividade simples
@@ -189,8 +206,9 @@ Stack mandatória (substituições exigem amenda):
   `@tanstack/react-router` (file-based) · **Server-state:** TanStack Query · **Validação:** Zod 4 (na borda)
   · **UI:** React 19 · **Tipos:** TS estrito máximo · **pnpm** (ADR-0003).
 - **Testes:** runner híbrido — `node:test` para puro (`server/domain`, `server/application`, `shared`,
-  `external`, `client/data`/`usecase`), Vitest para DOM (`client/ui`, `view-model`). ⚠ código testado por
-  `node:test` usa **imports relativos** (alias só no bundler).
+  `external`, e o **núcleo agnóstico** do client: `*.view-model.ts`/`*.mutation.ts`/`data`), Vitest para DOM
+  (adapters: `*.page`/`*.component`/`*.binding`/`*.controller`). ⚠ código testado por `node:test` usa
+  **imports relativos** (alias só no bundler).
 
 Estrutura de pastas (normativa — ver ADR-0004):
 
@@ -201,11 +219,11 @@ src/
 │   │   ├── domain/             # PURO: VOs branded, Result, regras, *.repository.port.ts, *.events.ts
 │   │   ├── application/         # *.use-case.ts (orquestra core-api + sessão) + ports
 │   │   └── adapters/            # *.server-fn.ts (fronteira RPC) + client core-api + *.schema.ts (Zod) + mappers
-│   ├── client/                  # FRONT (client-side, MVVM) — consome o BFF
-│   │   ├── data/                # *.model.ts (Zod do retorno do BFF) + *.repository.ts (porta → server-fn)
-│   │   ├── usecase/             # *.use-case.ts (intenção de UI; opcional) — emite eventos no bus
-│   │   ├── view-model/          # *.view-model.ts (TanStack + store; {estado, ações}; assina o bus)
-│   │   └── ui/                  # *.page.tsx (template burro) + *.controller.ts (form) + *.component.tsx
+│   ├── client/                  # FRONT (client-side, MVVM, AGNÓSTICO) — feature-first FLAT (ADR-0009)
+│   │   ├── data/                # COMPARTILHADO: *.model.ts (Zod) + *.repository.ts (porta → server-fn) + events/
+│   │   ├── domain/              # COMPARTILHADO, OPCIONAL: use-cases compartilhados (vazio por padrão)
+│   │   └── <comportamento>/     # ex.: login/ — camada=SUFIXO: *.mutation/*.view-model (agnóstico) +
+│   │                            #   *.binding/*.page/*.component/*.controller (adapter) + components/
 │   └── public-api/              # index.ts — ÚNICO import externo ao módulo
 ├── shared/                      # cross-cutting PURO (sem framework/I/O)
 │   ├── primitives/              # result.ts, brand.ts, immutable.ts
@@ -227,7 +245,8 @@ SameSite + validação de origem; CSP/HSTS/nosniff/frame-deny via middleware. 40
 
 - **Naming (postfix por papel):** `*.value-object.ts`, `*.repository.port.ts`, `*.events.ts`,
   `*.use-case.ts`, `*.server-fn.ts`, `*.schema.ts`, `*.model.ts`, `*.repository.ts`, `*.queries.ts`,
-  `*.view-model.ts`, `*.controller.ts`, `*.page.tsx`, `*.component.tsx`. `tests/` espelha `src/`.
+  `*.mutation.ts`, `*.view-model.ts` (objeto agnóstico), `*.binding.ts` (adapter), `*.controller.ts`,
+  `*.page.tsx`, `*.component.tsx` (nomeado pelo papel: `LoginForm`, nunca `...View`). `tests/` espelha `src/`.
 - **Idioma:** código em EN; strings de UI via **i18n (tags)**; erros internos = literais kebab-case EN.
 - **Quality gate (bloqueante):** `pnpm lint` (boundaries + MVVM) · `pnpm typecheck` · testes verdes ·
   `pnpm build`.
@@ -248,4 +267,4 @@ expansão material; PATCH = clarificações.
 **Conformidade:** o "Constitution Check" do `/speckit-plan` verifica aderência. Os gates de lint
 (boundaries, no-any, erasableSyntaxOnly, MVVM) e typecheck enforçam os princípios automaticamente.
 
-**Version**: 1.2.1 | **Ratified**: 2026-05-29 | **Last Amended**: 2026-05-29
+**Version**: 1.3.0 | **Ratified**: 2026-05-29 | **Last Amended**: 2026-05-31
