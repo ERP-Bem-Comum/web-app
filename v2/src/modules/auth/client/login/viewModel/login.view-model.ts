@@ -9,7 +9,7 @@ import type { CurrentUser } from '#modules/auth/client/data/model/auth.model.ts'
 import type { AuthError } from '#modules/auth/client/data/repository/auth.repository.ts'
 import type { AuthEvent } from '#modules/auth/client/data/events/auth.events.ts'
 import { authErrorTag } from '#modules/auth/client/data/helpers/auth-error-tag.ts'
-import { loginMutationOptions } from './login.mutation.ts'
+import { loginMutationOptions } from '../bind/login.mutation.ts'
 
 export const loginViewModel = {
   mutation: loginMutationOptions,

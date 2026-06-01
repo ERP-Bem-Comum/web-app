@@ -7,9 +7,9 @@ import type { ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { useLoginBinding } from '#modules/auth/client/login/login.binding.ts'
-import { useLoginFormController } from './components/forms/login-form.controller.ts'
-import { LoginForm } from './components/forms/login-form.component.tsx'
+import { useLoginBinding } from '#modules/auth/client/login/bind/login.binding.ts'
+import { useLoginFormController } from '../components/forms/login-form.controller.ts'
+import { LoginForm } from '../components/forms/login-form.component.tsx'
 import { screen } from './login.css.ts'
 
 const t = createTranslator(ptBR)

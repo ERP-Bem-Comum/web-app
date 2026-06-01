@@ -10,7 +10,7 @@ import { isErr, isOk } from '#shared/primitives/result.ts'
 import type { CurrentUser, LoginInput } from '#modules/auth/client/data/model/auth.model.ts'
 import { safeRedirect } from '#modules/auth/client/data/helpers/safe-redirect.ts'
 import { authBus } from '#modules/auth/client/data/events/auth.bus.ts'
-import { loginViewModel } from './login.view-model.ts'
+import { loginViewModel } from '../viewModel/login.view-model.ts'
 
 export type LoginCommand = Readonly<{
   running: boolean

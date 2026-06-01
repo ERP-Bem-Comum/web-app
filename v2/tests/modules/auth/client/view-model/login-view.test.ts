@@ -7,7 +7,7 @@ import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
 
 import { ok, err } from '#shared/primitives/result.ts'
-import { loginViewModel } from '#modules/auth/client/login/login.view-model.ts'
+import { loginViewModel } from '#modules/auth/client/login/viewModel/login.view-model.ts'
 import type { AuthEvent } from '#modules/auth/client/data/events/auth.events.ts'
 
 describe('loginViewModel', () => {
