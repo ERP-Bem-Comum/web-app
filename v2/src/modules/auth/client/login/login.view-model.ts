@@ -1,22 +1,27 @@
 /**
- * Lógica PURA do ViewModel de login — deriva o estado da tela a partir do estado da mutation.
- * Separada do hook (que usa TanStack/router) para ser testável em node:test (sem DOM/framework).
+ * loginViewModel — ViewModel AGNÓSTICO do login (objeto puro; ADR-0009). Define o Command (via
+ * `mutation`), o efeito de sucesso (`onSuccess`: emite `UsuarioAutenticado` — era o antigo
+ * `client/usecase`) e a derivação pura de erro → tag i18n (`toErrorTag`). ZERO React (lint anti-react).
+ * Testável em node:test. O binding (`login.binding.ts`) o liga ao framework e expõe o `loginCommand`.
  */
-import type { Result } from '#shared/primitives/result.ts'
+import { isOk, type Result } from '#shared/primitives/result.ts'
 import type { CurrentUser } from '#modules/auth/client/data/model/auth.model.ts'
 import type { AuthError } from '#modules/auth/client/data/repository/auth.repository.ts'
+import type { AuthEvent } from '#modules/auth/client/data/events/auth.events.ts'
 import { authErrorTag } from '#modules/auth/client/data/helpers/auth-error-tag.ts'
+import { loginMutationOptions } from './login.mutation.ts'
 
-export type LoginStatus = 'idle' | 'submitting' | 'error'
+export const loginViewModel = {
+  mutation: loginMutationOptions,
 
-export type LoginView = Readonly<{ status: LoginStatus; errorTag: string | null }>
+  /** Efeito no sucesso: emite o fato `UsuarioAutenticado` (§XII). `emit` injetado → puro/testável. */
+  onSuccess: (
+    result: Result<CurrentUser, AuthError>,
+    deps: Readonly<{ emit: (event: AuthEvent) => void }>,
+  ): void => {
+    if (isOk(result)) deps.emit({ type: 'UsuarioAutenticado', userId: result.value.userId })
+  },
 
-export const deriveLoginView = (
-  state: Readonly<{ isPending: boolean; data?: Result<CurrentUser, AuthError> }>,
-): LoginView => {
-  if (state.isPending) return { status: 'submitting', errorTag: null }
-  if (state.data !== undefined && !state.data.ok) {
-    return { status: 'error', errorTag: authErrorTag(state.data.error) }
-  }
-  return { status: 'idle', errorTag: null }
+  /** Derivação pura: erro de auth → tag de i18n (a View resolve a tag → texto). */
+  toErrorTag: (error: AuthError): string => authErrorTag(error),
 }

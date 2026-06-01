@@ -19,6 +19,7 @@ export const vars = createThemeContract({
     surface: {
       default: null,
       raised: null,
+      canvas: null,
     },
     text: {
       primary: null,

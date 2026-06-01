@@ -28,6 +28,9 @@ export const tokenValues = {
     surface: {
       default: '#ffffff',
       raised: '#ffffff',
+      // Fundo de "tela" (canvas) — fallback quando a imagem de fundo do login não carrega.
+      // Tom de marca claro (provisório; P.O. confirma). Contrasta com o card branco.
+      canvas: '#e8f6fc',
     },
     text: {
       primary: '#292820',

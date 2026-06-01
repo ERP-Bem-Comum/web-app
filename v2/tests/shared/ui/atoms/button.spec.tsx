@@ -50,4 +50,14 @@ describe('Button', () => {
     fireEvent.click(btn)
     expect(onClick).not.toHaveBeenCalled()
   })
+
+  it('loading + loadingLabel: expõe nome acessível "carregando" (sr-only) + aria-busy', () => {
+    render(
+      <Button loading loadingLabel="Carregando…">
+        Entrar
+      </Button>,
+    )
+    expect(screen.getByText('Carregando…')).toBeTruthy()
+    expect(screen.getByRole('button').getAttribute('aria-busy')).toBe('true')
+  })
 })

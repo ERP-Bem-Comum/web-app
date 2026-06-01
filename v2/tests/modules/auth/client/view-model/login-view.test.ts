@@ -1,32 +1,33 @@
 /**
- * deriveLoginView (BDD) — lógica pura do ViewModel: idle → submitting → error (com tag). TDD.
+ * loginViewModel (node:test) — núcleo AGNÓSTICO do login (ADR-0009): derivação pura de erro
+ * (`toErrorTag`) + efeito de sucesso (`onSuccess` emite `UsuarioAutenticado`). Sem React. TDD.
+ * (Absorve os casos do antigo `client/usecase/login`, removido nesta feature.)
  */
 import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
 
-import { deriveLoginView } from '#modules/auth/client/login/login.view-model.ts'
 import { ok, err } from '#shared/primitives/result.ts'
+import { loginViewModel } from '#modules/auth/client/login/login.view-model.ts'
+import type { AuthEvent } from '#modules/auth/client/data/events/auth.events.ts'
 
-describe('deriveLoginView', () => {
-  it('Given mutation em andamento, Then status = submitting', () => {
-    assert.deepEqual(deriveLoginView({ isPending: true }), { status: 'submitting', errorTag: null })
+describe('loginViewModel', () => {
+  it('toErrorTag: invalid-credentials → tag de credencial inválida', () => {
+    assert.equal(loginViewModel.toErrorTag('invalid-credentials'), 'auth.error.invalid-credentials')
   })
 
-  it('Given sem submit ainda, Then status = idle', () => {
-    assert.deepEqual(deriveLoginView({ isPending: false }), { status: 'idle', errorTag: null })
+  it('toErrorTag: erro de sessão/refresh → tag genérica', () => {
+    assert.equal(loginViewModel.toErrorTag('server'), 'auth.error.unexpected')
   })
 
-  it('Given resultado de erro, Then status = error com a tag mapeada', () => {
-    assert.deepEqual(deriveLoginView({ isPending: false, data: err('invalid-credentials') }), {
-      status: 'error',
-      errorTag: 'auth.error.invalid-credentials',
-    })
+  it('onSuccess (ok): emite UsuarioAutenticado com o userId', () => {
+    const events: AuthEvent[] = []
+    loginViewModel.onSuccess(ok({ userId: 'u' }), { emit: (e) => events.push(e) })
+    assert.deepEqual(events, [{ type: 'UsuarioAutenticado', userId: 'u' }])
   })
 
-  it('Given resultado ok, Then status = idle (sucesso → o hook navega)', () => {
-    assert.deepEqual(deriveLoginView({ isPending: false, data: ok({ userId: 'u' }) }), {
-      status: 'idle',
-      errorTag: null,
-    })
+  it('onSuccess (err): NÃO emite evento', () => {
+    const events: AuthEvent[] = []
+    loginViewModel.onSuccess(err('invalid-credentials'), { emit: (e) => events.push(e) })
+    assert.equal(events.length, 0)
   })
 })

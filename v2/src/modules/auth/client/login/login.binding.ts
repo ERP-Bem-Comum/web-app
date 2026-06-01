@@ -1,26 +1,37 @@
 /**
- * ViewModel do login (§XI) — a verdade reativa da tela. Liga server-state (TanStack mutation) e expõe
- * `{ status, errorTag, submit }` à view (dados, nunca JSX). Sucesso → navega (redirect simples '/' no MVP;
- * a feature/US2 trata `?redirect`). Erro → tag i18n (a page resolve). Wira o use-case + o navigate aqui.
+ * useLoginBinding — ADAPTER React (ADR-0009): liga o `loginViewModel` agnóstico às primitivas reativas
+ * do framework (TanStack `useMutation` + router) e expõe o `loginCommand` ({ running, errorTag, result,
+ * execute }). É o ÚNICO ponto que toca o framework — trocar p/ Solid reescreve só este arquivo.
  */
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 
-import { isOk } from '#shared/primitives/result.ts'
-import type { LoginInput } from '#modules/auth/client/data/model/auth.model.ts'
+import { isErr, isOk } from '#shared/primitives/result.ts'
+import type { CurrentUser, LoginInput } from '#modules/auth/client/data/model/auth.model.ts'
 import { safeRedirect } from '#modules/auth/client/data/helpers/safe-redirect.ts'
-import { loginUseCase } from '#modules/auth/client/login/login.composition.ts'
-import { deriveLoginView, type LoginView } from './login.view-model.ts'
+import { authBus } from '#modules/auth/client/data/events/auth.bus.ts'
+import { loginViewModel } from './login.view-model.ts'
 
-export type LoginViewModel = LoginView & Readonly<{ submit: (input: LoginInput) => void }>
+export type LoginCommand = Readonly<{
+  running: boolean
+  errorTag: string | null
+  result: CurrentUser | null
+  execute: (input: LoginInput) => void
+}>
 
-export const useLoginViewModel = (): LoginViewModel => {
+export const useLoginBinding = (): Readonly<{ loginCommand: LoginCommand }> => {
   const navigate = useNavigate()
   // lê `?redirect` (qualquer rota) e saneia (anti open-redirect) — sucesso volta ao destino pretendido.
   const search = useSearch({ strict: false })
+
   const mutation = useMutation({
-    mutationFn: loginUseCase,
+    ...loginViewModel.mutation,
     onSuccess: (result) => {
+      loginViewModel.onSuccess(result, {
+        emit: (event) => {
+          authBus.emit(event)
+        },
+      })
       if (isOk(result)) {
         const target = safeRedirect(typeof search.redirect === 'string' ? search.redirect : undefined)
         void navigate({ to: target })
@@ -28,10 +39,15 @@ export const useLoginViewModel = (): LoginViewModel => {
     },
   })
 
+  const data = mutation.data
   return {
-    ...deriveLoginView({ isPending: mutation.isPending, data: mutation.data }),
-    submit: (input) => {
-      mutation.mutate(input)
+    loginCommand: {
+      running: mutation.isPending,
+      errorTag: data !== undefined && isErr(data) ? loginViewModel.toErrorTag(data.error) : null,
+      result: data !== undefined && isOk(data) ? data.value : null,
+      execute: (input) => {
+        mutation.mutate(input)
+      },
     },
   }
 }

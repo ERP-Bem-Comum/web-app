@@ -14,9 +14,9 @@
 
 ## Phase 1: Setup
 
-- [ ] T001 [P] Portar o asset de fundo: copiar `../v1/public/images/backgroundLogin.png` → `public/images/backgroundLogin.png` (servido em `/images/backgroundLogin.png`).
-- [ ] T002 [P] i18n: adicionar em `src/shared/i18n/catalog.pt-BR.ts` as chaves `auth.login.subtitle`, `auth.login.email-placeholder`, `auth.login.password-placeholder`, `common.loading` (textos provisórios; conteúdo do P.O.).
-- [ ] T003 Token de fundo de fallback `color.surface.canvas`: adicionar em `tokens.values.ts` → `contract.css.ts` → `theme.css.ts` e sincronizar `tests/shared/ui/tokens/{tokens.values.test.ts,contract-extensibility.test.ts}` (padrão do `borderWidth.thin`). Valor provisório (tom de marca claro) — **tom exato confirmado com o P.O. durante a impl**.
+- [X] T001 [P] Portar o asset de fundo: copiar `../v1/public/images/backgroundLogin.png` → `public/images/backgroundLogin.png` (servido em `/images/backgroundLogin.png`).
+- [X] T002 [P] i18n: adicionar em `src/shared/i18n/catalog.pt-BR.ts` as chaves `auth.login.subtitle`, `auth.login.email-placeholder`, `auth.login.password-placeholder`, `common.loading` (textos provisórios; conteúdo do P.O.).
+- [X] T003 Token de fundo de fallback `color.surface.canvas`: adicionar em `tokens.values.ts` → `contract.css.ts` → `theme.css.ts` e sincronizar `tests/shared/ui/tokens/{tokens.values.test.ts,contract-extensibility.test.ts}` (padrão do `borderWidth.thin`). Valor provisório (tom de marca claro) — **tom exato confirmado com o P.O. durante a impl**.
 
 ---
 
@@ -26,17 +26,17 @@
 
 ### Átomo Button — spinner (design system)
 
-- [ ] T004 [P] (TDD vermelho) Estender `tests/shared/ui/atoms/button.spec.tsx`: no estado `loading` → `disabled` + `aria-busy` + nome acessível `loadingLabel` presente (sr-only) + spinner (classe) presente; `onClick` não dispara; sem `loading`, sem spinner.
-- [ ] T005 Implementar o spinner no Button: `button.css.ts` (+ `keyframes(spin)` + `spinner` anel `conic-gradient`+`mask` dimensionado em `em` + `WebkitMask` p/ Safari + `srOnly` + `position: relative` na base; suavizar sob `prefers-reduced-motion`) e `button.component.tsx` (+ prop `loadingLabel?`; no `loading`: `children` com `visibility: hidden` + spinner centralizado + `<span srOnly>{loadingLabel}</span>`). T004 → verde. (Consultar o agente `css-expert`.)
+- [X] T004 [P] (TDD vermelho) Estender `tests/shared/ui/atoms/button.spec.tsx`: no estado `loading` → `disabled` + `aria-busy` + nome acessível `loadingLabel` presente (sr-only) + spinner (classe) presente; `onClick` não dispara; sem `loading`, sem spinner.
+- [X] T005 Implementar o spinner no Button: `button.css.ts` (+ `keyframes(spin)` + `spinner` anel `conic-gradient`+`mask` dimensionado em `em` + `WebkitMask` p/ Safari + `srOnly` + `position: relative` na base; suavizar sob `prefers-reduced-motion`) e `button.component.tsx` (+ prop `loadingLabel?`; no `loading`: `children` com `visibility: hidden` + spinner centralizado + `<span srOnly>{loadingLabel}</span>`). T004 → verde. (Consultar o agente `css-expert`.)
 
 ### Núcleo agnóstico + Command + binding (login)
 
-- [ ] T006 [P] (TDD vermelho) Criar `tests/modules/auth/client/login/login.view-model.test.ts` (`node:test`, imports relativos): `loginViewModel.toErrorTag(err('invalid-credentials'))` → tag i18n esperada; o objeto é **puro** (sem React). Deve falhar/ajustar (o objeto ainda não existe nessa forma).
-- [ ] T007 [P] Criar `src/modules/auth/client/login/login.mutation.ts`: `loginMutationOptions = { mutationKey, mutationFn: (input) => authRepository.login(input) }` — AGNÓSTICO (só `@tanstack/query-core`/tipos; o lint anti-react cobre).
-- [ ] T008 Refatorar `src/modules/auth/client/login/login.view-model.ts` para o **objeto puro** `loginViewModel = { mutation: loginMutationOptions, onSuccess: (user, { bus }) => bus.emit(UsuarioAutenticado(user)), toErrorTag }`. Migrar o `authErrorTag` p/ `toErrorTag`; remover a forma antiga (`deriveLoginView`/`type LoginView` → vira `LoginUiState` se necessário). T006 → verde.
-- [ ] T009 Refatorar `src/modules/auth/client/login/login.binding.ts`: `useLoginBinding()` retorna `{ loginCommand: { running: m.isPending, errorTag: m.error ? loginViewModel.toErrorTag(...) : null, result, execute: m.mutate } }`; renomear o export `useLoginViewModel` → `useLoginBinding`.
-- [ ] T010 Remover o `usecase` do login (`src/modules/auth/client/login/login.{use-case,composition}.ts`): a emissão de `UsuarioAutenticado` agora é o `onSuccess` do command (T008). Adaptar/mover `tests/modules/auth/client/usecase/login.test.ts` (o que sobrar de lógica pura vai p/ `login.view-model.test.ts`); ajustar `public-api/index.ts` se reexportava o usecase.
-- [ ] T011 Atualizar `src/modules/auth/client/login/login.page.tsx`: consumir `useLoginBinding`; mapear `loginCommand` → props da `LoginForm` (`submitting = loginCommand.running`, `errorText = loginCommand.errorTag ? t(loginCommand.errorTag) : null`, `onSubmit = () => loginCommand.execute(input)`); resolver e passar as novas tags i18n (`subtitle`, placeholders, `loadingLabel = t('common.loading')`).
+- [X] T006 [P] (TDD vermelho) Criar `tests/modules/auth/client/login/login.view-model.test.ts` (`node:test`, imports relativos): `loginViewModel.toErrorTag(err('invalid-credentials'))` → tag i18n esperada; o objeto é **puro** (sem React). Deve falhar/ajustar (o objeto ainda não existe nessa forma).
+- [X] T007 [P] Criar `src/modules/auth/client/login/login.mutation.ts`: `loginMutationOptions = { mutationKey, mutationFn: (input) => authRepository.login(input) }` — AGNÓSTICO (só `@tanstack/query-core`/tipos; o lint anti-react cobre).
+- [X] T008 Refatorar `src/modules/auth/client/login/login.view-model.ts` para o **objeto puro** `loginViewModel = { mutation: loginMutationOptions, onSuccess: (user, { bus }) => bus.emit(UsuarioAutenticado(user)), toErrorTag }`. Migrar o `authErrorTag` p/ `toErrorTag`; remover a forma antiga (`deriveLoginView`/`type LoginView` → vira `LoginUiState` se necessário). T006 → verde.
+- [X] T009 Refatorar `src/modules/auth/client/login/login.binding.ts`: `useLoginBinding()` retorna `{ loginCommand: { running: m.isPending, errorTag: m.error ? loginViewModel.toErrorTag(...) : null, result, execute: m.mutate } }`; renomear o export `useLoginViewModel` → `useLoginBinding`.
+- [X] T010 Remover o `usecase` do login (`src/modules/auth/client/login/login.{use-case,composition}.ts`): a emissão de `UsuarioAutenticado` agora é o `onSuccess` do command (T008). Adaptar/mover `tests/modules/auth/client/usecase/login.test.ts` (o que sobrar de lógica pura vai p/ `login.view-model.test.ts`); ajustar `public-api/index.ts` se reexportava o usecase.
+- [X] T011 Atualizar `src/modules/auth/client/login/login.page.tsx`: consumir `useLoginBinding`; mapear `loginCommand` → props da `LoginForm` (`submitting = loginCommand.running`, `errorText = loginCommand.errorTag ? t(loginCommand.errorTag) : null`, `onSubmit = () => loginCommand.execute(input)`); resolver e passar as novas tags i18n (`subtitle`, placeholders, `loadingLabel = t('common.loading')`).
 
 **Checkpoint**: núcleo agnóstico (puro, anti-react verde) + Command + binding + Button com spinner — a `LoginForm` pode ser vestida.
 
