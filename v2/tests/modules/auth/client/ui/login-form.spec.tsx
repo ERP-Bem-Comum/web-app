@@ -1,16 +1,16 @@
 /**
- * LoginView (Vitest/jsdom) — unitário: componente burro renderiza props; erro e submitting refletem props.
+ * LoginForm (Vitest/jsdom) — unitário: componente burro renderiza props; erro e submitting refletem props.
  */
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, cleanup } from '@testing-library/react'
 
-import { LoginView, type LoginViewProps } from '#modules/auth/client/ui/login/login-view.component.tsx'
+import { LoginForm, type LoginFormProps } from '#modules/auth/client/ui/login/components/forms/login-form.component.tsx'
 
 afterEach(() => {
   cleanup()
 })
 
-const baseProps = (over: Partial<LoginViewProps> = {}): LoginViewProps => ({
+const baseProps = (over: Partial<LoginFormProps> = {}): LoginFormProps => ({
   title: 'Entrar',
   emailLabel: 'E-mail',
   passwordLabel: 'Senha',
@@ -28,20 +28,20 @@ const baseProps = (over: Partial<LoginViewProps> = {}): LoginViewProps => ({
   ...over,
 })
 
-describe('LoginView', () => {
+describe('LoginForm', () => {
   it('renderiza título e campos', () => {
-    render(<LoginView {...baseProps()} />)
+    render(<LoginForm {...baseProps()} />)
     expect(screen.getByRole('heading', { name: 'Entrar' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Entrar' })).toBeTruthy()
   })
 
   it('mostra o erro quando errorText presente', () => {
-    render(<LoginView {...baseProps({ errorText: 'E-mail ou senha inválidos.' })} />)
+    render(<LoginForm {...baseProps({ errorText: 'E-mail ou senha inválidos.' })} />)
     expect(screen.getByRole('alert').textContent).toBe('E-mail ou senha inválidos.')
   })
 
   it('desabilita o botão quando submitting', () => {
-    render(<LoginView {...baseProps({ submitting: true })} />)
+    render(<LoginForm {...baseProps({ submitting: true })} />)
     expect(screen.getByRole('button', { name: 'Entrar' }).hasAttribute('disabled')).toBe(true)
   })
 })

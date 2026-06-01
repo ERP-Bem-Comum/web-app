@@ -62,10 +62,11 @@ modules/auth/
 │   ├── view-model/                      # MVVM: orquestra a tela (TanStack Query + estado)
 │   │   ├── login/                       #   {use-login.view-model, login-view (derivação pura)}
 │   │   └── current-user/                #   {use-current-user.view-model, current-user-view (pura)}
-│   └── ui/login/                        # views BURRAS (Princípio XI)
-│       ├── login.page.tsx               #   template; zero fetch/lógica
-│       ├── login-view.component.tsx     #   apresentação pura (props → JSX)
-│       └── login-form.controller.ts     #   estado transiente do form (exceção ao "burras")
+│   └── ui/login/                        # views BURRAS (Princípio XI; nomes: ADR-0009)
+│       ├── login.page.tsx               #   "Screen": template que LIGA o ViewModel + Controller; zero fetch/lógica
+│       └── components/forms/            #   componentes de apresentação da feature, agrupados por tipo
+│           ├── login-form.component.tsx #     LoginForm — apresentação pura (props → JSX); a "view" do form
+│           └── login-form.controller.ts #     estado transiente do form (exceção ao "burras")
 │
 └── public-api/index.ts                  # ★ ÚNICO ponto de import por fora do módulo (ADR-0001)
 ```

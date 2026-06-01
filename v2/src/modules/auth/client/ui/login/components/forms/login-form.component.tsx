@@ -1,10 +1,11 @@
 /**
- * LoginView — componente BURRO (§XI): só props (strings + callbacks) → JSX. Zero fetch/estado de negócio.
- * Toda a verdade vem da ViewModel; os textos já chegam resolvidos (tags i18n resolvidas na page).
+ * LoginForm — componente BURRO (§XI): a "view" do formulário de login. Só props (strings + callbacks) →
+ * JSX. Zero fetch/estado de negócio. Quem liga o ViewModel é a LoginPage (ver ADR-0009). Toda a verdade
+ * vem da ViewModel; os textos já chegam resolvidos (tags i18n resolvidas na page).
  */
 import type { ReactNode } from 'react'
 
-export type LoginViewProps = Readonly<{
+export type LoginFormProps = Readonly<{
   title: string
   emailLabel: string
   passwordLabel: string
@@ -21,7 +22,7 @@ export type LoginViewProps = Readonly<{
   onSubmit: () => void
 }>
 
-export function LoginView(props: LoginViewProps): ReactNode {
+export function LoginForm(props: LoginFormProps): ReactNode {
   return (
     <main>
       <h1>{props.title}</h1>
