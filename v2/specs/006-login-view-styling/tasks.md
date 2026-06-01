@@ -48,11 +48,11 @@
 
 **Independent Test**: abrir `/login` deslogado → enquadramento da marca; login funciona; `test:dom`/`lint`/`typecheck`/`build` verdes.
 
-- [ ] T012 [P] [US1] (TDD vermelho) Estender `tests/modules/auth/client/ui/login-form.spec.tsx`: renderiza `Card` (superfície) + `Logo` (alt) + título + subtítulo + 2× `Field`>`Input` (com placeholder, `getByLabelText`) + `Checkbox` (lembrar) + `Button`; submit dispara `onSubmit`; `errorText` → `role="alert"`; comportamento (onChange/remember/submit) inalterado.
-- [ ] T013 [P] [US1] Criar `src/modules/auth/client/login/components/forms/login-form.css.ts`: estilo interno do form (stack `flex column` + `gap` por token; bloco de erro form-level com `vars.color.feedback.*`). Só `vars.*`. (Consultar `css-expert`.)
-- [ ] T014 [P] [US1] Criar `src/modules/auth/client/login/login.css.ts`: layout da TELA — `min-block-size: 100dvh` + `display: grid; place-items: center` + `background-image: url(/images/backgroundLogin.png)` + `background-size: cover` + fallback `vars.color.surface.canvas`; largura do card `max-inline-size` ~`28rem` (sem largura fixa → ~320px **sem overflow**, SC-006). Só `vars.*` (logical properties). **Nota:** SC-006 é verificado **manualmente** (jsdom não faz layout) — ver T019. (Consultar `css-expert`.)
-- [ ] T015 [US1] Reescrever `src/modules/auth/client/login/components/forms/login-form.component.tsx` (burra): `Card` › `Logo(size=48)` + título + subtítulo + `<form>`[ `Field`>`Input`(email, placeholder) · `Field`>`Input`(senha, placeholder) · `Checkbox`(remember)+label · (se errorText) bloco `role=alert` · `Button`(submit, `loading={submitting}`, `loadingLabel`) ]; props novas (`subtitle`, `emailPlaceholder`, `passwordPlaceholder`, `loadingLabel`). A `login.page.tsx` envolve no wrapper de `login.css.ts`. T012 → verde.
-- [ ] T016 [US1] Validar o MVP: `pnpm test` + `pnpm test:dom` + `pnpm typecheck` + `pnpm lint` + `pnpm build` verdes; conferir que o CSS gerado usa as CSS vars (sem cor/medida crua) e que o login funciona ponta a ponta (smoke).
+- [X] T012 [P] [US1] (TDD vermelho) Estender `tests/modules/auth/client/ui/login-form.spec.tsx`: renderiza `Card` (superfície) + `Logo` (alt) + título + subtítulo + 2× `Field`>`Input` (com placeholder, `getByLabelText`) + `Checkbox` (lembrar) + `Button`; submit dispara `onSubmit`; `errorText` → `role="alert"`; comportamento (onChange/remember/submit) inalterado.
+- [X] T013 [P] [US1] Criar `src/modules/auth/client/login/components/forms/login-form.css.ts`: estilo interno do form (stack `flex column` + `gap` por token; bloco de erro form-level com `vars.color.feedback.*`). Só `vars.*`. (Consultar `css-expert`.)
+- [X] T014 [P] [US1] Criar `src/modules/auth/client/login/login.css.ts`: layout da TELA — `min-block-size: 100dvh` + `display: grid; place-items: center` + `background-image: url(/images/backgroundLogin.png)` + `background-size: cover` + fallback `vars.color.surface.canvas`; largura do card `max-inline-size` ~`28rem` (sem largura fixa → ~320px **sem overflow**, SC-006). Só `vars.*` (logical properties). **Nota:** SC-006 é verificado **manualmente** (jsdom não faz layout) — ver T019. (Consultar `css-expert`.)
+- [X] T015 [US1] Reescrever `src/modules/auth/client/login/components/forms/login-form.component.tsx` (burra): `Card` › `Logo(size=48)` + título + subtítulo + `<form>`[ `Field`>`Input`(email, placeholder) · `Field`>`Input`(senha, placeholder) · `Checkbox`(remember)+label · (se errorText) bloco `role=alert` · `Button`(submit, `loading={submitting}`, `loadingLabel`) ]; props novas (`subtitle`, `emailPlaceholder`, `passwordPlaceholder`, `loadingLabel`). A `login.page.tsx` envolve no wrapper de `login.css.ts`. T012 → verde.
+- [X] T016 [US1] Validar o MVP: `pnpm test` + `pnpm test:dom` + `pnpm typecheck` + `pnpm lint` + `pnpm build` verdes; conferir que o CSS gerado usa as CSS vars (sem cor/medida crua) e que o login funciona ponta a ponta (smoke).
 
 **Checkpoint**: LoginForm vestida, testada, só-tokens, comportamento intacto.
 
@@ -64,8 +64,8 @@
 
 **Independent Test**: navegar só por teclado → foco visível em cada controle; erro com `role=alert`; spinner com nome acessível; `prefers-reduced-motion` suaviza (não some).
 
-- [ ] T017 [P] [US2] (TDD) Asserções de a11y no `login-form.spec.tsx`/`button.spec.tsx`: cada campo tem label associado (`getByLabelText`); erro `getByRole('alert')`; Button em loading expõe nome acessível "carregando"; foco visível (classe `:focus-visible` presente nos átomos).
-- [ ] T018 [US2] Confirmar `prefers-reduced-motion` no spinner (suavizado, não removido) e que estado/erro não dependem só de cor (o `role=alert` + texto cobrem). Ajustar se faltar.
+- [X] T017 [P] [US2] (TDD) Asserções de a11y no `login-form.spec.tsx`/`button.spec.tsx`: cada campo tem label associado (`getByLabelText`); erro `getByRole('alert')`; Button em loading expõe nome acessível "carregando"; foco visível (classe `:focus-visible` presente nos átomos).
+- [X] T018 [US2] Confirmar `prefers-reduced-motion` no spinner (suavizado, não removido) e que estado/erro não dependem só de cor (o `role=alert` + texto cobrem). Ajustar se faltar.
 
 ---
 
@@ -82,7 +82,7 @@
 ## Phase 6: Polish & Cross-Cutting
 
 - [ ] T020 [P] Espelhar as pastas de TESTE no flat (ADR-0009): mover `tests/modules/auth/client/{ui,usecase,view-model}/*` → `tests/modules/auth/client/{login,current-user}/...` (mirror de `src/`); atualizar a anatomia no `src/modules/auth/README.md` pro flat.
-- [ ] T021 [P] Quality gate final completo: `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm test:dom` · `pnpm build` — todos verdes.
+- [X] T021 [P] Quality gate final completo: `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm test:dom` · `pnpm build` — todos verdes.
 
 ---
 
