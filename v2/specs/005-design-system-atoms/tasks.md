@@ -14,7 +14,7 @@
 
 ## Path Conventions
 
-Design system em `src/shared/ui/{atoms,molecules}/<nome>/` (`.tsx` + `.css.ts` + `index.ts`). Testes em `tests/shared/ui/{atoms,molecules}/` — `*.test.ts` (node:test) e `*.spec.tsx` (Vitest). Asset em `public/images/`. Tokens consumidos via `vars` de `#shared/ui/tokens`.
+Design system em `src/shared/ui/{atoms,molecules}/<nome>/`. **Padrão de arquivos (fixo, extensível):** `<nome>.component.tsx` + `<nome>.css.ts` + `index.ts` sempre; `<nome>.variants.ts` quando há lógica pura de variante/estado (ex.: Button); `<nome>.controller.ts` quando há estado transiente. Doc: `src/shared/ui/README.md` (§Anatomia). Testes em `tests/shared/ui/{atoms,molecules}/` — `*.test.ts` (node:test) e `*.spec.tsx` (Vitest). Asset em `public/images/`. Tokens consumidos via `vars` de `#shared/ui/tokens`.
 
 ---
 
@@ -29,7 +29,7 @@ Design system em `src/shared/ui/{atoms,molecules}/<nome>/` (`.tsx` + `.css.ts` +
 
 > Não há "núcleo" novo além dos tokens (spec 004, já prontos) e dos barris. Os barris vêm DEPOIS dos componentes (reexportam). Esta fase só garante o ponto de entrada do DS.
 
-- [ ] T003 Criar o barrel raiz `src/shared/ui/index.ts` reexportando `vars` de `./tokens/index.ts` (placeholder dos átomos a completar conforme cada um nascer). Garante a porta única `#shared/ui` (tipo `shared-ui`, consumível por features) — research.md R4.
+- [X] T003 Criar o barrel raiz `src/shared/ui/index.ts` reexportando `vars` de `./tokens/index.ts` (placeholder dos átomos a completar conforme cada um nascer). Garante a porta única `#shared/ui` (tipo `shared-ui`, consumível por features) — research.md R4.
 
 ---
 
@@ -47,33 +47,33 @@ Design system em `src/shared/ui/{atoms,molecules}/<nome>/` (`.tsx` + `.css.ts` +
 
 ### Input
 
-- [ ] T007 [P] [US1] (TDD vermelho) `tests/shared/ui/atoms/input.spec.tsx`: exibe `value`; `onChange` recebe o valor digitado; aceita `type` text/email/password; `invalid` aplica estado visual; tem `id` (associável a label).
-- [ ] T008 [US1] Implementar `src/shared/ui/atoms/input/input.css.ts` (border/radius/foco via `vars`) + `input.tsx` (burro; encaminha `e.target.value`) + `index.ts`. T007 → verde.
+- [X] T007 [P] [US1] (TDD vermelho) `tests/shared/ui/atoms/input.spec.tsx`: exibe `value`; `onChange` recebe o valor digitado; aceita `type` text/email/password; `invalid` aplica estado visual (via `aria-invalid`); tem `id` (associável a label).
+- [X] T008 [US1] Implementar `src/shared/ui/atoms/input/input.css.ts` (border/radius/foco via `vars`) + `input.component.tsx` (burro; encaminha `e.target.value`; erro via `aria-invalid`) + `index.ts`. T007 → verde. **Nota:** inaugurou o token `borderWidth.thin` (1px) em `tokens.values.ts` — o lint só-tokens proíbe `px` cru, inclusive 1px. CSS desenhado pelo agente `css-expert`.
 
 ### Checkbox
 
-- [ ] T009 [P] [US1] (TDD vermelho) `tests/shared/ui/atoms/checkbox.spec.tsx`: reflete `checked`; `onChange` recebe `e.target.checked`; respeita `disabled`.
-- [ ] T010 [US1] Implementar `src/shared/ui/atoms/checkbox/checkbox.css.ts` + `checkbox.tsx` + `index.ts`. T009 → verde.
+- [X] T009 [P] [US1] (TDD vermelho) `tests/shared/ui/atoms/checkbox.spec.tsx`: reflete `checked`; `onChange` recebe `e.target.checked`; respeita `disabled`.
+- [X] T010 [US1] Implementar `src/shared/ui/atoms/checkbox/checkbox.css.ts` + `checkbox.component.tsx` + `index.ts`. T009 → verde. **Nota:** nativo + `accent-color`; honra `disabled` no handler (artefato jsdom: `fireEvent.click` ignora o atributo). CSS pelo `css-expert`.
 
 ### Logo
 
-- [ ] T011 [P] [US1] (TDD vermelho) `tests/shared/ui/atoms/logo.spec.tsx`: renderiza `<img>` com `alt` (a11y) e `src` recebidos; aplica `size` em width/height.
-- [ ] T012 [US1] Implementar `src/shared/ui/atoms/logo/logo.css.ts` (mínimo) + `logo.tsx` (genérico: `src`/`alt`/`size`) + `index.ts`. T011 → verde.
+- [X] T011 [P] [US1] (TDD vermelho) `tests/shared/ui/atoms/logo.spec.tsx`: renderiza `<img>` com `alt` (a11y) e `src` recebidos; aplica `size` em width/height.
+- [X] T012 [US1] Implementar `src/shared/ui/atoms/logo/logo.css.ts` (mínimo) + `logo.component.tsx` (genérico: `src`/`alt`/`size`) + `index.ts`. T011 → verde. **Nota:** `size` dinâmico via atributos `width`/`height` do `<img>` (não `createVar`) — recomendação do `css-expert` (zero-runtime).
 
 ### Card
 
-- [ ] T013 [P] [US1] (TDD vermelho) `tests/shared/ui/atoms/card.spec.tsx`: renderiza `children`; usa elemento `as` (default `div`).
-- [ ] T014 [US1] Implementar `src/shared/ui/atoms/card/card.css.ts` (surface/radius/shadow/padding via `vars`) + `card.tsx` + `index.ts`. T013 → verde.
+- [X] T013 [P] [US1] (TDD vermelho) `tests/shared/ui/atoms/card.spec.tsx`: renderiza `children`; usa elemento `as` (default `div`).
+- [X] T014 [US1] Implementar `src/shared/ui/atoms/card/card.css.ts` (surface/radius/shadow/padding via `vars`) + `card.component.tsx` (polimórfico `as`) + `index.ts`. T013 → verde.
 
 ### Molécula Field
 
-- [ ] T015 [P] [US1] (TDD vermelho) `tests/shared/ui/molecules/field.spec.tsx`: `label` associado ao controle (`getByLabelText` via `htmlFor`); renderiza `children` (controle); com `error` → mensagem com `role="alert"`; sem `error` → sem alerta.
-- [ ] T016 [US1] Implementar `src/shared/ui/molecules/field/field.css.ts` (erro via `vars.color.feedback.*`) + `field.tsx` (label + children + erro role=alert) + `index.ts`. T015 → verde.
+- [X] T015 [P] [US1] (TDD vermelho) `tests/shared/ui/molecules/field.spec.tsx`: `label` associado ao controle (`getByLabelText` via `htmlFor`); renderiza `children` (controle); com `error` → mensagem com `role="alert"`; sem `error` → sem alerta.
+- [X] T016 [US1] Implementar `src/shared/ui/molecules/field/field.css.ts` (erro via `vars.color.feedback.*`) + `field.component.tsx` (label + children + erro role=alert) + `index.ts`. T015 → verde. **Nota:** stack flex+gap (sem margem órfã); não importa Input (recebe controle por children).
 
 ### Barris e validação do MVP
 
-- [ ] T017 [US1] Completar `src/shared/ui/atoms/index.ts` (reexporta Button/Input/Checkbox/Logo/Card), `src/shared/ui/molecules/index.ts` (Field) e atualizar o barrel raiz `src/shared/ui/index.ts` (vars + atoms + molecules). Conferir import único `import { Button, ... } from '#shared/ui'`.
-- [ ] T018 [US1] Validar o MVP: `pnpm test` (node:test, variantes) + `pnpm test:dom` (Vitest) verdes; `pnpm typecheck`; `pnpm build` (CSS estático dos componentes emitido). Conferir que o CSS gerado referencia as CSS vars dos tokens (sem hex cru). **Nota (C1)**: este é o proxy de fidelidade desta spec (CSS usa `vars`); a **comparação visual pixel-a-pixel com a v1 (SC-005) é da PRÓXIMA spec** (vestir a LoginView), quando os componentes estiverem montados na tela.
+- [X] T017 [US1] Completar `src/shared/ui/atoms/index.ts` (reexporta Button/Input/Checkbox/Logo/Card), `src/shared/ui/molecules/index.ts` (Field) e atualizar o barrel raiz `src/shared/ui/index.ts` (vars + atoms + molecules). Conferir import único `import { Button, ... } from '#shared/ui'`.
+- [X] T018 [US1] Validar o MVP: `pnpm test` (node:test, variantes) + `pnpm test:dom` (Vitest) verdes; `pnpm typecheck`; `pnpm build` (CSS estático dos componentes emitido). ✅ test:dom 32/32 · node:test 210 · lint 0 · typecheck 0 · build OK. Conferir que o CSS gerado referencia as CSS vars dos tokens (sem hex cru). **Nota (C1)**: este é o proxy de fidelidade desta spec (CSS usa `vars`); a **comparação visual pixel-a-pixel com a v1 (SC-005) é da PRÓXIMA spec** (vestir a LoginView), quando os componentes estiverem montados na tela.
 
 **Checkpoint**: 5 átomos + Field prontos, testados, type-safe, só-tokens.
 
@@ -85,14 +85,14 @@ Design system em `src/shared/ui/{atoms,molecules}/<nome>/` (`.tsx` + `.css.ts` +
 
 **Independent Test**: caso negativo (hex cru / import cruzado) reprova; removido, lint verde.
 
-- [ ] T019 [US2] Provar o enforcement nos componentes reais: criar temporariamente (a) um hex cru num `*.css.ts` de átomo e (b) um import de `molecules/` dentro de um átomo → `pnpm lint` deve reprovar AMBOS (no-restricted-syntax + boundaries). Remover as iscas e confirmar `pnpm lint` verde. (Registrar o resultado; não deixar isca commitada.)
+- [X] T019 [US2] Provar o enforcement nos componentes reais: criar temporariamente (a) um hex cru num `*.css.ts` de átomo e (b) um import de `molecules/` dentro de um átomo → `pnpm lint` deve reprovar AMBOS (no-restricted-syntax + boundaries). Remover as iscas e confirmar `pnpm lint` verde. (Registrar o resultado; não deixar isca commitada.) ✅ Isca única `atoms/_probe.css.ts` reprovou os DOIS: `boundaries/dependencies` (ds-atom ↛ ds-molecule) + `no-restricted-syntax` ("Cor crua proibida"). Removida → `pnpm lint` verde. Isca NÃO commitada.
 
 ---
 
 ## Phase 5: Polish & Cross-Cutting
 
-- [ ] T020 [P] Atualizar `src/shared/ui/README.md`: marcar `atoms/` e `molecules/` como implementados (eram "próxima spec"), com link ao quickstart. Confirmar guia `handbook/reference/design-system/lint-enforcement.md` ainda coerente.
-- [ ] T021 [P] Quality gate completo final: `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm test:dom` · `pnpm build` — todos verdes.
+- [X] T020 [P] Atualizar `src/shared/ui/README.md`: marcar `atoms/` e `molecules/` como implementados (eram "próxima spec"), com link ao quickstart. Confirmar guia `handbook/reference/design-system/lint-enforcement.md` ainda coerente.
+- [X] T021 [P] Quality gate completo final: `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm test:dom` · `pnpm build` — todos verdes. ✅ lint 0 · typecheck 0 · node:test 210 · test:dom 32 · build OK.
 
 ---
 

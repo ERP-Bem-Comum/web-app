@@ -4,3 +4,5 @@
  * nascem, os átomos/moléculas (T017). Ver specs/005-design-system-atoms (research R4).
  */
 export { vars } from './tokens/index.ts'
+export * from './atoms/index.ts'
+export * from './molecules/index.ts'
