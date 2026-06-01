@@ -3,7 +3,7 @@
 Feature de apresentação: sem entidades de domínio/dados novas. O "modelo" aqui são os **contratos de
 componente** (props), os **tokens** e as **chaves i18n** adicionados. Tipos em EN; strings via i18n.
 
-## Contrato: `LoginForm` (`modules/auth/client/ui/login/components/forms/login-form.component.tsx`)
+## Contrato: `LoginForm` (`modules/auth/client/login/components/forms/login-form.component.tsx`)
 
 Continua **burra** (§XI): só props → JSX. Props novas marcadas com **(novo)**.
 
@@ -61,6 +61,29 @@ Comportamento no `loading` (já desabilita; ver `resolveButtonState`):
 - spinner (anel CSS) centralizado absoluto.
 - se `loadingLabel` presente → `<span class={srOnly}>{loadingLabel}</span>` (anuncia "carregando").
 
+## ViewModel · Command · Binding (ADR-0009)
+
+Acima da LoginForm, a camada agnóstica + adapter ([ADR-0009](../../handbook/adr/0009-framework-agnostic-client.md)):
+
+```
+// login/login.view-model.ts — AGNÓSTICO (zero React; node:test)
+loginViewModel = {
+  mutation: loginMutationOptions,                 // login/login.mutation.ts (data do comportamento)
+  onSuccess: (user, { bus }) => bus.emit(UsuarioAutenticado(user)),  // ← era o client/usecase/login (removido)
+  toErrorTag: (e: AuthError) => string,           // derivação pura → tag i18n
+}
+
+// login/login.binding.ts — ADAPTER React
+useLoginBinding(): { loginCommand: Command<LoginInput, CurrentUser> }
+  // useMutation(loginViewModel.mutation) → { running, errorTag, result, execute }
+
+type Command<I, R> = Readonly<{ running: boolean; errorTag: string | null; result: R | null; execute: (i: I) => void }>
+```
+
+A `login.page.tsx` consome o binding e **mapeia o command → props da LoginForm**:
+`submitting = loginCommand.running` · `errorText = errorTag ? t(errorTag) : null` ·
+`onSubmit = () => loginCommand.execute(input)`. A **LoginForm continua burra** (não conhece Command).
+
 ## Tokens novos (`shared/ui/tokens/`)
 
 Adicionar em `tokens.values.ts` → `contract.css.ts` → `theme.css.ts` (+ sincronizar
@@ -104,5 +127,5 @@ A `login.page.tsx` resolve essas tags e passa ao `LoginForm` (que repassa `commo
 - **Button loading (DOM, Vitest)**: `loading` → `disabled` + `aria-busy` + nome acessível (`loadingLabel`)
   presente + spinner (classe) presente; `onClick` não dispara.
 - **Tokens (node:test)**: `color.surface.canvas` definido e não-vazio; formas de contrato/tema sincronizadas.
-- **Só-tokens / hierarquia (lint)**: nenhum hex/px/rgb cru em `login-view.css.ts`/`button.css.ts`; `client-ui`
+- **Só-tokens / hierarquia (lint)**: nenhum hex/px/rgb cru em `login.css.ts`/`login-form.css.ts`/`button.css.ts`; `client-ui`
   importa `shared-ui` (permitido).

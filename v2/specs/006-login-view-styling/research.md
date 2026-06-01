@@ -49,7 +49,7 @@ Todas as incógnitas técnicas resolvidas. Decisões já validadas com o Tech Le
 
 ## R5 — Layout da tela (fundo full-screen + card centralizado)
 
-- **Decision**: `login-view.css.ts` (novo, em `client/ui` do auth) com um container que ocupa
+- **Decision**: `login/login.css.ts` (novo, na pasta do comportamento) com um container que ocupa
   `min-block-size: 100dvh`, `display: grid; place-items: center`, `background-image:
   url(/images/backgroundLogin.png)` + `background-size: cover` + **cor de fallback** (token). O card usa o
   átomo **Card** (que não fixa largura — por design) envolto/limitado a `max-inline-size` ~`28rem` (≈ max-w-md).
@@ -91,7 +91,7 @@ Todas as incógnitas técnicas resolvidas. Decisões já validadas com o Tech Le
 - **Decision**: `components/forms/login-form.component.tsx` passa a compor `Card` > `Logo` + título/subtítulo + `Field`
   (label) > `Input` (×2, com placeholder) + `Checkbox` (lembrar) + bloco de erro form-level + `Button`
   (submit, `loading={submitting}`, `loadingLabel`). Recebe novas props: `subtitle`, `emailPlaceholder`,
-  `passwordPlaceholder`, `loadingLabel`. O erro form-level usa tokens de feedback (estilo no `login-view.css.ts`).
+  `passwordPlaceholder`, `loadingLabel`. O erro form-level usa tokens de feedback (estilo no `login-form.css.ts`).
 - **Rationale**: §XI (burra: props→JSX, estilo via className do DS); reuso dos átomos da spec 005. O erro
   form-level é distinto do erro por-campo da Field (é do formulário inteiro → bloco próprio com `role=alert`).
 - **Alternatives**: usar `Field` para envolver o checkbox — desnecessário (checkbox tem label próprio via

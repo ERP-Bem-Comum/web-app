@@ -13,6 +13,13 @@ centralizado + logo + ciano), **sem alterar o comportamento de autenticação** 
 **átomo Button** — melhoria do design system que o login consome. Abordagem: TDD (teste antes), só-tokens,
 views burras (§XI), a11y (foco visível, `role=alert`, spinner com alternativa textual).
 
+> **Camada foundational — refactor do [ADR-0009](../../handbook/adr/0009-framework-agnostic-client.md):**
+> como a reorg do client foi adiada para cá, esta feature CARREGA a adoção do modelo agnóstico antes da
+> estilização: `client/` vira **flat feature-first** (`login/`, `current-user/`, `data/` compartilhado);
+> o login ganha **`loginViewModel`** (agnóstico) + **`useLoginBinding`** (`useMutation → loginCommand`); o
+> `client/usecase/login` é **removido** (vira `loginViewModel.onSuccess`). A estilização (Phase 3) assenta
+> sobre essa base. O `Command` (`{ running, errorTag, … }`) entrega o spinner de graça (`command.running`).
+
 ## Technical Context
 
 **Language/Version**: TypeScript estrito (strip-types / TS 6→7), React 19
@@ -93,22 +100,35 @@ src/shared/ui/tokens/
 src/shared/i18n/
 └── catalog.pt-BR.ts                          # + auth.login.subtitle, *.email-placeholder, *.password-placeholder, common.loading
 
-src/modules/auth/client/ui/login/
-├── components/forms/login-form.component.tsx                  # REESCRITA: Card/Logo/Field/Input/Checkbox/Button (burra)
-├── login-view.css.ts                         # NOVO: layout (fundo full-screen + centralização + largura do card)
-└── login.page.tsx                            # + resolve novas tags i18n e passa ao LoginForm
+src/modules/auth/client/                      # ★ REORG flat feature-first (ADR-0009)
+├── data/                                     # COMPARTILHADO (porta/model/events) — inalterado
+├── login/                                    # COMPORTAMENTO login (flat) — camada = sufixo
+│   ├── login.mutation.ts                     # NOVO: loginMutationOptions { mutationFn } — AGNÓSTICO
+│   ├── login.view-model.ts                   # loginViewModel { mutation, onSuccess, toErrorTag } — AGNÓSTICO ← funde os antigos view-model/login/*
+│   ├── login.binding.ts                      # NOVO: useLoginBinding() → loginCommand — ADAPTER (React)
+│   ├── login.page.tsx                        # LoginPage — compõe (resolve i18n, chama o binding) + aplica login.css
+│   ├── login.css.ts                          # NOVO: layout da TELA (fundo full-screen + centralização)
+│   └── components/forms/
+│       ├── login-form.component.tsx          # REESCRITA: LoginForm burra (Card/Logo/Field/Input/Checkbox/Button)
+│       ├── login-form.css.ts                 # NOVO: estilo interno do form (stack de campos + bloco de erro)
+│       └── login-form.controller.ts          # useLoginFormController — Hook local de form
+└── (removido) usecase/login/                 # emissão do evento vira loginViewModel.onSuccess
 
 tests/shared/ui/atoms/
-└── button.spec.tsx                           # + casos de loading (disabled, aria-busy, nome acessível, spinner presente)
+└── button.spec.tsx                           # + casos de loading (disabled, aria-busy, nome acessível, spinner)
 
-tests/modules/auth/client/ui/
-└── login-form.spec.tsx                       # ESTENDE: estrutura vestida (Field/Input/Checkbox/Button/Card/Logo, subtítulo, placeholders, erro)
+tests/modules/auth/client/
+├── login/login.view-model.test.ts            # NOVO (node:test): toErrorTag/derivação do loginViewModel (puro)
+└── login/components/forms/login-form.spec.tsx # ESTENDE: estrutura vestida (Card/Logo/Field/Input/Checkbox/Button, subtítulo, placeholders, erro)
 ```
 
-**Structure Decision**: Feature de UI no slice `modules/auth/client/ui` (login) + melhoria no design
-system compartilhado (`shared/ui`: Button, tokens, i18n). A LoginForm permanece a view burra (§XI); todo
-layout novo vive em `login-view.css.ts` (tipo `client-ui`, que pode consumir `shared-ui` + tokens). O
-spinner é do **átomo Button** (reuso por todo o DS), não local ao login.
+**Structure Decision**: client **flat feature-first** ([ADR-0009](../../handbook/adr/0009-framework-agnostic-client.md)):
+a pasta `login/` concentra tudo do comportamento (camada = sufixo: `.mutation/.view-model` agnósticos,
+`.binding/.page/.component/.controller` adapter), com `data/` compartilhado. A **LoginForm** permanece a
+view burra (§XI); a `login.page.tsx` chama o `useLoginBinding` e passa `{ command, textos }` por props. O
+layout da tela vive em `login.css.ts` e o do form em `login-form.css.ts` (tipo `client-ui` → consome
+`shared-ui` + tokens). O **spinner é do átomo Button** (reuso por todo o DS) e é dirigido por
+`loginCommand.running`.
 
 ## Complexity Tracking
 

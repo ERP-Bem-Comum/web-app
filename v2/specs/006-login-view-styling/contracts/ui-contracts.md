@@ -62,3 +62,28 @@ Chaves novas no catálogo `pt-BR` (resolvidas por `createTranslator`):
 
 **Contrato**: a `LoginForm` nunca contém literais de UI — recebe tudo resolvido por props. O `Button` nunca
 contém i18n — recebe `loadingLabel` por prop.
+
+## C5 — ViewModel · Command · Binding (ADR-0009)
+
+```ts
+// AGNÓSTICO (login/login.view-model.ts) — zero React
+export const loginViewModel: {
+  mutation: typeof loginMutationOptions
+  onSuccess: (user: CurrentUser, deps: { bus: AuthBus }) => void   // emite UsuarioAutenticado (era o usecase)
+  toErrorTag: (e: AuthError) => string
+}
+
+// ADAPTER (login/login.binding.ts) — React
+export type Command<Input, Result> = Readonly<{
+  running: boolean
+  errorTag: string | null
+  result: Result | null
+  execute: (input: Input) => void
+}>
+export function useLoginBinding(): { loginCommand: Command<LoginInput, CurrentUser> }
+```
+
+**Contrato**: `loginViewModel` é **puro** (testável em `node:test`, sem `react`/`@tanstack/react-*` — lint
+por sufixo). `useLoginBinding` é o **único** ponto que toca o framework; trocar p/ Solid reescreve só ele.
+A `login.page.tsx` traduz `loginCommand` → props da `LoginForm` (C1). O `client/usecase/login` **deixa de
+existir** (vira `loginViewModel.onSuccess`).
