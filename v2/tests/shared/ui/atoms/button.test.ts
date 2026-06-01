@@ -5,7 +5,7 @@ import assert from 'node:assert/strict'
 // Decisão A1: a escolha do estado visual é uma função pura `resolveButtonState(disabled, loading)`
 // (sem DOM/CSS) que o button.tsx usa para indexar o mapa `buttonState` do .css.ts.
 // node:test não roda o plugin do vanilla-extract → testamos a FUNÇÃO, não o .css.ts.
-import { resolveButtonState } from '../../../../src/shared/ui/atoms/button/button-state.ts'
+import { resolveButtonState } from '../../../../src/shared/ui/atoms/button/button.variants.ts'
 
 describe('resolveButtonState — qual estado visual aplicar', () => {
   it('normal quando habilitado', () => {

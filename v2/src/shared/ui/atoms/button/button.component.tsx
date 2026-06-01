@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 
 import { buttonState } from './button.css.ts'
-import { resolveButtonState } from './button-state.ts'
+import { resolveButtonState } from './button.variants.ts'
 
 /**
  * Button (átomo) — BURRO: props + JSX, sem estado de negócio. Variante primária (ciano).

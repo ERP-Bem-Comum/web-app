@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, fireEvent, cleanup } from '@testing-library/react'
 
-import { Button } from '#shared/ui/atoms/button/button.tsx'
+import { Button } from '#shared/ui/atoms/button/button.component.tsx'
 
 afterEach(() => {
   cleanup()
