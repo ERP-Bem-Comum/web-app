@@ -2,12 +2,14 @@
  * Security headers + CSP — builder PURO (testável; sem efeito colateral). FR-001/002/003.
  * Quem APLICA é o middleware global em `src/start.ts` (composition root) via `setResponseHeaders`.
  *
- * Decisões (research R2):
- * - `script-src 'self'` (SEM `unsafe-inline`): no TanStack Start 1.168 NÃO há suporte a `nonce` nos
- *   `<script>` de hidratação injetados por `<Scripts/>`. Como esses scripts são same-origin, `'self'`
- *   os cobre e ainda satisfaz o FR-003 ("sem unsafe-inline em script-src"). Nonce nativo (`ssr.nonce`)
- *   fica reservado a `<style>` (CSS inlining) — follow-up.
- * - `style-src 'unsafe-inline'` é tolerado no baseline (SSR pode emitir estilo inline); endurecer depois.
+ * Decisões (research R2 + correção ADR-0006):
+ * - `script-src 'self' 'nonce-<n>'`: o TanStack Start injeta um `<script>` INLINE de bootstrap
+ *   (`window.$_TSR`, dehydrated state) — `'self'` NÃO cobre inline, então a hidratação quebrava. No
+ *   router 1.170 `<Scripts/>`/`<ScriptOnce/>` aplicam `router.options.ssr.nonce` nesse inline; o nonce
+ *   per-request (`#external/http/csp-nonce.ts`) libera só o nosso bootstrap, sem `'unsafe-inline'`.
+ * - `style-src 'self' 'unsafe-inline'` (SEM nonce de propósito): pela regra CSP3 um nonce DESATIVA o
+ *   `'unsafe-inline'` da diretiva, e o `style-src` ainda depende dele (vanilla-extract/Vite injetam
+ *   `<style>` por JS em dev). Endurecer com nonce em style-src é follow-up (exige carimbar esses estilos).
  * - HSTS só em https (R1/trust-proxy): em dev http omitir para não "travar" localhost.
  */
 
@@ -35,6 +37,16 @@ export const CSP_BASELINE: CspDirectives = {
 export const isHttpsFromForwardedProto = (proto: string | null | undefined): boolean =>
   proto === 'https'
 
+/**
+ * Adiciona `'nonce-<nonce>'` ao `script-src` (preserva `'self'` e as demais diretivas). Puro/imutável.
+ * NÃO toca `style-src`: pela regra CSP3 um nonce desativa o `'unsafe-inline'` da diretiva — e o
+ * `style-src` ainda depende dele (estilos injetados por JS em dev). Ver cabeçalho do arquivo.
+ */
+export const cspWithScriptNonce = (directives: CspDirectives, nonce: string): CspDirectives => ({
+  ...directives,
+  'script-src': [...(directives['script-src'] ?? []), `'nonce-${nonce}'`],
+})
+
 /** Serializa diretivas CSP em `"k v v; k2 v2"` (determinístico — ordem das chaves preservada). */
 export const serializeCsp = (directives: CspDirectives): string =>
   Object.entries(directives)
@@ -50,12 +62,14 @@ const HSTS_VALUE = 'max-age=63072000; includeSubDomains; preload'
 
 /**
  * Conjunto de headers de segurança para TODA resposta. `https` controla a emissão do HSTS.
- * `csp` permite sobrescrever a política (default: `CSP_BASELINE`).
+ * `nonce` (per-request) habilita o inline de bootstrap do Start em `script-src`. `csp` permite
+ * sobrescrever a política inteira (default: `CSP_BASELINE`, com nonce em script-src se fornecido).
  */
 export const buildSecurityHeaders = (
-  opts: Readonly<{ https: boolean; csp?: string }>,
+  opts: Readonly<{ https: boolean; nonce?: string; csp?: string }>,
 ): SecurityHeaderSet => {
-  const csp = opts.csp ?? serializeCsp(CSP_BASELINE)
+  const directives = opts.nonce ? cspWithScriptNonce(CSP_BASELINE, opts.nonce) : CSP_BASELINE
+  const csp = opts.csp ?? serializeCsp(directives)
   const base: SecurityHeader[] = [
     ['X-Content-Type-Options', 'nosniff'],
     ['X-Frame-Options', 'DENY'],

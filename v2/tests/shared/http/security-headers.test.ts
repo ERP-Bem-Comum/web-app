@@ -10,6 +10,7 @@ import {
   serializeCsp,
   buildSecurityHeaders,
   isHttpsFromForwardedProto,
+  cspWithScriptNonce,
   CSP_BASELINE,
 } from '#shared/http/security-headers.ts'
 
@@ -83,5 +84,44 @@ describe('buildSecurityHeaders', () => {
   it('aceita CSP customizada via opts.csp', () => {
     const set = buildSecurityHeaders({ https: false, csp: "default-src 'none'" })
     assert.equal(find(set, 'Content-Security-Policy'), "default-src 'none'")
+  })
+
+  it('com nonce → script-src ganha \'nonce-X\' (mantém \'self\')', () => {
+    const set = buildSecurityHeaders({ https: false, nonce: 'abc123' })
+    const csp = find(set, 'Content-Security-Policy')
+    assert.ok(csp, 'CSP presente')
+    const scriptDirective = csp.split('; ').find((d) => d.startsWith('script-src '))
+    assert.ok(scriptDirective?.includes("'self'"), "script-src mantém 'self'")
+    assert.ok(scriptDirective?.includes("'nonce-abc123'"), "script-src ganha o nonce")
+  })
+
+  it('com nonce → style-src NÃO ganha nonce (preserva unsafe-inline; regra CSP3)', () => {
+    const set = buildSecurityHeaders({ https: false, nonce: 'abc123' })
+    const csp = find(set, 'Content-Security-Policy')
+    const styleDirective = csp?.split('; ').find((d) => d.startsWith('style-src '))
+    assert.ok(styleDirective?.includes("'unsafe-inline'"), "style-src mantém 'unsafe-inline'")
+    assert.equal(styleDirective?.includes('nonce-'), false, 'style-src sem nonce')
+  })
+
+  it('sem nonce → script-src permanece só \'self\' (sem nonce-)', () => {
+    const set = buildSecurityHeaders({ https: false })
+    const csp = find(set, 'Content-Security-Policy')
+    const scriptDirective = csp?.split('; ').find((d) => d.startsWith('script-src '))
+    assert.equal(scriptDirective?.includes('nonce-'), false)
+  })
+})
+
+describe('cspWithScriptNonce (puro)', () => {
+  it('adiciona \'nonce-X\' ao script-src sem mutar o original', () => {
+    const out = cspWithScriptNonce(CSP_BASELINE, 'n0nc3')
+    assert.deepEqual(out['script-src'], ["'self'", "'nonce-n0nc3'"])
+    // imutabilidade: o baseline original não muda
+    assert.deepEqual(CSP_BASELINE['script-src'], ["'self'"])
+  })
+
+  it('preserva as demais diretivas intactas', () => {
+    const out = cspWithScriptNonce(CSP_BASELINE, 'n0nc3')
+    assert.deepEqual(out['style-src'], CSP_BASELINE['style-src'])
+    assert.deepEqual(out['default-src'], CSP_BASELINE['default-src'])
   })
 })

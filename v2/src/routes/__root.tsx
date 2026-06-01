@@ -9,6 +9,9 @@ interface RouterContext {
 }
 
 export const Route = createRootRouteWithContext<RouterContext>()({
+  // A <meta property="csp-nonce"> NÃO é emitida aqui de propósito: o próprio HeadContent a injeta
+  // automaticamente (uma vez) quando o router tem `ssr.nonce` — setado por getRouter() per-request.
+  // O cliente do Start lê essa meta (querySelector) p/ reconstruir o nonce na hidratação.
   head: () => ({
     meta: [
       { charSet: 'utf-8' },

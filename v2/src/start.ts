@@ -17,10 +17,15 @@ import { createStart, createMiddleware, createCsrfMiddleware } from '@tanstack/r
 import { getRequestHeader, setResponseHeader } from '@tanstack/react-start/server'
 
 import { buildSecurityHeaders, isHttpsFromForwardedProto } from '#shared/http/security-headers.ts'
+import { generateCspNonce, setRequestCspNonce } from '#external/http/csp-nonce.ts'
 
 const securityHeadersMiddleware = createMiddleware().server(({ next }) => {
   const https = isHttpsFromForwardedProto(getRequestHeader('x-forwarded-proto'))
-  for (const [name, value] of buildSecurityHeaders({ https })) {
+  // Nonce per-request: publicado no request-scope ANTES do next() (o getRouter() lê o mesmo nonce
+  // no mesmo h3Event) e injetado no script-src para liberar o <script> inline de bootstrap do Start.
+  const nonce = generateCspNonce()
+  setRequestCspNonce(nonce)
+  for (const [name, value] of buildSecurityHeaders({ https, nonce })) {
     setResponseHeader(name, value)
   }
   return next()

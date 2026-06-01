@@ -6,6 +6,7 @@ import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query
 import '#shared/ui/tokens/theme.css.ts'
 import '#shared/ui/tokens/fonts.ts'
 
+import { getRequestCspNonce } from '#external/http/csp-nonce.ts'
 import { createAppQueryClient } from './query-client.ts'
 import { routeTree } from './routeTree.gen'
 
@@ -21,11 +22,16 @@ export function getRouter() {
     onAuthExpired()
   })
 
+  // Nonce CSP per-request (servidor): casa com o header Content-Security-Policy e libera o <script>
+  // inline de bootstrap do Start. No cliente é undefined — o Start o reconstrói da <meta csp-nonce>.
+  const nonce = getRequestCspNonce()
+
   const router = createRouter({
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
     defaultPreload: 'intent',
+    ssr: { nonce },
   })
 
   // 401/auth:expired → manda ao login preservando o destino atual (FR-006). safeRedirect na volta.
