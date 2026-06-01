@@ -6,7 +6,7 @@ import type { ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { useLoginViewModel } from '#modules/auth/client/view-model/login/use-login.view-model.ts'
+import { useLoginViewModel } from '#modules/auth/client/login/login.binding.ts'
 import { useLoginFormController } from './components/forms/login-form.controller.ts'
 import { LoginForm } from './components/forms/login-form.component.tsx'
 

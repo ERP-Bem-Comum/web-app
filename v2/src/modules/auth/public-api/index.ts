@@ -5,6 +5,6 @@
  */
 export { getCurrentUserFn } from '#modules/auth/server/adapters/server-fns/get-current-user.server-fn.ts'
 export { safeRedirect } from '#modules/auth/client/data/helpers/safe-redirect.ts'
-export { useCurrentUser } from '#modules/auth/client/view-model/current-user/use-current-user.view-model.ts'
-export { logoutUseCase } from '#modules/auth/client/usecase/logout/logout.composition.ts'
+export { useCurrentUser } from '#modules/auth/client/current-user/current-user.binding.ts'
+export { logoutUseCase } from '#modules/auth/client/logout/logout.composition.ts'
 export type { CurrentUser } from '#modules/auth/client/data/model/auth.model.ts'

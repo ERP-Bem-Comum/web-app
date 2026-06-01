@@ -4,7 +4,7 @@
 import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
 
-import { deriveLoginView } from '#modules/auth/client/view-model/login/login-view.ts'
+import { deriveLoginView } from '#modules/auth/client/login/login.view-model.ts'
 import { ok, err } from '#shared/primitives/result.ts'
 
 describe('deriveLoginView', () => {

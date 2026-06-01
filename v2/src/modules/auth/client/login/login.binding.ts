@@ -9,8 +9,8 @@ import { useNavigate, useSearch } from '@tanstack/react-router'
 import { isOk } from '#shared/primitives/result.ts'
 import type { LoginInput } from '#modules/auth/client/data/model/auth.model.ts'
 import { safeRedirect } from '#modules/auth/client/data/helpers/safe-redirect.ts'
-import { loginUseCase } from '#modules/auth/client/usecase/login/login.composition.ts'
-import { deriveLoginView, type LoginView } from './login-view.ts'
+import { loginUseCase } from '#modules/auth/client/login/login.composition.ts'
+import { deriveLoginView, type LoginView } from './login.view-model.ts'
 
 export type LoginViewModel = LoginView & Readonly<{ submit: (input: LoginInput) => void }>
 

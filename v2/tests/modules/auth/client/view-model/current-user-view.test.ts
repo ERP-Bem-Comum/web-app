@@ -4,7 +4,7 @@
 import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
 
-import { deriveCurrentUser } from '#modules/auth/client/view-model/current-user/current-user-view.ts'
+import { deriveCurrentUser } from '#modules/auth/client/current-user/current-user.view-model.ts'
 
 describe('deriveCurrentUser', () => {
   it('com usuário → autenticado', () => {

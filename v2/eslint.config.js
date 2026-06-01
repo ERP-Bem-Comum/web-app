@@ -29,11 +29,16 @@ const boundaryElements = [
   { type: 'server-domain', pattern: 'src/modules/*/server/domain', ...F },
   { type: 'server-application', pattern: 'src/modules/*/server/application', ...F },
   { type: 'server-adapters', pattern: 'src/modules/*/server/adapters', ...F },
-  // client-side (FRONT, MVVM)
+  // client-side (FRONT, MVVM, AGNÓSTICO) — feature-first FLAT (ADR-0009): camada = SUFIXO.
+  // data/ e domain/ são pastas COMPARTILHADAS (folder mode); o resto casa por sufixo (mode 'file').
   { type: 'client-data', pattern: 'src/modules/*/client/data', ...F },
-  { type: 'client-usecase', pattern: 'src/modules/*/client/usecase', ...F },
-  { type: 'client-view-model', pattern: 'src/modules/*/client/view-model', ...F },
-  { type: 'client-ui', pattern: 'src/modules/*/client/ui', ...F },
+  { type: 'client-domain', pattern: 'src/modules/*/client/domain', ...F },
+  { type: 'client-view-model', mode: 'file', pattern: 'src/modules/*/client/**/*.view-model.ts', ...F },
+  { type: 'client-data-options', mode: 'file', pattern: 'src/modules/*/client/**/*.{mutation,query}.ts', ...F },
+  { type: 'client-usecase', mode: 'file', pattern: 'src/modules/*/client/**/*.{use-case,composition}.ts', ...F },
+  { type: 'client-controller', mode: 'file', pattern: 'src/modules/*/client/**/*.controller.ts', ...F },
+  { type: 'client-binding', mode: 'file', pattern: 'src/modules/*/client/**/*.binding.ts', ...F },
+  { type: 'client-ui', mode: 'file', pattern: 'src/modules/*/client/**/*.{page,component}.tsx', ...F },
   { type: 'public-api', pattern: 'src/modules/*/public-api', ...F },
 ]
 
@@ -59,25 +64,37 @@ const boundaryRules = [
   { from: { type: 'server-adapters' }, allow: { to: { type: ['shared', 'external', 'public-api'] } } },
   { from: { type: 'server-adapters' }, allow: sameFeature(['server-domain', 'server-application', 'server-adapters']) },
 
-  // --- CLIENT (MVVM): data → usecase → view-model → ui ---
-  // data: Repository é a PORTA → chama a server function (server-adapters da MESMA feature). Não toca server/domain|application.
+  // --- CLIENT (MVVM AGNÓSTICO, ADR-0009): núcleo agnóstico (data/domain/view-model/options) × adapter (binding/controller/ui) ---
+  // data (COMPARTILHADO): Repository = PORTA → server function (server-adapters da MESMA feature). Não toca server/domain|application.
   { from: { type: 'client-data' }, allow: { to: { type: 'shared' } } },
   { from: { type: 'client-data' }, allow: sameFeature(['client-data', 'server-adapters']) },
-  // usecase: shared + data/usecase própria + public-api (emite no bus de shared).
-  { from: { type: 'client-usecase' }, allow: { to: { type: ['shared', 'public-api'] } } },
-  { from: { type: 'client-usecase' }, allow: sameFeature(['client-data', 'client-usecase']) },
-  // view-model: shared + data/usecase/view-model própria + public-api (TanStack Query, assina o bus).
+  // domain (COMPARTILHADO, opcional): shared + data própria.
+  { from: { type: 'client-domain' }, allow: { to: { type: 'shared' } } },
+  { from: { type: 'client-domain' }, allow: sameFeature(['client-data', 'client-domain']) },
+  // data-options (*.mutation/*.query, AGNÓSTICO): shared + data/domain própria (define queryFn/mutationFn → repository).
+  { from: { type: 'client-data-options' }, allow: { to: { type: 'shared' } } },
+  { from: { type: 'client-data-options' }, allow: sameFeature(['client-data', 'client-domain', 'client-data-options']) },
+  // view-model (AGNÓSTICO, objeto puro): shared + public-api + data/domain/options/view-model própria. SEM React (bloco anti-react).
   { from: { type: 'client-view-model' }, allow: { to: { type: ['shared', 'public-api'] } } },
-  { from: { type: 'client-view-model' }, allow: sameFeature(['client-data', 'client-usecase', 'client-view-model']) },
-  // ui: shared + design system + view-model/data(tipos)/ui própria + public-api. NÃO importa server/* nem repository direto.
+  { from: { type: 'client-view-model' }, allow: sameFeature(['client-data', 'client-domain', 'client-data-options', 'client-view-model']) },
+  // usecase (transitional → vira efeito do command): shared + public-api + data/domain/usecase/view-model própria.
+  { from: { type: 'client-usecase' }, allow: { to: { type: ['shared', 'public-api'] } } },
+  { from: { type: 'client-usecase' }, allow: sameFeature(['client-data', 'client-domain', 'client-usecase', 'client-view-model']) },
+  // controller (ADAPTER, form local): shared + public-api + data própria (Zod schema).
+  { from: { type: 'client-controller' }, allow: { to: { type: ['shared', 'public-api'] } } },
+  { from: { type: 'client-controller' }, allow: sameFeature(['client-data', 'client-controller']) },
+  // binding (ADAPTER): liga o framework ao núcleo. shared + public-api + data/options/view-model/usecase/binding própria.
+  { from: { type: 'client-binding' }, allow: { to: { type: ['shared', 'public-api'] } } },
+  { from: { type: 'client-binding' }, allow: sameFeature(['client-data', 'client-domain', 'client-data-options', 'client-view-model', 'client-usecase', 'client-binding']) },
+  // ui (View burra): shared + design system + public-api + binding/controller/view-model(tipos)/ui própria. NÃO importa server/data/repository direto.
   { from: { type: 'client-ui' }, allow: { to: { type: ['shared', 'shared-ui', 'public-api'] } } },
-  { from: { type: 'client-ui' }, allow: sameFeature(['client-data', 'client-view-model', 'client-ui']) },
+  { from: { type: 'client-ui' }, allow: sameFeature(['client-binding', 'client-controller', 'client-view-model', 'client-ui']) },
 
   // --- public-api: re-exporta as camadas do PRÓPRIO módulo (client p/ consumo externo) ---
   { from: { type: 'public-api' }, allow: { to: { type: 'shared' } } },
   {
     from: { type: 'public-api' },
-    allow: sameFeature(['server-domain', 'server-application', 'server-adapters', 'client-data', 'client-usecase', 'client-view-model', 'client-ui']),
+    allow: sameFeature(['server-domain', 'server-application', 'server-adapters', 'client-data', 'client-domain', 'client-data-options', 'client-view-model', 'client-usecase', 'client-controller', 'client-binding', 'client-ui']),
   },
 ]
 
@@ -190,8 +207,8 @@ export default tseslint.config(
   // server/data/usecase/repository/server-fn (passe pela ViewModel).
   {
     files: [
-      'src/modules/*/client/ui/**/*.page.tsx',
-      'src/modules/*/client/ui/**/*.component.tsx',
+      'src/modules/*/client/**/*.page.tsx',
+      'src/modules/*/client/**/*.component.tsx',
       'src/routes/**/*.tsx',
     ],
     rules: {
@@ -212,12 +229,30 @@ export default tseslint.config(
   // Ban de import server/data/usecase SÓ em views burras (page/component) — NÃO em rotas:
   // a rota é composition root e o `beforeLoad` legitimamente chama server functions (padrão do framework).
   {
-    files: ['src/modules/*/client/ui/**/*.page.tsx', 'src/modules/*/client/ui/**/*.component.tsx'],
+    files: ['src/modules/*/client/**/*.page.tsx', 'src/modules/*/client/**/*.component.tsx'],
     rules: {
       'no-restricted-imports': [
         'error',
         { patterns: [
-          { group: ['**/server/**', '**/client/data/**', '**/client/usecase/**', '**/*.server-fn', '**/*.repository'], message: 'View burra (§XI MVVM): page/component não importa server/data/usecase/repository — receba tudo da ViewModel por props.' },
+          { group: ['**/server/**', '**/client/data/**', '**/*.use-case', '**/*.server-fn', '**/*.repository'], message: 'View burra (§XI MVVM): page/component não importa server/data/use-case/repository — receba tudo do binding/ViewModel por props.' },
+        ] },
+      ],
+    },
+  },
+
+  // Núcleo AGNÓSTICO (ADR-0009): data/domain + *.view-model/*.mutation/*.query NÃO importam React.
+  // O framework entra só no *.binding.ts (adapter). Garante portabilidade React↔Solid.
+  {
+    files: [
+      'src/modules/*/client/data/**/*.ts',
+      'src/modules/*/client/domain/**/*.ts',
+      'src/modules/*/client/**/*.{view-model,mutation,query}.ts',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { patterns: [
+          { group: ['react', 'react-dom', 'react/*', '@tanstack/react-*'], message: 'Núcleo agnóstico (ADR-0009): proibido React / @tanstack/react-* — só @tanstack/query-core e tipos. O framework entra só no *.binding.ts.' },
         ] },
       ],
     },
@@ -254,7 +289,7 @@ export default tseslint.config(
   // enforça sozinho. Escopo: UI do design system (atoms/molecules/organisms) + UI de feature.
   // EXCLUI tokens/ (definem os valores) e *.values.ts (a fonte de verdade dos literais).
   {
-    files: ['src/shared/ui/{atoms,molecules,organisms}/**/*.{ts,tsx}', 'src/modules/*/client/ui/**/*.{ts,tsx}'],
+    files: ['src/shared/ui/{atoms,molecules,organisms}/**/*.{ts,tsx}', 'src/modules/*/client/**/*.css.ts'],
     rules: {
       'no-restricted-syntax': [
         'error',

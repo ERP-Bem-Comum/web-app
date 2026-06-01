@@ -4,7 +4,7 @@
 import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
 
-import { createLoginUseCase } from '#modules/auth/client/usecase/login/login.use-case.ts'
+import { createLoginUseCase } from '#modules/auth/client/login/login.use-case.ts'
 import { ok, err, type Result } from '#shared/primitives/result.ts'
 import type { AuthRepository, AuthError } from '#modules/auth/client/data/repository/auth.repository.ts'
 import type { CurrentUser } from '#modules/auth/client/data/model/auth.model.ts'

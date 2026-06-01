@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { fetchCurrentUser } from '#modules/auth/client/data/gateways/current-user.gateway.ts'
 import { authBus } from '#modules/auth/client/data/events/auth.bus.ts'
-import { deriveCurrentUser, type CurrentUserView } from './current-user-view.ts'
+import { deriveCurrentUser, type CurrentUserView } from './current-user.view-model.ts'
 
 const CURRENT_USER_KEY = ['auth', 'me'] as const
 

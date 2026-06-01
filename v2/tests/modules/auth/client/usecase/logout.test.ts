@@ -4,7 +4,7 @@
 import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
 
-import { createLogoutUseCase } from '#modules/auth/client/usecase/logout/logout.use-case.ts'
+import { createLogoutUseCase } from '#modules/auth/client/logout/logout.use-case.ts'
 import type { AuthEvent } from '#modules/auth/client/data/events/auth.events.ts'
 
 describe('client/usecase/logout', () => {

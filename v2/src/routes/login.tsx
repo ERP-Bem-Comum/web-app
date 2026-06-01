@@ -7,7 +7,7 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 import * as z from 'zod'
 
 import { getCurrentUserFn, safeRedirect } from '#modules/auth/public-api/index.ts'
-import { LoginPage } from '#modules/auth/client/ui/login/login.page.tsx'
+import { LoginPage } from '#modules/auth/client/login/login.page.tsx'
 
 const LoginSearchSchema = z.object({ redirect: z.string().trim().optional() })
 
