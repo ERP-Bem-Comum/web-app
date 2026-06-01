@@ -24,4 +24,10 @@ export const loginViewModel = {
 
   /** Derivação pura: erro de auth → tag de i18n (a View resolve a tag → texto). */
   toErrorTag: (error: AuthError): string => authErrorTag(error),
+
+  /**
+   * Tag para erro INESPERADO/LANÇADO (não é um AuthError de valor): a server fn lançou — rede, env,
+   * server caído, RPC. O binding usa quando `mutation.isError` (sem `Result.err`). Evita UI silenciosa.
+   */
+  unexpectedErrorTag: 'auth.error.unexpected',
 }

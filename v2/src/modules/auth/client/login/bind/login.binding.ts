@@ -40,10 +40,18 @@ export const useLoginBinding = (): Readonly<{ loginCommand: LoginCommand }> => {
   })
 
   const data = mutation.data
+  // Erro de auth ESPERADO chega como Result.err (valor, HTTP 200). Erro INESPERADO/LANÇADO (rede, env,
+  // server, RPC) não vira valor — vai para mutation.error; sem este ramo a UI ficaria SILENCIOSA.
+  const errorTag =
+    data !== undefined && isErr(data)
+      ? loginViewModel.toErrorTag(data.error)
+      : mutation.isError
+        ? loginViewModel.unexpectedErrorTag
+        : null
   return {
     loginCommand: {
       running: mutation.isPending,
-      errorTag: data !== undefined && isErr(data) ? loginViewModel.toErrorTag(data.error) : null,
+      errorTag,
       result: data !== undefined && isOk(data) ? data.value : null,
       execute: (input) => {
         mutation.mutate(input)

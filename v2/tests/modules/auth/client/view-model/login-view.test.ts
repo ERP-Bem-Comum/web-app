@@ -19,6 +19,10 @@ describe('loginViewModel', () => {
     assert.equal(loginViewModel.toErrorTag('server'), 'auth.error.unexpected')
   })
 
+  it('unexpectedErrorTag: erro LANÇADO (rede/env/server) → tag genérica (não silencia a UI)', () => {
+    assert.equal(loginViewModel.unexpectedErrorTag, 'auth.error.unexpected')
+  })
+
   it('onSuccess (ok): emite UsuarioAutenticado com o userId', () => {
     const events: AuthEvent[] = []
     loginViewModel.onSuccess(ok({ userId: 'u' }), { emit: (e) => events.push(e) })
