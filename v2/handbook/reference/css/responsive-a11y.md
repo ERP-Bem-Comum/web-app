@@ -28,6 +28,13 @@ especificidade) para sobrepor; foque em não escalar/transladar objetos grandes.
 > Convém um **reset global** (em `src/start.ts`/layout, via `globalStyle`) zerando animações sob `reduce`
 > para o app inteiro, e cada componente refina se precisar.
 
+⚠️ **Exceção — indicadores de loading.** Um spinner/indicador de progresso é **funcional** (comunica "não
+travou"), então NÃO o remova sob `reduce`: **suavize** (desacelere a rotação, ou troque o giro por um pulso
+de opacidade) e **sempre** garanta a alternativa textual acessível (`aria-busy` + nome "carregando", ex.:
+texto visualmente oculto). Matar a animação aqui esconde estado — é o oposto do que a a11y quer. (Fonte:
+Think Company / Pope Tech, 2025.) Spinner moderno de elemento único: `conic-gradient` + `mask`
+(`radial-gradient` recorta o miolo); precisa de `WebkitMask` p/ Safari.
+
 ## `prefers-color-scheme` — claro/escuro
 
 ```ts

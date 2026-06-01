@@ -36,6 +36,7 @@ as alternativas **rejeitadas** e por quê. É a fonte que um dev novo (ou um age
 | [0006](./0006-security-headers-csp.md) | Security headers & CSP (middleware global em src/start.ts + Caddy; script-src 'self') | Accepted |
 | [0007](./0007-design-system-vanilla-extract.md) | vanilla-extract como engine do design system (zero-runtime, type-safe; Panda/Tailwind rejeitados) | Accepted |
 | [0008](./0008-self-host-webfonts-fontsource.md) | Self-host de webfonts via @fontsource (assets puros + provenance; CDN/woff2-manual rejeitados) | Accepted |
+| [0009](./0009-framework-agnostic-client.md) | Cliente agnóstico de framework: ViewModel puro + Command, UI como adaptador plugável (binding hook), use-case opcional | Accepted |
 
 > Próximos ADRs a registrar conforme as decisões surgirem (ex.: i18n, módulo de usuários Zero Trust).
 > Decisões já tomadas e ainda não "adritizadas" vivem na constituição e em `specs/*/research.md`.
