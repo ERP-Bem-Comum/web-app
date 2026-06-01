@@ -8,7 +8,4 @@ export type Catalog = Readonly<Record<string, string>>
 
 export type Translator = (key: string) => string
 
-export const createTranslator =
-  (catalog: Catalog): Translator =>
-  (key) =>
-    catalog[key] ?? key
+export const createTranslator = (catalog: Catalog): Translator => (key) => catalog[key] ?? key

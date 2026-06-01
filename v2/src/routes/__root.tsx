@@ -18,6 +18,9 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { title: 'ERP Bem Comum' },
     ],
+    // Favicon explícito → o browser usa este ícone e PARA de pedir /favicon.ico (some o 404).
+    // Reusa o logo da marca (same-origin, coberto por img-src 'self' na CSP). PNG: suporte universal.
+    links: [{ rel: 'icon', type: 'image/png', href: '/images/logo-bem-comum.png' }],
   }),
   component: RootComponent,
 })

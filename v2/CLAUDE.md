@@ -151,9 +151,10 @@ exige incluí-la em `minimumReleaseAgeExclude` por **versão exata**. Nunca use 
    a estrutura `features/`+`lib/` foi **substituída** pelo split client×server; os snippets de Result/HTTP/
    server fn continuam válidos).
 
-Spec-driven via **Spec Kit** (`/speckit-*` skills); specs em `specs/`. O backend `core-api/` é um
-**submódulo** (Swift/Vapor, lint próprio) — fora do escopo do lint/typecheck deste app; docs em
-`handbook/core-api/`. Stack local: `docker compose up -d` → `https://app.localhost` (Caddy).
+Spec-driven via **Spec Kit** (`/speckit-*` skills); specs em `specs/`. O `core-api/` é um **submódulo**
+(repo separado) presente só como **referência para subir o Docker de infra única** — não é alvo de
+desenvolvimento daqui, fora do escopo do lint/typecheck deste app; docs em `handbook/core-api/`. Stack
+local: `docker compose up -d` → `https://app.localhost` (Caddy).
 
 ## Git / commits
 

@@ -6,4 +6,5 @@ import { logoutFn } from '#modules/auth/server/adapters/server-fns/logout.server
 
 export const requestLogout = async (): Promise<void> => {
   await logoutFn()
+  return
 }
