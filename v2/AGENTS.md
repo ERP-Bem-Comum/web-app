@@ -9,16 +9,16 @@
 ## ⚠️ Precedência (leia primeiro)
 
 1. **As regras deste projeto sobrepõem qualquer fluxo/skill global seu.** Em especial: **NÃO use o "GSD"
-   global** (`~/.kimi/...`). A metodologia desta base é **Spec Kit (speckit)** — ver abaixo. Se houver
-   conflito, **o projeto vence**.
+   global** (`~/.kimi-code/...`). A metodologia desta base é **Spec Kit (speckit)** — ver abaixo. Se houver
+   conflito, **o projeto vence** (Project > User na descoberta de skills do Kimi).
 2. Existe um `CLAUDE.md` nesta mesma pasta (porta do Claude Code). O conteúdo de engenharia dele é válido e
    espelha este arquivo, mas a **fonte de verdade canônica** são os arquivos da próxima seção.
 
 ## Metodologia: Spec Kit (igual ao Claude Code)
 
-Os dois assistentes usam o **mesmo fluxo speckit**. As skills vivem em `.claude/skills/` e o **Kimi as carrega
-automaticamente** (skills são cross-tool; o "brand group" de projeto cai para `.claude/skills/`). Invoque com
-`/skill:<nome>`:
+Os dois assistentes usam o **mesmo fluxo speckit**. As skills vivem em `.claude/skills/`; o Kimi Code (Node)
+as descobre via o **symlink versionado `.agents/skills → .claude/skills`** (já no repo — não auto-descobre
+`.claude/skills/` diretamente). Invoque com `/skill:<nome>`:
 
 ```
 /skill:speckit-specify   → cria/atualiza a spec (specs/) a partir da descrição da feature
@@ -28,9 +28,9 @@ automaticamente** (skills são cross-tool; o "brand group" de projeto cai para `
 /skill:speckit-implement → executa as tasks
 ```
 
-As skills speckit chamam scripts **bash** em `.specify/scripts/bash/` (agnósticos) — rode-os via `Shell`.
-Se as skills não aparecerem, garanta no seu `~/.kimi/config.toml`: `merge_all_available_skills = true`
-(ver `handbook/kimi/README.md`).
+As skills speckit chamam scripts **bash** em `.specify/scripts/bash/` (agnósticos) — rode-os via `Bash`.
+Se as skills `/speckit-*` não aparecerem, confira o symlink `.agents/skills` ou adicione
+`extra_skill_dirs = [".claude/skills"]` no seu `~/.kimi-code/config.toml` (ver `handbook/kimi/README.md`).
 
 ## Cânone — leitura obrigatória ANTES de codar (neutro, não cita nenhuma IA)
 
@@ -58,10 +58,11 @@ Se as skills não aparecerem, garanta no seu `~/.kimi/config.toml`: `merge_all_a
 
 | No Claude Code | No Kimi (você) |
 |---|---|
-| Skills speckit em `.claude/skills/` | **Idênticas** — carregadas automaticamente; use `/skill:speckit-*` |
-| Hook `block-non-pnpm` (PreToolUse) bloqueia npm/yarn | **Só se você configurar** o hook equivalente (ver `handbook/kimi/README.md`). Senão: **só `pnpm`, na mão.** |
+| Skills speckit em `.claude/skills/` | **Idênticas** — via symlink versionado `.agents/skills`; use `/skill:speckit-*` |
+| Subagents de domínio em `.claude/agents/` (react/zod/...) | Replicados como **skills** em `.kimi-code/skills/` (versionado): `/skill:css-expert`, `react-expert`, `zod-expert`, `typescript-expert`, `tanstack-{start,router,query}-expert`. Para explorar/planejar, use os built-in `explore`/`plan`/`coder`. |
+| MCP (ESLint + chrome-devtools) | **Idêntico** — em `.kimi-code/mcp.json` (versionado). Cheque com `/mcp`. |
+| Hook `block-non-pnpm` (PreToolUse) bloqueia npm/yarn | **Só se você configurar** o `[[hooks]]` no `~/.kimi-code/config.toml` (ver `handbook/kimi/README.md` §4). Senão: **só `pnpm`, na mão.** |
 | Hook `eslint-fix` (PostToolUse) roda `eslint --fix` no save | **Só se você configurar.** Senão: rode `pnpm lint:fix` você mesma após editar. |
-| Subagents de domínio em `.claude/agents/` (react/zod/...) | Não portados. Use os subagents embutidos: `explore` (mapear código), `plan` (arquitetura), `coder`. |
 
 **Mesmo configurando os hooks, antes de concluir rode você mesma:** `pnpm typecheck` + `pnpm lint` + testes.
 
