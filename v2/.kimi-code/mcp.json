@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "ESLint": {
+      "command": "pnpm",
+      "args": ["dlx", "@eslint/mcp@0.3.6"]
+    },
+    "chrome-devtools": {
+      "command": "pnpm",
+      "args": ["dlx", "chrome-devtools-mcp@1.1.1", "--acceptInsecureCerts"]
+    }
+  }
+}

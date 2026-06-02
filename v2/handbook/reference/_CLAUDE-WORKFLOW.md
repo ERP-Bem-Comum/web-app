@@ -7,12 +7,15 @@ escrever commits sem esbarrar neles. Doc interno (prefixo `_`) — não é espel
 
 | Evento | Matcher | Hook | O que faz |
 | --- | --- | --- | --- |
-| `PreToolUse` | `Bash` | `.claude/hooks/block-non-pnpm.sh` | Bloqueia `npm`/`yarn` (força **pnpm**). Permite `pnpm` e `npx`. |
-| `PostToolUse` | `Edit\|Write` | `.claude/hooks/eslint-fix.sh` | Roda `eslint --fix` no arquivo editado. |
+| `PreToolUse` | `Bash` | `.claude/hooks/block-non-pnpm.sh` | Bloqueia `npm`/`yarn` **como comando** (força **pnpm**). Permite `pnpm`, `npx`, e `npm`/`yarn` dentro de strings/args (não dá mais falso-positivo em commit/grep). |
+| `PostToolUse` | `Edit\|Write` | `.claude/hooks/eslint-fix.sh` | Roda `eslint --fix` no `.ts`/`.tsx` editado e marca a sessão como "suja". |
+| `Stop` | — | `.claude/hooks/verify-gate.sh` | Se houve mudança de código, lembra de rodar `pnpm verify`. Com `CLAUDE_VERIFY_GATE=1`, roda typecheck+lint de verdade e devolve erros ao Claude. |
 | `PreToolUse` | `Bash` | **plugin Maestro** → `policy-enforcer.js` | **Bloqueia heredoc** (`<<EOF` / `<<'EOF'`) em qualquer comando Bash. |
 
-> Os dois primeiros são do projeto (`.claude/settings.json`). O terceiro vem do **plugin
-> Maestro** instalado globalmente (`~/.claude/plugins/.../maestro/.../scripts/policy-enforcer.js`)
+> Os dois hooks de projeto compartilham `.claude/hooks/_lib.sh` (parse de JSON via `jq`, fallback `node`).
+
+> Os três primeiros são do projeto (`.claude/settings.json` + `.claude/hooks/`). O último vem do
+> **plugin Maestro** instalado globalmente (`~/.claude/plugins/.../maestro/.../scripts/policy-enforcer.js`)
 > — vale para todos os projetos, não está no `settings.json` deste repo.
 
 ## Regra: nunca usar heredoc em Bash

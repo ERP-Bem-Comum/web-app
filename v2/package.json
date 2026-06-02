@@ -17,6 +17,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit",
+    "verify": "pnpm typecheck && pnpm lint && pnpm test",
+    "claude:check": "node .claude/check.mjs",
     "test": "node --experimental-strip-types --test \"tests/**/*.test.ts\"",
     "test:watch": "node --experimental-strip-types --test --watch \"tests/**/*.test.ts\"",
     "test:dom": "vitest run",
