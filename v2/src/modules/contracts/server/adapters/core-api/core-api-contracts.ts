@@ -7,13 +7,13 @@ import { ok, err, isErr, type Result } from '#shared/primitives/result.ts'
 import type { HttpError } from '#shared/http/http-error.types.ts'
 import { parseErrorEnvelope } from '#shared/http/error-envelope.ts'
 import { resultFetch } from '#external/core-api/result-fetch.ts'
-import type { ContractsError } from '#modules/contracts/server/domain/errors/contracts.errors.ts'
+import type { ContractsError } from '#modules/contracts/server/adapters/contracts-shared.types.ts'
 import type {
   CreateContractInput,
   UpdateContractInput,
   CreateAmendmentInput,
   ListContractsInput,
-} from '#modules/contracts/client/data/model/contracts.model.ts'
+} from '#modules/contracts/server/domain/contracts.types.ts'
 
 const SLUG_TO_ERROR: Partial<Record<string, ContractsError>> = {
   'contract-not-found': 'contract-not-found',
@@ -63,7 +63,7 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
     if (input.search) params.set('search', input.search)
     if (input.contractType) params.set('contractType', input.contractType)
     if (input.status) params.set('status', input.status)
-    if (input.order) params.set('order', input.order)
+    params.set('order', input.order)
     return params.toString()
   }
 

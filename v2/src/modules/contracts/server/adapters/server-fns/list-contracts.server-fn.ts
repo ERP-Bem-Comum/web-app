@@ -3,13 +3,12 @@
  * Extrai access token da sessão (via auth guard), chama use-case.
  */
 import { createServerFn } from '@tanstack/react-start'
-import * as z from 'zod'
 
 import { isErr } from '#shared/primitives/result.ts'
 import { getCurrentUserFn } from '#modules/auth/public-api/index.ts'
 import { contractsServer } from '../contracts.composition.ts'
-import { ListContractsInputSchema, type ListContractsResponse } from '#modules/contracts/client/data/model/contracts.model.ts'
-import type { ContractsError } from '#modules/contracts/server/domain/errors/contracts.errors.ts'
+import { ListContractsInputSchema, type ListContractsResponse } from '#modules/contracts/server/domain/contracts.types.ts'
+import type { ContractsError } from '#modules/contracts/server/adapters/contracts-shared.types.ts'
 
 export type ListContractsFnResult =
   | Readonly<{ ok: true; data: ListContractsResponse }>

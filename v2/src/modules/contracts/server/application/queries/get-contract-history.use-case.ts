@@ -8,7 +8,7 @@ export type ContractHistoryEvent = Readonly<{
   description: string
   occurredAt: string
   userName?: string
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, string | number | boolean | null>
 }>
 
 type Deps = Readonly<{
@@ -21,5 +21,5 @@ export const createGetContractHistory = (deps: Deps) =>
   async (id: string, token: string): Promise<Result<readonly ContractHistoryEvent[], ContractsError>> => {
     const r = await deps.client.getHistory(id, token)
     if (isErr(r)) return err(r.error)
-    return ok((r.value as { events: ContractHistoryEvent[] }).events ?? [])
+    return ok((r.value as { events: ContractHistoryEvent[] }).events)
   }

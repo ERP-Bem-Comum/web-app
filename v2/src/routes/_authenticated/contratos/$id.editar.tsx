@@ -1,9 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { ContractEditPage } from '#modules/contracts/client/contract-edit/page/contract-edit.page.tsx'
 
+function ContractEditRoute(): JSX.Element {
+  const { id } = Route.useParams()
+  return <ContractEditPage contractId={id} />
+}
+
 export const Route = createFileRoute('/_authenticated/contratos/$id/editar')({
-  component: () => {
-    const { id } = Route.useParams()
-    return <ContractEditPage contractId={id} />
-  },
+  component: ContractEditRoute,
 })

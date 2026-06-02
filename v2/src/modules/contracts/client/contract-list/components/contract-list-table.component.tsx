@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import type { Contract } from '#modules/contracts/client/data/model/contracts.model.ts'
+import type { Contract } from '#modules/contracts/public-api/index.ts'
 
 const t = createTranslator(ptBR)
 

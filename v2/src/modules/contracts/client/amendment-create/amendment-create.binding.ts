@@ -23,7 +23,7 @@ export const useAmendmentCreateBinding = (): Readonly<{ createCommand: CreateAme
       running: mutation.isPending,
       errorTag,
       result: data !== undefined && isOk(data) ? data.value : null,
-      execute: (contractId, input) => mutation.mutate({ contractId, data: input }),
+      execute: (contractId, input) => { mutation.mutate({ contractId, data: input }); },
     },
   }
 }

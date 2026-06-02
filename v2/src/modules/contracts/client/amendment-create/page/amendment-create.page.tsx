@@ -10,7 +10,7 @@ const t = createTranslator(ptBR)
 
 export function AmendmentCreatePage({ contractId }: { contractId: string }): ReactNode {
   const { createCommand } = useAmendmentCreateBinding()
-  const form = useAmendmentFormController((input) => createCommand.execute(contractId, input))
+  const form = useAmendmentFormController((input) => { createCommand.execute(contractId, input); })
 
   return (
     <div className={screen}>

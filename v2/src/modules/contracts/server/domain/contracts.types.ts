@@ -1,6 +1,6 @@
 /**
- * Client/data Model — padronização client-side do contrato (Zod).
- * Espelha o contrato da API v2 + campos da v1. É a borda de validação do client.
+ * Tipos e schemas compartilhados do domínio de contratos (server-side).
+ * Definidos no server para evitar import circular client→server.
  */
 import * as z from 'zod'
 
@@ -121,7 +121,6 @@ export const ContractSchema = z.object({
 })
 export type Contract = z.infer<typeof ContractSchema>
 
-// Input schemas
 export const ListContractsInputSchema = z.object({
   page: z.int().min(1).default(1),
   limit: z.int().min(1).max(100).default(20),
@@ -176,7 +175,6 @@ export const CreateAmendmentInputSchema = z.object({
 })
 export type CreateAmendmentInput = z.infer<typeof CreateAmendmentInputSchema>
 
-// List response
 export const ListContractsResponseSchema = z.object({
   items: z.array(ContractSchema),
   meta: z.object({

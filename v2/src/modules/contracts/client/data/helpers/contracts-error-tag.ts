@@ -1,7 +1,7 @@
 /**
  * contractsErrorTag — mapeia ContractsError → tag i18n.
  */
-import type { ContractsError } from '#modules/contracts/server/domain/errors/contracts.errors.ts'
+import type { ContractsError } from '#modules/contracts/client/data/repository/contracts.repository.ts'
 
 export const contractsErrorTag = (e: ContractsError): string => {
   switch (e) {

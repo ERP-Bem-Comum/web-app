@@ -5,40 +5,40 @@
 import * as z from 'zod'
 
 export const CoreApiContractSchema = z.object({
-  id: z.string().uuid(),
-  sequentialNumber: z.string(),
-  title: z.string(),
-  objective: z.string(),
+  id: z.uuid(),
+  sequentialNumber: z.string().trim(),
+  title: z.string().trim(),
+  objective: z.string().trim(),
   originalValue: z.object({ cents: z.number() }),
-  originalPeriod: z.object({ start: z.string().datetime(), end: z.string().datetime() }),
-  status: z.string(),
-  signedAt: z.string().datetime().nullable(),
+  originalPeriod: z.object({ start: z.iso.datetime(), end: z.iso.datetime() }),
+  status: z.string().trim(),
+  signedAt: z.iso.datetime().nullable(),
   currentValue: z.object({ cents: z.number() }),
-  currentPeriod: z.object({ start: z.string().datetime(), end: z.string().datetime() }).nullable(),
-  endedAt: z.string().datetime().nullable(),
+  currentPeriod: z.object({ start: z.iso.datetime(), end: z.iso.datetime() }).nullable(),
+  endedAt: z.iso.datetime().nullable(),
 })
 
 export const CoreApiAmendmentSchema = z.object({
-  id: z.string().uuid(),
-  amendmentNumber: z.string(),
-  type: z.string(),
-  description: z.string().optional(),
+  id: z.uuid(),
+  amendmentNumber: z.string().trim(),
+  type: z.string().trim(),
+  description: z.string().trim().optional(),
   impactValueCents: z.number().optional(),
-  newEndDate: z.string().datetime().optional(),
-  startDate: z.string().datetime().optional(),
-  status: z.string(),
-  signedAt: z.string().datetime().optional(),
-  signedContractUrl: z.string().optional(),
-  createdAt: z.string().datetime(),
+  newEndDate: z.iso.datetime().optional(),
+  startDate: z.iso.datetime().optional(),
+  status: z.string().trim(),
+  signedAt: z.iso.datetime().optional(),
+  signedContractUrl: z.string().trim().optional(),
+  createdAt: z.iso.datetime(),
 })
 
 export const CoreApiContractFileSchema = z.object({
-  id: z.string().uuid(),
-  name: z.string(),
-  url: z.string(),
+  id: z.uuid(),
+  name: z.string().trim(),
+  url: z.string().trim(),
   size: z.number().optional(),
-  uploadedAt: z.string().datetime(),
-  uploadedBy: z.string().optional(),
+  uploadedAt: z.iso.datetime(),
+  uploadedBy: z.string().trim().optional(),
 })
 
 export const CoreApiListResponseSchema = z.object({

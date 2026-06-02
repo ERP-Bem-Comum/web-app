@@ -29,9 +29,9 @@ export const useAmendmentFormController = (onSubmit: (input: CreateAmendmentInpu
   }, [])
 
   const submit = useCallback(() => {
+    if (!state.type) return
     const input: CreateAmendmentInput = {
-      contractId: '', // preenchido pelo caller
-      type: state.type!,
+      type: state.type,
       description: state.description || undefined,
       impactValueCents: state.type === 'valor'
         ? state.impactDirection === 'supressao' ? -state.impactValueCents : state.impactValueCents

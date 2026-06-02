@@ -20,11 +20,11 @@ export function ContractEditForm(props: Props): ReactNode {
   return (
     <form onSubmit={(e) => { e.preventDefault(); props.onSubmit() }}>
       <label>{t('contracts.edit.field.email')}</label>
-      <input value={props.email} onChange={(e) => props.onEmailChange(e.target.value)} />
+      <input value={props.email} onChange={(e) => { props.onEmailChange(e.target.value); }} />
       <label>{t('contracts.edit.field.telephone')}</label>
-      <input value={props.telephone} onChange={(e) => props.onTelephoneChange(e.target.value)} />
+      <input value={props.telephone} onChange={(e) => { props.onTelephoneChange(e.target.value); }} />
       <label>{t('contracts.edit.field.observations')}</label>
-      <textarea value={props.observations} onChange={(e) => props.onObservationsChange(e.target.value)} />
+      <textarea value={props.observations} onChange={(e) => { props.onObservationsChange(e.target.value); }} />
       {props.errorText && <div role="alert">{props.errorText}</div>}
       <button type="submit" disabled={props.submitting}>{t('contracts.edit.submit')}</button>
     </form>

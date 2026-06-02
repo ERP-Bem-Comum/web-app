@@ -1,7 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
 import type { CreateContractInput, Contract } from '#modules/contracts/client/data/model/contracts.model.ts'
-import type { ContractsError } from '#modules/contracts/server/domain/errors/contracts.errors.ts'
-import type { Result } from '#shared/primitives/result.ts'
 import { isOk } from '#shared/primitives/result.ts'
 import { contractCreateViewModel } from './contract-create.view-model.ts'
 
@@ -33,7 +31,7 @@ export const useContractCreateBinding = (): Readonly<{ createCommand: CreateCont
       running: mutation.isPending,
       errorTag,
       result: data !== undefined && isOk(data) ? data.value : null,
-      execute: (input) => mutation.mutate(input),
+      execute: (input) => { mutation.mutate(input); },
     },
   }
 }

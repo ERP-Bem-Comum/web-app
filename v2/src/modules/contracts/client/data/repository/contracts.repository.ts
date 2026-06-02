@@ -12,8 +12,20 @@ import type {
   CreateAmendmentInput,
   Amendment,
 } from '#modules/contracts/client/data/model/contracts.model.ts'
-import type { ContractsError } from '#modules/contracts/server/domain/errors/contracts.errors.ts'
-import type { ContractHistoryEvent } from '#modules/contracts/server/application/queries/get-contract-history.use-case.ts'
+/** Erro de contratos propagado pelo BFF — definido localmente para evitar cross-layer import. */
+export type ContractsError =
+  | 'invalid-code'
+  | 'invalid-value'
+  | 'invalid-period'
+  | 'missing-contractor'
+  | 'contract-not-found'
+  | 'amendment-not-found'
+  | 'invalid-amendment-type'
+  | 'connectivity'
+  | 'server'
+  | 'unauthorized'
+
+import type { ContractHistoryEvent } from '#modules/contracts/server/adapters/contracts-shared.types.ts'
 
 type ListContractsFn = (opts: { data: ListContractsInput }) => Promise<
   | Readonly<{ ok: true; data: ListContractsResponse }>

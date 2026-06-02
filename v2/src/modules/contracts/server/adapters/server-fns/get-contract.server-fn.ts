@@ -4,10 +4,10 @@ import * as z from 'zod'
 import { isErr } from '#shared/primitives/result.ts'
 import { getCurrentUserFn } from '#modules/auth/public-api/index.ts'
 import { contractsServer } from '../contracts.composition.ts'
-import type { Contract } from '#modules/contracts/client/data/model/contracts.model.ts'
-import type { ContractsError } from '#modules/contracts/server/domain/errors/contracts.errors.ts'
+import type { Contract } from '#modules/contracts/server/domain/contracts.types.ts'
+import type { ContractsError } from '#modules/contracts/server/adapters/contracts-shared.types.ts'
 
-const GetContractInputSchema = z.object({ id: z.string().uuid() })
+const GetContractInputSchema = z.object({ id: z.uuid() })
 
 export type GetContractFnResult =
   | Readonly<{ ok: true; data: Contract }>

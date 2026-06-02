@@ -25,11 +25,11 @@ export function AmendmentForm({ state, onUpdate, onSubmit, submitting, errorText
             <button
               key={type}
               type="button"
-              onClick={() => onUpdate('type', type)}
+              onClick={() => { onUpdate('type', type); }}
               style={{ background: state.type === type ? '#e0e0e0' : 'white' }}
             >
-              {t(`contracts.amendment.type.${type}`)}
-              <small>{t(`contracts.amendment.type.desc.${type}`)}</small>
+              {type ? t(`contracts.amendment.type.${type}`) : ''}
+              <small>{type ? t(`contracts.amendment.type.desc.${type}`) : ''}</small>
             </button>
           ))}
         </div>
@@ -37,32 +37,32 @@ export function AmendmentForm({ state, onUpdate, onSubmit, submitting, errorText
       {state.type === 'prazo' && (
         <label>
           {t('contracts.amendment.field.newEndDate')}
-          <input type="date" value={state.newEndDate} onChange={(e) => onUpdate('newEndDate', e.target.value)} />
+          <input type="date" value={state.newEndDate} onChange={(e) => { onUpdate('newEndDate', e.target.value); }} />
         </label>
       )}
       {state.type === 'valor' && (
         <>
           <div>
-            <button type="button" onClick={() => onUpdate('impactDirection', 'acrescimo')}>Acréscimo</button>
-            <button type="button" onClick={() => onUpdate('impactDirection', 'supressao')}>Supressão</button>
+            <button type="button" onClick={() => { onUpdate('impactDirection', 'acrescimo'); }}>Acréscimo</button>
+            <button type="button" onClick={() => { onUpdate('impactDirection', 'supressao'); }}>Supressão</button>
           </div>
           <label>
             {t('contracts.amendment.field.value')}
-            <input type="number" value={state.impactValueCents} onChange={(e) => onUpdate('impactValueCents', Number(e.target.value))} />
+            <input type="number" value={state.impactValueCents} onChange={(e) => { onUpdate('impactValueCents', Number(e.target.value)); }} />
           </label>
         </>
       )}
       <label>
         {t('contracts.amendment.field.signedAt')}
-        <input type="date" value={state.signedAt} onChange={(e) => onUpdate('signedAt', e.target.value)} />
+        <input type="date" value={state.signedAt} onChange={(e) => { onUpdate('signedAt', e.target.value); }} />
       </label>
       <label>
         {t('contracts.amendment.field.startDate')}
-        <input type="date" value={state.startDate} onChange={(e) => onUpdate('startDate', e.target.value)} />
+        <input type="date" value={state.startDate} onChange={(e) => { onUpdate('startDate', e.target.value); }} />
       </label>
       <label>
         {t('contracts.amendment.field.description')}
-        <textarea value={state.description} onChange={(e) => onUpdate('description', e.target.value)} />
+        <textarea value={state.description} onChange={(e) => { onUpdate('description', e.target.value); }} />
       </label>
       {errorText && <div role="alert">{errorText}</div>}
       <button type="submit" disabled={submitting}>{t('contracts.amendment.submit')}</button>

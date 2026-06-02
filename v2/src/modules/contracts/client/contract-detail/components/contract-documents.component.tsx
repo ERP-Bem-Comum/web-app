@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import type { Contract } from '#modules/contracts/client/data/model/contracts.model.ts'
+import type { Contract } from '#modules/contracts/public-api/index.ts'
 
 interface Props {
   contract: Contract

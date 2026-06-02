@@ -15,7 +15,7 @@ import { screen } from './contract-list.css.ts'
 const t = createTranslator(ptBR)
 
 export function ContractListPage(): ReactNode {
-  const { data, isLoading } = useContractListBinding({ page: 1, limit: 20 })
+  const { data, isLoading } = useContractListBinding({ page: 1, limit: 20, order: 'DESC' })
 
   const contracts = data && isOk(data) ? data.value.items : []
   const meta = data && isOk(data) ? data.value.meta : null
@@ -34,7 +34,7 @@ export function ContractListPage(): ReactNode {
       ) : (
         <ContractListTable contracts={contracts} />
       )}
-      {meta && <ContractListPagination meta={meta} />}
+      {meta && <ContractListPagination page={meta.page} totalPages={meta.totalPages} total={meta.total} />}
     </div>
   )
 }

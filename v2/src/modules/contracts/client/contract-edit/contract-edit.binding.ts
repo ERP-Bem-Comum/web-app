@@ -23,7 +23,7 @@ export const useContractEditBinding = (): Readonly<{ editCommand: UpdateContract
       running: mutation.isPending,
       errorTag,
       result: data !== undefined && isOk(data) ? data.value : null,
-      execute: (input) => mutation.mutate(input),
+      execute: (input) => { mutation.mutate(input); },
     },
   }
 }
