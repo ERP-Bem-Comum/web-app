@@ -1,4 +1,4 @@
-import { style } from '@vanilla-extract/css'
+import { style, globalStyle } from '@vanilla-extract/css'
 import { vars } from '#shared/ui/tokens/index.ts'
 
 export const screen = style({
@@ -14,7 +14,6 @@ export const topbar = style({
   gap: vars.space.sm,
   padding: `${vars.space.sm} ${vars.space.md}`,
   borderBottom: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
-  marginBottom: vars.space.lg,
   flexShrink: 0,
 })
 
@@ -44,6 +43,10 @@ export const topbarTitle = style({
   color: vars.color.institutional.ink2,
   letterSpacing: '-0.01em',
   lineHeight: 1.3,
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  flexWrap: 'wrap',
 })
 
 export const topbarMeta = style({
@@ -81,10 +84,32 @@ export const formCol = style({
   minWidth: 0,
   overflowY: 'auto',
   overflowX: 'hidden',
-  paddingBottom: '6rem',
+  paddingTop: vars.space.lg,
+  paddingLeft: vars.space.md,
+  paddingRight: vars.space.xs,
+  paddingBottom: '4rem',
   display: 'flex',
   flexDirection: 'column',
   gap: vars.space.lg,
+  scrollbarWidth: 'thin',
+  scrollbarColor: `${vars.color.institutional.paperRule} transparent`,
+})
+
+globalStyle(`${formCol}::-webkit-scrollbar`, {
+  width: '0.25rem',
+})
+
+globalStyle(`${formCol}::-webkit-scrollbar-track`, {
+  background: 'transparent',
+})
+
+globalStyle(`${formCol}::-webkit-scrollbar-thumb`, {
+  background: vars.color.institutional.paperRule,
+  borderRadius: vars.radius.lg,
+})
+
+globalStyle(`${formCol}::-webkit-scrollbar-thumb:hover`, {
+  background: vars.color.institutional.ink5,
 })
 
 export const sidebar = style({
@@ -92,23 +117,46 @@ export const sidebar = style({
   flexShrink: 0,
   display: 'flex',
   flexDirection: 'column',
-  gap: vars.space.md,
   overflowY: 'auto',
   overflowX: 'hidden',
+  background: vars.color.surface.default,
+  borderLeft: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  scrollbarWidth: 'thin',
+  scrollbarColor: `${vars.color.institutional.paperRule} transparent`,
+})
+
+globalStyle(`${sidebar}::-webkit-scrollbar`, {
+  width: '0.25rem',
+})
+
+globalStyle(`${sidebar}::-webkit-scrollbar-track`, {
+  background: 'transparent',
+})
+
+globalStyle(`${sidebar}::-webkit-scrollbar-thumb`, {
+  background: vars.color.institutional.paperRule,
+  borderRadius: vars.radius.lg,
+})
+
+globalStyle(`${sidebar}::-webkit-scrollbar-thumb:hover`, {
+  background: vars.color.institutional.ink5,
 })
 
 export const section = style({
   padding: `${vars.space.md} 0`,
+  display: 'flex',
+  flexDirection: 'column',
+  gap: vars.space.md,
 })
 
 export const sectionTitle = style({
   fontFamily: vars.font.family.heading,
-  fontSize: '0.6875rem',
+  fontSize: '0.75rem',
   fontWeight: vars.font.weight.bold,
   textTransform: 'uppercase',
   letterSpacing: '0.06em',
-  color: vars.color.institutional.ink5,
-  marginBottom: vars.space.md,
+  color: vars.color.institutional.blue,
+  marginBottom: vars.space.xs,
   display: 'flex',
   alignItems: 'center',
   gap: vars.space.sm,
@@ -128,49 +176,62 @@ export const field = style({
 })
 
 export const fieldLabel = style({
-  fontFamily: vars.font.family.heading,
-  fontSize: '0.59375rem',
+  fontFamily: vars.font.family.body,
+  fontSize: '0.625rem',
   fontWeight: vars.font.weight.bold,
   textTransform: 'uppercase',
   letterSpacing: '0.04em',
-  color: vars.color.institutional.ink5,
+  color: vars.color.institutional.ink4,
 })
 
 export const grid2 = style({
   display: 'grid',
   gridTemplateColumns: 'repeat(2, 1fr)',
-  gap: vars.space.md,
+  gap: vars.space.lg,
+})
+
+export const grid2ValuePeriod = style({
+  display: 'grid',
+  gridTemplateColumns: '2fr 3fr',
+  gap: vars.space.lg,
 })
 
 export const grid3 = style({
   display: 'grid',
   gridTemplateColumns: 'repeat(3, 1fr)',
-  gap: vars.space.md,
+  gap: vars.space.lg,
 })
 
 export const grid4 = style({
   display: 'grid',
   gridTemplateColumns: 'repeat(4, 1fr)',
-  gap: vars.space.md,
+  gap: vars.space.lg,
+})
+
+export const grid4Contract = style({
+  display: 'grid',
+  gridTemplateColumns: '1.2fr 1.2fr 1.2fr 0.8fr',
+  gap: vars.space.lg,
 })
 
 export const input = style({
-  height: '2.25rem',
+  height: '2.5rem',
   padding: `0 ${vars.space.sm}`,
   fontFamily: vars.font.family.body,
-  fontSize: '0.78125rem',
+  fontSize: '0.84375rem',
   color: vars.color.institutional.ink2,
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   borderRadius: vars.radius.md,
   background: vars.color.surface.default,
   outline: 'none',
   width: '100%',
+  boxSizing: 'border-box',
   transition: 'border-color 150ms',
   ':hover': {
-    borderColor: vars.color.institutional.ink5,
+    borderColor: vars.color.institutional.blueLine,
   },
   ':focus': {
-    borderColor: vars.color.institutional.blueLine,
+    borderColor: vars.color.institutional.blue,
     boxShadow: `0 0 0 ${vars.borderWidth.thin} ${vars.color.institutional.blueLine}`,
   },
   ':disabled': {
@@ -202,63 +263,67 @@ export const fieldError = style({
 })
 
 export const select = style({
-  height: '2.25rem',
+  height: '2.5rem',
   padding: `0 ${vars.space.sm}`,
   fontFamily: vars.font.family.body,
-  fontSize: '0.78125rem',
+  fontSize: '0.84375rem',
   color: vars.color.institutional.ink2,
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   borderRadius: vars.radius.md,
   background: vars.color.surface.default,
   outline: 'none',
   width: '100%',
+  boxSizing: 'border-box',
   cursor: 'pointer',
   transition: 'border-color 150ms',
   ':hover': {
-    borderColor: vars.color.institutional.ink5,
+    borderColor: vars.color.institutional.blueLine,
   },
   ':focus': {
-    borderColor: vars.color.institutional.blueLine,
+    borderColor: vars.color.institutional.blue,
     boxShadow: `0 0 0 ${vars.borderWidth.thin} ${vars.color.institutional.blueLine}`,
   },
 })
 
 export const textarea = style({
-  minHeight: '5rem',
+  minHeight: '2.5rem',
   padding: vars.space.sm,
   fontFamily: vars.font.family.body,
-  fontSize: '0.78125rem',
+  fontSize: '0.84375rem',
   color: vars.color.institutional.ink2,
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   borderRadius: vars.radius.md,
   background: vars.color.surface.default,
   outline: 'none',
   width: '100%',
-  resize: 'vertical',
+  boxSizing: 'border-box',
+  resize: 'none',
+  overflow: 'hidden',
   transition: 'border-color 150ms',
   ':hover': {
-    borderColor: vars.color.institutional.ink5,
+    borderColor: vars.color.institutional.blueLine,
   },
   ':focus': {
-    borderColor: vars.color.institutional.blueLine,
+    borderColor: vars.color.institutional.blue,
     boxShadow: `0 0 0 ${vars.borderWidth.thin} ${vars.color.institutional.blueLine}`,
   },
 })
 
 export const footer = style({
-  position: 'sticky',
-  bottom: 0,
-  left: 0,
-  right: 0,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'flex-end',
   gap: vars.space.md,
-  padding: `${vars.space.md} ${vars.space.lg}`,
-  background: vars.color.institutional.surfaceTranslucent,
-  backdropFilter: 'blur(8px)',
+  height: '3.5rem',
+  paddingInline: vars.space.lg,
+  background: vars.color.institutional.paperWarm,
   borderTop: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
-  zIndex: 50,
+  flexShrink: 0,
+  position: 'fixed',
+  bottom: 0,
+  left: 'var(--sidebar-width, 260px)',
+  right: 0,
+  zIndex: 100,
 })
 
 export const buttonPrimary = style({
@@ -411,10 +476,11 @@ export const contractorBox = style({
   display: 'flex',
   alignItems: 'center',
   gap: vars.space.md,
-  padding: `${vars.space.lg} ${vars.space.xl}`,
+  padding: `${vars.space.lg} ${vars.space.md}`,
   background: vars.color.institutional.paperWarm,
   border: `${vars.borderWidth.thin} dashed ${vars.color.institutional.paperRule}`,
   borderRadius: vars.radius.lg,
+  zIndex: 10,
 })
 
 export const contractorBoxIcon = style({
@@ -429,6 +495,11 @@ export const contractorBoxIcon = style({
   color: vars.color.institutional.ink4,
   fontSize: vars.font.size.md,
   flexShrink: 0,
+  cursor: 'pointer',
+  ':hover': {
+    borderColor: vars.color.institutional.blueLine,
+    color: vars.color.institutional.blue,
+  },
 })
 
 export const contractorBoxContent = style({
@@ -446,6 +517,7 @@ export const contractorBoxTitle = style({
 })
 
 export const contractorBoxHint = style({
+  fontFamily: vars.font.family.body,
   fontSize: vars.font.size.sm,
   color: vars.color.institutional.ink5,
 })
@@ -470,7 +542,7 @@ export const partnerCard = style({
   display: 'flex',
   alignItems: 'center',
   gap: vars.space.md,
-  padding: `${vars.space.md} ${vars.space.lg}`,
+  padding: `${vars.space.md} ${vars.space.md}`,
   background: vars.color.institutional.paperWarm,
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   borderRadius: vars.radius.md,
@@ -544,6 +616,7 @@ export const partnerSwapButton = style({
 
 export const searchWrap = style({
   position: 'relative',
+  zIndex: 200,
 })
 
 export const searchInputWrap = style({
@@ -569,7 +642,7 @@ export const searchDropdown = style({
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   borderRadius: vars.radius.md,
   boxShadow: vars.shadow.cardElevated,
-  zIndex: 100,
+  zIndex: 200,
   maxHeight: '16rem',
   overflowY: 'auto',
 })
@@ -610,6 +683,7 @@ export const searchDropdownAvatarPrimary = style({
 
 export const searchDropdownEmpty = style({
   padding: `${vars.space.md} ${vars.space.lg}`,
+  fontFamily: vars.font.family.body,
   fontSize: vars.font.size.sm,
   color: vars.color.institutional.ink5,
   textAlign: 'center',
@@ -620,6 +694,7 @@ export const searchDropdownNewPartner = style({
   alignItems: 'center',
   gap: vars.space.sm,
   padding: `${vars.space.sm} ${vars.space.md}`,
+  fontFamily: vars.font.family.body,
   fontSize: vars.font.size.sm,
   fontWeight: vars.font.weight.semibold,
   color: vars.color.institutional.blue,
@@ -794,10 +869,178 @@ export const uploadHint = style({
   textAlign: 'center',
 })
 
+/* ── Aside (sidebar direito da tela contratos/criar) ── */
+
+export const asideSection = style({
+  padding: vars.space.lg,
+  ':after': {
+    content: '""',
+    display: 'block',
+    marginTop: vars.space.lg,
+    borderBottom: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  },
+})
+
+export const asideSectionLast = style({
+  padding: vars.space.lg,
+  flex: 1,
+  display: 'flex',
+  flexDirection: 'column',
+})
+
+export const asideLabel = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: '0.75rem',
+  fontWeight: vars.font.weight.bold,
+  textTransform: 'uppercase',
+  letterSpacing: '0.06em',
+  color: vars.color.institutional.blue,
+  marginBottom: vars.space.sm,
+})
+
+export const asideValueWrap = style({
+  fontFamily: vars.font.family.mono,
+  color: vars.color.institutional.ink2,
+  lineHeight: 1.2,
+  display: 'flex',
+  alignItems: 'baseline',
+  gap: '0.125rem',
+})
+
+export const asideValueEmpty = style({
+  color: vars.color.institutional.ink5,
+})
+
+export const asideValueCurrency = style({
+  fontSize: '0.8125rem',
+  fontWeight: vars.font.weight.medium,
+})
+
+export const asideValueInteger = style({
+  fontSize: '1.5rem',
+  fontWeight: vars.font.weight.bold,
+  letterSpacing: '-0.02em',
+})
+
+export const asideValueCents = style({
+  fontSize: '0.8125rem',
+  fontWeight: vars.font.weight.medium,
+})
+
+export const vigenciaCard = style({
+  display: 'grid',
+  gridTemplateColumns: '1fr auto 1fr',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  background: vars.color.institutional.paperWarm,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.md,
+  padding: `${vars.space.sm} ${vars.space.md}`,
+})
+
+export const vigenciaCardItem = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.125rem',
+})
+
+export const vigenciaCardLabel = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: '0.59375rem',
+  fontWeight: vars.font.weight.bold,
+  textTransform: 'uppercase',
+  letterSpacing: '0.04em',
+  color: vars.color.institutional.ink5,
+})
+
+export const vigenciaCardValue = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: '0.78125rem',
+  color: vars.color.institutional.ink2,
+})
+
+export const vigenciaCardValueEmpty = style({
+  color: vars.color.institutional.ink5,
+})
+
+export const vigenciaArrow = style({
+  fontSize: '0.6875rem',
+  color: vars.color.institutional.ink5,
+})
+
+export const checklistAside = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: vars.space.sm,
+})
+
+export const checklistAsideItem = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  fontFamily: vars.font.family.body,
+  fontSize: '0.78125rem',
+  color: vars.color.institutional.ink5,
+  transition: 'color 150ms',
+})
+
+export const checklistAsideItemDone = style({
+  color: vars.color.institutional.green,
+  fontWeight: vars.font.weight.medium,
+})
+
+export const checklistAsideCircle = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: '1rem',
+  height: '1rem',
+  borderRadius: '50%',
+  background: vars.color.institutional.paperRule,
+  flexShrink: 0,
+})
+
+export const checklistAsideCircleDone = style({
+  background: vars.color.institutional.green,
+  color: vars.color.surface.default,
+})
+
+export const checklistProgress = style({
+  marginTop: vars.space.md,
+  paddingTop: vars.space.sm,
+  borderTop: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+})
+
+export const checklistProgressLabel = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: '0.625rem',
+  fontWeight: vars.font.weight.bold,
+  textTransform: 'uppercase',
+  letterSpacing: '0.04em',
+  color: vars.color.institutional.ink5,
+})
+
+export const checklistProgressValue = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: '0.6875rem',
+  fontWeight: vars.font.weight.bold,
+  color: vars.color.institutional.ink2,
+})
+
 export const noteText = style({
   fontSize: vars.font.size.xs,
   color: vars.color.institutional.ink5,
   fontStyle: 'italic',
+})
+
+export const modalBodyText = style({
+  marginBottom: vars.space.lg,
+  color: vars.color.institutional.ink3,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
 })
 
 export const errorAlert = style({

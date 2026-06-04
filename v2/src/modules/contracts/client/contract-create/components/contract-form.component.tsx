@@ -17,11 +17,11 @@ import {
   sidebar,
   section,
   sectionTitle,
-  sectionSubtitle,
   field,
   fieldLabel,
   grid2,
-  grid4,
+  grid2ValuePeriod,
+  grid4Contract,
   input,
   inputError,
   fieldError,
@@ -30,18 +30,28 @@ import {
   footer,
   buttonPrimary,
   buttonSecondary,
-  sidebarCard,
-  valuePreview,
-  valuePreviewLabel,
-  valueCurrency,
-  valueInteger,
-  valueCents,
-  vigenciaPreview,
-  checklist as checklistStyle,
-  checklistItem,
-  checklistDone,
-  checklistCircle,
-  checklistCircleDone,
+  asideSection,
+  asideSectionLast,
+  asideLabel,
+  asideValueWrap,
+  asideValueEmpty,
+  asideValueCurrency,
+  asideValueInteger,
+  asideValueCents,
+  vigenciaCard,
+  vigenciaCardItem,
+  vigenciaCardLabel,
+  vigenciaCardValue,
+  vigenciaCardValueEmpty,
+  vigenciaArrow,
+  checklistAside,
+  checklistAsideItem,
+  checklistAsideItemDone,
+  checklistAsideCircle,
+  checklistAsideCircleDone,
+  checklistProgress,
+  checklistProgressLabel,
+  checklistProgressValue,
   contractorBox,
   contractorBoxIcon,
   contractorBoxContent,
@@ -92,6 +102,12 @@ function formatDateBR(dateStr: string): string {
   return d.toLocaleDateString('pt-BR')
 }
 
+function handleAutoExpand(e: React.SyntheticEvent<HTMLTextAreaElement>): void {
+  const el = e.currentTarget
+  el.style.height = 'auto'
+  el.style.height = `${String(el.scrollHeight)}px`
+}
+
 interface Props {
   state: ContractFormState
   onUpdate: <K extends keyof ContractFormState>(key: K, value: ContractFormState[K]) => void
@@ -136,6 +152,14 @@ export function ContractForm({
   onPartnerSearchClose,
   onCreateNewPartner,
 }: Props): ReactNode {
+  const togglePartnerSearch = (): void => {
+    if (partnerSearchOpen) {
+      onPartnerSearchClose()
+    } else {
+      onPartnerSearchOpen()
+    }
+  }
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === 'Escape') {
       onPartnerSearchClose()
@@ -149,8 +173,12 @@ export function ContractForm({
         <button type="button" className={backButton} onClick={onCancel} aria-label={t('contracts.create.back')}>
           ←
         </button>
-        <h1 className={topbarTitle}>{t('contracts.create.title')}</h1>
-        <span className={topbarMeta}>{t('contracts.create.code')}</span>
+        <h1 className={topbarTitle}>
+          {state.classification === 'Contract' ? 'Novo Contrato' : 'Nova Ordem de Serviço'}
+          <span className={topbarMeta}>
+            {state.classification === 'Contract' ? 'CT' : 'OS'} 0000/{new Date().getFullYear()}
+          </span>
+        </h1>
       </div>
 
       <div className={mainLayout}>
@@ -177,7 +205,14 @@ export function ContractForm({
             </div>
           ) : (
             <div className={contractorBox}>
-              <div className={contractorBoxIcon}>🔍</div>
+              <button
+                type="button"
+                className={contractorBoxIcon}
+                onClick={togglePartnerSearch}
+                aria-label={t('contracts.create.field.searchPartner')}
+              >
+                🔍
+              </button>
               <div className={contractorBoxContent}>
                 <span className={contractorBoxTitle}>{t('contracts.create.field.searchPartner')}</span>
                 <span className={contractorBoxHint}>{t('contracts.create.field.searchPartnerHint')}</span>
@@ -185,7 +220,7 @@ export function ContractForm({
               <button
                 type="button"
                 className={contractorBoxAction}
-                onClick={onPartnerSearchOpen}
+                onClick={togglePartnerSearch}
               >
                 {t('contracts.create.field.searchPartnerAction')}
               </button>
@@ -263,7 +298,7 @@ export function ContractForm({
           {/* Dados do Contrato */}
           <div className={section}>
             <div className={sectionTitle}>{t('contracts.create.section.contractData')}</div>
-            <div className={grid4}>
+            <div className={grid4Contract}>
               <div className={field}>
                 <label className={fieldLabel}>{t('contracts.create.field.classification')}</label>
                 <select
@@ -307,17 +342,18 @@ export function ContractForm({
               </div>
             </div>
 
-            <div className={field} style={{ marginTop: '1rem' }}>
+            <div className={field}>
               <label className={fieldLabel}>{t('contracts.create.field.objective')}</label>
               <textarea
                 className={textarea}
                 value={state.objective}
                 onChange={(e) => { onUpdate('objective', e.target.value) }}
-                rows={3}
+                onInput={handleAutoExpand}
+                rows={2}
               />
             </div>
 
-            <div className={grid2} style={{ marginTop: '1rem' }}>
+            <div className={grid2ValuePeriod}>
               <div className={field}>
                 <label className={fieldLabel}>{t('contracts.create.field.value')}</label>
                 <input
@@ -341,7 +377,7 @@ export function ContractForm({
                 )}
               </div>
               <div className={field}>
-                <label className={fieldLabel}>{t('contracts.create.field.period')}</label>
+                <label className={fieldLabel}>Período de Vigência Original</label>
                 <div className={grid2}>
                   <input
                     className={input}
@@ -359,7 +395,7 @@ export function ContractForm({
               </div>
             </div>
 
-            <div className={grid2} style={{ marginTop: '1rem' }}>
+            <div className={grid2}>
               <div className={field}>
                 <label className={fieldLabel}>{t('contracts.create.field.program')}</label>
                 <select
@@ -389,7 +425,7 @@ export function ContractForm({
               </div>
             </div>
 
-            <div className={grid2} style={{ marginTop: '1rem' }}>
+            <div className={grid2}>
               <div className={field}>
                 <label className={fieldLabel}>{t('contracts.create.field.categorizacao')}</label>
                 <select
@@ -419,9 +455,42 @@ export function ContractForm({
             </div>
           </div>
 
-          {/* Contato */}
+          {/* Dados Bancários */}
           <div className={section}>
-            <div className={sectionTitle}>{t('contracts.create.section.contact')}</div>
+            <div className={sectionTitle}>{t('contracts.create.section.banking')}</div>
+            <div className={grid4Contract}>
+              <div className={field}>
+                <label className={fieldLabel}>{t('contracts.create.bancaryInfo.bank')}</label>
+                <input className={input} disabled value={state.bancaryInfo.bank} />
+              </div>
+              <div className={field}>
+                <label className={fieldLabel}>{t('contracts.create.bancaryInfo.agency')}</label>
+                <input className={input} disabled value={state.bancaryInfo.agency} />
+              </div>
+              <div className={field}>
+                <label className={fieldLabel}>{t('contracts.create.bancaryInfo.account')}</label>
+                <input className={input} disabled value={state.bancaryInfo.accountNumber} />
+              </div>
+              <div className={field}>
+                <label className={fieldLabel}>{t('contracts.create.bancaryInfo.dv')}</label>
+                <input className={input} disabled value={state.bancaryInfo.dv} />
+              </div>
+            </div>
+            <div className={grid2}>
+              <div className={field}>
+                <label className={fieldLabel}>{t('contracts.create.pixInfo.keyType')}</label>
+                <input className={input} disabled value={state.pixInfo.keyType} />
+              </div>
+              <div className={field}>
+                <label className={fieldLabel}>{t('contracts.create.pixInfo.key')}</label>
+                <input className={input} disabled value={state.pixInfo.key} />
+              </div>
+            </div>
+          </div>
+
+          {/* CONTATO */}
+          <div className={section}>
+            <div className={sectionTitle}>Contato</div>
             <div className={grid2}>
               <div className={field}>
                 <label className={fieldLabel}>{t('contracts.create.field.email')}</label>
@@ -442,54 +511,14 @@ export function ContractForm({
                 />
               </div>
             </div>
-          </div>
-
-          {/* Dados Bancários */}
-          <div className={section}>
-            <div className={sectionTitle}>{t('contracts.create.section.banking')}</div>
-            <div className={sectionSubtitle}>
-              {t('contracts.create.bancaryInfo.subtitle')}
-            </div>
-            <div className={grid4}>
-              <div className={field}>
-                <label className={fieldLabel}>{t('contracts.create.bancaryInfo.bank')}</label>
-                <input className={input} disabled value={state.bancaryInfo.bank} />
-              </div>
-              <div className={field}>
-                <label className={fieldLabel}>{t('contracts.create.bancaryInfo.agency')}</label>
-                <input className={input} disabled value={state.bancaryInfo.agency} />
-              </div>
-              <div className={field}>
-                <label className={fieldLabel}>{t('contracts.create.bancaryInfo.account')}</label>
-                <input className={input} disabled value={state.bancaryInfo.accountNumber} />
-              </div>
-              <div className={field}>
-                <label className={fieldLabel}>{t('contracts.create.bancaryInfo.dv')}</label>
-                <input className={input} disabled value={state.bancaryInfo.dv} />
-              </div>
-            </div>
-            <div className={grid2} style={{ marginTop: '1rem' }}>
-              <div className={field}>
-                <label className={fieldLabel}>{t('contracts.create.pixInfo.keyType')}</label>
-                <input className={input} disabled value={state.pixInfo.keyType} />
-              </div>
-              <div className={field}>
-                <label className={fieldLabel}>{t('contracts.create.pixInfo.key')}</label>
-                <input className={input} disabled value={state.pixInfo.key} />
-              </div>
-            </div>
-          </div>
-
-          {/* Observações */}
-          <div className={section}>
-            <div className={sectionTitle}>{t('contracts.create.section.observations')}</div>
             <div className={field}>
               <label className={fieldLabel}>{t('contracts.create.field.observations')}</label>
               <textarea
                 className={textarea}
                 value={state.observations}
                 onChange={(e) => { onUpdate('observations', e.target.value) }}
-                rows={4}
+                onInput={handleAutoExpand}
+                rows={2}
               />
             </div>
           </div>
@@ -503,33 +532,50 @@ export function ContractForm({
 
         {/* Sidebar */}
         <div className={sidebar}>
-          <div className={sidebarCard}>
-            <div className={valuePreviewLabel}>Valor do Contrato</div>
-            <div className={valuePreview}>
-              <span className={valueCurrency}>R$</span>
-              <span className={valueInteger}>{formatValueParts(state.originalValueCents).integer}</span>
-              <span className={valueCents}>{formatValueParts(state.originalValueCents).cents}</span>
-            </div>
-            <div className={vigenciaPreview}>
-              <span>{formatDateBR(state.originalPeriodStart)}</span>
-              <span>→</span>
-              <span>{formatDateBR(state.originalPeriodEnd)}</span>
+          {/* Valor do Contrato */}
+          <div className={asideSection}>
+            <div className={asideLabel}>Valor do Contrato</div>
+            <div className={`${asideValueWrap} ${state.originalValueCents <= 0 ? asideValueEmpty : ''}`}>
+              <span className={asideValueCurrency}>R$</span>
+              <span className={asideValueInteger}>{formatValueParts(state.originalValueCents).integer}</span>
+              <span className={asideValueCents}>{formatValueParts(state.originalValueCents).cents}</span>
             </div>
           </div>
 
-          <div className={sidebarCard}>
-            <div className={sectionTitle} style={{ marginBottom: '0.5rem' }}>
-              {t('contracts.create.checklist.title')}
+          {/* Vigência */}
+          <div className={asideSection}>
+            <div className={asideLabel}>Vigência</div>
+            <div className={vigenciaCard}>
+              <div className={vigenciaCardItem}>
+                <span className={vigenciaCardLabel}>Início</span>
+                <span className={`${vigenciaCardValue} ${!state.originalPeriodStart ? vigenciaCardValueEmpty : ''}`}>
+                  {formatDateBR(state.originalPeriodStart)}
+                </span>
+              </div>
+              <span className={vigenciaArrow}>→</span>
+              <div className={vigenciaCardItem}>
+                <span className={vigenciaCardLabel}>Fim</span>
+                <span className={`${vigenciaCardValue} ${!state.originalPeriodEnd ? vigenciaCardValueEmpty : ''}`}>
+                  {formatDateBR(state.originalPeriodEnd)}
+                </span>
+              </div>
             </div>
-            <div className={checklistStyle}>
-              <CheckItem done={checklist.checks.contratado} label={t('contracts.create.checklist.contractor')} />
-              <CheckItem done={checklist.checks.contrato} label={t('contracts.create.checklist.contract')} />
-              <CheckItem done={checklist.checks.valor} label={t('contracts.create.checklist.value')} />
-              <CheckItem done={checklist.checks.vigencia} label={t('contracts.create.checklist.period')} />
-              <CheckItem done={checklist.checks.programa} label={t('contracts.create.checklist.program')} />
+          </div>
+
+          {/* Pendências */}
+          <div className={asideSectionLast}>
+            <div className={asideLabel}>Pendências</div>
+            <div className={checklistAside}>
+              <CheckItem done={checklist.checks.contratado} label="Contratado selecionado" />
+              <CheckItem done={checklist.checks.contrato} label="Tipo, Modelo e Objeto preenchidos" />
+              <CheckItem done={checklist.checks.valor} label="Valor original informado" />
+              <CheckItem done={checklist.checks.vigencia} label="Início e fim da vigência" />
+              <CheckItem done={checklist.checks.programa} label="Programa e plano orçamentário" />
+              <CheckItem done={checklist.checks.documento} label="Documento principal anexado" />
             </div>
-            <div style={{ marginTop: '1rem', textAlign: 'center', fontSize: '0.875rem', color: '#999187' }}>
-              Concluído {checklist.done} / {checklist.total}
+            <div className={checklistProgress}>
+              <span className={checklistProgressLabel}>Concluído</span>
+              <span className={checklistProgressValue}>{checklist.done} / {checklist.total}</span>
             </div>
           </div>
         </div>
@@ -550,8 +596,8 @@ export function ContractForm({
 
 function CheckItem({ done, label }: { done: boolean; label: string }): ReactNode {
   return (
-    <div className={`${checklistItem} ${done ? checklistDone : ''}`}>
-      <div className={`${checklistCircle} ${done ? checklistCircleDone : ''}`}>
+    <div className={`${checklistAsideItem} ${done ? checklistAsideItemDone : ''}`}>
+      <div className={`${checklistAsideCircle} ${done ? checklistAsideCircleDone : ''}`}>
         {done ? '✓' : ''}
       </div>
       <span>{label}</span>
