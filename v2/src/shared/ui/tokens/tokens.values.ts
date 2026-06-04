@@ -107,7 +107,7 @@ export const tokenValues = {
   },
   font: {
     family: {
-      heading: `"Nunito Variable", ${SANS_FALLBACK}`,
+      heading: `"Inter Variable", ${SANS_FALLBACK}`,
       body: `"Nunito Variable", ${SANS_FALLBACK}`,
       mono: `"JetBrains Mono", ${MONO_FALLBACK}`,
     },

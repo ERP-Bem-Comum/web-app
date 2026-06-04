@@ -51,12 +51,12 @@ export const topbarTitle = style({
 
 export const topbarMeta = style({
   fontFamily: vars.font.family.mono,
-  fontSize: '0.6875rem',
-  color: vars.color.institutional.ink5,
-  background: vars.color.institutional.paperWarm,
+  fontSize: '0.75rem',
+  color: vars.color.institutional.ink2,
+  background: vars.color.institutional.blueBg,
   padding: `${vars.space.xs} ${vars.space.sm}`,
   borderRadius: vars.radius.sm,
-  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.blueLine}`,
 })
 
 export const topbarStatus = style({
@@ -254,6 +254,7 @@ export const inputError = style({
 })
 
 export const fieldError = style({
+  fontFamily: vars.font.family.body,
   fontSize: '0.71875rem',
   color: vars.color.feedback.errorText,
   display: 'flex',
@@ -362,14 +363,14 @@ export const buttonSecondary = style({
   fontSize: vars.font.size.sm,
   fontWeight: vars.font.weight.bold,
   color: vars.color.institutional.ink4,
-  background: vars.color.institutional.paperWarm,
+  background: vars.color.surface.default,
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   borderRadius: vars.radius.md,
   cursor: 'pointer',
   transition: 'background 150ms, border-color 150ms',
   ':hover': {
-    background: vars.color.institutional.paperBeige,
-    borderColor: vars.color.institutional.ink5,
+    background: vars.color.institutional.blueBg,
+    borderColor: vars.color.institutional.blueLine,
   },
   ':disabled': {
     opacity: 0.5,
@@ -477,10 +478,15 @@ export const contractorBox = style({
   alignItems: 'center',
   gap: vars.space.md,
   padding: `${vars.space.lg} ${vars.space.md}`,
-  background: vars.color.institutional.paperWarm,
-  border: `${vars.borderWidth.thin} dashed ${vars.color.institutional.paperRule}`,
+  background: vars.color.institutional.blueBg,
+  border: `${vars.borderWidth.thin} dashed ${vars.color.institutional.blueLine}`,
   borderRadius: vars.radius.lg,
   zIndex: 10,
+})
+
+export const contractorBoxError = style({
+  border: `${vars.borderWidth.thick} dashed ${vars.color.feedback.errorText}`,
+  background: vars.color.feedback.errorBg,
 })
 
 export const contractorBoxIcon = style({
@@ -710,6 +716,7 @@ export const modalOverlay = style({
   position: 'fixed',
   inset: 0,
   background: vars.color.institutional.overlay,
+  backdropFilter: 'blur(6px)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -718,21 +725,27 @@ export const modalOverlay = style({
 })
 
 export const modalContent = style({
+  position: 'relative',
+  zIndex: 10,
   background: vars.color.surface.default,
   borderRadius: vars.radius.xl,
   boxShadow: vars.shadow.cardElevated,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   width: '100%',
-  maxWidth: '36rem',
+  maxWidth: '32.5rem',
   maxHeight: '90vh',
-  overflowY: 'auto',
-  padding: vars.space.xl,
+  overflow: 'hidden',
+  display: 'flex',
+  flexDirection: 'column',
 })
 
 export const modalHeader = style({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  marginBottom: vars.space.lg,
+  padding: `${vars.space.md} ${vars.space.lg}`,
+  background: vars.color.institutional.blueBg,
+  borderBottom: `${vars.borderWidth.thin} solid ${vars.color.institutional.blueLine}`,
 })
 
 export const modalHeaderIcon = style({
@@ -751,11 +764,12 @@ export const modalHeaderIcon = style({
 export const modalHeaderText = style({
   display: 'flex',
   flexDirection: 'column',
-  gap: vars.space.xs,
+  gap: '0.125rem',
 })
 
 export const modalSubtitle = style({
-  fontSize: '0.6875rem',
+  fontFamily: vars.font.family.body,
+  fontSize: '0.8125rem',
   color: vars.color.institutional.ink4,
 })
 
@@ -767,20 +781,40 @@ export const modalTitle = style({
 })
 
 export const modalClose = style({
-  width: '2rem',
-  height: '2rem',
+  width: '1.75rem',
+  height: '1.75rem',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
   borderRadius: vars.radius.md,
   border: 'none',
   background: 'transparent',
-  color: vars.color.institutional.ink5,
+  color: vars.color.institutional.ink4,
   cursor: 'pointer',
-  fontSize: '1.25rem',
+  fontSize: '0.875rem',
+  transition: 'background 120ms, color 120ms',
   ':hover': {
-    background: vars.color.institutional.paperWarm,
+    background: vars.color.institutional.paperRule,
+    color: vars.color.institutional.ink2,
   },
+})
+
+export const modalBody = style({
+  padding: `${vars.space.lg} ${vars.space.lg}`,
+  display: 'flex',
+  flexDirection: 'column',
+  gap: vars.space.lg,
+  overflowY: 'auto',
+})
+
+export const modalFooter = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'flex-end',
+  gap: vars.space.sm,
+  padding: `${vars.space.md} ${vars.space.lg}`,
+  background: vars.color.institutional.blueBg,
+  borderTop: `${vars.borderWidth.thin} solid ${vars.color.institutional.blueLine}`,
 })
 
 export const summaryGrid = style({
@@ -791,13 +825,14 @@ export const summaryGrid = style({
 
 export const summaryCard = style({
   padding: vars.space.md,
-  background: vars.color.institutional.paperWarm,
+  background: vars.color.surface.subtle,
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   borderRadius: vars.radius.md,
 })
 
 export const summaryCardLabel = style({
-  fontSize: '0.5625rem',
+  fontFamily: vars.font.family.body,
+  fontSize: '0.625rem',
   fontWeight: vars.font.weight.bold,
   textTransform: 'uppercase',
   letterSpacing: '0.04em',
@@ -806,7 +841,8 @@ export const summaryCardLabel = style({
 })
 
 export const summaryCardValue = style({
-  fontSize: '0.75rem',
+  fontFamily: vars.font.family.body,
+  fontSize: '0.8125rem',
   fontWeight: vars.font.weight.medium,
   color: vars.color.institutional.ink2,
   overflow: 'hidden',
@@ -815,12 +851,13 @@ export const summaryCardValue = style({
 })
 
 export const statusBadge = style({
+  fontFamily: vars.font.family.body,
   display: 'inline-flex',
   alignItems: 'center',
   gap: vars.space.xs,
   padding: `${vars.space.xs} ${vars.space.sm}`,
   borderRadius: vars.radius.md,
-  fontSize: '0.75rem',
+  fontSize: '0.8125rem',
   fontWeight: vars.font.weight.semibold,
 })
 
@@ -834,21 +871,59 @@ export const statusBadgeActive = style({
   color: vars.color.status.activeText,
 })
 
+export const statusDot = style({
+  fontSize: '0.5rem',
+  lineHeight: 1,
+})
+
+export const modalStatusRow = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.md,
+  padding: `${vars.space.sm} ${vars.space.md}`,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.md,
+})
+
+export const modalStatusLabel = style({
+  fontFamily: vars.font.family.body,
+  fontSize: '0.6875rem',
+  fontWeight: vars.font.weight.bold,
+  textTransform: 'uppercase',
+  letterSpacing: '0.04em',
+  color: vars.color.institutional.ink5,
+})
+
+export const fieldHint = style({
+  fontFamily: vars.font.family.body,
+  fontSize: '0.78125rem',
+  color: vars.color.institutional.ink5,
+  marginTop: vars.space.xs,
+})
+
+export const fieldHintError = style({
+  fontFamily: vars.font.family.body,
+  fontSize: '0.71875rem',
+  color: vars.color.feedback.errorText,
+  marginTop: vars.space.xs,
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.xs,
+})
+
 export const uploadZone = style({
   display: 'flex',
-  flexDirection: 'column',
   alignItems: 'center',
-  justifyContent: 'center',
-  gap: vars.space.sm,
-  padding: vars.space.xl,
-  border: `${vars.borderWidth.thick} dashed ${vars.color.institutional.paperRule}`,
+  gap: vars.space.lg,
+  padding: vars.space.lg,
+  border: `${vars.borderWidth.thick} dashed ${vars.color.institutional.blueLine}`,
   borderRadius: vars.radius.lg,
-  background: vars.color.institutional.paperWarm,
+  background: vars.color.institutional.blueBg,
   cursor: 'pointer',
   transition: 'border-color 150ms, background 150ms',
   ':hover': {
-    borderColor: vars.color.institutional.blueLine,
-    background: vars.color.institutional.paperBeige,
+    borderColor: vars.color.institutional.blue,
+    background: vars.color.surface.subtle,
   },
 })
 
@@ -857,16 +932,57 @@ export const uploadZoneActive = style({
   background: vars.color.institutional.blueBg,
 })
 
+export const uploadIconWrap = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexShrink: 0,
+  color: vars.color.institutional.ink4,
+})
+
+export const uploadFileInfo = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.125rem',
+  minWidth: 0,
+  flex: 1,
+})
+
+export const uploadFileName = style({
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.medium,
+  color: vars.color.institutional.ink2,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+})
+
+export const uploadFileSize = style({
+  fontFamily: vars.font.family.body,
+  fontSize: '0.71875rem',
+  color: vars.color.institutional.ink5,
+})
+
+export const uploadAction = style({
+  fontFamily: vars.font.family.body,
+  fontSize: '0.71875rem',
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.blue,
+  flexShrink: 0,
+  marginLeft: 'auto',
+})
+
 export const uploadText = style({
+  fontFamily: vars.font.family.body,
   fontSize: vars.font.size.sm,
   color: vars.color.institutional.ink4,
-  textAlign: 'center',
 })
 
 export const uploadHint = style({
-  fontSize: vars.font.size.xs,
+  fontFamily: vars.font.family.body,
+  fontSize: '0.71875rem',
   color: vars.color.institutional.ink5,
-  textAlign: 'center',
 })
 
 /* ── Aside (sidebar direito da tela contratos/criar) ── */
@@ -932,8 +1048,8 @@ export const vigenciaCard = style({
   gridTemplateColumns: '1fr auto 1fr',
   alignItems: 'center',
   gap: vars.space.sm,
-  background: vars.color.institutional.paperWarm,
-  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  background: vars.color.institutional.blueBg,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.blueLine}`,
   borderRadius: vars.radius.md,
   padding: `${vars.space.sm} ${vars.space.md}`,
 })
@@ -989,6 +1105,11 @@ export const checklistAsideItemDone = style({
   fontWeight: vars.font.weight.medium,
 })
 
+export const checklistAsideItemPending = style({
+  color: vars.color.status.pendingText,
+  fontWeight: vars.font.weight.medium,
+})
+
 export const checklistAsideCircle = style({
   display: 'flex',
   alignItems: 'center',
@@ -1002,6 +1123,11 @@ export const checklistAsideCircle = style({
 
 export const checklistAsideCircleDone = style({
   background: vars.color.institutional.green,
+  color: vars.color.surface.default,
+})
+
+export const checklistAsideCirclePending = style({
+  background: vars.color.status.pendingText,
   color: vars.color.surface.default,
 })
 
@@ -1044,6 +1170,7 @@ export const modalBodyText = style({
 })
 
 export const errorAlert = style({
+  fontFamily: vars.font.family.body,
   padding: `${vars.space.sm} ${vars.space.md}`,
   borderRadius: vars.radius.md,
   background: vars.color.feedback.errorBg,

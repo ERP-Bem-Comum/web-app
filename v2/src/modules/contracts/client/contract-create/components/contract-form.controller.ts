@@ -52,10 +52,12 @@ export interface ContractFormController {
   readonly selectedPartner: SelectedPartner | null
   readonly showModal: boolean
   readonly isOvertopOS: boolean
+  readonly validationAttempted: boolean
   readonly update: <K extends keyof ContractFormState>(key: K, value: ContractFormState[K]) => void
   readonly setSelectedPartner: (partner: SelectedPartner | null) => void
   readonly openModal: () => void
   readonly closeModal: () => void
+  readonly triggerValidation: () => void
   readonly submit: () => CreateContractInput
   readonly checklist: Readonly<{
     checks: Readonly<Record<string, boolean>>
@@ -91,6 +93,7 @@ export const useContractFormController = (): ContractFormController => {
 
   const [selectedPartner, setSelectedPartner] = useState<SelectedPartner | null>(null)
   const [showModal, setShowModal] = useState(false)
+  const [validationAttempted, setValidationAttempted] = useState(false)
 
   const update = useCallback(<K extends keyof ContractFormState>(key: K, value: ContractFormState[K]) => {
     setState((s) => ({ ...s, [key]: value }))
@@ -98,6 +101,7 @@ export const useContractFormController = (): ContractFormController => {
 
   const openModal = useCallback(() => { setShowModal(true) }, [])
   const closeModal = useCallback(() => { setShowModal(false) }, [])
+  const triggerValidation = useCallback(() => { setValidationAttempted(true) }, [])
 
   const isOvertopOS = useMemo(() => {
     return state.classification === 'ServiceOrder' && state.originalValueCents > 999_999
@@ -110,9 +114,11 @@ export const useContractFormController = (): ContractFormController => {
       valor: (state.originalValueCents || 0) > 0,
       vigencia: !!state.originalPeriodStart && !!state.originalPeriodEnd,
       programa: !!state.programId || !!state.budgetPlanId,
+      categorizacao: !!state.categorizacao,
+      centroDeCusto: !!state.centroDeCusto,
     }
     const done = Object.values(checks).filter(Boolean).length
-    return { checks, done, total: 5 }
+    return { checks, done, total: 7 }
   }, [state, selectedPartner])
 
   const submit = useCallback((): CreateContractInput => {
@@ -145,10 +151,12 @@ export const useContractFormController = (): ContractFormController => {
     selectedPartner,
     showModal,
     isOvertopOS,
+    validationAttempted,
     update,
     setSelectedPartner,
     openModal,
     closeModal,
+    triggerValidation,
     submit,
     checklist,
   }
