@@ -59,13 +59,13 @@ import {
   contractorBoxTitle,
   contractorBoxHint,
   contractorBoxAction,
-  partnerCard,
   partnerCardBody,
   partnerLabel,
   partnerBadge,
   partnerName,
   partnerDoc,
-  partnerSwapButton,
+  partnerSelectedWrap,
+  partnerSwapCompact,
   searchWrap,
   searchInputWrap,
   searchInputIcon,
@@ -191,7 +191,7 @@ export function ContractForm({
         <div className={formCol}>
           {/* Contratado */}
           {selectedPartner ? (
-            <div className={partnerCard}>
+            <div className={partnerSelectedWrap}>
               <div className={partnerCardBody}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <span className={partnerLabel}>{t('contracts.create.partnerLabel')}</span>
@@ -204,7 +204,7 @@ export function ContractForm({
                   {selectedPartner.cnpj ? `CNPJ ${selectedPartner.cnpj}` : selectedPartner.cpf ? `CPF ${selectedPartner.cpf}` : '—'}
                 </span>
               </div>
-              <button type="button" className={partnerSwapButton} onClick={onRemovePartner}>
+              <button type="button" className={partnerSwapCompact} onClick={onRemovePartner}>
                 ✎ {t('contracts.create.partnerSwap')}
               </button>
             </div>

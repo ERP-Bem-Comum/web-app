@@ -224,3 +224,91 @@ pnpm typecheck && pnpm lint && pnpm build
 3. **Testes E2E** — criar suite Playwright para o fluxo completo de contratos.
 4. **PUT/PATCH aditivos** — aguardar endpoint do backend para edição de aditivos.
 5. **Módulo Financeiro** — quando integrado, substituir placeholder `"—"` do Saldo por cálculo real.
+
+---
+
+## Evolução — Sessões de desenvolvimento
+
+> Esta seção documenta as alterações incrementais, bugs encontrados e decisões tomadas
+> durante o desenvolvimento ativo do módulo. Atualizada em 2026-06-02.
+
+### Sessão 2026-06-02 — Estilização v1 + Correções críticas de criação
+
+#### Estilização da tela `contratos/criar`
+
+Alterações visuais aplicadas seguindo a identidade da v1 (paleta institucional: azul `#396496`, verde `#1f7d55`, fundos creme `#faf7f2`, bordas `#e5ded4`):
+
+| Alteração | Onde | Detalhe |
+|---|---|---|
+| **Títulos de sections** (main + aside) | `sectionTitle`, `asideLabel` | Azul `#396496` → marrom-escuro `#332e29` (`ink2`) — mesmo tom do título "Novo Contrato" da topbar |
+| **Títulos do modal** | `modalTitle` | Já estava em `ink2`; mantido |
+| **Labels do modal** | `summaryCardLabel`, `modalStatusLabel` | Cinza intencional (`ink5`), não alterado |
+| **Contratado selecionado** | `partnerSelectedWrap`, `partnerCardBody` | Layout flex row: dados à esquerda, botão "Trocar" à direita |
+| **Botão "Trocar"** | `partnerSwapCompact` | Caixa compacta (`1.625rem` altura, padding menor, fonte `0.75rem`), posicionado à direita dos dados |
+| **Card removido** | — | Container `partnerCard` removido; dados aparecem sem background/borda |
+
+#### Correções de bugs na criação de contrato
+
+**Bug 1 — `PeriodSchema` com `z.date()` puro (CRÍTICO)**
+
+- **Sintoma:** Ao clicar "Confirmar" no modal de finalização, exibia "Algo deu errado."
+- **Causa:** O `CreateContractInputSchema` usava `PeriodSchema` com `z.date()` para `start` e `end`. Quando o input é serializado como JSON no RPC do TanStack Start, as datas viram strings ISO. O Zod `z.date()` rejeita strings — espera objetos `Date` nativos.
+- **Fix:** `PeriodSchema.start` e `PeriodSchema.end` alterados para `z.coerce.date()`, que aceita strings ISO e as converte automaticamente para `Date`.
+- **Arquivo:** `src/modules/contracts/server/domain/contracts.types.ts`
+
+**Bug 2 — Body da criação incompleto**
+
+- **Sintoma:** API real podia rejeitar por falta de campos obrigatórios.
+- **Causa:** O `core-api-contracts.ts` enviava apenas 7 campos (`mode`, `sequentialNumber`, `title`, `objective`, `originalValueCents`, `periodStart`, `periodEnd`), ignorando todos os demais do `CreateContractInput`.
+- **Fix:** Body expandido para incluir todos os campos disponíveis: `classification`, `contractModel`, `contractType`, `supplierId`, `financierId`, `collaboratorId`, `programId`, `budgetPlanId`, `categorizacao`, `centroDeCusto`, `observations`, `email`, `telephone`.
+- **Arquivo:** `src/modules/contracts/server/adapters/core-api/core-api-contracts.ts`
+
+**Bug 3 — `supplierId` não populado ao selecionar parceiro**
+
+- **Sintoma:** O contrato era criado sem referência ao contratado (todos os IDs `undefined`).
+- **Causa:** `onSelectPartner` no page apenas chamava `form.setSelectedPartner(partner)`, mas não atualizava o `supplierId`/`financierId`/`collaboratorId` no estado do formulário. O `submit()` enviava `state.supplierId || undefined` = `undefined`.
+- **Fix:** Criados `handleSelectPartner` e `handleRemovePartner` no page que sincronizam `selectedPartner` com o ID correspondente no state, limpando os outros IDs para evitar conflito.
+- **Arquivo:** `src/modules/contracts/client/contract-create/page/contract-create.page.tsx`
+
+**Bug 4 — `title` obrigatório mas sem campo no formulário**
+
+- **Sintoma:** Validação Zod rejeitava porque `title` estava vazio.
+- **Causa:** O formulário não tinha campo de título; o usuário preenchia apenas "Objeto".
+- **Fix:** O controller `submit()` passou a gerar `title` automaticamente a partir de `objective`: `const title = state.title.trim() || state.objective.trim() || 'Contrato sem título'`.
+- **Arquivo:** `src/modules/contracts/client/contract-create/components/contract-form.controller.ts`
+
+**Bug 5 — Checklist não registrava documento anexado**
+
+- **Sintoma:** Aside mostrava "0 / 8" mesmo com arquivo carregado.
+- **Causa:** O componente `ContractForm` não recebia a prop `documentUploaded`.
+- **Fix:** Prop `documentUploaded: boolean` adicionada ao `ContractForm`, alimentada pelo estado `uploadedFile !== null` no page.
+- **Arquivos:** `contract-form.component.tsx`, `contract-create.page.tsx`
+
+#### Mocks de desenvolvimento
+
+Adicionados mocks server-side para facilitar desenvolvimento local sem o core-api:
+
+- `listPartnersMockFn` — 4 parceiros de tipos distintos (Fornecedor, Colaborador, Financiador, ACT)
+- `getContractMockFn` — contrato completo com aditivos e documentos
+
+Ambos ativam automaticamente quando não há sessão (`user === null || accessToken === null`).
+
+#### Regras invariantes do módulo (decididas nesta sessão)
+
+1. **Datas no server-domain usam `z.coerce.date()`**, nunca `z.date()` puro, porque o RPC serializa datas como strings ISO.
+2. **O body da criação/atualização deve incluir TODOS os campos do input**, mesmo que o backend ignore alguns — evita perda silenciosa de dados quando o backend evolui.
+3. **A seleção de parceiro SEMPRE sincroniza o ID no state** (`supplierId`/`financierId`/`collaboratorId`) — `selectedPartner` é estado de UI, o ID é o dado que viaja para o BFF.
+4. **Campos obrigatórios sem input visível devem ter fallback no controller** (ex: `title` ← `objective`).
+
+#### Problemas conhecidos / Workarounds
+
+| Problema | Workaround atual | Resolução futura |
+|---|---|---|
+| `Invalid server function ID` (cache Vite) | Limpar `node_modules/.vite`, `.vanilla-cache`, `.tanstack`; reiniciar `pnpm dev` | Normalizar após atualizações de server functions |
+| Core-api offline em dev → erro de conectividade | Dev fallback retorna mock quando sem sessão | Rodar `docker compose up -d` para stack completa |
+| `supplierId` etc. não persistidos pelo backend | Enviados na requisição, mas backend ignora | Aguardar PR do backend |
+| Criação de contrato com sessão ativa pode falhar | Logout + retry ativa o dev fallback | Implementar mock condicional por flag de env |
+
+---
+
+*Última atualização: 2026-06-02 por Kimi Code (sessão de estilização + correções críticas)*

@@ -18,6 +18,16 @@ export type PartnerSearchResult = Readonly<{
   email?: string
   telephone?: string
   kind: 'Fornecedor' | 'Financiador' | 'Colaborador'
+  bancaryInfo?: Readonly<{
+    bank: string
+    agency: string
+    accountNumber: string
+    dv: string
+  }>
+  pixInfo?: Readonly<{
+    keyType: string
+    key: string
+  }>
 }>
 
 type ListPartnersMockFn = (opts: {
@@ -42,6 +52,8 @@ const toClientPartner = (p: PartnerMock): PartnerSearchResult => ({
     : p.kind === 'Financier' ? 'Financiador'
     : p.kind === 'Collaborator' ? 'Colaborador'
     : 'Fornecedor',
+  bancaryInfo: p.bancaryInfo,
+  pixInfo: p.pixInfo,
 })
 
 export const createPartnersRepository = (deps: Readonly<{

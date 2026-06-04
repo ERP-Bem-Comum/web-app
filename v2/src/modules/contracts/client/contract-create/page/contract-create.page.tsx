@@ -81,6 +81,39 @@ export function ContractCreatePage(): ReactNode {
     setPartnerQuery(q)
   }, [])
 
+  const handleSelectPartner = useCallback((partner: SelectedPartner) => {
+    form.setSelectedPartner(partner)
+    if (partner.kind === 'Fornecedor') {
+      form.update('supplierId', partner.id)
+      form.update('financierId', '')
+      form.update('collaboratorId', '')
+    } else if (partner.kind === 'Financiador') {
+      form.update('financierId', partner.id)
+      form.update('supplierId', '')
+      form.update('collaboratorId', '')
+    } else {
+      form.update('collaboratorId', partner.id)
+      form.update('supplierId', '')
+      form.update('financierId', '')
+    }
+    if (partner.bancaryInfo) {
+      form.update('bancaryInfo', { ...partner.bancaryInfo })
+    }
+    if (partner.pixInfo) {
+      form.update('pixInfo', { ...partner.pixInfo })
+    }
+  }, [form])
+
+  const handleRemovePartner = useCallback(() => {
+    form.setSelectedPartner(null)
+    form.update('supplierId', '')
+    form.update('financierId', '')
+    form.update('collaboratorId', '')
+    form.update('bancaryInfo', { bank: '', agency: '', accountNumber: '', dv: '' })
+    form.update('pixInfo', { keyType: '', key: '' })
+    setPartnerQuery('')
+  }, [form])
+
   /* Modal de finalização */
   const [showModal, setShowModal] = useState(false)
   const [signatureDate, setSignatureDate] = useState('')
@@ -155,8 +188,8 @@ export function ContractCreatePage(): ReactNode {
         submitting={createCommand.running}
         errorText={createCommand.errorTag === null ? null : t(createCommand.errorTag)}
         selectedPartner={form.selectedPartner}
-        onSelectPartner={form.setSelectedPartner}
-        onRemovePartner={() => { form.setSelectedPartner(null); setPartnerQuery('') }}
+        onSelectPartner={handleSelectPartner}
+        onRemovePartner={handleRemovePartner}
         checklist={form.checklist}
         isOvertopOS={form.isOvertopOS}
         validationAttempted={form.validationAttempted}

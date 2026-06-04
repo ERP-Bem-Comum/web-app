@@ -13,6 +13,16 @@ export interface SelectedPartner {
   readonly email?: string
   readonly telephone?: string
   readonly kind: 'Fornecedor' | 'Financiador' | 'Colaborador'
+  readonly bancaryInfo?: Readonly<{
+    bank: string
+    agency: string
+    accountNumber: string
+    dv: string
+  }>
+  readonly pixInfo?: Readonly<{
+    keyType: string
+    key: string
+  }>
 }
 
 export type ContractFormState = Readonly<{
@@ -144,6 +154,8 @@ export const useContractFormController = (): ContractFormController => {
       email: state.email || undefined,
       telephone: state.telephone || undefined,
       observations: state.observations || undefined,
+      bancaryInfo: state.bancaryInfo.bank ? state.bancaryInfo : undefined,
+      pixInfo: state.pixInfo.key ? state.pixInfo : undefined,
     }
   }, [state])
 

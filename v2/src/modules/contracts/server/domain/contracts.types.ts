@@ -26,13 +26,13 @@ export const MoneySchema = z.object({ cents: z.int() })
 export type Money = z.infer<typeof MoneySchema>
 
 export const PeriodSchema = z.object({
-  start: z.date(),
-  end: z.date(),
+  start: z.coerce.date(),
+  end: z.coerce.date(),
 })
 export type Period = z.infer<typeof PeriodSchema>
 
 export const PartnerSnapshotSchema = z.object({
-  id: z.uuid(),
+  id: z.string().trim(),
   name: z.string().trim(),
   document: z.string().trim(),
   email: z.email().optional(),
@@ -96,9 +96,9 @@ export const ContractSchema = z.object({
   classification: ContractClassificationSchema,
   contractModel: ContractModelSchema,
   contractType: ContractTypeSchema,
-  supplierId: z.uuid().optional(),
-  financierId: z.uuid().optional(),
-  collaboratorId: z.uuid().optional(),
+  supplierId: z.string().trim().optional(),
+  financierId: z.string().trim().optional(),
+  collaboratorId: z.string().trim().optional(),
   supplier: PartnerSnapshotSchema.optional(),
   financier: PartnerSnapshotSchema.optional(),
   collaborator: PartnerSnapshotSchema.optional(),
@@ -144,9 +144,9 @@ export const CreateContractInputSchema = z.object({
   classification: ContractClassificationSchema,
   contractModel: ContractModelSchema,
   contractType: ContractTypeSchema,
-  supplierId: z.uuid().optional(),
-  financierId: z.uuid().optional(),
-  collaboratorId: z.uuid().optional(),
+  supplierId: z.string().trim().optional(),
+  financierId: z.string().trim().optional(),
+  collaboratorId: z.string().trim().optional(),
   programId: z.number().optional(),
   budgetPlanId: z.number().optional(),
   categorizacao: z.enum(['Avaliação', 'Operacional', 'Processo']).optional(),
@@ -154,6 +154,8 @@ export const CreateContractInputSchema = z.object({
   observations: z.string().trim().optional(),
   email: z.email().optional(),
   telephone: z.string().trim().optional(),
+  bancaryInfo: BankInfoSchema.omit({ updatedAt: true }).optional(),
+  pixInfo: PixInfoSchema.omit({ updatedAt: true }).optional(),
 })
 export type CreateContractInput = z.infer<typeof CreateContractInputSchema>
 
