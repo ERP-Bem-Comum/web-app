@@ -3,6 +3,12 @@ import type { ReactNode } from 'react'
 import type { QueryClient } from '@tanstack/react-query'
 import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from '@tanstack/react-router'
 
+// Design system (side-effects de registro, 1×): tema aplica os tokens no :root e as
+// webfonts self-host registram seus @font-face. Importado na rota raiz para garantir
+// que o vanilla-extract processe o CSS no bundle de estilos (FR-011).
+import '#shared/ui/tokens/theme.css.ts'
+import '#shared/ui/tokens/fonts.ts'
+
 // Contexto do router: o queryClient é injetado por getRouter() e fica tipado nos loaders.
 interface RouterContext {
   queryClient: QueryClient

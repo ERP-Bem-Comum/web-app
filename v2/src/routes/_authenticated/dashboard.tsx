@@ -10,9 +10,8 @@ export const Route = createFileRoute('/_authenticated/dashboard')({
 
 function Dashboard() {
   return (
-    <main>
-      <h1>Dashboard</h1>
+    <div>
       <p>Área protegida — só acessível com sessão válida.</p>
-    </main>
+    </div>
   )
 }

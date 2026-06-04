@@ -15,7 +15,7 @@ export const Route = createFileRoute('/login')({
   validateSearch: LoginSearchSchema,
   beforeLoad: async ({ search }) => {
     const user = await getCurrentUserFn()
-    if (user !== null) throw redirect({ to: safeRedirect(search.redirect) })
+    if (user !== null) throw redirect({ to: safeRedirect(search.redirect, '/dashboard') })
   },
   component: LoginPage,
 })
