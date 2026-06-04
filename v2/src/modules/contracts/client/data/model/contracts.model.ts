@@ -155,6 +155,8 @@ export const CreateContractInputSchema = z.object({
   observations: z.string().trim().optional(),
   email: z.email().optional(),
   telephone: z.string().trim().optional(),
+  bancaryInfo: BankInfoSchema.omit({ updatedAt: true }).optional(),
+  pixInfo: PixInfoSchema.omit({ updatedAt: true }).optional(),
 })
 export type CreateContractInput = z.infer<typeof CreateContractInputSchema>
 

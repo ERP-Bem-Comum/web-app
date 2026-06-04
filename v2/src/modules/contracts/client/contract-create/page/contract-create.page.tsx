@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { useContractCreateBinding } from '../contract-create.binding.ts'
+import { useContractCreateBinding, usePartnerSearchBinding } from '../contract-create.binding.ts'
 import { useContractFormController } from '../components/contract-form.controller.ts'
 import type { SelectedPartner } from '../components/contract-form.controller.ts'
 import { ContractForm } from '../components/contract-form.component.tsx'
@@ -68,25 +68,51 @@ export function ContractCreatePage(): ReactNode {
   const { createCommand } = useContractCreateBinding()
   const form = useContractFormController()
 
-  /* Busca de parceiros (mock — integrar com API real depois) */
+  /* Busca de parceiros via binding */
   const [partnerQuery, setPartnerQuery] = useState('')
   const [partnerOpen, setPartnerOpen] = useState(false)
-  const [partnerLoading] = useState(false)
-  const [partnerResults, setPartnerResults] = useState<readonly SelectedPartner[]>([])
+
+  const partnerSearch = usePartnerSearchBinding(partnerQuery, form.state.contractType, partnerOpen)
+
+  const partnerLoading = partnerSearch.isLoading
+  const partnerResults: readonly SelectedPartner[] = partnerSearch.results
 
   const handlePartnerQueryChange = useCallback((q: string) => {
     setPartnerQuery(q)
-    if (q.length >= 2) {
-      // Mock de busca — substituir por chamada real ao módulo de parceiros
-      const mock: readonly SelectedPartner[] = [
-        { id: '1', name: 'Empresa ABC Ltda', cnpj: '12.345.678/0001-90', kind: 'Fornecedor' as const },
-        { id: '2', name: 'João Silva', cpf: '123.456.789-00', kind: 'Colaborador' as const },
-      ].filter((p) => p.name.toLowerCase().includes(q.toLowerCase()) || (p.cnpj?.includes(q) ?? false) || (p.cpf?.includes(q) ?? false))
-      setPartnerResults(mock)
-    } else {
-      setPartnerResults([])
-    }
   }, [])
+
+  const handleSelectPartner = useCallback((partner: SelectedPartner) => {
+    form.setSelectedPartner(partner)
+    if (partner.kind === 'Fornecedor') {
+      form.update('supplierId', partner.id)
+      form.update('financierId', '')
+      form.update('collaboratorId', '')
+    } else if (partner.kind === 'Financiador') {
+      form.update('financierId', partner.id)
+      form.update('supplierId', '')
+      form.update('collaboratorId', '')
+    } else {
+      form.update('collaboratorId', partner.id)
+      form.update('supplierId', '')
+      form.update('financierId', '')
+    }
+    if (partner.bancaryInfo) {
+      form.update('bancaryInfo', { ...partner.bancaryInfo })
+    }
+    if (partner.pixInfo) {
+      form.update('pixInfo', { ...partner.pixInfo })
+    }
+  }, [form])
+
+  const handleRemovePartner = useCallback(() => {
+    form.setSelectedPartner(null)
+    form.update('supplierId', '')
+    form.update('financierId', '')
+    form.update('collaboratorId', '')
+    form.update('bancaryInfo', { bank: '', agency: '', accountNumber: '', dv: '' })
+    form.update('pixInfo', { keyType: '', key: '' })
+    setPartnerQuery('')
+  }, [form])
 
   /* Modal de finalização */
   const [showModal, setShowModal] = useState(false)
@@ -111,6 +137,13 @@ export function ContractCreatePage(): ReactNode {
   const handleCancel = useCallback(() => {
     navigate({ to: '/contratos' }).catch(() => { /* noop */ })
   }, [navigate])
+
+  /* Redirect automático para lista após criação bem-sucedida */
+  useEffect(() => {
+    if (createCommand.result !== null) {
+      navigate({ to: '/contratos' }).catch(() => { /* noop */ })
+    }
+  }, [createCommand.result, navigate])
 
   const handleCreateNewPartner = useCallback(() => {
     window.open('/parceiros/criar', '_blank')
@@ -155,8 +188,8 @@ export function ContractCreatePage(): ReactNode {
         submitting={createCommand.running}
         errorText={createCommand.errorTag === null ? null : t(createCommand.errorTag)}
         selectedPartner={form.selectedPartner}
-        onSelectPartner={form.setSelectedPartner}
-        onRemovePartner={() => { form.setSelectedPartner(null); setPartnerQuery('') }}
+        onSelectPartner={handleSelectPartner}
+        onRemovePartner={handleRemovePartner}
         checklist={form.checklist}
         isOvertopOS={form.isOvertopOS}
         validationAttempted={form.validationAttempted}
@@ -170,6 +203,7 @@ export function ContractCreatePage(): ReactNode {
         onPartnerSearchOpen={() => { setPartnerOpen(true) }}
         onPartnerSearchClose={() => { setPartnerOpen(false) }}
         onCreateNewPartner={handleCreateNewPartner}
+        documentUploaded={uploadedFile !== null}
       />
 
       {/* Modal de finalização */}
@@ -303,28 +337,6 @@ export function ContractCreatePage(): ReactNode {
         </div>
       )}
 
-      {/* Modal de sucesso após criação */}
-      {createCommand.result && (
-        <div className={modalOverlay}>
-          <div className={modalContent}>
-            <div className={modalHeader}>
-              <h2 className={modalTitle}>{t('contracts.create.modal.title')}</h2>
-            </div>
-            <p style={{ marginBottom: '1.5rem', color: '#4d4740' }}>
-              {t('contracts.create.modal.subtitle').replace('{{code}}', createCommand.result.sequentialNumber)}
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <a
-                href={`/contratos/${createCommand.result.id}`}
-                className={buttonPrimary}
-                style={{ textDecoration: 'none' }}
-              >
-                {t('contracts.create.modal.button')}
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

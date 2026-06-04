@@ -59,13 +59,13 @@ import {
   contractorBoxTitle,
   contractorBoxHint,
   contractorBoxAction,
-  partnerCard,
   partnerCardBody,
   partnerLabel,
   partnerBadge,
   partnerName,
   partnerDoc,
-  partnerSwapButton,
+  partnerSelectedWrap,
+  partnerSwapCompact,
   searchWrap,
   searchInputWrap,
   searchInputIcon,
@@ -131,6 +131,7 @@ interface Props {
   onPartnerSearchOpen: () => void
   onPartnerSearchClose: () => void
   onCreateNewPartner: () => void
+  documentUploaded: boolean
 }
 
 export function ContractForm({
@@ -154,6 +155,7 @@ export function ContractForm({
   onPartnerSearchOpen,
   onPartnerSearchClose,
   onCreateNewPartner,
+  documentUploaded,
 }: Props): ReactNode {
   const togglePartnerSearch = (): void => {
     if (partnerSearchOpen) {
@@ -189,7 +191,7 @@ export function ContractForm({
         <div className={formCol}>
           {/* Contratado */}
           {selectedPartner ? (
-            <div className={partnerCard}>
+            <div className={partnerSelectedWrap}>
               <div className={partnerCardBody}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <span className={partnerLabel}>{t('contracts.create.partnerLabel')}</span>
@@ -202,7 +204,7 @@ export function ContractForm({
                   {selectedPartner.cnpj ? `CNPJ ${selectedPartner.cnpj}` : selectedPartner.cpf ? `CPF ${selectedPartner.cpf}` : '—'}
                 </span>
               </div>
-              <button type="button" className={partnerSwapButton} onClick={onRemovePartner}>
+              <button type="button" className={partnerSwapCompact} onClick={onRemovePartner}>
                 ✎ {t('contracts.create.partnerSwap')}
               </button>
             </div>
@@ -576,11 +578,11 @@ export function ContractForm({
               <CheckItem done={checklist.checks.programa} label="Programa e plano orçamentário" />
               <CheckItem done={checklist.checks.categorizacao} label="Categorização preenchida" />
               <CheckItem done={checklist.checks.centroDeCusto} label="Centro de custo selecionado" />
-              <CheckItem done={checklist.checks.documento} label="Documento principal anexado" />
+              <CheckItem done={documentUploaded} label="Documento principal anexado" />
             </div>
             <div className={checklistProgress}>
               <span className={checklistProgressLabel}>Concluído</span>
-              <span className={checklistProgressValue}>{checklist.done} / {checklist.total}</span>
+              <span className={checklistProgressValue}>{checklist.done + (documentUploaded ? 1 : 0)} / {checklist.total + 1}</span>
             </div>
           </div>
         </div>

@@ -155,7 +155,7 @@ export const sectionTitle = style({
   fontWeight: vars.font.weight.bold,
   textTransform: 'uppercase',
   letterSpacing: '0.06em',
-  color: vars.color.institutional.blue,
+  color: vars.color.institutional.ink2,
   marginBottom: vars.space.xs,
   display: 'flex',
   alignItems: 'center',
@@ -317,8 +317,8 @@ export const footer = style({
   gap: vars.space.md,
   height: '3.5rem',
   paddingInline: vars.space.lg,
-  background: vars.color.institutional.paperWarm,
-  borderTop: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  background: vars.color.surface.default,
+  borderTop: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
   flexShrink: 0,
   position: 'fixed',
   bottom: 0,
@@ -543,7 +543,7 @@ export const contractorBoxAction = style({
   },
 })
 
-/* Card do contratado selecionado (print v1) */
+/* Card do contratado selecionado */
 export const partnerCard = style({
   display: 'flex',
   alignItems: 'center',
@@ -611,6 +611,34 @@ export const partnerSwapButton = style({
   background: vars.color.surface.default,
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   borderRadius: vars.radius.md,
+  cursor: 'pointer',
+  transition: 'background 120ms, border-color 120ms',
+  flexShrink: 0,
+  ':hover': {
+    background: vars.color.institutional.paperWarm,
+    borderColor: vars.color.institutional.blueLine,
+  },
+})
+
+export const partnerSelectedWrap = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.md,
+})
+
+export const partnerSwapCompact = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: vars.space.xs,
+  height: '1.625rem',
+  padding: `0 ${vars.space.sm}`,
+  fontFamily: vars.font.family.body,
+  fontSize: '0.75rem',
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.blue,
+  background: vars.color.surface.default,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.sm,
   cursor: 'pointer',
   transition: 'background 120ms, border-color 120ms',
   flexShrink: 0,
@@ -1010,7 +1038,7 @@ export const asideLabel = style({
   fontWeight: vars.font.weight.bold,
   textTransform: 'uppercase',
   letterSpacing: '0.06em',
-  color: vars.color.institutional.blue,
+  color: vars.color.institutional.ink2,
   marginBottom: vars.space.sm,
 })
 
