@@ -109,9 +109,9 @@ describe('ContractForm', () => {
     expect(screen.getByText('Documento principal anexado')).toBeTruthy()
   })
 
-  it('checklist progresso mostra 0 / 7', () => {
+  it('checklist progresso mostra 0 / 8', () => {
     render(<ContractForm {...baseProps()} />)
-    expect(screen.getByText('0 / 7')).toBeTruthy()
+    expect(screen.getByText('0 / 8')).toBeTruthy()
   })
 
   it('encaminha onOpenModal ao clicar Finalizar', () => {

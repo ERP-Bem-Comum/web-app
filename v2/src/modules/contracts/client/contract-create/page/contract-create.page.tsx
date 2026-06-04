@@ -170,6 +170,7 @@ export function ContractCreatePage(): ReactNode {
         onPartnerSearchOpen={() => { setPartnerOpen(true) }}
         onPartnerSearchClose={() => { setPartnerOpen(false) }}
         onCreateNewPartner={handleCreateNewPartner}
+        documentUploaded={uploadedFile !== null}
       />
 
       {/* Modal de finalização */}
