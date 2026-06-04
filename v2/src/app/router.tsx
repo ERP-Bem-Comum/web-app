@@ -1,6 +1,9 @@
 import { createRouter } from '@tanstack/react-router'
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query'
 
+// CSS global (reset + border-box) — side-effect vanilla-extract; deve ser importado uma única vez no boot.
+import './global.css.ts'
+
 // Config global de runtime (side-effect, 1×): Zod `jitless: true` — evita o probe `new Function`
 // bloqueado pela CSP (script-src sem 'unsafe-eval'). Antes de qualquer schema parsear. Ver o arquivo.
 import './zod-config.ts'
