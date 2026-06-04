@@ -64,9 +64,7 @@ export type ListPartnersFnResult =
 export const listPartnersMockFn = createServerFn({ method: 'GET' })
   .inputValidator(ListPartnersInputSchema)
   .handler(async ({ data }): Promise<ListPartnersFnResult> => {
-    const user = await getCurrentUserFn()
-    if (user === null) return { ok: false, error: 'unauthorized' }
-
+    // Dev-only mock: autenticação desabilitada para facilitar testes locais
     let results = [...MOCK_PARTNERS]
 
     if (data.kind) {

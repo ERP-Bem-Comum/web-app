@@ -89,9 +89,7 @@ export const MOCK_CONTRACT: Contract = {
 export const getContractMockFn = createServerFn({ method: 'GET' })
   .inputValidator(GetContractMockInputSchema)
   .handler(async ({ data }): Promise<GetContractMockFnResult> => {
-    const user = await getCurrentUserFn()
-    if (user === null) return { ok: false, error: 'unauthorized' }
-
+    // Dev-only mock: autenticação desabilitada para facilitar testes locais
     // Sempre retorna o mock independente do ID (para dev/teste)
     return { ok: true, data: { ...MOCK_CONTRACT, id: data.id } }
   })

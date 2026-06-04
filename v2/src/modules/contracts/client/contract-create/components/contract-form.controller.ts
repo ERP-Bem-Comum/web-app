@@ -122,8 +122,9 @@ export const useContractFormController = (): ContractFormController => {
   }, [state, selectedPartner])
 
   const submit = useCallback((): CreateContractInput => {
+    const title = state.title.trim() || state.objective.trim() || 'Contrato sem título'
     return {
-      title: state.title,
+      title,
       objective: state.objective,
       originalValueCents: state.originalValueCents,
       originalPeriod: {

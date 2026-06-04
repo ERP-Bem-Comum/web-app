@@ -40,7 +40,11 @@ export const useContractCreateBinding = (): Readonly<{ createCommand: CreateCont
   }
 }
 
-export const usePartnerSearchBinding = (query: string, contractType: string): Readonly<{
+export const usePartnerSearchBinding = (
+  query: string,
+  contractType: string,
+  isOpen: boolean,
+): Readonly<{
   results: readonly PartnerSearchResult[]
   isLoading: boolean
 }> => {
@@ -57,7 +61,8 @@ export const usePartnerSearchBinding = (query: string, contractType: string): Re
       if (!isOk(res)) return [] as PartnerSearchResult[]
       return res.value
     },
-    enabled: query.length >= 2,
+    enabled: isOpen,
+    staleTime: 30_000,
   })
 
   return {

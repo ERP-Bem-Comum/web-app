@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
@@ -72,7 +72,7 @@ export function ContractCreatePage(): ReactNode {
   const [partnerQuery, setPartnerQuery] = useState('')
   const [partnerOpen, setPartnerOpen] = useState(false)
 
-  const partnerSearch = usePartnerSearchBinding(partnerQuery, form.state.contractType)
+  const partnerSearch = usePartnerSearchBinding(partnerQuery, form.state.contractType, partnerOpen)
 
   const partnerLoading = partnerSearch.isLoading
   const partnerResults: readonly SelectedPartner[] = partnerSearch.results
@@ -104,6 +104,13 @@ export function ContractCreatePage(): ReactNode {
   const handleCancel = useCallback(() => {
     navigate({ to: '/contratos' }).catch(() => { /* noop */ })
   }, [navigate])
+
+  /* Redirect automático para lista após criação bem-sucedida */
+  useEffect(() => {
+    if (createCommand.result !== null) {
+      navigate({ to: '/contratos' }).catch(() => { /* noop */ })
+    }
+  }, [createCommand.result, navigate])
 
   const handleCreateNewPartner = useCallback(() => {
     window.open('/parceiros/criar', '_blank')
@@ -296,28 +303,6 @@ export function ContractCreatePage(): ReactNode {
         </div>
       )}
 
-      {/* Modal de sucesso após criação */}
-      {createCommand.result && (
-        <div className={modalOverlay}>
-          <div className={modalContent}>
-            <div className={modalHeader}>
-              <h2 className={modalTitle}>{t('contracts.create.modal.title')}</h2>
-            </div>
-            <p style={{ marginBottom: '1.5rem', color: '#4d4740' }}>
-              {t('contracts.create.modal.subtitle').replace('{{code}}', createCommand.result.sequentialNumber)}
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <a
-                href={`/contratos/${createCommand.result.id}`}
-                className={buttonPrimary}
-                style={{ textDecoration: 'none' }}
-              >
-                {t('contracts.create.modal.button')}
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
