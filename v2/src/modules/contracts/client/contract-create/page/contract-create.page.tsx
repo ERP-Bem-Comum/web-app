@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { useContractCreateBinding } from '../contract-create.binding.ts'
+import { useContractCreateBinding, usePartnerSearchBinding } from '../contract-create.binding.ts'
 import { useContractFormController } from '../components/contract-form.controller.ts'
 import type { SelectedPartner } from '../components/contract-form.controller.ts'
 import { ContractForm } from '../components/contract-form.component.tsx'
@@ -68,24 +68,17 @@ export function ContractCreatePage(): ReactNode {
   const { createCommand } = useContractCreateBinding()
   const form = useContractFormController()
 
-  /* Busca de parceiros (mock — integrar com API real depois) */
+  /* Busca de parceiros via binding */
   const [partnerQuery, setPartnerQuery] = useState('')
   const [partnerOpen, setPartnerOpen] = useState(false)
-  const [partnerLoading] = useState(false)
-  const [partnerResults, setPartnerResults] = useState<readonly SelectedPartner[]>([])
+
+  const partnerSearch = usePartnerSearchBinding(partnerQuery, form.state.contractType)
+
+  const partnerLoading = partnerSearch.isLoading
+  const partnerResults: readonly SelectedPartner[] = partnerSearch.results
 
   const handlePartnerQueryChange = useCallback((q: string) => {
     setPartnerQuery(q)
-    if (q.length >= 2) {
-      // Mock de busca — substituir por chamada real ao módulo de parceiros
-      const mock: readonly SelectedPartner[] = [
-        { id: '1', name: 'Empresa ABC Ltda', cnpj: '12.345.678/0001-90', kind: 'Fornecedor' as const },
-        { id: '2', name: 'João Silva', cpf: '123.456.789-00', kind: 'Colaborador' as const },
-      ].filter((p) => p.name.toLowerCase().includes(q.toLowerCase()) || (p.cnpj?.includes(q) ?? false) || (p.cpf?.includes(q) ?? false))
-      setPartnerResults(mock)
-    } else {
-      setPartnerResults([])
-    }
   }, [])
 
   /* Modal de finalização */
