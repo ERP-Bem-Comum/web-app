@@ -710,6 +710,7 @@ export const modalOverlay = style({
   position: 'fixed',
   inset: 0,
   background: vars.color.institutional.overlay,
+  backdropFilter: 'blur(6px)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -718,21 +719,27 @@ export const modalOverlay = style({
 })
 
 export const modalContent = style({
+  position: 'relative',
+  zIndex: 10,
   background: vars.color.surface.default,
   borderRadius: vars.radius.xl,
   boxShadow: vars.shadow.cardElevated,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   width: '100%',
-  maxWidth: '36rem',
+  maxWidth: '32.5rem',
   maxHeight: '90vh',
-  overflowY: 'auto',
-  padding: vars.space.xl,
+  overflow: 'hidden',
+  display: 'flex',
+  flexDirection: 'column',
 })
 
 export const modalHeader = style({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  marginBottom: vars.space.lg,
+  padding: `${vars.space.md} ${vars.space.lg}`,
+  background: vars.color.institutional.paperWarm,
+  borderBottom: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
 })
 
 export const modalHeaderIcon = style({
@@ -767,20 +774,40 @@ export const modalTitle = style({
 })
 
 export const modalClose = style({
-  width: '2rem',
-  height: '2rem',
+  width: '1.75rem',
+  height: '1.75rem',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
   borderRadius: vars.radius.md,
   border: 'none',
   background: 'transparent',
-  color: vars.color.institutional.ink5,
+  color: vars.color.institutional.ink4,
   cursor: 'pointer',
-  fontSize: '1.25rem',
+  fontSize: '0.875rem',
+  transition: 'background 120ms, color 120ms',
   ':hover': {
-    background: vars.color.institutional.paperWarm,
+    background: vars.color.institutional.paperRule,
+    color: vars.color.institutional.ink2,
   },
+})
+
+export const modalBody = style({
+  padding: `${vars.space.lg} ${vars.space.lg}`,
+  display: 'flex',
+  flexDirection: 'column',
+  gap: vars.space.lg,
+  overflowY: 'auto',
+})
+
+export const modalFooter = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'flex-end',
+  gap: vars.space.sm,
+  padding: `${vars.space.md} ${vars.space.lg}`,
+  background: vars.color.institutional.paperWarm,
+  borderTop: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
 })
 
 export const summaryGrid = style({
@@ -834,13 +861,43 @@ export const statusBadgeActive = style({
   color: vars.color.status.activeText,
 })
 
+export const modalStatusRow = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.md,
+  padding: `${vars.space.sm} ${vars.space.md}`,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.md,
+})
+
+export const modalStatusLabel = style({
+  fontSize: '0.6875rem',
+  fontWeight: vars.font.weight.bold,
+  textTransform: 'uppercase',
+  letterSpacing: '0.04em',
+  color: vars.color.institutional.ink5,
+})
+
+export const fieldHint = style({
+  fontSize: '0.71875rem',
+  color: vars.color.institutional.ink5,
+  marginTop: vars.space.xs,
+})
+
+export const fieldHintError = style({
+  fontSize: '0.71875rem',
+  color: vars.color.feedback.errorText,
+  marginTop: vars.space.xs,
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.xs,
+})
+
 export const uploadZone = style({
   display: 'flex',
-  flexDirection: 'column',
   alignItems: 'center',
-  justifyContent: 'center',
-  gap: vars.space.sm,
-  padding: vars.space.xl,
+  gap: vars.space.lg,
+  padding: vars.space.lg,
   border: `${vars.borderWidth.thick} dashed ${vars.color.institutional.paperRule}`,
   borderRadius: vars.radius.lg,
   background: vars.color.institutional.paperWarm,
@@ -848,7 +905,7 @@ export const uploadZone = style({
   transition: 'border-color 150ms, background 150ms',
   ':hover': {
     borderColor: vars.color.institutional.blueLine,
-    background: vars.color.institutional.paperBeige,
+    background: vars.color.institutional.blueBg,
   },
 })
 
@@ -857,16 +914,52 @@ export const uploadZoneActive = style({
   background: vars.color.institutional.blueBg,
 })
 
+export const uploadIconWrap = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexShrink: 0,
+  color: vars.color.institutional.ink4,
+})
+
+export const uploadFileInfo = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.125rem',
+  minWidth: 0,
+  flex: 1,
+})
+
+export const uploadFileName = style({
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.medium,
+  color: vars.color.institutional.ink2,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+})
+
+export const uploadFileSize = style({
+  fontSize: '0.71875rem',
+  color: vars.color.institutional.ink5,
+})
+
+export const uploadAction = style({
+  fontSize: '0.71875rem',
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.blue,
+  flexShrink: 0,
+  marginLeft: 'auto',
+})
+
 export const uploadText = style({
   fontSize: vars.font.size.sm,
   color: vars.color.institutional.ink4,
-  textAlign: 'center',
 })
 
 export const uploadHint = style({
-  fontSize: vars.font.size.xs,
+  fontSize: '0.71875rem',
   color: vars.color.institutional.ink5,
-  textAlign: 'center',
 })
 
 /* ── Aside (sidebar direito da tela contratos/criar) ── */

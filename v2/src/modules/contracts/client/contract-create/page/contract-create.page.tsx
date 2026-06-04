@@ -17,6 +17,10 @@ import {
   modalTitle,
   modalSubtitle,
   modalClose,
+  modalBody,
+  modalFooter,
+  modalStatusRow,
+  modalStatusLabel,
   summaryGrid,
   summaryCard,
   summaryCardLabel,
@@ -28,10 +32,16 @@ import {
   field,
   fieldLabel,
   input,
+  inputError,
+  fieldHint,
+  fieldHintError,
   uploadZone,
   uploadZoneActive,
-  uploadText,
-  uploadHint,
+  uploadIconWrap,
+  uploadFileInfo,
+  uploadFileName,
+  uploadFileSize,
+  uploadAction,
   buttonPrimary,
   buttonSecondary,
   errorAlert,
@@ -161,66 +171,74 @@ export function ContractCreatePage(): ReactNode {
       {showModal && (
         <div className={modalOverlay} onClick={closeModal}>
           <div className={modalContent} onClick={(e) => { e.stopPropagation() }}>
+            {/* Header */}
             <div className={modalHeader}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
                 <div className={modalHeaderIcon}>📄</div>
                 <div className={modalHeaderText}>
-                  <h2 className={modalTitle}>{t('contracts.create.modal.finalizeTitle')}</h2>
-                  <span className={modalSubtitle}>{t('contracts.create.modal.finalizeSubtitle')}</span>
+                  <h2 className={modalTitle}>Finalizar cadastro</h2>
+                  <span className={modalSubtitle}>Revise os dados e anexe o documento assinado</span>
                 </div>
               </div>
               <button type="button" className={modalClose} onClick={closeModal} aria-label="Fechar">×</button>
             </div>
 
-            {/* Resumo */}
-            <div style={{ marginBottom: '1.5rem' }}>
-              <div className={sectionTitle}>{t('contracts.create.modal.summary')}</div>
-              <div className={summaryGrid}>
-                <div className={summaryCard}>
-                  <div className={summaryCardLabel}>Contratado</div>
-                  <div className={summaryCardValue} title={form.selectedPartner?.name ?? '—'}>
-                    {form.selectedPartner?.name ?? '—'}
+            {/* Body */}
+            <div className={modalBody}>
+              {/* Resumo */}
+              <div>
+                <div className={sectionTitle}>{t('contracts.create.modal.summary')}</div>
+                <div className={summaryGrid}>
+                  <div className={summaryCard}>
+                    <div className={summaryCardLabel}>Contratado</div>
+                    <div className={summaryCardValue} title={form.selectedPartner?.name ?? '—'}>
+                      {form.selectedPartner?.name ?? '—'}
+                    </div>
                   </div>
-                </div>
-                <div className={summaryCard}>
-                  <div className={summaryCardLabel}>Valor</div>
-                  <div className={summaryCardValue}>{formatCurrencyCents(form.state.originalValueCents)}</div>
-                </div>
-                <div className={summaryCard}>
-                  <div className={summaryCardLabel}>Vigência</div>
-                  <div className={summaryCardValue}>
-                    {formatDateBR(form.state.originalPeriodStart)} → {formatDateBR(form.state.originalPeriodEnd)}
+                  <div className={summaryCard}>
+                    <div className={summaryCardLabel}>Valor</div>
+                    <div className={summaryCardValue}>{formatCurrencyCents(form.state.originalValueCents)}</div>
+                  </div>
+                  <div className={summaryCard}>
+                    <div className={summaryCardLabel}>Vigência</div>
+                    <div className={summaryCardValue}>
+                      {formatDateBR(form.state.originalPeriodStart)} → {formatDateBR(form.state.originalPeriodEnd)}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Status Preview */}
-            <div style={{ marginBottom: '1.5rem' }}>
-              <div className={sectionTitle}>{t('contracts.create.modal.statusPreview')}</div>
-              <div className={`${statusBadge} ${statusStyle}`}>
-                <span>●</span>
-                {statusLabel}
+              {/* Status preview */}
+              <div className={modalStatusRow}>
+                <span className={modalStatusLabel}>Status do contrato</span>
+                <span className={`${statusBadge} ${statusStyle}`} style={{ marginLeft: 'auto' }}>
+                  <span>●</span>
+                  {statusLabel}
+                </span>
               </div>
-            </div>
 
-            {/* Data de Assinatura */}
-            <div style={{ marginBottom: '1.5rem' }}>
+              {/* Data de Assinatura */}
               <div className={field}>
-                <label className={fieldLabel}>{t('contracts.create.modal.signatureDate')}</label>
+                <label className={fieldLabel}>Data de Assinatura</label>
                 <input
-                  className={input}
+                  className={`${input} ${uploadedFile && !signatureDate ? inputError : ''}`}
                   type="date"
                   value={signatureDate}
                   onChange={(e) => { setSignatureDate(e.target.value) }}
                 />
+                {uploadedFile && !signatureDate ? (
+                  <div className={fieldHintError}>
+                    <span>⚠</span>
+                    Ao anexar o contrato assinado, informe a data de assinatura.
+                  </div>
+                ) : (
+                  <div className={fieldHint}>Informe a data apenas se o contrato já foi assinado.</div>
+                )}
               </div>
-            </div>
 
-            {/* Upload PDF */}
-            <div style={{ marginBottom: '1.5rem' }}>
+              {/* Upload PDF */}
               <div className={field}>
-                <label className={fieldLabel}>{t('contracts.create.modal.uploadDocument')}</label>
+                <label className={fieldLabel}>Documento Principal</label>
                 <div
                   className={`${uploadZone} ${isDragOver ? uploadZoneActive : ''}`}
                   onDrop={handleDrop}
@@ -234,34 +252,46 @@ export function ContractCreatePage(): ReactNode {
                     id="contract-upload"
                     onChange={handleFileSelect}
                   />
-                  <label htmlFor="contract-upload" style={{ cursor: 'pointer', textAlign: 'center' }}>
-                    <div className={uploadText}>
-                      {uploadedFile ? uploadedFile.name : 'Arraste o PDF aqui ou clique para selecionar'}
+                  <label htmlFor="contract-upload" style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%', cursor: 'pointer' }}>
+                    <div className={uploadIconWrap}>
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                      </svg>
                     </div>
-                    <div className={uploadHint}>{t('contracts.create.modal.uploadHint')}</div>
+                    <div className={uploadFileInfo}>
+                      <div className={uploadFileName}>
+                        {uploadedFile ? uploadedFile.name : 'Clique para escolher o arquivo'}
+                      </div>
+                      <div className={uploadFileSize}>
+                        {uploadedFile ? `${(uploadedFile.size / 1024 / 1024).toFixed(1)} MB` : 'PDF assinado · até 20MB'}
+                      </div>
+                    </div>
+                    <div className={uploadAction}>{uploadedFile ? 'Trocar' : 'Escolher'}</div>
                   </label>
                 </div>
               </div>
+
+              {createCommand.errorTag && (
+                <div className={errorAlert} role="alert">
+                  {t(createCommand.errorTag)}
+                </div>
+              )}
             </div>
 
-            {createCommand.errorTag && (
-              <div className={errorAlert} role="alert" style={{ marginBottom: '1rem' }}>
-                {t(createCommand.errorTag)}
-              </div>
-            )}
-
-            {/* Botões do modal */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+            {/* Footer */}
+            <div className={modalFooter}>
               <button type="button" className={buttonSecondary} onClick={closeModal}>
-                {t('contracts.create.modal.backButton')}
+                Voltar ao formulário
               </button>
               <button
                 type="button"
                 className={buttonPrimary}
-                disabled={createCommand.running || form.isOvertopOS}
+                disabled={createCommand.running || form.isOvertopOS || (uploadedFile !== null && signatureDate === '')}
                 onClick={handleConfirm}
               >
-                {createCommand.running ? t('common.loading') : t('contracts.create.modal.confirmButton')}
+                {createCommand.running ? t('common.loading') : 'Confirmar e salvar'}
               </button>
             </div>
           </div>
