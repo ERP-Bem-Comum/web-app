@@ -7,15 +7,27 @@ import { useState } from 'react'
 
 import { LoginInputSchema, type LoginInput } from '#modules/auth/client/data/model/auth.model.ts'
 
-export const useLoginFormController = (onSubmit: (input: LoginInput) => void) => {
+export const useLoginFormController = (
+  onSubmit: (input: LoginInput) => void,
+  onResetError: (() => void) | undefined,
+) => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [rememberDevice, setRememberDevice] = useState(false)
+
+  const setEmailAndReset = (value: string): void => {
+    setEmail(value)
+    onResetError?.()
+  }
+
+  const setPasswordAndReset = (value: string): void => {
+    setPassword(value)
+    onResetError?.()
+  }
 
   const submit = (): void => {
-    const parsed = LoginInputSchema.safeParse({ email, password, rememberDevice })
+    const parsed = LoginInputSchema.safeParse({ email, password, rememberDevice: false })
     if (parsed.success) onSubmit(parsed.data)
   }
 
-  return { email, setEmail, password, setPassword, rememberDevice, setRememberDevice, submit }
+  return { email, setEmail: setEmailAndReset, password, setPassword: setPasswordAndReset, submit }
 }

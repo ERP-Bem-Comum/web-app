@@ -1,107 +1,108 @@
 /**
- * LoginForm — componente BURRO (§XI, ADR-0009): a "view" do formulário de login, vestida com o design
- * system (Card/Logo/Field/Input/Checkbox/Button). Só props (strings + callbacks) → JSX. Zero fetch/estado.
- * Quem liga o binding/ViewModel é a LoginPage; os textos já chegam resolvidos (i18n na page).
+ * LoginForm — componente BURRO (§XI, ADR-0009): a "view" do formulário de login.
+ * Réplica fiel da tela de login da v1 (referência visual 2026-06-03).
+ * Só props (strings + callbacks) → JSX. Zero fetch/estado de negócio.
  */
+import { useState } from 'react'
 import type { ReactNode } from 'react'
 
-import { Button, Card, Checkbox, Field, Input, Logo } from '#shared/ui/index.ts'
+import { Button, Field, Logo } from '#shared/ui/index.ts'
+import { InputWithIcon } from '../input-with-icon.component.tsx'
+import { MailIcon, EyeIcon, EyeOffIcon } from '../icons.tsx'
 import {
-  cardShell,
   content,
   header,
   title,
-  subtitle,
+  titleUnderline,
   form,
-  rememberRow,
-  rememberLabel,
+  forgotLink,
+  buttonWrap,
   errorText,
 } from './login-form.css.ts'
 
 export type LoginFormProps = Readonly<{
   title: string
-  subtitle: string
   emailLabel: string
   passwordLabel: string
   emailPlaceholder: string
   passwordPlaceholder: string
-  rememberLabel: string
   submitLabel: string
   loadingLabel: string
   email: string
   password: string
-  rememberDevice: boolean
   submitting: boolean
   errorText: string | null
   onEmailChange: (value: string) => void
   onPasswordChange: (value: string) => void
-  onRememberChange: (value: boolean) => void
   onSubmit: () => void
 }>
 
 export function LoginForm(props: LoginFormProps): ReactNode {
+  const [showPassword, setShowPassword] = useState(false)
+
   return (
-    <div className={cardShell}>
-      <Card as="section" elevation="elevated">
-        <div className={content}>
-          <div className={header}>
-            <Logo src="/images/logo-bem-comum.png" alt="Bem Comum" size={48} />
-            <h1 className={title}>{props.title}</h1>
-            <p className={subtitle}>{props.subtitle}</p>
-          </div>
+    <div className={content}>
+      <div className={header}>
+        <Logo src="/images/logo-bem-comum.png" alt="Bem Comum" size={72} />
+        <h1 className={title}>{props.title}</h1>
+        <span className={titleUnderline} aria-hidden="true" />
+      </div>
 
-          <form
-            className={form}
-            onSubmit={(e) => {
-              e.preventDefault()
-              props.onSubmit()
+      <form
+        className={form}
+        onSubmit={(e) => {
+          e.preventDefault()
+          props.onSubmit()
+        }}
+      >
+        <Field htmlFor="login-email" label={props.emailLabel}>
+          <InputWithIcon
+            id="login-email"
+            type="email"
+            value={props.email}
+            placeholder={props.emailPlaceholder}
+            autoComplete="email"
+            onChange={props.onEmailChange}
+            icon={<MailIcon size={18} />}
+          />
+        </Field>
+
+        <Field htmlFor="login-password" label={props.passwordLabel}>
+          <InputWithIcon
+            id="login-password"
+            type={showPassword ? 'text' : 'password'}
+            value={props.password}
+            placeholder={props.passwordPlaceholder}
+            autoComplete="current-password"
+            onChange={props.onPasswordChange}
+            icon={showPassword ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
+            iconOrange
+            iconAction={() => {
+              setShowPassword((prev) => !prev)
             }}
+          />
+        </Field>
+
+        <a className={forgotLink} href="#">
+          Esqueci Minha Senha
+        </a>
+
+        {props.errorText !== null ? (
+          <p role="alert" className={errorText}>
+            {props.errorText}
+          </p>
+        ) : null}
+
+        <div className={buttonWrap}>
+          <Button
+            type="submit"
+            loading={props.submitting}
+            loadingLabel={props.loadingLabel}
           >
-            <Field htmlFor="login-email" label={props.emailLabel}>
-              <Input
-                id="login-email"
-                type="email"
-                value={props.email}
-                placeholder={props.emailPlaceholder}
-                autoComplete="email"
-                onChange={props.onEmailChange}
-              />
-            </Field>
-
-            <Field htmlFor="login-password" label={props.passwordLabel}>
-              <Input
-                id="login-password"
-                type="password"
-                value={props.password}
-                placeholder={props.passwordPlaceholder}
-                autoComplete="current-password"
-                onChange={props.onPasswordChange}
-              />
-            </Field>
-
-            <div className={rememberRow}>
-              <Checkbox
-                id="login-remember"
-                checked={props.rememberDevice}
-                onChange={props.onRememberChange}
-              />
-              <label htmlFor="login-remember" className={rememberLabel}>
-                {props.rememberLabel}
-              </label>
-            </div>
-
-            {props.errorText !== null ? (
-              <p role="alert" className={errorText}>
-                {props.errorText}
-              </p>
-            ) : null}
-
-            <Button type="submit" loading={props.submitting} loadingLabel={props.loadingLabel}>
-              {props.submitLabel}
-            </Button>
-          </form>
+            {props.submitLabel}
+          </Button>
         </div>
-      </Card>
+      </form>
     </div>
   )
 }

@@ -14,6 +14,11 @@ import { Route as HealthRouteImport } from './../routes/health'
 import { Route as AuthenticatedRouteRouteImport } from './../routes/_authenticated/route'
 import { Route as IndexRouteImport } from './../routes/index'
 import { Route as AuthenticatedDashboardRouteImport } from './../routes/_authenticated/dashboard'
+import { Route as AuthenticatedContratosIndexRouteImport } from './../routes/_authenticated/contratos/index'
+import { Route as AuthenticatedContratosCriarRouteImport } from './../routes/_authenticated/contratos/criar'
+import { Route as AuthenticatedContratosIdRouteImport } from './../routes/_authenticated/contratos/$id'
+import { Route as AuthenticatedContratosAditivoIdRouteImport } from './../routes/_authenticated/contratos/aditivo.$id'
+import { Route as AuthenticatedContratosIdEditarRouteImport } from './../routes/_authenticated/contratos/$id.editar'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -39,18 +44,58 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedContratosIndexRoute =
+  AuthenticatedContratosIndexRouteImport.update({
+    id: '/contratos/',
+    path: '/contratos/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedContratosCriarRoute =
+  AuthenticatedContratosCriarRouteImport.update({
+    id: '/contratos/criar',
+    path: '/contratos/criar',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedContratosIdRoute =
+  AuthenticatedContratosIdRouteImport.update({
+    id: '/contratos/$id',
+    path: '/contratos/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedContratosAditivoIdRoute =
+  AuthenticatedContratosAditivoIdRouteImport.update({
+    id: '/contratos/aditivo/$id',
+    path: '/contratos/aditivo/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedContratosIdEditarRoute =
+  AuthenticatedContratosIdEditarRouteImport.update({
+    id: '/editar',
+    path: '/editar',
+    getParentRoute: () => AuthenticatedContratosIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/contratos/$id': typeof AuthenticatedContratosIdRouteWithChildren
+  '/contratos/criar': typeof AuthenticatedContratosCriarRoute
+  '/contratos/': typeof AuthenticatedContratosIndexRoute
+  '/contratos/$id/editar': typeof AuthenticatedContratosIdEditarRoute
+  '/contratos/aditivo/$id': typeof AuthenticatedContratosAditivoIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/contratos/$id': typeof AuthenticatedContratosIdRouteWithChildren
+  '/contratos/criar': typeof AuthenticatedContratosCriarRoute
+  '/contratos': typeof AuthenticatedContratosIndexRoute
+  '/contratos/$id/editar': typeof AuthenticatedContratosIdEditarRoute
+  '/contratos/aditivo/$id': typeof AuthenticatedContratosAditivoIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -59,12 +104,35 @@ export interface FileRoutesById {
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/contratos/$id': typeof AuthenticatedContratosIdRouteWithChildren
+  '/_authenticated/contratos/criar': typeof AuthenticatedContratosCriarRoute
+  '/_authenticated/contratos/': typeof AuthenticatedContratosIndexRoute
+  '/_authenticated/contratos/$id/editar': typeof AuthenticatedContratosIdEditarRoute
+  '/_authenticated/contratos/aditivo/$id': typeof AuthenticatedContratosAditivoIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/health' | '/login' | '/dashboard'
+  fullPaths:
+    | '/'
+    | '/health'
+    | '/login'
+    | '/dashboard'
+    | '/contratos/$id'
+    | '/contratos/criar'
+    | '/contratos/'
+    | '/contratos/$id/editar'
+    | '/contratos/aditivo/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/health' | '/login' | '/dashboard'
+  to:
+    | '/'
+    | '/health'
+    | '/login'
+    | '/dashboard'
+    | '/contratos/$id'
+    | '/contratos/criar'
+    | '/contratos'
+    | '/contratos/$id/editar'
+    | '/contratos/aditivo/$id'
   id:
     | '__root__'
     | '/'
@@ -72,6 +140,11 @@ export interface FileRouteTypes {
     | '/health'
     | '/login'
     | '/_authenticated/dashboard'
+    | '/_authenticated/contratos/$id'
+    | '/_authenticated/contratos/criar'
+    | '/_authenticated/contratos/'
+    | '/_authenticated/contratos/$id/editar'
+    | '/_authenticated/contratos/aditivo/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -118,15 +191,72 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/contratos/': {
+      id: '/_authenticated/contratos/'
+      path: '/contratos'
+      fullPath: '/contratos/'
+      preLoaderRoute: typeof AuthenticatedContratosIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/contratos/criar': {
+      id: '/_authenticated/contratos/criar'
+      path: '/contratos/criar'
+      fullPath: '/contratos/criar'
+      preLoaderRoute: typeof AuthenticatedContratosCriarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/contratos/$id': {
+      id: '/_authenticated/contratos/$id'
+      path: '/contratos/$id'
+      fullPath: '/contratos/$id'
+      preLoaderRoute: typeof AuthenticatedContratosIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/contratos/aditivo/$id': {
+      id: '/_authenticated/contratos/aditivo/$id'
+      path: '/contratos/aditivo/$id'
+      fullPath: '/contratos/aditivo/$id'
+      preLoaderRoute: typeof AuthenticatedContratosAditivoIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/contratos/$id/editar': {
+      id: '/_authenticated/contratos/$id/editar'
+      path: '/editar'
+      fullPath: '/contratos/$id/editar'
+      preLoaderRoute: typeof AuthenticatedContratosIdEditarRouteImport
+      parentRoute: typeof AuthenticatedContratosIdRoute
+    }
   }
 }
 
+interface AuthenticatedContratosIdRouteChildren {
+  AuthenticatedContratosIdEditarRoute: typeof AuthenticatedContratosIdEditarRoute
+}
+
+const AuthenticatedContratosIdRouteChildren: AuthenticatedContratosIdRouteChildren =
+  {
+    AuthenticatedContratosIdEditarRoute: AuthenticatedContratosIdEditarRoute,
+  }
+
+const AuthenticatedContratosIdRouteWithChildren =
+  AuthenticatedContratosIdRoute._addFileChildren(
+    AuthenticatedContratosIdRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedContratosIdRoute: typeof AuthenticatedContratosIdRouteWithChildren
+  AuthenticatedContratosCriarRoute: typeof AuthenticatedContratosCriarRoute
+  AuthenticatedContratosIndexRoute: typeof AuthenticatedContratosIndexRoute
+  AuthenticatedContratosAditivoIdRoute: typeof AuthenticatedContratosAditivoIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedContratosIdRoute: AuthenticatedContratosIdRouteWithChildren,
+  AuthenticatedContratosCriarRoute: AuthenticatedContratosCriarRoute,
+  AuthenticatedContratosIndexRoute: AuthenticatedContratosIndexRoute,
+  AuthenticatedContratosAditivoIdRoute: AuthenticatedContratosAditivoIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

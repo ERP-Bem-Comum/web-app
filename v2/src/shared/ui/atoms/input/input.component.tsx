@@ -9,7 +9,7 @@ import { input } from './input.css.ts'
  */
 export type InputProps = Readonly<{
   id: string
-  type?: 'text' | 'email' | 'password'
+  type?: 'text' | 'email' | 'password' | 'date' | 'number'
   value: string
   onChange: (value: string) => void
   placeholder?: string

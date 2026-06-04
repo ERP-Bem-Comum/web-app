@@ -16,7 +16,7 @@ const base = style({
   paddingInline: vars.space.md,
   borderRadius: vars.radius.md,
   fontFamily: vars.font.family.body,
-  fontWeight: vars.font.weight.medium,
+  fontWeight: vars.font.weight.semibold,
   fontSize: vars.font.size.sm,
   background: vars.color.brand.normal,
   color: vars.color.brand.onBrand,

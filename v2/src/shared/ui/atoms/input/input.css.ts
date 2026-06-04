@@ -7,6 +7,8 @@ import { vars } from '../../tokens/index.ts'
 // foco casa com o Button (focusRing + border.focus). Um único style(), sem variantes.
 export const input = style({
   inlineSize: '100%',
+  // CRÍTICO: sem border-box, padding + border somam À LARGURA e estouram o container.
+  boxSizing: 'border-box',
   // borda hairline via TOKEN (o lint só-tokens proíbe `px` cru, inclusive 1px em template).
   border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
   borderRadius: vars.radius.md,

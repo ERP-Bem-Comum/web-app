@@ -31,6 +31,8 @@ export const tokenValues = {
       // Fundo de "tela" (canvas) — fallback quando a imagem de fundo do login não carrega.
       // Tom de marca claro (provisório; P.O. confirma). Contrasta com o card branco.
       canvas: '#e8f6fc',
+      // Fundo sutil/cinza claro para telas de autenticação (login).
+      subtle: '#F5F5F7',
     },
     text: {
       primary: '#292820',
@@ -50,11 +52,51 @@ export const tokenValues = {
       errorBg: '#fef2f2',
       errorText: '#dc2626',
     },
+    status: {
+      pendingBg: '#FFF3E0',
+      pendingText: '#E65100',
+      activeBg: '#E8F5E9',
+      activeText: '#2E7D32',
+      finishedBg: '#E3F2FD',
+      finishedText: '#1565C0',
+      terminatedBg: '#FFEBEE',
+      terminatedText: '#C62828',
+      prazoBg: '#E0F7FA',
+      prazoText: '#298CAB',
+      valorBg: '#E8F5E9',
+      valorText: '#33B266',
+      escopoBg: '#FFF8E1',
+      escopoText: '#D97706',
+      distratoBg: '#FFEBEE',
+      distratoText: '#E54D40',
+      outroBg: '#F5F5F5',
+      outroText: '#736961',
+    },
+    institutional: {
+      blue: '#396496',
+      blueDeep: '#2d4f75',
+      blueBg: '#e8eef5',
+      blueLine: '#8bb0d6',
+      green: '#1f7d55',
+      greenDeep: '#176642',
+      orange: '#F5A623',
+      orangeLight: '#FFF8E7',
+      ink2: '#332e29',
+      ink3: '#4d4740',
+      ink4: '#736b61',
+      ink5: '#999187',
+      paperRule: '#e5ded4',
+      paperWarm: '#faf7f2',
+      paperBeige: '#f2ede5',
+      overlay: 'rgba(0,0,0,0.45)',
+      surfaceTranslucent: 'rgba(255,255,255,0.92)',
+    },
   },
   radius: {
     sm: '0.25rem',
     md: '0.375rem',
     lg: '0.5rem',
+    xl: '0.75rem',
   },
   space: {
     xs: '0.25rem',
@@ -65,7 +107,7 @@ export const tokenValues = {
   },
   font: {
     family: {
-      heading: `"Inter Variable", ${SANS_FALLBACK}`,
+      heading: `"Nunito Variable", ${SANS_FALLBACK}`,
       body: `"Nunito Variable", ${SANS_FALLBACK}`,
       mono: `"JetBrains Mono", ${MONO_FALLBACK}`,
     },
@@ -103,6 +145,7 @@ export const tokenValues = {
   // componentes. A COR da borda vive em color.border.*; aqui é só a espessura.
   borderWidth: {
     thin: '1px',
+    thick: '2px',
   },
 } as const
 
