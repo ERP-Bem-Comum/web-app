@@ -28,6 +28,7 @@ import {
   statusBadge,
   statusBadgePending,
   statusBadgeActive,
+  statusDot,
   sectionTitle,
   field,
   fieldLabel,
@@ -97,6 +98,11 @@ export function ContractCreatePage(): ReactNode {
   const closeModal = useCallback(() => { setShowModal(false) }, [])
 
   const handleConfirm = useCallback(() => {
+    if (form.isOvertopOS || form.checklist.done < form.checklist.total) {
+      form.triggerValidation()
+      closeModal()
+      return
+    }
     const payload = form.submit()
     createCommand.execute(payload)
     closeModal()
@@ -136,11 +142,9 @@ export function ContractCreatePage(): ReactNode {
     }
   }, [])
 
-  /* Status preview */
-  const today = new Date()
-  const startDate = form.state.originalPeriodStart ? new Date(form.state.originalPeriodStart) : null
-  const statusLabel = startDate && startDate <= today ? t('contracts.status.Em Andamento') : t('contracts.status.Pendente')
-  const statusStyle = startDate && startDate <= today ? statusBadgeActive : statusBadgePending
+  /* Status preview: arquivo anexado → Em Andamento; sem arquivo → Pendente */
+  const statusLabel = uploadedFile !== null ? t('contracts.status.Em Andamento') : t('contracts.status.Pendente')
+  const statusStyle = uploadedFile !== null ? statusBadgeActive : statusBadgePending
 
   return (
     <div className={screen}>
@@ -155,6 +159,7 @@ export function ContractCreatePage(): ReactNode {
         onRemovePartner={() => { form.setSelectedPartner(null); setPartnerQuery('') }}
         checklist={form.checklist}
         isOvertopOS={form.isOvertopOS}
+        validationAttempted={form.validationAttempted}
         onCancel={handleCancel}
         onOpenModal={openModal}
         partnerSearchQuery={partnerQuery}
@@ -212,7 +217,7 @@ export function ContractCreatePage(): ReactNode {
               <div className={modalStatusRow}>
                 <span className={modalStatusLabel}>Status do contrato</span>
                 <span className={`${statusBadge} ${statusStyle}`} style={{ marginLeft: 'auto' }}>
-                  <span>●</span>
+                  <span className={statusDot}>●</span>
                   {statusLabel}
                 </span>
               </div>
@@ -232,7 +237,7 @@ export function ContractCreatePage(): ReactNode {
                     Ao anexar o contrato assinado, informe a data de assinatura.
                   </div>
                 ) : (
-                  <div className={fieldHint}>Informe a data apenas se o contrato já foi assinado.</div>
+                  <div className={fieldHint}>Informe a data de assinatura do contrato.</div>
                 )}
               </div>
 

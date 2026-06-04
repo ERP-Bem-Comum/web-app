@@ -53,6 +53,7 @@ import {
   checklistProgressLabel,
   checklistProgressValue,
   contractorBox,
+  contractorBoxError,
   contractorBoxIcon,
   contractorBoxContent,
   contractorBoxTitle,
@@ -119,6 +120,7 @@ interface Props {
   onRemovePartner: () => void
   checklist: ContractFormController['checklist']
   isOvertopOS: boolean
+  validationAttempted: boolean
   onCancel: () => void
   onOpenModal: () => void
   partnerSearchQuery: string
@@ -141,6 +143,7 @@ export function ContractForm({
   onRemovePartner,
   checklist,
   isOvertopOS,
+  validationAttempted,
   onCancel,
   onOpenModal,
   partnerSearchQuery,
@@ -176,7 +179,7 @@ export function ContractForm({
         <h1 className={topbarTitle}>
           {state.classification === 'Contract' ? 'Novo Contrato' : 'Nova Ordem de Serviço'}
           <span className={topbarMeta}>
-            {state.classification === 'Contract' ? 'CT' : 'OS'} 0000/{new Date().getFullYear()}
+            {state.classification === 'Contract' ? 'CT' : 'OS'} 0001/{new Date().getFullYear()}
           </span>
         </h1>
       </div>
@@ -204,7 +207,7 @@ export function ContractForm({
               </button>
             </div>
           ) : (
-            <div className={contractorBox}>
+            <div className={`${contractorBox} ${validationAttempted ? contractorBoxError : ''}`}>
               <button
                 type="button"
                 className={contractorBoxIcon}
@@ -345,7 +348,7 @@ export function ContractForm({
             <div className={field}>
               <label className={fieldLabel}>{t('contracts.create.field.objective')}</label>
               <textarea
-                className={textarea}
+                className={`${textarea} ${validationAttempted && !state.objective ? inputError : ''}`}
                 value={state.objective}
                 onChange={(e) => { onUpdate('objective', e.target.value) }}
                 onInput={handleAutoExpand}
@@ -357,7 +360,7 @@ export function ContractForm({
               <div className={field}>
                 <label className={fieldLabel}>{t('contracts.create.field.value')}</label>
                 <input
-                  className={`${input} ${isOvertopOS ? inputError : ''}`}
+                  className={`${input} ${(isOvertopOS || (validationAttempted && state.originalValueCents <= 0)) ? inputError : ''}`}
                   type="text"
                   inputMode="decimal"
                   placeholder="R$ 0,00"
@@ -380,13 +383,13 @@ export function ContractForm({
                 <label className={fieldLabel}>Período de Vigência Original</label>
                 <div className={grid2}>
                   <input
-                    className={input}
+                    className={`${input} ${validationAttempted && !state.originalPeriodStart ? inputError : ''}`}
                     type="date"
                     value={state.originalPeriodStart}
                     onChange={(e) => { onUpdate('originalPeriodStart', e.target.value) }}
                   />
                   <input
-                    className={input}
+                    className={`${input} ${validationAttempted && !state.originalPeriodEnd ? inputError : ''}`}
                     type="date"
                     value={state.originalPeriodEnd}
                     onChange={(e) => { onUpdate('originalPeriodEnd', e.target.value) }}
@@ -399,7 +402,7 @@ export function ContractForm({
               <div className={field}>
                 <label className={fieldLabel}>{t('contracts.create.field.program')}</label>
                 <select
-                  className={select}
+                  className={`${select} ${validationAttempted && !state.programId ? inputError : ''}`}
                   value={state.programId ?? ''}
                   onChange={(e) => { onUpdate('programId', e.target.value ? Number(e.target.value) : null) }}
                 >
@@ -413,7 +416,7 @@ export function ContractForm({
               <div className={field}>
                 <label className={fieldLabel}>{t('contracts.create.field.budgetPlan')}</label>
                 <select
-                  className={select}
+                  className={`${select} ${validationAttempted && !state.budgetPlanId ? inputError : ''}`}
                   value={state.budgetPlanId ?? ''}
                   onChange={(e) => { onUpdate('budgetPlanId', e.target.value ? Number(e.target.value) : null) }}
                 >
@@ -429,7 +432,7 @@ export function ContractForm({
               <div className={field}>
                 <label className={fieldLabel}>{t('contracts.create.field.categorizacao')}</label>
                 <select
-                  className={select}
+                  className={`${select} ${validationAttempted && !state.categorizacao ? inputError : ''}`}
                   value={state.categorizacao ?? ''}
                   onChange={(e) => { onUpdate('categorizacao', e.target.value ? (e.target.value as 'Avaliação' | 'Operacional' | 'Processo') : null) }}
                 >
@@ -442,7 +445,7 @@ export function ContractForm({
               <div className={field}>
                 <label className={fieldLabel}>{t('contracts.create.field.centroDeCusto')}</label>
                 <select
-                  className={select}
+                  className={`${select} ${validationAttempted && !state.centroDeCusto ? inputError : ''}`}
                   value={state.centroDeCusto ?? ''}
                   onChange={(e) => { onUpdate('centroDeCusto', e.target.value ? (e.target.value as 'RH' | 'Serviços Gerais' | 'Eventos') : null) }}
                 >
@@ -571,6 +574,8 @@ export function ContractForm({
               <CheckItem done={checklist.checks.valor} label="Valor original informado" />
               <CheckItem done={checklist.checks.vigencia} label="Início e fim da vigência" />
               <CheckItem done={checklist.checks.programa} label="Programa e plano orçamentário" />
+              <CheckItem done={checklist.checks.categorizacao} label="Categorização preenchida" />
+              <CheckItem done={checklist.checks.centroDeCusto} label="Centro de custo selecionado" />
               <CheckItem done={checklist.checks.documento} label="Documento principal anexado" />
             </div>
             <div className={checklistProgress}>
@@ -586,7 +591,7 @@ export function ContractForm({
         <button type="button" className={buttonSecondary} onClick={onCancel}>
           {t('contracts.create.action.cancel')}
         </button>
-        <button type="button" className={buttonPrimary} disabled={submitting} onClick={onOpenModal}>
+        <button type="button" className={buttonPrimary} disabled={submitting || isOvertopOS} onClick={onOpenModal}>
           {submitting ? t('common.loading') : t('contracts.create.action.save')}
         </button>
       </div>
