@@ -40,7 +40,7 @@ export type ContractStatus =
   (typeof ContractStatus)[keyof typeof ContractStatus]
 
 export const AditivoStatus = {
-  RASCUNHO: 'Rascunho',
+  // RASCUNHO removed per spec §1 / P.O. decision 2026-06-02
   PENDENTE: 'Pendente',
   HOMOLOGADO: 'Homologado',
 } as const
@@ -171,6 +171,7 @@ export interface Contract {
 export interface ContractRow extends Omit<Contract, 'children'> {
   readonly children?: readonly Contract[] | null
   readonly childrenCount?: number
+  readonly currentValue?: number
 }
 
 export interface ContractListFilters {

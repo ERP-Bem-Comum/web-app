@@ -175,6 +175,17 @@ export const CreateAmendmentInputSchema = z.object({
 })
 export type CreateAmendmentInput = z.infer<typeof CreateAmendmentInputSchema>
 
+// ContractHistoryEvent — evento de auditoria do contrato (server-domain para evitar cross-layer import).
+export type ContractHistoryEvent = Readonly<{
+  eventId: string
+  contractId: string
+  kind: string
+  description: string
+  occurredAt: string
+  userName?: string
+  metadata?: Record<string, string | number | boolean | null>
+}>
+
 export const ListContractsResponseSchema = z.object({
   items: z.array(ContractSchema),
   meta: z.object({

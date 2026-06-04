@@ -1,52 +1,188 @@
 /**
  * Zod schemas para validação dos responses do core-api contracts.
  * Server-only (adapters/core-api). Converte o formato cru da API para o nosso domínio.
+ *
+ * Alinhado com a API real do backend (branch dev, commit 9ffd07d):
+ *  - Status em inglês: Pending | Active | Expired | Terminated
+ *  - Period discriminated: { kind: 'Fixed', start: string, end: string } | { kind: 'Indefinite', start: string }
+ *  - Money: { cents: number }
+ *  - Amendments discriminados por kind: Addition | Suppression | TermChange | Misc
+ *  - Documents com metadados de storage (sem URL direta)
  */
 import * as z from 'zod'
 
-export const CoreApiContractSchema = z.object({
+// ─── Contrato (item de lista / detalhe base) ────────────────────────────────
+
+const MoneyDtoSchema = z.object({ cents: z.int() })
+
+const PeriodDtoSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('Fixed'), start: z.string().trim(), end: z.string().trim() }),
+  z.object({ kind: z.literal('Indefinite'), start: z.string().trim() }),
+])
+
+const ContractListItemBaseSchema = z.object({
   id: z.uuid(),
   sequentialNumber: z.string().trim(),
   title: z.string().trim(),
   objective: z.string().trim(),
-  originalValue: z.object({ cents: z.number() }),
-  originalPeriod: z.object({ start: z.iso.datetime(), end: z.iso.datetime() }),
-  status: z.string().trim(),
-  signedAt: z.iso.datetime().nullable(),
-  currentValue: z.object({ cents: z.number() }),
-  currentPeriod: z.object({ start: z.iso.datetime(), end: z.iso.datetime() }).nullable(),
-  endedAt: z.iso.datetime().nullable(),
+  originalValue: MoneyDtoSchema,
+  originalPeriod: PeriodDtoSchema,
 })
 
-export const CoreApiAmendmentSchema = z.object({
+export const CoreApiContractListItemSchema = z.discriminatedUnion('status', [
+  z.object({ ...ContractListItemBaseSchema.shape, status: z.literal('Pending') }),
+  z.object({
+    ...ContractListItemBaseSchema.shape,
+    status: z.literal('Active'),
+    signedAt: z.string().trim(),
+    currentValue: MoneyDtoSchema,
+    currentPeriod: PeriodDtoSchema,
+  }),
+  z.object({
+    ...ContractListItemBaseSchema.shape,
+    status: z.literal('Expired'),
+    signedAt: z.string().trim(),
+    currentValue: MoneyDtoSchema,
+    currentPeriod: PeriodDtoSchema,
+    endedAt: z.string().trim(),
+  }),
+  z.object({
+    ...ContractListItemBaseSchema.shape,
+    status: z.literal('Terminated'),
+    signedAt: z.string().trim(),
+    currentValue: MoneyDtoSchema,
+    currentPeriod: PeriodDtoSchema,
+    endedAt: z.string().trim(),
+  }),
+])
+
+export type CoreApiContractListItem = z.infer<typeof CoreApiContractListItemSchema>
+
+// ─── Detalhe enriquecido (GET /contracts/:id) ───────────────────────────────
+
+const AmendmentDtoSchema = z.discriminatedUnion('kind', [
+  z.object({
+    id: z.uuid(),
+    contractId: z.uuid(),
+    amendmentNumber: z.string().trim(),
+    description: z.string().trim(),
+    status: z.string().trim(),
+    createdAt: z.string().trim(),
+    kind: z.literal('Addition'),
+    impactValueCents: z.int(),
+  }),
+  z.object({
+    id: z.uuid(),
+    contractId: z.uuid(),
+    amendmentNumber: z.string().trim(),
+    description: z.string().trim(),
+    status: z.string().trim(),
+    createdAt: z.string().trim(),
+    kind: z.literal('Suppression'),
+    impactValueCents: z.int(),
+  }),
+  z.object({
+    id: z.uuid(),
+    contractId: z.uuid(),
+    amendmentNumber: z.string().trim(),
+    description: z.string().trim(),
+    status: z.string().trim(),
+    createdAt: z.string().trim(),
+    kind: z.literal('TermChange'),
+    newEndDate: z.string().trim(),
+  }),
+  z.object({
+    id: z.uuid(),
+    contractId: z.uuid(),
+    amendmentNumber: z.string().trim(),
+    description: z.string().trim(),
+    status: z.string().trim(),
+    createdAt: z.string().trim(),
+    kind: z.literal('Misc'),
+  }),
+])
+
+export const CoreApiDocumentSchema = z.object({
   id: z.uuid(),
-  amendmentNumber: z.string().trim(),
-  type: z.string().trim(),
-  description: z.string().trim().optional(),
-  impactValueCents: z.number().optional(),
-  newEndDate: z.iso.datetime().optional(),
-  startDate: z.iso.datetime().optional(),
+  parentType: z.enum(['Contract', 'Amendment']),
+  parentId: z.string().trim(),
+  categoria: z.string().trim(),
+  fileName: z.string().trim(),
+  mimeType: z.string().trim(),
+  sizeBytes: z.int().nonnegative(),
+  hashSha256: z.string().trim(),
+  bucket: z.string().trim(),
+  storageKey: z.string().trim(),
+  version: z.int(),
   status: z.string().trim(),
-  signedAt: z.iso.datetime().optional(),
-  signedContractUrl: z.string().trim().optional(),
-  createdAt: z.iso.datetime(),
+  uploadedAt: z.string().trim(),
 })
 
-export const CoreApiContractFileSchema = z.object({
-  id: z.uuid(),
-  name: z.string().trim(),
-  url: z.string().trim(),
-  size: z.number().optional(),
-  uploadedAt: z.iso.datetime(),
-  uploadedBy: z.string().trim().optional(),
-})
+export const CoreApiContractDetailSchema = z.discriminatedUnion('status', [
+  z.object({
+    ...ContractListItemBaseSchema.shape,
+    status: z.literal('Pending'),
+    amendments: z.array(AmendmentDtoSchema),
+    documents: z.array(CoreApiDocumentSchema),
+  }),
+  z.object({
+    ...ContractListItemBaseSchema.shape,
+    status: z.literal('Active'),
+    signedAt: z.string().trim(),
+    currentValue: MoneyDtoSchema,
+    currentPeriod: PeriodDtoSchema,
+    amendments: z.array(AmendmentDtoSchema),
+    documents: z.array(CoreApiDocumentSchema),
+  }),
+  z.object({
+    ...ContractListItemBaseSchema.shape,
+    status: z.literal('Expired'),
+    signedAt: z.string().trim(),
+    currentValue: MoneyDtoSchema,
+    currentPeriod: PeriodDtoSchema,
+    endedAt: z.string().trim(),
+    amendments: z.array(AmendmentDtoSchema),
+    documents: z.array(CoreApiDocumentSchema),
+  }),
+  z.object({
+    ...ContractListItemBaseSchema.shape,
+    status: z.literal('Terminated'),
+    signedAt: z.string().trim(),
+    currentValue: MoneyDtoSchema,
+    currentPeriod: PeriodDtoSchema,
+    endedAt: z.string().trim(),
+    amendments: z.array(AmendmentDtoSchema),
+    documents: z.array(CoreApiDocumentSchema),
+  }),
+])
+
+export type CoreApiContractDetail = z.infer<typeof CoreApiContractDetailSchema>
+
+// ─── Listagem paginada ──────────────────────────────────────────────────────
 
 export const CoreApiListResponseSchema = z.object({
-  items: z.array(CoreApiContractSchema),
+  items: z.array(CoreApiContractListItemSchema),
   meta: z.object({
-    page: z.number(),
-    totalPages: z.number(),
-    total: z.number(),
-    limit: z.number(),
+    page: z.int(),
+    totalPages: z.int(),
+    total: z.int(),
+    limit: z.int(),
   }),
 })
+
+// ─── Timeline / History ─────────────────────────────────────────────────────
+
+export const CoreApiTimelineEntrySchema = z.object({
+  eventId: z.string().trim(),
+  contractId: z.string().trim(),
+  kind: z.string().trim(),
+  occurredAt: z.string().trim(),
+  actor: z.string().trim().nullable(),
+  subjectAmendmentId: z.string().trim().nullable(),
+})
+
+export const CoreApiTimelineSchema = z.array(CoreApiTimelineEntrySchema)
+
+// ─── Amendment (resposta de criação) ────────────────────────────────────────
+
+export const CoreApiAmendmentSchema = AmendmentDtoSchema

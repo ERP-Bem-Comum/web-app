@@ -1,7 +1,8 @@
+import type { ReactNode } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { ContractDetailPage } from '#modules/contracts/client/contract-detail/page/contract-detail.page.tsx'
 
-function ContractDetailRoute(): JSX.Element {
+function ContractDetailRoute(): ReactNode {
   const { id } = Route.useParams()
   return <ContractDetailPage contractId={id} />
 }

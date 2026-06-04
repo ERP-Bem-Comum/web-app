@@ -89,6 +89,7 @@ export function mapModelToContractRow(model: ContractModel): ContractRow {
     contractModel: 'Serviço',
     object: model.objective,
     totalValue: model.originalValue.cents / 100,
+    currentValue: model.currentValue.cents / 100,
     contractPeriod: model.originalPeriod,
     contractType: mapContractTypeModelToDomain(model.contractType),
     supplierId: model.supplierId ?? undefined,
@@ -177,28 +178,6 @@ export function computeStatusChipCounts(
   }
 
   return counts as unknown as StatusChipCounts
-}
-
-export function filterByDerivedStatus(
-  rows: readonly ContractRow[],
-  statusFilter: string,
-): readonly ContractRow[] {
-  if (statusFilter === 'todos') return rows
-
-  const msPerDay = 1000 * 60 * 60 * 24
-  const now = Date.now()
-
-  return rows.filter((row) => {
-    const info = getMostRecentChild(row)
-    const derived = deriveStatus(info, !!(row.children?.length ?? 0))
-
-    if (statusFilter === 'vencendo') {
-      const daysUntilEnd = (info.contractPeriod.end.getTime() - now) / msPerDay
-      return daysUntilEnd >= 0 && daysUntilEnd <= 45
-    }
-
-    return derived.key === statusFilter
-  })
 }
 
 export { STATUS_OPTIONS, deriveStatus, getMostRecentChild, programaShort }

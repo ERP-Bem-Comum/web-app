@@ -1,13 +1,25 @@
 /**
- * useContractFormController — estado transiente do formulário de contrato.
+ * useContractFormController — estado transiente do formulário de criação de contrato.
+ * Replicação v1: campos completos + modal de finalização + selectedPartner + checklist.
  */
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import type { CreateContractInput } from '#modules/contracts/client/data/model/contracts.model.ts'
+
+export interface SelectedPartner {
+  readonly id: string
+  readonly name: string
+  readonly cnpj?: string
+  readonly cpf?: string
+  readonly email?: string
+  readonly telephone?: string
+  readonly kind: 'Fornecedor' | 'Financiador' | 'Colaborador'
+}
 
 export type ContractFormState = Readonly<{
   title: string
   objective: string
   originalValueCents: number
+  valorInput: string
   originalPeriodStart: string
   originalPeriodEnd: string
   classification: 'Contract' | 'ServiceOrder'
@@ -23,13 +35,41 @@ export type ContractFormState = Readonly<{
   email: string
   telephone: string
   observations: string
+  bancaryInfo: Readonly<{
+    bank: string
+    agency: string
+    accountNumber: string
+    dv: string
+  }>
+  pixInfo: Readonly<{
+    keyType: string
+    key: string
+  }>
 }>
 
-export const useContractFormController = (onSubmit: (input: CreateContractInput) => void) => {
+export interface ContractFormController {
+  readonly state: ContractFormState
+  readonly selectedPartner: SelectedPartner | null
+  readonly showModal: boolean
+  readonly isOvertopOS: boolean
+  readonly update: <K extends keyof ContractFormState>(key: K, value: ContractFormState[K]) => void
+  readonly setSelectedPartner: (partner: SelectedPartner | null) => void
+  readonly openModal: () => void
+  readonly closeModal: () => void
+  readonly submit: () => CreateContractInput
+  readonly checklist: Readonly<{
+    checks: Readonly<Record<string, boolean>>
+    done: number
+    total: number
+  }>
+}
+
+export const useContractFormController = (): ContractFormController => {
   const [state, setState] = useState<ContractFormState>({
     title: '',
     objective: '',
     originalValueCents: 0,
+    valorInput: '',
     originalPeriodStart: '',
     originalPeriodEnd: '',
     classification: 'Contract',
@@ -45,14 +85,38 @@ export const useContractFormController = (onSubmit: (input: CreateContractInput)
     email: '',
     telephone: '',
     observations: '',
+    bancaryInfo: { bank: '', agency: '', accountNumber: '', dv: '' },
+    pixInfo: { keyType: '', key: '' },
   })
+
+  const [selectedPartner, setSelectedPartner] = useState<SelectedPartner | null>(null)
+  const [showModal, setShowModal] = useState(false)
 
   const update = useCallback(<K extends keyof ContractFormState>(key: K, value: ContractFormState[K]) => {
     setState((s) => ({ ...s, [key]: value }))
   }, [])
 
-  const submit = useCallback(() => {
-    const input: CreateContractInput = {
+  const openModal = useCallback(() => { setShowModal(true) }, [])
+  const closeModal = useCallback(() => { setShowModal(false) }, [])
+
+  const isOvertopOS = useMemo(() => {
+    return state.classification === 'ServiceOrder' && state.originalValueCents > 999_999
+  }, [state.classification, state.originalValueCents])
+
+  const checklist = useMemo(() => {
+    const checks = {
+      contratado: !!selectedPartner || !!(state.supplierId || state.financierId || state.collaboratorId),
+      contrato: !!state.objective,
+      valor: (state.originalValueCents || 0) > 0,
+      vigencia: !!state.originalPeriodStart && !!state.originalPeriodEnd,
+      programa: !!state.programId || !!state.budgetPlanId,
+    }
+    const done = Object.values(checks).filter(Boolean).length
+    return { checks, done, total: 5 }
+  }, [state, selectedPartner])
+
+  const submit = useCallback((): CreateContractInput => {
+    return {
       title: state.title,
       objective: state.objective,
       originalValueCents: state.originalValueCents,
@@ -74,8 +138,18 @@ export const useContractFormController = (onSubmit: (input: CreateContractInput)
       telephone: state.telephone || undefined,
       observations: state.observations || undefined,
     }
-    onSubmit(input)
-  }, [state, onSubmit])
+  }, [state])
 
-  return { state, update, submit }
+  return {
+    state,
+    selectedPartner,
+    showModal,
+    isOvertopOS,
+    update,
+    setSelectedPartner,
+    openModal,
+    closeModal,
+    submit,
+    checklist,
+  }
 }

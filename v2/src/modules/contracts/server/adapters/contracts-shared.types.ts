@@ -1,6 +1,7 @@
 /**
  * Tipos compartilhados entre server e client (fronteira adapters).
  * Client-data pode importar de server-adapters; server-application pode importar de server-domain.
+ * ContractHistoryEvent foi movido para server-domain/contracts.types.ts para respeitar boundaries.
  */
 
 // ContractsError — união discriminada de falhas do domínio de contratos.
@@ -16,13 +17,5 @@ export type ContractsError =
   | 'server'
   | 'unauthorized'
 
-// ContractHistoryEvent — evento de auditoria do contrato.
-export type ContractHistoryEvent = Readonly<{
-  eventId: string
-  contractId: string
-  kind: string
-  description: string
-  occurredAt: string
-  userName?: string
-  metadata?: Record<string, string | number | boolean | null>
-}>
+// Re-export de ContractHistoryEvent do server-domain (boundaries-compatível).
+export type { ContractHistoryEvent } from '#modules/contracts/server/domain/contracts.types.ts'

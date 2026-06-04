@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import type { ContractsError } from '#modules/contracts/client/data/repository/contracts.repository.ts'
 import type { Contract } from '#modules/contracts/client/data/model/contracts.model.ts'
-import type { ContractsError } from '#modules/contracts/client/data/repository/contracts.repository.ts'
 import type { Result } from '#shared/primitives/result.ts'
 import { contractDetailViewModel } from './contract-detail.view-model.ts'
 

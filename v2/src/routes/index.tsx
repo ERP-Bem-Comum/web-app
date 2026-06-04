@@ -1,14 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/')({
-  component: Home,
+  beforeLoad: () => {
+    throw redirect({ to: '/login' })
+  },
 })
-
-function Home() {
-  return (
-    <main>
-      <h1>ERP Bem Comum — v2</h1>
-      <p>Fundação TanStack Start ativa (SSR).</p>
-    </main>
-  )
-}

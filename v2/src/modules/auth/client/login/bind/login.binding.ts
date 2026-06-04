@@ -17,6 +17,7 @@ export type LoginCommand = Readonly<{
   errorTag: string | null
   result: CurrentUser | null
   execute: (input: LoginInput) => void
+  resetError: () => void
 }>
 
 export const useLoginBinding = (): Readonly<{ loginCommand: LoginCommand }> => {
@@ -55,6 +56,9 @@ export const useLoginBinding = (): Readonly<{ loginCommand: LoginCommand }> => {
       result: data !== undefined && isOk(data) ? data.value : null,
       execute: (input) => {
         mutation.mutate(input)
+      },
+      resetError: () => {
+        mutation.reset()
       },
     },
   }
