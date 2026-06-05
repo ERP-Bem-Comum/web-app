@@ -1,0 +1,9 @@
+C4Context
+  title Diagrama de Contexto (C4 nível 1) — Frontend v2 (web + BFF)
+
+  Person(user, "Usuário", "Acessa a aplicação web pelo browser")
+  System(web, "Frontend v2 (web + BFF)", "TanStack Start + React 19. Browser + server functions (BFF)")
+  System_Ext(coreapi, "core-api", "Backend (repo-irmão). Fonte de dados e regras de negócio")
+
+  Rel(user, web, "usa", "HTTPS (browser)")
+  Rel(web, coreapi, "consome via BFF", "HTTP server-side")
