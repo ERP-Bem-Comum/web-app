@@ -9,9 +9,9 @@
 > **React 19**, **pnpm 11**, **vanilla-extract**, **Zod 4**, **TypeScript strict**. Erros como valores
 > (`Result`), módulos verticais com fronteiras enforçadas por lint. Zero exceções escondidas.
 
-> **Precedência v1 (legado).** A versão antiga vive em `../v1` (**congelada, não desenvolver lá**). Se
-> precisar entender como a v1 fazia um fluxo/tela/contrato para portar à v2, leia **`../v1/CLAUDE.md`** —
-> é o mapa de consulta da v1 (stack real = TanStack Start migrado pela metade; docs internas dela estão
+> **Precedência legado.** A versão antiga vive na pasta-irmã `../web-app-legacy` (**congelada, não
+> desenvolver lá**). Se precisar entender como ela fazia um fluxo/tela/contrato para portar, leia
+> **`../web-app-legacy/CLAUDE.md`** — é o mapa de consulta (stack real = TanStack Start migrado pela metade; docs internas dela estão
 > desatualizadas). Não copie padrões da v1 para a v2: aqui valem as invariantes abaixo.
 
 ## ⚠️ Precedência (leia primeiro)
@@ -211,10 +211,10 @@ exige incluí-la em `minimumReleaseAgeExclude` por **versão exata**. Nunca use 
 
 Spec-driven via **Spec Kit** (`/speckit-*` skills); specs em `specs/`. **Perdido no fluxo?** Rode
 `/speckit-status` ("você está aqui"). **Onboarding + playbook de "a IA alucinou"** em `.claude/README.md`.
-Antes de dar algo como pronto, rode `pnpm verify` (typecheck + lint + testes). O `core-api/` é um **submódulo**
-(repo separado) presente só como **referência para subir o Docker de infra única** — não é alvo de
-desenvolvimento daqui, fora do escopo do lint/typecheck deste app; docs em `handbook/core-api/`. Stack
-local: `docker compose up -d` → `https://app.localhost` (Caddy).
+Antes de dar algo como pronto, rode `pnpm verify` (typecheck + lint + testes). O `core-api` **não é submódulo**:
+é a pasta-irmã **`../ERP-CONTRACTS`** no mono_repo (repo próprio, não é alvo de dev daqui — fora do escopo do
+lint/typecheck deste app; docs em `handbook/core-api/`). Para subir a stack completa (back+front+Caddy), use a
+**infra única** em **`../infraestrutura`** (`./up.sh` → `https://app.localhost`).
 
 ## Sua tarefa: o módulo de contratos
 
@@ -223,8 +223,8 @@ local: `docker compose up -d` → `https://app.localhost` (Caddy).
 2. Crie `src/modules/contracts/` **espelhando** `src/modules/auth/` (a feature-modelo): split `server/`
    (domain → application → adapters, a server fn é a fronteira) × `client/` (data → view-model → ui), e
    `public-api/index.ts` como único ponto de import externo. As fronteiras são **enforçadas por lint**.
-3. Trabalhe **só em `v2/`**. A pasta `../v1/` está **congelada** — referência de como o fluxo de contratos
-   funcionava no legado, nunca alvo de desenvolvimento.
+3. Trabalhe **só neste repo (`web-app`)**. A pasta-irmã `../web-app-legacy/` está **congelada** —
+   referência de como o fluxo de contratos funcionava no legado, nunca alvo de desenvolvimento.
 4. Commits: `tipo(<bc>/<scope>): descrição` (ex.: `feat(contracts): agregado Contract`). **Nunca use heredoc.**
 5. Ao abrir o Pull Request, aponte para **`develop`** (não para `main`).
 
