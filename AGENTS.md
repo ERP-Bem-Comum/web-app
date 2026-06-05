@@ -24,5 +24,6 @@ padrões (a v2 tem invariantes próprias, cobradas por lint).
 
 - **Gerenciador de pacotes:** `v2` usa **pnpm 11** (nunca `npm`/`yarn`). `v1` usa Yarn 4. Nunca misture.
 - **Commits:** nunca use heredoc (`<<EOF`). Convenção `tipo(<bc>/<scope>): descrição`.
-- **`v2/core-api/`** é submódulo de infra (não é alvo de dev). O browser nunca fala com ele direto — só via
-  server functions (BFF) da v2.
+- **`core-api`** (backend) não é mais o submódulo `v2/core-api/`: agora é a pasta-irmã `../ERP-CONTRACTS/`
+  no mono_repo (ver `../CLAUDE.md`). Não é alvo de dev a partir do front. O browser nunca fala com ele
+  direto — só via server functions (BFF) da v2. Infra Docker única em `../infraestrutura/`.
