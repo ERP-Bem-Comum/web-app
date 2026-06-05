@@ -212,7 +212,7 @@ exige incluí-la em `minimumReleaseAgeExclude` por **versão exata**. Nunca use 
 Spec-driven via **Spec Kit** (`/speckit-*` skills); specs em `specs/`. **Perdido no fluxo?** Rode
 `/speckit-status` ("você está aqui"). **Onboarding + playbook de "a IA alucinou"** em `.claude/README.md`.
 Antes de dar algo como pronto, rode `pnpm verify` (typecheck + lint + testes). O `core-api` **não é submódulo**:
-é a pasta-irmã **`../ERP-CONTRACTS`** no mono_repo (repo próprio, não é alvo de dev daqui — fora do escopo do
+é a pasta-irmã **`../core-api`** no mono_repo (repo próprio, não é alvo de dev daqui — fora do escopo do
 lint/typecheck deste app; docs em `handbook/core-api/`). Para subir a stack completa (back+front+Caddy), use a
 **infra única** em **`../infraestrutura`** (`./up.sh` → `https://app.localhost`).
 
