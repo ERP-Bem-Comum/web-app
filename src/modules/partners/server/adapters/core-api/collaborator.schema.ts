@@ -27,3 +27,9 @@ export const CoreApiCollaboratorDetailSchema = CoreApiCollaboratorItemSchema.ext
   employmentRelationship: z.enum(['CLT', 'PJ']),
 }).loose()
 export type CoreApiCollaboratorDetail = z.infer<typeof CoreApiCollaboratorDetailSchema>
+
+// Resposta do import em lote: relatório parcial (sempre 200).
+export const CoreApiImportResultSchema = z.object({
+  created: z.int(),
+  failed: z.array(z.object({ line: z.int(), error: z.string().trim() })),
+})

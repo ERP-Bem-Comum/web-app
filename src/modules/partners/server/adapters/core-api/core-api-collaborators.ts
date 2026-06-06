@@ -26,6 +26,7 @@ import {
   CoreApiCollaboratorListSchema,
   CoreApiCollaboratorDetailSchema,
   CoreApiCollaboratorItemSchema,
+  CoreApiImportResultSchema,
   type CoreApiCollaboratorItem,
 } from './collaborator.schema.ts'
 
@@ -184,6 +185,45 @@ export const createCoreApiCollaboratorsClient = (baseUrl: string): CollaboratorC
       })
       if (isErr(r)) return err(mapHttpError(r.error))
       return fetchDetailById(id, token)
+    },
+
+    // Import em lote: o core-api aceita `text/csv` cru (NÃO multipart). `resultFetch` força JSON, então
+    // aqui usamos `fetch` nativo direto. Resposta sempre 200 com o relatório parcial { created, failed }.
+    importCsv: async (input, token) => {
+      let response: Response
+      try {
+        response = await globalThis.fetch(`${baseUrl}/collaborators/import`, {
+          method: 'POST',
+          headers: { ...auth(token), 'Content-Type': 'text/csv' },
+          body: input.csv,
+          signal: AbortSignal.timeout(30_000),
+        })
+      } catch {
+        return err('connectivity')
+      }
+      if (!response.ok) {
+        const text = await response.text().catch(() => '')
+        let body: unknown
+        try {
+          body = JSON.parse(text)
+        } catch {
+          body = null
+        }
+        const slug = parseErrorEnvelope(body)?.error.code
+        const bySlug = slug === undefined ? undefined : SLUG_TO_ERROR[slug]
+        if (bySlug !== undefined) return err(bySlug)
+        if (response.status === 401) return err('unauthorized')
+        if (response.status === 403) return err('forbidden')
+        if (response.status === 400 || response.status === 422) return err('validation')
+        return err('server')
+      }
+      try {
+        const data: unknown = await response.json()
+        const parsed = CoreApiImportResultSchema.safeParse(data)
+        return parsed.success ? ok(parsed.data) : err('server')
+      } catch {
+        return err('server')
+      }
     },
   }
 }

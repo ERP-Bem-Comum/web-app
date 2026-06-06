@@ -9,6 +9,8 @@ import type {
   CollaboratorListResponse,
   CollaboratorDetail,
   CreateCollaboratorInput,
+  ImportCollaboratorsInput,
+  CollaboratorImportResult,
 } from '#modules/partners/server/domain/collaborator/collaborator.io.ts'
 import type { DeactivationReason } from '#modules/partners/server/domain/collaborator/collaborator.types.ts'
 
@@ -18,6 +20,7 @@ export type CollaboratorClient = Readonly<{
   create: (input: CreateCollaboratorInput, token: string) => Promise<Result<CollaboratorDetail, PartnersError>>
   deactivate: (id: string, reason: DeactivationReason, token: string) => Promise<Result<CollaboratorDetail, PartnersError>>
   reactivate: (id: string, token: string) => Promise<Result<CollaboratorDetail, PartnersError>>
+  importCsv: (input: ImportCollaboratorsInput, token: string) => Promise<Result<CollaboratorImportResult, PartnersError>>
 }>
 
 type Deps = Readonly<{ client: CollaboratorClient }>
@@ -41,3 +44,8 @@ export const createDeactivateCollaborator =
   (deps: Deps) =>
   (id: string, reason: DeactivationReason, token: string): Promise<Result<CollaboratorDetail, PartnersError>> =>
     deps.client.deactivate(id, reason, token)
+
+export const createImportCollaborators =
+  (deps: Deps) =>
+  (input: ImportCollaboratorsInput, token: string): Promise<Result<CollaboratorImportResult, PartnersError>> =>
+    deps.client.importCsv(input, token)

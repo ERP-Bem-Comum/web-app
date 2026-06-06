@@ -10,6 +10,7 @@ import {
   createGetCollaborator,
   createCreateCollaborator,
   createDeactivateCollaborator,
+  createImportCollaborators,
 } from '#modules/partners/server/application/collaborator/collaborator.use-cases.ts'
 
 type CollaboratorServer = ReturnType<typeof build>
@@ -23,6 +24,7 @@ const build = () => {
     getCollaborator: createGetCollaborator({ client }),
     createCollaborator: createCreateCollaborator({ client }),
     deactivateCollaborator: createDeactivateCollaborator({ client }),
+    importCollaborators: createImportCollaborators({ client }),
   }
 }
 

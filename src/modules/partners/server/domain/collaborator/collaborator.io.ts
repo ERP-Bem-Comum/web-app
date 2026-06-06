@@ -49,6 +49,20 @@ export const DeactivateCollaboratorInputSchema = z.object({
 })
 export type DeactivateCollaboratorInput = z.infer<typeof DeactivateCollaboratorInputSchema>
 
+// Import em lote (CSV-only). O client lê `File.text()` e envia a STRING; a server fn repassa `text/csv`
+// ao core-api. Teto ~2 MiB (alinha ao `bodyLimit` do core-api). FR-007.
+export const ImportCollaboratorsInputSchema = z.object({
+  filename: z.string().trim().min(1),
+  csv: z.string().trim().min(1).max(2 * 1024 * 1024),
+})
+export type ImportCollaboratorsInput = z.infer<typeof ImportCollaboratorsInputSchema>
+
+// Resultado parcial (sucesso COM relatório, não erro): linhas válidas criadas + inválidas reportadas.
+export type CollaboratorImportResult = Readonly<{
+  created: number
+  failed: readonly Readonly<{ line: number; error: string }>[]
+}>
+
 // ── Model (o que a UI consome) ─────────────────────────────────────────────────
 export type CollaboratorListItem = Readonly<{
   id: string

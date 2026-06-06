@@ -11,6 +11,7 @@ import {
   createGetCollaborator,
   createCreateCollaborator,
   createDeactivateCollaborator,
+  createImportCollaborators,
   type CollaboratorClient,
 } from '#modules/partners/server/application/collaborator/collaborator.use-cases.ts'
 import type { CollaboratorDetail } from '#modules/partners/server/domain/collaborator/collaborator.io.ts'
@@ -34,6 +35,7 @@ const fakeClient: CollaboratorClient = {
   create: () => Promise.resolve(ok(fakeDetail)),
   deactivate: () => Promise.resolve(ok({ ...fakeDetail, activation: 'inactive', registration: 'pre-registration' })),
   reactivate: () => Promise.resolve(ok(fakeDetail)),
+  importCsv: () => Promise.resolve(ok({ created: 2, failed: [{ line: 3, error: 'invalid-email' }] })),
 }
 
 describe('Collaborator use-cases', () => {
@@ -63,5 +65,9 @@ describe('Collaborator use-cases', () => {
   it('deactivate retorna inactive', async () => {
     const r = await createDeactivateCollaborator({ client: fakeClient })('1', 'contract-ended', 'token')
     assert.equal(isOk(r) && r.value.activation === 'inactive', true)
+  })
+  it('import retorna relatório parcial (created + failed)', async () => {
+    const r = await createImportCollaborators({ client: fakeClient })({ filename: 'c.csv', csv: 'name,email\nAna,a@b.dev' }, 'token')
+    assert.equal(isOk(r) && r.value.created === 2 && r.value.failed.length === 1, true)
   })
 })
