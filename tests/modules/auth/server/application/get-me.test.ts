@@ -11,7 +11,7 @@ import type { AuthError } from '#modules/auth/server/domain/errors/auth.errors.t
 
 describe('get-me', () => {
   it('ok → { userId }', async () => {
-    const client = { me: (): Promise<Result<AuthUser, AuthError>> => Promise.resolve(ok({ userId: 'u' })) }
+    const client = { me: (): Promise<Result<AuthUser, AuthError>> => Promise.resolve(ok({ userId: 'u', permissions: [] })) }
     const r = await createGetMe({ client })('access')
     assert.equal(isOk(r) && r.value.userId === 'u', true)
   })

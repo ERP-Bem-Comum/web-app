@@ -259,8 +259,8 @@ const apiTimelineEntryToDomain = (e: Record<string, unknown>): ContractHistoryEv
   kind: toStr(e.kind),
   description: toStr(e.kind), // Backend não envia description; usamos kind como fallback
   occurredAt: toStr(e.occurredAt),
-  userName: typeof e.actor === 'string' ? e.actor : undefined,
-  metadata: typeof e.subjectAmendmentId === 'string' ? { subjectAmendmentId: e.subjectAmendmentId } : undefined,
+  ...(typeof e.actor === 'string' ? { userName: e.actor } : {}),
+  ...(typeof e.subjectAmendmentId === 'string' ? { metadata: { subjectAmendmentId: e.subjectAmendmentId } } : {}),
 })
 
 const apiTimelineToDomain = (raw: unknown): readonly ContractHistoryEvent[] => {

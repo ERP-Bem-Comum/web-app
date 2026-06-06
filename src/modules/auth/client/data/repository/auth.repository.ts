@@ -19,6 +19,7 @@ export type AuthRepository = Readonly<{
 export const createAuthRepository = (deps: Readonly<{ loginFn: LoginFn }>): AuthRepository => ({
   login: async (input) => {
     const res = await deps.loginFn({ data: input })
-    return res.ok ? ok({ userId: res.userId }) : err(res.error)
+    // login não carrega permissões (elas vêm do /me via getCurrentUser); RBAC degrada a [] até lá.
+    return res.ok ? ok({ userId: res.userId, permissions: [] }) : err(res.error)
   },
 })

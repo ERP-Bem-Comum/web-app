@@ -8,7 +8,10 @@ import { deriveCurrentUser } from '#modules/auth/client/current-user/current-use
 
 describe('deriveCurrentUser', () => {
   it('com usuário → autenticado', () => {
-    assert.deepEqual(deriveCurrentUser({ userId: 'u' }), { user: { userId: 'u' }, isAuthenticated: true })
+    assert.deepEqual(deriveCurrentUser({ userId: 'u', permissions: [] }), {
+      user: { userId: 'u', permissions: [] },
+      isAuthenticated: true,
+    })
   })
   it('null → não autenticado', () => {
     assert.deepEqual(deriveCurrentUser(null), { user: null, isAuthenticated: false })

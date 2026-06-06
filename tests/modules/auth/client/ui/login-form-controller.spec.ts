@@ -9,23 +9,22 @@ import { useLoginFormController } from '#modules/auth/client/login/components/fo
 describe('useLoginFormController', () => {
   it('submit com dados válidos entrega o input parseado', () => {
     const onSubmit = vi.fn()
-    const { result } = renderHook(() => useLoginFormController(onSubmit))
+    const { result } = renderHook(() => useLoginFormController(onSubmit, undefined))
 
     act(() => {
       result.current.setEmail('a@b.com')
       result.current.setPassword('p')
-      result.current.setRememberDevice(true)
     })
     act(() => {
       result.current.submit()
     })
 
-    expect(onSubmit).toHaveBeenCalledWith({ email: 'a@b.com', password: 'p', rememberDevice: true })
+    expect(onSubmit).toHaveBeenCalledWith({ email: 'a@b.com', password: 'p', rememberDevice: false })
   })
 
   it('submit com email inválido NÃO chama onSubmit (Zod local barra)', () => {
     const onSubmit = vi.fn()
-    const { result } = renderHook(() => useLoginFormController(onSubmit))
+    const { result } = renderHook(() => useLoginFormController(onSubmit, undefined))
 
     act(() => {
       result.current.setEmail('not-email')

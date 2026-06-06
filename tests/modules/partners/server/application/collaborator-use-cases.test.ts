@@ -75,7 +75,7 @@ describe('Collaborator use-cases', () => {
     assert.equal(isOk(r) && r.value.created === 2 && r.value.failed.length === 1, true)
   })
   it('completeRegistration promove a situação para complete', async () => {
-    const r = await createCompleteCollaboratorRegistration({ client: fakeClient })({ id: '1', rg: '12.345.678-9', miniBio: 'Olá' }, 'token')
+    const r = await createCompleteCollaboratorRegistration({ client: fakeClient })({ id: '1', rg: '12.345.678-9', biography: 'Olá' }, 'token')
     assert.equal(isOk(r) && r.value.registration === 'complete', true)
   })
   it('update retorna o detail atualizado', async () => {

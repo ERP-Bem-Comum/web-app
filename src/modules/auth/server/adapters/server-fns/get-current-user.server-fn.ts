@@ -12,7 +12,7 @@ import type { SessionId } from '#modules/auth/server/domain/session/session.type
 import { authServer } from '#modules/auth/server/adapters/auth.composition.ts'
 
 export const getCurrentUserFn = createServerFn({ method: 'GET' }).handler(
-  async (): Promise<Readonly<{ userId: string; permissions: readonly string[] }> | null> => {
+  async (): Promise<Readonly<{ userId: string; permissions: string[] }> | null> => {
     const sessionId = getCookie(SESSION_COOKIE_NAME)
     if (sessionId === undefined) return null
 
@@ -24,6 +24,6 @@ export const getCurrentUserFn = createServerFn({ method: 'GET' }).handler(
     }
 
     const me = await server.getMe(resolved.value.accessToken)
-    return isOk(me) ? { userId: me.value.userId, permissions: me.value.permissions } : null
+    return isOk(me) ? { userId: me.value.userId, permissions: [...me.value.permissions] } : null
   },
 )

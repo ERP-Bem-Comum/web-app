@@ -142,7 +142,7 @@ export const avatarBadgeClass = (contractType: string): string => {
 export function programaShort(name: string | undefined): string {
   if (!name) return '—'
   const parts = name.split(' — ')
-  if (parts.length > 1) return parts[0]
+  if (parts.length > 1) return parts[0] ?? name
   const words = name.split(' ')
   if (words.length === 1) return name.slice(0, 4).toUpperCase()
   const sigla = words

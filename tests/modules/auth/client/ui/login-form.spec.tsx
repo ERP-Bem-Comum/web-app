@@ -1,6 +1,6 @@
 /**
- * LoginForm (Vitest/jsdom) — view burra VESTIDA (spec 006): renderiza Card/Logo/Field/Input/Checkbox/
- * Button + subtítulo/placeholders; encaminha callbacks; erro com role=alert. Comportamento via props.
+ * LoginForm (Vitest/jsdom) — view burra VESTIDA (spec 006): renderiza Card/Logo/Field/Input/Button +
+ * placeholders; encaminha callbacks; erro com role=alert. Comportamento via props.
  */
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, fireEvent, cleanup } from '@testing-library/react'
@@ -13,32 +13,27 @@ afterEach(() => {
 
 const baseProps = (over: Partial<LoginFormProps> = {}): LoginFormProps => ({
   title: 'Entrar',
-  subtitle: 'Entre com suas credenciais',
   emailLabel: 'E-mail',
   passwordLabel: 'Senha',
   emailPlaceholder: 'seu@email.com',
   passwordPlaceholder: '••••••••',
-  rememberLabel: 'Lembrar',
   submitLabel: 'Entrar',
   loadingLabel: 'Carregando…',
   email: '',
   password: '',
-  rememberDevice: false,
   submitting: false,
   errorText: null,
   onEmailChange: vi.fn(),
   onPasswordChange: vi.fn(),
-  onRememberChange: vi.fn(),
   onSubmit: vi.fn(),
   ...over,
 })
 
 describe('LoginForm (vestida)', () => {
-  it('renderiza logo, título, subtítulo e botão', () => {
+  it('renderiza logo, título e botão', () => {
     render(<LoginForm {...baseProps()} />)
     expect(screen.getByRole('img')).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Entrar' })).toBeTruthy()
-    expect(screen.getByText('Entre com suas credenciais')).toBeTruthy()
     expect(screen.getByRole('button')).toBeTruthy()
   })
 
@@ -48,11 +43,6 @@ describe('LoginForm (vestida)', () => {
     expect(screen.getByLabelText('Senha')).toBeTruthy()
     expect(screen.getByPlaceholderText('seu@email.com')).toBeTruthy()
     expect(screen.getByPlaceholderText('••••••••')).toBeTruthy()
-  })
-
-  it('checkbox "lembrar" associado ao label', () => {
-    render(<LoginForm {...baseProps()} />)
-    expect(screen.getByLabelText('Lembrar')).toBeTruthy()
   })
 
   it('encaminha onEmailChange (valor digitado) e onSubmit (envio)', () => {
