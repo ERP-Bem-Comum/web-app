@@ -185,6 +185,21 @@ Os seguintes campos ainda **não são persistidos** pelo core-api; o frontend os
 > **Nota:** Quando o backend entregar esses campos, basta remover os defaults/mock nos mappers
 > (`core-api-contracts.ts`) — a tipagem já está preparada.
 
+### 🔌 Aguardando core-api (backend) — o front/BFF já fez a parte dele
+
+> **Status (2026-06-06):** do lado do **front + BFF**, o que dependia de nós para Contratos/Parceiros
+> **está concluído**. O que segue não é trabalho nosso pendente — é o **backend** que precisa entregar.
+> Onde o core-api ainda não tem rota, o BFF devolve **`'not-implemented'`** (erro-de-valor, ADR-0011),
+> nunca dado falso. Backlog espelhado no core-api em `handbook/po-feedback/0001-gap-api-v2-contracts.md`,
+> **ADR-0032** e `specs/001-partners-http-gaps/`.
+
+| # | O backend precisa fazer | Bloqueia o quê no front | Status front |
+|---|---|---|---|
+| 1 | **Vínculo de parceiro no contrato** — `contractor:{type,id}` no `POST /api/v2/contracts`; coluna no agregado/tabela; snapshot no `GET /:id` (+ `ActView`) | Associar contrato ↔ contratado (hoje o contrato fica "solto") | ✅ pronto — busca de parceiro por fan-out; só falta para onde enviar o vínculo |
+| 2 | **`PATCH /api/v2/contracts/:id`** (metadados: `title/objective/observations/email/telephone`; valor/período seguem imutáveis via aditivo) | Editar contato/observações do contrato | ✅ pronto — `update` no BFF já retorna `not-implemented` |
+| 3 | **Agregador `GET /api/v1/partners`** (busca unificada) — *melhoria* | Otimizar o seletor de contratado (hoje fan-out de 4 GETs funciona) | ✅ pronto — fan-out implementado |
+| 4 | **Export CSV** de `financiers`/`acts`/`collaborators` (este já tem serializer) — *melhoria* | Exportar parceiros | ⚪ não consumido ainda |
+
 ## Como rodar / validar
 
 ```bash
