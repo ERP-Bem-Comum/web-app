@@ -38,6 +38,7 @@ as alternativas **rejeitadas** e por quê. É a fonte que um dev novo (ou um age
 | [0008](./0008-self-host-webfonts-fontsource.md) | Self-host de webfonts via @fontsource (assets puros + provenance; CDN/woff2-manual rejeitados) | Accepted |
 | [0009](./0009-framework-agnostic-client.md) | Cliente agnóstico de framework: ViewModel puro + Command, UI como adaptador plugável (binding hook), use-case opcional | Accepted |
 | [0010](./0010-bff-orchestration-fn-naming.md) | BFF orquestrador: uma `fn` completa por caso de uso, client não compõe; nomenclatura `.query.fn` / `.service.fn` | Accepted |
+| [0011](./0011-no-mocks-in-production.md) | Sem mocks em produção (`src/`): `not-implemented` como placeholder; fixtures só em `tests/` (governance test) | Accepted |
 
 > Próximos ADRs a registrar conforme as decisões surgirem (ex.: i18n, módulo de usuários Zero Trust).
 > Decisões já tomadas e ainda não "adritizadas" vivem na constituição e em `specs/*/research.md`.
