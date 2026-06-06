@@ -82,3 +82,10 @@ upload do browser em texto. Contrato ao vivo: `GET /docs/json` (OpenAPI).
 - **Financiador PF**: API é PJ-only. Decisão de produto: manter PJ-only no front (recomendado) ou aguardar backend? → clarify.
 - **Filtros programa/idade**: backend descartou (FR-012). Front: derivar idade de `dateOfBirth` (client-side) e remover "programa" da UI de filtros. → clarify.
 - **Detalhe de borda**: import multipart→`text/csv` é responsabilidade da server function do BFF.
+- **RBAC na UI (FR-020)** 🔴: o core-api **não expõe permissões** ao front — o JWT tem payload vazio
+  (só `sub=userId`, `token-issuer.es256.ts`) e `GET /api/v2/auth/me` retorna `{ userId }`
+  (`meResponseSchema`). As permissões vivem no banco (`auth_permission`/`role`/`user_role`) mas não cruzam
+  a borda HTTP (ADR-0024/0005). **Pedido P1 ao core-api**: estender `GET /auth/me` + `meResponseSchema`
+  para incluir `permissions: string[]` (achatar `roles→permissions`). **Nota front**: a extensão do módulo
+  `auth` (MeSchema/AuthUser/CurrentUser) é **trabalho separado** — a feature-modelo é protegida (edição
+  bloqueada). Até lá, o `can()` (T011) recebe `[]` → degradação: ações de escrita ocultas na UI.
