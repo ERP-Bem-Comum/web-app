@@ -28,8 +28,9 @@ territorial) — ver `api-readiness-report.md`. Portanto a Fase 1 integra **real
 - **Mock** (opcional, só dev offline): a composição mock dos gateways permanece disponível como ponto de
   troca (ADR-0001 / R-002), mas não é mais necessária. Trocar mock↔real **não** altera UI/ViewModel (SC-005).
 
-⚠️ **Import de colaboradores**: o core-api espera `text/csv` cru — a server function do BFF converte o
-upload multipart do browser em texto antes de chamar `POST /api/v1/collaborators/import`.
+⚠️ **Import de colaboradores** (CSV-only): o client lê `File.text()` e envia a **string** (Zod ≤2 MiB) à
+server function, que repassa `text/csv` ao core-api (`POST /api/v1/collaborators/import`). Parsing +
+anti-CSV-injection vivem no `server/domain`; sem lib de `.xlsx` (Princ. VIII).
 
 ## Testes
 

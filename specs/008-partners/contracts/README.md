@@ -24,7 +24,7 @@
 | `completeCollaboratorRegistration` | `{ id, ...dadosCompletos }` | `CollaboratorDetail` (status `Cadastrado`) | `PATCH /api/v1/collaborators/:id/complete-registration` |
 | `updateCollaborator` | `{ id, ...campos }` | `CollaboratorDetail` | `PUT /api/v1/collaborators/:id` |
 | `deactivateCollaborator` | `{ id, reason }` (reason obrigatório) | `{ id }` | `POST /api/v1/collaborators/:id/deactivate` |
-| `importCollaborators` | CSV cru (`text/csv`, colunas `name,email,cpf,occupationArea,role,startOfContract,employmentRelationship`) | `{ created, failed: { line, error }[] }` (sempre 200; malformado→400) | `POST /api/v1/collaborators/import` — ⚠️ BFF **converte o upload multipart do browser em `text/csv`** |
+| `importCollaborators` | **string CSV** (Zod, ≤2 MiB; colunas `name,email,cpf,occupationArea,role,startOfContract,employmentRelationship`) | `{ created, failed: { line, error }[] }` (sempre 200; malformado→400) | `POST /api/v1/collaborators/import` — client lê `File.text()`→string; server fn repassa `text/csv` (parsing+anti-injection no `server/domain`) |
 
 ## Fornecedores
 

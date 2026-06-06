@@ -25,6 +25,15 @@
 | **Situação cadastral** | Para colaboradores: `Pré Cadastrado` → `Cadastrado` (eixo distinto de ativo/inativo). |
 | **Status** | `Ativo`/`Inativo` (eixo de habilitação, transversal a todos os tipos). |
 
+## Clarifications
+
+### Session 2026-06-06
+
+- Q: Financiador aceita pessoa física ou é PJ-only? → A: **PJ-only**. A evidência do legado já é PJ (formulário com Razão Social + CNPJ; todos os registros com CNPJ) e a API é PJ-only. Variante PF fica fora de escopo.
+- Q: Filtros `programa` e `idade` de Colaborador (descartados pelo backend, FR-012)? → A: **Remover "programa"** da UI de filtros e **derivar/filtrar idade a partir de `dateOfBirth` no client** (sem filtro server-side).
+- Q: A UI reflete o RBAC do core-api (`collaborator:write`, `supplier:write`, `geography:write`…)? → A: **Sim** — ações de criar/editar/desativar/toggle ficam **ocultas ou desabilitadas** quando o usuário não tem a permissão.
+- Q: Formato aceito no import de Colaboradores? → A: **CSV-only**. O client lê o arquivo (`File.text()`) e envia a **string** (validada por Zod, ≤ 2 MiB) à server function, que repassa `text/csv` ao core-api; parsing + anti-CSV-injection vivem no `server/domain` (sem lib de `.xlsx` — Princ. VIII). `.xlsx` fica fora de escopo.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Colaboradores (Priority: P1)
@@ -47,7 +56,7 @@ observável na UI, sem depender dos outros sub-domínios.
 3. **Given** a tela "Adicionar", **When** o usuário preenche os 7 campos essenciais (Rep. Legal, Email, Área, Função, Início de Contrato, Vínculo, CPF), **Then** o colaborador é criado com situação `Pré Cadastrado`.
 4. **Given** um colaborador pré-cadastrado, **When** completa os dados pessoais no Editar, **Then** a situação passa a `Cadastrado`.
 5. **Given** o modal de Desativar, **When** o usuário não seleciona "Motivo", **Then** o botão "Desativar Colaborador(a)" permanece desabilitado.
-6. **Given** um arquivo CSV/Excel válido, **When** o usuário importa em lote, **Then** os colaboradores são criados (ou o sistema reporta as linhas inválidas).
+6. **Given** um arquivo **CSV** válido, **When** o usuário importa em lote, **Then** os colaboradores válidos são criados e as linhas inválidas são reportadas (`{ created, failed }`).
 
 ---
 
@@ -134,12 +143,12 @@ painel de selecionados mantendo municípios de qualquer UF (cross-state), para r
 ### Functional Requirements
 
 - **FR-001**: O sistema MUST listar cada tipo de parceiro com busca livre por texto e paginação (5/10/25 itens por página).
-- **FR-002**: O sistema MUST oferecer filtros avançados em Colaboradores (escolaridade, raça, ano de contratação, função, identidade de gênero, status, situação cadastral, vínculo) e em Fornecedores (status, categoria), via painel toggle que não fecha ao aplicar.
+- **FR-002**: O sistema MUST oferecer filtros avançados em Colaboradores (escolaridade, raça, ano de contratação, função, identidade de gênero, status, situação cadastral, vínculo) e em Fornecedores (status, categoria), via painel toggle que não fecha ao aplicar. O filtro **"programa" é removido** (não é conceito do BC) e **"idade" é derivada de `dateOfBirth` no client** (não há filtro server-side desses dois — ver Clarifications / FR-019).
 - **FR-003**: Usuários MUST conseguir criar Colaborador em pré-cadastro (7 campos essenciais), resultando em situação `Pré Cadastrado`.
 - **FR-004**: Usuários MUST conseguir completar o cadastro do Colaborador (dados pessoais, contato de emergência, identidade, saúde, biografia), promovendo a situação para `Cadastrado`.
 - **FR-005**: O sistema MUST exibir o status duplo de Colaboradores (Ativo/Inativo + Cadastrado/Pré Cadastrado).
 - **FR-006**: Usuários MUST conseguir desativar Colaborador com **Motivo obrigatório** (botão de confirmação desabilitado até selecionar o motivo).
-- **FR-007**: Usuários MUST conseguir importar Colaboradores em lote via CSV/Excel, com relatório de linhas inválidas.
+- **FR-007**: Usuários MUST conseguir importar Colaboradores em lote via **CSV** (`.csv`), com relatório de linhas inválidas (`{ created, failed: [{ line, error }] }` = sucesso parcial). O client lê `File.text()` e envia a string (Zod ≤ 2 MiB) à server function, que repassa `text/csv` ao core-api; parsing e anti-CSV-injection vivem no `server/domain`. `.xlsx` está fora de escopo (Princ. VIII — ver Clarifications).
 - **FR-008**: Usuários MUST conseguir criar Fornecedor (PJ) com dados cadastrais + bancários + PIX (3 seções), filtrar por categoria de serviço e exportar a listagem filtrada.
 - **FR-009**: Usuários MUST conseguir o CRUD simples de Financiador (6 campos, sem seções) com busca simples e desativação por modal (texto dinâmico, sem Motivo).
 - **FR-010**: Usuários MUST conseguir marcar/desmarcar Estados parceiros via dual-panel com persistência imediata (sem botão Salvar) e estado "Adicionado" visível.
@@ -150,12 +159,10 @@ painel de selecionados mantendo municípios de qualquer UF (cross-state), para r
 - **FR-015**: O sistema MUST preservar a coluna `CONTRATOS/ADITIVOS` (vazia/reservada) nas listagens onde o legado a exibe.
 - **FR-016**: Todas as strings de UI MUST vir do catálogo i18n; toda falha MUST ser apresentada como `AppError.kind` mapeado para tag i18n (a UI nunca inspeciona status HTTP).
 
-- **FR-017**: O catálogo de categorias de serviço de Fornecedores MUST vir do endpoint canônico `GET /api/v1/suppliers/service-categories` (**39 códigos**, union fechada no domínio). *(Resolvido — antes NEEDS CLARIFICATION sobre a fonte; o backend agora expõe o catálogo.)*
-
-*Itens com NEEDS CLARIFICATION (pendentes — entram no `/speckit-clarify`):*
-
-- **FR-018**: Financiador — o core-api é **PJ-only** (exige CNPJ; sem variante PF). [NEEDS CLARIFICATION: manter o formulário PJ-only no front (recomendado) ou aguardar suporte a PF no backend?]
-- **FR-019**: Filtros de Colaborador — o core-api **descartou** `programa` (fora do BC) e `idade` (FR-012 do backend). [NEEDS CLARIFICATION: remover "programa" da UI de filtros e derivar idade de `dateOfBirth` no client (recomendado), ou manter alguma forma desses filtros?]
+- **FR-017**: O catálogo de categorias de serviço de Fornecedores MUST vir do endpoint canônico `GET /api/v1/suppliers/service-categories` (**39 códigos**, union fechada no domínio). *(Resolvido — o backend expõe o catálogo.)*
+- **FR-018**: O formulário de Financiador MUST ser **PJ-only** (Razão Social + CNPJ obrigatórios), alinhado à evidência do legado e à API. Variante pessoa física está **fora de escopo**. *(Resolvido — Clarifications 2026-06-06.)*
+- **FR-019**: Os filtros de Colaborador MUST **omitir "programa"** e tratar "idade" como **derivação client-side** de `dateOfBirth` (sem filtro server-side). *(Resolvido — Clarifications 2026-06-06.)*
+- **FR-020**: A UI MUST refletir o RBAC do core-api: ações de criar/editar/desativar/reativar/toggle MUST ficar **ocultas ou desabilitadas** quando a sessão não tem a permissão correspondente (`collaborator:write`, `supplier:write`, `financier:write`, `geography:write`). Falha de autorização do backend MUST ser tratada como `AppError('unauthorized')`. *(Defesa em profundidade — Clarifications 2026-06-06.)*
 
 ### Key Entities
 

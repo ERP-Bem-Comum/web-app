@@ -36,8 +36,15 @@
   function do BFF converte o arquivo em texto `text/csv`** antes de repassar ao core-api. Resposta sempre
   `200 { created, failed: [{ line, error }] }` (import parcial); malformado → `400`.
 - **Porquê**: a rota existe; o BFF é o lugar de adaptar o formato (ACL). Sem mock.
-- **Aberto**: parser/validação client opcional antes do upload; suporte a `.xlsx` exige conversão (a API é CSV).
-- **Rejeitado**: enviar multipart direto ao core-api (contrato é `text/csv`).
+- **Consolidado (consultas nodejs/tanstack-start/react experts + ACDG/security, 2026-06-06)**: **CSV-only**.
+  O client lê `File.text()` e envia a **string** validada por Zod (≤2 MiB) à server fn (não `FormData`); o
+  `server/domain` faz parser CSV puro (BOM/aspas/quebras) + value-objects branded + **anti-CSV-injection**
+  (rejeitar `= + - @ \t` no início de campo); o `server/adapters` repassa `text/csv` ao core-api com timeout.
+  Na UI (MVVM): `File` no Controller, `File.text()` no Binding (`mutationFn`), ViewModel puro recebe strings,
+  union tagged `idle|file-selected|sending|reported|failed`, a11y (`useId`, `<progress>` indeterminado, `aria-live`).
+- **Rejeitado**: lib de `.xlsx` (SheetJS) — colide com supply-chain pnpm + CVEs (prototype pollution/ReDoS),
+  Princ. VIII; e `FormData`/multipart (a server fn idiomática recebe string serializável validada por Zod).
+- **`.xlsx`**: fora de escopo; se virar requisito de negócio, reabrir como conversão **no BFF** (nunca via shell), com justificativa formal.
 
 ## R-005 — Status duplo de colaboradores (situação × ativação)
 

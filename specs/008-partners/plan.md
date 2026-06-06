@@ -96,7 +96,7 @@ dual-panel sem sub-rotas.
 | `completeCollaboratorRegistration` | mutation | dados completos | `PATCH /collaborators/:id/complete-registration` | 🟢 |
 | `updateCollaborator` | mutation | campos | `PUT /collaborators/:id` | 🟢 |
 | `deactivateCollaborator` | mutation | `{ id, reason }` | `POST /collaborators/:id/deactivate` | 🟢 |
-| `importCollaborators` | mutation | CSV (`text/csv`) | `POST /collaborators/import` | 🟢 (BFF converte multipart→csv) |
+| `importCollaborators` | mutation | string CSV (Zod ≤2 MiB) | `POST /collaborators/import` | 🟢 (client `File.text()`→string; server fn repassa `text/csv`) |
 | `listSuppliers`/`getSupplier`/`createSupplier`/`updateSupplier`/`deactivateSupplier` | — | — | `/suppliers*` | 🟢 |
 | `exportSuppliers` | query | filtros | `GET /suppliers/export` | 🟢 |
 | `listServiceCategories` | query | — | `GET /suppliers/service-categories` | 🟢 (39) |
