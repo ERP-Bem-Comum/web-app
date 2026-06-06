@@ -45,10 +45,10 @@ imports relativos); testes DOM em Vitest/jsdom (`*.spec.tsx`). Espelhe `src/` �
 
 - [X] T006 [P] Teste dos VOs branded compartilhados em `tests/modules/partners/server/domain/value-objects.test.ts` (CPF, CNPJ, Email, UF, Phone, PixKey — rejeitam inválidos; MF-001) ✅ 19/19 verdes
 - [X] T007 [P] Implementar VOs `CPF`/`CNPJ`/`Email`/`UF`/`Phone`/`PixKey` (branded + smart constructor `Result`) em `src/modules/partners/server/domain/value-objects/` ✅
-- [ ] T008 [P] Definir erros-como-valor do módulo em `src/modules/partners/server/domain/errors/partners.errors.ts` (união kebab-case EN)
+- [X] T008 [P] Definir erros-como-valor do módulo em `src/modules/partners/server/domain/errors/partners.errors.ts` (união kebab-case EN) ✅
 - [ ] T009 Criar o client do core-api para `/api/v1` em `src/modules/partners/server/adapters/core-api/partners-core-api.ts` (usa `external/core-api` resultFetch; base `/api/v1`, timeout)
 - [ ] T010 [P] Mapear a cadeia de erro do módulo (HttpError→AppError) em `src/modules/partners/client/data/helpers/partners-error-tag.ts` (switch exaustivo → tag i18n)
-- [ ] T011 [P] Helper de RBAC (FR-020) em `src/modules/partners/client/data/helpers/can.ts` (deriva permissões da sessão; `can('collaborator:write')` etc.) + teste `tests/modules/partners/client/data/can.test.ts` 🔴
+- [X] T011 [P] Helper de RBAC (FR-020) em `src/modules/partners/client/data/helpers/can.ts` + teste ✅ (lógica pura pronta; ⚠️ FONTE das permissões pendente — `CurrentUser` só tem `userId`; exige BFF `/me` expor permissões)
 - [ ] T012 [P] Organismo compartilhado `DataTable` (linha clicável, coluna reservada, empty/loading) em `src/shared/ui/organisms/data-table/` + `*.spec.tsx` 🔴
 - [ ] T013 [P] Molécula `PaginationControl` (5/10/25 + prev/next) em `src/shared/ui/molecules/pagination-control/` + `*.spec.tsx` 🔴
 - [ ] T014 [P] Organismo `FormCard` (n seções) em `src/shared/ui/organisms/form-card/` + `*.spec.tsx` 🔴
