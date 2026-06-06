@@ -52,6 +52,8 @@
 
 > Toggles **idempotentes** (`POST` ativa / `DELETE` desativa). Permissões `geography:read/write`.
 > Município é identificado por **`ibgeCode`** (não por nome) e a listagem exige `uf`.
+> **Rev. 2**: cada toggle **retorna o DTO atualizado** (`{ uf, isPartner }` / `{ ibgeCode, uf, name, isPartner }`,
+> `200`) → o view-model aplica **atualização otimista** com o DTO, sem refetch obrigatório.
 
 | Server fn | Input | Output | core-api |
 |---|---|---|---|

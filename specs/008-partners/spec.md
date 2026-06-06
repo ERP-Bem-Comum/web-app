@@ -162,7 +162,7 @@ painel de selecionados mantendo municípios de qualquer UF (cross-state), para r
 - **FR-017**: O catálogo de categorias de serviço de Fornecedores MUST vir do endpoint canônico `GET /api/v1/suppliers/service-categories` (**39 códigos**, union fechada no domínio). *(Resolvido — o backend expõe o catálogo.)*
 - **FR-018**: O formulário de Financiador MUST ser **PJ-only** (Razão Social + CNPJ obrigatórios), alinhado à evidência do legado e à API. Variante pessoa física está **fora de escopo**. *(Resolvido — Clarifications 2026-06-06.)*
 - **FR-019**: Os filtros de Colaborador MUST **omitir "programa"** e tratar "idade" como **derivação client-side** de `dateOfBirth` (sem filtro server-side). *(Resolvido — Clarifications 2026-06-06.)*
-- **FR-020**: A UI MUST refletir o RBAC do core-api: ações de criar/editar/desativar/reativar/toggle MUST ficar **ocultas ou desabilitadas** quando a sessão não tem a permissão correspondente (`collaborator:write`, `supplier:write`, `financier:write`, `geography:write`). Falha de autorização do backend MUST ser tratada como `AppError('unauthorized')`. *(Defesa em profundidade — Clarifications 2026-06-06.)*
+- **FR-020**: A UI MUST refletir o RBAC do core-api: ações de criar/editar/desativar/reativar/toggle MUST ficar **ocultas ou desabilitadas** quando a sessão não tem a permissão correspondente (`collaborator:write`, `supplier:write`, `financier:write`, `geography:write`). Falha de autorização do backend MUST ser tratada como `AppError('forbidden')`. *(Defesa em profundidade.)* **Fonte resolvida (Rev. 2)**: `GET /api/v2/auth/me` agora entrega `permissions[]`; o `can()` lê `me.permissions`. Falta apenas a ponte no front (estender `MeSchema`/`AuthUser`/`CurrentUser` do `auth`).
 
 ### Key Entities
 
@@ -207,3 +207,4 @@ painel de selecionados mantendo municípios de qualquer UF (cross-state), para r
 - CRUD de usuários/permissões (Zero Trust) — fora do épico.
 - Telas de Contratos/Aditivos (módulo `contracts` já existe) — apenas a coluna reservada é mantida.
 - Relatórios/dashboards de parceiros (dashboard é outra evidência).
+- **ACT** (novo tipo de parceiro, `/api/v1/acts`) — **fora de escopo nesta fase**: é placeholder provisório no core-api (espelha o núcleo do Colaborador; regras de produto e significado da sigla pendentes, ADR-0036 do core-api). Reabrir como US futura quando o produto definir as regras.

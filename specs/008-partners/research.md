@@ -26,7 +26,7 @@
   independentes), dirigido por um view-model puro (estado da seleção + commands add/remove). Municípios
   estende com seleção de UF (combobox autocomplete) obrigatória.
 - **Porquê**: reuso entre Estados e Municípios; mantém view burra (Princ. XI). Persistência imediata =
-  command que chama o gateway (mock na Fase 1) e atualiza otimista.
+  command que chama o gateway e **atualiza otimista com o DTO retornado pelo toggle** (Rev. 2 — sem refetch).
 - **Rejeitado**: dois componentes separados copiados (duplicação); CRUD convencional (não bate com a UX).
 
 ## R-004 — Import CSV/Excel de colaboradores

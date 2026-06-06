@@ -117,7 +117,7 @@ Resumo de `api-readiness-report.md`. Ponto de troca = gateway/repository (ADR-00
 | Fornecedores (CRUD + export + catálogo 39) | 🟢 | real |
 | Colaboradores (CRUD + import `text/csv`) | 🟢 | real (BFF converte multipart→csv) |
 | Estados / Municípios (toggles idempotentes) | 🟢 | real (Município por `ibgeCode`; `uf` obrigatório na lista) |
-| Financiador-PF · filtros programa/idade | ⚪ | fora de escopo (não-mock; ver clarify) |
+| Financiador-PF · filtros programa/idade · ACT | ⚪ | fora de escopo (ACT = placeholder `/api/v1/acts`, regras pendentes; RBAC **resolvido** — `/me` expõe `permissions[]`) |
 
 ## Design System Impact *(Atomic Design — ADR-0007, só-tokens)*
 

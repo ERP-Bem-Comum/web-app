@@ -57,8 +57,8 @@ Financier { id, name, corporateName, legalRepresentative, cnpj: CNPJ, telephone:
 
 ### Referências territoriais (VOs de referência — ADR-0002)
 ```
-PartnerState { uf: UF, name, isPartner: boolean }                          // toggle por uf
-PartnerMunicipality { ibgeCode, uf: UF, name, isPartner: boolean }          // identidade = ibgeCode (7 díg.); toggle por ibgeCode
+PartnerState { uf: UF, name, isPartner: boolean }                          // toggle por uf; toggle retorna o DTO (otimista)
+PartnerMunicipality { ibgeCode, uf: UF, name, isPartner: boolean }          // identidade = ibgeCode (7 díg.); toggle por ibgeCode; toggle retorna DTO
 ```
 
 ## Models do client (`client/data` — Zod)
