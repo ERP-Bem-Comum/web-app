@@ -4,7 +4,7 @@
  * do `CORE_API_URL` (que inclui o prefixo `/api/v2` usado por auth/contracts).
  */
 import { loadEnvOrThrow } from '#external/config/env.config.ts'
-import { createCoreApiCollaboratorsClient } from './coreapi/core-api-collaborators.ts'
+import { createCoreApiCollaboratorsClient } from './core-api/core-api-collaborators.ts'
 import {
   createListCollaborators,
   createGetCollaborator,

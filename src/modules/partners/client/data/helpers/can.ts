@@ -2,10 +2,10 @@
  * RBAC do client (FR-020) — verificação PURA de permissão. A UI usa `can(granted, required)` para
  * ocultar/desabilitar ações de escrita conforme o RBAC do core-api.
  *
- * FONTE de `granted` (Rev. 2): o core-api `GET /api/v2/auth/me` já entrega `permissions[]`
- * (degradação simétrica `[]` em falha). Falta só a ponte no front: estender `MeSchema`/`AuthUser`/
- * `CurrentUser` do módulo `auth` para propagar o campo; aí o ViewModel passa `me.permissions` como
- * `granted`. Enquanto a ponte não existe, `granted = []` (degradado: ações de escrita ocultas). FR-020.
+ * FONTE de `granted` — LIGADA: o core-api `GET /api/v2/auth/me` entrega `permissions[]` (degradação
+ * simétrica `[]` em falha) e a ponte no front está feita — `MeSchema`/`AuthUser`/`CurrentUser` propagam
+ * o campo. O ViewModel/binding obtém `currentUser.permissions` (via `useCurrentUser`) e passa como
+ * `granted`. Falta apenas o uso final nas views de US1 (esconder/desabilitar ações). FR-020.
  */
 export type PartnerPermission =
   | 'collaborator:read'

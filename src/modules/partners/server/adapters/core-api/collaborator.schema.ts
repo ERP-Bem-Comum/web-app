@@ -1,9 +1,7 @@
 /**
- * Zod dos responses do core-api `/api/v1/collaborators/*` (boundary §VI).
- * ⚠️ Pasta `coreapi/` (não `core-api/`) por um contorno temporário: a regra de permissão
- * `Write(./core-api/**)` do settings.json casa o segmento `core-api/` em qualquer profundidade e
- * bloqueia a subpasta idiomática `adapters/core-api/`. Renomear para `core-api/` quando o glob for
- * ancorado na raiz. Shape modelado a partir do contrato conhecido; confirmar contra `GET /docs/json`.
+ * Zod dos responses do core-api `/api/v1/collaborators/*` (boundary §VI). Valida o que entra do backend
+ * antes de virar Model. Shape modelado a partir do contrato conhecido; confirmar contra `GET /docs/json`.
+ * `.loose()` no detalhe tolera os ~27 campos completos (mapeados conforme expandir).
  */
 import * as z from 'zod'
 
