@@ -68,6 +68,11 @@ export const createDeactivateCollaborator =
   (id: string, reason: DeactivationReason, token: string): Promise<Result<CollaboratorDetail, PartnersError>> =>
     deps.client.deactivate(id, reason, token)
 
+export const createReactivateCollaborator =
+  (deps: Deps) =>
+  (id: string, token: string): Promise<Result<CollaboratorDetail, PartnersError>> =>
+    deps.client.reactivate(id, token)
+
 export const createImportCollaborators =
   (deps: Deps) =>
   (input: ImportCollaboratorsInput, token: string): Promise<Result<CollaboratorImportResult, PartnersError>> =>

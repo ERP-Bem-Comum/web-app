@@ -78,6 +78,12 @@ export const DeactivateCollaboratorInputSchema = z.object({
 })
 export type DeactivateCollaboratorInput = z.infer<typeof DeactivateCollaboratorInputSchema>
 
+// Reativar: Inactive → Active. Sem motivo (idempotente). Backend: POST /collaborators/:id/reactivate.
+export const ReactivateCollaboratorInputSchema = z.object({
+  id: z.string().trim().min(1).max(64),
+})
+export type ReactivateCollaboratorInput = z.infer<typeof ReactivateCollaboratorInputSchema>
+
 // Import em lote (CSV-only). O client lê `File.text()` e envia a STRING; a server fn repassa `text/csv`.
 // Teto de 2 MiB validado em BYTES (UTF-8), alinhado ao `bodyLimit` do core-api. FR-007.
 export const ImportCollaboratorsInputSchema = z.object({

@@ -12,6 +12,7 @@ import {
   createCompleteCollaboratorRegistration,
   createUpdateCollaborator,
   createDeactivateCollaborator,
+  createReactivateCollaborator,
   createImportCollaborators,
 } from '#modules/partners/server/application/collaborator/collaborator.use-cases.ts'
 
@@ -34,6 +35,7 @@ const build = () => {
     completeCollaboratorRegistration: createCompleteCollaboratorRegistration({ client }),
     updateCollaborator: createUpdateCollaborator({ client }),
     deactivateCollaborator: createDeactivateCollaborator({ client }),
+    reactivateCollaborator: createReactivateCollaborator({ client }),
     importCollaborators: createImportCollaborators({ client }),
   }
 }
