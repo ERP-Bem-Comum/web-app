@@ -1,0 +1,1 @@
+ArquivoID da capturaDescrição do estado01-estado-vazio-sem-uf.pngss_83623p901Sem estado selecionado — painel esq. vazio ("Nenhum resultado encontrado"), painel dir. com Anamã02-estado-preenchido-com-uf.pngss_9580046ypEstado "Amazonas" selecionado — lista de municípios (Alvarães, Amaturá, Anamã=Adicionado, Anori, Apuí…)
