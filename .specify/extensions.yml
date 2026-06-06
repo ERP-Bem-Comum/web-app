@@ -1,46 +1,158 @@
-# Spec-Kit Extension Hooks — fluxo guiado (NÃO destrutivo)
-#
-# Todos os hooks são `optional: true`: ao fim/início de uma fase, o assistente
-# SUGERE o próximo comando (não executa sozinho). Você mantém o controle.
-# Para auto-executar uma transição, troque `optional: true` por `optional: false`
-# (aí o assistente emite EXECUTE_COMMAND e roda o comando automaticamente).
-#
-# Regras (das SKILL.md speckit-*):
-#  - `command` usa pontos; vira slash trocando "." por "-" (speckit.plan → /speckit-plan).
-#  - `enabled: false` desliga o hook (default = ligado).
-#  - `condition` é avaliado pelo executor; deixamos vazio (sempre sugerir).
-#
-# Fluxo: constitution → specify → (clarify) → plan → (checklist) → tasks → (analyze) → implement
-
+installed:
+  - git
+settings:
+  auto_execute_hooks: true
 hooks:
-  # Ao terminar a SPEC → sugerir clarify (opcional) e o plano.
-  after_specify:
-    - command: speckit.plan
+  before_constitution:
+    - extension: git
+      command: speckit.git.initialize
+      enabled: true
+      optional: false
+      prompt: Execute speckit.git.initialize?
+      description: Initialize Git repository before constitution setup
+      condition: null
+  before_specify:
+    # optional: true (correção achado #4) — branch/pasta nascem no SCAFFOLD, antes do step 0
+    # (discovery já grava em specs/<feature>/). Aqui o hook vira no-op seguro / allow-existing.
+    - extension: git
+      command: speckit.git.feature
       enabled: true
       optional: true
-      description: "Gerar o plano técnico a partir da spec recém-criada."
-      prompt: "A especificação está pronta. Rode /speckit-plan para gerar o plano técnico. Se houver ambiguidades, /speckit-clarify primeiro (opcional)."
-
-  # Ao terminar o PLANO → sugerir a geração de tasks.
-  after_plan:
-    - command: speckit.tasks
+      prompt: Execute speckit.git.feature?
+      description: Create feature branch before specification (skip se já criada no scaffold)
+      condition: null
+  before_clarify:
+    - extension: git
+      command: speckit.git.commit
       enabled: true
       optional: true
-      description: "Gerar a lista de tasks ordenada por dependência a partir do plano."
-      prompt: "O plano está pronto. Rode /speckit-tasks para gerar a tasks.md. (Opcional antes: /speckit-checklist para um checklist sob medida.)"
-
-  # Ao terminar as TASKS → sugerir a análise de consistência cross-artefato.
-  after_tasks:
-    - command: speckit.analyze
+      prompt: Commit outstanding changes before clarification?
+      description: Auto-commit before spec clarification
+      condition: null
+  before_plan:
+    - extension: git
+      command: speckit.git.commit
       enabled: true
       optional: true
-      description: "Analisar consistência entre spec.md, plan.md e tasks.md antes de implementar."
-      prompt: "As tasks foram geradas. Rode /speckit-analyze para checar consistência (spec ↔ plan ↔ tasks) antes de implementar."
-
-  # Antes de IMPLEMENTAR → lembrar de rodar a análise como gate de qualidade.
+      prompt: Commit outstanding changes before planning?
+      description: Auto-commit before implementation planning
+      condition: null
+  before_tasks:
+    - extension: git
+      command: speckit.git.commit
+      enabled: true
+      optional: true
+      prompt: Commit outstanding changes before task generation?
+      description: Auto-commit before task generation
+      condition: null
   before_implement:
-    - command: speckit.analyze
+    - extension: git
+      command: speckit.git.commit
       enabled: true
       optional: true
-      description: "Gate de qualidade: validar consistência cross-artefato antes de codar."
-      prompt: "Antes de implementar, considere rodar /speckit-analyze como gate de qualidade (consistência spec ↔ plan ↔ tasks)."
+      prompt: Commit outstanding changes before implementation?
+      description: Auto-commit before implementation
+      condition: null
+  before_checklist:
+    - extension: git
+      command: speckit.git.commit
+      enabled: true
+      optional: true
+      prompt: Commit outstanding changes before checklist?
+      description: Auto-commit before checklist generation
+      condition: null
+  before_analyze:
+    - extension: git
+      command: speckit.git.commit
+      enabled: true
+      optional: true
+      prompt: Commit outstanding changes before analysis?
+      description: Auto-commit before analysis
+      condition: null
+  before_taskstoissues:
+    - extension: git
+      command: speckit.git.commit
+      enabled: true
+      optional: true
+      prompt: Commit outstanding changes before issue sync?
+      description: Auto-commit before tasks-to-issues conversion
+      condition: null
+  after_constitution:
+    - extension: git
+      command: speckit.git.commit
+      enabled: true
+      optional: true
+      prompt: Commit constitution changes?
+      description: Auto-commit after constitution update
+      condition: null
+  after_specify:
+    - extension: git
+      command: speckit.git.commit
+      enabled: true
+      optional: true
+      prompt: Commit specification changes?
+      description: Auto-commit after specification
+      condition: null
+  after_clarify:
+    - extension: git
+      command: speckit.git.commit
+      enabled: true
+      optional: true
+      prompt: Commit clarification changes?
+      description: Auto-commit after spec clarification
+      condition: null
+  after_plan:
+    - extension: git
+      command: speckit.git.commit
+      enabled: true
+      optional: true
+      prompt: Commit plan changes?
+      description: Auto-commit after implementation planning
+      condition: null
+  after_tasks:
+    - extension: git
+      command: speckit.git.commit
+      enabled: true
+      optional: true
+      prompt: Commit task changes?
+      description: Auto-commit after task generation
+      condition: null
+  after_implement:
+    - extension: bem-comum-verify
+      command: speckit.verify
+      enabled: true
+      optional: false
+      prompt: Rodar o gate de qualidade W3 (typecheck + format:check + lint + test)?
+      description: Quality gate W3 da core-api + política de regressão zero (custom)
+      condition: null
+    - extension: git
+      command: speckit.git.commit
+      enabled: true
+      optional: true
+      prompt: Commit implementation changes?
+      description: Auto-commit after implementation
+      condition: null
+  after_checklist:
+    - extension: git
+      command: speckit.git.commit
+      enabled: true
+      optional: true
+      prompt: Commit checklist changes?
+      description: Auto-commit after checklist generation
+      condition: null
+  after_analyze:
+    - extension: git
+      command: speckit.git.commit
+      enabled: true
+      optional: true
+      prompt: Commit analysis results?
+      description: Auto-commit after analysis
+      condition: null
+  after_taskstoissues:
+    - extension: git
+      command: speckit.git.commit
+      enabled: true
+      optional: true
+      prompt: Commit after syncing issues?
+      description: Auto-commit after tasks-to-issues conversion
+      condition: null

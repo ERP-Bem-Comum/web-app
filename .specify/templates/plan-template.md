@@ -111,3 +111,28 @@ directories captured above]
 |-----------|------------|-------------------------------------|
 | [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
 | [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+
+## Migrations Drizzle (core-api)
+
+> Preencher se a feature altera `schema.ts`. Migration nunca é escrita à mão.
+
+- **Mudanças de schema**: [ ] tabelas novas · [ ] colunas · [ ] índices · [ ] FKs · [ ] nenhuma
+- **Prefixo de isolamento correto?** (`ctr_*` / `fin_*` / …) — ADR-0014: [sim/N/A]
+- **Outbox**: novo evento exige `INSERT` em `core.outbox`? [sim/não]
+- **Comando**: após editar `schema.ts`, rodar `pnpm run db:generate` e versionar a migration gerada.
+- **Restrições MySQL 8** (ADR-0020): sem JSON nativo, triggers, stored procs, ENUM nativo.
+
+## Contrato HTTP (Fase 2+ — pular se CLI-only)
+
+> Só preencher se houver ADR ativando a borda Fastify. Caso contrário: "N/A — CLI-first".
+
+- **Endpoints novos/alterados**: [método, rota, schema Zod request/response, status codes]
+- **Backward-compat / versionamento**: [...]
+
+## Estimativa de Pipeline (W0 size)
+
+> Define o `--size` do ticket (`pnpm run pipeline:state init <ticket> --size <S|M|L>`).
+
+- **Tamanho**: [ ] **S** (trivial, 1-3 linhas/config) · [ ] **M** (VO/use case/refactor localizado) · [ ] **L** (BC novo, múltiplos agregados, outbox, API)
+- **Justificativa**: [por que esse tamanho]
+- **Plano de testes W0 (RED)**: [quais suites `*.test.ts` falham primeiro, descrevendo a API esperada]

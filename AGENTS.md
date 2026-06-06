@@ -214,7 +214,7 @@ Spec-driven via **Spec Kit** (`/speckit-*` skills); specs em `specs/`. **Perdido
 Antes de dar algo como pronto, rode `pnpm verify` (typecheck + lint + testes). O `core-api` **não é submódulo**:
 é a pasta-irmã **`../core-api`** no mono_repo (repo próprio, não é alvo de dev daqui — fora do escopo do
 lint/typecheck deste app; docs em `handbook/core-api/`). Para subir a stack completa (back+front+Caddy), use a
-**infra única** em **`../infraestrutura`** (`./up.sh` → `https://app.localhost`).
+**infra única** em **`../ERP-INFRA/local`** (`./up.sh` → `https://app.localhost`).
 
 ## Sua tarefa: o módulo de contratos
 

@@ -117,6 +117,22 @@
 - **SC-003**: [User satisfaction metric, e.g., "90% of users successfully complete primary task on first attempt"]
 - **SC-004**: [Business metric, e.g., "Reduce support tickets related to [X] by 50%"]
 
+## Impacto Arquitetural (core-api) *(obrigatório se a feature toca `src/`)*
+
+<!--
+  Seção específica do core-api. Liga a spec aos princípios da constituição
+  (Modular Monolith, outbox, MySQL/Drizzle, CLI-first). Preencha o que se aplica;
+  marque "N/A" no resto. Detalhe técnico fica no plano, não aqui.
+-->
+
+- **Bounded Contexts afetados**: [ ] Contratos (`ctr_*`) · [ ] Financeiro (`fin_*`) · [ ] Auth (`auth_*`) · [ ] Parceiros (`partners_*`)
+  - ⚠️ Tocar mais de um BC numa mesma feature ofende o isolamento (ADR-0014) — justifique.
+- **Novos agregados / Value Objects?**: [listar; cada um exige smart constructor + branded type + `Result<T,E>`]
+- **Novos eventos de domínio (outbox)?**: [listar `EventName` em EN-passado; registrar contrato em `handbook/architecture/`]
+- **Novos subcomandos de CLI?**: [listar; CLI é a UX primária da Fase 1]
+- **Borda HTTP envolvida?**: [normalmente NÃO — Fastify é Fase 2+ e exige ADR]
+- **Possíveis violações da constituição (I–VIII)?**: [ex.: pede 5º módulo, classe no domínio, JSON nativo MySQL, Redis/Kafka — se houver, escalar em "Complexity Tracking" do plano]
+
 ## Assumptions
 
 <!--

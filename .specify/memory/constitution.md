@@ -1,270 +1,105 @@
-<!--
-SYNC IMPACT REPORT
-==================
-Version change: (template) → 1.0.0 → 1.1.0 → 1.2.0 → 1.2.1 → 1.3.0
-Bump rationale:
-  - 1.3.0 (MINOR): cliente agnóstico de framework (ADR-0009). §III: client vira feature-first FLAT
-    (pastas por comportamento + data/domain compartilhados; camada = SUFIXO); núcleo agnóstico (data/
-    domain/view-model sem React) × adapter (ui). §XI reescrito: ViewModel = objeto PURO; binding hook
-    (useXxxBinding) é o adapter; Command padroniza ação+estado; saída da VM = "UI state" (não "view");
-    componente burro nomeado pelo papel (Form/Card). §XII: o ViewModel (efeito do command) emite — o
-    client/usecase deixa de ser camada (vira domain opcional). Pendente: recalibrar eslint boundaries
-    (pasta→sufixo) + lint anti-react no núcleo. Ver ADR-0009.
-  - 1.2.1 (PATCH): clarificação do §XII — localização dos tipos de evento (client→`client/data`,
-    server→`server/domain`), resolvendo tensão com os boundaries (client não importa server/domain).
-    Origem: /speckit-analyze da Auth (finding K1).
-  - 1.0.0: first ratification (template → governing principles).
-  - 1.1.0 (MINOR): adopted vertical-modular structure mirroring core-api + Principle XI (MVVM).
-  - 1.2.0 (MINOR): refined the per-module internal structure into a CLIENT × SERVER split — the
-    server side (BFF) is DDD; the client side (FRONT) is MVVM; the boundary is the server function.
-    Made Event Bus (Observer) and Controller (transient form state) official patterns. Rewrote
-    Principle III and XI; added Principle XII (Reactive Flow via Event Bus); rewrote folder structure.
-    Materially expanded guidance, no principle removed. See ADR-0004 (refines ADR-0001's internal layout).
+# Constituição do core-api
 
-Principles:
-  - I. BFF-Orchestrated Boundary · II. Errors Are Values · III. Client×Server Modular Architecture
-    (rewritten 1.2.0; client → feature-first agnóstico 1.3.0) · IV. Make Illegal States Unrepresentable ·
-    V. Server-State Is Not UI-State · VI. Validation at the Boundary · VII. Strict TypeScript & 6→7 ·
-    VIII. Minimal Dependencies · IX. pnpm Only · X. Spec-Driven Development · XI. Framework-Agnostic Client —
-    MVVM (View · ViewModel · Command · Binding) (rewritten 1.3.0) · XII. Reactive Flow via Event Bus
-    (refined 1.3.0).
-
-Templates & config requiring updates:
-  - eslint.config.js ................................ ⚠ pending (boundary elements for server/* vs
-    client/* + shared/bus + MVVM rule scoped to *.page.tsx/*.component.tsx)
-  - handbook/adr/0004-*.md .......................... ⚠ pending (new ADR for the client×server split)
-  - handbook/adr/0001-*.md .......................... ⚠ note: internal layout refined by ADR-0004
-  - handbook/arquiteture.md ......................... ⚠ divergence note already present (update layout)
-  - .specify/templates/* ............................ ✅ no change (tech-agnostic / dynamic gates)
-
-Sources of truth: CLAUDE.md (v2), handbook/adr/, core-api modular-monolith (ADR-0006), and the
-Tech Lead's front-end architecture guide (client=MVVM, server=DDD) consolidated here.
--->
-
-# ERP Bem Comum — Frontend v2 Constitution
-
-> Front + BFF unificado em TanStack Start. Fonte de verdade: este documento + `handbook/adr/`.
-> Governa o código de `src/`; conflitos com outras práticas são resolvidos a favor deste documento
-> (e dos ADRs aceitos, que estão acima dele na hierarquia).
+> **Fonte de verdade:** esta constituição **resume** os princípios para guiar o
+> fluxo do spec-kit (plan/tasks/implement). Ela **não substitui** o cânone — quando
+> houver divergência, vencem, nesta ordem: `handbook/architecture/adr/` (ADRs aceitos,
+> imutáveis) → `handbook/` → `AGENTS.md` + `.claude/rules/`. Veja a "Hierarquia de
+> regras" no `AGENTS.md`. Não duplique regras aqui; referencie.
 
 ## Core Principles
 
-### I. BFF-Orchestrated Boundary
+### I. TDD fail-first em pipeline W0→W3 (NÃO-NEGOCIÁVEL)
+Toda mudança em código de produção abre ticket em `.claude/.pipeline/<TICKET-ID>/`
+(`pnpm run pipeline:state init <ticket> --size <S|M|L>`) e percorre as waves:
+**W0** testes RED antes de tocar `src/`; **W1** implementação mínima até GREEN;
+**W2** code review read-only (máx. 3 rounds); **W3** quality gate verde
+(`typecheck` + `format:check` + `lint` + `test`). Pular wave quebra o fail-first.
+Bug trivial (1-3 linhas) ou config pode ir direto. *(AGENTS.md §"Pipeline fail-first")*
 
-Um app = front + BFF no mesmo processo. O browser **NUNCA** fala direto com o `core-api` — fala apenas
-com as **server functions** do próprio BFF, que autenticam, orquestram e normalizam. Tokens, refresh
-tokens, client secrets e a URL do backend **NUNCA** chegam ao browser: o cookie carrega só um
-`sessionId` opaco (`HttpOnly; SameSite=Strict; Secure`); os tokens vivem num `SessionStore` server-side.
-Toda I/O e todo segredo ficam atrás da fronteira do BFF.
+### II. Política de regressão zero (NÃO-NEGOCIÁVEL)
+Qualquer vermelho — teste, `lint`, `typecheck`, hook, build, gate W3 — é regressão a
+corrigir AGORA, tenha ou não sido causado pelo diff atual. "Não é meu erro" / "já estava
+quebrado" não fecham wave. Saídas aceitas: consertar a causa; corrigir o gate mal-gateado
+**provando** o verde no caminho certo; ou escalar ao humano com causa-raiz. É o anti-padrão
+mais grave (#14). *(AGENTS.md §"Política de regressão zero")*
 
-**Rationale:** centralizar I/O e segredos elimina classes inteiras de vazamento e de acoplamento
-cliente↔backend, e dá um único ponto de auditoria de segurança.
+### III. pnpm é o único package manager
+Nunca `npm` (ADR-0012; hook `block-npm.sh` bloqueia). Qualquer doc/PR/script com `npm`
+deve ser convertido. Supply-chain endurecido: corepack, `only-allow=pnpm`,
+`approve-builds` (ADR-0011). *(AGENTS.md §"IMPORTANTE")*
 
-### II. Errors Are Values
+### IV. Modular Monolith com isolamento estrito por Bounded Context
+Único processo deployável; módulos isolados por pasta (`src/modules/<bc>/`), tabelas
+namespaceadas (`ctr_*`, `fin_*`, `auth_*`, `partners_*` — ADR-0014). Cross-módulo
+**apenas** via `<module>/public-api/` — nunca importar `domain/`/`application/` de outro
+módulo (ADR-0006). Comunicação cross-BC por eventos via **outbox** (ADR-0015), não por
+leitura cruzada de tabelas. Não misturar módulos numa sessão. *(ADR-0006, 0014, 0015)*
 
-Erros são valores, não exceções: toda operação falível retorna `Result<T, E>` com unions de erro em
-string-literal kebab-case. `throw` é **proibido** fora da borda de infraestrutura; quando uma API nativa
-lança, o `catch` converte para `Result` **imediatamente**. A **única** subclasse de `Error` permitida é
-`QueryError` (vive em `shared/http`, ponte entre `Result` e a API de erro do TanStack Query, usada só por
-`queryFn`/`mutationFn`). Engolir erros é proibido — todo `E` é propagado e tratado exaustivamente.
+### V. Domínio puro — sem classes, sem framework, sem throw
+Domain = funções + `Readonly<{...}>` + smart constructors retornando `Result<T, E>`
+(nunca `throw`). Branded types para IDs/valores. Erros são string-literal unions EN
+kebab-case (`'contract-not-active'`); switch exaustivo com `const _: never = x`, nunca
+`throw` no `default`. *(`.claude/rules/domain.md`)*
 
-**Rationale:** erros-como-valores tornam o fluxo de falha visível ao compilador e à revisão.
+### VI. MySQL 8 único + Drizzle; migrations geradas
+MySQL 8.4 é o único dialeto (ADR-0020). Schema em Drizzle; após alterar `schema.ts`,
+gerar migration com `pnpm run db:generate` (nunca SQL à mão). Proibidos: JSON nativo,
+triggers, stored procs, ENUM nativo. Cliente de storage único: `@aws-sdk/client-s3`
+(ADR-0019). *(ADR-0013, 0015, 0020)*
 
-### III. Client × Server Modular Architecture with Enforced Boundaries
+### VII. CLI-first; HTTP é Fase 2+ (exige ADR)
+A UX primária da Fase 1 é a CLI (`pnpm run cli:contracts -- <subcomando>`). Servidor
+HTTP (Fastify) é reservado para Fase 2+ e só ativa via novo ADR. Application orquestra;
+o domínio ignora o transporte. *(AGENTS.md; ADR-0025 reservado)*
 
-Cada módulo de negócio é um slice vertical isolado em `src/modules/<módulo>/` e **separa explicitamente
-client de server** (decisão do Tech Lead; ver ADR-0004):
+### VIII. TypeScript strict + ESM + idioma por camada
+`strict` completo (`noUncheckedIndexedAccess`, `verbatimModuleSyntax`, etc.),
+`import type` para tipos, extensões `.ts` nos imports relativos (NodeNext), subpath
+`#src/*`. Proibidos: `any`, classes no domínio, `axios`/`moment`/`lodash`. Idioma:
+código em **EN**, strings ao humano e docs/commits em **PT** (commit `feat(contracts): …`).
+*(AGENTS.md §"Idioma" e §"Sintaxe TS")*
 
-- **`server/` — BFF, server-side, DDD.** É "tudo que definimos pro BFF": orquestração real, sessão,
-  tokens, chamada ao `core-api`. Camadas: `domain/` (puro: VOs branded, `Result`, regras, ports, event
-  types), `application/` (use cases — orquestram core-api + sessão), `adapters/` (server functions
-  `*.server-fn.ts` + client do core-api + `*.schema.ts` Zod + mappers). Usa `external/` para I/O/segredos.
-- **`client/` — FRONT, client-side, MVVM, AGNÓSTICO de framework (ADR-0009).** Organizado **por
-  comportamento** (feature-first FLAT): cada tela/ação é uma pasta sob `client/` (`login/`,
-  `current-user/`…), ao lado de **dois nomes reservados compartilhados** — `data/` (Repository = porta →
-  server fn, Model Zod, events) e `domain/` (use-cases compartilhados, **opcional**). Dentro do
-  comportamento, **a camada é o SUFIXO**: `*.mutation.ts`/`*.view-model.ts` (núcleo **agnóstico**, sem
-  React — ViewModel = objeto puro com commands + derivações + efeitos) × `*.binding.ts`/`*.page.tsx`/
-  `*.component.tsx`/`*.controller.ts` (**adapter** React). Trocar React→Solid mexe só nos adapters.
-- **`public-api/`** — único ponto de import **cross-módulo**.
+### IX. Decisões ancoradas no cânone (consultoria ACDG + citação obrigatória)
+A pipeline `core-api-sdd` opera em **máximo rigor**: cada fase consulta a persona-consultora
+ACDG correspondente (prompts MCP `/acdg-skills:*` — requirements-engineer, ddd-architect,
+software-architect, database-engineer, tdd-strategist, clean-code-reviewer, security-reviewer).
+Toda **decisão-chave** — fronteira de Bounded Context/agregado (DDD), ADR, estratégia de teste
+(TDD) e achados de review — exige **citação literal ≥4 linhas** de livro canônico, extraída pelas
+tools `skills_buscar`/`skills_citar` (Evans, Vernon, Beck, Uncle Bob, Newman, Ramakrishnan,
+OWASP…). Sem citação, a decisão não avança o gate. *(MCP `acdg-skills`; ver `.mcp.json`)*
 
-**Fronteira client↔server = a server function.** O `client/` só toca o `server/` chamando server
-functions (RPC); **nunca** importa `server/domain` ou `server/application`. A **dependência aponta para
-dentro**: `view (page/component) → binding → view-model → data`; o **núcleo agnóstico**
-(`data`/`domain`/`*.view-model`/`*.mutation`) **não importa React**; `server/adapters →
-server/application → server/domain`; `domain` (qualquer lado) é puro. `external/` é server-only e nunca
-importa módulos. Cross-módulo só via `public-api`.
+## Ciclo RED → YELLOW → GREEN (mapeia no W0→W3)
 
-Compartilhado: `src/shared/` (puro) e `src/external/` (I/O real + segredos, server-only). Violar a matriz
-de import é **erro de lint**, não convenção.
+- 🔴 **RED** — testes (W0) escritos a partir do BDD e **falhando** por inexistência da API.
+- 🟡 **YELLOW** — implementação mínima (W1) faz os **testes passarem**, mas review/qualidade/citações
+  ainda **pendentes** (verde funcional ≠ verde de qualidade).
+- 🟢 **GREEN** — testes + **review W2** + **gate W3** (`/speckit-verify`) + **citações das
+  decisões-chave registradas**. Só então a feature fecha.
 
-**Rationale:** separar client (apresentação/consumo, MVVM) de server (domínio/orquestração, DDD) deixa
-claro onde vive o quê, mantém o núcleo testável e cada lado evoluível sem vazar o outro — e o `public-api`
-mantém os módulos extraíveis (como o `core-api`, ADR-0006).
+## Technology Constraints
 
-### IV. Make Illegal States Unrepresentable
-
-O domínio usa **branded types + smart constructors** (`type CPF = Brand<string,'CPF'>`;
-`CPF = (raw) => Result<CPF, CPFError>`) — estado inválido é irrepresentável. Toda estrutura é imutável
-(`Readonly<>`, `readonly T[]`, `as const`); mudança de estado é cópia por spread. Commands, eventos e
-estados são **discriminated unions** com campo discriminante, tratados por `switch` **exaustivo** com
-guarda `const _: never = x`. `as` só dentro do smart constructor (ou com comentário); `any` é proibido.
-
-**Rationale:** o compilador vira a primeira linha de defesa; estado inválido deixa de compilar.
-
-### V. Server-State Is Not UI-State
-
-Estado remoto vive **somente** no cache do TanStack Query (na `view-model`). Estado de UI efêmero vive em
-`useReducer`/state machine (na `view-model`) ou estado transiente de form (no `controller`). **Nunca**
-misturar. A cadeia de erro é fixa: `server/` (`resultFetch → HttpError → mapToServerResponse`) →
-`client/data` Repository (valida Zod, converte) → `queryFn` lança `QueryError(mapToAppError)` → `AppError`
-→ `switch` na `view-model`/UI. A UI **nunca** inspeciona status HTTP — só `AppError` semântico (resolvido
-em tag de i18n).
-
-**Rationale:** separar as duas naturezas de estado elimina sincronização manual e bugs de re-render.
-
-### VI. Validation at the Boundary
-
-Validação com **Zod 4** acontece na fronteira: no **input** da server function E no **response do backend**
-(`server/adapters/*.schema.ts`), e novamente quando o **Repository do client** recebe o retorno da server
-function (Model). Para dentro da fronteira, tudo é total e tipado. Zod só em `server/adapters`,
-`client/data` e `external` — **nunca** em `domain` nem em `ui`.
-
-**Rationale:** a borda é o único lugar onde dados não confiáveis entram; validar ali mantém o núcleo limpo.
-
-### VII. Strict TypeScript & Healthy 6→7 Migration
-
-TypeScript estrito máximo. Proibido sintaxe não-apagável (`erasableSyntaxOnly`): **sem `enum`/`namespace`/
-parameter-properties/`import =`** — use union de literais + `as const` e ESM. `import type` obrigatório
-(`verbatimModuleSyntax`). Proibidos `any`, `class` (exceto `QueryError`) e `this`.
-
-**Rationale:** alinhar com o compilador nativo do TS 7 evita migração dolorosa e mantém output previsível.
-
-### VIII. Minimal Dependencies
-
-Preferir APIs nativas (`Intl`/`Temporal`, `crypto.randomUUID`, `EventTarget`, `AbortController`, `fetch`).
-Adicionar dependência exige justificativa explícita — não é o default.
-
-**Rationale:** cada dependência é superfície de ataque e dívida de manutenção.
-
-### IX. pnpm Only
-
-pnpm (pinado via `packageManager`); `npm`/`yarn` proibidos (hook bloqueia). Supply-chain hardening em
-`pnpm-workspace.yaml` (ADR-0003). Lockfile commitado.
-
-**Rationale:** lockfile determinístico e instalação reproduzível em dev/CI/Docker.
-
-### X. Spec-Driven Development
-
-Toda feature segue o spec-kit: **constitution → specify → (clarify) → plan → (checklist) → tasks →
-(analyze) → implement**. Código de produção não nasce antes de uma spec versionada em `specs/`. Decisões
-arquiteturais viram **ADRs** (`handbook/adr/`).
-
-**Rationale:** especificar e registrar a decisão (não só o código) torna intenção/escopo revisáveis.
-
-### XI. Framework-Agnostic Client — MVVM (View · ViewModel · Command · Binding)
-
-O `client/` é **agnóstico de framework**: só os adapters mudam entre React/Solid (ADR-0009). Papéis:
-
-- **View** — `*.page.tsx` (raiz que compõe) e `*.component.tsx` (componentes) são **BURROS**: props → JSX,
-  encaminham eventos. **Proibido**: data-hooks (`useQuery`/`useMutation`), `useReducer`, importar
-  `data`/server/`*.binding`. Nomeie pelo **papel** que rendem (`LoginForm`, `PatientCard`) — **nunca**
-  `...View` (a palavra "View" é a UI, não um sufixo de widget).
-- **ViewModel** — `*.view-model.ts` é um **objeto PURO** (`xxxViewModel`), **agnóstico** (sem React):
-  define os **Command(s)**, as **derivações** de UI state (ex.: `toErrorTag`) e os **efeitos** (`onSuccess`).
-  Devolve **dados, nunca JSX**. Testável em `node:test`.
-- **Command** — uma ação do usuário + seu estado: `{ running, errorTag, result, execute }`. O binding mapeia
-  `useMutation`/`useQuery` → Command; a View liga declarativo (`command.running` → spinner).
-- **Binding** — `*.binding.ts` (`useXxxBinding()`) é o **único** ponto que toca o framework: assina a
-  reatividade (TanStack) e expõe os commands. É fino e burro (não decide regra). É o **adapter** trocável.
-- **Controller** — `*.controller.ts` (`useXxxController`): estado **transiente** de form local (categoria
-  "Hook"); no submit entrega ao ViewModel.
-
-A saída do ViewModel chama-se **UI state** (nunca "view"). Strings de UI são **tags i18n** — nenhum literal.
-
-**Rationale:** isolar a lógica (ViewModel puro + Command) do framework (binding) torna o cliente portável e
-testável sem DOM, e dá nomes sem colisão (View = UI; ViewModel = objeto; UI state = dado).
-
-### XII. Reactive Flow via Event Bus
-
-Reações cross-feature no client usam um **Event Bus** (Observer, `shared/bus`, `EventTarget` nativo).
-Eventos são **fatos no passado** (particípio: `UsuarioAutenticado`, nunca `AutenticarUsuario`). **Localização
-dos tipos de evento:** eventos **client** vivem em `client/data` (acessíveis ao client — que não importa
-`server/domain`); eventos **server** vivem em `server/domain`. O **ViewModel emite** (efeito do command,
-ex.: `onSuccess` — o antigo `client/usecase` deixa de ser camada); **outro `view-model` assina** para
-reagir (ex.: invalidar query). O bus é **opt-in** (chamada direta é o normal — use o bus só
-para efeito cross-feature); handlers **delegam** (não decidem regra) e **não** podem criar loops.
-
-**Rationale:** desacopla quem causa o fato de quem reage a ele, sem CQRS/event-store — reatividade simples
-e declarativa.
-
-## Technology Constraints & Stack
-
-Stack mandatória (substituições exigem amenda):
-
-- **Meta-framework:** Vite + `@tanstack/react-start` (SSR + server functions) · **Router:**
-  `@tanstack/react-router` (file-based) · **Server-state:** TanStack Query · **Validação:** Zod 4 (na borda)
-  · **UI:** React 19 · **Tipos:** TS estrito máximo · **pnpm** (ADR-0003).
-- **Testes:** runner híbrido — `node:test` para puro (`server/domain`, `server/application`, `shared`,
-  `external`, e o **núcleo agnóstico** do client: `*.view-model.ts`/`*.mutation.ts`/`data`), Vitest para DOM
-  (adapters: `*.page`/`*.component`/`*.binding`/`*.controller`). ⚠ código testado por `node:test` usa
-  **imports relativos** (alias só no bundler).
-
-Estrutura de pastas (normativa — ver ADR-0004):
-
-```
-src/
-├── modules/<módulo>/
-│   ├── server/                 # BFF (server-side, DDD) — usa external/, nunca vai ao browser
-│   │   ├── domain/             # PURO: VOs branded, Result, regras, *.repository.port.ts, *.events.ts
-│   │   ├── application/         # *.use-case.ts (orquestra core-api + sessão) + ports
-│   │   └── adapters/            # *.server-fn.ts (fronteira RPC) + client core-api + *.schema.ts (Zod) + mappers
-│   ├── client/                  # FRONT (client-side, MVVM, AGNÓSTICO) — feature-first FLAT (ADR-0009)
-│   │   ├── data/                # COMPARTILHADO: *.model.ts (Zod) + *.repository.ts (porta → server-fn) + events/
-│   │   ├── domain/              # COMPARTILHADO, OPCIONAL: use-cases compartilhados (vazio por padrão)
-│   │   └── <comportamento>/     # ex.: login/ — camada=SUFIXO: *.mutation/*.view-model (agnóstico) +
-│   │                            #   *.binding/*.page/*.component/*.controller (adapter) + components/
-│   └── public-api/              # index.ts — ÚNICO import externo ao módulo
-├── shared/                      # cross-cutting PURO (sem framework/I/O)
-│   ├── primitives/              # result.ts, brand.ts, immutable.ts
-│   ├── http/                    # http-error / app-error / query-error / map-to-app-error
-│   ├── bus/                     # Event Bus (Observer, EventTarget nativo)
-│   ├── i18n/                    # catálogo de strings (tags) — l10n-ready
-│   ├── ports/ · ui/ · utils/    # contratos cross-cutting · design system · helpers
-├── external/                    # EXTERNAL ADAPTERS (I/O real + segredos; server-only)
-│   ├── core-api/                # result-fetch, map-to-server-response
-│   ├── session/                 # SessionStore (compartilhável p/ escala horizontal) + cookie
-│   └── config/                  # env.config (Zod fail-fast)
-└── routes/ + router.tsx         # TanStack file-based (composition root / framework glue)
-```
-
-Segurança obrigatória: cookie `__Host-session`/sessionId opaco (HttpOnly/SameSite=Strict/Secure); CSRF via
-SameSite + validação de origem; CSP/HSTS/nosniff/frame-deny via middleware. 401 → signOut + limpeza de cache.
+Stack fixa: Node.js 24 LTS · TypeScript 6 (roadmap TS 7) · ESM · pnpm · Drizzle + `mysql2`
+(MySQL 8) · `node:test` (sem Jest) · ESLint flat config + Prettier · CLI (Fastify reservado).
+Mudar qualquer item exige ADR novo que `supersedes` o anterior, registrado em
+`handbook/CHANGELOG.md`. Nunca contradizer um ADR aceito. *(AGENTS.md §"ADRs críticos")*
 
 ## Development Workflow & Quality Gates
 
-- **Naming (postfix por papel):** `*.value-object.ts`, `*.repository.port.ts`, `*.events.ts`,
-  `*.use-case.ts`, `*.server-fn.ts`, `*.schema.ts`, `*.model.ts`, `*.repository.ts`, `*.queries.ts`,
-  `*.mutation.ts`, `*.view-model.ts` (objeto agnóstico), `*.binding.ts` (adapter), `*.controller.ts`,
-  `*.page.tsx`, `*.component.tsx` (nomeado pelo papel: `LoginForm`, nunca `...View`). `tests/` espelha `src/`.
-- **Idioma:** código em EN; strings de UI via **i18n (tags)**; erros internos = literais kebab-case EN.
-- **Quality gate (bloqueante):** `pnpm lint` (boundaries + MVVM) · `pnpm typecheck` · testes verdes ·
-  `pnpm build`.
-- **Automações:** `npm`/`yarn` bloqueados; `eslint --fix` ao salvar `*.ts/*.tsx`.
-- **Backend `core-api`:** submódulo; contratos via agente `core-api-consultant`.
+- **Gate W3 (obrigatório antes de fechar ticket/feature):**
+  `pnpm run typecheck && pnpm run format:check && pnpm run lint && pnpm test`.
+- **Integração:** `pnpm run test:integration` (sobe MySQL via Docker) antes de merge.
+- **Pipeline state:** `pnpm run pipeline:status` para o dashboard; tickets fechados são
+  histórico auditável — não deletar.
+- **Roteamento:** entrada única pelo `contratos-orchestrator`; um agente OU uma skill por
+  vez. Não duplicar regras que já vivem no handbook / SKILL.md.
 
 ## Governance
 
-Esta constituição **supersede** outras práticas, **abaixo apenas dos ADRs aceitos** (`handbook/adr/`).
-Em conflito, prevalece o mais restritivo; divergências reais se resolvem por amenda aqui ou por novo ADR.
+Esta constituição serve ao fluxo spec-kit e está **subordinada** ao cânone do repositório
+(`AGENTS.md`, `handbook/`, ADRs). Em conflito, o cânone vence. Toda feature planejada via
+`/speckit-plan` deve passar pelo "Constitution Check" verificando os princípios I–VIII; uma
+violação só é aceitável com justificativa explícita na seção "Complexity Tracking" do plano.
+O "Constitution Check" do `/speckit-plan` verifica os princípios I–IX.
+Alterações de stack ou de princípio exigem ADR novo (com `supersedes`), não edição aqui.
 
-**Procedimento de amenda:** PR alterando este arquivo, com Sync Impact Report atualizado e propagação aos
-templates/eslint/ADRs dependentes.
-
-**Versionamento (semver):** MAJOR = remoção/redefinição incompatível; MINOR = novo princípio/seção ou
-expansão material; PATCH = clarificações.
-
-**Conformidade:** o "Constitution Check" do `/speckit-plan` verifica aderência. Os gates de lint
-(boundaries, no-any, erasableSyntaxOnly, MVVM) e typecheck enforçam os princípios automaticamente.
-
-**Version**: 1.3.0 | **Ratified**: 2026-05-29 | **Last Amended**: 2026-05-31
+**Version**: 1.1.0 | **Ratified**: 2026-06-05 | **Last Amended**: 2026-06-05
