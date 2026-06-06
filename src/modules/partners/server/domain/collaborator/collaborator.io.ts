@@ -43,6 +43,33 @@ export const CreateCollaboratorInputSchema = z.object({
 })
 export type CreateCollaboratorInput = z.infer<typeof CreateCollaboratorInputSchema>
 
+// Cadastro completo (Seção 2 — "Complete seu cadastro", FR-004). Campos da 2ª etapa; opcionais na borda.
+// PATCH /collaborators/:id/complete-registration — o core-api promove `pre-registration → complete`.
+export const CompleteCollaboratorRegistrationInputSchema = z.object({
+  id: z.string().trim().min(1),
+  rg: z.string().trim().optional(),
+  fullAddress: z.string().trim().optional(),
+  dateOfBirth: z.string().trim().optional(),
+  mobile: z.string().trim().optional(),
+  emergencyContactName: z.string().trim().optional(),
+  emergencyContactPhone: z.string().trim().optional(),
+  genderIdentity: z.string().trim().optional(),
+  race: z.string().trim().optional(),
+  hasAllergy: z.boolean().optional(),
+  allergies: z.string().trim().optional(),
+  foodCategory: z.string().trim().optional(),
+  education: z.string().trim().optional(),
+  publicSectorExperience: z.boolean().optional(),
+  miniBio: z.string().trim().max(500).optional(),
+})
+export type CompleteCollaboratorRegistrationInput = z.infer<typeof CompleteCollaboratorRegistrationInputSchema>
+
+// Edição dos dados cadastrais (os 7 do pré-cadastro). PUT /collaborators/:id.
+export const UpdateCollaboratorInputSchema = CreateCollaboratorInputSchema.extend({
+  id: z.string().trim().min(1),
+})
+export type UpdateCollaboratorInput = z.infer<typeof UpdateCollaboratorInputSchema>
+
 export const DeactivateCollaboratorInputSchema = z.object({
   id: z.string().trim().min(1),
   reason: DeactivationReasonSchema, // obrigatório (FR-006). ⚠️ alinhar aos valores `disableBy` do core-api na integração.

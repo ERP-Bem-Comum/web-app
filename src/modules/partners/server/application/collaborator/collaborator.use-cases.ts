@@ -9,6 +9,8 @@ import type {
   CollaboratorListResponse,
   CollaboratorDetail,
   CreateCollaboratorInput,
+  CompleteCollaboratorRegistrationInput,
+  UpdateCollaboratorInput,
   ImportCollaboratorsInput,
   CollaboratorImportResult,
 } from '#modules/partners/server/domain/collaborator/collaborator.io.ts'
@@ -18,6 +20,8 @@ export type CollaboratorClient = Readonly<{
   list: (input: ListCollaboratorsInput, token: string) => Promise<Result<CollaboratorListResponse, PartnersError>>
   getById: (id: string, token: string) => Promise<Result<CollaboratorDetail, PartnersError>>
   create: (input: CreateCollaboratorInput, token: string) => Promise<Result<CollaboratorDetail, PartnersError>>
+  completeRegistration: (input: CompleteCollaboratorRegistrationInput, token: string) => Promise<Result<CollaboratorDetail, PartnersError>>
+  update: (input: UpdateCollaboratorInput, token: string) => Promise<Result<CollaboratorDetail, PartnersError>>
   deactivate: (id: string, reason: DeactivationReason, token: string) => Promise<Result<CollaboratorDetail, PartnersError>>
   reactivate: (id: string, token: string) => Promise<Result<CollaboratorDetail, PartnersError>>
   importCsv: (input: ImportCollaboratorsInput, token: string) => Promise<Result<CollaboratorImportResult, PartnersError>>
@@ -39,6 +43,16 @@ export const createCreateCollaborator =
   (deps: Deps) =>
   (input: CreateCollaboratorInput, token: string): Promise<Result<CollaboratorDetail, PartnersError>> =>
     deps.client.create(input, token)
+
+export const createCompleteCollaboratorRegistration =
+  (deps: Deps) =>
+  (input: CompleteCollaboratorRegistrationInput, token: string): Promise<Result<CollaboratorDetail, PartnersError>> =>
+    deps.client.completeRegistration(input, token)
+
+export const createUpdateCollaborator =
+  (deps: Deps) =>
+  (input: UpdateCollaboratorInput, token: string): Promise<Result<CollaboratorDetail, PartnersError>> =>
+    deps.client.update(input, token)
 
 export const createDeactivateCollaborator =
   (deps: Deps) =>

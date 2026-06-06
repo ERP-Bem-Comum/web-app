@@ -10,6 +10,8 @@ import {
   createListCollaborators,
   createGetCollaborator,
   createCreateCollaborator,
+  createCompleteCollaboratorRegistration,
+  createUpdateCollaborator,
   createDeactivateCollaborator,
   createImportCollaborators,
   type CollaboratorClient,
@@ -35,6 +37,8 @@ const fakeClient: CollaboratorClient = {
   create: () => Promise.resolve(ok(fakeDetail)),
   deactivate: () => Promise.resolve(ok({ ...fakeDetail, activation: 'inactive', registration: 'pre-registration' })),
   reactivate: () => Promise.resolve(ok(fakeDetail)),
+  completeRegistration: () => Promise.resolve(ok({ ...fakeDetail, registration: 'complete' })),
+  update: () => Promise.resolve(ok({ ...fakeDetail, role: 'Coordenadora' })),
   importCsv: () => Promise.resolve(ok({ created: 2, failed: [{ line: 3, error: 'invalid-email' }] })),
 }
 
@@ -69,5 +73,16 @@ describe('Collaborator use-cases', () => {
   it('import retorna relatório parcial (created + failed)', async () => {
     const r = await createImportCollaborators({ client: fakeClient })({ filename: 'c.csv', csv: 'name,email\nAna,a@b.dev' }, 'token')
     assert.equal(isOk(r) && r.value.created === 2 && r.value.failed.length === 1, true)
+  })
+  it('completeRegistration promove a situação para complete', async () => {
+    const r = await createCompleteCollaboratorRegistration({ client: fakeClient })({ id: '1', rg: '12.345.678-9', miniBio: 'Olá' }, 'token')
+    assert.equal(isOk(r) && r.value.registration === 'complete', true)
+  })
+  it('update retorna o detail atualizado', async () => {
+    const r = await createUpdateCollaborator({ client: fakeClient })(
+      { id: '1', name: 'Ana', email: 'ana@bemcomum.dev', cpf: '11144477735', occupationArea: 'EPV', role: 'Coordenadora', startOfContract: '2024-01-01', employmentRelationship: 'PJ' },
+      'token',
+    )
+    assert.equal(isOk(r) && r.value.role === 'Coordenadora', true)
   })
 })

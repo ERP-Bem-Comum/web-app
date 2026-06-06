@@ -166,6 +166,28 @@ export const createCoreApiCollaboratorsClient = (baseUrl: string): CollaboratorC
       }
     },
 
+    completeRegistration: async (input, token) => {
+      const { id, ...fields } = input
+      const r = await resultFetch<unknown>(`${baseUrl}/collaborators/${id}/complete-registration`, {
+        method: 'PATCH',
+        body: fields,
+        headers: auth(token),
+      })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      return fetchDetailById(id, token)
+    },
+
+    update: async (input, token) => {
+      const { id, ...fields } = input
+      const r = await resultFetch<unknown>(`${baseUrl}/collaborators/${id}`, {
+        method: 'PUT',
+        body: fields,
+        headers: auth(token),
+      })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      return fetchDetailById(id, token)
+    },
+
     deactivate: async (id, reason: DeactivationReason, token) => {
       // ⚠️ `disableBy` — alinhar os valores ao enum real do core-api na confirmação do contrato.
       const r = await resultFetch<unknown>(`${baseUrl}/collaborators/${id}/deactivate`, {
