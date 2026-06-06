@@ -10,18 +10,18 @@ import type {
   EmploymentRelationship,
 } from './collaborator.types.ts'
 
-const OCCUPATION = z.enum(['PARC', 'DDI', 'DCE', 'EPV'])
-const EMPLOYMENT = z.enum(['CLT', 'PJ'])
-const REGISTRATION = z.enum(['pre-registration', 'complete'])
-const REASON = z.enum(['contract-ended', 'voluntary-exit', 'restructuring', 'other'])
+const OccupationAreaSchema = z.enum(['PARC', 'DDI', 'DCE', 'EPV'])
+const EmploymentRelationshipSchema = z.enum(['CLT', 'PJ'])
+const RegistrationStatusSchema = z.enum(['pre-registration', 'complete'])
+const DeactivationReasonSchema = z.enum(['contract-ended', 'voluntary-exit', 'restructuring', 'other'])
 
 // ── Input (validado na server fn) ──────────────────────────────────────────────
 export const ListCollaboratorsInputSchema = z.object({
   search: z.string().trim().optional(),
   active: z.boolean().optional(),
-  status: REGISTRATION.optional(),
-  occupationAreas: z.array(OCCUPATION).optional(),
-  employmentRelationships: z.array(EMPLOYMENT).optional(),
+  status: RegistrationStatusSchema.optional(),
+  occupationAreas: z.array(OccupationAreaSchema).optional(),
+  employmentRelationships: z.array(EmploymentRelationshipSchema).optional(),
   roles: z.array(z.string().trim()).optional(),
   yearOfContract: z.int().optional(),
   page: z.int().min(1).default(1),
@@ -36,16 +36,16 @@ export const CreateCollaboratorInputSchema = z.object({
   name: z.string().trim().min(1),
   email: z.email(),
   cpf: z.string().trim().min(1),
-  occupationArea: OCCUPATION,
+  occupationArea: OccupationAreaSchema,
   role: z.string().trim().min(1),
   startOfContract: z.string().trim().min(1), // ISO date (YYYY-MM-DD)
-  employmentRelationship: EMPLOYMENT,
+  employmentRelationship: EmploymentRelationshipSchema,
 })
 export type CreateCollaboratorInput = z.infer<typeof CreateCollaboratorInputSchema>
 
 export const DeactivateCollaboratorInputSchema = z.object({
   id: z.string().trim().min(1),
-  reason: REASON, // obrigatório (FR-006). ⚠️ alinhar aos valores `disableBy` do core-api na integração.
+  reason: DeactivationReasonSchema, // obrigatório (FR-006). ⚠️ alinhar aos valores `disableBy` do core-api na integração.
 })
 export type DeactivateCollaboratorInput = z.infer<typeof DeactivateCollaboratorInputSchema>
 
