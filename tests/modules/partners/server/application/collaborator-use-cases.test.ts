@@ -67,7 +67,7 @@ describe('Collaborator use-cases', () => {
     assert.equal(isOk(r) && r.value.name === 'Ana', true)
   })
   it('deactivate retorna inactive', async () => {
-    const r = await createDeactivateCollaborator({ client: fakeClient })('1', 'contract-ended', 'token')
+    const r = await createDeactivateCollaborator({ client: fakeClient })('1', 'TEMPO_CONTRATO_FINALIZADO', 'token')
     assert.equal(isOk(r) && r.value.activation === 'inactive', true)
   })
   it('import retorna relatório parcial (created + failed)', async () => {

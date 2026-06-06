@@ -10,12 +10,12 @@ export type ActivationStatus = 'active' | 'inactive'
 export type OccupationArea = 'PARC' | 'DDI' | 'DCE' | 'EPV'
 export type EmploymentRelationship = 'CLT' | 'PJ'
 
-// ⚠️ Alinhar aos valores reais do enum `disableBy` do core-api (4 valores) na integração (T029).
+// Valores REAIS do enum `disableBy` do core-api (códigos legados). A UI mapeia para labels via i18n.
 export type DeactivationReason =
-  | 'contract-ended'
-  | 'voluntary-exit'
-  | 'restructuring'
-  | 'other'
+  | 'DESLIGAMENTO_ABC'
+  | 'FALECIMENTO'
+  | 'TEMPO_CONTRATO_FINALIZADO'
+  | 'SOLICITACAO_RESCISAO_CONTRATUAL'
 
 /** Os 7 campos do pré-cadastro (dados ABC). */
 export type PreRegistrationInput = Readonly<{

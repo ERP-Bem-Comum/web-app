@@ -2,8 +2,13 @@
  * Use-cases de Colaborador (application) — orquestram o client do core-api. Thin sobre a borda; sem I/O
  * direto (o client é injetado). Result em tudo (§II). O `Client` é uma porta — implementada em adapters.
  */
-import type { Result } from '#shared/primitives/result.ts'
+import { err, isErr, type Result } from '#shared/primitives/result.ts'
+import { CPF } from '#modules/partners/server/domain/value-objects/cpf.value-object.ts'
+import { Email } from '#modules/partners/server/domain/value-objects/email.value-object.ts'
 import type { PartnersError } from '#modules/partners/server/domain/errors/partners.errors.ts'
+
+// Exercita os VOs branded na escrita: valida DV do CPF + formato do email antes de tocar o core-api (§IV).
+const identityIsValid = (cpf: string, email: string): boolean => !isErr(CPF(cpf)) && !isErr(Email(email))
 import type {
   ListCollaboratorsInput,
   CollaboratorListResponse,
@@ -42,7 +47,9 @@ export const createGetCollaborator =
 export const createCreateCollaborator =
   (deps: Deps) =>
   (input: CreateCollaboratorInput, token: string): Promise<Result<CollaboratorDetail, PartnersError>> =>
-    deps.client.create(input, token)
+    identityIsValid(input.cpf, input.email)
+      ? deps.client.create(input, token)
+      : Promise.resolve(err('validation'))
 
 export const createCompleteCollaboratorRegistration =
   (deps: Deps) =>
@@ -52,7 +59,9 @@ export const createCompleteCollaboratorRegistration =
 export const createUpdateCollaborator =
   (deps: Deps) =>
   (input: UpdateCollaboratorInput, token: string): Promise<Result<CollaboratorDetail, PartnersError>> =>
-    deps.client.update(input, token)
+    identityIsValid(input.cpf, input.email)
+      ? deps.client.update(input, token)
+      : Promise.resolve(err('validation'))
 
 export const createDeactivateCollaborator =
   (deps: Deps) =>

@@ -51,13 +51,13 @@ describe('Collaborator', () => {
   })
 
   it('deactivate registra motivo e fica inactive', () => {
-    const c = deactivate(buildPreRegistration(input), 'contract-ended')
+    const c = deactivate(buildPreRegistration(input), 'TEMPO_CONTRATO_FINALIZADO')
     assert.equal(c.activation, 'inactive')
-    assert.equal(c.deactivationReason, 'contract-ended')
+    assert.equal(c.deactivationReason, 'TEMPO_CONTRATO_FINALIZADO')
   })
 
   it('reactivate limpa o motivo', () => {
-    const c = reactivate(deactivate(buildPreRegistration(input), 'other'))
+    const c = reactivate(deactivate(buildPreRegistration(input), 'FALECIMENTO'))
     assert.equal(c.activation, 'active')
     assert.equal(c.deactivationReason, null)
   })
