@@ -70,7 +70,15 @@ export interface ContractFormController {
   readonly triggerValidation: () => void
   readonly submit: () => CreateContractInput
   readonly checklist: Readonly<{
-    checks: Readonly<Record<string, boolean>>
+    checks: Readonly<{
+      contratado: boolean
+      contrato: boolean
+      valor: boolean
+      vigencia: boolean
+      programa: boolean
+      categorizacao: boolean
+      centroDeCusto: boolean
+    }>
     done: number
     total: number
   }>

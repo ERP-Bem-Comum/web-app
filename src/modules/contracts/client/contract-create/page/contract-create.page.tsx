@@ -154,7 +154,7 @@ export function ContractCreatePage(): ReactNode {
     e.preventDefault()
     setIsDragOver(false)
     const file = e.dataTransfer.files[0]
-    if (file.type === 'application/pdf') {
+    if (file?.type === 'application/pdf') {
       setUploadedFile(file)
     }
   }, [])

@@ -238,7 +238,7 @@ export default tseslint.config(
       'no-restricted-imports': [
         'error',
         { patterns: [
-          { group: ['**/server/**', '**/client/data/**', '**/*.use-case', '**/*.server-fn', '**/*.repository'], message: 'View burra (§XI MVVM): page/component não importa server/data/use-case/repository — receba tudo do binding/ViewModel por props.' },
+          { group: ['**/server/**', '**/client/data/**', '**/*.use-case', '**/*.server-fn', '**/*.query.fn', '**/*.service.fn', '**/*.repository'], message: 'View burra (§XI MVVM): page/component não importa server/data/use-case/repository — receba tudo do binding/ViewModel por props.' },
         ] },
       ],
     },
@@ -263,8 +263,15 @@ export default tseslint.config(
   },
 
   // TanStack lança `redirect()`/`notFound()` (não-Error) por design — em rotas e server functions.
+  // Server functions vivem em adapters/server-fns/** (qualquer profundidade): sufixos .server-fn (legado
+  // auth), .query.fn e .service.fn (ADR-0010).
   {
-    files: ['src/routes/**/*.{ts,tsx}', 'src/modules/*/server/adapters/*.server-fn.ts'],
+    files: [
+      'src/routes/**/*.{ts,tsx}',
+      'src/modules/*/server/adapters/**/*.server-fn.ts',
+      'src/modules/*/server/adapters/**/*.query.fn.ts',
+      'src/modules/*/server/adapters/**/*.service.fn.ts',
+    ],
     rules: { '@typescript-eslint/only-throw-error': 'off' },
   },
 
@@ -282,10 +289,12 @@ export default tseslint.config(
     },
   },
 
-  // Arquivos de config em JS puro não passam por regras type-checked.
+  // Arquivos de config/scripts em JS puro não passam por regras type-checked.
+  // Rodam em Node (ex.: .claude/check.mjs usa console/process), então expõe os globals do Node.
   {
     files: ['**/*.{js,mjs,cjs}'],
     extends: [tseslint.configs.disableTypeChecked],
+    languageOptions: { globals: { ...globals.node } },
   },
 
   // Design system — "SÓ TOKENS" (zero-dep, ADR-0007/0008): proíbe cor/medida crua nos

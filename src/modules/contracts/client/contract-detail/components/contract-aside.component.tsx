@@ -28,7 +28,7 @@ interface Props {
 function formatCurrencyParts(cents: number): { integer: string; cents: string } {
   const val = cents / 100
   const parts = val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).split(',')
-  return { integer: parts[0], cents: `,${parts[1]}` }
+  return { integer: parts[0] ?? '0', cents: `,${parts[1] ?? '00'}` }
 }
 
 function formatCurrency(cents: number): string {

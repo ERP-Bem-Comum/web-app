@@ -65,9 +65,11 @@ function getContractorFromRow(contractRow: ContractRow) {
 
 function getInitials(name: string): string {
   const words = name.trim().split(/\s+/).filter(Boolean)
-  if (words.length === 0) return ''
-  if (words.length === 1) return words[0].slice(0, 2).toUpperCase()
-  return (words[0][0] + words[words.length - 1][0]).toUpperCase()
+  const first = words[0]
+  if (first === undefined) return ''
+  if (words.length === 1) return first.slice(0, 2).toUpperCase()
+  const last = words[words.length - 1] ?? first
+  return ((first[0] ?? '') + (last[0] ?? '')).toUpperCase()
 }
 
 function maskDocument(doc: string | null | undefined): string {

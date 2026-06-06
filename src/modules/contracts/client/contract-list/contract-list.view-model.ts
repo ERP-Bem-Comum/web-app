@@ -173,7 +173,7 @@ export function computeStatusChipCounts(
 
     const daysUntilEnd = (info.contractPeriod.end.getTime() - now) / msPerDay
     if (daysUntilEnd >= 0 && daysUntilEnd <= 45) {
-      counts.vencendo++
+      counts.vencendo = (counts.vencendo ?? 0) + 1
     }
   }
 

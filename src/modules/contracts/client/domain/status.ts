@@ -83,7 +83,7 @@ export function getMostRecentChild(row: ContractRow): ContractRow {
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     )
-    return sorted[0]
+    return sorted[0] ?? row
   }
   return row
 }
@@ -109,7 +109,7 @@ export const statusBadgeClass = (key: string): string => {
     distrato: 'text-[rgb(168,47,36)] bg-[rgba(229,77,64,0.08)]',
     cancelado: 'text-[rgb(168,47,36)] bg-[rgba(229,77,64,0.08)]',
   }
-  return map[key] || map['em-andamento']
+  return map[key] ?? map['em-andamento'] ?? ''
 }
 
 export const tipoBadgeClass = (contractType: string): string => {
@@ -124,7 +124,7 @@ export const tipoBadgeClass = (contractType: string): string => {
       'text-[rgb(154,84,2)] bg-[rgba(217,119,6,0.08)] border-[0.5px] border-[rgba(217,119,6,0.20)]',
   }
   return (
-    map[contractType] ||
+    map[contractType] ??
     'text-[rgb(115,107,97)] bg-[rgb(250,247,242)] border-[0.5px] border-[rgb(199,191,178)]'
   )
 }
@@ -136,7 +136,7 @@ export const avatarBadgeClass = (contractType: string): string => {
     Financiador: 'bg-[rgb(255,247,224)] text-[rgb(217,153,26)]',
     ACT: 'bg-[rgba(217,119,6,0.10)] text-[rgb(154,84,2)]',
   }
-  return map[contractType] || 'bg-[rgb(232,245,250)] text-[rgb(26,112,140)]'
+  return map[contractType] ?? 'bg-[rgb(232,245,250)] text-[rgb(26,112,140)]'
 }
 
 export function programaShort(name: string | undefined): string {

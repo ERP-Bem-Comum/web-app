@@ -1,13 +1,14 @@
 export function formatContractNumber(code: string): string {
   const match = /(CT|OS|CNT|C|A)-(\d{4})-(\d{4})/.exec(code)
   if (match) {
+    const [, kind = '', year = '', seq = ''] = match
     const prefix =
-      match[1] === 'CNT' || match[1] === 'C'
+      kind === 'CNT' || kind === 'C'
         ? 'CT'
-        : match[1] === 'A'
+        : kind === 'A'
           ? 'OS'
-          : match[1]
-    return `${prefix} ${match[3]}/${match[2]}`
+          : kind
+    return `${prefix} ${seq}/${year}`
   }
   return code
 }

@@ -5,9 +5,10 @@
  */
 export const decodeAccessExp = (jwt: string): number | null => {
   const parts = jwt.split('.')
-  if (parts.length !== 3) return null
+  const payloadB64 = parts[1]
+  if (parts.length !== 3 || payloadB64 === undefined) return null
   try {
-    const json = Buffer.from(parts[1], 'base64url').toString('utf8')
+    const json = Buffer.from(payloadB64, 'base64url').toString('utf8')
     const payload: unknown = JSON.parse(json)
     if (typeof payload !== 'object' || payload === null || !('exp' in payload)) return null
     const { exp } = payload as Record<'exp', unknown>

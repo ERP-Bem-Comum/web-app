@@ -7,7 +7,7 @@ import * as z from 'zod'
 export const LoginInputSchema = z.object({
   email: z.email(),
   password: z.string().trim().min(1),
-  rememberDevice: z.boolean().optional().default(false),
+  rememberDevice: z.boolean().default(false),
 })
 export type LoginInput = z.infer<typeof LoginInputSchema>
 
