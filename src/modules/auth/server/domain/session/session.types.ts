@@ -10,8 +10,12 @@ export type SessionId = Brand<string, 'SessionId'>
 /** Tokens devolvidos pelo core-api (login/refresh). Tipo de domínio — a Zod schema (adapters) produz este shape. */
 export type AuthTokens = Readonly<{ accessToken: string; refreshToken: string; userId: string }>
 
-/** Identidade mínima exposta pelo /me do core-api (R3: só userId). */
-export type AuthUser = Readonly<{ userId: string }>
+/**
+ * Identidade exposta pelo /me do core-api. `permissions` é hint de UI para RBAC (FR-020 do módulo
+ * partners) — achatadas de roles→permissions pelo backend; `[]` em falha (degradação simétrica).
+ * Não é fronteira de segurança: a autorização real é server-side no core-api.
+ */
+export type AuthUser = Readonly<{ userId: string; permissions: readonly string[] }>
 
 export type Session = Readonly<{
   sessionId: SessionId

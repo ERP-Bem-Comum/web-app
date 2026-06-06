@@ -12,6 +12,9 @@ export const AuthTokensSchema = z.object({
 
 export const MeSchema = z.object({
   userId: z.string().trim(),
+  // RBAC hint de UI (FR-020 partners). O core-api /me entrega permissions[] (ticket AUTH-ME-PERMISSIONS);
+  // default [] mantém compat caso ausente.
+  permissions: z.array(z.string()).optional().default([]),
 })
 
 // Os tipos canônicos (AuthTokens, AuthUser) vivem em server/domain/session.types.ts.

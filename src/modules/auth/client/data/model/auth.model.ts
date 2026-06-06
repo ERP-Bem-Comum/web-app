@@ -13,5 +13,7 @@ export type LoginInput = z.infer<typeof LoginInputSchema>
 
 export const CurrentUserSchema = z.object({
   userId: z.string().trim(),
+  // RBAC hint de UI (FR-020 partners) — o `can()` lê daqui. Default [] mantém compat.
+  permissions: z.array(z.string().trim()).default([]),
 })
 export type CurrentUser = z.infer<typeof CurrentUserSchema>
