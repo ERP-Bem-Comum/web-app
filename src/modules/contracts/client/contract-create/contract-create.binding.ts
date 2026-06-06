@@ -55,7 +55,7 @@ export const usePartnerSearchBinding = (
     : undefined
 
   const q = useQuery({
-    queryKey: ['partners', 'mock', query, kind],
+    queryKey: ['partners', 'search', query, kind],
     queryFn: async () => {
       const res = await partnersRepository.search(query, kind)
       if (!isOk(res)) return [] as PartnerSearchResult[]

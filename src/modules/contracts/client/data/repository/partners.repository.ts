@@ -1,14 +1,18 @@
 /**
- * PartnersRepository — porta do client para o BFF (server functions mock).
- * Converte Result do RPC para Result do client.
+ * PartnersRepository — porta do client para a busca de parceiros do contract-create.
+ *
+ * Consome a `searchPartnersFn` (BFF), que orquestra o fan-out dos 4 recursos do core-api
+ * (suppliers/financiers/acts/collaborators) e devolve UMA lista pronta (ADR-0010). O client só
+ * converte o Result do RPC e normaliza o `kind` para o tipo da UI.
+ *
+ * Nota: a busca devolve dados de LISTA (sem `bancaryInfo`/`pixInfo` — esses só vêm no detalhe de cada
+ * recurso). E o `POST /contracts` ainda não aceita vínculo de parceiro, então a seleção é informativa.
  */
 import { ok, err, type Result } from '#shared/primitives/result.ts'
-import type {
-  PartnerMock,
-  PartnerKind,
-} from '#modules/contracts/server/adapters/server-fns/list-partners-mock.server-fn.ts'
 
-export type PartnersError = 'unauthorized'
+export type PartnerKind = 'Supplier' | 'Financier' | 'Collaborator' | 'ACT'
+
+export type PartnersError = 'unauthorized' | 'connectivity' | 'server'
 
 export type PartnerSearchResult = Readonly<{
   id: string
@@ -30,10 +34,20 @@ export type PartnerSearchResult = Readonly<{
   }>
 }>
 
-type ListPartnersMockFn = (opts: {
+// Item entregue pela query.fn (já normalizado pelo BFF).
+type SearchedPartner = Readonly<{
+  id: string
+  name: string
+  document?: string
+  email?: string
+  telephone?: string
+  kind: 'Fornecedor' | 'Financiador' | 'Colaborador' | 'ACT'
+}>
+
+type SearchPartnersFn = (opts: {
   data: { query?: string; kind?: PartnerKind }
 }) => Promise<
-  | Readonly<{ ok: true; data: readonly PartnerMock[] }>
+  | Readonly<{ ok: true; data: readonly SearchedPartner[] }>
   | Readonly<{ ok: false; error: PartnersError }>
 >
 
@@ -41,26 +55,28 @@ export type PartnersRepository = Readonly<{
   search: (query: string, kind?: PartnerKind) => Promise<Result<readonly PartnerSearchResult[], PartnersError>>
 }>
 
-const toClientPartner = (p: PartnerMock): PartnerSearchResult => ({
-  id: p.id,
-  name: p.name,
-  cnpj: p.cnpj,
-  cpf: p.cpf,
-  email: p.email,
-  telephone: p.telephone,
-  kind: p.kind === 'Supplier' ? 'Fornecedor'
-    : p.kind === 'Financier' ? 'Financiador'
-    : p.kind === 'Collaborator' ? 'Colaborador'
-    : 'Fornecedor',
-  bancaryInfo: p.bancaryInfo,
-  pixInfo: p.pixInfo,
-})
+const toClientPartner = (p: SearchedPartner): PartnerSearchResult => {
+  // ACT não tem campo próprio no formulário (SelectedPartner só cobre 3 tipos) → exibe como Fornecedor
+  // até o formulário/POST de contrato suportarem ACT.
+  const kind = p.kind === 'ACT' ? 'Fornecedor' : p.kind
+  // Documento de PJ (Fornecedor/Financiador/ACT) → cnpj; de PF (Colaborador) → cpf.
+  const isPF = p.kind === 'Colaborador'
+  return {
+    id: p.id,
+    name: p.name,
+    cnpj: isPF ? undefined : p.document,
+    cpf: isPF ? p.document : undefined,
+    email: p.email,
+    telephone: p.telephone,
+    kind,
+  }
+}
 
 export const createPartnersRepository = (deps: Readonly<{
-  listPartnersMockFn: ListPartnersMockFn
+  searchPartnersFn: SearchPartnersFn
 }>): PartnersRepository => ({
   search: async (query, kind) => {
-    const res = await deps.listPartnersMockFn({ data: { query: query || undefined, kind } })
+    const res = await deps.searchPartnersFn({ data: { query: query || undefined, kind } })
     return res.ok ? ok(res.data.map(toClientPartner)) : err(res.error)
   },
 })
