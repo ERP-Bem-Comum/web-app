@@ -24,6 +24,7 @@ export type ContractsError =
   | 'connectivity'
   | 'server'
   | 'unauthorized'
+  | 'not-implemented'
 
 import type { ContractHistoryEvent } from '#modules/contracts/server/adapters/contracts-shared.types.ts'
 

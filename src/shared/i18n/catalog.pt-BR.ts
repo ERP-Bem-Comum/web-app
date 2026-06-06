@@ -32,6 +32,7 @@ export const ptBR: Catalog = {
   'contracts.error.invalid-amendment-type': 'Tipo de aditivo inválido.',
   'contracts.error.connectivity': 'Serviço temporariamente indisponível. Tente novamente.',
   'contracts.error.unauthorized': 'Acesso não autorizado.',
+  'contracts.error.not-implemented': 'Funcionalidade ainda não disponível.',
   'contracts.error.unexpected': 'Algo deu errado. Tente novamente.',
   // Contracts — Listagem
   'contracts.list.title': 'Contratos',

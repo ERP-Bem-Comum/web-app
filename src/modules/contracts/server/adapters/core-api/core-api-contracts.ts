@@ -389,8 +389,9 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
 
     update: (_input, _token) => {
       // O backend NÃO possui rota de update geral de contrato (PATCH /contracts/:id).
-      // Apenas activate, end e documentos. Retornamos erro até o backend implementar.
-      return Promise.resolve(err('server'))
+      // Apenas activate, end e documentos. `not-implemented` sinaliza isso explicitamente
+      // (errors-as-values) até o backend criar a rota.
+      return Promise.resolve(err('not-implemented'))
     },
 
     createAmendment: async (contractId, input, token) => {

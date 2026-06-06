@@ -16,6 +16,7 @@ export type ContractsError =
   | 'connectivity'
   | 'server'
   | 'unauthorized'
+  | 'not-implemented'
 
 // Re-export de ContractHistoryEvent do server-domain (boundaries-compatível).
 export type { ContractHistoryEvent } from '#modules/contracts/server/domain/contracts.types.ts'

@@ -42,7 +42,7 @@ modules/contracts/
 │   │       ├── get-contract.use-case.ts
 │   │       └── get-contract-history.use-case.ts
 │   └── adapters/                        # borda: traduz mundo externo ↔ domínio
-│       ├── server-fns/*.server-fn.ts    #   ←★ A FRONTEIRA: RPC list/get/create/update/aditivar
+│       ├── server-fns/*.{query,service}.fn.ts  #   ←★ A FRONTEIRA: RPC (query=leitura, service=escrita; ADR-0010)
 │       ├── core-api/                    #   tudo que fala com o core-api
 │       │   ├── core-api-contracts.ts    #     chama /api/v2/contracts/* (HTTP) → Result
 │       │   ├── contracts.schema.ts      #     Zod dos responses (validação na borda)
@@ -284,14 +284,18 @@ Alterações visuais aplicadas seguindo a identidade da v1 (paleta institucional
 - **Fix:** Prop `documentUploaded: boolean` adicionada ao `ContractForm`, alimentada pelo estado `uploadedFile !== null` no page.
 - **Arquivos:** `contract-form.component.tsx`, `contract-create.page.tsx`
 
-#### Mocks de desenvolvimento
+#### Operações sem backend (estratégia `not-implemented`)
 
-Adicionados mocks server-side para facilitar desenvolvimento local sem o core-api:
+Os mocks server-side (`listPartnersMockFn`, `getContractMockFn` e os fallbacks inline de
+`get-contract`/`create-contract`) foram **removidos**. No lugar, operações que o core-api ainda não
+expõe retornam o erro-como-valor `'not-implemented'` (mapeado para a tag i18n
+`contracts.error.not-implemented`), em vez de devolver dado falso:
 
-- `listPartnersMockFn` — 4 parceiros de tipos distintos (Fornecedor, Colaborador, Financiador, ACT)
-- `getContractMockFn` — contrato completo com aditivos e documentos
-
-Ambos ativam automaticamente quando não há sessão (`user === null || accessToken === null`).
+- **Update geral de contrato** — o core-api não tem `PATCH /contracts/:id` (só `activate`/`end`/
+  documentos). O client core-api retorna `err('not-implemented')`.
+- **Busca de parceiros (combobox do contract-create)** — não há rota agregadora `/api/v1/partners`
+  e o `POST /contracts` sequer aceita vínculo de parceiro hoje; `partnersRepository.search` retorna
+  `not-implemented`.
 
 #### Regras invariantes do módulo (decididas nesta sessão)
 

@@ -17,42 +17,8 @@ export const createContractFn = createServerFn({ method: 'POST' })
       const user = await getCurrentUserFn()
       const accessToken = await resolveAccessTokenFn()
 
-      // Dev fallback: quando não há sessão ou API indisponível, retorna mock
       if (user === null || accessToken === null) {
-        return {
-          ok: true,
-          data: {
-            id: 'e0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15',
-            sequentialNumber: '0002/2026',
-            title: data.title,
-            objective: data.objective,
-            originalValue: { cents: data.originalValueCents },
-            originalPeriod: data.originalPeriod,
-            status: 'Pendente',
-            signedAt: null,
-            currentValue: { cents: data.originalValueCents },
-            currentPeriod: null,
-            endedAt: null,
-            classification: data.classification,
-            contractModel: data.contractModel,
-            contractType: data.contractType,
-            supplierId: data.supplierId,
-            financierId: data.financierId,
-            collaboratorId: data.collaboratorId,
-            programId: data.programId,
-            budgetPlanId: data.budgetPlanId,
-            categorizacao: data.categorizacao,
-            centroDeCusto: data.centroDeCusto,
-            observations: data.observations,
-            email: data.email,
-            telephone: data.telephone,
-            origin: 'Manual',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            children: [],
-            files: [],
-          },
-        }
+        return { ok: false, error: 'unauthorized' }
       }
 
       const r = await contractsServer().createContract(data, accessToken)

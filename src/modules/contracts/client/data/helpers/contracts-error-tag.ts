@@ -25,5 +25,7 @@ export const contractsErrorTag = (e: ContractsError): string => {
       return 'contracts.error.unauthorized'
     case 'server':
       return 'contracts.error.unexpected'
+    case 'not-implemented':
+      return 'contracts.error.not-implemented'
   }
 }

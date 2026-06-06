@@ -13,3 +13,4 @@ export type ContractsError =
   | 'connectivity'           // backend fora / timeout
   | 'server'                 // 5xx / inesperado
   | 'unauthorized'           // 401 / 403
+  | 'not-implemented'        // operação ainda não existe no core-api (sem rota)

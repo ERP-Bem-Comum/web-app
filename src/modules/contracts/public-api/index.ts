@@ -2,12 +2,12 @@
  * Public API do módulo Contracts — ÚNICO ponto de import externo.
  * Expõe server functions (para rotas), bindings (para outras features) e tipos.
  */
-export { listContractsFn } from '#modules/contracts/server/adapters/server-fns/list-contracts.server-fn.ts'
-export { getContractFn } from '#modules/contracts/server/adapters/server-fns/get-contract.server-fn.ts'
-export { createContractFn } from '#modules/contracts/server/adapters/server-fns/create-contract.server-fn.ts'
-export { updateContractFn } from '#modules/contracts/server/adapters/server-fns/update-contract.server-fn.ts'
-export { createAmendmentFn } from '#modules/contracts/server/adapters/server-fns/create-amendment.server-fn.ts'
-export { getContractHistoryFn } from '#modules/contracts/server/adapters/server-fns/get-contract-history.server-fn.ts'
+export { listContractsFn } from '#modules/contracts/server/adapters/server-fns/list-contracts.query.fn.ts'
+export { getContractFn } from '#modules/contracts/server/adapters/server-fns/get-contract.query.fn.ts'
+export { createContractFn } from '#modules/contracts/server/adapters/server-fns/create-contract.service.fn.ts'
+export { updateContractFn } from '#modules/contracts/server/adapters/server-fns/update-contract.service.fn.ts'
+export { createAmendmentFn } from '#modules/contracts/server/adapters/server-fns/create-amendment.service.fn.ts'
+export { getContractHistoryFn } from '#modules/contracts/server/adapters/server-fns/get-contract-history.query.fn.ts'
 
 export { useContractListBinding } from '#modules/contracts/client/contract-list/contract-list.binding.ts'
 export { useContractCreateBinding } from '#modules/contracts/client/contract-create/contract-create.binding.ts'
