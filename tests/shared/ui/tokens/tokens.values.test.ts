@@ -5,8 +5,10 @@ import assert from 'node:assert/strict'
 // Importa o módulo PURO de valores (sem vanilla-extract) — runner node:test, import relativo.
 import { tokenValues } from '../../../../src/shared/ui/tokens/tokens.values.ts'
 
-// Paleta "institucional" da v1 que NÃO deve ser herdada (FR-009 / SC-005).
-const FORBIDDEN_INSTITUTIONAL = ['#396496', '#2d4f75', '#1f7d55', '#176642']
+// Cores da paleta institucional (estética de "documento", usada por contracts/login). Governança:
+// são a paleta institucional OFICIAL (papel `color.institutional`), mas NÃO podem vazar para os
+// outros papéis semânticos — confinadas ao seu papel, sem virar segunda paleta concorrente difusa.
+const INSTITUTIONAL_COLORS = ['#396496', '#2d4f75', '#1f7d55', '#176642']
 
 // Coleta recursiva de todos os valores-folha string do objeto de tokens.
 function collectLeaves(node: unknown, acc: string[] = []): string[] {
@@ -42,13 +44,14 @@ describe('design tokens — valores (fidelidade v1)', () => {
     assert.equal(tokenValues.borderWidth.thin, '1px')
   })
 
-  it('NÃO herda a paleta institucional duplicada da v1', () => {
-    const leaves = collectLeaves(tokenValues.color).map((s) => s.toLowerCase())
-    for (const forbidden of FORBIDDEN_INSTITUTIONAL) {
+  it('cores institucionais ficam confinadas ao papel `institutional` (não vazam p/ outros papéis)', () => {
+    const { institutional: _institutional, ...otherRoles } = tokenValues.color
+    const leaves = collectLeaves(otherRoles).map((s) => s.toLowerCase())
+    for (const c of INSTITUTIONAL_COLORS) {
       assert.equal(
-        leaves.includes(forbidden.toLowerCase()),
+        leaves.includes(c.toLowerCase()),
         false,
-        `cor institucional proibida encontrada: ${forbidden}`,
+        `cor institucional vazou para um papel semântico: ${c}`,
       )
     }
   })
@@ -69,23 +72,24 @@ describe('design tokens — valores (fidelidade v1)', () => {
     }
   })
 
-  // T011 (US2 — governança): UMA paleta de marca. O contrato de cor NÃO deve ganhar uma
-  // segunda família concorrente (a dívida da v1: institutional azul/verde). Trava por nome.
-  it('governança: papéis de cor semânticos, sem segunda paleta concorrente', () => {
+  // Governança: a paleta de cor é um CONJUNTO CANÔNICO FECHADO. `status` (semântico) e `institutional`
+  // (estética de documento, amplamente usada por contracts/login) são oficiais; QUALQUER outro papel
+  // (nova paleta concorrente) falha o deepEqual. Mantém a trava contra papéis com nome de cor cru.
+  it('governança: papéis de cor = conjunto canônico fechado, sem nova paleta concorrente', () => {
     const colorRoles = Object.keys(tokenValues.color)
-    const allowedRoles = ['brand', 'surface', 'text', 'border', 'feedback']
+    const allowedRoles = ['brand', 'surface', 'text', 'border', 'feedback', 'status', 'institutional']
     assert.deepEqual(
       [...colorRoles].sort(),
       [...allowedRoles].sort(),
-      'color tem papéis inesperados (possível segunda paleta). Esperado: ' + allowedRoles.join(', '),
+      'color tem papéis fora do conjunto canônico (possível nova paleta). Permitido: ' + allowedRoles.join(', '),
     )
-    // nenhum papel nomeado por cor/contexto cru (ex.: "blue", "green", "institutional")
-    const FORBIDDEN_ROLE_NAMES = /blue|green|institutional|cyan|legacy/i
+    // nenhum papel NOVO nomeado por cor crua (ex.: "blue", "green", "cyan")
+    const FORBIDDEN_ROLE_NAMES = /blue|green|cyan|legacy/i
     for (const role of colorRoles) {
       assert.equal(
         FORBIDDEN_ROLE_NAMES.test(role),
         false,
-        `papel de cor não-semântico (nomeado por cor/contexto): "${role}"`,
+        `papel de cor nomeado por cor crua: "${role}"`,
       )
     }
   })

@@ -34,12 +34,30 @@ describe('contract — extensibilidade (tema alternativo)', () => {
           disabled: '#3a3a3c',
           onDisabled: '#8e8e93',
         },
-        surface: { default: '#1c1c1e', raised: '#2c2c2e', canvas: '#0d1b1f' },
+        surface: { default: '#1c1c1e', raised: '#2c2c2e', canvas: '#0d1b1f', subtle: '#23232a' },
         text: { primary: '#f2f2f7', secondary: '#c7c7cc', muted: '#8e8e93', onBrand: '#ffffff' },
         border: { default: '#38383a', focus: '#0a84ff', subtle: '#2a3a40' },
         feedback: { errorBg: '#3a1f1f', errorText: '#ff6961' },
+        status: {
+          pendingBg: '#3a2f1f', pendingText: '#ffb74d',
+          activeBg: '#1f3a28', activeText: '#81c784',
+          finishedBg: '#1f2f3a', finishedText: '#64b5f6',
+          terminatedBg: '#3a1f24', terminatedText: '#e57373',
+          prazoBg: '#1f3438', prazoText: '#4dd0e1',
+          valorBg: '#1f3a28', valorText: '#66bb6a',
+          escopoBg: '#3a341f', escopoText: '#ffd54f',
+          distratoBg: '#3a1f24', distratoText: '#ef9a9a',
+          outroBg: '#2a2a2a', outroText: '#bdbdbd',
+        },
+        institutional: {
+          blue: '#5a8cc8', blueDeep: '#3a5f8a', blueBg: '#1f2a38', blueLine: '#4a6f9a',
+          green: '#4caf80', greenDeep: '#2e7d55', orange: '#ffb74d', orangeLight: '#3a341f',
+          ink2: '#e0dcd6', ink3: '#c4beb6', ink4: '#a39b91', ink5: '#7d756b',
+          paperRule: '#38342e', paperWarm: '#2a2620', paperBeige: '#231f18',
+          overlay: 'rgba(255,255,255,0.45)', surfaceTranslucent: 'rgba(0,0,0,0.92)',
+        },
       },
-      radius: { sm: '0.25rem', md: '0.375rem', lg: '0.5rem' },
+      radius: { sm: '0.25rem', md: '0.375rem', lg: '0.5rem', xl: '0.75rem' },
       space: { xs: '0.25rem', sm: '0.5rem', md: '1rem', lg: '1.5rem', xl: '2rem' },
       font: {
         family: { heading: 'X', body: 'Y', mono: 'Z' },
@@ -48,7 +66,7 @@ describe('contract — extensibilidade (tema alternativo)', () => {
       },
       shadow: { card: 'none', cardElevated: 'none' },
       focusRing: { width: '3px', offset: '1px' },
-      borderWidth: { thin: '0.5px' },
+      borderWidth: { thin: '0.5px', thick: '1.5px' },
     } satisfies TokenShape
 
     // Em runtime, confirma que as duas formas têm exatamente os mesmos caminhos de folha.
