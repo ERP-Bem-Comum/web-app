@@ -9,7 +9,7 @@ import { useSupplierDetailBinding } from '../supplier-detail.binding.ts'
 import { statusActionFor } from '../supplier-detail.view-model.ts'
 import { SupplierDetailContent } from '../components/supplier-detail-content.component.tsx'
 import { ConfirmDialog } from '../components/confirm-dialog.component.tsx'
-import { actionButton, headerActions, screen } from './supplier-detail.css.ts'
+import { actionButton, errorBanner, headerActions, screen } from './supplier-detail.css.ts'
 
 const t = createTranslator(ptBR)
 const routeApi = getRouteApi('/_authenticated/parceiros/fornecedores/$id')
@@ -70,6 +70,12 @@ export function SupplierDetailPage(): ReactNode {
           ) : undefined
         }
       />
+
+      {statusCommand.errorTag !== null ? (
+        <div className={errorBanner} role="alert">
+          {t(statusCommand.errorTag)}
+        </div>
+      ) : null}
 
       <SupplierDetailContent supplier={supplier} canViewSensitive={canViewSensitive} />
 

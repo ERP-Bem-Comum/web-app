@@ -13,6 +13,15 @@ export const headerActions = style({
   gap: vars.space.sm,
 })
 
+export const errorBanner = style({
+  padding: vars.space.md,
+  borderRadius: vars.radius.md,
+  background: vars.color.feedback.errorBg,
+  color: vars.color.feedback.errorText,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+})
+
 export const actionButton = style({
   paddingBlock: vars.space.sm,
   paddingInline: vars.space.lg,
@@ -25,4 +34,16 @@ export const actionButton = style({
   fontWeight: vars.font.weight.semibold,
   cursor: 'pointer',
   whiteSpace: 'nowrap',
+  transitionProperty: 'background-color, border-color',
+  transitionDuration: '150ms',
+  selectors: {
+    '&:hover': { background: vars.color.surface.subtle },
+    '&:focus-visible': {
+      outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
+      outlineOffset: vars.focusRing.offset,
+    },
+  },
+  '@media': {
+    '(prefers-reduced-motion: reduce)': { transitionDuration: '0.01ms' },
+  },
 })
