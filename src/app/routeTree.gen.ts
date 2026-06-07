@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './../routes/login'
 import { Route as HealthRouteImport } from './../routes/health'
 import { Route as AuthenticatedRouteRouteImport } from './../routes/_authenticated/route'
 import { Route as IndexRouteImport } from './../routes/index'
+import { Route as ShowcaseOrganismsRouteImport } from './../routes/showcase/organisms'
 import { Route as AuthenticatedDashboardRouteImport } from './../routes/_authenticated/dashboard'
 import { Route as AuthenticatedContratosIndexRouteImport } from './../routes/_authenticated/contratos/index'
 import { Route as AuthenticatedContratosCriarRouteImport } from './../routes/_authenticated/contratos/criar'
@@ -37,6 +38,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShowcaseOrganismsRoute = ShowcaseOrganismsRouteImport.update({
+  id: '/showcase/organisms',
+  path: '/showcase/organisms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -80,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/showcase/organisms': typeof ShowcaseOrganismsRoute
   '/contratos/$id': typeof AuthenticatedContratosIdRouteWithChildren
   '/contratos/criar': typeof AuthenticatedContratosCriarRoute
   '/contratos/': typeof AuthenticatedContratosIndexRoute
@@ -91,6 +98,7 @@ export interface FileRoutesByTo {
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/showcase/organisms': typeof ShowcaseOrganismsRoute
   '/contratos/$id': typeof AuthenticatedContratosIdRouteWithChildren
   '/contratos/criar': typeof AuthenticatedContratosCriarRoute
   '/contratos': typeof AuthenticatedContratosIndexRoute
@@ -104,6 +112,7 @@ export interface FileRoutesById {
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/showcase/organisms': typeof ShowcaseOrganismsRoute
   '/_authenticated/contratos/$id': typeof AuthenticatedContratosIdRouteWithChildren
   '/_authenticated/contratos/criar': typeof AuthenticatedContratosCriarRoute
   '/_authenticated/contratos/': typeof AuthenticatedContratosIndexRoute
@@ -117,6 +126,7 @@ export interface FileRouteTypes {
     | '/health'
     | '/login'
     | '/dashboard'
+    | '/showcase/organisms'
     | '/contratos/$id'
     | '/contratos/criar'
     | '/contratos/'
@@ -128,6 +138,7 @@ export interface FileRouteTypes {
     | '/health'
     | '/login'
     | '/dashboard'
+    | '/showcase/organisms'
     | '/contratos/$id'
     | '/contratos/criar'
     | '/contratos'
@@ -140,6 +151,7 @@ export interface FileRouteTypes {
     | '/health'
     | '/login'
     | '/_authenticated/dashboard'
+    | '/showcase/organisms'
     | '/_authenticated/contratos/$id'
     | '/_authenticated/contratos/criar'
     | '/_authenticated/contratos/'
@@ -152,6 +164,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   HealthRoute: typeof HealthRoute
   LoginRoute: typeof LoginRoute
+  ShowcaseOrganismsRoute: typeof ShowcaseOrganismsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -182,6 +195,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/showcase/organisms': {
+      id: '/showcase/organisms'
+      path: '/showcase/organisms'
+      fullPath: '/showcase/organisms'
+      preLoaderRoute: typeof ShowcaseOrganismsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/dashboard': {
@@ -267,6 +287,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   HealthRoute: HealthRoute,
   LoginRoute: LoginRoute,
+  ShowcaseOrganismsRoute: ShowcaseOrganismsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
