@@ -1,0 +1,23 @@
+export type { IconProps, IconComponent } from './icons.tsx'
+export {
+  HomeIcon,
+  HeartHandshakeIcon,
+  UsersIcon,
+  CalendarCheckIcon,
+  CalendarDaysIcon,
+  TrendingUpIcon,
+  WalletIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  MenuIcon,
+  LogOutIcon,
+  MailIcon,
+  EyeIcon,
+  EyeOffIcon,
+  FilterIcon,
+  SearchIcon,
+  DownloadIcon,
+  FileTextIcon,
+  FileChartIcon,
+  UploadIcon,
+} from './icons.tsx'

@@ -1,16 +1,11 @@
 /**
- * InputWithIcon — wrapper local do Input (átomo) com ícone à direita.
- * Específico da feature de login; não faz parte do design system genérico.
+ * InputWithIcon — molécula do design system: o átomo `Input` com um ícone à direita (decorativo ou
+ * botão de ação, ex.: toggle de senha). Genérica (sem regra de negócio). Atomic Design: molécula → átomo.
  */
 import type { ReactNode } from 'react'
 
-import { Input } from '#shared/ui/index.ts'
-import {
-  inputWrap,
-  iconSlot,
-  iconButton,
-  iconOrange,
-} from './input-with-icon.css.ts'
+import { Input } from '#shared/ui/atoms/input/index.ts'
+import { inputWrap, iconSlot, iconButton, iconOrange } from './input-with-icon.css.ts'
 
 export type InputWithIconProps = Readonly<{
   id: string
@@ -21,9 +16,9 @@ export type InputWithIconProps = Readonly<{
   autoComplete?: string
   invalid?: boolean
   icon: ReactNode
-  /** Quando true, o ícone vira um botão clicável (ex: toggle senha). */
+  /** Quando definido, o ícone vira um botão clicável (ex.: toggle de senha). */
   iconAction?: () => void
-  /** Aplica cor laranja ao ícone (ex: olho de senha). */
+  /** Aplica cor laranja ao ícone (ex.: olho de senha). */
   iconOrange?: boolean
 }>
 
@@ -42,7 +37,7 @@ export function InputWithIcon(props: InputWithIconProps): ReactNode {
       {props.iconAction !== undefined ? (
         <button
           type="button"
-          className={`${iconButton} ${props.iconOrange ? iconOrange : ''}`}
+          className={`${iconButton} ${props.iconOrange === true ? iconOrange : ''}`}
           onClick={props.iconAction}
           aria-label="Alternar visibilidade"
           tabIndex={-1}
@@ -50,7 +45,7 @@ export function InputWithIcon(props: InputWithIconProps): ReactNode {
           {props.icon}
         </button>
       ) : (
-        <span className={`${iconSlot} ${props.iconOrange ? iconOrange : ''}`}>{props.icon}</span>
+        <span className={`${iconSlot} ${props.iconOrange === true ? iconOrange : ''}`}>{props.icon}</span>
       )}
     </div>
   )

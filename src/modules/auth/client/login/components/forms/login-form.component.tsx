@@ -6,9 +6,7 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 
-import { Button, Field, Logo } from '#shared/ui/index.ts'
-import { InputWithIcon } from '../input-with-icon.component.tsx'
-import { MailIcon, EyeIcon, EyeOffIcon } from '../icons.tsx'
+import { Button, Field, Logo, InputWithIcon, MailIcon, EyeIcon, EyeOffIcon } from '#shared/ui/index.ts'
 import {
   content,
   header,

@@ -17,6 +17,7 @@ import { ContractRow } from '../components/contract-row.component.tsx'
 import { ContractPaginator } from '../components/contract-paginator.component.tsx'
 import { ExportDropdown } from '../components/export-dropdown.component.tsx'
 import type { ContractListFilters } from '../contract-list.view-model.ts'
+import { FilterIcon, SearchIcon } from '#shared/ui/icons/index.ts'
 
 import {
   screen,
@@ -35,25 +36,6 @@ import {
 
 const t = createTranslator(ptBR)
 const routeApi = getRouteApi('/_authenticated/contratos/')
-
-/* ─── Ícones inline (replicação v1) ─── */
-
-function FilterIcon(): ReactNode {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-    </svg>
-  )
-}
-
-function SearchIcon(): ReactNode {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="11" cy="11" r="8" />
-      <path d="m21 21-4.3-4.3" />
-    </svg>
-  )
-}
 
 export function ContractListPage(): ReactNode {
   const search = routeApi.useSearch()

@@ -34,7 +34,7 @@ describe('LoginForm (vestida)', () => {
     render(<LoginForm {...baseProps()} />)
     expect(screen.getByRole('img')).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Entrar' })).toBeTruthy()
-    expect(screen.getByRole('button')).toBeTruthy()
+    expect(screen.getByRole('button', { name: /entrar|carregando/i })).toBeTruthy()
   })
 
   it('campos Email/Senha com label associado e placeholder', () => {
@@ -51,7 +51,7 @@ describe('LoginForm (vestida)', () => {
     render(<LoginForm {...baseProps({ onEmailChange, onSubmit })} />)
     fireEvent.change(screen.getByLabelText('E-mail'), { target: { value: 'a@b.com' } })
     expect(onEmailChange).toHaveBeenCalledWith('a@b.com')
-    fireEvent.click(screen.getByRole('button'))
+    fireEvent.click(screen.getByRole('button', { name: /entrar|carregando/i }))
     expect(onSubmit).toHaveBeenCalled()
   })
 
@@ -62,7 +62,7 @@ describe('LoginForm (vestida)', () => {
 
   it('submitting: botão desabilitado + aria-busy (loading)', () => {
     render(<LoginForm {...baseProps({ submitting: true })} />)
-    const btn = screen.getByRole('button')
+    const btn = screen.getByRole('button', { name: /entrar|carregando/i })
     expect(btn.hasAttribute('disabled')).toBe(true)
     expect(btn.getAttribute('aria-busy')).toBe('true')
   })

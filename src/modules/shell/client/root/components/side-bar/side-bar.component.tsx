@@ -7,8 +7,9 @@ import { useId, type ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 
 import type { MenuSection } from '#modules/shell/client/root/viewModel/root.view-model.ts'
+import { ChevronDownIcon, ChevronUpIcon, MenuIcon } from '#shared/ui/icons/index.ts'
 import { useSideBarAccordionController } from './side-bar.controller.ts'
-import { ChevronDownIcon, ChevronUpIcon, MenuIcon, MenuItemIcon } from './icons.tsx'
+import { MenuItemIcon } from './icons.tsx'
 import * as s from './side-bar.css.ts'
 
 export interface SideBarProps {

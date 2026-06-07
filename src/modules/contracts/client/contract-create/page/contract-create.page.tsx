@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
+import { UploadIcon } from '#shared/ui/icons/index.ts'
 import { useContractCreateBinding, usePartnerSearchBinding } from '../contract-create.binding.ts'
 import { useContractFormController } from '../components/contract-form.controller.ts'
 import type { SelectedPartner } from '../components/contract-form.controller.ts'
@@ -293,11 +294,7 @@ export function ContractCreatePage(): ReactNode {
                   />
                   <label htmlFor="contract-upload" style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%', cursor: 'pointer' }}>
                     <div className={uploadIconWrap}>
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="17 8 12 3 7 8" />
-                        <line x1="12" y1="3" x2="12" y2="15" />
-                      </svg>
+                      <UploadIcon />
                     </div>
                     <div className={uploadFileInfo}>
                       <div className={uploadFileName}>

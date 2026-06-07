@@ -322,7 +322,7 @@ export const footer = style({
   flexShrink: 0,
   position: 'fixed',
   bottom: 0,
-  left: 'var(--sidebar-width, 260px)',
+  left: 'var(--sidebar-width, 16.25rem)',
   right: 0,
   zIndex: 100,
 })

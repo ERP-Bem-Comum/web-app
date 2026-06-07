@@ -6,3 +6,4 @@
 export { vars } from './tokens/index.ts'
 export * from './atoms/index.ts'
 export * from './molecules/index.ts'
+export * from './icons/index.ts'

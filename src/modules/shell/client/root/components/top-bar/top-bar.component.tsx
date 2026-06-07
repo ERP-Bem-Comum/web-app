@@ -5,8 +5,8 @@
 import type { ReactNode } from 'react'
 
 import type { RootUser } from '#modules/shell/client/root/bind/root.binding.ts'
+import { ChevronDownIcon, LogOutIcon } from '#shared/ui/icons/index.ts'
 import { useTopBarMenuController } from './top-bar.controller.ts'
-import { ChevronDownIcon, LogOutIcon } from './icons.tsx'
 import * as s from './top-bar.css.ts'
 
 export interface TopBarProps {
