@@ -2,7 +2,7 @@
  * partnersErrorTag — mapeia `PartnersError` → tag i18n (§V: a UI nunca olha status; trata só a tag).
  * `switch` exaustivo com guarda `never` (§IV) — adicionar um erro novo sem mapear quebra o build.
  */
-import type { PartnersError } from '#modules/partners/client/data/repository/supplier.repository.ts'
+import type { PartnersError } from '#modules/partners/client/data/repository/partners-error.ts'
 
 export const partnersErrorTag = (e: PartnersError): string => {
   switch (e) {
