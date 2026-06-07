@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 
 import { Input } from '#shared/ui/index.ts'
 
+import { useDebouncedSearch } from './supplier-filters.controller.ts'
 import { toolbar, search, group, select, chip, chipActive } from './supplier-filters.css.ts'
 
 export type StatusFilter = 'all' | 'active' | 'inactive'
@@ -26,14 +27,15 @@ export type SupplierFiltersProps = Readonly<{
 const STATUSES: readonly StatusFilter[] = ['all', 'active', 'inactive']
 
 export function SupplierFilters(props: SupplierFiltersProps): ReactNode {
+  const searchField = useDebouncedSearch(props.searchValue, props.onSearch)
   return (
     <div className={toolbar}>
       <div className={search}>
         <Input
           id="supplier-search"
-          value={props.searchValue}
+          value={searchField.value}
           placeholder={props.labels.search}
-          onChange={props.onSearch}
+          onChange={searchField.setValue}
         />
       </div>
 
