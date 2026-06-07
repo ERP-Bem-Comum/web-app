@@ -84,9 +84,22 @@ Document[]` **composto**, e o client só consome. Faltava generalizar isso como 
 - **Mock/placeholder enquanto o backend não tem rota** — rejeitada: viola [ADR-0002](./0002-errors-as-values.md);
   usamos `'not-implemented'` como valor.
 
+## Adendo (2026-06-07) — o fan-out de parceiros virou 1 chamada ao agregador
+
+O core-api passou a expor o agregador **`GET /api/v1/partners`** (PR #20 `003-partners-aggregator-export`),
+que não existia quando este ADR foi escrito. O BFF da busca de parceiros (`core-api-partners.ts`)
+**deixou de fazer o fan-out de 4 GETs** e passa a fazer **uma única chamada** ao agregador.
+
+**A decisão central deste ADR não muda:** o BFF continua sendo o orquestrador e o client continua sem
+conhecer a topologia do backend (consome a mesma `searchPartnersFn`, com o mesmo contrato). O que mudou é
+apenas **onde** a composição acontece — antes no BFF (fan-out + merge), agora no core-api (agregador
+nativo). O princípio "o client nunca compõe/agrega/faz fan-out" segue valendo: o fan-out simplesmente
+saiu de cena porque o backend passou a entregar a lista já unificada. Detalhes: `core-api-partners.ts`
+e o `api-readiness-report.md` da spec 008.
+
 ## Referências
 
 - [ADR-0002](./0002-errors-as-values.md) — erros como valores (`Result`); base do `'not-implemented'`.
 - [ADR-0004](./0004-client-server-split-mvvm-ddd.md) — split client × server; server fn é a fronteira.
 - [ADR-0009](./0009-framework-agnostic-client.md) — client agnóstico e mínimo.
-- `src/modules/contracts/README.md` — combobox de parceiros (fan-out) e update (`not-implemented`).
+- `src/modules/contracts/README.md` — combobox de parceiros (agregador) e update (PATCH real).

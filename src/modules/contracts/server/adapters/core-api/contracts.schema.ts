@@ -118,15 +118,25 @@ export const CoreApiDocumentSchema = z.object({
   uploadedAt: z.string().trim(),
 })
 
+// Metadados editáveis via PATCH /api/v2/contracts/:id — a rota gorda GET /:id os
+// devolve no detalhe (opcionais/ausentes quando nunca preenchidos).
+const detailMetaShape = {
+  observations: z.string().trim().optional(),
+  email: z.string().trim().optional(),
+  telephone: z.string().trim().optional(),
+}
+
 export const CoreApiContractDetailSchema = z.discriminatedUnion('status', [
   z.object({
     ...ContractListItemBaseSchema.shape,
+    ...detailMetaShape,
     status: z.literal('Pending'),
     amendments: z.array(AmendmentDtoSchema),
     documents: z.array(CoreApiDocumentSchema),
   }),
   z.object({
     ...ContractListItemBaseSchema.shape,
+    ...detailMetaShape,
     status: z.literal('Active'),
     signedAt: z.string().trim(),
     currentValue: MoneyDtoSchema,
@@ -136,6 +146,7 @@ export const CoreApiContractDetailSchema = z.discriminatedUnion('status', [
   }),
   z.object({
     ...ContractListItemBaseSchema.shape,
+    ...detailMetaShape,
     status: z.literal('Expired'),
     signedAt: z.string().trim(),
     currentValue: MoneyDtoSchema,
@@ -146,6 +157,7 @@ export const CoreApiContractDetailSchema = z.discriminatedUnion('status', [
   }),
   z.object({
     ...ContractListItemBaseSchema.shape,
+    ...detailMetaShape,
     status: z.literal('Terminated'),
     signedAt: z.string().trim(),
     currentValue: MoneyDtoSchema,

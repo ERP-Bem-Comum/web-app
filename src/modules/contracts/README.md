@@ -195,10 +195,10 @@ Os seguintes campos ainda **não são persistidos** pelo core-api; o frontend os
 
 | # | O backend precisa fazer | Bloqueia o quê no front | Status front |
 |---|---|---|---|
-| 1 | **Vínculo de parceiro no contrato** — `contractor:{type,id}` no `POST /api/v2/contracts`; coluna no agregado/tabela; snapshot no `GET /:id` (+ `ActView`) | Associar contrato ↔ contratado (hoje o contrato fica "solto") | ✅ pronto — busca de parceiro por fan-out; só falta para onde enviar o vínculo |
-| 2 | **`PATCH /api/v2/contracts/:id`** (metadados: `title/objective/observations/email/telephone`; valor/período seguem imutáveis via aditivo) | Editar contato/observações do contrato | ✅ pronto — `update` no BFF já retorna `not-implemented` |
-| 3 | **Agregador `GET /api/v1/partners`** (busca unificada) — *melhoria* | Otimizar o seletor de contratado (hoje fan-out de 4 GETs funciona) | ✅ pronto — fan-out implementado |
-| 4 | **Export CSV** de `financiers`/`acts`/`collaborators` (este já tem serializer) — *melhoria* | Exportar parceiros | ⚪ não consumido ainda |
+| 1 | **Vínculo de parceiro no contrato** — `contractor:{type,id}` no `POST /api/v2/contracts`; coluna no agregado/tabela; snapshot no `GET /:id` (+ `ActView`) | Associar contrato ↔ contratado (hoje o contrato fica "solto") | ✅ pronto — busca de parceiro via **agregador**; só falta para onde enviar o vínculo |
+| 2 | ~~**`PATCH /api/v2/contracts/:id`**~~ **ENTREGUE pelo core-api** (metadados: `title/objective/observations/email/telephone`; valor/período seguem imutáveis via aditivo) | Editar contato/observações do contrato | 🟢 **ligado** — `update()` consome o PATCH real; detalhe lê `observations/email/telephone` (2026-06-07) |
+| 3 | ~~**Agregador `GET /api/v1/partners`**~~ **ENTREGUE pelo core-api** (busca unificada) | Otimizar o seletor de contratado | 🟢 **ligado** — fan-out de 4 GETs substituído por **1 chamada** ao agregador (2026-06-07) |
+| 4 | ~~**Export CSV** de `financiers`/`acts`/`collaborators`~~ **ENTREGUE pelo core-api** | Exportar parceiros | 🟢 **ligado** — `exportPartnersFn` (passthrough `text/csv`) no módulo **partners** para os 4 tipos (2026-06-07) |
 
 ## Como rodar / validar
 
@@ -306,11 +306,14 @@ Os mocks server-side (`listPartnersMockFn`, `getContractMockFn` e os fallbacks i
 expõe retornam o erro-como-valor `'not-implemented'` (mapeado para a tag i18n
 `contracts.error.not-implemented`), em vez de devolver dado falso:
 
-- **Update geral de contrato** — o core-api não tem `PATCH /contracts/:id` (só `activate`/`end`/
-  documentos). O client core-api retorna `err('not-implemented')`.
-- **Busca de parceiros (combobox do contract-create)** — não há rota agregadora `/api/v1/partners`
-  e o `POST /contracts` sequer aceita vínculo de parceiro hoje; `partnersRepository.search` retorna
-  `not-implemented`.
+- **Update geral de contrato** — ~~o core-api não tem `PATCH /contracts/:id`~~ → **RESOLVIDO (2026-06-07)**:
+  o core-api entregou `PATCH /contracts/:id` (metadados) e o `update()` do client agora o consome de
+  verdade (a rota gorda devolve o detalhe com `observations/email/telephone`). O membro `'not-implemented'`
+  do union de erros permanece como vocabulário do módulo (ADR-0011), mas nenhuma operação o produz mais.
+- **Busca de parceiros (combobox do contract-create)** — ~~não há rota agregadora `/api/v1/partners`~~ →
+  **RESOLVIDO (2026-06-07)**: o core-api entregou o agregador `GET /api/v1/partners` e o BFF agora faz **1
+  chamada** (antes era fan-out de 4 GETs). A seleção segue informativa enquanto o `POST /contracts` não
+  aceita o vínculo `contractor:{type,id}` (item 1 da tabela acima).
 
 #### Regras invariantes do módulo (decididas nesta sessão)
 

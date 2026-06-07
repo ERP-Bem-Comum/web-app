@@ -94,6 +94,10 @@ const statusDomainToApi = (domainStatus: Contract['status']): 'Pending' | 'Activ
 
 const parseIsoDate = (s: string): Date => new Date(s)
 
+// Normaliza string ausente/vazia → undefined (o backend pode devolver "" em metadados opcionais).
+const blankToUndefined = (s: string | undefined): string | undefined =>
+  s !== undefined && s.trim() !== '' ? s : undefined
+
 const apiPeriodToDomain = (p: { kind: 'Fixed'; start: string; end: string } | { kind: 'Indefinite'; start: string }) => ({
   start: parseIsoDate(p.start),
   end: p.kind === 'Fixed' ? parseIsoDate(p.end) : parseIsoDate(p.start),
@@ -219,7 +223,7 @@ const apiContractToDomain = (c: {
   files: [],
 })
 
-const apiContractDetailToDomain = (raw: unknown): Contract => {
+export const apiContractDetailToDomain = (raw: unknown): Contract => {
   const parsed = CoreApiContractDetailSchema.safeParse(raw)
   if (!parsed.success) {
     // Fallback: tenta parsear como list-item (resposta de escrita)
@@ -235,6 +239,10 @@ const apiContractDetailToDomain = (raw: unknown): Contract => {
 
   return {
     ...base,
+    // Metadados editáveis (PATCH /contracts/:id) — a rota gorda os devolve no detalhe.
+    observations: blankToUndefined(c.observations),
+    email: blankToUndefined(c.email),
+    telephone: blankToUndefined(c.telephone),
     children: c.amendments.map(apiAmendmentToDomain),
     files: c.documents.map(apiDocumentToDomain),
   }
@@ -387,11 +395,27 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
       }
     },
 
-    update: (_input, _token) => {
-      // O backend NÃO possui rota de update geral de contrato (PATCH /contracts/:id).
-      // Apenas activate, end e documentos. `not-implemented` sinaliza isso explicitamente
-      // (errors-as-values) até o backend criar a rota.
-      return Promise.resolve(err('not-implemented'))
+    update: async (input, token) => {
+      // PATCH /contracts/:id — metadados editáveis (title/objective/observations/email/
+      // telephone). Valor/período seguem imutáveis (mudam só via aditivo). A Tela 4 só
+      // edita contato + observações; enviamos apenas os campos definidos (o backend exige
+      // ≥1 e valida com `.strict()`). A resposta é o detalhe gordo (contractFullDetail).
+      const body: Record<string, unknown> = {}
+      if (input.email !== undefined) body.email = input.email
+      if (input.telephone !== undefined) body.telephone = input.telephone
+      if (input.observations !== undefined) body.observations = input.observations
+
+      const r = await resultFetch<unknown>(`${baseUrl}/contracts/${input.id}`, {
+        method: 'PATCH',
+        body,
+        headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+      })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      try {
+        return ok(apiContractDetailToDomain(r.value))
+      } catch {
+        return err('server')
+      }
     },
 
     createAmendment: async (contractId, input, token) => {

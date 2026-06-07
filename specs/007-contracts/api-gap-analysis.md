@@ -36,7 +36,7 @@ A API v2 possui a **base estrutural** de contratos (CRUD básico, aditivos, docu
 | 9 | `POST` | `/api/v2/contracts/{id}/documents` | ✅ Existe |
 | 10 | `POST` | `/api/v2/contracts/{id}/amendments/{amendmentId}/documents` | ✅ Existe |
 | 11 | `POST` | `/api/v2/contracts/{id}/documents/{documentId}/supersede` | ✅ Existe |
-| — | `PUT`/`PATCH` | `/api/v2/contracts/{id}` | ❌ **AUSENTE** |
+| — | `PATCH` | `/api/v2/contracts/{id}` | 🟢 **ENTREGUE** (dev, 2026-06-07) — metadados (`title/objective/observations/email/telephone`); **ligado no BFF** via `update()` |
 | — | `DELETE` | `/api/v2/contracts/{id}` | ❌ **AUSENTE** |
 | — | `DELETE` | `/api/v2/contracts/{id}/documents/{documentId}` | ❌ **AUSENTE** |
 
@@ -175,7 +175,7 @@ Na v1, essas regras viviam no frontend (Zod + React Hook Form). Na v2, **devem s
 |---|------|------|------------|-------|
 | 1 | Adicionar campos de domínio ao schema do contrato (`classification`, `contractModel`, `contractType`, `supplierId`, `financierId`, `collaboratorId`, `programId`, `budgetPlanId`, `categorizacao`, `centroDeCusto`, `observations`, `email`, `telephone`, `origin`, `createdAt`, `updatedAt`) | Schema | 🔴 P1 | MVP |
 | 2 | Retornar `children[]` (aditivos) e `files[]` (documentos) no `GET /contracts/{id}` | Schema | 🔴 P1 | MVP |
-| 3 | Implementar `PUT`/`PATCH` `/contracts/{id}` para edição | Endpoint | 🔴 P1 | MVP |
+| 3 | ~~Implementar `PATCH` `/contracts/{id}` para edição~~ → 🟢 **ENTREGUE+LIGADO** (dev, 2026-06-07): metadados; `update()` do BFF consome e o detalhe lê `observations/email/telephone` | Endpoint | ✅ feito | MVP |
 | 4 | Adicionar query parameters de filtro e paginação no `GET /contracts` | Endpoint | 🔴 P1 | MVP |
 | 5 | Retornar meta de paginação no `GET /contracts` | Schema | 🔴 P1 | MVP |
 | 6 | Validar regras de negócio na API (**R1–R4**) | Validação | 🔴 P1 | MVP |
@@ -204,7 +204,7 @@ Na v1, essas regras viviam no frontend (Zod + React Hook Form). Na v2, **devem s
 
 - [ ] Backend revisou e concordou com a lista de campos (seção 3.1)
 - [ ] Backend confirmou que `children[]` e `files[]` serão incluídos no GET de detalhe
-- [ ] Backend confirmou que implementará `PUT`/`PATCH` de contrato
+- [x] Backend confirmou que implementará `PUT`/`PATCH` de contrato → **entregue na dev (2026-06-07) e ligado no BFF** (`update()` consome `PATCH /contracts/:id`)
 - [ ] Backend confirmou que implementará filtros + paginação na listagem
 - [ ] Backend confirmou que validará regras R1–R4 na API
 - [ ] Backend confirmou tipos de aditivo (`distrato` incluso)

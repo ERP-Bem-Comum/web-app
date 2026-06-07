@@ -1,9 +1,9 @@
 /**
  * PartnersRepository — porta do client para a busca de parceiros do contract-create.
  *
- * Consome a `searchPartnersFn` (BFF), que orquestra o fan-out dos 4 recursos do core-api
- * (suppliers/financiers/acts/collaborators) e devolve UMA lista pronta (ADR-0010). O client só
- * converte o Result do RPC e normaliza o `kind` para o tipo da UI.
+ * Consome a `searchPartnersFn` (BFF), que chama o agregador `GET /api/v1/partners` do core-api
+ * (lista unificada dos 4 tipos: suppliers/financiers/acts/collaborators) e devolve UMA lista pronta
+ * (ADR-0010). O client só converte o Result do RPC e normaliza o `kind` para o tipo da UI.
  *
  * Nota: a busca devolve dados de LISTA (sem `bancaryInfo`/`pixInfo` — esses só vêm no detalhe de cada
  * recurso). E o `POST /contracts` ainda não aceita vínculo de parceiro, então a seleção é informativa.

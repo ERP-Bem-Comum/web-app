@@ -1,13 +1,18 @@
 /**
- * core-api-partners — orquestrador de BUSCA de parceiros para o combobox de contratos (ADR-0010).
+ * core-api-partners — BUSCA de parceiros para o combobox de contratos (ADR-0010).
  *
- * O core-api NÃO tem rota agregadora `/api/v1/partners`: cada tipo é um recurso isolado
- * (`suppliers` · `financiers` · `acts` · `collaborators`, todos em `/api/v1`). O BFF faz o **fan-out**
- * dos endpoints em paralelo, normaliza para um item unificado e devolve UMA lista — o client nunca
- * sabe que foram N chamadas. NUNCA lança (errors-as-values). Server-only (adapters).
+ * Consome o **agregador nativo** `GET /api/v1/partners` do core-api (entregue na dev, PR #20):
+ * uma lista unificada dos 4 tipos (`supplier · financier · collaborator · act`), paginada e com
+ * busca server-side. Substitui o antigo fan-out de 4 GETs do BFF — agora é UMA chamada. O agregador
+ * exige as 4 permissões de leitura (`{supplier,financier,collaborator,act}:read`); faltando qualquer
+ * uma, devolve 403 → `unauthorized` (mesma semântica do fan-out anterior). NUNCA lança
+ * (errors-as-values). Server-only (adapters).
+ *
+ * Nota: o agregador devolve `{ type, id, name, document, active }` — sem `email`/`telephone` (que o
+ * combobox não usa: o dropdown mostra `name · kind` e a seleção liga só `id`/`kind`).
  */
 import * as z from 'zod'
-import { ok, err, isErr, isOk, type Result } from '#shared/primitives/result.ts'
+import { ok, err, isErr, type Result } from '#shared/primitives/result.ts'
 import type { HttpError } from '#shared/http/http-error.types.ts'
 import { resultFetch } from '#external/core-api/result-fetch.ts'
 import { loadEnvOrThrow } from '#external/config/env.config.ts'
@@ -19,35 +24,48 @@ export type PartnerSearchItem = Readonly<{
   id: string
   name: string
   document?: string
-  email?: string
-  telephone?: string
+  email?: string // não fornecido pelo agregador (mantido p/ compat do tipo — sempre undefined)
+  telephone?: string // idem
   kind: 'Fornecedor' | 'Financiador' | 'Colaborador' | 'ACT'
 }>
 
-// Boundary (§VI): valida só os campos que a busca usa; `z.object` descarta extras (sem `.loose()` —
-// não vaza PII não validada, ver collaborator.schema.ts). Cada recurso pode nomear o documento
-// diferente (cnpj/cpf/document) — aceitamos os três e normalizamos.
-const CoreApiPartnerItemSchema = z.object({
+const AGGREGATE_TYPES = ['supplier', 'financier', 'collaborator', 'act'] as const
+type AggregateType = (typeof AGGREGATE_TYPES)[number]
+
+// Boundary (§VI): valida só os campos que a busca usa; `z.object` descarta extras (incl. `meta`).
+const PartnersAggregateItemSchema = z.object({
+  type: z.enum(AGGREGATE_TYPES),
   id: z.string().trim(),
   name: z.string().trim(),
-  cnpj: z.string().trim().optional(),
-  cpf: z.string().trim().optional(),
-  document: z.string().trim().optional(),
-  email: z.string().trim().optional(),
-  telephone: z.string().trim().optional(),
-  phone: z.string().trim().optional(),
+  document: z.string().trim(),
+  active: z.boolean(),
 })
-const CoreApiPartnerListSchema = z.object({ items: z.array(CoreApiPartnerItemSchema) })
+const PartnersAggregateResponseSchema = z.object({ items: z.array(PartnersAggregateItemSchema) })
 
-type CoreApiPartnerItem = z.infer<typeof CoreApiPartnerItemSchema>
+type PartnersAggregateItem = z.infer<typeof PartnersAggregateItemSchema>
 
-type Resource = Readonly<{ kind: PartnerSearchKind; path: string; label: PartnerSearchItem['kind'] }>
-const RESOURCES: readonly Resource[] = [
-  { kind: 'Supplier', path: 'suppliers', label: 'Fornecedor' },
-  { kind: 'Financier', path: 'financiers', label: 'Financiador' },
-  { kind: 'Collaborator', path: 'collaborators', label: 'Colaborador' },
-  { kind: 'ACT', path: 'acts', label: 'ACT' },
-]
+// Quantos itens pedir ao agregador para o autocomplete do combobox.
+const SEARCH_LIMIT = 20
+
+export const partnerKindToType = (kind: PartnerSearchKind): AggregateType => {
+  const map: Record<PartnerSearchKind, AggregateType> = {
+    Supplier: 'supplier',
+    Financier: 'financier',
+    Collaborator: 'collaborator',
+    ACT: 'act',
+  }
+  return map[kind]
+}
+
+export const aggregateTypeToLabel = (type: AggregateType): PartnerSearchItem['kind'] => {
+  const map: Record<AggregateType, PartnerSearchItem['kind']> = {
+    supplier: 'Fornecedor',
+    financier: 'Financiador',
+    collaborator: 'Colaborador',
+    act: 'ACT',
+  }
+  return map[type]
+}
 
 // CORE_API_URL inclui o prefixo /api/v2 (auth/contracts); parceiros vivem em /api/v1 (ADR-0033).
 const derivePartnersBase = (coreApiUrl: string): string =>
@@ -72,35 +90,17 @@ const mapHttpError = (e: HttpError): PartnerSearchError => {
   }
 }
 
-const toItem = (it: CoreApiPartnerItem, label: PartnerSearchItem['kind']): PartnerSearchItem => ({
+const toItem = (it: PartnersAggregateItem): PartnerSearchItem => ({
   id: it.id,
   name: it.name,
-  document: it.cnpj ?? it.cpf ?? it.document,
-  email: it.email,
-  telephone: it.telephone ?? it.phone,
-  kind: label,
+  document: it.document,
+  kind: aggregateTypeToLabel(it.type),
 })
 
-const fetchResource = async (
-  base: string,
-  r: Resource,
-  query: string,
-  token: string,
-): Promise<Result<readonly PartnerSearchItem[], PartnerSearchError>> => {
-  const qs = new URLSearchParams({ limit: '10' })
-  if (query !== '') qs.set('search', query)
-  const res = await resultFetch<unknown>(`${base}/${r.path}?${qs.toString()}`, { method: 'GET', token })
-  if (isErr(res)) return err(mapHttpError(res.error))
-  const parsed = CoreApiPartnerListSchema.safeParse(res.value)
-  // Drift de contrato NESTE recurso não derruba a busca inteira — degrada para vazio.
-  if (!parsed.success) return ok([])
-  return ok(parsed.data.items.map((it) => toItem(it, r.label)))
-}
-
 /**
- * searchPartners — fan-out + merge. Se `kind` for dado, consulta só aquele recurso; senão, os 4 em
- * paralelo. Falha de auth em qualquer recurso propaga como `unauthorized`; demais falhas degradam para
- * vazio (busca resiliente). Env lido DENTRO da função (nunca em escopo de módulo).
+ * searchPartners — UMA chamada ao agregador. Se `kind` for dado, filtra por `type`; senão, devolve os
+ * 4 tipos unificados. Env lido DENTRO da função (nunca em escopo de módulo). Drift de contrato no
+ * agregador → `server` (sem fan-out para degradar, surfacer é mais correto que esconder atrás de vazio).
  */
 export const searchPartners = async (
   query: string,
@@ -108,8 +108,14 @@ export const searchPartners = async (
   kind?: PartnerSearchKind,
 ): Promise<Result<readonly PartnerSearchItem[], PartnerSearchError>> => {
   const base = derivePartnersBase(loadEnvOrThrow().CORE_API_URL)
-  const targets = kind === undefined ? RESOURCES : RESOURCES.filter((r) => r.kind === kind)
-  const results = await Promise.all(targets.map((r) => fetchResource(base, r, query, token)))
-  if (results.some((r) => isErr(r) && r.error === 'unauthorized')) return err('unauthorized')
-  return ok(results.flatMap((r) => (isOk(r) ? r.value : [])))
+  const qs = new URLSearchParams({ page: '1', limit: String(SEARCH_LIMIT) })
+  if (query !== '') qs.set('search', query)
+  if (kind !== undefined) qs.set('type', partnerKindToType(kind))
+
+  const res = await resultFetch<unknown>(`${base}/partners?${qs.toString()}`, { method: 'GET', token })
+  if (isErr(res)) return err(mapHttpError(res.error))
+
+  const parsed = PartnersAggregateResponseSchema.safeParse(res.value)
+  if (!parsed.success) return err('server')
+  return ok(parsed.data.items.map(toItem))
 }
