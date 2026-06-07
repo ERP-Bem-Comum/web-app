@@ -1,4 +1,0 @@
-[submodule "v2/core-api"]
-	path = v2/core-api
-	url = git@github.com:ERP-Bem-Comum/core-api.git
-	branch = dev

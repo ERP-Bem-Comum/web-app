@@ -1,0 +1,83 @@
+// Tasks do Zed — web-app (frontend ativo, TanStack Start + pnpm 11)
+// Rode com Cmd+Shift+R (task: spawn) ou Command Palette → "task: spawn".
+// cwd = raiz deste worktree (web-app). Scripts: ver package.json.
+[
+  {
+    "label": "web-app: dev (vite :3000)",
+    "command": "pnpm",
+    "args": ["dev"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": true,
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "web-app: build",
+    "command": "pnpm",
+    "args": ["build"],
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "web-app: typecheck",
+    "command": "pnpm",
+    "args": ["typecheck"],
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "web-app: lint",
+    "command": "pnpm",
+    "args": ["lint"],
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "web-app: lint:fix",
+    "command": "pnpm",
+    "args": ["lint:fix"],
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "web-app: test (node:test, puro)",
+    "command": "pnpm",
+    "args": ["test"],
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "web-app: test:dom (vitest + jsdom)",
+    "command": "pnpm",
+    "args": ["test:dom"],
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "web-app: test:all",
+    "command": "pnpm",
+    "args": ["test:all"],
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "web-app: test:e2e (Playwright)",
+    "command": "pnpm",
+    "args": ["test:e2e"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "use_new_terminal": true
+  },
+  {
+    "label": "web-app: verify (typecheck + lint + test)",
+    "command": "pnpm",
+    "args": ["verify"],
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "web-app: test arquivo atual (node:test)",
+    "command": "node",
+    "args": ["--experimental-strip-types", "--test", "$ZED_FILE"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "tags": ["ts-test"]
+  },
+  {
+    "label": "web-app: test:dom arquivo atual (vitest)",
+    "command": "pnpm",
+    "args": ["test:dom", "$ZED_FILE"],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "tags": ["ts-spec"]
+  }
+]

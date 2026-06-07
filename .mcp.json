@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "acdg-skills": {
+      "command": "docker",
+      "args": ["run", "--rm", "-i", "acdg-skills-mcp:0.1.0"]
+    },
+    "ESLint": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "@eslint/mcp@0.3.6"
+      ]
+    },
+    "chrome-devtools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "chrome-devtools-mcp@1.1.1",
+        "--acceptInsecureCerts"
+      ],
+      "env": {}
+    }
+  }
+}
