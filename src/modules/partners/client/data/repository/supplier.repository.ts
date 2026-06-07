@@ -10,24 +10,11 @@ import type {
   SupplierListResponse,
   SupplierWriteInput,
 } from '#modules/partners/client/data/model/supplier.model.ts'
+import type { PartnersError, FnResult } from '#modules/partners/client/data/repository/partners-error.ts'
 
-/** Erros do módulo partners propagados pelo BFF — espelha `PartnersError` do server (string union). */
-export type PartnersError =
-  | 'not-found'
-  | 'validation'
-  | 'unauthorized'
-  | 'forbidden'
-  | 'conflict'
-  | 'connectivity'
-  | 'server'
-  | 'collaborator-import-malformed'
-  | 'invalid-registration-transition'
-  | 'deactivation-reason-required'
-  | 'invalid-service-category'
-  | 'invalid-state'
-  | 'invalid-ibge-code'
-
-type FnResult<T> = Readonly<{ ok: true; data: T }> | Readonly<{ ok: false; error: PartnersError }>
+// `PartnersError`/`FnResult` vivem em `partners-error.ts` (neutro, compartilhado entre verticais do
+// módulo — supplier/financier/…). Reexportado aqui por compat com quem já importa daqui (§I boundary).
+export type { PartnersError } from '#modules/partners/client/data/repository/partners-error.ts'
 
 type ListFn = (opts: { data: SupplierListInput }) => Promise<FnResult<SupplierListResponse>>
 type GetFn = (opts: { data: { id: string } }) => Promise<FnResult<SupplierDetail>>
