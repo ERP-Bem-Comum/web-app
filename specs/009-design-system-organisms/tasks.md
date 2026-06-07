@@ -95,7 +95,7 @@ description: "Task list — Fundação de Organismos (Design System)"
 - [x] T016 [P] Atualizar `src/shared/ui/README.md`: listar os organismos `DataTable` e `PageHeader` (porta `#shared/ui`, resumo de props), e **remover** a marcação "`organisms/` virá em spec futura".
 - [x] T017 Criar o harness de showcase para baseline visual (R8): rota dev isolada sob `src/routes/` (com guard de ambiente) **ou** harness equivalente que renderize `DataTable` nos 4 estados e `PageHeader` com/sem ações de forma determinística (aguardar `document.fonts.ready`). Decidir o mecanismo na implementação conforme o padrão de `e2e/visual` existente.
 - [x] T018 Criar `e2e/visual/organisms.visual.e2e.ts` com `toHaveScreenshot` por estado: DataTable (loading, error, empty, ready-com-dados) e PageHeader (com ações, sem ações). (depende de T017)
-- [ ] T019 Gerar a baseline oficial `-linux` via Docker e **commitar os `.png`** junto (⚠️ revisão humana do diff — **nunca** `test:visual:update` sem aprovação). Guia: `.claude/guides/visual-testing.md`. (depende de T018)
+- [x] T019 Gerar a baseline oficial `-linux` via Docker e **commitar os `.png`** junto (⚠️ revisão humana do diff — **nunca** `test:visual:update` sem aprovação). Guia: `.claude/guides/visual-testing.md`. (depende de T018)
 - [x] T020 Validar o `quickstart.md`: confirmar que o esqueleto de listagem (PageHeader + DataTable) compila/typecheca usando só `#shared/ui` (sem componente local de tabela/cabeçalho).
 - [x] T021 Gate final: rodar `pnpm verify` (typecheck + lint + test) e `pnpm test:dom` — tudo verde. Confirmar nenhum import de `modules/`/`data/`/`server/` dentro de `organisms/` e nenhuma cor/medida crua.
 

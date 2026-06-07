@@ -71,18 +71,38 @@ Screenshots **diferem por OS** (renderização de fonte/subpixel). Os nomes incl
 **Política deste repo (decidida 2026-06-07):**
 
 - **Baseline OFICIAL = `-linux`** (versionado, é o que o CI e os outros devs comparam). Gere no container
-  oficial do Playwright (Linux), com a stack acessível:
+  oficial do Playwright (Linux). **Receita validada (2026-06-07, macOS Docker Desktop):**
 
   ```bash
-  # macOS (Docker Desktop): host-gateway resolve app.localhost para a stack no host
+  # 1) Rebuilde o web se mexeu no front (a rota/tela tem que existir no build de produção):
+  #    cd ../ERP-INFRA/local && docker compose build web && docker compose up -d --wait web
+  # 2) Gere no container, conectado à REDE do compose (erp-net):
+  CADDY_IP=$(docker inspect erp-caddy --format '{{(index .NetworkSettings.Networks "erp-net").IPAddress}}')
   docker run --rm --ipc=host \
-    --add-host app.localhost:host-gateway \
-    -v "$(pwd):/app" -w /app \
+    --network erp-net \
+    -e "E2E_HOST_RESOLVER_RULES=MAP app.localhost $CADDY_IP" \
+    -e E2E_SKIP_GLOBAL_SETUP=1 \
+    -v "$(pwd):/app" -v pw_node_modules:/app/node_modules \
+    -w /app \
     mcr.microsoft.com/playwright:v1.60.0-noble \
-    /bin/sh -c "corepack enable && pnpm install --frozen-lockfile && pnpm test:visual:update"
+    /bin/sh -c "corepack enable && pnpm install --frozen-lockfile && \
+      pnpm exec playwright test e2e/visual/<arquivo>.e2e.ts --update-snapshots"
   ```
-  > Ajuste a rede conforme seu ambiente: no Linux/CI, prefira `--network <rede_do_compose>` e aponte o
-  > `E2E_BASE_URL` para o serviço interno (ex.: `https://caddy`). O objetivo é o container enxergar a stack.
+
+  **Por que cada flag (aprendido na marra):**
+  - `--network erp-net` — o container precisa enxergar o Caddy; `--add-host host-gateway` **NÃO funciona**
+    aqui. Descubra a rede com `docker inspect erp-caddy` (alias do Caddy: `caddy`).
+  - `E2E_HOST_RESOLVER_RULES=MAP app.localhost <IP_DO_CADDY>` — o **Chromium resolve `.localhost` sempre
+    para `127.0.0.1`** (RFC 6761), ignorando `/etc/hosts`/`--add-host`. Sem isso → `ERR_CONNECTION_REFUSED`.
+    Mantenha a URL/SNI = `app.localhost` (o cert `tls internal` é desse host). O config lê essa env.
+  - `E2E_SKIP_GLOBAL_SETUP=1` — o `global-setup` usa `docker compose exec mysql`, que não existe no
+    container. Suites de **rota pública** (ex.: `/showcase/organisms`) não precisam de usuários. O config
+    pula o setup com essa env. **Suites autenticadas** precisam do setup → não use essa env (e o
+    `docker compose exec` exigiria o socket do Docker no container).
+  - `-v pw_node_modules:/app/node_modules` — volume nomeado: protege o `node_modules` do macOS (binários
+    diferentes) e acelera re-runs.
+  - Prefira `playwright test <arquivo> --update-snapshots` (só a suíte alvo) a `test:visual:update` (todas).
+  > No Linux/CI puro, `--network host` costuma bastar (o `127.0.0.1` do container = host com a stack).
 
 - **`-darwin` (local) = feedback rápido.** Rode `pnpm test:visual:update` direto no Mac pra iterar; **mas
   o que vale no CI/PR é o `-linux`.** Evite commitar `-darwin` desatualizado (ou ignore-os se preferir).
