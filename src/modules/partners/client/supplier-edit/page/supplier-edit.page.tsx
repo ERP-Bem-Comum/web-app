@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { getRouteApi, useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
@@ -16,12 +16,6 @@ export function SupplierEditPage(): ReactNode {
   const { id } = routeApi.useParams()
   const navigate = useNavigate()
   const { state, updateCommand, canEditSensitive, categories } = useSupplierEditBinding(id)
-
-  useEffect(() => {
-    if (updateCommand.result !== null) {
-      void navigate({ to: '/parceiros/fornecedores/$id', params: { id } })
-    }
-  }, [updateCommand.result, navigate, id])
 
   if (state.status === 'loading') {
     return (
@@ -46,6 +40,7 @@ export function SupplierEditPage(): ReactNode {
     <div className={screen}>
       <PageHeader title={t('partners.suppliers.edit.title')} />
       <SupplierEditForm
+        key={id}
         initial={state.initial}
         categories={categories}
         canEditSensitive={canEditSensitive}
