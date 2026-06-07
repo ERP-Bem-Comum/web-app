@@ -33,7 +33,9 @@ export const MENU: readonly MenuSection[] = [
   {
     label: 'Gestão de Parceiros',
     iconId: 'heart-handshake',
-    subItems: [{ label: 'Fornecedores', to: '/parceiros/fornecedores' }],
+    // `supplier:read` é o slug do catálogo PARTNER_PERMISSIONS (módulo partners). Mantido como
+    // literal — `shell` não importa `partners` (boundaries). RBAC do menu (feature 011).
+    subItems: [{ label: 'Fornecedores', to: '/parceiros/fornecedores', requiredPermission: 'supplier:read' }],
   },
   { label: 'Gestão de Programas', iconId: 'users' },
   {
