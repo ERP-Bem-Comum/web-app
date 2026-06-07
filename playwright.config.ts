@@ -13,10 +13,21 @@ import { defineConfig, devices } from '@playwright/test'
 
 const BASE_URL = process.env['E2E_BASE_URL'] ?? 'https://app.localhost'
 
+// Dentro de um container (gerar baseline `-linux`), o Chromium resolve o TLD `.localhost` SEMPRE para
+// 127.0.0.1 (RFC 6761), ignorando /etc/hosts e --add-host — então não alcança o Caddy na rede do
+// compose. `E2E_HOST_RESOLVER_RULES` (ex.: "MAP app.localhost 172.20.0.6") sobrescreve a resolução do
+// Chromium, mantendo a URL/SNI = app.localhost (necessário para o cert `tls internal`). No host (Mac),
+// não é setada e nada muda. Ver .claude/guides/visual-testing.md.
+const HOST_RESOLVER_RULES = process.env['E2E_HOST_RESOLVER_RULES']
+
 export default defineConfig({
   testDir: './e2e',
   testMatch: '**/*.e2e.ts',
-  globalSetup: './e2e/global-setup.ts',
+  // O globalSetup prepara usuários de teste via core-api + `docker compose exec` (MySQL) — só faz
+  // sentido para suites AUTENTICADAS. Suites de telas/rotas PÚBLICAS (ex.: regressão visual de
+  // organismos em /showcase/organisms) não precisam disso e podem rodar num container Playwright puro
+  // (sem docker socket). `E2E_SKIP_GLOBAL_SETUP=1` pula o setup nesses casos. Default: mantém o setup.
+  globalSetup: process.env['E2E_SKIP_GLOBAL_SETUP'] === '1' ? undefined : './e2e/global-setup.ts',
 
   // CI: sem .only, mais retries; local: falha rápido.
   forbidOnly: Boolean(process.env['CI']),
@@ -42,5 +53,15 @@ export default defineConfig({
     },
   },
 
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        ...(HOST_RESOLVER_RULES
+          ? { launchOptions: { args: [`--host-resolver-rules=${HOST_RESOLVER_RULES}`] } }
+          : {}),
+      },
+    },
+  ],
 })
