@@ -17,7 +17,8 @@
 
 | Termo (PT) | Significado |
 |---|---|
-| **Parceiro** | Entidade vinculada à organização. Guarda-chuva de Colaborador, Fornecedor e Financiador. |
+| **Parceiro** | Entidade vinculada à organização. Guarda-chuva de Colaborador, Fornecedor, Financiador e **ACT**. |
+| **ACT** | 4º tipo de parceiro (PF), provisório — espelha o núcleo do Colaborador (7 campos). Significado da sigla e regras avançadas pendentes de produto (ADR-0036 do core-api). |
 | **Colaborador** | Pessoa física (PF) vinculada a programas; tem cadastro em 2 etapas (pré-cadastro → completo). |
 | **Fornecedor** | Pessoa jurídica (PJ) prestadora de serviços; tem dados bancários + PIX. |
 | **Financiador** | Entidade (PJ) que financia programas; cadastro simples. |
@@ -128,6 +129,31 @@ painel de selecionados mantendo municípios de qualquer UF (cross-state), para r
 2. **Given** uma UF selecionada no combobox (com autocomplete), **When** carrega, **Then** o painel esquerdo lista os municípios daquela UF.
 3. **Given** municípios adicionados de UFs diferentes, **When** o usuário troca a UF, **Then** o painel direito mantém todos os adicionados (cross-state).
 
+---
+
+### User Story 6 - ACT (Priority: P3)
+
+Como gestor, quero cadastrar e gerenciar **ACTs** (4º tipo de parceiro, PF) com o mesmo núcleo do
+Colaborador (pré-cadastro de 7 campos, listar, editar, ativar/desativar), para registrar esse vínculo
+enquanto o produto define as regras específicas do tipo.
+
+**Why this priority**: O core-api promoveu o ACT de placeholder para **CRUD completo + export** (PR #20),
+e o agregador `/partners` já o inclui. Entrega o vínculo de verdade (sem mock), mas com **menor
+prioridade**: as regras de produto (significado da sigla, complete-registration de 27 campos, import,
+filtros avançados) ainda não existem — o shape pode crescer (ADR-0036 do core-api).
+
+**Independent Test**: Em `/acts`, criar um ACT (7 campos), listar/buscar, editar e desativar/reativar —
+tudo via `/api/v1/acts` real, sem mock.
+
+**Acceptance Scenarios**:
+
+1. **Given** a tela "Adicionar ACT", **When** o usuário preenche os 7 campos (Nome, Email, CPF, Área, Função, Início de Contrato, Vínculo), **Then** o ACT é criado com situação `Pré Cadastrado`.
+2. **Given** a listagem, **When** o usuário busca por texto, **Then** a lista filtra (paginação server-side).
+3. **Given** um ACT ativo, **When** o usuário desativa, **Then** o ACT fica inativo (desativação **simples — sem motivo**, diferente do Colaborador); reativar volta a ativo.
+
+> ⚠️ **Provisório**: ACT **não tem** complete-registration de 27 campos, import em lote nem filtros
+> avançados (o core-api não os expõe). Clonar a UI do **núcleo** do Colaborador apontando para `/api/v1/acts`.
+
 ### Edge Cases
 
 - Lista vazia / 0 resultados de filtro → empty state, não tabela quebrada.
@@ -149,7 +175,7 @@ painel de selecionados mantendo municípios de qualquer UF (cross-state), para r
 - **FR-005**: O sistema MUST exibir o status duplo de Colaboradores (Ativo/Inativo + Cadastrado/Pré Cadastrado).
 - **FR-006**: Usuários MUST conseguir desativar Colaborador com **Motivo obrigatório** (botão de confirmação desabilitado até selecionar o motivo).
 - **FR-007**: Usuários MUST conseguir importar Colaboradores em lote via **CSV** (`.csv`), com relatório de linhas inválidas (`{ created, failed: [{ line, error }] }` = sucesso parcial). O client lê `File.text()` e envia a string (Zod ≤ 2 MiB) à server function, que repassa `text/csv` ao core-api; parsing e anti-CSV-injection vivem no `server/domain`. `.xlsx` está fora de escopo (Princ. VIII — ver Clarifications).
-- **FR-008**: Usuários MUST conseguir criar Fornecedor (PJ) com dados cadastrais + bancários + PIX (3 seções), filtrar por categoria de serviço e exportar a listagem filtrada.
+- **FR-008**: Usuários MUST conseguir criar Fornecedor (PJ) com dados cadastrais + bancários + PIX (3 seções), filtrar por categoria de serviço e exportar a listagem filtrada. O **export** dos 4 tipos (suppliers/collaborators/financiers/acts) MUST consumir `GET /api/v1/{resource}/export` real via BFF (passthrough `text/csv`, `exportPartnersFn`), **não** montar CSV no client. *(Export server ✅ implementado — PR #20 deu paridade aos 4.)*
 - **FR-009**: Usuários MUST conseguir o CRUD simples de Financiador (6 campos, sem seções) com busca simples e desativação por modal (texto dinâmico, sem Motivo).
 - **FR-010**: Usuários MUST conseguir marcar/desmarcar Estados parceiros via dual-panel com persistência imediata (sem botão Salvar) e estado "Adicionado" visível.
 - **FR-011**: Usuários MUST conseguir marcar/desmarcar Municípios parceiros por UF (seleção obrigatória, combobox com autocomplete), com painel de selecionados cross-state.
@@ -162,11 +188,13 @@ painel de selecionados mantendo municípios de qualquer UF (cross-state), para r
 - **FR-017**: O catálogo de categorias de serviço de Fornecedores MUST vir do endpoint canônico `GET /api/v1/suppliers/service-categories` (**39 códigos**, union fechada no domínio). *(Resolvido — o backend expõe o catálogo.)*
 - **FR-018**: O formulário de Financiador MUST ser **PJ-only** (Razão Social + CNPJ obrigatórios), alinhado à evidência do legado e à API. Variante pessoa física está **fora de escopo**. *(Resolvido — Clarifications 2026-06-06.)*
 - **FR-019**: Os filtros de Colaborador MUST **omitir "programa"** e tratar "idade" como **derivação client-side** de `dateOfBirth` (sem filtro server-side). *(Resolvido — Clarifications 2026-06-06.)*
-- **FR-020**: A UI MUST refletir o RBAC do core-api: ações de criar/editar/desativar/reativar/toggle MUST ficar **ocultas ou desabilitadas** quando a sessão não tem a permissão correspondente (`collaborator:write`, `supplier:write`, `financier:write`, `geography:write`). Falha de autorização do backend MUST ser tratada como `AppError('forbidden')`. *(Defesa em profundidade.)* **Fonte resolvida (Rev. 2)**: `GET /api/v2/auth/me` agora entrega `permissions[]`; o `can()` lê `me.permissions`. Falta apenas a ponte no front (estender `MeSchema`/`AuthUser`/`CurrentUser` do `auth`).
+- **FR-020**: A UI MUST refletir o RBAC do core-api: ações de criar/editar/desativar/reativar/toggle MUST ficar **ocultas ou desabilitadas** quando a sessão não tem a permissão correspondente (`collaborator:write`, `supplier:write`, `financier:write`, `geography:write`, `act:write`). Falha de autorização do backend MUST ser tratada como `AppError('forbidden')`. *(Defesa em profundidade.)* **Fonte resolvida (Rev. 2)**: `GET /api/v2/auth/me` agora entrega `permissions[]`; o `can()` lê `me.permissions`. Falta apenas a ponte no front (estender `MeSchema`/`AuthUser`/`CurrentUser` do `auth`).
+- **FR-021**: O sistema MUST oferecer o CRUD de **ACT** (4º tipo de parceiro, PF) consumindo `/api/v1/acts` real: listar (busca + paginação), pré-cadastro de 7 campos, editar (PUT) e ativar/desativar (**desativação simples, sem motivo** — o core-api `POST /acts/:id/deactivate` não recebe body), sob RBAC `act:read/write`. **Fora de escopo nesta fase**: complete-registration de 27 campos, import em lote e filtros avançados (o core-api ainda não os expõe — provisório, ADR-0036). *(Reaberto — antes em Out of Scope; ver US6.)*
 
 ### Key Entities
 
-- **Partner** (conceito guarda-chuva): identidade comum (nome, status ativo/inativo, datas). Especializado em Collaborator/Supplier/Financier.
+- **Partner** (conceito guarda-chuva): identidade comum (nome, status ativo/inativo, datas). Especializado em Collaborator/Supplier/Financier/ACT.
+- **Act** (PF, provisório): mesmo núcleo do Collaborator — nome, email, CPF, área de atuação, função, início de contrato, vínculo empregatício; status duplo (situação cadastral + ativo/inativo). Sem dados completos/import nesta fase. Desativação **sem motivo**.
 - **Collaborator** (PF): rep. legal, email, CPF, área de atuação, função, início de contrato, vínculo empregatício, situação cadastral; + dados completos (RG, endereço, nascimento, celular, contato de emergência, identidade de gênero, raça/cor, alergias, categoria alimentar, escolaridade, experiência setor público, biografia). Motivo de desativação.
 - **Supplier** (PJ): nome, email, CNPJ, razão social, nome fantasia, categoria de serviço, dados bancários (banco, agência, conta, dígito), PIX (tipo de chave, chave).
 - **Financier** (PJ): nome, razão social, representante legal, CNPJ, telefone, endereço.
@@ -187,7 +215,7 @@ painel de selecionados mantendo municípios de qualquer UF (cross-state), para r
 ## Impacto Arquitetural (web-app / BFF) *(obrigatório se a feature toca `src/`)*
 
 - **Módulo(s) vertical(is) afetado(s)**: [x] novo `src/modules/partners/` — espelha `contracts`/`auth`.
-- **Server functions novas (a fronteira, Princ. I)**: `listCollaborators`, `getCollaborator`, `createCollaborator`, `completeCollaboratorRegistration`, `updateCollaborator`, `deactivateCollaborator`, `importCollaborators`; análogas para `supplier*` e `financier*`; `listPartnerStates`/`togglePartnerState`, `listMunicipalitiesByUf`/`togglePartnerMunicipality`.
+- **Server functions novas (a fronteira, Princ. I)**: `listCollaborators`, `getCollaborator`, `createCollaborator`, `completeCollaboratorRegistration`, `updateCollaborator`, `deactivateCollaborator`, `importCollaborators`; análogas para `supplier*` e `financier*`; `listPartnerStates`/`togglePartnerState`, `listMunicipalitiesByUf`/`togglePartnerMunicipality`; **ACT** (US6, ✅ implementado): `listActsFn`, `getActFn`, `createActFn`, `updateActFn`, `deactivateActFn`, `reactivateActFn` (`public-api/index.ts`).
 - **Integração core-api**: parceiros vivem em **`/api/v1`** (não `/api/v2`). Prontidão (revisada): Financiadores/Fornecedores/Colaboradores/Estados/Municípios **🟢 todos prontos** (incl. import/export/catálogo/territorial). Fora de escopo: financiador-PF e filtros programa/idade. Ver `api-readiness-report.md`.
 - **Novos agregados / VOs (server/domain, Princ. IV)**: Collaborator, Supplier, Financier + VOs branded (CPF/CNPJ/Email/UF/PixKey).
 - **Eventos no client (Event Bus, Princ. XII)**: opcional (ex.: `ColaboradorDesativado` → invalida lista). Vivem em `client/data`.
@@ -207,4 +235,7 @@ painel de selecionados mantendo municípios de qualquer UF (cross-state), para r
 - CRUD de usuários/permissões (Zero Trust) — fora do épico.
 - Telas de Contratos/Aditivos (módulo `contracts` já existe) — apenas a coluna reservada é mantida.
 - Relatórios/dashboards de parceiros (dashboard é outra evidência).
-- **ACT** (novo tipo de parceiro, `/api/v1/acts`) — **fora de escopo nesta fase**: é placeholder provisório no core-api (espelha o núcleo do Colaborador; regras de produto e significado da sigla pendentes, ADR-0036 do core-api). Reabrir como US futura quando o produto definir as regras.
+- ~~**ACT** fora de escopo~~ → **REABERTO como US6 (2026-06-07)**: o core-api promoveu o ACT de placeholder
+  para **CRUD completo + export** (`/api/v1/acts`, PR #20). Implementado o **server** do ACT (espelhando o
+  núcleo do Colaborador). O significado da sigla e as regras avançadas (complete-registration de 27 campos,
+  import, filtros) seguem pendentes de produto — fora desta fase.
