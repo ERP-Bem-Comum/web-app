@@ -32,5 +32,15 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
 
+  // Regressão visual (e2e/visual/*.e2e.ts): tolerância mínima p/ antialiasing; animações desligadas
+  // p/ snapshots determinísticos. Baselines OFICIAIS são `-linux` (Docker/CI); `-darwin` é feedback
+  // local. Ver .claude/guides/visual-testing.md.
+  expect: {
+    toHaveScreenshot: {
+      maxDiffPixelRatio: 0.01,
+      animations: 'disabled',
+    },
+  },
+
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
 })

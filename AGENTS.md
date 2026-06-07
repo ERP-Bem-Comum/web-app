@@ -85,6 +85,15 @@ bundler** — testes de `node:test` usam **imports relativos**; testes de Vitest
 **TDD: escreva o teste antes.** Quando não estiver claro se é teste unitário (node:test) ou de
 comportamento/DOM (Vitest), **pergunte** (`AskUserQuestion`).
 
+### Testes visuais (regressão de UI — Playwright)
+
+Telas/componentes têm baseline de screenshot (`e2e/visual/*.e2e.ts`, `toHaveScreenshot`). **Após mexer em
+UI/CSS/layout, rode `pnpm test:visual`** (precisa da stack de pé — `../ERP-INFRA/local/up.sh`; o shell é
+autenticado, via `https://app.localhost`). Se falhar por mudança **não intencional**, **reverta/corrija** —
+**nunca** rode `test:visual:update` sem revisão humana explícita do diff. Se a mudança for **intencional e
+aprovada**, regenere o baseline `-linux` (Docker, ver guia) e **commite os `.png`** junto. Guia completo:
+**`.claude/guides/visual-testing.md`**.
+
 ## Arquitetura (visão geral)
 
 Um app = **front + BFF unificado**. O browser nunca fala com o `core-api` diretamente — fala com as
