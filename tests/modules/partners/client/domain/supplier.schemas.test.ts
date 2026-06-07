@@ -18,8 +18,22 @@ describe('SupplierListFiltersSchema', () => {
     assert.equal(r.limit, 20)
   })
 
-  it('rejeita limit acima de 100', () => {
-    assert.equal(SupplierListFiltersSchema.safeParse({ limit: 999 }).success, false)
+  it('degrada limit fora da faixa para o default (não deixa 999 vazar)', () => {
+    // `.catch(5)`: o valor abusivo não passa a valer 999 nem derruba a navegação — cai no default.
+    assert.equal(SupplierListFiltersSchema.parse({ limit: 999 }).limit, 5)
+  })
+
+  it('degrada page inválida da URL (?page=abc / vazio) para 1 em vez de quebrar', () => {
+    assert.equal(SupplierListFiltersSchema.parse({ page: 'abc' }).page, 1)
+    assert.equal(SupplierListFiltersSchema.parse({ page: '' }).page, 1)
+  })
+
+  it("regressão: active='false' da URL vira false (z.coerce.boolean fazia Boolean('false')===true)", () => {
+    assert.equal(SupplierListFiltersSchema.parse({ active: 'false' }).active, false)
+    assert.equal(SupplierListFiltersSchema.parse({ active: 'true' }).active, true)
+    // navegação SPA passa boolean nativo — deve continuar aceito
+    assert.equal(SupplierListFiltersSchema.parse({ active: false }).active, false)
+    assert.equal(SupplierListFiltersSchema.parse({ active: true }).active, true)
   })
 })
 
