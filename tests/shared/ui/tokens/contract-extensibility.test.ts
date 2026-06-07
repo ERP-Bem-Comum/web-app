@@ -34,10 +34,15 @@ describe('contract — extensibilidade (tema alternativo)', () => {
           disabled: '#3a3a3c',
           onDisabled: '#8e8e93',
         },
-        surface: { default: '#1c1c1e', raised: '#2c2c2e', canvas: '#0d1b1f', subtle: '#23232a' },
+        surface: { default: '#1c1c1e', raised: '#2c2c2e', canvas: '#0d1b1f', subtle: '#23232a', app: '#15151a' },
         text: { primary: '#f2f2f7', secondary: '#c7c7cc', muted: '#8e8e93', onBrand: '#ffffff' },
         border: { default: '#38383a', focus: '#0a84ff', subtle: '#2a3a40' },
         feedback: { errorBg: '#3a1f1f', errorText: '#ff6961' },
+        nav: {
+          background: '#1a1c2e', surface: '#1c1c1e', itemActive: '#0a84ff', itemHover: 'rgba(255,255,255,0.08)',
+          submenuBackground: 'rgba(0,0,0,0.30)', textActive: '#ffffff', textMuted: '#8a8d9f', ink: '#f2f2f7',
+          textOnSurface: '#c7c7cc', border: '#38383a', surfaceHover: '#2c2c2e',
+        },
         status: {
           pendingBg: '#3a2f1f', pendingText: '#ffb74d',
           activeBg: '#1f3a28', activeText: '#81c784',
@@ -48,6 +53,12 @@ describe('contract — extensibilidade (tema alternativo)', () => {
           escopoBg: '#3a341f', escopoText: '#ffd54f',
           distratoBg: '#3a1f24', distratoText: '#ef9a9a',
           outroBg: '#2a2a2a', outroText: '#bdbdbd',
+        },
+        partnerType: {
+          supplier: { text: '#81c784', background: 'rgba(129,199,132,0.10)', border: 'rgba(129,199,132,0.20)' },
+          collaborator: { text: '#64b5f6', background: '#1f2f3a', border: '#3a5f7a' },
+          financier: { text: '#ffd54f', background: '#3a341f', border: 'rgba(255,213,79,0.25)' },
+          act: { text: '#ffb74d', background: 'rgba(255,183,77,0.08)', border: 'rgba(255,183,77,0.20)' },
         },
         institutional: {
           blue: '#5a8cc8', blueDeep: '#3a5f8a', blueBg: '#1f2a38', blueLine: '#4a6f9a',
@@ -66,7 +77,8 @@ describe('contract — extensibilidade (tema alternativo)', () => {
       },
       shadow: { card: 'none', cardElevated: 'none' },
       focusRing: { width: '3px', offset: '1px' },
-      borderWidth: { thin: '0.5px', thick: '1.5px' },
+      borderWidth: { hairline: '0.25px', thin: '0.5px', thick: '1.5px' },
+      size: { topbar: '4rem' },
     } satisfies TokenShape
 
     // Em runtime, confirma que as duas formas têm exatamente os mesmos caminhos de folha.

@@ -72,12 +72,13 @@ describe('design tokens — valores (fidelidade v1)', () => {
     }
   })
 
-  // Governança: a paleta de cor é um CONJUNTO CANÔNICO FECHADO. `status` (semântico) e `institutional`
-  // (estética de documento, amplamente usada por contracts/login) são oficiais; QUALQUER outro papel
-  // (nova paleta concorrente) falha o deepEqual. Mantém a trava contra papéis com nome de cor cru.
+  // Governança: a paleta de cor é um CONJUNTO CANÔNICO FECHADO. Papéis oficiais: marca (`brand`),
+  // superfícies/texto/borda, `feedback`, `nav` (chrome — sidebar/topbar, índigo #464E78), `status`
+  // (semântico), `partnerType` (badges dos 4 tipos de parceiro) e `institutional` (estética de documento).
+  // QUALQUER outro papel (nova paleta concorrente) falha o deepEqual. Trava contra papel com nome de cor cru.
   it('governança: papéis de cor = conjunto canônico fechado, sem nova paleta concorrente', () => {
     const colorRoles = Object.keys(tokenValues.color)
-    const allowedRoles = ['brand', 'surface', 'text', 'border', 'feedback', 'status', 'institutional']
+    const allowedRoles = ['brand', 'surface', 'text', 'border', 'feedback', 'nav', 'status', 'partnerType', 'institutional']
     assert.deepEqual(
       [...colorRoles].sort(),
       [...allowedRoles].sort(),

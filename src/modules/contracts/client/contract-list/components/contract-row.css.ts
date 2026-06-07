@@ -48,17 +48,24 @@ export const avatar = style({
   flexShrink: 0,
 })
 
-// Cores legadas da v1 não mapeiam 1:1 para tokens institucionais;
-// desabilitado por linha (T009) até definição de tokens de tipo de contrato.
+// Avatar do tipo de parceiro — tints derivados dos tokens `color.partnerType.*` (antes hex cru).
 export const avatarVariant = styleVariants({
-  // eslint-disable-next-line no-restricted-syntax
-  Fornecedor: { background: 'rgba(51,178,102,0.15)', color: '#1c7943' },
-  // eslint-disable-next-line no-restricted-syntax
-  Colaborador: { background: '#c7e5f2', color: '#1a708c' },
-  // eslint-disable-next-line no-restricted-syntax
-  Financiador: { background: '#fff7e0', color: '#d9991a' },
-  // eslint-disable-next-line no-restricted-syntax
-  ACT: { background: 'rgba(217,119,6,0.10)', color: '#9a5402' },
+  Fornecedor: {
+    background: `color-mix(in srgb, ${vars.color.partnerType.supplier.text} 15%, transparent)`,
+    color: vars.color.partnerType.supplier.text,
+  },
+  Colaborador: {
+    background: vars.color.partnerType.collaborator.background,
+    color: vars.color.partnerType.collaborator.text,
+  },
+  Financiador: {
+    background: vars.color.partnerType.financier.background,
+    color: vars.color.partnerType.financier.text,
+  },
+  ACT: {
+    background: `color-mix(in srgb, ${vars.color.partnerType.act.text} 10%, transparent)`,
+    color: vars.color.partnerType.act.text,
+  },
 })
 
 export const contractorInfo = style({
@@ -104,14 +111,26 @@ const tipoBadgeBase = style({
 })
 
 export const tipoVariant = styleVariants({
-  // eslint-disable-next-line no-restricted-syntax
-  Fornecedor: [tipoBadgeBase, { color: '#1c7943', background: 'rgba(51,178,102,0.10)', border: '0.5px solid rgba(51,178,102,0.20)' }],
-  // eslint-disable-next-line no-restricted-syntax
-  Colaborador: [tipoBadgeBase, { color: '#1a708c', background: '#e8f5fa', border: '0.5px solid #8cc7de' }],
-  // eslint-disable-next-line no-restricted-syntax
-  Financiador: [tipoBadgeBase, { color: '#d9991a', background: '#fff7e0', border: '0.5px solid rgba(217,153,26,0.25)' }],
-  // eslint-disable-next-line no-restricted-syntax
-  ACT: [tipoBadgeBase, { color: '#9a5402', background: 'rgba(217,119,6,0.08)', border: '0.5px solid rgba(217,119,6,0.20)' }],
+  Fornecedor: [tipoBadgeBase, {
+    color: vars.color.partnerType.supplier.text,
+    background: vars.color.partnerType.supplier.background,
+    border: `${vars.borderWidth.hairline} solid ${vars.color.partnerType.supplier.border}`,
+  }],
+  Colaborador: [tipoBadgeBase, {
+    color: vars.color.partnerType.collaborator.text,
+    background: vars.color.partnerType.collaborator.background,
+    border: `${vars.borderWidth.hairline} solid ${vars.color.partnerType.collaborator.border}`,
+  }],
+  Financiador: [tipoBadgeBase, {
+    color: vars.color.partnerType.financier.text,
+    background: vars.color.partnerType.financier.background,
+    border: `${vars.borderWidth.hairline} solid ${vars.color.partnerType.financier.border}`,
+  }],
+  ACT: [tipoBadgeBase, {
+    color: vars.color.partnerType.act.text,
+    background: vars.color.partnerType.act.background,
+    border: `${vars.borderWidth.hairline} solid ${vars.color.partnerType.act.border}`,
+  }],
 })
 
 export const programText = style({

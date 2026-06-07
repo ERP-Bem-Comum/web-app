@@ -21,6 +21,7 @@ export const vars = createThemeContract({
       raised: null,
       canvas: null,
       subtle: null,
+      app: null,
     },
     text: {
       primary: null,
@@ -36,6 +37,19 @@ export const vars = createThemeContract({
     feedback: {
       errorBg: null,
       errorText: null,
+    },
+    nav: {
+      background: null,
+      surface: null,
+      itemActive: null,
+      itemHover: null,
+      submenuBackground: null,
+      textActive: null,
+      textMuted: null,
+      ink: null,
+      textOnSurface: null,
+      border: null,
+      surfaceHover: null,
     },
     status: {
       pendingBg: null,
@@ -56,6 +70,12 @@ export const vars = createThemeContract({
       distratoText: null,
       outroBg: null,
       outroText: null,
+    },
+    partnerType: {
+      supplier: { text: null, background: null, border: null },
+      collaborator: { text: null, background: null, border: null },
+      financier: { text: null, background: null, border: null },
+      act: { text: null, background: null, border: null },
     },
     institutional: {
       blue: null,
@@ -119,7 +139,11 @@ export const vars = createThemeContract({
     offset: null,
   },
   borderWidth: {
+    hairline: null,
     thin: null,
     thick: null,
+  },
+  size: {
+    topbar: null,
   },
 })

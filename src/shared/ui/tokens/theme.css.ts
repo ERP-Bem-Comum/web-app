@@ -1,4 +1,4 @@
-import { createGlobalTheme, globalStyle } from '@vanilla-extract/css'
+import { createGlobalTheme } from '@vanilla-extract/css'
 
 import { vars } from './contract.css.ts'
 import { tokenValues } from './tokens.values.ts'
@@ -10,15 +10,10 @@ import { tokenValues } from './tokens.values.ts'
  *
  * `tokenValues` é `as const` (readonly); o spread cria uma cópia mutável que satisfaz a
  * assinatura de `createGlobalTheme`, preservando os literais.
+ *
+ * ⚠️ Reset global (margin/padding/box-sizing) NÃO vive aqui — é responsabilidade única de
+ * `src/app/global.css.ts` (composition root). Este arquivo só aplica TOKENS.
  */
-
-// CSS Reset: zera margin/padding padrão do browser em html/body.
-// Evita faixas brancas nas bordas (login, dashboard, sidebar).
-globalStyle('html, body', {
-  margin: 0,
-  padding: 0,
-  blockSize: '100%',
-})
 createGlobalTheme(':root', vars, {
   color: {
     brand: { ...tokenValues.color.brand },
@@ -26,7 +21,14 @@ createGlobalTheme(':root', vars, {
     text: { ...tokenValues.color.text },
     border: { ...tokenValues.color.border },
     feedback: { ...tokenValues.color.feedback },
+    nav: { ...tokenValues.color.nav },
     status: { ...tokenValues.color.status },
+    partnerType: {
+      supplier: { ...tokenValues.color.partnerType.supplier },
+      collaborator: { ...tokenValues.color.partnerType.collaborator },
+      financier: { ...tokenValues.color.partnerType.financier },
+      act: { ...tokenValues.color.partnerType.act },
+    },
     institutional: { ...tokenValues.color.institutional },
   },
   radius: { ...tokenValues.radius },
@@ -39,4 +41,5 @@ createGlobalTheme(':root', vars, {
   shadow: { ...tokenValues.shadow },
   focusRing: { ...tokenValues.focusRing },
   borderWidth: { ...tokenValues.borderWidth },
+  size: { ...tokenValues.size },
 })

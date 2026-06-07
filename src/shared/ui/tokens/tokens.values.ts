@@ -33,6 +33,9 @@ export const tokenValues = {
       canvas: '#e8f6fc',
       // Fundo sutil/cinza claro para telas de autenticação (login).
       subtle: '#F5F5F7',
+      // Fundo do SHELL autenticado (canvas do app por trás de cards/tabelas). Legado
+      // `.bg-erp-background` = rgb(232 238 240). Cinza-frio neutro, baixo contraste.
+      app: '#E8EEF0',
     },
     text: {
       primary: '#292820',
@@ -51,6 +54,32 @@ export const tokenValues = {
     feedback: {
       errorBg: '#fef2f2',
       errorText: '#dc2626',
+    },
+    // Chrome / navegação (sidebar + topbar) — índigo institucional do legado
+    // (`.bg-erp-nav` = rgb(70 78 120) = #464E78). NÃO é a marca (ciano): é a moldura.
+    nav: {
+      // Fundo da sidebar.
+      background: '#464E78',
+      // Fundo da topbar (barra superior).
+      surface: '#ffffff',
+      // Item ativo na sidebar = cor de marca (ciano); casa com color.brand.normal.
+      itemActive: '#32C6F4',
+      // Hover de item de nav (branco a 6% sobre o índigo).
+      itemHover: 'rgba(255,255,255,0.06)',
+      // Fundo do grupo de sub-itens (escurece o índigo).
+      submenuBackground: 'rgba(0,0,0,0.15)',
+      // Texto de item ativo (sobre índigo ou sobre ciano).
+      textActive: '#ffffff',
+      // Texto de item inativo (lavanda dessaturada).
+      textMuted: '#b0b3c7',
+      // Tinta forte do título do chrome ("Bem Comum" na topbar).
+      ink: '#1a1a2e',
+      // Texto neutro de topbar (saudação, item de menu) — ardósia.
+      textOnSurface: '#334155',
+      // Borda/hairline do chrome (borda inferior da topbar, borda do dropdown).
+      border: '#e2e8f0',
+      // Hover de superfície clara do chrome (botão de usuário, item "Sair").
+      surfaceHover: '#f1f5f9',
     },
     status: {
       pendingBg: '#FFF3E0',
@@ -71,6 +100,14 @@ export const tokenValues = {
       distratoText: '#E54D40',
       outroBg: '#F5F5F5',
       outroText: '#736961',
+    },
+    // Tipos de parceiro/contrato (badges) — cores legadas da v1, agora tokenizadas (antes hex
+    // cru com eslint-disable em contract-row.css.ts). `background`/`border` em tint de baixa opacidade.
+    partnerType: {
+      supplier: { text: '#1c7943', background: 'rgba(51,178,102,0.10)', border: 'rgba(51,178,102,0.20)' },
+      collaborator: { text: '#1a708c', background: '#e8f5fa', border: '#8cc7de' },
+      financier: { text: '#d9991a', background: '#fff7e0', border: 'rgba(217,153,26,0.25)' },
+      act: { text: '#9a5402', background: 'rgba(217,119,6,0.08)', border: 'rgba(217,119,6,0.20)' },
     },
     institutional: {
       blue: '#396496',
@@ -144,8 +181,15 @@ export const tokenValues = {
   // template literal (não há exceção). Um tema de alto contraste pode engrossar sem tocar
   // componentes. A COR da borda vive em color.border.*; aqui é só a espessura.
   borderWidth: {
+    // Traço sub-pixel (0.5px) — bordas delicadas de badges/chips, fiel à v1.
+    hairline: '0.5px',
     thin: '1px',
     thick: '2px',
+  },
+  // Dimensões semânticas de layout. `topbar` = altura da barra superior fixa do shell, referenciada
+  // em 3 pontos que precisam concordar (header, paddingBlockStart do shell, calc do body) — token único.
+  size: {
+    topbar: '3.5rem',
   },
 } as const
 
@@ -156,10 +200,7 @@ export type TokenValues = typeof tokenValues
  * Útil para provar que um tema alternativo (ex.: dark) satisfaz o MESMO contrato
  * sem precisar repetir os valores exatos do tema claro. Ver contract-extensibility.test.ts.
  */
-export type TokenShape = {
-  readonly [G in keyof TokenValues]: {
-    readonly [K in keyof TokenValues[G]]: TokenValues[G][K] extends Record<string, unknown>
-      ? { readonly [L in keyof TokenValues[G][K]]: string }
-      : string
-  }
+type DeepTokenShape<T> = {
+  readonly [K in keyof T]: T[K] extends string ? string : DeepTokenShape<T[K]>
 }
+export type TokenShape = DeepTokenShape<TokenValues>
