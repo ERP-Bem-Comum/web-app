@@ -5,7 +5,7 @@
  * Testável em node:test. O binding (`login.binding.ts`) o liga ao framework e expõe o `loginCommand`.
  */
 import { isOk, type Result } from '#shared/primitives/result.ts'
-import type { CurrentUser } from '#modules/auth/client/data/model/auth.model.ts'
+import type { AuthenticatedUser } from '#modules/auth/client/data/model/auth.model.ts'
 import type { AuthError } from '#modules/auth/client/data/repository/auth.repository.ts'
 import type { AuthEvent } from '#modules/auth/client/data/events/auth.events.ts'
 import { authErrorTag } from '#modules/auth/client/data/helpers/auth-error-tag.ts'
@@ -16,7 +16,7 @@ export const loginViewModel = {
 
   /** Efeito no sucesso: emite o fato `UsuarioAutenticado` (§XII). `emit` injetado → puro/testável. */
   onSuccess: (
-    result: Result<CurrentUser, AuthError>,
+    result: Result<AuthenticatedUser, AuthError>,
     deps: Readonly<{ emit: (event: AuthEvent) => void }>,
   ): void => {
     if (isOk(result)) deps.emit({ type: 'UsuarioAutenticado', userId: result.value.userId })

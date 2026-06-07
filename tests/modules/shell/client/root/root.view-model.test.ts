@@ -12,6 +12,7 @@ import {
   SIDEBAR_WIDTH_EXPANDED,
   SIDEBAR_WIDTH_COLLAPSED,
 } from '#modules/shell/client/root/viewModel/root.view-model.ts'
+import { MENU } from '#modules/shell/client/data/menu/shell-menu.config.ts'
 import type { MenuSection } from '#modules/shell/client/data/menu/shell-menu.config.ts'
 
 describe('rootViewModel.resolvePageTitle', () => {
@@ -104,5 +105,36 @@ describe('rootViewModel.visibleMenu (RBAC)', () => {
     rootViewModel.visibleMenu(menu, [])
     assert.strictEqual(menu.length, len)
     assert.strictEqual(menu[2]?.subItems?.length, 2)
+  })
+})
+
+// Regressão de CONFIGURAÇÃO sobre o MENU real (não o sintético acima): trava que o subitem
+// "Fornecedores" exige `supplier:read`. Se alguém remover o `requiredPermission` da config no
+// futuro, estes testes falham. (feature 011 — RBAC do menu de fornecedores)
+describe('rootViewModel.visibleMenu (MENU real — fornecedores)', () => {
+  const findParceiros = (menu: readonly MenuSection[]): MenuSection | undefined =>
+    menu.find((s) => s.label === 'Gestão de Parceiros')
+  const hasFornecedores = (menu: readonly MenuSection[]): boolean =>
+    findParceiros(menu)?.subItems?.some((s) => s.label === 'Fornecedores') ?? false
+
+  it('sem supplier:read (permissions vazias): esconde o subitem e a seção "Gestão de Parceiros"', () => {
+    const v = rootViewModel.visibleMenu(MENU, [])
+    assert.strictEqual(findParceiros(v), undefined, 'a seção accordion deve sumir por ficar vazia')
+    assert.strictEqual(hasFornecedores(v), false)
+  })
+
+  it('com outras permissões mas sem supplier:read: continua escondendo', () => {
+    const v = rootViewModel.visibleMenu(MENU, ['user:read', 'contract:audit'])
+    assert.strictEqual(findParceiros(v), undefined)
+    assert.strictEqual(hasFornecedores(v), false)
+  })
+
+  it('com supplier:read: mostra a seção e o subitem "Fornecedores" → /parceiros/fornecedores', () => {
+    const v = rootViewModel.visibleMenu(MENU, ['supplier:read'])
+    const parceiros = findParceiros(v)
+    assert.ok(parceiros, 'a seção "Gestão de Parceiros" deve aparecer')
+    const fornecedores = parceiros?.subItems?.find((s) => s.label === 'Fornecedores')
+    assert.ok(fornecedores, 'o subitem "Fornecedores" deve aparecer')
+    assert.strictEqual(fornecedores?.to, '/parceiros/fornecedores')
   })
 })
