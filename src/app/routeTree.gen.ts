@@ -18,8 +18,12 @@ import { Route as AuthenticatedDashboardRouteImport } from './../routes/_authent
 import { Route as AuthenticatedContratosIndexRouteImport } from './../routes/_authenticated/contratos/index'
 import { Route as AuthenticatedContratosCriarRouteImport } from './../routes/_authenticated/contratos/criar'
 import { Route as AuthenticatedContratosIdRouteImport } from './../routes/_authenticated/contratos/$id'
+import { Route as AuthenticatedParceirosFornecedoresIndexRouteImport } from './../routes/_authenticated/parceiros/fornecedores/index'
+import { Route as AuthenticatedParceirosFornecedoresCriarRouteImport } from './../routes/_authenticated/parceiros/fornecedores/criar'
+import { Route as AuthenticatedParceirosFornecedoresIdRouteImport } from './../routes/_authenticated/parceiros/fornecedores/$id'
 import { Route as AuthenticatedContratosAditivoIdRouteImport } from './../routes/_authenticated/contratos/aditivo.$id'
 import { Route as AuthenticatedContratosIdEditarRouteImport } from './../routes/_authenticated/contratos/$id.editar'
+import { Route as AuthenticatedParceirosFornecedoresIdEditarRouteImport } from './../routes/_authenticated/parceiros/fornecedores/$id.editar'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -68,6 +72,24 @@ const AuthenticatedContratosIdRoute =
     path: '/contratos/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedParceirosFornecedoresIndexRoute =
+  AuthenticatedParceirosFornecedoresIndexRouteImport.update({
+    id: '/parceiros/fornecedores/',
+    path: '/parceiros/fornecedores/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedParceirosFornecedoresCriarRoute =
+  AuthenticatedParceirosFornecedoresCriarRouteImport.update({
+    id: '/parceiros/fornecedores/criar',
+    path: '/parceiros/fornecedores/criar',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedParceirosFornecedoresIdRoute =
+  AuthenticatedParceirosFornecedoresIdRouteImport.update({
+    id: '/parceiros/fornecedores/$id',
+    path: '/parceiros/fornecedores/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedContratosAditivoIdRoute =
   AuthenticatedContratosAditivoIdRouteImport.update({
     id: '/contratos/aditivo/$id',
@@ -79,6 +101,12 @@ const AuthenticatedContratosIdEditarRoute =
     id: '/editar',
     path: '/editar',
     getParentRoute: () => AuthenticatedContratosIdRoute,
+  } as any)
+const AuthenticatedParceirosFornecedoresIdEditarRoute =
+  AuthenticatedParceirosFornecedoresIdEditarRouteImport.update({
+    id: '/editar',
+    path: '/editar',
+    getParentRoute: () => AuthenticatedParceirosFornecedoresIdRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -92,6 +120,10 @@ export interface FileRoutesByFullPath {
   '/contratos/': typeof AuthenticatedContratosIndexRoute
   '/contratos/$id/editar': typeof AuthenticatedContratosIdEditarRoute
   '/contratos/aditivo/$id': typeof AuthenticatedContratosAditivoIdRoute
+  '/parceiros/fornecedores/$id': typeof AuthenticatedParceirosFornecedoresIdRouteWithChildren
+  '/parceiros/fornecedores/criar': typeof AuthenticatedParceirosFornecedoresCriarRoute
+  '/parceiros/fornecedores/': typeof AuthenticatedParceirosFornecedoresIndexRoute
+  '/parceiros/fornecedores/$id/editar': typeof AuthenticatedParceirosFornecedoresIdEditarRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -104,6 +136,10 @@ export interface FileRoutesByTo {
   '/contratos': typeof AuthenticatedContratosIndexRoute
   '/contratos/$id/editar': typeof AuthenticatedContratosIdEditarRoute
   '/contratos/aditivo/$id': typeof AuthenticatedContratosAditivoIdRoute
+  '/parceiros/fornecedores/$id': typeof AuthenticatedParceirosFornecedoresIdRouteWithChildren
+  '/parceiros/fornecedores/criar': typeof AuthenticatedParceirosFornecedoresCriarRoute
+  '/parceiros/fornecedores': typeof AuthenticatedParceirosFornecedoresIndexRoute
+  '/parceiros/fornecedores/$id/editar': typeof AuthenticatedParceirosFornecedoresIdEditarRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -118,6 +154,10 @@ export interface FileRoutesById {
   '/_authenticated/contratos/': typeof AuthenticatedContratosIndexRoute
   '/_authenticated/contratos/$id/editar': typeof AuthenticatedContratosIdEditarRoute
   '/_authenticated/contratos/aditivo/$id': typeof AuthenticatedContratosAditivoIdRoute
+  '/_authenticated/parceiros/fornecedores/$id': typeof AuthenticatedParceirosFornecedoresIdRouteWithChildren
+  '/_authenticated/parceiros/fornecedores/criar': typeof AuthenticatedParceirosFornecedoresCriarRoute
+  '/_authenticated/parceiros/fornecedores/': typeof AuthenticatedParceirosFornecedoresIndexRoute
+  '/_authenticated/parceiros/fornecedores/$id/editar': typeof AuthenticatedParceirosFornecedoresIdEditarRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -132,6 +172,10 @@ export interface FileRouteTypes {
     | '/contratos/'
     | '/contratos/$id/editar'
     | '/contratos/aditivo/$id'
+    | '/parceiros/fornecedores/$id'
+    | '/parceiros/fornecedores/criar'
+    | '/parceiros/fornecedores/'
+    | '/parceiros/fornecedores/$id/editar'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -144,6 +188,10 @@ export interface FileRouteTypes {
     | '/contratos'
     | '/contratos/$id/editar'
     | '/contratos/aditivo/$id'
+    | '/parceiros/fornecedores/$id'
+    | '/parceiros/fornecedores/criar'
+    | '/parceiros/fornecedores'
+    | '/parceiros/fornecedores/$id/editar'
   id:
     | '__root__'
     | '/'
@@ -157,6 +205,10 @@ export interface FileRouteTypes {
     | '/_authenticated/contratos/'
     | '/_authenticated/contratos/$id/editar'
     | '/_authenticated/contratos/aditivo/$id'
+    | '/_authenticated/parceiros/fornecedores/$id'
+    | '/_authenticated/parceiros/fornecedores/criar'
+    | '/_authenticated/parceiros/fornecedores/'
+    | '/_authenticated/parceiros/fornecedores/$id/editar'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -232,6 +284,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedContratosIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/parceiros/fornecedores/': {
+      id: '/_authenticated/parceiros/fornecedores/'
+      path: '/parceiros/fornecedores'
+      fullPath: '/parceiros/fornecedores/'
+      preLoaderRoute: typeof AuthenticatedParceirosFornecedoresIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/parceiros/fornecedores/criar': {
+      id: '/_authenticated/parceiros/fornecedores/criar'
+      path: '/parceiros/fornecedores/criar'
+      fullPath: '/parceiros/fornecedores/criar'
+      preLoaderRoute: typeof AuthenticatedParceirosFornecedoresCriarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/parceiros/fornecedores/$id': {
+      id: '/_authenticated/parceiros/fornecedores/$id'
+      path: '/parceiros/fornecedores/$id'
+      fullPath: '/parceiros/fornecedores/$id'
+      preLoaderRoute: typeof AuthenticatedParceirosFornecedoresIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/contratos/aditivo/$id': {
       id: '/_authenticated/contratos/aditivo/$id'
       path: '/contratos/aditivo/$id'
@@ -245,6 +318,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/contratos/$id/editar'
       preLoaderRoute: typeof AuthenticatedContratosIdEditarRouteImport
       parentRoute: typeof AuthenticatedContratosIdRoute
+    }
+    '/_authenticated/parceiros/fornecedores/$id/editar': {
+      id: '/_authenticated/parceiros/fornecedores/$id/editar'
+      path: '/editar'
+      fullPath: '/parceiros/fornecedores/$id/editar'
+      preLoaderRoute: typeof AuthenticatedParceirosFornecedoresIdEditarRouteImport
+      parentRoute: typeof AuthenticatedParceirosFornecedoresIdRoute
     }
   }
 }
@@ -263,12 +343,30 @@ const AuthenticatedContratosIdRouteWithChildren =
     AuthenticatedContratosIdRouteChildren,
   )
 
+interface AuthenticatedParceirosFornecedoresIdRouteChildren {
+  AuthenticatedParceirosFornecedoresIdEditarRoute: typeof AuthenticatedParceirosFornecedoresIdEditarRoute
+}
+
+const AuthenticatedParceirosFornecedoresIdRouteChildren: AuthenticatedParceirosFornecedoresIdRouteChildren =
+  {
+    AuthenticatedParceirosFornecedoresIdEditarRoute:
+      AuthenticatedParceirosFornecedoresIdEditarRoute,
+  }
+
+const AuthenticatedParceirosFornecedoresIdRouteWithChildren =
+  AuthenticatedParceirosFornecedoresIdRoute._addFileChildren(
+    AuthenticatedParceirosFornecedoresIdRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedContratosIdRoute: typeof AuthenticatedContratosIdRouteWithChildren
   AuthenticatedContratosCriarRoute: typeof AuthenticatedContratosCriarRoute
   AuthenticatedContratosIndexRoute: typeof AuthenticatedContratosIndexRoute
   AuthenticatedContratosAditivoIdRoute: typeof AuthenticatedContratosAditivoIdRoute
+  AuthenticatedParceirosFornecedoresIdRoute: typeof AuthenticatedParceirosFornecedoresIdRouteWithChildren
+  AuthenticatedParceirosFornecedoresCriarRoute: typeof AuthenticatedParceirosFornecedoresCriarRoute
+  AuthenticatedParceirosFornecedoresIndexRoute: typeof AuthenticatedParceirosFornecedoresIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -277,6 +375,12 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedContratosCriarRoute: AuthenticatedContratosCriarRoute,
   AuthenticatedContratosIndexRoute: AuthenticatedContratosIndexRoute,
   AuthenticatedContratosAditivoIdRoute: AuthenticatedContratosAditivoIdRoute,
+  AuthenticatedParceirosFornecedoresIdRoute:
+    AuthenticatedParceirosFornecedoresIdRouteWithChildren,
+  AuthenticatedParceirosFornecedoresCriarRoute:
+    AuthenticatedParceirosFornecedoresCriarRoute,
+  AuthenticatedParceirosFornecedoresIndexRoute:
+    AuthenticatedParceirosFornecedoresIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
