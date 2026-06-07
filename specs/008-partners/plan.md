@@ -10,11 +10,13 @@
 ## Summary
 
 Criar o módulo vertical `src/modules/partners/` espelhando `contracts`/`auth` (split `server/` DDD ×
-`client/` MVVM agnóstico), entregando os 5 sub-domínios da Gestão de Parceiros como capacidades
-independentes. Integração progressiva com o `core-api` (`/api/v1`): real onde está pronto
-(financiadores/fornecedores/colaboradores), mock isolado no gateway onde não está (estados/municípios,
-import/export) — sem que UI/ViewModel mudem na troca (ADR-0001). Clone fiel do legado, saneando bugs de
-borda na anti-corruption layer.
+`client/` MVVM agnóstico), entregando os sub-domínios da Gestão de Parceiros como capacidades
+independentes: Colaboradores, Fornecedores, Financiadores, Estados, Municípios e **ACT** (4º tipo,
+reaberto como US6 após a PR #20/#22 do core-api). Integração com o `core-api` (`/api/v1`) é **real em toda
+a superfície** — a Rev. 2/3 do `api-readiness-report.md` confirmou que o backend cobre tudo (incl.
+import/export, território, agregador `/partners` e CRUD de ACT). O **ponto de troca** (gateway/repository)
+permanece isolado por princípio (ADR-0001), mas **mock não é mais necessário**. Clone fiel do legado,
+saneando bugs de borda na anti-corruption layer.
 
 ## Technical Context
 
@@ -103,6 +105,9 @@ dual-panel sem sub-rotas.
 | `listFinanciers`/`getFinancier`/`createFinancier`/`updateFinancier`/`deactivateFinancier` | — | — | `/financiers*` | 🟢 |
 | `listPartnerStates`/`togglePartnerState` | — | `{ uf, isPartner }` | `GET /partner-states` · `POST/DELETE /partner-states/:uf` | 🟢 |
 | `listMunicipalitiesByUf`/`togglePartnerMunicipality` | — | `{ uf }` / `{ ibgeCode, isPartner }` | `GET /partner-municipalities?uf=` · `POST/DELETE /:ibgeCode` | 🟢 |
+| `listActsFn`/`getActFn`/`createActFn`/`updateActFn`/`deactivateActFn`/`reactivateActFn` (US6) | query/mutation | 7 campos · `{ id }` | `/api/v1/acts*` | 🟢 ✅ implementado |
+| `exportPartnersFn` | query | `{ resource, search?, active?, categories? }` | `GET /api/v1/{resource}/export` | 🟢 ✅ (passthrough `text/csv`) |
+| `searchPartnersFn` (no módulo `contracts`) | query | `{ query?, kind? }` | `GET /api/v1/partners` (agregador) | 🟢 ✅ (1 chamada, ADR-0010) |
 
 - **Cadeia de erro** (Princ. II/V): core-api 4xx/5xx → `resultFetch`→`HttpError` → `mapToServerResponse` →
   `queryFn` lança `QueryError(mapToAppError)` → `switch` em `AppError.kind` → tag i18n. UI nunca olha status HTTP.
@@ -117,7 +122,9 @@ Resumo de `api-readiness-report.md`. Ponto de troca = gateway/repository (ADR-00
 | Fornecedores (CRUD + export + catálogo 39) | 🟢 | real |
 | Colaboradores (CRUD + import `text/csv`) | 🟢 | real (BFF converte multipart→csv) |
 | Estados / Municípios (toggles idempotentes) | 🟢 | real (Município por `ibgeCode`; `uf` obrigatório na lista) |
-| Financiador-PF · filtros programa/idade · ACT | ⚪ | fora de escopo (ACT = placeholder `/api/v1/acts`, regras pendentes; RBAC **resolvido** — `/me` expõe `permissions[]`) |
+| **ACT** (4º tipo, `/api/v1/acts`) | 🟢 | **real (US6)** — promovido a CRUD completo + export na PR #20; server implementado (2026-06-07) |
+| Agregador `GET /partners` · Export CSV (4 tipos) | 🟢 | real — `searchPartnersFn` (1 chamada) e `exportPartnersFn` (passthrough) |
+| Financiador-PF · filtros programa/idade | ⚪ | fora de escopo (decididos; RBAC **resolvido** — `/me` expõe `permissions[]`) |
 
 ## Design System Impact *(Atomic Design — ADR-0007, só-tokens)*
 
@@ -144,4 +151,4 @@ Resumo de `api-readiness-report.md`. Ponto de troca = gateway/repository (ADR-00
 
 | Violação | Por que necessária | Alternativa simples rejeitada porque |
 |---|---|---|
-| Gateway como ponto de troca isolado | Manter SC-005 (UI/ViewModel estáveis) e o princípio do ADR-0001 | Acoplar a UI ao client core-api espalha a borda. *(Mock não mais necessário — API cobre toda a superfície.)* |
+| Gateway como ponto de troca isolado | Manter SC-005 (UI/ViewModel estáveis) e o princípio do ADR-0001 | Acoplar a UI ao client core-api espalha a borda. **Mock não é mais usado** — o core-api cobre 100% da superfície (collaborators/suppliers/financiers/geography/acts + agregador + export). O gateway permanece como ponto de troca por princípio, não por necessidade. |

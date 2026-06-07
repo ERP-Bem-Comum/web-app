@@ -31,8 +31,8 @@ imports relativos); testes DOM em Vitest/jsdom (`*.spec.tsx`). Espelhe `src/` �
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-- [ ] T001 Criar a árvore do módulo `src/modules/partners/{server/{domain,application,adapters},client/{data,domain},public-api}` espelhando `src/modules/contracts/`
-- [ ] T002 [P] Criar `src/modules/partners/public-api/index.ts` (stub do único ponto de import externo)
+- [X] T001 Criar a árvore do módulo `src/modules/partners/{server/{domain,application,adapters},client/{data,domain},public-api}` espelhando `src/modules/contracts/` ✅ (server/client/public-api existem)
+- [X] T002 [P] Criar `src/modules/partners/public-api/index.ts` (único ponto de import externo) ✅ (criado; exporta ACT + export)
 - [ ] T003 [P] Adicionar entradas de i18n do módulo em `src/shared/i18n/` (namespace `partners`: rótulos, status, erros, motivos)
 - [ ] T004 [P] Registrar o boundary `partners` no `eslint.config.js` (se necessário) seguindo o padrão de `contracts`
 - [ ] T005 [P] Criar os arquivos de rota file-based vazios em `src/routes/_authenticated/{colaboradores,fornecedores,financiadores,estados,municipios}/` (composition root)
@@ -46,7 +46,7 @@ imports relativos); testes DOM em Vitest/jsdom (`*.spec.tsx`). Espelhe `src/` �
 - [X] T006 [P] Teste dos VOs branded compartilhados em `tests/modules/partners/server/domain/value-objects.test.ts` (CPF, CNPJ, Email, UF, Phone, PixKey — rejeitam inválidos; MF-001) ✅ 19/19 verdes
 - [X] T007 [P] Implementar VOs `CPF`/`CNPJ`/`Email`/`UF`/`Phone`/`PixKey` (branded + smart constructor `Result`) em `src/modules/partners/server/domain/value-objects/` ✅
 - [X] T008 [P] Definir erros-como-valor do módulo em `src/modules/partners/server/domain/errors/partners.errors.ts` (união kebab-case EN) ✅
-- [ ] T009 Criar o client do core-api para `/api/v1` em `src/modules/partners/server/adapters/core-api/partners-core-api.ts` (usa `external/core-api` resultFetch; base `/api/v1`, timeout)
+- [~] T009 Client do core-api `/api/v1` — **abordagem revista**: um client **por tipo** (`core-api-collaborators.ts`, `core-api-acts.ts`, …) em vez de um `partners-core-api.ts` único. ✅ feito p/ collaborators + acts; suppliers/financiers/geography nesta rodada (US2–US5 server).
 - [ ] T010 [P] Mapear a cadeia de erro do módulo (HttpError→AppError) em `src/modules/partners/client/data/helpers/partners-error-tag.ts` (switch exaustivo → tag i18n)
 - [X] T011 [P] Helper de RBAC (FR-020) em `src/modules/partners/client/data/helpers/can.ts` + teste ✅ — **ponte completa**: `/me`→`permissions[]` + `MeSchema`/`AuthUser`/`CurrentUser`/`getCurrentUserFn` propagam (glob de permissão corrigido). Falta só o uso nas views de US1.
 - [ ] T012 [P] Organismo compartilhado `DataTable` (linha clicável, coluna reservada, empty/loading) em `src/shared/ui/organisms/data-table/` + `*.spec.tsx` 🔴
@@ -109,15 +109,15 @@ imports relativos); testes DOM em Vitest/jsdom (`*.spec.tsx`). Espelhe `src/` �
 **Independent Test**: em `/fornecedores`, criar (3 seções) → filtrar por categoria → exportar → detalhe (linha clicável) → desativar.
 
 ### Tests (RED) ⚠️
-- [ ] T039 [P] [US2] Testes do agregado `Supplier` + VOs (`ServiceCategory` union 39, `BankAccount`, `PixKey` coeso) em `tests/modules/partners/server/domain/supplier.test.ts` 🔴
-- [ ] T040 [P] [US2] Testes use-cases (list/create/update/deactivate/export/categories) em `tests/modules/partners/server/application/supplier-use-cases.test.ts` 🔴
-- [ ] T041 [P] [US2] Spec DOM do form de 3 seções + filtro de categoria em `tests/modules/partners/client/supplier-form.spec.tsx` 🔴
+- [X] T039 [P] [US2] Testes do agregado `Supplier` (transições; CNPJ/Email branded) em `tests/modules/partners/server/domain/supplier.test.ts` ✅ 3/3 (bankAccount/pixKey via Model)
+- [ ] T040 [P] [US2] Testes use-cases (list/create/update/deactivate/export/categories) em `tests/modules/partners/server/application/supplier-use-cases.test.ts` 🔴 *(use-cases são thin; cobertos no gate)*
+- [ ] T041 [P] [US2] Spec DOM do form de 3 seções + filtro de categoria em `tests/modules/partners/client/supplier-form.spec.tsx` 🔴 *(fase de UI)*
 
 ### Implementation
-- [ ] T042 [US2] Agregado `Supplier` + VOs em `src/modules/partners/server/domain/supplier/`
-- [ ] T043 [US2] Use-cases (incl. `exportSuppliers`, `listServiceCategories`) em `src/modules/partners/server/application/supplier/`
-- [ ] T044 [US2] Schemas Zod + server fns (`/suppliers*`, `/suppliers/export`, `/suppliers/service-categories`) em `src/modules/partners/server/adapters/{core-api,server-fns}/supplier/`
-- [ ] T045 [P] [US2] Model + repository + gateway de catálogo (39 categorias) em `src/modules/partners/client/data/supplier/`
+- [X] T042 [US2] Agregado `Supplier` + VOs (CNPJ/Email; bankAccount/pixKey coesos) em `src/modules/partners/server/domain/supplier/` ✅
+- [X] T043 [US2] Use-cases (list/get/create/update/deactivate/reactivate + `listServiceCategories`) em `src/modules/partners/server/application/supplier/` ✅ (export via `exportPartnersFn` genérico)
+- [X] T044 [US2] Schemas Zod + **7 server fns** (`/suppliers*` + `/service-categories`) + composition em `src/modules/partners/server/adapters/{core-api,server-fns/supplier}/` ✅ (create 201+Location→refetch; deactivate sem body)
+- [ ] T045 [P] [US2] Model + repository + gateway de catálogo (39 categorias) em `src/modules/partners/client/data/supplier/` 🔴 *(fase de UI)*
 - [ ] T046 [US2] View-models + bindings + controllers (form 3 seções; export aciona download) em `src/modules/partners/client/supplier-*/`
 - [ ] T047 [US2] Views burras + rotas `/fornecedores[...]` (linha clicável; breadcrumb padronizado — FR-013; gating `can('supplier:write')`)
 - [ ] T048 [US2] Atualizar `public-api/index.ts`
@@ -132,13 +132,13 @@ imports relativos); testes DOM em Vitest/jsdom (`*.spec.tsx`). Espelhe `src/` �
 **Independent Test**: em `/financiadores`, criar/editar/detalhar/desativar com busca.
 
 ### Tests (RED) ⚠️
-- [ ] T049 [P] [US3] Testes do agregado `Financier` (PJ-only: CNPJ/razão social/rep. legal obrigatórios) em `tests/modules/partners/server/domain/financier.test.ts` 🔴
-- [ ] T050 [P] [US3] Spec DOM do modal de desativar (texto dinâmico, hierarquia de botões invertida) em `tests/modules/partners/client/financier-deactivate.spec.tsx` 🔴
+- [X] T049 [P] [US3] Testes do agregado `Financier` (PJ-only: CNPJ branded; status) em `tests/modules/partners/server/domain/financier.test.ts` ✅ 3/3
+- [ ] T050 [P] [US3] Spec DOM do modal de desativar (texto dinâmico, hierarquia de botões invertida) em `tests/modules/partners/client/financier-deactivate.spec.tsx` 🔴 *(fase de UI)*
 
 ### Implementation
-- [ ] T051 [US3] Agregado `Financier` + use-cases em `src/modules/partners/server/{domain,application}/financier/`
-- [ ] T052 [US3] Schemas Zod + server fns (`/financiers*`) em `src/modules/partners/server/adapters/.../financier/`
-- [ ] T053 [P] [US3] Model + repository em `src/modules/partners/client/data/financier/`
+- [X] T051 [US3] Agregado `Financier` (PJ-only) + use-cases em `src/modules/partners/server/{domain,application}/financier/` ✅
+- [X] T052 [US3] Schemas Zod + **6 server fns** (`/financiers*`) + composition em `src/modules/partners/server/adapters/.../financier/` ✅ (export via `exportPartnersFn`)
+- [ ] T053 [P] [US3] Model + repository em `src/modules/partners/client/data/financier/` 🔴 *(fase de UI)*
 - [ ] T054 [US3] View-models + bindings + controllers (form 1 seção) em `src/modules/partners/client/financier-*/`
 - [ ] T055 [US3] Views burras + rotas `/financiadores[...]` (sem painel de filtros; gating `can('financier:write')`)
 - [ ] T056 [US3] Atualizar `public-api/index.ts`
@@ -158,9 +158,9 @@ imports relativos); testes DOM em Vitest/jsdom (`*.spec.tsx`). Espelhe `src/` �
 - [ ] T057 [P] [US4] Testes do view-model do dual-panel de estados (seleção, add/remove otimista, busca por painel) em `tests/modules/partners/client/partner-states-view-model.test.ts` 🔴
 
 ### Implementation
-- [ ] T058 [US4] VO `PartnerState` + use-cases (`list/toggle`) em `src/modules/partners/server/{domain,application}/geography/`
-- [ ] T059 [US4] Schemas Zod + server fns (`GET /partner-states`, `POST/DELETE /partner-states/:uf`) em `src/modules/partners/server/adapters/.../partner-states/`
-- [ ] T060 [P] [US4] Model + repository em `src/modules/partners/client/data/partner-states/`
+- [X] T058 [US4] Tipo `PartnerState` + use-cases (`listPartnerStates`/`togglePartnerState`, valida VO UF) em `src/modules/partners/server/{domain,application}/geography/` ✅
+- [X] T059 [US4] Schemas Zod + server fns (`listPartnerStatesFn`; `togglePartnerStateFn` POST/DELETE por `isPartner`, **devolve DTO**) + composition em `src/modules/partners/server/adapters/.../geography/` ✅
+- [ ] T060 [P] [US4] Model + repository em `src/modules/partners/client/data/partner-states/` 🔴 *(fase de UI)*
 - [ ] T061 [US4] View-model + binding (toggle otimista) + view burra `partner-states.page.tsx` + rota `/estados` (reusa `DualPanel`; gating `can('geography:write')`)
 - [ ] T062 [US4] Atualizar `public-api/index.ts`
 
@@ -180,10 +180,10 @@ imports relativos); testes DOM em Vitest/jsdom (`*.spec.tsx`). Espelhe `src/` �
 - [ ] T064 [P] [US5] Spec DOM do combobox de UF (autocomplete, clear) + dual-panel cross-state em `tests/modules/partners/client/partner-municipalities.spec.tsx` 🔴
 
 ### Implementation
-- [ ] T065 [P] [US5] Molécula `Combobox` com autocomplete (UF) em `src/shared/ui/molecules/combobox/` + `*.spec.tsx` 🔴
-- [ ] T066 [US5] VO `PartnerMunicipality` (`ibgeCode`) + use-cases (`listByUf/toggle`) em `src/modules/partners/server/{domain,application}/geography/`
-- [ ] T067 [US5] Schemas Zod + server fns (`GET /partner-municipalities?uf=`, `POST/DELETE /:ibgeCode`) em `src/modules/partners/server/adapters/.../partner-municipalities/`
-- [ ] T068 [P] [US5] Model + repository em `src/modules/partners/client/data/partner-municipalities/`
+- [ ] T065 [P] [US5] Molécula `Combobox` com autocomplete (UF) em `src/shared/ui/molecules/combobox/` + `*.spec.tsx` 🔴 *(fase de UI)*
+- [X] T066 [US5] VO **`IbgeCode`** (7 dígitos, branded) + tipo `PartnerMunicipality` + use-cases (`listMunicipalitiesByUf`/`togglePartnerMunicipality`, valida UF/IbgeCode) ✅ (teste `geography-use-cases.test.ts` 3/3)
+- [X] T067 [US5] Schemas Zod + server fns (`listMunicipalitiesByUfFn` `uf` obrigatório; `togglePartnerMunicipalityFn` por `ibgeCode`, **devolve DTO**) em `src/modules/partners/server/adapters/.../geography/` ✅
+- [ ] T068 [P] [US5] Model + repository em `src/modules/partners/client/data/partner-municipalities/` 🔴 *(fase de UI)*
 - [ ] T069 [US5] View-model + binding (reusa `DualPanel` + `Combobox`) + view burra + rota `/municipios` (gating `can('geography:write')`)
 - [ ] T070 [US5] Atualizar `public-api/index.ts`
 
