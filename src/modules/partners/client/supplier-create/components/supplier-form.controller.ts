@@ -7,8 +7,10 @@ import { useCallback, useState } from 'react'
 
 import { SupplierFormSchema, type SupplierFormValues, type PixKeyType } from '#modules/partners/client/data/model/supplier.model.ts'
 
-// Reexporta a partir da fonte única (`data/model`) — antes era uma 4ª cópia da mesma união.
+// Reexporta a partir da fonte única (`data/model`) — antes eram cópias da mesma união/lista. A view
+// (client-ui) consome PIX_KEY_TYPES/isPixKeyType POR AQUI, pois o boundary não a deixa tocar data/.
 export type { SupplierFormValues, PixKeyType } from '#modules/partners/client/data/model/supplier.model.ts'
+export { PIX_KEY_TYPES, isPixKeyType } from '#modules/partners/client/data/model/supplier.model.ts'
 
 export type SupplierFormState = Readonly<{
   name: string

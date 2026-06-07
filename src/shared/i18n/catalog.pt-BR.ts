@@ -300,4 +300,10 @@ export const ptBR: Catalog = {
   'partners.suppliers.confirm.reactivate-message': 'Tem certeza que deseja reativar este fornecedor?',
   'partners.suppliers.confirm.confirm': 'Confirmar',
   'partners.suppliers.confirm.cancel': 'Cancelar',
+
+  'partners.suppliers.pix.cpf': 'CPF',
+  'partners.suppliers.pix.cnpj': 'CNPJ',
+  'partners.suppliers.pix.email': 'E-mail',
+  'partners.suppliers.pix.phone': 'Telefone',
+  'partners.suppliers.pix.random-key': 'Chave aleatória',
 }
