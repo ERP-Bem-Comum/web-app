@@ -1,0 +1,44 @@
+/**
+ * Menu de navegação do shell — DADO PURO (sem JSX/React), para a ViewModel (agnóstica) poder importá-lo
+ * e filtrá-lo por permissão. O ícone é um `iconId` (string); a SideBar mapeia id → SVG. `requiredPermission`
+ * é opcional: itens sem ele são sempre visíveis. (ADR-0012)
+ */
+
+export type MenuIconId =
+  | 'home'
+  | 'heart-handshake'
+  | 'users'
+  | 'calendar-check'
+  | 'calendar-days'
+  | 'trending-up'
+  | 'wallet'
+
+export interface MenuSubItem {
+  readonly label: string
+  readonly to: string
+  /** Permissão RBAC exigida (slug do core-api). Ausente = sempre visível. TODO(produto): mapear. */
+  readonly requiredPermission?: string
+}
+
+export interface MenuSection {
+  readonly label: string
+  readonly iconId: MenuIconId
+  readonly to?: string
+  readonly requiredPermission?: string
+  readonly subItems?: readonly MenuSubItem[]
+}
+
+export const MENU: readonly MenuSection[] = [
+  { label: 'Dashboard', iconId: 'home', to: '/dashboard' },
+  { label: 'Gestão de Parceiros', iconId: 'heart-handshake' },
+  { label: 'Gestão de Programas', iconId: 'users' },
+  {
+    label: 'Gestão de Contratos',
+    iconId: 'calendar-check',
+    subItems: [{ label: 'Contratos', to: '/contratos' }],
+  },
+  { label: 'Plano Orçamentário', iconId: 'calendar-days' },
+  { label: 'Relatórios', iconId: 'trending-up' },
+  { label: 'Financeiro', iconId: 'wallet' },
+  { label: 'Gestão de Usuários', iconId: 'users' },
+] as const
