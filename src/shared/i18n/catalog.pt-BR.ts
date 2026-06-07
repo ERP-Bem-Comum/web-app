@@ -8,7 +8,7 @@ export const ptBR: Catalog = {
   // Login
   'auth.login.title': 'Login',
   'auth.login.subtitle': 'Entre com suas credenciais',
-  'auth.login.email': 'Email',
+  'auth.login.email': 'E-mail',
   'auth.login.email-placeholder': 'seu@email.com',
   'auth.login.password': 'Senha',
   'auth.login.password-placeholder': '••••••••',
