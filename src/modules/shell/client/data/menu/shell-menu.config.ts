@@ -40,6 +40,7 @@ export const MENU: readonly MenuSection[] = [
       { label: 'Financiadores', to: '/parceiros/financiadores', requiredPermission: 'financier:read' },
       // ACT espelha o Colaborador no RBAC do core-api → governado por `collaborator:read` (013).
       { label: 'ACTs', to: '/parceiros/atos', requiredPermission: 'collaborator:read' },
+      { label: 'Geografia', to: '/parceiros/territorios', requiredPermission: 'geography:read' },
     ],
   },
   { label: 'Gestão de Programas', iconId: 'users' },

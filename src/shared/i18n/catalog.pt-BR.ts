@@ -412,4 +412,15 @@ export const ptBR: Catalog = {
   'partners.acts.confirm.reactivate-message': 'Tem certeza que deseja reativar este ACT?',
   'partners.acts.confirm.confirm': 'Confirmar',
   'partners.acts.confirm.cancel': 'Cancelar',
+
+  // ── Geografia de parceria (feature 014) — seleção territorial por toggle (estados → municípios) ──
+  'partners.geography.title': 'Geografia de parceria',
+  'partners.geography.subtitle': 'Defina os estados e municípios onde o programa atua',
+  'partners.geography.states.title': 'Estados',
+  'partners.geography.municipalities.title': 'Municípios',
+  'partners.geography.select-state-hint': 'Selecione um estado para ver os municípios.',
+  'partners.geography.states.empty': 'Nenhum estado disponível.',
+  'partners.geography.municipalities.empty': 'Nenhum município neste estado.',
+  'partners.geography.loading': 'Carregando…',
+  'partners.geography.toggle-aria': 'Marcar como parceiro',
 }

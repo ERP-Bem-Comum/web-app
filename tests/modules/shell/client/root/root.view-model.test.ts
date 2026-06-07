@@ -197,3 +197,34 @@ describe('rootViewModel.visibleMenu (MENU real — ACTs)', () => {
     assert.deepStrictEqual(labels, ['Fornecedores', 'Financiadores', 'ACTs'])
   })
 })
+
+// Regressão de CONFIGURAÇÃO do subitem "Geografia" (feature 014). Governado por `geography:read`.
+// A seção "Gestão de Parceiros" agora tem 4 subitens.
+describe('rootViewModel.visibleMenu (MENU real — geografia)', () => {
+  const findParceiros = (menu: readonly MenuSection[]): MenuSection | undefined =>
+    menu.find((s) => s.label === 'Gestão de Parceiros')
+  const hasGeografia = (menu: readonly MenuSection[]): boolean =>
+    findParceiros(menu)?.subItems?.some((s) => s.label === 'Geografia') ?? false
+
+  it('sem geography:read: esconde o subitem "Geografia"', () => {
+    assert.strictEqual(hasGeografia(rootViewModel.visibleMenu(MENU, [])), false)
+    assert.strictEqual(hasGeografia(rootViewModel.visibleMenu(MENU, ['supplier:read'])), false)
+  })
+
+  it('com geography:read: mostra o subitem "Geografia" → /parceiros/territorios', () => {
+    const v = rootViewModel.visibleMenu(MENU, ['geography:read'])
+    const geo = findParceiros(v)?.subItems?.find((s) => s.label === 'Geografia')
+    assert.strictEqual(geo?.to, '/parceiros/territorios')
+  })
+
+  it('com os 4 reads: a seção mostra os 4 subitens na ordem', () => {
+    const v = rootViewModel.visibleMenu(MENU, [
+      'supplier:read',
+      'financier:read',
+      'collaborator:read',
+      'geography:read',
+    ])
+    const labels = findParceiros(v)?.subItems?.map((s) => s.label)
+    assert.deepStrictEqual(labels, ['Fornecedores', 'Financiadores', 'ACTs', 'Geografia'])
+  })
+})
