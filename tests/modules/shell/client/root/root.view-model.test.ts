@@ -169,3 +169,31 @@ describe('rootViewModel.visibleMenu (MENU real — financiadores)', () => {
     assert.deepStrictEqual(labels, ['Fornecedores', 'Financiadores'])
   })
 })
+
+// Regressão de CONFIGURAÇÃO do subitem "ACTs" (feature 013). ACT é governado por `collaborator:read`
+// (espelha o Colaborador no RBAC). A seção "Gestão de Parceiros" agora tem 3 subitens.
+describe('rootViewModel.visibleMenu (MENU real — ACTs)', () => {
+  const findParceiros = (menu: readonly MenuSection[]): MenuSection | undefined =>
+    menu.find((s) => s.label === 'Gestão de Parceiros')
+  const hasActs = (menu: readonly MenuSection[]): boolean =>
+    findParceiros(menu)?.subItems?.some((s) => s.label === 'ACTs') ?? false
+
+  it('sem collaborator:read: esconde o subitem "ACTs"', () => {
+    assert.strictEqual(hasActs(rootViewModel.visibleMenu(MENU, [])), false)
+    assert.strictEqual(hasActs(rootViewModel.visibleMenu(MENU, ['supplier:read', 'financier:read'])), false)
+  })
+
+  it('com collaborator:read: mostra o subitem "ACTs" → /parceiros/atos', () => {
+    const v = rootViewModel.visibleMenu(MENU, ['collaborator:read'])
+    const parceiros = findParceiros(v)
+    assert.ok(parceiros, 'a seção deve aparecer (só com ACTs)')
+    const acts = parceiros?.subItems?.find((s) => s.label === 'ACTs')
+    assert.strictEqual(acts?.to, '/parceiros/atos')
+  })
+
+  it('com os 3 reads: a seção mostra os 3 subitens na ordem', () => {
+    const v = rootViewModel.visibleMenu(MENU, ['supplier:read', 'financier:read', 'collaborator:read'])
+    const labels = findParceiros(v)?.subItems?.map((s) => s.label)
+    assert.deepStrictEqual(labels, ['Fornecedores', 'Financiadores', 'ACTs'])
+  })
+})
