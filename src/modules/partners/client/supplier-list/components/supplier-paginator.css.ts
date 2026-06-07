@@ -26,10 +26,20 @@ export const button = style({
   fontFamily: vars.font.family.body,
   fontSize: vars.font.size.sm,
   cursor: 'pointer',
+  transitionProperty: 'background-color',
+  transitionDuration: '150ms',
   selectors: {
+    '&:hover:not(:disabled)': { background: vars.color.surface.subtle },
+    '&:focus-visible': {
+      outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
+      outlineOffset: vars.focusRing.offset,
+    },
     '&:disabled': {
       color: vars.color.text.muted,
       cursor: 'not-allowed',
     },
+  },
+  '@media': {
+    '(prefers-reduced-motion: reduce)': { transitionDuration: '0.01ms' },
   },
 })

@@ -17,4 +17,7 @@ export const serviceCategoriesQueryKey = ['suppliers', 'service-categories'] as 
 export const serviceCategoriesQueryOptions = () => ({
   queryKey: serviceCategoriesQueryKey,
   queryFn: () => supplierRepository.categories(),
+  // tabela de referência praticamente estática — `'static'` evita o refetch a cada montagem
+  // (list/create/edit) e não é re-disparada pela invalidação global pós-mutation.
+  staleTime: 'static' as const,
 })

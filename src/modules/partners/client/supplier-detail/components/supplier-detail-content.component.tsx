@@ -67,7 +67,7 @@ export function SupplierDetailContent(props: SupplierDetailContentProps): ReactN
             <>
               <h2 className={cardTitle}>{t('partners.suppliers.form.section.pix')}</h2>
               <div className={fieldGrid}>
-                <Item label={t('partners.suppliers.form.pixType')} value={s.pixKey.keyType} />
+                <Item label={t('partners.suppliers.form.pixType')} value={t(`partners.suppliers.pix.${s.pixKey.keyType}`)} />
                 <Item label={t('partners.suppliers.form.pixKey')} value={s.pixKey.key} />
               </div>
             </>

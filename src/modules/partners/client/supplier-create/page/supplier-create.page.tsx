@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
@@ -20,13 +20,6 @@ export function SupplierCreatePage(): ReactNode {
       createCommand.execute(values)
     },
   })
-
-  // Navega de volta à listagem quando a criação conclui com sucesso.
-  useEffect(() => {
-    if (createCommand.result !== null) {
-      void navigate({ to: '/parceiros/fornecedores' })
-    }
-  }, [createCommand.result, navigate])
 
   return (
     <div className={screen}>

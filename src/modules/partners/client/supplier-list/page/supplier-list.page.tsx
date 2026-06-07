@@ -71,7 +71,7 @@ export function SupplierListPage(): ReactNode {
     },
   ]
 
-  const tableState = toTableState(state, hasFilters)
+  const tableState = toTableState(state)
   const pageNum = search.page
   const pages = state.status === 'ready' ? totalPages(state.meta) : 1
 
@@ -102,11 +102,12 @@ export function SupplierListPage(): ReactNode {
           category: t('partners.suppliers.filters.category'),
         }}
         onSearch={(value) =>
-          void navigate({ to: '.', search: (p) => ({ ...p, search: value || undefined, page: 1 }) })
+          void navigate({ to: '.', replace: true, search: (p) => ({ ...p, search: value || undefined, page: 1 }) })
         }
         onStatus={(s) =>
           void navigate({
             to: '.',
+            replace: true,
             search: (p) => ({
               ...p,
               active: s === 'all' ? undefined : s === 'active',
@@ -117,6 +118,7 @@ export function SupplierListPage(): ReactNode {
         onCategory={(c) =>
           void navigate({
             to: '.',
+            replace: true,
             search: (p) => ({ ...p, categories: c ? [c] : undefined, page: 1 }),
           })
         }
@@ -148,7 +150,7 @@ export function SupplierListPage(): ReactNode {
   )
 }
 
-function toTableState(state: SupplierListState, _hasFilters: boolean): DataTableState<SupplierRow> {
+function toTableState(state: SupplierListState): DataTableState<SupplierRow> {
   switch (state.status) {
     case 'loading':
       return { status: 'loading' }

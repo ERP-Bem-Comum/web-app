@@ -5,11 +5,12 @@
  */
 import { useCallback, useState } from 'react'
 
-import { SupplierFormSchema, type SupplierFormValues } from '#modules/partners/client/data/model/supplier.model.ts'
+import { SupplierFormSchema, type SupplierFormValues, type PixKeyType } from '#modules/partners/client/data/model/supplier.model.ts'
 
-export type { SupplierFormValues } from '#modules/partners/client/data/model/supplier.model.ts'
-
-export type PixKeyType = 'cpf' | 'cnpj' | 'email' | 'phone' | 'random-key'
+// Reexporta a partir da fonte única (`data/model`) — antes eram cópias da mesma união/lista. A view
+// (client-ui) consome PIX_KEY_TYPES/isPixKeyType POR AQUI, pois o boundary não a deixa tocar data/.
+export type { SupplierFormValues, PixKeyType } from '#modules/partners/client/data/model/supplier.model.ts'
+export { PIX_KEY_TYPES, isPixKeyType } from '#modules/partners/client/data/model/supplier.model.ts'
 
 export type SupplierFormState = Readonly<{
   name: string

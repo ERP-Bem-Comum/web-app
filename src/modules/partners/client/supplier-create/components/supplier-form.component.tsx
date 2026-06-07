@@ -4,7 +4,7 @@ import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Button, Checkbox, Field, Input } from '#shared/ui/index.ts'
 
-import type { PixKeyType, SupplierFormController } from './supplier-form.controller.ts'
+import { PIX_KEY_TYPES, isPixKeyType, type SupplierFormController } from './supplier-form.controller.ts'
 import {
   cancelButton,
   checkboxRow,
@@ -19,7 +19,6 @@ import {
 } from './supplier-form.css.ts'
 
 const t = createTranslator(ptBR)
-const PIX_TYPES: readonly PixKeyType[] = ['cpf', 'cnpj', 'email', 'phone', 'random-key']
 
 export type SupplierFormProps = Readonly<{
   controller: SupplierFormController
@@ -128,11 +127,13 @@ export function SupplierForm(props: SupplierFormProps): ReactNode {
                     id="sup-pix-type"
                     className={select}
                     value={c.state.pixKeyType}
-                    onChange={(e) => { c.setField('pixKeyType', e.target.value as PixKeyType); }}
+                    onChange={(e) => {
+                      if (isPixKeyType(e.target.value)) c.setField('pixKeyType', e.target.value)
+                    }}
                   >
-                    {PIX_TYPES.map((pt) => (
+                    {PIX_KEY_TYPES.map((pt) => (
                       <option key={pt} value={pt}>
-                        {pt}
+                        {t(`partners.suppliers.pix.${pt}`)}
                       </option>
                     ))}
                   </select>

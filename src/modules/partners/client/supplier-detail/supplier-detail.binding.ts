@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { useCurrentUser } from '#modules/auth/public-api/index.ts'
 import { isOk } from '#shared/primitives/result.ts'
-import { can, type PartnerPermission } from '#modules/partners/client/data/helpers/can.ts'
+import { can, grantedPermissions } from '#modules/partners/client/data/helpers/can.ts'
 import { partnersErrorTag } from '#modules/partners/client/data/helpers/partners-error-tag.ts'
 import type { StatusAction } from '#modules/partners/client/domain/supplier.types.ts'
 
@@ -35,7 +35,7 @@ export function useSupplierDetailBinding(id: string): SupplierDetailBinding {
     },
   })
   const current = useCurrentUser()
-  const granted = (current.user?.permissions ?? []) as readonly PartnerPermission[]
+  const granted = grantedPermissions(current.user?.permissions)
 
   const state: SupplierDetailState = ((): SupplierDetailState => {
     if (query.isPending) return { status: 'loading' }
@@ -47,8 +47,9 @@ export function useSupplierDetailBinding(id: string): SupplierDetailBinding {
   })()
 
   const mdata = mutation.data
-  const statusErrorTag =
-    mdata !== undefined && !isOk(mdata)
+  const statusErrorTag = mutation.isPending
+    ? null
+    : mdata !== undefined && !isOk(mdata)
       ? partnersErrorTag(mdata.error)
       : mutation.isError
         ? 'partners.error.server'

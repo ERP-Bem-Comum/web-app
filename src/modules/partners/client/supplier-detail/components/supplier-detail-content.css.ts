@@ -19,6 +19,9 @@ export const card = style({
   borderRadius: vars.radius.lg,
   border: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
   background: vars.color.surface.default,
+  // contexto para o `@container` do fieldGrid — o card já colapsa para 1 coluna no layout pai;
+  // o container query reage à largura REAL do card, não do viewport.
+  containerType: 'inline-size',
 })
 
 export const cardTitle = style({
@@ -31,8 +34,11 @@ export const cardTitle = style({
 
 export const fieldGrid = style({
   display: 'grid',
-  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+  gridTemplateColumns: '1fr', // mobile-first: 1 coluna
   gap: vars.space.md,
+  '@container': {
+    '(inline-size > 28rem)': { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' },
+  },
 })
 
 export const field = style({

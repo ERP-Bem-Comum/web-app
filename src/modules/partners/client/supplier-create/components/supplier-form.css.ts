@@ -17,6 +17,8 @@ export const section = style({
   borderRadius: vars.radius.lg,
   border: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
   background: vars.color.surface.default,
+  // contexto para o `@container` do grid (responde à largura do card, não do viewport).
+  containerType: 'inline-size',
 })
 
 export const sectionTitle = style({
@@ -29,8 +31,11 @@ export const sectionTitle = style({
 
 export const grid = style({
   display: 'grid',
-  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+  gridTemplateColumns: '1fr', // mobile-first: 1 coluna
   gap: vars.space.md,
+  '@container': {
+    '(inline-size > 32rem)': { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' },
+  },
 })
 
 export const checkboxRow = style({
@@ -80,6 +85,18 @@ export const cancelButton = style({
   fontSize: vars.font.size.sm,
   fontWeight: vars.font.weight.semibold,
   cursor: 'pointer',
+  transitionProperty: 'background-color',
+  transitionDuration: '150ms',
+  selectors: {
+    '&:hover': { background: vars.color.surface.subtle },
+    '&:focus-visible': {
+      outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
+      outlineOffset: vars.focusRing.offset,
+    },
+  },
+  '@media': {
+    '(prefers-reduced-motion: reduce)': { transitionDuration: '0.01ms' },
+  },
 })
 
 export const saveWrap = style({

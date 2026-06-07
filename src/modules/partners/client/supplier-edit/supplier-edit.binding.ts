@@ -1,13 +1,15 @@
 /**
  * Binding da edição — ADAPTER React. `useQuery` (pré-preenche) + `useMutation` (update) + RBAC.
+ * Navega de volta ao detalhe no `onSuccess` (não num `useEffect` que observa `result`).
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
 
 import { useCurrentUser } from '#modules/auth/public-api/index.ts'
 import { isOk } from '#shared/primitives/result.ts'
-import { can, type PartnerPermission } from '#modules/partners/client/data/helpers/can.ts'
+import { can, grantedPermissions } from '#modules/partners/client/data/helpers/can.ts'
 import { partnersErrorTag } from '#modules/partners/client/data/helpers/partners-error-tag.ts'
-import type { SupplierDetail, SupplierFormValues } from '#modules/partners/client/data/model/supplier.model.ts'
+import type { SupplierFormValues } from '#modules/partners/client/data/model/supplier.model.ts'
 import { supplierDetailQueryOptions } from '#modules/partners/client/supplier-detail/supplier-detail.query.ts'
 import { serviceCategoriesQueryOptions } from '#modules/partners/client/supplier-list/supplier-list.query.ts'
 
@@ -17,7 +19,6 @@ import { deriveEditState, type SupplierEditState } from './supplier-edit.view-mo
 export type SupplierUpdateCommand = Readonly<{
   running: boolean
   errorTag: string | null
-  result: SupplierDetail | null
   execute: (values: SupplierFormValues) => void
 }>
 
@@ -30,16 +31,18 @@ export type SupplierEditBinding = Readonly<{
 
 export function useSupplierEditBinding(id: string): SupplierEditBinding {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const query = useQuery(supplierDetailQueryOptions(id))
   const categoriesQuery = useQuery(serviceCategoriesQueryOptions())
   const mutation = useMutation({
     ...supplierUpdateMutationOptions,
-    onSuccess: () => {
+    onSuccess: (res) => {
       void queryClient.invalidateQueries({ queryKey: ['suppliers'] })
+      if (isOk(res)) void navigate({ to: '/parceiros/fornecedores/$id', params: { id } })
     },
   })
   const current = useCurrentUser()
-  const granted = (current.user?.permissions ?? []) as readonly PartnerPermission[]
+  const granted = grantedPermissions(current.user?.permissions)
 
   const state: SupplierEditState = ((): SupplierEditState => {
     if (query.isPending) return { status: 'loading' }
@@ -51,8 +54,9 @@ export function useSupplierEditBinding(id: string): SupplierEditBinding {
   })()
 
   const mdata = mutation.data
-  const errorTag =
-    mdata !== undefined && !isOk(mdata)
+  const errorTag = mutation.isPending
+    ? null
+    : mdata !== undefined && !isOk(mdata)
       ? partnersErrorTag(mdata.error)
       : mutation.isError
         ? 'partners.error.server'
@@ -63,7 +67,6 @@ export function useSupplierEditBinding(id: string): SupplierEditBinding {
     updateCommand: {
       running: mutation.isPending,
       errorTag,
-      result: mdata !== undefined && isOk(mdata) ? mdata.value : null,
       execute: (values) => {
         mutation.mutate({ ...values, id })
       },

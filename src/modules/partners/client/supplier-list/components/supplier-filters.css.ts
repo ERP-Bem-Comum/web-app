@@ -29,6 +29,14 @@ export const select = style({
   color: vars.color.text.primary,
   fontFamily: vars.font.family.body,
   fontSize: vars.font.size.sm,
+  cursor: 'pointer',
+  selectors: {
+    '&:focus-visible': {
+      borderColor: vars.color.border.focus,
+      outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
+      outlineOffset: vars.focusRing.offset,
+    },
+  },
 })
 
 const chipBase = style({
@@ -41,6 +49,18 @@ const chipBase = style({
   fontFamily: vars.font.family.body,
   fontSize: vars.font.size.sm,
   cursor: 'pointer',
+  transitionProperty: 'background-color, border-color',
+  transitionDuration: '150ms',
+  selectors: {
+    '&:hover': { background: vars.color.surface.subtle },
+    '&:focus-visible': {
+      outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
+      outlineOffset: vars.focusRing.offset,
+    },
+  },
+  '@media': {
+    '(prefers-reduced-motion: reduce)': { transitionDuration: '0.01ms' },
+  },
 })
 
 export const chip = style([chipBase])
@@ -51,5 +71,9 @@ export const chipActive = style([
     background: vars.color.brand.normal,
     color: vars.color.brand.onBrand,
     borderColor: vars.color.brand.normal,
+    // sobrepõe o hover cinza do chipBase — o chip ativo mantém a marca ao passar o mouse.
+    selectors: {
+      '&:hover': { background: vars.color.brand.hover, borderColor: vars.color.brand.hover },
+    },
   },
 ])
