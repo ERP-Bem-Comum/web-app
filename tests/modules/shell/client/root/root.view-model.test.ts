@@ -138,3 +138,34 @@ describe('rootViewModel.visibleMenu (MENU real — fornecedores)', () => {
     assert.strictEqual(fornecedores?.to, '/parceiros/fornecedores')
   })
 })
+
+// Regressão de CONFIGURAÇÃO do subitem "Financiadores" (feature 012). Coordena com a 011: agora a
+// seção "Gestão de Parceiros" tem 2 subitens, logo sobrevive com `supplier:read` OU `financier:read`.
+describe('rootViewModel.visibleMenu (MENU real — financiadores)', () => {
+  const findParceiros = (menu: readonly MenuSection[]): MenuSection | undefined =>
+    menu.find((s) => s.label === 'Gestão de Parceiros')
+  const hasFinanciadores = (menu: readonly MenuSection[]): boolean =>
+    findParceiros(menu)?.subItems?.some((s) => s.label === 'Financiadores') ?? false
+
+  it('sem financier:read: esconde o subitem "Financiadores"', () => {
+    assert.strictEqual(hasFinanciadores(rootViewModel.visibleMenu(MENU, [])), false)
+    assert.strictEqual(hasFinanciadores(rootViewModel.visibleMenu(MENU, ['supplier:read'])), false)
+  })
+
+  it('com financier:read: mostra o subitem "Financiadores" → /parceiros/financiadores', () => {
+    const v = rootViewModel.visibleMenu(MENU, ['financier:read'])
+    const parceiros = findParceiros(v)
+    assert.ok(parceiros, 'a seção "Gestão de Parceiros" deve aparecer (só com Financiadores)')
+    const financiadores = parceiros?.subItems?.find((s) => s.label === 'Financiadores')
+    assert.ok(financiadores, 'o subitem "Financiadores" deve aparecer')
+    assert.strictEqual(financiadores?.to, '/parceiros/financiadores')
+    // a seção sobrevive mesmo sem supplier:read — Fornecedores foi filtrado, mas Financiadores ficou.
+    assert.strictEqual(parceiros?.subItems?.some((s) => s.label === 'Fornecedores'), false)
+  })
+
+  it('com ambos os reads: a seção mostra os 2 subitens', () => {
+    const v = rootViewModel.visibleMenu(MENU, ['supplier:read', 'financier:read'])
+    const labels = findParceiros(v)?.subItems?.map((s) => s.label)
+    assert.deepStrictEqual(labels, ['Fornecedores', 'Financiadores'])
+  })
+})
