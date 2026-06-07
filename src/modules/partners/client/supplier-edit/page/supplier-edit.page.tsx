@@ -1,0 +1,61 @@
+import { useEffect, type ReactNode } from 'react'
+import { getRouteApi, useNavigate } from '@tanstack/react-router'
+
+import { createTranslator } from '#shared/i18n/index.ts'
+import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
+import { PageHeader } from '#shared/ui/index.ts'
+
+import { useSupplierEditBinding } from '../supplier-edit.binding.ts'
+import { SupplierEditForm } from '../components/supplier-edit-form.component.tsx'
+import { screen } from './supplier-edit.css.ts'
+
+const t = createTranslator(ptBR)
+const routeApi = getRouteApi('/_authenticated/parceiros/fornecedores/$id/editar')
+
+export function SupplierEditPage(): ReactNode {
+  const { id } = routeApi.useParams()
+  const navigate = useNavigate()
+  const { state, updateCommand, canEditSensitive, categories } = useSupplierEditBinding(id)
+
+  useEffect(() => {
+    if (updateCommand.result !== null) {
+      void navigate({ to: '/parceiros/fornecedores/$id', params: { id } })
+    }
+  }, [updateCommand.result, navigate, id])
+
+  if (state.status === 'loading') {
+    return (
+      <div className={screen}>
+        <PageHeader
+          title={t('partners.suppliers.edit.title')}
+          subtitle={t('partners.suppliers.list.loading')}
+        />
+      </div>
+    )
+  }
+
+  if (state.status === 'error') {
+    return (
+      <div className={screen}>
+        <PageHeader title={t('partners.suppliers.edit.title')} subtitle={t(state.errorTag)} />
+      </div>
+    )
+  }
+
+  return (
+    <div className={screen}>
+      <PageHeader title={t('partners.suppliers.edit.title')} />
+      <SupplierEditForm
+        initial={state.initial}
+        categories={categories}
+        canEditSensitive={canEditSensitive}
+        running={updateCommand.running}
+        errorTag={updateCommand.errorTag}
+        onSubmit={(values) => {
+          updateCommand.execute(values)
+        }}
+        onCancel={() => void navigate({ to: '/parceiros/fornecedores/$id', params: { id } })}
+      />
+    </div>
+  )
+}

@@ -1,10 +1,8 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
-import {
-  SupplierListFiltersSchema,
-  SupplierFormSchema,
-} from '../../../../../src/modules/partners/client/domain/supplier.schemas.ts'
+import { SupplierListFiltersSchema } from '../../../../../src/modules/partners/client/domain/supplier.schemas.ts'
+import { SupplierFormSchema } from '../../../../../src/modules/partners/client/data/model/supplier.model.ts'
 
 describe('SupplierListFiltersSchema', () => {
   it('aplica defaults (order ASC, page 1, limit 5)', () => {

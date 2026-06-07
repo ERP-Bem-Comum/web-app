@@ -76,16 +76,16 @@ description: "Task list — Telas de Fornecedores (Suppliers)"
 
 ### Tests (TDD)
 
-- [ ] T018 [P] [US2] Escrever `tests/.../supplier-create/supplier-form.controller.spec.tsx` (Vitest, RED): bloqueia submit inválido (sem chamar backend); emite input válido; respeita `canEditSensitive` (oculta bancário/PIX)
+- [x] T018 [P] [US2] Escrever `tests/.../supplier-create/supplier-form.controller.spec.tsx` (Vitest, RED): bloqueia submit inválido (sem chamar backend); emite input válido; respeita `canEditSensitive` (oculta bancário/PIX)
 
 ### Implementação
 
-- [ ] T019 [P] [US2] `supplier-create/components/supplier-form.controller.ts` — estado do form + validação Zod (`SupplierFormSchema`), normaliza CNPJ, grupo bancário "tudo ou nada"; até T018 GREEN
-- [ ] T020 [P] [US2] `supplier-create/components/supplier-form.component.tsx` — view burra: seções básicos/bancário/PIX (gate sensível), usando atoms/molecules do DS (`Field`/`Input`/`Button`), só-tokens, i18n
-- [ ] T021 [US2] `supplier-create/supplier-create.mutation.ts` + `.view-model.ts` (onSuccess: invalida lista) + `.binding.ts` (`useMutation` → Command `{running,errorTag,execute}`). (depende de T006)
-- [ ] T022 [US2] `supplier-create/page/supplier-create.page.tsx` — `PageHeader` + `supplier-form` ligado ao Command; navega à lista/detalhe no sucesso. (depende de T019, T020, T021)
-- [ ] T023 [US2] Rota `src/routes/_authenticated/parceiros/fornecedores/criar.tsx` + regenerar routeTree. (depende de T022)
-- [ ] T024 [US2] Suites de US2 GREEN + `pnpm lint` verde. (depende de T023)
+- [x] T019 [P] [US2] `supplier-create/components/supplier-form.controller.ts` — estado do form + validação Zod (`SupplierFormSchema`), normaliza CNPJ, grupo bancário "tudo ou nada"; até T018 GREEN
+- [x] T020 [P] [US2] `supplier-create/components/supplier-form.component.tsx` — view burra: seções básicos/bancário/PIX (gate sensível), usando atoms/molecules do DS (`Field`/`Input`/`Button`), só-tokens, i18n
+- [x] T021 [US2] `supplier-create/supplier-create.mutation.ts` + `.view-model.ts` (onSuccess: invalida lista) + `.binding.ts` (`useMutation` → Command `{running,errorTag,execute}`). (depende de T006)
+- [x] T022 [US2] `supplier-create/page/supplier-create.page.tsx` — `PageHeader` + `supplier-form` ligado ao Command; navega à lista/detalhe no sucesso. (depende de T019, T020, T021)
+- [x] T023 [US2] Rota `src/routes/_authenticated/parceiros/fornecedores/criar.tsx` + regenerar routeTree. (depende de T022)
+- [x] T024 [US2] Suites de US2 GREEN + `pnpm lint` verde. (depende de T023)
 
 **Checkpoint**: criar + listar = ciclo mínimo (ver + adicionar).
 
@@ -99,17 +99,17 @@ description: "Task list — Telas de Fornecedores (Suppliers)"
 
 ### Tests (TDD)
 
-- [ ] T025 [P] [US3] Escrever `tests/.../supplier-detail/supplier-detail.view-model.test.ts` (RED): estado ready/not-found/error; decisão da ação (`deactivate` se ativo, `reactivate` se inativo); gates por permissão
+- [x] T025 [P] [US3] Escrever `tests/.../supplier-detail/supplier-detail.view-model.test.ts` (RED): estado ready/not-found/error; decisão da ação (`deactivate` se ativo, `reactivate` se inativo); gates por permissão
 
 ### Implementação
 
-- [ ] T026 [P] [US3] `supplier-detail/supplier-detail.query.ts` (sobre `repository.getById`) + `supplier-status.mutation.ts` (deactivate/reactivate, invalida detalhe+lista)
-- [ ] T027 [US3] `supplier-detail/supplier-detail.view-model.ts` — derivação de estado + ação de status + gates; até T025 GREEN. (depende de T026)
-- [ ] T028 [US3] `supplier-detail/supplier-detail.binding.ts` — `useQuery` + `useMutation` → estado + `statusCommand`. (depende de T027)
-- [ ] T029 [P] [US3] Componentes locais do detalhe em `supplier-detail/components/`: hero + aside (bancário/PIX gated) + confirmação de status (componente local, só-tokens, R9)
-- [ ] T030 [US3] `supplier-detail/page/supplier-detail.page.tsx` — view burra liga estado + ações (gated por `canWrite`); botão "Editar". (depende de T028, T029)
-- [ ] T031 [US3] Rota `src/routes/_authenticated/parceiros/fornecedores/$id.tsx` + regenerar routeTree. (depende de T030)
-- [ ] T032 [US3] Suites de US3 GREEN + `pnpm lint` verde. (depende de T031)
+- [x] T026 [P] [US3] `supplier-detail/supplier-detail.query.ts` (sobre `repository.getById`) + `supplier-status.mutation.ts` (deactivate/reactivate, invalida detalhe+lista)
+- [x] T027 [US3] `supplier-detail/supplier-detail.view-model.ts` — derivação de estado + ação de status + gates; até T025 GREEN. (depende de T026)
+- [x] T028 [US3] `supplier-detail/supplier-detail.binding.ts` — `useQuery` + `useMutation` → estado + `statusCommand`. (depende de T027)
+- [x] T029 [P] [US3] Componentes locais do detalhe em `supplier-detail/components/`: hero + aside (bancário/PIX gated) + confirmação de status (componente local, só-tokens, R9)
+- [x] T030 [US3] `supplier-detail/page/supplier-detail.page.tsx` — view burra liga estado + ações (gated por `canWrite`); botão "Editar". (depende de T028, T029)
+- [x] T031 [US3] Rota `src/routes/_authenticated/parceiros/fornecedores/$id.tsx` + regenerar routeTree. (depende de T030)
+- [x] T032 [US3] Suites de US3 GREEN + `pnpm lint` verde. (depende de T031)
 
 **Checkpoint**: ver → detalhe → ação de status completo.
 
@@ -123,10 +123,10 @@ description: "Task list — Telas de Fornecedores (Suppliers)"
 
 ### Implementação (reusa form/controller de US2)
 
-- [ ] T033 [US4] `supplier-edit/supplier-edit.query.ts` (pré-preenche via `getSupplierFn`) + `supplier-edit.mutation.ts` (`updateSupplierFn`, com `id`) + `.view-model.ts` + `.binding.ts`. (depende de T006, T021)
-- [ ] T034 [US4] `supplier-edit/page/supplier-edit.page.tsx` — reusa `supplier-form.component` com `initialValues`; liga ao Command de update. (depende de T033, T020)
-- [ ] T035 [US4] Rota `src/routes/_authenticated/parceiros/fornecedores/$id.editar.tsx` + regenerar routeTree. (depende de T034)
-- [ ] T036 [US4] Suites/typecheck/lint de US4 verdes. (depende de T035)
+- [x] T033 [US4] `supplier-edit/supplier-edit.query.ts` (pré-preenche via `getSupplierFn`) + `supplier-edit.mutation.ts` (`updateSupplierFn`, com `id`) + `.view-model.ts` + `.binding.ts`. (depende de T006, T021)
+- [x] T034 [US4] `supplier-edit/page/supplier-edit.page.tsx` — reusa `supplier-form.component` com `initialValues`; liga ao Command de update. (depende de T033, T020)
+- [x] T035 [US4] Rota `src/routes/_authenticated/parceiros/fornecedores/$id.editar.tsx` + regenerar routeTree. (depende de T034)
+- [x] T036 [US4] Suites/typecheck/lint de US4 verdes. (depende de T035)
 
 **Checkpoint**: CRUD de fornecedor completo.
 
@@ -134,10 +134,10 @@ description: "Task list — Telas de Fornecedores (Suppliers)"
 
 ## Phase 7: Polish & Cross-Cutting
 
-- [ ] T037 [P] Ligar o menu: subitem "Fornecedores" sob "Gestão de Parceiros" em `shell-menu.config` apontando para `/parceiros/fornecedores` (sem `requiredPermission` ainda — isso é o item 2/RBAC do menu, feature separada)
-- [ ] T038 [P] Revisar i18n: nenhuma string literal nas views; todas as tags `partners.suppliers.*` existem no catálogo
-- [ ] T039 Validar o `quickstart.md` (checklist de conformidade por tela: views burras, núcleo agnóstico, erros→tag, só-tokens, RBAC, organismos)
-- [ ] T040 Gate final: `pnpm verify` (typecheck + lint + test) e `pnpm test:dom` verdes; conferir boundaries (client não importa `server/domain|application`; views sem data-hooks)
+- [x] T037 [P] Ligar o menu: subitem "Fornecedores" sob "Gestão de Parceiros" em `shell-menu.config` apontando para `/parceiros/fornecedores` (sem `requiredPermission` ainda — isso é o item 2/RBAC do menu, feature separada)
+- [x] T038 [P] Revisar i18n: nenhuma string literal nas views; todas as tags `partners.suppliers.*` existem no catálogo
+- [x] T039 Validar o `quickstart.md` (checklist de conformidade por tela: views burras, núcleo agnóstico, erros→tag, só-tokens, RBAC, organismos)
+- [x] T040 Gate final: `pnpm verify` (typecheck + lint + test) e `pnpm test:dom` verdes; conferir boundaries (client não importa `server/domain|application`; views sem data-hooks)
 - [ ] T041 (Opcional) Baseline visual da listagem de fornecedores em `e2e/visual/` (rota real autenticada), seguindo a receita validada do guia — gerar `-linux` com revisão humana
 
 ---

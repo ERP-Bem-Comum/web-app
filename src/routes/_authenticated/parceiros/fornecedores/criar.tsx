@@ -1,19 +1,10 @@
 /**
- * Rota /parceiros/fornecedores/criar — STUB do MVP (US1). A tela real entra na US2.
+ * Rota /parceiros/fornecedores/criar — cadastro de fornecedor (US2).
  */
-import type { ReactNode } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 
-import { createTranslator } from '#shared/i18n/index.ts'
-import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { PageHeader } from '#shared/ui/index.ts'
-
-const t = createTranslator(ptBR)
-
-function SupplierCreateStub(): ReactNode {
-  return <PageHeader title={t('partners.suppliers.create.title')} subtitle={t('partners.suppliers.coming-soon')} />
-}
+import { SupplierCreatePage } from '#modules/partners/client/supplier-create/page/supplier-create.page.tsx'
 
 export const Route = createFileRoute('/_authenticated/parceiros/fornecedores/criar')({
-  component: SupplierCreateStub,
+  component: SupplierCreatePage,
 })

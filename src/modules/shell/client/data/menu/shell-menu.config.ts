@@ -30,7 +30,11 @@ export interface MenuSection {
 
 export const MENU: readonly MenuSection[] = [
   { label: 'Dashboard', iconId: 'home', to: '/dashboard' },
-  { label: 'Gestão de Parceiros', iconId: 'heart-handshake' },
+  {
+    label: 'Gestão de Parceiros',
+    iconId: 'heart-handshake',
+    subItems: [{ label: 'Fornecedores', to: '/parceiros/fornecedores' }],
+  },
   { label: 'Gestão de Programas', iconId: 'users' },
   {
     label: 'Gestão de Contratos',
