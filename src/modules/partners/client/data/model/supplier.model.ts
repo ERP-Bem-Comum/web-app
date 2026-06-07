@@ -9,6 +9,14 @@ import * as z from 'zod'
 
 export type ActivationStatus = 'active' | 'inactive'
 
+/** Tipos de chave PIX aceitos pelo contrato do core-api (client). FONTE ÚNICA: `type`, `z.enum` e a
+ * lista de `<option>` derivam daqui — `as const` evita drift entre as 4 materializações anteriores. */
+export const PIX_KEY_TYPES = ['cpf', 'cnpj', 'email', 'phone', 'random-key'] as const
+export type PixKeyType = (typeof PIX_KEY_TYPES)[number]
+
+export const isPixKeyType = (v: string): v is PixKeyType =>
+  (PIX_KEY_TYPES as readonly string[]).includes(v)
+
 export type BankAccount = Readonly<{
   bank: string
   agency: string
@@ -17,7 +25,7 @@ export type BankAccount = Readonly<{
 }>
 
 export type SupplierPixKey = Readonly<{
-  keyType: 'cpf' | 'cnpj' | 'email' | 'phone' | 'random-key'
+  keyType: PixKeyType
   key: string
 }>
 
@@ -83,7 +91,7 @@ export const BankAccountFormSchema = z.object({
 })
 
 export const PixKeyFormSchema = z.object({
-  keyType: z.enum(['cpf', 'cnpj', 'email', 'phone', 'random-key']),
+  keyType: z.enum(PIX_KEY_TYPES),
   key: z.string().trim().min(1).max(140),
 })
 

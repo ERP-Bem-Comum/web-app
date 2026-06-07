@@ -5,11 +5,10 @@
  */
 import { useCallback, useState } from 'react'
 
-import { SupplierFormSchema, type SupplierFormValues } from '#modules/partners/client/data/model/supplier.model.ts'
+import { SupplierFormSchema, type SupplierFormValues, type PixKeyType } from '#modules/partners/client/data/model/supplier.model.ts'
 
-export type { SupplierFormValues } from '#modules/partners/client/data/model/supplier.model.ts'
-
-export type PixKeyType = 'cpf' | 'cnpj' | 'email' | 'phone' | 'random-key'
+// Reexporta a partir da fonte única (`data/model`) — antes era uma 4ª cópia da mesma união.
+export type { SupplierFormValues, PixKeyType } from '#modules/partners/client/data/model/supplier.model.ts'
 
 export type SupplierFormState = Readonly<{
   name: string
