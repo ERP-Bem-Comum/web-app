@@ -17,3 +17,11 @@ export const CurrentUserSchema = z.object({
   permissions: z.array(z.string().trim()).default([]),
 })
 export type CurrentUser = z.infer<typeof CurrentUserSchema>
+
+/**
+ * Resultado do LOGIN — propositalmente SEM `permissions` (§IV: estados ilegais irrepresentáveis).
+ * O endpoint de login só devolve a identidade (`userId`); as permissões são responsabilidade
+ * EXCLUSIVA do `/me` (`getCurrentUserFn` → `CurrentUser`). Separar os tipos elimina o placeholder
+ * mentiroso `permissions: []` no caminho do login.
+ */
+export type AuthenticatedUser = Readonly<{ userId: string }>

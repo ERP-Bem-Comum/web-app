@@ -25,7 +25,7 @@ describe('loginViewModel', () => {
 
   it('onSuccess (ok): emite UsuarioAutenticado com o userId', () => {
     const events: AuthEvent[] = []
-    loginViewModel.onSuccess(ok({ userId: 'u', permissions: [] }), { emit: (e) => events.push(e) })
+    loginViewModel.onSuccess(ok({ userId: 'u' }), { emit: (e) => events.push(e) })
     assert.deepEqual(events, [{ type: 'UsuarioAutenticado', userId: 'u' }])
   })
 

@@ -5,7 +5,7 @@
  */
 import { ok, err, type Result } from '#shared/primitives/result.ts'
 import type { LoginFnResult } from '#modules/auth/server/adapters/server-fns/login.server-fn.ts'
-import type { LoginInput, CurrentUser } from '#modules/auth/client/data/model/auth.model.ts'
+import type { LoginInput, AuthenticatedUser } from '#modules/auth/client/data/model/auth.model.ts'
 
 /** Erro de auth propagado pelo BFF (derivado do contrato da server fn — sem importar server/domain). */
 export type AuthError = Extract<LoginFnResult, { ok: false }>['error']
@@ -13,13 +13,13 @@ export type AuthError = Extract<LoginFnResult, { ok: false }>['error']
 type LoginFn = (opts: Readonly<{ data: LoginInput }>) => Promise<LoginFnResult>
 
 export type AuthRepository = Readonly<{
-  login: (input: LoginInput) => Promise<Result<CurrentUser, AuthError>>
+  login: (input: LoginInput) => Promise<Result<AuthenticatedUser, AuthError>>
 }>
 
 export const createAuthRepository = (deps: Readonly<{ loginFn: LoginFn }>): AuthRepository => ({
   login: async (input) => {
     const res = await deps.loginFn({ data: input })
-    // login não carrega permissões (elas vêm do /me via getCurrentUser); RBAC degrada a [] até lá.
-    return res.ok ? ok({ userId: res.userId, permissions: [] }) : err(res.error)
+    // O login só devolve a identidade; permissões são do /me (getCurrentUser). Sem placeholder.
+    return res.ok ? ok({ userId: res.userId }) : err(res.error)
   },
 })
