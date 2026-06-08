@@ -36,11 +36,12 @@ export const MENU: readonly MenuSection[] = [
     // Slugs do catálogo PARTNER_PERMISSIONS (módulo partners). Mantidos como literais — `shell` não
     // importa `partners` (boundaries). RBAC do menu por subitem (features 011/012).
     subItems: [
+      { label: 'Colaboradores', to: '/parceiros/colaboradores', requiredPermission: 'collaborator:read' },
       { label: 'Fornecedores', to: '/parceiros/fornecedores', requiredPermission: 'supplier:read' },
       { label: 'Financiadores', to: '/parceiros/financiadores', requiredPermission: 'financier:read' },
       // ACT espelha o Colaborador no RBAC do core-api → governado por `collaborator:read` (013).
       { label: 'ACTs', to: '/parceiros/atos', requiredPermission: 'collaborator:read' },
-      { label: 'Geografia', to: '/parceiros/territorios', requiredPermission: 'geography:read' },
+      { label: 'Estados e Municípios', to: '/parceiros/territorios', requiredPermission: 'geography:read' },
     ],
   },
   { label: 'Gestão de Programas', iconId: 'users' },

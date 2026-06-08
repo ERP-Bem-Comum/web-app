@@ -21,6 +21,11 @@ describe('rootViewModel.resolvePageTitle', () => {
     assert.strictEqual(rootViewModel.resolvePageTitle('/contratos'), 'Contratos')
     assert.strictEqual(rootViewModel.resolvePageTitle('/contratos/criar'), 'Contratos')
     assert.strictEqual(rootViewModel.resolvePageTitle('/contratos/123/editar'), 'Contratos')
+    // Submódulos de parceiros (alimentam o document.title)
+    assert.strictEqual(rootViewModel.resolvePageTitle('/parceiros/colaboradores'), 'Colaboradores')
+    assert.strictEqual(rootViewModel.resolvePageTitle('/parceiros/colaboradores/adicionar'), 'Colaboradores')
+    assert.strictEqual(rootViewModel.resolvePageTitle('/parceiros/fornecedores'), 'Fornecedores')
+    assert.strictEqual(rootViewModel.resolvePageTitle('/parceiros/territorios'), 'Estados e Municípios')
   })
   it('cai no fallback para rota desconhecida e não casa substring solta', () => {
     assert.strictEqual(rootViewModel.resolvePageTitle('/desconhecida'), 'ERP Bem Comum')
@@ -42,9 +47,12 @@ describe('rootViewModel.sidebarWidth / showPageHeader', () => {
     assert.strictEqual(rootViewModel.sidebarWidth(false), SIDEBAR_WIDTH_EXPANDED)
     assert.strictEqual(rootViewModel.sidebarWidth(true), SIDEBAR_WIDTH_COLLAPSED)
   })
-  it('esconde o header só em /contratos/criar', () => {
+  it('esconde o header do shell em /contratos/criar e em /parceiros/* (que têm header próprio)', () => {
     assert.strictEqual(rootViewModel.showPageHeader('/contratos/criar'), false)
     assert.strictEqual(rootViewModel.showPageHeader('/contratos'), true)
+    assert.strictEqual(rootViewModel.showPageHeader('/parceiros/fornecedores'), false)
+    assert.strictEqual(rootViewModel.showPageHeader('/parceiros/colaboradores'), false)
+    assert.strictEqual(rootViewModel.showPageHeader('/dashboard'), true)
   })
 })
 
@@ -191,10 +199,10 @@ describe('rootViewModel.visibleMenu (MENU real — ACTs)', () => {
     assert.strictEqual(acts?.to, '/parceiros/atos')
   })
 
-  it('com os 3 reads: a seção mostra os 3 subitens na ordem', () => {
+  it('com supplier+financier+collaborator reads: mostra Colaboradores, Fornecedores, Financiadores, ACTs na ordem', () => {
     const v = rootViewModel.visibleMenu(MENU, ['supplier:read', 'financier:read', 'collaborator:read'])
     const labels = findParceiros(v)?.subItems?.map((s) => s.label)
-    assert.deepStrictEqual(labels, ['Fornecedores', 'Financiadores', 'ACTs'])
+    assert.deepStrictEqual(labels, ['Colaboradores', 'Fornecedores', 'Financiadores', 'ACTs'])
   })
 })
 
@@ -204,20 +212,20 @@ describe('rootViewModel.visibleMenu (MENU real — geografia)', () => {
   const findParceiros = (menu: readonly MenuSection[]): MenuSection | undefined =>
     menu.find((s) => s.label === 'Gestão de Parceiros')
   const hasGeografia = (menu: readonly MenuSection[]): boolean =>
-    findParceiros(menu)?.subItems?.some((s) => s.label === 'Geografia') ?? false
+    findParceiros(menu)?.subItems?.some((s) => s.label === 'Estados e Municípios') ?? false
 
-  it('sem geography:read: esconde o subitem "Geografia"', () => {
+  it('sem geography:read: esconde o subitem "Estados e Municípios"', () => {
     assert.strictEqual(hasGeografia(rootViewModel.visibleMenu(MENU, [])), false)
     assert.strictEqual(hasGeografia(rootViewModel.visibleMenu(MENU, ['supplier:read'])), false)
   })
 
-  it('com geography:read: mostra o subitem "Geografia" → /parceiros/territorios', () => {
+  it('com geography:read: mostra o subitem "Estados e Municípios" → /parceiros/territorios', () => {
     const v = rootViewModel.visibleMenu(MENU, ['geography:read'])
-    const geo = findParceiros(v)?.subItems?.find((s) => s.label === 'Geografia')
+    const geo = findParceiros(v)?.subItems?.find((s) => s.label === 'Estados e Municípios')
     assert.strictEqual(geo?.to, '/parceiros/territorios')
   })
 
-  it('com os 4 reads: a seção mostra os 4 subitens na ordem', () => {
+  it('com os 4 reads: a seção mostra os 5 subitens na ordem', () => {
     const v = rootViewModel.visibleMenu(MENU, [
       'supplier:read',
       'financier:read',
@@ -225,6 +233,12 @@ describe('rootViewModel.visibleMenu (MENU real — geografia)', () => {
       'geography:read',
     ])
     const labels = findParceiros(v)?.subItems?.map((s) => s.label)
-    assert.deepStrictEqual(labels, ['Fornecedores', 'Financiadores', 'ACTs', 'Geografia'])
+    assert.deepStrictEqual(labels, [
+      'Colaboradores',
+      'Fornecedores',
+      'Financiadores',
+      'ACTs',
+      'Estados e Municípios',
+    ])
   })
 })

@@ -59,6 +59,7 @@ export function SideBar({ collapsed, onToggle, menuItems, isItemActive }: SideBa
                   className={`${s.item} ${collapsed ? s.itemCollapsed : ''}`}
                   data-active={active ? true : undefined}
                   aria-current={active ? 'page' : undefined}
+                  aria-label={collapsed ? section.label : undefined}
                 >
                   {content}
                 </Link>
@@ -68,10 +69,17 @@ export function SideBar({ collapsed, onToggle, menuItems, isItemActive }: SideBa
                   className={`${s.item} ${collapsed ? s.itemCollapsed : ''}`}
                   data-active={active ? true : undefined}
                   onClick={() => {
+                    // Recolhida: clicar no ícone EXPANDE a sidebar e abre a seção (revela os submódulos).
+                    if (collapsed) {
+                      onToggle()
+                      if (hasSub && !isOpen) accordion.toggle(section.label)
+                      return
+                    }
                     if (hasSub) accordion.toggle(section.label)
                   }}
                   aria-expanded={hasSub ? isOpen : undefined}
                   aria-controls={hasSub ? submenuId : undefined}
+                  aria-label={collapsed ? section.label : undefined}
                 >
                   {content}
                   {!collapsed && hasSub && (

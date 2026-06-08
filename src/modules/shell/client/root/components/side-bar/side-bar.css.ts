@@ -14,7 +14,7 @@ export const nav = style({
 })
 
 export const navWidth = styleVariants({
-  expanded: { inlineSize: '16.25rem' }, // 260px
+  expanded: { inlineSize: '14rem' }, // 224px — ajustado p/ ficar mais justo aos nomes dos módulos
   collapsed: { inlineSize: '4rem' }, // 64px
 })
 

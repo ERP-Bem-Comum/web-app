@@ -15,6 +15,8 @@ export type InputProps = Readonly<{
   placeholder?: string
   invalid?: boolean
   autoComplete?: string
+  /** Desabilita o campo (ex.: campo vital somente-leitura na edição, como CNPJ/CPF). */
+  disabled?: boolean
 }>
 
 export function Input(props: InputProps): ReactNode {
@@ -29,6 +31,7 @@ export function Input(props: InputProps): ReactNode {
       placeholder={props.placeholder}
       autoComplete={props.autoComplete}
       aria-invalid={invalid || undefined}
+      disabled={props.disabled}
       onChange={(e) => {
         props.onChange(e.target.value)
       }}
