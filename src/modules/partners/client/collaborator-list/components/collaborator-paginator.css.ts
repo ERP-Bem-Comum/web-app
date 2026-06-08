@@ -16,6 +16,29 @@ export const label = style({
   color: vars.color.text.secondary,
 })
 
+/* "Itens por página" + seletor (legado) */
+export const perPageWrap = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: vars.space.xs,
+  marginInlineEnd: 'auto',
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+  color: vars.color.text.secondary,
+})
+
+export const perPageSelect = style({
+  paddingBlock: vars.space.xs,
+  paddingInline: vars.space.sm,
+  borderRadius: vars.radius.md,
+  border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
+  background: vars.color.surface.default,
+  color: vars.color.text.primary,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+  cursor: 'pointer',
+})
+
 export const button = style({
   paddingBlock: vars.space.xs,
   paddingInline: vars.space.md,

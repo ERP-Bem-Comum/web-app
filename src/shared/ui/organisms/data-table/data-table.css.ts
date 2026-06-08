@@ -38,8 +38,9 @@ export const th = style([
   {
     position: 'sticky',
     insetBlockStart: 0,
-    background: vars.color.surface.default,
-    color: vars.color.text.secondary,
+    // Linha dos títulos com preenchimento discreto no tom da marca (cyan claro), nomes em índigo.
+    background: vars.color.surface.canvas,
+    color: vars.color.nav.background,
     fontWeight: vars.font.weight.semibold,
     whiteSpace: 'nowrap',
   },
