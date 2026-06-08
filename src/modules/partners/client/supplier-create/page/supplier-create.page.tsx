@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { useNavigate } from '@tanstack/react-router'
+import { useNavigate, useRouter } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
@@ -14,7 +14,12 @@ const t = createTranslator(ptBR)
 
 export function SupplierCreatePage(): ReactNode {
   const navigate = useNavigate()
-  const { createCommand, canEditSensitive, categories } = useSupplierCreateBinding()
+  const router = useRouter()
+  // Banco/PIX (payment target) é editável por `supplier:write` no core-api (supplier-plugin.ts) e é
+  // OBRIGATÓRIO (invariante "≥1 payment target" → CHECK no MySQL): sem banco nem PIX o create dá 422
+  // ("Há campos inválidos"). Por isso liberamos as seções para quem tem ESCRITA (canWrite), não só
+  // `supplier:edit-sensitive` (que no backend só protege o campo VITAL, o CNPJ, e só na edição).
+  const { createCommand, canWrite, categories } = useSupplierCreateBinding()
   const controller = useSupplierFormController({
     onSubmit: (values) => {
       createCommand.execute(values)
@@ -23,11 +28,15 @@ export function SupplierCreatePage(): ReactNode {
 
   return (
     <div className={screen}>
-      <PageHeader title={t('partners.suppliers.create.title')} />
+      <PageHeader
+        title={t('partners.suppliers.create.title')}
+        onBack={() => { router.history.back(); }}
+        backLabel={t('common.back')}
+      />
       <SupplierForm
         controller={controller}
         categories={categories}
-        canEditSensitive={canEditSensitive}
+        canEditSensitive={canWrite}
         running={createCommand.running}
         errorTag={createCommand.errorTag}
         onCancel={() => void navigate({ to: '/parceiros/fornecedores' })}

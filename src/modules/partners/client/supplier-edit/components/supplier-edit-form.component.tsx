@@ -10,6 +10,7 @@ export type SupplierEditFormProps = Readonly<{
   initial: SupplierFormValues
   categories: readonly string[]
   canEditSensitive: boolean
+  cnpjDisabled: boolean
   running: boolean
   errorTag: string | null
   onSubmit: (values: SupplierFormValues) => void
@@ -27,6 +28,7 @@ export function SupplierEditForm(props: SupplierEditFormProps): ReactNode {
       controller={controller}
       categories={props.categories}
       canEditSensitive={props.canEditSensitive}
+      cnpjDisabled={props.cnpjDisabled}
       running={props.running}
       errorTag={props.errorTag}
       onCancel={props.onCancel}

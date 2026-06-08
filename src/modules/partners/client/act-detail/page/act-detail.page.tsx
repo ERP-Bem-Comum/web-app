@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { getRouteApi, useNavigate } from '@tanstack/react-router'
+import { getRouteApi, useNavigate, useRouter } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
@@ -17,13 +17,20 @@ const routeApi = getRouteApi('/_authenticated/parceiros/atos/$id')
 export function ActDetailPage(): ReactNode {
   const { id } = routeApi.useParams()
   const navigate = useNavigate()
+  const router = useRouter()
+  const goBack = (): void => { router.history.back(); }
   const { state, statusCommand, canWrite } = useActDetailBinding(id)
   const [confirming, setConfirming] = useState(false)
 
   if (state.status === 'loading') {
     return (
       <div className={screen}>
-        <PageHeader title={t('partners.acts.detail.title')} subtitle={t('partners.acts.list.loading')} />
+        <PageHeader
+          title={t('partners.acts.detail.title')}
+          subtitle={t('partners.acts.list.loading')}
+          onBack={goBack}
+          backLabel={t('common.back')}
+        />
       </div>
     )
   }
@@ -31,7 +38,12 @@ export function ActDetailPage(): ReactNode {
   if (state.status === 'error') {
     return (
       <div className={screen}>
-        <PageHeader title={t('partners.acts.detail.title')} subtitle={t(state.errorTag)} />
+        <PageHeader
+          title={t('partners.acts.detail.title')}
+          subtitle={t(state.errorTag)}
+          onBack={goBack}
+          backLabel={t('common.back')}
+        />
       </div>
     )
   }
@@ -46,6 +58,8 @@ export function ActDetailPage(): ReactNode {
       <PageHeader
         title={act.name}
         subtitle={act.role}
+        onBack={goBack}
+        backLabel={t('common.back')}
         actions={
           canWrite ? (
             <div className={headerActions}>

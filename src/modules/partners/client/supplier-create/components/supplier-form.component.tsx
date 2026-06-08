@@ -23,7 +23,10 @@ const t = createTranslator(ptBR)
 export type SupplierFormProps = Readonly<{
   controller: SupplierFormController
   categories: readonly string[]
+  /** Mostra as seções Banco/PIX (payment target). Na criação/edição = quem tem `supplier:write`. */
   canEditSensitive: boolean
+  /** Bloqueia o campo CNPJ (vital): true na edição sem `supplier:edit-sensitive`. */
+  cnpjDisabled?: boolean
   running: boolean
   errorTag: string | null
   onCancel: () => void
@@ -64,7 +67,7 @@ export function SupplierForm(props: SupplierFormProps): ReactNode {
             <Input id="sup-email" type="email" value={c.state.email} onChange={(v) => { c.setField('email', v); }} />
           </Field>
           <Field htmlFor="sup-cnpj" label={t('partners.suppliers.form.cnpj')} error={invalid('cnpj')}>
-            <Input id="sup-cnpj" value={c.state.cnpj} onChange={(v) => { c.setField('cnpj', v); }} />
+            <Input id="sup-cnpj" value={c.state.cnpj} disabled={props.cnpjDisabled} onChange={(v) => { c.setField('cnpj', v); }} />
           </Field>
           <Field htmlFor="sup-cat" label={t('partners.suppliers.form.category')} error={invalid('serviceCategory')}>
             <select

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { getRouteApi, useNavigate } from '@tanstack/react-router'
+import { getRouteApi, useNavigate, useRouter } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
@@ -17,7 +17,9 @@ const routeApi = getRouteApi('/_authenticated/parceiros/fornecedores/$id')
 export function SupplierDetailPage(): ReactNode {
   const { id } = routeApi.useParams()
   const navigate = useNavigate()
-  const { state, statusCommand, canWrite, canViewSensitive } = useSupplierDetailBinding(id)
+  const router = useRouter()
+  const goBack = (): void => { router.history.back(); }
+  const { state, statusCommand, canWrite } = useSupplierDetailBinding(id)
   const [confirming, setConfirming] = useState(false)
 
   if (state.status === 'loading') {
@@ -26,6 +28,8 @@ export function SupplierDetailPage(): ReactNode {
         <PageHeader
           title={t('partners.suppliers.detail.title')}
           subtitle={t('partners.suppliers.list.loading')}
+          onBack={goBack}
+          backLabel={t('common.back')}
         />
       </div>
     )
@@ -34,7 +38,12 @@ export function SupplierDetailPage(): ReactNode {
   if (state.status === 'error') {
     return (
       <div className={screen}>
-        <PageHeader title={t('partners.suppliers.detail.title')} subtitle={t(state.errorTag)} />
+        <PageHeader
+          title={t('partners.suppliers.detail.title')}
+          subtitle={t(state.errorTag)}
+          onBack={goBack}
+          backLabel={t('common.back')}
+        />
       </div>
     )
   }
@@ -51,6 +60,8 @@ export function SupplierDetailPage(): ReactNode {
       <PageHeader
         title={supplier.name}
         subtitle={supplier.fantasyName}
+        onBack={goBack}
+        backLabel={t('common.back')}
         actions={
           canWrite ? (
             <div className={headerActions}>
@@ -77,7 +88,9 @@ export function SupplierDetailPage(): ReactNode {
         </div>
       ) : null}
 
-      <SupplierDetailContent supplier={supplier} canViewSensitive={canViewSensitive} />
+      {/* Banco/PIX (payment target) é visível para quem pode escrever (supplier:write) — alinhado ao
+          backend (payment é não-vital). Antes exigia edit-sensitive e escondia os dados do admin. */}
+      <SupplierDetailContent supplier={supplier} canViewSensitive={canWrite} />
 
       <ConfirmDialog
         open={confirming}

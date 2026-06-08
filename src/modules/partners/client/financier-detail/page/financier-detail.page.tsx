@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { getRouteApi, useNavigate } from '@tanstack/react-router'
+import { getRouteApi, useNavigate, useRouter } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
@@ -17,6 +17,8 @@ const routeApi = getRouteApi('/_authenticated/parceiros/financiadores/$id')
 export function FinancierDetailPage(): ReactNode {
   const { id } = routeApi.useParams()
   const navigate = useNavigate()
+  const router = useRouter()
+  const goBack = (): void => { router.history.back(); }
   const { state, statusCommand, canWrite } = useFinancierDetailBinding(id)
   const [confirming, setConfirming] = useState(false)
 
@@ -26,6 +28,8 @@ export function FinancierDetailPage(): ReactNode {
         <PageHeader
           title={t('partners.financiers.detail.title')}
           subtitle={t('partners.financiers.list.loading')}
+          onBack={goBack}
+          backLabel={t('common.back')}
         />
       </div>
     )
@@ -34,7 +38,12 @@ export function FinancierDetailPage(): ReactNode {
   if (state.status === 'error') {
     return (
       <div className={screen}>
-        <PageHeader title={t('partners.financiers.detail.title')} subtitle={t(state.errorTag)} />
+        <PageHeader
+          title={t('partners.financiers.detail.title')}
+          subtitle={t(state.errorTag)}
+          onBack={goBack}
+          backLabel={t('common.back')}
+        />
       </div>
     )
   }
@@ -51,6 +60,8 @@ export function FinancierDetailPage(): ReactNode {
       <PageHeader
         title={financier.name}
         subtitle={financier.corporateName}
+        onBack={goBack}
+        backLabel={t('common.back')}
         actions={
           canWrite ? (
             <div className={headerActions}>

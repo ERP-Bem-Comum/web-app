@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { getRouteApi, useNavigate } from '@tanstack/react-router'
+import { getRouteApi, useNavigate, useRouter } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
@@ -15,7 +15,9 @@ const routeApi = getRouteApi('/_authenticated/parceiros/fornecedores/$id/editar'
 export function SupplierEditPage(): ReactNode {
   const { id } = routeApi.useParams()
   const navigate = useNavigate()
-  const { state, updateCommand, canEditSensitive, categories } = useSupplierEditBinding(id)
+  const router = useRouter()
+  const goBack = (): void => { router.history.back(); }
+  const { state, updateCommand, canWrite, canEditSensitive, categories } = useSupplierEditBinding(id)
 
   if (state.status === 'loading') {
     return (
@@ -23,6 +25,8 @@ export function SupplierEditPage(): ReactNode {
         <PageHeader
           title={t('partners.suppliers.edit.title')}
           subtitle={t('partners.suppliers.list.loading')}
+          onBack={goBack}
+          backLabel={t('common.back')}
         />
       </div>
     )
@@ -31,19 +35,29 @@ export function SupplierEditPage(): ReactNode {
   if (state.status === 'error') {
     return (
       <div className={screen}>
-        <PageHeader title={t('partners.suppliers.edit.title')} subtitle={t(state.errorTag)} />
+        <PageHeader
+          title={t('partners.suppliers.edit.title')}
+          subtitle={t(state.errorTag)}
+          onBack={goBack}
+          backLabel={t('common.back')}
+        />
       </div>
     )
   }
 
   return (
     <div className={screen}>
-      <PageHeader title={t('partners.suppliers.edit.title')} />
+      <PageHeader
+        title={t('partners.suppliers.edit.title')}
+        onBack={goBack}
+        backLabel={t('common.back')}
+      />
       <SupplierEditForm
         key={id}
         initial={state.initial}
         categories={categories}
-        canEditSensitive={canEditSensitive}
+        canEditSensitive={canWrite}
+        cnpjDisabled={!canEditSensitive}
         running={updateCommand.running}
         errorTag={updateCommand.errorTag}
         onSubmit={(values) => {

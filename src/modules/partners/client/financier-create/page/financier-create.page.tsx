@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { useNavigate } from '@tanstack/react-router'
+import { useNavigate, useRouter } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
@@ -14,6 +14,7 @@ const t = createTranslator(ptBR)
 
 export function FinancierCreatePage(): ReactNode {
   const navigate = useNavigate()
+  const router = useRouter()
   const { createCommand } = useFinancierCreateBinding()
   const controller = useFinancierFormController({
     onSubmit: (values) => {
@@ -23,7 +24,11 @@ export function FinancierCreatePage(): ReactNode {
 
   return (
     <div className={screen}>
-      <PageHeader title={t('partners.financiers.create.title')} />
+      <PageHeader
+        title={t('partners.financiers.create.title')}
+        onBack={() => { router.history.back(); }}
+        backLabel={t('common.back')}
+      />
       <FinancierForm
         controller={controller}
         running={createCommand.running}
