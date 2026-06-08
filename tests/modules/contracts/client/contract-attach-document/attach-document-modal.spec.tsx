@@ -39,7 +39,7 @@ describe('AttachDocumentModal', () => {
 
   it('submit desabilitado sem arquivo/data; habilita com PDF + data', () => {
     const { container } = render(<AttachDocumentModal {...baseProps()} />)
-    const submit = screen.getByRole('button', { name: 'Confirmar e efetivar' }) as HTMLButtonElement
+    const submit = screen.getByRole('button', { name: 'Salvar e efetivar' }) as HTMLButtonElement
     expect(submit.disabled).toBe(true)
 
     const fileInput = container.querySelector('input[type="file"]')
@@ -61,7 +61,7 @@ describe('AttachDocumentModal', () => {
     if (fileInput === null || dateInput === null) throw new Error('inputs ausentes')
     fireEvent.change(fileInput, { target: { files: [pdf()] } })
     fireEvent.change(dateInput, { target: { value: '2026-06-01' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Confirmar e efetivar' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar e efetivar' }))
     expect(onSubmit).toHaveBeenCalledTimes(1)
     const arg = onSubmit.mock.calls[0]?.[0] as { file: File; signedAt: string }
     expect(arg.signedAt).toBe('2026-06-01')

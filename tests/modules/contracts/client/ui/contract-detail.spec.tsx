@@ -41,17 +41,17 @@ describe('ContractInfo', () => {
 describe('ContractDocuments', () => {
   it('renderiza tabela com contrato base + aditivos', () => {
     const contract = mockContract()
-    render(<ContractDocuments contract={contract} onOpenBase={() => undefined} />)
+    render(<ContractDocuments contract={contract} onOpenBase={() => undefined} onNewAmendment={() => undefined} onOpenAmendment={() => undefined} onPreview={() => undefined} />)
     expect(screen.getByText('Documentos')).toBeTruthy()
-    // Redesign (wireframe): nº do contrato base com prefixo CT/OS + número do aditivo.
+    // Redesign (wireframe): base com prefixo CT/OS; aditivos no padrão AD NN-XXXX/ANO (seq por criação).
     expect(screen.getByText('CT 0001/2026')).toBeTruthy()
-    expect(screen.getByText('001')).toBeTruthy()
-    expect(screen.getByText('002')).toBeTruthy()
+    expect(screen.getByText('AD 01-0001/2026')).toBeTruthy() // 001 (valor, criado 20/05) → seq 1
+    expect(screen.getByText('AD 02-0001/2026')).toBeTruthy() // 002 (prazo, criado 10/11) → seq 2
   })
 
   it('renderiza badge de tipo para cada documento', () => {
     const contract = mockContract()
-    render(<ContractDocuments contract={contract} onOpenBase={() => undefined} />)
+    render(<ContractDocuments contract={contract} onOpenBase={() => undefined} onNewAmendment={() => undefined} onOpenAmendment={() => undefined} onPreview={() => undefined} />)
     expect(screen.getByText('Base')).toBeTruthy()
     expect(screen.getByText('Valor')).toBeTruthy()
     expect(screen.getByText('Prazo')).toBeTruthy()
@@ -71,8 +71,9 @@ describe('ContractAside', () => {
     render(<ContractAside contract={contract} />)
     expect(screen.getByText('Composição')).toBeTruthy()
     expect(screen.getByText('Valor Original')).toBeTruthy()
-    expect(screen.getByText(/Aditivo 001/)).toBeTruthy()
-    expect(screen.getByText(/Aditivo 002/)).toBeTruthy()
+    // Composição mostra APENAS aditivos do tipo VALOR: 001 (valor) entra; 002 (prazo) NÃO.
+    expect(screen.getByText('AD 01-0001/2026')).toBeTruthy()
+    expect(screen.queryByText(/AD 02/)).toBeNull()
   })
 
   it('renderiza barra de vigência', () => {
@@ -89,6 +90,6 @@ describe('ContractTimeline', () => {
     expect(screen.getByText('Timeline')).toBeTruthy()
     expect(screen.getByText('Contrato criado')).toBeTruthy()
     expect(screen.getByText('Contrato assinado')).toBeTruthy()
-    expect(screen.getByText('Aditivo 001 homologado')).toBeTruthy()
+    expect(screen.getByText('AD 01-0001/2026 homologado')).toBeTruthy()
   })
 })
