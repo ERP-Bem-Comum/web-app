@@ -1,0 +1,81 @@
+# PoC LOCAL — stack completa persistente (NÃO versionar; arquivo de apoio temporário).
+# Uso: docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.poc.yml up -d --build
+#
+# O que este arquivo adiciona/sobrescreve sobre o base + override:
+#   - core-api: build a partir de ../core-api (o backend foi extraído deste repo na migração)
+#   - core-api: drivers mysql p/ contratos e parceiros + storage S3 (MinIO) — itens 2 e 3 do relatório
+#   - minio + minio-bootstrap: equivalente local do S3 e criação do bucket contracts-documents
+#
+# Tudo aponta para o MySQL `core` (user core_app/coredev) já definido no docker-compose.yml base.
+# As migrations de auth/contracts/partners são aplicadas no boot do core-api (applyMigrations: true).
+
+name: bemcomum
+
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: bemcomum-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    ports:
+      - '${MINIO_API_PORT:-9000}:9000'
+      - '${MINIO_CONSOLE_PORT:-9001}:9001'
+    environment:
+      MINIO_ROOT_USER: dev-access-key
+      MINIO_ROOT_PASSWORD: dev-secret-key-min-8-chars
+    volumes:
+      - minio-data:/data
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - bemcomum
+
+  minio-bootstrap:
+    image: minio/mc:latest
+    container_name: bemcomum-minio-bootstrap
+    depends_on:
+      minio:
+        condition: service_started
+    entrypoint:
+      - /bin/sh
+      - -c
+      - >
+        until mc alias set local http://minio:9000 dev-access-key dev-secret-key-min-8-chars; do
+          echo 'aguardando minio...'; sleep 2;
+        done;
+        mc mb --ignore-existing local/contracts-documents;
+        mc anonymous set download local/contracts-documents;
+        echo 'bootstrap concluido: bucket contracts-documents pronto.';
+    restart: 'no'
+    networks:
+      - bemcomum
+
+  core-api:
+    build:
+      context: ../core-api
+      dockerfile: Dockerfile
+    environment:
+      # Contratos e Parceiros → MySQL real (mesmo DB `core` do auth). Migrations no boot.
+      CONTRACTS_DRIVER: mysql
+      CONTRACTS_DATABASE_URL: mysql://${MYSQL_USER:-core_app}:${MYSQL_PASSWORD:-coredev}@mysql:3306/core
+      PARTNERS_DRIVER: mysql
+      PARTNERS_DATABASE_URL: mysql://${MYSQL_USER:-core_app}:${MYSQL_PASSWORD:-coredev}@mysql:3306/core
+      # Storage de documentos de contratos → MinIO (S3-compatível).
+      S3_ENDPOINT: http://minio:9000
+      S3_REGION: us-east-1
+      S3_BUCKET: contracts-documents
+      S3_ACCESS_KEY_ID: dev-access-key
+      S3_SECRET_ACCESS_KEY: dev-secret-key-min-8-chars
+      S3_FORCE_PATH_STYLE: 'true'
+      # Seed de RBAC para DEV (mecanismo do próprio core-api: guarda dupla CORE_API_E2E + AUTH_SEED_JSON).
+      # Concede ao admin todas as permissões de parceiros (read+write) para o menu "Gestão de Parceiros"
+      # e seus submódulos aparecerem. ⚠️ Na branch dev o seed NÃO é idempotente (item 1 do relatório ainda
+      # não mergeado): re-rodar exige banco limpo (`down -v`), senão o boot crasha por e-mail duplicado.
+      CORE_API_E2E: '1'
+      AUTH_SEED_JSON: '{"users":[{"email":"admin@bemcomum.dev","password":"DevPassw0rd!2024","permissions":["supplier:read","supplier:write","financier:read","financier:write","collaborator:read","collaborator:write","act:read","act:write","geography:read","geography:write","contract:read","contract:write","contract:mass-approve"]}]}'
+    depends_on:
+      minio:
+        condition: service_started
+
+volumes:
+  minio-data:
