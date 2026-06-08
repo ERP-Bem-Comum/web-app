@@ -1,5 +1,7 @@
 import { useState, useCallback } from 'react'
 import type { CreateAmendmentInput, AmendmentType } from '#modules/contracts/client/data/model/contracts.model.ts'
+// Re-export para as views (§XI: componentes não importam client/data direto — pegam tipos via controller).
+export type { CreateAmendmentInput, AmendmentType } from '#modules/contracts/client/data/model/contracts.model.ts'
 
 export type AmendmentFormState = Readonly<{
   type: AmendmentType | null
@@ -10,6 +12,9 @@ export type AmendmentFormState = Readonly<{
   startDate: string
   signedAt: string
   hasDocument: boolean
+  // Distrato (encerramento antecipado): data efetiva do distrato. Capturada aqui; a religação ao
+  // POST /contracts/:id/end (Terminate) é do tech lead — ver handbook/core-api/tickets/CTR-HTTP-DISTRATO-*.
+  terminationDate: string
 }>
 
 export const useAmendmentFormController = (onSubmit: (input: CreateAmendmentInput) => void) => {
@@ -22,6 +27,7 @@ export const useAmendmentFormController = (onSubmit: (input: CreateAmendmentInpu
     startDate: '',
     signedAt: '',
     hasDocument: false,
+    terminationDate: '',
   })
 
   const update = useCallback(<K extends keyof AmendmentFormState>(key: K, value: AmendmentFormState[K]) => {

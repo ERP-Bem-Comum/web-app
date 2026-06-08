@@ -189,6 +189,15 @@ export const AttachSignedDocumentInputSchema = z.object({
 })
 export type AttachSignedDocumentInput = z.infer<typeof AttachSignedDocumentInputSchema>
 
+export const AttachAmendmentDocumentInputSchema = z.object({
+  contractId: z.uuid(),
+  amendmentId: z.uuid(),
+  fileBase64: z.string().trim().min(1),
+  fileName: z.string().trim().min(1).max(255),
+  signedAt: z.string().trim().min(1),
+})
+export type AttachAmendmentDocumentInput = z.infer<typeof AttachAmendmentDocumentInputSchema>
+
 // Metadados do documento devolvidos pelo core-api no upload (espelha CoreApiDocumentSchema do server).
 export const DocumentMetaSchema = z.object({
   id: z.uuid(),

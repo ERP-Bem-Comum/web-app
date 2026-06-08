@@ -118,12 +118,38 @@ export const CoreApiDocumentSchema = z.object({
   uploadedAt: z.string().trim(),
 })
 
+// Contratado — o detalhe (GET /:id) devolve `contractor` com o snapshot (nome/documento/banco/PIX).
+const CoreApiContractorBankSchema = z.object({
+  bank: z.string().trim(),
+  agency: z.string().trim(),
+  accountNumber: z.string().trim(),
+  checkDigit: z.string().trim(),
+})
+const CoreApiContractorPixSchema = z.object({
+  keyType: z.string().trim(),
+  key: z.string().trim(),
+})
+export const CoreApiContractorSchema = z.object({
+  type: z.enum(['supplier', 'financier', 'collaborator', 'act']),
+  id: z.string().trim(),
+  snapshot: z.object({
+    name: z.string().trim(),
+    document: z.string().trim(),
+    updatedAt: z.string().trim().optional(),
+    bankAccount: CoreApiContractorBankSchema.nullable().optional(),
+    pixKey: CoreApiContractorPixSchema.nullable().optional(),
+  }),
+})
+
 // Metadados editáveis via PATCH /api/v2/contracts/:id — a rota gorda GET /:id os
 // devolve no detalhe (opcionais/ausentes quando nunca preenchidos).
 const detailMetaShape = {
-  observations: z.string().trim().optional(),
-  email: z.string().trim().optional(),
-  telephone: z.string().trim().optional(),
+  // O backend devolve null (não ausente) quando vazios — precisa aceitar null, senão o parse do
+  // detalhe inteiro falha e cai no fallback de list-item (perdendo contractor/documents/etc.).
+  observations: z.string().trim().nullable().optional(),
+  email: z.string().trim().nullable().optional(),
+  telephone: z.string().trim().nullable().optional(),
+  contractor: CoreApiContractorSchema.nullable().optional(),
 }
 
 export const CoreApiContractDetailSchema = z.discriminatedUnion('status', [

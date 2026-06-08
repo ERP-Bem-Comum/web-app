@@ -44,6 +44,10 @@ const SLUG_TO_ERROR: Partial<Record<string, ContractsError>> = {
   'activate-contract-no-signed-document': 'no-signed-document',
   'activate-contract-invalid-signed-at': 'invalid-signed-at',
   'amendment-retroactive-to-contract-start': 'server',
+  // Validações de aditivo do core-api (422) — a UI já barra antes; defesa p/ mensagem clara.
+  AmendmentDescriptionRequired: 'invalid-value',
+  AmendmentImpactValueZero: 'invalid-value',
+  'money-negative-value': 'invalid-value',
   'ContractNotActive': 'server',
   'contract-repo-conflict': 'server',
   'amendment-repo-conflict': 'server',
@@ -101,8 +105,8 @@ const statusDomainToApi = (domainStatus: Contract['status']): 'Pending' | 'Activ
 const parseIsoDate = (s: string): Date => new Date(s)
 
 // Normaliza string ausente/vazia → undefined (o backend pode devolver "" em metadados opcionais).
-const blankToUndefined = (s: string | undefined): string | undefined =>
-  s !== undefined && s.trim() !== '' ? s : undefined
+const blankToUndefined = (s: string | null | undefined): string | undefined =>
+  s != null && s.trim() !== '' ? s : undefined
 
 const apiPeriodToDomain = (p: { kind: 'Fixed'; start: string; end: string } | { kind: 'Indefinite'; start: string }) => ({
   start: parseIsoDate(p.start),
@@ -130,6 +134,13 @@ const amendmentTypeToKind = (type: Amendment['type']): 'Addition' | 'Suppression
   return map[type]
 }
 
+// ⚠️ GAMBIARRA TEMPORÁRIA (até o backend ter um `kind` distrato): o core-api colapsa
+// escopo/outro/distrato em `Misc`, perdendo a identidade. Para o distrato funcionar como aditivo
+// (linha na tabela + efeito ao homologar), marcamos a descrição na escrita e detectamos na leitura.
+// A gambiarra fica CONTIDA no BFF — o client/UI recebe `type: 'distrato'` e a descrição já limpa.
+// Substituir por um kind próprio — ver handbook/core-api/tickets/CTR-HTTP-DISTRATO-DOCUMENTO.md.
+const DISTRATO_MARKER = '[[distrato]] '
+
 const apiAmendmentToDomain = (a: {
   id: string
   contractId: string
@@ -155,11 +166,19 @@ const apiAmendmentToDomain = (a: {
     case 'Addition':
       return { ...base, impactValueCents: a.impactValueCents }
     case 'Suppression':
-      return { ...base, impactValueCents: a.impactValueCents }
+      // Backend guarda supressão como valor POSITIVO + kind Suppression; no domínio do front a
+      // convenção é SINAL (negativo = supressão), p/ composição/tabela exibirem "−" corretamente.
+      return { ...base, impactValueCents: a.impactValueCents !== undefined ? -a.impactValueCents : undefined }
     case 'TermChange':
       return { ...base, newEndDate: a.newEndDate ? parseIsoDate(a.newEndDate) : undefined }
-    case 'Misc':
-      return { ...base }
+    case 'Misc': {
+      // Gambiarra: descrição marcada → é um distrato. Devolve type 'distrato' + descrição sem o marcador.
+      if (a.description.startsWith(DISTRATO_MARKER)) {
+        const desc = a.description.slice(DISTRATO_MARKER.length)
+        return { ...base, type: 'distrato', description: desc === '' ? undefined : desc }
+      }
+      return base
+    }
   }
 }
 
@@ -229,6 +248,44 @@ const apiContractToDomain = (c: {
   files: [],
 })
 
+type ContractorDto = Readonly<{
+  type: 'supplier' | 'financier' | 'collaborator' | 'act'
+  id: string
+  snapshot: Readonly<{
+    name: string
+    document: string
+    updatedAt?: string
+    bankAccount?: Readonly<{ bank: string; agency: string; accountNumber: string; checkDigit: string }> | null
+    pixKey?: Readonly<{ keyType: string; key: string }> | null
+  }>
+}>
+
+const CONTRACTOR_TYPE: Record<ContractorDto['type'], Contract['contractType']> = {
+  supplier: 'Supplier',
+  financier: 'Financier',
+  collaborator: 'Collaborator',
+  act: 'ACT',
+}
+
+// Mapeia o `contractor.snapshot` do detalhe → contratado + dados bancários/PIX no domínio do front.
+const mapContractorToDomain = (k: ContractorDto): Partial<Contract> => {
+  const snapshot = { id: k.id, name: k.snapshot.name, document: k.snapshot.document }
+  const updatedAt = k.snapshot.updatedAt ? parseIsoDate(k.snapshot.updatedAt) : new Date()
+  const bank = k.snapshot.bankAccount
+  const pix = k.snapshot.pixKey
+  return {
+    contractType: CONTRACTOR_TYPE[k.type],
+    supplierId: k.type === 'supplier' ? k.id : undefined,
+    financierId: k.type === 'financier' ? k.id : undefined,
+    collaboratorId: k.type === 'collaborator' ? k.id : undefined,
+    supplier: k.type === 'supplier' ? snapshot : undefined,
+    financier: k.type === 'financier' ? snapshot : undefined,
+    collaborator: k.type === 'collaborator' ? snapshot : undefined,
+    ...(bank != null ? { bancaryInfo: { bank: bank.bank, agency: bank.agency, accountNumber: bank.accountNumber, dv: bank.checkDigit, updatedAt } } : {}),
+    ...(pix != null ? { pixInfo: { keyType: pix.keyType, key: pix.key, updatedAt } } : {}),
+  }
+}
+
 export const apiContractDetailToDomain = (raw: unknown): Contract => {
   const parsed = CoreApiContractDetailSchema.safeParse(raw)
   if (!parsed.success) {
@@ -245,6 +302,8 @@ export const apiContractDetailToDomain = (raw: unknown): Contract => {
 
   return {
     ...base,
+    // Contratado (nome/documento) + dados bancários/PIX + tipo, vindos do snapshot do detalhe.
+    ...(c.contractor != null ? mapContractorToDomain(c.contractor) : {}),
     // Metadados editáveis (PATCH /contracts/:id) — a rota gorda os devolve no detalhe.
     observations: blankToUndefined(c.observations),
     email: blankToUndefined(c.email),
@@ -309,6 +368,9 @@ export type CoreApiContractsClient = Readonly<{
   getHistory: (id: string, token: string) => Promise<Result<readonly ContractHistoryEvent[], ContractsError>>
   uploadDocument: (contractId: string, input: Readonly<{ bytes: Uint8Array; fileName: string }>, token: string) => Promise<Result<void, ContractsError>>
   activate: (contractId: string, signedAtIso: string, token: string) => Promise<Result<Contract, ContractsError>>
+  uploadAmendmentDocument: (contractId: string, amendmentId: string, input: Readonly<{ bytes: Uint8Array; fileName: string }>, token: string) => Promise<Result<void, ContractsError>>
+  homologateAmendment: (contractId: string, amendmentId: string, homologatedBy: string, token: string) => Promise<Result<Contract, ContractsError>>
+  endContract: (contractId: string, token: string) => Promise<Result<Contract, ContractsError>>
 }>
 
 export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsClient => {
@@ -341,11 +403,45 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
         headers: authHeader(token),
       })
       if (isErr(r)) return err(mapHttpError(r.error))
+      let listResp: ListContractsResponse
       try {
-        return ok(apiListResponseToDomain(r.value))
+        listResp = apiListResponseToDomain(r.value)
       } catch {
         return err('server')
       }
+      // Enriquecimento N+1: o GET /contracts (lista) NÃO devolve o contratado; buscamos o detalhe de
+      // cada item só p/ exibir o nome no grid. Degrada por item (mantém sem contratado em caso de falha).
+      // Limitado pelo tamanho da página. (Ideal: o core-api incluir o `contractor` na própria lista.)
+      const items = await Promise.all(
+        listResp.items.map(async (item) => {
+          const d = await resultFetch<unknown>(`${baseUrl}/contracts/${item.id}`, {
+            method: 'GET',
+            headers: authHeader(token),
+          })
+          if (isErr(d)) return item
+          try {
+            const full = apiContractDetailToDomain(d.value)
+            return {
+              ...item,
+              contractType: full.contractType,
+              supplierId: full.supplierId,
+              financierId: full.financierId,
+              collaboratorId: full.collaboratorId,
+              supplier: full.supplier,
+              financier: full.financier,
+              collaborator: full.collaborator,
+              // Vigência/valor vigentes (refletem aditivos homologados) p/ o grid mostrar a data estendida.
+              currentPeriod: full.currentPeriod,
+              currentValue: full.currentValue,
+              // Aditivos do contrato — p/ o grid exibir a QUANTIDADE na coluna Aditivos (lista não traz).
+              children: full.children,
+            }
+          } catch {
+            return item
+          }
+        }),
+      )
+      return ok({ ...listResp, items })
     },
 
     getById: async (id, token) => {
@@ -428,7 +524,8 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
       const r = await resultFetch<unknown>(`${baseUrl}/contracts/${input.id}`, {
         method: 'PATCH',
         body,
-        headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+        // resultFetch já injeta content-type quando há body; repetir → header duplicado → 415 (ver `create`).
+        headers: authHeader(token),
       })
       if (isErr(r)) return err(mapHttpError(r.error))
       try {
@@ -439,14 +536,21 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
     },
 
     createAmendment: async (contractId, input, token) => {
-      const kind = amendmentTypeToKind(input.type)
+      const signedValue = input.impactValueCents ?? 0
+      // valor: o SINAL decide Addition (+) vs Suppression (−). O backend exige o valor SEMPRE positivo,
+      // com o sentido no `kind` (supressão com valor negativo → money-negative-value 422).
+      const kind =
+        input.type === 'valor'
+          ? signedValue < 0 ? 'Suppression' : 'Addition'
+          : amendmentTypeToKind(input.type)
       const body: Record<string, unknown> = {
         kind,
         amendmentNumber: `ADT-${String(Date.now())}`,
-        description: input.description ?? '',
+        // Gambiarra distrato: marca a descrição p/ a leitura reconhecer (kind no backend é Misc).
+        description: input.type === 'distrato' ? `${DISTRATO_MARKER}${input.description ?? ''}` : input.description ?? '',
       }
       if (kind === 'Addition' || kind === 'Suppression') {
-        body.impactValueCents = input.impactValueCents ?? 0
+        body.impactValueCents = Math.abs(signedValue)
       }
       if (kind === 'TermChange') {
         body.newEndDate = input.newEndDate ? input.newEndDate.toISOString().slice(0, 10) : undefined
@@ -455,7 +559,8 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
       const r = await resultFetch<unknown>(`${baseUrl}/contracts/${contractId}/amendments`, {
         method: 'POST',
         body,
-        headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+        // resultFetch já injeta content-type quando há body; repetir → header duplicado → 415 (ver `create`).
+        headers: authHeader(token),
       })
       if (isErr(r)) return err(mapHttpError(r.error))
       try {
@@ -507,6 +612,52 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
       const r = await resultFetch<unknown>(`${baseUrl}/contracts/${contractId}/activate`, {
         method: 'POST',
         body: { signedAt: signedAtIso },
+        headers: authHeader(token),
+      })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      try {
+        return ok(apiContractDetailToDomain(r.value))
+      } catch {
+        return err('server')
+      }
+    },
+
+    uploadAmendmentDocument: async (contractId, amendmentId, { bytes, fileName }, token) => {
+      // POST /contracts/:id/amendments/:amendmentId/documents — binário (octet-stream) + metadados na query.
+      const r = await octetStreamFetch<unknown>(`${baseUrl}/contracts/${contractId}/amendments/${amendmentId}/documents`, {
+        token,
+        bytes,
+        query: { categoria: 'signed_amendment', fileName, mimeType: 'application/pdf', signedElectronically: 'true' },
+      })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      const parsed = CoreApiDocumentSchema.safeParse(r.value)
+      if (!parsed.success) return err('server')
+      return ok(undefined)
+    },
+
+    homologateAmendment: async (contractId, amendmentId, homologatedBy, token) => {
+      // POST /contracts/:id/amendments/:amendmentId/homologate — { homologatedBy }. Exige o documento
+      // signed_amendment já enviado (parsePendingWithDocument no backend). Devolve o contrato atualizado.
+      const r = await resultFetch<unknown>(`${baseUrl}/contracts/${contractId}/amendments/${amendmentId}/homologate`, {
+        method: 'POST',
+        body: { homologatedBy },
+        headers: authHeader(token),
+      })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      try {
+        return ok(apiContractDetailToDomain(r.value))
+      } catch {
+        return err('server')
+      }
+    },
+
+    endContract: async (contractId, token) => {
+      // POST /contracts/:id/end — { kind: 'Terminate' } = distrato. Encerra o contrato (status Terminated).
+      // ⚠️ Religação BÁSICA: o core-api hoje não recebe data efetiva nem documento → endedAt = now.
+      // Gap documentado em handbook/core-api/tickets/CTR-HTTP-DISTRATO-DOCUMENTO.md.
+      const r = await resultFetch<unknown>(`${baseUrl}/contracts/${contractId}/end`, {
+        method: 'POST',
+        body: { kind: 'Terminate' },
         headers: authHeader(token),
       })
       if (isErr(r)) return err(mapHttpError(r.error))

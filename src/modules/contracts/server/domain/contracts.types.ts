@@ -169,6 +169,15 @@ export const AttachSignedDocumentInputSchema = z.object({
 })
 export type AttachSignedDocumentInput = z.infer<typeof AttachSignedDocumentInputSchema>
 
+export const AttachAmendmentDocumentInputSchema = z.object({
+  contractId: z.uuid(),
+  amendmentId: z.uuid(),
+  fileBase64: z.string().trim().min(1),
+  fileName: z.string().trim().min(1).max(255).regex(/^[^/\\:*?"<>|]+$/, 'invalid-file-name'),
+  signedAt: z.string().trim().min(1),
+})
+export type AttachAmendmentDocumentInput = z.infer<typeof AttachAmendmentDocumentInputSchema>
+
 export const UpdateContractInputSchema = z.object({
   id: z.uuid(),
   email: z.email().optional(),

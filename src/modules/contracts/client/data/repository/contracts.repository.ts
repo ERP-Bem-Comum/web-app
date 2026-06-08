@@ -12,6 +12,7 @@ import type {
   CreateAmendmentInput,
   Amendment,
   AttachSignedDocumentInput,
+  AttachAmendmentDocumentInput,
 } from '#modules/contracts/client/data/model/contracts.model.ts'
 /** Erro de contratos propagado pelo BFF — definido localmente para evitar cross-layer import. */
 export type ContractsError =
@@ -63,6 +64,14 @@ type AttachSignedDocumentFn = (opts: { data: AttachSignedDocumentInput }) => Pro
   | Readonly<{ ok: true; data: Contract }>
   | Readonly<{ ok: false; error: ContractsError }>
 >
+type AttachAmendmentDocumentFn = (opts: { data: AttachAmendmentDocumentInput }) => Promise<
+  | Readonly<{ ok: true; data: Contract }>
+  | Readonly<{ ok: false; error: ContractsError }>
+>
+type EndContractFn = (opts: { data: { contractId: string } }) => Promise<
+  | Readonly<{ ok: true; data: Contract }>
+  | Readonly<{ ok: false; error: ContractsError }>
+>
 
 export type ContractsRepository = Readonly<{
   list: (input: ListContractsInput) => Promise<Result<ListContractsResponse, ContractsError>>
@@ -72,6 +81,8 @@ export type ContractsRepository = Readonly<{
   createAmendment: (contractId: string, input: CreateAmendmentInput) => Promise<Result<Amendment, ContractsError>>
   getHistory: (id: string) => Promise<Result<readonly ContractHistoryEvent[], ContractsError>>
   attachSignedDocument: (input: AttachSignedDocumentInput) => Promise<Result<Contract, ContractsError>>
+  attachAmendmentDocument: (input: AttachAmendmentDocumentInput) => Promise<Result<Contract, ContractsError>>
+  endContract: (contractId: string) => Promise<Result<Contract, ContractsError>>
 }>
 
 export const createContractsRepository = (deps: Readonly<{
@@ -82,6 +93,8 @@ export const createContractsRepository = (deps: Readonly<{
   createAmendmentFn: CreateAmendmentFn
   getContractHistoryFn: GetHistoryFn
   attachSignedDocumentFn: AttachSignedDocumentFn
+  attachAmendmentDocumentFn: AttachAmendmentDocumentFn
+  endContractFn: EndContractFn
 }>): ContractsRepository => ({
   list: async (input) => {
     const res = await deps.listContractsFn({ data: input })
@@ -109,6 +122,14 @@ export const createContractsRepository = (deps: Readonly<{
   },
   attachSignedDocument: async (input) => {
     const res = await deps.attachSignedDocumentFn({ data: input })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  attachAmendmentDocument: async (input) => {
+    const res = await deps.attachAmendmentDocumentFn({ data: input })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  endContract: async (contractId) => {
+    const res = await deps.endContractFn({ data: { contractId } })
     return res.ok ? ok(res.data) : err(res.error)
   },
 })
