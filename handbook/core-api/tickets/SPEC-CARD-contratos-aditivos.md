@@ -36,6 +36,9 @@ de contrato (aditivos, distrato, documentos) e **o que precisa ser alinhado/impl
 **Grid (lista)**
 - Coluna **Aditivos** mostra a **quantidade** de aditivos do contrato.
 - Vigência do grid reflete a data estendida por aditivo de prazo.
+- **Status real** do contrato (Distrato deixa de ser mascarado pelo aditivo mais recente).
+- Coluna **Ações** por status: **Pendente → Excluir**; **demais → Histórico Financeiro + Termo de Quitação**.
+  ⚠️ Os botões aparecem por status, mas ainda **não executam ação real** (placeholders — ver gaps).
 
 ---
 
@@ -48,6 +51,7 @@ de contrato (aditivos, distrato, documentos) e **o que precisa ser alinhado/impl
 | 3 | **`signed_at` do aditivo** | `ctr_amendments` não persiste data de assinatura → coluna "Assinatura" da tabela fica vazia. | (incluir no ticket de aditivos) |
 | 4 | **Subtipos de aditivo** | escopo/outro/distrato colapsam em `Misc` → na releitura perde-se o subtipo (distrato só funciona via gambiarra). | (CTR-HTTP-DISTRATO-DOCUMENTO) |
 | 5 | **Metadados do contrato** | programa, categoria, centro de custo, plano orçamentário, classificação (CT/OS) não são persistidos → aparecem como "—". | (a abrir) |
+| 6 | **Ações do grid** | os 3 itens do menu aparecem por status, mas não têm efeito: **Excluir** (precisa de endpoint DELETE de contrato Pendente), **Histórico Financeiro** (depende do módulo Financeiro), **Termo de Quitação** (feature/documento a definir). | (a abrir) |
 
 ---
 
