@@ -7,8 +7,13 @@ import { isOk } from '#shared/primitives/result.ts'
 import { useContractDetailBinding } from '../contract-detail.binding.ts'
 import { useAttachSignedDocumentBinding } from '#modules/contracts/client/contract-attach-document/attach-signed-document.binding.ts'
 import { AttachDocumentModal } from '#modules/contracts/client/contract-attach-document/components/attach-document-modal.component.tsx'
+import { useAmendmentCreateBinding } from '../../amendment-create/amendment-create.binding.ts'
+import { useEndContractBinding } from '../../contract-terminate/end-contract.binding.ts'
+import { useAttachAmendmentDocumentBinding } from '../../amendment-create/attach-amendment-document.binding.ts'
+import { AmendmentModal, type AmendmentForAttach } from '../../amendment-create/components/amendment-modal.component.tsx'
 import { ContractInfo } from '../components/contract-info.component.tsx'
-import { ContractDocuments } from '../components/contract-documents.component.tsx'
+import { ContractDocuments, type DocRef } from '../components/contract-documents.component.tsx'
+import { DocumentPreviewModal } from '../components/document-preview-modal.component.tsx'
 import { ContractBankInfo } from '../components/contract-bank-info.component.tsx'
 import { ContractTimeline } from '../components/contract-timeline.component.tsx'
 import { ContractAside } from '../components/contract-aside.component.tsx'
@@ -47,7 +52,16 @@ export function ContractDetailPage({ contractId }: { contractId: string }): Reac
   const navigate = useNavigate()
   const { data, isLoading } = useContractDetailBinding(contractId)
   const { attachCommand } = useAttachSignedDocumentBinding()
+  const { createCommand: amendmentCommand } = useAmendmentCreateBinding()
+  const { attachCommand: amendmentAttachCommand } = useAttachAmendmentDocumentBinding()
+  const { endCommand } = useEndContractBinding()
   const [attachOpen, setAttachOpen] = useState(false)
+  const [amendmentOpen, setAmendmentOpen] = useState(false)
+  const [selectedAmendment, setSelectedAmendment] = useState<AmendmentForAttach | null>(null)
+  const [previewDoc, setPreviewDoc] = useState<DocRef | null>(null)
+  // Modais somem ao concluir (derivado, sem setState em efeito). Distrato fecha quando o `end` conclui.
+  const amendmentModalOpen = amendmentOpen && amendmentCommand.result === null && endCommand.result === null
+  const amendmentAttachOpen = selectedAmendment !== null && amendmentAttachCommand.result === null
   // Anexo bem-sucedido → contrato efetivado: o modal some (derivado, sem setState em efeito). A lista/
   // detalhe são invalidados no binding; ao virar "Em Andamento" o botão-gatilho também deixa de aparecer.
   const modalOpen = attachOpen && attachCommand.result === null
@@ -104,7 +118,19 @@ export function ContractDetailPage({ contractId }: { contractId: string }): Reac
       <div className={mainLayout}>
         <div className={mainCol}>
           <ContractInfo contract={contract} />
-          <ContractDocuments contract={contract} onOpenBase={() => { setAttachOpen(true) }} />
+          <ContractDocuments
+            contract={contract}
+            onOpenBase={() => { attachCommand.reset(); setAttachOpen(true) }}
+            onNewAmendment={() => {
+              // reset() limpa o resultado da criação anterior → permite criar VÁRIOS aditivos sem recarregar.
+              if (contract.status !== 'Pendente') { amendmentCommand.reset(); endCommand.reset(); setAmendmentOpen(true) }
+            }}
+            onOpenAmendment={(id) => {
+              const a = contract.children.find((c) => c.id === id)
+              if (a) { amendmentAttachCommand.reset(); endCommand.reset(); setSelectedAmendment({ id: a.id, type: a.type, description: a.description ?? '' }) }
+            }}
+            onPreview={(doc) => { setPreviewDoc(doc) }}
+          />
           <ContractBankInfo contract={contract} />
         </div>
         <div className={asideCol}>
@@ -149,6 +175,45 @@ export function ContractDetailPage({ contractId }: { contractId: string }): Reac
         onSubmit={({ file, signedAt }) => {
           attachCommand.execute({ contractId, file, signedAt })
         }}
+      />
+
+      <AmendmentModal
+        open={amendmentModalOpen}
+        mode="create"
+        contractNumber={`${contract.classification === 'Contract' ? 'CT' : 'OS'} ${contract.sequentialNumber}`}
+        amendment={undefined}
+        onClose={() => { setAmendmentOpen(false) }}
+        submitting={amendmentCommand.running || endCommand.running}
+        errorTag={amendmentCommand.errorTag ?? endCommand.errorTag}
+        onCreate={(input) => {
+          // Distrato é criado como aditivo Pendente (gambiarra Misc+marcador no BFF) → vira linha na
+          // tabela SEM efeito. O encerramento acontece só ao HOMOLOGAR (ver onAttach do modal de anexo).
+          amendmentCommand.execute(contractId, input)
+        }}
+        onAttach={() => { /* não usado no modo create */ }}
+      />
+
+      <AmendmentModal
+        open={amendmentAttachOpen}
+        mode="attach"
+        contractNumber={`${contract.classification === 'Contract' ? 'CT' : 'OS'} ${contract.sequentialNumber}`}
+        amendment={selectedAmendment ?? undefined}
+        onClose={() => { setSelectedAmendment(null) }}
+        submitting={amendmentAttachCommand.running}
+        errorTag={amendmentAttachCommand.errorTag}
+        onCreate={() => { /* não usado no modo attach */ }}
+        onAttach={({ amendmentId, file, signedAt }) => {
+          // Homologa o aditivo; se for DISTRATO, encadeia o encerramento do contrato (POST /:id/end).
+          void amendmentAttachCommand
+            .execute({ contractId, amendmentId, file, signedAt })
+            .then((okHomolog) => { if (okHomolog && selectedAmendment?.type === 'distrato') endCommand.execute(contractId) })
+        }}
+      />
+
+      <DocumentPreviewModal
+        open={previewDoc !== null}
+        doc={previewDoc}
+        onClose={() => { setPreviewDoc(null) }}
       />
     </div>
   )

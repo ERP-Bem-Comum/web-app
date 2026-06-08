@@ -13,7 +13,6 @@ import {
   formatCurrency,
   formatDate,
   deriveStatus,
-  getMostRecentChild,
   programaShort,
 } from '#modules/contracts/client/contract-list/contract-list.view-model.ts'
 
@@ -102,8 +101,9 @@ function closeDropdown(e: MouseEvent<HTMLButtonElement>) {
 
 export function ContractRow({ row, index }: ContractRowProps): ReactNode {
   const navigate = useNavigate()
-  const info = getMostRecentChild(row)
-  const derived = deriveStatus(info, !!(row.children?.length ?? 0))
+  // Status REAL do contrato (inclui Distrato/Finalizado). Antes derivava do aditivo mais recente,
+  // o que mascarava o status do contrato quando havia aditivos homologados.
+  const derived = deriveStatus(row, !!(row.children?.length ?? 0))
   const valorAtual = row.currentValue ?? Number(row.totalValue)
 
   const contractor = getContractorFromRow(row)
@@ -181,17 +181,22 @@ export function ContractRow({ row, index }: ContractRowProps): ReactNode {
             ⋮
           </summary>
           <div className={dropdownMenu}>
-            {derived.key === 'pendente' && (
+            {derived.key === 'pendente' ? (
+              // Pendente: só permite excluir (ainda sem efetividade).
               <button type="button" className={actionItemDanger} onClick={closeDropdown}>
                 {t('contracts.list.actions.delete')}
               </button>
+            ) : (
+              // Demais status: ações do contrato vigente/encerrado.
+              <>
+                <button type="button" className={actionItem} onClick={closeDropdown}>
+                  {t('contracts.list.actions.paymentHistory')}
+                </button>
+                <button type="button" className={actionItem} onClick={closeDropdown}>
+                  {t('contracts.list.actions.quitacao')}
+                </button>
+              </>
             )}
-            <button type="button" className={actionItem} onClick={closeDropdown}>
-              {t('contracts.list.actions.paymentHistory')}
-            </button>
-            <button type="button" className={actionItem} onClick={closeDropdown}>
-              {t('contracts.list.actions.quitacao')}
-            </button>
           </div>
         </details>
       </td>

@@ -70,6 +70,10 @@ export const vars = createThemeContract({
       distratoText: null,
       outroBg: null,
       outroText: null,
+      aditEscopoBg: null,
+      aditEscopoText: null,
+      aditOutroBg: null,
+      aditOutroText: null,
     },
     partnerType: {
       supplier: { text: null, background: null, border: null },

@@ -100,6 +100,12 @@ export const tokenValues = {
       distratoText: '#E54D40',
       outroBg: '#F5F5F5',
       outroText: '#736961',
+      // Aditivos: marrom (escopo) e laranja (outro) — paleta própria, distinta do reuso
+      // de escopo* pelo chip "Vencendo" e pela timeline (não regredir aqueles).
+      aditEscopoBg: '#EFE6DC',
+      aditEscopoText: '#8A5A33',
+      aditOutroBg: '#FFF1E0',
+      aditOutroText: '#D9772E',
     },
     // Tipos de parceiro/contrato (badges) — cores legadas da v1, agora tokenizadas (antes hex
     // cru com eslint-disable em contract-row.css.ts). `background`/`border` em tint de baixa opacidade.

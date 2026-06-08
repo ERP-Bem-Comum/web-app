@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { Contract } from '#modules/contracts/public-api/index.ts'
+import { amendmentSeqMap, formatAmendmentNumber } from '../amendment-number.ts'
 import {
   asideSection,
   asideLabel,
@@ -32,10 +33,11 @@ export function ContractTimeline({ contract }: Props): ReactNode {
     events.push({ title: 'Contrato assinado', date: formatDate(contract.signedAt), variant: 'ok' })
   }
 
+  const seq = amendmentSeqMap(contract.children)
   for (const a of contract.children) {
     const homologado = a.status === 'Homologado'
     events.push({
-      title: `Aditivo ${a.amendmentNumber} ${homologado ? 'homologado' : 'incluído'}`,
+      title: `${formatAmendmentNumber(seq.get(a.id), contract.sequentialNumber, a.amendmentNumber)} ${homologado ? 'homologado' : 'incluído'}`,
       date: formatDate(a.signedAt ?? a.createdAt),
       variant: homologado ? 'ok' : 'current',
     })

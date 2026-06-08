@@ -104,8 +104,10 @@ const tipoBadgeBase = style({
   alignItems: 'center',
   padding: `${vars.space.xs} ${vars.space.sm}`,
   borderRadius: vars.radius.lg,
+  fontFamily: vars.font.family.heading, // brand: Inter (badges)
   fontSize: '0.65625rem',
-  fontWeight: vars.font.weight.medium,
+  fontWeight: vars.font.weight.semibold,
+  letterSpacing: '0.02em',
   lineHeight: 1,
   whiteSpace: 'nowrap',
 })
@@ -156,9 +158,9 @@ export const additiveBadge = style({
   justifyContent: 'center',
   padding: `${vars.space.xs} ${vars.space.sm}`,
   borderRadius: vars.radius.lg,
-  fontFamily: vars.font.family.mono,
+  fontFamily: vars.font.family.heading, // brand: Inter (badges)
   fontSize: vars.font.size.xs,
-  fontWeight: vars.font.weight.medium,
+  fontWeight: vars.font.weight.semibold,
   background: vars.color.institutional.blueBg,
   color: vars.color.institutional.blueDeep,
 })

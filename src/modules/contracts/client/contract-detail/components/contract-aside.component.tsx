@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { Contract } from '#modules/contracts/public-api/index.ts'
+import { amendmentSeqMap, formatAmendmentNumber } from '../amendment-number.ts'
 import {
   asideSection,
   asideHero,
@@ -38,7 +39,8 @@ function formatCurrency(cents: number): string {
 }
 
 function formatDate(date: Date): string {
-  return date.toLocaleDateString('pt-BR')
+  // YYYY-MM-DD (meia-noite UTC) → formatar em UTC p/ não recuar 1 dia em BRT.
+  return date.toLocaleDateString('pt-BR', { timeZone: 'UTC' })
 }
 
 export function ContractAside({ contract }: Props): ReactNode {
@@ -46,8 +48,12 @@ export function ContractAside({ contract }: Props): ReactNode {
   const currentCents = contract.currentValue.cents
   const parts = formatCurrencyParts(currentCents)
 
-  const homologatedAmendments = contract.children.filter((a) => a.status === 'Homologado')
-  const pendingAmendments = contract.children.filter((a) => a.status === 'Pendente')
+  // Composição mostra APENAS aditivos do tipo VALOR (item 2): só eles impactam o valor atual do
+  // contrato. Prazo/escopo/outro/distrato não entram aqui.
+  const seq = amendmentSeqMap(contract.children)
+  const valorAmendments = contract.children.filter((a) => a.type === 'valor')
+  const homologatedAmendments = valorAmendments.filter((a) => a.status === 'Homologado')
+  const pendingAmendments = valorAmendments.filter((a) => a.status === 'Pendente')
 
   const today = new Date()
   const startDate = contract.currentPeriod?.start ?? contract.originalPeriod.start
@@ -80,15 +86,15 @@ export function ContractAside({ contract }: Props): ReactNode {
 
           {homologatedAmendments.map((a) => (
             <div key={a.id} className={`${compositionItem} ${(a.impactValueCents ?? 0) >= 0 ? compositionItemPositive : compositionItemNegative}`}>
-              <span>Aditivo {a.amendmentNumber} ({a.type})</span>
+              <span>{formatAmendmentNumber(seq.get(a.id), contract.sequentialNumber, a.amendmentNumber)}</span>
               <span>{(a.impactValueCents ?? 0) >= 0 ? '+' : ''}{formatCurrency(a.impactValueCents ?? 0)}</span>
             </div>
           ))}
 
           {pendingAmendments.map((a) => (
             <div key={a.id} className={`${compositionItem} ${compositionItemPending}`}>
-              <span>Aditivo {a.amendmentNumber} ({a.type}) — pendente</span>
-              <span>{(a.impactValueCents ?? 0) >= 0 ? '+' : ''}{formatCurrency(a.impactValueCents ?? 0)}</span>
+              <span>{formatAmendmentNumber(seq.get(a.id), contract.sequentialNumber, a.amendmentNumber)} · pendente</span>
+              <span>não computado</span>
             </div>
           ))}
 

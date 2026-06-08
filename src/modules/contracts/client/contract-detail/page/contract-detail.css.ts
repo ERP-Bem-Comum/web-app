@@ -64,10 +64,13 @@ export const statusBadge = style({
   display: 'inline-flex',
   alignItems: 'center',
   gap: vars.space.xs,
-  padding: `${vars.space.xs} ${vars.space.sm}`,
-  borderRadius: vars.radius.md,
-  fontSize: '0.75rem',
+  padding: `0.1875rem ${vars.space.sm}`,
+  borderRadius: vars.radius.xl, // pílula (wireframe)
+  fontFamily: vars.font.family.heading, // brand: Inter (badges)
+  fontSize: '0.625rem',
   fontWeight: vars.font.weight.semibold,
+  letterSpacing: '0.02em',
+  whiteSpace: 'nowrap',
 })
 
 export const statusBadgePending = style({
@@ -88,6 +91,13 @@ export const statusBadgeFinished = style({
 export const statusBadgeTerminated = style({
   background: vars.color.status.terminatedBg,
   color: vars.color.status.terminatedText,
+})
+
+// "Homologado" — badge BRANCA (fundo branco + borda hairline + texto institucional), por pedido da stakeholder.
+export const statusBadgeHomologado = style({
+  background: vars.color.surface.default,
+  color: vars.color.institutional.ink2,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
 })
 
 /* ── Layout principal 2 colunas ── */
@@ -259,6 +269,18 @@ export const sectionHeadAction = style({
     borderColor: vars.color.institutional.blueLine,
     background: vars.color.institutional.blueBg,
   },
+  selectors: {
+    '&:disabled': {
+      opacity: 0.45,
+      cursor: 'not-allowed',
+      color: vars.color.institutional.ink5,
+    },
+    // sem hover quando desabilitado
+    '&:disabled:hover': {
+      borderColor: vars.color.institutional.paperRule,
+      background: vars.color.surface.default,
+    },
+  },
 })
 
 export const fieldRow = style({ display: 'grid', gap: vars.space.md })
@@ -341,7 +363,9 @@ export const aditivos = style({
   background: vars.color.surface.default,
 })
 
-const aditGridCols = '6.5rem 4.5rem 5.5rem 1fr 7rem 8rem 3.5rem'
+// Larguras espelhando a wireframe (Nº · Tipo · Assinatura · Resumo · Impacto · Status · Doc);
+// Impacto mais largo p/ caber "+ 31/12/2026" (nova vigência do aditivo de prazo).
+const aditGridCols = '6.875rem 4.5rem 5.625rem 1fr 8.5rem 6.75rem 3.75rem'
 
 export const aditRow = style({
   display: 'grid',
@@ -354,6 +378,8 @@ export const aditRow = style({
   transition: 'background 120ms',
   selectors: {
     '&:last-child': { borderBottom: 'none' },
+    // Hover em todas as linhas de dados (a head já é paperWarm, então não muda). Wireframe.
+    '&:hover': { background: vars.color.institutional.paperWarm },
   },
 })
 
@@ -386,12 +412,15 @@ export const aditNum = style({
   fontSize: '0.65rem',
   fontWeight: vars.font.weight.medium,
   color: vars.color.institutional.ink2,
+  fontVariantNumeric: 'tabular-nums',
+  letterSpacing: '-0.01em',
 })
 
 export const aditData = style({
   fontFamily: vars.font.family.mono,
   fontSize: '0.6875rem',
   color: vars.color.institutional.ink3,
+  fontVariantNumeric: 'tabular-nums',
 })
 
 export const aditResumo = style({
@@ -405,8 +434,10 @@ export const aditImpacto = style({
   fontFamily: vars.font.family.mono,
   fontSize: '0.6875rem',
   textAlign: 'right',
+  fontVariantNumeric: 'tabular-nums',
 })
 export const aditImpactoPos = style({ color: vars.color.institutional.greenDeep, fontWeight: vars.font.weight.semibold })
+export const aditImpactoNeg = style({ color: vars.color.status.distratoText, fontWeight: vars.font.weight.semibold }) // supressão (reduz valor)
 export const aditImpactoBase = style({ color: vars.color.institutional.ink2, fontWeight: vars.font.weight.semibold })
 export const aditImpactoNeutral = style({ color: vars.color.institutional.ink4 })
 
@@ -428,9 +459,13 @@ export const docAct = style({
   background: 'transparent',
   border: 'none',
   cursor: 'pointer',
-  fontSize: '0.75rem',
+  textDecoration: 'none',
   transition: 'background 120ms, color 120ms',
   ':hover': { background: vars.color.institutional.blueBg, color: vars.color.institutional.blueDeep },
+  selectors: {
+    '&:disabled': { opacity: 0.4, cursor: 'not-allowed' },
+    '&:disabled:hover': { background: 'transparent', color: vars.color.institutional.ink4 },
+  },
 })
 
 /* Timeline (sidebar) — linha vertical + marcadores (wireframe) */
@@ -702,19 +737,23 @@ export const tableActionBtn = style({
   },
 })
 
-/* ── Badge de tipo de documento ── */
+/* ── Badge de TIPO de aditivo (wireframe: UPPERCASE, weight 700, 9px, cantos suaves) ── */
 export const docBadge = style({
   display: 'inline-flex',
   alignItems: 'center',
-  padding: `${vars.space.xs} ${vars.space.sm}`,
-  borderRadius: vars.radius.md,
-  fontSize: '0.6875rem',
-  fontWeight: vars.font.weight.semibold,
+  padding: `0.125rem 0.4375rem`,
+  borderRadius: 0, // sem arredondamento (pedido da stakeholder — fica mais elegante)
+  fontFamily: vars.font.family.heading, // brand: Inter (badges)
+  fontSize: '0.5625rem',
+  fontWeight: vars.font.weight.bold,
+  letterSpacing: '0.05em',
+  textTransform: 'uppercase',
+  whiteSpace: 'nowrap',
 })
 
 export const docBadgeBase = style({
-  background: vars.color.status.finishedBg,
-  color: vars.color.status.finishedText,
+  background: vars.color.institutional.ink2, // BASE (contrato) preto, conforme wireframe
+  color: vars.color.surface.default,
 })
 
 export const docBadgePrazo = style({
@@ -728,8 +767,8 @@ export const docBadgeValor = style({
 })
 
 export const docBadgeEscopo = style({
-  background: vars.color.status.escopoBg,
-  color: vars.color.status.escopoText,
+  background: vars.color.status.aditEscopoBg,
+  color: vars.color.status.aditEscopoText,
 })
 
 export const docBadgeDistrato = style({
@@ -738,8 +777,8 @@ export const docBadgeDistrato = style({
 })
 
 export const docBadgeOutro = style({
-  background: vars.color.status.outroBg,
-  color: vars.color.status.outroText,
+  background: vars.color.status.aditOutroBg,
+  color: vars.color.status.aditOutroText,
 })
 
 /* ── Aside ── */

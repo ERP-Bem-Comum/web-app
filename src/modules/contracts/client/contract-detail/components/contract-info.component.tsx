@@ -37,7 +37,8 @@ function formatCurrency(money: { cents: number }): string {
 }
 
 function formatDate(date: Date | null | undefined): string {
-  return date ? date.toLocaleDateString('pt-BR') : '—'
+  // Datas do backend são YYYY-MM-DD (meia-noite UTC); formatar em UTC evita recuar 1 dia em BRT.
+  return date ? date.toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '—'
 }
 
 function maskDocument(doc: string | undefined): { label: string; value: string } {

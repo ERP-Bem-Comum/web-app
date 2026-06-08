@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
-import { useNavigate } from '@tanstack/react-router'
 import type { Contract, Amendment } from '#modules/contracts/public-api/index.ts'
+import { amendmentSeqMap, formatAmendmentNumber } from '../amendment-number.ts'
 import {
   sectionBlock,
   sectionHeadRow,
@@ -18,6 +18,7 @@ import {
   aditResumo,
   aditImpacto,
   aditImpactoPos,
+  aditImpactoNeg,
   aditImpactoBase,
   aditImpactoNeutral,
   docActions,
@@ -34,11 +35,37 @@ import {
   statusBadgeActive,
   statusBadgeFinished,
   statusBadgeTerminated,
+  statusBadgeHomologado,
 } from '../page/contract-detail.css.ts'
+
+export interface DocRef {
+  readonly name: string
+  readonly url: string | undefined // vazio enquanto o backend não expõe o conteúdo (ver ticket CTR-HTTP-DOCUMENT-CONTENT)
+}
 
 interface Props {
   contract: Contract
   onOpenBase: () => void
+  onNewAmendment: () => void
+  onOpenAmendment: (amendmentId: string) => void
+  onPreview: (doc: DocRef) => void
+}
+
+// Ícones padrão (espelham a wireframe: #i-eye / #i-download).
+function EyeIcon(): ReactNode {
+  return (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z" />
+      <circle cx="8" cy="8" r="2" />
+    </svg>
+  )
+}
+function DownloadIcon(): ReactNode {
+  return (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 2v8" /><path d="M4.5 7.5L8 11l3.5-3.5" /><path d="M3 13h10" />
+    </svg>
+  )
 }
 
 const TIPO_CLASS: Record<string, string> = {
@@ -56,7 +83,7 @@ const TIPO_LABEL: Record<string, string> = {
 const STATUS_CLASS: Record<string, string> = {
   Pendente: statusBadgePending,
   'Em Andamento': statusBadgeActive,
-  Homologado: statusBadgeActive,
+  Homologado: statusBadgeHomologado,
   Vigente: statusBadgeActive,
   Finalizado: statusBadgeFinished,
   Distrato: statusBadgeTerminated,
@@ -68,7 +95,8 @@ function formatCurrency(cents: number | undefined): string {
 }
 
 function formatDate(date: Date | null | undefined): string {
-  return date ? date.toLocaleDateString('pt-BR') : '—'
+  // YYYY-MM-DD (meia-noite UTC) → formatar em UTC p/ não recuar 1 dia em BRT.
+  return date ? date.toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '—'
 }
 
 interface DocRow {
@@ -77,29 +105,50 @@ interface DocRow {
   readonly type: string
   readonly signedAt: Date | null | undefined
   readonly summary: string
-  readonly impactKind: 'base' | 'pos' | 'neutral'
+  readonly impactKind: 'base' | 'pos' | 'neg' | 'neutral'
   readonly impactText: string
   readonly status: string
   readonly isBase: boolean
+  readonly docName: string
+  readonly docUrl: string | undefined
 }
 
-export function ContractDocuments({ contract, onOpenBase }: Props): ReactNode {
-  const navigate = useNavigate()
+const blank = (s: string | undefined): string | undefined => (s !== undefined && s !== '' ? s : undefined)
+
+export function ContractDocuments({ contract, onOpenBase, onNewAmendment, onOpenAmendment, onPreview }: Props): ReactNode {
   const ctPrefix = contract.classification === 'Contract' ? 'CT' : 'OS'
 
+  const seq = amendmentSeqMap(contract.children)
+  // Mais recente no topo (item 4): aditivos por createdAt desc; o contrato base fica sempre por último.
+  const amendmentsDesc = [...contract.children].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+
   const rows: readonly DocRow[] = [
-    ...contract.children.map((a: Amendment): DocRow => {
-      const hasValue = a.impactValueCents !== undefined && a.impactValueCents !== 0
+    ...amendmentsDesc.map((a: Amendment): DocRow => {
+      const v = a.impactValueCents ?? 0
+      // Impacto por tipo: valor → "+ R$ x" (acréscimo) / "− R$ x" (supressão, valor negativo no domínio);
+      // prazo → "+ DD/MM/AAAA" (nova vigência); escopo/outro/distrato → sem impacto financeiro.
+      const impact =
+        a.type === 'distrato'
+          ? { kind: 'neg' as const, text: 'DISTRATO' }
+          : a.type === 'valor' && v !== 0
+            ? v < 0
+              ? { kind: 'neg' as const, text: `− ${formatCurrency(Math.abs(v))}` }
+              : { kind: 'pos' as const, text: `+ ${formatCurrency(v)}` }
+            : a.type === 'prazo' && a.newEndDate
+              ? { kind: 'neutral' as const, text: `+ ${formatDate(a.newEndDate)}` }
+              : { kind: 'neutral' as const, text: 'sem impacto' }
       return {
         id: a.id,
-        num: a.amendmentNumber,
+        num: formatAmendmentNumber(seq.get(a.id), contract.sequentialNumber, a.amendmentNumber),
         type: a.type,
         signedAt: a.signedAt,
         summary: a.description ?? '—',
-        impactKind: hasValue ? 'pos' : 'neutral',
-        impactText: hasValue ? `+ ${formatCurrency(a.impactValueCents)}` : 'sem impacto',
+        impactKind: impact.kind,
+        impactText: impact.text,
         status: a.status,
         isBase: false,
+        docName: `Aditivo ${formatAmendmentNumber(seq.get(a.id), contract.sequentialNumber, a.amendmentNumber)}`,
+        docUrl: blank(a.signedContractUrl),
       }
     }),
     {
@@ -110,13 +159,16 @@ export function ContractDocuments({ contract, onOpenBase }: Props): ReactNode {
       summary: contract.objective || '—',
       impactKind: 'base',
       impactText: formatCurrency(contract.originalValue.cents),
-      status: contract.status,
+      // Status do DOCUMENTO base: Pendente (sem assinado) → Homologado (efetivado, em azul).
+      status: contract.status === 'Pendente' ? 'Pendente' : 'Homologado',
       isBase: true,
+      docName: `Contrato ${ctPrefix} ${contract.sequentialNumber}`,
+      docUrl: blank(contract.files[0]?.url),
     },
   ]
 
   const impactClass = (k: DocRow['impactKind']): string =>
-    k === 'pos' ? aditImpactoPos : k === 'base' ? aditImpactoBase : aditImpactoNeutral
+    k === 'pos' ? aditImpactoPos : k === 'neg' ? aditImpactoNeg : k === 'base' ? aditImpactoBase : aditImpactoNeutral
 
   return (
     <section className={sectionBlock}>
@@ -125,7 +177,9 @@ export function ContractDocuments({ contract, onOpenBase }: Props): ReactNode {
         <button
           type="button"
           className={sectionHeadAction}
-          onClick={() => { navigate({ to: `/contratos/aditivo/${contract.id}` }).catch(() => { /* noop */ }) }}
+          onClick={onNewAmendment}
+          disabled={contract.status === 'Pendente'}
+          title={contract.status === 'Pendente' ? 'Disponível após a efetivação do contrato (Em Andamento).' : undefined}
         >
           + Novo Aditivo
         </button>
@@ -142,11 +196,19 @@ export function ContractDocuments({ contract, onOpenBase }: Props): ReactNode {
           <span className={`${aditHeadCell} ${aditHeadCellRight}`}>Doc</span>
         </div>
 
-        {rows.map((r) => (
+        {rows.map((r) => {
+          // Linha clicável: base (sempre, abre o doc do contrato) e aditivo Pendente (anexar doc → homologar).
+          const amendmentClickable = !r.isBase && r.status === 'Pendente'
+          const clickProps = r.isBase
+            ? { role: 'button' as const, tabIndex: 0, onClick: onOpenBase }
+            : amendmentClickable
+              ? { role: 'button' as const, tabIndex: 0, onClick: () => { onOpenAmendment(r.id) } }
+              : {}
+          return (
           <div
             key={r.id}
-            className={`${aditRow} ${r.isBase ? `${aditRowClickable} ${aditRowBase}` : ''}`}
-            {...(r.isBase ? { role: 'button', tabIndex: 0, onClick: onOpenBase } : {})}
+            className={`${aditRow} ${r.isBase ? `${aditRowClickable} ${aditRowBase}` : amendmentClickable ? aditRowClickable : ''}`}
+            {...clickProps}
           >
             <span className={aditNum}>{r.num}</span>
             <span><span className={`${docBadge} ${TIPO_CLASS[r.type] ?? docBadgeOutro}`}>{TIPO_LABEL[r.type] ?? r.type}</span></span>
@@ -160,11 +222,28 @@ export function ContractDocuments({ contract, onOpenBase }: Props): ReactNode {
               </span>
             </span>
             <span className={docActions}>
-              <button type="button" className={docAct} aria-label="Visualizar documento">👁</button>
-              <button type="button" className={docAct} aria-label="Baixar documento" onClick={(e) => { e.stopPropagation() }}>⬇</button>
+              <button
+                type="button"
+                className={docAct}
+                aria-label="Visualizar documento"
+                title="Visualizar documento"
+                onClick={(e) => { e.stopPropagation(); onPreview({ name: r.docName, url: r.docUrl }) }}
+              >
+                <EyeIcon />
+              </button>
+              {r.docUrl !== undefined ? (
+                <a className={docAct} href={r.docUrl} download aria-label="Baixar documento" title="Baixar documento" onClick={(e) => { e.stopPropagation() }}>
+                  <DownloadIcon />
+                </a>
+              ) : (
+                <button type="button" className={docAct} aria-label="Baixar documento" title="Download disponível quando o backend expor o conteúdo do documento" disabled onClick={(e) => { e.stopPropagation() }}>
+                  <DownloadIcon />
+                </button>
+              )}
             </span>
           </div>
-        ))}
+          )
+        })}
       </div>
     </section>
   )

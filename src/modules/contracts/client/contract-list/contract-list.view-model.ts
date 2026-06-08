@@ -90,7 +90,8 @@ export function mapModelToContractRow(model: ContractModel): ContractRow {
     object: model.objective,
     totalValue: model.originalValue.cents / 100,
     currentValue: model.currentValue.cents / 100,
-    contractPeriod: model.originalPeriod,
+    // Vigência vigente (estendida por aditivo de prazo homologado); cai no original se não houver.
+    contractPeriod: model.currentPeriod ?? model.originalPeriod,
     contractType: mapContractTypeModelToDomain(model.contractType),
     supplierId: model.supplierId ?? undefined,
     financierId: model.financierId ?? undefined,

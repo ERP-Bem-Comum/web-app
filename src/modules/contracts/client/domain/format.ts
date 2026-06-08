@@ -22,5 +22,6 @@ export function formatCurrency(value: number): string {
 
 export function formatDate(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date
-  return d.toLocaleDateString('pt-BR')
+  // Datas de contrato são YYYY-MM-DD (meia-noite UTC); formatar em UTC evita recuar 1 dia em BRT.
+  return d.toLocaleDateString('pt-BR', { timeZone: 'UTC' })
 }
