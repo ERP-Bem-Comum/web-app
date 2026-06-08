@@ -5,8 +5,9 @@
  * única de verdade dos valores e é testável por `node:test` (ver tests/shared/ui/tokens).
  * O `theme.css.ts` consome este objeto ao aplicar `createGlobalTheme(':root', vars, …)`.
  *
- * ⚠ Fidelidade v1: paleta de marca LEGADA (ciano #32C6F4). NÃO herdar a paleta
- * "institucional" da v1 (azul #396496 / verde #1f7d55). Ver ADR-0007/0008 e data-model.md.
+ * ⚠ Marca: TESTE de azul sóbrio (#2B6CB0) por pedido da stakeholder — pendente de validação do P.O.
+ * (a marca v1 original era o ciano #32C6F4). Reverter trocando os tokens de acento de volta. NÃO herdar
+ * a paleta "institucional" da v1 (azul #396496 / verde #1f7d55). Ver ADR-0007/0008 e data-model.md.
  *
  * Famílias self-host via @fontsource (ADR-0008): os family-names abaixo casam com os
  * registrados pelos pacotes (`Inter Variable`, `Nunito Variable`, `JetBrains Mono`).
@@ -19,9 +20,9 @@ const MONO_FALLBACK = 'ui-monospace, "SF Mono", Menlo, Consolas, monospace'
 export const tokenValues = {
   color: {
     brand: {
-      normal: '#32C6F4',
-      hover: '#76D9F8',
-      onBrand: '#000000',
+      normal: '#2B6CB0',
+      hover: '#3F84C6',
+      onBrand: '#FFFFFF',
       disabled: '#E0E0E0',
       onDisabled: '#6F6F6F',
     },
@@ -30,7 +31,7 @@ export const tokenValues = {
       raised: '#ffffff',
       // Fundo de "tela" (canvas) — fallback quando a imagem de fundo do login não carrega.
       // Tom de marca claro (provisório; P.O. confirma). Contrasta com o card branco.
-      canvas: '#e8f6fc',
+      canvas: '#E7EFF8',
       // Fundo sutil/cinza claro para telas de autenticação (login).
       subtle: '#F5F5F7',
       // Fundo do SHELL autenticado (canvas do app por trás de cards/tabelas). Legado
@@ -45,7 +46,7 @@ export const tokenValues = {
     },
     border: {
       default: '#e5ded4',
-      focus: '#32C6F4',
+      focus: '#2B6CB0',
       // Hairline neutra-fria (~oklab 14% da marca sobre branco): define a aresta de superfícies
       // elevadas sobre fundo claro de baixo contraste (ex.: card de login sobre o canvas ciano)
       // sem a dissonância quente do `default`. Harmoniza com branco E com o canvas.
@@ -63,7 +64,7 @@ export const tokenValues = {
       // Fundo da topbar (barra superior).
       surface: '#ffffff',
       // Item ativo na sidebar = cor de marca (ciano); casa com color.brand.normal.
-      itemActive: '#32C6F4',
+      itemActive: '#2B6CB0',
       // Hover de item de nav (branco a 6% sobre o índigo).
       itemHover: 'rgba(255,255,255,0.06)',
       // Fundo do grupo de sub-itens (escurece o índigo).
