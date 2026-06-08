@@ -74,7 +74,7 @@ export const searchWrap = style({
 
 export const searchIcon = style({
   position: 'absolute',
-  left: vars.space.sm,
+  insetInlineStart: vars.space.sm,
   top: '50%',
   transform: 'translateY(-50%)',
   color: vars.color.institutional.ink4,
@@ -86,8 +86,8 @@ export const searchIcon = style({
 export const searchInput = style({
   width: '100%',
   height: '2.25rem',
-  paddingLeft: '2.25rem',
-  paddingRight: vars.space.md,
+  paddingInlineStart: '2.25rem',
+  paddingInlineEnd: vars.space.md,
   borderRadius: vars.radius.md,
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   background: vars.color.surface.default,
@@ -104,7 +104,7 @@ export const searchInput = style({
 })
 
 export const chipsWrap = style({
-  marginLeft: 'auto',
+  marginInlineStart: 'auto',
 })
 
 export const filtersArea = style({
@@ -132,8 +132,8 @@ export const bottombar = style({
   flexShrink: 0,
   position: 'fixed',
   bottom: 0,
-  left: 'var(--sidebar-width, 16.25rem)',
-  right: 0,
+  insetInlineStart: 'var(--sidebar-width, 16.25rem)',
+  insetInlineEnd: 0,
   zIndex: 100,
 })
 
@@ -160,7 +160,7 @@ export const exportButton = style({
 })
 
 export const newButton = style({
-  marginLeft: 'auto',
+  marginInlineStart: 'auto',
   display: 'inline-flex',
   alignItems: 'center',
   gap: vars.space.sm,

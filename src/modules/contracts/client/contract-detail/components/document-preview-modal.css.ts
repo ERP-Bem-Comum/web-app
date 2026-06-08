@@ -13,6 +13,21 @@ export const overlay = style({
   padding: vars.space.lg,
 })
 
+// <dialog> nativo (A4): ESC + focus-trap + inert de graça. O card continua em `content`.
+export const dialog = style({
+  border: 'none',
+  padding: vars.space.lg,
+  background: 'transparent',
+  maxInlineSize: '100%',
+  maxBlockSize: '100%',
+  selectors: {
+    '&::backdrop': {
+      background: vars.color.institutional.overlay,
+      backdropFilter: 'blur(6px)',
+    },
+  },
+})
+
 export const content = style({
   position: 'relative',
   background: vars.color.surface.default,
@@ -25,6 +40,9 @@ export const content = style({
   display: 'flex',
   flexDirection: 'column',
   overflow: 'hidden',
+  // Acessibilidade (M4): qualquer transição de entrada respeita prefers-reduced-motion.
+  transition: 'opacity 120ms',
+  '@media': { '(prefers-reduced-motion: reduce)': { transitionDuration: '0.01ms' } },
 })
 
 export const header = style({

@@ -6,7 +6,7 @@
  * View burra: usa o controller (create) internamente + estado local (attach). Estilo só-tokens.
  */
 import type { ReactNode } from 'react'
-import { useState } from 'react'
+import { useId, useState } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
@@ -59,6 +59,7 @@ export function AmendmentModal({ open, mode, contractNumber, amendment, onClose,
   const { state, update, submit } = useAmendmentFormController(onCreate)
   const [file, setFile] = useState<File | null>(null)
   const [attachSignedAt, setAttachSignedAt] = useState('')
+  const titleId = useId()
 
   if (!open) return null
 
@@ -84,11 +85,23 @@ export function AmendmentModal({ open, mode, contractNumber, amendment, onClose,
   }
 
   return (
-    <div className={s.overlay} onClick={onClose}>
-      <div className={s.content} onClick={(e) => { e.stopPropagation() }} role="dialog" aria-modal="true">
+    <dialog
+      className={s.dialog}
+      aria-labelledby={titleId}
+      // showModal() entrega ESC + focus-trap + inert (A4). ref-callback abre ao montar; try/catch p/ jsdom.
+      ref={(el) => {
+        if (el !== null && !el.open) {
+          // jsdom não implementa showModal() → fallback abre o dialog (open) p/ o conteúdo ficar acessível.
+          try { el.showModal() } catch { el.open = true }
+        }
+      }}
+      onCancel={(e) => { e.preventDefault(); onClose() }}
+      onClick={(e) => { if (e.currentTarget === e.target) onClose() }}
+    >
+      <div className={s.content}>
         <div className={s.header}>
           <div className={s.headLeft}>
-            <h3 className={s.title}>{isAttach ? 'Documento do Aditivo' : t('contracts.amendment.title')}</h3>
+            <h3 className={s.title} id={titleId}>{isAttach ? 'Documento do Aditivo' : t('contracts.amendment.title')}</h3>
             <span className={s.autoNum}>{contractNumber}</span>
           </div>
           <button type="button" className={s.close} onClick={onClose} aria-label={t('contracts.amendment.cancel')}>×</button>
@@ -233,6 +246,6 @@ export function AmendmentModal({ open, mode, contractNumber, amendment, onClose,
           </button>
         </div>
       </div>
-    </div>
+    </dialog>
   )
 }

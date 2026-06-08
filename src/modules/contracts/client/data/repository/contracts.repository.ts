@@ -14,25 +14,10 @@ import type {
   AttachSignedDocumentInput,
   AttachAmendmentDocumentInput,
 } from '#modules/contracts/client/data/model/contracts.model.ts'
-/** Erro de contratos propagado pelo BFF — definido localmente para evitar cross-layer import. */
-export type ContractsError =
-  | 'invalid-code'
-  | 'invalid-value'
-  | 'invalid-period'
-  | 'missing-contractor'
-  | 'contract-not-found'
-  | 'amendment-not-found'
-  | 'invalid-amendment-type'
-  | 'connectivity'
-  | 'server'
-  | 'unauthorized'
-  | 'not-implemented'
-  | 'invalid-pdf'
-  | 'file-too-large'
-  | 'invalid-signed-at'
-  | 'no-signed-document'
-  | 'document-conflict'
-  | 'storage-unavailable'
+// ContractsError — FONTE ÚNICA no domínio (A2); o client-data reexporta pela fronteira adapters
+// (não redefine mais a 3ª cópia). Antes: união duplicada e propensa a divergir.
+export type { ContractsError } from '#modules/contracts/server/adapters/contracts-shared.types.ts'
+import type { ContractsError } from '#modules/contracts/server/adapters/contracts-shared.types.ts'
 
 import type { ContractHistoryEvent } from '#modules/contracts/server/adapters/contracts-shared.types.ts'
 

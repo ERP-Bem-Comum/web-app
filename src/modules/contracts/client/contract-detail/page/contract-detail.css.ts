@@ -115,8 +115,8 @@ export const mainCol = style({
   overflowY: 'auto',
   overflowX: 'hidden',
   paddingTop: vars.space.lg,
-  paddingLeft: vars.space.md,
-  paddingRight: vars.space.xs,
+  paddingInlineStart: vars.space.md,
+  paddingInlineEnd: vars.space.xs,
   paddingBottom: '4rem',
   display: 'flex',
   flexDirection: 'column',
@@ -152,7 +152,7 @@ export const asideCol = style({
   overflowY: 'auto',
   overflowX: 'hidden',
   background: vars.color.surface.default,
-  borderLeft: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderInlineStart: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   scrollbarWidth: 'thin',
   scrollbarColor: `${vars.color.institutional.paperRule} transparent`,
 })
@@ -220,7 +220,7 @@ export const contractedFantasia = style({
   color: vars.color.institutional.ink4,
   fontWeight: vars.font.weight.medium,
   fontSize: '1.125rem',
-  marginLeft: vars.space.xs,
+  marginInlineStart: vars.space.xs,
 })
 
 export const contractedMeta = style({
@@ -254,7 +254,7 @@ export const sectionH3 = style({
 })
 
 export const sectionHeadAction = style({
-  marginLeft: 'auto',
+  marginInlineStart: 'auto',
   fontFamily: vars.font.family.heading,
   fontSize: '0.6875rem',
   fontWeight: vars.font.weight.medium,
@@ -339,7 +339,7 @@ export const fldBoxCalc = style({
     fontSize: '0.625rem',
     fontWeight: vars.font.weight.semibold,
     color: vars.color.institutional.blueDeep,
-    marginRight: vars.space.sm,
+    marginInlineEnd: vars.space.sm,
     opacity: 0.7,
   },
 })
@@ -349,7 +349,7 @@ export const fldBoxSelect = style({
     content: '"\\25BE"',
     color: vars.color.institutional.blue,
     fontSize: '0.625rem',
-    marginLeft: vars.space.sm,
+    marginInlineStart: vars.space.sm,
   },
 })
 
@@ -475,12 +475,12 @@ export const tlItem = style({
   position: 'relative',
   padding: `${vars.space.sm} 0 ${vars.space.sm} 1.125rem`,
   fontSize: '0.6875rem',
-  borderLeft: `${vars.borderWidth.thick} solid ${vars.color.institutional.paperRule}`,
-  marginLeft: '0.3125rem',
+  borderInlineStart: `${vars.borderWidth.thick} solid ${vars.color.institutional.paperRule}`,
+  marginInlineStart: '0.3125rem',
   '::before': {
     content: '""',
     position: 'absolute',
-    left: '-0.3125rem',
+    insetInlineStart: '-0.3125rem',
     top: '0.6875rem',
     width: '0.5rem',
     height: '0.5rem',
@@ -523,8 +523,8 @@ export const bottombar = style({
   // Mesmo posicionamento do footer da tela de incluir contrato (full-width do conteúdo, fixo no rodapé).
   position: 'fixed',
   bottom: 0,
-  left: 'var(--sidebar-width, 16.25rem)',
-  right: 0,
+  insetInlineStart: 'var(--sidebar-width, 16.25rem)',
+  insetInlineEnd: 0,
   zIndex: 100,
 })
 
@@ -553,7 +553,7 @@ export const bottombarStage = style({
 })
 
 export const bottombarActions = style({
-  marginLeft: 'auto',
+  marginInlineStart: 'auto',
   display: 'flex',
   alignItems: 'center',
   gap: vars.space.sm,
@@ -901,7 +901,7 @@ export const vigenciaBarTrack = style({
 export const vigenciaBarFill = style({
   position: 'absolute',
   top: 0,
-  left: 0,
+  insetInlineStart: 0,
   height: '100%',
   background: vars.color.institutional.blue,
   borderRadius: vars.radius.lg,

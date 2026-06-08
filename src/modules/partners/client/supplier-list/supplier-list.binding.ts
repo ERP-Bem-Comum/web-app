@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useCurrentUser } from '#modules/auth/public-api/index.ts'
 import { can, grantedPermissions } from '#modules/partners/client/data/helpers/can.ts'
 import { partnersErrorTag } from '#modules/partners/client/data/helpers/partners-error-tag.ts'
-import type { SupplierListFilters } from '#modules/partners/client/domain/supplier.schemas.ts'
+import type { SupplierListFilters } from '#modules/partners/client/data/supplier-list-filters.schema.ts'
 
 import { serviceCategoriesQueryOptions } from './supplier-list.query.ts'
 import {

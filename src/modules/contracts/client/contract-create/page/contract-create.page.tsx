@@ -10,6 +10,7 @@ import { useContractCreateBinding, usePartnerSearchBinding } from '../contract-c
 import { useContractFormController } from '../components/contract-form.controller.ts'
 import type { SelectedPartner } from '../components/contract-form.controller.ts'
 import { ContractForm } from '../components/contract-form.component.tsx'
+import { formatDateOrDash } from '#modules/contracts/client/domain/format.ts'
 import {
   screen,
   modalOverlay,
@@ -57,13 +58,6 @@ function formatCurrencyCents(cents: number): string {
   if (!cents || cents <= 0) return 'R$ 0,00'
   const val = cents / 100
   return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
-
-function formatDateBR(dateStr: string): string {
-  if (!dateStr) return '—'
-  const d = new Date(dateStr)
-  if (Number.isNaN(d.getTime())) return '—'
-  return d.toLocaleDateString('pt-BR')
 }
 
 export function ContractCreatePage(): ReactNode {
@@ -244,6 +238,7 @@ export function ContractCreatePage(): ReactNode {
         onPartnerSearchClose={() => { setPartnerOpen(false) }}
         onCreateNewPartner={handleCreateNewPartner}
         documentUploaded={uploadedFile !== null}
+        currentYear={form.currentYear}
       />
 
       {/* Modal de finalização */}
@@ -281,7 +276,7 @@ export function ContractCreatePage(): ReactNode {
                   <div className={summaryCard}>
                     <div className={summaryCardLabel}>Vigência</div>
                     <div className={summaryCardValue}>
-                      {formatDateBR(form.state.originalPeriodStart)} → {formatDateBR(form.state.originalPeriodEnd)}
+                      {formatDateOrDash(form.state.originalPeriodStart)} → {formatDateOrDash(form.state.originalPeriodEnd)}
                     </div>
                   </div>
                 </div>

@@ -6,6 +6,7 @@ import type {
   SelectedPartner,
   ContractFormController,
 } from './contract-form.controller.ts'
+import { formatDateOrDash } from '#modules/contracts/client/domain/format.ts'
 import {
   screen,
   topbar,
@@ -96,13 +97,6 @@ function formatValueParts(cents: number): { currency: string; integer: string; c
   return { currency: 'R$', integer, cents: `,${decimal}` }
 }
 
-function formatDateBR(dateStr: string): string {
-  if (!dateStr) return '—'
-  const d = new Date(dateStr)
-  if (Number.isNaN(d.getTime())) return '—'
-  return d.toLocaleDateString('pt-BR')
-}
-
 function handleAutoExpand(e: React.SyntheticEvent<HTMLTextAreaElement>): void {
   const el = e.currentTarget
   el.style.height = 'auto'
@@ -132,6 +126,8 @@ interface Props {
   onPartnerSearchClose: () => void
   onCreateNewPartner: () => void
   documentUploaded: boolean
+  // Ano corrente para o número provisório (CT 0001/AAAA) — vem da view/controller, não do render (C1).
+  currentYear: number
 }
 
 export function ContractForm({
@@ -156,6 +152,7 @@ export function ContractForm({
   onPartnerSearchClose,
   onCreateNewPartner,
   documentUploaded,
+  currentYear,
 }: Props): ReactNode {
   const togglePartnerSearch = (): void => {
     if (partnerSearchOpen) {
@@ -181,7 +178,7 @@ export function ContractForm({
         <h1 className={topbarTitle}>
           {state.classification === 'Contract' ? 'Novo Contrato' : 'Nova Ordem de Serviço'}
           <span className={topbarMeta}>
-            {state.classification === 'Contract' ? 'CT' : 'OS'} 0001/{new Date().getFullYear()}
+            {state.classification === 'Contract' ? 'CT' : 'OS'} 0001/{currentYear}
           </span>
         </h1>
       </div>
@@ -554,14 +551,14 @@ export function ContractForm({
               <div className={vigenciaCardItem}>
                 <span className={vigenciaCardLabel}>Início</span>
                 <span className={`${vigenciaCardValue} ${!state.originalPeriodStart ? vigenciaCardValueEmpty : ''}`}>
-                  {formatDateBR(state.originalPeriodStart)}
+                  {formatDateOrDash(state.originalPeriodStart)}
                 </span>
               </div>
               <span className={vigenciaArrow}>→</span>
               <div className={vigenciaCardItem}>
                 <span className={vigenciaCardLabel}>Fim</span>
                 <span className={`${vigenciaCardValue} ${!state.originalPeriodEnd ? vigenciaCardValueEmpty : ''}`}>
-                  {formatDateBR(state.originalPeriodEnd)}
+                  {formatDateOrDash(state.originalPeriodEnd)}
                 </span>
               </div>
             </div>

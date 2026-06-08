@@ -39,5 +39,9 @@ export const contractsErrorTag = (e: ContractsError): string => {
       return 'contracts.attach.error.conflict'
     case 'storage-unavailable':
       return 'contracts.attach.error.storage'
+    default: {
+      const _exhaustive: never = e
+      return _exhaustive
+    }
   }
 }

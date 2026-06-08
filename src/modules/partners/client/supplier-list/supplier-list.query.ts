@@ -2,7 +2,7 @@
  * Query options da listagem de fornecedores — AGNÓSTICO (puro, zero React). Sobre o repository.
  */
 import { supplierRepository } from '#modules/partners/client/data/repository/supplier.repository.instance.ts'
-import type { SupplierListFilters } from '#modules/partners/client/domain/supplier.schemas.ts'
+import type { SupplierListFilters } from '#modules/partners/client/data/supplier-list-filters.schema.ts'
 
 export const supplierListQueryKey = (input: SupplierListFilters) =>
   ['suppliers', 'list', input] as const

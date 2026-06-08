@@ -9,7 +9,7 @@ import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { isOk } from '#shared/primitives/result.ts'
 import { useContractListController } from '../contract-list.controller.ts'
 import { useContractListBinding } from '../contract-list.binding.ts'
-import { mapListResponseToContractRows } from '../contract-list.view-model.ts'
+import { mapListResponseToContractRows, parseDateParam, filterExpiringRows } from '../contract-list.view-model.ts'
 import { ContractStatusChips } from '../components/contract-status-chips.component.tsx'
 import { ContractFilters } from '../components/contract-filters.component.tsx'
 import { ContractsTable } from '../components/contracts-table.component.tsx'
@@ -40,7 +40,7 @@ const routeApi = getRouteApi('/_authenticated/contratos/')
 export function ContractListPage(): ReactNode {
   const search = routeApi.useSearch()
   const navigate = useNavigate()
-  const { showFilters, toggleFilters } = useContractListController()
+  const { showFilters, toggleFilters, nowMs } = useContractListController()
 
   const { data, isLoading } = useContractListBinding({
     page: search.page,
@@ -49,12 +49,8 @@ export function ContractListPage(): ReactNode {
     search: search.search,
     contractType: search.contractType as 'Supplier' | 'Financier' | 'Collaborator' | 'ACT' | undefined,
     status: search.contractStatus as 'Pendente' | 'Em Andamento' | 'Finalizado' | 'Distrato' | undefined,
-    contractPeriodStart: search.contractPeriodStart
-      ? new Date(search.contractPeriodStart)
-      : undefined,
-    contractPeriodEnd: search.contractPeriodEnd
-      ? new Date(search.contractPeriodEnd)
-      : undefined,
+    contractPeriodStart: parseDateParam(search.contractPeriodStart),
+    contractPeriodEnd: parseDateParam(search.contractPeriodEnd),
     minValue: search.minValue,
     maxValue: search.maxValue,
     budgetPlanId: search.budgetPlanId
@@ -86,16 +82,7 @@ export function ContractListPage(): ReactNode {
 
   const selectedSlug = search.vencendo ? 'vencendo' : domainToSlug(search.contractStatus)
 
-  const rows = ((): typeof allRows => {
-    if (selectedSlug !== 'vencendo') return allRows
-    const now = new Date().getTime()
-    const msPerDay = 1000 * 60 * 60 * 24
-    const thresholdDays = 45
-    return allRows.filter((row) => {
-      const daysUntilEnd = (new Date(row.contractPeriod.end).getTime() - now) / msPerDay
-      return daysUntilEnd >= 0 && daysUntilEnd <= thresholdDays
-    })
-  })()
+  const rows = selectedSlug === 'vencendo' ? filterExpiringRows(allRows, nowMs) : allRows
 
   const handleFilterChange = (filters: ContractListFilters): void => {
     void navigate({

@@ -18,9 +18,13 @@ export type OctetStreamFetchOptions = Readonly<{
   timeoutMs?: number
 }>
 
+// Corpo de erro com TAMANHO LIMITADO: um core-api com defeito pode devolver um payload enorme
+// (HTML de proxy, stack trace). Lemos no máximo MAX_ERROR_BODY chars para não inflar memória/log.
+const MAX_ERROR_BODY = 8192
 const safeReadBody = async (r: Response): Promise<unknown> => {
-  const text = await r.text()
-  if (text === '') return null
+  const full = await r.text()
+  if (full === '') return null
+  const text = full.length > MAX_ERROR_BODY ? full.slice(0, MAX_ERROR_BODY) : full
   try {
     return JSON.parse(text) as unknown
   } catch {
@@ -41,13 +45,18 @@ export const octetStreamFetch = async <T>(
   const timeoutId = setTimeout(() => {
     controller.abort()
   }, timeoutMs)
+  // Listener nomeado para poder REMOVER no cleanup (evita vazamento quando o `signal` externo
+  // sobrevive a esta chamada — ex.: AbortController de longa duração reusado entre requests).
+  const onExternalAbort = () => {
+    controller.abort()
+  }
   if (signal) {
     if (signal.aborted) controller.abort()
-    else {
-      signal.addEventListener('abort', () => {
-        controller.abort()
-      }, { once: true })
-    }
+    else signal.addEventListener('abort', onExternalAbort, { once: true })
+  }
+  const cleanup = () => {
+    clearTimeout(timeoutId)
+    signal?.removeEventListener('abort', onExternalAbort)
   }
 
   const requestHeaders: Record<string, string> = {
@@ -68,13 +77,13 @@ export const octetStreamFetch = async <T>(
       signal: controller.signal,
     })
   } catch {
-    clearTimeout(timeoutId)
+    cleanup()
     if (controller.signal.aborted) {
       return err(signal?.aborted === true ? { kind: 'aborted' } : { kind: 'timeout' })
     }
     return err({ kind: 'network' })
   }
-  clearTimeout(timeoutId)
+  cleanup()
 
   if (!response.ok) {
     return err({ kind: 'http', status: response.status, body: await safeReadBody(response) })

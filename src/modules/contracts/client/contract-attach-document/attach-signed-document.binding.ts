@@ -7,6 +7,8 @@ export type AttachSignedDocumentCommand = Readonly<{
   running: boolean
   errorTag: string | null
   result: Contract | null
+  // Derivação server-state → "concluído" (A1): mora no binding, não na page.
+  succeeded: boolean
   execute: (args: Readonly<{ contractId: string; file: File; signedAt: string }>) => void
   reset: () => void
 }>
@@ -24,10 +26,12 @@ export const useAttachSignedDocumentBinding = (): Readonly<{ attachCommand: Atta
   const queryClient = useQueryClient()
   const mutation = useMutation({
     ...attachSignedDocumentViewModel.mutation,
-    onSuccess: (result) => {
+    onSuccess: (result, variables) => {
       attachSignedDocumentViewModel.onSuccess(result)
+      // Escopado (A5): só o detalhe do contrato afetado + as listas — nunca o prefixo amplo ['contracts'].
       if (isOk(result)) {
-        void queryClient.invalidateQueries({ queryKey: ['contracts'] })
+        void queryClient.invalidateQueries({ queryKey: ['contracts', 'detail', variables.contractId] })
+        void queryClient.invalidateQueries({ queryKey: ['contracts', 'list'] })
       }
     },
   })
@@ -45,6 +49,7 @@ export const useAttachSignedDocumentBinding = (): Readonly<{ attachCommand: Atta
       running: mutation.isPending,
       errorTag,
       result: data !== undefined && isOk(data) ? data.value : null,
+      succeeded: data !== undefined && isOk(data),
       execute: ({ contractId, file, signedAt }) => {
         void fileToBase64(file).then((fileBase64) => {
           mutation.mutate({ contractId, fileBase64, fileName: file.name, signedAt })

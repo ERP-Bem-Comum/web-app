@@ -3,7 +3,7 @@
  * Espelha `supplier-list.query.ts`, sem a query de categorias (financiador não tem categorias).
  */
 import { financierRepository } from '#modules/partners/client/data/repository/financier.repository.instance.ts'
-import type { FinancierListFilters } from '#modules/partners/client/domain/financier.schemas.ts'
+import type { FinancierListFilters } from '#modules/partners/client/data/financier-list-filters.schema.ts'
 
 export const financierListQueryKey = (input: FinancierListFilters) =>
   ['financiers', 'list', input] as const

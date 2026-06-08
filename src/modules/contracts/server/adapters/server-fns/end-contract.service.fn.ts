@@ -18,13 +18,19 @@ export type EndContractFnResult =
 export const endContractFn = createServerFn({ method: 'POST' })
   .inputValidator(EndContractFnInputSchema)
   .handler(async ({ data }): Promise<EndContractFnResult> => {
-    const user = await getCurrentUserFn()
-    if (user === null) return { ok: false, error: 'unauthorized' }
+    // Borda de infra: qualquer exceção inesperada (rede, bug de composição) vira Result — a UI
+    // nunca recebe throw cru e a cadeia de erro segue como valor (ADR-0002, ver A7 do review).
+    try {
+      const user = await getCurrentUserFn()
+      if (user === null) return { ok: false, error: 'unauthorized' }
 
-    const accessToken = await resolveAccessTokenFn()
-    if (accessToken === null) return { ok: false, error: 'unauthorized' }
+      const accessToken = await resolveAccessTokenFn()
+      if (accessToken === null) return { ok: false, error: 'unauthorized' }
 
-    const r = await contractsServer().endContract(data.contractId, accessToken)
-    if (isErr(r)) return { ok: false, error: r.error }
-    return { ok: true, data: r.value }
+      const r = await contractsServer().endContract(data.contractId, accessToken)
+      if (isErr(r)) return { ok: false, error: r.error }
+      return { ok: true, data: r.value }
+    } catch {
+      return { ok: false, error: 'server' }
+    }
   })

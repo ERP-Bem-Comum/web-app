@@ -50,7 +50,7 @@ const STATUS_BADGE_CLASS: Record<string, string> = {
 
 export function ContractDetailPage({ contractId }: { contractId: string }): ReactNode {
   const navigate = useNavigate()
-  const { data, isLoading } = useContractDetailBinding(contractId)
+  const { data, isLoading, vigencia } = useContractDetailBinding(contractId)
   const { attachCommand } = useAttachSignedDocumentBinding()
   const { createCommand: amendmentCommand } = useAmendmentCreateBinding()
   const { attachCommand: amendmentAttachCommand } = useAttachAmendmentDocumentBinding()
@@ -59,12 +59,13 @@ export function ContractDetailPage({ contractId }: { contractId: string }): Reac
   const [amendmentOpen, setAmendmentOpen] = useState(false)
   const [selectedAmendment, setSelectedAmendment] = useState<AmendmentForAttach | null>(null)
   const [previewDoc, setPreviewDoc] = useState<DocRef | null>(null)
-  // Modais somem ao concluir (derivado, sem setState em efeito). Distrato fecha quando o `end` conclui.
-  const amendmentModalOpen = amendmentOpen && amendmentCommand.result === null && endCommand.result === null
-  const amendmentAttachOpen = selectedAmendment !== null && amendmentAttachCommand.result === null
-  // Anexo bem-sucedido → contrato efetivado: o modal some (derivado, sem setState em efeito). A lista/
-  // detalhe são invalidados no binding; ao virar "Em Andamento" o botão-gatilho também deixa de aparecer.
-  const modalOpen = attachOpen && attachCommand.result === null
+  // Modais somem ao concluir. A derivação server-state→"concluído" vive no binding (`succeeded`, A1);
+  // aqui a page só compõe o UI-state local (aberto) com esse flag semântico. Distrato fecha ao `end` concluir.
+  const amendmentModalOpen = amendmentOpen && !amendmentCommand.succeeded && !endCommand.succeeded
+  const amendmentAttachOpen = selectedAmendment !== null && !amendmentAttachCommand.succeeded
+  // Anexo bem-sucedido → contrato efetivado: o modal some. A lista/detalhe são invalidados no binding;
+  // ao virar "Em Andamento" o botão-gatilho também deixa de aparecer.
+  const modalOpen = attachOpen && !attachCommand.succeeded
 
   if (isLoading) {
     return (
@@ -76,11 +77,11 @@ export function ContractDetailPage({ contractId }: { contractId: string }): Reac
     )
   }
 
-  if (!data || !isOk(data)) {
+  if (!data || !isOk(data) || vigencia === null) {
     return (
       <div className={screen}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-          Erro ao carregar contrato
+          {t('contracts.detail.error.loading')}
         </div>
       </div>
     )
@@ -134,7 +135,7 @@ export function ContractDetailPage({ contractId }: { contractId: string }): Reac
           <ContractBankInfo contract={contract} />
         </div>
         <div className={asideCol}>
-          <ContractAside contract={contract} />
+          <ContractAside contract={contract} vigencia={vigencia} />
           <ContractTimeline contract={contract} />
         </div>
       </div>

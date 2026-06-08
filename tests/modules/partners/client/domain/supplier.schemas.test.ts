@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
-import { SupplierListFiltersSchema } from '../../../../../src/modules/partners/client/domain/supplier.schemas.ts'
+import { SupplierListFiltersSchema } from '../../../../../src/modules/partners/client/data/supplier-list-filters.schema.ts'
 import { SupplierFormSchema } from '../../../../../src/modules/partners/client/data/model/supplier.model.ts'
 
 describe('SupplierListFiltersSchema', () => {

@@ -3,7 +3,7 @@
  */
 import { createFileRoute } from '@tanstack/react-router'
 
-import { ActListFiltersSchema } from '#modules/partners/client/domain/act.schemas.ts'
+import { ActListFiltersSchema } from '#modules/partners/client/data/act-list-filters.schema.ts'
 import { ActListPage } from '#modules/partners/client/act-list/page/act-list.page.tsx'
 
 export const Route = createFileRoute('/_authenticated/parceiros/atos/')({

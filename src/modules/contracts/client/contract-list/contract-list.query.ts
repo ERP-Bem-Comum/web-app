@@ -9,4 +9,6 @@ export const contractListQueryKey = (input: ListContractsInput) => ['contracts',
 export const contractListQueryOptions = (input: ListContractsInput) => ({
   queryKey: contractListQueryKey(input),
   queryFn: () => contractsRepository.list(input),
+  // Evita refetch agressivo (foco/montagem) durante a navegação da lista — M1.
+  staleTime: 30_000,
 })

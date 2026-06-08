@@ -43,9 +43,11 @@ describe('createAppQueryClient — política de auth:expired', () => {
     assert.equal(called, 0)
   })
 
-  it('tem mutationCache.onSuccess configurado (invalidação)', () => {
+  it('NÃO tem invalidação global no mutationCache (A5: escopada por binding)', () => {
+    // A5 do code-review: a invalidação global (`invalidateQueries()` sem escopo) foi removida — cada
+    // binding invalida só as keys que tocou (detalhe do contrato + listas), em onSuccess/isOk.
     const client = createAppQueryClient(() => undefined)
 
-    assert.equal(typeof client.getMutationCache().config.onSuccess, 'function')
+    assert.equal(client.getMutationCache().config.onSuccess, undefined)
   })
 })

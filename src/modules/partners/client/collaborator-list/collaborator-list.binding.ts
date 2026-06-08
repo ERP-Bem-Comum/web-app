@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useCurrentUser } from '#modules/auth/public-api/index.ts'
 import { can, grantedPermissions } from '#modules/partners/client/data/helpers/can.ts'
 import { partnersErrorTag } from '#modules/partners/client/data/helpers/partners-error-tag.ts'
-import type { CollaboratorListFilters } from '#modules/partners/client/domain/collaborator.schemas.ts'
+import type { CollaboratorListFilters } from '#modules/partners/client/data/collaborator-list-filters.schema.ts'
 
 import {
   mapResponseToRows,

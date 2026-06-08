@@ -12,6 +12,7 @@ import {
   formatDate,
   deriveStatus,
   getMostRecentChild,
+  exportFileStamp,
 } from '#modules/contracts/client/contract-list/contract-list.view-model.ts'
 import { DownloadIcon, FileTextIcon, FileChartIcon } from '#shared/ui/icons/index.ts'
 import { wrapper, trigger, menu, menuItem, menuItemBorder } from './export-dropdown.css.ts'
@@ -75,7 +76,7 @@ function downloadCsv(rows: readonly ContractRow[]): void {
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
-  link.download = `contratos-${new Date().toISOString().slice(0, 10)}.csv`
+  link.download = `contratos-${exportFileStamp()}.csv`
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)

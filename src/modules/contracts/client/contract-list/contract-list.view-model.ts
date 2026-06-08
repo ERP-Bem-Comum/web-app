@@ -181,6 +181,43 @@ export function computeStatusChipCounts(
   return counts as unknown as StatusChipCounts
 }
 
+// Parsing de parâmetro de data (YYYY-MM-DD da URL → Date). Fica na view-model: a page/filtros são
+// views burras e não podem instanciar `new Date(` (C1) — o relógio/parse mora aqui.
+export const parseDateParam = (s: string | undefined): Date | undefined =>
+  s !== undefined && s !== '' ? new Date(s) : undefined
+
+// Filtro "vencendo": recebe `nowMs` (estável, vindo do controller) — derivação pura, sem relógio no render.
+export const filterExpiringRows = (
+  rows: readonly ContractRow[],
+  nowMs: number,
+  thresholdDays = 45,
+): readonly ContractRow[] => {
+  const msPerDay = 1000 * 60 * 60 * 24
+  return rows.filter((row) => {
+    const daysUntilEnd = (row.contractPeriod.end.getTime() - nowMs) / msPerDay
+    return daysUntilEnd >= 0 && daysUntilEnd <= thresholdDays
+  })
+}
+
+// Normaliza uma data (string da URL ou ISO) para o formato YYYY-MM-DD do <input type="date">.
+// Helper de view-model: a view de filtros é burra e não instancia `new Date(` (C1).
+export const formatDateInput = (dateStr: string | undefined): string => {
+  if (!dateStr) return ''
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr
+  try {
+    const d = new Date(dateStr)
+    const yyyy = String(d.getFullYear())
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    const dd = String(d.getDate()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd}`
+  } catch {
+    return ''
+  }
+}
+
+// Carimbo de data (YYYY-MM-DD) para o nome do arquivo exportado. O relógio mora aqui, não na view (C1).
+export const exportFileStamp = (): string => new Date().toISOString().slice(0, 10)
+
 export { STATUS_OPTIONS, deriveStatus, getMostRecentChild, programaShort }
 export {
   formatContractNumber,
@@ -188,4 +225,4 @@ export {
   formatDate,
 } from '#modules/contracts/client/domain/format.ts'
 export type { ContractRow } from '#modules/contracts/client/domain/types.ts'
-export type { ContractListFilters } from '#modules/contracts/client/domain/schemas.ts'
+export type { ContractListFilters } from '#modules/contracts/client/data/contract-list-filters.schema.ts'

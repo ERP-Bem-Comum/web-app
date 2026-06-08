@@ -6,7 +6,8 @@ import { createServerFn } from '@tanstack/react-start'
 import { isErr } from '#shared/primitives/result.ts'
 import { getCurrentUserFn, resolveAccessTokenFn } from '#modules/auth/public-api/index.ts'
 import { supplierServer } from '../../supplier.composition.ts'
-import { ListSuppliersInputSchema, type SupplierListResponse } from '#modules/partners/server/domain/supplier/supplier.io.ts'
+import { ListSuppliersInputSchema } from "#modules/partners/server/adapters/supplier.io-schemas.ts"
+import type { SupplierListResponse } from "#modules/partners/server/domain/supplier/supplier.io.ts"
 import type { PartnersError } from '#modules/partners/server/domain/errors/partners.errors.ts'
 
 export type ListSuppliersFnResult =

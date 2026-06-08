@@ -25,3 +25,12 @@ export function formatDate(date: Date | string): string {
   // Datas de contrato são YYYY-MM-DD (meia-noite UTC); formatar em UTC evita recuar 1 dia em BRT.
   return d.toLocaleDateString('pt-BR', { timeZone: 'UTC' })
 }
+
+// Formata uma string de data (YYYY-MM-DD) para exibição, com fallback "—" para vazio/inválido.
+// Vive no domínio (helper puro) para as views burras não instanciarem `new Date(` no render (C1).
+export function formatDateOrDash(dateStr: string): string {
+  if (!dateStr) return '—'
+  const d = new Date(dateStr)
+  if (Number.isNaN(d.getTime())) return '—'
+  return d.toLocaleDateString('pt-BR', { timeZone: 'UTC' })
+}

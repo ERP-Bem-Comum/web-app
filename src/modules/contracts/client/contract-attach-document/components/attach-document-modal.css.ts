@@ -13,6 +13,22 @@ export const overlay = style({
   padding: vars.space.md,
 })
 
+// <dialog> nativo (A4): showModal() entrega ESC + focus-trap + inert + restauração de foco. O card
+// continua sendo `content`; o dialog só centraliza e pinta o backdrop (espelha o overlay anterior).
+export const dialog = style({
+  border: 'none',
+  padding: vars.space.md,
+  background: 'transparent',
+  maxInlineSize: '100%',
+  maxBlockSize: '100%',
+  selectors: {
+    '&::backdrop': {
+      background: vars.color.institutional.overlay,
+      backdropFilter: 'blur(6px)',
+    },
+  },
+})
+
 export const content = style({
   position: 'relative',
   background: vars.color.surface.default,
@@ -51,7 +67,7 @@ export const titleNum = style({
   background: vars.color.institutional.paperWarm,
   padding: `0.125rem ${vars.space.xs}`,
   borderRadius: vars.radius.sm,
-  marginLeft: vars.space.sm,
+  marginInlineStart: vars.space.sm,
 })
 
 export const subtitle = style({
@@ -124,6 +140,8 @@ export const uploadZone = style({
   background: vars.color.institutional.paperWarm,
   cursor: 'pointer',
   transition: 'border-color 120ms, background 120ms',
+  // Acessibilidade (M4): respeita quem pediu menos movimento — zera a duração da transição.
+  '@media': { '(prefers-reduced-motion: reduce)': { transitionDuration: '0.01ms' } },
 })
 
 export const uploadZoneActive = style({
@@ -213,7 +231,7 @@ export const statusBadge = style({
   borderRadius: vars.radius.md,
   fontSize: '0.6875rem',
   fontWeight: vars.font.weight.semibold,
-  marginLeft: 'auto',
+  marginInlineStart: 'auto',
 })
 export const statusBadgePending = style({ background: vars.color.status.pendingBg, color: vars.color.status.pendingText })
 export const statusBadgeActive = style({ background: vars.color.status.activeBg, color: vars.color.status.activeText })

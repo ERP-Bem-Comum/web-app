@@ -8,6 +8,8 @@ export type AttachAmendmentDocumentCommand = Readonly<{
   running: boolean
   errorTag: string | null
   result: Contract | null
+  // Derivação server-state → "concluído" (A1): mora no binding, não na page.
+  succeeded: boolean
   // Retorna `true` se a homologação deu certo — permite encadear (ex.: distrato → /end).
   execute: (args: Readonly<{ contractId: string; amendmentId: string; file: File; signedAt: string }>) => Promise<boolean>
   reset: () => void
@@ -24,8 +26,12 @@ export const useAttachAmendmentDocumentBinding = (): Readonly<{ attachCommand: A
   const queryClient = useQueryClient()
   const mutation = useMutation({
     ...attachAmendmentDocumentMutationOptions,
-    onSuccess: (result) => {
-      if (isOk(result)) void queryClient.invalidateQueries({ queryKey: ['contracts'] })
+    onSuccess: (result, variables) => {
+      // Escopado (A5): só o detalhe do contrato afetado + as listas — nunca o prefixo amplo ['contracts'].
+      if (isOk(result)) {
+        void queryClient.invalidateQueries({ queryKey: ['contracts', 'detail', variables.contractId] })
+        void queryClient.invalidateQueries({ queryKey: ['contracts', 'list'] })
+      }
     },
   })
 
@@ -42,6 +48,7 @@ export const useAttachAmendmentDocumentBinding = (): Readonly<{ attachCommand: A
       running: mutation.isPending,
       errorTag,
       result: data !== undefined && isOk(data) ? data.value : null,
+      succeeded: data !== undefined && isOk(data),
       execute: ({ contractId, amendmentId, file, signedAt }) =>
         fileToBase64(file)
           .then((fileBase64) => mutation.mutateAsync({ contractId, amendmentId, fileBase64, fileName: file.name, signedAt }))

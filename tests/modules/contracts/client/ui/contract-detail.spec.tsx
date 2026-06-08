@@ -8,7 +8,11 @@ import { ContractInfo } from '#modules/contracts/client/contract-detail/componen
 import { ContractDocuments } from '#modules/contracts/client/contract-detail/components/contract-documents.component.tsx'
 import { ContractAside } from '#modules/contracts/client/contract-detail/components/contract-aside.component.tsx'
 import { ContractTimeline } from '#modules/contracts/client/contract-detail/components/contract-timeline.component.tsx'
+import { deriveVigencia } from '#modules/contracts/client/contract-detail/contract-detail.view-model.ts'
 import { mockContract } from '../../fixtures/contract.fixture.ts'
+
+// `now` fixo p/ a barra de vigência (a view recebe a derivação por prop; ver C1 do review).
+const FIXED_NOW = new Date('2026-06-08T00:00:00Z')
 
 afterEach(() => {
   cleanup()
@@ -61,14 +65,14 @@ describe('ContractDocuments', () => {
 describe('ContractAside', () => {
   it('renderiza valor atual', () => {
     const contract = mockContract()
-    render(<ContractAside contract={contract} />)
+    render(<ContractAside contract={contract} vigencia={deriveVigencia(contract, FIXED_NOW)} />)
     // "Valor Atual" aparece no label da seção e no total da composição
     expect(screen.getAllByText('Valor Atual').length).toBeGreaterThanOrEqual(1)
   })
 
   it('renderiza composição com valor original e aditivos', () => {
     const contract = mockContract()
-    render(<ContractAside contract={contract} />)
+    render(<ContractAside contract={contract} vigencia={deriveVigencia(contract, FIXED_NOW)} />)
     expect(screen.getByText('Composição')).toBeTruthy()
     expect(screen.getByText('Valor Original')).toBeTruthy()
     // Composição mostra APENAS aditivos do tipo VALOR: 001 (valor) entra; 002 (prazo) NÃO.
@@ -78,7 +82,7 @@ describe('ContractAside', () => {
 
   it('renderiza barra de vigência', () => {
     const contract = mockContract()
-    render(<ContractAside contract={contract} />)
+    render(<ContractAside contract={contract} vigencia={deriveVigencia(contract, FIXED_NOW)} />)
     expect(screen.getByText('Vigência Atual')).toBeTruthy()
   })
 })

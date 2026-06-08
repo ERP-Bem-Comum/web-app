@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
-import { ActListFiltersSchema } from '../../../../../src/modules/partners/client/domain/act.schemas.ts'
+import { ActListFiltersSchema } from '../../../../../src/modules/partners/client/data/act-list-filters.schema.ts'
 import { ActFormSchema } from '../../../../../src/modules/partners/client/data/model/act.model.ts'
 
 describe('ActListFiltersSchema', () => {

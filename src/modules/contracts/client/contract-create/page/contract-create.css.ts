@@ -85,8 +85,8 @@ export const formCol = style({
   overflowY: 'auto',
   overflowX: 'hidden',
   paddingTop: vars.space.lg,
-  paddingLeft: vars.space.md,
-  paddingRight: vars.space.xs,
+  paddingInlineStart: vars.space.md,
+  paddingInlineEnd: vars.space.xs,
   paddingBottom: '4rem',
   display: 'flex',
   flexDirection: 'column',
@@ -120,7 +120,7 @@ export const sidebar = style({
   overflowY: 'auto',
   overflowX: 'hidden',
   background: vars.color.surface.default,
-  borderLeft: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderInlineStart: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   scrollbarWidth: 'thin',
   scrollbarColor: `${vars.color.institutional.paperRule} transparent`,
 })
@@ -322,8 +322,8 @@ export const footer = style({
   flexShrink: 0,
   position: 'fixed',
   bottom: 0,
-  left: 'var(--sidebar-width, 16.25rem)',
-  right: 0,
+  insetInlineStart: 'var(--sidebar-width, 16.25rem)',
+  insetInlineEnd: 0,
   zIndex: 100,
 })
 
@@ -659,7 +659,7 @@ export const searchInputWrap = style({
 
 export const searchInputIcon = style({
   position: 'absolute',
-  left: vars.space.sm,
+  insetInlineStart: vars.space.sm,
   top: '50%',
   transform: 'translateY(-50%)',
   color: vars.color.institutional.ink5,
@@ -670,8 +670,8 @@ export const searchInputIcon = style({
 export const searchDropdown = style({
   position: 'absolute',
   top: 'calc(100% + 4px)',
-  left: 0,
-  right: 0,
+  insetInlineStart: 0,
+  insetInlineEnd: 0,
   background: vars.color.surface.default,
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   borderRadius: vars.radius.md,
@@ -998,7 +998,7 @@ export const uploadAction = style({
   fontWeight: vars.font.weight.semibold,
   color: vars.color.institutional.blue,
   flexShrink: 0,
-  marginLeft: 'auto',
+  marginInlineStart: 'auto',
 })
 
 export const uploadText = style({

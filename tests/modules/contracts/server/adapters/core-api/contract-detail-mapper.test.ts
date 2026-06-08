@@ -22,21 +22,24 @@ const baseDetailPending = {
 
 describe('apiContractDetailToDomain — metadados editáveis (PATCH)', () => {
   it('propaga observations/email/telephone quando o detalhe os traz', () => {
-    const c = apiContractDetailToDomain({
+    // O mapper agora retorna Result (C3 / errors-as-values) — desembrulhamos o caso ok.
+    const r = apiContractDetailToDomain({
       ...baseDetailPending,
       observations: 'Observação atualizada',
       email: 'contato@exemplo.com',
       telephone: '+55 11 99999-8888',
     })
-    assert.strictEqual(c.observations, 'Observação atualizada')
-    assert.strictEqual(c.email, 'contato@exemplo.com')
-    assert.strictEqual(c.telephone, '+55 11 99999-8888')
+    assert.ok(r.ok)
+    assert.strictEqual(r.value.observations, 'Observação atualizada')
+    assert.strictEqual(r.value.email, 'contato@exemplo.com')
+    assert.strictEqual(r.value.telephone, '+55 11 99999-8888')
   })
 
   it('deixa os metadados como undefined quando ausentes no detalhe', () => {
-    const c = apiContractDetailToDomain(baseDetailPending)
-    assert.strictEqual(c.observations, undefined)
-    assert.strictEqual(c.email, undefined)
-    assert.strictEqual(c.telephone, undefined)
+    const r = apiContractDetailToDomain(baseDetailPending)
+    assert.ok(r.ok)
+    assert.strictEqual(r.value.observations, undefined)
+    assert.strictEqual(r.value.email, undefined)
+    assert.strictEqual(r.value.telephone, undefined)
   })
 })

@@ -8,6 +8,8 @@ export type EndContractCommand = Readonly<{
   running: boolean
   errorTag: string | null
   result: Contract | null
+  // Derivação server-state → "concluído" (A1): mora no binding, não na page.
+  succeeded: boolean
   execute: (contractId: string) => void
   reset: () => void
 }>
@@ -17,8 +19,12 @@ export const useEndContractBinding = (): Readonly<{ endCommand: EndContractComma
   const queryClient = useQueryClient()
   const mutation = useMutation({
     ...endContractMutationOptions,
-    onSuccess: (result) => {
-      if (isOk(result)) void queryClient.invalidateQueries({ queryKey: ['contracts'] })
+    onSuccess: (result, variables) => {
+      // Escopado (A5): só o detalhe do contrato afetado + as listas — nunca o prefixo amplo ['contracts'].
+      if (isOk(result)) {
+        void queryClient.invalidateQueries({ queryKey: ['contracts', 'detail', variables.contractId] })
+        void queryClient.invalidateQueries({ queryKey: ['contracts', 'list'] })
+      }
     },
   })
 
@@ -35,6 +41,7 @@ export const useEndContractBinding = (): Readonly<{ endCommand: EndContractComma
       running: mutation.isPending,
       errorTag,
       result: data !== undefined && isOk(data) ? data.value : null,
+      succeeded: data !== undefined && isOk(data),
       execute: (contractId) => { mutation.mutate({ contractId }) },
       reset: () => { mutation.reset() },
     },

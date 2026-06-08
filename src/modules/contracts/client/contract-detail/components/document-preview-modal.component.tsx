@@ -5,6 +5,7 @@
  * CTR-HTTP-DOCUMENT-CONTENT), mostra um placeholder. Estilo só-tokens.
  */
 import type { ReactNode } from 'react'
+import { useId } from 'react'
 import type { DocRef } from './contract-documents.component.tsx'
 import * as s from './document-preview-modal.css.ts'
 
@@ -15,13 +16,26 @@ export interface DocumentPreviewModalProps {
 }
 
 export function DocumentPreviewModal({ open, doc, onClose }: DocumentPreviewModalProps): ReactNode {
+  const titleId = useId()
   if (!open || doc === null) return null
 
   return (
-    <div className={s.overlay} onClick={onClose}>
-      <div className={s.content} onClick={(e) => { e.stopPropagation() }} role="dialog" aria-modal="true" aria-label="Prévia do documento">
+    <dialog
+      className={s.dialog}
+      aria-labelledby={titleId}
+      // showModal() entrega ESC + focus-trap + inert (A4). ref-callback abre ao montar; try/catch p/ jsdom.
+      ref={(el) => {
+        if (el !== null && !el.open) {
+          // jsdom não implementa showModal() → fallback abre o dialog (open) p/ o conteúdo ficar acessível.
+          try { el.showModal() } catch { el.open = true }
+        }
+      }}
+      onCancel={(e) => { e.preventDefault(); onClose() }}
+      onClick={(e) => { if (e.currentTarget === e.target) onClose() }}
+    >
+      <div className={s.content}>
         <div className={s.header}>
-          <h3 className={s.title}>{doc.name}</h3>
+          <h3 className={s.title} id={titleId}>{doc.name}</h3>
           <div className={s.headActions}>
             {doc.url !== undefined && (
               <a className={s.downloadLink} href={doc.url} download>Baixar</a>
@@ -44,6 +58,6 @@ export function DocumentPreviewModal({ open, doc, onClose }: DocumentPreviewModa
           )}
         </div>
       </div>
-    </div>
+    </dialog>
   )
 }

@@ -12,6 +12,11 @@ export const CollaboratorListFiltersSchema = z.object({
     .or(z.enum(['true', 'false']).transform((v) => v === 'true'))
     .optional(),
   status: z.enum(['pre-registration', 'complete']).optional(),
+  // Filtros do painel (legado) suportados pelo backend — singulares na URL, mapeados p/ arrays na query.
+  area: z.enum(['PARC', 'DDI', 'DCE', 'EPV']).optional(),
+  employment: z.enum(['CLT', 'PJ']).optional(),
+  role: z.string().trim().max(120).optional(),
+  year: z.coerce.number().int().min(1900).max(2100).optional(),
   page: z.coerce.number().int().min(1).catch(1).default(1),
   limit: z.coerce
     .number()

@@ -5,4 +5,6 @@ export const contractDetailQueryKey = (id: string) => ['contracts', 'detail', id
 export const contractDetailQueryOptions = (id: string) => ({
   queryKey: contractDetailQueryKey(id),
   queryFn: () => contractsRepository.getById(id),
+  // Evita refetch agressivo (foco/montagem); a mutação invalida a key explicitamente — M1.
+  staleTime: 30_000,
 })

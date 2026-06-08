@@ -22,7 +22,8 @@ export type AmendmentType = z.infer<typeof AmendmentTypeSchema>
 export const AmendmentStatusSchema = z.enum(['Pendente', 'Homologado'])
 export type AmendmentStatus = z.infer<typeof AmendmentStatusSchema>
 
-export const MoneySchema = z.object({ cents: z.int() })
+// Valor monetário em centavos — sempre ≥ 0 (M7 do review: contrato não tem valor negativo).
+export const MoneySchema = z.object({ cents: z.int().nonnegative() })
 export type Money = z.infer<typeof MoneySchema>
 
 export const PeriodSchema = z.object({

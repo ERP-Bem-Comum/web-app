@@ -40,6 +40,6 @@ export const collaboratorListViewModel = {
 }
 
 export type { CollaboratorRow } from '#modules/partners/client/domain/collaborator.types.ts'
-// A page (client-ui) consome a lista de áreas POR AQUI (boundary §XI não a deixa tocar `data/`).
-export { OCCUPATION_AREAS } from '#modules/partners/client/data/model/collaborator.model.ts'
-export type { OccupationArea } from '#modules/partners/client/data/model/collaborator.model.ts'
+// A page (client-ui) consome as listas de enum POR AQUI (boundary §XI não a deixa tocar `data/`).
+export { OCCUPATION_AREAS, EMPLOYMENT_RELATIONSHIPS } from '#modules/partners/client/data/model/collaborator.model.ts'
+export type { OccupationArea, EmploymentRelationship } from '#modules/partners/client/data/model/collaborator.model.ts'

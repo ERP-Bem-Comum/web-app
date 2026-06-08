@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
-import { FinancierListFiltersSchema } from '../../../../../src/modules/partners/client/domain/financier.schemas.ts'
+import { FinancierListFiltersSchema } from '../../../../../src/modules/partners/client/data/financier-list-filters.schema.ts'
 import { FinancierFormSchema } from '../../../../../src/modules/partners/client/data/model/financier.model.ts'
 
 describe('FinancierListFiltersSchema', () => {

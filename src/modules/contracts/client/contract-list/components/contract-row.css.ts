@@ -198,7 +198,7 @@ export const summaryButton = style({
 export const dropdownMenu = style({
   position: 'absolute',
   top: '100%',
-  right: 0,
+  insetInlineEnd: 0,
   zIndex: 20,
   background: vars.color.surface.default,
   borderRadius: vars.radius.md,

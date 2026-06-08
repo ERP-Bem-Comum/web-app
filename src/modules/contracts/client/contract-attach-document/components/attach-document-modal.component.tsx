@@ -37,7 +37,9 @@ export function AttachDocumentModal({ open, contract, onClose, onSubmit, submitt
   const [signedAt, setSignedAt] = useState('')
   const [dragOver, setDragOver] = useState(false)
   const inputId = useId()
+  const titleId = useId()
 
+  // Early-return: ao fechar, o <dialog> desmonta e o estado transiente do upload zera sozinho.
   if (!open) return null
 
   const isPending = contract.status === 'Pendente'
@@ -60,11 +62,23 @@ export function AttachDocumentModal({ open, contract, onClose, onSubmit, submitt
   const canSubmit = file !== null && signedAt !== '' && !submitting
 
   return (
-    <div className={s.overlay} onClick={onClose}>
-      <div className={s.content} onClick={(e) => { e.stopPropagation() }} role="dialog" aria-modal="true">
+    <dialog
+      className={s.dialog}
+      aria-labelledby={titleId}
+      // showModal() entrega ESC + focus-trap + inert (A4). ref-callback abre ao montar; try/catch p/ jsdom.
+      ref={(el) => {
+        if (el !== null && !el.open) {
+          // jsdom não implementa showModal() → fallback abre o dialog (open) p/ o conteúdo ficar acessível.
+          try { el.showModal() } catch { el.open = true }
+        }
+      }}
+      onCancel={(e) => { e.preventDefault(); onClose() }}
+      onClick={(e) => { if (e.currentTarget === e.target) onClose() }}
+    >
+      <div className={s.content}>
         <div className={s.header}>
           <div>
-            <div className={s.title}>
+            <div className={s.title} id={titleId}>
               {isPending ? t('contracts.attach.title') : t('contracts.attach.title-view')}
               {!isPending && <span className={s.titleNum}>{contractNumber}</span>}
             </div>
@@ -170,6 +184,6 @@ export function AttachDocumentModal({ open, contract, onClose, onSubmit, submitt
           )}
         </div>
       </div>
-    </div>
+    </dialog>
   )
 }

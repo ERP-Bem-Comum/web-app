@@ -13,6 +13,21 @@ export const overlay = style({
   padding: vars.space.md,
 })
 
+// <dialog> nativo (A4): ESC + focus-trap + inert de graça. O card continua em `content`.
+export const dialog = style({
+  border: 'none',
+  padding: vars.space.md,
+  background: 'transparent',
+  maxInlineSize: '100%',
+  maxBlockSize: '100%',
+  selectors: {
+    '&::backdrop': {
+      background: vars.color.institutional.overlay,
+      backdropFilter: 'blur(6px)',
+    },
+  },
+})
+
 export const content = style({
   position: 'relative',
   background: vars.color.surface.default,
@@ -104,6 +119,8 @@ export const tipoCard = style({
   textAlign: 'left',
   transition: 'border-color 120ms, background 120ms',
   ':hover': { borderColor: vars.color.institutional.ink5, background: vars.color.institutional.paperWarm },
+  // Acessibilidade (M4): respeita quem pediu menos movimento — zera a duração da transição.
+  '@media': { '(prefers-reduced-motion: reduce)': { transitionDuration: '0.01ms' } },
 })
 
 export const tipoIcon = style({

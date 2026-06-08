@@ -1,61 +1,44 @@
 /**
- * Supplier — contratos de I/O da fronteira (Zod). Input das server fns (validação na borda §VI) + Model
- * que a UI consome. Alinhado ao contrato REAL (`supplier-schemas.ts` do core-api): query
- * page/limit/order/search/active/categories; create/update = PUT total dos campos; bankAccount/pixKey
- * coesos (ou null). A invariante "≥1 payment target" e o catálogo de categorias são validados pelo core-api.
+ * Supplier — tipos de I/O do domínio (PUROS, sem Zod — C2 do review). Os schemas Zod correspondentes
+ * vivem em `../../adapters/supplier.io-schemas.ts` (a borda). Alinhado ao contrato REAL: query
+ * page/limit/order/search/active/categories; create/update = PUT total; bankAccount/pixKey coesos (ou null).
  */
-import * as z from 'zod'
 import type { ActivationStatus, BankAccount, SupplierPixKey } from './supplier.types.ts'
 
-const BankAccountSchema = z.object({
-  bank: z.string().trim().min(1).max(20),
-  agency: z.string().trim().min(1).max(20),
-  accountNumber: z.string().trim().min(1).max(30),
-  checkDigit: z.string().trim().max(5),
-})
+// ── Input (validado na server fn pelos schemas em adapters) ─────────────────────
+export interface ListSuppliersInput {
+  search?: string
+  active?: boolean
+  categories?: string[]
+  order: 'ASC' | 'DESC'
+  page: number
+  limit: number
+}
 
-// No body de create/update o core-api aceita keyType livre (validado no domínio); espelhamos a união real.
-const PixKeySchema = z.object({
-  keyType: z.enum(['cpf', 'cnpj', 'email', 'phone', 'random-key']),
-  key: z.string().trim().min(1).max(140),
-})
+export interface GetSupplierInput {
+  id: string
+}
 
-// ── Input (validado na server fn) ──────────────────────────────────────────────
-export const ListSuppliersInputSchema = z.object({
-  search: z.string().trim().max(120).optional(),
-  active: z.boolean().optional(),
-  categories: z.array(z.string().trim().max(80)).optional(),
-  order: z.enum(['ASC', 'DESC']).default('ASC'),
-  page: z.int().min(1).default(1),
-  limit: z.int().min(1).max(100).default(5),
-})
-export type ListSuppliersInput = z.infer<typeof ListSuppliersInputSchema>
+export interface CreateSupplierInput {
+  name: string
+  email: string
+  cnpj: string
+  corporateName: string
+  fantasyName: string
+  serviceCategory: string
+  bankAccount: BankAccount | null
+  pixKey: SupplierPixKey | null
+}
 
-export const GetSupplierInputSchema = z.object({ id: z.string().trim().min(1).max(64) })
-export type GetSupplierInput = z.infer<typeof GetSupplierInputSchema>
+export type UpdateSupplierInput = CreateSupplierInput & { id: string }
 
-export const CreateSupplierInputSchema = z.object({
-  name: z.string().trim().min(1).max(200),
-  email: z.email(),
-  cnpj: z.string().trim().min(14).max(18), // aceita máscara; o client normaliza p/ 14 dígitos
-  corporateName: z.string().trim().min(1).max(200),
-  fantasyName: z.string().trim().min(1).max(200),
-  serviceCategory: z.string().trim().min(1).max(80),
-  bankAccount: BankAccountSchema.nullable().default(null),
-  pixKey: PixKeySchema.nullable().default(null),
-})
-export type CreateSupplierInput = z.infer<typeof CreateSupplierInputSchema>
+export interface DeactivateSupplierInput {
+  id: string
+}
 
-export const UpdateSupplierInputSchema = CreateSupplierInputSchema.extend({
-  id: z.string().trim().min(1).max(64),
-})
-export type UpdateSupplierInput = z.infer<typeof UpdateSupplierInputSchema>
-
-export const DeactivateSupplierInputSchema = z.object({ id: z.string().trim().min(1).max(64) })
-export type DeactivateSupplierInput = z.infer<typeof DeactivateSupplierInputSchema>
-
-export const ReactivateSupplierInputSchema = z.object({ id: z.string().trim().min(1).max(64) })
-export type ReactivateSupplierInput = z.infer<typeof ReactivateSupplierInputSchema>
+export interface ReactivateSupplierInput {
+  id: string
+}
 
 // ── Model (o que a UI consome) ─────────────────────────────────────────────────
 export type SupplierListItem = Readonly<{

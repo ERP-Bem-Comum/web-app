@@ -82,6 +82,7 @@ export interface ContractFormController {
     done: number
     total: number
   }>
+  readonly currentYear: number
 }
 
 export const useContractFormController = (): ContractFormController => {
@@ -112,6 +113,8 @@ export const useContractFormController = (): ContractFormController => {
   const [selectedPartner, setSelectedPartner] = useState<SelectedPartner | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [validationAttempted, setValidationAttempted] = useState(false)
+  // Ano corrente estável (lazy) p/ o número provisório — fora do render da view burra (C1).
+  const [currentYear] = useState(() => new Date().getFullYear())
 
   const update = useCallback(<K extends keyof ContractFormState>(key: K, value: ContractFormState[K]) => {
     setState((s) => ({ ...s, [key]: value }))
@@ -180,5 +183,6 @@ export const useContractFormController = (): ContractFormController => {
     triggerValidation,
     submit,
     checklist,
+    currentYear,
   }
 }

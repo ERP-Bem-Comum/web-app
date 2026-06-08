@@ -9,7 +9,9 @@ import * as z from 'zod'
 export const CoreApiCollaboratorItemSchema = z.object({
   id: z.string().trim(),
   name: z.string().trim(),
-  email: z.email(),
+  // RESPONSE tolerante (Bc): a base legada tem e-mails malformados; um único item inválido NÃO pode
+  // derrubar a lista inteira. A validação estrita de e-mail vive nos formulários, não na leitura.
+  email: z.string().trim(),
   occupationArea: z.string().trim(),
   role: z.string().trim(),
   status: z.enum(['PreRegistration', 'Complete']),

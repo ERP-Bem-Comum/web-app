@@ -54,9 +54,9 @@ export const navGroup = style({
   display: 'flex',
   alignItems: 'center',
   gap: '0.125rem',
-  marginLeft: vars.space.sm,
-  paddingLeft: vars.space.md,
-  borderLeft: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  marginInlineStart: vars.space.sm,
+  paddingInlineStart: vars.space.md,
+  borderInlineStart: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
 })
 
 export const navButton = style({

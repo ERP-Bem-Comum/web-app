@@ -286,21 +286,23 @@ const mapContractorToDomain = (k: ContractorDto): Partial<Contract> => {
   }
 }
 
-export const apiContractDetailToDomain = (raw: unknown): Contract => {
+// Errors-as-values (C3 / ADR-0002): falha de parse vira Result.err, NUNCA throw. A UI nunca recebe
+// exceção crua — a cadeia de erro segue como valor.
+export const apiContractDetailToDomain = (raw: unknown): Result<Contract, ContractsError> => {
   const parsed = CoreApiContractDetailSchema.safeParse(raw)
   if (!parsed.success) {
     // Fallback: tenta parsear como list-item (resposta de escrita)
     const listParsed = CoreApiContractListItemSchema.safeParse(raw)
     if (listParsed.success) {
-      return apiContractToDomain(listParsed.data)
+      return ok(apiContractToDomain(listParsed.data))
     }
-    throw new Error(`[contracts] resposta inválida do core-api: ${parsed.error.message}`)
+    return err('server')
   }
 
   const c = parsed.data
   const base = apiContractToDomain(c)
 
-  return {
+  return ok({
     ...base,
     // Contratado (nome/documento) + dados bancários/PIX + tipo, vindos do snapshot do detalhe.
     ...(c.contractor != null ? mapContractorToDomain(c.contractor) : {}),
@@ -310,18 +312,16 @@ export const apiContractDetailToDomain = (raw: unknown): Contract => {
     telephone: blankToUndefined(c.telephone),
     children: c.amendments.map(apiAmendmentToDomain),
     files: c.documents.map(apiDocumentToDomain),
-  }
+  })
 }
 
-const apiListResponseToDomain = (raw: unknown): ListContractsResponse => {
+const apiListResponseToDomain = (raw: unknown): Result<ListContractsResponse, ContractsError> => {
   const parsed = CoreApiListResponseSchema.safeParse(raw)
-  if (!parsed.success) {
-    throw new Error(`[contracts] resposta inválida do core-api (list): ${parsed.error.message}`)
-  }
-  return {
+  if (!parsed.success) return err('server') // errors-as-values (C3), sem throw
+  return ok({
     items: parsed.data.items.map(apiContractToDomain),
     meta: parsed.data.meta,
-  }
+  })
 }
 
 const toStr = (v: unknown): string => (typeof v === 'string' ? v : '')
@@ -336,7 +336,7 @@ const apiTimelineEntryToDomain = (e: Record<string, unknown>): ContractHistoryEv
   ...(typeof e.subjectAmendmentId === 'string' ? { metadata: { subjectAmendmentId: e.subjectAmendmentId } } : {}),
 })
 
-const apiTimelineToDomain = (raw: unknown): readonly ContractHistoryEvent[] => {
+const apiTimelineToDomain = (raw: unknown): Result<readonly ContractHistoryEvent[], ContractsError> => {
   const parsed = CoreApiTimelineSchema.safeParse(raw)
   if (!parsed.success) {
     // Tentar formato antigo { events: [...] } para compatibilidade
@@ -345,11 +345,11 @@ const apiTimelineToDomain = (raw: unknown): readonly ContractHistoryEvent[] => {
       legacyShape.events = (raw as Record<string, unknown>).events as unknown[]
     }
     if (legacyShape.events.length > 0) {
-      return legacyShape.events.map((e) => apiTimelineEntryToDomain(e as Record<string, unknown>))
+      return ok(legacyShape.events.map((e) => apiTimelineEntryToDomain(e as Record<string, unknown>)))
     }
-    throw new Error(`[contracts] resposta inválida do core-api (timeline): ${parsed.error.message}`)
+    return err('server') // errors-as-values (C3), sem throw
   }
-  return parsed.data.map((e) => apiTimelineEntryToDomain(e as unknown as Record<string, unknown>))
+  return ok(parsed.data.map((e) => apiTimelineEntryToDomain(e as unknown as Record<string, unknown>)))
 }
 
 // ─── Mappers: Domain → API ──────────────────────────────────────────────────
@@ -403,12 +403,9 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
         headers: authHeader(token),
       })
       if (isErr(r)) return err(mapHttpError(r.error))
-      let listResp: ListContractsResponse
-      try {
-        listResp = apiListResponseToDomain(r.value)
-      } catch {
-        return err('server')
-      }
+      const listR = apiListResponseToDomain(r.value)
+      if (isErr(listR)) return err('server')
+      const listResp = listR.value
       // Enriquecimento N+1: o GET /contracts (lista) NÃO devolve o contratado; buscamos o detalhe de
       // cada item só p/ exibir o nome no grid. Degrada por item (mantém sem contratado em caso de falha).
       // Limitado pelo tamanho da página. (Ideal: o core-api incluir o `contractor` na própria lista.)
@@ -419,25 +416,23 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
             headers: authHeader(token),
           })
           if (isErr(d)) return item
-          try {
-            const full = apiContractDetailToDomain(d.value)
-            return {
-              ...item,
-              contractType: full.contractType,
-              supplierId: full.supplierId,
-              financierId: full.financierId,
-              collaboratorId: full.collaboratorId,
-              supplier: full.supplier,
-              financier: full.financier,
-              collaborator: full.collaborator,
-              // Vigência/valor vigentes (refletem aditivos homologados) p/ o grid mostrar a data estendida.
-              currentPeriod: full.currentPeriod,
-              currentValue: full.currentValue,
-              // Aditivos do contrato — p/ o grid exibir a QUANTIDADE na coluna Aditivos (lista não traz).
-              children: full.children,
-            }
-          } catch {
-            return item
+          const fullR = apiContractDetailToDomain(d.value)
+          if (isErr(fullR)) return item
+          const full = fullR.value
+          return {
+            ...item,
+            contractType: full.contractType,
+            supplierId: full.supplierId,
+            financierId: full.financierId,
+            collaboratorId: full.collaboratorId,
+            supplier: full.supplier,
+            financier: full.financier,
+            collaborator: full.collaborator,
+            // Vigência/valor vigentes (refletem aditivos homologados) p/ o grid mostrar a data estendida.
+            currentPeriod: full.currentPeriod,
+            currentValue: full.currentValue,
+            // Aditivos do contrato — p/ o grid exibir a QUANTIDADE na coluna Aditivos (lista não traz).
+            children: full.children,
           }
         }),
       )
@@ -450,11 +445,7 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
         headers: authHeader(token),
       })
       if (isErr(r)) return err(mapHttpError(r.error))
-      try {
-        return ok(apiContractDetailToDomain(r.value))
-      } catch {
-        return err('server')
-      }
+      return apiContractDetailToDomain(r.value)
     },
 
     create: async (input, token) => {
@@ -501,14 +492,10 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
         headers: authHeader(token),
       })
       if (isErr(r)) return err(mapHttpError(r.error))
-      try {
-        // A API de criação retorna um contractListItem (não detalhe enriquecido)
-        const parsed = CoreApiContractListItemSchema.safeParse(r.value)
-        if (!parsed.success) throw new Error(parsed.error.message)
-        return ok(apiContractToDomain(parsed.data))
-      } catch {
-        return err('server')
-      }
+      // A API de criação retorna um contractListItem (não detalhe enriquecido). Errors-as-values (C3).
+      const parsed = CoreApiContractListItemSchema.safeParse(r.value)
+      if (!parsed.success) return err('server')
+      return ok(apiContractToDomain(parsed.data))
     },
 
     update: async (input, token) => {
@@ -528,11 +515,7 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
         headers: authHeader(token),
       })
       if (isErr(r)) return err(mapHttpError(r.error))
-      try {
-        return ok(apiContractDetailToDomain(r.value))
-      } catch {
-        return err('server')
-      }
+      return apiContractDetailToDomain(r.value)
     },
 
     createAmendment: async (contractId, input, token) => {
@@ -563,13 +546,10 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
         headers: authHeader(token),
       })
       if (isErr(r)) return err(mapHttpError(r.error))
-      try {
-        const parsed = CoreApiAmendmentSchema.safeParse(r.value)
-        if (!parsed.success) throw new Error(parsed.error.message)
-        return ok(apiAmendmentToDomain(parsed.data))
-      } catch {
-        return err('server')
-      }
+      // Errors-as-values (C3): parse falho → err, sem throw.
+      const parsed = CoreApiAmendmentSchema.safeParse(r.value)
+      if (!parsed.success) return err('server')
+      return ok(apiAmendmentToDomain(parsed.data))
     },
 
     getHistory: async (id, token) => {
@@ -578,11 +558,7 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
         headers: authHeader(token),
       })
       if (isErr(r)) return err(mapHttpError(r.error))
-      try {
-        return ok(apiTimelineToDomain(r.value))
-      } catch {
-        return err('server')
-      }
+      return apiTimelineToDomain(r.value)
     },
 
     uploadDocument: async (contractId, { bytes, fileName }, token) => {
@@ -615,11 +591,7 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
         headers: authHeader(token),
       })
       if (isErr(r)) return err(mapHttpError(r.error))
-      try {
-        return ok(apiContractDetailToDomain(r.value))
-      } catch {
-        return err('server')
-      }
+      return apiContractDetailToDomain(r.value)
     },
 
     uploadAmendmentDocument: async (contractId, amendmentId, { bytes, fileName }, token) => {
@@ -644,11 +616,7 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
         headers: authHeader(token),
       })
       if (isErr(r)) return err(mapHttpError(r.error))
-      try {
-        return ok(apiContractDetailToDomain(r.value))
-      } catch {
-        return err('server')
-      }
+      return apiContractDetailToDomain(r.value)
     },
 
     endContract: async (contractId, token) => {
@@ -661,11 +629,7 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
         headers: authHeader(token),
       })
       if (isErr(r)) return err(mapHttpError(r.error))
-      try {
-        return ok(apiContractDetailToDomain(r.value))
-      } catch {
-        return err('server')
-      }
+      return apiContractDetailToDomain(r.value)
     },
   }
 }
