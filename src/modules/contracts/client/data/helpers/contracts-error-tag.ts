@@ -27,5 +27,17 @@ export const contractsErrorTag = (e: ContractsError): string => {
       return 'contracts.error.unexpected'
     case 'not-implemented':
       return 'contracts.error.not-implemented'
+    case 'invalid-pdf':
+      return 'contracts.attach.error.invalid-pdf'
+    case 'file-too-large':
+      return 'contracts.attach.error.too-large'
+    case 'invalid-signed-at':
+      return 'contracts.attach.error.invalid-date'
+    case 'no-signed-document':
+      return 'contracts.attach.error.no-document'
+    case 'document-conflict':
+      return 'contracts.attach.error.conflict'
+    case 'storage-unavailable':
+      return 'contracts.attach.error.storage'
   }
 }

@@ -10,6 +10,7 @@ import { ok, err, isErr, type Result } from '#shared/primitives/result.ts'
 import type { HttpError } from '#shared/http/http-error.types.ts'
 import { parseErrorEnvelope } from '#shared/http/error-envelope.ts'
 import { resultFetch } from '#external/core-api/result-fetch.ts'
+import { octetStreamFetch } from '#external/core-api/octet-stream-fetch.ts'
 import type { ContractsError } from '#modules/contracts/server/adapters/contracts-shared.types.ts'
 import type { ContractHistoryEvent } from '#modules/contracts/server/adapters/contracts-shared.types.ts'
 import type {
@@ -27,6 +28,7 @@ import {
   CoreApiContractDetailSchema,
   CoreApiTimelineSchema,
   CoreApiAmendmentSchema,
+  CoreApiDocumentSchema,
 } from './contracts.schema.ts'
 
 const SLUG_TO_ERROR: Partial<Record<string, ContractsError>> = {
@@ -39,15 +41,19 @@ const SLUG_TO_ERROR: Partial<Record<string, ContractsError>> = {
   'contract-sequential-number-duplicated': 'server',
   'contract-not-pending': 'server',
   'amendment-contract-mismatch': 'server',
-  'activate-contract-no-signed-document': 'server',
+  'activate-contract-no-signed-document': 'no-signed-document',
+  'activate-contract-invalid-signed-at': 'invalid-signed-at',
   'amendment-retroactive-to-contract-start': 'server',
   'ContractNotActive': 'server',
   'contract-repo-conflict': 'server',
   'amendment-repo-conflict': 'server',
-  'document-already-deleted': 'server',
-  'document-already-superseded': 'server',
-  'document-contract-mismatch': 'server',
-  'document-magic-bytes-mismatch': 'server',
+  'document-already-deleted': 'document-conflict',
+  'document-already-superseded': 'document-conflict',
+  'document-contract-mismatch': 'document-conflict',
+  'document-magic-bytes-mismatch': 'invalid-pdf',
+  'storage-unavailable': 'storage-unavailable',
+  'storage-upload-failed': 'storage-unavailable',
+  'storage-permission-denied': 'storage-unavailable',
 }
 
 const mapHttpError = (e: HttpError): ContractsError => {
@@ -301,6 +307,8 @@ export type CoreApiContractsClient = Readonly<{
   update: (input: UpdateContractInput, token: string) => Promise<Result<Contract, ContractsError>>
   createAmendment: (contractId: string, input: CreateAmendmentInput, token: string) => Promise<Result<Amendment, ContractsError>>
   getHistory: (id: string, token: string) => Promise<Result<readonly ContractHistoryEvent[], ContractsError>>
+  uploadDocument: (contractId: string, input: Readonly<{ bytes: Uint8Array; fileName: string }>, token: string) => Promise<Result<void, ContractsError>>
+  activate: (contractId: string, signedAtIso: string, token: string) => Promise<Result<Contract, ContractsError>>
 }>
 
 export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsClient => {
@@ -354,8 +362,17 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
     },
 
     create: async (input, token) => {
-      // O backend espera: mode, sequentialNumber, title, objective, originalValueCents, periodStart, periodEnd, signedAt?
-      // O frontend não envia sequentialNumber nem mode. Geramos um sequentialNumber e usamos mode='Pending'.
+      // O backend espera: mode, sequentialNumber, title, objective, originalValueCents, periodStart, periodEnd,
+      // contractor:{ type, id } (OBRIGATÓRIO), signedAt?. O frontend não envia sequentialNumber nem mode.
+      // Geramos um sequentialNumber e usamos mode='Pending'. `contractor` derivado do tipo selecionado.
+      const contractor =
+        input.supplierId !== undefined
+          ? { type: 'supplier' as const, id: input.supplierId }
+          : input.financierId !== undefined
+            ? { type: 'financier' as const, id: input.financierId }
+            : input.collaboratorId !== undefined
+              ? { type: 'collaborator' as const, id: input.collaboratorId }
+              : undefined
       const body = {
         mode: 'Pending' as const,
         sequentialNumber: `${String(Math.floor(Math.random() * 900 + 100)).padStart(3, '0')}/${String(new Date().getFullYear())}`, // Formato exigido pelo backend: XXX/YYYY
@@ -363,6 +380,7 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
         objective: input.objective,
         originalValueCents: input.originalValueCents,
         ...domainPeriodToApi(input.originalPeriod),
+        ...(contractor !== undefined ? { contractor } : {}),
         classification: input.classification,
         contractModel: input.contractModel,
         contractType: input.contractType,
@@ -382,7 +400,9 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
       const r = await resultFetch<unknown>(`${baseUrl}/contracts`, {
         method: 'POST',
         body,
-        headers: { ...authHeader(token), 'Content-Type': 'application/json' },
+        // resultFetch já injeta `content-type: application/json` quando há body. Repetir o header
+        // (com outra capitalização) gerava content-type duplicado → o Fastify do core-api respondia 415.
+        headers: authHeader(token),
       })
       if (isErr(r)) return err(mapHttpError(r.error))
       try {
@@ -455,6 +475,43 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
       if (isErr(r)) return err(mapHttpError(r.error))
       try {
         return ok(apiTimelineToDomain(r.value))
+      } catch {
+        return err('server')
+      }
+    },
+
+    uploadDocument: async (contractId, { bytes, fileName }, token) => {
+      // POST /contracts/:id/documents — corpo binário (octet-stream), metadados na query.
+      // categoria=signed_contract (documento assinado do contrato); mimeType allowlist application/pdf.
+      const r = await octetStreamFetch<unknown>(`${baseUrl}/contracts/${contractId}/documents`, {
+        token,
+        bytes,
+        query: {
+          categoria: 'signed_contract',
+          fileName,
+          mimeType: 'application/pdf',
+          signedElectronically: 'true',
+        },
+      })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      // Validação do response na fronteira (§IX). Não devolvemos o meta — o use-case só precisa do ok/err.
+      const parsed = CoreApiDocumentSchema.safeParse(r.value)
+      if (!parsed.success) return err('server')
+      return ok(undefined)
+    },
+
+    activate: async (contractId, signedAtIso, token) => {
+      // POST /contracts/:id/activate — { signedAt }. Exige o documento signed_contract já enviado
+      // (senão o backend responde activate-contract-no-signed-document → 'no-signed-document').
+      // headers só authHeader: o resultFetch injeta content-type application/json (duplicar → 415).
+      const r = await resultFetch<unknown>(`${baseUrl}/contracts/${contractId}/activate`, {
+        method: 'POST',
+        body: { signedAt: signedAtIso },
+        headers: authHeader(token),
+      })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      try {
+        return ok(apiContractDetailToDomain(r.value))
       } catch {
         return err('server')
       }

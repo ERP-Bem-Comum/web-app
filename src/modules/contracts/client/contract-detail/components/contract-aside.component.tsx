@@ -2,7 +2,8 @@ import type { ReactNode } from 'react'
 import type { Contract } from '#modules/contracts/public-api/index.ts'
 import {
   asideSection,
-  asideSectionLast,
+  asideHero,
+  asideOverline,
   asideLabel,
   asideValueWrap,
   asideValueCurrency,
@@ -59,8 +60,8 @@ export function ContractAside({ contract }: Props): ReactNode {
   return (
     <>
       {/* Valor Atual */}
-      <div className={asideSection}>
-        <div className={asideLabel}>Valor Atual</div>
+      <div className={asideHero}>
+        <div className={asideOverline}>Valor Atual</div>
         <div className={asideValueWrap}>
           <span className={asideValueCurrency}>R$</span>
           <span className={asideValueInteger}>{parts.integer}</span>
@@ -118,9 +119,6 @@ export function ContractAside({ contract }: Props): ReactNode {
           )}
         </div>
       </div>
-
-      {/* Espaço reservado para mais seções */}
-      <div className={asideSectionLast} />
     </>
   )
 }

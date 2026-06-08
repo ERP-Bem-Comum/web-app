@@ -1,17 +1,14 @@
 import type { ReactNode } from 'react'
 import type { Contract } from '#modules/contracts/public-api/index.ts'
 import {
-  section,
-  sectionTitle,
-  timeline,
-  timelineItem,
-  timelineDot,
-  timelineDotGreen,
-  timelineDotOrange,
-  timelineDotGray,
-  timelineContent,
-  timelineTitle,
-  timelineDate,
+  asideSection,
+  asideLabel,
+  tlWrap,
+  tlItem,
+  tlItemOk,
+  tlItemCurrent,
+  tlDate,
+  tlText,
 } from '../page/contract-detail.css.ts'
 
 interface Props {
@@ -22,58 +19,42 @@ function formatDate(date: Date): string {
   return date.toLocaleDateString('pt-BR')
 }
 
+interface TlEvent {
+  readonly title: string
+  readonly date: string
+  readonly variant: 'default' | 'ok' | 'current'
+}
+
 export function ContractTimeline({ contract }: Props): ReactNode {
-  const events: {
-    title: string
-    date: string
-    variant: 'blue' | 'green' | 'orange' | 'gray'
-  }[] = [
-    {
-      title: 'Contrato criado',
-      date: formatDate(contract.createdAt),
-      variant: 'blue',
-    },
-  ]
+  const events: TlEvent[] = [{ title: 'Contrato criado', date: formatDate(contract.createdAt), variant: 'default' }]
 
   if (contract.signedAt) {
+    events.push({ title: 'Contrato assinado', date: formatDate(contract.signedAt), variant: 'ok' })
+  }
+
+  for (const a of contract.children) {
+    const homologado = a.status === 'Homologado'
     events.push({
-      title: 'Contrato assinado',
-      date: formatDate(contract.signedAt),
-      variant: 'green',
+      title: `Aditivo ${a.amendmentNumber} ${homologado ? 'homologado' : 'incluído'}`,
+      date: formatDate(a.signedAt ?? a.createdAt),
+      variant: homologado ? 'ok' : 'current',
     })
   }
 
-  contract.children
-    .filter((a) => a.status === 'Homologado')
-    .forEach((a) => {
-      events.push({
-        title: `Aditivo ${a.amendmentNumber} homologado`,
-        date: formatDate(a.signedAt ?? a.createdAt),
-        variant: 'orange',
-      })
-    })
+  // Mais recente no topo (wireframe)
+  const ordered = [...events].reverse()
 
   return (
-    <div className={section}>
-      <span className={sectionTitle}>Timeline de Marcos</span>
-      <div className={timeline}>
-        {events.map((event, idx) => (
-          <div key={idx} className={timelineItem}>
-            <span
-              className={`${timelineDot} ${
-                event.variant === 'green'
-                  ? timelineDotGreen
-                  : event.variant === 'orange'
-                  ? timelineDotOrange
-                  : event.variant === 'gray'
-                  ? timelineDotGray
-                  : ''
-              }`}
-            />
-            <div className={timelineContent}>
-              <span className={timelineTitle}>{event.title}</span>
-              <span className={timelineDate}>{event.date}</span>
-            </div>
+    <div className={asideSection}>
+      <div className={asideLabel}>Timeline</div>
+      <div className={tlWrap}>
+        {ordered.map((event, idx) => (
+          <div
+            key={idx}
+            className={`${tlItem} ${event.variant === 'ok' ? tlItemOk : event.variant === 'current' ? tlItemCurrent : ''}`}
+          >
+            <div className={tlDate}>{event.date}</div>
+            <div className={tlText}>{event.title}</div>
           </div>
         ))}
       </div>

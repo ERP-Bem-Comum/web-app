@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react'
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { UploadIcon } from '#shared/ui/icons/index.ts'
+import { getSupplierFn } from '#modules/partners/public-api/index.ts'
+import { useAttachSignedDocumentBinding } from '#modules/contracts/client/contract-attach-document/attach-signed-document.binding.ts'
 import { useContractCreateBinding, usePartnerSearchBinding } from '../contract-create.binding.ts'
 import { useContractFormController } from '../components/contract-form.controller.ts'
 import type { SelectedPartner } from '../components/contract-form.controller.ts'
@@ -67,6 +69,7 @@ function formatDateBR(dateStr: string): string {
 export function ContractCreatePage(): ReactNode {
   const navigate = useNavigate()
   const { createCommand } = useContractCreateBinding()
+  const { attachCommand } = useAttachSignedDocumentBinding()
   const form = useContractFormController()
 
   /* Busca de parceiros via binding */
@@ -88,6 +91,19 @@ export function ContractCreatePage(): ReactNode {
       form.update('supplierId', partner.id)
       form.update('financierId', '')
       form.update('collaboratorId', '')
+      // A busca de parceiros não traz dados bancários (só o detalhe). Buscamos o detalhe do fornecedor
+      // e herdamos banco/PIX para a seção "Dados Bancários" (campos somente-leitura).
+      void getSupplierFn({ data: { id: partner.id } }).then((res) => {
+        if (!res.ok) return
+        const b = res.data.bankAccount
+        if (b !== null) {
+          form.update('bancaryInfo', { bank: b.bank, agency: b.agency, accountNumber: b.accountNumber, dv: b.checkDigit })
+        }
+        const p = res.data.pixKey
+        if (p !== null) {
+          form.update('pixInfo', { keyType: p.keyType, key: p.key })
+        }
+      })
     } else if (partner.kind === 'Financiador') {
       form.update('financierId', partner.id)
       form.update('supplierId', '')
@@ -130,21 +146,44 @@ export function ContractCreatePage(): ReactNode {
       closeModal()
       return
     }
+    // Anexar documento exige data de assinatura (US2 AS-2).
+    if (uploadedFile !== null && signatureDate === '') {
+      return
+    }
+    // Se o contrato já foi criado (retry após falha no anexo), não cria de novo: só reanexa.
+    if (createCommand.result !== null) {
+      if (uploadedFile !== null) {
+        attachCommand.execute({ contractId: createCommand.result.id, file: uploadedFile, signedAt: signatureDate })
+      }
+      return
+    }
     const payload = form.submit()
     createCommand.execute(payload)
-    closeModal()
-  }, [form, createCommand, closeModal])
+  }, [form, createCommand, attachCommand, closeModal, uploadedFile, signatureDate])
 
   const handleCancel = useCallback(() => {
     navigate({ to: '/contratos' }).catch(() => { /* noop */ })
   }, [navigate])
 
-  /* Redirect automático para lista após criação bem-sucedida */
+  /* Pós-criação: se há documento assinado, anexar e efetivar (Pendente → Em Andamento) ANTES de
+     redirecionar. Sem documento, redireciona direto (contrato fica Pendente). Roda uma vez por criação. */
+  const postCreateHandled = useRef(false)
   useEffect(() => {
-    if (createCommand.result !== null) {
+    if (createCommand.result === null || postCreateHandled.current) return
+    postCreateHandled.current = true
+    if (uploadedFile !== null && signatureDate !== '') {
+      attachCommand.execute({ contractId: createCommand.result.id, file: uploadedFile, signedAt: signatureDate })
+    } else {
       navigate({ to: '/contratos' }).catch(() => { /* noop */ })
     }
-  }, [createCommand.result, navigate])
+  }, [createCommand.result, uploadedFile, signatureDate, attachCommand, navigate])
+
+  /* Anexo bem-sucedido → contrato efetivado (Em Andamento): redireciona para a grade. */
+  useEffect(() => {
+    if (attachCommand.result !== null) {
+      navigate({ to: '/contratos' }).catch(() => { /* noop */ })
+    }
+  }, [attachCommand.result, navigate])
 
   const handleCreateNewPartner = useCallback(() => {
     window.open('/parceiros/criar', '_blank')
@@ -309,9 +348,9 @@ export function ContractCreatePage(): ReactNode {
                 </div>
               </div>
 
-              {createCommand.errorTag && (
+              {(createCommand.errorTag ?? attachCommand.errorTag) && (
                 <div className={errorAlert} role="alert">
-                  {t(createCommand.errorTag)}
+                  {t(createCommand.errorTag ?? attachCommand.errorTag ?? '')}
                 </div>
               )}
             </div>
@@ -324,10 +363,10 @@ export function ContractCreatePage(): ReactNode {
               <button
                 type="button"
                 className={buttonPrimary}
-                disabled={createCommand.running || form.isOvertopOS || (uploadedFile !== null && signatureDate === '')}
+                disabled={createCommand.running || attachCommand.running || form.isOvertopOS || (uploadedFile !== null && signatureDate === '')}
                 onClick={handleConfirm}
               >
-                {createCommand.running ? t('common.loading') : 'Confirmar e salvar'}
+                {createCommand.running || attachCommand.running ? t('common.loading') : 'Confirmar e salvar'}
               </button>
             </div>
           </div>

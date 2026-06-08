@@ -14,3 +14,9 @@ export type ContractsError =
   | 'server'                 // 5xx / inesperado
   | 'unauthorized'           // 401 / 403
   | 'not-implemented'        // operação ainda não existe no core-api (sem rota)
+  | 'invalid-pdf'            // arquivo não é PDF assinado válido (magic bytes %PDF)
+  | 'file-too-large'         // documento acima do limite (20 MiB)
+  | 'invalid-signed-at'      // data de assinatura ausente/inválida/futura
+  | 'no-signed-document'     // ativar sem documento assinado anexado
+  | 'document-conflict'      // documento já anexado/substituído/removido ou de outro contrato
+  | 'storage-unavailable'    // backend de objetos (MinIO/S3) indisponível

@@ -159,6 +159,16 @@ export const CreateContractInputSchema = z.object({
 })
 export type CreateContractInput = z.infer<typeof CreateContractInputSchema>
 
+export const AttachSignedDocumentInputSchema = z.object({
+  contractId: z.uuid(),
+  fileBase64: z.string().trim().min(1),
+  fileName: z.string().trim().min(1).max(255).regex(/^[^/\\:*?"<>|]+$/, 'invalid-file-name'),
+  // String ISO (ex.: "2026-06-01") vinda do <input type="date">. Validação de data válida/não-futura
+  // acontece na borda da server fn (decodificação + checagem), não aqui.
+  signedAt: z.string().trim().min(1),
+})
+export type AttachSignedDocumentInput = z.infer<typeof AttachSignedDocumentInputSchema>
+
 export const UpdateContractInputSchema = z.object({
   id: z.uuid(),
   email: z.email().optional(),

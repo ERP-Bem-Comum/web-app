@@ -8,8 +8,10 @@ export { createContractFn } from '#modules/contracts/server/adapters/server-fns/
 export { updateContractFn } from '#modules/contracts/server/adapters/server-fns/update-contract.service.fn.ts'
 export { createAmendmentFn } from '#modules/contracts/server/adapters/server-fns/create-amendment.service.fn.ts'
 export { getContractHistoryFn } from '#modules/contracts/server/adapters/server-fns/get-contract-history.query.fn.ts'
+export { attachSignedDocumentFn } from '#modules/contracts/server/adapters/server-fns/attach-signed-document.service.fn.ts'
 
 export { useContractListBinding } from '#modules/contracts/client/contract-list/contract-list.binding.ts'
+export { useAttachSignedDocumentBinding } from '#modules/contracts/client/contract-attach-document/attach-signed-document.binding.ts'
 export { useContractCreateBinding } from '#modules/contracts/client/contract-create/contract-create.binding.ts'
 export { useContractDetailBinding } from '#modules/contracts/client/contract-detail/contract-detail.binding.ts'
 export { useContractEditBinding } from '#modules/contracts/client/contract-edit/contract-edit.binding.ts'

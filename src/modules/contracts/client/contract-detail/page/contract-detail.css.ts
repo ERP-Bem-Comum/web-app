@@ -110,7 +110,6 @@ export const mainCol = style({
   paddingBottom: '4rem',
   display: 'flex',
   flexDirection: 'column',
-  gap: vars.space.lg,
   scrollbarWidth: 'thin',
   scrollbarColor: `${vars.color.institutional.paperRule} transparent`,
 })
@@ -137,6 +136,9 @@ export const asideCol = style({
   flexShrink: 0,
   display: 'flex',
   flexDirection: 'column',
+  gap: vars.space.lg,
+  padding: vars.space.lg,
+  paddingBottom: '4rem',
   overflowY: 'auto',
   overflowX: 'hidden',
   background: vars.color.surface.default,
@@ -158,15 +160,375 @@ globalStyle(`${asideCol}::-webkit-scrollbar-thumb`, {
   borderRadius: vars.radius.lg,
 })
 
-/* ── Hero card ── */
+/* ═══ Redesign (wireframe) — Contratado · Dados Vigentes · Dados do Contrato ═══
+   Layout/estrutura da wireframe mapeados aos tokens do nosso DS (teal → azul institucional). */
+
+export const contractedHero = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: vars.space.xs,
+  paddingBottom: vars.space.md,
+  borderBottom: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+})
+
+export const overline = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: '0.6rem',
+  fontWeight: vars.font.weight.semibold,
+  letterSpacing: '0.1em',
+  color: vars.color.institutional.ink5,
+  textTransform: 'uppercase',
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  flexWrap: 'wrap',
+})
+
+export const overlinePill = style({
+  fontFamily: vars.font.family.body,
+  fontSize: '0.5625rem',
+  fontWeight: vars.font.weight.semibold,
+  letterSpacing: '0.06em',
+  color: vars.color.institutional.ink4,
+  background: vars.color.institutional.paperBeige,
+  padding: `0.125rem ${vars.space.xs}`,
+  borderRadius: vars.radius.sm,
+  textTransform: 'uppercase',
+})
+
+export const contractedName = style({
+  fontFamily: vars.font.family.heading,
+  fontWeight: vars.font.weight.semibold,
+  fontSize: '1.375rem',
+  color: vars.color.institutional.ink2,
+  letterSpacing: '-0.012em',
+  lineHeight: 1.15,
+  margin: 0,
+})
+
+export const contractedFantasia = style({
+  color: vars.color.institutional.ink4,
+  fontWeight: vars.font.weight.medium,
+  fontSize: '1.125rem',
+  marginLeft: vars.space.xs,
+})
+
+export const contractedMeta = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: '0.6875rem',
+  color: vars.color.institutional.ink4,
+  marginTop: vars.space.xs,
+})
+
+export const sectionBlock = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: vars.space.md,
+  paddingTop: vars.space.md,
+  paddingBottom: vars.space.md,
+  borderBottom: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+})
+
+export const sectionHeadRow = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+})
+
+export const sectionH3 = style({
+  margin: 0,
+  fontFamily: vars.font.family.heading,
+  fontSize: '0.8125rem',
+  fontWeight: vars.font.weight.bold,
+  color: vars.color.institutional.ink2,
+})
+
+export const sectionHeadAction = style({
+  marginLeft: 'auto',
+  fontFamily: vars.font.family.heading,
+  fontSize: '0.6875rem',
+  fontWeight: vars.font.weight.medium,
+  color: vars.color.institutional.blue,
+  padding: `${vars.space.xs} ${vars.space.sm}`,
+  borderRadius: vars.radius.sm,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  background: vars.color.surface.default,
+  cursor: 'pointer',
+  transition: 'background 120ms, border-color 120ms',
+  ':hover': {
+    borderColor: vars.color.institutional.blueLine,
+    background: vars.color.institutional.blueBg,
+  },
+})
+
+export const fieldRow = style({ display: 'grid', gap: vars.space.md })
+export const frCols4 = style({ gridTemplateColumns: 'repeat(4, 1fr)' })
+export const frCols3 = style({ gridTemplateColumns: 'repeat(3, 1fr)' })
+export const frCols2 = style({ gridTemplateColumns: '1fr 1fr' })
+export const frWide = style({ gridTemplateColumns: '1fr' })
+export const frVigentes = style({ gridTemplateColumns: '1fr 1.5fr 1fr' })
+export const frContratoBase = style({ gridTemplateColumns: '1.3fr 1fr 1fr 1fr' })
+export const frBank = style({ gridTemplateColumns: '1.4fr 0.7fr 1fr 0.4fr' })
+
+export const fld = style({ display: 'flex', flexDirection: 'column', gap: '0.3125rem', minWidth: 0 })
+
+export const fldLabel = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: '0.6rem',
+  fontWeight: vars.font.weight.semibold,
+  letterSpacing: '0.04em',
+  color: vars.color.institutional.ink5,
+  textTransform: 'uppercase',
+})
+
+export const fldBox = style({
+  display: 'flex',
+  alignItems: 'center',
+  background: vars.color.surface.default,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.md,
+  padding: `${vars.space.sm} 0.6875rem`,
+  fontFamily: vars.font.family.body,
+  fontSize: '0.78rem',
+  color: vars.color.institutional.ink2,
+  minHeight: '2.125rem',
+  minWidth: 0,
+})
+
+export const fldValue = style({
+  flex: 1,
+  minWidth: 0,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+})
+
+export const fldMono = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: '0.75rem',
+  letterSpacing: '0.01em',
+})
+
+export const fldBoxCalc = style({
+  background: vars.color.institutional.blueBg,
+  borderColor: vars.color.institutional.blueLine,
+  '::before': {
+    content: '"\\03A3"',
+    fontSize: '0.625rem',
+    fontWeight: vars.font.weight.semibold,
+    color: vars.color.institutional.blueDeep,
+    marginRight: vars.space.sm,
+    opacity: 0.7,
+  },
+})
+
+export const fldBoxSelect = style({
+  '::after': {
+    content: '"\\25BE"',
+    color: vars.color.institutional.blue,
+    fontSize: '0.625rem',
+    marginLeft: vars.space.sm,
+  },
+})
+
+/* Documentos — tabela de aditivos (grade hairline, wireframe) */
+export const aditivos = style({
+  display: 'flex',
+  flexDirection: 'column',
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.lg,
+  overflow: 'hidden',
+  background: vars.color.surface.default,
+})
+
+const aditGridCols = '6.5rem 4.5rem 5.5rem 1fr 7rem 8rem 3.5rem'
+
+export const aditRow = style({
+  display: 'grid',
+  gridTemplateColumns: aditGridCols,
+  alignItems: 'center',
+  gap: vars.space.sm,
+  padding: `0.625rem ${vars.space.md}`,
+  fontSize: '0.72rem',
+  borderBottom: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  transition: 'background 120ms',
+  selectors: {
+    '&:last-child': { borderBottom: 'none' },
+  },
+})
+
+export const aditRowClickable = style({
+  cursor: 'pointer',
+  ':hover': { background: vars.color.institutional.paperWarm },
+})
+
+export const aditHead = style({
+  background: vars.color.institutional.paperWarm,
+  padding: `0.4375rem ${vars.space.md}`,
+})
+
+export const aditHeadCell = style({
+  fontSize: '0.5625rem',
+  fontWeight: vars.font.weight.bold,
+  color: vars.color.institutional.ink5,
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+})
+
+export const aditHeadCellRight = style({ textAlign: 'right' })
+
+export const aditRowBase = style({
+  background: vars.color.institutional.paperWarm,
+})
+
+export const aditNum = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: '0.65rem',
+  fontWeight: vars.font.weight.medium,
+  color: vars.color.institutional.ink2,
+})
+
+export const aditData = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: '0.6875rem',
+  color: vars.color.institutional.ink3,
+})
+
+export const aditResumo = style({
+  color: vars.color.institutional.ink2,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+})
+
+export const aditImpacto = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: '0.6875rem',
+  textAlign: 'right',
+})
+export const aditImpactoPos = style({ color: vars.color.institutional.greenDeep, fontWeight: vars.font.weight.semibold })
+export const aditImpactoBase = style({ color: vars.color.institutional.ink2, fontWeight: vars.font.weight.semibold })
+export const aditImpactoNeutral = style({ color: vars.color.institutional.ink4 })
+
+export const docActions = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.xs,
+  justifyContent: 'flex-end',
+})
+
+export const docAct = style({
+  width: '1.5rem',
+  height: '1.5rem',
+  borderRadius: vars.radius.sm,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: vars.color.institutional.ink4,
+  background: 'transparent',
+  border: 'none',
+  cursor: 'pointer',
+  fontSize: '0.75rem',
+  transition: 'background 120ms, color 120ms',
+  ':hover': { background: vars.color.institutional.blueBg, color: vars.color.institutional.blueDeep },
+})
+
+/* Timeline (sidebar) — linha vertical + marcadores (wireframe) */
+export const tlWrap = style({ display: 'flex', flexDirection: 'column' })
+
+export const tlItem = style({
+  position: 'relative',
+  padding: `${vars.space.sm} 0 ${vars.space.sm} 1.125rem`,
+  fontSize: '0.6875rem',
+  borderLeft: `${vars.borderWidth.thick} solid ${vars.color.institutional.paperRule}`,
+  marginLeft: '0.3125rem',
+  '::before': {
+    content: '""',
+    position: 'absolute',
+    left: '-0.3125rem',
+    top: '0.6875rem',
+    width: '0.5rem',
+    height: '0.5rem',
+    borderRadius: '50%',
+    background: vars.color.surface.default,
+    border: `${vars.borderWidth.thick} solid ${vars.color.institutional.ink5}`,
+  },
+})
+
+export const tlItemOk = style({
+  '::before': { borderColor: vars.color.institutional.green, background: vars.color.institutional.green },
+})
+
+export const tlItemCurrent = style({
+  '::before': { borderColor: vars.color.institutional.orange, background: vars.color.institutional.orange },
+})
+
+export const tlDate = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: '0.625rem',
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.ink5,
+  marginBottom: '0.125rem',
+  letterSpacing: '0.02em',
+})
+
+export const tlText = style({ color: vars.color.institutional.ink2, lineHeight: 1.45 })
+
+/* Bottombar — barra inferior de status + ações (wireframe) */
+export const bottombar = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: vars.space.md,
+  height: '3.5rem',
+  paddingInline: vars.space.lg,
+  background: vars.color.surface.default,
+  borderTop: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
+  flexShrink: 0,
+  // Mesmo posicionamento do footer da tela de incluir contrato (full-width do conteúdo, fixo no rodapé).
+  position: 'fixed',
+  bottom: 0,
+  left: 'var(--sidebar-width, 16.25rem)',
+  right: 0,
+  zIndex: 100,
+})
+
+export const bottombarStatus = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  fontSize: '0.6875rem',
+  color: vars.color.institutional.ink4,
+})
+
+export const bottombarDot = style({
+  width: '0.375rem',
+  height: '0.375rem',
+  borderRadius: '50%',
+  background: vars.color.institutional.green,
+})
+
+export const bottombarStage = style({
+  background: vars.color.status.activeBg,
+  color: vars.color.status.activeText,
+  padding: `0.1875rem ${vars.space.sm}`,
+  borderRadius: vars.radius.lg,
+  fontSize: '0.625rem',
+  fontWeight: vars.font.weight.semibold,
+})
+
+export const bottombarActions = style({
+  marginLeft: 'auto',
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+})
+
+/* ── Hero card (legado — bloco simples sem chrome; será removido ao fim do redesign) ── */
 export const heroCard = style({
   display: 'flex',
   flexDirection: 'column',
   gap: vars.space.md,
-  padding: vars.space.lg,
-  background: vars.color.institutional.blueBg,
-  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.blueLine}`,
-  borderRadius: vars.radius.lg,
 })
 
 export const heroHeader = style({
@@ -382,13 +744,16 @@ export const docBadgeOutro = style({
 
 /* ── Aside ── */
 export const asideSection = style({
-  padding: vars.space.lg,
-  ':after': {
-    content: '""',
-    display: 'block',
-    marginTop: vars.space.lg,
-    borderBottom: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
-  },
+  display: 'flex',
+  flexDirection: 'column',
+})
+
+/* Bloco "Valor Atual" (sb-hero) — único com régua embaixo, como na wireframe */
+export const asideHero = style({
+  display: 'flex',
+  flexDirection: 'column',
+  paddingBottom: vars.space.lg,
+  borderBottom: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
 })
 
 export const asideSectionLast = style({
@@ -398,36 +763,49 @@ export const asideSectionLast = style({
 
 export const asideLabel = style({
   fontFamily: vars.font.family.heading,
-  fontSize: '0.75rem',
+  fontSize: '0.625rem',
   fontWeight: vars.font.weight.bold,
   textTransform: 'uppercase',
-  letterSpacing: '0.06em',
-  color: vars.color.institutional.blue,
+  letterSpacing: '0.08em',
+  color: vars.color.institutional.ink5,
+  marginBottom: vars.space.sm,
+})
+
+// Overline do "Valor Atual" (sb-hero) — mono, como na wireframe (distinto dos h4 de seção em Inter).
+export const asideOverline = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: '0.6rem',
+  fontWeight: vars.font.weight.semibold,
+  letterSpacing: '0.1em',
+  color: vars.color.institutional.ink5,
+  textTransform: 'uppercase',
   marginBottom: vars.space.sm,
 })
 
 export const asideValueWrap = style({
   fontFamily: vars.font.family.mono,
   color: vars.color.institutional.ink2,
-  lineHeight: 1.2,
+  lineHeight: 1,
   display: 'flex',
   alignItems: 'baseline',
-  gap: '0.125rem',
+  gap: vars.space.xs,
 })
 
 export const asideValueCurrency = style({
   fontSize: '0.8125rem',
-  fontWeight: vars.font.weight.medium,
+  fontWeight: vars.font.weight.regular,
+  color: vars.color.institutional.ink4,
 })
 
 export const asideValueInteger = style({
-  fontSize: '1.5rem',
-  fontWeight: vars.font.weight.bold,
+  fontSize: '1.625rem',
+  fontWeight: vars.font.weight.medium,
 })
 
 export const asideValueCents = style({
-  fontSize: '0.8125rem',
+  fontSize: '0.9375rem',
   fontWeight: vars.font.weight.medium,
+  color: vars.color.institutional.ink3,
 })
 
 export const compositionList = style({

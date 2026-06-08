@@ -17,6 +17,12 @@ export type ContractsError =
   | 'server'
   | 'unauthorized'
   | 'not-implemented'
+  | 'invalid-pdf'
+  | 'file-too-large'
+  | 'invalid-signed-at'
+  | 'no-signed-document'
+  | 'document-conflict'
+  | 'storage-unavailable'
 
 // Re-export de ContractHistoryEvent do server-domain (boundaries-compatível).
 export type { ContractHistoryEvent } from '#modules/contracts/server/domain/contracts.types.ts'

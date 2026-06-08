@@ -178,6 +178,31 @@ export const CreateAmendmentInputSchema = z.object({
 })
 export type CreateAmendmentInput = z.infer<typeof CreateAmendmentInputSchema>
 
+// Anexo do documento assinado (feature 017). O client lê File.arrayBuffer() → base64 e envia a STRING
+// (mesmo precedente do CSV de colaboradores). A server fn decodifica, valida (magic bytes/tamanho/data)
+// e orquestra upload→activate no BFF.
+export const AttachSignedDocumentInputSchema = z.object({
+  contractId: z.uuid(),
+  fileBase64: z.string().trim().min(1),
+  fileName: z.string().trim().min(1).max(255),
+  signedAt: z.string().trim().min(1),
+})
+export type AttachSignedDocumentInput = z.infer<typeof AttachSignedDocumentInputSchema>
+
+// Metadados do documento devolvidos pelo core-api no upload (espelha CoreApiDocumentSchema do server).
+export const DocumentMetaSchema = z.object({
+  id: z.uuid(),
+  parentType: z.enum(['Contract', 'Amendment']),
+  parentId: z.string().trim(),
+  categoria: z.string().trim(),
+  fileName: z.string().trim(),
+  mimeType: z.string().trim(),
+  sizeBytes: z.int().nonnegative(),
+  status: z.string().trim(),
+  uploadedAt: z.string().trim(),
+})
+export type DocumentMeta = z.infer<typeof DocumentMetaSchema>
+
 // List response
 export const ListContractsResponseSchema = z.object({
   items: z.array(ContractSchema),
