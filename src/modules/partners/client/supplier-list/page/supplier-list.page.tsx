@@ -9,7 +9,7 @@ import { useSupplierListBinding } from '../supplier-list.binding.ts'
 import { totalPages, type SupplierListState, type SupplierRow } from '../supplier-list.view-model.ts'
 import { SupplierFilters, type StatusFilter } from '../components/supplier-filters.component.tsx'
 import { SupplierPaginator } from '../components/supplier-paginator.component.tsx'
-import { screen } from './supplier-list.css.ts'
+import { cnpjCell, screen } from './supplier-list.css.ts'
 
 const t = createTranslator(ptBR)
 const routeApi = getRouteApi('/_authenticated/parceiros/fornecedores/')
@@ -37,36 +37,25 @@ export function SupplierListPage(): ReactNode {
 
   const columns: readonly Column<SupplierRow>[] = [
     { key: 'name', header: t('partners.suppliers.columns.name'), cell: (r) => r.name },
+    { key: 'email', header: t('partners.suppliers.columns.email'), cell: (r) => r.email },
     {
       key: 'cnpj',
       header: t('partners.suppliers.columns.cnpj'),
-      width: 'narrow',
-      cell: (r) => formatCnpj(r.cnpj),
+      cell: (r) => <span className={cnpjCell}>{formatCnpj(r.cnpj)}</span>,
     },
-    { key: 'email', header: t('partners.suppliers.columns.email'), cell: (r) => r.email },
     {
-      key: 'category',
-      header: t('partners.suppliers.columns.category'),
-      cell: (r) => r.serviceCategory,
+      // Contratos/Aditivos: coluna do legado; o item da lista do backend ainda não traz a contagem.
+      key: 'contracts',
+      header: t('partners.suppliers.columns.contracts'),
+      cell: () => '—',
     },
     {
       key: 'status',
       header: t('partners.suppliers.columns.status'),
-      align: 'center',
       cell: (r) => (
         <Badge variant={r.activation === 'active' ? 'active' : 'outro'}>
           {t(`partners.suppliers.status.${r.activation}`)}
         </Badge>
-      ),
-    },
-    {
-      key: 'actions',
-      header: t('partners.suppliers.columns.actions'),
-      align: 'end',
-      cell: (r) => (
-        <Button onClick={() => void navigate({ to: '/parceiros/fornecedores/$id', params: { id: r.id } })}>
-          {t('partners.suppliers.actions.view')}
-        </Button>
       ),
     },
   ]
@@ -99,7 +88,13 @@ export function SupplierListPage(): ReactNode {
           all: t('partners.suppliers.filters.all'),
           active: t('partners.suppliers.filters.active'),
           inactive: t('partners.suppliers.filters.inactive'),
+          toggle: t('partners.suppliers.filters.toggle'),
           category: t('partners.suppliers.filters.category'),
+          contractStatus: t('partners.suppliers.filters.contractStatus'),
+          allOption: t('partners.suppliers.filters.allOption'),
+          gatedHint: t('partners.suppliers.filters.gatedHint'),
+          apply: t('partners.suppliers.filters.apply'),
+          export: t('partners.suppliers.filters.export'),
         }}
         onSearch={(value) =>
           void navigate({ to: '.', replace: true, search: (p) => ({ ...p, search: value || undefined, page: 1 }) })
@@ -122,6 +117,7 @@ export function SupplierListPage(): ReactNode {
             search: (p) => ({ ...p, categories: c ? [c] : undefined, page: 1 }),
           })
         }
+        onExport={() => { /* TODO: export CSV de fornecedores (follow-up; ver gaps) */ }}
       />
 
       <DataTable<SupplierRow>
@@ -133,18 +129,22 @@ export function SupplierListPage(): ReactNode {
         }
         loadingLabel={t('partners.suppliers.list.loading')}
         caption={t('partners.suppliers.list.title')}
+        onRowClick={(r) => void navigate({ to: '/parceiros/fornecedores/$id', params: { id: r.id } })}
       />
 
       <SupplierPaginator
         page={pageNum}
         totalPages={pages}
+        perPage={search.limit}
         labels={{
           previous: t('partners.suppliers.paginator.previous'),
           next: t('partners.suppliers.paginator.next'),
           page: t('partners.suppliers.paginator.page'),
+          perPage: t('partners.suppliers.paginator.perPage'),
         }}
         onPrev={() => void navigate({ to: '.', search: (p) => ({ ...p, page: Math.max(1, pageNum - 1) }) })}
         onNext={() => void navigate({ to: '.', search: (p) => ({ ...p, page: pageNum + 1 }) })}
+        onPerPage={(perPage) => void navigate({ to: '.', search: (p) => ({ ...p, limit: perPage, page: 1 }) })}
       />
     </div>
   )
