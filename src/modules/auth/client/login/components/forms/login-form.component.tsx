@@ -41,7 +41,7 @@ export function LoginForm(props: LoginFormProps): ReactNode {
   return (
     <div className={content}>
       <div className={header}>
-        <Logo src="/images/logo-bem-comum.png" alt="Bem Comum" size={72} />
+        <Logo src="/images/logo-bem-comum.png" alt="Bem Comum" size={56} />
         <h1 className={title}>{props.title}</h1>
         <span className={titleUnderline} aria-hidden="true" />
       </div>

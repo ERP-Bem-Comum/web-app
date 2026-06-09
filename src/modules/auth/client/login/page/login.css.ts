@@ -50,7 +50,7 @@ export const cardWrapper = style({
   position: 'relative',
   zIndex: 1,
   inlineSize: '100%',
-  maxInlineSize: '32rem',
+  maxInlineSize: '26rem',
   display: 'flex',
   borderRadius: vars.radius.xl,
   overflow: 'hidden',
@@ -70,6 +70,6 @@ export const accentBar = style({
 export const cardContent = style({
   flex: 1,
   background: vars.color.surface.default,
-  paddingBlock: `calc(${vars.space.xl} + ${vars.space.md})`,
-  paddingInline: `calc(${vars.space.xl} + ${vars.space.sm})`,
+  paddingBlock: vars.space.xl,
+  paddingInline: vars.space.xl,
 })

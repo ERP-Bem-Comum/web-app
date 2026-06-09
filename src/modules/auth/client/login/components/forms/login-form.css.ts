@@ -6,16 +6,16 @@ import { vars } from '#shared/ui/tokens/index.ts'
 export const content = style({
   display: 'flex',
   flexDirection: 'column',
-  gap: `calc(${vars.space.xl} + ${vars.space.sm})`,
+  gap: vars.space.lg,
 })
 
-// Cabeçalho: logo + título com underline decorativo.
+// Cabeçalho: logo + título com underline decorativo. Stack compacto (logo ↔ título ↔ barra).
 export const header = style({
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
   textAlign: 'center',
-  gap: vars.space.lg,
+  gap: vars.space.sm,
 })
 
 export const title = style({
@@ -26,14 +26,13 @@ export const title = style({
   margin: 0,
 })
 
-// Underline decorativo laranja abaixo do título.
+// Underline decorativo laranja abaixo do título. O respiro vem do `gap` do header (stack compacto).
 export const titleUnderline = style({
   display: 'block',
   inlineSize: '2.5rem',
   blockSize: '0.1875rem',
   background: vars.color.institutional.orange,
   borderRadius: vars.radius.sm,
-  marginBlockStart: vars.space.sm,
   marginInline: 'auto',
 })
 
