@@ -6,7 +6,7 @@ import { PageHeader } from '#shared/ui/index.ts'
 
 import { useGeographyBinding, type GeoPanel } from '../geography.binding.ts'
 import { TerritoryColumn, type ColumnState } from '../components/territory-column.component.tsx'
-import { columns, errorBanner, screen, section, sectionTitle, ufSelect } from './geography.css.ts'
+import { columns, errorBanner, screen, section, ufSelect } from './geography.css.ts'
 
 const t = createTranslator(ptBR)
 
@@ -42,9 +42,8 @@ export function GeographyPage(): ReactNode {
         </div>
       ) : null}
 
-      {/* Seção 1 — Estados */}
+      {/* Seção 1 — Estados (sem título de grupo: os cards já têm faixa de título própria) */}
       <section className={section}>
-        <h2 className={sectionTitle}>{t('partners.geography.states.section')}</h2>
         <div className={columns}>
           <TerritoryColumn
             title={t('partners.geography.states.general')}
@@ -86,9 +85,8 @@ export function GeographyPage(): ReactNode {
         </div>
       </section>
 
-      {/* Seção 2 — Municípios */}
+      {/* Seção 2 — Municípios (sem título de grupo) */}
       <section className={section}>
-        <h2 className={sectionTitle}>{t('partners.geography.municipalities.section')}</h2>
         <div className={columns}>
           <TerritoryColumn
             title={t('partners.geography.municipalities.general')}

@@ -9,7 +9,7 @@ export const screen = style({
   padding: vars.space.xl,
   display: 'flex',
   flexDirection: 'column',
-  gap: vars.space.xl,
+  gap: vars.space.lg,
   scrollbarWidth: 'thin',
   scrollbarColor: `${vars.color.border.default} transparent`,
 })
@@ -19,15 +19,6 @@ export const section = style({
   flexDirection: 'column',
   gap: vars.space.md,
   flexShrink: 0,
-})
-
-export const sectionTitle = style({
-  margin: 0,
-  // subordinado ao título da página (xl): grupo em lg/bold, acima dos cards (lg/semibold em faixa).
-  fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.lg,
-  fontWeight: vars.font.weight.bold,
-  color: vars.color.text.primary,
 })
 
 export const columns = style({
