@@ -27,12 +27,26 @@ export const panel = style({
   background: vars.color.surface.default,
 })
 
+export const panelHeader = style({
+  display: 'flex',
+  alignItems: 'baseline',
+  justifyContent: 'space-between',
+  gap: vars.space.sm,
+})
+
 export const panelTitle = style({
   margin: 0,
   fontFamily: vars.font.family.heading,
   fontSize: vars.font.size.lg,
   fontWeight: vars.font.weight.semibold,
   color: vars.color.text.primary,
+})
+
+export const count = style({
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.text.secondary,
 })
 
 export const message = style({

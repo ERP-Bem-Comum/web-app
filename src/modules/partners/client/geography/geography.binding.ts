@@ -43,6 +43,13 @@ export type PanelState<T> =
 export type GeographyBinding = Readonly<{
   states: PanelState<TerritoryItem>
   municipalities: PanelState<TerritoryItem>
+  /** Contador "marcados/total" (ex.: "3/27"); null enquanto não pronto. */
+  statesCount: string | null
+  municipalitiesCount: string | null
+  statesSearch: string
+  setStatesSearch: (value: string) => void
+  municipalitiesSearch: string
+  setMunicipalitiesSearch: (value: string) => void
   selectedUf: string | null
   selectUf: (uf: string) => void
   canWrite: boolean
@@ -62,6 +69,8 @@ export function useGeographyBinding(): GeographyBinding {
 
   const [selectedUf, setSelectedUf] = useState<string | null>(null)
   const [toggleErrorTag, setToggleErrorTag] = useState<string | null>(null)
+  const [statesSearch, setStatesSearch] = useState('')
+  const [municipalitiesSearch, setMunicipalitiesSearch] = useState('')
 
   const statesQuery = useQuery(partnerStatesQueryOptions())
   const munisQuery = useQuery({
@@ -123,16 +132,29 @@ export function useGeographyBinding(): GeographyBinding {
     setToggleErrorTag(null)
   }, [])
 
+  const statesPanel = buildPanel(
+    statesQuery,
+    (data) => sortStates(data).map((s) => ({ key: s.uf, label: s.uf, checked: s.isPartner })),
+    statesSearch,
+  )
+  const muniPanel =
+    selectedUf === null
+      ? { panel: { status: 'idle' } as const, count: null }
+      : buildPanel(
+          munisQuery,
+          (data) => sortMunicipalities(data).map((m) => ({ key: m.ibgeCode, label: m.name, checked: m.isPartner })),
+          municipalitiesSearch,
+        )
+
   return {
-    states: derivePanel(statesQuery, (data) =>
-      sortStates(data).map((s) => ({ key: s.uf, label: s.uf, checked: s.isPartner })),
-    ),
-    municipalities:
-      selectedUf === null
-        ? { status: 'idle' }
-        : derivePanel(munisQuery, (data) =>
-            sortMunicipalities(data).map((m) => ({ key: m.ibgeCode, label: m.name, checked: m.isPartner })),
-          ),
+    states: statesPanel.panel,
+    municipalities: muniPanel.panel,
+    statesCount: statesPanel.count,
+    municipalitiesCount: muniPanel.count,
+    statesSearch,
+    setStatesSearch,
+    municipalitiesSearch,
+    setMunicipalitiesSearch,
     selectedUf,
     selectUf,
     canWrite,
@@ -147,14 +169,23 @@ export function useGeographyBinding(): GeographyBinding {
   }
 }
 
-/** Deriva o estado de painel (loading/error/ready) de uma query cujo `data` é um `Result`. */
-function derivePanel<TData, TItem>(
+/**
+ * Deriva painel (loading/error/ready) + contador "marcados/total" a partir de uma query cujo `data` é
+ * um `Result`. Aplica a busca (filtro por rótulo, client-side) sobre os itens; o contador usa o total
+ * COMPLETO (antes do filtro).
+ */
+function buildPanel<TData>(
   query: Readonly<{ isPending: boolean; isError: boolean; data: Result<readonly TData[], PartnersError> | undefined }>,
-  toItems: (data: readonly TData[]) => readonly TItem[],
-): PanelState<TItem> {
-  if (query.isPending) return { status: 'loading' }
+  toItems: (data: readonly TData[]) => readonly TerritoryItem[],
+  search: string,
+): Readonly<{ panel: PanelState<TerritoryItem>; count: string | null }> {
+  if (query.isPending) return { panel: { status: 'loading' }, count: null }
   const res = query.data
-  if (query.isError || res === undefined) return { status: 'error', errorTag: 'partners.error.server' }
-  if (!isOk(res)) return { status: 'error', errorTag: partnersErrorTag(res.error) }
-  return { status: 'ready', items: toItems(res.value) }
+  if (query.isError || res === undefined) return { panel: { status: 'error', errorTag: 'partners.error.server' }, count: null }
+  if (!isOk(res)) return { panel: { status: 'error', errorTag: partnersErrorTag(res.error) }, count: null }
+  const all = toItems(res.value)
+  const selected = all.filter((i) => i.checked).length
+  const q = search.trim().toLowerCase()
+  const items = q === '' ? all : all.filter((i) => i.label.toLowerCase().includes(q))
+  return { panel: { status: 'ready', items }, count: `${String(selected)}/${String(all.length)}` }
 }

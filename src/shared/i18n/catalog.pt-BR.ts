@@ -594,6 +594,8 @@ export const ptBR: Catalog = {
   'partners.geography.select-state-hint': 'Selecione um estado para ver os municípios.',
   'partners.geography.states.empty': 'Nenhum estado disponível.',
   'partners.geography.municipalities.empty': 'Nenhum município neste estado.',
+  'partners.geography.states.search': 'Filtrar estado (UF)',
+  'partners.geography.municipalities.search': 'Filtrar município',
   'partners.geography.loading': 'Carregando…',
   'partners.geography.toggle-aria': 'Marcar como parceiro',
 }
