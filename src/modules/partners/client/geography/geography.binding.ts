@@ -1,11 +1,13 @@
 /**
- * Binding da geografia — ADAPTER React (§XI). Liga as queries (estados/municípios) e as mutations de
- * toggle (OTIMISTAS, com rollback) ao TanStack Query + RBAC. UI-state `selectedUf` (useState — o painel
- * de municípios depende dele). Entrega listas já formatadas p/ o `territory-list` (page burra) + comandos.
+ * Binding da geografia — ADAPTER React (§XI). Modelo dual-list (Lista Geral × Parceiros Adicionados),
+ * por seção (Estados / Municípios). Liga queries + mutations de toggle OTIMISTAS (add = isPartner true,
+ * remove = false) ao TanStack Query + RBAC. Buscas e UF selecionada são UI-state (useState).
  *
- * Otimista: `onMutate` aplica o toggle no cache (via view-model puro) e guarda o snapshot; como o
- * repository devolve `Result` (não lança), o ERRO DE NEGÓCIO chega no `onSuccess` (Result.err) → reverte;
- * o `onError` cobre falha LANÇADA (rede). Sem refetch (o DTO confirma) — §XII/otimista.
+ * Otimista: `onMutate` aplica o toggle no cache (view-model puro) + snapshot; erro de NEGÓCIO chega no
+ * `onSuccess` (Result.err) → reverte; `onError` cobre falha LANÇADA (rede). Sem refetch (o DTO confirma).
+ *
+ * Municípios "Adicionados" (todos os estados) depende de endpoint inexistente no core-api
+ * (ver ticket PAR-GEO-ADDED-MUNICIPALITIES) → exposto como `municipalitiesAddedPending`.
  */
 import { useCallback, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -28,39 +30,59 @@ import {
   applyMunicipalityToggle,
   applyStateToggle,
   sortMunicipalities,
-  sortStates,
+  stateName,
+  UF_NAMES,
 } from './geography.view-model.ts'
 
-/** Item formatado para o `territory-list` (burro). `key` = uf (estado) ou ibgeCode (município). */
-export type TerritoryItem = Readonly<{ key: string; label: string; checked: boolean }>
+export type ColumnItem = Readonly<{ key: string; label: string; added: boolean }>
 
-export type PanelState<T> =
+export type GeoPanel =
   | Readonly<{ status: 'idle' }>
   | Readonly<{ status: 'loading' }>
   | Readonly<{ status: 'error'; errorTag: string }>
-  | Readonly<{ status: 'ready'; items: readonly T[] }>
+  | Readonly<{ status: 'ready'; items: readonly ColumnItem[] }>
+
+export type UfOption = Readonly<{ uf: string; name: string }>
 
 export type GeographyBinding = Readonly<{
-  states: PanelState<TerritoryItem>
-  municipalities: PanelState<TerritoryItem>
-  /** Contador "marcados/total" (ex.: "3/27"); null enquanto não pronto. */
+  // Estados
+  statesGeneral: GeoPanel
+  statesAdded: GeoPanel
   statesCount: string | null
-  municipalitiesCount: string | null
-  statesSearch: string
-  setStatesSearch: (value: string) => void
-  municipalitiesSearch: string
-  setMunicipalitiesSearch: (value: string) => void
+  statesGeneralSearch: string
+  setStatesGeneralSearch: (v: string) => void
+  statesAddedSearch: string
+  setStatesAddedSearch: (v: string) => void
+  addState: (uf: string) => void
+  removeState: (uf: string) => void
+  // Municípios
+  ufOptions: readonly UfOption[]
   selectedUf: string | null
   selectUf: (uf: string) => void
+  municipalitiesGeneral: GeoPanel
+  municipalitiesGeneralSearch: string
+  setMunicipalitiesGeneralSearch: (v: string) => void
+  municipalitiesAddedSearch: string
+  setMunicipalitiesAddedSearch: (v: string) => void
+  /** Painel "Adicionados (todos os estados)" pendente de endpoint no core-api. */
+  municipalitiesAddedPending: boolean
+  addMunicipality: (ibgeCode: string) => void
+  removeMunicipality: (ibgeCode: string) => void
+  // Comuns
   canWrite: boolean
   toggleErrorTag: string | null
-  toggleState: (uf: string, isPartner: boolean) => void
-  toggleMunicipality: (ibgeCode: string, isPartner: boolean) => void
   togglePending: boolean
 }>
 
 type StatesData = Result<readonly PartnerState[], PartnersError>
 type MunisData = Result<readonly PartnerMunicipality[], PartnersError>
+
+const UF_OPTIONS: readonly UfOption[] = Object.keys(UF_NAMES)
+  .map((uf) => ({ uf, name: stateName(uf) }))
+  .sort((a, b) => a.name.localeCompare(b.name))
+
+const matches = (label: string, search: string): boolean =>
+  label.toLowerCase().includes(search.trim().toLowerCase())
 
 export function useGeographyBinding(): GeographyBinding {
   const queryClient = useQueryClient()
@@ -69,8 +91,10 @@ export function useGeographyBinding(): GeographyBinding {
 
   const [selectedUf, setSelectedUf] = useState<string | null>(null)
   const [toggleErrorTag, setToggleErrorTag] = useState<string | null>(null)
-  const [statesSearch, setStatesSearch] = useState('')
-  const [municipalitiesSearch, setMunicipalitiesSearch] = useState('')
+  const [statesGeneralSearch, setStatesGeneralSearch] = useState('')
+  const [statesAddedSearch, setStatesAddedSearch] = useState('')
+  const [municipalitiesGeneralSearch, setMunicipalitiesGeneralSearch] = useState('')
+  const [municipalitiesAddedSearch, setMunicipalitiesAddedSearch] = useState('')
 
   const statesQuery = useQuery(partnerStatesQueryOptions())
   const munisQuery = useQuery({
@@ -78,7 +102,6 @@ export function useGeographyBinding(): GeographyBinding {
     enabled: selectedUf !== null,
   })
 
-  // ── toggles otimistas ──
   const stateMutation = useMutation({
     mutationFn: (vars: Readonly<{ uf: string; isPartner: boolean }>) => geographyRepository.toggleState(vars),
     onMutate: async (vars) => {
@@ -128,64 +151,75 @@ export function useGeographyBinding(): GeographyBinding {
   })
 
   const selectUf = useCallback((uf: string) => {
-    setSelectedUf(uf)
+    setSelectedUf(uf === '' ? null : uf)
     setToggleErrorTag(null)
+    setMunicipalitiesGeneralSearch('')
   }, [])
 
-  const statesPanel = buildPanel(
-    statesQuery,
-    (data) => sortStates(data).map((s) => ({ key: s.uf, label: s.uf, checked: s.isPartner })),
-    statesSearch,
+  // ── Estados: lista completa (com nome) derivada da query ──
+  const allStates: readonly ColumnItem[] | null =
+    statesQuery.data !== undefined && isOk(statesQuery.data)
+      ? [...statesQuery.data.value]
+          .map((s) => ({ key: s.uf, label: stateName(s.uf), added: s.isPartner }))
+          .sort((a, b) => a.label.localeCompare(b.label))
+      : null
+
+  const statesGeneral = panelFrom(statesQuery, allStates, (items) =>
+    items.filter((i) => matches(i.label, statesGeneralSearch)),
   )
-  const muniPanel =
+  const statesAdded = panelFrom(statesQuery, allStates, (items) =>
+    items.filter((i) => i.added && matches(i.label, statesAddedSearch)),
+  )
+  const statesCount =
+    allStates === null ? null : `${String(allStates.filter((i) => i.added).length)}/${String(allStates.length)}`
+
+  // ── Municípios da UF selecionada (Lista Geral) ──
+  const allMunis: readonly ColumnItem[] | null =
+    selectedUf !== null && munisQuery.data !== undefined && isOk(munisQuery.data)
+      ? sortMunicipalities(munisQuery.data.value).map((m) => ({ key: m.ibgeCode, label: m.name, added: m.isPartner }))
+      : null
+
+  const municipalitiesGeneral: GeoPanel =
     selectedUf === null
-      ? { panel: { status: 'idle' } as const, count: null }
-      : buildPanel(
-          munisQuery,
-          (data) => sortMunicipalities(data).map((m) => ({ key: m.ibgeCode, label: m.name, checked: m.isPartner })),
-          municipalitiesSearch,
-        )
+      ? { status: 'idle' }
+      : panelFrom(munisQuery, allMunis, (items) => items.filter((i) => matches(i.label, municipalitiesGeneralSearch)))
 
   return {
-    states: statesPanel.panel,
-    municipalities: muniPanel.panel,
-    statesCount: statesPanel.count,
-    municipalitiesCount: muniPanel.count,
-    statesSearch,
-    setStatesSearch,
-    municipalitiesSearch,
-    setMunicipalitiesSearch,
+    statesGeneral,
+    statesAdded,
+    statesCount,
+    statesGeneralSearch,
+    setStatesGeneralSearch,
+    statesAddedSearch,
+    setStatesAddedSearch,
+    addState: (uf) => { stateMutation.mutate({ uf, isPartner: true }) },
+    removeState: (uf) => { stateMutation.mutate({ uf, isPartner: false }) },
+
+    ufOptions: UF_OPTIONS,
     selectedUf,
     selectUf,
+    municipalitiesGeneral,
+    municipalitiesGeneralSearch,
+    setMunicipalitiesGeneralSearch,
+    municipalitiesAddedSearch,
+    setMunicipalitiesAddedSearch,
+    municipalitiesAddedPending: true,
+    addMunicipality: (ibgeCode) => { muniMutation.mutate({ ibgeCode, isPartner: true }) },
+    removeMunicipality: (ibgeCode) => { muniMutation.mutate({ ibgeCode, isPartner: false }) },
+
     canWrite,
     toggleErrorTag,
-    toggleState: (uf, isPartner) => {
-      stateMutation.mutate({ uf, isPartner })
-    },
-    toggleMunicipality: (ibgeCode, isPartner) => {
-      muniMutation.mutate({ ibgeCode, isPartner })
-    },
     togglePending: stateMutation.isPending || muniMutation.isPending,
   }
 }
 
-/**
- * Deriva painel (loading/error/ready) + contador "marcados/total" a partir de uma query cujo `data` é
- * um `Result`. Aplica a busca (filtro por rótulo, client-side) sobre os itens; o contador usa o total
- * COMPLETO (antes do filtro).
- */
-function buildPanel<TData>(
-  query: Readonly<{ isPending: boolean; isError: boolean; data: Result<readonly TData[], PartnersError> | undefined }>,
-  toItems: (data: readonly TData[]) => readonly TerritoryItem[],
-  search: string,
-): Readonly<{ panel: PanelState<TerritoryItem>; count: string | null }> {
-  if (query.isPending) return { panel: { status: 'loading' }, count: null }
-  const res = query.data
-  if (query.isError || res === undefined) return { panel: { status: 'error', errorTag: 'partners.error.server' }, count: null }
-  if (!isOk(res)) return { panel: { status: 'error', errorTag: partnersErrorTag(res.error) }, count: null }
-  const all = toItems(res.value)
-  const selected = all.filter((i) => i.checked).length
-  const q = search.trim().toLowerCase()
-  const items = q === '' ? all : all.filter((i) => i.label.toLowerCase().includes(q))
-  return { panel: { status: 'ready', items }, count: `${String(selected)}/${String(all.length)}` }
+/** Deriva GeoPanel (loading/error/ready) aplicando `transform` sobre os itens já mapeados. */
+function panelFrom(
+  query: Readonly<{ isPending: boolean; isError: boolean }>,
+  items: readonly ColumnItem[] | null,
+  transform: (items: readonly ColumnItem[]) => readonly ColumnItem[],
+): GeoPanel {
+  if (query.isPending) return { status: 'loading' }
+  if (query.isError || items === null) return { status: 'error', errorTag: 'partners.error.server' }
+  return { status: 'ready', items: transform(items) }
 }

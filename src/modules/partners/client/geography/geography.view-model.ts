@@ -4,6 +4,20 @@
  */
 import type { PartnerMunicipality, PartnerState } from '#modules/partners/client/data/model/geography.model.ts'
 
+/** Nomes das 27 UFs (o `GET /partner-states` traz só a sigla; a UI exibe o nome por extenso). */
+export const UF_NAMES: Readonly<Record<string, string>> = {
+  AC: 'Acre', AL: 'Alagoas', AP: 'Amapá', AM: 'Amazonas', BA: 'Bahia', CE: 'Ceará',
+  DF: 'Distrito Federal', ES: 'Espírito Santo', GO: 'Goiás', MA: 'Maranhão', MT: 'Mato Grosso',
+  MS: 'Mato Grosso do Sul', MG: 'Minas Gerais', PA: 'Pará', PB: 'Paraíba', PR: 'Paraná',
+  PE: 'Pernambuco', PI: 'Piauí', RJ: 'Rio de Janeiro', RN: 'Rio Grande do Norte', RS: 'Rio Grande do Sul',
+  RO: 'Rondônia', RR: 'Roraima', SC: 'Santa Catarina', SP: 'São Paulo', SE: 'Sergipe', TO: 'Tocantins',
+}
+
+/** Nome por extenso da UF; cai na própria sigla se desconhecida (tolerância a legado). */
+export function stateName(uf: string): string {
+  return UF_NAMES[uf] ?? uf
+}
+
 /** Ordena estados por UF (alfabético, estável). Não muta a entrada. */
 export function sortStates(states: readonly PartnerState[]): readonly PartnerState[] {
   return [...states].sort((a, b) => a.uf.localeCompare(b.uf))

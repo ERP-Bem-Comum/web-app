@@ -3,63 +3,56 @@ import { style } from '@vanilla-extract/css'
 import { vars } from '#shared/ui/tokens/index.ts'
 
 export const screen = style({
+  boxSizing: 'border-box',
+  blockSize: '100%',
+  overflowY: 'auto',
   padding: vars.space.xl,
   display: 'flex',
   flexDirection: 'column',
+  gap: vars.space.xl,
+  scrollbarWidth: 'thin',
+  scrollbarColor: `${vars.color.border.default} transparent`,
 })
 
-export const panels = style({
-  display: 'grid',
-  gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 2fr)',
-  gap: vars.space.lg,
-  '@media': {
-    'screen and (max-width: 48rem)': { gridTemplateColumns: '1fr' },
-  },
-})
-
-export const panel = style({
+export const section = style({
   display: 'flex',
   flexDirection: 'column',
   gap: vars.space.md,
-  padding: vars.space.lg,
-  borderRadius: vars.radius.lg,
-  border: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
-  background: vars.color.surface.default,
+  flexShrink: 0,
 })
 
-export const panelHeader = style({
-  display: 'flex',
-  alignItems: 'baseline',
-  justifyContent: 'space-between',
-  gap: vars.space.sm,
-})
-
-export const panelTitle = style({
+export const sectionTitle = style({
   margin: 0,
   fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.lg,
-  fontWeight: vars.font.weight.semibold,
+  fontSize: vars.font.size.xl,
+  fontWeight: vars.font.weight.bold,
   color: vars.color.text.primary,
 })
 
-export const count = style({
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size.sm,
-  fontWeight: vars.font.weight.semibold,
-  color: vars.color.text.secondary,
+export const columns = style({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+  gap: vars.space.lg,
+  alignItems: 'start',
+  '@media': {
+    'screen and (max-width: 60rem)': { gridTemplateColumns: '1fr' },
+  },
 })
 
-export const message = style({
-  paddingBlock: vars.space.lg,
+export const ufSelect = style({
+  blockSize: '2.5rem',
   paddingInline: vars.space.md,
+  borderRadius: vars.radius.md,
+  border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
+  background: vars.color.surface.default,
+  color: vars.color.text.primary,
   fontFamily: vars.font.family.body,
   fontSize: vars.font.size.sm,
-  color: vars.color.text.muted,
+  inlineSize: '100%',
 })
 
 export const errorBanner = style({
   padding: vars.space.md,
-  marginBlockEnd: vars.space.md,
   borderRadius: vars.radius.md,
   background: vars.color.feedback.errorBg,
   color: vars.color.feedback.errorText,
