@@ -6,7 +6,10 @@ export const form = style({
   display: 'flex',
   flexDirection: 'column',
   gap: vars.space.xl,
-  maxInlineSize: '52rem',
+  // expande pra usar melhor o espaço da tela (4 colunas no card, como o print do legado).
+  maxInlineSize: '72rem',
+  // não encolher dentro do screen com overflow (senão o overflow:hidden dos cards corta os campos).
+  flexShrink: 0,
 })
 
 export const section = style({
@@ -47,16 +50,8 @@ export const grid = style({
   gap: vars.space.md,
   '@container': {
     '(inline-size > 32rem)': { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' },
+    '(inline-size > 56rem)': { gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' },
   },
-})
-
-export const checkboxRow = style({
-  display: 'flex',
-  alignItems: 'center',
-  gap: vars.space.sm,
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size.sm,
-  color: vars.color.text.secondary,
 })
 
 export const select = style({

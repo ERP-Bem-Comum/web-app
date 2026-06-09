@@ -39,7 +39,7 @@ describe('useSupplierFormController', () => {
     expect(values.pixKey).toBeNull()
   })
 
-  it('grupo bancário habilitado e incompleto bloqueia o submit', () => {
+  it('grupo bancário parcialmente preenchido (sem checkbox) bloqueia o submit', () => {
     const onSubmit = vi.fn()
     const { result } = renderHook(() => useSupplierFormController({ onSubmit }))
 
@@ -50,7 +50,7 @@ describe('useSupplierFormController', () => {
       result.current.setField('email', 'c@acme.dev')
       result.current.setField('cnpj', '12345678000190')
       result.current.setField('serviceCategory', 'Limpeza')
-      result.current.setField('bankEnabled', true) // sem preencher os campos do grupo
+      result.current.setField('bank', '341') // só o banco → grupo bancário incompleto
     })
     act(() => {
       result.current.submit()
