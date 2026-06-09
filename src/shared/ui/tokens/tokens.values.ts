@@ -83,14 +83,16 @@ export const tokenValues = {
       surfaceHover: '#f1f5f9',
     },
     status: {
-      pendingBg: '#FFF3E0',
-      pendingText: '#E65100',
+      // Pendente — âmbar suave (antes laranja saturado #E65100/#FFF3E0).
+      pendingBg: '#FFF4E5',
+      pendingText: '#B45309',
       activeBg: '#E8F5E9',
       activeText: '#2E7D32',
       finishedBg: '#E3F2FD',
       finishedText: '#1565C0',
-      terminatedBg: '#FFEBEE',
-      terminatedText: '#C62828',
+      // Distrato — vermelho-tijolo suave (antes #C62828/#FFEBEE).
+      terminatedBg: '#FCECEA',
+      terminatedText: '#C0453C',
       prazoBg: '#E0F7FA',
       prazoText: '#298CAB',
       valorBg: '#E8F5E9',
@@ -108,13 +110,14 @@ export const tokenValues = {
       aditOutroBg: '#FFF1E0',
       aditOutroText: '#D9772E',
     },
-    // Tipos de parceiro/contrato (badges) — cores legadas da v1, agora tokenizadas (antes hex
-    // cru com eslint-disable em contract-row.css.ts). `background`/`border` em tint de baixa opacidade.
+    // Tipos de parceiro/contrato (badges). Paleta por tipo (brand do cliente):
+    //   Fornecedor = azul · Colaborador = amarelo · Financiador = verde · ACT = laranja.
+    // `background`/`border` em tint de baixa opacidade.
     partnerType: {
-      supplier: { text: '#1c7943', background: 'rgba(51,178,102,0.10)', border: 'rgba(51,178,102,0.20)' },
-      collaborator: { text: '#1a708c', background: '#e8f5fa', border: '#8cc7de' },
-      financier: { text: '#d9991a', background: '#fff7e0', border: 'rgba(217,153,26,0.25)' },
-      act: { text: '#9a5402', background: 'rgba(217,119,6,0.08)', border: 'rgba(217,119,6,0.20)' },
+      supplier: { text: '#1d6cab', background: '#e9f2fb', border: '#a8cdee' }, // azul (mais limpo, menos teal)
+      collaborator: { text: '#b07d12', background: '#fff7e0', border: 'rgba(217,153,26,0.30)' }, // amarelo
+      financier: { text: '#1c7943', background: 'rgba(51,178,102,0.10)', border: 'rgba(51,178,102,0.25)' }, // verde
+      act: { text: '#c2410c', background: 'rgba(234,88,12,0.10)', border: 'rgba(234,88,12,0.22)' }, // laranja
     },
     institutional: {
       blue: '#396496',

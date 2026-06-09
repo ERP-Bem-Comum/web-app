@@ -1,15 +1,27 @@
-export function formatContractNumber(code: string): string {
-  const match = /(CT|OS|CNT|C|A)-(\d{4})-(\d{4})/.exec(code)
-  if (match) {
-    const [, kind = '', year = '', seq = ''] = match
+// Padroniza o número do contrato para "CT 0001/2026" (contrato) / "OS 0001/2026" (ordem de serviço):
+// prefixo por classificação + sequencial com 4 dígitos + ano. Reconhece tanto o formato legado com
+// hífen (`CT-2026-0001`) quanto o formato do backend atual (`941/2026`). O prefixo CT/OS depende da
+// classificação — que o backend ainda NÃO persiste (gap, ver ticket CTR-NUMBER-PROGRAM): por ora vem
+// sempre 'Contrato' → CT. Quando o backend devolver a classificação, o prefixo passa a refletir OS.
+export function formatContractNumber(code: string, classification?: string): string {
+  const isServiceOrder =
+    classification === 'Ordem de Serviço' || classification === 'ServiceOrder' || classification === 'OS'
+
+  const dashed = /(CT|OS|CNT|C|A)-(\d{4})-(\d{4})/.exec(code)
+  if (dashed) {
+    const [, kind = '', year = '', seq = ''] = dashed
     const prefix =
-      kind === 'CNT' || kind === 'C'
-        ? 'CT'
-        : kind === 'A'
-          ? 'OS'
-          : kind
-    return `${prefix} ${seq}/${year}`
+      kind === 'CNT' || kind === 'C' ? 'CT' : kind === 'A' ? 'OS' : kind
+    return `${prefix} ${seq.padStart(4, '0')}/${year}`
   }
+
+  // Formato do backend atual: "NNN/AAAA" (ou "NNNN/AAAA").
+  const slashed = /^(\d{1,5})\/(\d{4})$/.exec(code.trim())
+  if (slashed) {
+    const [, seq = '', year = ''] = slashed
+    return `${isServiceOrder ? 'OS' : 'CT'} ${seq.padStart(4, '0')}/${year}`
+  }
+
   return code
 }
 
