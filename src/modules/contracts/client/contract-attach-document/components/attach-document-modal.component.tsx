@@ -29,7 +29,8 @@ function formatCurrency(cents: number): string {
   return (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 function formatDate(date: Date | null | undefined): string {
-  return date ? date.toLocaleDateString('pt-BR') : '—'
+  // YYYY-MM-DD vem como meia-noite UTC; formatar em UTC evita recuar 1 dia em BRT.
+  return date ? date.toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '—'
 }
 
 export function AttachDocumentModal({ open, contract, onClose, onSubmit, submitting, errorTag }: AttachDocumentModalProps): ReactNode {

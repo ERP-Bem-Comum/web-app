@@ -17,7 +17,11 @@ export type AmendmentFormState = Readonly<{
   terminationDate: string
 }>
 
-export const useAmendmentFormController = (onSubmit: (input: CreateAmendmentInput) => void) => {
+// Anexo opcional no MESMO save do create: documento assinado + data de assinatura → homologa em
+// seguida (fluxo unificado). Sem anexo → aditivo nasce Pendente, sem efeito.
+export type AmendmentAttach = Readonly<{ file: File; signedAt: string }>
+
+export const useAmendmentFormController = (onSubmit: (input: CreateAmendmentInput, attach?: AmendmentAttach) => void) => {
   const [state, setState] = useState<AmendmentFormState>({
     type: null,
     description: '',
@@ -34,7 +38,7 @@ export const useAmendmentFormController = (onSubmit: (input: CreateAmendmentInpu
     setState((s) => ({ ...s, [key]: value }))
   }, [])
 
-  const submit = useCallback(() => {
+  const submit = useCallback((attach?: AmendmentAttach) => {
     if (!state.type) return
     const input: CreateAmendmentInput = {
       type: state.type,
@@ -46,7 +50,7 @@ export const useAmendmentFormController = (onSubmit: (input: CreateAmendmentInpu
       startDate: state.startDate ? new Date(state.startDate) : undefined,
       signedAt: state.signedAt ? new Date(state.signedAt) : undefined,
     }
-    onSubmit(input)
+    onSubmit(input, attach)
   }, [state, onSubmit])
 
   return { state, update, submit }

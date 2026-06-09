@@ -10,7 +10,7 @@ import { useId, useState } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { useAmendmentFormController, type CreateAmendmentInput, type AmendmentType } from './amendment-form.controller.ts'
+import { useAmendmentFormController, type CreateAmendmentInput, type AmendmentType, type AmendmentAttach } from './amendment-form.controller.ts'
 import * as s from './amendment-modal.css.ts'
 
 const t = createTranslator(ptBR)
@@ -25,13 +25,23 @@ const inputToCents = (raw: string): number => {
 
 export type AmendmentForAttach = Readonly<{ id: string; type: AmendmentType; description: string }>
 
+// Dados (já formatados) p/ o modo somente-leitura (view) — clicar um aditivo já existente.
+export type AmendmentViewData = Readonly<{
+  type: AmendmentType
+  description: string
+  signedAt: string
+  status: string
+  impactLabel: string
+}>
+
 export interface AmendmentModalProps {
   readonly open: boolean
-  readonly mode: 'create' | 'attach'
+  readonly mode: 'create' | 'attach' | 'view'
   readonly contractNumber: string
   readonly amendment?: AmendmentForAttach
+  readonly viewData?: AmendmentViewData
   readonly onClose: () => void
-  readonly onCreate: (input: CreateAmendmentInput) => void
+  readonly onCreate: (input: CreateAmendmentInput, attach?: AmendmentAttach) => void
   readonly onAttach: (args: Readonly<{ amendmentId: string; file: File; signedAt: string }>) => void
   readonly submitting: boolean
   readonly errorTag: string | null
@@ -55,17 +65,33 @@ function TipoIcon({ type }: { type: AmendmentType }): ReactNode {
   }
 }
 
-export function AmendmentModal({ open, mode, contractNumber, amendment, onClose, onCreate, onAttach, submitting, errorTag }: AmendmentModalProps): ReactNode {
+export function AmendmentModal({ open, mode, contractNumber, amendment, viewData, onClose, onCreate, onAttach, submitting, errorTag }: AmendmentModalProps): ReactNode {
   const { state, update, submit } = useAmendmentFormController(onCreate)
   const [file, setFile] = useState<File | null>(null)
   const [attachSignedAt, setAttachSignedAt] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const titleId = useId()
 
   if (!open) return null
 
   const isAttach = mode === 'attach'
-  const selectedType: AmendmentType | null = isAttach ? (amendment?.type ?? null) : state.type
-  const resumoText = amendment !== undefined && amendment.description !== '' ? amendment.description : '—'
+  const isView = mode === 'view'
+  const readOnly = isAttach || isView // tipo/resumo não editáveis
+  const selectedType: AmendmentType | null = isView
+    ? (viewData?.type ?? null)
+    : isAttach
+      ? (amendment?.type ?? null)
+      : state.type
+  const resumoText = isView
+    ? (viewData?.description && viewData.description !== '' ? viewData.description : '—')
+    : amendment !== undefined && amendment.description !== '' ? amendment.description : '—'
+
+  // Documento e assinatura são INTERDEPENDENTES no create: ambos preenchidos → homologa no mesmo save;
+  // nenhum → aditivo Pendente (sem efeito). Apenas um dos dois → inconsistente (sinaliza, bloqueia).
+  const hasFile = file !== null
+  const hasSignature = state.signedAt !== ''
+  const attachInconsistent = hasFile !== hasSignature
+  const willHomologate = hasFile && hasSignature
 
   const canCreate =
     state.type !== null &&
@@ -73,6 +99,7 @@ export function AmendmentModal({ open, mode, contractNumber, amendment, onClose,
     (state.type !== 'prazo' || state.newEndDate !== '') &&
     (state.type !== 'valor' || state.impactValueCents > 0) && // core-api: AmendmentImpactValueZero (422)
     (state.type !== 'distrato' || state.terminationDate !== '') && // distrato exige data efetiva
+    !attachInconsistent &&
     !submitting
   const canAttach = file !== null && attachSignedAt !== '' && !submitting
 
@@ -80,7 +107,8 @@ export function AmendmentModal({ open, mode, contractNumber, amendment, onClose,
     if (isAttach) {
       if (file !== null && amendment) onAttach({ amendmentId: amendment.id, file, signedAt: attachSignedAt })
     } else {
-      submit()
+      // Com documento + assinatura → encaminha o anexo p/ a página homologar após criar.
+      submit(file !== null && state.signedAt !== '' ? { file, signedAt: state.signedAt } : undefined)
     }
   }
 
@@ -101,7 +129,7 @@ export function AmendmentModal({ open, mode, contractNumber, amendment, onClose,
       <div className={s.content}>
         <div className={s.header}>
           <div className={s.headLeft}>
-            <h3 className={s.title} id={titleId}>{isAttach ? 'Documento do Aditivo' : t('contracts.amendment.title')}</h3>
+            <h3 className={s.title} id={titleId}>{isView ? 'Detalhes do Aditivo' : isAttach ? 'Documento do Aditivo' : t('contracts.amendment.title')}</h3>
             <span className={s.autoNum}>{contractNumber}</span>
           </div>
           <button type="button" className={s.close} onClick={onClose} aria-label={t('contracts.amendment.cancel')}>×</button>
@@ -119,8 +147,8 @@ export function AmendmentModal({ open, mode, contractNumber, amendment, onClose,
                     key={type}
                     type="button"
                     className={`${s.tipoCard} ${active ? s.tipoCardActiveTone[type] : ''}`}
-                    disabled={isAttach}
-                    onClick={() => { if (!isAttach) update('type', type) }}
+                    disabled={readOnly}
+                    onClick={() => { if (!readOnly) update('type', type) }}
                   >
                     <span className={`${s.tipoIcon} ${active ? s.tipoIconActiveTone[type] : ''}`}><TipoIcon type={type} /></span>
                     <span className={s.tipoName}>{t(`contracts.amendment.type.${type}`)}</span>
@@ -182,12 +210,26 @@ export function AmendmentModal({ open, mode, contractNumber, amendment, onClose,
             )}
           </div>
 
+          {/* Impacto + Status (somente leitura, modo view) */}
+          {isView && (
+            <div className={s.fieldRow2}>
+              <div className={s.field}>
+                <label className={s.label}>{t('contracts.amendment.field.impact.label')}</label>
+                <div className={s.input}><span>{viewData?.impactLabel ?? '—'}</span></div>
+              </div>
+              <div className={s.field}>
+                <label className={s.label}>{t('contracts.amendment.field.status')}</label>
+                <div className={s.input}><span>{viewData?.status ?? '—'}</span></div>
+              </div>
+            </div>
+          )}
+
           {/* Resumo */}
           <div>
             <div className={s.sectionLabel}>
-              {t('contracts.amendment.field.description')} {!isAttach && <span className={s.req}>*</span>}
+              {t('contracts.amendment.field.description')} {!readOnly && <span className={s.req}>*</span>}
             </div>
-            {isAttach ? (
+            {readOnly ? (
               <div className={s.input}><span>{resumoText}</span></div>
             ) : (
               <textarea className={s.textarea} value={state.description} onChange={(e) => { update('description', e.target.value) }} />
@@ -200,15 +242,17 @@ export function AmendmentModal({ open, mode, contractNumber, amendment, onClose,
             <div className={s.fieldRow2}>
               <div className={s.field}>
                 <label className={s.label}>
-                  {t('contracts.amendment.field.signedAt')} {isAttach && <span className={s.req}>*</span>}
+                  {t('contracts.amendment.field.signedAt')} {(isAttach || hasFile) && <span className={s.req}>*</span>}
                 </label>
                 {isAttach ? (
                   <input className={s.input} type="date" value={attachSignedAt} onChange={(e) => { setAttachSignedAt(e.target.value) }} />
+                ) : isView ? (
+                  <div className={s.input}><span>{viewData?.signedAt && viewData.signedAt !== '' ? viewData.signedAt : '—'}</span></div>
                 ) : (
                   <input className={s.input} type="date" value={state.signedAt} onChange={(e) => { update('signedAt', e.target.value) }} />
                 )}
               </div>
-              {!isAttach && (
+              {!readOnly && (
                 <div className={s.field}>
                   <label className={s.label}>{t('contracts.amendment.field.startDate')}</label>
                   <input className={s.input} type="date" value={state.startDate} onChange={(e) => { update('startDate', e.target.value) }} />
@@ -217,33 +261,76 @@ export function AmendmentModal({ open, mode, contractNumber, amendment, onClose,
             </div>
           </div>
 
-          {/* Documento */}
-          <div>
-            <div className={s.sectionLabel}>
-              {t('contracts.amendment.field.document')} {isAttach && <span className={s.req}>*</span>}
-            </div>
-            <label className={s.uploadZone}>
-              <input
-                type="file"
-                accept="application/pdf"
-                style={{ display: 'none' }}
-                onChange={(e) => { const f = e.target.files?.[0]; if (f?.type === 'application/pdf') { setFile(f); update('hasDocument', true) } }}
-              />
-              <div className={s.uploadInfo}>
-                <span className={s.uploadName}>{file !== null ? file.name : t('contracts.amendment.field.document.hint')}</span>
-                <span className={s.uploadHint}>PDF · ≤ 20 MB</span>
+          {/* Documento (oculto no modo view) */}
+          {!isView && (
+            <div>
+              <div className={s.sectionLabel}>
+                {t('contracts.amendment.field.document')} {isAttach && <span className={s.req}>*</span>}
               </div>
-            </label>
-          </div>
+              <label className={s.uploadZone}>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  style={{ display: 'none' }}
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f?.type === 'application/pdf') { setFile(f); update('hasDocument', true) } }}
+                />
+                <div className={s.uploadInfo}>
+                  <span className={s.uploadName}>{file !== null ? file.name : t('contracts.amendment.field.document.hint')}</span>
+                  <span className={s.uploadHint}>{isAttach ? 'PDF · ≤ 20 MB' : t('contracts.amendment.document.optional')}</span>
+                </div>
+              </label>
+            </div>
+          )}
+
+          {/* Sinal: documento e assinatura são interdependentes (só no create). */}
+          {!readOnly && attachInconsistent && (
+            <div className={s.errorAlert} role="alert">{t('contracts.amendment.attachDependency')}</div>
+          )}
+
+          {/* Confirmação de exclusão (aditivo Pendente, modo attach) — gated até o backend. */}
+          {isAttach && confirmDelete && (
+            <div className={s.errorAlert} role="alert">
+              {t('contracts.amendment.delete.question')} {t('contracts.amendment.delete.unavailable')}
+            </div>
+          )}
 
           {errorTag !== null && <div className={s.errorAlert} role="alert">{t(errorTag)}</div>}
         </div>
 
         <div className={s.footer}>
-          <button type="button" className={s.buttonSecondary} onClick={onClose}>{t('contracts.amendment.cancel')}</button>
-          <button type="button" className={s.buttonPrimary} disabled={isAttach ? !canAttach : !canCreate} onClick={handleSubmit}>
-            {submitting ? t('common.loading') : isAttach ? 'Salvar e homologar' : t('contracts.amendment.submit')}
-          </button>
+          {isView ? (
+            <button type="button" className={s.buttonSecondary} onClick={onClose}>{t('contracts.amendment.close')}</button>
+          ) : confirmDelete ? (
+            <>
+              <button
+                type="button"
+                className={`${s.buttonDanger} ${s.footerStart}`}
+                disabled
+                title={t('contracts.amendment.delete.unavailable')}
+              >
+                {t('contracts.amendment.delete.confirm')}
+              </button>
+              <button type="button" className={s.buttonSecondary} onClick={() => { setConfirmDelete(false) }}>
+                {t('contracts.amendment.cancel')}
+              </button>
+            </>
+          ) : (
+            <>
+              {isAttach && (
+                <button type="button" className={`${s.buttonDanger} ${s.footerStart}`} onClick={() => { setConfirmDelete(true) }}>
+                  {t('contracts.amendment.delete')}
+                </button>
+              )}
+              <button type="button" className={s.buttonSecondary} onClick={onClose}>{t('contracts.amendment.cancel')}</button>
+              <button type="button" className={s.buttonPrimary} disabled={isAttach ? !canAttach : !canCreate} onClick={handleSubmit}>
+                {submitting
+                  ? t('common.loading')
+                  : isAttach
+                    ? 'Salvar e homologar'
+                    : willHomologate ? t('contracts.amendment.submitHomologate') : t('contracts.amendment.submit')}
+              </button>
+            </>
+          )}
         </div>
       </div>
     </dialog>

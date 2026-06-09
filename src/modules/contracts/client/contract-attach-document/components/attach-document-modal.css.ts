@@ -116,6 +116,8 @@ export const hint = style({
 
 export const input = style({
   height: '2.5rem',
+  display: 'flex', // centraliza verticalmente o valor read-only (modo somente leitura)
+  alignItems: 'center',
   padding: `0 ${vars.space.sm}`,
   fontFamily: vars.font.family.body,
   fontSize: vars.font.size.sm,
@@ -184,7 +186,8 @@ export const summaryCard = style({
   flexDirection: 'column',
   gap: vars.space.xs,
   padding: vars.space.sm,
-  background: vars.color.institutional.paperWarm,
+  // Caixas em tom de azul suave (identidade do cliente), no lugar do bege.
+  background: vars.color.institutional.blueBg,
   borderRadius: vars.radius.md,
   minWidth: 0,
 })
@@ -226,11 +229,16 @@ export const statusRowLabel = style({
 export const statusBadge = style({
   display: 'inline-flex',
   alignItems: 'center',
+  justifyContent: 'center',
   gap: vars.space.xs,
-  padding: `${vars.space.xs} ${vars.space.sm}`,
+  padding: `0.1875rem ${vars.space.sm}`,
   borderRadius: vars.radius.md,
-  fontSize: '0.6875rem',
+  fontFamily: vars.font.family.heading, // padrão das badges (Inter)
+  fontSize: '0.625rem',
   fontWeight: vars.font.weight.semibold,
+  letterSpacing: '0.04em',
+  textTransform: 'uppercase',
+  lineHeight: 1.2,
   marginInlineStart: 'auto',
 })
 export const statusBadgePending = style({ background: vars.color.status.pendingBg, color: vars.color.status.pendingText })
@@ -242,8 +250,9 @@ export const attachedFile = style({
   alignItems: 'center',
   gap: vars.space.md,
   padding: vars.space.md,
-  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.blueLine}`,
-  borderRadius: vars.radius.lg,
+  // Borda azul mais discreta (color-mix) + raio médio: caixa em tom de azul suave.
+  border: `${vars.borderWidth.thin} solid color-mix(in srgb, ${vars.color.institutional.blueLine} 50%, transparent)`,
+  borderRadius: vars.radius.md,
   background: vars.color.institutional.blueBg,
 })
 

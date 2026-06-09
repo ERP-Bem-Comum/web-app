@@ -210,6 +210,8 @@ export const input = style({
   width: '100%',
   boxSizing: 'border-box',
   height: '2.5rem',
+  display: 'flex', // centraliza verticalmente o conteúdo read-only (modo view)
+  alignItems: 'center',
   padding: `0 ${vars.space.sm}`,
   fontFamily: vars.font.family.body,
   fontSize: vars.font.size.sm,
@@ -277,10 +279,35 @@ export const errorAlert = style({
 export const footer = style({
   display: 'flex',
   justifyContent: 'flex-end',
+  alignItems: 'center',
   gap: vars.space.sm,
   padding: vars.space.lg,
   borderTop: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   background: vars.color.institutional.paperWarm,
+})
+
+// Empurra o "Excluir aditivo" para a esquerda do footer.
+export const footerStart = style({ marginInlineEnd: 'auto' })
+
+// Botão danger SUAVE — "Excluir aditivo" (texto, sem borda; discreto no layout).
+export const buttonDanger = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  height: '2.5rem',
+  padding: `0 ${vars.space.md}`,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.feedback.errorText,
+  background: 'transparent',
+  border: 'none',
+  borderRadius: vars.radius.md,
+  cursor: 'pointer',
+  selectors: {
+    '&:disabled': { opacity: '0.5', cursor: 'not-allowed' },
+    '&:hover:not(:disabled)': { background: vars.color.feedback.errorBg },
+  },
 })
 
 export const buttonSecondary = style({
@@ -330,7 +357,8 @@ const TONE = {
 } as const
 
 export const tipoCardActiveTone = styleVariants(TONE, (t) => ({
-  borderColor: t.fg,
+  // Borda discreta (color-mix) em vez da cor cheia → mais suave/sofisticado.
+  borderColor: `color-mix(in srgb, ${t.fg} 38%, transparent)`,
   background: t.bg,
 }))
 
@@ -338,7 +366,7 @@ export const tipoIconActiveTone = styleVariants(TONE, (t) => ({ color: t.fg }))
 
 export const condRowTone = styleVariants(TONE, (t) => ({
   background: t.bg,
-  borderColor: t.fg,
+  borderColor: `color-mix(in srgb, ${t.fg} 25%, transparent)`,
 }))
 
 export const condHeadTone = styleVariants(TONE, (t) => ({ color: t.fg }))
