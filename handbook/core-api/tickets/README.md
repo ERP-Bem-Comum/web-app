@@ -38,7 +38,9 @@
 # Handoff Front → Core-API — Parceiros
 
 > Pendências de backend levantadas na **adequação ao legado** dos submódulos de Parceiros
-> (Colaboradores, Fornecedores, ACTs, Financiadores) — grids, forms e detalhes. Verificado em 2026-06-09.
+> (Colaboradores, Fornecedores, ACTs, Financiadores + Estados/Municípios) — grids, forms e detalhes.
+> Verificado em 2026-06-09. **Visão geral consolidada (o que foi feito + o que falta):**
+> [PAR-PARCEIROS-RESUMO](./PAR-PARCEIROS-RESUMO.md).
 
 ## 🟥 Pendências de BACKEND (core-api)
 
