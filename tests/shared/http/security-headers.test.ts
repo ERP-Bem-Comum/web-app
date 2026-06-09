@@ -47,6 +47,16 @@ describe('serializeCsp', () => {
     assert.match(s, /object-src 'none'/)
     assert.match(s, /base-uri 'self'/)
   })
+
+  it('CSP baseline libera frame-src self + blob (preview de PDF), sem abrir p/ http(s) externo', () => {
+    const s = serializeCsp(CSP_BASELINE)
+    const frameSrc = s.split('; ').find((d) => d.startsWith('frame-src '))
+    assert.ok(frameSrc, 'frame-src presente')
+    assert.match(frameSrc, /frame-src 'self' blob:/)
+    assert.equal(frameSrc.includes('http://'), false)
+    assert.equal(frameSrc.includes('https://'), false)
+    assert.equal(frameSrc.includes('*'), false)
+  })
 })
 
 describe('buildSecurityHeaders', () => {

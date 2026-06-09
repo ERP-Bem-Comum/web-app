@@ -25,6 +25,10 @@ export const CSP_BASELINE: CspDirectives = {
   'connect-src': ["'self'"], // browser só fala com o BFF
   'object-src': ["'none'"],
   'base-uri': ["'self'"],
+  // Preview de PDF: o BFF entrega os bytes (same-origin) e o client cria um `blob:` para o <iframe>.
+  // Sem `frame-src`, o framing do `blob:` cai no `default-src 'self'` e é bloqueado (ADR-0006). Liberamos
+  // só `'self'` + `blob:` (o blob é gerado pelo nosso próprio JS a partir de bytes same-origin).
+  'frame-src': ["'self'", 'blob:'],
   'frame-ancestors': ["'none'"], // anti-clickjacking
   'form-action': ["'self'"],
 } as const
