@@ -77,6 +77,10 @@ export const createPartnersRepository = (deps: Readonly<{
 }>): PartnersRepository => ({
   search: async (query, kind) => {
     const res = await deps.searchPartnersFn({ data: { query: query || undefined, kind } })
-    return res.ok ? ok(res.data.map(toClientPartner)) : err(res.error)
+    if (!res.ok) return err(res.error)
+    // ACT ainda NÃO é selecionável como contratado (o form/POST de contrato não têm `actId` nem
+    // tratam o tipo ACT) → fica fora da busca até o vínculo de ACT ser suportado ponta a ponta.
+    const items = res.data.filter((p) => p.kind !== 'ACT').map(toClientPartner)
+    return ok(items)
   },
 })

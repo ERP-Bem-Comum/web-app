@@ -70,7 +70,7 @@ export function ContractCreatePage(): ReactNode {
   const [partnerQuery, setPartnerQuery] = useState('')
   const [partnerOpen, setPartnerOpen] = useState(false)
 
-  const partnerSearch = usePartnerSearchBinding(partnerQuery, form.state.contractType, partnerOpen)
+  const partnerSearch = usePartnerSearchBinding(partnerQuery, partnerOpen)
 
   const partnerLoading = partnerSearch.isLoading
   const partnerResults: readonly SelectedPartner[] = partnerSearch.results
@@ -82,6 +82,8 @@ export function ContractCreatePage(): ReactNode {
   const handleSelectPartner = useCallback((partner: SelectedPartner) => {
     form.setSelectedPartner(partner)
     if (partner.kind === 'Fornecedor') {
+      // O tipo do contrato é DERIVADO do parceiro escolhido (busca unificada) — mantém consistência.
+      form.update('contractType', 'Supplier')
       form.update('supplierId', partner.id)
       form.update('financierId', '')
       form.update('collaboratorId', '')
@@ -99,10 +101,12 @@ export function ContractCreatePage(): ReactNode {
         }
       })
     } else if (partner.kind === 'Financiador') {
+      form.update('contractType', 'Financier')
       form.update('financierId', partner.id)
       form.update('supplierId', '')
       form.update('collaboratorId', '')
     } else {
+      form.update('contractType', 'Collaborator')
       form.update('collaboratorId', partner.id)
       form.update('supplierId', '')
       form.update('financierId', '')

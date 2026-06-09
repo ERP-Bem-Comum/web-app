@@ -40,24 +40,21 @@ export const useContractCreateBinding = (): Readonly<{ createCommand: CreateCont
   }
 }
 
+// Busca UNIFICADA: traz TODOS os parceiros (fornecedores, financiadores, colaboradores) para o
+// combobox — o usuário seleciona qualquer um e o tipo do contrato é derivado da escolha (ver
+// handleSelectPartner). Não filtra mais pelo `contractType` pré-selecionado. (ACT fica fora até o
+// vínculo de ACT ser suportado — filtrado no repository.)
 export const usePartnerSearchBinding = (
   query: string,
-  contractType: string,
   isOpen: boolean,
 ): Readonly<{
   results: readonly PartnerSearchResult[]
   isLoading: boolean
 }> => {
-  const kind =
-    contractType === 'Supplier' ? 'Supplier' as const
-    : contractType === 'Financier' ? 'Financier' as const
-    : contractType === 'Collaborator' ? 'Collaborator' as const
-    : undefined
-
   const q = useQuery({
-    queryKey: ['partners', 'search', query, kind],
+    queryKey: ['partners', 'search', query],
     queryFn: async () => {
-      const res = await partnersRepository.search(query, kind)
+      const res = await partnersRepository.search(query)
       if (!isOk(res)) return [] as PartnerSearchResult[]
       return res.value
     },
