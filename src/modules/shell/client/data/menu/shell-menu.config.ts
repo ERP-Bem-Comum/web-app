@@ -8,6 +8,7 @@ export type MenuIconId =
   | 'home'
   | 'heart-handshake'
   | 'users'
+  | 'target'
   | 'calendar-check'
   | 'calendar-days'
   | 'trending-up'
@@ -44,7 +45,7 @@ export const MENU: readonly MenuSection[] = [
       { label: 'Estados e Municípios', to: '/parceiros/territorios', requiredPermission: 'geography:read' },
     ],
   },
-  { label: 'Gestão de Programas', iconId: 'users' },
+  { label: 'Gestão de Programas', iconId: 'target' },
   {
     label: 'Gestão de Contratos',
     iconId: 'calendar-check',

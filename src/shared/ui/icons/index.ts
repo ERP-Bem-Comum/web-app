@@ -5,6 +5,7 @@ export {
   UsersIcon,
   CalendarCheckIcon,
   CalendarDaysIcon,
+  TargetIcon,
   TrendingUpIcon,
   WalletIcon,
   ChevronDownIcon,

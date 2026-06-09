@@ -39,7 +39,7 @@ export const menuList = style({
   paddingBlock: vars.space.sm,
   display: 'flex',
   flexDirection: 'column',
-  gap: '0.125rem',
+  gap: vars.space.xs,
   flex: 1,
 })
 
@@ -68,9 +68,11 @@ export const item = style({
   justifyContent: 'space-between',
   border: 'none',
   background: 'transparent',
-  paddingBlock: vars.space.sm,
+  // Mais respiro vertical por módulo (sm + xs = 0.75rem).
+  paddingBlock: `calc(${vars.space.sm} + ${vars.space.xs})`,
   paddingInline: vars.space.md,
-  fontSize: vars.font.size.sm,
+  // +1px sobre o `sm` (14px) → 15px, por pedido de legibilidade do menu.
+  fontSize: '0.9375rem',
   fontFamily: vars.font.family.body,
   fontWeight: vars.font.weight.medium,
   color: vars.color.nav.textMuted,
@@ -112,7 +114,8 @@ export const subItem = style({
   color: vars.color.nav.textMuted,
   background: 'transparent',
   textDecoration: 'none',
-  fontSize: vars.font.size.xs,
+  // +1px sobre o `xs` (12px) → 13px (submódulo), acompanhando o aumento dos módulos.
+  fontSize: '0.8125rem',
   fontFamily: vars.font.family.body,
   fontWeight: vars.font.weight.regular,
   borderInlineStart: `${vars.borderWidth.thick} solid transparent`,
