@@ -10,8 +10,13 @@ export type UpdateContractCommand = Readonly<{
   execute: (input: UpdateContractInput) => void
 }>
 
-export const useContractEditBinding = (): Readonly<{ editCommand: UpdateContractCommand }> => {
-  const mutation = useMutation({ ...contractEditViewModel.mutation })
+export const useContractEditBinding = (
+  opts?: Readonly<{ onSuccess?: () => void }>,
+): Readonly<{ editCommand: UpdateContractCommand }> => {
+  const mutation = useMutation({
+    ...contractEditViewModel.mutation,
+    onSuccess: (result) => { if (isOk(result) && opts?.onSuccess) opts.onSuccess() },
+  })
   const data = mutation.data
   const errorTag =
     data !== undefined && !isOk(data)

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useState } from 'react'
 import type { Contract, Amendment } from '#modules/contracts/public-api/index.ts'
 import { amendmentSeqMap, formatAmendmentNumber } from '../amendment-number.ts'
 import {
@@ -13,6 +14,9 @@ import {
   aditHeadCell,
   aditHeadCellRight,
   aditRowBase,
+  aditPaginator,
+  aditPageBtn,
+  aditPageInfo,
   aditNum,
   aditData,
   aditResumo,
@@ -116,19 +120,19 @@ interface DocRow {
 }
 
 export function ContractDocuments({ contract, onOpenBase, onNewAmendment, onOpenAmendment, onPreview, onDownload }: Props): ReactNode {
+  const [page, setPage] = useState(0)
   const ctPrefix = contract.classification === 'Contract' ? 'CT' : 'OS'
 
   // Casa cada linha ao seu documento anexado (associação documento ↔ dono via parentType/parentId).
   const baseDocumentId = contract.files.find((f) => f.parentType === 'Contract')?.id
-  const amendmentDocumentId = (amendmentId: string): string | undefined =>
-    contract.files.find((f) => f.parentType === 'Amendment' && f.parentId === amendmentId)?.id
+  const amendmentDoc = (amendmentId: string) =>
+    contract.files.find((f) => f.parentType === 'Amendment' && f.parentId === amendmentId)
 
   const seq = amendmentSeqMap(contract.children)
   // Mais recente no topo (item 4): aditivos por createdAt desc; o contrato base fica sempre por último.
   const amendmentsDesc = [...contract.children].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 
-  const rows: readonly DocRow[] = [
-    ...amendmentsDesc.map((a: Amendment): DocRow => {
+  const amendmentRows: readonly DocRow[] = amendmentsDesc.map((a: Amendment): DocRow => {
       const v = a.impactValueCents ?? 0
       // Impacto por tipo: valor → "+ R$ x" (acréscimo) / "− R$ x" (supressão, valor negativo no domínio);
       // prazo → "+ DD/MM/AAAA" (nova vigência); escopo/outro/distrato → sem impacto financeiro.
@@ -142,35 +146,46 @@ export function ContractDocuments({ contract, onOpenBase, onNewAmendment, onOpen
             : a.type === 'prazo' && a.newEndDate
               ? { kind: 'neutral' as const, text: `+ ${formatDate(a.newEndDate)}` }
               : { kind: 'neutral' as const, text: 'sem impacto' }
+      const adoc = amendmentDoc(a.id)
       return {
         id: a.id,
         num: formatAmendmentNumber(seq.get(a.id), contract.sequentialNumber, a.amendmentNumber),
         type: a.type,
-        signedAt: a.signedAt,
+        // Assinatura/homologação: o aditivo não expõe `signedAt` (backend) — usamos o `uploadedAt` do
+        // documento assinado como data de homologação (quando há documento anexado).
+        signedAt: a.signedAt ?? adoc?.uploadedAt ?? null,
         summary: a.description ?? '—',
         impactKind: impact.kind,
         impactText: impact.text,
         status: a.status,
         isBase: false,
         docName: `Aditivo ${formatAmendmentNumber(seq.get(a.id), contract.sequentialNumber, a.amendmentNumber)}`,
-        documentId: amendmentDocumentId(a.id),
+        documentId: adoc?.id,
       }
-    }),
-    {
-      id: contract.id,
-      num: `${ctPrefix} ${contract.sequentialNumber}`,
-      type: 'base',
-      signedAt: contract.signedAt,
-      summary: contract.objective || '—',
-      impactKind: 'base',
-      impactText: formatCurrency(contract.originalValue.cents),
-      // Status do DOCUMENTO base: Pendente (sem assinado) → Homologado (efetivado, em azul).
-      status: contract.status === 'Pendente' ? 'Pendente' : 'Homologado',
-      isBase: true,
-      docName: `Contrato ${ctPrefix} ${contract.sequentialNumber}`,
-      documentId: baseDocumentId,
-    },
-  ]
+    })
+
+  const baseRow: DocRow = {
+    id: contract.id,
+    num: `${ctPrefix} ${contract.sequentialNumber}`,
+    type: 'base',
+    signedAt: contract.signedAt,
+    summary: contract.objective || '—',
+    impactKind: 'base',
+    impactText: formatCurrency(contract.originalValue.cents),
+    // Status do DOCUMENTO base: Pendente (sem assinado) → Homologado (efetivado, em azul).
+    status: contract.status === 'Pendente' ? 'Pendente' : 'Homologado',
+    isBase: true,
+    docName: `Contrato ${ctPrefix} ${contract.sequentialNumber}`,
+    documentId: baseDocumentId,
+  }
+
+  // Paginação dos ADITIVOS: 5 por página (o contrato base fica sempre por último, fora da paginação).
+  const PAGE_SIZE = 5
+  const totalPages = Math.max(1, Math.ceil(amendmentRows.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages - 1)
+  const pagedAmendmentRows = amendmentRows.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE)
+  const showPaginator = amendmentRows.length > PAGE_SIZE
+  const rows: readonly DocRow[] = [...pagedAmendmentRows, baseRow]
 
   const impactClass = (k: DocRow['impactKind']): string =>
     k === 'pos' ? aditImpactoPos : k === 'neg' ? aditImpactoNeg : k === 'base' ? aditImpactoBase : aditImpactoNeutral
@@ -202,8 +217,9 @@ export function ContractDocuments({ contract, onOpenBase, onNewAmendment, onOpen
         </div>
 
         {rows.map((r) => {
-          // Linha clicável: base (sempre, abre o doc do contrato) e aditivo Pendente (anexar doc → homologar).
-          const amendmentClickable = !r.isBase && r.status === 'Pendente'
+          // Linha clicável: base (abre o doc do contrato) e TODO aditivo — Pendente abre p/ anexar/homologar;
+          // já existente (Homologado/etc.) abre o modal em modo leitura (view) com as infos preenchidas.
+          const amendmentClickable = !r.isBase
           const clickProps = r.isBase
             ? { role: 'button' as const, tabIndex: 0, onClick: onOpenBase }
             : amendmentClickable
@@ -252,6 +268,30 @@ export function ContractDocuments({ contract, onOpenBase, onNewAmendment, onOpen
           )
         })}
       </div>
+
+      {showPaginator && (
+        <div className={aditPaginator}>
+          <button
+            type="button"
+            className={aditPageBtn}
+            disabled={safePage === 0}
+            aria-label="Página anterior"
+            onClick={() => { setPage((p) => Math.max(0, p - 1)) }}
+          >
+            ‹
+          </button>
+          <span className={aditPageInfo}>{safePage + 1} / {totalPages}</span>
+          <button
+            type="button"
+            className={aditPageBtn}
+            disabled={safePage >= totalPages - 1}
+            aria-label="Próxima página"
+            onClick={() => { setPage((p) => Math.min(totalPages - 1, p + 1)) }}
+          >
+            ›
+          </button>
+        </div>
+      )}
     </section>
   )
 }

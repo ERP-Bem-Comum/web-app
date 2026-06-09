@@ -8,6 +8,7 @@ import {
   contractedHero,
   overline,
   overlinePill,
+  overlinePillTone,
   contractedName,
   contractedMeta,
   sectionBlock,
@@ -15,7 +16,7 @@ import {
   sectionH3,
   fieldRow,
   frCols4,
-  frCols3,
+  frCols2,
   frWide,
   frVigentes,
   frContratoBase,
@@ -76,7 +77,7 @@ export function ContractInfo({ contract }: Props): ReactNode {
       <div className={contractedHero}>
         <div className={overline}>
           Contratado
-          <span className={overlinePill}>{pessoa} · {typeLabel(contract.contractType)}</span>
+          <span className={`${overlinePill} ${overlinePillTone[contract.contractType]}`}>{pessoa} · {typeLabel(contract.contractType)}</span>
         </div>
         <h2 className={contractedName}>{partnerName}</h2>
         <div className={contractedMeta}>{doc.label} {doc.value}</div>
@@ -105,22 +106,23 @@ export function ContractInfo({ contract }: Props): ReactNode {
       <section className={sectionBlock}>
         <div className={sectionHeadRow}><h3 className={sectionH3}>Dados do Contrato</h3></div>
 
+        {/* Linha 1: Classificação, Modelo, Tipo, Categoria (Categoria trocou de lugar com Origem) */}
         <div className={`${fieldRow} ${frCols4}`}>
           <div className={fld}>
-            <label className={fldLabel}>Tipo</label>
-            <div className={`${fldBox} ${fldBoxSelect}`}><span className={fldValue}>{typeLabel(contract.contractType)}</span></div>
+            <label className={fldLabel}>Classificação</label>
+            <div className={`${fldBox} ${fldBoxSelect}`}><span className={fldValue}>{contract.classification === 'Contract' ? 'Contrato' : 'Ordem de Serviço'}</span></div>
           </div>
           <div className={fld}>
             <label className={fldLabel}>Modelo</label>
             <div className={`${fldBox} ${fldBoxSelect}`}><span className={fldValue}>{contract.contractModel === 'Service' ? 'Serviço' : 'Doação'}</span></div>
           </div>
           <div className={fld}>
-            <label className={fldLabel}>Categoria</label>
-            <div className={`${fldBox} ${fldBoxSelect}`}><span className={fldValue}>{contract.categorizacao ?? '—'}</span></div>
+            <label className={fldLabel}>Tipo</label>
+            <div className={`${fldBox} ${fldBoxSelect}`}><span className={fldValue}>{typeLabel(contract.contractType)}</span></div>
           </div>
           <div className={fld}>
-            <label className={fldLabel}>Centro de Custo</label>
-            <div className={`${fldBox} ${fldBoxSelect}`}><span className={fldValue}>{contract.centroDeCusto ?? '—'}</span></div>
+            <label className={fldLabel}>Categoria</label>
+            <div className={`${fldBox} ${fldBoxSelect}`}><span className={fldValue}>{contract.categorizacao ?? '—'}</span></div>
           </div>
         </div>
 
@@ -131,6 +133,7 @@ export function ContractInfo({ contract }: Props): ReactNode {
           </div>
         </div>
 
+        {/* Valor + Vigência (original) + Programa (Programa trocou de lugar com Status Base) */}
         <div className={`${fieldRow} ${frContratoBase}`}>
           <div className={fld}>
             <label className={fldLabel}>Valor Original</label>
@@ -145,23 +148,32 @@ export function ContractInfo({ contract }: Props): ReactNode {
             <div className={fldBox}><span className={`${fldValue} ${fldMono}`}>{formatDate(contract.originalPeriod.end)}</span></div>
           </div>
           <div className={fld}>
-            <label className={fldLabel}>Status Base</label>
-            <div className={fldBox}><span className={fldValue}>{contract.status}</span></div>
+            <label className={fldLabel}>Programa</label>
+            <div className={`${fldBox} ${fldBoxSelect}`}><span className={fldValue}>{contract.program?.name ?? '—'}</span></div>
           </div>
         </div>
 
-        <div className={`${fieldRow} ${frCols3}`}>
+        {/* Status Base + Plano Orçamentário */}
+        <div className={`${fieldRow} ${frCols2}`}>
           <div className={fld}>
-            <label className={fldLabel}>Origem</label>
-            <div className={fldBox}><span className={fldValue}>{contract.origin ?? 'Manual'}</span></div>
-          </div>
-          <div className={fld}>
-            <label className={fldLabel}>Programa</label>
-            <div className={`${fldBox} ${fldBoxSelect}`}><span className={fldValue}>{contract.program?.name ?? '—'}</span></div>
+            <label className={fldLabel}>Status Base</label>
+            <div className={fldBox}><span className={fldValue}>{contract.status}</span></div>
           </div>
           <div className={fld}>
             <label className={fldLabel}>Plano Orçamentário</label>
             <div className={`${fldBox} ${fldBoxSelect}`}><span className={fldValue}>{contract.budgetPlan?.scenarioName ?? '—'}</span></div>
+          </div>
+        </div>
+
+        {/* Origem + Centro de Custo (Origem trocou de lugar com Categoria) */}
+        <div className={`${fieldRow} ${frCols2}`}>
+          <div className={fld}>
+            <label className={fldLabel}>Origem</label>
+            <div className={`${fldBox} ${fldBoxSelect}`}><span className={fldValue}>{contract.origin ?? 'Manual'}</span></div>
+          </div>
+          <div className={fld}>
+            <label className={fldLabel}>Centro de Custo</label>
+            <div className={`${fldBox} ${fldBoxSelect}`}><span className={fldValue}>{contract.centroDeCusto ?? '—'}</span></div>
           </div>
         </div>
       </section>

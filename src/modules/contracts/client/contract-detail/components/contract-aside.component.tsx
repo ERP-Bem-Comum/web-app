@@ -5,7 +5,6 @@ import { amendmentSeqMap, formatAmendmentNumber } from '../amendment-number.ts'
 import {
   asideSection,
   asideHero,
-  asideOverline,
   asideLabel,
   asideValueWrap,
   asideValueCurrency,
@@ -57,7 +56,7 @@ export function ContractAside({ contract, vigencia }: Props): ReactNode {
     <>
       {/* Valor Atual */}
       <div className={asideHero}>
-        <div className={asideOverline}>Valor Atual</div>
+        <div className={asideLabel}>Valor Atual</div>
         <div className={asideValueWrap}>
           <span className={asideValueCurrency}>R$</span>
           <span className={asideValueInteger}>{parts.integer}</span>

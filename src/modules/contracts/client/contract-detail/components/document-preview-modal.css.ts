@@ -34,9 +34,9 @@ export const content = style({
   borderRadius: vars.radius.xl,
   boxShadow: vars.shadow.cardElevated,
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
-  width: '100%',
-  maxWidth: '52rem',
-  height: '85vh',
+  width: '88vw',
+  maxWidth: '80rem', // levemente mais estreito (ajuste fino sobre 96rem)
+  height: '90vh',
   display: 'flex',
   flexDirection: 'column',
   overflow: 'hidden',

@@ -1,4 +1,4 @@
-import { style, globalStyle } from '@vanilla-extract/css'
+import { style, styleVariants, globalStyle } from '@vanilla-extract/css'
 import { vars } from '#shared/ui/tokens/index.ts'
 
 /* ── Layout raiz ── */
@@ -12,8 +12,10 @@ export const screen = style({
 export const topbar = style({
   display: 'flex',
   alignItems: 'center',
-  gap: vars.space.sm,
-  padding: `${vars.space.sm} ${vars.space.md}`,
+  gap: vars.space.xs,
+  // Mesma espessura do footer (bottombar) como padrão: altura fixa 3.5rem.
+  height: '3.5rem',
+  paddingInline: vars.space.md,
   borderBottom: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   flexShrink: 0,
 })
@@ -65,11 +67,12 @@ export const statusBadge = style({
   alignItems: 'center',
   gap: vars.space.xs,
   padding: `0.1875rem ${vars.space.sm}`,
-  borderRadius: vars.radius.xl, // pílula (wireframe)
+  borderRadius: vars.radius.md, // cantos médios (alinhado às badges do grid)
   fontFamily: vars.font.family.heading, // brand: Inter (badges)
   fontSize: '0.625rem',
   fontWeight: vars.font.weight.semibold,
   letterSpacing: '0.02em',
+  lineHeight: 1.2,
   whiteSpace: 'nowrap',
 })
 
@@ -146,7 +149,7 @@ export const asideCol = style({
   flexShrink: 0,
   display: 'flex',
   flexDirection: 'column',
-  gap: vars.space.lg,
+  gap: '1.75rem', // um pouco mais de respiro entre as sections
   padding: vars.space.lg,
   paddingBottom: '4rem',
   overflowY: 'auto',
@@ -195,15 +198,25 @@ export const overline = style({
 })
 
 export const overlinePill = style({
-  fontFamily: vars.font.family.body,
+  display: 'inline-flex',
+  alignItems: 'center',
+  fontFamily: vars.font.family.heading, // brand: Inter (badge)
   fontSize: '0.5625rem',
   fontWeight: vars.font.weight.semibold,
   letterSpacing: '0.06em',
-  color: vars.color.institutional.ink4,
-  background: vars.color.institutional.paperBeige,
-  padding: `0.125rem ${vars.space.xs}`,
-  borderRadius: vars.radius.sm,
+  padding: `0.1875rem ${vars.space.sm}`,
+  borderRadius: vars.radius.md, // cantos médios (alinhado às badges do grid)
   textTransform: 'uppercase',
+  lineHeight: 1.2,
+  whiteSpace: 'nowrap',
+})
+
+// Cor por TIPO de parceiro (azul/amarelo/verde/laranja) — chaveada pelo `contractType` (EN).
+export const overlinePillTone = styleVariants({
+  Supplier: { color: vars.color.partnerType.supplier.text, background: vars.color.partnerType.supplier.background },
+  Financier: { color: vars.color.partnerType.financier.text, background: vars.color.partnerType.financier.background },
+  Collaborator: { color: vars.color.partnerType.collaborator.text, background: vars.color.partnerType.collaborator.background },
+  ACT: { color: vars.color.partnerType.act.text, background: vars.color.partnerType.act.background },
 })
 
 export const contractedName = style({
@@ -239,6 +252,50 @@ export const sectionBlock = style({
   borderBottom: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
 })
 
+// Modificador: remove a linha inferior (usado na última seção — Contato).
+export const sectionBlockFlush = style({ borderBottom: 'none' })
+
+/* Edição inline do Contato */
+export const editInput = style({
+  inlineSize: '100%',
+  boxSizing: 'border-box',
+  blockSize: '2.25rem',
+  paddingInline: vars.space.sm,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+  color: vars.color.institutional.ink2,
+  background: vars.color.surface.default,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.md,
+  selectors: {
+    '&:focus': {
+      outline: 'none',
+      borderColor: vars.color.institutional.blue,
+    },
+  },
+})
+
+export const editTextarea = style([editInput, {
+  blockSize: 'auto',
+  minBlockSize: '4rem',
+  paddingBlock: vars.space.sm,
+  resize: 'vertical',
+}])
+
+export const editActions = style({
+  display: 'flex',
+  justifyContent: 'flex-end',
+  gap: vars.space.sm,
+  marginBlockStart: vars.space.sm,
+})
+
+export const editError = style({
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+  color: vars.color.feedback.errorText,
+  marginBlockStart: vars.space.sm,
+})
+
 export const sectionHeadRow = style({
   display: 'flex',
   alignItems: 'center',
@@ -255,14 +312,18 @@ export const sectionH3 = style({
 
 export const sectionHeadAction = style({
   marginInlineStart: 'auto',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  blockSize: '2.125rem', // um pouco menor
   fontFamily: vars.font.family.heading,
-  fontSize: '0.6875rem',
-  fontWeight: vars.font.weight.medium,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.semibold,
   color: vars.color.institutional.blue,
-  padding: `${vars.space.xs} ${vars.space.sm}`,
-  borderRadius: vars.radius.sm,
+  paddingInline: vars.space.md,
+  borderRadius: vars.radius.md,
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
-  background: vars.color.surface.default,
+  background: vars.color.surface.default, // sem preenchimento (estilo anterior)
   cursor: 'pointer',
   transition: 'background 120ms, border-color 120ms',
   ':hover': {
@@ -394,6 +455,7 @@ export const aditHead = style({
 })
 
 export const aditHeadCell = style({
+  fontFamily: vars.font.family.heading, // brand: Inter (títulos da tabela)
   fontSize: '0.5625rem',
   fontWeight: vars.font.weight.bold,
   color: vars.color.institutional.ink5,
@@ -424,6 +486,8 @@ export const aditData = style({
 })
 
 export const aditResumo = style({
+  fontFamily: vars.font.family.body, // brand: Nunito (coluna RESUMO)
+  fontSize: vars.font.size.sm,
   color: vars.color.institutional.ink2,
   overflow: 'hidden',
   textOverflow: 'ellipsis',
@@ -499,7 +563,7 @@ export const tlItemCurrent = style({
 })
 
 export const tlDate = style({
-  fontFamily: vars.font.family.mono,
+  fontFamily: vars.font.family.body, // brand: Nunito
   fontSize: '0.625rem',
   fontWeight: vars.font.weight.semibold,
   color: vars.color.institutional.ink5,
@@ -507,7 +571,58 @@ export const tlDate = style({
   letterSpacing: '0.02em',
 })
 
-export const tlText = style({ color: vars.color.institutional.ink2, lineHeight: 1.45 })
+export const tlText = style({
+  fontFamily: vars.font.family.body, // brand: Nunito
+  color: vars.color.institutional.ink2,
+  lineHeight: 1.45,
+})
+
+/* Paginador da tabela de aditivos (aparece quando > 5 aditivos). */
+export const aditPaginator = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'flex-end',
+  gap: vars.space.sm,
+  paddingBlockStart: vars.space.sm,
+})
+
+export const aditPageBtn = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  inlineSize: '1.75rem',
+  blockSize: '1.75rem',
+  borderRadius: vars.radius.sm,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  background: vars.color.surface.default,
+  color: vars.color.institutional.ink3,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.sm,
+  lineHeight: 1,
+  cursor: 'pointer',
+  selectors: {
+    '&:hover:not(:disabled)': { background: vars.color.institutional.paperWarm },
+    '&:disabled': { opacity: '0.4', cursor: 'not-allowed' },
+  },
+})
+
+export const aditPageInfo = style({
+  fontFamily: vars.font.family.body, // brand: Nunito
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink4,
+  minInlineSize: '2.5rem',
+  textAlign: 'center',
+})
+
+// Cor do NÓ da timeline pela cor do TIPO de aditivo (prazo/valor/escopo/distrato/outro). Definido
+// DEPOIS de `tlItem`/`tlItemOk` p/ vencer por ordem de fonte (mesma especificidade de classe).
+export const tlNodeTone = styleVariants({
+  prazo: { '::before': { borderColor: vars.color.status.prazoText, background: vars.color.status.prazoText } },
+  valor: { '::before': { borderColor: vars.color.status.valorText, background: vars.color.status.valorText } },
+  escopo: { '::before': { borderColor: vars.color.status.escopoText, background: vars.color.status.escopoText } },
+  distrato: { '::before': { borderColor: vars.color.status.distratoText, background: vars.color.status.distratoText } },
+  outro: { '::before': { borderColor: vars.color.status.outroText, background: vars.color.status.outroText } },
+})
 
 /* Bottombar — barra inferior de status + ações (wireframe) */
 export const bottombar = style({
@@ -532,6 +647,7 @@ export const bottombarStatus = style({
   display: 'flex',
   alignItems: 'center',
   gap: vars.space.sm,
+  fontFamily: vars.font.family.body, // brand: Nunito ("Sincronizado")
   fontSize: '0.6875rem',
   color: vars.color.institutional.ink4,
 })
@@ -741,12 +857,14 @@ export const tableActionBtn = style({
 export const docBadge = style({
   display: 'inline-flex',
   alignItems: 'center',
-  padding: `0.125rem 0.4375rem`,
-  borderRadius: 0, // sem arredondamento (pedido da stakeholder — fica mais elegante)
+  justifyContent: 'center',
+  padding: `0.1875rem ${vars.space.sm}`,
+  borderRadius: vars.radius.md, // cantos médios (alinhado às badges do grid)
   fontFamily: vars.font.family.heading, // brand: Inter (badges)
   fontSize: '0.5625rem',
   fontWeight: vars.font.weight.bold,
   letterSpacing: '0.05em',
+  lineHeight: 1.2,
   textTransform: 'uppercase',
   whiteSpace: 'nowrap',
 })
@@ -802,21 +920,21 @@ export const asideSectionLast = style({
 
 export const asideLabel = style({
   fontFamily: vars.font.family.heading,
-  fontSize: '0.625rem',
+  fontSize: '0.6875rem', // +1px
   fontWeight: vars.font.weight.bold,
   textTransform: 'uppercase',
   letterSpacing: '0.08em',
-  color: vars.color.institutional.ink5,
+  color: vars.color.institutional.ink2, // preto
   marginBottom: vars.space.sm,
 })
 
 // Overline do "Valor Atual" (sb-hero) — mono, como na wireframe (distinto dos h4 de seção em Inter).
 export const asideOverline = style({
   fontFamily: vars.font.family.mono,
-  fontSize: '0.6rem',
+  fontSize: '0.6625rem', // +1px
   fontWeight: vars.font.weight.semibold,
   letterSpacing: '0.1em',
-  color: vars.color.institutional.ink5,
+  color: vars.color.institutional.ink2, // preto
   textTransform: 'uppercase',
   marginBottom: vars.space.sm,
 })
@@ -857,7 +975,8 @@ export const compositionItem = style({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  fontSize: vars.font.size.sm,
+  fontFamily: vars.font.family.mono, // mesma fonte de Número/Assinatura (melhor p/ números)
+  fontSize: '0.75rem', // −2px sobre sm
 })
 
 export const compositionItemPositive = style({
@@ -876,7 +995,8 @@ export const compositionTotal = style({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  fontSize: vars.font.size.sm,
+  fontFamily: vars.font.family.mono, // mesma fonte de Número/Assinatura (melhor p/ números)
+  fontSize: '0.75rem', // −2px sobre sm
   fontWeight: vars.font.weight.bold,
   paddingTop: vars.space.sm,
   borderTop: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
@@ -910,6 +1030,7 @@ export const vigenciaBarFill = style({
 export const vigenciaBarLabels = style({
   display: 'flex',
   justifyContent: 'space-between',
+  fontFamily: vars.font.family.body, // brand: Nunito
   fontSize: '0.6875rem',
   color: vars.color.institutional.ink5,
 })

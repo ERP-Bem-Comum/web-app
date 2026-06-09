@@ -9,7 +9,7 @@ import {
   tlWrap,
   tlItem,
   tlItemOk,
-  tlItemCurrent,
+  tlNodeTone,
   tlDate,
   tlText,
 } from '../page/contract-detail.css.ts'
@@ -18,21 +18,25 @@ interface Props {
   contract: Contract
 }
 
+type AmendmentTone = 'prazo' | 'valor' | 'escopo' | 'outro' | 'distrato'
+
 interface TlEvent {
   // Key estável (B1): 'created' / 'signed' / id do aditivo — sobrevive à reordenação da lista.
   readonly key: string
   readonly title: string
   readonly date: string
-  readonly variant: 'default' | 'ok' | 'current'
+  readonly signed?: boolean
+  // Aditivo → cor do nó pela cor do TIPO do aditivo; ausente nos eventos do contrato (criado/assinado).
+  readonly amendmentType?: AmendmentTone
 }
 
 export function ContractTimeline({ contract }: Props): ReactNode {
   const events: TlEvent[] = [
-    { key: 'created', title: 'Contrato criado', date: formatDate(contract.createdAt), variant: 'default' },
+    { key: 'created', title: 'Contrato criado', date: formatDate(contract.createdAt) },
   ]
 
   if (contract.signedAt) {
-    events.push({ key: 'signed', title: 'Contrato assinado', date: formatDate(contract.signedAt), variant: 'ok' })
+    events.push({ key: 'signed', title: 'Contrato assinado', date: formatDate(contract.signedAt), signed: true })
   }
 
   const seq = amendmentSeqMap(contract.children)
@@ -42,7 +46,7 @@ export function ContractTimeline({ contract }: Props): ReactNode {
       key: a.id,
       title: `${formatAmendmentNumber(seq.get(a.id), contract.sequentialNumber, a.amendmentNumber)} ${homologado ? 'homologado' : 'incluído'}`,
       date: formatDate(a.signedAt ?? a.createdAt),
-      variant: homologado ? 'ok' : 'current',
+      amendmentType: a.type,
     })
   }
 
@@ -53,15 +57,15 @@ export function ContractTimeline({ contract }: Props): ReactNode {
     <div className={asideSection}>
       <div className={asideLabel}>Timeline</div>
       <div className={tlWrap}>
-        {ordered.map((event) => (
-          <div
-            key={event.key}
-            className={`${tlItem} ${event.variant === 'ok' ? tlItemOk : event.variant === 'current' ? tlItemCurrent : ''}`}
-          >
-            <div className={tlDate}>{event.date}</div>
-            <div className={tlText}>{event.title}</div>
-          </div>
-        ))}
+        {ordered.map((event) => {
+          const tone = event.amendmentType ? tlNodeTone[event.amendmentType] : event.signed ? tlItemOk : ''
+          return (
+            <div key={event.key} className={`${tlItem} ${tone}`}>
+              <div className={tlDate}>{event.date}</div>
+              <div className={tlText}>{event.title}</div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
