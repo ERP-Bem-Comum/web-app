@@ -1,8 +1,10 @@
 # Handoff Front → Core-API — Contratos
 
 > Índice consolidado das pendências de backend e dos achados resolvidos no front durante a **validação
-> em tela** do módulo Contratos (web-app v2). Verificado contra `core-api@dev` em 2026-06-08.
+> em tela** do módulo Contratos (web-app v2). Verificado contra `core-api@dev` em 2026-06-09.
 > Cada item de backend tem um ticket no padrão `000-request.md` nesta pasta.
+>
+> 📄 **Resumo único pro tech lead (texto corrido):** [CTR-CONTRATOS-RESUMO](./CTR-CONTRATOS-RESUMO.md).
 
 ## 🟥 Pendências de BACKEND (precisam de ação no core-api)
 
