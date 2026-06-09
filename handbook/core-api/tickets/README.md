@@ -10,6 +10,8 @@
 |---|---|---|---|
 | [CTR-HTTP-DISTRATO-DOCUMENTO](./CTR-HTTP-DISTRATO-DOCUMENTO.md) + [binding-map](./CTR-HTTP-DISTRATO-DOCUMENTO.binding-map.md) | Distrato rico | O distrato existe (`POST /contracts/:id/end` `{kind:Terminate}`) mas é "cru": não recebe **documento assinado**, **data efetiva** nem **motivo**. Religação do front ao `/end` fica com o tech lead. | Distrato efetiva de verdade (hoje a UI coleta os campos; submit ainda usa stand-in) |
 | [CTR-HTTP-DOCUMENT-CONTENT](./CTR-HTTP-DOCUMENT-CONTENT.md) | Conteúdo do documento | Não há rota que devolva **bytes/URL** do documento (só upload/supersede/delete). Detalhe não associa **documento ↔ aditivo**. | Preview e **download** (seta desabilitada mesmo em aditivos Homologado, que têm doc) |
+| [CTR-NUMBER-PROGRAM](./CTR-NUMBER-PROGRAM.md) | Numeração + metadados | `sequentialNumber` não é sequencial (BFF gera aleatório); **classificação CT/OS** e **programa/plano/categorização/centro de custo** não são persistidos nem retornados. | Número sempre **CT** (front padroniza `CT 0001/2026`); coluna **Programa** = `—` |
+| [CTR-DELETE-CANCEL](./CTR-DELETE-CANCEL.md) | Excluir/cancelar contrato | `DELETE /contracts/:id` é recusado por design (**405** `contract-delete-forbidden`); não há cancelar/soft-delete de rascunho/pendente. | Ação **Excluir** abre modal, mas **Confirmar desabilitado** (aguardando backend) |
 
 ### Pendências de backend conhecidas, ainda SEM ticket (alinhamento P.O./tech lead)
 - **Persistência de metadados do contrato**: programa, categoria, centro de custo, plano orçamentário,
