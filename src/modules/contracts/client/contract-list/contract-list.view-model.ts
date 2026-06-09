@@ -8,6 +8,7 @@ import {
   getMostRecentChild,
   programaShort,
 } from '#modules/contracts/client/domain/status.ts'
+import { formatContractNumber, formatCurrency, formatDate } from '#modules/contracts/client/domain/format.ts'
 import type { ContractRow, ContractStatus, ContractType } from '#modules/contracts/client/domain/types.ts'
 import type {
   Contract as ContractModel,
@@ -138,6 +139,46 @@ export function mapListResponseToContractRows(response: ListContractsResponse): 
   return response.items.map(mapModelToContractRow)
 }
 
+// Máscara de documento (CPF 11 / CNPJ 14 dígitos) p/ exibição em documentos.
+const maskDocForDoc = (raw: string): string => {
+  const d = raw.replace(/\D/g, '')
+  if (d.length === 11) return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
+  if (d.length === 14) return d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
+  return raw
+}
+
+export interface ContractDocData {
+  readonly number: string
+  readonly contractor: string
+  readonly document: string
+  readonly object: string
+  readonly type: string
+  readonly value: string
+  readonly period: string
+  readonly status: string
+}
+
+// Monta (puro) os dados padronizados de um contrato para os documentos imprimíveis (Termo de
+// Quitação / Histórico de Pagamento). A view só renderiza — formatação/derivação moram aqui (C1).
+export function buildContractDocData(row: ContractRow): ContractDocData {
+  const c = row.supplier ?? row.financier ?? row.collaborator
+  const contractor = c?.name ?? c?.corporateName ?? c?.fantasyName ?? '—'
+  const rawDoc = c?.cnpj ?? c?.cpf ?? ''
+  // Status REAL do contrato (mesma derivação do grid: a partir do `row`, não do aditivo mais recente).
+  const derived = deriveStatus(row, !!(row.children?.length ?? 0))
+  const valor = row.currentValue ?? row.totalValue
+  return {
+    number: formatContractNumber(row.contractCode, row.classification),
+    contractor,
+    document: rawDoc !== '' ? maskDocForDoc(rawDoc) : '—',
+    object: row.object !== '' ? row.object : '—',
+    type: row.contractType,
+    value: formatCurrency(valor),
+    period: `${formatDate(row.contractPeriod.start)} — ${formatDate(row.contractPeriod.end)}`,
+    status: derived.label,
+  }
+}
+
 export const contractListViewModel = {
   query: contractListQueryOptions,
 }
@@ -217,6 +258,11 @@ export const formatDateInput = (dateStr: string | undefined): string => {
 
 // Carimbo de data (YYYY-MM-DD) para o nome do arquivo exportado. O relógio mora aqui, não na view (C1).
 export const exportFileStamp = (): string => new Date().toISOString().slice(0, 10)
+
+// Data de emissão (dd/mm/aaaa) p/ os documentos imprimíveis. Recebe `nowMs` (estável, do controller)
+// — a view não instancia relógio (C1/§XI); a formatação mora aqui.
+export const formatEmittedDate = (nowMs: number): string =>
+  new Date(nowMs).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
 
 export { STATUS_OPTIONS, deriveStatus, getMostRecentChild, programaShort }
 export {

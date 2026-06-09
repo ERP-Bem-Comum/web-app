@@ -19,6 +19,15 @@ export const screen = style({
   minHeight: '100vh',
 })
 
+// Wrapper transparente do conteúdo da lista (display:contents → não altera o layout flex do `screen`).
+// Quando um documento imprimível está ativo, ganha a variante que o oculta SÓ na impressão, para o
+// PDF conter apenas o documento (e não a grade).
+export const contentWrap = style({ display: 'contents' })
+export const contentWrapPrintHidden = style([
+  contentWrap,
+  { '@media': { print: { display: 'none' } } },
+])
+
 export const header = style({
   display: 'flex',
   alignItems: 'center',

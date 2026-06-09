@@ -6,7 +6,6 @@ import type { MouseEvent, ReactNode } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { Badge } from '#shared/ui/index.ts'
 import type { ContractRow } from '#modules/contracts/client/contract-list/contract-list.view-model.ts'
 import {
   formatContractNumber,
@@ -19,6 +18,8 @@ import {
 import {
   rowStyle,
   cell,
+  cellCenter,
+  cellRight,
   numberText,
   contractorWrap,
   avatar,
@@ -30,9 +31,11 @@ import {
   tipoVariant,
   programText,
   currencyText,
+  balanceText,
   periodText,
   additiveBadge,
   additiveEmpty,
+  statusVariant,
   detailsWrap,
   summaryButton,
   dropdownMenu,
@@ -45,6 +48,8 @@ const t = createTranslator(ptBR)
 export interface ContractRowProps {
   readonly row: ContractRow
   readonly index: number
+  readonly onRequestDelete: (row: ContractRow) => void
+  readonly onGenerateDoc: (row: ContractRow, kind: 'quitacao' | 'historico') => void
 }
 
 function getContractorFromRow(contractRow: ContractRow) {
@@ -99,7 +104,7 @@ function closeDropdown(e: MouseEvent<HTMLButtonElement>) {
   if (details) details.open = false
 }
 
-export function ContractRow({ row, index }: ContractRowProps): ReactNode {
+export function ContractRow({ row, index, onRequestDelete, onGenerateDoc }: ContractRowProps): ReactNode {
   const navigate = useNavigate()
   // Status REAL do contrato (inclui Distrato/Finalizado). Antes derivava do aditivo mais recente,
   // o que mascarava o status do contrato quando havia aditivos homologados.
@@ -128,7 +133,7 @@ export function ContractRow({ row, index }: ContractRowProps): ReactNode {
       aria-rowindex={index + 1}
     >
       <td className={cell}>
-        <span className={numberText}>{formatContractNumber(row.contractCode)}</span>
+        <span className={numberText}>{formatContractNumber(row.contractCode, row.classification)}</span>
       </td>
       <td className={cell}>
         <div className={contractorWrap}>
@@ -146,53 +151,67 @@ export function ContractRow({ row, index }: ContractRowProps): ReactNode {
       <td className={cell}>
         <span className={objectText}>{row.object}</span>
       </td>
-      <td className={cell}>
+      <td className={`${cell} ${cellCenter}`}>
         <span className={tipoVariant[row.contractType]}>{row.contractType}</span>
       </td>
-      <td className={cell}>
+      <td className={`${cell} ${cellCenter}`}>
         <span className={programText}>{programaShort(row.program?.name)}</span>
       </td>
-      <td className={cell}>
+      <td className={`${cell} ${cellRight}`}>
         <span className={currencyText}>{formatCurrency(valorAtual)}</span>
       </td>
-      <td className={cell}>
-        <span className={currencyText} title="Saldo será exibido quando o módulo Financeiro estiver integrado">
+      <td className={`${cell} ${cellCenter}`}>
+        <span className={balanceText} title="Saldo será exibido quando o módulo Financeiro estiver integrado">
           {'—'}
         </span>
       </td>
-      <td className={cell}>
+      <td className={`${cell} ${cellCenter}`}>
         <span className={periodText}>
           {formatDate(row.contractPeriod.start)} — {formatDate(row.contractPeriod.end)}
         </span>
       </td>
-      <td className={cell}>
+      <td className={`${cell} ${cellCenter}`}>
         {additiveCount > 0 ? (
           <span className={additiveBadge}>+{additiveCount}</span>
         ) : (
           <span className={additiveEmpty}>—</span>
         )}
       </td>
-      <td className={cell}>
-        <Badge variant={statusToBadgeVariant(derived.key)}>{derived.label}</Badge>
+      <td className={`${cell} ${cellCenter}`}>
+        <span className={statusVariant[statusToBadgeVariant(derived.key)]}>{derived.label}</span>
       </td>
-      <td className={cell}>
-        <details className={detailsWrap} onClick={handleDetailsClick}>
+      <td className={`${cell} ${cellRight}`}>
+        <details className={detailsWrap} name="contract-row-actions" onClick={handleDetailsClick}>
           <summary className={summaryButton} aria-label={t('contracts.table.columns.actions')}>
             ⋮
           </summary>
           <div className={dropdownMenu}>
             {derived.key === 'pendente' ? (
-              // Pendente: só permite excluir (ainda sem efetividade).
-              <button type="button" className={actionItemDanger} onClick={closeDropdown}>
+              // Pendente: excluir abre o modal de confirmação (confirmar fica gated até o backend
+              // suportar cancelamento/soft-delete — DELETE físico é 405 por design).
+              <button
+                type="button"
+                className={actionItemDanger}
+                onClick={(e) => { closeDropdown(e); onRequestDelete(row) }}
+              >
                 {t('contracts.list.actions.delete')}
               </button>
             ) : (
-              // Demais status: ações do contrato vigente/encerrado.
+              // Demais status: gera documento padronizado em PDF (window.print → "Salvar como PDF").
               <>
-                <button type="button" className={actionItem} onClick={closeDropdown}>
+                <button
+                  type="button"
+                  className={actionItem}
+                  title={t('contracts.list.actions.financeiroSoon')}
+                  onClick={(e) => { closeDropdown(e); onGenerateDoc(row, 'historico') }}
+                >
                   {t('contracts.list.actions.paymentHistory')}
                 </button>
-                <button type="button" className={actionItem} onClick={closeDropdown}>
+                <button
+                  type="button"
+                  className={actionItem}
+                  onClick={(e) => { closeDropdown(e); onGenerateDoc(row, 'quitacao') }}
+                >
                   {t('contracts.list.actions.quitacao')}
                 </button>
               </>

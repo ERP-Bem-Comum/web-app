@@ -3,20 +3,24 @@
  * Layout: header (filtro + busca + chips), filtros condicionais, tabela, bottombar fixo.
  */
 import type { ReactNode } from 'react'
+import { useState, useEffect } from 'react'
 import { getRouteApi, Link, useNavigate } from '@tanstack/react-router'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { isOk } from '#shared/primitives/result.ts'
+import { formatContractNumber } from '#modules/contracts/client/domain/format.ts'
 import { useContractListController } from '../contract-list.controller.ts'
 import { useContractListBinding } from '../contract-list.binding.ts'
-import { mapListResponseToContractRows, parseDateParam, filterExpiringRows } from '../contract-list.view-model.ts'
+import { mapListResponseToContractRows, parseDateParam, filterExpiringRows, buildContractDocData, formatEmittedDate } from '../contract-list.view-model.ts'
 import { ContractStatusChips } from '../components/contract-status-chips.component.tsx'
 import { ContractFilters } from '../components/contract-filters.component.tsx'
 import { ContractsTable } from '../components/contracts-table.component.tsx'
 import { ContractRow } from '../components/contract-row.component.tsx'
 import { ContractPaginator } from '../components/contract-paginator.component.tsx'
 import { ExportDropdown } from '../components/export-dropdown.component.tsx'
-import type { ContractListFilters } from '../contract-list.view-model.ts'
+import { DeleteContractModal } from '../components/delete-contract-modal.component.tsx'
+import { PrintableDocument, type PrintableDocKind, type PrintableDocData } from '../components/printable-document.component.tsx'
+import type { ContractListFilters, ContractRow as ContractRowData } from '../contract-list.view-model.ts'
 import { FilterIcon, SearchIcon } from '#shared/ui/icons/index.ts'
 
 import {
@@ -32,6 +36,8 @@ import {
   tableWrap,
   bottombar,
   newButton,
+  contentWrap,
+  contentWrapPrintHidden,
 } from './contract-list.css.ts'
 
 const t = createTranslator(ptBR)
@@ -41,6 +47,24 @@ export function ContractListPage(): ReactNode {
   const search = routeApi.useSearch()
   const navigate = useNavigate()
   const { showFilters, toggleFilters, nowMs } = useContractListController()
+  const [deleteTarget, setDeleteTarget] = useState<ContractRowData | null>(null)
+  const [printDoc, setPrintDoc] = useState<{ kind: PrintableDocKind; data: PrintableDocData; emittedAt: string } | null>(null)
+
+  // Dispara a impressão (→ "Salvar como PDF") quando um documento é selecionado; limpa ao concluir.
+  // `window.print()` é o mesmo mecanismo do Exportar→PDF (sem dependência de lib).
+  useEffect(() => {
+    if (printDoc === null) return
+    const id = window.setTimeout(() => {
+      window.print()
+      setPrintDoc(null)
+    }, 80)
+    return () => { window.clearTimeout(id) }
+  }, [printDoc])
+
+  const handleGenerateDoc = (row: ContractRowData, kind: PrintableDocKind): void => {
+    // Data de emissão derivada do `nowMs` (controller) — sem relógio no render (C1/§XI).
+    setPrintDoc({ kind, data: buildContractDocData(row), emittedAt: formatEmittedDate(nowMs) })
+  }
 
   const { data, isLoading } = useContractListBinding({
     page: search.page,
@@ -123,6 +147,7 @@ export function ContractListPage(): ReactNode {
 
   return (
     <div className={screen}>
+      <div className={printDoc !== null ? contentWrapPrintHidden : contentWrap}>
       {/* Header */}
       <div className={header}>
         <button
@@ -192,7 +217,13 @@ export function ContractListPage(): ReactNode {
           <ContractsTable
             rows={rows}
             renderRow={(row, index) => (
-              <ContractRow key={row.id} row={row} index={index} />
+              <ContractRow
+                key={row.id}
+                row={row}
+                index={index}
+                onRequestDelete={setDeleteTarget}
+                onGenerateDoc={handleGenerateDoc}
+              />
             )}
           />
         )}
@@ -223,6 +254,19 @@ export function ContractListPage(): ReactNode {
           + {t('contracts.list.new')}
         </Link>
       </div>
+      </div>
+
+      {printDoc !== null ? (
+        <PrintableDocument kind={printDoc.kind} data={printDoc.data} emittedAt={printDoc.emittedAt} />
+      ) : null}
+
+      <DeleteContractModal
+        open={deleteTarget !== null}
+        contractLabel={deleteTarget ? formatContractNumber(deleteTarget.contractCode, deleteTarget.classification) : ''}
+        onClose={() => { setDeleteTarget(null) }}
+        onConfirm={() => { setDeleteTarget(null) }}
+        confirmDisabled
+      />
     </div>
   )
 }
