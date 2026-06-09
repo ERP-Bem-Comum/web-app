@@ -32,6 +32,15 @@ describe('resultFetch — sucesso', () => {
     assert.equal(isOk(r), true)
     if (isOk(r)) assert.equal(r.value, undefined)
   })
+
+  it('200 sem corpo (PUT/deactivate) → ok(undefined)', async () => {
+    globalThis.fetch = () => Promise.resolve(new Response('', { status: 200 }))
+
+    const r = await resultFetch('http://x/r', { method: 'PUT', body: { a: 1 } })
+
+    assert.equal(isOk(r), true)
+    if (isOk(r)) assert.equal(r.value, undefined)
+  })
 })
 
 describe('resultFetch — erros HTTP (sem lançar)', () => {
