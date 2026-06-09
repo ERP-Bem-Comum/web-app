@@ -43,4 +43,6 @@ export type DataTableProps<T> = Readonly<{
   loadingLabel: string
   /** Nome acessível da tabela (aria-label). */
   caption?: string
+  /** Opcional: torna as linhas clicáveis (hover + cursor + teclado). Ausente = linhas não interativas. */
+  onRowClick?: (row: T) => void
 }>
