@@ -23,8 +23,9 @@ export const section = style({
 
 export const sectionTitle = style({
   margin: 0,
+  // subordinado ao título da página (xl): grupo em lg/bold, acima dos cards (lg/semibold em faixa).
   fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.xl,
+  fontSize: vars.font.size.lg,
   fontWeight: vars.font.weight.bold,
   color: vars.color.text.primary,
 })
