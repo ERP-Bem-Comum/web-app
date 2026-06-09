@@ -42,6 +42,7 @@ export type FinancierListItem = Readonly<{
   id: string
   name: string
   corporateName: string
+  legalRepresentative: string
   cnpj: string
   telephone: string
   activation: ActivationStatus
@@ -49,7 +50,6 @@ export type FinancierListItem = Readonly<{
 
 export type FinancierDetail = FinancierListItem &
   Readonly<{
-    legalRepresentative: string
     address: string
   }>
 

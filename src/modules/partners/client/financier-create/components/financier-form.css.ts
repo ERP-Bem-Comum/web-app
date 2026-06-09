@@ -6,7 +6,10 @@ export const form = style({
   display: 'flex',
   flexDirection: 'column',
   gap: vars.space.xl,
-  maxInlineSize: '52rem',
+  // expande pra usar melhor o espaço da tela (padrão de Colaboradores/Fornecedores).
+  maxInlineSize: '72rem',
+  // não encolher dentro do screen com overflow.
+  flexShrink: 0,
 })
 
 export const section = style({
@@ -46,6 +49,7 @@ export const grid = style({
   gap: vars.space.md,
   '@container': {
     '(inline-size > 32rem)': { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' },
+    '(inline-size > 56rem)': { gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' },
   },
 })
 

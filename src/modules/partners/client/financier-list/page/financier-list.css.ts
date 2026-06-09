@@ -7,3 +7,8 @@ export const screen = style({
   display: 'flex',
   flexDirection: 'column',
 })
+
+// CNPJ formatado (18 chars) não pode quebrar no '-' / '/': cabe inteiro na coluna.
+export const cnpjCell = style({
+  whiteSpace: 'nowrap',
+})
