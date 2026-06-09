@@ -6,6 +6,7 @@ import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { UploadIcon } from '#shared/ui/icons/index.ts'
 import { getSupplierFn } from '#modules/partners/public-api/index.ts'
 import { useAttachSignedDocumentBinding } from '#modules/contracts/client/contract-attach-document/attach-signed-document.binding.ts'
+import { useContractEditBinding } from '#modules/contracts/client/contract-edit/contract-edit.binding.ts'
 import { useContractCreateBinding, usePartnerSearchBinding } from '../contract-create.binding.ts'
 import { useContractFormController } from '../components/contract-form.controller.ts'
 import type { SelectedPartner } from '../components/contract-form.controller.ts'
@@ -64,6 +65,8 @@ export function ContractCreatePage(): ReactNode {
   const navigate = useNavigate()
   const { createCommand } = useContractCreateBinding()
   const { attachCommand } = useAttachSignedDocumentBinding()
+  // Workaround: o backend não aceita contato no create → PATCH logo após criar (se preenchido).
+  const { editCommand: contatoEditCommand } = useContractEditBinding()
   const form = useContractFormController()
 
   /* Busca de parceiros via binding */
@@ -169,12 +172,20 @@ export function ContractCreatePage(): ReactNode {
   useEffect(() => {
     if (createCommand.result === null || postCreateHandled.current) return
     postCreateHandled.current = true
+    const id = createCommand.result.id
+    // Workaround: backend não persiste contato no create → PATCH logo após criar (se preenchido).
+    const email = form.state.email
+    const telephone = form.state.telephone
+    const observations = form.state.observations
+    if (email !== '' || telephone !== '' || observations !== '') {
+      contatoEditCommand.execute({ id, email: email !== '' ? email : undefined, telephone, observations })
+    }
     if (uploadedFile !== null && signatureDate !== '') {
-      attachCommand.execute({ contractId: createCommand.result.id, file: uploadedFile, signedAt: signatureDate })
+      attachCommand.execute({ contractId: id, file: uploadedFile, signedAt: signatureDate })
     } else {
       navigate({ to: '/contratos' }).catch(() => { /* noop */ })
     }
-  }, [createCommand.result, uploadedFile, signatureDate, attachCommand, navigate])
+  }, [createCommand.result, uploadedFile, signatureDate, attachCommand, navigate, contatoEditCommand, form.state.email, form.state.telephone, form.state.observations])
 
   /* Anexo bem-sucedido → contrato efetivado (Em Andamento): redireciona para a grade. */
   useEffect(() => {

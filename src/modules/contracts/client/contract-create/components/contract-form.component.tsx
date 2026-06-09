@@ -63,6 +63,7 @@ import {
   partnerCardBody,
   partnerLabel,
   partnerBadge,
+  partnerTypeBadge,
   partnerName,
   partnerDoc,
   partnerSelectedWrap,
@@ -73,6 +74,7 @@ import {
   searchDropdown,
   searchDropdownItem,
   searchDropdownAvatar,
+  searchDropdownAvatarVariant,
   searchDropdownAvatarPrimary,
   searchDropdownEmpty,
   searchDropdownNewPartner,
@@ -85,6 +87,15 @@ function formatCurrencyCents(cents: number): string {
   if (!cents || cents <= 0) return 'R$ 00.000,00'
   const val = cents / 100
   return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
+// Máscara de documento (CPF 11 dígitos / CNPJ 14) — espelha o helper do grid de contratos.
+function maskDocument(doc: string | null | undefined): string {
+  if (!doc) return ''
+  const digits = doc.replace(/\D/g, '')
+  if (digits.length === 11) return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
+  if (digits.length === 14) return digits.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
+  return doc
 }
 
 function formatValueParts(cents: number): { currency: string; integer: string; cents: string } {
@@ -193,12 +204,15 @@ export function ContractForm({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <span className={partnerLabel}>{t('contracts.create.partnerLabel')}</span>
                   <span className={partnerBadge}>
-                    {selectedPartner.cnpj ? 'PJ' : 'PF'} · {selectedPartner.kind}
+                    {selectedPartner.cnpj ? 'PJ' : 'PF'}
                   </span>
                 </div>
-                <span className={partnerName}>{selectedPartner.name}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span className={partnerName}>{selectedPartner.name}</span>
+                  <span className={partnerTypeBadge[selectedPartner.kind]}>{selectedPartner.kind}</span>
+                </div>
                 <span className={partnerDoc}>
-                  {selectedPartner.cnpj ? `CNPJ ${selectedPartner.cnpj}` : selectedPartner.cpf ? `CPF ${selectedPartner.cpf}` : '—'}
+                  {selectedPartner.cnpj ? `CNPJ ${maskDocument(selectedPartner.cnpj)}` : selectedPartner.cpf ? `CPF ${maskDocument(selectedPartner.cpf)}` : '—'}
                 </span>
               </div>
               <button type="button" className={partnerSwapCompact} onClick={onRemovePartner}>
@@ -268,7 +282,7 @@ export function ContractForm({
                             }
                           }}
                         >
-                          <span className={searchDropdownAvatar}>{p.name.slice(0, 2)}</span>
+                          <span className={`${searchDropdownAvatar} ${searchDropdownAvatarVariant[p.kind]}`}>{p.name.slice(0, 2)}</span>
                           <span>{p.name} · {p.kind}</span>
                         </div>
                       ))
