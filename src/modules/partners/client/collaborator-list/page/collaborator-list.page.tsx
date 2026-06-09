@@ -171,6 +171,7 @@ export function CollaboratorListPage(): ReactNode {
         }
         loadingLabel={t('partners.collaborators.list.loading')}
         caption={t('partners.collaborators.list.title')}
+        onRowClick={(r) => void navigate({ to: '/parceiros/colaboradores/$id', params: { id: r.id } })}
       />
 
       <CollaboratorPaginator

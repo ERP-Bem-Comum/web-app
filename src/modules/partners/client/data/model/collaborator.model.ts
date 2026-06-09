@@ -40,6 +40,21 @@ export type CollaboratorDetail = CollaboratorListItem &
     cpf: string
     startOfContract: string
     employmentRelationship: EmploymentRelationship
+    // Dados do cadastro completo (2ª etapa) — opcionais: ausentes enquanto só pré-cadastrado.
+    rg?: string
+    dateOfBirth?: string
+    completeAddress?: string
+    telephone?: string
+    emergencyContactName?: string
+    emergencyContactTelephone?: string
+    genderIdentity?: string
+    race?: string
+    allergies?: string
+    foodCategory?: string
+    foodCategoryDescription?: string
+    education?: string
+    biography?: string
+    experienceInThePublicSector?: boolean
   }>
 
 export type CollaboratorListResponse = Readonly<{

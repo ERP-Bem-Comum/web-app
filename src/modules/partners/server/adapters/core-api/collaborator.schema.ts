@@ -33,12 +33,26 @@ export const CoreApiCollaboratorListSchema = z.object({
   meta: CoreApiPaginationMetaSchema,
 })
 
-// Detalhe: campos básicos validados; extras descartados (strip). Os ~27 campos completos serão adicionados
-// explicitamente quando a UI de detalhe os consumir (sem abrir o objeto inteiro).
+// Detalhe: pré-cadastro (7) + dados do cadastro completo (2ª etapa). Campos completos são `nullish`
+// (a base legada/pré-cadastro pode trazê-los null/ausentes). Extras não listados são descartados (strip).
 export const CoreApiCollaboratorDetailSchema = CoreApiCollaboratorItemSchema.extend({
   cpf: z.string().trim(),
   startOfContract: z.string().trim(),
   employmentRelationship: z.enum(['CLT', 'PJ']),
+  rg: z.string().trim().nullish(),
+  dateOfBirth: z.string().trim().nullish(),
+  completeAddress: z.string().trim().nullish(),
+  telephone: z.string().trim().nullish(),
+  emergencyContactName: z.string().trim().nullish(),
+  emergencyContactTelephone: z.string().trim().nullish(),
+  genderIdentity: z.string().trim().nullish(),
+  race: z.string().trim().nullish(),
+  allergies: z.string().trim().nullish(),
+  foodCategory: z.string().trim().nullish(),
+  foodCategoryDescription: z.string().trim().nullish(),
+  education: z.string().trim().nullish(),
+  biography: z.string().trim().nullish(),
+  experienceInThePublicSector: z.boolean().nullish(),
 })
 export type CoreApiCollaboratorDetail = z.infer<typeof CoreApiCollaboratorDetailSchema>
 

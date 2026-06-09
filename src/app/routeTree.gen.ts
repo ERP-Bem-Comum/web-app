@@ -28,6 +28,7 @@ import { Route as AuthenticatedParceirosFornecedoresIdRouteImport } from './../r
 import { Route as AuthenticatedParceirosFinanciadoresCriarRouteImport } from './../routes/_authenticated/parceiros/financiadores/criar'
 import { Route as AuthenticatedParceirosFinanciadoresIdRouteImport } from './../routes/_authenticated/parceiros/financiadores/$id'
 import { Route as AuthenticatedParceirosColaboradoresCriarRouteImport } from './../routes/_authenticated/parceiros/colaboradores/criar'
+import { Route as AuthenticatedParceirosColaboradoresIdRouteImport } from './../routes/_authenticated/parceiros/colaboradores/$id'
 import { Route as AuthenticatedParceirosAtosCriarRouteImport } from './../routes/_authenticated/parceiros/atos/criar'
 import { Route as AuthenticatedParceirosAtosIdRouteImport } from './../routes/_authenticated/parceiros/atos/$id'
 import { Route as AuthenticatedContratosAditivoIdRouteImport } from './../routes/_authenticated/contratos/aditivo.$id'
@@ -143,6 +144,12 @@ const AuthenticatedParceirosColaboradoresCriarRoute =
     path: '/parceiros/colaboradores/criar',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedParceirosColaboradoresIdRoute =
+  AuthenticatedParceirosColaboradoresIdRouteImport.update({
+    id: '/parceiros/colaboradores/$id',
+    path: '/parceiros/colaboradores/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedParceirosAtosCriarRoute =
   AuthenticatedParceirosAtosCriarRouteImport.update({
     id: '/parceiros/atos/criar',
@@ -199,6 +206,7 @@ export interface FileRoutesByFullPath {
   '/contratos/aditivo/$id': typeof AuthenticatedContratosAditivoIdRoute
   '/parceiros/atos/$id': typeof AuthenticatedParceirosAtosIdRouteWithChildren
   '/parceiros/atos/criar': typeof AuthenticatedParceirosAtosCriarRoute
+  '/parceiros/colaboradores/$id': typeof AuthenticatedParceirosColaboradoresIdRoute
   '/parceiros/colaboradores/criar': typeof AuthenticatedParceirosColaboradoresCriarRoute
   '/parceiros/financiadores/$id': typeof AuthenticatedParceirosFinanciadoresIdRouteWithChildren
   '/parceiros/financiadores/criar': typeof AuthenticatedParceirosFinanciadoresCriarRoute
@@ -226,6 +234,7 @@ export interface FileRoutesByTo {
   '/contratos/aditivo/$id': typeof AuthenticatedContratosAditivoIdRoute
   '/parceiros/atos/$id': typeof AuthenticatedParceirosAtosIdRouteWithChildren
   '/parceiros/atos/criar': typeof AuthenticatedParceirosAtosCriarRoute
+  '/parceiros/colaboradores/$id': typeof AuthenticatedParceirosColaboradoresIdRoute
   '/parceiros/colaboradores/criar': typeof AuthenticatedParceirosColaboradoresCriarRoute
   '/parceiros/financiadores/$id': typeof AuthenticatedParceirosFinanciadoresIdRouteWithChildren
   '/parceiros/financiadores/criar': typeof AuthenticatedParceirosFinanciadoresCriarRoute
@@ -255,6 +264,7 @@ export interface FileRoutesById {
   '/_authenticated/contratos/aditivo/$id': typeof AuthenticatedContratosAditivoIdRoute
   '/_authenticated/parceiros/atos/$id': typeof AuthenticatedParceirosAtosIdRouteWithChildren
   '/_authenticated/parceiros/atos/criar': typeof AuthenticatedParceirosAtosCriarRoute
+  '/_authenticated/parceiros/colaboradores/$id': typeof AuthenticatedParceirosColaboradoresIdRoute
   '/_authenticated/parceiros/colaboradores/criar': typeof AuthenticatedParceirosColaboradoresCriarRoute
   '/_authenticated/parceiros/financiadores/$id': typeof AuthenticatedParceirosFinanciadoresIdRouteWithChildren
   '/_authenticated/parceiros/financiadores/criar': typeof AuthenticatedParceirosFinanciadoresCriarRoute
@@ -284,6 +294,7 @@ export interface FileRouteTypes {
     | '/contratos/aditivo/$id'
     | '/parceiros/atos/$id'
     | '/parceiros/atos/criar'
+    | '/parceiros/colaboradores/$id'
     | '/parceiros/colaboradores/criar'
     | '/parceiros/financiadores/$id'
     | '/parceiros/financiadores/criar'
@@ -311,6 +322,7 @@ export interface FileRouteTypes {
     | '/contratos/aditivo/$id'
     | '/parceiros/atos/$id'
     | '/parceiros/atos/criar'
+    | '/parceiros/colaboradores/$id'
     | '/parceiros/colaboradores/criar'
     | '/parceiros/financiadores/$id'
     | '/parceiros/financiadores/criar'
@@ -339,6 +351,7 @@ export interface FileRouteTypes {
     | '/_authenticated/contratos/aditivo/$id'
     | '/_authenticated/parceiros/atos/$id'
     | '/_authenticated/parceiros/atos/criar'
+    | '/_authenticated/parceiros/colaboradores/$id'
     | '/_authenticated/parceiros/colaboradores/criar'
     | '/_authenticated/parceiros/financiadores/$id'
     | '/_authenticated/parceiros/financiadores/criar'
@@ -497,6 +510,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedParceirosColaboradoresCriarRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/parceiros/colaboradores/$id': {
+      id: '/_authenticated/parceiros/colaboradores/$id'
+      path: '/parceiros/colaboradores/$id'
+      fullPath: '/parceiros/colaboradores/$id'
+      preLoaderRoute: typeof AuthenticatedParceirosColaboradoresIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/parceiros/atos/criar': {
       id: '/_authenticated/parceiros/atos/criar'
       path: '/parceiros/atos/criar'
@@ -616,6 +636,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedContratosAditivoIdRoute: typeof AuthenticatedContratosAditivoIdRoute
   AuthenticatedParceirosAtosIdRoute: typeof AuthenticatedParceirosAtosIdRouteWithChildren
   AuthenticatedParceirosAtosCriarRoute: typeof AuthenticatedParceirosAtosCriarRoute
+  AuthenticatedParceirosColaboradoresIdRoute: typeof AuthenticatedParceirosColaboradoresIdRoute
   AuthenticatedParceirosColaboradoresCriarRoute: typeof AuthenticatedParceirosColaboradoresCriarRoute
   AuthenticatedParceirosFinanciadoresIdRoute: typeof AuthenticatedParceirosFinanciadoresIdRouteWithChildren
   AuthenticatedParceirosFinanciadoresCriarRoute: typeof AuthenticatedParceirosFinanciadoresCriarRoute
@@ -637,6 +658,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedParceirosAtosIdRoute:
     AuthenticatedParceirosAtosIdRouteWithChildren,
   AuthenticatedParceirosAtosCriarRoute: AuthenticatedParceirosAtosCriarRoute,
+  AuthenticatedParceirosColaboradoresIdRoute:
+    AuthenticatedParceirosColaboradoresIdRoute,
   AuthenticatedParceirosColaboradoresCriarRoute:
     AuthenticatedParceirosColaboradoresCriarRoute,
   AuthenticatedParceirosFinanciadoresIdRoute:
