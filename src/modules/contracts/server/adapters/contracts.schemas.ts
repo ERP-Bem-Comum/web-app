@@ -64,6 +64,9 @@ export const ContractFileSchema = z.object({
   size: z.number().optional(),
   uploadedAt: z.date(),
   uploadedBy: z.string().trim().optional(),
+  parentType: z.enum(['Contract', 'Amendment']).optional(),
+  parentId: z.string().trim().optional(),
+  categoria: z.string().trim().optional(),
 })
 
 export const ContractSchema = z.object({

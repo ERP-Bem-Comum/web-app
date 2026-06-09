@@ -40,7 +40,8 @@ import {
 
 export interface DocRef {
   readonly name: string
-  readonly url: string | undefined // vazio enquanto o backend não expõe o conteúdo (ver ticket CTR-HTTP-DOCUMENT-CONTENT)
+  // id do documento p/ buscar os bytes via .../documents/:id/content (BFF). undefined = sem doc anexado.
+  readonly documentId: string | undefined
 }
 
 interface Props {
@@ -49,6 +50,7 @@ interface Props {
   onNewAmendment: () => void
   onOpenAmendment: (amendmentId: string) => void
   onPreview: (doc: DocRef) => void
+  onDownload: (doc: DocRef) => void
 }
 
 // Ícones padrão (espelham a wireframe: #i-eye / #i-download).
@@ -110,13 +112,16 @@ interface DocRow {
   readonly status: string
   readonly isBase: boolean
   readonly docName: string
-  readonly docUrl: string | undefined
+  readonly documentId: string | undefined
 }
 
-const blank = (s: string | undefined): string | undefined => (s !== undefined && s !== '' ? s : undefined)
-
-export function ContractDocuments({ contract, onOpenBase, onNewAmendment, onOpenAmendment, onPreview }: Props): ReactNode {
+export function ContractDocuments({ contract, onOpenBase, onNewAmendment, onOpenAmendment, onPreview, onDownload }: Props): ReactNode {
   const ctPrefix = contract.classification === 'Contract' ? 'CT' : 'OS'
+
+  // Casa cada linha ao seu documento anexado (associação documento ↔ dono via parentType/parentId).
+  const baseDocumentId = contract.files.find((f) => f.parentType === 'Contract')?.id
+  const amendmentDocumentId = (amendmentId: string): string | undefined =>
+    contract.files.find((f) => f.parentType === 'Amendment' && f.parentId === amendmentId)?.id
 
   const seq = amendmentSeqMap(contract.children)
   // Mais recente no topo (item 4): aditivos por createdAt desc; o contrato base fica sempre por último.
@@ -148,7 +153,7 @@ export function ContractDocuments({ contract, onOpenBase, onNewAmendment, onOpen
         status: a.status,
         isBase: false,
         docName: `Aditivo ${formatAmendmentNumber(seq.get(a.id), contract.sequentialNumber, a.amendmentNumber)}`,
-        docUrl: blank(a.signedContractUrl),
+        documentId: amendmentDocumentId(a.id),
       }
     }),
     {
@@ -163,7 +168,7 @@ export function ContractDocuments({ contract, onOpenBase, onNewAmendment, onOpen
       status: contract.status === 'Pendente' ? 'Pendente' : 'Homologado',
       isBase: true,
       docName: `Contrato ${ctPrefix} ${contract.sequentialNumber}`,
-      docUrl: blank(contract.files[0]?.url),
+      documentId: baseDocumentId,
     },
   ]
 
@@ -226,20 +231,22 @@ export function ContractDocuments({ contract, onOpenBase, onNewAmendment, onOpen
                 type="button"
                 className={docAct}
                 aria-label="Visualizar documento"
-                title="Visualizar documento"
-                onClick={(e) => { e.stopPropagation(); onPreview({ name: r.docName, url: r.docUrl }) }}
+                title={r.documentId !== undefined ? 'Visualizar documento' : 'Sem documento anexado'}
+                disabled={r.documentId === undefined}
+                onClick={(e) => { e.stopPropagation(); onPreview({ name: r.docName, documentId: r.documentId }) }}
               >
                 <EyeIcon />
               </button>
-              {r.docUrl !== undefined ? (
-                <a className={docAct} href={r.docUrl} download aria-label="Baixar documento" title="Baixar documento" onClick={(e) => { e.stopPropagation() }}>
-                  <DownloadIcon />
-                </a>
-              ) : (
-                <button type="button" className={docAct} aria-label="Baixar documento" title="Download disponível quando o backend expor o conteúdo do documento" disabled onClick={(e) => { e.stopPropagation() }}>
-                  <DownloadIcon />
-                </button>
-              )}
+              <button
+                type="button"
+                className={docAct}
+                aria-label="Baixar documento"
+                title={r.documentId !== undefined ? 'Baixar documento' : 'Sem documento anexado'}
+                disabled={r.documentId === undefined}
+                onClick={(e) => { e.stopPropagation(); onDownload({ name: r.docName, documentId: r.documentId }) }}
+              >
+                <DownloadIcon />
+              </button>
             </span>
           </div>
           )

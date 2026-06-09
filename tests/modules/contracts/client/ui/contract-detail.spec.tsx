@@ -45,7 +45,7 @@ describe('ContractInfo', () => {
 describe('ContractDocuments', () => {
   it('renderiza tabela com contrato base + aditivos', () => {
     const contract = mockContract()
-    render(<ContractDocuments contract={contract} onOpenBase={() => undefined} onNewAmendment={() => undefined} onOpenAmendment={() => undefined} onPreview={() => undefined} />)
+    render(<ContractDocuments contract={contract} onOpenBase={() => undefined} onNewAmendment={() => undefined} onOpenAmendment={() => undefined} onPreview={() => undefined} onDownload={() => undefined} />)
     expect(screen.getByText('Documentos')).toBeTruthy()
     // Redesign (wireframe): base com prefixo CT/OS; aditivos no padrão AD NN-XXXX/ANO (seq por criação).
     expect(screen.getByText('CT 0001/2026')).toBeTruthy()
@@ -55,7 +55,7 @@ describe('ContractDocuments', () => {
 
   it('renderiza badge de tipo para cada documento', () => {
     const contract = mockContract()
-    render(<ContractDocuments contract={contract} onOpenBase={() => undefined} onNewAmendment={() => undefined} onOpenAmendment={() => undefined} onPreview={() => undefined} />)
+    render(<ContractDocuments contract={contract} onOpenBase={() => undefined} onNewAmendment={() => undefined} onOpenAmendment={() => undefined} onPreview={() => undefined} onDownload={() => undefined} />)
     expect(screen.getByText('Base')).toBeTruthy()
     expect(screen.getByText('Valor')).toBeTruthy()
     expect(screen.getByText('Prazo')).toBeTruthy()

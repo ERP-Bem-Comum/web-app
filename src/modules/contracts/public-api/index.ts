@@ -11,6 +11,7 @@ export { getContractHistoryFn } from '#modules/contracts/server/adapters/server-
 export { attachSignedDocumentFn } from '#modules/contracts/server/adapters/server-fns/attach-signed-document.service.fn.ts'
 export { attachAmendmentDocumentFn } from '#modules/contracts/server/adapters/server-fns/attach-amendment-document.service.fn.ts'
 export { endContractFn } from '#modules/contracts/server/adapters/server-fns/end-contract.service.fn.ts'
+export { getDocumentContentFn } from '#modules/contracts/server/adapters/server-fns/get-document-content.query.fn.ts'
 
 export { useContractListBinding } from '#modules/contracts/client/contract-list/contract-list.binding.ts'
 export { useAttachSignedDocumentBinding } from '#modules/contracts/client/contract-attach-document/attach-signed-document.binding.ts'
@@ -20,5 +21,6 @@ export { useContractEditBinding } from '#modules/contracts/client/contract-edit/
 export { useAmendmentCreateBinding } from '#modules/contracts/client/amendment-create/amendment-create.binding.ts'
 export { useAttachAmendmentDocumentBinding } from '#modules/contracts/client/amendment-create/attach-amendment-document.binding.ts'
 export { useEndContractBinding } from '#modules/contracts/client/contract-terminate/end-contract.binding.ts'
+export { useDocumentContentBinding } from '#modules/contracts/client/contract-detail/document-content.binding.ts'
 
 export type { Contract, Amendment, ContractStatus, AmendmentStatus, ContractType } from '#modules/contracts/client/data/model/contracts.model.ts'

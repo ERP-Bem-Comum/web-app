@@ -1,23 +1,28 @@
 /**
- * DocumentPreviewModal — prévia do documento anexado SEM sair da página e SEM download.
- * View burra: recebe `doc` (nome + url) por prop. Renderiza o PDF num <iframe> quando há url;
- * enquanto o backend não expõe o conteúdo do documento (ver handbook/core-api/tickets/
- * CTR-HTTP-DOCUMENT-CONTENT), mostra um placeholder. Estilo só-tokens.
+ * DocumentPreviewModal — prévia do documento anexado SEM sair da página. View burra: recebe a
+ * `blobUrl` (já buscada via BFF pela ViewModel/binding — CTR-HTTP-DOCUMENT-CONTENT) + estados de
+ * carregamento/erro. Renderiza o PDF num <iframe>. <dialog> nativo (A4: ESC/focus-trap). Só-tokens.
  */
 import type { ReactNode } from 'react'
 import { useId } from 'react'
-import type { DocRef } from './contract-documents.component.tsx'
+import { createTranslator } from '#shared/i18n/index.ts'
+import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import * as s from './document-preview-modal.css.ts'
+
+const t = createTranslator(ptBR)
 
 export interface DocumentPreviewModalProps {
   readonly open: boolean
-  readonly doc: DocRef | null
+  readonly name: string
+  readonly blobUrl: string | null
+  readonly loading: boolean
+  readonly errorTag: string | null
   readonly onClose: () => void
 }
 
-export function DocumentPreviewModal({ open, doc, onClose }: DocumentPreviewModalProps): ReactNode {
+export function DocumentPreviewModal({ open, name, blobUrl, loading, errorTag, onClose }: DocumentPreviewModalProps): ReactNode {
   const titleId = useId()
-  if (!open || doc === null) return null
+  if (!open) return null
 
   return (
     <dialog
@@ -26,7 +31,6 @@ export function DocumentPreviewModal({ open, doc, onClose }: DocumentPreviewModa
       // showModal() entrega ESC + focus-trap + inert (A4). ref-callback abre ao montar; try/catch p/ jsdom.
       ref={(el) => {
         if (el !== null && !el.open) {
-          // jsdom não implementa showModal() → fallback abre o dialog (open) p/ o conteúdo ficar acessível.
           try { el.showModal() } catch { el.open = true }
         }
       }}
@@ -35,25 +39,31 @@ export function DocumentPreviewModal({ open, doc, onClose }: DocumentPreviewModa
     >
       <div className={s.content}>
         <div className={s.header}>
-          <h3 className={s.title} id={titleId}>{doc.name}</h3>
+          <h3 className={s.title} id={titleId}>{name}</h3>
           <div className={s.headActions}>
-            {doc.url !== undefined && (
-              <a className={s.downloadLink} href={doc.url} download>Baixar</a>
+            {blobUrl !== null && (
+              <a className={s.downloadLink} href={blobUrl} download={name}>{t('contracts.detail.documents.download')}</a>
             )}
-            <button type="button" className={s.close} onClick={onClose} aria-label="Fechar">×</button>
+            <button type="button" className={s.close} onClick={onClose} aria-label={t('common.close')}>×</button>
           </div>
         </div>
         <div className={s.body}>
-          {doc.url !== undefined ? (
-            <iframe className={s.frame} src={doc.url} title={`Prévia — ${doc.name}`} />
+          {loading ? (
+            <div className={s.placeholder}>
+              <div className={s.placeholderIcon}>⏳</div>
+              <div className={s.placeholderText}>{t('common.loading')}</div>
+            </div>
+          ) : errorTag !== null ? (
+            <div className={s.placeholder} role="alert">
+              <div className={s.placeholderIcon}>⚠</div>
+              <div className={s.placeholderText}>{t(errorTag)}</div>
+            </div>
+          ) : blobUrl !== null ? (
+            <iframe className={s.frame} src={blobUrl} title={`${t('contracts.detail.documents.preview')} — ${name}`} />
           ) : (
             <div className={s.placeholder}>
               <div className={s.placeholderIcon}>📄</div>
-              <div className={s.placeholderTitle}>Prévia indisponível</div>
-              <div className={s.placeholderText}>
-                O backend ainda não expõe o conteúdo do documento para visualização/baixa.
-                <br />Pendência registrada em <code>CTR-HTTP-DOCUMENT-CONTENT</code>.
-              </div>
+              <div className={s.placeholderText}>{t('contracts.detail.document.empty')}</div>
             </div>
           )}
         </div>

@@ -90,6 +90,11 @@ export interface ContractFile {
   size?: number
   uploadedAt: Date
   uploadedBy?: string
+  // Associação documento ↔ dono (CTR-HTTP-DOCUMENT-CONTENT): permite casar o documento à linha
+  // (contrato base vs. cada aditivo) e buscar os bytes pela rota .../documents/:id/content.
+  parentType?: 'Contract' | 'Amendment'
+  parentId?: string
+  categoria?: string
 }
 
 export interface Contract {

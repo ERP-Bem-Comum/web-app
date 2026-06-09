@@ -10,6 +10,7 @@ import { AttachDocumentModal } from '#modules/contracts/client/contract-attach-d
 import { useAmendmentCreateBinding } from '../../amendment-create/amendment-create.binding.ts'
 import { useEndContractBinding } from '../../contract-terminate/end-contract.binding.ts'
 import { useAttachAmendmentDocumentBinding } from '../../amendment-create/attach-amendment-document.binding.ts'
+import { useDocumentContentBinding } from '../document-content.binding.ts'
 import { AmendmentModal, type AmendmentForAttach } from '../../amendment-create/components/amendment-modal.component.tsx'
 import { ContractInfo } from '../components/contract-info.component.tsx'
 import { ContractDocuments, type DocRef } from '../components/contract-documents.component.tsx'
@@ -55,6 +56,7 @@ export function ContractDetailPage({ contractId }: { contractId: string }): Reac
   const { createCommand: amendmentCommand } = useAmendmentCreateBinding()
   const { attachCommand: amendmentAttachCommand } = useAttachAmendmentDocumentBinding()
   const { endCommand } = useEndContractBinding()
+  const { documentCommand } = useDocumentContentBinding()
   const [attachOpen, setAttachOpen] = useState(false)
   const [amendmentOpen, setAmendmentOpen] = useState(false)
   const [selectedAmendment, setSelectedAmendment] = useState<AmendmentForAttach | null>(null)
@@ -130,7 +132,15 @@ export function ContractDetailPage({ contractId }: { contractId: string }): Reac
               const a = contract.children.find((c) => c.id === id)
               if (a) { amendmentAttachCommand.reset(); endCommand.reset(); setSelectedAmendment({ id: a.id, type: a.type, description: a.description ?? '' }) }
             }}
-            onPreview={(doc) => { setPreviewDoc(doc) }}
+            onPreview={(doc) => {
+              setPreviewDoc(doc)
+              if (doc.documentId !== undefined) documentCommand.open({ contractId, documentId: doc.documentId })
+            }}
+            onDownload={(doc) => {
+              if (doc.documentId !== undefined) {
+                documentCommand.download({ contractId, documentId: doc.documentId, fallbackName: doc.name })
+              }
+            }}
           />
           <ContractBankInfo contract={contract} />
         </div>
@@ -213,8 +223,11 @@ export function ContractDetailPage({ contractId }: { contractId: string }): Reac
 
       <DocumentPreviewModal
         open={previewDoc !== null}
-        doc={previewDoc}
-        onClose={() => { setPreviewDoc(null) }}
+        name={previewDoc?.name ?? ''}
+        blobUrl={documentCommand.blobUrl}
+        loading={documentCommand.running}
+        errorTag={documentCommand.errorTag}
+        onClose={() => { setPreviewDoc(null); documentCommand.reset() }}
       />
     </div>
   )

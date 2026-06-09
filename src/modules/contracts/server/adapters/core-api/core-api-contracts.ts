@@ -11,6 +11,7 @@ import type { HttpError } from '#shared/http/http-error.types.ts'
 import { parseErrorEnvelope } from '#shared/http/error-envelope.ts'
 import { resultFetch } from '#external/core-api/result-fetch.ts'
 import { octetStreamFetch } from '#external/core-api/octet-stream-fetch.ts'
+import { documentContentFetch } from '#external/core-api/document-content-fetch.ts'
 import type { ContractsError } from '#modules/contracts/server/adapters/contracts-shared.types.ts'
 import type { ContractHistoryEvent } from '#modules/contracts/server/adapters/contracts-shared.types.ts'
 import type {
@@ -187,13 +188,21 @@ const apiDocumentToDomain = (d: {
   fileName: string
   sizeBytes: number
   uploadedAt: string
+  parentType?: 'Contract' | 'Amendment'
+  parentId?: string
+  categoria?: string
 }): Contract['files'][number] => ({
   id: d.id,
   name: d.fileName,
-  url: '', // Backend não expõe URL direta; download via rota futura
+  // `url` vazia de propósito: o conteúdo é obtido pela rota .../documents/:id/content (via BFF),
+  // usando o `id` do documento — não há mais URL estática (CTR-HTTP-DOCUMENT-CONTENT religado).
+  url: '',
   size: d.sizeBytes,
   uploadedAt: parseIsoDate(d.uploadedAt),
   uploadedBy: undefined,
+  parentType: d.parentType,
+  parentId: d.parentId,
+  categoria: d.categoria,
 })
 
 const apiContractToDomain = (c: {
@@ -371,6 +380,7 @@ export type CoreApiContractsClient = Readonly<{
   uploadAmendmentDocument: (contractId: string, amendmentId: string, input: Readonly<{ bytes: Uint8Array; fileName: string }>, token: string) => Promise<Result<void, ContractsError>>
   homologateAmendment: (contractId: string, amendmentId: string, homologatedBy: string, token: string) => Promise<Result<Contract, ContractsError>>
   endContract: (contractId: string, token: string) => Promise<Result<Contract, ContractsError>>
+  getDocumentContent: (contractId: string, documentId: string, token: string) => Promise<Result<Readonly<{ bytes: Uint8Array; fileName: string; contentType: string }>, ContractsError>>
 }>
 
 export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsClient => {
@@ -630,6 +640,14 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
       })
       if (isErr(r)) return err(mapHttpError(r.error))
       return apiContractDetailToDomain(r.value)
+    },
+
+    getDocumentContent: async (contractId, documentId, token) => {
+      // GET /contracts/:id/documents/:documentId/content — bytes do documento (preview/download via BFF).
+      // CTR-HTTP-DOCUMENT-CONTENT. Ownership (doc ↔ contrato, direto ou via aditivo) é verificada no core-api.
+      const r = await documentContentFetch(`${baseUrl}/contracts/${contractId}/documents/${documentId}/content`, { token })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      return ok({ bytes: r.value.bytes, fileName: r.value.fileName ?? 'documento.pdf', contentType: r.value.contentType })
     },
   }
 }

@@ -18,6 +18,7 @@ export const ptBR: Catalog = {
   // Comum (reutilizável)
   'common.loading': 'Carregando…',
   'common.back': 'Voltar',
+  'common.close': 'Fechar',
   // Erros (genéricos por ora — P.O. refina)
   'auth.error.invalid-credentials': 'E-mail ou senha inválidos.',
   'auth.error.user-disabled': 'Sua conta está desativada. Procure o administrador.',
@@ -190,6 +191,8 @@ export const ptBR: Catalog = {
   'contracts.detail.documents.amendment': 'Aditivo',
   'contracts.detail.documents.preview': 'Visualizar',
   'contracts.detail.documents.download': 'Download',
+  'contracts.detail.document.error': 'Não foi possível carregar o documento.',
+  'contracts.detail.document.empty': 'Nenhum documento anexado.',
   'contracts.detail.timeline.created': 'Contrato criado',
   'contracts.detail.timeline.signed': 'Contrato assinado',
   'contracts.detail.timeline.amendment': 'Aditivo {{number}} — {{type}}',

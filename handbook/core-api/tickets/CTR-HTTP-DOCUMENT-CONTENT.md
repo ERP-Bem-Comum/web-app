@@ -61,3 +61,26 @@ Uma forma de o browser obter o PDF **via BFF** (o browser nunca fala com core-ap
 - Religação no front: preencher `Contract.files[].url` / `Amendment.signedContractUrl` (ou um endpoint
   de conteúdo) no mapper do BFF (`apiDocumentToDomain`/`apiAmendmentToDomain`).
 - Espelho de upload já implementado: `octetStreamFetch` + `POST /:id/documents`.
+
+---
+
+## ✅ RESOLVIDO (2026-06-08)
+
+**Core-api** (`dev` @ `71b7460`): implementou a opção (a) — `GET /api/v2/contracts/:id/documents/:documentId/content`
+→ bytes + `content-type` + `Content-Disposition: attachment`; auth `contract:read` + ownership (Contract
+direto / via Amendment) no use-case `getDocumentContent`; `document-not-owned` → 404 fail-closed. O detalhe
+(`GET /contracts/:id`) passou a expor `documents[]` com `id`/`parentType`/`parentId`/`fileName`/`mimeType`
+(associação documento ↔ aditivo). Coleção Bruno em `api-collections/.../document-content/`.
+
+**Front** (slice de leitura, espelhando o upload):
+- `external/core-api/document-content-fetch.ts` — GET binário (`arrayBuffer`) → Result, parseia filename.
+- core-api client `getDocumentContent` + use-case `get-document-content.use-case.ts` + composition.
+- server-fn `get-document-content.query.fn.ts` (bytes → base64 no envelope RPC) + repository + public-api.
+- `document-content.binding.ts` (+ `.mutation.ts`): base64 → Blob → object URL; `open`/`download`/`reset`.
+- Mapper preserva `parentType`/`parentId`/`categoria` em `Contract.files[]`; a tabela casa o `documentId`
+  por linha (base vs. cada aditivo) e habilita olho/seta só quando há documento.
+- `DocumentPreviewModal` consome `blobUrl`/`loading`/`errorTag` (iframe + estados). Download via Blob.
+- Testes: `document-preview-modal.spec.tsx` (estados) — verde. `pnpm verify` + `pnpm test:dom` 100%.
+
+**Pendente de validação em tela** (stack de pé): preview inline + download em contrato efetivado e aditivo
+homologado; 403/404 de ownership.

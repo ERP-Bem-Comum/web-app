@@ -79,6 +79,10 @@ export const ContractFileSchema = z.object({
   size: z.number().optional(),
   uploadedAt: z.date(),
   uploadedBy: z.string().trim().optional(),
+  // Associação documento ↔ dono (CTR-HTTP-DOCUMENT-CONTENT).
+  parentType: z.enum(['Contract', 'Amendment']).optional(),
+  parentId: z.string().trim().optional(),
+  categoria: z.string().trim().optional(),
 })
 export type ContractFile = z.infer<typeof ContractFileSchema>
 

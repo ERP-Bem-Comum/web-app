@@ -57,6 +57,12 @@ type EndContractFn = (opts: { data: { contractId: string } }) => Promise<
   | Readonly<{ ok: true; data: Contract }>
   | Readonly<{ ok: false; error: ContractsError }>
 >
+// Conteúdo do documento — bytes em base64 (transporte RPC); o binding decodifica p/ Blob no browser.
+export type DocumentContentDto = Readonly<{ base64: string; fileName: string; contentType: string }>
+type GetDocumentContentFn = (opts: { data: { contractId: string; documentId: string } }) => Promise<
+  | Readonly<{ ok: true; data: DocumentContentDto }>
+  | Readonly<{ ok: false; error: ContractsError }>
+>
 
 export type ContractsRepository = Readonly<{
   list: (input: ListContractsInput) => Promise<Result<ListContractsResponse, ContractsError>>
@@ -68,6 +74,7 @@ export type ContractsRepository = Readonly<{
   attachSignedDocument: (input: AttachSignedDocumentInput) => Promise<Result<Contract, ContractsError>>
   attachAmendmentDocument: (input: AttachAmendmentDocumentInput) => Promise<Result<Contract, ContractsError>>
   endContract: (contractId: string) => Promise<Result<Contract, ContractsError>>
+  getDocumentContent: (input: { contractId: string; documentId: string }) => Promise<Result<DocumentContentDto, ContractsError>>
 }>
 
 export const createContractsRepository = (deps: Readonly<{
@@ -80,6 +87,7 @@ export const createContractsRepository = (deps: Readonly<{
   attachSignedDocumentFn: AttachSignedDocumentFn
   attachAmendmentDocumentFn: AttachAmendmentDocumentFn
   endContractFn: EndContractFn
+  getDocumentContentFn: GetDocumentContentFn
 }>): ContractsRepository => ({
   list: async (input) => {
     const res = await deps.listContractsFn({ data: input })
@@ -115,6 +123,10 @@ export const createContractsRepository = (deps: Readonly<{
   },
   endContract: async (contractId) => {
     const res = await deps.endContractFn({ data: { contractId } })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  getDocumentContent: async (input) => {
+    const res = await deps.getDocumentContentFn({ data: input })
     return res.ok ? ok(res.data) : err(res.error)
   },
 })
