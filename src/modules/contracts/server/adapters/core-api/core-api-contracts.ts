@@ -327,9 +327,18 @@ export const apiContractDetailToDomain = (raw: unknown): Result<Contract, Contra
 const apiListResponseToDomain = (raw: unknown): Result<ListContractsResponse, ContractsError> => {
   const parsed = CoreApiListResponseSchema.safeParse(raw)
   if (!parsed.success) return err('server') // errors-as-values (C3), sem throw
+  const items = parsed.data.items.map(apiContractToDomain)
+  const m = parsed.data.meta
+  // Normaliza o meta da API (atual `currentPage/itemsPerPage/totalItems` ou legado `page/limit/total`)
+  // para o shape de domínio `{ page, totalPages, total, limit }`.
   return ok({
-    items: parsed.data.items.map(apiContractToDomain),
-    meta: parsed.data.meta,
+    items,
+    meta: {
+      page: m.currentPage ?? m.page ?? 1,
+      totalPages: m.totalPages ?? 1,
+      total: m.totalItems ?? m.total ?? items.length,
+      limit: m.itemsPerPage ?? m.limit ?? items.length,
+    },
   })
 }
 

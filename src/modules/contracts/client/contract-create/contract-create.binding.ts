@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { CreateContractInput, Contract } from '#modules/contracts/client/data/model/contracts.model.ts'
 import { isOk } from '#shared/primitives/result.ts'
 import { partnersRepository } from '#modules/contracts/client/data/repository/partners.repository.instance.ts'
@@ -15,10 +15,15 @@ export type CreateContractCommand = Readonly<{
 export type { PartnerSearchResult } from '#modules/contracts/client/data/repository/partners.repository.ts'
 
 export const useContractCreateBinding = (): Readonly<{ createCommand: CreateContractCommand }> => {
+  const queryClient = useQueryClient()
   const mutation = useMutation({
     ...contractCreateViewModel.mutation,
     onSuccess: (result) => {
       contractCreateViewModel.onSuccess(result)
+      // Sucesso → invalida a lista p/ o grid refletir o novo contrato (espelha end-contract/amendment).
+      if (isOk(result)) {
+        void queryClient.invalidateQueries({ queryKey: ['contracts', 'list'] })
+      }
     },
   })
 

@@ -198,13 +198,23 @@ export type CoreApiContractDetail = z.infer<typeof CoreApiContractDetailSchema>
 
 // ─── Listagem paginada ──────────────────────────────────────────────────────
 
+// O core-api (dev atual) devolve a paginação como
+// `{ currentPage, itemsPerPage, itemCount, totalItems, totalPages }`. Versões anteriores usavam
+// `{ page, total, limit, totalPages }`. Aceitamos AMBOS (campos opcionais) e normalizamos no
+// mapper (`apiListResponseToDomain`) — senão o `safeParse` falha e a lista inteira zera no grid.
 export const CoreApiListResponseSchema = z.object({
   items: z.array(CoreApiContractListItemSchema),
   meta: z.object({
-    page: z.int(),
-    totalPages: z.int(),
-    total: z.int(),
-    limit: z.int(),
+    // Shape atual (dev)
+    currentPage: z.int().optional(),
+    itemsPerPage: z.int().optional(),
+    itemCount: z.int().optional(),
+    totalItems: z.int().optional(),
+    totalPages: z.int().optional(),
+    // Shape legado (compat)
+    page: z.int().optional(),
+    total: z.int().optional(),
+    limit: z.int().optional(),
   }),
 })
 
