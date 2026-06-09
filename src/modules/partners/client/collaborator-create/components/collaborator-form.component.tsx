@@ -102,7 +102,7 @@ export function CollaboratorForm(props: CollaboratorFormProps): ReactNode {
             </select>
           </Field>
           <Field htmlFor="collab-cpf" label={t('partners.collaborators.form.cpf')} error={invalid('cpf')}>
-            <Input id="collab-cpf" value={c.state.cpf} onChange={(v) => { c.setField('cpf', v); }} />
+            <Input id="collab-cpf" mask="cpf" value={c.state.cpf} onChange={(v) => { c.setField('cpf', v); }} />
           </Field>
         </div>
         </div>

@@ -22,9 +22,9 @@ export type CollaboratorDetailContentProps = Readonly<{
 }>
 
 export function CollaboratorDetailContent({ controller: c, editing, showComplete, preTitle }: CollaboratorDetailContentProps): ReactNode {
-  const txt = (key: keyof CollaboratorDetailFormState, label: string, type?: 'text' | 'email' | 'date'): ReactNode => (
+  const txt = (key: keyof CollaboratorDetailFormState, label: string, type?: 'text' | 'email' | 'date', mask?: 'cpf' | 'cnpj' | 'phone'): ReactNode => (
     <Field htmlFor={`cd-${key}`} label={label}>
-      <Input id={`cd-${key}`} type={type} value={c.state[key]} disabled={!editing} onChange={(v) => { c.setField(key, v); }} />
+      <Input id={`cd-${key}`} type={type} mask={mask} value={c.state[key]} disabled={!editing} onChange={(v) => { c.setField(key, v); }} />
     </Field>
   )
 
@@ -55,7 +55,7 @@ export function CollaboratorDetailContent({ controller: c, editing, showComplete
           {txt('role', t('partners.collaborators.form.role'))}
           {txt('startOfContract', t('partners.collaborators.form.startOfContract'), 'date')}
           {sel('employmentRelationship', t('partners.collaborators.form.employmentRelationship'), vinculoOptions)}
-          {txt('cpf', t('partners.collaborators.form.cpf'))}
+          {txt('cpf', t('partners.collaborators.form.cpf'), undefined, 'cpf')}
         </div>
       </section>
 
@@ -66,9 +66,9 @@ export function CollaboratorDetailContent({ controller: c, editing, showComplete
             {txt('rg', t('partners.collaborators.detail.field.rg'))}
             {txt('completeAddress', t('partners.collaborators.detail.field.completeAddress'))}
             {txt('dateOfBirth', t('partners.collaborators.detail.field.dateOfBirth'), 'date')}
-            {txt('telephone', t('partners.collaborators.detail.field.telephone'))}
+            {txt('telephone', t('partners.collaborators.detail.field.telephone'), undefined, 'phone')}
             {txt('emergencyContactName', t('partners.collaborators.detail.field.emergencyContactName'))}
-            {txt('emergencyContactTelephone', t('partners.collaborators.detail.field.emergencyContactTelephone'))}
+            {txt('emergencyContactTelephone', t('partners.collaborators.detail.field.emergencyContactTelephone'), undefined, 'phone')}
             {txt('genderIdentity', t('partners.collaborators.detail.field.genderIdentity'))}
             {txt('race', t('partners.collaborators.detail.field.race'))}
             {txt('allergies', t('partners.collaborators.detail.field.allergies'))}
