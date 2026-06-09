@@ -32,3 +32,33 @@
   tipo "Distrato" vive na modal de aditivo (UI/coleta de campos pronta) — a religação correta é via `/end`.
 - **Escopo / Outro / Distrato** todos mapeiam para `Misc` no backend → ao reler, perde-se o subtipo
   (aparecem como "Outro"). Se o subtipo importar no backend, precisaria de `kind` próprio ou um campo.
+
+---
+
+# Handoff Front → Core-API — Parceiros
+
+> Pendências de backend levantadas na **adequação ao legado** dos submódulos de Parceiros
+> (Colaboradores, Fornecedores, ACTs, Financiadores) — grids, forms e detalhes. Verificado em 2026-06-09.
+
+## 🟥 Pendências de BACKEND (core-api)
+
+| Ticket | Tema | Resumo | Bloqueia no front |
+|---|---|---|---|
+| [PAR-ACT-ACORDO](./PAR-ACT-ACORDO.md) | **ACT → Acordo** | Reformular o agregado ACT de pessoa-física para **Acordo de Cooperação Técnica** (Nº instrumento, vigência, instituição parceira c/ CNPJ/razão social/nome fantasia, repasse + banco/PIX; remover CPF/vínculo/início). | **Criar ACT não salva**; campos novos são placeholders gated; grid Nº/Parceiro = `—` |
+| [PAR-SUPPLIER-AVALIACAO](./PAR-SUPPLIER-AVALIACAO.md) | Fornecedor: avaliação | `serviceRating` + `ratingComment` não existem no agregado. | 2 campos gated no form/detalhe |
+| [PAR-GRID-FILTROS-EXPORT](./PAR-GRID-FILTROS-EXPORT.md) | Filtros / contagem / export | Filtros (Status de contrato; ACT Tipo/Área), coluna **Contratos/Aditivos** (contagem) e **export CSV**. | Filtros gated; coluna `—`; botão Exportar sem wiring |
+| [PAR-COLLABORATOR-GRID-GAPS](./PAR-COLLABORATOR-GRID-GAPS.md) | Colaborador: grid | Filtros do painel + coluna Contratos/Aditivos + import/export. | Filtros gated; coluna `—` |
+
+## 🟩 Achados RESOLVIDOS / em aberto no FRONT (sem ação de backend obrigatória — registro)
+
+| Achado | Causa | Status |
+|---|---|---|
+| **Salvar/Inativar/Reativar** dos Parceiros mostram "erro inesperado" embora **gravem no backend** | O core-api responde **`200` sem corpo** em PUT/deactivate/reactivate; o BFF `resultFetch` faz `response.json()` direto → estoura → mapeia p/ `'server'`. (PUT direto no core-api = 200 + persiste, confirmado.) | **Fix no FRONT** (tratar 2xx sem corpo como `ok(undefined)`, igual ao 204) — pendente. *Opcional no backend: padronizar `204 No Content`.* |
+| Máscaras CPF/CNPJ/telefone | — | ✅ feito no front (átomo `Input` com `mask`) |
+| Grids/forms/detalhes alinhados ao legado | — | ✅ feito no front |
+
+## ℹ️ Notas de modelagem (tech lead + P.O.)
+- **ACT**: decisão CPF→CNPJ + migração dos registros + numeração do instrumento (ver ticket).
+- **`registration` (pré/completo)** é conceito de **Colaborador** — removido do detalhe de ACT no front.
+- **Enums do cadastro completo de Colaborador** (gênero/raça/categoria alimentar/escolaridade) ainda são
+  texto livre no front por falta de listas canônicas — viram `<select>` quando o backend/legado as definir.
