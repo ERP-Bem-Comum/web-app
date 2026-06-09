@@ -48,6 +48,7 @@
 | [PAR-SUPPLIER-AVALIACAO](./PAR-SUPPLIER-AVALIACAO.md) | Fornecedor: avaliação | `serviceRating` + `ratingComment` não existem no agregado. | 2 campos gated no form/detalhe |
 | [PAR-GRID-FILTROS-EXPORT](./PAR-GRID-FILTROS-EXPORT.md) | Filtros / contagem / export | Filtros (Status de contrato; ACT Tipo/Área), coluna **Contratos/Aditivos** (contagem) e **export CSV**. | Filtros gated; coluna `—`; botão Exportar sem wiring |
 | [PAR-COLLABORATOR-GRID-GAPS](./PAR-COLLABORATOR-GRID-GAPS.md) | Colaborador: grid | Filtros do painel + coluna Contratos/Aditivos + import/export. | Filtros gated; coluna `—` |
+| [PAR-GEO-ADDED-MUNICIPALITIES](./PAR-GEO-ADDED-MUNICIPALITIES.md) | Geografia: municípios | Listar municípios parceiros de **todos os estados** (o GET exige UF). | Painel "Municípios Parceiros Adicionados" é placeholder |
 
 ## 🟩 Achados RESOLVIDOS / em aberto no FRONT (sem ação de backend obrigatória — registro)
 
