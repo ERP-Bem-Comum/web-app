@@ -6,7 +6,11 @@ export const form = style({
   display: 'flex',
   flexDirection: 'column',
   gap: vars.space.xl,
-  maxInlineSize: '52rem',
+  // usa toda a largura disponível da tela (cap generoso só pra telas ultra-largas).
+  inlineSize: '100%',
+  maxInlineSize: '110rem',
+  // não encolher dentro do screen com overflow.
+  flexShrink: 0,
 })
 
 export const section = style({
@@ -46,6 +50,7 @@ export const grid = style({
   gap: vars.space.md,
   '@container': {
     '(inline-size > 32rem)': { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' },
+    '(inline-size > 56rem)': { gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' },
   },
 })
 
@@ -59,6 +64,13 @@ export const select = style({
   fontFamily: vars.font.family.body,
   fontSize: vars.font.size.sm,
   inlineSize: '100%',
+  selectors: {
+    '&:disabled': {
+      background: vars.color.surface.subtle,
+      color: vars.color.text.muted,
+      cursor: 'not-allowed',
+    },
+  },
 })
 
 export const errorBanner = style({
@@ -66,6 +78,17 @@ export const errorBanner = style({
   borderRadius: vars.radius.md,
   background: vars.color.feedback.errorBg,
   color: vars.color.feedback.errorText,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+})
+
+// Aviso da regra de repasse (quando "Sim"): dados bancários ficam obrigatórios.
+export const hint = style({
+  margin: 0,
+  padding: vars.space.sm,
+  borderRadius: vars.radius.md,
+  background: vars.color.surface.canvas,
+  color: vars.color.text.secondary,
   fontFamily: vars.font.family.body,
   fontSize: vars.font.size.sm,
 })

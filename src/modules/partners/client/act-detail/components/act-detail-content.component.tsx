@@ -2,57 +2,79 @@ import type { ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { Badge } from '#shared/ui/index.ts'
-
+import { Badge, Field, Input } from '#shared/ui/index.ts'
 import {
   OCCUPATION_AREAS,
-  type ActDetail,
-  type OccupationArea,
-} from '../act-detail.view-model.ts'
-import { card, cardTitle, field, fieldGrid, fieldLabel, fieldValue, layout } from './act-detail-content.css.ts'
+  EMPLOYMENT_RELATIONSHIPS,
+  type ActFormController,
+  type ActFormState,
+} from '#modules/partners/client/act-create/components/act-form.controller.ts'
+import type { ActivationStatus } from '#modules/partners/client/domain/act.types.ts'
+
+import { stack, section, sectionTitle, statusRow, fieldGrid, select } from './act-detail-content.css.ts'
 
 const t = createTranslator(ptBR)
 
-const isOccupationArea = (v: string): v is OccupationArea =>
-  (OCCUPATION_AREAS as readonly string[]).includes(v)
-
-function areaLabel(area: string): string {
-  return isOccupationArea(area) ? t(`partners.acts.area.${area}`) : area
-}
-
-function Item({ label, value }: Readonly<{ label: string; value: string }>): ReactNode {
-  return (
-    <div className={field}>
-      <span className={fieldLabel}>{label}</span>
-      <span className={fieldValue}>{value}</span>
-    </div>
-  )
-}
-
-export type ActDetailContentProps = Readonly<{ act: ActDetail }>
+export type ActDetailContentProps = Readonly<{
+  controller: ActFormController
+  editing: boolean
+  activation: ActivationStatus
+}>
 
 export function ActDetailContent(props: ActDetailContentProps): ReactNode {
-  const a = props.act
+  const { controller: c, editing } = props
+  const invalid = (key: string): string | undefined =>
+    c.errors[key] === true ? t('partners.acts.form.invalid') : undefined
+
+  const txt = (key: keyof ActFormState, label: string, type?: 'text' | 'email' | 'date', mask?: 'cpf' | 'cnpj' | 'phone'): ReactNode => (
+    <Field htmlFor={`ad-${key}`} label={label} error={invalid(key)}>
+      <Input id={`ad-${key}`} type={type} mask={mask} value={c.state[key]} disabled={!editing} onChange={(v) => { c.setField(key, v); }} />
+    </Field>
+  )
+
   return (
-    <div className={layout}>
-      <section className={card}>
-        <h2 className={cardTitle}>{t('partners.acts.form.section.basic')}</h2>
-        <div>
-          <Badge variant={a.activation === 'active' ? 'active' : 'outro'}>
-            {t(`partners.acts.status.${a.activation}`)}
-          </Badge>{' '}
-          <Badge variant={a.registration === 'complete' ? 'active' : 'outro'}>
-            {t(`partners.acts.registration.${a.registration}`)}
+    <div className={stack}>
+      <section className={section}>
+        <h2 className={sectionTitle}>{t('partners.acts.form.section.basic')}</h2>
+        <div className={statusRow}>
+          <Badge variant={props.activation === 'active' ? 'active' : 'outro'}>
+            {t(`partners.acts.status.${props.activation}`)}
           </Badge>
         </div>
         <div className={fieldGrid}>
-          <Item label={t('partners.acts.form.name')} value={a.name} />
-          <Item label={t('partners.acts.form.email')} value={a.email} />
-          <Item label={t('partners.acts.form.cpf')} value={a.cpf} />
-          <Item label={t('partners.acts.form.occupationArea')} value={areaLabel(a.occupationArea)} />
-          <Item label={t('partners.acts.form.role')} value={a.role} />
-          <Item label={t('partners.acts.form.startOfContract')} value={a.startOfContract} />
-          <Item label={t('partners.acts.form.employmentRelationship')} value={t(`partners.acts.employment.${a.employmentRelationship}`)} />
+          {txt('name', t('partners.acts.form.name'))}
+          {txt('email', t('partners.acts.form.email'), 'email')}
+          {txt('cpf', t('partners.acts.form.cpf'), undefined, 'cpf')}
+          <Field htmlFor="ad-occupationArea" label={t('partners.acts.form.occupationArea')} error={invalid('occupationArea')}>
+            <select
+              id="ad-occupationArea"
+              className={select}
+              value={c.state.occupationArea}
+              disabled={!editing}
+              onChange={(e) => { c.setField('occupationArea', e.target.value); }}
+            >
+              <option value="">{t('partners.acts.form.select')}</option>
+              {OCCUPATION_AREAS.map((a) => (
+                <option key={a} value={a}>{t(`partners.acts.area.${a}`)}</option>
+              ))}
+            </select>
+          </Field>
+          {txt('role', t('partners.acts.form.role'))}
+          {txt('startOfContract', t('partners.acts.form.startOfContract'), 'date')}
+          <Field htmlFor="ad-employmentRelationship" label={t('partners.acts.form.employmentRelationship')} error={invalid('employmentRelationship')}>
+            <select
+              id="ad-employmentRelationship"
+              className={select}
+              value={c.state.employmentRelationship}
+              disabled={!editing}
+              onChange={(e) => { c.setField('employmentRelationship', e.target.value); }}
+            >
+              <option value="">{t('partners.acts.form.select')}</option>
+              {EMPLOYMENT_RELATIONSHIPS.map((v) => (
+                <option key={v} value={v}>{t(`partners.acts.employment.${v}`)}</option>
+              ))}
+            </select>
+          </Field>
         </div>
       </section>
     </div>
