@@ -27,13 +27,13 @@ const stubController = (over: Partial<CollaboratorFormController> = {}): Collabo
 describe('CollaboratorForm', () => {
   it('renderiza os 7 campos do pré-cadastro', () => {
     render(<CollaboratorForm controller={stubController()} running={false} errorTag={null} onCancel={() => undefined} />)
-    expect(screen.getByLabelText('Nome')).toBeTruthy()
-    expect(screen.getByLabelText('E-mail')).toBeTruthy()
+    expect(screen.getByLabelText('Representante Legal')).toBeTruthy()
+    expect(screen.getByLabelText('Email')).toBeTruthy()
     expect(screen.getByLabelText('CPF')).toBeTruthy()
-    expect(screen.getByLabelText('Cargo')).toBeTruthy()
-    expect(screen.getByLabelText('Área de atuação')).toBeTruthy()
-    expect(screen.getByLabelText('Vínculo')).toBeTruthy()
-    expect(screen.getByLabelText('Início do contrato')).toBeTruthy()
+    expect(screen.getByLabelText('Função')).toBeTruthy()
+    expect(screen.getByLabelText('Área de Atuação')).toBeTruthy()
+    expect(screen.getByLabelText('Vínculo Empregatício')).toBeTruthy()
+    expect(screen.getByLabelText('Início de Contrato')).toBeTruthy()
   })
 
   it('selects de área e vínculo trazem as opções dos enums', () => {

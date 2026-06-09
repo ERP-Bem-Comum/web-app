@@ -17,6 +17,8 @@ import {
   grid,
   saveWrap,
   section,
+  sectionBody,
+  sectionHeader,
   sectionTitle,
   select,
 } from './collaborator-form.css.ts'
@@ -50,19 +52,17 @@ export function CollaboratorForm(props: CollaboratorFormProps): ReactNode {
       ) : null}
 
       <section className={section}>
-        <h2 className={sectionTitle}>{t('partners.collaborators.form.section.basic')}</h2>
+        <div className={sectionHeader}>
+          <h2 className={sectionTitle}>{t('partners.collaborators.form.section.basic')}</h2>
+        </div>
+        <div className={sectionBody}>
         <div className={grid}>
+          {/* Ordem espelhando o print: linha 1 → Representante Legal · Email · Área de atuação · Função */}
           <Field htmlFor="collab-name" label={t('partners.collaborators.form.name')} error={invalid('name')}>
             <Input id="collab-name" value={c.state.name} onChange={(v) => { c.setField('name', v); }} />
           </Field>
           <Field htmlFor="collab-email" label={t('partners.collaborators.form.email')} error={invalid('email')}>
             <Input id="collab-email" type="email" value={c.state.email} onChange={(v) => { c.setField('email', v); }} />
-          </Field>
-          <Field htmlFor="collab-cpf" label={t('partners.collaborators.form.cpf')} error={invalid('cpf')}>
-            <Input id="collab-cpf" value={c.state.cpf} onChange={(v) => { c.setField('cpf', v); }} />
-          </Field>
-          <Field htmlFor="collab-role" label={t('partners.collaborators.form.role')} error={invalid('role')}>
-            <Input id="collab-role" value={c.state.role} onChange={(v) => { c.setField('role', v); }} />
           </Field>
           <Field htmlFor="collab-area" label={t('partners.collaborators.form.occupationArea')} error={invalid('occupationArea')}>
             <select
@@ -79,6 +79,13 @@ export function CollaboratorForm(props: CollaboratorFormProps): ReactNode {
               ))}
             </select>
           </Field>
+          <Field htmlFor="collab-role" label={t('partners.collaborators.form.role')} error={invalid('role')}>
+            <Input id="collab-role" value={c.state.role} onChange={(v) => { c.setField('role', v); }} />
+          </Field>
+          {/* linha 2 → Início de Contrato · Vínculo Empregatício · CPF */}
+          <Field htmlFor="collab-start" label={t('partners.collaborators.form.startOfContract')} error={invalid('startOfContract')}>
+            <Input id="collab-start" type="date" value={c.state.startOfContract} onChange={(v) => { c.setField('startOfContract', v); }} />
+          </Field>
           <Field htmlFor="collab-vinc" label={t('partners.collaborators.form.employmentRelationship')} error={invalid('employmentRelationship')}>
             <select
               id="collab-vinc"
@@ -94,9 +101,10 @@ export function CollaboratorForm(props: CollaboratorFormProps): ReactNode {
               ))}
             </select>
           </Field>
-          <Field htmlFor="collab-start" label={t('partners.collaborators.form.startOfContract')} error={invalid('startOfContract')}>
-            <Input id="collab-start" type="date" value={c.state.startOfContract} onChange={(v) => { c.setField('startOfContract', v); }} />
+          <Field htmlFor="collab-cpf" label={t('partners.collaborators.form.cpf')} error={invalid('cpf')}>
+            <Input id="collab-cpf" value={c.state.cpf} onChange={(v) => { c.setField('cpf', v); }} />
           </Field>
+        </div>
         </div>
       </section>
 

@@ -6,16 +6,31 @@ export const form = style({
   display: 'flex',
   flexDirection: 'column',
   gap: vars.space.xl,
-  maxInlineSize: '52rem',
+  // Card mais largo: aproveita melhor a largura da página (layout de até 4 colunas).
+  maxInlineSize: '72rem',
 })
 
+// Card: borda discreta + elevação. Sem padding aqui (header e body têm o seu); overflow hidden p/
+// o header preencher até a borda arredondada.
 export const section = style({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: vars.space.md,
-  padding: vars.space.lg,
   borderRadius: vars.radius.lg,
   border: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
+  background: vars.color.surface.default,
+  boxShadow: vars.shadow.card,
+  overflow: 'hidden',
+})
+
+// Faixa de título com preenchimento discreto (tom de marca, igual à linha de títulos da tabela).
+export const sectionHeader = style({
+  paddingBlock: vars.space.md,
+  paddingInline: vars.space.lg,
+  background: vars.color.surface.canvas,
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
+})
+
+// Corpo branco (campos sobre branco).
+export const sectionBody = style({
+  padding: vars.space.lg,
   background: vars.color.surface.default,
   containerType: 'inline-size',
 })
@@ -25,15 +40,17 @@ export const sectionTitle = style({
   fontFamily: vars.font.family.heading,
   fontSize: vars.font.size.lg,
   fontWeight: vars.font.weight.semibold,
-  color: vars.color.text.primary,
+  color: vars.color.nav.background,
 })
 
 export const grid = style({
   display: 'grid',
   gridTemplateColumns: '1fr',
   gap: vars.space.md,
+  // mobile-first: 1 col → 2 col → 4 col (card largo), espelhando o print.
   '@container': {
     '(inline-size > 32rem)': { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' },
+    '(inline-size > 56rem)': { gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' },
   },
 })
 
