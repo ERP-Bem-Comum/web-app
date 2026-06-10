@@ -19,7 +19,6 @@ import {
   chipActive,
   panelFooter,
   applyButton,
-  exportButton,
 } from './collaborator-filters.css.ts'
 
 export type StatusFilter = 'all' | 'active' | 'inactive'
@@ -56,15 +55,15 @@ export type CollaboratorFiltersProps = Readonly<{
     preRegistration: string
     complete: string
     apply: string
-    export: string
   }>
+  /** Slot de exportação (a página injeta o dropdown Tudo/Histórico/template). */
+  exportSlot?: ReactNode
   onSearch: (value: string) => void
   onStatus: (status: StatusFilter) => void
   onSituacao: (situacao: SituacaoFilter) => void
   onEmployment: (employment: string) => void
   onRole: (role: string) => void
   onYear: (year: string) => void
-  onExport: () => void
 }>
 
 const STATUSES: readonly StatusFilter[] = ['all', 'active', 'inactive']
@@ -177,9 +176,7 @@ export function CollaboratorFilters(props: CollaboratorFiltersProps): ReactNode 
             <button type="button" className={applyButton} onClick={() => { setOpen(false); }}>
               {L.apply}
             </button>
-            <button type="button" className={exportButton} onClick={props.onExport}>
-              {L.export}
-            </button>
+            {props.exportSlot}
           </div>
         </div>
       ) : null}

@@ -19,7 +19,6 @@ import {
   chipActive,
   panelFooter,
   applyButton,
-  exportButton,
 } from './act-filters.css.ts'
 
 export type StatusFilter = 'all' | 'active' | 'inactive'
@@ -43,11 +42,11 @@ export type ActFiltersProps = Readonly<{
     allOption: string
     gatedHint: string
     apply: string
-    export: string
   }>
+  /** Slot de exportação (a página injeta o dropdown CSV/PDF com os dados carregados). */
+  exportSlot?: ReactNode
   onSearch: (value: string) => void
   onStatus: (status: StatusFilter) => void
-  onExport: () => void
 }>
 
 const STATUSES: readonly StatusFilter[] = ['all', 'active', 'inactive']
@@ -121,7 +120,7 @@ export function ActFilters(props: ActFiltersProps): ReactNode {
 
           <div className={panelFooter}>
             <button type="button" className={applyButton} onClick={() => { setOpen(false); }}>{L.apply}</button>
-            <button type="button" className={exportButton} onClick={props.onExport}>{L.export}</button>
+            {props.exportSlot}
           </div>
         </div>
       ) : null}

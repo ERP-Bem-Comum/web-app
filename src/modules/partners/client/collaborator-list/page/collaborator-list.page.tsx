@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { getRouteApi, useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
@@ -16,6 +16,10 @@ import {
 } from '../collaborator-list.view-model.ts'
 import { CollaboratorFilters, type StatusFilter } from '../components/collaborator-filters.component.tsx'
 import { CollaboratorPaginator } from '../components/collaborator-paginator.component.tsx'
+import { ImportReportModal } from '../components/import-report-modal.component.tsx'
+import { CollaboratorExportDropdown } from '#modules/partners/client/shared/collaborator-export-dropdown.component.tsx'
+import { PartnersPrintable } from '#modules/partners/client/shared/partners-printable.component.tsx'
+import { contentWrap, contentWrapPrintHidden } from '#modules/partners/client/shared/export-print.css.ts'
 import { screen, statusCell, registrationText, toolbarActions, importButton } from './collaborator-list.css.ts'
 
 const t = createTranslator(ptBR)
@@ -37,7 +41,26 @@ function statusFromActive(active: boolean | undefined): StatusFilter {
 export function CollaboratorListPage(): ReactNode {
   const search = routeApi.useSearch()
   const navigate = useNavigate()
-  const { state, canCreate } = useCollaboratorListBinding(search)
+  const { state, canCreate, importCommand } = useCollaboratorListBinding(search)
+  const [printing, setPrinting] = useState(false)
+  // Modal de relatório DERIVADO do comando (sem setState em efeito): aparece quando há resultado/erro e
+  // o usuário ainda não dispensou; cada nova importação reabre.
+  const [reportDismissed, setReportDismissed] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!printing) return
+    const id = setTimeout(() => { window.print(); setPrinting(false) }, 0)
+    return () => { clearTimeout(id) }
+  }, [printing])
+
+  const reportOpen = !reportDismissed && (importCommand.result !== null || importCommand.errorTag !== null)
+
+  const onPickFile = async (file: File): Promise<void> => {
+    setReportDismissed(false)
+    const csv = await file.text()
+    importCommand.execute({ filename: file.name, csv })
+  }
 
   const hasFilters =
     (search.search ?? '') !== '' ||
@@ -83,24 +106,52 @@ export function CollaboratorListPage(): ReactNode {
   const tableState = toTableState(state)
   const pageNum = search.page
   const pages = state.status === 'ready' ? totalPages(state.meta) : 1
+  const rows = state.status === 'ready' ? state.rows : []
+
+  const exportColumns: readonly string[] = [
+    t('partners.collaborators.columns.legalRepresentative'),
+    t('partners.collaborators.columns.email'),
+    t('partners.collaborators.columns.occupationArea'),
+    t('partners.collaborators.columns.role'),
+    t('partners.collaborators.columns.status'),
+  ]
+  const exportRows: readonly (readonly string[])[] = rows.map((r) => [
+    r.name,
+    r.email,
+    areaLabel(r.occupationArea),
+    r.role,
+    t(`partners.collaborators.status.${r.activation}`),
+  ])
 
   return (
     <div className={screen}>
+      <div className={printing ? contentWrapPrintHidden : contentWrap}>
       <PageHeader
         title={t('partners.collaborators.list.title')}
         subtitle={t('partners.collaborators.list.subtitle')}
         actions={
           canCreate ? (
             <div className={toolbarActions}>
-              {/* Importar CSV/Excel — botão do legado. Wiring da importação (file → importCsv) é follow-up
-                  (backend `import-collaborators` já existe); ver gaps documentados. */}
+              {/* Importar CSV/Excel — abre o seletor de arquivo → importCsv → relatório (criados/falhas). */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,text/csv"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) void onPickFile(f)
+                  e.target.value = ''
+                }}
+              />
               <button
                 type="button"
                 className={importButton}
                 title={t('partners.collaborators.list.import')}
-                onClick={() => { /* TODO: abrir fluxo de importação CSV/Excel (import-collaborators) */ }}
+                disabled={importCommand.running}
+                onClick={() => { fileInputRef.current?.click() }}
               >
-                {t('partners.collaborators.list.import')}
+                {importCommand.running ? t('partners.collaborators.import.running') : t('partners.collaborators.list.import')}
               </button>
               <Button onClick={() => void navigate({ to: '/parceiros/colaboradores/criar' })}>
                 {t('partners.collaborators.list.new')}
@@ -139,8 +190,16 @@ export function CollaboratorListPage(): ReactNode {
           preRegistration: t('partners.collaborators.registration.pre-registration'),
           complete: t('partners.collaborators.registration.complete'),
           apply: t('partners.collaborators.filters.apply'),
-          export: t('partners.collaborators.filters.export'),
         }}
+        exportSlot={
+          <CollaboratorExportDropdown
+            exportLabel={t('partners.collaborators.filters.export')}
+            tudoLabel={t('partners.collaborators.export.tudo')}
+            historicoLabel={t('partners.collaborators.export.historico')}
+            templateLabel={t('partners.collaborators.export.template')}
+            onPrint={() => { setPrinting(true) }}
+          />
+        }
         onSearch={(value) =>
           void navigate({ to: '.', replace: true, search: (p) => ({ ...p, search: value || undefined, page: 1 }) })
         }
@@ -159,7 +218,6 @@ export function CollaboratorListPage(): ReactNode {
         onYear={(v) =>
           void navigate({ to: '.', replace: true, search: (p) => ({ ...p, year: v.trim() === '' ? undefined : Number(v), page: 1 }) })
         }
-        onExport={() => { /* TODO: export CSV de colaboradores (follow-up; ver gaps) */ }}
       />
 
       <DataTable<CollaboratorRow>
@@ -187,6 +245,22 @@ export function CollaboratorListPage(): ReactNode {
         onPrev={() => void navigate({ to: '.', search: (p) => ({ ...p, page: Math.max(1, pageNum - 1) }) })}
         onNext={() => void navigate({ to: '.', search: (p) => ({ ...p, page: pageNum + 1 }) })}
         onPerPage={(perPage) => void navigate({ to: '.', search: (p) => ({ ...p, limit: perPage, page: 1 }) })}
+      />
+      </div>
+
+      <PartnersPrintable
+        title={t('partners.collaborators.list.title')}
+        emittedLabel={t('partners.export.count').replace('{n}', String(rows.length))}
+        columns={exportColumns}
+        rows={exportRows}
+        emptyLabel={t('partners.collaborators.list.empty')}
+      />
+
+      <ImportReportModal
+        open={reportOpen}
+        report={importCommand.result}
+        errorTag={importCommand.errorTag}
+        onClose={() => { setReportDismissed(true); importCommand.reset() }}
       />
     </div>
   )
