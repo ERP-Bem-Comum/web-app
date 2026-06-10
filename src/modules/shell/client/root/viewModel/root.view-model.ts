@@ -44,6 +44,9 @@ const PAGE_TITLES: Readonly<Record<string, string>> = {
   '/parceiros/financiadores': 'Financiadores',
   '/parceiros/atos': 'ACTs',
   '/parceiros/territorios': 'Estados e Municípios',
+  // Gestão de Usuários — alimenta o document.title (a tela já mostra o título via PageHeader).
+  '/usuarios': 'Usuários',
+  '/minha-conta': 'Minha Conta',
   '/login': 'Login',
 }
 
@@ -62,11 +65,14 @@ export const rootViewModel = {
 
   sidebarWidth: (collapsed: boolean): number => (collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED),
 
-  // Não renderiza o h1 do shell em /parceiros/* (cada submódulo já tem seu PageHeader) nem em qualquer
-  // sub-rota de /contratos/ (criar, detalhe, editar, aditivo — cada tela tem seu próprio header). A lista
-  // /contratos mantém o h1. Evita o título duplicado e libera o espaço vertical da tela.
+  // Não renderiza o h1 do shell em /parceiros/* e /usuarios/* (cada tela já tem seu PageHeader) nem em
+  // qualquer sub-rota de /contratos/ (criar, detalhe, editar, aditivo — cada tela tem seu próprio header).
+  // A lista /contratos mantém o h1. Evita o título duplicado e libera o espaço vertical da tela.
   showPageHeader: (path: string): boolean =>
-    !path.startsWith('/contratos/') && !isPrefixPath(path, '/parceiros'),
+    !path.startsWith('/contratos/') &&
+    !isPrefixPath(path, '/parceiros') &&
+    !isPrefixPath(path, '/usuarios') &&
+    !isPrefixPath(path, '/minha-conta'),
 
   /**
    * RBAC: remove seções/subitens cujo `requiredPermission` não está em `permissions`. Uma seção de

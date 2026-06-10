@@ -54,5 +54,18 @@ export const MENU: readonly MenuSection[] = [
   { label: 'Plano Orçamentário', iconId: 'calendar-days' },
   { label: 'Relatórios', iconId: 'trending-up' },
   { label: 'Financeiro', iconId: 'wallet' },
-  { label: 'Gestão de Usuários', iconId: 'users' },
+  {
+    label: 'Gestão de Usuários',
+    iconId: 'users',
+    // Subitem SEM `requiredPermission` (espelha "Gestão de Contratos → Contratos"): a visibilidade do
+    // menu não é gated por RBAC aqui — quem controla acesso é o backend (403 → tag de erro no grid) e a
+    // rota protegida. Gating de menu por `user:list` foi removido porque o seed do admin ainda não
+    // concede `user:*` (gap de backend), o que escondia a seção inteira (accordion sem subitem some).
+    // TODO(backend): ao conceder `user:list` no seed, podemos reintroduzir o gate se quisermos.
+    subItems: [
+      { label: 'Usuários', to: '/usuarios' },
+      // Minha Conta = autosserviço (/api/v1/me): qualquer usuário autenticado acessa → sem RBAC.
+      { label: 'Minha Conta', to: '/minha-conta' },
+    ],
+  },
 ] as const
