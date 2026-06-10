@@ -8,6 +8,10 @@ import { useCallback, useState } from 'react'
 import {
   OCCUPATION_AREAS,
   EMPLOYMENT_RELATIONSHIPS,
+  GENDER_IDENTITIES,
+  RACES,
+  EDUCATION_LEVELS,
+  FOOD_CATEGORIES,
   type CollaboratorDetail,
   type CollaboratorWriteInput,
   type CollaboratorCompleteInput,
@@ -16,7 +20,7 @@ import {
 } from '#modules/partners/client/data/model/collaborator.model.ts'
 
 // Re-export p/ a view burra (component) consumir os enums sem importar `data/` direto (boundary §XI).
-export { OCCUPATION_AREAS, EMPLOYMENT_RELATIONSHIPS }
+export { OCCUPATION_AREAS, EMPLOYMENT_RELATIONSHIPS, GENDER_IDENTITIES, RACES, EDUCATION_LEVELS, FOOD_CATEGORIES }
 
 export type CollaboratorDetailFormState = Readonly<{
   // pré-cadastro
@@ -50,10 +54,11 @@ const fromDetail = (c: CollaboratorDetail): CollaboratorDetailFormState => ({
   cpf: c.cpf,
   occupationArea: c.occupationArea,
   role: c.role,
-  startOfContract: c.startOfContract,
+  // Datas chegam do backend como ISO datetime (…T00:00:00.000Z); o form/`z.iso.date()` exige YYYY-MM-DD.
+  startOfContract: c.startOfContract.slice(0, 10),
   employmentRelationship: c.employmentRelationship,
   rg: c.rg ?? '',
-  dateOfBirth: c.dateOfBirth ?? '',
+  dateOfBirth: (c.dateOfBirth ?? '').slice(0, 10),
   completeAddress: c.completeAddress ?? '',
   telephone: c.telephone ?? '',
   emergencyContactName: c.emergencyContactName ?? '',

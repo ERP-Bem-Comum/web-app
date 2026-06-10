@@ -16,6 +16,16 @@ export type OccupationArea = (typeof OCCUPATION_AREAS)[number]
 export const EMPLOYMENT_RELATIONSHIPS = ['CLT', 'PJ'] as const
 export type EmploymentRelationship = (typeof EMPLOYMENT_RELATIONSHIPS)[number]
 
+// Enums canônicos do cadastro completo (códigos legados do core-api — o backend rejeita texto livre).
+export const GENDER_IDENTITIES = [
+  'PREFIRO_NAO_RESPONDER', 'HOMEM_CIS', 'HOMEM_TRANS', 'MULHER_CIS', 'MULHER_TRANS', 'TRAVESTI', 'NAO_BINARIO', 'OUTRO',
+] as const
+export const RACES = ['AMARELO', 'BRANCO', 'PARDO', 'INDIGENA', 'PRETO', 'PREFIRO_NAO_RESPONDER'] as const
+export const EDUCATION_LEVELS = [
+  'EDUCACAO_INFANTIL', 'ENSINO_FUNDAMENTAL', 'ENSINO_MEDIO', 'ENSINO_SUPERIOR', 'POS_GRADUACAO', 'MESTRADO', 'DOUTORADO',
+] as const
+export const FOOD_CATEGORIES = ['ONIVORO', 'VEGANO', 'VEGETARIANO', 'PESCETARIANO', 'OUTRO', 'PREFIRO_NAO_RESPONDER'] as const
+
 /** Valores REAIS do enum `disableBy` do core-api (a UI mapeia p/ label via i18n). */
 export const DEACTIVATION_REASONS = [
   'DESLIGAMENTO_ABC',

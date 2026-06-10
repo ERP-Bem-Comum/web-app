@@ -7,6 +7,10 @@ import { Field, Input } from '#shared/ui/index.ts'
 import {
   OCCUPATION_AREAS,
   EMPLOYMENT_RELATIONSHIPS,
+  GENDER_IDENTITIES,
+  RACES,
+  EDUCATION_LEVELS,
+  FOOD_CATEGORIES,
   type CollaboratorDetailFormController,
   type CollaboratorDetailFormState,
 } from './collaborator-detail-form.controller.ts'
@@ -43,6 +47,11 @@ export function CollaboratorDetailContent({ controller: c, editing, showComplete
     { value: 'sim', label: t('partners.collaborators.detail.experience.yes') },
     { value: 'nao', label: t('partners.collaborators.detail.experience.no') },
   ]
+  // Enums canônicos do core-api (rótulos PT-BR via i18n) — o backend rejeita texto livre.
+  const genderOptions = GENDER_IDENTITIES.map((v) => ({ value: v, label: t(`partners.collaborators.gender.${v}`) }))
+  const raceOptions = RACES.map((v) => ({ value: v, label: t(`partners.collaborators.race.${v}`) }))
+  const educationOptions = EDUCATION_LEVELS.map((v) => ({ value: v, label: t(`partners.collaborators.education.${v}`) }))
+  const foodOptions = FOOD_CATEGORIES.map((v) => ({ value: v, label: t(`partners.collaborators.food.${v}`) }))
 
   return (
     <>
@@ -69,12 +78,12 @@ export function CollaboratorDetailContent({ controller: c, editing, showComplete
             {txt('telephone', t('partners.collaborators.detail.field.telephone'), undefined, 'phone')}
             {txt('emergencyContactName', t('partners.collaborators.detail.field.emergencyContactName'))}
             {txt('emergencyContactTelephone', t('partners.collaborators.detail.field.emergencyContactTelephone'), undefined, 'phone')}
-            {txt('genderIdentity', t('partners.collaborators.detail.field.genderIdentity'))}
-            {txt('race', t('partners.collaborators.detail.field.race'))}
+            {sel('genderIdentity', t('partners.collaborators.detail.field.genderIdentity'), genderOptions)}
+            {sel('race', t('partners.collaborators.detail.field.race'), raceOptions)}
             {txt('allergies', t('partners.collaborators.detail.field.allergies'))}
-            {txt('foodCategory', t('partners.collaborators.detail.field.foodCategory'))}
+            {sel('foodCategory', t('partners.collaborators.detail.field.foodCategory'), foodOptions)}
             {txt('foodCategoryDescription', t('partners.collaborators.detail.field.foodCategoryDescription'))}
-            {txt('education', t('partners.collaborators.detail.field.education'))}
+            {sel('education', t('partners.collaborators.detail.field.education'), educationOptions)}
             {sel('experienceInThePublicSector', t('partners.collaborators.detail.field.experience'), simNao)}
             <div className={gridFull}>
               <Field htmlFor="cd-biography" label={t('partners.collaborators.detail.field.biography')}>
