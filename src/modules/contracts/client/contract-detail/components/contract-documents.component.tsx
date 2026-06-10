@@ -198,8 +198,18 @@ export function ContractDocuments({ contract, onOpenBase, onNewAmendment, onOpen
           type="button"
           className={sectionHeadAction}
           onClick={onNewAmendment}
-          disabled={contract.status === 'Pendente'}
-          title={contract.status === 'Pendente' ? 'Disponível após a efetivação do contrato (Em Andamento).' : undefined}
+          // Aditivo só é aceito pelo core-api em contrato Ativo (Em Andamento) — fora disso retorna
+          // 409 ContractNotActive. Gateia o botão por status, com dica explicando o motivo.
+          disabled={contract.status !== 'Em Andamento'}
+          title={
+            contract.status === 'Em Andamento'
+              ? undefined
+              : contract.status === 'Pendente'
+                ? 'Disponível após a efetivação do contrato (Em Andamento).'
+                : contract.status === 'Distrato'
+                  ? 'Contrato em distrato não aceita novos aditivos.'
+                  : 'Contrato finalizado não aceita novos aditivos.'
+          }
         >
           + Novo Aditivo
         </button>

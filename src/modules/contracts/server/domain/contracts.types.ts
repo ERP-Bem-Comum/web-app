@@ -20,6 +20,11 @@ export type ContractsError =
   | 'contract-not-found'     // 404
   | 'amendment-not-found'    // 404 aditivo
   | 'invalid-amendment-type' // tipo de aditivo inválido
+  | 'contract-not-active'    // 409: aditivo só é permitido em contrato Ativo (Em Andamento)
+  | 'amendment-not-extending'        // 422: nova data de término não estende a vigência atual
+  | 'amendment-invalid-new-end-date' // 422: nova data de término inválida
+  | 'amendment-cannot-extend-indefinite' // 422: contrato com vigência indeterminada não tem prazo a estender
+  | 'amendment-suppression-exceeds-value' // 422: supressão maior que o valor atual do contrato
   | 'connectivity'           // backend fora / timeout
   | 'server'                 // 5xx / inesperado
   | 'unauthorized'           // 401 / 403

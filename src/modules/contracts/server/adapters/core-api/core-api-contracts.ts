@@ -47,9 +47,18 @@ const SLUG_TO_ERROR: Partial<Record<string, ContractsError>> = {
   'amendment-retroactive-to-contract-start': 'server',
   // Validações de aditivo do core-api (422) — a UI já barra antes; defesa p/ mensagem clara.
   AmendmentDescriptionRequired: 'invalid-value',
+  'amendment-description-required': 'invalid-value',
   AmendmentImpactValueZero: 'invalid-value',
+  'amendment-impact-value-zero': 'invalid-value',
   'money-negative-value': 'invalid-value',
-  'ContractNotActive': 'server',
+  'ContractNotActive': 'contract-not-active',
+  // Aditivo de PRAZO: a nova data de término precisa estender a vigência atual (ser posterior).
+  'create-amendment-term-change-not-extending': 'amendment-not-extending',
+  'create-amendment-invalid-new-end-date': 'amendment-invalid-new-end-date',
+  'amendment-invalid-new-end-date': 'amendment-invalid-new-end-date',
+  'create-amendment-cannot-extend-indefinite': 'amendment-cannot-extend-indefinite',
+  // Aditivo de VALOR (supressão): não pode exceder o valor atual do contrato.
+  'amendment-suppression-exceeds-current-value': 'amendment-suppression-exceeds-value',
   'contract-repo-conflict': 'server',
   'amendment-repo-conflict': 'server',
   'document-already-deleted': 'document-conflict',

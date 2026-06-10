@@ -19,6 +19,16 @@ export const contractsErrorTag = (e: ContractsError): string => {
       return 'contracts.error.amendment-not-found'
     case 'invalid-amendment-type':
       return 'contracts.error.invalid-amendment-type'
+    case 'contract-not-active':
+      return 'contracts.error.contract-not-active'
+    case 'amendment-not-extending':
+      return 'contracts.error.amendment-not-extending'
+    case 'amendment-invalid-new-end-date':
+      return 'contracts.error.amendment-invalid-new-end-date'
+    case 'amendment-cannot-extend-indefinite':
+      return 'contracts.error.amendment-cannot-extend-indefinite'
+    case 'amendment-suppression-exceeds-value':
+      return 'contracts.error.amendment-suppression-exceeds-value'
     case 'connectivity':
       return 'contracts.error.connectivity'
     case 'unauthorized':
