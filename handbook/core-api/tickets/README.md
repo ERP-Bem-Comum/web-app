@@ -14,6 +14,7 @@
 | [CTR-HTTP-DOCUMENT-CONTENT](./CTR-HTTP-DOCUMENT-CONTENT.md) | Conteúdo do documento | Não há rota que devolva **bytes/URL** do documento (só upload/supersede/delete). Detalhe não associa **documento ↔ aditivo**. | Preview e **download** (seta desabilitada mesmo em aditivos Homologado, que têm doc) |
 | [CTR-NUMBER-PROGRAM](./CTR-NUMBER-PROGRAM.md) | Numeração + metadados | `sequentialNumber` não é sequencial (BFF gera aleatório); **classificação CT/OS** e **programa/plano/categorização/centro de custo** não são persistidos nem retornados. | Número sempre **CT** (front padroniza `CT 0001/2026`); coluna **Programa** = `—` |
 | [CTR-DELETE-CANCEL](./CTR-DELETE-CANCEL.md) | Excluir/cancelar contrato | `DELETE /contracts/:id` é recusado por design (**405** `contract-delete-forbidden`); não há cancelar/soft-delete de rascunho/pendente. | Ação **Excluir** abre modal, mas **Confirmar desabilitado** (aguardando backend) |
+| [CTR-AUTO-EXPIRE](./CTR-AUTO-EXPIRE.md) | Expiração automática | A transição `Active → Expired` existe no domínio mas **não é disparada** (sem cron/rota/job). Contrato com vigência encerrada fica **Active** para sempre. Ex.: CT 0776/2026 (`end 2026-06-10`) segue `Active`. Alinhar também a **borda** (D vs D+1). | Contrato vencido continua "Em Andamento" no grid/detalhe (front reflete o backend; nada a corrigir no front) |
 
 ### Pendências de backend conhecidas, ainda SEM ticket (alinhamento P.O./tech lead)
 - **Persistência de metadados do contrato**: programa, categoria, centro de custo, plano orçamentário,
