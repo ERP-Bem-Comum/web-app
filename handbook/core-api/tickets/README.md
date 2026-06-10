@@ -69,3 +69,27 @@
 - **`registration` (pré/completo)** é conceito de **Colaborador** — removido do detalhe de ACT no front.
 - **Enums do cadastro completo de Colaborador** (gênero/raça/categoria alimentar/escolaridade) ainda são
   texto livre no front por falta de listas canônicas — viram `<select>` quando o backend/legado as definir.
+
+---
+
+# Handoff Front → Core-API — Gestão de Usuários
+
+> Pendências da validação em tela do módulo **Gestão de Usuários** (slices Usuários + Minha Conta),
+> web-app v2. Verificado contra `core-api@dev` em 2026-06-09.
+>
+> 📄 **Resumo único pro tech lead (texto corrido):** [USR-USUARIOS-RESUMO](./USR-USUARIOS-RESUMO.md).
+
+## 🟥 Pendências de BACKEND (core-api)
+
+| Ticket | Tema | Resumo | Bloqueia no front |
+|---|---|---|---|
+| [USR-SEED-PERMISSIONS](./USR-SEED-PERMISSIONS.md) | Seed: permissões | Admin de dev sem `user:*` (e `program:*`) → **403** no grid/ações de Usuários (e em `/programs`). | Grid/detalhe de Usuários mostram 403 (Minha Conta funciona, é `/me`) |
+| [USR-ME-PROFILE-FIELDS](./USR-ME-PROFILE-FIELDS.md) | Minha Conta: campos | `PUT /api/v1/me` só aceita `name`+`telephone` (não cpf/email). | CPF e E-mail **read-only** no modal Editar Perfil |
+| [USR-ME-PHOTO](./USR-ME-PHOTO.md) | Foto de perfil | Sem `/api/v1/me/photo` (só `/users/:id/photo`, admin); `POST /users` não recebe imagem. | "Alterar Imagem" e "Foto de Perfil" **gated** (avatar = iniciais) |
+| [USR-PASSWORD-POLICY](./USR-PASSWORD-POLICY.md) | Política de senha | Checklist do design (máx 15 + complexidade) é mais rígido que o backend (máx 128, sem complexidade, com blocklist). | Checklist validado no client; senha comum → `password-weak` |
+
+## ℹ️ Notas de modelagem (tech lead + P.O.)
+- **"Aprovador em Massa"** = `massApprovalPermission`, **read-only** (derivado dos papéis no backend). Não é
+  setável na criação nem na edição → exibido somente-leitura (gated no form de inclusão).
+- **Troca de senha** (`POST /api/v2/auth/change-password`) **revoga todas as sessões** → o front faz logout
+  automático + redirect `/login` ao concluir (204).
