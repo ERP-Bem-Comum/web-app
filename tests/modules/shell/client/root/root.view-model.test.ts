@@ -30,6 +30,8 @@ describe('rootViewModel.resolvePageTitle', () => {
     assert.strictEqual(rootViewModel.resolvePageTitle('/usuarios'), 'Usuários')
     assert.strictEqual(rootViewModel.resolvePageTitle('/usuarios/criar'), 'Usuários')
     assert.strictEqual(rootViewModel.resolvePageTitle('/minha-conta'), 'Minha Conta')
+    assert.strictEqual(rootViewModel.resolvePageTitle('/programas'), 'Programas')
+    assert.strictEqual(rootViewModel.resolvePageTitle('/programas/criar'), 'Programas')
   })
   it('cai no fallback para rota desconhecida e não casa substring solta', () => {
     assert.strictEqual(rootViewModel.resolvePageTitle('/desconhecida'), 'ERP Bem Comum')
@@ -60,6 +62,8 @@ describe('rootViewModel.sidebarWidth / showPageHeader', () => {
     assert.strictEqual(rootViewModel.showPageHeader('/usuarios'), false)
     assert.strictEqual(rootViewModel.showPageHeader('/usuarios/criar'), false)
     assert.strictEqual(rootViewModel.showPageHeader('/minha-conta'), false)
+    assert.strictEqual(rootViewModel.showPageHeader('/programas'), false)
+    assert.strictEqual(rootViewModel.showPageHeader('/programas/criar'), false)
     assert.strictEqual(rootViewModel.showPageHeader('/dashboard'), true)
   })
 })

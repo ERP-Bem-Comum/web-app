@@ -16,10 +16,13 @@ import { Route as IndexRouteImport } from './../routes/index'
 import { Route as ShowcaseOrganismsRouteImport } from './../routes/showcase/organisms'
 import { Route as AuthenticatedDashboardRouteImport } from './../routes/_authenticated/dashboard'
 import { Route as AuthenticatedUsuariosIndexRouteImport } from './../routes/_authenticated/usuarios/index'
+import { Route as AuthenticatedProgramasIndexRouteImport } from './../routes/_authenticated/programas/index'
 import { Route as AuthenticatedMinhaContaIndexRouteImport } from './../routes/_authenticated/minha-conta/index'
 import { Route as AuthenticatedContratosIndexRouteImport } from './../routes/_authenticated/contratos/index'
 import { Route as AuthenticatedUsuariosCriarRouteImport } from './../routes/_authenticated/usuarios/criar'
 import { Route as AuthenticatedUsuariosIdRouteImport } from './../routes/_authenticated/usuarios/$id'
+import { Route as AuthenticatedProgramasCriarRouteImport } from './../routes/_authenticated/programas/criar'
+import { Route as AuthenticatedProgramasIdRouteImport } from './../routes/_authenticated/programas/$id'
 import { Route as AuthenticatedContratosCriarRouteImport } from './../routes/_authenticated/contratos/criar'
 import { Route as AuthenticatedContratosIdRouteImport } from './../routes/_authenticated/contratos/$id'
 import { Route as AuthenticatedParceirosTerritoriosIndexRouteImport } from './../routes/_authenticated/parceiros/territorios/index'
@@ -76,6 +79,12 @@ const AuthenticatedUsuariosIndexRoute =
     path: '/usuarios/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedProgramasIndexRoute =
+  AuthenticatedProgramasIndexRouteImport.update({
+    id: '/programas/',
+    path: '/programas/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedMinhaContaIndexRoute =
   AuthenticatedMinhaContaIndexRouteImport.update({
     id: '/minha-conta/',
@@ -99,6 +108,18 @@ const AuthenticatedUsuariosIdRoute = AuthenticatedUsuariosIdRouteImport.update({
   path: '/usuarios/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedProgramasCriarRoute =
+  AuthenticatedProgramasCriarRouteImport.update({
+    id: '/programas/criar',
+    path: '/programas/criar',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedProgramasIdRoute =
+  AuthenticatedProgramasIdRouteImport.update({
+    id: '/programas/$id',
+    path: '/programas/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedContratosCriarRoute =
   AuthenticatedContratosCriarRouteImport.update({
     id: '/contratos/criar',
@@ -228,10 +249,13 @@ export interface FileRoutesByFullPath {
   '/showcase/organisms': typeof ShowcaseOrganismsRoute
   '/contratos/$id': typeof AuthenticatedContratosIdRouteWithChildren
   '/contratos/criar': typeof AuthenticatedContratosCriarRoute
+  '/programas/$id': typeof AuthenticatedProgramasIdRoute
+  '/programas/criar': typeof AuthenticatedProgramasCriarRoute
   '/usuarios/$id': typeof AuthenticatedUsuariosIdRoute
   '/usuarios/criar': typeof AuthenticatedUsuariosCriarRoute
   '/contratos/': typeof AuthenticatedContratosIndexRoute
   '/minha-conta/': typeof AuthenticatedMinhaContaIndexRoute
+  '/programas/': typeof AuthenticatedProgramasIndexRoute
   '/usuarios/': typeof AuthenticatedUsuariosIndexRoute
   '/contratos/$id/editar': typeof AuthenticatedContratosIdEditarRoute
   '/contratos/aditivo/$id': typeof AuthenticatedContratosAditivoIdRoute
@@ -260,10 +284,13 @@ export interface FileRoutesByTo {
   '/showcase/organisms': typeof ShowcaseOrganismsRoute
   '/contratos/$id': typeof AuthenticatedContratosIdRouteWithChildren
   '/contratos/criar': typeof AuthenticatedContratosCriarRoute
+  '/programas/$id': typeof AuthenticatedProgramasIdRoute
+  '/programas/criar': typeof AuthenticatedProgramasCriarRoute
   '/usuarios/$id': typeof AuthenticatedUsuariosIdRoute
   '/usuarios/criar': typeof AuthenticatedUsuariosCriarRoute
   '/contratos': typeof AuthenticatedContratosIndexRoute
   '/minha-conta': typeof AuthenticatedMinhaContaIndexRoute
+  '/programas': typeof AuthenticatedProgramasIndexRoute
   '/usuarios': typeof AuthenticatedUsuariosIndexRoute
   '/contratos/$id/editar': typeof AuthenticatedContratosIdEditarRoute
   '/contratos/aditivo/$id': typeof AuthenticatedContratosAditivoIdRoute
@@ -294,10 +321,13 @@ export interface FileRoutesById {
   '/showcase/organisms': typeof ShowcaseOrganismsRoute
   '/_authenticated/contratos/$id': typeof AuthenticatedContratosIdRouteWithChildren
   '/_authenticated/contratos/criar': typeof AuthenticatedContratosCriarRoute
+  '/_authenticated/programas/$id': typeof AuthenticatedProgramasIdRoute
+  '/_authenticated/programas/criar': typeof AuthenticatedProgramasCriarRoute
   '/_authenticated/usuarios/$id': typeof AuthenticatedUsuariosIdRoute
   '/_authenticated/usuarios/criar': typeof AuthenticatedUsuariosCriarRoute
   '/_authenticated/contratos/': typeof AuthenticatedContratosIndexRoute
   '/_authenticated/minha-conta/': typeof AuthenticatedMinhaContaIndexRoute
+  '/_authenticated/programas/': typeof AuthenticatedProgramasIndexRoute
   '/_authenticated/usuarios/': typeof AuthenticatedUsuariosIndexRoute
   '/_authenticated/contratos/$id/editar': typeof AuthenticatedContratosIdEditarRoute
   '/_authenticated/contratos/aditivo/$id': typeof AuthenticatedContratosAditivoIdRoute
@@ -328,10 +358,13 @@ export interface FileRouteTypes {
     | '/showcase/organisms'
     | '/contratos/$id'
     | '/contratos/criar'
+    | '/programas/$id'
+    | '/programas/criar'
     | '/usuarios/$id'
     | '/usuarios/criar'
     | '/contratos/'
     | '/minha-conta/'
+    | '/programas/'
     | '/usuarios/'
     | '/contratos/$id/editar'
     | '/contratos/aditivo/$id'
@@ -360,10 +393,13 @@ export interface FileRouteTypes {
     | '/showcase/organisms'
     | '/contratos/$id'
     | '/contratos/criar'
+    | '/programas/$id'
+    | '/programas/criar'
     | '/usuarios/$id'
     | '/usuarios/criar'
     | '/contratos'
     | '/minha-conta'
+    | '/programas'
     | '/usuarios'
     | '/contratos/$id/editar'
     | '/contratos/aditivo/$id'
@@ -393,10 +429,13 @@ export interface FileRouteTypes {
     | '/showcase/organisms'
     | '/_authenticated/contratos/$id'
     | '/_authenticated/contratos/criar'
+    | '/_authenticated/programas/$id'
+    | '/_authenticated/programas/criar'
     | '/_authenticated/usuarios/$id'
     | '/_authenticated/usuarios/criar'
     | '/_authenticated/contratos/'
     | '/_authenticated/minha-conta/'
+    | '/_authenticated/programas/'
     | '/_authenticated/usuarios/'
     | '/_authenticated/contratos/$id/editar'
     | '/_authenticated/contratos/aditivo/$id'
@@ -477,6 +516,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUsuariosIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/programas/': {
+      id: '/_authenticated/programas/'
+      path: '/programas'
+      fullPath: '/programas/'
+      preLoaderRoute: typeof AuthenticatedProgramasIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/minha-conta/': {
       id: '/_authenticated/minha-conta/'
       path: '/minha-conta'
@@ -503,6 +549,20 @@ declare module '@tanstack/react-router' {
       path: '/usuarios/$id'
       fullPath: '/usuarios/$id'
       preLoaderRoute: typeof AuthenticatedUsuariosIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/programas/criar': {
+      id: '/_authenticated/programas/criar'
+      path: '/programas/criar'
+      fullPath: '/programas/criar'
+      preLoaderRoute: typeof AuthenticatedProgramasCriarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/programas/$id': {
+      id: '/_authenticated/programas/$id'
+      path: '/programas/$id'
+      fullPath: '/programas/$id'
+      preLoaderRoute: typeof AuthenticatedProgramasIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/contratos/criar': {
@@ -711,10 +771,13 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedContratosIdRoute: typeof AuthenticatedContratosIdRouteWithChildren
   AuthenticatedContratosCriarRoute: typeof AuthenticatedContratosCriarRoute
+  AuthenticatedProgramasIdRoute: typeof AuthenticatedProgramasIdRoute
+  AuthenticatedProgramasCriarRoute: typeof AuthenticatedProgramasCriarRoute
   AuthenticatedUsuariosIdRoute: typeof AuthenticatedUsuariosIdRoute
   AuthenticatedUsuariosCriarRoute: typeof AuthenticatedUsuariosCriarRoute
   AuthenticatedContratosIndexRoute: typeof AuthenticatedContratosIndexRoute
   AuthenticatedMinhaContaIndexRoute: typeof AuthenticatedMinhaContaIndexRoute
+  AuthenticatedProgramasIndexRoute: typeof AuthenticatedProgramasIndexRoute
   AuthenticatedUsuariosIndexRoute: typeof AuthenticatedUsuariosIndexRoute
   AuthenticatedContratosAditivoIdRoute: typeof AuthenticatedContratosAditivoIdRoute
   AuthenticatedParceirosAtosIdRoute: typeof AuthenticatedParceirosAtosIdRouteWithChildren
@@ -736,10 +799,13 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedContratosIdRoute: AuthenticatedContratosIdRouteWithChildren,
   AuthenticatedContratosCriarRoute: AuthenticatedContratosCriarRoute,
+  AuthenticatedProgramasIdRoute: AuthenticatedProgramasIdRoute,
+  AuthenticatedProgramasCriarRoute: AuthenticatedProgramasCriarRoute,
   AuthenticatedUsuariosIdRoute: AuthenticatedUsuariosIdRoute,
   AuthenticatedUsuariosCriarRoute: AuthenticatedUsuariosCriarRoute,
   AuthenticatedContratosIndexRoute: AuthenticatedContratosIndexRoute,
   AuthenticatedMinhaContaIndexRoute: AuthenticatedMinhaContaIndexRoute,
+  AuthenticatedProgramasIndexRoute: AuthenticatedProgramasIndexRoute,
   AuthenticatedUsuariosIndexRoute: AuthenticatedUsuariosIndexRoute,
   AuthenticatedContratosAditivoIdRoute: AuthenticatedContratosAditivoIdRoute,
   AuthenticatedParceirosAtosIdRoute:

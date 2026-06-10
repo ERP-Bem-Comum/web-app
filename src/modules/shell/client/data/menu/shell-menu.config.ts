@@ -45,7 +45,14 @@ export const MENU: readonly MenuSection[] = [
       { label: 'Estados e Municípios', to: '/parceiros/territorios', requiredPermission: 'geography:read' },
     ],
   },
-  { label: 'Gestão de Programas', iconId: 'target' },
+  {
+    label: 'Gestão de Programas',
+    iconId: 'target',
+    // Subitem sem `requiredPermission` (mesmo critério de Contratos/Usuários): o acesso é cobrado pelo
+    // backend (program:read → 403 → tag de erro). TODO(backend): gatear por `program:read` quando o seed
+    // conceder a permissão ao admin.
+    subItems: [{ label: 'Programas', to: '/programas' }],
+  },
   {
     label: 'Gestão de Contratos',
     iconId: 'calendar-check',

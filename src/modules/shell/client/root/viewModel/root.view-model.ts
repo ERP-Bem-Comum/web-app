@@ -47,6 +47,7 @@ const PAGE_TITLES: Readonly<Record<string, string>> = {
   // Gestão de Usuários — alimenta o document.title (a tela já mostra o título via PageHeader).
   '/usuarios': 'Usuários',
   '/minha-conta': 'Minha Conta',
+  '/programas': 'Programas',
   '/login': 'Login',
 }
 
@@ -72,7 +73,8 @@ export const rootViewModel = {
     !path.startsWith('/contratos/') &&
     !isPrefixPath(path, '/parceiros') &&
     !isPrefixPath(path, '/usuarios') &&
-    !isPrefixPath(path, '/minha-conta'),
+    !isPrefixPath(path, '/minha-conta') &&
+    !isPrefixPath(path, '/programas'),
 
   /**
    * RBAC: remove seções/subitens cujo `requiredPermission` não está em `permissions`. Uma seção de
