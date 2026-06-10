@@ -102,3 +102,27 @@ nada — validado no client; senha comum cai em `password-weak`.
   setável na criação nem na edição → exibido somente-leitura (gated no form de inclusão).
 - **Troca de senha** (`POST /api/v2/auth/change-password`) **revoga todas as sessões** → o front faz logout
   automático + redirect `/login` ao concluir (204).
+
+---
+
+# Handoff Front → Core-API — Gestão de Programas
+
+> Pendências da validação em tela do módulo **Gestão de Programas** (slice Programas: grid + inclusão +
+> detalhe/edição), web-app v2. Verificado contra `core-api@dev` em 2026-06-10.
+
+## 🟥 Pendências de BACKEND (core-api)
+
+**[PRG-LOGO-CONTENT](./PRG-LOGO-CONTENT.md) — Logo do programa.** Existe upload (`POST /programs/:id/logo`)
+mas **não há GET** que sirva os bytes nem uma URL renderizável a partir do `logoKey`; o `POST /programs`
+também não recebe o binário na criação. *Bloqueia no front:* a coluna **Logo** (grid) mostra placeholder e
+o campo **"Logo do Programa"** (inclusão/detalhe) fica **gated** até existir exibição + fluxo definido.
+
+**Permissões no seed** — o admin de dev não tem `program:*` → grid/detalhe de Programas dão **403**. Já
+coberto pelo ticket [USR-SEED-PERMISSIONS](./USR-SEED-PERMISSIONS.md) (que pede `user:*` **e** `program:*`).
+
+## ℹ️ Notas de modelagem (tech lead + P.O.)
+- **Ativar/Desativar**: o backend tem `POST /programs/:id/{deactivate|reactivate}` (`program:deactivate`),
+  mas os prints do detalhe **não** mostram essa ação (só Voltar/Editar) → **não** foi adicionada à UI. O
+  status aparece apenas no grid (coluna Status). Reavaliar com P.O. se deve haver um toggle.
+- **Edição** usa **optimistic-lock** (`version` no `PUT /programs/:id`): conflito → `program-version-conflict`
+  (409) → mensagem "o programa foi alterado por outra pessoa, recarregue".
