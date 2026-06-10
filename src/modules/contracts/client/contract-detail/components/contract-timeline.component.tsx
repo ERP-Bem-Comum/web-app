@@ -8,7 +8,8 @@ import {
   asideLabel,
   tlWrap,
   tlItem,
-  tlItemOk,
+  tlItemBase,
+  tlItemFinished,
   tlNodeTone,
   tlDate,
   tlText,
@@ -21,12 +22,15 @@ interface Props {
 type AmendmentTone = 'prazo' | 'valor' | 'escopo' | 'outro' | 'distrato'
 
 interface TlEvent {
-  // Key estável (B1): 'created' / 'signed' / id do aditivo — sobrevive à reordenação da lista.
+  // Key estável (B1): 'created' / 'signed' / 'finalized' / id do aditivo — sobrevive à reordenação.
   readonly key: string
   readonly title: string
   readonly date: string
+  // Contrato base homologado (assinado/efetivado) → nó PRETO (cor do tipo BASE).
   readonly signed?: boolean
-  // Aditivo → cor do nó pela cor do TIPO do aditivo; ausente nos eventos do contrato (criado/assinado).
+  // Contrato finalizado → nó na cor da badge "Finalizado".
+  readonly finalized?: boolean
+  // Aditivo → cor do nó pela cor do TIPO do aditivo; ausente nos eventos do contrato base.
   readonly amendmentType?: AmendmentTone
 }
 
@@ -35,8 +39,9 @@ export function ContractTimeline({ contract }: Props): ReactNode {
     { key: 'created', title: 'Contrato criado', date: formatDate(contract.createdAt) },
   ]
 
+  // Base homologado: o documento base vira "Homologado" ao ser efetivado (signedAt definido).
   if (contract.signedAt) {
-    events.push({ key: 'signed', title: 'Contrato assinado', date: formatDate(contract.signedAt), signed: true })
+    events.push({ key: 'signed', title: 'Contrato homologado', date: formatDate(contract.signedAt), signed: true })
   }
 
   const seq = amendmentSeqMap(contract.children)
@@ -50,6 +55,12 @@ export function ContractTimeline({ contract }: Props): ReactNode {
     })
   }
 
+  // Evento terminal: contrato finalizado (vigência encerrada) → nó na cor da badge "Finalizado".
+  if (contract.status === 'Finalizado') {
+    const period = contract.currentPeriod ?? contract.originalPeriod
+    events.push({ key: 'finalized', title: 'Contrato finalizado', date: formatDate(period.end), finalized: true })
+  }
+
   // Mais recente no topo (wireframe)
   const ordered = [...events].reverse()
 
@@ -58,7 +69,13 @@ export function ContractTimeline({ contract }: Props): ReactNode {
       <div className={asideLabel}>Timeline</div>
       <div className={tlWrap}>
         {ordered.map((event) => {
-          const tone = event.amendmentType ? tlNodeTone[event.amendmentType] : event.signed ? tlItemOk : ''
+          const tone = event.amendmentType
+            ? tlNodeTone[event.amendmentType]
+            : event.finalized
+              ? tlItemFinished
+              : event.signed
+                ? tlItemBase
+                : ''
           return (
             <div key={event.key} className={`${tlItem} ${tone}`}>
               <div className={tlDate}>{event.date}</div>

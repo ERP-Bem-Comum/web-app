@@ -2,6 +2,15 @@
  * DocumentPreviewModal — prévia do documento anexado SEM sair da página. View burra: recebe a
  * `blobUrl` (já buscada via BFF pela ViewModel/binding — CTR-HTTP-DOCUMENT-CONTENT) + estados de
  * carregamento/erro. Renderiza o PDF num <iframe>. <dialog> nativo (A4: ESC/focus-trap). Só-tokens.
+ *
+ * ⚠️ Variação conhecida entre navegadores (decisão: aceitar; fallback = link "Baixar" no header):
+ *  - Chrome/Edge/Firefox (desktop): renderizam o PDF (blob:) no <iframe> normalmente.
+ *  - Safari desktop (intermitente) e iOS Safari (sempre): o WebKit NÃO renderiza PDF servido por
+ *    `blob:` dentro de <iframe> → área em branco. Não há fix puramente client-side: trocar para
+ *    <embed>/<object> esbarra na CSP (`object-src 'none'`, ADR-0006); a alternativa robusta seria
+ *    servir o PDF por uma rota same-origin inline (Content-Type: application/pdf + Disposition: inline),
+ *    coberta por `frame-src 'self'` — não adotada por ora. O MIME do Blob é normalizado para
+ *    application/pdf no binding (toBlob) para evitar a falha por sniffing no Firefox/Safari.
  */
 import type { ReactNode } from 'react'
 import { useId } from 'react'

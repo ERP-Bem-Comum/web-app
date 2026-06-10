@@ -36,7 +36,7 @@ export const content = style({
   boxShadow: vars.shadow.cardElevated,
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   width: '100%',
-  maxWidth: '30rem',
+  maxWidth: '32rem',
   maxHeight: '90vh',
   overflow: 'hidden',
   display: 'flex',
@@ -48,7 +48,8 @@ export const header = style({
   alignItems: 'flex-start',
   justifyContent: 'space-between',
   gap: vars.space.sm,
-  padding: vars.space.lg,
+  // Header mais enxuto (padding vertical md), alinhado ao modal de aditivos.
+  padding: `${vars.space.md} ${vars.space.lg}`,
   borderBottom: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
 })
 
@@ -101,17 +102,20 @@ export const field = style({
   gap: vars.space.xs,
 })
 
+// Micro-label discreta em maiúsculas — espelha o padrão do modal de aditivos (mais elegante/discreto).
 export const label = style({
   fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.sm,
-  fontWeight: vars.font.weight.bold,
-  color: vars.color.institutional.ink2,
+  fontSize: '0.6rem',
+  fontWeight: vars.font.weight.semibold,
+  letterSpacing: '0.04em',
+  textTransform: 'uppercase',
+  color: vars.color.institutional.ink5,
 })
 
 export const hint = style({
   fontFamily: vars.font.family.body,
-  fontSize: '0.75rem',
-  color: vars.color.institutional.ink4,
+  fontSize: '0.6875rem',
+  color: vars.color.institutional.ink5,
 })
 
 export const input = style({
@@ -170,8 +174,9 @@ export const uploadName = style({
 
 export const uploadMeta = style({
   fontFamily: vars.font.family.body,
-  fontSize: '0.75rem',
-  color: vars.color.institutional.ink4,
+  // Alinhado ao uploadHint do modal de aditivos (0.6875rem / ink5).
+  fontSize: '0.6875rem',
+  color: vars.color.institutional.ink5,
 })
 
 // Resumo dos dados do contrato (espelha o modal de finalização do incluir contrato)
@@ -188,6 +193,8 @@ export const summaryCard = style({
   padding: vars.space.sm,
   // Caixas em tom de azul suave (identidade do cliente), no lugar do bege.
   background: vars.color.institutional.blueBg,
+  // Moldura azul discreta (color-mix) — espelha as caixas de tom do modal de aditivos.
+  border: `${vars.borderWidth.thin} solid color-mix(in srgb, ${vars.color.institutional.blueLine} 50%, transparent)`,
   borderRadius: vars.radius.md,
   minWidth: 0,
 })
@@ -205,9 +212,10 @@ export const summaryValue = style({
   fontFamily: vars.font.family.body,
   fontSize: vars.font.size.sm,
   color: vars.color.institutional.ink2,
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
+  // Mostra o valor completo (quebra em vez de cortar com reticências) — cards expandem em altura.
+  whiteSpace: 'normal',
+  overflowWrap: 'anywhere',
+  lineHeight: 1.35,
 })
 
 export const statusRow = style({
@@ -270,7 +278,10 @@ export const footer = style({
   display: 'flex',
   justifyContent: 'flex-end',
   gap: vars.space.sm,
-  padding: vars.space.lg,
+  // Bandeja de rodapé em bege quente — espelha o footer do modal de aditivos.
+  // Espessura reduzida (md no vertical) p/ liberar altura aos cards de resumo.
+  padding: `${vars.space.md} ${vars.space.lg}`,
+  background: vars.color.institutional.paperWarm,
   borderTop: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
 })
 

@@ -71,7 +71,9 @@ export const statusBadge = style({
   fontFamily: vars.font.family.heading, // brand: Inter (badges)
   fontSize: '0.625rem',
   fontWeight: vars.font.weight.semibold,
-  letterSpacing: '0.02em',
+  // Caixa alta + letter-spacing alinhados ao padrão das badges do grid.
+  letterSpacing: '0.04em',
+  textTransform: 'uppercase',
   lineHeight: 1.2,
   whiteSpace: 'nowrap',
 })
@@ -558,6 +560,11 @@ export const tlItemOk = style({
   '::before': { borderColor: vars.color.institutional.green, background: vars.color.institutional.green },
 })
 
+// Nó do contrato BASE (assinatura): preto (ink2), espelhando a cor do badge "BASE" — cor por tipo.
+export const tlItemBase = style({
+  '::before': { borderColor: vars.color.institutional.ink2, background: vars.color.institutional.ink2 },
+})
+
 export const tlItemCurrent = style({
   '::before': { borderColor: vars.color.institutional.orange, background: vars.color.institutional.orange },
 })
@@ -614,14 +621,20 @@ export const aditPageInfo = style({
   textAlign: 'center',
 })
 
-// Cor do NÓ da timeline pela cor do TIPO de aditivo (prazo/valor/escopo/distrato/outro). Definido
-// DEPOIS de `tlItem`/`tlItemOk` p/ vencer por ordem de fonte (mesma especificidade de classe).
+// Nó da timeline na cor do TIPO de aditivo, espelhando exatamente o badge do documento:
+// prazo azul · valor verde · escopo MARROM (aditEscopo) · outro LARANJA (aditOutro) · distrato vermelho.
+// Definido DEPOIS de `tlItem`/`tlItemOk` p/ vencer por ordem de fonte (mesma especificidade de classe).
 export const tlNodeTone = styleVariants({
   prazo: { '::before': { borderColor: vars.color.status.prazoText, background: vars.color.status.prazoText } },
   valor: { '::before': { borderColor: vars.color.status.valorText, background: vars.color.status.valorText } },
-  escopo: { '::before': { borderColor: vars.color.status.escopoText, background: vars.color.status.escopoText } },
+  escopo: { '::before': { borderColor: vars.color.status.aditEscopoText, background: vars.color.status.aditEscopoText } },
   distrato: { '::before': { borderColor: vars.color.status.distratoText, background: vars.color.status.distratoText } },
-  outro: { '::before': { borderColor: vars.color.status.outroText, background: vars.color.status.outroText } },
+  outro: { '::before': { borderColor: vars.color.status.aditOutroText, background: vars.color.status.aditOutroText } },
+})
+
+// Nó do contrato FINALIZADO: mesma cor da badge "Finalizado" (finishedText).
+export const tlItemFinished = style({
+  '::before': { borderColor: vars.color.status.finishedText, background: vars.color.status.finishedText },
 })
 
 /* Bottombar — barra inferior de status + ações (wireframe) */

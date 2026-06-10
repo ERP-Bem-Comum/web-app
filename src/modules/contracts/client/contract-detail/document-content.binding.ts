@@ -21,11 +21,21 @@ export type DocumentContentCommand = Readonly<{
 }>
 
 // base64 (RPC) → Blob (browser). atob → binary string → bytes.
+//
+// MIME consistente entre navegadores: documentos de contrato são SEMPRE PDF (allowlist de upload =
+// application/pdf). Quando o core-api não envia um `Content-Type` confiável, o fetch cai no fallback
+// `application/octet-stream` — e aí o preview no <iframe> varia: Chrome/Edge fazem sniff dos magic bytes
+// `%PDF` e renderizam, mas Firefox/Safari não (tela em branco / força download). Normalizar o tipo
+// vazio/octet-stream para application/pdf faz o preview renderizar igual em todos os navegadores.
+const PDF_MIME = 'application/pdf'
+const resolveDocMime = (contentType: string): string =>
+  contentType === '' || contentType === 'application/octet-stream' ? PDF_MIME : contentType
+
 const toBlob = (dto: DocumentContentDto): Blob => {
   const binary = atob(dto.base64)
   const bytes = new Uint8Array(binary.length)
   for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i)
-  return new Blob([bytes], { type: dto.contentType })
+  return new Blob([bytes], { type: resolveDocMime(dto.contentType) })
 }
 
 export const useDocumentContentBinding = (): Readonly<{ documentCommand: DocumentContentCommand }> => {

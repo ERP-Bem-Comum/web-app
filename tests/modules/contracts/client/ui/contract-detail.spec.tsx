@@ -93,7 +93,7 @@ describe('ContractTimeline', () => {
     render(<ContractTimeline contract={contract} />)
     expect(screen.getByText('Timeline')).toBeTruthy()
     expect(screen.getByText('Contrato criado')).toBeTruthy()
-    expect(screen.getByText('Contrato assinado')).toBeTruthy()
+    expect(screen.getByText('Contrato homologado')).toBeTruthy()
     expect(screen.getByText('AD 01-0001/2026 homologado')).toBeTruthy()
   })
 })
