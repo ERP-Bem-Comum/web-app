@@ -22,13 +22,13 @@ export const container = style({
       borderRadius: vars.radius.md,
     },
     '&::-webkit-scrollbar-thumb': {
-      // Bege/taupe visível sobre o trilho claro (nem escuro como `text.muted`, nem invisível).
-      background: `color-mix(in srgb, ${vars.color.institutional.ink5} 45%, ${vars.color.institutional.paperRule})`,
+      // Bege bem claro: pouca ink5 (predomina paperRule) → taupe suave/discreto.
+      background: `color-mix(in srgb, ${vars.color.institutional.ink5} 15%, ${vars.color.institutional.paperRule})`,
       borderRadius: vars.radius.md,
       border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperWarm}`,
     },
     '&::-webkit-scrollbar-thumb:hover': {
-      background: `color-mix(in srgb, ${vars.color.institutional.ink5} 70%, ${vars.color.institutional.paperRule})`,
+      background: `color-mix(in srgb, ${vars.color.institutional.ink5} 30%, ${vars.color.institutional.paperRule})`,
     },
   },
 })

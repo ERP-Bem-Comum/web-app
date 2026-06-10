@@ -25,6 +25,19 @@ export function formatContractNumber(code: string, classification?: string): str
   return code
 }
 
+/**
+ * Iniciais do contratado para o avatar do grid: primeira + segunda inicial do nome (não a última).
+ * Nome de uma só palavra → as duas primeiras letras dela. Vazio → ''.
+ */
+export function contractorInitials(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean)
+  const first = words[0]
+  if (first === undefined) return ''
+  if (words.length === 1) return first.slice(0, 2).toUpperCase()
+  const second = words[1] ?? first
+  return ((first[0] ?? '') + (second[0] ?? '')).toUpperCase()
+}
+
 export function formatCurrency(value: number): string {
   return value.toLocaleString('pt-BR', {
     style: 'currency',

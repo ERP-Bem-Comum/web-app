@@ -31,7 +31,7 @@ export const cellRight = style({ textAlign: 'right' })
 
 export const numberText = style({
   fontFamily: vars.font.family.body,
-  fontSize: '0.6875rem',
+  fontSize: '0.75rem', // +1px (era 0.6875rem) — dá mais destaque ao número do contrato
   fontWeight: vars.font.weight.bold,
   color: vars.color.institutional.ink2,
   whiteSpace: 'nowrap', // "CT 0001/2026" em uma só linha

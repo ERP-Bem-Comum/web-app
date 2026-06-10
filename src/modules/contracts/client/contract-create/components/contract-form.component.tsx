@@ -6,7 +6,7 @@ import type {
   SelectedPartner,
   ContractFormController,
 } from './contract-form.controller.ts'
-import { formatDateOrDash } from '#modules/contracts/client/domain/format.ts'
+import { formatDateOrDash, contractorInitials } from '#modules/contracts/client/domain/format.ts'
 import {
   screen,
   topbar,
@@ -282,7 +282,7 @@ export function ContractForm({
                             }
                           }}
                         >
-                          <span className={`${searchDropdownAvatar} ${searchDropdownAvatarVariant[p.kind]}`}>{p.name.slice(0, 2)}</span>
+                          <span className={`${searchDropdownAvatar} ${searchDropdownAvatarVariant[p.kind]}`}>{contractorInitials(p.name)}</span>
                           <span>{p.name} · {p.kind}</span>
                         </div>
                       ))

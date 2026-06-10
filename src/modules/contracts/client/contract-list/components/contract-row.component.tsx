@@ -13,6 +13,7 @@ import {
   formatDate,
   deriveStatus,
   programaShort,
+  contractorInitials,
 } from '#modules/contracts/client/contract-list/contract-list.view-model.ts'
 
 import {
@@ -65,15 +66,6 @@ function getContractorFromRow(contractRow: ContractRow) {
     default:
       return contractRow.supplier ?? contractRow.financier ?? contractRow.collaborator
   }
-}
-
-function getInitials(name: string): string {
-  const words = name.trim().split(/\s+/).filter(Boolean)
-  const first = words[0]
-  if (first === undefined) return ''
-  if (words.length === 1) return first.slice(0, 2).toUpperCase()
-  const last = words[words.length - 1] ?? first
-  return ((first[0] ?? '') + (last[0] ?? '')).toUpperCase()
 }
 
 function maskDocument(doc: string | null | undefined): string {
@@ -138,7 +130,7 @@ export function ContractRow({ row, index, onRequestDelete, onGenerateDoc }: Cont
       <td className={cell}>
         <div className={contractorWrap}>
           <span className={`${avatar} ${avatarVariant[row.contractType]}`}>
-            {getInitials(contractorNameText)}
+            {contractorInitials(contractorNameText)}
           </span>
           <div className={contractorInfo}>
             <span className={contractorName}>{contractorNameText}</span>

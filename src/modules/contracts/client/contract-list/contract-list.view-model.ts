@@ -269,6 +269,7 @@ export {
   formatContractNumber,
   formatCurrency,
   formatDate,
+  contractorInitials,
 } from '#modules/contracts/client/domain/format.ts'
 export type { ContractRow } from '#modules/contracts/client/domain/types.ts'
 export type { ContractListFilters } from '#modules/contracts/client/data/contract-list-filters.schema.ts'
