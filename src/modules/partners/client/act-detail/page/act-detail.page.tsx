@@ -4,7 +4,7 @@ import { getRouteApi, useRouter } from '@tanstack/react-router'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Button, PageHeader } from '#shared/ui/index.ts'
-import { useActFormController } from '#modules/partners/client/act-create/components/act-form.controller.ts'
+import { useActFormController, type ActFormValues } from '#modules/partners/client/act-create/components/act-form.controller.ts'
 import { detailToFormValues } from '#modules/partners/client/act-edit/act-edit.view-model.ts'
 
 import { useActDetailBinding, type ActSaveCommand, type ActStatusCommand } from '../act-detail.binding.ts'
@@ -68,9 +68,10 @@ type DetailReadyProps = Readonly<{
 function DetailReady(props: DetailReadyProps): ReactNode {
   const { act, editing } = props
   const [confirming, setConfirming] = useState(false)
+  const [pendingEdit, setPendingEdit] = useState<ActFormValues | null>(null)
   const c = useActFormController({
     initial: detailToFormValues(act),
-    onSubmit: (values) => { props.saveCommand.execute(values); },
+    onSubmit: (values) => { setPendingEdit(values); },
   })
 
   const action = statusActionFor(act.activation)
@@ -124,6 +125,17 @@ function DetailReady(props: DetailReadyProps): ReactNode {
         running={props.statusCommand.running}
         onConfirm={() => { props.statusCommand.execute(act.id, action); setConfirming(false); }}
         onCancel={() => { setConfirming(false); }}
+      />
+
+      <ConfirmDialog
+        open={pendingEdit !== null}
+        title={t('partners.confirm.edit.title')}
+        message={t('partners.confirm.edit.message')}
+        confirmLabel={t('partners.confirm.confirm')}
+        cancelLabel={t('partners.confirm.cancel')}
+        running={props.saveCommand.running}
+        onConfirm={() => { if (pendingEdit !== null) props.saveCommand.execute(pendingEdit); setPendingEdit(null); }}
+        onCancel={() => { setPendingEdit(null); }}
       />
     </div>
   )

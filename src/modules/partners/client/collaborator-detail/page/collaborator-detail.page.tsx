@@ -13,6 +13,7 @@ import { Button, PageHeader } from '#shared/ui/index.ts'
 import { useCollaboratorDetailBinding, type CollaboratorSaveCommand, type CollaboratorDetail } from '../collaborator-detail.binding.ts'
 import { useCollaboratorDetailFormController } from '../components/collaborator-detail-form.controller.ts'
 import { CollaboratorDetailContent } from '../components/collaborator-detail-content.component.tsx'
+import { PartnersConfirmDialog } from '#modules/partners/client/shared/partners-confirm-dialog.component.tsx'
 import { errorBanner, footer, saveWrap, screen, secondaryButton } from './collaborator-detail.css.ts'
 
 const t = createTranslator(ptBR)
@@ -68,6 +69,7 @@ type DetailReadyProps = Readonly<{
 
 function DetailReady({ collaborator, editing, canWrite, saveCommand, onEdit, onCancel, onBack }: DetailReadyProps): ReactNode {
   const c = useCollaboratorDetailFormController(collaborator)
+  const [confirmingEdit, setConfirmingEdit] = useState(false)
   // Em edição mostramos sempre as 2 seções (permite completar o cadastro); em leitura, a 2ª só se já completo.
   const showComplete = editing || collaborator.registration === 'complete'
   const preTitle = showComplete
@@ -97,14 +99,7 @@ function DetailReady({ collaborator, editing, canWrite, saveCommand, onEdit, onC
             </button>
             <div className={saveWrap}>
               <Button
-                onClick={() => {
-                  saveCommand.execute({
-                    id: collaborator.id,
-                    pre: c.buildPre(),
-                    complete: c.buildComplete(collaborator.id),
-                    includeComplete: c.hasCompleteData(),
-                  })
-                }}
+                onClick={() => { setConfirmingEdit(true) }}
                 loading={saveCommand.running}
                 loadingLabel={t('partners.collaborators.detail.saving')}
               >
@@ -123,6 +118,25 @@ function DetailReady({ collaborator, editing, canWrite, saveCommand, onEdit, onC
           </>
         )}
       </div>
+
+      <PartnersConfirmDialog
+        open={confirmingEdit}
+        title={t('partners.confirm.edit.title')}
+        message={t('partners.confirm.edit.message')}
+        confirmLabel={t('partners.confirm.confirm')}
+        cancelLabel={t('partners.confirm.cancel')}
+        running={saveCommand.running}
+        onConfirm={() => {
+          saveCommand.execute({
+            id: collaborator.id,
+            pre: c.buildPre(),
+            complete: c.buildComplete(collaborator.id),
+            includeComplete: c.hasCompleteData(),
+          })
+          setConfirmingEdit(false)
+        }}
+        onCancel={() => { setConfirmingEdit(false) }}
+      />
     </div>
   )
 }

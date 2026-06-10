@@ -4,7 +4,7 @@ import { getRouteApi, useRouter } from '@tanstack/react-router'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Button, PageHeader } from '#shared/ui/index.ts'
-import { useFinancierFormController } from '#modules/partners/client/financier-create/components/financier-form.controller.ts'
+import { useFinancierFormController, type FinancierFormValues } from '#modules/partners/client/financier-create/components/financier-form.controller.ts'
 import { detailToFormValues } from '#modules/partners/client/financier-edit/financier-edit.view-model.ts'
 
 import {
@@ -72,9 +72,10 @@ type DetailReadyProps = Readonly<{
 function DetailReady(props: DetailReadyProps): ReactNode {
   const { financier, editing } = props
   const [confirming, setConfirming] = useState(false)
+  const [pendingEdit, setPendingEdit] = useState<FinancierFormValues | null>(null)
   const c = useFinancierFormController({
     initial: detailToFormValues(financier),
-    onSubmit: (values) => { props.saveCommand.execute(values); },
+    onSubmit: (values) => { setPendingEdit(values); },
   })
 
   const action = statusActionFor(financier.activation)
@@ -128,6 +129,17 @@ function DetailReady(props: DetailReadyProps): ReactNode {
         running={props.statusCommand.running}
         onConfirm={() => { props.statusCommand.execute(financier.id, action); setConfirming(false); }}
         onCancel={() => { setConfirming(false); }}
+      />
+
+      <ConfirmDialog
+        open={pendingEdit !== null}
+        title={t('partners.confirm.edit.title')}
+        message={t('partners.confirm.edit.message')}
+        confirmLabel={t('partners.confirm.confirm')}
+        cancelLabel={t('partners.confirm.cancel')}
+        running={props.saveCommand.running}
+        onConfirm={() => { if (pendingEdit !== null) props.saveCommand.execute(pendingEdit); setPendingEdit(null); }}
+        onCancel={() => { setPendingEdit(null); }}
       />
     </div>
   )

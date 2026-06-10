@@ -309,6 +309,17 @@ export const ptBR: Catalog = {
   // ── Partners › Fornecedores (spec 010) ──
   'partners.export.label': 'Exportar',
   'partners.export.count': 'Total de registros: {n}',
+  // Confirmações (cadastrar/editar) — padrão do legado
+  'partners.confirm.create.title': 'Confirmar cadastro',
+  'partners.confirm.create.message': 'Deseja confirmar o cadastro deste parceiro?',
+  'partners.confirm.edit.title': 'Confirmar alterações',
+  'partners.confirm.edit.message': 'Deseja salvar as alterações?',
+  'partners.confirm.confirm': 'Confirmar',
+  'partners.confirm.cancel': 'Cancelar',
+  // Filtro ACT
+  'partners.acts.filters.hasTransfer': 'Possui Repasse Financeiro?',
+  'partners.acts.filters.transferYes': 'Sim',
+  'partners.acts.filters.transferNo': 'Não',
   'partners.suppliers.list.title': 'Fornecedores',
   'partners.suppliers.list.subtitle': 'Gestão de fornecedores do programa',
   'partners.suppliers.list.new': 'Novo Fornecedor',

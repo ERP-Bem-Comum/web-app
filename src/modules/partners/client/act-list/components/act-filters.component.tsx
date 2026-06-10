@@ -35,9 +35,9 @@ export type ActFiltersProps = Readonly<{
     active: string
     inactive: string
     toggle: string
-    tipo: string
-    comRepasse: string
-    semRepasse: string
+    hasTransfer: string
+    transferYes: string
+    transferNo: string
     area: string
     allOption: string
     gatedHint: string
@@ -97,13 +97,13 @@ export function ActFilters(props: ActFiltersProps): ReactNode {
 
       {open ? (
         <div className={panel}>
-          {/* Tipo (Com/Sem Repasse): sem suporte no backend ainda → desabilitado (placeholder). */}
+          {/* Possui Repasse Financeiro? — sem suporte de filtro no backend do ACT ainda → desabilitado. */}
           <div className={field}>
-            <span className={fieldLabel}>{L.tipo}</span>
-            <select className={select} disabled title={L.gatedHint} aria-label={L.tipo}>
+            <span className={fieldLabel}>{L.hasTransfer}</span>
+            <select className={select} disabled title={L.gatedHint} aria-label={L.hasTransfer}>
               <option value="">{L.allOption}</option>
-              <option value="com">{L.comRepasse}</option>
-              <option value="sem">{L.semRepasse}</option>
+              <option value="sim">{L.transferYes}</option>
+              <option value="nao">{L.transferNo}</option>
             </select>
           </div>
 

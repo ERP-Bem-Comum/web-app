@@ -4,7 +4,7 @@ import { getRouteApi, useRouter } from '@tanstack/react-router'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Button, PageHeader } from '#shared/ui/index.ts'
-import { useSupplierFormController } from '#modules/partners/client/supplier-create/components/supplier-form.controller.ts'
+import { useSupplierFormController, type SupplierFormValues } from '#modules/partners/client/supplier-create/components/supplier-form.controller.ts'
 
 import {
   useSupplierDetailBinding,
@@ -76,6 +76,7 @@ type DetailReadyProps = Readonly<{
 function DetailReady(props: DetailReadyProps): ReactNode {
   const { supplier, editing } = props
   const [confirming, setConfirming] = useState(false)
+  const [pendingEdit, setPendingEdit] = useState<SupplierFormValues | null>(null)
   const c = useSupplierFormController({
     initial: {
       name: supplier.name,
@@ -87,7 +88,7 @@ function DetailReady(props: DetailReadyProps): ReactNode {
       bankAccount: supplier.bankAccount,
       pixKey: supplier.pixKey,
     },
-    onSubmit: (values) => { props.saveCommand.execute(values); },
+    onSubmit: (values) => { setPendingEdit(values); },
   })
 
   const action = statusActionFor(supplier.activation)
@@ -159,6 +160,17 @@ function DetailReady(props: DetailReadyProps): ReactNode {
         running={props.statusCommand.running}
         onConfirm={() => { props.statusCommand.execute(supplier.id, action); setConfirming(false); }}
         onCancel={() => { setConfirming(false); }}
+      />
+
+      <ConfirmDialog
+        open={pendingEdit !== null}
+        title={t('partners.confirm.edit.title')}
+        message={t('partners.confirm.edit.message')}
+        confirmLabel={t('partners.confirm.confirm')}
+        cancelLabel={t('partners.confirm.cancel')}
+        running={props.saveCommand.running}
+        onConfirm={() => { if (pendingEdit !== null) props.saveCommand.execute(pendingEdit); setPendingEdit(null); }}
+        onCancel={() => { setPendingEdit(null); }}
       />
     </div>
   )
