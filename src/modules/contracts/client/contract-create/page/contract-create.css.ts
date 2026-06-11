@@ -626,7 +626,7 @@ export const partnerTypeBadge = styleVariants({
     color: vars.color.partnerType.financier.text,
     background: vars.color.partnerType.financier.background,
   }],
-  ACT: [partnerTypeBadgeBase, {
+  Acordo: [partnerTypeBadgeBase, {
     color: vars.color.partnerType.act.text,
     background: vars.color.partnerType.act.background,
   }],
@@ -765,7 +765,7 @@ export const searchDropdownAvatarVariant = styleVariants({
     background: vars.color.partnerType.financier.background,
     color: vars.color.partnerType.financier.text,
   },
-  ACT: {
+  Acordo: {
     background: vars.color.partnerType.act.background,
     color: vars.color.partnerType.act.text,
   },

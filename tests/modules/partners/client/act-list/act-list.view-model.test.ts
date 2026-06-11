@@ -10,29 +10,34 @@ import type { ActListItem } from '../../../../../src/modules/partners/client/dat
 
 const item: ActListItem = {
   id: '1',
-  name: 'João Souza',
-  email: 'joao@org.dev',
+  actNumber: 'ACT-2026-001',
+  name: 'Acordo X',
+  email: 'contato@org.dev',
+  corporateName: 'Instituição LTDA',
+  fantasyName: 'IP',
   occupationArea: 'PARC',
-  role: 'Analista',
-  registration: 'pre-registration',
-  activation: 'active',
+  hasFinancialTransfer: false,
+  active: true,
 }
 
 describe('act-list.view-model', () => {
-  it('mapItemToRow projeta os campos da linha (com os 2 status)', () => {
+  it('mapItemToRow projeta os campos da linha do Acordo', () => {
     const row = mapItemToRow(item)
-    assert.equal(row.registration, 'pre-registration')
-    assert.equal(row.activation, 'active')
+    assert.equal(row.actNumber, 'ACT-2026-001')
+    assert.equal(row.corporateName, 'Instituição LTDA')
     assert.equal(row.occupationArea, 'PARC')
+    assert.equal(row.hasFinancialTransfer, false)
+    assert.equal(row.active, true)
   })
 
   it('mapResponseToRows mapeia todos os itens', () => {
     const rows = mapResponseToRows({
-      items: [item, { ...item, id: '2', activation: 'inactive', registration: 'complete' }],
+      items: [item, { ...item, id: '2', active: false, hasFinancialTransfer: true }],
       meta: { page: 1, limit: 5, total: 2 },
     })
     assert.equal(rows.length, 2)
-    assert.equal(rows[1]?.registration, 'complete')
+    assert.equal(rows[1]?.active, false)
+    assert.equal(rows[1]?.hasFinancialTransfer, true)
   })
 
   it('totalPages (teto, mínimo 1)', () => {

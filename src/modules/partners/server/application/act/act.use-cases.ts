@@ -3,12 +3,12 @@
  * (o client é injetado). Result em tudo (§II). O `ActClient` é uma porta — implementada em adapters.
  */
 import { err, isErr, type Result } from '#shared/primitives/result.ts'
-import { CPF } from '#modules/partners/server/domain/value-objects/cpf.value-object.ts'
 import { Email } from '#modules/partners/server/domain/value-objects/email.value-object.ts'
 import type { PartnersError } from '#modules/partners/server/domain/errors/partners.errors.ts'
 
-// Exercita os VOs branded na escrita: valida DV do CPF + formato do email antes de tocar o core-api (§IV).
-const identityIsValid = (cpf: string, email: string): boolean => !isErr(CPF(cpf)) && !isErr(Email(email))
+// Exercita o VO branded de Email na escrita (§IV); o DV do CNPJ é validado pelo core-api (422 invalid-cnpj),
+// que é o árbitro final do número.
+const identityIsValid = (email: string): boolean => !isErr(Email(email))
 import type {
   ListActsInput,
   ActListResponse,
@@ -41,14 +41,14 @@ export const createGetAct =
 export const createCreateAct =
   (deps: Deps) =>
   (input: CreateActInput, token: string): Promise<Result<ActDetail, PartnersError>> =>
-    identityIsValid(input.cpf, input.email)
+    identityIsValid(input.email)
       ? deps.client.create(input, token)
       : Promise.resolve(err('validation'))
 
 export const createUpdateAct =
   (deps: Deps) =>
   (input: UpdateActInput, token: string): Promise<Result<ActDetail, PartnersError>> =>
-    identityIsValid(input.cpf, input.email)
+    identityIsValid(input.email)
       ? deps.client.update(input, token)
       : Promise.resolve(err('validation'))
 

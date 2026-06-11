@@ -12,7 +12,7 @@ export interface SelectedPartner {
   readonly cpf?: string
   readonly email?: string
   readonly telephone?: string
-  readonly kind: 'Fornecedor' | 'Financiador' | 'Colaborador'
+  readonly kind: 'Fornecedor' | 'Financiador' | 'Colaborador' | 'Acordo'
   readonly bancaryInfo?: Readonly<{
     bank: string
     agency: string
@@ -38,6 +38,7 @@ export type ContractFormState = Readonly<{
   supplierId: string
   financierId: string
   collaboratorId: string
+  actId: string
   // IDs técnicos = UUID string (ADR-0013). categorizacao/centroDeCusto = string livre.
   programId: string | null
   budgetPlanId: string | null
@@ -100,6 +101,7 @@ export const useContractFormController = (): ContractFormController => {
     supplierId: '',
     financierId: '',
     collaboratorId: '',
+    actId: '',
     programId: null,
     budgetPlanId: null,
     categorizacao: null,
@@ -131,7 +133,7 @@ export const useContractFormController = (): ContractFormController => {
 
   const checklist = useMemo(() => {
     const checks = {
-      contratado: !!selectedPartner || !!(state.supplierId || state.financierId || state.collaboratorId),
+      contratado: !!selectedPartner || !!(state.supplierId || state.financierId || state.collaboratorId || state.actId),
       contrato: !!state.objective,
       valor: (state.originalValueCents || 0) > 0,
       vigencia: !!state.originalPeriodStart && !!state.originalPeriodEnd,
@@ -159,6 +161,7 @@ export const useContractFormController = (): ContractFormController => {
       supplierId: state.supplierId || undefined,
       financierId: state.financierId || undefined,
       collaboratorId: state.collaboratorId || undefined,
+      actId: state.actId || undefined,
       programId: state.programId ?? undefined,
       budgetPlanId: state.budgetPlanId ?? undefined,
       categorizacao: state.categorizacao ?? undefined,

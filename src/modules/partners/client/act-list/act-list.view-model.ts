@@ -1,5 +1,6 @@
 /**
- * ViewModel da listagem de ACTs — AGNÓSTICO (objeto puro, zero React). Derivações: model → row.
+ * ViewModel da listagem de ACTs (Acordos de Cooperação) — AGNÓSTICO (objeto puro, zero React).
+ * Derivações: model → row.
  */
 import type { ActListItem, ActListResponse } from '#modules/partners/client/data/model/act.model.ts'
 import type { ActRow } from '#modules/partners/client/domain/act.types.ts'
@@ -14,12 +15,12 @@ export type ActListState =
 export function mapItemToRow(item: ActListItem): ActRow {
   return {
     id: item.id,
+    actNumber: item.actNumber,
     name: item.name,
-    email: item.email,
+    corporateName: item.corporateName,
     occupationArea: item.occupationArea,
-    role: item.role,
-    registration: item.registration,
-    activation: item.activation,
+    hasFinancialTransfer: item.hasFinancialTransfer,
+    active: item.active,
   }
 }
 

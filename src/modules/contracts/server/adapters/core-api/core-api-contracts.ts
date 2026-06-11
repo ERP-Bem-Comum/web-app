@@ -505,7 +505,9 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
             ? { type: 'financier' as const, id: input.financierId }
             : input.collaboratorId !== undefined
               ? { type: 'collaborator' as const, id: input.collaboratorId }
-              : undefined
+              : input.actId !== undefined
+                ? { type: 'act' as const, id: input.actId }
+                : undefined
       const body = {
         mode: 'Pending' as const,
         title: input.title,
@@ -520,6 +522,7 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
         supplierId: input.supplierId,
         financierId: input.financierId,
         collaboratorId: input.collaboratorId,
+        actId: input.actId,
         programId: input.programId,
         budgetPlanId: input.budgetPlanId,
         categorizacao: input.categorizacao,

@@ -21,34 +21,46 @@ describe('ActListFiltersSchema', () => {
     assert.equal(ActListFiltersSchema.parse({ active: 'false' }).active, false)
     assert.equal(ActListFiltersSchema.parse({ active: true }).active, true)
   })
+
+  it('aceita hasFinancialTransfer e occupationArea', () => {
+    assert.equal(ActListFiltersSchema.parse({ hasFinancialTransfer: 'true' }).hasFinancialTransfer, true)
+    assert.equal(ActListFiltersSchema.parse({ occupationArea: 'PARC' }).occupationArea, 'PARC')
+    assert.equal(ActListFiltersSchema.safeParse({ occupationArea: 'XXX' }).success, false)
+  })
 })
 
 const validForm = {
-  name: 'João Souza',
-  email: 'joao@org.dev',
-  cpf: '123.456.789-09',
+  actNumber: 'ACT-2026-001',
+  name: 'Acordo X',
+  email: 'contato@org.dev',
+  cnpj: '11.222.333/0001-81',
+  corporateName: 'Instituição LTDA',
+  fantasyName: 'IP',
   occupationArea: 'PARC',
-  role: 'Analista',
-  startOfContract: '2026-01-15',
-  employmentRelationship: 'CLT',
+  legalRepresentative: 'João',
+  startDate: '2026-01-01',
+  endDate: '2026-12-31',
+  hasFinancialTransfer: false,
+  bankAccount: null,
+  pixKey: null,
 }
 
 describe('ActFormSchema', () => {
-  it('aceita os 7 campos válidos e normaliza o CPF para 11 dígitos', () => {
+  it('aceita os campos válidos e normaliza o CNPJ para 14 dígitos', () => {
     const r = ActFormSchema.parse(validForm)
-    assert.equal(r.cpf, '12345678909')
+    assert.equal(r.cnpj, '11222333000181')
     assert.equal(r.occupationArea, 'PARC')
-    assert.equal(r.employmentRelationship, 'CLT')
+    assert.equal(r.hasFinancialTransfer, false)
   })
 
-  it('aceita CPF sem máscara', () => {
-    assert.equal(ActFormSchema.parse({ ...validForm, cpf: '12345678909' }).cpf, '12345678909')
+  it('aceita CNPJ sem máscara', () => {
+    assert.equal(ActFormSchema.parse({ ...validForm, cnpj: '11222333000181' }).cnpj, '11222333000181')
   })
 
-  it('rejeita CPF inválido, enum fora da lista, data inválida e obrigatório vazio', () => {
-    assert.equal(ActFormSchema.safeParse({ ...validForm, cpf: '123' }).success, false)
+  it('rejeita CNPJ inválido, enum fora da lista, data inválida e obrigatório vazio', () => {
+    assert.equal(ActFormSchema.safeParse({ ...validForm, cnpj: '123' }).success, false)
     assert.equal(ActFormSchema.safeParse({ ...validForm, occupationArea: 'XXX' }).success, false)
-    assert.equal(ActFormSchema.safeParse({ ...validForm, startOfContract: '15/01/2026' }).success, false)
+    assert.equal(ActFormSchema.safeParse({ ...validForm, startDate: '01/01/2026' }).success, false)
     assert.equal(ActFormSchema.safeParse({ ...validForm, name: '' }).success, false)
   })
 })

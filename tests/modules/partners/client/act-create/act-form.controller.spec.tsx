@@ -3,15 +3,20 @@ import { renderHook, act } from '@testing-library/react'
 
 import { useActFormController } from '#modules/partners/client/act-create/components/act-form.controller.ts'
 
-const fill = (result: { current: ReturnType<typeof useActFormController> }): void => {
+type Controller = ReturnType<typeof useActFormController>
+
+const fillBase = (result: { current: Controller }): void => {
   act(() => {
-    result.current.setField('name', 'João Souza')
-    result.current.setField('email', 'joao@org.dev')
-    result.current.setField('cpf', '123.456.789-09')
+    result.current.setField('actNumber', 'ACT-2026-001')
+    result.current.setField('name', 'Acordo X')
+    result.current.setField('email', 'contato@org.dev')
+    result.current.setField('cnpj', '11.222.333/0001-81')
+    result.current.setField('corporateName', 'Instituição LTDA')
+    result.current.setField('fantasyName', 'IP')
     result.current.setField('occupationArea', 'PARC')
-    result.current.setField('role', 'Analista')
-    result.current.setField('startOfContract', '2026-01-15')
-    result.current.setField('employmentRelationship', 'CLT')
+    result.current.setField('legalRepresentative', 'João Diretor')
+    result.current.setField('startDate', '2026-01-01')
+    result.current.setField('endDate', '2026-12-31')
   })
 }
 
@@ -26,23 +31,81 @@ describe('useActFormController', () => {
     expect(Object.keys(result.current.errors).length).toBeGreaterThan(0)
   })
 
-  it('submit válido: emite os 7 campos com CPF normalizado e enums', () => {
+  it('submit válido sem repasse: emite o input com cnpj normalizado, área, datas e conta/PIX nulos', () => {
     const onSubmit = vi.fn()
     const { result } = renderHook(() => useActFormController({ onSubmit }))
-    fill(result)
+    fillBase(result)
     act(() => {
       result.current.submit()
     })
     expect(onSubmit).toHaveBeenCalledTimes(1)
-    const values = onSubmit.mock.calls[0]?.[0] as { cpf: string; occupationArea: string }
-    expect(values.cpf).toBe('12345678909')
-    expect(values.occupationArea).toBe('PARC')
+    const v = onSubmit.mock.calls[0]?.[0] as {
+      cnpj: string
+      occupationArea: string
+      startDate: string
+      endDate: string
+      hasFinancialTransfer: boolean
+      bankAccount: unknown
+      pixKey: unknown
+    }
+    expect(v.cnpj).toBe('11222333000181')
+    expect(v.occupationArea).toBe('PARC')
+    expect(v.startDate).toBe('2026-01-01')
+    expect(v.endDate).toBe('2026-12-31')
+    expect(v.hasFinancialTransfer).toBe(false)
+    expect(v.bankAccount).toBeNull()
+    expect(v.pixKey).toBeNull()
   })
 
-  it('enum não selecionado bloqueia o submit', () => {
+  it('repasse ligado sem conta nem PIX bloqueia o submit', () => {
     const onSubmit = vi.fn()
     const { result } = renderHook(() => useActFormController({ onSubmit }))
-    fill(result)
+    fillBase(result)
+    act(() => {
+      result.current.setField('hasFinancialTransfer', true)
+    })
+    act(() => {
+      result.current.submit()
+    })
+    expect(onSubmit).not.toHaveBeenCalled()
+    expect(result.current.errors.hasFinancialTransfer).toBe(true)
+  })
+
+  it('repasse ligado com PIX passa e emite pixKey', () => {
+    const onSubmit = vi.fn()
+    const { result } = renderHook(() => useActFormController({ onSubmit }))
+    fillBase(result)
+    act(() => {
+      result.current.setField('hasFinancialTransfer', true)
+      result.current.setField('pixKeyType', 'email')
+      result.current.setField('pixKey', 'pix@org.dev')
+    })
+    act(() => {
+      result.current.submit()
+    })
+    expect(onSubmit).toHaveBeenCalledTimes(1)
+    const v = onSubmit.mock.calls[0]?.[0] as { pixKey: { keyType: string; key: string } | null }
+    expect(v.pixKey).toEqual({ keyType: 'email', key: 'pix@org.dev' })
+  })
+
+  it('vigência fim <= início bloqueia o submit (endDate)', () => {
+    const onSubmit = vi.fn()
+    const { result } = renderHook(() => useActFormController({ onSubmit }))
+    fillBase(result)
+    act(() => {
+      result.current.setField('endDate', '2026-01-01')
+    })
+    act(() => {
+      result.current.submit()
+    })
+    expect(onSubmit).not.toHaveBeenCalled()
+    expect(result.current.errors.endDate).toBe(true)
+  })
+
+  it('enum de área não selecionado bloqueia o submit', () => {
+    const onSubmit = vi.fn()
+    const { result } = renderHook(() => useActFormController({ onSubmit }))
+    fillBase(result)
     act(() => {
       result.current.setField('occupationArea', '')
     })

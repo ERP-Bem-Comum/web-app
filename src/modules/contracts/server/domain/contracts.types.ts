@@ -169,6 +169,7 @@ export interface CreateContractInput {
   supplierId?: string
   financierId?: string
   collaboratorId?: string
+  actId?: string
   programId?: string
   budgetPlanId?: string
   categorizacao?: string

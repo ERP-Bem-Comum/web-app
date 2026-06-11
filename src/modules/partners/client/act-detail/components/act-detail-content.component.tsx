@@ -2,14 +2,14 @@ import type { ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { Badge, Field, Input } from '#shared/ui/index.ts'
+import { Badge, Checkbox, Field, Input } from '#shared/ui/index.ts'
 import {
   OCCUPATION_AREAS,
-  EMPLOYMENT_RELATIONSHIPS,
+  PIX_KEY_TYPES,
+  isPixKeyType,
   type ActFormController,
   type ActFormState,
 } from '#modules/partners/client/act-create/components/act-form.controller.ts'
-import type { ActivationStatus } from '#modules/partners/client/domain/act.types.ts'
 
 import { stack, section, sectionTitle, statusRow, fieldGrid, select } from './act-detail-content.css.ts'
 
@@ -18,7 +18,7 @@ const t = createTranslator(ptBR)
 export type ActDetailContentProps = Readonly<{
   controller: ActFormController
   editing: boolean
-  activation: ActivationStatus
+  active: boolean
 }>
 
 export function ActDetailContent(props: ActDetailContentProps): ReactNode {
@@ -26,25 +26,40 @@ export function ActDetailContent(props: ActDetailContentProps): ReactNode {
   const invalid = (key: string): string | undefined =>
     c.errors[key] === true ? t('partners.acts.form.invalid') : undefined
 
-  const txt = (key: keyof ActFormState, label: string, type?: 'text' | 'email' | 'date', mask?: 'cpf' | 'cnpj' | 'phone'): ReactNode => (
-    <Field htmlFor={`ad-${key}`} label={label} error={invalid(key)}>
-      <Input id={`ad-${key}`} type={type} mask={mask} value={c.state[key]} disabled={!editing} onChange={(v) => { c.setField(key, v); }} />
+  // Só campos string do estado (exclui o boolean `hasFinancialTransfer` e o enum `pixKeyType`).
+  type TextKey = {
+    [K in keyof ActFormState]: ActFormState[K] extends string ? K : never
+  }[keyof ActFormState]
+  const txt = (
+    key: Exclude<TextKey, 'pixKeyType'>,
+    label: string,
+    errKey: string,
+    opts?: Readonly<{ type?: 'text' | 'email' | 'date'; mask?: 'cpf' | 'cnpj' | 'phone' }>,
+  ): ReactNode => (
+    <Field htmlFor={`ad-${key}`} label={label} error={invalid(errKey)}>
+      <Input
+        id={`ad-${key}`}
+        type={opts?.type}
+        mask={opts?.mask}
+        value={c.state[key]}
+        disabled={!editing}
+        onChange={(v) => { c.setField(key, v); }}
+      />
     </Field>
   )
 
   return (
     <div className={stack}>
       <section className={section}>
-        <h2 className={sectionTitle}>{t('partners.acts.form.section.basic')}</h2>
+        <h2 className={sectionTitle}>{t('partners.acts.form.section.instrument')}</h2>
         <div className={statusRow}>
-          <Badge variant={props.activation === 'active' ? 'active' : 'outro'}>
-            {t(`partners.acts.status.${props.activation}`)}
+          <Badge variant={props.active ? 'active' : 'outro'}>
+            {t(`partners.acts.status.${props.active ? 'active' : 'inactive'}`)}
           </Badge>
         </div>
         <div className={fieldGrid}>
-          {txt('name', t('partners.acts.form.name'))}
-          {txt('email', t('partners.acts.form.email'), 'email')}
-          {txt('cpf', t('partners.acts.form.cpf'), undefined, 'cpf')}
+          {txt('actNumber', t('partners.acts.form.actNumber'), 'actNumber')}
+          {txt('name', t('partners.acts.form.name'), 'name')}
           <Field htmlFor="ad-occupationArea" label={t('partners.acts.form.occupationArea')} error={invalid('occupationArea')}>
             <select
               id="ad-occupationArea"
@@ -59,23 +74,51 @@ export function ActDetailContent(props: ActDetailContentProps): ReactNode {
               ))}
             </select>
           </Field>
-          {txt('role', t('partners.acts.form.role'))}
-          {txt('startOfContract', t('partners.acts.form.startOfContract'), 'date')}
-          <Field htmlFor="ad-employmentRelationship" label={t('partners.acts.form.employmentRelationship')} error={invalid('employmentRelationship')}>
-            <select
-              id="ad-employmentRelationship"
-              className={select}
-              value={c.state.employmentRelationship}
-              disabled={!editing}
-              onChange={(e) => { c.setField('employmentRelationship', e.target.value); }}
-            >
-              <option value="">{t('partners.acts.form.select')}</option>
-              {EMPLOYMENT_RELATIONSHIPS.map((v) => (
-                <option key={v} value={v}>{t(`partners.acts.employment.${v}`)}</option>
-              ))}
-            </select>
+          {txt('startDate', t('partners.acts.form.startDate'), 'startDate', { type: 'date' })}
+          {txt('endDate', t('partners.acts.form.endDate'), 'endDate', { type: 'date' })}
+        </div>
+      </section>
+
+      <section className={section}>
+        <h2 className={sectionTitle}>{t('partners.acts.form.section.institution')}</h2>
+        <div className={fieldGrid}>
+          {txt('cnpj', t('partners.acts.form.cnpj'), 'cnpj', { mask: 'cnpj' })}
+          {txt('corporateName', t('partners.acts.form.corporateName'), 'corporateName')}
+          {txt('fantasyName', t('partners.acts.form.fantasyName'), 'fantasyName')}
+          {txt('legalRepresentative', t('partners.acts.form.legalRepresentative'), 'legalRepresentative')}
+          {txt('email', t('partners.acts.form.email'), 'email', { type: 'email' })}
+        </div>
+      </section>
+
+      <section className={section}>
+        <h2 className={sectionTitle}>{t('partners.acts.form.section.payment')}</h2>
+        <div className={fieldGrid}>
+          <Field htmlFor="ad-transfer" label={t('partners.acts.form.hasFinancialTransfer')} error={invalid('hasFinancialTransfer')}>
+            <Checkbox id="ad-transfer" checked={c.state.hasFinancialTransfer} disabled={!editing} onChange={(v) => { c.setField('hasFinancialTransfer', v); }} />
           </Field>
         </div>
+        {c.state.hasFinancialTransfer ? (
+          <div className={fieldGrid}>
+            {txt('bank', t('partners.acts.form.bank'), 'bankAccount.bank')}
+            {txt('agency', t('partners.acts.form.agency'), 'bankAccount.agency')}
+            {txt('accountNumber', t('partners.acts.form.accountNumber'), 'bankAccount.accountNumber')}
+            {txt('checkDigit', t('partners.acts.form.checkDigit'), 'bankAccount.checkDigit')}
+            <Field htmlFor="ad-pix-type" label={t('partners.acts.form.pixType')} error={invalid('pixKey.keyType')}>
+              <select
+                id="ad-pix-type"
+                className={select}
+                value={c.state.pixKeyType}
+                disabled={!editing}
+                onChange={(e) => { if (isPixKeyType(e.target.value)) c.setField('pixKeyType', e.target.value) }}
+              >
+                {PIX_KEY_TYPES.map((pt) => (
+                  <option key={pt} value={pt}>{t(`partners.acts.pix.${pt}`)}</option>
+                ))}
+              </select>
+            </Field>
+            {txt('pixKey', t('partners.acts.form.pixKey'), 'pixKey.key')}
+          </div>
+        ) : null}
       </section>
     </div>
   )

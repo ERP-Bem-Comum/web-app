@@ -10,23 +10,31 @@ import type { ActDetail } from '../../../../../src/modules/partners/client/data/
 
 const detail: ActDetail = {
   id: 'a1',
-  name: 'João Souza',
-  email: 'joao@org.dev',
+  legacyId: null,
+  actNumber: 'ACT-2026-001',
+  name: 'Acordo X',
+  email: 'contato@org.dev',
+  cnpj: '11222333000181',
+  corporateName: 'Instituição LTDA',
+  fantasyName: 'IP',
   occupationArea: 'PARC',
-  role: 'Analista',
-  registration: 'pre-registration',
-  activation: 'active',
-  cpf: '12345678909',
-  startOfContract: '2026-01-15',
-  employmentRelationship: 'CLT',
+  legalRepresentative: 'João Diretor',
+  startDate: '2026-01-01',
+  endDate: '2026-12-31',
+  hasFinancialTransfer: false,
+  bankAccount: null,
+  pixKey: null,
+  active: true,
+  createdAt: '2026-01-01T00:00:00Z',
+  updatedAt: '2026-01-02T00:00:00Z',
 }
 
 describe('act-detail.view-model', () => {
-  it('deriveDetailState: ok → ready com o ACT (inclui campos PF)', () => {
+  it('deriveDetailState: ok → ready com o Acordo (campos institucionais)', () => {
     const s = deriveDetailState(ok(detail))
     assert.equal(s.status, 'ready')
-    assert.equal(s.status === 'ready' && s.act.cpf, '12345678909')
-    assert.equal(s.status === 'ready' && s.act.employmentRelationship, 'CLT')
+    assert.equal(s.status === 'ready' && s.act.cnpj, '11222333000181')
+    assert.equal(s.status === 'ready' && s.act.corporateName, 'Instituição LTDA')
   })
 
   it('deriveDetailState: err → error com tag i18n', () => {
@@ -35,7 +43,7 @@ describe('act-detail.view-model', () => {
   })
 
   it('statusActionFor: ativo → deactivate; inativo → reactivate', () => {
-    assert.equal(statusActionFor('active'), 'deactivate')
-    assert.equal(statusActionFor('inactive'), 'reactivate')
+    assert.equal(statusActionFor(true), 'deactivate')
+    assert.equal(statusActionFor(false), 'reactivate')
   })
 })

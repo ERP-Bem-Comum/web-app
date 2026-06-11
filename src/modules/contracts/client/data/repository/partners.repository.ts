@@ -21,7 +21,7 @@ export type PartnerSearchResult = Readonly<{
   cpf?: string
   email?: string
   telephone?: string
-  kind: 'Fornecedor' | 'Financiador' | 'Colaborador'
+  kind: 'Fornecedor' | 'Financiador' | 'Colaborador' | 'Acordo'
   bancaryInfo?: Readonly<{
     bank: string
     agency: string
@@ -56,10 +56,9 @@ export type PartnersRepository = Readonly<{
 }>
 
 const toClientPartner = (p: SearchedPartner): PartnerSearchResult => {
-  // ACT não tem campo próprio no formulário (SelectedPartner só cobre 3 tipos) → exibe como Fornecedor
-  // até o formulário/POST de contrato suportarem ACT.
-  const kind = p.kind === 'ACT' ? 'Fornecedor' : p.kind
-  // Documento de PJ (Fornecedor/Financiador/ACT) → cnpj; de PF (Colaborador) → cpf.
+  // ACT = Acordo de Cooperação Técnica (PJ/CNPJ) — selecionável como contratado (#32 aceita type='act').
+  const kind = p.kind === 'ACT' ? 'Acordo' : p.kind
+  // Documento de PJ (Fornecedor/Financiador/Acordo) → cnpj; de PF (Colaborador) → cpf.
   const isPF = p.kind === 'Colaborador'
   return {
     id: p.id,
@@ -78,9 +77,9 @@ export const createPartnersRepository = (deps: Readonly<{
   search: async (query, kind) => {
     const res = await deps.searchPartnersFn({ data: { query: query || undefined, kind } })
     if (!res.ok) return err(res.error)
-    // ACT ainda NÃO é selecionável como contratado (o form/POST de contrato não têm `actId` nem
-    // tratam o tipo ACT) → fica fora da busca até o vínculo de ACT ser suportado ponta a ponta.
-    const items = res.data.filter((p) => p.kind !== 'ACT').map(toClientPartner)
+    // Os 4 tipos (inclui Acordo/ACT) são selecionáveis como contratado — o create threada actId e o
+    // #32 aceita contractor.type='act'.
+    const items = res.data.map(toClientPartner)
     return ok(items)
   },
 })
