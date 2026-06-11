@@ -123,9 +123,11 @@ export interface Contract {
   supplierId?: string
   financierId?: string
   collaboratorId?: string
+  actId?: string
   supplier?: PartnerSnapshot
   financier?: PartnerSnapshot
   collaborator?: PartnerSnapshot
+  act?: PartnerSnapshot
   // IDs técnicos = UUID string (ADR-0013). `program` = bloco composto (id + nome + sigla exibível).
   programId?: string
   program?: { id: string; name: string; sigla: string }

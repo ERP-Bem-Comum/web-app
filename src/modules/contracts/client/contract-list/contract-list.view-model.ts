@@ -100,11 +100,13 @@ export function mapModelToContractRow(model: ContractModel): ContractRow {
     supplierId: model.supplierId ?? undefined,
     financierId: model.financierId ?? undefined,
     collaboratorId: model.collaboratorId ?? undefined,
+    actId: model.actId ?? undefined,
     budgetPlanId: model.budgetPlanId ?? undefined,
     programId: model.programId ?? undefined,
     supplier: mapPartnerToContractor(model.supplier),
     financier: mapPartnerToContractor(model.financier),
     collaborator: mapPartnerToContractor(model.collaborator),
+    act: mapPartnerToContractor(model.act),
     program: model.program ? { id: model.program.id, name: model.program.name, sigla: model.program.sigla } : undefined,
     budgetPlan: model.budgetPlan
       ? {
@@ -142,6 +144,24 @@ export function mapListResponseToContractRows(response: ListContractsResponse): 
   return response.items.map(mapModelToContractRow)
 }
 
+/** Contratado da linha conforme o tipo (supplier/financier/collaborator/act). `switch` exaustivo. */
+export function getContractorFromRow(row: ContractRow): ContractRow['supplier'] {
+  switch (row.contractType) {
+    case 'Fornecedor':
+      return row.supplier
+    case 'Financiador':
+      return row.financier
+    case 'Colaborador':
+      return row.collaborator
+    case 'ACT':
+      return row.act
+    default: {
+      const _exhaustive: never = row.contractType
+      return _exhaustive
+    }
+  }
+}
+
 // Máscara de documento (CPF 11 / CNPJ 14 dígitos) p/ exibição em documentos.
 const maskDocForDoc = (raw: string): string => {
   const d = raw.replace(/\D/g, '')
@@ -164,7 +184,7 @@ export interface ContractDocData {
 // Monta (puro) os dados padronizados de um contrato para os documentos imprimíveis (Termo de
 // Quitação / Histórico de Pagamento). A view só renderiza — formatação/derivação moram aqui (C1).
 export function buildContractDocData(row: ContractRow): ContractDocData {
-  const c = row.supplier ?? row.financier ?? row.collaborator
+  const c = row.supplier ?? row.financier ?? row.collaborator ?? row.act
   const contractor = c?.name ?? c?.corporateName ?? c?.fantasyName ?? '—'
   const rawDoc = c?.cnpj ?? c?.cpf ?? ''
   // Status REAL do contrato (mesma derivação do grid: a partir do `row`, não do aditivo mais recente).

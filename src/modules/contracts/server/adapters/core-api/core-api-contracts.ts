@@ -267,9 +267,11 @@ const apiContractToDomain = (c: {
   supplierId: undefined,
   financierId: undefined,
   collaboratorId: undefined,
+  actId: undefined,
   supplier: undefined,
   financier: undefined,
   collaborator: undefined,
+  act: undefined,
   // Programa + metadados (#32). `program` = bloco composto (sigla na coluna do grid).
   programId: blankToUndefined(c.programId),
   program: c.program?.snapshot
@@ -321,9 +323,11 @@ const mapContractorToDomain = (k: ContractorDto): Partial<Contract> => {
     supplierId: k.type === 'supplier' ? k.id : undefined,
     financierId: k.type === 'financier' ? k.id : undefined,
     collaboratorId: k.type === 'collaborator' ? k.id : undefined,
+    actId: k.type === 'act' ? k.id : undefined,
     supplier: k.type === 'supplier' ? snapshot : undefined,
     financier: k.type === 'financier' ? snapshot : undefined,
     collaborator: k.type === 'collaborator' ? snapshot : undefined,
+    act: k.type === 'act' ? snapshot : undefined,
     ...(bank != null ? { bancaryInfo: { bank: bank.bank, agency: bank.agency, accountNumber: bank.accountNumber, dv: bank.checkDigit, updatedAt } } : {}),
     ...(pix != null ? { pixInfo: { keyType: pix.keyType, key: pix.key, updatedAt } } : {}),
   }
@@ -481,9 +485,11 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
             supplierId: full.supplierId,
             financierId: full.financierId,
             collaboratorId: full.collaboratorId,
+            actId: full.actId,
             supplier: full.supplier,
             financier: full.financier,
             collaborator: full.collaborator,
+            act: full.act,
             // Vigência/valor vigentes (refletem aditivos homologados) p/ o grid mostrar a data estendida.
             currentPeriod: full.currentPeriod,
             currentValue: full.currentValue,

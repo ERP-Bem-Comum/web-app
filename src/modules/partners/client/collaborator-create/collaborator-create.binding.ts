@@ -3,9 +3,9 @@
  * navega à listagem no sucesso (no `onSuccess`, não num efeito). RBAC: `collaborator:write`.
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
+import { useNavigate, useSearch } from '@tanstack/react-router'
 
-import { useCurrentUser } from '#modules/auth/public-api/index.ts'
+import { useCurrentUser, safeRedirect } from '#modules/auth/public-api/index.ts'
 import { isOk } from '#shared/primitives/result.ts'
 import { can, grantedPermissions } from '#modules/partners/client/data/helpers/can.ts'
 import type { CollaboratorWriteInput } from '#modules/partners/client/data/model/collaborator.model.ts'
@@ -26,13 +26,14 @@ export type CollaboratorCreateBinding = Readonly<{
 export function useCollaboratorCreateBinding(): CollaboratorCreateBinding {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const search = useSearch({ strict: false })
   const current = useCurrentUser()
   const granted = grantedPermissions(current.user?.permissions)
   const mutation = useMutation({
     ...collaboratorCreateViewModel.mutation,
     onSuccess: (res) => {
       void queryClient.invalidateQueries({ queryKey: ['collaborators'] })
-      if (isOk(res)) void navigate({ to: '/parceiros/colaboradores' })
+      if (isOk(res)) void navigate({ to: safeRedirect(typeof search.returnTo === 'string' ? search.returnTo : undefined, '/parceiros/colaboradores') })
     },
   })
 

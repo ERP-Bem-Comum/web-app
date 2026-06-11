@@ -4,7 +4,8 @@ import { useNavigate } from '@tanstack/react-router'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { UploadIcon } from '#shared/ui/icons/index.ts'
-import { getSupplierFn } from '#modules/partners/public-api/index.ts'
+import { getSupplierFn, getActFn, getFinancierFn, getCollaboratorFn } from '#modules/partners/public-api/index.ts'
+import { partnerDetailToContractFields, type ContractPrefill } from '../partner-detail-to-contract.ts'
 import { useAttachSignedDocumentBinding } from '#modules/contracts/client/contract-attach-document/attach-signed-document.binding.ts'
 import { useContractEditBinding } from '#modules/contracts/client/contract-edit/contract-edit.binding.ts'
 import { useContractCreateBinding, usePartnerSearchBinding, useContractProgramOptionsBinding } from '../contract-create.binding.ts'
@@ -85,51 +86,44 @@ export function ContractCreatePage(): ReactNode {
 
   const handleSelectPartner = useCallback((partner: SelectedPartner) => {
     form.setSelectedPartner(partner)
+    // Reset dos campos derivados do contratado anterior (evita vazar banco/PIX/contato ao TROCAR de tipo).
+    form.update('supplierId', '')
+    form.update('financierId', '')
+    form.update('collaboratorId', '')
+    form.update('actId', '')
+    form.update('bancaryInfo', { bank: '', agency: '', accountNumber: '', dv: '' })
+    form.update('pixInfo', { keyType: '', key: '' })
+    form.update('email', '')
+    form.update('telephone', '')
+
+    // Pré-preenche os campos do contrato com o detalhe do parceiro. Banco/PIX são SOMENTE-LEITURA
+    // (campos disabled — só alimentamos p/ exibição); e-mail/telefone (Contato) são editáveis.
+    const applyPrefill = (fields: ContractPrefill): void => {
+      if (fields.bancaryInfo) form.update('bancaryInfo', fields.bancaryInfo)
+      if (fields.pixInfo) form.update('pixInfo', { keyType: fields.pixInfo.keyType, key: fields.pixInfo.key })
+      if (fields.email !== undefined) form.update('email', fields.email)
+      if (fields.telephone !== undefined) form.update('telephone', fields.telephone)
+    }
+
+    // O tipo do contrato é DERIVADO do parceiro escolhido (busca unificada). Buscamos o DETALHE por tipo
+    // (a busca/dropdown não traz banco/PIX/contato) — falha não trava o form (degrada p/ preenchimento manual).
     if (partner.kind === 'Fornecedor') {
-      // O tipo do contrato é DERIVADO do parceiro escolhido (busca unificada) — mantém consistência.
       form.update('contractType', 'Supplier')
       form.update('supplierId', partner.id)
-      form.update('financierId', '')
-      form.update('collaboratorId', '')
-      form.update('actId', '')
-      // A busca de parceiros não traz dados bancários (só o detalhe). Buscamos o detalhe do fornecedor
-      // e herdamos banco/PIX para a seção "Dados Bancários" (campos somente-leitura).
-      void getSupplierFn({ data: { id: partner.id } }).then((res) => {
-        if (!res.ok) return
-        const b = res.data.bankAccount
-        if (b !== null) {
-          form.update('bancaryInfo', { bank: b.bank, agency: b.agency, accountNumber: b.accountNumber, dv: b.checkDigit })
-        }
-        const p = res.data.pixKey
-        if (p !== null) {
-          form.update('pixInfo', { keyType: p.keyType, key: p.key })
-        }
-      })
+      void getSupplierFn({ data: { id: partner.id } }).then((res) => { if (res.ok) applyPrefill(partnerDetailToContractFields(res.data)) })
     } else if (partner.kind === 'Financiador') {
       form.update('contractType', 'Financier')
       form.update('financierId', partner.id)
-      form.update('supplierId', '')
-      form.update('collaboratorId', '')
-      form.update('actId', '')
+      void getFinancierFn({ data: { id: partner.id } }).then((res) => { if (res.ok) applyPrefill(partnerDetailToContractFields(res.data)) })
     } else if (partner.kind === 'Acordo') {
       // Acordo de Cooperação Técnica (ACT) como contratado — #32 aceita contractor.type='act'.
       form.update('contractType', 'ACT')
       form.update('actId', partner.id)
-      form.update('supplierId', '')
-      form.update('financierId', '')
-      form.update('collaboratorId', '')
+      void getActFn({ data: { id: partner.id } }).then((res) => { if (res.ok) applyPrefill(partnerDetailToContractFields(res.data)) })
     } else {
       form.update('contractType', 'Collaborator')
       form.update('collaboratorId', partner.id)
-      form.update('supplierId', '')
-      form.update('financierId', '')
-      form.update('actId', '')
-    }
-    if (partner.bancaryInfo) {
-      form.update('bancaryInfo', { ...partner.bancaryInfo })
-    }
-    if (partner.pixInfo) {
-      form.update('pixInfo', { ...partner.pixInfo })
+      void getCollaboratorFn({ data: { id: partner.id } }).then((res) => { if (res.ok) applyPrefill(partnerDetailToContractFields(res.data)) })
     }
   }, [form])
 
@@ -138,8 +132,11 @@ export function ContractCreatePage(): ReactNode {
     form.update('supplierId', '')
     form.update('financierId', '')
     form.update('collaboratorId', '')
+    form.update('actId', '')
     form.update('bancaryInfo', { bank: '', agency: '', accountNumber: '', dv: '' })
     form.update('pixInfo', { keyType: '', key: '' })
+    form.update('email', '')
+    form.update('telephone', '')
     setPartnerQuery('')
   }, [form])
 
@@ -206,8 +203,9 @@ export function ContractCreatePage(): ReactNode {
   }, [attachCommand.result, navigate])
 
   const handleCreateNewPartner = useCallback(() => {
-    window.open('/parceiros/criar', '_blank')
-  }, [])
+    // Direciona ao módulo de parceiros (mesma aba) levando o retorno; ao cadastrar, volta para cá.
+    navigate({ to: '/parceiros/fornecedores/criar', search: { returnTo: '/contratos/criar' } }).catch(() => { /* noop */ })
+  }, [navigate])
 
   /* Upload handlers */
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {

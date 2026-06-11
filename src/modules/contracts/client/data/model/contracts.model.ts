@@ -108,9 +108,11 @@ export const ContractSchema = z.object({
   supplierId: z.uuid().optional(),
   financierId: z.uuid().optional(),
   collaboratorId: z.uuid().optional(),
+  actId: z.uuid().optional(),
   supplier: PartnerSnapshotSchema.optional(),
   financier: PartnerSnapshotSchema.optional(),
   collaborator: PartnerSnapshotSchema.optional(),
+  act: PartnerSnapshotSchema.optional(),
   // IDs técnicos = UUID string (ADR-0013). `program` é o bloco composto pelo backend
   // (id + nome + sigla exibível); `programId`/`budgetPlanId` são as referências cruas (UUID).
   programId: z.uuid().optional(),

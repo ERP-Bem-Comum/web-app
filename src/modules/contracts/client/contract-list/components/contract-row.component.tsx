@@ -12,8 +12,8 @@ import {
   formatCurrency,
   formatDate,
   deriveStatus,
-  programaShort,
   contractorInitials,
+  getContractorFromRow,
 } from '#modules/contracts/client/contract-list/contract-list.view-model.ts'
 
 import {
@@ -51,21 +51,6 @@ export interface ContractRowProps {
   readonly index: number
   readonly onRequestDelete: (row: ContractRow) => void
   readonly onGenerateDoc: (row: ContractRow, kind: 'quitacao' | 'historico') => void
-}
-
-function getContractorFromRow(contractRow: ContractRow) {
-  switch (contractRow.contractType) {
-    case 'Fornecedor':
-      return contractRow.supplier
-    case 'Financiador':
-      return contractRow.financier
-    case 'Colaborador':
-      return contractRow.collaborator
-    case 'ACT':
-      return contractRow.supplier
-    default:
-      return contractRow.supplier ?? contractRow.financier ?? contractRow.collaborator
-  }
 }
 
 function maskDocument(doc: string | null | undefined): string {
@@ -148,7 +133,7 @@ export function ContractRow({ row, index, onRequestDelete, onGenerateDoc }: Cont
         <span className={tipoVariant[row.contractType]}>{row.contractType}</span>
       </td>
       <td className={`${cell} ${cellCenter}`}>
-        <span className={programText}>{programaShort(row.program?.sigla)}</span>
+        <span className={programText}>{row.program?.sigla ?? '—'}</span>
       </td>
       <td className={`${cell} ${cellRight}`}>
         <span className={currencyText}>{formatCurrency(valorAtual)}</span>

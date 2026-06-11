@@ -1055,6 +1055,7 @@ export const vigenciaBarLabels = style({
 })
 
 export const vigenciaAlert = style({
+  fontFamily: vars.font.family.heading,
   fontSize: '0.6875rem',
   fontWeight: vars.font.weight.medium,
   color: vars.color.status.pendingText,

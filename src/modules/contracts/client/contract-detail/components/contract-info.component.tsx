@@ -63,7 +63,7 @@ function typeLabel(t: Contract['contractType']): string {
 }
 
 export function ContractInfo({ contract }: Props): ReactNode {
-  const partner = contract.supplier ?? contract.financier ?? contract.collaborator
+  const partner = contract.supplier ?? contract.financier ?? contract.collaborator ?? contract.act
   const partnerName = partner?.name ?? '—'
   const doc = maskDocument(partner?.document)
   const pessoa = (partner?.document ?? '').replace(/\D/g, '').length === 11 ? 'PF' : 'PJ'

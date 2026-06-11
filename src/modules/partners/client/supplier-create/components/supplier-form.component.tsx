@@ -5,6 +5,7 @@ import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Button, Field, Input } from '#shared/ui/index.ts'
 
 import { PIX_KEY_TYPES, isPixKeyType, SERVICE_RATINGS, isServiceRating, type SupplierFormController } from './supplier-form.controller.ts'
+import { derivePixKey } from '#modules/partners/client/domain/derive-pix-key.ts'
 import {
   cancelButton,
   errorBanner,
@@ -127,7 +128,11 @@ export function SupplierForm(props: SupplierFormProps): ReactNode {
                 className={select}
                 value={c.state.pixKeyType}
                 onChange={(e) => {
-                  if (isPixKeyType(e.target.value)) c.setField('pixKeyType', e.target.value)
+                  if (isPixKeyType(e.target.value)) {
+                    c.setField('pixKeyType', e.target.value)
+                    // Auto-preenche a chave com o dado correspondente do form (editável).
+                    c.setField('pixKey', derivePixKey(e.target.value, { document: c.state.cnpj, email: c.state.email }))
+                  }
                 }}
               >
                 {PIX_KEY_TYPES.map((pt) => (
