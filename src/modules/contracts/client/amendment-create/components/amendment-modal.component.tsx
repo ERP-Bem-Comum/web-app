@@ -98,7 +98,9 @@ export function AmendmentModal({ open, mode, contractNumber, amendment, viewData
     state.description.trim() !== '' && // core-api: AmendmentDescriptionRequired (422) p/ qualquer tipo
     (state.type !== 'prazo' || state.newEndDate !== '') &&
     (state.type !== 'valor' || state.impactValueCents > 0) && // core-api: AmendmentImpactValueZero (422)
-    (state.type !== 'distrato' || state.terminationDate !== '') && // distrato exige data efetiva
+    // Distrato (#32): exige data efetiva + documento assinado + data de assinatura (o `signed_termination`
+    // é pré-requisito do encerramento; sem ele o contrato não encerra). F3.
+    (state.type !== 'distrato' || (state.terminationDate !== '' && willHomologate)) &&
     !attachInconsistent &&
     !submitting
   const canAttach = file !== null && attachSignedAt !== '' && !submitting
@@ -108,7 +110,8 @@ export function AmendmentModal({ open, mode, contractNumber, amendment, viewData
       if (file !== null && amendment) onAttach({ amendmentId: amendment.id, file, signedAt: attachSignedAt })
     } else {
       // Com documento + assinatura → encaminha o anexo p/ a página homologar após criar.
-      submit(file !== null && state.signedAt !== '' ? { file, signedAt: state.signedAt } : undefined)
+      // Distrato: `terminatedAt` = data efetiva digitada; demais tipos não a usam.
+      submit(file !== null && state.signedAt !== '' ? { file, signedAt: state.signedAt, terminatedAt: state.terminationDate } : undefined)
     }
   }
 

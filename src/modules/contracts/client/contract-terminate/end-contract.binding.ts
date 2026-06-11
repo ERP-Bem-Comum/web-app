@@ -10,11 +10,20 @@ export type EndContractCommand = Readonly<{
   result: Contract | null
   // Derivação server-state → "concluído" (A1): mora no binding, não na page.
   succeeded: boolean
-  execute: (contractId: string) => void
+  execute: (args: Readonly<{ contractId: string; file: File; terminatedAt: string; reason: string }>) => void
   reset: () => void
 }>
 
-// Distrato (encerramento antecipado) — POST /contracts/:id/end (Terminate). Religação básica.
+// ArrayBuffer → base64 (nativo: btoa). Confina a leitura do File na camada de binding (browser),
+// mantendo mutation/view-model agnósticos de DOM (§XI). Espelha attach-signed-document.binding.
+const fileToBase64 = async (file: File): Promise<string> => {
+  const bytes = new Uint8Array(await file.arrayBuffer())
+  let bin = ''
+  for (const byte of bytes) bin += String.fromCharCode(byte)
+  return btoa(bin)
+}
+
+// Distrato (#32) — POST /contracts/:id/end (Terminate): sobe o doc `signed_termination` + data efetiva + motivo.
 export const useEndContractBinding = (): Readonly<{ endCommand: EndContractCommand }> => {
   const queryClient = useQueryClient()
   const mutation = useMutation({
@@ -42,7 +51,11 @@ export const useEndContractBinding = (): Readonly<{ endCommand: EndContractComma
       errorTag,
       result: data !== undefined && isOk(data) ? data.value : null,
       succeeded: data !== undefined && isOk(data),
-      execute: (contractId) => { mutation.mutate({ contractId }) },
+      execute: ({ contractId, file, terminatedAt, reason }) => {
+        void fileToBase64(file).then((fileBase64) => {
+          mutation.mutate({ contractId, fileBase64, fileName: file.name, terminatedAt, reason })
+        })
+      },
       reset: () => { mutation.reset() },
     },
   }

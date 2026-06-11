@@ -208,6 +208,17 @@ export const AttachAmendmentDocumentInputSchema = z.object({
 })
 export type AttachAmendmentDocumentInput = z.infer<typeof AttachAmendmentDocumentInputSchema>
 
+// Distrato (#32): input do encerramento. PDF reaproveitado do aditivo de distrato; `terminatedAt`
+// (data efetiva, YYYY-MM-DD) + `reason` (motivo). Espelha o EndContractInput do server.
+export const EndContractInputSchema = z.object({
+  contractId: z.uuid(),
+  fileBase64: z.string().trim().min(1),
+  fileName: z.string().trim().min(1).max(255),
+  terminatedAt: z.string().trim().min(1),
+  reason: z.string().trim().min(1),
+})
+export type EndContractInput = z.infer<typeof EndContractInputSchema>
+
 // Metadados do documento devolvidos pelo core-api no upload (espelha CoreApiDocumentSchema do server).
 export const DocumentMetaSchema = z.object({
   id: z.uuid(),

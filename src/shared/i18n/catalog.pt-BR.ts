@@ -59,6 +59,9 @@ export const ptBR: Catalog = {
   'contracts.attach.error.conflict': 'O documento já foi anexado ou não corresponde a este contrato.',
   'contracts.attach.error.storage': 'Falha ao armazenar o documento. Tente novamente.',
   'contracts.attach.error.failed': 'Não foi possível incluir o documento. Tente novamente.',
+  // Contracts — Distrato (encerramento) — #32 CTR-HTTP-DISTRATO-DOCUMENTO
+  'contracts.distrato.error.no-document': 'É necessário anexar o documento assinado de distrato para encerrar o contrato.',
+  'contracts.distrato.error.invalid-date': 'Data efetiva do distrato inválida (não pode ser futura).',
   // Contracts — Listagem
   'contracts.list.title': 'Contratos',
   'contracts.list.new': 'Novo Contrato',

@@ -163,6 +163,17 @@ export const AttachAmendmentDocumentInputSchema = z.object({
   signedAt: z.string().trim().min(1),
 })
 
+// Distrato (#32): input da server fn `end-contract`. `terminatedAt` (data efetiva, YYYY-MM-DD) e
+// `reason` (motivo) obrigatórios; a checagem de data válida/não-futura acontece na borda da fn
+// (via validateSignedDocument), não aqui — aqui só garantimos presença/forma.
+export const EndContractInputSchema = z.object({
+  contractId: z.uuid(),
+  fileBase64: z.string().trim().min(1),
+  fileName: z.string().trim().min(1).max(255).regex(/^[^/\\:*?"<>|]+$/, 'invalid-file-name'),
+  terminatedAt: z.string().trim().min(1),
+  reason: z.string().trim().min(1),
+})
+
 export const UpdateContractInputSchema = z.object({
   id: z.uuid(),
   email: z.email().optional(),
@@ -207,11 +218,12 @@ const _g_listInput: AssertEqual<z.infer<typeof ListContractsInputSchema>, D.List
 const _g_createInput: AssertEqual<z.infer<typeof CreateContractInputSchema>, D.CreateContractInput> = true
 const _g_attachSigned: AssertEqual<z.infer<typeof AttachSignedDocumentInputSchema>, D.AttachSignedDocumentInput> = true
 const _g_attachAmend: AssertEqual<z.infer<typeof AttachAmendmentDocumentInputSchema>, D.AttachAmendmentDocumentInput> = true
+const _g_endInput: AssertEqual<z.infer<typeof EndContractInputSchema>, D.EndContractInput> = true
 const _g_updateInput: AssertEqual<z.infer<typeof UpdateContractInputSchema>, D.UpdateContractInput> = true
 const _g_createAmend: AssertEqual<z.infer<typeof CreateAmendmentInputSchema>, D.CreateAmendmentInput> = true
 const _g_listResp: AssertEqual<z.infer<typeof ListContractsResponseSchema>, D.ListContractsResponse> = true
  
 void [
   _g_money, _g_period, _g_partner, _g_bank, _g_pix, _g_amendment, _g_file, _g_contract,
-  _g_listInput, _g_createInput, _g_attachSigned, _g_attachAmend, _g_updateInput, _g_createAmend, _g_listResp,
+  _g_listInput, _g_createInput, _g_attachSigned, _g_attachAmend, _g_endInput, _g_updateInput, _g_createAmend, _g_listResp,
 ]

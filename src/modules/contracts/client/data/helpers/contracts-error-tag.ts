@@ -49,6 +49,10 @@ export const contractsErrorTag = (e: ContractsError): string => {
       return 'contracts.attach.error.conflict'
     case 'storage-unavailable':
       return 'contracts.attach.error.storage'
+    case 'terminate-no-document':
+      return 'contracts.distrato.error.no-document'
+    case 'terminate-invalid-date':
+      return 'contracts.distrato.error.invalid-date'
     default: {
       const _exhaustive: never = e
       return _exhaustive

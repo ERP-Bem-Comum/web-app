@@ -68,6 +68,9 @@ const SLUG_TO_ERROR: Partial<Record<string, ContractsError>> = {
   'storage-unavailable': 'storage-unavailable',
   'storage-upload-failed': 'storage-unavailable',
   'storage-permission-denied': 'storage-unavailable',
+  // Distrato (#32, CTR-HTTP-DISTRATO-DOCUMENTO): encerrar exige doc `signed_termination` + data efetiva.
+  'terminate-no-signed-document': 'terminate-no-document',
+  'terminate-invalid-date': 'terminate-invalid-date',
 }
 
 const mapHttpError = (e: HttpError): ContractsError => {
@@ -407,10 +410,11 @@ export type CoreApiContractsClient = Readonly<{
   createAmendment: (contractId: string, input: CreateAmendmentInput, token: string) => Promise<Result<Amendment, ContractsError>>
   getHistory: (id: string, token: string) => Promise<Result<readonly ContractHistoryEvent[], ContractsError>>
   uploadDocument: (contractId: string, input: Readonly<{ bytes: Uint8Array; fileName: string }>, token: string) => Promise<Result<void, ContractsError>>
+  uploadTerminationDocument: (contractId: string, input: Readonly<{ bytes: Uint8Array; fileName: string }>, token: string) => Promise<Result<void, ContractsError>>
   activate: (contractId: string, signedAtIso: string, token: string) => Promise<Result<Contract, ContractsError>>
   uploadAmendmentDocument: (contractId: string, amendmentId: string, input: Readonly<{ bytes: Uint8Array; fileName: string; signedAt: string }>, token: string) => Promise<Result<void, ContractsError>>
   homologateAmendment: (contractId: string, amendmentId: string, homologatedBy: string, token: string) => Promise<Result<Contract, ContractsError>>
-  endContract: (contractId: string, token: string) => Promise<Result<Contract, ContractsError>>
+  endContract: (contractId: string, terminatedAt: string, reason: string, token: string) => Promise<Result<Contract, ContractsError>>
   getDocumentContent: (contractId: string, documentId: string, token: string) => Promise<Result<Readonly<{ bytes: Uint8Array; fileName: string; contentType: string }>, ContractsError>>
 }>
 
@@ -623,6 +627,25 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
       return ok(undefined)
     },
 
+    uploadTerminationDocument: async (contractId, { bytes, fileName }, token) => {
+      // POST /contracts/:id/documents — corpo binário, metadados na query. categoria=signed_termination
+      // (pré-requisito do /end Terminate, #32). A query de doc de CONTRATO NÃO leva signedAt.
+      const r = await octetStreamFetch<unknown>(`${baseUrl}/contracts/${contractId}/documents`, {
+        token,
+        bytes,
+        query: {
+          categoria: 'signed_termination',
+          fileName,
+          mimeType: 'application/pdf',
+          signedElectronically: 'true',
+        },
+      })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      const parsed = CoreApiDocumentSchema.safeParse(r.value)
+      if (!parsed.success) return err('server')
+      return ok(undefined)
+    },
+
     activate: async (contractId, signedAtIso, token) => {
       // POST /contracts/:id/activate — { signedAt }. Exige o documento signed_contract já enviado
       // (senão o backend responde activate-contract-no-signed-document → 'no-signed-document').
@@ -663,13 +686,13 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
       return apiContractDetailToDomain(r.value)
     },
 
-    endContract: async (contractId, token) => {
-      // POST /contracts/:id/end — { kind: 'Terminate' } = distrato. Encerra o contrato (status Terminated).
-      // ⚠️ Religação BÁSICA: o core-api hoje não recebe data efetiva nem documento → endedAt = now.
-      // Gap documentado em handbook/core-api/tickets/CTR-HTTP-DISTRATO-DOCUMENTO.md.
+    endContract: async (contractId, terminatedAt, reason, token) => {
+      // POST /contracts/:id/end — { kind:'Terminate', terminatedAt, reason } = distrato (#32).
+      // Exige um doc `signed_termination` Active já anexado (subido antes pelo use-case) → senão 422
+      // terminate-no-signed-document. terminatedAt (YYYY-MM-DD) não-futura → senão 422 terminate-invalid-date.
       const r = await resultFetch<unknown>(`${baseUrl}/contracts/${contractId}/end`, {
         method: 'POST',
-        body: { kind: 'Terminate' },
+        body: { kind: 'Terminate', terminatedAt, reason },
         headers: authHeader(token),
       })
       if (isErr(r)) return err(mapHttpError(r.error))

@@ -35,6 +35,8 @@ export type ContractsError =
   | 'no-signed-document'     // ativar sem documento assinado anexado
   | 'document-conflict'      // documento já anexado/substituído/removido ou de outro contrato
   | 'storage-unavailable'    // backend de objetos (MinIO/S3) indisponível
+  | 'terminate-no-document'  // 422 terminate-no-signed-document: distrato sem doc `signed_termination`
+  | 'terminate-invalid-date' // 422 terminate-invalid-date: data efetiva ausente/inválida/futura
 
 export type ContractClassification = 'Contract' | 'ServiceOrder'
 export type ContractModel = 'Service' | 'Donation'
@@ -191,6 +193,17 @@ export interface AttachAmendmentDocumentInput {
   fileBase64: string
   fileName: string
   signedAt: string
+}
+
+// Distrato (#32, CTR-HTTP-DISTRATO-DOCUMENTO): encerrar exige documento `signed_termination` +
+// data efetiva (`terminatedAt`, não-futura) + motivo (`reason`). O PDF reaproveita o anexo do
+// aditivo de distrato (Mecanismo A); `terminatedAt` em YYYY-MM-DD.
+export interface EndContractInput {
+  contractId: string
+  fileBase64: string
+  fileName: string
+  terminatedAt: string
+  reason: string
 }
 
 export interface UpdateContractInput {

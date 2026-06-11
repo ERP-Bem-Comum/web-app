@@ -13,6 +13,7 @@ import type {
   Amendment,
   AttachSignedDocumentInput,
   AttachAmendmentDocumentInput,
+  EndContractInput,
 } from '#modules/contracts/client/data/model/contracts.model.ts'
 // ContractsError — FONTE ÚNICA no domínio (A2); o client-data reexporta pela fronteira adapters
 // (não redefine mais a 3ª cópia). Antes: união duplicada e propensa a divergir.
@@ -53,7 +54,7 @@ type AttachAmendmentDocumentFn = (opts: { data: AttachAmendmentDocumentInput }) 
   | Readonly<{ ok: true; data: Contract }>
   | Readonly<{ ok: false; error: ContractsError }>
 >
-type EndContractFn = (opts: { data: { contractId: string } }) => Promise<
+type EndContractFn = (opts: { data: EndContractInput }) => Promise<
   | Readonly<{ ok: true; data: Contract }>
   | Readonly<{ ok: false; error: ContractsError }>
 >
@@ -73,7 +74,7 @@ export type ContractsRepository = Readonly<{
   getHistory: (id: string) => Promise<Result<readonly ContractHistoryEvent[], ContractsError>>
   attachSignedDocument: (input: AttachSignedDocumentInput) => Promise<Result<Contract, ContractsError>>
   attachAmendmentDocument: (input: AttachAmendmentDocumentInput) => Promise<Result<Contract, ContractsError>>
-  endContract: (contractId: string) => Promise<Result<Contract, ContractsError>>
+  endContract: (input: EndContractInput) => Promise<Result<Contract, ContractsError>>
   getDocumentContent: (input: { contractId: string; documentId: string }) => Promise<Result<DocumentContentDto, ContractsError>>
 }>
 
@@ -121,8 +122,8 @@ export const createContractsRepository = (deps: Readonly<{
     const res = await deps.attachAmendmentDocumentFn({ data: input })
     return res.ok ? ok(res.data) : err(res.error)
   },
-  endContract: async (contractId) => {
-    const res = await deps.endContractFn({ data: { contractId } })
+  endContract: async (input) => {
+    const res = await deps.endContractFn({ data: input })
     return res.ok ? ok(res.data) : err(res.error)
   },
   getDocumentContent: async (input) => {

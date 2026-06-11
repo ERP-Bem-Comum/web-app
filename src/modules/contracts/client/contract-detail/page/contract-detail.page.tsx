@@ -91,7 +91,7 @@ export function ContractDetailPage({ contractId }: { contractId: string }): Reac
   const [previewDoc, setPreviewDoc] = useState<DocRef | null>(null)
   // Fluxo unificado de aditivo: se o create vier com documento+assinatura, guardamos o anexo e
   // homologamos logo após a criação (encadeado no efeito abaixo).
-  const [pendingAmendmentAttach, setPendingAmendmentAttach] = useState<Readonly<{ file: File; signedAt: string; isDistrato: boolean }> | null>(null)
+  const [pendingAmendmentAttach, setPendingAmendmentAttach] = useState<Readonly<{ file: File; signedAt: string; isDistrato: boolean; terminatedAt: string; reason: string }> | null>(null)
 
   // Edição inline da seção Contato (PATCH email/telefone/observações).
   const queryClient = useQueryClient()
@@ -121,10 +121,10 @@ export function ContractDetailPage({ contractId }: { contractId: string }): Reac
     if (created === null) { homologateChained.current = false; return }
     if (pendingAmendmentAttach === null || homologateChained.current) return
     homologateChained.current = true
-    const { file, signedAt, isDistrato } = pendingAmendmentAttach
+    const { file, signedAt, isDistrato, terminatedAt, reason } = pendingAmendmentAttach
     void amendmentAttachCommand
       .execute({ contractId, amendmentId: created.id, file, signedAt })
-      .then((ok) => { if (ok && isDistrato) endCommand.execute(contractId) })
+      .then((ok) => { if (ok && isDistrato) endCommand.execute({ contractId, file, terminatedAt, reason }) })
   }, [amendmentCommand.result, pendingAmendmentAttach, amendmentAttachCommand, endCommand, contractId])
 
   if (isLoading) {
@@ -294,7 +294,16 @@ export function ContractDetailPage({ contractId }: { contractId: string }): Reac
           // Sem anexo → aditivo nasce Pendente (sem efeito). Com documento + assinatura → guardamos o
           // anexo e homologamos logo após criar (efeito de encadeamento); distrato encerra ao homologar.
           setPendingAmendmentAttach(
-            attach !== undefined ? { file: attach.file, signedAt: attach.signedAt, isDistrato: input.type === 'distrato' } : null,
+            attach !== undefined
+              ? {
+                  file: attach.file,
+                  signedAt: attach.signedAt,
+                  isDistrato: input.type === 'distrato',
+                  // Distrato (#32): data efetiva digitada + motivo (= descrição do aditivo).
+                  terminatedAt: attach.terminatedAt,
+                  reason: input.description ?? '',
+                }
+              : null,
           )
           amendmentCommand.execute(contractId, input)
         }}
@@ -312,9 +321,11 @@ export function ContractDetailPage({ contractId }: { contractId: string }): Reac
         onCreate={() => { /* não usado no modo attach */ }}
         onAttach={({ amendmentId, file, signedAt }) => {
           // Homologa o aditivo; se for DISTRATO, encadeia o encerramento do contrato (POST /:id/end).
+          // Distrato no attach-pending: data efetiva degrada p/ a data de assinatura; motivo = descrição.
+          const reason = selectedAmendment?.description ?? ''
           void amendmentAttachCommand
             .execute({ contractId, amendmentId, file, signedAt })
-            .then((okHomolog) => { if (okHomolog && selectedAmendment?.type === 'distrato') endCommand.execute(contractId) })
+            .then((okHomolog) => { if (okHomolog && selectedAmendment?.type === 'distrato') endCommand.execute({ contractId, file, terminatedAt: signedAt, reason }) })
         }}
       />
 

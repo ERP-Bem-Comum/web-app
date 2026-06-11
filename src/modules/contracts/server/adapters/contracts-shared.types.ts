@@ -10,3 +10,7 @@ export type { ContractsError } from '#modules/contracts/server/domain/contracts.
 
 // Re-export de ContractHistoryEvent do server-domain (boundaries-compatível).
 export type { ContractHistoryEvent } from '#modules/contracts/server/domain/contracts.types.ts'
+
+// EndContractInput — input do distrato (#32). Re-export pela fronteira adapters (boundaries-compatível).
+// O client-data tem a própria cópia no `contracts.model.ts` (espelha AttachSignedDocumentInput).
+export type { EndContractInput } from '#modules/contracts/server/domain/contracts.types.ts'

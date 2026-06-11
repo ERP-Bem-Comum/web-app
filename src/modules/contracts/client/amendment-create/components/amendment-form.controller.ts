@@ -19,7 +19,8 @@ export type AmendmentFormState = Readonly<{
 
 // Anexo opcional no MESMO save do create: documento assinado + data de assinatura → homologa em
 // seguida (fluxo unificado). Sem anexo → aditivo nasce Pendente, sem efeito.
-export type AmendmentAttach = Readonly<{ file: File; signedAt: string }>
+// `terminatedAt` (distrato #32): data efetiva do encerramento; vazia para os demais tipos.
+export type AmendmentAttach = Readonly<{ file: File; signedAt: string; terminatedAt: string }>
 
 export const useAmendmentFormController = (onSubmit: (input: CreateAmendmentInput, attach?: AmendmentAttach) => void) => {
   const [state, setState] = useState<AmendmentFormState>({
