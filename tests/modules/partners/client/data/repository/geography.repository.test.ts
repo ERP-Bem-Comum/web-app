@@ -16,6 +16,7 @@ const deps = {
   togglePartnerStateFn: () => Promise.resolve({ ok: true as const, data: { uf: 'SP', isPartner: false } }),
   listMunicipalitiesByUfFn: () => Promise.resolve({ ok: true as const, data: [muni] }),
   togglePartnerMunicipalityFn: () => Promise.resolve({ ok: true as const, data: { ...muni, isPartner: false } }),
+  listAddedMunicipalitiesFn: () => Promise.resolve({ ok: true as const, data: [muni] }),
 }
 
 describe('GeographyRepository (mapeia FnResult → Result)', () => {
@@ -24,6 +25,12 @@ describe('GeographyRepository (mapeia FnResult → Result)', () => {
     assert.equal(isOk(await repo.listStates()), true)
     const m = await repo.listMunicipalities('SP')
     assert.equal(isOk(m) && m.value[0]?.name === 'São Paulo', true)
+  })
+
+  it('listAddedMunicipalities: mapeia FnResult ok → Result', async () => {
+    const repo = createGeographyRepository(deps)
+    const r = await repo.listAddedMunicipalities()
+    assert.equal(isOk(r) && r.value[0]?.name === 'São Paulo', true)
   })
 
   it('toggleState / toggleMunicipality: devolve o DTO confirmado', async () => {

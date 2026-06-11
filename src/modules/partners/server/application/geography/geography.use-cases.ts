@@ -14,6 +14,7 @@ export type GeographyClient = Readonly<{
   setPartnerState: (uf: string, isPartner: boolean, token: string) => Promise<Result<PartnerState, PartnersError>>
   listMunicipalitiesByUf: (uf: string, token: string) => Promise<Result<readonly PartnerMunicipality[], PartnersError>>
   setPartnerMunicipality: (ibgeCode: string, isPartner: boolean, token: string) => Promise<Result<PartnerMunicipality, PartnersError>>
+  listAddedMunicipalities: (token: string) => Promise<Result<readonly PartnerMunicipality[], PartnersError>>
 }>
 
 type Deps = Readonly<{ client: GeographyClient }>
@@ -39,3 +40,8 @@ export const createTogglePartnerMunicipality =
     isErr(IbgeCode(ibgeCode))
       ? Promise.resolve(err('invalid-ibge-code'))
       : deps.client.setPartnerMunicipality(ibgeCode, isPartner, token)
+
+export const createListAddedMunicipalities =
+  (deps: Deps) =>
+  (token: string): Promise<Result<readonly PartnerMunicipality[], PartnersError>> =>
+    deps.client.listAddedMunicipalities(token)

@@ -16,3 +16,11 @@ export const municipalitiesQueryOptions = (uf: string) => ({
   queryKey: municipalitiesQueryKey(uf),
   queryFn: () => geographyRepository.listMunicipalities(uf),
 })
+
+// Municípios parceiros de TODAS as UFs (cross-state) — painel "Adicionados".
+export const addedMunicipalitiesQueryKey = ['geography', 'municipalities', 'added'] as const
+
+export const addedMunicipalitiesQueryOptions = () => ({
+  queryKey: addedMunicipalitiesQueryKey,
+  queryFn: () => geographyRepository.listAddedMunicipalities(),
+})

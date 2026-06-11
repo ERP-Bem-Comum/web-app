@@ -21,6 +21,7 @@ const neverClient: GeographyClient = {
   setPartnerState: fail,
   listMunicipalitiesByUf: fail,
   setPartnerMunicipality: fail,
+  listAddedMunicipalities: fail,
 }
 
 describe('geography use-cases — validação de VO antes do core-api', () => {

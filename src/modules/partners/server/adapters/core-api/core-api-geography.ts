@@ -4,7 +4,7 @@
  * idempotentes e DEVOLVEM o DTO do item (200) — parseamos a resposta (sem refetch). `isPartner` decide o
  * método: true → POST (ativar), false → DELETE (desativar). Shape confirmado contra `partner-geography-schemas.ts`.
  */
-import { ok, err, isErr } from '#shared/primitives/result.ts'
+import { ok, err, isErr, type Result } from '#shared/primitives/result.ts'
 import type { HttpError } from '#shared/http/http-error.types.ts'
 import { parseErrorEnvelope } from '#shared/http/error-envelope.ts'
 import { resultFetch } from '#external/core-api/result-fetch.ts'
@@ -16,7 +16,9 @@ import {
   CoreApiPartnerStateListSchema,
   CoreApiPartnerMunicipalitySchema,
   CoreApiPartnerMunicipalityListSchema,
+  CoreApiAddedMunicipalitiesPagedSchema,
 } from './geography.schema.ts'
+import { toAddedMunicipalities, type AddedMunicipalityDto } from './added-municipalities.mapper.ts'
 
 const SLUG_TO_ERROR: Partial<Record<string, PartnersError>> = {
   unauthorized: 'unauthorized',
@@ -93,6 +95,33 @@ export const createCoreApiGeographyClient = (baseUrl: string): GeographyClient =
       if (isErr(r)) return err(mapHttpError(r.error))
       const parsed = CoreApiPartnerMunicipalitySchema.safeParse(r.value)
       return parsed.success ? ok(parsed.data satisfies PartnerMunicipality) : err('server')
+    },
+
+    // GET /partner-municipalities/added (cross-state, PAGINADO). Acumula TODAS as páginas (limit=100,
+    // até currentPage >= totalPages; guard de MAX_PAGES) e mapeia para o domínio. Recursão imutável
+    // (sem mutar arrays) — borda sem throw (tudo Result).
+    listAddedMunicipalities: async (token) => {
+      const PER_PAGE = 100
+      const MAX_PAGES = 50
+      const fetchPage = async (
+        page: number,
+        soFar: readonly AddedMunicipalityDto[],
+      ): Promise<Result<readonly AddedMunicipalityDto[], PartnersError>> => {
+        const qs = new URLSearchParams({ page: String(page), limit: String(PER_PAGE) }).toString()
+        const r = await resultFetch<unknown>(`${baseUrl}/partner-municipalities/added?${qs}`, {
+          method: 'GET',
+          headers: auth(token),
+        })
+        if (isErr(r)) return err(mapHttpError(r.error))
+        const parsed = CoreApiAddedMunicipalitiesPagedSchema.safeParse(r.value)
+        if (!parsed.success) return err('server')
+        const merged = [...soFar, ...parsed.data.items]
+        const { currentPage, totalPages } = parsed.data.meta
+        if (currentPage >= totalPages || page >= MAX_PAGES) return ok(merged)
+        return fetchPage(page + 1, merged)
+      }
+      const collected = await fetchPage(1, [])
+      return isErr(collected) ? collected : ok(toAddedMunicipalities(collected.value))
     },
   }
 }

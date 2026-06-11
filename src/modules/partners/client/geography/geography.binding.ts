@@ -6,8 +6,8 @@
  * Otimista: `onMutate` aplica o toggle no cache (view-model puro) + snapshot; erro de NEGÓCIO chega no
  * `onSuccess` (Result.err) → reverte; `onError` cobre falha LANÇADA (rede). Sem refetch (o DTO confirma).
  *
- * Municípios "Adicionados" (todos os estados) depende de endpoint inexistente no core-api
- * (ver ticket PAR-GEO-ADDED-MUNICIPALITIES) → exposto como `municipalitiesAddedPending`.
+ * Municípios "Adicionados" (todos os estados) consome `GET /partner-municipalities/added` (cross-state,
+ * #32) → `municipalitiesAdded: GeoPanel`. Toggle de município (Lista Geral) invalida essa query.
  */
 import { useCallback, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -23,8 +23,10 @@ import { geographyRepository } from '#modules/partners/client/data/repository/ge
 import {
   partnerStatesQueryOptions,
   municipalitiesQueryOptions,
+  addedMunicipalitiesQueryOptions,
   partnerStatesQueryKey,
   municipalitiesQueryKey,
+  addedMunicipalitiesQueryKey,
 } from './geography.query.ts'
 import {
   applyMunicipalityToggle,
@@ -64,8 +66,8 @@ export type GeographyBinding = Readonly<{
   setMunicipalitiesGeneralSearch: (v: string) => void
   municipalitiesAddedSearch: string
   setMunicipalitiesAddedSearch: (v: string) => void
-  /** Painel "Adicionados (todos os estados)" pendente de endpoint no core-api. */
-  municipalitiesAddedPending: boolean
+  /** Painel "Municípios Adicionados (todos os estados)" — cross-state via GET /partner-municipalities/added. */
+  municipalitiesAdded: GeoPanel
   addMunicipality: (ibgeCode: string) => void
   removeMunicipality: (ibgeCode: string) => void
   // Comuns
@@ -101,6 +103,7 @@ export function useGeographyBinding(): GeographyBinding {
     ...municipalitiesQueryOptions(selectedUf ?? ''),
     enabled: selectedUf !== null,
   })
+  const addedMunisQuery = useQuery(addedMunicipalitiesQueryOptions())
 
   const stateMutation = useMutation({
     mutationFn: (vars: Readonly<{ uf: string; isPartner: boolean }>) => geographyRepository.toggleState(vars),
@@ -142,7 +145,10 @@ export function useGeographyBinding(): GeographyBinding {
       if (isErr(result)) {
         if (ctx.prev !== undefined) queryClient.setQueryData(ctx.key, ctx.prev)
         setToggleErrorTag(partnersErrorTag(result.error))
+        return
       }
+      // Sucesso: o painel cross-state "Adicionados" precisa refletir o add/remove → invalida e refetch.
+      void queryClient.invalidateQueries({ queryKey: addedMunicipalitiesQueryKey })
     },
     onError: (_e, _vars, ctx) => {
       if (ctx?.prev !== undefined) queryClient.setQueryData(ctx.key, ctx.prev)
@@ -184,6 +190,16 @@ export function useGeographyBinding(): GeographyBinding {
       ? { status: 'idle' }
       : panelFrom(munisQuery, allMunis, (items) => items.filter((i) => matches(i.label, municipalitiesGeneralSearch)))
 
+  // ── Municípios "Adicionados" (cross-state) — já vem ordenado UF→nome do adapter ──
+  const allAddedMunis: readonly ColumnItem[] | null =
+    addedMunisQuery.data !== undefined && isOk(addedMunisQuery.data)
+      ? addedMunisQuery.data.value.map((m) => ({ key: m.ibgeCode, label: `${m.name} (${m.uf})`, added: true }))
+      : null
+
+  const municipalitiesAdded = panelFrom(addedMunisQuery, allAddedMunis, (items) =>
+    items.filter((i) => matches(i.label, municipalitiesAddedSearch)),
+  )
+
   return {
     statesGeneral,
     statesAdded,
@@ -203,7 +219,7 @@ export function useGeographyBinding(): GeographyBinding {
     setMunicipalitiesGeneralSearch,
     municipalitiesAddedSearch,
     setMunicipalitiesAddedSearch,
-    municipalitiesAddedPending: true,
+    municipalitiesAdded,
     addMunicipality: (ibgeCode) => { muniMutation.mutate({ ibgeCode, isPartner: true }) },
     removeMunicipality: (ibgeCode) => { muniMutation.mutate({ ibgeCode, isPartner: false }) },
 
