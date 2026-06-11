@@ -91,6 +91,7 @@ export function ContractCreatePage(): ReactNode {
       form.update('supplierId', partner.id)
       form.update('financierId', '')
       form.update('collaboratorId', '')
+      form.update('actId', '')
       // A busca de parceiros não traz dados bancários (só o detalhe). Buscamos o detalhe do fornecedor
       // e herdamos banco/PIX para a seção "Dados Bancários" (campos somente-leitura).
       void getSupplierFn({ data: { id: partner.id } }).then((res) => {
@@ -109,11 +110,20 @@ export function ContractCreatePage(): ReactNode {
       form.update('financierId', partner.id)
       form.update('supplierId', '')
       form.update('collaboratorId', '')
+      form.update('actId', '')
+    } else if (partner.kind === 'Acordo') {
+      // Acordo de Cooperação Técnica (ACT) como contratado — #32 aceita contractor.type='act'.
+      form.update('contractType', 'ACT')
+      form.update('actId', partner.id)
+      form.update('supplierId', '')
+      form.update('financierId', '')
+      form.update('collaboratorId', '')
     } else {
       form.update('contractType', 'Collaborator')
       form.update('collaboratorId', partner.id)
       form.update('supplierId', '')
       form.update('financierId', '')
+      form.update('actId', '')
     }
     if (partner.bancaryInfo) {
       form.update('bancaryInfo', { ...partner.bancaryInfo })

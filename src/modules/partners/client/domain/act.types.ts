@@ -1,19 +1,18 @@
 /**
- * Tipos derivados de UI do vertical de ACTs (client). Espelha `financier.types.ts`, com status duplo.
+ * Tipos derivados de UI do vertical de ACTs (client). ACT = Acordo de Cooperação Técnica (instituição).
+ * Situação = `active` boolean (rótulo Ativo/Inativo derivado no view-model). Espelha o supplier.
  */
-import type { ActivationStatus, RegistrationStatus } from '#modules/partners/client/data/model/act.model.ts'
-export type { ActivationStatus, RegistrationStatus }
 
 /** Linha da tabela (DataTable<ActRow>) — derivada de ActListItem por mapper puro. */
 export type ActRow = Readonly<{
   id: string
+  actNumber: string
   name: string
-  email: string
+  corporateName: string
   occupationArea: string
-  role: string
-  registration: RegistrationStatus
-  activation: ActivationStatus
+  hasFinancialTransfer: boolean
+  active: boolean
 }>
 
-/** Ação de ciclo de vida no detalhe (sobre a ATIVAÇÃO; o status cadastral é somente-leitura). */
+/** Ação de ciclo de vida no detalhe (sobre a situação ativa/inativa). */
 export type StatusAction = 'deactivate' | 'reactivate'

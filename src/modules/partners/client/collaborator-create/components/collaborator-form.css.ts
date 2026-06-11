@@ -6,8 +6,17 @@ export const form = style({
   display: 'flex',
   flexDirection: 'column',
   gap: vars.space.xl,
-  // Card mais largo: aproveita melhor a largura da página (layout de até 4 colunas).
-  maxInlineSize: '72rem',
+  // Ocupa toda a largura disponível da página (o `screen` já aplica o padding lateral).
+  inlineSize: '100%',
+})
+
+// Aviso discreto da seção "gated" (campos desabilitados até o backend suportar).
+export const gatedNote = style({
+  margin: 0,
+  marginBlockStart: vars.space.xs,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+  color: vars.color.text.secondary,
 })
 
 // Card: borda discreta + elevação. Sem padding aqui (header e body têm o seu); overflow hidden p/

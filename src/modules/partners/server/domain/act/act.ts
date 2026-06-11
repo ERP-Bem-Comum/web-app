@@ -1,22 +1,18 @@
 /**
- * Act — transições de domínio PURAS (sem I/O, sem throw; §II/§IV). Invariantes:
- *  - pré-cadastro nasce `pre-registration` + `active`;
+ * Act — transições de domínio PURAS (sem I/O, sem throw; §II/§IV). Situação única `active` (boolean):
+ *  - nasce `active: true`;
  *  - desativar/reativar são idempotentes e SEM motivo (o core-api `POST /acts/:id/deactivate` não
- *    recebe body — diferente do Colaborador, que exige `disableBy`).
+ *    recebe body — igual ao Fornecedor).
+ * Invariantes de repasse (hasFinancialTransfer ⇒ conta|pix) e vigência (endDate > startDate) são
+ * validadas na borda (act.io-schemas) + core-api (422).
  */
-import type { Act, PreRegistrationInput } from './act.types.ts'
+import type { Act, ActInput } from './act.types.ts'
 
-/** Pré-cadastro (7 campos) → Act com situação `pre-registration` + `active`. */
-export const buildPreRegistration = (input: PreRegistrationInput): Act => ({
+export const buildAct = (input: ActInput): Act => ({
   ...input,
-  registration: 'pre-registration',
-  activation: 'active',
+  active: true,
 })
 
-/** Desativa (idempotente, sem motivo). */
-export const deactivate = (a: Act): Act =>
-  a.activation === 'inactive' ? a : { ...a, activation: 'inactive' }
+export const deactivate = (a: Act): Act => (a.active ? { ...a, active: false } : a)
 
-/** Reativa (idempotente). */
-export const reactivate = (a: Act): Act =>
-  a.activation === 'active' ? a : { ...a, activation: 'active' }
+export const reactivate = (a: Act): Act => (a.active ? a : { ...a, active: true })

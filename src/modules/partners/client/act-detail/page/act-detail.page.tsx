@@ -74,20 +74,20 @@ function DetailReady(props: DetailReadyProps): ReactNode {
     onSubmit: (values) => { setPendingEdit(values); },
   })
 
-  const action = statusActionFor(act.activation)
+  const action = statusActionFor(act.active)
   const actionLabel =
     action === 'deactivate' ? t('partners.acts.actions.deactivate') : t('partners.acts.actions.reactivate')
   const errorTag = props.saveCommand.errorTag ?? props.statusCommand.errorTag
 
   return (
     <div className={screen}>
-      <PageHeader title={act.name} subtitle={act.role} onBack={props.onBack} backLabel={t('common.back')} />
+      <PageHeader title={act.name} subtitle={act.corporateName} onBack={props.onBack} backLabel={t('common.back')} />
 
       {errorTag !== null ? (
         <div className={errorBanner} role="alert">{t(errorTag)}</div>
       ) : null}
 
-      <ActDetailContent controller={c} editing={editing} activation={act.activation} />
+      <ActDetailContent controller={c} editing={editing} active={act.active} />
 
       <div className={footer}>
         {editing ? (

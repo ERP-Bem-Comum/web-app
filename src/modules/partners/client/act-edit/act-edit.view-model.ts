@@ -1,7 +1,7 @@
 /**
- * ViewModel da edição de ACT — AGNÓSTICO (puro). Deriva o estado de carregamento e mapeia o detalhe
- * para os valores iniciais do formulário (7 campos). occupationArea/employmentRelationship vêm como
- * enum no detalhe; o form os trata como string (compatível).
+ * ViewModel da edição de ACT — AGNÓSTICO (puro). Deriva o estado de carregamento e mapeia o detalhe do
+ * Acordo para os valores iniciais do formulário (incl. conta/PIX). occupationArea vem como string
+ * tolerante no detalhe; o form parte de um valor válido do enum (legado fora do enum → 'PARC').
  */
 import { isOk, type Result } from '#shared/primitives/result.ts'
 import { partnersErrorTag } from '#modules/partners/client/data/helpers/partners-error-tag.ts'
@@ -24,14 +24,19 @@ const asOccupationArea = (v: string): OccupationArea => (isOccupationArea(v) ? v
 
 export function detailToFormValues(a: ActDetail): ActFormValues {
   return {
+    actNumber: a.actNumber,
     name: a.name,
     email: a.email,
-    cpf: a.cpf,
-    // o detalhe pode trazer área legada (string fora do enum); o form parte de um valor válido.
+    cnpj: a.cnpj,
+    corporateName: a.corporateName,
+    fantasyName: a.fantasyName,
     occupationArea: asOccupationArea(a.occupationArea),
-    role: a.role,
-    startOfContract: a.startOfContract,
-    employmentRelationship: a.employmentRelationship,
+    legalRepresentative: a.legalRepresentative,
+    startDate: a.startDate,
+    endDate: a.endDate,
+    hasFinancialTransfer: a.hasFinancialTransfer,
+    bankAccount: a.bankAccount,
+    pixKey: a.pixKey,
   }
 }
 

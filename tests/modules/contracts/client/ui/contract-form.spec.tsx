@@ -25,6 +25,7 @@ const baseState = (): ContractFormState => ({
   supplierId: '',
   financierId: '',
   collaboratorId: '',
+  actId: '',
   programId: null,
   budgetPlanId: null,
   categorizacao: null,

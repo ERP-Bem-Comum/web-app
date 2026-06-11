@@ -158,6 +158,7 @@ export const CreateContractInputSchema = z.object({
   supplierId: z.uuid().optional(),
   financierId: z.uuid().optional(),
   collaboratorId: z.uuid().optional(),
+  actId: z.uuid().optional(),
   programId: z.uuid().optional(),
   budgetPlanId: z.uuid().optional(),
   categorizacao: z.string().trim().optional(),

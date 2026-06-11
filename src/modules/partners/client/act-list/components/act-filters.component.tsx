@@ -23,11 +23,16 @@ import {
 
 export type StatusFilter = 'all' | 'active' | 'inactive'
 
+/** Filtro de repasse financeiro: todos | com | sem. */
+export type TransferFilter = 'all' | 'yes' | 'no'
+
 export type SelectOption = Readonly<{ value: string; label: string }>
 
 export type ActFiltersProps = Readonly<{
   searchValue: string
   status: StatusFilter
+  transfer: TransferFilter
+  area: string
   areaOptions: readonly SelectOption[]
   labels: Readonly<{
     search: string
@@ -40,13 +45,14 @@ export type ActFiltersProps = Readonly<{
     transferNo: string
     area: string
     allOption: string
-    gatedHint: string
     apply: string
   }>
   /** Slot de exportação (a página injeta o dropdown CSV/PDF com os dados carregados). */
   exportSlot?: ReactNode
   onSearch: (value: string) => void
   onStatus: (status: StatusFilter) => void
+  onTransfer: (transfer: TransferFilter) => void
+  onArea: (area: string) => void
 }>
 
 const STATUSES: readonly StatusFilter[] = ['all', 'active', 'inactive']
@@ -97,20 +103,31 @@ export function ActFilters(props: ActFiltersProps): ReactNode {
 
       {open ? (
         <div className={panel}>
-          {/* Possui Repasse Financeiro? — sem suporte de filtro no backend do ACT ainda → desabilitado. */}
           <div className={field}>
-            <span className={fieldLabel}>{L.hasTransfer}</span>
-            <select className={select} disabled title={L.gatedHint} aria-label={L.hasTransfer}>
-              <option value="">{L.allOption}</option>
-              <option value="sim">{L.transferYes}</option>
-              <option value="nao">{L.transferNo}</option>
+            <label className={fieldLabel} htmlFor="act-f-transfer">{L.hasTransfer}</label>
+            <select
+              id="act-f-transfer"
+              className={select}
+              value={props.transfer}
+              onChange={(e) => {
+                const v = e.target.value
+                props.onTransfer(v === 'yes' ? 'yes' : v === 'no' ? 'no' : 'all')
+              }}
+            >
+              <option value="all">{L.allOption}</option>
+              <option value="yes">{L.transferYes}</option>
+              <option value="no">{L.transferNo}</option>
             </select>
           </div>
 
-          {/* Área de Atuação: combo populado; filtro no backend ainda não suportado → desabilitado. */}
           <div className={field}>
-            <span className={fieldLabel}>{L.area}</span>
-            <select className={select} disabled title={L.gatedHint} aria-label={L.area}>
+            <label className={fieldLabel} htmlFor="act-f-area">{L.area}</label>
+            <select
+              id="act-f-area"
+              className={select}
+              value={props.area}
+              onChange={(e) => { props.onArea(e.target.value); }}
+            >
               <option value="">{L.allOption}</option>
               {props.areaOptions.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>

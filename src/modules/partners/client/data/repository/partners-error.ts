@@ -16,6 +16,10 @@ export type PartnersError =
   | 'invalid-registration-transition'
   | 'deactivation-reason-required'
   | 'invalid-service-category'
+  | 'act-number-duplicate'
+  | 'invalid-cnpj'
+  | 'invalid-act-period'
+  | 'act-payment-target-required'
   | 'invalid-state'
   | 'invalid-ibge-code'
 

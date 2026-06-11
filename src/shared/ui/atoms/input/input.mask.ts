@@ -3,7 +3,7 @@
  * onChange — o estado/submit ficam crus (os schemas de CPF/CNPJ normalizam; telefone vira dígitos).
  * Funções puras e idempotentes (sempre extraem os dígitos primeiro).
  */
-export type InputMask = 'cpf' | 'cnpj' | 'cpf-cnpj' | 'phone'
+export type InputMask = 'cpf' | 'cnpj' | 'cpf-cnpj' | 'phone' | 'agency'
 
 const onlyDigits = (value: string): string => value.replace(/\D/g, '')
 
@@ -38,6 +38,12 @@ function maskPhone(d: string): string {
   return `(${ddd}) ${rest.slice(0, breakAt)}-${rest.slice(breakAt)}`
 }
 
+/** Agência bancária: 4 dígitos + DV opcional (5º dígito). Ex.: "1234" ou "1234-5". */
+function maskAgency(d: string): string {
+  const x = d.slice(0, 5)
+  return x.length > 4 ? `${x.slice(0, 4)}-${x.slice(4, 5)}` : x.slice(0, 4)
+}
+
 /** Valor cru (somente dígitos) — o que o onChange do Input emite e o estado guarda. */
 export function unmask(value: string): string {
   return onlyDigits(value)
@@ -55,6 +61,8 @@ export function formatMask(mask: InputMask, value: string): string {
       return d.length > 11 ? maskCnpj(d) : maskCpf(d)
     case 'phone':
       return maskPhone(d)
+    case 'agency':
+      return maskAgency(d)
     default: {
       const _exhaustive: never = mask
       return _exhaustive

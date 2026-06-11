@@ -14,6 +14,7 @@ import {
   errorBanner,
   footer,
   form,
+  gatedNote,
   grid,
   saveWrap,
   section,
@@ -24,6 +25,8 @@ import {
 } from './collaborator-form.css.ts'
 
 const t = createTranslator(ptBR)
+
+const PIX_KEY_TYPES = ['cpf', 'cnpj', 'email', 'phone', 'random-key'] as const
 
 export type CollaboratorFormProps = Readonly<{
   controller: CollaboratorFormController
@@ -105,6 +108,43 @@ export function CollaboratorForm(props: CollaboratorFormProps): ReactNode {
             <Input id="collab-cpf" mask="cpf" value={c.state.cpf} onChange={(v) => { c.setField('cpf', v); }} />
           </Field>
         </div>
+        </div>
+      </section>
+
+      {/* Dados bancários — GATED: o backend ainda não aceita conta bancária p/ colaborador
+          (ver handbook/core-api/tickets/PAR-FINANCIER-COLLAB-BANK.md). Campos visíveis e
+          desabilitados; ao liberar o backend, habilitar + ligar no controller/mapeador. */}
+      <section className={section}>
+        <div className={sectionHeader}>
+          <h2 className={sectionTitle}>{t('partners.collaborators.form.section.bank')}</h2>
+        </div>
+        <div className={sectionBody}>
+          <p className={gatedNote}>{t('partners.collaborators.form.bankGatedHint')}</p>
+          <div className={grid}>
+            <Field htmlFor="collab-bank" label={t('partners.collaborators.form.bank')}>
+              <Input id="collab-bank" value="" disabled onChange={() => { /* gated */ }} />
+            </Field>
+            <Field htmlFor="collab-agency" label={t('partners.collaborators.form.agency')}>
+              <Input id="collab-agency" mask="agency" value="" disabled onChange={() => { /* gated */ }} />
+            </Field>
+            <Field htmlFor="collab-account" label={t('partners.collaborators.form.accountNumber')}>
+              <Input id="collab-account" value="" disabled onChange={() => { /* gated */ }} />
+            </Field>
+            <Field htmlFor="collab-dv" label={t('partners.collaborators.form.checkDigit')}>
+              <Input id="collab-dv" value="" disabled onChange={() => { /* gated */ }} />
+            </Field>
+            <Field htmlFor="collab-pix-type" label={t('partners.collaborators.form.pixKeyType')}>
+              <select id="collab-pix-type" className={select} disabled defaultValue="" aria-label={t('partners.collaborators.form.pixKeyType')}>
+                <option value="">{t('partners.collaborators.form.select')}</option>
+                {PIX_KEY_TYPES.map((k) => (
+                  <option key={k} value={k}>{t(`partners.collaborators.pix.${k}`)}</option>
+                ))}
+              </select>
+            </Field>
+            <Field htmlFor="collab-pix-key" label={t('partners.collaborators.form.pixKey')}>
+              <Input id="collab-pix-key" value="" disabled onChange={() => { /* gated */ }} />
+            </Field>
+          </div>
         </div>
       </section>
 

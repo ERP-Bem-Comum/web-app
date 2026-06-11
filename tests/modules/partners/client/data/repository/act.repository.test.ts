@@ -7,20 +7,38 @@ import type { ActDetail, ActListResponse } from '../../../../../../src/modules/p
 
 const detail: ActDetail = {
   id: 'a1',
-  name: 'João Souza',
-  email: 'joao@org.dev',
+  legacyId: null,
+  actNumber: 'ACT-2026-001',
+  name: 'Acordo X',
+  email: 'contato@org.dev',
+  cnpj: '11222333000181',
+  corporateName: 'Instituição LTDA',
+  fantasyName: 'IP',
   occupationArea: 'PARC',
-  role: 'Analista',
-  registration: 'pre-registration',
-  activation: 'active',
-  cpf: '12345678909',
-  startOfContract: '2026-01-15',
-  employmentRelationship: 'CLT',
+  legalRepresentative: 'João',
+  startDate: '2026-01-01',
+  endDate: '2026-12-31',
+  hasFinancialTransfer: false,
+  bankAccount: null,
+  pixKey: null,
+  active: true,
+  createdAt: '2026-01-01T00:00:00Z',
+  updatedAt: '2026-01-02T00:00:00Z',
 }
 
 const listResponse: ActListResponse = {
   items: [
-    { id: 'a1', name: 'João Souza', email: 'joao@org.dev', occupationArea: 'PARC', role: 'Analista', registration: 'pre-registration', activation: 'active' },
+    {
+      id: 'a1',
+      actNumber: 'ACT-2026-001',
+      name: 'Acordo X',
+      email: 'contato@org.dev',
+      corporateName: 'Instituição LTDA',
+      fantasyName: 'IP',
+      occupationArea: 'PARC',
+      hasFinancialTransfer: false,
+      active: true,
+    },
   ],
   meta: { page: 1, limit: 5, total: 1 },
 }
@@ -32,7 +50,7 @@ const baseDeps = {
   getActFn: okFn(detail),
   createActFn: okFn(detail),
   updateActFn: okFn(detail),
-  deactivateActFn: okFn({ ...detail, activation: 'inactive' as const }),
+  deactivateActFn: okFn({ ...detail, active: false }),
   reactivateActFn: okFn(detail),
 }
 
@@ -41,13 +59,13 @@ describe('ActRepository (mapeia FnResult → Result)', () => {
     const repo = createActRepository(baseDeps)
     assert.equal(isOk(await repo.list({ order: 'ASC', page: 1, limit: 5 })), true)
     const d = await repo.getById('a1')
-    assert.equal(isOk(d) && d.value.cpf === '12345678909', true)
+    assert.equal(isOk(d) && d.value.cnpj === '11222333000181', true)
   })
 
-  it('deactivate/reactivate: activation correto', async () => {
+  it('deactivate/reactivate: active correto', async () => {
     const repo = createActRepository(baseDeps)
     const d = await repo.deactivate('a1')
-    assert.equal(isOk(d) && d.value.activation === 'inactive', true)
+    assert.equal(isOk(d) && !d.value.active, true)
   })
 
   it('propaga erro do BFF como err(PartnersError)', async () => {

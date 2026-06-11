@@ -6,8 +6,8 @@ export const form = style({
   display: 'flex',
   flexDirection: 'column',
   gap: vars.space.xl,
-  // expande pra usar melhor o espaço da tela (padrão de Colaboradores/Fornecedores).
-  maxInlineSize: '72rem',
+  // ocupa toda a largura disponível da página (o `screen` já aplica o padding lateral).
+  inlineSize: '100%',
   // não encolher dentro do screen com overflow.
   flexShrink: 0,
 })
@@ -51,6 +51,26 @@ export const grid = style({
     '(inline-size > 32rem)': { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' },
     '(inline-size > 56rem)': { gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' },
   },
+})
+
+// Aviso discreto da seção "gated" (campos desabilitados até o backend suportar).
+export const gatedNote = style({
+  margin: 0,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+  color: vars.color.text.secondary,
+})
+
+export const select = style({
+  paddingBlock: vars.space.sm,
+  paddingInline: vars.space.md,
+  borderRadius: vars.radius.md,
+  border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
+  background: vars.color.surface.default,
+  color: vars.color.text.primary,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+  inlineSize: '100%',
 })
 
 export const errorBanner = style({

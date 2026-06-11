@@ -18,6 +18,11 @@ export type PartnersError =
   | 'deactivation-reason-required' // desativar colaborador exige motivo
   // fornecedores
   | 'invalid-service-category' // categoria fora do catálogo (39)
+  // acordos (ACT)
+  | 'act-number-duplicate' // 409 register/edit/act-number-duplicate
+  | 'invalid-cnpj' // 422 invalid-cnpj
+  | 'invalid-act-period' // 422 period-end-before-start / period-zero-duration
+  | 'act-payment-target-required' // 422 act-payment-target-required
   // geografia
   | 'invalid-state' // UF fora do catálogo
   | 'invalid-ibge-code' // município fora do catálogo

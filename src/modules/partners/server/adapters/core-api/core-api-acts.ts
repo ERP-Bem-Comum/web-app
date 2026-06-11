@@ -1,8 +1,9 @@
 /**
  * Cliente HTTP do core-api para Acts — chama `/api/v1/acts/*`. NUNCA lança (tudo é Result; mappers
  * retornam Result, sem `throw`). Server-only (adapters). Anti-corruption layer: traduz o contrato REAL
- * do core-api ↔ Model do front (paginação legada, `registrationStatus`, create 201+Location, deactivate
- * SEM body) e mapeia o envelope de erro para `PartnersError`. Shape confirmado contra `act-schemas.ts`.
+ * do #32 (Acordo de Cooperação Técnica institucional) ↔ Model do front (paginação legada, `active`
+ * boolean, create 201+Location, deactivate/reactivate SEM body) e mapeia o envelope de erro para
+ * `PartnersError`. CNPJ normalizado p/ 14 dígitos antes de enviar (o core-api exige só-dígitos).
  */
 import { ok, err, isErr, type Result } from '#shared/primitives/result.ts'
 import type { HttpError } from '#shared/http/http-error.types.ts'
@@ -15,17 +16,20 @@ import type {
   ActListResponse,
   ActListItem,
   ActDetail,
+  CreateActInput,
 } from '#modules/partners/server/domain/act/act.io.ts'
-import type {
-  RegistrationStatus,
-  ActivationStatus,
-  EmploymentRelationship,
-} from '#modules/partners/server/domain/act/act.types.ts'
 import { CoreApiActListSchema, CoreApiActDetailSchema, type CoreApiActItem } from './act.schema.ts'
 
-const SLUG_TO_ERROR: Partial<Record<string, PartnersError>> = {
+export const SLUG_TO_ERROR: Partial<Record<string, PartnersError>> = {
   unauthorized: 'unauthorized',
   forbidden: 'forbidden',
+  'register-act-number-duplicate': 'act-number-duplicate',
+  'edit-act-number-duplicate': 'act-number-duplicate',
+  'act-number-duplicate': 'act-number-duplicate',
+  'invalid-cnpj': 'invalid-cnpj',
+  'period-end-before-start': 'invalid-act-period',
+  'period-zero-duration': 'invalid-act-period',
+  'act-payment-target-required': 'act-payment-target-required',
 }
 
 const statusToError = (status: number, slug: string | undefined): PartnersError => {
@@ -68,31 +72,36 @@ const mapResponseError = async (response: Response): Promise<PartnersError> => {
   return statusToError(response.status, parseErrorEnvelope(body)?.error.code)
 }
 
-// ── Mappers: API → Model (errors-as-values: retornam Result, sem throw) ─────────────
-const registrationFromApi = (s: 'PreRegistration' | 'Complete'): RegistrationStatus =>
-  s === 'Complete' ? 'complete' : 'pre-registration'
-const activationFromApi = (active: boolean): ActivationStatus => (active ? 'active' : 'inactive')
-const employmentFromApi = (s: string): EmploymentRelationship => (s === 'PJ' ? 'PJ' : 'CLT')
+const onlyDigits = (raw: string): string => raw.replace(/\D/g, '')
 
-const itemToModel = (a: CoreApiActItem): ActListItem => ({
+// ── Mappers: API → Model (errors-as-values: retornam Result, sem throw) ─────────────
+export const itemToModel = (a: CoreApiActItem): ActListItem => ({
   id: a.id,
+  actNumber: a.actNumber,
   name: a.name,
   email: a.email,
+  corporateName: a.corporateName,
+  fantasyName: a.fantasyName,
   occupationArea: a.occupationArea,
-  role: a.role,
-  registration: registrationFromApi(a.registrationStatus),
-  activation: activationFromApi(a.active),
+  hasFinancialTransfer: a.hasFinancialTransfer,
+  active: a.active,
 })
 
-const detailToModel = (raw: unknown): Result<ActDetail, PartnersError> => {
+export const detailToModel = (raw: unknown): Result<ActDetail, PartnersError> => {
   const parsed = CoreApiActDetailSchema.safeParse(raw)
   if (!parsed.success) return err('server') // drift de contrato
   const a = parsed.data
   return ok({
     ...itemToModel(a),
-    cpf: a.cpf,
-    startOfContract: a.startOfContract,
-    employmentRelationship: employmentFromApi(a.employmentRelationship),
+    legacyId: a.legacyId,
+    cnpj: a.cnpj,
+    legalRepresentative: a.legalRepresentative,
+    startDate: a.startDate,
+    endDate: a.endDate,
+    bankAccount: a.bankAccount,
+    pixKey: a.pixKey,
+    createdAt: a.createdAt,
+    updatedAt: a.updatedAt,
   })
 }
 
@@ -113,8 +122,28 @@ const buildListQuery = (input: ListActsInput): string => {
   p.set('order', input.order)
   if (input.search !== undefined && input.search !== '') p.set('search', input.search)
   if (input.active !== undefined) p.set('active', input.active ? '1' : '0')
+  if (input.hasFinancialTransfer !== undefined)
+    p.set('hasFinancialTransfer', input.hasFinancialTransfer ? '1' : '0')
+  if (input.occupationArea !== undefined) p.set('occupationArea', input.occupationArea)
   return p.toString()
 }
+
+// Normaliza o CNPJ (14 dígitos) no corpo de escrita; conta/PIX/datas/flag passam direto.
+export const toWriteBody = (input: CreateActInput): Record<string, unknown> => ({
+  actNumber: input.actNumber,
+  name: input.name,
+  email: input.email,
+  cnpj: onlyDigits(input.cnpj),
+  corporateName: input.corporateName,
+  fantasyName: input.fantasyName,
+  occupationArea: input.occupationArea,
+  legalRepresentative: input.legalRepresentative,
+  startDate: input.startDate,
+  endDate: input.endDate,
+  hasFinancialTransfer: input.hasFinancialTransfer,
+  bankAccount: input.bankAccount,
+  pixKey: input.pixKey,
+})
 
 export const createCoreApiActsClient = (baseUrl: string): ActClient => {
   const auth = (token: string) => ({ Authorization: `Bearer ${token}` })
@@ -145,31 +174,31 @@ export const createCoreApiActsClient = (baseUrl: string): ActClient => {
         response = await globalThis.fetch(`${baseUrl}/acts`, {
           method: 'POST',
           headers: { ...auth(token), 'Content-Type': 'application/json' },
-          body: JSON.stringify(input),
+          body: JSON.stringify(toWriteBody(input)),
           signal: AbortSignal.timeout(10_000),
         })
       } catch {
         return err('connectivity')
       }
       if (!response.ok) return err(await mapResponseError(response))
-      const location = response.headers.get('location')
-      const id = location?.split('/').pop()
+      const id = response.headers.get('location')?.split('/').pop()
       if (id === undefined || id === '') return err('server')
       return fetchDetailById(id, token)
     },
 
+    // PUT → 200 vazio → refetch.
     update: async (input, token) => {
-      const { id, ...fields } = input
+      const { id } = input
       const r = await resultFetch<unknown>(`${baseUrl}/acts/${id}`, {
         method: 'PUT',
-        body: fields,
+        body: toWriteBody(input),
         headers: auth(token),
       })
       if (isErr(r)) return err(mapHttpError(r.error))
       return fetchDetailById(id, token)
     },
 
-    // deactivate: POST /acts/:id/deactivate SEM body (≠ Colaborador). Retorna 200 vazio → refetch.
+    // deactivate/reactivate: POST SEM body → 200 vazio → refetch.
     deactivate: async (id, token) => {
       const r = await resultFetch<unknown>(`${baseUrl}/acts/${id}/deactivate`, {
         method: 'POST',

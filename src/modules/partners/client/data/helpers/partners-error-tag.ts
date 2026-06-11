@@ -28,6 +28,14 @@ export const partnersErrorTag = (e: PartnersError): string => {
       return 'partners.error.deactivation-reason-required'
     case 'invalid-service-category':
       return 'partners.error.invalid-service-category'
+    case 'act-number-duplicate':
+      return 'partners.error.act-number-duplicate'
+    case 'invalid-cnpj':
+      return 'partners.error.invalid-cnpj'
+    case 'invalid-act-period':
+      return 'partners.error.invalid-act-period'
+    case 'act-payment-target-required':
+      return 'partners.error.act-payment-target-required'
     case 'invalid-state':
       return 'partners.error.invalid-state'
     case 'invalid-ibge-code':

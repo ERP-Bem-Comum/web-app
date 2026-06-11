@@ -1,22 +1,42 @@
 /**
- * Zod dos responses do core-api `/api/v1/acts/*` (boundary §VI). Valida o que entra do backend antes de
- * virar Model. Shape alinhado ao contrato REAL (`act-schemas.ts` do core-api): o list já traz o DETALHE
- * completo de cada item; `registrationStatus` é o status cadastral, `active` é o soft-delete.
- * `.strip()` (default Zod) descarta extras (`legacyId`, `createdAt`, `updatedAt`).
+ * Zod dos responses do core-api `/api/v1/acts/*` (boundary §VI). Shape alinhado ao contrato REAL do #32
+ * (`actDetailSchema`): Acordo de Cooperação Técnica institucional. `occupationArea` string TOLERANTE
+ * (valor legado fora do enum não quebra o parse); `legacyId` number|null; `active` boolean; bankAccount/
+ * pixKey objeto ou null. A lista já entrega o detalhe completo de cada item.
  */
 import * as z from 'zod'
 
+const BankAccountDtoSchema = z.object({
+  bank: z.string().trim(),
+  agency: z.string().trim(),
+  accountNumber: z.string().trim(),
+  checkDigit: z.string().trim(),
+})
+
+const PixKeyDtoSchema = z.object({
+  keyType: z.enum(['cpf', 'cnpj', 'email', 'phone', 'random-key']),
+  key: z.string().trim(),
+})
+
 export const CoreApiActItemSchema = z.object({
   id: z.string().trim(),
+  legacyId: z.number().nullable(),
+  actNumber: z.string().trim(),
   name: z.string().trim(),
-  email: z.string().trim(), // core-api: z.string() (não z.email) — tolerante na borda
-  cpf: z.string().trim(),
-  occupationArea: z.string().trim(),
-  role: z.string().trim(),
-  startOfContract: z.string().trim(),
-  employmentRelationship: z.string().trim(), // tolerante; normalizado p/ 'CLT'|'PJ' no mapper
-  registrationStatus: z.enum(['PreRegistration', 'Complete']),
+  email: z.string().trim(), // tolerante na borda (core-api usa z.string())
+  cnpj: z.string().trim(),
+  corporateName: z.string().trim(),
+  fantasyName: z.string().trim(),
+  occupationArea: z.string().trim(), // tolerante: valor legado fora do enum não quebra
+  legalRepresentative: z.string().trim(),
+  startDate: z.string().trim(),
+  endDate: z.string().trim(),
+  hasFinancialTransfer: z.boolean(),
+  bankAccount: BankAccountDtoSchema.nullable(),
+  pixKey: PixKeyDtoSchema.nullable(),
   active: z.boolean(),
+  createdAt: z.string().trim(),
+  updatedAt: z.string().trim(),
 })
 export type CoreApiActItem = z.infer<typeof CoreApiActItemSchema>
 
