@@ -5,6 +5,7 @@ import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Button, Checkbox, Field, Input } from '#shared/ui/index.ts'
 
 import { OCCUPATION_AREAS, PIX_KEY_TYPES, isPixKeyType, type ActFormController } from './act-form.controller.ts'
+import { derivePixKey } from '#modules/partners/client/domain/derive-pix-key.ts'
 import {
   cancelButton,
   errorBanner,
@@ -127,7 +128,12 @@ export function ActForm(props: ActFormProps): ReactNode {
                   id="act-pix-type"
                   className={select}
                   value={c.state.pixKeyType}
-                  onChange={(e) => { if (isPixKeyType(e.target.value)) c.setField('pixKeyType', e.target.value) }}
+                  onChange={(e) => {
+                    if (isPixKeyType(e.target.value)) {
+                      c.setField('pixKeyType', e.target.value)
+                      c.setField('pixKey', derivePixKey(e.target.value, { document: c.state.cnpj, email: c.state.email }))
+                    }
+                  }}
                 >
                   {PIX_KEY_TYPES.map((pt) => (
                     <option key={pt} value={pt}>{t(`partners.acts.pix.${pt}`)}</option>

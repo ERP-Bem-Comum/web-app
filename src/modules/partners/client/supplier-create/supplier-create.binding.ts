@@ -4,9 +4,9 @@
  * intermediário e disparo em commits arbitrários).
  */
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
+import { useNavigate, useSearch } from '@tanstack/react-router'
 
-import { useCurrentUser } from '#modules/auth/public-api/index.ts'
+import { useCurrentUser, safeRedirect } from '#modules/auth/public-api/index.ts'
 import { isOk } from '#shared/primitives/result.ts'
 import { can, grantedPermissions } from '#modules/partners/client/data/helpers/can.ts'
 import type { SupplierWriteInput } from '#modules/partners/client/data/model/supplier.model.ts'
@@ -31,6 +31,7 @@ export type SupplierCreateBinding = Readonly<{
 export function useSupplierCreateBinding(): SupplierCreateBinding {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const search = useSearch({ strict: false })
   const current = useCurrentUser()
   const granted = grantedPermissions(current.user?.permissions)
   const categoriesQuery = useQuery(serviceCategoriesQueryOptions())
@@ -39,7 +40,8 @@ export function useSupplierCreateBinding(): SupplierCreateBinding {
     ...supplierCreateViewModel.mutation,
     onSuccess: (res) => {
       void queryClient.invalidateQueries({ queryKey: ['suppliers'] })
-      if (isOk(res)) void navigate({ to: '/parceiros/fornecedores' })
+      // Se veio da inclusão de contrato (?returnTo), volta para lá; senão, para a lista. safeRedirect anti open-redirect.
+      if (isOk(res)) void navigate({ to: safeRedirect(typeof search.returnTo === 'string' ? search.returnTo : undefined, '/parceiros/fornecedores') })
     },
   })
 

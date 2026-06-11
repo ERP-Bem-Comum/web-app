@@ -24,6 +24,10 @@ export { deactivateFinancierFn } from '#modules/partners/server/adapters/server-
 export { reactivateFinancierFn } from '#modules/partners/server/adapters/server-fns/financier/reactivate-financier.service.fn.ts'
 export type { FinancierListItem, FinancierDetail, FinancierListResponse } from '#modules/partners/server/domain/financier/financier.io.ts'
 
+// ── Colaboradores ───────────────────────────────────────────────────────────
+export { getCollaboratorFn } from '#modules/partners/server/adapters/server-fns/collaborator/get-collaborator.query.fn.ts'
+export type { CollaboratorDetail } from '#modules/partners/server/domain/collaborator/collaborator.io.ts'
+
 // ── Geografia: Estados (US4) + Municípios (US5) ─────────────────────────────
 export { listPartnerStatesFn } from '#modules/partners/server/adapters/server-fns/geography/list-partner-states.query.fn.ts'
 export { togglePartnerStateFn } from '#modules/partners/server/adapters/server-fns/geography/toggle-partner-state.service.fn.ts'
