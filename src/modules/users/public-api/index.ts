@@ -18,3 +18,8 @@ export { updateMeFn } from '#modules/users/server/adapters/server-fns/update-me.
 export type { UpdateMeFnResult } from '#modules/users/server/adapters/server-fns/update-me.service.fn.ts'
 export { changePasswordFn } from '#modules/users/server/adapters/server-fns/change-password.service.fn.ts'
 export type { ChangePasswordFnResult } from '#modules/users/server/adapters/server-fns/change-password.service.fn.ts'
+
+// Perfil do usuário logado (autosserviço GET /api/v1/me) — query CLIENT compartilhada (queryKey
+// ['users','me']). Consumida pelo slice "Minha Conta" e também pelo shell (o topbar exibe o nome).
+// Como a mutation de Minha Conta invalida ['users'], o topbar reflete a alteração automaticamente.
+export { myAccountQueryOptions } from '#modules/users/client/my-account/my-account.query.ts'
