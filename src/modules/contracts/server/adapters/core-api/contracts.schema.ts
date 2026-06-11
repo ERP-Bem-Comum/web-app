@@ -20,6 +20,27 @@ const PeriodDtoSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('Indefinite'), start: z.string().trim() }),
 ])
 
+// CTR-NUMBER-PROGRAM (#32): metadados de cadastro do agregado + bloco `program` composto na borda.
+// Todos NULLABLE/OPTIONAL para backward-compat (contratos antigos / respostas sem composição de programs).
+const ProgramDtoSchema = z
+  .object({
+    id: z.uuid(),
+    snapshot: z
+      .object({ name: z.string().trim(), sigla: z.string().trim(), programNumber: z.number() })
+      .nullable(),
+  })
+  .nullable()
+  .optional()
+
+const ContractMetaShape = {
+  classification: z.enum(['CT', 'OS']).nullable().optional(),
+  programId: z.uuid().nullable().optional(),
+  budgetPlanId: z.uuid().nullable().optional(),
+  categorizacao: z.string().trim().nullable().optional(),
+  centroDeCusto: z.string().trim().nullable().optional(),
+  program: ProgramDtoSchema,
+}
+
 const ContractListItemBaseSchema = z.object({
   id: z.uuid(),
   sequentialNumber: z.string().trim(),
@@ -27,9 +48,13 @@ const ContractListItemBaseSchema = z.object({
   objective: z.string().trim(),
   originalValue: MoneyDtoSchema,
   originalPeriod: PeriodDtoSchema,
+  ...ContractMetaShape,
 })
 
-export const CoreApiContractListItemSchema = z.discriminatedUnion('status', [
+// D9 (ADR-0013): `z.union` (não `discriminatedUnion`) com BRANCH DE ESCAPE no fim — status conhecidos
+// primeiro (validação completa dos campos condicionais); qualquer status novo do backend (ex.: 'Cancelled'
+// do #32) cai no escape `status: z.string()` e preserva a linha (o mapper degrada o status desconhecido).
+export const CoreApiContractListItemSchema = z.union([
   z.object({ ...ContractListItemBaseSchema.shape, status: z.literal('Pending') }),
   z.object({
     ...ContractListItemBaseSchema.shape,
@@ -53,6 +78,15 @@ export const CoreApiContractListItemSchema = z.discriminatedUnion('status', [
     currentValue: MoneyDtoSchema,
     currentPeriod: PeriodDtoSchema,
     endedAt: z.string().trim(),
+  }),
+  // Escape: status desconhecido (futuro). Campos condicionais opcionais p/ tolerar variações.
+  z.object({
+    ...ContractListItemBaseSchema.shape,
+    status: z.string().trim(),
+    signedAt: z.string().trim().optional(),
+    currentValue: MoneyDtoSchema.optional(),
+    currentPeriod: PeriodDtoSchema.optional(),
+    endedAt: z.string().trim().optional(),
   }),
 ])
 
@@ -152,7 +186,9 @@ const detailMetaShape = {
   contractor: CoreApiContractorSchema.nullable().optional(),
 }
 
-export const CoreApiContractDetailSchema = z.discriminatedUnion('status', [
+// D9 (ADR-0013): `z.union` com escape branch no fim (mesmo padrão do list-item) — status novo do
+// backend (ex.: 'Cancelled' do #32) não derruba o detalhe; o mapper degrada o status desconhecido.
+export const CoreApiContractDetailSchema = z.union([
   z.object({
     ...ContractListItemBaseSchema.shape,
     ...detailMetaShape,
@@ -189,6 +225,18 @@ export const CoreApiContractDetailSchema = z.discriminatedUnion('status', [
     currentValue: MoneyDtoSchema,
     currentPeriod: PeriodDtoSchema,
     endedAt: z.string().trim(),
+    amendments: z.array(AmendmentDtoSchema),
+    documents: z.array(CoreApiDocumentSchema),
+  }),
+  // Escape: status desconhecido (futuro, ex.: 'Cancelled'). Campos condicionais opcionais.
+  z.object({
+    ...ContractListItemBaseSchema.shape,
+    ...detailMetaShape,
+    status: z.string().trim(),
+    signedAt: z.string().trim().optional(),
+    currentValue: MoneyDtoSchema.optional(),
+    currentPeriod: PeriodDtoSchema.optional(),
+    endedAt: z.string().trim().optional(),
     amendments: z.array(AmendmentDtoSchema),
     documents: z.array(CoreApiDocumentSchema),
   }),

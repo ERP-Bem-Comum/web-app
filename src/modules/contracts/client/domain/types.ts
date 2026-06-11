@@ -121,6 +121,8 @@ export interface FileAttachment {
 export interface ProgramRef {
   readonly id: string
   readonly name: string
+  // Sigla curta exibida na coluna "Programa" do grid (#32 — bloco program.snapshot.sigla).
+  readonly sigla: string
 }
 
 export interface BudgetPlanRef {

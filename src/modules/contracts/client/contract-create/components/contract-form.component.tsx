@@ -139,6 +139,8 @@ interface Props {
   documentUploaded: boolean
   // Ano corrente para o número provisório (CT 0001/AAAA) — vem da view/controller, não do render (C1).
   currentYear: number
+  // Opções reais de Programa (D8 — UUID→sigla), vindas da ViewModel (query de programas no binding).
+  programOptions: readonly { readonly value: string; readonly label: string }[]
 }
 
 export function ContractForm({
@@ -164,6 +166,7 @@ export function ContractForm({
   onCreateNewPartner,
   documentUploaded,
   currentYear,
+  programOptions,
 }: Props): ReactNode {
   const togglePartnerSearch = (): void => {
     if (partnerSearchOpen) {
@@ -417,13 +420,12 @@ export function ContractForm({
                 <select
                   className={`${select} ${validationAttempted && !state.programId ? inputError : ''}`}
                   value={state.programId ?? ''}
-                  onChange={(e) => { onUpdate('programId', e.target.value ? Number(e.target.value) : null) }}
+                  onChange={(e) => { onUpdate('programId', e.target.value || null) }}
                 >
                   <option value="">Selecione…</option>
-                  <option value={1}>Educação Básica</option>
-                  <option value={2}>Saúde da Família</option>
-                  <option value={3}>Assistência Social</option>
-                  <option value={4}>Infraestrutura Urbana</option>
+                  {programOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
                 </select>
               </div>
               <div className={field}>
@@ -431,12 +433,10 @@ export function ContractForm({
                 <select
                   className={`${select} ${validationAttempted && !state.budgetPlanId ? inputError : ''}`}
                   value={state.budgetPlanId ?? ''}
-                  onChange={(e) => { onUpdate('budgetPlanId', e.target.value ? Number(e.target.value) : null) }}
+                  onChange={(e) => { onUpdate('budgetPlanId', e.target.value || null) }}
                 >
+                  {/* Plano Orçamentário: backend ainda não expõe listagem (#32) → follow-up. Sem opções reais. */}
                   <option value="">Selecione…</option>
-                  <option value={1}>Plano Anual 2025</option>
-                  <option value={2}>Plano Anual 2026</option>
-                  <option value={3}>Plano Suplementar</option>
                 </select>
               </div>
             </div>
@@ -447,7 +447,7 @@ export function ContractForm({
                 <select
                   className={`${select} ${validationAttempted && !state.categorizacao ? inputError : ''}`}
                   value={state.categorizacao ?? ''}
-                  onChange={(e) => { onUpdate('categorizacao', e.target.value ? (e.target.value as 'Avaliação' | 'Operacional' | 'Processo') : null) }}
+                  onChange={(e) => { onUpdate('categorizacao', e.target.value || null) }}
                 >
                   <option value="">Selecione…</option>
                   <option value="Avaliação">{t('contracts.create.field.categorizacao.evaluation')}</option>
@@ -460,7 +460,7 @@ export function ContractForm({
                 <select
                   className={`${select} ${validationAttempted && !state.centroDeCusto ? inputError : ''}`}
                   value={state.centroDeCusto ?? ''}
-                  onChange={(e) => { onUpdate('centroDeCusto', e.target.value ? (e.target.value as 'RH' | 'Serviços Gerais' | 'Eventos') : null) }}
+                  onChange={(e) => { onUpdate('centroDeCusto', e.target.value || null) }}
                 >
                   <option value="">Selecione…</option>
                   <option value="RH">{t('contracts.create.field.centroDeCusto.rh')}</option>

@@ -7,7 +7,7 @@ import { UploadIcon } from '#shared/ui/icons/index.ts'
 import { getSupplierFn } from '#modules/partners/public-api/index.ts'
 import { useAttachSignedDocumentBinding } from '#modules/contracts/client/contract-attach-document/attach-signed-document.binding.ts'
 import { useContractEditBinding } from '#modules/contracts/client/contract-edit/contract-edit.binding.ts'
-import { useContractCreateBinding, usePartnerSearchBinding } from '../contract-create.binding.ts'
+import { useContractCreateBinding, usePartnerSearchBinding, useContractProgramOptionsBinding } from '../contract-create.binding.ts'
 import { useContractFormController } from '../components/contract-form.controller.ts'
 import type { SelectedPartner } from '../components/contract-form.controller.ts'
 import { ContractForm } from '../components/contract-form.component.tsx'
@@ -64,6 +64,7 @@ function formatCurrencyCents(cents: number): string {
 export function ContractCreatePage(): ReactNode {
   const navigate = useNavigate()
   const { createCommand } = useContractCreateBinding()
+  const programOptions = useContractProgramOptionsBinding()
   const { attachCommand } = useAttachSignedDocumentBinding()
   // Workaround: o backend não aceita contato no create → PATCH logo após criar (se preenchido).
   const { editCommand: contatoEditCommand } = useContractEditBinding()
@@ -254,6 +255,7 @@ export function ContractCreatePage(): ReactNode {
         onCreateNewPartner={handleCreateNewPartner}
         documentUploaded={uploadedFile !== null}
         currentYear={form.currentYear}
+        programOptions={programOptions}
       />
 
       {/* Modal de finalização */}

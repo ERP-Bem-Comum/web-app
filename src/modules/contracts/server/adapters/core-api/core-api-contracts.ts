@@ -92,14 +92,17 @@ const mapHttpError = (e: HttpError): ContractsError => {
 
 // ─── Mappers: API → Domain ──────────────────────────────────────────────────
 
-const statusApiToDomain = (apiStatus: 'Pending' | 'Active' | 'Expired' | 'Terminated') => {
-  const map: Record<typeof apiStatus, Contract['status']> = {
+// D9 (ADR-0013): aceita string p/ tolerar status futuros do backend (ex.: 'Cancelled' do #32).
+// Status conhecidos mapeiam normalmente; DESCONHECIDO degrada para 'Finalizado' (terminal seguro,
+// não-acionável) só p/ não zerar a linha — a UI/fluxo próprio de cancelamento é slice futuro.
+const statusApiToDomain = (apiStatus: string): Contract['status'] => {
+  const map: Record<string, Contract['status']> = {
     Pending: 'Pendente',
     Active: 'Em Andamento',
     Expired: 'Finalizado',
     Terminated: 'Distrato',
   }
-  return map[apiStatus]
+  return map[apiStatus] ?? 'Finalizado'
 }
 
 const statusDomainToApi = (domainStatus: Contract['status']): 'Pending' | 'Active' | 'Expired' | 'Terminated' | undefined => {
@@ -221,11 +224,18 @@ const apiContractToDomain = (c: {
   objective: string
   originalValue: { cents: number }
   originalPeriod: { kind: 'Fixed'; start: string; end: string } | { kind: 'Indefinite'; start: string }
-  status: 'Pending' | 'Active' | 'Expired' | 'Terminated'
+  status: string
   signedAt?: string
   currentValue?: { cents: number }
   currentPeriod?: { kind: 'Fixed'; start: string; end: string } | { kind: 'Indefinite'; start: string }
   endedAt?: string
+  // CTR-NUMBER-PROGRAM (#32): metadados do agregado + bloco program (id + snapshot.{name,sigla}).
+  classification?: 'CT' | 'OS' | null
+  programId?: string | null
+  budgetPlanId?: string | null
+  categorizacao?: string | null
+  centroDeCusto?: string | null
+  program?: { id: string; snapshot: { name: string; sigla: string; programNumber: number } | null } | null
 }): Contract => ({
   id: c.id,
   sequentialNumber: c.sequentialNumber,
@@ -238,8 +248,8 @@ const apiContractToDomain = (c: {
   currentValue: { cents: c.currentValue?.cents ?? c.originalValue.cents },
   currentPeriod: c.currentPeriod ? apiPeriodToDomain(c.currentPeriod) : null,
   endedAt: c.endedAt ? parseIsoDate(c.endedAt) : null,
-  // Campos não suportados pelo backend (preenchidos com defaults)
-  classification: 'Contract',
+  // Classificação real do backend (CT/OS → domínio); default Contract quando ausente (ADR-0013).
+  classification: c.classification === 'OS' ? 'ServiceOrder' : 'Contract',
   contractModel: 'Service',
   contractType: 'Supplier',
   supplierId: undefined,
@@ -248,12 +258,15 @@ const apiContractToDomain = (c: {
   supplier: undefined,
   financier: undefined,
   collaborator: undefined,
-  programId: undefined,
-  program: undefined,
-  budgetPlanId: undefined,
+  // Programa + metadados (#32). `program` = bloco composto (sigla na coluna do grid).
+  programId: blankToUndefined(c.programId),
+  program: c.program?.snapshot
+    ? { id: c.program.id, name: c.program.snapshot.name, sigla: c.program.snapshot.sigla }
+    : undefined,
+  budgetPlanId: blankToUndefined(c.budgetPlanId),
   budgetPlan: undefined,
-  categorizacao: undefined,
-  centroDeCusto: undefined,
+  categorizacao: blankToUndefined(c.categorizacao),
+  centroDeCusto: blankToUndefined(c.centroDeCusto),
   observations: undefined,
   email: undefined,
   telephone: undefined,
@@ -395,7 +408,7 @@ export type CoreApiContractsClient = Readonly<{
   getHistory: (id: string, token: string) => Promise<Result<readonly ContractHistoryEvent[], ContractsError>>
   uploadDocument: (contractId: string, input: Readonly<{ bytes: Uint8Array; fileName: string }>, token: string) => Promise<Result<void, ContractsError>>
   activate: (contractId: string, signedAtIso: string, token: string) => Promise<Result<Contract, ContractsError>>
-  uploadAmendmentDocument: (contractId: string, amendmentId: string, input: Readonly<{ bytes: Uint8Array; fileName: string }>, token: string) => Promise<Result<void, ContractsError>>
+  uploadAmendmentDocument: (contractId: string, amendmentId: string, input: Readonly<{ bytes: Uint8Array; fileName: string; signedAt: string }>, token: string) => Promise<Result<void, ContractsError>>
   homologateAmendment: (contractId: string, amendmentId: string, homologatedBy: string, token: string) => Promise<Result<Contract, ContractsError>>
   endContract: (contractId: string, token: string) => Promise<Result<Contract, ContractsError>>
   getDocumentContent: (contractId: string, documentId: string, token: string) => Promise<Result<Readonly<{ bytes: Uint8Array; fileName: string; contentType: string }>, ContractsError>>
@@ -420,7 +433,7 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
     if (input.contractPeriodEnd) params.set('contractPeriodEnd', input.contractPeriodEnd.toISOString().slice(0, 10))
     if (input.minValue !== undefined) params.set('minValue', String(input.minValue))
     if (input.maxValue !== undefined) params.set('maxValue', String(input.maxValue))
-    if (input.budgetPlanId !== undefined) params.set('budgetPlanId', String(input.budgetPlanId))
+    if (input.budgetPlanId !== undefined) params.set('budgetPlanId', input.budgetPlanId)
     return params.toString()
   }
 
@@ -477,9 +490,10 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
     },
 
     create: async (input, token) => {
-      // O backend espera: mode, sequentialNumber, title, objective, originalValueCents, periodStart, periodEnd,
-      // contractor:{ type, id } (OBRIGATÓRIO), signedAt?. O frontend não envia sequentialNumber nem mode.
-      // Geramos um sequentialNumber e usamos mode='Pending'. `contractor` derivado do tipo selecionado.
+      // #32: o backend GERA o sequentialNumber (não enviamos número — ADR-0013 / CTR-CONTRACT-SEQUENTIAL-NUMBER).
+      // Body: mode + title/objective/valor/período + contractor:{type,id} + classification (CT/OS) + metadados.
+      // mode='Pending' (D7 — cadastro+assinatura segue o fluxo de 2 passos: criar → anexar doc → ativar).
+      // `contractor` derivado do tipo selecionado.
       const contractor =
         input.supplierId !== undefined
           ? { type: 'supplier' as const, id: input.supplierId }
@@ -490,13 +504,13 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
               : undefined
       const body = {
         mode: 'Pending' as const,
-        sequentialNumber: `${String(Math.floor(Math.random() * 900 + 100)).padStart(3, '0')}/${String(new Date().getFullYear())}`, // Formato exigido pelo backend: XXX/YYYY
         title: input.title,
         objective: input.objective,
         originalValueCents: input.originalValueCents,
         ...domainPeriodToApi(input.originalPeriod),
         ...(contractor !== undefined ? { contractor } : {}),
-        classification: input.classification,
+        // Domínio (Contract/ServiceOrder) → wire do #32 (CT/OS).
+        classification: input.classification === 'ServiceOrder' ? 'OS' : 'CT',
         contractModel: input.contractModel,
         contractType: input.contractType,
         supplierId: input.supplierId,
@@ -622,12 +636,14 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
       return apiContractDetailToDomain(r.value)
     },
 
-    uploadAmendmentDocument: async (contractId, amendmentId, { bytes, fileName }, token) => {
+    uploadAmendmentDocument: async (contractId, amendmentId, { bytes, fileName, signedAt }, token) => {
       // POST /contracts/:id/amendments/:amendmentId/documents — binário (octet-stream) + metadados na query.
+      // #32: a query de doc de ADITIVO exige `signedAt` (data de assinatura no MESMO passo do upload+attach —
+      // amendmentDocumentUploadQuerySchema). Sem ele o core-api responde 400 validation.
       const r = await octetStreamFetch<unknown>(`${baseUrl}/contracts/${contractId}/amendments/${amendmentId}/documents`, {
         token,
         bytes,
-        query: { categoria: 'signed_amendment', fileName, mimeType: 'application/pdf', signedElectronically: 'true' },
+        query: { categoria: 'signed_amendment', fileName, mimeType: 'application/pdf', signedElectronically: 'true', signedAt },
       })
       if (isErr(r)) return err(mapHttpError(r.error))
       const parsed = CoreApiDocumentSchema.safeParse(r.value)

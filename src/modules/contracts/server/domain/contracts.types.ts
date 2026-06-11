@@ -123,12 +123,13 @@ export interface Contract {
   supplier?: PartnerSnapshot
   financier?: PartnerSnapshot
   collaborator?: PartnerSnapshot
-  programId?: number
-  program?: { id: number; name: string }
-  budgetPlanId?: number
-  budgetPlan?: { id: number; scenarioName: string; year: number; version: number }
-  categorizacao?: 'Avaliação' | 'Operacional' | 'Processo'
-  centroDeCusto?: 'RH' | 'Serviços Gerais' | 'Eventos'
+  // IDs técnicos = UUID string (ADR-0013). `program` = bloco composto (id + nome + sigla exibível).
+  programId?: string
+  program?: { id: string; name: string; sigla: string }
+  budgetPlanId?: string
+  budgetPlan?: { id: string; scenarioName: string; year: number; version: number }
+  categorizacao?: string
+  centroDeCusto?: string
   observations?: string
   email?: string
   telephone?: string
@@ -151,7 +152,7 @@ export interface ListContractsInput {
   contractPeriodEnd?: Date
   minValue?: number
   maxValue?: number
-  budgetPlanId?: number
+  budgetPlanId?: string
   order: 'ASC' | 'DESC'
 }
 
@@ -166,10 +167,10 @@ export interface CreateContractInput {
   supplierId?: string
   financierId?: string
   collaboratorId?: string
-  programId?: number
-  budgetPlanId?: number
-  categorizacao?: 'Avaliação' | 'Operacional' | 'Processo'
-  centroDeCusto?: 'RH' | 'Serviços Gerais' | 'Eventos'
+  programId?: string
+  budgetPlanId?: string
+  categorizacao?: string
+  centroDeCusto?: string
   observations?: string
   email?: string
   telephone?: string

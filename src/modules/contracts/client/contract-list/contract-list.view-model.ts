@@ -86,7 +86,9 @@ const mapAmendmentToChild = (amendment: AmendmentModel): ContractRow => {
 export function mapModelToContractRow(model: ContractModel): ContractRow {
   return {
     id: model.id,
-    classification: 'Contrato',
+    // Classificação REAL do contrato (#32) → prefixo CT/OS correto na coluna Número do grid.
+    // model.classification é 'Contract'|'ServiceOrder'; o domínio usa 'Contrato'|'Ordem de Serviço'.
+    classification: model.classification === 'ServiceOrder' ? 'Ordem de Serviço' : 'Contrato',
     contractModel: 'Serviço',
     object: model.objective,
     totalValue: model.originalValue.cents / 100,
@@ -97,15 +99,15 @@ export function mapModelToContractRow(model: ContractModel): ContractRow {
     supplierId: model.supplierId ?? undefined,
     financierId: model.financierId ?? undefined,
     collaboratorId: model.collaboratorId ?? undefined,
-    budgetPlanId: model.budgetPlanId ? String(model.budgetPlanId) : undefined,
-    programId: model.programId ? String(model.programId) : undefined,
+    budgetPlanId: model.budgetPlanId ?? undefined,
+    programId: model.programId ?? undefined,
     supplier: mapPartnerToContractor(model.supplier),
     financier: mapPartnerToContractor(model.financier),
     collaborator: mapPartnerToContractor(model.collaborator),
-    program: model.program ? { id: String(model.program.id), name: model.program.name } : undefined,
+    program: model.program ? { id: model.program.id, name: model.program.name, sigla: model.program.sigla } : undefined,
     budgetPlan: model.budgetPlan
       ? {
-          id: String(model.budgetPlan.id),
+          id: model.budgetPlan.id,
           scenarioName: model.budgetPlan.scenarioName,
           year: model.budgetPlan.year,
           version: model.budgetPlan.version,

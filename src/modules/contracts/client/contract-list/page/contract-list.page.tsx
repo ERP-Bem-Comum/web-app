@@ -77,9 +77,7 @@ export function ContractListPage(): ReactNode {
     contractPeriodEnd: parseDateParam(search.contractPeriodEnd),
     minValue: search.minValue,
     maxValue: search.maxValue,
-    budgetPlanId: search.budgetPlanId
-      ? Number(search.budgetPlanId)
-      : undefined,
+    budgetPlanId: search.budgetPlanId ?? undefined,
   })
 
   const allRows = data && isOk(data) ? mapListResponseToContractRows(data.value) : []

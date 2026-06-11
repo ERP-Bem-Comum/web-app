@@ -35,6 +35,8 @@ export const attachAmendmentDocumentFn = createServerFn({ method: 'POST' })
           amendmentId: data.amendmentId,
           bytes: validated.value.bytes,
           fileName: validated.value.fileName,
+          // #32: signedAt vai na query do upload de doc do aditivo (exigência do core-api).
+          signedAt: data.signedAt,
           homologatedBy: user.userId,
         },
         accessToken,

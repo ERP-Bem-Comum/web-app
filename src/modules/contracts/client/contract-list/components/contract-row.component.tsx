@@ -147,7 +147,7 @@ export function ContractRow({ row, index, onRequestDelete, onGenerateDoc }: Cont
         <span className={tipoVariant[row.contractType]}>{row.contractType}</span>
       </td>
       <td className={`${cell} ${cellCenter}`}>
-        <span className={programText}>{programaShort(row.program?.name)}</span>
+        <span className={programText}>{programaShort(row.program?.sigla)}</span>
       </td>
       <td className={`${cell} ${cellRight}`}>
         <span className={currencyText}>{formatCurrency(valorAtual)}</span>

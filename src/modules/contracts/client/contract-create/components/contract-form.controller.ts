@@ -38,10 +38,11 @@ export type ContractFormState = Readonly<{
   supplierId: string
   financierId: string
   collaboratorId: string
-  programId: number | null
-  budgetPlanId: number | null
-  categorizacao: 'Avaliação' | 'Operacional' | 'Processo' | null
-  centroDeCusto: 'RH' | 'Serviços Gerais' | 'Eventos' | null
+  // IDs técnicos = UUID string (ADR-0013). categorizacao/centroDeCusto = string livre.
+  programId: string | null
+  budgetPlanId: string | null
+  categorizacao: string | null
+  centroDeCusto: string | null
   email: string
   telephone: string
   observations: string

@@ -12,7 +12,7 @@ type Deps = Readonly<{
     uploadAmendmentDocument: (
       contractId: string,
       amendmentId: string,
-      input: Readonly<{ bytes: Uint8Array; fileName: string }>,
+      input: Readonly<{ bytes: Uint8Array; fileName: string; signedAt: string }>,
       token: string,
     ) => Promise<Result<void, ContractsError>>
     homologateAmendment: (contractId: string, amendmentId: string, homologatedBy: string, token: string) => Promise<Result<Contract, ContractsError>>
@@ -24,6 +24,8 @@ export type AttachAmendmentDocumentCommand = Readonly<{
   amendmentId: string
   bytes: Uint8Array
   fileName: string
+  // #32: data de assinatura exigida na query do upload de doc do aditivo (vai junto, não só no homologate).
+  signedAt: string
   homologatedBy: string
 }>
 
@@ -32,7 +34,7 @@ export const createAttachAmendmentDocument = (deps: Deps) =>
     const up = await deps.client.uploadAmendmentDocument(
       input.contractId,
       input.amendmentId,
-      { bytes: input.bytes, fileName: input.fileName },
+      { bytes: input.bytes, fileName: input.fileName, signedAt: input.signedAt },
       token,
     )
     if (isErr(up) && up.error !== 'document-conflict') return err(up.error)

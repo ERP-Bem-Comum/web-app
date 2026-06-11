@@ -72,6 +72,7 @@ const baseProps = (over: Record<string, unknown> = {}) => ({
   onCreateNewPartner: vi.fn(),
   documentUploaded: false,
   currentYear: 2026,
+  programOptions: [],
   ...over,
 })
 

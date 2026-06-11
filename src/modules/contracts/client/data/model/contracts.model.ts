@@ -107,12 +107,17 @@ export const ContractSchema = z.object({
   supplier: PartnerSnapshotSchema.optional(),
   financier: PartnerSnapshotSchema.optional(),
   collaborator: PartnerSnapshotSchema.optional(),
-  programId: z.number().optional(),
-  program: z.object({ id: z.number(), name: z.string().trim() }).optional(),
-  budgetPlanId: z.number().optional(),
-  budgetPlan: z.object({ id: z.number(), scenarioName: z.string().trim(), year: z.number(), version: z.number() }).optional(),
-  categorizacao: z.enum(['Avaliação', 'Operacional', 'Processo']).optional(),
-  centroDeCusto: z.enum(['RH', 'Serviços Gerais', 'Eventos']).optional(),
+  // IDs técnicos = UUID string (ADR-0013). `program` é o bloco composto pelo backend
+  // (id + nome + sigla exibível); `programId`/`budgetPlanId` são as referências cruas (UUID).
+  programId: z.uuid().optional(),
+  program: z.object({ id: z.uuid(), name: z.string().trim(), sigla: z.string().trim() }).optional(),
+  budgetPlanId: z.uuid().optional(),
+  // budgetPlan (bloco) ainda não é retornado pelo #32 (só `budgetPlanId`) → fica opcional/undefined
+  // até o backend compor o bloco (follow-up). Mantido para não quebrar consumidores do detalhe.
+  budgetPlan: z.object({ id: z.uuid(), scenarioName: z.string().trim(), year: z.number(), version: z.number() }).optional(),
+  // categorizacao/centroDeCusto = string livre (o backend persiste texto — ADR-0013).
+  categorizacao: z.string().trim().optional(),
+  centroDeCusto: z.string().trim().optional(),
   observations: z.string().trim().optional(),
   email: z.email().optional(),
   telephone: z.string().trim().optional(),
@@ -137,7 +142,7 @@ export const ListContractsInputSchema = z.object({
   contractPeriodEnd: z.date().optional(),
   minValue: z.number().optional(),
   maxValue: z.number().optional(),
-  budgetPlanId: z.number().optional(),
+  budgetPlanId: z.uuid().optional(),
   order: z.enum(['ASC', 'DESC']).default('DESC'),
 })
 export type ListContractsInput = z.infer<typeof ListContractsInputSchema>
@@ -153,10 +158,10 @@ export const CreateContractInputSchema = z.object({
   supplierId: z.uuid().optional(),
   financierId: z.uuid().optional(),
   collaboratorId: z.uuid().optional(),
-  programId: z.number().optional(),
-  budgetPlanId: z.number().optional(),
-  categorizacao: z.enum(['Avaliação', 'Operacional', 'Processo']).optional(),
-  centroDeCusto: z.enum(['RH', 'Serviços Gerais', 'Eventos']).optional(),
+  programId: z.uuid().optional(),
+  budgetPlanId: z.uuid().optional(),
+  categorizacao: z.string().trim().optional(),
+  centroDeCusto: z.string().trim().optional(),
   observations: z.string().trim().optional(),
   email: z.email().optional(),
   telephone: z.string().trim().optional(),

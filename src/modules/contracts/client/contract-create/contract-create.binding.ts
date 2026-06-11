@@ -3,7 +3,25 @@ import type { CreateContractInput, Contract } from '#modules/contracts/client/da
 import { isOk } from '#shared/primitives/result.ts'
 import { partnersRepository } from '#modules/contracts/client/data/repository/partners.repository.instance.ts'
 import type { PartnerSearchResult } from '#modules/contracts/client/data/repository/partners.repository.ts'
+import { listProgramsFn } from '#modules/programs/public-api/index.ts'
 import { contractCreateViewModel } from './contract-create.view-model.ts'
+
+export type ProgramOption = Readonly<{ value: string; label: string }>
+
+// D8 (ADR-0013): opções reais de Programa para o seletor do create — UUID (value) → sigla (label).
+// Consome a listagem de programas via public-api de `programs` (boundary respeitado). Degradação
+// graciosa: erro/sem permissão → lista vazia (campo fica sem opções, mas o create não trava).
+export const useContractProgramOptionsBinding = (): readonly ProgramOption[] => {
+  const q = useQuery({
+    queryKey: ['programs', 'options', 'contract-create'],
+    queryFn: async (): Promise<readonly ProgramOption[]> => {
+      const res = await listProgramsFn({ data: { status: 'ATIVO', order: 'ASC', page: 1, limit: 25 } })
+      return res.ok ? res.data.items.map((p) => ({ value: p.id, label: p.sigla })) : []
+    },
+    staleTime: 60_000,
+  })
+  return q.data ?? []
+}
 
 export type CreateContractCommand = Readonly<{
   running: boolean
