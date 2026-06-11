@@ -9,6 +9,7 @@ import {
   createTogglePartnerState,
   createListMunicipalitiesByUf,
   createTogglePartnerMunicipality,
+  createListAddedMunicipalities,
 } from '#modules/partners/server/application/geography/geography.use-cases.ts'
 
 type GeographyServer = ReturnType<typeof build>
@@ -26,6 +27,7 @@ const build = () => {
     togglePartnerState: createTogglePartnerState({ client }),
     listMunicipalitiesByUf: createListMunicipalitiesByUf({ client }),
     togglePartnerMunicipality: createTogglePartnerMunicipality({ client }),
+    listAddedMunicipalities: createListAddedMunicipalities({ client }),
   }
 }
 

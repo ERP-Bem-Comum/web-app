@@ -132,17 +132,14 @@ export function GeographyPage(): ReactNode {
             columnLabel={t('partners.geography.municipalities.column')}
             actionLabel={t('partners.geography.action.remove')}
             mode="remove"
-            state={{ status: 'ready', items: [] }}
-            emptyLabel={t('partners.geography.municipalities.empty')}
+            state={toColumnState(g.municipalitiesAdded)}
+            emptyLabel={t('partners.geography.municipalities.added-empty')}
             addedLabel={t('partners.geography.action.added')}
             addAria={t('partners.geography.add-aria')}
             removeAria={t('partners.geography.remove-aria')}
             disabled={disabled}
             onAction={g.removeMunicipality}
             loadingLabel={t('partners.geography.loading')}
-            placeholder={
-              g.municipalitiesAddedPending ? t('partners.geography.municipalities.added-pending') : undefined
-            }
           />
         </div>
       </section>

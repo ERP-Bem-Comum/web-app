@@ -736,7 +736,7 @@ export const ptBR: Catalog = {
   'partners.geography.municipalities.search': 'Procurar Município',
   'partners.geography.municipalities.empty': 'Nenhum município neste estado.',
   'partners.geography.municipalities.select-state': 'Selecionar Estado',
-  'partners.geography.municipalities.added-pending': 'Disponível quando o backend listar municípios parceiros de todos os estados.',
+  'partners.geography.municipalities.added-empty': 'Nenhum município parceiro adicionado.',
   // Comuns
   'partners.geography.select-state-hint': 'Selecione um estado para ver os municípios.',
   'partners.geography.action.add': 'ADD',

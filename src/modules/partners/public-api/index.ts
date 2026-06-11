@@ -29,6 +29,7 @@ export { listPartnerStatesFn } from '#modules/partners/server/adapters/server-fn
 export { togglePartnerStateFn } from '#modules/partners/server/adapters/server-fns/geography/toggle-partner-state.service.fn.ts'
 export { listMunicipalitiesByUfFn } from '#modules/partners/server/adapters/server-fns/geography/list-municipalities-by-uf.query.fn.ts'
 export { togglePartnerMunicipalityFn } from '#modules/partners/server/adapters/server-fns/geography/toggle-partner-municipality.service.fn.ts'
+export { listAddedMunicipalitiesFn } from '#modules/partners/server/adapters/server-fns/geography/list-added-municipalities.query.fn.ts'
 export type { PartnerState, PartnerMunicipality } from '#modules/partners/server/domain/geography/geography.types.ts'
 
 // ── ACT (US6) ───────────────────────────────────────────────────────────────

@@ -18,3 +18,22 @@ export const CoreApiPartnerMunicipalitySchema = z.object({
   isPartner: z.boolean(),
 })
 export const CoreApiPartnerMunicipalityListSchema = z.array(CoreApiPartnerMunicipalitySchema)
+
+// GET /partner-municipalities/added — municípios parceiros de TODAS as UFs (cross-state). PAGINADO
+// (diferente dos demais GETs da geografia, que devolvem array puro). Itens SEM `isPartner` (todos são
+// parceiros por definição). Shape alinhado a `partner-geography-schemas.ts` (addedMunicipalitiesPagedSchema).
+export const CoreApiAddedMunicipalityDtoSchema = z.object({
+  ibgeCode: z.string().trim(),
+  uf: z.string().trim(),
+  name: z.string().trim(),
+})
+export const CoreApiAddedMunicipalitiesPagedSchema = z.object({
+  items: z.array(CoreApiAddedMunicipalityDtoSchema),
+  meta: z.object({
+    currentPage: z.int(),
+    itemsPerPage: z.int(),
+    itemCount: z.int().nonnegative(),
+    totalItems: z.int().nonnegative(),
+    totalPages: z.int().nonnegative(),
+  }),
+})

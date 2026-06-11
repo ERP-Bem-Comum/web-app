@@ -16,12 +16,14 @@ type ListStatesFn = () => Promise<FnResult<readonly PartnerState[]>>
 type ToggleStateFn = (opts: { data: ToggleStateInput }) => Promise<FnResult<PartnerState>>
 type ListMunicipalitiesFn = (opts: { data: { uf: string } }) => Promise<FnResult<readonly PartnerMunicipality[]>>
 type ToggleMunicipalityFn = (opts: { data: ToggleMunicipalityInput }) => Promise<FnResult<PartnerMunicipality>>
+type ListAddedMunicipalitiesFn = () => Promise<FnResult<readonly PartnerMunicipality[]>>
 
 export type GeographyRepository = Readonly<{
   listStates: () => Promise<Result<readonly PartnerState[], PartnersError>>
   toggleState: (input: ToggleStateInput) => Promise<Result<PartnerState, PartnersError>>
   listMunicipalities: (uf: string) => Promise<Result<readonly PartnerMunicipality[], PartnersError>>
   toggleMunicipality: (input: ToggleMunicipalityInput) => Promise<Result<PartnerMunicipality, PartnersError>>
+  listAddedMunicipalities: () => Promise<Result<readonly PartnerMunicipality[], PartnersError>>
 }>
 
 export const createGeographyRepository = (
@@ -30,6 +32,7 @@ export const createGeographyRepository = (
     togglePartnerStateFn: ToggleStateFn
     listMunicipalitiesByUfFn: ListMunicipalitiesFn
     togglePartnerMunicipalityFn: ToggleMunicipalityFn
+    listAddedMunicipalitiesFn: ListAddedMunicipalitiesFn
   }>,
 ): GeographyRepository => ({
   listStates: async () => {
@@ -46,6 +49,10 @@ export const createGeographyRepository = (
   },
   toggleMunicipality: async (input) => {
     const res = await deps.togglePartnerMunicipalityFn({ data: input })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  listAddedMunicipalities: async () => {
+    const res = await deps.listAddedMunicipalitiesFn()
     return res.ok ? ok(res.data) : err(res.error)
   },
 })
