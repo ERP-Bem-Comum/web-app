@@ -67,12 +67,28 @@ services:
       S3_ACCESS_KEY_ID: dev-access-key
       S3_SECRET_ACCESS_KEY: dev-secret-key-min-8-chars
       S3_FORCE_PATH_STYLE: 'true'
+      # E-mail transacional (convite de usuário + reset de senha) via RESEND, usando o gateway SMTP
+      # do Resend (§3.2 do guia de infra). ⚠️ A API key é SEGREDO: vem do .env GITIGNORADO
+      # (RESEND_API_KEY) — NUNCA neste arquivo versionado. O remetente (RESEND_FROM) precisa ser de um
+      # DOMÍNIO VERIFICADO no Resend, senão a entrega é recusada. Faltando qualquer SMTP_* / AUTH_RESET_FROM
+      # → o mailer vira no-op silencioso (não envia).
+      SMTP_HOST: smtp.resend.com
+      SMTP_PORT: '465'
+      SMTP_SECURE: 'true'
+      SMTP_USER: resend
+      SMTP_PASS: ${RESEND_API_KEY}
+      AUTH_RESET_FROM: ${RESEND_FROM}
+      AUTH_INVITE_FROM: ${RESEND_FROM}
+      # Origem confiável do link de reset (aponta para o front local).
+      AUTH_RESET_BASE_URL: https://app.localhost
       # Seed de RBAC para DEV (mecanismo do próprio core-api: guarda dupla CORE_API_E2E + AUTH_SEED_JSON).
-      # Concede ao admin todas as permissões de parceiros (read+write) para o menu "Gestão de Parceiros"
-      # e seus submódulos aparecerem. ⚠️ Na branch dev o seed NÃO é idempotente (item 1 do relatório ainda
-      # não mergeado): re-rodar exige banco limpo (`down -v`), senão o boot crasha por e-mail duplicado.
+      # A imagem atual É idempotente: o seed PULA usuários já existentes (não atualiza permissões nem crasha
+      # por e-mail duplicado). Consequência: o admin original (admin@bemcomum.dev) NÃO pode ser "promovido"
+      # em si só via env — para ganhar Gestão de Usuários (user:*) sem mexer no banco, semeamos um 2º admin
+      # com acesso TOTAL ao catálogo de permissões: admin.full@bemcomum.dev / DevPassw0rd!2024.
+      # Ambos coexistem; nenhum dado existente é tocado. (Strings = permission-catalog.ts; user:create, NÃO user:write.)
       CORE_API_E2E: '1'
-      AUTH_SEED_JSON: '{"users":[{"email":"admin@bemcomum.dev","password":"DevPassw0rd!2024","permissions":["supplier:read","supplier:write","financier:read","financier:write","collaborator:read","collaborator:write","act:read","act:write","geography:read","geography:write","contract:read","contract:write","contract:mass-approve"]}]}'
+      AUTH_SEED_JSON: '{"users":[{"email":"admin@bemcomum.dev","password":"DevPassw0rd!2024","permissions":["supplier:read","supplier:write","financier:read","financier:write","collaborator:read","collaborator:write","act:read","act:write","geography:read","geography:write","contract:read","contract:write","contract:mass-approve"]},{"email":"admin.full@bemcomum.dev","password":"DevPassw0rd!2024","permissions":["act:read","act:write","collaborator:read","collaborator:write","contract:read","contract:write","contract:delete","contract:mass-approve","etl:mass-approver","financier:read","financier:write","geography:read","geography:write","program:read","program:write","program:deactivate","role:read","role:create","role:update","role:assign","role:revoke","supplier:read","supplier:write","user:list","user:read","user:create","user:update","user:activate","user:deactivate","user:register","user:assign-role"]}]}'
     depends_on:
       minio:
         condition: service_started
