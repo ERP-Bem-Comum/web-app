@@ -17,6 +17,14 @@ export type PixKeyType = (typeof PIX_KEY_TYPES)[number]
 export const isPixKeyType = (v: string): v is PixKeyType =>
   (PIX_KEY_TYPES as readonly string[]).includes(v)
 
+/** Níveis de avaliação de serviço (§1.6). Enum FIXO no front (D1) — não consome GET /service-ratings.
+ *  `null` = sem avaliação (D2). FONTE ÚNICA: `type`, `z.enum` e a lista de `<option>` derivam daqui. */
+export const SERVICE_RATINGS = ['RUIM', 'REGULAR', 'BOM', 'OTIMO'] as const
+export type ServiceRating = (typeof SERVICE_RATINGS)[number]
+
+export const isServiceRating = (v: string): v is ServiceRating =>
+  (SERVICE_RATINGS as readonly string[]).includes(v)
+
 export type BankAccount = Readonly<{
   bank: string
   agency: string
@@ -44,6 +52,9 @@ export type SupplierDetail = SupplierListItem &
   Readonly<{
     bankAccount: BankAccount | null
     pixKey: SupplierPixKey | null
+    // Avaliação de serviço (§1.6) — null = sem avaliação (D2).
+    serviceRating: ServiceRating | null
+    ratingComment: string | null
   }>
 
 export type SupplierListResponse = Readonly<{
@@ -71,6 +82,9 @@ export type SupplierWriteInput = Readonly<{
   serviceCategory: string
   bankAccount: BankAccount | null
   pixKey: SupplierPixKey | null
+  // Avaliação de serviço (§1.6) — null = sem avaliação (D2).
+  serviceRating: ServiceRating | null
+  ratingComment: string | null
 }>
 
 // ── Schema do formulário (validação na borda do cliente) ──
@@ -104,5 +118,9 @@ export const SupplierFormSchema = z.object({
   serviceCategory: z.string().trim().min(1).max(80),
   bankAccount: BankAccountFormSchema.nullable().default(null),
   pixKey: PixKeyFormSchema.nullable().default(null),
+  // Avaliação de serviço (§1.6) — opcionais; null = sem avaliação (D2). Comentário só faz sentido com
+  // nível, mas não obrigamos (defesa no backend); o textarea vira null quando vazio.
+  serviceRating: z.enum(SERVICE_RATINGS).nullable().default(null),
+  ratingComment: z.string().trim().max(500).nullable().default(null),
 })
 export type SupplierFormValues = z.infer<typeof SupplierFormSchema>

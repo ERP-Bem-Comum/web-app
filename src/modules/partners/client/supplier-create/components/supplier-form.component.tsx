@@ -4,7 +4,7 @@ import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Button, Field, Input } from '#shared/ui/index.ts'
 
-import { PIX_KEY_TYPES, isPixKeyType, type SupplierFormController } from './supplier-form.controller.ts'
+import { PIX_KEY_TYPES, isPixKeyType, SERVICE_RATINGS, isServiceRating, type SupplierFormController } from './supplier-form.controller.ts'
 import {
   cancelButton,
   errorBanner,
@@ -83,15 +83,24 @@ export function SupplierForm(props: SupplierFormProps): ReactNode {
               ))}
             </select>
           </Field>
-          {/* Avaliação de serviço + comentário: campos do legado SEM suporte no backend ainda —
-              exibidos desabilitados (padrão "gated"); habilitar quando o core-api tiver o campo. */}
+          {/* Avaliação de serviço + comentário (§1.6) — habilitados: o core-api aceita/retorna os 2
+              campos (#32). Opcionais: "Sem avaliação" = null. */}
           <Field htmlFor="sup-rating" label={t('partners.suppliers.form.serviceRating')}>
-            <select id="sup-rating" className={select} disabled title={t('partners.suppliers.form.gatedHint')} aria-label={t('partners.suppliers.form.serviceRating')}>
-              <option value="">{t('partners.suppliers.form.select')}</option>
+            <select
+              id="sup-rating"
+              className={select}
+              value={c.state.serviceRating}
+              aria-label={t('partners.suppliers.form.serviceRating')}
+              onChange={(e) => { c.setField('serviceRating', isServiceRating(e.target.value) ? e.target.value : '') }}
+            >
+              <option value="">{t('partners.suppliers.rating.none')}</option>
+              {SERVICE_RATINGS.map((r) => (
+                <option key={r} value={r}>{t(`partners.suppliers.rating.${r}`)}</option>
+              ))}
             </select>
           </Field>
           <Field htmlFor="sup-rating-comment" label={t('partners.suppliers.form.ratingComment')}>
-            <Input id="sup-rating-comment" value="" disabled placeholder={t('partners.suppliers.form.gatedHint')} onChange={() => { /* gated */ }} />
+            <Input id="sup-rating-comment" value={c.state.ratingComment} onChange={(v) => { c.setField('ratingComment', v); }} />
           </Field>
         </div>
       </section>

@@ -5,12 +5,13 @@
  */
 import { useCallback, useState } from 'react'
 
-import { SupplierFormSchema, type SupplierFormValues, type PixKeyType } from '#modules/partners/client/data/model/supplier.model.ts'
+import { SupplierFormSchema, type SupplierFormValues, type PixKeyType, type ServiceRating } from '#modules/partners/client/data/model/supplier.model.ts'
 
 // Reexporta a partir da fonte única (`data/model`) — antes eram cópias da mesma união/lista. A view
-// (client-ui) consome PIX_KEY_TYPES/isPixKeyType POR AQUI, pois o boundary não a deixa tocar data/.
-export type { SupplierFormValues, PixKeyType } from '#modules/partners/client/data/model/supplier.model.ts'
-export { PIX_KEY_TYPES, isPixKeyType } from '#modules/partners/client/data/model/supplier.model.ts'
+// (client-ui) consome PIX_KEY_TYPES/isPixKeyType e SERVICE_RATINGS/isServiceRating POR AQUI, pois o
+// boundary não a deixa tocar data/.
+export type { SupplierFormValues, PixKeyType, ServiceRating } from '#modules/partners/client/data/model/supplier.model.ts'
+export { PIX_KEY_TYPES, isPixKeyType, SERVICE_RATINGS, isServiceRating } from '#modules/partners/client/data/model/supplier.model.ts'
 
 export type SupplierFormState = Readonly<{
   name: string
@@ -25,6 +26,9 @@ export type SupplierFormState = Readonly<{
   checkDigit: string
   pixKeyType: PixKeyType
   pixKey: string
+  // Avaliação de serviço (§1.6). '' no select = sem avaliação (→ null no submit).
+  serviceRating: ServiceRating | ''
+  ratingComment: string
 }>
 
 export type SupplierFormErrors = Readonly<Record<string, boolean>>
@@ -42,6 +46,8 @@ const EMPTY: SupplierFormState = {
   checkDigit: '',
   pixKeyType: 'cpf',
   pixKey: '',
+  serviceRating: '',
+  ratingComment: '',
 }
 
 function stateFromValues(v: SupplierFormValues | undefined): SupplierFormState {
@@ -59,6 +65,8 @@ function stateFromValues(v: SupplierFormValues | undefined): SupplierFormState {
     checkDigit: v.bankAccount?.checkDigit ?? '',
     pixKeyType: v.pixKey?.keyType ?? 'cpf',
     pixKey: v.pixKey?.key ?? '',
+    serviceRating: v.serviceRating ?? '',
+    ratingComment: v.ratingComment ?? '',
   }
 }
 
@@ -107,6 +115,9 @@ export function useSupplierFormController(
           }
         : null,
       pixKey: hasPix ? { keyType: state.pixKeyType, key: state.pixKey } : null,
+      // Avaliação (§1.6): '' = sem avaliação → null. Comentário vazio → null.
+      serviceRating: state.serviceRating === '' ? null : state.serviceRating,
+      ratingComment: state.ratingComment.trim() !== '' ? state.ratingComment : null,
     }
     const parsed = SupplierFormSchema.safeParse(candidate)
     if (!parsed.success) {

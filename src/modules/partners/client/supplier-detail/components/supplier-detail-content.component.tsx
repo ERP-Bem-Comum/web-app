@@ -6,6 +6,8 @@ import { Badge, Field, Input } from '#shared/ui/index.ts'
 import {
   PIX_KEY_TYPES,
   isPixKeyType,
+  SERVICE_RATINGS,
+  isServiceRating,
   type SupplierFormController,
   type SupplierFormState,
 } from '#modules/partners/client/supplier-create/components/supplier-form.controller.ts'
@@ -84,15 +86,24 @@ export function SupplierDetailContent(props: SupplierDetailContentProps): ReactN
               ))}
             </select>
           </Field>
-          {/* Avaliação/Comentário: campos do legado sem suporte no backend → sempre desabilitados. */}
+          {/* Avaliação/Comentário (§1.6) — exibido sempre; editável só em modo edição (como os demais).
+              "Sem avaliação" = null. O core-api aceita/retorna os 2 campos (#32). */}
           <Field htmlFor="sd-rating" label={t('partners.suppliers.form.serviceRating')}>
-            <select id="sd-rating" className={select} disabled title={t('partners.suppliers.form.gatedHint')} aria-label={t('partners.suppliers.form.serviceRating')}>
-              <option value="">{t('partners.suppliers.form.select')}</option>
+            <select
+              id="sd-rating"
+              className={select}
+              value={c.state.serviceRating}
+              disabled={!editing}
+              aria-label={t('partners.suppliers.form.serviceRating')}
+              onChange={(e) => { c.setField('serviceRating', isServiceRating(e.target.value) ? e.target.value : '') }}
+            >
+              <option value="">{t('partners.suppliers.rating.none')}</option>
+              {SERVICE_RATINGS.map((r) => (
+                <option key={r} value={r}>{t(`partners.suppliers.rating.${r}`)}</option>
+              ))}
             </select>
           </Field>
-          <Field htmlFor="sd-rating-comment" label={t('partners.suppliers.form.ratingComment')}>
-            <Input id="sd-rating-comment" value="" disabled placeholder={t('partners.suppliers.form.gatedHint')} onChange={() => { /* gated */ }} />
-          </Field>
+          {txt('ratingComment', t('partners.suppliers.form.ratingComment'), 'ratingComment')}
         </div>
       </section>
 
