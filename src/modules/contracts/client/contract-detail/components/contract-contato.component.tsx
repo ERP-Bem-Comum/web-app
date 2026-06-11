@@ -5,6 +5,7 @@
  */
 import type { ReactNode } from 'react'
 import type { Contract } from '#modules/contracts/public-api/index.ts'
+import { formatMask, unmask } from '#shared/ui/index.ts'
 import {
   sectionBlock,
   sectionBlockFlush,
@@ -62,9 +63,9 @@ export function ContractContato(props: Props): ReactNode {
         <div className={fld}>
           <label className={fldLabel}>Telefone</label>
           {editing ? (
-            <input className={editInput} type="text" value={props.telephone} onChange={(e) => { props.onChange('telephone', e.target.value) }} />
+            <input className={editInput} type="text" inputMode="numeric" value={formatMask('phone', props.telephone)} onChange={(e) => { props.onChange('telephone', unmask(e.target.value)) }} />
           ) : (
-            <div className={fldBox}><span className={fldValue}>{contract.telephone ?? '—'}</span></div>
+            <div className={fldBox}><span className={fldValue}>{contract.telephone != null && contract.telephone !== '' ? formatMask('phone', contract.telephone) : '—'}</span></div>
           )}
         </div>
       </div>

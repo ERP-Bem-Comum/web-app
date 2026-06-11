@@ -7,6 +7,7 @@ import type {
   ContractFormController,
 } from './contract-form.controller.ts'
 import { formatDateOrDash, contractorInitials } from '#modules/contracts/client/domain/format.ts'
+import { formatMask, unmask } from '#shared/ui/index.ts'
 import {
   screen,
   topbar,
@@ -522,8 +523,9 @@ export function ContractForm({
                 <input
                   className={input}
                   type="text"
-                  value={state.telephone}
-                  onChange={(e) => { onUpdate('telephone', e.target.value) }}
+                  inputMode="numeric"
+                  value={formatMask('phone', state.telephone)}
+                  onChange={(e) => { onUpdate('telephone', unmask(e.target.value)) }}
                 />
               </div>
             </div>

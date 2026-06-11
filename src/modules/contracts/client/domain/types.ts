@@ -144,11 +144,13 @@ export interface Contract {
   readonly supplierId?: string | null
   readonly financierId?: string | null
   readonly collaboratorId?: string | null
+  readonly actId?: string | null
   readonly budgetPlanId?: string | null
   readonly programId?: string | null
   readonly supplier?: Contractor | null
   readonly financier?: Contractor | null
   readonly collaborator?: Contractor | null
+  readonly act?: Contractor | null
   readonly program?: ProgramRef | null
   readonly budgetPlan?: BudgetPlanRef | null
   readonly contractStatus: ContractStatus
