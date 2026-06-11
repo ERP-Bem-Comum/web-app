@@ -1,181 +1,226 @@
 /**
- * Tipos e schemas compartilhados do domínio de contratos (server-side).
- * Definidos no server para evitar import circular client→server.
+ * Tipos do domínio de contratos (server-side) — PUROS, sem Zod (C2 do review: domínio não depende
+ * de framework de validação). Os schemas Zod correspondentes vivem em `../adapters/contracts.schemas.ts`
+ * (a borda), que mantém guards de drift contra estes tipos. Definidos no server p/ evitar import
+ * circular client→server.
+ *
+ * Nota: a forma destes tipos espelha EXATAMENTE a saída dos schemas (antes inferida via `z.infer`),
+ * para não regredir os consumidores — daí não serem `readonly` (o client-model correspondente também
+ * não é). Imutabilidade reforçada é tratada separadamente, fora do escopo deste achado.
  */
-import * as z from 'zod'
 
-export const ContractClassificationSchema = z.enum(['Contract', 'ServiceOrder'])
-export type ContractClassification = z.infer<typeof ContractClassificationSchema>
+// ContractsError — FONTE ÚNICA (A2) da união discriminada de falhas do domínio de contratos.
+// Vive no domínio (puro); adapters e client-data REEXPORTAM daqui (boundary: domain não importa nada
+// de fora). Antes havia 3 cópias divergentes (domain/errors, adapters/shared, client/repository).
+export type ContractsError =
+  | 'invalid-code'           // código/sequentialNumber inválido
+  | 'invalid-value'          // valor <= 0 ou teto de OS excedido
+  | 'invalid-period'         // período de vigência inválido
+  | 'missing-contractor'     // contratante obrigatório não informado
+  | 'contract-not-found'     // 404
+  | 'amendment-not-found'    // 404 aditivo
+  | 'invalid-amendment-type' // tipo de aditivo inválido
+  | 'contract-not-active'    // 409: aditivo só é permitido em contrato Ativo (Em Andamento)
+  | 'amendment-not-extending'        // 422: nova data de término não estende a vigência atual
+  | 'amendment-invalid-new-end-date' // 422: nova data de término inválida
+  | 'amendment-cannot-extend-indefinite' // 422: contrato com vigência indeterminada não tem prazo a estender
+  | 'amendment-suppression-exceeds-value' // 422: supressão maior que o valor atual do contrato
+  | 'connectivity'           // backend fora / timeout
+  | 'server'                 // 5xx / inesperado
+  | 'unauthorized'           // 401 / 403
+  | 'not-implemented'        // operação ainda não existe no core-api (sem rota)
+  | 'invalid-pdf'            // arquivo não é PDF assinado válido (magic bytes %PDF)
+  | 'file-too-large'         // documento acima do limite (20 MiB)
+  | 'invalid-signed-at'      // data de assinatura ausente/inválida/futura
+  | 'no-signed-document'     // ativar sem documento assinado anexado
+  | 'document-conflict'      // documento já anexado/substituído/removido ou de outro contrato
+  | 'storage-unavailable'    // backend de objetos (MinIO/S3) indisponível
+  | 'terminate-no-document'  // 422 terminate-no-signed-document: distrato sem doc `signed_termination`
+  | 'terminate-invalid-date' // 422 terminate-invalid-date: data efetiva ausente/inválida/futura
 
-export const ContractModelSchema = z.enum(['Service', 'Donation'])
-export type ContractModel = z.infer<typeof ContractModelSchema>
+export type ContractClassification = 'Contract' | 'ServiceOrder'
+export type ContractModel = 'Service' | 'Donation'
+export type ContractType = 'Supplier' | 'Financier' | 'Collaborator' | 'ACT'
+export type ContractStatus = 'Pendente' | 'Em Andamento' | 'Finalizado' | 'Distrato'
+export type AmendmentType = 'prazo' | 'valor' | 'escopo' | 'outro' | 'distrato'
+export type AmendmentStatus = 'Pendente' | 'Homologado'
 
-export const ContractTypeSchema = z.enum(['Supplier', 'Financier', 'Collaborator', 'ACT'])
-export type ContractType = z.infer<typeof ContractTypeSchema>
+export interface Money {
+  cents: number
+}
 
-export const ContractStatusSchema = z.enum(['Pendente', 'Em Andamento', 'Finalizado', 'Distrato'])
-export type ContractStatus = z.infer<typeof ContractStatusSchema>
+export interface Period {
+  start: Date
+  end: Date
+}
 
-export const AmendmentTypeSchema = z.enum(['prazo', 'valor', 'escopo', 'outro', 'distrato'])
-export type AmendmentType = z.infer<typeof AmendmentTypeSchema>
+export interface PartnerSnapshot {
+  id: string
+  name: string
+  document: string
+  email?: string
+  telephone?: string
+}
 
-export const AmendmentStatusSchema = z.enum(['Pendente', 'Homologado'])
-export type AmendmentStatus = z.infer<typeof AmendmentStatusSchema>
+export interface BankInfo {
+  bank: string
+  agency: string
+  accountNumber: string
+  dv: string
+  updatedAt: Date
+}
 
-export const MoneySchema = z.object({ cents: z.int() })
-export type Money = z.infer<typeof MoneySchema>
+export interface PixInfo {
+  keyType: string
+  key: string
+  updatedAt: Date
+}
 
-export const PeriodSchema = z.object({
-  start: z.coerce.date(),
-  end: z.coerce.date(),
-})
-export type Period = z.infer<typeof PeriodSchema>
+export interface Amendment {
+  id: string
+  amendmentNumber: string
+  type: AmendmentType
+  description?: string
+  impactValueCents?: number
+  newEndDate?: Date
+  startDate?: Date
+  status: AmendmentStatus
+  signedAt?: Date
+  signedContractUrl?: string
+  createdAt: Date
+}
 
-export const PartnerSnapshotSchema = z.object({
-  id: z.string().trim(),
-  name: z.string().trim(),
-  document: z.string().trim(),
-  email: z.email().optional(),
-  telephone: z.string().trim().optional(),
-})
-export type PartnerSnapshot = z.infer<typeof PartnerSnapshotSchema>
+export interface ContractFile {
+  id: string
+  name: string
+  url: string
+  size?: number
+  uploadedAt: Date
+  uploadedBy?: string
+  // Associação documento ↔ dono (CTR-HTTP-DOCUMENT-CONTENT): permite casar o documento à linha
+  // (contrato base vs. cada aditivo) e buscar os bytes pela rota .../documents/:id/content.
+  parentType?: 'Contract' | 'Amendment'
+  parentId?: string
+  categoria?: string
+}
 
-export const BankInfoSchema = z.object({
-  bank: z.string().trim(),
-  agency: z.string().trim(),
-  accountNumber: z.string().trim(),
-  dv: z.string().trim(),
-  updatedAt: z.date(),
-})
-export type BankInfo = z.infer<typeof BankInfoSchema>
+export interface Contract {
+  id: string
+  sequentialNumber: string
+  title: string
+  objective: string
+  originalValue: Money
+  originalPeriod: Period
+  status: ContractStatus
+  signedAt: Date | null
+  currentValue: Money
+  currentPeriod: Period | null
+  endedAt: Date | null
+  classification: ContractClassification
+  contractModel: ContractModel
+  contractType: ContractType
+  supplierId?: string
+  financierId?: string
+  collaboratorId?: string
+  supplier?: PartnerSnapshot
+  financier?: PartnerSnapshot
+  collaborator?: PartnerSnapshot
+  // IDs técnicos = UUID string (ADR-0013). `program` = bloco composto (id + nome + sigla exibível).
+  programId?: string
+  program?: { id: string; name: string; sigla: string }
+  budgetPlanId?: string
+  budgetPlan?: { id: string; scenarioName: string; year: number; version: number }
+  categorizacao?: string
+  centroDeCusto?: string
+  observations?: string
+  email?: string
+  telephone?: string
+  bancaryInfo?: BankInfo
+  pixInfo?: PixInfo
+  origin?: string
+  createdAt: Date
+  updatedAt?: Date
+  children: Amendment[]
+  files: ContractFile[]
+}
 
-export const PixInfoSchema = z.object({
-  keyType: z.string().trim(),
-  key: z.string().trim(),
-  updatedAt: z.date(),
-})
-export type PixInfo = z.infer<typeof PixInfoSchema>
+export interface ListContractsInput {
+  page: number
+  limit: number
+  search?: string
+  contractType?: ContractType
+  status?: ContractStatus
+  contractPeriodStart?: Date
+  contractPeriodEnd?: Date
+  minValue?: number
+  maxValue?: number
+  budgetPlanId?: string
+  order: 'ASC' | 'DESC'
+}
 
-export const AmendmentSchema = z.object({
-  id: z.uuid(),
-  amendmentNumber: z.string().trim(),
-  type: AmendmentTypeSchema,
-  description: z.string().trim().optional(),
-  impactValueCents: z.int().optional(),
-  newEndDate: z.date().optional(),
-  startDate: z.date().optional(),
-  status: AmendmentStatusSchema,
-  signedAt: z.date().optional(),
-  signedContractUrl: z.string().trim().optional(),
-  createdAt: z.date(),
-})
-export type Amendment = z.infer<typeof AmendmentSchema>
+export interface CreateContractInput {
+  title: string
+  objective: string
+  originalValueCents: number
+  originalPeriod: Period
+  classification: ContractClassification
+  contractModel: ContractModel
+  contractType: ContractType
+  supplierId?: string
+  financierId?: string
+  collaboratorId?: string
+  programId?: string
+  budgetPlanId?: string
+  categorizacao?: string
+  centroDeCusto?: string
+  observations?: string
+  email?: string
+  telephone?: string
+  bancaryInfo?: { bank: string; agency: string; accountNumber: string; dv: string }
+  pixInfo?: { keyType: string; key: string }
+}
 
-export const ContractFileSchema = z.object({
-  id: z.uuid(),
-  name: z.string().trim(),
-  url: z.string().trim(),
-  size: z.number().optional(),
-  uploadedAt: z.date(),
-  uploadedBy: z.string().trim().optional(),
-})
-export type ContractFile = z.infer<typeof ContractFileSchema>
+export interface AttachSignedDocumentInput {
+  contractId: string
+  fileBase64: string
+  fileName: string
+  signedAt: string
+}
 
-export const ContractSchema = z.object({
-  id: z.uuid(),
-  sequentialNumber: z.string().trim(),
-  title: z.string().trim(),
-  objective: z.string().trim(),
-  originalValue: MoneySchema,
-  originalPeriod: PeriodSchema,
-  status: ContractStatusSchema,
-  signedAt: z.date().nullable(),
-  currentValue: MoneySchema,
-  currentPeriod: PeriodSchema.nullable(),
-  endedAt: z.date().nullable(),
-  classification: ContractClassificationSchema,
-  contractModel: ContractModelSchema,
-  contractType: ContractTypeSchema,
-  supplierId: z.string().trim().optional(),
-  financierId: z.string().trim().optional(),
-  collaboratorId: z.string().trim().optional(),
-  supplier: PartnerSnapshotSchema.optional(),
-  financier: PartnerSnapshotSchema.optional(),
-  collaborator: PartnerSnapshotSchema.optional(),
-  programId: z.number().optional(),
-  program: z.object({ id: z.number(), name: z.string().trim() }).optional(),
-  budgetPlanId: z.number().optional(),
-  budgetPlan: z.object({ id: z.number(), scenarioName: z.string().trim(), year: z.number(), version: z.number() }).optional(),
-  categorizacao: z.enum(['Avaliação', 'Operacional', 'Processo']).optional(),
-  centroDeCusto: z.enum(['RH', 'Serviços Gerais', 'Eventos']).optional(),
-  observations: z.string().trim().optional(),
-  email: z.email().optional(),
-  telephone: z.string().trim().optional(),
-  bancaryInfo: BankInfoSchema.optional(),
-  pixInfo: PixInfoSchema.optional(),
-  origin: z.string().trim().optional(),
-  createdAt: z.date(),
-  updatedAt: z.date().optional(),
-  children: z.array(AmendmentSchema),
-  files: z.array(ContractFileSchema),
-})
-export type Contract = z.infer<typeof ContractSchema>
+export interface AttachAmendmentDocumentInput {
+  contractId: string
+  amendmentId: string
+  fileBase64: string
+  fileName: string
+  signedAt: string
+}
 
-export const ListContractsInputSchema = z.object({
-  page: z.int().min(1).default(1),
-  limit: z.int().min(1).max(100).default(20),
-  search: z.string().trim().optional(),
-  contractType: ContractTypeSchema.optional(),
-  status: ContractStatusSchema.optional(),
-  contractPeriodStart: z.date().optional(),
-  contractPeriodEnd: z.date().optional(),
-  minValue: z.number().optional(),
-  maxValue: z.number().optional(),
-  budgetPlanId: z.number().optional(),
-  order: z.enum(['ASC', 'DESC']).default('DESC'),
-})
-export type ListContractsInput = z.infer<typeof ListContractsInputSchema>
+// Distrato (#32, CTR-HTTP-DISTRATO-DOCUMENTO): encerrar exige documento `signed_termination` +
+// data efetiva (`terminatedAt`, não-futura) + motivo (`reason`). O PDF reaproveita o anexo do
+// aditivo de distrato (Mecanismo A); `terminatedAt` em YYYY-MM-DD.
+export interface EndContractInput {
+  contractId: string
+  fileBase64: string
+  fileName: string
+  terminatedAt: string
+  reason: string
+}
 
-export const CreateContractInputSchema = z.object({
-  title: z.string().trim().min(1),
-  objective: z.string().trim().min(1),
-  originalValueCents: z.int().positive(),
-  originalPeriod: PeriodSchema,
-  classification: ContractClassificationSchema,
-  contractModel: ContractModelSchema,
-  contractType: ContractTypeSchema,
-  supplierId: z.string().trim().optional(),
-  financierId: z.string().trim().optional(),
-  collaboratorId: z.string().trim().optional(),
-  programId: z.number().optional(),
-  budgetPlanId: z.number().optional(),
-  categorizacao: z.enum(['Avaliação', 'Operacional', 'Processo']).optional(),
-  centroDeCusto: z.enum(['RH', 'Serviços Gerais', 'Eventos']).optional(),
-  observations: z.string().trim().optional(),
-  email: z.email().optional(),
-  telephone: z.string().trim().optional(),
-  bancaryInfo: BankInfoSchema.omit({ updatedAt: true }).optional(),
-  pixInfo: PixInfoSchema.omit({ updatedAt: true }).optional(),
-})
-export type CreateContractInput = z.infer<typeof CreateContractInputSchema>
+export interface UpdateContractInput {
+  id: string
+  email?: string
+  telephone?: string
+  observations?: string
+}
 
-export const UpdateContractInputSchema = z.object({
-  id: z.uuid(),
-  email: z.email().optional(),
-  telephone: z.string().trim().optional(),
-  observations: z.string().trim().optional(),
-})
-export type UpdateContractInput = z.infer<typeof UpdateContractInputSchema>
-
-export const CreateAmendmentInputSchema = z.object({
-  type: AmendmentTypeSchema,
-  description: z.string().trim().optional(),
-  impactValueCents: z.int().optional(),
-  newEndDate: z.date().optional(),
-  startDate: z.date().optional(),
-  signedAt: z.date().optional(),
-})
-export type CreateAmendmentInput = z.infer<typeof CreateAmendmentInputSchema>
+export interface CreateAmendmentInput {
+  type: AmendmentType
+  description?: string
+  impactValueCents?: number
+  newEndDate?: Date
+  startDate?: Date
+  signedAt?: Date
+}
 
 // ContractHistoryEvent — evento de auditoria do contrato (server-domain para evitar cross-layer import).
 export type ContractHistoryEvent = Readonly<{
@@ -188,13 +233,12 @@ export type ContractHistoryEvent = Readonly<{
   metadata?: Record<string, string | number | boolean | null>
 }>
 
-export const ListContractsResponseSchema = z.object({
-  items: z.array(ContractSchema),
-  meta: z.object({
-    page: z.number(),
-    totalPages: z.number(),
-    total: z.number(),
-    limit: z.number(),
-  }),
-})
-export type ListContractsResponse = z.infer<typeof ListContractsResponseSchema>
+export interface ListContractsResponse {
+  items: Contract[]
+  meta: {
+    page: number
+    totalPages: number
+    total: number
+    limit: number
+  }
+}

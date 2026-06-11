@@ -1,6 +1,6 @@
 # ADR-0006 — Security Headers & CSP (middleware global + Caddy)
 
-**Status**: Aceito (amendado 2026-06-01) · **Data**: 2026-05-30 · **Contexto**: spec `003-auth-security-hardening`
+**Status**: Aceito (amendado 2026-06-01, 2026-06-09) · **Data**: 2026-05-30 · **Contexto**: spec `003-auth-security-hardening`
 
 > **Amendência 2026-06-01 (CSP nonce):** a Decisão #3 abaixo partia de uma premissa **incorreta** — o
 > TanStack Start injeta SIM um `<script>` **inline** de bootstrap (`window.$_TSR`, dehydrated state) que
@@ -30,6 +30,11 @@ A auditoria OWASP da Auth (003) confirmou que **nenhum security header** existia
 4. **HSTS condicional (trust-proxy)** — emitido só quando `x-forwarded-proto: https` (injetado pelo Caddy). Em `pnpm dev` puro (http) é omitido para não travar localhost. O header só é confiável atrás do proxy; forjá-lo apenas suprime o próprio HSTS do atacante (não escala acesso).
 
 5. **CSRF re-registrado** — criar `src/start.ts` **desativa** o CSRF automático do Start; re-registramos `createCsrfMiddleware({ filter: ctx => ctx.handlerType === 'serverFn' })`. Complementa o `csrf-origin.ts` (validação de origem aplicada em login e logout).
+
+6. **`frame-src 'self' blob:` (adicionado 2026-06-09) — preview de PDF de documentos de contrato:**
+   - A tela de detalhe do contrato pré-visualiza o PDF do documento (contrato/aditivo) num `<iframe>`. O BFF entrega os **bytes** (same-origin, via server-fn) e o client cria um `blob:` (`URL.createObjectURL`) como `src` do iframe.
+   - Sem uma diretiva `frame-src`, o framing do `blob:` caía no `default-src 'self'` e era **bloqueado** (iframe abria em branco). Adicionamos `frame-src 'self' blob:` — restrito a same-origin + blob (o blob é gerado pelo nosso próprio JS a partir de bytes same-origin; `script-src` segue travado, sem injeção de blob por terceiros).
+   - **Não** abrimos `frame-src` para `http(s)://` externo nem `*` (coberto por teste em `tests/shared/http/security-headers.test.ts`). `frame-ancestors 'none'` (anti-clickjacking) permanece intacto.
 
 ## Consequências
 

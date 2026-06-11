@@ -3,14 +3,27 @@ import { style } from '@vanilla-extract/css'
 import { vars } from '#shared/ui/tokens/index.ts'
 
 export const screen = style({
+  boxSizing: 'border-box',
+  blockSize: '100%',
+  overflowY: 'auto',
   padding: vars.space.xl,
   display: 'flex',
   flexDirection: 'column',
+  gap: vars.space.lg,
+  scrollbarWidth: 'thin',
+  scrollbarColor: `${vars.color.border.default} transparent`,
 })
 
-export const headerActions = style({
-  display: 'inline-flex',
-  gap: vars.space.sm,
+// Footer de ações no rodapé (mesmo padrão do detalhe de Colaboradores): Voltar + Inativar + Editar.
+export const footer = style({
+  display: 'flex',
+  justifyContent: 'flex-end',
+  gap: vars.space.md,
+  maxInlineSize: '72rem',
+})
+
+export const saveWrap = style({
+  inlineSize: '12rem',
 })
 
 export const errorBanner = style({

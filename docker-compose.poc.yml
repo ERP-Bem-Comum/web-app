@@ -1,0 +1,97 @@
+# PoC LOCAL — stack completa persistente (NÃO versionar; arquivo de apoio temporário).
+# Uso: docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.poc.yml up -d --build
+#
+# O que este arquivo adiciona/sobrescreve sobre o base + override:
+#   - core-api: build a partir de ../core-api (o backend foi extraído deste repo na migração)
+#   - core-api: drivers mysql p/ contratos e parceiros + storage S3 (MinIO) — itens 2 e 3 do relatório
+#   - minio + minio-bootstrap: equivalente local do S3 e criação do bucket contracts-documents
+#
+# Tudo aponta para o MySQL `core` (user core_app/coredev) já definido no docker-compose.yml base.
+# As migrations de auth/contracts/partners são aplicadas no boot do core-api (applyMigrations: true).
+
+name: bemcomum
+
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: bemcomum-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    ports:
+      - '${MINIO_API_PORT:-9000}:9000'
+      - '${MINIO_CONSOLE_PORT:-9001}:9001'
+    environment:
+      MINIO_ROOT_USER: dev-access-key
+      MINIO_ROOT_PASSWORD: dev-secret-key-min-8-chars
+    volumes:
+      - minio-data:/data
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - bemcomum
+
+  minio-bootstrap:
+    image: minio/mc:latest
+    container_name: bemcomum-minio-bootstrap
+    depends_on:
+      minio:
+        condition: service_started
+    entrypoint:
+      - /bin/sh
+      - -c
+      - >
+        until mc alias set local http://minio:9000 dev-access-key dev-secret-key-min-8-chars; do
+          echo 'aguardando minio...'; sleep 2;
+        done;
+        mc mb --ignore-existing local/contracts-documents;
+        mc anonymous set download local/contracts-documents;
+        echo 'bootstrap concluido: bucket contracts-documents pronto.';
+    restart: 'no'
+    networks:
+      - bemcomum
+
+  core-api:
+    build:
+      context: ../core-api
+      dockerfile: Dockerfile
+    environment:
+      # Contratos e Parceiros → MySQL real (mesmo DB `core` do auth). Migrations no boot.
+      CONTRACTS_DRIVER: mysql
+      CONTRACTS_DATABASE_URL: mysql://${MYSQL_USER:-core_app}:${MYSQL_PASSWORD:-coredev}@mysql:3306/core
+      PARTNERS_DRIVER: mysql
+      PARTNERS_DATABASE_URL: mysql://${MYSQL_USER:-core_app}:${MYSQL_PASSWORD:-coredev}@mysql:3306/core
+      # Storage de documentos de contratos → MinIO (S3-compatível).
+      S3_ENDPOINT: http://minio:9000
+      S3_REGION: us-east-1
+      S3_BUCKET: contracts-documents
+      S3_ACCESS_KEY_ID: dev-access-key
+      S3_SECRET_ACCESS_KEY: dev-secret-key-min-8-chars
+      S3_FORCE_PATH_STYLE: 'true'
+      # E-mail transacional (convite de usuário + reset de senha) via RESEND, usando o gateway SMTP
+      # do Resend (§3.2 do guia de infra). ⚠️ A API key é SEGREDO: vem do .env GITIGNORADO
+      # (RESEND_API_KEY) — NUNCA neste arquivo versionado. O remetente (RESEND_FROM) precisa ser de um
+      # DOMÍNIO VERIFICADO no Resend, senão a entrega é recusada. Faltando qualquer SMTP_* / AUTH_RESET_FROM
+      # → o mailer vira no-op silencioso (não envia).
+      SMTP_HOST: smtp.resend.com
+      SMTP_PORT: '465'
+      SMTP_SECURE: 'true'
+      SMTP_USER: resend
+      SMTP_PASS: ${RESEND_API_KEY}
+      AUTH_RESET_FROM: ${RESEND_FROM}
+      AUTH_INVITE_FROM: ${RESEND_FROM}
+      # Origem confiável do link de reset (aponta para o front local).
+      AUTH_RESET_BASE_URL: https://app.localhost
+      # Seed de RBAC para DEV (mecanismo do próprio core-api: guarda dupla CORE_API_E2E + AUTH_SEED_JSON).
+      # A imagem atual É idempotente: o seed PULA usuários já existentes (não atualiza permissões nem crasha
+      # por e-mail duplicado). Consequência: o admin original (admin@bemcomum.dev) NÃO pode ser "promovido"
+      # em si só via env — para ganhar Gestão de Usuários (user:*) sem mexer no banco, semeamos um 2º admin
+      # com acesso TOTAL ao catálogo de permissões: admin.full@bemcomum.dev / DevPassw0rd!2024.
+      # Ambos coexistem; nenhum dado existente é tocado. (Strings = permission-catalog.ts; user:create, NÃO user:write.)
+      CORE_API_E2E: '1'
+      AUTH_SEED_JSON: '{"users":[{"email":"admin@bemcomum.dev","password":"DevPassw0rd!2024","permissions":["supplier:read","supplier:write","financier:read","financier:write","collaborator:read","collaborator:write","act:read","act:write","geography:read","geography:write","contract:read","contract:write","contract:mass-approve"]},{"email":"admin.full@bemcomum.dev","password":"DevPassw0rd!2024","permissions":["act:read","act:write","collaborator:read","collaborator:write","contract:read","contract:write","contract:delete","contract:mass-approve","etl:mass-approver","financier:read","financier:write","geography:read","geography:write","program:read","program:write","program:deactivate","role:read","role:create","role:update","role:assign","role:revoke","supplier:read","supplier:write","user:list","user:read","user:create","user:update","user:activate","user:deactivate","user:register","user:assign-role"]}]}'
+    depends_on:
+      minio:
+        condition: service_started
+
+volumes:
+  minio-data:

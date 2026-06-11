@@ -20,6 +20,27 @@ const PeriodDtoSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('Indefinite'), start: z.string().trim() }),
 ])
 
+// CTR-NUMBER-PROGRAM (#32): metadados de cadastro do agregado + bloco `program` composto na borda.
+// Todos NULLABLE/OPTIONAL para backward-compat (contratos antigos / respostas sem composição de programs).
+const ProgramDtoSchema = z
+  .object({
+    id: z.uuid(),
+    snapshot: z
+      .object({ name: z.string().trim(), sigla: z.string().trim(), programNumber: z.number() })
+      .nullable(),
+  })
+  .nullable()
+  .optional()
+
+const ContractMetaShape = {
+  classification: z.enum(['CT', 'OS']).nullable().optional(),
+  programId: z.uuid().nullable().optional(),
+  budgetPlanId: z.uuid().nullable().optional(),
+  categorizacao: z.string().trim().nullable().optional(),
+  centroDeCusto: z.string().trim().nullable().optional(),
+  program: ProgramDtoSchema,
+}
+
 const ContractListItemBaseSchema = z.object({
   id: z.uuid(),
   sequentialNumber: z.string().trim(),
@@ -27,9 +48,13 @@ const ContractListItemBaseSchema = z.object({
   objective: z.string().trim(),
   originalValue: MoneyDtoSchema,
   originalPeriod: PeriodDtoSchema,
+  ...ContractMetaShape,
 })
 
-export const CoreApiContractListItemSchema = z.discriminatedUnion('status', [
+// D9 (ADR-0013): `z.union` (não `discriminatedUnion`) com BRANCH DE ESCAPE no fim — status conhecidos
+// primeiro (validação completa dos campos condicionais); qualquer status novo do backend (ex.: 'Cancelled'
+// do #32) cai no escape `status: z.string()` e preserva a linha (o mapper degrada o status desconhecido).
+export const CoreApiContractListItemSchema = z.union([
   z.object({ ...ContractListItemBaseSchema.shape, status: z.literal('Pending') }),
   z.object({
     ...ContractListItemBaseSchema.shape,
@@ -53,6 +78,15 @@ export const CoreApiContractListItemSchema = z.discriminatedUnion('status', [
     currentValue: MoneyDtoSchema,
     currentPeriod: PeriodDtoSchema,
     endedAt: z.string().trim(),
+  }),
+  // Escape: status desconhecido (futuro). Campos condicionais opcionais p/ tolerar variações.
+  z.object({
+    ...ContractListItemBaseSchema.shape,
+    status: z.string().trim(),
+    signedAt: z.string().trim().optional(),
+    currentValue: MoneyDtoSchema.optional(),
+    currentPeriod: PeriodDtoSchema.optional(),
+    endedAt: z.string().trim().optional(),
   }),
 ])
 
@@ -118,15 +152,43 @@ export const CoreApiDocumentSchema = z.object({
   uploadedAt: z.string().trim(),
 })
 
+// Contratado — o detalhe (GET /:id) devolve `contractor` com o snapshot (nome/documento/banco/PIX).
+const CoreApiContractorBankSchema = z.object({
+  bank: z.string().trim(),
+  agency: z.string().trim(),
+  accountNumber: z.string().trim(),
+  checkDigit: z.string().trim(),
+})
+const CoreApiContractorPixSchema = z.object({
+  keyType: z.string().trim(),
+  key: z.string().trim(),
+})
+export const CoreApiContractorSchema = z.object({
+  type: z.enum(['supplier', 'financier', 'collaborator', 'act']),
+  id: z.string().trim(),
+  snapshot: z.object({
+    name: z.string().trim(),
+    document: z.string().trim(),
+    updatedAt: z.string().trim().optional(),
+    bankAccount: CoreApiContractorBankSchema.nullable().optional(),
+    pixKey: CoreApiContractorPixSchema.nullable().optional(),
+  }),
+})
+
 // Metadados editáveis via PATCH /api/v2/contracts/:id — a rota gorda GET /:id os
 // devolve no detalhe (opcionais/ausentes quando nunca preenchidos).
 const detailMetaShape = {
-  observations: z.string().trim().optional(),
-  email: z.string().trim().optional(),
-  telephone: z.string().trim().optional(),
+  // O backend devolve null (não ausente) quando vazios — precisa aceitar null, senão o parse do
+  // detalhe inteiro falha e cai no fallback de list-item (perdendo contractor/documents/etc.).
+  observations: z.string().trim().nullable().optional(),
+  email: z.string().trim().nullable().optional(),
+  telephone: z.string().trim().nullable().optional(),
+  contractor: CoreApiContractorSchema.nullable().optional(),
 }
 
-export const CoreApiContractDetailSchema = z.discriminatedUnion('status', [
+// D9 (ADR-0013): `z.union` com escape branch no fim (mesmo padrão do list-item) — status novo do
+// backend (ex.: 'Cancelled' do #32) não derruba o detalhe; o mapper degrada o status desconhecido.
+export const CoreApiContractDetailSchema = z.union([
   z.object({
     ...ContractListItemBaseSchema.shape,
     ...detailMetaShape,
@@ -166,19 +228,41 @@ export const CoreApiContractDetailSchema = z.discriminatedUnion('status', [
     amendments: z.array(AmendmentDtoSchema),
     documents: z.array(CoreApiDocumentSchema),
   }),
+  // Escape: status desconhecido (futuro, ex.: 'Cancelled'). Campos condicionais opcionais.
+  z.object({
+    ...ContractListItemBaseSchema.shape,
+    ...detailMetaShape,
+    status: z.string().trim(),
+    signedAt: z.string().trim().optional(),
+    currentValue: MoneyDtoSchema.optional(),
+    currentPeriod: PeriodDtoSchema.optional(),
+    endedAt: z.string().trim().optional(),
+    amendments: z.array(AmendmentDtoSchema),
+    documents: z.array(CoreApiDocumentSchema),
+  }),
 ])
 
 export type CoreApiContractDetail = z.infer<typeof CoreApiContractDetailSchema>
 
 // ─── Listagem paginada ──────────────────────────────────────────────────────
 
+// O core-api (dev atual) devolve a paginação como
+// `{ currentPage, itemsPerPage, itemCount, totalItems, totalPages }`. Versões anteriores usavam
+// `{ page, total, limit, totalPages }`. Aceitamos AMBOS (campos opcionais) e normalizamos no
+// mapper (`apiListResponseToDomain`) — senão o `safeParse` falha e a lista inteira zera no grid.
 export const CoreApiListResponseSchema = z.object({
   items: z.array(CoreApiContractListItemSchema),
   meta: z.object({
-    page: z.int(),
-    totalPages: z.int(),
-    total: z.int(),
-    limit: z.int(),
+    // Shape atual (dev)
+    currentPage: z.int().optional(),
+    itemsPerPage: z.int().optional(),
+    itemCount: z.int().optional(),
+    totalItems: z.int().optional(),
+    totalPages: z.int().optional(),
+    // Shape legado (compat)
+    page: z.int().optional(),
+    total: z.int().optional(),
+    limit: z.int().optional(),
   }),
 })
 

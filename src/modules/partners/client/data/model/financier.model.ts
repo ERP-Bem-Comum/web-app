@@ -16,6 +16,7 @@ export type FinancierListItem = Readonly<{
   id: string
   name: string
   corporateName: string
+  legalRepresentative: string
   cnpj: string
   telephone: string
   activation: ActivationStatus

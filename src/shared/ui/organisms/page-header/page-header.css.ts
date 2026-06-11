@@ -44,3 +44,38 @@ export const actions = style({
   gap: vars.space.sm,
   flexShrink: 0,
 })
+
+// Grupo da esquerda: botão voltar (opcional) + título/subtítulo.
+export const leftGroup = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  minInlineSize: 0,
+})
+
+// Botão voltar — quadrado arredondado com borda da marca (à esquerda do título).
+export const backButton = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  inlineSize: '2.25rem',
+  blockSize: '2.25rem',
+  flexShrink: 0,
+  borderRadius: vars.radius.md,
+  border: `${vars.borderWidth.thin} solid ${vars.color.brand.normal}`,
+  background: vars.color.surface.default,
+  color: vars.color.brand.normal,
+  cursor: 'pointer',
+  transitionProperty: 'background-color, color',
+  transitionDuration: '150ms',
+  selectors: {
+    '&:hover': { background: vars.color.brand.normal, color: vars.color.brand.onBrand },
+    '&:focus-visible': {
+      outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
+      outlineOffset: vars.focusRing.offset,
+    },
+  },
+  '@media': {
+    '(prefers-reduced-motion: reduce)': { transitionDuration: '0.01ms' },
+  },
+})

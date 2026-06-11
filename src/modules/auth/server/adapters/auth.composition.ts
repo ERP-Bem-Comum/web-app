@@ -32,6 +32,8 @@ const build = () => {
     getMe: createGetMe({ client }),
     logout: createLogout({ client, store }),
     resolveSession: createResolveSession({ store, refreshSession, now }),
+    // Leitura pública da política de senha (#32) — passthrough do client (sem use-case próprio).
+    getPasswordPolicy: () => client.getPasswordPolicy(),
   }
 }
 

@@ -1,15 +1,18 @@
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { getRouteApi, useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { Badge, Button, DataTable, PageHeader, type Column, type DataTableState } from '#shared/ui/index.ts'
+import { Badge, Button, DataTable, PageHeader, formatMask, type Column, type DataTableState } from '#shared/ui/index.ts'
 
 import { useFinancierListBinding } from '../financier-list.binding.ts'
 import { totalPages, type FinancierListState, type FinancierRow } from '../financier-list.view-model.ts'
 import { FinancierFilters, type StatusFilter } from '../components/financier-filters.component.tsx'
 import { FinancierPaginator } from '../components/financier-paginator.component.tsx'
-import { screen } from './financier-list.css.ts'
+import { PartnersExportDropdown } from '#modules/partners/client/shared/partners-export-dropdown.component.tsx'
+import { PartnersPrintable } from '#modules/partners/client/shared/partners-printable.component.tsx'
+import { contentWrap, contentWrapPrintHidden } from '#modules/partners/client/shared/export-print.css.ts'
+import { cnpjCell, screen } from './financier-list.css.ts'
 
 const t = createTranslator(ptBR)
 const routeApi = getRouteApi('/_authenticated/parceiros/financiadores/')
@@ -29,41 +32,40 @@ export function FinancierListPage(): ReactNode {
   const search = routeApi.useSearch()
   const navigate = useNavigate()
   const { state, canCreate } = useFinancierListBinding(search)
+  const [printing, setPrinting] = useState(false)
+
+  useEffect(() => {
+    if (!printing) return
+    const id = setTimeout(() => { window.print(); setPrinting(false) }, 0)
+    return () => { clearTimeout(id) }
+  }, [printing])
 
   const hasFilters = (search.search ?? '') !== '' || search.active !== undefined
 
   const columns: readonly Column<FinancierRow>[] = [
-    { key: 'name', header: t('partners.financiers.columns.name'), cell: (r) => r.name },
     {
       key: 'corporateName',
       header: t('partners.financiers.columns.corporateName'),
       cell: (r) => r.corporateName,
     },
     {
+      key: 'legalRepresentative',
+      header: t('partners.financiers.columns.legalRepresentative'),
+      cell: (r) => r.legalRepresentative,
+    },
+    {
       key: 'cnpj',
       header: t('partners.financiers.columns.cnpj'),
-      width: 'narrow',
-      cell: (r) => formatCnpj(r.cnpj),
+      cell: (r) => <span className={cnpjCell}>{formatCnpj(r.cnpj)}</span>,
     },
-    { key: 'telephone', header: t('partners.financiers.columns.telephone'), cell: (r) => r.telephone },
+    { key: 'telephone', header: t('partners.financiers.columns.telephone'), cell: (r) => formatMask('phone', r.telephone) },
     {
       key: 'status',
       header: t('partners.financiers.columns.status'),
-      align: 'center',
       cell: (r) => (
         <Badge variant={r.activation === 'active' ? 'active' : 'outro'}>
           {t(`partners.financiers.status.${r.activation}`)}
         </Badge>
-      ),
-    },
-    {
-      key: 'actions',
-      header: t('partners.financiers.columns.actions'),
-      align: 'end',
-      cell: (r) => (
-        <Button onClick={() => void navigate({ to: '/parceiros/financiadores/$id', params: { id: r.id } })}>
-          {t('partners.financiers.actions.view')}
-        </Button>
       ),
     },
   ]
@@ -71,9 +73,26 @@ export function FinancierListPage(): ReactNode {
   const tableState = toTableState(state)
   const pageNum = search.page
   const pages = state.status === 'ready' ? totalPages(state.meta) : 1
+  const rows = state.status === 'ready' ? state.rows : []
+
+  const exportColumns: readonly string[] = [
+    t('partners.financiers.columns.corporateName'),
+    t('partners.financiers.columns.legalRepresentative'),
+    t('partners.financiers.columns.cnpj'),
+    t('partners.financiers.columns.telephone'),
+    t('partners.financiers.columns.status'),
+  ]
+  const exportRows: readonly (readonly string[])[] = rows.map((r) => [
+    r.corporateName,
+    r.legalRepresentative,
+    formatCnpj(r.cnpj),
+    formatMask('phone', r.telephone),
+    t(`partners.financiers.status.${r.activation}`),
+  ])
 
   return (
     <div className={screen}>
+      <div className={printing ? contentWrapPrintHidden : contentWrap}>
       <PageHeader
         title={t('partners.financiers.list.title')}
         subtitle={t('partners.financiers.list.subtitle')}
@@ -95,6 +114,15 @@ export function FinancierListPage(): ReactNode {
           active: t('partners.financiers.filters.active'),
           inactive: t('partners.financiers.filters.inactive'),
         }}
+        exportSlot={
+          <PartnersExportDropdown
+            exportLabel={t('partners.export.label')}
+            filenameBase="financiadores"
+            headers={exportColumns}
+            rows={exportRows}
+            onPrint={() => { setPrinting(true) }}
+          />
+        }
         onSearch={(value) =>
           void navigate({ to: '.', replace: true, search: (p) => ({ ...p, search: value || undefined, page: 1 }) })
         }
@@ -116,18 +144,31 @@ export function FinancierListPage(): ReactNode {
         }
         loadingLabel={t('partners.financiers.list.loading')}
         caption={t('partners.financiers.list.title')}
+        onRowClick={(r) => void navigate({ to: '/parceiros/financiadores/$id', params: { id: r.id } })}
       />
 
       <FinancierPaginator
         page={pageNum}
         totalPages={pages}
+        perPage={search.limit}
         labels={{
           previous: t('partners.financiers.paginator.previous'),
           next: t('partners.financiers.paginator.next'),
           page: t('partners.financiers.paginator.page'),
+          perPage: t('partners.financiers.paginator.perPage'),
         }}
         onPrev={() => void navigate({ to: '.', search: (p) => ({ ...p, page: Math.max(1, pageNum - 1) }) })}
         onNext={() => void navigate({ to: '.', search: (p) => ({ ...p, page: pageNum + 1 }) })}
+        onPerPage={(perPage) => void navigate({ to: '.', search: (p) => ({ ...p, limit: perPage, page: 1 }) })}
+      />
+      </div>
+
+      <PartnersPrintable
+        title={t('partners.financiers.list.title')}
+        emittedLabel={t('partners.export.count').replace('{n}', String(rows.length))}
+        columns={exportColumns}
+        rows={exportRows}
+        emptyLabel={t('partners.financiers.list.empty')}
       />
     </div>
   )

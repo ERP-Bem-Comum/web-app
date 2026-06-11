@@ -1,13 +1,18 @@
 /**
  * useRootBinding — ADAPTER React (ADR-0009/0012): liga o `rootViewModel` agnóstico às primitivas do
  * framework. Aplica o reducer da VM (`useReducer`), lê a rota (`useRouterState`), navega no logout, e
- * deriva o que a page precisa. Recebe o `user` (com `permissions`) por ARGUMENTO — vem do route context
- * via prop (NUNCA `useCurrentUser` aqui → evitaria double-fetch). Efeitos de DOM em `useEffect` (SSR-safe).
+ * deriva o que a page precisa. Recebe o `user` (userId+permissions) por ARGUMENTO — vem do route context
+ * (server fn de auth `/auth/me`, que NÃO traz o nome). O **nome de exibição** vem do perfil autosserviço
+ * (GET /api/v1/me, query ['users','me'], compartilhada com "Minha Conta"): assim o topbar mostra o nome e
+ * reflete edições automaticamente (a mutation de Minha Conta invalida ['users']). DOM em `useEffect` (SSR-safe).
  */
 import { useCallback, useEffect, useReducer, useRef } from 'react'
 import { useNavigate, useRouterState } from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
 
+import { isOk } from '#shared/primitives/result.ts'
 import { logoutUseCase } from '#modules/auth/public-api/index.ts'
+import { myAccountQueryOptions } from '#modules/users/public-api/index.ts'
 import { MENU, type MenuSection } from '#modules/shell/client/data/menu/shell-menu.config.ts'
 import { rootInitialUiState, rootUiReducer, rootViewModel } from '#modules/shell/client/root/viewModel/root.view-model.ts'
 
@@ -29,6 +34,14 @@ export function useRootBinding(user: RootUser): RootView {
   const [state, dispatch] = useReducer(rootUiReducer, rootInitialUiState)
   const path = useRouterState({ select: (s) => s.location.pathname })
   const navigate = useNavigate()
+
+  // Nome de exibição: do perfil autosserviço (/api/v1/me), reativo. Enquanto carrega, o topbar usa o
+  // fallback do userId. Compartilha a queryKey ['users','me'] com "Minha Conta" → editar lá reflete aqui.
+  const profileQuery = useQuery(myAccountQueryOptions)
+  const profileName =
+    profileQuery.data !== undefined && isOk(profileQuery.data) ? profileQuery.data.value.name : undefined
+  const resolvedUser: RootUser =
+    profileName !== undefined && profileName.trim().length > 0 ? { ...user, name: profileName } : user
 
   const pageTitle = rootViewModel.resolvePageTitle(path)
   const sidebarWidth = rootViewModel.sidebarWidth(state.collapsed)
@@ -56,7 +69,7 @@ export function useRootBinding(user: RootUser): RootView {
   }, [navigate])
 
   return {
-    user,
+    user: resolvedUser,
     collapsed: state.collapsed,
     sidebarWidth,
     pageTitle,

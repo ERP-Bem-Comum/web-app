@@ -76,10 +76,13 @@ export const resultFetch = async <T>(
     // 204 No Content: sucesso sem corpo. `as T` documentado — chamador tipa T como void/undefined.
     return ok(undefined as T)
   }
+  // Alguns endpoints respondem 2xx COM corpo vazio (ex.: PUT /…/:id, deactivate/reactivate do core-api
+  // retornam 200 sem body). Tratamos como sucesso sem conteúdo — o chamador refaz o GET quando precisa.
+  const text = await response.text()
+  if (text === '') return ok(undefined as T)
   try {
     // Boundary: o response do backend é validado por Zod no schema do módulo; aqui o cast é o ponto único.
-    const data = (await response.json()) as T
-    return ok(data)
+    return ok(JSON.parse(text) as T)
   } catch {
     return err({ kind: 'parse' })
   }

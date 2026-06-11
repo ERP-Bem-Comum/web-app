@@ -70,9 +70,7 @@ export function ContractsTable({ rows, renderRow }: ContractsTableProps): ReactN
             <th className={`${thCell} ${colStatus}`}>
               {t('contracts.table.columns.status')}
             </th>
-            <th className={`${thCell} ${colActions}`}>
-              {t('contracts.table.columns.actions')}
-            </th>
+            <th className={`${thCell} ${colActions}`} aria-label={t('contracts.table.columns.actions')} />
           </tr>
         </thead>
         <tbody>

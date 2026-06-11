@@ -7,7 +7,8 @@ import { createServerFn } from '@tanstack/react-start'
 import { isErr } from '#shared/primitives/result.ts'
 import { getCurrentUserFn, resolveAccessTokenFn } from '#modules/auth/public-api/index.ts'
 import { contractsServer } from '../contracts.composition.ts'
-import { ListContractsInputSchema, type ListContractsResponse } from '#modules/contracts/server/domain/contracts.types.ts'
+import { ListContractsInputSchema } from '#modules/contracts/server/adapters/contracts.schemas.ts'
+import type { ListContractsResponse } from '#modules/contracts/server/domain/contracts.types.ts'
 import type { ContractsError } from '#modules/contracts/server/adapters/contracts-shared.types.ts'
 
 export type ListContractsFnResult =

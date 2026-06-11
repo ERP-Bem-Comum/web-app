@@ -24,6 +24,12 @@ export const input = style({
   transitionDuration: '150ms',
   selectors: {
     '&::placeholder': { color: vars.color.text.muted },
+    // desabilitado: campo somente-leitura (ex.: CNPJ/CPF vital na edição)
+    '&:disabled': {
+      background: vars.color.surface.subtle,
+      color: vars.color.text.muted,
+      cursor: 'not-allowed',
+    },
     // foco por teclado: mesmo padrão do Button (border.focus + focusRing como outline)
     '&:focus-visible': {
       borderColor: vars.color.border.focus,

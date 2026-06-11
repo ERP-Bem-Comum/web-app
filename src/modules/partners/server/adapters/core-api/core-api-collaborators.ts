@@ -93,11 +93,27 @@ const detailToModel = (raw: unknown): Result<CollaboratorDetail, PartnersError> 
   const parsed = CoreApiCollaboratorDetailSchema.safeParse(raw)
   if (!parsed.success) return err('server') // drift de contrato — diagnóstico via parsed.error se necessário
   const c = parsed.data
+  const u = (v: string | null | undefined): string | undefined => (v === null || v === '' ? undefined : v)
   return ok({
     ...itemToModel(c),
     cpf: c.cpf,
     startOfContract: c.startOfContract,
     employmentRelationship: c.employmentRelationship,
+    // Dados do cadastro completo (null/'' legado → undefined).
+    rg: u(c.rg),
+    dateOfBirth: u(c.dateOfBirth),
+    completeAddress: u(c.completeAddress),
+    telephone: u(c.telephone),
+    emergencyContactName: u(c.emergencyContactName),
+    emergencyContactTelephone: u(c.emergencyContactTelephone),
+    genderIdentity: u(c.genderIdentity),
+    race: u(c.race),
+    allergies: u(c.allergies),
+    foodCategory: u(c.foodCategory),
+    foodCategoryDescription: u(c.foodCategoryDescription),
+    education: u(c.education),
+    biography: u(c.biography),
+    experienceInThePublicSector: c.experienceInThePublicSector ?? undefined,
   })
 }
 

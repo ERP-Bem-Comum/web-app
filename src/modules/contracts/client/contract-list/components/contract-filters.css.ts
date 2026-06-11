@@ -59,7 +59,7 @@ export const clearButton = style({
   cursor: 'pointer',
   fontFamily: vars.font.family.body,
   transition: 'background 150ms ease, border-color 150ms ease',
-  marginLeft: 'auto',
+  marginInlineStart: 'auto',
   ':hover': {
     background: vars.color.institutional.paperWarm,
     borderColor: vars.color.institutional.paperRule,

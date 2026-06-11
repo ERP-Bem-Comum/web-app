@@ -1,0 +1,40 @@
+name: CI
+
+# Gate de qualidade em Pull Request (TICKET-002 / G3): roda os mesmos checks do `pnpm verify`
+# (typecheck + lint + testes) mais os testes de DOM, antes de permitir o merge em develop/main.
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+
+jobs:
+  verify:
+    name: typecheck + lint + tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Unit tests (node:test)
+        run: pnpm test
+
+      - name: DOM tests (vitest)
+        run: pnpm test:dom

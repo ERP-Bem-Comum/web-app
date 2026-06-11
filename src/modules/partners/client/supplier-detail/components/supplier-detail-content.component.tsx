@@ -2,77 +2,124 @@ import type { ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { Badge } from '#shared/ui/index.ts'
-
-import type { SupplierDetail } from '../supplier-detail.view-model.ts'
+import { Badge, Field, Input } from '#shared/ui/index.ts'
 import {
-  card,
-  cardTitle,
-  field,
+  PIX_KEY_TYPES,
+  isPixKeyType,
+  type SupplierFormController,
+  type SupplierFormState,
+} from '#modules/partners/client/supplier-create/components/supplier-form.controller.ts'
+import type { ActivationStatus } from '#modules/partners/client/domain/supplier.types.ts'
+
+import {
+  stack,
+  section,
+  sectionTitle,
+  statusRow,
   fieldGrid,
-  fieldLabel,
-  fieldValue,
-  layout,
+  select,
 } from './supplier-detail-content.css.ts'
 
 const t = createTranslator(ptBR)
 
-function Item({ label, value }: Readonly<{ label: string; value: string }>): ReactNode {
-  return (
-    <div className={field}>
-      <span className={fieldLabel}>{label}</span>
-      <span className={fieldValue}>{value}</span>
-    </div>
-  )
-}
-
 export type SupplierDetailContentProps = Readonly<{
-  supplier: SupplierDetail
+  controller: SupplierFormController
+  editing: boolean
   canViewSensitive: boolean
+  /** CNPJ é vital: só edita com `supplier:edit-sensitive`. */
+  cnpjDisabled: boolean
+  activation: ActivationStatus
+  categories: readonly string[]
 }>
 
 export function SupplierDetailContent(props: SupplierDetailContentProps): ReactNode {
-  const s = props.supplier
+  const { controller: c, editing } = props
+  const invalid = (key: string): string | undefined =>
+    c.errors[key] === true ? t('partners.suppliers.form.invalid') : undefined
+
+  const txt = (
+    key: keyof SupplierFormState,
+    label: string,
+    errKey: string,
+    opts?: Readonly<{ type?: 'text' | 'email'; disabled?: boolean; mask?: 'cpf' | 'cnpj' | 'phone' }>,
+  ): ReactNode => (
+    <Field htmlFor={`sd-${key}`} label={label} error={invalid(errKey)}>
+      <Input
+        id={`sd-${key}`}
+        type={opts?.type}
+        mask={opts?.mask}
+        value={c.state[key]}
+        disabled={!editing || (opts?.disabled ?? false)}
+        onChange={(v) => { c.setField(key, v); }}
+      />
+    </Field>
+  )
+
   return (
-    <div className={layout}>
-      <section className={card}>
-        <h2 className={cardTitle}>{t('partners.suppliers.form.section.basic')}</h2>
-        <Badge variant={s.activation === 'active' ? 'active' : 'outro'}>
-          {t(`partners.suppliers.status.${s.activation}`)}
-        </Badge>
+    <div className={stack}>
+      <section className={section}>
+        <h2 className={sectionTitle}>{t('partners.suppliers.form.section.basic')}</h2>
+        <div className={statusRow}>
+          <Badge variant={props.activation === 'active' ? 'active' : 'outro'}>
+            {t(`partners.suppliers.status.${props.activation}`)}
+          </Badge>
+        </div>
         <div className={fieldGrid}>
-          <Item label={t('partners.suppliers.form.name')} value={s.name} />
-          <Item label={t('partners.suppliers.form.corporateName')} value={s.corporateName} />
-          <Item label={t('partners.suppliers.form.fantasyName')} value={s.fantasyName} />
-          <Item label={t('partners.suppliers.form.email')} value={s.email} />
-          <Item label={t('partners.suppliers.form.cnpj')} value={s.cnpj} />
-          <Item label={t('partners.suppliers.form.category')} value={s.serviceCategory} />
+          {txt('name', t('partners.suppliers.form.name'), 'name')}
+          {txt('email', t('partners.suppliers.form.email'), 'email', { type: 'email' })}
+          {txt('cnpj', t('partners.suppliers.form.cnpj'), 'cnpj', { disabled: props.cnpjDisabled, mask: 'cnpj' })}
+          {txt('corporateName', t('partners.suppliers.form.corporateName'), 'corporateName')}
+          {txt('fantasyName', t('partners.suppliers.form.fantasyName'), 'fantasyName')}
+          <Field htmlFor="sd-category" label={t('partners.suppliers.form.category')} error={invalid('serviceCategory')}>
+            <select
+              id="sd-category"
+              className={select}
+              value={c.state.serviceCategory}
+              disabled={!editing}
+              onChange={(e) => { c.setField('serviceCategory', e.target.value); }}
+            >
+              <option value="">{t('partners.suppliers.form.select')}</option>
+              {props.categories.map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </Field>
+          {/* Avaliação/Comentário: campos do legado sem suporte no backend → sempre desabilitados. */}
+          <Field htmlFor="sd-rating" label={t('partners.suppliers.form.serviceRating')}>
+            <select id="sd-rating" className={select} disabled title={t('partners.suppliers.form.gatedHint')} aria-label={t('partners.suppliers.form.serviceRating')}>
+              <option value="">{t('partners.suppliers.form.select')}</option>
+            </select>
+          </Field>
+          <Field htmlFor="sd-rating-comment" label={t('partners.suppliers.form.ratingComment')}>
+            <Input id="sd-rating-comment" value="" disabled placeholder={t('partners.suppliers.form.gatedHint')} onChange={() => { /* gated */ }} />
+          </Field>
         </div>
       </section>
 
       {props.canViewSensitive ? (
-        <aside className={card}>
-          {s.bankAccount !== null ? (
-            <>
-              <h2 className={cardTitle}>{t('partners.suppliers.form.section.banking')}</h2>
-              <div className={fieldGrid}>
-                <Item label={t('partners.suppliers.form.bank')} value={s.bankAccount.bank} />
-                <Item label={t('partners.suppliers.form.agency')} value={s.bankAccount.agency} />
-                <Item label={t('partners.suppliers.form.accountNumber')} value={s.bankAccount.accountNumber} />
-                <Item label={t('partners.suppliers.form.checkDigit')} value={s.bankAccount.checkDigit} />
-              </div>
-            </>
-          ) : null}
-          {s.pixKey !== null ? (
-            <>
-              <h2 className={cardTitle}>{t('partners.suppliers.form.section.pix')}</h2>
-              <div className={fieldGrid}>
-                <Item label={t('partners.suppliers.form.pixType')} value={t(`partners.suppliers.pix.${s.pixKey.keyType}`)} />
-                <Item label={t('partners.suppliers.form.pixKey')} value={s.pixKey.key} />
-              </div>
-            </>
-          ) : null}
-        </aside>
+        <section className={section}>
+          <h2 className={sectionTitle}>{t('partners.suppliers.form.section.payment')}</h2>
+          <div className={fieldGrid}>
+            {txt('bank', t('partners.suppliers.form.bank'), 'bankAccount.bank')}
+            {txt('agency', t('partners.suppliers.form.agency'), 'bankAccount.agency')}
+            {txt('accountNumber', t('partners.suppliers.form.accountNumber'), 'bankAccount.accountNumber')}
+            {txt('checkDigit', t('partners.suppliers.form.checkDigit'), 'bankAccount.checkDigit')}
+            <Field htmlFor="sd-pix-type" label={t('partners.suppliers.form.pixType')} error={invalid('pixKey.keyType')}>
+              <select
+                id="sd-pix-type"
+                className={select}
+                value={c.state.pixKeyType}
+                disabled={!editing}
+                onChange={(e) => { if (isPixKeyType(e.target.value)) c.setField('pixKeyType', e.target.value) }}
+              >
+                {PIX_KEY_TYPES.map((pt) => (
+                  <option key={pt} value={pt}>{t(`partners.suppliers.pix.${pt}`)}</option>
+                ))}
+              </select>
+            </Field>
+            {txt('pixKey', t('partners.suppliers.form.pixKey'), 'pixKey.key')}
+          </div>
+        </section>
       ) : null}
     </div>
   )

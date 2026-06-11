@@ -57,10 +57,10 @@ export function FinancierForm(props: FinancierFormProps): ReactNode {
             <Input id="fin-rep" value={c.state.legalRepresentative} onChange={(v) => { c.setField('legalRepresentative', v); }} />
           </Field>
           <Field htmlFor="fin-cnpj" label={t('partners.financiers.form.cnpj')} error={invalid('cnpj')}>
-            <Input id="fin-cnpj" value={c.state.cnpj} onChange={(v) => { c.setField('cnpj', v); }} />
+            <Input id="fin-cnpj" mask="cnpj" value={c.state.cnpj} onChange={(v) => { c.setField('cnpj', v); }} />
           </Field>
           <Field htmlFor="fin-tel" label={t('partners.financiers.form.telephone')} error={invalid('telephone')}>
-            <Input id="fin-tel" value={c.state.telephone} onChange={(v) => { c.setField('telephone', v); }} />
+            <Input id="fin-tel" mask="phone" value={c.state.telephone} onChange={(v) => { c.setField('telephone', v); }} />
           </Field>
           <Field htmlFor="fin-addr" label={t('partners.financiers.form.address')} error={invalid('address')}>
             <Input id="fin-addr" value={c.state.address} onChange={(v) => { c.setField('address', v); }} />

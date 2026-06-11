@@ -21,7 +21,7 @@ const detail: FinancierDetail = {
 
 const listResponse: FinancierListResponse = {
   items: [
-    { id: 'f1', name: 'Fundo XPTO', corporateName: 'Fundo XPTO LTDA', cnpj: '12345678000190', telephone: '1140000000', activation: 'active' },
+    { id: 'f1', name: 'Fundo XPTO', corporateName: 'Fundo XPTO LTDA', legalRepresentative: 'Maria Silva', cnpj: '12345678000190', telephone: '1140000000', activation: 'active' },
   ],
   meta: { page: 1, limit: 5, total: 1 },
 }

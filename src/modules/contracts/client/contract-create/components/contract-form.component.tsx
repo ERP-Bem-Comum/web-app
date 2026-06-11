@@ -6,6 +6,7 @@ import type {
   SelectedPartner,
   ContractFormController,
 } from './contract-form.controller.ts'
+import { formatDateOrDash, contractorInitials } from '#modules/contracts/client/domain/format.ts'
 import {
   screen,
   topbar,
@@ -62,6 +63,7 @@ import {
   partnerCardBody,
   partnerLabel,
   partnerBadge,
+  partnerTypeBadge,
   partnerName,
   partnerDoc,
   partnerSelectedWrap,
@@ -72,6 +74,7 @@ import {
   searchDropdown,
   searchDropdownItem,
   searchDropdownAvatar,
+  searchDropdownAvatarVariant,
   searchDropdownAvatarPrimary,
   searchDropdownEmpty,
   searchDropdownNewPartner,
@@ -86,6 +89,15 @@ function formatCurrencyCents(cents: number): string {
   return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
+// Máscara de documento (CPF 11 dígitos / CNPJ 14) — espelha o helper do grid de contratos.
+function maskDocument(doc: string | null | undefined): string {
+  if (!doc) return ''
+  const digits = doc.replace(/\D/g, '')
+  if (digits.length === 11) return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
+  if (digits.length === 14) return digits.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
+  return doc
+}
+
 function formatValueParts(cents: number): { currency: string; integer: string; cents: string } {
   if (!cents || cents <= 0) return { currency: 'R$', integer: '00.000', cents: ',00' }
   const val = cents / 100
@@ -94,13 +106,6 @@ function formatValueParts(cents: number): { currency: string; integer: string; c
   const integer = parts[0] ?? '0'
   const decimal = parts[1] ?? '00'
   return { currency: 'R$', integer, cents: `,${decimal}` }
-}
-
-function formatDateBR(dateStr: string): string {
-  if (!dateStr) return '—'
-  const d = new Date(dateStr)
-  if (Number.isNaN(d.getTime())) return '—'
-  return d.toLocaleDateString('pt-BR')
 }
 
 function handleAutoExpand(e: React.SyntheticEvent<HTMLTextAreaElement>): void {
@@ -132,6 +137,10 @@ interface Props {
   onPartnerSearchClose: () => void
   onCreateNewPartner: () => void
   documentUploaded: boolean
+  // Ano corrente para o número provisório (CT 0001/AAAA) — vem da view/controller, não do render (C1).
+  currentYear: number
+  // Opções reais de Programa (D8 — UUID→sigla), vindas da ViewModel (query de programas no binding).
+  programOptions: readonly { readonly value: string; readonly label: string }[]
 }
 
 export function ContractForm({
@@ -156,6 +165,8 @@ export function ContractForm({
   onPartnerSearchClose,
   onCreateNewPartner,
   documentUploaded,
+  currentYear,
+  programOptions,
 }: Props): ReactNode {
   const togglePartnerSearch = (): void => {
     if (partnerSearchOpen) {
@@ -181,7 +192,7 @@ export function ContractForm({
         <h1 className={topbarTitle}>
           {state.classification === 'Contract' ? 'Novo Contrato' : 'Nova Ordem de Serviço'}
           <span className={topbarMeta}>
-            {state.classification === 'Contract' ? 'CT' : 'OS'} 0001/{new Date().getFullYear()}
+            {state.classification === 'Contract' ? 'CT' : 'OS'} 0001/{currentYear}
           </span>
         </h1>
       </div>
@@ -196,12 +207,15 @@ export function ContractForm({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <span className={partnerLabel}>{t('contracts.create.partnerLabel')}</span>
                   <span className={partnerBadge}>
-                    {selectedPartner.cnpj ? 'PJ' : 'PF'} · {selectedPartner.kind}
+                    {selectedPartner.cnpj ? 'PJ' : 'PF'}
                   </span>
                 </div>
-                <span className={partnerName}>{selectedPartner.name}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span className={partnerName}>{selectedPartner.name}</span>
+                  <span className={partnerTypeBadge[selectedPartner.kind]}>{selectedPartner.kind}</span>
+                </div>
                 <span className={partnerDoc}>
-                  {selectedPartner.cnpj ? `CNPJ ${selectedPartner.cnpj}` : selectedPartner.cpf ? `CPF ${selectedPartner.cpf}` : '—'}
+                  {selectedPartner.cnpj ? `CNPJ ${maskDocument(selectedPartner.cnpj)}` : selectedPartner.cpf ? `CPF ${maskDocument(selectedPartner.cpf)}` : '—'}
                 </span>
               </div>
               <button type="button" className={partnerSwapCompact} onClick={onRemovePartner}>
@@ -271,7 +285,7 @@ export function ContractForm({
                             }
                           }}
                         >
-                          <span className={searchDropdownAvatar}>{p.name.slice(0, 2)}</span>
+                          <span className={`${searchDropdownAvatar} ${searchDropdownAvatarVariant[p.kind]}`}>{contractorInitials(p.name)}</span>
                           <span>{p.name} · {p.kind}</span>
                         </div>
                       ))
@@ -406,13 +420,12 @@ export function ContractForm({
                 <select
                   className={`${select} ${validationAttempted && !state.programId ? inputError : ''}`}
                   value={state.programId ?? ''}
-                  onChange={(e) => { onUpdate('programId', e.target.value ? Number(e.target.value) : null) }}
+                  onChange={(e) => { onUpdate('programId', e.target.value || null) }}
                 >
                   <option value="">Selecione…</option>
-                  <option value={1}>Educação Básica</option>
-                  <option value={2}>Saúde da Família</option>
-                  <option value={3}>Assistência Social</option>
-                  <option value={4}>Infraestrutura Urbana</option>
+                  {programOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
                 </select>
               </div>
               <div className={field}>
@@ -420,12 +433,10 @@ export function ContractForm({
                 <select
                   className={`${select} ${validationAttempted && !state.budgetPlanId ? inputError : ''}`}
                   value={state.budgetPlanId ?? ''}
-                  onChange={(e) => { onUpdate('budgetPlanId', e.target.value ? Number(e.target.value) : null) }}
+                  onChange={(e) => { onUpdate('budgetPlanId', e.target.value || null) }}
                 >
+                  {/* Plano Orçamentário: backend ainda não expõe listagem (#32) → follow-up. Sem opções reais. */}
                   <option value="">Selecione…</option>
-                  <option value={1}>Plano Anual 2025</option>
-                  <option value={2}>Plano Anual 2026</option>
-                  <option value={3}>Plano Suplementar</option>
                 </select>
               </div>
             </div>
@@ -436,7 +447,7 @@ export function ContractForm({
                 <select
                   className={`${select} ${validationAttempted && !state.categorizacao ? inputError : ''}`}
                   value={state.categorizacao ?? ''}
-                  onChange={(e) => { onUpdate('categorizacao', e.target.value ? (e.target.value as 'Avaliação' | 'Operacional' | 'Processo') : null) }}
+                  onChange={(e) => { onUpdate('categorizacao', e.target.value || null) }}
                 >
                   <option value="">Selecione…</option>
                   <option value="Avaliação">{t('contracts.create.field.categorizacao.evaluation')}</option>
@@ -449,7 +460,7 @@ export function ContractForm({
                 <select
                   className={`${select} ${validationAttempted && !state.centroDeCusto ? inputError : ''}`}
                   value={state.centroDeCusto ?? ''}
-                  onChange={(e) => { onUpdate('centroDeCusto', e.target.value ? (e.target.value as 'RH' | 'Serviços Gerais' | 'Eventos') : null) }}
+                  onChange={(e) => { onUpdate('centroDeCusto', e.target.value || null) }}
                 >
                   <option value="">Selecione…</option>
                   <option value="RH">{t('contracts.create.field.centroDeCusto.rh')}</option>
@@ -554,14 +565,14 @@ export function ContractForm({
               <div className={vigenciaCardItem}>
                 <span className={vigenciaCardLabel}>Início</span>
                 <span className={`${vigenciaCardValue} ${!state.originalPeriodStart ? vigenciaCardValueEmpty : ''}`}>
-                  {formatDateBR(state.originalPeriodStart)}
+                  {formatDateOrDash(state.originalPeriodStart)}
                 </span>
               </div>
               <span className={vigenciaArrow}>→</span>
               <div className={vigenciaCardItem}>
                 <span className={vigenciaCardLabel}>Fim</span>
                 <span className={`${vigenciaCardValue} ${!state.originalPeriodEnd ? vigenciaCardValueEmpty : ''}`}>
-                  {formatDateBR(state.originalPeriodEnd)}
+                  {formatDateOrDash(state.originalPeriodEnd)}
                 </span>
               </div>
             </div>

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { getRouteApi, useNavigate } from '@tanstack/react-router'
+import { getRouteApi, useNavigate, useRouter } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
@@ -15,12 +15,19 @@ const routeApi = getRouteApi('/_authenticated/parceiros/atos/$id/editar')
 export function ActEditPage(): ReactNode {
   const { id } = routeApi.useParams()
   const navigate = useNavigate()
+  const router = useRouter()
+  const goBack = (): void => { router.history.back(); }
   const { state, updateCommand } = useActEditBinding(id)
 
   if (state.status === 'loading') {
     return (
       <div className={screen}>
-        <PageHeader title={t('partners.acts.edit.title')} subtitle={t('partners.acts.list.loading')} />
+        <PageHeader
+          title={t('partners.acts.edit.title')}
+          subtitle={t('partners.acts.list.loading')}
+          onBack={goBack}
+          backLabel={t('common.back')}
+        />
       </div>
     )
   }
@@ -28,14 +35,23 @@ export function ActEditPage(): ReactNode {
   if (state.status === 'error') {
     return (
       <div className={screen}>
-        <PageHeader title={t('partners.acts.edit.title')} subtitle={t(state.errorTag)} />
+        <PageHeader
+          title={t('partners.acts.edit.title')}
+          subtitle={t(state.errorTag)}
+          onBack={goBack}
+          backLabel={t('common.back')}
+        />
       </div>
     )
   }
 
   return (
     <div className={screen}>
-      <PageHeader title={t('partners.acts.edit.title')} />
+      <PageHeader
+        title={t('partners.acts.edit.title')}
+        onBack={goBack}
+        backLabel={t('common.back')}
+      />
       <ActEditForm
         key={id}
         initial={state.initial}

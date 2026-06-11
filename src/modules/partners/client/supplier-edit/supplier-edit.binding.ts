@@ -25,6 +25,7 @@ export type SupplierUpdateCommand = Readonly<{
 export type SupplierEditBinding = Readonly<{
   state: SupplierEditState
   updateCommand: SupplierUpdateCommand
+  canWrite: boolean
   canEditSensitive: boolean
   categories: readonly string[]
 }>
@@ -71,6 +72,7 @@ export function useSupplierEditBinding(id: string): SupplierEditBinding {
         mutation.mutate({ ...values, id })
       },
     },
+    canWrite: can(granted, 'supplier:write'),
     canEditSensitive: can(granted, 'supplier:edit-sensitive'),
     categories: categoriesQuery.data?.ok ? categoriesQuery.data.value : [],
   }

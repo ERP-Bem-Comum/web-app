@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useCurrentUser } from '#modules/auth/public-api/index.ts'
 import { can, grantedPermissions } from '#modules/partners/client/data/helpers/can.ts'
 import { partnersErrorTag } from '#modules/partners/client/data/helpers/partners-error-tag.ts'
-import type { FinancierListFilters } from '#modules/partners/client/domain/financier.schemas.ts'
+import type { FinancierListFilters } from '#modules/partners/client/data/financier-list-filters.schema.ts'
 
 import {
   mapResponseToRows,

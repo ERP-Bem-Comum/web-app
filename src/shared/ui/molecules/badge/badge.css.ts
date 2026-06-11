@@ -7,8 +7,10 @@ const base = style({
   justifyContent: 'center',
   padding: `${vars.space.xs} ${vars.space.sm}`,
   borderRadius: vars.radius.lg,
+  fontFamily: vars.font.family.heading, // brand: Inter (badges)
   fontSize: vars.font.size.xs,
   fontWeight: vars.font.weight.semibold,
+  letterSpacing: '0.02em',
   lineHeight: 1,
   whiteSpace: 'nowrap',
 })

@@ -32,12 +32,22 @@ export const rootUiReducer = (state: RootUiState, action: RootUiAction): RootUiS
   }
 }
 
-export const SIDEBAR_WIDTH_EXPANDED = 260
+export const SIDEBAR_WIDTH_EXPANDED = 224
 export const SIDEBAR_WIDTH_COLLAPSED = 64
 
 const PAGE_TITLES: Readonly<Record<string, string>> = {
   '/dashboard': 'Dashboard',
   '/contratos': 'Contratos',
+  // Submódulos de Gestão de Parceiros — alimentam o document.title (a tela já mostra o título via PageHeader).
+  '/parceiros/colaboradores': 'Colaboradores',
+  '/parceiros/fornecedores': 'Fornecedores',
+  '/parceiros/financiadores': 'Financiadores',
+  '/parceiros/atos': 'ACTs',
+  '/parceiros/territorios': 'Estados e Municípios',
+  // Gestão de Usuários — alimenta o document.title (a tela já mostra o título via PageHeader).
+  '/usuarios': 'Usuários',
+  '/minha-conta': 'Minha Conta',
+  '/programas': 'Programas',
   '/login': 'Login',
 }
 
@@ -56,7 +66,15 @@ export const rootViewModel = {
 
   sidebarWidth: (collapsed: boolean): number => (collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED),
 
-  showPageHeader: (path: string): boolean => path !== '/contratos/criar',
+  // Não renderiza o h1 do shell em /parceiros/* e /usuarios/* (cada tela já tem seu PageHeader) nem em
+  // qualquer sub-rota de /contratos/ (criar, detalhe, editar, aditivo — cada tela tem seu próprio header).
+  // A lista /contratos mantém o h1. Evita o título duplicado e libera o espaço vertical da tela.
+  showPageHeader: (path: string): boolean =>
+    !path.startsWith('/contratos/') &&
+    !isPrefixPath(path, '/parceiros') &&
+    !isPrefixPath(path, '/usuarios') &&
+    !isPrefixPath(path, '/minha-conta') &&
+    !isPrefixPath(path, '/programas'),
 
   /**
    * RBAC: remove seções/subitens cujo `requiredPermission` não está em `permissions`. Uma seção de

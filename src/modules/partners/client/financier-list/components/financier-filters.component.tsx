@@ -16,6 +16,8 @@ export type FinancierFiltersProps = Readonly<{
     active: string
     inactive: string
   }>
+  /** Slot de exportação (a página injeta o dropdown CSV/PDF com os dados carregados). */
+  exportSlot?: ReactNode
   onSearch: (value: string) => void
   onStatus: (status: StatusFilter) => void
 }>
@@ -50,6 +52,8 @@ export function FinancierFilters(props: FinancierFiltersProps): ReactNode {
           </button>
         ))}
       </div>
+
+      {props.exportSlot}
     </div>
   )
 }

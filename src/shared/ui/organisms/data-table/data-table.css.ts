@@ -38,14 +38,32 @@ export const th = style([
   {
     position: 'sticky',
     insetBlockStart: 0,
-    background: vars.color.surface.default,
-    color: vars.color.text.secondary,
+    // Linha dos títulos com preenchimento discreto no tom da marca (cyan claro), nomes em índigo.
+    background: vars.color.surface.canvas,
+    color: vars.color.nav.background,
     fontWeight: vars.font.weight.semibold,
     whiteSpace: 'nowrap',
   },
 ])
 
 export const td = style([cellBase])
+
+// Linha clicável (navega para o detalhe): cursor + hover discreto + foco por teclado.
+export const clickableRow = style({
+  cursor: 'pointer',
+  transitionProperty: 'background-color',
+  transitionDuration: '150ms',
+  selectors: {
+    '&:hover': { background: vars.color.surface.subtle },
+    '&:focus-visible': {
+      outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
+      outlineOffset: `calc(-1 * ${vars.focusRing.width})`,
+    },
+  },
+  '@media': {
+    '(prefers-reduced-motion: reduce)': { transitionDuration: '0.01ms' },
+  },
+})
 
 // Última linha sem borda inferior (estética).
 export const lastRowFlush = style({

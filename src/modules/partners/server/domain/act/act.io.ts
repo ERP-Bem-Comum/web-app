@@ -1,52 +1,47 @@
 /**
- * Act — contratos de I/O da fronteira (Zod). Input das server fns (validação na borda §VI) + Model que a
- * UI consome (response normalizado pela ACL). O agregado de domínio vive em `act.ts`. Nomes/valores
- * alinhados ao contrato REAL do core-api (`/api/v1/acts/*`, `act-schemas.ts`): query simples
- * (page/limit/order/search/active) e os 7 campos canônicos do pré-cadastro.
+ * Act — tipos de I/O do domínio (PUROS, sem Zod — C2 do review). Os schemas Zod correspondentes vivem
+ * em `../../adapters/act.io-schemas.ts` (a borda). Nomes/valores alinhados ao contrato REAL do core-api
+ * (`/api/v1/acts/*`): query simples (page/limit/order/search/active) e os 7 campos do pré-cadastro.
  */
-import * as z from 'zod'
-import type { RegistrationStatus, ActivationStatus, EmploymentRelationship } from './act.types.ts'
+import type {
+  RegistrationStatus,
+  ActivationStatus,
+  EmploymentRelationship,
+  OccupationArea,
+} from './act.types.ts'
 
-const OccupationAreaSchema = z.enum(['PARC', 'DDI', 'DCE', 'EPV'])
-const EmploymentRelationshipSchema = z.enum(['CLT', 'PJ'])
+// ── Input (validado na server fn pelos schemas em adapters) ─────────────────────
+export interface ListActsInput {
+  search?: string
+  active?: boolean
+  order: 'ASC' | 'DESC'
+  page: number
+  limit: number
+}
 
-// ── Input (validado na server fn) ──────────────────────────────────────────────
-// Query do core-api: page, limit(≤100), order(ASC|DESC), search, active. Sem filtros avançados (provisório).
-export const ListActsInputSchema = z.object({
-  search: z.string().trim().max(120).optional(),
-  active: z.boolean().optional(),
-  order: z.enum(['ASC', 'DESC']).default('ASC'),
-  page: z.int().min(1).default(1),
-  limit: z.int().min(1).max(100).default(5),
-})
-export type ListActsInput = z.infer<typeof ListActsInputSchema>
+export interface GetActInput {
+  id: string
+}
 
-export const GetActInputSchema = z.object({ id: z.string().trim().min(1).max(64) })
-export type GetActInput = z.infer<typeof GetActInputSchema>
+export interface CreateActInput {
+  name: string
+  email: string
+  cpf: string
+  occupationArea: OccupationArea
+  role: string
+  startOfContract: string // YYYY-MM-DD
+  employmentRelationship: EmploymentRelationship
+}
 
-export const CreateActInputSchema = z.object({
-  name: z.string().trim().min(1).max(200),
-  email: z.email(),
-  cpf: z.string().trim().min(11).max(14),
-  occupationArea: OccupationAreaSchema,
-  role: z.string().trim().min(1).max(120),
-  startOfContract: z.iso.date(), // YYYY-MM-DD (validado na borda)
-  employmentRelationship: EmploymentRelationshipSchema,
-})
-export type CreateActInput = z.infer<typeof CreateActInputSchema>
+export type UpdateActInput = CreateActInput & { id: string }
 
-// Edição (PUT /acts/:id) — substituição total dos 7 campos cadastrais.
-export const UpdateActInputSchema = CreateActInputSchema.extend({
-  id: z.string().trim().min(1).max(64),
-})
-export type UpdateActInput = z.infer<typeof UpdateActInputSchema>
+export interface DeactivateActInput {
+  id: string
+}
 
-// Desativar: SEM motivo (o core-api não recebe body — diferente do Colaborador). Idempotente.
-export const DeactivateActInputSchema = z.object({ id: z.string().trim().min(1).max(64) })
-export type DeactivateActInput = z.infer<typeof DeactivateActInputSchema>
-
-export const ReactivateActInputSchema = z.object({ id: z.string().trim().min(1).max(64) })
-export type ReactivateActInput = z.infer<typeof ReactivateActInputSchema>
+export interface ReactivateActInput {
+  id: string
+}
 
 // ── Model (o que a UI consome) ─────────────────────────────────────────────────
 export type ActListItem = Readonly<{

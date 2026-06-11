@@ -1,18 +1,35 @@
 import type { ReactNode } from 'react'
 
-import { paginator, label, button } from './supplier-paginator.css.ts'
+import { paginator, label, button, perPageWrap, perPageSelect } from './supplier-paginator.css.ts'
+
+const PER_PAGE_OPTIONS = [5, 10, 25] as const
 
 export type SupplierPaginatorProps = Readonly<{
   page: number
   totalPages: number
-  labels: Readonly<{ previous: string; next: string; page: string }>
+  perPage: number
+  labels: Readonly<{ previous: string; next: string; page: string; perPage: string }>
   onPrev: () => void
   onNext: () => void
+  onPerPage: (perPage: number) => void
 }>
 
 export function SupplierPaginator(props: SupplierPaginatorProps): ReactNode {
   return (
     <nav className={paginator} aria-label={props.labels.page}>
+      <span className={perPageWrap}>
+        {props.labels.perPage}
+        <select
+          className={perPageSelect}
+          aria-label={props.labels.perPage}
+          value={props.perPage}
+          onChange={(e) => { props.onPerPage(Number(e.target.value)); }}
+        >
+          {PER_PAGE_OPTIONS.map((n) => (
+            <option key={n} value={n}>{n}</option>
+          ))}
+        </select>
+      </span>
       <button
         type="button"
         className={button}

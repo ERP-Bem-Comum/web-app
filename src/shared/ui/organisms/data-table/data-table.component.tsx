@@ -1,7 +1,8 @@
-import type { ReactNode } from 'react'
+import type { KeyboardEvent, ReactNode } from 'react'
 
 import {
   align,
+  clickableRow,
   container,
   errorCell,
   stateCell,
@@ -22,7 +23,7 @@ function cx(...classes: readonly (string | undefined)[]): string {
 }
 
 export function DataTable<T>(props: DataTableProps<T>): ReactNode {
-  const { columns, state, rowKey, emptyLabel, loadingLabel, caption } = props
+  const { columns, state, rowKey, emptyLabel, loadingLabel, caption, onRowClick } = props
   const colCount = columns.length
 
   return (
@@ -41,7 +42,7 @@ export function DataTable<T>(props: DataTableProps<T>): ReactNode {
             ))}
           </tr>
         </thead>
-        <tbody>{renderBody(state, columns, colCount, rowKey, emptyLabel, loadingLabel)}</tbody>
+        <tbody>{renderBody(state, columns, colCount, rowKey, emptyLabel, loadingLabel, onRowClick)}</tbody>
       </table>
     </div>
   )
@@ -54,6 +55,7 @@ function renderBody<T>(
   rowKey: (row: T) => string,
   emptyLabel: string,
   loadingLabel: string,
+  onRowClick?: (row: T) => void,
 ): ReactNode {
   switch (state.status) {
     case 'loading':
@@ -83,7 +85,23 @@ function renderBody<T>(
         )
       }
       return state.rows.map((row) => (
-        <tr key={rowKey(row)}>
+        <tr
+          key={rowKey(row)}
+          className={onRowClick !== undefined ? clickableRow : undefined}
+          {...(onRowClick !== undefined
+            ? {
+                role: 'button' as const,
+                tabIndex: 0,
+                onClick: () => { onRowClick(row); },
+                onKeyDown: (e: KeyboardEvent<HTMLTableRowElement>) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    onRowClick(row)
+                  }
+                },
+              }
+            : {})}
+        >
           {columns.map((column) => (
             <td key={column.key} className={cx(td, align[column.align ?? 'start'])}>
               {column.cell(row)}

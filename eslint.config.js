@@ -8,6 +8,8 @@ import pluginSecurity from 'eslint-plugin-security'
 import noSecrets from 'eslint-plugin-no-secrets'
 import boundaries from 'eslint-plugin-boundaries'
 import pluginZod from 'eslint-plugin-zod'
+import i18next from 'eslint-plugin-i18next'
+import eslintConfigPrettier from 'eslint-config-prettier'
 import globals from 'globals'
 
 // Camadas da constituição v1.2.0 (ADR-0004) → tipos de elemento p/ eslint-plugin-boundaries.
@@ -67,7 +69,9 @@ const boundaryRules = [
   // --- CLIENT (MVVM AGNÓSTICO, ADR-0009): núcleo agnóstico (data/domain/view-model/options) × adapter (binding/controller/ui) ---
   // data (COMPARTILHADO): Repository = PORTA → server function (server-adapters da MESMA feature). Não toca server/domain|application.
   { from: { type: 'client-data' }, allow: { to: { type: 'shared' } } },
-  { from: { type: 'client-data' }, allow: sameFeature(['client-data', 'server-adapters']) },
+  // +client-domain: data pode depender do domínio PURO da própria feature (tipos/enums) — domínio é o
+  // núcleo interno e "dependências apontam para dentro" (pós-C2 o domínio não tem mais Zod).
+  { from: { type: 'client-data' }, allow: sameFeature(['client-data', 'client-domain', 'server-adapters']) },
   // domain (COMPARTILHADO, opcional): shared + data própria.
   { from: { type: 'client-domain' }, allow: { to: { type: 'shared' } } },
   { from: { type: 'client-domain' }, allow: sameFeature(['client-data', 'client-domain']) },
@@ -86,9 +90,10 @@ const boundaryRules = [
   // binding (ADAPTER): liga o framework ao núcleo. shared + public-api + data/options/view-model/usecase/binding própria.
   { from: { type: 'client-binding' }, allow: { to: { type: ['shared', 'public-api'] } } },
   { from: { type: 'client-binding' }, allow: sameFeature(['client-data', 'client-domain', 'client-data-options', 'client-view-model', 'client-usecase', 'client-binding']) },
-  // ui (View burra): shared + design system + public-api + binding/controller/view-model(tipos)/ui própria. NÃO importa server/data/repository direto.
+  // ui (View burra): shared + design system + public-api + binding/controller/view-model(tipos)/domain(formatadores
+  // e tipos PUROS)/ui própria. NÃO importa server/data/repository direto. (domain liberado pós-C2: é o núcleo puro.)
   { from: { type: 'client-ui' }, allow: { to: { type: ['shared', 'shared-ui', 'public-api'] } } },
-  { from: { type: 'client-ui' }, allow: sameFeature(['client-binding', 'client-controller', 'client-view-model', 'client-ui']) },
+  { from: { type: 'client-ui' }, allow: sameFeature(['client-binding', 'client-controller', 'client-view-model', 'client-domain', 'client-ui']) },
 
   // --- public-api: re-exporta as camadas do PRÓPRIO módulo (client p/ consumo externo) ---
   { from: { type: 'public-api' }, allow: { to: { type: 'shared' } } },
@@ -171,6 +176,8 @@ export default tseslint.config(
         { selector: 'TSParameterProperty', message: 'parameter property não é apagável. Declare o campo explicitamente.' },
         { selector: 'TSImportEquals', message: '`import =` é CommonJS. Use import ESM.' },
         { selector: 'JSXAttribute[name.name="dangerouslySetInnerHTML"]', message: 'dangerouslySetInnerHTML é vetor de XSS — evite ou sanitize e desabilite por linha.' },
+        // H5 (fecha A5): invalidateQueries() sem argumento invalida o app inteiro. Passe { queryKey } escopado.
+        { selector: "CallExpression[callee.property.name='invalidateQueries'][arguments.length=0]", message: 'invalidateQueries() sem escopo invalida o app inteiro. Passe { queryKey } escopado (ver A5).' },
       ],
 
       // --- Segurança da informação ---
@@ -226,6 +233,8 @@ export default tseslint.config(
         { selector: 'JSXAttribute[name.name="dangerouslySetInnerHTML"]', message: 'dangerouslySetInnerHTML é vetor de XSS — evite ou sanitize e desabilite por linha.' },
         { selector: 'CallExpression[callee.name=/^use(Query|Mutation|InfiniteQuery|Queries|SuspenseQuery)$/]', message: 'View burra (§XI MVVM): data-hooks do TanStack Query vivem na ViewModel (*.view-model.ts), não na page/component.' },
         { selector: 'CallExpression[callee.name="useReducer"]', message: 'View burra (§XI MVVM): estado complexo (useReducer) vive na ViewModel/Controller, não na page/component.' },
+        // H1 (fecha C1): relógio no render quebra pureza/SSR. `new Date()` SEM args = "agora" não-determinístico.
+        { selector: "NewExpression[callee.name='Date']:not([arguments.length>0])", message: 'Relógio no render quebra pureza/SSR (§XI). Receba `now`/data derivada por prop da ViewModel/Controller.' },
       ],
     },
   },
@@ -259,6 +268,28 @@ export default tseslint.config(
           { group: ['react', 'react-dom', 'react/*', '@tanstack/react-*'], message: 'Núcleo agnóstico (ADR-0009): proibido React / @tanstack/react-* — só @tanstack/query-core e tipos. O framework entra só no *.binding.ts.' },
         ] },
       ],
+    },
+  },
+
+  // H3 (fecha C2): Domínio é PURO (DDD/Evans). Zod (validação) vive em adapters/ (server) ou data/ (client).
+  {
+    files: ['src/modules/*/server/domain/**/*.ts', 'src/modules/*/client/domain/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { paths: [{ name: 'zod', message: 'Domínio é puro (DDD/Evans p.59). Schemas Zod vivem em adapters/ (server) ou data/ (client).' }] },
+      ],
+    },
+  },
+
+  // H2 (fecha A8): strings de UI são tags i18n, não literais. Escopado às views; `warn` porque há
+  // literais PRÉ-EXISTENTES em telas fora deste PR — limpeza incremental (ver TICKET-001 §H2). Ao
+  // zerar a dívida, subir para 'error'. `jsx-text-only` foca no texto visível (ignora props técnicas).
+  {
+    files: ['src/modules/*/client/**/*.page.tsx', 'src/modules/*/client/**/*.component.tsx'],
+    plugins: { i18next },
+    rules: {
+      'i18next/no-literal-string': ['warn', { mode: 'jsx-text-only' }],
     },
   },
 
@@ -318,7 +349,12 @@ export default tseslint.config(
         { selector: 'TemplateElement[value.raw=/#(?:[0-9a-fA-F]{3,4}){1,2}\\b/]', message: 'Cor crua proibida (design system). Use vars.color.* de #shared/ui/tokens.' },
         { selector: 'TemplateElement[value.raw=/-?\\d*\\.?\\d+px\\b/]', message: 'Medida em px crua proibida (design system). Use vars.space.*/vars.radius.* de #shared/ui/tokens.' },
         { selector: 'TemplateElement[value.raw=/(?:rgb|rgba|hsl|hsla)\\(/i]', message: 'Cor crua (rgb/hsl) proibida (design system). Use vars.color.* de #shared/ui/tokens.' },
+        // H4 (fecha M3): propriedades físicas quebram RTL. Use logical properties.
+        { selector: "Property[key.name=/^(paddingLeft|paddingRight|marginLeft|marginRight|left|right|borderLeft|borderRight)$/]", message: 'Use logical properties (paddingInline/marginInlineStart/insetInlineStart/borderInlineStart…) — RTL-safe (M3/H4).' },
       ],
     },
   },
+  // POR ÚLTIMO (G1): desliga as regras de formatação do ESLint que conflitam com o Prettier — o
+  // Prettier passa a ser a fonte única de formatação. Só REMOVE regras, nunca adiciona.
+  eslintConfigPrettier,
 )

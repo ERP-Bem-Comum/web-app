@@ -75,6 +75,7 @@ const itemToModel = (f: CoreApiFinancierItem): FinancierListItem => ({
   id: f.id,
   name: f.name,
   corporateName: f.corporateName,
+  legalRepresentative: f.legalRepresentative,
   cnpj: f.cnpj,
   telephone: f.telephone,
   activation: activationFromApi(f.active),

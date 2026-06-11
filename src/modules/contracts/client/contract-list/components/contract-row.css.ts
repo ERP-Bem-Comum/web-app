@@ -21,12 +21,20 @@ export const rowStyle = style({
 export const cell = style({
   paddingInline: vars.space.md,
   verticalAlign: 'middle',
+  // Brand: linhas da tabela em Nunito (body), não mais mono.
+  fontFamily: vars.font.family.body,
 })
 
+// Variantes de alinhamento do conteúdo da célula (text-align afeta inline / inline-flex como as badges).
+export const cellCenter = style({ textAlign: 'center' })
+export const cellRight = style({ textAlign: 'right' })
+
 export const numberText = style({
-  fontFamily: vars.font.family.mono,
-  fontSize: '0.6875rem',
+  fontFamily: vars.font.family.body,
+  fontSize: '0.75rem', // +1px (era 0.6875rem) — dá mais destaque ao número do contrato
+  fontWeight: vars.font.weight.bold,
   color: vars.color.institutional.ink2,
+  whiteSpace: 'nowrap', // "CT 0001/2026" em uma só linha
 })
 
 export const contractorWrap = style({
@@ -83,7 +91,7 @@ export const contractorName = style({
 })
 
 export const contractorDoc = style({
-  fontFamily: vars.font.family.mono,
+  fontFamily: vars.font.family.body,
   fontSize: '0.6875rem',
   color: vars.color.institutional.ink4,
 })
@@ -99,55 +107,63 @@ export const objectText = style({
   lineHeight: 1.4,
 })
 
-const tipoBadgeBase = style({
+// Base sofisticada compartilhada pelas badges de TIPO e STATUS do grid: uppercase, cantos médios
+// (arredondamento suave), letter-spacing e fundo tonalizado — SEM borda (look mais suave). Cada
+// variante só define cor/fundo. (Inter p/ o "look" de tag.)
+const gridBadgeBase = style({
   display: 'inline-flex',
   alignItems: 'center',
-  padding: `${vars.space.xs} ${vars.space.sm}`,
-  borderRadius: vars.radius.lg,
-  fontSize: '0.65625rem',
-  fontWeight: vars.font.weight.medium,
-  lineHeight: 1,
+  justifyContent: 'center',
+  paddingBlock: '0.1875rem',
+  paddingInline: vars.space.sm,
+  borderRadius: vars.radius.md,
+  fontFamily: vars.font.family.heading,
+  fontSize: '0.625rem',
+  fontWeight: vars.font.weight.semibold,
+  letterSpacing: '0.04em',
+  textTransform: 'uppercase',
+  lineHeight: 1.2,
   whiteSpace: 'nowrap',
 })
 
 export const tipoVariant = styleVariants({
-  Fornecedor: [tipoBadgeBase, {
+  Fornecedor: [gridBadgeBase, {
     color: vars.color.partnerType.supplier.text,
     background: vars.color.partnerType.supplier.background,
-    border: `${vars.borderWidth.hairline} solid ${vars.color.partnerType.supplier.border}`,
   }],
-  Colaborador: [tipoBadgeBase, {
+  Colaborador: [gridBadgeBase, {
     color: vars.color.partnerType.collaborator.text,
     background: vars.color.partnerType.collaborator.background,
-    border: `${vars.borderWidth.hairline} solid ${vars.color.partnerType.collaborator.border}`,
   }],
-  Financiador: [tipoBadgeBase, {
+  Financiador: [gridBadgeBase, {
     color: vars.color.partnerType.financier.text,
     background: vars.color.partnerType.financier.background,
-    border: `${vars.borderWidth.hairline} solid ${vars.color.partnerType.financier.border}`,
   }],
-  ACT: [tipoBadgeBase, {
+  ACT: [gridBadgeBase, {
     color: vars.color.partnerType.act.text,
     background: vars.color.partnerType.act.background,
-    border: `${vars.borderWidth.hairline} solid ${vars.color.partnerType.act.border}`,
   }],
 })
 
 export const programText = style({
-  fontFamily: vars.font.family.mono,
+  fontFamily: vars.font.family.body,
   fontSize: '0.6875rem',
   color: vars.color.institutional.ink4,
 })
 
 export const currencyText = style({
-  fontFamily: vars.font.family.mono,
+  fontFamily: vars.font.family.body,
   fontSize: '0.75rem',
   color: vars.color.institutional.ink2,
 })
 
+// Saldo — mesmo do valor, porém em bold (destaque).
+export const balanceText = style([currencyText, { fontWeight: vars.font.weight.bold }])
+
 export const periodText = style({
   fontSize: vars.font.size.sm,
   color: vars.color.institutional.ink4,
+  whiteSpace: 'nowrap', // vigência em uma só linha (início — fim)
 })
 
 export const additiveBadge = style({
@@ -156,9 +172,9 @@ export const additiveBadge = style({
   justifyContent: 'center',
   padding: `${vars.space.xs} ${vars.space.sm}`,
   borderRadius: vars.radius.lg,
-  fontFamily: vars.font.family.mono,
+  fontFamily: vars.font.family.heading, // brand: Inter (badges)
   fontSize: vars.font.size.xs,
-  fontWeight: vars.font.weight.medium,
+  fontWeight: vars.font.weight.semibold,
   background: vars.color.institutional.blueBg,
   color: vars.color.institutional.blueDeep,
 })
@@ -166,6 +182,28 @@ export const additiveBadge = style({
 export const additiveEmpty = style({
   color: vars.color.institutional.ink4,
   fontSize: vars.font.size.sm,
+})
+
+// Badge de status (coluna Status) — LOCAL ao grid de contratos (não reusa o átomo `Badge`, que é
+// compartilhado com Parceiros). Reaproveita `gridBadgeBase` (mesmo look da badge de TIPO), SEM borda
+// (só fundo tonalizado + texto), p/ um visual mais suave.
+export const statusVariant = styleVariants({
+  pending: [gridBadgeBase, {
+    background: vars.color.status.pendingBg,
+    color: vars.color.status.pendingText,
+  }],
+  active: [gridBadgeBase, {
+    background: vars.color.status.activeBg,
+    color: vars.color.status.activeText,
+  }],
+  finished: [gridBadgeBase, {
+    background: vars.color.status.finishedBg,
+    color: vars.color.status.finishedText,
+  }],
+  terminated: [gridBadgeBase, {
+    background: vars.color.status.terminatedBg,
+    color: vars.color.status.terminatedText,
+  }],
 })
 
 export const detailsWrap = style({
@@ -196,7 +234,7 @@ export const summaryButton = style({
 export const dropdownMenu = style({
   position: 'absolute',
   top: '100%',
-  right: 0,
+  insetInlineEnd: 0,
   zIndex: 20,
   background: vars.color.surface.default,
   borderRadius: vars.radius.md,
@@ -213,13 +251,15 @@ export const actionItem = style({
   textAlign: 'left',
   padding: `${vars.space.sm} ${vars.space.md}`,
   fontSize: vars.font.size.sm,
+  fontFamily: vars.font.family.body,
   color: vars.color.institutional.ink2,
   background: 'transparent',
   border: 'none',
   cursor: 'pointer',
   whiteSpace: 'nowrap',
-  ':hover': {
-    background: vars.color.institutional.paperWarm,
+  selectors: {
+    '&:hover:not(:disabled)': { background: vars.color.institutional.paperWarm },
+    '&:disabled': { opacity: '0.5', cursor: 'not-allowed' },
   },
 })
 

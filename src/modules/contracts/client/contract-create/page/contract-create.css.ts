@@ -1,4 +1,4 @@
-import { style, globalStyle } from '@vanilla-extract/css'
+import { style, styleVariants, globalStyle } from '@vanilla-extract/css'
 import { vars } from '#shared/ui/tokens/index.ts'
 
 export const screen = style({
@@ -11,8 +11,10 @@ export const screen = style({
 export const topbar = style({
   display: 'flex',
   alignItems: 'center',
-  gap: vars.space.sm,
-  padding: `${vars.space.sm} ${vars.space.md}`,
+  gap: vars.space.xs,
+  // Mesma espessura do footer (bottombar) como padrão: altura fixa 3.5rem.
+  height: '3.5rem',
+  paddingInline: vars.space.md,
   borderBottom: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   flexShrink: 0,
 })
@@ -85,8 +87,8 @@ export const formCol = style({
   overflowY: 'auto',
   overflowX: 'hidden',
   paddingTop: vars.space.lg,
-  paddingLeft: vars.space.md,
-  paddingRight: vars.space.xs,
+  paddingInlineStart: vars.space.md,
+  paddingInlineEnd: vars.space.xs,
   paddingBottom: '4rem',
   display: 'flex',
   flexDirection: 'column',
@@ -120,7 +122,7 @@ export const sidebar = style({
   overflowY: 'auto',
   overflowX: 'hidden',
   background: vars.color.surface.default,
-  borderLeft: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderInlineStart: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   scrollbarWidth: 'thin',
   scrollbarColor: `${vars.color.institutional.paperRule} transparent`,
 })
@@ -150,11 +152,11 @@ export const section = style({
 })
 
 export const sectionTitle = style({
+  // Mesmo formato dos títulos de seção da tela de detalhes (sectionH3): Inter, 0.8125rem, bold,
+  // sem uppercase nem letter-spacing.
   fontFamily: vars.font.family.heading,
-  fontSize: '0.75rem',
+  fontSize: '0.8125rem',
   fontWeight: vars.font.weight.bold,
-  textTransform: 'uppercase',
-  letterSpacing: '0.06em',
   color: vars.color.institutional.ink2,
   marginBottom: vars.space.xs,
   display: 'flex',
@@ -322,8 +324,8 @@ export const footer = style({
   flexShrink: 0,
   position: 'fixed',
   bottom: 0,
-  left: 'var(--sidebar-width, 16.25rem)',
-  right: 0,
+  insetInlineStart: 'var(--sidebar-width, 16.25rem)',
+  insetInlineEnd: 0,
   zIndex: 100,
 })
 
@@ -592,6 +594,44 @@ export const partnerName = style({
   lineHeight: 1.2,
 })
 
+// Badge de TIPO de parceiro (Fornecedor/Colaborador/Financiador/ACT) — cores por `color.partnerType.*`
+// (azul/amarelo/verde/laranja). Usada no dropdown de busca e ao lado do nome do contratado selecionado;
+// espelha o padrão do grid de contratos (tipoVariant). Chaveada pelos rótulos PT do `SelectedPartner.kind`.
+const partnerTypeBadgeBase = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  paddingBlock: '0.1875rem',
+  paddingInline: vars.space.sm,
+  borderRadius: vars.radius.md,
+  fontFamily: vars.font.family.heading,
+  fontSize: '0.625rem',
+  fontWeight: vars.font.weight.semibold,
+  letterSpacing: '0.04em',
+  textTransform: 'uppercase',
+  lineHeight: 1.2,
+  whiteSpace: 'nowrap',
+})
+
+export const partnerTypeBadge = styleVariants({
+  Fornecedor: [partnerTypeBadgeBase, {
+    color: vars.color.partnerType.supplier.text,
+    background: vars.color.partnerType.supplier.background,
+  }],
+  Colaborador: [partnerTypeBadgeBase, {
+    color: vars.color.partnerType.collaborator.text,
+    background: vars.color.partnerType.collaborator.background,
+  }],
+  Financiador: [partnerTypeBadgeBase, {
+    color: vars.color.partnerType.financier.text,
+    background: vars.color.partnerType.financier.background,
+  }],
+  ACT: [partnerTypeBadgeBase, {
+    color: vars.color.partnerType.act.text,
+    background: vars.color.partnerType.act.background,
+  }],
+})
+
 export const partnerDoc = style({
   fontFamily: vars.font.family.mono,
   fontSize: vars.font.size.xs,
@@ -659,7 +699,7 @@ export const searchInputWrap = style({
 
 export const searchInputIcon = style({
   position: 'absolute',
-  left: vars.space.sm,
+  insetInlineStart: vars.space.sm,
   top: '50%',
   transform: 'translateY(-50%)',
   color: vars.color.institutional.ink5,
@@ -670,8 +710,8 @@ export const searchInputIcon = style({
 export const searchDropdown = style({
   position: 'absolute',
   top: 'calc(100% + 4px)',
-  left: 0,
-  right: 0,
+  insetInlineStart: 0,
+  insetInlineEnd: 0,
   background: vars.color.surface.default,
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   borderRadius: vars.radius.md,
@@ -686,6 +726,7 @@ export const searchDropdownItem = style({
   alignItems: 'center',
   gap: vars.space.sm,
   padding: `${vars.space.sm} ${vars.space.md}`,
+  fontFamily: vars.font.family.body, // brand: Nunito na listagem do dropdown
   fontSize: vars.font.size.sm,
   color: vars.color.institutional.ink2,
   cursor: 'pointer',
@@ -708,6 +749,26 @@ export const searchDropdownAvatar = style({
   fontWeight: vars.font.weight.bold,
   flexShrink: 0,
   textTransform: 'uppercase',
+})
+
+// Avatar do dropdown colorido por TIPO de parceiro (igual ao grid) — tint de `color.partnerType.*`.
+export const searchDropdownAvatarVariant = styleVariants({
+  Fornecedor: {
+    background: vars.color.partnerType.supplier.background,
+    color: vars.color.partnerType.supplier.text,
+  },
+  Colaborador: {
+    background: vars.color.partnerType.collaborator.background,
+    color: vars.color.partnerType.collaborator.text,
+  },
+  Financiador: {
+    background: vars.color.partnerType.financier.background,
+    color: vars.color.partnerType.financier.text,
+  },
+  ACT: {
+    background: vars.color.partnerType.act.background,
+    color: vars.color.partnerType.act.text,
+  },
 })
 
 export const searchDropdownAvatarPrimary = style({
@@ -998,7 +1059,7 @@ export const uploadAction = style({
   fontWeight: vars.font.weight.semibold,
   color: vars.color.institutional.blue,
   flexShrink: 0,
-  marginLeft: 'auto',
+  marginInlineStart: 'auto',
 })
 
 export const uploadText = style({

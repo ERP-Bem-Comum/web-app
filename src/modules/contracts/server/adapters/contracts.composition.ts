@@ -10,6 +10,10 @@ import { createCreateContract } from '../application/commands/create-contract.us
 import { createUpdateContract } from '../application/commands/update-contract.use-case.ts'
 import { createCreateAmendment } from '../application/commands/create-amendment.use-case.ts'
 import { createGetContractHistory } from '../application/queries/get-contract-history.use-case.ts'
+import { createAttachSignedDocument } from '../application/commands/attach-signed-document.use-case.ts'
+import { createAttachAmendmentDocument } from '../application/commands/attach-amendment-document.use-case.ts'
+import { createEndContract } from '../application/commands/end-contract.use-case.ts'
+import { createGetDocumentContent } from '../application/queries/get-document-content.use-case.ts'
 
 type ContractsServer = ReturnType<typeof build>
 
@@ -24,6 +28,10 @@ const build = () => {
     updateContract: createUpdateContract({ client }),
     createAmendment: createCreateAmendment({ client }),
     getContractHistory: createGetContractHistory({ client }),
+    attachSignedDocument: createAttachSignedDocument({ client }),
+    attachAmendmentDocument: createAttachAmendmentDocument({ client }),
+    endContract: createEndContract({ client }),
+    getDocumentContent: createGetDocumentContent({ client }),
   }
 }
 

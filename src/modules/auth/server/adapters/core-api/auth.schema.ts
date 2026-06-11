@@ -17,5 +17,11 @@ export const MeSchema = z.object({
   permissions: z.array(z.string().trim()).default([]),
 })
 
+// Política de senha pública (#32: GET /api/v2/auth/password-policy) — boundary §VI.
+export const PasswordPolicySchema = z.object({
+  minLength: z.int().positive(),
+  maxLength: z.int().positive(),
+})
+
 // Os tipos canônicos (AuthTokens, AuthUser) vivem em server/domain/session.types.ts.
 // As schemas acima validam e produzem shapes assignáveis a eles (boundary §VI).

@@ -11,3 +11,8 @@ export const screen = style({
 export const newButtonWrap = style({
   inlineSize: 'auto',
 })
+
+// CNPJ formatado (18 chars) não pode quebrar no '-' / '/': cabe inteiro na coluna.
+export const cnpjCell = style({
+  whiteSpace: 'nowrap',
+})

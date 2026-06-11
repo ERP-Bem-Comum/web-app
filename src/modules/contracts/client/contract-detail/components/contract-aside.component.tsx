@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react'
 import type { Contract } from '#modules/contracts/public-api/index.ts'
+import type { VigenciaView } from '../contract-detail.view-model.ts'
+import { amendmentSeqMap, formatAmendmentNumber } from '../amendment-number.ts'
 import {
   asideSection,
-  asideSectionLast,
+  asideHero,
   asideLabel,
   asideValueWrap,
   asideValueCurrency,
@@ -23,6 +25,8 @@ import {
 
 interface Props {
   contract: Contract
+  // Vigência derivada na view-model (recebe `now` estável) — a view burra não cria relógio (C1).
+  vigencia: VigenciaView
 }
 
 function formatCurrencyParts(cents: number): { integer: string; cents: string } {
@@ -36,30 +40,22 @@ function formatCurrency(cents: number): string {
   return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
-function formatDate(date: Date): string {
-  return date.toLocaleDateString('pt-BR')
-}
-
-export function ContractAside({ contract }: Props): ReactNode {
+export function ContractAside({ contract, vigencia }: Props): ReactNode {
   const originalCents = contract.originalValue.cents
   const currentCents = contract.currentValue.cents
   const parts = formatCurrencyParts(currentCents)
 
-  const homologatedAmendments = contract.children.filter((a) => a.status === 'Homologado')
-  const pendingAmendments = contract.children.filter((a) => a.status === 'Pendente')
-
-  const today = new Date()
-  const startDate = contract.currentPeriod?.start ?? contract.originalPeriod.start
-  const endDate = contract.currentPeriod?.end ?? contract.originalPeriod.end
-  const totalDays = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)))
-  const elapsedDays = Math.max(0, Math.ceil((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)))
-  const progressPercent = Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100))
-  const daysRemaining = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  // Composição mostra APENAS aditivos do tipo VALOR (item 2): só eles impactam o valor atual do
+  // contrato. Prazo/escopo/outro/distrato não entram aqui.
+  const seq = amendmentSeqMap(contract.children)
+  const valorAmendments = contract.children.filter((a) => a.type === 'valor')
+  const homologatedAmendments = valorAmendments.filter((a) => a.status === 'Homologado')
+  const pendingAmendments = valorAmendments.filter((a) => a.status === 'Pendente')
 
   return (
     <>
       {/* Valor Atual */}
-      <div className={asideSection}>
+      <div className={asideHero}>
         <div className={asideLabel}>Valor Atual</div>
         <div className={asideValueWrap}>
           <span className={asideValueCurrency}>R$</span>
@@ -79,15 +75,15 @@ export function ContractAside({ contract }: Props): ReactNode {
 
           {homologatedAmendments.map((a) => (
             <div key={a.id} className={`${compositionItem} ${(a.impactValueCents ?? 0) >= 0 ? compositionItemPositive : compositionItemNegative}`}>
-              <span>Aditivo {a.amendmentNumber} ({a.type})</span>
+              <span>{formatAmendmentNumber(seq.get(a.id), contract.sequentialNumber, a.amendmentNumber)}</span>
               <span>{(a.impactValueCents ?? 0) >= 0 ? '+' : ''}{formatCurrency(a.impactValueCents ?? 0)}</span>
             </div>
           ))}
 
           {pendingAmendments.map((a) => (
             <div key={a.id} className={`${compositionItem} ${compositionItemPending}`}>
-              <span>Aditivo {a.amendmentNumber} ({a.type}) — pendente</span>
-              <span>{(a.impactValueCents ?? 0) >= 0 ? '+' : ''}{formatCurrency(a.impactValueCents ?? 0)}</span>
+              <span>{formatAmendmentNumber(seq.get(a.id), contract.sequentialNumber, a.amendmentNumber)} · pendente</span>
+              <span>não computado</span>
             </div>
           ))}
 
@@ -103,24 +99,21 @@ export function ContractAside({ contract }: Props): ReactNode {
         <div className={asideLabel}>Vigência Atual</div>
         <div className={vigenciaBar}>
           <div className={vigenciaBarLabels}>
-            <span>Início: {formatDate(startDate)}</span>
-            <span>Fim: {formatDate(endDate)}</span>
+            <span>Início: {vigencia.startLabel}</span>
+            <span>Fim: {vigencia.endLabel}</span>
           </div>
           <div className={vigenciaBarTrack}>
-            <div className={vigenciaBarFill} style={{ width: `${String(progressPercent)}%` }} />
+            <div className={vigenciaBarFill} style={{ width: `${String(vigencia.progressPercent)}%` }} />
           </div>
           <div className={vigenciaBarLabels}>
-            <span>Hoje: {formatDate(today)}</span>
-            <span>{daysRemaining > 0 ? `${String(daysRemaining)} dias restantes` : 'Vencido'}</span>
+            <span>Hoje: {vigencia.todayLabel}</span>
+            <span>{vigencia.daysRemaining > 0 ? `${String(vigencia.daysRemaining)} dias restantes` : 'Vencido'}</span>
           </div>
-          {daysRemaining <= 45 && daysRemaining > 0 && (
+          {vigencia.nearExpiry && (
             <div className={vigenciaAlert}>⚠ Contrato próximo do vencimento</div>
           )}
         </div>
       </div>
-
-      {/* Espaço reservado para mais seções */}
-      <div className={asideSectionLast} />
     </>
   )
 }

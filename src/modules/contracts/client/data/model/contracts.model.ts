@@ -22,7 +22,8 @@ export type AmendmentType = z.infer<typeof AmendmentTypeSchema>
 export const AmendmentStatusSchema = z.enum(['Pendente', 'Homologado'])
 export type AmendmentStatus = z.infer<typeof AmendmentStatusSchema>
 
-export const MoneySchema = z.object({ cents: z.int() })
+// Valor monetário em centavos — sempre ≥ 0 (M7 do review: contrato não tem valor negativo).
+export const MoneySchema = z.object({ cents: z.int().nonnegative() })
 export type Money = z.infer<typeof MoneySchema>
 
 export const PeriodSchema = z.object({
@@ -78,6 +79,10 @@ export const ContractFileSchema = z.object({
   size: z.number().optional(),
   uploadedAt: z.date(),
   uploadedBy: z.string().trim().optional(),
+  // Associação documento ↔ dono (CTR-HTTP-DOCUMENT-CONTENT).
+  parentType: z.enum(['Contract', 'Amendment']).optional(),
+  parentId: z.string().trim().optional(),
+  categoria: z.string().trim().optional(),
 })
 export type ContractFile = z.infer<typeof ContractFileSchema>
 
@@ -102,12 +107,17 @@ export const ContractSchema = z.object({
   supplier: PartnerSnapshotSchema.optional(),
   financier: PartnerSnapshotSchema.optional(),
   collaborator: PartnerSnapshotSchema.optional(),
-  programId: z.number().optional(),
-  program: z.object({ id: z.number(), name: z.string().trim() }).optional(),
-  budgetPlanId: z.number().optional(),
-  budgetPlan: z.object({ id: z.number(), scenarioName: z.string().trim(), year: z.number(), version: z.number() }).optional(),
-  categorizacao: z.enum(['Avaliação', 'Operacional', 'Processo']).optional(),
-  centroDeCusto: z.enum(['RH', 'Serviços Gerais', 'Eventos']).optional(),
+  // IDs técnicos = UUID string (ADR-0013). `program` é o bloco composto pelo backend
+  // (id + nome + sigla exibível); `programId`/`budgetPlanId` são as referências cruas (UUID).
+  programId: z.uuid().optional(),
+  program: z.object({ id: z.uuid(), name: z.string().trim(), sigla: z.string().trim() }).optional(),
+  budgetPlanId: z.uuid().optional(),
+  // budgetPlan (bloco) ainda não é retornado pelo #32 (só `budgetPlanId`) → fica opcional/undefined
+  // até o backend compor o bloco (follow-up). Mantido para não quebrar consumidores do detalhe.
+  budgetPlan: z.object({ id: z.uuid(), scenarioName: z.string().trim(), year: z.number(), version: z.number() }).optional(),
+  // categorizacao/centroDeCusto = string livre (o backend persiste texto — ADR-0013).
+  categorizacao: z.string().trim().optional(),
+  centroDeCusto: z.string().trim().optional(),
   observations: z.string().trim().optional(),
   email: z.email().optional(),
   telephone: z.string().trim().optional(),
@@ -132,7 +142,7 @@ export const ListContractsInputSchema = z.object({
   contractPeriodEnd: z.date().optional(),
   minValue: z.number().optional(),
   maxValue: z.number().optional(),
-  budgetPlanId: z.number().optional(),
+  budgetPlanId: z.uuid().optional(),
   order: z.enum(['ASC', 'DESC']).default('DESC'),
 })
 export type ListContractsInput = z.infer<typeof ListContractsInputSchema>
@@ -148,10 +158,10 @@ export const CreateContractInputSchema = z.object({
   supplierId: z.uuid().optional(),
   financierId: z.uuid().optional(),
   collaboratorId: z.uuid().optional(),
-  programId: z.number().optional(),
-  budgetPlanId: z.number().optional(),
-  categorizacao: z.enum(['Avaliação', 'Operacional', 'Processo']).optional(),
-  centroDeCusto: z.enum(['RH', 'Serviços Gerais', 'Eventos']).optional(),
+  programId: z.uuid().optional(),
+  budgetPlanId: z.uuid().optional(),
+  categorizacao: z.string().trim().optional(),
+  centroDeCusto: z.string().trim().optional(),
   observations: z.string().trim().optional(),
   email: z.email().optional(),
   telephone: z.string().trim().optional(),
@@ -177,6 +187,51 @@ export const CreateAmendmentInputSchema = z.object({
   signedAt: z.date().optional(),
 })
 export type CreateAmendmentInput = z.infer<typeof CreateAmendmentInputSchema>
+
+// Anexo do documento assinado (feature 017). O client lê File.arrayBuffer() → base64 e envia a STRING
+// (mesmo precedente do CSV de colaboradores). A server fn decodifica, valida (magic bytes/tamanho/data)
+// e orquestra upload→activate no BFF.
+export const AttachSignedDocumentInputSchema = z.object({
+  contractId: z.uuid(),
+  fileBase64: z.string().trim().min(1),
+  fileName: z.string().trim().min(1).max(255),
+  signedAt: z.string().trim().min(1),
+})
+export type AttachSignedDocumentInput = z.infer<typeof AttachSignedDocumentInputSchema>
+
+export const AttachAmendmentDocumentInputSchema = z.object({
+  contractId: z.uuid(),
+  amendmentId: z.uuid(),
+  fileBase64: z.string().trim().min(1),
+  fileName: z.string().trim().min(1).max(255),
+  signedAt: z.string().trim().min(1),
+})
+export type AttachAmendmentDocumentInput = z.infer<typeof AttachAmendmentDocumentInputSchema>
+
+// Distrato (#32): input do encerramento. PDF reaproveitado do aditivo de distrato; `terminatedAt`
+// (data efetiva, YYYY-MM-DD) + `reason` (motivo). Espelha o EndContractInput do server.
+export const EndContractInputSchema = z.object({
+  contractId: z.uuid(),
+  fileBase64: z.string().trim().min(1),
+  fileName: z.string().trim().min(1).max(255),
+  terminatedAt: z.string().trim().min(1),
+  reason: z.string().trim().min(1),
+})
+export type EndContractInput = z.infer<typeof EndContractInputSchema>
+
+// Metadados do documento devolvidos pelo core-api no upload (espelha CoreApiDocumentSchema do server).
+export const DocumentMetaSchema = z.object({
+  id: z.uuid(),
+  parentType: z.enum(['Contract', 'Amendment']),
+  parentId: z.string().trim(),
+  categoria: z.string().trim(),
+  fileName: z.string().trim(),
+  mimeType: z.string().trim(),
+  sizeBytes: z.int().nonnegative(),
+  status: z.string().trim(),
+  uploadedAt: z.string().trim(),
+})
+export type DocumentMeta = z.infer<typeof DocumentMetaSchema>
 
 // List response
 export const ListContractsResponseSchema = z.object({

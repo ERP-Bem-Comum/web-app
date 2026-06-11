@@ -21,10 +21,11 @@ function collectLeaves(node: unknown, acc: string[] = []): string[] {
 }
 
 describe('design tokens — valores (fidelidade v1)', () => {
-  it('marca: ciano #32C6F4, hover #76D9F8, texto preto sobre marca', () => {
-    assert.equal(tokenValues.color.brand.normal, '#32C6F4')
-    assert.equal(tokenValues.color.brand.hover, '#76D9F8')
-    assert.equal(tokenValues.color.brand.onBrand, '#000000')
+  it('marca: azul sóbrio #2B6CB0 (teste), hover #3F84C6, texto branco sobre marca', () => {
+    // TESTE de marca (pendente P.O.) — antes era o ciano v1 #32C6F4. Reverter aqui ao restaurar a marca.
+    assert.equal(tokenValues.color.brand.normal, '#2B6CB0')
+    assert.equal(tokenValues.color.brand.hover, '#3F84C6')
+    assert.equal(tokenValues.color.brand.onBrand, '#FFFFFF')
   })
 
   it('superfície: card branco', () => {

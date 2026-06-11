@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useCurrentUser } from '#modules/auth/public-api/index.ts'
 import { can, grantedPermissions } from '#modules/partners/client/data/helpers/can.ts'
 import { partnersErrorTag } from '#modules/partners/client/data/helpers/partners-error-tag.ts'
-import type { ActListFilters } from '#modules/partners/client/domain/act.schemas.ts'
+import type { ActListFilters } from '#modules/partners/client/data/act-list-filters.schema.ts'
 
 import { mapResponseToRows, actListViewModel, type ActListState } from './act-list.view-model.ts'
 

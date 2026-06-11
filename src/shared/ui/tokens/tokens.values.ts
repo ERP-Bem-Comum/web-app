@@ -5,8 +5,9 @@
  * única de verdade dos valores e é testável por `node:test` (ver tests/shared/ui/tokens).
  * O `theme.css.ts` consome este objeto ao aplicar `createGlobalTheme(':root', vars, …)`.
  *
- * ⚠ Fidelidade v1: paleta de marca LEGADA (ciano #32C6F4). NÃO herdar a paleta
- * "institucional" da v1 (azul #396496 / verde #1f7d55). Ver ADR-0007/0008 e data-model.md.
+ * ⚠ Marca: TESTE de azul sóbrio (#2B6CB0) por pedido da stakeholder — pendente de validação do P.O.
+ * (a marca v1 original era o ciano #32C6F4). Reverter trocando os tokens de acento de volta. NÃO herdar
+ * a paleta "institucional" da v1 (azul #396496 / verde #1f7d55). Ver ADR-0007/0008 e data-model.md.
  *
  * Famílias self-host via @fontsource (ADR-0008): os family-names abaixo casam com os
  * registrados pelos pacotes (`Inter Variable`, `Nunito Variable`, `JetBrains Mono`).
@@ -19,9 +20,9 @@ const MONO_FALLBACK = 'ui-monospace, "SF Mono", Menlo, Consolas, monospace'
 export const tokenValues = {
   color: {
     brand: {
-      normal: '#32C6F4',
-      hover: '#76D9F8',
-      onBrand: '#000000',
+      normal: '#2B6CB0',
+      hover: '#3F84C6',
+      onBrand: '#FFFFFF',
       disabled: '#E0E0E0',
       onDisabled: '#6F6F6F',
     },
@@ -30,7 +31,7 @@ export const tokenValues = {
       raised: '#ffffff',
       // Fundo de "tela" (canvas) — fallback quando a imagem de fundo do login não carrega.
       // Tom de marca claro (provisório; P.O. confirma). Contrasta com o card branco.
-      canvas: '#e8f6fc',
+      canvas: '#E7EFF8',
       // Fundo sutil/cinza claro para telas de autenticação (login).
       subtle: '#F5F5F7',
       // Fundo do SHELL autenticado (canvas do app por trás de cards/tabelas). Legado
@@ -45,7 +46,7 @@ export const tokenValues = {
     },
     border: {
       default: '#e5ded4',
-      focus: '#32C6F4',
+      focus: '#2B6CB0',
       // Hairline neutra-fria (~oklab 14% da marca sobre branco): define a aresta de superfícies
       // elevadas sobre fundo claro de baixo contraste (ex.: card de login sobre o canvas ciano)
       // sem a dissonância quente do `default`. Harmoniza com branco E com o canvas.
@@ -63,7 +64,7 @@ export const tokenValues = {
       // Fundo da topbar (barra superior).
       surface: '#ffffff',
       // Item ativo na sidebar = cor de marca (ciano); casa com color.brand.normal.
-      itemActive: '#32C6F4',
+      itemActive: '#2B6CB0',
       // Hover de item de nav (branco a 6% sobre o índigo).
       itemHover: 'rgba(255,255,255,0.06)',
       // Fundo do grupo de sub-itens (escurece o índigo).
@@ -82,14 +83,16 @@ export const tokenValues = {
       surfaceHover: '#f1f5f9',
     },
     status: {
-      pendingBg: '#FFF3E0',
-      pendingText: '#E65100',
+      // Pendente — âmbar suave (antes laranja saturado #E65100/#FFF3E0).
+      pendingBg: '#FFF4E5',
+      pendingText: '#B45309',
       activeBg: '#E8F5E9',
       activeText: '#2E7D32',
       finishedBg: '#E3F2FD',
       finishedText: '#1565C0',
-      terminatedBg: '#FFEBEE',
-      terminatedText: '#C62828',
+      // Distrato — vermelho-tijolo suave (antes #C62828/#FFEBEE).
+      terminatedBg: '#FCECEA',
+      terminatedText: '#C0453C',
       prazoBg: '#E0F7FA',
       prazoText: '#298CAB',
       valorBg: '#E8F5E9',
@@ -100,14 +103,21 @@ export const tokenValues = {
       distratoText: '#E54D40',
       outroBg: '#F5F5F5',
       outroText: '#736961',
+      // Aditivos: marrom (escopo) e laranja (outro) — paleta própria, distinta do reuso
+      // de escopo* pelo chip "Vencendo" e pela timeline (não regredir aqueles).
+      aditEscopoBg: '#EFE6DC',
+      aditEscopoText: '#8A5A33',
+      aditOutroBg: '#FFF1E0',
+      aditOutroText: '#D9772E',
     },
-    // Tipos de parceiro/contrato (badges) — cores legadas da v1, agora tokenizadas (antes hex
-    // cru com eslint-disable em contract-row.css.ts). `background`/`border` em tint de baixa opacidade.
+    // Tipos de parceiro/contrato (badges). Paleta por tipo (brand do cliente):
+    //   Fornecedor = azul · Colaborador = amarelo · Financiador = verde · ACT = laranja.
+    // `background`/`border` em tint de baixa opacidade.
     partnerType: {
-      supplier: { text: '#1c7943', background: 'rgba(51,178,102,0.10)', border: 'rgba(51,178,102,0.20)' },
-      collaborator: { text: '#1a708c', background: '#e8f5fa', border: '#8cc7de' },
-      financier: { text: '#d9991a', background: '#fff7e0', border: 'rgba(217,153,26,0.25)' },
-      act: { text: '#9a5402', background: 'rgba(217,119,6,0.08)', border: 'rgba(217,119,6,0.20)' },
+      supplier: { text: '#1d6cab', background: '#e9f2fb', border: '#a8cdee' }, // azul (mais limpo, menos teal)
+      collaborator: { text: '#b07d12', background: '#fff7e0', border: 'rgba(217,153,26,0.30)' }, // amarelo
+      financier: { text: '#1c7943', background: 'rgba(51,178,102,0.10)', border: 'rgba(51,178,102,0.25)' }, // verde
+      act: { text: '#c2410c', background: 'rgba(234,88,12,0.10)', border: 'rgba(234,88,12,0.22)' }, // laranja
     },
     institutional: {
       blue: '#396496',

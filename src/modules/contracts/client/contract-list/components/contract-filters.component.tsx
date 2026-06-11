@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import type { ContractListFilters } from '../contract-list.view-model.ts'
+import { formatDateInput } from '../contract-list.view-model.ts'
 import {
   container,
   fieldLabel,
@@ -14,20 +15,6 @@ import {
 } from './contract-filters.css.ts'
 
 const _t = createTranslator(ptBR)
-
-function formatDateInput(dateStr: string | undefined): string {
-  if (!dateStr) return ''
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr
-  try {
-    const d = new Date(dateStr)
-    const yyyy = String(d.getFullYear())
-    const mm = String(d.getMonth() + 1).padStart(2, '0')
-    const dd = String(d.getDate()).padStart(2, '0')
-    return `${yyyy}-${mm}-${dd}`
-  } catch {
-    return ''
-  }
-}
 
 interface Props {
   filters: ContractListFilters

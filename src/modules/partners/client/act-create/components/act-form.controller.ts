@@ -54,6 +54,7 @@ export type ActFormController = Readonly<{
   state: ActFormState
   errors: ActFormErrors
   setField: <K extends keyof ActFormState>(key: K, value: ActFormState[K]) => void
+  reset: (values?: ActFormValues) => void
   submit: () => void
 }>
 
@@ -65,6 +66,11 @@ export function useActFormController(
 
   const setField = useCallback<ActFormController['setField']>((key, value) => {
     setState((s) => ({ ...s, [key]: value }))
+  }, [])
+
+  const reset = useCallback((values?: ActFormValues) => {
+    setState(stateFromValues(values))
+    setErrors({})
   }, [])
 
   const submit = useCallback(() => {
@@ -79,5 +85,5 @@ export function useActFormController(
     opts.onSubmit(parsed.data)
   }, [state, opts])
 
-  return { state, errors, setField, submit }
+  return { state, errors, setField, reset, submit }
 }

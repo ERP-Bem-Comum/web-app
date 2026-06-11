@@ -31,7 +31,7 @@ export const trigger = style({
 export const menu = style({
   position: 'absolute',
   top: 'calc(100% + 4px)',
-  right: 0,
+  insetInlineEnd: 0,
   zIndex: 50,
   background: vars.color.surface.default,
   borderRadius: vars.radius.lg,

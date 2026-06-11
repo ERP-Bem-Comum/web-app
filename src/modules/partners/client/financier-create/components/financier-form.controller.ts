@@ -45,6 +45,7 @@ export type FinancierFormController = Readonly<{
   state: FinancierFormState
   errors: FinancierFormErrors
   setField: <K extends keyof FinancierFormState>(key: K, value: FinancierFormState[K]) => void
+  reset: (values?: FinancierFormValues) => void
   submit: () => void
 }>
 
@@ -56,6 +57,11 @@ export function useFinancierFormController(
 
   const setField = useCallback<FinancierFormController['setField']>((key, value) => {
     setState((s) => ({ ...s, [key]: value }))
+  }, [])
+
+  const reset = useCallback((values?: FinancierFormValues) => {
+    setState(stateFromValues(values))
+    setErrors({})
   }, [])
 
   const submit = useCallback(() => {
@@ -70,5 +76,5 @@ export function useFinancierFormController(
     opts.onSubmit(parsed.data)
   }, [state, opts])
 
-  return { state, errors, setField, submit }
+  return { state, errors, setField, reset, submit }
 }

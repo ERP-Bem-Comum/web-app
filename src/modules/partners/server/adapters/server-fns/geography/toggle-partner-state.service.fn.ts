@@ -7,7 +7,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { isErr } from '#shared/primitives/result.ts'
 import { getCurrentUserFn, resolveAccessTokenFn } from '#modules/auth/public-api/index.ts'
 import { geographyServer } from '../../geography.composition.ts'
-import { TogglePartnerStateInputSchema } from '#modules/partners/server/domain/geography/geography.io.ts'
+import { TogglePartnerStateInputSchema } from '#modules/partners/server/adapters/geography.io-schemas.ts'
 import type { PartnerState } from '#modules/partners/server/domain/geography/geography.types.ts'
 import type { PartnersError } from '#modules/partners/server/domain/errors/partners.errors.ts'
 

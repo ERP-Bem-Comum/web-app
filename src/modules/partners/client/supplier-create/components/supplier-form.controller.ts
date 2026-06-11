@@ -19,12 +19,10 @@ export type SupplierFormState = Readonly<{
   email: string
   cnpj: string
   serviceCategory: string
-  bankEnabled: boolean
   bank: string
   agency: string
   accountNumber: string
   checkDigit: string
-  pixEnabled: boolean
   pixKeyType: PixKeyType
   pixKey: string
 }>
@@ -38,12 +36,10 @@ const EMPTY: SupplierFormState = {
   email: '',
   cnpj: '',
   serviceCategory: '',
-  bankEnabled: false,
   bank: '',
   agency: '',
   accountNumber: '',
   checkDigit: '',
-  pixEnabled: false,
   pixKeyType: 'cpf',
   pixKey: '',
 }
@@ -57,12 +53,10 @@ function stateFromValues(v: SupplierFormValues | undefined): SupplierFormState {
     email: v.email,
     cnpj: v.cnpj,
     serviceCategory: v.serviceCategory,
-    bankEnabled: v.bankAccount !== null,
     bank: v.bankAccount?.bank ?? '',
     agency: v.bankAccount?.agency ?? '',
     accountNumber: v.bankAccount?.accountNumber ?? '',
     checkDigit: v.bankAccount?.checkDigit ?? '',
-    pixEnabled: v.pixKey !== null,
     pixKeyType: v.pixKey?.keyType ?? 'cpf',
     pixKey: v.pixKey?.key ?? '',
   }
@@ -72,6 +66,7 @@ export type SupplierFormController = Readonly<{
   state: SupplierFormState
   errors: SupplierFormErrors
   setField: <K extends keyof SupplierFormState>(key: K, value: SupplierFormState[K]) => void
+  reset: (values?: SupplierFormValues) => void
   submit: () => void
 }>
 
@@ -85,7 +80,17 @@ export function useSupplierFormController(
     setState((s) => ({ ...s, [key]: value }))
   }, [])
 
+  const reset = useCallback((values?: SupplierFormValues) => {
+    setState(stateFromValues(values))
+    setErrors({})
+  }, [])
+
   const submit = useCallback(() => {
+    // Sem checkbox de "habilitar": a presença de banco/PIX é inferida do que foi preenchido.
+    // Banco parcialmente preenchido cai no schema (campos min(1)) e bloqueia o submit.
+    const hasBank =
+      [state.bank, state.agency, state.accountNumber, state.checkDigit].some((v) => v.trim() !== '')
+    const hasPix = state.pixKey.trim() !== ''
     const candidate = {
       name: state.name,
       corporateName: state.corporateName,
@@ -93,7 +98,7 @@ export function useSupplierFormController(
       email: state.email,
       cnpj: state.cnpj,
       serviceCategory: state.serviceCategory,
-      bankAccount: state.bankEnabled
+      bankAccount: hasBank
         ? {
             bank: state.bank,
             agency: state.agency,
@@ -101,7 +106,7 @@ export function useSupplierFormController(
             checkDigit: state.checkDigit,
           }
         : null,
-      pixKey: state.pixEnabled ? { keyType: state.pixKeyType, key: state.pixKey } : null,
+      pixKey: hasPix ? { keyType: state.pixKeyType, key: state.pixKey } : null,
     }
     const parsed = SupplierFormSchema.safeParse(candidate)
     if (!parsed.success) {
@@ -114,5 +119,5 @@ export function useSupplierFormController(
     opts.onSubmit(parsed.data)
   }, [state, opts])
 
-  return { state, errors, setField, submit }
+  return { state, errors, setField, reset, submit }
 }

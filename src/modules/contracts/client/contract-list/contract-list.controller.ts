@@ -1,7 +1,7 @@
 /**
  * contract-list.controller.ts — Estado transiente da listagem (ADR-0009).
  */
-import { useReducer } from 'react'
+import { useReducer, useState } from 'react'
 
 interface State {
   readonly showFilters: boolean
@@ -26,9 +26,12 @@ function reducer(state: State, action: Action): State {
 
 export function useContractListController() {
   const [state, dispatch] = useReducer(reducer, { showFilters: false })
+  // "Agora" estável por carga de página (lazy) — base do filtro "vencendo", fora do render da view (C1).
+  const [nowMs] = useState(() => Date.now())
 
   return {
     showFilters: state.showFilters,
+    nowMs,
     toggleFilters: () => {
       dispatch({ type: 'TOGGLE_FILTERS' })
     },
