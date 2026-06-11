@@ -32,7 +32,7 @@ import {
   CoreApiDocumentSchema,
 } from './contracts.schema.ts'
 
-const SLUG_TO_ERROR: Partial<Record<string, ContractsError>> = {
+export const SLUG_TO_ERROR: Partial<Record<string, ContractsError>> = {
   'contract-not-found': 'contract-not-found',
   'amendment-not-found': 'amendment-not-found',
   'invalid-value': 'invalid-value',
@@ -40,7 +40,10 @@ const SLUG_TO_ERROR: Partial<Record<string, ContractsError>> = {
   'missing-contractor': 'missing-contractor',
   'unauthorized': 'unauthorized',
   'contract-sequential-number-duplicated': 'server',
-  'contract-not-pending': 'server',
+  // Cancelamento (§1.7, #32): 409 ao cancelar contrato não-Pendente. O core-api envia
+  // `ContractNotPending` (PascalCase) e/ou `contract-not-pending` (kebab) — cobrimos ambos.
+  'ContractNotPending': 'contract-not-pending',
+  'contract-not-pending': 'contract-not-pending',
   'amendment-contract-mismatch': 'server',
   'activate-contract-no-signed-document': 'no-signed-document',
   'activate-contract-invalid-signed-at': 'invalid-signed-at',
@@ -95,25 +98,27 @@ const mapHttpError = (e: HttpError): ContractsError => {
 
 // ─── Mappers: API → Domain ──────────────────────────────────────────────────
 
-// D9 (ADR-0013): aceita string p/ tolerar status futuros do backend (ex.: 'Cancelled' do #32).
-// Status conhecidos mapeiam normalmente; DESCONHECIDO degrada para 'Finalizado' (terminal seguro,
-// não-acionável) só p/ não zerar a linha — a UI/fluxo próprio de cancelamento é slice futuro.
-const statusApiToDomain = (apiStatus: string): Contract['status'] => {
+// D9 (ADR-0013): aceita string p/ tolerar status futuros do backend. Status conhecidos mapeiam
+// normalmente (inclui 'Cancelled' → 'Cancelado', §1.7); DESCONHECIDO degrada para 'Finalizado'
+// (terminal seguro, não-acionável) só p/ não zerar a linha. Exportado p/ teste (status-cancel.test).
+export const statusApiToDomain = (apiStatus: string): Contract['status'] => {
   const map: Record<string, Contract['status']> = {
     Pending: 'Pendente',
     Active: 'Em Andamento',
     Expired: 'Finalizado',
     Terminated: 'Distrato',
+    Cancelled: 'Cancelado',
   }
   return map[apiStatus] ?? 'Finalizado'
 }
 
-const statusDomainToApi = (domainStatus: Contract['status']): 'Pending' | 'Active' | 'Expired' | 'Terminated' | undefined => {
-  const map: Record<Contract['status'], 'Pending' | 'Active' | 'Expired' | 'Terminated'> = {
+export const statusDomainToApi = (domainStatus: Contract['status']): 'Pending' | 'Active' | 'Expired' | 'Terminated' | 'Cancelled' | undefined => {
+  const map: Record<Contract['status'], 'Pending' | 'Active' | 'Expired' | 'Terminated' | 'Cancelled'> = {
     Pendente: 'Pending',
     'Em Andamento': 'Active',
     Finalizado: 'Expired',
     Distrato: 'Terminated',
+    Cancelado: 'Cancelled',
   }
   return map[domainStatus]
 }
@@ -168,8 +173,9 @@ const apiAmendmentToDomain = (a: {
   impactValueCents?: number
   newEndDate?: string
   startDate?: string
+  signedAt?: string | null
 }): Amendment => {
-  const base: Pick<Amendment, 'id' | 'amendmentNumber' | 'description' | 'status' | 'createdAt' | 'type' | 'startDate'> = {
+  const base: Pick<Amendment, 'id' | 'amendmentNumber' | 'description' | 'status' | 'createdAt' | 'type' | 'startDate' | 'signedAt'> = {
     id: a.id,
     amendmentNumber: a.amendmentNumber,
     description: a.description || undefined,
@@ -177,6 +183,9 @@ const apiAmendmentToDomain = (a: {
     createdAt: parseIsoDate(a.createdAt),
     type: amendmentKindToType(a.kind),
     startDate: a.startDate ? parseIsoDate(a.startDate) : undefined,
+    // #32: data de assinatura do aditivo (null enquanto não homologado). Antes era descartada → modal de
+    // leitura mostrava "—" mesmo homologado.
+    signedAt: a.signedAt ? parseIsoDate(a.signedAt) : undefined,
   }
   switch (a.kind) {
     case 'Addition':
@@ -415,6 +424,8 @@ export type CoreApiContractsClient = Readonly<{
   uploadAmendmentDocument: (contractId: string, amendmentId: string, input: Readonly<{ bytes: Uint8Array; fileName: string; signedAt: string }>, token: string) => Promise<Result<void, ContractsError>>
   homologateAmendment: (contractId: string, amendmentId: string, homologatedBy: string, token: string) => Promise<Result<Contract, ContractsError>>
   endContract: (contractId: string, terminatedAt: string, reason: string, token: string) => Promise<Result<Contract, ContractsError>>
+  // Cancelamento (§1.7) — DELETE /contracts/:id (soft): Pendente → Cancelled. SEPARADO do distrato (D5).
+  cancelContract: (contractId: string, token: string) => Promise<Result<Contract, ContractsError>>
   getDocumentContent: (contractId: string, documentId: string, token: string) => Promise<Result<Readonly<{ bytes: Uint8Array; fileName: string; contentType: string }>, ContractsError>>
 }>
 
@@ -696,6 +707,17 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
       const r = await resultFetch<unknown>(`${baseUrl}/contracts/${contractId}/end`, {
         method: 'POST',
         body: { kind: 'Terminate', terminatedAt, reason },
+        headers: authHeader(token),
+      })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      return apiContractDetailToDomain(r.value)
+    },
+
+    cancelContract: async (contractId, token) => {
+      // DELETE /contracts/:id — cancelamento (soft) de contrato Pendente (§1.7, #32). 200 → contrato
+      // Cancelled (registro preservado). Não-Pendente → 409 ContractNotPending. SEPARADO do distrato.
+      const r = await resultFetch<unknown>(`${baseUrl}/contracts/${contractId}`, {
+        method: 'DELETE',
         headers: authHeader(token),
       })
       if (isErr(r)) return err(mapHttpError(r.error))

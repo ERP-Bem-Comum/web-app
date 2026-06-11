@@ -14,6 +14,7 @@ import type {
   AttachSignedDocumentInput,
   AttachAmendmentDocumentInput,
   EndContractInput,
+  CancelContractInput,
 } from '#modules/contracts/client/data/model/contracts.model.ts'
 // ContractsError — FONTE ÚNICA no domínio (A2); o client-data reexporta pela fronteira adapters
 // (não redefine mais a 3ª cópia). Antes: união duplicada e propensa a divergir.
@@ -58,6 +59,10 @@ type EndContractFn = (opts: { data: EndContractInput }) => Promise<
   | Readonly<{ ok: true; data: Contract }>
   | Readonly<{ ok: false; error: ContractsError }>
 >
+type CancelContractFn = (opts: { data: CancelContractInput }) => Promise<
+  | Readonly<{ ok: true; data: Contract }>
+  | Readonly<{ ok: false; error: ContractsError }>
+>
 // Conteúdo do documento — bytes em base64 (transporte RPC); o binding decodifica p/ Blob no browser.
 export type DocumentContentDto = Readonly<{ base64: string; fileName: string; contentType: string }>
 type GetDocumentContentFn = (opts: { data: { contractId: string; documentId: string } }) => Promise<
@@ -75,6 +80,7 @@ export type ContractsRepository = Readonly<{
   attachSignedDocument: (input: AttachSignedDocumentInput) => Promise<Result<Contract, ContractsError>>
   attachAmendmentDocument: (input: AttachAmendmentDocumentInput) => Promise<Result<Contract, ContractsError>>
   endContract: (input: EndContractInput) => Promise<Result<Contract, ContractsError>>
+  cancelContract: (input: CancelContractInput) => Promise<Result<Contract, ContractsError>>
   getDocumentContent: (input: { contractId: string; documentId: string }) => Promise<Result<DocumentContentDto, ContractsError>>
 }>
 
@@ -88,6 +94,7 @@ export const createContractsRepository = (deps: Readonly<{
   attachSignedDocumentFn: AttachSignedDocumentFn
   attachAmendmentDocumentFn: AttachAmendmentDocumentFn
   endContractFn: EndContractFn
+  cancelContractFn: CancelContractFn
   getDocumentContentFn: GetDocumentContentFn
 }>): ContractsRepository => ({
   list: async (input) => {
@@ -124,6 +131,10 @@ export const createContractsRepository = (deps: Readonly<{
   },
   endContract: async (input) => {
     const res = await deps.endContractFn({ data: input })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  cancelContract: async (input) => {
+    const res = await deps.cancelContractFn({ data: input })
     return res.ok ? ok(res.data) : err(res.error)
   },
   getDocumentContent: async (input) => {

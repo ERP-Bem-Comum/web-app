@@ -60,6 +60,8 @@ export const vars = createThemeContract({
       finishedText: null,
       terminatedBg: null,
       terminatedText: null,
+      cancelledBg: null,
+      cancelledText: null,
       prazoBg: null,
       prazoText: null,
       valorBg: null,

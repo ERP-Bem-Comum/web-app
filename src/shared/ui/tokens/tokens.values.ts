@@ -93,6 +93,9 @@ export const tokenValues = {
       // Distrato — vermelho-tijolo suave (antes #C62828/#FFEBEE).
       terminatedBg: '#FCECEA',
       terminatedText: '#C0453C',
+      // Cancelado (§1.7) — NEUTRO/cinza, distinto do vermelho do distrato (cancelar Pendente ≠ distratar).
+      cancelledBg: '#F2EDE5',
+      cancelledText: '#736961',
       prazoBg: '#E0F7FA',
       prazoText: '#298CAB',
       valorBg: '#E8F5E9',

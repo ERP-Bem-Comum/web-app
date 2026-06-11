@@ -13,6 +13,7 @@ import { createGetContractHistory } from '../application/queries/get-contract-hi
 import { createAttachSignedDocument } from '../application/commands/attach-signed-document.use-case.ts'
 import { createAttachAmendmentDocument } from '../application/commands/attach-amendment-document.use-case.ts'
 import { createEndContract } from '../application/commands/end-contract.use-case.ts'
+import { createCancelContract } from '../application/commands/cancel-contract.use-case.ts'
 import { createGetDocumentContent } from '../application/queries/get-document-content.use-case.ts'
 
 type ContractsServer = ReturnType<typeof build>
@@ -31,6 +32,7 @@ const build = () => {
     attachSignedDocument: createAttachSignedDocument({ client }),
     attachAmendmentDocument: createAttachAmendmentDocument({ client }),
     endContract: createEndContract({ client }),
+    cancelContract: createCancelContract({ client }),
     getDocumentContent: createGetDocumentContent({ client }),
   }
 }

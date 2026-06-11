@@ -41,6 +41,7 @@ export const ptBR: Catalog = {
   'contracts.error.unauthorized': 'Acesso não autorizado.',
   'contracts.error.not-implemented': 'Funcionalidade ainda não disponível.',
   'contracts.error.unexpected': 'Algo deu errado. Tente novamente.',
+  'contracts.error.contract-not-pending': 'Apenas contratos pendentes podem ser cancelados.',
   // Contracts — Anexo do documento assinado / efetivação (feature 017)
   'contracts.attach.title': 'Incluir documento assinado',
   'contracts.attach.title-view': 'Documento',
@@ -119,6 +120,14 @@ export const ptBR: Catalog = {
   'contracts.list.delete.unavailable': 'Exclusão ainda não disponível: o backend não permite exclusão física de contratos (imutabilidade). Aguardando suporte de cancelamento/soft-delete.',
   'contracts.list.delete.cancel': 'Cancelar',
   'contracts.list.delete.confirm': 'Excluir contrato',
+  // Contracts — cancelamento de contrato Pendente (§1.7 — soft-delete → status Cancelado)
+  'contracts.cancel.title': 'Cancelar contrato',
+  'contracts.cancel.body': 'Tem certeza que deseja cancelar este contrato pendente? Ele passará para o status Cancelado.',
+  'contracts.cancel.confirm': 'Confirmar cancelamento',
+  'contracts.cancel.cancel': 'Voltar',
+  'contracts.list.actions.cancel': 'Cancelar contrato',
+  // Rótulo do status Cancelado (exibido no grid/detalhe/chips/filtro).
+  'contracts.status.cancelado': 'Cancelado',
   'contracts.list.empty': 'Nenhum contrato encontrado.',
   // Contracts — Tabela
   'contracts.table.columns.number': 'Número',
@@ -377,6 +386,12 @@ export const ptBR: Catalog = {
   'partners.suppliers.form.serviceRating': 'Avaliação De Serviço',
   'partners.suppliers.form.ratingComment': 'Comentário da Avaliação',
   'partners.suppliers.form.gatedHint': 'Disponível quando o backend suportar este campo',
+  // Avaliação de serviço (§1.6) — níveis fixos (D1) + opção "sem avaliação".
+  'partners.suppliers.rating.none': 'Sem avaliação',
+  'partners.suppliers.rating.RUIM': 'Ruim',
+  'partners.suppliers.rating.REGULAR': 'Regular',
+  'partners.suppliers.rating.BOM': 'Bom',
+  'partners.suppliers.rating.OTIMO': 'Ótimo',
   'partners.suppliers.form.bank': 'Banco',
   'partners.suppliers.form.agency': 'Agência - DV',
   'partners.suppliers.form.accountNumber': 'Número da Conta',

@@ -34,7 +34,6 @@ import {
   docBadgeEscopo,
   docBadgeDistrato,
   docBadgeOutro,
-  statusBadge,
   statusBadgePending,
   statusBadgeActive,
   statusBadgeFinished,
@@ -151,8 +150,8 @@ export function ContractDocuments({ contract, onOpenBase, onNewAmendment, onOpen
         id: a.id,
         num: formatAmendmentNumber(seq.get(a.id), contract.sequentialNumber, a.amendmentNumber),
         type: a.type,
-        // Assinatura/homologação: o aditivo não expõe `signedAt` (backend) — usamos o `uploadedAt` do
-        // documento assinado como data de homologação (quando há documento anexado).
+        // Assinatura: usa o `signedAt` do aditivo (#32, lido no mapper); fallback no `uploadedAt` do
+        // documento anexado p/ aditivos legados sem a data.
         signedAt: a.signedAt ?? adoc?.uploadedAt ?? null,
         summary: a.description ?? '—',
         impactKind: impact.kind,
@@ -247,8 +246,8 @@ export function ContractDocuments({ contract, onOpenBase, onNewAmendment, onOpen
             <span className={aditResumo} title={r.summary}>{r.summary}</span>
             <span className={`${aditImpacto} ${impactClass(r.impactKind)}`}>{r.impactText}</span>
             <span>
-              <span className={`${statusBadge} ${STATUS_CLASS[r.status] ?? ''}`}>
-                <span style={{ fontSize: '0.5rem', lineHeight: 1 }}>●</span>
+              {/* Status com a MESMA métrica do badge de Tipo (docBadge) — proporcional na tabela. */}
+              <span className={`${docBadge} ${STATUS_CLASS[r.status] ?? ''}`}>
                 {r.status}
               </span>
             </span>

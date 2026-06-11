@@ -1,9 +1,9 @@
 /**
- * DeleteContractModal — modal de confirmação de exclusão de contrato (componente BURRO).
- * O backend ainda PROÍBE exclusão física (405 `contract-delete-forbidden`, imutabilidade), então o
- * botão "Confirmar" fica DESABILITADO com aviso até existir suporte de cancelamento/soft-delete
- * (ver handbook/core-api/tickets/CTR-DELETE-CANCEL.md). Quando o backend suportar, basta habilitar o
- * confirmar + ligar `onConfirm` ao binding de exclusão.
+ * CancelContractModal — modal de confirmação de CANCELAMENTO de contrato Pendente (componente BURRO).
+ * O cancelamento é um soft-delete (§1.7, #32): Pendente → Cancelado (o registro é preservado). O
+ * gatilho só oferece a ação p/ contratos Pendente (`canCancelContract`); o 409 ContractNotPending é a
+ * defesa do backend (mapeado p/ `contracts.error.contract-not-pending`). NÃO é exclusão física (antes
+ * o botão ficava gated por 405 — comentário stale removido).
  */
 import type { ReactNode } from 'react'
 
@@ -29,8 +29,10 @@ export interface DeleteContractModalProps {
   readonly contractLabel: string
   readonly onClose: () => void
   readonly onConfirm: () => void
-  /** Enquanto o backend não suportar exclusão, o confirmar fica desabilitado com aviso. */
-  readonly confirmDisabled: boolean
+  /** Cancelamento em andamento (mutation pendente) — desabilita os botões. */
+  readonly running?: boolean
+  /** Tag i18n de erro (ex.: 409 contract-not-pending) — exibida no corpo do modal. */
+  readonly errorTag?: string | null
 }
 
 export function DeleteContractModal({
@@ -38,7 +40,8 @@ export function DeleteContractModal({
   contractLabel,
   onClose,
   onConfirm,
-  confirmDisabled,
+  running = false,
+  errorTag = null,
 }: DeleteContractModalProps): ReactNode {
   if (!open) return null
 
@@ -48,26 +51,26 @@ export function DeleteContractModal({
         className={content}
         role="alertdialog"
         aria-modal="true"
-        aria-label={t('contracts.list.delete.title')}
+        aria-label={t('contracts.cancel.title')}
         onClick={(e) => { e.stopPropagation() }}
       >
-        <h2 className={title}>{t('contracts.list.delete.title')}</h2>
+        <h2 className={title}>{t('contracts.cancel.title')}</h2>
         <span className={label}>{contractLabel}</span>
-        <p className={body}>{t('contracts.list.delete.body')}</p>
-        {confirmDisabled ? (
-          <div className={aviso} role="alert">{t('contracts.list.delete.unavailable')}</div>
+        <p className={body}>{t('contracts.cancel.body')}</p>
+        {errorTag !== null ? (
+          <div className={aviso} role="alert">{t(errorTag)}</div>
         ) : null}
         <div className={footer}>
-          <button type="button" className={buttonSecondary} onClick={onClose}>
-            {t('contracts.list.delete.cancel')}
+          <button type="button" className={buttonSecondary} onClick={onClose} disabled={running}>
+            {t('contracts.cancel.cancel')}
           </button>
           <button
             type="button"
             className={buttonDanger}
-            disabled={confirmDisabled}
+            disabled={running}
             onClick={onConfirm}
           >
-            {t('contracts.list.delete.confirm')}
+            {t('contracts.cancel.confirm')}
           </button>
         </div>
       </div>

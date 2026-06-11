@@ -80,12 +80,13 @@ function maskDocument(doc: string | null | undefined): string {
   return doc
 }
 
-function statusToBadgeVariant(key: string): 'pending' | 'active' | 'finished' | 'terminated' {
-  const map: Record<string, 'pending' | 'active' | 'finished' | 'terminated'> = {
+function statusToBadgeVariant(key: string): 'pending' | 'active' | 'finished' | 'terminated' | 'cancelled' {
+  const map: Record<string, 'pending' | 'active' | 'finished' | 'terminated' | 'cancelled'> = {
     'em-andamento': 'active',
     pendente: 'pending',
     finalizado: 'finished',
     distrato: 'terminated',
+    cancelado: 'cancelled',
   }
   return map[key] ?? 'active'
 }
@@ -179,14 +180,14 @@ export function ContractRow({ row, index, onRequestDelete, onGenerateDoc }: Cont
           </summary>
           <div className={dropdownMenu}>
             {derived.key === 'pendente' ? (
-              // Pendente: excluir abre o modal de confirmação (confirmar fica gated até o backend
-              // suportar cancelamento/soft-delete — DELETE físico é 405 por design).
+              // Pendente: abre o modal de CANCELAMENTO (§1.7, soft-delete → Cancelado). Só Pendente
+              // oferece a ação (canCancelContract); não-Pendente cai no ramo de geração de documento.
               <button
                 type="button"
                 className={actionItemDanger}
                 onClick={(e) => { closeDropdown(e); onRequestDelete(row) }}
               >
-                {t('contracts.list.actions.delete')}
+                {t('contracts.list.actions.cancel')}
               </button>
             ) : (
               // Demais status: gera documento padronizado em PDF (window.print → "Salvar como PDF").

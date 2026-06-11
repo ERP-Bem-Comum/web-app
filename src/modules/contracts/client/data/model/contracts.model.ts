@@ -13,8 +13,12 @@ export type ContractModel = z.infer<typeof ContractModelSchema>
 export const ContractTypeSchema = z.enum(['Supplier', 'Financier', 'Collaborator', 'ACT'])
 export type ContractType = z.infer<typeof ContractTypeSchema>
 
-export const ContractStatusSchema = z.enum(['Pendente', 'Em Andamento', 'Finalizado', 'Distrato'])
+export const ContractStatusSchema = z.enum(['Pendente', 'Em Andamento', 'Finalizado', 'Distrato', 'Cancelado'])
 export type ContractStatus = z.infer<typeof ContractStatusSchema>
+
+// Gating do cancelamento (§1.7, helper puro): só contratos Pendente podem ser cancelados (soft → Cancelado).
+// A ação "cancelar" só aparece/habilita quando true; o 409 ContractNotPending é a defesa no backend.
+export const canCancelContract = (status: ContractStatus): boolean => status === 'Pendente'
 
 export const AmendmentTypeSchema = z.enum(['prazo', 'valor', 'escopo', 'outro', 'distrato'])
 export type AmendmentType = z.infer<typeof AmendmentTypeSchema>
@@ -219,6 +223,12 @@ export const EndContractInputSchema = z.object({
   reason: z.string().trim().min(1),
 })
 export type EndContractInput = z.infer<typeof EndContractInputSchema>
+
+// Cancelamento (§1.7): input do cancelamento (só o id). Espelha CancelContractInput do server.
+export const CancelContractInputSchema = z.object({
+  contractId: z.uuid(),
+})
+export type CancelContractInput = z.infer<typeof CancelContractInputSchema>
 
 // Metadados do documento devolvidos pelo core-api no upload (espelha CoreApiDocumentSchema do server).
 export const DocumentMetaSchema = z.object({

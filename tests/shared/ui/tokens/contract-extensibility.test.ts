@@ -48,6 +48,7 @@ describe('contract — extensibilidade (tema alternativo)', () => {
           activeBg: '#1f3a28', activeText: '#81c784',
           finishedBg: '#1f2f3a', finishedText: '#64b5f6',
           terminatedBg: '#3a1f24', terminatedText: '#e57373',
+          cancelledBg: '#2a2620', cancelledText: '#bdbdbd',
           prazoBg: '#1f3438', prazoText: '#4dd0e1',
           valorBg: '#1f3a28', valorText: '#66bb6a',
           escopoBg: '#3a341f', escopoText: '#ffd54f',
