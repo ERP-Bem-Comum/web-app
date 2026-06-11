@@ -6,8 +6,8 @@ export const form = style({
   display: 'flex',
   flexDirection: 'column',
   gap: vars.space.xl,
-  // expande pra usar melhor o espaço da tela (4 colunas no card, como o print do legado).
-  maxInlineSize: '72rem',
+  // ocupa toda a largura disponível da página (o `screen` já aplica o padding lateral).
+  inlineSize: '100%',
   // não encolher dentro do screen com overflow (senão o overflow:hidden dos cards corta os campos).
   flexShrink: 0,
 })

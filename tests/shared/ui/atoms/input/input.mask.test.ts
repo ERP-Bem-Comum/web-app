@@ -4,6 +4,14 @@ import assert from 'node:assert/strict'
 import { formatMask, unmask } from '../../../../../src/shared/ui/atoms/input/input.mask.ts'
 
 describe('input.mask', () => {
+  it('Agência: 4 dígitos + DV opcional (5º)', () => {
+    assert.equal(formatMask('agency', '12'), '12') // progressivo
+    assert.equal(formatMask('agency', '1234'), '1234') // 4 dígitos, sem DV
+    assert.equal(formatMask('agency', '12345'), '1234-5') // 5º dígito = DV
+    assert.equal(formatMask('agency', '1234-5'), '1234-5') // idempotente
+    assert.equal(formatMask('agency', '123456789'), '1234-5') // trunca além de 5
+  })
+
   it('CPF: progressivo e completo', () => {
     assert.equal(formatMask('cpf', '390'), '390')
     assert.equal(formatMask('cpf', '39053344705'), '390.533.447-05')

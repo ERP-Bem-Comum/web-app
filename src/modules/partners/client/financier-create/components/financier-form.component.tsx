@@ -10,11 +10,15 @@ import {
   errorBanner,
   footer,
   form,
+  gatedNote,
   grid,
   saveWrap,
   section,
   sectionTitle,
+  select,
 } from './financier-form.css.ts'
+
+const PIX_KEY_TYPES = ['cpf', 'cnpj', 'email', 'phone', 'random-key'] as const
 
 const t = createTranslator(ptBR)
 
@@ -64,6 +68,39 @@ export function FinancierForm(props: FinancierFormProps): ReactNode {
           </Field>
           <Field htmlFor="fin-addr" label={t('partners.financiers.form.address')} error={invalid('address')}>
             <Input id="fin-addr" value={c.state.address} onChange={(v) => { c.setField('address', v); }} />
+          </Field>
+        </div>
+      </section>
+
+      {/* Dados bancários — GATED: o backend ainda não aceita conta bancária p/ financiador
+          (ver handbook/core-api/tickets/PAR-FINANCIER-COLLAB-BANK.md). Campos visíveis e
+          desabilitados; ao liberar o backend, habilitar + ligar no controller/mapeador. */}
+      <section className={section}>
+        <h2 className={sectionTitle}>{t('partners.financiers.form.section.bank')}</h2>
+        <p className={gatedNote}>{t('partners.financiers.form.bankGatedHint')}</p>
+        <div className={grid}>
+          <Field htmlFor="fin-bank" label={t('partners.financiers.form.bank')}>
+            <Input id="fin-bank" value="" disabled onChange={() => { /* gated */ }} />
+          </Field>
+          <Field htmlFor="fin-agency" label={t('partners.financiers.form.agency')}>
+            <Input id="fin-agency" mask="agency" value="" disabled onChange={() => { /* gated */ }} />
+          </Field>
+          <Field htmlFor="fin-account" label={t('partners.financiers.form.accountNumber')}>
+            <Input id="fin-account" value="" disabled onChange={() => { /* gated */ }} />
+          </Field>
+          <Field htmlFor="fin-dv" label={t('partners.financiers.form.checkDigit')}>
+            <Input id="fin-dv" value="" disabled onChange={() => { /* gated */ }} />
+          </Field>
+          <Field htmlFor="fin-pix-type" label={t('partners.financiers.form.pixKeyType')}>
+            <select id="fin-pix-type" className={select} disabled defaultValue="" aria-label={t('partners.financiers.form.pixKeyType')}>
+              <option value="">{t('partners.financiers.form.select')}</option>
+              {PIX_KEY_TYPES.map((k) => (
+                <option key={k} value={k}>{t(`partners.financiers.pix.${k}`)}</option>
+              ))}
+            </select>
+          </Field>
+          <Field htmlFor="fin-pix-key" label={t('partners.financiers.form.pixKey')}>
+            <Input id="fin-pix-key" value="" disabled onChange={() => { /* gated */ }} />
           </Field>
         </div>
       </section>
