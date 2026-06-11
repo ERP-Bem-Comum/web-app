@@ -6,8 +6,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 
 import { isOk } from '#shared/primitives/result.ts'
-import { logoutUseCase } from '#modules/auth/public-api/index.ts'
+import { logoutUseCase, passwordPolicyQueryOptions } from '#modules/auth/public-api/index.ts'
 import { usersErrorTag } from '#modules/users/client/data/helpers/users-error-tag.ts'
+import { DEFAULT_PASSWORD_LIMITS, type PasswordLimits } from '#modules/users/client/domain/password-policy.ts'
 import type { UpdateMeInput, ChangePasswordInput } from '#modules/users/client/data/model/user.model.ts'
 
 import { deriveMyAccountState, myAccountViewModel, type MyAccountState } from './my-account.view-model.ts'
@@ -29,12 +30,20 @@ export type MyAccountBinding = Readonly<{
   state: MyAccountState
   saveCommand: MyAccountSaveCommand
   passwordCommand: MyAccountPasswordCommand
+  // Política de senha (#32) da fonte única; fallback seguro {12,128} quando indisponível (D4).
+  passwordLimits: PasswordLimits
 }>
 
 export function useMyAccountBinding(onSaved?: () => void): MyAccountBinding {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const query = useQuery(myAccountViewModel.query)
+  // Política de senha da fonte única (#32); null/erro → fallback seguro {12,128} (D4).
+  const policyQuery = useQuery(passwordPolicyQueryOptions)
+  const passwordLimits: PasswordLimits = {
+    minLength: policyQuery.data?.minLength ?? DEFAULT_PASSWORD_LIMITS.minLength,
+    maxLength: policyQuery.data?.maxLength ?? DEFAULT_PASSWORD_LIMITS.maxLength,
+  }
 
   const saveMutation = useMutation({
     ...updateMeMutationOptions,
@@ -81,6 +90,7 @@ export function useMyAccountBinding(onSaved?: () => void): MyAccountBinding {
 
   return {
     state,
+    passwordLimits,
     saveCommand: {
       running: saveMutation.isPending,
       errorTag: saveErrorTag,

@@ -16,6 +16,8 @@ export const usersErrorTag = (e: UsersError): string => {
       return 'users.error.invalid-current-password'
     case 'password-weak':
       return 'users.error.password-weak'
+    case 'password-too-short':
+      return 'users.error.password-too-short'
     case 'unauthorized':
       return 'users.error.unauthorized'
     case 'forbidden':

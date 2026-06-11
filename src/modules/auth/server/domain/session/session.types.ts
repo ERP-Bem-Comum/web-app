@@ -17,6 +17,9 @@ export type AuthTokens = Readonly<{ accessToken: string; refreshToken: string; u
  */
 export type AuthUser = Readonly<{ userId: string; permissions: readonly string[] }>
 
+/** Política pública de senha (#32: GET /api/v2/auth/password-policy). */
+export type PasswordPolicy = Readonly<{ minLength: number; maxLength: number }>
+
 export type Session = Readonly<{
   sessionId: SessionId
   userId: string

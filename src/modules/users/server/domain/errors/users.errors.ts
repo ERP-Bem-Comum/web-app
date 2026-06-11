@@ -8,6 +8,7 @@ export type UsersError =
   | 'email-taken'   // 409 email-already-registered (criação) → mensagem específica
   | 'invalid-current-password' // 401 na troca de senha: senha atual incorreta
   | 'password-weak'            // 422 password-too-common: senha vazada/comum
+  | 'password-too-short'       // 422 password-too-short: senha abaixo do mínimo da política (#32)
   | 'unauthorized'
   | 'forbidden'
   | 'conflict'

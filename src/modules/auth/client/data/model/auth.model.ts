@@ -25,3 +25,6 @@ export type CurrentUser = z.infer<typeof CurrentUserSchema>
  * mentiroso `permissions: []` no caminho do login.
  */
 export type AuthenticatedUser = Readonly<{ userId: string }>
+
+/** Política pública de senha (#32) — minLength/maxLength da fonte única (GET /auth/password-policy). */
+export type PasswordPolicy = Readonly<{ minLength: number; maxLength: number }>

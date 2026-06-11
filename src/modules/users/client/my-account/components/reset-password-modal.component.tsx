@@ -37,6 +37,9 @@ export type ResetPasswordModalProps = Readonly<{
   open: boolean
   running: boolean
   errorTag: string | null
+  // Limites da fonte única (#32); a page os injeta a partir do binding (fallback {12,128}).
+  minLength: number
+  maxLength: number
   onSave: (input: ChangePasswordInput) => void
   onClose: () => void
 }>
@@ -47,6 +50,7 @@ function EyeIcon(): ReactNode {
 
 export function ResetPasswordModal(props: ResetPasswordModalProps): ReactNode {
   const ref = useRef<HTMLDialogElement>(null)
+  const downOnBackdrop = useRef(false) // mousedown caiu no backdrop? (gate do backdrop-close)
   const titleId = useId()
   const [current, setCurrent] = useState('')
   const [next, setNext] = useState('')
@@ -69,13 +73,17 @@ export function ResetPasswordModal(props: ResetPasswordModalProps): ReactNode {
     }
   }, [props.open])
 
-  const checks = evaluatePassword(next)
+  const limits = { minLength: props.minLength, maxLength: props.maxLength }
+  const checks = evaluatePassword(next, limits)
   const confirmMismatch = confirm !== '' && confirm !== next
   const canSave =
-    current !== '' && passwordMeetsPolicy(next) && next === confirm && !props.running
+    current !== '' && passwordMeetsPolicy(next, limits) && next === confirm && !props.running
 
   const ruleLabel: Readonly<Record<PasswordRuleKey, string>> = {
-    length: t('users.account.password.rule.length'),
+    // t() não interpola; compõe-se o min/max da fonte única no rótulo (string ainda vem do i18n).
+    length: t('users.account.password.rule.length')
+      .replace('{{min}}', String(props.minLength))
+      .replace('{{max}}', String(props.maxLength)),
     upper: t('users.account.password.rule.upper'),
     lower: t('users.account.password.rule.lower'),
     number: t('users.account.password.rule.number'),
@@ -112,7 +120,11 @@ export function ResetPasswordModal(props: ResetPasswordModalProps): ReactNode {
       className={dialog}
       aria-labelledby={titleId}
       onCancel={(e) => { e.preventDefault(); props.onClose() }}
-      onClick={(e) => { if (e.target === ref.current) props.onClose() }}
+      // Backdrop-close só em clique GENUÍNO no backdrop: o mousedown E o click precisam cair no
+      // próprio <dialog>. Evita o footgun nativo de fechar ao selecionar/arrastar texto de um campo
+      // e soltar fora (o click resolveria com target = dialog).
+      onMouseDown={(e) => { downOnBackdrop.current = e.target === ref.current }}
+      onClick={(e) => { if (e.target === ref.current && downOnBackdrop.current) props.onClose() }}
     >
       <div className={header}>
         <h2 id={titleId} className={titleClass}>{t('users.account.password.title')}</h2>

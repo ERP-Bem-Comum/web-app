@@ -37,7 +37,7 @@ function IconPhone(): ReactNode {
 
 export function MyAccountPage(): ReactNode {
   const [modal, setModal] = useState<Modal>('none')
-  const { state, saveCommand, passwordCommand } = useMyAccountBinding(() => { setModal('none'); })
+  const { state, saveCommand, passwordCommand, passwordLimits } = useMyAccountBinding(() => { setModal('none'); })
 
   return (
     <div className={screen}>
@@ -69,6 +69,8 @@ export function MyAccountPage(): ReactNode {
             open={modal === 'password'}
             running={passwordCommand.running}
             errorTag={passwordCommand.errorTag}
+            minLength={passwordLimits.minLength}
+            maxLength={passwordLimits.maxLength}
             onSave={(input) => { passwordCommand.execute(input) }}
             onClose={() => { setModal('none') }}
           />

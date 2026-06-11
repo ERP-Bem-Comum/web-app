@@ -8,8 +8,8 @@ import type { HttpError } from '#shared/http/http-error.types.ts'
 import { parseErrorEnvelope } from '#shared/http/error-envelope.ts'
 import { resultFetch } from '#external/core-api/result-fetch.ts'
 import type { AuthError } from '#modules/auth/server/domain/errors/auth.errors.ts'
-import type { AuthTokens, AuthUser } from '#modules/auth/server/domain/session/session.types.ts'
-import { AuthTokensSchema, MeSchema } from './auth.schema.ts'
+import type { AuthTokens, AuthUser, PasswordPolicy } from '#modules/auth/server/domain/session/session.types.ts'
+import { AuthTokensSchema, MeSchema, PasswordPolicySchema } from './auth.schema.ts'
 
 // Slugs do core-api → AuthError do nosso domínio (ver contracts/core-api-auth.md).
 const SLUG_TO_AUTH_ERROR: Partial<Record<string, AuthError>> = {
@@ -53,6 +53,7 @@ export type CoreApiAuthClient = Readonly<{
   refresh: (refreshToken: string) => Promise<Result<AuthTokens, AuthError>>
   logout: (refreshToken: string) => Promise<Result<void, AuthError>>
   me: (accessToken: string) => Promise<Result<AuthUser, AuthError>>
+  getPasswordPolicy: () => Promise<Result<PasswordPolicy, AuthError>>
 }>
 
 export const createCoreApiAuthClient = (baseUrl: string): CoreApiAuthClient => ({
@@ -71,6 +72,14 @@ export const createCoreApiAuthClient = (baseUrl: string): CoreApiAuthClient => (
     const r = await resultFetch<unknown>(`${baseUrl}/auth/me`, { method: 'GET', token: accessToken })
     if (isErr(r)) return err(mapHttpToAuthError(r.error))
     const parsed = MeSchema.safeParse(r.value)
+    return parsed.success ? ok(parsed.data) : err('server')
+  },
+
+  // Público (sem token): política de senha (#32). Valida o response na borda (§VI).
+  getPasswordPolicy: async () => {
+    const r = await resultFetch<unknown>(`${baseUrl}/auth/password-policy`, { method: 'GET' })
+    if (isErr(r)) return err(mapHttpToAuthError(r.error))
+    const parsed = PasswordPolicySchema.safeParse(r.value)
     return parsed.success ? ok(parsed.data) : err('server')
   },
 })

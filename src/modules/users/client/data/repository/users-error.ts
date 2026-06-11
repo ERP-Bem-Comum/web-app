@@ -9,6 +9,7 @@ export type UsersError =
   | 'email-taken'
   | 'invalid-current-password'
   | 'password-weak'
+  | 'password-too-short'
   | 'unauthorized'
   | 'forbidden'
   | 'conflict'

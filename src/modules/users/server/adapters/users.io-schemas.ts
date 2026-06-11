@@ -39,10 +39,11 @@ export const UpdateMeInputSchema = z.object({
   telephone: z.string().trim().min(1).max(20),
 })
 
-// Troca de senha — currentPassword + newPassword (a policy fina vive no core-api; aqui min/max amplos).
+// Troca de senha — currentPassword + newPassword. Min 12 alinhado ao backend (#32, OWASP 2025);
+// a policy fina (blocklist de comuns) vive no core-api. Defesa de borda além da validação de UI.
 export const ChangePasswordInputSchema = z.object({
   currentPassword: z.string().trim().min(1),
-  newPassword: z.string().trim().min(8).max(128),
+  newPassword: z.string().trim().min(12).max(128),
 })
 
 type AssertEqual<A, B> = [A] extends [B] ? ([B] extends [A] ? true : never) : never

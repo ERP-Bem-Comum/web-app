@@ -21,6 +21,7 @@ const SLUG_TO_ERROR: Partial<Record<string, UsersError>> = {
   // Troca de senha: senha atual incorreta / senha vazada-comum.
   'invalid-credentials': 'invalid-current-password',
   'password-too-common': 'password-weak',
+  'password-too-short': 'password-too-short',
 }
 
 const statusToError = (status: number, slug: string | undefined): UsersError => {
