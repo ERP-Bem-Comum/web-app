@@ -26,12 +26,17 @@ const inputToCents = (raw: string): number => {
 export type AmendmentForAttach = Readonly<{ id: string; type: AmendmentType; description: string }>
 
 // Dados (já formatados) p/ o modo somente-leitura (view) — clicar um aditivo já existente.
+// Documento anexado (modo leitura) — nome + id p/ visualizar/baixar via BFF.
+export type AmendmentViewDoc = Readonly<{ name: string; documentId: string | undefined }>
+
 export type AmendmentViewData = Readonly<{
   type: AmendmentType
   description: string
   signedAt: string
   status: string
   impactLabel: string
+  // Documento anexado ao aditivo (quando houver) — exibido como caixa no modo leitura.
+  doc?: AmendmentViewDoc
 }>
 
 export interface AmendmentModalProps {
@@ -43,6 +48,8 @@ export interface AmendmentModalProps {
   readonly onClose: () => void
   readonly onCreate: (input: CreateAmendmentInput, attach?: AmendmentAttach) => void
   readonly onAttach: (args: Readonly<{ amendmentId: string; file: File; signedAt: string }>) => void
+  // Visualizar o documento anexado (modo leitura). Opcional.
+  readonly onPreviewDoc?: (doc: AmendmentViewDoc) => void
   readonly submitting: boolean
   readonly errorTag: string | null
 }
@@ -65,7 +72,7 @@ function TipoIcon({ type }: { type: AmendmentType }): ReactNode {
   }
 }
 
-export function AmendmentModal({ open, mode, contractNumber, amendment, viewData, onClose, onCreate, onAttach, submitting, errorTag }: AmendmentModalProps): ReactNode {
+export function AmendmentModal({ open, mode, contractNumber, amendment, viewData, onClose, onCreate, onAttach, onPreviewDoc, submitting, errorTag }: AmendmentModalProps): ReactNode {
   const { state, update, submit } = useAmendmentFormController(onCreate)
   const [file, setFile] = useState<File | null>(null)
   const [attachSignedAt, setAttachSignedAt] = useState('')
@@ -76,6 +83,8 @@ export function AmendmentModal({ open, mode, contractNumber, amendment, viewData
 
   const isAttach = mode === 'attach'
   const isView = mode === 'view'
+  // Documento anexado, exibido como caixa no modo leitura.
+  const viewDoc = isView ? viewData?.doc : undefined
   const readOnly = isAttach || isView // tipo/resumo não editáveis
   const selectedType: AmendmentType | null = isView
     ? (viewData?.type ?? null)
@@ -282,6 +291,24 @@ export function AmendmentModal({ open, mode, contractNumber, amendment, viewData
                   <span className={s.uploadHint}>{isAttach ? 'PDF · ≤ 20 MB' : t('contracts.amendment.document.optional')}</span>
                 </div>
               </label>
+            </div>
+          )}
+
+          {/* Modo leitura: caixa do documento ANEXADO (quando houver) — clicável p/ visualizar. */}
+          {isView && viewDoc !== undefined && (
+            <div>
+              <div className={s.sectionLabel}>{t('contracts.amendment.field.document')}</div>
+              <button
+                type="button"
+                className={s.uploadZone}
+                disabled={viewDoc.documentId === undefined || onPreviewDoc === undefined}
+                onClick={() => { if (onPreviewDoc !== undefined) onPreviewDoc(viewDoc) }}
+              >
+                <div className={s.uploadInfo}>
+                  <span className={s.uploadName}>{viewDoc.name}</span>
+                  <span className={s.uploadHint}>{viewDoc.documentId !== undefined ? t('contracts.detail.documents.preview') : t('contracts.detail.document.empty')}</span>
+                </div>
+              </button>
             </div>
           )}
 

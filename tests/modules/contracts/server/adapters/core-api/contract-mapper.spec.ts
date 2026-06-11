@@ -57,10 +57,17 @@ describe('apiContractDetailToDomain — campos #32', () => {
     expect(res.value.categorizacao).toBeUndefined()
   })
 
-  it('D9: status desconhecido (Cancelled) não quebra o parse e degrada com segurança', () => {
+  it('§1.7: status Cancelled mapeia para Cancelado (cancelamento de contrato Pendente)', () => {
     const res = apiContractDetailToDomain({ ...baseRaw, status: 'Cancelled', endedAt: '2026-06-11' })
     expect(isOk(res)).toBe(true)
     if (!isOk(res)) return
-    expect(res.value.status).toBe('Finalizado') // degradação segura (slice de cancelamento é futuro)
+    expect(res.value.status).toBe('Cancelado') // antes degradava p/ 'Finalizado'; agora é status próprio
+  })
+
+  it('D9: status REALMENTE desconhecido ainda degrada com segurança p/ Finalizado', () => {
+    const res = apiContractDetailToDomain({ ...baseRaw, status: 'Voodoo', endedAt: '2026-06-11' })
+    expect(isOk(res)).toBe(true)
+    if (!isOk(res)) return
+    expect(res.value.status).toBe('Finalizado')
   })
 })

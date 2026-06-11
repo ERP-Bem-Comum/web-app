@@ -10,7 +10,7 @@ import type * as D from '../domain/contracts.types.ts'
 export const ContractClassificationSchema = z.enum(['Contract', 'ServiceOrder'])
 export const ContractModelSchema = z.enum(['Service', 'Donation'])
 export const ContractTypeSchema = z.enum(['Supplier', 'Financier', 'Collaborator', 'ACT'])
-export const ContractStatusSchema = z.enum(['Pendente', 'Em Andamento', 'Finalizado', 'Distrato'])
+export const ContractStatusSchema = z.enum(['Pendente', 'Em Andamento', 'Finalizado', 'Distrato', 'Cancelado'])
 export const AmendmentTypeSchema = z.enum(['prazo', 'valor', 'escopo', 'outro', 'distrato'])
 export const AmendmentStatusSchema = z.enum(['Pendente', 'Homologado'])
 
@@ -182,6 +182,11 @@ export const UpdateContractInputSchema = z.object({
   observations: z.string().trim().optional(),
 })
 
+// Cancelamento (§1.7): input da server fn `cancel-contract`. Só o id do contrato (uuid).
+export const CancelContractInputSchema = z.object({
+  contractId: z.uuid(),
+})
+
 export const CreateAmendmentInputSchema = z.object({
   type: AmendmentTypeSchema,
   description: z.string().trim().optional(),
@@ -221,10 +226,11 @@ const _g_attachSigned: AssertEqual<z.infer<typeof AttachSignedDocumentInputSchem
 const _g_attachAmend: AssertEqual<z.infer<typeof AttachAmendmentDocumentInputSchema>, D.AttachAmendmentDocumentInput> = true
 const _g_endInput: AssertEqual<z.infer<typeof EndContractInputSchema>, D.EndContractInput> = true
 const _g_updateInput: AssertEqual<z.infer<typeof UpdateContractInputSchema>, D.UpdateContractInput> = true
+const _g_cancelInput: AssertEqual<z.infer<typeof CancelContractInputSchema>, D.CancelContractInput> = true
 const _g_createAmend: AssertEqual<z.infer<typeof CreateAmendmentInputSchema>, D.CreateAmendmentInput> = true
 const _g_listResp: AssertEqual<z.infer<typeof ListContractsResponseSchema>, D.ListContractsResponse> = true
  
 void [
   _g_money, _g_period, _g_partner, _g_bank, _g_pix, _g_amendment, _g_file, _g_contract,
-  _g_listInput, _g_createInput, _g_attachSigned, _g_attachAmend, _g_endInput, _g_updateInput, _g_createAmend, _g_listResp,
+  _g_listInput, _g_createInput, _g_attachSigned, _g_attachAmend, _g_endInput, _g_updateInput, _g_cancelInput, _g_createAmend, _g_listResp,
 ]

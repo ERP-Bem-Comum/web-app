@@ -8,6 +8,10 @@ import type { Email } from '../value-objects/email.value-object.ts'
 
 export type ActivationStatus = 'active' | 'inactive'
 
+// Avaliação de serviço do fornecedor (§1.6, #32). Enum FIXO no front (D1) — não consumimos
+// GET /suppliers/service-ratings. `null` = sem avaliação (D2).
+export type ServiceRating = 'RUIM' | 'REGULAR' | 'BOM' | 'OTIMO'
+
 export type BankAccount = Readonly<{
   bank: string
   agency: string

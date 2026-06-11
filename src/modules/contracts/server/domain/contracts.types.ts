@@ -37,11 +37,12 @@ export type ContractsError =
   | 'storage-unavailable'    // backend de objetos (MinIO/S3) indisponível
   | 'terminate-no-document'  // 422 terminate-no-signed-document: distrato sem doc `signed_termination`
   | 'terminate-invalid-date' // 422 terminate-invalid-date: data efetiva ausente/inválida/futura
+  | 'contract-not-pending'   // 409 ContractNotPending: cancelamento só é permitido em contrato Pendente
 
 export type ContractClassification = 'Contract' | 'ServiceOrder'
 export type ContractModel = 'Service' | 'Donation'
 export type ContractType = 'Supplier' | 'Financier' | 'Collaborator' | 'ACT'
-export type ContractStatus = 'Pendente' | 'Em Andamento' | 'Finalizado' | 'Distrato'
+export type ContractStatus = 'Pendente' | 'Em Andamento' | 'Finalizado' | 'Distrato' | 'Cancelado'
 export type AmendmentType = 'prazo' | 'valor' | 'escopo' | 'outro' | 'distrato'
 export type AmendmentStatus = 'Pendente' | 'Homologado'
 
@@ -212,6 +213,12 @@ export interface UpdateContractInput {
   email?: string
   telephone?: string
   observations?: string
+}
+
+// Cancelamento (§1.7) — input da server fn `cancel-contract`. Só o id; o gating (só-Pendente) é UI +
+// defesa 409 no backend. SEPARADO do distrato (EndContractInput).
+export interface CancelContractInput {
+  contractId: string
 }
 
 export interface CreateAmendmentInput {

@@ -22,6 +22,8 @@ export function detailToFormValues(s: SupplierDetail): SupplierFormValues {
     serviceCategory: s.serviceCategory,
     bankAccount: s.bankAccount,
     pixKey: s.pixKey,
+    serviceRating: s.serviceRating,
+    ratingComment: s.ratingComment,
   }
 }
 

@@ -204,6 +204,11 @@ export const statusVariant = styleVariants({
     background: vars.color.status.terminatedBg,
     color: vars.color.status.terminatedText,
   }],
+  // Cancelado (§1.7) — NEUTRO/cinza (token cancelled*), distinto do vermelho do distrato.
+  cancelled: [gridBadgeBase, {
+    background: vars.color.status.cancelledBg,
+    color: vars.color.status.cancelledText,
+  }],
 })
 
 export const detailsWrap = style({

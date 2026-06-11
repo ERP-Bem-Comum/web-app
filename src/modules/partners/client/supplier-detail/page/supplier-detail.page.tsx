@@ -87,6 +87,8 @@ function DetailReady(props: DetailReadyProps): ReactNode {
       serviceCategory: supplier.serviceCategory,
       bankAccount: supplier.bankAccount,
       pixKey: supplier.pixKey,
+      serviceRating: supplier.serviceRating,
+      ratingComment: supplier.ratingComment,
     },
     onSubmit: (values) => { setPendingEdit(values); },
   })
@@ -127,6 +129,8 @@ function DetailReady(props: DetailReadyProps): ReactNode {
               serviceCategory: supplier.serviceCategory,
               bankAccount: supplier.bankAccount,
               pixKey: supplier.pixKey,
+              serviceRating: supplier.serviceRating,
+              ratingComment: supplier.ratingComment,
             }); props.onCancel(); }}>
               {t('partners.suppliers.form.cancel')}
             </button>

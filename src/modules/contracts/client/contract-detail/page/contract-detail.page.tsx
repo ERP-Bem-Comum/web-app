@@ -34,6 +34,7 @@ import {
   statusBadgeActive,
   statusBadgeFinished,
   statusBadgeTerminated,
+  statusBadgeCancelled,
   mainLayout,
   mainCol,
   asideCol,
@@ -50,7 +51,7 @@ const fmtCurrencyCents = (cents: number): string => (cents / 100).toLocaleString
 const fmtDateUTC = (d: Date | null | undefined): string => (d ? d.toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '')
 
 // Monta os dados (já formatados) p/ o modo leitura do modal de aditivo. Derivação pura.
-function buildAmendmentView(a: Amendment): AmendmentViewData {
+function buildAmendmentView(a: Amendment, doc?: Readonly<{ name: string; documentId: string | undefined }>): AmendmentViewData {
   const v = a.impactValueCents ?? 0
   const impactLabel =
     a.type === 'distrato'
@@ -66,6 +67,7 @@ function buildAmendmentView(a: Amendment): AmendmentViewData {
     signedAt: fmtDateUTC(a.signedAt),
     status: a.status,
     impactLabel,
+    doc,
   }
 }
 
@@ -74,6 +76,7 @@ const STATUS_BADGE_CLASS: Record<string, string> = {
   'Em Andamento': statusBadgeActive,
   Finalizado: statusBadgeFinished,
   Distrato: statusBadgeTerminated,
+  Cancelado: statusBadgeCancelled,
 }
 
 export function ContractDetailPage({ contractId }: { contractId: string }): ReactNode {
@@ -211,8 +214,10 @@ export function ContractDetailPage({ contractId }: { contractId: string }): Reac
                 amendmentAttachCommand.reset(); endCommand.reset()
                 setSelectedAmendment({ id: a.id, type: a.type, description: a.description ?? '' })
               } else {
-                // Aditivo já existente (Homologado/etc.) → abre em modo leitura com as infos preenchidas.
-                setViewAmendment(buildAmendmentView(a))
+                // Aditivo já existente (Homologado/etc.) → abre em modo leitura com as infos preenchidas
+                // + a caixa do documento anexado (quando houver).
+                const adoc = contract.files.find((f) => f.parentType === 'Amendment' && f.parentId === a.id)
+                setViewAmendment(buildAmendmentView(a, adoc ? { name: adoc.name, documentId: adoc.id } : undefined))
               }
             }}
             onPreview={(doc) => {
@@ -346,6 +351,12 @@ export function ContractDetailPage({ contractId }: { contractId: string }): Reac
         onClose={() => { setViewAmendment(null) }}
         onCreate={() => { /* não usado no modo view */ }}
         onAttach={() => { /* não usado no modo view */ }}
+        onPreviewDoc={(doc) => {
+          // Fecha a leitura do aditivo e abre o preview do documento (um modal por vez).
+          setViewAmendment(null)
+          setPreviewDoc({ name: doc.name, documentId: doc.documentId })
+          if (doc.documentId !== undefined) documentCommand.open({ contractId, documentId: doc.documentId })
+        }}
         submitting={false}
         errorTag={null}
       />

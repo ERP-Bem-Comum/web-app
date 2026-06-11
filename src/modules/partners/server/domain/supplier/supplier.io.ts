@@ -3,7 +3,7 @@
  * vivem em `../../adapters/supplier.io-schemas.ts` (a borda). Alinhado ao contrato REAL: query
  * page/limit/order/search/active/categories; create/update = PUT total; bankAccount/pixKey coesos (ou null).
  */
-import type { ActivationStatus, BankAccount, SupplierPixKey } from './supplier.types.ts'
+import type { ActivationStatus, BankAccount, SupplierPixKey, ServiceRating } from './supplier.types.ts'
 
 // ── Input (validado na server fn pelos schemas em adapters) ─────────────────────
 export interface ListSuppliersInput {
@@ -28,6 +28,9 @@ export interface CreateSupplierInput {
   serviceCategory: string
   bankAccount: BankAccount | null
   pixKey: SupplierPixKey | null
+  // Avaliação de serviço (§1.6) — opcionais; null = sem avaliação (D2).
+  serviceRating: ServiceRating | null
+  ratingComment: string | null
 }
 
 export type UpdateSupplierInput = CreateSupplierInput & { id: string }
@@ -56,6 +59,9 @@ export type SupplierDetail = SupplierListItem &
   Readonly<{
     bankAccount: BankAccount | null
     pixKey: SupplierPixKey | null
+    // Avaliação de serviço (§1.6) — leitura tolerante: desconhecido → null (D2).
+    serviceRating: ServiceRating | null
+    ratingComment: string | null
   }>
 
 export type SupplierListResponse = Readonly<{

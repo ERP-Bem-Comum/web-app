@@ -39,6 +39,9 @@ export const CreateSupplierInputSchema = z.object({
   serviceCategory: z.string().trim().min(1).max(80),
   bankAccount: BankAccountSchema.nullable().default(null),
   pixKey: PixKeySchema.nullable().default(null),
+  // Avaliação de serviço (§1.6) — enum FIXO (D1) + comentário; ambos opcionais (null = sem avaliação).
+  serviceRating: z.enum(['RUIM', 'REGULAR', 'BOM', 'OTIMO']).nullable().default(null),
+  ratingComment: z.string().trim().max(500).nullable().default(null),
 })
 
 export const UpdateSupplierInputSchema = CreateSupplierInputSchema.extend({

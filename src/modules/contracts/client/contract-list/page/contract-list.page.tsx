@@ -11,6 +11,7 @@ import { isOk } from '#shared/primitives/result.ts'
 import { formatContractNumber } from '#modules/contracts/client/domain/format.ts'
 import { useContractListController } from '../contract-list.controller.ts'
 import { useContractListBinding } from '../contract-list.binding.ts'
+import { useCancelContractBinding } from '../../contract-terminate/cancel-contract.binding.ts'
 import { mapListResponseToContractRows, parseDateParam, filterExpiringRows, buildContractDocData, formatEmittedDate } from '../contract-list.view-model.ts'
 import { ContractStatusChips } from '../components/contract-status-chips.component.tsx'
 import { ContractFilters } from '../components/contract-filters.component.tsx'
@@ -48,7 +49,13 @@ export function ContractListPage(): ReactNode {
   const navigate = useNavigate()
   const { showFilters, toggleFilters, nowMs } = useContractListController()
   const [deleteTarget, setDeleteTarget] = useState<ContractRowData | null>(null)
+  const { cancelCommand } = useCancelContractBinding()
   const [printDoc, setPrintDoc] = useState<{ kind: PrintableDocKind; data: PrintableDocData; emittedAt: string } | null>(null)
+
+  // Cancelamento (§1.7): o modal SOME ao concluir (derivação server-state→"concluído" vive no binding,
+  // `succeeded`, A1 — sem setState no efeito). A lista é invalidada no binding. O gatilho reseta o
+  // command ao abrir (p/ não reaproveitar um `succeeded` anterior).
+  const cancelModalOpen = deleteTarget !== null && !cancelCommand.succeeded
 
   // Dispara a impressão (→ "Salvar como PDF") quando um documento é selecionado; limpa ao concluir.
   // `window.print()` é o mesmo mecanismo do Exportar→PDF (sem dependência de lib).
@@ -72,7 +79,7 @@ export function ContractListPage(): ReactNode {
     order: search.order,
     search: search.search,
     contractType: search.contractType as 'Supplier' | 'Financier' | 'Collaborator' | 'ACT' | undefined,
-    status: search.contractStatus as 'Pendente' | 'Em Andamento' | 'Finalizado' | 'Distrato' | undefined,
+    status: search.contractStatus as 'Pendente' | 'Em Andamento' | 'Finalizado' | 'Distrato' | 'Cancelado' | undefined,
     contractPeriodStart: parseDateParam(search.contractPeriodStart),
     contractPeriodEnd: parseDateParam(search.contractPeriodEnd),
     minValue: search.minValue,
@@ -88,6 +95,7 @@ export function ContractListPage(): ReactNode {
       Pendente: 'pendente',
       Finalizado: 'finalizado',
       Distrato: 'distrato',
+      Cancelado: 'cancelado',
     }
     return d ? (map[d] ?? d) : 'todos'
   }
@@ -98,6 +106,7 @@ export function ContractListPage(): ReactNode {
       pendente: 'Pendente',
       finalizado: 'Finalizado',
       distrato: 'Distrato',
+      cancelado: 'Cancelado',
     }
     return s === 'todos' ? undefined : map[s]
   }
@@ -219,7 +228,7 @@ export function ContractListPage(): ReactNode {
                 key={row.id}
                 row={row}
                 index={index}
-                onRequestDelete={setDeleteTarget}
+                onRequestDelete={(r) => { cancelCommand.reset(); setDeleteTarget(r) }}
                 onGenerateDoc={handleGenerateDoc}
               />
             )}
@@ -259,11 +268,12 @@ export function ContractListPage(): ReactNode {
       ) : null}
 
       <DeleteContractModal
-        open={deleteTarget !== null}
+        open={cancelModalOpen}
         contractLabel={deleteTarget ? formatContractNumber(deleteTarget.contractCode, deleteTarget.classification) : ''}
-        onClose={() => { setDeleteTarget(null) }}
-        onConfirm={() => { setDeleteTarget(null) }}
-        confirmDisabled
+        onClose={() => { setDeleteTarget(null); cancelCommand.reset() }}
+        onConfirm={() => { if (deleteTarget !== null) cancelCommand.execute({ contractId: deleteTarget.id }) }}
+        running={cancelCommand.running}
+        errorTag={cancelCommand.errorTag}
       />
     </div>
   )

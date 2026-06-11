@@ -19,6 +19,8 @@ const detail: SupplierDetail = {
   activation: 'active',
   bankAccount: null,
   pixKey: null,
+  serviceRating: null,
+  ratingComment: null,
 }
 
 describe('supplier-detail.view-model', () => {

@@ -45,6 +45,7 @@ const mapStatusModelToDomain = (status: string): ContractStatus => {
     'Em Andamento': 'Em Andamento',
     Finalizado: 'Finalizado',
     Distrato: 'Distrato',
+    Cancelado: 'Cancelado',
   }
   return map[status] ?? 'Pendente'
 }
@@ -191,6 +192,7 @@ export interface StatusChipCounts {
   readonly pendente: number
   readonly finalizado: number
   readonly distrato: number
+  readonly cancelado: number
   readonly vencendo: number
   readonly [key: string]: number
 }
@@ -204,6 +206,7 @@ export function computeStatusChipCounts(
     pendente: 0,
     finalizado: 0,
     distrato: 0,
+    cancelado: 0,
     vencendo: 0,
   }
 

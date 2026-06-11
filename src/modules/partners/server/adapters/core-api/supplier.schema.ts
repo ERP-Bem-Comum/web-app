@@ -28,6 +28,10 @@ export const CoreApiSupplierItemSchema = z.object({
   bankAccount: BankAccountDtoSchema.nullable(),
   pixKey: PixKeyDtoSchema.nullable(),
   active: z.boolean(),
+  // Avaliação de serviço (§1.6) — leitura TOLERANTE: string livre nullable (mapeada p/ ServiceRating |
+  // null no front; desconhecido → null) + `.nullish()` p/ dados legados sem o campo. Comentário idem.
+  serviceRating: z.string().trim().nullish(),
+  ratingComment: z.string().trim().nullish(),
 })
 export type CoreApiSupplierItem = z.infer<typeof CoreApiSupplierItemSchema>
 

@@ -53,6 +53,8 @@ export const contractsErrorTag = (e: ContractsError): string => {
       return 'contracts.distrato.error.no-document'
     case 'terminate-invalid-date':
       return 'contracts.distrato.error.invalid-date'
+    case 'contract-not-pending':
+      return 'contracts.error.contract-not-pending'
     default: {
       const _exhaustive: never = e
       return _exhaustive

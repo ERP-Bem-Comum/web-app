@@ -35,6 +35,7 @@ export const ContractStatus = {
   ACTIVE: 'Em Andamento',
   EXPIRED: 'Finalizado',
   TERMINATED: 'Distrato',
+  CANCELLED: 'Cancelado',
 } as const
 export type ContractStatus =
   (typeof ContractStatus)[keyof typeof ContractStatus]
@@ -209,6 +210,8 @@ export function mapBackendStatus(backend: string): ContractStatus {
       return ContractStatus.EXPIRED
     case 'Terminated':
       return ContractStatus.TERMINATED
+    case 'Cancelled':
+      return ContractStatus.CANCELLED
     default:
       return ContractStatus.PENDING
   }

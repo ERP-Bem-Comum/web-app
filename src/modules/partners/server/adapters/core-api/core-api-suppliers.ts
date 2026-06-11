@@ -17,7 +17,7 @@ import type {
   SupplierDetail,
   CreateSupplierInput,
 } from '#modules/partners/server/domain/supplier/supplier.io.ts'
-import type { ActivationStatus } from '#modules/partners/server/domain/supplier/supplier.types.ts'
+import type { ActivationStatus, ServiceRating } from '#modules/partners/server/domain/supplier/supplier.types.ts'
 import {
   CoreApiSupplierListSchema,
   CoreApiSupplierDetailSchema,
@@ -29,7 +29,14 @@ const SLUG_TO_ERROR: Partial<Record<string, PartnersError>> = {
   unauthorized: 'unauthorized',
   forbidden: 'forbidden',
   'invalid-service-category': 'invalid-service-category',
+  // Avaliação de serviço (§1.6): nível fora do enum → 422. A UI já restringe ao enum (defesa).
+  'invalid-service-rating': 'validation',
 }
+
+// Níveis canônicos de avaliação (§1.6, D1). Leitura TOLERANTE (D2): valor desconhecido/null → null.
+const SERVICE_RATINGS = ['RUIM', 'REGULAR', 'BOM', 'OTIMO'] as const
+export const parseServiceRating = (raw: string | null | undefined): ServiceRating | null =>
+  raw != null && (SERVICE_RATINGS as readonly string[]).includes(raw) ? (raw as ServiceRating) : null
 
 const statusToError = (status: number, slug: string | undefined): PartnersError => {
   const bySlug = slug === undefined ? undefined : SLUG_TO_ERROR[slug]
@@ -84,11 +91,18 @@ const itemToModel = (s: CoreApiSupplierItem): SupplierListItem => ({
   activation: activationFromApi(s.active),
 })
 
-const detailToModel = (raw: unknown): Result<SupplierDetail, PartnersError> => {
+// Exportado p/ teste (supplier-rating.test): leitura tolerante da avaliação (§1.6, D2).
+export const detailToModel = (raw: unknown): Result<SupplierDetail, PartnersError> => {
   const parsed = CoreApiSupplierDetailSchema.safeParse(raw)
   if (!parsed.success) return err('server')
   const s = parsed.data
-  return ok({ ...itemToModel(s), bankAccount: s.bankAccount, pixKey: s.pixKey })
+  return ok({
+    ...itemToModel(s),
+    bankAccount: s.bankAccount,
+    pixKey: s.pixKey,
+    serviceRating: parseServiceRating(s.serviceRating),
+    ratingComment: s.ratingComment ?? null,
+  })
 }
 
 const listToModel = (raw: unknown): Result<SupplierListResponse, PartnersError> => {
@@ -112,8 +126,9 @@ const buildListQuery = (input: ListSuppliersInput): string => {
   return p.toString()
 }
 
-// Normaliza o CNPJ (14 dígitos) no corpo de escrita; demais campos passam direto.
-const toWriteBody = (input: CreateSupplierInput): Record<string, unknown> => ({
+// Normaliza o CNPJ (14 dígitos) no corpo de escrita; demais campos passam direto. Avaliação de
+// serviço (§1.6): serviceRating/ratingComment vão como null quando sem avaliação. Exportado p/ teste.
+export const toWriteBody = (input: CreateSupplierInput): Record<string, unknown> => ({
   name: input.name,
   email: input.email,
   cnpj: onlyDigits(input.cnpj),
@@ -122,6 +137,8 @@ const toWriteBody = (input: CreateSupplierInput): Record<string, unknown> => ({
   serviceCategory: input.serviceCategory,
   bankAccount: input.bankAccount,
   pixKey: input.pixKey,
+  serviceRating: input.serviceRating,
+  ratingComment: input.ratingComment,
 })
 
 export const createCoreApiSuppliersClient = (baseUrl: string): SupplierClient => {

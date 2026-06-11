@@ -23,6 +23,9 @@ export function deriveStatus(
   if (data.contractStatus === 'Distrato') {
     return { label: 'DISTRATO', key: 'distrato' }
   }
+  if (data.contractStatus === 'Cancelado') {
+    return { label: 'CANCELADO', key: 'cancelado' }
+  }
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -97,6 +100,7 @@ export const STATUS_OPTIONS: readonly {
   { key: 'pendente', label: 'Pendente' },
   { key: 'finalizado', label: 'Finalizado' },
   { key: 'distrato', label: 'Distrato' },
+  { key: 'cancelado', label: 'Cancelado' },
   { key: 'vencendo', label: 'Vencendo' },
 ] as const
 

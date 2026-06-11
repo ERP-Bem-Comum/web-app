@@ -98,6 +98,12 @@ export const statusBadgeTerminated = style({
   color: vars.color.status.terminatedText,
 })
 
+// Cancelado (§1.7) — badge NEUTRA/cinza (token cancelled*), distinta do vermelho do distrato.
+export const statusBadgeCancelled = style({
+  background: vars.color.status.cancelledBg,
+  color: vars.color.status.cancelledText,
+})
+
 // "Homologado" — badge BRANCA (fundo branco + borda hairline + texto institucional), por pedido da stakeholder.
 export const statusBadgeHomologado = style({
   background: vars.color.surface.default,
