@@ -14,6 +14,25 @@ export const card = style({
   containerType: 'inline-size',
 })
 
+// Faixa de título da section (padrão dos forms de parceiro): cola no topo do card (cancela o padding
+// com margens negativas), faixa suave, título azul tamanho md, ícone + texto.
+export const sectionTitle = style({
+  margin: 0,
+  marginBlockStart: `calc(-1 * ${vars.space.lg})`,
+  marginInline: `calc(-1 * ${vars.space.lg})`,
+  paddingBlock: vars.space.md,
+  paddingInline: vars.space.lg,
+  background: vars.color.surface.subtle,
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.md,
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.nav.background,
+})
+
 export const grid = style({
   display: 'grid',
   gridTemplateColumns: '1fr',

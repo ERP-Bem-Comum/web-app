@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Badge, Field, Input } from '#shared/ui/index.ts'
+import { UsersIcon } from '#shared/ui/icons/index.ts'
 import type { UserFormController, UserFormState } from '#modules/users/client/users-create/components/user-form.controller.ts'
 
 import { stack, section, sectionTitle, statusRow, fieldGrid, readonlyRow, readonlyLabel } from './user-detail-content.css.ts'
@@ -35,7 +36,7 @@ export function UserDetailContent(props: UserDetailContentProps): ReactNode {
   return (
     <div className={stack}>
       <section className={section}>
-        <h2 className={sectionTitle}>{t('users.form.section.data')}</h2>
+        <h2 className={sectionTitle}><UsersIcon size={18} />{t('users.form.section.data')}</h2>
         <div className={statusRow}>
           <Badge variant={props.active ? 'active' : 'outro'}>
             {t(props.active ? 'users.status.active' : 'users.status.inactive')}
