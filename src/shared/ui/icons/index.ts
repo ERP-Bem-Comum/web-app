@@ -1,6 +1,7 @@
 export type { IconProps, IconComponent } from './icons.tsx'
 export {
   HomeIcon,
+  MapPinIcon,
   HeartHandshakeIcon,
   UsersIcon,
   CalendarCheckIcon,
