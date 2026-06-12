@@ -26,16 +26,16 @@ export function formatContractNumber(code: string, classification?: string): str
 }
 
 /**
- * Iniciais do contratado para o avatar do grid: primeira + segunda inicial do nome (não a última).
- * Nome de uma só palavra → as duas primeiras letras dela. Vazio → ''.
+ * Iniciais do contratado para o avatar do grid: primeira + ÚLTIMA inicial do nome
+ * (ex.: "Harry Potter" → HP, "João da Silva" → JS). Uma só palavra → as duas primeiras letras. Vazio → ''.
  */
 export function contractorInitials(name: string): string {
   const words = name.trim().split(/\s+/).filter(Boolean)
   const first = words[0]
   if (first === undefined) return ''
   if (words.length === 1) return first.slice(0, 2).toUpperCase()
-  const second = words[1] ?? first
-  return ((first[0] ?? '') + (second[0] ?? '')).toUpperCase()
+  const last = words[words.length - 1] ?? first
+  return ((first[0] ?? '') + (last[0] ?? '')).toUpperCase()
 }
 
 export function formatCurrency(value: number): string {
