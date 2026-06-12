@@ -6,7 +6,6 @@ export const stack = style({
   display: 'flex',
   flexDirection: 'column',
   gap: vars.space.xl,
-  maxInlineSize: '72rem',
 })
 
 export const section = style({
