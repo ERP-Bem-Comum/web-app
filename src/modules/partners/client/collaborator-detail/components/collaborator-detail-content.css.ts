@@ -67,6 +67,60 @@ export const gatedNote = style({
   color: vars.color.text.secondary,
 })
 
+// Aviso da 2ª fase (protótipo não-persistido — aguardando backend).
+export const protoNote = style({
+  margin: 0,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  color: vars.color.text.muted,
+})
+
+// Grupo de radios (Sim/Não, CLT/PJ) — chips selecionáveis, só-tokens.
+export const radioGroup = style({
+  display: 'flex',
+  gap: vars.space.sm,
+  flexWrap: 'wrap',
+})
+
+export const radioOption = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: vars.space.xs,
+  paddingBlock: vars.space.xs,
+  paddingInline: vars.space.md,
+  borderRadius: vars.radius.md,
+  border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
+  background: vars.color.surface.default,
+  color: vars.color.text.primary,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+  cursor: 'pointer',
+  selectors: {
+    '&:has(input:checked)': {
+      background: vars.color.brand.normal,
+      color: vars.color.brand.onBrand,
+      borderColor: vars.color.brand.normal,
+    },
+    '&:has(input:focus-visible)': {
+      outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
+      outlineOffset: vars.focusRing.offset,
+    },
+  },
+})
+
+// O input nativo fica acessível mas visualmente colapsado (o chip mostra o estado).
+export const radioInput = style({
+  position: 'absolute',
+  inlineSize: vars.borderWidth.thin,
+  blockSize: vars.borderWidth.thin,
+  padding: 0,
+  margin: `calc(-1 * ${vars.borderWidth.thin})`,
+  overflow: 'hidden',
+  clipPath: 'inset(50%)',
+  whiteSpace: 'nowrap',
+  border: 0,
+})
+
 export const select = style({
   blockSize: '2.5rem',
   paddingInline: vars.space.md,

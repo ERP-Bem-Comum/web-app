@@ -10,6 +10,20 @@ O cadastro completo do Colaborador hoje tem (GET detalhe / PUT complete): `rg, c
 
 > **Legenda:** 🟢 front-only (já dá pra fazer) · 🔴 precisa de campo novo/ajuste no backend.
 
+## Atualização (2ª fase — revisão da stakeholder)
+
+- **Tipo de contratação (CLT/PJ)** no topo do formulário (radio, obrigatório) — reusa `employmentRelationship` existente.
+- **Identidade de Gênero** (mantido o termo; NÃO virou "Sexo"): opções **Mulher cisgênero, Homem cisgênero, Mulher transgênero, Homem transgênero, Pessoa não binária, Outra identidade de gênero (abre input de texto), Prefiro não responder**. Campo `genderIdentity` já existe (enum); o backend precisa aceitar o **texto livre** quando "Outra" (`genderOther`).
+- **Estado Civil**: 6 opções (Solteiro(a), Casado(a), Separado(a), Divorciado(a), União Estável, Viúvo(a)). ⚠️ *Confirmar a lista exata com a stakeholder.*
+- **Informações Familiares**: "Possui filhos?" (radio) → se Sim: **Quantos filhos** (select) + **Idade dos filhos** (select). ⚠️ *Confirmar opções dos selects (qtd e faixas de idade).*
+- **Saúde**: "Possui alergia/intolerância?" (radio) → se Sim, "Qual?" (texto, reusa `allergies`). "PCD?" (radio) → se Sim, "Qual?" (`pwdDescription`).
+- **Contratuais**: Experiência no setor público (radio) → se Sim, "Qual a função ou cargo?" (`publicSectorRole`). "Afastado do **município OU estado**?" (radio) → se Sim: tempo + renovação (condicional) + por quanto tempo.
+
+### 🔐 RBAC (políticas de acesso) — pedido ao backend
+Campos de **dados pessoais sensíveis e de saúde** (identidade de gênero, raça, PCD/`pwdDescription`, alergias, informações familiares, estado civil) devem ser **retornados pela API somente** se o usuário logado tiver a role **RH**, **Diretora** ou **Diretora Adjunta (DDI)**. Criar/ajustar as policies/roles correspondentes (filtragem por papel no GET de colaborador). O front oculta/condiciona conforme o que a API retornar.
+
+> **Estado do front:** versão **INTERATIVA** (condicionais funcionando) na branch `feat/collaborator-second-phase` para validação com o cliente — **NÃO persiste** (não vai em `buildComplete`) e **não vai pra prod** até este ticket (campos + RBAC) ser entregue.
+
 ## Bloco 1 — Dados Pessoais
 
 | Campo | Mudança | Backend? |

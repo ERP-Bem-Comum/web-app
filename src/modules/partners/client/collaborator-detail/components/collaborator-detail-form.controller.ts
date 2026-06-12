@@ -46,6 +46,22 @@ export type CollaboratorDetailFormState = Readonly<{
   education: string
   biography: string
   experienceInThePublicSector: '' | 'sim' | 'nao'
+  // ── CAMPOS DEMO da 2ª fase (validação com o cliente) — NÃO PERSISTIDOS ────────────────────
+  // Pendentes do backend (ticket PAR-COLLABORATOR-PROFILE-FIELDS, incl. RBAC). Vivem só no estado
+  // da UI para validar fluxo/condicionais; NÃO entram em buildPre/buildComplete (zero envio ao core-api).
+  genderOther: string
+  maritalStatus: string
+  hasChildren: '' | 'sim' | 'nao'
+  childrenCount: string
+  childrenAges: string
+  hasAllergies: '' | 'sim' | 'nao'
+  isPwd: '' | 'sim' | 'nao'
+  pwdDescription: string
+  publicSectorRole: string
+  isOnLeave: '' | 'sim' | 'nao'
+  leaveDuration: string
+  leaveRenewable: '' | 'sim' | 'nao'
+  leaveRenewalDuration: string
 }>
 
 const fromDetail = (c: CollaboratorDetail): CollaboratorDetailFormState => ({
@@ -71,6 +87,21 @@ const fromDetail = (c: CollaboratorDetail): CollaboratorDetailFormState => ({
   education: c.education ?? '',
   biography: c.biography ?? '',
   experienceInThePublicSector: c.experienceInThePublicSector === undefined ? '' : c.experienceInThePublicSector ? 'sim' : 'nao',
+  // Demo (não vêm do backend) — começam vazios.
+  genderOther: '',
+  maritalStatus: '',
+  hasChildren: '',
+  childrenCount: '',
+  childrenAges: '',
+  // Reflete o dado real de alergias (texto) num radio Sim/Não para a 2ª fase.
+  hasAllergies: (c.allergies ?? '') !== '' ? 'sim' : '',
+  isPwd: '',
+  pwdDescription: '',
+  publicSectorRole: '',
+  isOnLeave: '',
+  leaveDuration: '',
+  leaveRenewable: '',
+  leaveRenewalDuration: '',
 })
 
 const blank = (s: string): string | undefined => (s.trim() === '' ? undefined : s.trim())
