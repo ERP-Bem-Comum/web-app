@@ -578,6 +578,7 @@ export const ptBR: Catalog = {
   'partners.collaborators.import.running': 'Importando…',
   'partners.collaborators.export.tudo': 'Tudo',
   'partners.collaborators.export.historico': 'Histórico',
+  'partners.collaborators.export.historico.gated': 'Disponível quando o backend liberar o histórico do colaborador.',
   'partners.collaborators.export.template': 'Baixar template',
   'partners.collaborators.import.report.title': 'Importação de colaboradores',
   'partners.collaborators.import.report.created': '{n} criado(s)',

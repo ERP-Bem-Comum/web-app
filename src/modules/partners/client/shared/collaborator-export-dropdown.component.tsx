@@ -8,12 +8,14 @@ import type { ReactNode, MouseEvent } from 'react'
 import { FileChartIcon, FileTextIcon } from '#shared/ui/icons/index.ts'
 import { buildCsv, COLLABORATOR_IMPORT_HEADERS } from '#modules/partners/client/domain/export-csv.ts'
 
-import { wrapper, trigger, menu, menuItem, menuItemBorder } from './export-dropdown.css.ts'
+import { wrapper, trigger, menu, menuItem, menuItemBorder, menuItemDisabled, menuItemHint } from './export-dropdown.css.ts'
 
 export type CollaboratorExportDropdownProps = Readonly<{
   exportLabel: string
   tudoLabel: string
   historicoLabel: string
+  /** Aviso do "Histórico" gated — pendente do backend (ver ticket PAR-COLLABORATOR-HISTORY-EXPORT). */
+  historicoGatedHint: string
   templateLabel: string
   onPrint: () => void
 }>
@@ -47,10 +49,13 @@ export function CollaboratorExportDropdown(props: CollaboratorExportDropdownProp
           <FileChartIcon />
           {props.tudoLabel}
         </button>
-        <button type="button" className={`${menuItem} ${menuItemBorder}`} onClick={(e) => { props.onPrint(); closeDetails(e) }}>
+        {/* Histórico gated: no legado gerava CSV de histórico (tabela collaborator_history); o core-api
+            ainda não expõe esse dado (ticket PAR-COLLABORATOR-HISTORY-EXPORT). Desabilitado até liberar. */}
+        <button type="button" className={`${menuItem} ${menuItemBorder} ${menuItemDisabled}`} disabled aria-disabled="true">
           <FileChartIcon />
           {props.historicoLabel}
         </button>
+        <span className={menuItemHint}>{props.historicoGatedHint}</span>
         <button type="button" className={`${menuItem} ${menuItemBorder}`} onClick={(e) => { downloadTemplate(); closeDetails(e) }}>
           <FileTextIcon />
           {props.templateLabel}
