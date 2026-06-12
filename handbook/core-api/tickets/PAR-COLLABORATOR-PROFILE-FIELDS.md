@@ -14,8 +14,8 @@ O cadastro completo do Colaborador hoje tem (GET detalhe / PUT complete): `rg, c
 
 - **Tipo de contratação (CLT/PJ)** no topo do formulário (radio, obrigatório) — reusa `employmentRelationship` existente.
 - **Identidade de Gênero** (mantido o termo; NÃO virou "Sexo"): opções **Mulher cisgênero, Homem cisgênero, Mulher transgênero, Homem transgênero, Pessoa não binária, Outra identidade de gênero (abre input de texto), Prefiro não responder**. Campo `genderIdentity` já existe (enum); o backend precisa aceitar o **texto livre** quando "Outra" (`genderOther`).
-- **Estado Civil**: 6 opções (Solteiro(a), Casado(a), Separado(a), Divorciado(a), União Estável, Viúvo(a)). ⚠️ *Confirmar a lista exata com a stakeholder.*
-- **Informações Familiares**: "Possui filhos?" (radio) → se Sim: **Quantos filhos** (select) + **Idade dos filhos** (select). ⚠️ *Confirmar opções dos selects (qtd e faixas de idade).*
+- **Estado Civil** (enum `maritalStatus`): **Solteiro(a), Casado(a), União Estável, Divorciado(a), Separado(a) Judicialmente, Viúvo(a)** (6 opções, nesta ordem — confirmadas pela stakeholder).
+- **Informações Familiares**: "Possui filhos?" (radio Sim/Não) → se Sim: **Quantos filhos possui?** (select de número) + **Idade dos filhos** (select de número). Campos `hasChildren` (bool), `childrenCount` (int), `childrenAges` (lista/int — definir no backend).
 - **Saúde**: "Possui alergia/intolerância?" (radio) → se Sim, "Qual?" (texto, reusa `allergies`). "PCD?" (radio) → se Sim, "Qual?" (`pwdDescription`).
 - **Contratuais**: Experiência no setor público (radio) → se Sim, "Qual a função ou cargo?" (`publicSectorRole`). "Afastado do **município OU estado**?" (radio) → se Sim: tempo + renovação (condicional) + por quanto tempo.
 
@@ -30,7 +30,7 @@ Campos de **dados pessoais sensíveis e de saúde** (identidade de gênero, raç
 |---|---|---|
 | **Sexo** (substitui "Identidade de Gênero") | Select/Radio: **Feminino, Masculino** | 🔴 Novo campo `sex: "F" \| "M"` (nullable). `genderIdentity` é enum diferente (8 valores) — não reaproveitar. Decidir se mantém `genderIdentity` ou substitui por `sex`. |
 | **Raça/Cor** | Ajustar opções para as **5 do IBGE**: Branca, Preta, Parda, Amarela, Indígena | 🟢 Front (o enum `RACES` já tem `BRANCO/PRETO/PARDO/AMARELO/INDIGENA`; basta o select não oferecer `PREFIRO_NAO_RESPONDER`). Backend não muda. |
-| **Estado Civil** | Campo NOVO. Select: Solteiro(a), Casado(a), Divorciado(a), Viúvo(a), União Estável | 🔴 Novo enum `maritalStatus: "single"\|"married"\|"divorced"\|"widowed"\|"stable_union"` (nullable). |
+| **Estado Civil** | Campo NOVO. Select (6): Solteiro(a), Casado(a), União Estável, Divorciado(a), Separado(a) Judicialmente, Viúvo(a) | 🔴 Novo enum `maritalStatus: "single"\|"married"\|"stable_union"\|"divorced"\|"separated"\|"widowed"` (nullable). |
 | RG, Endereço completo, Data de nascimento, Celular, Escolaridade | **Permanecem iguais** | — |
 | **Experiência no setor público** | Tornar CONDICIONAL: se **Sim** → abre "**Por quanto tempo?**" (input texto) | 🔴 `experienceInThePublicSector` já existe (bool); novo `publicSectorExperienceDuration: string` (nullable, só quando Sim). |
 
@@ -68,7 +68,7 @@ Adicionar ao agregado/rotas de **Collaborator** (POST/PUT complete + GET detalhe
 
 ```jsonc
 "sex": "F | M",                       // | null  (decidir relação com genderIdentity)
-"maritalStatus": "single|married|divorced|widowed|stable_union", // | null
+"maritalStatus": "single|married|stable_union|divorced|separated|widowed", // | null
 "hasChildren": true,                  // | null
 "childrenCount": 2,                   // | null
 "childrenAges": "5 anos, 12 anos",    // | null
