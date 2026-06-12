@@ -28,3 +28,13 @@ export const badge = styleVariants({
 })
 
 export type BadgeVariant = keyof typeof badge
+
+/** Modificador opt-in: texto em caixa alta (mantém a fonte/peso da badge). */
+export const uppercaseText = style({ textTransform: 'uppercase' })
+
+/** Modificador opt-in: badge mais compacta/suave (padding e peso menores). */
+export const sizeSm = style({
+  padding: `0.125rem ${vars.space.sm}`,
+  fontWeight: vars.font.weight.medium,
+  letterSpacing: 'normal',
+})

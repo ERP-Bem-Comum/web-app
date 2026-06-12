@@ -21,5 +21,7 @@ export {
   DownloadIcon,
   FileTextIcon,
   FileChartIcon,
+  LinkIcon,
+  HeartPulseIcon,
   UploadIcon,
 } from './icons.tsx'
