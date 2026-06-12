@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Button, Field, Input } from '#shared/ui/index.ts'
+import { FileTextIcon, WalletIcon } from '#shared/ui/icons/index.ts'
 
 import type { FinancierFormController } from './financier-form.controller.ts'
 import {
@@ -49,7 +50,7 @@ export function FinancierForm(props: FinancierFormProps): ReactNode {
       ) : null}
 
       <section className={section}>
-        <h2 className={sectionTitle}>{t('partners.financiers.form.section.basic')}</h2>
+        <h2 className={sectionTitle}><FileTextIcon size={18} />{t('partners.financiers.form.section.basic')}</h2>
         <div className={grid}>
           <Field htmlFor="fin-name" label={t('partners.financiers.form.name')} error={invalid('name')}>
             <Input id="fin-name" value={c.state.name} onChange={(v) => { c.setField('name', v); }} />
@@ -76,7 +77,7 @@ export function FinancierForm(props: FinancierFormProps): ReactNode {
           (ver handbook/core-api/tickets/PAR-FINANCIER-COLLAB-BANK.md). Campos visíveis e
           desabilitados; ao liberar o backend, habilitar + ligar no controller/mapeador. */}
       <section className={section}>
-        <h2 className={sectionTitle}>{t('partners.financiers.form.section.bank')}</h2>
+        <h2 className={sectionTitle}><WalletIcon size={18} />{t('partners.financiers.form.section.bank')}</h2>
         <p className={gatedNote}>{t('partners.financiers.form.bankGatedHint')}</p>
         <div className={grid}>
           <Field htmlFor="fin-bank" label={t('partners.financiers.form.bank')}>

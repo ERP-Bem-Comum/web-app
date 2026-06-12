@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Button, Checkbox, Field, Input } from '#shared/ui/index.ts'
+import { FileTextIcon, HeartHandshakeIcon, WalletIcon } from '#shared/ui/icons/index.ts'
 
 import { OCCUPATION_AREAS, PIX_KEY_TYPES, isPixKeyType, type ActFormController } from './act-form.controller.ts'
 import { derivePixKey } from '#modules/partners/client/domain/derive-pix-key.ts'
@@ -52,7 +53,7 @@ export function ActForm(props: ActFormProps): ReactNode {
 
       {/* Seção 1 — Identificação do Instrumento */}
       <section className={section}>
-        <h2 className={sectionTitle}>{t('partners.acts.form.section.instrument')}</h2>
+        <h2 className={sectionTitle}><FileTextIcon size={18} />{t('partners.acts.form.section.instrument')}</h2>
         <div className={grid}>
           <Field htmlFor="act-number" label={t('partners.acts.form.actNumber')} error={invalid('actNumber')}>
             <Input id="act-number" value={c.state.actNumber} onChange={(v) => { c.setField('actNumber', v); }} />
@@ -79,7 +80,7 @@ export function ActForm(props: ActFormProps): ReactNode {
 
       {/* Seção 2 — Dados da Instituição Parceira */}
       <section className={section}>
-        <h2 className={sectionTitle}>{t('partners.acts.form.section.institution')}</h2>
+        <h2 className={sectionTitle}><HeartHandshakeIcon size={18} />{t('partners.acts.form.section.institution')}</h2>
         <div className={grid}>
           <Field htmlFor="act-cnpj" label={t('partners.acts.form.cnpj')} error={invalid('cnpj')}>
             <Input id="act-cnpj" mask="cnpj" value={c.state.cnpj} onChange={(v) => { c.setField('cnpj', v); }} />
@@ -101,7 +102,7 @@ export function ActForm(props: ActFormProps): ReactNode {
 
       {/* Seção 3 — Repasse Financeiro (toggle revela conta/PIX) */}
       <section className={section}>
-        <h2 className={sectionTitle}>{t('partners.acts.form.section.payment')}</h2>
+        <h2 className={sectionTitle}><WalletIcon size={18} />{t('partners.acts.form.section.payment')}</h2>
         <div className={grid}>
           <Field htmlFor="act-transfer" label={t('partners.acts.form.hasFinancialTransfer')} error={invalid('hasFinancialTransfer')}>
             <Checkbox id="act-transfer" checked={c.state.hasFinancialTransfer} onChange={(v) => { c.setField('hasFinancialTransfer', v); }} />

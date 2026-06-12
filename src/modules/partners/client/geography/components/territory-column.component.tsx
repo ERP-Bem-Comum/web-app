@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import { Input } from '#shared/ui/index.ts'
+import { Input, MapPinIcon } from '#shared/ui/index.ts'
 
 import {
   card,
@@ -69,7 +69,7 @@ export function TerritoryColumn(props: TerritoryColumnProps): ReactNode {
   return (
     <section className={card}>
       <div className={header}>
-        <h3 className={title}>{props.title}</h3>
+        <h3 className={title}><MapPinIcon size={18} />{props.title}</h3>
         {props.countLabel !== undefined && props.countLabel !== null ? (
           <span className={count}>{props.countLabel}</span>
         ) : null}

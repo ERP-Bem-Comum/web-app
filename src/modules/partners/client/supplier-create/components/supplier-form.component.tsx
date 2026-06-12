@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Button, Field, Input } from '#shared/ui/index.ts'
+import { FileTextIcon, WalletIcon } from '#shared/ui/icons/index.ts'
 
 import { PIX_KEY_TYPES, isPixKeyType, SERVICE_RATINGS, isServiceRating, type SupplierFormController } from './supplier-form.controller.ts'
 import { derivePixKey } from '#modules/partners/client/domain/derive-pix-key.ts'
@@ -52,7 +53,7 @@ export function SupplierForm(props: SupplierFormProps): ReactNode {
       ) : null}
 
       <section className={section}>
-        <h2 className={sectionTitle}>{t('partners.suppliers.form.section.basic')}</h2>
+        <h2 className={sectionTitle}><FileTextIcon size={18} />{t('partners.suppliers.form.section.basic')}</h2>
         <div className={grid}>
           <Field htmlFor="sup-name" label={t('partners.suppliers.form.name')} error={invalid('name')}>
             <Input id="sup-name" value={c.state.name} onChange={(v) => { c.setField('name', v); }} />
@@ -108,7 +109,7 @@ export function SupplierForm(props: SupplierFormProps): ReactNode {
 
       {props.canEditSensitive ? (
         <section className={section}>
-          <h2 className={sectionTitle}>{t('partners.suppliers.form.section.payment')}</h2>
+          <h2 className={sectionTitle}><WalletIcon size={18} />{t('partners.suppliers.form.section.payment')}</h2>
           <div className={grid}>
             <Field htmlFor="sup-bank" label={t('partners.suppliers.form.bank')} error={invalid('bankAccount.bank')}>
               <Input id="sup-bank" value={c.state.bank} onChange={(v) => { c.setField('bank', v); }} />

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Button, Field, Input } from '#shared/ui/index.ts'
+import { UsersIcon, WalletIcon } from '#shared/ui/icons/index.ts'
 
 import {
   OCCUPATION_AREAS,
@@ -56,7 +57,7 @@ export function CollaboratorForm(props: CollaboratorFormProps): ReactNode {
 
       <section className={section}>
         <div className={sectionHeader}>
-          <h2 className={sectionTitle}>{t('partners.collaborators.form.section.basic')}</h2>
+          <h2 className={sectionTitle}><UsersIcon size={18} />{t('partners.collaborators.form.section.basic')}</h2>
         </div>
         <div className={sectionBody}>
         <div className={grid}>
@@ -116,7 +117,7 @@ export function CollaboratorForm(props: CollaboratorFormProps): ReactNode {
           desabilitados; ao liberar o backend, habilitar + ligar no controller/mapeador. */}
       <section className={section}>
         <div className={sectionHeader}>
-          <h2 className={sectionTitle}>{t('partners.collaborators.form.section.bank')}</h2>
+          <h2 className={sectionTitle}><WalletIcon size={18} />{t('partners.collaborators.form.section.bank')}</h2>
         </div>
         <div className={sectionBody}>
           <p className={gatedNote}>{t('partners.collaborators.form.bankGatedHint')}</p>

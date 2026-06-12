@@ -3,10 +3,12 @@ import type { ReactNode } from 'react'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Field, Input } from '#shared/ui/index.ts'
+import { TargetIcon } from '#shared/ui/icons/index.ts'
 
 import type { ProgramFormController } from './program-form.controller.ts'
 import {
   card,
+  sectionTitle,
   grid,
   logoField,
   logoUpload,
@@ -35,6 +37,7 @@ export function ProgramForm(props: ProgramFormProps): ReactNode {
 
   return (
     <div className={card}>
+      <h2 className={sectionTitle}><TargetIcon size={18} />{t('programs.form.section.data')}</h2>
       {props.errorBanner}
       <div className={grid}>
         {/* Logo — gated (sem endpoint de exibição/serviço próprio; upload é pós-criação). Ver ticket. */}

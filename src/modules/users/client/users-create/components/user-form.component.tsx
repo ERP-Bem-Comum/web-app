@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Button, Field, Input } from '#shared/ui/index.ts'
+import { UsersIcon } from '#shared/ui/icons/index.ts'
 
 import type { UserFormController } from './user-form.controller.ts'
 import {
@@ -53,7 +54,7 @@ export function UserForm(props: UserFormProps): ReactNode {
       ) : null}
 
       <section className={section}>
-        <h2 className={sectionTitle}>{t('users.form.section.data')}</h2>
+        <h2 className={sectionTitle}><UsersIcon size={18} />{t('users.form.section.data')}</h2>
         <div className={grid}>
           <Field htmlFor="user-name" label={t('users.form.name')} error={invalid('name')}>
             <Input id="user-name" value={c.state.name} onChange={(v) => { c.setField('name', v); }} />

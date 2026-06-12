@@ -862,6 +862,7 @@ export const ptBR: Catalog = {
   'programs.detail.save': 'Salvar',
   'programs.detail.saving': 'Salvando…',
   // Formulário
+  'programs.form.section.data': 'Dados do Programa',
   'programs.form.logo': 'Logo do Programa',
   'programs.form.name': 'Nome do Programa',
   'programs.form.sigla': 'Sigla',

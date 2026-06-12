@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Field, Input } from '#shared/ui/index.ts'
+import { UsersIcon, FileTextIcon } from '#shared/ui/icons/index.ts'
 
 import {
   OCCUPATION_AREAS,
@@ -56,7 +57,7 @@ export function CollaboratorDetailContent({ controller: c, editing, showComplete
   return (
     <>
       <section className={section}>
-        <h2 className={sectionTitle}>{preTitle}</h2>
+        <h2 className={sectionTitle}><UsersIcon size={18} />{preTitle}</h2>
         <div className={grid}>
           {txt('name', t('partners.collaborators.form.name'))}
           {txt('email', t('partners.collaborators.form.email'), 'email')}
@@ -70,7 +71,7 @@ export function CollaboratorDetailContent({ controller: c, editing, showComplete
 
       {showComplete ? (
         <section className={section}>
-          <h2 className={sectionTitle}>{t('partners.collaborators.detail.section.complete')}</h2>
+          <h2 className={sectionTitle}><FileTextIcon size={18} />{t('partners.collaborators.detail.section.complete')}</h2>
           <div className={grid}>
             {txt('rg', t('partners.collaborators.detail.field.rg'))}
             {txt('completeAddress', t('partners.collaborators.detail.field.completeAddress'))}

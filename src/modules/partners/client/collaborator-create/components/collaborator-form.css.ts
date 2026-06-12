@@ -33,7 +33,7 @@ export const section = style({
 export const sectionHeader = style({
   paddingBlock: vars.space.md,
   paddingInline: vars.space.lg,
-  background: vars.color.surface.canvas,
+  background: vars.color.surface.subtle,
   borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
 })
 
@@ -46,8 +46,11 @@ export const sectionBody = style({
 
 export const sectionTitle = style({
   margin: 0,
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
   fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.lg,
+  fontSize: vars.font.size.md,
   fontWeight: vars.font.weight.semibold,
   color: vars.color.nav.background,
 })

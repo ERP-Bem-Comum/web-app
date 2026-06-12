@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Badge, Field, Input } from '#shared/ui/index.ts'
+import { FileTextIcon, WalletIcon } from '#shared/ui/icons/index.ts'
 import {
   PIX_KEY_TYPES,
   isPixKeyType,
@@ -60,7 +61,7 @@ export function SupplierDetailContent(props: SupplierDetailContentProps): ReactN
   return (
     <div className={stack}>
       <section className={section}>
-        <h2 className={sectionTitle}>{t('partners.suppliers.form.section.basic')}</h2>
+        <h2 className={sectionTitle}><FileTextIcon size={18} />{t('partners.suppliers.form.section.basic')}</h2>
         <div className={statusRow}>
           <Badge variant={props.activation === 'active' ? 'active' : 'outro'}>
             {t(`partners.suppliers.status.${props.activation}`)}
@@ -109,7 +110,7 @@ export function SupplierDetailContent(props: SupplierDetailContentProps): ReactN
 
       {props.canViewSensitive ? (
         <section className={section}>
-          <h2 className={sectionTitle}>{t('partners.suppliers.form.section.payment')}</h2>
+          <h2 className={sectionTitle}><WalletIcon size={18} />{t('partners.suppliers.form.section.payment')}</h2>
           <div className={fieldGrid}>
             {txt('bank', t('partners.suppliers.form.bank'), 'bankAccount.bank')}
             {txt('agency', t('partners.suppliers.form.agency'), 'bankAccount.agency')}
