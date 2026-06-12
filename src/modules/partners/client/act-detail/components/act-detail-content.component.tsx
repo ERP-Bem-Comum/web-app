@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Badge, Checkbox, Field, Input } from '#shared/ui/index.ts'
+import { FileTextIcon, HeartHandshakeIcon, WalletIcon } from '#shared/ui/icons/index.ts'
 import {
   OCCUPATION_AREAS,
   PIX_KEY_TYPES,
@@ -51,7 +52,7 @@ export function ActDetailContent(props: ActDetailContentProps): ReactNode {
   return (
     <div className={stack}>
       <section className={section}>
-        <h2 className={sectionTitle}>{t('partners.acts.form.section.instrument')}</h2>
+        <h2 className={sectionTitle}><FileTextIcon size={18} />{t('partners.acts.form.section.instrument')}</h2>
         <div className={statusRow}>
           <Badge variant={props.active ? 'active' : 'outro'}>
             {t(`partners.acts.status.${props.active ? 'active' : 'inactive'}`)}
@@ -80,7 +81,7 @@ export function ActDetailContent(props: ActDetailContentProps): ReactNode {
       </section>
 
       <section className={section}>
-        <h2 className={sectionTitle}>{t('partners.acts.form.section.institution')}</h2>
+        <h2 className={sectionTitle}><HeartHandshakeIcon size={18} />{t('partners.acts.form.section.institution')}</h2>
         <div className={fieldGrid}>
           {txt('cnpj', t('partners.acts.form.cnpj'), 'cnpj', { mask: 'cnpj' })}
           {txt('corporateName', t('partners.acts.form.corporateName'), 'corporateName')}
@@ -91,7 +92,7 @@ export function ActDetailContent(props: ActDetailContentProps): ReactNode {
       </section>
 
       <section className={section}>
-        <h2 className={sectionTitle}>{t('partners.acts.form.section.payment')}</h2>
+        <h2 className={sectionTitle}><WalletIcon size={18} />{t('partners.acts.form.section.payment')}</h2>
         <div className={fieldGrid}>
           <Field htmlFor="ad-transfer" label={t('partners.acts.form.hasFinancialTransfer')} error={invalid('hasFinancialTransfer')}>
             <Checkbox id="ad-transfer" checked={c.state.hasFinancialTransfer} disabled={!editing} onChange={(v) => { c.setField('hasFinancialTransfer', v); }} />

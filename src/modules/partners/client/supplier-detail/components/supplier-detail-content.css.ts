@@ -7,7 +7,6 @@ export const stack = style({
   display: 'flex',
   flexDirection: 'column',
   gap: vars.space.xl,
-  maxInlineSize: '72rem',
 })
 
 // Card com faixa de título colada no topo. Sem padding no topo (a faixa cola).
@@ -33,10 +32,13 @@ export const sectionTitle = style({
   marginInline: `calc(-1 * ${vars.space.lg})`,
   paddingBlock: vars.space.md,
   paddingInline: vars.space.lg,
-  background: vars.color.surface.canvas,
+  background: vars.color.surface.subtle,
   borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
   fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.lg,
+  fontSize: vars.font.size.md,
   fontWeight: vars.font.weight.semibold,
   color: vars.color.nav.background,
 })

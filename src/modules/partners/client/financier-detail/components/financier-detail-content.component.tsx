@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Badge, Field, Input } from '#shared/ui/index.ts'
+import { FileTextIcon } from '#shared/ui/icons/index.ts'
 import {
   type FinancierFormController,
   type FinancierFormState,
@@ -33,7 +34,7 @@ export function FinancierDetailContent(props: FinancierDetailContentProps): Reac
   return (
     <div className={stack}>
       <section className={section}>
-        <h2 className={sectionTitle}>{t('partners.financiers.form.section.basic')}</h2>
+        <h2 className={sectionTitle}><FileTextIcon size={18} />{t('partners.financiers.form.section.basic')}</h2>
         <div className={statusRow}>
           <Badge variant={props.activation === 'active' ? 'active' : 'outro'}>
             {t(`partners.financiers.status.${props.activation}`)}
