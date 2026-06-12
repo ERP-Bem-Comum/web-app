@@ -19,7 +19,6 @@ export const footer = style({
   display: 'flex',
   justifyContent: 'flex-end',
   gap: vars.space.md,
-  maxInlineSize: '72rem',
 })
 
 export const saveWrap = style({
