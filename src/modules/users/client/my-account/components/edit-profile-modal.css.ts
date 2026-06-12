@@ -72,7 +72,7 @@ export const avatar = style({
   justifyContent: 'center',
   inlineSize: '8rem',
   blockSize: '8rem',
-  borderRadius: vars.radius.md,
+  borderRadius: '50%',
   background: vars.color.surface.subtle,
   color: vars.color.text.secondary,
   fontFamily: vars.font.family.heading,

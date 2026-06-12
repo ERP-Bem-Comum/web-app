@@ -32,7 +32,7 @@ export const avatar = style({
   inlineSize: '7rem',
   blockSize: '7rem',
   flexShrink: 0,
-  borderRadius: vars.radius.md,
+  borderRadius: '50%',
   background: vars.color.surface.subtle,
   color: vars.color.text.secondary,
   fontFamily: vars.font.family.heading,

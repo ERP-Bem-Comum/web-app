@@ -894,6 +894,7 @@ export const ptBR: Catalog = {
   'programs.list.loading': 'Carregando…',
   'programs.list.columns.logo': 'Logo',
   'programs.list.columns.name': 'Nome',
+  'programs.list.columns.sigla': 'Sigla',
   'programs.list.columns.characteristics': 'Características Gerais',
   'programs.list.columns.status': 'Status',
   'programs.status.active': 'Ativo',

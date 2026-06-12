@@ -29,7 +29,9 @@ export const avatarVariant = styleVariants({
   supplier: { background: vars.color.partnerType.supplier.background, color: vars.color.partnerType.supplier.text },
   financier: { background: vars.color.partnerType.financier.background, color: vars.color.partnerType.financier.text },
   act: { background: vars.color.partnerType.act.background, color: vars.color.partnerType.act.text },
-  brand: { background: `color-mix(in srgb, ${vars.color.nav.background} 12%, transparent)`, color: vars.color.nav.background },
+  // `brand` = azul sólido da marca (mesmo do avatar do topbar). `neutral` = cinza (igual ao "Minha Conta").
+  brand: { background: vars.color.brand.normal, color: vars.color.brand.onBrand },
+  neutral: { background: vars.color.surface.subtle, color: vars.color.text.secondary },
 })
 
 export const label = style({

@@ -3,7 +3,7 @@ import { getRouteApi, useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { Badge, Button, DataTable, PageHeader, type Column, type DataTableState } from '#shared/ui/index.ts'
+import { Badge, Button, DataTable, PageHeader, AvatarLabel, initialsFrom, type Column, type DataTableState } from '#shared/ui/index.ts'
 
 import { useProgramsListBinding } from '../programs-list.binding.ts'
 import { totalPages, type ProgramsListState, type ProgramRow } from '../programs-list.view-model.ts'
@@ -37,7 +37,8 @@ export function ProgramsListPage(): ReactNode {
 
   const columns: readonly Column<ProgramRow>[] = [
     { key: 'logo', header: t('programs.list.columns.logo'), cell: () => <LogoPlaceholder /> },
-    { key: 'name', header: t('programs.list.columns.name'), cell: (r) => r.name },
+    { key: 'name', header: t('programs.list.columns.name'), cell: (r) => <AvatarLabel variant="neutral" initials={initialsFrom(r.name)} text={r.name} /> },
+    { key: 'sigla', header: t('programs.list.columns.sigla'), cell: (r) => r.sigla },
     {
       key: 'characteristics',
       header: t('programs.list.columns.characteristics'),
