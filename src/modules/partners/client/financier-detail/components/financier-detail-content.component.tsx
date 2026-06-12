@@ -36,7 +36,7 @@ export function FinancierDetailContent(props: FinancierDetailContentProps): Reac
       <section className={section}>
         <h2 className={sectionTitle}><FileTextIcon size={18} />{t('partners.financiers.form.section.basic')}</h2>
         <div className={statusRow}>
-          <Badge variant={props.activation === 'active' ? 'active' : 'outro'}>
+          <Badge variant={props.activation === 'active' ? 'active' : 'terminated'} uppercase size="sm">
             {t(`partners.financiers.status.${props.activation}`)}
           </Badge>
         </div>

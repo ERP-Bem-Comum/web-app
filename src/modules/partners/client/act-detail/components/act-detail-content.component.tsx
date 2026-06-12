@@ -54,7 +54,7 @@ export function ActDetailContent(props: ActDetailContentProps): ReactNode {
       <section className={section}>
         <h2 className={sectionTitle}><FileTextIcon size={18} />{t('partners.acts.form.section.instrument')}</h2>
         <div className={statusRow}>
-          <Badge variant={props.active ? 'active' : 'outro'}>
+          <Badge variant={props.active ? 'active' : 'terminated'} uppercase size="sm">
             {t(`partners.acts.status.${props.active ? 'active' : 'inactive'}`)}
           </Badge>
         </div>

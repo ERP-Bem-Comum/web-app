@@ -3,7 +3,7 @@ import { getRouteApi, useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { Button, DataTable, PageHeader, type Column, type DataTableState } from '#shared/ui/index.ts'
+import { Badge, Button, DataTable, PageHeader, type Column, type DataTableState } from '#shared/ui/index.ts'
 
 import { useProgramsListBinding } from '../programs-list.binding.ts'
 import { totalPages, type ProgramsListState, type ProgramRow } from '../programs-list.view-model.ts'
@@ -46,7 +46,11 @@ export function ProgramsListPage(): ReactNode {
     {
       key: 'status',
       header: t('programs.list.columns.status'),
-      cell: (r) => t(r.status === 'ATIVO' ? 'programs.status.active' : 'programs.status.inactive'),
+      cell: (r) => (
+        <Badge variant={r.status === 'ATIVO' ? 'active' : 'terminated'} uppercase size="sm">
+          {t(r.status === 'ATIVO' ? 'programs.status.active' : 'programs.status.inactive')}
+        </Badge>
+      ),
     },
   ]
 

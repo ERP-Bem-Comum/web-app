@@ -27,7 +27,7 @@ const stubController = (over: Partial<CollaboratorFormController> = {}): Collabo
 describe('CollaboratorForm', () => {
   it('renderiza os 7 campos do pré-cadastro', () => {
     render(<CollaboratorForm controller={stubController()} running={false} errorTag={null} onCancel={() => undefined} />)
-    expect(screen.getByLabelText('Representante Legal')).toBeTruthy()
+    expect(screen.getByLabelText('Nome Completo')).toBeTruthy()
     expect(screen.getByLabelText('Email')).toBeTruthy()
     expect(screen.getByLabelText('CPF')).toBeTruthy()
     expect(screen.getByLabelText('Função')).toBeTruthy()

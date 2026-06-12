@@ -63,7 +63,7 @@ export function SupplierDetailContent(props: SupplierDetailContentProps): ReactN
       <section className={section}>
         <h2 className={sectionTitle}><FileTextIcon size={18} />{t('partners.suppliers.form.section.basic')}</h2>
         <div className={statusRow}>
-          <Badge variant={props.activation === 'active' ? 'active' : 'outro'}>
+          <Badge variant={props.activation === 'active' ? 'active' : 'terminated'} uppercase size="sm">
             {t(`partners.suppliers.status.${props.activation}`)}
           </Badge>
         </div>

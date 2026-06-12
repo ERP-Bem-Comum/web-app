@@ -3,7 +3,7 @@ import { getRouteApi, useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { Badge, Button, DataTable, PageHeader, type Column, type DataTableState } from '#shared/ui/index.ts'
+import { Badge, Button, DataTable, PageHeader, AvatarLabel, initialsFrom, type Column, type DataTableState } from '#shared/ui/index.ts'
 
 import { useActListBinding } from '../act-list.binding.ts'
 import {
@@ -58,7 +58,7 @@ export function ActListPage(): ReactNode {
 
   const columns: readonly Column<ActRow>[] = [
     { key: 'number', header: t('partners.acts.columns.actNumber'), cell: (r) => r.actNumber },
-    { key: 'partner', header: t('partners.acts.columns.partner'), cell: (r) => r.corporateName },
+    { key: 'partner', header: t('partners.acts.columns.partner'), cell: (r) => <AvatarLabel variant="act" initials={initialsFrom(r.corporateName)} text={r.corporateName} /> },
     { key: 'title', header: t('partners.acts.columns.objectTitle'), cell: (r) => r.name },
     { key: 'area', header: t('partners.acts.columns.occupationArea'), cell: (r) => areaLabel(r.occupationArea) },
     { key: 'transfer', header: t('partners.acts.columns.hasFinancialTransfer'), cell: (r) => transferLabel(r.hasFinancialTransfer) },
@@ -66,7 +66,7 @@ export function ActListPage(): ReactNode {
       key: 'status',
       header: t('partners.acts.columns.status'),
       cell: (r) => (
-        <Badge variant={r.active ? 'active' : 'outro'}>
+        <Badge variant={r.active ? 'active' : 'terminated'} uppercase size="sm">
           {t(`partners.acts.status.${r.active ? 'active' : 'inactive'}`)}
         </Badge>
       ),
@@ -127,7 +127,15 @@ export function ActListPage(): ReactNode {
           transferNo: t('partners.acts.filters.transferNo'),
           area: t('partners.acts.filters.area'),
           allOption: t('partners.acts.filters.allOption'),
-          apply: t('partners.acts.filters.apply'),
+          apply: t('partners.filters.apply'),
+          statusLabel: t('partners.acts.columns.status'),
+          advancedTitle: t('partners.filters.advancedTitle'),
+          advancedSubtitle: t('partners.acts.filters.advancedSubtitle'),
+          collapse: t('partners.filters.collapse'),
+          clear: t('partners.filters.clear'),
+          clearAll: t('partners.filters.clearAll'),
+          removeFilter: t('partners.filters.removeFilter'),
+          applied: t('partners.filters.applied'),
         }}
         exportSlot={
           <PartnersExportDropdown
@@ -161,6 +169,12 @@ export function ActListPage(): ReactNode {
             replace: true,
             search: (p) => ({ ...p, occupationArea: a === '' ? undefined : (a as OccupationArea), page: 1 }),
           })
+        }
+        onClear={() =>
+          void navigate({ to: '.', replace: true, search: (p) => ({ ...p, hasFinancialTransfer: undefined, occupationArea: undefined, page: 1 }) })
+        }
+        onClearAll={() =>
+          void navigate({ to: '.', replace: true, search: (p) => ({ ...p, active: undefined, hasFinancialTransfer: undefined, occupationArea: undefined, page: 1 }) })
         }
       />
 
