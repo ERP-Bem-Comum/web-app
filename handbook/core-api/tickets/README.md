@@ -86,17 +86,19 @@
 (e `program:*`), então o grid e as ações de Usuários retornam **403** (idem `/programs`). *Bloqueia no
 front:* grid/detalhe de Usuários mostram 403 (a Minha Conta funciona, é `/me`).
 
-**[USR-ME-PROFILE-FIELDS](./USR-ME-PROFILE-FIELDS.md) — Minha Conta: campos.** O `PUT /api/v1/me` só aceita
-`name` + `telephone` (não cpf/email). *Bloqueia no front:* CPF e E-mail ficam **read-only** no modal
-Editar Perfil.
+**[USR-ME-PHOTO-DISPLAY](./USR-ME-PHOTO-DISPLAY.md) — Exibir a foto de perfil.** O #32 entregou o **upload**
+(`PUT/DELETE /me/photo`), mas o `imageUrl` retornado é uma **chave de storage**, não URL renderável, e não
+há rota que sirva os bytes. *Bloqueia no front:* "Alterar Imagem"/"Foto de Perfil" seguem **gated** (avatar
+usa iniciais) — ligar só o upload faria subir imagem que nunca se vê. Recomendação: **rota de bytes via BFF**
+(não mexe na CSP). Revalidado 2026-06-14.
 
-**[USR-ME-PHOTO](./USR-ME-PHOTO.md) — Foto de perfil.** Não há `/api/v1/me/photo` (só `/users/:id/photo`,
-admin) e o `POST /users` não recebe imagem. *Bloqueia no front:* "Alterar Imagem" e "Foto de Perfil"
-ficam **gated** (avatar usa as iniciais).
+## 🟩 Entregue no #32 — front já acompanhou (registro; 2026-06-14)
 
-**[USR-PASSWORD-POLICY](./USR-PASSWORD-POLICY.md) — Política de senha.** O checklist do design (máx 15 +
-complexidade) é mais rígido que o backend (máx 128, sem complexidade, com blocklist). *Bloqueia no front:*
-nada — validado no client; senha comum cai em `password-weak`.
+| Ticket | Backend | Front |
+|---|---|---|
+| [USR-ME-PROFILE-FIELDS](./USR-ME-PROFILE-FIELDS.md) — e-mail editável no `/me` | ✅ #32 (`PUT /me` aceita `email`; CPF imutável) | ✅ e-mail editável no modal Editar Perfil; CPF segue read-only |
+| [USR-PASSWORD-POLICY](./USR-PASSWORD-POLICY.md) — política de senha (min 12) | ✅ #32 (`GET /password-policy`, min 8→12) | ✅ consome a policy (fallback `{12,128}`); `min 12` no change-password |
+| [USR-ME-PHOTO](./USR-ME-PHOTO.md) — upload de foto no autosserviço | ✅ #32 (`PUT/DELETE /me/photo`) | ⏳ exibição depende de [USR-ME-PHOTO-DISPLAY](./USR-ME-PHOTO-DISPLAY.md) |
 
 ## ℹ️ Notas de modelagem (tech lead + P.O.)
 - **"Aprovador em Massa"** = `massApprovalPermission`, **read-only** (derivado dos papéis no backend). Não é
