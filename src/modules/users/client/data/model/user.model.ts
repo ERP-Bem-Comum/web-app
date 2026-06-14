@@ -57,9 +57,10 @@ export type UpdateUserInput = Readonly<{
   telephone: string
 }>
 
-// Minha Conta — PUT /me aceita só name + telephone.
+// Minha Conta — PUT /me aceita name + email + telephone (CPF imutável; e-mail editável no autosserviço).
 export type UpdateMeInput = Readonly<{
   name: string
+  email: string
   telephone: string
 }>
 
