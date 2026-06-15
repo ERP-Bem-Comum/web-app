@@ -67,3 +67,22 @@ export const menuItem = style({
 export const menuItemBorder = style({
   borderBlockStart: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
 })
+
+// Item gated (ex.: Histórico aguardando o backend): apagado e não-clicável.
+export const menuItemDisabled = style({
+  opacity: 0.5,
+  cursor: 'not-allowed',
+  selectors: {
+    '&:hover': { background: 'transparent' },
+  },
+})
+
+// Dica abaixo de um item gated.
+export const menuItemHint = style({
+  display: 'block',
+  paddingBlockEnd: vars.space.sm,
+  paddingInline: vars.space.md,
+  color: vars.color.text.muted,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+})
