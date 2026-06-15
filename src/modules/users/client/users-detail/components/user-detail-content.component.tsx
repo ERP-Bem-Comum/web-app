@@ -38,7 +38,7 @@ export function UserDetailContent(props: UserDetailContentProps): ReactNode {
       <section className={section}>
         <h2 className={sectionTitle}><UsersIcon size={18} />{t('users.form.section.data')}</h2>
         <div className={statusRow}>
-          <Badge variant={props.active ? 'active' : 'outro'}>
+          <Badge variant={props.active ? 'active' : 'terminated'} uppercase size="sm">
             {t(props.active ? 'users.status.active' : 'users.status.inactive')}
           </Badge>
         </div>
@@ -52,7 +52,7 @@ export function UserDetailContent(props: UserDetailContentProps): ReactNode {
         {/* Aprovador em Massa — somente leitura (derivado dos perfis de acesso no backend). */}
         <div className={readonlyRow}>
           <span className={readonlyLabel}>{t('users.form.massApproval')}</span>
-          <Badge variant={props.massApproval ? 'active' : 'outro'}>
+          <Badge variant={props.massApproval ? 'finished' : 'pending'} uppercase size="sm">
             {t(props.massApproval ? 'users.detail.yes' : 'users.detail.no')}
           </Badge>
         </div>

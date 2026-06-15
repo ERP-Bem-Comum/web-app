@@ -24,7 +24,8 @@ export const titleGroup = style({
 
 export const title = style({
   margin: 0,
-  fontFamily: vars.font.family.heading,
+  // Título das telas em Nunito (padrão definido com a stakeholder) — corpo, não heading.
+  fontFamily: vars.font.family.body,
   fontSize: vars.font.size.xl,
   fontWeight: vars.font.weight.bold,
   color: vars.color.text.primary,

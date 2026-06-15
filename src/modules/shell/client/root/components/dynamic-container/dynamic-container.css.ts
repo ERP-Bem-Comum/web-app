@@ -29,6 +29,7 @@ export const pageTitle = style({
   fontSize: vars.font.size.xl,
   fontWeight: vars.font.weight.bold,
   color: vars.color.nav.ink,
-  fontFamily: vars.font.family.heading,
+  // Nunito (corpo), igual ao título das telas via PageHeader — consistência entre módulos.
+  fontFamily: vars.font.family.body,
   margin: 0,
 })

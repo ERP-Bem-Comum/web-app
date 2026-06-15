@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useState } from 'react'
 
-import { Input } from '#shared/ui/index.ts'
+import { Input, FilterIcon, ChevronDownIcon, ChevronUpIcon } from '#shared/ui/index.ts'
 
 import { useDebouncedSearch } from './act-filters.controller.ts'
 import {
@@ -10,7 +10,20 @@ import {
   search,
   funnelButton,
   funnelButtonActive,
+  counterChip,
   panel,
+  advancedHeader,
+  funnelBadge,
+  headerTexts,
+  advancedTitle,
+  advancedSubtitle,
+  collapseButton,
+  clearAllButton,
+  chipsRow,
+  appliedChip,
+  appliedChipRemove,
+  chipsSpacer,
+  groupGrid,
   field,
   fieldLabel,
   select,
@@ -18,7 +31,9 @@ import {
   chip,
   chipActive,
   panelFooter,
+  footerRight,
   applyButton,
+  clearButton,
 } from './act-filters.css.ts'
 
 export type StatusFilter = 'all' | 'active' | 'inactive'
@@ -46,6 +61,14 @@ export type ActFiltersProps = Readonly<{
     area: string
     allOption: string
     apply: string
+    statusLabel: string
+    advancedTitle: string
+    advancedSubtitle: string
+    collapse: string
+    clear: string
+    clearAll: string
+    removeFilter: string
+    applied: string
   }>
   /** Slot de exportação (a página injeta o dropdown CSV/PDF com os dados carregados). */
   exportSlot?: ReactNode
@@ -53,14 +76,18 @@ export type ActFiltersProps = Readonly<{
   onStatus: (status: StatusFilter) => void
   onTransfer: (transfer: TransferFilter) => void
   onArea: (area: string) => void
+  onClear: () => void
+  onClearAll: () => void
 }>
 
 const STATUSES: readonly StatusFilter[] = ['all', 'active', 'inactive']
 
-function FunnelIcon(): ReactNode {
+type AppliedChip = Readonly<{ key: string; label: string; onRemove: () => void }>
+
+function XIcon(): ReactNode {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M2 3h12l-4.5 5.5V13L6.5 11.5V8.5L2 3z" />
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M18 6 6 18M6 6l12 12" />
     </svg>
   )
 }
@@ -69,6 +96,19 @@ export function ActFilters(props: ActFiltersProps): ReactNode {
   const searchField = useDebouncedSearch(props.searchValue, props.onSearch)
   const [open, setOpen] = useState(false)
   const L = props.labels
+
+  const areaLabel = props.areaOptions.find((o) => o.value === props.area)?.label ?? props.area
+  const appliedChips: readonly AppliedChip[] = [
+    props.status !== 'all'
+      ? { key: 'status', label: `${L.statusLabel}: ${props.status === 'active' ? L.active : L.inactive}`, onRemove: () => { props.onStatus('all'); } }
+      : null,
+    props.transfer !== 'all'
+      ? { key: 'transfer', label: `${L.hasTransfer}: ${props.transfer === 'yes' ? L.transferYes : L.transferNo}`, onRemove: () => { props.onTransfer('all'); } }
+      : null,
+    props.area !== ''
+      ? { key: 'area', label: `${L.area}: ${areaLabel}`, onRemove: () => { props.onArea(''); } }
+      : null,
+  ].filter((c): c is AppliedChip => c !== null)
 
   return (
     <div className={toolbar}>
@@ -81,11 +121,17 @@ export function ActFilters(props: ActFiltersProps): ReactNode {
           title={L.toggle}
           onClick={() => { setOpen((v) => !v); }}
         >
-          <FunnelIcon />
+          <FilterIcon size={16} />
         </button>
         <div className={search}>
           <Input id="act-search" value={searchField.value} placeholder={L.search} onChange={searchField.setValue} />
         </div>
+        {appliedChips.length > 0 ? (
+          <button type="button" className={counterChip} onClick={() => { setOpen((v) => !v); }}>
+            {`${String(appliedChips.length)} ${L.applied}`}
+            {open ? <ChevronUpIcon size={12} /> : <ChevronDownIcon size={12} />}
+          </button>
+        ) : null}
         <div className={group} role="group" aria-label={L.all}>
           {STATUSES.map((s) => (
             <button
@@ -101,43 +147,81 @@ export function ActFilters(props: ActFiltersProps): ReactNode {
         </div>
       </div>
 
+      {appliedChips.length > 0 ? (
+        <div className={chipsRow}>
+          {appliedChips.map((c) => (
+            <span key={c.key} className={appliedChip}>
+              {c.label}
+              <button type="button" className={appliedChipRemove} aria-label={`${L.removeFilter}: ${c.label}`} onClick={c.onRemove}>
+                <XIcon />
+              </button>
+            </span>
+          ))}
+          <span className={chipsSpacer} aria-hidden="true" />
+          <button type="button" className={clearAllButton} onClick={() => { props.onClearAll(); }}>
+            {L.clearAll}
+          </button>
+        </div>
+      ) : null}
+
       {open ? (
         <div className={panel}>
-          <div className={field}>
-            <label className={fieldLabel} htmlFor="act-f-transfer">{L.hasTransfer}</label>
-            <select
-              id="act-f-transfer"
-              className={select}
-              value={props.transfer}
-              onChange={(e) => {
-                const v = e.target.value
-                props.onTransfer(v === 'yes' ? 'yes' : v === 'no' ? 'no' : 'all')
-              }}
-            >
-              <option value="all">{L.allOption}</option>
-              <option value="yes">{L.transferYes}</option>
-              <option value="no">{L.transferNo}</option>
-            </select>
+          <div className={advancedHeader}>
+            <span className={funnelBadge}><FilterIcon size={18} /></span>
+            <div className={headerTexts}>
+              <h3 className={advancedTitle}>{L.advancedTitle}</h3>
+              <p className={advancedSubtitle}>{L.advancedSubtitle}</p>
+            </div>
+            <button type="button" className={collapseButton} onClick={() => { setOpen(false); }}>
+              {L.collapse}
+              <ChevronUpIcon size={14} />
+            </button>
           </div>
 
-          <div className={field}>
-            <label className={fieldLabel} htmlFor="act-f-area">{L.area}</label>
-            <select
-              id="act-f-area"
-              className={select}
-              value={props.area}
-              onChange={(e) => { props.onArea(e.target.value); }}
-            >
-              <option value="">{L.allOption}</option>
-              {props.areaOptions.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
+          <div className={groupGrid}>
+            <div className={field}>
+              <label className={fieldLabel} htmlFor="act-f-transfer">{L.hasTransfer}</label>
+              <select
+                id="act-f-transfer"
+                className={select}
+                value={props.transfer}
+                onChange={(e) => {
+                  const v = e.target.value
+                  props.onTransfer(v === 'yes' ? 'yes' : v === 'no' ? 'no' : 'all')
+                }}
+              >
+                <option value="all">{L.allOption}</option>
+                <option value="yes">{L.transferYes}</option>
+                <option value="no">{L.transferNo}</option>
+              </select>
+            </div>
+
+            <div className={field}>
+              <label className={fieldLabel} htmlFor="act-f-area">{L.area}</label>
+              <select
+                id="act-f-area"
+                className={select}
+                value={props.area}
+                onChange={(e) => { props.onArea(e.target.value); }}
+              >
+                <option value="">{L.allOption}</option>
+                {props.areaOptions.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className={panelFooter}>
-            <button type="button" className={applyButton} onClick={() => { setOpen(false); }}>{L.apply}</button>
-            {props.exportSlot}
+            <button type="button" className={clearButton} onClick={() => { props.onClear(); }}>
+              {L.clear}
+            </button>
+            <div className={footerRight}>
+              <button type="button" className={applyButton} onClick={() => { setOpen(false); }}>
+                {L.apply}
+              </button>
+              {props.exportSlot}
+            </div>
           </div>
         </div>
       ) : null}

@@ -37,16 +37,34 @@ export const importButton = style({
   },
 })
 
-/* Coluna Status — duplo: badge de ativação + situação cadastral abaixo (legado) */
-export const statusCell = style({
+/* Coluna Nome — avatar circular com iniciais + nome. */
+export const nameCell = style({
   display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'flex-start',
-  gap: vars.space.xs,
+  alignItems: 'center',
+  gap: vars.space.sm,
+  minInlineSize: 0,
 })
 
-export const registrationText = style({
-  fontFamily: vars.font.family.body,
+export const avatar = style({
+  inlineSize: '2rem',
+  blockSize: '2rem',
+  flexShrink: 0,
+  borderRadius: '50%',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  // Cor por tipo de parceiro (este grid é só Colaborador → tom amarelo), igual aos contratos.
+  background: vars.color.partnerType.collaborator.background,
+  color: vars.color.partnerType.collaborator.text,
+  fontFamily: vars.font.family.heading,
   fontSize: vars.font.size.xs,
-  color: vars.color.text.muted,
+  fontWeight: vars.font.weight.semibold,
+  textTransform: 'uppercase',
+})
+
+export const nameText = style({
+  minInlineSize: 0,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
 })

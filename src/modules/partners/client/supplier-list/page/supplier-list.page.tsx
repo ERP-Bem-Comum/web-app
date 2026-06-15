@@ -3,7 +3,7 @@ import { getRouteApi, useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { Badge, Button, DataTable, PageHeader, type Column, type DataTableState } from '#shared/ui/index.ts'
+import { Badge, Button, DataTable, PageHeader, AvatarLabel, initialsFrom, type Column, type DataTableState } from '#shared/ui/index.ts'
 
 import { useSupplierListBinding } from '../supplier-list.binding.ts'
 import { totalPages, type SupplierListState, type SupplierRow } from '../supplier-list.view-model.ts'
@@ -47,7 +47,7 @@ export function SupplierListPage(): ReactNode {
     (search.categories?.length ?? 0) > 0
 
   const columns: readonly Column<SupplierRow>[] = [
-    { key: 'name', header: t('partners.suppliers.columns.name'), cell: (r) => r.name },
+    { key: 'name', header: t('partners.suppliers.columns.name'), cell: (r) => <AvatarLabel variant="supplier" initials={initialsFrom(r.name)} text={r.name} /> },
     { key: 'email', header: t('partners.suppliers.columns.email'), cell: (r) => r.email },
     {
       key: 'cnpj',
@@ -63,7 +63,7 @@ export function SupplierListPage(): ReactNode {
       key: 'status',
       header: t('partners.suppliers.columns.status'),
       cell: (r) => (
-        <Badge variant={r.activation === 'active' ? 'active' : 'outro'}>
+        <Badge variant={r.activation === 'active' ? 'active' : 'terminated'} uppercase size="sm">
           {t(`partners.suppliers.status.${r.activation}`)}
         </Badge>
       ),
@@ -118,7 +118,15 @@ export function SupplierListPage(): ReactNode {
             contractStatus: t('partners.suppliers.filters.contractStatus'),
             allOption: t('partners.suppliers.filters.allOption'),
             gatedHint: t('partners.suppliers.filters.gatedHint'),
-            apply: t('partners.suppliers.filters.apply'),
+            apply: t('partners.filters.apply'),
+            statusLabel: t('partners.suppliers.columns.status'),
+            advancedTitle: t('partners.filters.advancedTitle'),
+            advancedSubtitle: t('partners.suppliers.filters.advancedSubtitle'),
+            collapse: t('partners.filters.collapse'),
+            clear: t('partners.filters.clear'),
+            clearAll: t('partners.filters.clearAll'),
+            removeFilter: t('partners.filters.removeFilter'),
+            applied: t('partners.filters.applied'),
           }}
           exportSlot={
             <PartnersExportDropdown
@@ -145,6 +153,12 @@ export function SupplierListPage(): ReactNode {
               replace: true,
               search: (p) => ({ ...p, categories: c ? [c] : undefined, page: 1 }),
             })
+          }
+          onClear={() =>
+            void navigate({ to: '.', replace: true, search: (p) => ({ ...p, categories: undefined, page: 1 }) })
+          }
+          onClearAll={() =>
+            void navigate({ to: '.', replace: true, search: (p) => ({ ...p, active: undefined, categories: undefined, page: 1 }) })
           }
         />
 

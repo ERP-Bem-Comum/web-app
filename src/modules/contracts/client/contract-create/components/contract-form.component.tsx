@@ -63,7 +63,6 @@ import {
   contractorBoxAction,
   partnerCardBody,
   partnerLabel,
-  partnerBadge,
   partnerTypeBadge,
   partnerName,
   partnerDoc,
@@ -205,16 +204,15 @@ export function ContractForm({
           {selectedPartner ? (
             <div className={partnerSelectedWrap}>
               <div className={partnerCardBody}>
+                {/* Espelha o bloco "Contratado" da tela de detalhe: overline (label + pill PJ · TIPO),
+                    nome e documento. Badge do ACT = "ACT" (não "Acordo"). */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <span className={partnerLabel}>{t('contracts.create.partnerLabel')}</span>
-                  <span className={partnerBadge}>
-                    {selectedPartner.cnpj ? 'PJ' : 'PF'}
+                  <span className={partnerTypeBadge[selectedPartner.kind]}>
+                    {selectedPartner.cnpj ? 'PJ' : 'PF'} · {selectedPartner.kind === 'Acordo' ? 'ACT' : selectedPartner.kind}
                   </span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span className={partnerName}>{selectedPartner.name}</span>
-                  <span className={partnerTypeBadge[selectedPartner.kind]}>{selectedPartner.kind}</span>
-                </div>
+                <span className={partnerName}>{selectedPartner.name}</span>
                 <span className={partnerDoc}>
                   {selectedPartner.cnpj ? `CNPJ ${maskDocument(selectedPartner.cnpj)}` : selectedPartner.cpf ? `CPF ${maskDocument(selectedPartner.cpf)}` : '—'}
                 </span>

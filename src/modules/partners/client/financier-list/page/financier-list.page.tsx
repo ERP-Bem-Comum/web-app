@@ -3,7 +3,7 @@ import { getRouteApi, useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { Badge, Button, DataTable, PageHeader, formatMask, type Column, type DataTableState } from '#shared/ui/index.ts'
+import { Badge, Button, DataTable, PageHeader, formatMask, AvatarLabel, initialsFrom, type Column, type DataTableState } from '#shared/ui/index.ts'
 
 import { useFinancierListBinding } from '../financier-list.binding.ts'
 import { totalPages, type FinancierListState, type FinancierRow } from '../financier-list.view-model.ts'
@@ -46,7 +46,7 @@ export function FinancierListPage(): ReactNode {
     {
       key: 'corporateName',
       header: t('partners.financiers.columns.corporateName'),
-      cell: (r) => r.corporateName,
+      cell: (r) => <AvatarLabel variant="financier" initials={initialsFrom(r.corporateName)} text={r.corporateName} />,
     },
     {
       key: 'legalRepresentative',
@@ -63,7 +63,7 @@ export function FinancierListPage(): ReactNode {
       key: 'status',
       header: t('partners.financiers.columns.status'),
       cell: (r) => (
-        <Badge variant={r.activation === 'active' ? 'active' : 'outro'}>
+        <Badge variant={r.activation === 'active' ? 'active' : 'terminated'} uppercase size="sm">
           {t(`partners.financiers.status.${r.activation}`)}
         </Badge>
       ),

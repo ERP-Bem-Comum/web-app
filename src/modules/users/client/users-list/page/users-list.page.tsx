@@ -3,7 +3,7 @@ import { getRouteApi, useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { Badge, Button, DataTable, PageHeader, type Column, type DataTableState } from '#shared/ui/index.ts'
+import { Badge, Button, DataTable, PageHeader, AvatarLabel, initialsFrom, type Column, type DataTableState } from '#shared/ui/index.ts'
 
 import { useUsersListBinding } from '../users-list.binding.ts'
 import { totalPages, type UsersListState, type UserRow } from '../users-list.view-model.ts'
@@ -22,7 +22,7 @@ export function UsersListPage(): ReactNode {
   const hasFilters = (search.search ?? '') !== '' || search.status !== 'all'
 
   const columns: readonly Column<UserRow>[] = [
-    { key: 'name', header: t('users.list.columns.name'), cell: (r) => r.name },
+    { key: 'name', header: t('users.list.columns.name'), cell: (r) => <AvatarLabel variant="brand" initials={initialsFrom(r.name)} text={r.name} /> },
     // Perfil (role) NÃO vem na listagem do backend (só id/name/email/status) → travessão até o backend
     // expor o perfil na lista (ver gap). Ver ticket.
     { key: 'profile', header: t('users.list.columns.profile'), cell: () => '—' },
@@ -30,7 +30,7 @@ export function UsersListPage(): ReactNode {
       key: 'status',
       header: t('users.list.columns.status'),
       cell: (r) => (
-        <Badge variant={r.activation === 'active' ? 'active' : 'outro'}>
+        <Badge variant={r.activation === 'active' ? 'active' : 'terminated'} uppercase size="sm">
           {t(`users.status.${r.activation}`)}
         </Badge>
       ),

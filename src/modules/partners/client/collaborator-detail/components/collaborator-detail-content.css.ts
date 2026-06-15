@@ -59,6 +59,14 @@ export const gridFull = style({
   gridColumn: '1 / -1',
 })
 
+// Aviso de seção gated (espelha o form: dados bancários aguardando backend).
+export const gatedNote = style({
+  margin: 0,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+  color: vars.color.text.secondary,
+})
+
 export const select = style({
   blockSize: '2.5rem',
   paddingInline: vars.space.md,

@@ -20,10 +20,19 @@ import { ImportReportModal } from '../components/import-report-modal.component.t
 import { CollaboratorExportDropdown } from '#modules/partners/client/shared/collaborator-export-dropdown.component.tsx'
 import { PartnersPrintable } from '#modules/partners/client/shared/partners-printable.component.tsx'
 import { contentWrap, contentWrapPrintHidden } from '#modules/partners/client/shared/export-print.css.ts'
-import { screen, statusCell, registrationText, toolbarActions, importButton } from './collaborator-list.css.ts'
+import { screen, toolbarActions, importButton, nameCell, avatar, nameText } from './collaborator-list.css.ts'
 
 const t = createTranslator(ptBR)
 const routeApi = getRouteApi('/_authenticated/parceiros/colaboradores/')
+
+/** Iniciais (até 2) do nome para o avatar da grid. */
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return '—'
+  const first = parts[0]?.[0] ?? ''
+  const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? '') : ''
+  return `${first}${last}`
+}
 
 const isOccupationArea = (v: string): v is OccupationArea =>
   (OCCUPATION_AREAS as readonly string[]).includes(v)
@@ -72,7 +81,16 @@ export function CollaboratorListPage(): ReactNode {
     search.year !== undefined
 
   const columns: readonly Column<CollaboratorRow>[] = [
-    { key: 'name', header: t('partners.collaborators.columns.legalRepresentative'), cell: (r) => r.name },
+    {
+      key: 'name',
+      header: t('partners.collaborators.columns.legalRepresentative'),
+      cell: (r) => (
+        <div className={nameCell}>
+          <span className={avatar} aria-hidden="true">{initials(r.name)}</span>
+          <span className={nameText}>{r.name}</span>
+        </div>
+      ),
+    },
     { key: 'email', header: t('partners.collaborators.columns.email'), cell: (r) => r.email },
     {
       key: 'area',
@@ -87,18 +105,23 @@ export function CollaboratorListPage(): ReactNode {
     },
     { key: 'role', header: t('partners.collaborators.columns.role'), cell: (r) => r.role },
     {
-      // Status duplo (legado): badge de ativação + situação cadastral abaixo.
+      // Status (ativação) — coluna própria.
       key: 'status',
       header: t('partners.collaborators.columns.status'),
       cell: (r) => (
-        <div className={statusCell}>
-          <Badge variant={r.activation === 'active' ? 'active' : 'outro'}>
-            {t(`partners.collaborators.status.${r.activation}`)}
-          </Badge>
-          <span className={registrationText}>
-            {t(`partners.collaborators.registration.${r.registration}`)}
-          </span>
-        </div>
+        <Badge variant={r.activation === 'active' ? 'active' : 'terminated'} uppercase size="sm">
+          {t(`partners.collaborators.status.${r.activation}`)}
+        </Badge>
+      ),
+    },
+    {
+      // Situação cadastral (pré-cadastro/cadastrado) — coluna própria.
+      key: 'situacao',
+      header: t('partners.collaborators.columns.situacao'),
+      cell: (r) => (
+        <Badge variant={r.registration === 'pre-registration' ? 'pending' : 'finished'} uppercase size="sm">
+          {t(`partners.collaborators.registration.${r.registration}`)}
+        </Badge>
       ),
     },
   ]
@@ -114,6 +137,7 @@ export function CollaboratorListPage(): ReactNode {
     t('partners.collaborators.columns.occupationArea'),
     t('partners.collaborators.columns.role'),
     t('partners.collaborators.columns.status'),
+    t('partners.collaborators.columns.situacao'),
   ]
   const exportRows: readonly (readonly string[])[] = rows.map((r) => [
     r.name,
@@ -121,6 +145,7 @@ export function CollaboratorListPage(): ReactNode {
     areaLabel(r.occupationArea),
     r.role,
     t(`partners.collaborators.status.${r.activation}`),
+    t(`partners.collaborators.registration.${r.registration}`),
   ])
 
   return (
@@ -190,6 +215,17 @@ export function CollaboratorListPage(): ReactNode {
           preRegistration: t('partners.collaborators.registration.pre-registration'),
           complete: t('partners.collaborators.registration.complete'),
           apply: t('partners.collaborators.filters.apply'),
+          advancedTitle: t('partners.collaborators.filters.advancedTitle'),
+          advancedSubtitle: t('partners.collaborators.filters.advancedSubtitle'),
+          collapse: t('partners.collaborators.filters.collapse'),
+          clear: t('partners.collaborators.filters.clear'),
+          groupPessoais: t('partners.collaborators.filters.groupPessoais'),
+          groupContratuais: t('partners.collaborators.filters.groupContratuais'),
+          groupSituacao: t('partners.collaborators.filters.groupSituacao'),
+          applied: t('partners.collaborators.filters.applied'),
+          statusLabel: t('partners.collaborators.columns.status'),
+          clearAll: t('partners.collaborators.filters.clearAll'),
+          removeFilter: t('partners.collaborators.filters.removeFilter'),
         }}
         exportSlot={
           <CollaboratorExportDropdown
@@ -217,6 +253,20 @@ export function CollaboratorListPage(): ReactNode {
         }
         onYear={(v) =>
           void navigate({ to: '.', replace: true, search: (p) => ({ ...p, year: v.trim() === '' ? undefined : Number(v), page: 1 }) })
+        }
+        onClear={() =>
+          void navigate({
+            to: '.',
+            replace: true,
+            search: (p) => ({ ...p, status: undefined, employment: undefined, role: undefined, year: undefined, page: 1 }),
+          })
+        }
+        onClearAll={() =>
+          void navigate({
+            to: '.',
+            replace: true,
+            search: (p) => ({ ...p, active: undefined, status: undefined, employment: undefined, role: undefined, year: undefined, page: 1 }),
+          })
         }
       />
 
