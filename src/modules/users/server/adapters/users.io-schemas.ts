@@ -33,9 +33,11 @@ export const UpdateUserInputSchema = z.object({
   telephone: z.string().trim().min(1).max(20),
 })
 
-// Minha Conta — PUT /me (só name + telephone).
+// Minha Conta — PUT /me (name + email + telephone; CPF imutável). E-mail editável no autosserviço
+// (USR-ME-PROFILE-FIELDS). Presença/limite aqui; FORMATO e duplicidade são do core-api (422/409).
 export const UpdateMeInputSchema = z.object({
   name: z.string().trim().min(1).max(200),
+  email: z.string().trim().min(1).max(254),
   telephone: z.string().trim().min(1).max(20),
 })
 

@@ -23,6 +23,10 @@ import {
 
 const t = createTranslator(ptBR)
 
+// Checagem leve de formato de e-mail (UX): habilita/desabilita "Salvar". O FORMATO canônico e a
+// duplicidade são do core-api (422 email-invalid-format / 409 email-already-registered).
+const isLikelyEmail = (raw: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw.trim())
+
 export type EditProfileModalProps = Readonly<{
   open: boolean
   me: UserDetail
@@ -36,6 +40,7 @@ export function EditProfileModal(props: EditProfileModalProps): ReactNode {
   const ref = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   const [name, setName] = useState(props.me.name)
+  const [email, setEmail] = useState(props.me.email)
   const [telephone, setTelephone] = useState(props.me.telephone)
 
   useEffect(() => {
@@ -43,14 +48,15 @@ export function EditProfileModal(props: EditProfileModalProps): ReactNode {
     if (el === null) return
     if (props.open && !el.open) {
       setName(props.me.name)
+      setEmail(props.me.email)
       setTelephone(props.me.telephone)
       el.showModal()
     } else if (!props.open && el.open) {
       el.close()
     }
-  }, [props.open, props.me.name, props.me.telephone])
+  }, [props.open, props.me.name, props.me.email, props.me.telephone])
 
-  const canSave = name.trim() !== '' && telephone.trim() !== '' && !props.running
+  const canSave = name.trim() !== '' && isLikelyEmail(email) && telephone.trim() !== '' && !props.running
 
   return (
     <dialog
@@ -81,12 +87,12 @@ export function EditProfileModal(props: EditProfileModalProps): ReactNode {
           <Field htmlFor="me-name" label={t('users.form.name')}>
             <Input id="me-name" value={name} onChange={setName} />
           </Field>
-          {/* CPF e E-mail não são editáveis no autosserviço (PUT /me aceita só nome/telefone). */}
+          {/* CPF é imutável no autosserviço; e-mail é editável (PUT /me — USR-ME-PROFILE-FIELDS). */}
           <Field htmlFor="me-cpf" label={t('users.form.cpf')}>
             <Input id="me-cpf" mask="cpf" value={props.me.cpf} disabled onChange={() => { /* read-only */ }} />
           </Field>
           <Field htmlFor="me-email" label={t('users.form.email')}>
-            <Input id="me-email" type="email" value={props.me.email} disabled onChange={() => { /* read-only */ }} />
+            <Input id="me-email" type="email" value={email} onChange={setEmail} />
           </Field>
           <Field htmlFor="me-telephone" label={t('users.form.telephone')}>
             <Input id="me-telephone" mask="phone" value={telephone} onChange={setTelephone} />
@@ -98,7 +104,7 @@ export function EditProfileModal(props: EditProfileModalProps): ReactNode {
         <button type="button" className={cancelButton} onClick={props.onClose}>{t('users.form.cancel')}</button>
         <div className={saveWrap}>
           <Button
-            onClick={() => { props.onSave({ name: name.trim(), telephone }) }}
+            onClick={() => { props.onSave({ name: name.trim(), email: email.trim(), telephone }) }}
             disabled={!canSave}
             loading={props.running}
             loadingLabel={t('users.detail.saving')}

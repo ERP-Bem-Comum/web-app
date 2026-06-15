@@ -34,9 +34,11 @@ export interface UpdateUserInput {
   telephone: string
 }
 
-// Minha Conta (autosserviço). PUT /api/v1/me aceita SÓ name + telephone (cpf/email read-only).
+// Minha Conta (autosserviço). PUT /api/v1/me aceita name + email + telephone (CPF imutável). E-mail
+// editável desde o core-api USR-ME-PROFILE-FIELDS (PR #32): duplicado → 409 email-already-registered.
 export interface UpdateMeInput {
   name: string
+  email: string
   telephone: string
 }
 
