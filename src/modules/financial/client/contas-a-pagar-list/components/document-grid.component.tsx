@@ -92,10 +92,11 @@ export function DocumentGrid(props: DocumentGridProps): ReactNode {
         </div>
       ) : (
         state.rows.map((r) => {
-          const isSelected = (selectedIds?.has(r.id) ?? false) || props.activeId === r.id
+          const isChecked = selectedIds?.has(r.id) ?? false // estado da checkbox (seleção em massa)
+          const isActive = props.activeId === r.id // linha com o drawer aberto
           return (
             <div
-              className={`${row} ${rowClickable}${isSelected ? ` ${rowSelected}` : ''}`}
+              className={`${row} ${rowClickable}${isChecked || isActive ? ` ${rowSelected}` : ''}`}
               role="button"
               tabIndex={0}
               key={r.id}
@@ -122,7 +123,7 @@ export function DocumentGrid(props: DocumentGridProps): ReactNode {
                 {selectable ? (
                   <Checkbox
                     id={`cb-${r.id}`}
-                    checked={isSelected}
+                    checked={isChecked}
                     onChange={() => {
                       onToggle(r.id)
                     }}
