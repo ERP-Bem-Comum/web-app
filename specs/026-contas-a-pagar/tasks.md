@@ -84,16 +84,16 @@ description: "Task list — Contas a Pagar (Financeiro) v1 núcleo"
 
 ### Tests for US1 (RED first) ⚠️
 
-- [ ] T025 [P] [US1] (RED) Teste puro de `document-form.view` (preview do líquido = bruto − descontos-fonte − retenções − descontos + multa + juros; gating de retenção só NFS-e/RPA; `canSubmit`) em `tests/modules/financial/client/document-create/document-form-view.test.ts`.
+- [ ] T025 [P] [US1] (RED) Teste puro de `document-form.view` (preview do líquido; gating de retenção só NFS-e/RPA; **agregação CSRF = PIS+COFINS+CSLL** no input e no preview de "Títulos Previstos" pai+ISS/IRRF/INSS/CSRF; `canSubmit`) em `tests/modules/financial/client/document-create/document-form-view.test.ts`.
 - [ ] T026 [P] [US1] (RED) Spec DOM do form (campos obrigatórios, bloco de retenções aparece só p/ NFS-e/RPA, `onSubmit` emite centavos+bps, mensagem de erro por tag, **estado de sucesso lista os títulos gerados** — FR-007) em `tests/modules/financial/client/document-create/document-form.spec.tsx`.
 
 ### Implementation for US1
 
-- [ ] T027 [US1] `src/modules/financial/client/document-create/document-form.view.ts` (derivação pura: preview do líquido, `retentionsEnabled`, `canSubmit`).
+- [ ] T027 [US1] `src/modules/financial/client/document-create/document-form.view.ts` (derivação pura: preview do líquido, `retentionsEnabled`, **agregação CSRF (PIS+COFINS+CSLL → 1 retenção `CSRF`)** ao montar o `CreateDocumentInput` e os "Títulos Previstos", `canSubmit`).
 - [ ] T028 [US1] `src/modules/financial/client/document-create/document-form.controller.ts` (UI-state do form em máquina/`useReducer`, agnóstico de React no núcleo).
 - [ ] T029 [US1] `src/modules/financial/client/document-create/create-document.mutation.ts` (`mutationOptions` → `repository.create`).
 - [ ] T030 [US1] `src/modules/financial/client/document-create/create-document.binding.ts` (adapter React: `useMutation`, deriva `submitting`/`errorTag`, e no **sucesso** expõe o documento criado + seus `payables` para o estado de sucesso — **FR-007**).
-- [ ] T031 [P] [US1] Componentes burros `document-form.component.tsx`, `retentions-block.component.tsx`, `registered-taxes-block.component.tsx`, `net-value-preview.component.tsx` (+ `.css.ts` tokens-only) em `src/modules/financial/client/document-create/components/` — tokens/medidas via **Figma node 205-638** + mock HTML `~/Desktop/CONSULTORIA/Financeiro/contas-a-pagar/`.
+- [ ] T031 [P] [US1] Componentes burros (form **manual**, sem PDF/OCR) em `src/modules/financial/client/document-create/components/` (+ `.css.ts` tokens-only): `document-form.component.tsx`, `identificacao-block` (tipo/nº/série/vencimento/bruto/descrição — **sem** competência/emissão), `retentions-block.component.tsx` (**6 inputs**: ISS/IRRF/INSS/PIS/COFINS/CSLL), `registered-taxes-block.component.tsx` (CBS/IBS, leitura), `net-value-preview.component.tsx`, `titulos-previstos.component.tsx` (pai+filhos com CSRF), `categorizacao-readonly.component.tsx` (**herdada do contrato vinculado**, read-only). **Gated/omitir no v1:** painel PDF/OCR, Validação/Divergência, Aprovador, conta-débito. Referência principal = **mock HTML** `~/Desktop/CONSULTORIA/Financeiro/contas-a-pagar/lancar-documento/` (o Figma desta tela está incompleto); tokens do grid via Figma node 205-638.
 - [ ] T032 [US1] `src/modules/financial/client/document-create/page/lancar-documento.page.tsx` (+ `.css.ts`) — view burra (recebe binding por props); inclui o **estado de sucesso** que exibe os **títulos gerados** (pai + filhos) retornados pelo create (**FR-007**).
 - [ ] T033 [US1] Ligar a rota `src/routes/financeiro/contas-a-pagar/lancar.tsx` (binding→page); **guard de rota por permissão `fiscal-document:write`** (FR-013); **select de fornecedor** via `#modules/partners/public-api` (lista de Fornecedores).
 - [ ] T034 [US1] i18n: tags `financial.create.*` (labels de campos, tipos, formas de pagamento, retenções) + erros `financial.error.*` em `catalog.pt-BR.ts`.
@@ -139,7 +139,7 @@ description: "Task list — Contas a Pagar (Financeiro) v1 núcleo"
 
 ## Phase 6: Polish & Cross-Cutting
 
-- [ ] T045 [P] Escrever o handoff `handbook/core-api/tickets/FIN-LIST-DTO.md` (backend enriquecer o DTO da lista — hoje só id/status/número/tipo/supplierRef/líquido/vencimento; faltam bruto/emissão/forma-pag/contrato/fornecedor-nome/série).
+- [ ] T045 [P] Abrir os handoffs de backend como **GitHub issues** (novo padrão do tech lead — não mais `.md` no repo), provavelmente no repo `ERP-Bem-Comum/core-api`: **FIN-LIST-DTO** (enriquecer o DTO da lista) e **FIN-CREATE-DTO** (create aceitar competência/emissão/conta-débito + derivar categorização do `contractRef`). Referenciar as URLs das issues aqui.
 - [ ] T046 Rodar `pnpm verify` (typecheck + lint + `test` + `test:dom`) verde; corrigir qualquer regressão (regra de regressão-zero).
 - [ ] T047 Gerar baselines visuais Playwright das 2 telas (`e2e/visual/`), com revisão humana do diff — nunca `test:visual:update` cego.
 - [ ] T048 Validar `quickstart.md` (smoke manual contra a stack `app.localhost`).

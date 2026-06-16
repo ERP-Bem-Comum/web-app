@@ -95,6 +95,25 @@ Líquido = Bruto − DescontosNaFonte − Σ(Retenções) − Descontos + Multa 
 ```
 Impostos registrados **não** entram. Calculado em `document-form.view.ts` (puro) só para **preview**; o backend é a autoridade.
 
+## Regra de agregação CSRF (form → input)
+
+O **form coleta 6 retenções** (ISS, IRRF, INSS, **PIS, COFINS, CSLL**), mas o backend só aceita `RetentionType ∈ {ISS, IRRF, INSS, CSRF}`. Na borda (model→input), o front **agrega PIS + COFINS + CSLL num único `CSRF`**:
+
+```
+csrfValueCents = pisCents + cofinsCents + csllCents          // 65 + 300 + 100 → 465
+retentions = [ ISS?, IRRF?, INSS?, (csrf>0 ? {type:'CSRF', valueCents: csrf, ...} : —) ]
+```
+
+O preview "Títulos Previstos" reflete isso: pai (líquido) + filhos ISS/IRRF/INSS/**CSRF**. (R8 do `domain.md`.)
+
+## Categorização — herdada do contrato (read-only)
+
+`categoria`, `programa`, `planoOrcamentario` e `centroCusto` **não são entrada livre**: vêm do **contrato vinculado** (`contractRef`) ao documento. No v1 são **exibidos read-only** (derivados do contrato). Dependências: o contrato expor esses metadados (`CTR-NUMBER-PROGRAM`) e o create derivá-los do `contractRef` (`FIN-CREATE-DTO`). Enquanto não houver, a seção fica gated.
+
+## Lacunas do create na Fatia 1 (ticket `FIN-CREATE-DTO`)
+
+O `createDocumentBodySchema` **não aceita** `competencia`, `dataEmissao` nem `contaDebitoId` (presentes no `data-model` documentado). No v1, esses campos são **omitidos/gated**.
+
 ## Regras de validação (na UI / borda)
 
 - Retenções só habilitadas para **NFS-e** e **RPA** (gating na view; backend recusa o resto → `retention-not-allowed`).
