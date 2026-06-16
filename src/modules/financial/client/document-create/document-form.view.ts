@@ -327,8 +327,10 @@ const retentionSumFromDetail = (d: DocumentDetail): number =>
 
 /** DocumentDetail → campos do form (para hidratar a tela de edição). Série não vem no detalhe. */
 export const hydrateFieldsFromDetail = (d: DocumentDetail): DocumentFormFields => {
-  // ISS/IRRF/INSS hidratam direto; CSRF é agregado (PIS+COFINS+CSLL) e não há como desagregar → fica
-  // fora dos campos split (e retenções são somente-consulta na edição mesmo).
+  // ISS/IRRF/INSS hidratam direto. CSRF é agregado (PIS+COFINS+CSLL); como o form soma os três em CSRF,
+  // colocamos o total da CSRF em `pis` (cofins/csll = 0) → o LÍQUIDO e os TÍTULOS previstos batem com o
+  // documento. (Retenções são somente-consulta na edição e OMITIDAS no PATCH — o backend as preserva; o
+  // único efeito é a linha "PIS" da composição exibir o valor da CSRF, read-only.)
   const retVal = (rt: RetentionType): string => {
     const child = d.payables.find((p) => p.kind === 'Child' && p.retentionType === rt)
     return child !== undefined ? centsToBRL(child.valueCents) : ''
@@ -338,6 +340,7 @@ export const hydrateFieldsFromDetail = (d: DocumentDetail): DocumentFormFields =
     iss: retVal('ISS'),
     irrf: retVal('IRRF'),
     inss: retVal('INSS'),
+    pis: retVal('CSRF'),
   }
   return {
     type: d.type ?? '',

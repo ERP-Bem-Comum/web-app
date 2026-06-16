@@ -175,6 +175,7 @@ const detail: DocumentDetail = {
     { id: 'p0', kind: 'Parent', retentionType: null, valueCents: '793500', status: 'Aberto' },
     { id: 'p1', kind: 'Child', retentionType: 'ISS', valueCents: '35000', status: 'Aberto' },
     { id: 'p2', kind: 'Child', retentionType: 'IRRF', valueCents: '15000', status: 'Aberto' },
+    { id: 'p3', kind: 'Child', retentionType: 'CSRF', valueCents: '25500', status: 'Aberto' },
   ],
 }
 
@@ -214,6 +215,8 @@ describe('hydrateFieldsFromDetail', () => {
     assert.match(f.retentions.iss, /350,00/)
     assert.match(f.retentions.irrf, /150,00/)
     assert.equal(f.retentions.inss, '')
+    // CSRF (agregado) é hidratado em `pis` p/ o líquido/títulos baterem (read-only na edição).
+    assert.match(f.retentions.pis, /255,00/)
   })
 })
 
