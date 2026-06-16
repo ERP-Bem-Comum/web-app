@@ -29,30 +29,35 @@ export const count = style({
   paddingInline: vars.space.sm,
   borderRadius: vars.radius.xl,
 })
+// Ação primária — espelha `newButton` do grid de Contratos (azul sólido + texto em superfície).
 export const newButton = style({
   marginInlineStart: 'auto',
   display: 'inline-flex',
   alignItems: 'center',
-  gap: vars.space.xs,
+  gap: vars.space.sm,
   textDecoration: 'none',
   fontSize: vars.font.size.sm,
-  fontWeight: 600,
-  color: vars.color.institutional.paperWarm,
-  background: vars.color.institutional.blueDeep,
+  fontWeight: vars.font.weight.medium,
+  fontFamily: vars.font.family.body,
+  color: vars.color.surface.default,
+  background: vars.color.institutional.blue,
   paddingBlock: vars.space.sm,
   paddingInline: vars.space.md,
   borderRadius: vars.radius.md,
+  ':hover': { background: vars.color.institutional.blueDeep },
 })
 
 export const chips = style({ display: 'flex', gap: vars.space.xs, flexWrap: 'wrap' })
+// Chip de status (chrome) — denso como o mock (.chip: 11px, weight 500, radius 4px, ink-4).
 export const chip = style({
-  fontSize: vars.font.size.sm,
-  color: vars.color.text.secondary,
+  fontSize: vars.font.size.xs,
+  fontWeight: vars.font.weight.medium,
+  color: vars.color.institutional.ink4,
   background: vars.color.surface.default,
-  border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   paddingBlock: vars.space.xs,
   paddingInline: vars.space.sm,
-  borderRadius: vars.radius.xl,
+  borderRadius: vars.radius.sm,
 })
 export const chipActive = style([
   chip,
@@ -76,17 +81,20 @@ export const head = style({
   display: 'grid',
   gridTemplateColumns: GRID_COLS,
   gap: vars.space.sm,
-  paddingBlock: vars.space.sm,
+  alignItems: 'center',
+  minBlockSize: '2.25rem', // mock: header 36px
+  paddingBlock: vars.space.xs,
   paddingInline: vars.space.md,
   background: vars.color.institutional.paperWarm,
   borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
 })
+// Cabeçalho denso do mock: caixa-alta, peso forte, tracking largo, tom ink-5.
 export const headCell = style({
   fontSize: vars.font.size.xs,
-  fontWeight: 600,
+  fontWeight: vars.font.weight.bold,
   textTransform: 'uppercase',
-  letterSpacing: '0.04em',
-  color: vars.color.text.muted,
+  letterSpacing: '0.06em',
+  color: vars.color.institutional.ink5,
 })
 export const headCellRight = style([headCell, { textAlign: 'right' }])
 
@@ -95,11 +103,14 @@ export const row = style({
   gridTemplateColumns: GRID_COLS,
   gap: vars.space.sm,
   alignItems: 'center',
-  paddingBlock: vars.space.sm,
+  minBlockSize: '2.75rem',
+  paddingBlock: '0.625rem', // mesma fração fina do grid de Contratos
   paddingInline: vars.space.md,
   borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   fontSize: vars.font.size.sm,
-  color: vars.color.text.primary,
+  color: vars.color.institutional.ink2,
+  transition: 'background 120ms ease',
+  ':hover': { background: vars.color.institutional.paperWarm },
   ':last-child': { borderBlockEnd: 'none' },
 })
 export const cell = style({ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })
