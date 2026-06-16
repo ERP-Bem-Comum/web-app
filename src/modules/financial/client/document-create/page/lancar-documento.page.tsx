@@ -61,10 +61,25 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
   // Hidrata banco + contrato "Em Andamento" do fornecedor (auto-preenchimento do Pagamento/Categorização).
   const hydration = usePartnerHydration(controller.fields.supplierRef, selectedPartner?.kind ?? null)
 
-  // Modo da tela: criação · edição (Aberto, ajustável) · consulta (status ≠ Aberto, só leitura).
-  const mode = !edit.isEdit ? 'create' : edit.editable ? 'edit' : 'view'
-  const errorTag = edit.isEdit ? edit.errorTag : command.errorTag
-  const running = edit.isEdit ? edit.running : command.running
+  // Modo da tela:
+  //  · create  — novo documento
+  //  · edit    — Aberto: ajuste (PATCH) do subconjunto editável; demais campos travados
+  //  · draft   — Rascunho: reabre com TUDO preenchido e EDITÁVEL p/ concluir e salvar (via create)
+  //  · view    — demais status: somente consulta (tudo travado)
+  const mode = !edit.isEdit
+    ? 'create'
+    : edit.status === 'Aberto'
+      ? 'edit'
+      : edit.status === 'Rascunho'
+        ? 'draft'
+        : 'view'
+  // Rascunho/criação salvam pelo command (create); edição usa o binding de ajuste.
+  const errorTag = mode === 'edit' ? edit.errorTag : command.errorTag
+  const running = mode === 'edit' ? edit.running : command.running
+  // Travas: edição/consulta usam as travas por status; criação/rascunho ficam 100% abertos.
+  const formLocks = mode === 'edit' || mode === 'view' ? (edit.locks ?? undefined) : undefined
+  // Bottombar: rascunho reaproveita as ações de criação (Salvar Documento / Salvar rascunho).
+  const bottombarMode = mode === 'draft' ? 'create' : mode
   const goToGrid = (): void => {
     void navigate({ to: '/financeiro/contas-a-pagar' })
   }
@@ -102,7 +117,9 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
         >
           {t('financial.create.back')}
         </Link>
-        <h1 className={topTitle}>{edit.isEdit ? t('financial.edit.title') : t('financial.create.title')}</h1>
+        <h1 className={topTitle}>
+          {mode === 'edit' || mode === 'view' ? t('financial.edit.title') : t('financial.create.title')}
+        </h1>
         <span className={crumb}>{t('financial.create.crumb')}</span>
         <Link
           to="/financeiro/contas-a-pagar"
@@ -129,7 +146,7 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
             options={partners}
             open={picker.open}
             query={picker.query}
-            disabled={edit.isEdit}
+            disabled={mode === 'edit' || mode === 'view'}
             onToggle={picker.toggle}
             onClose={picker.close}
             onQueryChange={picker.setQuery}
@@ -142,7 +159,7 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
           <DocumentForm
             fields={controller.fields}
             hydration={hydration}
-            locks={edit.locks ?? undefined}
+            locks={formLocks}
             onType={controller.setType}
             onPaymentMethod={controller.setPaymentMethod}
             onText={controller.setText}
@@ -156,13 +173,13 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
       </div>
 
       <DocumentBottombar
-        mode={mode}
+        mode={bottombarMode}
         onDiscard={edit.isEdit ? goToGrid : controller.reset}
         onSaveDraft={() => {
           submit(buildDraftInput(controller.fields))
         }}
         onSubmit={
-          edit.isEdit
+          mode === 'edit'
             ? submitEdit
             : () => {
                 submit(buildCreateInput(controller.fields))
@@ -170,7 +187,7 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
         }
         canSaveDraft={canSaveDraft(controller.fields)}
         canSubmit={
-          edit.isEdit
+          mode === 'edit'
             ? edit.detail !== null && canSaveEdit(controller.fields, edit.detail)
             : canSubmit(controller.fields)
         }

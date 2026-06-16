@@ -118,6 +118,7 @@ export function ContasAPagarPage(): ReactNode {
           onRowClick={(id) => {
             setSelectedId(id)
           }}
+          activeId={selectedId}
           selectedIds={selected}
           allSelected={allSelected}
           onToggle={toggle}

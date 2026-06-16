@@ -18,6 +18,14 @@ export const topbar = style({
   paddingInline: vars.space.md,
   borderBottom: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   flexShrink: 0,
+  // Header FIXO full-width (mesmo padrão da tela Incluir Contrato): logo abaixo do topbar do sistema,
+  // da barra de menu à direita.
+  position: 'fixed',
+  insetBlockStart: vars.size.topbar,
+  insetInlineStart: 'var(--sidebar-width, 16.25rem)',
+  insetInlineEnd: 0,
+  zIndex: 100,
+  background: vars.color.surface.default,
 })
 
 export const backButton = style({
@@ -118,6 +126,8 @@ export const mainLayout = style({
   gap: vars.space.xl,
   minHeight: 0,
   overflow: 'hidden',
+  // Reserva a altura do header agora fixo (mantém o corpo na mesma posição de antes).
+  paddingBlockStart: '3.5rem',
 })
 
 export const mainCol = style({
@@ -221,9 +231,18 @@ export const overlinePill = style({
 
 // Cor por TIPO de parceiro (azul/amarelo/verde/laranja) — chaveada pelo `contractType` (EN).
 export const overlinePillTone = styleVariants({
-  Supplier: { color: vars.color.partnerType.supplier.text, background: vars.color.partnerType.supplier.background },
-  Financier: { color: vars.color.partnerType.financier.text, background: vars.color.partnerType.financier.background },
-  Collaborator: { color: vars.color.partnerType.collaborator.text, background: vars.color.partnerType.collaborator.background },
+  Supplier: {
+    color: vars.color.partnerType.supplier.text,
+    background: vars.color.partnerType.supplier.background,
+  },
+  Financier: {
+    color: vars.color.partnerType.financier.text,
+    background: vars.color.partnerType.financier.background,
+  },
+  Collaborator: {
+    color: vars.color.partnerType.collaborator.text,
+    background: vars.color.partnerType.collaborator.background,
+  },
   ACT: { color: vars.color.partnerType.act.text, background: vars.color.partnerType.act.background },
 })
 
@@ -283,12 +302,15 @@ export const editInput = style({
   },
 })
 
-export const editTextarea = style([editInput, {
-  blockSize: 'auto',
-  minBlockSize: '4rem',
-  paddingBlock: vars.space.sm,
-  resize: 'vertical',
-}])
+export const editTextarea = style([
+  editInput,
+  {
+    blockSize: 'auto',
+    minBlockSize: '4rem',
+    paddingBlock: vars.space.sm,
+    resize: 'vertical',
+  },
+])
 
 export const editActions = style({
   display: 'flex',
@@ -508,9 +530,18 @@ export const aditImpacto = style({
   textAlign: 'right',
   fontVariantNumeric: 'tabular-nums',
 })
-export const aditImpactoPos = style({ color: vars.color.institutional.greenDeep, fontWeight: vars.font.weight.semibold })
-export const aditImpactoNeg = style({ color: vars.color.status.distratoText, fontWeight: vars.font.weight.semibold }) // supressão (reduz valor)
-export const aditImpactoBase = style({ color: vars.color.institutional.ink2, fontWeight: vars.font.weight.semibold })
+export const aditImpactoPos = style({
+  color: vars.color.institutional.greenDeep,
+  fontWeight: vars.font.weight.semibold,
+})
+export const aditImpactoNeg = style({
+  color: vars.color.status.distratoText,
+  fontWeight: vars.font.weight.semibold,
+}) // supressão (reduz valor)
+export const aditImpactoBase = style({
+  color: vars.color.institutional.ink2,
+  fontWeight: vars.font.weight.semibold,
+})
 export const aditImpactoNeutral = style({ color: vars.color.institutional.ink4 })
 
 export const docActions = style({
@@ -631,11 +662,24 @@ export const aditPageInfo = style({
 // prazo azul · valor verde · escopo MARROM (aditEscopo) · outro LARANJA (aditOutro) · distrato vermelho.
 // Definido DEPOIS de `tlItem`/`tlItemOk` p/ vencer por ordem de fonte (mesma especificidade de classe).
 export const tlNodeTone = styleVariants({
-  prazo: { '::before': { borderColor: vars.color.status.prazoText, background: vars.color.status.prazoText } },
-  valor: { '::before': { borderColor: vars.color.status.valorText, background: vars.color.status.valorText } },
-  escopo: { '::before': { borderColor: vars.color.status.aditEscopoText, background: vars.color.status.aditEscopoText } },
-  distrato: { '::before': { borderColor: vars.color.status.distratoText, background: vars.color.status.distratoText } },
-  outro: { '::before': { borderColor: vars.color.status.aditOutroText, background: vars.color.status.aditOutroText } },
+  prazo: {
+    '::before': { borderColor: vars.color.status.prazoText, background: vars.color.status.prazoText },
+  },
+  valor: {
+    '::before': { borderColor: vars.color.status.valorText, background: vars.color.status.valorText },
+  },
+  escopo: {
+    '::before': {
+      borderColor: vars.color.status.aditEscopoText,
+      background: vars.color.status.aditEscopoText,
+    },
+  },
+  distrato: {
+    '::before': { borderColor: vars.color.status.distratoText, background: vars.color.status.distratoText },
+  },
+  outro: {
+    '::before': { borderColor: vars.color.status.aditOutroText, background: vars.color.status.aditOutroText },
+  },
 })
 
 // Nó do contrato FINALIZADO: mesma cor da badge "Finalizado" (finishedText).

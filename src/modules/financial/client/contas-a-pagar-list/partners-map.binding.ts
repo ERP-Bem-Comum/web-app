@@ -3,7 +3,12 @@
  * do grid e do drawer (o DTO da lista só traz o id — FIN-LIST-DTO #47). Agrega via public-api de Parceiros
  * (§I). ACT exibe a RAZÃO SOCIAL (corporateName). O `kind` pinta o avatar pela regra de cor do parceiro.
  */
-import { listSuppliersFn, listFinanciersFn, listActsFn } from '#modules/partners/public-api/index.ts'
+import {
+  listSuppliersFn,
+  listFinanciersFn,
+  listActsFn,
+  getActFn,
+} from '#modules/partners/public-api/index.ts'
 
 import type { PartnerKind } from './contas-a-pagar.view-model.ts'
 
@@ -26,9 +31,14 @@ export const partnersMapQueryOptions = {
     if (financiers.ok)
       for (const f of financiers.data.items)
         map.set(f.id, { name: f.name, kind: 'financier', document: f.cnpj })
-    // ActListItem não traz CNPJ (só o ActDetail) — sem sublinha de documento p/ ACT na lista.
-    if (acts.ok)
-      for (const a of acts.data.items) map.set(a.id, { name: a.corporateName, kind: 'act', document: '' })
+    // ActListItem não traz CNPJ (só o ActDetail) — busca os detalhes (são poucos Atos) p/ exibir o CNPJ
+    // junto à razão social, igual fornecedor/financiador.
+    if (acts.ok) {
+      const details = await Promise.all(acts.data.items.map((a) => getActFn({ data: { id: a.id } })))
+      for (const d of details) {
+        if (d.ok) map.set(d.data.id, { name: d.data.corporateName, kind: 'act', document: d.data.cnpj })
+      }
+    }
     return map
   },
   staleTime: 60_000,

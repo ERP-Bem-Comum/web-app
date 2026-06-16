@@ -387,21 +387,23 @@ export const selClear = style({
 })
 
 // ── Drawer de Detalhe do Documento (onda 2) ───────────────────────────────────
+// Painel lateral NÃO-modal (mock): a grade atrás permanece clara (sem escurecer). O backdrop é
+// transparente e serve só para fechar ao clicar fora; a linha clicada fica realçada (selecionada).
 export const drawerOverlay = style({
   position: 'fixed',
   inset: 0,
   zIndex: 300,
-  background: vars.color.institutional.overlay,
+  background: 'transparent',
   display: 'flex',
   justifyContent: 'flex-end',
 })
 export const drawerPanel = style({
-  inlineSize: 'min(32rem, 100%)',
+  inlineSize: 'min(27rem, 100%)',
   blockSize: '100%',
   display: 'flex',
   flexDirection: 'column',
   background: vars.color.surface.default,
-  boxShadow: vars.shadow.card,
+  boxShadow: vars.shadow.cardElevated,
 })
 export const drawerHeader = style({
   flexShrink: 0,

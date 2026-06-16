@@ -56,6 +56,8 @@ export type DocumentGridProps = Readonly<{
   allSelected?: boolean
   onToggle?: (id: string) => void
   onToggleAll?: () => void
+  // Linha cujo detalhe está aberto no drawer — fica realçada (selecionada), igual ao mock.
+  activeId?: string | null
 }>
 
 export function DocumentGrid(props: DocumentGridProps): ReactNode {
@@ -90,7 +92,7 @@ export function DocumentGrid(props: DocumentGridProps): ReactNode {
         </div>
       ) : (
         state.rows.map((r) => {
-          const isSelected = selectedIds?.has(r.id) ?? false
+          const isSelected = (selectedIds?.has(r.id) ?? false) || props.activeId === r.id
           return (
             <div
               className={`${row} ${rowClickable}${isSelected ? ` ${rowSelected}` : ''}`}
