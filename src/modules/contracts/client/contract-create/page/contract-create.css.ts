@@ -17,6 +17,13 @@ export const topbar = style({
   paddingInline: vars.space.md,
   borderBottom: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   flexShrink: 0,
+  // Header FIXO full-width (espelha o footer): logo abaixo do topbar do sistema, da barra de menu à direita.
+  position: 'fixed',
+  insetBlockStart: vars.size.topbar,
+  insetInlineStart: 'var(--sidebar-width, 16.25rem)',
+  insetInlineEnd: 0,
+  zIndex: 100,
+  background: vars.color.surface.default,
 })
 
 export const backButton = style({
@@ -79,6 +86,8 @@ export const mainLayout = style({
   gap: vars.space.xl,
   minHeight: 0,
   overflow: 'hidden',
+  // Reserva a altura do header agora fixo (mantém o corpo na mesma posição de antes).
+  paddingBlockStart: '3.5rem',
 })
 
 export const formCol = style({
@@ -614,22 +623,34 @@ const partnerTypeBadgeBase = style({
 })
 
 export const partnerTypeBadge = styleVariants({
-  Fornecedor: [partnerTypeBadgeBase, {
-    color: vars.color.partnerType.supplier.text,
-    background: vars.color.partnerType.supplier.background,
-  }],
-  Colaborador: [partnerTypeBadgeBase, {
-    color: vars.color.partnerType.collaborator.text,
-    background: vars.color.partnerType.collaborator.background,
-  }],
-  Financiador: [partnerTypeBadgeBase, {
-    color: vars.color.partnerType.financier.text,
-    background: vars.color.partnerType.financier.background,
-  }],
-  Acordo: [partnerTypeBadgeBase, {
-    color: vars.color.partnerType.act.text,
-    background: vars.color.partnerType.act.background,
-  }],
+  Fornecedor: [
+    partnerTypeBadgeBase,
+    {
+      color: vars.color.partnerType.supplier.text,
+      background: vars.color.partnerType.supplier.background,
+    },
+  ],
+  Colaborador: [
+    partnerTypeBadgeBase,
+    {
+      color: vars.color.partnerType.collaborator.text,
+      background: vars.color.partnerType.collaborator.background,
+    },
+  ],
+  Financiador: [
+    partnerTypeBadgeBase,
+    {
+      color: vars.color.partnerType.financier.text,
+      background: vars.color.partnerType.financier.background,
+    },
+  ],
+  Acordo: [
+    partnerTypeBadgeBase,
+    {
+      color: vars.color.partnerType.act.text,
+      background: vars.color.partnerType.act.background,
+    },
+  ],
 })
 
 export const partnerDoc = style({
