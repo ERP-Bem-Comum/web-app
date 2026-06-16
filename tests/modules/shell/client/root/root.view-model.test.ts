@@ -66,6 +66,9 @@ describe('rootViewModel.sidebarWidth / showPageHeader', () => {
     assert.strictEqual(rootViewModel.showPageHeader('/programas'), false)
     assert.strictEqual(rootViewModel.showPageHeader('/programas/criar'), false)
     assert.strictEqual(rootViewModel.showPageHeader('/dashboard'), true)
+    // Financeiro: o grid mantém o h1 do shell; o Lançar Documento tem topbar própria.
+    assert.strictEqual(rootViewModel.showPageHeader('/financeiro/contas-a-pagar'), true)
+    assert.strictEqual(rootViewModel.showPageHeader('/financeiro/contas-a-pagar/lancar'), false)
   })
 })
 

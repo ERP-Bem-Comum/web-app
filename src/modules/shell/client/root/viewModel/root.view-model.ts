@@ -82,7 +82,9 @@ export const rootViewModel = {
     !isPrefixPath(path, '/parceiros') &&
     !isPrefixPath(path, '/usuarios') &&
     !isPrefixPath(path, '/minha-conta') &&
-    !isPrefixPath(path, '/programas'),
+    !isPrefixPath(path, '/programas') &&
+    // Lançar Documento tem topbar própria (modal-like, ←/✕) — o grid mantém o h1 do shell.
+    !isPrefixPath(path, '/financeiro/contas-a-pagar/lancar'),
 
   /**
    * RBAC: remove seções/subitens cujo `requiredPermission` não está em `permissions`. Uma seção de

@@ -15,21 +15,97 @@ export const screen = style({
   inlineSize: '100%',
 })
 
+// Topbar própria do Lançar (Figma): ← · título · breadcrumb · ✕, barra de 44px.
 export const topbar = style({
   display: 'flex',
   alignItems: 'center',
-  gap: vars.space.md,
+  gap: '0.875rem', // 14px
+  minBlockSize: '2.75rem', // 44px
+  paddingBlock: vars.space.sm,
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+})
+export const topbarBack = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  inlineSize: '1.75rem',
+  blockSize: '1.75rem',
+  borderRadius: vars.radius.md,
+  color: vars.color.institutional.blueDeep,
+  fontSize: vars.font.size.lg,
+  textDecoration: 'none',
+  ':hover': { background: vars.color.institutional.blueBg },
+})
+export const topbarClose = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  inlineSize: '1.75rem',
+  blockSize: '1.75rem',
+  borderRadius: vars.radius.md,
+  color: vars.color.institutional.ink4,
+  fontSize: vars.font.size.md,
+  textDecoration: 'none',
+  ':hover': { background: vars.color.institutional.paperWarm },
 })
 export const topTitle = style({
   margin: 0,
-  fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.lg,
-  color: vars.color.text.primary,
+  fontFamily: vars.font.family.body, // Nunito (título, padrão Contratos)
+  fontSize: vars.font.size.sm, // 14px (Figma)
+  fontWeight: vars.font.weight.bold,
+  letterSpacing: '-0.005em',
+  color: vars.color.institutional.ink2,
 })
 export const crumb = style({
   marginInlineStart: 'auto',
   fontSize: vars.font.size.sm,
   color: vars.color.text.muted,
+})
+
+// Hero do fornecedor (Figma): overline mono · nome grande · botão Alterar.
+export const hero = style({
+  display: 'grid',
+  gridTemplateColumns: '1fr auto',
+  alignItems: 'end',
+  gap: vars.space.lg,
+  paddingBlockEnd: vars.space.md,
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+})
+export const heroInfo = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: vars.space.xs,
+  minInlineSize: 0,
+})
+export const heroOverline = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.semibold,
+  letterSpacing: '0.1em',
+  textTransform: 'uppercase',
+  color: vars.color.institutional.ink5,
+})
+export const heroName = style({
+  fontFamily: vars.font.family.body, // Fraunces no mock → Nunito no DS (sem serif)
+  fontSize: vars.font.size.xl,
+  fontWeight: vars.font.weight.semibold,
+  letterSpacing: '-0.012em',
+  color: vars.color.institutional.ink2,
+})
+export const heroAlter = style({
+  alignSelf: 'center',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: vars.space.xs,
+  whiteSpace: 'nowrap',
+  fontSize: vars.font.size.xs,
+  fontWeight: vars.font.weight.medium,
+  color: vars.color.institutional.blueDeep,
+  background: vars.color.surface.default,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  paddingBlock: vars.space.xs,
+  paddingInline: vars.space.sm,
+  borderRadius: vars.radius.md,
 })
 
 export const body = style({

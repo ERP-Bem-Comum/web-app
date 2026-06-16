@@ -5,6 +5,7 @@
  * hooks de binding/controller.
  */
 import type { ReactNode } from 'react'
+import { Link } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
@@ -31,6 +32,13 @@ import {
   tituloVal,
   topTitle,
   topbar,
+  topbarBack,
+  topbarClose,
+  hero,
+  heroInfo,
+  heroOverline,
+  heroName,
+  heroAlter,
   successCard,
   successTitle,
 } from './lancar-documento.css.ts'
@@ -78,8 +86,22 @@ export function LancarDocumentoPage(): ReactNode {
   return (
     <div className={screen}>
       <header className={topbar}>
+        <Link
+          to="/financeiro/contas-a-pagar"
+          className={topbarBack}
+          aria-label={t('financial.create.backLabel')}
+        >
+          {t('financial.create.back')}
+        </Link>
         <h1 className={topTitle}>{t('financial.create.title')}</h1>
         <span className={crumb}>{t('financial.create.crumb')}</span>
+        <Link
+          to="/financeiro/contas-a-pagar"
+          className={topbarClose}
+          aria-label={t('financial.create.closeLabel')}
+        >
+          {t('financial.create.close')}
+        </Link>
       </header>
 
       {command.errorTag !== null ? (
@@ -90,6 +112,17 @@ export function LancarDocumentoPage(): ReactNode {
 
       <div className={body}>
         <div className={formCol}>
+          {/* Hero do fornecedor (Figma). v1: exibe o selecionado; "Alterar" abre o select da seção (chrome). */}
+          <div className={hero}>
+            <div className={heroInfo}>
+              <span className={heroOverline}>{t('financial.create.hero.overline')}</span>
+              <span className={heroName}>
+                {supplierName !== '' ? supplierName : t('financial.create.hero.placeholder')}
+              </span>
+            </div>
+            <span className={heroAlter}>{t('financial.create.hero.change')}</span>
+          </div>
+
           <DocumentForm
             fields={controller.fields}
             suppliers={suppliers}
