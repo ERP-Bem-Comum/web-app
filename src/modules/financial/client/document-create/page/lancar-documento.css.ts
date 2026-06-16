@@ -642,3 +642,83 @@ export const contratoLink = style({
   color: vars.color.institutional.blueDeep,
   fontWeight: vars.font.weight.medium,
 })
+
+// ── Bottombar fixa (Figma 626:25): status + quick-action · spacer · ações ─────────
+export const pageBottombar = style({
+  position: 'sticky',
+  insetBlockEnd: 0,
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.875rem', // 14px
+  paddingBlock: vars.space.sm,
+  paddingInline: vars.space.lg,
+  borderBlockStart: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  background: vars.color.surface.default,
+  '@media': { 'screen and (max-width: 48rem)': { flexWrap: 'wrap' } },
+})
+export const statusGroup = style({ display: 'flex', alignItems: 'center', gap: vars.space.sm })
+export const statusDot = style({
+  inlineSize: '0.375rem', // 6px
+  blockSize: '0.375rem',
+  borderRadius: '50%',
+  background: vars.color.institutional.green,
+})
+export const statusText = style({ fontSize: vars.font.size.xs, color: vars.color.institutional.ink4 })
+export const draftPill = style({
+  paddingBlock: '0.1875rem', // 3px
+  paddingInline: '0.625rem', // 10px
+  borderRadius: vars.radius.xl,
+  background: vars.color.institutional.paperBeige,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.ink3,
+})
+export const addSupplierButton = style({
+  paddingBlock: vars.space.xs,
+  paddingInline: vars.space.md,
+  borderRadius: vars.radius.sm,
+  border: `${vars.borderWidth.thin} dashed ${vars.color.institutional.paperRule}`,
+  background: 'transparent',
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.xs,
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.text.muted,
+  cursor: 'not-allowed',
+})
+export const bottombarSpacer = style({ flex: 1, minInlineSize: 0 })
+export const actionsGroup = style({ display: 'flex', alignItems: 'center', gap: vars.space.sm })
+const actionButtonBase = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  paddingBlock: '0.625rem', // 10px
+  paddingInline: '0.875rem', // 14px
+  borderRadius: vars.radius.md,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.sm, // 13px
+  fontWeight: vars.font.weight.semibold,
+  cursor: 'pointer',
+} as const
+export const discardButton = style([
+  actionButtonBase,
+  { border: 'none', background: 'transparent', color: vars.color.institutional.ink2 },
+])
+export const draftButton = style([
+  actionButtonBase,
+  {
+    border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+    background: vars.color.surface.default,
+    color: vars.color.text.muted,
+    cursor: 'not-allowed',
+  },
+])
+export const kbdChip = style({
+  paddingBlock: '0.125rem', // 2px
+  paddingInline: vars.space.xs,
+  borderRadius: vars.radius.sm,
+  background: vars.color.institutional.paperBeige,
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size['2xs'],
+  color: vars.color.institutional.ink3,
+})

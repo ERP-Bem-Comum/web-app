@@ -18,6 +18,7 @@ import { buildCreateInput, canSubmit, formatCents } from '../document-form.view.
 import { DocumentForm } from '../components/document-form.component.tsx'
 import { ComposicaoSidebar } from '../components/composicao-sidebar.component.tsx'
 import { DocumentPreview } from '../components/document-preview.component.tsx'
+import { DocumentBottombar } from '../components/document-bottombar.component.tsx'
 import {
   body,
   bottombar,
@@ -25,7 +26,6 @@ import {
   crumb,
   errorBanner,
   formCol,
-  ghostButton,
   screen,
   sidebarCol,
   tituloChild,
@@ -139,24 +139,18 @@ export function LancarDocumentoPage(): ReactNode {
 
         <aside className={sidebarCol}>
           <ComposicaoSidebar fields={controller.fields} supplierName={supplierName} />
-          <div className={bottombar}>
-            <button type="button" className={ghostButton} onClick={controller.reset}>
-              {t('financial.create.discard')}
-            </button>
-            <Button
-              onClick={() => {
-                const input = buildCreateInput(controller.fields)
-                if (input !== null) command.execute(input)
-              }}
-              disabled={!canSubmit(controller.fields)}
-              loading={command.running}
-              loadingLabel={t('common.loading')}
-            >
-              {t('financial.create.submit')}
-            </Button>
-          </div>
         </aside>
       </div>
+
+      <DocumentBottombar
+        onDiscard={controller.reset}
+        onSubmit={() => {
+          const input = buildCreateInput(controller.fields)
+          if (input !== null) command.execute(input)
+        }}
+        canSubmit={canSubmit(controller.fields)}
+        running={command.running}
+      />
     </div>
   )
 }
