@@ -24,6 +24,7 @@ import {
   type PaymentMethod,
   type DocumentFormFields,
   type RetentionFieldsReais,
+  type PartnerHydration,
 } from '../document-form.view.ts'
 import {
   control,
@@ -43,11 +44,15 @@ import {
   sectionHeadTitle,
   contratoPill,
   contratoLink,
+  contratoNum,
+  contratoStatus,
+  contratoDot,
   entityCard,
   entityIcon,
   entityInfo,
   entityLabel,
   entityValue,
+  entityValueStrong,
 } from '../page/lancar-documento.css.ts'
 
 const t = createTranslator(ptBR)
@@ -66,8 +71,14 @@ function ChromeSelect({ label }: Readonly<{ label: string }>): ReactNode {
   )
 }
 
-/** Card de entidade chrome (Conta do fornecedor / Aprovador) — ícone + rótulo + hint (sem dado real). */
-function EntityCard(props: Readonly<{ label: string; hint: string; icon: ReactNode }>): ReactNode {
+/**
+ * Card de entidade (Conta do fornecedor / Aprovador). Com `value` (dado real, ex.: banco do fornecedor)
+ * mostra o valor em destaque; sem ele, o hint discreto (chrome).
+ */
+function EntityCard(
+  props: Readonly<{ label: string; hint: string; value?: string; icon: ReactNode }>,
+): ReactNode {
+  const hasValue = props.value !== undefined && props.value !== ''
   return (
     <div className={entityCard}>
       <span className={entityIcon} aria-hidden="true">
@@ -75,14 +86,27 @@ function EntityCard(props: Readonly<{ label: string; hint: string; icon: ReactNo
       </span>
       <span className={entityInfo}>
         <span className={entityLabel}>{props.label}</span>
-        <span className={entityValue}>{props.hint}</span>
+        <span className={hasValue ? entityValueStrong : entityValue}>
+          {hasValue ? props.value : props.hint}
+        </span>
       </span>
+    </div>
+  )
+}
+
+/** Campo somente-leitura preenchido a partir do contrato (Categorização derivada). */
+function ReadonlyField({ label, value }: Readonly<{ label: string; value: string }>): ReactNode {
+  return (
+    <div className={field}>
+      <span className={fieldLabel}>{label}</span>
+      <input className={controlDisabled} disabled value={value === '' ? '—' : value} aria-label={label} />
     </div>
   )
 }
 
 export type DocumentFormProps = Readonly<{
   fields: DocumentFormFields
+  hydration: PartnerHydration
   onType: (value: DocumentType | '') => void
   onPaymentMethod: (value: PaymentMethod | '') => void
   onText: (key: 'documentNumber' | 'series' | 'grossValue' | 'dueDate' | 'description', value: string) => void
@@ -90,8 +114,12 @@ export type DocumentFormProps = Readonly<{
 }>
 
 export function DocumentForm(props: DocumentFormProps): ReactNode {
-  const { fields } = props
+  const { fields, hydration } = props
   const retEnabled = retentionsEnabledFor(fields.type)
+  const bank = hydration.bank
+  const contract = hydration.contract
+  const bankLine =
+    bank !== null ? [bank.line, bank.pix].filter((s) => s !== null && s !== '').join(' · ') : ''
 
   return (
     <>
@@ -289,6 +317,7 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
           <EntityCard
             label={t('financial.create.pagamento.contaFornecedor')}
             hint={t('financial.create.pagamento.contaFornecedorHint')}
+            value={bankLine}
             icon={<WalletIcon size={16} />}
           />
           <EntityCard
@@ -299,26 +328,58 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
         </div>
       </section>
 
-      {/* ── S4 Categorização — chrome ── */}
+      {/* ── S4 Categorização — auto-preenchida do contrato "Em Andamento" (quando houver) ── */}
       <section className={section}>
         <div className={sectionHead}>
           <h3 className={`${sectionTitle} ${sectionHeadTitle}`}>
             {t('financial.create.section.categorizacao')}
           </h3>
           <span className={contratoPill}>
-            {t('financial.create.categorizacao.semContrato')}
-            <span className={contratoLink}>{t('financial.create.categorizacao.vincular')}</span>
+            {contract !== null ? (
+              <>
+                {t('financial.create.categorizacao.contrato')}{' '}
+                <span className={contratoNum}>{contract.number}</span>
+                <span className={contratoStatus}>
+                  <span className={contratoDot} aria-hidden="true" />
+                  {t('financial.create.categorizacao.emAndamento')}
+                </span>
+              </>
+            ) : (
+              <>
+                {t('financial.create.categorizacao.semContrato')}
+                <span className={contratoLink}>{t('financial.create.categorizacao.vincular')}</span>
+              </>
+            )}
           </span>
         </div>
-        <div className={fieldGrid.three}>
-          <ChromeSelect label={t('financial.create.field.centroCusto')} />
-          <ChromeSelect label={t('financial.create.field.categoria')} />
-          <ChromeSelect label={t('financial.create.field.subcategoria')} />
-        </div>
-        <div className={fieldGrid.two}>
-          <ChromeSelect label={t('financial.create.field.programa')} />
-          <ChromeSelect label={t('financial.create.field.planoOrcamentario')} />
-        </div>
+        {contract !== null ? (
+          <>
+            <div className={fieldGrid.three}>
+              <ReadonlyField label={t('financial.create.field.centroCusto')} value={contract.centroCusto} />
+              <ReadonlyField label={t('financial.create.field.categoria')} value={contract.categoria} />
+              <ReadonlyField label={t('financial.create.field.subcategoria')} value="" />
+            </div>
+            <div className={fieldGrid.two}>
+              <ReadonlyField label={t('financial.create.field.programa')} value={contract.programa} />
+              <ReadonlyField
+                label={t('financial.create.field.planoOrcamentario')}
+                value={contract.planoOrcamentario}
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            <div className={fieldGrid.three}>
+              <ChromeSelect label={t('financial.create.field.centroCusto')} />
+              <ChromeSelect label={t('financial.create.field.categoria')} />
+              <ChromeSelect label={t('financial.create.field.subcategoria')} />
+            </div>
+            <div className={fieldGrid.two}>
+              <ChromeSelect label={t('financial.create.field.programa')} />
+              <ChromeSelect label={t('financial.create.field.planoOrcamentario')} />
+            </div>
+          </>
+        )}
       </section>
     </>
   )

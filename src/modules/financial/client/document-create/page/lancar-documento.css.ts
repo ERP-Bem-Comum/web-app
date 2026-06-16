@@ -807,6 +807,16 @@ export const entityValue = style({
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
 })
+// Mesmo do entityValue mas com dado REAL (não-muted) — usado quando há banco do fornecedor.
+export const entityValueStrong = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.xs,
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.ink2,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+})
 // ── S4 Categorização: cabeçalho com pill de contrato (chrome) ────────────────────
 export const sectionHead = style({
   display: 'flex',
@@ -832,6 +842,27 @@ export const contratoLink = style({
   borderInlineStart: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   color: vars.color.institutional.blueDeep,
   fontWeight: vars.font.weight.medium,
+})
+// Chip de contrato vinculado (preenchido a partir do contrato "Em Andamento" do fornecedor).
+export const contratoNum = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink2,
+})
+export const contratoStatus = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: vars.space.xs,
+  paddingInlineStart: vars.space.sm,
+  borderInlineStart: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  color: vars.color.institutional.greenDeep,
+  fontWeight: vars.font.weight.semibold,
+})
+export const contratoDot = style({
+  inlineSize: '0.3125rem',
+  blockSize: '0.3125rem',
+  borderRadius: '50%',
+  background: vars.color.institutional.green,
 })
 
 // ── Bottombar fixa (Figma 626:25): status + quick-action · spacer · ações ─────────

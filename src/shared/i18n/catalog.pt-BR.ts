@@ -1009,6 +1009,8 @@ export const ptBR: Catalog = {
   'financial.create.pagamento.aprovadorHint': 'Definido no fluxo de aprovação',
   'financial.create.categorizacao.semContrato': 'Sem contrato vinculado',
   'financial.create.categorizacao.vincular': 'Vincular contrato',
+  'financial.create.categorizacao.contrato': 'Contrato',
+  'financial.create.categorizacao.emAndamento': 'Em Andamento',
   'financial.create.bottombar.autosaved': 'Auto-salvo · há um instante',
   'financial.create.bottombar.draft': 'Rascunho',
   'financial.create.bottombar.addSupplier': '+ Adicionar fornecedor',

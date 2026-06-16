@@ -39,6 +39,24 @@ export const maskCnpj = (value: string): string => {
 /** Parceiro é PJ quando o subtítulo é um CNPJ (14 dígitos). */
 export const isCnpj = (value: string): boolean => value.replace(/\D/g, '').length === 14
 
+// ── Hidratação do fornecedor: dados bancários + contrato "Em Andamento" (auto-preenchimento) ──────
+export type SupplierBankView = Readonly<{ line: string; pix: string | null }>
+export type ContractCategoView = Readonly<{
+  ref: string // contractRef (uuid) — enviado no create; backend deriva a categorização (#48)
+  number: string // sequentialNumber (ex.: 0001/2026)
+  centroCusto: string
+  categoria: string
+  programa: string
+  planoOrcamentario: string
+  programRef: string | null
+  budgetPlanRef: string | null
+}>
+export type PartnerHydration = Readonly<{
+  bank: SupplierBankView | null
+  contract: ContractCategoView | null
+}>
+export const EMPTY_HYDRATION: PartnerHydration = { bank: null, contract: null }
+
 /** Filtro PURO do picker: casa por nome ou subtítulo (CNPJ/nº) — case-insensitive, ignora pontuação. */
 export const filterPartners = (
   options: readonly PartnerOption[],

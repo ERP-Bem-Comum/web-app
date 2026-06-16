@@ -30,6 +30,7 @@ const fields = (over: Partial<DocumentFormFields> = {}): DocumentFormFields => (
 
 const baseProps = (over: Record<string, unknown> = {}) => ({
   fields: fields(),
+  hydration: { bank: null, contract: null },
   onType: vi.fn(),
   onPaymentMethod: vi.fn(),
   onText: vi.fn(),

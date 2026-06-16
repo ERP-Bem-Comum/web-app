@@ -14,6 +14,7 @@ import { useDocumentFormController } from '../document-form.controller.ts'
 import { useSupplierPickerController } from '../supplier-picker.controller.ts'
 import { useLancarDocumentoBinding } from '../create-document.binding.ts'
 import { usePartnersOptions } from '../partners-options.binding.ts'
+import { usePartnerHydration } from '../partner-hydration.binding.ts'
 import { buildCreateInput, canSubmit } from '../document-form.view.ts'
 import { DocumentForm } from '../components/document-form.component.tsx'
 import { SupplierPicker } from '../components/supplier-picker.component.tsx'
@@ -45,6 +46,8 @@ export function LancarDocumentoPage(): ReactNode {
   // Sucesso → o binding invalida a lista e redireciona pro grid (sem card de sucesso inline).
   const selectedPartner = partners.find((p) => p.id === controller.fields.supplierRef) ?? null
   const supplierName = selectedPartner?.name ?? ''
+  // Hidrata banco + contrato "Em Andamento" do fornecedor (auto-preenchimento do Pagamento/Categorização).
+  const hydration = usePartnerHydration(controller.fields.supplierRef, selectedPartner?.kind ?? null)
 
   return (
     <div className={screen}>
@@ -94,6 +97,7 @@ export function LancarDocumentoPage(): ReactNode {
 
           <DocumentForm
             fields={controller.fields}
+            hydration={hydration}
             onType={controller.setType}
             onPaymentMethod={controller.setPaymentMethod}
             onText={controller.setText}
@@ -109,8 +113,20 @@ export function LancarDocumentoPage(): ReactNode {
       <DocumentBottombar
         onDiscard={controller.reset}
         onSubmit={() => {
-          const input = buildCreateInput(controller.fields)
-          if (input !== null) command.execute(input)
+          const base = buildCreateInput(controller.fields)
+          if (base === null) return
+          // Anexa os refs do contrato "Em Andamento" (backend deriva a categorização — core-api#48).
+          const c = hydration.contract
+          const input =
+            c !== null
+              ? {
+                  ...base,
+                  contractRef: c.ref,
+                  programRef: c.programRef ?? undefined,
+                  budgetPlanRef: c.budgetPlanRef ?? undefined,
+                }
+              : base
+          command.execute(input)
         }}
         canSubmit={canSubmit(controller.fields)}
         running={command.running}
