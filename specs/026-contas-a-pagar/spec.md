@@ -85,11 +85,13 @@ Como **aprovador financeiro**, quero aprovar, desfazer aprovação, ajustar ou c
 - **FR-006**: O sistema MUST permitir retenções **apenas** para documentos NFS-e e RPA; para os demais tipos, o bloco de retenções fica indisponível.
 - **FR-007**: Ao confirmar o lançamento, o sistema MUST criar o documento e exibir o resultado dos **títulos gerados** (pai = líquido; um filho por retenção).
 - **FR-008**: O sistema SHOULD apresentar uma **prévia do valor líquido** (bruto − descontos na fonte − retenções − descontos + multa + juros) e MUST impedir a confirmação se o líquido não for positivo.
-- **FR-009**: O sistema MUST permitir, sobre um documento existente, as ações de **ajustar** (somente quando Aberto), **aprovar** (Aberto → Aprovado), **desfazer aprovação** (Aprovado → Aberto) e **cancelar** (somente quando Aberto, removendo definitivamente).
-- **FR-010**: O sistema MUST refletir a **separação de funções**: ações de aprovação só ficam disponíveis para quem tem a permissão de aprovação, distinta da permissão de lançamento.
-- **FR-011**: O sistema MUST tratar documento **Aprovado como imutável**: a edição exige desfazer a aprovação antes.
+> **Faseamento (v1):** FR-009 a FR-011 têm a **camada server/client pronta no v1** (server fns + repository), mas a **superfície de UI** dessas ações desce na **onda 2** (drawer) — ver "Fora de escopo".
+
+- **FR-009**: O sistema MUST permitir, sobre um documento existente, as ações de **ajustar** (somente quando Aberto), **aprovar** (Aberto → Aprovado), **desfazer aprovação** (Aprovado → Aberto) e **cancelar** (somente quando Aberto, removendo definitivamente). *(v1: server/client pronto; UI na onda 2.)*
+- **FR-010**: O sistema MUST refletir a **separação de funções**: ações de aprovação só ficam disponíveis para quem tem a permissão de aprovação, distinta da permissão de lançamento. *(v1: guard no servidor; degradação de UI na onda 2.)*
+- **FR-011**: O sistema MUST tratar documento **Aprovado como imutável**: a edição exige desfazer a aprovação antes. *(v1: regra no servidor; UI de edição na onda 2.)*
 - **FR-012**: O sistema MUST traduzir todos os erros de negócio em **mensagens claras ao usuário** (cadeia de erro fim-a-fim), sem nunca expor status HTTP ou jargão técnico.
-- **FR-013**: O sistema MUST exigir as permissões corretas por ação (ler, lançar/ajustar, aprovar/desfazer, cancelar) e degradar a UI de acordo (esconder/desabilitar o que o usuário não pode fazer).
+- **FR-013**: O sistema MUST exigir as permissões corretas por ação (ler, lançar/ajustar, aprovar/desfazer, cancelar). No **v1**: o **gating de menu/rota** por permissão (`fiscal-document:read` para acessar; `fiscal-document:write` para lançar) entra; a **degradação fina por ação** (esconder/desabilitar aprovar/cancelar) desce na **onda 2** com a UI de ciclo de vida.
 
 ### Key Entities *(include if feature involves data)*
 
