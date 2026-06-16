@@ -17,6 +17,7 @@ import { useSuppliersOptions } from '../suppliers-options.binding.ts'
 import { buildCreateInput, canSubmit, formatCents } from '../document-form.view.ts'
 import { DocumentForm } from '../components/document-form.component.tsx'
 import { ComposicaoSidebar } from '../components/composicao-sidebar.component.tsx'
+import { DocumentPreview } from '../components/document-preview.component.tsx'
 import {
   body,
   bottombar,
@@ -111,6 +112,8 @@ export function LancarDocumentoPage(): ReactNode {
       ) : null}
 
       <div className={body}>
+        <DocumentPreview />
+
         <div className={formCol}>
           {/* Hero do fornecedor (Figma). v1: exibe o selecionado; "Alterar" abre o select da seção (chrome). */}
           <div className={hero}>

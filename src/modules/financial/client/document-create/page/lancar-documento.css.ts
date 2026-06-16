@@ -108,12 +108,17 @@ export const heroAlter = style({
   borderRadius: vars.radius.md,
 })
 
+// Layout 3-col do Figma 626-2: preview/OCR (480) · form (FILL) · sidebar (340). Colapsa por etapas:
+// abaixo de 75rem some o preview (form+sidebar); abaixo de 60rem vira coluna única.
 export const body = style({
   display: 'grid',
-  gridTemplateColumns: '1fr 21rem',
+  gridTemplateColumns: 'minmax(16rem, 28rem) minmax(0, 1fr) 21.25rem',
   gap: vars.space.lg,
   alignItems: 'start',
-  '@media': { 'screen and (max-width: 60rem)': { gridTemplateColumns: '1fr' } },
+  '@media': {
+    'screen and (max-width: 75rem)': { gridTemplateColumns: 'minmax(0, 1fr) 21.25rem' },
+    'screen and (max-width: 60rem)': { gridTemplateColumns: '1fr' },
+  },
 })
 
 export const formCol = style({
@@ -218,11 +223,16 @@ export const cardTitle = style({
 export const compRow = style({
   display: 'flex',
   justifyContent: 'space-between',
+  alignItems: 'baseline',
   gap: vars.space.sm,
-  fontSize: vars.font.size.sm,
+  fontSize: vars.font.size.xs,
   color: vars.color.text.secondary,
 })
-export const compVal = style({ fontFamily: vars.font.family.mono, color: vars.color.text.primary })
+export const compVal = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size.xs,
+  color: vars.color.text.primary,
+})
 export const compSep = style({
   blockSize: vars.borderWidth.thin,
   background: vars.color.institutional.paperRule,
@@ -309,3 +319,253 @@ export const successTitle = style({
   fontSize: vars.font.size.lg,
   color: vars.color.institutional.greenDeep,
 })
+
+// ── Coluna esquerda: Preview / OCR (chrome — Figma 626:22 é um shell vazio) ──────
+export const previewCol = style({
+  position: 'sticky',
+  insetBlockStart: vars.space.lg,
+  display: 'flex',
+  flexDirection: 'column',
+  gap: vars.space.md,
+  minBlockSize: '24rem',
+  paddingInlineEnd: vars.space.lg,
+  borderInlineEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  '@media': { 'screen and (max-width: 75rem)': { display: 'none' } },
+})
+export const previewHeader = style({ display: 'flex', alignItems: 'center', gap: vars.space.sm })
+export const previewBadge = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  paddingBlock: '0.125rem',
+  paddingInline: vars.space.sm,
+  borderRadius: vars.radius.sm,
+  background: vars.color.institutional.blueBg,
+  color: vars.color.institutional.blueDeep,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.bold,
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+})
+export const previewHeaderText = style({ fontSize: vars.font.size.xs, color: vars.color.text.muted })
+export const dropzone = style({
+  flex: 1,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: vars.space.md,
+  textAlign: 'center',
+  padding: vars.space.xl,
+  borderRadius: vars.radius.lg,
+  border: `${vars.borderWidth.thin} dashed ${vars.color.institutional.paperRule}`,
+  background: vars.color.institutional.paperWarm,
+})
+export const dropzoneIcon = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  inlineSize: '3rem',
+  blockSize: '3rem',
+  borderRadius: vars.radius.lg,
+  background: vars.color.surface.default,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  color: vars.color.institutional.blueDeep,
+})
+export const dropzoneHint = style({
+  maxInlineSize: '18rem',
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.xs,
+  lineHeight: 1.5,
+  color: vars.color.text.secondary,
+})
+export const dropzoneFormats = style({ fontSize: vars.font.size['2xs'], color: vars.color.text.muted })
+
+// ── Sidebar: painéis FLAT (Figma 670:* — sem card; só título + conteúdo) ─────────
+export const panel = style({ display: 'flex', flexDirection: 'column', gap: vars.space.sm })
+export const panelTitle = style({
+  margin: 0,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.bold,
+  color: vars.color.institutional.ink5,
+  textTransform: 'uppercase',
+  letterSpacing: '0.08em',
+})
+
+// ── Títulos Previstos: árvore (pai → filhos com conector tracejado + ticks) ───────
+export const titulosTree = style({ display: 'flex', flexDirection: 'column', gap: vars.space.sm })
+export const paiRow = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.md,
+})
+export const paiName = style({
+  flex: 1,
+  minInlineSize: 0,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.xs,
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.ink2,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+})
+export const paiVal = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size.xs,
+  fontWeight: vars.font.weight.medium,
+  color: vars.color.institutional.blueDeep,
+  whiteSpace: 'nowrap',
+})
+export const childrenContainer = style({
+  display: 'flex',
+  flexDirection: 'column',
+  marginInlineStart: '0.875rem', // 14px
+  paddingInlineStart: '0.875rem',
+  borderInlineStart: `0.09375rem dashed ${vars.color.institutional.paperRule}`, // 1.5px
+})
+export const childRow = style({
+  position: 'relative',
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  paddingBlock: vars.space.xs,
+  paddingInline: vars.space.sm,
+  borderRadius: vars.radius.sm,
+  // Tick: linha horizontal curta saindo do conector tracejado até a linha (Figma).
+  '::before': {
+    content: '""',
+    position: 'absolute',
+    insetInlineStart: 'calc(-0.875rem - 0.09375rem)',
+    insetBlockStart: '50%',
+    inlineSize: '0.75rem', // 12px
+    blockSize: '0.09375rem', // 1.5px
+    background: vars.color.institutional.paperRule,
+  },
+})
+export const childKind = style({
+  display: 'inline-flex',
+  justifyContent: 'flex-start',
+  inlineSize: '2.375rem', // 38px (alinha os badges)
+  flexShrink: 0,
+})
+export const childDest = style({
+  flex: 1,
+  minInlineSize: 0,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink3,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+})
+export const childVal = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink2,
+  whiteSpace: 'nowrap',
+})
+
+// Badge de tipo (Figma "Type-badge"): teal do mock → AZUL do DS; divergente → âmbar.
+const kindBadgeBase = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  paddingBlock: '0.0625rem',
+  paddingInline: vars.space.xs,
+  borderRadius: vars.radius.sm,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.bold,
+  letterSpacing: '0.06em',
+  lineHeight: 1,
+  textTransform: 'uppercase',
+  whiteSpace: 'nowrap',
+} as const
+export const kindBadge = styleVariants({
+  blue: [
+    kindBadgeBase,
+    { background: vars.color.institutional.blueBg, color: vars.color.institutional.blueDeep },
+  ],
+  amber: [
+    kindBadgeBase,
+    { background: vars.color.institutional.orangeLight, color: vars.color.status.pendingText },
+  ],
+})
+// Badge do Pai: mesmo tom azul, levemente maior (Figma usa padding/borda maiores).
+export const paiBadge = style([
+  kindBadge.blue,
+  { paddingBlock: '0.1875rem', paddingInline: vars.space.sm, flexShrink: 0 },
+])
+
+export const titulosEmpty = style({ fontSize: vars.font.size.xs, color: vars.color.text.muted })
+
+// ── Validação: checklist (Ok / Aviso / Pendente) — Figma 670:420 ─────────────────
+export const validations = style({ display: 'flex', flexDirection: 'column', gap: vars.space.xs })
+const validationItemBase = {
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: vars.space.sm,
+  paddingBlock: vars.space.sm,
+  paddingInline: '0.625rem', // 10px
+  borderRadius: vars.radius.md,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.xs,
+  lineHeight: 1.45,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  background: vars.color.surface.default,
+} as const
+export const validationItem = styleVariants({
+  ok: [validationItemBase, { color: vars.color.institutional.ink2 }],
+  aviso: [
+    validationItemBase,
+    {
+      background: vars.color.institutional.orangeLight,
+      borderColor: vars.color.institutional.orange,
+      color: vars.color.status.pendingText,
+    },
+  ],
+  pendente: [validationItemBase, { color: vars.color.institutional.ink4 }],
+})
+const validationDotBase = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  inlineSize: '0.9375rem', // 15px
+  blockSize: '0.9375rem',
+  flexShrink: 0,
+  borderRadius: '50%',
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.bold,
+  lineHeight: 1,
+} as const
+export const validationDot = styleVariants({
+  ok: [
+    validationDotBase,
+    {
+      background: vars.color.institutional.green,
+      color: vars.color.surface.default,
+      '::after': { content: '"✓"' },
+    },
+  ],
+  aviso: [
+    validationDotBase,
+    {
+      background: vars.color.institutional.orange,
+      color: vars.color.surface.default,
+      '::after': { content: '"!"' },
+    },
+  ],
+  pendente: [
+    validationDotBase,
+    {
+      background: vars.color.institutional.paperBeige,
+      color: vars.color.institutional.ink4,
+      border: `${vars.borderWidth.thin} solid ${vars.color.institutional.ink5}`,
+      '::after': { content: '"·"' },
+    },
+  ],
+})
+export const validationText = style({ flex: 1, minInlineSize: 0 })

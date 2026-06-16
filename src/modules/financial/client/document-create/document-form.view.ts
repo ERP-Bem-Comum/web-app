@@ -13,7 +13,11 @@ import type {
 } from '#modules/financial/client/data/model/document.model.ts'
 
 // Re-export dos tipos que a UI precisa — as views importam SÓ do view-model (§XI), nunca de client-data.
-export type { DocumentType, PaymentMethod } from '#modules/financial/client/data/model/document.model.ts'
+export type {
+  DocumentType,
+  PaymentMethod,
+  RetentionType,
+} from '#modules/financial/client/data/model/document.model.ts'
 export type SupplierOption = Readonly<{ id: string; name: string }>
 
 export type RetentionFieldsReais = Readonly<{
@@ -84,6 +88,42 @@ export const titulosPrevistos = (fields: DocumentFormFields): readonly TituloPre
   if (t.inss > 0) filhos.push({ kind: 'INSS', valueCents: String(t.inss) })
   if (t.csrf > 0) filhos.push({ kind: 'CSRF', valueCents: String(t.csrf) })
   return [{ kind: 'Pai', valueCents: String(grossCents(fields) - t.sum) }, ...filhos]
+}
+
+/** Destino (órgão arrecadador) de cada filho — i18n key. ISS = município; demais = federal. */
+export const tituloDestino = (kind: 'Pai' | RetentionType): string =>
+  kind === 'ISS' ? 'financial.create.titulos.dest.iss' : 'financial.create.titulos.dest.federal'
+
+export type ValidationState = 'ok' | 'aviso' | 'pendente'
+export type ValidationItem = Readonly<{ key: string; tag: string; state: ValidationState }>
+
+/**
+ * Checklist de Validação (sidebar, Figma). Os dois primeiros itens são DERIVADOS do form (fornecedor
+ * identificado, cálculo bruto→líquido íntegro) e o aviso de ISS divergente só aparece quando há ISS;
+ * "dados bancários" e "aguarda aprovação" são CHROME (sem backend de validação/aprovação no v1).
+ */
+export const validationChecklist = (
+  fields: DocumentFormFields,
+  supplierName: string,
+): readonly ValidationItem[] => {
+  const hasSupplier = supplierName.trim() !== '' && fields.supplierRef.trim() !== ''
+  const t = retentionTotals(fields)
+  const net = grossCents(fields) - t.sum
+  const calcOk = grossCents(fields) > 0 && net > 0
+  const items: ValidationItem[] = [
+    {
+      key: 'supplier',
+      tag: 'financial.create.validation.supplier',
+      state: hasSupplier ? 'ok' : 'pendente',
+    },
+    { key: 'calc', tag: 'financial.create.validation.calc', state: calcOk ? 'ok' : 'pendente' },
+    { key: 'bank', tag: 'financial.create.validation.bank', state: 'ok' }, // chrome
+  ]
+  if (t.iss > 0) {
+    items.push({ key: 'iss', tag: 'financial.create.validation.issDivergent', state: 'aviso' }) // chrome
+  }
+  items.push({ key: 'approval', tag: 'financial.create.validation.approval', state: 'pendente' }) // chrome
+  return items
 }
 
 export const canSubmit = (fields: DocumentFormFields): boolean => {
