@@ -4,7 +4,7 @@
  * Pagamento. ⚠️ Sem regra de PARCELAMENTO no domínio — os "Títulos" são o PAI + os FILHOS (retenções).
  *
  * Seções do Figma sem dado no DTO de detalhe (arquivo PDF, Emissão, Plano Orçamentário, dados bancários)
- * ficam fora por ora — dependem de enriquecer o GET /:id (futuro). Fecha no ✕, no botão ou clicando fora.
+ * ficam fora por ora — dependem de enriquecer o GET /:id (core-api#95). Fecha no ✕, no botão ou clicando fora.
  */
 import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
