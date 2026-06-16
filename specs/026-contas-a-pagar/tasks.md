@@ -112,18 +112,18 @@ description: 'Task list — Contas a Pagar (Financeiro) v1 núcleo'
 
 ### Tests for US2 (RED first) ⚠️
 
-- [ ] T035 [P] [US2] (RED) Teste puro da `contas-a-pagar.view-model` (deriva `loading`/`empty`/`ready`/`error`; **`ready` lista os itens** + expõe a paginação; lista vazia = `empty`, não `error`) em `tests/modules/financial/client/contas-a-pagar/contas-a-pagar-view-model.test.ts`.
-- [ ] T036 [P] [US2] (RED) Spec DOM da página (**renderiza linhas de uma lista real** + cabeçalhos + chrome de paginação; base vazia → estado vazio; botão "Novo Documento" navega para `/lancar`) em `tests/modules/financial/client/contas-a-pagar/contas-a-pagar.spec.tsx`.
+- [x] T035 [P] [US2] (RED) Teste puro da `contas-a-pagar.view-model` (deriva `loading`/`empty`/`ready`/`error`; **`ready` lista os itens** + expõe a paginação; lista vazia = `empty`, não `error`) em `tests/modules/financial/client/contas-a-pagar/contas-a-pagar-view-model.test.ts`.
+- [x] T036 [P] [US2] (RED) Spec DOM da página (**renderiza linhas de uma lista real** + cabeçalhos + chrome de paginação; base vazia → estado vazio; botão "Novo Documento" navega para `/lancar`) em `tests/modules/financial/client/contas-a-pagar/contas-a-pagar.spec.tsx`.
 
 ### Implementation for US2
 
-- [ ] T037 [US2] `src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.query.ts` (`queryOptions` da lista → `repository.list`, **com page/pageSize**; a lista é real na Fatia 2).
-- [ ] T038 [US2] `src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts` (derivação pura do estado — `ready` mapeia os `items` para linhas + dados de paginação).
-- [ ] T039 [US2] `src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.binding.ts` (adapter React: `useQuery`).
-- [ ] T040 [P] [US2] Componentes burros `grid-head`, `document-row` (**renderiza um `DocumentSummary` real**), `status-chips` (chrome — sem contadores por aba no v1), `empty-state` (fallback), `footer-totais`, `pagination-chrome` (**ligado a page/pageSize**) (+ `.css.ts` tokens-only) em `src/modules/financial/client/contas-a-pagar-list/components/` — tokens via Figma 205-638 + mock HTML.
-- [ ] T041 [US2] `src/modules/financial/client/contas-a-pagar-list/page/contas-a-pagar.page.tsx` (+ `.css.ts`) — view burra.
-- [ ] T042 [US2] Ligar a rota `src/routes/financeiro/contas-a-pagar/index.tsx` (binding→page) com **guard de rota por `fiscal-document:read`** e adicionar o item **Financeiro → Contas a Pagar** ao menu (`src/modules/shell/client/data/menu/shell-menu.config.ts`), **gated pela mesma permissão** (FR-013).
-- [ ] T043 [US2] i18n: tags `financial.list.*` (títulos de coluna, rótulos de status, estado vazio, "Novo Documento").
+- [x] T037 [US2] `src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.query.ts` (`queryOptions` da lista → `repository.list`, **com page/pageSize**; a lista é real na Fatia 2).
+- [x] T038 [US2] `src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts` (derivação pura do estado — `ready` mapeia os `items` para linhas + dados de paginação).
+- [x] T039 [US2] `src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.binding.ts` (adapter React: `useQuery`).
+- [x] T040 [P] [US2] Componentes burros `grid-head`, `document-row` (**renderiza um `DocumentSummary` real**), `status-chips` (chrome — sem contadores por aba no v1), `empty-state` (fallback), `footer-totais`, `pagination-chrome` (**ligado a page/pageSize**) (+ `.css.ts` tokens-only) em `src/modules/financial/client/contas-a-pagar-list/components/` — tokens via Figma 205-638 + mock HTML.
+- [x] T041 [US2] `src/modules/financial/client/contas-a-pagar-list/page/contas-a-pagar.page.tsx` (+ `.css.ts`) — view burra.
+- [x] T042 [US2] Ligar a rota `src/routes/financeiro/contas-a-pagar/index.tsx` (binding→page) com **guard de rota por `fiscal-document:read`** e adicionar o item **Financeiro → Contas a Pagar** ao menu (`src/modules/shell/client/data/menu/shell-menu.config.ts`), **gated pela mesma permissão** (FR-013).
+- [x] T043 [US2] i18n: tags `financial.list.*` (títulos de coluna, rótulos de status, estado vazio, "Novo Documento").
 
 **Checkpoint**: Grid com listagem real paginada funcional; US1 + US2 independentes e testáveis.
 
