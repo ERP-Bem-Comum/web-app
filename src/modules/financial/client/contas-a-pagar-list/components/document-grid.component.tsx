@@ -7,7 +7,7 @@ import type { ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { AvatarLabel, initialsFrom } from '#shared/ui/index.ts'
+import { AvatarLabel, initialsFrom, Checkbox } from '#shared/ui/index.ts'
 
 import {
   COLUMNS,
@@ -22,6 +22,8 @@ import {
   headCellRight,
   row,
   rowClickable,
+  rowSelected,
+  cellCheckbox,
   cell,
   cellMutedDoc,
   cellNet,
@@ -49,14 +51,25 @@ const t = createTranslator(ptBR)
 export type DocumentGridProps = Readonly<{
   state: ListState
   onRowClick?: (id: string, status: DocumentStatus) => void
+  // Seleção (mock): checkbox por linha + "selecionar todos". Opcional (aditivo — sem isso, sem coluna).
+  selectedIds?: ReadonlySet<string>
+  allSelected?: boolean
+  onToggle?: (id: string) => void
+  onToggleAll?: () => void
 }>
 
 export function DocumentGrid(props: DocumentGridProps): ReactNode {
-  const { state } = props
+  const { state, selectedIds, onToggle, onToggleAll } = props
+  const selectable = onToggle !== undefined
 
   return (
     <div className={grid}>
       <div className={head} role="row">
+        <span className={cellCheckbox}>
+          {selectable ? (
+            <Checkbox id="cb-all" checked={props.allSelected ?? false} onChange={() => onToggleAll?.()} />
+          ) : null}
+        </span>
         {COLUMNS.map((c) => (
           <span key={c.key} className={c.align === 'right' ? headCellRight : headCell}>
             {t(c.labelTag)}
@@ -76,42 +89,65 @@ export function DocumentGrid(props: DocumentGridProps): ReactNode {
           <span>{t('financial.list.empty.hint')}</span>
         </div>
       ) : (
-        state.rows.map((r) => (
-          <div
-            className={`${row} ${rowClickable}`}
-            role="button"
-            tabIndex={0}
-            key={r.id}
-            onClick={() => {
-              props.onRowClick?.(r.id, r.status)
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
+        state.rows.map((r) => {
+          const isSelected = selectedIds?.has(r.id) ?? false
+          return (
+            <div
+              className={`${row} ${rowClickable}${isSelected ? ` ${rowSelected}` : ''}`}
+              role="button"
+              tabIndex={0}
+              key={r.id}
+              onClick={() => {
                 props.onRowClick?.(r.id, r.status)
-              }
-            }}
-          >
-            {r.type === DASH ? (
-              <span className={cell}>{r.type}</span>
-            ) : (
-              <span className={typeClass(r.type)}>{r.type}</span>
-            )}
-            <span className={cellMutedDoc}>{r.documentNumber}</span>
-            {r.supplier === DASH ? (
-              <span className={cell}>{r.supplier}</span>
-            ) : (
-              <AvatarLabel
-                initials={initialsFrom(r.supplier)}
-                variant={avatarVariantOf(r.supplierKind)}
-                text={r.supplier}
-              />
-            )}
-            <span className={cell}>{r.due}</span>
-            <span className={cellNet}>{r.net}</span>
-            <span className={`${statusBadge} ${statusVariant[r.status]}`}>{r.status}</span>
-          </div>
-        ))
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  props.onRowClick?.(r.id, r.status)
+                }
+              }}
+            >
+              <span
+                className={cellCheckbox}
+                onClick={(e) => {
+                  e.stopPropagation() // marcar não abre o drawer
+                }}
+                onKeyDown={(e) => {
+                  e.stopPropagation()
+                }}
+                role="presentation"
+              >
+                {selectable ? (
+                  <Checkbox
+                    id={`cb-${r.id}`}
+                    checked={isSelected}
+                    onChange={() => {
+                      onToggle(r.id)
+                    }}
+                  />
+                ) : null}
+              </span>
+              {r.type === DASH ? (
+                <span className={cell}>{r.type}</span>
+              ) : (
+                <span className={typeClass(r.type)}>{r.type}</span>
+              )}
+              <span className={cellMutedDoc}>{r.documentNumber}</span>
+              {r.supplier === DASH ? (
+                <span className={cell}>{r.supplier}</span>
+              ) : (
+                <AvatarLabel
+                  initials={initialsFrom(r.supplier)}
+                  variant={avatarVariantOf(r.supplierKind)}
+                  text={r.supplier}
+                />
+              )}
+              <span className={cell}>{r.due}</span>
+              <span className={cellNet}>{r.net}</span>
+              <span className={`${statusBadge} ${statusVariant[r.status]}`}>{r.status}</span>
+            </div>
+          )
+        })
       )}
     </div>
   )

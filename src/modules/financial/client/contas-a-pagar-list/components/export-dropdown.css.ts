@@ -59,3 +59,23 @@ export const menuItem = style({
 export const menuItemBorder = style({
   borderBlockStart: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
 })
+
+// Item indisponível (chrome honesto — funcionalidade pendente no backend): esmaecido e não-clicável.
+export const menuItemDisabled = style({
+  opacity: 0.5,
+  cursor: 'not-allowed',
+  ':hover': { background: 'transparent' },
+})
+
+// Item com rótulo + dica (padrão do mock: "Aprovar" / "aprova o documento").
+export const itemCol = style({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'flex-start',
+  gap: '0.0625rem',
+  minInlineSize: 0,
+})
+export const itemHint = style({
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink5,
+})

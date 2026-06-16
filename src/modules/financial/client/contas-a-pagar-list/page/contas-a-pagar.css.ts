@@ -114,7 +114,7 @@ export const chipCountOnActive = style([chipCount, { background: vars.color.inst
 
 // ── Grid (Figma 205-638): 6 colunas do DTO fino ───────────────────────────────
 // Larguras EXATAS do Figma (px→rem): Tipo 65 · Doc 100 · Fornecedor flex(446) · Venc 105 · Líquido 110(→) · Status 130.
-const GRID_COLS = '4.0625rem 6.25rem 1fr 6.5625rem 6.875rem 8.125rem'
+const GRID_COLS = '2.25rem 4.0625rem 6.25rem 1fr 6.5625rem 6.875rem 8.125rem'
 
 export const gridWrap = style({ paddingInline: vars.space.lg, paddingBlock: vars.space.md })
 export const grid = style({
@@ -337,6 +337,53 @@ export const perPageLabel = style({ color: vars.color.text.muted })
 export const rowClickable = style({
   cursor: 'pointer',
   ':hover': { background: vars.color.institutional.blueBg },
+})
+
+// Célula da checkbox (1ª coluna) — centraliza e não dispara o clique da linha (stopPropagation no JSX).
+export const cellCheckbox = style({ display: 'flex', alignItems: 'center', justifyContent: 'center' })
+// Linha selecionada — realce sutil (mock: bg azul claro), prevalece sobre o hover.
+export const rowSelected = style({
+  background: vars.color.institutional.blueBg,
+  ':hover': { background: vars.color.institutional.blueBg },
+})
+
+// ── Barra de seleção (mock: substitui a paginação quando há linhas marcadas) ───
+export const selBar = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.md,
+})
+export const selCount = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: vars.space.xs,
+  paddingBlock: vars.space.xs,
+  paddingInline: vars.space.sm,
+  borderRadius: vars.radius.xl,
+  background: vars.color.institutional.blueBg,
+  color: vars.color.institutional.blueDeep,
+  fontSize: vars.font.size.xs,
+  fontWeight: vars.font.weight.semibold,
+})
+export const selSum = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.ink2,
+})
+export const selSumLabel = style({
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink4,
+})
+export const selClear = style({
+  border: 'none',
+  background: 'transparent',
+  cursor: 'pointer',
+  color: vars.color.institutional.blue,
+  fontSize: vars.font.size.xs,
+  fontWeight: vars.font.weight.semibold,
+  textDecoration: 'underline',
+  textUnderlineOffset: '0.125rem',
 })
 
 // ── Drawer de Detalhe do Documento (onda 2) ───────────────────────────────────

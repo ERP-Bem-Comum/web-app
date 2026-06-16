@@ -26,6 +26,7 @@ const readyState: ListState = {
       supplierKind: 'supplier',
       due: '10/07/2026',
       net: 'R$ 1.500,00',
+      netCents: '150000',
       status: 'Aberto',
     },
   ],

@@ -9,7 +9,16 @@ import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { DownloadIcon, FileTextIcon, FileChartIcon } from '#shared/ui/icons/index.ts'
 
 import { buildDocumentsCsv, exportFileStamp, type GridRow } from '../contas-a-pagar.view-model.ts'
-import { wrapper, trigger, menu, menuItem, menuItemBorder } from './export-dropdown.css.ts'
+import {
+  wrapper,
+  trigger,
+  menu,
+  menuItem,
+  menuItemBorder,
+  menuItemDisabled,
+  itemCol,
+  itemHint,
+} from './export-dropdown.css.ts'
 
 const t = createTranslator(ptBR)
 
@@ -64,6 +73,19 @@ export function ExportDropdown({ rows }: ExportDropdownProps): ReactNode {
         >
           <FileChartIcon />
           PDF
+        </button>
+        {/* CNAB (remessa bancária) = gap de backend (transmissão CNAB 240) — core-api#58 (Fatia 3). */}
+        <button
+          type="button"
+          className={`${menuItem} ${menuItemBorder} ${menuItemDisabled}`}
+          disabled
+          title={t('financial.list.export.cnabSoon')}
+        >
+          <FileChartIcon />
+          <span className={itemCol}>
+            {t('financial.list.export.cnab')}
+            <span className={itemHint}>{t('financial.list.export.cnabHint')}</span>
+          </span>
         </button>
       </div>
     </details>

@@ -11,6 +11,7 @@ import {
   buildRows,
   pageInfo,
   buildDocumentsCsv,
+  sumSelectedNetBRL,
 } from '../../../../../src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts'
 import { ok, err } from '../../../../../src/shared/primitives/result.ts'
 import type {
@@ -136,5 +137,28 @@ describe('buildDocumentsCsv', () => {
   it('escapa aspas internas duplicando-as', () => {
     const csv = buildDocumentsCsv(buildRows([summary({ documentNumber: 'A"B' })], supplierName))
     assert.ok(csv.includes('"A""B"'))
+  })
+})
+
+describe('sumSelectedNetBRL', () => {
+  const rows = buildRows(
+    [
+      summary({ id: 'a', netValueCents: '150000' }),
+      summary({ id: 'b', netValueCents: '249999' }),
+      summary({ id: 'c', netValueCents: null }),
+    ],
+    supplierName,
+  )
+
+  // Intl (pt-BR) usa NBSP entre "R$" e o número — normaliza p/ comparar.
+  const norm = (s: string): string => s.replace(/\s/g, ' ')
+
+  it('soma só o líquido das linhas selecionadas (BRL)', () => {
+    assert.equal(norm(sumSelectedNetBRL(rows, new Set(['a', 'b']))), 'R$ 3.999,99')
+  })
+
+  it('ignora linhas sem valor e zera quando nada selecionado', () => {
+    assert.equal(norm(sumSelectedNetBRL(rows, new Set(['c']))), 'R$ 0,00')
+    assert.equal(norm(sumSelectedNetBRL(rows, new Set())), 'R$ 0,00')
   })
 })

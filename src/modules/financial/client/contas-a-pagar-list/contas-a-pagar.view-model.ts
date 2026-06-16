@@ -37,6 +37,7 @@ export type GridRow = Readonly<{
   supplierKind: PartnerKind | null
   due: string
   net: string
+  netCents: string | null // bruto em centavos p/ o somatório da seleção (formatação fica fora)
   status: DocumentStatus
 }>
 
@@ -98,8 +99,19 @@ const toRow = (
   supplierKind: resolveKind?.(it.supplierRef) ?? null,
   due: it.dueDate !== null && it.dueDate !== '' ? formatDue(it.dueDate) : DASH,
   net: it.netValueCents !== null && it.netValueCents !== '' ? centsToBRL(it.netValueCents) : DASH,
+  netCents: it.netValueCents,
   status: it.status,
 })
+
+/** Soma (BRL formatado) do líquido das linhas selecionadas — PURA (o relógio/Intl fica no `centsToBRL`). */
+export const sumSelectedNetBRL = (rows: readonly GridRow[], selected: ReadonlySet<string>): string => {
+  const total = rows.reduce((acc, r) => {
+    if (!selected.has(r.id) || r.netCents === null || r.netCents === '') return acc
+    const n = Number(r.netCents)
+    return Number.isFinite(n) ? acc + n : acc
+  }, 0)
+  return centsToBRL(String(total))
+}
 
 export const buildRows = (
   items: readonly DocumentSummary[],
