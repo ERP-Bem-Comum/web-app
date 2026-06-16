@@ -139,7 +139,7 @@ description: "Task list — Contas a Pagar (Financeiro) v1 núcleo"
 
 ## Phase 6: Polish & Cross-Cutting
 
-- [ ] T045 [P] Abrir os handoffs de backend como **GitHub issues** (novo padrão do tech lead — não mais `.md` no repo), provavelmente no repo `ERP-Bem-Comum/core-api`: **FIN-LIST-DTO** (enriquecer o DTO da lista) e **FIN-CREATE-DTO** (create aceitar competência/emissão/conta-débito + derivar categorização do `contractRef`). Referenciar as URLs das issues aqui.
+- [x] T045 [P] Handoffs de backend abertos como **GitHub issues** (padrão do tech lead): **FIN-LIST-DTO** → ERP-Bem-Comum/core-api#47 · **FIN-CREATE-DTO** → ERP-Bem-Comum/core-api#48.
 - [ ] T046 Rodar `pnpm verify` (typecheck + lint + `test` + `test:dom`) verde; corrigir qualquer regressão (regra de regressão-zero).
 - [ ] T047 Gerar baselines visuais Playwright das 2 telas (`e2e/visual/`), com revisão humana do diff — nunca `test:visual:update` cego.
 - [ ] T048 Validar `quickstart.md` (smoke manual contra a stack `app.localhost`).
