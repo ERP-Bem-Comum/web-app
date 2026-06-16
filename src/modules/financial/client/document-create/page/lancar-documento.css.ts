@@ -10,17 +10,19 @@ import { vars } from '#shared/ui/tokens/index.ts'
 
 // Preenche a caixa de conteúdo do shell (que é overflow:hidden) e gerencia o próprio scroll:
 // topbar fixa · body (3 colunas que rolam) · bottombar fixa. Sem isso, a tela longa fica cortada.
+// Editor full-bleed: ocupa toda a região abaixo do topbar do sistema e à direita do menu (como o mock).
+// Sendo a própria tela fixa, o header e o footer viram linhas flex normais (full-width automático).
 export const screen = style({
+  position: 'fixed',
+  insetBlockStart: vars.size.topbar, // logo abaixo do topbar do sistema
+  insetBlockEnd: 0,
+  insetInlineStart: 'var(--sidebar-width, 16.25rem)', // à direita do menu (acompanha colapso)
+  insetInlineEnd: 0,
   display: 'flex',
   flexDirection: 'column',
-  inlineSize: '100%',
-  blockSize: '100%',
   minBlockSize: 0,
   overflow: 'hidden',
   background: vars.color.surface.default,
-  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
-  borderRadius: vars.radius.lg,
-  boxShadow: vars.shadow.card,
 })
 
 // Topbar própria do Lançar (Figma): ← · título · breadcrumb · ✕, barra de 44px.
@@ -266,7 +268,7 @@ export const sidebarCol = style({
   minBlockSize: 0,
   blockSize: '100%',
   overflowY: 'auto',
-  paddingBlock: '1.25rem', // 20
+  paddingBlock: '1.25rem', // 20 (mock)
   paddingInline: '1.125rem', // 18
   borderInlineStart: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
 })
@@ -720,9 +722,9 @@ export const contratoLink = style({
 })
 
 // ── Bottombar fixa (Figma 626:25): status + quick-action · spacer · ações ─────────
-// Footer no mesmo padrão da tela de criar contrato: altura fixa 3.5rem, borda fina, fundo branco.
+// Footer: última linha (full-width via screen fixa). Padrão da tela de contrato: 3.5rem, borda fina, branco.
 export const pageBottombar = style({
-  flexShrink: 0, // última linha fixa do shell (topbar · body rolável · bottombar)
+  flexShrink: 0,
   display: 'flex',
   alignItems: 'center',
   gap: '0.875rem', // 14px
@@ -730,7 +732,6 @@ export const pageBottombar = style({
   paddingInline: vars.space.lg,
   borderBlockStart: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
   background: vars.color.surface.default,
-  '@media': { 'screen and (max-width: 48rem)': { flexWrap: 'wrap' } },
 })
 export const statusGroup = style({ display: 'flex', alignItems: 'center', gap: vars.space.sm })
 export const statusDot = style({
