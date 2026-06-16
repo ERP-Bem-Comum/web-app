@@ -34,8 +34,9 @@ const partnersOptionsQueryOptions = {
       }
     }
     if (acts.ok) {
+      // ACT exibe a RAZÃO SOCIAL (corporateName); o nº do ato vai no subtítulo.
       for (const a of acts.data.items) {
-        options.push({ id: a.id, name: a.name, subtitle: a.actNumber, kind: 'act' })
+        options.push({ id: a.id, name: a.corporateName, subtitle: a.actNumber, kind: 'act' })
       }
     }
     return options.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))

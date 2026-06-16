@@ -968,7 +968,7 @@ export const ptBR: Catalog = {
   'financial.create.hero.overline': 'Fornecedor',
   'financial.create.partner.kind.supplier': 'Fornecedor',
   'financial.create.partner.kind.financier': 'Financiador',
-  'financial.create.partner.kind.act': 'Ato',
+  'financial.create.partner.kind.act': 'ACT',
   'financial.create.partner.search': 'Buscar por nome ou CNPJ…',
   'financial.create.partner.empty': 'Nenhum parceiro encontrado',
   'financial.create.partner.close': 'Fechar',
