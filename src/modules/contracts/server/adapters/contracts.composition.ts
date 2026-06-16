@@ -3,6 +3,7 @@
  * Env é lido DENTRO da função (nunca em escopo de módulo).
  */
 import { loadEnvOrThrow } from '#external/config/env.config.ts'
+import { coreApiBase } from '#external/core-api/api-base.ts'
 import { createCoreApiContractsClient } from './core-api/core-api-contracts.ts'
 import { createListContracts } from '../application/queries/list-contracts.use-case.ts'
 import { createGetContract } from '../application/queries/get-contract.use-case.ts'
@@ -20,7 +21,7 @@ type ContractsServer = ReturnType<typeof build>
 
 const build = () => {
   const env = loadEnvOrThrow()
-  const client = createCoreApiContractsClient(env.CORE_API_URL)
+  const client = createCoreApiContractsClient(coreApiBase(env.CORE_API_URL, 'v2'))
 
   return {
     listContracts: createListContracts({ client }),

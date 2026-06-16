@@ -3,6 +3,7 @@
  * Parceiros vivem em `/api/v1` (ADR-0033) — derivamos a base do `CORE_API_URL`.
  */
 import { loadEnvOrThrow } from '#external/config/env.config.ts'
+import { coreApiBase } from '#external/core-api/api-base.ts'
 import { createCoreApiFinanciersClient } from './core-api/core-api-financiers.ts'
 import {
   createListFinanciers,
@@ -15,14 +16,9 @@ import {
 
 type FinancierServer = ReturnType<typeof build>
 
-const derivePartnersBase = (coreApiUrl: string): string =>
-  coreApiUrl.includes('/api/v2')
-    ? coreApiUrl.replace('/api/v2', '/api/v1')
-    : `${coreApiUrl.replace(/\/+$/, '')}/api/v1`
-
 const build = () => {
   const env = loadEnvOrThrow()
-  const client = createCoreApiFinanciersClient(derivePartnersBase(env.CORE_API_URL))
+  const client = createCoreApiFinanciersClient(coreApiBase(env.CORE_API_URL, 'v1'))
   return {
     listFinanciers: createListFinanciers({ client }),
     getFinancier: createGetFinancier({ client }),

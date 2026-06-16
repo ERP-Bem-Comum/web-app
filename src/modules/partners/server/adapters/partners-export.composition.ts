@@ -4,6 +4,7 @@
  */
 import type { Result } from '#shared/primitives/result.ts'
 import { loadEnvOrThrow } from '#external/config/env.config.ts'
+import { coreApiBase } from '#external/core-api/api-base.ts'
 import type { PartnersError } from '#modules/partners/server/domain/errors/partners.errors.ts'
 import {
   exportPartnerCsv,
@@ -12,14 +13,9 @@ import {
   type PartnerExportFile,
 } from './core-api/core-api-partners-export.ts'
 
-const derivePartnersBase = (coreApiUrl: string): string =>
-  coreApiUrl.includes('/api/v2')
-    ? coreApiUrl.replace('/api/v2', '/api/v1')
-    : `${coreApiUrl.replace(/\/+$/, '')}/api/v1`
-
 export const exportPartner = (
   resource: PartnerExportResource,
   query: PartnerExportQuery,
   token: string,
 ): Promise<Result<PartnerExportFile, PartnersError>> =>
-  exportPartnerCsv(derivePartnersBase(loadEnvOrThrow().CORE_API_URL), resource, query, token)
+  exportPartnerCsv(coreApiBase(loadEnvOrThrow().CORE_API_URL, 'v1'), resource, query, token)
