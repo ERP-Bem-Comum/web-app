@@ -1014,6 +1014,7 @@ export const ptBR: Catalog = {
   'financial.list.title': 'Contas a Pagar',
   'financial.list.count': 'documentos',
   'financial.list.new': 'Novo Documento',
+  'financial.list.search': 'Buscar por fornecedor, número, CNPJ…',
   'financial.list.pagination': 'Paginação',
   'financial.list.prev': 'Página anterior',
   'financial.list.next': 'Próxima página',
@@ -1030,4 +1031,5 @@ export const ptBR: Catalog = {
   'financial.list.chip.rascunho': 'Rascunho',
   'financial.list.chip.aberto': 'Em Aberto',
   'financial.list.chip.aprovado': 'Aprovado',
+  'financial.list.chip.pago': 'Pago',
 }

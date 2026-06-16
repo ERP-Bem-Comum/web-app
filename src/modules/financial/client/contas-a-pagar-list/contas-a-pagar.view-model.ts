@@ -53,12 +53,14 @@ export const COLUMNS = [
   { key: 'status', labelTag: 'financial.list.col.status', align: 'left' },
 ] as const
 
-// Chips de status — apenas CHROME no v1 (sem contadores por aba; o backend da Fatia 2 não agrega).
+// Chips de status (Figma) — CHROME no v1: contador real só no "Todos" (= total); os por-aba dependem de
+// agregação que o backend da Fatia 2 não faz.
 export const STATUS_CHIPS = [
   { key: 'todos', labelTag: 'financial.list.chip.todos' },
   { key: 'rascunho', labelTag: 'financial.list.chip.rascunho' },
   { key: 'aberto', labelTag: 'financial.list.chip.aberto' },
   { key: 'aprovado', labelTag: 'financial.list.chip.aprovado' },
+  { key: 'pago', labelTag: 'financial.list.chip.pago' },
 ] as const
 
 const DASH = '—'
