@@ -3,7 +3,7 @@
  * gating de retenção (NFS-e/RPA), **agregação CSRF** (PIS+COFINS+CSLL → 1 filho) e build do
  * `CreateDocumentInput`. Money via `money.ts`. No v1, descontos/multa/juros = 0 (sem campos no form).
  */
-import { reaisToCents } from '#modules/financial/client/data/money.ts'
+import { reaisToCents, centsToBRL } from '#modules/financial/client/data/money.ts'
 import type {
   CreateDocumentInput,
   DocumentType,
@@ -11,6 +11,10 @@ import type {
   RetentionInput,
   RetentionType,
 } from '#modules/financial/client/data/model/document.model.ts'
+
+// Re-export dos tipos que a UI precisa — as views importam SÓ do view-model (§XI), nunca de client-data.
+export type { DocumentType, PaymentMethod } from '#modules/financial/client/data/model/document.model.ts'
+export type SupplierOption = Readonly<{ id: string; name: string }>
 
 export type RetentionFieldsReais = Readonly<{
   iss: string
@@ -126,4 +130,25 @@ export const buildCreateInput = (fields: DocumentFormFields): CreateDocumentInpu
     dueDate: fields.dueDate,
     description: trimToUndefined(fields.description),
   }
+}
+
+// ── Opções / guards / formatação para as views (§XI: a view importa só daqui) ────
+export const DOCUMENT_TYPES: readonly DocumentType[] = ['NFS-e', 'DANFE', 'RPA', 'Fatura', 'Boleto', 'Recibo', 'Imposto']
+export const PAYMENT_METHODS: readonly PaymentMethod[] = ['TED', 'TransferenciaBancaria', 'PIX', 'Boleto', 'CartaoCorporativo', 'Cambio', 'GuiaRecolhimento', 'Outro']
+export const RETENTION_KEYS: readonly (keyof RetentionFieldsReais)[] = ['iss', 'irrf', 'inss', 'pis', 'cofins', 'csll']
+
+export const isDocumentType = (v: string): v is DocumentType => (DOCUMENT_TYPES as readonly string[]).includes(v)
+export const isPaymentMethod = (v: string): v is PaymentMethod => (PAYMENT_METHODS as readonly string[]).includes(v)
+
+/** Centavos → "R$ x,xx". */
+export const formatCents = (cents: string): string => centsToBRL(cents)
+/** Reais (com máscara) → "R$ x,xx" (0 quando inválido/vazio). */
+export const formatReaisBRL = (reais: string): string => {
+  const c = reaisToCents(reais)
+  return centsToBRL(c.ok ? c.value : '0')
+}
+/** YYYY-MM-DD → DD/MM/YYYY (sem Date — evita recuo de fuso). */
+export const formatDue = (iso: string): string => {
+  const p = iso.split('-')
+  return p.length === 3 ? `${p[2] ?? ''}/${p[1] ?? ''}/${p[0] ?? ''}` : iso
 }
