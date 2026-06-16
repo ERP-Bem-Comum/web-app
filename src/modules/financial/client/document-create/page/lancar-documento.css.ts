@@ -81,24 +81,27 @@ export const fieldGrid = styleVariants({
 
 export const field = style({ display: 'flex', flexDirection: 'column', gap: vars.space.xs, minInlineSize: 0 })
 export const fieldLabel = style({
+  fontFamily: vars.font.family.heading, // Inter (Figma/mock)
   fontSize: vars.font.size.xs,
   fontWeight: vars.font.weight.semibold,
-  color: vars.color.text.muted,
+  color: vars.color.institutional.ink5,
   textTransform: 'uppercase',
   letterSpacing: '0.04em',
 })
 
+// Input do mock: Inter 12.5px, min-height 34px, border 1px paper-rule, radius 6px, padding 8/11px.
 const controlBase = {
   inlineSize: '100%',
-  paddingBlock: vars.space.sm,
-  paddingInline: vars.space.sm,
+  minBlockSize: '2.125rem', // 34px
+  paddingBlock: '0.5rem', // 8px
+  paddingInline: '0.6875rem', // 11px
   borderRadius: vars.radius.md,
-  border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   background: vars.color.surface.default,
-  color: vars.color.text.primary,
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size.sm,
-  ':focus': { outline: 'none', borderColor: vars.color.border.focus },
+  color: vars.color.institutional.ink2,
+  fontFamily: vars.font.family.heading, // Inter (Figma/mock)
+  fontSize: vars.font.size.xs, // ~12.5px
+  ':focus': { outline: 'none', borderColor: vars.color.institutional.blueLine },
 } as const
 
 export const control = style(controlBase)

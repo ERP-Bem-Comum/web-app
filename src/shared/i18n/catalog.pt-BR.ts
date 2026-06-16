@@ -1015,6 +1015,7 @@ export const ptBR: Catalog = {
   'financial.list.count': 'documentos',
   'financial.list.new': 'Novo Documento',
   'financial.list.export': 'Exportar',
+  'financial.list.kbd': '⌘K',
   'financial.list.perPage': 'por página',
   'financial.list.search': 'Buscar por fornecedor, número, CNPJ…',
   'financial.list.pagination': 'Paginação',

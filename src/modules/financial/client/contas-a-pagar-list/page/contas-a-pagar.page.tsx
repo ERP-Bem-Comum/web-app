@@ -61,7 +61,7 @@ export function ContasAPagarPage(): ReactNode {
             placeholder={t('financial.list.search')}
             aria-label={t('financial.list.search')}
           />
-          <span className={kbd}>⌘K</span>
+          <span className={kbd}>{t('financial.list.kbd')}</span>
         </div>
 
         <div className={statusChips}>
