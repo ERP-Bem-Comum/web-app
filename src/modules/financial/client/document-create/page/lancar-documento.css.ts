@@ -224,6 +224,35 @@ export const controlDisabled = style([
   { background: vars.color.institutional.paperBeige, color: vars.color.text.muted, cursor: 'not-allowed' },
 ])
 
+// Select com aparência custom (Figma/mock): some o caret nativo; o wrapper desenha o ▾ azul.
+export const selectWrap = style({
+  position: 'relative',
+  inlineSize: '100%',
+  '::after': {
+    content: '"▾"',
+    position: 'absolute',
+    insetInlineEnd: '0.6875rem', // 11px
+    insetBlockStart: '50%',
+    transform: 'translateY(-50%)',
+    color: vars.color.institutional.blueDeep,
+    fontSize: vars.font.size.xs,
+    pointerEvents: 'none',
+  },
+})
+const selectAppearance = {
+  appearance: 'none',
+  WebkitAppearance: 'none',
+  MozAppearance: 'none',
+  paddingInlineEnd: '1.75rem', // espaço p/ o caret
+  cursor: 'pointer',
+} as const
+export const selectControl = style([controlBase, selectAppearance])
+export const selectControlDisabled = style([
+  controlBase,
+  selectAppearance,
+  { background: vars.color.institutional.paperBeige, color: vars.color.text.muted, cursor: 'not-allowed' },
+])
+
 export const retentionsHint = style({ fontSize: vars.font.size.xs, color: vars.color.text.muted })
 
 // ── Sidebar ──────────────────────────────────────────────────────────────────

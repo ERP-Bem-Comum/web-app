@@ -30,6 +30,9 @@ import {
   control,
   controlMono,
   controlDisabled,
+  selectWrap,
+  selectControl,
+  selectControlDisabled,
   field,
   fieldGrid,
   fieldLabel,
@@ -55,9 +58,11 @@ function ChromeSelect({ label }: Readonly<{ label: string }>): ReactNode {
   return (
     <div className={field}>
       <span className={fieldLabel}>{label}</span>
-      <select className={controlDisabled} disabled aria-label={label}>
-        <option>{t('financial.create.select')}</option>
-      </select>
+      <div className={selectWrap}>
+        <select className={selectControlDisabled} disabled aria-label={label}>
+          <option>{t('financial.create.select')}</option>
+        </select>
+      </div>
     </div>
   )
 }
@@ -101,21 +106,23 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             <label className={fieldLabel} htmlFor="fin-type">
               {t('financial.create.field.type')}
             </label>
-            <select
-              id="fin-type"
-              className={control}
-              value={fields.type}
-              onChange={(e) => {
-                props.onType(isDocumentType(e.target.value) ? e.target.value : '')
-              }}
-            >
-              <option value="">{t('financial.create.select')}</option>
-              {DOCUMENT_TYPES.map((dt) => (
-                <option key={dt} value={dt}>
-                  {dt}
-                </option>
-              ))}
-            </select>
+            <div className={selectWrap}>
+              <select
+                id="fin-type"
+                className={selectControl}
+                value={fields.type}
+                onChange={(e) => {
+                  props.onType(isDocumentType(e.target.value) ? e.target.value : '')
+                }}
+              >
+                <option value="">{t('financial.create.select')}</option>
+                {DOCUMENT_TYPES.map((dt) => (
+                  <option key={dt} value={dt}>
+                    {dt}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Nº / Série — célula combinada (Figma), dois inputs sob um rótulo. */}
@@ -260,41 +267,45 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             <label className={fieldLabel} htmlFor="fin-forma">
               {t('financial.create.field.paymentMethod')}
             </label>
-            <select
-              id="fin-forma"
-              className={control}
-              value={fields.paymentMethod}
-              onChange={(e) => {
-                props.onPaymentMethod(isPaymentMethod(e.target.value) ? e.target.value : '')
-              }}
-            >
-              <option value="">{t('financial.create.select')}</option>
-              {PAYMENT_METHODS.map((pm) => (
-                <option key={pm} value={pm}>
-                  {t(`financial.paymentMethod.${pm}`)}
-                </option>
-              ))}
-            </select>
+            <div className={selectWrap}>
+              <select
+                id="fin-forma"
+                className={selectControl}
+                value={fields.paymentMethod}
+                onChange={(e) => {
+                  props.onPaymentMethod(isPaymentMethod(e.target.value) ? e.target.value : '')
+                }}
+              >
+                <option value="">{t('financial.create.select')}</option>
+                {PAYMENT_METHODS.map((pm) => (
+                  <option key={pm} value={pm}>
+                    {t(`financial.paymentMethod.${pm}`)}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className={field}>
             <label className={fieldLabel} htmlFor="fin-forn">
               {t('financial.create.field.supplier')}
             </label>
-            <select
-              id="fin-forn"
-              className={control}
-              value={fields.supplierRef}
-              onChange={(e) => {
-                props.onSupplier(e.target.value)
-              }}
-            >
-              <option value="">{t('financial.create.select')}</option>
-              {props.suppliers.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
+            <div className={selectWrap}>
+              <select
+                id="fin-forn"
+                className={selectControl}
+                value={fields.supplierRef}
+                onChange={(e) => {
+                  props.onSupplier(e.target.value)
+                }}
+              >
+                <option value="">{t('financial.create.select')}</option>
+                {props.suppliers.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
         <div className={fieldGrid.wide}>
