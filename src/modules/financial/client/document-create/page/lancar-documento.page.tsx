@@ -15,7 +15,7 @@ import { useSupplierPickerController } from '../supplier-picker.controller.ts'
 import { useLancarDocumentoBinding } from '../create-document.binding.ts'
 import { usePartnersOptions } from '../partners-options.binding.ts'
 import { usePartnerHydration } from '../partner-hydration.binding.ts'
-import { buildCreateInput, canSubmit } from '../document-form.view.ts'
+import { buildCreateInput, buildDraftInput, canSubmit, canSaveDraft } from '../document-form.view.ts'
 import { DocumentForm } from '../components/document-form.component.tsx'
 import { SupplierPicker } from '../components/supplier-picker.component.tsx'
 import { ComposicaoSidebar } from '../components/composicao-sidebar.component.tsx'
@@ -48,6 +48,22 @@ export function LancarDocumentoPage(): ReactNode {
   const supplierName = selectedPartner?.name ?? ''
   // Hidrata banco + contrato "Em Andamento" do fornecedor (auto-preenchimento do Pagamento/Categorização).
   const hydration = usePartnerHydration(controller.fields.supplierRef, selectedPartner?.kind ?? null)
+
+  // Anexa os refs do contrato "Em Andamento" e dispara o create (backend deriva a categorização — #48).
+  const submit = (base: ReturnType<typeof buildCreateInput>): void => {
+    if (base === null) return
+    const c = hydration.contract
+    command.execute(
+      c !== null
+        ? {
+            ...base,
+            contractRef: c.ref,
+            programRef: c.programRef ?? undefined,
+            budgetPlanRef: c.budgetPlanRef ?? undefined,
+          }
+        : base,
+    )
+  }
 
   return (
     <div className={screen}>
@@ -112,22 +128,13 @@ export function LancarDocumentoPage(): ReactNode {
 
       <DocumentBottombar
         onDiscard={controller.reset}
-        onSubmit={() => {
-          const base = buildCreateInput(controller.fields)
-          if (base === null) return
-          // Anexa os refs do contrato "Em Andamento" (backend deriva a categorização — core-api#48).
-          const c = hydration.contract
-          const input =
-            c !== null
-              ? {
-                  ...base,
-                  contractRef: c.ref,
-                  programRef: c.programRef ?? undefined,
-                  budgetPlanRef: c.budgetPlanRef ?? undefined,
-                }
-              : base
-          command.execute(input)
+        onSaveDraft={() => {
+          submit(buildDraftInput(controller.fields))
         }}
+        onSubmit={() => {
+          submit(buildCreateInput(controller.fields))
+        }}
+        canSaveDraft={canSaveDraft(controller.fields)}
         canSubmit={canSubmit(controller.fields)}
         running={command.running}
       />

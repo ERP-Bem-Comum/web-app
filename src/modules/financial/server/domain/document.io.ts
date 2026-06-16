@@ -67,8 +67,9 @@ export interface CreateDocumentInput {
   interestCents?: string
   retentions: readonly RetentionInput[]
   registeredTaxes: readonly RegisteredTaxInput[]
-  dueDate: string
+  dueDate?: string // opcional p/ rascunho (asDraft); obrigatório no lançamento (gating na UI)
   description?: string
+  asDraft?: boolean // true → Rascunho; default false → Aberto
 }
 
 // Ajuste (PATCH /documents/:id) — só em Aberto; ≥1 campo além de version; regenera filhos.

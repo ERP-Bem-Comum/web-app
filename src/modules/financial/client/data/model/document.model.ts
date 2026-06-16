@@ -57,8 +57,9 @@ export type CreateDocumentInput = Readonly<{
   interestCents?: string
   retentions: readonly RetentionInput[]
   registeredTaxes: readonly RegisteredTaxInput[]
-  dueDate: string
+  dueDate?: string // opcional p/ rascunho (asDraft); obrigatório no lançamento (gating na UI)
   description?: string
+  asDraft?: boolean // true → Rascunho (campos opcionais, sem títulos); default false → Aberto
 }>
 
 export type AdjustDocumentInput = Readonly<{

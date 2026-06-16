@@ -228,6 +228,42 @@ export const buildCreateInput = (fields: DocumentFormFields): CreateDocumentInpu
   }
 }
 
+/**
+ * Pode salvar RASCUNHO? Mínimo que o core-api exige p/ asDraft:true (sem dueDate nem checagem de líquido):
+ * tipo, número, fornecedor, forma e bruto > 0.
+ */
+export const canSaveDraft = (fields: DocumentFormFields): boolean =>
+  fields.type !== '' &&
+  fields.documentNumber.trim() !== '' &&
+  fields.supplierRef.trim() !== '' &&
+  fields.paymentMethod !== '' &&
+  grossCents(fields) > 0
+
+/** Monta o input de RASCUNHO (asDraft:true) — dueDate é opcional; ou `null` se nem o mínimo está pronto. */
+export const buildDraftInput = (fields: DocumentFormFields): CreateDocumentInput | null => {
+  if (!canSaveDraft(fields) || fields.type === '' || fields.paymentMethod === '') return null
+  const gross = grossCents(fields)
+  const t = retentionTotals(fields)
+  const retentions: RetentionInput[] = []
+  if (t.iss > 0) retentions.push(retentionInput('ISS', t.iss, gross))
+  if (t.irrf > 0) retentions.push(retentionInput('IRRF', t.irrf, gross))
+  if (t.inss > 0) retentions.push(retentionInput('INSS', t.inss, gross))
+  if (t.csrf > 0) retentions.push(retentionInput('CSRF', t.csrf, gross))
+  return {
+    type: fields.type,
+    documentNumber: fields.documentNumber.trim(),
+    series: trimToUndefined(fields.series),
+    supplierRef: fields.supplierRef,
+    paymentMethod: fields.paymentMethod,
+    grossValueCents: String(gross),
+    retentions,
+    registeredTaxes: [],
+    dueDate: trimToUndefined(fields.dueDate),
+    description: trimToUndefined(fields.description),
+    asDraft: true,
+  }
+}
+
 // ── Opções / guards / formatação para as views (§XI: a view importa só daqui) ────
 export const DOCUMENT_TYPES: readonly DocumentType[] = [
   'NFS-e',

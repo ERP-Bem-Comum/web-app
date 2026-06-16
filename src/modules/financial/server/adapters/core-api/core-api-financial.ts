@@ -49,7 +49,7 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
     create: async (input, token) => {
       const r = await resultFetch<unknown>(docs, {
         method: 'POST',
-        body: { ...input, asDraft: false },
+        body: { asDraft: false, ...input }, // input.asDraft (rascunho) tem precedência
         token,
       })
       if (isErr(r)) return err(mapHttpError(r.error))

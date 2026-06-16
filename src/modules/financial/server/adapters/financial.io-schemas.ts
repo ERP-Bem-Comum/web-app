@@ -66,8 +66,9 @@ export const CreateDocumentInputSchema = z.object({
   interestCents: CentsSchema.optional(),
   retentions: z.array(RetentionItemSchema).readonly(),
   registeredTaxes: z.array(RegisteredTaxItemSchema).readonly(),
-  dueDate: DateSchema,
+  dueDate: DateSchema.optional(), // opcional p/ rascunho; o lançamento exige (gating na UI)
   description: z.string().trim().max(500).optional(),
+  asDraft: z.boolean().optional(), // true → Rascunho; default false → Aberto (core-api)
 })
 
 // Ajuste (PATCH /documents/:id).

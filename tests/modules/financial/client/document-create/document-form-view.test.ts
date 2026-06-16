@@ -11,7 +11,9 @@ import {
   netPreviewCents,
   titulosPrevistos,
   canSubmit,
+  canSaveDraft,
   buildCreateInput,
+  buildDraftInput,
   filterPartners,
   partnerKindTag,
   type DocumentFormFields,
@@ -120,6 +122,26 @@ describe('filterPartners', () => {
   })
   it('sem match → vazio', () => {
     assert.equal(filterPartners(partners, 'inexistente').length, 0)
+  })
+})
+
+describe('canSaveDraft / buildDraftInput', () => {
+  it('rascunho NÃO exige vencimento (diferente do submit)', () => {
+    const semVenc = { ...base, dueDate: '' }
+    assert.equal(canSubmit(semVenc), false)
+    assert.equal(canSaveDraft(semVenc), true)
+  })
+  it('rascunho exige o mínimo: tipo, número, fornecedor, forma, bruto', () => {
+    assert.equal(canSaveDraft({ ...base, supplierRef: '' }), false)
+    assert.equal(canSaveDraft({ ...base, grossValue: '' }), false)
+  })
+  it('buildDraftInput marca asDraft e omite dueDate vazio', () => {
+    const input = buildDraftInput({ ...base, dueDate: '' })
+    assert.notEqual(input, null)
+    if (input !== null) {
+      assert.equal(input.asDraft, true)
+      assert.equal(input.dueDate, undefined)
+    }
   })
 })
 

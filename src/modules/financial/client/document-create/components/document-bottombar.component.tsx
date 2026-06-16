@@ -30,7 +30,9 @@ const t = createTranslator(ptBR)
 
 export type DocumentBottombarProps = Readonly<{
   onDiscard: () => void
+  onSaveDraft: () => void
   onSubmit: () => void
+  canSaveDraft: boolean
   canSubmit: boolean
   running: boolean
 }>
@@ -53,7 +55,12 @@ export function DocumentBottombar(props: DocumentBottombarProps): ReactNode {
         <button type="button" className={discardButton} onClick={props.onDiscard}>
           {t('financial.create.discard')}
         </button>
-        <button type="button" className={draftButton} disabled>
+        <button
+          type="button"
+          className={draftButton}
+          onClick={props.onSaveDraft}
+          disabled={!props.canSaveDraft || props.running}
+        >
           {t('financial.create.bottombar.saveDraft')}
           <span className={kbdChip}>{t('financial.create.bottombar.kbdSaveDraft')}</span>
         </button>
