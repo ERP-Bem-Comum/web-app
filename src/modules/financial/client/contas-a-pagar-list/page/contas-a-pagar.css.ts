@@ -89,9 +89,9 @@ export const head = style({
   background: vars.color.institutional.paperWarm,
   borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
 })
-// Cabeçalho denso do mock: caixa-alta, peso forte, tracking largo, tom ink-5.
+// Cabeçalho denso (Figma "Badge" 9px): caixa-alta, peso bold, tracking largo, tom ink-5.
 export const headCell = style({
-  fontSize: vars.font.size.xs,
+  fontSize: vars.font.size['2xs'],
   fontWeight: vars.font.weight.bold,
   textTransform: 'uppercase',
   letterSpacing: '0.06em',
@@ -107,20 +107,23 @@ export const row = style({
   minBlockSize: '3.5rem', // Figma: grid-row 56px
   paddingInline: vars.space.lg, // Figma: 24px lateral
   borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
-  fontSize: vars.font.size.sm,
+  fontSize: vars.font.size.xs, // Figma Body/Medium ~12.5px
   color: vars.color.institutional.ink2,
   transition: 'background 120ms ease',
   ':hover': { background: vars.color.institutional.paperWarm },
   ':last-child': { borderBlockEnd: 'none' },
 })
 export const cell = style({ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })
-export const cellMutedDoc = style([cell, { color: vars.color.text.secondary }])
+export const cellMutedDoc = style([cell, { color: vars.color.institutional.ink4 }])
 export const cellNet = style({ textAlign: 'right', fontFamily: vars.font.family.mono })
 
+// Badge de status — Figma "Badge" 9px bold caixa-alta.
 export const statusBadge = style({
   justifySelf: 'start',
-  fontSize: vars.font.size.xs,
-  fontWeight: 600,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.bold,
+  textTransform: 'uppercase',
+  letterSpacing: '0.04em',
   paddingBlock: vars.space.xs,
   paddingInline: vars.space.sm,
   borderRadius: vars.radius.xl,
