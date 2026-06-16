@@ -3,7 +3,7 @@
  * (busca + status-chips segmented-control), grid de 6 colunas (DTO fino) com tipografia densa Inter +
  * valores mono, e bottombar (footer no padrão Contratos: paginação + Novo Documento). Marca azul do DS.
  */
-import { style, styleVariants } from '@vanilla-extract/css'
+import { style, styleVariants, globalStyle } from '@vanilla-extract/css'
 
 import { vars } from '#shared/ui/tokens/index.ts'
 
@@ -225,8 +225,14 @@ export const bottombar = style({
   insetInlineEnd: 0,
   zIndex: 100,
 })
-export const newButton = style({
+// Grupo à direita do footer: Exportar + Novo Documento.
+export const footerActions = style({
   marginInlineStart: 'auto',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: vars.space.md,
+})
+export const newButton = style({
   display: 'inline-flex',
   alignItems: 'center',
   gap: vars.space.sm,
@@ -264,3 +270,19 @@ export const pageBtn = style({
   cursor: 'pointer',
   ':disabled': { opacity: 0.4, cursor: 'not-allowed' },
 })
+export const separator = style({ color: vars.color.institutional.ink5 })
+export const select = style({
+  border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
+  borderRadius: vars.radius.sm,
+  background: vars.color.surface.default,
+  color: vars.color.text.secondary,
+  fontSize: vars.font.size.sm,
+  paddingBlock: vars.space.xs,
+  paddingInline: vars.space.xs,
+  cursor: 'pointer',
+})
+export const perPageLabel = style({ color: vars.color.text.muted })
+
+// ── Impressão (PDF via window.print): esconde o cromo, imprime só o grid ──
+globalStyle(`${filterBar}, ${bottombar}`, { '@media': { print: { display: 'none !important' } } })
+globalStyle(screen, { '@media': { print: { paddingBlockEnd: '0 !important' } } })

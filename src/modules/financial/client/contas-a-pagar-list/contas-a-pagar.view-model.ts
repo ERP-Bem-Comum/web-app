@@ -99,6 +99,21 @@ export const pageInfo = (page: number, pageSize: number, total: number): PageInf
   }
 }
 
+// ── Exportar (client-side, padrão Contratos) ──────────────────────────────────
+const CSV_HEADERS = ['Tipo', 'Documento', 'Fornecedor', 'Vencimento', 'Líquido', 'Status'] as const
+
+/** Monta o CSV (`;`) das linhas exibidas — PURO. Escapa aspas (RFC 4180). */
+export const buildDocumentsCsv = (rows: readonly GridRow[]): string => {
+  const cell = (v: string): string => `"${v.replace(/"/g, '""')}"`
+  const lines = rows.map((r) =>
+    [r.type, r.documentNumber, r.supplier, r.due, r.net, r.status].map(cell).join(';'),
+  )
+  return [CSV_HEADERS.join(';'), ...lines].join('\n')
+}
+
+/** Carimbo YYYY-MM-DD p/ o nome do arquivo. O relógio mora na view-model (não na view — §XI). */
+export const exportFileStamp = (): string => new Date().toISOString().slice(0, 10)
+
 /** Deriva o estado da tela a partir do resultado da query (que devolve um `Result`). PURA. */
 export const deriveListState = (args: {
   isLoading: boolean

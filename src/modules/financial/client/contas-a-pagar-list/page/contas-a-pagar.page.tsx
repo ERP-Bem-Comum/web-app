@@ -1,8 +1,8 @@
 /**
  * Contas a Pagar — PAGE (view burra §XI). Estrutura fiel ao Figma 205-638: filter-bar (busca + status-chips
- * segmented-control) + grid + bottombar (footer no padrão Contratos: paginação + Novo Documento). O TÍTULO
- * vem do PageHeader do shell (padrão Contratos, Nunito). Busca e contadores por-aba = CHROME no v1 (a Fatia 2
- * não faz busca textual nem agrega por status); só o "Todos" mostra o total real. Não usa data-hooks direto.
+ * segmented-control) + grid + bottombar (footer no padrão Contratos: paginação + "por página" + Exportar +
+ * Novo Documento). Título vem do PageHeader do shell (Nunito). Busca e contadores por-aba = CHROME no v1
+ * (Fatia 2 não faz busca textual nem agrega); só "Todos" mostra o total real. Exportar (CSV/PDF) = client-side.
  */
 import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
@@ -14,6 +14,7 @@ import { SearchIcon } from '#shared/ui/icons/index.ts'
 import { useContasAPagar } from '../contas-a-pagar.binding.ts'
 import { STATUS_CHIPS } from '../contas-a-pagar.view-model.ts'
 import { DocumentGrid } from '../components/document-grid.component.tsx'
+import { ExportDropdown } from '../components/export-dropdown.component.tsx'
 import {
   screen,
   filterBar,
@@ -27,18 +28,24 @@ import {
   chipCountOnActive,
   gridWrap,
   bottombar,
+  footerActions,
   newButton,
   pagination,
   pageRange,
+  separator,
+  select,
+  perPageLabel,
   pageNav,
   pageBtn,
 } from './contas-a-pagar.css.ts'
 
 const t = createTranslator(ptBR)
+const PAGE_SIZE_OPTIONS = [5, 10, 12, 25, 50] as const
 
 export function ContasAPagarPage(): ReactNode {
-  const { state, onPrev, onNext } = useContasAPagar()
+  const { state, pageSize, onPrev, onNext, onPageSize } = useContasAPagar()
   const page = state.tag === 'ready' ? state.page : null
+  const rows = state.tag === 'ready' ? state.rows : []
 
   return (
     <div className={screen}>
@@ -80,6 +87,24 @@ export function ContasAPagarPage(): ReactNode {
         {page !== null ? (
           <nav className={pagination} aria-label={t('financial.list.pagination')}>
             <span className={pageRange}>{page.rangeLabel}</span>
+            <span className={separator} aria-hidden="true">
+              ·
+            </span>
+            <select
+              className={select}
+              value={pageSize}
+              onChange={(e) => {
+                onPageSize(Number(e.target.value))
+              }}
+              aria-label={t('financial.list.perPage')}
+            >
+              {PAGE_SIZE_OPTIONS.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+            <span className={perPageLabel}>{t('financial.list.perPage')}</span>
             <div className={pageNav}>
               <button
                 type="button"
@@ -102,9 +127,13 @@ export function ContasAPagarPage(): ReactNode {
             </div>
           </nav>
         ) : null}
-        <Link to="/financeiro/contas-a-pagar/lancar" className={newButton}>
-          {t('financial.list.new')}
-        </Link>
+
+        <div className={footerActions}>
+          {page !== null ? <ExportDropdown rows={rows} /> : null}
+          <Link to="/financeiro/contas-a-pagar/lancar" className={newButton}>
+            {t('financial.list.new')}
+          </Link>
+        </div>
       </footer>
     </div>
   )

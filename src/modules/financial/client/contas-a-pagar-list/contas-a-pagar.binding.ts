@@ -11,7 +11,7 @@ import { listSuppliersFn } from '#modules/partners/public-api/index.ts'
 import { contasAPagarQueryOptions } from './contas-a-pagar.query.ts'
 import { deriveListState, type ListState, type ResolveSupplier } from './contas-a-pagar.view-model.ts'
 
-const PAGE_SIZE = 12
+const DEFAULT_PAGE_SIZE = 12
 
 const suppliersMapQueryOptions = {
   queryKey: ['financial', 'suppliers-map'] as const,
@@ -24,14 +24,17 @@ const suppliersMapQueryOptions = {
 
 export type ContasAPagarBinding = Readonly<{
   state: ListState
+  pageSize: number
   onPrev: () => void
   onNext: () => void
+  onPageSize: (size: number) => void
 }>
 
 export function useContasAPagar(): ContasAPagarBinding {
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const suppliers = useQuery(suppliersMapQueryOptions)
-  const list = useQuery(contasAPagarQueryOptions({ page, pageSize: PAGE_SIZE }))
+  const list = useQuery(contasAPagarQueryOptions({ page, pageSize }))
 
   const resolveSupplier: ResolveSupplier = (ref) => (ref === null ? '—' : (suppliers.data?.get(ref) ?? ref))
 
@@ -39,11 +42,16 @@ export function useContasAPagar(): ContasAPagarBinding {
 
   return {
     state,
+    pageSize,
     onPrev: () => {
       setPage((p) => Math.max(1, p - 1))
     },
     onNext: () => {
       setPage((p) => p + 1)
+    },
+    onPageSize: (size) => {
+      setPageSize(size)
+      setPage(1)
     },
   }
 }
