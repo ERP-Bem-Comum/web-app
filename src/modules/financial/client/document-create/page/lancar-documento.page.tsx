@@ -12,10 +12,12 @@ import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Button } from '#shared/ui/index.ts'
 
 import { useDocumentFormController } from '../document-form.controller.ts'
+import { useSupplierPickerController } from '../supplier-picker.controller.ts'
 import { useLancarDocumentoBinding } from '../create-document.binding.ts'
-import { useSuppliersOptions } from '../suppliers-options.binding.ts'
+import { usePartnersOptions } from '../partners-options.binding.ts'
 import { buildCreateInput, canSubmit, formatCents } from '../document-form.view.ts'
 import { DocumentForm } from '../components/document-form.component.tsx'
+import { SupplierPicker } from '../components/supplier-picker.component.tsx'
 import { ComposicaoSidebar } from '../components/composicao-sidebar.component.tsx'
 import { DocumentPreview } from '../components/document-preview.component.tsx'
 import { DocumentBottombar } from '../components/document-bottombar.component.tsx'
@@ -36,11 +38,6 @@ import {
   topbar,
   topbarBack,
   topbarClose,
-  hero,
-  heroInfo,
-  heroOverline,
-  heroName,
-  heroAlter,
   successCard,
   successTitle,
 } from './lancar-documento.css.ts'
@@ -49,8 +46,9 @@ const t = createTranslator(ptBR)
 
 export function LancarDocumentoPage(): ReactNode {
   const controller = useDocumentFormController()
+  const picker = useSupplierPickerController()
   const command = useLancarDocumentoBinding()
-  const suppliers = useSuppliersOptions()
+  const partners = usePartnersOptions()
 
   // Estado de sucesso — mostra os títulos gerados (pai + filhos).
   if (command.created !== null) {
@@ -83,7 +81,8 @@ export function LancarDocumentoPage(): ReactNode {
     )
   }
 
-  const supplierName = suppliers.find((s) => s.id === controller.fields.supplierRef)?.name ?? ''
+  const selectedPartner = partners.find((p) => p.id === controller.fields.supplierRef) ?? null
+  const supplierName = selectedPartner?.name ?? ''
 
   return (
     <div className={screen}>
@@ -116,23 +115,25 @@ export function LancarDocumentoPage(): ReactNode {
         <DocumentPreview />
 
         <div className={`${formCol} ${scrollArea}`}>
-          {/* Hero do fornecedor (Figma). v1: exibe o selecionado; "Alterar" abre o select da seção (chrome). */}
-          <div className={hero}>
-            <div className={heroInfo}>
-              <span className={heroOverline}>{t('financial.create.hero.overline')}</span>
-              <span className={heroName}>
-                {supplierName !== '' ? supplierName : t('financial.create.hero.placeholder')}
-              </span>
-            </div>
-            <span className={heroAlter}>{t('financial.create.hero.change')}</span>
-          </div>
+          {/* Hero do fornecedor com picker buscável (todos os parceiros) — via MANUAL do fornecedor. */}
+          <SupplierPicker
+            selected={selectedPartner}
+            options={partners}
+            open={picker.open}
+            query={picker.query}
+            onToggle={picker.toggle}
+            onClose={picker.close}
+            onQueryChange={picker.setQuery}
+            onSelect={(id) => {
+              controller.setSupplier(id)
+              picker.close()
+            }}
+          />
 
           <DocumentForm
             fields={controller.fields}
-            suppliers={suppliers}
             onType={controller.setType}
             onPaymentMethod={controller.setPaymentMethod}
-            onSupplier={controller.setSupplier}
             onText={controller.setText}
             onRetention={controller.setRetention}
           />

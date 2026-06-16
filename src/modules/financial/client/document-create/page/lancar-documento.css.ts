@@ -103,6 +103,14 @@ export const heroName = style({
   fontWeight: vars.font.weight.semibold,
   letterSpacing: '-0.012em',
   color: vars.color.institutional.ink2,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+})
+export const heroCnpj = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size['2xs'],
+  color: vars.color.institutional.ink4,
 })
 export const heroAlter = style({
   alignSelf: 'center',
@@ -118,6 +126,114 @@ export const heroAlter = style({
   paddingBlock: vars.space.xs,
   paddingInline: vars.space.sm,
   borderRadius: vars.radius.md,
+  cursor: 'pointer',
+  transition: 'background 120ms, border-color 120ms',
+  ':hover': {
+    background: vars.color.institutional.blueBg,
+    borderColor: vars.color.institutional.blueLine,
+  },
+})
+
+// ── Picker de parceiro (dropdown buscável no hero, padrão contratos) ──────────────
+export const pickerWrap = style({ position: 'relative', alignSelf: 'center' })
+// Captura clique-fora p/ fechar o dropdown (atrás do painel).
+export const pickerBackdrop = style({
+  position: 'fixed',
+  inset: 0,
+  zIndex: 199,
+  border: 'none',
+  background: 'transparent',
+  cursor: 'default',
+})
+export const pickerDropdown = style({
+  position: 'absolute',
+  insetInlineEnd: 0,
+  insetBlockStart: 'calc(100% + 0.375rem)',
+  inlineSize: '22rem',
+  maxBlockSize: '20rem',
+  overflowY: 'auto',
+  zIndex: 200,
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.125rem',
+  padding: vars.space.xs,
+  background: vars.color.surface.default,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.lg,
+  boxShadow: vars.shadow.card,
+})
+export const pickerSearch = style({
+  inlineSize: '100%',
+  minBlockSize: '2.125rem',
+  marginBlockEnd: vars.space.xs,
+  paddingBlock: '0.5rem',
+  paddingInline: '0.6875rem',
+  borderRadius: vars.radius.md,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  background: vars.color.surface.default,
+  color: vars.color.institutional.ink2,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.xs,
+  ':focus': {
+    outline: 'none',
+    borderColor: vars.color.institutional.blue,
+    boxShadow: `0 0 0 0.1875rem ${vars.color.institutional.blueBg}`,
+  },
+})
+export const pickerItem = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  inlineSize: '100%',
+  paddingBlock: vars.space.sm,
+  paddingInline: vars.space.sm,
+  borderRadius: vars.radius.md,
+  border: 'none',
+  background: 'transparent',
+  textAlign: 'start',
+  cursor: 'pointer',
+  ':hover': { background: vars.color.institutional.blueBg },
+})
+export const pickerItemSelected = style({ background: vars.color.institutional.blueBg })
+export const pickerAvatar = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  inlineSize: '2rem',
+  blockSize: '2rem',
+  flexShrink: 0,
+  borderRadius: '50%',
+  background: vars.color.institutional.blueBg,
+  color: vars.color.institutional.blueDeep,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.bold,
+})
+export const pickerItemInfo = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.125rem',
+  flex: 1,
+  minInlineSize: 0,
+})
+export const pickerItemName = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.xs,
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.ink2,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+})
+export const pickerItemCnpj = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size['2xs'],
+  color: vars.color.institutional.ink4,
+})
+export const pickerEmpty = style({
+  padding: vars.space.sm,
+  fontSize: vars.font.size.xs,
+  color: vars.color.text.muted,
 })
 
 // Layout 3-col do Figma 626-2: preview/OCR (480) · form (FILL) · sidebar (340). Colapsa por etapas:

@@ -24,7 +24,6 @@ import {
   type PaymentMethod,
   type DocumentFormFields,
   type RetentionFieldsReais,
-  type SupplierOption,
 } from '../document-form.view.ts'
 import {
   control,
@@ -84,10 +83,8 @@ function EntityCard(props: Readonly<{ label: string; hint: string; icon: ReactNo
 
 export type DocumentFormProps = Readonly<{
   fields: DocumentFormFields
-  suppliers: readonly SupplierOption[]
   onType: (value: DocumentType | '') => void
   onPaymentMethod: (value: PaymentMethod | '') => void
-  onSupplier: (ref: string) => void
   onText: (key: 'documentNumber' | 'series' | 'grossValue' | 'dueDate' | 'description', value: string) => void
   onRetention: (key: keyof RetentionFieldsReais, value: string) => void
 }>
@@ -262,6 +259,7 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
       {/* ── S3 Pagamento ── */}
       <section className={section}>
         <h3 className={sectionTitle}>{t('financial.create.section.pagamento')}</h3>
+        {/* Forma (real) + Pagar da Conta (chrome). O fornecedor é escolhido no hero (picker). */}
         <div className={fieldGrid.two}>
           <div className={field}>
             <label className={fieldLabel} htmlFor="fin-forma">
@@ -285,30 +283,6 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
               </select>
             </div>
           </div>
-          <div className={field}>
-            <label className={fieldLabel} htmlFor="fin-forn">
-              {t('financial.create.field.supplier')}
-            </label>
-            <div className={selectWrap}>
-              <select
-                id="fin-forn"
-                className={selectControl}
-                value={fields.supplierRef}
-                onChange={(e) => {
-                  props.onSupplier(e.target.value)
-                }}
-              >
-                <option value="">{t('financial.create.select')}</option>
-                {props.suppliers.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-        <div className={fieldGrid.wide}>
           <ChromeSelect label={t('financial.create.field.payFromAccount')} />
         </div>
         <div className={fieldGrid.two}>

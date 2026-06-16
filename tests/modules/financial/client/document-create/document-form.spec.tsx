@@ -30,10 +30,8 @@ const fields = (over: Partial<DocumentFormFields> = {}): DocumentFormFields => (
 
 const baseProps = (over: Record<string, unknown> = {}) => ({
   fields: fields(),
-  suppliers: [{ id: 's1', name: 'Bambu Educação' }],
   onType: vi.fn(),
   onPaymentMethod: vi.fn(),
-  onSupplier: vi.fn(),
   onText: vi.fn(),
   onRetention: vi.fn(),
   ...over,

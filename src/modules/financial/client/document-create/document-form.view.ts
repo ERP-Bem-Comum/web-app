@@ -20,6 +20,34 @@ export type {
 } from '#modules/financial/client/data/model/document.model.ts'
 export type SupplierOption = Readonly<{ id: string; name: string }>
 
+// Parceiro selecionável no picker do hero (Fornecedor/Financiador/Ato). `supplierRef` do documento
+// guarda o `id`. ⚠️ Hoje o core-api só aceita Fornecedor em supplierRef (não-fornecedor → erro no salvar
+// até o backend evoluir — ver issue). Colaborador não tem list-fn na public-api → fora do picker.
+export type PartnerKind = 'supplier' | 'financier' | 'act'
+// `subtitle` = linha secundária no picker: CNPJ (fornecedor/financiador) ou nº do ato (ato).
+export type PartnerOption = Readonly<{ id: string; name: string; subtitle: string; kind: PartnerKind }>
+
+/** Rótulo i18n do tipo de parceiro. */
+export const partnerKindTag = (kind: PartnerKind): string => `financial.create.partner.kind.${kind}`
+
+/** Filtro PURO do picker: casa por nome ou subtítulo (CNPJ/nº) — case-insensitive, ignora pontuação. */
+export const filterPartners = (
+  options: readonly PartnerOption[],
+  query: string,
+): readonly PartnerOption[] => {
+  const q = query.trim().toLowerCase()
+  if (q === '') return options
+  const hasLetters = /[a-z]/.test(q)
+  const digits = q.replace(/\D/g, '')
+  return options.filter((o) => {
+    if (o.name.toLowerCase().includes(q)) return true
+    if (o.subtitle.toLowerCase().includes(q)) return true
+    // Busca por dígitos (CNPJ) só quando a query é numérica — evita "014" casar dentro de outro CNPJ.
+    if (!hasLetters && digits !== '' && o.subtitle.replace(/\D/g, '').includes(digits)) return true
+    return false
+  })
+}
+
 export type RetentionFieldsReais = Readonly<{
   iss: string
   irrf: string

@@ -12,8 +12,17 @@ import {
   titulosPrevistos,
   canSubmit,
   buildCreateInput,
+  filterPartners,
+  partnerKindTag,
   type DocumentFormFields,
+  type PartnerOption,
 } from '../../../../../src/modules/financial/client/document-create/document-form.view.ts'
+
+const partners: readonly PartnerOption[] = [
+  { id: '1', name: 'Bambu Educação', subtitle: '37.364.305/0001-92', kind: 'supplier' },
+  { id: '2', name: 'Fundo Verde', subtitle: '11.222.333/0001-44', kind: 'financier' },
+  { id: '3', name: 'Acordo Regional', subtitle: 'OS-014/2026', kind: 'act' },
+]
 
 const base: DocumentFormFields = {
   type: 'NFS-e',
@@ -87,5 +96,36 @@ describe('buildCreateInput', () => {
   })
   it('null quando não pode submeter', () => {
     assert.equal(buildCreateInput({ ...base, documentNumber: '' }), null)
+  })
+})
+
+describe('filterPartners', () => {
+  it('vazio → devolve todos', () => {
+    assert.equal(filterPartners(partners, '   ').length, 3)
+  })
+  it('casa por nome (case-insensitive)', () => {
+    const r = filterPartners(partners, 'bambu')
+    assert.equal(r.length, 1)
+    assert.equal(r[0]?.id, '1')
+  })
+  it('casa por CNPJ ignorando pontuação', () => {
+    const r = filterPartners(partners, '11222333')
+    assert.equal(r.length, 1)
+    assert.equal(r[0]?.kind, 'financier')
+  })
+  it('casa por nº do ato (subtitle textual)', () => {
+    const r = filterPartners(partners, 'OS-014')
+    assert.equal(r.length, 1)
+    assert.equal(r[0]?.kind, 'act')
+  })
+  it('sem match → vazio', () => {
+    assert.equal(filterPartners(partners, 'inexistente').length, 0)
+  })
+})
+
+describe('partnerKindTag', () => {
+  it('mapeia o tipo para a chave i18n', () => {
+    assert.equal(partnerKindTag('supplier'), 'financial.create.partner.kind.supplier')
+    assert.equal(partnerKindTag('act'), 'financial.create.partner.kind.act')
   })
 })
