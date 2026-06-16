@@ -9,13 +9,12 @@ import { Link } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { Button } from '#shared/ui/index.ts'
 
 import { useDocumentFormController } from '../document-form.controller.ts'
 import { useSupplierPickerController } from '../supplier-picker.controller.ts'
 import { useLancarDocumentoBinding } from '../create-document.binding.ts'
 import { usePartnersOptions } from '../partners-options.binding.ts'
-import { buildCreateInput, canSubmit, formatCents } from '../document-form.view.ts'
+import { buildCreateInput, canSubmit } from '../document-form.view.ts'
 import { DocumentForm } from '../components/document-form.component.tsx'
 import { SupplierPicker } from '../components/supplier-picker.component.tsx'
 import { ComposicaoSidebar } from '../components/composicao-sidebar.component.tsx'
@@ -23,23 +22,16 @@ import { DocumentPreview } from '../components/document-preview.component.tsx'
 import { DocumentBottombar } from '../components/document-bottombar.component.tsx'
 import {
   body,
-  bottombar,
-  cardTitle,
   crumb,
   errorBanner,
   formCol,
   scrollArea,
   screen,
   sidebarCol,
-  tituloChild,
-  tituloParent,
-  tituloVal,
   topTitle,
   topbar,
   topbarBack,
   topbarClose,
-  successCard,
-  successTitle,
 } from './lancar-documento.css.ts'
 
 const t = createTranslator(ptBR)
@@ -50,37 +42,7 @@ export function LancarDocumentoPage(): ReactNode {
   const command = useLancarDocumentoBinding()
   const partners = usePartnersOptions()
 
-  // Estado de sucesso — mostra os títulos gerados (pai + filhos).
-  if (command.created !== null) {
-    const created = command.created
-    return (
-      <div className={screen}>
-        <div className={successCard}>
-          <h2 className={successTitle}>{t('financial.create.success.title')}</h2>
-          <h4 className={cardTitle}>{t('financial.create.success.subtitle')}</h4>
-          {created.payables.map((p) => (
-            <div className={p.kind === 'Parent' ? tituloParent : tituloChild} key={p.id}>
-              <span>
-                {p.kind === 'Parent' ? t('financial.create.sidebar.tituloPai') : (p.retentionType ?? '')}
-              </span>
-              <span className={tituloVal}>{formatCents(p.valueCents)}</span>
-            </div>
-          ))}
-          <div className={bottombar}>
-            <Button
-              onClick={() => {
-                command.reset()
-                controller.reset()
-              }}
-            >
-              {t('financial.create.success.novo')}
-            </Button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
+  // Sucesso → o binding invalida a lista e redireciona pro grid (sem card de sucesso inline).
   const selectedPartner = partners.find((p) => p.id === controller.fields.supplierRef) ?? null
   const supplierName = selectedPartner?.name ?? ''
 

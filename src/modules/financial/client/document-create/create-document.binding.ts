@@ -1,9 +1,10 @@
 /**
- * Binding do Lançar Documento — ADAPTER React. `useMutation` → Command. No sucesso expõe o documento
- * criado + seus `payables` (estado de sucesso — FR-007). Erro → tag i18n (§V). Espelha
- * `users-create.binding.ts` (sem invalidar lista: na Fatia 1 a lista é stub).
+ * Binding do Lançar Documento — ADAPTER React. `useMutation` → Command. No SUCESSO: invalida a lista e
+ * **redireciona pro grid** de Contas a Pagar (regra documentada — o documento criado aparece na lista).
+ * Erro → tag i18n (§V). A lista é REAL (Fatia 2), por isso invalidamos a query.
  */
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
 
 import { isOk } from '#shared/primitives/result.ts'
 import { financialErrorTag } from '#modules/financial/client/data/helpers/financial-error-tag.ts'
@@ -23,7 +24,16 @@ export type LancarDocumentoCommand = Readonly<{
 }>
 
 export function useLancarDocumentoBinding(): LancarDocumentoCommand {
-  const mutation = useMutation({ ...createDocumentMutationOptions })
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const mutation = useMutation({
+    ...createDocumentMutationOptions,
+    onSuccess: (result) => {
+      if (!isOk(result)) return // erro-como-valor: a mutation resolve mesmo no err
+      void queryClient.invalidateQueries({ queryKey: ['financial', 'documents', 'list'] })
+      void navigate({ to: '/financeiro/contas-a-pagar' })
+    },
+  })
 
   const data = mutation.data
   const errorTag = mutation.isPending
