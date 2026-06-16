@@ -12,7 +12,13 @@ import type {
   DocumentListResponse,
   DocumentStatus,
   DocumentSummary,
+  DocumentDetail,
+  RetentionType,
+  PaymentMethod,
 } from '#modules/financial/client/data/model/document.model.ts'
+
+// Re-export p/ as views (ui) tiparem sem importar de client/data (boundary §I).
+export type { DocumentStatus, RetentionType } from '#modules/financial/client/data/model/document.model.ts'
 
 // Resolve o nome do fornecedor a partir do `supplierRef` (o DTO da lista só traz o id). Vem do binding
 // (mapa dos Fornecedores já carregados). Mantém a view-model pura/testável.
@@ -98,6 +104,59 @@ export const pageInfo = (page: number, pageSize: number, total: number): PageInf
     hasNext: to < total,
   }
 }
+
+// ── Detalhe do documento (drawer — onda 2) ────────────────────────────────────
+export type RetentionLine = Readonly<{ type: RetentionType; value: string }>
+export type DetailPayableView = Readonly<{
+  id: string
+  isParent: boolean
+  retentionType: RetentionType | null
+  value: string
+  status: DocumentStatus
+}>
+export type DocumentDetailView = Readonly<{
+  id: string
+  type: string
+  documentNumber: string
+  status: DocumentStatus
+  supplier: string
+  due: string
+  gross: string
+  net: string
+  paymentMethod: PaymentMethod | null
+  description: string
+  retentions: readonly RetentionLine[]
+  payables: readonly DetailPayableView[]
+}>
+
+/** DocumentDetail (GET /:id) → view do drawer. PURA. Resolve o nome do fornecedor pelo `resolveSupplier`. */
+export const mapDocumentDetail = (
+  d: DocumentDetail,
+  resolveSupplier: ResolveSupplier,
+): DocumentDetailView => ({
+  id: d.id,
+  type: d.type ?? DASH,
+  documentNumber: d.documentNumber ?? DASH,
+  status: d.status,
+  supplier: resolveSupplier(d.supplierRef),
+  due: d.dueDate !== null && d.dueDate !== '' ? formatDue(d.dueDate) : DASH,
+  gross: d.grossValueCents !== null && d.grossValueCents !== '' ? centsToBRL(d.grossValueCents) : DASH,
+  net: d.netValueCents !== null && d.netValueCents !== '' ? centsToBRL(d.netValueCents) : DASH,
+  paymentMethod: d.paymentMethod,
+  description: d.description ?? '',
+  retentions: d.payables.flatMap((p) =>
+    p.kind === 'Child' && p.retentionType !== null
+      ? [{ type: p.retentionType, value: centsToBRL(p.valueCents) }]
+      : [],
+  ),
+  payables: d.payables.map((p) => ({
+    id: p.id,
+    isParent: p.kind === 'Parent',
+    retentionType: p.retentionType,
+    value: centsToBRL(p.valueCents),
+    status: p.status,
+  })),
+})
 
 // ── Exportar (client-side, padrão Contratos) ──────────────────────────────────
 const CSV_HEADERS = ['Tipo', 'Documento', 'Fornecedor', 'Vencimento', 'Líquido', 'Status'] as const

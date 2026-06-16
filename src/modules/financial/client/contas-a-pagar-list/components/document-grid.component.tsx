@@ -8,13 +8,14 @@ import type { ReactNode } from 'react'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 
-import { COLUMNS, type ListState } from '../contas-a-pagar.view-model.ts'
+import { COLUMNS, type ListState, type DocumentStatus } from '../contas-a-pagar.view-model.ts'
 import {
   grid,
   head,
   headCell,
   headCellRight,
   row,
+  rowClickable,
   cell,
   cellMutedDoc,
   cellNet,
@@ -27,7 +28,10 @@ import {
 
 const t = createTranslator(ptBR)
 
-export type DocumentGridProps = Readonly<{ state: ListState }>
+export type DocumentGridProps = Readonly<{
+  state: ListState
+  onRowClick?: (id: string, status: DocumentStatus) => void
+}>
 
 export function DocumentGrid(props: DocumentGridProps): ReactNode {
   const { state } = props
@@ -55,7 +59,21 @@ export function DocumentGrid(props: DocumentGridProps): ReactNode {
         </div>
       ) : (
         state.rows.map((r) => (
-          <div className={row} role="row" key={r.id}>
+          <div
+            className={`${row} ${rowClickable}`}
+            role="button"
+            tabIndex={0}
+            key={r.id}
+            onClick={() => {
+              props.onRowClick?.(r.id, r.status)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                props.onRowClick?.(r.id, r.status)
+              }
+            }}
+          >
             <span className={cell}>{r.type}</span>
             <span className={cellMutedDoc}>{r.documentNumber}</span>
             <span className={cell}>{r.supplier}</span>

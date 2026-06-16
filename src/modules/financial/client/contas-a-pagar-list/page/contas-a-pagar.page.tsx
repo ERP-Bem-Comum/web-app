@@ -4,7 +4,7 @@
  * Novo Documento). Título vem do PageHeader do shell (Nunito). Busca e contadores por-aba = CHROME no v1
  * (Fatia 2 não faz busca textual nem agrega); só "Todos" mostra o total real. Exportar (CSV/PDF) = client-side.
  */
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
@@ -12,8 +12,10 @@ import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { SearchIcon } from '#shared/ui/icons/index.ts'
 
 import { useContasAPagar } from '../contas-a-pagar.binding.ts'
+import { useDocumentDetail } from '../document-detail.binding.ts'
 import { STATUS_CHIPS } from '../contas-a-pagar.view-model.ts'
 import { DocumentGrid } from '../components/document-grid.component.tsx'
+import { DocumentDetailDrawer } from '../components/document-detail-drawer.component.tsx'
 import { ExportDropdown } from '../components/export-dropdown.component.tsx'
 import {
   screen,
@@ -46,6 +48,10 @@ export function ContasAPagarPage(): ReactNode {
   const { state, pageSize, onPrev, onNext, onPageSize } = useContasAPagar()
   const page = state.tag === 'ready' ? state.page : null
   const rows = state.tag === 'ready' ? state.rows : []
+
+  // Linha clicável → drawer de detalhe (onda 2). Rascunho → reabrir o form é a Etapa 2 (core-api#91).
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const detail = useDocumentDetail(selectedId)
 
   return (
     <div className={screen}>
@@ -80,8 +86,22 @@ export function ContasAPagarPage(): ReactNode {
       </div>
 
       <div className={gridWrap}>
-        <DocumentGrid state={state} />
+        <DocumentGrid
+          state={state}
+          onRowClick={(id) => {
+            setSelectedId(id)
+          }}
+        />
       </div>
+
+      {detail.view !== null ? (
+        <DocumentDetailDrawer
+          view={detail.view}
+          onClose={() => {
+            setSelectedId(null)
+          }}
+        />
+      ) : null}
 
       <footer className={bottombar}>
         {page !== null ? (

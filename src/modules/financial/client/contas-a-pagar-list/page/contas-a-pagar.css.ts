@@ -283,6 +283,300 @@ export const select = style({
 })
 export const perPageLabel = style({ color: vars.color.text.muted })
 
+// ── Linha clicável (abre detalhe/drawer ou rascunho→form) ─────────────────────
+export const rowClickable = style({
+  cursor: 'pointer',
+  border: 'none',
+  background: 'transparent',
+  textAlign: 'start',
+  font: 'inherit',
+  ':hover': { background: vars.color.institutional.blueBg },
+})
+
+// ── Drawer de Detalhe do Documento (onda 2) ───────────────────────────────────
+export const drawerOverlay = style({
+  position: 'fixed',
+  inset: 0,
+  zIndex: 300,
+  background: vars.color.institutional.overlay,
+  display: 'flex',
+  justifyContent: 'flex-end',
+})
+export const drawerPanel = style({
+  inlineSize: 'min(32rem, 100%)',
+  blockSize: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  background: vars.color.surface.default,
+  boxShadow: vars.shadow.card,
+})
+export const drawerHeader = style({
+  flexShrink: 0,
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: vars.space.md,
+  paddingBlock: vars.space.md,
+  paddingInline: vars.space.lg,
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+})
+export const drawerOverline = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.bold,
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+  color: vars.color.institutional.ink5,
+})
+export const drawerTitle = style({
+  margin: 0,
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size.md,
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.ink2,
+})
+export const drawerClose = style({
+  marginInlineStart: 'auto',
+  flexShrink: 0,
+  inlineSize: '1.75rem',
+  blockSize: '1.75rem',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  borderRadius: vars.radius.md,
+  border: 'none',
+  background: 'transparent',
+  color: vars.color.institutional.ink4,
+  cursor: 'pointer',
+  ':hover': { background: vars.color.institutional.paperWarm },
+})
+export const drawerBody = style({
+  flex: 1,
+  minBlockSize: 0,
+  overflowY: 'auto',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: vars.space.lg,
+  padding: vars.space.lg,
+})
+export const drawerSectionTitle = style({
+  margin: `0 0 ${vars.space.sm}`,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.bold,
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+  color: vars.color.institutional.ink5,
+})
+export const detailGrid = style({
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr',
+  gap: vars.space.sm,
+})
+export const detailField = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.125rem',
+  minInlineSize: 0,
+})
+export const detailLabel = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.semibold,
+  letterSpacing: '0.04em',
+  textTransform: 'uppercase',
+  color: vars.color.institutional.ink5,
+})
+export const detailValue = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink2,
+})
+export const compRow = style({
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'baseline',
+  gap: vars.space.sm,
+  paddingBlock: vars.space.xs,
+  fontSize: vars.font.size.xs,
+  color: vars.color.text.secondary,
+})
+export const compVal = style({ fontFamily: vars.font.family.mono, color: vars.color.institutional.ink2 })
+export const netRow = style({
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'baseline',
+  marginBlockStart: vars.space.xs,
+  paddingBlockStart: vars.space.sm,
+  borderBlockStart: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+})
+export const netLabel = style({
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.bold,
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+  color: vars.color.institutional.blueDeep,
+})
+export const netVal = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size.lg,
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.blueDeep,
+})
+export const tituloCard = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  paddingBlock: vars.space.sm,
+  paddingInline: vars.space.md,
+  marginBlockEnd: vars.space.xs,
+  borderRadius: vars.radius.md,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+})
+export const tituloKind = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minInlineSize: '2.75rem',
+  paddingBlock: '0.0625rem',
+  paddingInline: vars.space.xs,
+  borderRadius: vars.radius.sm,
+  background: vars.color.institutional.blueBg,
+  color: vars.color.institutional.blueDeep,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.bold,
+  textTransform: 'uppercase',
+})
+export const tituloInfo = style({
+  flex: 1,
+  minInlineSize: 0,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink3,
+})
+export const tituloVal = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink2,
+})
+export const drawerFooter = style({
+  flexShrink: 0,
+  display: 'flex',
+  justifyContent: 'flex-end',
+  gap: vars.space.sm,
+  paddingBlock: vars.space.md,
+  paddingInline: vars.space.lg,
+  borderBlockStart: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+})
+export const drawerCloseBtn = style({
+  blockSize: '2.5rem',
+  paddingInline: vars.space.lg,
+  borderRadius: vars.radius.md,
+  border: 'none',
+  background: vars.color.institutional.blue,
+  color: vars.color.surface.default,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.bold,
+  cursor: 'pointer',
+  ':hover': { background: vars.color.institutional.blueDeep },
+})
+// Botão secundário do footer (Editar pagamento) — padrão da tela de criar contrato.
+export const drawerEditBtn = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  blockSize: '2.5rem',
+  paddingInline: vars.space.lg,
+  borderRadius: vars.radius.md,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  background: vars.color.surface.default,
+  color: vars.color.institutional.ink2,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.bold,
+  cursor: 'pointer',
+  ':hover': { background: vars.color.institutional.blueBg, borderColor: vars.color.institutional.blueLine },
+})
+export const dwSection = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: vars.space.sm,
+  inlineSize: '100%',
+})
+// Cabeçalho de seção do drawer (Figma): rótulo + contador + régua fina preenchendo a linha.
+export const dwSectionLabel = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  inlineSize: '100%',
+})
+export const dwSectionRule = style({
+  flex: 1,
+  blockSize: vars.borderWidth.thin,
+  background: vars.color.institutional.paperRule,
+})
+export const dwSectionCount = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size['2xs'],
+  color: vars.color.institutional.ink4,
+})
+// Card de Título Gerado (pai/filho) — Figma dw-titulo-card (sem "parcela": usamos pai + retenções).
+export const tituloLeft = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: vars.space.xs,
+  flex: 1,
+  minInlineSize: 0,
+})
+export const tituloOverline = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.bold,
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+  color: vars.color.institutional.ink5,
+})
+export const tituloNome = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.ink2,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+})
+export const tituloVenc = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size['2xs'],
+  color: vars.color.institutional.ink5,
+})
+export const tituloRight = style({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'flex-end',
+  gap: vars.space.xs,
+  flexShrink: 0,
+})
+export const tituloValBold = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.bold,
+  color: vars.color.institutional.ink2,
+  whiteSpace: 'nowrap',
+})
+export const statusPill = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  paddingBlock: '0.1875rem',
+  paddingInline: '0.625rem',
+  borderRadius: '1.5rem',
+  background: vars.color.institutional.paperBeige,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.ink4,
+  whiteSpace: 'nowrap',
+})
 // ── Impressão (PDF via window.print): esconde o cromo, imprime só o grid ──
 globalStyle(`${filterBar}, ${bottombar}`, { '@media': { print: { display: 'none !important' } } })
 globalStyle(screen, { '@media': { print: { paddingBlockEnd: '0 !important' } } })
