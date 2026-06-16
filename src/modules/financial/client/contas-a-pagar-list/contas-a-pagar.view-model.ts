@@ -133,6 +133,27 @@ const toRow = (
   status: it.status,
 })
 
+// ── Ações de status em massa (Mudar Status) — PURO ────────────────────────────
+// `approve`: só linhas em "Aberto" (Aberto→Aprovado). `reopen`: só "Aprovado" (Aprovado→Aberto, undo).
+// Cada alvo leva o `version` da linha (optimistic lock). As demais transições não têm rota (chrome).
+export type StatusTarget = Readonly<{ id: string; version: number }>
+export type BulkStatusTargets = Readonly<{
+  approve: readonly StatusTarget[]
+  reopen: readonly StatusTarget[]
+}>
+
+export const bulkStatusTargets = (
+  rows: readonly GridRow[],
+  selected: ReadonlySet<string>,
+): BulkStatusTargets => {
+  const sel = rows.filter((r) => selected.has(r.id))
+  const pick = (r: GridRow): StatusTarget => ({ id: r.id, version: r.version })
+  return {
+    approve: sel.filter((r) => r.status === 'Aberto').map(pick),
+    reopen: sel.filter((r) => r.status === 'Aprovado').map(pick),
+  }
+}
+
 /** Soma (BRL formatado) do líquido das linhas selecionadas — PURA (o relógio/Intl fica no `centsToBRL`). */
 export const sumSelectedNetBRL = (rows: readonly GridRow[], selected: ReadonlySet<string>): string => {
   const total = rows.reduce((acc, r) => {

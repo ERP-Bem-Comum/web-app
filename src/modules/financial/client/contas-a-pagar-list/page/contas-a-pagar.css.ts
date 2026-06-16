@@ -395,6 +395,11 @@ export const selClear = style({
   textDecoration: 'underline',
   textUnderlineOffset: '0.125rem',
 })
+// Erro de ação em massa (ex.: 409 de versão) — texto discreto na barra de seleção.
+export const selError = style({
+  fontSize: vars.font.size.xs,
+  color: vars.color.status.terminatedText,
+})
 
 // ── Drawer de Detalhe do Documento (onda 2) ───────────────────────────────────
 // Painel lateral NÃO-modal (mock): a grade atrás permanece clara (sem escurecer). O backdrop é

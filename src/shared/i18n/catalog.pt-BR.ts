@@ -1107,6 +1107,9 @@ export const ptBR: Catalog = {
   // Mudar Status (chrome — transições pendentes no backend)
   'financial.list.status.change': 'Mudar Status',
   'financial.list.status.soon': 'Indisponível no v1 — pendente no backend',
+  'financial.list.status.needOpen': 'Selecione documentos em "Aberto" para aprovar',
+  'financial.list.status.needApproved': 'Selecione documentos "Aprovado" para voltar à edição',
+  'financial.list.status.bulkError': 'Algumas ações não foram concluídas (atualize e tente de novo)',
   'financial.list.status.approve': 'Aprovar',
   'financial.list.status.approveHint': 'aprova o documento',
   'financial.list.status.reopen': 'Voltar para edição',

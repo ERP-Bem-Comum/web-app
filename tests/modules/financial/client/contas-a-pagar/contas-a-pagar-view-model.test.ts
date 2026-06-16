@@ -13,6 +13,7 @@ import {
   buildDocumentsCsv,
   sumSelectedNetBRL,
   maskCnpj,
+  bulkStatusTargets,
 } from '../../../../../src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts'
 import { ok, err } from '../../../../../src/shared/primitives/result.ts'
 import type {
@@ -166,6 +167,31 @@ describe('sumSelectedNetBRL', () => {
   it('ignora linhas sem valor e zera quando nada selecionado', () => {
     assert.equal(norm(sumSelectedNetBRL(rows, new Set(['c']))), 'R$ 0,00')
     assert.equal(norm(sumSelectedNetBRL(rows, new Set())), 'R$ 0,00')
+  })
+})
+
+describe('bulkStatusTargets', () => {
+  const rows = buildRows(
+    [
+      summary({ id: 'a', status: 'Aberto', version: 2 }),
+      summary({ id: 'b', status: 'Aprovado', version: 5 }),
+      summary({ id: 'c', status: 'Aberto', version: 1 }),
+      summary({ id: 'd', status: 'Pago', version: 9 }),
+    ],
+    supplierName,
+  )
+
+  it('aprovar = só "Aberto" selecionados; reabrir = só "Aprovado"; com o version de cada', () => {
+    const tg = bulkStatusTargets(rows, new Set(['a', 'b', 'd']))
+    assert.deepEqual(tg.approve, [{ id: 'a', version: 2 }])
+    assert.deepEqual(tg.reopen, [{ id: 'b', version: 5 }])
+    // 'd' (Pago) não entra em nenhum
+  })
+
+  it('vazio quando nada elegível', () => {
+    const tg = bulkStatusTargets(rows, new Set(['d']))
+    assert.deepEqual(tg.approve, [])
+    assert.deepEqual(tg.reopen, [])
   })
 })
 

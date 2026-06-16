@@ -7,7 +7,7 @@
  * em lote + tratamento de 409); `submit` (Rascunho→Aberto) não tem rota (core-api#91); `pay`/`transmit`/
  * `reconcile` não existem (roadmap #58/#59/#60, epic #64). Itens desabilitados com tooltip por enquanto.
  */
-import type { ReactNode } from 'react'
+import type { MouseEvent, ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
@@ -26,14 +26,22 @@ import {
 
 const t = createTranslator(ptBR)
 
-const OPTIONS = [
-  { key: 'approve', labelTag: 'financial.list.status.approve', hintTag: 'financial.list.status.approveHint' },
-  { key: 'reopen', labelTag: 'financial.list.status.reopen', hintTag: 'financial.list.status.reopenHint' },
-  { key: 'submit', labelTag: 'financial.list.status.submit', hintTag: 'financial.list.status.submitHint' },
-  { key: 'pay', labelTag: 'financial.list.status.pay', hintTag: 'financial.list.status.payHint' },
-] as const
+const closeDetails = (e: MouseEvent<HTMLButtonElement>): void => {
+  const d = e.currentTarget.closest('details')
+  if (d) d.open = false
+}
 
-export function StatusActions(): ReactNode {
+export type StatusActionsProps = Readonly<{
+  // Aprovar (Aberto→Aprovado) e Voltar p/ edição (Aprovado→Aberto) — habilitados conforme a seleção.
+  canApprove: boolean
+  canReopen: boolean
+  running: boolean
+  onApprove: () => void
+  onReopen: () => void
+}>
+
+export function StatusActions(props: StatusActionsProps): ReactNode {
+  const { canApprove, canReopen, running } = props
   return (
     <details className={wrapper}>
       <summary
@@ -47,20 +55,63 @@ export function StatusActions(): ReactNode {
       </summary>
 
       <div className={menu}>
-        {OPTIONS.map((o, i) => (
-          <button
-            key={o.key}
-            type="button"
-            className={`${menuItem} ${menuItemDisabled}${i > 0 ? ` ${menuItemBorder}` : ''}`}
-            disabled
-            title={t('financial.list.status.soon')}
-          >
-            <span className={itemCol}>
-              {t(o.labelTag)}
-              <span className={itemHint}>{t(o.hintTag)}</span>
-            </span>
-          </button>
-        ))}
+        {/* Aprovar — Aberto→Aprovado (em massa) */}
+        <button
+          type="button"
+          className={`${menuItem}${canApprove && !running ? '' : ` ${menuItemDisabled}`}`}
+          disabled={!canApprove || running}
+          title={canApprove ? undefined : t('financial.list.status.needOpen')}
+          onClick={(e) => {
+            props.onApprove()
+            closeDetails(e)
+          }}
+        >
+          <span className={itemCol}>
+            {t('financial.list.status.approve')}
+            <span className={itemHint}>{t('financial.list.status.approveHint')}</span>
+          </span>
+        </button>
+
+        {/* Voltar para edição — Aprovado→Aberto (undo) */}
+        <button
+          type="button"
+          className={`${menuItem} ${menuItemBorder}${canReopen && !running ? '' : ` ${menuItemDisabled}`}`}
+          disabled={!canReopen || running}
+          title={canReopen ? undefined : t('financial.list.status.needApproved')}
+          onClick={(e) => {
+            props.onReopen()
+            closeDetails(e)
+          }}
+        >
+          <span className={itemCol}>
+            {t('financial.list.status.reopen')}
+            <span className={itemHint}>{t('financial.list.status.reopenHint')}</span>
+          </span>
+        </button>
+
+        {/* Enviar p/ aprovação (submit) e Marcar como pago — sem rota no backend (chrome). */}
+        <button
+          type="button"
+          className={`${menuItem} ${menuItemBorder} ${menuItemDisabled}`}
+          disabled
+          title={t('financial.list.status.soon')}
+        >
+          <span className={itemCol}>
+            {t('financial.list.status.submit')}
+            <span className={itemHint}>{t('financial.list.status.submitHint')}</span>
+          </span>
+        </button>
+        <button
+          type="button"
+          className={`${menuItem} ${menuItemBorder} ${menuItemDisabled}`}
+          disabled
+          title={t('financial.list.status.soon')}
+        >
+          <span className={itemCol}>
+            {t('financial.list.status.pay')}
+            <span className={itemHint}>{t('financial.list.status.payHint')}</span>
+          </span>
+        </button>
       </div>
     </details>
   )

@@ -13,7 +13,8 @@ import { SearchIcon } from '#shared/ui/icons/index.ts'
 
 import { useContasAPagar } from '../contas-a-pagar.binding.ts'
 import { useDocumentDetail } from '../document-detail.binding.ts'
-import { STATUS_CHIPS, sumSelectedNetBRL } from '../contas-a-pagar.view-model.ts'
+import { useBulkStatus } from '../bulk-status.binding.ts'
+import { STATUS_CHIPS, sumSelectedNetBRL, bulkStatusTargets } from '../contas-a-pagar.view-model.ts'
 import { DocumentGrid } from '../components/document-grid.component.tsx'
 import { DocumentDetailDrawer } from '../components/document-detail-drawer.component.tsx'
 import { ExportDropdown } from '../components/export-dropdown.component.tsx'
@@ -45,6 +46,7 @@ import {
   selSum,
   selSumLabel,
   selClear,
+  selError,
 } from './contas-a-pagar.css.ts'
 
 const t = createTranslator(ptBR)
@@ -79,6 +81,10 @@ export function ContasAPagarPage(): ReactNode {
   const clearSelection = (): void => {
     setSelected(new Set())
   }
+
+  // ── Mudar Status em massa: Aprovar (Aberto→Aprovado) · Voltar p/ edição (Aprovado→Aberto) ──
+  const bulk = useBulkStatus(clearSelection)
+  const targets = bulkStatusTargets(rows, selected)
 
   return (
     <div className={screen}>
@@ -146,7 +152,18 @@ export function ContasAPagarPage(): ReactNode {
             <button type="button" className={selClear} onClick={clearSelection}>
               {t('financial.list.selection.clear')}
             </button>
-            <StatusActions />
+            <StatusActions
+              canApprove={targets.approve.length > 0}
+              canReopen={targets.reopen.length > 0}
+              running={bulk.running}
+              onApprove={() => {
+                bulk.approve(targets.approve)
+              }}
+              onReopen={() => {
+                bulk.reopen(targets.reopen)
+              }}
+            />
+            {bulk.errorTag !== null ? <span className={selError}>{t(bulk.errorTag)}</span> : null}
           </div>
         ) : page !== null ? (
           <nav className={pagination} aria-label={t('financial.list.pagination')}>
