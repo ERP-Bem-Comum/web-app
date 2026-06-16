@@ -6,6 +6,9 @@
 import { reaisToCents, centsToBRL } from '#modules/financial/client/data/money.ts'
 import type {
   CreateDocumentInput,
+  AdjustDocumentInput,
+  DocumentDetail,
+  DocumentStatus,
   DocumentType,
   PaymentMethod,
   RetentionInput,
@@ -261,6 +264,115 @@ export const buildDraftInput = (fields: DocumentFormFields): CreateDocumentInput
     dueDate: trimToUndefined(fields.dueDate),
     description: trimToUndefined(fields.description),
     asDraft: true,
+  }
+}
+
+// ── Modo EDIÇÃO ("Editar pagamento" do drawer) ───────────────────────────────────
+// O core-api só permite AJUSTAR (PATCH) documentos em "Aberto", e só estes campos: grossValue, dueDate,
+// description (+ descontos/encargos/retenções). Os demais são IMUTÁVEIS após a criação → somente-consulta.
+// Aqui habilitamos com segurança grossValue/dueDate/description; retenções ficam travadas e OMITIDAS no
+// payload (o backend as PRESERVA — confirmado). Status ≠ Aberto → tudo somente-consulta (sem salvar).
+
+/** Trava por campo: `true` = somente-consulta. */
+export type FieldLocks = Readonly<{
+  type: boolean
+  numberSeries: boolean
+  supplier: boolean
+  paymentMethod: boolean
+  grossValue: boolean
+  dueDate: boolean
+  description: boolean
+  retentions: boolean
+}>
+
+/** Criação: nada travado. */
+export const NO_LOCKS: FieldLocks = {
+  type: false,
+  numberSeries: false,
+  supplier: false,
+  paymentMethod: false,
+  grossValue: false,
+  dueDate: false,
+  description: false,
+  retentions: false,
+}
+
+/** Travas no modo edição conforme o status (só "Aberto" libera os campos ajustáveis). */
+export const editLocksFor = (status: DocumentStatus): FieldLocks => {
+  const open = status === 'Aberto'
+  return {
+    // Imutáveis após criação — sempre somente-consulta.
+    type: true,
+    numberSeries: true,
+    supplier: true,
+    paymentMethod: true,
+    retentions: true,
+    // Ajustáveis — liberados apenas em "Aberto".
+    grossValue: !open,
+    dueDate: !open,
+    description: !open,
+  }
+}
+
+/** Status editável (só "Aberto" pode ser ajustado pelo core-api). */
+export const isEditableStatus = (status: DocumentStatus): boolean => status === 'Aberto'
+
+/** Soma (centavos) das retenções existentes do documento (filhos) — p/ validar líquido > 0 ao mudar bruto. */
+const retentionSumFromDetail = (d: DocumentDetail): number =>
+  d.payables.reduce((acc, p) => {
+    if (p.kind !== 'Child') return acc
+    const n = Number(p.valueCents) // já está em centavos (não usar reaisToCents)
+    return Number.isFinite(n) ? acc + n : acc
+  }, 0)
+
+/** DocumentDetail → campos do form (para hidratar a tela de edição). Série não vem no detalhe. */
+export const hydrateFieldsFromDetail = (d: DocumentDetail): DocumentFormFields => {
+  // ISS/IRRF/INSS hidratam direto; CSRF é agregado (PIS+COFINS+CSLL) e não há como desagregar → fica
+  // fora dos campos split (e retenções são somente-consulta na edição mesmo).
+  const retVal = (rt: RetentionType): string => {
+    const child = d.payables.find((p) => p.kind === 'Child' && p.retentionType === rt)
+    return child !== undefined ? centsToBRL(child.valueCents) : ''
+  }
+  const retentions: RetentionFieldsReais = {
+    ...EMPTY_RETENTIONS,
+    iss: retVal('ISS'),
+    irrf: retVal('IRRF'),
+    inss: retVal('INSS'),
+  }
+  return {
+    type: d.type ?? '',
+    documentNumber: d.documentNumber ?? '',
+    series: '',
+    supplierRef: d.supplierRef ?? '',
+    paymentMethod: d.paymentMethod ?? '',
+    grossValue: d.grossValueCents !== null ? centsToBRL(d.grossValueCents) : '',
+    dueDate: d.dueDate ?? '',
+    description: d.description ?? '',
+    retentions,
+  }
+}
+
+/** Pode salvar o AJUSTE? Bruto > 0, vencimento preenchido e líquido (bruto − retenções atuais) > 0. */
+export const canSaveEdit = (fields: DocumentFormFields, detail: DocumentDetail): boolean => {
+  const gross = grossCents(fields)
+  return gross > 0 && fields.dueDate.trim() !== '' && gross - retentionSumFromDetail(detail) > 0
+}
+
+/**
+ * Monta o AdjustDocumentInput (PATCH) — só os campos ajustáveis (grossValue/dueDate/description) + version.
+ * `retentions` é OMITIDO de propósito (o backend preserva as existentes). `null` se o form não pode salvar.
+ */
+export const buildAdjustInput = (
+  fields: DocumentFormFields,
+  detail: DocumentDetail,
+): AdjustDocumentInput | null => {
+  if (!canSaveEdit(fields, detail)) return null
+  return {
+    id: detail.id,
+    version: detail.version,
+    grossValueCents: String(grossCents(fields)),
+    dueDate: fields.dueDate,
+    description: trimToUndefined(fields.description) ?? null,
   }
 }
 

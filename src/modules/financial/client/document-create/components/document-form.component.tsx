@@ -22,9 +22,11 @@ import {
   isPaymentMethod,
   type DocumentType,
   type PaymentMethod,
+  NO_LOCKS,
   type DocumentFormFields,
   type RetentionFieldsReais,
   type PartnerHydration,
+  type FieldLocks,
 } from '../document-form.view.ts'
 import {
   control,
@@ -107,6 +109,8 @@ function ReadonlyField({ label, value }: Readonly<{ label: string; value: string
 export type DocumentFormProps = Readonly<{
   fields: DocumentFormFields
   hydration: PartnerHydration
+  /** Travas por campo (modo edição). Ausente/criação = nada travado. */
+  locks?: FieldLocks
   onType: (value: DocumentType | '') => void
   onPaymentMethod: (value: PaymentMethod | '') => void
   onText: (key: 'documentNumber' | 'series' | 'grossValue' | 'dueDate' | 'description', value: string) => void
@@ -115,6 +119,7 @@ export type DocumentFormProps = Readonly<{
 
 export function DocumentForm(props: DocumentFormProps): ReactNode {
   const { fields, hydration } = props
+  const locks = props.locks ?? NO_LOCKS
   const retEnabled = retentionsEnabledFor(fields.type)
   const bank = hydration.bank
   const contract = hydration.contract
@@ -134,7 +139,8 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             <div className={selectWrap}>
               <select
                 id="fin-type"
-                className={selectControl}
+                className={locks.type ? selectControlDisabled : selectControl}
+                disabled={locks.type}
                 value={fields.type}
                 onChange={(e) => {
                   props.onType(isDocumentType(e.target.value) ? e.target.value : '')
@@ -155,7 +161,8 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             <span className={fieldLabel}>{t('financial.create.field.numberSeries')}</span>
             <div className={numberSeriesRow}>
               <input
-                className={control}
+                className={locks.numberSeries ? controlDisabled : control}
+                disabled={locks.numberSeries}
                 aria-label={t('financial.create.field.documentNumber')}
                 value={fields.documentNumber}
                 onChange={(e) => {
@@ -163,7 +170,8 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
                 }}
               />
               <input
-                className={control}
+                className={locks.numberSeries ? controlDisabled : control}
+                disabled={locks.numberSeries}
                 aria-label={t('financial.create.field.series')}
                 value={fields.series}
                 onChange={(e) => {
@@ -200,7 +208,8 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             <input
               id="fin-venc"
               type="date"
-              className={control}
+              className={locks.dueDate ? controlDisabled : control}
+              disabled={locks.dueDate}
               value={fields.dueDate}
               onChange={(e) => {
                 props.onText('dueDate', e.target.value)
@@ -213,7 +222,8 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             </label>
             <input
               id="fin-bruto"
-              className={controlMono}
+              className={locks.grossValue ? controlDisabled : controlMono}
+              disabled={locks.grossValue}
               inputMode="decimal"
               placeholder="R$ 0,00"
               value={fields.grossValue}
@@ -230,7 +240,8 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             </label>
             <input
               id="fin-desc"
-              className={control}
+              className={locks.description ? controlDisabled : control}
+              disabled={locks.description}
               value={fields.description}
               onChange={(e) => {
                 props.onText('description', e.target.value)
@@ -253,7 +264,8 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
                   </label>
                   <input
                     id={`fin-ret-${key}`}
-                    className={controlMono}
+                    className={locks.retentions ? controlDisabled : controlMono}
+                    disabled={locks.retentions}
                     inputMode="decimal"
                     placeholder="R$ 0,00"
                     value={fields.retentions[key]}
@@ -296,7 +308,8 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             <div className={selectWrap}>
               <select
                 id="fin-forma"
-                className={selectControl}
+                className={locks.paymentMethod ? selectControlDisabled : selectControl}
+                disabled={locks.paymentMethod}
                 value={fields.paymentMethod}
                 onChange={(e) => {
                   props.onPaymentMethod(isPaymentMethod(e.target.value) ? e.target.value : '')

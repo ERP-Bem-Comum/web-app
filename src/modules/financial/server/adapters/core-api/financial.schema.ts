@@ -28,6 +28,8 @@ export const CoreApiDocumentSchema = z.object({
   dueDate: z.string().trim().nullable(),
   description: z.string().trim().nullable(),
   payables: z.array(CoreApiPayableSchema),
+  // Optimistic lock — necessário p/ o PATCH (ajuste). Tolerante a drift (Fatia 1 pode não enviar) → 0.
+  version: z.int().min(0).catch(0),
 })
 export type CoreApiDocument = z.infer<typeof CoreApiDocumentSchema>
 

@@ -44,6 +44,8 @@ export type SupplierPickerProps = Readonly<{
   options: readonly PartnerOption[]
   open: boolean
   query: string
+  /** Modo edição: fornecedor é imutável → esconde "Alterar fornecedor" (somente-consulta). */
+  disabled?: boolean
   onToggle: () => void
   onClose: () => void
   onQueryChange: (value: string) => void
@@ -79,11 +81,13 @@ export function SupplierPicker(props: SupplierPickerProps): ReactNode {
       </div>
 
       <div className={pickerWrap}>
-        <button type="button" className={heroAlter} onClick={props.onToggle} aria-expanded={props.open}>
-          {t('financial.create.hero.change')}
-        </button>
+        {props.disabled === true ? null : (
+          <button type="button" className={heroAlter} onClick={props.onToggle} aria-expanded={props.open}>
+            {t('financial.create.hero.change')}
+          </button>
+        )}
 
-        {props.open ? (
+        {props.open && props.disabled !== true ? (
           <>
             <button
               type="button"

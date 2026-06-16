@@ -16,9 +16,15 @@ import {
   buildDraftInput,
   filterPartners,
   partnerKindTag,
+  editLocksFor,
+  isEditableStatus,
+  hydrateFieldsFromDetail,
+  canSaveEdit,
+  buildAdjustInput,
   type DocumentFormFields,
   type PartnerOption,
 } from '../../../../../src/modules/financial/client/document-create/document-form.view.ts'
+import type { DocumentDetail } from '../../../../../src/modules/financial/client/data/model/document.model.ts'
 
 const partners: readonly PartnerOption[] = [
   { id: '1', name: 'Bambu Educação', subtitle: '37.364.305/0001-92', kind: 'supplier' },
@@ -149,5 +155,91 @@ describe('partnerKindTag', () => {
   it('mapeia o tipo para a chave i18n', () => {
     assert.equal(partnerKindTag('supplier'), 'financial.create.partner.kind.supplier')
     assert.equal(partnerKindTag('act'), 'financial.create.partner.kind.act')
+  })
+})
+
+// ── Modo edição ("Editar pagamento") ──────────────────────────────────────────
+const detail: DocumentDetail = {
+  id: 'doc-1',
+  status: 'Aberto',
+  type: 'NFS-e',
+  documentNumber: '0847',
+  supplierRef: 's-1',
+  paymentMethod: 'PIX',
+  grossValueCents: '1000000',
+  netValueCents: '793500',
+  dueDate: '2026-06-10',
+  description: 'Consultoria',
+  version: 3,
+  payables: [
+    { id: 'p0', kind: 'Parent', retentionType: null, valueCents: '793500', status: 'Aberto' },
+    { id: 'p1', kind: 'Child', retentionType: 'ISS', valueCents: '35000', status: 'Aberto' },
+    { id: 'p2', kind: 'Child', retentionType: 'IRRF', valueCents: '15000', status: 'Aberto' },
+  ],
+}
+
+describe('editLocksFor / isEditableStatus', () => {
+  it('Aberto: imutáveis travados; ajustáveis liberados', () => {
+    const l = editLocksFor('Aberto')
+    assert.equal(l.type, true)
+    assert.equal(l.supplier, true)
+    assert.equal(l.paymentMethod, true)
+    assert.equal(l.retentions, true)
+    assert.equal(l.grossValue, false)
+    assert.equal(l.dueDate, false)
+    assert.equal(l.description, false)
+    assert.equal(isEditableStatus('Aberto'), true)
+  })
+  it('≠ Aberto: tudo travado (somente-consulta)', () => {
+    const l = editLocksFor('Pago')
+    assert.equal(l.grossValue, true)
+    assert.equal(l.dueDate, true)
+    assert.equal(l.description, true)
+    assert.equal(isEditableStatus('Pago'), false)
+    assert.equal(isEditableStatus('Aprovado'), false)
+  })
+})
+
+describe('hydrateFieldsFromDetail', () => {
+  it('mapeia detalhe → campos (bruto formatado, ISS/IRRF dos filhos; série vazia)', () => {
+    const f = hydrateFieldsFromDetail(detail)
+    assert.equal(f.type, 'NFS-e')
+    assert.equal(f.documentNumber, '0847')
+    assert.equal(f.series, '')
+    assert.equal(f.supplierRef, 's-1')
+    assert.equal(f.paymentMethod, 'PIX')
+    assert.equal(f.dueDate, '2026-06-10')
+    assert.equal(f.description, 'Consultoria')
+    assert.match(f.grossValue, /10\.000,00/)
+    assert.match(f.retentions.iss, /350,00/)
+    assert.match(f.retentions.irrf, /150,00/)
+    assert.equal(f.retentions.inss, '')
+  })
+})
+
+describe('canSaveEdit / buildAdjustInput', () => {
+  const fields = hydrateFieldsFromDetail(detail)
+
+  it('canSaveEdit: bruto > 0, vencimento set e líquido (bruto − retenções) > 0', () => {
+    assert.equal(canSaveEdit(fields, detail), true)
+    assert.equal(canSaveEdit({ ...fields, dueDate: '' }, detail), false)
+    assert.equal(canSaveEdit({ ...fields, grossValue: '' }, detail), false)
+    // bruto menor que as retenções (350+150=500 → 400 reais) → líquido ≤ 0
+    assert.equal(canSaveEdit({ ...fields, grossValue: 'R$ 400,00' }, detail), false)
+  })
+
+  it('buildAdjustInput: só campos ajustáveis + version; OMITE retentions', () => {
+    const input = buildAdjustInput(fields, detail)
+    assert.notEqual(input, null)
+    assert.equal(input?.id, 'doc-1')
+    assert.equal(input?.version, 3)
+    assert.equal(input?.grossValueCents, '1000000')
+    assert.equal(input?.dueDate, '2026-06-10')
+    assert.equal(input?.description, 'Consultoria')
+    assert.equal('retentions' in (input ?? {}), false)
+  })
+
+  it('buildAdjustInput: null quando não pode salvar', () => {
+    assert.equal(buildAdjustInput({ ...fields, dueDate: '' }, detail), null)
   })
 })

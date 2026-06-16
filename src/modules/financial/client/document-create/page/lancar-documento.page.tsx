@@ -5,7 +5,7 @@
  * hooks de binding/controller.
  */
 import type { ReactNode } from 'react'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
@@ -13,9 +13,17 @@ import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { useDocumentFormController } from '../document-form.controller.ts'
 import { useSupplierPickerController } from '../supplier-picker.controller.ts'
 import { useLancarDocumentoBinding } from '../create-document.binding.ts'
+import { useDocumentEditing } from '../edit-document.binding.ts'
 import { usePartnersOptions } from '../partners-options.binding.ts'
 import { usePartnerHydration } from '../partner-hydration.binding.ts'
-import { buildCreateInput, buildDraftInput, canSubmit, canSaveDraft } from '../document-form.view.ts'
+import {
+  buildCreateInput,
+  buildDraftInput,
+  buildAdjustInput,
+  canSubmit,
+  canSaveDraft,
+  canSaveEdit,
+} from '../document-form.view.ts'
 import { DocumentForm } from '../components/document-form.component.tsx'
 import { SupplierPicker } from '../components/supplier-picker.component.tsx'
 import { ComposicaoSidebar } from '../components/composicao-sidebar.component.tsx'
@@ -37,8 +45,12 @@ import {
 
 const t = createTranslator(ptBR)
 
-export function LancarDocumentoPage(): ReactNode {
-  const controller = useDocumentFormController()
+export type LancarDocumentoPageProps = Readonly<{ documentId?: string }>
+
+export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {}): ReactNode {
+  const navigate = useNavigate()
+  const edit = useDocumentEditing(documentId)
+  const controller = useDocumentFormController(edit.initialFields)
   const picker = useSupplierPickerController()
   const command = useLancarDocumentoBinding()
   const partners = usePartnersOptions()
@@ -48,6 +60,14 @@ export function LancarDocumentoPage(): ReactNode {
   const supplierName = selectedPartner?.name ?? ''
   // Hidrata banco + contrato "Em Andamento" do fornecedor (auto-preenchimento do Pagamento/Categorização).
   const hydration = usePartnerHydration(controller.fields.supplierRef, selectedPartner?.kind ?? null)
+
+  // Modo da tela: criação · edição (Aberto, ajustável) · consulta (status ≠ Aberto, só leitura).
+  const mode = !edit.isEdit ? 'create' : edit.editable ? 'edit' : 'view'
+  const errorTag = edit.isEdit ? edit.errorTag : command.errorTag
+  const running = edit.isEdit ? edit.running : command.running
+  const goToGrid = (): void => {
+    void navigate({ to: '/financeiro/contas-a-pagar' })
+  }
 
   // Anexa os refs do contrato "Em Andamento" e dispara o create (backend deriva a categorização — #48).
   const submit = (base: ReturnType<typeof buildCreateInput>): void => {
@@ -65,6 +85,13 @@ export function LancarDocumentoPage(): ReactNode {
     )
   }
 
+  // Ajuste (modo edição): só os campos editáveis + version; o binding invalida e volta ao grid.
+  const submitEdit = (): void => {
+    if (edit.detail === null) return
+    const input = buildAdjustInput(controller.fields, edit.detail)
+    if (input !== null) edit.execute(input)
+  }
+
   return (
     <div className={screen}>
       <header className={topbar}>
@@ -75,7 +102,7 @@ export function LancarDocumentoPage(): ReactNode {
         >
           {t('financial.create.back')}
         </Link>
-        <h1 className={topTitle}>{t('financial.create.title')}</h1>
+        <h1 className={topTitle}>{edit.isEdit ? t('financial.edit.title') : t('financial.create.title')}</h1>
         <span className={crumb}>{t('financial.create.crumb')}</span>
         <Link
           to="/financeiro/contas-a-pagar"
@@ -86,9 +113,9 @@ export function LancarDocumentoPage(): ReactNode {
         </Link>
       </header>
 
-      {command.errorTag !== null ? (
+      {errorTag !== null ? (
         <div className={errorBanner} role="alert">
-          {t(command.errorTag)}
+          {t(errorTag)}
         </div>
       ) : null}
 
@@ -102,6 +129,7 @@ export function LancarDocumentoPage(): ReactNode {
             options={partners}
             open={picker.open}
             query={picker.query}
+            disabled={edit.isEdit}
             onToggle={picker.toggle}
             onClose={picker.close}
             onQueryChange={picker.setQuery}
@@ -114,6 +142,7 @@ export function LancarDocumentoPage(): ReactNode {
           <DocumentForm
             fields={controller.fields}
             hydration={hydration}
+            locks={edit.locks ?? undefined}
             onType={controller.setType}
             onPaymentMethod={controller.setPaymentMethod}
             onText={controller.setText}
@@ -127,16 +156,25 @@ export function LancarDocumentoPage(): ReactNode {
       </div>
 
       <DocumentBottombar
-        onDiscard={controller.reset}
+        mode={mode}
+        onDiscard={edit.isEdit ? goToGrid : controller.reset}
         onSaveDraft={() => {
           submit(buildDraftInput(controller.fields))
         }}
-        onSubmit={() => {
-          submit(buildCreateInput(controller.fields))
-        }}
+        onSubmit={
+          edit.isEdit
+            ? submitEdit
+            : () => {
+                submit(buildCreateInput(controller.fields))
+              }
+        }
         canSaveDraft={canSaveDraft(controller.fields)}
-        canSubmit={canSubmit(controller.fields)}
-        running={command.running}
+        canSubmit={
+          edit.isEdit
+            ? edit.detail !== null && canSaveEdit(controller.fields, edit.detail)
+            : canSubmit(controller.fields)
+        }
+        running={running}
       />
     </div>
   )

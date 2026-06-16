@@ -127,6 +127,7 @@ export const detailToModel = (raw: unknown): Result<DocumentDetail, FinancialErr
     dueDate: d.dueDate,
     description: d.description,
     payables: d.payables.map(payableToModel),
+    version: d.version,
   })
 }
 

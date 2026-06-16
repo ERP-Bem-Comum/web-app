@@ -28,7 +28,10 @@ import {
 
 const t = createTranslator(ptBR)
 
+export type DocumentBottombarMode = 'create' | 'edit' | 'view'
+
 export type DocumentBottombarProps = Readonly<{
+  mode?: DocumentBottombarMode // default 'create'
   onDiscard: () => void
   onSaveDraft: () => void
   onSubmit: () => void
@@ -38,47 +41,65 @@ export type DocumentBottombarProps = Readonly<{
 }>
 
 export function DocumentBottombar(props: DocumentBottombarProps): ReactNode {
+  const mode = props.mode ?? 'create'
+
   return (
     <div className={pageBottombar}>
       <div className={statusGroup}>
         <span className={statusDot} aria-hidden="true" />
-        <span className={statusText}>{t('financial.create.bottombar.autosaved')}</span>
-        <span className={draftPill}>{t('financial.create.bottombar.draft')}</span>
+        <span className={statusText}>
+          {mode === 'create'
+            ? t('financial.create.bottombar.autosaved')
+            : mode === 'edit'
+              ? t('financial.create.bottombar.editing')
+              : t('financial.create.bottombar.viewOnly')}
+        </span>
+        {mode === 'create' ? (
+          <span className={draftPill}>{t('financial.create.bottombar.draft')}</span>
+        ) : null}
       </div>
-      <button type="button" className={addSupplierButton} disabled>
-        {t('financial.create.bottombar.addSupplier')}
-      </button>
+      {mode === 'create' ? (
+        <button type="button" className={addSupplierButton} disabled>
+          {t('financial.create.bottombar.addSupplier')}
+        </button>
+      ) : null}
 
       <div className={bottombarSpacer} />
 
       <div className={actionsGroup}>
         <button type="button" className={discardButton} onClick={props.onDiscard}>
-          {t('financial.create.discard')}
+          {mode === 'view' ? t('financial.create.backToList') : t('financial.create.discard')}
         </button>
-        <button
-          type="button"
-          className={draftButton}
-          onClick={props.onSaveDraft}
-          disabled={!props.canSaveDraft || props.running}
-        >
-          {t('financial.create.bottombar.saveDraft')}
-          <span className={kbdChip}>{t('financial.create.bottombar.kbdSaveDraft')}</span>
-        </button>
-        <button
-          type="button"
-          className={primaryButton}
-          onClick={props.onSubmit}
-          disabled={!props.canSubmit || props.running}
-        >
-          {props.running ? (
-            t('common.loading')
-          ) : (
-            <>
-              {t('financial.create.submit')}
-              <span className={kbdChip}>{t('financial.create.bottombar.kbdSubmit')}</span>
-            </>
-          )}
-        </button>
+
+        {mode === 'create' ? (
+          <button
+            type="button"
+            className={draftButton}
+            onClick={props.onSaveDraft}
+            disabled={!props.canSaveDraft || props.running}
+          >
+            {t('financial.create.bottombar.saveDraft')}
+            <span className={kbdChip}>{t('financial.create.bottombar.kbdSaveDraft')}</span>
+          </button>
+        ) : null}
+
+        {mode === 'view' ? null : (
+          <button
+            type="button"
+            className={primaryButton}
+            onClick={props.onSubmit}
+            disabled={!props.canSubmit || props.running}
+          >
+            {props.running ? (
+              t('common.loading')
+            ) : (
+              <>
+                {mode === 'edit' ? t('financial.create.editSubmit') : t('financial.create.submit')}
+                <span className={kbdChip}>{t('financial.create.bottombar.kbdSubmit')}</span>
+              </>
+            )}
+          </button>
+        )}
       </div>
     </div>
   )

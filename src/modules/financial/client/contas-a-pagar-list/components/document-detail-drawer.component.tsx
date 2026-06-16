@@ -7,6 +7,7 @@
  * ficam fora por ora — dependem de enriquecer o GET /:id (futuro). Fecha no ✕, no botão ou clicando fora.
  */
 import type { ReactNode } from 'react'
+import { Link } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
@@ -171,9 +172,10 @@ export function DocumentDetailDrawer({ view, onClose }: DocumentDetailDrawerProp
         </div>
 
         <footer className={drawerFooter}>
-          <button type="button" className={drawerEditBtn} disabled title={t('financial.detail.editSoon')}>
+          {/* "Editar pagamento" → abre o documento na tela de Lançar (edição se Aberto; consulta se não). */}
+          <Link to="/financeiro/contas-a-pagar/lancar" search={{ id: view.id }} className={drawerEditBtn}>
             {t('financial.detail.edit')}
-          </button>
+          </Link>
           <button type="button" className={drawerCloseBtn} onClick={onClose}>
             {t('financial.detail.close')}
           </button>

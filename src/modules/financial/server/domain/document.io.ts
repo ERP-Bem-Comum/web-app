@@ -129,6 +129,7 @@ export type DocumentDetail = Readonly<{
   dueDate: string | null // YYYY-MM-DD
   description: string | null
   payables: readonly Payable[] // vazio em Rascunho
+  version: number // optimistic lock — reenviado no PATCH (ajuste)
 }>
 
 // Item da lista (DTO fino da Fatia 1 — será enriquecido por core-api#47 FIN-LIST-DTO).

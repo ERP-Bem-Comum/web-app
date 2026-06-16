@@ -109,6 +109,7 @@ export type DocumentDetail = Readonly<{
   dueDate: string | null
   description: string | null
   payables: readonly Payable[]
+  version: number // optimistic lock — reenviado no PATCH (ajuste)
 }>
 
 export type DocumentSummary = Readonly<{

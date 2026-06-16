@@ -3,7 +3,7 @@
  * Guarda os campos crus (reais/strings); a derivação pura (preview/CSRF/canSubmit) vive em
  * `document-form.view.ts`. Trocar para um tipo sem retenção limpa o bloco de retenções (gating).
  */
-import { useReducer } from 'react'
+import { useEffect, useReducer, useRef } from 'react'
 
 import type { DocumentType, PaymentMethod } from '#modules/financial/client/data/model/document.model.ts'
 import {
@@ -33,6 +33,7 @@ type FormAction =
   | Readonly<{ kind: 'setSupplier'; ref: string }>
   | Readonly<{ kind: 'setText'; key: TextKey; value: string }>
   | Readonly<{ kind: 'setRetention'; key: keyof RetentionFieldsReais; value: string }>
+  | Readonly<{ kind: 'hydrate'; fields: DocumentFormFields }>
   | Readonly<{ kind: 'reset' }>
 
 const reducer = (state: DocumentFormFields, action: FormAction): DocumentFormFields => {
@@ -52,6 +53,8 @@ const reducer = (state: DocumentFormFields, action: FormAction): DocumentFormFie
       return { ...state, [action.key]: action.value }
     case 'setRetention':
       return { ...state, retentions: { ...state.retentions, [action.key]: action.value } }
+    case 'hydrate':
+      return action.fields
     case 'reset':
       return EMPTY_FIELDS
     default: {
@@ -71,8 +74,17 @@ export type DocumentFormController = Readonly<{
   reset: () => void
 }>
 
-export function useDocumentFormController(): DocumentFormController {
+export function useDocumentFormController(initial?: DocumentFormFields | null): DocumentFormController {
   const [fields, dispatch] = useReducer(reducer, EMPTY_FIELDS)
+  // Hidrata UMA vez quando os dados de edição chegam (async). `useRef` evita re-hidratar a cada render,
+  // preservando o que o usuário já editou.
+  const hydrated = useRef(false)
+  useEffect(() => {
+    if (initial != null && !hydrated.current) {
+      hydrated.current = true
+      dispatch({ kind: 'hydrate', fields: initial })
+    }
+  }, [initial])
   return {
     fields,
     setType: (value) => {
