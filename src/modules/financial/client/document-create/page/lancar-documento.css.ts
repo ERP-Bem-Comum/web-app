@@ -128,29 +128,22 @@ export const formCol = style({
   minInlineSize: 0,
 })
 
+// Seções FLAT do Figma (sem card): divisória inferior + respiro vertical; a última seção sem borda.
 export const section = style({
   display: 'flex',
   flexDirection: 'column',
   gap: vars.space.md,
-  paddingBlockEnd: vars.space.lg,
-  paddingInline: vars.space.lg,
-  borderRadius: vars.radius.lg,
-  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
-  background: vars.color.surface.default,
-  boxShadow: vars.shadow.card,
+  paddingBlock: '1.125rem', // 18px (Figma)
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  selectors: { '&:last-of-type': { borderBlockEnd: 'none' } },
 })
 export const sectionTitle = style({
   margin: 0,
-  marginInline: `calc(-1 * ${vars.space.lg})`,
-  paddingBlock: vars.space.md,
-  paddingInline: vars.space.lg,
-  background: vars.color.institutional.paperWarm,
-  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
-  borderStartStartRadius: vars.radius.lg,
-  borderStartEndRadius: vars.radius.lg,
-  fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.md,
-  color: vars.color.text.primary,
+  fontFamily: vars.font.family.heading, // Inter (Figma)
+  fontSize: vars.font.size.sm, // ~13px
+  fontWeight: vars.font.weight.bold,
+  letterSpacing: '-0.005em',
+  color: vars.color.institutional.ink2,
 })
 
 export const fieldGrid = styleVariants({
@@ -163,11 +156,17 @@ export const fieldGrid = styleVariants({
 export const field = style({ display: 'flex', flexDirection: 'column', gap: vars.space.xs, minInlineSize: 0 })
 export const fieldLabel = style({
   fontFamily: vars.font.family.heading, // Inter (Figma/mock)
-  fontSize: vars.font.size.xs,
+  fontSize: vars.font.size['2xs'], // 9.5px (Label/Field do Figma)
   fontWeight: vars.font.weight.semibold,
   color: vars.color.institutional.ink5,
   textTransform: 'uppercase',
   letterSpacing: '0.04em',
+})
+// Célula combinada "Nº / Série": dois inputs sob um rótulo só (fidelidade Figma + modelo separado).
+export const numberSeriesRow = style({
+  display: 'grid',
+  gridTemplateColumns: '1.4fr 1fr',
+  gap: vars.space.xs,
 })
 
 // Input do mock: Inter 12.5px, min-height 34px, border 1px paper-rule, radius 6px, padding 8/11px.
@@ -569,3 +568,77 @@ export const validationDot = styleVariants({
   ],
 })
 export const validationText = style({ flex: 1, minInlineSize: 0 })
+
+// ── S3 Pagamento: entity-cards (Conta do fornecedor / Aprovador) — chrome ────────
+export const entityCard = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.md,
+  paddingBlock: '0.75rem', // 12px
+  paddingInline: '0.875rem', // 14px
+  borderRadius: vars.radius.lg,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  background: vars.color.institutional.paperWarm,
+  minInlineSize: 0,
+})
+export const entityIcon = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  inlineSize: '2rem', // 32px
+  blockSize: '2rem',
+  flexShrink: 0,
+  borderRadius: vars.radius.lg,
+  background: vars.color.institutional.blueDeep, // teal do Figma → azul da marca
+  color: vars.color.surface.default,
+})
+export const entityInfo = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.1875rem', // 3px
+  flex: 1,
+  minInlineSize: 0,
+})
+export const entityLabel = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.ink5,
+  textTransform: 'uppercase',
+  letterSpacing: '0.04em',
+})
+export const entityValue = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.xs,
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.text.muted, // estado chrome: hint discreto (sem dado real)
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+})
+// ── S4 Categorização: cabeçalho com pill de contrato (chrome) ────────────────────
+export const sectionHead = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.md,
+})
+export const sectionHeadTitle = style({ flex: 1, minInlineSize: 0 })
+export const contratoPill = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  paddingBlock: vars.space.xs,
+  paddingInline: vars.space.md,
+  borderRadius: '1.5rem', // pill (sem token de pill no DS)
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  background: vars.color.institutional.paperWarm,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.xs,
+  color: vars.color.text.muted,
+})
+export const contratoLink = style({
+  paddingInlineStart: vars.space.sm,
+  borderInlineStart: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  color: vars.color.institutional.blueDeep,
+  fontWeight: vars.font.weight.medium,
+})
