@@ -15,7 +15,6 @@ import { DocumentGrid } from '../components/document-grid.component.tsx'
 import {
   screen,
   topbar,
-  topTitle,
   count,
   newButton,
   chips,
@@ -35,8 +34,8 @@ export function ContasAPagarPage(): ReactNode {
 
   return (
     <div className={screen}>
+      {/* Título: desenhado pelo PageHeader do shell (padrão Contratos, Nunito). Aqui só ações/contador. */}
       <header className={topbar}>
-        <h1 className={topTitle}>{t('financial.list.title')}</h1>
         {page !== null ? (
           <span className={count}>
             {String(page.total)} {t('financial.list.count')}

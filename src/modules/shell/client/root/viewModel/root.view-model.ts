@@ -6,7 +6,11 @@
 import type { MenuSection } from '#modules/shell/client/data/menu/shell-menu.config.ts'
 
 // Reexporta os tipos do menu pela camada que a UI consome (a view não importa `data/` direto — §XI MVVM).
-export type { MenuSection, MenuSubItem, MenuIconId } from '#modules/shell/client/data/menu/shell-menu.config.ts'
+export type {
+  MenuSection,
+  MenuSubItem,
+  MenuIconId,
+} from '#modules/shell/client/data/menu/shell-menu.config.ts'
 
 // ── UI-state (page-wide) + reducer puro (o binding aplica via useReducer) ──
 export type RootUiState = Readonly<{ collapsed: boolean }>
@@ -48,6 +52,9 @@ const PAGE_TITLES: Readonly<Record<string, string>> = {
   '/usuarios': 'Usuários',
   '/minha-conta': 'Minha Conta',
   '/programas': 'Programas',
+  // Financeiro — o título é desenhado pelo PageHeader do shell (padrão Contratos, Nunito); sem isto
+  // cairia no fallback "ERP Bem Comum".
+  '/financeiro/contas-a-pagar': 'Contas a Pagar',
   '/login': 'Login',
 }
 
@@ -64,7 +71,8 @@ export const rootViewModel = {
 
   isItemActive: (activePath: string, to: string): boolean => isPrefixPath(activePath, to),
 
-  sidebarWidth: (collapsed: boolean): number => (collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED),
+  sidebarWidth: (collapsed: boolean): number =>
+    collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED,
 
   // Não renderiza o h1 do shell em /parceiros/* e /usuarios/* (cada tela já tem seu PageHeader) nem em
   // qualquer sub-rota de /contratos/ (criar, detalhe, editar, aditivo — cada tela tem seu próprio header).

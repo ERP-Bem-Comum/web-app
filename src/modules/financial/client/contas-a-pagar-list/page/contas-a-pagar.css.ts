@@ -14,13 +14,8 @@ export const screen = style({
   inlineSize: '100%',
 })
 
+// Linha de ações da tela (contador + Novo Documento). O TÍTULO vem do PageHeader do shell (padrão Contratos).
 export const topbar = style({ display: 'flex', alignItems: 'center', gap: vars.space.md })
-export const topTitle = style({
-  margin: 0,
-  fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.lg,
-  color: vars.color.text.primary,
-})
 export const count = style({
   fontSize: vars.font.size.sm,
   color: vars.color.institutional.blueDeep,
