@@ -140,6 +140,7 @@ export function DocumentGrid(props: DocumentGridProps): ReactNode {
                   initials={initialsFrom(r.supplier)}
                   variant={avatarVariantOf(r.supplierKind)}
                   text={r.supplier}
+                  subtitle={r.supplierDoc}
                 />
               )}
               <span className={cell}>{r.due}</span>

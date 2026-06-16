@@ -7,7 +7,7 @@ import { listSuppliersFn, listFinanciersFn, listActsFn } from '#modules/partners
 
 import type { PartnerKind } from './contas-a-pagar.view-model.ts'
 
-export type PartnerRef = Readonly<{ name: string; kind: PartnerKind }>
+export type PartnerRef = Readonly<{ name: string; kind: PartnerKind; document: string }>
 
 const PAGE = { active: true, limit: 100 } as const
 
@@ -20,10 +20,15 @@ export const partnersMapQueryOptions = {
       listActsFn({ data: PAGE }),
     ])
     const map = new Map<string, PartnerRef>()
-    if (suppliers.ok) for (const s of suppliers.data.items) map.set(s.id, { name: s.name, kind: 'supplier' })
+    if (suppliers.ok)
+      for (const s of suppliers.data.items)
+        map.set(s.id, { name: s.name, kind: 'supplier', document: s.cnpj })
     if (financiers.ok)
-      for (const f of financiers.data.items) map.set(f.id, { name: f.name, kind: 'financier' })
-    if (acts.ok) for (const a of acts.data.items) map.set(a.id, { name: a.corporateName, kind: 'act' })
+      for (const f of financiers.data.items)
+        map.set(f.id, { name: f.name, kind: 'financier', document: f.cnpj })
+    // ActListItem não traz CNPJ (só o ActDetail) — sem sublinha de documento p/ ACT na lista.
+    if (acts.ok)
+      for (const a of acts.data.items) map.set(a.id, { name: a.corporateName, kind: 'act', document: '' })
     return map
   },
   staleTime: 60_000,

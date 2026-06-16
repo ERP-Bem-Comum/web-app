@@ -28,6 +28,8 @@ export type ResolveSupplier = (ref: string | null) => string
 // Financiador=verde · ACT=laranja). Resolver OPCIONAL (aditivo: sem ele, `supplierKind` = null).
 export type PartnerKind = 'supplier' | 'collaborator' | 'financier' | 'act'
 export type ResolveSupplierKind = (ref: string | null) => PartnerKind | null
+// CNPJ do favorecido (sublinha da coluna Fornecedor, padrão do grid de Contratos). Resolver OPCIONAL.
+export type ResolveSupplierDoc = (ref: string | null) => string | null
 
 export type GridRow = Readonly<{
   id: string
@@ -35,11 +37,22 @@ export type GridRow = Readonly<{
   documentNumber: string
   supplier: string
   supplierKind: PartnerKind | null
+  supplierDoc: string | null // CNPJ já mascarado (ex.: "37.364.305/0001-92") ou null
   due: string
   net: string
   netCents: string | null // bruto em centavos p/ o somatório da seleção (formatação fica fora)
   status: DocumentStatus
 }>
+
+/** Mascara CNPJ (14 díg.) / CPF (11) p/ exibição; devolve null se vazio, ou o original se tamanho ≠. */
+export const maskCnpj = (doc: string | null): string | null => {
+  if (doc === null) return null
+  const digits = doc.replace(/\D/g, '')
+  if (digits === '') return null
+  if (digits.length === 14) return digits.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
+  if (digits.length === 11) return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
+  return doc
+}
 
 export type PageInfo = Readonly<{
   page: number
@@ -91,12 +104,14 @@ const toRow = (
   it: DocumentSummary,
   resolveSupplier: ResolveSupplier,
   resolveKind?: ResolveSupplierKind,
+  resolveDoc?: ResolveSupplierDoc,
 ): GridRow => ({
   id: it.id,
   type: it.type ?? DASH,
   documentNumber: it.documentNumber ?? DASH,
   supplier: resolveSupplier(it.supplierRef),
   supplierKind: resolveKind?.(it.supplierRef) ?? null,
+  supplierDoc: maskCnpj(resolveDoc?.(it.supplierRef) ?? null),
   due: it.dueDate !== null && it.dueDate !== '' ? formatDue(it.dueDate) : DASH,
   net: it.netValueCents !== null && it.netValueCents !== '' ? centsToBRL(it.netValueCents) : DASH,
   netCents: it.netValueCents,
@@ -117,7 +132,8 @@ export const buildRows = (
   items: readonly DocumentSummary[],
   resolveSupplier: ResolveSupplier,
   resolveKind?: ResolveSupplierKind,
-): readonly GridRow[] => items.map((it) => toRow(it, resolveSupplier, resolveKind))
+  resolveDoc?: ResolveSupplierDoc,
+): readonly GridRow[] => items.map((it) => toRow(it, resolveSupplier, resolveKind, resolveDoc))
 
 export const pageInfo = (page: number, pageSize: number, total: number): PageInfo => {
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1
@@ -206,14 +222,15 @@ export const deriveListState = (args: {
   data: Result<DocumentListResponse, FinancialError> | undefined
   resolveSupplier: ResolveSupplier
   resolveKind?: ResolveSupplierKind
+  resolveDoc?: ResolveSupplierDoc
 }): ListState => {
-  const { isLoading, data, resolveSupplier, resolveKind } = args
+  const { isLoading, data, resolveSupplier, resolveKind, resolveDoc } = args
   if (isLoading || data === undefined) return { tag: 'loading' }
   if (!data.ok) return { tag: 'error', errorTag: financialErrorTag(data.error) }
   if (data.value.items.length === 0) return { tag: 'empty' }
   return {
     tag: 'ready',
-    rows: buildRows(data.value.items, resolveSupplier, resolveKind),
+    rows: buildRows(data.value.items, resolveSupplier, resolveKind, resolveDoc),
     page: pageInfo(data.value.page, data.value.pageSize, data.value.total),
   }
 }

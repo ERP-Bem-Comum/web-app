@@ -13,6 +13,7 @@ import {
   type ListState,
   type ResolveSupplier,
   type ResolveSupplierKind,
+  type ResolveSupplierDoc,
 } from './contas-a-pagar.view-model.ts'
 
 const DEFAULT_PAGE_SIZE = 12
@@ -35,8 +36,16 @@ export function useContasAPagar(): ContasAPagarBinding {
     ref === null ? '—' : (partners.data?.get(ref)?.name ?? ref)
   const resolveKind: ResolveSupplierKind = (ref) =>
     ref === null ? null : (partners.data?.get(ref)?.kind ?? null)
+  const resolveDoc: ResolveSupplierDoc = (ref) =>
+    ref === null ? null : (partners.data?.get(ref)?.document ?? null)
 
-  const state = deriveListState({ isLoading: list.isLoading, data: list.data, resolveSupplier, resolveKind })
+  const state = deriveListState({
+    isLoading: list.isLoading,
+    data: list.data,
+    resolveSupplier,
+    resolveKind,
+    resolveDoc,
+  })
 
   return {
     state,

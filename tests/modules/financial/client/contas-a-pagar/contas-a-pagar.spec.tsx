@@ -24,6 +24,7 @@ const readyState: ListState = {
       documentNumber: '0847',
       supplier: 'Bambu Educação',
       supplierKind: 'supplier',
+      supplierDoc: '37.364.305/0001-92',
       due: '10/07/2026',
       net: 'R$ 1.500,00',
       netCents: '150000',

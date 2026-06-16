@@ -12,6 +12,7 @@ import {
   pageInfo,
   buildDocumentsCsv,
   sumSelectedNetBRL,
+  maskCnpj,
 } from '../../../../../src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts'
 import { ok, err } from '../../../../../src/shared/primitives/result.ts'
 import type {
@@ -160,5 +161,15 @@ describe('sumSelectedNetBRL', () => {
   it('ignora linhas sem valor e zera quando nada selecionado', () => {
     assert.equal(norm(sumSelectedNetBRL(rows, new Set(['c']))), 'R$ 0,00')
     assert.equal(norm(sumSelectedNetBRL(rows, new Set())), 'R$ 0,00')
+  })
+})
+
+describe('maskCnpj', () => {
+  it('mascara CNPJ (14) e CPF (11); null/vazio → null; tamanho ≠ → original', () => {
+    assert.equal(maskCnpj('37364305000192'), '37.364.305/0001-92')
+    assert.equal(maskCnpj('12345678901'), '123.456.789-01')
+    assert.equal(maskCnpj(null), null)
+    assert.equal(maskCnpj(''), null)
+    assert.equal(maskCnpj('123'), '123')
   })
 })

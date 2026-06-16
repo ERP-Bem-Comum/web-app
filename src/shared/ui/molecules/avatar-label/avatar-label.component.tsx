@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import { wrap, avatar, avatarVariant, label } from './avatar-label.css.ts'
+import { wrap, avatar, avatarVariant, textCol, label, subtitle } from './avatar-label.css.ts'
 
 export type AvatarVariant = keyof typeof avatarVariant
 
@@ -9,14 +9,25 @@ export type AvatarLabelProps = Readonly<{
   initials: string
   variant: AvatarVariant
   text: string
+  /** Sublinha opcional (ex.: CNPJ) — quando presente, vira célula de duas linhas (padrão Contratos). */
+  subtitle?: string | null
 }>
 
-/** Avatar circular com iniciais (cor por tipo) + rótulo truncado. Célula de nome dos grids. */
-export function AvatarLabel({ initials, variant, text }: AvatarLabelProps): ReactNode {
+/** Avatar circular com iniciais (cor por tipo) + rótulo truncado (+ sublinha opcional). Célula de grids. */
+export function AvatarLabel({ initials, variant, text, subtitle: sub }: AvatarLabelProps): ReactNode {
   return (
     <div className={wrap}>
-      <span className={`${avatar} ${avatarVariant[variant]}`} aria-hidden="true">{initials}</span>
-      <span className={label}>{text}</span>
+      <span className={`${avatar} ${avatarVariant[variant]}`} aria-hidden="true">
+        {initials}
+      </span>
+      {sub !== undefined && sub !== null && sub !== '' ? (
+        <span className={textCol}>
+          <span className={label}>{text}</span>
+          <span className={subtitle}>{sub}</span>
+        </span>
+      ) : (
+        <span className={label}>{text}</span>
+      )}
     </div>
   )
 }
