@@ -6,21 +6,11 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
-import { listSuppliersFn } from '#modules/partners/public-api/index.ts'
-
 import { contasAPagarQueryOptions } from './contas-a-pagar.query.ts'
+import { partnersMapQueryOptions } from './partners-map.binding.ts'
 import { deriveListState, type ListState, type ResolveSupplier } from './contas-a-pagar.view-model.ts'
 
 const DEFAULT_PAGE_SIZE = 12
-
-const suppliersMapQueryOptions = {
-  queryKey: ['financial', 'suppliers-map'] as const,
-  queryFn: async (): Promise<ReadonlyMap<string, string>> => {
-    const res = await listSuppliersFn({ data: { active: true, limit: 100 } })
-    return new Map(res.ok ? res.data.items.map((s) => [s.id, s.name] as const) : [])
-  },
-  staleTime: 60_000,
-}
 
 export type ContasAPagarBinding = Readonly<{
   state: ListState
@@ -33,10 +23,10 @@ export type ContasAPagarBinding = Readonly<{
 export function useContasAPagar(): ContasAPagarBinding {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
-  const suppliers = useQuery(suppliersMapQueryOptions)
+  const partners = useQuery(partnersMapQueryOptions)
   const list = useQuery(contasAPagarQueryOptions({ page, pageSize }))
 
-  const resolveSupplier: ResolveSupplier = (ref) => (ref === null ? '—' : (suppliers.data?.get(ref) ?? ref))
+  const resolveSupplier: ResolveSupplier = (ref) => (ref === null ? '—' : (partners.data?.get(ref) ?? ref))
 
   const state = deriveListState({ isLoading: list.isLoading, data: list.data, resolveSupplier })
 

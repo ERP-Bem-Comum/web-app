@@ -283,13 +283,9 @@ export const select = style({
 })
 export const perPageLabel = style({ color: vars.color.text.muted })
 
-// ── Linha clicável (abre detalhe/drawer ou rascunho→form) ─────────────────────
+// ── Linha clicável (abre detalhe/drawer) — só afeta cursor/hover; NÃO reseta a tipografia da linha ──
 export const rowClickable = style({
   cursor: 'pointer',
-  border: 'none',
-  background: 'transparent',
-  textAlign: 'start',
-  font: 'inherit',
   ':hover': { background: vars.color.institutional.blueBg },
 })
 
