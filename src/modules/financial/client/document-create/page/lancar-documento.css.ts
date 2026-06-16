@@ -125,6 +125,8 @@ export const body = style({
   minBlockSize: 0,
   display: 'grid',
   gridTemplateColumns: 'minmax(16rem, 28rem) minmax(0, 1fr) 21.25rem',
+  // A linha precisa ter a altura do container (senão vira auto = altura do conteúdo e nada rola).
+  gridTemplateRows: 'minmax(0, 1fr)',
   overflow: 'hidden', // cada coluna rola sozinha (independent scroll, igual ao mock)
   '@media': {
     'screen and (max-width: 75rem)': { gridTemplateColumns: 'minmax(0, 1fr) 21.25rem' },
@@ -718,14 +720,15 @@ export const contratoLink = style({
 })
 
 // ── Bottombar fixa (Figma 626:25): status + quick-action · spacer · ações ─────────
+// Footer no mesmo padrão da tela de criar contrato: altura fixa 3.5rem, borda fina, fundo branco.
 export const pageBottombar = style({
   flexShrink: 0, // última linha fixa do shell (topbar · body rolável · bottombar)
   display: 'flex',
   alignItems: 'center',
   gap: '0.875rem', // 14px
-  paddingBlock: vars.space.sm,
+  blockSize: '3.5rem',
   paddingInline: vars.space.lg,
-  borderBlockStart: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderBlockStart: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
   background: vars.color.surface.default,
   '@media': { 'screen and (max-width: 48rem)': { flexWrap: 'wrap' } },
 })
@@ -761,29 +764,54 @@ export const addSupplierButton = style({
 })
 export const bottombarSpacer = style({ flex: 1, minInlineSize: 0 })
 export const actionsGroup = style({ display: 'flex', alignItems: 'center', gap: vars.space.sm })
+// Botões do footer espelham os da tela de criar contrato: altura 2.5rem, sm bold, radius md.
 const actionButtonBase = {
   display: 'inline-flex',
   alignItems: 'center',
+  justifyContent: 'center',
   gap: vars.space.sm,
-  paddingBlock: '0.625rem', // 10px
-  paddingInline: '0.875rem', // 14px
+  blockSize: '2.5rem',
+  paddingInline: vars.space.lg,
   borderRadius: vars.radius.md,
   fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.sm, // 13px
-  fontWeight: vars.font.weight.semibold,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.bold,
   cursor: 'pointer',
+  transition: 'background 150ms, border-color 150ms, box-shadow 150ms',
 } as const
-export const discardButton = style([
+// Primário (= buttonPrimary do contrato): azul da marca → blueDeep no hover.
+export const primaryButton = style([
   actionButtonBase,
-  { border: 'none', background: 'transparent', color: vars.color.institutional.ink2 },
+  {
+    border: 'none',
+    background: vars.color.institutional.blue,
+    color: vars.color.surface.default,
+    ':hover': { background: vars.color.institutional.blueDeep },
+    ':disabled': { opacity: 0.5, cursor: 'not-allowed' },
+  },
 ])
+// Secundário (= buttonSecondary do contrato): branco + borda; hover azul claro.
 export const draftButton = style([
   actionButtonBase,
   {
     border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
     background: vars.color.surface.default,
-    color: vars.color.text.muted,
-    cursor: 'not-allowed',
+    color: vars.color.institutional.ink4,
+    ':hover': {
+      background: vars.color.institutional.blueBg,
+      borderColor: vars.color.institutional.blueLine,
+    },
+    ':disabled': { opacity: 0.5, cursor: 'not-allowed' },
+  },
+])
+// Descartar (ghost): mesmo tamanho/peso, sem fundo.
+export const discardButton = style([
+  actionButtonBase,
+  {
+    border: 'none',
+    background: 'transparent',
+    color: vars.color.institutional.ink4,
+    ':hover': { background: vars.color.institutional.blueBg },
   },
 ])
 export const kbdChip = style({

@@ -10,7 +10,6 @@ import type { ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { Button } from '#shared/ui/index.ts'
 
 import {
   pageBottombar,
@@ -23,6 +22,7 @@ import {
   actionsGroup,
   discardButton,
   draftButton,
+  primaryButton,
   kbdChip,
 } from '../page/lancar-documento.css.ts'
 
@@ -57,15 +57,21 @@ export function DocumentBottombar(props: DocumentBottombarProps): ReactNode {
           {t('financial.create.bottombar.saveDraft')}
           <span className={kbdChip}>{t('financial.create.bottombar.kbdSaveDraft')}</span>
         </button>
-        <Button
+        <button
+          type="button"
+          className={primaryButton}
           onClick={props.onSubmit}
-          disabled={!props.canSubmit}
-          loading={props.running}
-          loadingLabel={t('common.loading')}
+          disabled={!props.canSubmit || props.running}
         >
-          {t('financial.create.submit')}
-          <span className={kbdChip}>{t('financial.create.bottombar.kbdSubmit')}</span>
-        </Button>
+          {props.running ? (
+            t('common.loading')
+          ) : (
+            <>
+              {t('financial.create.submit')}
+              <span className={kbdChip}>{t('financial.create.bottombar.kbdSubmit')}</span>
+            </>
+          )}
+        </button>
       </div>
     </div>
   )
