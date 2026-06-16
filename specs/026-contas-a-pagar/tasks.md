@@ -56,7 +56,7 @@ description: 'Task list — Contas a Pagar (Financeiro) v1 núcleo'
 
 - [ ] T011 Criar `src/modules/financial/server/application/financial.use-cases.ts` — porta `FinancialClient` + use-cases (sem throw, devolvem `Result`).
 - [ ] T012 Criar `src/modules/financial/server/adapters/financial.composition.ts` (injeta o client core-api).
-- [ ] T013 [P] `src/modules/financial/server/adapters/server-fns/list-documents.query.fn.ts` (GET /documents — devolve vazio na Fatia 1; anexa guard de auth).
+- [ ] T013 [P] `src/modules/financial/server/adapters/server-fns/list-documents.query.fn.ts` (GET /documents — **passa pela lista real paginada/filtrada** do backend Fatia 2; anexa guard de auth).
 - [ ] T014 [P] `.../server-fns/get-document.query.fn.ts` (GET /documents/:id).
 - [ ] T015 [P] `.../server-fns/create-document.service.fn.ts` (POST /documents, asDraft:false; valida `CreateDocumentInput`).
 - [ ] T016 [P] `.../server-fns/adjust-document.service.fn.ts` (PATCH /documents/:id).
@@ -104,26 +104,30 @@ description: 'Task list — Contas a Pagar (Financeiro) v1 núcleo'
 
 ## Phase 4: User Story 2 - Grid de Contas a Pagar (Priority: P2)
 
-**Goal**: tela de entrada do submódulo — grid shell + estado vazio + "Novo Documento".
+**Goal**: tela de entrada do submódulo — grid com **listagem real paginada** (Fatia 2) + estado vazio (fallback) + "Novo Documento".
 
-**Independent Test**: acessar `/financeiro/contas-a-pagar` → colunas + chips + **estado vazio** (lista stub) + botão que leva a Lançar.
+> **Reconciliação Fatia 2 (2026-06-16):** `GET /documents` deixou de ser stub — agora é **lista real, paginada e filtrável** (status/supplierRef/type/dueFrom/dueTo, ordenação estável). A US2 passa de "shell + estado vazio" para **listar documentos de verdade**; o estado vazio vira **fallback** (base sem registros). Colunas finas do DTO atual (tipo/número/fornecedor/líquido/vencimento/situação); as ricas (Contrato/Forma Pag./Emissão/Bruto) ficam gated até `FIN-LIST-DTO` ([core-api#47](https://github.com/ERP-Bem-Comum/core-api/issues/47)).
+
+**Independent Test**: acessar `/financeiro/contas-a-pagar` → grid **lista os documentos** (colunas finas, paginado); base vazia → **estado vazio** (não erro); botão "Novo Documento" leva a Lançar.
 
 ### Tests for US2 (RED first) ⚠️
 
-- [ ] T035 [P] [US2] (RED) Teste puro da `contas-a-pagar.view-model` (deriva `loading`/`empty`/`ready`/`error`; lista vazia = `empty`, não `error`) em `tests/modules/financial/client/contas-a-pagar/contas-a-pagar-view-model.test.ts`.
-- [ ] T036 [P] [US2] (RED) Spec DOM da página (renderiza colunas + chips chrome + estado vazio; botão "Novo Documento" navega para `/lancar`) em `tests/modules/financial/client/contas-a-pagar/contas-a-pagar.spec.tsx`.
+- [ ] T035 [P] [US2] (RED) Teste puro da `contas-a-pagar.view-model` (deriva `loading`/`empty`/`ready`/`error`; **`ready` lista os itens** + expõe a paginação; lista vazia = `empty`, não `error`) em `tests/modules/financial/client/contas-a-pagar/contas-a-pagar-view-model.test.ts`.
+- [ ] T036 [P] [US2] (RED) Spec DOM da página (**renderiza linhas de uma lista real** + cabeçalhos + chrome de paginação; base vazia → estado vazio; botão "Novo Documento" navega para `/lancar`) em `tests/modules/financial/client/contas-a-pagar/contas-a-pagar.spec.tsx`.
 
 ### Implementation for US2
 
-- [ ] T037 [US2] `src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.query.ts` (`queryOptions` da lista → `repository.list`).
-- [ ] T038 [US2] `src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts` (derivação pura do estado).
+- [ ] T037 [US2] `src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.query.ts` (`queryOptions` da lista → `repository.list`, **com page/pageSize**; a lista é real na Fatia 2).
+- [ ] T038 [US2] `src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts` (derivação pura do estado — `ready` mapeia os `items` para linhas + dados de paginação).
 - [ ] T039 [US2] `src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.binding.ts` (adapter React: `useQuery`).
-- [ ] T040 [P] [US2] Componentes burros `grid-head`, `document-row`, `status-chips` (chrome, sem filtrar), `empty-state`, `footer-totais`, `pagination-chrome` (+ `.css.ts` tokens-only) em `src/modules/financial/client/contas-a-pagar-list/components/` — tokens via Figma 205-638 + mock HTML.
+- [ ] T040 [P] [US2] Componentes burros `grid-head`, `document-row` (**renderiza um `DocumentSummary` real**), `status-chips` (chrome — sem contadores por aba no v1), `empty-state` (fallback), `footer-totais`, `pagination-chrome` (**ligado a page/pageSize**) (+ `.css.ts` tokens-only) em `src/modules/financial/client/contas-a-pagar-list/components/` — tokens via Figma 205-638 + mock HTML.
 - [ ] T041 [US2] `src/modules/financial/client/contas-a-pagar-list/page/contas-a-pagar.page.tsx` (+ `.css.ts`) — view burra.
 - [ ] T042 [US2] Ligar a rota `src/routes/financeiro/contas-a-pagar/index.tsx` (binding→page) com **guard de rota por `fiscal-document:read`** e adicionar o item **Financeiro → Contas a Pagar** ao menu (`src/modules/shell/client/data/menu/shell-menu.config.ts`), **gated pela mesma permissão** (FR-013).
 - [ ] T043 [US2] i18n: tags `financial.list.*` (títulos de coluna, rótulos de status, estado vazio, "Novo Documento").
 
-**Checkpoint**: Grid shell funcional; US1 + US2 independentes e testáveis.
+**Checkpoint**: Grid com listagem real paginada funcional; US1 + US2 independentes e testáveis.
+
+> **Nota (onda 2, US3):** com a Fatia 2 o **optimistic lock passou a ser exigido** (409 `document-version-conflict`) em ajustar/aprovar/desfazer. Quando a UI de ciclo de vida (drawer/onda 2) descer, ela MUST tratar esse conflito (tag i18n própria + recarregar o documento). Garantir que o mapper/error-tag do financeiro cobre o slug `document-version-conflict`.
 
 ---
 

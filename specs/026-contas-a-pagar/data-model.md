@@ -1,6 +1,6 @@
 # Data Model (front) — Contas a Pagar (Fase 1)
 
-Tipos de I/O do **front** (espelham `core-api/specs/FIN-DOCUMENTO-INGESTAO` e o contrato real da Fatia 1). Money trafega como **string de centavos** na borda; no model do client é normalizado conforme o uso. Enums = união de literais (§VI). Tudo `Readonly` (§VII).
+Tipos de I/O do **front** (espelham `core-api/specs/FIN-DOCUMENTO-INGESTAO` e o contrato real da **Fatia 2, #57**). Money trafega como **string de centavos** na borda; no model do client é normalizado conforme o uso. Enums = união de literais (§VI). Tudo `Readonly` (§VII).
 
 ## Enums (uniões de literais)
 
@@ -15,7 +15,7 @@ type PaymentMethod =
   | 'Cambio'
   | 'GuiaRecolhimento'
   | 'Outro'
-// Alvo (7); vivos na Fatia 1 = Rascunho|Aberto|Aprovado
+// Alvo (7); vivos no backend atual = Rascunho|Aberto|Aprovado
 type DocumentStatus = 'Rascunho' | 'Aberto' | 'Aprovado' | 'Transmitido' | 'Recusado' | 'Pago' | 'Conciliado'
 type RetentionType = 'ISS' | 'IRRF' | 'INSS' | 'CSRF' // gera filho + abate líquido
 type RegisteredTaxType = 'ICMS' | 'IPI' | 'PIS' | 'COFINS' | 'CBS' | 'IBS_Municipal' | 'IBS_Estadual' // só registro
@@ -113,7 +113,7 @@ type DocumentDetail = Readonly<{
   payables: readonly Payable[] // vazio em Rascunho
 }>
 
-// Item da lista (DTO fino da Fatia 1 — será enriquecido por FIN-LIST-DTO)
+// Item da lista (lista REAL paginada na Fatia 2; DTO ainda fino — será enriquecido por FIN-LIST-DTO #47)
 type DocumentSummary = Readonly<{
   id: string
   status: DocumentStatus
@@ -171,7 +171,7 @@ O preview "Títulos Previstos" reflete isso: pai (líquido) + filhos ISS/IRRF/IN
 
 `categoria`, `programa`, `planoOrcamentario` e `centroCusto` **não são entrada livre**: vêm do **contrato vinculado** (`contractRef`) ao documento. No v1 são **exibidos read-only** (derivados do contrato). Dependências: o contrato expor esses metadados (`CTR-NUMBER-PROGRAM`) e o create derivá-los do `contractRef` (`FIN-CREATE-DTO`). Enquanto não houver, a seção fica gated.
 
-## Lacunas do create na Fatia 1 (ticket `FIN-CREATE-DTO`)
+## Lacunas do create no backend atual (ticket `FIN-CREATE-DTO`, core-api#48)
 
 O `createDocumentBodySchema` **não aceita** `competencia`, `dataEmissao` nem `contaDebitoId` (presentes no `data-model` documentado). No v1, esses campos são **omitidos/gated**.
 

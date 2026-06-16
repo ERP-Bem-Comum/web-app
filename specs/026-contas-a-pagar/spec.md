@@ -6,7 +6,9 @@
 
 **Status**: Draft
 
-**Input**: Submódulo **Contas a Pagar** do módulo **Financeiro** (front v2). Greenfield (sem legado — o legado vale só para Contas a Receber). Consome o backend novo `/api/v2/financial` do core-api (#38), Document-cêntrico, em "Fatia 1" (parcial). Escopo travado pela usuária no **núcleo que funciona** (criar/aprovar/cancelar); a listagem é apenas o shell (backend stub vazio).
+**Input**: Submódulo **Contas a Pagar** do módulo **Financeiro** (front v2). Greenfield (sem legado — o legado vale só para Contas a Receber). Consome o backend novo `/api/v2/financial` do core-api (**#57, Fatia 2**), Document-cêntrico. Escopo travado pela usuária no **núcleo que funciona** (criar/aprovar/cancelar) + o **grid com listagem real** (paginada/filtrada) — o DTO da lista ainda é **fino** (colunas reduzidas) até o backend [core-api#47](https://github.com/ERP-Bem-Comum/core-api/issues/47).
+
+> **Atualização 2026-06-16 (reconciliação Fatia 1 → Fatia 2):** o backend avançou de #38/Fatia 1 para **#57/Fatia 2**. Mudou: (1) `GET /documents` deixou de ser stub vazio — é **listagem real paginada e filtrada**; (2) o **optimistic lock passou a ser exigido** (409 `document-version-conflict`) em ajustar/aprovar/desfazer (cancelamento ainda não — [core-api#55](https://github.com/ERP-Bem-Comum/core-api/issues/55)); (3) existe `GET /:id/timeline`. **Não mudou:** o DTO de detalhe e o da lista seguem **finos** ([#47](https://github.com/ERP-Bem-Comum/core-api/issues/47)/[#48](https://github.com/ERP-Bem-Comum/core-api/issues/48) abertos).
 
 ## User Scenarios & Testing _(mandatory)_
 
@@ -32,13 +34,13 @@ Como **operador financeiro**, quero registrar um documento fiscal (NFS-e, RPA, F
 
 Como **usuário do Financeiro**, quero acessar Financeiro → Contas a Pagar e ver a tela de listagem (grid) como ponto de entrada, com o botão "Novo documento", para navegar ao lançamento.
 
-**Why this priority**: É o shell de navegação e a porta de entrada do US1. Tem valor de orientação mesmo antes de a listagem real existir, mas depende de backend que ainda não retorna dados (Fatia 1).
+**Why this priority**: É a porta de entrada do submódulo e o lugar onde os documentos lançados no US1 aparecem. Com a **Fatia 2** o backend retorna **lista real** (paginada/filtrada) — o grid passa a exibir os documentos criados, não só um shell.
 
-**Independent Test**: Navegar pelo menu até Contas a Pagar e ver o grid renderizado com suas colunas e um **estado vazio** honesto, além do botão "Novo documento" que leva à página de lançamento.
+**Independent Test**: Navegar pelo menu até Contas a Pagar e ver o grid renderizado com suas colunas, listando os documentos existentes (paginado); com a base vazia, um **estado vazio** honesto. O botão "Novo documento" leva à página de lançamento.
 
 **Acceptance Scenarios**:
 
-1. **Given** um usuário autenticado com permissão de leitura, **When** acessa Financeiro → Contas a Pagar, **Then** vê o grid com cabeçalhos de coluna e, como o backend ainda não retorna registros, um **estado vazio** ("nenhum documento") — **não** uma mensagem de erro.
+1. **Given** um usuário autenticado com permissão de leitura e documentos cadastrados, **When** acessa Financeiro → Contas a Pagar, **Then** vê o grid **listando os documentos** (colunas finas do DTO atual: tipo, número, fornecedor, líquido, vencimento, situação), paginado; com a base vazia, vê um **estado vazio** ("nenhum documento") — **nunca** uma mensagem de erro.
 2. **Given** o grid aberto, **When** clica em "Novo documento", **Then** é direcionado à página "Lançar Documento".
 3. **Given** um usuário **sem** permissão de leitura do financeiro, **When** tenta acessar, **Then** vê uma mensagem de acesso negado (sem expor detalhe técnico).
 
@@ -69,7 +71,7 @@ Como **aprovador financeiro**, quero aprovar, desfazer aprovação, ajustar ou c
 - **Retenção em tipo não permitido** (qualquer tipo ≠ NFS-e/RPA): bloqueio na UI (bloco indisponível) e, em última instância, mensagem do backend.
 - **Transição inválida** (ex.: aprovar um já aprovado, cancelar um aprovado, ajustar um não-aberto): mensagem "operação não permitida para o estado atual".
 - **Documento inexistente** (id inválido): mensagem "documento não encontrado".
-- **Grid sem dados** (backend stub na Fatia 1): **estado vazio**, nunca erro.
+- **Grid sem documentos** (base vazia): **estado vazio**, nunca erro.
 - **Sessão expirada / sem permissão**: redirecionamento de login / mensagem de acesso negado, conforme a cadeia padrão.
 - **Falha de conectividade/servidor**: mensagem amigável de indisponibilidade temporária, sem expor detalhe interno.
 
@@ -78,7 +80,7 @@ Como **aprovador financeiro**, quero aprovar, desfazer aprovação, ajustar ou c
 ### Functional Requirements
 
 - **FR-001**: O sistema MUST oferecer navegação Menu → Financeiro → Contas a Pagar, abrindo o **grid** como tela inicial do submódulo.
-- **FR-002**: O grid MUST apresentar colunas para os dados de listagem do documento (identificação/número, tipo, fornecedor, valor líquido, vencimento, situação) e um **estado vazio** explícito enquanto o backend não retornar registros (Fatia 1). Não pode tratar lista vazia como erro.
+- **FR-002**: O grid MUST listar os documentos retornados pelo backend (Fatia 2: **lista real, paginada**) com colunas para os dados do DTO atual (identificação/número, tipo, fornecedor, valor líquido, vencimento, situação) e um **estado vazio** explícito quando não houver registros. Não pode tratar lista vazia como erro. As colunas adicionais do design (Contrato, Forma de Pagamento, Emissão, Bruto) dependem do enriquecimento do DTO ([core-api#47](https://github.com/ERP-Bem-Comum/core-api/issues/47)) e ficam **gated** até lá.
 - **FR-003**: O grid MUST oferecer a ação "Novo documento", que direciona à página "Lançar Documento".
 - **FR-004**: A página "Lançar Documento" MUST permitir informar (v1, entrada manual): tipo do documento, número/série, fornecedor, forma de pagamento, valor bruto, retenções (ISS/IRRF/INSS/PIS/COFINS/CSLL — agregadas para envio), impostos registrados (CBS/IBS…, leitura), data de vencimento e descrição. A **categorização** (categoria/programa/plano/centro de custo) é exibida **read-only herdada do contrato vinculado** (não é entrada livre).
 - **FR-005**: O sistema MUST aceitar valores monetários em reais na entrada e tratá-los com a precisão exigida pelo backend (inteiros em centavos), e alíquotas de retenção como percentual, convertendo para a unidade do backend (basis points).
@@ -97,7 +99,7 @@ Como **aprovador financeiro**, quero aprovar, desfazer aprovação, ajustar ou c
 ### Key Entities _(include if feature involves data)_
 
 - **Documento Fiscal**: o fato gerador da conta a pagar. Atributos: tipo (NFS-e, DANFE, RPA, Fatura, Boleto, Recibo, Imposto), número/série, fornecedor, vínculos opcionais (contrato/programa/plano/categoria), forma de pagamento, valor bruto e componentes (descontos na fonte, descontos, multa, juros), retenções, impostos registrados, vencimento, descrição, **situação** (Rascunho, Aberto, Aprovado) e **valor líquido** calculado.
-- **Título (a pagar)**: obrigação financeira gerada do documento. Dois tipos: **pai** (1 por documento, valor = líquido) e **filho** (1 por retenção retida; **CSRF agrega PIS+COFINS+CSLL**). Situação-alvo com 7 estados (Rascunho, Aberto, Aprovado, Transmitido, Recusado, Pago, Conciliado) — **só 3 vivos na Fatia 1**. Não é parcelamento.
+- **Título (a pagar)**: obrigação financeira gerada do documento. Dois tipos: **pai** (1 por documento, valor = líquido) e **filho** (1 por retenção retida; **CSRF agrega PIS+COFINS+CSLL**). Situação-alvo com 7 estados (Rascunho, Aberto, Aprovado, Transmitido, Recusado, Pago, Conciliado) — **só 3 vivos no backend atual** (Rascunho/Aberto/Aprovado). Não é parcelamento.
 - **Retenção**: imposto que **abate do líquido e gera título filho**. Tipos: ISS, IRRF, INSS, CSRF. Atributos: base, alíquota, valor.
 - **Imposto registrado**: imposto apenas **registrado** (não abate do líquido nem gera filho). Tipos: ICMS, IPI, PIS, COFINS, CBS, IBS Municipal, IBS Estadual.
 
@@ -109,7 +111,7 @@ Como **aprovador financeiro**, quero aprovar, desfazer aprovação, ajustar ou c
 - **SC-002**: **100%** dos erros de negócio (líquido não positivo, retenção indevida, transição inválida, documento incompleto, não encontrado, sem permissão) aparecem como **mensagem compreensível**, sem nenhum código HTTP ou texto técnico visível.
 - **SC-003**: O bloco de retenções aparece **somente** para NFS-e e RPA em **100%** dos casos.
 - **SC-004**: A separação de funções é respeitada: um usuário sem permissão de aprovação **nunca** consegue aprovar/desfazer (ação ausente da UI e recusada na borda).
-- **SC-005**: Acessar o submódulo com a lista vazia nunca produz erro — o usuário vê um **estado vazio** orientativo em **100%** dos acessos enquanto o backend estiver em Fatia 1.
+- **SC-005**: Acessar o submódulo com a base vazia nunca produz erro — o usuário vê um **estado vazio** orientativo em **100%** desses acessos; havendo documentos, o grid os **lista** (paginado).
 - **SC-006**: A prévia do valor líquido exibida na UI coincide com o líquido calculado pelo backend para os mesmos dados.
 
 ## Impacto Arquitetural (front v2) _(adaptado do core-api → este é o repo de frontend)_
@@ -120,36 +122,36 @@ Como **aprovador financeiro**, quero aprovar, desfazer aprovação, ajustar ou c
 - **Fronteira única**: o browser nunca fala com o core-api direto — só via **server functions (BFF)**. Validação Zod no input da server fn **e** no response do core-api.
 - **Erros como valores** (`Result`), sem `throw` fora da borda; `QueryError` só na ponte com o TanStack Query. Cadeia de erro slug → `AppError.kind` → tag i18n.
 - **Design system tokens-only** (`vars.*`), **strings de UI = i18n**, server-state no TanStack Query e UI-state em máquina de estado.
-- **Backend**: nenhum novo agregado/evento/CLI no core-api. Dependência do contrato `/api/v2/financial` **como está na Fatia 1** (ver Assumptions).
+- **Backend**: nenhum novo agregado/evento/CLI no core-api. Dependência do contrato `/api/v2/financial` **como está na Fatia 2 (#57)** (ver Assumptions).
 
 ## Assumptions
 
 - **Fonte de verdade**: o modelo é regido pela **documentação revisada do módulo** em `core-api/specs/FIN-DOCUMENTO-INGESTAO/` (`domain.md`, `data-model.md`, `contracts/`) **e** pelo código real (`core-api/src/modules/financial/`). Onde o **design (mock/Figma)** for além disso, backend + documentação **vencem**.
 - **Títulos = Pai + Filhos-por-retenção (SEM parcelamento)** — confirmado no `domain.md` (R4/R8): o documento gera **1 título pai (líquido) + 1 filho por retenção**; **CSRF agrega PIS+COFINS+CSLL num único filho**. NFS-e → pai + até 4 filhos (ISS, IRRF, INSS, CSRF); RPA → pai + 3 (IRRF, INSS, CSRF); demais tipos → só o pai. O "Parcela 1/3…" do mock **não é parcelamento** — leia-se como os títulos filhos (impostos retidos).
-- **Documentação = visão-alvo; código Fatia 1 = subconjunto disponível**: a doc/design descrevem o modelo completo (7 status, categorização rica, OCR/divergências, drawer). A **Fatia 1** entrega só criar/ajustar/aprovar/desfazer/cancelar + detalhe-por-id; **lista é stub**, **DTO fino**, **3 status vivos** (Rascunho/Aberto/Aprovado). O front v1 constrói contra a Fatia 1, com os **tipos modelados rumo ao alvo** (crescem sem reescrita).
-- **Colunas do grid são legítimas, mas a lista não as expõe ainda**: as colunas do design (Tipo, Documento+série, Fornecedor+CNPJ, Contrato, Forma Pag., Emissão, Vencimento, Bruto, Líquido, Status) existem no **data-model documentado** (`fin_documentos`), mas o **DTO da lista na Fatia 1 é fino** (só id/status/número/tipo/supplierRef/líquido/vencimento). → **ticket de backend `FIN-LIST-DTO`** (enriquecer a lista) para a Fatia 2; até lá, grid = shell + estado vazio.
-- **Backend em "Fatia 1" (Document-cêntrico)** — fronteiras de escopo aceitas pela usuária:
-  - A **listagem** (`GET /financial/documents`) é **stub** e retorna vazio: o grid é só o shell + estado vazio nesta versão; a listagem real chega na Fatia 2 do backend.
+- **Documentação = visão-alvo; código Fatia 2 = subconjunto disponível**: a doc/design descrevem o modelo completo (7 status, categorização rica, OCR/divergências, drawer). A **Fatia 2 (#57)** entrega criar/ajustar/aprovar/desfazer/cancelar + detalhe-por-id + **listagem real (paginada/filtrada)** + timeline; **DTO de lista e de detalhe ainda finos**, **3 status vivos** (Rascunho/Aberto/Aprovado). O front v1 constrói contra a Fatia 2, com os **tipos modelados rumo ao alvo** (crescem sem reescrita).
+- **Colunas do grid: parte já vem da lista, parte ainda não**: as colunas do design (Tipo, Documento+série, Fornecedor+CNPJ, Contrato, Forma Pag., Emissão, Vencimento, Bruto, Líquido, Status) existem no **data-model documentado** (`fin_documentos`), mas o **DTO da lista na Fatia 2 ainda é fino** (só id/status/número/tipo/supplierRef/líquido/vencimento). → o grid **lista de verdade** com essas colunas; as demais (Contrato, Forma Pag., Emissão, Bruto) ficam **gated** até **`FIN-LIST-DTO`** ([core-api#47](https://github.com/ERP-Bem-Comum/core-api/issues/47), **aberto**).
+- **Backend em "Fatia 2" (Document-cêntrico, #57)** — fronteiras de escopo aceitas pela usuária:
+  - A **listagem** (`GET /financial/documents`) é **real**: paginada, filtrável (status/supplierRef/type/dueFrom/dueTo) e com ordenação estável. O grid lista os documentos; sem registros → estado vazio. **Busca textual e contadores por aba de status** seguem fora do v1 (não confirmados no contrato).
   - **Não há rota de "enviar rascunho"** e o cadastro exige os campos principais mesmo como rascunho → **rascunho/autosave parcial fica fora do v1**.
-  - **Controle de concorrência (optimistic lock)** não é aplicado pelo backend (o campo de versão é exigido mas não verificado) → o front envia o exigido, mas não promete detecção de conflito.
-  - O **detalhe** retornado é enxuto (não traz séries, vínculos, componentes de valor detalhados, nem quem/quando aprovou) → a tela de detalhe exibe o que o contrato fornece hoje.
+  - **Controle de concorrência (optimistic lock) AGORA é aplicado** pelo backend em ajustar/aprovar/desfazer (`UPDATE … WHERE version=?` → 409 `document-version-conflict`). O **cancelamento ainda não** exige a versão ([core-api#55](https://github.com/ERP-Bem-Comum/core-api/issues/55), aberto). → o front MUST tratar o conflito de versão como erro de negócio (tag i18n própria), oferecendo recarregar o documento.
+  - O **detalhe** retornado segue **enxuto** (não traz séries, vínculos contract/budget/category/program, componentes de valor detalhados, retenções/impostos por série, nem quem/quando aprovou — [core-api#48](https://github.com/ERP-Bem-Comum/core-api/issues/48)) → a tela de detalhe exibe o que o contrato fornece hoje.
 - **Telas prontas**: o **grid** e a **página de lançamento** já existem como design e serão fornecidos na fase de UI; a área/tela de **detalhe** que hospeda as ações de ciclo de vida (US3) também terá design a fornecer.
 - **Seleção de fornecedor**: o fornecedor (obrigatório) é escolhido a partir dos dados já existentes de Parceiros/Fornecedores (picker via `#modules/partners`).
 - **Categorização é HERDADA do contrato** (não são selects livres): **categoria, programa, plano orçamentário e centro de custo** vêm do **contrato vinculado** ao documento (o contrato do fornecedor). O operador vincula um **contrato**; a categorização é exibida **read-only**, derivada dele. Dependências: o contrato precisa **expor** esses metadados (relaciona-se a `CTR-NUMBER-PROGRAM`) e o create precisa **derivá-los do `contractRef`** (`FIN-CREATE-DTO`). Sem isso, a seção fica gated.
-- **Form do design é OCR-first; v1 é manual.** O mock pré-preenche campos a partir de um PDF (OCR), com painel de validação/divergência e alçada de aprovação — **nada disso existe na Fatia 1**. O **v1 é um form de entrada manual** (sem upload/preview de PDF).
+- **Form do design é OCR-first; v1 é manual.** O mock pré-preenche campos a partir de um PDF (OCR), com painel de validação/divergência e alçada de aprovação — **nada disso existe no backend atual**. O **v1 é um form de entrada manual** (sem upload/preview de PDF).
 - **Retenções: 6 inputs → 1 CSRF.** O form coleta ISS, IRRF, INSS, **PIS, COFINS, CSLL** separadamente, mas o backend só aceita `retentions[].type ∈ {ISS, IRRF, INSS, CSRF}` — o front **agrega PIS+COFINS+CSLL num único `CSRF`** (valor = soma) antes de enviar (R8 do `domain.md`). O preview "Títulos Previstos" mostra pai + ISS/IRRF/INSS/**CSRF**.
-- **create da Fatia 1 não aceita** `competência`, `emissão` (data de emissão) nem `conta de débito` — embora o `data-model` documentado os preveja → **gated** + ticket `FIN-CREATE-DTO`.
+- **o create do backend atual não aceita** `competência`, `emissão` (data de emissão) nem `conta de débito` — embora o `data-model` documentado os preveja → **gated** + ticket `FIN-CREATE-DTO` ([core-api#48](https://github.com/ERP-Bem-Comum/core-api/issues/48), aberto).
 - **Localização**: moeda em BRL e textos em pt-BR; datas exibidas no fuso local, trafegadas como data simples (sem hora).
-- **Estados reservados** (Transmitido, Recusado, Pago, Conciliado) existem no domínio do backend mas **não** têm transição na Fatia 1 → **fora** do v1 (são de Conciliação/pagamento, outro submódulo).
+- **Estados reservados** (Transmitido, Recusado, Pago, Conciliado) existem no domínio do backend mas **não** têm transição no backend atual → **fora** do v1 (são de Conciliação/pagamento, outro submódulo).
 
 ### Fora de escopo (v1)
 
 - Submódulos **Contas a Receber** (legado) e **Conciliação**.
-- Listagem com dados reais, filtros e paginação efetivos (dependem da Fatia 2 do backend + `FIN-LIST-DTO`).
+- **Colunas ricas do grid** (Contrato, Forma de Pagamento, Emissão, Bruto) — dependem do enriquecimento do DTO da lista (`FIN-LIST-DTO`, [core-api#47](https://github.com/ERP-Bem-Comum/core-api/issues/47) aberto). _(A listagem real, paginação e filtros básicos saíram do "fora de escopo" — chegaram na Fatia 2.)_
 - **"Filtro Adicionar" + "Visões Salvas"** — por decisão da usuária, são a **última coisa de todo o módulo** (depois de Contas a Pagar/Receber/Conciliação).
-- **Busca, ordenação e contadores das abas de status** (Todos/Rascunho/Em Aberto/Aprovado/Pago) — dependem da lista real (Fatia 2).
+- **Busca textual e contadores das abas de status** (Todos/Rascunho/Em Aberto/Aprovado/Pago) — não confirmados no contrato da Fatia 2 (que oferece filtros por status/fornecedor/tipo/vencimento, não busca textual nem agregação por aba).
 - **Seleção em massa + "Mudar Status" em lote + "Exportar" (PDF/CSV/CNAB)** — Fatia 2+ (sem endpoint de lote nem export; CNAB depende de remessa bancária).
-- **Corpo do Drawer de detalhes** ("onda 2", marcado pelo próprio design) e as **ações de ciclo de vida (US3) hospedadas nele** — o backend suporta aprovar/cancelar/ajustar, mas a superfície de UI desce junto com o drawer; no v1 entra grid shell + Lançar Documento.
+- **Corpo do Drawer de detalhes** ("onda 2", marcado pelo próprio design) e as **ações de ciclo de vida (US3) hospedadas nele** — o backend suporta aprovar/cancelar/ajustar, mas a superfície de UI desce junto com o drawer; no v1 entra o **grid (lista real)** + Lançar Documento.
 - Fluxo de rascunho → envio (sem rota de submit), autosave, e edição rica de detalhe.
-- **Lançar Documento — gated no v1** (no design, sem backend na Fatia 1): painel **PDF + OCR** (preview, badges de origem); painel de **Validação/Divergência** (`MotorRetencoes`/`fin_divergencias`) + modal de divergência; **Aprovador + alçada**; **conta de débito** + dados bancários do fornecedor; **competência** e **emissão**; **autosave / "Salvar rascunho"**; **categorização editável** (é herdada do contrato, read-only).
+- **Lançar Documento — gated no v1** (no design, sem backend no atual): painel **PDF + OCR** (preview, badges de origem); painel de **Validação/Divergência** (`MotorRetencoes`/`fin_divergencias`) + modal de divergência; **Aprovador + alçada**; **conta de débito** + dados bancários do fornecedor; **competência** e **emissão**; **autosave / "Salvar rascunho"**; **categorização editável** (é herdada do contrato, read-only).
 - Fluxos de pagamento/baixa/transmissão/conciliação (estados reservados Transmitido/Recusado/Pago/Conciliado).

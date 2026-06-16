@@ -6,7 +6,7 @@
 
 ## Summary
 
-Criar o submódulo **Contas a Pagar** como **novo módulo vertical** `src/modules/financial/`, espelhando a feature-modelo `src/modules/auth/`. Duas superfícies de UI no v1: **Grid de Contas a Pagar** (shell de entrada + estado vazio — a lista do backend é stub na Fatia 1) e **Lançar Documento** (form que cria um documento fiscal `Open` via `POST /api/v2/financial/documents`; o backend gera 1 título pai + 1 filho por retenção). As server functions de ciclo de vida (ajustar/aprovar/desfazer/cancelar) entram na camada server+client, mas a **superfície de UI** dessas ações desce com o **drawer (onda 2)** — fora do v1. Consome `/api/v2/financial` (Fatia 1). **Zero mudança no core-api** (gap `FIN-LIST-DTO` fica como handoff).
+Criar o submódulo **Contas a Pagar** como **novo módulo vertical** `src/modules/financial/`, espelhando a feature-modelo `src/modules/auth/`. Duas superfícies de UI no v1: **Grid de Contas a Pagar** (entrada — **lista real paginada** na Fatia 2; estado vazio é fallback) e **Lançar Documento** (form que cria um documento fiscal `Open` via `POST /api/v2/financial/documents`; o backend gera 1 título pai + 1 filho por retenção). As server functions de ciclo de vida (ajustar/aprovar/desfazer/cancelar) entram na camada server+client, mas a **superfície de UI** dessas ações desce com o **drawer (onda 2)** — fora do v1. Consome `/api/v2/financial` (**Fatia 2, #57**). **Zero mudança no core-api** (gap `FIN-LIST-DTO`/[#47](https://github.com/ERP-Bem-Comum/core-api/issues/47) fica como handoff: lista real mas DTO fino).
 
 ## Technical Context
 
@@ -18,8 +18,8 @@ Criar o submódulo **Contas a Pagar** como **novo módulo vertical** `src/module
 **Project Type**: Web app (front + BFF) — módulo vertical novo
 **Performance Goals**: interações percebidas como instantâneas; grid preparado para paginação server-side (quando a Fatia 2 entregar a lista)
 **Constraints**: token nunca no browser (§IX); design system só-tokens (§X); strings i18n; errors-as-values (§II); a UI nunca olha status HTTP (§V)
-**Scale/Scope**: v1 ≈ 2 telas (grid + lançar) · 7 server fns (5 que funcionam + list stub + get) · ações de ciclo de vida na camada server/client
-**NEEDS CLARIFICATION**: nenhum bloqueante — contrato da Fatia 1 mapeado e fonte de verdade (`core-api/specs/FIN-DOCUMENTO-INGESTAO`) lida. Itens fora do contrato atual estão explicitamente deferidos na spec.
+**Scale/Scope**: v1 ≈ 2 telas (grid + lançar) · 7 server fns (todas reais na Fatia 2: list paginada/filtrada + get + 5 de ciclo) · ações de ciclo de vida na camada server/client
+**NEEDS CLARIFICATION**: nenhum bloqueante — contrato da **Fatia 2 (#57)** mapeado e fonte de verdade (`core-api/specs/FIN-DOCUMENTO-INGESTAO`) lida. Itens fora do contrato atual estão explicitamente deferidos na spec.
 
 ## Constitution Check
 
@@ -74,7 +74,7 @@ src/modules/financial/
 │       │   ├── core-api-financial.ts # cliente HTTP /api/v2/financial; mapHttpError; mappers API→model
 │       │   └── financial.schema.ts   # Zod RESPONSE (CoreApiDocument, CoreApiPayable, CoreApiDocumentList)
 │       └── server-fns/
-│           ├── list-documents.query.fn.ts       # GET /documents (stub → vazio)
+│           ├── list-documents.query.fn.ts       # GET /documents (lista real paginada/filtrada)
 │           ├── get-document.query.fn.ts          # GET /documents/:id
 │           ├── create-document.service.fn.ts     # POST /documents (asDraft:false)
 │           ├── adjust-document.service.fn.ts      # PATCH /documents/:id
@@ -118,7 +118,7 @@ tests/modules/financial/    # espelha src (../server/... .test.ts puros; ../clie
 ## Faseamento dentro do v1 (ondas)
 
 - **Onda 1a — Server + dados (sem UI):** scaffold do módulo; `document.io.ts` + `money` + schemas Zod (input/response); `core-api-financial.ts` (7 chamadas, mappers, mapHttpError); use-cases + composition; server fns; repository + error-tag. **Testes puros primeiro (RED→GREEN):** money reais↔centavos, mappers API→model, view-model do grid (empty/ready), `financialErrorTag` exaustivo, `document-form.view` (preview do líquido + gating de retenção NFS-e/RPA).
-- **Onda 1b — Grid (shell + estado vazio):** `contas-a-pagar` query/view-model/binding/page + componentes; ligado ao `list-documents.query.fn` (devolve vazio → estado vazio honesto); chips de status e colunas renderizados (sem filtrar/contar — sem backend); botão "Novo Documento" → rota de lançar. Spec DOM do grid (empty state, navegação).
+- **Onda 1b — Grid (lista real paginada):** `contas-a-pagar` query/view-model/binding/page + componentes; ligado ao `list-documents.query.fn` (**lista real, paginada/filtrada** na Fatia 2); linhas renderizadas a partir dos `items`; paginação ligada a page/pageSize; base vazia → estado vazio (fallback); chips de status como chrome (sem contadores por aba no v1); botão "Novo Documento" → rota de lançar. Spec DOM do grid (lista + paginação + empty fallback + navegação).
 - **Onda 1c — Lançar Documento:** `document-form.controller` + `create-document.mutation/binding` + page/componentes; preview do líquido; bloco de retenções só p/ NFS-e/RPA; fornecedor via dados de Parceiros/Fornecedores; submit → `create-document.service.fn`. Spec DOM do form (validações, gating, onSubmit com centavos/bps).
 - **Onda 2 (fora do v1):** drawer de detalhes + ações de ciclo de vida na UI (aprovar/desfazer/ajustar/cancelar), seleção em massa, export, filtro/visões. As server fns já estarão prontas desde a Onda 1a.
 
@@ -128,7 +128,7 @@ tests/modules/financial/    # espelha src (../server/... .test.ts puros; ../clie
 
 ## Contrato HTTP (Fase 2+)
 
-**N/A — consome** o `/api/v2/financial` já existente (Fatia 1). Nenhum endpoint novo no core-api. Handoff aberto: `FIN-LIST-DTO` (enriquecer o DTO da lista) — registrar em `handbook/core-api/tickets/`.
+**N/A — consome** o `/api/v2/financial` já existente (**Fatia 2, #57**). Nenhum endpoint novo no core-api. Handoffs abertos como GitHub issues: `FIN-LIST-DTO` ([#47](https://github.com/ERP-Bem-Comum/core-api/issues/47), enriquecer DTO da lista) e `FIN-CREATE-DTO` ([#48](https://github.com/ERP-Bem-Comum/core-api/issues/48)).
 
 ## Estimativa de Pipeline (W0 size)
 
