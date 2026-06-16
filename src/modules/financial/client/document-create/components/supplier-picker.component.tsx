@@ -1,37 +1,40 @@
 /**
- * Hero do fornecedor com picker buscável (Lançar Documento) — view BURRA (§XI). Espelha o UX de busca de
- * parceiro de Contratos: botão "Alterar fornecedor" abre um dropdown com TODOS os parceiros cadastrados
- * (Fornecedor/Financiador/Ato), filtrável por nome/CNPJ. Recebe estado e dados por props; sem hooks de dado.
+ * Hero do fornecedor com picker buscável (Lançar Documento) — view BURRA (§XI). Mantém o MESMO padrão
+ * visual do "Contratado" de Contratos (módulos reformados compartilham padrão): item do dropdown =
+ * `AvatarLabel` (avatar colorido por tipo + "Nome · Tipo"); selecionado = overline + badge "PJ · TIPO"
+ * (cores `partnerType.*`) + nome + CNPJ mascarado. Recebe estado/dados por props; sem hooks de dado.
  *
- * No futuro o OCR auto-identifica o fornecedor pela leitura do documento (chrome — issue #89); aqui é a
- * via MANUAL. ⚠️ supplierRef hoje só aceita Fornecedor no core-api (não-fornecedor → erro ao salvar).
+ * No futuro o OCR auto-identifica o fornecedor (chrome — issue #89); aqui é a via MANUAL.
+ * ⚠️ supplierRef hoje só aceita Fornecedor no core-api (não-fornecedor → erro ao salvar — issue #90).
  */
 import type { ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { initialsFrom } from '#shared/ui/index.ts'
+import { AvatarLabel, initialsFrom } from '#shared/ui/index.ts'
 
-import { filterPartners, partnerKindTag, type PartnerOption } from '../document-form.view.ts'
+import {
+  filterPartners,
+  partnerKindTag,
+  maskCnpj,
+  isCnpj,
+  type PartnerOption,
+} from '../document-form.view.ts'
 import {
   hero,
   heroInfo,
   heroOverline,
   heroName,
   heroCnpj,
+  heroBadgeRow,
   heroAlter,
+  partnerBadge,
   pickerWrap,
   pickerBackdrop,
   pickerDropdown,
   pickerSearch,
   pickerItem,
-  pickerItemSelected,
-  pickerAvatar,
-  pickerItemInfo,
-  pickerItemName,
-  pickerItemCnpj,
   pickerEmpty,
-  kindBadge,
 } from '../page/lancar-documento.css.ts'
 
 const t = createTranslator(ptBR)
@@ -54,13 +57,25 @@ export function SupplierPicker(props: SupplierPickerProps): ReactNode {
   return (
     <div className={hero}>
       <div className={heroInfo}>
-        <span className={heroOverline}>
-          {selected !== null ? t(partnerKindTag(selected.kind)) : t('financial.create.hero.overline')}
-        </span>
+        <div className={heroBadgeRow}>
+          <span className={heroOverline}>{t('financial.create.hero.overline')}</span>
+          {selected !== null ? (
+            <span className={partnerBadge[selected.kind]}>
+              {isCnpj(selected.subtitle) ? `${t('financial.create.partner.pj')} · ` : ''}
+              {t(partnerKindTag(selected.kind))}
+            </span>
+          ) : null}
+        </div>
         <span className={heroName}>
           {selected !== null ? selected.name : t('financial.create.hero.placeholder')}
         </span>
-        {selected !== null ? <span className={heroCnpj}>{selected.subtitle}</span> : null}
+        {selected !== null ? (
+          <span className={heroCnpj}>
+            {isCnpj(selected.subtitle)
+              ? `${t('financial.create.partner.cnpjLabel')} ${maskCnpj(selected.subtitle)}`
+              : selected.subtitle}
+          </span>
+        ) : null}
       </div>
 
       <div className={pickerWrap}>
@@ -96,19 +111,16 @@ export function SupplierPicker(props: SupplierPickerProps): ReactNode {
                     key={p.id}
                     role="option"
                     aria-selected={selected?.id === p.id}
-                    className={`${pickerItem} ${selected?.id === p.id ? pickerItemSelected : ''}`}
+                    className={pickerItem}
                     onClick={() => {
                       props.onSelect(p.id)
                     }}
                   >
-                    <span className={pickerAvatar} aria-hidden="true">
-                      {initialsFrom(p.name)}
-                    </span>
-                    <span className={pickerItemInfo}>
-                      <span className={pickerItemName}>{p.name}</span>
-                      <span className={pickerItemCnpj}>{p.subtitle}</span>
-                    </span>
-                    <span className={kindBadge.blue}>{t(partnerKindTag(p.kind))}</span>
+                    <AvatarLabel
+                      initials={initialsFrom(p.name)}
+                      variant={p.kind}
+                      text={`${p.name} · ${t(partnerKindTag(p.kind))}`}
+                    />
                   </button>
                 ))
               )}

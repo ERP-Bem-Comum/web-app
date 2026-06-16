@@ -109,8 +109,40 @@ export const heroName = style({
 })
 export const heroCnpj = style({
   fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink5,
+})
+// Linha overline + badge de tipo (mesmo padrão do "Contratado selecionado" de contratos).
+export const heroBadgeRow = style({ display: 'flex', alignItems: 'center', gap: vars.space.sm })
+// Badge de TIPO de parceiro — cores por `color.partnerType.*` (idênticas às de contratos).
+const partnerBadgeBase = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  paddingBlock: '0.1875rem',
+  paddingInline: vars.space.sm,
+  borderRadius: vars.radius.md,
+  fontFamily: vars.font.family.heading,
   fontSize: vars.font.size['2xs'],
-  color: vars.color.institutional.ink4,
+  fontWeight: vars.font.weight.semibold,
+  letterSpacing: '0.04em',
+  textTransform: 'uppercase',
+  lineHeight: 1.2,
+  whiteSpace: 'nowrap',
+} as const
+export const partnerBadge = styleVariants({
+  supplier: [
+    partnerBadgeBase,
+    { color: vars.color.partnerType.supplier.text, background: vars.color.partnerType.supplier.background },
+  ],
+  financier: [
+    partnerBadgeBase,
+    { color: vars.color.partnerType.financier.text, background: vars.color.partnerType.financier.background },
+  ],
+  act: [
+    partnerBadgeBase,
+    { color: vars.color.partnerType.act.text, background: vars.color.partnerType.act.background },
+  ],
 })
 export const heroAlter = style({
   alignSelf: 'center',
@@ -195,41 +227,6 @@ export const pickerItem = style({
   ':hover': { background: vars.color.institutional.blueBg },
 })
 export const pickerItemSelected = style({ background: vars.color.institutional.blueBg })
-export const pickerAvatar = style({
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  inlineSize: '2rem',
-  blockSize: '2rem',
-  flexShrink: 0,
-  borderRadius: '50%',
-  background: vars.color.institutional.blueBg,
-  color: vars.color.institutional.blueDeep,
-  fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size['2xs'],
-  fontWeight: vars.font.weight.bold,
-})
-export const pickerItemInfo = style({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '0.125rem',
-  flex: 1,
-  minInlineSize: 0,
-})
-export const pickerItemName = style({
-  fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.xs,
-  fontWeight: vars.font.weight.semibold,
-  color: vars.color.institutional.ink2,
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-})
-export const pickerItemCnpj = style({
-  fontFamily: vars.font.family.mono,
-  fontSize: vars.font.size['2xs'],
-  color: vars.color.institutional.ink4,
-})
 export const pickerEmpty = style({
   padding: vars.space.sm,
   fontSize: vars.font.size.xs,

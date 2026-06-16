@@ -30,6 +30,15 @@ export type PartnerOption = Readonly<{ id: string; name: string; subtitle: strin
 /** Rótulo i18n do tipo de parceiro. */
 export const partnerKindTag = (kind: PartnerKind): string => `financial.create.partner.kind.${kind}`
 
+/** 14 dígitos → CNPJ mascarado (xx.xxx.xxx/xxxx-xx); senão devolve como veio (ex.: nº de ato). */
+export const maskCnpj = (value: string): string => {
+  const d = value.replace(/\D/g, '')
+  if (d.length !== 14) return value
+  return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12, 14)}`
+}
+/** Parceiro é PJ quando o subtítulo é um CNPJ (14 dígitos). */
+export const isCnpj = (value: string): boolean => value.replace(/\D/g, '').length === 14
+
 /** Filtro PURO do picker: casa por nome ou subtítulo (CNPJ/nº) — case-insensitive, ignora pontuação. */
 export const filterPartners = (
   options: readonly PartnerOption[],

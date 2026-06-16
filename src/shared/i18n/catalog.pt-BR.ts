@@ -972,6 +972,8 @@ export const ptBR: Catalog = {
   'financial.create.partner.search': 'Buscar por nome ou CNPJ…',
   'financial.create.partner.empty': 'Nenhum parceiro encontrado',
   'financial.create.partner.close': 'Fechar',
+  'financial.create.partner.pj': 'PJ',
+  'financial.create.partner.cnpjLabel': 'CNPJ',
   'financial.create.hero.placeholder': 'Selecione o fornecedor',
   'financial.create.hero.change': 'Alterar fornecedor',
   'financial.create.submit': 'Salvar Documento',
