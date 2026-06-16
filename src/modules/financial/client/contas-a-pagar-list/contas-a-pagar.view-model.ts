@@ -1,8 +1,8 @@
 /**
  * Derivação PURA do grid de Contas a Pagar (§XI: lógica fora da view; sem React). Mapeia a lista REAL
- * da Fatia 2 (`DocumentListResponse`) → estado da tela (loading/empty/error/ready) + linhas + paginação.
- * DTO ainda fino (FIN-LIST-DTO #47): colunas Tipo/Documento/Fornecedor/Vencimento/Líquido/Status; as
- * ricas (Contrato/Forma Pag./Emissão/Bruto) ficam gated. Money via `data/money`; erro → tag i18n.
+ * (`DocumentListResponse`) → estado da tela (loading/empty/error/ready) + linhas + paginação. DTO
+ * enriquecido pela 012/#47: Tipo/Documento/Fornecedor/Contrato/Forma/Vencimento/Bruto/Líquido/Status +
+ * version. (Só `Emissão` segue gated — depende do detalhe, core-api#95.) Money via `data/money`.
  */
 import type { Result } from '#shared/primitives/result.ts'
 import { centsToBRL } from '#modules/financial/client/data/money.ts'
