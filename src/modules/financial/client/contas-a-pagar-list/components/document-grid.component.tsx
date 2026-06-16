@@ -7,6 +7,7 @@ import type { ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
+import { AvatarLabel, initialsFrom } from '#shared/ui/index.ts'
 
 import { COLUMNS, type ListState, type DocumentStatus } from '../contas-a-pagar.view-model.ts'
 import {
@@ -19,12 +20,15 @@ import {
   cell,
   cellMutedDoc,
   cellNet,
+  typeBadge,
   statusBadge,
   statusVariant,
   placeholder,
   placeholderTitle,
   errorBanner,
 } from '../page/contas-a-pagar.css.ts'
+
+const DASH = '—'
 
 const t = createTranslator(ptBR)
 
@@ -74,9 +78,17 @@ export function DocumentGrid(props: DocumentGridProps): ReactNode {
               }
             }}
           >
-            <span className={cell}>{r.type}</span>
+            {r.type === DASH ? (
+              <span className={cell}>{r.type}</span>
+            ) : (
+              <span className={typeBadge}>{r.type}</span>
+            )}
             <span className={cellMutedDoc}>{r.documentNumber}</span>
-            <span className={cell}>{r.supplier}</span>
+            {r.supplier === DASH ? (
+              <span className={cell}>{r.supplier}</span>
+            ) : (
+              <AvatarLabel initials={initialsFrom(r.supplier)} variant="supplier" text={r.supplier} />
+            )}
             <span className={cell}>{r.due}</span>
             <span className={cellNet}>{r.net}</span>
             <span className={`${statusBadge} ${statusVariant[r.status]}`}>{r.status}</span>

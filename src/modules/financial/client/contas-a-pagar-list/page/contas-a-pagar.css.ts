@@ -160,8 +160,28 @@ export const row = style({
   ':last-child': { borderBlockEnd: 'none' },
 })
 export const cell = style({ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })
-export const cellMutedDoc = style([cell, { color: vars.color.institutional.ink4 }])
+export const cellMutedDoc = style([
+  cell,
+  { fontFamily: vars.font.family.mono, color: vars.color.institutional.ink4 },
+])
 export const cellNet = style({ textAlign: 'right', fontFamily: vars.font.family.mono })
+// Badge de TIPO (Figma grid): pílula azul do DS (teal→azul), 9px bold caixa-alta.
+export const typeBadge = style({
+  justifySelf: 'start',
+  display: 'inline-flex',
+  alignItems: 'center',
+  paddingBlock: '0.0625rem',
+  paddingInline: vars.space.xs,
+  borderRadius: vars.radius.sm,
+  background: vars.color.institutional.blueBg,
+  color: vars.color.institutional.blueDeep,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.bold,
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+  whiteSpace: 'nowrap',
+})
 
 // Badge de status — Figma "Badge" 9px bold caixa-alta.
 export const statusBadge = style({
