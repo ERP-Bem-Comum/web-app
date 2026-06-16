@@ -26,6 +26,7 @@ import {
   crumb,
   errorBanner,
   formCol,
+  scrollArea,
   screen,
   sidebarCol,
   tituloChild,
@@ -114,7 +115,7 @@ export function LancarDocumentoPage(): ReactNode {
       <div className={body}>
         <DocumentPreview />
 
-        <div className={formCol}>
+        <div className={`${formCol} ${scrollArea}`}>
           {/* Hero do fornecedor (Figma). v1: exibe o selecionado; "Alterar" abre o select da seção (chrome). */}
           <div className={hero}>
             <div className={heroInfo}>
@@ -137,7 +138,7 @@ export function LancarDocumentoPage(): ReactNode {
           />
         </div>
 
-        <aside className={sidebarCol}>
+        <aside className={`${sidebarCol} ${scrollArea}`}>
           <ComposicaoSidebar fields={controller.fields} supplierName={supplierName} />
         </aside>
       </div>

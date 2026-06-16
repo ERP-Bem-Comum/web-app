@@ -8,20 +8,30 @@ import { style, styleVariants } from '@vanilla-extract/css'
 
 import { vars } from '#shared/ui/tokens/index.ts'
 
+// Preenche a caixa de conteúdo do shell (que é overflow:hidden) e gerencia o próprio scroll:
+// topbar fixa · body (3 colunas que rolam) · bottombar fixa. Sem isso, a tela longa fica cortada.
 export const screen = style({
   display: 'flex',
   flexDirection: 'column',
-  gap: vars.space.lg,
   inlineSize: '100%',
+  blockSize: '100%',
+  minBlockSize: 0,
+  overflow: 'hidden',
+  background: vars.color.surface.default,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.lg,
+  boxShadow: vars.shadow.card,
 })
 
 // Topbar própria do Lançar (Figma): ← · título · breadcrumb · ✕, barra de 44px.
 export const topbar = style({
+  flexShrink: 0,
   display: 'flex',
   alignItems: 'center',
   gap: '0.875rem', // 14px
   minBlockSize: '2.75rem', // 44px
   paddingBlock: vars.space.sm,
+  paddingInline: vars.space.lg,
   borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
 })
 export const topbarBack = style({
@@ -111,10 +121,11 @@ export const heroAlter = style({
 // Layout 3-col do Figma 626-2: preview/OCR (480) · form (FILL) · sidebar (340). Colapsa por etapas:
 // abaixo de 75rem some o preview (form+sidebar); abaixo de 60rem vira coluna única.
 export const body = style({
+  flex: 1,
+  minBlockSize: 0,
   display: 'grid',
   gridTemplateColumns: 'minmax(16rem, 28rem) minmax(0, 1fr) 21.25rem',
-  gap: vars.space.lg,
-  alignItems: 'start',
+  overflow: 'hidden', // cada coluna rola sozinha (independent scroll, igual ao mock)
   '@media': {
     'screen and (max-width: 75rem)': { gridTemplateColumns: 'minmax(0, 1fr) 21.25rem' },
     'screen and (max-width: 60rem)': { gridTemplateColumns: '1fr' },
@@ -124,8 +135,12 @@ export const body = style({
 export const formCol = style({
   display: 'flex',
   flexDirection: 'column',
-  gap: vars.space.lg,
   minInlineSize: 0,
+  minBlockSize: 0,
+  blockSize: '100%',
+  overflowY: 'auto',
+  paddingBlock: '1.375rem 2rem', // 22 / 32 (mock)
+  paddingInline: '1.75rem', // 28
 })
 
 // Seções FLAT do Figma (sem card): divisória inferior + respiro vertical; a última seção sem borda.
@@ -181,8 +196,26 @@ const controlBase = {
   color: vars.color.institutional.ink2,
   fontFamily: vars.font.family.heading, // Inter (Figma/mock)
   fontSize: vars.font.size.xs, // ~12.5px
-  ':focus': { outline: 'none', borderColor: vars.color.institutional.blueLine },
+  fontVariantNumeric: 'tabular-nums',
+  transition: 'border-color 120ms ease, box-shadow 120ms ease',
+  ':hover': { borderColor: vars.color.institutional.ink5 },
+  ':focus': {
+    outline: 'none',
+    borderColor: vars.color.institutional.blue,
+    boxShadow: `0 0 0 0.1875rem ${vars.color.institutional.blueBg}`, // anel 3px (marca)
+  },
 } as const
+
+// Rolagem fina (igual ao mock) — aplicada às 3 colunas roláveis.
+export const scrollArea = style({
+  scrollbarWidth: 'thin',
+  scrollbarColor: `${vars.color.institutional.paperRule} transparent`,
+  '::-webkit-scrollbar': { width: '0.375rem', height: '0.375rem' },
+  '::-webkit-scrollbar-thumb': {
+    background: vars.color.institutional.paperRule,
+    borderRadius: vars.radius.sm,
+  },
+})
 
 export const control = style(controlBase)
 export const controlMono = style([controlBase, { fontFamily: vars.font.family.mono, textAlign: 'end' }])
@@ -194,12 +227,17 @@ export const controlDisabled = style([
 export const retentionsHint = style({ fontSize: vars.font.size.xs, color: vars.color.text.muted })
 
 // ── Sidebar ──────────────────────────────────────────────────────────────────
+// Coluna direita: rola sozinha; borda à esquerda separa do form (mock: padding 20/18, border-left).
 export const sidebarCol = style({
-  position: 'sticky',
-  insetBlockStart: vars.space.lg,
   display: 'flex',
   flexDirection: 'column',
-  gap: vars.space.lg,
+  gap: '1.375rem', // 22px (mock: div + div)
+  minBlockSize: 0,
+  blockSize: '100%',
+  overflowY: 'auto',
+  paddingBlock: '1.25rem', // 20
+  paddingInline: '1.125rem', // 18
+  borderInlineStart: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
 })
 export const card = style({
   display: 'flex',
@@ -277,6 +315,9 @@ export const tituloVal = style({ marginInlineStart: 'auto', fontFamily: vars.fon
 
 // ── Estado / ações ─────────────────────────────────────────────────────────────
 export const errorBanner = style({
+  flexShrink: 0,
+  marginBlockStart: vars.space.md,
+  marginInline: vars.space.lg,
   padding: vars.space.md,
   borderRadius: vars.radius.md,
   background: vars.color.feedback.errorBg,
@@ -306,6 +347,9 @@ export const successCard = style({
   display: 'flex',
   flexDirection: 'column',
   gap: vars.space.md,
+  margin: vars.space.lg,
+  minBlockSize: 0,
+  overflowY: 'auto',
   padding: vars.space.xl,
   borderRadius: vars.radius.lg,
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.blueLine}`,
@@ -321,13 +365,14 @@ export const successTitle = style({
 
 // ── Coluna esquerda: Preview / OCR (chrome — Figma 626:22 é um shell vazio) ──────
 export const previewCol = style({
-  position: 'sticky',
-  insetBlockStart: vars.space.lg,
   display: 'flex',
   flexDirection: 'column',
   gap: vars.space.md,
-  minBlockSize: '24rem',
-  paddingInlineEnd: vars.space.lg,
+  minBlockSize: 0,
+  blockSize: '100%',
+  overflowY: 'auto',
+  padding: '1.25rem', // 20 (mock)
+  background: vars.color.institutional.paperWarm,
   borderInlineEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   '@media': { 'screen and (max-width: 75rem)': { display: 'none' } },
 })
@@ -645,8 +690,7 @@ export const contratoLink = style({
 
 // ── Bottombar fixa (Figma 626:25): status + quick-action · spacer · ações ─────────
 export const pageBottombar = style({
-  position: 'sticky',
-  insetBlockEnd: 0,
+  flexShrink: 0, // última linha fixa do shell (topbar · body rolável · bottombar)
   display: 'flex',
   alignItems: 'center',
   gap: '0.875rem', // 14px

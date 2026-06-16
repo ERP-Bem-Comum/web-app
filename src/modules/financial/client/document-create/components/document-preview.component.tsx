@@ -19,13 +19,14 @@ import {
   previewHeader,
   previewHeaderText,
   ghostButton,
+  scrollArea,
 } from '../page/lancar-documento.css.ts'
 
 const t = createTranslator(ptBR)
 
 export function DocumentPreview(): ReactNode {
   return (
-    <aside className={previewCol} aria-label={t('financial.create.preview.title')}>
+    <aside className={`${previewCol} ${scrollArea}`} aria-label={t('financial.create.preview.title')}>
       <div className={previewHeader}>
         <span className={previewBadge}>{t('financial.create.preview.ocrBadge')}</span>
         <span className={previewHeaderText}>{t('financial.create.preview.title')}</span>
