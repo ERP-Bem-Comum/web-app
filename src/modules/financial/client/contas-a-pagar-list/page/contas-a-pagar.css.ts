@@ -68,8 +68,10 @@ export const chipActive = style([
   },
 ])
 
-// Grid de 6 colunas (DTO fino): Tipo · Documento · Fornecedor · Vencimento · Líquido(→) · Status.
-const GRID_COLS = '7rem 9rem 1fr 8rem 9rem 7rem'
+// Grid de 6 colunas (DTO fino) com as LARGURAS EXATAS do Figma 205-638 (px→rem): Tipo 65 · Documento 100
+// · Fornecedor flex(446) · Vencimento 105 · Líquido 110(→) · Status 130. (Colunas gated do Figma —
+// checkbox/Contrato/Forma Pag./Emissão/Bruto — entram com o FIN-LIST-DTO #47.)
+const GRID_COLS = '4.0625rem 6.25rem 1fr 6.5625rem 6.875rem 8.125rem'
 
 export const grid = style({
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
@@ -80,11 +82,10 @@ export const grid = style({
 export const head = style({
   display: 'grid',
   gridTemplateColumns: GRID_COLS,
-  gap: vars.space.sm,
+  gap: '0.75rem', // Figma: gap 12px
   alignItems: 'center',
-  minBlockSize: '2.25rem', // mock: header 36px
-  paddingBlock: vars.space.xs,
-  paddingInline: vars.space.md,
+  minBlockSize: '2.25rem', // Figma: grid-head 36px
+  paddingInline: vars.space.lg, // Figma: 24px lateral
   background: vars.color.institutional.paperWarm,
   borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
 })
@@ -101,11 +102,10 @@ export const headCellRight = style([headCell, { textAlign: 'right' }])
 export const row = style({
   display: 'grid',
   gridTemplateColumns: GRID_COLS,
-  gap: vars.space.sm,
+  gap: '0.75rem', // Figma: gap 12px
   alignItems: 'center',
-  minBlockSize: '2.75rem',
-  paddingBlock: '0.625rem', // mesma fração fina do grid de Contratos
-  paddingInline: vars.space.md,
+  minBlockSize: '3.5rem', // Figma: grid-row 56px
+  paddingInline: vars.space.lg, // Figma: 24px lateral
   borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   fontSize: vars.font.size.sm,
   color: vars.color.institutional.ink2,
