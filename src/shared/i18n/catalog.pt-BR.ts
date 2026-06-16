@@ -1107,7 +1107,10 @@ export const ptBR: Catalog = {
   'financial.list.col.status': 'Status',
   'financial.list.chip.todos': 'Todos',
   'financial.list.chip.rascunho': 'Rascunho',
-  'financial.list.chip.aberto': 'Em Aberto',
+  'financial.list.chip.aberto': 'Aberto',
   'financial.list.chip.aprovado': 'Aprovado',
+  'financial.list.chip.transmitido': 'Transmitido',
+  'financial.list.chip.recusado': 'Recusado',
   'financial.list.chip.pago': 'Pago',
+  'financial.list.chip.conciliado': 'Conciliado',
 }

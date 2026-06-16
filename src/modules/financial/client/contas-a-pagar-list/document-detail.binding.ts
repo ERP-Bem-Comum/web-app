@@ -33,7 +33,7 @@ export function useDocumentDetail(id: string | null): DocumentDetailBinding {
     },
   })
   // Mapeia FORA da queryFn (resolve o nome do fornecedor pelo mapa) — view PURA, sem deps na key.
-  const resolve: ResolveSupplier = (ref) => (ref === null ? '—' : (partners.data?.get(ref) ?? ref))
+  const resolve: ResolveSupplier = (ref) => (ref === null ? '—' : (partners.data?.get(ref)?.name ?? ref))
   const view = detail.data != null ? mapDocumentDetail(detail.data, resolve) : null
   return { view, loading: id !== null && detail.isLoading }
 }

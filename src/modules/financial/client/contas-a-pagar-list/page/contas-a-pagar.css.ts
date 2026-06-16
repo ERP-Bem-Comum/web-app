@@ -165,7 +165,7 @@ export const cellMutedDoc = style([
   { fontFamily: vars.font.family.mono, color: vars.color.institutional.ink4 },
 ])
 export const cellNet = style({ textAlign: 'right', fontFamily: vars.font.family.mono })
-// Badge de TIPO (Figma grid): pílula azul do DS (teal→azul), 9px bold caixa-alta.
+// Badge de TIPO (Figma grid / mock) — base de layout (9px bold caixa-alta); a COR vem por variante de tipo.
 export const typeBadge = style({
   justifySelf: 'start',
   display: 'inline-flex',
@@ -173,14 +173,44 @@ export const typeBadge = style({
   paddingBlock: '0.0625rem',
   paddingInline: vars.space.xs,
   borderRadius: vars.radius.sm,
-  background: vars.color.institutional.blueBg,
-  color: vars.color.institutional.blueDeep,
+  border: '0.5px solid transparent', // reservado p/ as variantes com borda (não desloca o baseline)
   fontFamily: vars.font.family.heading,
   fontSize: vars.font.size['2xs'],
   fontWeight: vars.font.weight.bold,
   letterSpacing: '0.06em',
   textTransform: 'uppercase',
   whiteSpace: 'nowrap',
+})
+
+// Cores por DocumentType (mock): azul = NFS-e/Fatura · âmbar = RPA · laranja = Boleto · neutro = DANFE/
+// Recibo/Imposto. Mapeado em tokens do DS (marca azul; reuso de partnerType p/ âmbar/laranja).
+export const typeBadgeVariant = styleVariants({
+  'NFS-e': { background: vars.color.institutional.blueBg, color: vars.color.institutional.blueDeep },
+  Fatura: {
+    background: vars.color.institutional.blueBg,
+    color: vars.color.institutional.blueDeep,
+    borderColor: vars.color.institutional.blueLine,
+  },
+  DANFE: { background: vars.color.institutional.paperBeige, color: vars.color.institutional.ink2 },
+  RPA: {
+    background: vars.color.partnerType.collaborator.background,
+    color: vars.color.partnerType.collaborator.text,
+  },
+  Boleto: {
+    background: vars.color.partnerType.act.background,
+    color: vars.color.partnerType.act.text,
+  },
+  Recibo: {
+    background: vars.color.institutional.paperWarm,
+    color: vars.color.institutional.ink3,
+    borderColor: vars.color.institutional.paperRule,
+  },
+  Imposto: {
+    background: vars.color.institutional.paperWarm,
+    color: vars.color.institutional.ink3,
+    borderColor: vars.color.institutional.paperRule,
+  },
+  neutral: { background: vars.color.institutional.paperBeige, color: vars.color.institutional.ink3 },
 })
 
 // Badge de status — Figma "Badge" 9px bold caixa-alta.

@@ -24,11 +24,17 @@ export type { DocumentStatus, RetentionType } from '#modules/financial/client/da
 // (mapa dos Fornecedores já carregados). Mantém a view-model pura/testável.
 export type ResolveSupplier = (ref: string | null) => string
 
+// Tipo do parceiro — pinta o avatar pela regra de cor (Fornecedor=azul · Colaborador=âmbar ·
+// Financiador=verde · ACT=laranja). Resolver OPCIONAL (aditivo: sem ele, `supplierKind` = null).
+export type PartnerKind = 'supplier' | 'collaborator' | 'financier' | 'act'
+export type ResolveSupplierKind = (ref: string | null) => PartnerKind | null
+
 export type GridRow = Readonly<{
   id: string
   type: string
   documentNumber: string
   supplier: string
+  supplierKind: PartnerKind | null
   due: string
   net: string
   status: DocumentStatus
@@ -66,7 +72,10 @@ export const STATUS_CHIPS = [
   { key: 'rascunho', labelTag: 'financial.list.chip.rascunho' },
   { key: 'aberto', labelTag: 'financial.list.chip.aberto' },
   { key: 'aprovado', labelTag: 'financial.list.chip.aprovado' },
+  { key: 'transmitido', labelTag: 'financial.list.chip.transmitido' },
+  { key: 'recusado', labelTag: 'financial.list.chip.recusado' },
   { key: 'pago', labelTag: 'financial.list.chip.pago' },
+  { key: 'conciliado', labelTag: 'financial.list.chip.conciliado' },
 ] as const
 
 const DASH = '—'
@@ -77,11 +86,16 @@ const formatDue = (iso: string): string => {
   return p.length === 3 ? `${p[2] ?? ''}/${p[1] ?? ''}/${p[0] ?? ''}` : iso
 }
 
-const toRow = (it: DocumentSummary, resolveSupplier: ResolveSupplier): GridRow => ({
+const toRow = (
+  it: DocumentSummary,
+  resolveSupplier: ResolveSupplier,
+  resolveKind?: ResolveSupplierKind,
+): GridRow => ({
   id: it.id,
   type: it.type ?? DASH,
   documentNumber: it.documentNumber ?? DASH,
   supplier: resolveSupplier(it.supplierRef),
+  supplierKind: resolveKind?.(it.supplierRef) ?? null,
   due: it.dueDate !== null && it.dueDate !== '' ? formatDue(it.dueDate) : DASH,
   net: it.netValueCents !== null && it.netValueCents !== '' ? centsToBRL(it.netValueCents) : DASH,
   status: it.status,
@@ -90,7 +104,8 @@ const toRow = (it: DocumentSummary, resolveSupplier: ResolveSupplier): GridRow =
 export const buildRows = (
   items: readonly DocumentSummary[],
   resolveSupplier: ResolveSupplier,
-): readonly GridRow[] => items.map((it) => toRow(it, resolveSupplier))
+  resolveKind?: ResolveSupplierKind,
+): readonly GridRow[] => items.map((it) => toRow(it, resolveSupplier, resolveKind))
 
 export const pageInfo = (page: number, pageSize: number, total: number): PageInfo => {
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1
@@ -178,14 +193,15 @@ export const deriveListState = (args: {
   isLoading: boolean
   data: Result<DocumentListResponse, FinancialError> | undefined
   resolveSupplier: ResolveSupplier
+  resolveKind?: ResolveSupplierKind
 }): ListState => {
-  const { isLoading, data, resolveSupplier } = args
+  const { isLoading, data, resolveSupplier, resolveKind } = args
   if (isLoading || data === undefined) return { tag: 'loading' }
   if (!data.ok) return { tag: 'error', errorTag: financialErrorTag(data.error) }
   if (data.value.items.length === 0) return { tag: 'empty' }
   return {
     tag: 'ready',
-    rows: buildRows(data.value.items, resolveSupplier),
+    rows: buildRows(data.value.items, resolveSupplier, resolveKind),
     page: pageInfo(data.value.page, data.value.pageSize, data.value.total),
   }
 }

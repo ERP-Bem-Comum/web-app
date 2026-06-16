@@ -23,6 +23,7 @@ const readyState: ListState = {
       type: 'NFS-e',
       documentNumber: '0847',
       supplier: 'Bambu Educação',
+      supplierKind: 'supplier',
       due: '10/07/2026',
       net: 'R$ 1.500,00',
       status: 'Aberto',

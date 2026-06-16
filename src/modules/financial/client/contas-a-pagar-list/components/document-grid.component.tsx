@@ -9,7 +9,12 @@ import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { AvatarLabel, initialsFrom } from '#shared/ui/index.ts'
 
-import { COLUMNS, type ListState, type DocumentStatus } from '../contas-a-pagar.view-model.ts'
+import {
+  COLUMNS,
+  type ListState,
+  type DocumentStatus,
+  type PartnerKind,
+} from '../contas-a-pagar.view-model.ts'
 import {
   grid,
   head,
@@ -21,6 +26,7 @@ import {
   cellMutedDoc,
   cellNet,
   typeBadge,
+  typeBadgeVariant,
   statusBadge,
   statusVariant,
   placeholder,
@@ -29,6 +35,14 @@ import {
 } from '../page/contas-a-pagar.css.ts'
 
 const DASH = '—'
+
+// Variante de cor do badge de TIPO: por DocumentType; tipo desconhecido → neutro.
+const typeClass = (type: string): string =>
+  `${typeBadge} ${type in typeBadgeVariant ? typeBadgeVariant[type as keyof typeof typeBadgeVariant] : typeBadgeVariant.neutral}`
+
+// Cor do avatar pela regra de parceiro; sem tipo conhecido → 'supplier' (azul da marca).
+const avatarVariantOf = (kind: PartnerKind | null): 'supplier' | 'collaborator' | 'financier' | 'act' =>
+  kind ?? 'supplier'
 
 const t = createTranslator(ptBR)
 
@@ -81,13 +95,17 @@ export function DocumentGrid(props: DocumentGridProps): ReactNode {
             {r.type === DASH ? (
               <span className={cell}>{r.type}</span>
             ) : (
-              <span className={typeBadge}>{r.type}</span>
+              <span className={typeClass(r.type)}>{r.type}</span>
             )}
             <span className={cellMutedDoc}>{r.documentNumber}</span>
             {r.supplier === DASH ? (
               <span className={cell}>{r.supplier}</span>
             ) : (
-              <AvatarLabel initials={initialsFrom(r.supplier)} variant="supplier" text={r.supplier} />
+              <AvatarLabel
+                initials={initialsFrom(r.supplier)}
+                variant={avatarVariantOf(r.supplierKind)}
+                text={r.supplier}
+              />
             )}
             <span className={cell}>{r.due}</span>
             <span className={cellNet}>{r.net}</span>
