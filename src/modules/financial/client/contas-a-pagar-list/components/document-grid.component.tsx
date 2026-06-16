@@ -27,6 +27,7 @@ import {
   cell,
   cellMutedDoc,
   cellNet,
+  cellGross,
   typeBadge,
   typeBadgeVariant,
   statusBadge,
@@ -146,7 +147,12 @@ export function DocumentGrid(props: DocumentGridProps): ReactNode {
                   subtitle={r.supplierDoc}
                 />
               )}
+              <span className={cell}>{r.contract}</span>
+              <span className={cell}>
+                {r.paymentMethod !== null ? t(`financial.paymentMethod.${r.paymentMethod}`) : DASH}
+              </span>
               <span className={cell}>{r.due}</span>
+              <span className={cellGross}>{r.gross}</span>
               <span className={cellNet}>{r.net}</span>
               <span className={`${statusBadge} ${statusVariant[r.status]}`}>{r.status}</span>
             </div>

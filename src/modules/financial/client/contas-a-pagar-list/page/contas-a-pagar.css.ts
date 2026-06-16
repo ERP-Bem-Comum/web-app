@@ -112,12 +112,20 @@ export const chipCount = style({
 // Quando o chip ativo (fundo branco) carrega o contador, o badge ganha o tom paper-beige p/ contraste.
 export const chipCountOnActive = style([chipCount, { background: vars.color.institutional.paperBeige }])
 
-// ── Grid (Figma 205-638): 6 colunas do DTO fino ───────────────────────────────
-// Larguras EXATAS do Figma (px→rem): Tipo 65 · Doc 100 · Fornecedor flex(446) · Venc 105 · Líquido 110(→) · Status 130.
-const GRID_COLS = '2.25rem 4.0625rem 6.25rem 1fr 6.5625rem 6.875rem 8.125rem'
+// ── Grid (Figma 205-638) — enriquecido pela 012/#47: + Contrato, Forma, Bruto ──────────────────────
+// Larguras EXATAS do Figma (px→rem): checkbox 36 · Tipo 65 · Doc 100 · Fornecedor flex · Contrato 130 ·
+// Forma 90 · Venc 105 · Bruto 95(→) · Líquido 110(→) · Status 130. (Emissão segue gated — core-api#95.)
+const GRID_COLS =
+  '2.25rem 4.0625rem 6.25rem minmax(14rem, 1fr) 8.125rem 5.625rem 6.5625rem 5.9375rem 6.875rem 8.125rem'
 
-export const gridWrap = style({ paddingInline: vars.space.lg, paddingBlock: vars.space.md })
+// Wrapper rola na horizontal (como o grid largo do Figma) quando a viewport é estreita.
+export const gridWrap = style({
+  paddingInline: vars.space.lg,
+  paddingBlock: vars.space.md,
+  overflowX: 'auto',
+})
 export const grid = style({
+  minInlineSize: '76rem', // garante Fornecedor legível (≥14rem); abaixo disso o wrapper rola
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   borderRadius: vars.radius.lg,
   overflow: 'hidden',
@@ -165,6 +173,8 @@ export const cellMutedDoc = style([
   { fontFamily: vars.font.family.mono, color: vars.color.institutional.ink4 },
 ])
 export const cellNet = style({ textAlign: 'right', fontFamily: vars.font.family.mono })
+// Bruto (Figma): mono à direita, tom mais discreto que o Líquido.
+export const cellGross = style([cellNet, { color: vars.color.institutional.ink4 }])
 // Badge de TIPO (Figma grid / mock) — base de layout (9px bold caixa-alta); a COR vem por variante de tipo.
 export const typeBadge = style({
   justifySelf: 'start',

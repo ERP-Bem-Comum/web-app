@@ -2,11 +2,10 @@
  * StatusActions ("Mudar Status") — view BURRA (§XI). Dropdown de ação em massa sobre a seleção, fiel ao
  * mock (Aprovar / Voltar p/ edição / Enviar p/ aprovação / Marcar como pago).
  *
- * ⚠️ CHROME honesto: hoje TODAS as transições estão indisponíveis pela borda HTTP do core-api —
- * `approve`/`undo-approval` existem mas exigem o `version` (ausente no DTO fino da lista, core-api#47);
- * `submit` (Rascunho→Aberto) não tem rota (core-api#91); `pay`/`transmit`/`reconcile` não existem
- * (roadmap fatias #58/#59/#60, epic #64). Itens desabilitados com tooltip; quando o backend abrir, é só
- * plugar o handler.
+ * ⚠️ CHROME honesto por ora: `approve`/`undo-approval` já existem e o `version` agora vem na listagem
+ * (012/#47) — ou seja, "Aprovar" e "Voltar p/ edição" em massa já são VIÁVEIS (falta só fiar a mutation
+ * em lote + tratamento de 409); `submit` (Rascunho→Aberto) não tem rota (core-api#91); `pay`/`transmit`/
+ * `reconcile` não existem (roadmap #58/#59/#60, epic #64). Itens desabilitados com tooltip por enquanto.
  */
 import type { ReactNode } from 'react'
 

@@ -8,12 +8,14 @@ import { useQuery } from '@tanstack/react-query'
 
 import { contasAPagarQueryOptions } from './contas-a-pagar.query.ts'
 import { partnersMapQueryOptions } from './partners-map.binding.ts'
+import { contractsMapQueryOptions } from './contracts-map.binding.ts'
 import {
   deriveListState,
   type ListState,
   type ResolveSupplier,
   type ResolveSupplierKind,
   type ResolveSupplierDoc,
+  type ResolveContract,
 } from './contas-a-pagar.view-model.ts'
 
 const DEFAULT_PAGE_SIZE = 12
@@ -30,6 +32,7 @@ export function useContasAPagar(): ContasAPagarBinding {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const partners = useQuery(partnersMapQueryOptions)
+  const contracts = useQuery(contractsMapQueryOptions)
   const list = useQuery(contasAPagarQueryOptions({ page, pageSize }))
 
   const resolveSupplier: ResolveSupplier = (ref) =>
@@ -38,6 +41,7 @@ export function useContasAPagar(): ContasAPagarBinding {
     ref === null ? null : (partners.data?.get(ref)?.kind ?? null)
   const resolveDoc: ResolveSupplierDoc = (ref) =>
     ref === null ? null : (partners.data?.get(ref)?.document ?? null)
+  const resolveContract: ResolveContract = (ref) => (ref === null ? null : (contracts.data?.get(ref) ?? null))
 
   const state = deriveListState({
     isLoading: list.isLoading,
@@ -45,6 +49,7 @@ export function useContasAPagar(): ContasAPagarBinding {
     resolveSupplier,
     resolveKind,
     resolveDoc,
+    resolveContract,
   })
 
   return {

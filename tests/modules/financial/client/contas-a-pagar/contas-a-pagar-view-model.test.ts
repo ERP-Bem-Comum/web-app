@@ -29,6 +29,11 @@ const summary = (over: Partial<DocumentSummary> = {}): DocumentSummary => ({
   type: 'NFS-e',
   supplierRef: 's1',
   netValueCents: '150000',
+  series: null,
+  grossValueCents: '160000',
+  paymentMethod: 'PIX',
+  contractRef: null,
+  version: 0,
   dueDate: '2026-07-10',
   ...over,
 })

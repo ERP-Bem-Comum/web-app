@@ -132,7 +132,7 @@ export type DocumentDetail = Readonly<{
   version: number // optimistic lock — reenviado no PATCH (ajuste)
 }>
 
-// Item da lista (DTO fino da Fatia 1 — será enriquecido por core-api#47 FIN-LIST-DTO).
+// Item da lista — enriquecido pela 012/#47 (FIN-LIST-DTO): + série, bruto, forma de pagto, contrato, version.
 export type DocumentSummary = Readonly<{
   id: string
   status: DocumentStatus
@@ -141,6 +141,11 @@ export type DocumentSummary = Readonly<{
   supplierRef: string | null
   netValueCents: string | null
   dueDate: string | null
+  series: string | null
+  grossValueCents: string | null
+  paymentMethod: PaymentMethod | null
+  contractRef: string | null
+  version: number
 }>
 
 export type DocumentListResponse = Readonly<{

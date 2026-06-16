@@ -30,6 +30,8 @@ export type PartnerKind = 'supplier' | 'collaborator' | 'financier' | 'act'
 export type ResolveSupplierKind = (ref: string | null) => PartnerKind | null
 // CNPJ do favorecido (sublinha da coluna Fornecedor, padrão do grid de Contratos). Resolver OPCIONAL.
 export type ResolveSupplierDoc = (ref: string | null) => string | null
+// Número do contrato a partir do `contractRef` (uuid). Resolver OPCIONAL (vem do contracts-map).
+export type ResolveContract = (ref: string | null) => string | null
 
 export type GridRow = Readonly<{
   id: string
@@ -38,9 +40,13 @@ export type GridRow = Readonly<{
   supplier: string
   supplierKind: PartnerKind | null
   supplierDoc: string | null // CNPJ já mascarado (ex.: "37.364.305/0001-92") ou null
+  contract: string // número do contrato vinculado ("0003/2026") ou "—"
+  paymentMethod: PaymentMethod | null // forma de pagamento (a view traduz via i18n)
+  gross: string // valor bruto formatado (BRL) ou "—"
   due: string
   net: string
   netCents: string | null // bruto em centavos p/ o somatório da seleção (formatação fica fora)
+  version: number // optimistic lock — p/ ações inline (Mudar Status em massa)
   status: DocumentStatus
 }>
 
@@ -69,12 +75,16 @@ export type ListState =
   | Readonly<{ tag: 'empty' }>
   | Readonly<{ tag: 'ready'; rows: readonly GridRow[]; page: PageInfo }>
 
-// Colunas do v1 (DTO fino). `labelTag` = i18n; `align` p/ valores monetários à direita.
+// Colunas (Figma 205-638), enriquecidas pela 012/#47: + Contrato, Forma de Pagamento, Bruto.
+// `Emissão` segue gated (não vem na lista; depende do detalhe — core-api#95). `align:right` = monetário.
 export const COLUMNS = [
   { key: 'type', labelTag: 'financial.list.col.type', align: 'left' },
   { key: 'documentNumber', labelTag: 'financial.list.col.documentNumber', align: 'left' },
   { key: 'supplier', labelTag: 'financial.list.col.supplier', align: 'left' },
+  { key: 'contract', labelTag: 'financial.list.col.contract', align: 'left' },
+  { key: 'paymentMethod', labelTag: 'financial.list.col.paymentMethod', align: 'left' },
   { key: 'due', labelTag: 'financial.list.col.due', align: 'left' },
+  { key: 'gross', labelTag: 'financial.list.col.gross', align: 'right' },
   { key: 'net', labelTag: 'financial.list.col.net', align: 'right' },
   { key: 'status', labelTag: 'financial.list.col.status', align: 'left' },
 ] as const
@@ -105,6 +115,7 @@ const toRow = (
   resolveSupplier: ResolveSupplier,
   resolveKind?: ResolveSupplierKind,
   resolveDoc?: ResolveSupplierDoc,
+  resolveContract?: ResolveContract,
 ): GridRow => ({
   id: it.id,
   type: it.type ?? DASH,
@@ -112,9 +123,13 @@ const toRow = (
   supplier: resolveSupplier(it.supplierRef),
   supplierKind: resolveKind?.(it.supplierRef) ?? null,
   supplierDoc: maskCnpj(resolveDoc?.(it.supplierRef) ?? null),
+  contract: it.contractRef !== null ? (resolveContract?.(it.contractRef) ?? it.contractRef) : DASH,
+  paymentMethod: it.paymentMethod,
+  gross: it.grossValueCents !== null && it.grossValueCents !== '' ? centsToBRL(it.grossValueCents) : DASH,
   due: it.dueDate !== null && it.dueDate !== '' ? formatDue(it.dueDate) : DASH,
   net: it.netValueCents !== null && it.netValueCents !== '' ? centsToBRL(it.netValueCents) : DASH,
   netCents: it.netValueCents,
+  version: it.version,
   status: it.status,
 })
 
@@ -133,7 +148,9 @@ export const buildRows = (
   resolveSupplier: ResolveSupplier,
   resolveKind?: ResolveSupplierKind,
   resolveDoc?: ResolveSupplierDoc,
-): readonly GridRow[] => items.map((it) => toRow(it, resolveSupplier, resolveKind, resolveDoc))
+  resolveContract?: ResolveContract,
+): readonly GridRow[] =>
+  items.map((it) => toRow(it, resolveSupplier, resolveKind, resolveDoc, resolveContract))
 
 export const pageInfo = (page: number, pageSize: number, total: number): PageInfo => {
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1
@@ -226,14 +243,15 @@ export const deriveListState = (args: {
   resolveSupplier: ResolveSupplier
   resolveKind?: ResolveSupplierKind
   resolveDoc?: ResolveSupplierDoc
+  resolveContract?: ResolveContract
 }): ListState => {
-  const { isLoading, data, resolveSupplier, resolveKind, resolveDoc } = args
+  const { isLoading, data, resolveSupplier, resolveKind, resolveDoc, resolveContract } = args
   if (isLoading || data === undefined) return { tag: 'loading' }
   if (!data.ok) return { tag: 'error', errorTag: financialErrorTag(data.error) }
   if (data.value.items.length === 0) return { tag: 'empty' }
   return {
     tag: 'ready',
-    rows: buildRows(data.value.items, resolveSupplier, resolveKind, resolveDoc),
+    rows: buildRows(data.value.items, resolveSupplier, resolveKind, resolveDoc, resolveContract),
     page: pageInfo(data.value.page, data.value.pageSize, data.value.total),
   }
 }

@@ -119,6 +119,12 @@ export type DocumentSummary = Readonly<{
   type: DocumentType | null
   supplierRef: string | null
   netValueCents: string | null
+  // Enriquecido pela 012/#47 (FIN-LIST-DTO): série, bruto, forma de pagamento, contrato, version.
+  series: string | null
+  grossValueCents: string | null
+  paymentMethod: PaymentMethod | null
+  contractRef: string | null
+  version: number
   dueDate: string | null
 }>
 

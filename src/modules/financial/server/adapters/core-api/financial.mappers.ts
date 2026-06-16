@@ -143,6 +143,11 @@ export const listToModel = (raw: unknown): Result<DocumentListResponse, Financia
     supplierRef: s.supplierRef,
     netValueCents: s.netValueCents,
     dueDate: s.dueDate,
+    series: s.series,
+    grossValueCents: s.grossValueCents,
+    paymentMethod: mapPaymentMethod(s.paymentMethod),
+    contractRef: s.contractRef,
+    version: s.version,
   }))
   return ok({ items, page: l.page, pageSize: l.pageSize, total: l.total })
 }

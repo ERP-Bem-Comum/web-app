@@ -42,6 +42,12 @@ export const CoreApiDocumentSummarySchema = z.object({
   supplierRef: z.string().trim().nullable(),
   netValueCents: z.string().trim().nullable(),
   dueDate: z.string().trim().nullable(),
+  // Enriquecido pela 012/#47: campos locais do documento no grid de Contas a Pagar.
+  series: z.string().trim().nullable().catch(null),
+  grossValueCents: z.string().trim().nullable().catch(null),
+  paymentMethod: z.string().trim().nullable().catch(null),
+  contractRef: z.string().trim().nullable().catch(null),
+  version: z.int().min(0).catch(0),
 })
 export type CoreApiDocumentSummary = z.infer<typeof CoreApiDocumentSummarySchema>
 
