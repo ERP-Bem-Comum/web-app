@@ -426,7 +426,7 @@ export const drawerTitle = style({
   margin: 0,
   fontFamily: vars.font.family.mono,
   fontSize: vars.font.size.md,
-  fontWeight: vars.font.weight.semibold,
+  fontWeight: vars.font.weight.bold,
   color: vars.color.institutional.ink2,
 })
 export const drawerClose = style({
@@ -556,10 +556,12 @@ export const tituloVal = style({
 export const drawerFooter = style({
   flexShrink: 0,
   display: 'flex',
-  justifyContent: 'flex-end',
+  justifyContent: 'space-between', // Figma: Editar (esq.) · Fechar (dir.)
+  alignItems: 'center',
   gap: vars.space.sm,
   paddingBlock: vars.space.md,
   paddingInline: vars.space.lg,
+  background: vars.color.institutional.paperWarm,
   borderBlockStart: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
 })
 export const drawerCloseBtn = style({
@@ -671,6 +673,51 @@ export const statusPill = style({
   fontWeight: vars.font.weight.semibold,
   color: vars.color.institutional.ink4,
   whiteSpace: 'nowrap',
+})
+
+// Pílula de status do drawer (Figma): dot + rótulo, COR via `statusVariant`. Shape sem cor própria
+// (a cor vem da variante); o dot herda a cor do texto (currentColor).
+export const dwStatusPill = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: vars.space.xs,
+  paddingBlock: '0.1875rem',
+  paddingInline: '0.625rem',
+  borderRadius: vars.radius.xl,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.semibold,
+  whiteSpace: 'nowrap',
+  '::before': {
+    content: '""',
+    inlineSize: '0.3125rem',
+    blockSize: '0.3125rem',
+    borderRadius: '50%',
+    background: 'currentColor',
+  },
+})
+
+// Valor de campo em fonte MONO (Número, Vencimento) — Figma "Mono/Value".
+export const detailValueMono = style([detailValue, { fontFamily: vars.font.family.mono }])
+
+// Card de Forma de Pagamento (Figma dw-pix-card) — só o método (chave/banco/favorecido dependem de
+// enriquecer o detalhe). Borda fina + cantos arredondados.
+export const paymentCard = style({
+  inlineSize: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: vars.space.sm,
+  paddingBlock: vars.space.md,
+  paddingInline: vars.space.md,
+  borderRadius: vars.radius.lg,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  background: vars.color.surface.default,
+})
+export const paymentMethodName = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.ink2,
 })
 // ── Impressão (PDF via window.print): esconde o cromo, imprime só o grid ──
 globalStyle(`${filterBar}, ${bottombar}`, { '@media': { print: { display: 'none !important' } } })

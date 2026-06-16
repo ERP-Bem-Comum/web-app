@@ -14,8 +14,11 @@ import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 
 import type { DocumentDetailView, RetentionType } from '../contas-a-pagar.view-model.ts'
 import {
-  statusBadge,
   statusVariant,
+  dwStatusPill,
+  detailValueMono,
+  paymentCard,
+  paymentMethodName,
   drawerOverlay,
   drawerPanel,
   drawerHeader,
@@ -43,7 +46,6 @@ import {
   tituloVenc,
   tituloRight,
   tituloValBold,
-  statusPill,
   drawerFooter,
   drawerEditBtn,
   drawerCloseBtn,
@@ -64,11 +66,15 @@ function SectionLabel({ label, count }: Readonly<{ label: string; count?: number
   )
 }
 
-function Field({ label, value }: Readonly<{ label: string; value: string }>): ReactNode {
+function Field({
+  label,
+  value,
+  mono = false,
+}: Readonly<{ label: string; value: string; mono?: boolean }>): ReactNode {
   return (
     <span className={detailField}>
       <span className={detailLabel}>{label}</span>
-      <span className={detailValue}>{value}</span>
+      <span className={mono ? detailValueMono : detailValue}>{value}</span>
     </span>
   )
 }
@@ -107,14 +113,17 @@ export function DocumentDetailDrawer({ view, onClose }: DocumentDetailDrawerProp
             <SectionLabel label={t('financial.detail.label.documento')} />
             <div className={detailGrid}>
               <Field label={t('financial.detail.label.tipo')} value={view.type} />
-              <Field label={t('financial.detail.label.numero')} value={view.documentNumber} />
-              <Field label={t('financial.detail.label.vencimento')} value={view.due} />
-              <Field label={t('financial.detail.label.fornecedor')} value={view.supplier} />
+              <Field label={t('financial.detail.label.numero')} value={view.documentNumber} mono />
+              <Field label={t('financial.detail.label.vencimento')} value={view.due} mono />
+              <Field
+                label={t('financial.detail.label.fornecedor')}
+                value={view.supplierDoc !== null ? `${view.supplier} · ${view.supplierDoc}` : view.supplier}
+              />
             </div>
             <span className={detailField}>
               <span className={detailLabel}>{t('financial.detail.label.status')}</span>
               <span>
-                <span className={`${statusBadge} ${statusVariant[view.status]}`}>{view.status}</span>
+                <span className={`${dwStatusPill} ${statusVariant[view.status]}`}>{view.status}</span>
               </span>
             </span>
           </section>
@@ -153,7 +162,7 @@ export function DocumentDetailDrawer({ view, onClose }: DocumentDetailDrawerProp
                   </span>
                   <span className={tituloRight}>
                     <span className={tituloValBold}>{p.value}</span>
-                    <span className={statusPill}>{p.status}</span>
+                    <span className={`${dwStatusPill} ${statusVariant[p.status]}`}>{p.status}</span>
                   </span>
                 </div>
               ))}
@@ -164,8 +173,10 @@ export function DocumentDetailDrawer({ view, onClose }: DocumentDetailDrawerProp
           {view.paymentMethod !== null ? (
             <section className={dwSection}>
               <SectionLabel label={t('financial.detail.section.pagamento')} />
-              <div className={compRow}>
-                <span>{t(`financial.paymentMethod.${view.paymentMethod}`)}</span>
+              <div className={paymentCard}>
+                <span className={paymentMethodName}>
+                  {t(`financial.paymentMethod.${view.paymentMethod}`)}
+                </span>
               </div>
             </section>
           ) : null}

@@ -135,7 +135,8 @@ export const mainCol = style({
   minWidth: 0,
   overflowY: 'auto',
   overflowX: 'hidden',
-  paddingTop: vars.space.lg,
+  // Hero mais justo sob o header fixo (redução suave: 1.5rem → 1rem).
+  paddingTop: vars.space.md,
   paddingInlineStart: vars.space.md,
   paddingInlineEnd: vars.space.xs,
   paddingBottom: '4rem',

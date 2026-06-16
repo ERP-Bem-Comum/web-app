@@ -14,6 +14,7 @@ import {
   mapDocumentDetail,
   type DocumentDetailView,
   type ResolveSupplier,
+  type ResolveSupplierDoc,
 } from './contas-a-pagar.view-model.ts'
 
 export type DocumentDetailBinding = Readonly<{
@@ -32,8 +33,10 @@ export function useDocumentDetail(id: string | null): DocumentDetailBinding {
       return isOk(r) ? r.value : null
     },
   })
-  // Mapeia FORA da queryFn (resolve o nome do fornecedor pelo mapa) — view PURA, sem deps na key.
+  // Mapeia FORA da queryFn (resolve nome + CNPJ do fornecedor pelo mapa) — view PURA, sem deps na key.
   const resolve: ResolveSupplier = (ref) => (ref === null ? '—' : (partners.data?.get(ref)?.name ?? ref))
-  const view = detail.data != null ? mapDocumentDetail(detail.data, resolve) : null
+  const resolveDoc: ResolveSupplierDoc = (ref) =>
+    ref === null ? null : (partners.data?.get(ref)?.document ?? null)
+  const view = detail.data != null ? mapDocumentDetail(detail.data, resolve, resolveDoc) : null
   return { view, loading: id !== null && detail.isLoading }
 }

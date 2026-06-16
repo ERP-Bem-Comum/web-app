@@ -163,6 +163,7 @@ export type DocumentDetailView = Readonly<{
   documentNumber: string
   status: DocumentStatus
   supplier: string
+  supplierDoc: string | null // CNPJ mascarado do favorecido (sublinha do Fornecedor no drawer)
   due: string
   gross: string
   net: string
@@ -172,16 +173,18 @@ export type DocumentDetailView = Readonly<{
   payables: readonly DetailPayableView[]
 }>
 
-/** DocumentDetail (GET /:id) → view do drawer. PURA. Resolve o nome do fornecedor pelo `resolveSupplier`. */
+/** DocumentDetail (GET /:id) → view do drawer. PURA. Resolve nome + CNPJ do fornecedor pelos resolvers. */
 export const mapDocumentDetail = (
   d: DocumentDetail,
   resolveSupplier: ResolveSupplier,
+  resolveDoc?: ResolveSupplierDoc,
 ): DocumentDetailView => ({
   id: d.id,
   type: d.type ?? DASH,
   documentNumber: d.documentNumber ?? DASH,
   status: d.status,
   supplier: resolveSupplier(d.supplierRef),
+  supplierDoc: maskCnpj(resolveDoc?.(d.supplierRef) ?? null),
   due: d.dueDate !== null && d.dueDate !== '' ? formatDue(d.dueDate) : DASH,
   gross: d.grossValueCents !== null && d.grossValueCents !== '' ? centsToBRL(d.grossValueCents) : DASH,
   net: d.netValueCents !== null && d.netValueCents !== '' ? centsToBRL(d.netValueCents) : DASH,
