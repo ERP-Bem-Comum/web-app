@@ -204,7 +204,7 @@ export const pickerSearch = style({
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   background: vars.color.surface.default,
   color: vars.color.institutional.ink2,
-  fontFamily: vars.font.family.heading,
+  fontFamily: vars.font.family.body, // Nunito (brand)
   fontSize: vars.font.size.xs,
   ':focus': {
     outline: 'none',
@@ -287,7 +287,7 @@ export const fieldGrid = styleVariants({
 
 export const field = style({ display: 'flex', flexDirection: 'column', gap: vars.space.xs, minInlineSize: 0 })
 export const fieldLabel = style({
-  fontFamily: vars.font.family.heading, // Inter (Figma/mock)
+  fontFamily: vars.font.family.body, // Nunito (brand — padrão Contratos fieldLabel; Figma usava Inter)
   fontSize: vars.font.size['2xs'], // 9.5px (Label/Field do Figma)
   fontWeight: vars.font.weight.semibold,
   color: vars.color.institutional.ink5,
@@ -311,7 +311,7 @@ const controlBase = {
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   background: vars.color.surface.default,
   color: vars.color.institutional.ink2,
-  fontFamily: vars.font.family.heading, // Inter (Figma/mock)
+  fontFamily: vars.font.family.body, // Nunito (brand — padrão Contratos input; Figma usava Inter)
   fontSize: vars.font.size.xs, // ~12.5px
   fontVariantNumeric: 'tabular-nums',
   transition: 'border-color 120ms ease, box-shadow 120ms ease',
@@ -582,7 +582,7 @@ export const dropzoneIcon = style({
 })
 export const dropzoneHint = style({
   maxInlineSize: '18rem',
-  fontFamily: vars.font.family.heading,
+  fontFamily: vars.font.family.body, // Nunito (brand — hint/prose, padrão Contratos)
   fontSize: vars.font.size.xs,
   lineHeight: 1.5,
   color: vars.color.text.secondary,
