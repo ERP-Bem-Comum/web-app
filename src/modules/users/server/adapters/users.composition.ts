@@ -35,6 +35,13 @@ const build = () => {
     getMe: createGetMe({ client }),
     updateMe: createUpdateMe({ client }),
     changePassword: createChangePassword({ client }),
+    // Foto de perfil (binário) — passthrough fino (I/O puro).
+    getMyPhoto: (token: string) => client.getMyPhoto(token),
+    uploadMyPhoto: (input: { bytes: Uint8Array; mimeType: string }, token: string) =>
+      client.uploadMyPhoto(input, token),
+    getUserPhoto: (id: string, token: string) => client.getUserPhoto(id, token),
+    uploadUserPhoto: (id: string, input: { bytes: Uint8Array; mimeType: string }, token: string) =>
+      client.uploadUserPhoto(id, input, token),
   }
 }
 

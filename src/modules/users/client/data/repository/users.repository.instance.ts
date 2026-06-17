@@ -10,6 +10,10 @@ import { setUserStatusFn } from '#modules/users/server/adapters/server-fns/set-u
 import { getMeFn } from '#modules/users/server/adapters/server-fns/get-me.query.fn.ts'
 import { updateMeFn } from '#modules/users/server/adapters/server-fns/update-me.service.fn.ts'
 import { changePasswordFn } from '#modules/users/server/adapters/server-fns/change-password.service.fn.ts'
+import { getMyPhotoFn } from '#modules/users/server/adapters/server-fns/get-my-photo.query.fn.ts'
+import { uploadMyPhotoFn } from '#modules/users/server/adapters/server-fns/upload-my-photo.service.fn.ts'
+import { getUserPhotoFn } from '#modules/users/server/adapters/server-fns/get-user-photo.query.fn.ts'
+import { uploadUserPhotoFn } from '#modules/users/server/adapters/server-fns/upload-user-photo.service.fn.ts'
 
 import { createUsersRepository } from './users.repository.ts'
 
@@ -22,4 +26,8 @@ export const usersRepository = createUsersRepository({
   getMeFn: () => getMeFn(),
   updateMeFn: (opts) => updateMeFn(opts),
   changePasswordFn: (opts) => changePasswordFn(opts),
+  getMyPhotoFn: () => getMyPhotoFn(),
+  uploadMyPhotoFn: (opts) => uploadMyPhotoFn(opts),
+  getUserPhotoFn: (opts) => getUserPhotoFn(opts),
+  uploadUserPhotoFn: (opts) => uploadUserPhotoFn(opts),
 })
