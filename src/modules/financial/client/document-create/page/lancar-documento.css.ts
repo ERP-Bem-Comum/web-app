@@ -395,7 +395,7 @@ export const reformaTitle = style({
 export const sidebarCol = style({
   display: 'flex',
   flexDirection: 'column',
-  gap: '1.375rem', // 22px (mock: div + div)
+  gap: vars.space.lg, // 24px (Figma: gap entre panels)
   minBlockSize: 0,
   blockSize: '100%',
   overflowY: 'auto',
@@ -426,13 +426,19 @@ export const compRow = style({
   justifyContent: 'space-between',
   alignItems: 'baseline',
   gap: vars.space.sm,
+  fontFamily: vars.font.family.body, // Nunito (brand — rótulo é prose)
   fontSize: vars.font.size.xs,
-  color: vars.color.text.secondary,
+  color: vars.color.institutional.ink4,
 })
+// Linha "Valor Bruto" (base): rótulo + valor em destaque (Figma Label/Lg, ink escuro).
+export const compRowStrong = style([
+  compRow,
+  { fontWeight: vars.font.weight.semibold, color: vars.color.institutional.ink2 },
+])
 export const compVal = style({
   fontFamily: vars.font.family.mono,
   fontSize: vars.font.size.xs,
-  color: vars.color.text.primary,
+  color: vars.color.institutional.ink2,
 })
 export const compSep = style({
   blockSize: vars.borderWidth.thin,
@@ -443,20 +449,24 @@ export const netBlock = style({
   display: 'flex',
   flexDirection: 'column',
   gap: vars.space.xs,
-  padding: vars.space.md,
-  borderRadius: vars.radius.md,
+  paddingBlock: '0.875rem', // 14px (Figma net-block)
+  paddingInline: vars.space.md, // 16px
+  borderRadius: vars.radius.lg, // 8px (Figma radius-lg)
   background: vars.color.institutional.blueBg,
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.blueLine}`,
 })
 export const netLabel = style({
-  fontSize: vars.font.size.xs,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size['2xs'], // 9px overline (Figma Label/Overline — não 12px)
+  fontWeight: vars.font.weight.bold,
   color: vars.color.institutional.blueDeep,
   textTransform: 'uppercase',
-  letterSpacing: '0.04em',
+  letterSpacing: '0.1em',
 })
 export const netValue = style({
   fontFamily: vars.font.family.mono,
-  fontSize: vars.font.size.xl,
+  fontSize: '1.375rem', // 22px (Figma Mono/Display)
+  lineHeight: 1.1,
   color: vars.color.institutional.blueDeep,
 })
 export const netDue = style({ fontSize: vars.font.size.xs, color: vars.color.text.muted })
@@ -590,7 +600,7 @@ export const dropzoneHint = style({
 export const dropzoneFormats = style({ fontSize: vars.font.size['2xs'], color: vars.color.text.muted })
 
 // ── Sidebar: painéis FLAT (Figma 670:* — sem card; só título + conteúdo) ─────────
-export const panel = style({ display: 'flex', flexDirection: 'column', gap: vars.space.sm })
+export const panel = style({ display: 'flex', flexDirection: 'column', gap: '0.625rem' /* 10px */ })
 export const panelTitle = style({
   margin: 0,
   fontFamily: vars.font.family.heading,
@@ -598,7 +608,7 @@ export const panelTitle = style({
   fontWeight: vars.font.weight.bold,
   color: vars.color.institutional.ink5,
   textTransform: 'uppercase',
-  letterSpacing: '0.08em',
+  letterSpacing: '0.1em', // tracking largo (Figma Label/Overline)
 })
 
 // ── Títulos Previstos: árvore (pai → filhos com conector tracejado + ticks) ───────

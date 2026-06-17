@@ -25,6 +25,7 @@ import {
   panel,
   panelTitle,
   compRow,
+  compRowStrong,
   compSep,
   compVal,
   netBlock,
@@ -71,7 +72,7 @@ export function ComposicaoSidebar(props: ComposicaoSidebarProps): ReactNode {
       {/* ── Composição ── */}
       <section className={panel}>
         <h4 className={panelTitle}>{t('financial.create.sidebar.composicao')}</h4>
-        <div className={compRow}>
+        <div className={compRowStrong}>
           <span>{t('financial.create.field.grossValue')}</span>
           <span className={compVal}>{formatReaisBRL(fields.grossValue)}</span>
         </div>
