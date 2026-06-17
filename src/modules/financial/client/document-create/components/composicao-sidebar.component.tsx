@@ -28,6 +28,7 @@ import {
   compRowStrong,
   compSep,
   compVal,
+  compValStrong,
   netBlock,
   netDue,
   netLabel,
@@ -74,7 +75,7 @@ export function ComposicaoSidebar(props: ComposicaoSidebarProps): ReactNode {
         <h4 className={panelTitle}>{t('financial.create.sidebar.composicao')}</h4>
         <div className={compRowStrong}>
           <span>{t('financial.create.field.grossValue')}</span>
-          <span className={compVal}>{formatReaisBRL(fields.grossValue)}</span>
+          <span className={compValStrong}>{formatReaisBRL(fields.grossValue)}</span>
         </div>
         {retEnabled ? (
           <>

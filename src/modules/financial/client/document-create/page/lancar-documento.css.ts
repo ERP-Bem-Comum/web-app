@@ -430,16 +430,15 @@ export const compRow = style({
   fontSize: vars.font.size.xs,
   color: vars.color.institutional.ink4,
 })
-// Linha "Valor Bruto" (base): rótulo + valor em destaque (Figma Label/Lg, ink escuro).
-export const compRowStrong = style([
-  compRow,
-  { fontWeight: vars.font.weight.semibold, color: vars.color.institutional.ink2 },
-])
+// Linha "Valor Bruto" (base): rótulo escuro (peso normal); só o VALOR é negrito (mock).
+export const compRowStrong = style([compRow, { color: vars.color.institutional.ink2 }])
 export const compVal = style({
   fontFamily: vars.font.family.mono,
   fontSize: vars.font.size.xs,
   color: vars.color.institutional.ink2,
 })
+// Valor do "Valor Bruto" — negrito (mock: o bruto se destaca; retenções ficam normais).
+export const compValStrong = style([compVal, { fontWeight: vars.font.weight.bold }])
 export const compSep = style({
   blockSize: vars.borderWidth.thin,
   background: vars.color.institutional.paperRule,
