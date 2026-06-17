@@ -21,6 +21,8 @@ export const trigger = style({
   fontSize: vars.font.size.sm,
   fontWeight: vars.font.weight.medium,
   fontFamily: vars.font.family.body,
+  whiteSpace: 'nowrap',
+  flexShrink: 0,
   cursor: 'pointer',
   ':hover': { background: vars.color.institutional.paperWarm, borderColor: vars.color.institutional.ink4 },
 })

@@ -292,7 +292,7 @@ export const errorBanner = style({
 export const bottombar = style({
   display: 'flex',
   alignItems: 'center',
-  gap: vars.space.md,
+  gap: vars.space.sm,
   height: '3.5rem',
   paddingInline: vars.space.lg,
   // Fonte da marca (Nunito) nos itens do footer; valores monetários (mono) sobrescrevem pontualmente.
@@ -310,12 +310,15 @@ export const footerActions = style({
   marginInlineStart: 'auto',
   display: 'inline-flex',
   alignItems: 'center',
-  gap: vars.space.md,
+  gap: vars.space.sm,
+  flexShrink: 0,
 })
 export const newButton = style({
   display: 'inline-flex',
   alignItems: 'center',
   gap: vars.space.sm,
+  flexShrink: 0,
+  whiteSpace: 'nowrap',
   textDecoration: 'none',
   fontSize: vars.font.size.sm,
   fontWeight: vars.font.weight.medium,
@@ -382,7 +385,8 @@ export const rowSelected = style({
 export const selBar = style({
   display: 'flex',
   alignItems: 'center',
-  gap: vars.space.md,
+  gap: vars.space.sm,
+  minInlineSize: 0,
 })
 export const selCount = style({
   display: 'inline-flex',
@@ -401,10 +405,12 @@ export const selSum = style({
   fontSize: vars.font.size.sm,
   fontWeight: vars.font.weight.semibold,
   color: vars.color.institutional.ink2,
+  whiteSpace: 'nowrap',
 })
 export const selSumLabel = style({
   fontSize: vars.font.size.xs,
   color: vars.color.institutional.ink4,
+  whiteSpace: 'nowrap',
 })
 export const selClear = style({
   border: 'none',
