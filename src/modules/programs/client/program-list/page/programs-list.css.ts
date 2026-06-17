@@ -29,3 +29,12 @@ export const logoPlaceholder = style({
   background: vars.color.surface.subtle,
   color: vars.color.text.muted,
 })
+
+// Logo real do programa (data URL via BFF) — mesmo gabarito do placeholder.
+export const logoImg = style({
+  inlineSize: '2.75rem',
+  blockSize: '2.75rem',
+  borderRadius: '50%',
+  objectFit: 'cover',
+  border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
+})
