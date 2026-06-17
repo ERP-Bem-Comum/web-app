@@ -160,7 +160,7 @@ export const row = style({
   minBlockSize: '3.5rem', // 56px
   paddingInline: vars.space.lg,
   borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
-  fontFamily: vars.font.family.heading, // Figma Body/Medium = Inter
+  fontFamily: vars.font.family.body, // marca: Nunito no corpo da tabela (padroniza com o grid de Contratos)
   fontSize: `calc(${vars.font.size.xs} + 0.0625rem)`, // +1px sobre o xs (12px → 13px) nos campos
   color: vars.color.institutional.ink2,
   transition: 'background 120ms ease',
@@ -432,7 +432,11 @@ export const selError = style({
 // transparente e serve só para fechar ao clicar fora; a linha clicada fica realçada (selecionada).
 export const drawerOverlay = style({
   position: 'fixed',
-  inset: 0,
+  // Começa ABAIXO do topbar do sistema p/ o header do drawer ficar visível (não some atrás do topbar).
+  insetBlockStart: vars.size.topbar,
+  insetBlockEnd: 0,
+  insetInlineStart: 0,
+  insetInlineEnd: 0,
   zIndex: 300,
   background: 'transparent',
   display: 'flex',
@@ -445,6 +449,8 @@ export const drawerPanel = style({
   flexDirection: 'column',
   background: vars.color.surface.default,
   boxShadow: vars.shadow.cardElevated,
+  // Base na fonte da marca (Nunito); overlines/badges (Inter) e números (mono) sobrescrevem pontualmente.
+  fontFamily: vars.font.family.body,
 })
 export const drawerHeader = style({
   flexShrink: 0,
@@ -523,7 +529,7 @@ export const detailLabel = style({
   color: vars.color.institutional.ink5,
 })
 export const detailValue = style({
-  fontFamily: vars.font.family.heading,
+  fontFamily: vars.font.family.body, // valor = Nunito (marca)
   fontSize: vars.font.size.xs,
   color: vars.color.institutional.ink2,
 })
@@ -600,9 +606,10 @@ export const drawerFooter = style({
   justifyContent: 'space-between', // Figma: Editar (esq.) · Fechar (dir.)
   alignItems: 'center',
   gap: vars.space.sm,
-  paddingBlock: vars.space.md,
-  paddingInline: vars.space.lg,
-  background: vars.color.institutional.paperWarm,
+  blockSize: '3.5rem', // mesma altura do footer da página (alinhado)
+  paddingInline: vars.space.lg, // mesmo recuo lateral do footer da página
+  // Levemente diferenciado do footer da página (paperWarm) — um tom acima (paperBeige).
+  background: vars.color.institutional.paperBeige,
   borderBlockStart: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
 })
 export const drawerCloseBtn = style({
@@ -675,7 +682,7 @@ export const tituloOverline = style({
   color: vars.color.institutional.ink5,
 })
 export const tituloNome = style({
-  fontFamily: vars.font.family.heading,
+  fontFamily: vars.font.family.body, // nome do título = Nunito (marca)
   fontSize: vars.font.size.sm,
   fontWeight: vars.font.weight.semibold,
   color: vars.color.institutional.ink2,
@@ -755,7 +762,7 @@ export const paymentCard = style({
   background: vars.color.surface.default,
 })
 export const paymentMethodName = style({
-  fontFamily: vars.font.family.heading,
+  fontFamily: vars.font.family.body, // método = Nunito (marca)
   fontSize: vars.font.size.sm,
   fontWeight: vars.font.weight.semibold,
   color: vars.color.institutional.ink2,
@@ -795,7 +802,7 @@ export const dwFileInfo = style({
   minInlineSize: 0,
 })
 export const dwFileName = style({
-  fontFamily: vars.font.family.heading,
+  fontFamily: vars.font.family.body, // nome do arquivo = Nunito (marca)
   fontSize: vars.font.size.xs,
   fontWeight: vars.font.weight.semibold,
   color: vars.color.institutional.ink4,
