@@ -25,13 +25,29 @@ export const avatar = style({
 
 // Cor por tipo de parceiro (tokens partnerType.*) + `brand` (navy) p/ grids não-parceiro.
 export const avatarVariant = styleVariants({
-  collaborator: { background: vars.color.partnerType.collaborator.background, color: vars.color.partnerType.collaborator.text },
-  supplier: { background: vars.color.partnerType.supplier.background, color: vars.color.partnerType.supplier.text },
-  financier: { background: vars.color.partnerType.financier.background, color: vars.color.partnerType.financier.text },
+  collaborator: {
+    background: vars.color.partnerType.collaborator.background,
+    color: vars.color.partnerType.collaborator.text,
+  },
+  supplier: {
+    background: vars.color.partnerType.supplier.background,
+    color: vars.color.partnerType.supplier.text,
+  },
+  financier: {
+    background: vars.color.partnerType.financier.background,
+    color: vars.color.partnerType.financier.text,
+  },
   act: { background: vars.color.partnerType.act.background, color: vars.color.partnerType.act.text },
   // `brand` = azul sólido da marca (mesmo do avatar do topbar). `neutral` = cinza (igual ao "Minha Conta").
   brand: { background: vars.color.brand.normal, color: vars.color.brand.onBrand },
   neutral: { background: vars.color.surface.subtle, color: vars.color.text.secondary },
+})
+
+// Coluna nome + sublinha (opcional). Sem `subtitle`, o `label` segue centralizado pelo `wrap`.
+export const textCol = style({
+  display: 'flex',
+  flexDirection: 'column',
+  minInlineSize: 0,
 })
 
 export const label = style({
@@ -39,4 +55,15 @@ export const label = style({
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
+})
+
+// Sublinha (ex.: CNPJ) — mono, menor, esmaecida (padrão do grid de Contratos / Figma).
+export const subtitle = style({
+  minInlineSize: 0,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size['2xs'],
+  color: vars.color.text.muted,
 })

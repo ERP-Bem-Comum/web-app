@@ -3,6 +3,7 @@
  * Parceiros vivem em `/api/v1` (ADR-0033) — derivamos a base do `CORE_API_URL`.
  */
 import { loadEnvOrThrow } from '#external/config/env.config.ts'
+import { coreApiBase } from '#external/core-api/api-base.ts'
 import { createCoreApiGeographyClient } from './core-api/core-api-geography.ts'
 import {
   createListPartnerStates,
@@ -14,14 +15,9 @@ import {
 
 type GeographyServer = ReturnType<typeof build>
 
-const derivePartnersBase = (coreApiUrl: string): string =>
-  coreApiUrl.includes('/api/v2')
-    ? coreApiUrl.replace('/api/v2', '/api/v1')
-    : `${coreApiUrl.replace(/\/+$/, '')}/api/v1`
-
 const build = () => {
   const env = loadEnvOrThrow()
-  const client = createCoreApiGeographyClient(derivePartnersBase(env.CORE_API_URL))
+  const client = createCoreApiGeographyClient(coreApiBase(env.CORE_API_URL, 'v1'))
   return {
     listPartnerStates: createListPartnerStates({ client }),
     togglePartnerState: createTogglePartnerState({ client }),

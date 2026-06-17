@@ -5,13 +5,26 @@
  * envelope de erro para `UsersError`.
  */
 import { ok, err, isErr, type Result } from '#shared/primitives/result.ts'
+import { documentContentFetch } from '#external/core-api/document-content-fetch.ts'
+import { octetStreamFetch } from '#external/core-api/octet-stream-fetch.ts'
 import type { HttpError } from '#shared/http/http-error.types.ts'
 import { parseErrorEnvelope } from '#shared/http/error-envelope.ts'
 import { resultFetch } from '#external/core-api/result-fetch.ts'
 import type { UsersError } from '#modules/users/server/domain/errors/users.errors.ts'
 import type { UserClient } from '#modules/users/server/application/users.use-cases.ts'
-import type { ListUsersInput, UserListItem, UserListResponse, UserDetail } from '#modules/users/server/domain/user.io.ts'
-import { CoreApiUserListSchema, CoreApiCreatedUserSchema, CoreApiUserDetailSchema, type CoreApiUserItem, type CoreApiUserDetail } from './users.schema.ts'
+import type {
+  ListUsersInput,
+  UserListItem,
+  UserListResponse,
+  UserDetail,
+} from '#modules/users/server/domain/user.io.ts'
+import {
+  CoreApiUserListSchema,
+  CoreApiCreatedUserSchema,
+  CoreApiUserDetailSchema,
+  type CoreApiUserItem,
+  type CoreApiUserDetail,
+} from './users.schema.ts'
 
 const SLUG_TO_ERROR: Partial<Record<string, UsersError>> = {
   unauthorized: 'unauthorized',
@@ -151,7 +164,11 @@ export const createCoreApiUsersClient = (baseUrl: string, authBaseUrl: string): 
       return detailToModel(r.value)
     },
     updateMe: async (input, token) => {
-      const r = await resultFetch<unknown>(`${baseUrl}/me`, { method: 'PUT', body: input, headers: auth(token) })
+      const r = await resultFetch<unknown>(`${baseUrl}/me`, {
+        method: 'PUT',
+        body: input,
+        headers: auth(token),
+      })
       if (isErr(r)) return err(mapHttpError(r.error))
       return detailToModel(r.value)
     },
@@ -161,6 +178,38 @@ export const createCoreApiUsersClient = (baseUrl: string, authBaseUrl: string): 
         method: 'POST',
         body: input,
         headers: auth(token),
+      })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      return ok(undefined)
+    },
+    // ── Foto de perfil (binário) ────────────────────────────────────────────
+    getMyPhoto: async (token) => {
+      const r = await documentContentFetch(`${baseUrl}/me/photo`, { token })
+      if (isErr(r)) return err(mapHttpError(r.error)) // 404 (sem foto) → 'not-found' (server fn vira null)
+      return ok({ bytes: r.value.bytes, contentType: r.value.contentType })
+    },
+    uploadMyPhoto: async (input, token) => {
+      // PUT binário cru (octet-stream) + ?mimeType= (convenção do core-api p/ foto). Corpo da resposta ignorado.
+      const r = await octetStreamFetch<unknown>(`${baseUrl}/me/photo`, {
+        token,
+        bytes: input.bytes,
+        method: 'PUT',
+        query: { mimeType: input.mimeType },
+      })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      return ok(undefined)
+    },
+    getUserPhoto: async (id, token) => {
+      const r = await documentContentFetch(`${baseUrl}/users/${id}/photo`, { token })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      return ok({ bytes: r.value.bytes, contentType: r.value.contentType })
+    },
+    uploadUserPhoto: async (id, input, token) => {
+      const r = await octetStreamFetch<unknown>(`${baseUrl}/users/${id}/photo`, {
+        token,
+        bytes: input.bytes,
+        method: 'PUT',
+        query: { mimeType: input.mimeType },
       })
       if (isErr(r)) return err(mapHttpError(r.error))
       return ok(undefined)

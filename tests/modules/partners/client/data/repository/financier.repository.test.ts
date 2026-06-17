@@ -19,6 +19,7 @@ const detail: FinancierDetail = {
   address: 'Av. Paulista, 1000',
   bankAccount: null,
   pixKey: null,
+  contractCount: 0,
 }
 
 const listResponse: FinancierListResponse = {
@@ -31,6 +32,7 @@ const listResponse: FinancierListResponse = {
       cnpj: '12345678000190',
       telephone: '1140000000',
       activation: 'active',
+      contractCount: 0,
     },
   ],
   meta: { page: 1, limit: 5, total: 1 },

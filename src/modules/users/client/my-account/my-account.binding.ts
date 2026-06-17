@@ -11,6 +11,13 @@ import { usersErrorTag } from '#modules/users/client/data/helpers/users-error-ta
 import { DEFAULT_PASSWORD_LIMITS, type PasswordLimits } from '#modules/users/client/domain/password-policy.ts'
 import type { UpdateMeInput, ChangePasswordInput } from '#modules/users/client/data/model/user.model.ts'
 
+import {
+  useMyPhoto,
+  useMyPhotoUpload,
+  type PhotoView,
+  type PhotoUploadCommand,
+} from '#modules/users/client/user-photo/user-photo.binding.ts'
+
 import { deriveMyAccountState, myAccountViewModel, type MyAccountState } from './my-account.view-model.ts'
 import { updateMeMutationOptions, changePasswordMutationOptions } from './my-account.mutation.ts'
 
@@ -32,6 +39,8 @@ export type MyAccountBinding = Readonly<{
   passwordCommand: MyAccountPasswordCommand
   // Política de senha (#32) da fonte única; fallback seguro {12,128} quando indisponível (D4).
   passwordLimits: PasswordLimits
+  photo: PhotoView
+  photoUpload: PhotoUploadCommand
 }>
 
 export function useMyAccountBinding(onSaved?: () => void): MyAccountBinding {
@@ -58,7 +67,9 @@ export function useMyAccountBinding(onSaved?: () => void): MyAccountBinding {
     onSuccess: (res) => {
       // Sucesso → o core-api revogou TODAS as sessões: encerra a sessão local e leva ao login.
       if (isOk(res)) {
-        void logoutUseCase().finally(() => { void navigate({ to: '/login' }) })
+        void logoutUseCase().finally(() => {
+          void navigate({ to: '/login' })
+        })
       }
     },
   })
@@ -69,6 +80,11 @@ export function useMyAccountBinding(onSaved?: () => void): MyAccountBinding {
     if (query.isError || res === undefined) return { status: 'error', errorTag: 'users.error.server' }
     return deriveMyAccountState(res)
   })()
+
+  // Foto: a flag `imageUrl` (do detalhe /me) diz se há foto; o binding busca os bytes só quando existe.
+  const imageUrl = query.data !== undefined && isOk(query.data) ? query.data.value.imageUrl : null
+  const photo = useMyPhoto(imageUrl)
+  const photoUpload = useMyPhotoUpload()
 
   const sdata = saveMutation.data
   const saveErrorTag = saveMutation.isPending
@@ -91,15 +107,21 @@ export function useMyAccountBinding(onSaved?: () => void): MyAccountBinding {
   return {
     state,
     passwordLimits,
+    photo,
+    photoUpload,
     saveCommand: {
       running: saveMutation.isPending,
       errorTag: saveErrorTag,
-      execute: (input) => { saveMutation.mutate(input) },
+      execute: (input) => {
+        saveMutation.mutate(input)
+      },
     },
     passwordCommand: {
       running: passwordMutation.isPending,
       errorTag: passwordErrorTag,
-      execute: (input) => { passwordMutation.mutate(input) },
+      execute: (input) => {
+        passwordMutation.mutate(input)
+      },
     },
   }
 }

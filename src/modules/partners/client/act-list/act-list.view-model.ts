@@ -21,6 +21,7 @@ export function mapItemToRow(item: ActListItem): ActRow {
     occupationArea: item.occupationArea,
     hasFinancialTransfer: item.hasFinancialTransfer,
     active: item.active,
+    contractCount: item.contractCount,
   }
 }
 

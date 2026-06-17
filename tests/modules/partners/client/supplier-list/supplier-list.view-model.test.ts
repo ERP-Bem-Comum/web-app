@@ -17,6 +17,7 @@ const item: SupplierListItem = {
   fantasyName: 'Acme',
   serviceCategory: 'Limpeza',
   activation: 'active',
+  contractCount: 0,
 }
 
 describe('supplier-list.view-model', () => {
@@ -29,6 +30,7 @@ describe('supplier-list.view-model', () => {
       email: 'c@acme.dev',
       serviceCategory: 'Limpeza',
       activation: 'active',
+      contractCount: 0,
     })
   })
 

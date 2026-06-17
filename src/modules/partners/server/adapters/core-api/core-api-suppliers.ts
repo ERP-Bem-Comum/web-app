@@ -17,7 +17,10 @@ import type {
   SupplierDetail,
   CreateSupplierInput,
 } from '#modules/partners/server/domain/supplier/supplier.io.ts'
-import type { ActivationStatus, ServiceRating } from '#modules/partners/server/domain/supplier/supplier.types.ts'
+import type {
+  ActivationStatus,
+  ServiceRating,
+} from '#modules/partners/server/domain/supplier/supplier.types.ts'
 import {
   CoreApiSupplierListSchema,
   CoreApiSupplierDetailSchema,
@@ -89,6 +92,7 @@ const itemToModel = (s: CoreApiSupplierItem): SupplierListItem => ({
   fantasyName: s.fantasyName,
   serviceCategory: s.serviceCategory,
   activation: activationFromApi(s.active),
+  contractCount: s.contractCount,
 })
 
 // Exportado p/ teste (supplier-rating.test): leitura tolerante da avaliação (§1.6, D2).
@@ -144,8 +148,14 @@ export const toWriteBody = (input: CreateSupplierInput): Record<string, unknown>
 export const createCoreApiSuppliersClient = (baseUrl: string): SupplierClient => {
   const auth = (token: string) => ({ Authorization: `Bearer ${token}` })
 
-  const fetchDetailById = async (id: string, token: string): Promise<Result<SupplierDetail, PartnersError>> => {
-    const r = await resultFetch<unknown>(`${baseUrl}/suppliers/${id}`, { method: 'GET', headers: auth(token) })
+  const fetchDetailById = async (
+    id: string,
+    token: string,
+  ): Promise<Result<SupplierDetail, PartnersError>> => {
+    const r = await resultFetch<unknown>(`${baseUrl}/suppliers/${id}`, {
+      method: 'GET',
+      headers: auth(token),
+    })
     if (isErr(r)) return err(mapHttpError(r.error))
     return detailToModel(r.value)
   }

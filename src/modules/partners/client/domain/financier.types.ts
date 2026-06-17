@@ -15,6 +15,7 @@ export type FinancierRow = Readonly<{
   cnpj: string
   telephone: string
   activation: ActivationStatus
+  contractCount: number
 }>
 
 /** Ação de ciclo de vida no detalhe. */

@@ -3,7 +3,16 @@ import { getRouteApi, useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { Badge, Button, DataTable, PageHeader, AvatarLabel, initialsFrom, type Column, type DataTableState } from '#shared/ui/index.ts'
+import {
+  Badge,
+  Button,
+  DataTable,
+  PageHeader,
+  AvatarLabel,
+  initialsFrom,
+  type Column,
+  type DataTableState,
+} from '#shared/ui/index.ts'
 
 import { useSupplierListBinding } from '../supplier-list.binding.ts'
 import { totalPages, type SupplierListState, type SupplierRow } from '../supplier-list.view-model.ts'
@@ -37,17 +46,24 @@ export function SupplierListPage(): ReactNode {
   // PDF = window.print (mesmo mecanismo dos Contratos): liga o printable, imprime e desliga.
   useEffect(() => {
     if (!printing) return
-    const id = setTimeout(() => { window.print(); setPrinting(false) }, 0)
-    return () => { clearTimeout(id) }
+    const id = setTimeout(() => {
+      window.print()
+      setPrinting(false)
+    }, 0)
+    return () => {
+      clearTimeout(id)
+    }
   }, [printing])
 
   const hasFilters =
-    (search.search ?? '') !== '' ||
-    search.active !== undefined ||
-    (search.categories?.length ?? 0) > 0
+    (search.search ?? '') !== '' || search.active !== undefined || (search.categories?.length ?? 0) > 0
 
   const columns: readonly Column<SupplierRow>[] = [
-    { key: 'name', header: t('partners.suppliers.columns.name'), cell: (r) => <AvatarLabel variant="supplier" initials={initialsFrom(r.name)} text={r.name} /> },
+    {
+      key: 'name',
+      header: t('partners.suppliers.columns.name'),
+      cell: (r) => <AvatarLabel variant="supplier" initials={initialsFrom(r.name)} text={r.name} />,
+    },
     { key: 'email', header: t('partners.suppliers.columns.email'), cell: (r) => r.email },
     {
       key: 'cnpj',
@@ -55,9 +71,10 @@ export function SupplierListPage(): ReactNode {
       cell: (r) => <span className={cnpjCell}>{formatCnpj(r.cnpj)}</span>,
     },
     {
+      // Contratos/Aditivos: contagem de contratos ativos vinda do item da lista (#46).
       key: 'contracts',
       header: t('partners.suppliers.columns.contracts'),
-      cell: () => '—',
+      cell: (r) => String(r.contractCount),
     },
     {
       key: 'status',
@@ -134,11 +151,17 @@ export function SupplierListPage(): ReactNode {
               filenameBase="fornecedores"
               headers={exportColumns}
               rows={exportRows}
-              onPrint={() => { setPrinting(true) }}
+              onPrint={() => {
+                setPrinting(true)
+              }}
             />
           }
           onSearch={(value) =>
-            void navigate({ to: '.', replace: true, search: (p) => ({ ...p, search: value || undefined, page: 1 }) })
+            void navigate({
+              to: '.',
+              replace: true,
+              search: (p) => ({ ...p, search: value || undefined, page: 1 }),
+            })
           }
           onStatus={(s) =>
             void navigate({
@@ -155,10 +178,18 @@ export function SupplierListPage(): ReactNode {
             })
           }
           onClear={() =>
-            void navigate({ to: '.', replace: true, search: (p) => ({ ...p, categories: undefined, page: 1 }) })
+            void navigate({
+              to: '.',
+              replace: true,
+              search: (p) => ({ ...p, categories: undefined, page: 1 }),
+            })
           }
           onClearAll={() =>
-            void navigate({ to: '.', replace: true, search: (p) => ({ ...p, active: undefined, categories: undefined, page: 1 }) })
+            void navigate({
+              to: '.',
+              replace: true,
+              search: (p) => ({ ...p, active: undefined, categories: undefined, page: 1 }),
+            })
           }
         />
 
@@ -166,7 +197,9 @@ export function SupplierListPage(): ReactNode {
           columns={columns}
           state={tableState}
           rowKey={(r) => r.id}
-          emptyLabel={hasFilters ? t('partners.suppliers.list.no-results') : t('partners.suppliers.list.empty')}
+          emptyLabel={
+            hasFilters ? t('partners.suppliers.list.no-results') : t('partners.suppliers.list.empty')
+          }
           loadingLabel={t('partners.suppliers.list.loading')}
           caption={t('partners.suppliers.list.title')}
           onRowClick={(r) => void navigate({ to: '/parceiros/fornecedores/$id', params: { id: r.id } })}
@@ -184,7 +217,9 @@ export function SupplierListPage(): ReactNode {
           }}
           onPrev={() => void navigate({ to: '.', search: (p) => ({ ...p, page: Math.max(1, pageNum - 1) }) })}
           onNext={() => void navigate({ to: '.', search: (p) => ({ ...p, page: pageNum + 1 }) })}
-          onPerPage={(perPage) => void navigate({ to: '.', search: (p) => ({ ...p, limit: perPage, page: 1 }) })}
+          onPerPage={(perPage) =>
+            void navigate({ to: '.', search: (p) => ({ ...p, limit: perPage, page: 1 }) })
+          }
         />
       </div>
 

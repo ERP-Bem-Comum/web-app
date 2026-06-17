@@ -15,6 +15,10 @@ import type {
   ChangePasswordInput,
 } from '#modules/users/server/domain/user.io.ts'
 
+// Foto (binário): GET devolve bytes+mime; upload (PUT) envia bytes crus + ?mimeType= → sem corpo útil.
+export type UserPhoto = Readonly<{ bytes: Uint8Array; contentType: string }>
+export type UserPhotoUpload = Readonly<{ bytes: Uint8Array; mimeType: string }>
+
 export type UserClient = Readonly<{
   list: (input: ListUsersInput, token: string) => Promise<Result<UserListResponse, UsersError>>
   create: (input: CreateUserInput, token: string) => Promise<Result<CreatedUser, UsersError>>
@@ -24,6 +28,11 @@ export type UserClient = Readonly<{
   getMe: (token: string) => Promise<Result<UserDetail, UsersError>>
   updateMe: (input: UpdateMeInput, token: string) => Promise<Result<UserDetail, UsersError>>
   changePassword: (input: ChangePasswordInput, token: string) => Promise<Result<void, UsersError>>
+  // Foto de perfil — autosserviço (/me) e admin (/users/:id).
+  getMyPhoto: (token: string) => Promise<Result<UserPhoto, UsersError>>
+  uploadMyPhoto: (input: UserPhotoUpload, token: string) => Promise<Result<void, UsersError>>
+  getUserPhoto: (id: string, token: string) => Promise<Result<UserPhoto, UsersError>>
+  uploadUserPhoto: (id: string, input: UserPhotoUpload, token: string) => Promise<Result<void, UsersError>>
 }>
 
 type Deps = Readonly<{ client: UserClient }>

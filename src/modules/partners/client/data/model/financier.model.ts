@@ -33,6 +33,7 @@ export type FinancierListItem = Readonly<{
   cnpj: string
   telephone: string
   activation: ActivationStatus
+  contractCount: number
 }>
 
 export type FinancierDetail = FinancierListItem &

@@ -16,6 +16,8 @@ export const CoreApiCollaboratorItemSchema = z.object({
   role: z.string().trim(),
   status: z.enum(['PreRegistration', 'Complete']),
   active: z.boolean(),
+  // Contratos ativos do parceiro (#46). `.catch(0)` tolera resposta sem o campo (fallback → 0).
+  contractCount: z.int().nonnegative().catch(0),
 })
 export type CoreApiCollaboratorItem = z.infer<typeof CoreApiCollaboratorItemSchema>
 

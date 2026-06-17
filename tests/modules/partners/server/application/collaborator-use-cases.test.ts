@@ -26,6 +26,7 @@ const fakeDetail: CollaboratorDetail = {
   role: 'Analista',
   registration: 'pre-registration',
   activation: 'active',
+  contractCount: 0,
   cpf: '11144477735',
   startOfContract: '2024-01-01',
   employmentRelationship: 'PJ',
@@ -35,7 +36,8 @@ const fakeClient: CollaboratorClient = {
   list: () => Promise.resolve(ok({ items: [], meta: { page: 1, limit: 5, total: 0 } })),
   getById: () => Promise.resolve(ok(fakeDetail)),
   create: () => Promise.resolve(ok(fakeDetail)),
-  deactivate: () => Promise.resolve(ok({ ...fakeDetail, activation: 'inactive', registration: 'pre-registration' })),
+  deactivate: () =>
+    Promise.resolve(ok({ ...fakeDetail, activation: 'inactive', registration: 'pre-registration' })),
   reactivate: () => Promise.resolve(ok(fakeDetail)),
   completeRegistration: () => Promise.resolve(ok({ ...fakeDetail, registration: 'complete' })),
   update: () => Promise.resolve(ok({ ...fakeDetail, role: 'Coordenadora' })),
@@ -67,20 +69,39 @@ describe('Collaborator use-cases', () => {
     assert.equal(isOk(r) && r.value.name === 'Ana', true)
   })
   it('deactivate retorna inactive', async () => {
-    const r = await createDeactivateCollaborator({ client: fakeClient })('1', 'TEMPO_CONTRATO_FINALIZADO', 'token')
+    const r = await createDeactivateCollaborator({ client: fakeClient })(
+      '1',
+      'TEMPO_CONTRATO_FINALIZADO',
+      'token',
+    )
     assert.equal(isOk(r) && r.value.activation === 'inactive', true)
   })
   it('import retorna relatório parcial (created + failed)', async () => {
-    const r = await createImportCollaborators({ client: fakeClient })({ filename: 'c.csv', csv: 'name,email\nAna,a@b.dev' }, 'token')
+    const r = await createImportCollaborators({ client: fakeClient })(
+      { filename: 'c.csv', csv: 'name,email\nAna,a@b.dev' },
+      'token',
+    )
     assert.equal(isOk(r) && r.value.created === 2 && r.value.failed.length === 1, true)
   })
   it('completeRegistration promove a situação para complete', async () => {
-    const r = await createCompleteCollaboratorRegistration({ client: fakeClient })({ id: '1', rg: '12.345.678-9', biography: 'Olá' }, 'token')
+    const r = await createCompleteCollaboratorRegistration({ client: fakeClient })(
+      { id: '1', rg: '12.345.678-9', biography: 'Olá' },
+      'token',
+    )
     assert.equal(isOk(r) && r.value.registration === 'complete', true)
   })
   it('update retorna o detail atualizado', async () => {
     const r = await createUpdateCollaborator({ client: fakeClient })(
-      { id: '1', name: 'Ana', email: 'ana@bemcomum.dev', cpf: '11144477735', occupationArea: 'EPV', role: 'Coordenadora', startOfContract: '2024-01-01', employmentRelationship: 'PJ' },
+      {
+        id: '1',
+        name: 'Ana',
+        email: 'ana@bemcomum.dev',
+        cpf: '11144477735',
+        occupationArea: 'EPV',
+        role: 'Coordenadora',
+        startOfContract: '2024-01-01',
+        employmentRelationship: 'PJ',
+      },
       'token',
     )
     assert.equal(isOk(r) && r.value.role === 'Coordenadora', true)

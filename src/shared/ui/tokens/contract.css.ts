@@ -123,6 +123,7 @@ export const vars = createThemeContract({
       mono: null,
     },
     size: {
+      '2xs': null,
       xs: null,
       sm: null,
       md: null,

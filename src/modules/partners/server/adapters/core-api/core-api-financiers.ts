@@ -79,6 +79,7 @@ const itemToModel = (f: CoreApiFinancierItem): FinancierListItem => ({
   cnpj: f.cnpj,
   telephone: f.telephone,
   activation: activationFromApi(f.active),
+  contractCount: f.contractCount,
 })
 
 const detailToModel = (raw: unknown): Result<FinancierDetail, PartnersError> => {

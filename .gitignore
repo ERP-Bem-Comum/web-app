@@ -23,3 +23,7 @@ count.txt
 # Kimi Code CLI — config pessoal do dev (pode conter API key/credenciais em .kimi/config.toml).
 # NUNCA versionar. As skills/regras compartilhadas vivem em .claude/ + AGENTS.md (versionados).
 .kimi/
+
+# Cópia perdida do backend dentro do front (o core-api canônico é a pasta-irmã ../core-api).
+# Não pertence a este repo — ignorada p/ não poluir num 'git add .'.
+/core-api/

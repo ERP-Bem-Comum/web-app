@@ -12,7 +12,18 @@ import { usersErrorTag } from '#modules/users/client/data/helpers/users-error-ta
 import type { UpdateUserInput } from '#modules/users/client/data/model/user.model.ts'
 import type { StatusAction } from '#modules/users/client/domain/user.types.ts'
 
-import { deriveUserDetailState, userDetailViewModel, type UserDetailState } from './users-detail.view-model.ts'
+import {
+  useUserPhoto,
+  useUserPhotoUpload,
+  type PhotoView,
+  type PhotoUploadCommand,
+} from '#modules/users/client/user-photo/user-photo.binding.ts'
+
+import {
+  deriveUserDetailState,
+  userDetailViewModel,
+  type UserDetailState,
+} from './users-detail.view-model.ts'
 import { usersUpdateMutationOptions } from './users-update.mutation.ts'
 import { usersStatusMutationOptions } from './users-status.mutation.ts'
 
@@ -34,6 +45,8 @@ export type UsersDetailBinding = Readonly<{
   statusCommand: UsersStatusCommand
   canUpdate: boolean
   canSetStatus: boolean
+  photo: PhotoView
+  photoUpload: PhotoUploadCommand
 }>
 
 export function useUsersDetailBinding(id: string, onSaved?: () => void): UsersDetailBinding {
@@ -61,6 +74,11 @@ export function useUsersDetailBinding(id: string, onSaved?: () => void): UsersDe
     if (query.isError || res === undefined) return { status: 'error', errorTag: 'users.error.server' }
     return deriveUserDetailState(res)
   })()
+
+  // Foto (admin): a flag `imageUrl` do detalhe diz se há foto; busca os bytes só quando existe.
+  const imageUrl = query.data !== undefined && isOk(query.data) ? query.data.value.imageUrl : null
+  const photo = useUserPhoto(id, imageUrl)
+  const photoUpload = useUserPhotoUpload(id)
 
   const sdata = saveMutation.data
   const saveErrorTag = saveMutation.isPending
@@ -98,5 +116,7 @@ export function useUsersDetailBinding(id: string, onSaved?: () => void): UsersDe
     },
     canUpdate: can(granted, 'user:update'),
     canSetStatus: can(granted, 'user:activate') || can(granted, 'user:deactivate'),
+    photo,
+    photoUpload,
   }
 }

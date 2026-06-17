@@ -59,8 +59,13 @@ export function CollaboratorListPage(): ReactNode {
 
   useEffect(() => {
     if (!printing) return
-    const id = setTimeout(() => { window.print(); setPrinting(false) }, 0)
-    return () => { clearTimeout(id) }
+    const id = setTimeout(() => {
+      window.print()
+      setPrinting(false)
+    }, 0)
+    return () => {
+      clearTimeout(id)
+    }
   }, [printing])
 
   const reportOpen = !reportDismissed && (importCommand.result !== null || importCommand.errorTag !== null)
@@ -86,7 +91,9 @@ export function CollaboratorListPage(): ReactNode {
       header: t('partners.collaborators.columns.legalRepresentative'),
       cell: (r) => (
         <div className={nameCell}>
-          <span className={avatar} aria-hidden="true">{initials(r.name)}</span>
+          <span className={avatar} aria-hidden="true">
+            {initials(r.name)}
+          </span>
           <span className={nameText}>{r.name}</span>
         </div>
       ),
@@ -98,10 +105,10 @@ export function CollaboratorListPage(): ReactNode {
       cell: (r) => areaLabel(r.occupationArea),
     },
     {
-      // Contratos/Aditivos: coluna do legado; o item da lista do backend ainda não traz a contagem.
+      // Contratos/Aditivos: contagem de contratos ativos vinda do item da lista (#46).
       key: 'contracts',
       header: t('partners.collaborators.columns.contracts'),
-      cell: () => '—',
+      cell: (r) => String(r.contractCount),
     },
     { key: 'role', header: t('partners.collaborators.columns.role'), cell: (r) => r.role },
     {
@@ -151,152 +158,202 @@ export function CollaboratorListPage(): ReactNode {
   return (
     <div className={screen}>
       <div className={printing ? contentWrapPrintHidden : contentWrap}>
-      <PageHeader
-        title={t('partners.collaborators.list.title')}
-        subtitle={t('partners.collaborators.list.subtitle')}
-        actions={
-          canCreate ? (
-            <div className={toolbarActions}>
-              {/* Importar CSV/Excel — abre o seletor de arquivo → importCsv → relatório (criados/falhas). */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".csv,text/csv"
-                style={{ display: 'none' }}
-                onChange={(e) => {
-                  const f = e.target.files?.[0]
-                  if (f) void onPickFile(f)
-                  e.target.value = ''
-                }}
-              />
-              <button
-                type="button"
-                className={importButton}
-                title={t('partners.collaborators.list.import')}
-                disabled={importCommand.running}
-                onClick={() => { fileInputRef.current?.click() }}
-              >
-                {importCommand.running ? t('partners.collaborators.import.running') : t('partners.collaborators.list.import')}
-              </button>
-              <Button onClick={() => void navigate({ to: '/parceiros/colaboradores/criar' })}>
-                {t('partners.collaborators.list.new')}
-              </Button>
-            </div>
-          ) : undefined
-        }
-      />
+        <PageHeader
+          title={t('partners.collaborators.list.title')}
+          subtitle={t('partners.collaborators.list.subtitle')}
+          actions={
+            canCreate ? (
+              <div className={toolbarActions}>
+                {/* Importar CSV/Excel — abre o seletor de arquivo → importCsv → relatório (criados/falhas). */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv,text/csv"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0]
+                    if (f) void onPickFile(f)
+                    e.target.value = ''
+                  }}
+                />
+                <button
+                  type="button"
+                  className={importButton}
+                  title={t('partners.collaborators.list.import')}
+                  disabled={importCommand.running}
+                  onClick={() => {
+                    fileInputRef.current?.click()
+                  }}
+                >
+                  {importCommand.running
+                    ? t('partners.collaborators.import.running')
+                    : t('partners.collaborators.list.import')}
+                </button>
+                <Button onClick={() => void navigate({ to: '/parceiros/colaboradores/criar' })}>
+                  {t('partners.collaborators.list.new')}
+                </Button>
+              </div>
+            ) : undefined
+          }
+        />
 
-      <CollaboratorFilters
-        searchValue={search.search ?? ''}
-        status={statusFromActive(search.active)}
-        situacao={search.status ?? ''}
-        employment={search.employment ?? ''}
-        role={search.role ?? ''}
-        year={search.year !== undefined ? String(search.year) : ''}
-        employmentOptions={EMPLOYMENT_RELATIONSHIPS.map((e) => ({ value: e, label: t(`partners.collaborators.employment.${e}`) }))}
-        labels={{
-          search: t('partners.collaborators.list.search'),
-          all: t('partners.collaborators.filters.all'),
-          active: t('partners.collaborators.filters.active'),
-          inactive: t('partners.collaborators.filters.inactive'),
-          toggle: t('partners.collaborators.filters.toggle'),
-          situacao: t('partners.collaborators.filters.situacao'),
-          employment: t('partners.collaborators.filters.employment'),
-          role: t('partners.collaborators.filters.role'),
-          year: t('partners.collaborators.filters.year'),
-          escolaridade: t('partners.collaborators.filters.escolaridade'),
-          raca: t('partners.collaborators.filters.raca'),
-          idade: t('partners.collaborators.filters.idade'),
-          genderIdentity: t('partners.collaborators.filters.genderIdentity'),
-          programa: t('partners.collaborators.filters.programa'),
-          deactivatedBy: t('partners.collaborators.filters.deactivatedBy'),
-          gatedHint: t('partners.collaborators.filters.gatedHint'),
-          allOption: t('partners.collaborators.filters.allOption'),
-          preRegistration: t('partners.collaborators.registration.pre-registration'),
-          complete: t('partners.collaborators.registration.complete'),
-          apply: t('partners.collaborators.filters.apply'),
-          advancedTitle: t('partners.collaborators.filters.advancedTitle'),
-          advancedSubtitle: t('partners.collaborators.filters.advancedSubtitle'),
-          collapse: t('partners.collaborators.filters.collapse'),
-          clear: t('partners.collaborators.filters.clear'),
-          groupPessoais: t('partners.collaborators.filters.groupPessoais'),
-          groupContratuais: t('partners.collaborators.filters.groupContratuais'),
-          groupSituacao: t('partners.collaborators.filters.groupSituacao'),
-          applied: t('partners.collaborators.filters.applied'),
-          statusLabel: t('partners.collaborators.columns.status'),
-          clearAll: t('partners.collaborators.filters.clearAll'),
-          removeFilter: t('partners.collaborators.filters.removeFilter'),
-        }}
-        exportSlot={
-          <CollaboratorExportDropdown
-            exportLabel={t('partners.collaborators.filters.export')}
-            tudoLabel={t('partners.collaborators.export.tudo')}
-            historicoLabel={t('partners.collaborators.export.historico')}
-            historicoGatedHint={t('partners.collaborators.export.historico.gated')}
-            templateLabel={t('partners.collaborators.export.template')}
-            onPrint={() => { setPrinting(true) }}
-          />
-        }
-        onSearch={(value) =>
-          void navigate({ to: '.', replace: true, search: (p) => ({ ...p, search: value || undefined, page: 1 }) })
-        }
-        onStatus={(s) =>
-          void navigate({ to: '.', replace: true, search: (p) => ({ ...p, active: s === 'all' ? undefined : s === 'active', page: 1 }) })
-        }
-        onSituacao={(v) =>
-          void navigate({ to: '.', replace: true, search: (p) => ({ ...p, status: v === '' ? undefined : v, page: 1 }) })
-        }
-        onEmployment={(v) =>
-          void navigate({ to: '.', replace: true, search: (p) => ({ ...p, employment: v === '' ? undefined : (v as 'CLT' | 'PJ'), page: 1 }) })
-        }
-        onRole={(v) =>
-          void navigate({ to: '.', replace: true, search: (p) => ({ ...p, role: v.trim() === '' ? undefined : v, page: 1 }) })
-        }
-        onYear={(v) =>
-          void navigate({ to: '.', replace: true, search: (p) => ({ ...p, year: v.trim() === '' ? undefined : Number(v), page: 1 }) })
-        }
-        onClear={() =>
-          void navigate({
-            to: '.',
-            replace: true,
-            search: (p) => ({ ...p, status: undefined, employment: undefined, role: undefined, year: undefined, page: 1 }),
-          })
-        }
-        onClearAll={() =>
-          void navigate({
-            to: '.',
-            replace: true,
-            search: (p) => ({ ...p, active: undefined, status: undefined, employment: undefined, role: undefined, year: undefined, page: 1 }),
-          })
-        }
-      />
+        <CollaboratorFilters
+          searchValue={search.search ?? ''}
+          status={statusFromActive(search.active)}
+          situacao={search.status ?? ''}
+          employment={search.employment ?? ''}
+          role={search.role ?? ''}
+          year={search.year !== undefined ? String(search.year) : ''}
+          employmentOptions={EMPLOYMENT_RELATIONSHIPS.map((e) => ({
+            value: e,
+            label: t(`partners.collaborators.employment.${e}`),
+          }))}
+          labels={{
+            search: t('partners.collaborators.list.search'),
+            all: t('partners.collaborators.filters.all'),
+            active: t('partners.collaborators.filters.active'),
+            inactive: t('partners.collaborators.filters.inactive'),
+            toggle: t('partners.collaborators.filters.toggle'),
+            situacao: t('partners.collaborators.filters.situacao'),
+            employment: t('partners.collaborators.filters.employment'),
+            role: t('partners.collaborators.filters.role'),
+            year: t('partners.collaborators.filters.year'),
+            escolaridade: t('partners.collaborators.filters.escolaridade'),
+            raca: t('partners.collaborators.filters.raca'),
+            idade: t('partners.collaborators.filters.idade'),
+            genderIdentity: t('partners.collaborators.filters.genderIdentity'),
+            programa: t('partners.collaborators.filters.programa'),
+            deactivatedBy: t('partners.collaborators.filters.deactivatedBy'),
+            gatedHint: t('partners.collaborators.filters.gatedHint'),
+            allOption: t('partners.collaborators.filters.allOption'),
+            preRegistration: t('partners.collaborators.registration.pre-registration'),
+            complete: t('partners.collaborators.registration.complete'),
+            apply: t('partners.collaborators.filters.apply'),
+            advancedTitle: t('partners.collaborators.filters.advancedTitle'),
+            advancedSubtitle: t('partners.collaborators.filters.advancedSubtitle'),
+            collapse: t('partners.collaborators.filters.collapse'),
+            clear: t('partners.collaborators.filters.clear'),
+            groupPessoais: t('partners.collaborators.filters.groupPessoais'),
+            groupContratuais: t('partners.collaborators.filters.groupContratuais'),
+            groupSituacao: t('partners.collaborators.filters.groupSituacao'),
+            applied: t('partners.collaborators.filters.applied'),
+            statusLabel: t('partners.collaborators.columns.status'),
+            clearAll: t('partners.collaborators.filters.clearAll'),
+            removeFilter: t('partners.collaborators.filters.removeFilter'),
+          }}
+          exportSlot={
+            <CollaboratorExportDropdown
+              exportLabel={t('partners.collaborators.filters.export')}
+              tudoLabel={t('partners.collaborators.export.tudo')}
+              historicoLabel={t('partners.collaborators.export.historico')}
+              historicoGatedHint={t('partners.collaborators.export.historico.gated')}
+              templateLabel={t('partners.collaborators.export.template')}
+              onPrint={() => {
+                setPrinting(true)
+              }}
+            />
+          }
+          onSearch={(value) =>
+            void navigate({
+              to: '.',
+              replace: true,
+              search: (p) => ({ ...p, search: value || undefined, page: 1 }),
+            })
+          }
+          onStatus={(s) =>
+            void navigate({
+              to: '.',
+              replace: true,
+              search: (p) => ({ ...p, active: s === 'all' ? undefined : s === 'active', page: 1 }),
+            })
+          }
+          onSituacao={(v) =>
+            void navigate({
+              to: '.',
+              replace: true,
+              search: (p) => ({ ...p, status: v === '' ? undefined : v, page: 1 }),
+            })
+          }
+          onEmployment={(v) =>
+            void navigate({
+              to: '.',
+              replace: true,
+              search: (p) => ({ ...p, employment: v === '' ? undefined : (v as 'CLT' | 'PJ'), page: 1 }),
+            })
+          }
+          onRole={(v) =>
+            void navigate({
+              to: '.',
+              replace: true,
+              search: (p) => ({ ...p, role: v.trim() === '' ? undefined : v, page: 1 }),
+            })
+          }
+          onYear={(v) =>
+            void navigate({
+              to: '.',
+              replace: true,
+              search: (p) => ({ ...p, year: v.trim() === '' ? undefined : Number(v), page: 1 }),
+            })
+          }
+          onClear={() =>
+            void navigate({
+              to: '.',
+              replace: true,
+              search: (p) => ({
+                ...p,
+                status: undefined,
+                employment: undefined,
+                role: undefined,
+                year: undefined,
+                page: 1,
+              }),
+            })
+          }
+          onClearAll={() =>
+            void navigate({
+              to: '.',
+              replace: true,
+              search: (p) => ({
+                ...p,
+                active: undefined,
+                status: undefined,
+                employment: undefined,
+                role: undefined,
+                year: undefined,
+                page: 1,
+              }),
+            })
+          }
+        />
 
-      <DataTable<CollaboratorRow>
-        columns={columns}
-        state={tableState}
-        rowKey={(r) => r.id}
-        emptyLabel={
-          hasFilters ? t('partners.collaborators.list.no-results') : t('partners.collaborators.list.empty')
-        }
-        loadingLabel={t('partners.collaborators.list.loading')}
-        caption={t('partners.collaborators.list.title')}
-        onRowClick={(r) => void navigate({ to: '/parceiros/colaboradores/$id', params: { id: r.id } })}
-      />
+        <DataTable<CollaboratorRow>
+          columns={columns}
+          state={tableState}
+          rowKey={(r) => r.id}
+          emptyLabel={
+            hasFilters ? t('partners.collaborators.list.no-results') : t('partners.collaborators.list.empty')
+          }
+          loadingLabel={t('partners.collaborators.list.loading')}
+          caption={t('partners.collaborators.list.title')}
+          onRowClick={(r) => void navigate({ to: '/parceiros/colaboradores/$id', params: { id: r.id } })}
+        />
 
-      <CollaboratorPaginator
-        page={pageNum}
-        totalPages={pages}
-        perPage={search.limit}
-        labels={{
-          previous: t('partners.collaborators.paginator.previous'),
-          next: t('partners.collaborators.paginator.next'),
-          page: t('partners.collaborators.paginator.page'),
-          perPage: t('partners.collaborators.paginator.perPage'),
-        }}
-        onPrev={() => void navigate({ to: '.', search: (p) => ({ ...p, page: Math.max(1, pageNum - 1) }) })}
-        onNext={() => void navigate({ to: '.', search: (p) => ({ ...p, page: pageNum + 1 }) })}
-        onPerPage={(perPage) => void navigate({ to: '.', search: (p) => ({ ...p, limit: perPage, page: 1 }) })}
-      />
+        <CollaboratorPaginator
+          page={pageNum}
+          totalPages={pages}
+          perPage={search.limit}
+          labels={{
+            previous: t('partners.collaborators.paginator.previous'),
+            next: t('partners.collaborators.paginator.next'),
+            page: t('partners.collaborators.paginator.page'),
+            perPage: t('partners.collaborators.paginator.perPage'),
+          }}
+          onPrev={() => void navigate({ to: '.', search: (p) => ({ ...p, page: Math.max(1, pageNum - 1) }) })}
+          onNext={() => void navigate({ to: '.', search: (p) => ({ ...p, page: pageNum + 1 }) })}
+          onPerPage={(perPage) =>
+            void navigate({ to: '.', search: (p) => ({ ...p, limit: perPage, page: 1 }) })
+          }
+        />
       </div>
 
       <PartnersPrintable
@@ -311,7 +368,10 @@ export function CollaboratorListPage(): ReactNode {
         open={reportOpen}
         report={importCommand.result}
         errorTag={importCommand.errorTag}
-        onClose={() => { setReportDismissed(true); importCommand.reset() }}
+        onClose={() => {
+          setReportDismissed(true)
+          importCommand.reset()
+        }}
       />
     </div>
   )
