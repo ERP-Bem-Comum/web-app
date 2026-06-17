@@ -112,11 +112,12 @@ export const chipCount = style({
 // Quando o chip ativo (fundo branco) carrega o contador, o badge ganha o tom paper-beige p/ contraste.
 export const chipCountOnActive = style([chipCount, { background: vars.color.institutional.paperBeige }])
 
-// ── Grid (Figma 205-638) — enriquecido pela 012/#47: + Contrato, Forma, Bruto ──────────────────────
-// Larguras EXATAS do Figma (px→rem): checkbox 36 · Tipo 65 · Doc 100 · Fornecedor flex · Contrato 130 ·
-// Forma 90 · Venc 105 · Bruto 95(→) · Líquido 110(→) · Status 130. (Emissão segue gated — core-api#95.)
+// ── Grid (Figma 205-638) — enriquecido pela 012/#47: + Contrato, Forma, Emissão, Bruto ─────────────
+// Larguras balanceadas (espaço proporcional entre as colunas); Fornecedor é a flexível (minmax).
+// Ordem: checkbox · Tipo · Documento · Fornecedor · Contrato · Forma · Emissão · Venc · Bruto · Líquido ·
+// Status. (Emissão é placeholder "—" até o backend expô-la na lista — core-api#95.)
 const GRID_COLS =
-  '2.25rem 4.0625rem 6.25rem minmax(14rem, 1fr) 8.125rem 5.625rem 6.5625rem 5.9375rem 6.875rem 8.125rem'
+  '2.25rem 4.5rem 7rem minmax(13rem, 1.4fr) 6.5rem 7.5rem 6.25rem 6.25rem 6.75rem 6.75rem 7.25rem'
 
 // Wrapper rola na horizontal (como o grid largo do Figma) quando a viewport é estreita.
 export const gridWrap = style({
@@ -125,7 +126,7 @@ export const gridWrap = style({
   overflowX: 'auto',
 })
 export const grid = style({
-  minInlineSize: '76rem', // garante Fornecedor legível (≥14rem); abaixo disso o wrapper rola
+  minInlineSize: '80rem', // garante Fornecedor legível (≥13rem); abaixo disso o wrapper rola
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   borderRadius: vars.radius.lg,
   overflow: 'hidden',
@@ -134,17 +135,17 @@ export const grid = style({
 export const head = style({
   display: 'grid',
   gridTemplateColumns: GRID_COLS,
-  gap: '0.75rem', // 12px
+  gap: '0.625rem', // 10px — espaçamento mais uniforme entre colunas
   alignItems: 'center',
   minBlockSize: '2.25rem', // 36px
   paddingInline: vars.space.lg,
   background: vars.color.institutional.paperWarm,
   borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
 })
-// Cabeçalho denso (Figma "Badge" 9px Inter): caixa-alta, bold, tracking largo, ink-5.
+// Cabeçalho denso (Figma "Badge"): caixa-alta, bold, tracking largo, ink-5. Fonte +1px (sobre o 2xs=9px).
 export const headCell = style({
   fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size['2xs'],
+  fontSize: `calc(${vars.font.size['2xs']} + 0.0625rem)`, // +1px sobre o 2xs (9px → 10px)
   fontWeight: vars.font.weight.bold,
   textTransform: 'uppercase',
   letterSpacing: '0.06em',
@@ -155,7 +156,7 @@ export const headCellRight = style([headCell, { textAlign: 'right' }])
 export const row = style({
   display: 'grid',
   gridTemplateColumns: GRID_COLS,
-  gap: '0.75rem',
+  gap: '0.625rem',
   alignItems: 'center',
   minBlockSize: '3.5rem', // 56px
   paddingInline: vars.space.lg,
@@ -294,6 +295,8 @@ export const bottombar = style({
   gap: vars.space.md,
   height: '3.5rem',
   paddingInline: vars.space.lg,
+  // Fonte da marca (Nunito) nos itens do footer; valores monetários (mono) sobrescrevem pontualmente.
+  fontFamily: vars.font.family.body,
   background: vars.color.institutional.paperWarm,
   borderBlockStart: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   position: 'fixed',
@@ -353,6 +356,7 @@ export const select = style({
   borderRadius: vars.radius.sm,
   background: vars.color.surface.default,
   color: vars.color.text.secondary,
+  fontFamily: vars.font.family.body, // <select> não herda font-family por padrão
   fontSize: vars.font.size.sm,
   paddingBlock: vars.space.xs,
   paddingInline: vars.space.xs,

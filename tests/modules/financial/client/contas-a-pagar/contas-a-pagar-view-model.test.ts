@@ -12,6 +12,7 @@ import {
   pageInfo,
   buildDocumentsCsv,
   sumSelectedNetBRL,
+  sumSelectedGrossBRL,
   maskCnpj,
   bulkStatusTargets,
 } from '../../../../../src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts'
@@ -167,6 +168,10 @@ describe('sumSelectedNetBRL', () => {
   it('ignora linhas sem valor e zera quando nada selecionado', () => {
     assert.equal(norm(sumSelectedNetBRL(rows, new Set(['c']))), 'R$ 0,00')
     assert.equal(norm(sumSelectedNetBRL(rows, new Set())), 'R$ 0,00')
+  })
+
+  it('soma o BRUTO das selecionadas (default 160000 por linha)', () => {
+    assert.equal(norm(sumSelectedGrossBRL(rows, new Set(['a', 'b']))), 'R$ 3.200,00')
   })
 })
 

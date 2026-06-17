@@ -1103,6 +1103,7 @@ export const ptBR: Catalog = {
   // Seleção em massa (mock)
   'financial.list.selection.selected': 'selecionados',
   'financial.list.selection.clear': 'limpar',
+  'financial.list.selection.sumGrossLabel': 'Soma (bruto):',
   'financial.list.selection.sumLabel': 'Soma (líquido):',
   // Mudar Status (chrome — transições pendentes no backend)
   'financial.list.status.change': 'Mudar Status',
@@ -1131,6 +1132,7 @@ export const ptBR: Catalog = {
   'financial.list.col.supplier': 'Fornecedor',
   'financial.list.col.contract': 'Contrato',
   'financial.list.col.paymentMethod': 'Forma Pag.',
+  'financial.list.col.emissao': 'Emissão',
   'financial.list.col.due': 'Vencimento',
   'financial.list.col.gross': 'Bruto',
   'financial.list.col.net': 'Líquido',

@@ -163,6 +163,7 @@ export function DocumentGrid(props: DocumentGridProps): ReactNode {
               <span className={cell}>
                 {r.paymentMethod !== null ? t(`financial.paymentMethod.${r.paymentMethod}`) : DASH}
               </span>
+              <span className={cell}>{r.emissao}</span>
               <span className={cell}>{r.due}</span>
               <span className={cellGross}>{r.gross}</span>
               <span className={cellNet}>{r.net}</span>

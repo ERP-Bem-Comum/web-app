@@ -43,10 +43,12 @@ export type GridRow = Readonly<{
   supplierDoc: string | null // CNPJ já mascarado (ex.: "37.364.305/0001-92") ou null
   contract: string // número do contrato vinculado ("0003/2026") ou "—"
   paymentMethod: PaymentMethod | null // forma de pagamento (a view traduz via i18n)
+  emissao: string // data de emissão — GATED (não vem na lista; core-api#95) → "—" até o backend expor
   gross: string // valor bruto formatado (BRL) ou "—"
+  grossCents: string | null // bruto em centavos p/ o somatório da seleção
   due: string
   net: string
-  netCents: string | null // bruto em centavos p/ o somatório da seleção (formatação fica fora)
+  netCents: string | null // líquido em centavos p/ o somatório da seleção (formatação fica fora)
   version: number // optimistic lock — p/ ações inline (Mudar Status em massa)
   status: DocumentStatus
 }>
@@ -76,14 +78,15 @@ export type ListState =
   | Readonly<{ tag: 'empty' }>
   | Readonly<{ tag: 'ready'; rows: readonly GridRow[]; page: PageInfo }>
 
-// Colunas (Figma 205-638), enriquecidas pela 012/#47: + Contrato, Forma de Pagamento, Bruto.
-// `Emissão` segue gated (não vem na lista; depende do detalhe — core-api#95). `align:right` = monetário.
+// Colunas (Figma 205-638), enriquecidas pela 012/#47: + Contrato, Forma de Pagamento, Emissão, Bruto.
+// `Emissão` entra como coluna (placeholder "—") até o backend expô-la na lista (core-api#95).
 export const COLUMNS = [
   { key: 'type', labelTag: 'financial.list.col.type', align: 'left' },
   { key: 'documentNumber', labelTag: 'financial.list.col.documentNumber', align: 'left' },
   { key: 'supplier', labelTag: 'financial.list.col.supplier', align: 'left' },
   { key: 'contract', labelTag: 'financial.list.col.contract', align: 'left' },
   { key: 'paymentMethod', labelTag: 'financial.list.col.paymentMethod', align: 'left' },
+  { key: 'emissao', labelTag: 'financial.list.col.emissao', align: 'left' },
   { key: 'due', labelTag: 'financial.list.col.due', align: 'left' },
   { key: 'gross', labelTag: 'financial.list.col.gross', align: 'right' },
   { key: 'net', labelTag: 'financial.list.col.net', align: 'right' },
@@ -127,7 +130,9 @@ const toRow = (
   supplierDoc: maskCnpj(resolveDoc?.(it.supplierRef) ?? null),
   contract: it.contractRef !== null ? (resolveContract?.(it.contractRef) ?? it.contractRef) : DASH,
   paymentMethod: it.paymentMethod,
+  emissao: DASH, // GATED: a emissão só virá quando o backend expô-la na lista (core-api#95)
   gross: it.grossValueCents !== null && it.grossValueCents !== '' ? centsToBRL(it.grossValueCents) : DASH,
+  grossCents: it.grossValueCents,
   due: it.dueDate !== null && it.dueDate !== '' ? formatDue(it.dueDate) : DASH,
   net: it.netValueCents !== null && it.netValueCents !== '' ? centsToBRL(it.netValueCents) : DASH,
   netCents: it.netValueCents,
@@ -156,15 +161,28 @@ export const bulkStatusTargets = (
   }
 }
 
-/** Soma (BRL formatado) do líquido das linhas selecionadas — PURA (o relógio/Intl fica no `centsToBRL`). */
-export const sumSelectedNetBRL = (rows: readonly GridRow[], selected: ReadonlySet<string>): string => {
+/** Soma (BRL) de um campo de centavos das linhas selecionadas — PURA (Intl fica no `centsToBRL`). */
+const sumSelectedCentsBRL = (
+  rows: readonly GridRow[],
+  selected: ReadonlySet<string>,
+  pick: (r: GridRow) => string | null,
+): string => {
   const total = rows.reduce((acc, r) => {
-    if (!selected.has(r.id) || r.netCents === null || r.netCents === '') return acc
-    const n = Number(r.netCents)
+    const cents = pick(r)
+    if (!selected.has(r.id) || cents === null || cents === '') return acc
+    const n = Number(cents)
     return Number.isFinite(n) ? acc + n : acc
   }, 0)
   return centsToBRL(String(total))
 }
+
+/** Soma do LÍQUIDO das linhas selecionadas (BRL). */
+export const sumSelectedNetBRL = (rows: readonly GridRow[], selected: ReadonlySet<string>): string =>
+  sumSelectedCentsBRL(rows, selected, (r) => r.netCents)
+
+/** Soma do BRUTO das linhas selecionadas (BRL). */
+export const sumSelectedGrossBRL = (rows: readonly GridRow[], selected: ReadonlySet<string>): string =>
+  sumSelectedCentsBRL(rows, selected, (r) => r.grossCents)
 
 export const buildRows = (
   items: readonly DocumentSummary[],

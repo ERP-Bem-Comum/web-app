@@ -14,7 +14,12 @@ import { SearchIcon } from '#shared/ui/icons/index.ts'
 import { useContasAPagar } from '../contas-a-pagar.binding.ts'
 import { useDocumentDetail } from '../document-detail.binding.ts'
 import { useBulkStatus } from '../bulk-status.binding.ts'
-import { STATUS_CHIPS, sumSelectedNetBRL, bulkStatusTargets } from '../contas-a-pagar.view-model.ts'
+import {
+  STATUS_CHIPS,
+  sumSelectedNetBRL,
+  sumSelectedGrossBRL,
+  bulkStatusTargets,
+} from '../contas-a-pagar.view-model.ts'
 import { DocumentGrid } from '../components/document-grid.component.tsx'
 import { DocumentDetailDrawer } from '../components/document-detail-drawer.component.tsx'
 import { ExportDropdown } from '../components/export-dropdown.component.tsx'
@@ -66,6 +71,7 @@ export function ContasAPagarPage(): ReactNode {
   const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set())
   const selectedCount = selected.size
   const allSelected = rows.length > 0 && rows.every((r) => selected.has(r.id))
+  const selectedGross = sumSelectedGrossBRL(rows, selected)
   const selectedSum = sumSelectedNetBRL(rows, selected)
   const exportRows = selectedCount > 0 ? rows.filter((r) => selected.has(r.id)) : rows
   const toggle = (id: string): void => {
@@ -154,6 +160,8 @@ export function ContasAPagarPage(): ReactNode {
             <span className={selCount}>
               <strong>{selectedCount}</strong> {t('financial.list.selection.selected')}
             </span>
+            <span className={selSumLabel}>{t('financial.list.selection.sumGrossLabel')}</span>
+            <span className={selSum}>{selectedGross}</span>
             <span className={selSumLabel}>{t('financial.list.selection.sumLabel')}</span>
             <span className={selSum}>{selectedSum}</span>
             <button type="button" className={selClear} onClick={clearSelection}>
