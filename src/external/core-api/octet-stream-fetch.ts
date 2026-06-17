@@ -12,6 +12,7 @@ import { ok, err, type Result } from '#shared/primitives/result.ts'
 export type OctetStreamFetchOptions = Readonly<{
   token?: string
   bytes: Uint8Array
+  method?: 'POST' | 'PUT' // default POST; PUT p/ upsert (ex.: foto de perfil `PUT /me/photo`)
   query?: Readonly<Record<string, string>>
   headers?: Readonly<Record<string, string>>
   signal?: AbortSignal
@@ -36,7 +37,7 @@ export const octetStreamFetch = async <T>(
   url: string,
   options: OctetStreamFetchOptions,
 ): Promise<Result<T, HttpError>> => {
-  const { token, bytes, query = {}, headers = {}, signal, timeoutMs = 30_000 } = options
+  const { token, bytes, method = 'POST', query = {}, headers = {}, signal, timeoutMs = 30_000 } = options
 
   const qs = new URLSearchParams(query).toString()
   const fullUrl = qs === '' ? url : `${url}?${qs}`
@@ -69,7 +70,7 @@ export const octetStreamFetch = async <T>(
   let response: Response
   try {
     response = await globalThis.fetch(fullUrl, {
-      method: 'POST',
+      method,
       headers: requestHeaders,
       // `as BodyInit`: Uint8Array é um BodyInit válido em runtime (fetch aceita ArrayBufferView);
       // o cast só satisfaz a tipagem estrita do lib DOM. Sem mutação, dado imutável de entrada.

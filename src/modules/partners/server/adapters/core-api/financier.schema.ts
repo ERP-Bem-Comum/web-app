@@ -4,6 +4,18 @@
  */
 import * as z from 'zod'
 
+// Payment-target (banco/PIX) no detalhe do Financiador (#40) — mesmo shape do Fornecedor.
+const BankAccountDtoSchema = z.object({
+  bank: z.string().trim(),
+  agency: z.string().trim(),
+  accountNumber: z.string().trim(),
+  checkDigit: z.string().trim(),
+})
+const PixKeyDtoSchema = z.object({
+  keyType: z.enum(['cpf', 'cnpj', 'email', 'phone', 'random-key']),
+  key: z.string().trim(),
+})
+
 export const CoreApiFinancierItemSchema = z.object({
   id: z.string().trim(),
   name: z.string().trim(),
@@ -13,6 +25,8 @@ export const CoreApiFinancierItemSchema = z.object({
   telephone: z.string().trim(),
   address: z.string().trim(),
   active: z.boolean(),
+  // Contratos ativos do parceiro (#46). `.catch(0)` tolera resposta sem o campo (fallback → 0).
+  contractCount: z.int().nonnegative().catch(0),
 })
 export type CoreApiFinancierItem = z.infer<typeof CoreApiFinancierItemSchema>
 
@@ -29,5 +43,9 @@ export const CoreApiFinancierListSchema = z.object({
   meta: CoreApiFinancierPaginationMetaSchema,
 })
 
-export const CoreApiFinancierDetailSchema = CoreApiFinancierItemSchema
+// Detalhe enriquece o item com banco/PIX (#40). `.catch(null)` tolera ausência (consistência/legado).
+export const CoreApiFinancierDetailSchema = CoreApiFinancierItemSchema.extend({
+  bankAccount: BankAccountDtoSchema.nullable().catch(null),
+  pixKey: PixKeyDtoSchema.nullable().catch(null),
+})
 export type CoreApiFinancierDetail = z.infer<typeof CoreApiFinancierDetailSchema>

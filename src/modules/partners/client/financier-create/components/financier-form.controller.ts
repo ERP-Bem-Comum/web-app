@@ -5,9 +5,16 @@
  */
 import { useCallback, useState } from 'react'
 
-import { FinancierFormSchema, type FinancierFormValues } from '#modules/partners/client/data/model/financier.model.ts'
+import {
+  FinancierFormSchema,
+  type FinancierFormValues,
+  type PixKeyType,
+} from '#modules/partners/client/data/model/financier.model.ts'
 
 export type { FinancierFormValues } from '#modules/partners/client/data/model/financier.model.ts'
+export type { PixKeyType } from '#modules/partners/client/data/model/financier.model.ts'
+// A view (client-ui) consome PIX_KEY_TYPES/isPixKeyType POR AQUI (boundary não a deixa tocar data/).
+export { PIX_KEY_TYPES, isPixKeyType } from '#modules/partners/client/data/model/financier.model.ts'
 
 export type FinancierFormState = Readonly<{
   name: string
@@ -16,6 +23,12 @@ export type FinancierFormState = Readonly<{
   cnpj: string
   telephone: string
   address: string
+  bank: string
+  agency: string
+  accountNumber: string
+  checkDigit: string
+  pixKeyType: PixKeyType
+  pixKey: string
 }>
 
 export type FinancierFormErrors = Readonly<Record<string, boolean>>
@@ -27,6 +40,12 @@ const EMPTY: FinancierFormState = {
   cnpj: '',
   telephone: '',
   address: '',
+  bank: '',
+  agency: '',
+  accountNumber: '',
+  checkDigit: '',
+  pixKeyType: 'cpf',
+  pixKey: '',
 }
 
 function stateFromValues(v: FinancierFormValues | undefined): FinancierFormState {
@@ -38,6 +57,12 @@ function stateFromValues(v: FinancierFormValues | undefined): FinancierFormState
     cnpj: v.cnpj,
     telephone: v.telephone,
     address: v.address,
+    bank: v.bankAccount?.bank ?? '',
+    agency: v.bankAccount?.agency ?? '',
+    accountNumber: v.bankAccount?.accountNumber ?? '',
+    checkDigit: v.bankAccount?.checkDigit ?? '',
+    pixKeyType: v.pixKey?.keyType ?? 'cpf',
+    pixKey: v.pixKey?.key ?? '',
   }
 }
 
@@ -65,7 +90,30 @@ export function useFinancierFormController(
   }, [])
 
   const submit = useCallback(() => {
-    const parsed = FinancierFormSchema.safeParse({ ...state })
+    // Banco/PIX (#40): presença inferida do que foi preenchido (sem checkbox). Banco parcial cai no
+    // schema (campos min(1)) e bloqueia o submit. Espelha o Fornecedor.
+    const hasBank = [state.bank, state.agency, state.accountNumber, state.checkDigit].some(
+      (v) => v.trim() !== '',
+    )
+    const hasPix = state.pixKey.trim() !== ''
+    const candidate = {
+      name: state.name,
+      corporateName: state.corporateName,
+      legalRepresentative: state.legalRepresentative,
+      cnpj: state.cnpj,
+      telephone: state.telephone,
+      address: state.address,
+      bankAccount: hasBank
+        ? {
+            bank: state.bank,
+            agency: state.agency,
+            accountNumber: state.accountNumber,
+            checkDigit: state.checkDigit,
+          }
+        : null,
+      pixKey: hasPix ? { keyType: state.pixKeyType, key: state.pixKey } : null,
+    }
+    const parsed = FinancierFormSchema.safeParse(candidate)
     if (!parsed.success) {
       const next: Record<string, boolean> = {}
       for (const issue of parsed.error.issues) next[issue.path.join('.')] = true

@@ -24,6 +24,7 @@ export function mapItemToRow(item: CollaboratorListItem): CollaboratorRow {
     role: item.role,
     registration: item.registration,
     activation: item.activation,
+    contractCount: item.contractCount,
   }
 }
 
@@ -41,5 +42,11 @@ export const collaboratorListViewModel = {
 
 export type { CollaboratorRow } from '#modules/partners/client/domain/collaborator.types.ts'
 // A page (client-ui) consome as listas de enum POR AQUI (boundary §XI não a deixa tocar `data/`).
-export { OCCUPATION_AREAS, EMPLOYMENT_RELATIONSHIPS } from '#modules/partners/client/data/model/collaborator.model.ts'
-export type { OccupationArea, EmploymentRelationship } from '#modules/partners/client/data/model/collaborator.model.ts'
+export {
+  OCCUPATION_AREAS,
+  EMPLOYMENT_RELATIONSHIPS,
+} from '#modules/partners/client/data/model/collaborator.model.ts'
+export type {
+  OccupationArea,
+  EmploymentRelationship,
+} from '#modules/partners/client/data/model/collaborator.model.ts'

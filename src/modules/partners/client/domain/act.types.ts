@@ -12,6 +12,7 @@ export type ActRow = Readonly<{
   occupationArea: string
   hasFinancialTransfer: boolean
   active: boolean
+  contractCount: number
 }>
 
 /** Ação de ciclo de vida no detalhe (sobre a situação ativa/inativa). */

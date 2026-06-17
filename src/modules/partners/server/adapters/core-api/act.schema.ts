@@ -37,6 +37,8 @@ export const CoreApiActItemSchema = z.object({
   active: z.boolean(),
   createdAt: z.string().trim(),
   updatedAt: z.string().trim(),
+  // Contratos ativos do parceiro (#46). `.catch(0)` tolera resposta sem o campo (fallback → 0).
+  contractCount: z.int().nonnegative().catch(0),
 })
 export type CoreApiActItem = z.infer<typeof CoreApiActItemSchema>
 

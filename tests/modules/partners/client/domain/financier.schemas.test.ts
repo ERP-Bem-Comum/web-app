@@ -65,4 +65,29 @@ describe('FinancierFormSchema', () => {
     assert.equal(FinancierFormSchema.safeParse({ ...validForm, name: '' }).success, false)
     assert.equal(FinancierFormSchema.safeParse({ ...validForm, address: '   ' }).success, false)
   })
+
+  // Banco/PIX (#40) — opcionais, mesmo shape do Fornecedor.
+  it('banco/PIX ausentes → null (default)', () => {
+    const r = FinancierFormSchema.parse(validForm)
+    assert.equal(r.bankAccount, null)
+    assert.equal(r.pixKey, null)
+  })
+
+  it('aceita banco + PIX válidos', () => {
+    const r = FinancierFormSchema.parse({
+      ...validForm,
+      bankAccount: { bank: '001', agency: '1234', accountNumber: '56789', checkDigit: '0' },
+      pixKey: { keyType: 'cnpj', key: '12345678000190' },
+    })
+    assert.equal(r.bankAccount?.bank, '001')
+    assert.equal(r.pixKey?.keyType, 'cnpj')
+  })
+
+  it('rejeita banco parcial (campo obrigatório vazio dentro de bankAccount)', () => {
+    const r = FinancierFormSchema.safeParse({
+      ...validForm,
+      bankAccount: { bank: '', agency: '1234', accountNumber: '56789', checkDigit: '0' },
+    })
+    assert.equal(r.success, false)
+  })
 })

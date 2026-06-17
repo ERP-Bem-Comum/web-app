@@ -87,6 +87,7 @@ const itemToModel = (c: CoreApiCollaboratorItem): CollaboratorListItem => ({
   role: c.role,
   registration: registrationFromApi(c.status),
   activation: activationFromApi(c.active),
+  contractCount: c.contractCount,
 })
 
 const detailToModel = (raw: unknown): Result<CollaboratorDetail, PartnersError> => {

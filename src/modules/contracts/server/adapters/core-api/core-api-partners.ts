@@ -16,6 +16,7 @@ import { ok, err, isErr, type Result } from '#shared/primitives/result.ts'
 import type { HttpError } from '#shared/http/http-error.types.ts'
 import { resultFetch } from '#external/core-api/result-fetch.ts'
 import { loadEnvOrThrow } from '#external/config/env.config.ts'
+import { coreApiBase } from '#external/core-api/api-base.ts'
 
 export type PartnerSearchKind = 'Supplier' | 'Financier' | 'Collaborator' | 'ACT'
 export type PartnerSearchError = 'unauthorized' | 'connectivity' | 'server'
@@ -67,12 +68,6 @@ export const aggregateTypeToLabel = (type: AggregateType): PartnerSearchItem['ki
   return map[type]
 }
 
-// CORE_API_URL inclui o prefixo /api/v2 (auth/contracts); parceiros vivem em /api/v1 (ADR-0033).
-const derivePartnersBase = (coreApiUrl: string): string =>
-  coreApiUrl.includes('/api/v2')
-    ? coreApiUrl.replace('/api/v2', '/api/v1')
-    : `${coreApiUrl.replace(/\/+$/, '')}/api/v1`
-
 const mapHttpError = (e: HttpError): PartnerSearchError => {
   switch (e.kind) {
     case 'http':
@@ -107,7 +102,7 @@ export const searchPartners = async (
   token: string,
   kind?: PartnerSearchKind,
 ): Promise<Result<readonly PartnerSearchItem[], PartnerSearchError>> => {
-  const base = derivePartnersBase(loadEnvOrThrow().CORE_API_URL)
+  const base = coreApiBase(loadEnvOrThrow().CORE_API_URL, 'v1')
   const qs = new URLSearchParams({ page: '1', limit: String(SEARCH_LIMIT) })
   if (query !== '') qs.set('search', query)
   if (kind !== undefined) qs.set('type', partnerKindToType(kind))

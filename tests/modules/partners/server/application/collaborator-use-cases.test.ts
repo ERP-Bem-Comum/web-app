@@ -26,6 +26,7 @@ const fakeDetail: CollaboratorDetail = {
   role: 'Analista',
   registration: 'pre-registration',
   activation: 'active',
+  contractCount: 0,
   cpf: '11144477735',
   startOfContract: '2024-01-01',
   employmentRelationship: 'PJ',

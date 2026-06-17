@@ -16,6 +16,7 @@ const item: FinancierListItem = {
   cnpj: '12345678000190',
   telephone: '1140000000',
   activation: 'active',
+  contractCount: 0,
 }
 
 describe('financier-list.view-model', () => {
@@ -29,6 +30,7 @@ describe('financier-list.view-model', () => {
       cnpj: '12345678000190',
       telephone: '1140000000',
       activation: 'active',
+      contractCount: 0,
     })
   })
 

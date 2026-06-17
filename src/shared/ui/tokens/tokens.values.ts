@@ -162,6 +162,8 @@ export const tokenValues = {
       mono: `"JetBrains Mono", ${MONO_FALLBACK}`,
     },
     size: {
+      // Degrau denso do Figma DS v1 (Badge/header de grid = 9px). Aditivo — não altera os existentes.
+      '2xs': '0.5625rem',
       xs: '0.75rem',
       sm: '0.875rem',
       md: '1rem',

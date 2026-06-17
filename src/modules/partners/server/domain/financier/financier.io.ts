@@ -3,7 +3,7 @@
  * vivem em `../../adapters/financier.io-schemas.ts` (a borda). Alinhado ao contrato REAL: PJ-only
  * (6 campos obrigatórios), query page/limit/order/search/active, create/update = PUT total.
  */
-import type { ActivationStatus } from './financier.types.ts'
+import type { ActivationStatus, BankAccount, FinancierPixKey } from './financier.types.ts'
 
 // ── Input (validado na server fn pelos schemas em adapters) ─────────────────────
 export interface ListFinanciersInput {
@@ -25,6 +25,8 @@ export interface CreateFinancierInput {
   cnpj: string
   telephone: string
   address: string
+  bankAccount: BankAccount | null
+  pixKey: FinancierPixKey | null
 }
 
 export type UpdateFinancierInput = CreateFinancierInput & { id: string }
@@ -46,11 +48,14 @@ export type FinancierListItem = Readonly<{
   cnpj: string
   telephone: string
   activation: ActivationStatus
+  contractCount: number
 }>
 
 export type FinancierDetail = FinancierListItem &
   Readonly<{
     address: string
+    bankAccount: BankAccount | null
+    pixKey: FinancierPixKey | null
   }>
 
 export type FinancierListResponse = Readonly<{

@@ -5,12 +5,25 @@
  * Aqui também vive o schema Zod do FORMULÁRIO (validação na borda do cliente), para o controller poder
  * consumi-lo sem furar a fronteira client-controller↛client-domain.
  *
- * Financiador é PJ-only: 6 campos. Diferente do fornecedor: SEM categorias, SEM dados bancários/PIX,
- * SEM e-mail/nome-fantasia.
+ * Financiador é PJ-only. Diferente do fornecedor: SEM categorias, SEM e-mail/nome-fantasia. Banco/PIX
+ * (payment-target) adicionados em #40 — REUSO dos tipos/validações do Fornecedor (DRY, mesmo shape).
  */
 import * as z from 'zod'
 
+import {
+  type BankAccount,
+  type SupplierPixKey as PixKey,
+  type PixKeyType,
+  PIX_KEY_TYPES,
+  isPixKeyType,
+  BankAccountFormSchema,
+  PixKeyFormSchema,
+} from './supplier.model.ts'
+
 export type ActivationStatus = 'active' | 'inactive'
+// Reuso (DRY) dos tipos/enum de payment-target do Fornecedor (#40).
+export type { BankAccount, PixKey, PixKeyType }
+export { PIX_KEY_TYPES, isPixKeyType }
 
 export type FinancierListItem = Readonly<{
   id: string
@@ -20,12 +33,15 @@ export type FinancierListItem = Readonly<{
   cnpj: string
   telephone: string
   activation: ActivationStatus
+  contractCount: number
 }>
 
 export type FinancierDetail = FinancierListItem &
   Readonly<{
     legalRepresentative: string
     address: string
+    bankAccount: BankAccount | null
+    pixKey: PixKey | null
   }>
 
 export type FinancierListResponse = Readonly<{
@@ -49,6 +65,8 @@ export type FinancierWriteInput = Readonly<{
   cnpj: string
   telephone: string
   address: string
+  bankAccount: BankAccount | null
+  pixKey: PixKey | null
 }>
 
 // ── Schema do formulário (validação na borda do cliente) ──
@@ -61,7 +79,7 @@ export const CnpjFieldSchema = z
   .transform(onlyDigits)
   .refine((d) => d.length === 14, { error: 'cnpj-invalid' })
 
-/** Formulário PJ-only — os 6 campos obrigatórios do contrato. */
+/** Formulário PJ-only — campos obrigatórios + banco/PIX opcionais (#40, reuso das schemas do Fornecedor). */
 export const FinancierFormSchema = z.object({
   name: z.string().trim().min(1).max(200),
   corporateName: z.string().trim().min(1).max(200),
@@ -69,5 +87,7 @@ export const FinancierFormSchema = z.object({
   cnpj: CnpjFieldSchema,
   telephone: z.string().trim().min(1).max(20),
   address: z.string().trim().min(1).max(300),
+  bankAccount: BankAccountFormSchema.nullable().default(null),
+  pixKey: PixKeyFormSchema.nullable().default(null),
 })
 export type FinancierFormValues = z.infer<typeof FinancierFormSchema>

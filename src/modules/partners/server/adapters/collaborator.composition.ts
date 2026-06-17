@@ -4,6 +4,7 @@
  * do `CORE_API_URL` (que inclui o prefixo `/api/v2` usado por auth/contracts).
  */
 import { loadEnvOrThrow } from '#external/config/env.config.ts'
+import { coreApiBase } from '#external/core-api/api-base.ts'
 import { createCoreApiCollaboratorsClient } from './core-api/core-api-collaborators.ts'
 import {
   createListCollaborators,
@@ -18,16 +19,9 @@ import {
 
 type CollaboratorServer = ReturnType<typeof build>
 
-// CORE_API_URL inclui o prefixo de versão (auth/contracts usam /api/v2). Parceiros vivem em /api/v1
-// (ADR-0033). Deriva de forma robusta: troca o /api/v2 se presente; senão anexa /api/v1.
-const derivePartnersBase = (coreApiUrl: string): string =>
-  coreApiUrl.includes('/api/v2')
-    ? coreApiUrl.replace('/api/v2', '/api/v1')
-    : `${coreApiUrl.replace(/\/+$/, '')}/api/v1`
-
 const build = () => {
   const env = loadEnvOrThrow()
-  const client = createCoreApiCollaboratorsClient(derivePartnersBase(env.CORE_API_URL))
+  const client = createCoreApiCollaboratorsClient(coreApiBase(env.CORE_API_URL, 'v1'))
   return {
     listCollaborators: createListCollaborators({ client }),
     getCollaborator: createGetCollaborator({ client }),

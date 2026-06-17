@@ -53,6 +53,7 @@ export type SupplierListItem = Readonly<{
   fantasyName: string
   serviceCategory: string
   activation: ActivationStatus
+  contractCount: number
 }>
 
 export type SupplierDetail = SupplierListItem &

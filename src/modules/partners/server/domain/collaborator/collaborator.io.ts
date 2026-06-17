@@ -90,6 +90,7 @@ export type CollaboratorListItem = Readonly<{
   role: string
   registration: RegistrationStatus
   activation: ActivationStatus
+  contractCount: number
 }>
 
 export type CollaboratorDetail = CollaboratorListItem &

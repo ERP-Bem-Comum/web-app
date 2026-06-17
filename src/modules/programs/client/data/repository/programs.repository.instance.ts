@@ -6,6 +6,8 @@ import { listProgramsFn } from '#modules/programs/server/adapters/server-fns/lis
 import { createProgramFn } from '#modules/programs/server/adapters/server-fns/create-program.service.fn.ts'
 import { getProgramFn } from '#modules/programs/server/adapters/server-fns/get-program.query.fn.ts'
 import { updateProgramFn } from '#modules/programs/server/adapters/server-fns/update-program.service.fn.ts'
+import { getProgramLogoFn } from '#modules/programs/server/adapters/server-fns/get-program-logo.query.fn.ts'
+import { uploadProgramLogoFn } from '#modules/programs/server/adapters/server-fns/upload-program-logo.service.fn.ts'
 
 import { createProgramsRepository } from './programs.repository.ts'
 
@@ -14,4 +16,6 @@ export const programsRepository = createProgramsRepository({
   createProgramFn: (opts) => createProgramFn(opts),
   getProgramFn: (opts) => getProgramFn(opts),
   updateProgramFn: (opts) => updateProgramFn(opts),
+  getProgramLogoFn: (opts) => getProgramLogoFn(opts),
+  uploadProgramLogoFn: (opts) => uploadProgramLogoFn(opts),
 })

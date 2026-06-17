@@ -7,6 +7,7 @@
  */
 import { createMemorySessionStore } from '#external/session/session-store.memory.ts'
 import { loadEnvOrThrow } from '#external/config/env.config.ts'
+import { coreApiBase } from '#external/core-api/api-base.ts'
 import type { Session, SessionId } from '#modules/auth/server/domain/session/session.types.ts'
 import { createLogin } from '#modules/auth/server/application/commands/login.use-case.ts'
 import { createGetMe } from '#modules/auth/server/application/queries/get-me.use-case.ts'
@@ -24,7 +25,7 @@ type AuthServer = ReturnType<typeof build>
 
 const build = () => {
   const env = loadEnvOrThrow() // lê process.env aqui (não no módulo)
-  const client = createCoreApiAuthClient(env.CORE_API_URL)
+  const client = createCoreApiAuthClient(coreApiBase(env.CORE_API_URL, 'v2'))
   const refreshSession = createRefreshSession({ client, store, now, decodeExp: decodeAccessExp })
   return {
     store,

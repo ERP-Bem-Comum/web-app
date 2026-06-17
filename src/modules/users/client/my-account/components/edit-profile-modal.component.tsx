@@ -3,10 +3,8 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Button, Field, Input } from '#shared/ui/index.ts'
-import { initialsFromName, type UpdateMeInput, type UserDetail } from '../my-account.view-model.ts'
+import { type UpdateMeInput, type UserDetail } from '../my-account.view-model.ts'
 import {
-  avatar,
-  avatarCol,
   body as bodyClass,
   cancelButton,
   closeButton,
@@ -14,8 +12,6 @@ import {
   errorBanner,
   fieldsCol,
   footer,
-  gatedButton,
-  gatedHint,
   header,
   saveWrap,
   title as titleClass,
@@ -63,33 +59,50 @@ export function EditProfileModal(props: EditProfileModalProps): ReactNode {
       ref={ref}
       className={dialog}
       aria-labelledby={titleId}
-      onCancel={(e) => { e.preventDefault(); props.onClose() }}
-      onClick={(e) => { if (e.target === ref.current) props.onClose() }}
+      onCancel={(e) => {
+        e.preventDefault()
+        props.onClose()
+      }}
+      onClick={(e) => {
+        if (e.target === ref.current) props.onClose()
+      }}
     >
       <div className={header}>
-        <h2 id={titleId} className={titleClass}>{t('users.account.edit.title')}</h2>
-        <button type="button" className={closeButton} onClick={props.onClose} aria-label={t('users.form.cancel')}>×</button>
+        <h2 id={titleId} className={titleClass}>
+          {t('users.account.edit.title')}
+        </h2>
+        <button
+          type="button"
+          className={closeButton}
+          onClick={props.onClose}
+          aria-label={t('users.form.cancel')}
+        >
+          ×
+        </button>
       </div>
 
-      {props.errorTag !== null ? <div className={errorBanner} role="alert">{t(props.errorTag)}</div> : null}
+      {props.errorTag !== null ? (
+        <div className={errorBanner} role="alert">
+          {t(props.errorTag)}
+        </div>
+      ) : null}
 
       <div className={bodyClass}>
-        <div className={avatarCol}>
-          <div className={avatar}>{initialsFromName(name)}</div>
-          {/* Foto: sem endpoint de autosserviço (/me/photo) → gated. Ver gaps/ticket. */}
-          <button type="button" className={gatedButton} disabled title={t('users.account.edit.photo.gated')}>
-            {t('users.account.edit.photo')}
-          </button>
-          <span className={gatedHint}>{t('users.account.edit.photo.gated')}</span>
-        </div>
-
         <div className={fieldsCol}>
           <Field htmlFor="me-name" label={t('users.form.name')}>
             <Input id="me-name" value={name} onChange={setName} />
           </Field>
           {/* CPF é imutável no autosserviço; e-mail é editável (PUT /me — USR-ME-PROFILE-FIELDS). */}
           <Field htmlFor="me-cpf" label={t('users.form.cpf')}>
-            <Input id="me-cpf" mask="cpf" value={props.me.cpf} disabled onChange={() => { /* read-only */ }} />
+            <Input
+              id="me-cpf"
+              mask="cpf"
+              value={props.me.cpf}
+              disabled
+              onChange={() => {
+                /* read-only */
+              }}
+            />
           </Field>
           <Field htmlFor="me-email" label={t('users.form.email')}>
             <Input id="me-email" type="email" value={email} onChange={setEmail} />
@@ -101,10 +114,14 @@ export function EditProfileModal(props: EditProfileModalProps): ReactNode {
       </div>
 
       <div className={footer}>
-        <button type="button" className={cancelButton} onClick={props.onClose}>{t('users.form.cancel')}</button>
+        <button type="button" className={cancelButton} onClick={props.onClose}>
+          {t('users.form.cancel')}
+        </button>
         <div className={saveWrap}>
           <Button
-            onClick={() => { props.onSave({ name: name.trim(), email: email.trim(), telephone }) }}
+            onClick={() => {
+              props.onSave({ name: name.trim(), email: email.trim(), telephone })
+            }}
             disabled={!canSave}
             loading={props.running}
             loadingLabel={t('users.detail.saving')}

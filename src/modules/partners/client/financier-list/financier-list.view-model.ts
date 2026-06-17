@@ -25,6 +25,7 @@ export function mapItemToRow(item: FinancierListItem): FinancierRow {
     cnpj: item.cnpj,
     telephone: item.telephone,
     activation: item.activation,
+    contractCount: item.contractCount,
   }
 }
 
