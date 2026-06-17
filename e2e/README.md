@@ -40,10 +40,10 @@ pnpm exec playwright show-report   # relatório HTML da última execução
 
 ## Seed dos usuários de teste
 
-| Usuário | Estado | Como é preparado |
-|---|---|---|
-| `admin@bemcomum.dev` / `DevPassw0rd!2024` | válido | serviço `core-api-seed` do `docker-compose.yml` (via `/register`) |
-| `disabled@e2e.local` / `DevPassw0rd!2024` | **desabilitado** | `global-setup.ts`: `/register` + `UPDATE` no MySQL |
+| Usuário                                   | Estado           | Como é preparado                                                  |
+| ----------------------------------------- | ---------------- | ----------------------------------------------------------------- |
+| `admin@bemcomum.dev` / `DevPassw0rd!2027` | válido           | serviço `core-api-seed` do `docker-compose.yml` (via `/register`) |
+| `disabled@e2e.local` / `DevPassw0rd!2027` | **desabilitado** | `global-setup.ts`: `/register` + `UPDATE` no MySQL                |
 
 **Por que o `disabled` precisa de `UPDATE` no MySQL:** o domínio do core-api modela
 `status='disabled'` + `disabled_at`, mas **não expõe transição** (não há use-case nem rota para
@@ -52,6 +52,7 @@ desativar, e o seed só cria contas `active`). O `global-setup.ts` registra o us
 ```sql
 UPDATE auth_user SET status='disabled', disabled_at=NOW(3), updated_at=NOW(3) WHERE email='disabled@e2e.local';
 ```
+
 via `docker compose exec -T mysql …`. As duas colunas são setadas **juntas** — há um CHECK
 bicondicional (`auth_user_disabled_consistency_chk`); setar só uma viola a constraint.
 
@@ -59,12 +60,12 @@ bicondicional (`auth_user_disabled_consistency_chk`); setar só uma viola a cons
 
 Defaults batem com o `docker-compose.yml`; sobrescreva só se mudar a stack.
 
-| Var | Default | Uso |
-|---|---|---|
-| `E2E_BASE_URL` | `https://app.localhost` | URL do app (browser) |
-| `E2E_CORE_API_URL` | `http://localhost:3001/api/v2` | core-api para o `register` do seed (exposto pelo override dev) |
-| `MYSQL_ROOT_PASSWORD` | `rootdev` | root do MySQL para o `UPDATE` do disabled |
-| `E2E_MYSQL_SERVICE` / `E2E_MYSQL_DATABASE` | `mysql` / `core` | serviço/DB no `docker compose exec` |
+| Var                                        | Default                        | Uso                                                            |
+| ------------------------------------------ | ------------------------------ | -------------------------------------------------------------- |
+| `E2E_BASE_URL`                             | `https://app.localhost`        | URL do app (browser)                                           |
+| `E2E_CORE_API_URL`                         | `http://localhost:3001/api/v2` | core-api para o `register` do seed (exposto pelo override dev) |
+| `MYSQL_ROOT_PASSWORD`                      | `rootdev`                      | root do MySQL para o `UPDATE` do disabled                      |
+| `E2E_MYSQL_SERVICE` / `E2E_MYSQL_DATABASE` | `mysql` / `core`               | serviço/DB no `docker compose exec`                            |
 
 ## Convenções
 
