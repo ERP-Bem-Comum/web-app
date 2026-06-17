@@ -986,3 +986,212 @@ export const kbdChip = style({
   fontSize: vars.font.size['2xs'],
   color: vars.color.institutional.ink3,
 })
+
+// ── Modal "Tipo de Documento" (Figma) — <dialog> nativo (ESC/focus-trap), padrão Contratos ───────
+export const typeDialog = style({
+  border: 'none',
+  padding: 0,
+  background: 'transparent',
+  maxInlineSize: '100%',
+  maxBlockSize: '100%',
+  selectors: {
+    '&::backdrop': {
+      background: vars.color.institutional.overlay,
+      backdropFilter: 'blur(6px)',
+    },
+  },
+})
+export const typeContent = style({
+  position: 'relative',
+  display: 'flex',
+  flexDirection: 'column',
+  inlineSize: 'min(43rem, 92vw)',
+  maxBlockSize: '92vh',
+  overflow: 'hidden',
+  background: vars.color.surface.default,
+  borderRadius: vars.radius.xl,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  boxShadow: vars.shadow.cardElevated,
+})
+export const typeHeader = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: vars.space.sm,
+  paddingBlock: vars.space.md,
+  paddingInline: vars.space.lg,
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+})
+export const typeTitle = style({
+  margin: 0,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.lg,
+  fontWeight: vars.font.weight.bold,
+  color: vars.color.institutional.ink2,
+})
+export const typeClose = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  inlineSize: '1.875rem',
+  blockSize: '1.875rem',
+  border: 'none',
+  borderRadius: vars.radius.md,
+  background: 'transparent',
+  color: vars.color.institutional.ink4,
+  fontSize: vars.font.size.lg,
+  cursor: 'pointer',
+  ':hover': { background: vars.color.institutional.paperWarm },
+})
+export const typeBody = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: vars.space.lg,
+  minBlockSize: 0,
+  overflowY: 'auto',
+  paddingBlock: vars.space.lg,
+  paddingInline: vars.space.lg,
+})
+export const typeSubtitle = style({
+  margin: 0,
+  fontFamily: vars.font.family.body, // Nunito (prose/brand)
+  fontSize: vars.font.size.xs,
+  lineHeight: 1.5,
+  color: vars.color.text.secondary,
+})
+export const typeGrid = style({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(2, 1fr)',
+  gap: vars.space.md,
+  '@media': { 'screen and (max-width: 36rem)': { gridTemplateColumns: '1fr' } },
+})
+export const typeCard = style({
+  display: 'grid',
+  gridTemplateColumns: 'auto 1fr',
+  gap: vars.space.md,
+  alignItems: 'start',
+  padding: vars.space.md,
+  textAlign: 'start',
+  borderRadius: vars.radius.lg,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  background: vars.color.surface.default,
+  cursor: 'pointer',
+  transition: 'border-color 120ms, background 120ms, box-shadow 120ms',
+  ':hover': { borderColor: vars.color.institutional.blueLine, background: vars.color.institutional.blueBg },
+  ':focus-visible': {
+    outline: 'none',
+    borderColor: vars.color.institutional.blue,
+    boxShadow: `0 0 0 0.1875rem ${vars.color.institutional.blueBg}`,
+  },
+})
+export const typeCardSelected = style({
+  borderColor: vars.color.institutional.blue,
+  background: vars.color.institutional.blueBg,
+})
+const typeAvatarBase = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  inlineSize: '2.25rem',
+  blockSize: '2.25rem',
+  flexShrink: 0,
+  borderRadius: vars.radius.md,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.xs,
+  fontWeight: vars.font.weight.bold,
+  letterSpacing: '0.02em',
+} as const
+export const typeAvatar = styleVariants({
+  fiscal: [
+    typeAvatarBase,
+    { background: vars.color.institutional.blueDeep, color: vars.color.surface.default },
+  ],
+  partial: [
+    typeAvatarBase,
+    { background: vars.color.institutional.orange, color: vars.color.surface.default },
+  ],
+  'non-fiscal': [
+    typeAvatarBase,
+    { background: vars.color.institutional.paperBeige, color: vars.color.institutional.ink3 },
+  ],
+})
+export const typeCardMain = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: vars.space.xs,
+  minInlineSize: 0,
+})
+export const typeCardHead = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  flexWrap: 'wrap',
+})
+export const typeName = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.bold,
+  color: vars.color.institutional.ink2,
+})
+const typeClassBadgeBase = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  paddingBlock: '0.0625rem',
+  paddingInline: vars.space.xs,
+  borderRadius: vars.radius.sm,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.bold,
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+  lineHeight: 1.2,
+} as const
+export const typeClassBadge = styleVariants({
+  fiscal: [
+    typeClassBadgeBase,
+    { background: vars.color.institutional.blueBg, color: vars.color.institutional.blueDeep },
+  ],
+  partial: [
+    typeClassBadgeBase,
+    { background: vars.color.institutional.orangeLight, color: vars.color.status.pendingText },
+  ],
+  'non-fiscal': [
+    typeClassBadgeBase,
+    { background: vars.color.institutional.paperBeige, color: vars.color.institutional.ink4 },
+  ],
+})
+export const typeDesc = style({
+  fontFamily: vars.font.family.body, // Nunito (prose/brand)
+  fontSize: vars.font.size.xs,
+  lineHeight: 1.45,
+  color: vars.color.text.secondary,
+})
+// Gatilho do campo Tipo (abre o modal) — mesma caixa do input, com o valor + caret.
+export const typeTrigger = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: vars.space.sm,
+  inlineSize: '100%',
+  minBlockSize: '2.125rem',
+  paddingBlock: '0.5rem',
+  paddingInline: '0.6875rem',
+  borderRadius: vars.radius.md,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  background: vars.color.surface.default,
+  color: vars.color.institutional.ink2,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  textAlign: 'start',
+  cursor: 'pointer',
+  transition: 'border-color 120ms, box-shadow 120ms',
+  ':hover': { borderColor: vars.color.institutional.ink5 },
+  ':focus-visible': {
+    outline: 'none',
+    borderColor: vars.color.institutional.blue,
+    boxShadow: `0 0 0 0.1875rem ${vars.color.institutional.blueBg}`,
+  },
+  // Caret ▾ via CSS (mesmo padrão do selectWrap; evita literal no JSX).
+  '::after': { content: '"▾"', color: vars.color.institutional.blueDeep, flexShrink: 0 },
+})
+export const typeTriggerPlaceholder = style({ color: vars.color.text.muted })

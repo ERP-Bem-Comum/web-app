@@ -165,6 +165,13 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
             onText={controller.setText}
             onRetention={controller.setRetention}
             onReformaTributaria={controller.setReformaTributaria}
+            typeModalOpen={controller.typeModalOpen}
+            onOpenTypeModal={controller.openTypeModal}
+            onSelectType={(type) => {
+              controller.setType(type)
+              controller.closeTypeModal()
+            }}
+            onCloseTypeModal={controller.closeTypeModal}
           />
         </div>
 

@@ -16,6 +16,9 @@ import {
   buildCreateInput,
   buildDraftInput,
   buildRegisteredTaxInputs,
+  DOCUMENT_TYPE_META,
+  fiscalClassTag,
+  docTypeDescriptionTag,
   filterPartners,
   partnerKindTag,
   editLocksFor,
@@ -162,6 +165,30 @@ describe('buildRegisteredTaxInputs / buildCreateInput envia registeredTaxes', ()
   })
   it('tipo sem reforma tributária (Boleto): registeredTaxes vazio', () => {
     assert.equal(buildRegisteredTaxInputs({ ...comReforma, type: 'Boleto' }).length, 0)
+  })
+})
+
+describe('DOCUMENT_TYPE_META (modal de tipo)', () => {
+  it('tem os 7 tipos do enum com classe fiscal correta', () => {
+    assert.equal(DOCUMENT_TYPE_META.length, 7)
+    const cls = (t: string): string => DOCUMENT_TYPE_META.find((m) => m.type === t)?.fiscalClass ?? '?'
+    assert.equal(cls('NFS-e'), 'fiscal')
+    assert.equal(cls('DANFE'), 'fiscal')
+    assert.equal(cls('RPA'), 'fiscal')
+    assert.equal(cls('Fatura'), 'partial')
+    assert.equal(cls('Boleto'), 'non-fiscal')
+    assert.equal(cls('Recibo'), 'non-fiscal')
+    assert.equal(cls('Imposto'), 'non-fiscal')
+  })
+  it('iniciais (2 letras) derivadas do tipo', () => {
+    const ini = (t: string): string => DOCUMENT_TYPE_META.find((m) => m.type === t)?.initials ?? '?'
+    assert.equal(ini('NFS-e'), 'NF')
+    assert.equal(ini('RPA'), 'RP')
+    assert.equal(ini('Imposto'), 'IM')
+  })
+  it('tags i18n de classe e descrição', () => {
+    assert.equal(fiscalClassTag('non-fiscal'), 'financial.create.docType.class.non-fiscal')
+    assert.equal(docTypeDescriptionTag('NFS-e'), 'financial.create.docType.desc.NFS-e')
   })
 })
 

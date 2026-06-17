@@ -3,7 +3,7 @@
  * Guarda os campos crus (reais/strings); a derivação pura (preview/CSRF/canSubmit) vive em
  * `document-form.view.ts`. Trocar para um tipo sem retenção limpa o bloco de retenções (gating).
  */
-import { useEffect, useReducer, useRef } from 'react'
+import { useEffect, useReducer, useRef, useState } from 'react'
 
 import type { DocumentType, PaymentMethod } from '#modules/financial/client/data/model/document.model.ts'
 import {
@@ -86,10 +86,15 @@ export type DocumentFormController = Readonly<{
   setRetention: (key: keyof RetentionFieldsReais, value: string) => void
   setReformaTributaria: (key: keyof ReformaTributariaFieldsReais, value: string) => void
   reset: () => void
+  // Modal "Tipo de Documento" (UI-state).
+  typeModalOpen: boolean
+  openTypeModal: () => void
+  closeTypeModal: () => void
 }>
 
 export function useDocumentFormController(initial?: DocumentFormFields | null): DocumentFormController {
   const [fields, dispatch] = useReducer(reducer, EMPTY_FIELDS)
+  const [typeModalOpen, setTypeModalOpen] = useState(false)
   // Hidrata UMA vez quando os dados de edição chegam (async). `useRef` evita re-hidratar a cada render,
   // preservando o que o usuário já editou.
   const hydrated = useRef(false)
@@ -121,6 +126,13 @@ export function useDocumentFormController(initial?: DocumentFormFields | null): 
     },
     reset: () => {
       dispatch({ kind: 'reset' })
+    },
+    typeModalOpen,
+    openTypeModal: () => {
+      setTypeModalOpen(true)
+    },
+    closeTypeModal: () => {
+      setTypeModalOpen(false)
     },
   }
 }

@@ -470,6 +470,44 @@ export const REFORMA_TRIBUTARIA_KEYS: readonly (keyof ReformaTributariaFieldsRea
   'ibsEstadual',
 ]
 
+// ── Metadata do tipo de documento (modal "Tipo de Documento", Figma) ─────────────
+// Classe fiscal exibida como badge: fiscal | parcial | não-fiscal. ⚠️ É a CLASSIFICAÇÃO do documento —
+// distinta de "dispara o motor de retenções" (só NFS-e/RPA; DANFE é fiscal mas não dispara no regime atual).
+export type FiscalClass = 'fiscal' | 'partial' | 'non-fiscal'
+
+const FISCAL_CLASS: Record<DocumentType, FiscalClass> = {
+  'NFS-e': 'fiscal',
+  DANFE: 'fiscal',
+  RPA: 'fiscal',
+  Fatura: 'partial',
+  Boleto: 'non-fiscal',
+  Recibo: 'non-fiscal',
+  Imposto: 'non-fiscal',
+}
+
+export type DocumentTypeMeta = Readonly<{
+  type: DocumentType
+  fiscalClass: FiscalClass
+  initials: string
+}>
+
+/** Iniciais (2 letras) p/ o avatar do card — derivadas do próprio tipo (sem mapa mágico). */
+const initialsOf = (type: DocumentType): string =>
+  type
+    .replace(/[^a-zA-Z]/g, '')
+    .slice(0, 2)
+    .toUpperCase()
+
+export const DOCUMENT_TYPE_META: readonly DocumentTypeMeta[] = DOCUMENT_TYPES.map((type) => ({
+  type,
+  fiscalClass: FISCAL_CLASS[type],
+  initials: initialsOf(type),
+}))
+
+/** Tag i18n da classe fiscal (badge) e da descrição do tipo (card do modal). */
+export const fiscalClassTag = (c: FiscalClass): string => `financial.create.docType.class.${c}`
+export const docTypeDescriptionTag = (type: DocumentType): string => `financial.create.docType.desc.${type}`
+
 export const isDocumentType = (v: string): v is DocumentType =>
   (DOCUMENT_TYPES as readonly string[]).includes(v)
 export const isPaymentMethod = (v: string): v is PaymentMethod =>

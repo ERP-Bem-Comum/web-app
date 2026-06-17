@@ -37,6 +37,10 @@ const baseProps = (over: Record<string, unknown> = {}) => ({
   onText: vi.fn(),
   onRetention: vi.fn(),
   onReformaTributaria: vi.fn(),
+  typeModalOpen: false,
+  onOpenTypeModal: vi.fn(),
+  onSelectType: vi.fn(),
+  onCloseTypeModal: vi.fn(),
   ...over,
 })
 
@@ -91,15 +95,35 @@ describe('DocumentForm', () => {
     expect(onReformaTributaria).toHaveBeenCalledWith('cbs', '100')
   })
 
-  it('dispara onText ao digitar o número e onType ao trocar o tipo', () => {
+  it('dispara onText ao digitar o número', () => {
     const onText = vi.fn()
-    const onType = vi.fn()
-    render(<DocumentForm {...baseProps({ onText, onType })} />)
+    render(<DocumentForm {...baseProps({ onText })} />)
     fireEvent.change(screen.getByLabelText(tr('financial.create.field.documentNumber')), {
       target: { value: '0847' },
     })
     expect(onText).toHaveBeenCalledWith('documentNumber', '0847')
-    fireEvent.change(screen.getByLabelText(tr('financial.create.field.type')), { target: { value: 'RPA' } })
-    expect(onType).toHaveBeenCalledWith('RPA')
+  })
+
+  it('abre o modal de tipo ao clicar no gatilho', () => {
+    const onOpenTypeModal = vi.fn()
+    render(<DocumentForm {...baseProps({ onOpenTypeModal })} />)
+    fireEvent.click(screen.getByLabelText(tr('financial.create.field.type')))
+    expect(onOpenTypeModal).toHaveBeenCalledTimes(1)
+  })
+
+  it('modal de tipo lista os 7 tipos e seleciona um (onSelectType)', () => {
+    const onSelectType = vi.fn()
+    // type='' p/ o gatilho mostrar o placeholder (não duplicar um nome de tipo no DOM).
+    render(
+      <DocumentForm {...baseProps({ fields: fields({ type: '' }), typeModalOpen: true, onSelectType })} />,
+    )
+    expect(screen.getByText(tr('financial.create.docType.modalTitle'))).toBeTruthy()
+    // 6 tipos únicos (Boleto colide com a <option> de forma de pagamento → checado à parte).
+    for (const dt of ['NFS-e', 'DANFE', 'RPA', 'Fatura', 'Recibo', 'Imposto']) {
+      expect(screen.getByText(dt)).toBeTruthy()
+    }
+    expect(screen.getAllByText('Boleto').length).toBeGreaterThanOrEqual(2)
+    fireEvent.click(screen.getByText('RPA'))
+    expect(onSelectType).toHaveBeenCalledWith('RPA')
   })
 })

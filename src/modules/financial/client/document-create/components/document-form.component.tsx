@@ -19,11 +19,9 @@ import { WalletIcon, UsersIcon } from '#shared/ui/index.ts'
 import {
   retentionsEnabledFor,
   reformaTributariaEnabledFor,
-  DOCUMENT_TYPES,
   PAYMENT_METHODS,
   RETENTION_KEYS,
   REFORMA_TRIBUTARIA_KEYS,
-  isDocumentType,
   isPaymentMethod,
   type DocumentType,
   type PaymentMethod,
@@ -34,6 +32,7 @@ import {
   type PartnerHydration,
   type FieldLocks,
 } from '../document-form.view.ts'
+import { DocumentTypeModal } from './document-type-modal.component.tsx'
 import {
   control,
   controlMono,
@@ -48,6 +47,8 @@ import {
   retentionsHint,
   reformaHead,
   reformaTitle,
+  typeTrigger,
+  typeTriggerPlaceholder,
   section,
   sectionTitle,
   sectionHead,
@@ -124,6 +125,11 @@ export type DocumentFormProps = Readonly<{
   onText: (key: 'documentNumber' | 'series' | 'grossValue' | 'dueDate' | 'description', value: string) => void
   onRetention: (key: keyof RetentionFieldsReais, value: string) => void
   onReformaTributaria: (key: keyof ReformaTributariaFieldsReais, value: string) => void
+  // Modal "Tipo de Documento" (o campo Tipo abre o modal; selecionar aplica o tipo).
+  typeModalOpen: boolean
+  onOpenTypeModal: () => void
+  onSelectType: (type: DocumentType) => void
+  onCloseTypeModal: () => void
 }>
 
 export function DocumentForm(props: DocumentFormProps): ReactNode {
@@ -145,24 +151,30 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             <label className={fieldLabel} htmlFor="fin-type">
               {t('financial.create.field.type')}
             </label>
-            <div className={selectWrap}>
-              <select
+            {/* Tipo abre o modal de seleção (cards com classe fiscal). Travado (edição) → caixa inerte. */}
+            {locks.type ? (
+              <input
                 id="fin-type"
-                className={locks.type ? selectControlDisabled : selectControl}
-                disabled={locks.type}
-                value={fields.type}
-                onChange={(e) => {
-                  props.onType(isDocumentType(e.target.value) ? e.target.value : '')
-                }}
+                className={controlDisabled}
+                disabled
+                value={fields.type === '' ? '—' : fields.type}
+                aria-label={t('financial.create.field.type')}
+              />
+            ) : (
+              <button
+                id="fin-type"
+                type="button"
+                className={typeTrigger}
+                aria-label={t('financial.create.field.type')}
+                onClick={props.onOpenTypeModal}
               >
-                <option value="">{t('financial.create.select')}</option>
-                {DOCUMENT_TYPES.map((dt) => (
-                  <option key={dt} value={dt}>
-                    {dt}
-                  </option>
-                ))}
-              </select>
-            </div>
+                {fields.type === '' ? (
+                  <span className={typeTriggerPlaceholder}>{t('financial.create.select')}</span>
+                ) : (
+                  <span>{fields.type}</span>
+                )}
+              </button>
+            )}
           </div>
 
           {/* Nº / Série — célula combinada (Figma), dois inputs sob um rótulo. */}
@@ -417,6 +429,13 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
           </>
         )}
       </section>
+
+      <DocumentTypeModal
+        open={props.typeModalOpen}
+        selected={fields.type}
+        onSelect={props.onSelectType}
+        onClose={props.onCloseTypeModal}
+      />
     </>
   )
 }
