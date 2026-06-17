@@ -57,6 +57,7 @@ export type ActListItem = Readonly<{
   occupationArea: string // tolerante: o core-api emite string (valores legados possíveis); a UI mapeia p/ label
   hasFinancialTransfer: boolean
   active: boolean
+  contractCount: number
 }>
 
 export type ActDetail = ActListItem &

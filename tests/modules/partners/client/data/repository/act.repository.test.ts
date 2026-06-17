@@ -3,7 +3,10 @@ import assert from 'node:assert/strict'
 
 import { createActRepository } from '../../../../../../src/modules/partners/client/data/repository/act.repository.ts'
 import { isOk, isErr } from '../../../../../../src/shared/primitives/result.ts'
-import type { ActDetail, ActListResponse } from '../../../../../../src/modules/partners/client/data/model/act.model.ts'
+import type {
+  ActDetail,
+  ActListResponse,
+} from '../../../../../../src/modules/partners/client/data/model/act.model.ts'
 
 const detail: ActDetail = {
   id: 'a1',
@@ -22,6 +25,7 @@ const detail: ActDetail = {
   bankAccount: null,
   pixKey: null,
   active: true,
+  contractCount: 0,
   createdAt: '2026-01-01T00:00:00Z',
   updatedAt: '2026-01-02T00:00:00Z',
 }
@@ -38,12 +42,16 @@ const listResponse: ActListResponse = {
       occupationArea: 'PARC',
       hasFinancialTransfer: false,
       active: true,
+      contractCount: 0,
     },
   ],
   meta: { page: 1, limit: 5, total: 1 },
 }
 
-const okFn = <T>(data: T) => () => Promise.resolve({ ok: true as const, data })
+const okFn =
+  <T>(data: T) =>
+  () =>
+    Promise.resolve({ ok: true as const, data })
 
 const baseDeps = {
   listActsFn: okFn(listResponse),
@@ -69,7 +77,10 @@ describe('ActRepository (mapeia FnResult → Result)', () => {
   })
 
   it('propaga erro do BFF como err(PartnersError)', async () => {
-    const repo = createActRepository({ ...baseDeps, getActFn: () => Promise.resolve({ ok: false as const, error: 'not-found' as const }) })
+    const repo = createActRepository({
+      ...baseDeps,
+      getActFn: () => Promise.resolve({ ok: false as const, error: 'not-found' as const }),
+    })
     const r = await repo.getById('nope')
     assert.equal(isErr(r) && r.error === 'not-found', true)
   })

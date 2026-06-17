@@ -79,6 +79,7 @@ const itemToModel = (f: CoreApiFinancierItem): FinancierListItem => ({
   cnpj: f.cnpj,
   telephone: f.telephone,
   activation: activationFromApi(f.active),
+  contractCount: f.contractCount,
 })
 
 const detailToModel = (raw: unknown): Result<FinancierDetail, PartnersError> => {
@@ -120,8 +121,14 @@ const toWriteBody = (input: CreateFinancierInput): Record<string, unknown> => ({
 export const createCoreApiFinanciersClient = (baseUrl: string): FinancierClient => {
   const auth = (token: string) => ({ Authorization: `Bearer ${token}` })
 
-  const fetchDetailById = async (id: string, token: string): Promise<Result<FinancierDetail, PartnersError>> => {
-    const r = await resultFetch<unknown>(`${baseUrl}/financiers/${id}`, { method: 'GET', headers: auth(token) })
+  const fetchDetailById = async (
+    id: string,
+    token: string,
+  ): Promise<Result<FinancierDetail, PartnersError>> => {
+    const r = await resultFetch<unknown>(`${baseUrl}/financiers/${id}`, {
+      method: 'GET',
+      headers: auth(token),
+    })
     if (isErr(r)) return err(mapHttpError(r.error))
     return detailToModel(r.value)
   }

@@ -13,6 +13,8 @@ export const CoreApiFinancierItemSchema = z.object({
   telephone: z.string().trim(),
   address: z.string().trim(),
   active: z.boolean(),
+  // Contratos ativos do parceiro (#46). `.catch(0)` tolera resposta sem o campo (fallback → 0).
+  contractCount: z.int().nonnegative().catch(0),
 })
 export type CoreApiFinancierItem = z.infer<typeof CoreApiFinancierItemSchema>
 

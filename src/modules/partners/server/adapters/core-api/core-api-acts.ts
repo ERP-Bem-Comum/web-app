@@ -85,6 +85,7 @@ export const itemToModel = (a: CoreApiActItem): ActListItem => ({
   occupationArea: a.occupationArea,
   hasFinancialTransfer: a.hasFinancialTransfer,
   active: a.active,
+  contractCount: a.contractCount,
 })
 
 export const detailToModel = (raw: unknown): Result<ActDetail, PartnersError> => {

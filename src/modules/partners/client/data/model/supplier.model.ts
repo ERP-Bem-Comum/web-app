@@ -14,8 +14,7 @@ export type ActivationStatus = 'active' | 'inactive'
 export const PIX_KEY_TYPES = ['cpf', 'cnpj', 'email', 'phone', 'random-key'] as const
 export type PixKeyType = (typeof PIX_KEY_TYPES)[number]
 
-export const isPixKeyType = (v: string): v is PixKeyType =>
-  (PIX_KEY_TYPES as readonly string[]).includes(v)
+export const isPixKeyType = (v: string): v is PixKeyType => (PIX_KEY_TYPES as readonly string[]).includes(v)
 
 /** Níveis de avaliação de serviço (§1.6). Enum FIXO no front (D1) — não consome GET /service-ratings.
  *  `null` = sem avaliação (D2). FONTE ÚNICA: `type`, `z.enum` e a lista de `<option>` derivam daqui. */
@@ -46,6 +45,7 @@ export type SupplierListItem = Readonly<{
   fantasyName: string
   serviceCategory: string
   activation: ActivationStatus
+  contractCount: number
 }>
 
 export type SupplierDetail = SupplierListItem &

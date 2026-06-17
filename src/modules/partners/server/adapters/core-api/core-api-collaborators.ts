@@ -87,6 +87,7 @@ const itemToModel = (c: CoreApiCollaboratorItem): CollaboratorListItem => ({
   role: c.role,
   registration: registrationFromApi(c.status),
   activation: activationFromApi(c.active),
+  contractCount: c.contractCount,
 })
 
 const detailToModel = (raw: unknown): Result<CollaboratorDetail, PartnersError> => {
@@ -148,8 +149,14 @@ const buildListQuery = (input: ListCollaboratorsInput): string => {
 export const createCoreApiCollaboratorsClient = (baseUrl: string): CollaboratorClient => {
   const auth = (token: string) => ({ Authorization: `Bearer ${token}` })
 
-  const fetchDetailById = async (id: string, token: string): Promise<Result<CollaboratorDetail, PartnersError>> => {
-    const r = await resultFetch<unknown>(`${baseUrl}/collaborators/${id}`, { method: 'GET', headers: auth(token) })
+  const fetchDetailById = async (
+    id: string,
+    token: string,
+  ): Promise<Result<CollaboratorDetail, PartnersError>> => {
+    const r = await resultFetch<unknown>(`${baseUrl}/collaborators/${id}`, {
+      method: 'GET',
+      headers: auth(token),
+    })
     if (isErr(r)) return err(mapHttpError(r.error))
     return detailToModel(r.value)
   }

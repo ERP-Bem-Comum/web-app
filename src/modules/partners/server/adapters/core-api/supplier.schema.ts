@@ -32,6 +32,8 @@ export const CoreApiSupplierItemSchema = z.object({
   // null no front; desconhecido → null) + `.nullish()` p/ dados legados sem o campo. Comentário idem.
   serviceRating: z.string().trim().nullish(),
   ratingComment: z.string().trim().nullish(),
+  // Contratos ativos do parceiro (#46). `.catch(0)` tolera resposta sem o campo (fallback → 0).
+  contractCount: z.int().nonnegative().catch(0),
 })
 export type CoreApiSupplierItem = z.infer<typeof CoreApiSupplierItemSchema>
 

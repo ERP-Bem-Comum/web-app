@@ -16,6 +16,7 @@ export type CollaboratorRow = Readonly<{
   role: string
   registration: RegistrationStatus
   activation: ActivationStatus
+  contractCount: number
 }>
 
 /** Ação de ciclo de vida no detalhe (sobre a ATIVAÇÃO; o status cadastral é somente-leitura). */
