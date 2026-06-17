@@ -13,6 +13,8 @@ import type {
   PaymentMethod,
   RetentionInput,
   RetentionType,
+  RegisteredTaxInput,
+  RegisteredTaxType,
 } from '#modules/financial/client/data/model/document.model.ts'
 
 // Re-export dos tipos que a UI precisa — as views importam SÓ do view-model (§XI), nunca de client-data.
@@ -20,6 +22,7 @@ export type {
   DocumentType,
   PaymentMethod,
   RetentionType,
+  RegisteredTaxType,
 } from '#modules/financial/client/data/model/document.model.ts'
 export type SupplierOption = Readonly<{ id: string; name: string }>
 
@@ -87,6 +90,15 @@ export type RetentionFieldsReais = Readonly<{
   csll: string
 }>
 
+// Reforma Tributária (CBS/IBS) — campos de **registro de valor apenas** (OCR preenche ou manual). Por
+// regra documentada (specs/FIN-DOCUMENTO-INGESTAO, domain R5): NÃO geram filho, NÃO viram retenção e
+// NÃO abatem do líquido — só são enviados em `registeredTaxes[]` p/ auditoria fiscal.
+export type ReformaTributariaFieldsReais = Readonly<{
+  cbs: string
+  ibsMunicipal: string
+  ibsEstadual: string
+}>
+
 export type DocumentFormFields = Readonly<{
   type: DocumentType | ''
   documentNumber: string
@@ -97,6 +109,7 @@ export type DocumentFormFields = Readonly<{
   dueDate: string
   description: string
   retentions: RetentionFieldsReais
+  reformaTributaria: ReformaTributariaFieldsReais
 }>
 
 export type TituloPreview = Readonly<{ kind: 'Pai' | RetentionType; valueCents: string }>
@@ -110,6 +123,12 @@ export const EMPTY_RETENTIONS: RetentionFieldsReais = {
   csll: '',
 }
 
+export const EMPTY_REFORMA_TRIBUTARIA: ReformaTributariaFieldsReais = {
+  cbs: '',
+  ibsMunicipal: '',
+  ibsEstadual: '',
+}
+
 const toCents = (reais: string): number => {
   const r = reaisToCents(reais)
   return r.ok ? Number.parseInt(r.value, 10) : 0
@@ -117,6 +136,13 @@ const toCents = (reais: string): number => {
 
 /** Retenções só valem para NFS-e e RPA (gating; backend recusa o resto → retention-not-allowed). */
 export const retentionsEnabledFor = (type: DocumentType | ''): boolean => type === 'NFS-e' || type === 'RPA'
+
+/**
+ * Reforma Tributária (CBS/IBS) — campos de registro de valor. Documentos fiscais de serviço (NFS-e/RPA)
+ * exibem CBS/IBS conforme a tabela do domínio. São SÓ registro: não geram filho nem abatem o líquido.
+ */
+export const reformaTributariaEnabledFor = (type: DocumentType | ''): boolean =>
+  type === 'NFS-e' || type === 'RPA'
 
 type RetentionTotals = Readonly<{ iss: number; irrf: number; inss: number; csrf: number; sum: number }>
 
@@ -205,6 +231,34 @@ const retentionInput = (type: RetentionType, valueCents: number, base: number): 
   valueCents: String(valueCents),
 })
 
+const registeredTaxInput = (
+  type: RegisteredTaxType,
+  valueCents: number,
+  base: number,
+): RegisteredTaxInput => ({
+  type,
+  baseCents: String(base),
+  rateBps: base > 0 ? Math.round((valueCents / base) * 10000) : 0,
+  valueCents: String(valueCents),
+})
+
+/**
+ * Monta `registeredTaxes[]` da Reforma Tributária (CBS/IBS) — só os campos > 0, base = bruto. Vazio
+ * quando o tipo não habilita reforma tributária. NÃO afeta líquido nem gera filho (regra: só registro).
+ */
+export const buildRegisteredTaxInputs = (fields: DocumentFormFields): readonly RegisteredTaxInput[] => {
+  if (!reformaTributariaEnabledFor(fields.type)) return []
+  const base = grossCents(fields)
+  const out: RegisteredTaxInput[] = []
+  const cbs = toCents(fields.reformaTributaria.cbs)
+  const ibsM = toCents(fields.reformaTributaria.ibsMunicipal)
+  const ibsE = toCents(fields.reformaTributaria.ibsEstadual)
+  if (cbs > 0) out.push(registeredTaxInput('CBS', cbs, base))
+  if (ibsM > 0) out.push(registeredTaxInput('IBS_Municipal', ibsM, base))
+  if (ibsE > 0) out.push(registeredTaxInput('IBS_Estadual', ibsE, base))
+  return out
+}
+
 const trimToUndefined = (s: string): string | undefined => (s.trim() === '' ? undefined : s.trim())
 
 /** Monta o CreateDocumentInput (com agregação CSRF) ou `null` se o form ainda não pode submeter. */
@@ -225,7 +279,7 @@ export const buildCreateInput = (fields: DocumentFormFields): CreateDocumentInpu
     paymentMethod: fields.paymentMethod,
     grossValueCents: String(gross),
     retentions,
-    registeredTaxes: [],
+    registeredTaxes: buildRegisteredTaxInputs(fields),
     dueDate: fields.dueDate,
     description: trimToUndefined(fields.description),
   }
@@ -260,7 +314,7 @@ export const buildDraftInput = (fields: DocumentFormFields): CreateDocumentInput
     paymentMethod: fields.paymentMethod,
     grossValueCents: String(gross),
     retentions,
-    registeredTaxes: [],
+    registeredTaxes: buildRegisteredTaxInputs(fields),
     dueDate: trimToUndefined(fields.dueDate),
     description: trimToUndefined(fields.description),
     asDraft: true,
@@ -352,6 +406,9 @@ export const hydrateFieldsFromDetail = (d: DocumentDetail): DocumentFormFields =
     dueDate: d.dueDate ?? '',
     description: d.description ?? '',
     retentions,
+    // Reforma Tributária não vem no GET de detalhe hoje (enriquecimento = core-api#95) e é imutável no
+    // ajuste → hidrata vazia. (Quando o detalhe expuser registeredTaxes, mapear aqui.)
+    reformaTributaria: EMPTY_REFORMA_TRIBUTARIA,
   }
 }
 
@@ -406,6 +463,11 @@ export const RETENTION_KEYS: readonly (keyof RetentionFieldsReais)[] = [
   'pis',
   'cofins',
   'csll',
+]
+export const REFORMA_TRIBUTARIA_KEYS: readonly (keyof ReformaTributariaFieldsReais)[] = [
+  'cbs',
+  'ibsMunicipal',
+  'ibsEstadual',
 ]
 
 export const isDocumentType = (v: string): v is DocumentType =>

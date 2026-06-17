@@ -25,6 +25,7 @@ const fields = (over: Partial<DocumentFormFields> = {}): DocumentFormFields => (
   dueDate: '',
   description: '',
   retentions: { iss: '', irrf: '', inss: '', pis: '', cofins: '', csll: '' },
+  reformaTributaria: { cbs: '', ibsMunicipal: '', ibsEstadual: '' },
   ...over,
 })
 
@@ -35,6 +36,7 @@ const baseProps = (over: Record<string, unknown> = {}) => ({
   onPaymentMethod: vi.fn(),
   onText: vi.fn(),
   onRetention: vi.fn(),
+  onReformaTributaria: vi.fn(),
   ...over,
 })
 
@@ -57,6 +59,24 @@ describe('DocumentForm', () => {
     render(<DocumentForm {...baseProps({ fields: fields({ type: 'Boleto' }) })} />)
     expect(screen.queryByLabelText('ISS')).toBe(null)
     expect(screen.getByText(tr('financial.create.retention.disabled'))).toBeTruthy()
+  })
+
+  it('mostra a Reforma Tributária (CBS/IBS) para NFS-e e oculta para Boleto', () => {
+    const { unmount } = render(<DocumentForm {...baseProps({ fields: fields({ type: 'NFS-e' }) })} />)
+    expect(screen.getByText(tr('financial.create.reformaTributaria.label'))).toBeTruthy()
+    for (const r of ['CBS', 'IBS Municipal', 'IBS Estadual']) {
+      expect(screen.getByLabelText(r)).toBeTruthy()
+    }
+    unmount()
+    render(<DocumentForm {...baseProps({ fields: fields({ type: 'Boleto' }) })} />)
+    expect(screen.queryByText(tr('financial.create.reformaTributaria.label'))).toBe(null)
+  })
+
+  it('dispara onReformaTributaria ao digitar CBS', () => {
+    const onReformaTributaria = vi.fn()
+    render(<DocumentForm {...baseProps({ fields: fields({ type: 'NFS-e' }), onReformaTributaria })} />)
+    fireEvent.change(screen.getByLabelText('CBS'), { target: { value: '100' } })
+    expect(onReformaTributaria).toHaveBeenCalledWith('cbs', '100')
   })
 
   it('dispara onText ao digitar o número e onType ao trocar o tipo', () => {

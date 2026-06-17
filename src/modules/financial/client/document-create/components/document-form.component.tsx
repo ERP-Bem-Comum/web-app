@@ -3,10 +3,13 @@
  * setters do controller por props. Seções FLAT do Figma 626-2 (S1 Identificação, S2 Retenções, S3
  * Pagamento, S4 Categorização). Bloco de retenções só aparece para NFS-e/RPA (gating).
  *
- * Chrome (sem backend no v1, decisão #7): Competência/Emissão, linha CBS/IBS, "Pagar da Conta", cards
- * Conta/Aprovador e toda a Categorização são DESABILITADOS (sem dado fabricado) até os DTOs do core-api
- * (#47/#48) e o cadastro de contas/categorias existirem. A faixa âmbar de OCR do Figma é omitida de
- * propósito — sinalizaria preenchimento automático que não acontece sem o OCR.
+ * Reforma Tributária (CBS/IBS): campos VIVOS de registro de valor (OCR/manual) — enviados em
+ * registeredTaxes[] do core-api; não geram filho nem abatem o líquido (regra FIN-DOCUMENTO-INGESTAO).
+ *
+ * Chrome (sem backend no v1, decisão #7): Competência/Emissão, "Pagar da Conta", cards Conta/Aprovador
+ * e toda a Categorização são DESABILITADOS (sem dado fabricado) até os DTOs do core-api (#47/#48) e o
+ * cadastro de contas/categorias existirem. A faixa âmbar de OCR do Figma é omitida de propósito —
+ * sinalizaria preenchimento automático que não acontece sem o OCR.
  */
 import type { ReactNode } from 'react'
 
@@ -15,9 +18,11 @@ import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { WalletIcon, UsersIcon } from '#shared/ui/index.ts'
 import {
   retentionsEnabledFor,
+  reformaTributariaEnabledFor,
   DOCUMENT_TYPES,
   PAYMENT_METHODS,
   RETENTION_KEYS,
+  REFORMA_TRIBUTARIA_KEYS,
   isDocumentType,
   isPaymentMethod,
   type DocumentType,
@@ -25,6 +30,7 @@ import {
   NO_LOCKS,
   type DocumentFormFields,
   type RetentionFieldsReais,
+  type ReformaTributariaFieldsReais,
   type PartnerHydration,
   type FieldLocks,
 } from '../document-form.view.ts'
@@ -40,6 +46,8 @@ import {
   fieldLabel,
   numberSeriesRow,
   retentionsHint,
+  reformaHead,
+  reformaTitle,
   section,
   sectionTitle,
   sectionHead,
@@ -115,6 +123,7 @@ export type DocumentFormProps = Readonly<{
   onPaymentMethod: (value: PaymentMethod | '') => void
   onText: (key: 'documentNumber' | 'series' | 'grossValue' | 'dueDate' | 'description', value: string) => void
   onRetention: (key: keyof RetentionFieldsReais, value: string) => void
+  onReformaTributaria: (key: keyof ReformaTributariaFieldsReais, value: string) => void
 }>
 
 export function DocumentForm(props: DocumentFormProps): ReactNode {
@@ -276,20 +285,36 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
                 </div>
               ))}
             </div>
-            {/* Reforma tributária (CBS/IBS) — chrome, ainda sem cálculo no core-api. */}
-            <div className={fieldGrid.three}>
-              {(['cbs', 'ibsMunicipal', 'ibsEstadual'] as const).map((key) => (
-                <div className={field} key={key}>
-                  <span className={fieldLabel}>{t(`financial.create.retention.${key}`)}</span>
-                  <input
-                    className={controlDisabled}
-                    disabled
-                    placeholder="R$ 0,00"
-                    aria-label={t(`financial.create.retention.${key}`)}
-                  />
+            {/* Reforma Tributária (CBS/IBS) — registro de valor apenas (OCR/manual): não gera filho nem
+                retenção e não abate o líquido. Enviado em registeredTaxes[] (core-api). */}
+            {reformaTributariaEnabledFor(fields.type) ? (
+              <>
+                <div className={reformaHead}>
+                  <span className={reformaTitle}>{t('financial.create.reformaTributaria.label')}</span>
+                  <span className={retentionsHint}>{t('financial.create.reformaTributaria.hint')}</span>
                 </div>
-              ))}
-            </div>
+                <div className={fieldGrid.three}>
+                  {REFORMA_TRIBUTARIA_KEYS.map((key) => (
+                    <div className={field} key={key}>
+                      <label className={fieldLabel} htmlFor={`fin-rt-${key}`}>
+                        {t(`financial.create.retention.${key}`)}
+                      </label>
+                      <input
+                        id={`fin-rt-${key}`}
+                        className={locks.retentions ? controlDisabled : controlMono}
+                        disabled={locks.retentions}
+                        inputMode="decimal"
+                        placeholder="R$ 0,00"
+                        value={fields.reformaTributaria[key]}
+                        onChange={(e) => {
+                          props.onReformaTributaria(key, e.target.value)
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : null}
           </>
         ) : (
           <p className={retentionsHint}>{t('financial.create.retention.disabled')}</p>

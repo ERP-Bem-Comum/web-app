@@ -8,12 +8,14 @@ import assert from 'node:assert/strict'
 
 import {
   retentionsEnabledFor,
+  reformaTributariaEnabledFor,
   netPreviewCents,
   titulosPrevistos,
   canSubmit,
   canSaveDraft,
   buildCreateInput,
   buildDraftInput,
+  buildRegisteredTaxInputs,
   filterPartners,
   partnerKindTag,
   editLocksFor,
@@ -21,6 +23,7 @@ import {
   hydrateFieldsFromDetail,
   canSaveEdit,
   buildAdjustInput,
+  EMPTY_REFORMA_TRIBUTARIA,
   type DocumentFormFields,
   type PartnerOption,
 } from '../../../../../src/modules/financial/client/document-create/document-form.view.ts'
@@ -42,6 +45,13 @@ const base: DocumentFormFields = {
   dueDate: '2026-06-10',
   description: 'Consultoria',
   retentions: { iss: '350', irrf: '150', inss: '1100', pis: '65', cofins: '300', csll: '100' },
+  reformaTributaria: EMPTY_REFORMA_TRIBUTARIA,
+}
+
+// NFS-e com Reforma Tributária preenchida (CBS/IBS) — só registro de valor.
+const comReforma: DocumentFormFields = {
+  ...base,
+  reformaTributaria: { cbs: '100', ibsMunicipal: '50', ibsEstadual: '50' },
 }
 
 describe('retentionsEnabledFor', () => {
@@ -104,6 +114,54 @@ describe('buildCreateInput', () => {
   })
   it('null quando não pode submeter', () => {
     assert.equal(buildCreateInput({ ...base, documentNumber: '' }), null)
+  })
+})
+
+// ── Reforma Tributária (CBS/IBS) — registro de valor apenas (sem filho, sem retenção, sem abater líquido) ──
+describe('reformaTributariaEnabledFor', () => {
+  it('só NFS-e e RPA', () => {
+    assert.equal(reformaTributariaEnabledFor('NFS-e'), true)
+    assert.equal(reformaTributariaEnabledFor('RPA'), true)
+    assert.equal(reformaTributariaEnabledFor('Boleto'), false)
+    assert.equal(reformaTributariaEnabledFor(''), false)
+  })
+})
+
+describe('reforma tributária NÃO altera líquido nem gera filho', () => {
+  it('líquido idêntico ao sem reforma (value-only)', () => {
+    assert.equal(netPreviewCents(comReforma), netPreviewCents(base))
+    assert.equal(netPreviewCents(comReforma), '793500')
+  })
+  it('títulos previstos não ganham filho de CBS/IBS', () => {
+    const t = titulosPrevistos(comReforma)
+    assert.equal(t.length, titulosPrevistos(base).length)
+    assert.equal(
+      t.some((x) => x.kind !== 'Pai' && !['ISS', 'IRRF', 'INSS', 'CSRF'].includes(x.kind)),
+      false,
+    )
+  })
+})
+
+describe('buildRegisteredTaxInputs / buildCreateInput envia registeredTaxes', () => {
+  it('mapeia CBS/IBS > 0 com base = bruto', () => {
+    const rt = buildRegisteredTaxInputs(comReforma)
+    assert.equal(rt.length, 3)
+    const cbs = rt.find((r) => r.type === 'CBS')
+    assert.equal(cbs?.valueCents, '10000')
+    assert.equal(cbs?.baseCents, '1000000')
+    assert.equal(rt.find((r) => r.type === 'IBS_Municipal')?.valueCents, '5000')
+    assert.equal(rt.find((r) => r.type === 'IBS_Estadual')?.valueCents, '5000')
+  })
+  it('buildCreateInput inclui os registeredTaxes (e retenções inalteradas)', () => {
+    const input = buildCreateInput(comReforma)
+    assert.notEqual(input, null)
+    if (input !== null) {
+      assert.equal(input.registeredTaxes.length, 3)
+      assert.equal(input.retentions.length, 4)
+    }
+  })
+  it('tipo sem reforma tributária (Boleto): registeredTaxes vazio', () => {
+    assert.equal(buildRegisteredTaxInputs({ ...comReforma, type: 'Boleto' }).length, 0)
   })
 })
 

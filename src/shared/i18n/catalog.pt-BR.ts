@@ -1041,6 +1041,9 @@ export const ptBR: Catalog = {
   'financial.create.retention.cbs': 'CBS',
   'financial.create.retention.ibsMunicipal': 'IBS Municipal',
   'financial.create.retention.ibsEstadual': 'IBS Estadual',
+  'financial.create.reformaTributaria.label': 'Reforma Tributária',
+  'financial.create.reformaTributaria.hint':
+    'Apenas registro do valor (OCR ou manual) — não gera título filho nem retenção.',
   'financial.create.pagamento.contaFornecedor': 'Conta do fornecedor',
   'financial.create.pagamento.contaFornecedorHint': 'Conforme dados bancários do fornecedor',
   'financial.create.pagamento.aprovador': 'Aprovador',

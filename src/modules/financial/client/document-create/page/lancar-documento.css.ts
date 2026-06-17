@@ -371,6 +371,24 @@ export const selectControlDisabled = style([
 ])
 
 export const retentionsHint = style({ fontSize: vars.font.size.xs, color: vars.color.text.muted })
+// Cabeçalho do subgrupo Reforma Tributária (CBS/IBS) — rótulo + hint da regra (só registro de valor).
+export const reformaHead = style({
+  display: 'flex',
+  alignItems: 'baseline',
+  flexWrap: 'wrap',
+  columnGap: vars.space.sm,
+  rowGap: vars.space.xs,
+  marginBlockStart: vars.space.md,
+  marginBlockEnd: vars.space.xs,
+})
+export const reformaTitle = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.bold,
+  color: vars.color.institutional.ink2,
+  textTransform: 'uppercase',
+  letterSpacing: '0.04em',
+})
 
 // ── Sidebar ──────────────────────────────────────────────────────────────────
 // Coluna direita: rola sozinha; borda à esquerda separa do form (mock: padding 20/18, border-left).

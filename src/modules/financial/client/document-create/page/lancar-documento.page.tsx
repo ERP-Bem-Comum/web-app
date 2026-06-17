@@ -164,6 +164,7 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
             onPaymentMethod={controller.setPaymentMethod}
             onText={controller.setText}
             onRetention={controller.setRetention}
+            onReformaTributaria={controller.setReformaTributaria}
           />
         </div>
 
