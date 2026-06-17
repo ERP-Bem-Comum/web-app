@@ -33,10 +33,13 @@ export const ptBR: Catalog = {
   'contracts.error.amendment-not-found': 'Aditivo não encontrado.',
   'contracts.error.invalid-amendment-type': 'Tipo de aditivo inválido.',
   'contracts.error.contract-not-active': 'Só é possível incluir aditivos em contratos Ativos (Em Andamento).',
-  'contracts.error.amendment-not-extending': 'A nova data de término deve ser posterior à data de término atual do contrato.',
+  'contracts.error.amendment-not-extending':
+    'A nova data de término deve ser posterior à data de término atual do contrato.',
   'contracts.error.amendment-invalid-new-end-date': 'Data de término do aditivo inválida.',
-  'contracts.error.amendment-cannot-extend-indefinite': 'Contrato com vigência indeterminada não possui prazo a ser estendido.',
-  'contracts.error.amendment-suppression-exceeds-value': 'A supressão não pode exceder o valor atual do contrato.',
+  'contracts.error.amendment-cannot-extend-indefinite':
+    'Contrato com vigência indeterminada não possui prazo a ser estendido.',
+  'contracts.error.amendment-suppression-exceeds-value':
+    'A supressão não pode exceder o valor atual do contrato.',
   'contracts.error.connectivity': 'Serviço temporariamente indisponível. Tente novamente.',
   'contracts.error.unauthorized': 'Acesso não autorizado.',
   'contracts.error.not-implemented': 'Funcionalidade ainda não disponível.',
@@ -45,7 +48,8 @@ export const ptBR: Catalog = {
   // Contracts — Anexo do documento assinado / efetivação (feature 017)
   'contracts.attach.title': 'Incluir documento assinado',
   'contracts.attach.title-view': 'Documento',
-  'contracts.attach.subtitle': 'Anexe o PDF assinado e informe a data de assinatura para efetivar o contrato.',
+  'contracts.attach.subtitle':
+    'Anexe o PDF assinado e informe a data de assinatura para efetivar o contrato.',
   'contracts.attach.button': 'Incluir documento assinado',
   'contracts.attach.fileLabel': 'Documento assinado (PDF)',
   'contracts.attach.fileHint': 'PDF assinado · até 20 MB',
@@ -61,7 +65,8 @@ export const ptBR: Catalog = {
   'contracts.attach.error.storage': 'Falha ao armazenar o documento. Tente novamente.',
   'contracts.attach.error.failed': 'Não foi possível incluir o documento. Tente novamente.',
   // Contracts — Distrato (encerramento) — #32 CTR-HTTP-DISTRATO-DOCUMENTO
-  'contracts.distrato.error.no-document': 'É necessário anexar o documento assinado de distrato para encerrar o contrato.',
+  'contracts.distrato.error.no-document':
+    'É necessário anexar o documento assinado de distrato para encerrar o contrato.',
   'contracts.distrato.error.invalid-date': 'Data efetiva do distrato inválida (não pode ser futura).',
   // Contracts — Listagem
   'contracts.list.title': 'Contratos',
@@ -88,12 +93,14 @@ export const ptBR: Catalog = {
   'contracts.amendment.field.impact.label': 'Impacto',
   'contracts.amendment.field.status': 'Status',
   'contracts.amendment.document.optional': 'PDF · ≤ 20 MB · opcional (anexe + assine para homologar)',
-  'contracts.amendment.attachDependency': 'Documento e data de assinatura andam juntos: preencha os dois para homologar agora, ou deixe ambos em branco (o aditivo fica Pendente).',
+  'contracts.amendment.attachDependency':
+    'Documento e data de assinatura andam juntos: preencha os dois para homologar agora, ou deixe ambos em branco (o aditivo fica Pendente).',
   'contracts.amendment.submitHomologate': 'Salvar e Homologar',
   'contracts.amendment.delete': 'Excluir aditivo',
   'contracts.amendment.delete.confirm': 'Confirmar exclusão',
   'contracts.amendment.delete.question': 'Excluir este aditivo Pendente? Esta ação não poderá ser desfeita.',
-  'contracts.amendment.delete.unavailable': 'Exclusão de aditivo ainda não disponível — aguardando suporte do backend.',
+  'contracts.amendment.delete.unavailable':
+    'Exclusão de aditivo ainda não disponível — aguardando suporte do backend.',
   // Contracts — documentos imprimíveis (PDF via window.print → "Salvar como PDF")
   'contracts.doc.org': 'Instituto Bem Comum',
   'contracts.doc.emittedAt': 'Documento emitido em',
@@ -106,23 +113,28 @@ export const ptBR: Catalog = {
   'contracts.doc.field.period': 'Vigência',
   'contracts.doc.field.status': 'Situação',
   'contracts.doc.quitacao.title': 'TERMO DE QUITAÇÃO',
-  'contracts.doc.quitacao.declaration': 'Declaramos, para os devidos fins de direito, que o contrato acima identificado encontra-se integralmente QUITADO, nada mais havendo a reclamar, a qualquer título, quanto aos valores e obrigações nele previstos.',
+  'contracts.doc.quitacao.declaration':
+    'Declaramos, para os devidos fins de direito, que o contrato acima identificado encontra-se integralmente QUITADO, nada mais havendo a reclamar, a qualquer título, quanto aos valores e obrigações nele previstos.',
   'contracts.doc.historico.title': 'HISTÓRICO DE PAGAMENTO',
   'contracts.doc.historico.col.date': 'Data',
   'contracts.doc.historico.col.description': 'Descrição',
   'contracts.doc.historico.col.value': 'Valor',
-  'contracts.doc.historico.empty': 'Os lançamentos de pagamento serão exibidos quando o módulo Financeiro estiver integrado.',
+  'contracts.doc.historico.empty':
+    'Os lançamentos de pagamento serão exibidos quando o módulo Financeiro estiver integrado.',
   'contracts.doc.placeDateLine': 'Local e data',
   'contracts.doc.signatureLine': 'Assinatura e carimbo',
   // Contracts — modal de exclusão (confirmação)
   'contracts.list.delete.title': 'Excluir contrato',
-  'contracts.list.delete.body': 'Tem certeza que deseja excluir este contrato? Esta ação não poderá ser desfeita.',
-  'contracts.list.delete.unavailable': 'Exclusão ainda não disponível: o backend não permite exclusão física de contratos (imutabilidade). Aguardando suporte de cancelamento/soft-delete.',
+  'contracts.list.delete.body':
+    'Tem certeza que deseja excluir este contrato? Esta ação não poderá ser desfeita.',
+  'contracts.list.delete.unavailable':
+    'Exclusão ainda não disponível: o backend não permite exclusão física de contratos (imutabilidade). Aguardando suporte de cancelamento/soft-delete.',
   'contracts.list.delete.cancel': 'Cancelar',
   'contracts.list.delete.confirm': 'Excluir contrato',
   // Contracts — cancelamento de contrato Pendente (§1.7 — soft-delete → status Cancelado)
   'contracts.cancel.title': 'Cancelar contrato',
-  'contracts.cancel.body': 'Tem certeza que deseja cancelar este contrato pendente? Ele passará para o status Cancelado.',
+  'contracts.cancel.body':
+    'Tem certeza que deseja cancelar este contrato pendente? Ele passará para o status Cancelado.',
   'contracts.cancel.confirm': 'Confirmar cancelamento',
   'contracts.cancel.cancel': 'Voltar',
   'contracts.list.actions.cancel': 'Cancelar contrato',
@@ -210,8 +222,10 @@ export const ptBR: Catalog = {
   'contracts.create.pixInfo.keyType': 'Tipo PIX',
   'contracts.create.pixInfo.key': 'Chave PIX',
   'contracts.create.bancaryInfo.subtitle': 'Dados herdados do cadastro do contratado (somente leitura)',
-  'contracts.create.bancaryInfo.placeholder': 'Dados sincronizados do módulo Parceiros. Última atualização: {{date}}',
-  'contracts.create.pixInfo.placeholder': 'Dados sincronizados do módulo Parceiros. Última atualização: {{date}}',
+  'contracts.create.bancaryInfo.placeholder':
+    'Dados sincronizados do módulo Parceiros. Última atualização: {{date}}',
+  'contracts.create.pixInfo.placeholder':
+    'Dados sincronizados do módulo Parceiros. Última atualização: {{date}}',
   'contracts.create.action.cancel': 'Cancelar',
   'contracts.create.action.save': 'Salvar contrato',
   'contracts.create.submit': 'Criar Contrato',
@@ -315,7 +329,8 @@ export const ptBR: Catalog = {
   'partners.error.act-number-duplicate': 'Já existe um acordo com este número de instrumento.',
   'partners.error.invalid-cnpj': 'CNPJ inválido. Verifique o número informado.',
   'partners.error.invalid-act-period': 'A data de fim da vigência deve ser posterior à de início.',
-  'partners.error.act-payment-target-required': 'Informe ao menos uma conta bancária ou chave PIX para o repasse.',
+  'partners.error.act-payment-target-required':
+    'Informe ao menos uma conta bancária ou chave PIX para o repasse.',
   'partners.error.collaborator-import-malformed': 'Arquivo de importação malformado.',
   'partners.error.invalid-registration-transition': 'Transição de situação cadastral inválida.',
   'partners.error.deactivation-reason-required': 'Informe o motivo da desativação.',
@@ -473,7 +488,8 @@ export const ptBR: Catalog = {
   'partners.financiers.form.agency': 'Agência',
   'partners.financiers.form.accountNumber': 'Número da Conta',
   'partners.financiers.form.checkDigit': 'DV',
-  'partners.financiers.form.bankGatedHint': 'Disponível quando o backend suportar dados bancários e PIX para financiadores.',
+  'partners.financiers.form.bankGatedHint':
+    'Disponível quando o backend suportar dados bancários e PIX para financiadores.',
   'partners.financiers.form.pixKeyType': 'Tipo de chave PIX',
   'partners.financiers.form.pixKey': 'Chave PIX',
   'partners.financiers.form.select': 'Selecione',
@@ -549,7 +565,8 @@ export const ptBR: Catalog = {
   'partners.acts.form.hasFinancialTransfer': 'Possui Repasse Financeiro?',
   'partners.acts.form.transferYes': 'Sim',
   'partners.acts.form.transferNo': 'Não',
-  'partners.acts.form.financialHint': 'Este acordo envolve repasse — informe ao menos uma conta bancária ou chave PIX.',
+  'partners.acts.form.financialHint':
+    'Este acordo envolve repasse — informe ao menos uma conta bancária ou chave PIX.',
   'partners.acts.form.bank': 'Banco',
   'partners.acts.form.agency': 'Agência',
   'partners.acts.form.accountNumber': 'Número da Conta',
@@ -588,7 +605,8 @@ export const ptBR: Catalog = {
   'partners.collaborators.import.running': 'Importando…',
   'partners.collaborators.export.tudo': 'Tudo',
   'partners.collaborators.export.historico': 'Histórico',
-  'partners.collaborators.export.historico.gated': 'Disponível quando o backend liberar o histórico do colaborador.',
+  'partners.collaborators.export.historico.gated':
+    'Disponível quando o backend liberar o histórico do colaborador.',
   'partners.collaborators.export.template': 'Baixar template',
   'partners.collaborators.import.report.title': 'Importação de colaboradores',
   'partners.collaborators.import.report.created': '{n} criado(s)',
@@ -740,12 +758,16 @@ export const ptBR: Catalog = {
   // Inclusão de colaborador (feature 018) — pré-cadastro dos 7 campos.
   'partners.collaborators.create.title': 'Novo Colaborador',
   'partners.collaborators.form.section.basic': 'Pré-Cadastro de Colaborador(a)',
+  'partners.collaborators.form.section.territory': 'Território',
+  'partners.collaborators.form.uf': 'UF',
+  'partners.collaborators.form.municipality': 'Município',
   'partners.collaborators.form.section.bank': 'Dados Bancários',
   'partners.collaborators.form.bank': 'Banco',
   'partners.collaborators.form.agency': 'Agência',
   'partners.collaborators.form.accountNumber': 'Número da Conta',
   'partners.collaborators.form.checkDigit': 'DV',
-  'partners.collaborators.form.bankGatedHint': 'Disponível quando o backend suportar dados bancários e PIX para colaboradores.',
+  'partners.collaborators.form.bankGatedHint':
+    'Disponível quando o backend suportar dados bancários e PIX para colaboradores.',
   'partners.collaborators.form.pixKeyType': 'Tipo de chave PIX',
   'partners.collaborators.form.pixKey': 'Chave PIX',
   'partners.collaborators.pix.cpf': 'CPF',
@@ -930,7 +952,8 @@ export const ptBR: Catalog = {
   'programs.error.not-found': 'Programa não encontrado.',
   'programs.error.validation': 'Dados inválidos. Verifique os campos.',
   'programs.error.sigla-duplicated': 'Já existe um programa com esta sigla.',
-  'programs.error.version-conflict': 'O programa foi alterado por outra pessoa. Recarregue e tente novamente.',
+  'programs.error.version-conflict':
+    'O programa foi alterado por outra pessoa. Recarregue e tente novamente.',
   'programs.error.unauthorized': 'Acesso não autorizado.',
   'programs.error.forbidden': 'Você não tem permissão para esta ação.',
   'programs.error.conflict': 'Conflito ao processar a solicitação.',

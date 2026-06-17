@@ -31,6 +31,12 @@ export const ListCollaboratorsInputSchema = z.object({
 
 export const GetCollaboratorInputSchema = z.object({ id: z.string().trim().min(1).max(64) })
 
+// Território (#42) — UF (sigla) + município (texto livre); ambos opcionais. O objeto pode ser null.
+const TerritoryInputSchema = z.object({
+  uf: z.string().trim().max(2).nullable(),
+  municipality: z.string().trim().max(120).nullable(),
+})
+
 export const CreateCollaboratorInputSchema = z.object({
   name: z.string().trim().min(1).max(200),
   email: z.email(),
@@ -39,6 +45,7 @@ export const CreateCollaboratorInputSchema = z.object({
   role: z.string().trim().min(1).max(120),
   startOfContract: z.iso.date(), // YYYY-MM-DD (validado na borda)
   employmentRelationship: EmploymentRelationshipSchema,
+  territory: TerritoryInputSchema.nullable(),
 })
 
 // Cadastro completo (Seção 2). Nomes alinhados ao core-api. PATCH /collaborators/:id/complete-registration.
@@ -60,8 +67,8 @@ export const CompleteCollaboratorRegistrationInputSchema = z.object({
   experienceInThePublicSector: z.boolean().optional(),
 })
 
-// Edição dos dados cadastrais (os 7 do pré-cadastro). PUT /collaborators/:id.
-export const UpdateCollaboratorInputSchema = CreateCollaboratorInputSchema.extend({
+// Edição dos dados cadastrais. PUT /collaborators/:id — OMITE território (#42, contrato do backend).
+export const UpdateCollaboratorInputSchema = CreateCollaboratorInputSchema.omit({ territory: true }).extend({
   id: z.string().trim().min(1).max(64),
 })
 
@@ -88,14 +95,26 @@ export const ImportCollaboratorsInputSchema = z.object({
 })
 
 type AssertEqual<A, B> = [A] extends [B] ? true : never
- 
+
 const _g_list: AssertEqual<z.infer<typeof ListCollaboratorsInputSchema>, D.ListCollaboratorsInput> = true
 const _g_get: AssertEqual<z.infer<typeof GetCollaboratorInputSchema>, D.GetCollaboratorInput> = true
 const _g_create: AssertEqual<z.infer<typeof CreateCollaboratorInputSchema>, D.CreateCollaboratorInput> = true
-const _g_complete: AssertEqual<z.infer<typeof CompleteCollaboratorRegistrationInputSchema>, D.CompleteCollaboratorRegistrationInput> = true
+const _g_complete: AssertEqual<
+  z.infer<typeof CompleteCollaboratorRegistrationInputSchema>,
+  D.CompleteCollaboratorRegistrationInput
+> = true
 const _g_update: AssertEqual<z.infer<typeof UpdateCollaboratorInputSchema>, D.UpdateCollaboratorInput> = true
-const _g_deact: AssertEqual<z.infer<typeof DeactivateCollaboratorInputSchema>, D.DeactivateCollaboratorInput> = true
-const _g_react: AssertEqual<z.infer<typeof ReactivateCollaboratorInputSchema>, D.ReactivateCollaboratorInput> = true
-const _g_import: AssertEqual<z.infer<typeof ImportCollaboratorsInputSchema>, D.ImportCollaboratorsInput> = true
- 
+const _g_deact: AssertEqual<
+  z.infer<typeof DeactivateCollaboratorInputSchema>,
+  D.DeactivateCollaboratorInput
+> = true
+const _g_react: AssertEqual<
+  z.infer<typeof ReactivateCollaboratorInputSchema>,
+  D.ReactivateCollaboratorInput
+> = true
+const _g_import: AssertEqual<
+  z.infer<typeof ImportCollaboratorsInputSchema>,
+  D.ImportCollaboratorsInput
+> = true
+
 void [_g_list, _g_get, _g_create, _g_complete, _g_update, _g_deact, _g_react, _g_import]

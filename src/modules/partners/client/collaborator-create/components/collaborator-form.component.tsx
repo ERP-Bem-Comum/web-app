@@ -3,11 +3,12 @@ import type { ReactNode } from 'react'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Button, Field, Input } from '#shared/ui/index.ts'
-import { UsersIcon, WalletIcon } from '#shared/ui/icons/index.ts'
+import { MapPinIcon, UsersIcon, WalletIcon } from '#shared/ui/icons/index.ts'
 
 import {
   OCCUPATION_AREAS,
   EMPLOYMENT_RELATIONSHIPS,
+  BR_UF,
   type CollaboratorFormController,
 } from './collaborator-form.controller.ts'
 import {
@@ -57,58 +58,163 @@ export function CollaboratorForm(props: CollaboratorFormProps): ReactNode {
 
       <section className={section}>
         <div className={sectionHeader}>
-          <h2 className={sectionTitle}><UsersIcon size={18} />{t('partners.collaborators.form.section.basic')}</h2>
+          <h2 className={sectionTitle}>
+            <UsersIcon size={18} />
+            {t('partners.collaborators.form.section.basic')}
+          </h2>
         </div>
         <div className={sectionBody}>
-        <div className={grid}>
-          {/* Ordem espelhando o print: linha 1 → Representante Legal · Email · Área de atuação · Função */}
-          <Field htmlFor="collab-name" label={t('partners.collaborators.form.name')} error={invalid('name')}>
-            <Input id="collab-name" value={c.state.name} onChange={(v) => { c.setField('name', v); }} />
-          </Field>
-          <Field htmlFor="collab-email" label={t('partners.collaborators.form.email')} error={invalid('email')}>
-            <Input id="collab-email" type="email" value={c.state.email} onChange={(v) => { c.setField('email', v); }} />
-          </Field>
-          <Field htmlFor="collab-area" label={t('partners.collaborators.form.occupationArea')} error={invalid('occupationArea')}>
-            <select
-              id="collab-area"
-              className={select}
-              value={c.state.occupationArea}
-              onChange={(e) => { c.setField('occupationArea', e.target.value); }}
+          <div className={grid}>
+            {/* Ordem espelhando o print: linha 1 → Representante Legal · Email · Área de atuação · Função */}
+            <Field
+              htmlFor="collab-name"
+              label={t('partners.collaborators.form.name')}
+              error={invalid('name')}
             >
-              <option value="">{t('partners.collaborators.form.select')}</option>
-              {OCCUPATION_AREAS.map((a) => (
-                <option key={a} value={a}>
-                  {t(`partners.collaborators.area.${a}`)}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field htmlFor="collab-role" label={t('partners.collaborators.form.role')} error={invalid('role')}>
-            <Input id="collab-role" value={c.state.role} onChange={(v) => { c.setField('role', v); }} />
-          </Field>
-          {/* linha 2 → Início de Contrato · Vínculo Empregatício · CPF */}
-          <Field htmlFor="collab-start" label={t('partners.collaborators.form.startOfContract')} error={invalid('startOfContract')}>
-            <Input id="collab-start" type="date" value={c.state.startOfContract} onChange={(v) => { c.setField('startOfContract', v); }} />
-          </Field>
-          <Field htmlFor="collab-vinc" label={t('partners.collaborators.form.employmentRelationship')} error={invalid('employmentRelationship')}>
-            <select
-              id="collab-vinc"
-              className={select}
-              value={c.state.employmentRelationship}
-              onChange={(e) => { c.setField('employmentRelationship', e.target.value); }}
+              <Input
+                id="collab-name"
+                value={c.state.name}
+                onChange={(v) => {
+                  c.setField('name', v)
+                }}
+              />
+            </Field>
+            <Field
+              htmlFor="collab-email"
+              label={t('partners.collaborators.form.email')}
+              error={invalid('email')}
             >
-              <option value="">{t('partners.collaborators.form.select')}</option>
-              {EMPLOYMENT_RELATIONSHIPS.map((v) => (
-                <option key={v} value={v}>
-                  {t(`partners.collaborators.employment.${v}`)}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field htmlFor="collab-cpf" label={t('partners.collaborators.form.cpf')} error={invalid('cpf')}>
-            <Input id="collab-cpf" mask="cpf" value={c.state.cpf} onChange={(v) => { c.setField('cpf', v); }} />
-          </Field>
+              <Input
+                id="collab-email"
+                type="email"
+                value={c.state.email}
+                onChange={(v) => {
+                  c.setField('email', v)
+                }}
+              />
+            </Field>
+            <Field
+              htmlFor="collab-area"
+              label={t('partners.collaborators.form.occupationArea')}
+              error={invalid('occupationArea')}
+            >
+              <select
+                id="collab-area"
+                className={select}
+                value={c.state.occupationArea}
+                onChange={(e) => {
+                  c.setField('occupationArea', e.target.value)
+                }}
+              >
+                <option value="">{t('partners.collaborators.form.select')}</option>
+                {OCCUPATION_AREAS.map((a) => (
+                  <option key={a} value={a}>
+                    {t(`partners.collaborators.area.${a}`)}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field
+              htmlFor="collab-role"
+              label={t('partners.collaborators.form.role')}
+              error={invalid('role')}
+            >
+              <Input
+                id="collab-role"
+                value={c.state.role}
+                onChange={(v) => {
+                  c.setField('role', v)
+                }}
+              />
+            </Field>
+            {/* linha 2 → Início de Contrato · Vínculo Empregatício · CPF */}
+            <Field
+              htmlFor="collab-start"
+              label={t('partners.collaborators.form.startOfContract')}
+              error={invalid('startOfContract')}
+            >
+              <Input
+                id="collab-start"
+                type="date"
+                value={c.state.startOfContract}
+                onChange={(v) => {
+                  c.setField('startOfContract', v)
+                }}
+              />
+            </Field>
+            <Field
+              htmlFor="collab-vinc"
+              label={t('partners.collaborators.form.employmentRelationship')}
+              error={invalid('employmentRelationship')}
+            >
+              <select
+                id="collab-vinc"
+                className={select}
+                value={c.state.employmentRelationship}
+                onChange={(e) => {
+                  c.setField('employmentRelationship', e.target.value)
+                }}
+              >
+                <option value="">{t('partners.collaborators.form.select')}</option>
+                {EMPLOYMENT_RELATIONSHIPS.map((v) => (
+                  <option key={v} value={v}>
+                    {t(`partners.collaborators.employment.${v}`)}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field htmlFor="collab-cpf" label={t('partners.collaborators.form.cpf')} error={invalid('cpf')}>
+              <Input
+                id="collab-cpf"
+                mask="cpf"
+                value={c.state.cpf}
+                onChange={(v) => {
+                  c.setField('cpf', v)
+                }}
+              />
+            </Field>
+          </div>
         </div>
+      </section>
+
+      {/* Território (#42) — UF (27 siglas) + município (texto livre). Opcionais. Entra no create. */}
+      <section className={section}>
+        <div className={sectionHeader}>
+          <h2 className={sectionTitle}>
+            <MapPinIcon size={18} />
+            {t('partners.collaborators.form.section.territory')}
+          </h2>
+        </div>
+        <div className={sectionBody}>
+          <div className={grid}>
+            <Field htmlFor="collab-uf" label={t('partners.collaborators.form.uf')}>
+              <select
+                id="collab-uf"
+                className={select}
+                value={c.state.uf}
+                aria-label={t('partners.collaborators.form.uf')}
+                onChange={(e) => {
+                  c.setField('uf', e.target.value)
+                }}
+              >
+                <option value="">{t('partners.collaborators.form.select')}</option>
+                {BR_UF.map((u) => (
+                  <option key={u.sigla} value={u.sigla}>
+                    {u.sigla} — {u.nome}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field htmlFor="collab-municipality" label={t('partners.collaborators.form.municipality')}>
+              <Input
+                id="collab-municipality"
+                value={c.state.municipality}
+                onChange={(v) => {
+                  c.setField('municipality', v)
+                }}
+              />
+            </Field>
+          </div>
         </div>
       </section>
 
@@ -117,33 +223,80 @@ export function CollaboratorForm(props: CollaboratorFormProps): ReactNode {
           desabilitados; ao liberar o backend, habilitar + ligar no controller/mapeador. */}
       <section className={section}>
         <div className={sectionHeader}>
-          <h2 className={sectionTitle}><WalletIcon size={18} />{t('partners.collaborators.form.section.bank')}</h2>
+          <h2 className={sectionTitle}>
+            <WalletIcon size={18} />
+            {t('partners.collaborators.form.section.bank')}
+          </h2>
         </div>
         <div className={sectionBody}>
           <p className={gatedNote}>{t('partners.collaborators.form.bankGatedHint')}</p>
           <div className={grid}>
             <Field htmlFor="collab-bank" label={t('partners.collaborators.form.bank')}>
-              <Input id="collab-bank" value="" disabled onChange={() => { /* gated */ }} />
+              <Input
+                id="collab-bank"
+                value=""
+                disabled
+                onChange={() => {
+                  /* gated */
+                }}
+              />
             </Field>
             <Field htmlFor="collab-agency" label={t('partners.collaborators.form.agency')}>
-              <Input id="collab-agency" mask="agency" value="" disabled onChange={() => { /* gated */ }} />
+              <Input
+                id="collab-agency"
+                mask="agency"
+                value=""
+                disabled
+                onChange={() => {
+                  /* gated */
+                }}
+              />
             </Field>
             <Field htmlFor="collab-account" label={t('partners.collaborators.form.accountNumber')}>
-              <Input id="collab-account" value="" disabled onChange={() => { /* gated */ }} />
+              <Input
+                id="collab-account"
+                value=""
+                disabled
+                onChange={() => {
+                  /* gated */
+                }}
+              />
             </Field>
             <Field htmlFor="collab-dv" label={t('partners.collaborators.form.checkDigit')}>
-              <Input id="collab-dv" value="" disabled onChange={() => { /* gated */ }} />
+              <Input
+                id="collab-dv"
+                value=""
+                disabled
+                onChange={() => {
+                  /* gated */
+                }}
+              />
             </Field>
             <Field htmlFor="collab-pix-type" label={t('partners.collaborators.form.pixKeyType')}>
-              <select id="collab-pix-type" className={select} disabled defaultValue="" aria-label={t('partners.collaborators.form.pixKeyType')}>
+              <select
+                id="collab-pix-type"
+                className={select}
+                disabled
+                defaultValue=""
+                aria-label={t('partners.collaborators.form.pixKeyType')}
+              >
                 <option value="">{t('partners.collaborators.form.select')}</option>
                 {PIX_KEY_TYPES.map((k) => (
-                  <option key={k} value={k}>{t(`partners.collaborators.pix.${k}`)}</option>
+                  <option key={k} value={k}>
+                    {t(`partners.collaborators.pix.${k}`)}
+                  </option>
                 ))}
               </select>
             </Field>
             <Field htmlFor="collab-pix-key" label={t('partners.collaborators.form.pixKey')}>
-              <Input id="collab-pix-key" value="" disabled onChange={() => { /* gated */ }} />
+              <Input
+                id="collab-pix-key"
+                value=""
+                disabled
+                onChange={() => {
+                  /* gated */
+                }}
+              />
             </Field>
           </div>
         </div>
@@ -154,7 +307,11 @@ export function CollaboratorForm(props: CollaboratorFormProps): ReactNode {
           {t('partners.collaborators.form.cancel')}
         </button>
         <div className={saveWrap}>
-          <Button type="submit" loading={props.running} loadingLabel={t('partners.collaborators.form.saving')}>
+          <Button
+            type="submit"
+            loading={props.running}
+            loadingLabel={t('partners.collaborators.form.saving')}
+          >
             {t('partners.collaborators.form.save')}
           </Button>
         </div>

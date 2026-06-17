@@ -20,7 +20,14 @@ import {
 } from '#modules/partners/client/data/model/collaborator.model.ts'
 
 // Re-export p/ a view burra (component) consumir os enums sem importar `data/` direto (boundary §XI).
-export { OCCUPATION_AREAS, EMPLOYMENT_RELATIONSHIPS, GENDER_IDENTITIES, RACES, EDUCATION_LEVELS, FOOD_CATEGORIES }
+export {
+  OCCUPATION_AREAS,
+  EMPLOYMENT_RELATIONSHIPS,
+  GENDER_IDENTITIES,
+  RACES,
+  EDUCATION_LEVELS,
+  FOOD_CATEGORIES,
+}
 
 export type CollaboratorDetailFormState = Readonly<{
   // pré-cadastro
@@ -46,6 +53,9 @@ export type CollaboratorDetailFormState = Readonly<{
   education: string
   biography: string
   experienceInThePublicSector: '' | 'sim' | 'nao'
+  // Território (#42) — somente leitura no detalhe (o PUT omite território).
+  uf: string
+  municipality: string
 }>
 
 const fromDetail = (c: CollaboratorDetail): CollaboratorDetailFormState => ({
@@ -70,21 +80,29 @@ const fromDetail = (c: CollaboratorDetail): CollaboratorDetailFormState => ({
   foodCategoryDescription: c.foodCategoryDescription ?? '',
   education: c.education ?? '',
   biography: c.biography ?? '',
-  experienceInThePublicSector: c.experienceInThePublicSector === undefined ? '' : c.experienceInThePublicSector ? 'sim' : 'nao',
+  experienceInThePublicSector:
+    c.experienceInThePublicSector === undefined ? '' : c.experienceInThePublicSector ? 'sim' : 'nao',
+  uf: c.territory?.uf ?? '',
+  municipality: c.territory?.municipality ?? '',
 })
 
 const blank = (s: string): string | undefined => (s.trim() === '' ? undefined : s.trim())
 
 export interface CollaboratorDetailFormController {
   readonly state: CollaboratorDetailFormState
-  readonly setField: <K extends keyof CollaboratorDetailFormState>(key: K, value: CollaboratorDetailFormState[K]) => void
+  readonly setField: <K extends keyof CollaboratorDetailFormState>(
+    key: K,
+    value: CollaboratorDetailFormState[K],
+  ) => void
   readonly reset: (detail: CollaboratorDetail) => void
   readonly buildPre: () => CollaboratorWriteInput
   readonly buildComplete: (id: string) => CollaboratorCompleteInput
   readonly hasCompleteData: () => boolean
 }
 
-export function useCollaboratorDetailFormController(initial: CollaboratorDetail): CollaboratorDetailFormController {
+export function useCollaboratorDetailFormController(
+  initial: CollaboratorDetail,
+): CollaboratorDetailFormController {
   const [state, setState] = useState<CollaboratorDetailFormState>(() => fromDetail(initial))
 
   const setField = useCallback<CollaboratorDetailFormController['setField']>((key, value) => {
@@ -95,42 +113,63 @@ export function useCollaboratorDetailFormController(initial: CollaboratorDetail)
     setState(fromDetail(detail))
   }, [])
 
-  const buildPre = useCallback((): CollaboratorWriteInput => ({
-    name: state.name.trim(),
-    email: state.email.trim(),
-    cpf: state.cpf.trim(),
-    // valores vêm do <select> dos enums — cast seguro (são membros do enum). Validação real no server.
-    occupationArea: state.occupationArea as OccupationArea,
-    role: state.role.trim(),
-    startOfContract: state.startOfContract,
-    employmentRelationship: state.employmentRelationship as EmploymentRelationship,
-  }), [state])
+  const buildPre = useCallback(
+    (): CollaboratorWriteInput => ({
+      name: state.name.trim(),
+      email: state.email.trim(),
+      cpf: state.cpf.trim(),
+      // valores vêm do <select> dos enums — cast seguro (são membros do enum). Validação real no server.
+      occupationArea: state.occupationArea as OccupationArea,
+      role: state.role.trim(),
+      startOfContract: state.startOfContract,
+      employmentRelationship: state.employmentRelationship as EmploymentRelationship,
+      // PUT omite território (#42); o backend ignora. Enviamos null (a borda de update faz strip).
+      territory: null,
+    }),
+    [state],
+  )
 
-  const buildComplete = useCallback((id: string): CollaboratorCompleteInput => ({
-    id,
-    rg: blank(state.rg),
-    dateOfBirth: blank(state.dateOfBirth),
-    genderIdentity: blank(state.genderIdentity),
-    race: blank(state.race),
-    education: blank(state.education),
-    foodCategory: blank(state.foodCategory),
-    foodCategoryDescription: blank(state.foodCategoryDescription),
-    completeAddress: blank(state.completeAddress),
-    telephone: blank(state.telephone),
-    emergencyContactName: blank(state.emergencyContactName),
-    emergencyContactTelephone: blank(state.emergencyContactTelephone),
-    allergies: blank(state.allergies),
-    biography: blank(state.biography),
-    experienceInThePublicSector: state.experienceInThePublicSector === '' ? undefined : state.experienceInThePublicSector === 'sim',
-  }), [state])
+  const buildComplete = useCallback(
+    (id: string): CollaboratorCompleteInput => ({
+      id,
+      rg: blank(state.rg),
+      dateOfBirth: blank(state.dateOfBirth),
+      genderIdentity: blank(state.genderIdentity),
+      race: blank(state.race),
+      education: blank(state.education),
+      foodCategory: blank(state.foodCategory),
+      foodCategoryDescription: blank(state.foodCategoryDescription),
+      completeAddress: blank(state.completeAddress),
+      telephone: blank(state.telephone),
+      emergencyContactName: blank(state.emergencyContactName),
+      emergencyContactTelephone: blank(state.emergencyContactTelephone),
+      allergies: blank(state.allergies),
+      biography: blank(state.biography),
+      experienceInThePublicSector:
+        state.experienceInThePublicSector === '' ? undefined : state.experienceInThePublicSector === 'sim',
+    }),
+    [state],
+  )
 
   const hasCompleteData = useCallback((): boolean => {
     const f = state
-    return [
-      f.rg, f.dateOfBirth, f.completeAddress, f.telephone, f.emergencyContactName,
-      f.emergencyContactTelephone, f.genderIdentity, f.race, f.allergies, f.foodCategory,
-      f.foodCategoryDescription, f.education, f.biography,
-    ].some((v) => v.trim() !== '') || f.experienceInThePublicSector !== ''
+    return (
+      [
+        f.rg,
+        f.dateOfBirth,
+        f.completeAddress,
+        f.telephone,
+        f.emergencyContactName,
+        f.emergencyContactTelephone,
+        f.genderIdentity,
+        f.race,
+        f.allergies,
+        f.foodCategory,
+        f.foodCategoryDescription,
+        f.education,
+        f.biography,
+      ].some((v) => v.trim() !== '') || f.experienceInThePublicSector !== ''
+    )
   }, [state])
 
   return { state, setField, reset, buildPre, buildComplete, hasCompleteData }
