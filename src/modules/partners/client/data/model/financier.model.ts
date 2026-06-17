@@ -19,6 +19,7 @@ import {
   BankAccountFormSchema,
   PixKeyFormSchema,
 } from './supplier.model.ts'
+import { normalizeCnpj, isValidCnpjFormat } from '#shared/document/cnpj.ts'
 
 export type ActivationStatus = 'active' | 'inactive'
 // Reuso (DRY) dos tipos/enum de payment-target do Fornecedor (#40).
@@ -70,14 +71,12 @@ export type FinancierWriteInput = Readonly<{
 }>
 
 // ── Schema do formulário (validação na borda do cliente) ──
-const onlyDigits = (raw: string): string => raw.replace(/\D/g, '')
-
-/** CNPJ: aceita com/sem máscara; normaliza para 14 dígitos (o server fn aceita 14–18). */
+/** CNPJ (Serpro/2026): aceita com/sem máscara; normaliza p/ 14 alfanuméricos maiúsculos e valida formato. */
 export const CnpjFieldSchema = z
   .string()
   .trim()
-  .transform(onlyDigits)
-  .refine((d) => d.length === 14, { error: 'cnpj-invalid' })
+  .transform(normalizeCnpj)
+  .refine(isValidCnpjFormat, { error: 'cnpj-invalid' })
 
 /** Formulário PJ-only — campos obrigatórios + banco/PIX opcionais (#40, reuso das schemas do Fornecedor). */
 export const FinancierFormSchema = z.object({

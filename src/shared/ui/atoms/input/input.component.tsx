@@ -26,6 +26,9 @@ export type InputProps = Readonly<{
 export function Input(props: InputProps): ReactNode {
   const invalid = props.invalid ?? false
   const display = props.mask !== undefined ? formatMask(props.mask, props.value) : props.value
+  // CNPJ (Serpro/2026) é alfanumérico → teclado de texto; CPF/telefone/agência seguem numéricos.
+  const alnumMask = props.mask === 'cnpj' || props.mask === 'cpf-cnpj'
+  const inputMode = props.mask === undefined || alnumMask ? undefined : 'numeric'
 
   return (
     <input
@@ -37,9 +40,9 @@ export function Input(props: InputProps): ReactNode {
       autoComplete={props.autoComplete}
       aria-invalid={invalid || undefined}
       disabled={props.disabled}
-      inputMode={props.mask !== undefined ? 'numeric' : undefined}
+      inputMode={inputMode}
       onChange={(e) => {
-        props.onChange(props.mask !== undefined ? unmask(e.target.value) : e.target.value)
+        props.onChange(props.mask !== undefined ? unmask(e.target.value, props.mask) : e.target.value)
       }}
     />
   )

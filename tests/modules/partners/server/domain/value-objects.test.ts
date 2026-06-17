@@ -15,7 +15,7 @@ import { isOk, isErr } from '#shared/primitives/result.ts'
 
 describe('CPF', () => {
   it('vazio → err(empty)', () => {
-    assert.equal(isErr(CPF('   ')) , true)
+    assert.equal(isErr(CPF('   ')), true)
   })
   it('tamanho errado → err(invalid-length)', () => {
     const r = CPF('123')
@@ -47,6 +47,24 @@ describe('CNPJ', () => {
     const r = CNPJ('11.222.333/0001-81')
     assert.equal(isOk(r), true)
     if (isOk(r)) assert.equal(r.value, '11222333000181')
+  })
+  // CNPJ alfanumérico (Serpro/2026) — feature 027. DV pela fórmula Serpro (charCodeAt−48).
+  it('alfanumérico válido → ok(normalizado uppercase)', () => {
+    const r = CNPJ('12ABC34501DE35')
+    assert.equal(isOk(r), true)
+    if (isOk(r)) assert.equal(r.value, '12ABC34501DE35')
+  })
+  it('alfanumérico minúsculo/mascarado → ok(normalizado)', () => {
+    const r = CNPJ('12.abc.345/01de-35')
+    assert.equal(isOk(r), true)
+    if (isOk(r)) assert.equal(r.value, '12ABC34501DE35')
+  })
+  it('alfanumérico com DV errado → err(invalid-check-digit)', () => {
+    const r = CNPJ('12ABC34501DE34')
+    assert.equal(isErr(r) && r.error === 'invalid-check-digit', true)
+  })
+  it('alfanumérico com formato inválido (DV não-numérico) → err', () => {
+    assert.equal(isErr(CNPJ('12ABC34501DEAB')), true)
   })
 })
 

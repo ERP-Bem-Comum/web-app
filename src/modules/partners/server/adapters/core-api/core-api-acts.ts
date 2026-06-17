@@ -9,6 +9,7 @@ import { ok, err, isErr, type Result } from '#shared/primitives/result.ts'
 import type { HttpError } from '#shared/http/http-error.types.ts'
 import { parseErrorEnvelope } from '#shared/http/error-envelope.ts'
 import { resultFetch } from '#external/core-api/result-fetch.ts'
+import { normalizeCnpj } from '#shared/document/cnpj.ts'
 import type { PartnersError } from '#modules/partners/server/domain/errors/partners.errors.ts'
 import type { ActClient } from '#modules/partners/server/application/act/act.use-cases.ts'
 import type {
@@ -72,8 +73,6 @@ const mapResponseError = async (response: Response): Promise<PartnersError> => {
   return statusToError(response.status, parseErrorEnvelope(body)?.error.code)
 }
 
-const onlyDigits = (raw: string): string => raw.replace(/\D/g, '')
-
 // ── Mappers: API → Model (errors-as-values: retornam Result, sem throw) ─────────────
 export const itemToModel = (a: CoreApiActItem): ActListItem => ({
   id: a.id,
@@ -134,7 +133,7 @@ export const toWriteBody = (input: CreateActInput): Record<string, unknown> => (
   actNumber: input.actNumber,
   name: input.name,
   email: input.email,
-  cnpj: onlyDigits(input.cnpj),
+  cnpj: normalizeCnpj(input.cnpj),
   corporateName: input.corporateName,
   fantasyName: input.fantasyName,
   occupationArea: input.occupationArea,

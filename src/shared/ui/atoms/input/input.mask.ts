@@ -1,30 +1,14 @@
 /**
- * Máscaras de input (apresentação). O Input exibe o valor MASCARADO mas emite só os DÍGITOS via
- * onChange — o estado/submit ficam crus (os schemas de CPF/CNPJ normalizam; telefone vira dígitos).
- * Funções puras e idempotentes (sempre extraem os dígitos primeiro).
+ * Máscaras de input (apresentação). O Input exibe o valor MASCARADO mas emite o valor CRU via onChange.
+ * Para CPF/telefone/agência o cru são só dígitos; para CNPJ (e cpf-cnpj) o cru é alfanumérico maiúsculo
+ * (Serpro/2026) — a lógica de CNPJ vive no helper único `#shared/document/cnpj.ts`.
+ * Funções puras e idempotentes.
  */
+import { maskCnpj, maskCpf, maskCpfCnpj, unmaskCnpj } from '#shared/document/cnpj.ts'
+
 export type InputMask = 'cpf' | 'cnpj' | 'cpf-cnpj' | 'phone' | 'agency'
 
 const onlyDigits = (value: string): string => value.replace(/\D/g, '')
-
-function maskCpf(d: string): string {
-  const x = d.slice(0, 11)
-  let out = x.slice(0, 3)
-  if (x.length > 3) out += `.${x.slice(3, 6)}`
-  if (x.length > 6) out += `.${x.slice(6, 9)}`
-  if (x.length > 9) out += `-${x.slice(9, 11)}`
-  return out
-}
-
-function maskCnpj(d: string): string {
-  const x = d.slice(0, 14)
-  let out = x.slice(0, 2)
-  if (x.length > 2) out += `.${x.slice(2, 5)}`
-  if (x.length > 5) out += `.${x.slice(5, 8)}`
-  if (x.length > 8) out += `/${x.slice(8, 12)}`
-  if (x.length > 12) out += `-${x.slice(12, 14)}`
-  return out
-}
 
 /** Celular/telefone: (xx) xxxxx-xxxx (11 díg.) ou (xx) xxxx-xxxx (10 díg.). */
 function maskPhone(d: string): string {
@@ -44,25 +28,30 @@ function maskAgency(d: string): string {
   return x.length > 4 ? `${x.slice(0, 4)}-${x.slice(4, 5)}` : x.slice(0, 4)
 }
 
-/** Valor cru (somente dígitos) — o que o onChange do Input emite e o estado guarda. */
-export function unmask(value: string): string {
-  return onlyDigits(value)
+/** Máscaras que carregam alfanumérico (CNPJ) — o cru preserva letras. */
+const ALNUM_MASKS: ReadonlySet<InputMask> = new Set<InputMask>(['cnpj', 'cpf-cnpj'])
+
+/**
+ * Valor cru emitido pelo onChange do Input e guardado no estado. CNPJ/cpf-cnpj → alfanumérico maiúsculo
+ * (preserva letras); demais → só dígitos. (O `mask` é opcional p/ retrocompat de chamadas antigas.)
+ */
+export function unmask(value: string, mask?: InputMask): string {
+  return mask !== undefined && ALNUM_MASKS.has(mask) ? unmaskCnpj(value) : onlyDigits(value)
 }
 
 /** Valor mascarado para exibição, a partir de qualquer entrada (cru ou já mascarado). */
 export function formatMask(mask: InputMask, value: string): string {
-  const d = onlyDigits(value)
   switch (mask) {
     case 'cpf':
-      return maskCpf(d)
+      return maskCpf(value)
     case 'cnpj':
-      return maskCnpj(d)
+      return maskCnpj(value)
     case 'cpf-cnpj':
-      return d.length > 11 ? maskCnpj(d) : maskCpf(d)
+      return maskCpfCnpj(value)
     case 'phone':
-      return maskPhone(d)
+      return maskPhone(onlyDigits(value))
     case 'agency':
-      return maskAgency(d)
+      return maskAgency(onlyDigits(value))
     default: {
       const _exhaustive: never = mask
       return _exhaustive

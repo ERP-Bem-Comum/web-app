@@ -4,6 +4,7 @@
  * `CreateDocumentInput`. Money via `money.ts`. No v1, descontos/multa/juros = 0 (sem campos no form).
  */
 import { reaisToCents, centsToBRL } from '#modules/financial/client/data/money.ts'
+import { normalizeCnpj, isCnpjLength, maskCnpj as maskCnpjDoc } from '#shared/document/cnpj.ts'
 import type {
   CreateDocumentInput,
   AdjustDocumentInput,
@@ -33,14 +34,10 @@ export type PartnerOption = Readonly<{ id: string; name: string; subtitle: strin
 /** Rótulo i18n do tipo de parceiro. */
 export const partnerKindTag = (kind: PartnerKind): string => `financial.create.partner.kind.${kind}`
 
-/** 14 dígitos → CNPJ mascarado (xx.xxx.xxx/xxxx-xx); senão devolve como veio (ex.: nº de ato). */
-export const maskCnpj = (value: string): string => {
-  const d = value.replace(/\D/g, '')
-  if (d.length !== 14) return value
-  return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12, 14)}`
-}
-/** Parceiro é PJ quando o subtítulo é um CNPJ (14 dígitos). */
-export const isCnpj = (value: string): boolean => value.replace(/\D/g, '').length === 14
+/** CNPJ (14, alfanumérico Serpro/2026) → mascarado; senão devolve como veio (ex.: nº de ato). */
+export const maskCnpj = (value: string): string => (isCnpjLength(value) ? maskCnpjDoc(value) : value)
+/** Parceiro é PJ quando o subtítulo é um CNPJ (14 caracteres alfanuméricos). */
+export const isCnpj = (value: string): boolean => isCnpjLength(value)
 
 // ── Hidratação do fornecedor: dados bancários + contrato "Em Andamento" (auto-preenchimento) ──────
 export type SupplierBankView = Readonly<{ line: string; pix: string | null }>
@@ -67,13 +64,13 @@ export const filterPartners = (
 ): readonly PartnerOption[] => {
   const q = query.trim().toLowerCase()
   if (q === '') return options
-  const hasLetters = /[a-z]/.test(q)
-  const digits = q.replace(/\D/g, '')
+  // Documento normalizado (CNPJ alfanumérico Serpro/2026 ou numérico) — sem pontuação, maiúsculo.
+  const docQuery = normalizeCnpj(query.trim())
   return options.filter((o) => {
     if (o.name.toLowerCase().includes(q)) return true
     if (o.subtitle.toLowerCase().includes(q)) return true
-    // Busca por dígitos (CNPJ) só quando a query é numérica — evita "014" casar dentro de outro CNPJ.
-    if (!hasLetters && digits !== '' && o.subtitle.replace(/\D/g, '').includes(digits)) return true
+    // Busca por documento ignorando pontuação/caixa (casa CNPJ alfanumérico parcial).
+    if (docQuery !== '' && normalizeCnpj(o.subtitle).includes(docQuery)) return true
     return false
   })
 }

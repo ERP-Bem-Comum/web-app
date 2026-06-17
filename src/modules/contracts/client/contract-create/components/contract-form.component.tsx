@@ -8,6 +8,7 @@ import type {
 } from './contract-form.controller.ts'
 import { formatDateOrDash, contractorInitials } from '#modules/contracts/client/domain/format.ts'
 import { formatMask, unmask } from '#shared/ui/index.ts'
+import { normalizeCnpj, maskCnpj, maskCpf } from '#shared/document/cnpj.ts'
 import {
   screen,
   topbar,
@@ -89,12 +90,12 @@ function formatCurrencyCents(cents: number): string {
   return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
-// Máscara de documento (CPF 11 dígitos / CNPJ 14) — espelha o helper do grid de contratos.
+// Máscara de documento (CPF 11 dígitos / CNPJ 14 alfanumérico Serpro/2026) — via helper único.
 function maskDocument(doc: string | null | undefined): string {
   if (!doc) return ''
-  const digits = doc.replace(/\D/g, '')
-  if (digits.length === 11) return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
-  if (digits.length === 14) return digits.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
+  const len = normalizeCnpj(doc).length
+  if (len === 11) return maskCpf(doc)
+  if (len === 14) return maskCnpj(doc)
   return doc
 }
 
@@ -186,7 +187,12 @@ export function ContractForm({
     <div className={screen}>
       {/* Topbar */}
       <div className={topbar}>
-        <button type="button" className={backButton} onClick={onCancel} aria-label={t('contracts.create.back')}>
+        <button
+          type="button"
+          className={backButton}
+          onClick={onCancel}
+          aria-label={t('contracts.create.back')}
+        >
           ←
         </button>
         <h1 className={topbarTitle}>
@@ -209,12 +215,17 @@ export function ContractForm({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <span className={partnerLabel}>{t('contracts.create.partnerLabel')}</span>
                   <span className={partnerTypeBadge[selectedPartner.kind]}>
-                    {selectedPartner.cnpj ? 'PJ' : 'PF'} · {selectedPartner.kind === 'Acordo' ? 'ACT' : selectedPartner.kind}
+                    {selectedPartner.cnpj ? 'PJ' : 'PF'} ·{' '}
+                    {selectedPartner.kind === 'Acordo' ? 'ACT' : selectedPartner.kind}
                   </span>
                 </div>
                 <span className={partnerName}>{selectedPartner.name}</span>
                 <span className={partnerDoc}>
-                  {selectedPartner.cnpj ? `CNPJ ${maskDocument(selectedPartner.cnpj)}` : selectedPartner.cpf ? `CPF ${maskDocument(selectedPartner.cpf)}` : '—'}
+                  {selectedPartner.cnpj
+                    ? `CNPJ ${maskDocument(selectedPartner.cnpj)}`
+                    : selectedPartner.cpf
+                      ? `CPF ${maskDocument(selectedPartner.cpf)}`
+                      : '—'}
                 </span>
               </div>
               <button type="button" className={partnerSwapCompact} onClick={onRemovePartner}>
@@ -235,15 +246,14 @@ export function ContractForm({
                 <span className={contractorBoxTitle}>{t('contracts.create.field.searchPartner')}</span>
                 <span className={contractorBoxHint}>{t('contracts.create.field.searchPartnerHint')}</span>
               </div>
-              <button
-                type="button"
-                className={contractorBoxAction}
-                onClick={togglePartnerSearch}
-              >
+              <button type="button" className={contractorBoxAction} onClick={togglePartnerSearch}>
                 {t('contracts.create.field.searchPartnerAction')}
               </button>
               {partnerSearchOpen && (
-                <div className={searchWrap} style={{ position: 'absolute', top: '5rem', left: '2rem', right: '2rem' }}>
+                <div
+                  className={searchWrap}
+                  style={{ position: 'absolute', top: '5rem', left: '2rem', right: '2rem' }}
+                >
                   <div className={searchInputWrap}>
                     <span className={searchInputIcon}>🔍</span>
                     <input
@@ -284,8 +294,12 @@ export function ContractForm({
                             }
                           }}
                         >
-                          <span className={`${searchDropdownAvatar} ${searchDropdownAvatarVariant[p.kind]}`}>{contractorInitials(p.name)}</span>
-                          <span>{p.name} · {p.kind}</span>
+                          <span className={`${searchDropdownAvatar} ${searchDropdownAvatarVariant[p.kind]}`}>
+                            {contractorInitials(p.name)}
+                          </span>
+                          <span>
+                            {p.name} · {p.kind}
+                          </span>
                         </div>
                       ))
                     )}
@@ -322,7 +336,9 @@ export function ContractForm({
                 <select
                   className={select}
                   value={state.classification}
-                  onChange={(e) => { onUpdate('classification', e.target.value as 'Contract' | 'ServiceOrder') }}
+                  onChange={(e) => {
+                    onUpdate('classification', e.target.value as 'Contract' | 'ServiceOrder')
+                  }}
                 >
                   <option value="Contract">{t('contracts.create.field.classification.ct')}</option>
                   <option value="ServiceOrder">{t('contracts.create.field.classification.os')}</option>
@@ -333,7 +349,9 @@ export function ContractForm({
                 <select
                   className={select}
                   value={state.contractModel}
-                  onChange={(e) => { onUpdate('contractModel', e.target.value as 'Service' | 'Donation') }}
+                  onChange={(e) => {
+                    onUpdate('contractModel', e.target.value as 'Service' | 'Donation')
+                  }}
                 >
                   <option value="Service">{t('contracts.create.field.model.service')}</option>
                   <option value="Donation">{t('contracts.create.field.model.donation')}</option>
@@ -344,7 +362,12 @@ export function ContractForm({
                 <select
                   className={select}
                   value={state.contractType}
-                  onChange={(e) => { onUpdate('contractType', e.target.value as 'Supplier' | 'Financier' | 'Collaborator' | 'ACT') }}
+                  onChange={(e) => {
+                    onUpdate(
+                      'contractType',
+                      e.target.value as 'Supplier' | 'Financier' | 'Collaborator' | 'ACT',
+                    )
+                  }}
                 >
                   <option value="Supplier">{t('contracts.create.field.type.supplier')}</option>
                   <option value="Financier">{t('contracts.create.field.type.financier')}</option>
@@ -365,7 +388,9 @@ export function ContractForm({
               <textarea
                 className={`${textarea} ${validationAttempted && !state.objective ? inputError : ''}`}
                 value={state.objective}
-                onChange={(e) => { onUpdate('objective', e.target.value) }}
+                onChange={(e) => {
+                  onUpdate('objective', e.target.value)
+                }}
                 onInput={handleAutoExpand}
                 rows={2}
               />
@@ -375,7 +400,7 @@ export function ContractForm({
               <div className={field}>
                 <label className={fieldLabel}>{t('contracts.create.field.value')}</label>
                 <input
-                  className={`${input} ${(isOvertopOS || (validationAttempted && state.originalValueCents <= 0)) ? inputError : ''}`}
+                  className={`${input} ${isOvertopOS || (validationAttempted && state.originalValueCents <= 0) ? inputError : ''}`}
                   type="text"
                   inputMode="decimal"
                   placeholder="R$ 0,00"
@@ -401,13 +426,17 @@ export function ContractForm({
                     className={`${input} ${validationAttempted && !state.originalPeriodStart ? inputError : ''}`}
                     type="date"
                     value={state.originalPeriodStart}
-                    onChange={(e) => { onUpdate('originalPeriodStart', e.target.value) }}
+                    onChange={(e) => {
+                      onUpdate('originalPeriodStart', e.target.value)
+                    }}
                   />
                   <input
                     className={`${input} ${validationAttempted && !state.originalPeriodEnd ? inputError : ''}`}
                     type="date"
                     value={state.originalPeriodEnd}
-                    onChange={(e) => { onUpdate('originalPeriodEnd', e.target.value) }}
+                    onChange={(e) => {
+                      onUpdate('originalPeriodEnd', e.target.value)
+                    }}
                   />
                 </div>
               </div>
@@ -419,11 +448,15 @@ export function ContractForm({
                 <select
                   className={`${select} ${validationAttempted && !state.programId ? inputError : ''}`}
                   value={state.programId ?? ''}
-                  onChange={(e) => { onUpdate('programId', e.target.value || null) }}
+                  onChange={(e) => {
+                    onUpdate('programId', e.target.value || null)
+                  }}
                 >
                   <option value="">Selecione…</option>
                   {programOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -432,7 +465,9 @@ export function ContractForm({
                 <select
                   className={`${select} ${validationAttempted && !state.budgetPlanId ? inputError : ''}`}
                   value={state.budgetPlanId ?? ''}
-                  onChange={(e) => { onUpdate('budgetPlanId', e.target.value || null) }}
+                  onChange={(e) => {
+                    onUpdate('budgetPlanId', e.target.value || null)
+                  }}
                 >
                   {/* Plano Orçamentário: backend ainda não expõe listagem (#32) → follow-up. Sem opções reais. */}
                   <option value="">Selecione…</option>
@@ -446,7 +481,9 @@ export function ContractForm({
                 <select
                   className={`${select} ${validationAttempted && !state.categorizacao ? inputError : ''}`}
                   value={state.categorizacao ?? ''}
-                  onChange={(e) => { onUpdate('categorizacao', e.target.value || null) }}
+                  onChange={(e) => {
+                    onUpdate('categorizacao', e.target.value || null)
+                  }}
                 >
                   <option value="">Selecione…</option>
                   <option value="Avaliação">{t('contracts.create.field.categorizacao.evaluation')}</option>
@@ -459,11 +496,15 @@ export function ContractForm({
                 <select
                   className={`${select} ${validationAttempted && !state.centroDeCusto ? inputError : ''}`}
                   value={state.centroDeCusto ?? ''}
-                  onChange={(e) => { onUpdate('centroDeCusto', e.target.value || null) }}
+                  onChange={(e) => {
+                    onUpdate('centroDeCusto', e.target.value || null)
+                  }}
                 >
                   <option value="">Selecione…</option>
                   <option value="RH">{t('contracts.create.field.centroDeCusto.rh')}</option>
-                  <option value="Serviços Gerais">{t('contracts.create.field.centroDeCusto.services')}</option>
+                  <option value="Serviços Gerais">
+                    {t('contracts.create.field.centroDeCusto.services')}
+                  </option>
                   <option value="Eventos">{t('contracts.create.field.centroDeCusto.events')}</option>
                 </select>
               </div>
@@ -513,7 +554,9 @@ export function ContractForm({
                   className={input}
                   type="email"
                   value={state.email}
-                  onChange={(e) => { onUpdate('email', e.target.value) }}
+                  onChange={(e) => {
+                    onUpdate('email', e.target.value)
+                  }}
                 />
               </div>
               <div className={field}>
@@ -523,7 +566,9 @@ export function ContractForm({
                   type="text"
                   inputMode="numeric"
                   value={formatMask('phone', state.telephone)}
-                  onChange={(e) => { onUpdate('telephone', unmask(e.target.value)) }}
+                  onChange={(e) => {
+                    onUpdate('telephone', unmask(e.target.value))
+                  }}
                 />
               </div>
             </div>
@@ -532,7 +577,9 @@ export function ContractForm({
               <textarea
                 className={textarea}
                 value={state.observations}
-                onChange={(e) => { onUpdate('observations', e.target.value) }}
+                onChange={(e) => {
+                  onUpdate('observations', e.target.value)
+                }}
                 onInput={handleAutoExpand}
                 rows={2}
               />
@@ -564,14 +611,18 @@ export function ContractForm({
             <div className={vigenciaCard}>
               <div className={vigenciaCardItem}>
                 <span className={vigenciaCardLabel}>Início</span>
-                <span className={`${vigenciaCardValue} ${!state.originalPeriodStart ? vigenciaCardValueEmpty : ''}`}>
+                <span
+                  className={`${vigenciaCardValue} ${!state.originalPeriodStart ? vigenciaCardValueEmpty : ''}`}
+                >
                   {formatDateOrDash(state.originalPeriodStart)}
                 </span>
               </div>
               <span className={vigenciaArrow}>→</span>
               <div className={vigenciaCardItem}>
                 <span className={vigenciaCardLabel}>Fim</span>
-                <span className={`${vigenciaCardValue} ${!state.originalPeriodEnd ? vigenciaCardValueEmpty : ''}`}>
+                <span
+                  className={`${vigenciaCardValue} ${!state.originalPeriodEnd ? vigenciaCardValueEmpty : ''}`}
+                >
                   {formatDateOrDash(state.originalPeriodEnd)}
                 </span>
               </div>
@@ -593,7 +644,9 @@ export function ContractForm({
             </div>
             <div className={checklistProgress}>
               <span className={checklistProgressLabel}>Concluído</span>
-              <span className={checklistProgressValue}>{checklist.done + (documentUploaded ? 1 : 0)} / {checklist.total + 1}</span>
+              <span className={checklistProgressValue}>
+                {checklist.done + (documentUploaded ? 1 : 0)} / {checklist.total + 1}
+              </span>
             </div>
           </div>
         </div>
@@ -604,7 +657,12 @@ export function ContractForm({
         <button type="button" className={buttonSecondary} onClick={onCancel}>
           {t('contracts.create.action.cancel')}
         </button>
-        <button type="button" className={buttonPrimary} disabled={submitting || isOvertopOS} onClick={onOpenModal}>
+        <button
+          type="button"
+          className={buttonPrimary}
+          disabled={submitting || isOvertopOS}
+          onClick={onOpenModal}
+        >
           {submitting ? t('common.loading') : t('contracts.create.action.save')}
         </button>
       </div>
@@ -622,5 +680,3 @@ function CheckItem({ done, label }: { done: boolean; label: string }): ReactNode
     </div>
   )
 }
-
-
