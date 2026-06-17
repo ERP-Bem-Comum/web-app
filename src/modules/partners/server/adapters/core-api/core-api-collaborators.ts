@@ -115,6 +115,7 @@ const detailToModel = (raw: unknown): Result<CollaboratorDetail, PartnersError> 
     education: u(c.education),
     biography: u(c.biography),
     experienceInThePublicSector: c.experienceInThePublicSector ?? undefined,
+    territory: c.territory, // #42
   })
 }
 

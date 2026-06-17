@@ -16,6 +16,40 @@ export type OccupationArea = (typeof OCCUPATION_AREAS)[number]
 export const EMPLOYMENT_RELATIONSHIPS = ['CLT', 'PJ'] as const
 export type EmploymentRelationship = (typeof EMPLOYMENT_RELATIONSHIPS)[number]
 
+// Território (#42) — UF (sigla IBGE) + município (texto livre). Ambos opcionais.
+export type Territory = Readonly<{ uf: string | null; municipality: string | null }>
+
+/** As 27 UFs (sigla + nome) — fonte estática local p/ o select; o backend valida o catálogo IBGE. */
+export const BR_UF: readonly Readonly<{ sigla: string; nome: string }>[] = [
+  { sigla: 'AC', nome: 'Acre' },
+  { sigla: 'AL', nome: 'Alagoas' },
+  { sigla: 'AP', nome: 'Amapá' },
+  { sigla: 'AM', nome: 'Amazonas' },
+  { sigla: 'BA', nome: 'Bahia' },
+  { sigla: 'CE', nome: 'Ceará' },
+  { sigla: 'DF', nome: 'Distrito Federal' },
+  { sigla: 'ES', nome: 'Espírito Santo' },
+  { sigla: 'GO', nome: 'Goiás' },
+  { sigla: 'MA', nome: 'Maranhão' },
+  { sigla: 'MT', nome: 'Mato Grosso' },
+  { sigla: 'MS', nome: 'Mato Grosso do Sul' },
+  { sigla: 'MG', nome: 'Minas Gerais' },
+  { sigla: 'PA', nome: 'Pará' },
+  { sigla: 'PB', nome: 'Paraíba' },
+  { sigla: 'PR', nome: 'Paraná' },
+  { sigla: 'PE', nome: 'Pernambuco' },
+  { sigla: 'PI', nome: 'Piauí' },
+  { sigla: 'RJ', nome: 'Rio de Janeiro' },
+  { sigla: 'RN', nome: 'Rio Grande do Norte' },
+  { sigla: 'RS', nome: 'Rio Grande do Sul' },
+  { sigla: 'RO', nome: 'Rondônia' },
+  { sigla: 'RR', nome: 'Roraima' },
+  { sigla: 'SC', nome: 'Santa Catarina' },
+  { sigla: 'SP', nome: 'São Paulo' },
+  { sigla: 'SE', nome: 'Sergipe' },
+  { sigla: 'TO', nome: 'Tocantins' },
+] as const
+
 // Enums canônicos do cadastro completo (códigos legados do core-api — o backend rejeita texto livre).
 export const GENDER_IDENTITIES = [
   'PREFIRO_NAO_RESPONDER',
@@ -86,6 +120,7 @@ export type CollaboratorDetail = CollaboratorListItem &
     education?: string
     biography?: string
     experienceInThePublicSector?: boolean
+    territory: Territory | null // #42
   }>
 
 export type CollaboratorListResponse = Readonly<{
@@ -111,7 +146,7 @@ export type CollaboratorListInput = Readonly<{
   limit: 5 | 10 | 25
 }>
 
-/** Pré-cadastro: os 7 campos essenciais. */
+/** Pré-cadastro: os 7 campos essenciais + território (#42, opcional). */
 export type CollaboratorWriteInput = Readonly<{
   name: string
   email: string
@@ -120,6 +155,7 @@ export type CollaboratorWriteInput = Readonly<{
   role: string
   startOfContract: string
   employmentRelationship: EmploymentRelationship
+  territory: Territory | null
 }>
 
 /** Cadastro completo (dados pessoais; todos opcionais). `id` identifica o colaborador. */
@@ -154,7 +190,13 @@ export const CpfFieldSchema = z
   .transform(onlyDigits)
   .refine((d) => d.length === 11, { error: 'cpf-invalid' })
 
-/** Formulário dos 7 campos do pré-cadastro. */
+/** Território (#42) — UF + município, ambos opcionais (texto livre). */
+export const TerritoryFormSchema = z.object({
+  uf: z.string().trim().max(2).nullable(),
+  municipality: z.string().trim().max(120).nullable(),
+})
+
+/** Formulário dos 7 campos do pré-cadastro + território (#42). */
 export const CollaboratorFormSchema = z.object({
   name: z.string().trim().min(1).max(200),
   email: z.email(),
@@ -163,5 +205,6 @@ export const CollaboratorFormSchema = z.object({
   role: z.string().trim().min(1).max(120),
   startOfContract: z.iso.date(), // YYYY-MM-DD
   employmentRelationship: z.enum(EMPLOYMENT_RELATIONSHIPS),
+  territory: TerritoryFormSchema.nullable().default(null),
 })
 export type CollaboratorFormValues = z.infer<typeof CollaboratorFormSchema>

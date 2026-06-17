@@ -55,6 +55,11 @@ export const CoreApiCollaboratorDetailSchema = CoreApiCollaboratorItemSchema.ext
   education: z.string().trim().nullish(),
   biography: z.string().trim().nullish(),
   experienceInThePublicSector: z.boolean().nullish(),
+  // Território (#42) — UF + município (texto livre). `.catch(null)` tolera ausência/legado.
+  territory: z
+    .object({ uf: z.string().trim().nullable(), municipality: z.string().trim().nullable() })
+    .nullable()
+    .catch(null),
 })
 export type CoreApiCollaboratorDetail = z.infer<typeof CoreApiCollaboratorDetailSchema>
 

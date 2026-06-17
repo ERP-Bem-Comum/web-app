@@ -760,6 +760,9 @@ export const ptBR: Catalog = {
   // Inclusão de colaborador (feature 018) — pré-cadastro dos 7 campos.
   'partners.collaborators.create.title': 'Novo Colaborador',
   'partners.collaborators.form.section.basic': 'Pré-Cadastro de Colaborador(a)',
+  'partners.collaborators.form.section.territory': 'Território',
+  'partners.collaborators.form.uf': 'UF',
+  'partners.collaborators.form.municipality': 'Município',
   'partners.collaborators.form.section.bank': 'Dados Bancários',
   'partners.collaborators.form.bank': 'Banco',
   'partners.collaborators.form.agency': 'Agência',
