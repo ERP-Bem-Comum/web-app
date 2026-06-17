@@ -85,7 +85,7 @@ export function PaymentMethodModal(props: PaymentMethodModalProps): ReactNode {
                 }}
               >
                 <span className={methodAvatar} aria-hidden="true">
-                  {m.initials}
+                  {m.icon}
                 </span>
                 <span className={typeCardMain}>
                   <span className={typeName}>{t(paymentMethodNameTag(m.method))}</span>

@@ -534,26 +534,27 @@ const PAYMENT_COMPLEMENTARY: Record<PaymentMethod, PaymentComplementary> = {
   GuiaRecolhimento: 'none',
   Outro: 'free', // outro → texto livre (especificar)
 }
-const PAYMENT_INITIALS: Record<PaymentMethod, string> = {
-  PIX: 'PIX',
-  Boleto: 'BOL',
-  TED: 'TED',
-  TransferenciaBancaria: 'TEF',
-  CartaoCorporativo: 'CC',
-  Cambio: 'CMB',
-  GuiaRecolhimento: 'GR',
-  Outro: 'OUT',
+// Ícones (glifos unicode, como no mock) — o modal de pagamento usa ícones, não iniciais.
+const PAYMENT_ICON: Record<PaymentMethod, string> = {
+  PIX: '⚡',
+  Boleto: '⠇',
+  TED: '→',
+  TransferenciaBancaria: '⇄',
+  CartaoCorporativo: '▢',
+  Cambio: '$',
+  GuiaRecolhimento: '▤',
+  Outro: '·',
 }
 
 export type PaymentMethodMeta = Readonly<{
   method: PaymentMethod
-  initials: string
+  icon: string
   complementary: PaymentComplementary
 }>
 
 export const PAYMENT_METHOD_META: readonly PaymentMethodMeta[] = PAYMENT_METHODS.map((method) => ({
   method,
-  initials: PAYMENT_INITIALS[method],
+  icon: PAYMENT_ICON[method],
   complementary: PAYMENT_COMPLEMENTARY[method],
 }))
 

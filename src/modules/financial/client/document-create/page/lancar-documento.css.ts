@@ -1037,7 +1037,7 @@ export const typeContent = style({
   position: 'relative',
   display: 'flex',
   flexDirection: 'column',
-  inlineSize: 'min(43rem, 92vw)',
+  inlineSize: 'min(30rem, calc(100vw - 2.5rem))', // 480px (fiel ao mock)
   maxBlockSize: '92vh',
   overflow: 'hidden',
   background: vars.color.surface.default,
@@ -1108,17 +1108,25 @@ export const typeCard = style({
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   background: vars.color.surface.default,
   cursor: 'pointer',
-  transition: 'border-color 120ms, background 120ms, box-shadow 120ms',
-  ':hover': { borderColor: vars.color.institutional.blueLine, background: vars.color.institutional.blueBg },
+  transition: 'border-color 120ms, background 120ms, box-shadow 120ms, transform 120ms',
+  // Hover do mock: borda+fundo tint, leve elevação e sombra.
+  ':hover': {
+    borderColor: vars.color.institutional.blueLine,
+    background: vars.color.institutional.blueBg,
+    transform: 'translateY(-1px)',
+    boxShadow: vars.shadow.card,
+  },
   ':focus-visible': {
     outline: 'none',
     borderColor: vars.color.institutional.blue,
     boxShadow: `0 0 0 0.1875rem ${vars.color.institutional.blueBg}`,
   },
 })
+// Selecionado (mock): borda da marca + anel 3px.
 export const typeCardSelected = style({
-  borderColor: vars.color.institutional.blue,
+  borderColor: vars.color.brand.normal,
   background: vars.color.institutional.blueBg,
+  boxShadow: `0 0 0 0.1875rem ${vars.color.institutional.blueBg}`,
 })
 const typeAvatarBase = {
   display: 'inline-flex',
@@ -1147,10 +1155,15 @@ export const typeAvatar = styleVariants({
     { background: vars.color.institutional.paperBeige, color: vars.color.institutional.ink3 },
   ],
 })
-// Avatar dos cards do modal de Forma de Pagamento — azul da marca (sigla do método).
+// Avatar dos cards do modal de Forma de Pagamento — azul da marca (ícone/glifo do método).
 export const methodAvatar = style([
   typeAvatarBase,
-  { background: vars.color.brand.normal, color: vars.color.brand.onBrand },
+  {
+    background: vars.color.brand.normal,
+    color: vars.color.brand.onBrand,
+    fontSize: vars.font.size.sm, // 14px (glifo, como o mock)
+    fontWeight: vars.font.weight.regular,
+  },
 ])
 export const typeCardMain = style({
   display: 'flex',
