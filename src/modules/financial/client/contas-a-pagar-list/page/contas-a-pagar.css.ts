@@ -116,8 +116,7 @@ export const chipCountOnActive = style([chipCount, { background: vars.color.inst
 // Larguras balanceadas (espaço proporcional entre as colunas); Fornecedor é a flexível (minmax).
 // Ordem: checkbox · Tipo · Documento · Fornecedor · Contrato · Forma · Emissão · Venc · Bruto · Líquido ·
 // Status. (Emissão é placeholder "—" até o backend expô-la na lista — core-api#95.)
-const GRID_COLS =
-  '2.25rem 4.5rem 7rem minmax(13rem, 1.4fr) 6.5rem 7.5rem 6.25rem 6.25rem 6.75rem 6.75rem 7.25rem'
+const GRID_COLS = '2.25rem 4.75rem 7rem minmax(15rem, 1.4fr) 6.5rem 8.5rem 6.5rem 6.5rem 7rem 7rem 7.5rem'
 
 // Wrapper rola na horizontal (como o grid largo do Figma) quando a viewport é estreita.
 export const gridWrap = style({
@@ -126,7 +125,7 @@ export const gridWrap = style({
   overflowX: 'auto',
 })
 export const grid = style({
-  minInlineSize: '80rem', // garante Fornecedor legível (≥13rem); abaixo disso o wrapper rola
+  minInlineSize: '88rem', // colunas folgadas (sem corte) + fonte +1px; abaixo disso o wrapper rola
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   borderRadius: vars.radius.lg,
   overflow: 'hidden',
@@ -135,7 +134,7 @@ export const grid = style({
 export const head = style({
   display: 'grid',
   gridTemplateColumns: GRID_COLS,
-  gap: '0.625rem', // 10px — espaçamento mais uniforme entre colunas
+  gap: '1rem', // 16px — mais respiro entre colunas (ex.: Líquido ↔ Status)
   alignItems: 'center',
   minBlockSize: '2.25rem', // 36px
   paddingInline: vars.space.lg,
@@ -156,13 +155,13 @@ export const headCellRight = style([headCell, { textAlign: 'right' }])
 export const row = style({
   display: 'grid',
   gridTemplateColumns: GRID_COLS,
-  gap: '0.625rem',
+  gap: '1rem', // 16px — alinhado ao header; mais respiro entre colunas
   alignItems: 'center',
   minBlockSize: '3.5rem', // 56px
   paddingInline: vars.space.lg,
   borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   fontFamily: vars.font.family.heading, // Figma Body/Medium = Inter
-  fontSize: vars.font.size.xs, // ~12.5px
+  fontSize: `calc(${vars.font.size.xs} + 0.0625rem)`, // +1px sobre o xs (12px → 13px) nos campos
   color: vars.color.institutional.ink2,
   transition: 'background 120ms ease',
   ':hover': { background: vars.color.institutional.paperWarm },
