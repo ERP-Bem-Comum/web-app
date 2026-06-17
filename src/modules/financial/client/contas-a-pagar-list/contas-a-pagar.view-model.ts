@@ -20,15 +20,15 @@ import type {
 // Re-export p/ as views (ui) tiparem sem importar de client/data (boundary §I).
 export type { DocumentStatus, RetentionType } from '#modules/financial/client/data/model/document.model.ts'
 
-// Resolve o nome do fornecedor a partir do `supplierRef` (o DTO da lista só traz o id). Vem do binding
-// (mapa dos Fornecedores já carregados). Mantém a view-model pura/testável.
+// Resolve o nome do fornecedor a partir do `supplierRef`. ⚠️ Na LISTA o fornecedor já vem resolvido no
+// DTO (read-model #47 US2); este tipo permanece só para o DRAWER de detalhe (`document-detail.binding`),
+// que ainda usa o `partners-map` enquanto o GET /documents/:id não for enriquecido (core-api#95).
 export type ResolveSupplier = (ref: string | null) => string
 
 // Tipo do parceiro — pinta o avatar pela regra de cor (Fornecedor=azul · Colaborador=âmbar ·
-// Financiador=verde · ACT=laranja). Resolver OPCIONAL (aditivo: sem ele, `supplierKind` = null).
+// Financiador=verde · ACT=laranja).
 export type PartnerKind = 'supplier' | 'collaborator' | 'financier' | 'act'
-export type ResolveSupplierKind = (ref: string | null) => PartnerKind | null
-// CNPJ do favorecido (sublinha da coluna Fornecedor, padrão do grid de Contratos). Resolver OPCIONAL.
+// CNPJ do favorecido — usado pelo DRAWER de detalhe (partners-map, #95). Na lista vem do DTO.
 export type ResolveSupplierDoc = (ref: string | null) => string | null
 // Número do contrato a partir do `contractRef` (uuid). Resolver OPCIONAL (vem do contracts-map).
 export type ResolveContract = (ref: string | null) => string | null
@@ -114,20 +114,16 @@ const formatDue = (iso: string): string => {
   return p.length === 3 ? `${p[2] ?? ''}/${p[1] ?? ''}/${p[0] ?? ''}` : iso
 }
 
-const toRow = (
-  it: DocumentSummary,
-  resolveSupplier: ResolveSupplier,
-  resolveKind?: ResolveSupplierKind,
-  resolveDoc?: ResolveSupplierDoc,
-  resolveContract?: ResolveContract,
-): GridRow => ({
+const toRow = (it: DocumentSummary, resolveContract?: ResolveContract): GridRow => ({
   id: it.id,
   type: it.type ?? DASH,
   documentNumber: it.documentNumber ?? DASH,
   series: it.series !== null && it.series !== '' ? it.series : null,
-  supplier: resolveSupplier(it.supplierRef),
-  supplierKind: resolveKind?.(it.supplierRef) ?? null,
-  supplierDoc: maskCnpj(resolveDoc?.(it.supplierRef) ?? null),
+  // Fornecedor resolvido no backend (read-model #47 US2) — lido direto do item; nulo → DASH.
+  supplier: it.supplierName ?? DASH,
+  // O read-model só projeta Fornecedor e o DTO não traz o kind → avatar padrão de Fornecedor.
+  supplierKind: 'supplier',
+  supplierDoc: maskCnpj(it.supplierDocument),
   contract: it.contractRef !== null ? (resolveContract?.(it.contractRef) ?? it.contractRef) : DASH,
   paymentMethod: it.paymentMethod,
   emissao: DASH, // GATED: a emissão só virá quando o backend expô-la na lista (core-api#95)
@@ -186,12 +182,8 @@ export const sumSelectedGrossBRL = (rows: readonly GridRow[], selected: Readonly
 
 export const buildRows = (
   items: readonly DocumentSummary[],
-  resolveSupplier: ResolveSupplier,
-  resolveKind?: ResolveSupplierKind,
-  resolveDoc?: ResolveSupplierDoc,
   resolveContract?: ResolveContract,
-): readonly GridRow[] =>
-  items.map((it) => toRow(it, resolveSupplier, resolveKind, resolveDoc, resolveContract))
+): readonly GridRow[] => items.map((it) => toRow(it, resolveContract))
 
 export const pageInfo = (page: number, pageSize: number, total: number): PageInfo => {
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1
@@ -283,18 +275,15 @@ export const exportFileStamp = (): string => new Date().toISOString().slice(0, 1
 export const deriveListState = (args: {
   isLoading: boolean
   data: Result<DocumentListResponse, FinancialError> | undefined
-  resolveSupplier: ResolveSupplier
-  resolveKind?: ResolveSupplierKind
-  resolveDoc?: ResolveSupplierDoc
   resolveContract?: ResolveContract
 }): ListState => {
-  const { isLoading, data, resolveSupplier, resolveKind, resolveDoc, resolveContract } = args
+  const { isLoading, data, resolveContract } = args
   if (isLoading || data === undefined) return { tag: 'loading' }
   if (!data.ok) return { tag: 'error', errorTag: financialErrorTag(data.error) }
   if (data.value.items.length === 0) return { tag: 'empty' }
   return {
     tag: 'ready',
-    rows: buildRows(data.value.items, resolveSupplier, resolveKind, resolveDoc, resolveContract),
+    rows: buildRows(data.value.items, resolveContract),
     page: pageInfo(data.value.page, data.value.pageSize, data.value.total),
   }
 }

@@ -22,14 +22,15 @@ import type {
   DocumentSummary,
 } from '../../../../../src/modules/financial/client/data/model/document.model.ts'
 
-const supplierName = (ref: string | null): string => (ref === 's1' ? 'Bambu Educação' : (ref ?? '—'))
-
 const summary = (over: Partial<DocumentSummary> = {}): DocumentSummary => ({
   id: 'd1',
   status: 'Aberto',
   documentNumber: '0847',
   type: 'NFS-e',
   supplierRef: 's1',
+  // Fornecedor resolvido no DTO (read-model #47 US2).
+  supplierName: 'Bambu Educação',
+  supplierDocument: '37364305000192',
   netValueCents: '150000',
   series: null,
   grossValueCents: '160000',
@@ -52,21 +53,19 @@ const response = (
 })
 
 describe('deriveListState', () => {
-  const resolveSupplier = supplierName
-
   it('loading quando isLoading=true ou data=undefined', () => {
-    assert.equal(deriveListState({ isLoading: true, data: undefined, resolveSupplier }).tag, 'loading')
-    assert.equal(deriveListState({ isLoading: false, data: undefined, resolveSupplier }).tag, 'loading')
+    assert.equal(deriveListState({ isLoading: true, data: undefined }).tag, 'loading')
+    assert.equal(deriveListState({ isLoading: false, data: undefined }).tag, 'loading')
   })
 
   it('error quando o Result é err → tag i18n', () => {
-    const s = deriveListState({ isLoading: false, data: err('server'), resolveSupplier })
+    const s = deriveListState({ isLoading: false, data: err('server') })
     assert.equal(s.tag, 'error')
     if (s.tag === 'error') assert.equal(s.errorTag, 'financial.error.server')
   })
 
   it('empty quando a lista vem vazia (NÃO é erro)', () => {
-    const s = deriveListState({ isLoading: false, data: ok(response([])), resolveSupplier })
+    const s = deriveListState({ isLoading: false, data: ok(response([])) })
     assert.equal(s.tag, 'empty')
   })
 
@@ -74,7 +73,6 @@ describe('deriveListState', () => {
     const s = deriveListState({
       isLoading: false,
       data: ok(response([summary()], { total: 47 })),
-      resolveSupplier,
     })
     assert.equal(s.tag, 'ready')
     if (s.tag === 'ready') {
@@ -86,11 +84,13 @@ describe('deriveListState', () => {
 })
 
 describe('buildRows', () => {
-  it('mapeia campos, formata vencimento (DD/MM/YYYY) e líquido (R$), resolve fornecedor', () => {
-    const [row] = buildRows([summary()], supplierName)
+  it('lê fornecedor (nome + CNPJ) do DTO, formata vencimento (DD/MM/YYYY) e líquido (R$)', () => {
+    const [row] = buildRows([summary()])
     assert.equal(row?.type, 'NFS-e')
     assert.equal(row?.documentNumber, '0847')
     assert.equal(row?.supplier, 'Bambu Educação')
+    assert.equal(row?.supplierKind, 'supplier') // avatar padrão de Fornecedor
+    assert.equal(row?.supplierDoc, '37.364.305/0001-92') // CNPJ mascarado do DTO
     assert.equal(row?.due, '10/07/2026')
     // `Intl` BRL usa espaço não-quebrável entre "R$" e o número → asserção pelo conteúdo numérico.
     assert.ok((row?.net ?? '').startsWith('R$'))
@@ -98,16 +98,24 @@ describe('buildRows', () => {
     assert.equal(row?.status, 'Aberto')
   })
 
-  it('usa "—" para campos nulos', () => {
-    const [row] = buildRows(
-      [summary({ documentNumber: null, type: null, netValueCents: null, dueDate: null, supplierRef: null })],
-      supplierName,
-    )
+  it('usa "—"/null para campos nulos (fornecedor sem nome/CNPJ no DTO)', () => {
+    const [row] = buildRows([
+      summary({
+        documentNumber: null,
+        type: null,
+        netValueCents: null,
+        dueDate: null,
+        supplierRef: null,
+        supplierName: null,
+        supplierDocument: null,
+      }),
+    ])
     assert.equal(row?.documentNumber, '—')
     assert.equal(row?.type, '—')
     assert.equal(row?.net, '—')
     assert.equal(row?.due, '—')
     assert.equal(row?.supplier, '—')
+    assert.equal(row?.supplierDoc, null)
   })
 })
 
@@ -135,7 +143,7 @@ describe('pageInfo', () => {
 
 describe('buildDocumentsCsv', () => {
   it('cabeçalho + linhas com `;`, valores entre aspas (RFC 4180)', () => {
-    const csv = buildDocumentsCsv(buildRows([summary()], supplierName))
+    const csv = buildDocumentsCsv(buildRows([summary()]))
     const [header, row] = csv.split('\n')
     assert.equal(header, 'Tipo;Documento;Fornecedor;Vencimento;Líquido;Status')
     assert.ok(row?.startsWith('"NFS-e";"0847";"Bambu Educação";"10/07/2026";'))
@@ -143,20 +151,17 @@ describe('buildDocumentsCsv', () => {
   })
 
   it('escapa aspas internas duplicando-as', () => {
-    const csv = buildDocumentsCsv(buildRows([summary({ documentNumber: 'A"B' })], supplierName))
+    const csv = buildDocumentsCsv(buildRows([summary({ documentNumber: 'A"B' })]))
     assert.ok(csv.includes('"A""B"'))
   })
 })
 
 describe('sumSelectedNetBRL', () => {
-  const rows = buildRows(
-    [
-      summary({ id: 'a', netValueCents: '150000' }),
-      summary({ id: 'b', netValueCents: '249999' }),
-      summary({ id: 'c', netValueCents: null }),
-    ],
-    supplierName,
-  )
+  const rows = buildRows([
+    summary({ id: 'a', netValueCents: '150000' }),
+    summary({ id: 'b', netValueCents: '249999' }),
+    summary({ id: 'c', netValueCents: null }),
+  ])
 
   // Intl (pt-BR) usa NBSP entre "R$" e o número — normaliza p/ comparar.
   const norm = (s: string): string => s.replace(/\s/g, ' ')
@@ -176,15 +181,12 @@ describe('sumSelectedNetBRL', () => {
 })
 
 describe('bulkStatusTargets', () => {
-  const rows = buildRows(
-    [
-      summary({ id: 'a', status: 'Aberto', version: 2 }),
-      summary({ id: 'b', status: 'Aprovado', version: 5 }),
-      summary({ id: 'c', status: 'Aberto', version: 1 }),
-      summary({ id: 'd', status: 'Pago', version: 9 }),
-    ],
-    supplierName,
-  )
+  const rows = buildRows([
+    summary({ id: 'a', status: 'Aberto', version: 2 }),
+    summary({ id: 'b', status: 'Aprovado', version: 5 }),
+    summary({ id: 'c', status: 'Aberto', version: 1 }),
+    summary({ id: 'd', status: 'Pago', version: 9 }),
+  ])
 
   it('aprovar = só "Aberto" selecionados; reabrir = só "Aprovado"; com o version de cada', () => {
     const tg = bulkStatusTargets(rows, new Set(['a', 'b', 'd']))

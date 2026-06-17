@@ -42,6 +42,9 @@ export const CoreApiDocumentSummarySchema = z.object({
   supplierRef: z.string().trim().nullable(),
   netValueCents: z.string().trim().nullable(),
   dueDate: z.string().trim().nullable(),
+  // Fornecedor resolvido no backend via read-model (#47 US2). Nulos por consistência eventual.
+  supplierName: z.string().trim().nullable().catch(null),
+  supplierDocument: z.string().trim().nullable().catch(null),
   // Enriquecido pela 012/#47: campos locais do documento no grid de Contas a Pagar.
   series: z.string().trim().nullable().catch(null),
   grossValueCents: z.string().trim().nullable().catch(null),

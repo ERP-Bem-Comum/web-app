@@ -118,6 +118,9 @@ export type DocumentSummary = Readonly<{
   documentNumber: string | null
   type: DocumentType | null
   supplierRef: string | null
+  // Fornecedor resolvido no backend via read-model (#47 US2); nulos por consistência eventual.
+  supplierName: string | null
+  supplierDocument: string | null
   netValueCents: string | null
   // Enriquecido pela 012/#47 (FIN-LIST-DTO): série, bruto, forma de pagamento, contrato, version.
   series: string | null

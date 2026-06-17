@@ -139,6 +139,8 @@ export type DocumentSummary = Readonly<{
   documentNumber: string | null
   type: DocumentType | null
   supplierRef: string | null
+  supplierName: string | null
+  supplierDocument: string | null
   netValueCents: string | null
   dueDate: string | null
   series: string | null

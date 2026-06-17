@@ -141,6 +141,8 @@ export const listToModel = (raw: unknown): Result<DocumentListResponse, Financia
     documentNumber: s.documentNumber,
     type: mapType(s.type),
     supplierRef: s.supplierRef,
+    supplierName: s.supplierName,
+    supplierDocument: s.supplierDocument,
     netValueCents: s.netValueCents,
     dueDate: s.dueDate,
     series: s.series,

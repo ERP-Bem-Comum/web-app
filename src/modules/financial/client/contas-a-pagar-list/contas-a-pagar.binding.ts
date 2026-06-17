@@ -1,22 +1,14 @@
 /**
- * Binding do grid de Contas a Pagar — ADAPTER React (estado de página + queries). Reúne a lista (Fatia 2)
- * e o mapa de Fornecedores (resolve `supplierRef` → nome, já que o DTO fino só traz o id; FIN-LIST-DTO #47)
- * e entrega o `ListState` derivado pela view-model PURA. A page é burra (só consome este hook).
+ * Binding do grid de Contas a Pagar — ADAPTER React (estado de página + queries). O fornecedor (nome +
+ * CNPJ) vem RESOLVIDO no item da lista pelo read-model do backend (#47 US2) — sem mais o workaround de
+ * mapa de parceiros na lista. Só o nº do contrato ainda é resolvido via contracts-map. A page é burra.
  */
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
 import { contasAPagarQueryOptions } from './contas-a-pagar.query.ts'
-import { partnersMapQueryOptions } from './partners-map.binding.ts'
 import { contractsMapQueryOptions } from './contracts-map.binding.ts'
-import {
-  deriveListState,
-  type ListState,
-  type ResolveSupplier,
-  type ResolveSupplierKind,
-  type ResolveSupplierDoc,
-  type ResolveContract,
-} from './contas-a-pagar.view-model.ts'
+import { deriveListState, type ListState, type ResolveContract } from './contas-a-pagar.view-model.ts'
 
 const DEFAULT_PAGE_SIZE = 12
 
@@ -31,24 +23,14 @@ export type ContasAPagarBinding = Readonly<{
 export function useContasAPagar(): ContasAPagarBinding {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
-  const partners = useQuery(partnersMapQueryOptions)
   const contracts = useQuery(contractsMapQueryOptions)
   const list = useQuery(contasAPagarQueryOptions({ page, pageSize }))
 
-  const resolveSupplier: ResolveSupplier = (ref) =>
-    ref === null ? '—' : (partners.data?.get(ref)?.name ?? ref)
-  const resolveKind: ResolveSupplierKind = (ref) =>
-    ref === null ? null : (partners.data?.get(ref)?.kind ?? null)
-  const resolveDoc: ResolveSupplierDoc = (ref) =>
-    ref === null ? null : (partners.data?.get(ref)?.document ?? null)
   const resolveContract: ResolveContract = (ref) => (ref === null ? null : (contracts.data?.get(ref) ?? null))
 
   const state = deriveListState({
     isLoading: list.isLoading,
     data: list.data,
-    resolveSupplier,
-    resolveKind,
-    resolveDoc,
     resolveContract,
   })
 
