@@ -8,6 +8,7 @@ import { ok, err, isErr, type Result } from '#shared/primitives/result.ts'
 import type { HttpError } from '#shared/http/http-error.types.ts'
 import { parseErrorEnvelope } from '#shared/http/error-envelope.ts'
 import { resultFetch } from '#external/core-api/result-fetch.ts'
+import { normalizeCnpj } from '#shared/document/cnpj.ts'
 import type { PartnersError } from '#modules/partners/server/domain/errors/partners.errors.ts'
 import type { SupplierClient } from '#modules/partners/server/application/supplier/supplier.use-cases.ts'
 import type {
@@ -80,7 +81,6 @@ const mapResponseError = async (response: Response): Promise<PartnersError> => {
   return statusToError(response.status, parseErrorEnvelope(body)?.error.code)
 }
 
-const onlyDigits = (raw: string): string => raw.replace(/\D/g, '')
 const activationFromApi = (active: boolean): ActivationStatus => (active ? 'active' : 'inactive')
 
 const itemToModel = (s: CoreApiSupplierItem): SupplierListItem => ({
@@ -135,7 +135,7 @@ const buildListQuery = (input: ListSuppliersInput): string => {
 export const toWriteBody = (input: CreateSupplierInput): Record<string, unknown> => ({
   name: input.name,
   email: input.email,
-  cnpj: onlyDigits(input.cnpj),
+  cnpj: normalizeCnpj(input.cnpj),
   corporateName: input.corporateName,
   fantasyName: input.fantasyName,
   serviceCategory: input.serviceCategory,

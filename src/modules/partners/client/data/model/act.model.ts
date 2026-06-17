@@ -6,6 +6,8 @@
  */
 import * as z from 'zod'
 
+import { normalizeCnpj, isValidCnpjFormat } from '#shared/document/cnpj.ts'
+
 export const OCCUPATION_AREAS = ['PARC', 'DDI', 'DCE', 'EPV'] as const
 export type OccupationArea = (typeof OCCUPATION_AREAS)[number]
 
@@ -84,14 +86,12 @@ export type ActWriteInput = Readonly<{
 }>
 
 // ── Schema do formulário (validação na borda do cliente) ──
-const onlyDigits = (raw: string): string => raw.replace(/\D/g, '')
-
-/** CNPJ: aceita com/sem máscara; normaliza para 14 dígitos (o server fn aceita 14–18). */
+/** CNPJ (Serpro/2026): aceita com/sem máscara; normaliza p/ 14 alfanuméricos maiúsculos e valida formato. */
 export const CnpjFieldSchema = z
   .string()
   .trim()
-  .transform(onlyDigits)
-  .refine((d) => d.length === 14, { error: 'cnpj-invalid' })
+  .transform(normalizeCnpj)
+  .refine(isValidCnpjFormat, { error: 'cnpj-invalid' })
 
 export const BankAccountFormSchema = z.object({
   bank: z.string().trim().min(1).max(20),

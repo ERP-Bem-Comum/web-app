@@ -8,6 +8,7 @@ import { ok, err, isErr, type Result } from '#shared/primitives/result.ts'
 import type { HttpError } from '#shared/http/http-error.types.ts'
 import { parseErrorEnvelope } from '#shared/http/error-envelope.ts'
 import { resultFetch } from '#external/core-api/result-fetch.ts'
+import { normalizeCnpj } from '#shared/document/cnpj.ts'
 import type { PartnersError } from '#modules/partners/server/domain/errors/partners.errors.ts'
 import type { FinancierClient } from '#modules/partners/server/application/financier/financier.use-cases.ts'
 import type {
@@ -68,7 +69,6 @@ const mapResponseError = async (response: Response): Promise<PartnersError> => {
   return statusToError(response.status, parseErrorEnvelope(body)?.error.code)
 }
 
-const onlyDigits = (raw: string): string => raw.replace(/\D/g, '')
 const activationFromApi = (active: boolean): ActivationStatus => (active ? 'active' : 'inactive')
 
 const itemToModel = (f: CoreApiFinancierItem): FinancierListItem => ({
@@ -119,7 +119,7 @@ const toWriteBody = (input: CreateFinancierInput): Record<string, unknown> => ({
   name: input.name,
   corporateName: input.corporateName,
   legalRepresentative: input.legalRepresentative,
-  cnpj: onlyDigits(input.cnpj),
+  cnpj: normalizeCnpj(input.cnpj),
   telephone: input.telephone,
   address: input.address,
   bankAccount: input.bankAccount,
