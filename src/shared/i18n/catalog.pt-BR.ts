@@ -933,6 +933,9 @@ export const ptBR: Catalog = {
   // Formulário
   'programs.form.section.data': 'Dados do Programa',
   'programs.form.logo': 'Logo do Programa',
+  'programs.logo.add': 'Adicionar logo',
+  'programs.logo.change': 'Trocar logo',
+  'programs.logo.hint': 'PNG, JPG ou WEBP · até 5 MB',
   'programs.form.name': 'Nome do Programa',
   'programs.form.sigla': 'Sigla',
   'programs.form.director': 'Diretor',

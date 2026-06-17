@@ -8,9 +8,23 @@ import { useCurrentUser } from '#modules/auth/public-api/index.ts'
 import { isOk } from '#shared/primitives/result.ts'
 import { can, grantedPermissions } from '#modules/programs/client/data/helpers/can.ts'
 import { programsErrorTag } from '#modules/programs/client/data/helpers/programs-error-tag.ts'
-import { formToCreateInput, type ProgramFormValues } from '#modules/programs/client/data/model/program.model.ts'
+import {
+  formToCreateInput,
+  type ProgramFormValues,
+} from '#modules/programs/client/data/model/program.model.ts'
 
-import { deriveDetailState, programDetailViewModel, type ProgramDetailState } from './program-detail.view-model.ts'
+import {
+  useProgramLogo,
+  useProgramLogoUpload,
+  type ProgramLogoView,
+  type ProgramLogoUploadCommand,
+} from '#modules/programs/client/program-logo/program-logo.binding.ts'
+
+import {
+  deriveDetailState,
+  programDetailViewModel,
+  type ProgramDetailState,
+} from './program-detail.view-model.ts'
 import { programUpdateMutationOptions } from './program-update.mutation.ts'
 
 export type ProgramSaveCommand = Readonly<{
@@ -23,6 +37,8 @@ export type ProgramDetailBinding = Readonly<{
   state: ProgramDetailState
   saveCommand: ProgramSaveCommand
   canEdit: boolean
+  logo: ProgramLogoView
+  logoUpload: ProgramLogoUploadCommand
 }>
 
 export function useProgramDetailBinding(id: string, onSaved?: () => void): ProgramDetailBinding {
@@ -37,6 +53,11 @@ export function useProgramDetailBinding(id: string, onSaved?: () => void): Progr
   })
   const current = useCurrentUser()
   const granted = grantedPermissions(current.user?.permissions)
+
+  // Logo: display (só busca se houver logoKey) + upload.
+  const logoKey = query.data !== undefined && isOk(query.data) ? query.data.value.logoKey : null
+  const logo = useProgramLogo(id, logoKey)
+  const logoUpload = useProgramLogoUpload(id)
 
   const state: ProgramDetailState = ((): ProgramDetailState => {
     if (query.isPending) return { status: 'loading' }
@@ -64,5 +85,7 @@ export function useProgramDetailBinding(id: string, onSaved?: () => void): Progr
       },
     },
     canEdit: can(granted, 'program:write'),
+    logo,
+    logoUpload,
   }
 }

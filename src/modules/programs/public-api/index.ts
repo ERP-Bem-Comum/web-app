@@ -10,3 +10,7 @@ export { getProgramFn } from '#modules/programs/server/adapters/server-fns/get-p
 export type { GetProgramFnResult } from '#modules/programs/server/adapters/server-fns/get-program.query.fn.ts'
 export { updateProgramFn } from '#modules/programs/server/adapters/server-fns/update-program.service.fn.ts'
 export type { UpdateProgramFnResult } from '#modules/programs/server/adapters/server-fns/update-program.service.fn.ts'
+export { getProgramLogoFn } from '#modules/programs/server/adapters/server-fns/get-program-logo.query.fn.ts'
+export type { GetProgramLogoFnResult } from '#modules/programs/server/adapters/server-fns/get-program-logo.query.fn.ts'
+export { uploadProgramLogoFn } from '#modules/programs/server/adapters/server-fns/upload-program-logo.service.fn.ts'
+export type { UploadProgramLogoFnResult } from '#modules/programs/server/adapters/server-fns/upload-program-logo.service.fn.ts'

@@ -23,6 +23,10 @@ const build = () => {
     createProgram: createCreateProgram({ client }),
     getProgram: createGetProgram({ client }),
     updateProgram: createUpdateProgram({ client }),
+    // Logo (binário) — passthrough fino: I/O puro, sem regra de domínio.
+    getLogo: (id: string, token: string) => client.getLogo(id, token),
+    uploadLogo: (id: string, input: { bytes: Uint8Array; mimeType: string }, token: string) =>
+      client.uploadLogo(id, input, token),
   }
 }
 
