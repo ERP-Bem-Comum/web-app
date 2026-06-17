@@ -17,16 +17,29 @@ const detail: FinancierDetail = {
   activation: 'active',
   legalRepresentative: 'Maria Silva',
   address: 'Av. Paulista, 1000',
+  bankAccount: null,
+  pixKey: null,
 }
 
 const listResponse: FinancierListResponse = {
   items: [
-    { id: 'f1', name: 'Fundo XPTO', corporateName: 'Fundo XPTO LTDA', legalRepresentative: 'Maria Silva', cnpj: '12345678000190', telephone: '1140000000', activation: 'active' },
+    {
+      id: 'f1',
+      name: 'Fundo XPTO',
+      corporateName: 'Fundo XPTO LTDA',
+      legalRepresentative: 'Maria Silva',
+      cnpj: '12345678000190',
+      telephone: '1140000000',
+      activation: 'active',
+    },
   ],
   meta: { page: 1, limit: 5, total: 1 },
 }
 
-const okFn = <T>(data: T) => () => Promise.resolve({ ok: true as const, data })
+const okFn =
+  <T>(data: T) =>
+  () =>
+    Promise.resolve({ ok: true as const, data })
 const errFn = (error: 'not-found' | 'validation' | 'forbidden' | 'conflict') => () =>
   Promise.resolve({ ok: false as const, error })
 
@@ -54,8 +67,37 @@ describe('FinancierRepository (mapeia FnResult → Result)', () => {
 
   it('create/update: ok(detail)', async () => {
     const repo = createFinancierRepository(baseDeps)
-    assert.equal(isOk(await repo.create({ name: 'x', corporateName: 'x', legalRepresentative: 'x', cnpj: '12345678000190', telephone: '1', address: 'a' })), true)
-    assert.equal(isOk(await repo.update({ id: 'f1', name: 'x', corporateName: 'x', legalRepresentative: 'x', cnpj: '12345678000190', telephone: '1', address: 'a' })), true)
+    assert.equal(
+      isOk(
+        await repo.create({
+          name: 'x',
+          corporateName: 'x',
+          legalRepresentative: 'x',
+          cnpj: '12345678000190',
+          telephone: '1',
+          address: 'a',
+          bankAccount: null,
+          pixKey: null,
+        }),
+      ),
+      true,
+    )
+    assert.equal(
+      isOk(
+        await repo.update({
+          id: 'f1',
+          name: 'x',
+          corporateName: 'x',
+          legalRepresentative: 'x',
+          cnpj: '12345678000190',
+          telephone: '1',
+          address: 'a',
+          bankAccount: null,
+          pixKey: null,
+        }),
+      ),
+      true,
+    )
   })
 
   it('deactivate/reactivate: ok com activation correto', async () => {

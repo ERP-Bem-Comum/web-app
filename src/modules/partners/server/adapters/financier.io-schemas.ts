@@ -16,6 +16,18 @@ export const ListFinanciersInputSchema = z.object({
 
 export const GetFinancierInputSchema = z.object({ id: z.string().trim().min(1).max(64) })
 
+// Payment-target (banco/PIX) — opcionais (#40), mesmo shape do Fornecedor.
+const BankAccountInputSchema = z.object({
+  bank: z.string().trim().min(1).max(20),
+  agency: z.string().trim().min(1).max(20),
+  accountNumber: z.string().trim().min(1).max(30),
+  checkDigit: z.string().trim().max(5),
+})
+const PixKeyInputSchema = z.object({
+  keyType: z.enum(['cpf', 'cnpj', 'email', 'phone', 'random-key']),
+  key: z.string().trim().min(1).max(140),
+})
+
 export const CreateFinancierInputSchema = z.object({
   name: z.string().trim().min(1).max(200),
   corporateName: z.string().trim().min(1).max(200),
@@ -23,6 +35,8 @@ export const CreateFinancierInputSchema = z.object({
   cnpj: z.string().trim().min(14).max(18), // aceita máscara; o client normaliza p/ 14 dígitos
   telephone: z.string().trim().min(1).max(20),
   address: z.string().trim().min(1).max(300),
+  bankAccount: BankAccountInputSchema.nullable(),
+  pixKey: PixKeyInputSchema.nullable(),
 })
 
 export const UpdateFinancierInputSchema = CreateFinancierInputSchema.extend({
@@ -34,12 +48,12 @@ export const DeactivateFinancierInputSchema = z.object({ id: z.string().trim().m
 export const ReactivateFinancierInputSchema = z.object({ id: z.string().trim().min(1).max(64) })
 
 type AssertEqual<A, B> = [A] extends [B] ? true : never
- 
+
 const _g_list: AssertEqual<z.infer<typeof ListFinanciersInputSchema>, D.ListFinanciersInput> = true
 const _g_get: AssertEqual<z.infer<typeof GetFinancierInputSchema>, D.GetFinancierInput> = true
 const _g_create: AssertEqual<z.infer<typeof CreateFinancierInputSchema>, D.CreateFinancierInput> = true
 const _g_update: AssertEqual<z.infer<typeof UpdateFinancierInputSchema>, D.UpdateFinancierInput> = true
 const _g_deact: AssertEqual<z.infer<typeof DeactivateFinancierInputSchema>, D.DeactivateFinancierInput> = true
 const _g_react: AssertEqual<z.infer<typeof ReactivateFinancierInputSchema>, D.ReactivateFinancierInput> = true
- 
+
 void [_g_list, _g_get, _g_create, _g_update, _g_deact, _g_react]
