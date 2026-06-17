@@ -22,6 +22,7 @@ const readyState: ListState = {
       id: 'd1',
       type: 'NFS-e',
       documentNumber: '0847',
+      series: 'A1',
       supplier: 'Bambu Educação',
       supplierKind: 'supplier',
       supplierDoc: '37.364.305/0001-92',

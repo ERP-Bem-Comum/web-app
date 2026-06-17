@@ -89,18 +89,9 @@ export function StatusActions(props: StatusActionsProps): ReactNode {
           </span>
         </button>
 
-        {/* Enviar p/ aprovação (submit) e Marcar como pago — sem rota no backend (chrome). */}
-        <button
-          type="button"
-          className={`${menuItem} ${menuItemBorder} ${menuItemDisabled}`}
-          disabled
-          title={t('financial.list.status.soon')}
-        >
-          <span className={itemCol}>
-            {t('financial.list.status.submit')}
-            <span className={itemHint}>{t('financial.list.status.submitHint')}</span>
-          </span>
-        </button>
+        {/* "Marcar como pago" — sem rota no backend (chrome). ("Enviar p/ aprovação" foi removido:
+            a finalização do rascunho acontece reabrindo o documento na tela de Lançar, e a aprovação
+            já é coberta por "Aprovar".) */}
         <button
           type="button"
           className={`${menuItem} ${menuItemBorder} ${menuItemDisabled}`}

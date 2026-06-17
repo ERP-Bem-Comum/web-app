@@ -26,6 +26,9 @@ import {
   cellCheckbox,
   cell,
   cellMutedDoc,
+  cellDoc,
+  cellDocNumber,
+  cellDocSeries,
   cellNet,
   cellGross,
   typeBadge,
@@ -136,7 +139,16 @@ export function DocumentGrid(props: DocumentGridProps): ReactNode {
               ) : (
                 <span className={typeClass(r.type)}>{r.type}</span>
               )}
-              <span className={cellMutedDoc}>{r.documentNumber}</span>
+              {r.series !== null ? (
+                <span className={cellDoc}>
+                  <span className={cellDocNumber}>{r.documentNumber}</span>
+                  <span className={cellDocSeries}>
+                    {t('financial.list.seriesPrefix')} {r.series}
+                  </span>
+                </span>
+              ) : (
+                <span className={cellMutedDoc}>{r.documentNumber}</span>
+              )}
               {r.supplier === DASH ? (
                 <span className={cell}>{r.supplier}</span>
               ) : (

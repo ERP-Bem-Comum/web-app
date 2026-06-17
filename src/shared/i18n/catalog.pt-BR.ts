@@ -1127,6 +1127,7 @@ export const ptBR: Catalog = {
   'financial.list.empty.hint': 'Clique em “Novo Documento” para lançar a primeira conta a pagar.',
   'financial.list.col.type': 'Tipo',
   'financial.list.col.documentNumber': 'Documento',
+  'financial.list.seriesPrefix': 'série',
   'financial.list.col.supplier': 'Fornecedor',
   'financial.list.col.contract': 'Contrato',
   'financial.list.col.paymentMethod': 'Forma Pag.',

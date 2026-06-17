@@ -5,7 +5,7 @@
  * (Fatia 2 não faz busca textual nem agrega); só "Todos" mostra o total real. Exportar (CSV/PDF) = client-side.
  */
 import { useState, type ReactNode } from 'react'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
@@ -53,11 +53,12 @@ const t = createTranslator(ptBR)
 const PAGE_SIZE_OPTIONS = [5, 10, 12, 25, 50] as const
 
 export function ContasAPagarPage(): ReactNode {
+  const navigate = useNavigate()
   const { state, pageSize, onPrev, onNext, onPageSize } = useContasAPagar()
   const page = state.tag === 'ready' ? state.page : null
   const rows = state.tag === 'ready' ? state.rows : []
 
-  // Linha clicável → drawer de detalhe (onda 2). Rascunho → reabrir o form é a Etapa 2 (core-api#91).
+  // Linha clicável: Rascunho → tela de Lançar (finalizar inclusão); demais status → drawer de detalhe.
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const detail = useDocumentDetail(selectedId)
 
@@ -121,8 +122,14 @@ export function ContasAPagarPage(): ReactNode {
       <div className={gridWrap}>
         <DocumentGrid
           state={state}
-          onRowClick={(id) => {
-            setSelectedId(id)
+          onRowClick={(id, status) => {
+            // Rascunho → abre o Lançar p/ FINALIZAR a inclusão (modo draft, tudo editável).
+            // Demais status → drawer de detalhe.
+            if (status === 'Rascunho') {
+              void navigate({ to: '/financeiro/contas-a-pagar/lancar', search: { id } })
+            } else {
+              setSelectedId(id)
+            }
           }}
           activeId={selectedId}
           selectedIds={selected}

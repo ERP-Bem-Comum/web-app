@@ -172,6 +172,23 @@ export const cellMutedDoc = style([
   cell,
   { fontFamily: vars.font.family.mono, color: vars.color.institutional.ink4 },
 ])
+// Coluna Documento (Figma): número (mono) + sublinha "série …" (mono, menor, esmaecida).
+export const cellDoc = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.0625rem',
+  minInlineSize: 0,
+  overflow: 'hidden',
+})
+export const cellDocNumber = style([cellMutedDoc, { color: vars.color.institutional.ink2 }])
+export const cellDocSeries = style([
+  cell,
+  {
+    fontFamily: vars.font.family.mono,
+    fontSize: vars.font.size['2xs'],
+    color: vars.color.institutional.ink5,
+  },
+])
 export const cellNet = style({ textAlign: 'right', fontFamily: vars.font.family.mono })
 // Bruto (Figma): mono à direita, tom mais discreto que o Líquido.
 export const cellGross = style([cellNet, { color: vars.color.institutional.ink4 }])

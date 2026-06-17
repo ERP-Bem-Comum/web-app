@@ -37,6 +37,7 @@ export type GridRow = Readonly<{
   id: string
   type: string
   documentNumber: string
+  series: string | null // sublinha "série …" da coluna Documento (Figma); null = sem série
   supplier: string
   supplierKind: PartnerKind | null
   supplierDoc: string | null // CNPJ já mascarado (ex.: "37.364.305/0001-92") ou null
@@ -120,6 +121,7 @@ const toRow = (
   id: it.id,
   type: it.type ?? DASH,
   documentNumber: it.documentNumber ?? DASH,
+  series: it.series !== null && it.series !== '' ? it.series : null,
   supplier: resolveSupplier(it.supplierRef),
   supplierKind: resolveKind?.(it.supplierRef) ?? null,
   supplierDoc: maskCnpj(resolveDoc?.(it.supplierRef) ?? null),
