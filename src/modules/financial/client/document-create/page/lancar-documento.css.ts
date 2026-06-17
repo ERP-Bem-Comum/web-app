@@ -820,8 +820,8 @@ export const entityIcon = style({
   blockSize: '2rem',
   flexShrink: 0,
   borderRadius: vars.radius.lg,
-  background: vars.color.institutional.blueDeep, // teal do Figma → azul da marca
-  color: vars.color.surface.default,
+  background: vars.color.brand.normal, // azul da marca (mais claro/suave que o navy institucional)
+  color: vars.color.brand.onBrand,
 })
 export const entityInfo = style({
   display: 'flex',
@@ -964,14 +964,15 @@ const actionButtonBase = {
   cursor: 'pointer',
   transition: 'background 150ms, border-color 150ms, box-shadow 150ms',
 } as const
-// Primário (= buttonPrimary do contrato): azul da marca → blueDeep no hover.
+// Primário: azul da MARCA (mais claro/suave) → hover brand.hover. (Lançar usa o tom de marca; o token
+// global segue navy até alinhar o app todo.)
 export const primaryButton = style([
   actionButtonBase,
   {
     border: 'none',
-    background: vars.color.institutional.blue,
-    color: vars.color.surface.default,
-    ':hover': { background: vars.color.institutional.blueDeep },
+    background: vars.color.brand.normal,
+    color: vars.color.brand.onBrand,
+    ':hover': { background: vars.color.brand.hover },
     ':disabled': { opacity: 0.5, cursor: 'not-allowed' },
   },
 ])
@@ -1126,7 +1127,7 @@ const typeAvatarBase = {
 export const typeAvatar = styleVariants({
   fiscal: [
     typeAvatarBase,
-    { background: vars.color.institutional.blueDeep, color: vars.color.surface.default },
+    { background: vars.color.brand.normal, color: vars.color.brand.onBrand }, // azul da marca (suave)
   ],
   partial: [
     typeAvatarBase,
