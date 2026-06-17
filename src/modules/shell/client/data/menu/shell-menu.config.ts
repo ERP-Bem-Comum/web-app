@@ -60,7 +60,20 @@ export const MENU: readonly MenuSection[] = [
   },
   { label: 'Plano Orçamentário', iconId: 'calendar-days' },
   { label: 'Relatórios', iconId: 'trending-up' },
-  { label: 'Financeiro', iconId: 'wallet' },
+  {
+    label: 'Financeiro',
+    iconId: 'wallet',
+    // Contas a Pagar (slug do catálogo do core-api `fiscal-document:read`). Mesmo padrão de Parceiros:
+    // subitem gated por permissão (a seção some se ficar sem subitens visíveis). Contas a Receber e
+    // Conciliação entram quando os submódulos existirem.
+    subItems: [
+      {
+        label: 'Contas a Pagar',
+        to: '/financeiro/contas-a-pagar',
+        requiredPermission: 'fiscal-document:read',
+      },
+    ],
+  },
   {
     label: 'Gestão de Usuários',
     iconId: 'users',

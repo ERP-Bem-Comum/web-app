@@ -23,7 +23,19 @@ type UpdateFn = (opts: { data: UpdateUserInput & { id: string } }) => Promise<Fn
 type SetStatusFn = (opts: { data: { id: string; active: boolean } }) => Promise<FnResult<UserDetail>>
 type GetMeFn = () => Promise<FnResult<UserDetail>>
 type UpdateMeFn = (opts: { data: UpdateMeInput }) => Promise<FnResult<UserDetail>>
-type ChangePasswordFn = (opts: { data: ChangePasswordInput }) => Promise<Readonly<{ ok: true }> | Readonly<{ ok: false; error: UsersError }>>
+type ChangePasswordFn = (opts: {
+  data: ChangePasswordInput
+}) => Promise<Readonly<{ ok: true }> | Readonly<{ ok: false; error: UsersError }>>
+// Foto (binário): GET → bytes em base64 (ou null = sem foto); upload → sem corpo.
+export type UserPhotoData = Readonly<{ base64: string; contentType: string }>
+type GetPhotoFn = () => Promise<FnResult<UserPhotoData | null>>
+type GetUserPhotoFn = (opts: { data: { id: string } }) => Promise<FnResult<UserPhotoData | null>>
+type UploadMyPhotoFn = (opts: {
+  data: { fileBase64: string; mimeType: string }
+}) => Promise<Readonly<{ ok: true }> | Readonly<{ ok: false; error: UsersError }>>
+type UploadUserPhotoFn = (opts: {
+  data: { id: string; fileBase64: string; mimeType: string }
+}) => Promise<Readonly<{ ok: true }> | Readonly<{ ok: false; error: UsersError }>>
 
 export type UsersRepository = Readonly<{
   list: (input: UserListInput) => Promise<Result<UserListResponse, UsersError>>
@@ -34,6 +46,14 @@ export type UsersRepository = Readonly<{
   getMe: () => Promise<Result<UserDetail, UsersError>>
   updateMe: (input: UpdateMeInput) => Promise<Result<UserDetail, UsersError>>
   changePassword: (input: ChangePasswordInput) => Promise<Result<void, UsersError>>
+  getMyPhoto: () => Promise<Result<UserPhotoData | null, UsersError>>
+  uploadMyPhoto: (
+    input: Readonly<{ fileBase64: string; mimeType: string }>,
+  ) => Promise<Result<void, UsersError>>
+  getUserPhoto: (id: string) => Promise<Result<UserPhotoData | null, UsersError>>
+  uploadUserPhoto: (
+    input: Readonly<{ id: string; fileBase64: string; mimeType: string }>,
+  ) => Promise<Result<void, UsersError>>
 }>
 
 export const createUsersRepository = (
@@ -46,6 +66,10 @@ export const createUsersRepository = (
     getMeFn: GetMeFn
     updateMeFn: UpdateMeFn
     changePasswordFn: ChangePasswordFn
+    getMyPhotoFn: GetPhotoFn
+    uploadMyPhotoFn: UploadMyPhotoFn
+    getUserPhotoFn: GetUserPhotoFn
+    uploadUserPhotoFn: UploadUserPhotoFn
   }>,
 ): UsersRepository => ({
   list: async (input) => {
@@ -78,6 +102,22 @@ export const createUsersRepository = (
   },
   changePassword: async (input) => {
     const res = await deps.changePasswordFn({ data: input })
+    return res.ok ? ok(undefined) : err(res.error)
+  },
+  getMyPhoto: async () => {
+    const res = await deps.getMyPhotoFn()
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  uploadMyPhoto: async (input) => {
+    const res = await deps.uploadMyPhotoFn({ data: input })
+    return res.ok ? ok(undefined) : err(res.error)
+  },
+  getUserPhoto: async (id) => {
+    const res = await deps.getUserPhotoFn({ data: { id } })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  uploadUserPhoto: async (input) => {
+    const res = await deps.uploadUserPhotoFn({ data: input })
     return res.ok ? ok(undefined) : err(res.error)
   },
 })

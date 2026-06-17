@@ -7,6 +7,8 @@ import { ok, err, isErr, type Result } from '#shared/primitives/result.ts'
 import type { HttpError } from '#shared/http/http-error.types.ts'
 import { parseErrorEnvelope } from '#shared/http/error-envelope.ts'
 import { resultFetch } from '#external/core-api/result-fetch.ts'
+import { documentContentFetch } from '#external/core-api/document-content-fetch.ts'
+import { octetStreamFetch } from '#external/core-api/octet-stream-fetch.ts'
 import type { ProgramsError } from '#modules/programs/server/domain/errors/programs.errors.ts'
 import type { ProgramClient } from '#modules/programs/server/application/programs.use-cases.ts'
 import type {
@@ -147,6 +149,21 @@ export const createCoreApiProgramsClient = (baseUrl: string): ProgramClient => {
       })
       if (isErr(r)) return err(mapHttpError(r.error))
       return detailToModel(r.value)
+    },
+    getLogo: async (id, token) => {
+      const r = await documentContentFetch(`${baseUrl}/programs/${id}/logo`, { token })
+      if (isErr(r)) return err(mapHttpError(r.error)) // 404 (sem logo) → 'not-found' (a server fn vira null)
+      return ok({ bytes: r.value.bytes, contentType: r.value.contentType })
+    },
+    uploadLogo: async (id, input, token) => {
+      // POST binário cru com o MIME no Content-Type (convenção do core-api p/ logo de programa).
+      const r = await octetStreamFetch<{ logoKey: string }>(`${baseUrl}/programs/${id}/logo`, {
+        token,
+        bytes: input.bytes,
+        headers: { 'content-type': input.mimeType },
+      })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      return ok({ logoKey: r.value.logoKey })
     },
   }
 }

@@ -32,6 +32,7 @@ describe('rootViewModel.resolvePageTitle', () => {
     assert.strictEqual(rootViewModel.resolvePageTitle('/minha-conta'), 'Minha Conta')
     assert.strictEqual(rootViewModel.resolvePageTitle('/programas'), 'Programas')
     assert.strictEqual(rootViewModel.resolvePageTitle('/programas/criar'), 'Programas')
+    assert.strictEqual(rootViewModel.resolvePageTitle('/financeiro/contas-a-pagar'), 'Contas a Pagar')
   })
   it('cai no fallback para rota desconhecida e não casa substring solta', () => {
     assert.strictEqual(rootViewModel.resolvePageTitle('/desconhecida'), 'ERP Bem Comum')
@@ -65,6 +66,9 @@ describe('rootViewModel.sidebarWidth / showPageHeader', () => {
     assert.strictEqual(rootViewModel.showPageHeader('/programas'), false)
     assert.strictEqual(rootViewModel.showPageHeader('/programas/criar'), false)
     assert.strictEqual(rootViewModel.showPageHeader('/dashboard'), true)
+    // Financeiro: o grid mantém o h1 do shell; o Lançar Documento tem topbar própria.
+    assert.strictEqual(rootViewModel.showPageHeader('/financeiro/contas-a-pagar'), true)
+    assert.strictEqual(rootViewModel.showPageHeader('/financeiro/contas-a-pagar/lancar'), false)
   })
 })
 
@@ -114,7 +118,10 @@ describe('rootViewModel.visibleMenu (RBAC)', () => {
   })
   it('filtra subitens por permissão', () => {
     const contratos = rootViewModel.visibleMenu(menu, []).find((s) => s.label === 'Contratos')
-    assert.deepStrictEqual(contratos?.subItems?.map((s) => s.label), ['Lista'])
+    assert.deepStrictEqual(
+      contratos?.subItems?.map((s) => s.label),
+      ['Lista'],
+    )
   })
   it('seção de accordion que fica sem subitens some', () => {
     assert.ok(!rootViewModel.visibleMenu(menu, []).some((s) => s.label === 'Só-Admin'))
@@ -180,7 +187,10 @@ describe('rootViewModel.visibleMenu (MENU real — financiadores)', () => {
     assert.ok(financiadores, 'o subitem "Financiadores" deve aparecer')
     assert.strictEqual(financiadores?.to, '/parceiros/financiadores')
     // a seção sobrevive mesmo sem supplier:read — Fornecedores foi filtrado, mas Financiadores ficou.
-    assert.strictEqual(parceiros?.subItems?.some((s) => s.label === 'Fornecedores'), false)
+    assert.strictEqual(
+      parceiros?.subItems?.some((s) => s.label === 'Fornecedores'),
+      false,
+    )
   })
 
   it('com ambos os reads: a seção mostra os 2 subitens', () => {

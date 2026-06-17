@@ -13,11 +13,25 @@ import type {
   UpdateProgramInput,
 } from '#modules/programs/server/domain/program.io.ts'
 
+// Logo (binário): GET devolve bytes+mime; upload envia bytes crus (Content-Type: image/*) → { logoKey }.
+export type ProgramLogo = Readonly<{ bytes: Uint8Array; contentType: string }>
+export type ProgramLogoUpload = Readonly<{ bytes: Uint8Array; mimeType: string }>
+
 export type ProgramClient = Readonly<{
   list: (input: ListProgramsInput, token: string) => Promise<Result<ProgramListResponse, ProgramsError>>
   create: (input: CreateProgramInput, token: string) => Promise<Result<CreatedProgram, ProgramsError>>
   getById: (id: string, token: string) => Promise<Result<ProgramDetail, ProgramsError>>
-  update: (id: string, input: UpdateProgramInput, token: string) => Promise<Result<ProgramDetail, ProgramsError>>
+  update: (
+    id: string,
+    input: UpdateProgramInput,
+    token: string,
+  ) => Promise<Result<ProgramDetail, ProgramsError>>
+  getLogo: (id: string, token: string) => Promise<Result<ProgramLogo, ProgramsError>>
+  uploadLogo: (
+    id: string,
+    input: ProgramLogoUpload,
+    token: string,
+  ) => Promise<Result<Readonly<{ logoKey: string }>, ProgramsError>>
 }>
 
 type Deps = Readonly<{ client: ProgramClient }>

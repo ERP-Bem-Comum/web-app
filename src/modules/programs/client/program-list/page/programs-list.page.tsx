@@ -3,27 +3,52 @@ import { getRouteApi, useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { Badge, Button, DataTable, PageHeader, AvatarLabel, initialsFrom, type Column, type DataTableState } from '#shared/ui/index.ts'
+import {
+  Badge,
+  Button,
+  DataTable,
+  PageHeader,
+  AvatarLabel,
+  initialsFrom,
+  type Column,
+  type DataTableState,
+} from '#shared/ui/index.ts'
 
 import { useProgramsListBinding } from '../programs-list.binding.ts'
 import { totalPages, type ProgramsListState, type ProgramRow } from '../programs-list.view-model.ts'
 import { ProgramsFilters } from '../components/programs-filters.component.tsx'
 import { ProgramsPaginator } from '../components/programs-paginator.component.tsx'
-import { screen, logoCell, logoPlaceholder } from './programs-list.css.ts'
+import { screen, logoCell, logoPlaceholder, logoImg } from './programs-list.css.ts'
 
 const t = createTranslator(ptBR)
 const routeApi = getRouteApi('/_authenticated/programas/')
 
 function LogoPlaceholder(): ReactNode {
   return (
+    <span className={logoPlaceholder} aria-hidden="true">
+      <svg
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <rect x="3" y="3" width="18" height="18" rx="2" />
+        <circle cx="8.5" cy="8.5" r="1.5" />
+        <path d="m21 15-5-5L5 21" />
+      </svg>
+    </span>
+  )
+}
+
+// Célula do logo: imagem real (data URL) quando o programa tem logo; senão o placeholder.
+function LogoCell({ url, name }: Readonly<{ url: string | null; name: string }>): ReactNode {
+  return (
     <span className={logoCell}>
-      <span className={logoPlaceholder} aria-hidden="true">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <circle cx="8.5" cy="8.5" r="1.5" />
-          <path d="m21 15-5-5L5 21" />
-        </svg>
-      </span>
+      {url !== null ? <img className={logoImg} src={url} alt={name} /> : <LogoPlaceholder />}
     </span>
   )
 }
@@ -31,13 +56,21 @@ function LogoPlaceholder(): ReactNode {
 export function ProgramsListPage(): ReactNode {
   const search = routeApi.useSearch()
   const navigate = useNavigate()
-  const { state } = useProgramsListBinding(search)
+  const { state, logos } = useProgramsListBinding(search)
 
   const hasFilters = (search.search ?? '') !== ''
 
   const columns: readonly Column<ProgramRow>[] = [
-    { key: 'logo', header: t('programs.list.columns.logo'), cell: () => <LogoPlaceholder /> },
-    { key: 'name', header: t('programs.list.columns.name'), cell: (r) => <AvatarLabel variant="neutral" initials={initialsFrom(r.name)} text={r.name} /> },
+    {
+      key: 'logo',
+      header: t('programs.list.columns.logo'),
+      cell: (r) => <LogoCell url={logos.get(r.id) ?? null} name={r.name} />,
+    },
+    {
+      key: 'name',
+      header: t('programs.list.columns.name'),
+      cell: (r) => <AvatarLabel variant="neutral" initials={initialsFrom(r.name)} text={r.name} />,
+    },
     { key: 'sigla', header: t('programs.list.columns.sigla'), cell: (r) => r.sigla },
     {
       key: 'characteristics',
@@ -74,7 +107,11 @@ export function ProgramsListPage(): ReactNode {
         searchValue={search.search ?? ''}
         searchLabel={t('programs.list.search')}
         onSearch={(value) =>
-          void navigate({ to: '.', replace: true, search: (p) => ({ ...p, search: value || undefined, page: 1 }) })
+          void navigate({
+            to: '.',
+            replace: true,
+            search: (p) => ({ ...p, search: value || undefined, page: 1 }),
+          })
         }
       />
 
@@ -100,7 +137,9 @@ export function ProgramsListPage(): ReactNode {
         }}
         onPrev={() => void navigate({ to: '.', search: (p) => ({ ...p, page: Math.max(1, pageNum - 1) }) })}
         onNext={() => void navigate({ to: '.', search: (p) => ({ ...p, page: pageNum + 1 }) })}
-        onPerPage={(perPage) => void navigate({ to: '.', search: (p) => ({ ...p, limit: perPage, page: 1 }) })}
+        onPerPage={(perPage) =>
+          void navigate({ to: '.', search: (p) => ({ ...p, limit: perPage, page: 1 }) })
+        }
       />
     </div>
   )
