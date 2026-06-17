@@ -4,7 +4,7 @@
 
 **Created**: 2026-06-17
 
-**Status**: Implemented (validação manual em tela pendente — T026)
+**Status**: Implemented (validação manual da máscara em tela ✓; save/DV coberto por testes automatizados)
 
 **Input**: Adequar o frontend ao novo formato de CNPJ alfanumérico já suportado pelo core-api (PR #96 / ADR-0044). Hoje o front assume "14 dígitos numéricos" em máscara, validação de formato, normalização e exibição; a partir de 07/2026 um CNPJ válido com letras seria mutilado ou rejeitado.
 
