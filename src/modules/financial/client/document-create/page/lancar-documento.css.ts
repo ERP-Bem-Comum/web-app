@@ -869,13 +869,22 @@ export const contratoPill = style({
   alignItems: 'center',
   gap: vars.space.sm,
   paddingBlock: vars.space.xs,
-  paddingInline: vars.space.md,
+  paddingInline: '0.75rem', // 12px (Figma)
   borderRadius: '1.5rem', // pill (sem token de pill no DS)
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   background: vars.color.institutional.paperWarm,
-  fontFamily: vars.font.family.heading,
+  fontFamily: vars.font.family.body, // Nunito (brand) — texto do pill (ex.: "Sem contrato vinculado")
   fontSize: vars.font.size.xs,
   color: vars.color.text.muted,
+})
+// Rótulo "CONTRATO" — overline pequeno maiúsculo (Figma Label/Field 9.5px, tracking largo).
+export const contratoLabel = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.ink5,
+  textTransform: 'uppercase',
+  letterSpacing: '0.1em',
 })
 export const contratoLink = style({
   paddingInlineStart: vars.space.sm,

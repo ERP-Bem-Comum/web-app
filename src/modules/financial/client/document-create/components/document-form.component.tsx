@@ -54,6 +54,7 @@ import {
   sectionHead,
   sectionHeadTitle,
   contratoPill,
+  contratoLabel,
   contratoLink,
   contratoNum,
   contratoStatus,
@@ -405,7 +406,7 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
           <span className={contratoPill}>
             {contract !== null ? (
               <>
-                {t('financial.create.categorizacao.contrato')}{' '}
+                <span className={contratoLabel}>{t('financial.create.categorizacao.contrato')}</span>{' '}
                 <span className={contratoNum}>{contract.number}</span>
                 <span className={contratoStatus}>
                   <span className={contratoDot} aria-hidden="true" />
