@@ -77,6 +77,16 @@ describe('DocumentForm', () => {
     expect(screen.queryByLabelText('ISS')).toBe(null)
   })
 
+  it('DANFE mostra o campo Chave de acesso (chrome) e os demais tipos não', () => {
+    const { unmount } = render(<DocumentForm {...baseProps({ fields: fields({ type: 'DANFE' }) })} />)
+    const chave = screen.getByLabelText(tr('financial.create.field.accessKey'))
+    expect(chave).toBeTruthy()
+    expect((chave as HTMLInputElement).disabled).toBe(true) // chrome até core-api#115
+    unmount()
+    render(<DocumentForm {...baseProps({ fields: fields({ type: 'NFS-e' }) })} />)
+    expect(screen.queryByLabelText(tr('financial.create.field.accessKey'))).toBe(null)
+  })
+
   it('mostra a Reforma Tributária (CBS/IBS) para NFS-e e oculta para Boleto', () => {
     const { unmount } = render(<DocumentForm {...baseProps({ fields: fields({ type: 'NFS-e' }) })} />)
     expect(screen.getByText(tr('financial.create.reformaTributaria.label'))).toBeTruthy()

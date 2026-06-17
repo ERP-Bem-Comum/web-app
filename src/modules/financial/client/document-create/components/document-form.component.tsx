@@ -254,6 +254,26 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             />
           </div>
         </div>
+        {/* Chave de acesso — só DANFE. Chrome honesto: o create do core-api ainda não aceita o campo
+            (core-api#115) → desabilitado, não enviado. */}
+        {fields.type === 'DANFE' ? (
+          <div className={fieldGrid.wide}>
+            <div className={field}>
+              <label className={fieldLabel} htmlFor="fin-chave">
+                {t('financial.create.field.accessKey')}
+              </label>
+              <input
+                id="fin-chave"
+                className={controlDisabled}
+                disabled
+                inputMode="numeric"
+                placeholder="0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000"
+                aria-label={t('financial.create.field.accessKey')}
+              />
+              <span className={retentionsHint}>{t('financial.create.accessKey.hint')}</span>
+            </div>
+          </div>
+        ) : null}
         <div className={fieldGrid.wide}>
           <div className={field}>
             <label className={fieldLabel} htmlFor="fin-desc">
