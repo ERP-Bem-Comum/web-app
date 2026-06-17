@@ -16,6 +16,7 @@ import {
   buildCreateInput,
   buildDraftInput,
   buildRegisteredTaxInputs,
+  retentionRatePct,
   DOCUMENT_TYPE_META,
   fiscalClassTag,
   docTypeDescriptionTag,
@@ -165,6 +166,18 @@ describe('buildRegisteredTaxInputs / buildCreateInput envia registeredTaxes', ()
   })
   it('tipo sem reforma tributária (Boleto): registeredTaxes vazio', () => {
     assert.equal(buildRegisteredTaxInputs({ ...comReforma, type: 'Boleto' }).length, 0)
+  })
+})
+
+describe('retentionRatePct (alíquota derivada na Composição)', () => {
+  it('valor ÷ bruto formatado em % pt-BR', () => {
+    assert.equal(retentionRatePct(base, 'iss'), '3,5%') // 350 / 10.000
+    assert.equal(retentionRatePct(base, 'inss'), '11%') // 1.100 / 10.000
+    assert.equal(retentionRatePct(base, 'pis'), '0,65%') // 65 / 10.000
+  })
+  it("'' quando bruto ou valor ≤ 0", () => {
+    assert.equal(retentionRatePct({ ...base, grossValue: '' }, 'iss'), '')
+    assert.equal(retentionRatePct({ ...base, retentions: { ...base.retentions, iss: '' } }, 'iss'), '')
   })
 })
 

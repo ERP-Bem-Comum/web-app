@@ -661,7 +661,7 @@ export const childKind = style({
 export const childDest = style({
   flex: 1,
   minInlineSize: 0,
-  fontFamily: vars.font.family.heading,
+  fontFamily: vars.font.family.body, // Nunito (brand — destino é prose; padrão Contratos)
   fontSize: vars.font.size.xs,
   color: vars.color.institutional.ink3,
   overflow: 'hidden',
@@ -718,7 +718,7 @@ const validationItemBase = {
   paddingBlock: vars.space.sm,
   paddingInline: '0.625rem', // 10px
   borderRadius: vars.radius.md,
-  fontFamily: vars.font.family.heading,
+  fontFamily: vars.font.family.body, // Nunito (brand — prose da validação; padrão Contratos)
   fontSize: vars.font.size.xs,
   lineHeight: 1.45,
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,

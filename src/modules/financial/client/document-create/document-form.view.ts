@@ -163,6 +163,17 @@ const grossCents = (fields: DocumentFormFields): number => toCents(fields.grossV
 export const netPreviewCents = (fields: DocumentFormFields): string =>
   String(grossCents(fields) - retentionTotals(fields).sum)
 
+/**
+ * Alíquota % DERIVADA de uma retenção (valor ÷ bruto), p/ exibir ao lado do rótulo na Composição
+ * (Figma: "ISS (3,5%)"). `''` quando não computável (bruto ou valor ≤ 0). Formata em pt-BR.
+ */
+export const retentionRatePct = (fields: DocumentFormFields, key: keyof RetentionFieldsReais): string => {
+  const gross = grossCents(fields)
+  const value = toCents(fields.retentions[key])
+  if (gross <= 0 || value <= 0) return ''
+  return new Intl.NumberFormat('pt-BR', { style: 'percent', maximumFractionDigits: 2 }).format(value / gross)
+}
+
 /** Títulos previstos: pai (líquido) + 1 filho por retenção (ISS/IRRF/INSS/CSRF), só os > 0. */
 export const titulosPrevistos = (fields: DocumentFormFields): readonly TituloPreview[] => {
   const t = retentionTotals(fields)

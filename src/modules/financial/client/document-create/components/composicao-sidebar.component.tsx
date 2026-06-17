@@ -11,6 +11,7 @@ import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import {
   netPreviewCents,
   retentionsEnabledFor,
+  retentionRatePct,
   titulosPrevistos,
   tituloDestino,
   validationChecklist,
@@ -77,12 +78,16 @@ export function ComposicaoSidebar(props: ComposicaoSidebarProps): ReactNode {
         {retEnabled ? (
           <>
             <div className={compSep} />
-            {RETENTION_KEYS.map((key) => (
-              <div className={compRow} key={key}>
-                <span>{t(`financial.create.retention.${key}`)}</span>
-                <span className={compVal}>− {formatReaisBRL(fields.retentions[key])}</span>
-              </div>
-            ))}
+            {RETENTION_KEYS.map((key) => {
+              const pct = retentionRatePct(fields, key)
+              const label = t(`financial.create.retention.${key}`)
+              return (
+                <div className={compRow} key={key}>
+                  <span>{pct !== '' ? `${label} (${pct})` : label}</span>
+                  <span className={compVal}>− {formatReaisBRL(fields.retentions[key])}</span>
+                </div>
+              )
+            })}
           </>
         ) : null}
         <div className={compSep} />
