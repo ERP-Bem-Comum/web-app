@@ -100,7 +100,7 @@ services:
         code=$$(curl -s -o /dev/null -w '%{http_code}' -X POST \
           http://core-api:3000/api/v2/auth/register \
           -H 'content-type: application/json' \
-          -d '{"email":"'"$${SEED_EMAIL:-admin@bemcomum.dev}"'","password":"'"$${SEED_PASSWORD:-DevPassw0rd!2024}"'"}');
+          -d '{"email":"'"$${SEED_EMAIL:-admin@bemcomum.dev}"'","password":"'"$${SEED_PASSWORD:-DevPassw0rd!2027}"'"}');
         echo "register → HTTP $$code";
         case "$$code" in
           201) echo "seed: usuário criado." ;;
@@ -109,7 +109,7 @@ services:
         esac
     environment:
       SEED_EMAIL: ${SEED_EMAIL:-admin@bemcomum.dev}
-      SEED_PASSWORD: ${SEED_PASSWORD:-DevPassw0rd!2024}
+      SEED_PASSWORD: ${SEED_PASSWORD:-DevPassw0rd!2027}
     restart: 'no'
     networks:
       - bemcomum

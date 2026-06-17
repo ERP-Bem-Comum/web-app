@@ -10,11 +10,11 @@
 export const USERS = {
   valid: {
     email: process.env['E2E_VALID_EMAIL'] ?? 'admin@bemcomum.dev',
-    password: process.env['E2E_VALID_PASSWORD'] ?? 'DevPassw0rd!2024',
+    password: process.env['E2E_VALID_PASSWORD'] ?? 'DevPassw0rd!2027',
   },
   disabled: {
     email: process.env['E2E_DISABLED_EMAIL'] ?? 'disabled@e2e.local',
-    password: process.env['E2E_DISABLED_PASSWORD'] ?? 'DevPassw0rd!2024',
+    password: process.env['E2E_DISABLED_PASSWORD'] ?? 'DevPassw0rd!2027',
   },
   /** Não existe no backend — para o caso de anti-enumeração (mesmo erro que senha errada). */
   unknown: {
