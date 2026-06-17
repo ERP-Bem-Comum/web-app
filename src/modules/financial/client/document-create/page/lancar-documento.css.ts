@@ -1147,6 +1147,11 @@ export const typeAvatar = styleVariants({
     { background: vars.color.institutional.paperBeige, color: vars.color.institutional.ink3 },
   ],
 })
+// Avatar dos cards do modal de Forma de Pagamento — azul da marca (sigla do método).
+export const methodAvatar = style([
+  typeAvatarBase,
+  { background: vars.color.brand.normal, color: vars.color.brand.onBrand },
+])
 export const typeCardMain = style({
   display: 'flex',
   flexDirection: 'column',

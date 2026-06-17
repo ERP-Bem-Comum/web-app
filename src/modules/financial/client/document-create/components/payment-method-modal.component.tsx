@@ -25,7 +25,7 @@ import {
   typeGrid,
   typeCard,
   typeCardSelected,
-  typeAvatar,
+  methodAvatar,
   typeCardMain,
   typeName,
   typeDesc,
@@ -84,7 +84,7 @@ export function PaymentMethodModal(props: PaymentMethodModalProps): ReactNode {
                   props.onSelect(m.method)
                 }}
               >
-                <span className={typeAvatar['non-fiscal']} aria-hidden="true">
+                <span className={methodAvatar} aria-hidden="true">
                   {m.initials}
                 </span>
                 <span className={typeCardMain}>

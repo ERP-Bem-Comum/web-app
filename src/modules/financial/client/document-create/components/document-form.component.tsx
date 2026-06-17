@@ -443,6 +443,39 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             </div>
           </div>
         ) : null}
+        {paymentComplementaryOf(fields.paymentMethod) === 'currency' ? (
+          <div className={fieldGrid.wide}>
+            <div className={field}>
+              <label className={fieldLabel} htmlFor="fin-currency">
+                {t('financial.create.payMethod.currencyLabel')}
+              </label>
+              <input
+                id="fin-currency"
+                className={controlDisabled}
+                disabled
+                placeholder="USD · 5,00 · R$ 0,00"
+                aria-label={t('financial.create.payMethod.currencyLabel')}
+              />
+              <span className={retentionsHint}>{t('financial.create.payMethod.currencyHint')}</span>
+            </div>
+          </div>
+        ) : null}
+        {paymentComplementaryOf(fields.paymentMethod) === 'free' ? (
+          <div className={fieldGrid.wide}>
+            <div className={field}>
+              <label className={fieldLabel} htmlFor="fin-free">
+                {t('financial.create.payMethod.freeLabel')}
+              </label>
+              <input
+                id="fin-free"
+                className={controlDisabled}
+                disabled
+                aria-label={t('financial.create.payMethod.freeLabel')}
+              />
+              <span className={retentionsHint}>{t('financial.create.payMethod.freeHint')}</span>
+            </div>
+          </div>
+        ) : null}
       </section>
 
       {/* ── S4 Categorização — auto-preenchida do contrato "Em Andamento" (quando houver) ── */}

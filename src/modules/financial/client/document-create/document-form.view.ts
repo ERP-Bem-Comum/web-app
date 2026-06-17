@@ -522,7 +522,7 @@ export const docTypeDescriptionTag = (type: DocumentType): string => `financial.
 // ── Metadata da Forma de Pagamento (modal + campos complementares) ───────────────
 // A forma escolhida controla o CAMPO COMPLEMENTAR exibido (mock): pix/bank usam a conta herdada do
 // fornecedor (card já existente); boleto pede linha digitável; cartão mostra o cartão corporativo.
-export type PaymentComplementary = 'pix' | 'boleto' | 'card' | 'bank' | 'none'
+export type PaymentComplementary = 'pix' | 'boleto' | 'card' | 'bank' | 'currency' | 'free' | 'none'
 
 const PAYMENT_COMPLEMENTARY: Record<PaymentMethod, PaymentComplementary> = {
   PIX: 'pix',
@@ -530,9 +530,9 @@ const PAYMENT_COMPLEMENTARY: Record<PaymentMethod, PaymentComplementary> = {
   TED: 'bank',
   TransferenciaBancaria: 'bank',
   CartaoCorporativo: 'card',
-  Cambio: 'bank',
+  Cambio: 'currency', // câmbio → moeda/detalhe da conversão
   GuiaRecolhimento: 'none',
-  Outro: 'none',
+  Outro: 'free', // outro → texto livre (especificar)
 }
 const PAYMENT_INITIALS: Record<PaymentMethod, string> = {
   PIX: 'PIX',

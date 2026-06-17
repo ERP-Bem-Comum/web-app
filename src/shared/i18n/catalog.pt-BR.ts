@@ -1084,6 +1084,11 @@ export const ptBR: Catalog = {
     'Será preenchida via OCR ou manual — aguardando backend (core-api#89).',
   'financial.create.payMethod.cardLabel': 'Cartão corporativo',
   'financial.create.payMethod.cardHint': 'Cartão da empresa — aguardando backend (core-api#89).',
+  'financial.create.payMethod.freeLabel': 'Especifique a forma de pagamento',
+  'financial.create.payMethod.freeHint': 'Cheque, dinheiro, compensação… — aguardando backend (core-api#89).',
+  'financial.create.payMethod.currencyLabel': 'Moeda / detalhes do câmbio',
+  'financial.create.payMethod.currencyHint':
+    'Moeda estrangeira e cotação da conversão — aguardando backend (core-api#89).',
   'financial.create.pagamento.contaFornecedor': 'Conta do fornecedor',
   'financial.create.pagamento.contaFornecedorHint': 'Conforme dados bancários do fornecedor',
   'financial.create.pagamento.aprovador': 'Aprovador',
