@@ -14,8 +14,7 @@ export type OccupationArea = (typeof OCCUPATION_AREAS)[number]
 export const PIX_KEY_TYPES = ['cpf', 'cnpj', 'email', 'phone', 'random-key'] as const
 export type PixKeyType = (typeof PIX_KEY_TYPES)[number]
 
-export const isPixKeyType = (v: string): v is PixKeyType =>
-  (PIX_KEY_TYPES as readonly string[]).includes(v)
+export const isPixKeyType = (v: string): v is PixKeyType => (PIX_KEY_TYPES as readonly string[]).includes(v)
 
 export type BankAccount = Readonly<{
   bank: string
@@ -36,6 +35,7 @@ export type ActListItem = Readonly<{
   occupationArea: string // tolerante a valores legados fora do enum (a UI mapeia p/ label quando casa)
   hasFinancialTransfer: boolean
   active: boolean
+  contractCount: number
 }>
 
 export type ActDetail = ActListItem &

@@ -23,6 +23,7 @@ export function mapItemToRow(item: SupplierListItem): SupplierRow {
     email: item.email,
     serviceCategory: item.serviceCategory,
     activation: item.activation,
+    contractCount: item.contractCount,
   }
 }
 

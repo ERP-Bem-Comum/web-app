@@ -18,6 +18,7 @@ const item: ActListItem = {
   occupationArea: 'PARC',
   hasFinancialTransfer: false,
   active: true,
+  contractCount: 0,
 }
 
 describe('act-list.view-model', () => {

@@ -51,7 +51,12 @@ describe('core-api-acts toWriteBody', () => {
       pixKey: { keyType: 'email', key: 'pix@org.dev' },
     })
     assert.equal(body.hasFinancialTransfer, true)
-    assert.deepEqual(body.bankAccount, { bank: '001', agency: '1234', accountNumber: '5678', checkDigit: '9' })
+    assert.deepEqual(body.bankAccount, {
+      bank: '001',
+      agency: '1234',
+      accountNumber: '5678',
+      checkDigit: '9',
+    })
     assert.deepEqual(body.pixKey, { keyType: 'email', key: 'pix@org.dev' })
   })
 })
@@ -73,6 +78,7 @@ const rawDetail = {
   bankAccount: { bank: '001', agency: '1234', accountNumber: '5678', checkDigit: '9' },
   pixKey: { keyType: 'email' as const, key: 'pix@org.dev' },
   active: true,
+  contractCount: 0,
   createdAt: '2026-01-01T00:00:00Z',
   updatedAt: '2026-01-02T00:00:00Z',
 }
@@ -95,7 +101,14 @@ describe('core-api-acts detailToModel / itemToModel', () => {
   })
 
   it('detailToModel tolera legacyId nulo e occupationArea legada', () => {
-    const r = detailToModel({ ...rawDetail, legacyId: null, occupationArea: 'LEGADO', bankAccount: null, pixKey: null, hasFinancialTransfer: false })
+    const r = detailToModel({
+      ...rawDetail,
+      legacyId: null,
+      occupationArea: 'LEGADO',
+      bankAccount: null,
+      pixKey: null,
+      hasFinancialTransfer: false,
+    })
     assert.ok(isOk(r))
     assert.equal(r.value.legacyId, null)
     assert.equal(r.value.occupationArea, 'LEGADO')
