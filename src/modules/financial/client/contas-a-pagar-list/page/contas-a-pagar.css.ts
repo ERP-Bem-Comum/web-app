@@ -760,6 +760,51 @@ export const paymentMethodName = style({
   fontWeight: vars.font.weight.semibold,
   color: vars.color.institutional.ink2,
 })
+
+// Card do arquivo (Figma FileCard) — placeholder/empty-state honesto: o upload do PDF depende do backend
+// (core-api#95). Ícone PDF esmaecido + texto "sem arquivo"; sem botão VER até existir o arquivo.
+export const dwFileCard = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.md,
+  inlineSize: '100%',
+  padding: vars.space.md,
+  borderRadius: vars.radius.lg,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  background: vars.color.institutional.paperWarm,
+})
+export const dwFileIcon = style({
+  flexShrink: 0,
+  inlineSize: '2.25rem',
+  blockSize: '2.25rem',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  borderRadius: vars.radius.md,
+  background: vars.color.institutional.paperBeige,
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.bold,
+  letterSpacing: '0.06em',
+  color: vars.color.institutional.ink5,
+})
+export const dwFileInfo = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.0625rem',
+  minInlineSize: 0,
+})
+export const dwFileName = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.xs,
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.ink4,
+})
+export const dwFileMeta = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size['2xs'],
+  color: vars.color.institutional.ink5,
+})
 // ── Impressão (PDF via window.print): esconde o cromo, imprime só o grid ──
 globalStyle(`${filterBar}, ${bottombar}`, { '@media': { print: { display: 'none !important' } } })
 globalStyle(screen, { '@media': { print: { paddingBlockEnd: '0 !important' } } })

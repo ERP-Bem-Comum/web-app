@@ -19,6 +19,11 @@ import {
   detailValueMono,
   paymentCard,
   paymentMethodName,
+  dwFileCard,
+  dwFileIcon,
+  dwFileInfo,
+  dwFileName,
+  dwFileMeta,
   drawerOverlay,
   drawerPanel,
   drawerHeader,
@@ -108,18 +113,29 @@ export function DocumentDetailDrawer({ view, onClose }: DocumentDetailDrawerProp
         </header>
 
         <div className={drawerBody}>
-          {/* Identificação */}
+          {/* Documento */}
           <section className={dwSection}>
             <SectionLabel label={t('financial.detail.label.documento')} />
+            {/* FileCard (PDF) — placeholder até o backend expor o arquivo do documento (core-api#95). */}
+            <div className={dwFileCard}>
+              <span className={dwFileIcon} aria-hidden="true">
+                PDF
+              </span>
+              <span className={dwFileInfo}>
+                <span className={dwFileName}>{t('financial.detail.file.empty')}</span>
+                <span className={dwFileMeta}>{t('financial.detail.file.soon')}</span>
+              </span>
+            </div>
             <div className={detailGrid}>
               <Field label={t('financial.detail.label.tipo')} value={view.type} />
               <Field label={t('financial.detail.label.numero')} value={view.documentNumber} mono />
+              <Field label={t('financial.detail.label.emissao')} value={view.emissao} mono />
               <Field label={t('financial.detail.label.vencimento')} value={view.due} mono />
-              <Field
-                label={t('financial.detail.label.fornecedor')}
-                value={view.supplierDoc !== null ? `${view.supplier} · ${view.supplierDoc}` : view.supplier}
-              />
             </div>
+            <Field
+              label={t('financial.detail.label.fornecedor')}
+              value={view.supplierDoc !== null ? `${view.supplier} · ${view.supplierDoc}` : view.supplier}
+            />
             <span className={detailField}>
               <span className={detailLabel}>{t('financial.detail.label.status')}</span>
               <span>
@@ -169,7 +185,21 @@ export function DocumentDetailDrawer({ view, onClose }: DocumentDetailDrawerProp
             </section>
           ) : null}
 
-          {/* Forma de Pagamento (método; dados bancários dependem de enriquecer o detalhe) */}
+          {/* Plano Orçamentário — categorização/contrato GATED (detalhe não expõe; placeholders, core-api#95). */}
+          <section className={dwSection}>
+            <SectionLabel label={t('financial.detail.section.plano')} />
+            <div className={paymentCard}>
+              <div className={detailGrid}>
+                <Field label={t('financial.detail.label.centroCusto')} value="—" />
+                <Field label={t('financial.detail.label.categoria')} value="—" />
+                <Field label={t('financial.detail.label.subcategoria')} value="—" />
+                <Field label={t('financial.detail.label.programa')} value="—" />
+              </div>
+              <Field label={t('financial.detail.label.planoOrcamentario')} value="—" />
+            </div>
+          </section>
+
+          {/* Forma de Pagamento — método (real) + dados bancários GATED (placeholders, core-api#95). */}
           {view.paymentMethod !== null ? (
             <section className={dwSection}>
               <SectionLabel label={t('financial.detail.section.pagamento')} />
@@ -177,6 +207,12 @@ export function DocumentDetailDrawer({ view, onClose }: DocumentDetailDrawerProp
                 <span className={paymentMethodName}>
                   {t(`financial.paymentMethod.${view.paymentMethod}`)}
                 </span>
+                <div className={detailGrid}>
+                  <Field label={t('financial.detail.label.tipoChave')} value="—" />
+                  <Field label={t('financial.detail.label.chave')} value="—" mono />
+                  <Field label={t('financial.detail.label.banco')} value="—" />
+                  <Field label={t('financial.detail.label.favorecido')} value="—" />
+                </div>
               </div>
             </section>
           ) : null}

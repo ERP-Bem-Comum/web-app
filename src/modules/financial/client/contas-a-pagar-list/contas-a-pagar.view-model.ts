@@ -222,6 +222,7 @@ export type DocumentDetailView = Readonly<{
   status: DocumentStatus
   supplier: string
   supplierDoc: string | null // CNPJ mascarado do favorecido (sublinha do Fornecedor no drawer)
+  emissao: string // GATED — placeholder "—" até o detalhe expor a emissão (core-api#95)
   due: string
   gross: string
   net: string
@@ -243,6 +244,7 @@ export const mapDocumentDetail = (
   status: d.status,
   supplier: resolveSupplier(d.supplierRef),
   supplierDoc: maskCnpj(resolveDoc?.(d.supplierRef) ?? null),
+  emissao: DASH, // GATED: emissão não vem no detalhe ainda (core-api#95)
   due: d.dueDate !== null && d.dueDate !== '' ? formatDue(d.dueDate) : DASH,
   gross: d.grossValueCents !== null && d.grossValueCents !== '' ? centsToBRL(d.grossValueCents) : DASH,
   net: d.netValueCents !== null && d.netValueCents !== '' ? centsToBRL(d.netValueCents) : DASH,
