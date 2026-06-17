@@ -10,6 +10,9 @@ export type ActivationStatus = 'active' | 'inactive'
 export type OccupationArea = 'PARC' | 'DDI' | 'DCE' | 'EPV'
 export type EmploymentRelationship = 'CLT' | 'PJ'
 
+// Território (#42) — UF (sigla IBGE) + município (texto livre). Ambos opcionais. Type-alias puro.
+export type Territory = Readonly<{ uf: string | null; municipality: string | null }>
+
 // Valores REAIS do enum `disableBy` do core-api (códigos legados). A UI mapeia para labels via i18n.
 export type DeactivationReason =
   | 'DESLIGAMENTO_ABC'

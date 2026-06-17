@@ -5,6 +5,7 @@
  * version. (Só `Emissão` segue gated — depende do detalhe, core-api#95.) Money via `data/money`.
  */
 import type { Result } from '#shared/primitives/result.ts'
+import { normalizeCnpj, maskCnpj as maskCnpjDoc, maskCpf as maskCpfDoc } from '#shared/document/cnpj.ts'
 import { centsToBRL } from '#modules/financial/client/data/money.ts'
 import { financialErrorTag } from '#modules/financial/client/data/helpers/financial-error-tag.ts'
 import type { FinancialError } from '#modules/financial/client/data/repository/financial-error.ts'
@@ -53,13 +54,13 @@ export type GridRow = Readonly<{
   status: DocumentStatus
 }>
 
-/** Mascara CNPJ (14 díg.) / CPF (11) p/ exibição; devolve null se vazio, ou o original se tamanho ≠. */
+/** Mascara CNPJ (14 alfanum. Serpro/2026) / CPF (11) p/ exibição; null se vazio, ou o original se tamanho ≠. */
 export const maskCnpj = (doc: string | null): string | null => {
   if (doc === null) return null
-  const digits = doc.replace(/\D/g, '')
-  if (digits === '') return null
-  if (digits.length === 14) return digits.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
-  if (digits.length === 11) return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
+  const normalized = normalizeCnpj(doc)
+  if (normalized === '') return null
+  if (normalized.length === 14) return maskCnpjDoc(doc)
+  if (normalized.length === 11) return maskCpfDoc(doc)
   return doc
 }
 

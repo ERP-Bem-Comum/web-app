@@ -9,6 +9,7 @@ import {
   programaShort,
 } from '#modules/contracts/client/domain/status.ts'
 import { formatContractNumber, formatCurrency, formatDate } from '#modules/contracts/client/domain/format.ts'
+import { normalizeCnpj, maskCnpj, maskCpf } from '#shared/document/cnpj.ts'
 import type { ContractRow, ContractStatus, ContractType } from '#modules/contracts/client/domain/types.ts'
 import type {
   Contract as ContractModel,
@@ -20,9 +21,9 @@ import { contractListQueryOptions } from './contract-list.query.ts'
 
 const mapDocumentToCnpjCpf = (document: string | undefined): { cnpj?: string; cpf?: string } => {
   if (!document) return {}
-  const digits = document.replace(/\D/g, '')
-  if (digits.length === 14) return { cnpj: document }
-  if (digits.length === 11) return { cpf: document }
+  const len = normalizeCnpj(document).length // CNPJ=14 (alfanumérico Serpro/2026), CPF=11 numérico
+  if (len === 14) return { cnpj: document }
+  if (len === 11) return { cpf: document }
   return {}
 }
 
@@ -107,7 +108,9 @@ export function mapModelToContractRow(model: ContractModel): ContractRow {
     financier: mapPartnerToContractor(model.financier),
     collaborator: mapPartnerToContractor(model.collaborator),
     act: mapPartnerToContractor(model.act),
-    program: model.program ? { id: model.program.id, name: model.program.name, sigla: model.program.sigla } : undefined,
+    program: model.program
+      ? { id: model.program.id, name: model.program.name, sigla: model.program.sigla }
+      : undefined,
     budgetPlan: model.budgetPlan
       ? {
           id: model.budgetPlan.id,
@@ -162,11 +165,11 @@ export function getContractorFromRow(row: ContractRow): ContractRow['supplier'] 
   }
 }
 
-// Máscara de documento (CPF 11 / CNPJ 14 dígitos) p/ exibição em documentos.
+// Máscara de documento (CPF 11 / CNPJ 14 alfanumérico Serpro/2026) p/ exibição em documentos.
 const maskDocForDoc = (raw: string): string => {
-  const d = raw.replace(/\D/g, '')
-  if (d.length === 11) return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
-  if (d.length === 14) return d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
+  const len = normalizeCnpj(raw).length
+  if (len === 11) return maskCpf(raw)
+  if (len === 14) return maskCnpj(raw)
   return raw
 }
 
@@ -217,9 +220,7 @@ export interface StatusChipCounts {
   readonly [key: string]: number
 }
 
-export function computeStatusChipCounts(
-  contracts: readonly ContractRow[],
-): StatusChipCounts {
+export function computeStatusChipCounts(contracts: readonly ContractRow[]): StatusChipCounts {
   const counts: Record<string, number> = {
     todos: contracts.length,
     'em-andamento': 0,

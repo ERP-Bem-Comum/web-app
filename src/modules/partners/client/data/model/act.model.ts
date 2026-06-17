@@ -6,6 +6,8 @@
  */
 import * as z from 'zod'
 
+import { normalizeCnpj, isValidCnpjFormat } from '#shared/document/cnpj.ts'
+
 export const OCCUPATION_AREAS = ['PARC', 'DDI', 'DCE', 'EPV'] as const
 export type OccupationArea = (typeof OCCUPATION_AREAS)[number]
 
@@ -14,8 +16,7 @@ export type OccupationArea = (typeof OCCUPATION_AREAS)[number]
 export const PIX_KEY_TYPES = ['cpf', 'cnpj', 'email', 'phone', 'random-key'] as const
 export type PixKeyType = (typeof PIX_KEY_TYPES)[number]
 
-export const isPixKeyType = (v: string): v is PixKeyType =>
-  (PIX_KEY_TYPES as readonly string[]).includes(v)
+export const isPixKeyType = (v: string): v is PixKeyType => (PIX_KEY_TYPES as readonly string[]).includes(v)
 
 export type BankAccount = Readonly<{
   bank: string
@@ -36,6 +37,7 @@ export type ActListItem = Readonly<{
   occupationArea: string // tolerante a valores legados fora do enum (a UI mapeia p/ label quando casa)
   hasFinancialTransfer: boolean
   active: boolean
+  contractCount: number
 }>
 
 export type ActDetail = ActListItem &
@@ -84,14 +86,12 @@ export type ActWriteInput = Readonly<{
 }>
 
 // ── Schema do formulário (validação na borda do cliente) ──
-const onlyDigits = (raw: string): string => raw.replace(/\D/g, '')
-
-/** CNPJ: aceita com/sem máscara; normaliza para 14 dígitos (o server fn aceita 14–18). */
+/** CNPJ (Serpro/2026): aceita com/sem máscara; normaliza p/ 14 alfanuméricos maiúsculos e valida formato. */
 export const CnpjFieldSchema = z
   .string()
   .trim()
-  .transform(onlyDigits)
-  .refine((d) => d.length === 14, { error: 'cnpj-invalid' })
+  .transform(normalizeCnpj)
+  .refine(isValidCnpjFormat, { error: 'cnpj-invalid' })
 
 export const BankAccountFormSchema = z.object({
   bank: z.string().trim().min(1).max(20),

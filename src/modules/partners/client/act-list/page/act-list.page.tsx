@@ -3,7 +3,16 @@ import { getRouteApi, useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { Badge, Button, DataTable, PageHeader, AvatarLabel, initialsFrom, type Column, type DataTableState } from '#shared/ui/index.ts'
+import {
+  Badge,
+  Button,
+  DataTable,
+  PageHeader,
+  AvatarLabel,
+  initialsFrom,
+  type Column,
+  type DataTableState,
+} from '#shared/ui/index.ts'
 
 import { useActListBinding } from '../act-list.binding.ts'
 import {
@@ -41,8 +50,13 @@ export function ActListPage(): ReactNode {
 
   useEffect(() => {
     if (!printing) return
-    const id = setTimeout(() => { window.print(); setPrinting(false) }, 0)
-    return () => { clearTimeout(id) }
+    const id = setTimeout(() => {
+      window.print()
+      setPrinting(false)
+    }, 0)
+    return () => {
+      clearTimeout(id)
+    }
   }, [printing])
 
   const hasFilters =
@@ -58,10 +72,30 @@ export function ActListPage(): ReactNode {
 
   const columns: readonly Column<ActRow>[] = [
     { key: 'number', header: t('partners.acts.columns.actNumber'), cell: (r) => r.actNumber },
-    { key: 'partner', header: t('partners.acts.columns.partner'), cell: (r) => <AvatarLabel variant="act" initials={initialsFrom(r.corporateName)} text={r.corporateName} /> },
+    {
+      key: 'partner',
+      header: t('partners.acts.columns.partner'),
+      cell: (r) => (
+        <AvatarLabel variant="act" initials={initialsFrom(r.corporateName)} text={r.corporateName} />
+      ),
+    },
     { key: 'title', header: t('partners.acts.columns.objectTitle'), cell: (r) => r.name },
-    { key: 'area', header: t('partners.acts.columns.occupationArea'), cell: (r) => areaLabel(r.occupationArea) },
-    { key: 'transfer', header: t('partners.acts.columns.hasFinancialTransfer'), cell: (r) => transferLabel(r.hasFinancialTransfer) },
+    {
+      key: 'area',
+      header: t('partners.acts.columns.occupationArea'),
+      cell: (r) => areaLabel(r.occupationArea),
+    },
+    {
+      key: 'transfer',
+      header: t('partners.acts.columns.hasFinancialTransfer'),
+      cell: (r) => transferLabel(r.hasFinancialTransfer),
+    },
+    {
+      // Contratos/Aditivos: contagem de contratos ativos vinda do item da lista (#46).
+      key: 'contracts',
+      header: t('partners.acts.columns.contracts'),
+      cell: (r) => String(r.contractCount),
+    },
     {
       key: 'status',
       header: t('partners.acts.columns.status'),
@@ -98,110 +132,140 @@ export function ActListPage(): ReactNode {
   return (
     <div className={screen}>
       <div className={printing ? contentWrapPrintHidden : contentWrap}>
-      <PageHeader
-        title={t('partners.acts.list.title')}
-        subtitle={t('partners.acts.list.subtitle')}
-        actions={
-          canCreate ? (
-            <Button onClick={() => void navigate({ to: '/parceiros/atos/criar' })}>
-              {t('partners.acts.list.new')}
-            </Button>
-          ) : undefined
-        }
-      />
+        <PageHeader
+          title={t('partners.acts.list.title')}
+          subtitle={t('partners.acts.list.subtitle')}
+          actions={
+            canCreate ? (
+              <Button onClick={() => void navigate({ to: '/parceiros/atos/criar' })}>
+                {t('partners.acts.list.new')}
+              </Button>
+            ) : undefined
+          }
+        />
 
-      <ActFilters
-        searchValue={search.search ?? ''}
-        status={statusFromActive(search.active)}
-        transfer={transferFrom(search.hasFinancialTransfer)}
-        area={search.occupationArea ?? ''}
-        areaOptions={OCCUPATION_AREAS.map((a) => ({ value: a, label: t(`partners.acts.area.${a}`) }))}
-        labels={{
-          search: t('partners.acts.list.search'),
-          all: t('partners.acts.filters.all'),
-          active: t('partners.acts.filters.active'),
-          inactive: t('partners.acts.filters.inactive'),
-          toggle: t('partners.acts.filters.toggle'),
-          hasTransfer: t('partners.acts.filters.hasTransfer'),
-          transferYes: t('partners.acts.filters.transferYes'),
-          transferNo: t('partners.acts.filters.transferNo'),
-          area: t('partners.acts.filters.area'),
-          allOption: t('partners.acts.filters.allOption'),
-          apply: t('partners.filters.apply'),
-          statusLabel: t('partners.acts.columns.status'),
-          advancedTitle: t('partners.filters.advancedTitle'),
-          advancedSubtitle: t('partners.acts.filters.advancedSubtitle'),
-          collapse: t('partners.filters.collapse'),
-          clear: t('partners.filters.clear'),
-          clearAll: t('partners.filters.clearAll'),
-          removeFilter: t('partners.filters.removeFilter'),
-          applied: t('partners.filters.applied'),
-        }}
-        exportSlot={
-          <PartnersExportDropdown
-            exportLabel={t('partners.acts.filters.export')}
-            filenameBase="acordos"
-            headers={exportColumns}
-            rows={exportRows}
-            onPrint={() => { setPrinting(true) }}
-          />
-        }
-        onSearch={(value) =>
-          void navigate({ to: '.', replace: true, search: (p) => ({ ...p, search: value || undefined, page: 1 }) })
-        }
-        onStatus={(s) =>
-          void navigate({
-            to: '.',
-            replace: true,
-            search: (p) => ({ ...p, active: s === 'all' ? undefined : s === 'active', page: 1 }),
-          })
-        }
-        onTransfer={(tr) =>
-          void navigate({
-            to: '.',
-            replace: true,
-            search: (p) => ({ ...p, hasFinancialTransfer: tr === 'all' ? undefined : tr === 'yes', page: 1 }),
-          })
-        }
-        onArea={(a) =>
-          void navigate({
-            to: '.',
-            replace: true,
-            search: (p) => ({ ...p, occupationArea: a === '' ? undefined : (a as OccupationArea), page: 1 }),
-          })
-        }
-        onClear={() =>
-          void navigate({ to: '.', replace: true, search: (p) => ({ ...p, hasFinancialTransfer: undefined, occupationArea: undefined, page: 1 }) })
-        }
-        onClearAll={() =>
-          void navigate({ to: '.', replace: true, search: (p) => ({ ...p, active: undefined, hasFinancialTransfer: undefined, occupationArea: undefined, page: 1 }) })
-        }
-      />
+        <ActFilters
+          searchValue={search.search ?? ''}
+          status={statusFromActive(search.active)}
+          transfer={transferFrom(search.hasFinancialTransfer)}
+          area={search.occupationArea ?? ''}
+          areaOptions={OCCUPATION_AREAS.map((a) => ({ value: a, label: t(`partners.acts.area.${a}`) }))}
+          labels={{
+            search: t('partners.acts.list.search'),
+            all: t('partners.acts.filters.all'),
+            active: t('partners.acts.filters.active'),
+            inactive: t('partners.acts.filters.inactive'),
+            toggle: t('partners.acts.filters.toggle'),
+            hasTransfer: t('partners.acts.filters.hasTransfer'),
+            transferYes: t('partners.acts.filters.transferYes'),
+            transferNo: t('partners.acts.filters.transferNo'),
+            area: t('partners.acts.filters.area'),
+            allOption: t('partners.acts.filters.allOption'),
+            apply: t('partners.filters.apply'),
+            statusLabel: t('partners.acts.columns.status'),
+            advancedTitle: t('partners.filters.advancedTitle'),
+            advancedSubtitle: t('partners.acts.filters.advancedSubtitle'),
+            collapse: t('partners.filters.collapse'),
+            clear: t('partners.filters.clear'),
+            clearAll: t('partners.filters.clearAll'),
+            removeFilter: t('partners.filters.removeFilter'),
+            applied: t('partners.filters.applied'),
+          }}
+          exportSlot={
+            <PartnersExportDropdown
+              exportLabel={t('partners.acts.filters.export')}
+              filenameBase="acordos"
+              headers={exportColumns}
+              rows={exportRows}
+              onPrint={() => {
+                setPrinting(true)
+              }}
+            />
+          }
+          onSearch={(value) =>
+            void navigate({
+              to: '.',
+              replace: true,
+              search: (p) => ({ ...p, search: value || undefined, page: 1 }),
+            })
+          }
+          onStatus={(s) =>
+            void navigate({
+              to: '.',
+              replace: true,
+              search: (p) => ({ ...p, active: s === 'all' ? undefined : s === 'active', page: 1 }),
+            })
+          }
+          onTransfer={(tr) =>
+            void navigate({
+              to: '.',
+              replace: true,
+              search: (p) => ({
+                ...p,
+                hasFinancialTransfer: tr === 'all' ? undefined : tr === 'yes',
+                page: 1,
+              }),
+            })
+          }
+          onArea={(a) =>
+            void navigate({
+              to: '.',
+              replace: true,
+              search: (p) => ({
+                ...p,
+                occupationArea: a === '' ? undefined : (a as OccupationArea),
+                page: 1,
+              }),
+            })
+          }
+          onClear={() =>
+            void navigate({
+              to: '.',
+              replace: true,
+              search: (p) => ({ ...p, hasFinancialTransfer: undefined, occupationArea: undefined, page: 1 }),
+            })
+          }
+          onClearAll={() =>
+            void navigate({
+              to: '.',
+              replace: true,
+              search: (p) => ({
+                ...p,
+                active: undefined,
+                hasFinancialTransfer: undefined,
+                occupationArea: undefined,
+                page: 1,
+              }),
+            })
+          }
+        />
 
-      <DataTable<ActRow>
-        columns={columns}
-        state={tableState}
-        rowKey={(r) => r.id}
-        emptyLabel={hasFilters ? t('partners.acts.list.no-results') : t('partners.acts.list.empty')}
-        loadingLabel={t('partners.acts.list.loading')}
-        caption={t('partners.acts.list.title')}
-        onRowClick={(r) => void navigate({ to: '/parceiros/atos/$id', params: { id: r.id } })}
-      />
+        <DataTable<ActRow>
+          columns={columns}
+          state={tableState}
+          rowKey={(r) => r.id}
+          emptyLabel={hasFilters ? t('partners.acts.list.no-results') : t('partners.acts.list.empty')}
+          loadingLabel={t('partners.acts.list.loading')}
+          caption={t('partners.acts.list.title')}
+          onRowClick={(r) => void navigate({ to: '/parceiros/atos/$id', params: { id: r.id } })}
+        />
 
-      <ActPaginator
-        page={pageNum}
-        totalPages={pages}
-        perPage={search.limit}
-        labels={{
-          previous: t('partners.acts.paginator.previous'),
-          next: t('partners.acts.paginator.next'),
-          page: t('partners.acts.paginator.page'),
-          perPage: t('partners.acts.paginator.perPage'),
-        }}
-        onPrev={() => void navigate({ to: '.', search: (p) => ({ ...p, page: Math.max(1, pageNum - 1) }) })}
-        onNext={() => void navigate({ to: '.', search: (p) => ({ ...p, page: pageNum + 1 }) })}
-        onPerPage={(perPage) => void navigate({ to: '.', search: (p) => ({ ...p, limit: perPage, page: 1 }) })}
-      />
+        <ActPaginator
+          page={pageNum}
+          totalPages={pages}
+          perPage={search.limit}
+          labels={{
+            previous: t('partners.acts.paginator.previous'),
+            next: t('partners.acts.paginator.next'),
+            page: t('partners.acts.paginator.page'),
+            perPage: t('partners.acts.paginator.perPage'),
+          }}
+          onPrev={() => void navigate({ to: '.', search: (p) => ({ ...p, page: Math.max(1, pageNum - 1) }) })}
+          onNext={() => void navigate({ to: '.', search: (p) => ({ ...p, page: pageNum + 1 }) })}
+          onPerPage={(perPage) =>
+            void navigate({ to: '.', search: (p) => ({ ...p, limit: perPage, page: 1 }) })
+          }
+        />
       </div>
 
       <PartnersPrintable

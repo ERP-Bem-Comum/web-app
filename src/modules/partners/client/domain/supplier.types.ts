@@ -15,6 +15,7 @@ export type SupplierRow = Readonly<{
   email: string
   serviceCategory: string
   activation: ActivationStatus
+  contractCount: number
 }>
 
 /** Ação de ciclo de vida no detalhe. */

@@ -241,6 +241,13 @@ describe('filterPartners', () => {
     assert.equal(r.length, 1)
     assert.equal(r[0]?.kind, 'act')
   })
+  it('casa por CNPJ alfanumérico parcial ignorando pontuação/caixa (Serpro/2026)', () => {
+    const alnum: readonly PartnerOption[] = [
+      { id: '9', name: 'Empresa Nova', subtitle: '12.ABC.345/01DE-35', kind: 'supplier' },
+    ]
+    assert.equal(filterPartners(alnum, 'abc345').length, 1)
+    assert.equal(filterPartners(alnum, 'ABC345').length, 1)
+  })
   it('sem match → vazio', () => {
     assert.equal(filterPartners(partners, 'inexistente').length, 0)
   })

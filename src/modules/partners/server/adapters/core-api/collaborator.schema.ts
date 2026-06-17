@@ -16,6 +16,8 @@ export const CoreApiCollaboratorItemSchema = z.object({
   role: z.string().trim(),
   status: z.enum(['PreRegistration', 'Complete']),
   active: z.boolean(),
+  // Contratos ativos do parceiro (#46). `.catch(0)` tolera resposta sem o campo (fallback → 0).
+  contractCount: z.int().nonnegative().catch(0),
 })
 export type CoreApiCollaboratorItem = z.infer<typeof CoreApiCollaboratorItemSchema>
 
@@ -53,6 +55,11 @@ export const CoreApiCollaboratorDetailSchema = CoreApiCollaboratorItemSchema.ext
   education: z.string().trim().nullish(),
   biography: z.string().trim().nullish(),
   experienceInThePublicSector: z.boolean().nullish(),
+  // Território (#42) — UF + município (texto livre). `.catch(null)` tolera ausência/legado.
+  territory: z
+    .object({ uf: z.string().trim().nullable(), municipality: z.string().trim().nullable() })
+    .nullable()
+    .catch(null),
 })
 export type CoreApiCollaboratorDetail = z.infer<typeof CoreApiCollaboratorDetailSchema>
 

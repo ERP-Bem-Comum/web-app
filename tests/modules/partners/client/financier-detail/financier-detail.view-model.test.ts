@@ -17,6 +17,9 @@ const detail: FinancierDetail = {
   activation: 'active',
   legalRepresentative: 'Maria Silva',
   address: 'Av. Paulista, 1000',
+  bankAccount: null,
+  pixKey: null,
+  contractCount: 0,
 }
 
 describe('financier-detail.view-model', () => {

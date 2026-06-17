@@ -17,6 +17,7 @@ const detail: SupplierDetail = {
   fantasyName: 'Acme',
   serviceCategory: 'Limpeza',
   activation: 'active',
+  contractCount: 0,
   bankAccount: null,
   pixKey: null,
   serviceRating: null,

@@ -9,6 +9,7 @@ import type {
   EmploymentRelationship,
   OccupationArea,
   DeactivationReason,
+  Territory,
 } from './collaborator.types.ts'
 
 // ── Input (validado na server fn pelos schemas em adapters) ─────────────────────
@@ -36,6 +37,7 @@ export interface CreateCollaboratorInput {
   role: string
   startOfContract: string // YYYY-MM-DD
   employmentRelationship: EmploymentRelationship
+  territory: Territory | null // #42 — entra no create (PUT omite)
 }
 
 export interface CompleteCollaboratorRegistrationInput {
@@ -56,7 +58,8 @@ export interface CompleteCollaboratorRegistrationInput {
   experienceInThePublicSector?: boolean
 }
 
-export type UpdateCollaboratorInput = CreateCollaboratorInput & { id: string }
+// PUT omite território (#42) — não enviar na edição.
+export type UpdateCollaboratorInput = Omit<CreateCollaboratorInput, 'territory'> & { id: string }
 
 export interface DeactivateCollaboratorInput {
   id: string
@@ -87,6 +90,7 @@ export type CollaboratorListItem = Readonly<{
   role: string
   registration: RegistrationStatus
   activation: ActivationStatus
+  contractCount: number
 }>
 
 export type CollaboratorDetail = CollaboratorListItem &
@@ -94,6 +98,7 @@ export type CollaboratorDetail = CollaboratorListItem &
     cpf: string
     startOfContract: string
     employmentRelationship: EmploymentRelationship
+    territory: Territory | null
   }>
 
 export type CollaboratorListResponse = Readonly<{

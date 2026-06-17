@@ -6,6 +6,7 @@ import type { MouseEvent, ReactNode } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
+import { normalizeCnpj, maskCnpj, maskCpf } from '#shared/document/cnpj.ts'
 import type { ContractRow } from '#modules/contracts/client/contract-list/contract-list.view-model.ts'
 import {
   formatContractNumber,
@@ -55,13 +56,9 @@ export interface ContractRowProps {
 
 function maskDocument(doc: string | null | undefined): string {
   if (!doc) return ''
-  const digits = doc.replace(/\D/g, '')
-  if (digits.length === 11) {
-    return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
-  }
-  if (digits.length === 14) {
-    return digits.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
-  }
+  const len = normalizeCnpj(doc).length // CPF=11 numérico, CNPJ=14 (alfanumérico Serpro/2026)
+  if (len === 11) return maskCpf(doc)
+  if (len === 14) return maskCnpj(doc)
   return doc
 }
 
@@ -104,12 +101,7 @@ export function ContractRow({ row, index, onRequestDelete, onGenerateDoc }: Cont
   const additiveCount = row.children?.length ?? 0
 
   return (
-    <tr
-      className={rowStyle}
-      onClick={handleRowClick}
-      data-index={index}
-      aria-rowindex={index + 1}
-    >
+    <tr className={rowStyle} onClick={handleRowClick} data-index={index} aria-rowindex={index + 1}>
       <td className={cell}>
         <span className={numberText}>{formatContractNumber(row.contractCode, row.classification)}</span>
       </td>
@@ -120,9 +112,7 @@ export function ContractRow({ row, index, onRequestDelete, onGenerateDoc }: Cont
           </span>
           <div className={contractorInfo}>
             <span className={contractorName}>{contractorNameText}</span>
-            {contractorDocText && (
-              <span className={contractorDoc}>{contractorDocText}</span>
-            )}
+            {contractorDocText && <span className={contractorDoc}>{contractorDocText}</span>}
           </div>
         </div>
       </td>
@@ -170,7 +160,10 @@ export function ContractRow({ row, index, onRequestDelete, onGenerateDoc }: Cont
               <button
                 type="button"
                 className={actionItemDanger}
-                onClick={(e) => { closeDropdown(e); onRequestDelete(row) }}
+                onClick={(e) => {
+                  closeDropdown(e)
+                  onRequestDelete(row)
+                }}
               >
                 {t('contracts.list.actions.cancel')}
               </button>
@@ -181,14 +174,20 @@ export function ContractRow({ row, index, onRequestDelete, onGenerateDoc }: Cont
                   type="button"
                   className={actionItem}
                   title={t('contracts.list.actions.financeiroSoon')}
-                  onClick={(e) => { closeDropdown(e); onGenerateDoc(row, 'historico') }}
+                  onClick={(e) => {
+                    closeDropdown(e)
+                    onGenerateDoc(row, 'historico')
+                  }}
                 >
                   {t('contracts.list.actions.paymentHistory')}
                 </button>
                 <button
                   type="button"
                   className={actionItem}
-                  onClick={(e) => { closeDropdown(e); onGenerateDoc(row, 'quitacao') }}
+                  onClick={(e) => {
+                    closeDropdown(e)
+                    onGenerateDoc(row, 'quitacao')
+                  }}
                 >
                   {t('contracts.list.actions.quitacao')}
                 </button>
