@@ -19,10 +19,10 @@ import { WalletIcon, UsersIcon } from '#shared/ui/index.ts'
 import {
   retentionsEnabledFor,
   reformaTributariaEnabledFor,
-  PAYMENT_METHODS,
   RETENTION_KEYS,
   REFORMA_TRIBUTARIA_KEYS,
-  isPaymentMethod,
+  paymentComplementaryOf,
+  paymentMethodNameTag,
   type DocumentType,
   type PaymentMethod,
   NO_LOCKS,
@@ -33,12 +33,12 @@ import {
   type FieldLocks,
 } from '../document-form.view.ts'
 import { DocumentTypeModal } from './document-type-modal.component.tsx'
+import { PaymentMethodModal } from './payment-method-modal.component.tsx'
 import {
   control,
   controlMono,
   controlDisabled,
   selectWrap,
-  selectControl,
   selectControlDisabled,
   field,
   fieldGrid,
@@ -131,6 +131,11 @@ export type DocumentFormProps = Readonly<{
   onOpenTypeModal: () => void
   onSelectType: (type: DocumentType) => void
   onCloseTypeModal: () => void
+  // Modal "Forma de Pagamento" (o campo Forma abre o modal; a forma controla os campos complementares).
+  payModalOpen: boolean
+  onOpenPayModal: () => void
+  onSelectPayment: (method: PaymentMethod) => void
+  onClosePayModal: () => void
 }>
 
 export function DocumentForm(props: DocumentFormProps): ReactNode {
@@ -361,24 +366,30 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             <label className={fieldLabel} htmlFor="fin-forma">
               {t('financial.create.field.paymentMethod')}
             </label>
-            <div className={selectWrap}>
-              <select
+            {/* Forma abre o modal (cards); a forma escolhida controla os campos complementares abaixo. */}
+            {locks.paymentMethod ? (
+              <input
                 id="fin-forma"
-                className={locks.paymentMethod ? selectControlDisabled : selectControl}
-                disabled={locks.paymentMethod}
-                value={fields.paymentMethod}
-                onChange={(e) => {
-                  props.onPaymentMethod(isPaymentMethod(e.target.value) ? e.target.value : '')
-                }}
+                className={controlDisabled}
+                disabled
+                value={fields.paymentMethod === '' ? '—' : t(paymentMethodNameTag(fields.paymentMethod))}
+                aria-label={t('financial.create.field.paymentMethod')}
+              />
+            ) : (
+              <button
+                id="fin-forma"
+                type="button"
+                className={typeTrigger}
+                aria-label={t('financial.create.field.paymentMethod')}
+                onClick={props.onOpenPayModal}
               >
-                <option value="">{t('financial.create.select')}</option>
-                {PAYMENT_METHODS.map((pm) => (
-                  <option key={pm} value={pm}>
-                    {t(`financial.paymentMethod.${pm}`)}
-                  </option>
-                ))}
-              </select>
-            </div>
+                {fields.paymentMethod === '' ? (
+                  <span className={typeTriggerPlaceholder}>{t('financial.create.select')}</span>
+                ) : (
+                  <span>{t(paymentMethodNameTag(fields.paymentMethod))}</span>
+                )}
+              </button>
+            )}
           </div>
           <ChromeSelect label={t('financial.create.field.payFromAccount')} />
         </div>
@@ -395,6 +406,43 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             icon={<UsersIcon size={16} />}
           />
         </div>
+        {/* Campo complementar controlado pela forma (mock): boleto → linha digitável; cartão → cartão
+            corporativo. Chrome honesto: o create do core-api não aceita esses campos (core-api#89). */}
+        {paymentComplementaryOf(fields.paymentMethod) === 'boleto' ? (
+          <div className={fieldGrid.wide}>
+            <div className={field}>
+              <label className={fieldLabel} htmlFor="fin-boleto">
+                {t('financial.create.payMethod.boletoLabel')}
+              </label>
+              <input
+                id="fin-boleto"
+                className={controlDisabled}
+                disabled
+                inputMode="numeric"
+                placeholder="00000.00000 00000.000000 00000.000000 0 00000000000000"
+                aria-label={t('financial.create.payMethod.boletoLabel')}
+              />
+              <span className={retentionsHint}>{t('financial.create.payMethod.boletoHint')}</span>
+            </div>
+          </div>
+        ) : null}
+        {paymentComplementaryOf(fields.paymentMethod) === 'card' ? (
+          <div className={fieldGrid.wide}>
+            <div className={field}>
+              <label className={fieldLabel} htmlFor="fin-card">
+                {t('financial.create.payMethod.cardLabel')}
+              </label>
+              <input
+                id="fin-card"
+                className={controlDisabled}
+                disabled
+                placeholder="•••• •••• •••• ••••"
+                aria-label={t('financial.create.payMethod.cardLabel')}
+              />
+              <span className={retentionsHint}>{t('financial.create.payMethod.cardHint')}</span>
+            </div>
+          </div>
+        ) : null}
       </section>
 
       {/* ── S4 Categorização — auto-preenchida do contrato "Em Andamento" (quando houver) ── */}
@@ -456,6 +504,12 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
         selected={fields.type}
         onSelect={props.onSelectType}
         onClose={props.onCloseTypeModal}
+      />
+      <PaymentMethodModal
+        open={props.payModalOpen}
+        selected={fields.paymentMethod}
+        onSelect={props.onSelectPayment}
+        onClose={props.onClosePayModal}
       />
     </>
   )

@@ -90,11 +90,16 @@ export type DocumentFormController = Readonly<{
   typeModalOpen: boolean
   openTypeModal: () => void
   closeTypeModal: () => void
+  // Modal "Forma de Pagamento" (UI-state).
+  payModalOpen: boolean
+  openPayModal: () => void
+  closePayModal: () => void
 }>
 
 export function useDocumentFormController(initial?: DocumentFormFields | null): DocumentFormController {
   const [fields, dispatch] = useReducer(reducer, EMPTY_FIELDS)
   const [typeModalOpen, setTypeModalOpen] = useState(false)
+  const [payModalOpen, setPayModalOpen] = useState(false)
   // Hidrata UMA vez quando os dados de edição chegam (async). `useRef` evita re-hidratar a cada render,
   // preservando o que o usuário já editou.
   const hydrated = useRef(false)
@@ -133,6 +138,13 @@ export function useDocumentFormController(initial?: DocumentFormFields | null): 
     },
     closeTypeModal: () => {
       setTypeModalOpen(false)
+    },
+    payModalOpen,
+    openPayModal: () => {
+      setPayModalOpen(true)
+    },
+    closePayModal: () => {
+      setPayModalOpen(false)
     },
   }
 }

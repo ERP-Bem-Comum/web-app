@@ -172,6 +172,13 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
               controller.closeTypeModal()
             }}
             onCloseTypeModal={controller.closeTypeModal}
+            payModalOpen={controller.payModalOpen}
+            onOpenPayModal={controller.openPayModal}
+            onSelectPayment={(method) => {
+              controller.setPaymentMethod(method)
+              controller.closePayModal()
+            }}
+            onClosePayModal={controller.closePayModal}
           />
         </div>
 

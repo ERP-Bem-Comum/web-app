@@ -20,6 +20,8 @@ import {
   DOCUMENT_TYPE_META,
   fiscalClassTag,
   docTypeDescriptionTag,
+  PAYMENT_METHOD_META,
+  paymentComplementaryOf,
   filterPartners,
   partnerKindTag,
   editLocksFor,
@@ -202,6 +204,20 @@ describe('DOCUMENT_TYPE_META (modal de tipo)', () => {
   it('tags i18n de classe e descrição', () => {
     assert.equal(fiscalClassTag('non-fiscal'), 'financial.create.docType.class.non-fiscal')
     assert.equal(docTypeDescriptionTag('NFS-e'), 'financial.create.docType.desc.NFS-e')
+  })
+})
+
+describe('PAYMENT_METHOD_META / paymentComplementaryOf', () => {
+  it('8 métodos do enum com o campo complementar correto', () => {
+    assert.equal(PAYMENT_METHOD_META.length, 8)
+    assert.equal(paymentComplementaryOf('PIX'), 'pix')
+    assert.equal(paymentComplementaryOf('Boleto'), 'boleto')
+    assert.equal(paymentComplementaryOf('CartaoCorporativo'), 'card')
+    assert.equal(paymentComplementaryOf('TED'), 'bank')
+    assert.equal(paymentComplementaryOf('TransferenciaBancaria'), 'bank')
+    assert.equal(paymentComplementaryOf('GuiaRecolhimento'), 'none')
+    assert.equal(paymentComplementaryOf('Outro'), 'none')
+    assert.equal(paymentComplementaryOf(''), 'none')
   })
 })
 

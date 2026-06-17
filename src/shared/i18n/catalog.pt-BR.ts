@@ -1026,7 +1026,7 @@ export const ptBR: Catalog = {
   'financial.create.field.dueDate': 'Vencimento',
   'financial.create.field.grossValue': 'Valor Bruto',
   'financial.create.field.description': 'Descrição',
-  'financial.create.field.paymentMethod': 'Forma de Pagamento',
+  'financial.create.field.paymentMethod': 'Forma',
   'financial.create.field.supplier': 'Fornecedor',
   'financial.create.field.numberSeries': 'Nº / Série',
   'financial.create.field.competencia': 'Competência',
@@ -1066,6 +1066,24 @@ export const ptBR: Catalog = {
   'financial.create.docType.desc.Recibo': 'Recibo simples — lançamento manual sem aderência fiscal.',
   'financial.create.docType.desc.Imposto':
     'Guia de Recolhimento (DARF/GPS) — recolhimento de tributo já apurado; sem retenções.',
+  // Modal "Forma de Pagamento" (cards) — a forma controla os campos complementares.
+  'financial.create.payMethod.modalTitle': 'Forma de Pagamento',
+  'financial.create.payMethod.modalSubtitle':
+    'A forma escolhida controla os campos complementares (chave PIX, código de barras, dados bancários).',
+  'financial.create.payMethod.desc.PIX': 'Transferência instantânea · chave do fornecedor.',
+  'financial.create.payMethod.desc.Boleto': 'Código de barras / linha digitável.',
+  'financial.create.payMethod.desc.TED': 'Transferência eletrônica entre bancos.',
+  'financial.create.payMethod.desc.TransferenciaBancaria': 'DOC / TEF · mesma instituição ou interbancária.',
+  'financial.create.payMethod.desc.CartaoCorporativo': 'Débito ou crédito na fatura da empresa.',
+  'financial.create.payMethod.desc.Cambio': 'Operação de câmbio / moeda estrangeira.',
+  'financial.create.payMethod.desc.GuiaRecolhimento': 'Guia de recolhimento (DARF / GPS).',
+  'financial.create.payMethod.desc.Outro': 'Cheque, dinheiro, compensação.',
+  // Campos complementares por método (chrome até o backend aceitar — core-api#89).
+  'financial.create.payMethod.boletoLabel': 'Linha digitável (47-48 dígitos)',
+  'financial.create.payMethod.boletoHint':
+    'Será preenchida via OCR ou manual — aguardando backend (core-api#89).',
+  'financial.create.payMethod.cardLabel': 'Cartão corporativo',
+  'financial.create.payMethod.cardHint': 'Cartão da empresa — aguardando backend (core-api#89).',
   'financial.create.pagamento.contaFornecedor': 'Conta do fornecedor',
   'financial.create.pagamento.contaFornecedorHint': 'Conforme dados bancários do fornecedor',
   'financial.create.pagamento.aprovador': 'Aprovador',

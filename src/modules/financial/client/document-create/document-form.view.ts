@@ -519,6 +519,52 @@ export const DOCUMENT_TYPE_META: readonly DocumentTypeMeta[] = DOCUMENT_TYPES.ma
 export const fiscalClassTag = (c: FiscalClass): string => `financial.create.docType.class.${c}`
 export const docTypeDescriptionTag = (type: DocumentType): string => `financial.create.docType.desc.${type}`
 
+// ── Metadata da Forma de Pagamento (modal + campos complementares) ───────────────
+// A forma escolhida controla o CAMPO COMPLEMENTAR exibido (mock): pix/bank usam a conta herdada do
+// fornecedor (card já existente); boleto pede linha digitável; cartão mostra o cartão corporativo.
+export type PaymentComplementary = 'pix' | 'boleto' | 'card' | 'bank' | 'none'
+
+const PAYMENT_COMPLEMENTARY: Record<PaymentMethod, PaymentComplementary> = {
+  PIX: 'pix',
+  Boleto: 'boleto',
+  TED: 'bank',
+  TransferenciaBancaria: 'bank',
+  CartaoCorporativo: 'card',
+  Cambio: 'bank',
+  GuiaRecolhimento: 'none',
+  Outro: 'none',
+}
+const PAYMENT_INITIALS: Record<PaymentMethod, string> = {
+  PIX: 'PIX',
+  Boleto: 'BOL',
+  TED: 'TED',
+  TransferenciaBancaria: 'TEF',
+  CartaoCorporativo: 'CC',
+  Cambio: 'CMB',
+  GuiaRecolhimento: 'GR',
+  Outro: 'OUT',
+}
+
+export type PaymentMethodMeta = Readonly<{
+  method: PaymentMethod
+  initials: string
+  complementary: PaymentComplementary
+}>
+
+export const PAYMENT_METHOD_META: readonly PaymentMethodMeta[] = PAYMENT_METHODS.map((method) => ({
+  method,
+  initials: PAYMENT_INITIALS[method],
+  complementary: PAYMENT_COMPLEMENTARY[method],
+}))
+
+/** Nome (i18n) e descrição (i18n) do método — usados no card do modal. */
+export const paymentMethodNameTag = (m: PaymentMethod): string => `financial.paymentMethod.${m}`
+export const paymentMethodDescTag = (m: PaymentMethod): string => `financial.create.payMethod.desc.${m}`
+
+/** Campo complementar controlado pela forma escolhida ('none' quando vazio). */
+export const paymentComplementaryOf = (m: PaymentMethod | ''): PaymentComplementary =>
+  m === '' ? 'none' : PAYMENT_COMPLEMENTARY[m]
+
 export const isDocumentType = (v: string): v is DocumentType =>
   (DOCUMENT_TYPES as readonly string[]).includes(v)
 export const isPaymentMethod = (v: string): v is PaymentMethod =>

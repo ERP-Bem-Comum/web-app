@@ -41,6 +41,10 @@ const baseProps = (over: Record<string, unknown> = {}) => ({
   onOpenTypeModal: vi.fn(),
   onSelectType: vi.fn(),
   onCloseTypeModal: vi.fn(),
+  payModalOpen: false,
+  onOpenPayModal: vi.fn(),
+  onSelectPayment: vi.fn(),
+  onClosePayModal: vi.fn(),
   ...over,
 })
 
@@ -119,6 +123,31 @@ describe('DocumentForm', () => {
     render(<DocumentForm {...baseProps({ onOpenTypeModal })} />)
     fireEvent.click(screen.getByLabelText(tr('financial.create.field.type')))
     expect(onOpenTypeModal).toHaveBeenCalledTimes(1)
+  })
+
+  it('abre o modal de pagamento ao clicar no gatilho de forma', () => {
+    const onOpenPayModal = vi.fn()
+    render(<DocumentForm {...baseProps({ onOpenPayModal })} />)
+    fireEvent.click(screen.getByLabelText(tr('financial.create.field.paymentMethod')))
+    expect(onOpenPayModal).toHaveBeenCalledTimes(1)
+  })
+
+  it('modal de pagamento lista métodos e seleciona (onSelectPayment)', () => {
+    const onSelectPayment = vi.fn()
+    render(<DocumentForm {...baseProps({ payModalOpen: true, onSelectPayment })} />)
+    expect(screen.getByText(tr('financial.create.payMethod.modalTitle'))).toBeTruthy()
+    fireEvent.click(screen.getByText(tr('financial.create.payMethod.desc.PIX')))
+    expect(onSelectPayment).toHaveBeenCalledWith('PIX')
+  })
+
+  it('campo complementar segue a forma: Boleto mostra linha digitável; PIX não', () => {
+    const { unmount } = render(
+      <DocumentForm {...baseProps({ fields: fields({ paymentMethod: 'Boleto' }) })} />,
+    )
+    expect(screen.getByLabelText(tr('financial.create.payMethod.boletoLabel'))).toBeTruthy()
+    unmount()
+    render(<DocumentForm {...baseProps({ fields: fields({ paymentMethod: 'PIX' }) })} />)
+    expect(screen.queryByLabelText(tr('financial.create.payMethod.boletoLabel'))).toBe(null)
   })
 
   it('modal de tipo lista os 7 tipos e seleciona um (onSelectType)', () => {
