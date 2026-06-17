@@ -70,6 +70,7 @@ export const topTitle = style({
 })
 export const crumb = style({
   marginInlineStart: 'auto',
+  fontFamily: vars.font.family.body, // Nunito (brand)
   fontSize: vars.font.size.sm,
   color: vars.color.text.muted,
 })
@@ -468,7 +469,11 @@ export const netValue = style({
   lineHeight: 1.1,
   color: vars.color.institutional.blueDeep,
 })
-export const netDue = style({ fontSize: vars.font.size.xs, color: vars.color.text.muted })
+export const netDue = style({
+  fontFamily: vars.font.family.body, // Nunito (brand)
+  fontSize: vars.font.size.xs,
+  color: vars.color.text.muted,
+})
 
 export const titulo = style({
   display: 'flex',
@@ -564,7 +569,11 @@ export const previewBadge = style({
   letterSpacing: '0.08em',
   textTransform: 'uppercase',
 })
-export const previewHeaderText = style({ fontSize: vars.font.size.xs, color: vars.color.text.muted })
+export const previewHeaderText = style({
+  fontFamily: vars.font.family.body, // Nunito (brand)
+  fontSize: vars.font.size.xs,
+  color: vars.color.text.muted,
+})
 export const dropzone = style({
   flex: 1,
   display: 'flex',
@@ -596,7 +605,11 @@ export const dropzoneHint = style({
   lineHeight: 1.5,
   color: vars.color.text.secondary,
 })
-export const dropzoneFormats = style({ fontSize: vars.font.size['2xs'], color: vars.color.text.muted })
+export const dropzoneFormats = style({
+  fontFamily: vars.font.family.body, // Nunito (brand)
+  fontSize: vars.font.size['2xs'],
+  color: vars.color.text.muted,
+})
 
 // ── Sidebar: painéis FLAT (Figma 670:* — sem card; só título + conteúdo) ─────────
 export const panel = style({ display: 'flex', flexDirection: 'column', gap: '0.625rem' /* 10px */ })
