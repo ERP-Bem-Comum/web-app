@@ -55,10 +55,22 @@ describe('DocumentForm', () => {
     }
   })
 
-  it('esconde retenções e mostra a dica para tipo sem retenção (Boleto)', () => {
+  it('oculta a seção Retenções inteira para tipo não-fiscal (Boleto)', () => {
     render(<DocumentForm {...baseProps({ fields: fields({ type: 'Boleto' }) })} />)
     expect(screen.queryByLabelText('ISS')).toBe(null)
-    expect(screen.getByText(tr('financial.create.retention.disabled'))).toBeTruthy()
+    // Seção some por completo — sem título de Retenções e sem dica.
+    expect(screen.queryByText(tr('financial.create.section.retencoes'))).toBe(null)
+    expect(screen.queryByText(tr('financial.create.retention.disabled'))).toBe(null)
+    // As demais seções permanecem.
+    expect(screen.getByText(tr('financial.create.section.identificacao'))).toBeTruthy()
+    expect(screen.getByText(tr('financial.create.section.pagamento'))).toBeTruthy()
+    expect(screen.getByText(tr('financial.create.section.categorizacao'))).toBeTruthy()
+  })
+
+  it('DANFE (fiscal, mas sem motor fiscal no regime do cliente) também oculta Retenções', () => {
+    render(<DocumentForm {...baseProps({ fields: fields({ type: 'DANFE' }) })} />)
+    expect(screen.queryByText(tr('financial.create.section.retencoes'))).toBe(null)
+    expect(screen.queryByLabelText('ISS')).toBe(null)
   })
 
   it('mostra a Reforma Tributária (CBS/IBS) para NFS-e e oculta para Boleto', () => {

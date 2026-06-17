@@ -260,66 +260,64 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
         </div>
       </section>
 
-      {/* ── S2 Retenções — só NFS-e/RPA ── */}
-      <section className={section}>
-        <h3 className={sectionTitle}>{t('financial.create.section.retencoes')}</h3>
-        {retEnabled ? (
-          <>
-            <div className={fieldGrid.six}>
-              {RETENTION_KEYS.map((key) => (
-                <div className={field} key={key}>
-                  <label className={fieldLabel} htmlFor={`fin-ret-${key}`}>
-                    {t(`financial.create.retention.${key}`)}
-                  </label>
-                  <input
-                    id={`fin-ret-${key}`}
-                    className={locks.retentions ? controlDisabled : controlMono}
-                    disabled={locks.retentions}
-                    inputMode="decimal"
-                    placeholder="R$ 0,00"
-                    value={fields.retentions[key]}
-                    onChange={(e) => {
-                      props.onRetention(key, e.target.value)
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-            {/* Reforma Tributária (CBS/IBS) — registro de valor apenas (OCR/manual): não gera filho nem
-                retenção e não abate o líquido. Enviado em registeredTaxes[] (core-api). */}
-            {reformaTributariaEnabledFor(fields.type) ? (
-              <>
-                <div className={reformaHead}>
-                  <span className={reformaTitle}>{t('financial.create.reformaTributaria.label')}</span>
-                  <span className={retentionsHint}>{t('financial.create.reformaTributaria.hint')}</span>
-                </div>
-                <div className={fieldGrid.three}>
-                  {REFORMA_TRIBUTARIA_KEYS.map((key) => (
-                    <div className={field} key={key}>
-                      <label className={fieldLabel} htmlFor={`fin-rt-${key}`}>
-                        {t(`financial.create.retention.${key}`)}
-                      </label>
-                      <input
-                        id={`fin-rt-${key}`}
-                        className={locks.retentions ? controlDisabled : controlMono}
-                        disabled={locks.retentions}
-                        inputMode="decimal"
-                        placeholder="R$ 0,00"
-                        value={fields.reformaTributaria[key]}
-                        onChange={(e) => {
-                          props.onReformaTributaria(key, e.target.value)
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </>
-            ) : null}
-          </>
-        ) : (
-          <p className={retentionsHint}>{t('financial.create.retention.disabled')}</p>
-        )}
-      </section>
+      {/* ── S2 Retenções + Reforma Tributária — só tipos que DISPARAM o motor fiscal (NFS-e/RPA). Tipos
+          não-fiscais (Boleto/Recibo/Fatura/Guia) e DANFE — que é fiscal mas NÃO dispara o motor no regime
+          tributário do cliente — OCULTAM a seção inteira (sobram Identificação/Pagamento/Categorização). ── */}
+      {retEnabled ? (
+        <section className={section}>
+          <h3 className={sectionTitle}>{t('financial.create.section.retencoes')}</h3>
+          <div className={fieldGrid.six}>
+            {RETENTION_KEYS.map((key) => (
+              <div className={field} key={key}>
+                <label className={fieldLabel} htmlFor={`fin-ret-${key}`}>
+                  {t(`financial.create.retention.${key}`)}
+                </label>
+                <input
+                  id={`fin-ret-${key}`}
+                  className={locks.retentions ? controlDisabled : controlMono}
+                  disabled={locks.retentions}
+                  inputMode="decimal"
+                  placeholder="R$ 0,00"
+                  value={fields.retentions[key]}
+                  onChange={(e) => {
+                    props.onRetention(key, e.target.value)
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+          {/* Reforma Tributária (CBS/IBS) — registro de valor apenas (OCR/manual): não gera filho nem
+              retenção e não abate o líquido. Enviado em registeredTaxes[] (core-api). */}
+          {reformaTributariaEnabledFor(fields.type) ? (
+            <>
+              <div className={reformaHead}>
+                <span className={reformaTitle}>{t('financial.create.reformaTributaria.label')}</span>
+                <span className={retentionsHint}>{t('financial.create.reformaTributaria.hint')}</span>
+              </div>
+              <div className={fieldGrid.three}>
+                {REFORMA_TRIBUTARIA_KEYS.map((key) => (
+                  <div className={field} key={key}>
+                    <label className={fieldLabel} htmlFor={`fin-rt-${key}`}>
+                      {t(`financial.create.retention.${key}`)}
+                    </label>
+                    <input
+                      id={`fin-rt-${key}`}
+                      className={locks.retentions ? controlDisabled : controlMono}
+                      disabled={locks.retentions}
+                      inputMode="decimal"
+                      placeholder="R$ 0,00"
+                      value={fields.reformaTributaria[key]}
+                      onChange={(e) => {
+                        props.onReformaTributaria(key, e.target.value)
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : null}
+        </section>
+      ) : null}
 
       {/* ── S3 Pagamento ── */}
       <section className={section}>
