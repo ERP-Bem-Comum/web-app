@@ -4,7 +4,7 @@
 
 **Created**: 2026-06-17
 
-**Status**: Implemented (validação manual em tela pendente — T012)
+**Status**: Implemented + validado em tela (a coluna exibe o `contractCount` do backend). Nota: os valores vêm `0` porque o read-model de contagem do core-api (`par_contract_count_view`) não foi backfillado para contratos pré-existentes (só incrementa em `ContractCreated` novos) — lacuna de dados do backend, não do front.
 
 **Input**: O core-api passou a expor `contractCount` (nº de contratos ativos) no item de lista de cada parceiro (#46/#105/#107, US6). O front deve exibir essa contagem nos grids de parceiros, removendo o placeholder gated ("—") que já existe no grid de Colaborador.
 
