@@ -86,7 +86,13 @@ const detailToModel = (raw: unknown): Result<FinancierDetail, PartnersError> => 
   const parsed = CoreApiFinancierDetailSchema.safeParse(raw)
   if (!parsed.success) return err('server')
   const f = parsed.data
-  return ok({ ...itemToModel(f), legalRepresentative: f.legalRepresentative, address: f.address })
+  return ok({
+    ...itemToModel(f),
+    legalRepresentative: f.legalRepresentative,
+    address: f.address,
+    bankAccount: f.bankAccount,
+    pixKey: f.pixKey,
+  })
 }
 
 const listToModel = (raw: unknown): Result<FinancierListResponse, PartnersError> => {
@@ -116,6 +122,8 @@ const toWriteBody = (input: CreateFinancierInput): Record<string, unknown> => ({
   cnpj: onlyDigits(input.cnpj),
   telephone: input.telephone,
   address: input.address,
+  bankAccount: input.bankAccount,
+  pixKey: input.pixKey,
 })
 
 export const createCoreApiFinanciersClient = (baseUrl: string): FinancierClient => {

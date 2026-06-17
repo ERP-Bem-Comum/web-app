@@ -17,6 +17,8 @@ const detail: FinancierDetail = {
   activation: 'active',
   legalRepresentative: 'Maria Silva',
   address: 'Av. Paulista, 1000',
+  bankAccount: null,
+  pixKey: null,
   contractCount: 0,
 }
 
@@ -76,6 +78,8 @@ describe('FinancierRepository (mapeia FnResult → Result)', () => {
           cnpj: '12345678000190',
           telephone: '1',
           address: 'a',
+          bankAccount: null,
+          pixKey: null,
         }),
       ),
       true,
@@ -90,6 +94,8 @@ describe('FinancierRepository (mapeia FnResult → Result)', () => {
           cnpj: '12345678000190',
           telephone: '1',
           address: 'a',
+          bankAccount: null,
+          pixKey: null,
         }),
       ),
       true,

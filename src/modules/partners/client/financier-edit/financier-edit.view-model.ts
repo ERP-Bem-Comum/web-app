@@ -5,7 +5,10 @@
 import { isOk, type Result } from '#shared/primitives/result.ts'
 import { partnersErrorTag } from '#modules/partners/client/data/helpers/partners-error-tag.ts'
 import type { PartnersError } from '#modules/partners/client/data/repository/partners-error.ts'
-import type { FinancierDetail, FinancierFormValues } from '#modules/partners/client/data/model/financier.model.ts'
+import type {
+  FinancierDetail,
+  FinancierFormValues,
+} from '#modules/partners/client/data/model/financier.model.ts'
 
 export type FinancierEditState =
   | Readonly<{ status: 'loading' }>
@@ -20,6 +23,8 @@ export function detailToFormValues(f: FinancierDetail): FinancierFormValues {
     cnpj: f.cnpj,
     telephone: f.telephone,
     address: f.address,
+    bankAccount: f.bankAccount,
+    pixKey: f.pixKey,
   }
 }
 
