@@ -70,6 +70,7 @@ export const topTitle = style({
 })
 export const crumb = style({
   marginInlineStart: 'auto',
+  fontFamily: vars.font.family.body, // Nunito (brand)
   fontSize: vars.font.size.sm,
   color: vars.color.text.muted,
 })
@@ -204,7 +205,7 @@ export const pickerSearch = style({
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   background: vars.color.surface.default,
   color: vars.color.institutional.ink2,
-  fontFamily: vars.font.family.heading,
+  fontFamily: vars.font.family.body, // Nunito (brand)
   fontSize: vars.font.size.xs,
   ':focus': {
     outline: 'none',
@@ -287,7 +288,7 @@ export const fieldGrid = styleVariants({
 
 export const field = style({ display: 'flex', flexDirection: 'column', gap: vars.space.xs, minInlineSize: 0 })
 export const fieldLabel = style({
-  fontFamily: vars.font.family.heading, // Inter (Figma/mock)
+  fontFamily: vars.font.family.body, // Nunito (brand — padrão Contratos fieldLabel; Figma usava Inter)
   fontSize: vars.font.size['2xs'], // 9.5px (Label/Field do Figma)
   fontWeight: vars.font.weight.semibold,
   color: vars.color.institutional.ink5,
@@ -311,7 +312,7 @@ const controlBase = {
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   background: vars.color.surface.default,
   color: vars.color.institutional.ink2,
-  fontFamily: vars.font.family.heading, // Inter (Figma/mock)
+  fontFamily: vars.font.family.body, // Nunito (brand — padrão Contratos input; Figma usava Inter)
   fontSize: vars.font.size.xs, // ~12.5px
   fontVariantNumeric: 'tabular-nums',
   transition: 'border-color 120ms ease, box-shadow 120ms ease',
@@ -371,13 +372,31 @@ export const selectControlDisabled = style([
 ])
 
 export const retentionsHint = style({ fontSize: vars.font.size.xs, color: vars.color.text.muted })
+// Cabeçalho do subgrupo Reforma Tributária (CBS/IBS) — rótulo + hint da regra (só registro de valor).
+export const reformaHead = style({
+  display: 'flex',
+  alignItems: 'baseline',
+  flexWrap: 'wrap',
+  columnGap: vars.space.sm,
+  rowGap: vars.space.xs,
+  marginBlockStart: vars.space.md,
+  marginBlockEnd: vars.space.xs,
+})
+export const reformaTitle = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.bold,
+  color: vars.color.institutional.ink2,
+  textTransform: 'uppercase',
+  letterSpacing: '0.04em',
+})
 
 // ── Sidebar ──────────────────────────────────────────────────────────────────
 // Coluna direita: rola sozinha; borda à esquerda separa do form (mock: padding 20/18, border-left).
 export const sidebarCol = style({
   display: 'flex',
   flexDirection: 'column',
-  gap: '1.375rem', // 22px (mock: div + div)
+  gap: vars.space.lg, // 24px (Figma: gap entre panels)
   minBlockSize: 0,
   blockSize: '100%',
   overflowY: 'auto',
@@ -408,14 +427,19 @@ export const compRow = style({
   justifyContent: 'space-between',
   alignItems: 'baseline',
   gap: vars.space.sm,
+  fontFamily: vars.font.family.body, // Nunito (brand — rótulo é prose)
   fontSize: vars.font.size.xs,
-  color: vars.color.text.secondary,
+  color: vars.color.institutional.ink4,
 })
+// Linha "Valor Bruto" (base): rótulo escuro (peso normal); só o VALOR é negrito (mock).
+export const compRowStrong = style([compRow, { color: vars.color.institutional.ink2 }])
 export const compVal = style({
   fontFamily: vars.font.family.mono,
   fontSize: vars.font.size.xs,
-  color: vars.color.text.primary,
+  color: vars.color.institutional.ink2,
 })
+// Valor do "Valor Bruto" — negrito (mock: o bruto se destaca; retenções ficam normais).
+export const compValStrong = style([compVal, { fontWeight: vars.font.weight.bold }])
 export const compSep = style({
   blockSize: vars.borderWidth.thin,
   background: vars.color.institutional.paperRule,
@@ -425,23 +449,31 @@ export const netBlock = style({
   display: 'flex',
   flexDirection: 'column',
   gap: vars.space.xs,
-  padding: vars.space.md,
-  borderRadius: vars.radius.md,
+  paddingBlock: '0.875rem', // 14px (Figma net-block)
+  paddingInline: vars.space.md, // 16px
+  borderRadius: vars.radius.lg, // 8px (Figma radius-lg)
   background: vars.color.institutional.blueBg,
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.blueLine}`,
 })
 export const netLabel = style({
-  fontSize: vars.font.size.xs,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size['2xs'], // 9px overline (Figma Label/Overline — não 12px)
+  fontWeight: vars.font.weight.bold,
   color: vars.color.institutional.blueDeep,
   textTransform: 'uppercase',
-  letterSpacing: '0.04em',
+  letterSpacing: '0.1em',
 })
 export const netValue = style({
   fontFamily: vars.font.family.mono,
-  fontSize: vars.font.size.xl,
+  fontSize: '1.375rem', // 22px (Figma Mono/Display)
+  lineHeight: 1.1,
   color: vars.color.institutional.blueDeep,
 })
-export const netDue = style({ fontSize: vars.font.size.xs, color: vars.color.text.muted })
+export const netDue = style({
+  fontFamily: vars.font.family.body, // Nunito (brand)
+  fontSize: vars.font.size.xs,
+  color: vars.color.text.muted,
+})
 
 export const titulo = style({
   display: 'flex',
@@ -537,7 +569,11 @@ export const previewBadge = style({
   letterSpacing: '0.08em',
   textTransform: 'uppercase',
 })
-export const previewHeaderText = style({ fontSize: vars.font.size.xs, color: vars.color.text.muted })
+export const previewHeaderText = style({
+  fontFamily: vars.font.family.body, // Nunito (brand)
+  fontSize: vars.font.size.xs,
+  color: vars.color.text.muted,
+})
 export const dropzone = style({
   flex: 1,
   display: 'flex',
@@ -564,15 +600,19 @@ export const dropzoneIcon = style({
 })
 export const dropzoneHint = style({
   maxInlineSize: '18rem',
-  fontFamily: vars.font.family.heading,
+  fontFamily: vars.font.family.body, // Nunito (brand — hint/prose, padrão Contratos)
   fontSize: vars.font.size.xs,
   lineHeight: 1.5,
   color: vars.color.text.secondary,
 })
-export const dropzoneFormats = style({ fontSize: vars.font.size['2xs'], color: vars.color.text.muted })
+export const dropzoneFormats = style({
+  fontFamily: vars.font.family.body, // Nunito (brand)
+  fontSize: vars.font.size['2xs'],
+  color: vars.color.text.muted,
+})
 
 // ── Sidebar: painéis FLAT (Figma 670:* — sem card; só título + conteúdo) ─────────
-export const panel = style({ display: 'flex', flexDirection: 'column', gap: vars.space.sm })
+export const panel = style({ display: 'flex', flexDirection: 'column', gap: '0.625rem' /* 10px */ })
 export const panelTitle = style({
   margin: 0,
   fontFamily: vars.font.family.heading,
@@ -580,7 +620,7 @@ export const panelTitle = style({
   fontWeight: vars.font.weight.bold,
   color: vars.color.institutional.ink5,
   textTransform: 'uppercase',
-  letterSpacing: '0.08em',
+  letterSpacing: '0.1em', // tracking largo (Figma Label/Overline)
 })
 
 // ── Títulos Previstos: árvore (pai → filhos com conector tracejado + ticks) ───────
@@ -643,7 +683,7 @@ export const childKind = style({
 export const childDest = style({
   flex: 1,
   minInlineSize: 0,
-  fontFamily: vars.font.family.heading,
+  fontFamily: vars.font.family.body, // Nunito (brand — destino é prose; padrão Contratos)
   fontSize: vars.font.size.xs,
   color: vars.color.institutional.ink3,
   overflow: 'hidden',
@@ -700,7 +740,7 @@ const validationItemBase = {
   paddingBlock: vars.space.sm,
   paddingInline: '0.625rem', // 10px
   borderRadius: vars.radius.md,
-  fontFamily: vars.font.family.heading,
+  fontFamily: vars.font.family.body, // Nunito (brand — prose da validação; padrão Contratos)
   fontSize: vars.font.size.xs,
   lineHeight: 1.45,
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
@@ -780,8 +820,8 @@ export const entityIcon = style({
   blockSize: '2rem',
   flexShrink: 0,
   borderRadius: vars.radius.lg,
-  background: vars.color.institutional.blueDeep, // teal do Figma → azul da marca
-  color: vars.color.surface.default,
+  background: vars.color.brand.normal, // azul da marca (mais claro/suave que o navy institucional)
+  color: vars.color.brand.onBrand,
 })
 export const entityInfo = style({
   display: 'flex',
@@ -829,13 +869,22 @@ export const contratoPill = style({
   alignItems: 'center',
   gap: vars.space.sm,
   paddingBlock: vars.space.xs,
-  paddingInline: vars.space.md,
+  paddingInline: '0.75rem', // 12px (Figma)
   borderRadius: '1.5rem', // pill (sem token de pill no DS)
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   background: vars.color.institutional.paperWarm,
-  fontFamily: vars.font.family.heading,
+  fontFamily: vars.font.family.body, // Nunito (brand) — texto do pill (ex.: "Sem contrato vinculado")
   fontSize: vars.font.size.xs,
   color: vars.color.text.muted,
+})
+// Rótulo "CONTRATO" — overline pequeno maiúsculo (Figma Label/Field 9.5px, tracking largo).
+export const contratoLabel = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.ink5,
+  textTransform: 'uppercase',
+  letterSpacing: '0.1em',
 })
 export const contratoLink = style({
   paddingInlineStart: vars.space.sm,
@@ -924,14 +973,15 @@ const actionButtonBase = {
   cursor: 'pointer',
   transition: 'background 150ms, border-color 150ms, box-shadow 150ms',
 } as const
-// Primário (= buttonPrimary do contrato): azul da marca → blueDeep no hover.
+// Primário: azul da MARCA (mais claro/suave) → hover brand.hover. (Lançar usa o tom de marca; o token
+// global segue navy até alinhar o app todo.)
 export const primaryButton = style([
   actionButtonBase,
   {
     border: 'none',
-    background: vars.color.institutional.blue,
-    color: vars.color.surface.default,
-    ':hover': { background: vars.color.institutional.blueDeep },
+    background: vars.color.brand.normal,
+    color: vars.color.brand.onBrand,
+    ':hover': { background: vars.color.brand.hover },
     ':disabled': { opacity: 0.5, cursor: 'not-allowed' },
   },
 ])
@@ -968,3 +1018,230 @@ export const kbdChip = style({
   fontSize: vars.font.size['2xs'],
   color: vars.color.institutional.ink3,
 })
+
+// ── Modal "Tipo de Documento" (Figma) — <dialog> nativo (ESC/focus-trap), padrão Contratos ───────
+export const typeDialog = style({
+  border: 'none',
+  padding: 0,
+  background: 'transparent',
+  maxInlineSize: '100%',
+  maxBlockSize: '100%',
+  selectors: {
+    '&::backdrop': {
+      background: vars.color.institutional.overlay,
+      backdropFilter: 'blur(6px)',
+    },
+  },
+})
+export const typeContent = style({
+  position: 'relative',
+  display: 'flex',
+  flexDirection: 'column',
+  inlineSize: 'min(30rem, calc(100vw - 2.5rem))', // 480px (fiel ao mock)
+  maxBlockSize: '92vh',
+  overflow: 'hidden',
+  background: vars.color.surface.default,
+  borderRadius: vars.radius.xl,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  boxShadow: vars.shadow.cardElevated,
+})
+export const typeHeader = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: vars.space.sm,
+  paddingBlock: vars.space.md,
+  paddingInline: vars.space.lg,
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+})
+export const typeTitle = style({
+  margin: 0,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.lg,
+  fontWeight: vars.font.weight.bold,
+  color: vars.color.institutional.ink2,
+})
+export const typeClose = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  inlineSize: '1.875rem',
+  blockSize: '1.875rem',
+  border: 'none',
+  borderRadius: vars.radius.md,
+  background: 'transparent',
+  color: vars.color.institutional.ink4,
+  fontSize: vars.font.size.lg,
+  cursor: 'pointer',
+  ':hover': { background: vars.color.institutional.paperWarm },
+})
+export const typeBody = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: vars.space.lg,
+  minBlockSize: 0,
+  overflowY: 'auto',
+  paddingBlock: vars.space.lg,
+  paddingInline: vars.space.lg,
+})
+export const typeSubtitle = style({
+  margin: 0,
+  fontFamily: vars.font.family.body, // Nunito (prose/brand)
+  fontSize: vars.font.size.xs,
+  lineHeight: 1.5,
+  color: vars.color.text.secondary,
+})
+export const typeGrid = style({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(2, 1fr)',
+  gap: vars.space.md,
+  '@media': { 'screen and (max-width: 36rem)': { gridTemplateColumns: '1fr' } },
+})
+export const typeCard = style({
+  display: 'grid',
+  gridTemplateColumns: 'auto 1fr',
+  gap: vars.space.md,
+  alignItems: 'start',
+  padding: vars.space.md,
+  textAlign: 'start',
+  borderRadius: vars.radius.lg,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  background: vars.color.surface.default,
+  cursor: 'pointer',
+  transition: 'border-color 120ms, background 120ms, box-shadow 120ms, transform 120ms',
+  // Hover do mock: borda+fundo tint, leve elevação e sombra.
+  ':hover': {
+    borderColor: vars.color.institutional.blueLine,
+    background: vars.color.institutional.blueBg,
+    transform: 'translateY(-1px)',
+    boxShadow: vars.shadow.card,
+  },
+  ':focus-visible': {
+    outline: 'none',
+    borderColor: vars.color.institutional.blue,
+    boxShadow: `0 0 0 0.1875rem ${vars.color.institutional.blueBg}`,
+  },
+})
+// Selecionado (mock): borda da marca + anel 3px.
+export const typeCardSelected = style({
+  borderColor: vars.color.brand.normal,
+  background: vars.color.institutional.blueBg,
+  boxShadow: `0 0 0 0.1875rem ${vars.color.institutional.blueBg}`,
+})
+const typeAvatarBase = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  inlineSize: '2.25rem',
+  blockSize: '2.25rem',
+  flexShrink: 0,
+  borderRadius: vars.radius.md,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.xs,
+  fontWeight: vars.font.weight.bold,
+  letterSpacing: '0.02em',
+} as const
+export const typeAvatar = styleVariants({
+  fiscal: [
+    typeAvatarBase,
+    { background: vars.color.brand.normal, color: vars.color.brand.onBrand }, // azul da marca (suave)
+  ],
+  partial: [
+    typeAvatarBase,
+    { background: vars.color.institutional.orange, color: vars.color.surface.default },
+  ],
+  'non-fiscal': [
+    typeAvatarBase,
+    { background: vars.color.institutional.paperBeige, color: vars.color.institutional.ink3 },
+  ],
+})
+// Avatar dos cards do modal de Forma de Pagamento — azul da marca (ícone/glifo do método).
+export const methodAvatar = style([
+  typeAvatarBase,
+  {
+    background: vars.color.brand.normal,
+    color: vars.color.brand.onBrand,
+    fontSize: vars.font.size.sm, // 14px (glifo, como o mock)
+    fontWeight: vars.font.weight.regular,
+  },
+])
+export const typeCardMain = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: vars.space.xs,
+  minInlineSize: 0,
+})
+export const typeCardHead = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  flexWrap: 'wrap',
+})
+export const typeName = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.bold,
+  color: vars.color.institutional.ink2,
+})
+const typeClassBadgeBase = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  paddingBlock: '0.0625rem',
+  paddingInline: vars.space.xs,
+  borderRadius: vars.radius.sm,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.bold,
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+  lineHeight: 1.2,
+} as const
+export const typeClassBadge = styleVariants({
+  fiscal: [
+    typeClassBadgeBase,
+    { background: vars.color.institutional.blueBg, color: vars.color.institutional.blueDeep },
+  ],
+  partial: [
+    typeClassBadgeBase,
+    { background: vars.color.institutional.orangeLight, color: vars.color.status.pendingText },
+  ],
+  'non-fiscal': [
+    typeClassBadgeBase,
+    { background: vars.color.institutional.paperBeige, color: vars.color.institutional.ink4 },
+  ],
+})
+export const typeDesc = style({
+  fontFamily: vars.font.family.body, // Nunito (prose/brand)
+  fontSize: vars.font.size.xs,
+  lineHeight: 1.45,
+  color: vars.color.text.secondary,
+})
+// Gatilho do campo Tipo (abre o modal) — mesma caixa do input, com o valor + caret.
+export const typeTrigger = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: vars.space.sm,
+  inlineSize: '100%',
+  minBlockSize: '2.125rem',
+  paddingBlock: '0.5rem',
+  paddingInline: '0.6875rem',
+  borderRadius: vars.radius.md,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  background: vars.color.surface.default,
+  color: vars.color.institutional.ink2,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  textAlign: 'start',
+  cursor: 'pointer',
+  transition: 'border-color 120ms, box-shadow 120ms',
+  ':hover': { borderColor: vars.color.institutional.ink5 },
+  ':focus-visible': {
+    outline: 'none',
+    borderColor: vars.color.institutional.blue,
+    boxShadow: `0 0 0 0.1875rem ${vars.color.institutional.blueBg}`,
+  },
+  // Caret ▾ via CSS (mesmo padrão do selectWrap; evita literal no JSX).
+  '::after': { content: '"▾"', color: vars.color.institutional.blueDeep, flexShrink: 0 },
+})
+export const typeTriggerPlaceholder = style({ color: vars.color.text.muted })

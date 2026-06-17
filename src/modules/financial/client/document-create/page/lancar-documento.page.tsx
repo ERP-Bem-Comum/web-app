@@ -164,6 +164,21 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
             onPaymentMethod={controller.setPaymentMethod}
             onText={controller.setText}
             onRetention={controller.setRetention}
+            onReformaTributaria={controller.setReformaTributaria}
+            typeModalOpen={controller.typeModalOpen}
+            onOpenTypeModal={controller.openTypeModal}
+            onSelectType={(type) => {
+              controller.setType(type)
+              controller.closeTypeModal()
+            }}
+            onCloseTypeModal={controller.closeTypeModal}
+            payModalOpen={controller.payModalOpen}
+            onOpenPayModal={controller.openPayModal}
+            onSelectPayment={(method) => {
+              controller.setPaymentMethod(method)
+              controller.closePayModal()
+            }}
+            onClosePayModal={controller.closePayModal}
           />
         </div>
 

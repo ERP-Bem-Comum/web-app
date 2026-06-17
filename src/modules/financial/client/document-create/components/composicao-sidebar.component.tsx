@@ -11,6 +11,7 @@ import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import {
   netPreviewCents,
   retentionsEnabledFor,
+  retentionRatePct,
   titulosPrevistos,
   tituloDestino,
   validationChecklist,
@@ -24,8 +25,10 @@ import {
   panel,
   panelTitle,
   compRow,
+  compRowStrong,
   compSep,
   compVal,
+  compValStrong,
   netBlock,
   netDue,
   netLabel,
@@ -70,19 +73,23 @@ export function ComposicaoSidebar(props: ComposicaoSidebarProps): ReactNode {
       {/* ── Composição ── */}
       <section className={panel}>
         <h4 className={panelTitle}>{t('financial.create.sidebar.composicao')}</h4>
-        <div className={compRow}>
+        <div className={compRowStrong}>
           <span>{t('financial.create.field.grossValue')}</span>
-          <span className={compVal}>{formatReaisBRL(fields.grossValue)}</span>
+          <span className={compValStrong}>{formatReaisBRL(fields.grossValue)}</span>
         </div>
         {retEnabled ? (
           <>
             <div className={compSep} />
-            {RETENTION_KEYS.map((key) => (
-              <div className={compRow} key={key}>
-                <span>{t(`financial.create.retention.${key}`)}</span>
-                <span className={compVal}>− {formatReaisBRL(fields.retentions[key])}</span>
-              </div>
-            ))}
+            {RETENTION_KEYS.map((key) => {
+              const pct = retentionRatePct(fields, key)
+              const label = t(`financial.create.retention.${key}`)
+              return (
+                <div className={compRow} key={key}>
+                  <span>{pct !== '' ? `${label} (${pct})` : label}</span>
+                  <span className={compVal}>− {formatReaisBRL(fields.retentions[key])}</span>
+                </div>
+              )
+            })}
           </>
         ) : null}
         <div className={compSep} />

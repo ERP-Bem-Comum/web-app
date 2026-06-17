@@ -3,10 +3,13 @@
  * setters do controller por props. Seções FLAT do Figma 626-2 (S1 Identificação, S2 Retenções, S3
  * Pagamento, S4 Categorização). Bloco de retenções só aparece para NFS-e/RPA (gating).
  *
- * Chrome (sem backend no v1, decisão #7): Competência/Emissão, linha CBS/IBS, "Pagar da Conta", cards
- * Conta/Aprovador e toda a Categorização são DESABILITADOS (sem dado fabricado) até os DTOs do core-api
- * (#47/#48) e o cadastro de contas/categorias existirem. A faixa âmbar de OCR do Figma é omitida de
- * propósito — sinalizaria preenchimento automático que não acontece sem o OCR.
+ * Reforma Tributária (CBS/IBS): campos VIVOS de registro de valor (OCR/manual) — enviados em
+ * registeredTaxes[] do core-api; não geram filho nem abatem o líquido (regra FIN-DOCUMENTO-INGESTAO).
+ *
+ * Chrome (sem backend no v1, decisão #7): Competência/Emissão, "Pagar da Conta", cards Conta/Aprovador
+ * e toda a Categorização são DESABILITADOS (sem dado fabricado) até os DTOs do core-api (#47/#48) e o
+ * cadastro de contas/categorias existirem. A faixa âmbar de OCR do Figma é omitida de propósito —
+ * sinalizaria preenchimento automático que não acontece sem o OCR.
  */
 import type { ReactNode } from 'react'
 
@@ -15,36 +18,43 @@ import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { WalletIcon, UsersIcon } from '#shared/ui/index.ts'
 import {
   retentionsEnabledFor,
-  DOCUMENT_TYPES,
-  PAYMENT_METHODS,
+  reformaTributariaEnabledFor,
   RETENTION_KEYS,
-  isDocumentType,
-  isPaymentMethod,
+  REFORMA_TRIBUTARIA_KEYS,
+  paymentComplementaryOf,
+  paymentMethodNameTag,
   type DocumentType,
   type PaymentMethod,
   NO_LOCKS,
   type DocumentFormFields,
   type RetentionFieldsReais,
+  type ReformaTributariaFieldsReais,
   type PartnerHydration,
   type FieldLocks,
 } from '../document-form.view.ts'
+import { DocumentTypeModal } from './document-type-modal.component.tsx'
+import { PaymentMethodModal } from './payment-method-modal.component.tsx'
 import {
   control,
   controlMono,
   controlDisabled,
   selectWrap,
-  selectControl,
   selectControlDisabled,
   field,
   fieldGrid,
   fieldLabel,
   numberSeriesRow,
   retentionsHint,
+  reformaHead,
+  reformaTitle,
+  typeTrigger,
+  typeTriggerPlaceholder,
   section,
   sectionTitle,
   sectionHead,
   sectionHeadTitle,
   contratoPill,
+  contratoLabel,
   contratoLink,
   contratoNum,
   contratoStatus,
@@ -115,6 +125,17 @@ export type DocumentFormProps = Readonly<{
   onPaymentMethod: (value: PaymentMethod | '') => void
   onText: (key: 'documentNumber' | 'series' | 'grossValue' | 'dueDate' | 'description', value: string) => void
   onRetention: (key: keyof RetentionFieldsReais, value: string) => void
+  onReformaTributaria: (key: keyof ReformaTributariaFieldsReais, value: string) => void
+  // Modal "Tipo de Documento" (o campo Tipo abre o modal; selecionar aplica o tipo).
+  typeModalOpen: boolean
+  onOpenTypeModal: () => void
+  onSelectType: (type: DocumentType) => void
+  onCloseTypeModal: () => void
+  // Modal "Forma de Pagamento" (o campo Forma abre o modal; a forma controla os campos complementares).
+  payModalOpen: boolean
+  onOpenPayModal: () => void
+  onSelectPayment: (method: PaymentMethod) => void
+  onClosePayModal: () => void
 }>
 
 export function DocumentForm(props: DocumentFormProps): ReactNode {
@@ -136,24 +157,30 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             <label className={fieldLabel} htmlFor="fin-type">
               {t('financial.create.field.type')}
             </label>
-            <div className={selectWrap}>
-              <select
+            {/* Tipo abre o modal de seleção (cards com classe fiscal). Travado (edição) → caixa inerte. */}
+            {locks.type ? (
+              <input
                 id="fin-type"
-                className={locks.type ? selectControlDisabled : selectControl}
-                disabled={locks.type}
-                value={fields.type}
-                onChange={(e) => {
-                  props.onType(isDocumentType(e.target.value) ? e.target.value : '')
-                }}
+                className={controlDisabled}
+                disabled
+                value={fields.type === '' ? '—' : fields.type}
+                aria-label={t('financial.create.field.type')}
+              />
+            ) : (
+              <button
+                id="fin-type"
+                type="button"
+                className={typeTrigger}
+                aria-label={t('financial.create.field.type')}
+                onClick={props.onOpenTypeModal}
               >
-                <option value="">{t('financial.create.select')}</option>
-                {DOCUMENT_TYPES.map((dt) => (
-                  <option key={dt} value={dt}>
-                    {dt}
-                  </option>
-                ))}
-              </select>
-            </div>
+                {fields.type === '' ? (
+                  <span className={typeTriggerPlaceholder}>{t('financial.create.select')}</span>
+                ) : (
+                  <span>{fields.type}</span>
+                )}
+              </button>
+            )}
           </div>
 
           {/* Nº / Série — célula combinada (Figma), dois inputs sob um rótulo. */}
@@ -233,6 +260,26 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             />
           </div>
         </div>
+        {/* Chave de acesso — só DANFE. Chrome honesto: o create do core-api ainda não aceita o campo
+            (core-api#115) → desabilitado, não enviado. */}
+        {fields.type === 'DANFE' ? (
+          <div className={fieldGrid.wide}>
+            <div className={field}>
+              <label className={fieldLabel} htmlFor="fin-chave">
+                {t('financial.create.field.accessKey')}
+              </label>
+              <input
+                id="fin-chave"
+                className={controlDisabled}
+                disabled
+                inputMode="numeric"
+                placeholder="0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000"
+                aria-label={t('financial.create.field.accessKey')}
+              />
+              <span className={retentionsHint}>{t('financial.create.accessKey.hint')}</span>
+            </div>
+          </div>
+        ) : null}
         <div className={fieldGrid.wide}>
           <div className={field}>
             <label className={fieldLabel} htmlFor="fin-desc">
@@ -251,50 +298,64 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
         </div>
       </section>
 
-      {/* ── S2 Retenções — só NFS-e/RPA ── */}
-      <section className={section}>
-        <h3 className={sectionTitle}>{t('financial.create.section.retencoes')}</h3>
-        {retEnabled ? (
-          <>
-            <div className={fieldGrid.six}>
-              {RETENTION_KEYS.map((key) => (
-                <div className={field} key={key}>
-                  <label className={fieldLabel} htmlFor={`fin-ret-${key}`}>
-                    {t(`financial.create.retention.${key}`)}
-                  </label>
-                  <input
-                    id={`fin-ret-${key}`}
-                    className={locks.retentions ? controlDisabled : controlMono}
-                    disabled={locks.retentions}
-                    inputMode="decimal"
-                    placeholder="R$ 0,00"
-                    value={fields.retentions[key]}
-                    onChange={(e) => {
-                      props.onRetention(key, e.target.value)
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-            {/* Reforma tributária (CBS/IBS) — chrome, ainda sem cálculo no core-api. */}
-            <div className={fieldGrid.three}>
-              {(['cbs', 'ibsMunicipal', 'ibsEstadual'] as const).map((key) => (
-                <div className={field} key={key}>
-                  <span className={fieldLabel}>{t(`financial.create.retention.${key}`)}</span>
-                  <input
-                    className={controlDisabled}
-                    disabled
-                    placeholder="R$ 0,00"
-                    aria-label={t(`financial.create.retention.${key}`)}
-                  />
-                </div>
-              ))}
-            </div>
-          </>
-        ) : (
-          <p className={retentionsHint}>{t('financial.create.retention.disabled')}</p>
-        )}
-      </section>
+      {/* ── S2 Retenções + Reforma Tributária — só tipos que DISPARAM o motor fiscal (NFS-e/RPA). Tipos
+          não-fiscais (Boleto/Recibo/Fatura/Guia) e DANFE — que é fiscal mas NÃO dispara o motor no regime
+          tributário do cliente — OCULTAM a seção inteira (sobram Identificação/Pagamento/Categorização). ── */}
+      {retEnabled ? (
+        <section className={section}>
+          <h3 className={sectionTitle}>{t('financial.create.section.retencoes')}</h3>
+          <div className={fieldGrid.six}>
+            {RETENTION_KEYS.map((key) => (
+              <div className={field} key={key}>
+                <label className={fieldLabel} htmlFor={`fin-ret-${key}`}>
+                  {t(`financial.create.retention.${key}`)}
+                </label>
+                <input
+                  id={`fin-ret-${key}`}
+                  className={locks.retentions ? controlDisabled : controlMono}
+                  disabled={locks.retentions}
+                  inputMode="decimal"
+                  placeholder="R$ 0,00"
+                  value={fields.retentions[key]}
+                  onChange={(e) => {
+                    props.onRetention(key, e.target.value)
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+          {/* Reforma Tributária (CBS/IBS) — registro de valor apenas (OCR/manual): não gera filho nem
+              retenção e não abate o líquido. Enviado em registeredTaxes[] (core-api). */}
+          {reformaTributariaEnabledFor(fields.type) ? (
+            <>
+              <div className={reformaHead}>
+                <span className={reformaTitle}>{t('financial.create.reformaTributaria.label')}</span>
+                <span className={retentionsHint}>{t('financial.create.reformaTributaria.hint')}</span>
+              </div>
+              <div className={fieldGrid.three}>
+                {REFORMA_TRIBUTARIA_KEYS.map((key) => (
+                  <div className={field} key={key}>
+                    <label className={fieldLabel} htmlFor={`fin-rt-${key}`}>
+                      {t(`financial.create.retention.${key}`)}
+                    </label>
+                    <input
+                      id={`fin-rt-${key}`}
+                      className={locks.retentions ? controlDisabled : controlMono}
+                      disabled={locks.retentions}
+                      inputMode="decimal"
+                      placeholder="R$ 0,00"
+                      value={fields.reformaTributaria[key]}
+                      onChange={(e) => {
+                        props.onReformaTributaria(key, e.target.value)
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : null}
+        </section>
+      ) : null}
 
       {/* ── S3 Pagamento ── */}
       <section className={section}>
@@ -305,24 +366,30 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             <label className={fieldLabel} htmlFor="fin-forma">
               {t('financial.create.field.paymentMethod')}
             </label>
-            <div className={selectWrap}>
-              <select
+            {/* Forma abre o modal (cards); a forma escolhida controla os campos complementares abaixo. */}
+            {locks.paymentMethod ? (
+              <input
                 id="fin-forma"
-                className={locks.paymentMethod ? selectControlDisabled : selectControl}
-                disabled={locks.paymentMethod}
-                value={fields.paymentMethod}
-                onChange={(e) => {
-                  props.onPaymentMethod(isPaymentMethod(e.target.value) ? e.target.value : '')
-                }}
+                className={controlDisabled}
+                disabled
+                value={fields.paymentMethod === '' ? '—' : t(paymentMethodNameTag(fields.paymentMethod))}
+                aria-label={t('financial.create.field.paymentMethod')}
+              />
+            ) : (
+              <button
+                id="fin-forma"
+                type="button"
+                className={typeTrigger}
+                aria-label={t('financial.create.field.paymentMethod')}
+                onClick={props.onOpenPayModal}
               >
-                <option value="">{t('financial.create.select')}</option>
-                {PAYMENT_METHODS.map((pm) => (
-                  <option key={pm} value={pm}>
-                    {t(`financial.paymentMethod.${pm}`)}
-                  </option>
-                ))}
-              </select>
-            </div>
+                {fields.paymentMethod === '' ? (
+                  <span className={typeTriggerPlaceholder}>{t('financial.create.select')}</span>
+                ) : (
+                  <span>{t(paymentMethodNameTag(fields.paymentMethod))}</span>
+                )}
+              </button>
+            )}
           </div>
           <ChromeSelect label={t('financial.create.field.payFromAccount')} />
         </div>
@@ -339,6 +406,76 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             icon={<UsersIcon size={16} />}
           />
         </div>
+        {/* Campo complementar controlado pela forma (mock): boleto → linha digitável; cartão → cartão
+            corporativo. Chrome honesto: o create do core-api não aceita esses campos (core-api#89). */}
+        {paymentComplementaryOf(fields.paymentMethod) === 'boleto' ? (
+          <div className={fieldGrid.wide}>
+            <div className={field}>
+              <label className={fieldLabel} htmlFor="fin-boleto">
+                {t('financial.create.payMethod.boletoLabel')}
+              </label>
+              <input
+                id="fin-boleto"
+                className={controlDisabled}
+                disabled
+                inputMode="numeric"
+                placeholder="00000.00000 00000.000000 00000.000000 0 00000000000000"
+                aria-label={t('financial.create.payMethod.boletoLabel')}
+              />
+              <span className={retentionsHint}>{t('financial.create.payMethod.boletoHint')}</span>
+            </div>
+          </div>
+        ) : null}
+        {paymentComplementaryOf(fields.paymentMethod) === 'card' ? (
+          <div className={fieldGrid.wide}>
+            <div className={field}>
+              <label className={fieldLabel} htmlFor="fin-card">
+                {t('financial.create.payMethod.cardLabel')}
+              </label>
+              <input
+                id="fin-card"
+                className={controlDisabled}
+                disabled
+                placeholder="•••• •••• •••• ••••"
+                aria-label={t('financial.create.payMethod.cardLabel')}
+              />
+              <span className={retentionsHint}>{t('financial.create.payMethod.cardHint')}</span>
+            </div>
+          </div>
+        ) : null}
+        {paymentComplementaryOf(fields.paymentMethod) === 'currency' ? (
+          <div className={fieldGrid.wide}>
+            <div className={field}>
+              <label className={fieldLabel} htmlFor="fin-currency">
+                {t('financial.create.payMethod.currencyLabel')}
+              </label>
+              <input
+                id="fin-currency"
+                className={controlDisabled}
+                disabled
+                placeholder="USD · 5,00 · R$ 0,00"
+                aria-label={t('financial.create.payMethod.currencyLabel')}
+              />
+              <span className={retentionsHint}>{t('financial.create.payMethod.currencyHint')}</span>
+            </div>
+          </div>
+        ) : null}
+        {paymentComplementaryOf(fields.paymentMethod) === 'free' ? (
+          <div className={fieldGrid.wide}>
+            <div className={field}>
+              <label className={fieldLabel} htmlFor="fin-free">
+                {t('financial.create.payMethod.freeLabel')}
+              </label>
+              <input
+                id="fin-free"
+                className={controlDisabled}
+                disabled
+                aria-label={t('financial.create.payMethod.freeLabel')}
+              />
+              <span className={retentionsHint}>{t('financial.create.payMethod.freeHint')}</span>
+            </div>
+          </div>
+        ) : null}
       </section>
 
       {/* ── S4 Categorização — auto-preenchida do contrato "Em Andamento" (quando houver) ── */}
@@ -350,7 +487,7 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
           <span className={contratoPill}>
             {contract !== null ? (
               <>
-                {t('financial.create.categorizacao.contrato')}{' '}
+                <span className={contratoLabel}>{t('financial.create.categorizacao.contrato')}</span>{' '}
                 <span className={contratoNum}>{contract.number}</span>
                 <span className={contratoStatus}>
                   <span className={contratoDot} aria-hidden="true" />
@@ -394,6 +531,19 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
           </>
         )}
       </section>
+
+      <DocumentTypeModal
+        open={props.typeModalOpen}
+        selected={fields.type}
+        onSelect={props.onSelectType}
+        onClose={props.onCloseTypeModal}
+      />
+      <PaymentMethodModal
+        open={props.payModalOpen}
+        selected={fields.paymentMethod}
+        onSelect={props.onSelectPayment}
+        onClose={props.onClosePayModal}
+      />
     </>
   )
 }

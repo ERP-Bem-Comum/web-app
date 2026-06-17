@@ -1031,7 +1031,7 @@ export const ptBR: Catalog = {
   'financial.create.field.dueDate': 'Vencimento',
   'financial.create.field.grossValue': 'Valor Bruto',
   'financial.create.field.description': 'Descrição',
-  'financial.create.field.paymentMethod': 'Forma de Pagamento',
+  'financial.create.field.paymentMethod': 'Forma',
   'financial.create.field.supplier': 'Fornecedor',
   'financial.create.field.numberSeries': 'Nº / Série',
   'financial.create.field.competencia': 'Competência',
@@ -1046,6 +1046,54 @@ export const ptBR: Catalog = {
   'financial.create.retention.cbs': 'CBS',
   'financial.create.retention.ibsMunicipal': 'IBS Municipal',
   'financial.create.retention.ibsEstadual': 'IBS Estadual',
+  'financial.create.reformaTributaria.label': 'Reforma Tributária',
+  'financial.create.reformaTributaria.hint':
+    'Apenas registro do valor (OCR ou manual) — não gera título filho nem retenção.',
+  'financial.create.field.accessKey': 'Chave de acesso',
+  'financial.create.accessKey.hint':
+    'Chave de acesso da NF-e (44 dígitos) — aguardando suporte do backend (core-api#115).',
+  // Modal "Tipo de Documento" (cards com classe fiscal + descrição).
+  'financial.create.docType.modalTitle': 'Tipo de Documento',
+  'financial.create.docType.modalSubtitle':
+    'Tipos fiscais habilitam campos fiscais. No regime atual, apenas NFS-e e RPA disparam o motor de retenções; os demais são tratados como lançamentos manuais.',
+  'financial.create.docType.close': 'Fechar',
+  'financial.create.docType.class.fiscal': 'Fiscal',
+  'financial.create.docType.class.partial': 'Parcial',
+  'financial.create.docType.class.non-fiscal': 'Não-fiscal',
+  'financial.create.docType.desc.NFS-e':
+    'Nota Fiscal de Serviço Eletrônica — serviços contratados de PJ; gera retenções tributárias.',
+  'financial.create.docType.desc.DANFE':
+    'Documento Auxiliar da NF-e — produtos/mercadorias; ICMS informativo, IPI e federais.',
+  'financial.create.docType.desc.RPA':
+    'Recibo de Pagamento Autônomo — pessoa física autônoma; INSS, IRRF (tabela progressiva), ISS.',
+  'financial.create.docType.desc.Fatura': 'Fatura comercial — cobrança comercial; retenções condicionais.',
+  'financial.create.docType.desc.Boleto': 'Boleto bancário — pagamento com código de barras; sem retenções.',
+  'financial.create.docType.desc.Recibo': 'Recibo simples — lançamento manual sem aderência fiscal.',
+  'financial.create.docType.desc.Imposto':
+    'Guia de Recolhimento (DARF/GPS) — recolhimento de tributo já apurado; sem retenções.',
+  // Modal "Forma de Pagamento" (cards) — a forma controla os campos complementares.
+  'financial.create.payMethod.modalTitle': 'Forma de Pagamento',
+  'financial.create.payMethod.modalSubtitle':
+    'A forma escolhida controla os campos complementares (chave PIX, código de barras, dados bancários).',
+  'financial.create.payMethod.desc.PIX': 'Transferência instantânea · chave do fornecedor.',
+  'financial.create.payMethod.desc.Boleto': 'Código de barras / linha digitável.',
+  'financial.create.payMethod.desc.TED': 'Transferência eletrônica entre bancos.',
+  'financial.create.payMethod.desc.TransferenciaBancaria': 'DOC / TEF · mesma instituição ou interbancária.',
+  'financial.create.payMethod.desc.CartaoCorporativo': 'Débito ou crédito na fatura da empresa.',
+  'financial.create.payMethod.desc.Cambio': 'Operação de câmbio / moeda estrangeira.',
+  'financial.create.payMethod.desc.GuiaRecolhimento': 'Guia de recolhimento (DARF / GPS).',
+  'financial.create.payMethod.desc.Outro': 'Cheque, dinheiro, compensação.',
+  // Campos complementares por método (chrome até o backend aceitar — core-api#89).
+  'financial.create.payMethod.boletoLabel': 'Linha digitável (47-48 dígitos)',
+  'financial.create.payMethod.boletoHint':
+    'Será preenchida via OCR ou manual — aguardando backend (core-api#89).',
+  'financial.create.payMethod.cardLabel': 'Cartão corporativo',
+  'financial.create.payMethod.cardHint': 'Cartão da empresa — aguardando backend (core-api#89).',
+  'financial.create.payMethod.freeLabel': 'Especifique a forma de pagamento',
+  'financial.create.payMethod.freeHint': 'Cheque, dinheiro, compensação… — aguardando backend (core-api#89).',
+  'financial.create.payMethod.currencyLabel': 'Moeda / detalhes do câmbio',
+  'financial.create.payMethod.currencyHint':
+    'Moeda estrangeira e cotação da conversão — aguardando backend (core-api#89).',
   'financial.create.pagamento.contaFornecedor': 'Conta do fornecedor',
   'financial.create.pagamento.contaFornecedorHint': 'Conforme dados bancários do fornecedor',
   'financial.create.pagamento.aprovador': 'Aprovador',

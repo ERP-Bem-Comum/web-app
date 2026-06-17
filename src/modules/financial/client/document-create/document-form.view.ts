@@ -14,6 +14,8 @@ import type {
   PaymentMethod,
   RetentionInput,
   RetentionType,
+  RegisteredTaxInput,
+  RegisteredTaxType,
 } from '#modules/financial/client/data/model/document.model.ts'
 
 // Re-export dos tipos que a UI precisa — as views importam SÓ do view-model (§XI), nunca de client-data.
@@ -21,6 +23,7 @@ export type {
   DocumentType,
   PaymentMethod,
   RetentionType,
+  RegisteredTaxType,
 } from '#modules/financial/client/data/model/document.model.ts'
 export type SupplierOption = Readonly<{ id: string; name: string }>
 
@@ -84,6 +87,15 @@ export type RetentionFieldsReais = Readonly<{
   csll: string
 }>
 
+// Reforma Tributária (CBS/IBS) — campos de **registro de valor apenas** (OCR preenche ou manual). Por
+// regra documentada (specs/FIN-DOCUMENTO-INGESTAO, domain R5): NÃO geram filho, NÃO viram retenção e
+// NÃO abatem do líquido — só são enviados em `registeredTaxes[]` p/ auditoria fiscal.
+export type ReformaTributariaFieldsReais = Readonly<{
+  cbs: string
+  ibsMunicipal: string
+  ibsEstadual: string
+}>
+
 export type DocumentFormFields = Readonly<{
   type: DocumentType | ''
   documentNumber: string
@@ -94,6 +106,7 @@ export type DocumentFormFields = Readonly<{
   dueDate: string
   description: string
   retentions: RetentionFieldsReais
+  reformaTributaria: ReformaTributariaFieldsReais
 }>
 
 export type TituloPreview = Readonly<{ kind: 'Pai' | RetentionType; valueCents: string }>
@@ -107,6 +120,12 @@ export const EMPTY_RETENTIONS: RetentionFieldsReais = {
   csll: '',
 }
 
+export const EMPTY_REFORMA_TRIBUTARIA: ReformaTributariaFieldsReais = {
+  cbs: '',
+  ibsMunicipal: '',
+  ibsEstadual: '',
+}
+
 const toCents = (reais: string): number => {
   const r = reaisToCents(reais)
   return r.ok ? Number.parseInt(r.value, 10) : 0
@@ -114,6 +133,13 @@ const toCents = (reais: string): number => {
 
 /** Retenções só valem para NFS-e e RPA (gating; backend recusa o resto → retention-not-allowed). */
 export const retentionsEnabledFor = (type: DocumentType | ''): boolean => type === 'NFS-e' || type === 'RPA'
+
+/**
+ * Reforma Tributária (CBS/IBS) — campos de registro de valor. Documentos fiscais de serviço (NFS-e/RPA)
+ * exibem CBS/IBS conforme a tabela do domínio. São SÓ registro: não geram filho nem abatem o líquido.
+ */
+export const reformaTributariaEnabledFor = (type: DocumentType | ''): boolean =>
+  type === 'NFS-e' || type === 'RPA'
 
 type RetentionTotals = Readonly<{ iss: number; irrf: number; inss: number; csrf: number; sum: number }>
 
@@ -133,6 +159,17 @@ const grossCents = (fields: DocumentFormFields): number => toCents(fields.grossV
 /** Líquido = Bruto − Σretenções (v1: descontos/multa/juros = 0). String de centavos. */
 export const netPreviewCents = (fields: DocumentFormFields): string =>
   String(grossCents(fields) - retentionTotals(fields).sum)
+
+/**
+ * Alíquota % DERIVADA de uma retenção (valor ÷ bruto), p/ exibir ao lado do rótulo na Composição
+ * (Figma: "ISS (3,5%)"). `''` quando não computável (bruto ou valor ≤ 0). Formata em pt-BR.
+ */
+export const retentionRatePct = (fields: DocumentFormFields, key: keyof RetentionFieldsReais): string => {
+  const gross = grossCents(fields)
+  const value = toCents(fields.retentions[key])
+  if (gross <= 0 || value <= 0) return ''
+  return new Intl.NumberFormat('pt-BR', { style: 'percent', maximumFractionDigits: 2 }).format(value / gross)
+}
 
 /** Títulos previstos: pai (líquido) + 1 filho por retenção (ISS/IRRF/INSS/CSRF), só os > 0. */
 export const titulosPrevistos = (fields: DocumentFormFields): readonly TituloPreview[] => {
@@ -202,6 +239,34 @@ const retentionInput = (type: RetentionType, valueCents: number, base: number): 
   valueCents: String(valueCents),
 })
 
+const registeredTaxInput = (
+  type: RegisteredTaxType,
+  valueCents: number,
+  base: number,
+): RegisteredTaxInput => ({
+  type,
+  baseCents: String(base),
+  rateBps: base > 0 ? Math.round((valueCents / base) * 10000) : 0,
+  valueCents: String(valueCents),
+})
+
+/**
+ * Monta `registeredTaxes[]` da Reforma Tributária (CBS/IBS) — só os campos > 0, base = bruto. Vazio
+ * quando o tipo não habilita reforma tributária. NÃO afeta líquido nem gera filho (regra: só registro).
+ */
+export const buildRegisteredTaxInputs = (fields: DocumentFormFields): readonly RegisteredTaxInput[] => {
+  if (!reformaTributariaEnabledFor(fields.type)) return []
+  const base = grossCents(fields)
+  const out: RegisteredTaxInput[] = []
+  const cbs = toCents(fields.reformaTributaria.cbs)
+  const ibsM = toCents(fields.reformaTributaria.ibsMunicipal)
+  const ibsE = toCents(fields.reformaTributaria.ibsEstadual)
+  if (cbs > 0) out.push(registeredTaxInput('CBS', cbs, base))
+  if (ibsM > 0) out.push(registeredTaxInput('IBS_Municipal', ibsM, base))
+  if (ibsE > 0) out.push(registeredTaxInput('IBS_Estadual', ibsE, base))
+  return out
+}
+
 const trimToUndefined = (s: string): string | undefined => (s.trim() === '' ? undefined : s.trim())
 
 /** Monta o CreateDocumentInput (com agregação CSRF) ou `null` se o form ainda não pode submeter. */
@@ -222,7 +287,7 @@ export const buildCreateInput = (fields: DocumentFormFields): CreateDocumentInpu
     paymentMethod: fields.paymentMethod,
     grossValueCents: String(gross),
     retentions,
-    registeredTaxes: [],
+    registeredTaxes: buildRegisteredTaxInputs(fields),
     dueDate: fields.dueDate,
     description: trimToUndefined(fields.description),
   }
@@ -257,7 +322,7 @@ export const buildDraftInput = (fields: DocumentFormFields): CreateDocumentInput
     paymentMethod: fields.paymentMethod,
     grossValueCents: String(gross),
     retentions,
-    registeredTaxes: [],
+    registeredTaxes: buildRegisteredTaxInputs(fields),
     dueDate: trimToUndefined(fields.dueDate),
     description: trimToUndefined(fields.description),
     asDraft: true,
@@ -349,6 +414,9 @@ export const hydrateFieldsFromDetail = (d: DocumentDetail): DocumentFormFields =
     dueDate: d.dueDate ?? '',
     description: d.description ?? '',
     retentions,
+    // Reforma Tributária não vem no GET de detalhe hoje (enriquecimento = core-api#95) e é imutável no
+    // ajuste → hidrata vazia. (Quando o detalhe expuser registeredTaxes, mapear aqui.)
+    reformaTributaria: EMPTY_REFORMA_TRIBUTARIA,
   }
 }
 
@@ -404,6 +472,96 @@ export const RETENTION_KEYS: readonly (keyof RetentionFieldsReais)[] = [
   'cofins',
   'csll',
 ]
+export const REFORMA_TRIBUTARIA_KEYS: readonly (keyof ReformaTributariaFieldsReais)[] = [
+  'cbs',
+  'ibsMunicipal',
+  'ibsEstadual',
+]
+
+// ── Metadata do tipo de documento (modal "Tipo de Documento", Figma) ─────────────
+// Classe fiscal exibida como badge: fiscal | parcial | não-fiscal. ⚠️ É a CLASSIFICAÇÃO do documento —
+// distinta de "dispara o motor de retenções" (só NFS-e/RPA; DANFE é fiscal mas não dispara no regime atual).
+export type FiscalClass = 'fiscal' | 'partial' | 'non-fiscal'
+
+const FISCAL_CLASS: Record<DocumentType, FiscalClass> = {
+  'NFS-e': 'fiscal',
+  DANFE: 'fiscal',
+  RPA: 'fiscal',
+  Fatura: 'partial',
+  Boleto: 'non-fiscal',
+  Recibo: 'non-fiscal',
+  Imposto: 'non-fiscal',
+}
+
+export type DocumentTypeMeta = Readonly<{
+  type: DocumentType
+  fiscalClass: FiscalClass
+  initials: string
+}>
+
+/** Iniciais (2 letras) p/ o avatar do card — derivadas do próprio tipo (sem mapa mágico). */
+const initialsOf = (type: DocumentType): string =>
+  type
+    .replace(/[^a-zA-Z]/g, '')
+    .slice(0, 2)
+    .toUpperCase()
+
+export const DOCUMENT_TYPE_META: readonly DocumentTypeMeta[] = DOCUMENT_TYPES.map((type) => ({
+  type,
+  fiscalClass: FISCAL_CLASS[type],
+  initials: initialsOf(type),
+}))
+
+/** Tag i18n da classe fiscal (badge) e da descrição do tipo (card do modal). */
+export const fiscalClassTag = (c: FiscalClass): string => `financial.create.docType.class.${c}`
+export const docTypeDescriptionTag = (type: DocumentType): string => `financial.create.docType.desc.${type}`
+
+// ── Metadata da Forma de Pagamento (modal + campos complementares) ───────────────
+// A forma escolhida controla o CAMPO COMPLEMENTAR exibido (mock): pix/bank usam a conta herdada do
+// fornecedor (card já existente); boleto pede linha digitável; cartão mostra o cartão corporativo.
+export type PaymentComplementary = 'pix' | 'boleto' | 'card' | 'bank' | 'currency' | 'free' | 'none'
+
+const PAYMENT_COMPLEMENTARY: Record<PaymentMethod, PaymentComplementary> = {
+  PIX: 'pix',
+  Boleto: 'boleto',
+  TED: 'bank',
+  TransferenciaBancaria: 'bank',
+  CartaoCorporativo: 'card',
+  Cambio: 'currency', // câmbio → moeda/detalhe da conversão
+  GuiaRecolhimento: 'none',
+  Outro: 'free', // outro → texto livre (especificar)
+}
+// Ícones (glifos unicode, como no mock) — o modal de pagamento usa ícones, não iniciais.
+const PAYMENT_ICON: Record<PaymentMethod, string> = {
+  PIX: '⚡',
+  Boleto: '⠇',
+  TED: '→',
+  TransferenciaBancaria: '⇄',
+  CartaoCorporativo: '▢',
+  Cambio: '$',
+  GuiaRecolhimento: '▤',
+  Outro: '·',
+}
+
+export type PaymentMethodMeta = Readonly<{
+  method: PaymentMethod
+  icon: string
+  complementary: PaymentComplementary
+}>
+
+export const PAYMENT_METHOD_META: readonly PaymentMethodMeta[] = PAYMENT_METHODS.map((method) => ({
+  method,
+  icon: PAYMENT_ICON[method],
+  complementary: PAYMENT_COMPLEMENTARY[method],
+}))
+
+/** Nome (i18n) e descrição (i18n) do método — usados no card do modal. */
+export const paymentMethodNameTag = (m: PaymentMethod): string => `financial.paymentMethod.${m}`
+export const paymentMethodDescTag = (m: PaymentMethod): string => `financial.create.payMethod.desc.${m}`
+
+/** Campo complementar controlado pela forma escolhida ('none' quando vazio). */
+export const paymentComplementaryOf = (m: PaymentMethod | ''): PaymentComplementary =>
+  m === '' ? 'none' : PAYMENT_COMPLEMENTARY[m]
 
 export const isDocumentType = (v: string): v is DocumentType =>
   (DOCUMENT_TYPES as readonly string[]).includes(v)
