@@ -761,6 +761,11 @@ export const ptBR: Catalog = {
   'partners.collaborators.employment.PJ': 'PJ',
   // Inclusão de colaborador (feature 018) — pré-cadastro dos 7 campos.
   'partners.collaborators.create.title': 'Novo Colaborador',
+  // Modal de sucesso do pré-cadastro: confirma e avisa que o link será enviado ao colaborador(a).
+  'partners.collaborators.create.success.title': 'Pré-cadastro concluído',
+  'partners.collaborators.create.success.body':
+    'Colaborador(a) pré-cadastrado, enviaremos um link ao colaborador(a) para que o cadastro seja finalizado.',
+  'partners.collaborators.create.success.ok': 'Entendi',
   'partners.collaborators.form.section.basic': 'Pré-Cadastro de Colaborador(a)',
   'partners.collaborators.form.section.territory': 'Território',
   'partners.collaborators.form.uf': 'UF',
