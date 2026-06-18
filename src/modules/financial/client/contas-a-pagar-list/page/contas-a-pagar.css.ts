@@ -22,7 +22,7 @@ export const filterBar = style({
   paddingInline: vars.space.lg, // 24px
   paddingBlock: vars.space.sm,
   background: vars.color.surface.default,
-  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  // Sem régua entre a busca e a tabela (pedido P.O.) — a separação fica no header sticky do grid.
 })
 
 export const searchWrap = style({
@@ -32,11 +32,11 @@ export const searchWrap = style({
   background: vars.color.surface.default,
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   borderRadius: vars.radius.md,
-  paddingBlock: '0.375rem', // 6px
-  paddingInlineStart: '2rem', // 32px (espaço do ícone)
-  paddingInlineEnd: '0.6875rem', // 11px
-  minInlineSize: '17.5rem', // 280px
-  maxInlineSize: '21.25rem', // 340px
+  paddingBlock: '0.5rem', // 8px — campo um pouco mais alto/confortável
+  paddingInlineStart: '2.25rem', // 36px (espaço do ícone)
+  paddingInlineEnd: '0.875rem', // 14px (sem atalho ⌘K dentro do campo)
+  inlineSize: '24rem', // largura fixa, mais larga (sem o chip de atalho)
+  maxInlineSize: '100%',
 })
 export const searchIcon = style({
   position: 'absolute',
@@ -68,49 +68,398 @@ export const kbd = style({
   borderRadius: vars.radius.sm,
 })
 
-// Status-chips = segmented control (trilho paper-warm; segmento ativo branco "elevado").
+// Status-chips = segmented control no MESMO padrão do grid de Contratos (trilho paper-warm; segmento
+// ativo branco "elevado"; Nunito 11px semibold; altura 30px). Agora clicáveis → filtram por status.
 export const statusChips = style({
   display: 'flex',
-  gap: vars.space.xs, // 4px
+  alignItems: 'center',
+  gap: '0.125rem', // 2px (Contratos)
   padding: '0.125rem', // 2px
   background: vars.color.institutional.paperWarm,
   borderRadius: vars.radius.md,
+  minInlineSize: 0,
+  overflowX: 'auto',
 })
-export const chip = style({
+const chipBase = style({
   display: 'inline-flex',
   alignItems: 'center',
-  gap: '0.375rem', // 6px
-  border: 'none',
-  background: 'transparent',
-  paddingBlock: '0.3125rem', // 5px
+  gap: vars.space.xs,
+  blockSize: '1.875rem', // 30px (Contratos)
   paddingInline: '0.625rem', // 10px
   borderRadius: vars.radius.sm,
-  fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.xs, // ~11px
-  fontWeight: vars.font.weight.medium,
-  color: vars.color.institutional.ink4,
+  fontFamily: vars.font.family.body, // Nunito (Contratos)
+  fontSize: '0.6875rem', // 11px
+  fontWeight: vars.font.weight.semibold,
+  lineHeight: 1,
   whiteSpace: 'nowrap',
+  cursor: 'pointer',
+  border: 'none',
+  background: 'transparent',
+  color: vars.color.institutional.ink4,
+  transition: 'background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease',
 })
+export const chip = style([
+  chipBase,
+  {
+    ':hover': {
+      background: vars.color.surface.default,
+      color: vars.color.institutional.ink2,
+      boxShadow: vars.shadow.card,
+    },
+  },
+])
 export const chipActive = style([
-  chip,
+  chipBase,
   {
     background: vars.color.surface.default,
     color: vars.color.institutional.ink2,
     boxShadow: vars.shadow.card,
   },
 ])
-export const chipCount = style({
+// Estado que o backend ainda não produz (Transmitido/Recusado/Pago/Conciliado) → desabilitado (chrome).
+export const chipDisabled = style([
+  chipBase,
+  {
+    color: vars.color.institutional.ink5,
+    cursor: 'not-allowed',
+    opacity: 0.5,
+  },
+])
+const chipCount = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
   fontFamily: vars.font.family.mono,
-  fontSize: vars.font.size['2xs'], // 9.5px
+  fontSize: '0.59375rem', // 9.5px (Contratos)
   fontWeight: vars.font.weight.medium,
+  minInlineSize: '1rem',
+  blockSize: '1rem',
+  paddingInline: '0.25rem',
+  borderRadius: vars.radius.sm,
   color: vars.color.institutional.ink5,
   background: vars.color.institutional.paperWarm,
-  paddingBlock: '0.0625rem', // 1px
-  paddingInline: '0.3125rem', // 5px
-  borderRadius: vars.radius.sm,
 })
 // Quando o chip ativo (fundo branco) carrega o contador, o badge ganha o tom paper-beige p/ contraste.
-export const chipCountOnActive = style([chipCount, { background: vars.color.institutional.paperBeige }])
+export const chipCountOnActive = style([
+  chipCount,
+  { color: vars.color.institutional.ink2, background: vars.color.institutional.paperBeige },
+])
+
+// ── Filtros avançados ("Adicionar filtro", estilo do mock) ────────────────────
+// Empurra o bloco de filtros para a direita da filter-bar (igual ao fbar-right do mock).
+export const fbarRight = style({ marginInlineStart: 'auto', display: 'inline-flex', gap: vars.space.sm })
+export const fltWrap = style({ position: 'relative', display: 'inline-flex' })
+export const addFilterBtn = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: vars.space.xs,
+  blockSize: '2rem',
+  paddingInline: '0.625rem',
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.md,
+  background: vars.color.surface.default,
+  fontFamily: vars.font.family.body,
+  fontSize: '0.6875rem',
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.ink2,
+  cursor: 'pointer',
+  whiteSpace: 'nowrap',
+  ':hover': {
+    background: vars.color.institutional.paperWarm,
+    borderColor: vars.color.institutional.blueLine,
+  },
+})
+// Prefixo "FILTRO" (caixa-alta, esmaecido), igual ao mock.
+export const addFilterLabel = style({
+  fontSize: '0.59375rem',
+  fontWeight: vars.font.weight.bold,
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+  color: vars.color.institutional.ink5,
+})
+export const addFilterMenu = style({
+  position: 'absolute',
+  insetBlockStart: 'calc(100% + 0.375rem)',
+  insetInlineEnd: 0,
+  zIndex: 50,
+  minInlineSize: '17rem',
+  maxBlockSize: '22rem',
+  overflowY: 'auto',
+  paddingBlock: vars.space.xs,
+  background: vars.color.surface.default,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.lg,
+  boxShadow: vars.shadow.card,
+})
+export const menuGroupLabel = style({
+  paddingInline: vars.space.md,
+  paddingBlock: vars.space.xs,
+  fontFamily: vars.font.family.body, // Nunito (marca) — grupos "Datas"/"Classificação"
+  fontSize: '0.5625rem',
+  fontWeight: vars.font.weight.bold,
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+  color: vars.color.institutional.ink5,
+})
+const menuItemBase = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  inlineSize: '100%',
+  paddingInline: vars.space.md,
+  paddingBlock: '0.4375rem',
+  border: 'none',
+  background: 'transparent',
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  textAlign: 'start',
+} as const
+export const menuItem = style([
+  menuItemBase,
+  {
+    color: vars.color.institutional.ink2,
+    cursor: 'pointer',
+    ':hover': { background: vars.color.institutional.blueBg },
+  },
+])
+export const menuItemDisabled = style([
+  menuItemBase,
+  { color: vars.color.institutional.ink5, cursor: 'not-allowed', opacity: 0.6 },
+])
+export const menuItemLabel = style({ flex: 1, minInlineSize: 0 })
+export const menuTypeTag = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: '0.5rem',
+  fontWeight: vars.font.weight.medium,
+  letterSpacing: '0.04em',
+  color: vars.color.institutional.ink5,
+  background: vars.color.institutional.paperWarm,
+  paddingInline: '0.3125rem',
+  paddingBlock: '0.125rem',
+  borderRadius: vars.radius.sm,
+})
+// Linha de chips de filtro ativos (abaixo da filter-bar).
+export const activeFilters = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  paddingInline: vars.space.lg,
+  paddingBlockEnd: vars.space.sm,
+  background: vars.color.surface.default,
+})
+export const activeFiltersLabel = style({
+  fontFamily: vars.font.family.body, // Nunito (marca)
+  fontSize: '0.59375rem',
+  fontWeight: vars.font.weight.bold,
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+  color: vars.color.institutional.ink5,
+})
+export const filterChip = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: vars.space.xs,
+  blockSize: '2rem',
+  paddingInlineStart: '0.625rem',
+  paddingInlineEnd: '0.25rem',
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.blueLine}`,
+  borderRadius: vars.radius.md,
+  background: vars.color.institutional.blueBg,
+})
+export const filterChipLabel = style({
+  fontFamily: vars.font.family.body,
+  fontSize: '0.6875rem',
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.blueDeep,
+})
+export const filterChipRange = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: vars.space.xs,
+  color: vars.color.institutional.ink4,
+})
+const chipControlBase = {
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.sm,
+  background: vars.color.surface.default,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink2,
+  paddingBlock: '0.125rem',
+  paddingInline: '0.375rem',
+} as const
+export const filterChipInput = style([chipControlBase, { fontFamily: vars.font.family.mono }])
+export const filterChipSelect = style([chipControlBase, { maxInlineSize: '11rem', cursor: 'pointer' }])
+// Autocomplete do filtro Fornecedor (busca, não dropdown gigante).
+export const filterCombo = style({ position: 'relative', display: 'inline-flex' })
+export const filterChipSearch = style([
+  chipControlBase,
+  { inlineSize: '11rem', fontFamily: vars.font.family.body },
+])
+export const filterComboList = style({
+  position: 'absolute',
+  insetBlockStart: 'calc(100% + 0.25rem)',
+  insetInlineStart: 0,
+  zIndex: 60,
+  minInlineSize: '14rem',
+  maxBlockSize: '14rem',
+  overflowY: 'auto',
+  paddingBlock: vars.space.xs,
+  background: vars.color.surface.default,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.md,
+  boxShadow: vars.shadow.card,
+})
+export const filterComboItem = style({
+  display: 'block',
+  inlineSize: '100%',
+  paddingInline: vars.space.md,
+  paddingBlock: '0.375rem',
+  border: 'none',
+  background: 'transparent',
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink2,
+  textAlign: 'start',
+  cursor: 'pointer',
+  ':hover': { background: vars.color.institutional.blueBg },
+})
+export const filterComboEmpty = style({
+  paddingInline: vars.space.md,
+  paddingBlock: '0.375rem',
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink5,
+})
+export const filterChipRemove = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  inlineSize: '1.25rem',
+  blockSize: '1.25rem',
+  border: 'none',
+  borderRadius: vars.radius.sm,
+  background: 'transparent',
+  color: vars.color.institutional.blueDeep,
+  fontSize: vars.font.size.sm,
+  lineHeight: 1,
+  cursor: 'pointer',
+  ':hover': { background: vars.color.institutional.blueLine },
+})
+export const clearAllFilters = style({
+  border: 'none',
+  background: 'transparent',
+  fontFamily: vars.font.family.body,
+  fontSize: '0.6875rem',
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.ink4,
+  cursor: 'pointer',
+  ':hover': { color: vars.color.institutional.ink2, textDecoration: 'underline' },
+})
+
+// ── Modal de confirmação de EXCLUSÃO (hard-delete) ────────────────────────────
+export const confirmOverlay = style({
+  position: 'fixed',
+  inset: 0,
+  zIndex: 200,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: vars.space.lg,
+  background: vars.color.institutional.overlay,
+})
+export const confirmDialog = style({
+  inlineSize: '28rem',
+  maxInlineSize: '100%',
+  padding: vars.space.lg,
+  background: vars.color.surface.default,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.lg,
+  boxShadow: vars.shadow.card,
+})
+export const confirmTitle = style({
+  margin: 0,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.lg,
+  fontWeight: vars.font.weight.bold,
+  color: vars.color.institutional.ink2,
+})
+export const confirmText = style({
+  marginBlock: vars.space.sm,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+  lineHeight: 1.5,
+  color: vars.color.institutional.ink3,
+})
+export const confirmWarn = style({
+  marginBlockStart: vars.space.sm,
+  padding: vars.space.sm,
+  borderRadius: vars.radius.sm,
+  background: vars.color.feedback.errorBg,
+  color: vars.color.feedback.errorText,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  fontWeight: vars.font.weight.semibold,
+})
+export const confirmActions = style({
+  display: 'flex',
+  justifyContent: 'flex-end',
+  gap: vars.space.sm,
+  marginBlockStart: vars.space.lg,
+})
+const confirmBtnBase = {
+  blockSize: '2.5rem',
+  paddingInline: vars.space.lg,
+  borderRadius: vars.radius.md,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.bold,
+  cursor: 'pointer',
+} as const
+export const confirmCancelBtn = style([
+  confirmBtnBase,
+  {
+    border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+    background: vars.color.surface.default,
+    color: vars.color.institutional.ink2,
+    ':hover': { background: vars.color.institutional.paperWarm },
+  },
+])
+export const confirmDeleteBtn = style([
+  confirmBtnBase,
+  {
+    border: 'none',
+    background: vars.color.feedback.errorText,
+    color: vars.color.surface.default,
+    ':hover': { filter: 'brightness(0.95)' },
+    ':disabled': { opacity: 0.6, cursor: 'not-allowed' },
+  },
+])
+// Botão primário (azul da marca) — usado no modal de Alterar vencimento.
+export const confirmPrimaryBtn = style([
+  confirmBtnBase,
+  {
+    border: 'none',
+    background: vars.color.institutional.blueDeep,
+    color: vars.color.surface.default,
+    ':hover': { filter: 'brightness(0.95)' },
+    ':disabled': { opacity: 0.6, cursor: 'not-allowed' },
+  },
+])
+// Input de data do modal de Alterar vencimento.
+export const confirmDateInput = style({
+  inlineSize: '100%',
+  marginBlockStart: vars.space.sm,
+  paddingBlock: vars.space.sm,
+  paddingInline: vars.space.md,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.md,
+  background: vars.color.surface.default,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+  color: vars.color.institutional.ink2,
+})
 
 // ── Grid (Figma 205-638) — enriquecido pela 012/#47: + Contrato, Forma, Emissão, Bruto ─────────────
 // Larguras balanceadas (espaço proporcional entre as colunas); Fornecedor é a flexível (minmax).
@@ -128,7 +477,9 @@ export const gridWrap = style({
 // sticky e na horizontal (minInlineSize > largura do container). Scrollbar fina/discreta da marca.
 export const grid = style({
   minInlineSize: '88rem', // colunas folgadas (sem corte); abaixo disso rola na horizontal
-  maxBlockSize: 'calc(100dvh - 15rem)',
+  // Reserva p/ o topo (header do shell + filter-bar) E o rodapé FIXO (3.5rem) + folga, p/ a última
+  // linha nunca ficar coberta pelo bottombar (antes 15rem deixava a borda inferior sob o rodapé).
+  maxBlockSize: 'calc(100dvh - 18rem)',
   overflow: 'auto',
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   borderRadius: vars.radius.lg,
@@ -564,6 +915,22 @@ export const compRow = style({
   color: vars.color.text.secondary,
 })
 export const compVal = style({ fontFamily: vars.font.family.mono, color: vars.color.institutional.ink2 })
+// Linha única de Retenções (soma) destacada em vermelho (mock): "− Retenções (IRRF, INSS, ISS)  (R$ 550,00)".
+export const compRowRetentions = style([
+  compRow,
+  {
+    marginBlock: vars.space.xs,
+    paddingInline: vars.space.sm,
+    borderRadius: vars.radius.sm,
+    background: vars.color.feedback.errorBg,
+    color: vars.color.feedback.errorText,
+    fontWeight: vars.font.weight.semibold,
+  },
+])
+export const compValRetentions = style([
+  compVal,
+  { color: vars.color.feedback.errorText, fontWeight: vars.font.weight.semibold },
+])
 export const netRow = style({
   display: 'flex',
   justifyContent: 'space-between',
@@ -756,6 +1123,8 @@ export const dwStatusPill = style({
   fontFamily: vars.font.family.heading,
   fontSize: vars.font.size['2xs'],
   fontWeight: vars.font.weight.semibold,
+  textTransform: 'uppercase', // CAIXA ALTA igual aos status do grid (pedido P.O.)
+  letterSpacing: '0.04em',
   whiteSpace: 'nowrap',
   '::before': {
     content: '""',

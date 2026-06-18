@@ -17,6 +17,7 @@ import type {
   RegisteredTaxInput,
   RegisteredTaxType,
 } from '#modules/financial/client/data/model/document.model.ts'
+import type { OcrExtractedFields } from '#modules/financial/client/data/model/ocr.model.ts'
 
 // Re-export dos tipos que a UI precisa — as views importam SÓ do view-model (§XI), nunca de client-data.
 export type {
@@ -25,6 +26,7 @@ export type {
   RetentionType,
   RegisteredTaxType,
 } from '#modules/financial/client/data/model/document.model.ts'
+export type { OcrExtractedFields } from '#modules/financial/client/data/model/ocr.model.ts'
 export type SupplierOption = Readonly<{ id: string; name: string }>
 
 // Parceiro selecionável no picker do hero (Fornecedor/Financiador/Ato/Colaborador). `supplierRef` do
@@ -474,6 +476,40 @@ export const hydrateFieldsFromDetail = (d: DocumentDetail): DocumentFormFields =
     reformaTributaria: EMPTY_REFORMA_TRIBUTARIA,
   }
 }
+
+// ── OCR → form (costura p/ core-api#62) ───────────────────────────────────────
+// Converte os campos extraídos pelo OCR (cents/ISO) no shape do form (reais mascarado/ISO). PURA. O
+// resultado é um PATCH parcial: só os campos que o OCR trouxe (o operador confirma; OCR nunca confirma).
+// CSRF agrega em `pis` (mesma convenção da hidratação do detalhe). `supplierTaxId` exige resolver o
+// parceiro (passo futuro) → não entra no patch aqui.
+const ocrRetentionsToFields = (
+  rets: readonly Readonly<{ type: RetentionType; valueCents: string }>[],
+): RetentionFieldsReais => {
+  const out: { -readonly [K in keyof RetentionFieldsReais]: string } = { ...EMPTY_RETENTIONS }
+  for (const r of rets) {
+    const reais = centsToReais(r.valueCents)
+    if (r.type === 'ISS') out.iss = reais
+    else if (r.type === 'IRRF') out.irrf = reais
+    else if (r.type === 'INSS') out.inss = reais
+    else out.pis = reais // CSRF → pis (agregado, igual à hidratação do detalhe)
+  }
+  return out
+}
+
+// Estado do fluxo de OCR (a UI exibe a mensagem conforme). `unavailable` = backend ausente (core-api#62).
+export type OcrStatus = 'idle' | 'running' | 'unavailable' | 'error' | 'done'
+
+export const ocrToFormPatch = (f: OcrExtractedFields): Partial<DocumentFormFields> => ({
+  ...(f.type !== undefined ? { type: f.type } : {}),
+  ...(f.documentNumber !== undefined ? { documentNumber: f.documentNumber } : {}),
+  ...(f.series !== undefined ? { series: f.series } : {}),
+  ...(f.grossValueCents !== undefined ? { grossValue: centsToReais(f.grossValueCents) } : {}),
+  ...(f.dueDate !== undefined ? { dueDate: f.dueDate } : {}),
+  ...(f.description !== undefined ? { description: f.description } : {}),
+  ...(f.retentions !== undefined && f.retentions.length > 0
+    ? { retentions: ocrRetentionsToFields(f.retentions) }
+    : {}),
+})
 
 /** Pode salvar o AJUSTE? Bruto > 0, vencimento preenchido e líquido (bruto − retenções atuais) > 0. */
 export const canSaveEdit = (fields: DocumentFormFields, detail: DocumentDetail): boolean => {

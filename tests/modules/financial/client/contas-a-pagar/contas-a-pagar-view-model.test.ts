@@ -15,6 +15,12 @@ import {
   sumSelectedGrossBRL,
   maskCnpj,
   bulkStatusTargets,
+  bulkDeleteTargets,
+  bulkDueDateTargets,
+  filterByLabel,
+  filterRowsBySearch,
+  STATUS_CHIPS,
+  FILTER_DIMS,
 } from '../../../../../src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts'
 import { ok, err } from '../../../../../src/shared/primitives/result.ts'
 import type {
@@ -197,6 +203,134 @@ describe('bulkStatusTargets', () => {
     const tg = bulkStatusTargets(rows, new Set(['d']))
     assert.deepEqual(tg.approve, [])
     assert.deepEqual(tg.reopen, [])
+  })
+})
+
+describe('bulkDeleteTargets', () => {
+  const rows = buildRows(
+    [
+      summary({ id: 'a', status: 'Aberto', version: 2 }),
+      summary({ id: 'b', status: 'Rascunho', version: 0 }),
+      summary({ id: 'c', status: 'Aberto', version: 1 }),
+      summary({ id: 'd', status: 'Aprovado', version: 9 }),
+    ],
+    supplierName,
+  )
+
+  it('deletable = só "Aberto" da seleção (id + version); conta rascunhos à parte; Aprovado fica de fora', () => {
+    const tg = bulkDeleteTargets(rows, new Set(['a', 'b', 'd']))
+    assert.deepEqual(tg.deletable, [{ id: 'a', version: 2 }])
+    assert.equal(tg.draftCount, 1)
+  })
+
+  it('seleção só de rascunho: nada deletável, draftCount conta', () => {
+    const tg = bulkDeleteTargets(rows, new Set(['b']))
+    assert.deepEqual(tg.deletable, [])
+    assert.equal(tg.draftCount, 1)
+  })
+})
+
+describe('bulkDueDateTargets', () => {
+  const rows = buildRows(
+    [
+      summary({ id: 'a', status: 'Aberto', version: 2 }),
+      summary({ id: 'b', status: 'Aprovado', version: 5 }),
+      summary({ id: 'c', status: 'Aberto', version: 1 }),
+    ],
+    supplierName,
+  )
+
+  it('editable = só "Aberto" (id+version); blockedCount conta os demais selecionados', () => {
+    const tg = bulkDueDateTargets(rows, new Set(['a', 'b', 'c']))
+    assert.deepEqual(tg.editable, [
+      { id: 'a', version: 2 },
+      { id: 'c', version: 1 },
+    ])
+    assert.equal(tg.blockedCount, 1)
+  })
+})
+
+describe('STATUS_CHIPS (filtro por status)', () => {
+  it('"Todos" sem status; Rascunho/Aberto/Aprovado filtram; demais são chrome (não filtram)', () => {
+    const byKey = Object.fromEntries(STATUS_CHIPS.map((c) => [c.key, c]))
+    assert.equal(byKey.todos?.status, null)
+    assert.equal(byKey.todos?.filterable, true)
+    assert.equal(byKey.rascunho?.status, 'Rascunho')
+    assert.equal(byKey.aberto?.status, 'Aberto')
+    assert.equal(byKey.aprovado?.status, 'Aprovado')
+    for (const k of ['rascunho', 'aberto', 'aprovado']) assert.equal(byKey[k]?.filterable, true)
+    // Estados que o backend ainda não produz → desabilitados.
+    for (const k of ['transmitido', 'recusado', 'pago', 'conciliado'])
+      assert.equal(byKey[k]?.filterable, false)
+  })
+})
+
+describe('FILTER_DIMS (filtros avançados)', () => {
+  it('só expõe as 3 dimensões com backend (Vencimento/Tipo/Fornecedor), todas habilitadas', () => {
+    assert.deepEqual(
+      FILTER_DIMS.map((d) => d.id),
+      ['vencimento', 'tipo', 'fornecedor'],
+    )
+    assert.ok(FILTER_DIMS.every((d) => d.enabled))
+  })
+})
+
+describe('filterRowsBySearch (busca rápida da página)', () => {
+  const resolveName = (ref: string | null): string =>
+    ref === 's1' ? 'Bambu Educação' : ref === 's2' ? 'Padaria Bartolomeu' : (ref ?? '—')
+  const resolveDoc = (ref: string | null): string | null =>
+    ref === 's1' ? '37364305000192' : ref === 's2' ? '68996168000132' : null
+  const rows = buildRows(
+    [
+      summary({ id: 'a', supplierRef: 's1', documentNumber: '0847' }),
+      summary({ id: 'b', supplierRef: 's2', documentNumber: '0345' }),
+    ],
+    resolveName,
+    undefined,
+    resolveDoc,
+  )
+
+  it('por nome do fornecedor (case-insensitive)', () => {
+    assert.deepEqual(
+      filterRowsBySearch(rows, 'bambu').map((r) => r.id),
+      ['a'],
+    )
+  })
+  it('por número do documento', () => {
+    assert.deepEqual(
+      filterRowsBySearch(rows, '0345').map((r) => r.id),
+      ['b'],
+    )
+  })
+  it('por CNPJ (dígitos, ignorando máscara)', () => {
+    assert.deepEqual(
+      filterRowsBySearch(rows, '37364305').map((r) => r.id),
+      ['a'],
+    )
+  })
+  it('query vazia devolve tudo', () => {
+    assert.equal(filterRowsBySearch(rows, '').length, 2)
+  })
+})
+
+describe('filterByLabel (autocomplete do Fornecedor)', () => {
+  const opts = [
+    { value: '1', label: 'Bambu Educação' },
+    { value: '2', label: 'Banco do Brasil' },
+    { value: '3', label: 'Padaria Bartolomeu' },
+  ]
+  it('substring case-insensitive', () => {
+    assert.deepEqual(
+      filterByLabel(opts, 'ban').map((o) => o.value),
+      ['2'],
+    )
+    assert.deepEqual(
+      filterByLabel(opts, 'BA').map((o) => o.value),
+      ['1', '2', '3'],
+    )
+  })
+  it('query vazia → primeiros (respeita o teto)', () => {
+    assert.equal(filterByLabel(opts, '', 2).length, 2)
   })
 })
 

@@ -164,6 +164,7 @@ export function DocumentGrid(props: DocumentGridProps): ReactNode {
                 {r.paymentMethod !== null ? t(`financial.paymentMethod.${r.paymentMethod}`) : DASH}
               </span>
               <span className={cell}>{r.emissao}</span>
+              {/* Vencimento é só-leitura aqui. Alteração: drawer → "Editar pagamento" (1) ou footer (1+). */}
               <span className={cell}>{r.due}</span>
               <span className={cellGross}>{r.gross}</span>
               <span className={cellNet}>{r.net}</span>

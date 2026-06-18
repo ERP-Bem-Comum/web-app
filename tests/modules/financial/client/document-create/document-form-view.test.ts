@@ -33,6 +33,7 @@ import {
   hydrateFieldsFromDetail,
   canSaveEdit,
   buildAdjustInput,
+  ocrToFormPatch,
   EMPTY_REFORMA_TRIBUTARIA,
   type DocumentFormFields,
   type PartnerOption,
@@ -443,5 +444,39 @@ describe('canSaveEdit / buildAdjustInput', () => {
 
   it('buildAdjustInput: null quando não pode salvar', () => {
     assert.equal(buildAdjustInput({ ...fields, dueDate: '' }, detail), null)
+  })
+})
+
+describe('ocrToFormPatch (costura OCR → form)', () => {
+  it('mapeia só os campos extraídos (cents→reais, dueDate ISO); patch parcial', () => {
+    const patch = ocrToFormPatch({
+      type: 'NFS-e',
+      documentNumber: '0847',
+      grossValueCents: '160000',
+      dueDate: '2026-07-10',
+    })
+    assert.equal(patch.type, 'NFS-e')
+    assert.equal(patch.documentNumber, '0847')
+    assert.equal(patch.grossValue, '1.600,00')
+    assert.equal(patch.dueDate, '2026-07-10')
+    // não veio série/descrição/retenção → não entram no patch
+    assert.equal('series' in patch, false)
+    assert.equal('retentions' in patch, false)
+  })
+
+  it('retenções: CSRF agrega em pis (mesma convenção da hidratação)', () => {
+    const patch = ocrToFormPatch({
+      retentions: [
+        { type: 'IRRF', valueCents: '15000' },
+        { type: 'CSRF', valueCents: '4650' },
+      ],
+    })
+    assert.equal(patch.retentions?.irrf, '150,00')
+    assert.equal(patch.retentions?.pis, '46,50')
+    assert.equal(patch.retentions?.iss, '')
+  })
+
+  it('vazio → patch vazio', () => {
+    assert.deepEqual(ocrToFormPatch({}), {})
   })
 })

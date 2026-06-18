@@ -72,4 +72,12 @@ describe('DocumentGrid', () => {
     render(<DocumentGrid state={{ tag: 'loading' }} />)
     expect(screen.getByText(tr('financial.list.loading'))).toBeTruthy()
   })
+
+  it('Vencimento é só-leitura na tabela (alteração via drawer ou footer)', () => {
+    render(<DocumentGrid state={readyState} />)
+    expect(screen.getByText('10/07/2026')).toBeTruthy()
+    expect(screen.queryByRole('textbox')).toBeNull()
+    // sem input de data inline na coluna de vencimento
+    expect(document.querySelector('input[type="date"]')).toBeNull()
+  })
 })

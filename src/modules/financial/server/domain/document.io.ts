@@ -92,9 +92,10 @@ export interface ApproveInput {
   version: number
 }
 
-// Cancelar (DELETE /documents/:id) — só em Aberto; hard-delete.
+// Cancelar (DELETE /documents/:id) — só em Aberto; hard-delete. `version` = optimistic lock (corpo).
 export interface CancelInput {
   id: string
+  version: number
 }
 
 // Listagem (GET /documents) — stub vazio na Fatia 1.

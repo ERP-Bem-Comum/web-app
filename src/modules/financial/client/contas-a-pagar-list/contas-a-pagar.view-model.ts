@@ -12,6 +12,7 @@ import type { FinancialError } from '#modules/financial/client/data/repository/f
 import type {
   DocumentListResponse,
   DocumentStatus,
+  DocumentType,
   DocumentSummary,
   DocumentDetail,
   RetentionType,
@@ -19,7 +20,11 @@ import type {
 } from '#modules/financial/client/data/model/document.model.ts'
 
 // Re-export p/ as views (ui) tiparem sem importar de client/data (boundary §I).
-export type { DocumentStatus, RetentionType } from '#modules/financial/client/data/model/document.model.ts'
+export type {
+  DocumentStatus,
+  DocumentType,
+  RetentionType,
+} from '#modules/financial/client/data/model/document.model.ts'
 
 // Resolve o nome do fornecedor a partir do `supplierRef` (o DTO da lista só traz o id). Vem do binding
 // (mapa dos Fornecedores já carregados). Mantém a view-model pura/testável.
@@ -94,18 +99,128 @@ export const COLUMNS = [
   { key: 'status', labelTag: 'financial.list.col.status', align: 'left' },
 ] as const
 
-// Chips de status (Figma) — CHROME no v1: contador real só no "Todos" (= total); os por-aba dependem de
-// agregação que o backend da Fatia 2 não faz.
+// Chips de status (Figma) — filtram a lista pelo `status` real do backend (Draft/Open/Approved → PT).
+// `status: null` = "Todos" (sem filtro). `filterable: false` = estado que o backend ainda NÃO produz
+// (Transmitido/Recusado/Pago/Conciliado, Fatia 1 só tem 3) → chip desabilitado (chrome honesto).
+// Contador real só aparece no chip ATIVO (= total da consulta filtrada); a lista é paginada no servidor.
 export const STATUS_CHIPS = [
-  { key: 'todos', labelTag: 'financial.list.chip.todos' },
-  { key: 'rascunho', labelTag: 'financial.list.chip.rascunho' },
-  { key: 'aberto', labelTag: 'financial.list.chip.aberto' },
-  { key: 'aprovado', labelTag: 'financial.list.chip.aprovado' },
-  { key: 'transmitido', labelTag: 'financial.list.chip.transmitido' },
-  { key: 'recusado', labelTag: 'financial.list.chip.recusado' },
-  { key: 'pago', labelTag: 'financial.list.chip.pago' },
-  { key: 'conciliado', labelTag: 'financial.list.chip.conciliado' },
+  { key: 'todos', labelTag: 'financial.list.chip.todos', status: null, filterable: true },
+  { key: 'rascunho', labelTag: 'financial.list.chip.rascunho', status: 'Rascunho', filterable: true },
+  { key: 'aberto', labelTag: 'financial.list.chip.aberto', status: 'Aberto', filterable: true },
+  { key: 'aprovado', labelTag: 'financial.list.chip.aprovado', status: 'Aprovado', filterable: true },
+  {
+    key: 'transmitido',
+    labelTag: 'financial.list.chip.transmitido',
+    status: 'Transmitido',
+    filterable: false,
+  },
+  { key: 'recusado', labelTag: 'financial.list.chip.recusado', status: 'Recusado', filterable: false },
+  { key: 'pago', labelTag: 'financial.list.chip.pago', status: 'Pago', filterable: false },
+  { key: 'conciliado', labelTag: 'financial.list.chip.conciliado', status: 'Conciliado', filterable: false },
+] as const satisfies readonly {
+  key: string
+  labelTag: string
+  status: DocumentStatus | null
+  filterable: boolean
+}[]
+
+// ── Filtros avançados ("Adicionar filtro", estilo do mock) ────────────────────
+// Só as dimensões com filtro REAL no backend (server-side, combinam com os status chips): Vencimento
+// (dueFrom/dueTo), Tipo (type) e Fornecedor (supplierRef). As demais do protótipo (Nº doc, CNPJ/CPF,
+// Competência, Valor, Contrato, Programa) foram DESCARTADAS por ora — voltam quando o backend expor
+// (core-api#164/#163) e o cliente exigir. `enabled` mantido p/ reintroduzir como chrome no futuro.
+export type FilterDimId = 'vencimento' | 'tipo' | 'fornecedor'
+export type FilterTypeTag = 'TEXTO' | 'PERÍODO' | 'VALOR' | 'LISTA' | 'BUSCA'
+export type FilterDim = Readonly<{
+  id: FilterDimId
+  labelTag: string
+  groupTag: string
+  typeTag: FilterTypeTag
+  enabled: boolean // true = filtra de verdade (server-side); false = chrome até o backend
+}>
+
+export const FILTER_DIMS: readonly FilterDim[] = [
+  {
+    id: 'vencimento',
+    labelTag: 'financial.list.filter.dim.vencimento',
+    groupTag: 'financial.list.filter.group.datas',
+    typeTag: 'PERÍODO',
+    enabled: true,
+  },
+  {
+    id: 'tipo',
+    labelTag: 'financial.list.filter.dim.tipo',
+    groupTag: 'financial.list.filter.group.classificacao',
+    typeTag: 'LISTA',
+    enabled: true,
+  },
+  {
+    id: 'fornecedor',
+    labelTag: 'financial.list.filter.dim.fornecedor',
+    groupTag: 'financial.list.filter.group.classificacao',
+    typeTag: 'BUSCA',
+    enabled: true,
+  },
+  // TODO(core-api#163): quando a EMISSÃO (issueDate) for modelada no backend + ganhar filtro na lista
+  // (issuedFrom/issuedTo), adicionar aqui a dimensão de Emissão (grupo "Datas", tipo PERÍODO):
+  //   { id: 'emissao', labelTag: 'financial.list.filter.dim.emissao', groupTag: '…group.datas',
+  //     typeTag: 'PERÍODO', enabled: true }
+  // + 'emissao' no FilterDimId, em AdvancedFilters ({ emissao?: {from?,to?} }), no binding (issuedFrom/
+  //   issuedTo no query) e um chip no ActiveFiltersRow. O resto do framework já suporta.
+]
+
+// Ordem dos grupos no menu (espelha o mock; só os grupos com dimensão ativa).
+export const FILTER_GROUPS = [
+  'financial.list.filter.group.datas',
+  'financial.list.filter.group.classificacao',
 ] as const
+
+// Tipos de documento p/ o filtro "Tipo" (LISTA). Espelha DocumentType do model.
+export const DOCUMENT_TYPE_OPTIONS: readonly DocumentType[] = [
+  'NFS-e',
+  'DANFE',
+  'RPA',
+  'Fatura',
+  'Boleto',
+  'Recibo',
+  'Imposto',
+]
+
+// Busca rápida (campo do topo) — filtra as linhas DA PÁGINA carregada por fornecedor / número / CNPJ.
+// ⚠️ É client-side: só enxerga a página atual (busca server-side cross-página = core-api#167). PURA.
+export const filterRowsBySearch = (rows: readonly GridRow[], query: string): readonly GridRow[] => {
+  const q = query.trim().toLowerCase()
+  if (q === '') return rows
+  const digits = q.replace(/\D/g, '')
+  return rows.filter((r) => {
+    const doc = r.supplierDoc?.toLowerCase() ?? ''
+    return (
+      r.supplier.toLowerCase().includes(q) ||
+      r.documentNumber.toLowerCase().includes(q) ||
+      doc.includes(q) ||
+      (digits !== '' && (r.supplierDoc?.replace(/\D/g, '') ?? '').includes(digits))
+    )
+  })
+}
+
+// Busca por rótulo (case-insensitive, substring) com teto — p/ o autocomplete do filtro Fornecedor
+// (pode haver inúmeros; não listamos tudo num dropdown). Query vazia → primeiros `cap`. PURA.
+export const filterByLabel = <T extends Readonly<{ label: string }>>(
+  options: readonly T[],
+  query: string,
+  cap = 8,
+): readonly T[] => {
+  const q = query.trim().toLowerCase()
+  const base = q === '' ? options : options.filter((o) => o.label.toLowerCase().includes(q))
+  return base.slice(0, cap)
+}
+
+// Valores dos filtros avançados ativos (só os com backend). Vazio = sem filtro.
+export type AdvancedFilters = Readonly<{
+  vencimento?: Readonly<{ from?: string; to?: string }> // YYYY-MM-DD → dueFrom/dueTo
+  tipo?: DocumentType
+  fornecedor?: string // supplierRef (uuid)
+}>
 
 const DASH = '—'
 
@@ -159,6 +274,35 @@ export const bulkStatusTargets = (
   return {
     approve: sel.filter((r) => r.status === 'Aberto').map(pick),
     reopen: sel.filter((r) => r.status === 'Aprovado').map(pick),
+  }
+}
+
+// Excluir (hard-delete) — o core-api só cancela documentos em **Aberto** (Rascunho dá 409, core-api#166).
+// `deletable` = alvos Aberto (id + version, p/ o optimistic lock do DELETE); `draftCount` = Rascunho fora.
+export type BulkDeleteTargets = Readonly<{ deletable: readonly StatusTarget[]; draftCount: number }>
+export const bulkDeleteTargets = (
+  rows: readonly GridRow[],
+  selected: ReadonlySet<string>,
+): BulkDeleteTargets => {
+  const sel = rows.filter((r) => selected.has(r.id))
+  return {
+    deletable: sel.filter((r) => r.status === 'Aberto').map((r) => ({ id: r.id, version: r.version })),
+    draftCount: sel.filter((r) => r.status === 'Rascunho').length,
+  }
+}
+
+// Alterar vencimento (1+) — o core-api só ajusta documentos em **Aberto**. `editable` = alvos Aberto
+// (id+version, p/ o PATCH); `blockedCount` = selecionados em outro status (não alteráveis). O "lote" é
+// feito como N PATCHes individuais (core-api#162 = otimização futura p/ 1 chamada só).
+export type BulkDueDateTargets = Readonly<{ editable: readonly StatusTarget[]; blockedCount: number }>
+export const bulkDueDateTargets = (
+  rows: readonly GridRow[],
+  selected: ReadonlySet<string>,
+): BulkDueDateTargets => {
+  const sel = rows.filter((r) => selected.has(r.id))
+  return {
+    editable: sel.filter((r) => r.status === 'Aberto').map((r) => ({ id: r.id, version: r.version })),
+    blockedCount: sel.filter((r) => r.status !== 'Aberto').length,
   }
 }
 
@@ -230,8 +374,22 @@ export type DocumentDetailView = Readonly<{
   paymentMethod: PaymentMethod | null
   description: string
   retentions: readonly RetentionLine[]
+  // Total das retenções (soma dos filhos), formatado em BRL. `null` quando não há retenção.
+  // No drawer aparece numa linha única destacada em vermelho (mock): "− Retenções (IRRF, INSS, ISS)".
+  retentionsTotal: string | null
   payables: readonly DetailPayableView[]
 }>
+
+/** Soma (centavos) dos títulos-filho de retenção → BRL formatado; `null` quando não há retenção. PURA. */
+const sumRetentionsBRL = (payables: DocumentDetail['payables']): string | null => {
+  const children = payables.filter((p) => p.kind === 'Child' && p.retentionType !== null)
+  if (children.length === 0) return null
+  const totalCents = children.reduce(
+    (s, p) => s + Number.parseInt(p.valueCents !== '' ? p.valueCents : '0', 10),
+    0,
+  )
+  return centsToBRL(String(totalCents))
+}
 
 /** DocumentDetail (GET /:id) → view do drawer. PURA. Resolve nome + CNPJ do fornecedor pelos resolvers. */
 export const mapDocumentDetail = (
@@ -256,6 +414,7 @@ export const mapDocumentDetail = (
       ? [{ type: p.retentionType, value: centsToBRL(p.valueCents) }]
       : [],
   ),
+  retentionsTotal: sumRetentionsBRL(d.payables),
   payables: d.payables.map((p) => ({
     id: p.id,
     isParent: p.kind === 'Parent',

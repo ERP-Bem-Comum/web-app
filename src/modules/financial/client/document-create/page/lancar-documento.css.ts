@@ -643,6 +643,26 @@ export const dropzoneFormats = style({
   fontSize: vars.font.size['2xs'],
   color: vars.color.text.muted,
 })
+// Input de arquivo escondido (o <label> ghostButton dispara o seletor).
+export const fileInputHidden = style({
+  position: 'absolute',
+  inlineSize: '0.0625rem',
+  blockSize: '0.0625rem',
+  padding: 0,
+  margin: '-0.0625rem',
+  overflow: 'hidden',
+  clip: 'rect(0,0,0,0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+})
+// Nota de estado do OCR (lendo / indisponível / erro) — honesta, abaixo do botão.
+export const dropzoneNote = style({
+  marginBlockStart: vars.space.xs,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size['2xs'],
+  color: vars.color.institutional.blueDeep,
+  textAlign: 'center',
+})
 
 // ── Sidebar: painéis FLAT (Figma 670:* — sem card; só título + conteúdo) ─────────
 export const panel = style({ display: 'flex', flexDirection: 'column', gap: '0.625rem' /* 10px */ })
