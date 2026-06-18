@@ -9,6 +9,8 @@ import assert from 'node:assert/strict'
 import {
   retentionsEnabledFor,
   reformaTributariaEnabledFor,
+  issAllowedFor,
+  allowedRetentionKeysFor,
   netPreviewCents,
   titulosPrevistos,
   canSubmit,
@@ -70,12 +72,38 @@ describe('retentionsEnabledFor', () => {
   })
 })
 
+describe('issAllowedFor / allowedRetentionKeysFor (ISS é exclusiva de NFS-e)', () => {
+  it('ISS só em NFS-e (RPA não aceita → espelha ALLOWED_RETENTIONS do core-api)', () => {
+    assert.equal(issAllowedFor('NFS-e'), true)
+    assert.equal(issAllowedFor('RPA'), false)
+  })
+  it('NFS-e exibe as 6 chaves (com ISS); RPA exibe 5 (sem ISS); demais nenhuma', () => {
+    assert.deepEqual(allowedRetentionKeysFor('NFS-e'), ['iss', 'irrf', 'inss', 'pis', 'cofins', 'csll'])
+    assert.deepEqual(allowedRetentionKeysFor('RPA'), ['irrf', 'inss', 'pis', 'cofins', 'csll'])
+    assert.deepEqual(allowedRetentionKeysFor('Boleto'), [])
+  })
+})
+
 describe('netPreviewCents', () => {
   it('líquido = bruto − Σretenções', () => {
     assert.equal(netPreviewCents(base), '793500')
   })
   it('tipo sem retenção: líquido = bruto (retenções ignoradas)', () => {
     assert.equal(netPreviewCents({ ...base, type: 'Boleto' }), '1000000')
+  })
+  it('RPA com ISS herdada: ISS é ignorada no líquido (RPA não aceita ISS)', () => {
+    // base tem ISS 350; em RPA o ISS não conta → líquido sobe 350 (R$ 7.935 → R$ 8.285).
+    assert.equal(netPreviewCents({ ...base, type: 'RPA' }), '828500')
+  })
+})
+
+describe('buildCreateInput — RPA não envia retenção ISS (evita 422)', () => {
+  it('RPA com ISS preenchida: o input NÃO inclui ISS (só IRRF/INSS/CSRF)', () => {
+    const input = buildCreateInput({ ...base, type: 'RPA' })
+    assert.notEqual(input, null)
+    const tipos = input?.retentions.map((r) => r.type) ?? []
+    assert.equal(tipos.includes('ISS'), false)
+    assert.deepEqual([...tipos].sort(), ['CSRF', 'INSS', 'IRRF'])
   })
 })
 

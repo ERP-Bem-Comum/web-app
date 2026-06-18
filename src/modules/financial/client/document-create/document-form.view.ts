@@ -136,6 +136,13 @@ const toCents = (reais: string): number => {
 export const retentionsEnabledFor = (type: DocumentType | ''): boolean => type === 'NFS-e' || type === 'RPA'
 
 /**
+ * ISS é retenção EXCLUSIVA de NFS-e. RPA aceita só IRRF/INSS/CSRF (espelha `ALLOWED_RETENTIONS` do
+ * core-api: NFS-e={ISS,IRRF,INSS,CSRF}, RPA={IRRF,INSS,CSRF}). Enviar ISS num RPA → 422
+ * `retention-not-allowed-for-type`. Por isso o campo ISS não aparece (nem entra no cálculo) em RPA.
+ */
+export const issAllowedFor = (type: DocumentType | ''): boolean => type === 'NFS-e'
+
+/**
  * Reforma Tributária (CBS/IBS) — campos de registro de valor. Documentos fiscais de serviço (NFS-e/RPA)
  * exibem CBS/IBS conforme a tabela do domínio. São SÓ registro: não geram filho nem abatem o líquido.
  */
@@ -146,7 +153,8 @@ type RetentionTotals = Readonly<{ iss: number; irrf: number; inss: number; csrf:
 
 const retentionTotals = (fields: DocumentFormFields): RetentionTotals => {
   if (!retentionsEnabledFor(fields.type)) return { iss: 0, irrf: 0, inss: 0, csrf: 0, sum: 0 }
-  const iss = toCents(fields.retentions.iss)
+  // ISS só conta para NFS-e (RPA não aceita ISS → ignora valor herdado p/ não cair em 422 no backend).
+  const iss = issAllowedFor(fields.type) ? toCents(fields.retentions.iss) : 0
   const irrf = toCents(fields.retentions.irrf)
   const inss = toCents(fields.retentions.inss)
   // CSRF agrega PIS + COFINS + CSLL num único filho (R8 do domain.md).
@@ -473,6 +481,12 @@ export const RETENTION_KEYS: readonly (keyof RetentionFieldsReais)[] = [
   'cofins',
   'csll',
 ]
+
+/** Chaves de retenção exibíveis por tipo: NFS-e = todas; RPA = sem ISS; demais = nenhuma (seção oculta). */
+export const allowedRetentionKeysFor = (type: DocumentType | ''): readonly (keyof RetentionFieldsReais)[] => {
+  if (!retentionsEnabledFor(type)) return []
+  return issAllowedFor(type) ? RETENTION_KEYS : RETENTION_KEYS.filter((k) => k !== 'iss')
+}
 export const REFORMA_TRIBUTARIA_KEYS: readonly (keyof ReformaTributariaFieldsReais)[] = [
   'cbs',
   'ibsMunicipal',

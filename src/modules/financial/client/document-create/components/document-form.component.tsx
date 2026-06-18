@@ -19,7 +19,7 @@ import { WalletIcon, UsersIcon } from '#shared/ui/index.ts'
 import {
   retentionsEnabledFor,
   reformaTributariaEnabledFor,
-  RETENTION_KEYS,
+  allowedRetentionKeysFor,
   REFORMA_TRIBUTARIA_KEYS,
   paymentComplementaryOf,
   paymentMethodNameTag,
@@ -305,7 +305,7 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
         <section className={section}>
           <h3 className={sectionTitle}>{t('financial.create.section.retencoes')}</h3>
           <div className={fieldGrid.six}>
-            {RETENTION_KEYS.map((key) => (
+            {allowedRetentionKeysFor(fields.type).map((key) => (
               <div className={field} key={key}>
                 <label className={fieldLabel} htmlFor={`fin-ret-${key}`}>
                   {t(`financial.create.retention.${key}`)}

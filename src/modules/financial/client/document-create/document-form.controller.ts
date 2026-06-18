@@ -11,6 +11,7 @@ import {
   EMPTY_REFORMA_TRIBUTARIA,
   retentionsEnabledFor,
   reformaTributariaEnabledFor,
+  issAllowedFor,
   type DocumentFormFields,
   type RetentionFieldsReais,
   type ReformaTributariaFieldsReais,
@@ -43,16 +44,21 @@ type FormAction =
 
 const reducer = (state: DocumentFormFields, action: FormAction): DocumentFormFields => {
   switch (action.kind) {
-    case 'setType':
-      // Tipo sem retenção/reforma (≠ NFS-e/RPA) → limpa os blocos correspondentes (gating).
+    case 'setType': {
+      // Tipo sem retenção/reforma (≠ NFS-e/RPA) → limpa os blocos correspondentes (gating). RPA mantém
+      // retenções, mas NÃO aceita ISS (só NFS-e) → zera ISS herdada p/ não enviar ISS num RPA (422).
+      const retentions = retentionsEnabledFor(action.value)
+        ? { ...state.retentions, iss: issAllowedFor(action.value) ? state.retentions.iss : '' }
+        : EMPTY_RETENTIONS
       return {
         ...state,
         type: action.value,
-        retentions: retentionsEnabledFor(action.value) ? state.retentions : EMPTY_RETENTIONS,
+        retentions,
         reformaTributaria: reformaTributariaEnabledFor(action.value)
           ? state.reformaTributaria
           : EMPTY_REFORMA_TRIBUTARIA,
       }
+    }
     case 'setPaymentMethod':
       return { ...state, paymentMethod: action.value }
     case 'setSupplier':
