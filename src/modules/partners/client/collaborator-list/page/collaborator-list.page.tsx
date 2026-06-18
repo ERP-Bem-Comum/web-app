@@ -245,8 +245,6 @@ export function CollaboratorListPage(): ReactNode {
             <CollaboratorExportDropdown
               exportLabel={t('partners.collaborators.filters.export')}
               tudoLabel={t('partners.collaborators.export.tudo')}
-              historicoLabel={t('partners.collaborators.export.historico')}
-              historicoGatedHint={t('partners.collaborators.export.historico.gated')}
               templateLabel={t('partners.collaborators.export.template')}
               onPrint={() => {
                 setPrinting(true)

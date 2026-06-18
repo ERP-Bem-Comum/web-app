@@ -1,21 +1,19 @@
 /**
- * CollaboratorExportDropdown — dropdown de export de Colaboradores conforme o print do legado:
- * **Tudo** e **Histórico** geram PDF (via `onPrint` → `window.print` do printable na página) e
- * **Baixar template** baixa um CSV com os cabeçalhos de importação (modelo p/ reimportar).
+ * CollaboratorExportDropdown — dropdown de export de Colaboradores: **Tudo** gera PDF (via `onPrint` →
+ * `window.print` do printable na página) e **Baixar template** baixa um CSV com os cabeçalhos de
+ * importação. O **histórico** é POR-colaborador → vive no detalhe (botão "Exportar histórico", D4),
+ * não na lista.
  */
 import type { ReactNode, MouseEvent } from 'react'
 
 import { FileChartIcon, FileTextIcon } from '#shared/ui/icons/index.ts'
 import { buildCsv, COLLABORATOR_IMPORT_HEADERS } from '#modules/partners/client/domain/export-csv.ts'
 
-import { wrapper, trigger, menu, menuItem, menuItemBorder, menuItemDisabled, menuItemHint } from './export-dropdown.css.ts'
+import { wrapper, trigger, menu, menuItem, menuItemBorder } from './export-dropdown.css.ts'
 
 export type CollaboratorExportDropdownProps = Readonly<{
   exportLabel: string
   tudoLabel: string
-  historicoLabel: string
-  /** Aviso do "Histórico" gated — pendente do backend (ver ticket PAR-COLLABORATOR-HISTORY-EXPORT). */
-  historicoGatedHint: string
   templateLabel: string
   onPrint: () => void
 }>
@@ -45,18 +43,26 @@ export function CollaboratorExportDropdown(props: CollaboratorExportDropdownProp
         {props.exportLabel}
       </summary>
       <div className={menu}>
-        <button type="button" className={menuItem} onClick={(e) => { props.onPrint(); closeDetails(e) }}>
+        <button
+          type="button"
+          className={menuItem}
+          onClick={(e) => {
+            props.onPrint()
+            closeDetails(e)
+          }}
+        >
           <FileChartIcon />
           {props.tudoLabel}
         </button>
-        {/* Histórico gated: no legado gerava CSV de histórico (tabela collaborator_history); o core-api
-            ainda não expõe esse dado (ticket PAR-COLLABORATOR-HISTORY-EXPORT). Desabilitado até liberar. */}
-        <button type="button" className={`${menuItem} ${menuItemBorder} ${menuItemDisabled}`} disabled aria-disabled="true">
-          <FileChartIcon />
-          {props.historicoLabel}
-        </button>
-        <span className={menuItemHint}>{props.historicoGatedHint}</span>
-        <button type="button" className={`${menuItem} ${menuItemBorder}`} onClick={(e) => { downloadTemplate(); closeDetails(e) }}>
+        {/* O histórico de alterações é por-colaborador → botão "Exportar histórico" no DETALHE (D4). */}
+        <button
+          type="button"
+          className={`${menuItem} ${menuItemBorder}`}
+          onClick={(e) => {
+            downloadTemplate()
+            closeDetails(e)
+          }}
+        >
           <FileTextIcon />
           {props.templateLabel}
         </button>
