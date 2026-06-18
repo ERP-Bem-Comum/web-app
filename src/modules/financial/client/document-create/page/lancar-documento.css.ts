@@ -144,6 +144,13 @@ export const partnerBadge = styleVariants({
     partnerBadgeBase,
     { color: vars.color.partnerType.act.text, background: vars.color.partnerType.act.background },
   ],
+  collaborator: [
+    partnerBadgeBase,
+    {
+      color: vars.color.partnerType.collaborator.text,
+      background: vars.color.partnerType.collaborator.background,
+    },
+  ],
 })
 export const heroAlter = style({
   alignSelf: 'center',

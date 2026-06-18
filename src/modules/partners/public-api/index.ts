@@ -33,8 +33,13 @@ export type {
 } from '#modules/partners/server/domain/financier/financier.io.ts'
 
 // ── Colaboradores ───────────────────────────────────────────────────────────
+export { listCollaboratorsFn } from '#modules/partners/server/adapters/server-fns/collaborator/list-collaborators.query.fn.ts'
 export { getCollaboratorFn } from '#modules/partners/server/adapters/server-fns/collaborator/get-collaborator.query.fn.ts'
-export type { CollaboratorDetail } from '#modules/partners/server/domain/collaborator/collaborator.io.ts'
+export type {
+  CollaboratorListItem,
+  CollaboratorDetail,
+  CollaboratorListResponse,
+} from '#modules/partners/server/domain/collaborator/collaborator.io.ts'
 
 // ── Geografia: Estados (US4) + Municípios (US5) ─────────────────────────────
 export { listPartnerStatesFn } from '#modules/partners/server/adapters/server-fns/geography/list-partner-states.query.fn.ts'

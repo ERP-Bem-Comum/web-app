@@ -39,6 +39,7 @@ const partners: readonly PartnerOption[] = [
   { id: '1', name: 'Bambu Educação', subtitle: '37.364.305/0001-92', kind: 'supplier' },
   { id: '2', name: 'Fundo Verde', subtitle: '11.222.333/0001-44', kind: 'financier' },
   { id: '3', name: 'Acordo Regional', subtitle: 'OS-014/2026', kind: 'act' },
+  { id: '4', name: 'Maria Souza', subtitle: 'maria.souza@bemcomum.org', kind: 'collaborator' },
 ]
 
 const base: DocumentFormFields = {
@@ -224,7 +225,7 @@ describe('PAYMENT_METHOD_META / paymentComplementaryOf', () => {
 
 describe('filterPartners', () => {
   it('vazio → devolve todos', () => {
-    assert.equal(filterPartners(partners, '   ').length, 3)
+    assert.equal(filterPartners(partners, '   ').length, 4)
   })
   it('casa por nome (case-insensitive)', () => {
     const r = filterPartners(partners, 'bambu')
@@ -247,6 +248,11 @@ describe('filterPartners', () => {
     ]
     assert.equal(filterPartners(alnum, 'abc345').length, 1)
     assert.equal(filterPartners(alnum, 'ABC345').length, 1)
+  })
+  it('casa colaborador (PF) por e-mail no subtítulo', () => {
+    const r = filterPartners(partners, 'maria.souza@')
+    assert.equal(r.length, 1)
+    assert.equal(r[0]?.kind, 'collaborator')
   })
   it('sem match → vazio', () => {
     assert.equal(filterPartners(partners, 'inexistente').length, 0)
@@ -277,6 +283,7 @@ describe('partnerKindTag', () => {
   it('mapeia o tipo para a chave i18n', () => {
     assert.equal(partnerKindTag('supplier'), 'financial.create.partner.kind.supplier')
     assert.equal(partnerKindTag('act'), 'financial.create.partner.kind.act')
+    assert.equal(partnerKindTag('collaborator'), 'financial.create.partner.kind.collaborator')
   })
 })
 

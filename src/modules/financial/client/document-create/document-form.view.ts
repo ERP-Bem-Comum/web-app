@@ -27,11 +27,12 @@ export type {
 } from '#modules/financial/client/data/model/document.model.ts'
 export type SupplierOption = Readonly<{ id: string; name: string }>
 
-// Parceiro selecionável no picker do hero (Fornecedor/Financiador/Ato). `supplierRef` do documento
-// guarda o `id`. ⚠️ Hoje o core-api só aceita Fornecedor em supplierRef (não-fornecedor → erro no salvar
-// até o backend evoluir — ver issue). Colaborador não tem list-fn na public-api → fora do picker.
-export type PartnerKind = 'supplier' | 'financier' | 'act'
-// `subtitle` = linha secundária no picker: CNPJ (fornecedor/financiador) ou nº do ato (ato).
+// Parceiro selecionável no picker do hero (Fornecedor/Financiador/Ato/Colaborador). `supplierRef` do
+// documento guarda só o `id` (UUID); o core-api persiste qualquer UUID (sem FK/validação de tipo) e o
+// FRONT resolve o nome/documento client-side via partners-map (o read-model do backend só conhece
+// fornecedor — por isso a resolução é nossa). Os 4 tipos funcionam fim-a-fim nesta tela e no grid.
+export type PartnerKind = 'supplier' | 'financier' | 'act' | 'collaborator'
+// `subtitle` = linha secundária no picker: CNPJ (PJ: fornecedor/financiador/ato) ou e-mail (colaborador, PF).
 export type PartnerOption = Readonly<{ id: string; name: string; subtitle: string; kind: PartnerKind }>
 
 /** Rótulo i18n do tipo de parceiro. */

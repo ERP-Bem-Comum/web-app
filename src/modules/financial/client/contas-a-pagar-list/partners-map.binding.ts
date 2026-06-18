@@ -1,7 +1,7 @@
 /**
- * Mapa `id → {nome, tipo}` de TODOS os parceiros (Fornecedor/Financiador/Ato) p/ resolver o `supplierRef`
- * do grid e do drawer (o DTO da lista só traz o id — FIN-LIST-DTO #47). Agrega via public-api de Parceiros
- * (§I). ACT exibe a RAZÃO SOCIAL (corporateName). O `kind` pinta o avatar pela regra de cor do parceiro.
+ * Mapa `id → {nome, tipo}` de TODOS os parceiros (Fornecedor/Financiador/Ato/Colaborador) p/ resolver o
+ * `supplierRef` do grid e do drawer (o DTO da lista só traz o id — FIN-LIST-DTO #47). Agrega via public-api
+ * de Parceiros (§I). ACT exibe a RAZÃO SOCIAL (corporateName). O `kind` pinta o avatar pela cor do parceiro.
  */
 import {
   listSuppliersFn,
@@ -9,6 +9,8 @@ import {
   listActsFn,
   getActFn,
 } from '#modules/partners/public-api/index.ts'
+
+import { listAllActiveCollaborators } from '#modules/financial/client/shared/list-all-collaborators.binding.ts'
 
 import type { PartnerKind } from './contas-a-pagar.view-model.ts'
 
@@ -19,10 +21,11 @@ const PAGE = { active: true, limit: 100 } as const
 export const partnersMapQueryOptions = {
   queryKey: ['financial', 'partners-map'] as const,
   queryFn: async (): Promise<ReadonlyMap<string, PartnerRef>> => {
-    const [suppliers, financiers, acts] = await Promise.all([
+    const [suppliers, financiers, acts, collaborators] = await Promise.all([
       listSuppliersFn({ data: PAGE }),
       listFinanciersFn({ data: PAGE }),
       listActsFn({ data: PAGE }),
+      listAllActiveCollaborators(),
     ])
     const map = new Map<string, PartnerRef>()
     if (suppliers.ok)
@@ -39,6 +42,8 @@ export const partnersMapQueryOptions = {
         if (d.ok) map.set(d.data.id, { name: d.data.corporateName, kind: 'act', document: d.data.cnpj })
       }
     }
+    // Colaborador é PF: o ListItem não traz CPF (só o Detail) → documento = e-mail (evita N fetches).
+    for (const c of collaborators) map.set(c.id, { name: c.name, kind: 'collaborator', document: c.email })
     return map
   },
   staleTime: 60_000,
