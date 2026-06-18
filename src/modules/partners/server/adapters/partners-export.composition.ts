@@ -8,6 +8,7 @@ import { coreApiBase } from '#external/core-api/api-base.ts'
 import type { PartnersError } from '#modules/partners/server/domain/errors/partners.errors.ts'
 import {
   exportPartnerCsv,
+  exportCollaboratorHistoryCsv,
   type PartnerExportResource,
   type PartnerExportQuery,
   type PartnerExportFile,
@@ -19,3 +20,9 @@ export const exportPartner = (
   token: string,
 ): Promise<Result<PartnerExportFile, PartnersError>> =>
   exportPartnerCsv(coreApiBase(loadEnvOrThrow().CORE_API_URL, 'v1'), resource, query, token)
+
+export const exportCollaboratorHistory = (
+  id: string,
+  token: string,
+): Promise<Result<PartnerExportFile, PartnersError>> =>
+  exportCollaboratorHistoryCsv(coreApiBase(loadEnvOrThrow().CORE_API_URL, 'v1'), id, token)

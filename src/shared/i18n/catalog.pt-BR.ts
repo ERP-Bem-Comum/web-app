@@ -668,6 +668,8 @@ export const ptBR: Catalog = {
   'partners.collaborators.actions.view': 'Ver',
   // Detalhe do colaborador (clique na linha da grid) — exibe o cadastro (pré + completo) com Editar.
   'partners.collaborators.detail.title': 'Detalhe do Colaborador',
+  'partners.collaborators.detail.exportHistory': 'Exportar histórico',
+  'partners.collaborators.detail.exportHistory.loading': 'Exportando…',
   'partners.collaborators.detail.section.prefilled': 'Dados pré-preenchidos pela ABC:',
   'partners.collaborators.detail.section.complete': 'Complete seu cadastro:',
   'partners.collaborators.detail.field.rg': 'RG',

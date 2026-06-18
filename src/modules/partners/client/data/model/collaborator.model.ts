@@ -196,6 +196,8 @@ export type CollaboratorCompleteInput = Readonly<{
 
 export type CollaboratorDeactivateInput = Readonly<{ id: string; reason: DeactivationReason }>
 export type CollaboratorImportInput = Readonly<{ filename: string; csv: string }>
+/** Arquivo CSV de export (histórico) repassado pelo BFF — `{ filename, csv }` (espelha `PartnerExportFile`). */
+export type CollaboratorExportFile = Readonly<{ filename: string; csv: string }>
 
 // ── Schema do formulário (validação na borda do cliente) — espelha ActFormSchema ──
 const onlyDigits = (raw: string): string => raw.replace(/\D/g, '')

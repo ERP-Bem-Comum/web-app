@@ -10,10 +10,16 @@ import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Button, PageHeader } from '#shared/ui/index.ts'
 
-import { useCollaboratorDetailBinding, type CollaboratorSaveCommand, type CollaboratorDetail } from '../collaborator-detail.binding.ts'
+import {
+  useCollaboratorDetailBinding,
+  type CollaboratorSaveCommand,
+  type CollaboratorExportHistoryCommand,
+  type CollaboratorDetail,
+} from '../collaborator-detail.binding.ts'
 import { useCollaboratorDetailFormController } from '../components/collaborator-detail-form.controller.ts'
 import { CollaboratorDetailContent } from '../components/collaborator-detail-content.component.tsx'
 import { PartnersConfirmDialog } from '#modules/partners/client/shared/partners-confirm-dialog.component.tsx'
+import { downloadCsvFile } from '#modules/partners/client/shared/download-file.ts'
 import { errorBanner, footer, saveWrap, screen, secondaryButton } from './collaborator-detail.css.ts'
 
 const t = createTranslator(ptBR)
@@ -22,14 +28,29 @@ const routeApi = getRouteApi('/_authenticated/parceiros/colaboradores/$id')
 export function CollaboratorDetailPage(): ReactNode {
   const { id } = routeApi.useParams()
   const router = useRouter()
-  const goBack = (): void => { router.history.back(); }
+  const goBack = (): void => {
+    router.history.back()
+  }
   const [editing, setEditing] = useState(false)
-  const { state, saveCommand, canWrite } = useCollaboratorDetailBinding(id, () => { setEditing(false); })
+  const { state, saveCommand, exportHistoryCommand, canWrite } = useCollaboratorDetailBinding(
+    id,
+    () => {
+      setEditing(false)
+    },
+    (file) => {
+      downloadCsvFile(file.filename, file.csv)
+    },
+  )
 
   if (state.status === 'loading') {
     return (
       <div className={screen}>
-        <PageHeader title={t('partners.collaborators.detail.title')} subtitle={t('partners.collaborators.list.loading')} onBack={goBack} backLabel={t('common.back')} />
+        <PageHeader
+          title={t('partners.collaborators.detail.title')}
+          subtitle={t('partners.collaborators.list.loading')}
+          onBack={goBack}
+          backLabel={t('common.back')}
+        />
       </div>
     )
   }
@@ -37,8 +58,14 @@ export function CollaboratorDetailPage(): ReactNode {
   if (state.status === 'error') {
     return (
       <div className={screen}>
-        <PageHeader title={t('partners.collaborators.detail.title')} onBack={goBack} backLabel={t('common.back')} />
-        <div className={errorBanner} role="alert">{t(state.errorTag)}</div>
+        <PageHeader
+          title={t('partners.collaborators.detail.title')}
+          onBack={goBack}
+          backLabel={t('common.back')}
+        />
+        <div className={errorBanner} role="alert">
+          {t(state.errorTag)}
+        </div>
       </div>
     )
   }
@@ -50,8 +77,13 @@ export function CollaboratorDetailPage(): ReactNode {
       editing={editing}
       canWrite={canWrite}
       saveCommand={saveCommand}
-      onEdit={() => { setEditing(true); }}
-      onCancel={() => { setEditing(false); }}
+      exportHistoryCommand={exportHistoryCommand}
+      onEdit={() => {
+        setEditing(true)
+      }}
+      onCancel={() => {
+        setEditing(false)
+      }}
       onBack={goBack}
     />
   )
@@ -62,12 +94,22 @@ type DetailReadyProps = Readonly<{
   editing: boolean
   canWrite: boolean
   saveCommand: CollaboratorSaveCommand
+  exportHistoryCommand: CollaboratorExportHistoryCommand
   onEdit: () => void
   onCancel: () => void
   onBack: () => void
 }>
 
-function DetailReady({ collaborator, editing, canWrite, saveCommand, onEdit, onCancel, onBack }: DetailReadyProps): ReactNode {
+function DetailReady({
+  collaborator,
+  editing,
+  canWrite,
+  saveCommand,
+  exportHistoryCommand,
+  onEdit,
+  onCancel,
+  onBack,
+}: DetailReadyProps): ReactNode {
   const c = useCollaboratorDetailFormController(collaborator)
   const [confirmingEdit, setConfirmingEdit] = useState(false)
   // Em edição mostramos sempre as 2 seções (permite completar o cadastro); em leitura, a 2ª só se já completo.
@@ -83,23 +125,60 @@ function DetailReady({ collaborator, editing, canWrite, saveCommand, onEdit, onC
         subtitle={t(`partners.collaborators.registration.${collaborator.registration}`)}
         onBack={onBack}
         backLabel={t('common.back')}
+        actions={
+          <button
+            type="button"
+            className={secondaryButton}
+            onClick={() => {
+              exportHistoryCommand.execute()
+            }}
+            disabled={exportHistoryCommand.running}
+            aria-busy={exportHistoryCommand.running || undefined}
+          >
+            {exportHistoryCommand.running
+              ? t('partners.collaborators.detail.exportHistory.loading')
+              : t('partners.collaborators.detail.exportHistory')}
+          </button>
+        }
       />
 
-      {saveCommand.errorTag !== null ? (
-        <div className={errorBanner} role="alert">{t(saveCommand.errorTag)}</div>
+      {exportHistoryCommand.errorTag !== null ? (
+        <div className={errorBanner} role="alert">
+          {t(exportHistoryCommand.errorTag)}
+        </div>
       ) : null}
 
-      <CollaboratorDetailContent controller={c} editing={editing} showComplete={showComplete} preTitle={preTitle} />
+      {saveCommand.errorTag !== null ? (
+        <div className={errorBanner} role="alert">
+          {t(saveCommand.errorTag)}
+        </div>
+      ) : null}
+
+      <CollaboratorDetailContent
+        controller={c}
+        editing={editing}
+        showComplete={showComplete}
+        preTitle={preTitle}
+      />
 
       <div className={footer}>
         {editing ? (
           <>
-            <button type="button" className={secondaryButton} onClick={() => { c.reset(collaborator); onCancel(); }}>
+            <button
+              type="button"
+              className={secondaryButton}
+              onClick={() => {
+                c.reset(collaborator)
+                onCancel()
+              }}
+            >
               {t('partners.collaborators.detail.cancel')}
             </button>
             <div className={saveWrap}>
               <Button
-                onClick={() => { setConfirmingEdit(true) }}
+                onClick={() => {
+                  setConfirmingEdit(true)
+                }}
                 loading={saveCommand.running}
                 loadingLabel={t('partners.collaborators.detail.saving')}
               >
@@ -109,7 +188,9 @@ function DetailReady({ collaborator, editing, canWrite, saveCommand, onEdit, onC
           </>
         ) : (
           <>
-            <button type="button" className={secondaryButton} onClick={onBack}>{t('common.back')}</button>
+            <button type="button" className={secondaryButton} onClick={onBack}>
+              {t('common.back')}
+            </button>
             {canWrite ? (
               <div className={saveWrap}>
                 <Button onClick={onEdit}>{t('partners.collaborators.actions.edit')}</Button>
@@ -135,7 +216,9 @@ function DetailReady({ collaborator, editing, canWrite, saveCommand, onEdit, onC
           })
           setConfirmingEdit(false)
         }}
-        onCancel={() => { setConfirmingEdit(false) }}
+        onCancel={() => {
+          setConfirmingEdit(false)
+        }}
       />
     </div>
   )

@@ -14,6 +14,7 @@ import type {
   CollaboratorDeactivateInput,
   CollaboratorImportInput,
   CollaboratorImportResult,
+  CollaboratorExportFile,
 } from '#modules/partners/client/data/model/collaborator.model.ts'
 import type { PartnersError, FnResult } from '#modules/partners/client/data/repository/partners-error.ts'
 
@@ -21,20 +22,28 @@ type ListFn = (opts: { data: CollaboratorListInput }) => Promise<FnResult<Collab
 type GetFn = (opts: { data: { id: string } }) => Promise<FnResult<CollaboratorDetail>>
 type CreateFn = (opts: { data: CollaboratorWriteInput }) => Promise<FnResult<CollaboratorDetail>>
 type CompleteFn = (opts: { data: CollaboratorCompleteInput }) => Promise<FnResult<CollaboratorDetail>>
-type UpdateFn = (opts: { data: CollaboratorWriteInput & { id: string } }) => Promise<FnResult<CollaboratorDetail>>
+type UpdateFn = (opts: {
+  data: CollaboratorWriteInput & { id: string }
+}) => Promise<FnResult<CollaboratorDetail>>
 type DeactivateFn = (opts: { data: CollaboratorDeactivateInput }) => Promise<FnResult<CollaboratorDetail>>
 type ReactivateFn = (opts: { data: { id: string } }) => Promise<FnResult<CollaboratorDetail>>
 type ImportFn = (opts: { data: CollaboratorImportInput }) => Promise<FnResult<CollaboratorImportResult>>
+type ExportHistoryFn = (opts: { data: { id: string } }) => Promise<FnResult<CollaboratorExportFile>>
 
 export type CollaboratorRepository = Readonly<{
   list: (input: CollaboratorListInput) => Promise<Result<CollaboratorListResponse, PartnersError>>
   getById: (id: string) => Promise<Result<CollaboratorDetail, PartnersError>>
   create: (input: CollaboratorWriteInput) => Promise<Result<CollaboratorDetail, PartnersError>>
-  completeRegistration: (input: CollaboratorCompleteInput) => Promise<Result<CollaboratorDetail, PartnersError>>
-  update: (input: CollaboratorWriteInput & { id: string }) => Promise<Result<CollaboratorDetail, PartnersError>>
+  completeRegistration: (
+    input: CollaboratorCompleteInput,
+  ) => Promise<Result<CollaboratorDetail, PartnersError>>
+  update: (
+    input: CollaboratorWriteInput & { id: string },
+  ) => Promise<Result<CollaboratorDetail, PartnersError>>
   deactivate: (input: CollaboratorDeactivateInput) => Promise<Result<CollaboratorDetail, PartnersError>>
   reactivate: (id: string) => Promise<Result<CollaboratorDetail, PartnersError>>
   importCsv: (input: CollaboratorImportInput) => Promise<Result<CollaboratorImportResult, PartnersError>>
+  exportHistory: (id: string) => Promise<Result<CollaboratorExportFile, PartnersError>>
 }>
 
 export const createCollaboratorRepository = (
@@ -47,6 +56,7 @@ export const createCollaboratorRepository = (
     deactivateCollaboratorFn: DeactivateFn
     reactivateCollaboratorFn: ReactivateFn
     importCollaboratorsFn: ImportFn
+    exportCollaboratorHistoryFn: ExportHistoryFn
   }>,
 ): CollaboratorRepository => ({
   list: async (input) => {
@@ -79,6 +89,10 @@ export const createCollaboratorRepository = (
   },
   importCsv: async (input) => {
     const res = await deps.importCollaboratorsFn({ data: input })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  exportHistory: async (id) => {
+    const res = await deps.exportCollaboratorHistoryFn({ data: { id } })
     return res.ok ? ok(res.data) : err(res.error)
   },
 })
