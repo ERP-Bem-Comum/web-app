@@ -24,6 +24,8 @@ import {
   bulkDeleteTargets,
   bulkDueDateTargets,
   filterByLabel,
+  filterRowsBySearch,
+  type ListState,
 } from '../contas-a-pagar.view-model.ts'
 import { DocumentGrid } from '../components/document-grid.component.tsx'
 import { AddFilterButton, ActiveFiltersRow } from '../components/document-filters.component.tsx'
@@ -87,8 +89,18 @@ export function ContasAPagarPage(): ReactNode {
     onNext,
     onPageSize,
   } = useContasAPagar()
+  // Busca rápida do topo — filtra CLIENT-SIDE as linhas da página carregada (core-api#167 = server-side).
+  const [search, setSearch] = useState('')
   const page = state.tag === 'ready' ? state.page : null
-  const rows = state.tag === 'ready' ? state.rows : []
+  const allRows = state.tag === 'ready' ? state.rows : []
+  const rows = filterRowsBySearch(allRows, search)
+  // Estado passado ao grid: linhas filtradas; se a busca zerar os resultados, mostra o vazio.
+  const gridState: ListState =
+    state.tag === 'ready'
+      ? rows.length === 0 && search.trim() !== ''
+        ? { tag: 'empty' }
+        : { tag: 'ready', rows, page: state.page }
+      : state
 
   // UI-state local (toggles), no padrão dos demais (selectedId/selected): menu "Adicionar filtro".
   const [filterMenuOpen, setFilterMenuOpen] = useState(false)
@@ -153,10 +165,14 @@ export function ContasAPagarPage(): ReactNode {
           <span className={searchIcon} aria-hidden="true">
             <SearchIcon />
           </span>
-          {/* Busca = CHROME no v1 (Fatia 2 não tem busca textual). */}
+          {/* Busca rápida CLIENT-SIDE da página carregada (fornecedor/número/CNPJ). Server-side = #167. */}
           <input
             className={searchInput}
             type="text"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value)
+            }}
             placeholder={t('financial.list.search')}
             aria-label={t('financial.list.search')}
           />
@@ -242,7 +258,7 @@ export function ContasAPagarPage(): ReactNode {
 
       <div className={gridWrap}>
         <DocumentGrid
-          state={state}
+          state={gridState}
           onRowClick={(id, status) => {
             // Rascunho → abre o Lançar p/ FINALIZAR a inclusão (modo draft, tudo editável).
             // Demais status → drawer de detalhe.

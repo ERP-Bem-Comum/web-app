@@ -18,6 +18,7 @@ import {
   bulkDeleteTargets,
   bulkDueDateTargets,
   filterByLabel,
+  filterRowsBySearch,
   STATUS_CHIPS,
   FILTER_DIMS,
 } from '../../../../../src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts'
@@ -271,6 +272,44 @@ describe('FILTER_DIMS (filtros avançados)', () => {
       ['vencimento', 'tipo', 'fornecedor'],
     )
     assert.ok(FILTER_DIMS.every((d) => d.enabled))
+  })
+})
+
+describe('filterRowsBySearch (busca rápida da página)', () => {
+  const resolveName = (ref: string | null): string =>
+    ref === 's1' ? 'Bambu Educação' : ref === 's2' ? 'Padaria Bartolomeu' : (ref ?? '—')
+  const resolveDoc = (ref: string | null): string | null =>
+    ref === 's1' ? '37364305000192' : ref === 's2' ? '68996168000132' : null
+  const rows = buildRows(
+    [
+      summary({ id: 'a', supplierRef: 's1', documentNumber: '0847' }),
+      summary({ id: 'b', supplierRef: 's2', documentNumber: '0345' }),
+    ],
+    resolveName,
+    undefined,
+    resolveDoc,
+  )
+
+  it('por nome do fornecedor (case-insensitive)', () => {
+    assert.deepEqual(
+      filterRowsBySearch(rows, 'bambu').map((r) => r.id),
+      ['a'],
+    )
+  })
+  it('por número do documento', () => {
+    assert.deepEqual(
+      filterRowsBySearch(rows, '0345').map((r) => r.id),
+      ['b'],
+    )
+  })
+  it('por CNPJ (dígitos, ignorando máscara)', () => {
+    assert.deepEqual(
+      filterRowsBySearch(rows, '37364305').map((r) => r.id),
+      ['a'],
+    )
+  })
+  it('query vazia devolve tudo', () => {
+    assert.equal(filterRowsBySearch(rows, '').length, 2)
   })
 })
 

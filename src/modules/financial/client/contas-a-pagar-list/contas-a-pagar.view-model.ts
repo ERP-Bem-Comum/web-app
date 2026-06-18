@@ -186,6 +186,23 @@ export const DOCUMENT_TYPE_OPTIONS: readonly DocumentType[] = [
   'Imposto',
 ]
 
+// Busca rápida (campo do topo) — filtra as linhas DA PÁGINA carregada por fornecedor / número / CNPJ.
+// ⚠️ É client-side: só enxerga a página atual (busca server-side cross-página = core-api#167). PURA.
+export const filterRowsBySearch = (rows: readonly GridRow[], query: string): readonly GridRow[] => {
+  const q = query.trim().toLowerCase()
+  if (q === '') return rows
+  const digits = q.replace(/\D/g, '')
+  return rows.filter((r) => {
+    const doc = r.supplierDoc?.toLowerCase() ?? ''
+    return (
+      r.supplier.toLowerCase().includes(q) ||
+      r.documentNumber.toLowerCase().includes(q) ||
+      doc.includes(q) ||
+      (digits !== '' && (r.supplierDoc?.replace(/\D/g, '') ?? '').includes(digits))
+    )
+  })
+}
+
 // Busca por rótulo (case-insensitive, substring) com teto — p/ o autocomplete do filtro Fornecedor
 // (pode haver inúmeros; não listamos tudo num dropdown). Query vazia → primeiros `cap`. PURA.
 export const filterByLabel = <T extends Readonly<{ label: string }>>(
