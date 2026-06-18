@@ -1220,6 +1220,8 @@ export const ptBR: Catalog = {
   'financial.list.filter.clearAll': 'Limpar tudo',
   'financial.list.filter.remove': 'Remover filtro',
   'financial.list.filter.any': 'Qualquer',
+  'financial.list.filter.fornecedorSearch': 'Buscar fornecedor…',
+  'financial.list.filter.noResults': 'Nenhum resultado',
   'financial.list.filter.from': 'De',
   'financial.list.filter.to': 'Até',
   'financial.list.filter.soon': 'Este filtro estará disponível quando o backend expor o campo.',

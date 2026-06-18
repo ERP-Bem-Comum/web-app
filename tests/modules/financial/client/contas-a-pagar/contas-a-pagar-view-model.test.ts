@@ -17,6 +17,7 @@ import {
   bulkStatusTargets,
   bulkDeleteTargets,
   bulkDueDateTargets,
+  filterByLabel,
   STATUS_CHIPS,
   FILTER_DIMS,
 } from '../../../../../src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts'
@@ -270,6 +271,27 @@ describe('FILTER_DIMS (filtros avançados)', () => {
       ['vencimento', 'tipo', 'fornecedor'],
     )
     assert.ok(FILTER_DIMS.every((d) => d.enabled))
+  })
+})
+
+describe('filterByLabel (autocomplete do Fornecedor)', () => {
+  const opts = [
+    { value: '1', label: 'Bambu Educação' },
+    { value: '2', label: 'Banco do Brasil' },
+    { value: '3', label: 'Padaria Bartolomeu' },
+  ]
+  it('substring case-insensitive', () => {
+    assert.deepEqual(
+      filterByLabel(opts, 'ban').map((o) => o.value),
+      ['2'],
+    )
+    assert.deepEqual(
+      filterByLabel(opts, 'BA').map((o) => o.value),
+      ['1', '2', '3'],
+    )
+  })
+  it('query vazia → primeiros (respeita o teto)', () => {
+    assert.equal(filterByLabel(opts, '', 2).length, 2)
   })
 })
 

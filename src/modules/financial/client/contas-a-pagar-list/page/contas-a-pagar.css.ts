@@ -291,6 +291,47 @@ const chipControlBase = {
 } as const
 export const filterChipInput = style([chipControlBase, { fontFamily: vars.font.family.mono }])
 export const filterChipSelect = style([chipControlBase, { maxInlineSize: '11rem', cursor: 'pointer' }])
+// Autocomplete do filtro Fornecedor (busca, não dropdown gigante).
+export const filterCombo = style({ position: 'relative', display: 'inline-flex' })
+export const filterChipSearch = style([
+  chipControlBase,
+  { inlineSize: '11rem', fontFamily: vars.font.family.body },
+])
+export const filterComboList = style({
+  position: 'absolute',
+  insetBlockStart: 'calc(100% + 0.25rem)',
+  insetInlineStart: 0,
+  zIndex: 60,
+  minInlineSize: '14rem',
+  maxBlockSize: '14rem',
+  overflowY: 'auto',
+  paddingBlock: vars.space.xs,
+  background: vars.color.surface.default,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.md,
+  boxShadow: vars.shadow.card,
+})
+export const filterComboItem = style({
+  display: 'block',
+  inlineSize: '100%',
+  paddingInline: vars.space.md,
+  paddingBlock: '0.375rem',
+  border: 'none',
+  background: 'transparent',
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink2,
+  textAlign: 'start',
+  cursor: 'pointer',
+  ':hover': { background: vars.color.institutional.blueBg },
+})
+export const filterComboEmpty = style({
+  paddingInline: vars.space.md,
+  paddingBlock: '0.375rem',
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink5,
+})
 export const filterChipRemove = style({
   display: 'inline-flex',
   alignItems: 'center',

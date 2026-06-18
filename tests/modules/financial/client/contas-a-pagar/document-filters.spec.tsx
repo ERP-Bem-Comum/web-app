@@ -66,9 +66,12 @@ describe('ActiveFiltersRow', () => {
     onRemoveFilter: vi.fn(),
     onSetVencimento: vi.fn(),
     onSetTipo: vi.fn(),
-    onSetFornecedor: vi.fn(),
     onClearFilters: vi.fn(),
-    supplierOptions: [{ value: 's-1', label: 'Bambu Educação' }],
+    fornecedorQuery: '',
+    fornecedorOpen: false,
+    supplierMatches: [{ value: 's-1', label: 'Bambu Educação' }],
+    onFornecedorQuery: vi.fn(),
+    onPickFornecedor: vi.fn(),
   }
 
   it('sem filtros ativos não renderiza nada', () => {
@@ -110,5 +113,27 @@ describe('ActiveFiltersRow', () => {
       target: { value: '2026-07-31' },
     })
     expect(onSetVencimento).toHaveBeenCalledWith('2026-07-01', '2026-07-31')
+  })
+
+  it('Fornecedor: busca dispara onFornecedorQuery; escolher um match dispara onPickFornecedor', () => {
+    const onFornecedorQuery = vi.fn()
+    const onPickFornecedor = vi.fn()
+    render(
+      <ActiveFiltersRow
+        activeDims={new Set(['fornecedor'])}
+        filters={{}}
+        {...noop}
+        fornecedorOpen
+        onFornecedorQuery={onFornecedorQuery}
+        onPickFornecedor={onPickFornecedor}
+      />,
+    )
+    fireEvent.change(screen.getByLabelText(tr('financial.list.filter.dim.fornecedor')), {
+      target: { value: 'bam' },
+    })
+    expect(onFornecedorQuery).toHaveBeenCalledWith('bam')
+    // o dropdown lista os matches (não todos); escolher dispara onPickFornecedor com a opção
+    fireEvent.mouseDown(screen.getByRole('option', { name: 'Bambu Educação' }))
+    expect(onPickFornecedor).toHaveBeenCalledWith({ value: 's-1', label: 'Bambu Educação' })
   })
 })

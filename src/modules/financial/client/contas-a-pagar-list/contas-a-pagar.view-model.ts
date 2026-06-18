@@ -186,6 +186,18 @@ export const DOCUMENT_TYPE_OPTIONS: readonly DocumentType[] = [
   'Imposto',
 ]
 
+// Busca por rótulo (case-insensitive, substring) com teto — p/ o autocomplete do filtro Fornecedor
+// (pode haver inúmeros; não listamos tudo num dropdown). Query vazia → primeiros `cap`. PURA.
+export const filterByLabel = <T extends Readonly<{ label: string }>>(
+  options: readonly T[],
+  query: string,
+  cap = 8,
+): readonly T[] => {
+  const q = query.trim().toLowerCase()
+  const base = q === '' ? options : options.filter((o) => o.label.toLowerCase().includes(q))
+  return base.slice(0, cap)
+}
+
 // Valores dos filtros avançados ativos (só os com backend). Vazio = sem filtro.
 export type AdvancedFilters = Readonly<{
   vencimento?: Readonly<{ from?: string; to?: string }> // YYYY-MM-DD → dueFrom/dueTo

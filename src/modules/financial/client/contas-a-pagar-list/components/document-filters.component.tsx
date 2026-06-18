@@ -36,6 +36,11 @@ import {
   filterChipSelect,
   filterChipRange,
   filterChipRemove,
+  filterCombo,
+  filterChipSearch,
+  filterComboList,
+  filterComboItem,
+  filterComboEmpty,
   clearAllFilters,
 } from '../page/contas-a-pagar.css.ts'
 
@@ -99,12 +104,16 @@ export function AddFilterButton(props: AddFilterButtonProps): ReactNode {
 export type ActiveFiltersRowProps = Readonly<{
   activeDims: ReadonlySet<FilterDimId>
   filters: AdvancedFilters
-  supplierOptions: readonly SupplierOption[]
   onRemoveFilter: (id: FilterDimId) => void
   onSetVencimento: (from: string | undefined, to: string | undefined) => void
   onSetTipo: (tipo: DocumentType | undefined) => void
-  onSetFornecedor: (ref: string | undefined) => void
   onClearFilters: () => void
+  // Filtro Fornecedor = busca/autocomplete (pode haver inúmeros; não lista tudo num dropdown).
+  fornecedorQuery: string
+  fornecedorOpen: boolean
+  supplierMatches: readonly SupplierOption[] // já filtrados + limitados (pela page)
+  onFornecedorQuery: (q: string) => void
+  onPickFornecedor: (option: SupplierOption) => void
 }>
 
 export function ActiveFiltersRow(props: ActiveFiltersRowProps): ReactNode {
@@ -186,21 +195,43 @@ export function ActiveFiltersRow(props: ActiveFiltersRowProps): ReactNode {
       {activeDims.has('fornecedor') ? (
         <span className={filterChip}>
           <span className={filterChipLabel}>{t('financial.list.filter.dim.fornecedor')}</span>
-          <select
-            className={filterChipSelect}
-            value={filters.fornecedor ?? ''}
-            aria-label={t('financial.list.filter.dim.fornecedor')}
-            onChange={(e) => {
-              props.onSetFornecedor(e.target.value === '' ? undefined : e.target.value)
-            }}
-          >
-            <option value="">{t('financial.list.filter.any')}</option>
-            {props.supplierOptions.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+          {/* Busca/autocomplete: digita e escolhe; não lista todos num dropdown (podem ser inúmeros). */}
+          <span className={filterCombo}>
+            <input
+              type="text"
+              className={filterChipSearch}
+              value={props.fornecedorQuery}
+              placeholder={t('financial.list.filter.fornecedorSearch')}
+              aria-label={t('financial.list.filter.dim.fornecedor')}
+              onChange={(e) => {
+                props.onFornecedorQuery(e.target.value)
+              }}
+            />
+            {props.fornecedorOpen ? (
+              <span className={filterComboList} role="listbox">
+                {props.supplierMatches.length === 0 ? (
+                  <span className={filterComboEmpty}>{t('financial.list.filter.noResults')}</span>
+                ) : (
+                  props.supplierMatches.map((o) => (
+                    <button
+                      key={o.value}
+                      type="button"
+                      role="option"
+                      aria-selected={filters.fornecedor === o.value}
+                      className={filterComboItem}
+                      // onMouseDown (não onClick) p/ disparar antes do blur do input.
+                      onMouseDown={(e) => {
+                        e.preventDefault()
+                        props.onPickFornecedor(o)
+                      }}
+                    >
+                      {o.label}
+                    </button>
+                  ))
+                )}
+              </span>
+            ) : null}
+          </span>
           <button
             type="button"
             className={filterChipRemove}

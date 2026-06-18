@@ -23,6 +23,7 @@ import {
   bulkStatusTargets,
   bulkDeleteTargets,
   bulkDueDateTargets,
+  filterByLabel,
 } from '../contas-a-pagar.view-model.ts'
 import { DocumentGrid } from '../components/document-grid.component.tsx'
 import { AddFilterButton, ActiveFiltersRow } from '../components/document-filters.component.tsx'
@@ -91,6 +92,10 @@ export function ContasAPagarPage(): ReactNode {
 
   // UI-state local (toggles), no padrão dos demais (selectedId/selected): menu "Adicionar filtro".
   const [filterMenuOpen, setFilterMenuOpen] = useState(false)
+  // Busca/autocomplete do filtro Fornecedor (texto digitado + dropdown de resultados).
+  const [fornecedorQuery, setFornecedorQuery] = useState('')
+  const [fornecedorOpen, setFornecedorOpen] = useState(false)
+  const supplierMatches = filterByLabel(supplierOptions, fornecedorQuery)
 
   // Linha clicável: Rascunho → tela de Lançar (finalizar inclusão); demais status → drawer de detalhe.
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -201,12 +206,32 @@ export function ContasAPagarPage(): ReactNode {
       <ActiveFiltersRow
         activeDims={activeDims}
         filters={filters}
-        supplierOptions={supplierOptions}
-        onRemoveFilter={onRemoveFilter}
+        onRemoveFilter={(id) => {
+          if (id === 'fornecedor') {
+            setFornecedorQuery('')
+            setFornecedorOpen(false)
+          }
+          onRemoveFilter(id)
+        }}
         onSetVencimento={onSetVencimento}
         onSetTipo={onSetTipo}
-        onSetFornecedor={onSetFornecedor}
-        onClearFilters={onClearFilters}
+        onClearFilters={() => {
+          setFornecedorQuery('')
+          setFornecedorOpen(false)
+          onClearFilters()
+        }}
+        fornecedorQuery={fornecedorQuery}
+        fornecedorOpen={fornecedorOpen}
+        supplierMatches={supplierMatches}
+        onFornecedorQuery={(q) => {
+          setFornecedorQuery(q)
+          setFornecedorOpen(true)
+        }}
+        onPickFornecedor={(o) => {
+          onSetFornecedor(o.value)
+          setFornecedorQuery(o.label)
+          setFornecedorOpen(false)
+        }}
       />
 
       {dueEdit.errorTag !== null ? (
