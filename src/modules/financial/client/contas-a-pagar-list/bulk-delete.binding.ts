@@ -10,13 +10,15 @@ import { isOk, type Result } from '#shared/primitives/result.ts'
 import { financialRepository } from '#modules/financial/client/data/repository/financial.repository.instance.ts'
 import type { FinancialError } from '#modules/financial/client/data/repository/financial-error.ts'
 
+import type { StatusTarget } from './contas-a-pagar.view-model.ts'
+
 type DeleteResult = readonly Result<void, FinancialError>[]
 
 const failures = (data: DeleteResult | undefined): number =>
   data === undefined ? 0 : data.filter((r) => !isOk(r)).length
 
 export type BulkDeleteBinding = Readonly<{
-  remove: (ids: readonly string[]) => void
+  remove: (targets: readonly StatusTarget[]) => void
   running: boolean
   errorTag: string | null
 }>
@@ -26,8 +28,8 @@ export function useBulkDelete(onCompleted: () => void): BulkDeleteBinding {
 
   const mut = useMutation({
     mutationKey: ['financial', 'documents', 'bulk-delete'] as const,
-    mutationFn: (ids: readonly string[]): Promise<DeleteResult> =>
-      Promise.all(ids.map((id) => financialRepository.cancel({ id }))),
+    mutationFn: (targets: readonly StatusTarget[]): Promise<DeleteResult> =>
+      Promise.all(targets.map((t) => financialRepository.cancel({ id: t.id, version: t.version }))),
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: ['financial', 'documents', 'list'] })
       void queryClient.invalidateQueries({ queryKey: ['financial', 'documents', 'detail'] })
@@ -39,8 +41,8 @@ export function useBulkDelete(onCompleted: () => void): BulkDeleteBinding {
   const errorTag = mut.isPending || failed === 0 ? null : 'financial.list.delete.error'
 
   return {
-    remove: (ids) => {
-      if (ids.length > 0) mut.mutate(ids)
+    remove: (targets) => {
+      if (targets.length > 0) mut.mutate(targets)
     },
     running: mut.isPending,
     errorTag,

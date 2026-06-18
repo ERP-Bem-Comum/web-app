@@ -91,8 +91,8 @@ export const ApproveInputSchema = z.object({
   version: z.int().min(0),
 })
 
-// Cancelar (DELETE /documents/:id).
-export const CancelInputSchema = z.object({ id: z.uuid() })
+// Cancelar (DELETE /documents/:id). `version` = optimistic lock exigido pelo core-api no corpo.
+export const CancelInputSchema = z.object({ id: z.uuid(), version: z.int().min(0) })
 
 // Listagem (GET /documents).
 export const ListDocumentsInputSchema = z.object({

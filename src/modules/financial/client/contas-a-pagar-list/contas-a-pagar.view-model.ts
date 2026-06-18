@@ -245,15 +245,15 @@ export const bulkStatusTargets = (
 }
 
 // Excluir (hard-delete) — o core-api só cancela documentos em **Aberto** (Rascunho dá 409, core-api#166).
-// `deletable` = ids dos Aberto da seleção; `draftCount` = quantos Rascunho ficaram de fora (chrome/aviso).
-export type BulkDeleteTargets = Readonly<{ deletable: readonly string[]; draftCount: number }>
+// `deletable` = alvos Aberto (id + version, p/ o optimistic lock do DELETE); `draftCount` = Rascunho fora.
+export type BulkDeleteTargets = Readonly<{ deletable: readonly StatusTarget[]; draftCount: number }>
 export const bulkDeleteTargets = (
   rows: readonly GridRow[],
   selected: ReadonlySet<string>,
 ): BulkDeleteTargets => {
   const sel = rows.filter((r) => selected.has(r.id))
   return {
-    deletable: sel.filter((r) => r.status === 'Aberto').map((r) => r.id),
+    deletable: sel.filter((r) => r.status === 'Aberto').map((r) => ({ id: r.id, version: r.version })),
     draftCount: sel.filter((r) => r.status === 'Rascunho').length,
   }
 }

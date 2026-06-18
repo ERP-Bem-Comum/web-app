@@ -76,7 +76,7 @@ export type AdjustDocumentInput = Readonly<{
 }>
 
 export type ApproveInput = Readonly<{ id: string; version: number }>
-export type CancelInput = Readonly<{ id: string }>
+export type CancelInput = Readonly<{ id: string; version: number }>
 
 export type ListDocumentsInput = Readonly<{
   status?: DocumentStatus

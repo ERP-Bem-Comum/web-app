@@ -80,7 +80,12 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
       return detailToModel(r.value)
     },
     cancel: async (input, token) => {
-      const r = await resultFetch<unknown>(`${docs}/${input.id}`, { method: 'DELETE', token })
+      // O core-api exige `version` no corpo do DELETE (optimistic lock); versão defasada → 409.
+      const r = await resultFetch<unknown>(`${docs}/${input.id}`, {
+        method: 'DELETE',
+        body: { version: input.version },
+        token,
+      })
       if (isErr(r)) return err(mapHttpError(r.error))
       return ok(undefined)
     },

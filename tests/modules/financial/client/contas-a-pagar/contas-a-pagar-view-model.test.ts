@@ -214,9 +214,9 @@ describe('bulkDeleteTargets', () => {
     supplierName,
   )
 
-  it('deletable = só "Aberto" da seleção; conta rascunhos à parte; Aprovado fica de fora', () => {
+  it('deletable = só "Aberto" da seleção (id + version); conta rascunhos à parte; Aprovado fica de fora', () => {
     const tg = bulkDeleteTargets(rows, new Set(['a', 'b', 'd']))
-    assert.deepEqual(tg.deletable, ['a'])
+    assert.deepEqual(tg.deletable, [{ id: 'a', version: 2 }])
     assert.equal(tg.draftCount, 1)
   })
 
