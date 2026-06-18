@@ -31,6 +31,7 @@ import {
   type RetentionFieldsReais,
   type ReformaTributariaFieldsReais,
   type PartnerHydration,
+  type ContractCategoView,
   type FieldLocks,
 } from '../document-form.view.ts'
 import { DocumentTypeModal } from './document-type-modal.component.tsx'
@@ -61,6 +62,14 @@ import {
   contratoNum,
   contratoStatus,
   contratoDot,
+  contratoPickerWrap,
+  contratoMenu,
+  contratoMenuItem,
+  contratoMenuItemActive,
+  contratoMenuLabel,
+  contratoMenuNum,
+  contratoMenuEmpty,
+  pickerBackdrop,
   entityCard,
   entityIcon,
   entityInfo,
@@ -168,6 +177,13 @@ export type DocumentFormProps = Readonly<{
   programOptions: readonly Readonly<{ id: string; name: string }>[]
   programValue: string
   onProgram: (value: string) => void
+  // Contrato vinculado (Categorização) — selecionado + lista "Em Andamento" do parceiro + dropdown "Alterar".
+  contract: ContractCategoView | null
+  contracts: readonly ContractCategoView[]
+  contractPickerOpen: boolean
+  onToggleContractPicker: () => void
+  onCloseContractPicker: () => void
+  onSelectContract: (ref: string) => void
   // Modal "Tipo de Documento" (o campo Tipo abre o modal; selecionar aplica o tipo).
   typeModalOpen: boolean
   onOpenTypeModal: () => void
@@ -185,7 +201,7 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
   const locks = props.locks ?? NO_LOCKS
   const retEnabled = retentionsEnabledFor(fields.type)
   const bank = hydration.bank
-  const contract = hydration.contract
+  const contract = props.contract
   const bankLine =
     bank !== null ? [bank.line, bank.pix].filter((s) => s !== null && s !== '').join(' · ') : ''
 
@@ -542,10 +558,61 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
               </>
             ) : (
               <>
-                {t('financial.create.categorizacao.semContrato')}
-                <span className={contratoLink}>{t('financial.create.categorizacao.vincular')}</span>
+                <span className={contratoLabel}>{t('financial.create.categorizacao.semContrato')}</span>
+                <span className={contratoStatus}>
+                  <span className={contratoDot} aria-hidden="true" />
+                  {t('financial.create.categorizacao.livre')}
+                </span>
               </>
             )}
+            {/* "Alterar" — sempre visível; abre o dropdown dos contratos "Em Andamento" do parceiro. */}
+            <span className={contratoPickerWrap}>
+              <button
+                type="button"
+                className={contratoLink}
+                aria-expanded={props.contractPickerOpen}
+                onClick={props.onToggleContractPicker}
+              >
+                {t('financial.create.categorizacao.alterar')}
+              </button>
+              {props.contractPickerOpen ? (
+                <>
+                  <button
+                    type="button"
+                    className={pickerBackdrop}
+                    aria-label={t('financial.create.partner.close')}
+                    onClick={props.onCloseContractPicker}
+                  />
+                  <div className={contratoMenu} role="listbox">
+                    {props.contracts.length === 0 ? (
+                      <p className={contratoMenuEmpty}>
+                        {t('financial.create.categorizacao.semContratosAndamento')}
+                      </p>
+                    ) : (
+                      props.contracts.map((c) => (
+                        <button
+                          key={c.ref}
+                          type="button"
+                          role="option"
+                          aria-selected={contract?.ref === c.ref}
+                          className={`${contratoMenuItem} ${contract?.ref === c.ref ? contratoMenuItemActive : ''}`}
+                          onClick={() => {
+                            props.onSelectContract(c.ref)
+                          }}
+                        >
+                          <span className={contratoMenuLabel}>
+                            {c.isServiceOrder
+                              ? t('financial.create.categorizacao.ordemServico')
+                              : t('financial.create.categorizacao.contrato')}
+                          </span>
+                          <span className={contratoMenuNum}>{c.number}</span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </>
+              ) : null}
+            </span>
           </span>
         </div>
         {contract !== null ? (

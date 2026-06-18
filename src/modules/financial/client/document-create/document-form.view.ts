@@ -63,9 +63,10 @@ export type ContractCategoView = Readonly<{
 }>
 export type PartnerHydration = Readonly<{
   bank: SupplierBankView | null
-  contract: ContractCategoView | null
+  // TODOS os contratos "Em Andamento" do parceiro (pode haver mais de um) — o usuário escolhe via "Alterar".
+  contracts: readonly ContractCategoView[]
 }>
-export const EMPTY_HYDRATION: PartnerHydration = { bank: null, contract: null }
+export const EMPTY_HYDRATION: PartnerHydration = { bank: null, contracts: [] }
 
 /** Filtro PURO do picker: casa por nome ou subtítulo (CNPJ/nº) — case-insensitive, ignora pontuação. */
 export const filterPartners = (
@@ -112,6 +113,7 @@ export type DocumentFormFields = Readonly<{
   grossValue: string
   dueDate: string
   description: string
+  contractRef: string // Categorização: contrato escolhido (UUID) via "Alterar". Vazio = o 1º "Em Andamento".
   programRef: string // Categorização: Programa escolhido (UUID). Vazio = herda o do contrato (se houver).
   retentions: RetentionFieldsReais
   reformaTributaria: ReformaTributariaFieldsReais
@@ -431,6 +433,7 @@ export const hydrateFieldsFromDetail = (d: DocumentDetail): DocumentFormFields =
     grossValue: d.grossValueCents !== null ? centsToReais(d.grossValueCents) : '',
     dueDate: d.dueDate ?? '',
     description: d.description ?? '',
+    contractRef: '', // o GET /:id não expõe o contrato vinculado (core-api#95) → vazio na hidratação
     programRef: '', // o GET /:id não expõe a categorização (core-api#95) → vazio na hidratação
     retentions,
     // Reforma Tributária não vem no GET de detalhe hoje (enriquecimento = core-api#95) e é imutável no

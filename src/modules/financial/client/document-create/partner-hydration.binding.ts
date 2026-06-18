@@ -65,9 +65,10 @@ export function usePartnerHydration(supplierRef: string, kind: PartnerKind | nul
       const contracts = await listContractsFn({
         data: { status: 'Em Andamento', page: 1, limit: 100, order: 'DESC' },
       })
-      const active = contracts.ok
-        ? contracts.data.items.find((c) => contractMatchesPartner(c, supplierRef, kind))
-        : undefined
+      // TODOS os contratos "Em Andamento" do parceiro (pode haver mais de um → "Alterar" no chip).
+      const partnerContracts = contracts.ok
+        ? contracts.data.items.filter((c) => contractMatchesPartner(c, supplierRef, kind)).map(toContract)
+        : []
 
       // Banco: só o Fornecedor tem getSupplierFn hoje; demais tipos → hint (sem dado fabricado).
       let bank: SupplierBankView | null = null
@@ -85,7 +86,7 @@ export function usePartnerHydration(supplierRef: string, kind: PartnerKind | nul
         }
       }
 
-      return { bank, contract: active !== undefined ? toContract(active) : null }
+      return { bank, contracts: partnerContracts }
     },
   })
   return query.data ?? EMPTY_HYDRATION

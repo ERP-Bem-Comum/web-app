@@ -922,6 +922,62 @@ export const contratoDot = style({
   background: vars.color.institutional.green,
 })
 
+// ── Dropdown "Alterar contrato" (Categorização) — lista os contratos "Em Andamento" do parceiro ──
+export const contratoPickerWrap = style({ position: 'relative', display: 'inline-flex' })
+export const contratoMenu = style({
+  position: 'absolute',
+  top: 'calc(100% + 0.375rem)',
+  insetInlineEnd: 0,
+  zIndex: 20,
+  minInlineSize: '15rem',
+  maxBlockSize: '16rem',
+  overflowY: 'auto',
+  padding: vars.space.xs,
+  background: vars.color.surface.default,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.lg,
+  boxShadow: vars.shadow.cardElevated,
+})
+export const contratoMenuItem = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  inlineSize: '100%',
+  paddingBlock: vars.space.xs,
+  paddingInline: vars.space.sm,
+  borderRadius: vars.radius.md,
+  border: 'none',
+  background: 'transparent',
+  textAlign: 'start',
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink2,
+  cursor: 'pointer',
+  ':hover': { background: vars.color.institutional.blueBg },
+})
+export const contratoMenuItemActive = style({
+  background: vars.color.institutional.blueBg,
+  fontWeight: vars.font.weight.semibold,
+})
+export const contratoMenuLabel = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.ink5,
+  textTransform: 'uppercase',
+  letterSpacing: '0.08em',
+})
+export const contratoMenuNum = style({
+  fontFamily: vars.font.family.mono,
+  color: vars.color.institutional.ink2,
+})
+export const contratoMenuEmpty = style({
+  padding: vars.space.sm,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  color: vars.color.text.muted,
+})
+
 // ── Bottombar fixa (Figma 626:25): status + quick-action · spacer · ações ─────────
 // Footer: última linha (full-width via screen fixa). Padrão da tela de contrato: 3.5rem, borda fina, branco.
 export const pageBottombar = style({

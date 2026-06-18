@@ -26,6 +26,7 @@ const EMPTY_FIELDS: DocumentFormFields = {
   grossValue: '',
   dueDate: '',
   description: '',
+  contractRef: '',
   programRef: '',
   retentions: EMPTY_RETENTIONS,
   reformaTributaria: EMPTY_REFORMA_TRIBUTARIA,
@@ -37,6 +38,7 @@ type FormAction =
   | Readonly<{ kind: 'setType'; value: DocumentType | '' }>
   | Readonly<{ kind: 'setPaymentMethod'; value: PaymentMethod | '' }>
   | Readonly<{ kind: 'setSupplier'; ref: string }>
+  | Readonly<{ kind: 'setContractRef'; value: string }>
   | Readonly<{ kind: 'setProgramRef'; value: string }>
   | Readonly<{ kind: 'setText'; key: TextKey; value: string }>
   | Readonly<{ kind: 'setRetention'; key: keyof RetentionFieldsReais; value: string }>
@@ -64,7 +66,11 @@ const reducer = (state: DocumentFormFields, action: FormAction): DocumentFormFie
     case 'setPaymentMethod':
       return { ...state, paymentMethod: action.value }
     case 'setSupplier':
-      return { ...state, supplierRef: action.ref }
+      // Trocar de parceiro zera o contrato/programa escolhidos (a hidratação re-deriva pelo novo parceiro).
+      return { ...state, supplierRef: action.ref, contractRef: '', programRef: '' }
+    case 'setContractRef':
+      // Trocar o contrato re-deriva o Programa (volta a herdar do contrato escolhido).
+      return { ...state, contractRef: action.value, programRef: '' }
     case 'setProgramRef':
       return { ...state, programRef: action.value }
     case 'setText':
@@ -92,6 +98,7 @@ export type DocumentFormController = Readonly<{
   setType: (value: DocumentType | '') => void
   setPaymentMethod: (value: PaymentMethod | '') => void
   setSupplier: (ref: string) => void
+  setContractRef: (value: string) => void
   setProgramRef: (value: string) => void
   setText: (key: TextKey, value: string) => void
   setRetention: (key: keyof RetentionFieldsReais, value: string) => void
@@ -105,12 +112,17 @@ export type DocumentFormController = Readonly<{
   payModalOpen: boolean
   openPayModal: () => void
   closePayModal: () => void
+  // Dropdown "Alterar contrato" da Categorização (UI-state).
+  contractPickerOpen: boolean
+  toggleContractPicker: () => void
+  closeContractPicker: () => void
 }>
 
 export function useDocumentFormController(initial?: DocumentFormFields | null): DocumentFormController {
   const [fields, dispatch] = useReducer(reducer, EMPTY_FIELDS)
   const [typeModalOpen, setTypeModalOpen] = useState(false)
   const [payModalOpen, setPayModalOpen] = useState(false)
+  const [contractPickerOpen, setContractPickerOpen] = useState(false)
   // Hidrata UMA vez quando os dados de edição chegam (async). `useRef` evita re-hidratar a cada render,
   // preservando o que o usuário já editou.
   const hydrated = useRef(false)
@@ -130,6 +142,9 @@ export function useDocumentFormController(initial?: DocumentFormFields | null): 
     },
     setSupplier: (ref) => {
       dispatch({ kind: 'setSupplier', ref })
+    },
+    setContractRef: (value) => {
+      dispatch({ kind: 'setContractRef', value })
     },
     setProgramRef: (value) => {
       dispatch({ kind: 'setProgramRef', value })
@@ -159,6 +174,13 @@ export function useDocumentFormController(initial?: DocumentFormFields | null): 
     },
     closePayModal: () => {
       setPayModalOpen(false)
+    },
+    contractPickerOpen,
+    toggleContractPicker: () => {
+      setContractPickerOpen((v) => !v)
+    },
+    closeContractPicker: () => {
+      setContractPickerOpen(false)
     },
   }
 }

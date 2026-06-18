@@ -24,6 +24,7 @@ const fields = (over: Partial<DocumentFormFields> = {}): DocumentFormFields => (
   grossValue: '',
   dueDate: '',
   description: '',
+  contractRef: '',
   programRef: '',
   retentions: { iss: '', irrf: '', inss: '', pis: '', cofins: '', csll: '' },
   reformaTributaria: { cbs: '', ibsMunicipal: '', ibsEstadual: '' },
@@ -32,7 +33,7 @@ const fields = (over: Partial<DocumentFormFields> = {}): DocumentFormFields => (
 
 const baseProps = (over: Record<string, unknown> = {}) => ({
   fields: fields(),
-  hydration: { bank: null, contract: null },
+  hydration: { bank: null, contracts: [] },
   onType: vi.fn(),
   onPaymentMethod: vi.fn(),
   onText: vi.fn(),
@@ -41,6 +42,12 @@ const baseProps = (over: Record<string, unknown> = {}) => ({
   programOptions: [],
   programValue: '',
   onProgram: vi.fn(),
+  contract: null,
+  contracts: [],
+  contractPickerOpen: false,
+  onToggleContractPicker: vi.fn(),
+  onCloseContractPicker: vi.fn(),
+  onSelectContract: vi.fn(),
   typeModalOpen: false,
   onOpenTypeModal: vi.fn(),
   onSelectType: vi.fn(),
@@ -140,15 +147,47 @@ describe('DocumentForm', () => {
       programRef: null,
       budgetPlanRef: null,
     }
-    render(<DocumentForm {...baseProps({ hydration: { bank: null, contract } })} />)
+    render(<DocumentForm {...baseProps({ contract })} />)
     expect(screen.getByText('Ordem de Serviço')).toBeTruthy()
     cleanup()
+    render(<DocumentForm {...baseProps({ contract: { ...contract, isServiceOrder: false } })} />)
+    expect(screen.getByText('Contrato')).toBeTruthy()
+  })
+
+  it('"Alterar" abre o dropdown e seleciona outro contrato Em Andamento', () => {
+    const onSelectContract = vi.fn()
+    const contracts = [
+      {
+        ref: 'c1',
+        number: '0001/2026',
+        isServiceOrder: false,
+        centroCusto: '',
+        categoria: '',
+        programa: '',
+        planoOrcamentario: '',
+        programRef: null,
+        budgetPlanRef: null,
+      },
+      {
+        ref: 'c2',
+        number: 'OS-014/2026',
+        isServiceOrder: true,
+        centroCusto: '',
+        categoria: '',
+        programa: '',
+        planoOrcamentario: '',
+        programRef: null,
+        budgetPlanRef: null,
+      },
+    ]
     render(
       <DocumentForm
-        {...baseProps({ hydration: { bank: null, contract: { ...contract, isServiceOrder: false } } })}
+        {...baseProps({ contract: contracts[0], contracts, contractPickerOpen: true, onSelectContract })}
       />,
     )
-    expect(screen.getByText('Contrato')).toBeTruthy()
+    // O dropdown lista os 2 contratos; clicar no segundo dispara onSelectContract com o ref.
+    fireEvent.click(screen.getByText('OS-014/2026'))
+    expect(onSelectContract).toHaveBeenCalledWith('c2')
   })
 
   it('dispara onText ao digitar o número', () => {

@@ -59,15 +59,16 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
   // Sucesso → o binding invalida a lista e redireciona pro grid (sem card de sucesso inline).
   const selectedPartner = partners.find((p) => p.id === controller.fields.supplierRef) ?? null
   const supplierName = selectedPartner?.name ?? ''
-  // Hidrata banco + contrato "Em Andamento" do fornecedor (auto-preenchimento do Pagamento/Categorização).
+  // Hidrata banco + contratos "Em Andamento" do parceiro (auto-preenchimento do Pagamento/Categorização).
   const hydration = usePartnerHydration(controller.fields.supplierRef, selectedPartner?.kind ?? null)
+  // Contrato vinculado: o escolhido em "Alterar" tem prioridade; senão o 1º "Em Andamento" do parceiro.
+  const selectedContract =
+    hydration.contracts.find((c) => c.ref === controller.fields.contractRef) ?? hydration.contracts[0] ?? null
   // Programa (Categorização) — opções reais + valor efetivo: o escolhido pelo usuário tem prioridade;
-  // senão herda o programa do contrato "Em Andamento" (quando houver).
+  // senão herda o programa do contrato selecionado (quando houver).
   const programOptions = useProgramOptions()
   const programValue =
-    controller.fields.programRef !== ''
-      ? controller.fields.programRef
-      : (hydration.contract?.programRef ?? '')
+    controller.fields.programRef !== '' ? controller.fields.programRef : (selectedContract?.programRef ?? '')
 
   // Modo da tela:
   //  · create  — novo documento
@@ -95,7 +96,7 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
   // Anexa os refs do contrato "Em Andamento" e dispara o create (backend deriva a categorização — #48).
   const submit = (base: ReturnType<typeof buildCreateInput>): void => {
     if (base === null) return
-    const c = hydration.contract
+    const c = selectedContract
     command.execute(
       c !== null
         ? {
@@ -177,6 +178,15 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
             programOptions={programOptions}
             programValue={programValue}
             onProgram={controller.setProgramRef}
+            contract={selectedContract}
+            contracts={hydration.contracts}
+            contractPickerOpen={controller.contractPickerOpen}
+            onToggleContractPicker={controller.toggleContractPicker}
+            onCloseContractPicker={controller.closeContractPicker}
+            onSelectContract={(ref) => {
+              controller.setContractRef(ref)
+              controller.closeContractPicker()
+            }}
             typeModalOpen={controller.typeModalOpen}
             onOpenTypeModal={controller.openTypeModal}
             onSelectType={(type) => {
