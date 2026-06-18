@@ -144,6 +144,16 @@ export function DocumentDetailDrawer({ view, onClose }: DocumentDetailDrawerProp
             </span>
           </section>
 
+          {/* Descrição — texto livre do cadastro (GET /:id já expõe `description`). Some quando vazia. */}
+          {view.description !== '' ? (
+            <section className={dwSection}>
+              <SectionLabel label={t('financial.detail.label.descricao')} />
+              <span className={detailField}>
+                <span className={detailValue}>{view.description}</span>
+              </span>
+            </section>
+          ) : null}
+
           {/* Composição Financeira */}
           <section className={dwSection}>
             <SectionLabel label={t('financial.detail.section.composicao')} />
@@ -211,7 +221,8 @@ export function DocumentDetailDrawer({ view, onClose }: DocumentDetailDrawerProp
                   <Field label={t('financial.detail.label.tipoChave')} value="—" />
                   <Field label={t('financial.detail.label.chave')} value="—" mono />
                   <Field label={t('financial.detail.label.banco')} value="—" />
-                  <Field label={t('financial.detail.label.favorecido')} value="—" />
+                  {/* Favorecido já é conhecido (favorecido do documento); banco/chave seguem gated (#95). */}
+                  <Field label={t('financial.detail.label.favorecido')} value={view.supplier} />
                 </div>
               </div>
             </section>

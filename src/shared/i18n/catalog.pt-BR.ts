@@ -1020,6 +1020,7 @@ export const ptBR: Catalog = {
   'financial.detail.label.chave': 'Chave',
   'financial.detail.label.banco': 'Banco',
   'financial.detail.label.favorecido': 'Favorecido',
+  'financial.detail.label.descricao': 'Descrição',
   'financial.detail.file.empty': 'Nenhum arquivo anexado',
   'financial.detail.file.soon': 'Disponível ao anexar o documento',
   'financial.detail.edit': 'Editar pagamento',
