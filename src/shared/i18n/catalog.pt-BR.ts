@@ -1209,6 +1209,11 @@ export const ptBR: Catalog = {
   'financial.list.status.payHint': 'registra a baixa',
   'financial.list.search': 'Buscar por fornecedor, número, CNPJ…',
   'financial.list.statusFilter': 'Filtrar por status',
+  'financial.list.dueDate.edit': 'Editar vencimento',
+  'financial.list.dueDate.error': 'Não foi possível alterar o vencimento. Tente novamente.',
+  'financial.list.dueDate.bulk': 'Alterar vencimento',
+  'financial.list.dueDate.bulkSoon':
+    'Alteração de vencimento em lote estará disponível quando o backend expor o endpoint (core-api#162).',
   'financial.list.pagination': 'Paginação',
   'financial.list.prev': 'Página anterior',
   'financial.list.next': 'Próxima página',

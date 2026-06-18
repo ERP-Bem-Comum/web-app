@@ -14,6 +14,7 @@ import { SearchIcon } from '#shared/ui/icons/index.ts'
 import { useContasAPagar } from '../contas-a-pagar.binding.ts'
 import { useDocumentDetail } from '../document-detail.binding.ts'
 import { useBulkStatus } from '../bulk-status.binding.ts'
+import { useInlineDueDate } from '../inline-due-date.binding.ts'
 import {
   STATUS_CHIPS,
   sumSelectedNetBRL,
@@ -36,6 +37,7 @@ import {
   chipDisabled,
   chipCountOnActive,
   gridWrap,
+  errorBanner,
   bottombar,
   footerActions,
   newButton,
@@ -93,6 +95,9 @@ export function ContasAPagarPage(): ReactNode {
   const bulk = useBulkStatus(clearSelection)
   const targets = bulkStatusTargets(rows, selected)
 
+  // ── Vencimento editável inline (PATCH por id; só linhas em Aberto). Lote pendente (core-api#162). ──
+  const dueEdit = useInlineDueDate()
+
   return (
     <div className={screen}>
       <div className={filterBar}>
@@ -136,9 +141,16 @@ export function ContasAPagarPage(): ReactNode {
         </div>
       </div>
 
+      {dueEdit.errorTag !== null ? (
+        <div className={errorBanner} role="alert">
+          {t(dueEdit.errorTag)}
+        </div>
+      ) : null}
+
       <div className={gridWrap}>
         <DocumentGrid
           state={state}
+          onDueDateChange={dueEdit.changeDueDate}
           onRowClick={(id, status) => {
             // Rascunho → abre o Lançar p/ FINALIZAR a inclusão (modo draft, tudo editável).
             // Demais status → drawer de detalhe.
@@ -177,6 +189,10 @@ export function ContasAPagarPage(): ReactNode {
             <span className={selSum}>{selectedSum}</span>
             <button type="button" className={selClear} onClick={clearSelection}>
               {t('financial.list.selection.clear')}
+            </button>
+            {/* Vencimento em LOTE — desabilitado até o endpoint de lote existir (core-api#162). */}
+            <button type="button" className={selClear} disabled title={t('financial.list.dueDate.bulkSoon')}>
+              {t('financial.list.dueDate.bulk')}
             </button>
             <StatusActions
               canApprove={targets.approve.length > 0}

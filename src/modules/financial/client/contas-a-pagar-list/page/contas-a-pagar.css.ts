@@ -224,6 +224,27 @@ export const row = style({
   ':last-child': { borderBlockEnd: 'none' },
 })
 export const cell = style({ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })
+// Vencimento editável inline (só linhas em Aberto). Input discreto que "vira" campo no hover/focus.
+export const dueInput = style({
+  inlineSize: '7.5rem',
+  maxInlineSize: '100%',
+  paddingBlock: '0.1875rem',
+  paddingInline: '0.375rem',
+  border: `${vars.borderWidth.thin} solid transparent`,
+  borderRadius: vars.radius.sm,
+  background: 'transparent',
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink2,
+  cursor: 'pointer',
+  ':hover': { borderColor: vars.color.institutional.paperRule, background: vars.color.surface.default },
+  ':focus': {
+    outline: 'none',
+    borderColor: vars.color.institutional.blueLine,
+    background: vars.color.surface.default,
+    boxShadow: `0 0 0 0.125rem ${vars.color.institutional.blueBg}`,
+  },
+})
 export const cellMutedDoc = style([
   cell,
   { fontFamily: vars.font.family.mono, color: vars.color.institutional.ink4 },
