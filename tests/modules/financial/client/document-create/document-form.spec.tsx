@@ -128,6 +128,29 @@ describe('DocumentForm', () => {
     expect(onProgram).toHaveBeenCalledWith('p1')
   })
 
+  it('chip da categorização: "Ordem de Serviço" p/ OS e "Contrato" p/ CT', () => {
+    const contract = {
+      ref: 'c1',
+      number: '0002/2026',
+      isServiceOrder: true,
+      centroCusto: 'CC',
+      categoria: 'Cat',
+      programa: 'Prog',
+      planoOrcamentario: '',
+      programRef: null,
+      budgetPlanRef: null,
+    }
+    render(<DocumentForm {...baseProps({ hydration: { bank: null, contract } })} />)
+    expect(screen.getByText('Ordem de Serviço')).toBeTruthy()
+    cleanup()
+    render(
+      <DocumentForm
+        {...baseProps({ hydration: { bank: null, contract: { ...contract, isServiceOrder: false } } })}
+      />,
+    )
+    expect(screen.getByText('Contrato')).toBeTruthy()
+  })
+
   it('dispara onText ao digitar o número', () => {
     const onText = vi.fn()
     render(<DocumentForm {...baseProps({ onText })} />)

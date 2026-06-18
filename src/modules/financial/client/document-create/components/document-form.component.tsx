@@ -529,7 +529,11 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
           <span className={contratoPill}>
             {contract !== null ? (
               <>
-                <span className={contratoLabel}>{t('financial.create.categorizacao.contrato')}</span>{' '}
+                <span className={contratoLabel}>
+                  {contract.isServiceOrder
+                    ? t('financial.create.categorizacao.ordemServico')
+                    : t('financial.create.categorizacao.contrato')}
+                </span>{' '}
                 <span className={contratoNum}>{contract.number}</span>
                 <span className={contratoStatus}>
                   <span className={contratoDot} aria-hidden="true" />

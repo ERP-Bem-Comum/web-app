@@ -26,6 +26,7 @@ function toContract(c: Contract): ContractCategoView {
   return {
     ref: c.id,
     number: c.sequentialNumber,
+    isServiceOrder: c.classification === 'ServiceOrder', // OS vs CT (mesma regra do grid de Contratos)
     centroCusto: c.centroDeCusto ?? '',
     categoria: c.categorizacao ?? '',
     programa: c.program?.sigla ?? c.program?.name ?? '',

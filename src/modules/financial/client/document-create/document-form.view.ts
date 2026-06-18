@@ -53,6 +53,7 @@ export type SupplierBankView = Readonly<{ line: string; pix: string | null }>
 export type ContractCategoView = Readonly<{
   ref: string // contractRef (uuid) — enviado no create; backend deriva a categorização (#48)
   number: string // sequentialNumber (ex.: 0001/2026)
+  isServiceOrder: boolean // classificação: true = Ordem de Serviço (OS), false = Contrato (CT) — rótulo do chip
   centroCusto: string
   categoria: string
   programa: string

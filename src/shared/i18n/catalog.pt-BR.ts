@@ -1112,6 +1112,7 @@ export const ptBR: Catalog = {
   'financial.create.categorizacao.semContrato': 'Sem contrato vinculado',
   'financial.create.categorizacao.vincular': 'Vincular contrato',
   'financial.create.categorizacao.contrato': 'Contrato',
+  'financial.create.categorizacao.ordemServico': 'Ordem de Serviço',
   'financial.create.categorizacao.emAndamento': 'Em Andamento',
   'financial.create.bottombar.autosaved': 'Auto-salvo · há um instante',
   'financial.create.bottombar.editing': 'Editando documento · alterações não salvas',
