@@ -7,6 +7,7 @@ import assert from 'node:assert/strict'
 
 import {
   centsToBRL,
+  centsToReais,
   reaisToCents,
   sumCents,
   maskMoneyBRL,
@@ -46,23 +47,30 @@ describe('reaisToCents', () => {
   })
 })
 
-describe('maskMoneyBRL (entrada decimal → BRL)', () => {
-  it('agrupa milhar e prefixa R$ mantendo o valor em reais', () => {
-    assert.equal(maskMoneyBRL('540'), 'R$ 540')
-    assert.equal(maskMoneyBRL('1234'), 'R$ 1.234')
-    assert.equal(maskMoneyBRL('1234,56'), 'R$ 1.234,56')
+describe('maskMoneyBRL (acumulador de centavos, sem R$)', () => {
+  it('vírgula 2 casas antes do fim + ponto de milhar, sem R$', () => {
+    assert.equal(maskMoneyBRL('5'), '0,05')
+    assert.equal(maskMoneyBRL('540'), '5,40')
+    assert.equal(maskMoneyBRL('123456'), '1.234,56')
   })
-  it('limita a 2 casas decimais e descarta lixo', () => {
-    assert.equal(maskMoneyBRL('1234,567'), 'R$ 1.234,56')
-    assert.equal(maskMoneyBRL('R$ 1.234,56'), 'R$ 1.234,56') // idempotente
+  it('idempotente sobre a saída formatada e tolera R$', () => {
+    assert.equal(maskMoneyBRL('1.234,56'), '1.234,56')
+    assert.equal(maskMoneyBRL('R$ 1.234,56'), '1.234,56')
   })
   it('vazio → "" (deixa o placeholder)', () => {
     assert.equal(maskMoneyBRL(''), '')
     assert.equal(maskMoneyBRL('R$ '), '')
   })
-  it('o resultado volta intacto por reaisToCents (entrada = valor em reais)', () => {
-    const r = reaisToCents(maskMoneyBRL('540'))
-    assert.equal(isOk(r) && r.value, '54000') // R$ 540,00
+  it('o resultado volta intacto por reaisToCents (centavos preservados)', () => {
+    const r = reaisToCents(maskMoneyBRL('123456'))
+    assert.equal(isOk(r) && r.value, '123456') // R$ 1.234,56
+  })
+})
+
+describe('centsToReais (centavos → reais sem R$)', () => {
+  it('formata sem o prefixo R$', () => {
+    assert.equal(centsToReais('150050'), '1.500,50')
+    assert.equal(centsToReais('540'), '5,40')
   })
 })
 

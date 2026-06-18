@@ -557,7 +557,7 @@ export const previewCol = style({
   blockSize: '100%',
   overflowY: 'auto',
   padding: '1.25rem', // 20 (mock)
-  background: vars.color.institutional.paperWarm,
+  background: vars.color.institutional.blueBg, // parte de FORA azul claro (a coluna do OCR)
   borderInlineEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   '@media': { 'screen and (max-width: 75rem)': { display: 'none' } },
 })
@@ -591,9 +591,9 @@ export const dropzone = style({
   textAlign: 'center',
   padding: vars.space.xl,
   borderRadius: vars.radius.lg,
-  // Caixa do OCR em azul claro da marca (antes bege/paperWarm) — borda tracejada no tom azul.
-  border: `${vars.borderWidth.thin} dashed ${vars.color.institutional.blueLine}`,
-  background: vars.color.institutional.blueBg,
+  // Caixa interna do OCR em bege (a coluna ao redor é azul) — contraste invertido.
+  border: `${vars.borderWidth.thin} dashed ${vars.color.institutional.paperRule}`,
+  background: vars.color.institutional.paperWarm,
 })
 export const dropzoneIcon = style({
   display: 'inline-flex',

@@ -253,7 +253,7 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
               className={locks.grossValue ? controlDisabled : controlMono}
               disabled={locks.grossValue}
               inputMode="decimal"
-              placeholder="R$ 0,00"
+              placeholder="0,00"
               value={fields.grossValue}
               onChange={(e) => {
                 props.onText('grossValue', maskMoney(e.target.value))
@@ -316,7 +316,7 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
                   className={locks.retentions ? controlDisabled : controlMono}
                   disabled={locks.retentions}
                   inputMode="decimal"
-                  placeholder="R$ 0,00"
+                  placeholder="0,00"
                   value={fields.retentions[key]}
                   onChange={(e) => {
                     props.onRetention(key, maskMoney(e.target.value))
@@ -344,7 +344,7 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
                       className={locks.retentions ? controlDisabled : controlMono}
                       disabled={locks.retentions}
                       inputMode="decimal"
-                      placeholder="R$ 0,00"
+                      placeholder="0,00"
                       value={fields.reformaTributaria[key]}
                       onChange={(e) => {
                         props.onReformaTributaria(key, maskMoney(e.target.value))

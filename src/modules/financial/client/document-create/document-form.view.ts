@@ -3,7 +3,7 @@
  * gating de retenção (NFS-e/RPA), **agregação CSRF** (PIS+COFINS+CSLL → 1 filho) e build do
  * `CreateDocumentInput`. Money via `money.ts`. No v1, descontos/multa/juros = 0 (sem campos no form).
  */
-import { reaisToCents, centsToBRL, maskMoneyBRL } from '#modules/financial/client/data/money.ts'
+import { reaisToCents, centsToBRL, centsToReais, maskMoneyBRL } from '#modules/financial/client/data/money.ts'
 import { normalizeCnpj, isCnpjLength, maskCnpj as maskCnpjDoc, maskCpfCnpj } from '#shared/document/cnpj.ts'
 import type {
   CreateDocumentInput,
@@ -409,7 +409,7 @@ export const hydrateFieldsFromDetail = (d: DocumentDetail): DocumentFormFields =
   // único efeito é a linha "PIS" da composição exibir o valor da CSRF, read-only.)
   const retVal = (rt: RetentionType): string => {
     const child = d.payables.find((p) => p.kind === 'Child' && p.retentionType === rt)
-    return child !== undefined ? centsToBRL(child.valueCents) : ''
+    return child !== undefined ? centsToReais(child.valueCents) : ''
   }
   const retentions: RetentionFieldsReais = {
     ...EMPTY_RETENTIONS,
@@ -424,7 +424,7 @@ export const hydrateFieldsFromDetail = (d: DocumentDetail): DocumentFormFields =
     series: '',
     supplierRef: d.supplierRef ?? '',
     paymentMethod: d.paymentMethod ?? '',
-    grossValue: d.grossValueCents !== null ? centsToBRL(d.grossValueCents) : '',
+    grossValue: d.grossValueCents !== null ? centsToReais(d.grossValueCents) : '',
     dueDate: d.dueDate ?? '',
     description: d.description ?? '',
     retentions,

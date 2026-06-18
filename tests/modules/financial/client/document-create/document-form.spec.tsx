@@ -105,9 +105,9 @@ describe('DocumentForm', () => {
   it('dispara onReformaTributaria ao digitar CBS', () => {
     const onReformaTributaria = vi.fn()
     render(<DocumentForm {...baseProps({ fields: fields({ type: 'NFS-e' }), onReformaTributaria })} />)
-    // Campo monetário: o valor digitado sai mascarado em BRL (entrada decimal — "100" = R$ 100).
+    // Campo monetário (acumulador de centavos, sem R$): "100" digitado = 100 centavos → "1,00".
     fireEvent.change(screen.getByLabelText('CBS'), { target: { value: '100' } })
-    expect(onReformaTributaria).toHaveBeenCalledWith('cbs', 'R$ 100')
+    expect(onReformaTributaria).toHaveBeenCalledWith('cbs', '1,00')
   })
 
   it('dispara onText ao digitar o número', () => {
