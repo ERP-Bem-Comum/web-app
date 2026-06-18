@@ -17,12 +17,16 @@ import {
   type ResolveSupplierDoc,
   type ResolveContract,
 } from './contas-a-pagar.view-model.ts'
+import type { DocumentStatus } from '#modules/financial/client/data/model/document.model.ts'
 
 const DEFAULT_PAGE_SIZE = 12
 
 export type ContasAPagarBinding = Readonly<{
   state: ListState
   pageSize: number
+  // Filtro de status (chips): null = "Todos". Trocar o filtro reseta a página.
+  selectedStatus: DocumentStatus | null
+  onStatusFilter: (status: DocumentStatus | null) => void
   onPrev: () => void
   onNext: () => void
   onPageSize: (size: number) => void
@@ -31,9 +35,10 @@ export type ContasAPagarBinding = Readonly<{
 export function useContasAPagar(): ContasAPagarBinding {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
+  const [selectedStatus, setSelectedStatus] = useState<DocumentStatus | null>(null)
   const partners = useQuery(partnersMapQueryOptions)
   const contracts = useQuery(contractsMapQueryOptions)
-  const list = useQuery(contasAPagarQueryOptions({ page, pageSize }))
+  const list = useQuery(contasAPagarQueryOptions({ page, pageSize, status: selectedStatus ?? undefined }))
 
   const resolveSupplier: ResolveSupplier = (ref) =>
     ref === null ? '—' : (partners.data?.get(ref)?.name ?? ref)
@@ -55,6 +60,11 @@ export function useContasAPagar(): ContasAPagarBinding {
   return {
     state,
     pageSize,
+    selectedStatus,
+    onStatusFilter: (status) => {
+      setSelectedStatus(status)
+      setPage(1)
+    },
     onPrev: () => {
       setPage((p) => Math.max(1, p - 1))
     },

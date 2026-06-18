@@ -94,18 +94,30 @@ export const COLUMNS = [
   { key: 'status', labelTag: 'financial.list.col.status', align: 'left' },
 ] as const
 
-// Chips de status (Figma) — CHROME no v1: contador real só no "Todos" (= total); os por-aba dependem de
-// agregação que o backend da Fatia 2 não faz.
+// Chips de status (Figma) — filtram a lista pelo `status` real do backend (Draft/Open/Approved → PT).
+// `status: null` = "Todos" (sem filtro). `filterable: false` = estado que o backend ainda NÃO produz
+// (Transmitido/Recusado/Pago/Conciliado, Fatia 1 só tem 3) → chip desabilitado (chrome honesto).
+// Contador real só aparece no chip ATIVO (= total da consulta filtrada); a lista é paginada no servidor.
 export const STATUS_CHIPS = [
-  { key: 'todos', labelTag: 'financial.list.chip.todos' },
-  { key: 'rascunho', labelTag: 'financial.list.chip.rascunho' },
-  { key: 'aberto', labelTag: 'financial.list.chip.aberto' },
-  { key: 'aprovado', labelTag: 'financial.list.chip.aprovado' },
-  { key: 'transmitido', labelTag: 'financial.list.chip.transmitido' },
-  { key: 'recusado', labelTag: 'financial.list.chip.recusado' },
-  { key: 'pago', labelTag: 'financial.list.chip.pago' },
-  { key: 'conciliado', labelTag: 'financial.list.chip.conciliado' },
-] as const
+  { key: 'todos', labelTag: 'financial.list.chip.todos', status: null, filterable: true },
+  { key: 'rascunho', labelTag: 'financial.list.chip.rascunho', status: 'Rascunho', filterable: true },
+  { key: 'aberto', labelTag: 'financial.list.chip.aberto', status: 'Aberto', filterable: true },
+  { key: 'aprovado', labelTag: 'financial.list.chip.aprovado', status: 'Aprovado', filterable: true },
+  {
+    key: 'transmitido',
+    labelTag: 'financial.list.chip.transmitido',
+    status: 'Transmitido',
+    filterable: false,
+  },
+  { key: 'recusado', labelTag: 'financial.list.chip.recusado', status: 'Recusado', filterable: false },
+  { key: 'pago', labelTag: 'financial.list.chip.pago', status: 'Pago', filterable: false },
+  { key: 'conciliado', labelTag: 'financial.list.chip.conciliado', status: 'Conciliado', filterable: false },
+] as const satisfies readonly {
+  key: string
+  labelTag: string
+  status: DocumentStatus | null
+  filterable: boolean
+}[]
 
 const DASH = '—'
 

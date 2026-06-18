@@ -1208,6 +1208,7 @@ export const ptBR: Catalog = {
   'financial.list.status.pay': 'Marcar como pago',
   'financial.list.status.payHint': 'registra a baixa',
   'financial.list.search': 'Buscar por fornecedor, número, CNPJ…',
+  'financial.list.statusFilter': 'Filtrar por status',
   'financial.list.pagination': 'Paginação',
   'financial.list.prev': 'Página anterior',
   'financial.list.next': 'Próxima página',

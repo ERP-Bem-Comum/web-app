@@ -68,49 +68,82 @@ export const kbd = style({
   borderRadius: vars.radius.sm,
 })
 
-// Status-chips = segmented control (trilho paper-warm; segmento ativo branco "elevado").
+// Status-chips = segmented control no MESMO padrão do grid de Contratos (trilho paper-warm; segmento
+// ativo branco "elevado"; Nunito 11px semibold; altura 30px). Agora clicáveis → filtram por status.
 export const statusChips = style({
   display: 'flex',
-  gap: vars.space.xs, // 4px
+  alignItems: 'center',
+  gap: '0.125rem', // 2px (Contratos)
   padding: '0.125rem', // 2px
   background: vars.color.institutional.paperWarm,
   borderRadius: vars.radius.md,
+  minInlineSize: 0,
+  overflowX: 'auto',
 })
-export const chip = style({
+const chipBase = style({
   display: 'inline-flex',
   alignItems: 'center',
-  gap: '0.375rem', // 6px
-  border: 'none',
-  background: 'transparent',
-  paddingBlock: '0.3125rem', // 5px
+  gap: vars.space.xs,
+  blockSize: '1.875rem', // 30px (Contratos)
   paddingInline: '0.625rem', // 10px
   borderRadius: vars.radius.sm,
-  fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.xs, // ~11px
-  fontWeight: vars.font.weight.medium,
-  color: vars.color.institutional.ink4,
+  fontFamily: vars.font.family.body, // Nunito (Contratos)
+  fontSize: '0.6875rem', // 11px
+  fontWeight: vars.font.weight.semibold,
+  lineHeight: 1,
   whiteSpace: 'nowrap',
+  cursor: 'pointer',
+  border: 'none',
+  background: 'transparent',
+  color: vars.color.institutional.ink4,
+  transition: 'background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease',
 })
+export const chip = style([
+  chipBase,
+  {
+    ':hover': {
+      background: vars.color.surface.default,
+      color: vars.color.institutional.ink2,
+      boxShadow: vars.shadow.card,
+    },
+  },
+])
 export const chipActive = style([
-  chip,
+  chipBase,
   {
     background: vars.color.surface.default,
     color: vars.color.institutional.ink2,
     boxShadow: vars.shadow.card,
   },
 ])
-export const chipCount = style({
+// Estado que o backend ainda não produz (Transmitido/Recusado/Pago/Conciliado) → desabilitado (chrome).
+export const chipDisabled = style([
+  chipBase,
+  {
+    color: vars.color.institutional.ink5,
+    cursor: 'not-allowed',
+    opacity: 0.5,
+  },
+])
+const chipCount = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
   fontFamily: vars.font.family.mono,
-  fontSize: vars.font.size['2xs'], // 9.5px
+  fontSize: '0.59375rem', // 9.5px (Contratos)
   fontWeight: vars.font.weight.medium,
+  minInlineSize: '1rem',
+  blockSize: '1rem',
+  paddingInline: '0.25rem',
+  borderRadius: vars.radius.sm,
   color: vars.color.institutional.ink5,
   background: vars.color.institutional.paperWarm,
-  paddingBlock: '0.0625rem', // 1px
-  paddingInline: '0.3125rem', // 5px
-  borderRadius: vars.radius.sm,
 })
 // Quando o chip ativo (fundo branco) carrega o contador, o badge ganha o tom paper-beige p/ contraste.
-export const chipCountOnActive = style([chipCount, { background: vars.color.institutional.paperBeige }])
+export const chipCountOnActive = style([
+  chipCount,
+  { color: vars.color.institutional.ink2, background: vars.color.institutional.paperBeige },
+])
 
 // ── Grid (Figma 205-638) — enriquecido pela 012/#47: + Contrato, Forma, Emissão, Bruto ─────────────
 // Larguras balanceadas (espaço proporcional entre as colunas); Fornecedor é a flexível (minmax).
@@ -128,7 +161,9 @@ export const gridWrap = style({
 // sticky e na horizontal (minInlineSize > largura do container). Scrollbar fina/discreta da marca.
 export const grid = style({
   minInlineSize: '88rem', // colunas folgadas (sem corte); abaixo disso rola na horizontal
-  maxBlockSize: 'calc(100dvh - 15rem)',
+  // Reserva p/ o topo (header do shell + filter-bar) E o rodapé FIXO (3.5rem) + folga, p/ a última
+  // linha nunca ficar coberta pelo bottombar (antes 15rem deixava a borda inferior sob o rodapé).
+  maxBlockSize: 'calc(100dvh - 18rem)',
   overflow: 'auto',
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   borderRadius: vars.radius.lg,

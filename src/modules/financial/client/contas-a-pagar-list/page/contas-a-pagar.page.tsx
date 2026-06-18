@@ -33,6 +33,7 @@ import {
   statusChips,
   chip,
   chipActive,
+  chipDisabled,
   chipCountOnActive,
   gridWrap,
   bottombar,
@@ -58,7 +59,7 @@ const PAGE_SIZE_OPTIONS = [5, 10, 12, 25, 50] as const
 
 export function ContasAPagarPage(): ReactNode {
   const navigate = useNavigate()
-  const { state, pageSize, onPrev, onNext, onPageSize } = useContasAPagar()
+  const { state, pageSize, selectedStatus, onStatusFilter, onPrev, onNext, onPageSize } = useContasAPagar()
   const page = state.tag === 'ready' ? state.page : null
   const rows = state.tag === 'ready' ? state.rows : []
 
@@ -108,16 +109,28 @@ export function ContasAPagarPage(): ReactNode {
           />
         </div>
 
-        <div className={statusChips}>
-          {STATUS_CHIPS.map((c, i) => {
-            const active = i === 0 // "Todos" ativo (chrome — chips não filtram no v1)
+        <div className={statusChips} role="group" aria-label={t('financial.list.statusFilter')}>
+          {STATUS_CHIPS.map((c) => {
+            const active = c.status === selectedStatus
+            // Estados que o backend ainda não produz ficam desabilitados (chrome honesto).
+            const cls = !c.filterable ? chipDisabled : active ? chipActive : chip
             return (
-              <span key={c.key} className={active ? chipActive : chip}>
+              <button
+                key={c.key}
+                type="button"
+                className={cls}
+                disabled={!c.filterable}
+                aria-pressed={active}
+                onClick={() => {
+                  if (c.filterable) onStatusFilter(c.status)
+                }}
+              >
                 {t(c.labelTag)}
+                {/* Contador real só no chip ATIVO (= total da consulta filtrada; lista paginada no servidor). */}
                 {active && page !== null ? (
                   <span className={chipCountOnActive}>{String(page.total)}</span>
                 ) : null}
-              </span>
+              </button>
             )
           })}
         </div>

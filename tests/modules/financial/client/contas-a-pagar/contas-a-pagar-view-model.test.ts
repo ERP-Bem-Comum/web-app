@@ -15,6 +15,7 @@ import {
   sumSelectedGrossBRL,
   maskCnpj,
   bulkStatusTargets,
+  STATUS_CHIPS,
 } from '../../../../../src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts'
 import { ok, err } from '../../../../../src/shared/primitives/result.ts'
 import type {
@@ -197,6 +198,21 @@ describe('bulkStatusTargets', () => {
     const tg = bulkStatusTargets(rows, new Set(['d']))
     assert.deepEqual(tg.approve, [])
     assert.deepEqual(tg.reopen, [])
+  })
+})
+
+describe('STATUS_CHIPS (filtro por status)', () => {
+  it('"Todos" sem status; Rascunho/Aberto/Aprovado filtram; demais são chrome (não filtram)', () => {
+    const byKey = Object.fromEntries(STATUS_CHIPS.map((c) => [c.key, c]))
+    assert.equal(byKey.todos?.status, null)
+    assert.equal(byKey.todos?.filterable, true)
+    assert.equal(byKey.rascunho?.status, 'Rascunho')
+    assert.equal(byKey.aberto?.status, 'Aberto')
+    assert.equal(byKey.aprovado?.status, 'Aprovado')
+    for (const k of ['rascunho', 'aberto', 'aprovado']) assert.equal(byKey[k]?.filterable, true)
+    // Estados que o backend ainda não produz → desabilitados.
+    for (const k of ['transmitido', 'recusado', 'pago', 'conciliado'])
+      assert.equal(byKey[k]?.filterable, false)
   })
 })
 
