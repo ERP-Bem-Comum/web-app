@@ -26,13 +26,28 @@ const EMPTY_FIELDS: DocumentFormFields = {
   grossValue: '',
   dueDate: '',
   description: '',
+  paymentComplement: '',
   contractRef: '',
   programRef: '',
+  centroCusto: '',
+  categoria: '',
+  subcategoria: '',
+  planoOrcamentario: '',
   retentions: EMPTY_RETENTIONS,
   reformaTributaria: EMPTY_REFORMA_TRIBUTARIA,
 }
 
-type TextKey = 'documentNumber' | 'series' | 'grossValue' | 'dueDate' | 'description'
+type TextKey =
+  | 'documentNumber'
+  | 'series'
+  | 'grossValue'
+  | 'dueDate'
+  | 'description'
+  | 'paymentComplement'
+  | 'centroCusto'
+  | 'categoria'
+  | 'subcategoria'
+  | 'planoOrcamentario'
 
 type FormAction =
   | Readonly<{ kind: 'setType'; value: DocumentType | '' }>
@@ -64,7 +79,8 @@ const reducer = (state: DocumentFormFields, action: FormAction): DocumentFormFie
       }
     }
     case 'setPaymentMethod':
-      return { ...state, paymentMethod: action.value }
+      // Trocar a forma limpa o complemento (cada forma tem o seu campo: boleto/cartão/câmbio/outro).
+      return { ...state, paymentMethod: action.value, paymentComplement: '' }
     case 'setSupplier':
       // Trocar de parceiro zera o contrato/programa escolhidos (a hidratação re-deriva pelo novo parceiro).
       return { ...state, supplierRef: action.ref, contractRef: '', programRef: '' }

@@ -125,6 +125,7 @@ function ProgramSelect(
   props: Readonly<{
     label: string
     value: string
+    disabled: boolean
     options: readonly Readonly<{ id: string; name: string; sigla: string }>[]
     onChange: (value: string) => void
   }>,
@@ -134,7 +135,8 @@ function ProgramSelect(
       <span className={fieldLabel}>{props.label}</span>
       <div className={selectWrap}>
         <select
-          className={selectControl}
+          className={props.disabled ? selectControlDisabled : selectControl}
+          disabled={props.disabled}
           aria-label={props.label}
           value={props.value}
           onChange={(e) => {
@@ -154,12 +156,26 @@ function ProgramSelect(
   )
 }
 
-/** Campo somente-leitura preenchido a partir do contrato (Categorização derivada). */
-function ReadonlyField({ label, value }: Readonly<{ label: string; value: string }>): ReactNode {
+/**
+ * Campo de Categorização EDITÁVEL (texto livre): herda o valor do contrato por padrão, mas o usuário pode
+ * sobrescrever. ⚠️ Persistência pendente (core-api#147) — capturado no form, ainda não enviado no create.
+ * Em edição/consulta (`disabled`) vira somente-leitura.
+ */
+function EditableField(
+  props: Readonly<{ label: string; value: string; disabled: boolean; onChange: (v: string) => void }>,
+): ReactNode {
   return (
     <div className={field}>
-      <span className={fieldLabel}>{label}</span>
-      <input className={controlDisabled} disabled value={value === '' ? '—' : value} aria-label={label} />
+      <span className={fieldLabel}>{props.label}</span>
+      <input
+        className={props.disabled ? controlDisabled : control}
+        disabled={props.disabled}
+        value={props.disabled && props.value === '' ? '—' : props.value}
+        onChange={(e) => {
+          props.onChange(e.target.value)
+        }}
+        aria-label={props.label}
+      />
     </div>
   )
 }
@@ -171,7 +187,20 @@ export type DocumentFormProps = Readonly<{
   locks?: FieldLocks
   onType: (value: DocumentType | '') => void
   onPaymentMethod: (value: PaymentMethod | '') => void
-  onText: (key: 'documentNumber' | 'series' | 'grossValue' | 'dueDate' | 'description', value: string) => void
+  onText: (
+    key:
+      | 'documentNumber'
+      | 'series'
+      | 'grossValue'
+      | 'dueDate'
+      | 'description'
+      | 'paymentComplement'
+      | 'centroCusto'
+      | 'categoria'
+      | 'subcategoria'
+      | 'planoOrcamentario',
+    value: string,
+  ) => void
   onRetention: (key: keyof RetentionFieldsReais, value: string) => void
   onReformaTributaria: (key: keyof ReformaTributariaFieldsReais, value: string) => void
   // Programa (Categorização) — dropdown editável. Opções reais + valor efetivo (fields ?? contrato).
@@ -203,6 +232,8 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
   const retEnabled = retentionsEnabledFor(fields.type)
   const bank = hydration.bank
   const contract = props.contract
+  // Categorização só-leitura em edição/consulta (mesma trava do fornecedor); editável em criação/rascunho.
+  const catDisabled = locks.supplier
   const bankLine =
     bank !== null ? [bank.line, bank.pix].filter((s) => s !== null && s !== '').join(' · ') : ''
 
@@ -465,8 +496,8 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             icon={<UsersIcon size={16} />}
           />
         </div>
-        {/* Campo complementar controlado pela forma (mock): boleto → linha digitável; cartão → cartão
-            corporativo. Chrome honesto: o create do core-api não aceita esses campos (core-api#89). */}
+        {/* Campo complementar controlado pela forma (boleto → linha digitável; cartão; câmbio; outro).
+            Editável (OCR/manual). ⚠️ Persistência pendente no core-api#89 — não é enviado no create ainda. */}
         {paymentComplementaryOf(fields.paymentMethod) === 'boleto' ? (
           <div className={fieldGrid.wide}>
             <div className={field}>
@@ -475,10 +506,13 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
               </label>
               <input
                 id="fin-boleto"
-                className={controlDisabled}
-                disabled
+                className={control}
                 inputMode="numeric"
                 placeholder="00000.00000 00000.000000 00000.000000 0 00000000000000"
+                value={fields.paymentComplement}
+                onChange={(e) => {
+                  props.onText('paymentComplement', e.target.value)
+                }}
                 aria-label={t('financial.create.payMethod.boletoLabel')}
               />
               <span className={retentionsHint}>{t('financial.create.payMethod.boletoHint')}</span>
@@ -493,9 +527,12 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
               </label>
               <input
                 id="fin-card"
-                className={controlDisabled}
-                disabled
+                className={control}
                 placeholder="•••• •••• •••• ••••"
+                value={fields.paymentComplement}
+                onChange={(e) => {
+                  props.onText('paymentComplement', e.target.value)
+                }}
                 aria-label={t('financial.create.payMethod.cardLabel')}
               />
               <span className={retentionsHint}>{t('financial.create.payMethod.cardHint')}</span>
@@ -510,9 +547,12 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
               </label>
               <input
                 id="fin-currency"
-                className={controlDisabled}
-                disabled
+                className={control}
                 placeholder="USD · 5,00 · R$ 0,00"
+                value={fields.paymentComplement}
+                onChange={(e) => {
+                  props.onText('paymentComplement', e.target.value)
+                }}
                 aria-label={t('financial.create.payMethod.currencyLabel')}
               />
               <span className={retentionsHint}>{t('financial.create.payMethod.currencyHint')}</span>
@@ -527,8 +567,11 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
               </label>
               <input
                 id="fin-free"
-                className={controlDisabled}
-                disabled
+                className={control}
+                value={fields.paymentComplement}
+                onChange={(e) => {
+                  props.onText('paymentComplement', e.target.value)
+                }}
                 aria-label={t('financial.create.payMethod.freeLabel')}
               />
               <span className={retentionsHint}>{t('financial.create.payMethod.freeHint')}</span>
@@ -616,44 +659,54 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             </span>
           </span>
         </div>
-        {contract !== null ? (
-          <>
-            <div className={fieldGrid.three}>
-              <ReadonlyField label={t('financial.create.field.centroCusto')} value={contract.centroCusto} />
-              <ReadonlyField label={t('financial.create.field.categoria')} value={contract.categoria} />
-              <ReadonlyField label={t('financial.create.field.subcategoria')} value="" />
-            </div>
-            <div className={fieldGrid.two}>
-              <ProgramSelect
-                label={t('financial.create.field.programa')}
-                value={props.programValue}
-                options={props.programOptions}
-                onChange={props.onProgram}
-              />
-              <ReadonlyField
-                label={t('financial.create.field.planoOrcamentario')}
-                value={contract.planoOrcamentario}
-              />
-            </div>
-          </>
-        ) : (
-          <>
-            <div className={fieldGrid.three}>
-              <ChromeSelect label={t('financial.create.field.centroCusto')} />
-              <ChromeSelect label={t('financial.create.field.categoria')} />
-              <ChromeSelect label={t('financial.create.field.subcategoria')} />
-            </div>
-            <div className={fieldGrid.two}>
-              <ProgramSelect
-                label={t('financial.create.field.programa')}
-                value={props.programValue}
-                options={props.programOptions}
-                onChange={props.onProgram}
-              />
-              <ChromeSelect label={t('financial.create.field.planoOrcamentario')} />
-            </div>
-          </>
-        )}
+        {/* Categorização EDITÁVEL: herda do contrato selecionado (quando houver), mas o usuário pode
+            sobrescrever. Em edição/consulta fica somente-leitura. Persistência: Programa real (programRef);
+            os demais campos pendem do core-api#147. */}
+        <div className={fieldGrid.three}>
+          <EditableField
+            label={t('financial.create.field.centroCusto')}
+            disabled={catDisabled}
+            value={fields.centroCusto !== '' ? fields.centroCusto : (contract?.centroCusto ?? '')}
+            onChange={(v) => {
+              props.onText('centroCusto', v)
+            }}
+          />
+          <EditableField
+            label={t('financial.create.field.categoria')}
+            disabled={catDisabled}
+            value={fields.categoria !== '' ? fields.categoria : (contract?.categoria ?? '')}
+            onChange={(v) => {
+              props.onText('categoria', v)
+            }}
+          />
+          <EditableField
+            label={t('financial.create.field.subcategoria')}
+            disabled={catDisabled}
+            value={fields.subcategoria}
+            onChange={(v) => {
+              props.onText('subcategoria', v)
+            }}
+          />
+        </div>
+        <div className={fieldGrid.two}>
+          <ProgramSelect
+            label={t('financial.create.field.programa')}
+            value={props.programValue}
+            disabled={catDisabled}
+            options={props.programOptions}
+            onChange={props.onProgram}
+          />
+          <EditableField
+            label={t('financial.create.field.planoOrcamentario')}
+            disabled={catDisabled}
+            value={
+              fields.planoOrcamentario !== '' ? fields.planoOrcamentario : (contract?.planoOrcamentario ?? '')
+            }
+            onChange={(v) => {
+              props.onText('planoOrcamentario', v)
+            }}
+          />
+        </div>
       </section>
 
       <DocumentTypeModal

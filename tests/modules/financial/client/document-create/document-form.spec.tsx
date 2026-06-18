@@ -24,8 +24,13 @@ const fields = (over: Partial<DocumentFormFields> = {}): DocumentFormFields => (
   grossValue: '',
   dueDate: '',
   description: '',
+  paymentComplement: '',
   contractRef: '',
   programRef: '',
+  centroCusto: '',
+  categoria: '',
+  subcategoria: '',
+  planoOrcamentario: '',
   retentions: { iss: '', irrf: '', inss: '', pis: '', cofins: '', csll: '' },
   reformaTributaria: { cbs: '', ibsMunicipal: '', ibsEstadual: '' },
   ...over,
@@ -192,6 +197,24 @@ describe('DocumentForm', () => {
     // O dropdown lista os 2 contratos; clicar no segundo dispara onSelectContract com o ref.
     fireEvent.click(screen.getByText('OS-014/2026'))
     expect(onSelectContract).toHaveBeenCalledWith('c2')
+  })
+
+  it('Boleto: campo de código de barras é editável e dispara onText(paymentComplement)', () => {
+    const onText = vi.fn()
+    render(<DocumentForm {...baseProps({ fields: fields({ paymentMethod: 'Boleto' }), onText })} />)
+    const campo = screen.getByLabelText(tr('financial.create.payMethod.boletoLabel'))
+    expect((campo as HTMLInputElement).disabled).toBe(false)
+    fireEvent.change(campo, { target: { value: '34191' } })
+    expect(onText).toHaveBeenCalledWith('paymentComplement', '34191')
+  })
+
+  it('Categorização: Centro de Custo é editável (criação) e dispara onText', () => {
+    const onText = vi.fn()
+    render(<DocumentForm {...baseProps({ onText })} />)
+    const cc = screen.getByLabelText(tr('financial.create.field.centroCusto'))
+    expect((cc as HTMLInputElement).disabled).toBe(false)
+    fireEvent.change(cc, { target: { value: 'CC-002' } })
+    expect(onText).toHaveBeenCalledWith('centroCusto', 'CC-002')
   })
 
   it('dispara onText ao digitar o número', () => {

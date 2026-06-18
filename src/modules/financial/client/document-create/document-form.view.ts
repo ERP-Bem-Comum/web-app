@@ -113,8 +113,17 @@ export type DocumentFormFields = Readonly<{
   grossValue: string
   dueDate: string
   description: string
+  // Complemento da Forma de Pagamento (boleto/cartão/câmbio/outro) — capturado no form; persistência no
+  // backend pendente (core-api#89). Só 1 visível por vez (controlado pela forma escolhida).
+  paymentComplement: string
   contractRef: string // Categorização: contrato escolhido (UUID) via "Alterar". Vazio = o 1º "Em Andamento".
   programRef: string // Categorização: Programa escolhido (UUID). Vazio = herda o do contrato (se houver).
+  // Categorização editável (texto livre, herdada do contrato mas sobrescrevível). Persistência pendente
+  // (core-api#147 — listas/refs). Vazio = herda o valor do contrato selecionado.
+  centroCusto: string
+  categoria: string
+  subcategoria: string
+  planoOrcamentario: string
   retentions: RetentionFieldsReais
   reformaTributaria: ReformaTributariaFieldsReais
 }>
@@ -433,8 +442,13 @@ export const hydrateFieldsFromDetail = (d: DocumentDetail): DocumentFormFields =
     grossValue: d.grossValueCents !== null ? centsToReais(d.grossValueCents) : '',
     dueDate: d.dueDate ?? '',
     description: d.description ?? '',
+    paymentComplement: '', // não exposto no detalhe (core-api#89/#95)
     contractRef: '', // o GET /:id não expõe o contrato vinculado (core-api#95) → vazio na hidratação
     programRef: '', // o GET /:id não expõe a categorização (core-api#95) → vazio na hidratação
+    centroCusto: '',
+    categoria: '',
+    subcategoria: '',
+    planoOrcamentario: '',
     retentions,
     // Reforma Tributária não vem no GET de detalhe hoje (enriquecimento = core-api#95) e é imutável no
     // ajuste → hidrata vazia. (Quando o detalhe expuser registeredTaxes, mapear aqui.)
