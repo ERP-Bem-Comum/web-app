@@ -378,7 +378,11 @@ export const selectControlDisabled = style([
   { background: vars.color.institutional.paperBeige, color: vars.color.text.muted, cursor: 'not-allowed' },
 ])
 
-export const retentionsHint = style({ fontSize: vars.font.size.xs, color: vars.color.text.muted })
+export const retentionsHint = style({
+  fontFamily: vars.font.family.body, // Nunito (brand) — hints/placeholders sob os campos
+  fontSize: vars.font.size.xs,
+  color: vars.color.text.muted,
+})
 // Cabeçalho do subgrupo Reforma Tributária (CBS/IBS) — rótulo + hint da regra (só registro de valor).
 export const reformaHead = style({
   display: 'flex',
@@ -901,11 +905,16 @@ export const contratoLabel = style({
   textTransform: 'uppercase',
   letterSpacing: '0.1em',
 })
+// "Alterar" — link de texto puro (sem caixa/borda/preenchimento), como no mock. O divisor "·" fica a
+// cargo do espaçamento do pill; só um leve padding à esquerda p/ respiro.
 export const contratoLink = style({
   paddingInlineStart: vars.space.sm,
-  borderInlineStart: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  border: 'none',
+  background: 'transparent',
   color: vars.color.institutional.blueDeep,
+  fontFamily: vars.font.family.body,
   fontWeight: vars.font.weight.medium,
+  cursor: 'pointer',
 })
 // Chip de contrato vinculado (preenchido a partir do contrato "Em Andamento" do fornecedor).
 export const contratoNum = style({
@@ -1127,7 +1136,7 @@ export const typeHeader = style({
 })
 export const typeTitle = style({
   margin: 0,
-  fontFamily: vars.font.family.heading,
+  fontFamily: vars.font.family.body, // Nunito (brand) — título mais sutil nos modais
   fontSize: vars.font.size.lg,
   fontWeight: vars.font.weight.bold,
   color: vars.color.institutional.ink2,
@@ -1212,26 +1221,23 @@ const typeAvatarBase = {
   fontWeight: vars.font.weight.bold,
   letterSpacing: '0.02em',
 } as const
+// Caixa do ícone — azul claro da marca (uniforme nos cards), combinando com o modal. Antes a cor variava
+// por classe fiscal; a pedido, todas usam o mesmo tom suave (blueBg) só nesta tela de Lançar Documento.
+const typeAvatarBlue = {
+  background: vars.color.institutional.blueBg,
+  color: vars.color.institutional.blueDeep,
+}
 export const typeAvatar = styleVariants({
-  fiscal: [
-    typeAvatarBase,
-    { background: vars.color.brand.normal, color: vars.color.brand.onBrand }, // azul da marca (suave)
-  ],
-  partial: [
-    typeAvatarBase,
-    { background: vars.color.institutional.orange, color: vars.color.surface.default },
-  ],
-  'non-fiscal': [
-    typeAvatarBase,
-    { background: vars.color.institutional.paperBeige, color: vars.color.institutional.ink3 },
-  ],
+  fiscal: [typeAvatarBase, typeAvatarBlue],
+  partial: [typeAvatarBase, typeAvatarBlue],
+  'non-fiscal': [typeAvatarBase, typeAvatarBlue],
 })
 // Avatar dos cards do modal de Forma de Pagamento — azul da marca (ícone/glifo do método).
 export const methodAvatar = style([
   typeAvatarBase,
   {
-    background: vars.color.brand.normal,
-    color: vars.color.brand.onBrand,
+    background: vars.color.institutional.blueBg, // azul claro da marca (igual aos cards de tipo)
+    color: vars.color.institutional.blueDeep,
     fontSize: vars.font.size.sm, // 14px (glifo, como o mock)
     fontWeight: vars.font.weight.regular,
   },

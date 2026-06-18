@@ -125,7 +125,7 @@ function ProgramSelect(
   props: Readonly<{
     label: string
     value: string
-    options: readonly Readonly<{ id: string; name: string }>[]
+    options: readonly Readonly<{ id: string; name: string; sigla: string }>[]
     onChange: (value: string) => void
   }>,
 ): ReactNode {
@@ -144,7 +144,8 @@ function ProgramSelect(
           <option value="">{t('financial.create.select')}</option>
           {props.options.map((o) => (
             <option key={o.id} value={o.id}>
-              {o.name}
+              {/* Exibe a SIGLA (padrão dos outros módulos, ex.: Contratos); cai p/ o nome se não houver. */}
+              {o.sigla !== '' ? o.sigla : o.name}
             </option>
           ))}
         </select>
@@ -174,7 +175,7 @@ export type DocumentFormProps = Readonly<{
   onRetention: (key: keyof RetentionFieldsReais, value: string) => void
   onReformaTributaria: (key: keyof ReformaTributariaFieldsReais, value: string) => void
   // Programa (Categorização) — dropdown editável. Opções reais + valor efetivo (fields ?? contrato).
-  programOptions: readonly Readonly<{ id: string; name: string }>[]
+  programOptions: readonly Readonly<{ id: string; name: string; sigla: string }>[]
   programValue: string
   onProgram: (value: string) => void
   // Contrato vinculado (Categorização) — selecionado + lista "Em Andamento" do parceiro + dropdown "Alterar".

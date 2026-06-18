@@ -1087,7 +1087,7 @@ export const ptBR: Catalog = {
   'financial.create.payMethod.desc.PIX': 'Transferência instantânea · chave do fornecedor.',
   'financial.create.payMethod.desc.Boleto': 'Código de barras / linha digitável.',
   'financial.create.payMethod.desc.TED': 'Transferência eletrônica entre bancos.',
-  'financial.create.payMethod.desc.TransferenciaBancaria': 'DOC / TEF · mesma instituição ou interbancária.',
+  'financial.create.payMethod.desc.TransferenciaBancaria': 'Mesma instituição ou interbancária.',
   'financial.create.payMethod.desc.CartaoCorporativo': 'Débito ou crédito na fatura da empresa.',
   'financial.create.payMethod.desc.Cambio': 'Operação de câmbio / moeda estrangeira.',
   'financial.create.payMethod.desc.GuiaRecolhimento': 'Guia de recolhimento (DARF / GPS).',

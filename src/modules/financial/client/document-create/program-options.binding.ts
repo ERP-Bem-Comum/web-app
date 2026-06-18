@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query'
 
 import { listProgramsFn } from '#modules/programs/public-api/index.ts'
 
-export type ProgramOption = Readonly<{ id: string; name: string }>
+export type ProgramOption = Readonly<{ id: string; name: string; sigla: string }>
 
 const programOptionsQueryOptions = {
   queryKey: ['financial', 'program-options'] as const,
@@ -17,7 +17,7 @@ const programOptionsQueryOptions = {
     for (;;) {
       const r = await listProgramsFn({ data: { status: 'ATIVO', order: 'ASC', page, limit: 25 } })
       if (!r.ok) break
-      for (const p of r.data.items) out.push({ id: p.id, name: p.name })
+      for (const p of r.data.items) out.push({ id: p.id, name: p.name, sigla: p.sigla })
       const { total, limit } = r.data.meta
       if (r.data.items.length === 0 || page * limit >= total) break
       page += 1

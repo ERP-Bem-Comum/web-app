@@ -121,14 +121,18 @@ describe('DocumentForm', () => {
     expect(onReformaTributaria).toHaveBeenCalledWith('cbs', '1,00')
   })
 
-  it('Programa é dropdown editável: lista opções e dispara onProgram', () => {
+  it('Programa é dropdown editável: lista pela SIGLA e dispara onProgram', () => {
     const onProgram = vi.fn()
     render(
       <DocumentForm
-        {...baseProps({ programOptions: [{ id: 'p1', name: 'Saúde Comunitária' }], onProgram })}
+        {...baseProps({
+          programOptions: [{ id: 'p1', name: 'Saúde Comunitária', sigla: 'SC' }],
+          onProgram,
+        })}
       />,
     )
-    expect(screen.getByRole('option', { name: 'Saúde Comunitária' })).toBeTruthy()
+    // Exibe a sigla (não o nome), igual aos outros módulos.
+    expect(screen.getByRole('option', { name: 'SC' })).toBeTruthy()
     fireEvent.change(screen.getByLabelText(tr('financial.create.field.programa')), {
       target: { value: 'p1' },
     })
