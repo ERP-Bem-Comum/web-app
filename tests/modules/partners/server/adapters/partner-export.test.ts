@@ -8,6 +8,8 @@ import assert from 'node:assert'
 import {
   partnerExportFilename,
   buildExportQuery,
+  collaboratorHistoryFilename,
+  parseContentDispositionFilename,
 } from '#modules/partners/server/adapters/core-api/core-api-partners-export.ts'
 
 describe('partnerExportFilename', () => {
@@ -36,5 +38,41 @@ describe('buildExportQuery', () => {
     const params = new URLSearchParams(buildExportQuery({ search: '', active: false }))
     assert.strictEqual(params.get('active'), '0')
     assert.strictEqual(params.has('search'), false)
+  })
+})
+
+describe('collaboratorHistoryFilename', () => {
+  it('deriva o fallback do histórico por id (igual ao Content-Disposition do core-api)', () => {
+    assert.strictEqual(collaboratorHistoryFilename('abc-123'), 'collaborator-abc-123-history.csv')
+  })
+})
+
+describe('parseContentDispositionFilename', () => {
+  it('retorna undefined quando o header está ausente', () => {
+    assert.strictEqual(parseContentDispositionFilename(null), undefined)
+  })
+
+  it('extrai filename="..." (com aspas)', () => {
+    assert.strictEqual(
+      parseContentDispositionFilename('attachment; filename="collaborator-7-history.csv"'),
+      'collaborator-7-history.csv',
+    )
+  })
+
+  it('extrai filename sem aspas', () => {
+    assert.strictEqual(
+      parseContentDispositionFilename('attachment; filename=collaborator-7-history.csv'),
+      'collaborator-7-history.csv',
+    )
+  })
+
+  it('prioriza e decodifica filename* (RFC 5987) sobre o filename simples', () => {
+    const encoded = `colaborador-${encodeURIComponent('é')}.csv`
+    const header = ['attachment; filename="fallback.csv"', `filename*=UTF-8''${encoded}`].join('; ')
+    assert.strictEqual(parseContentDispositionFilename(header), 'colaborador-é.csv')
+  })
+
+  it('retorna undefined quando não há um filename utilizável', () => {
+    assert.strictEqual(parseContentDispositionFilename('attachment'), undefined)
   })
 })

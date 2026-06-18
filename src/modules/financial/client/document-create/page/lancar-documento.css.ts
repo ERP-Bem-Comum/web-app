@@ -144,6 +144,13 @@ export const partnerBadge = styleVariants({
     partnerBadgeBase,
     { color: vars.color.partnerType.act.text, background: vars.color.partnerType.act.background },
   ],
+  collaborator: [
+    partnerBadgeBase,
+    {
+      color: vars.color.partnerType.collaborator.text,
+      background: vars.color.partnerType.collaborator.background,
+    },
+  ],
 })
 export const heroAlter = style({
   alignSelf: 'center',
@@ -371,7 +378,11 @@ export const selectControlDisabled = style([
   { background: vars.color.institutional.paperBeige, color: vars.color.text.muted, cursor: 'not-allowed' },
 ])
 
-export const retentionsHint = style({ fontSize: vars.font.size.xs, color: vars.color.text.muted })
+export const retentionsHint = style({
+  fontFamily: vars.font.family.body, // Nunito (brand) — hints/placeholders sob os campos
+  fontSize: vars.font.size.xs,
+  color: vars.color.text.muted,
+})
 // Cabeçalho do subgrupo Reforma Tributária (CBS/IBS) — rótulo + hint da regra (só registro de valor).
 export const reformaHead = style({
   display: 'flex',
@@ -431,8 +442,11 @@ export const compRow = style({
   fontSize: vars.font.size.xs,
   color: vars.color.institutional.ink4,
 })
-// Linha "Valor Bruto" (base): rótulo escuro (peso normal); só o VALOR é negrito (mock).
-export const compRowStrong = style([compRow, { color: vars.color.institutional.ink2 }])
+// Linha "Valor Bruto": rótulo E valor em negrito (destaque do bruto na composição).
+export const compRowStrong = style([
+  compRow,
+  { color: vars.color.institutional.ink2, fontWeight: vars.font.weight.bold },
+])
 export const compVal = style({
   fontFamily: vars.font.family.mono,
   fontSize: vars.font.size.xs,
@@ -440,6 +454,24 @@ export const compVal = style({
 })
 // Valor do "Valor Bruto" — negrito (mock: o bruto se destaca; retenções ficam normais).
 export const compValStrong = style([compVal, { fontWeight: vars.font.weight.bold }])
+// Campo editável na Composição (Descontos / Juros · Multa) — mono, alinhado à direita, compacto.
+export const compInput = style({
+  inlineSize: '7rem',
+  paddingBlock: vars.space.xs,
+  paddingInline: vars.space.xs,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.sm,
+  background: vars.color.surface.default,
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink2,
+  textAlign: 'end',
+  ':focus': {
+    outline: 'none',
+    borderColor: vars.color.institutional.blueLine,
+    boxShadow: `0 0 0 0.125rem ${vars.color.institutional.blueBg}`,
+  },
+})
 export const compSep = style({
   blockSize: vars.borderWidth.thin,
   background: vars.color.institutional.paperRule,
@@ -550,7 +582,7 @@ export const previewCol = style({
   blockSize: '100%',
   overflowY: 'auto',
   padding: '1.25rem', // 20 (mock)
-  background: vars.color.institutional.paperWarm,
+  background: vars.color.institutional.blueBg, // parte de FORA azul claro (a coluna do OCR)
   borderInlineEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   '@media': { 'screen and (max-width: 75rem)': { display: 'none' } },
 })
@@ -584,6 +616,7 @@ export const dropzone = style({
   textAlign: 'center',
   padding: vars.space.xl,
   borderRadius: vars.radius.lg,
+  // Caixa interna do OCR em bege (a coluna ao redor é azul) — contraste invertido.
   border: `${vars.borderWidth.thin} dashed ${vars.color.institutional.paperRule}`,
   background: vars.color.institutional.paperWarm,
 })
@@ -616,7 +649,7 @@ export const panel = style({ display: 'flex', flexDirection: 'column', gap: '0.6
 export const panelTitle = style({
   margin: 0,
   fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size['2xs'],
+  fontSize: `calc(${vars.font.size['2xs']} + 0.0625rem)`, // +1px nos títulos das seções da sidebar
   fontWeight: vars.font.weight.bold,
   color: vars.color.institutional.ink5,
   textTransform: 'uppercase',
@@ -729,7 +762,11 @@ export const paiBadge = style([
   { paddingBlock: '0.1875rem', paddingInline: vars.space.sm, flexShrink: 0 },
 ])
 
-export const titulosEmpty = style({ fontSize: vars.font.size.xs, color: vars.color.text.muted })
+export const titulosEmpty = style({
+  fontFamily: vars.font.family.body, // Nunito (brand) — placeholder "Preencha o valor…"
+  fontSize: vars.font.size.xs,
+  color: vars.color.text.muted,
+})
 
 // ── Validação: checklist (Ok / Aviso / Pendente) — Figma 670:420 ─────────────────
 export const validations = style({ display: 'flex', flexDirection: 'column', gap: vars.space.xs })
@@ -811,6 +848,12 @@ export const entityCard = style({
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   background: vars.color.institutional.paperWarm,
   minInlineSize: 0,
+  transition: 'background 120ms, border-color 120ms',
+  // Hover (mock): realce azul claro da marca — mesmo tom da seleção.
+  ':hover': {
+    background: vars.color.institutional.blueBg,
+    borderColor: vars.color.institutional.blueLine,
+  },
 })
 export const entityIcon = style({
   display: 'inline-flex',
@@ -820,8 +863,8 @@ export const entityIcon = style({
   blockSize: '2rem',
   flexShrink: 0,
   borderRadius: vars.radius.lg,
-  background: vars.color.brand.normal, // azul da marca (mais claro/suave que o navy institucional)
-  color: vars.color.brand.onBrand,
+  background: vars.color.institutional.blueBg, // azul claro da marca (igual às caixas de ícone dos modais)
+  color: vars.color.institutional.blueDeep,
 })
 export const entityInfo = style({
   display: 'flex',
@@ -876,6 +919,12 @@ export const contratoPill = style({
   fontFamily: vars.font.family.body, // Nunito (brand) — texto do pill (ex.: "Sem contrato vinculado")
   fontSize: vars.font.size.xs,
   color: vars.color.text.muted,
+  transition: 'background 120ms, border-color 120ms',
+  // Hover (mock): realce azul claro da marca — mesmo tom do hover do aprovador.
+  ':hover': {
+    background: vars.color.institutional.blueBg,
+    borderColor: vars.color.institutional.blueLine,
+  },
 })
 // Rótulo "CONTRATO" — overline pequeno maiúsculo (Figma Label/Field 9.5px, tracking largo).
 export const contratoLabel = style({
@@ -886,11 +935,16 @@ export const contratoLabel = style({
   textTransform: 'uppercase',
   letterSpacing: '0.1em',
 })
+// "Alterar" — link de texto puro (sem caixa/borda/preenchimento), como no mock. O divisor "·" fica a
+// cargo do espaçamento do pill; só um leve padding à esquerda p/ respiro.
 export const contratoLink = style({
   paddingInlineStart: vars.space.sm,
-  borderInlineStart: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  border: 'none',
+  background: 'transparent',
   color: vars.color.institutional.blueDeep,
+  fontFamily: vars.font.family.body,
   fontWeight: vars.font.weight.medium,
+  cursor: 'pointer',
 })
 // Chip de contrato vinculado (preenchido a partir do contrato "Em Andamento" do fornecedor).
 export const contratoNum = style({
@@ -912,6 +966,62 @@ export const contratoDot = style({
   blockSize: '0.3125rem',
   borderRadius: '50%',
   background: vars.color.institutional.green,
+})
+
+// ── Dropdown "Alterar contrato" (Categorização) — lista os contratos "Em Andamento" do parceiro ──
+export const contratoPickerWrap = style({ position: 'relative', display: 'inline-flex' })
+export const contratoMenu = style({
+  position: 'absolute',
+  top: 'calc(100% + 0.375rem)',
+  insetInlineEnd: 0,
+  zIndex: 20,
+  minInlineSize: '15rem',
+  maxBlockSize: '16rem',
+  overflowY: 'auto',
+  padding: vars.space.xs,
+  background: vars.color.surface.default,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.lg,
+  boxShadow: vars.shadow.cardElevated,
+})
+export const contratoMenuItem = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  inlineSize: '100%',
+  paddingBlock: vars.space.xs,
+  paddingInline: vars.space.sm,
+  borderRadius: vars.radius.md,
+  border: 'none',
+  background: 'transparent',
+  textAlign: 'start',
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink2,
+  cursor: 'pointer',
+  ':hover': { background: vars.color.institutional.blueBg },
+})
+export const contratoMenuItemActive = style({
+  background: vars.color.institutional.blueBg,
+  fontWeight: vars.font.weight.semibold,
+})
+export const contratoMenuLabel = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.ink5,
+  textTransform: 'uppercase',
+  letterSpacing: '0.08em',
+})
+export const contratoMenuNum = style({
+  fontFamily: vars.font.family.mono,
+  color: vars.color.institutional.ink2,
+})
+export const contratoMenuEmpty = style({
+  padding: vars.space.sm,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  color: vars.color.text.muted,
 })
 
 // ── Bottombar fixa (Figma 626:25): status + quick-action · spacer · ações ─────────
@@ -944,17 +1054,27 @@ export const draftPill = style({
   fontWeight: vars.font.weight.semibold,
   color: vars.color.institutional.ink3,
 })
+// Atalho funcional no rodapé → módulo de Parceiros › Fornecedor (mesma rota do "novo contrato").
+// Secundário em ghost com borda tracejada da marca; hover azul claro.
 export const addSupplierButton = style({
-  paddingBlock: vars.space.xs,
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: vars.space.xs,
+  blockSize: '2.5rem',
   paddingInline: vars.space.md,
-  borderRadius: vars.radius.sm,
-  border: `${vars.borderWidth.thin} dashed ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.md,
+  border: `${vars.borderWidth.thin} dashed ${vars.color.institutional.blueLine}`,
   background: 'transparent',
   fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.xs,
+  fontSize: vars.font.size.sm,
   fontWeight: vars.font.weight.semibold,
-  color: vars.color.text.muted,
-  cursor: 'not-allowed',
+  color: vars.color.institutional.blueDeep,
+  cursor: 'pointer',
+  transition: 'background 150ms, border-color 150ms',
+  ':hover': {
+    background: vars.color.institutional.blueBg,
+    borderColor: vars.color.institutional.blueDeep,
+  },
 })
 export const bottombarSpacer = style({ flex: 1, minInlineSize: 0 })
 export const actionsGroup = style({ display: 'flex', alignItems: 'center', gap: vars.space.sm })
@@ -1037,8 +1157,8 @@ export const typeContent = style({
   position: 'relative',
   display: 'flex',
   flexDirection: 'column',
-  inlineSize: 'min(30rem, calc(100vw - 2.5rem))', // 480px (fiel ao mock)
-  maxBlockSize: '92vh',
+  inlineSize: 'min(34rem, calc(100vw - 2.5rem))', // 544px — modal mais compacto (cards menores), fiel ao mock
+  maxBlockSize: '88vh',
   overflow: 'hidden',
   background: vars.color.surface.default,
   borderRadius: vars.radius.xl,
@@ -1056,7 +1176,7 @@ export const typeHeader = style({
 })
 export const typeTitle = style({
   margin: 0,
-  fontFamily: vars.font.family.heading,
+  fontFamily: vars.font.family.body, // Nunito (brand) — título mais sutil nos modais
   fontSize: vars.font.size.lg,
   fontWeight: vars.font.weight.bold,
   color: vars.color.institutional.ink2,
@@ -1094,15 +1214,15 @@ export const typeSubtitle = style({
 export const typeGrid = style({
   display: 'grid',
   gridTemplateColumns: 'repeat(2, 1fr)',
-  gap: vars.space.md,
+  gap: vars.space.sm, // cards mais próximos (mock) — reduz a altura do modal
   '@media': { 'screen and (max-width: 36rem)': { gridTemplateColumns: '1fr' } },
 })
 export const typeCard = style({
   display: 'grid',
   gridTemplateColumns: 'auto 1fr',
-  gap: vars.space.md,
+  gap: vars.space.sm, // avatar↔texto mais junto (cards compactos do mock)
   alignItems: 'start',
-  padding: vars.space.md,
+  padding: vars.space.sm, // card menor (antes md)
   textAlign: 'start',
   borderRadius: vars.radius.lg,
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
@@ -1141,26 +1261,23 @@ const typeAvatarBase = {
   fontWeight: vars.font.weight.bold,
   letterSpacing: '0.02em',
 } as const
+// Caixa do ícone — azul claro da marca (uniforme nos cards), combinando com o modal. Antes a cor variava
+// por classe fiscal; a pedido, todas usam o mesmo tom suave (blueBg) só nesta tela de Lançar Documento.
+const typeAvatarBlue = {
+  background: vars.color.institutional.blueBg,
+  color: vars.color.institutional.blueDeep,
+}
 export const typeAvatar = styleVariants({
-  fiscal: [
-    typeAvatarBase,
-    { background: vars.color.brand.normal, color: vars.color.brand.onBrand }, // azul da marca (suave)
-  ],
-  partial: [
-    typeAvatarBase,
-    { background: vars.color.institutional.orange, color: vars.color.surface.default },
-  ],
-  'non-fiscal': [
-    typeAvatarBase,
-    { background: vars.color.institutional.paperBeige, color: vars.color.institutional.ink3 },
-  ],
+  fiscal: [typeAvatarBase, typeAvatarBlue],
+  partial: [typeAvatarBase, typeAvatarBlue],
+  'non-fiscal': [typeAvatarBase, typeAvatarBlue],
 })
 // Avatar dos cards do modal de Forma de Pagamento — azul da marca (ícone/glifo do método).
 export const methodAvatar = style([
   typeAvatarBase,
   {
-    background: vars.color.brand.normal,
-    color: vars.color.brand.onBrand,
+    background: vars.color.institutional.blueBg, // azul claro da marca (igual aos cards de tipo)
+    color: vars.color.institutional.blueDeep,
     fontSize: vars.font.size.sm, // 14px (glifo, como o mock)
     fontWeight: vars.font.weight.regular,
   },

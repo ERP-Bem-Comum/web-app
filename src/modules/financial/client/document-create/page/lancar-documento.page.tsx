@@ -16,6 +16,7 @@ import { useLancarDocumentoBinding } from '../create-document.binding.ts'
 import { useDocumentEditing } from '../edit-document.binding.ts'
 import { usePartnersOptions } from '../partners-options.binding.ts'
 import { usePartnerHydration } from '../partner-hydration.binding.ts'
+import { useProgramOptions } from '../program-options.binding.ts'
 import {
   buildCreateInput,
   buildDraftInput,
@@ -58,8 +59,16 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
   // Sucesso → o binding invalida a lista e redireciona pro grid (sem card de sucesso inline).
   const selectedPartner = partners.find((p) => p.id === controller.fields.supplierRef) ?? null
   const supplierName = selectedPartner?.name ?? ''
-  // Hidrata banco + contrato "Em Andamento" do fornecedor (auto-preenchimento do Pagamento/Categorização).
+  // Hidrata banco + contratos "Em Andamento" do parceiro (auto-preenchimento do Pagamento/Categorização).
   const hydration = usePartnerHydration(controller.fields.supplierRef, selectedPartner?.kind ?? null)
+  // Contrato vinculado: o escolhido em "Alterar" tem prioridade; senão o 1º "Em Andamento" do parceiro.
+  const selectedContract =
+    hydration.contracts.find((c) => c.ref === controller.fields.contractRef) ?? hydration.contracts[0] ?? null
+  // Programa (Categorização) — opções reais + valor efetivo: o escolhido pelo usuário tem prioridade;
+  // senão herda o programa do contrato selecionado (quando houver).
+  const programOptions = useProgramOptions()
+  const programValue =
+    controller.fields.programRef !== '' ? controller.fields.programRef : (selectedContract?.programRef ?? '')
 
   // Modo da tela:
   //  · create  — novo documento
@@ -87,13 +96,14 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
   // Anexa os refs do contrato "Em Andamento" e dispara o create (backend deriva a categorização — #48).
   const submit = (base: ReturnType<typeof buildCreateInput>): void => {
     if (base === null) return
-    const c = hydration.contract
+    const c = selectedContract
     command.execute(
       c !== null
         ? {
             ...base,
             contractRef: c.ref,
-            programRef: c.programRef ?? undefined,
+            // Programa escolhido pelo usuário tem prioridade; senão herda o do contrato.
+            programRef: base.programRef ?? c.programRef ?? undefined,
             budgetPlanRef: c.budgetPlanRef ?? undefined,
           }
         : base,
@@ -165,6 +175,22 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
             onText={controller.setText}
             onRetention={controller.setRetention}
             onReformaTributaria={controller.setReformaTributaria}
+            programOptions={programOptions}
+            programValue={programValue}
+            onProgram={controller.setProgramRef}
+            centroCustoOptions={[]}
+            categoriaOptions={[]}
+            subcategoriaOptions={[]}
+            planoOptions={[]}
+            contract={selectedContract}
+            contracts={hydration.contracts}
+            contractPickerOpen={controller.contractPickerOpen}
+            onToggleContractPicker={controller.toggleContractPicker}
+            onCloseContractPicker={controller.closeContractPicker}
+            onSelectContract={(ref) => {
+              controller.setContractRef(ref)
+              controller.closeContractPicker()
+            }}
             typeModalOpen={controller.typeModalOpen}
             onOpenTypeModal={controller.openTypeModal}
             onSelectType={(type) => {
@@ -183,12 +209,24 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
         </div>
 
         <aside className={`${sidebarCol} ${scrollArea}`}>
-          <ComposicaoSidebar fields={controller.fields} supplierName={supplierName} />
+          <ComposicaoSidebar
+            fields={controller.fields}
+            supplierName={supplierName}
+            editable={mode === 'create' || mode === 'draft'}
+            onText={controller.setText}
+          />
         </aside>
       </div>
 
       <DocumentBottombar
         mode={bottombarMode}
+        onAddSupplier={() => {
+          // Mesma rota do "novo fornecedor" do incluir contrato; volta pra cá após cadastrar.
+          void navigate({
+            to: '/parceiros/fornecedores/criar',
+            search: { returnTo: '/financeiro/contas-a-pagar/lancar' },
+          })
+        }}
         onDiscard={edit.isEdit ? goToGrid : controller.reset}
         onSaveDraft={() => {
           submit(buildDraftInput(controller.fields))

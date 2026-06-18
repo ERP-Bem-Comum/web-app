@@ -5,7 +5,13 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
-import { centsToBRL, reaisToCents, sumCents } from '../../../../../src/modules/financial/client/data/money.ts'
+import {
+  centsToBRL,
+  centsToReais,
+  reaisToCents,
+  sumCents,
+  maskMoneyBRL,
+} from '../../../../../src/modules/financial/client/data/money.ts'
 import { isOk, isErr } from '../../../../../src/shared/primitives/result.ts'
 
 describe('centsToBRL', () => {
@@ -38,6 +44,33 @@ describe('reaisToCents', () => {
     for (const raw of ['', 'abc', '1,2,3', 'R$']) {
       assert.equal(isErr(reaisToCents(raw)), true)
     }
+  })
+})
+
+describe('maskMoneyBRL (acumulador de centavos, sem R$)', () => {
+  it('vírgula 2 casas antes do fim + ponto de milhar, sem R$', () => {
+    assert.equal(maskMoneyBRL('5'), '0,05')
+    assert.equal(maskMoneyBRL('540'), '5,40')
+    assert.equal(maskMoneyBRL('123456'), '1.234,56')
+  })
+  it('idempotente sobre a saída formatada e tolera R$', () => {
+    assert.equal(maskMoneyBRL('1.234,56'), '1.234,56')
+    assert.equal(maskMoneyBRL('R$ 1.234,56'), '1.234,56')
+  })
+  it('vazio → "" (deixa o placeholder)', () => {
+    assert.equal(maskMoneyBRL(''), '')
+    assert.equal(maskMoneyBRL('R$ '), '')
+  })
+  it('o resultado volta intacto por reaisToCents (centavos preservados)', () => {
+    const r = reaisToCents(maskMoneyBRL('123456'))
+    assert.equal(isOk(r) && r.value, '123456') // R$ 1.234,56
+  })
+})
+
+describe('centsToReais (centavos → reais sem R$)', () => {
+  it('formata sem o prefixo R$', () => {
+    assert.equal(centsToReais('150050'), '1.500,50')
+    assert.equal(centsToReais('540'), '5,40')
   })
 })
 

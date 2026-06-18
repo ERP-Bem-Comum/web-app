@@ -28,6 +28,25 @@ export const reaisToCents = (raw: string): Result<string, 'invalid-money'> => {
   return ok(String(Math.round(Number.parseFloat(cleaned) * 100)))
 }
 
+/**
+ * Máscara monetária "as-you-type" (acumulador de centavos, SEM `R$`): os dígitos preenchem da direita,
+ * com a vírgula sempre 2 casas antes do fim e ponto de milhar (`"123456"` → `"1.234,56"`). Vazio → `""`
+ * (deixa o placeholder). Idempotente (reaplica sobre `"1.234,56"`/`"R$ 1.234,56"`) e aceito de volta por
+ * `reaisToCents`. O número digitado é o valor em CENTAVOS (as 2 últimas casas são os centavos).
+ */
+export const maskMoneyBRL = (raw: string): string => {
+  const digits = raw.replace(/\D/g, '')
+  if (digits === '') return ''
+  const padded = digits.padStart(3, '0') // garante ao menos "0,XX"
+  const int = padded.slice(0, -2).replace(/^0+(?=\d)/, '') // remove zeros à esquerda (mantém 1)
+  const dec = padded.slice(-2)
+  const intGrouped = int.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  return `${intGrouped},${dec}`
+}
+
+/** Centavos → reais SEM o `R$` (`"150050"` → `"1.500,50"`) — hidrata campos de valor sem prefixo. */
+export const centsToReais = (cents: string | number): string => maskMoneyBRL(String(cents))
+
 /** Soma de strings de centavos (defaults a 0 quando indefinido/vazio). Retorna string de centavos. */
 export const sumCents = (...values: readonly (string | undefined)[]): string => {
   const total = values.reduce<number>((acc, v) => {

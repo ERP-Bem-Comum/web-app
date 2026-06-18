@@ -24,4 +24,5 @@ export {
   LinkIcon,
   HeartPulseIcon,
   UploadIcon,
+  CheckCircleIcon,
 } from './icons.tsx'

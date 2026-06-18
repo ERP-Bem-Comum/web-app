@@ -12,4 +12,6 @@
  */
 import '@fontsource-variable/inter'
 import '@fontsource-variable/nunito'
-import '@fontsource/jetbrains-mono'
+import '@fontsource/jetbrains-mono' // peso 400 (default)
+import '@fontsource/jetbrains-mono/500.css' // valores mono semibold
+import '@fontsource/jetbrains-mono/700.css' // valores mono em negrito (ex.: Valor Bruto) — sem isso o bold não renderiza

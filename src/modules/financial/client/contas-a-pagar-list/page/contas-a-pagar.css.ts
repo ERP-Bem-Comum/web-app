@@ -122,14 +122,32 @@ const GRID_COLS = '2.25rem 4.75rem 7rem minmax(15rem, 1.4fr) 6.5rem 8.5rem 6.5re
 export const gridWrap = style({
   paddingInline: vars.space.lg,
   paddingBlock: vars.space.md,
-  overflowX: 'auto',
+  minBlockSize: 0, // permite o scroller interno encolher dentro do flex da tela
 })
+// Scroller do grid (2 eixos), espelhando o grid de Contratos: rola na vertical (maxBlockSize) com header
+// sticky e na horizontal (minInlineSize > largura do container). Scrollbar fina/discreta da marca.
 export const grid = style({
-  minInlineSize: '88rem', // colunas folgadas (sem corte) + fonte +1px; abaixo disso o wrapper rola
+  minInlineSize: '88rem', // colunas folgadas (sem corte); abaixo disso rola na horizontal
+  maxBlockSize: 'calc(100dvh - 15rem)',
+  overflow: 'auto',
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   borderRadius: vars.radius.lg,
-  overflow: 'hidden',
   background: vars.color.surface.default,
+  selectors: {
+    '&::-webkit-scrollbar': { width: '0.625rem', height: '0.625rem' },
+    '&::-webkit-scrollbar-track': {
+      background: vars.color.institutional.paperWarm,
+      borderRadius: vars.radius.md,
+    },
+    '&::-webkit-scrollbar-thumb': {
+      background: `color-mix(in srgb, ${vars.color.institutional.ink5} 15%, ${vars.color.institutional.paperRule})`,
+      borderRadius: vars.radius.md,
+      border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperWarm}`,
+    },
+    '&::-webkit-scrollbar-thumb:hover': {
+      background: `color-mix(in srgb, ${vars.color.institutional.ink5} 30%, ${vars.color.institutional.paperRule})`,
+    },
+  },
 })
 export const head = style({
   display: 'grid',
@@ -140,6 +158,9 @@ export const head = style({
   paddingInline: vars.space.lg,
   background: vars.color.institutional.paperWarm,
   borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  position: 'sticky', // fixa o cabeçalho ao rolar na vertical (padrão do grid de Contratos)
+  top: 0,
+  zIndex: 5,
 })
 // Cabeçalho denso (Figma "Badge"): caixa-alta, bold, tracking largo, ink-5. Fonte +1px (sobre o 2xs=9px).
 export const headCell = style({

@@ -13,7 +13,11 @@ export { updateSupplierFn } from '#modules/partners/server/adapters/server-fns/s
 export { deactivateSupplierFn } from '#modules/partners/server/adapters/server-fns/supplier/deactivate-supplier.service.fn.ts'
 export { reactivateSupplierFn } from '#modules/partners/server/adapters/server-fns/supplier/reactivate-supplier.service.fn.ts'
 export { listServiceCategoriesFn } from '#modules/partners/server/adapters/server-fns/supplier/list-service-categories.query.fn.ts'
-export type { SupplierListItem, SupplierDetail, SupplierListResponse } from '#modules/partners/server/domain/supplier/supplier.io.ts'
+export type {
+  SupplierListItem,
+  SupplierDetail,
+  SupplierListResponse,
+} from '#modules/partners/server/domain/supplier/supplier.io.ts'
 
 // ── Financiadores (US3) ─────────────────────────────────────────────────────
 export { listFinanciersFn } from '#modules/partners/server/adapters/server-fns/financier/list-financiers.query.fn.ts'
@@ -22,11 +26,20 @@ export { createFinancierFn } from '#modules/partners/server/adapters/server-fns/
 export { updateFinancierFn } from '#modules/partners/server/adapters/server-fns/financier/update-financier.service.fn.ts'
 export { deactivateFinancierFn } from '#modules/partners/server/adapters/server-fns/financier/deactivate-financier.service.fn.ts'
 export { reactivateFinancierFn } from '#modules/partners/server/adapters/server-fns/financier/reactivate-financier.service.fn.ts'
-export type { FinancierListItem, FinancierDetail, FinancierListResponse } from '#modules/partners/server/domain/financier/financier.io.ts'
+export type {
+  FinancierListItem,
+  FinancierDetail,
+  FinancierListResponse,
+} from '#modules/partners/server/domain/financier/financier.io.ts'
 
 // ── Colaboradores ───────────────────────────────────────────────────────────
+export { listCollaboratorsFn } from '#modules/partners/server/adapters/server-fns/collaborator/list-collaborators.query.fn.ts'
 export { getCollaboratorFn } from '#modules/partners/server/adapters/server-fns/collaborator/get-collaborator.query.fn.ts'
-export type { CollaboratorDetail } from '#modules/partners/server/domain/collaborator/collaborator.io.ts'
+export type {
+  CollaboratorListItem,
+  CollaboratorDetail,
+  CollaboratorListResponse,
+} from '#modules/partners/server/domain/collaborator/collaborator.io.ts'
 
 // ── Geografia: Estados (US4) + Municípios (US5) ─────────────────────────────
 export { listPartnerStatesFn } from '#modules/partners/server/adapters/server-fns/geography/list-partner-states.query.fn.ts'
@@ -34,7 +47,10 @@ export { togglePartnerStateFn } from '#modules/partners/server/adapters/server-f
 export { listMunicipalitiesByUfFn } from '#modules/partners/server/adapters/server-fns/geography/list-municipalities-by-uf.query.fn.ts'
 export { togglePartnerMunicipalityFn } from '#modules/partners/server/adapters/server-fns/geography/toggle-partner-municipality.service.fn.ts'
 export { listAddedMunicipalitiesFn } from '#modules/partners/server/adapters/server-fns/geography/list-added-municipalities.query.fn.ts'
-export type { PartnerState, PartnerMunicipality } from '#modules/partners/server/domain/geography/geography.types.ts'
+export type {
+  PartnerState,
+  PartnerMunicipality,
+} from '#modules/partners/server/domain/geography/geography.types.ts'
 
 // ── ACT (US6) ───────────────────────────────────────────────────────────────
 export { listActsFn } from '#modules/partners/server/adapters/server-fns/act/list-acts.query.fn.ts'
@@ -46,6 +62,18 @@ export { reactivateActFn } from '#modules/partners/server/adapters/server-fns/ac
 
 export type { ActListItem, ActDetail, ActListResponse } from '#modules/partners/server/domain/act/act.io.ts'
 
+// ── Agregador dos 4 tipos (GET /api/v1/partners) — lista unificada com document (CPF/CNPJ) resolvido ──
+export { listAllPartnersFn } from '#modules/partners/server/adapters/server-fns/list-all-partners.query.fn.ts'
+export type {
+  PartnerAggregateItem,
+  PartnerAggregateKind,
+  PartnerAggregateError,
+} from '#modules/partners/server/adapters/core-api/core-api-partners-aggregate.ts'
+
 // Export CSV (passthrough do core-api) — suppliers/collaborators/financiers/acts.
 export { exportPartnersFn } from '#modules/partners/server/adapters/server-fns/export-partners.query.fn.ts'
-export type { PartnerExportResource, PartnerExportFile } from '#modules/partners/server/adapters/core-api/core-api-partners-export.ts'
+export { exportCollaboratorHistoryFn } from '#modules/partners/server/adapters/server-fns/collaborator/export-collaborator-history.query.fn.ts'
+export type {
+  PartnerExportResource,
+  PartnerExportFile,
+} from '#modules/partners/server/adapters/core-api/core-api-partners-export.ts'

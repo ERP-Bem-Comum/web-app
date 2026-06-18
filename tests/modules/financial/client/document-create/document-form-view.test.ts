@@ -9,6 +9,8 @@ import assert from 'node:assert/strict'
 import {
   retentionsEnabledFor,
   reformaTributariaEnabledFor,
+  issAllowedFor,
+  allowedRetentionKeysFor,
   netPreviewCents,
   titulosPrevistos,
   canSubmit,
@@ -24,6 +26,8 @@ import {
   paymentComplementaryOf,
   filterPartners,
   partnerKindTag,
+  isPartnerPF,
+  maskDocument,
   editLocksFor,
   isEditableStatus,
   hydrateFieldsFromDetail,
@@ -39,6 +43,7 @@ const partners: readonly PartnerOption[] = [
   { id: '1', name: 'Bambu Educação', subtitle: '37.364.305/0001-92', kind: 'supplier' },
   { id: '2', name: 'Fundo Verde', subtitle: '11.222.333/0001-44', kind: 'financier' },
   { id: '3', name: 'Acordo Regional', subtitle: 'OS-014/2026', kind: 'act' },
+  { id: '4', name: 'Maria Souza', subtitle: '14396412002', kind: 'collaborator' },
 ]
 
 const base: DocumentFormFields = {
@@ -50,6 +55,16 @@ const base: DocumentFormFields = {
   grossValue: 'R$ 10.000,00',
   dueDate: '2026-06-10',
   description: 'Consultoria',
+  discounts: '',
+  jurosMulta: '',
+  accessKey: '',
+  paymentComplement: '',
+  contractRef: '',
+  programRef: '',
+  centroCusto: '',
+  categoria: '',
+  subcategoria: '',
+  planoOrcamentario: '',
   retentions: { iss: '350', irrf: '150', inss: '1100', pis: '65', cofins: '300', csll: '100' },
   reformaTributaria: EMPTY_REFORMA_TRIBUTARIA,
 }
@@ -69,12 +84,55 @@ describe('retentionsEnabledFor', () => {
   })
 })
 
+describe('issAllowedFor / allowedRetentionKeysFor (ISS em NFS-e e RPA)', () => {
+  it('ISS em NFS-e e RPA (a UI exibe; o backend ainda gateia RPA — ver issue)', () => {
+    assert.equal(issAllowedFor('NFS-e'), true)
+    assert.equal(issAllowedFor('RPA'), true)
+    assert.equal(issAllowedFor('Boleto'), false)
+  })
+  it('NFS-e e RPA exibem as 6 chaves (com ISS); demais nenhuma', () => {
+    assert.deepEqual(allowedRetentionKeysFor('NFS-e'), ['iss', 'irrf', 'inss', 'pis', 'cofins', 'csll'])
+    assert.deepEqual(allowedRetentionKeysFor('RPA'), ['iss', 'irrf', 'inss', 'pis', 'cofins', 'csll'])
+    assert.deepEqual(allowedRetentionKeysFor('Boleto'), [])
+  })
+})
+
 describe('netPreviewCents', () => {
   it('líquido = bruto − Σretenções', () => {
     assert.equal(netPreviewCents(base), '793500')
   })
   it('tipo sem retenção: líquido = bruto (retenções ignoradas)', () => {
     assert.equal(netPreviewCents({ ...base, type: 'Boleto' }), '1000000')
+  })
+  it('RPA agora conta a ISS no líquido (mesmo cálculo da NFS-e)', () => {
+    assert.equal(netPreviewCents({ ...base, type: 'RPA' }), '793500')
+  })
+  it('Descontos SUBTRAEM e Juros/Multa SOMAM ao líquido (espelha o core-api)', () => {
+    // base = 793500 (bruto − retenções). − R$100,00 desconto + R$50,00 juros/multa = 793500 − 10000 + 5000.
+    assert.equal(netPreviewCents({ ...base, discounts: 'R$ 100,00', jurosMulta: 'R$ 50,00' }), '788500')
+  })
+})
+
+describe('buildCreateInput — RPA inclui ISS (a UI exibe; backend libera via issue)', () => {
+  it('RPA com ISS preenchida: o input inclui ISS (ISS/IRRF/INSS/CSRF)', () => {
+    const input = buildCreateInput({ ...base, type: 'RPA' })
+    assert.notEqual(input, null)
+    const tipos = input?.retentions.map((r) => r.type) ?? []
+    assert.equal(tipos.includes('ISS'), true)
+    assert.deepEqual([...tipos].sort(), ['CSRF', 'INSS', 'IRRF', 'ISS'])
+  })
+})
+
+describe('buildCreateInput — Descontos / Juros·Multa', () => {
+  it('emite discountsCents e interestCents (Juros/Multa → interestCents) quando > 0', () => {
+    const input = buildCreateInput({ ...base, discounts: 'R$ 100,00', jurosMulta: 'R$ 50,00' })
+    assert.equal(input?.discountsCents, '10000')
+    assert.equal(input?.interestCents, '5000')
+  })
+  it('omite os campos quando zerados', () => {
+    const input = buildCreateInput(base)
+    assert.equal(input?.discountsCents, undefined)
+    assert.equal(input?.interestCents, undefined)
   })
 })
 
@@ -224,7 +282,7 @@ describe('PAYMENT_METHOD_META / paymentComplementaryOf', () => {
 
 describe('filterPartners', () => {
   it('vazio → devolve todos', () => {
-    assert.equal(filterPartners(partners, '   ').length, 3)
+    assert.equal(filterPartners(partners, '   ').length, 4)
   })
   it('casa por nome (case-insensitive)', () => {
     const r = filterPartners(partners, 'bambu')
@@ -247,6 +305,11 @@ describe('filterPartners', () => {
     ]
     assert.equal(filterPartners(alnum, 'abc345').length, 1)
     assert.equal(filterPartners(alnum, 'ABC345').length, 1)
+  })
+  it('casa colaborador (PF) por CPF no subtítulo (ignora pontuação)', () => {
+    const r = filterPartners(partners, '143.964.120-02')
+    assert.equal(r.length, 1)
+    assert.equal(r[0]?.kind, 'collaborator')
   })
   it('sem match → vazio', () => {
     assert.equal(filterPartners(partners, 'inexistente').length, 0)
@@ -277,6 +340,20 @@ describe('partnerKindTag', () => {
   it('mapeia o tipo para a chave i18n', () => {
     assert.equal(partnerKindTag('supplier'), 'financial.create.partner.kind.supplier')
     assert.equal(partnerKindTag('act'), 'financial.create.partner.kind.act')
+    assert.equal(partnerKindTag('collaborator'), 'financial.create.partner.kind.collaborator')
+  })
+})
+
+describe('isPartnerPF / maskDocument (favorecido PF=colaborador exibe CPF; PJ exibe CNPJ)', () => {
+  it('colaborador é PF; demais tipos são PJ', () => {
+    assert.equal(isPartnerPF('collaborator'), true)
+    assert.equal(isPartnerPF('supplier'), false)
+    assert.equal(isPartnerPF('financier'), false)
+    assert.equal(isPartnerPF('act'), false)
+  })
+  it('mascara CPF (11) e CNPJ (14) conforme o conteúdo', () => {
+    assert.equal(maskDocument('14396412002'), '143.964.120-02')
+    assert.equal(maskDocument('37364305000192'), '37.364.305/0001-92')
   })
 })
 

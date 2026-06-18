@@ -74,3 +74,53 @@ export const exportPartnerCsv = async (
   const csv = await response.text().catch(() => '')
   return ok({ filename: partnerExportFilename(resource), csv })
 }
+
+/** Nome de arquivo de fallback do histórico de um colaborador (espelha o Content-Disposition do core-api). */
+export const collaboratorHistoryFilename = (id: string): string => `collaborator-${id}-history.csv`
+
+/**
+ * Extrai o `filename` de um header `Content-Disposition` (suporta `filename="..."` e `filename*=UTF-8''...`).
+ * Retorna `undefined` se não houver um nome utilizável — o chamador aplica seu próprio fallback.
+ */
+export const parseContentDispositionFilename = (header: string | null): string | undefined => {
+  if (header === null) return undefined
+  const star = /filename\*\s*=\s*(?:UTF-8'')?["']?([^"';]+)["']?/i.exec(header)
+  if (star?.[1] !== undefined && star[1] !== '') {
+    try {
+      return decodeURIComponent(star[1])
+    } catch {
+      return star[1]
+    }
+  }
+  const plain = /filename\s*=\s*["']?([^"';]+)["']?/i.exec(header)
+  return plain?.[1] !== undefined && plain[1] !== '' ? plain[1] : undefined
+}
+
+/**
+ * Export do HISTÓRICO de alterações de um colaborador — `GET /collaborators/:id/export?type=history`
+ * (`type` é literal obrigatório). Passthrough do `text/csv`; histórico vazio = CSV só com cabeçalho
+ * (sucesso, não erro). Preserva o `filename` do `Content-Disposition` (fallback `collaborator-<id>-history.csv`).
+ * 503 (reader indisponível) cai em `server`. NÃO usa `resultFetch` (que força JSON). NUNCA lança. Server-only.
+ */
+export const exportCollaboratorHistoryCsv = async (
+  baseUrl: string,
+  id: string,
+  token: string,
+): Promise<Result<PartnerExportFile, PartnersError>> => {
+  let response: Response
+  try {
+    response = await globalThis.fetch(`${baseUrl}/collaborators/${id}/export?type=history`, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${token}`, Accept: 'text/csv' },
+      signal: AbortSignal.timeout(30_000),
+    })
+  } catch {
+    return err('connectivity')
+  }
+  if (!response.ok) return err(await mapResponseError(response))
+  const csv = await response.text().catch(() => '')
+  const filename =
+    parseContentDispositionFilename(response.headers.get('content-disposition')) ??
+    collaboratorHistoryFilename(id)
+  return ok({ filename, csv })
+}

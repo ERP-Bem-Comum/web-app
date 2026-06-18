@@ -668,6 +668,8 @@ export const ptBR: Catalog = {
   'partners.collaborators.actions.view': 'Ver',
   // Detalhe do colaborador (clique na linha da grid) — exibe o cadastro (pré + completo) com Editar.
   'partners.collaborators.detail.title': 'Detalhe do Colaborador',
+  'partners.collaborators.detail.exportHistory': 'Exportar histórico',
+  'partners.collaborators.detail.exportHistory.loading': 'Exportando…',
   'partners.collaborators.detail.section.prefilled': 'Dados pré-preenchidos pela ABC:',
   'partners.collaborators.detail.section.complete': 'Complete seu cadastro:',
   'partners.collaborators.detail.field.rg': 'RG',
@@ -759,6 +761,11 @@ export const ptBR: Catalog = {
   'partners.collaborators.employment.PJ': 'PJ',
   // Inclusão de colaborador (feature 018) — pré-cadastro dos 7 campos.
   'partners.collaborators.create.title': 'Novo Colaborador',
+  // Modal de sucesso do pré-cadastro: confirma e avisa que o link será enviado ao colaborador(a).
+  'partners.collaborators.create.success.title': 'Pré-cadastro concluído',
+  'partners.collaborators.create.success.body':
+    'Colaborador(a) pré-cadastrado, enviaremos um link ao colaborador(a) para que o cadastro seja finalizado.',
+  'partners.collaborators.create.success.ok': 'Entendi',
   'partners.collaborators.form.section.basic': 'Pré-Cadastro de Colaborador(a)',
   'partners.collaborators.form.section.territory': 'Território',
   'partners.collaborators.form.uf': 'UF',
@@ -980,11 +987,14 @@ export const ptBR: Catalog = {
   'financial.create.partner.kind.supplier': 'Fornecedor',
   'financial.create.partner.kind.financier': 'Financiador',
   'financial.create.partner.kind.act': 'ACT',
-  'financial.create.partner.search': 'Buscar por nome ou CNPJ…',
+  'financial.create.partner.kind.collaborator': 'Colaborador',
+  'financial.create.partner.search': 'Buscar por nome, CNPJ ou CPF…',
   'financial.create.partner.empty': 'Nenhum parceiro encontrado',
   'financial.create.partner.close': 'Fechar',
   'financial.create.partner.pj': 'PJ',
+  'financial.create.partner.pf': 'PF',
   'financial.create.partner.cnpjLabel': 'CNPJ',
+  'financial.create.partner.cpfLabel': 'CPF',
   'financial.detail.title': 'Detalhes do Pagamento',
   'financial.detail.close': 'Fechar',
   'financial.detail.loading': 'Carregando…',
@@ -1010,6 +1020,7 @@ export const ptBR: Catalog = {
   'financial.detail.label.chave': 'Chave',
   'financial.detail.label.banco': 'Banco',
   'financial.detail.label.favorecido': 'Favorecido',
+  'financial.detail.label.descricao': 'Descrição',
   'financial.detail.file.empty': 'Nenhum arquivo anexado',
   'financial.detail.file.soon': 'Disponível ao anexar o documento',
   'financial.detail.edit': 'Editar pagamento',
@@ -1055,22 +1066,20 @@ export const ptBR: Catalog = {
   // Modal "Tipo de Documento" (cards com classe fiscal + descrição).
   'financial.create.docType.modalTitle': 'Tipo de Documento',
   'financial.create.docType.modalSubtitle':
-    'Tipos fiscais habilitam campos fiscais. No regime atual, apenas NFS-e e RPA disparam o motor de retenções; os demais são tratados como lançamentos manuais.',
+    'Tipos fiscais habilitam campos fiscais. No regime atual, apenas NFS-e e RPA disparam o motor de retenções.',
   'financial.create.docType.close': 'Fechar',
   'financial.create.docType.class.fiscal': 'Fiscal',
   'financial.create.docType.class.partial': 'Parcial',
   'financial.create.docType.class.non-fiscal': 'Não-fiscal',
-  'financial.create.docType.desc.NFS-e':
-    'Nota Fiscal de Serviço Eletrônica — serviços contratados de PJ; gera retenções tributárias.',
-  'financial.create.docType.desc.DANFE':
-    'Documento Auxiliar da NF-e — produtos/mercadorias; ICMS informativo, IPI e federais.',
+  'financial.create.docType.desc.NFS-e': 'Nota Fiscal de Serviço Eletrônica: serviços contratados de PJ.',
+  'financial.create.docType.desc.DANFE': 'Documento Auxiliar da NF-e — produtos/mercadorias.',
   'financial.create.docType.desc.RPA':
     'Recibo de Pagamento Autônomo — pessoa física autônoma; INSS, IRRF (tabela progressiva), ISS.',
-  'financial.create.docType.desc.Fatura': 'Fatura comercial — cobrança comercial; retenções condicionais.',
-  'financial.create.docType.desc.Boleto': 'Boleto bancário — pagamento com código de barras; sem retenções.',
+  'financial.create.docType.desc.Fatura': 'Fatura comercial, retenções condicionais.',
+  'financial.create.docType.desc.Boleto': 'Boleto bancário — pagamento com código de barras.',
   'financial.create.docType.desc.Recibo': 'Recibo simples — lançamento manual sem aderência fiscal.',
   'financial.create.docType.desc.Imposto':
-    'Guia de Recolhimento (DARF/GPS) — recolhimento de tributo já apurado; sem retenções.',
+    'Guia de Recolhimento (DARF/GPS) — recolhimento de tributo já apurado.',
   // Modal "Forma de Pagamento" (cards) — a forma controla os campos complementares.
   'financial.create.payMethod.modalTitle': 'Forma de Pagamento',
   'financial.create.payMethod.modalSubtitle':
@@ -1078,7 +1087,7 @@ export const ptBR: Catalog = {
   'financial.create.payMethod.desc.PIX': 'Transferência instantânea · chave do fornecedor.',
   'financial.create.payMethod.desc.Boleto': 'Código de barras / linha digitável.',
   'financial.create.payMethod.desc.TED': 'Transferência eletrônica entre bancos.',
-  'financial.create.payMethod.desc.TransferenciaBancaria': 'DOC / TEF · mesma instituição ou interbancária.',
+  'financial.create.payMethod.desc.TransferenciaBancaria': 'Mesma instituição ou interbancária.',
   'financial.create.payMethod.desc.CartaoCorporativo': 'Débito ou crédito na fatura da empresa.',
   'financial.create.payMethod.desc.Cambio': 'Operação de câmbio / moeda estrangeira.',
   'financial.create.payMethod.desc.GuiaRecolhimento': 'Guia de recolhimento (DARF / GPS).',
@@ -1098,9 +1107,13 @@ export const ptBR: Catalog = {
   'financial.create.pagamento.contaFornecedorHint': 'Conforme dados bancários do fornecedor',
   'financial.create.pagamento.aprovador': 'Aprovador',
   'financial.create.pagamento.aprovadorHint': 'Definido no fluxo de aprovação',
-  'financial.create.categorizacao.semContrato': 'Sem contrato vinculado',
+  'financial.create.categorizacao.semContrato': 'Sem contrato',
   'financial.create.categorizacao.vincular': 'Vincular contrato',
+  'financial.create.categorizacao.alterar': 'Alterar',
+  'financial.create.categorizacao.livre': 'Livre',
+  'financial.create.categorizacao.semContratosAndamento': 'Nenhum contrato em andamento',
   'financial.create.categorizacao.contrato': 'Contrato',
+  'financial.create.categorizacao.ordemServico': 'Ordem de Serviço',
   'financial.create.categorizacao.emAndamento': 'Em Andamento',
   'financial.create.bottombar.autosaved': 'Auto-salvo · há um instante',
   'financial.create.bottombar.editing': 'Editando documento · alterações não salvas',
@@ -1108,6 +1121,8 @@ export const ptBR: Catalog = {
   'financial.create.bottombar.draft': 'Rascunho',
   'financial.create.bottombar.addSupplier': '+ Adicionar fornecedor',
   'financial.create.bottombar.saveDraft': 'Salvar rascunho',
+  'financial.create.bottombar.saveDraftHint':
+    'Para salvar como rascunho, preencha tipo, número, fornecedor, forma de pagamento e valor bruto.',
   'financial.create.bottombar.kbdSaveDraft': '⌘S',
   'financial.create.bottombar.kbdSubmit': '⌘↵',
   'financial.create.retention.iss': 'ISS',

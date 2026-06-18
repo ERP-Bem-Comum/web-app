@@ -1,11 +1,11 @@
 /**
- * Binding da criação de colaborador — ADAPTER React. `useMutation` → Command. Invalida a lista e
- * navega à listagem no sucesso (no `onSuccess`, não num efeito). RBAC: `collaborator:write`.
+ * Binding da criação de colaborador — ADAPTER React. `useMutation` → Command. Invalida a lista no
+ * sucesso. A navegação NÃO acontece aqui: o sucesso DERIVA o flag `succeeded`, a página abre o modal
+ * informativo e só navega quando o usuário clica "Entendi". RBAC: `collaborator:write`.
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useNavigate, useSearch } from '@tanstack/react-router'
 
-import { useCurrentUser, safeRedirect } from '#modules/auth/public-api/index.ts'
+import { useCurrentUser } from '#modules/auth/public-api/index.ts'
 import { isOk } from '#shared/primitives/result.ts'
 import { can, grantedPermissions } from '#modules/partners/client/data/helpers/can.ts'
 import type { CollaboratorWriteInput } from '#modules/partners/client/data/model/collaborator.model.ts'
@@ -15,6 +15,9 @@ import { collaboratorCreateViewModel } from './collaborator-create.view-model.ts
 export type CollaboratorCreateCommand = Readonly<{
   running: boolean
   errorTag: string | null
+  // DERIVADO do resultado da mutation: true quando o pré-cadastro concluiu com sucesso (sem erro).
+  // A página usa isso para abrir o modal de sucesso (sem setState em efeito).
+  succeeded: boolean
   execute: (input: CollaboratorWriteInput) => void
 }>
 
@@ -25,15 +28,12 @@ export type CollaboratorCreateBinding = Readonly<{
 
 export function useCollaboratorCreateBinding(): CollaboratorCreateBinding {
   const queryClient = useQueryClient()
-  const navigate = useNavigate()
-  const search = useSearch({ strict: false })
   const current = useCurrentUser()
   const granted = grantedPermissions(current.user?.permissions)
   const mutation = useMutation({
     ...collaboratorCreateViewModel.mutation,
-    onSuccess: (res) => {
+    onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['collaborators'] })
-      if (isOk(res)) void navigate({ to: safeRedirect(typeof search.returnTo === 'string' ? search.returnTo : undefined, '/parceiros/colaboradores') })
     },
   })
 
@@ -46,10 +46,13 @@ export function useCollaboratorCreateBinding(): CollaboratorCreateBinding {
         ? collaboratorCreateViewModel.unexpectedErrorTag
         : null
 
+  const succeeded = !mutation.isPending && data !== undefined && isOk(data)
+
   return {
     createCommand: {
       running: mutation.isPending,
       errorTag,
+      succeeded,
       execute: (input) => {
         mutation.mutate(input)
       },

@@ -1,12 +1,12 @@
 /**
- * Hidratação do fornecedor selecionado (Lançar Documento) — ADAPTER React. Quando um FORNECEDOR é
- * escolhido, busca (cross-módulo só via public-api — §I):
- *  - dados bancários do fornecedor (`getSupplierFn`) → card "Conta do fornecedor";
- *  - o contrato "Em Andamento" dele (`listContractsFn` + filtro client-side por `supplierId`, pois o
- *    list-input não filtra por fornecedor) → preenche a Categorização + chip do contrato.
+ * Hidratação do parceiro selecionado (Lançar Documento) — ADAPTER React. Para QUALQUER tipo de favorecido
+ * (Fornecedor/Financiador/Colaborador/Ato), busca (cross-módulo só via public-api — §I) o contrato
+ * "Em Andamento" do parceiro (`listContractsFn` + match client-side pelo id correspondente ao tipo, pois o
+ * list-input não filtra por contratado) → preenche a Categorização + chip do contrato.
  *
- * Exibição agora; a PERSISTÊNCIA da categorização derivada vem com o backend (core-api#48). O create já
- * envia o `contractRef` (ver page) p/ o backend derivar quando #48 entrar.
+ * Banco: só o Fornecedor tem `getSupplierFn` (card "Conta do fornecedor"); demais tipos exibem o hint.
+ * Exibição agora; a PERSISTÊNCIA da categorização derivada vem do backend (core-api#48). O create já envia
+ * o `contractRef` (ver page).
  */
 import { useQuery } from '@tanstack/react-query'
 
@@ -26,6 +26,7 @@ function toContract(c: Contract): ContractCategoView {
   return {
     ref: c.id,
     number: c.sequentialNumber,
+    isServiceOrder: c.classification === 'ServiceOrder', // OS vs CT (mesma regra do grid de Contratos)
     centroCusto: c.centroDeCusto ?? '',
     categoria: c.categorizacao ?? '',
     programa: c.program?.sigla ?? c.program?.name ?? '',
@@ -35,32 +36,57 @@ function toContract(c: Contract): ContractCategoView {
   }
 }
 
+/** Casa o contrato pelo id do contratado conforme o TIPO do parceiro (cada tipo tem seu campo no Contract). */
+function contractMatchesPartner(c: Contract, ref: string, kind: PartnerKind): boolean {
+  switch (kind) {
+    case 'supplier':
+      return c.supplierId === ref
+    case 'financier':
+      return c.financierId === ref
+    case 'collaborator':
+      return c.collaboratorId === ref
+    case 'act':
+      return c.actId === ref
+    default: {
+      const _exhaustive: never = kind
+      return _exhaustive
+    }
+  }
+}
+
 export function usePartnerHydration(supplierRef: string, kind: PartnerKind | null): PartnerHydration {
-  const enabled = supplierRef !== '' && kind === 'supplier'
+  const enabled = supplierRef !== '' && kind !== null
   const query = useQuery({
-    queryKey: ['financial', 'partner-hydration', supplierRef] as const,
+    queryKey: ['financial', 'partner-hydration', kind, supplierRef] as const,
     enabled,
     queryFn: async (): Promise<PartnerHydration> => {
-      const [supplier, contracts] = await Promise.all([
-        getSupplierFn({ data: { id: supplierRef } }),
-        listContractsFn({ data: { status: 'Em Andamento', page: 1, limit: 100, order: 'DESC' } }),
-      ])
+      if (kind === null) return EMPTY_HYDRATION
+      // Contrato "Em Andamento" do parceiro — para TODOS os tipos (match pelo id do tipo).
+      const contracts = await listContractsFn({
+        data: { status: 'Em Andamento', page: 1, limit: 100, order: 'DESC' },
+      })
+      // TODOS os contratos "Em Andamento" do parceiro (pode haver mais de um → "Alterar" no chip).
+      const partnerContracts = contracts.ok
+        ? contracts.data.items.filter((c) => contractMatchesPartner(c, supplierRef, kind)).map(toContract)
+        : []
 
+      // Banco: só o Fornecedor tem getSupplierFn hoje; demais tipos → hint (sem dado fabricado).
       let bank: SupplierBankView | null = null
-      if (supplier.ok) {
-        const acc = supplier.data.bankAccount
-        const pix = supplier.data.pixKey
-        if (acc !== null || pix !== null) {
-          bank = {
-            line: acc !== null ? `${acc.bank} · Ag ${acc.agency} · CC ${acc.accountNumber}` : '',
-            pix: pix !== null ? `PIX · ${pix.key}` : null,
+      if (kind === 'supplier') {
+        const supplier = await getSupplierFn({ data: { id: supplierRef } })
+        if (supplier.ok) {
+          const acc = supplier.data.bankAccount
+          const pix = supplier.data.pixKey
+          if (acc !== null || pix !== null) {
+            bank = {
+              line: acc !== null ? `${acc.bank} · Ag ${acc.agency} · CC ${acc.accountNumber}` : '',
+              pix: pix !== null ? `PIX · ${pix.key}` : null,
+            }
           }
         }
       }
 
-      const active = contracts.ok ? contracts.data.items.find((c) => c.supplierId === supplierRef) : undefined
-
-      return { bank, contract: active !== undefined ? toContract(active) : null }
+      return { bank, contracts: partnerContracts }
     },
   })
   return query.data ?? EMPTY_HYDRATION

@@ -16,8 +16,8 @@ import { AvatarLabel, initialsFrom } from '#shared/ui/index.ts'
 import {
   filterPartners,
   partnerKindTag,
-  maskCnpj,
-  isCnpj,
+  maskDocument,
+  isPartnerPF,
   type PartnerOption,
 } from '../document-form.view.ts'
 import {
@@ -63,7 +63,10 @@ export function SupplierPicker(props: SupplierPickerProps): ReactNode {
           <span className={heroOverline}>{t('financial.create.hero.overline')}</span>
           {selected !== null ? (
             <span className={partnerBadge[selected.kind]}>
-              {isCnpj(selected.subtitle) ? `${t('financial.create.partner.pj')} · ` : ''}
+              {isPartnerPF(selected.kind)
+                ? t('financial.create.partner.pf')
+                : t('financial.create.partner.pj')}
+              {' · '}
               {t(partnerKindTag(selected.kind))}
             </span>
           ) : null}
@@ -73,9 +76,11 @@ export function SupplierPicker(props: SupplierPickerProps): ReactNode {
         </span>
         {selected !== null ? (
           <span className={heroCnpj}>
-            {isCnpj(selected.subtitle)
-              ? `${t('financial.create.partner.cnpjLabel')} ${maskCnpj(selected.subtitle)}`
-              : selected.subtitle}
+            {`${
+              isPartnerPF(selected.kind)
+                ? t('financial.create.partner.cpfLabel')
+                : t('financial.create.partner.cnpjLabel')
+            } ${maskDocument(selected.subtitle)}`}
           </span>
         ) : null}
       </div>

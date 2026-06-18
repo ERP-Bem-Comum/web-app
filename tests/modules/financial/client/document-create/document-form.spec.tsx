@@ -24,6 +24,16 @@ const fields = (over: Partial<DocumentFormFields> = {}): DocumentFormFields => (
   grossValue: '',
   dueDate: '',
   description: '',
+  discounts: '',
+  jurosMulta: '',
+  accessKey: '',
+  paymentComplement: '',
+  contractRef: '',
+  programRef: '',
+  centroCusto: '',
+  categoria: '',
+  subcategoria: '',
+  planoOrcamentario: '',
   retentions: { iss: '', irrf: '', inss: '', pis: '', cofins: '', csll: '' },
   reformaTributaria: { cbs: '', ibsMunicipal: '', ibsEstadual: '' },
   ...over,
@@ -31,12 +41,25 @@ const fields = (over: Partial<DocumentFormFields> = {}): DocumentFormFields => (
 
 const baseProps = (over: Record<string, unknown> = {}) => ({
   fields: fields(),
-  hydration: { bank: null, contract: null },
+  hydration: { bank: null, contracts: [] },
   onType: vi.fn(),
   onPaymentMethod: vi.fn(),
   onText: vi.fn(),
   onRetention: vi.fn(),
   onReformaTributaria: vi.fn(),
+  programOptions: [],
+  programValue: '',
+  onProgram: vi.fn(),
+  centroCustoOptions: [],
+  categoriaOptions: [],
+  subcategoriaOptions: [],
+  planoOptions: [],
+  contract: null,
+  contracts: [],
+  contractPickerOpen: false,
+  onToggleContractPicker: vi.fn(),
+  onCloseContractPicker: vi.fn(),
+  onSelectContract: vi.fn(),
   typeModalOpen: false,
   onOpenTypeModal: vi.fn(),
   onSelectType: vi.fn(),
@@ -81,11 +104,14 @@ describe('DocumentForm', () => {
     expect(screen.queryByLabelText('ISS')).toBe(null)
   })
 
-  it('DANFE mostra o campo Chave de acesso (chrome) e os demais tipos não', () => {
-    const { unmount } = render(<DocumentForm {...baseProps({ fields: fields({ type: 'DANFE' }) })} />)
-    const chave = screen.getByLabelText(tr('financial.create.field.accessKey'))
+  it('DANFE: Chave de acesso é editável (OCR/manual) e dispara onText(accessKey); demais tipos não exibem', () => {
+    const onText = vi.fn()
+    const { unmount } = render(<DocumentForm {...baseProps({ fields: fields({ type: 'DANFE' }), onText })} />)
+    const chave = screen.getByLabelText(tr('financial.create.field.accessKey')) as HTMLInputElement
     expect(chave).toBeTruthy()
-    expect((chave as HTMLInputElement).disabled).toBe(true) // chrome até core-api#115
+    expect(chave.disabled).toBe(false) // editável; persistência pendente em core-api#115
+    fireEvent.change(chave, { target: { value: '3526' } })
+    expect(onText).toHaveBeenCalledWith('accessKey', '3526')
     unmount()
     render(<DocumentForm {...baseProps({ fields: fields({ type: 'NFS-e' }) })} />)
     expect(screen.queryByLabelText(tr('financial.create.field.accessKey'))).toBe(null)
@@ -105,8 +131,104 @@ describe('DocumentForm', () => {
   it('dispara onReformaTributaria ao digitar CBS', () => {
     const onReformaTributaria = vi.fn()
     render(<DocumentForm {...baseProps({ fields: fields({ type: 'NFS-e' }), onReformaTributaria })} />)
+    // Campo monetário (acumulador de centavos, sem R$): "100" digitado = 100 centavos → "1,00".
     fireEvent.change(screen.getByLabelText('CBS'), { target: { value: '100' } })
-    expect(onReformaTributaria).toHaveBeenCalledWith('cbs', '100')
+    expect(onReformaTributaria).toHaveBeenCalledWith('cbs', '1,00')
+  })
+
+  it('Programa é dropdown editável: lista pela SIGLA e dispara onProgram', () => {
+    const onProgram = vi.fn()
+    render(
+      <DocumentForm
+        {...baseProps({
+          programOptions: [{ id: 'p1', name: 'Saúde Comunitária', sigla: 'SC' }],
+          onProgram,
+        })}
+      />,
+    )
+    // Exibe a sigla (não o nome), igual aos outros módulos.
+    expect(screen.getByRole('option', { name: 'SC' })).toBeTruthy()
+    fireEvent.change(screen.getByLabelText(tr('financial.create.field.programa')), {
+      target: { value: 'p1' },
+    })
+    expect(onProgram).toHaveBeenCalledWith('p1')
+  })
+
+  it('chip da categorização: "Ordem de Serviço" p/ OS e "Contrato" p/ CT', () => {
+    const contract = {
+      ref: 'c1',
+      number: '0002/2026',
+      isServiceOrder: true,
+      centroCusto: 'CC',
+      categoria: 'Cat',
+      programa: 'Prog',
+      planoOrcamentario: '',
+      programRef: null,
+      budgetPlanRef: null,
+    }
+    render(<DocumentForm {...baseProps({ contract })} />)
+    expect(screen.getByText('Ordem de Serviço')).toBeTruthy()
+    cleanup()
+    render(<DocumentForm {...baseProps({ contract: { ...contract, isServiceOrder: false } })} />)
+    expect(screen.getByText('Contrato')).toBeTruthy()
+  })
+
+  it('"Alterar" abre o dropdown e seleciona outro contrato Em Andamento', () => {
+    const onSelectContract = vi.fn()
+    const contracts = [
+      {
+        ref: 'c1',
+        number: '0001/2026',
+        isServiceOrder: false,
+        centroCusto: '',
+        categoria: '',
+        programa: '',
+        planoOrcamentario: '',
+        programRef: null,
+        budgetPlanRef: null,
+      },
+      {
+        ref: 'c2',
+        number: 'OS-014/2026',
+        isServiceOrder: true,
+        centroCusto: '',
+        categoria: '',
+        programa: '',
+        planoOrcamentario: '',
+        programRef: null,
+        budgetPlanRef: null,
+      },
+    ]
+    render(
+      <DocumentForm
+        {...baseProps({ contract: contracts[0], contracts, contractPickerOpen: true, onSelectContract })}
+      />,
+    )
+    // O dropdown lista os 2 contratos; clicar no segundo dispara onSelectContract com o ref.
+    fireEvent.click(screen.getByText('OS-014/2026'))
+    expect(onSelectContract).toHaveBeenCalledWith('c2')
+  })
+
+  it('Boleto: campo de código de barras é editável e dispara onText(paymentComplement)', () => {
+    const onText = vi.fn()
+    render(<DocumentForm {...baseProps({ fields: fields({ paymentMethod: 'Boleto' }), onText })} />)
+    const campo = screen.getByLabelText(tr('financial.create.payMethod.boletoLabel'))
+    expect((campo as HTMLInputElement).disabled).toBe(false)
+    fireEvent.change(campo, { target: { value: '34191' } })
+    expect(onText).toHaveBeenCalledWith('paymentComplement', '34191')
+  })
+
+  it('Categorização: Centro de Custo é um dropdown (habilitado na criação) e dispara onText', () => {
+    const onText = vi.fn()
+    render(
+      <DocumentForm
+        {...baseProps({ onText, centroCustoOptions: [{ value: 'cc1', label: 'CC-002 · Programa' }] })}
+      />,
+    )
+    const cc = screen.getByLabelText(tr('financial.create.field.centroCusto'))
+    expect((cc as HTMLSelectElement).disabled).toBe(false)
+    fireEvent.change(cc, { target: { value: 'cc1' } })
+    expect(onText).toHaveBeenCalledWith('centroCusto', 'cc1')
   })
 
   it('dispara onText ao digitar o número', () => {

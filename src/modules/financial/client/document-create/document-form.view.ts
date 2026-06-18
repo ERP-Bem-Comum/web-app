@@ -3,8 +3,8 @@
  * gating de retenção (NFS-e/RPA), **agregação CSRF** (PIS+COFINS+CSLL → 1 filho) e build do
  * `CreateDocumentInput`. Money via `money.ts`. No v1, descontos/multa/juros = 0 (sem campos no form).
  */
-import { reaisToCents, centsToBRL } from '#modules/financial/client/data/money.ts'
-import { normalizeCnpj, isCnpjLength, maskCnpj as maskCnpjDoc } from '#shared/document/cnpj.ts'
+import { reaisToCents, centsToBRL, centsToReais, maskMoneyBRL } from '#modules/financial/client/data/money.ts'
+import { normalizeCnpj, isCnpjLength, maskCnpj as maskCnpjDoc, maskCpfCnpj } from '#shared/document/cnpj.ts'
 import type {
   CreateDocumentInput,
   AdjustDocumentInput,
@@ -27,11 +27,12 @@ export type {
 } from '#modules/financial/client/data/model/document.model.ts'
 export type SupplierOption = Readonly<{ id: string; name: string }>
 
-// Parceiro selecionável no picker do hero (Fornecedor/Financiador/Ato). `supplierRef` do documento
-// guarda o `id`. ⚠️ Hoje o core-api só aceita Fornecedor em supplierRef (não-fornecedor → erro no salvar
-// até o backend evoluir — ver issue). Colaborador não tem list-fn na public-api → fora do picker.
-export type PartnerKind = 'supplier' | 'financier' | 'act'
-// `subtitle` = linha secundária no picker: CNPJ (fornecedor/financiador) ou nº do ato (ato).
+// Parceiro selecionável no picker do hero (Fornecedor/Financiador/Ato/Colaborador). `supplierRef` do
+// documento guarda só o `id` (UUID); o core-api persiste qualquer UUID (sem FK/validação de tipo) e o
+// FRONT resolve o nome/documento client-side via partners-map (o read-model do backend só conhece
+// fornecedor — por isso a resolução é nossa). Os 4 tipos funcionam fim-a-fim nesta tela e no grid.
+export type PartnerKind = 'supplier' | 'financier' | 'act' | 'collaborator'
+// `subtitle` = linha secundária no picker: CNPJ (PJ: fornecedor/financiador/ato) ou e-mail (colaborador, PF).
 export type PartnerOption = Readonly<{ id: string; name: string; subtitle: string; kind: PartnerKind }>
 
 /** Rótulo i18n do tipo de parceiro. */
@@ -42,11 +43,17 @@ export const maskCnpj = (value: string): string => (isCnpjLength(value) ? maskCn
 /** Parceiro é PJ quando o subtítulo é um CNPJ (14 caracteres alfanuméricos). */
 export const isCnpj = (value: string): boolean => isCnpjLength(value)
 
+/** Documento do parceiro mascarado por conteúdo: CPF (colaborador, PF) ou CNPJ (PJ). */
+export const maskDocument = (value: string): string => maskCpfCnpj(value)
+/** PF (pessoa física) = colaborador; os demais tipos são PJ. Define badge ("PF/PJ") e rótulo do documento. */
+export const isPartnerPF = (kind: PartnerKind): boolean => kind === 'collaborator'
+
 // ── Hidratação do fornecedor: dados bancários + contrato "Em Andamento" (auto-preenchimento) ──────
 export type SupplierBankView = Readonly<{ line: string; pix: string | null }>
 export type ContractCategoView = Readonly<{
   ref: string // contractRef (uuid) — enviado no create; backend deriva a categorização (#48)
   number: string // sequentialNumber (ex.: 0001/2026)
+  isServiceOrder: boolean // classificação: true = Ordem de Serviço (OS), false = Contrato (CT) — rótulo do chip
   centroCusto: string
   categoria: string
   programa: string
@@ -56,9 +63,10 @@ export type ContractCategoView = Readonly<{
 }>
 export type PartnerHydration = Readonly<{
   bank: SupplierBankView | null
-  contract: ContractCategoView | null
+  // TODOS os contratos "Em Andamento" do parceiro (pode haver mais de um) — o usuário escolhe via "Alterar".
+  contracts: readonly ContractCategoView[]
 }>
-export const EMPTY_HYDRATION: PartnerHydration = { bank: null, contract: null }
+export const EMPTY_HYDRATION: PartnerHydration = { bank: null, contracts: [] }
 
 /** Filtro PURO do picker: casa por nome ou subtítulo (CNPJ/nº) — case-insensitive, ignora pontuação. */
 export const filterPartners = (
@@ -105,6 +113,23 @@ export type DocumentFormFields = Readonly<{
   grossValue: string
   dueDate: string
   description: string
+  // Composição: Descontos (discountsCents) e Juros/Multa (interestCents). Editáveis (OCR ou manual).
+  // Descontos SUBTRAEM; Juros/Multa SOMAM ao bruto no líquido (mesma fórmula do core-api, financial-data.ts).
+  discounts: string
+  jurosMulta: string
+  // Chave de acesso (44 dígitos) — só DANFE. Editável (OCR/manual). Persistência pendente (core-api#115).
+  accessKey: string
+  // Complemento da Forma de Pagamento (boleto/cartão/câmbio/outro) — capturado no form; persistência no
+  // backend pendente (core-api#89). Só 1 visível por vez (controlado pela forma escolhida).
+  paymentComplement: string
+  contractRef: string // Categorização: contrato escolhido (UUID) via "Alterar". Vazio = o 1º "Em Andamento".
+  programRef: string // Categorização: Programa escolhido (UUID). Vazio = herda o do contrato (se houver).
+  // Categorização editável (texto livre, herdada do contrato mas sobrescrevível). Persistência pendente
+  // (core-api#147 — listas/refs). Vazio = herda o valor do contrato selecionado.
+  centroCusto: string
+  categoria: string
+  subcategoria: string
+  planoOrcamentario: string
   retentions: RetentionFieldsReais
   reformaTributaria: ReformaTributariaFieldsReais
 }>
@@ -135,6 +160,13 @@ const toCents = (reais: string): number => {
 export const retentionsEnabledFor = (type: DocumentType | ''): boolean => type === 'NFS-e' || type === 'RPA'
 
 /**
+ * ISS aparece em NFS-e e RPA (RPA de autônomo retém ISS — ver a própria descrição do tipo). ⚠️ O core-api
+ * ainda NÃO aceita ISS em RPA (`ALLOWED_RETENTIONS` RPA={IRRF,INSS,CSRF}) → enviar ISS num RPA dá 422 até
+ * o backend liberar (ver issue). A pedido da P.O., a UI passa a exibir o campo ISS também no RPA.
+ */
+export const issAllowedFor = (type: DocumentType | ''): boolean => type === 'NFS-e' || type === 'RPA'
+
+/**
  * Reforma Tributária (CBS/IBS) — campos de registro de valor. Documentos fiscais de serviço (NFS-e/RPA)
  * exibem CBS/IBS conforme a tabela do domínio. São SÓ registro: não geram filho nem abatem o líquido.
  */
@@ -145,7 +177,8 @@ type RetentionTotals = Readonly<{ iss: number; irrf: number; inss: number; csrf:
 
 const retentionTotals = (fields: DocumentFormFields): RetentionTotals => {
   if (!retentionsEnabledFor(fields.type)) return { iss: 0, irrf: 0, inss: 0, csrf: 0, sum: 0 }
-  const iss = toCents(fields.retentions.iss)
+  // ISS só conta para NFS-e (RPA não aceita ISS → ignora valor herdado p/ não cair em 422 no backend).
+  const iss = issAllowedFor(fields.type) ? toCents(fields.retentions.iss) : 0
   const irrf = toCents(fields.retentions.irrf)
   const inss = toCents(fields.retentions.inss)
   // CSRF agrega PIS + COFINS + CSLL num único filho (R8 do domain.md).
@@ -155,10 +188,15 @@ const retentionTotals = (fields: DocumentFormFields): RetentionTotals => {
 }
 
 const grossCents = (fields: DocumentFormFields): number => toCents(fields.grossValue)
+const discountsCents = (fields: DocumentFormFields): number => toCents(fields.discounts)
+const jurosMultaCents = (fields: DocumentFormFields): number => toCents(fields.jurosMulta)
 
-/** Líquido = Bruto − Σretenções (v1: descontos/multa/juros = 0). String de centavos. */
-export const netPreviewCents = (fields: DocumentFormFields): string =>
-  String(grossCents(fields) - retentionTotals(fields).sum)
+/** Líquido (centavos, número) = Bruto − Σretenções − Descontos + Juros/Multa. Espelha o core-api. */
+const netCents = (fields: DocumentFormFields): number =>
+  grossCents(fields) - retentionTotals(fields).sum - discountsCents(fields) + jurosMultaCents(fields)
+
+/** Líquido = Bruto − Σretenções − Descontos + Juros/Multa. String de centavos. */
+export const netPreviewCents = (fields: DocumentFormFields): string => String(netCents(fields))
 
 /**
  * Alíquota % DERIVADA de uma retenção (valor ÷ bruto), p/ exibir ao lado do rótulo na Composição
@@ -179,7 +217,7 @@ export const titulosPrevistos = (fields: DocumentFormFields): readonly TituloPre
   if (t.irrf > 0) filhos.push({ kind: 'IRRF', valueCents: String(t.irrf) })
   if (t.inss > 0) filhos.push({ kind: 'INSS', valueCents: String(t.inss) })
   if (t.csrf > 0) filhos.push({ kind: 'CSRF', valueCents: String(t.csrf) })
-  return [{ kind: 'Pai', valueCents: String(grossCents(fields) - t.sum) }, ...filhos]
+  return [{ kind: 'Pai', valueCents: String(netCents(fields)) }, ...filhos]
 }
 
 /** Destino (órgão arrecadador) de cada filho — i18n key. ISS = município; demais = federal. */
@@ -200,7 +238,7 @@ export const validationChecklist = (
 ): readonly ValidationItem[] => {
   const hasSupplier = supplierName.trim() !== '' && fields.supplierRef.trim() !== ''
   const t = retentionTotals(fields)
-  const net = grossCents(fields) - t.sum
+  const net = netCents(fields)
   const calcOk = grossCents(fields) > 0 && net > 0
   const items: ValidationItem[] = [
     {
@@ -220,7 +258,7 @@ export const validationChecklist = (
 
 export const canSubmit = (fields: DocumentFormFields): boolean => {
   const gross = grossCents(fields)
-  const net = gross - retentionTotals(fields).sum
+  const net = netCents(fields)
   return (
     fields.type !== '' &&
     fields.documentNumber.trim() !== '' &&
@@ -286,6 +324,10 @@ export const buildCreateInput = (fields: DocumentFormFields): CreateDocumentInpu
     supplierRef: fields.supplierRef,
     paymentMethod: fields.paymentMethod,
     grossValueCents: String(gross),
+    discountsCents: discountsCents(fields) > 0 ? String(discountsCents(fields)) : undefined,
+    // "Juros / Multa" (campo único) → interestCents; ambos somam ao líquido, então o total fica correto.
+    interestCents: jurosMultaCents(fields) > 0 ? String(jurosMultaCents(fields)) : undefined,
+    programRef: trimToUndefined(fields.programRef),
     retentions,
     registeredTaxes: buildRegisteredTaxInputs(fields),
     dueDate: fields.dueDate,
@@ -321,6 +363,9 @@ export const buildDraftInput = (fields: DocumentFormFields): CreateDocumentInput
     supplierRef: fields.supplierRef,
     paymentMethod: fields.paymentMethod,
     grossValueCents: String(gross),
+    discountsCents: discountsCents(fields) > 0 ? String(discountsCents(fields)) : undefined,
+    interestCents: jurosMultaCents(fields) > 0 ? String(jurosMultaCents(fields)) : undefined,
+    programRef: trimToUndefined(fields.programRef),
     retentions,
     registeredTaxes: buildRegisteredTaxInputs(fields),
     dueDate: trimToUndefined(fields.dueDate),
@@ -395,7 +440,7 @@ export const hydrateFieldsFromDetail = (d: DocumentDetail): DocumentFormFields =
   // único efeito é a linha "PIS" da composição exibir o valor da CSRF, read-only.)
   const retVal = (rt: RetentionType): string => {
     const child = d.payables.find((p) => p.kind === 'Child' && p.retentionType === rt)
-    return child !== undefined ? centsToBRL(child.valueCents) : ''
+    return child !== undefined ? centsToReais(child.valueCents) : ''
   }
   const retentions: RetentionFieldsReais = {
     ...EMPTY_RETENTIONS,
@@ -410,9 +455,19 @@ export const hydrateFieldsFromDetail = (d: DocumentDetail): DocumentFormFields =
     series: '',
     supplierRef: d.supplierRef ?? '',
     paymentMethod: d.paymentMethod ?? '',
-    grossValue: d.grossValueCents !== null ? centsToBRL(d.grossValueCents) : '',
+    grossValue: d.grossValueCents !== null ? centsToReais(d.grossValueCents) : '',
     dueDate: d.dueDate ?? '',
     description: d.description ?? '',
+    discounts: '', // composição não exposta no detalhe hoje (core-api#95) → edição via composição fica no create
+    jurosMulta: '',
+    accessKey: '', // não exposto no detalhe (core-api#115/#95)
+    paymentComplement: '', // não exposto no detalhe (core-api#89/#95)
+    contractRef: '', // o GET /:id não expõe o contrato vinculado (core-api#95) → vazio na hidratação
+    programRef: '', // o GET /:id não expõe a categorização (core-api#95) → vazio na hidratação
+    centroCusto: '',
+    categoria: '',
+    subcategoria: '',
+    planoOrcamentario: '',
     retentions,
     // Reforma Tributária não vem no GET de detalhe hoje (enriquecimento = core-api#95) e é imutável no
     // ajuste → hidrata vazia. (Quando o detalhe expuser registeredTaxes, mapear aqui.)
@@ -472,6 +527,12 @@ export const RETENTION_KEYS: readonly (keyof RetentionFieldsReais)[] = [
   'cofins',
   'csll',
 ]
+
+/** Chaves de retenção exibíveis por tipo: NFS-e = todas; RPA = sem ISS; demais = nenhuma (seção oculta). */
+export const allowedRetentionKeysFor = (type: DocumentType | ''): readonly (keyof RetentionFieldsReais)[] => {
+  if (!retentionsEnabledFor(type)) return []
+  return issAllowedFor(type) ? RETENTION_KEYS : RETENTION_KEYS.filter((k) => k !== 'iss')
+}
 export const REFORMA_TRIBUTARIA_KEYS: readonly (keyof ReformaTributariaFieldsReais)[] = [
   'cbs',
   'ibsMunicipal',
@@ -567,6 +628,9 @@ export const isDocumentType = (v: string): v is DocumentType =>
   (DOCUMENT_TYPES as readonly string[]).includes(v)
 export const isPaymentMethod = (v: string): v is PaymentMethod =>
   (PAYMENT_METHODS as readonly string[]).includes(v)
+
+/** Máscara monetária as-you-type p/ os campos de valor (bruto/retenções/reforma) — "R$ 1.500,50". */
+export const maskMoney = (raw: string): string => maskMoneyBRL(raw)
 
 /** Centavos → "R$ x,xx". */
 export const formatCents = (cents: string): string => centsToBRL(cents)

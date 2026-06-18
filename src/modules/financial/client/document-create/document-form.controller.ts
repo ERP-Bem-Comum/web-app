@@ -11,6 +11,7 @@ import {
   EMPTY_REFORMA_TRIBUTARIA,
   retentionsEnabledFor,
   reformaTributariaEnabledFor,
+  issAllowedFor,
   type DocumentFormFields,
   type RetentionFieldsReais,
   type ReformaTributariaFieldsReais,
@@ -25,16 +26,41 @@ const EMPTY_FIELDS: DocumentFormFields = {
   grossValue: '',
   dueDate: '',
   description: '',
+  discounts: '',
+  jurosMulta: '',
+  accessKey: '',
+  paymentComplement: '',
+  contractRef: '',
+  programRef: '',
+  centroCusto: '',
+  categoria: '',
+  subcategoria: '',
+  planoOrcamentario: '',
   retentions: EMPTY_RETENTIONS,
   reformaTributaria: EMPTY_REFORMA_TRIBUTARIA,
 }
 
-type TextKey = 'documentNumber' | 'series' | 'grossValue' | 'dueDate' | 'description'
+type TextKey =
+  | 'documentNumber'
+  | 'series'
+  | 'grossValue'
+  | 'dueDate'
+  | 'description'
+  | 'discounts'
+  | 'jurosMulta'
+  | 'accessKey'
+  | 'paymentComplement'
+  | 'centroCusto'
+  | 'categoria'
+  | 'subcategoria'
+  | 'planoOrcamentario'
 
 type FormAction =
   | Readonly<{ kind: 'setType'; value: DocumentType | '' }>
   | Readonly<{ kind: 'setPaymentMethod'; value: PaymentMethod | '' }>
   | Readonly<{ kind: 'setSupplier'; ref: string }>
+  | Readonly<{ kind: 'setContractRef'; value: string }>
+  | Readonly<{ kind: 'setProgramRef'; value: string }>
   | Readonly<{ kind: 'setText'; key: TextKey; value: string }>
   | Readonly<{ kind: 'setRetention'; key: keyof RetentionFieldsReais; value: string }>
   | Readonly<{ kind: 'setReformaTributaria'; key: keyof ReformaTributariaFieldsReais; value: string }>
@@ -43,20 +69,32 @@ type FormAction =
 
 const reducer = (state: DocumentFormFields, action: FormAction): DocumentFormFields => {
   switch (action.kind) {
-    case 'setType':
-      // Tipo sem retenção/reforma (≠ NFS-e/RPA) → limpa os blocos correspondentes (gating).
+    case 'setType': {
+      // Tipo sem retenção/reforma (≠ NFS-e/RPA) → limpa os blocos correspondentes (gating). RPA mantém
+      // retenções, mas NÃO aceita ISS (só NFS-e) → zera ISS herdada p/ não enviar ISS num RPA (422).
+      const retentions = retentionsEnabledFor(action.value)
+        ? { ...state.retentions, iss: issAllowedFor(action.value) ? state.retentions.iss : '' }
+        : EMPTY_RETENTIONS
       return {
         ...state,
         type: action.value,
-        retentions: retentionsEnabledFor(action.value) ? state.retentions : EMPTY_RETENTIONS,
+        retentions,
         reformaTributaria: reformaTributariaEnabledFor(action.value)
           ? state.reformaTributaria
           : EMPTY_REFORMA_TRIBUTARIA,
       }
+    }
     case 'setPaymentMethod':
-      return { ...state, paymentMethod: action.value }
+      // Trocar a forma limpa o complemento (cada forma tem o seu campo: boleto/cartão/câmbio/outro).
+      return { ...state, paymentMethod: action.value, paymentComplement: '' }
     case 'setSupplier':
-      return { ...state, supplierRef: action.ref }
+      // Trocar de parceiro zera o contrato/programa escolhidos (a hidratação re-deriva pelo novo parceiro).
+      return { ...state, supplierRef: action.ref, contractRef: '', programRef: '' }
+    case 'setContractRef':
+      // Trocar o contrato re-deriva o Programa (volta a herdar do contrato escolhido).
+      return { ...state, contractRef: action.value, programRef: '' }
+    case 'setProgramRef':
+      return { ...state, programRef: action.value }
     case 'setText':
       return { ...state, [action.key]: action.value }
     case 'setRetention':
@@ -82,6 +120,8 @@ export type DocumentFormController = Readonly<{
   setType: (value: DocumentType | '') => void
   setPaymentMethod: (value: PaymentMethod | '') => void
   setSupplier: (ref: string) => void
+  setContractRef: (value: string) => void
+  setProgramRef: (value: string) => void
   setText: (key: TextKey, value: string) => void
   setRetention: (key: keyof RetentionFieldsReais, value: string) => void
   setReformaTributaria: (key: keyof ReformaTributariaFieldsReais, value: string) => void
@@ -94,12 +134,17 @@ export type DocumentFormController = Readonly<{
   payModalOpen: boolean
   openPayModal: () => void
   closePayModal: () => void
+  // Dropdown "Alterar contrato" da Categorização (UI-state).
+  contractPickerOpen: boolean
+  toggleContractPicker: () => void
+  closeContractPicker: () => void
 }>
 
 export function useDocumentFormController(initial?: DocumentFormFields | null): DocumentFormController {
   const [fields, dispatch] = useReducer(reducer, EMPTY_FIELDS)
   const [typeModalOpen, setTypeModalOpen] = useState(false)
   const [payModalOpen, setPayModalOpen] = useState(false)
+  const [contractPickerOpen, setContractPickerOpen] = useState(false)
   // Hidrata UMA vez quando os dados de edição chegam (async). `useRef` evita re-hidratar a cada render,
   // preservando o que o usuário já editou.
   const hydrated = useRef(false)
@@ -119,6 +164,12 @@ export function useDocumentFormController(initial?: DocumentFormFields | null): 
     },
     setSupplier: (ref) => {
       dispatch({ kind: 'setSupplier', ref })
+    },
+    setContractRef: (value) => {
+      dispatch({ kind: 'setContractRef', value })
+    },
+    setProgramRef: (value) => {
+      dispatch({ kind: 'setProgramRef', value })
     },
     setText: (key, value) => {
       dispatch({ kind: 'setText', key, value })
@@ -145,6 +196,13 @@ export function useDocumentFormController(initial?: DocumentFormFields | null): 
     },
     closePayModal: () => {
       setPayModalOpen(false)
+    },
+    contractPickerOpen,
+    toggleContractPicker: () => {
+      setContractPickerOpen((v) => !v)
+    },
+    closeContractPicker: () => {
+      setContractPickerOpen(false)
     },
   }
 }
