@@ -31,7 +31,6 @@ import {
   cellDocSeries,
   cellNet,
   cellGross,
-  dueInput,
   typeBadge,
   typeBadgeVariant,
   statusBadge,
@@ -61,9 +60,6 @@ export type DocumentGridProps = Readonly<{
   allSelected?: boolean
   onToggle?: (id: string) => void
   onToggleAll?: () => void
-  // Edição inline do VENCIMENTO (só linhas em Aberto — o core-api só ajusta documentos em Aberto).
-  // Opcional/aditivo: sem este callback, a coluna Vencimento fica só-leitura.
-  onDueDateChange?: (id: string, version: number, dueIso: string) => void
   // Linha cujo detalhe está aberto no drawer — fica realçada (selecionada), igual ao mock.
   activeId?: string | null
 }>
@@ -168,32 +164,8 @@ export function DocumentGrid(props: DocumentGridProps): ReactNode {
                 {r.paymentMethod !== null ? t(`financial.paymentMethod.${r.paymentMethod}`) : DASH}
               </span>
               <span className={cell}>{r.emissao}</span>
-              {/* Vencimento editável só em Aberto (PATCH inline). Demais status: só-leitura. */}
-              {r.status === 'Aberto' && props.onDueDateChange !== undefined ? (
-                <span
-                  className={cell}
-                  onClick={(e) => {
-                    e.stopPropagation() // editar não abre o drawer
-                  }}
-                  onKeyDown={(e) => {
-                    e.stopPropagation()
-                  }}
-                  role="presentation"
-                >
-                  <input
-                    type="date"
-                    key={r.dueIso ?? ''}
-                    className={dueInput}
-                    defaultValue={r.dueIso ?? ''}
-                    aria-label={t('financial.list.dueDate.edit')}
-                    onChange={(e) => {
-                      if (e.target.value !== '') props.onDueDateChange?.(r.id, r.version, e.target.value)
-                    }}
-                  />
-                </span>
-              ) : (
-                <span className={cell}>{r.due}</span>
-              )}
+              {/* Vencimento é só-leitura aqui. Alteração: drawer → "Editar pagamento" (1) ou footer (1+). */}
+              <span className={cell}>{r.due}</span>
               <span className={cellGross}>{r.gross}</span>
               <span className={cellNet}>{r.net}</span>
               <span className={`${statusBadge} ${statusVariant[r.status]}`}>{r.status}</span>

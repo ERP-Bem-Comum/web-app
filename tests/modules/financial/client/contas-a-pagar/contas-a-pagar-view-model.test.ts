@@ -16,6 +16,7 @@ import {
   maskCnpj,
   bulkStatusTargets,
   bulkDeleteTargets,
+  bulkDueDateTargets,
   STATUS_CHIPS,
   FILTER_DIMS,
 } from '../../../../../src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts'
@@ -224,6 +225,26 @@ describe('bulkDeleteTargets', () => {
     const tg = bulkDeleteTargets(rows, new Set(['b']))
     assert.deepEqual(tg.deletable, [])
     assert.equal(tg.draftCount, 1)
+  })
+})
+
+describe('bulkDueDateTargets', () => {
+  const rows = buildRows(
+    [
+      summary({ id: 'a', status: 'Aberto', version: 2 }),
+      summary({ id: 'b', status: 'Aprovado', version: 5 }),
+      summary({ id: 'c', status: 'Aberto', version: 1 }),
+    ],
+    supplierName,
+  )
+
+  it('editable = só "Aberto" (id+version); blockedCount conta os demais selecionados', () => {
+    const tg = bulkDueDateTargets(rows, new Set(['a', 'b', 'c']))
+    assert.deepEqual(tg.editable, [
+      { id: 'a', version: 2 },
+      { id: 'c', version: 1 },
+    ])
+    assert.equal(tg.blockedCount, 1)
   })
 })
 

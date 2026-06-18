@@ -2,8 +2,8 @@
  * DocumentGrid (Vitest/jsdom) — view burra do grid de Contas a Pagar: cabeçalho + estados
  * (loading/empty/error/linhas). Recebe `ListState` por prop (sem hooks). Lista REAL da Fatia 2.
  */
-import { describe, it, expect, afterEach, vi } from 'vitest'
-import { render, screen, cleanup, fireEvent } from '@testing-library/react'
+import { describe, it, expect, afterEach } from 'vitest'
+import { render, screen, cleanup } from '@testing-library/react'
 
 import { DocumentGrid } from '#modules/financial/client/contas-a-pagar-list/components/document-grid.component.tsx'
 import type { ListState } from '#modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts'
@@ -32,7 +32,6 @@ const readyState: ListState = {
       gross: 'R$ 1.600,00',
       grossCents: '160000',
       due: '10/07/2026',
-      dueIso: '2026-07-10',
       net: 'R$ 1.500,00',
       netCents: '150000',
       version: 0,
@@ -74,23 +73,11 @@ describe('DocumentGrid', () => {
     expect(screen.getByText(tr('financial.list.loading'))).toBeTruthy()
   })
 
-  it('Vencimento: linha em Aberto vira input de data e dispara onDueDateChange (id, version, ISO)', () => {
-    const onDueDateChange = vi.fn()
-    render(<DocumentGrid state={readyState} onDueDateChange={onDueDateChange} />)
-    const input = screen.getByLabelText(tr('financial.list.dueDate.edit')) as HTMLInputElement
-    expect(input.type).toBe('date')
-    expect(input.value).toBe('2026-07-10')
-    fireEvent.change(input, { target: { value: '2026-08-15' } })
-    expect(onDueDateChange).toHaveBeenCalledWith('d1', 0, '2026-08-15')
-  })
-
-  it('Vencimento: status ≠ Aberto fica só-leitura (sem input de data)', () => {
-    const aprovado: ListState = {
-      ...readyState,
-      rows: readyState.rows.map((r) => ({ ...r, status: 'Aprovado' as const })),
-    }
-    render(<DocumentGrid state={aprovado} onDueDateChange={vi.fn()} />)
-    expect(screen.queryByLabelText(tr('financial.list.dueDate.edit'))).toBeNull()
+  it('Vencimento é só-leitura na tabela (alteração via drawer ou footer)', () => {
+    render(<DocumentGrid state={readyState} />)
     expect(screen.getByText('10/07/2026')).toBeTruthy()
+    expect(screen.queryByRole('textbox')).toBeNull()
+    // sem input de data inline na coluna de vencimento
+    expect(document.querySelector('input[type="date"]')).toBeNull()
   })
 })

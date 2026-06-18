@@ -53,7 +53,6 @@ export type GridRow = Readonly<{
   gross: string // valor bruto formatado (BRL) ou "—"
   grossCents: string | null // bruto em centavos p/ o somatório da seleção
   due: string
-  dueIso: string | null // vencimento cru (YYYY-MM-DD) p/ o input editável inline; null = sem data
   net: string
   netCents: string | null // líquido em centavos p/ o somatório da seleção (formatação fica fora)
   version: number // optimistic lock — p/ ações inline (Mudar Status em massa)
@@ -216,7 +215,6 @@ const toRow = (
   gross: it.grossValueCents !== null && it.grossValueCents !== '' ? centsToBRL(it.grossValueCents) : DASH,
   grossCents: it.grossValueCents,
   due: it.dueDate !== null && it.dueDate !== '' ? formatDue(it.dueDate) : DASH,
-  dueIso: it.dueDate !== null && it.dueDate !== '' ? it.dueDate : null,
   net: it.netValueCents !== null && it.netValueCents !== '' ? centsToBRL(it.netValueCents) : DASH,
   netCents: it.netValueCents,
   version: it.version,
@@ -255,6 +253,21 @@ export const bulkDeleteTargets = (
   return {
     deletable: sel.filter((r) => r.status === 'Aberto').map((r) => ({ id: r.id, version: r.version })),
     draftCount: sel.filter((r) => r.status === 'Rascunho').length,
+  }
+}
+
+// Alterar vencimento (1+) — o core-api só ajusta documentos em **Aberto**. `editable` = alvos Aberto
+// (id+version, p/ o PATCH); `blockedCount` = selecionados em outro status (não alteráveis). O "lote" é
+// feito como N PATCHes individuais (core-api#162 = otimização futura p/ 1 chamada só).
+export type BulkDueDateTargets = Readonly<{ editable: readonly StatusTarget[]; blockedCount: number }>
+export const bulkDueDateTargets = (
+  rows: readonly GridRow[],
+  selected: ReadonlySet<string>,
+): BulkDueDateTargets => {
+  const sel = rows.filter((r) => selected.has(r.id))
+  return {
+    editable: sel.filter((r) => r.status === 'Aberto').map((r) => ({ id: r.id, version: r.version })),
+    blockedCount: sel.filter((r) => r.status !== 'Aberto').length,
   }
 }
 

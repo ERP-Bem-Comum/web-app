@@ -15,18 +15,20 @@ import { useContasAPagar } from '../contas-a-pagar.binding.ts'
 import { useDocumentDetail } from '../document-detail.binding.ts'
 import { useBulkStatus } from '../bulk-status.binding.ts'
 import { useBulkDelete } from '../bulk-delete.binding.ts'
-import { useInlineDueDate } from '../inline-due-date.binding.ts'
+import { useBulkDueDate } from '../bulk-due-date.binding.ts'
 import {
   STATUS_CHIPS,
   sumSelectedNetBRL,
   sumSelectedGrossBRL,
   bulkStatusTargets,
   bulkDeleteTargets,
+  bulkDueDateTargets,
 } from '../contas-a-pagar.view-model.ts'
 import { DocumentGrid } from '../components/document-grid.component.tsx'
 import { AddFilterButton, ActiveFiltersRow } from '../components/document-filters.component.tsx'
 import { DocumentDetailDrawer } from '../components/document-detail-drawer.component.tsx'
 import { DeleteConfirmModal } from '../components/delete-confirm.component.tsx'
+import { DueDateModal } from '../components/due-date-modal.component.tsx'
 import { ExportDropdown } from '../components/export-dropdown.component.tsx'
 import { StatusActions } from '../components/status-actions.component.tsx'
 import {
@@ -120,8 +122,16 @@ export function ContasAPagarPage(): ReactNode {
   const bulk = useBulkStatus(clearSelection)
   const targets = bulkStatusTargets(rows, selected)
 
-  // ── Vencimento editável inline (PATCH por id; só linhas em Aberto). Lote pendente (core-api#162). ──
-  const dueEdit = useInlineDueDate()
+  // ── Alterar vencimento (1+) — modal com seletor de data; aplica a cada Aberto via PATCH (core-api#162
+  //    é só otimização). A edição de UM título também pode ser feita pelo drawer → "Editar pagamento". ──
+  const [dueOpen, setDueOpen] = useState(false)
+  const [dueValue, setDueValue] = useState('')
+  const dueEdit = useBulkDueDate(() => {
+    clearSelection()
+    setDueOpen(false)
+    setDueValue('')
+  })
+  const dueTargets = bulkDueDateTargets(rows, selected)
 
   // ── Excluir (hard-delete) em massa — só Aberto (Rascunho dá 409, core-api#166). Modal de confirmação. ──
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -208,7 +218,6 @@ export function ContasAPagarPage(): ReactNode {
       <div className={gridWrap}>
         <DocumentGrid
           state={state}
-          onDueDateChange={dueEdit.changeDueDate}
           onRowClick={(id, status) => {
             // Rascunho → abre o Lançar p/ FINALIZAR a inclusão (modo draft, tudo editável).
             // Demais status → drawer de detalhe.
@@ -248,6 +257,21 @@ export function ContasAPagarPage(): ReactNode {
         }}
       />
 
+      <DueDateModal
+        open={dueOpen}
+        count={dueTargets.editable.length}
+        blockedCount={dueTargets.blockedCount}
+        value={dueValue}
+        running={dueEdit.running}
+        onChange={setDueValue}
+        onApply={() => {
+          dueEdit.apply(dueTargets.editable, dueValue)
+        }}
+        onCancel={() => {
+          setDueOpen(false)
+        }}
+      />
+
       <footer className={bottombar}>
         {selectedCount > 0 ? (
           <div className={selBar}>
@@ -261,8 +285,16 @@ export function ContasAPagarPage(): ReactNode {
             <button type="button" className={selClear} onClick={clearSelection}>
               {t('financial.list.selection.clear')}
             </button>
-            {/* Vencimento em LOTE — desabilitado até o endpoint de lote existir (core-api#162). */}
-            <button type="button" className={selClear} disabled title={t('financial.list.dueDate.bulkSoon')}>
+            {/* Alterar vencimento de 1+ títulos Aberto (abre o modal); aplica via PATCH por id. */}
+            <button
+              type="button"
+              className={selClear}
+              disabled={dueTargets.editable.length === 0 || dueEdit.running}
+              title={dueTargets.editable.length === 0 ? t('financial.list.dueDate.needOpen') : undefined}
+              onClick={() => {
+                setDueOpen(true)
+              }}
+            >
               {t('financial.list.dueDate.bulk')}
             </button>
             <StatusActions
