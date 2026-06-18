@@ -113,6 +113,10 @@ export type DocumentFormFields = Readonly<{
   grossValue: string
   dueDate: string
   description: string
+  // Composição: Descontos (discountsCents) e Juros/Multa (interestCents). Editáveis (OCR ou manual).
+  // Descontos SUBTRAEM; Juros/Multa SOMAM ao bruto no líquido (mesma fórmula do core-api, financial-data.ts).
+  discounts: string
+  jurosMulta: string
   // Chave de acesso (44 dígitos) — só DANFE. Editável (OCR/manual). Persistência pendente (core-api#115).
   accessKey: string
   // Complemento da Forma de Pagamento (boleto/cartão/câmbio/outro) — capturado no form; persistência no
@@ -184,10 +188,15 @@ const retentionTotals = (fields: DocumentFormFields): RetentionTotals => {
 }
 
 const grossCents = (fields: DocumentFormFields): number => toCents(fields.grossValue)
+const discountsCents = (fields: DocumentFormFields): number => toCents(fields.discounts)
+const jurosMultaCents = (fields: DocumentFormFields): number => toCents(fields.jurosMulta)
 
-/** Líquido = Bruto − Σretenções (v1: descontos/multa/juros = 0). String de centavos. */
-export const netPreviewCents = (fields: DocumentFormFields): string =>
-  String(grossCents(fields) - retentionTotals(fields).sum)
+/** Líquido (centavos, número) = Bruto − Σretenções − Descontos + Juros/Multa. Espelha o core-api. */
+const netCents = (fields: DocumentFormFields): number =>
+  grossCents(fields) - retentionTotals(fields).sum - discountsCents(fields) + jurosMultaCents(fields)
+
+/** Líquido = Bruto − Σretenções − Descontos + Juros/Multa. String de centavos. */
+export const netPreviewCents = (fields: DocumentFormFields): string => String(netCents(fields))
 
 /**
  * Alíquota % DERIVADA de uma retenção (valor ÷ bruto), p/ exibir ao lado do rótulo na Composição
@@ -208,7 +217,7 @@ export const titulosPrevistos = (fields: DocumentFormFields): readonly TituloPre
   if (t.irrf > 0) filhos.push({ kind: 'IRRF', valueCents: String(t.irrf) })
   if (t.inss > 0) filhos.push({ kind: 'INSS', valueCents: String(t.inss) })
   if (t.csrf > 0) filhos.push({ kind: 'CSRF', valueCents: String(t.csrf) })
-  return [{ kind: 'Pai', valueCents: String(grossCents(fields) - t.sum) }, ...filhos]
+  return [{ kind: 'Pai', valueCents: String(netCents(fields)) }, ...filhos]
 }
 
 /** Destino (órgão arrecadador) de cada filho — i18n key. ISS = município; demais = federal. */
@@ -229,7 +238,7 @@ export const validationChecklist = (
 ): readonly ValidationItem[] => {
   const hasSupplier = supplierName.trim() !== '' && fields.supplierRef.trim() !== ''
   const t = retentionTotals(fields)
-  const net = grossCents(fields) - t.sum
+  const net = netCents(fields)
   const calcOk = grossCents(fields) > 0 && net > 0
   const items: ValidationItem[] = [
     {
@@ -249,7 +258,7 @@ export const validationChecklist = (
 
 export const canSubmit = (fields: DocumentFormFields): boolean => {
   const gross = grossCents(fields)
-  const net = gross - retentionTotals(fields).sum
+  const net = netCents(fields)
   return (
     fields.type !== '' &&
     fields.documentNumber.trim() !== '' &&
@@ -315,6 +324,9 @@ export const buildCreateInput = (fields: DocumentFormFields): CreateDocumentInpu
     supplierRef: fields.supplierRef,
     paymentMethod: fields.paymentMethod,
     grossValueCents: String(gross),
+    discountsCents: discountsCents(fields) > 0 ? String(discountsCents(fields)) : undefined,
+    // "Juros / Multa" (campo único) → interestCents; ambos somam ao líquido, então o total fica correto.
+    interestCents: jurosMultaCents(fields) > 0 ? String(jurosMultaCents(fields)) : undefined,
     programRef: trimToUndefined(fields.programRef),
     retentions,
     registeredTaxes: buildRegisteredTaxInputs(fields),
@@ -351,6 +363,8 @@ export const buildDraftInput = (fields: DocumentFormFields): CreateDocumentInput
     supplierRef: fields.supplierRef,
     paymentMethod: fields.paymentMethod,
     grossValueCents: String(gross),
+    discountsCents: discountsCents(fields) > 0 ? String(discountsCents(fields)) : undefined,
+    interestCents: jurosMultaCents(fields) > 0 ? String(jurosMultaCents(fields)) : undefined,
     programRef: trimToUndefined(fields.programRef),
     retentions,
     registeredTaxes: buildRegisteredTaxInputs(fields),
@@ -444,6 +458,8 @@ export const hydrateFieldsFromDetail = (d: DocumentDetail): DocumentFormFields =
     grossValue: d.grossValueCents !== null ? centsToReais(d.grossValueCents) : '',
     dueDate: d.dueDate ?? '',
     description: d.description ?? '',
+    discounts: '', // composição não exposta no detalhe hoje (core-api#95) → edição via composição fica no create
+    jurosMulta: '',
     accessKey: '', // não exposto no detalhe (core-api#115/#95)
     paymentComplement: '', // não exposto no detalhe (core-api#89/#95)
     contractRef: '', // o GET /:id não expõe o contrato vinculado (core-api#95) → vazio na hidratação

@@ -209,7 +209,12 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
         </div>
 
         <aside className={`${sidebarCol} ${scrollArea}`}>
-          <ComposicaoSidebar fields={controller.fields} supplierName={supplierName} />
+          <ComposicaoSidebar
+            fields={controller.fields}
+            supplierName={supplierName}
+            editable={mode === 'create' || mode === 'draft'}
+            onText={controller.setText}
+          />
         </aside>
       </div>
 

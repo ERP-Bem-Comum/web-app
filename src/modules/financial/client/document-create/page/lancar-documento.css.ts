@@ -454,6 +454,24 @@ export const compVal = style({
 })
 // Valor do "Valor Bruto" — negrito (mock: o bruto se destaca; retenções ficam normais).
 export const compValStrong = style([compVal, { fontWeight: vars.font.weight.bold }])
+// Campo editável na Composição (Descontos / Juros · Multa) — mono, alinhado à direita, compacto.
+export const compInput = style({
+  inlineSize: '7rem',
+  paddingBlock: vars.space.xs,
+  paddingInline: vars.space.xs,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.sm,
+  background: vars.color.surface.default,
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink2,
+  textAlign: 'end',
+  ':focus': {
+    outline: 'none',
+    borderColor: vars.color.institutional.blueLine,
+    boxShadow: `0 0 0 0.125rem ${vars.color.institutional.blueBg}`,
+  },
+})
 export const compSep = style({
   blockSize: vars.borderWidth.thin,
   background: vars.color.institutional.paperRule,

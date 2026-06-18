@@ -18,6 +18,7 @@ import {
   formatCents,
   formatReaisBRL,
   formatDue,
+  maskMoney,
   RETENTION_KEYS,
   type DocumentFormFields,
 } from '../document-form.view.ts'
@@ -29,6 +30,7 @@ import {
   compSep,
   compVal,
   compValStrong,
+  compInput,
   netBlock,
   netDue,
   netLabel,
@@ -56,10 +58,13 @@ const t = createTranslator(ptBR)
 export type ComposicaoSidebarProps = Readonly<{
   fields: DocumentFormFields
   supplierName: string
+  // Composição editável (Descontos / Juros · Multa) — só em criação/rascunho. Em edição/consulta: só leitura.
+  editable: boolean
+  onText: (key: 'discounts' | 'jurosMulta', value: string) => void
 }>
 
 export function ComposicaoSidebar(props: ComposicaoSidebarProps): ReactNode {
-  const { fields, supplierName } = props
+  const { fields, supplierName, editable } = props
   const retEnabled = retentionsEnabledFor(fields.type)
   const titulos = titulosPrevistos(fields)
   const pai = titulos[0]
@@ -95,11 +100,37 @@ export function ComposicaoSidebar(props: ComposicaoSidebarProps): ReactNode {
         <div className={compSep} />
         <div className={compRow}>
           <span>{t('financial.create.sidebar.descontos')}</span>
-          <span className={compVal}>{formatCents('0')}</span>
+          {editable ? (
+            <input
+              className={compInput}
+              inputMode="numeric"
+              value={fields.discounts}
+              onChange={(e) => {
+                props.onText('discounts', maskMoney(e.target.value))
+              }}
+              placeholder="0,00"
+              aria-label={t('financial.create.sidebar.descontos')}
+            />
+          ) : (
+            <span className={compVal}>{formatReaisBRL(fields.discounts)}</span>
+          )}
         </div>
         <div className={compRow}>
           <span>{t('financial.create.sidebar.jurosMulta')}</span>
-          <span className={compVal}>{formatCents('0')}</span>
+          {editable ? (
+            <input
+              className={compInput}
+              inputMode="numeric"
+              value={fields.jurosMulta}
+              onChange={(e) => {
+                props.onText('jurosMulta', maskMoney(e.target.value))
+              }}
+              placeholder="0,00"
+              aria-label={t('financial.create.sidebar.jurosMulta')}
+            />
+          ) : (
+            <span className={compVal}>{formatReaisBRL(fields.jurosMulta)}</span>
+          )}
         </div>
         <div className={netBlock}>
           <span className={netLabel}>{t('financial.create.sidebar.liquido')}</span>

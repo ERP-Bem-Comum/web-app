@@ -1121,6 +1121,8 @@ export const ptBR: Catalog = {
   'financial.create.bottombar.draft': 'Rascunho',
   'financial.create.bottombar.addSupplier': '+ Adicionar fornecedor',
   'financial.create.bottombar.saveDraft': 'Salvar rascunho',
+  'financial.create.bottombar.saveDraftHint':
+    'Para salvar como rascunho, preencha tipo, número, fornecedor, forma de pagamento e valor bruto.',
   'financial.create.bottombar.kbdSaveDraft': '⌘S',
   'financial.create.bottombar.kbdSubmit': '⌘↵',
   'financial.create.retention.iss': 'ISS',

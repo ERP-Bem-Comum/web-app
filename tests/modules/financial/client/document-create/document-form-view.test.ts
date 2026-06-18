@@ -55,6 +55,8 @@ const base: DocumentFormFields = {
   grossValue: 'R$ 10.000,00',
   dueDate: '2026-06-10',
   description: 'Consultoria',
+  discounts: '',
+  jurosMulta: '',
   accessKey: '',
   paymentComplement: '',
   contractRef: '',
@@ -105,6 +107,10 @@ describe('netPreviewCents', () => {
   it('RPA agora conta a ISS no líquido (mesmo cálculo da NFS-e)', () => {
     assert.equal(netPreviewCents({ ...base, type: 'RPA' }), '793500')
   })
+  it('Descontos SUBTRAEM e Juros/Multa SOMAM ao líquido (espelha o core-api)', () => {
+    // base = 793500 (bruto − retenções). − R$100,00 desconto + R$50,00 juros/multa = 793500 − 10000 + 5000.
+    assert.equal(netPreviewCents({ ...base, discounts: 'R$ 100,00', jurosMulta: 'R$ 50,00' }), '788500')
+  })
 })
 
 describe('buildCreateInput — RPA inclui ISS (a UI exibe; backend libera via issue)', () => {
@@ -114,6 +120,19 @@ describe('buildCreateInput — RPA inclui ISS (a UI exibe; backend libera via is
     const tipos = input?.retentions.map((r) => r.type) ?? []
     assert.equal(tipos.includes('ISS'), true)
     assert.deepEqual([...tipos].sort(), ['CSRF', 'INSS', 'IRRF', 'ISS'])
+  })
+})
+
+describe('buildCreateInput — Descontos / Juros·Multa', () => {
+  it('emite discountsCents e interestCents (Juros/Multa → interestCents) quando > 0', () => {
+    const input = buildCreateInput({ ...base, discounts: 'R$ 100,00', jurosMulta: 'R$ 50,00' })
+    assert.equal(input?.discountsCents, '10000')
+    assert.equal(input?.interestCents, '5000')
+  })
+  it('omite os campos quando zerados', () => {
+    const input = buildCreateInput(base)
+    assert.equal(input?.discountsCents, undefined)
+    assert.equal(input?.interestCents, undefined)
   })
 })
 

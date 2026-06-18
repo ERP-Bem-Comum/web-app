@@ -73,6 +73,8 @@ export function DocumentBottombar(props: DocumentBottombarProps): ReactNode {
             className={draftButton}
             onClick={props.onSaveDraft}
             disabled={!props.canSaveDraft || props.running}
+            // Quando travado, o tooltip explica o mínimo exigido (mesmo mínimo do core-api p/ asDraft).
+            title={props.canSaveDraft ? undefined : t('financial.create.bottombar.saveDraftHint')}
           >
             {t('financial.create.bottombar.saveDraft')}
             <span className={kbdChip}>{t('financial.create.bottombar.kbdSaveDraft')}</span>
