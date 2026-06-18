@@ -22,7 +22,7 @@ export const filterBar = style({
   paddingInline: vars.space.lg, // 24px
   paddingBlock: vars.space.sm,
   background: vars.color.surface.default,
-  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  // Sem régua entre a busca e a tabela (pedido P.O.) — a separação fica no header sticky do grid.
 })
 
 export const searchWrap = style({
@@ -32,11 +32,11 @@ export const searchWrap = style({
   background: vars.color.surface.default,
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   borderRadius: vars.radius.md,
-  paddingBlock: '0.375rem', // 6px
-  paddingInlineStart: '2rem', // 32px (espaço do ícone)
-  paddingInlineEnd: '0.6875rem', // 11px
-  minInlineSize: '17.5rem', // 280px
-  maxInlineSize: '21.25rem', // 340px
+  paddingBlock: '0.5rem', // 8px — campo um pouco mais alto/confortável
+  paddingInlineStart: '2.25rem', // 36px (espaço do ícone)
+  paddingInlineEnd: '0.875rem', // 14px (sem atalho ⌘K dentro do campo)
+  inlineSize: '24rem', // largura fixa, mais larga (sem o chip de atalho)
+  maxInlineSize: '100%',
 })
 export const searchIcon = style({
   position: 'absolute',
@@ -564,6 +564,22 @@ export const compRow = style({
   color: vars.color.text.secondary,
 })
 export const compVal = style({ fontFamily: vars.font.family.mono, color: vars.color.institutional.ink2 })
+// Linha única de Retenções (soma) destacada em vermelho (mock): "− Retenções (IRRF, INSS, ISS)  (R$ 550,00)".
+export const compRowRetentions = style([
+  compRow,
+  {
+    marginBlock: vars.space.xs,
+    paddingInline: vars.space.sm,
+    borderRadius: vars.radius.sm,
+    background: vars.color.feedback.errorBg,
+    color: vars.color.feedback.errorText,
+    fontWeight: vars.font.weight.semibold,
+  },
+])
+export const compValRetentions = style([
+  compVal,
+  { color: vars.color.feedback.errorText, fontWeight: vars.font.weight.semibold },
+])
 export const netRow = style({
   display: 'flex',
   justifyContent: 'space-between',
@@ -756,6 +772,8 @@ export const dwStatusPill = style({
   fontFamily: vars.font.family.heading,
   fontSize: vars.font.size['2xs'],
   fontWeight: vars.font.weight.semibold,
+  textTransform: 'uppercase', // CAIXA ALTA igual aos status do grid (pedido P.O.)
+  letterSpacing: '0.04em',
   whiteSpace: 'nowrap',
   '::before': {
     content: '""',

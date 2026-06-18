@@ -1009,6 +1009,7 @@ export const ptBR: Catalog = {
   'financial.detail.label.fornecedor': 'Fornecedor',
   'financial.detail.label.status': 'Status Atual',
   'financial.detail.label.bruto': 'Valor Bruto',
+  'financial.detail.label.retencoes': 'Retenções',
   'financial.detail.label.liquido': 'Líquido a Pagar',
   'financial.detail.label.documento': 'Documento',
   'financial.detail.label.centroCusto': 'Centro de Custo',

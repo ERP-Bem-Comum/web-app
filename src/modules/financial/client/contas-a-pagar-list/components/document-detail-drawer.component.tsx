@@ -41,6 +41,8 @@ import {
   detailValue,
   compRow,
   compVal,
+  compRowRetentions,
+  compValRetentions,
   netRow,
   netLabel,
   netVal,
@@ -161,12 +163,15 @@ export function DocumentDetailDrawer({ view, onClose }: DocumentDetailDrawerProp
               <span>{t('financial.detail.label.bruto')}</span>
               <span className={compVal}>{view.gross}</span>
             </div>
-            {view.retentions.map((r) => (
-              <div className={compRow} key={r.type}>
-                <span>− {r.type}</span>
-                <span className={compVal}>{r.value}</span>
+            {/* Retenções somadas numa linha única, destacada em vermelho (mock). Lista os tipos no rótulo. */}
+            {view.retentionsTotal !== null ? (
+              <div className={compRowRetentions}>
+                <span>
+                  − {t('financial.detail.label.retencoes')} ({view.retentions.map((r) => r.type).join(', ')})
+                </span>
+                <span className={compValRetentions}>({view.retentionsTotal})</span>
               </div>
-            ))}
+            ) : null}
             <div className={netRow}>
               <span className={netLabel}>{t('financial.detail.label.liquido')}</span>
               <span className={netVal}>{view.net}</span>

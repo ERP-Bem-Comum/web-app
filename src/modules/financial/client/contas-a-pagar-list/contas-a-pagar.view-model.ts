@@ -230,8 +230,22 @@ export type DocumentDetailView = Readonly<{
   paymentMethod: PaymentMethod | null
   description: string
   retentions: readonly RetentionLine[]
+  // Total das retenções (soma dos filhos), formatado em BRL. `null` quando não há retenção.
+  // No drawer aparece numa linha única destacada em vermelho (mock): "− Retenções (IRRF, INSS, ISS)".
+  retentionsTotal: string | null
   payables: readonly DetailPayableView[]
 }>
+
+/** Soma (centavos) dos títulos-filho de retenção → BRL formatado; `null` quando não há retenção. PURA. */
+const sumRetentionsBRL = (payables: DocumentDetail['payables']): string | null => {
+  const children = payables.filter((p) => p.kind === 'Child' && p.retentionType !== null)
+  if (children.length === 0) return null
+  const totalCents = children.reduce(
+    (s, p) => s + Number.parseInt(p.valueCents !== '' ? p.valueCents : '0', 10),
+    0,
+  )
+  return centsToBRL(String(totalCents))
+}
 
 /** DocumentDetail (GET /:id) → view do drawer. PURA. Resolve nome + CNPJ do fornecedor pelos resolvers. */
 export const mapDocumentDetail = (
@@ -256,6 +270,7 @@ export const mapDocumentDetail = (
       ? [{ type: p.retentionType, value: centsToBRL(p.valueCents) }]
       : [],
   ),
+  retentionsTotal: sumRetentionsBRL(d.payables),
   payables: d.payables.map((p) => ({
     id: p.id,
     isParent: p.kind === 'Parent',

@@ -28,6 +28,7 @@ const baseView: DocumentDetailView = {
   paymentMethod: 'PIX',
   description: 'teste rpa',
   retentions: [],
+  retentionsTotal: null,
   payables: [],
 }
 
@@ -47,5 +48,28 @@ describe('DocumentDetailDrawer', () => {
     render(<DocumentDetailDrawer view={baseView} onClose={() => undefined} />)
     // "Alexandre Novaes" aparece no cabeçalho do fornecedor e como Favorecido no pagamento.
     expect(screen.getAllByText(/Alexandre Novaes/).length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('Composição: retenções aparecem somadas numa linha única (tipos no rótulo + total em parênteses)', () => {
+    render(
+      <DocumentDetailDrawer
+        view={{
+          ...baseView,
+          retentions: [
+            { type: 'IRRF', value: 'R$ 150,00' },
+            { type: 'INSS', value: 'R$ 400,00' },
+          ],
+          retentionsTotal: 'R$ 550,00',
+        }}
+        onClose={() => undefined}
+      />,
+    )
+    expect(screen.getByText('− Retenções (IRRF, INSS)')).toBeTruthy()
+    expect(screen.getByText('(R$ 550,00)')).toBeTruthy()
+  })
+
+  it('Composição: sem retenções, a linha de Retenções não aparece', () => {
+    render(<DocumentDetailDrawer view={baseView} onClose={() => undefined} />)
+    expect(screen.queryByText(/− Retenções/)).toBeNull()
   })
 })
