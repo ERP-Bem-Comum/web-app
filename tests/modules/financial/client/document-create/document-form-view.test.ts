@@ -55,6 +55,7 @@ const base: DocumentFormFields = {
   grossValue: 'R$ 10.000,00',
   dueDate: '2026-06-10',
   description: 'Consultoria',
+  accessKey: '',
   paymentComplement: '',
   contractRef: '',
   programRef: '',

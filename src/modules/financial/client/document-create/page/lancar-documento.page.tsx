@@ -215,6 +215,13 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
 
       <DocumentBottombar
         mode={bottombarMode}
+        onAddSupplier={() => {
+          // Mesma rota do "novo fornecedor" do incluir contrato; volta pra cá após cadastrar.
+          void navigate({
+            to: '/parceiros/fornecedores/criar',
+            search: { returnTo: '/financeiro/contas-a-pagar/lancar' },
+          })
+        }}
         onDiscard={edit.isEdit ? goToGrid : controller.reset}
         onSaveDraft={() => {
           submit(buildDraftInput(controller.fields))

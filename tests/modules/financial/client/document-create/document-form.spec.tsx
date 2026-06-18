@@ -24,6 +24,7 @@ const fields = (over: Partial<DocumentFormFields> = {}): DocumentFormFields => (
   grossValue: '',
   dueDate: '',
   description: '',
+  accessKey: '',
   paymentComplement: '',
   contractRef: '',
   programRef: '',
@@ -101,11 +102,14 @@ describe('DocumentForm', () => {
     expect(screen.queryByLabelText('ISS')).toBe(null)
   })
 
-  it('DANFE mostra o campo Chave de acesso (chrome) e os demais tipos não', () => {
-    const { unmount } = render(<DocumentForm {...baseProps({ fields: fields({ type: 'DANFE' }) })} />)
-    const chave = screen.getByLabelText(tr('financial.create.field.accessKey'))
+  it('DANFE: Chave de acesso é editável (OCR/manual) e dispara onText(accessKey); demais tipos não exibem', () => {
+    const onText = vi.fn()
+    const { unmount } = render(<DocumentForm {...baseProps({ fields: fields({ type: 'DANFE' }), onText })} />)
+    const chave = screen.getByLabelText(tr('financial.create.field.accessKey')) as HTMLInputElement
     expect(chave).toBeTruthy()
-    expect((chave as HTMLInputElement).disabled).toBe(true) // chrome até core-api#115
+    expect(chave.disabled).toBe(false) // editável; persistência pendente em core-api#115
+    fireEvent.change(chave, { target: { value: '3526' } })
+    expect(onText).toHaveBeenCalledWith('accessKey', '3526')
     unmount()
     render(<DocumentForm {...baseProps({ fields: fields({ type: 'NFS-e' }) })} />)
     expect(screen.queryByLabelText(tr('financial.create.field.accessKey'))).toBe(null)

@@ -1036,17 +1036,27 @@ export const draftPill = style({
   fontWeight: vars.font.weight.semibold,
   color: vars.color.institutional.ink3,
 })
+// Atalho funcional no rodapé → módulo de Parceiros › Fornecedor (mesma rota do "novo contrato").
+// Secundário em ghost com borda tracejada da marca; hover azul claro.
 export const addSupplierButton = style({
-  paddingBlock: vars.space.xs,
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: vars.space.xs,
+  blockSize: '2.5rem',
   paddingInline: vars.space.md,
-  borderRadius: vars.radius.sm,
-  border: `${vars.borderWidth.thin} dashed ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.md,
+  border: `${vars.borderWidth.thin} dashed ${vars.color.institutional.blueLine}`,
   background: 'transparent',
   fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.xs,
+  fontSize: vars.font.size.sm,
   fontWeight: vars.font.weight.semibold,
-  color: vars.color.text.muted,
-  cursor: 'not-allowed',
+  color: vars.color.institutional.blueDeep,
+  cursor: 'pointer',
+  transition: 'background 150ms, border-color 150ms',
+  ':hover': {
+    background: vars.color.institutional.blueBg,
+    borderColor: vars.color.institutional.blueDeep,
+  },
 })
 export const bottombarSpacer = style({ flex: 1, minInlineSize: 0 })
 export const actionsGroup = style({ display: 'flex', alignItems: 'center', gap: vars.space.sm })

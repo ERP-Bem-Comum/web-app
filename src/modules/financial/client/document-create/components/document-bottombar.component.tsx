@@ -16,6 +16,7 @@ import {
   statusText,
   bottombarSpacer,
   actionsGroup,
+  addSupplierButton,
   discardButton,
   draftButton,
   primaryButton,
@@ -31,6 +32,8 @@ export type DocumentBottombarProps = Readonly<{
   onDiscard: () => void
   onSaveDraft: () => void
   onSubmit: () => void
+  // Atalho p/ cadastrar fornecedor no módulo de Parceiros (só no modo criação).
+  onAddSupplier: () => void
   canSaveDraft: boolean
   canSubmit: boolean
   running: boolean
@@ -41,8 +44,12 @@ export function DocumentBottombar(props: DocumentBottombarProps): ReactNode {
 
   return (
     <div className={pageBottombar}>
-      {/* Modo criação: sem indicador de status (não há auto-save). Edição/consulta mostram o status real. */}
-      {mode === 'create' ? null : (
+      {/* Modo criação: atalho p/ cadastrar fornecedor (Parceiros). Edição/consulta mostram o status real. */}
+      {mode === 'create' ? (
+        <button type="button" className={addSupplierButton} onClick={props.onAddSupplier}>
+          {t('financial.create.bottombar.addSupplier')}
+        </button>
+      ) : (
         <div className={statusGroup}>
           <span className={statusDot} aria-hidden="true" />
           <span className={statusText}>

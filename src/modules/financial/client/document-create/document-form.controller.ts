@@ -26,6 +26,7 @@ const EMPTY_FIELDS: DocumentFormFields = {
   grossValue: '',
   dueDate: '',
   description: '',
+  accessKey: '',
   paymentComplement: '',
   contractRef: '',
   programRef: '',
@@ -43,6 +44,7 @@ type TextKey =
   | 'grossValue'
   | 'dueDate'
   | 'description'
+  | 'accessKey'
   | 'paymentComplement'
   | 'centroCusto'
   | 'categoria'

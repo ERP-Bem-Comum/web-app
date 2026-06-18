@@ -113,6 +113,8 @@ export type DocumentFormFields = Readonly<{
   grossValue: string
   dueDate: string
   description: string
+  // Chave de acesso (44 dígitos) — só DANFE. Editável (OCR/manual). Persistência pendente (core-api#115).
+  accessKey: string
   // Complemento da Forma de Pagamento (boleto/cartão/câmbio/outro) — capturado no form; persistência no
   // backend pendente (core-api#89). Só 1 visível por vez (controlado pela forma escolhida).
   paymentComplement: string
@@ -442,6 +444,7 @@ export const hydrateFieldsFromDetail = (d: DocumentDetail): DocumentFormFields =
     grossValue: d.grossValueCents !== null ? centsToReais(d.grossValueCents) : '',
     dueDate: d.dueDate ?? '',
     description: d.description ?? '',
+    accessKey: '', // não exposto no detalhe (core-api#115/#95)
     paymentComplement: '', // não exposto no detalhe (core-api#89/#95)
     contractRef: '', // o GET /:id não expõe o contrato vinculado (core-api#95) → vazio na hidratação
     programRef: '', // o GET /:id não expõe a categorização (core-api#95) → vazio na hidratação
