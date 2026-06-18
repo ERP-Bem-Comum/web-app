@@ -316,6 +316,85 @@ export const clearAllFilters = style({
   ':hover': { color: vars.color.institutional.ink2, textDecoration: 'underline' },
 })
 
+// ── Modal de confirmação de EXCLUSÃO (hard-delete) ────────────────────────────
+export const confirmOverlay = style({
+  position: 'fixed',
+  inset: 0,
+  zIndex: 200,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: vars.space.lg,
+  background: vars.color.institutional.overlay,
+})
+export const confirmDialog = style({
+  inlineSize: '28rem',
+  maxInlineSize: '100%',
+  padding: vars.space.lg,
+  background: vars.color.surface.default,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.lg,
+  boxShadow: vars.shadow.card,
+})
+export const confirmTitle = style({
+  margin: 0,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.lg,
+  fontWeight: vars.font.weight.bold,
+  color: vars.color.institutional.ink2,
+})
+export const confirmText = style({
+  marginBlock: vars.space.sm,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+  lineHeight: 1.5,
+  color: vars.color.institutional.ink3,
+})
+export const confirmWarn = style({
+  marginBlockStart: vars.space.sm,
+  padding: vars.space.sm,
+  borderRadius: vars.radius.sm,
+  background: vars.color.feedback.errorBg,
+  color: vars.color.feedback.errorText,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  fontWeight: vars.font.weight.semibold,
+})
+export const confirmActions = style({
+  display: 'flex',
+  justifyContent: 'flex-end',
+  gap: vars.space.sm,
+  marginBlockStart: vars.space.lg,
+})
+const confirmBtnBase = {
+  blockSize: '2.5rem',
+  paddingInline: vars.space.lg,
+  borderRadius: vars.radius.md,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.bold,
+  cursor: 'pointer',
+} as const
+export const confirmCancelBtn = style([
+  confirmBtnBase,
+  {
+    border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+    background: vars.color.surface.default,
+    color: vars.color.institutional.ink2,
+    ':hover': { background: vars.color.institutional.paperWarm },
+  },
+])
+export const confirmDeleteBtn = style([
+  confirmBtnBase,
+  {
+    border: 'none',
+    background: vars.color.feedback.errorText,
+    color: vars.color.surface.default,
+    ':hover': { filter: 'brightness(0.95)' },
+    ':disabled': { opacity: 0.6, cursor: 'not-allowed' },
+  },
+])
+
 // ── Grid (Figma 205-638) — enriquecido pela 012/#47: + Contrato, Forma, Emissão, Bruto ─────────────
 // Larguras balanceadas (espaço proporcional entre as colunas); Fornecedor é a flexível (minmax).
 // Ordem: checkbox · Tipo · Documento · Fornecedor · Contrato · Forma · Emissão · Venc · Bruto · Líquido ·

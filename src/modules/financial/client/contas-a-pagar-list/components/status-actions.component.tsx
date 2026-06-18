@@ -35,13 +35,16 @@ export type StatusActionsProps = Readonly<{
   // Aprovar (Aberto→Aprovado) e Voltar p/ edição (Aprovado→Aberto) — habilitados conforme a seleção.
   canApprove: boolean
   canReopen: boolean
+  // Excluir (hard-delete) — só Aberto (Rascunho dá 409, core-api#166). Abre o modal de confirmação.
+  canDelete: boolean
   running: boolean
   onApprove: () => void
   onReopen: () => void
+  onDelete: () => void
 }>
 
 export function StatusActions(props: StatusActionsProps): ReactNode {
-  const { canApprove, canReopen, running } = props
+  const { canApprove, canReopen, canDelete, running } = props
   return (
     <details className={wrapper}>
       <summary
@@ -101,6 +104,23 @@ export function StatusActions(props: StatusActionsProps): ReactNode {
           <span className={itemCol}>
             {t('financial.list.status.pay')}
             <span className={itemHint}>{t('financial.list.status.payHint')}</span>
+          </span>
+        </button>
+
+        {/* Excluir — hard-delete; só Aberto (Rascunho dá 409, core-api#166). Abre modal de confirmação. */}
+        <button
+          type="button"
+          className={`${menuItem} ${menuItemBorder}${canDelete && !running ? '' : ` ${menuItemDisabled}`}`}
+          disabled={!canDelete || running}
+          title={canDelete ? undefined : t('financial.list.delete.needOpen')}
+          onClick={(e) => {
+            props.onDelete()
+            closeDetails(e)
+          }}
+        >
+          <span className={itemCol}>
+            {t('financial.list.delete.action')}
+            <span className={itemHint}>{t('financial.list.delete.actionHint')}</span>
           </span>
         </button>
       </div>

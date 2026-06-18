@@ -14,16 +14,19 @@ import { SearchIcon } from '#shared/ui/icons/index.ts'
 import { useContasAPagar } from '../contas-a-pagar.binding.ts'
 import { useDocumentDetail } from '../document-detail.binding.ts'
 import { useBulkStatus } from '../bulk-status.binding.ts'
+import { useBulkDelete } from '../bulk-delete.binding.ts'
 import { useInlineDueDate } from '../inline-due-date.binding.ts'
 import {
   STATUS_CHIPS,
   sumSelectedNetBRL,
   sumSelectedGrossBRL,
   bulkStatusTargets,
+  bulkDeleteTargets,
 } from '../contas-a-pagar.view-model.ts'
 import { DocumentGrid } from '../components/document-grid.component.tsx'
 import { AddFilterButton, ActiveFiltersRow } from '../components/document-filters.component.tsx'
 import { DocumentDetailDrawer } from '../components/document-detail-drawer.component.tsx'
+import { DeleteConfirmModal } from '../components/delete-confirm.component.tsx'
 import { ExportDropdown } from '../components/export-dropdown.component.tsx'
 import { StatusActions } from '../components/status-actions.component.tsx'
 import {
@@ -119,6 +122,14 @@ export function ContasAPagarPage(): ReactNode {
 
   // ── Vencimento editável inline (PATCH por id; só linhas em Aberto). Lote pendente (core-api#162). ──
   const dueEdit = useInlineDueDate()
+
+  // ── Excluir (hard-delete) em massa — só Aberto (Rascunho dá 409, core-api#166). Modal de confirmação. ──
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const del = useBulkDelete(() => {
+    clearSelection()
+    setDeleteOpen(false)
+  })
+  const deleteTargets = bulkDeleteTargets(rows, selected)
 
   return (
     <div className={screen}>
@@ -224,6 +235,19 @@ export function ContasAPagarPage(): ReactNode {
         />
       ) : null}
 
+      <DeleteConfirmModal
+        open={deleteOpen}
+        count={deleteTargets.deletable.length}
+        draftCount={deleteTargets.draftCount}
+        running={del.running}
+        onConfirm={() => {
+          del.remove(deleteTargets.deletable)
+        }}
+        onCancel={() => {
+          setDeleteOpen(false)
+        }}
+      />
+
       <footer className={bottombar}>
         {selectedCount > 0 ? (
           <div className={selBar}>
@@ -244,15 +268,20 @@ export function ContasAPagarPage(): ReactNode {
             <StatusActions
               canApprove={targets.approve.length > 0}
               canReopen={targets.reopen.length > 0}
-              running={bulk.running}
+              canDelete={deleteTargets.deletable.length > 0}
+              running={bulk.running || del.running}
               onApprove={() => {
                 bulk.approve(targets.approve)
               }}
               onReopen={() => {
                 bulk.reopen(targets.reopen)
               }}
+              onDelete={() => {
+                setDeleteOpen(true)
+              }}
             />
             {bulk.errorTag !== null ? <span className={selError}>{t(bulk.errorTag)}</span> : null}
+            {del.errorTag !== null ? <span className={selError}>{t(del.errorTag)}</span> : null}
           </div>
         ) : page !== null ? (
           <nav className={pagination} aria-label={t('financial.list.pagination')}>

@@ -1234,6 +1234,20 @@ export const ptBR: Catalog = {
   'financial.list.filter.dim.programa': 'Programa',
   'financial.list.dueDate.edit': 'Editar vencimento',
   'financial.list.dueDate.error': 'Não foi possível alterar o vencimento. Tente novamente.',
+  'financial.list.delete.action': 'Excluir',
+  'financial.list.delete.actionHint': 'apaga o documento definitivamente',
+  'financial.list.delete.needOpen': 'Só documentos em Aberto podem ser excluídos (Rascunho em breve).',
+  'financial.list.delete.title': 'Excluir documento(s)?',
+  'financial.list.delete.bodyOne': 'Esta ação é definitiva e não pode ser desfeita.',
+  'financial.list.delete.bodyManyPrefix': 'Esta ação é definitiva e vai excluir',
+  'financial.list.delete.bodyManySuffix': 'documento(s). Não pode ser desfeita.',
+  'financial.list.delete.warnChildren':
+    'Atenção: os títulos-filho (retenções), caso existam, também serão apagados junto com o documento.',
+  'financial.list.delete.draftSkipped':
+    'Os rascunhos selecionados não serão excluídos por ora — a exclusão de rascunho depende do backend.',
+  'financial.list.delete.cancel': 'Cancelar',
+  'financial.list.delete.confirm': 'Excluir definitivamente',
+  'financial.list.delete.error': 'Não foi possível excluir. Tente novamente.',
   'financial.list.dueDate.bulk': 'Alterar vencimento',
   'financial.list.dueDate.bulkSoon':
     'Alteração de vencimento em lote estará disponível quando o backend expor o endpoint (core-api#162).',

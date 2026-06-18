@@ -15,6 +15,7 @@ import {
   sumSelectedGrossBRL,
   maskCnpj,
   bulkStatusTargets,
+  bulkDeleteTargets,
   STATUS_CHIPS,
   FILTER_DIMS,
 } from '../../../../../src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts'
@@ -199,6 +200,30 @@ describe('bulkStatusTargets', () => {
     const tg = bulkStatusTargets(rows, new Set(['d']))
     assert.deepEqual(tg.approve, [])
     assert.deepEqual(tg.reopen, [])
+  })
+})
+
+describe('bulkDeleteTargets', () => {
+  const rows = buildRows(
+    [
+      summary({ id: 'a', status: 'Aberto', version: 2 }),
+      summary({ id: 'b', status: 'Rascunho', version: 0 }),
+      summary({ id: 'c', status: 'Aberto', version: 1 }),
+      summary({ id: 'd', status: 'Aprovado', version: 9 }),
+    ],
+    supplierName,
+  )
+
+  it('deletable = só "Aberto" da seleção; conta rascunhos à parte; Aprovado fica de fora', () => {
+    const tg = bulkDeleteTargets(rows, new Set(['a', 'b', 'd']))
+    assert.deepEqual(tg.deletable, ['a'])
+    assert.equal(tg.draftCount, 1)
+  })
+
+  it('seleção só de rascunho: nada deletável, draftCount conta', () => {
+    const tg = bulkDeleteTargets(rows, new Set(['b']))
+    assert.deepEqual(tg.deletable, [])
+    assert.equal(tg.draftCount, 1)
   })
 })
 
