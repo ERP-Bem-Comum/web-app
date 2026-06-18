@@ -92,7 +92,7 @@ export function useContasAPagar(): ContasAPagarBinding {
   const dropFilterValue = (id: FilterDimId): void => {
     if (id === 'vencimento') setFilters((f) => ({ ...f, vencimento: undefined }))
     else if (id === 'tipo') setFilters((f) => ({ ...f, tipo: undefined }))
-    else if (id === 'fornecedor') setFilters((f) => ({ ...f, fornecedor: undefined }))
+    else setFilters((f) => ({ ...f, fornecedor: undefined }))
   }
 
   return {

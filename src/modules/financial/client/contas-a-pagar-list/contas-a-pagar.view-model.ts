@@ -126,19 +126,11 @@ export const STATUS_CHIPS = [
 }[]
 
 // ── Filtros avançados ("Adicionar filtro", estilo do mock) ────────────────────
-// Só 3 dimensões têm filtro REAL no backend (server-side, combinam com os status chips):
-// Vencimento (dueFrom/dueTo), Tipo (type) e Fornecedor (supplierRef). As demais aparecem no menu
-// DESABILITADAS (chrome honesto) até o backend expor (ver issues). `enabled:false` = sem backend.
-export type FilterDimId =
-  | 'numDoc'
-  | 'cnpjCpf'
-  | 'vencimento'
-  | 'competencia'
-  | 'valor'
-  | 'tipo'
-  | 'fornecedor'
-  | 'contrato'
-  | 'programa'
+// Só as dimensões com filtro REAL no backend (server-side, combinam com os status chips): Vencimento
+// (dueFrom/dueTo), Tipo (type) e Fornecedor (supplierRef). As demais do protótipo (Nº doc, CNPJ/CPF,
+// Competência, Valor, Contrato, Programa) foram DESCARTADAS por ora — voltam quando o backend expor
+// (core-api#164/#163) e o cliente exigir. `enabled` mantido p/ reintroduzir como chrome no futuro.
+export type FilterDimId = 'vencimento' | 'tipo' | 'fornecedor'
 export type FilterTypeTag = 'TEXTO' | 'PERÍODO' | 'VALOR' | 'LISTA' | 'BUSCA'
 export type FilterDim = Readonly<{
   id: FilterDimId
@@ -150,39 +142,11 @@ export type FilterDim = Readonly<{
 
 export const FILTER_DIMS: readonly FilterDim[] = [
   {
-    id: 'numDoc',
-    labelTag: 'financial.list.filter.dim.numDoc',
-    groupTag: 'financial.list.filter.group.identificacao',
-    typeTag: 'TEXTO',
-    enabled: false,
-  },
-  {
-    id: 'cnpjCpf',
-    labelTag: 'financial.list.filter.dim.cnpjCpf',
-    groupTag: 'financial.list.filter.group.identificacao',
-    typeTag: 'TEXTO',
-    enabled: false,
-  },
-  {
     id: 'vencimento',
     labelTag: 'financial.list.filter.dim.vencimento',
     groupTag: 'financial.list.filter.group.datas',
     typeTag: 'PERÍODO',
     enabled: true,
-  },
-  {
-    id: 'competencia',
-    labelTag: 'financial.list.filter.dim.competencia',
-    groupTag: 'financial.list.filter.group.datas',
-    typeTag: 'PERÍODO',
-    enabled: false,
-  },
-  {
-    id: 'valor',
-    labelTag: 'financial.list.filter.dim.valor',
-    groupTag: 'financial.list.filter.group.valor',
-    typeTag: 'VALOR',
-    enabled: false,
   },
   {
     id: 'tipo',
@@ -198,29 +162,12 @@ export const FILTER_DIMS: readonly FilterDim[] = [
     typeTag: 'BUSCA',
     enabled: true,
   },
-  {
-    id: 'contrato',
-    labelTag: 'financial.list.filter.dim.contrato',
-    groupTag: 'financial.list.filter.group.classificacao',
-    typeTag: 'BUSCA',
-    enabled: false,
-  },
-  {
-    id: 'programa',
-    labelTag: 'financial.list.filter.dim.programa',
-    groupTag: 'financial.list.filter.group.categorizacao',
-    typeTag: 'LISTA',
-    enabled: false,
-  },
 ]
 
-// Ordem dos grupos no menu (espelha o mock).
+// Ordem dos grupos no menu (espelha o mock; só os grupos com dimensão ativa).
 export const FILTER_GROUPS = [
-  'financial.list.filter.group.identificacao',
   'financial.list.filter.group.datas',
-  'financial.list.filter.group.valor',
   'financial.list.filter.group.classificacao',
-  'financial.list.filter.group.categorizacao',
 ] as const
 
 // Tipos de documento p/ o filtro "Tipo" (LISTA). Espelha DocumentType do model.

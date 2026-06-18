@@ -42,7 +42,7 @@ describe('AddFilterButton', () => {
     expect(screen.getByText(tr('financial.list.filter.dim.vencimento'))).toBeTruthy()
   })
 
-  it('dimensão com backend dispara onAddFilter; sem backend fica desabilitada', () => {
+  it('clicar numa dimensão dispara onAddFilter (só as 3 com backend são listadas)', () => {
     const onAddFilter = vi.fn()
     render(
       <AddFilterButton
@@ -53,12 +53,11 @@ describe('AddFilterButton', () => {
         onAddFilter={onAddFilter}
       />,
     )
-    // Vencimento (enabled) → clicável
     fireEvent.click(screen.getByText(tr('financial.list.filter.dim.vencimento')))
     expect(onAddFilter).toHaveBeenCalledWith('vencimento')
-    // Competência (chrome) → botão desabilitado
-    const competencia = screen.getByText(tr('financial.list.filter.dim.competencia')).closest('button')
-    expect(competencia?.disabled).toBe(true)
+    // Dimensões sem backend foram descartadas — não aparecem no menu.
+    expect(screen.queryByText(tr('financial.list.filter.dim.competencia'))).toBeNull()
+    expect(screen.queryByText(tr('financial.list.filter.dim.valor'))).toBeNull()
   })
 })
 

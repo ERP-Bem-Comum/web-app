@@ -218,13 +218,12 @@ describe('STATUS_CHIPS (filtro por status)', () => {
 })
 
 describe('FILTER_DIMS (filtros avançados)', () => {
-  it('só Vencimento/Tipo/Fornecedor têm backend (enabled); o resto é chrome', () => {
-    const byId = Object.fromEntries(FILTER_DIMS.map((d) => [d.id, d]))
-    assert.equal(byId.vencimento?.enabled, true)
-    assert.equal(byId.tipo?.enabled, true)
-    assert.equal(byId.fornecedor?.enabled, true)
-    for (const id of ['numDoc', 'cnpjCpf', 'competencia', 'valor', 'contrato', 'programa'])
-      assert.equal(byId[id]?.enabled, false)
+  it('só expõe as 3 dimensões com backend (Vencimento/Tipo/Fornecedor), todas habilitadas', () => {
+    assert.deepEqual(
+      FILTER_DIMS.map((d) => d.id),
+      ['vencimento', 'tipo', 'fornecedor'],
+    )
+    assert.ok(FILTER_DIMS.every((d) => d.enabled))
   })
 })
 

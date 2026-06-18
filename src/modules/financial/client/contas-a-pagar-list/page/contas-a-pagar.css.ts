@@ -248,6 +248,7 @@ export const activeFilters = style({
   background: vars.color.surface.default,
 })
 export const activeFiltersLabel = style({
+  fontFamily: vars.font.family.body, // Nunito (marca)
   fontSize: '0.59375rem',
   fontWeight: vars.font.weight.bold,
   letterSpacing: '0.06em',
@@ -319,7 +320,8 @@ export const clearAllFilters = style({
 // Larguras balanceadas (espaço proporcional entre as colunas); Fornecedor é a flexível (minmax).
 // Ordem: checkbox · Tipo · Documento · Fornecedor · Contrato · Forma · Emissão · Venc · Bruto · Líquido ·
 // Status. (Emissão é placeholder "—" até o backend expô-la na lista — core-api#95.)
-const GRID_COLS = '2.25rem 4.75rem 7rem minmax(15rem, 1.4fr) 6.5rem 8.5rem 6.5rem 6.5rem 7rem 7rem 7.5rem'
+// Venc = 10.5rem p/ caber o campo editável de data (input + ícone do date-picker) sem cortar.
+const GRID_COLS = '2.25rem 4.75rem 7rem minmax(15rem, 1.4fr) 6.5rem 8.5rem 6.5rem 10.5rem 7rem 7rem 7.5rem'
 
 // Wrapper rola na horizontal (como o grid largo do Figma) quando a viewport é estreita.
 export const gridWrap = style({
@@ -395,15 +397,16 @@ export const row = style({
 })
 export const cell = style({ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })
 // Vencimento editável inline (só linhas em Aberto). Input discreto que "vira" campo no hover/focus.
+// Fonte Nunito (marca) e largura folgada p/ a data + ícone do date-picker não ficarem cortados.
 export const dueInput = style({
-  inlineSize: '7.5rem',
+  inlineSize: '9.5rem',
   maxInlineSize: '100%',
-  paddingBlock: '0.1875rem',
-  paddingInline: '0.375rem',
+  paddingBlock: '0.25rem',
+  paddingInline: '0.5rem',
   border: `${vars.borderWidth.thin} solid transparent`,
   borderRadius: vars.radius.sm,
   background: 'transparent',
-  fontFamily: vars.font.family.mono,
+  fontFamily: vars.font.family.body,
   fontSize: vars.font.size.xs,
   color: vars.color.institutional.ink2,
   cursor: 'pointer',
