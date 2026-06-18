@@ -10,6 +10,8 @@ import type {
   OccupationArea,
   DeactivationReason,
   Territory,
+  BankAccount,
+  CollaboratorPixKey,
 } from './collaborator.types.ts'
 
 // ── Input (validado na server fn pelos schemas em adapters) ─────────────────────
@@ -38,6 +40,8 @@ export interface CreateCollaboratorInput {
   startOfContract: string // YYYY-MM-DD
   employmentRelationship: EmploymentRelationship
   territory: Territory | null // #42 — entra no create (PUT omite)
+  bankAccount: BankAccount | null // #40 — create-only (PUT omite)
+  pixKey: CollaboratorPixKey | null // #40 — create-only (PUT omite)
 }
 
 export interface CompleteCollaboratorRegistrationInput {
@@ -58,8 +62,11 @@ export interface CompleteCollaboratorRegistrationInput {
   experienceInThePublicSector?: boolean
 }
 
-// PUT omite território (#42) — não enviar na edição.
-export type UpdateCollaboratorInput = Omit<CreateCollaboratorInput, 'territory'> & { id: string }
+// PUT omite território (#42) e banco/PIX (#40) — não enviar na edição.
+export type UpdateCollaboratorInput = Omit<
+  CreateCollaboratorInput,
+  'territory' | 'bankAccount' | 'pixKey'
+> & { id: string }
 
 export interface DeactivateCollaboratorInput {
   id: string
@@ -99,6 +106,8 @@ export type CollaboratorDetail = CollaboratorListItem &
     startOfContract: string
     employmentRelationship: EmploymentRelationship
     territory: Territory | null
+    bankAccount: BankAccount | null // #40 — create-only; exibido read-only no detalhe
+    pixKey: CollaboratorPixKey | null // #40 — create-only; exibido read-only no detalhe
   }>
 
 export type CollaboratorListResponse = Readonly<{

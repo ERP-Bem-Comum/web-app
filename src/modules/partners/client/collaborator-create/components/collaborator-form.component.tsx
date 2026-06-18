@@ -9,6 +9,8 @@ import {
   OCCUPATION_AREAS,
   EMPLOYMENT_RELATIONSHIPS,
   BR_UF,
+  PIX_KEY_TYPES,
+  isPixKeyType,
   type CollaboratorFormController,
 } from './collaborator-form.controller.ts'
 import {
@@ -16,7 +18,6 @@ import {
   errorBanner,
   footer,
   form,
-  gatedNote,
   grid,
   saveWrap,
   section,
@@ -27,8 +28,6 @@ import {
 } from './collaborator-form.css.ts'
 
 const t = createTranslator(ptBR)
-
-const PIX_KEY_TYPES = ['cpf', 'cnpj', 'email', 'phone', 'random-key'] as const
 
 export type CollaboratorFormProps = Readonly<{
   controller: CollaboratorFormController
@@ -218,9 +217,8 @@ export function CollaboratorForm(props: CollaboratorFormProps): ReactNode {
         </div>
       </section>
 
-      {/* Dados bancários — GATED: o backend ainda não aceita conta bancária p/ colaborador
-          (ver handbook/core-api/tickets/PAR-FINANCIER-COLLAB-BANK.md). Campos visíveis e
-          desabilitados; ao liberar o backend, habilitar + ligar no controller/mapeador. */}
+      {/* Dados bancários + PIX (#40) — opcionais. Presença inferida do preenchimento (sem checkbox);
+          banco parcial é bloqueado pelo schema. Espelha o Fornecedor. Create-only (o PUT omite). */}
       <section className={section}>
         <div className={sectionHeader}>
           <h2 className={sectionTitle}>
@@ -229,46 +227,57 @@ export function CollaboratorForm(props: CollaboratorFormProps): ReactNode {
           </h2>
         </div>
         <div className={sectionBody}>
-          <p className={gatedNote}>{t('partners.collaborators.form.bankGatedHint')}</p>
           <div className={grid}>
-            <Field htmlFor="collab-bank" label={t('partners.collaborators.form.bank')}>
+            <Field
+              htmlFor="collab-bank"
+              label={t('partners.collaborators.form.bank')}
+              error={invalid('bankAccount.bank')}
+            >
               <Input
                 id="collab-bank"
-                value=""
-                disabled
-                onChange={() => {
-                  /* gated */
+                value={c.state.bank}
+                onChange={(v) => {
+                  c.setField('bank', v)
                 }}
               />
             </Field>
-            <Field htmlFor="collab-agency" label={t('partners.collaborators.form.agency')}>
+            <Field
+              htmlFor="collab-agency"
+              label={t('partners.collaborators.form.agency')}
+              error={invalid('bankAccount.agency')}
+            >
               <Input
                 id="collab-agency"
                 mask="agency"
-                value=""
-                disabled
-                onChange={() => {
-                  /* gated */
+                value={c.state.agency}
+                onChange={(v) => {
+                  c.setField('agency', v)
                 }}
               />
             </Field>
-            <Field htmlFor="collab-account" label={t('partners.collaborators.form.accountNumber')}>
+            <Field
+              htmlFor="collab-account"
+              label={t('partners.collaborators.form.accountNumber')}
+              error={invalid('bankAccount.accountNumber')}
+            >
               <Input
                 id="collab-account"
-                value=""
-                disabled
-                onChange={() => {
-                  /* gated */
+                value={c.state.accountNumber}
+                onChange={(v) => {
+                  c.setField('accountNumber', v)
                 }}
               />
             </Field>
-            <Field htmlFor="collab-dv" label={t('partners.collaborators.form.checkDigit')}>
+            <Field
+              htmlFor="collab-dv"
+              label={t('partners.collaborators.form.checkDigit')}
+              error={invalid('bankAccount.checkDigit')}
+            >
               <Input
                 id="collab-dv"
-                value=""
-                disabled
-                onChange={() => {
-                  /* gated */
+                value={c.state.checkDigit}
+                onChange={(v) => {
+                  c.setField('checkDigit', v)
                 }}
               />
             </Field>
@@ -276,11 +285,12 @@ export function CollaboratorForm(props: CollaboratorFormProps): ReactNode {
               <select
                 id="collab-pix-type"
                 className={select}
-                disabled
-                defaultValue=""
+                value={c.state.pixKeyType}
                 aria-label={t('partners.collaborators.form.pixKeyType')}
+                onChange={(e) => {
+                  if (isPixKeyType(e.target.value)) c.setField('pixKeyType', e.target.value)
+                }}
               >
-                <option value="">{t('partners.collaborators.form.select')}</option>
                 {PIX_KEY_TYPES.map((k) => (
                   <option key={k} value={k}>
                     {t(`partners.collaborators.pix.${k}`)}
@@ -288,13 +298,16 @@ export function CollaboratorForm(props: CollaboratorFormProps): ReactNode {
                 ))}
               </select>
             </Field>
-            <Field htmlFor="collab-pix-key" label={t('partners.collaborators.form.pixKey')}>
+            <Field
+              htmlFor="collab-pix-key"
+              label={t('partners.collaborators.form.pixKey')}
+              error={invalid('pixKey.key')}
+            >
               <Input
                 id="collab-pix-key"
-                value=""
-                disabled
-                onChange={() => {
-                  /* gated */
+                value={c.state.pixKey}
+                onChange={(v) => {
+                  c.setField('pixKey', v)
                 }}
               />
             </Field>

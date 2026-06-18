@@ -116,6 +116,8 @@ const detailToModel = (raw: unknown): Result<CollaboratorDetail, PartnersError> 
     biography: u(c.biography),
     experienceInThePublicSector: c.experienceInThePublicSector ?? undefined,
     territory: c.territory, // #42
+    bankAccount: c.bankAccount, // #40 — create-only; read-only no detalhe
+    pixKey: c.pixKey, // #40 — create-only; read-only no detalhe
   })
 }
 

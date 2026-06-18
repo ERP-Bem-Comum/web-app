@@ -12,11 +12,14 @@ import {
   RACES,
   EDUCATION_LEVELS,
   FOOD_CATEGORIES,
+  PIX_KEY_TYPES,
+  isPixKeyType,
   type CollaboratorDetail,
   type CollaboratorWriteInput,
   type CollaboratorCompleteInput,
   type OccupationArea,
   type EmploymentRelationship,
+  type PixKeyType,
 } from '#modules/partners/client/data/model/collaborator.model.ts'
 
 // Re-export p/ a view burra (component) consumir os enums sem importar `data/` direto (boundary §XI).
@@ -27,6 +30,8 @@ export {
   RACES,
   EDUCATION_LEVELS,
   FOOD_CATEGORIES,
+  PIX_KEY_TYPES,
+  isPixKeyType,
 }
 
 export type CollaboratorDetailFormState = Readonly<{
@@ -56,6 +61,13 @@ export type CollaboratorDetailFormState = Readonly<{
   // Território (#42) — somente leitura no detalhe (o PUT omite território).
   uf: string
   municipality: string
+  // Banco/PIX (#40) — create-only; somente leitura no detalhe (o PUT omite).
+  bank: string
+  agency: string
+  accountNumber: string
+  checkDigit: string
+  pixKeyType: PixKeyType
+  pixKey: string
 }>
 
 const fromDetail = (c: CollaboratorDetail): CollaboratorDetailFormState => ({
@@ -84,6 +96,12 @@ const fromDetail = (c: CollaboratorDetail): CollaboratorDetailFormState => ({
     c.experienceInThePublicSector === undefined ? '' : c.experienceInThePublicSector ? 'sim' : 'nao',
   uf: c.territory?.uf ?? '',
   municipality: c.territory?.municipality ?? '',
+  bank: c.bankAccount?.bank ?? '',
+  agency: c.bankAccount?.agency ?? '',
+  accountNumber: c.bankAccount?.accountNumber ?? '',
+  checkDigit: c.bankAccount?.checkDigit ?? '',
+  pixKeyType: c.pixKey?.keyType ?? 'cpf',
+  pixKey: c.pixKey?.key ?? '',
 })
 
 const blank = (s: string): string | undefined => (s.trim() === '' ? undefined : s.trim())
@@ -123,8 +141,10 @@ export function useCollaboratorDetailFormController(
       role: state.role.trim(),
       startOfContract: state.startOfContract,
       employmentRelationship: state.employmentRelationship as EmploymentRelationship,
-      // PUT omite território (#42); o backend ignora. Enviamos null (a borda de update faz strip).
+      // PUT omite território (#42) e banco/PIX (#40); a borda de update faz strip. Enviamos null.
       territory: null,
+      bankAccount: null,
+      pixKey: null,
     }),
     [state],
   )

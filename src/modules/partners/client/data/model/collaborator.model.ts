@@ -7,8 +7,21 @@
  */
 import * as z from 'zod'
 
+import {
+  type BankAccount,
+  type SupplierPixKey as PixKey,
+  type PixKeyType,
+  PIX_KEY_TYPES,
+  isPixKeyType,
+  BankAccountFormSchema,
+  PixKeyFormSchema,
+} from './supplier.model.ts'
+
 export type RegistrationStatus = 'pre-registration' | 'complete'
 export type ActivationStatus = 'active' | 'inactive'
+// Reuso (DRY) dos tipos/validações de payment-target do Fornecedor (#40).
+export type { BankAccount, PixKey, PixKeyType }
+export { PIX_KEY_TYPES, isPixKeyType }
 
 export const OCCUPATION_AREAS = ['PARC', 'DDI', 'DCE', 'EPV'] as const
 export type OccupationArea = (typeof OCCUPATION_AREAS)[number]
@@ -121,6 +134,8 @@ export type CollaboratorDetail = CollaboratorListItem &
     biography?: string
     experienceInThePublicSector?: boolean
     territory: Territory | null // #42
+    bankAccount: BankAccount | null // #40 — create-only; exibido read-only no detalhe
+    pixKey: PixKey | null // #40 — create-only; exibido read-only no detalhe
   }>
 
 export type CollaboratorListResponse = Readonly<{
@@ -146,7 +161,7 @@ export type CollaboratorListInput = Readonly<{
   limit: 5 | 10 | 25
 }>
 
-/** Pré-cadastro: os 7 campos essenciais + território (#42, opcional). */
+/** Pré-cadastro: os 7 campos essenciais + território (#42) + banco/PIX (#40), todos opcionais. */
 export type CollaboratorWriteInput = Readonly<{
   name: string
   email: string
@@ -156,6 +171,8 @@ export type CollaboratorWriteInput = Readonly<{
   startOfContract: string
   employmentRelationship: EmploymentRelationship
   territory: Territory | null
+  bankAccount: BankAccount | null // #40 — create-only (a borda de update faz strip)
+  pixKey: PixKey | null // #40 — create-only (a borda de update faz strip)
 }>
 
 /** Cadastro completo (dados pessoais; todos opcionais). `id` identifica o colaborador. */
@@ -196,7 +213,8 @@ export const TerritoryFormSchema = z.object({
   municipality: z.string().trim().max(120).nullable(),
 })
 
-/** Formulário dos 7 campos do pré-cadastro + território (#42). */
+/** Formulário dos 7 campos do pré-cadastro + território (#42) + banco/PIX (#40, reuso das schemas
+ *  do Fornecedor). */
 export const CollaboratorFormSchema = z.object({
   name: z.string().trim().min(1).max(200),
   email: z.email(),
@@ -206,5 +224,7 @@ export const CollaboratorFormSchema = z.object({
   startOfContract: z.iso.date(), // YYYY-MM-DD
   employmentRelationship: z.enum(EMPLOYMENT_RELATIONSHIPS),
   territory: TerritoryFormSchema.nullable().default(null),
+  bankAccount: BankAccountFormSchema.nullable().default(null),
+  pixKey: PixKeyFormSchema.nullable().default(null),
 })
 export type CollaboratorFormValues = z.infer<typeof CollaboratorFormSchema>

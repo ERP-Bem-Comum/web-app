@@ -31,6 +31,8 @@ const fakeDetail: CollaboratorDetail = {
   startOfContract: '2024-01-01',
   employmentRelationship: 'PJ',
   territory: null,
+  bankAccount: null,
+  pixKey: null,
 }
 
 const fakeClient: CollaboratorClient = {
@@ -65,6 +67,8 @@ describe('Collaborator use-cases', () => {
         startOfContract: '2024-01-01',
         employmentRelationship: 'PJ',
         territory: null,
+        bankAccount: null,
+        pixKey: null,
       },
       'token',
     )

@@ -13,6 +13,17 @@ export type EmploymentRelationship = 'CLT' | 'PJ'
 // Território (#42) — UF (sigla IBGE) + município (texto livre). Ambos opcionais. Type-alias puro.
 export type Territory = Readonly<{ uf: string | null; municipality: string | null }>
 
+// Payment-target (banco/PIX) — mesmo shape do Fornecedor (#40). Type-aliases puros (sem lógica
+// divergente). Create-only: entram no create + detalhe; o PUT omite (igual ao território).
+export type BankAccount = Readonly<{
+  bank: string
+  agency: string
+  accountNumber: string
+  checkDigit: string
+}>
+export type CollaboratorPixKeyType = 'cpf' | 'cnpj' | 'email' | 'phone' | 'random-key'
+export type CollaboratorPixKey = Readonly<{ keyType: CollaboratorPixKeyType; key: string }>
+
 // Valores REAIS do enum `disableBy` do core-api (códigos legados). A UI mapeia para labels via i18n.
 export type DeactivationReason =
   | 'DESLIGAMENTO_ABC'
