@@ -26,6 +26,8 @@ import {
   paymentComplementaryOf,
   filterPartners,
   partnerKindTag,
+  isPartnerPF,
+  maskDocument,
   editLocksFor,
   isEditableStatus,
   hydrateFieldsFromDetail,
@@ -41,7 +43,7 @@ const partners: readonly PartnerOption[] = [
   { id: '1', name: 'Bambu Educação', subtitle: '37.364.305/0001-92', kind: 'supplier' },
   { id: '2', name: 'Fundo Verde', subtitle: '11.222.333/0001-44', kind: 'financier' },
   { id: '3', name: 'Acordo Regional', subtitle: 'OS-014/2026', kind: 'act' },
-  { id: '4', name: 'Maria Souza', subtitle: 'maria.souza@bemcomum.org', kind: 'collaborator' },
+  { id: '4', name: 'Maria Souza', subtitle: '14396412002', kind: 'collaborator' },
 ]
 
 const base: DocumentFormFields = {
@@ -277,8 +279,8 @@ describe('filterPartners', () => {
     assert.equal(filterPartners(alnum, 'abc345').length, 1)
     assert.equal(filterPartners(alnum, 'ABC345').length, 1)
   })
-  it('casa colaborador (PF) por e-mail no subtítulo', () => {
-    const r = filterPartners(partners, 'maria.souza@')
+  it('casa colaborador (PF) por CPF no subtítulo (ignora pontuação)', () => {
+    const r = filterPartners(partners, '143.964.120-02')
     assert.equal(r.length, 1)
     assert.equal(r[0]?.kind, 'collaborator')
   })
@@ -312,6 +314,19 @@ describe('partnerKindTag', () => {
     assert.equal(partnerKindTag('supplier'), 'financial.create.partner.kind.supplier')
     assert.equal(partnerKindTag('act'), 'financial.create.partner.kind.act')
     assert.equal(partnerKindTag('collaborator'), 'financial.create.partner.kind.collaborator')
+  })
+})
+
+describe('isPartnerPF / maskDocument (favorecido PF=colaborador exibe CPF; PJ exibe CNPJ)', () => {
+  it('colaborador é PF; demais tipos são PJ', () => {
+    assert.equal(isPartnerPF('collaborator'), true)
+    assert.equal(isPartnerPF('supplier'), false)
+    assert.equal(isPartnerPF('financier'), false)
+    assert.equal(isPartnerPF('act'), false)
+  })
+  it('mascara CPF (11) e CNPJ (14) conforme o conteúdo', () => {
+    assert.equal(maskDocument('14396412002'), '143.964.120-02')
+    assert.equal(maskDocument('37364305000192'), '37.364.305/0001-92')
   })
 })
 

@@ -4,7 +4,7 @@
  * `CreateDocumentInput`. Money via `money.ts`. No v1, descontos/multa/juros = 0 (sem campos no form).
  */
 import { reaisToCents, centsToBRL } from '#modules/financial/client/data/money.ts'
-import { normalizeCnpj, isCnpjLength, maskCnpj as maskCnpjDoc } from '#shared/document/cnpj.ts'
+import { normalizeCnpj, isCnpjLength, maskCnpj as maskCnpjDoc, maskCpfCnpj } from '#shared/document/cnpj.ts'
 import type {
   CreateDocumentInput,
   AdjustDocumentInput,
@@ -42,6 +42,11 @@ export const partnerKindTag = (kind: PartnerKind): string => `financial.create.p
 export const maskCnpj = (value: string): string => (isCnpjLength(value) ? maskCnpjDoc(value) : value)
 /** Parceiro é PJ quando o subtítulo é um CNPJ (14 caracteres alfanuméricos). */
 export const isCnpj = (value: string): boolean => isCnpjLength(value)
+
+/** Documento do parceiro mascarado por conteúdo: CPF (colaborador, PF) ou CNPJ (PJ). */
+export const maskDocument = (value: string): string => maskCpfCnpj(value)
+/** PF (pessoa física) = colaborador; os demais tipos são PJ. Define badge ("PF/PJ") e rótulo do documento. */
+export const isPartnerPF = (kind: PartnerKind): boolean => kind === 'collaborator'
 
 // ── Hidratação do fornecedor: dados bancários + contrato "Em Andamento" (auto-preenchimento) ──────
 export type SupplierBankView = Readonly<{ line: string; pix: string | null }>

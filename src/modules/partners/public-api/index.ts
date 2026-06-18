@@ -62,6 +62,14 @@ export { reactivateActFn } from '#modules/partners/server/adapters/server-fns/ac
 
 export type { ActListItem, ActDetail, ActListResponse } from '#modules/partners/server/domain/act/act.io.ts'
 
+// ── Agregador dos 4 tipos (GET /api/v1/partners) — lista unificada com document (CPF/CNPJ) resolvido ──
+export { listAllPartnersFn } from '#modules/partners/server/adapters/server-fns/list-all-partners.query.fn.ts'
+export type {
+  PartnerAggregateItem,
+  PartnerAggregateKind,
+  PartnerAggregateError,
+} from '#modules/partners/server/adapters/core-api/core-api-partners-aggregate.ts'
+
 // Export CSV (passthrough do core-api) — suppliers/collaborators/financiers/acts.
 export { exportPartnersFn } from '#modules/partners/server/adapters/server-fns/export-partners.query.fn.ts'
 export { exportCollaboratorHistoryFn } from '#modules/partners/server/adapters/server-fns/collaborator/export-collaborator-history.query.fn.ts'
