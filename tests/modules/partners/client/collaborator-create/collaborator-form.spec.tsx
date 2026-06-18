@@ -80,6 +80,25 @@ describe('CollaboratorForm', () => {
     expect(submit).toHaveBeenCalledTimes(1)
   })
 
+  it('ao escolher o tipo de chave PIX, auto-preenche a chave com o dado do form (CPF/e-mail)', () => {
+    const setField = vi.fn()
+    render(
+      <CollaboratorForm
+        controller={stubController({
+          state: { ...stubController().state, cpf: '12345678901', email: 'a@b.com' },
+          setField,
+        })}
+        running={false}
+        errorTag={null}
+        onCancel={() => undefined}
+      />,
+    )
+    const pixType = screen.getByLabelText('Tipo de chave PIX')
+    fireEvent.change(pixType, { target: { value: 'email' } })
+    expect(setField).toHaveBeenCalledWith('pixKeyType', 'email')
+    expect(setField).toHaveBeenCalledWith('pixKey', 'a@b.com')
+  })
+
   it('exibe o banner de erro quando errorTag é passado', () => {
     render(
       <CollaboratorForm

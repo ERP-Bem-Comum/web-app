@@ -4,6 +4,7 @@ import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Button, Field, Input } from '#shared/ui/index.ts'
 import { MapPinIcon, UsersIcon, WalletIcon } from '#shared/ui/icons/index.ts'
+import { derivePixKey } from '#modules/partners/client/domain/derive-pix-key.ts'
 
 import {
   OCCUPATION_AREAS,
@@ -288,7 +289,14 @@ export function CollaboratorForm(props: CollaboratorFormProps): ReactNode {
                 value={c.state.pixKeyType}
                 aria-label={t('partners.collaborators.form.pixKeyType')}
                 onChange={(e) => {
-                  if (isPixKeyType(e.target.value)) c.setField('pixKeyType', e.target.value)
+                  if (isPixKeyType(e.target.value)) {
+                    c.setField('pixKeyType', e.target.value)
+                    // Auto-preenche a chave com o dado correspondente do form (editável).
+                    c.setField(
+                      'pixKey',
+                      derivePixKey(e.target.value, { document: c.state.cpf, email: c.state.email }),
+                    )
+                  }
                 }}
               >
                 {PIX_KEY_TYPES.map((k) => (

@@ -4,6 +4,7 @@ import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Button, Field, Input } from '#shared/ui/index.ts'
 import { FileTextIcon, WalletIcon } from '#shared/ui/icons/index.ts'
+import { derivePixKey } from '#modules/partners/client/domain/derive-pix-key.ts'
 
 import type { FinancierFormController } from './financier-form.controller.ts'
 import { PIX_KEY_TYPES, isPixKeyType } from './financier-form.controller.ts'
@@ -192,7 +193,14 @@ export function FinancierForm(props: FinancierFormProps): ReactNode {
               value={c.state.pixKeyType}
               aria-label={t('partners.financiers.form.pixKeyType')}
               onChange={(e) => {
-                if (isPixKeyType(e.target.value)) c.setField('pixKeyType', e.target.value)
+                if (isPixKeyType(e.target.value)) {
+                  c.setField('pixKeyType', e.target.value)
+                  // Auto-preenche a chave com o dado correspondente do form (editável).
+                  c.setField(
+                    'pixKey',
+                    derivePixKey(e.target.value, { document: c.state.cnpj, telephone: c.state.telephone }),
+                  )
+                }
               }}
             >
               {PIX_KEY_TYPES.map((k) => (
