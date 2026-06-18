@@ -12,6 +12,7 @@ import type { FinancialError } from '#modules/financial/client/data/repository/f
 import type {
   DocumentListResponse,
   DocumentStatus,
+  DocumentType,
   DocumentSummary,
   DocumentDetail,
   RetentionType,
@@ -19,7 +20,11 @@ import type {
 } from '#modules/financial/client/data/model/document.model.ts'
 
 // Re-export p/ as views (ui) tiparem sem importar de client/data (boundary §I).
-export type { DocumentStatus, RetentionType } from '#modules/financial/client/data/model/document.model.ts'
+export type {
+  DocumentStatus,
+  DocumentType,
+  RetentionType,
+} from '#modules/financial/client/data/model/document.model.ts'
 
 // Resolve o nome do fornecedor a partir do `supplierRef` (o DTO da lista só traz o id). Vem do binding
 // (mapa dos Fornecedores já carregados). Mantém a view-model pura/testável.
@@ -119,6 +124,122 @@ export const STATUS_CHIPS = [
   status: DocumentStatus | null
   filterable: boolean
 }[]
+
+// ── Filtros avançados ("Adicionar filtro", estilo do mock) ────────────────────
+// Só 3 dimensões têm filtro REAL no backend (server-side, combinam com os status chips):
+// Vencimento (dueFrom/dueTo), Tipo (type) e Fornecedor (supplierRef). As demais aparecem no menu
+// DESABILITADAS (chrome honesto) até o backend expor (ver issues). `enabled:false` = sem backend.
+export type FilterDimId =
+  | 'numDoc'
+  | 'cnpjCpf'
+  | 'vencimento'
+  | 'competencia'
+  | 'valor'
+  | 'tipo'
+  | 'fornecedor'
+  | 'contrato'
+  | 'programa'
+export type FilterTypeTag = 'TEXTO' | 'PERÍODO' | 'VALOR' | 'LISTA' | 'BUSCA'
+export type FilterDim = Readonly<{
+  id: FilterDimId
+  labelTag: string
+  groupTag: string
+  typeTag: FilterTypeTag
+  enabled: boolean // true = filtra de verdade (server-side); false = chrome até o backend
+}>
+
+export const FILTER_DIMS: readonly FilterDim[] = [
+  {
+    id: 'numDoc',
+    labelTag: 'financial.list.filter.dim.numDoc',
+    groupTag: 'financial.list.filter.group.identificacao',
+    typeTag: 'TEXTO',
+    enabled: false,
+  },
+  {
+    id: 'cnpjCpf',
+    labelTag: 'financial.list.filter.dim.cnpjCpf',
+    groupTag: 'financial.list.filter.group.identificacao',
+    typeTag: 'TEXTO',
+    enabled: false,
+  },
+  {
+    id: 'vencimento',
+    labelTag: 'financial.list.filter.dim.vencimento',
+    groupTag: 'financial.list.filter.group.datas',
+    typeTag: 'PERÍODO',
+    enabled: true,
+  },
+  {
+    id: 'competencia',
+    labelTag: 'financial.list.filter.dim.competencia',
+    groupTag: 'financial.list.filter.group.datas',
+    typeTag: 'PERÍODO',
+    enabled: false,
+  },
+  {
+    id: 'valor',
+    labelTag: 'financial.list.filter.dim.valor',
+    groupTag: 'financial.list.filter.group.valor',
+    typeTag: 'VALOR',
+    enabled: false,
+  },
+  {
+    id: 'tipo',
+    labelTag: 'financial.list.filter.dim.tipo',
+    groupTag: 'financial.list.filter.group.classificacao',
+    typeTag: 'LISTA',
+    enabled: true,
+  },
+  {
+    id: 'fornecedor',
+    labelTag: 'financial.list.filter.dim.fornecedor',
+    groupTag: 'financial.list.filter.group.classificacao',
+    typeTag: 'BUSCA',
+    enabled: true,
+  },
+  {
+    id: 'contrato',
+    labelTag: 'financial.list.filter.dim.contrato',
+    groupTag: 'financial.list.filter.group.classificacao',
+    typeTag: 'BUSCA',
+    enabled: false,
+  },
+  {
+    id: 'programa',
+    labelTag: 'financial.list.filter.dim.programa',
+    groupTag: 'financial.list.filter.group.categorizacao',
+    typeTag: 'LISTA',
+    enabled: false,
+  },
+]
+
+// Ordem dos grupos no menu (espelha o mock).
+export const FILTER_GROUPS = [
+  'financial.list.filter.group.identificacao',
+  'financial.list.filter.group.datas',
+  'financial.list.filter.group.valor',
+  'financial.list.filter.group.classificacao',
+  'financial.list.filter.group.categorizacao',
+] as const
+
+// Tipos de documento p/ o filtro "Tipo" (LISTA). Espelha DocumentType do model.
+export const DOCUMENT_TYPE_OPTIONS: readonly DocumentType[] = [
+  'NFS-e',
+  'DANFE',
+  'RPA',
+  'Fatura',
+  'Boleto',
+  'Recibo',
+  'Imposto',
+]
+
+// Valores dos filtros avançados ativos (só os com backend). Vazio = sem filtro.
+export type AdvancedFilters = Readonly<{
+  vencimento?: Readonly<{ from?: string; to?: string }> // YYYY-MM-DD → dueFrom/dueTo
+  tipo?: DocumentType
+  fornecedor?: string // supplierRef (uuid)
+}>
 
 const DASH = '—'
 

@@ -22,6 +22,7 @@ import {
   bulkStatusTargets,
 } from '../contas-a-pagar.view-model.ts'
 import { DocumentGrid } from '../components/document-grid.component.tsx'
+import { AddFilterButton, ActiveFiltersRow } from '../components/document-filters.component.tsx'
 import { DocumentDetailDrawer } from '../components/document-detail-drawer.component.tsx'
 import { ExportDropdown } from '../components/export-dropdown.component.tsx'
 import { StatusActions } from '../components/status-actions.component.tsx'
@@ -36,6 +37,7 @@ import {
   chipActive,
   chipDisabled,
   chipCountOnActive,
+  fbarRight,
   gridWrap,
   errorBanner,
   bottombar,
@@ -61,9 +63,29 @@ const PAGE_SIZE_OPTIONS = [5, 10, 12, 25, 50] as const
 
 export function ContasAPagarPage(): ReactNode {
   const navigate = useNavigate()
-  const { state, pageSize, selectedStatus, onStatusFilter, onPrev, onNext, onPageSize } = useContasAPagar()
+  const {
+    state,
+    pageSize,
+    selectedStatus,
+    onStatusFilter,
+    activeDims,
+    filters,
+    supplierOptions,
+    onAddFilter,
+    onRemoveFilter,
+    onSetVencimento,
+    onSetTipo,
+    onSetFornecedor,
+    onClearFilters,
+    onPrev,
+    onNext,
+    onPageSize,
+  } = useContasAPagar()
   const page = state.tag === 'ready' ? state.page : null
   const rows = state.tag === 'ready' ? state.rows : []
+
+  // UI-state local (toggles), no padrão dos demais (selectedId/selected): menu "Adicionar filtro".
+  const [filterMenuOpen, setFilterMenuOpen] = useState(false)
 
   // Linha clicável: Rascunho → tela de Lançar (finalizar inclusão); demais status → drawer de detalhe.
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -139,7 +161,32 @@ export function ContasAPagarPage(): ReactNode {
             )
           })}
         </div>
+
+        <div className={fbarRight}>
+          <AddFilterButton
+            menuOpen={filterMenuOpen}
+            onToggleMenu={() => {
+              setFilterMenuOpen((v) => !v)
+            }}
+            onCloseMenu={() => {
+              setFilterMenuOpen(false)
+            }}
+            activeDims={activeDims}
+            onAddFilter={onAddFilter}
+          />
+        </div>
       </div>
+
+      <ActiveFiltersRow
+        activeDims={activeDims}
+        filters={filters}
+        supplierOptions={supplierOptions}
+        onRemoveFilter={onRemoveFilter}
+        onSetVencimento={onSetVencimento}
+        onSetTipo={onSetTipo}
+        onSetFornecedor={onSetFornecedor}
+        onClearFilters={onClearFilters}
+      />
 
       {dueEdit.errorTag !== null ? (
         <div className={errorBanner} role="alert">

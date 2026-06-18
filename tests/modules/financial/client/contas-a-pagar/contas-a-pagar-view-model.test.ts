@@ -16,6 +16,7 @@ import {
   maskCnpj,
   bulkStatusTargets,
   STATUS_CHIPS,
+  FILTER_DIMS,
 } from '../../../../../src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts'
 import { ok, err } from '../../../../../src/shared/primitives/result.ts'
 import type {
@@ -213,6 +214,17 @@ describe('STATUS_CHIPS (filtro por status)', () => {
     // Estados que o backend ainda não produz → desabilitados.
     for (const k of ['transmitido', 'recusado', 'pago', 'conciliado'])
       assert.equal(byKey[k]?.filterable, false)
+  })
+})
+
+describe('FILTER_DIMS (filtros avançados)', () => {
+  it('só Vencimento/Tipo/Fornecedor têm backend (enabled); o resto é chrome', () => {
+    const byId = Object.fromEntries(FILTER_DIMS.map((d) => [d.id, d]))
+    assert.equal(byId.vencimento?.enabled, true)
+    assert.equal(byId.tipo?.enabled, true)
+    assert.equal(byId.fornecedor?.enabled, true)
+    for (const id of ['numDoc', 'cnpjCpf', 'competencia', 'valor', 'contrato', 'programa'])
+      assert.equal(byId[id]?.enabled, false)
   })
 })
 

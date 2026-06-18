@@ -145,6 +145,176 @@ export const chipCountOnActive = style([
   { color: vars.color.institutional.ink2, background: vars.color.institutional.paperBeige },
 ])
 
+// ── Filtros avançados ("Adicionar filtro", estilo do mock) ────────────────────
+// Empurra o bloco de filtros para a direita da filter-bar (igual ao fbar-right do mock).
+export const fbarRight = style({ marginInlineStart: 'auto', display: 'inline-flex', gap: vars.space.sm })
+export const fltWrap = style({ position: 'relative', display: 'inline-flex' })
+export const addFilterBtn = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: vars.space.xs,
+  blockSize: '2rem',
+  paddingInline: '0.625rem',
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.md,
+  background: vars.color.surface.default,
+  fontFamily: vars.font.family.body,
+  fontSize: '0.6875rem',
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.ink2,
+  cursor: 'pointer',
+  whiteSpace: 'nowrap',
+  ':hover': {
+    background: vars.color.institutional.paperWarm,
+    borderColor: vars.color.institutional.blueLine,
+  },
+})
+// Prefixo "FILTRO" (caixa-alta, esmaecido), igual ao mock.
+export const addFilterLabel = style({
+  fontSize: '0.59375rem',
+  fontWeight: vars.font.weight.bold,
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+  color: vars.color.institutional.ink5,
+})
+export const addFilterMenu = style({
+  position: 'absolute',
+  insetBlockStart: 'calc(100% + 0.375rem)',
+  insetInlineEnd: 0,
+  zIndex: 50,
+  minInlineSize: '17rem',
+  maxBlockSize: '22rem',
+  overflowY: 'auto',
+  paddingBlock: vars.space.xs,
+  background: vars.color.surface.default,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.lg,
+  boxShadow: vars.shadow.card,
+})
+export const menuGroupLabel = style({
+  paddingInline: vars.space.md,
+  paddingBlock: vars.space.xs,
+  fontSize: '0.5625rem',
+  fontWeight: vars.font.weight.bold,
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+  color: vars.color.institutional.ink5,
+})
+const menuItemBase = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  inlineSize: '100%',
+  paddingInline: vars.space.md,
+  paddingBlock: '0.4375rem',
+  border: 'none',
+  background: 'transparent',
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  textAlign: 'start',
+} as const
+export const menuItem = style([
+  menuItemBase,
+  {
+    color: vars.color.institutional.ink2,
+    cursor: 'pointer',
+    ':hover': { background: vars.color.institutional.blueBg },
+  },
+])
+export const menuItemDisabled = style([
+  menuItemBase,
+  { color: vars.color.institutional.ink5, cursor: 'not-allowed', opacity: 0.6 },
+])
+export const menuItemLabel = style({ flex: 1, minInlineSize: 0 })
+export const menuTypeTag = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: '0.5rem',
+  fontWeight: vars.font.weight.medium,
+  letterSpacing: '0.04em',
+  color: vars.color.institutional.ink5,
+  background: vars.color.institutional.paperWarm,
+  paddingInline: '0.3125rem',
+  paddingBlock: '0.125rem',
+  borderRadius: vars.radius.sm,
+})
+// Linha de chips de filtro ativos (abaixo da filter-bar).
+export const activeFilters = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  paddingInline: vars.space.lg,
+  paddingBlockEnd: vars.space.sm,
+  background: vars.color.surface.default,
+})
+export const activeFiltersLabel = style({
+  fontSize: '0.59375rem',
+  fontWeight: vars.font.weight.bold,
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+  color: vars.color.institutional.ink5,
+})
+export const filterChip = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: vars.space.xs,
+  blockSize: '2rem',
+  paddingInlineStart: '0.625rem',
+  paddingInlineEnd: '0.25rem',
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.blueLine}`,
+  borderRadius: vars.radius.md,
+  background: vars.color.institutional.blueBg,
+})
+export const filterChipLabel = style({
+  fontFamily: vars.font.family.body,
+  fontSize: '0.6875rem',
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.blueDeep,
+})
+export const filterChipRange = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: vars.space.xs,
+  color: vars.color.institutional.ink4,
+})
+const chipControlBase = {
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.sm,
+  background: vars.color.surface.default,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink2,
+  paddingBlock: '0.125rem',
+  paddingInline: '0.375rem',
+} as const
+export const filterChipInput = style([chipControlBase, { fontFamily: vars.font.family.mono }])
+export const filterChipSelect = style([chipControlBase, { maxInlineSize: '11rem', cursor: 'pointer' }])
+export const filterChipRemove = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  inlineSize: '1.25rem',
+  blockSize: '1.25rem',
+  border: 'none',
+  borderRadius: vars.radius.sm,
+  background: 'transparent',
+  color: vars.color.institutional.blueDeep,
+  fontSize: vars.font.size.sm,
+  lineHeight: 1,
+  cursor: 'pointer',
+  ':hover': { background: vars.color.institutional.blueLine },
+})
+export const clearAllFilters = style({
+  border: 'none',
+  background: 'transparent',
+  fontFamily: vars.font.family.body,
+  fontSize: '0.6875rem',
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.ink4,
+  cursor: 'pointer',
+  ':hover': { color: vars.color.institutional.ink2, textDecoration: 'underline' },
+})
+
 // ── Grid (Figma 205-638) — enriquecido pela 012/#47: + Contrato, Forma, Emissão, Bruto ─────────────
 // Larguras balanceadas (espaço proporcional entre as colunas); Fornecedor é a flexível (minmax).
 // Ordem: checkbox · Tipo · Documento · Fornecedor · Contrato · Forma · Emissão · Venc · Bruto · Líquido ·
