@@ -1155,6 +1155,11 @@ export const ptBR: Catalog = {
     'Arraste o PDF da nota aqui ou selecione um arquivo. O OCR vai ler os dados e preencher o formulário.',
   'financial.create.preview.select': 'Selecionar arquivo',
   'financial.create.preview.formats': 'PDF, PNG ou JPG · até 10 MB',
+  'financial.create.preview.reading': 'Lendo o documento…',
+  'financial.create.preview.unavailable':
+    'A leitura automática (OCR) ainda não está disponível — em breve. Preencha o formulário manualmente.',
+  'financial.create.preview.error':
+    'Não foi possível ler o documento. Tente novamente ou preencha manualmente.',
   'financial.create.success.title': 'Documento lançado',
   'financial.create.success.subtitle': 'Títulos gerados',
   'financial.create.success.novo': 'Lançar outro',

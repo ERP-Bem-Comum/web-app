@@ -11,6 +11,7 @@ import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 
 import { useDocumentFormController } from '../document-form.controller.ts'
+import { useOcrExtraction } from '../ocr.binding.ts'
 import { useSupplierPickerController } from '../supplier-picker.controller.ts'
 import { useLancarDocumentoBinding } from '../create-document.binding.ts'
 import { useDocumentEditing } from '../edit-document.binding.ts'
@@ -52,6 +53,8 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
   const navigate = useNavigate()
   const edit = useDocumentEditing(documentId)
   const controller = useDocumentFormController(edit.initialFields)
+  // OCR (costura p/ core-api#62): no sucesso, aplica o patch extraído no form. Hoje devolve "indisponível".
+  const ocr = useOcrExtraction(controller.applyPatch)
   const picker = useSupplierPickerController()
   const command = useLancarDocumentoBinding()
   const partners = usePartnersOptions()
@@ -147,7 +150,7 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
       ) : null}
 
       <div className={body}>
-        <DocumentPreview />
+        <DocumentPreview status={ocr.status} fileName={ocr.fileName} onSelectFile={ocr.extract} />
 
         <div className={`${formCol} ${scrollArea}`}>
           {/* Hero do fornecedor com picker buscável (todos os parceiros) — via MANUAL do fornecedor. */}
