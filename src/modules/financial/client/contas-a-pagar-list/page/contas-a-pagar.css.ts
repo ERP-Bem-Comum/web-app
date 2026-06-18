@@ -194,6 +194,7 @@ export const addFilterMenu = style({
 export const menuGroupLabel = style({
   paddingInline: vars.space.md,
   paddingBlock: vars.space.xs,
+  fontFamily: vars.font.family.body, // Nunito (marca) — grupos "Datas"/"Classificação"
   fontSize: '0.5625rem',
   fontWeight: vars.font.weight.bold,
   letterSpacing: '0.08em',

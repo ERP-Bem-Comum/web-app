@@ -161,6 +161,12 @@ export const FILTER_DIMS: readonly FilterDim[] = [
     typeTag: 'BUSCA',
     enabled: true,
   },
+  // TODO(core-api#163): quando a EMISSÃO (issueDate) for modelada no backend + ganhar filtro na lista
+  // (issuedFrom/issuedTo), adicionar aqui a dimensão de Emissão (grupo "Datas", tipo PERÍODO):
+  //   { id: 'emissao', labelTag: 'financial.list.filter.dim.emissao', groupTag: '…group.datas',
+  //     typeTag: 'PERÍODO', enabled: true }
+  // + 'emissao' no FilterDimId, em AdvancedFilters ({ emissao?: {from?,to?} }), no binding (issuedFrom/
+  //   issuedTo no query) e um chip no ActiveFiltersRow. O resto do framework já suporta.
 ]
 
 // Ordem dos grupos no menu (espelha o mock; só os grupos com dimensão ativa).
