@@ -1,10 +1,8 @@
 /**
- * Bottombar fixa do Lançar Documento — view BURRA (§XI). Figma 626:25: status (auto-salvo + pill Rascunho)
- * · quick-action (+ Adicionar fornecedor) · ações (Descartar / Salvar rascunho / Salvar Documento).
- *
- * Funcional: Descartar (reset) e Salvar Documento (submit, botão primário azul da marca — teal no Figma).
- * Chrome (sem backend de rascunho/auto-save no v1): status "Auto-salvo", pill Rascunho, "+ Adicionar
- * fornecedor" e "Salvar rascunho" são desabilitados. As dicas de teclado (⌘S/⌘↵) são decorativas.
+ * Bottombar fixa do Lançar Documento — view BURRA (§XI). Ações: Descartar / Salvar rascunho / Salvar
+ * Documento (primário, teal da marca). No modo CRIAÇÃO não há indicador de status no rodapé — o falso
+ * "Auto-salvo · Rascunho" foi removido (não há auto-save de fato; enganava o operador). Em edição/consulta
+ * o rodapé mostra o status real ("Editando…" / "Somente consulta"). As dicas de teclado (⌘S/⌘↵) são decorativas.
  */
 import type { ReactNode } from 'react'
 
@@ -16,8 +14,6 @@ import {
   statusGroup,
   statusDot,
   statusText,
-  draftPill,
-  addSupplierButton,
   bottombarSpacer,
   actionsGroup,
   discardButton,
@@ -45,24 +41,17 @@ export function DocumentBottombar(props: DocumentBottombarProps): ReactNode {
 
   return (
     <div className={pageBottombar}>
-      <div className={statusGroup}>
-        <span className={statusDot} aria-hidden="true" />
-        <span className={statusText}>
-          {mode === 'create'
-            ? t('financial.create.bottombar.autosaved')
-            : mode === 'edit'
+      {/* Modo criação: sem indicador de status (não há auto-save). Edição/consulta mostram o status real. */}
+      {mode === 'create' ? null : (
+        <div className={statusGroup}>
+          <span className={statusDot} aria-hidden="true" />
+          <span className={statusText}>
+            {mode === 'edit'
               ? t('financial.create.bottombar.editing')
               : t('financial.create.bottombar.viewOnly')}
-        </span>
-        {mode === 'create' ? (
-          <span className={draftPill}>{t('financial.create.bottombar.draft')}</span>
-        ) : null}
-      </div>
-      {mode === 'create' ? (
-        <button type="button" className={addSupplierButton} disabled>
-          {t('financial.create.bottombar.addSupplier')}
-        </button>
-      ) : null}
+          </span>
+        </div>
+      )}
 
       <div className={bottombarSpacer} />
 
