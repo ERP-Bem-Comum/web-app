@@ -591,8 +591,9 @@ export const dropzone = style({
   textAlign: 'center',
   padding: vars.space.xl,
   borderRadius: vars.radius.lg,
-  border: `${vars.borderWidth.thin} dashed ${vars.color.institutional.paperRule}`,
-  background: vars.color.institutional.paperWarm,
+  // Caixa do OCR em azul claro da marca (antes bege/paperWarm) — borda tracejada no tom azul.
+  border: `${vars.borderWidth.thin} dashed ${vars.color.institutional.blueLine}`,
+  background: vars.color.institutional.blueBg,
 })
 export const dropzoneIcon = style({
   display: 'inline-flex',
@@ -1044,8 +1045,8 @@ export const typeContent = style({
   position: 'relative',
   display: 'flex',
   flexDirection: 'column',
-  inlineSize: 'min(30rem, calc(100vw - 2.5rem))', // 480px (fiel ao mock)
-  maxBlockSize: '92vh',
+  inlineSize: 'min(36rem, calc(100vw - 2.5rem))', // 576px — cards com mais respiro (menos quebra de texto)
+  maxBlockSize: '88vh',
   overflow: 'hidden',
   background: vars.color.surface.default,
   borderRadius: vars.radius.xl,

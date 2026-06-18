@@ -3,7 +3,7 @@
  * gating de retenção (NFS-e/RPA), **agregação CSRF** (PIS+COFINS+CSLL → 1 filho) e build do
  * `CreateDocumentInput`. Money via `money.ts`. No v1, descontos/multa/juros = 0 (sem campos no form).
  */
-import { reaisToCents, centsToBRL } from '#modules/financial/client/data/money.ts'
+import { reaisToCents, centsToBRL, maskMoneyBRL } from '#modules/financial/client/data/money.ts'
 import { normalizeCnpj, isCnpjLength, maskCnpj as maskCnpjDoc, maskCpfCnpj } from '#shared/document/cnpj.ts'
 import type {
   CreateDocumentInput,
@@ -587,6 +587,9 @@ export const isDocumentType = (v: string): v is DocumentType =>
   (DOCUMENT_TYPES as readonly string[]).includes(v)
 export const isPaymentMethod = (v: string): v is PaymentMethod =>
   (PAYMENT_METHODS as readonly string[]).includes(v)
+
+/** Máscara monetária as-you-type p/ os campos de valor (bruto/retenções/reforma) — "R$ 1.500,50". */
+export const maskMoney = (raw: string): string => maskMoneyBRL(raw)
 
 /** Centavos → "R$ x,xx". */
 export const formatCents = (cents: string): string => centsToBRL(cents)

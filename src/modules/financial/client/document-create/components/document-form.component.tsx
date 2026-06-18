@@ -20,6 +20,7 @@ import {
   retentionsEnabledFor,
   reformaTributariaEnabledFor,
   allowedRetentionKeysFor,
+  maskMoney,
   REFORMA_TRIBUTARIA_KEYS,
   paymentComplementaryOf,
   paymentMethodNameTag,
@@ -255,7 +256,7 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
               placeholder="R$ 0,00"
               value={fields.grossValue}
               onChange={(e) => {
-                props.onText('grossValue', e.target.value)
+                props.onText('grossValue', maskMoney(e.target.value))
               }}
             />
           </div>
@@ -318,7 +319,7 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
                   placeholder="R$ 0,00"
                   value={fields.retentions[key]}
                   onChange={(e) => {
-                    props.onRetention(key, e.target.value)
+                    props.onRetention(key, maskMoney(e.target.value))
                   }}
                 />
               </div>
@@ -346,7 +347,7 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
                       placeholder="R$ 0,00"
                       value={fields.reformaTributaria[key]}
                       onChange={(e) => {
-                        props.onReformaTributaria(key, e.target.value)
+                        props.onReformaTributaria(key, maskMoney(e.target.value))
                       }}
                     />
                   </div>

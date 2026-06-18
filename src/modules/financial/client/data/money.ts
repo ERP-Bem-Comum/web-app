@@ -28,6 +28,28 @@ export const reaisToCents = (raw: string): Result<string, 'invalid-money'> => {
   return ok(String(Math.round(Number.parseFloat(cleaned) * 100)))
 }
 
+/**
+ * Máscara monetária "as-you-type" por ENTRADA DECIMAL: agrupa o milhar e prefixa `R$`, mantendo o
+ * significado em reais (`"540"` → `"R$ 540"`, `"1234,56"` → `"R$ 1.234,56"`). Aceita vírgula decimal
+ * (máx. 2 casas), descarta o resto. Vazio → `""` (deixa o placeholder). Idempotente sobre a saída de
+ * `centsToBRL` (a hidratação do form não "embaralha" o valor) e aceito de volta por `reaisToCents`.
+ */
+export const maskMoneyBRL = (raw: string): string => {
+  const cleaned = raw.replace(/[^\d,]/g, '')
+  if (cleaned === '') return ''
+  const comma = cleaned.indexOf(',')
+  const intRaw = (comma === -1 ? cleaned : cleaned.slice(0, comma)).replace(/^0+(?=\d)/, '')
+  const dec =
+    comma === -1
+      ? ''
+      : cleaned
+          .slice(comma + 1)
+          .replace(/\D/g, '')
+          .slice(0, 2)
+  const intGrouped = (intRaw === '' ? '0' : intRaw).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  return `R$ ${intGrouped}${comma === -1 ? '' : `,${dec}`}`
+}
+
 /** Soma de strings de centavos (defaults a 0 quando indefinido/vazio). Retorna string de centavos. */
 export const sumCents = (...values: readonly (string | undefined)[]): string => {
   const total = values.reduce<number>((acc, v) => {

@@ -1066,7 +1066,7 @@ export const ptBR: Catalog = {
   // Modal "Tipo de Documento" (cards com classe fiscal + descrição).
   'financial.create.docType.modalTitle': 'Tipo de Documento',
   'financial.create.docType.modalSubtitle':
-    'Tipos fiscais habilitam campos fiscais. No regime atual, apenas NFS-e e RPA disparam o motor de retenções; os demais são tratados como lançamentos manuais.',
+    'Tipos fiscais habilitam campos fiscais. No regime atual, apenas NFS-e e RPA disparam o motor de retenções.',
   'financial.create.docType.close': 'Fechar',
   'financial.create.docType.class.fiscal': 'Fiscal',
   'financial.create.docType.class.partial': 'Parcial',
