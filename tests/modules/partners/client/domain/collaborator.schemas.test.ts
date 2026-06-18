@@ -40,3 +40,29 @@ describe('CollaboratorFormSchema — território (#42)', () => {
     assert.equal(soMun.territory?.municipality, 'Fortaleza')
   })
 })
+
+describe('CollaboratorFormSchema — banco/PIX (#40)', () => {
+  it('banco/PIX ausentes → null (default)', () => {
+    const r = CollaboratorFormSchema.parse(validForm)
+    assert.equal(r.bankAccount, null)
+    assert.equal(r.pixKey, null)
+  })
+
+  it('aceita banco + PIX válidos', () => {
+    const r = CollaboratorFormSchema.parse({
+      ...validForm,
+      bankAccount: { bank: '001', agency: '1234', accountNumber: '56789', checkDigit: '0' },
+      pixKey: { keyType: 'cnpj', key: '12345678000190' },
+    })
+    assert.equal(r.bankAccount?.bank, '001')
+    assert.equal(r.pixKey?.keyType, 'cnpj')
+  })
+
+  it('rejeita banco parcial (campo obrigatório vazio dentro de bankAccount)', () => {
+    const r = CollaboratorFormSchema.safeParse({
+      ...validForm,
+      bankAccount: { bank: '', agency: '1234', accountNumber: '56789', checkDigit: '0' },
+    })
+    assert.equal(r.success, false)
+  })
+})

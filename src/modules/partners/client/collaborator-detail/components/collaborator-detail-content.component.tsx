@@ -18,6 +18,7 @@ import {
   RACES,
   EDUCATION_LEVELS,
   FOOD_CATEGORIES,
+  PIX_KEY_TYPES,
   type CollaboratorDetailFormController,
   type CollaboratorDetailFormState,
 } from './collaborator-detail-form.controller.ts'
@@ -33,7 +34,6 @@ import {
 
 const t = createTranslator(ptBR)
 
-const PIX_KEY_TYPES = ['cpf', 'cnpj', 'email', 'phone', 'random-key'] as const
 // Campos pedidos pelo cliente ainda SEM suporte no backend (ticket PAR-COLLABORATOR-PROFILE-FIELDS):
 // renderizados VISÍVEIS porém DESABILITADOS ("gated"), como a seção bancária. Ao liberar o backend,
 // habilitar + ligar no controller/mapeador. NÃO são enviados (buildComplete não os inclui).
@@ -213,28 +213,62 @@ export function CollaboratorDetailContent({
         </div>
       </section>
 
-      {/* Dados Bancários — GATED (espelha o form): core-api ainda não captura conta bancária de
-          colaborador (ticket PAR-FINANCIER-COLLAB-BANK). */}
+      {/* Dados Bancários + PIX (#40) — create-only: definidos no cadastro; o PUT não os altera.
+          Exibidos SOMENTE LEITURA (vazios quando o colaborador não tem payment-target). */}
       <section className={section}>
         <h2 className={sectionTitle}>
           <WalletIcon size={18} />
           {t('partners.collaborators.form.section.bank')}
         </h2>
-        <p className={gatedNote}>{t('partners.collaborators.form.bankGatedHint')}</p>
         <div className={grid}>
-          {gatedTxt('bank', t('partners.collaborators.form.bank'))}
-          {gatedTxt('agency', t('partners.collaborators.form.agency'))}
-          {gatedTxt('account', t('partners.collaborators.form.accountNumber'))}
-          {gatedTxt('dv', t('partners.collaborators.form.checkDigit'))}
+          <Field htmlFor="cd-bank" label={t('partners.collaborators.form.bank')}>
+            <Input
+              id="cd-bank"
+              value={c.state.bank}
+              disabled
+              onChange={() => {
+                /* read-only (#40) */
+              }}
+            />
+          </Field>
+          <Field htmlFor="cd-agency" label={t('partners.collaborators.form.agency')}>
+            <Input
+              id="cd-agency"
+              value={c.state.agency}
+              disabled
+              onChange={() => {
+                /* read-only (#40) */
+              }}
+            />
+          </Field>
+          <Field htmlFor="cd-account" label={t('partners.collaborators.form.accountNumber')}>
+            <Input
+              id="cd-account"
+              value={c.state.accountNumber}
+              disabled
+              onChange={() => {
+                /* read-only (#40) */
+              }}
+            />
+          </Field>
+          <Field htmlFor="cd-dv" label={t('partners.collaborators.form.checkDigit')}>
+            <Input
+              id="cd-dv"
+              value={c.state.checkDigit}
+              disabled
+              onChange={() => {
+                /* read-only (#40) */
+              }}
+            />
+          </Field>
           <Field htmlFor="cd-pix-type" label={t('partners.collaborators.form.pixKeyType')}>
             <select
               id="cd-pix-type"
               className={select}
+              value={c.state.pixKeyType}
               disabled
-              defaultValue=""
               aria-label={t('partners.collaborators.form.pixKeyType')}
             >
-              <option value="">{t('partners.collaborators.form.select')}</option>
               {PIX_KEY_TYPES.map((k) => (
                 <option key={k} value={k}>
                   {t(`partners.collaborators.pix.${k}`)}
@@ -242,7 +276,16 @@ export function CollaboratorDetailContent({
               ))}
             </select>
           </Field>
-          {gatedTxt('pix-key', t('partners.collaborators.form.pixKey'))}
+          <Field htmlFor="cd-pix-key" label={t('partners.collaborators.form.pixKey')}>
+            <Input
+              id="cd-pix-key"
+              value={c.state.pixKey}
+              disabled
+              onChange={() => {
+                /* read-only (#40) */
+              }}
+            />
+          </Field>
         </div>
       </section>
 

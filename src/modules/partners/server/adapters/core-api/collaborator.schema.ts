@@ -35,6 +35,18 @@ export const CoreApiCollaboratorListSchema = z.object({
   meta: CoreApiPaginationMetaSchema,
 })
 
+// Payment-target (banco/PIX) no detalhe do Colaborador (#40) — mesmo shape do Fornecedor.
+const BankAccountDtoSchema = z.object({
+  bank: z.string().trim(),
+  agency: z.string().trim(),
+  accountNumber: z.string().trim(),
+  checkDigit: z.string().trim(),
+})
+const PixKeyDtoSchema = z.object({
+  keyType: z.enum(['cpf', 'cnpj', 'email', 'phone', 'random-key']),
+  key: z.string().trim(),
+})
+
 // Detalhe: pré-cadastro (7) + dados do cadastro completo (2ª etapa). Campos completos são `nullish`
 // (a base legada/pré-cadastro pode trazê-los null/ausentes). Extras não listados são descartados (strip).
 export const CoreApiCollaboratorDetailSchema = CoreApiCollaboratorItemSchema.extend({
@@ -60,6 +72,9 @@ export const CoreApiCollaboratorDetailSchema = CoreApiCollaboratorItemSchema.ext
     .object({ uf: z.string().trim().nullable(), municipality: z.string().trim().nullable() })
     .nullable()
     .catch(null),
+  // Banco/PIX (#40) — create-only; lidos no detalhe. `.catch(null)` tolera ausência/legado.
+  bankAccount: BankAccountDtoSchema.nullable().catch(null),
+  pixKey: PixKeyDtoSchema.nullable().catch(null),
 })
 export type CoreApiCollaboratorDetail = z.infer<typeof CoreApiCollaboratorDetailSchema>
 

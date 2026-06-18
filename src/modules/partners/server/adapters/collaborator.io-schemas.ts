@@ -37,6 +37,18 @@ const TerritoryInputSchema = z.object({
   municipality: z.string().trim().max(120).nullable(),
 })
 
+// Payment-target (banco/PIX) — opcionais (#40), mesmo shape do Fornecedor.
+const BankAccountInputSchema = z.object({
+  bank: z.string().trim().min(1).max(20),
+  agency: z.string().trim().min(1).max(20),
+  accountNumber: z.string().trim().min(1).max(30),
+  checkDigit: z.string().trim().max(5),
+})
+const PixKeyInputSchema = z.object({
+  keyType: z.enum(['cpf', 'cnpj', 'email', 'phone', 'random-key']),
+  key: z.string().trim().min(1).max(140),
+})
+
 export const CreateCollaboratorInputSchema = z.object({
   name: z.string().trim().min(1).max(200),
   email: z.email(),
@@ -46,6 +58,8 @@ export const CreateCollaboratorInputSchema = z.object({
   startOfContract: z.iso.date(), // YYYY-MM-DD (validado na borda)
   employmentRelationship: EmploymentRelationshipSchema,
   territory: TerritoryInputSchema.nullable(),
+  bankAccount: BankAccountInputSchema.nullable(),
+  pixKey: PixKeyInputSchema.nullable(),
 })
 
 // Cadastro completo (Seção 2). Nomes alinhados ao core-api. PATCH /collaborators/:id/complete-registration.
@@ -67,8 +81,12 @@ export const CompleteCollaboratorRegistrationInputSchema = z.object({
   experienceInThePublicSector: z.boolean().optional(),
 })
 
-// Edição dos dados cadastrais. PUT /collaborators/:id — OMITE território (#42, contrato do backend).
-export const UpdateCollaboratorInputSchema = CreateCollaboratorInputSchema.omit({ territory: true }).extend({
+// Edição dos dados cadastrais. PUT /collaborators/:id — OMITE território (#42) e banco/PIX (#40).
+export const UpdateCollaboratorInputSchema = CreateCollaboratorInputSchema.omit({
+  territory: true,
+  bankAccount: true,
+  pixKey: true,
+}).extend({
   id: z.string().trim().min(1).max(64),
 })
 
