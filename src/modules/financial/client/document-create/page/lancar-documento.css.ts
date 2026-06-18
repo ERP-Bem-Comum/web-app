@@ -438,8 +438,11 @@ export const compRow = style({
   fontSize: vars.font.size.xs,
   color: vars.color.institutional.ink4,
 })
-// Linha "Valor Bruto" (base): rótulo escuro (peso normal); só o VALOR é negrito (mock).
-export const compRowStrong = style([compRow, { color: vars.color.institutional.ink2 }])
+// Linha "Valor Bruto": rótulo E valor em negrito (destaque do bruto na composição).
+export const compRowStrong = style([
+  compRow,
+  { color: vars.color.institutional.ink2, fontWeight: vars.font.weight.bold },
+])
 export const compVal = style({
   fontFamily: vars.font.family.mono,
   fontSize: vars.font.size.xs,
@@ -624,7 +627,7 @@ export const panel = style({ display: 'flex', flexDirection: 'column', gap: '0.6
 export const panelTitle = style({
   margin: 0,
   fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size['2xs'],
+  fontSize: `calc(${vars.font.size['2xs']} + 0.0625rem)`, // +1px nos títulos das seções da sidebar
   fontWeight: vars.font.weight.bold,
   color: vars.color.institutional.ink5,
   textTransform: 'uppercase',
@@ -737,7 +740,11 @@ export const paiBadge = style([
   { paddingBlock: '0.1875rem', paddingInline: vars.space.sm, flexShrink: 0 },
 ])
 
-export const titulosEmpty = style({ fontSize: vars.font.size.xs, color: vars.color.text.muted })
+export const titulosEmpty = style({
+  fontFamily: vars.font.family.body, // Nunito (brand) — placeholder "Preencha o valor…"
+  fontSize: vars.font.size.xs,
+  color: vars.color.text.muted,
+})
 
 // ── Validação: checklist (Ok / Aviso / Pendente) — Figma 670:420 ─────────────────
 export const validations = style({ display: 'flex', flexDirection: 'column', gap: vars.space.xs })
@@ -1101,7 +1108,7 @@ export const typeContent = style({
   position: 'relative',
   display: 'flex',
   flexDirection: 'column',
-  inlineSize: 'min(36rem, calc(100vw - 2.5rem))', // 576px — cards com mais respiro (menos quebra de texto)
+  inlineSize: 'min(34rem, calc(100vw - 2.5rem))', // 544px — modal mais compacto (cards menores), fiel ao mock
   maxBlockSize: '88vh',
   overflow: 'hidden',
   background: vars.color.surface.default,
@@ -1158,15 +1165,15 @@ export const typeSubtitle = style({
 export const typeGrid = style({
   display: 'grid',
   gridTemplateColumns: 'repeat(2, 1fr)',
-  gap: vars.space.md,
+  gap: vars.space.sm, // cards mais próximos (mock) — reduz a altura do modal
   '@media': { 'screen and (max-width: 36rem)': { gridTemplateColumns: '1fr' } },
 })
 export const typeCard = style({
   display: 'grid',
   gridTemplateColumns: 'auto 1fr',
-  gap: vars.space.md,
+  gap: vars.space.sm, // avatar↔texto mais junto (cards compactos do mock)
   alignItems: 'start',
-  padding: vars.space.md,
+  padding: vars.space.sm, // card menor (antes md)
   textAlign: 'start',
   borderRadius: vars.radius.lg,
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,

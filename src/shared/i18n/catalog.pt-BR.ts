@@ -1071,17 +1071,15 @@ export const ptBR: Catalog = {
   'financial.create.docType.class.fiscal': 'Fiscal',
   'financial.create.docType.class.partial': 'Parcial',
   'financial.create.docType.class.non-fiscal': 'Não-fiscal',
-  'financial.create.docType.desc.NFS-e':
-    'Nota Fiscal de Serviço Eletrônica — serviços contratados de PJ; gera retenções tributárias.',
-  'financial.create.docType.desc.DANFE':
-    'Documento Auxiliar da NF-e — produtos/mercadorias; ICMS informativo, IPI e federais.',
+  'financial.create.docType.desc.NFS-e': 'Nota Fiscal de Serviço Eletrônica: serviços contratados de PJ.',
+  'financial.create.docType.desc.DANFE': 'Documento Auxiliar da NF-e — produtos/mercadorias.',
   'financial.create.docType.desc.RPA':
     'Recibo de Pagamento Autônomo — pessoa física autônoma; INSS, IRRF (tabela progressiva), ISS.',
-  'financial.create.docType.desc.Fatura': 'Fatura comercial — cobrança comercial; retenções condicionais.',
-  'financial.create.docType.desc.Boleto': 'Boleto bancário — pagamento com código de barras; sem retenções.',
+  'financial.create.docType.desc.Fatura': 'Fatura comercial, retenções condicionais.',
+  'financial.create.docType.desc.Boleto': 'Boleto bancário — pagamento com código de barras.',
   'financial.create.docType.desc.Recibo': 'Recibo simples — lançamento manual sem aderência fiscal.',
   'financial.create.docType.desc.Imposto':
-    'Guia de Recolhimento (DARF/GPS) — recolhimento de tributo já apurado; sem retenções.',
+    'Guia de Recolhimento (DARF/GPS) — recolhimento de tributo já apurado.',
   // Modal "Forma de Pagamento" (cards) — a forma controla os campos complementares.
   'financial.create.payMethod.modalTitle': 'Forma de Pagamento',
   'financial.create.payMethod.modalSubtitle':
