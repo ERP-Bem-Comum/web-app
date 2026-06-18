@@ -55,6 +55,7 @@ const base: DocumentFormFields = {
   grossValue: 'R$ 10.000,00',
   dueDate: '2026-06-10',
   description: 'Consultoria',
+  programRef: '',
   retentions: { iss: '350', irrf: '150', inss: '1100', pis: '65', cofins: '300', csll: '100' },
   reformaTributaria: EMPTY_REFORMA_TRIBUTARIA,
 }

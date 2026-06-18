@@ -111,6 +111,7 @@ export type DocumentFormFields = Readonly<{
   grossValue: string
   dueDate: string
   description: string
+  programRef: string // Categorização: Programa escolhido (UUID). Vazio = herda o do contrato (se houver).
   retentions: RetentionFieldsReais
   reformaTributaria: ReformaTributariaFieldsReais
 }>
@@ -300,6 +301,7 @@ export const buildCreateInput = (fields: DocumentFormFields): CreateDocumentInpu
     supplierRef: fields.supplierRef,
     paymentMethod: fields.paymentMethod,
     grossValueCents: String(gross),
+    programRef: trimToUndefined(fields.programRef),
     retentions,
     registeredTaxes: buildRegisteredTaxInputs(fields),
     dueDate: fields.dueDate,
@@ -335,6 +337,7 @@ export const buildDraftInput = (fields: DocumentFormFields): CreateDocumentInput
     supplierRef: fields.supplierRef,
     paymentMethod: fields.paymentMethod,
     grossValueCents: String(gross),
+    programRef: trimToUndefined(fields.programRef),
     retentions,
     registeredTaxes: buildRegisteredTaxInputs(fields),
     dueDate: trimToUndefined(fields.dueDate),
@@ -427,6 +430,7 @@ export const hydrateFieldsFromDetail = (d: DocumentDetail): DocumentFormFields =
     grossValue: d.grossValueCents !== null ? centsToReais(d.grossValueCents) : '',
     dueDate: d.dueDate ?? '',
     description: d.description ?? '',
+    programRef: '', // o GET /:id não expõe a categorização (core-api#95) → vazio na hidratação
     retentions,
     // Reforma Tributária não vem no GET de detalhe hoje (enriquecimento = core-api#95) e é imutável no
     // ajuste → hidrata vazia. (Quando o detalhe expuser registeredTaxes, mapear aqui.)

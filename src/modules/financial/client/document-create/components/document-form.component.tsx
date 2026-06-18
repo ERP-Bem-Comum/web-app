@@ -40,6 +40,7 @@ import {
   controlMono,
   controlDisabled,
   selectWrap,
+  selectControl,
   selectControlDisabled,
   field,
   fieldGrid,
@@ -107,6 +108,42 @@ function EntityCard(
   )
 }
 
+/**
+ * Programa — dropdown EDITÁVEL (real): opções de `listProgramsFn`, valor = `programRef`. Herda o programa
+ * do contrato por padrão, mas o usuário pode trocar; sem contrato, fica aberto. Envia `programRef` no create.
+ */
+function ProgramSelect(
+  props: Readonly<{
+    label: string
+    value: string
+    options: readonly Readonly<{ id: string; name: string }>[]
+    onChange: (value: string) => void
+  }>,
+): ReactNode {
+  return (
+    <div className={field}>
+      <span className={fieldLabel}>{props.label}</span>
+      <div className={selectWrap}>
+        <select
+          className={selectControl}
+          aria-label={props.label}
+          value={props.value}
+          onChange={(e) => {
+            props.onChange(e.target.value)
+          }}
+        >
+          <option value="">{t('financial.create.select')}</option>
+          {props.options.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.name}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+  )
+}
+
 /** Campo somente-leitura preenchido a partir do contrato (Categorização derivada). */
 function ReadonlyField({ label, value }: Readonly<{ label: string; value: string }>): ReactNode {
   return (
@@ -127,6 +164,10 @@ export type DocumentFormProps = Readonly<{
   onText: (key: 'documentNumber' | 'series' | 'grossValue' | 'dueDate' | 'description', value: string) => void
   onRetention: (key: keyof RetentionFieldsReais, value: string) => void
   onReformaTributaria: (key: keyof ReformaTributariaFieldsReais, value: string) => void
+  // Programa (Categorização) — dropdown editável. Opções reais + valor efetivo (fields ?? contrato).
+  programOptions: readonly Readonly<{ id: string; name: string }>[]
+  programValue: string
+  onProgram: (value: string) => void
   // Modal "Tipo de Documento" (o campo Tipo abre o modal; selecionar aplica o tipo).
   typeModalOpen: boolean
   onOpenTypeModal: () => void
@@ -511,7 +552,12 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
               <ReadonlyField label={t('financial.create.field.subcategoria')} value="" />
             </div>
             <div className={fieldGrid.two}>
-              <ReadonlyField label={t('financial.create.field.programa')} value={contract.programa} />
+              <ProgramSelect
+                label={t('financial.create.field.programa')}
+                value={props.programValue}
+                options={props.programOptions}
+                onChange={props.onProgram}
+              />
               <ReadonlyField
                 label={t('financial.create.field.planoOrcamentario')}
                 value={contract.planoOrcamentario}
@@ -526,7 +572,12 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
               <ChromeSelect label={t('financial.create.field.subcategoria')} />
             </div>
             <div className={fieldGrid.two}>
-              <ChromeSelect label={t('financial.create.field.programa')} />
+              <ProgramSelect
+                label={t('financial.create.field.programa')}
+                value={props.programValue}
+                options={props.programOptions}
+                onChange={props.onProgram}
+              />
               <ChromeSelect label={t('financial.create.field.planoOrcamentario')} />
             </div>
           </>

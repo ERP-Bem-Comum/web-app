@@ -24,6 +24,7 @@ const fields = (over: Partial<DocumentFormFields> = {}): DocumentFormFields => (
   grossValue: '',
   dueDate: '',
   description: '',
+  programRef: '',
   retentions: { iss: '', irrf: '', inss: '', pis: '', cofins: '', csll: '' },
   reformaTributaria: { cbs: '', ibsMunicipal: '', ibsEstadual: '' },
   ...over,
@@ -37,6 +38,9 @@ const baseProps = (over: Record<string, unknown> = {}) => ({
   onText: vi.fn(),
   onRetention: vi.fn(),
   onReformaTributaria: vi.fn(),
+  programOptions: [],
+  programValue: '',
+  onProgram: vi.fn(),
   typeModalOpen: false,
   onOpenTypeModal: vi.fn(),
   onSelectType: vi.fn(),
@@ -108,6 +112,20 @@ describe('DocumentForm', () => {
     // Campo monetário (acumulador de centavos, sem R$): "100" digitado = 100 centavos → "1,00".
     fireEvent.change(screen.getByLabelText('CBS'), { target: { value: '100' } })
     expect(onReformaTributaria).toHaveBeenCalledWith('cbs', '1,00')
+  })
+
+  it('Programa é dropdown editável: lista opções e dispara onProgram', () => {
+    const onProgram = vi.fn()
+    render(
+      <DocumentForm
+        {...baseProps({ programOptions: [{ id: 'p1', name: 'Saúde Comunitária' }], onProgram })}
+      />,
+    )
+    expect(screen.getByRole('option', { name: 'Saúde Comunitária' })).toBeTruthy()
+    fireEvent.change(screen.getByLabelText(tr('financial.create.field.programa')), {
+      target: { value: 'p1' },
+    })
+    expect(onProgram).toHaveBeenCalledWith('p1')
   })
 
   it('dispara onText ao digitar o número', () => {

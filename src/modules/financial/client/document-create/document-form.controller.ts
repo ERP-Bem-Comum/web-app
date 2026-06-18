@@ -26,6 +26,7 @@ const EMPTY_FIELDS: DocumentFormFields = {
   grossValue: '',
   dueDate: '',
   description: '',
+  programRef: '',
   retentions: EMPTY_RETENTIONS,
   reformaTributaria: EMPTY_REFORMA_TRIBUTARIA,
 }
@@ -36,6 +37,7 @@ type FormAction =
   | Readonly<{ kind: 'setType'; value: DocumentType | '' }>
   | Readonly<{ kind: 'setPaymentMethod'; value: PaymentMethod | '' }>
   | Readonly<{ kind: 'setSupplier'; ref: string }>
+  | Readonly<{ kind: 'setProgramRef'; value: string }>
   | Readonly<{ kind: 'setText'; key: TextKey; value: string }>
   | Readonly<{ kind: 'setRetention'; key: keyof RetentionFieldsReais; value: string }>
   | Readonly<{ kind: 'setReformaTributaria'; key: keyof ReformaTributariaFieldsReais; value: string }>
@@ -63,6 +65,8 @@ const reducer = (state: DocumentFormFields, action: FormAction): DocumentFormFie
       return { ...state, paymentMethod: action.value }
     case 'setSupplier':
       return { ...state, supplierRef: action.ref }
+    case 'setProgramRef':
+      return { ...state, programRef: action.value }
     case 'setText':
       return { ...state, [action.key]: action.value }
     case 'setRetention':
@@ -88,6 +92,7 @@ export type DocumentFormController = Readonly<{
   setType: (value: DocumentType | '') => void
   setPaymentMethod: (value: PaymentMethod | '') => void
   setSupplier: (ref: string) => void
+  setProgramRef: (value: string) => void
   setText: (key: TextKey, value: string) => void
   setRetention: (key: keyof RetentionFieldsReais, value: string) => void
   setReformaTributaria: (key: keyof ReformaTributariaFieldsReais, value: string) => void
@@ -125,6 +130,9 @@ export function useDocumentFormController(initial?: DocumentFormFields | null): 
     },
     setSupplier: (ref) => {
       dispatch({ kind: 'setSupplier', ref })
+    },
+    setProgramRef: (value) => {
+      dispatch({ kind: 'setProgramRef', value })
     },
     setText: (key, value) => {
       dispatch({ kind: 'setText', key, value })

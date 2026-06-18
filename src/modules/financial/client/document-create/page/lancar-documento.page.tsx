@@ -16,6 +16,7 @@ import { useLancarDocumentoBinding } from '../create-document.binding.ts'
 import { useDocumentEditing } from '../edit-document.binding.ts'
 import { usePartnersOptions } from '../partners-options.binding.ts'
 import { usePartnerHydration } from '../partner-hydration.binding.ts'
+import { useProgramOptions } from '../program-options.binding.ts'
 import {
   buildCreateInput,
   buildDraftInput,
@@ -60,6 +61,13 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
   const supplierName = selectedPartner?.name ?? ''
   // Hidrata banco + contrato "Em Andamento" do fornecedor (auto-preenchimento do Pagamento/Categorização).
   const hydration = usePartnerHydration(controller.fields.supplierRef, selectedPartner?.kind ?? null)
+  // Programa (Categorização) — opções reais + valor efetivo: o escolhido pelo usuário tem prioridade;
+  // senão herda o programa do contrato "Em Andamento" (quando houver).
+  const programOptions = useProgramOptions()
+  const programValue =
+    controller.fields.programRef !== ''
+      ? controller.fields.programRef
+      : (hydration.contract?.programRef ?? '')
 
   // Modo da tela:
   //  · create  — novo documento
@@ -93,7 +101,8 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
         ? {
             ...base,
             contractRef: c.ref,
-            programRef: c.programRef ?? undefined,
+            // Programa escolhido pelo usuário tem prioridade; senão herda o do contrato.
+            programRef: base.programRef ?? c.programRef ?? undefined,
             budgetPlanRef: c.budgetPlanRef ?? undefined,
           }
         : base,
@@ -165,6 +174,9 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
             onText={controller.setText}
             onRetention={controller.setRetention}
             onReformaTributaria={controller.setReformaTributaria}
+            programOptions={programOptions}
+            programValue={programValue}
+            onProgram={controller.setProgramRef}
             typeModalOpen={controller.typeModalOpen}
             onOpenTypeModal={controller.openTypeModal}
             onSelectType={(type) => {
