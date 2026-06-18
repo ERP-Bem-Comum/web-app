@@ -47,6 +47,10 @@ const baseProps = (over: Record<string, unknown> = {}) => ({
   programOptions: [],
   programValue: '',
   onProgram: vi.fn(),
+  centroCustoOptions: [],
+  categoriaOptions: [],
+  subcategoriaOptions: [],
+  planoOptions: [],
   contract: null,
   contracts: [],
   contractPickerOpen: false,
@@ -208,13 +212,17 @@ describe('DocumentForm', () => {
     expect(onText).toHaveBeenCalledWith('paymentComplement', '34191')
   })
 
-  it('Categorização: Centro de Custo é editável (criação) e dispara onText', () => {
+  it('Categorização: Centro de Custo é um dropdown (habilitado na criação) e dispara onText', () => {
     const onText = vi.fn()
-    render(<DocumentForm {...baseProps({ onText })} />)
+    render(
+      <DocumentForm
+        {...baseProps({ onText, centroCustoOptions: [{ value: 'cc1', label: 'CC-002 · Programa' }] })}
+      />,
+    )
     const cc = screen.getByLabelText(tr('financial.create.field.centroCusto'))
-    expect((cc as HTMLInputElement).disabled).toBe(false)
-    fireEvent.change(cc, { target: { value: 'CC-002' } })
-    expect(onText).toHaveBeenCalledWith('centroCusto', 'CC-002')
+    expect((cc as HTMLSelectElement).disabled).toBe(false)
+    fireEvent.change(cc, { target: { value: 'cc1' } })
+    expect(onText).toHaveBeenCalledWith('centroCusto', 'cc1')
   })
 
   it('dispara onText ao digitar o número', () => {

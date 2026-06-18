@@ -830,6 +830,12 @@ export const entityCard = style({
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   background: vars.color.institutional.paperWarm,
   minInlineSize: 0,
+  transition: 'background 120ms, border-color 120ms',
+  // Hover (mock): realce azul claro da marca — mesmo tom da seleção.
+  ':hover': {
+    background: vars.color.institutional.blueBg,
+    borderColor: vars.color.institutional.blueLine,
+  },
 })
 export const entityIcon = style({
   display: 'inline-flex',
@@ -839,8 +845,8 @@ export const entityIcon = style({
   blockSize: '2rem',
   flexShrink: 0,
   borderRadius: vars.radius.lg,
-  background: vars.color.brand.normal, // azul da marca (mais claro/suave que o navy institucional)
-  color: vars.color.brand.onBrand,
+  background: vars.color.institutional.blueBg, // azul claro da marca (igual às caixas de ícone dos modais)
+  color: vars.color.institutional.blueDeep,
 })
 export const entityInfo = style({
   display: 'flex',
@@ -895,6 +901,12 @@ export const contratoPill = style({
   fontFamily: vars.font.family.body, // Nunito (brand) — texto do pill (ex.: "Sem contrato vinculado")
   fontSize: vars.font.size.xs,
   color: vars.color.text.muted,
+  transition: 'background 120ms, border-color 120ms',
+  // Hover (mock): realce azul claro da marca — mesmo tom do hover do aprovador.
+  ':hover': {
+    background: vars.color.institutional.blueBg,
+    borderColor: vars.color.institutional.blueLine,
+  },
 })
 // Rótulo "CONTRATO" — overline pequeno maiúsculo (Figma Label/Field 9.5px, tracking largo).
 export const contratoLabel = style({

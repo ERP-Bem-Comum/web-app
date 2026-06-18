@@ -154,11 +154,11 @@ const toCents = (reais: string): number => {
 export const retentionsEnabledFor = (type: DocumentType | ''): boolean => type === 'NFS-e' || type === 'RPA'
 
 /**
- * ISS é retenção EXCLUSIVA de NFS-e. RPA aceita só IRRF/INSS/CSRF (espelha `ALLOWED_RETENTIONS` do
- * core-api: NFS-e={ISS,IRRF,INSS,CSRF}, RPA={IRRF,INSS,CSRF}). Enviar ISS num RPA → 422
- * `retention-not-allowed-for-type`. Por isso o campo ISS não aparece (nem entra no cálculo) em RPA.
+ * ISS aparece em NFS-e e RPA (RPA de autônomo retém ISS — ver a própria descrição do tipo). ⚠️ O core-api
+ * ainda NÃO aceita ISS em RPA (`ALLOWED_RETENTIONS` RPA={IRRF,INSS,CSRF}) → enviar ISS num RPA dá 422 até
+ * o backend liberar (ver issue). A pedido da P.O., a UI passa a exibir o campo ISS também no RPA.
  */
-export const issAllowedFor = (type: DocumentType | ''): boolean => type === 'NFS-e'
+export const issAllowedFor = (type: DocumentType | ''): boolean => type === 'NFS-e' || type === 'RPA'
 
 /**
  * Reforma Tributária (CBS/IBS) — campos de registro de valor. Documentos fiscais de serviço (NFS-e/RPA)

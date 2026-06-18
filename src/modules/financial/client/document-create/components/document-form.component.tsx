@@ -157,25 +157,40 @@ function ProgramSelect(
 }
 
 /**
- * Campo de Categorização EDITÁVEL (texto livre): herda o valor do contrato por padrão, mas o usuário pode
- * sobrescrever. ⚠️ Persistência pendente (core-api#147) — capturado no form, ainda não enviado no create.
- * Em edição/consulta (`disabled`) vira somente-leitura.
+ * Campo de Categorização como DROPDOWN: lista as opções que existirem (Centro de Custo/Categoria/
+ * Subcategoria/Plano Orçamentário). ⚠️ Hoje sem fonte de dados (core-api#147) → dropdown vazio (só o
+ * placeholder) até o backend expor as listas. Em edição/consulta (`disabled`) fica travado.
  */
-function EditableField(
-  props: Readonly<{ label: string; value: string; disabled: boolean; onChange: (v: string) => void }>,
+function CategoSelect(
+  props: Readonly<{
+    label: string
+    value: string
+    disabled: boolean
+    options: readonly Readonly<{ value: string; label: string }>[]
+    onChange: (v: string) => void
+  }>,
 ): ReactNode {
   return (
     <div className={field}>
       <span className={fieldLabel}>{props.label}</span>
-      <input
-        className={props.disabled ? controlDisabled : control}
-        disabled={props.disabled}
-        value={props.disabled && props.value === '' ? '—' : props.value}
-        onChange={(e) => {
-          props.onChange(e.target.value)
-        }}
-        aria-label={props.label}
-      />
+      <div className={selectWrap}>
+        <select
+          className={props.disabled ? selectControlDisabled : selectControl}
+          disabled={props.disabled}
+          aria-label={props.label}
+          value={props.value}
+          onChange={(e) => {
+            props.onChange(e.target.value)
+          }}
+        >
+          <option value="">{t('financial.create.select')}</option>
+          {props.options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </div>
     </div>
   )
 }
@@ -207,6 +222,12 @@ export type DocumentFormProps = Readonly<{
   programOptions: readonly Readonly<{ id: string; name: string; sigla: string }>[]
   programValue: string
   onProgram: (value: string) => void
+  // Opções dos dropdowns da Categorização (Centro de Custo/Categoria/Subcategoria/Plano). Vazias até o
+  // backend expor as listas (core-api#147); o select já fica pronto.
+  centroCustoOptions: readonly Readonly<{ value: string; label: string }>[]
+  categoriaOptions: readonly Readonly<{ value: string; label: string }>[]
+  subcategoriaOptions: readonly Readonly<{ value: string; label: string }>[]
+  planoOptions: readonly Readonly<{ value: string; label: string }>[]
   // Contrato vinculado (Categorização) — selecionado + lista "Em Andamento" do parceiro + dropdown "Alterar".
   contract: ContractCategoView | null
   contracts: readonly ContractCategoView[]
@@ -663,26 +684,29 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             sobrescrever. Em edição/consulta fica somente-leitura. Persistência: Programa real (programRef);
             os demais campos pendem do core-api#147. */}
         <div className={fieldGrid.three}>
-          <EditableField
+          <CategoSelect
             label={t('financial.create.field.centroCusto')}
             disabled={catDisabled}
-            value={fields.centroCusto !== '' ? fields.centroCusto : (contract?.centroCusto ?? '')}
+            value={fields.centroCusto}
+            options={props.centroCustoOptions}
             onChange={(v) => {
               props.onText('centroCusto', v)
             }}
           />
-          <EditableField
+          <CategoSelect
             label={t('financial.create.field.categoria')}
             disabled={catDisabled}
-            value={fields.categoria !== '' ? fields.categoria : (contract?.categoria ?? '')}
+            value={fields.categoria}
+            options={props.categoriaOptions}
             onChange={(v) => {
               props.onText('categoria', v)
             }}
           />
-          <EditableField
+          <CategoSelect
             label={t('financial.create.field.subcategoria')}
             disabled={catDisabled}
             value={fields.subcategoria}
+            options={props.subcategoriaOptions}
             onChange={(v) => {
               props.onText('subcategoria', v)
             }}
@@ -696,12 +720,11 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             options={props.programOptions}
             onChange={props.onProgram}
           />
-          <EditableField
+          <CategoSelect
             label={t('financial.create.field.planoOrcamentario')}
             disabled={catDisabled}
-            value={
-              fields.planoOrcamentario !== '' ? fields.planoOrcamentario : (contract?.planoOrcamentario ?? '')
-            }
+            value={fields.planoOrcamentario}
+            options={props.planoOptions}
             onChange={(v) => {
               props.onText('planoOrcamentario', v)
             }}
