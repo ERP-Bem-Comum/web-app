@@ -225,10 +225,10 @@ com a Conciliação.
 
 ## Phase 11: Polish & Cross-Cutting
 
-- [ ] T059 [P] Revisar a cadeia de erro fim-a-fim de todas as server fns (todas as `kind` do contrato cobertas, `switch` exaustivo, mensagens PT-BR sem vazar detalhe interno) — FR-017.
-- [ ] T060 [P] Auditoria tokens-only nas duas telas (sem hex/rgb/px crus; `vars.*`); confirmar fontes/escala contra o mock e o Figma (8:6/8:7) — FR-018/SC-005.
-- [ ] T061 [P] Acessibilidade dos estados chrome: `aria-disabled` + tooltip explicando a dependência (#168/#172/#173/#145) em todos os pontos bloqueados — SC-006.
-- [ ] T062 Verificar **não-regressão** em Contas a Pagar (rodar a suíte existente) e revisar invalidations de Query para não afetar telas vizinhas.
+- [x] T059 [P] Revisar a cadeia de erro fim-a-fim de todas as server fns (todas as `kind` do contrato cobertas, `switch` exaustivo, mensagens PT-BR sem vazar detalhe interno) — FR-017.
+- [x] T060 [P] Auditoria tokens-only nas duas telas (sem hex/rgb/px crus; `vars.*`); confirmar fontes/escala contra o mock e o Figma (8:6/8:7) — FR-018/SC-005.
+- [x] T061 [P] Acessibilidade dos estados chrome: `aria-disabled` + tooltip explicando a dependência (#168/#172/#173/#145) em todos os pontos bloqueados — SC-006.
+- [x] T062 Verificar **não-regressão** em Contas a Pagar (rodar a suíte existente) e revisar invalidations de Query para não afetar telas vizinhas.
 - [ ] T063 Gerar baseline visual Playwright das duas telas (`e2e/visual/*.e2e.ts`) e rodar `pnpm test:visual` com a stack de pé (commitar os `.png -linux` só após revisão humana do diff).
 - [ ] T064 `pnpm verify` + `pnpm test:dom` finais verdes; atualizar `public-api/index.ts` com os exports definitivos; abrir PR → **develop**.
 
