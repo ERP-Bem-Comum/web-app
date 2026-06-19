@@ -4,9 +4,14 @@
  * Fraunces). Mantém TODOS os nomes de export consumidos pela page/componentes. §X: zero literal cru aqui
  * (tudo via `recon.*`).
  */
-import { style, styleVariants } from '@vanilla-extract/css'
+import { keyframes, style, styleVariants } from '@vanilla-extract/css'
 
 import { recon } from '../../recon-ui/recon.values.ts'
+
+const pulse = keyframes({
+  '0%': { transform: 'scale(0.6)', opacity: 0.6 },
+  '100%': { transform: 'scale(1.6)', opacity: 0 },
+})
 
 const c = recon.color
 const sp = recon.space
@@ -23,13 +28,14 @@ export const screen = style({
   color: c.ink[2],
 })
 
-// ── acc-header (h ~88px) ────────────────────────────────────────────────────────
+// ── acc-header (hero, fiel ao mock: identidade | saldo | ações) ──────────────────
 export const accHeader = style({
-  display: 'flex',
+  display: 'grid',
+  gridTemplateColumns: 'minmax(21.25rem, auto) 1fr auto',
   alignItems: 'center',
-  gap: sp.xl,
+  gap: '2.25rem',
   paddingInline: sp['3xl'],
-  paddingBlock: sp['2xl'],
+  paddingBlock: sp.lg,
   background: c.paper.default,
   borderBlockEnd: `${bw.thin} solid ${c.paper.rule}`,
 })
@@ -39,7 +45,7 @@ export const accId = style({ display: 'flex', alignItems: 'center', gap: sp.xl, 
 export const bankMark = style({
   inlineSize: '2.75rem',
   blockSize: '2.75rem',
-  borderRadius: r.md,
+  borderRadius: r.lg,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -48,6 +54,7 @@ export const bankMark = style({
   fontFamily: recon.font.sans,
   fontSize: fs.xl,
   fontWeight: recon.weight.semibold,
+  letterSpacing: '-0.02em',
   flexShrink: 0,
 })
 
@@ -56,8 +63,9 @@ export const accInfo = style({ display: 'flex', flexDirection: 'column', gap: '0
 export const overline = style({
   fontFamily: recon.font.mono,
   fontSize: fs['3xs'],
-  letterSpacing: '0.08em',
+  letterSpacing: '0.1em',
   textTransform: 'uppercase',
+  fontWeight: recon.weight.semibold,
   color: c.ink[5],
 })
 
@@ -66,30 +74,114 @@ export const accName = style({
   fontSize: fs['2xl'],
   fontWeight: recon.weight.medium,
   color: c.ink[1],
+  lineHeight: 1.15,
   whiteSpace: 'nowrap',
   overflow: 'hidden',
   textOverflow: 'ellipsis',
 })
 
-export const accMeta = style({ fontFamily: recon.font.mono, fontSize: fs.xs, color: c.ink[4] })
+export const accMeta = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: sp.sm,
+  marginBlockStart: '0.0625rem',
+  fontFamily: recon.font.mono,
+  fontSize: fs.xs,
+  color: c.ink[4],
+})
+export const accMetaDot = style({ color: c.ink[6] })
+export const changeAcc = style({
+  marginInlineStart: sp.xs,
+  paddingInline: '0.5625rem',
+  paddingBlock: '0.25rem',
+  borderRadius: r.sm,
+  fontFamily: recon.font.sans,
+  fontSize: fs.xs,
+  fontWeight: recon.weight.medium,
+  color: c.teal.deep,
+  background: c.paper.default,
+  border: `${bw.hairline} solid ${c.teal.line}`,
+  cursor: 'pointer',
+  selectors: { '&:hover': { background: c.teal.bg } },
+})
 
 export const balanceBlock = style({
   display: 'flex',
   flexDirection: 'column',
+  alignItems: 'flex-start',
   gap: '0.125rem',
-  paddingInline: sp['3xl'],
-  marginInlineStart: 'auto',
+  paddingInline: '1.75rem',
   borderInline: `${bw.thin} solid ${c.paper.rule}`,
 })
-
+export const balanceLbl = style({
+  fontFamily: recon.font.sans,
+  fontSize: fs['3xs'],
+  fontWeight: recon.weight.bold,
+  letterSpacing: '0.1em',
+  textTransform: 'uppercase',
+  color: c.ink[5],
+})
 export const balanceVal = style({
   fontFamily: recon.font.mono,
   fontSize: fs['3xl'],
   fontWeight: recon.weight.bold,
   color: c.ink[1],
+  lineHeight: 1.1,
+  fontVariantNumeric: 'tabular-nums',
+})
+export const balanceCents = style({ fontSize: fs['2xl'], fontWeight: recon.weight.semibold, color: c.ink[3] })
+export const balanceUpd = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: sp.xs,
+  marginBlockStart: '0.125rem',
+  fontFamily: recon.font.mono,
+  fontSize: fs['2xs'],
+  color: c.ink[5],
+})
+export const pulseDot = style({
+  position: 'relative',
+  inlineSize: '0.375rem',
+  blockSize: '0.375rem',
+  borderRadius: r.pill,
+  background: c.green.normal,
+  '::before': {
+    content: '""',
+    position: 'absolute',
+    inset: '-0.1875rem',
+    borderRadius: r.pill,
+    border: `${bw.thick} solid ${c.green.normal}`,
+    opacity: 0.5,
+    animation: `${pulse} 2s ${recon.ease} infinite`,
+  },
 })
 
-export const accActions = style({ display: 'flex', alignItems: 'center', gap: sp.sm })
+export const accActions = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: sp.sm,
+  justifyContent: 'flex-end',
+})
+export const periodBtn = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: sp.xs,
+  paddingInline: sp.lg,
+  paddingBlock: sp.sm,
+  borderRadius: r.md,
+  border: `${bw.thin} solid ${c.paper.rule}`,
+  background: c.paper.default,
+  color: c.ink[3],
+  fontFamily: recon.font.mono,
+  fontSize: fs.sm,
+  cursor: 'pointer',
+})
+export const periodLbl = style({
+  fontWeight: recon.weight.semibold,
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+  color: c.ink[5],
+})
 
 export const pill = style({
   display: 'inline-flex',

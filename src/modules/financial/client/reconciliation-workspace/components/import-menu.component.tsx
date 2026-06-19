@@ -25,7 +25,7 @@ export function ImportMenu({ importing, summary, errorTag, onPickFile }: ImportM
   const inputRef = useRef<HTMLInputElement>(null)
 
   return (
-    <div className={s.accActions}>
+    <>
       <button
         type="button"
         className={s.btnPrimary}
@@ -61,6 +61,6 @@ export function ImportMenu({ importing, summary, errorTag, onPickFile }: ImportM
         </span>
       ) : null}
       {errorTag !== null ? <span className={s.errorText}>{t(errorTag)}</span> : null}
-    </div>
+    </>
   )
 }

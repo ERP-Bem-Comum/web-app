@@ -64,6 +64,8 @@ const isPrefixPath = (path: string, route: string): boolean => path === route ||
 
 export const rootViewModel = {
   resolvePageTitle: (path: string): string => {
+    // Conciliação: grid (entrada) = "Contas Bancárias"; workspace de uma conta = "Conciliação bancária".
+    if (path.startsWith('/financeiro/conciliacao/')) return 'Conciliação bancária'
     for (const [route, title] of Object.entries(PAGE_TITLES)) {
       if (isPrefixPath(path, route)) return title
     }

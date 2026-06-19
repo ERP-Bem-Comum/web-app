@@ -13,11 +13,10 @@ import {
   DownloadIcon,
   EyeIcon,
   EyeOffIcon,
-  WalletIcon,
 } from '#shared/ui/icons/index.ts'
 
 import { useReconciliationWorkspace } from '../reconciliation-workspace.binding.ts'
-import { isPending, type AssocTab } from '../reconciliation-workspace.view-model.ts'
+import { centsToBRL, isPending, type AssocTab } from '../reconciliation-workspace.view-model.ts'
 import { ImportMenu } from '../components/import-menu.component.tsx'
 import { ImportsList } from '../components/imports-list.component.tsx'
 import { SuggestionPane } from '../components/suggestion-pane.component.tsx'
@@ -34,46 +33,82 @@ const ASSOC_TABS: readonly { id: AssocTab; tag: string }[] = [
 ]
 
 const t = createTranslator(ptBR)
+const DASH = '—'
+const DOT = '·'
 
 export type ReconciliationWorkspacePageProps = Readonly<{ accountRef: string }>
 
 export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorkspacePageProps) {
   const vm = useReconciliationWorkspace(accountRef)
-  const { ui, progress } = vm
+  const { ui, progress, account } = vm
+  const balanceParts = account !== null ? centsToBRL(account.currentBalanceCents).split(',') : null
+  const bankInitials = account !== null ? account.bankName.slice(0, 2).toUpperCase() : DASH
 
   return (
     <div className={s.screen}>
-      {/* acc-header */}
+      {/* acc-header (hero) */}
       <header className={s.accHeader}>
         <div className={s.accId}>
           <span className={s.bankMark} aria-hidden="true">
-            <WalletIcon />
+            {bankInitials}
           </span>
           <div className={s.accInfo}>
             <span className={s.overline}>{t('financial.recon.account.overline')}</span>
-            <span className={s.accName}>{t('financial.recon.account.unavailable')}</span>
-            <span className={s.accMeta}>{accountRef}</span>
+            <span className={s.accName}>{account?.alias ?? t('financial.recon.account.unavailable')}</span>
+            <span className={s.accMeta}>
+              {account !== null ? (
+                <>
+                  <span>{`${account.bankCode} ${account.bankName}`}</span>
+                  <span className={s.accMetaDot}>{DOT}</span>
+                  <span>{`Ag ${account.branch}`}</span>
+                  <span className={s.accMetaDot}>{DOT}</span>
+                  <span>{`CC ${account.accountNumber}-${account.accountDv}`}</span>
+                </>
+              ) : (
+                <span>{t('financial.recon.account.metaPlaceholder')}</span>
+              )}
+              <button type="button" className={s.changeAcc}>
+                {t('financial.recon.account.changeAcc')}
+              </button>
+            </span>
           </div>
         </div>
 
         <div className={s.balanceBlock}>
-          <span className={s.overline}>{t('financial.recon.account.balanceUnavailable')}</span>
-          <span className={s.balanceVal}>—</span>
+          <span className={s.balanceLbl}>{t('financial.recon.account.balanceLbl')}</span>
+          {balanceParts !== null ? (
+            <span className={s.balanceVal}>
+              {balanceParts[0]}
+              {balanceParts[1] !== undefined ? (
+                <span className={s.balanceCents}>{`,${balanceParts[1]}`}</span>
+              ) : null}
+            </span>
+          ) : (
+            <span className={s.balanceVal}>{DASH}</span>
+          )}
+          {account !== null ? (
+            <span className={s.balanceUpd}>
+              <span className={s.pulseDot} aria-hidden="true" />
+              {`${t('financial.recon.account.updated')} ${DOT} ${account.lastUpdatedAt}`}
+            </span>
+          ) : (
+            <span className={s.balanceUpd}>{t('financial.recon.account.balanceUnavailable')}</span>
+          )}
         </div>
 
         <div className={s.accActions}>
-          <span className={s.pill}>
+          <button type="button" className={s.periodBtn}>
             <CalendarDaysIcon />
-            {t('financial.recon.period')}
-          </span>
+            <span className={s.periodLbl}>{t('financial.recon.period')}</span>
+          </button>
+          {/* Importar OFX/CSV (US2); PDF via OCR fica anunciado (#145) */}
+          <ImportMenu
+            importing={vm.import.importing}
+            summary={vm.import.summary}
+            errorTag={vm.import.errorTag}
+            onPickFile={vm.import.importFile}
+          />
         </div>
-        {/* Importar OFX/CSV (US2); PDF via OCR fica anunciado (#145) */}
-        <ImportMenu
-          importing={vm.import.importing}
-          summary={vm.import.summary}
-          errorTag={vm.import.errorTag}
-          onPickFile={vm.import.importFile}
-        />
       </header>
 
       {/* tabs-bar */}

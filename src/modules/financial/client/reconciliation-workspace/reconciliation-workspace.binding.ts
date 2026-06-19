@@ -43,6 +43,7 @@ import { reconciliationErrorTag } from '#modules/financial/client/data/helpers/r
 import type {
   MatchSuggestion,
   PaidPayable,
+  ReconciliationAccount as ReconciliationAccountModel,
   StatementTransaction,
   SuggestionBand,
   SuggestionCriteria,
@@ -75,6 +76,7 @@ export type SuggestionState =
 export type WorkspaceBinding = Readonly<{
   accountRef: string
   identityAvailable: boolean
+  account: ReconciliationAccountModel | null
   ui: WorkspaceUiState
   progress: Readonly<{ label: string; percent: number; reconciled: number; total: number }>
   txList: TxListState
@@ -109,7 +111,7 @@ const toMatchView = (s: MatchSuggestion, payables: ReadonlyMap<string, PaidPayab
 
 export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBinding {
   const [ui, dispatch] = useReducer(workspaceReducer, initialWorkspaceUiState)
-  const { accountRef, identityAvailable } = useAccountSelector(routeAccountRef)
+  const { accountRef, identityAvailable, account } = useAccountSelector(routeAccountRef)
 
   const txQuery = useQuery(transactionsQueryOptions(ui.statementId))
   const payablesQuery = useQuery(paidPayablesQueryOptions())
@@ -198,6 +200,7 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
   return {
     accountRef,
     identityAvailable,
+    account,
     ui,
     progress: {
       label: progressLabel(reconciled, total),

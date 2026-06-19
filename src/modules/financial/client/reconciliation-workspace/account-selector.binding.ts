@@ -9,10 +9,12 @@
 import { useQuery } from '@tanstack/react-query'
 
 import { reconciliationRepository } from '#modules/financial/client/data/repository/reconciliation.repository.instance.ts'
+import type { ReconciliationAccount } from '#modules/financial/client/data/model/reconciliation.model.ts'
 
 export type AccountSelector = Readonly<{
   accountRef: string
-  /** false enquanto #168 não expõe a conta — a UI mostra placeholder honesto, sem inventar dados. */
+  /** Conta-cedente resolvida; null enquanto #168 não expõe o cadastro (chrome honesto). */
+  account: ReconciliationAccount | null
   identityAvailable: boolean
 }>
 
@@ -23,7 +25,7 @@ const accountQueryOptions = (ref: string) => ({
 })
 
 export function useAccountSelector(routeAccountRef: string): AccountSelector {
-  const account = useQuery(accountQueryOptions(routeAccountRef))
-  const identityAvailable = account.data?.ok === true
-  return { accountRef: routeAccountRef, identityAvailable }
+  const q = useQuery(accountQueryOptions(routeAccountRef))
+  const account = q.data?.ok === true ? q.data.value : null
+  return { accountRef: routeAccountRef, account, identityAvailable: account !== null }
 }

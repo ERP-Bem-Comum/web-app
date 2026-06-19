@@ -28,10 +28,11 @@ afterEach(() => {
 })
 
 describe('ReconciliationWorkspacePage (shell)', () => {
-  it('mostra a identidade da conta como chrome honesto (indisponível até #168) + o ref', () => {
+  it('mostra a identidade da conta como chrome honesto (indisponível até #168)', () => {
     renderPage()
     expect(screen.getByText(tr('financial.recon.account.unavailable'))).toBeTruthy()
-    expect(screen.getByText('b1a7c0de-0000-4000-8000-000000000168')).toBeTruthy()
+    expect(screen.getByText(tr('financial.recon.account.metaPlaceholder'))).toBeTruthy()
+    expect(screen.getByText(tr('financial.recon.account.balanceLbl'))).toBeTruthy()
   })
 
   it('renderiza as abas Extrato e Conciliação (Conciliação ativa por padrão)', () => {
