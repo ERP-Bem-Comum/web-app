@@ -4,10 +4,12 @@
  * delega a tradução aos mappers PUROS (`reconciliation.mappers.ts`) e o erro a `mapHttpError`. Espelha
  * `core-api-financial.ts`.
  */
-import { err, isErr } from '#shared/primitives/result.ts'
+import { err, isErr, ok } from '#shared/primitives/result.ts'
 import { resultFetch } from '#external/core-api/result-fetch.ts'
 import type { ReconciliationClient } from '#modules/financial/server/application/reconciliation.use-cases.ts'
+import type { CedenteAccount } from '#modules/financial/server/domain/reconciliation.io.ts'
 import {
+  accountStatementSummary,
   batchToModel,
   cedenteAccountToModel,
   cedenteAccountsToModel,
@@ -22,6 +24,32 @@ import {
   transactionsToModel,
   undoToModel,
 } from './reconciliation.mappers.ts'
+
+// Janela ampla FIXA (determinística, sem relógio): o read-model soma TODOS os movimentos da conta →
+// closingBalanceCents = saldo corrente real e counters.pending = total de pendentes. `from`/`to` são
+// date-only (z.iso.date no core-api). Falha no statement → mantém os defaults honestos da conta (graceful).
+const STATEMENT_FROM = '2000-01-01'
+const STATEMENT_TO = '2999-12-31'
+
+const enrichAccountWithStatement = async (
+  baseUrl: string,
+  acc: CedenteAccount,
+  token: string,
+): Promise<CedenteAccount> => {
+  const r = await resultFetch<unknown>(
+    `${baseUrl}/cedente-accounts/${acc.id}/statement?from=${STATEMENT_FROM}&to=${STATEMENT_TO}`,
+    { token },
+  )
+  if (isErr(r)) return acc
+  const sum = accountStatementSummary(r.value)
+  if (isErr(sum)) return acc
+  return {
+    ...acc,
+    currentBalanceCents: sum.value.closingBalanceCents,
+    pendingCount: sum.value.pendingCount,
+    lastUpdatedAt: sum.value.lastDate ?? acc.lastUpdatedAt,
+  }
+}
 
 export const createCoreApiReconciliationClient = (baseUrl: string): ReconciliationClient => ({
   importStatement: async (i, token) => {
@@ -53,12 +81,20 @@ export const createCoreApiReconciliationClient = (baseUrl: string): Reconciliati
   listCedenteAccounts: async (token) => {
     const r = await resultFetch<unknown>(`${baseUrl}/cedente-accounts`, { token })
     if (isErr(r)) return err(mapHttpError(r.error))
-    return cedenteAccountsToModel(r.value)
+    const accounts = cedenteAccountsToModel(r.value)
+    if (isErr(accounts)) return accounts
+    // #139: enriquece cada conta com saldo corrente + pendências (fan-out por conta ao read-model).
+    const enriched = await Promise.all(
+      accounts.value.map((acc) => enrichAccountWithStatement(baseUrl, acc, token)),
+    )
+    return ok(enriched)
   },
   getCedenteAccount: async (id, token) => {
     const r = await resultFetch<unknown>(`${baseUrl}/cedente-accounts/${id}`, { token })
     if (isErr(r)) return err(mapHttpError(r.error))
-    return cedenteAccountToModel(r.value)
+    const acc = cedenteAccountToModel(r.value)
+    if (isErr(acc)) return acc
+    return ok(await enrichAccountWithStatement(baseUrl, acc.value, token)) // #139: saldo/pendências p/ o hero
   },
   createCedenteAccount: async (i, token) => {
     const typeMap = { Corrente: 'corrente', Poupanca: 'poupanca', Investimento: 'investimento' } as const

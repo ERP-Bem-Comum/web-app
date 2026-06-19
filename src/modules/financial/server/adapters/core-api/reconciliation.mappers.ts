@@ -26,6 +26,7 @@ import type {
   SuggestionBand,
 } from '#modules/financial/server/domain/reconciliation.io.ts'
 import {
+  CoreApiAccountStatementSchema,
   CoreApiBatchSchema,
   CoreApiCedenteAccountSchema,
   CoreApiCedenteAccountsSchema,
@@ -191,6 +192,28 @@ export const cedenteAccountToModel = (raw: unknown): Result<CedenteAccount, Reco
   const parsed = CoreApiCedenteAccountSchema.safeParse(raw)
   if (!parsed.success) return err('server')
   return ok(toCedenteAccount(parsed.data))
+}
+
+// Resumo do read-model do extrato (#139) usado p/ enriquecer a conta no grid/hero: saldo corrente,
+// contagem de pendências e data da última movimentação. O fan-out por conta vive no cliente HTTP.
+export type AccountStatementSummary = Readonly<{
+  closingBalanceCents: string
+  pendingCount: number
+  lastDate: string | null
+}>
+
+export const accountStatementSummary = (
+  raw: unknown,
+): Result<AccountStatementSummary, ReconciliationError> => {
+  const parsed = CoreApiAccountStatementSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  const d = parsed.data
+  const lastDay = d.days.at(-1)
+  return ok({
+    closingBalanceCents: d.closingBalanceCents,
+    pendingCount: d.counters.pending,
+    lastDate: lastDay ? lastDay.date.slice(0, 10) : null,
+  })
 }
 
 export const suggestionsToModel = (raw: unknown): Result<readonly MatchSuggestion[], ReconciliationError> => {

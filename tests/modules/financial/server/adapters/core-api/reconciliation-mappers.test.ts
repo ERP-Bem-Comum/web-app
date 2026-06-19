@@ -13,6 +13,7 @@ import {
   paidPayablesToModel,
   cedenteAccountsToModel,
   cedenteAccountToModel,
+  accountStatementSummary,
   suggestionsToModel,
   importToModel,
   reconciliationCreatedToModel,
@@ -183,6 +184,47 @@ describe('cedenteAccountsToModel / cedenteAccountToModel (#138)', () => {
 
   it('shape inválido → err(server)', () => {
     assert.ok(isErr(cedenteAccountsToModel({ nope: true })))
+  })
+})
+
+describe('accountStatementSummary (#139)', () => {
+  it('extrai saldo corrente (closing), pendências (counters.pending) e última data (último dia)', () => {
+    const raw = {
+      openingBalanceCents: '100000',
+      closingBalanceCents: '24539218',
+      counters: { all: 12, in: 5, out: 7, reconciled: 9, pending: 3 },
+      days: [{ date: '2026-06-01' }, { date: '2026-06-18' }],
+    }
+    const r = accountStatementSummary(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value.closingBalanceCents, '24539218')
+      assert.equal(r.value.pendingCount, 3)
+      assert.equal(r.value.lastDate, '2026-06-18')
+    }
+  })
+
+  it('sem dias → lastDate null; date ISO datetime → date-only', () => {
+    const semDias = accountStatementSummary({
+      openingBalanceCents: '0',
+      closingBalanceCents: '0',
+      counters: { all: 0, in: 0, out: 0, reconciled: 0, pending: 0 },
+      days: [],
+    })
+    assert.ok(isOk(semDias))
+    if (isOk(semDias)) assert.equal(semDias.value.lastDate, null)
+
+    const iso = accountStatementSummary({
+      closingBalanceCents: '500',
+      counters: { all: 1, in: 1, out: 0, reconciled: 0, pending: 1 },
+      days: [{ date: '2026-06-18T00:00:00.000Z' }],
+    })
+    assert.ok(isOk(iso))
+    if (isOk(iso)) assert.equal(iso.value.lastDate, '2026-06-18')
+  })
+
+  it('shape inválido → err(server)', () => {
+    assert.ok(isErr(accountStatementSummary({ nope: true })))
   })
 })
 

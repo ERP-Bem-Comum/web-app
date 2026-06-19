@@ -63,6 +63,23 @@ export const CoreApiCedenteAccountSchema = z.object({
 export type CoreApiCedenteAccount = z.infer<typeof CoreApiCedenteAccountSchema>
 export const CoreApiCedenteAccountsSchema = z.array(CoreApiCedenteAccountSchema)
 
+// Read-model do extrato por conta+período (#139 — GET /cedente-accounts/:id/statement). Saldo corrente =
+// closingBalanceCents; pendências = counters.pending; última atualização = data do último dia. Só os
+// campos que o grid/hero consomem (lines não são necessárias aqui). counters são int (NÃO string).
+export const CoreApiAccountStatementSchema = z.object({
+  openingBalanceCents: z.string().trim().catch('0'),
+  closingBalanceCents: z.string().trim(),
+  counters: z.object({
+    all: z.int().catch(0),
+    in: z.int().catch(0),
+    out: z.int().catch(0),
+    reconciled: z.int().catch(0),
+    pending: z.int(),
+  }),
+  days: z.array(z.object({ date: z.string().trim() })).catch([]),
+})
+export type CoreApiAccountStatement = z.infer<typeof CoreApiAccountStatementSchema>
+
 // Sugestões (GET /statement-transactions/:id/suggestions → { suggestions }, NÃO items).
 export const CoreApiSuggestionSchema = z.object({
   payableId: z.string().trim(),
