@@ -96,12 +96,12 @@ Conciliar → sai dos pendentes e progresso sobe; Rejeitar → some e mostra alt
 
 ### Client — view-model derivações, queries/bindings, UI da aba Sugestão
 
-- [ ] T023 [US1] Teste (RED) puro das derivações da view-model em `tests/modules/financial/client/reconciliation-workspace/workspace-derivations.test.ts` (agrupar transações por dia; filtro Pendentes/Conciliadas/Todas; progresso "conciliado X/N"; tag de palpite alta/média/sem match/conciliado; **heurística `entryType`→ícone com fallback por `movement`**, incluindo um `entryType` desconhecido caindo no fallback).
-- [ ] T024 [US1] Implementar essas derivações puras na `reconciliation-workspace.view-model.ts` e ligar as queries em `reconciliation-workspace.query.ts` (transações, payables Pago, sugestões) via repository, até T023 passar.
-- [ ] T025 [P] [US1] Criar `reconcile.binding.ts` (conciliar 1:1 + invalidações: transações/progresso) e estender o tracking de **sugestões rejeitadas** (UI-state + refetch) em `reconciliation-workspace/`.
-- [ ] T026 [US1] Implementar a coluna ESQUERDA (imports-list agrupada por dia, tag de palpite, filtro Pendentes/Conciliadas/Todas) em `components/imports-list.component.tsx` (+ `.css.ts`), view burra. **Ícone via heurística** sobre `entryType` normalizado (string livre: `FEE`/`TAR`, `INT`/`JUR`, `XFER`/`TED`/`DOC`, `APLIC`/`INVEST`, `RESG`/`REDEM`) **com fallback por `movement`** (entrada/saída) — nunca union fechado. Fidelidade ao mock.
-- [ ] T027 [US1] Implementar a aba **Sugestão** em `components/suggestion-pane.component.tsx` (+ `.css.ts`): match card lado a lado (extrato × título, **mínimo** até #172), critérios + confiança, botões Conciliar/Rejeitar, "outras possibilidades".
-- [ ] T028 [US1] Teste (RED→GREEN) DOM em `tests/modules/financial/client/reconciliation-workspace/suggestion-pane.spec.tsx` (selecionar transação → Conciliar move p/ conciliada e sobe progresso; Rejeitar some e não reaparece; transação sem palpite mostra estado vazio + ofertas Nova/Buscar).
+- [x] T023 [US1] Teste (RED) puro das derivações da view-model em `tests/modules/financial/client/reconciliation-workspace/workspace-derivations.test.ts` (agrupar transações por dia; filtro Pendentes/Conciliadas/Todas; progresso "conciliado X/N"; tag de palpite alta/média/sem match/conciliado; **heurística `entryType`→ícone com fallback por `movement`**, incluindo um `entryType` desconhecido caindo no fallback).
+- [x] T024 [US1] Implementar essas derivações puras na `reconciliation-workspace.view-model.ts` e ligar as queries em `reconciliation-workspace.query.ts` (transações, payables Pago, sugestões) via repository, até T023 passar.
+- [x] T025 [P] [US1] Criar `reconcile.binding.ts` (conciliar 1:1 + invalidações: transações/progresso) e estender o tracking de **sugestões rejeitadas** (UI-state + refetch) em `reconciliation-workspace/`.
+- [x] T026 [US1] Implementar a coluna ESQUERDA (imports-list agrupada por dia, tag de palpite, filtro Pendentes/Conciliadas/Todas) em `components/imports-list.component.tsx` (+ `.css.ts`), view burra. **Ícone via heurística** sobre `entryType` normalizado (string livre: `FEE`/`TAR`, `INT`/`JUR`, `XFER`/`TED`/`DOC`, `APLIC`/`INVEST`, `RESG`/`REDEM`) **com fallback por `movement`** (entrada/saída) — nunca union fechado. Fidelidade ao mock.
+- [x] T027 [US1] Implementar a aba **Sugestão** em `components/suggestion-pane.component.tsx` (+ `.css.ts`): match card lado a lado (extrato × título, **mínimo** até #172), critérios + confiança, botões Conciliar/Rejeitar, "outras possibilidades".
+- [x] T028 [US1] Teste (RED→GREEN) DOM em `tests/modules/financial/client/reconciliation-workspace/suggestion-pane.spec.tsx` (selecionar transação → Conciliar move p/ conciliada e sobe progresso; Rejeitar some e não reaparece; transação sem palpite mostra estado vazio + ofertas Nova/Buscar).
 
 **Checkpoint**: US1 demonstrável de ponta a ponta (com extrato já presente). MVP entregável.
 
@@ -116,9 +116,9 @@ duplicadas".
 
 - [x] T029 [P] [US2] Teste (RED) do mapper de import em `tests/modules/financial/server/adapters/import-statement.mapper.test.ts` (response → BankStatement {statementId, imported, duplicatesDiscarded, period}).
 - [x] T030 [US2] Estender `financial.schema.ts`/`financial.mappers.ts` para o import e criar `src/modules/financial/server/adapters/server-fns/import-bank-statement.service.fn.ts` (input `{debitAccountRef, format:'OFX'|'CSV', content, fileName?}`; mapeia erros 400/409/422), até T029 passar; wiring na composition.
-- [ ] T031 [US2] Criar `import.binding.ts` em `reconciliation-workspace/`: lê o arquivo via `File.text()`, chama a porta `import`, invalida a query de transações; trata erros → tags i18n.
-- [ ] T032 [US2] Implementar `components/import-menu.component.tsx` (+ `.css.ts`): menu Importar com OFX/CSV ativos e **PDF desabilitado/anunciado** (#145); exibe o resumo pós-import. View burra. Fidelidade ao mock.
-- [ ] T033 [US2] Teste (RED→GREEN) DOM em `tests/modules/financial/client/reconciliation-workspace/import-menu.spec.tsx` (import válido mostra resumo e popula lista; formato inválido mostra erro claro; período fechado bloqueia; PDF desabilitado).
+- [x] T031 [US2] Criar `import.binding.ts` em `reconciliation-workspace/`: lê o arquivo via `File.text()`, chama a porta `import`, invalida a query de transações; trata erros → tags i18n.
+- [x] T032 [US2] Implementar `components/import-menu.component.tsx` (+ `.css.ts`): menu Importar com OFX/CSV ativos e **PDF desabilitado/anunciado** (#145); exibe o resumo pós-import. View burra. Fidelidade ao mock.
+- [x] T033 [US2] Teste (RED→GREEN) DOM em `tests/modules/financial/client/reconciliation-workspace/import-menu.spec.tsx` (import válido mostra resumo e popula lista; formato inválido mostra erro claro; período fechado bloqueia; PDF desabilitado).
 
 **Checkpoint**: US1 + US2 = caminho feliz completo (importar → conciliar por sugestão).
 

@@ -10,15 +10,16 @@ import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import {
   CalendarDaysIcon,
   CheckCircleIcon,
-  ChevronDownIcon,
   DownloadIcon,
   EyeIcon,
   EyeOffIcon,
-  UploadIcon,
   WalletIcon,
 } from '#shared/ui/icons/index.ts'
 
 import { useReconciliationWorkspace } from '../reconciliation-workspace.binding.ts'
+import { ImportMenu } from '../components/import-menu.component.tsx'
+import { ImportsList } from '../components/imports-list.component.tsx'
+import { SuggestionPane } from '../components/suggestion-pane.component.tsx'
 import * as s from './reconciliation-workspace.css.ts'
 
 const t = createTranslator(ptBR)
@@ -54,19 +55,14 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
             <CalendarDaysIcon />
             {t('financial.recon.period')}
           </span>
-          {/* Importar: a costura (server fn) já existe; a UI de upload entra na US2 */}
-          <button
-            type="button"
-            className={s.btnPrimary}
-            disabled
-            aria-disabled="true"
-            title={t('financial.recon.empty.workspace')}
-          >
-            <UploadIcon />
-            {t('financial.recon.import')}
-            <ChevronDownIcon />
-          </button>
         </div>
+        {/* Importar OFX/CSV (US2); PDF via OCR fica anunciado (#145) */}
+        <ImportMenu
+          importing={vm.import.importing}
+          summary={vm.import.summary}
+          errorTag={vm.import.errorTag}
+          onPickFile={vm.import.importFile}
+        />
       </header>
 
       {/* tabs-bar */}
@@ -119,15 +115,41 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
         </div>
       </div>
 
-      {/* corpo — vazio honesto até a importação (US2) trazer movimentações */}
+      {/* corpo — conciliação (US1: lista + sugestão); extrato (US8) entra depois */}
       <div className={s.workspace} role="tabpanel">
-        <div className={s.emptyState}>
-          <p>
-            {ui.activeTab === 'conciliacao'
-              ? t('financial.recon.empty.workspace')
-              : t('financial.recon.empty.extrato')}
-          </p>
-        </div>
+        {ui.activeTab === 'conciliacao' ? (
+          <div className={s.conciliacaoView}>
+            <ImportsList
+              state={vm.txList}
+              filter={ui.listFilter}
+              counts={vm.filterCounts}
+              selectedId={ui.selectedTransactionId}
+              onFilter={vm.setListFilter}
+              onSelect={vm.selectTransaction}
+            />
+            <SuggestionPane
+              state={ui.showGuesses ? vm.suggestions : { tag: 'idle' }}
+              selectedTx={vm.selectedTx}
+              reconciling={vm.reconcile.reconciling}
+              rejecting={vm.reconcile.rejecting}
+              errorTag={vm.reconcile.errorTag}
+              onReconcile={(payableId) => {
+                if (ui.selectedTransactionId !== null) {
+                  vm.reconcile.reconcileOne(ui.selectedTransactionId, payableId)
+                }
+              }}
+              onReject={(payableId) => {
+                if (ui.selectedTransactionId !== null) {
+                  vm.reconcile.rejectOne(ui.selectedTransactionId, payableId)
+                }
+              }}
+            />
+          </div>
+        ) : (
+          <div className={s.emptyState}>
+            <p>{t('financial.recon.empty.extrato')}</p>
+          </div>
+        )}
       </div>
 
       {/* bottombar */}

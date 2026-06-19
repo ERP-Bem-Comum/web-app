@@ -56,10 +56,10 @@ describe('ReconciliationWorkspacePage (shell)', () => {
     expect(toggle.getAttribute('aria-pressed')).toBe('false')
   })
 
-  it('Importar (US2), Exportar (#173) e Fechar período (US7) ficam desabilitados/anunciados', () => {
+  it('Importar (US2) habilitado; Exportar (#173) e Fechar período (US7) anunciados/desabilitados', () => {
     renderPage()
     expect(screen.getByRole('button', { name: has('financial.recon.import') }).hasAttribute('disabled')).toBe(
-      true,
+      false,
     )
     const exportBtn = screen.getByRole('button', { name: has('financial.recon.bottombar.export') })
     expect(exportBtn.hasAttribute('disabled')).toBe(true)
@@ -69,9 +69,9 @@ describe('ReconciliationWorkspacePage (shell)', () => {
     ).toBe(true)
   })
 
-  it('mostra o estado vazio honesto da conciliação (importe um extrato)', () => {
+  it('sem extrato importado, a lista mostra o estado idle honesto', () => {
     renderPage()
     const panel = screen.getByRole('tabpanel')
-    expect(within(panel).getByText(tr('financial.recon.empty.workspace'))).toBeTruthy()
+    expect(within(panel).getByText(tr('financial.recon.list.idle'))).toBeTruthy()
   })
 })

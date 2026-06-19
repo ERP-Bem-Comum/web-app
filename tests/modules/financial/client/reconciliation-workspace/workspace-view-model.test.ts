@@ -10,7 +10,33 @@ import {
   workspaceReducer,
   progressLabel,
   progressPercent,
+  entryTypeIcon,
+  isPending,
+  transactionTag,
+  filterTransactions,
+  groupTransactionsByDay,
+  countReconciled,
 } from '../../../../../src/modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
+import type {
+  Movement,
+  ReconciliationStatus,
+  StatementTransaction,
+} from '../../../../../src/modules/financial/client/data/model/reconciliation.model.ts'
+
+const tx = (
+  over: Partial<StatementTransaction> & Pick<StatementTransaction, 'id'>,
+): StatementTransaction => ({
+  fitid: 'F',
+  date: '2026-06-01',
+  movement: 'Debit' as Movement,
+  entryType: 'TED',
+  payeeName: 'X',
+  memo: '',
+  valueCents: '100',
+  balanceAfterCents: '0',
+  reconciliationStatus: 'Pending' as ReconciliationStatus,
+  ...over,
+})
 
 describe('workspaceReducer', () => {
   it('estado inicial: aba conciliação, palpites on, filtro pendentes', () => {
@@ -69,5 +95,71 @@ describe('progresso', () => {
     assert.equal(progressPercent(0, 0), 0)
     assert.equal(progressPercent(1, 3), 33)
     assert.equal(progressPercent(3, 3), 100)
+  })
+})
+
+describe('entryTypeIcon (heurística + fallback por movimento)', () => {
+  it('tarifa/juros → fee', () => {
+    assert.equal(entryTypeIcon('TARIFA', 'Debit'), 'fee')
+    assert.equal(entryTypeIcon('JUROS', 'Credit'), 'fee')
+    assert.equal(entryTypeIcon('FEE', 'Debit'), 'fee')
+  })
+  it('transferência → transfer', () => {
+    assert.equal(entryTypeIcon('XFER', 'Debit'), 'transfer')
+    assert.equal(entryTypeIcon('TED', 'Credit'), 'transfer')
+    assert.equal(entryTypeIcon('DOC', 'Debit'), 'transfer')
+  })
+  it('aplicação/resgate → investment', () => {
+    assert.equal(entryTypeIcon('APLICACAO', 'Debit'), 'investment')
+    assert.equal(entryTypeIcon('RESGATE', 'Credit'), 'investment')
+  })
+  it('desconhecido cai no movimento (in/out)', () => {
+    assert.equal(entryTypeIcon('ZZZ', 'Credit'), 'in')
+    assert.equal(entryTypeIcon('OTHER', 'Debit'), 'out')
+  })
+})
+
+describe('derivações da lista', () => {
+  const a = tx({ id: 'a', date: '2026-06-01', reconciliationStatus: 'Pending' })
+  const b = tx({ id: 'b', date: '2026-06-01', reconciliationStatus: 'Reconciled' })
+  const c = tx({ id: 'c', date: '2026-06-02', reconciliationStatus: 'ManualEntry' })
+  const d = tx({ id: 'd', date: '2026-06-02', reconciliationStatus: 'Pending' })
+  const txs: readonly StatementTransaction[] = [a, b, c, d]
+
+  it('isPending / transactionTag', () => {
+    assert.equal(isPending(a), true)
+    assert.equal(transactionTag(a), 'pending')
+    assert.equal(transactionTag(b), 'reconciled')
+    assert.equal(transactionTag(c), 'reconciled')
+  })
+
+  it('filterTransactions separa pendentes/conciliadas/todas', () => {
+    assert.deepEqual(
+      filterTransactions(txs, 'pendentes').map((t) => t.id),
+      ['a', 'd'],
+    )
+    assert.deepEqual(
+      filterTransactions(txs, 'conciliadas').map((t) => t.id),
+      ['b', 'c'],
+    )
+    assert.equal(filterTransactions(txs, 'todas').length, 4)
+  })
+
+  it('groupTransactionsByDay agrupa por dia preservando a ordem', () => {
+    const groups = groupTransactionsByDay(txs)
+    assert.equal(groups.length, 2)
+    assert.equal(groups[0]?.date, '2026-06-01')
+    assert.deepEqual(
+      groups[0]?.items.map((t) => t.id),
+      ['a', 'b'],
+    )
+    assert.deepEqual(
+      groups[1]?.items.map((t) => t.id),
+      ['c', 'd'],
+    )
+  })
+
+  it('countReconciled conta as não-pendentes', () => {
+    assert.equal(countReconciled(txs), 2)
   })
 })

@@ -300,3 +300,328 @@ export const bottomActions = style({
   gap: vars.space.sm,
   marginInlineStart: 'auto',
 })
+
+// ── conciliação view (2 colunas: imports | associação) ──────────────────────────
+export const conciliacaoView = style({
+  display: 'grid',
+  gridTemplateColumns: 'minmax(20rem, 28rem) 1fr',
+  minBlockSize: '100%',
+})
+
+export const importsCol = style({
+  display: 'flex',
+  flexDirection: 'column',
+  background: vars.color.surface.default,
+  borderInlineEnd: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
+})
+
+export const importsHead = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  paddingInline: vars.space.md,
+  paddingBlock: vars.space.sm,
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
+})
+
+export const filterTabs = style({ display: 'flex', gap: vars.space.xs, marginInlineStart: 'auto' })
+
+const filterTabBase = {
+  border: 'none',
+  background: 'transparent',
+  paddingInline: vars.space.sm,
+  paddingBlock: '0.25rem',
+  borderRadius: vars.radius.sm,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  cursor: 'pointer',
+} as const
+
+export const filterTab = styleVariants({
+  inactive: { ...filterTabBase, color: vars.color.text.muted },
+  active: {
+    ...filterTabBase,
+    color: vars.color.text.primary,
+    fontWeight: vars.font.weight.semibold,
+    background: vars.color.surface.subtle,
+  },
+})
+
+export const importsList = style({ display: 'flex', flexDirection: 'column', overflowY: 'auto' })
+
+export const dayDivider = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  paddingInline: vars.space.md,
+  paddingBlock: '0.375rem',
+  background: vars.color.surface.canvas,
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size['2xs'],
+  color: vars.color.text.muted,
+})
+
+const txRowBase = {
+  display: 'grid',
+  gridTemplateColumns: '2rem 1fr auto',
+  gap: vars.space.sm,
+  alignItems: 'center',
+  inlineSize: '100%',
+  textAlign: 'start',
+  border: 'none',
+  paddingInline: vars.space.md,
+  paddingBlock: vars.space.sm,
+  background: 'transparent',
+  cursor: 'pointer',
+  borderInlineStart: `${vars.borderWidth.thick} solid transparent`,
+  borderBlockEnd: `${vars.borderWidth.hairline} solid ${vars.color.border.subtle}`,
+} as const
+
+export const txRow = styleVariants({
+  base: { ...txRowBase },
+  selected: {
+    ...txRowBase,
+    background: vars.color.surface.subtle,
+    borderInlineStartColor: vars.color.brand.normal,
+  },
+  reconciled: { ...txRowBase, opacity: 0.62 },
+})
+
+export const txIcon = style({
+  inlineSize: '1.875rem',
+  blockSize: '1.875rem',
+  borderRadius: vars.radius.sm,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+})
+
+export const txIconKind = styleVariants({
+  in: { background: vars.color.status.activeBg, color: vars.color.status.activeText },
+  out: { background: vars.color.feedback.errorBg, color: vars.color.feedback.errorText },
+  transfer: { background: vars.color.institutional.blueBg, color: vars.color.institutional.blueDeep },
+  fee: { background: vars.color.institutional.paperBeige, color: vars.color.institutional.ink3 },
+  investment: { background: vars.color.institutional.orangeLight, color: vars.color.institutional.orange },
+})
+
+export const txBody = style({ display: 'flex', flexDirection: 'column', gap: '0.125rem', minInlineSize: 0 })
+export const txDate = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size['2xs'],
+  color: vars.color.text.muted,
+})
+export const txName = style({
+  fontSize: vars.font.size.sm,
+  color: vars.color.text.primary,
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+})
+export const txDesc = style({
+  fontSize: vars.font.size.xs,
+  color: vars.color.text.muted,
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+})
+export const txAmtBlock = style({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'flex-end',
+  gap: '0.125rem',
+})
+
+export const txAmt = styleVariants({
+  in: {
+    fontFamily: vars.font.family.mono,
+    fontSize: vars.font.size.sm,
+    fontWeight: vars.font.weight.semibold,
+    color: vars.color.institutional.greenDeep,
+  },
+  out: {
+    fontFamily: vars.font.family.mono,
+    fontSize: vars.font.size.sm,
+    fontWeight: vars.font.weight.semibold,
+    color: vars.color.feedback.errorText,
+  },
+})
+
+export const txTag = styleVariants({
+  pending: {
+    fontFamily: vars.font.family.mono,
+    fontSize: vars.font.size['2xs'],
+    color: vars.color.status.pendingText,
+    background: vars.color.status.pendingBg,
+    paddingInline: vars.space.xs,
+    paddingBlock: '0.0625rem',
+    borderRadius: vars.radius.sm,
+  },
+  reconciled: {
+    fontFamily: vars.font.family.mono,
+    fontSize: vars.font.size['2xs'],
+    color: vars.color.status.activeText,
+    background: vars.color.status.activeBg,
+    paddingInline: vars.space.xs,
+    paddingBlock: '0.0625rem',
+    borderRadius: vars.radius.sm,
+  },
+})
+
+// ── coluna de associação (Sugestão) ─────────────────────────────────────────────
+export const assocCol = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: vars.space.md,
+  padding: vars.space.lg,
+  overflowY: 'auto',
+})
+
+export const assocTabs = style({ display: 'flex', gap: vars.space.xs })
+
+export const matchCard = style({
+  border: `${vars.borderWidth.thin} solid ${vars.color.status.activeText}`,
+  borderRadius: vars.radius.lg,
+  overflow: 'hidden',
+  background: vars.color.surface.default,
+})
+
+export const matchHead = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: vars.space.sm,
+  paddingInline: vars.space.md,
+  paddingBlock: vars.space.sm,
+  background: vars.color.status.activeBg,
+  color: vars.color.status.activeText,
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size['2xs'],
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.status.activeText}`,
+})
+
+export const matchSides = style({
+  display: 'grid',
+  gridTemplateColumns: '1fr auto 1fr',
+  gap: vars.space.sm,
+  alignItems: 'center',
+  padding: vars.space.md,
+})
+
+export const matchSide = styleVariants({
+  extrato: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.25rem',
+    padding: vars.space.sm,
+    borderRadius: vars.radius.md,
+    background: vars.color.surface.canvas,
+    border: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
+  },
+  doc: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.25rem',
+    padding: vars.space.sm,
+    borderRadius: vars.radius.md,
+    background: vars.color.institutional.blueBg,
+    border: `${vars.borderWidth.thin} solid ${vars.color.institutional.blueLine}`,
+  },
+})
+
+export const matchArrow = style({ color: vars.color.institutional.green, fontFamily: vars.font.family.mono })
+export const sideLbl = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size['2xs'],
+  color: vars.color.text.muted,
+})
+export const sideTitle = style({
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.text.primary,
+})
+export const sideRow = style({
+  display: 'flex',
+  justifyContent: 'space-between',
+  gap: vars.space.sm,
+  fontSize: vars.font.size.xs,
+})
+export const sideKey = style({ color: vars.color.text.muted })
+export const sideVal = style({ fontFamily: vars.font.family.mono, color: vars.color.text.secondary })
+
+export const critList = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: vars.space.xs,
+  paddingInline: vars.space.md,
+  paddingBlockEnd: vars.space.sm,
+})
+export const crit = styleVariants({
+  ok: {
+    fontFamily: vars.font.family.body,
+    fontSize: vars.font.size['2xs'],
+    color: vars.color.status.activeText,
+    background: vars.color.status.activeBg,
+    paddingInline: vars.space.xs,
+    paddingBlock: '0.125rem',
+    borderRadius: vars.radius.sm,
+  },
+  warn: {
+    fontFamily: vars.font.family.body,
+    fontSize: vars.font.size['2xs'],
+    color: vars.color.status.pendingText,
+    background: vars.color.status.pendingBg,
+    paddingInline: vars.space.xs,
+    paddingBlock: '0.125rem',
+    borderRadius: vars.radius.sm,
+  },
+})
+
+export const matchActions = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  padding: vars.space.md,
+  background: vars.color.surface.canvas,
+  borderBlockStart: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
+})
+export const spacer = style({ flex: 1 })
+
+export const btnConfirm = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '0.375rem',
+  paddingInline: vars.space.md,
+  paddingBlock: '0.5rem',
+  borderRadius: vars.radius.md,
+  border: 'none',
+  background: vars.color.institutional.greenDeep,
+  color: vars.color.brand.onBrand,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.semibold,
+  cursor: 'pointer',
+  selectors: { '&:disabled': { opacity: 0.55, cursor: 'not-allowed' } },
+})
+
+export const altList = style({ display: 'flex', flexDirection: 'column', gap: vars.space.xs })
+export const altCard = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: vars.space.sm,
+  padding: vars.space.sm,
+  borderRadius: vars.radius.md,
+  border: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
+  background: vars.color.surface.default,
+})
+
+export const errorText = style({
+  color: vars.color.feedback.errorText,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+})
+export const summaryNote = style({
+  color: vars.color.institutional.greenDeep,
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size['2xs'],
+})

@@ -1,9 +1,23 @@
 /**
  * View-model do workspace de Conciliação (§XI: lógica fora da view; sem React). UI-state como máquina
- * tagged + reducer PURO (testável em node:test) e derivações puras (progresso, rótulos). As queries de
- * dados (transações/sugestões/títulos) entram com US1/US2 via o binding. Espelha o padrão de
+ * tagged + reducer PURO (testável em node:test) e derivações puras (agrupar por dia, filtro, ícone por
+ * `entryType`, progresso, rótulos). As queries de dados entram via o binding. Espelha o padrão de
  * `contas-a-pagar.view-model.ts` (derivação pura) + reducer de UI-state.
  */
+import type {
+  Movement,
+  StatementTransaction,
+} from '#modules/financial/client/data/model/reconciliation.model.ts'
+
+// Re-export p/ as views (ui) formatarem dinheiro sem importar de client/data (boundary §I).
+export { centsToBRL } from '#modules/financial/client/data/money.ts'
+
+// Re-export dos tipos de model p/ as views tiparem sem importar de client/data (boundary §I).
+export type {
+  StatementTransaction,
+  BankStatementImport,
+  Movement,
+} from '#modules/financial/client/data/model/reconciliation.model.ts'
 
 // ── UI-state (server-state ≠ UI-state, §XI) ─────────────────────────────────────
 export type WorkspaceTab = 'extrato' | 'conciliacao'
@@ -16,6 +30,8 @@ export type WorkspaceUiState = Readonly<{
   listFilter: ListFilter
   selectedTransactionId: string | null
   assocTab: AssocTab
+  // statementId do extrato importado nesta sessão (não há endpoint p/ listar extratos → ephemeral).
+  statementId: string | null
 }>
 
 export const initialWorkspaceUiState: WorkspaceUiState = {
@@ -24,6 +40,7 @@ export const initialWorkspaceUiState: WorkspaceUiState = {
   listFilter: 'pendentes',
   selectedTransactionId: null,
   assocTab: 'sugestao',
+  statementId: null,
 }
 
 export type WorkspaceAction =
@@ -32,6 +49,7 @@ export type WorkspaceAction =
   | Readonly<{ type: 'set-list-filter'; filter: ListFilter }>
   | Readonly<{ type: 'select-transaction'; id: string | null }>
   | Readonly<{ type: 'set-assoc-tab'; tab: AssocTab }>
+  | Readonly<{ type: 'set-statement'; statementId: string }>
 
 export const workspaceReducer = (state: WorkspaceUiState, action: WorkspaceAction): WorkspaceUiState => {
   switch (action.type) {
@@ -46,6 +64,9 @@ export const workspaceReducer = (state: WorkspaceUiState, action: WorkspaceActio
       return { ...state, selectedTransactionId: action.id, assocTab: 'sugestao' }
     case 'set-assoc-tab':
       return { ...state, assocTab: action.tab }
+    case 'set-statement':
+      // Novo extrato importado: zera a seleção (as transações mudam).
+      return { ...state, statementId: action.statementId, selectedTransactionId: null }
     default: {
       const _exhaustive: never = action
       return _exhaustive
@@ -64,3 +85,71 @@ export const progressPercent = (reconciled: number, total: number): number => {
   const pct = Math.round((reconciled / total) * 100)
   return Math.max(0, Math.min(100, pct))
 }
+
+// ── Derivações da lista de transações (puras) ───────────────────────────────────
+
+/**
+ * Ícone da transação. `entryType` é **string livre** (#152) — heurística sobre o código normalizado, com
+ * fallback por `movement` (entrada/saída). Nunca um union fechado.
+ */
+export type TxIconKind = 'in' | 'out' | 'transfer' | 'fee' | 'investment'
+export const entryTypeIcon = (entryType: string, movement: Movement): TxIconKind => {
+  const e = entryType.toUpperCase()
+  if (e.includes('FEE') || e.includes('TAR') || e.includes('INT') || e.includes('JUR')) return 'fee'
+  if (e.includes('XFER') || e.includes('TED') || e.includes('DOC')) return 'transfer'
+  if (e.includes('APLIC') || e.includes('INVEST') || e.includes('RESG') || e.includes('REDEM'))
+    return 'investment'
+  return movement === 'Credit' ? 'in' : 'out'
+}
+
+/** É pendente de conciliação? (só `Pending`; `Reconciled`/`ManualEntry` = tratada.) */
+export const isPending = (tx: StatementTransaction): boolean => tx.reconciliationStatus === 'Pending'
+
+/**
+ * Tag da linha na lista. O contrato não tem endpoint de sugestões em lote (são por transação), então a
+ * lista mostra `reconciled`/`pending`; a banda (alta/média/sem match) aparece no painel da transação
+ * selecionada (onde as sugestões são buscadas). Ver chrome-gaps (palpite por linha = lacuna de backend).
+ */
+export type ListTag = 'reconciled' | 'pending'
+export const transactionTag = (tx: StatementTransaction): ListTag =>
+  isPending(tx) ? 'pending' : 'reconciled'
+
+/** Aplica o filtro da lista (Pendentes/Conciliadas/Todas). */
+export const filterTransactions = (
+  txs: readonly StatementTransaction[],
+  filter: ListFilter,
+): readonly StatementTransaction[] => {
+  switch (filter) {
+    case 'pendentes':
+      return txs.filter(isPending)
+    case 'conciliadas':
+      return txs.filter((t) => !isPending(t))
+    case 'todas':
+      return txs
+    default: {
+      const _exhaustive: never = filter
+      return _exhaustive
+    }
+  }
+}
+
+/** Agrupa transações por dia (`date`, ISO), preservando a ordem de chegada dentro do dia. */
+export type DayGroup = Readonly<{ date: string; items: readonly StatementTransaction[] }>
+export const groupTransactionsByDay = (txs: readonly StatementTransaction[]): readonly DayGroup[] => {
+  const order: string[] = []
+  const byDay = new Map<string, StatementTransaction[]>()
+  for (const t of txs) {
+    const bucket = byDay.get(t.date)
+    if (bucket === undefined) {
+      byDay.set(t.date, [t])
+      order.push(t.date)
+    } else {
+      bucket.push(t)
+    }
+  }
+  return order.map((date) => ({ date, items: byDay.get(date) ?? [] }))
+}
+
+/** Conta as transações já tratadas (não-pendentes) — alimenta o progresso "X/N". */
+export const countReconciled = (txs: readonly StatementTransaction[]): number =>
+  txs.filter((t) => !isPending(t)).length
