@@ -42,10 +42,10 @@ describe('ReconciliationWorkspacePage (shell)', () => {
     expect(extrato.getAttribute('aria-selected')).toBe('false')
   })
 
-  it('trocar para a aba Extrato atualiza o estado vazio', () => {
+  it('trocar para a aba Extrato mostra o estado idle do extrato (sem extrato importado)', () => {
     renderPage()
     fireEvent.click(screen.getByRole('tab', { name: tr('financial.recon.tab.extrato') }))
-    expect(screen.getByText(tr('financial.recon.empty.extrato'))).toBeTruthy()
+    expect(screen.getByText(tr('financial.recon.ext.idle'))).toBeTruthy()
   })
 
   it('toggle "Exibir palpites" alterna aria-pressed', () => {

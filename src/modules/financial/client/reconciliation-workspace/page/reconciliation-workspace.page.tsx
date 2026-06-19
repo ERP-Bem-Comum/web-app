@@ -24,6 +24,7 @@ import { SuggestionPane } from '../components/suggestion-pane.component.tsx'
 import { SearchCreatePane } from '../components/search-create-pane.component.tsx'
 import { NewTransactionPane } from '../components/new-transaction-pane.component.tsx'
 import { ReconciledBanner } from '../components/reconciled-banner.component.tsx'
+import { StatementGrid } from '../components/statement-grid.component.tsx'
 import * as s from './reconciliation-workspace.css.ts'
 
 const ASSOC_TABS: readonly { id: AssocTab; tag: string }[] = [
@@ -202,16 +203,25 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
             )}
           </div>
         ) : (
-          <div className={s.emptyState}>
-            <p>{t('financial.recon.empty.extrato')}</p>
-          </div>
+          <StatementGrid
+            hasStatement={ui.statementId !== null}
+            items={vm.extrato.items}
+            totals={vm.extrato.totals}
+            filter={ui.extratoFilter}
+            onFilter={vm.setExtratoFilter}
+          />
         )}
       </div>
 
       {/* bottombar */}
       <footer className={s.bottombar}>
-        <span className={s.auditNote}>{t('financial.recon.bottombar.audit')}</span>
+        <span className={s.auditNote}>
+          {vm.closePeriod.closed ? t('financial.recon.close.success') : t('financial.recon.bottombar.audit')}
+        </span>
         <div className={s.bottomActions}>
+          {vm.closePeriod.errorTag !== null ? (
+            <span className={s.errorText}>{t(vm.closePeriod.errorTag)}</span>
+          ) : null}
           {/* Exportar = chrome até #173 (sem endpoint p/ obter o periodId) */}
           <button
             type="button"
@@ -223,8 +233,23 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
             <DownloadIcon />
             {t('financial.recon.bottombar.export')}
           </button>
-          {/* Fechar período = US7 */}
-          <button type="button" className={s.btnPrimary} disabled aria-disabled="true">
+          {/* Fechar período (US7) — bloqueado se há pendentes ou sem extrato */}
+          <button
+            type="button"
+            className={s.btnPrimary}
+            disabled={!vm.closePeriod.canClose}
+            aria-disabled={!vm.closePeriod.canClose}
+            title={
+              ui.statementId === null
+                ? t('financial.recon.close.noStatement')
+                : vm.filterCounts.pendentes > 0
+                  ? t('financial.recon.close.pendingBlocked')
+                  : undefined
+            }
+            onClick={() => {
+              vm.closePeriod.close()
+            }}
+          >
             <CheckCircleIcon />
             {t('financial.recon.bottombar.close')}
           </button>

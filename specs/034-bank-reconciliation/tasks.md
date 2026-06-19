@@ -200,9 +200,9 @@ impedida; sem #168 a tela exibe estado honesto e "Adicionar conta" desabilitado.
 desabilitado/anunciado.
 
 - [x] T052 [US7] Criar `src/modules/financial/server/adapters/server-fns/close-reconciliation-period.service.fn.ts` (input `{debitAccountRef, periodStart, periodEnd}`; mapeia 422 has-pending/400 invalid-range); schema/mapper + composition.
-- [ ] T053 [US7] Implementar `close-period.binding.ts` (invalida progresso/contagens) e o botão **Fechar período** na bottombar (`components/bottombar.component.tsx`), com aviso quando há pendências.
-- [ ] T054 [US7] Criar `src/modules/financial/client/data/reconciliation.gateway.ts` (download de texto OFX/CSV) e o **Exportar** na bottombar **desabilitado/anunciado** (#173, costura `export` pronta) — sem inventar `periodId`.
-- [ ] T055 [US7] Teste (RED→GREEN) DOM em `tests/modules/financial/client/reconciliation-workspace/bottombar.spec.tsx` (fechar com pendências bloqueia; sem pendências fecha; Exportar desabilitado com aviso #173).
+- [x] T053 [US7] Implementar `close-period.binding.ts` (invalida progresso/contagens) e o botão **Fechar período** na bottombar (`components/bottombar.component.tsx`), com aviso quando há pendências.
+- [x] T054 [US7] Criar `src/modules/financial/client/data/reconciliation.gateway.ts` (download de texto OFX/CSV) e o **Exportar** na bottombar **desabilitado/anunciado** (#173, costura `export` pronta) — sem inventar `periodId`.
+- [x] T055 [US7] Teste (RED→GREEN) DOM em `tests/modules/financial/client/reconciliation-workspace/bottombar.spec.tsx` (fechar com pendências bloqueia; sem pendências fecha; Exportar desabilitado com aviso #173).
 
 **Checkpoint**: fechamento do ciclo funcionando; exportação preparada (chrome).
 
@@ -215,9 +215,9 @@ com a Conciliação.
 
 **Independent Test**: aba Extrato + filtro Pendentes + período → linhas e totais corretos.
 
-- [ ] T056 [P] [US8] Teste (RED) puro dos filtros/totais do extrato em `tests/modules/financial/client/reconciliation-workspace/statement-derivations.test.ts` (filtros todos/entradas/saídas/conciliados/pendentes; período client-side; totais).
-- [ ] T057 [US8] Implementar as derivações de extrato na view-model + `components/statement-grid.component.tsx` (+ `.css.ts`) e o `components/period-filter.component.tsx` compartilhado entre as abas, até T056 passar.
-- [ ] T058 [US8] Teste (RED→GREEN) DOM em `tests/modules/financial/client/reconciliation-workspace/statement-grid.spec.tsx` (filtros + período refletem na lista e nos totais).
+- [x] T056 [P] [US8] Teste (RED) puro dos filtros/totais do extrato em `tests/modules/financial/client/reconciliation-workspace/statement-derivations.test.ts` (filtros todos/entradas/saídas/conciliados/pendentes; período client-side; totais).
+- [x] T057 [US8] Implementar as derivações de extrato na view-model + `components/statement-grid.component.tsx` (+ `.css.ts`) e o `components/period-filter.component.tsx` compartilhado entre as abas, até T056 passar.
+- [x] T058 [US8] Teste (RED→GREEN) DOM em `tests/modules/financial/client/reconciliation-workspace/statement-grid.spec.tsx` (filtros + período refletem na lista e nos totais).
 
 **Checkpoint**: conferência completa do extrato disponível.
 

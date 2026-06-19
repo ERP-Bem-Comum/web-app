@@ -848,3 +848,81 @@ export const bannerTitle = style({
   fontSize: vars.font.size.sm,
   fontWeight: vars.font.weight.semibold,
 })
+
+// ── Aba Extrato (US8) ───────────────────────────────────────────────────────────
+export const extWrap = style({
+  display: 'flex',
+  flexDirection: 'column',
+  minBlockSize: '100%',
+  background: vars.color.surface.default,
+})
+export const extHead = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  paddingInline: vars.space.lg,
+  paddingBlock: vars.space.sm,
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
+})
+export const extRows = style({ display: 'flex', flexDirection: 'column', overflowY: 'auto' })
+const extGridCols = {
+  display: 'grid',
+  gridTemplateColumns: '6rem 1fr 7rem 7rem 8rem',
+  gap: vars.space.sm,
+  alignItems: 'center',
+} as const
+export const extRow = style({
+  ...extGridCols,
+  paddingInline: vars.space.lg,
+  paddingBlock: vars.space.sm,
+  borderBlockEnd: `${vars.borderWidth.hairline} solid ${vars.color.border.subtle}`,
+})
+export const extHeadRow = style({
+  ...extGridCols,
+  paddingInline: vars.space.lg,
+  paddingBlock: vars.space.sm,
+  background: vars.color.surface.canvas,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size['2xs'],
+  color: vars.color.text.muted,
+  textTransform: 'uppercase',
+})
+export const extFoot = style({
+  ...extGridCols,
+  paddingInline: vars.space.lg,
+  paddingBlock: vars.space.sm,
+  background: vars.color.surface.canvas,
+  borderBlockStart: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
+  fontFamily: vars.font.family.mono,
+  fontWeight: vars.font.weight.bold,
+})
+export const extCellMono = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size.xs,
+  color: vars.color.text.secondary,
+})
+export const extCellMonoRight = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size.xs,
+  textAlign: 'end',
+  color: vars.color.text.secondary,
+})
+export const extIn = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size.xs,
+  textAlign: 'end',
+  color: vars.color.institutional.greenDeep,
+})
+export const extOut = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size.xs,
+  textAlign: 'end',
+  color: vars.color.feedback.errorText,
+})
+export const extName = style({
+  fontSize: vars.font.size.sm,
+  color: vars.color.text.primary,
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+})

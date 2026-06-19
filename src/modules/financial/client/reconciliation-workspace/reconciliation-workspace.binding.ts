@@ -10,6 +10,8 @@ import { useQuery } from '@tanstack/react-query'
 
 import {
   countReconciled,
+  extratoTotals,
+  filterExtrato,
   filterTransactions,
   groupTransactionsByDay,
   initialWorkspaceUiState,
@@ -19,6 +21,8 @@ import {
   workspaceReducer,
   type AssocTab,
   type DayGroup,
+  type ExtratoFilter,
+  type ExtratoTotals,
   type ListFilter,
   type WorkspaceTab,
   type WorkspaceUiState,
@@ -29,6 +33,7 @@ import { useReconcile, type ReconcileBinding } from './reconcile.binding.ts'
 import { useSearchCreate, type SearchCreateBinding } from './search-create.binding.ts'
 import { useManualEntry, type ManualEntryBinding } from './manual-entry.binding.ts'
 import { useUndo, type UndoBinding } from './undo.binding.ts'
+import { useClosePeriod, type ClosePeriodBinding } from './close-period.binding.ts'
 import {
   paidPayablesQueryOptions,
   suggestionsQueryOptions,
@@ -77,16 +82,19 @@ export type WorkspaceBinding = Readonly<{
   selectedTx: StatementTransaction | null
   suggestions: SuggestionState
   payables: readonly PaidPayable[]
+  extrato: Readonly<{ items: readonly StatementTransaction[]; totals: ExtratoTotals }>
   import: ImportBinding
   reconcile: ReconcileBinding
   searchCreate: SearchCreateBinding
   manualEntry: ManualEntryBinding
   undo: UndoBinding
+  closePeriod: ClosePeriodBinding
   /** id da conciliação feita NESTA sessão p/ a transação (null se desconhecido — Desfazer fica chrome). */
   reconciliationIdFor: (transactionId: string) => string | null
   setTab: (tab: WorkspaceTab) => void
   toggleGuesses: () => void
   setListFilter: (filter: ListFilter) => void
+  setExtratoFilter: (filter: ExtratoFilter) => void
   selectTransaction: (id: string | null) => void
   setAssocTab: (tab: AssocTab) => void
 }>
@@ -131,16 +139,26 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
   const selectedTx =
     ui.selectedTransactionId === null ? null : (allTx.find((t) => t.id === ui.selectedTransactionId) ?? null)
 
+  const pendentesCount = allTx.filter(isPending).length
+
   const reconcileBinding = useReconcile(recordReconciliation)
   const searchCreateBinding = useSearchCreate(selectedTx, payables, recordReconciliation)
   const manualEntryBinding = useManualEntry(selectedTx, recordReconciliation)
   const undoBinding = useUndo(forgetReconciliation)
+  const closePeriodBinding = useClosePeriod(
+    accountRef,
+    importBinding.summary?.period ?? null,
+    pendentesCount > 0,
+  )
 
   const filterCounts: FilterCounts = {
-    pendentes: allTx.filter(isPending).length,
+    pendentes: pendentesCount,
     conciliadas: allTx.filter((t) => !isPending(t)).length,
     todas: allTx.length,
   }
+
+  const extratoItems = filterExtrato(allTx, ui.extratoFilter)
+  const extrato = { items: extratoItems, totals: extratoTotals(extratoItems) }
 
   const txList: TxListState = (() => {
     if (ui.statementId === null) return { tag: 'idle' }
@@ -192,11 +210,13 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     selectedTx,
     suggestions,
     payables,
+    extrato,
     import: importBinding,
     reconcile: reconcileBinding,
     searchCreate: searchCreateBinding,
     manualEntry: manualEntryBinding,
     undo: undoBinding,
+    closePeriod: closePeriodBinding,
     reconciliationIdFor: (transactionId) => recMap.get(transactionId) ?? null,
     setTab: (tab) => {
       dispatch({ type: 'set-tab', tab })
@@ -206,6 +226,9 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     },
     setListFilter: (filter) => {
       dispatch({ type: 'set-list-filter', filter })
+    },
+    setExtratoFilter: (filter) => {
+      dispatch({ type: 'set-extrato-filter', filter })
     },
     selectTransaction: (id) => {
       dispatch({ type: 'select-transaction', id })

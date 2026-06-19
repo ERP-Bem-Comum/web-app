@@ -22,6 +22,8 @@ import {
   canReconcileMulti,
   deriveReconType,
   requiresDestination,
+  filterExtrato,
+  extratoTotals,
 } from '../../../../../src/modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
 import type {
   Movement,
@@ -206,5 +208,41 @@ describe('lançamento manual (US4)', () => {
     assert.equal(requiresDestination('Payment'), false)
     assert.equal(requiresDestination('Receipt'), false)
     assert.equal(requiresDestination('FeePenaltyInterest'), false)
+  })
+})
+
+describe('aba Extrato (US8)', () => {
+  const cred = tx({ id: 'in1', movement: 'Credit', valueCents: '30000', reconciliationStatus: 'Reconciled' })
+  const deb = tx({ id: 'out1', movement: 'Debit', valueCents: '12000', reconciliationStatus: 'Pending' })
+  const deb2 = tx({ id: 'out2', movement: 'Debit', valueCents: '8000', reconciliationStatus: 'Pending' })
+  const all: readonly StatementTransaction[] = [cred, deb, deb2]
+
+  it('filterExtrato separa por direção/situação', () => {
+    assert.deepEqual(
+      filterExtrato(all, 'todos').map((t) => t.id),
+      ['in1', 'out1', 'out2'],
+    )
+    assert.deepEqual(
+      filterExtrato(all, 'entradas').map((t) => t.id),
+      ['in1'],
+    )
+    assert.deepEqual(
+      filterExtrato(all, 'saidas').map((t) => t.id),
+      ['out1', 'out2'],
+    )
+    assert.deepEqual(
+      filterExtrato(all, 'conciliados').map((t) => t.id),
+      ['in1'],
+    )
+    assert.deepEqual(
+      filterExtrato(all, 'pendentes').map((t) => t.id),
+      ['out1', 'out2'],
+    )
+  })
+
+  it('extratoTotals soma entradas e saídas em centavos', () => {
+    const totals = extratoTotals(all)
+    assert.equal(totals.inCents, 30000)
+    assert.equal(totals.outCents, 20000)
   })
 })

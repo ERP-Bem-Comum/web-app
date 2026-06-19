@@ -26,6 +26,7 @@ export type {
 export type WorkspaceTab = 'extrato' | 'conciliacao'
 export type ListFilter = 'pendentes' | 'conciliadas' | 'todas'
 export type AssocTab = 'sugestao' | 'nova' | 'multi'
+export type ExtratoFilter = 'todos' | 'entradas' | 'saidas' | 'conciliados' | 'pendentes'
 
 export type WorkspaceUiState = Readonly<{
   activeTab: WorkspaceTab
@@ -33,6 +34,7 @@ export type WorkspaceUiState = Readonly<{
   listFilter: ListFilter
   selectedTransactionId: string | null
   assocTab: AssocTab
+  extratoFilter: ExtratoFilter
   // statementId do extrato importado nesta sessão (não há endpoint p/ listar extratos → ephemeral).
   statementId: string | null
 }>
@@ -43,6 +45,7 @@ export const initialWorkspaceUiState: WorkspaceUiState = {
   listFilter: 'pendentes',
   selectedTransactionId: null,
   assocTab: 'sugestao',
+  extratoFilter: 'todos',
   statementId: null,
 }
 
@@ -52,6 +55,7 @@ export type WorkspaceAction =
   | Readonly<{ type: 'set-list-filter'; filter: ListFilter }>
   | Readonly<{ type: 'select-transaction'; id: string | null }>
   | Readonly<{ type: 'set-assoc-tab'; tab: AssocTab }>
+  | Readonly<{ type: 'set-extrato-filter'; filter: ExtratoFilter }>
   | Readonly<{ type: 'set-statement'; statementId: string }>
 
 export const workspaceReducer = (state: WorkspaceUiState, action: WorkspaceAction): WorkspaceUiState => {
@@ -67,6 +71,8 @@ export const workspaceReducer = (state: WorkspaceUiState, action: WorkspaceActio
       return { ...state, selectedTransactionId: action.id, assocTab: 'sugestao' }
     case 'set-assoc-tab':
       return { ...state, assocTab: action.tab }
+    case 'set-extrato-filter':
+      return { ...state, extratoFilter: action.filter }
     case 'set-statement':
       // Novo extrato importado: zera a seleção (as transações mudam).
       return { ...state, statementId: action.statementId, selectedTransactionId: null }
@@ -192,3 +198,35 @@ export const deriveReconType = (selectedCount: number, hasDifference: boolean): 
 /** Tipos de lançamento manual que exigem conta de destino + confirmação consciente (US4). */
 export const requiresDestination = (type: string): boolean =>
   type === 'Transfer' || type === 'Investment' || type === 'Redemption'
+
+// ── Aba Extrato (puro — US8) ────────────────────────────────────────────────────
+
+/** Aplica o filtro do extrato (Todos/Entradas/Saídas/Conciliados/Pendentes). */
+export const filterExtrato = (
+  txs: readonly StatementTransaction[],
+  filter: ExtratoFilter,
+): readonly StatementTransaction[] => {
+  switch (filter) {
+    case 'todos':
+      return txs
+    case 'entradas':
+      return txs.filter((t) => t.movement === 'Credit')
+    case 'saidas':
+      return txs.filter((t) => t.movement === 'Debit')
+    case 'conciliados':
+      return txs.filter((t) => !isPending(t))
+    case 'pendentes':
+      return txs.filter(isPending)
+    default: {
+      const _exhaustive: never = filter
+      return _exhaustive
+    }
+  }
+}
+
+/** Totais do extrato (centavos): entradas (Credit) e saídas (Debit). */
+export type ExtratoTotals = Readonly<{ inCents: number; outCents: number }>
+export const extratoTotals = (txs: readonly StatementTransaction[]): ExtratoTotals => ({
+  inCents: txs.filter((t) => t.movement === 'Credit').reduce((a, t) => a + parseCents(t.valueCents), 0),
+  outCents: txs.filter((t) => t.movement === 'Debit').reduce((a, t) => a + parseCents(t.valueCents), 0),
+})

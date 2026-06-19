@@ -1303,6 +1303,24 @@ export const ptBR: Catalog = {
   'financial.recon.undo.button': 'Desfazer conciliação',
   'financial.recon.undo.unavailable':
     'Desfazer disponível para conciliações desta sessão (o backend ainda não expõe o id na listagem).',
+  // Aba Extrato (US8)
+  'financial.recon.ext.filter.todos': 'Todos',
+  'financial.recon.ext.filter.entradas': 'Entradas',
+  'financial.recon.ext.filter.saidas': 'Saídas',
+  'financial.recon.ext.filter.conciliados': 'Conciliados',
+  'financial.recon.ext.filter.pendentes': 'Pendentes',
+  'financial.recon.ext.col.date': 'Data',
+  'financial.recon.ext.col.name': 'Movimentação',
+  'financial.recon.ext.col.in': 'Entrada',
+  'financial.recon.ext.col.out': 'Saída',
+  'financial.recon.ext.col.balance': 'Saldo',
+  'financial.recon.ext.totals': 'Totais',
+  'financial.recon.ext.empty': 'Sem movimentações neste filtro.',
+  'financial.recon.ext.idle': 'Importe um extrato para ver as movimentações.',
+  // Fechar período (US7)
+  'financial.recon.close.success': 'Período fechado.',
+  'financial.recon.close.pendingBlocked': 'Há movimentações pendentes — trate todas antes de fechar.',
+  'financial.recon.close.noStatement': 'Importe um extrato para poder fechar o período.',
 
   // ── Contas a Pagar — grid (US2, lista real Fatia 2) ──
   'financial.list.title': 'Contas a Pagar',
