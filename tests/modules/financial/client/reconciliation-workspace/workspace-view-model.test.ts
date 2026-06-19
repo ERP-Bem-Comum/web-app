@@ -16,6 +16,12 @@ import {
   filterTransactions,
   groupTransactionsByDay,
   countReconciled,
+  parseCents,
+  sumCentsOf,
+  residualCents,
+  canReconcileMulti,
+  deriveReconType,
+  requiresDestination,
 } from '../../../../../src/modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
 import type {
   Movement,
@@ -161,5 +167,44 @@ describe('derivações da lista', () => {
 
   it('countReconciled conta as não-pendentes', () => {
     assert.equal(countReconciled(txs), 2)
+  })
+})
+
+describe('balanceamento N:1 / parcial (US3)', () => {
+  it('parseCents / sumCentsOf', () => {
+    assert.equal(parseCents('15000'), 15000)
+    assert.equal(parseCents(''), 0)
+    assert.equal(sumCentsOf([{ valueCents: '10000' }, { valueCents: '5000' }]), 15000)
+  })
+
+  it('residualCents = extrato − soma (0 quando bate; pode ser negativo)', () => {
+    assert.equal(residualCents(15000, 15000), 0)
+    assert.equal(residualCents(15000, 12000), 3000)
+    assert.equal(residualCents(15000, 16000), -1000)
+  })
+
+  it('canReconcileMulti: precisa de ≥1 título e (bate OU diferença classificada)', () => {
+    assert.equal(canReconcileMulti(0, 0, false), false) // nada selecionado
+    assert.equal(canReconcileMulti(2, 0, false), true) // bate exatamente
+    assert.equal(canReconcileMulti(1, 3000, false), false) // diferença sem classificar → bloqueia
+    assert.equal(canReconcileMulti(1, 3000, true), true) // diferença classificada → libera
+  })
+
+  it('deriveReconType: difference→Partial; senão 1→Individual, ≥2→Multiple', () => {
+    assert.equal(deriveReconType(1, false), 'Individual')
+    assert.equal(deriveReconType(2, false), 'Multiple')
+    assert.equal(deriveReconType(1, true), 'Partial')
+    assert.equal(deriveReconType(3, true), 'Partial')
+  })
+})
+
+describe('lançamento manual (US4)', () => {
+  it('requiresDestination só p/ Transfer/Investment/Redemption', () => {
+    assert.equal(requiresDestination('Transfer'), true)
+    assert.equal(requiresDestination('Investment'), true)
+    assert.equal(requiresDestination('Redemption'), true)
+    assert.equal(requiresDestination('Payment'), false)
+    assert.equal(requiresDestination('Receipt'), false)
+    assert.equal(requiresDestination('FeePenaltyInterest'), false)
   })
 })

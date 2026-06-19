@@ -131,10 +131,10 @@ duplicadas".
 
 **Independent Test**: 2 títulos cuja soma bate → conciliar N:1; soma diferente → classificar → parcial.
 
-- [ ] T034 [P] [US3] Teste (RED) puro da **regra de balanceamento** em `tests/modules/financial/client/reconciliation-workspace/balance.test.ts` (Σ títulos + difference === |valor transação|; deriva type Individual/Multiple/Partial; gating do botão).
-- [ ] T035 [US3] Implementar a função pura de balanceamento + gating na view-model (`reconciliation-workspace.view-model.ts`) e `search-create.binding.ts` (multi-seleção + difference em UI-state), até T034 passar.
-- [ ] T036 [US3] Implementar a aba **Buscar/Criar vários** em `components/search-create-pane.component.tsx` (+ `.css.ts`): grid de títulos Pago com multi-seleção, soma comparada ao valor, seletor de tratamento da diferença, botão Conciliar com estado bloqueado/aviso. Reusa `create-reconciliation.service.fn.ts` (T022).
-- [ ] T037 [US3] Teste (RED→GREEN) DOM em `tests/modules/financial/client/reconciliation-workspace/search-create-pane.spec.tsx` (N:1 balanceado concilia; diferença sem classificação bloqueia; diferença classificada concilia parcial).
+- [x] T034 [P] [US3] Teste (RED) puro da **regra de balanceamento** em `tests/modules/financial/client/reconciliation-workspace/balance.test.ts` (Σ títulos + difference === |valor transação|; deriva type Individual/Multiple/Partial; gating do botão).
+- [x] T035 [US3] Implementar a função pura de balanceamento + gating na view-model (`reconciliation-workspace.view-model.ts`) e `search-create.binding.ts` (multi-seleção + difference em UI-state), até T034 passar.
+- [x] T036 [US3] Implementar a aba **Buscar/Criar vários** em `components/search-create-pane.component.tsx` (+ `.css.ts`): grid de títulos Pago com multi-seleção, soma comparada ao valor, seletor de tratamento da diferença, botão Conciliar com estado bloqueado/aviso. Reusa `create-reconciliation.service.fn.ts` (T022).
+- [x] T037 [US3] Teste (RED→GREEN) DOM em `tests/modules/financial/client/reconciliation-workspace/search-create-pane.spec.tsx` (N:1 balanceado concilia; diferença sem classificação bloqueia; diferença classificada concilia parcial).
 
 **Checkpoint**: conciliação N:1 e parcial funcionando sobre o mesmo endpoint.
 
@@ -148,11 +148,11 @@ confirmação consciente; conciliar em lote (best-effort).
 **Independent Test**: tarifa → "Tarifa/Multa/Juros" + categorizar → registrada; transferência → exige
 destino + confirmação.
 
-- [ ] T038 [P] [US4] Teste (RED) puro do gating de confirmação consciente em `tests/modules/financial/client/reconciliation-workspace/manual-entry.test.ts` (Transfer/Investment/Redemption bloqueiam submit sem destino+confirmação; demais tipos liberam).
+- [x] T038 [P] [US4] Teste (RED) puro do gating de confirmação consciente em `tests/modules/financial/client/reconciliation-workspace/manual-entry.test.ts` (Transfer/Investment/Redemption bloqueiam submit sem destino+confirmação; demais tipos liberam).
 - [x] T039 [US4] Criar `src/modules/financial/server/adapters/server-fns/create-manual-entry.service.fn.ts` (input com `type` + refs opcionais + `destinationAccount?`) e `batch-reconcile.service.fn.ts` (input `{transactionIds, template}`, retorna `created/failed`); schemas/mapper + composition.
-- [ ] T040 [US4] Implementar `manual-entry.binding.ts` (+ gating de T038) e a aba **Nova transação** em `components/new-transaction-pane.component.tsx` (+ `.css.ts`): cards de tipo, categorização, conta de destino + confirmação consciente para Transfer/Investment/Redemption.
+- [x] T040 [US4] Implementar `manual-entry.binding.ts` (+ gating de T038) e a aba **Nova transação** em `components/new-transaction-pane.component.tsx` (+ `.css.ts`): cards de tipo, categorização, conta de destino + confirmação consciente para Transfer/Investment/Redemption.
 - [ ] T041 [US4] Implementar a ação de **lote** (best-effort) a partir de seleção múltipla na imports-list (`batch.binding.ts` + UI de seleção/relatório de `failed`).
-- [ ] T042 [US4] Teste (RED→GREEN) DOM em `tests/modules/financial/client/reconciliation-workspace/new-transaction-pane.spec.tsx` (tipo simples registra; transferência sem destino/confirmação bloqueia; lote reporta falhas parciais).
+- [x] T042 [US4] Teste (RED→GREEN) DOM em `tests/modules/financial/client/reconciliation-workspace/new-transaction-pane.spec.tsx` (tipo simples registra; transferência sem destino/confirmação bloqueia; lote reporta falhas parciais).
 
 **Checkpoint**: o operador consegue "zerar" o extrato (todas as movimentações tratadas).
 
@@ -166,8 +166,8 @@ registro preservado como "desfeito".
 **Independent Test**: abrir detalhes de uma conciliada → Desfazer → volta a pendente.
 
 - [x] T043 [US5] Criar `src/modules/financial/server/adapters/server-fns/undo-reconciliation.service.fn.ts` (input `{reconciliationId, reason?}`; mapeia 409 already-undone/period-closed); schema/mapper + composition.
-- [ ] T044 [US5] Implementar `undo.binding.ts` (invalida transações/progresso) e `components/detail-modal.component.tsx` (+ `.css.ts`): detalhes da conciliação com botão Desfazer + campo de motivo. View burra.
-- [ ] T045 [US5] Teste (RED→GREEN) DOM em `tests/modules/financial/client/reconciliation-workspace/detail-modal.spec.tsx` (desfazer volta a pendente; período fechado bloqueia com aviso).
+- [x] T044 [US5] Implementar `undo.binding.ts` (invalida transações/progresso) e `components/detail-modal.component.tsx` (+ `.css.ts`): detalhes da conciliação com botão Desfazer + campo de motivo. View burra.
+- [x] T045 [US5] Teste (RED→GREEN) DOM em `tests/modules/financial/client/reconciliation-workspace/detail-modal.spec.tsx` (desfazer volta a pendente; período fechado bloqueia com aviso).
 
 **Checkpoint**: correção de erros disponível; trilha de auditoria preservada.
 

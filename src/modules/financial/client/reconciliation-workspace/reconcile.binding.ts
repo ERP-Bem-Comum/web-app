@@ -20,7 +20,9 @@ export type ReconcileBinding = Readonly<{
   rejectOne: (transactionId: string, payableId: string) => void
 }>
 
-export function useReconcile(): ReconcileBinding {
+export function useReconcile(
+  onReconciled: (transactionId: string, reconciliationId: string) => void,
+): ReconcileBinding {
   const qc = useQueryClient()
   const [rejected, setRejected] = useState<ReadonlySet<string>>(() => new Set())
   const [errorTag, setErrorTag] = useState<string | null>(null)
@@ -36,10 +38,11 @@ export function useReconcile(): ReconcileBinding {
         transactionId: v.transactionId,
         payableIds: [v.payableId],
       }),
-    onSuccess: (res) => {
+    onSuccess: (res, v) => {
       if (res.ok) {
         setErrorTag(null)
         invalidate()
+        onReconciled(v.transactionId, res.value.reconciliationId)
       } else {
         setErrorTag(reconciliationErrorTag(res.error))
       }

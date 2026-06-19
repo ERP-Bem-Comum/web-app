@@ -17,6 +17,9 @@ export type {
   StatementTransaction,
   BankStatementImport,
   Movement,
+  PaidPayable,
+  DifferenceTreatment,
+  ManualEntryType,
 } from '#modules/financial/client/data/model/reconciliation.model.ts'
 
 // ── UI-state (server-state ≠ UI-state, §XI) ─────────────────────────────────────
@@ -153,3 +156,39 @@ export const groupTransactionsByDay = (txs: readonly StatementTransaction[]): re
 /** Conta as transações já tratadas (não-pendentes) — alimenta o progresso "X/N". */
 export const countReconciled = (txs: readonly StatementTransaction[]): number =>
   txs.filter((t) => !isPending(t)).length
+
+// ── Balanceamento da conciliação N:1 / parcial (puro — US3) ─────────────────────
+
+/** String de centavos → inteiro (defensivo: vazio/NaN → 0). */
+export const parseCents = (s: string): number => {
+  const n = Number.parseInt(s, 10)
+  return Number.isFinite(n) ? n : 0
+}
+
+/** Soma (em centavos) dos títulos selecionados. */
+export const sumCentsOf = (payables: readonly { valueCents: string }[]): number =>
+  payables.reduce((acc, p) => acc + parseCents(p.valueCents), 0)
+
+/**
+ * Diferença residual (centavos) = valor do extrato − soma dos títulos. 0 → bate exatamente; ≠ 0 → exige
+ * classificação (Juros/Multa/Desconto/Tarifa/Parcial). Pode ser negativa (selecionou além do valor).
+ */
+export const residualCents = (txValueCents: number, selectedSumCents: number): number =>
+  txValueCents - selectedSumCents
+
+/**
+ * Pode conciliar (gating do botão): ≥1 título selecionado E (bate exatamente OU a diferença foi
+ * classificada). O backend revalida (422 reconciliation-not-balanced), mas a UI nunca deixa enviar
+ * desbalanceado (SC-004).
+ */
+export const canReconcileMulti = (selectedCount: number, residual: number, hasTreatment: boolean): boolean =>
+  selectedCount >= 1 && (residual === 0 || hasTreatment)
+
+/** Tipo derivado (espelha o backend `deriveType`): com diferença → Partial; senão 1→Individual, ≥2→Multiple. */
+export type ReconType = 'Individual' | 'Multiple' | 'Partial'
+export const deriveReconType = (selectedCount: number, hasDifference: boolean): ReconType =>
+  hasDifference ? 'Partial' : selectedCount > 1 ? 'Multiple' : 'Individual'
+
+/** Tipos de lançamento manual que exigem conta de destino + confirmação consciente (US4). */
+export const requiresDestination = (type: string): boolean =>
+  type === 'Transfer' || type === 'Investment' || type === 'Redemption'

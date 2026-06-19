@@ -17,10 +17,20 @@ import {
 } from '#shared/ui/icons/index.ts'
 
 import { useReconciliationWorkspace } from '../reconciliation-workspace.binding.ts'
+import { isPending, type AssocTab } from '../reconciliation-workspace.view-model.ts'
 import { ImportMenu } from '../components/import-menu.component.tsx'
 import { ImportsList } from '../components/imports-list.component.tsx'
 import { SuggestionPane } from '../components/suggestion-pane.component.tsx'
+import { SearchCreatePane } from '../components/search-create-pane.component.tsx'
+import { NewTransactionPane } from '../components/new-transaction-pane.component.tsx'
+import { ReconciledBanner } from '../components/reconciled-banner.component.tsx'
 import * as s from './reconciliation-workspace.css.ts'
+
+const ASSOC_TABS: readonly { id: AssocTab; tag: string }[] = [
+  { id: 'sugestao', tag: 'financial.recon.assoc.sugestao' },
+  { id: 'nova', tag: 'financial.recon.assoc.nova' },
+  { id: 'multi', tag: 'financial.recon.assoc.multi' },
+]
 
 const t = createTranslator(ptBR)
 
@@ -127,23 +137,69 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
               onFilter={vm.setListFilter}
               onSelect={vm.selectTransaction}
             />
-            <SuggestionPane
-              state={ui.showGuesses ? vm.suggestions : { tag: 'idle' }}
-              selectedTx={vm.selectedTx}
-              reconciling={vm.reconcile.reconciling}
-              rejecting={vm.reconcile.rejecting}
-              errorTag={vm.reconcile.errorTag}
-              onReconcile={(payableId) => {
-                if (ui.selectedTransactionId !== null) {
-                  vm.reconcile.reconcileOne(ui.selectedTransactionId, payableId)
-                }
-              }}
-              onReject={(payableId) => {
-                if (ui.selectedTransactionId !== null) {
-                  vm.reconcile.rejectOne(ui.selectedTransactionId, payableId)
-                }
-              }}
-            />
+            {vm.selectedTx !== null && !isPending(vm.selectedTx) ? (
+              <ReconciledBanner
+                undo={vm.undo}
+                reconciliationId={vm.reconciliationIdFor(vm.selectedTx.id)}
+                transactionId={vm.selectedTx.id}
+              />
+            ) : vm.selectedTx === null ? (
+              <SuggestionPane
+                state={{ tag: 'idle' }}
+                selectedTx={null}
+                reconciling={false}
+                rejecting={false}
+                errorTag={null}
+                onReconcile={() => undefined}
+                onReject={() => undefined}
+              />
+            ) : (
+              <div className={s.importsCol}>
+                <div className={s.assocTabs} role="tablist" aria-label={t('financial.recon.assoc.sugestao')}>
+                  {ASSOC_TABS.map((a) => (
+                    <button
+                      key={a.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={ui.assocTab === a.id}
+                      className={ui.assocTab === a.id ? s.assocTab.active : s.assocTab.inactive}
+                      onClick={() => {
+                        vm.setAssocTab(a.id)
+                      }}
+                    >
+                      {t(a.tag)}
+                    </button>
+                  ))}
+                </div>
+                {ui.assocTab === 'sugestao' ? (
+                  <SuggestionPane
+                    state={ui.showGuesses ? vm.suggestions : { tag: 'idle' }}
+                    selectedTx={vm.selectedTx}
+                    reconciling={vm.reconcile.reconciling}
+                    rejecting={vm.reconcile.rejecting}
+                    errorTag={vm.reconcile.errorTag}
+                    onReconcile={(payableId) => {
+                      if (ui.selectedTransactionId !== null) {
+                        vm.reconcile.reconcileOne(ui.selectedTransactionId, payableId)
+                      }
+                    }}
+                    onReject={(payableId) => {
+                      if (ui.selectedTransactionId !== null) {
+                        vm.reconcile.rejectOne(ui.selectedTransactionId, payableId)
+                      }
+                    }}
+                  />
+                ) : ui.assocTab === 'nova' ? (
+                  <NewTransactionPane binding={vm.manualEntry} />
+                ) : (
+                  <SearchCreatePane
+                    binding={vm.searchCreate}
+                    payables={vm.payables}
+                    extratoValueCents={vm.selectedTx.valueCents}
+                  />
+                )}
+              </div>
+            )}
           </div>
         ) : (
           <div className={s.emptyState}>

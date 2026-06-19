@@ -5,7 +5,7 @@
  * transação selecionada. A page e os componentes são burros (só consomem este hook). US1 (conciliar por
  * sugestão) + US2 (importar) ligados; US3–US8 entram nas próximas fatias.
  */
-import { useReducer } from 'react'
+import { useCallback, useReducer, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
 import {
@@ -26,6 +26,9 @@ import {
 import { useAccountSelector } from './account-selector.binding.ts'
 import { useImport, type ImportBinding } from './import.binding.ts'
 import { useReconcile, type ReconcileBinding } from './reconcile.binding.ts'
+import { useSearchCreate, type SearchCreateBinding } from './search-create.binding.ts'
+import { useManualEntry, type ManualEntryBinding } from './manual-entry.binding.ts'
+import { useUndo, type UndoBinding } from './undo.binding.ts'
 import {
   paidPayablesQueryOptions,
   suggestionsQueryOptions,
@@ -73,8 +76,14 @@ export type WorkspaceBinding = Readonly<{
   filterCounts: FilterCounts
   selectedTx: StatementTransaction | null
   suggestions: SuggestionState
+  payables: readonly PaidPayable[]
   import: ImportBinding
   reconcile: ReconcileBinding
+  searchCreate: SearchCreateBinding
+  manualEntry: ManualEntryBinding
+  undo: UndoBinding
+  /** id da conciliação feita NESTA sessão p/ a transação (null se desconhecido — Desfazer fica chrome). */
+  reconciliationIdFor: (transactionId: string) => string | null
   setTab: (tab: WorkspaceTab) => void
   toggleGuesses: () => void
   setListFilter: (filter: ListFilter) => void
@@ -101,10 +110,32 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
   const importBinding = useImport(accountRef, (statementId) => {
     dispatch({ type: 'set-statement', statementId })
   })
-  const reconcileBinding = useReconcile()
+
+  // Mapa de sessão transação→conciliação (o contrato não expõe o id na listagem — habilita o Desfazer
+  // só para conciliações feitas nesta sessão; ver undo.binding). Após recarregar, fica chrome.
+  const [recMap, setRecMap] = useState<ReadonlyMap<string, string>>(() => new Map())
+  const recordReconciliation = useCallback((transactionId: string, reconciliationId: string) => {
+    setRecMap((prev) => new Map(prev).set(transactionId, reconciliationId))
+  }, [])
+  const forgetReconciliation = useCallback((transactionId: string) => {
+    setRecMap((prev) => {
+      const next = new Map(prev)
+      next.delete(transactionId)
+      return next
+    })
+  }, [])
 
   // ── Lista de transações (server-state → estado da tela via view-model pura) ──
   const allTx: readonly StatementTransaction[] = txQuery.data?.ok === true ? txQuery.data.value : []
+  const payables: readonly PaidPayable[] = payablesQuery.data?.ok === true ? payablesQuery.data.value : []
+  const selectedTx =
+    ui.selectedTransactionId === null ? null : (allTx.find((t) => t.id === ui.selectedTransactionId) ?? null)
+
+  const reconcileBinding = useReconcile(recordReconciliation)
+  const searchCreateBinding = useSearchCreate(selectedTx, payables, recordReconciliation)
+  const manualEntryBinding = useManualEntry(selectedTx, recordReconciliation)
+  const undoBinding = useUndo(forgetReconciliation)
+
   const filterCounts: FilterCounts = {
     pendentes: allTx.filter(isPending).length,
     conciliadas: allTx.filter((t) => !isPending(t)).length,
@@ -121,13 +152,8 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     return { tag: 'ready', groups }
   })()
 
-  const selectedTx =
-    ui.selectedTransactionId === null ? null : (allTx.find((t) => t.id === ui.selectedTransactionId) ?? null)
-
   // ── Sugestões da transação selecionada (join com Pagos; rejeitadas filtradas) ──
-  const payablesMap: ReadonlyMap<string, PaidPayable> = new Map(
-    (payablesQuery.data?.ok === true ? payablesQuery.data.value : []).map((p) => [p.id, p]),
-  )
+  const payablesMap: ReadonlyMap<string, PaidPayable> = new Map(payables.map((p) => [p.id, p]))
 
   const suggestions: SuggestionState = (() => {
     if (ui.selectedTransactionId === null) return { tag: 'idle' }
@@ -165,8 +191,13 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     filterCounts,
     selectedTx,
     suggestions,
+    payables,
     import: importBinding,
     reconcile: reconcileBinding,
+    searchCreate: searchCreateBinding,
+    manualEntry: manualEntryBinding,
+    undo: undoBinding,
+    reconciliationIdFor: (transactionId) => recMap.get(transactionId) ?? null,
     setTab: (tab) => {
       dispatch({ type: 'set-tab', tab })
     },

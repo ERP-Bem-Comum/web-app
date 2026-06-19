@@ -625,3 +625,226 @@ export const summaryNote = style({
   fontFamily: vars.font.family.mono,
   fontSize: vars.font.size['2xs'],
 })
+
+// ── assoc tabs (Sugestão | Nova | Buscar/Criar vários) ──────────────────────────
+const assocTabBase = {
+  border: 'none',
+  background: 'transparent',
+  paddingInline: vars.space.sm,
+  paddingBlock: vars.space.sm,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+  cursor: 'pointer',
+  borderBlockEnd: `${vars.borderWidth.thick} solid transparent`,
+} as const
+export const assocTab = styleVariants({
+  inactive: { ...assocTabBase, color: vars.color.text.muted },
+  active: {
+    ...assocTabBase,
+    color: vars.color.text.primary,
+    fontWeight: vars.font.weight.semibold,
+    borderBlockEndColor: vars.color.brand.normal,
+  },
+})
+
+// ── Buscar / Criar vários (US3) ─────────────────────────────────────────────────
+export const multiSummary = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.md,
+  flexWrap: 'wrap',
+})
+export const summaryItem = style({ display: 'flex', flexDirection: 'column', gap: '0.125rem' })
+export const summaryLbl = style({
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size['2xs'],
+  color: vars.color.text.muted,
+})
+export const summaryVal = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size.md,
+  fontWeight: vars.font.weight.bold,
+  color: vars.color.text.primary,
+})
+export const diffPill = styleVariants({
+  zero: {
+    marginInlineStart: 'auto',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.125rem',
+    padding: vars.space.sm,
+    borderRadius: vars.radius.md,
+    background: vars.color.status.activeBg,
+    color: vars.color.status.activeText,
+  },
+  open: {
+    marginInlineStart: 'auto',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.125rem',
+    padding: vars.space.sm,
+    borderRadius: vars.radius.md,
+    background: vars.color.status.pendingBg,
+    color: vars.color.status.pendingText,
+  },
+})
+
+export const payGrid = style({
+  display: 'flex',
+  flexDirection: 'column',
+  border: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
+  borderRadius: vars.radius.md,
+  overflow: 'hidden',
+})
+export const payRow = style({
+  display: 'grid',
+  gridTemplateColumns: '1.25rem 1fr auto',
+  gap: vars.space.sm,
+  alignItems: 'center',
+  inlineSize: '100%',
+  textAlign: 'start',
+  border: 'none',
+  background: 'transparent',
+  cursor: 'pointer',
+  paddingInline: vars.space.sm,
+  paddingBlock: vars.space.sm,
+  borderBlockEnd: `${vars.borderWidth.hairline} solid ${vars.color.border.subtle}`,
+})
+export const payRowSelected = style({ background: vars.color.surface.subtle })
+export const checkbox = styleVariants({
+  on: {
+    inlineSize: '1rem',
+    blockSize: '1rem',
+    borderRadius: vars.radius.sm,
+    background: vars.color.brand.normal,
+    border: `${vars.borderWidth.thin} solid ${vars.color.brand.normal}`,
+  },
+  off: {
+    inlineSize: '1rem',
+    blockSize: '1rem',
+    borderRadius: vars.radius.sm,
+    background: vars.color.surface.default,
+    border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
+  },
+})
+export const payName = style({
+  fontSize: vars.font.size.sm,
+  color: vars.color.text.primary,
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+})
+export const payMeta = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size['2xs'],
+  color: vars.color.text.muted,
+})
+export const payAmt = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.text.secondary,
+})
+
+export const treatmentRow = style({ display: 'flex', flexWrap: 'wrap', gap: vars.space.xs })
+const treatmentCardBase = {
+  border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
+  background: vars.color.surface.default,
+  borderRadius: vars.radius.md,
+  paddingInline: vars.space.sm,
+  paddingBlock: '0.375rem',
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  cursor: 'pointer',
+} as const
+export const treatmentCard = styleVariants({
+  off: { ...treatmentCardBase, color: vars.color.text.secondary },
+  on: {
+    ...treatmentCardBase,
+    color: vars.color.status.pendingText,
+    background: vars.color.status.pendingBg,
+    borderColor: vars.color.status.pendingText,
+  },
+})
+
+// ── Nova transação (US4) ────────────────────────────────────────────────────────
+export const typeGrid = style({ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: vars.space.sm })
+const typeCardBase = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: '0.25rem',
+  border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
+  background: vars.color.surface.default,
+  borderRadius: vars.radius.md,
+  padding: vars.space.sm,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  color: vars.color.text.secondary,
+  cursor: 'pointer',
+  textAlign: 'center',
+} as const
+export const typeCard = styleVariants({
+  off: { ...typeCardBase },
+  on: {
+    ...typeCardBase,
+    color: vars.color.brand.normal,
+    background: vars.color.brand.disabled,
+    borderColor: vars.color.brand.normal,
+  },
+})
+export const formField = style({ display: 'flex', flexDirection: 'column', gap: '0.25rem' })
+export const fieldLabel = style({
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  color: vars.color.text.secondary,
+})
+export const input = style({
+  inlineSize: '100%',
+  paddingInline: vars.space.sm,
+  paddingBlock: '0.5rem',
+  borderRadius: vars.radius.md,
+  border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
+  background: vars.color.surface.default,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+  color: vars.color.text.primary,
+})
+export const confirmRow = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  color: vars.color.text.secondary,
+})
+export const warnBox = style({
+  display: 'flex',
+  gap: vars.space.sm,
+  padding: vars.space.sm,
+  borderRadius: vars.radius.md,
+  background: vars.color.status.pendingBg,
+  color: vars.color.status.pendingText,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+})
+
+// ── Desfazer (US5) ──────────────────────────────────────────────────────────────
+export const banner = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: vars.space.sm,
+  padding: vars.space.md,
+  borderRadius: vars.radius.lg,
+  background: vars.color.status.activeBg,
+  border: `${vars.borderWidth.thin} solid ${vars.color.status.activeText}`,
+})
+export const bannerTitle = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.375rem',
+  color: vars.color.status.activeText,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.semibold,
+})
