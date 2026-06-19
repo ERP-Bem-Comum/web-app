@@ -8,6 +8,7 @@ import type {
   Movement,
   PaidPayable,
   ReconciliationAccount,
+  ReconciliationPeriod,
   StatementTransaction,
   TransactionReconciliation,
 } from '#modules/financial/client/data/model/reconciliation.model.ts'
@@ -23,6 +24,8 @@ export type {
   Movement,
   PaidPayable,
   ReconciliationAccount,
+  ReconciliationPeriod,
+  ExportFormat,
   DifferenceTreatment,
   ManualEntryType,
 } from '#modules/financial/client/data/model/reconciliation.model.ts'
@@ -290,6 +293,21 @@ export const formatDayHeader = (iso: string): string => {
   const weekday = WEEKDAYS_PT[new Date(Date.UTC(y, m - 1, d)).getUTCDay()] ?? ''
   return `${String(d)} ${MONTHS_PT[m - 1] ?? ''} ${String(y)} · ${weekday}`
 }
+
+/** ISO `YYYY-MM-DD` → "18 mai 2026" (compacto, sem dia da semana — usado no rótulo do período de export). */
+export const formatShortDate = (iso: string): string => {
+  const [y, m, d] = iso.split('-').map((n) => Number.parseInt(n, 10))
+  if (y === undefined || m === undefined || d === undefined || !Number.isFinite(y * m * d)) return iso
+  return `${String(d)} ${MONTHS_PT[m - 1] ?? ''} ${String(y)}`
+}
+
+/** Período mais recente da conta (por data final) — alvo do export "Exportar conciliação". */
+export const pickLatestPeriod = (periods: readonly ReconciliationPeriod[]): ReconciliationPeriod | null =>
+  periods.length === 0 ? null : periods.reduce((best, p) => (p.periodEnd > best.periodEnd ? p : best))
+
+/** Rótulo honesto do que será exportado: "18 mai 2026 – 17 jun 2026". */
+export const periodRangeLabel = (p: ReconciliationPeriod): string =>
+  `${formatShortDate(p.periodStart)} – ${formatShortDate(p.periodEnd)}`
 
 /** ISO `YYYY-MM-DD` → "18/05" (coluna Data). */
 export const formatDayShort = (iso: string): string => {

@@ -26,6 +26,58 @@ const safeReadBody = async (r: Response): Promise<unknown> => {
   }
 }
 
+/**
+ * resultFetchText — variante p/ endpoints que respondem TEXTO cru (ex.: export OFX/CSV do core-api,
+ * que NÃO é JSON). Mesmo contrato de erro/timeout do `resultFetch`, mas devolve o body como string sem
+ * tentar `JSON.parse`. Envia accept curinga (não força application/json).
+ */
+export const resultFetchText = async (
+  url: string,
+  options: ResultFetchOptions = {},
+): Promise<Result<string, HttpError>> => {
+  const { method = 'GET', token, headers = {}, signal, timeoutMs = 15_000 } = options
+
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => {
+    controller.abort()
+  }, timeoutMs)
+  if (signal) {
+    if (signal.aborted) controller.abort()
+    else {
+      signal.addEventListener(
+        'abort',
+        () => {
+          controller.abort()
+        },
+        { once: true },
+      )
+    }
+  }
+
+  const requestHeaders: Record<string, string> = {
+    accept: '*/*',
+    ...(token !== undefined ? { authorization: `Bearer ${token}` } : {}),
+    ...headers,
+  }
+
+  let response: Response
+  try {
+    response = await globalThis.fetch(url, { method, headers: requestHeaders, signal: controller.signal })
+  } catch {
+    clearTimeout(timeoutId)
+    if (controller.signal.aborted) {
+      return err(signal?.aborted === true ? { kind: 'aborted' } : { kind: 'timeout' })
+    }
+    return err({ kind: 'network' })
+  }
+  clearTimeout(timeoutId)
+
+  if (!response.ok) {
+    return err({ kind: 'http', status: response.status, body: await safeReadBody(response) })
+  }
+  return ok(await response.text())
+}
+
 export const resultFetch = async <T>(
   url: string,
   options: ResultFetchOptions = {},
@@ -39,9 +91,13 @@ export const resultFetch = async <T>(
   if (signal) {
     if (signal.aborted) controller.abort()
     else {
-      signal.addEventListener('abort', () => {
-        controller.abort()
-      }, { once: true })
+      signal.addEventListener(
+        'abort',
+        () => {
+          controller.abort()
+        },
+        { once: true },
+      )
     }
   }
 

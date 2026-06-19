@@ -145,6 +145,19 @@ export const CoreApiPeriodClosedSchema = z.object({
   status: z.string().trim(), // 'Closed'
 })
 
+// Período de conciliação (#173 — GET /reconciliation-periods → array). `id` = periodId p/ exportar.
+export const CoreApiReconciliationPeriodSchema = z.object({
+  id: z.string().trim(),
+  debitAccountRef: z.string().trim(),
+  periodStart: z.string().trim(), // date-only YYYY-MM-DD
+  periodEnd: z.string().trim(),
+  status: z.string().trim(), // 'Open' | 'Closed'
+  closedAt: z.string().trim().nullable().catch(null),
+  closedBy: z.string().trim().nullable().catch(null),
+})
+export type CoreApiReconciliationPeriod = z.infer<typeof CoreApiReconciliationPeriodSchema>
+export const CoreApiReconciliationPeriodsSchema = z.array(CoreApiReconciliationPeriodSchema)
+
 // Rejeitar sugestão (POST /statement-transactions/:id/reject-suggestion).
 export const CoreApiRejectSchema = z.object({
   transactionId: z.string().trim(),

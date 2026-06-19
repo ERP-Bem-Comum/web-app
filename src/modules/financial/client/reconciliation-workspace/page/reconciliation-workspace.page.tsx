@@ -277,8 +277,8 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
           {vm.closePeriod.errorTag !== null ? (
             <span className={s.errorText}>{t(vm.closePeriod.errorTag)}</span>
           ) : null}
-          {/* Exportar OFX/CSV/PDF = chrome até #173 (sem endpoint p/ obter o periodId) */}
-          <ExportMenu menus={vm.headerMenus} />
+          {/* Exportar OFX/CSV reais (#173, exporta o período mais recente); PDF segue chrome (#145) */}
+          <ExportMenu menus={vm.headerMenus} exportBinding={vm.exportConciliacao} />
           {/* Fechar período (US7) — bloqueado se há pendentes ou sem extrato */}
           <button
             type="button"

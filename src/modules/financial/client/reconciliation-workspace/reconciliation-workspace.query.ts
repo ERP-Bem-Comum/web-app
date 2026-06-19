@@ -33,3 +33,11 @@ export const transactionReconciliationQueryOptions = (transactionId: string | nu
   enabled: transactionId !== null,
   staleTime: 15_000,
 })
+
+// Períodos de conciliação da conta (#173) — fornece o periodId p/ o export real. Habilita só com conta.
+export const reconciliationPeriodsQueryOptions = (debitAccountRef: string | null) => ({
+  queryKey: ['financial', 'reconciliation', 'periods', debitAccountRef] as const,
+  queryFn: () => reconciliationRepository.listReconciliationPeriods(debitAccountRef ?? ''),
+  enabled: debitAccountRef !== null,
+  staleTime: 30_000,
+})

@@ -18,6 +18,7 @@ import type {
   PaidPayable,
   PeriodClosed,
   ReconciliationCreated,
+  ReconciliationPeriod,
   ReconciliationStatus,
   ReconciliationType,
   ReconciliationUndone,
@@ -37,6 +38,7 @@ import {
   CoreApiPaidPayablesSchema,
   CoreApiPeriodClosedSchema,
   CoreApiReconciliationCreatedSchema,
+  CoreApiReconciliationPeriodsSchema,
   CoreApiRejectSchema,
   CoreApiSuggestionsSchema,
   CoreApiTransactionReconciliationSchema,
@@ -299,6 +301,23 @@ export const periodClosedToModel = (raw: unknown): Result<PeriodClosed, Reconcil
   const parsed = CoreApiPeriodClosedSchema.safeParse(raw)
   if (!parsed.success) return err('server')
   return ok({ periodId: parsed.data.periodId, status: 'Closed' })
+}
+
+export const reconciliationPeriodsToModel = (
+  raw: unknown,
+): Result<readonly ReconciliationPeriod[], ReconciliationError> => {
+  const parsed = CoreApiReconciliationPeriodsSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  const items: readonly ReconciliationPeriod[] = parsed.data.map((p) => ({
+    id: p.id,
+    debitAccountRef: p.debitAccountRef,
+    periodStart: p.periodStart.slice(0, 10),
+    periodEnd: p.periodEnd.slice(0, 10),
+    status: p.status === 'Closed' ? 'Closed' : 'Open',
+    closedAt: p.closedAt,
+    closedBy: p.closedBy,
+  }))
+  return ok(items)
 }
 
 export const rejectToModel = (raw: unknown): Result<RejectedSuggestion, ReconciliationError> => {

@@ -5,7 +5,7 @@
  * `core-api-financial.ts`.
  */
 import { err, isErr, ok } from '#shared/primitives/result.ts'
-import { resultFetch } from '#external/core-api/result-fetch.ts'
+import { resultFetch, resultFetchText } from '#external/core-api/result-fetch.ts'
 import type { ReconciliationClient } from '#modules/financial/server/application/reconciliation.use-cases.ts'
 import type { CedenteAccount } from '#modules/financial/server/domain/reconciliation.io.ts'
 import {
@@ -19,6 +19,7 @@ import {
   paidPayablesToModel,
   periodClosedToModel,
   reconciliationCreatedToModel,
+  reconciliationPeriodsToModel,
   rejectToModel,
   suggestionsToModel,
   transactionReconciliationToModel,
@@ -188,5 +189,22 @@ export const createCoreApiReconciliationClient = (baseUrl: string): Reconciliati
     })
     if (isErr(r)) return err(mapHttpError(r.error))
     return periodClosedToModel(r.value)
+  },
+  listReconciliationPeriods: async (i, token) => {
+    const r = await resultFetch<unknown>(
+      `${baseUrl}/reconciliation-periods?debitAccountRef=${encodeURIComponent(i.debitAccountRef)}`,
+      { token },
+    )
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return reconciliationPeriodsToModel(r.value)
+  },
+  exportReconciliation: async (i, token) => {
+    // Export é TEXTO cru (application/x-ofx | text/csv), não JSON → resultFetchText.
+    const r = await resultFetchText(
+      `${baseUrl}/reconciliation-periods/${i.periodId}/export?format=${i.format}`,
+      { token },
+    )
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return ok({ content: r.value, format: i.format })
   },
 })

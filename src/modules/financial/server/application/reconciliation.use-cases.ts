@@ -13,9 +13,11 @@ import type {
   CreateCedenteAccountInput,
   ClosePeriodInput,
   CreateReconciliationInput,
+  ExportReconciliationInput,
   GetSuggestionsInput,
   GetTransactionReconciliationInput,
   ImportStatementInput,
+  ListReconciliationPeriodsInput,
   ListTransactionsInput,
   ManualEntryCreated,
   ManualEntryInput,
@@ -23,6 +25,8 @@ import type {
   PaidPayable,
   PeriodClosed,
   ReconciliationCreated,
+  ReconciliationExport,
+  ReconciliationPeriod,
   ReconciliationUndone,
   RejectSuggestionInput,
   RejectedSuggestion,
@@ -73,6 +77,14 @@ export type ReconciliationClient = Readonly<{
   ) => Promise<Result<ManualEntryCreated, ReconciliationError>>
   batchReconcile: (i: BatchReconcileInput, token: string) => Promise<Result<BatchResult, ReconciliationError>>
   closePeriod: (i: ClosePeriodInput, token: string) => Promise<Result<PeriodClosed, ReconciliationError>>
+  listReconciliationPeriods: (
+    i: ListReconciliationPeriodsInput,
+    token: string,
+  ) => Promise<Result<readonly ReconciliationPeriod[], ReconciliationError>>
+  exportReconciliation: (
+    i: ExportReconciliationInput,
+    token: string,
+  ) => Promise<Result<ReconciliationExport, ReconciliationError>>
 }>
 
 type Deps = Readonly<{ client: ReconciliationClient }>
@@ -155,3 +167,16 @@ export const createClosePeriod =
   (deps: Deps) =>
   (i: ClosePeriodInput, token: string): Promise<Result<PeriodClosed, ReconciliationError>> =>
     deps.client.closePeriod(i, token)
+
+export const createListReconciliationPeriods =
+  (deps: Deps) =>
+  (
+    i: ListReconciliationPeriodsInput,
+    token: string,
+  ): Promise<Result<readonly ReconciliationPeriod[], ReconciliationError>> =>
+    deps.client.listReconciliationPeriods(i, token)
+
+export const createExportReconciliation =
+  (deps: Deps) =>
+  (i: ExportReconciliationInput, token: string): Promise<Result<ReconciliationExport, ReconciliationError>> =>
+    deps.client.exportReconciliation(i, token)

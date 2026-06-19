@@ -104,6 +104,19 @@ export interface ClosePeriodInput {
   periodEnd: string
 }
 
+// Listar períodos de conciliação por conta (#173 — GET /reconciliation-periods?debitAccountRef=).
+export interface ListReconciliationPeriodsInput {
+  debitAccountRef: string
+}
+
+// Exportar conciliação de um período (GET /reconciliation-periods/:id/export?format=). `format` é
+// minúsculo no core-api. Exporta período Open ou Closed (sem guard de status). PDF fica fora (#145).
+export type ExportFormat = 'ofx' | 'csv'
+export interface ExportReconciliationInput {
+  periodId: string
+  format: ExportFormat
+}
+
 // ── Outputs (Model que a UI consome) ────────────────────────────────────────────
 export type StatementPeriod = Readonly<{ start: string; end: string }>
 
@@ -230,3 +243,17 @@ export type BatchResult = Readonly<{
 }>
 
 export type PeriodClosed = Readonly<{ periodId: string; status: 'Closed' }>
+
+// Período de conciliação (#173). `id` = periodId p/ exportar. Datas date-only. `closedAt` ISO ou null.
+export type ReconciliationPeriod = Readonly<{
+  id: string
+  debitAccountRef: string
+  periodStart: string // YYYY-MM-DD
+  periodEnd: string // YYYY-MM-DD
+  status: 'Open' | 'Closed'
+  closedAt: string | null
+  closedBy: string | null
+}>
+
+// Conteúdo exportado (texto cru OFX/CSV) + o formato pedido (p/ a UI nomear o arquivo / content-type).
+export type ReconciliationExport = Readonly<{ content: string; format: ExportFormat }>

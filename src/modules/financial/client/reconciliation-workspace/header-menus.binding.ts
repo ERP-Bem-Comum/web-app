@@ -1,8 +1,8 @@
 /**
  * useHeaderMenus — controller dos dropdowns do header/footer (Período e Exportar). UI-state puro de
  * abertura + preset de período selecionado. As datas dos presets são calculadas a partir de `new Date()`
- * (adapter, client-only). Período é display-only até o backend filtrar por intervalo (#173); Exportar é
- * chrome até #173 (sem endpoint p/ obter o periodId). Sem I/O.
+ * (adapter, client-only). Período é display-only (filtro por intervalo é refinamento futuro). A AÇÃO de
+ * Exportar vive em `export-conciliacao.binding.ts` (#173); aqui só o abrir/fechar do dropdown. Sem I/O.
  */
 import { useState } from 'react'
 

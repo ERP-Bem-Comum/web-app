@@ -14,6 +14,7 @@ import type {
   ClosePeriodInput,
   CreateCedenteAccountInput,
   CreateReconciliationInput,
+  ExportReconciliationInput,
   GetSuggestionsInput,
   ImportStatementInput,
   ListTransactionsInput,
@@ -24,6 +25,8 @@ import type {
   PeriodClosed,
   ReconciliationAccount,
   ReconciliationCreated,
+  ReconciliationExport,
+  ReconciliationPeriod,
   ReconciliationUndone,
   RejectSuggestionInput,
   RejectedSuggestion,
@@ -56,6 +59,10 @@ type UndoFn = (opts: {
 type ManualFn = (opts: { data: ManualEntryInput }) => Promise<ReconFnResult<ManualEntryCreated>>
 type BatchFn = (opts: { data: BatchReconcileInput }) => Promise<ReconFnResult<BatchResult>>
 type CloseFn = (opts: { data: ClosePeriodInput }) => Promise<ReconFnResult<PeriodClosed>>
+type ListPeriodsFn = (opts: {
+  data: { debitAccountRef: string }
+}) => Promise<ReconFnResult<readonly ReconciliationPeriod[]>>
+type ExportFn = (opts: { data: ExportReconciliationInput }) => Promise<ReconFnResult<ReconciliationExport>>
 type ListAccountsFn = () => Promise<ReconFnResult<readonly ReconciliationAccount[]>>
 type GetAccountFn = (opts: { data: { id: string } }) => Promise<ReconFnResult<ReconciliationAccount>>
 type CreateAccountFn = (opts: {
@@ -82,7 +89,14 @@ export type ReconciliationRepository = Readonly<{
   createManualEntry: (i: ManualEntryInput) => Promise<Result<ManualEntryCreated, ReconciliationError>>
   batchReconcile: (i: BatchReconcileInput) => Promise<Result<BatchResult, ReconciliationError>>
   closePeriod: (i: ClosePeriodInput) => Promise<Result<PeriodClosed, ReconciliationError>>
-  // ── Costura honesta (#168/#173) — sem endpoint hoje ──
+  // Períodos + export reais (#173).
+  listReconciliationPeriods: (
+    debitAccountRef: string,
+  ) => Promise<Result<readonly ReconciliationPeriod[], ReconciliationError>>
+  exportReconciliation: (
+    i: ExportReconciliationInput,
+  ) => Promise<Result<ReconciliationExport, ReconciliationError>>
+  // ── Conta-cedente (#138) ──
   listAccounts: () => Promise<Result<readonly ReconciliationAccount[], ReconciliationError>>
   getAccount: (id: string) => Promise<Result<ReconciliationAccount, ReconciliationError>>
   createAccount: (i: CreateCedenteAccountInput) => Promise<Result<ReconciliationAccount, ReconciliationError>>
@@ -103,6 +117,8 @@ export const createReconciliationRepository = (
     createManualEntryFn: ManualFn
     batchReconcileFn: BatchFn
     closePeriodFn: CloseFn
+    listReconciliationPeriodsFn: ListPeriodsFn
+    exportReconciliationFn: ExportFn
     listAccountsFn: ListAccountsFn
     getAccountFn: GetAccountFn
     createAccountFn: CreateAccountFn
@@ -150,6 +166,14 @@ export const createReconciliationRepository = (
   },
   closePeriod: async (i) => {
     const res = await deps.closePeriodFn({ data: i })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  listReconciliationPeriods: async (debitAccountRef) => {
+    const res = await deps.listReconciliationPeriodsFn({ data: { debitAccountRef } })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  exportReconciliation: async (i) => {
+    const res = await deps.exportReconciliationFn({ data: i })
     return res.ok ? ok(res.data) : err(res.error)
   },
   // Conta-cedente (#138) — ligada ao GET /cedente-accounts (saldo/pendências completos com o #139).

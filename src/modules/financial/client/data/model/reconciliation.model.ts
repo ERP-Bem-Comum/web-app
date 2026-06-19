@@ -171,3 +171,18 @@ export type BatchResult = Readonly<{
   failed: readonly BatchFailure[]
 }>
 export type PeriodClosed = Readonly<{ periodId: string; status: 'Closed' }>
+// Período de conciliação (#173). `id` = periodId p/ exportar. Datas date-only.
+export type ReconciliationPeriod = Readonly<{
+  id: string
+  debitAccountRef: string
+  periodStart: string
+  periodEnd: string
+  status: 'Open' | 'Closed'
+  closedAt: string | null
+  closedBy: string | null
+}>
+// Export real (#173). `format` minúsculo. Conteúdo = texto cru OFX/CSV. PDF fica fora (#145).
+export type ExportFormat = 'ofx' | 'csv'
+export type ListReconciliationPeriodsInput = Readonly<{ debitAccountRef: string }>
+export type ExportReconciliationInput = Readonly<{ periodId: string; format: ExportFormat }>
+export type ReconciliationExport = Readonly<{ content: string; format: ExportFormat }>

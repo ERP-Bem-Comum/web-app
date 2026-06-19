@@ -90,6 +90,13 @@ export const ClosePeriodInputSchema = z.object({
   periodEnd: DateSchema,
 })
 
+export const ListReconciliationPeriodsInputSchema = z.object({ debitAccountRef: z.uuid() })
+
+export const ExportReconciliationInputSchema = z.object({
+  periodId: z.uuid(),
+  format: z.enum(['ofx', 'csv']),
+})
+
 // ── Guardas schema ≡ domínio (§IV/§VI) ──────────────────────────────────────────
 type AssertEqual<A, B> = [A] extends [B] ? ([B] extends [A] ? true : never) : never
 const _g_import: AssertEqual<z.infer<typeof ImportStatementInputSchema>, R.ImportStatementInput> = true
@@ -108,6 +115,14 @@ const _g_undo: AssertEqual<z.infer<typeof UndoReconciliationInputSchema>, R.Undo
 const _g_manual: AssertEqual<z.infer<typeof ManualEntryInputSchema>, R.ManualEntryInput> = true
 const _g_batch: AssertEqual<z.infer<typeof BatchReconcileInputSchema>, R.BatchReconcileInput> = true
 const _g_close: AssertEqual<z.infer<typeof ClosePeriodInputSchema>, R.ClosePeriodInput> = true
+const _g_listPeriods: AssertEqual<
+  z.infer<typeof ListReconciliationPeriodsInputSchema>,
+  R.ListReconciliationPeriodsInput
+> = true
+const _g_export: AssertEqual<
+  z.infer<typeof ExportReconciliationInputSchema>,
+  R.ExportReconciliationInput
+> = true
 const _g_createAcc: AssertEqual<
   z.infer<typeof CreateCedenteAccountInputSchema>,
   R.CreateCedenteAccountInput
@@ -123,3 +138,5 @@ void _g_undo
 void _g_manual
 void _g_batch
 void _g_close
+void _g_listPeriods
+void _g_export

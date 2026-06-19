@@ -12,12 +12,14 @@ import {
   createCreateManualEntry,
   createCreateCedenteAccount,
   createCreateReconciliation,
+  createExportReconciliation,
   createGetCedenteAccount,
   createGetSuggestions,
   createGetTransactionReconciliation,
   createImportStatement,
   createListCedenteAccounts,
   createListPaidPayables,
+  createListReconciliationPeriods,
   createListTransactions,
   createRejectSuggestion,
   createUndoReconciliation,
@@ -43,6 +45,8 @@ const build = () => {
     createManualEntry: createCreateManualEntry({ client }),
     batchReconcile: createBatchReconcile({ client }),
     closePeriod: createClosePeriod({ client }),
+    listReconciliationPeriods: createListReconciliationPeriods({ client }),
+    exportReconciliation: createExportReconciliation({ client }),
   }
 }
 

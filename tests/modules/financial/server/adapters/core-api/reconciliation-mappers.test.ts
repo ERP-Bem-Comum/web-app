@@ -15,6 +15,7 @@ import {
   cedenteAccountToModel,
   accountStatementSummary,
   transactionReconciliationToModel,
+  reconciliationPeriodsToModel,
   suggestionsToModel,
   importToModel,
   reconciliationCreatedToModel,
@@ -288,6 +289,57 @@ describe('transactionReconciliationToModel (#175)', () => {
 
   it('shape inválido → err(server)', () => {
     assert.ok(isErr(transactionReconciliationToModel({ nope: true })))
+  })
+})
+
+describe('reconciliationPeriodsToModel (#173)', () => {
+  it('array → períodos; status tolerante; datas date-only; closedAt/By nulos preservados', () => {
+    const r = reconciliationPeriodsToModel([
+      {
+        id: 'per-1',
+        debitAccountRef: 'acc-1',
+        periodStart: '2026-05-18T00:00:00.000Z',
+        periodEnd: '2026-06-17T00:00:00.000Z',
+        status: 'Closed',
+        closedAt: '2026-06-18T10:00:00.000Z',
+        closedBy: 'user-1',
+      },
+      {
+        id: 'per-2',
+        debitAccountRef: 'acc-1',
+        periodStart: '2026-06-18',
+        periodEnd: '2026-07-17',
+        status: 'Open',
+        closedAt: null,
+        closedBy: null,
+      },
+    ])
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value.length, 2)
+      assert.equal(r.value[0]?.periodStart, '2026-05-18')
+      assert.equal(r.value[0]?.periodEnd, '2026-06-17')
+      assert.equal(r.value[0]?.status, 'Closed')
+      assert.equal(r.value[1]?.status, 'Open')
+      assert.equal(r.value[1]?.closedAt, null)
+    }
+  })
+
+  it('status drift → Open; shape inválido → err(server)', () => {
+    const drift = reconciliationPeriodsToModel([
+      {
+        id: 'p',
+        debitAccountRef: 'a',
+        periodStart: '2026-06-01',
+        periodEnd: '2026-06-30',
+        status: 'ZZZ',
+        closedAt: null,
+        closedBy: null,
+      },
+    ])
+    assert.ok(isOk(drift))
+    if (isOk(drift)) assert.equal(drift.value[0]?.status, 'Open')
+    assert.ok(isErr(reconciliationPeriodsToModel({ nope: true })))
   })
 })
 

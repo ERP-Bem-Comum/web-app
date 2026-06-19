@@ -39,6 +39,7 @@ import { useSearchCreate, type SearchCreateBinding } from './search-create.bindi
 import { useManualEntry, type ManualEntryBinding } from './manual-entry.binding.ts'
 import { useUndo, type UndoBinding } from './undo.binding.ts'
 import { useClosePeriod, type ClosePeriodBinding } from './close-period.binding.ts'
+import { useExportConciliacao, type ExportBinding } from './export-conciliacao.binding.ts'
 import {
   paidPayablesQueryOptions,
   suggestionsQueryOptions,
@@ -112,7 +113,8 @@ export type WorkspaceBinding = Readonly<{
   manualEntry: ManualEntryBinding
   undo: UndoBinding
   closePeriod: ClosePeriodBinding
-  /** id da conciliação feita NESTA sessão p/ a transação (null se desconhecido — Desfazer fica chrome). */
+  exportConciliacao: ExportBinding
+  /** id da conciliação da transação: mapa de sessão (conciliação feita agora) OU lookup #175. */
   reconciliationIdFor: (transactionId: string) => string | null
   setTab: (tab: WorkspaceTab) => void
   toggleGuesses: () => void
@@ -193,6 +195,10 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     accountRef,
     importBinding.summary?.period ?? null,
     pendentesCount > 0,
+  )
+  const exportBinding = useExportConciliacao(
+    accountRef === '' ? null : accountRef,
+    headerMenusBinding.closeAll,
   )
 
   const filterCounts: FilterCounts = {
@@ -277,6 +283,7 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     manualEntry: manualEntryBinding,
     undo: undoBinding,
     closePeriod: closePeriodBinding,
+    exportConciliacao: exportBinding,
     reconciliationIdFor: (transactionId) =>
       recMap.get(transactionId) ??
       (transactionId === selectedReconLookupTxId ? selectedReconId : null) ??

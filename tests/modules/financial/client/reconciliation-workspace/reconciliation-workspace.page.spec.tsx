@@ -57,19 +57,22 @@ describe('ReconciliationWorkspacePage (shell)', () => {
     expect(toggle.getAttribute('aria-pressed')).toBe('false')
   })
 
-  it('Importar (US2) habilitado; Exportar abre menu (itens #173 anunciados); Fechar período (US7) desabilitado', () => {
+  it('Importar (US2) habilitado; Exportar abre menu (#173); Fechar período (US7) desabilitado', () => {
     renderPage()
     expect(screen.getByRole('button', { name: has('financial.recon.import') }).hasAttribute('disabled')).toBe(
       false,
     )
-    // Exportar agora é um dropdown: o gatilho abre o menu (anuncia indisponibilidade no title)…
+    // Exportar é um dropdown: o gatilho abre o menu.
     const exportBtn = screen.getByRole('button', { name: has('financial.recon.bottombar.export') })
-    expect(exportBtn.getAttribute('title')).toBe(tr('financial.recon.bottombar.exportUnavailable'))
     fireEvent.click(exportBtn)
-    // …e os formatos (OFX/CSV/PDF) ficam desabilitados (chrome até #173)
+    // Sem período de conciliação (sem backend no teste), OFX/CSV ficam desabilitados com o motivo honesto;
+    // PDF segue desabilitado (#145). Quando houver período, ligam (validado em tela).
+    const ofx = screen.getByRole('menuitem', { name: has('financial.recon.export.ofx') })
+    expect(ofx.hasAttribute('disabled')).toBe(true)
+    expect(ofx.getAttribute('title')).toBe(tr('financial.recon.export.noPeriod'))
     expect(
-      screen.getByRole('menuitem', { name: has('financial.recon.export.ofx') }).hasAttribute('disabled'),
-    ).toBe(true)
+      screen.getByRole('menuitem', { name: has('financial.recon.export.pdf') }).getAttribute('title'),
+    ).toBe(tr('financial.recon.export.pdfUnavailable'))
     expect(
       screen.getByRole('button', { name: has('financial.recon.bottombar.close') }).hasAttribute('disabled'),
     ).toBe(true)
