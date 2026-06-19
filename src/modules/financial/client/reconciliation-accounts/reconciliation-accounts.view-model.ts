@@ -8,11 +8,33 @@ import { centsToBRL } from '#modules/financial/client/data/money.ts'
 import type { ReconciliationAccount } from '#modules/financial/client/data/model/reconciliation.model.ts'
 
 export { centsToBRL } from '#modules/financial/client/data/money.ts'
-export type { ReconciliationAccount } from '#modules/financial/client/data/model/reconciliation.model.ts'
+export type {
+  ReconciliationAccount,
+  AccountType,
+} from '#modules/financial/client/data/model/reconciliation.model.ts'
 
 export type AccountStatusKind = 'pending' | 'up-to-date' | 'closed'
 export type StatusFilter = 'todas' | 'pendentes' | 'em-dia' | 'encerradas'
 export type SortKey = 'pendencias' | 'saldo' | 'nome' | 'atualizacao'
+
+// Lista estática dos principais bancos (FEBRABAN) para o seletor do form Nova Conta. Vocabulário de UI
+// (não dado de negócio); o core-api aceita bankCode livre — esta lista só guia o comum.
+export type BankOption = Readonly<{ code: string; name: string }>
+export const BANKS: readonly BankOption[] = [
+  { code: '001', name: 'Banco do Brasil' },
+  { code: '033', name: 'Santander' },
+  { code: '104', name: 'Caixa Econômica Federal' },
+  { code: '237', name: 'Bradesco' },
+  { code: '341', name: 'Itaú Unibanco' },
+  { code: '260', name: 'Nubank' },
+  { code: '077', name: 'Banco Inter' },
+  { code: '336', name: 'C6 Bank' },
+  { code: '748', name: 'Sicredi' },
+  { code: '756', name: 'Sicoob' },
+  { code: '212', name: 'Banco Original' },
+  { code: '422', name: 'Banco Safra' },
+]
+export const bankNameByCode = (code: string): string | undefined => BANKS.find((b) => b.code === code)?.name
 
 export type AccountRow = Readonly<{
   id: string

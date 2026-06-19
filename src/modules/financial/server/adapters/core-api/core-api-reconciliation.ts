@@ -60,6 +60,24 @@ export const createCoreApiReconciliationClient = (baseUrl: string): Reconciliati
     if (isErr(r)) return err(mapHttpError(r.error))
     return cedenteAccountToModel(r.value)
   },
+  createCedenteAccount: async (i, token) => {
+    const typeMap = { Corrente: 'corrente', Poupanca: 'poupanca', Investimento: 'investimento' } as const
+    const body = {
+      bankCode: i.bankCode,
+      ...(i.bankName !== undefined ? { bankName: i.bankName } : {}),
+      type: typeMap[i.type],
+      agency: i.agency,
+      accountNumber: i.accountNumber,
+      accountDigit: i.accountDigit,
+      document: i.document,
+      ...(i.nickname !== undefined ? { nickname: i.nickname } : {}),
+      ...(i.openingBalanceCents !== undefined ? { openingBalanceCents: i.openingBalanceCents } : {}),
+      ...(i.openingBalanceDate !== undefined ? { openingBalanceDate: i.openingBalanceDate } : {}),
+    }
+    const r = await resultFetch<unknown>(`${baseUrl}/cedente-accounts`, { method: 'POST', token, body })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return cedenteAccountToModel(r.value)
+  },
   getSuggestions: async (i, token) => {
     const r = await resultFetch<unknown>(`${baseUrl}/statement-transactions/${i.transactionId}/suggestions`, {
       token,

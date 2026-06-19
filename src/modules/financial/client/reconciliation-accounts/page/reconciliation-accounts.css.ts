@@ -614,3 +614,10 @@ export const pendingHint = style({
   color: c.ink[5],
   marginInlineEnd: 'auto',
 })
+export const errorText = style({
+  fontFamily: recon.font.sans,
+  fontSize: fs.sm,
+  color: c.red.deep,
+  paddingInline: sp['2xl'],
+  paddingBlockEnd: sp.sm,
+})

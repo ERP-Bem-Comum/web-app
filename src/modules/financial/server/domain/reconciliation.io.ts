@@ -139,6 +139,21 @@ export type CedenteAccount = Readonly<{
   pendingCount: number
 }>
 
+// Criar conta-cedente (#138). `document` = CNPJ (obrigatório). type = AccountType do front (mapeado p/
+// minúsculo na borda do core-api). Saldo de abertura opcional (centavos).
+export type CreateCedenteAccountInput = Readonly<{
+  bankCode: string
+  bankName?: string
+  type: 'Corrente' | 'Poupanca' | 'Investimento'
+  agency: string
+  accountNumber: string
+  accountDigit: string
+  document: string
+  nickname?: string
+  openingBalanceCents?: string
+  openingBalanceDate?: string
+}>
+
 // Título conciliável (só Pago). `supplierName`/`documentNumber` chegam quando core-api#172 enriquecer.
 export type PaidPayable = Readonly<{
   id: string

@@ -10,12 +10,14 @@ import { reconciliationRepository } from '#modules/financial/client/data/reposit
 import { reconciliationErrorTag } from '#modules/financial/client/data/helpers/reconciliation-error-tag.ts'
 import {
   accountStatus,
+  bankNameByCode,
   consolidate,
   deriveAccountRows,
   type AccountsState,
   type SortKey,
   type StatusFilter,
 } from './reconciliation-accounts.view-model.ts'
+import { useAddAccount, type AddAccountBinding } from './add-account.binding.ts'
 
 export type ChipCounts = Readonly<{ todas: number; pendentes: number; emDia: number; encerradas: number }>
 const EMPTY_COUNTS: ChipCounts = { todas: 0, pendentes: 0, emDia: 0, encerradas: 0 }
@@ -33,6 +35,7 @@ export type AccountsBinding = Readonly<{
   status: StatusFilter
   sort: SortKey
   addOpen: boolean
+  add: AddAccountBinding
   setSearch: (v: string) => void
   setStatus: (v: StatusFilter) => void
   setSort: (v: SortKey) => void
@@ -45,6 +48,9 @@ export function useReconciliationAccounts(): AccountsBinding {
   const [status, setStatus] = useState<StatusFilter>('todas')
   const [sort, setSort] = useState<SortKey>('pendencias')
   const [addOpen, setAddOpen] = useState(false)
+  const add = useAddAccount(bankNameByCode, () => {
+    setAddOpen(false)
+  })
   const q = useQuery(accountsQueryOptions())
 
   const state: AccountsState = (() => {
@@ -75,6 +81,7 @@ export function useReconciliationAccounts(): AccountsBinding {
     status,
     sort,
     addOpen,
+    add,
     setSearch: (v) => {
       setSearch(v)
     },

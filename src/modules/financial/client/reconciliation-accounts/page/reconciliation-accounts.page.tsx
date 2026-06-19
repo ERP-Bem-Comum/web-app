@@ -177,6 +177,7 @@ export function ReconciliationAccountsPage() {
 
       <AddAccountModal
         open={vm.addOpen}
+        binding={vm.add}
         onClose={() => {
           vm.closeAdd()
         }}

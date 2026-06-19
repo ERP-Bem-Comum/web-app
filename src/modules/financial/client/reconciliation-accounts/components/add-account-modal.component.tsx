@@ -1,21 +1,33 @@
 /**
- * AddAccountModal (TELA 1) — view burra: "Nova Conta Bancária". Estrutura fiel ao mock (cabeçalho com
- * ícone, banco, tipo segmentado, agência, conta-DV, apelido + dica, saldo de abertura opcional + aviso).
- * CHROME honesto até core-api#168: o "Adicionar conta" fica desabilitado/anunciado (sem persistência
- * fabricada). Recebe `open`/`onClose` por props.
+ * AddAccountModal (TELA 1) — view burra: "Nova Conta Bancária". Form controlado pelo `AddAccountBinding`
+ * (#138 — POST /cedente-accounts). Banco via lista estática (BANKS), tipo segmentado, agência, conta-DV,
+ * CNPJ da organização (obrigatório no core-api), apelido + dica, saldo de abertura opcional. Recebe
+ * `open`/`onClose`/`binding` por props; sem data-hooks.
  */
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { CheckCircleIcon, WalletIcon } from '#shared/ui/icons/index.ts'
 
 import * as s from '../page/reconciliation-accounts.css.ts'
+import { BANKS, type AccountType } from '../reconciliation-accounts.view-model.ts'
+import type { AddAccountBinding } from '../add-account.binding.ts'
 
 const t = createTranslator(ptBR)
 const CLOSE_GLYPH = '✕'
 
-export type AddAccountModalProps = Readonly<{ open: boolean; onClose: () => void }>
+const TYPES: readonly { value: AccountType; tag: string }[] = [
+  { value: 'Corrente', tag: 'financial.recon.add.type.corrente' },
+  { value: 'Poupanca', tag: 'financial.recon.add.type.poupanca' },
+  { value: 'Investimento', tag: 'financial.recon.add.type.investimento' },
+]
 
-export function AddAccountModal({ open, onClose }: AddAccountModalProps) {
+export type AddAccountModalProps = Readonly<{
+  open: boolean
+  onClose: () => void
+  binding: AddAccountBinding
+}>
+
+export function AddAccountModal({ open, onClose, binding }: AddAccountModalProps) {
   if (!open) return null
   return (
     <div className={s.overlay} role="dialog" aria-modal="true" aria-label={t('financial.recon.add.title')}>
@@ -45,24 +57,40 @@ export function AddAccountModal({ open, onClose }: AddAccountModalProps) {
               <label className={s.fieldLabel} htmlFor="add-bank">
                 {t('financial.recon.add.field.bank')}
               </label>
-              <select id="add-bank" className={s.selectField} defaultValue="">
+              <select
+                id="add-bank"
+                className={s.selectField}
+                value={binding.bankCode}
+                onChange={(e) => {
+                  binding.setBank(e.target.value)
+                }}
+              >
                 <option value="" disabled>
                   {t('financial.recon.add.placeholder.bank')}
                 </option>
+                {BANKS.map((b) => (
+                  <option key={b.code} value={b.code}>
+                    {`${b.code} · ${b.name}`}
+                  </option>
+                ))}
               </select>
             </div>
             <div className={s.formField}>
               <span className={s.fieldLabel}>{t('financial.recon.add.field.type')}</span>
               <div className={s.segmented}>
-                <button type="button" className={s.segBtn.on}>
-                  {t('financial.recon.add.type.corrente')}
-                </button>
-                <button type="button" className={s.segBtn.off}>
-                  {t('financial.recon.add.type.poupanca')}
-                </button>
-                <button type="button" className={s.segBtn.off}>
-                  {t('financial.recon.add.type.investimento')}
-                </button>
+                {TYPES.map((tp) => (
+                  <button
+                    key={tp.value}
+                    type="button"
+                    className={binding.type === tp.value ? s.segBtn.on : s.segBtn.off}
+                    aria-pressed={binding.type === tp.value}
+                    onClick={() => {
+                      binding.setType(tp.value)
+                    }}
+                  >
+                    {t(tp.tag)}
+                  </button>
+                ))}
               </div>
             </div>
           </section>
@@ -78,6 +106,10 @@ export function AddAccountModal({ open, onClose }: AddAccountModalProps) {
                   id="add-branch"
                   className={`${s.input} ${s.inputMono}`}
                   placeholder={t('financial.recon.add.placeholder.branch')}
+                  value={binding.agency}
+                  onChange={(e) => {
+                    binding.setAgency(e.target.value)
+                  }}
                 />
               </div>
               <div className={s.formField}>
@@ -88,8 +120,26 @@ export function AddAccountModal({ open, onClose }: AddAccountModalProps) {
                   id="add-account"
                   className={`${s.input} ${s.inputMono}`}
                   placeholder={t('financial.recon.add.placeholder.account')}
+                  value={binding.account}
+                  onChange={(e) => {
+                    binding.setAccount(e.target.value)
+                  }}
                 />
               </div>
+            </div>
+            <div className={s.formField}>
+              <label className={s.fieldLabel} htmlFor="add-document">
+                {t('financial.recon.add.field.document')}
+              </label>
+              <input
+                id="add-document"
+                className={`${s.input} ${s.inputMono}`}
+                placeholder={t('financial.recon.add.placeholder.document')}
+                value={binding.document}
+                onChange={(e) => {
+                  binding.setDocument(e.target.value)
+                }}
+              />
             </div>
             <div className={s.formField}>
               <label className={s.fieldLabel} htmlFor="add-alias">
@@ -99,6 +149,10 @@ export function AddAccountModal({ open, onClose }: AddAccountModalProps) {
                 id="add-alias"
                 className={s.input}
                 placeholder={t('financial.recon.add.placeholder.alias')}
+                value={binding.nickname}
+                onChange={(e) => {
+                  binding.setNickname(e.target.value)
+                }}
               />
               <span className={s.aliasHint}>{t('financial.recon.add.aliasHint')}</span>
             </div>
@@ -118,6 +172,10 @@ export function AddAccountModal({ open, onClose }: AddAccountModalProps) {
                   id="add-balance"
                   className={`${s.input} ${s.inputMono}`}
                   placeholder={t('financial.recon.add.placeholder.openingBalance')}
+                  value={binding.openingBalance}
+                  onChange={(e) => {
+                    binding.setOpeningBalance(e.target.value)
+                  }}
                 />
               </div>
               <div className={s.formField}>
@@ -128,6 +186,10 @@ export function AddAccountModal({ open, onClose }: AddAccountModalProps) {
                   id="add-balance-date"
                   className={`${s.input} ${s.inputMono}`}
                   placeholder={t('financial.recon.add.placeholder.balanceDate')}
+                  value={binding.openingBalanceDate}
+                  onChange={(e) => {
+                    binding.setOpeningBalanceDate(e.target.value)
+                  }}
                 />
               </div>
             </div>
@@ -138,14 +200,24 @@ export function AddAccountModal({ open, onClose }: AddAccountModalProps) {
               <span className={s.infoNoticeText}>{t('financial.recon.add.notice')}</span>
             </div>
           </section>
+
+          {binding.errorTag !== null ? <p className={s.errorText}>{t(binding.errorTag)}</p> : null}
         </div>
 
         <footer className={s.modalFoot}>
           <button type="button" className={s.btnSecondary} onClick={onClose}>
             {t('financial.recon.add.cancel')}
           </button>
-          <span className={s.pendingHint}>{t('financial.recon.add.pendingHint')}</span>
-          <button type="button" className={s.btnPrimary} disabled aria-disabled="true">
+          <span className={s.spacer} />
+          <button
+            type="button"
+            className={s.btnPrimary}
+            disabled={!binding.canSubmit || binding.submitting}
+            aria-disabled={!binding.canSubmit || binding.submitting}
+            onClick={() => {
+              binding.submit()
+            }}
+          >
             {t('financial.recon.add.save')}
           </button>
         </footer>

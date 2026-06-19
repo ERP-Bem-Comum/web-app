@@ -12,6 +12,7 @@ import type {
   BatchReconcileInput,
   BatchResult,
   ClosePeriodInput,
+  CreateCedenteAccountInput,
   CreateReconciliationInput,
   GetSuggestionsInput,
   ImportStatementInput,
@@ -53,6 +54,9 @@ type BatchFn = (opts: { data: BatchReconcileInput }) => Promise<ReconFnResult<Ba
 type CloseFn = (opts: { data: ClosePeriodInput }) => Promise<ReconFnResult<PeriodClosed>>
 type ListAccountsFn = () => Promise<ReconFnResult<readonly ReconciliationAccount[]>>
 type GetAccountFn = (opts: { data: { id: string } }) => Promise<ReconFnResult<ReconciliationAccount>>
+type CreateAccountFn = (opts: {
+  data: CreateCedenteAccountInput
+}) => Promise<ReconFnResult<ReconciliationAccount>>
 
 export type ReconciliationRepository = Readonly<{
   importStatement: (i: ImportStatementInput) => Promise<Result<BankStatementImport, ReconciliationError>>
@@ -74,6 +78,7 @@ export type ReconciliationRepository = Readonly<{
   // ── Costura honesta (#168/#173) — sem endpoint hoje ──
   listAccounts: () => Promise<Result<readonly ReconciliationAccount[], ReconciliationError>>
   getAccount: (id: string) => Promise<Result<ReconciliationAccount, ReconciliationError>>
+  createAccount: (i: CreateCedenteAccountInput) => Promise<Result<ReconciliationAccount, ReconciliationError>>
 }>
 
 type UndoReconciliationInput = Readonly<{ reconciliationId: string; reason?: string }>
@@ -92,6 +97,7 @@ export const createReconciliationRepository = (
     closePeriodFn: CloseFn
     listAccountsFn: ListAccountsFn
     getAccountFn: GetAccountFn
+    createAccountFn: CreateAccountFn
   }>,
 ): ReconciliationRepository => ({
   importStatement: async (i) => {
@@ -141,6 +147,10 @@ export const createReconciliationRepository = (
   },
   getAccount: async (id) => {
     const res = await deps.getAccountFn({ data: { id } })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  createAccount: async (i) => {
+    const res = await deps.createAccountFn({ data: i })
     return res.ok ? ok(res.data) : err(res.error)
   },
 })

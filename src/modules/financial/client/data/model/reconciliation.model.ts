@@ -47,6 +47,20 @@ export type ImportStatementInput = Readonly<{
 }>
 export type ListTransactionsInput = Readonly<{ statementId: string }>
 export type GetSuggestionsInput = Readonly<{ transactionId: string }>
+// Criar conta-cedente (#138). `document` = CNPJ da organização (obrigatório no core-api). Saldo de
+// abertura opcional (já em centavos). type = AccountType do front (mapeado p/ minúsculo na borda).
+export type CreateCedenteAccountInput = Readonly<{
+  bankCode: string
+  bankName?: string
+  type: AccountType
+  agency: string
+  accountNumber: string
+  accountDigit: string
+  document: string
+  nickname?: string
+  openingBalanceCents?: string
+  openingBalanceDate?: string
+}>
 export type RejectSuggestionInput = Readonly<{ transactionId: string; payableId: string }>
 export type DifferenceInput = Readonly<{ valueCents: number; treatment: DifferenceTreatment }>
 export type CreateReconciliationInput = Readonly<{

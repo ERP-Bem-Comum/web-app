@@ -32,6 +32,19 @@ export const ListTransactionsInputSchema = z.object({ statementId: z.uuid() })
 
 export const GetCedenteAccountInputSchema = z.object({ id: z.uuid() })
 
+export const CreateCedenteAccountInputSchema = z.object({
+  bankCode: z.string().trim().min(1).max(10),
+  bankName: z.string().trim().min(1).max(120).optional(),
+  type: z.enum(['Corrente', 'Poupanca', 'Investimento']),
+  agency: z.string().trim().min(1).max(10),
+  accountNumber: z.string().trim().min(1).max(20),
+  accountDigit: z.string().trim().max(2),
+  document: z.string().trim().min(1).max(18),
+  nickname: z.string().trim().min(1).max(120).optional(),
+  openingBalanceCents: z.string().trim().optional(),
+  openingBalanceDate: z.string().trim().optional(),
+})
+
 export const GetSuggestionsInputSchema = z.object({ transactionId: z.uuid() })
 
 export const RejectSuggestionInputSchema = z.object({ transactionId: z.uuid(), payableId: z.uuid() })
@@ -89,6 +102,10 @@ const _g_undo: AssertEqual<z.infer<typeof UndoReconciliationInputSchema>, R.Undo
 const _g_manual: AssertEqual<z.infer<typeof ManualEntryInputSchema>, R.ManualEntryInput> = true
 const _g_batch: AssertEqual<z.infer<typeof BatchReconcileInputSchema>, R.BatchReconcileInput> = true
 const _g_close: AssertEqual<z.infer<typeof ClosePeriodInputSchema>, R.ClosePeriodInput> = true
+const _g_createAcc: AssertEqual<
+  z.infer<typeof CreateCedenteAccountInputSchema>,
+  R.CreateCedenteAccountInput
+> = true
 
 void _g_import
 void _g_listTx
