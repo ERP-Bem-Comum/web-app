@@ -1,7 +1,8 @@
 /**
  * Binding "Fechar período" (US7) — ADAPTER React. Fecha o período do extrato importado (usa o período
  * devolvido pela importação como janela). Bloqueado se houver movimentações pendentes (gating na UI +
- * o backend revalida 422 period-has-pending-transactions). Invalida as transações. Erros → tag i18n.
+ * o backend revalida 422 period-has-pending-transactions). Invalida as transações E os períodos (#173,
+ * p/ o Exportar habilitar sem reload). Erros → tag i18n.
  */
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -35,6 +36,8 @@ export function useClosePeriod(
         setErrorTag(null)
         setClosed(true)
         void qc.invalidateQueries({ queryKey: ['financial', 'reconciliation', 'transactions'] })
+        // Fechar cria/sela o período → o Exportar (#173) precisa relê-los p/ habilitar sem reload.
+        void qc.invalidateQueries({ queryKey: ['financial', 'reconciliation', 'periods'] })
       } else {
         setErrorTag(reconciliationErrorTag(res.error))
       }
