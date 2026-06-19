@@ -9,6 +9,8 @@ import { resultFetch } from '#external/core-api/result-fetch.ts'
 import type { ReconciliationClient } from '#modules/financial/server/application/reconciliation.use-cases.ts'
 import {
   batchToModel,
+  cedenteAccountToModel,
+  cedenteAccountsToModel,
   importToModel,
   manualEntryToModel,
   mapHttpError,
@@ -47,6 +49,16 @@ export const createCoreApiReconciliationClient = (baseUrl: string): Reconciliati
     const r = await resultFetch<unknown>(`${baseUrl}/payables?status=Paid`, { token })
     if (isErr(r)) return err(mapHttpError(r.error))
     return paidPayablesToModel(r.value)
+  },
+  listCedenteAccounts: async (token) => {
+    const r = await resultFetch<unknown>(`${baseUrl}/cedente-accounts`, { token })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return cedenteAccountsToModel(r.value)
+  },
+  getCedenteAccount: async (id, token) => {
+    const r = await resultFetch<unknown>(`${baseUrl}/cedente-accounts/${id}`, { token })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return cedenteAccountToModel(r.value)
   },
   getSuggestions: async (i, token) => {
     const r = await resultFetch<unknown>(`${baseUrl}/statement-transactions/${i.transactionId}/suggestions`, {

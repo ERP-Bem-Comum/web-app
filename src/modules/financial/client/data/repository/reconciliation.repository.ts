@@ -3,9 +3,8 @@
  * `{ ok, data|error }` → `Result` (§II). Tipos do próprio `data/model`; `ReconciliationError`/
  * `ReconFnResult` do `reconciliation-error.ts` neutro (boundary §I). Fns injetadas (testável).
  *
- * Costura honesta (#168/#173): `listAccounts`/`getAccount`/`exportPeriod` ainda NÃO têm endpoint — a
- * porta existe com a assinatura final e devolve `err('unavailable')` até o backend chegar (trocar o
- * adapter liga o fluxo real, sem refactor de fronteira). Espelha `financial.repository.ts`.
+ * `listAccounts`/`getAccount` ligados ao `/cedente-accounts` (#138). `exportPeriod` ainda é costura
+ * honesta (#173, sem endpoint p/ obter o periodId). Espelha `financial.repository.ts`.
  */
 import { ok, err, type Result } from '#shared/primitives/result.ts'
 import type {
@@ -52,6 +51,8 @@ type UndoFn = (opts: {
 type ManualFn = (opts: { data: ManualEntryInput }) => Promise<ReconFnResult<ManualEntryCreated>>
 type BatchFn = (opts: { data: BatchReconcileInput }) => Promise<ReconFnResult<BatchResult>>
 type CloseFn = (opts: { data: ClosePeriodInput }) => Promise<ReconFnResult<PeriodClosed>>
+type ListAccountsFn = () => Promise<ReconFnResult<readonly ReconciliationAccount[]>>
+type GetAccountFn = (opts: { data: { id: string } }) => Promise<ReconFnResult<ReconciliationAccount>>
 
 export type ReconciliationRepository = Readonly<{
   importStatement: (i: ImportStatementInput) => Promise<Result<BankStatementImport, ReconciliationError>>
@@ -89,6 +90,8 @@ export const createReconciliationRepository = (
     createManualEntryFn: ManualFn
     batchReconcileFn: BatchFn
     closePeriodFn: CloseFn
+    listAccountsFn: ListAccountsFn
+    getAccountFn: GetAccountFn
   }>,
 ): ReconciliationRepository => ({
   importStatement: async (i) => {
@@ -131,7 +134,13 @@ export const createReconciliationRepository = (
     const res = await deps.closePeriodFn({ data: i })
     return res.ok ? ok(res.data) : err(res.error)
   },
-  // Conta-cedente ainda não existe no core-api (#168) — chrome honesto, sem dados fabricados.
-  listAccounts: () => Promise.resolve(err('unavailable')),
-  getAccount: () => Promise.resolve(err('unavailable')),
+  // Conta-cedente (#138) — ligada ao GET /cedente-accounts (saldo/pendências completos com o #139).
+  listAccounts: async () => {
+    const res = await deps.listAccountsFn()
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  getAccount: async (id) => {
+    const res = await deps.getAccountFn({ data: { id } })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
 })

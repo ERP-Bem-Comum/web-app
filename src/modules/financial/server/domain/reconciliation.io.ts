@@ -122,6 +122,23 @@ export type StatementTransaction = Readonly<{
   reconciliationStatus: ReconciliationStatus
 }>
 
+// Conta-cedente da organização (#138 — GET /cedente-accounts). Saldo corrente, lastUpdated e pendingCount
+// dependem do read-model #139 → defaults até lá.
+export type CedenteAccount = Readonly<{
+  id: string
+  bankCode: string
+  bankName: string
+  branch: string
+  accountNumber: string
+  accountDv: string
+  alias: string
+  type: 'Corrente' | 'Poupanca' | 'Investimento'
+  status: 'Active' | 'Closed'
+  currentBalanceCents: string
+  lastUpdatedAt: string
+  pendingCount: number
+}>
+
 // Título conciliável (só Pago). `supplierName`/`documentNumber` chegam quando core-api#172 enriquecer.
 export type PaidPayable = Readonly<{
   id: string

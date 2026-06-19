@@ -9,6 +9,7 @@ import type {
   BankStatementImport,
   BatchReconcileInput,
   BatchResult,
+  CedenteAccount,
   ClosePeriodInput,
   CreateReconciliationInput,
   GetSuggestionsInput,
@@ -37,6 +38,8 @@ export type ReconciliationClient = Readonly<{
     token: string,
   ) => Promise<Result<readonly StatementTransaction[], ReconciliationError>>
   listPaidPayables: (token: string) => Promise<Result<readonly PaidPayable[], ReconciliationError>>
+  listCedenteAccounts: (token: string) => Promise<Result<readonly CedenteAccount[], ReconciliationError>>
+  getCedenteAccount: (id: string, token: string) => Promise<Result<CedenteAccount, ReconciliationError>>
   getSuggestions: (
     i: GetSuggestionsInput,
     token: string,
@@ -80,6 +83,16 @@ export const createListPaidPayables =
   (deps: Deps) =>
   (token: string): Promise<Result<readonly PaidPayable[], ReconciliationError>> =>
     deps.client.listPaidPayables(token)
+
+export const createListCedenteAccounts =
+  (deps: Deps) =>
+  (token: string): Promise<Result<readonly CedenteAccount[], ReconciliationError>> =>
+    deps.client.listCedenteAccounts(token)
+
+export const createGetCedenteAccount =
+  (deps: Deps) =>
+  (id: string, token: string): Promise<Result<CedenteAccount, ReconciliationError>> =>
+    deps.client.getCedenteAccount(id, token)
 
 export const createGetSuggestions =
   (deps: Deps) =>

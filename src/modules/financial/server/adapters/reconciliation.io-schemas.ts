@@ -30,6 +30,8 @@ export const ImportStatementInputSchema = z.object({
 
 export const ListTransactionsInputSchema = z.object({ statementId: z.uuid() })
 
+export const GetCedenteAccountInputSchema = z.object({ id: z.uuid() })
+
 export const GetSuggestionsInputSchema = z.object({ transactionId: z.uuid() })
 
 export const RejectSuggestionInputSchema = z.object({ transactionId: z.uuid(), payableId: z.uuid() })

@@ -11,6 +11,7 @@ import type { ReconciliationError } from '#modules/financial/server/domain/error
 import type {
   BankStatementImport,
   BatchResult,
+  CedenteAccount,
   ManualEntryCreated,
   MatchSuggestion,
   Movement,
@@ -26,6 +27,9 @@ import type {
 } from '#modules/financial/server/domain/reconciliation.io.ts'
 import {
   CoreApiBatchSchema,
+  CoreApiCedenteAccountSchema,
+  CoreApiCedenteAccountsSchema,
+  type CoreApiCedenteAccount,
   CoreApiImportSchema,
   CoreApiManualEntrySchema,
   CoreApiPaidPayablesSchema,
@@ -151,6 +155,42 @@ export const paidPayablesToModel = (raw: unknown): Result<readonly PaidPayable[]
     documentType: null, // core-api#172: tipo de documento ainda não vem no contrato
   }))
   return ok(items)
+}
+
+// ── Conta-cedente (#138) ────────────────────────────────────────────────────────
+const mapAccountType = (t: string | null): CedenteAccount['type'] =>
+  t === 'poupanca' ? 'Poupanca' : t === 'investimento' ? 'Investimento' : 'Corrente'
+const mapAccountStatus = (s: string): CedenteAccount['status'] =>
+  s.toLowerCase() === 'closed' ? 'Closed' : 'Active'
+
+const toCedenteAccount = (a: CoreApiCedenteAccount): CedenteAccount => ({
+  id: a.id,
+  bankCode: a.bankCode,
+  bankName: a.bankName ?? a.bankCode,
+  branch: a.agency,
+  accountNumber: a.accountNumber,
+  accountDv: a.accountDigit,
+  alias: a.nickname ?? a.bankName ?? a.bankCode,
+  type: mapAccountType(a.type),
+  status: mapAccountStatus(a.status),
+  // saldo corrente, lastUpdated e contagem de pendências dependem do read-model #139 → defaults honestos
+  currentBalanceCents: a.openingBalanceCents ?? '0',
+  lastUpdatedAt: a.openingBalanceDate ?? '',
+  pendingCount: 0,
+})
+
+export const cedenteAccountsToModel = (
+  raw: unknown,
+): Result<readonly CedenteAccount[], ReconciliationError> => {
+  const parsed = CoreApiCedenteAccountsSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  return ok(parsed.data.map(toCedenteAccount))
+}
+
+export const cedenteAccountToModel = (raw: unknown): Result<CedenteAccount, ReconciliationError> => {
+  const parsed = CoreApiCedenteAccountSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  return ok(toCedenteAccount(parsed.data))
 }
 
 export const suggestionsToModel = (raw: unknown): Result<readonly MatchSuggestion[], ReconciliationError> => {

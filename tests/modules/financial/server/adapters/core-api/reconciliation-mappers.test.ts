@@ -11,6 +11,8 @@ import {
   mapHttpError,
   transactionsToModel,
   paidPayablesToModel,
+  cedenteAccountsToModel,
+  cedenteAccountToModel,
   suggestionsToModel,
   importToModel,
   reconciliationCreatedToModel,
@@ -132,6 +134,55 @@ describe('paidPayablesToModel', () => {
       assert.equal(r.value[0]?.documentNumber, null)
       assert.equal(r.value[0]?.dueDate, '2026-06-10')
     }
+  })
+})
+
+describe('cedenteAccountsToModel / cedenteAccountToModel (#138)', () => {
+  const raw = {
+    id: 'b1a7c0de-0000-4000-8000-000000000168',
+    bankCode: '237',
+    bankName: 'Bradesco',
+    type: 'poupanca',
+    agency: '1462',
+    accountNumber: '0012345',
+    accountDigit: '7',
+    convenio: '',
+    document: '12345678000190',
+    status: 'closed',
+    nickname: 'Conta Movimento',
+    openingBalanceCents: '24539218',
+    openingBalanceDate: '2026-06-18',
+  }
+
+  it('mapeia branch/accountDv/alias e normaliza type/status; defaults #139', () => {
+    const r = cedenteAccountToModel(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value.branch, '1462')
+      assert.equal(r.value.accountDv, '7')
+      assert.equal(r.value.alias, 'Conta Movimento')
+      assert.equal(r.value.type, 'Poupanca')
+      assert.equal(r.value.status, 'Closed')
+      assert.equal(r.value.currentBalanceCents, '24539218') // saldo de abertura até #139
+      assert.equal(r.value.pendingCount, 0) // #139
+    }
+  })
+
+  it('lista é array; bankName/nickname nulos → fallback p/ bankCode; type ausente → Corrente', () => {
+    const r = cedenteAccountsToModel([
+      { ...raw, bankName: null, nickname: null, type: null, status: 'active' },
+    ])
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value[0]?.bankName, '237')
+      assert.equal(r.value[0]?.alias, '237')
+      assert.equal(r.value[0]?.type, 'Corrente')
+      assert.equal(r.value[0]?.status, 'Active')
+    }
+  })
+
+  it('shape inválido → err(server)', () => {
+    assert.ok(isErr(cedenteAccountsToModel({ nope: true })))
   })
 })
 

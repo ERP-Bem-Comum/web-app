@@ -43,6 +43,26 @@ export const CoreApiPaidPayableSchema = z.object({
 export type CoreApiPaidPayable = z.infer<typeof CoreApiPaidPayableSchema>
 export const CoreApiPaidPayablesSchema = z.object({ items: z.array(CoreApiPaidPayableSchema) })
 
+// Conta-cedente (#138 — GET /cedente-accounts → array; GET /:id → objeto). Saldo corrente/pendências
+// dependem do read-model #139 (não vêm aqui).
+export const CoreApiCedenteAccountSchema = z.object({
+  id: z.string().trim(),
+  bankCode: z.string().trim(),
+  bankName: z.string().trim().nullable().catch(null),
+  type: z.string().trim().nullable().catch(null),
+  agency: z.string().trim(),
+  accountNumber: z.string().trim(),
+  accountDigit: z.string().trim(),
+  convenio: z.string().trim().catch(''),
+  document: z.string().trim().catch(''),
+  status: z.string().trim(),
+  nickname: z.string().trim().nullable().catch(null),
+  openingBalanceCents: z.string().trim().nullable().catch(null),
+  openingBalanceDate: z.string().trim().nullable().catch(null),
+})
+export type CoreApiCedenteAccount = z.infer<typeof CoreApiCedenteAccountSchema>
+export const CoreApiCedenteAccountsSchema = z.array(CoreApiCedenteAccountSchema)
+
 // Sugestões (GET /statement-transactions/:id/suggestions → { suggestions }, NÃO items).
 export const CoreApiSuggestionSchema = z.object({
   payableId: z.string().trim(),
