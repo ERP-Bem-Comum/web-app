@@ -109,7 +109,8 @@ export const importToModel = (raw: unknown): Result<BankStatementImport, Reconci
     statementId: d.statementId,
     imported: d.imported,
     duplicatesDiscarded: d.duplicatesDiscarded,
-    period: { start: d.period.start, end: d.period.end },
+    // period também vem como ISO datetime do core-api → date-only p/ exibição honesta no resumo.
+    period: { start: d.period.start.slice(0, 10), end: d.period.end.slice(0, 10) },
   })
 }
 
@@ -121,7 +122,9 @@ export const transactionsToModel = (
   const items: readonly StatementTransaction[] = parsed.data.items.map((t) => ({
     id: t.id,
     fitid: t.fitid,
-    date: t.date,
+    // O core-api envia `date` como ISO datetime (ex.: 2026-06-18T00:00:00.000Z); o modelo do front é
+    // date-only (YYYY-MM-DD) — agrupamento por dia e formatação assumem isso. Normaliza aqui na borda.
+    date: t.date.slice(0, 10),
     movement: mapMovement(t.movement),
     entryType: t.entryType,
     payeeName: t.payeeName,

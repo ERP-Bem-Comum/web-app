@@ -91,6 +91,28 @@ describe('transactionsToModel', () => {
     }
   })
 
+  it('normaliza date ISO datetime do core-api p/ date-only (YYYY-MM-DD)', () => {
+    const raw = {
+      items: [
+        {
+          id: 't1',
+          fitid: 'F1',
+          date: '2026-06-18T00:00:00.000Z',
+          movement: 'Debit',
+          entryType: 'PIX',
+          payeeName: 'X',
+          memo: '',
+          valueCents: '100',
+          balanceAfterCents: '0',
+          reconciliationStatus: 'Pending',
+        },
+      ],
+    }
+    const r = transactionsToModel(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) assert.equal(r.value[0]?.date, '2026-06-18')
+  })
+
   it('shape inválido → err(server)', () => {
     assert.ok(isErr(transactionsToModel({ nope: true })))
   })
