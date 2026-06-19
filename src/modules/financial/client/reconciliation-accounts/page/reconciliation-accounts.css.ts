@@ -91,33 +91,71 @@ export const searchInput = style({
   color: c.ink[1],
   outline: 'none',
 })
-export const statusChips = style({ display: 'flex', gap: sp.xs })
+// Segmented control (padrão do grid de Contas a Pagar): trilho paper-warm; chip ativo = paper + sombra.
+export const statusChips = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.125rem',
+  padding: '0.125rem',
+  background: c.paper.warm,
+  borderRadius: r.md,
+  overflowX: 'auto',
+})
 const chipBase = {
   display: 'inline-flex',
   alignItems: 'center',
   gap: sp.xs,
+  blockSize: '1.875rem',
+  paddingInline: sp.md,
   border: 'none',
-  borderRadius: r.pill,
-  paddingInline: sp.lg,
-  paddingBlock: sp.xs,
+  borderRadius: r.sm,
+  background: 'transparent',
+  color: c.ink[4],
   fontFamily: recon.font.sans,
   fontSize: fs.sm,
+  fontWeight: recon.weight.semibold,
+  lineHeight: 1,
+  whiteSpace: 'nowrap',
   cursor: 'pointer',
+  transition: `background ${recon.tFast}, color ${recon.tFast}, box-shadow ${recon.tFast}`,
 } as const
 export const chip = styleVariants({
-  inactive: { ...chipBase, background: 'transparent', color: c.ink[4] },
-  active: {
+  inactive: {
     ...chipBase,
-    background: c.paper.default,
-    color: c.ink[1],
-    fontWeight: recon.weight.semibold,
-    boxShadow: recon.shadow.card,
+    selectors: { '&:hover': { background: c.paper.default, color: c.ink[2], boxShadow: recon.shadow.card } },
   },
+  active: { ...chipBase, background: c.paper.default, color: c.ink[1], boxShadow: recon.shadow.card },
+})
+const chipCountBase = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontFamily: recon.font.mono,
+  fontSize: fs['3xs'],
+  fontWeight: recon.weight.medium,
+  minInlineSize: '1rem',
+  blockSize: '1rem',
+  paddingInline: '0.25rem',
+  borderRadius: r.sm,
+} as const
+export const chipCount = styleVariants({
+  inactive: { ...chipCountBase, color: c.ink[5], background: c.paper.warm },
+  active: { ...chipCountBase, color: c.ink[2], background: c.paper.beige },
 })
 export const chipDot = styleVariants({
-  pending: { inlineSize: '0.5rem', blockSize: '0.5rem', borderRadius: r.pill, background: c.orange.normal },
-  upToDate: { inlineSize: '0.5rem', blockSize: '0.5rem', borderRadius: r.pill, background: c.green.normal },
-  closed: { inlineSize: '0.5rem', blockSize: '0.5rem', borderRadius: r.pill, background: c.ink[5] },
+  pending: {
+    inlineSize: '0.4375rem',
+    blockSize: '0.4375rem',
+    borderRadius: r.pill,
+    background: c.orange.normal,
+  },
+  upToDate: {
+    inlineSize: '0.4375rem',
+    blockSize: '0.4375rem',
+    borderRadius: r.pill,
+    background: c.green.normal,
+  },
+  closed: { inlineSize: '0.4375rem', blockSize: '0.4375rem', borderRadius: r.pill, background: c.ink[5] },
 })
 export const sortWrap = style({ marginInlineStart: 'auto' })
 export const sortBtn = style({
@@ -136,25 +174,35 @@ export const sortBtn = style({
 })
 
 // ── grid ──────────────────────────────────────────────────────────────────────
-export const gridWrap = style({ flex: 1, overflowY: 'auto', background: c.paper.default })
+// Padrão do grid de Contas a Pagar: card com borda + raio, header sticky, linhas com hairline (última
+// sem borda), scroller interno discreto.
+export const gridWrap = style({ flex: 1, minBlockSize: 0, paddingInline: sp['3xl'], paddingBlock: sp.lg })
+export const grid = style({
+  overflow: 'auto',
+  border: `${bw.thin} solid ${c.paper.rule}`,
+  borderRadius: r.lg,
+  background: c.paper.default,
+})
 const gridCols = {
   display: 'grid',
   gridTemplateColumns: '1fr 12rem 12rem 11rem 3rem',
-  gap: sp.lg,
+  gap: sp.xl,
   alignItems: 'center',
 } as const
 export const gridHead = style({
   ...gridCols,
   position: 'sticky',
   insetBlockStart: 0,
-  paddingInline: sp['3xl'],
-  paddingBlock: sp.lg,
+  zIndex: 5,
+  minBlockSize: '2.25rem',
+  paddingInline: sp.xl,
   background: c.paper.warm,
   borderBlockEnd: `${bw.thin} solid ${c.paper.rule}`,
   fontFamily: recon.font.sans,
   fontSize: fs['3xs'],
+  fontWeight: recon.weight.bold,
   textTransform: 'uppercase',
-  letterSpacing: '0.04em',
+  letterSpacing: '0.06em',
   color: c.ink[5],
 })
 export const gridHeadRight = style({ textAlign: 'end' })
@@ -165,7 +213,8 @@ const gridRowBase = {
   inlineSize: '100%',
   textAlign: 'start',
   border: 'none',
-  paddingInline: sp['3xl'],
+  minBlockSize: '3.5rem',
+  paddingInline: sp.xl,
   paddingBlock: sp.lg,
   background: 'transparent',
   borderBlockEnd: `${bw.thin} solid ${c.paper.rule}`,
@@ -173,8 +222,16 @@ const gridRowBase = {
   transition: `background ${recon.tFast}`,
 } as const
 export const gridRow = styleVariants({
-  base: { ...gridRowBase, selectors: { '&:hover': { background: c.paper.warm } } },
-  closed: { ...gridRowBase, opacity: 0.55, cursor: 'not-allowed' },
+  base: {
+    ...gridRowBase,
+    selectors: { '&:hover': { background: c.paper.warm }, '&:last-child': { borderBlockEnd: 'none' } },
+  },
+  closed: {
+    ...gridRowBase,
+    opacity: 0.55,
+    cursor: 'not-allowed',
+    selectors: { '&:last-child': { borderBlockEnd: 'none' } },
+  },
 })
 
 export const colConta = style({ display: 'flex', alignItems: 'center', gap: sp.lg, minInlineSize: 0 })
@@ -218,8 +275,8 @@ export const saldoCol = style({
 })
 export const saldoVal = style({
   fontFamily: recon.font.mono,
-  fontSize: fs['2xl'],
-  fontWeight: recon.weight.bold,
+  fontSize: fs.lg, // reduzido (13px) p/ alinhar ao valor de linha do grid de Contas a Pagar
+  fontWeight: recon.weight.semibold,
   color: c.ink[1],
 })
 export const saldoLbl = style({ fontFamily: recon.font.sans, fontSize: fs['3xs'], color: c.ink[5] })
@@ -319,18 +376,37 @@ export const noticeChrome = style({
 })
 
 // ── bottombar (Adicionar conta) ────────────────────────────────────────────────
+// Footer no padrão do grid de Contas a Pagar: fixo, paper-warm, borda superior, recuado pela sidebar.
 export const bottombar = style({
   position: 'fixed',
   insetBlockEnd: 0,
-  insetInline: 0,
+  insetInlineStart: 'var(--sidebar-width, 14rem)',
+  insetInlineEnd: 0,
+  blockSize: '3.5rem',
   display: 'flex',
   alignItems: 'center',
   gap: sp.lg,
-  paddingInline: sp['3xl'],
-  paddingBlock: sp.lg,
-  background: c.paper.default,
+  paddingInline: sp.xl,
+  background: c.paper.warm,
   borderBlockStart: `${bw.thin} solid ${c.paper.rule}`,
+  fontFamily: recon.font.sans,
+  zIndex: 100,
 })
+export const footConsolidated = style({
+  display: 'inline-flex',
+  alignItems: 'baseline',
+  gap: sp.sm,
+  fontFamily: recon.font.sans,
+  fontSize: fs.sm,
+  color: c.ink[4],
+})
+export const footConsolidatedVal = style({
+  fontFamily: recon.font.mono,
+  fontSize: fs.lg,
+  fontWeight: recon.weight.bold,
+  color: c.ink[1],
+})
+export const footPending = style({ fontFamily: recon.font.sans, fontSize: fs.sm, color: c.orange.deep })
 export const bottomActions = style({
   display: 'flex',
   alignItems: 'center',

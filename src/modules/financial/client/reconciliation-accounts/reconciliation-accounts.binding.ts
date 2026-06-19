@@ -9,12 +9,16 @@ import { useQuery } from '@tanstack/react-query'
 import { reconciliationRepository } from '#modules/financial/client/data/repository/reconciliation.repository.instance.ts'
 import { reconciliationErrorTag } from '#modules/financial/client/data/helpers/reconciliation-error-tag.ts'
 import {
+  accountStatus,
   consolidate,
   deriveAccountRows,
   type AccountsState,
   type SortKey,
   type StatusFilter,
 } from './reconciliation-accounts.view-model.ts'
+
+export type ChipCounts = Readonly<{ todas: number; pendentes: number; emDia: number; encerradas: number }>
+const EMPTY_COUNTS: ChipCounts = { todas: 0, pendentes: 0, emDia: 0, encerradas: 0 }
 
 const accountsQueryOptions = () => ({
   queryKey: ['financial', 'reconciliation', 'accounts'] as const,
@@ -24,6 +28,7 @@ const accountsQueryOptions = () => ({
 
 export type AccountsBinding = Readonly<{
   state: AccountsState
+  counts: ChipCounts
   search: string
   status: StatusFilter
   sort: SortKey
@@ -55,8 +60,17 @@ export function useReconciliationAccounts(): AccountsBinding {
     return { tag: 'ready', rows, consolidated: consolidate(accounts) }
   })()
 
+  const allAccounts = q.data?.ok === true ? q.data.value : []
+  const counts: ChipCounts = {
+    todas: allAccounts.length,
+    pendentes: allAccounts.filter((a) => accountStatus(a) === 'pending').length,
+    emDia: allAccounts.filter((a) => accountStatus(a) === 'up-to-date').length,
+    encerradas: allAccounts.filter((a) => accountStatus(a) === 'closed').length,
+  }
+
   return {
     state,
+    counts: state.tag === 'ready' ? counts : EMPTY_COUNTS,
     search,
     status,
     sort,
