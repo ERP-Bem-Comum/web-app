@@ -72,6 +72,11 @@ export const MENU: readonly MenuSection[] = [
         to: '/financeiro/contas-a-pagar',
         requiredPermission: 'fiscal-document:read',
       },
+      {
+        label: 'Conciliação',
+        to: '/financeiro/conciliacao',
+        requiredPermission: 'reconciliation:read',
+      },
     ],
   },
   {

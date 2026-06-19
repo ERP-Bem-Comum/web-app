@@ -1209,6 +1209,40 @@ export const ptBR: Catalog = {
   'financial.recon.error.export-unsupported-format': 'Formato de exportação não suportado.',
   'financial.recon.error.unavailable': 'Recurso indisponível até a próxima entrega do backend.',
 
+  // ── Conciliação Bancária — telas (034) ──
+  'financial.recon.title': 'Conciliação Bancária',
+  'financial.recon.crumb': 'Financeiro',
+  'financial.recon.account.overline': 'CONTA BANCÁRIA',
+  'financial.recon.account.unavailable': 'Conta de teste (placeholder) — identidade indisponível até #168',
+  'financial.recon.account.balanceUnavailable': 'Saldo indisponível (#168)',
+  'financial.recon.period': 'Período',
+  'financial.recon.import': 'Importar',
+  'financial.recon.tab.extrato': 'Extrato',
+  'financial.recon.tab.conciliacao': 'Conciliação',
+  'financial.recon.progress': 'Conciliado',
+  'financial.recon.guesses': 'Exibir palpites',
+  'financial.recon.filter.pendentes': 'Pendentes',
+  'financial.recon.filter.conciliadas': 'Conciliadas',
+  'financial.recon.filter.todas': 'Todas',
+  'financial.recon.assoc.sugestao': 'Sugestão',
+  'financial.recon.assoc.nova': 'Nova transação',
+  'financial.recon.assoc.multi': 'Buscar / Criar vários',
+  'financial.recon.empty.workspace': 'Importe um extrato (OFX/CSV) para começar a conciliar.',
+  'financial.recon.empty.extrato': 'Sem movimentações neste período.',
+  'financial.recon.bottombar.audit': 'Conciliações registradas em trilha de auditoria',
+  'financial.recon.bottombar.export': 'Exportar',
+  'financial.recon.bottombar.exportUnavailable':
+    'Exportar disponível quando o backend listar períodos (#173)',
+  'financial.recon.bottombar.close': 'Fechar período',
+  // Grid de contas (TELA 1) — chrome honesto até #168
+  'financial.recon.accounts.crumb': 'Financeiro',
+  'financial.recon.accounts.title': 'Conciliação',
+  'financial.recon.accounts.unavailable.title': 'Grid de contas indisponível',
+  'financial.recon.accounts.unavailable.body':
+    'A listagem de contas bancárias chega quando o backend expuser o cadastro de contas-cedente (#168). Use a conta de teste para conciliar agora.',
+  'financial.recon.accounts.openWorkspace': 'Abrir conciliação (conta de teste)',
+  'financial.recon.accounts.addAccount': 'Adicionar conta bancária',
+
   // ── Contas a Pagar — grid (US2, lista real Fatia 2) ──
   'financial.list.title': 'Contas a Pagar',
   'financial.list.count': 'documentos',

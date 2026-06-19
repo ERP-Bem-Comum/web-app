@@ -35,10 +35,10 @@ Vitest/jsdom) para interação.
 
 **Purpose**: criar o esqueleto de pastas, rotas e wiring sem lógica de dados.
 
-- [ ] T001 Criar a árvore de pastas do submódulo client em `src/modules/financial/client/reconciliation-accounts/{page,components}` e `src/modules/financial/client/reconciliation-workspace/{page,components}` (arquivos `.gitkeep` provisórios se necessário).
-- [ ] T002 [P] Criar as rotas file-based `src/routes/_authenticated/financeiro/conciliacao/index.tsx` (TELA 1) e `src/routes/_authenticated/financeiro/conciliacao/$accountId.tsx` (TELA 2) como composition roots que apenas montam as páginas (sem data-hooks na rota além de loader/guard).
-- [ ] T003 [P] Adicionar o item "Conciliação" no submenu Financeiro da sidebar apontando para `/financeiro/conciliacao` (localizar e estender o componente de navegação existente do Financeiro).
-- [ ] T004 [P] Criar o namespace de tags i18n PT-BR de conciliação em `src/shared/i18n` (chaves de erro do contrato + rótulos das telas), espelhando o que Contas a Pagar usa.
+- [x] T001 Criar a árvore de pastas do submódulo client em `src/modules/financial/client/reconciliation-accounts/{page,components}` e `src/modules/financial/client/reconciliation-workspace/{page,components}` (arquivos `.gitkeep` provisórios se necessário).
+- [x] T002 [P] Criar as rotas file-based `src/routes/_authenticated/financeiro/conciliacao/index.tsx` (TELA 1) e `src/routes/_authenticated/financeiro/conciliacao/$accountId.tsx` (TELA 2) como composition roots que apenas montam as páginas (sem data-hooks na rota além de loader/guard).
+- [x] T003 [P] Adicionar o item "Conciliação" no submenu Financeiro da sidebar apontando para `/financeiro/conciliacao` (localizar e estender o componente de navegação existente do Financeiro).
+- [x] T004 [P] Criar o namespace de tags i18n PT-BR de conciliação em `src/shared/i18n` (chaves de erro do contrato + rótulos das telas), espelhando o que Contas a Pagar usa.
 - [ ] T005 Estender `src/modules/financial/public-api/index.ts` para reexportar (placeholders) as duas páginas e os tipos públicos do submódulo.
 
 **Checkpoint**: `pnpm typecheck` verde com as rotas/pastas vazias montando sem erro.
@@ -67,10 +67,10 @@ seletor de conta (seed)** — compartilhados por US1/US2 em diante.
 
 ### Shell do workspace + seletor de conta (seed) — compartilhado US1/US2
 
-- [ ] T013 [P] Teste (RED) DOM do shell em `tests/modules/financial/client/reconciliation-workspace/reconciliation-workspace.page.spec.tsx` (header da conta, tabs Extrato|Conciliação, toggle "Exibir palpites", bottombar — sem dados ainda).
-- [ ] T014 Implementar o shell da TELA 2: `src/modules/financial/client/reconciliation-workspace/page/reconciliation-workspace.page.tsx` (+ `.css.ts` tokens-only) com acc-header, tabs e bottombar burros, recebendo tudo por props da view-model. Fidelidade ao mock `conciliacao_bancaria` (Figma node 8:7).
-- [ ] T015 Criar a view-model base do workspace em `src/modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts` (UI-state via reducer: activeTab, showGuesses, period, listFilter, selectedTransactionId, assocTab) e `reconciliation-workspace.query.ts` (query keys por conta/extrato).
-- [ ] T016 Criar `account-selector.binding.ts` em `reconciliation-workspace/` — **seletor temporário com UUID v4 fixo de placeholder** (constante local; verificado no #152: não há conta de seed nem UUID conhecido, e o import não valida o ref). Reusar o **mesmo** uuid em todas as chamadas correlacionadas do extrato. A porta `getAccount` devolve "indisponível" (#168) sem fabricar dados (chrome honesto, D2). Liga ao grid real (`listAccounts`) quando #168 chegar.
+- [x] T013 [P] Teste (RED) DOM do shell em `tests/modules/financial/client/reconciliation-workspace/reconciliation-workspace.page.spec.tsx` (header da conta, tabs Extrato|Conciliação, toggle "Exibir palpites", bottombar — sem dados ainda).
+- [x] T014 Implementar o shell da TELA 2: `src/modules/financial/client/reconciliation-workspace/page/reconciliation-workspace.page.tsx` (+ `.css.ts` tokens-only) com acc-header, tabs e bottombar burros, recebendo tudo por props da view-model. Fidelidade ao mock `conciliacao_bancaria` (Figma node 8:7).
+- [x] T015 Criar a view-model base do workspace em `src/modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts` (UI-state via reducer: activeTab, showGuesses, period, listFilter, selectedTransactionId, assocTab) e `reconciliation-workspace.query.ts` (query keys por conta/extrato).
+- [x] T016 Criar `account-selector.binding.ts` em `reconciliation-workspace/` — **seletor temporário com UUID v4 fixo de placeholder** (constante local; verificado no #152: não há conta de seed nem UUID conhecido, e o import não valida o ref). Reusar o **mesmo** uuid em todas as chamadas correlacionadas do extrato. A porta `getAccount` devolve "indisponível" (#168) sem fabricar dados (chrome honesto, D2). Liga ao grid real (`listAccounts`) quando #168 chegar.
 
 **Checkpoint**: workspace abre em `/financeiro/conciliacao/$accountId` com shell fiel, tabs e seletor de
 conta (seed) funcionando; `pnpm verify` + `pnpm test:dom` verdes. Nenhuma US implementada ainda.

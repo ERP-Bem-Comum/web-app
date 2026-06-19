@@ -31,6 +31,7 @@ import { Route as AuthenticatedParceirosFinanciadoresIndexRouteImport } from './
 import { Route as AuthenticatedParceirosColaboradoresIndexRouteImport } from './../routes/_authenticated/parceiros/colaboradores/index'
 import { Route as AuthenticatedParceirosAtosIndexRouteImport } from './../routes/_authenticated/parceiros/atos/index'
 import { Route as AuthenticatedFinanceiroContasAPagarIndexRouteImport } from './../routes/_authenticated/financeiro/contas-a-pagar/index'
+import { Route as AuthenticatedFinanceiroConciliacaoIndexRouteImport } from './../routes/_authenticated/financeiro/conciliacao/index'
 import { Route as AuthenticatedParceirosFornecedoresCriarRouteImport } from './../routes/_authenticated/parceiros/fornecedores/criar'
 import { Route as AuthenticatedParceirosFornecedoresIdRouteImport } from './../routes/_authenticated/parceiros/fornecedores/$id'
 import { Route as AuthenticatedParceirosFinanciadoresCriarRouteImport } from './../routes/_authenticated/parceiros/financiadores/criar'
@@ -40,6 +41,7 @@ import { Route as AuthenticatedParceirosColaboradoresIdRouteImport } from './../
 import { Route as AuthenticatedParceirosAtosCriarRouteImport } from './../routes/_authenticated/parceiros/atos/criar'
 import { Route as AuthenticatedParceirosAtosIdRouteImport } from './../routes/_authenticated/parceiros/atos/$id'
 import { Route as AuthenticatedFinanceiroContasAPagarLancarRouteImport } from './../routes/_authenticated/financeiro/contas-a-pagar/lancar'
+import { Route as AuthenticatedFinanceiroConciliacaoAccountIdRouteImport } from './../routes/_authenticated/financeiro/conciliacao/$accountId'
 import { Route as AuthenticatedContratosAditivoIdRouteImport } from './../routes/_authenticated/contratos/aditivo.$id'
 import { Route as AuthenticatedContratosIdEditarRouteImport } from './../routes/_authenticated/contratos/$id.editar'
 import { Route as AuthenticatedParceirosFornecedoresIdEditarRouteImport } from './../routes/_authenticated/parceiros/fornecedores/$id.editar'
@@ -170,6 +172,12 @@ const AuthenticatedFinanceiroContasAPagarIndexRoute =
     path: '/financeiro/contas-a-pagar/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFinanceiroConciliacaoIndexRoute =
+  AuthenticatedFinanceiroConciliacaoIndexRouteImport.update({
+    id: '/financeiro/conciliacao/',
+    path: '/financeiro/conciliacao/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedParceirosFornecedoresCriarRoute =
   AuthenticatedParceirosFornecedoresCriarRouteImport.update({
     id: '/parceiros/fornecedores/criar',
@@ -224,6 +232,12 @@ const AuthenticatedFinanceiroContasAPagarLancarRoute =
     path: '/financeiro/contas-a-pagar/lancar',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFinanceiroConciliacaoAccountIdRoute =
+  AuthenticatedFinanceiroConciliacaoAccountIdRouteImport.update({
+    id: '/financeiro/conciliacao/$accountId',
+    path: '/financeiro/conciliacao/$accountId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedContratosAditivoIdRoute =
   AuthenticatedContratosAditivoIdRouteImport.update({
     id: '/contratos/aditivo/$id',
@@ -273,6 +287,7 @@ export interface FileRoutesByFullPath {
   '/usuarios/': typeof AuthenticatedUsuariosIndexRoute
   '/contratos/$id/editar': typeof AuthenticatedContratosIdEditarRoute
   '/contratos/aditivo/$id': typeof AuthenticatedContratosAditivoIdRoute
+  '/financeiro/conciliacao/$accountId': typeof AuthenticatedFinanceiroConciliacaoAccountIdRoute
   '/financeiro/contas-a-pagar/lancar': typeof AuthenticatedFinanceiroContasAPagarLancarRoute
   '/parceiros/atos/$id': typeof AuthenticatedParceirosAtosIdRouteWithChildren
   '/parceiros/atos/criar': typeof AuthenticatedParceirosAtosCriarRoute
@@ -282,6 +297,7 @@ export interface FileRoutesByFullPath {
   '/parceiros/financiadores/criar': typeof AuthenticatedParceirosFinanciadoresCriarRoute
   '/parceiros/fornecedores/$id': typeof AuthenticatedParceirosFornecedoresIdRouteWithChildren
   '/parceiros/fornecedores/criar': typeof AuthenticatedParceirosFornecedoresCriarRoute
+  '/financeiro/conciliacao/': typeof AuthenticatedFinanceiroConciliacaoIndexRoute
   '/financeiro/contas-a-pagar/': typeof AuthenticatedFinanceiroContasAPagarIndexRoute
   '/parceiros/atos/': typeof AuthenticatedParceirosAtosIndexRoute
   '/parceiros/colaboradores/': typeof AuthenticatedParceirosColaboradoresIndexRoute
@@ -310,6 +326,7 @@ export interface FileRoutesByTo {
   '/usuarios': typeof AuthenticatedUsuariosIndexRoute
   '/contratos/$id/editar': typeof AuthenticatedContratosIdEditarRoute
   '/contratos/aditivo/$id': typeof AuthenticatedContratosAditivoIdRoute
+  '/financeiro/conciliacao/$accountId': typeof AuthenticatedFinanceiroConciliacaoAccountIdRoute
   '/financeiro/contas-a-pagar/lancar': typeof AuthenticatedFinanceiroContasAPagarLancarRoute
   '/parceiros/atos/$id': typeof AuthenticatedParceirosAtosIdRouteWithChildren
   '/parceiros/atos/criar': typeof AuthenticatedParceirosAtosCriarRoute
@@ -319,6 +336,7 @@ export interface FileRoutesByTo {
   '/parceiros/financiadores/criar': typeof AuthenticatedParceirosFinanciadoresCriarRoute
   '/parceiros/fornecedores/$id': typeof AuthenticatedParceirosFornecedoresIdRouteWithChildren
   '/parceiros/fornecedores/criar': typeof AuthenticatedParceirosFornecedoresCriarRoute
+  '/financeiro/conciliacao': typeof AuthenticatedFinanceiroConciliacaoIndexRoute
   '/financeiro/contas-a-pagar': typeof AuthenticatedFinanceiroContasAPagarIndexRoute
   '/parceiros/atos': typeof AuthenticatedParceirosAtosIndexRoute
   '/parceiros/colaboradores': typeof AuthenticatedParceirosColaboradoresIndexRoute
@@ -349,6 +367,7 @@ export interface FileRoutesById {
   '/_authenticated/usuarios/': typeof AuthenticatedUsuariosIndexRoute
   '/_authenticated/contratos/$id/editar': typeof AuthenticatedContratosIdEditarRoute
   '/_authenticated/contratos/aditivo/$id': typeof AuthenticatedContratosAditivoIdRoute
+  '/_authenticated/financeiro/conciliacao/$accountId': typeof AuthenticatedFinanceiroConciliacaoAccountIdRoute
   '/_authenticated/financeiro/contas-a-pagar/lancar': typeof AuthenticatedFinanceiroContasAPagarLancarRoute
   '/_authenticated/parceiros/atos/$id': typeof AuthenticatedParceirosAtosIdRouteWithChildren
   '/_authenticated/parceiros/atos/criar': typeof AuthenticatedParceirosAtosCriarRoute
@@ -358,6 +377,7 @@ export interface FileRoutesById {
   '/_authenticated/parceiros/financiadores/criar': typeof AuthenticatedParceirosFinanciadoresCriarRoute
   '/_authenticated/parceiros/fornecedores/$id': typeof AuthenticatedParceirosFornecedoresIdRouteWithChildren
   '/_authenticated/parceiros/fornecedores/criar': typeof AuthenticatedParceirosFornecedoresCriarRoute
+  '/_authenticated/financeiro/conciliacao/': typeof AuthenticatedFinanceiroConciliacaoIndexRoute
   '/_authenticated/financeiro/contas-a-pagar/': typeof AuthenticatedFinanceiroContasAPagarIndexRoute
   '/_authenticated/parceiros/atos/': typeof AuthenticatedParceirosAtosIndexRoute
   '/_authenticated/parceiros/colaboradores/': typeof AuthenticatedParceirosColaboradoresIndexRoute
@@ -388,6 +408,7 @@ export interface FileRouteTypes {
     | '/usuarios/'
     | '/contratos/$id/editar'
     | '/contratos/aditivo/$id'
+    | '/financeiro/conciliacao/$accountId'
     | '/financeiro/contas-a-pagar/lancar'
     | '/parceiros/atos/$id'
     | '/parceiros/atos/criar'
@@ -397,6 +418,7 @@ export interface FileRouteTypes {
     | '/parceiros/financiadores/criar'
     | '/parceiros/fornecedores/$id'
     | '/parceiros/fornecedores/criar'
+    | '/financeiro/conciliacao/'
     | '/financeiro/contas-a-pagar/'
     | '/parceiros/atos/'
     | '/parceiros/colaboradores/'
@@ -425,6 +447,7 @@ export interface FileRouteTypes {
     | '/usuarios'
     | '/contratos/$id/editar'
     | '/contratos/aditivo/$id'
+    | '/financeiro/conciliacao/$accountId'
     | '/financeiro/contas-a-pagar/lancar'
     | '/parceiros/atos/$id'
     | '/parceiros/atos/criar'
@@ -434,6 +457,7 @@ export interface FileRouteTypes {
     | '/parceiros/financiadores/criar'
     | '/parceiros/fornecedores/$id'
     | '/parceiros/fornecedores/criar'
+    | '/financeiro/conciliacao'
     | '/financeiro/contas-a-pagar'
     | '/parceiros/atos'
     | '/parceiros/colaboradores'
@@ -463,6 +487,7 @@ export interface FileRouteTypes {
     | '/_authenticated/usuarios/'
     | '/_authenticated/contratos/$id/editar'
     | '/_authenticated/contratos/aditivo/$id'
+    | '/_authenticated/financeiro/conciliacao/$accountId'
     | '/_authenticated/financeiro/contas-a-pagar/lancar'
     | '/_authenticated/parceiros/atos/$id'
     | '/_authenticated/parceiros/atos/criar'
@@ -472,6 +497,7 @@ export interface FileRouteTypes {
     | '/_authenticated/parceiros/financiadores/criar'
     | '/_authenticated/parceiros/fornecedores/$id'
     | '/_authenticated/parceiros/fornecedores/criar'
+    | '/_authenticated/financeiro/conciliacao/'
     | '/_authenticated/financeiro/contas-a-pagar/'
     | '/_authenticated/parceiros/atos/'
     | '/_authenticated/parceiros/colaboradores/'
@@ -647,6 +673,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFinanceiroContasAPagarIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/financeiro/conciliacao/': {
+      id: '/_authenticated/financeiro/conciliacao/'
+      path: '/financeiro/conciliacao'
+      fullPath: '/financeiro/conciliacao/'
+      preLoaderRoute: typeof AuthenticatedFinanceiroConciliacaoIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/parceiros/fornecedores/criar': {
       id: '/_authenticated/parceiros/fornecedores/criar'
       path: '/parceiros/fornecedores/criar'
@@ -708,6 +741,13 @@ declare module '@tanstack/react-router' {
       path: '/financeiro/contas-a-pagar/lancar'
       fullPath: '/financeiro/contas-a-pagar/lancar'
       preLoaderRoute: typeof AuthenticatedFinanceiroContasAPagarLancarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/financeiro/conciliacao/$accountId': {
+      id: '/_authenticated/financeiro/conciliacao/$accountId'
+      path: '/financeiro/conciliacao/$accountId'
+      fullPath: '/financeiro/conciliacao/$accountId'
+      preLoaderRoute: typeof AuthenticatedFinanceiroConciliacaoAccountIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/contratos/aditivo/$id': {
@@ -820,6 +860,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProgramasIndexRoute: typeof AuthenticatedProgramasIndexRoute
   AuthenticatedUsuariosIndexRoute: typeof AuthenticatedUsuariosIndexRoute
   AuthenticatedContratosAditivoIdRoute: typeof AuthenticatedContratosAditivoIdRoute
+  AuthenticatedFinanceiroConciliacaoAccountIdRoute: typeof AuthenticatedFinanceiroConciliacaoAccountIdRoute
   AuthenticatedFinanceiroContasAPagarLancarRoute: typeof AuthenticatedFinanceiroContasAPagarLancarRoute
   AuthenticatedParceirosAtosIdRoute: typeof AuthenticatedParceirosAtosIdRouteWithChildren
   AuthenticatedParceirosAtosCriarRoute: typeof AuthenticatedParceirosAtosCriarRoute
@@ -829,6 +870,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedParceirosFinanciadoresCriarRoute: typeof AuthenticatedParceirosFinanciadoresCriarRoute
   AuthenticatedParceirosFornecedoresIdRoute: typeof AuthenticatedParceirosFornecedoresIdRouteWithChildren
   AuthenticatedParceirosFornecedoresCriarRoute: typeof AuthenticatedParceirosFornecedoresCriarRoute
+  AuthenticatedFinanceiroConciliacaoIndexRoute: typeof AuthenticatedFinanceiroConciliacaoIndexRoute
   AuthenticatedFinanceiroContasAPagarIndexRoute: typeof AuthenticatedFinanceiroContasAPagarIndexRoute
   AuthenticatedParceirosAtosIndexRoute: typeof AuthenticatedParceirosAtosIndexRoute
   AuthenticatedParceirosColaboradoresIndexRoute: typeof AuthenticatedParceirosColaboradoresIndexRoute
@@ -850,6 +892,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProgramasIndexRoute: AuthenticatedProgramasIndexRoute,
   AuthenticatedUsuariosIndexRoute: AuthenticatedUsuariosIndexRoute,
   AuthenticatedContratosAditivoIdRoute: AuthenticatedContratosAditivoIdRoute,
+  AuthenticatedFinanceiroConciliacaoAccountIdRoute:
+    AuthenticatedFinanceiroConciliacaoAccountIdRoute,
   AuthenticatedFinanceiroContasAPagarLancarRoute:
     AuthenticatedFinanceiroContasAPagarLancarRoute,
   AuthenticatedParceirosAtosIdRoute:
@@ -867,6 +911,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedParceirosFornecedoresIdRouteWithChildren,
   AuthenticatedParceirosFornecedoresCriarRoute:
     AuthenticatedParceirosFornecedoresCriarRoute,
+  AuthenticatedFinanceiroConciliacaoIndexRoute:
+    AuthenticatedFinanceiroConciliacaoIndexRoute,
   AuthenticatedFinanceiroContasAPagarIndexRoute:
     AuthenticatedFinanceiroContasAPagarIndexRoute,
   AuthenticatedParceirosAtosIndexRoute: AuthenticatedParceirosAtosIndexRoute,

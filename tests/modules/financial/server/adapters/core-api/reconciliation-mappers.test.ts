@@ -1,0 +1,185 @@
+/**
+ * Mappers do core-api conciliação (puro, node:test): mapHttpError slug→ReconciliationError, e
+ * transactions/payables/suggestions/import/reconcile/undo→Model com parse de borda. Verificado contra o
+ * contrato real (#152): entryType string livre, suggestions raiz `{ suggestions }`, band alta/media,
+ * type derivado pelo backend. Import relativo (os #alias resolvem só no bundler).
+ */
+import { describe, it } from 'node:test'
+import assert from 'node:assert/strict'
+
+import {
+  mapHttpError,
+  transactionsToModel,
+  paidPayablesToModel,
+  suggestionsToModel,
+  importToModel,
+  reconciliationCreatedToModel,
+  undoToModel,
+} from '../../../../../../src/modules/financial/server/adapters/core-api/reconciliation.mappers.ts'
+import { isOk, isErr } from '../../../../../../src/shared/primitives/result.ts'
+import type { HttpError } from '../../../../../../src/shared/http/http-error.types.ts'
+
+describe('mapHttpError (conciliação)', () => {
+  const http = (status: number, code?: string): HttpError => ({
+    kind: 'http',
+    status,
+    body: code === undefined ? null : { error: { code, message: '', requestId: 'r' } },
+  })
+
+  it('mapeia slugs do contrato', () => {
+    assert.equal(mapHttpError(http(422, 'reconciliation-not-balanced')), 'reconciliation-not-balanced')
+    assert.equal(mapHttpError(http(422, 'title-not-paid')), 'title-not-paid')
+    assert.equal(mapHttpError(http(409, 'period-closed')), 'period-closed')
+    assert.equal(mapHttpError(http(409, 'transaction-already-reconciled')), 'transaction-already-reconciled')
+    assert.equal(mapHttpError(http(400, 'unsupported-format')), 'import-unsupported-format')
+    assert.equal(mapHttpError(http(422, 'period-has-pending-transactions')), 'period-has-pending')
+  })
+
+  it('cai no status quando não há slug', () => {
+    assert.equal(mapHttpError(http(404)), 'not-found')
+    assert.equal(mapHttpError(http(403)), 'forbidden')
+    assert.equal(mapHttpError(http(409)), 'conflict')
+    assert.equal(mapHttpError(http(422)), 'validation')
+    assert.equal(mapHttpError(http(500)), 'server')
+  })
+
+  it('rede/timeout → connectivity; parse → server', () => {
+    assert.equal(mapHttpError({ kind: 'network' }), 'connectivity')
+    assert.equal(mapHttpError({ kind: 'timeout' }), 'connectivity')
+    assert.equal(mapHttpError({ kind: 'parse' }), 'server')
+  })
+})
+
+describe('transactionsToModel', () => {
+  it('mapeia items; entryType passa cru; movement/status tolerantes', () => {
+    const raw = {
+      items: [
+        {
+          id: 't1',
+          fitid: 'F1',
+          date: '2026-06-01',
+          movement: 'Credit',
+          entryType: 'XFER',
+          payeeName: 'Fulano',
+          memo: 'pix',
+          valueCents: '15000',
+          balanceAfterCents: '20000',
+          reconciliationStatus: 'Pending',
+        },
+        {
+          id: 't2',
+          fitid: 'F2',
+          date: '2026-06-02',
+          movement: 'WAT', // drift → Debit
+          entryType: 'TARIFA',
+          payeeName: '',
+          memo: '',
+          valueCents: '500',
+          balanceAfterCents: '19500',
+          reconciliationStatus: 'ZZZ', // drift → Pending
+        },
+      ],
+    }
+    const r = transactionsToModel(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value.length, 2)
+      assert.equal(r.value[0]?.movement, 'Credit')
+      assert.equal(r.value[0]?.entryType, 'XFER')
+      assert.equal(r.value[1]?.movement, 'Debit')
+      assert.equal(r.value[1]?.reconciliationStatus, 'Pending')
+    }
+  })
+
+  it('shape inválido → err(server)', () => {
+    assert.ok(isErr(transactionsToModel({ nope: true })))
+  })
+})
+
+describe('paidPayablesToModel', () => {
+  it('mapeia mínimo; supplier/docNumber ausentes → null (#172)', () => {
+    const raw = {
+      items: [
+        { id: 'p1', documentId: 'd1', valueCents: '15000', dueDate: '2026-06-10', paymentMethod: 'PIX' },
+      ],
+    }
+    const r = paidPayablesToModel(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value[0]?.supplierName, null)
+      assert.equal(r.value[0]?.documentNumber, null)
+      assert.equal(r.value[0]?.dueDate, '2026-06-10')
+    }
+  })
+})
+
+describe('suggestionsToModel', () => {
+  it('lê a raiz { suggestions } (não items); band tolerante', () => {
+    const raw = {
+      suggestions: [
+        {
+          payableId: 'p1',
+          score: 88,
+          band: 'alta',
+          criteria: {
+            payeeMatch: true,
+            exactValue: true,
+            dateD0: true,
+            memoRef: false,
+            supplierOpenCount: 2,
+          },
+        },
+        {
+          payableId: 'p2',
+          score: 55,
+          band: 'xx', // drift → media
+          criteria: {
+            payeeMatch: false,
+            exactValue: false,
+            dateD0: false,
+            memoRef: false,
+            supplierOpenCount: 0,
+          },
+        },
+      ],
+    }
+    const r = suggestionsToModel(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value[0]?.band, 'alta')
+      assert.equal(r.value[1]?.band, 'media')
+    }
+  })
+
+  it('usar a chave items (errada) → err(server)', () => {
+    assert.ok(isErr(suggestionsToModel({ items: [] })))
+  })
+})
+
+describe('importToModel / reconciliationCreatedToModel / undoToModel', () => {
+  it('import mapeia resumo + período', () => {
+    const r = importToModel({
+      statementId: 's1',
+      imported: 10,
+      duplicatesDiscarded: 2,
+      period: { start: '2026-06-01', end: '2026-06-30' },
+    })
+    assert.ok(isOk(r))
+    if (isOk(r)) assert.equal(r.value.duplicatesDiscarded, 2)
+  })
+
+  it('reconcile mapeia type tolerante', () => {
+    const r = reconciliationCreatedToModel({ reconciliationId: 'r1', type: 'Partial', itemCount: 2 })
+    assert.ok(isOk(r))
+    if (isOk(r)) assert.equal(r.value.type, 'Partial')
+    const drift = reconciliationCreatedToModel({ reconciliationId: 'r2', type: 'ZZZ', itemCount: 1 })
+    assert.ok(isOk(drift))
+    if (isOk(drift)) assert.equal(drift.value.type, 'Individual')
+  })
+
+  it('undo sempre status Undone', () => {
+    const r = undoToModel({ reconciliationId: 'r1', status: 'whatever' })
+    assert.ok(isOk(r))
+    if (isOk(r)) assert.equal(r.value.status, 'Undone')
+  })
+})
