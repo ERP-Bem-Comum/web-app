@@ -19,7 +19,7 @@ export const screen = style({
   flexDirection: 'column',
   minBlockSize: '100%',
   paddingBlockEnd: '3.5rem',
-  background: c.paper.warm,
+  background: c.paper.default,
   color: c.ink[2],
 })
 
@@ -67,7 +67,6 @@ export const filterBar = style({
   paddingInline: sp['3xl'],
   paddingBlock: sp.lg,
   background: c.paper.default,
-  borderBlockEnd: `${bw.thin} solid ${c.paper.rule}`,
 })
 export const search = style({
   display: 'flex',
