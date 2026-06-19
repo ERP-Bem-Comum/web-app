@@ -54,16 +54,16 @@ seletor de conta (seed)** — compartilhados por US1/US2 em diante.
 
 ### Domínio & erros (puro, TDD)
 
-- [ ] T006 [P] Teste (RED) dos VOs branded em `tests/modules/financial/server/domain/reconciliation.io.test.ts` (AccountRef/PayableId/TransactionId/StatementId/ReconciliationId/PeriodId, `Cents`, `IsoDate`, `Score` — smart constructors retornando `Result`).
-- [ ] T007 Implementar os VOs e tipos de domínio em `src/modules/financial/server/domain/reconciliation.io.ts` (unions discriminadas de D9: movement, reconciliationStatus, reconciliation type, manual-entry type, difference treatment, suggestion band) até T006 passar.
-- [ ] T008 [P] Teste (RED) do mapeamento de erros em `tests/modules/financial/client/data/reconciliation-error-tag.test.ts` (cada `kind` do contrato → tag i18n; `switch` exaustivo com `const _: never`).
-- [ ] T009 Estender os erros como valor em `src/modules/financial/server/domain/errors/financial.errors.ts` e o mapeamento em `src/modules/financial/client/data/helpers/financial-error-tag.ts` com os `kind` de conciliação (ver `contracts/server-fns.md`), até T008 passar.
+- [x] T006 [P] Teste (RED) dos VOs branded em `tests/modules/financial/server/domain/reconciliation.io.test.ts` (AccountRef/PayableId/TransactionId/StatementId/ReconciliationId/PeriodId, `Cents`, `IsoDate`, `Score` — smart constructors retornando `Result`).
+- [x] T007 Implementar os VOs e tipos de domínio em `src/modules/financial/server/domain/reconciliation.io.ts` (unions discriminadas de D9: movement, reconciliationStatus, reconciliation type, manual-entry type, difference treatment, suggestion band) até T006 passar.
+- [x] T008 [P] Teste (RED) do mapeamento de erros em `tests/modules/financial/client/data/reconciliation-error-tag.test.ts` (cada `kind` do contrato → tag i18n; `switch` exaustivo com `const _: never`).
+- [x] T009 Estender os erros como valor em `src/modules/financial/server/domain/errors/financial.errors.ts` e o mapeamento em `src/modules/financial/client/data/helpers/financial-error-tag.ts` com os `kind` de conciliação (ver `contracts/server-fns.md`), até T008 passar.
 
 ### Cliente core-api base + repositório-porta
 
-- [ ] T010 Estender o cliente em `src/modules/financial/server/adapters/core-api/core-api-financial.ts` com o helper de chamada ao namespace `/api/v2/financial` para conciliação (reuso do `resultFetch`/auth já existente; nada de endpoint novo no core-api).
-- [ ] T011 [P] Criar o model Zod do client em `src/modules/financial/client/data/model/reconciliation.model.ts` (BankStatement, StatementTransaction, PaidPayable, MatchSuggestion, Reconciliation, ManualEntry, ReconciliationPeriod — campos de fornecedor/nº doc **opcionais**, mínimo até #172). ⚠️ Verificado #152: `entryType` = **string livre** (não enum); `payables.dueDate` = **date-only `YYYY-MM-DD`**; raiz de suggestions = **`{ suggestions }`** (não `items`); `band: ['alta','media']`; `difference.valueCents` = **int (pode negativo)**.
-- [ ] T012 Estender a porta `src/modules/financial/client/data/repository/financial.repository.ts` (+ `financial.repository.instance.ts`) com as assinaturas finais de conciliação (import, listTransactions, listPaidPayables, getSuggestions, rejectSuggestion, reconcile, undo, manualEntry, batch, closePeriod, **listAccounts/getAccount = costura #168**, export = costura #173) devolvendo `Result`.
+- [x] T010 Estender o cliente em `src/modules/financial/server/adapters/core-api/core-api-financial.ts` com o helper de chamada ao namespace `/api/v2/financial` para conciliação (reuso do `resultFetch`/auth já existente; nada de endpoint novo no core-api).
+- [x] T011 [P] Criar o model Zod do client em `src/modules/financial/client/data/model/reconciliation.model.ts` (BankStatement, StatementTransaction, PaidPayable, MatchSuggestion, Reconciliation, ManualEntry, ReconciliationPeriod — campos de fornecedor/nº doc **opcionais**, mínimo até #172). ⚠️ Verificado #152: `entryType` = **string livre** (não enum); `payables.dueDate` = **date-only `YYYY-MM-DD`**; raiz de suggestions = **`{ suggestions }`** (não `items`); `band: ['alta','media']`; `difference.valueCents` = **int (pode negativo)**.
+- [x] T012 Estender a porta `src/modules/financial/client/data/repository/financial.repository.ts` (+ `financial.repository.instance.ts`) com as assinaturas finais de conciliação (import, listTransactions, listPaidPayables, getSuggestions, rejectSuggestion, reconcile, undo, manualEntry, batch, closePeriod, **listAccounts/getAccount = costura #168**, export = costura #173) devolvendo `Result`.
 
 ### Shell do workspace + seletor de conta (seed) — compartilhado US1/US2
 
@@ -87,12 +87,12 @@ Conciliar → sai dos pendentes e progresso sobe; Rejeitar → some e mostra alt
 
 ### BFF (server fns) — listar transações, payables Pago, sugestões, conciliar, rejeitar
 
-- [ ] T017 [P] [US1] Teste (RED) dos mappers em `tests/modules/financial/server/adapters/reconciliation-read.mappers.test.ts` (response core-api → StatementTransaction[], PaidPayable[], MatchSuggestion[]).
-- [ ] T018 [US1] Estender `src/modules/financial/server/adapters/core-api/financial.schema.ts` e `financial.mappers.ts` com os schemas/mapeamento de transações, payables Pago e sugestões, até T017 passar.
-- [ ] T019 [P] [US1] Criar `src/modules/financial/server/adapters/server-fns/list-statement-transactions.query.fn.ts` (input `{statementId}` via `financial.io-schemas.ts`; valida response; `mapToServerResponse`).
-- [ ] T020 [P] [US1] Criar `src/modules/financial/server/adapters/server-fns/list-paid-payables.query.fn.ts` (`GET /payables?status=Paid`; só Pago).
-- [ ] T021 [P] [US1] Criar `src/modules/financial/server/adapters/server-fns/get-transaction-suggestions.query.fn.ts` (input `{transactionId}`).
-- [ ] T022 [US1] Criar `src/modules/financial/server/adapters/server-fns/create-reconciliation.service.fn.ts` (input `{transactionId, payableIds, difference?}`) e `reject-suggestion.service.fn.ts` (input `{transactionId, payableId}`); wiring em `financial.composition.ts`.
+- [x] T017 [P] [US1] Teste (RED) dos mappers em `tests/modules/financial/server/adapters/reconciliation-read.mappers.test.ts` (response core-api → StatementTransaction[], PaidPayable[], MatchSuggestion[]).
+- [x] T018 [US1] Estender `src/modules/financial/server/adapters/core-api/financial.schema.ts` e `financial.mappers.ts` com os schemas/mapeamento de transações, payables Pago e sugestões, até T017 passar.
+- [x] T019 [P] [US1] Criar `src/modules/financial/server/adapters/server-fns/list-statement-transactions.query.fn.ts` (input `{statementId}` via `financial.io-schemas.ts`; valida response; `mapToServerResponse`).
+- [x] T020 [P] [US1] Criar `src/modules/financial/server/adapters/server-fns/list-paid-payables.query.fn.ts` (`GET /payables?status=Paid`; só Pago).
+- [x] T021 [P] [US1] Criar `src/modules/financial/server/adapters/server-fns/get-transaction-suggestions.query.fn.ts` (input `{transactionId}`).
+- [x] T022 [US1] Criar `src/modules/financial/server/adapters/server-fns/create-reconciliation.service.fn.ts` (input `{transactionId, payableIds, difference?}`) e `reject-suggestion.service.fn.ts` (input `{transactionId, payableId}`); wiring em `financial.composition.ts`.
 
 ### Client — view-model derivações, queries/bindings, UI da aba Sugestão
 
@@ -114,8 +114,8 @@ Conciliar → sai dos pendentes e progresso sobe; Rejeitar → some e mostra alt
 **Independent Test**: importar OFX válido → resumo + transações na lista; reimportar → "0 importadas / N
 duplicadas".
 
-- [ ] T029 [P] [US2] Teste (RED) do mapper de import em `tests/modules/financial/server/adapters/import-statement.mapper.test.ts` (response → BankStatement {statementId, imported, duplicatesDiscarded, period}).
-- [ ] T030 [US2] Estender `financial.schema.ts`/`financial.mappers.ts` para o import e criar `src/modules/financial/server/adapters/server-fns/import-bank-statement.service.fn.ts` (input `{debitAccountRef, format:'OFX'|'CSV', content, fileName?}`; mapeia erros 400/409/422), até T029 passar; wiring na composition.
+- [x] T029 [P] [US2] Teste (RED) do mapper de import em `tests/modules/financial/server/adapters/import-statement.mapper.test.ts` (response → BankStatement {statementId, imported, duplicatesDiscarded, period}).
+- [x] T030 [US2] Estender `financial.schema.ts`/`financial.mappers.ts` para o import e criar `src/modules/financial/server/adapters/server-fns/import-bank-statement.service.fn.ts` (input `{debitAccountRef, format:'OFX'|'CSV', content, fileName?}`; mapeia erros 400/409/422), até T029 passar; wiring na composition.
 - [ ] T031 [US2] Criar `import.binding.ts` em `reconciliation-workspace/`: lê o arquivo via `File.text()`, chama a porta `import`, invalida a query de transações; trata erros → tags i18n.
 - [ ] T032 [US2] Implementar `components/import-menu.component.tsx` (+ `.css.ts`): menu Importar com OFX/CSV ativos e **PDF desabilitado/anunciado** (#145); exibe o resumo pós-import. View burra. Fidelidade ao mock.
 - [ ] T033 [US2] Teste (RED→GREEN) DOM em `tests/modules/financial/client/reconciliation-workspace/import-menu.spec.tsx` (import válido mostra resumo e popula lista; formato inválido mostra erro claro; período fechado bloqueia; PDF desabilitado).
@@ -149,7 +149,7 @@ confirmação consciente; conciliar em lote (best-effort).
 destino + confirmação.
 
 - [ ] T038 [P] [US4] Teste (RED) puro do gating de confirmação consciente em `tests/modules/financial/client/reconciliation-workspace/manual-entry.test.ts` (Transfer/Investment/Redemption bloqueiam submit sem destino+confirmação; demais tipos liberam).
-- [ ] T039 [US4] Criar `src/modules/financial/server/adapters/server-fns/create-manual-entry.service.fn.ts` (input com `type` + refs opcionais + `destinationAccount?`) e `batch-reconcile.service.fn.ts` (input `{transactionIds, template}`, retorna `created/failed`); schemas/mapper + composition.
+- [x] T039 [US4] Criar `src/modules/financial/server/adapters/server-fns/create-manual-entry.service.fn.ts` (input com `type` + refs opcionais + `destinationAccount?`) e `batch-reconcile.service.fn.ts` (input `{transactionIds, template}`, retorna `created/failed`); schemas/mapper + composition.
 - [ ] T040 [US4] Implementar `manual-entry.binding.ts` (+ gating de T038) e a aba **Nova transação** em `components/new-transaction-pane.component.tsx` (+ `.css.ts`): cards de tipo, categorização, conta de destino + confirmação consciente para Transfer/Investment/Redemption.
 - [ ] T041 [US4] Implementar a ação de **lote** (best-effort) a partir de seleção múltipla na imports-list (`batch.binding.ts` + UI de seleção/relatório de `failed`).
 - [ ] T042 [US4] Teste (RED→GREEN) DOM em `tests/modules/financial/client/reconciliation-workspace/new-transaction-pane.spec.tsx` (tipo simples registra; transferência sem destino/confirmação bloqueia; lote reporta falhas parciais).
@@ -165,7 +165,7 @@ registro preservado como "desfeito".
 
 **Independent Test**: abrir detalhes de uma conciliada → Desfazer → volta a pendente.
 
-- [ ] T043 [US5] Criar `src/modules/financial/server/adapters/server-fns/undo-reconciliation.service.fn.ts` (input `{reconciliationId, reason?}`; mapeia 409 already-undone/period-closed); schema/mapper + composition.
+- [x] T043 [US5] Criar `src/modules/financial/server/adapters/server-fns/undo-reconciliation.service.fn.ts` (input `{reconciliationId, reason?}`; mapeia 409 already-undone/period-closed); schema/mapper + composition.
 - [ ] T044 [US5] Implementar `undo.binding.ts` (invalida transações/progresso) e `components/detail-modal.component.tsx` (+ `.css.ts`): detalhes da conciliação com botão Desfazer + campo de motivo. View burra.
 - [ ] T045 [US5] Teste (RED→GREEN) DOM em `tests/modules/financial/client/reconciliation-workspace/detail-modal.spec.tsx` (desfazer volta a pendente; período fechado bloqueia com aviso).
 
@@ -199,7 +199,7 @@ impedida; sem #168 a tela exibe estado honesto e "Adicionar conta" desabilitado.
 **Independent Test**: tudo tratado → fechar → "fechado"; com pendências → bloqueado; Exportar
 desabilitado/anunciado.
 
-- [ ] T052 [US7] Criar `src/modules/financial/server/adapters/server-fns/close-reconciliation-period.service.fn.ts` (input `{debitAccountRef, periodStart, periodEnd}`; mapeia 422 has-pending/400 invalid-range); schema/mapper + composition.
+- [x] T052 [US7] Criar `src/modules/financial/server/adapters/server-fns/close-reconciliation-period.service.fn.ts` (input `{debitAccountRef, periodStart, periodEnd}`; mapeia 422 has-pending/400 invalid-range); schema/mapper + composition.
 - [ ] T053 [US7] Implementar `close-period.binding.ts` (invalida progresso/contagens) e o botão **Fechar período** na bottombar (`components/bottombar.component.tsx`), com aviso quando há pendências.
 - [ ] T054 [US7] Criar `src/modules/financial/client/data/reconciliation.gateway.ts` (download de texto OFX/CSV) e o **Exportar** na bottombar **desabilitado/anunciado** (#173, costura `export` pronta) — sem inventar `periodId`.
 - [ ] T055 [US7] Teste (RED→GREEN) DOM em `tests/modules/financial/client/reconciliation-workspace/bottombar.spec.tsx` (fechar com pendências bloqueia; sem pendências fecha; Exportar desabilitado com aviso #173).

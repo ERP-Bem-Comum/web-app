@@ -16,3 +16,34 @@ export type {
   CreateDocumentInput,
 } from '#modules/financial/client/data/model/document.model.ts'
 export type { FinancialError } from '#modules/financial/client/data/repository/financial-error.ts'
+
+// ── Conciliação Bancária (034) — model + erro (a costura BFF/data; UI entra nas próximas fatias) ──
+export type {
+  ReconciliationAccount,
+  AccountType,
+  AccountStatus,
+  Movement,
+  ReconciliationStatus,
+  ReconciliationType,
+  DifferenceTreatment,
+  ManualEntryType,
+  SuggestionBand,
+  StatementFormat,
+  BankStatementImport,
+  StatementTransaction,
+  PaidPayable,
+  MatchSuggestion,
+  SuggestionCriteria,
+  ReconciliationCreated,
+  ReconciliationUndone,
+  ManualEntryCreated,
+  BatchResult,
+  PeriodClosed,
+  ImportStatementInput,
+  CreateReconciliationInput,
+  ManualEntryInput,
+  ManualEntryTemplate,
+  BatchReconcileInput,
+  ClosePeriodInput,
+} from '#modules/financial/client/data/model/reconciliation.model.ts'
+export type { ReconciliationError } from '#modules/financial/client/data/repository/reconciliation-error.ts'
