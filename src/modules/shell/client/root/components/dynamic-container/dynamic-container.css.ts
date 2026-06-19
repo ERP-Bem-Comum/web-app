@@ -12,6 +12,13 @@ export const main = style({
   flexDirection: 'column',
 })
 
+// Conteúdo "full-bleed": zera TODO o padding do shell (topo/laterais/base). O workspace de conciliação
+// espelha o mock (hero, abas, corpo e footer encostam nas bordas da área de conteúdo, igual incluir contrato).
+// Cada faixa interna gerencia seu próprio paddingInline. Sem margem negativa (não briga com o overflow).
+export const mainFullBleed = style({
+  padding: 0,
+})
+
 export const content = style({
   flex: 1,
   overflow: 'hidden',

@@ -14,7 +14,11 @@ import { isOk } from '#shared/primitives/result.ts'
 import { logoutUseCase } from '#modules/auth/public-api/index.ts'
 import { myAccountQueryOptions } from '#modules/users/public-api/index.ts'
 import { MENU, type MenuSection } from '#modules/shell/client/data/menu/shell-menu.config.ts'
-import { rootInitialUiState, rootUiReducer, rootViewModel } from '#modules/shell/client/root/viewModel/root.view-model.ts'
+import {
+  rootInitialUiState,
+  rootUiReducer,
+  rootViewModel,
+} from '#modules/shell/client/root/viewModel/root.view-model.ts'
 
 export type RootUser = Readonly<{ userId: string; name?: string; permissions: readonly string[] }>
 
@@ -24,6 +28,7 @@ export type RootView = Readonly<{
   sidebarWidth: number
   pageTitle: string
   showPageHeader: boolean
+  fullBleed: boolean
   visibleMenu: readonly MenuSection[]
   isItemActive: (to: string) => boolean
   toggleSidebar: () => void
@@ -74,6 +79,7 @@ export function useRootBinding(user: RootUser): RootView {
     sidebarWidth,
     pageTitle,
     showPageHeader: rootViewModel.showPageHeader(path),
+    fullBleed: rootViewModel.fullBleedContent(path),
     visibleMenu: rootViewModel.visibleMenu(MENU, user.permissions),
     isItemActive: (to) => rootViewModel.isItemActive(path, to),
     toggleSidebar: () => {

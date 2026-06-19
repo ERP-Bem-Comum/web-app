@@ -19,17 +19,29 @@ const fs = recon.size
 const r = recon.radius
 const bw = recon.border
 
+// Scrollbar suave (fina + bege clara) — espalhada nos containers roláveis do módulo (extrato/listas).
+// Padrão (Firefox/modern) + WebKit. Trilho transparente; polegar bege claro com cantos arredondados.
+const scrollSoft = {
+  scrollbarWidth: 'thin',
+  scrollbarColor: `${c.paper.rule} transparent`,
+  '::-webkit-scrollbar': { width: '0.375rem', height: '0.375rem' },
+  '::-webkit-scrollbar-track': { background: 'transparent' },
+  '::-webkit-scrollbar-thumb': { background: c.paper.rule, borderRadius: r.pill },
+  '::-webkit-scrollbar-thumb:hover': { background: c.ink[6] },
+} as const
+
 export const screen = style({
   display: 'flex',
   flexDirection: 'column',
-  minBlockSize: '100%',
-  paddingBlockEnd: '3.5rem',
+  blockSize: '100%',
+  overflow: 'hidden', // altura limitada: header/tabs/footer fixos; só o corpo (extrato/conciliação) rola
   background: c.paper.warm,
   color: c.ink[2],
 })
 
 // ── acc-header (hero, fiel ao mock: identidade | saldo | ações) ──────────────────
 export const accHeader = style({
+  flexShrink: 0,
   display: 'grid',
   gridTemplateColumns: 'minmax(21.25rem, auto) 1fr auto',
   alignItems: 'center',
@@ -166,8 +178,9 @@ export const periodBtn = style({
   display: 'inline-flex',
   alignItems: 'center',
   gap: sp.xs,
+  boxSizing: 'border-box',
+  blockSize: '2.375rem', // mesma altura do botão Importar (proporcional)
   paddingInline: sp.lg,
-  paddingBlock: sp.sm,
   borderRadius: r.md,
   border: `${bw.thin} solid ${c.paper.rule}`,
   background: c.paper.default,
@@ -182,6 +195,9 @@ export const periodLbl = style({
   textTransform: 'uppercase',
   color: c.ink[5],
 })
+export const periodValue = style({ color: c.ink[1], fontWeight: recon.weight.medium })
+export const periodChev = style({ color: c.ink[5], display: 'inline-flex' })
+export const guessesHint = style({ fontFamily: recon.font.mono, fontSize: fs['3xs'], color: c.ink[5] })
 
 export const pill = style({
   display: 'inline-flex',
@@ -201,9 +217,10 @@ export const btnPrimary = style({
   display: 'inline-flex',
   alignItems: 'center',
   gap: sp.xs,
+  boxSizing: 'border-box',
+  blockSize: '2.375rem', // mesma altura do botão Período (proporcional)
   paddingInline: sp.lg,
-  paddingBlock: sp.sm,
-  borderRadius: r.sm,
+  borderRadius: r.md,
   border: 'none',
   background: c.teal.normal,
   color: c.paper.default,
@@ -222,9 +239,10 @@ export const btnSecondary = style({
   display: 'inline-flex',
   alignItems: 'center',
   gap: sp.xs,
+  boxSizing: 'border-box',
+  blockSize: '2.375rem',
   paddingInline: sp.lg,
-  paddingBlock: sp.sm,
-  borderRadius: r.sm,
+  borderRadius: r.md,
   border: `${bw.thin} solid ${c.paper.rule}`,
   background: c.paper.default,
   color: c.ink[2],
@@ -240,6 +258,7 @@ export const btnSecondary = style({
 
 // ── tabs-bar (h ~44px) ──────────────────────────────────────────────────────────
 export const tabsBar = style({
+  flexShrink: 0,
   display: 'flex',
   alignItems: 'center',
   gap: sp.xl,
@@ -358,7 +377,15 @@ export const switchTrack = styleVariants({
 })
 
 // ── workspace body ──────────────────────────────────────────────────────────────
-export const workspace = style({ flex: 1, position: 'relative', background: c.paper.warm })
+export const workspace = style({
+  flex: 1,
+  minBlockSize: 0,
+  display: 'flex',
+  flexDirection: 'column',
+  position: 'relative',
+  overflow: 'hidden',
+  background: c.paper.warm,
+})
 
 export const emptyState = style({
   display: 'flex',
@@ -389,19 +416,23 @@ export const noticeChrome = style({
 
 // ── conciliação view (2 colunas: imports 460px | associação) ────────────────────
 export const conciliacaoView = style({
+  flex: 1,
+  minBlockSize: 0,
   display: 'grid',
   gridTemplateColumns: '28.75rem 1fr',
-  minBlockSize: '100%',
 })
 
 export const importsCol = style({
   display: 'flex',
   flexDirection: 'column',
+  minBlockSize: 0,
+  overflow: 'hidden',
   background: c.paper.default,
   borderInlineEnd: `${bw.thin} solid ${c.paper.rule}`,
 })
 
 export const importsHead = style({
+  flexShrink: 0,
   display: 'flex',
   alignItems: 'center',
   gap: sp.sm,
@@ -428,7 +459,14 @@ export const filterTab = styleVariants({
   active: { ...filterTabBase, color: c.ink[1], fontWeight: recon.weight.semibold, background: c.paper.beige },
 })
 
-export const importsList = style({ display: 'flex', flexDirection: 'column', overflowY: 'auto' })
+export const importsList = style({
+  flex: 1,
+  minBlockSize: 0,
+  display: 'flex',
+  flexDirection: 'column',
+  overflowY: 'auto',
+  ...scrollSoft,
+})
 
 export const dayDivider = style({
   display: 'flex',
@@ -534,6 +572,8 @@ export const txTag = styleVariants({
 
 // ── coluna de associação ────────────────────────────────────────────────────────
 export const assocCol = style({
+  flex: 1,
+  minBlockSize: 0,
   display: 'flex',
   flexDirection: 'column',
   gap: sp.xl,
@@ -542,9 +582,11 @@ export const assocCol = style({
   color: c.ink[3],
   fontFamily: recon.font.sans,
   fontSize: fs.md,
+  ...scrollSoft,
 })
 
 export const assocTabs = style({
+  flexShrink: 0,
   display: 'flex',
   gap: sp.sm,
   paddingInline: sp['3xl'],
@@ -705,25 +747,74 @@ export const summaryNote = style({ color: c.green.deep, fontFamily: recon.font.m
 
 // ── bottombar (h ~52px) ─────────────────────────────────────────────────────────
 export const bottombar = style({
-  position: 'fixed',
-  insetBlockEnd: 0,
-  insetInline: 0,
+  flexShrink: 0,
+  blockSize: '3.5rem', // mesma espessura do footer da tela de lançar contrato (altura fixa)
   display: 'flex',
   alignItems: 'center',
   gap: sp.xl,
   paddingInline: sp['3xl'],
-  paddingBlock: sp.lg,
   background: c.paper.default,
   borderBlockStart: `${bw.thin} solid ${c.paper.rule}`,
 })
 
-export const auditNote = style({ fontFamily: recon.font.sans, fontSize: fs.sm, color: c.ink[5] })
+// legenda (esquerda do footer): pontos coloridos + rótulos, fiel ao mock
+export const legend = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: sp.lg,
+  flexWrap: 'wrap',
+  minInlineSize: 0,
+})
+export const legendItem = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: sp.xs,
+  fontFamily: recon.font.sans,
+  fontSize: fs.sm,
+  color: c.ink[3],
+  whiteSpace: 'nowrap',
+})
+const legendDotBase = {
+  inlineSize: '0.5rem',
+  blockSize: '0.5rem',
+  borderRadius: r.pill,
+  flexShrink: 0,
+} as const
+export const legendDot = styleVariants({
+  alta: { ...legendDotBase, background: c.green.normal },
+  parcial: { ...legendDotBase, background: c.orange.normal },
+  semMatch: { ...legendDotBase, background: c.ink[6] },
+  conciliado: { ...legendDotBase, background: c.green.deep },
+})
+export const legendSep = style({
+  inlineSize: bw.thin,
+  blockSize: '0.875rem',
+  background: c.paper.rule,
+  flexShrink: 0,
+})
+
+export const auditNote = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: sp.xs,
+  fontFamily: recon.font.sans,
+  fontSize: fs.sm,
+  color: c.ink[5],
+})
+export const auditDot = style({
+  inlineSize: '0.5rem',
+  blockSize: '0.5rem',
+  borderRadius: r.pill,
+  background: c.green.normal,
+  flexShrink: 0,
+})
 
 export const bottomActions = style({
   display: 'flex',
   alignItems: 'center',
   gap: sp.sm,
   marginInlineStart: 'auto',
+  flexShrink: 0,
 })
 
 // ── Buscar / Criar vários (US3) ─────────────────────────────────────────────────
@@ -897,77 +988,273 @@ export const bannerTitle = style({
   fontWeight: recon.weight.semibold,
 })
 
-// ── Aba Extrato (US8) ───────────────────────────────────────────────────────────
+// ── Aba Extrato (US8) — fiel ao mock (9 colunas, divisor de dia, conc-mark, footer) ──
 export const extWrap = style({
+  flex: 1,
+  minBlockSize: 0,
   display: 'flex',
   flexDirection: 'column',
-  minBlockSize: '100%',
   background: c.paper.default,
 })
 export const extHead = style({
+  flexShrink: 0,
   display: 'flex',
   alignItems: 'center',
-  gap: sp.sm,
+  gap: sp.lg,
   paddingInline: sp['3xl'],
   paddingBlock: sp.lg,
   borderBlockEnd: `${bw.thin} solid ${c.paper.rule}`,
 })
-export const extRows = style({ display: 'flex', flexDirection: 'column', overflowY: 'auto' })
-const extGridCols = {
-  display: 'grid',
-  gridTemplateColumns: '6rem 1fr 7rem 7rem 8rem',
-  gap: sp.sm,
-  alignItems: 'center',
-} as const
-export const extRow = style({
-  ...extGridCols,
-  paddingInline: sp['3xl'],
-  paddingBlock: sp.lg,
-  borderBlockEnd: `${bw.hairline} solid ${c.paper.rule}`,
-})
-export const extHeadRow = style({
-  ...extGridCols,
-  paddingInline: sp['3xl'],
-  paddingBlock: sp.lg,
-  background: c.paper.warm,
+export const extHeadOverline = style({
   fontFamily: recon.font.sans,
   fontSize: fs['3xs'],
-  color: c.ink[5],
-  textTransform: 'uppercase',
-  letterSpacing: '0.04em',
-})
-export const extFoot = style({
-  ...extGridCols,
-  paddingInline: sp['3xl'],
-  paddingBlock: sp.lg,
-  background: c.paper.warm,
-  borderBlockStart: `${bw.thin} solid ${c.paper.rule}`,
-  fontFamily: recon.font.mono,
   fontWeight: recon.weight.bold,
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+  color: c.ink[5],
 })
-export const extCellMono = style({ fontFamily: recon.font.mono, fontSize: fs.sm, color: c.ink[3] })
-export const extCellMonoRight = style({
+export const extCount = style({
   fontFamily: recon.font.mono,
-  fontSize: fs.sm,
-  textAlign: 'end',
+  fontSize: fs.xs,
+  fontWeight: recon.weight.semibold,
   color: c.ink[3],
 })
-export const extIn = style({
-  fontFamily: recon.font.mono,
-  fontSize: fs.sm,
-  textAlign: 'end',
-  color: c.green.deep,
+export const extRows = style({
+  flex: 1,
+  minBlockSize: 0,
+  display: 'flex',
+  flexDirection: 'column',
+  overflowY: 'auto',
+  ...scrollSoft,
 })
-export const extOut = style({
-  fontFamily: recon.font.mono,
-  fontSize: fs.sm,
-  textAlign: 'end',
-  color: c.red.deep,
+
+const extGridCols = {
+  display: 'grid',
+  gridTemplateColumns:
+    '1.75rem 3.75rem 5rem minmax(11.25rem, 13.75rem) minmax(0, 1fr) 9.375rem 6.875rem 6.875rem 8.125rem',
+  alignItems: 'center',
+  gap: sp.lg,
+  paddingInline: sp['3xl'],
+} as const
+
+export const extGridHead = style({
+  ...extGridCols,
+  flexShrink: 0,
+  blockSize: '2rem',
+  background: c.paper.warm,
+  borderBlockEnd: `${bw.thin} solid ${c.paper.rule}`,
+  fontFamily: recon.font.sans,
+  fontSize: fs['3xs'],
+  fontWeight: recon.weight.bold,
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+  color: c.ink[5],
 })
-export const extName = style({
+export const extRight = style({ textAlign: 'end', justifySelf: 'end' })
+
+const extRowBase = {
+  ...extGridCols,
+  blockSize: '2.875rem',
+  borderBlockEnd: `${bw.hairline} solid ${c.paper.rule}`,
   fontSize: fs.md,
+  cursor: 'pointer',
+  transition: `background ${recon.tFast}`,
+} as const
+export const extRow = styleVariants({
+  base: { ...extRowBase, selectors: { '&:hover': { background: c.paper.warm } } },
+  reconciled: {
+    ...extRowBase,
+    opacity: 0.72,
+    selectors: { '&:hover': { opacity: 0.92, background: c.paper.warm } },
+  },
+})
+
+export const concMark = styleVariants({
+  pending: {
+    inlineSize: '1.125rem',
+    blockSize: '1.125rem',
+    borderRadius: r.pill,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    '::after': {
+      content: '""',
+      inlineSize: '0.375rem',
+      blockSize: '0.375rem',
+      borderRadius: r.pill,
+      background: c.orange.normal,
+    },
+  },
+  reconciled: {
+    inlineSize: '1.125rem',
+    blockSize: '1.125rem',
+    borderRadius: r.pill,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: c.green.bg,
+    color: c.green.deep,
+  },
+})
+
+export const extDt = style({ fontFamily: recon.font.mono, fontSize: fs.sm, color: c.ink[3] })
+
+const extKindBase = {
+  fontFamily: recon.font.sans,
+  fontSize: '0.53125rem',
+  fontWeight: recon.weight.bold,
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+  paddingInline: sp.xs,
+  paddingBlock: '0.125rem',
+  borderRadius: r.sm,
+  textAlign: 'center',
+  whiteSpace: 'nowrap',
+  justifySelf: 'start',
+} as const
+export const extKind = styleVariants({
+  pix: { ...extKindBase, background: c.pix.bg, color: c.pix.text },
+  ted: { ...extKindBase, background: c.teal.bg, color: c.teal.deep },
+  doc: { ...extKindBase, background: c.amber.bg, color: c.amber.deep },
+  tar: { ...extKindBase, background: c.paper.beige, color: c.ink[3] },
+  apl: { ...extKindBase, background: c.purple.bg, color: c.purple.deep },
+  default: { ...extKindBase, background: c.paper.beige, color: c.ink[3] },
+})
+
+export const extName = style({
+  fontFamily: recon.font.sans,
+  fontSize: fs.md,
+  fontWeight: recon.weight.medium,
   color: c.ink[1],
   whiteSpace: 'nowrap',
   overflow: 'hidden',
   textOverflow: 'ellipsis',
+})
+export const extNameReconciled = style({ color: c.ink[3] })
+export const extDesc = style({
+  fontFamily: recon.font.sans,
+  fontSize: fs.sm,
+  color: c.ink[4],
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+})
+export const extRef = style({ display: 'flex', flexDirection: 'column', gap: '0.0625rem', minInlineSize: 0 })
+export const extRefLine = style({
+  fontFamily: recon.font.mono,
+  fontSize: fs.xs,
+  fontWeight: recon.weight.medium,
+  color: c.ink[3],
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+})
+export const extRefId = style({
+  fontFamily: recon.font.mono,
+  fontSize: fs['3xs'],
+  color: c.ink[5],
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+})
+const extValBase = {
+  fontFamily: recon.font.mono,
+  fontSize: fs.md,
+  fontWeight: recon.weight.semibold,
+  textAlign: 'end',
+  justifySelf: 'end',
+  fontVariantNumeric: 'tabular-nums',
+} as const
+export const extVal = styleVariants({
+  in: { ...extValBase, color: c.green.deep },
+  out: { ...extValBase, color: c.red.deep },
+  empty: { ...extValBase, color: c.ink[6], fontWeight: recon.weight.regular },
+})
+export const extSaldo = style({
+  fontFamily: recon.font.mono,
+  fontSize: fs.md,
+  fontWeight: recon.weight.bold,
+  color: c.ink[1],
+  textAlign: 'end',
+  justifySelf: 'end',
+  fontVariantNumeric: 'tabular-nums',
+})
+
+// divisor de dia
+export const extDayDivider = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: sp.xl,
+  paddingInline: sp['3xl'],
+  paddingBlock: '0.5rem',
+  background: c.paper.warm,
+  borderBlock: `${bw.thin} solid ${c.paper.rule}`,
+  selectors: { '&::after': { content: '""', flex: 1, blockSize: bw.hairline, background: c.paper.rule } },
+})
+export const extDayLabel = style({
+  fontFamily: recon.font.mono,
+  fontSize: fs.xs,
+  fontWeight: recon.weight.semibold,
+  color: c.ink[2],
+})
+export const extDayMeta = style({
+  fontFamily: recon.font.mono,
+  fontSize: fs['3xs'],
+  fontWeight: recon.weight.medium,
+  color: c.ink[5],
+})
+export const extDayIn = style({ color: c.green.deep })
+export const extDayOut = style({ color: c.red.deep })
+export const extDaySaldo = style({
+  fontFamily: recon.font.mono,
+  fontSize: fs.sm,
+  fontWeight: recon.weight.bold,
+  color: c.ink[1],
+  marginInlineStart: 'auto',
+})
+export const extDaySaldoLbl = style({
+  color: c.ink[5],
+  fontWeight: recon.weight.medium,
+  marginInlineEnd: '0.3125rem',
+})
+
+// footer de totais
+export const extFoot = style({
+  ...extGridCols,
+  flexShrink: 0,
+  blockSize: '2.875rem',
+  background: c.paper.beige,
+  borderBlockStart: `${bw.thin} solid ${c.paper.rule}`,
+})
+export const extFtLbl = style({
+  fontFamily: recon.font.sans,
+  fontSize: fs['3xs'],
+  fontWeight: recon.weight.bold,
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+  color: c.ink[3],
+})
+export const extFtIn = style({
+  fontFamily: recon.font.mono,
+  fontSize: fs.md,
+  fontWeight: recon.weight.bold,
+  color: c.green.deep,
+  textAlign: 'end',
+  justifySelf: 'end',
+})
+export const extFtOut = style({
+  fontFamily: recon.font.mono,
+  fontSize: fs.md,
+  fontWeight: recon.weight.bold,
+  color: c.red.deep,
+  textAlign: 'end',
+  justifySelf: 'end',
+})
+export const extFtSaldo = style({
+  fontFamily: recon.font.mono,
+  fontSize: fs.lg,
+  fontWeight: recon.weight.bold,
+  color: c.ink[1],
+  textAlign: 'end',
+  justifySelf: 'end',
 })

@@ -24,12 +24,18 @@ export function RootPage({ user, children }: RootPageProps): ReactNode {
 
       <div className={s.body}>
         <div className={s.sidebarSticky}>
-          <SideBar collapsed={v.collapsed} onToggle={v.toggleSidebar} menuItems={v.visibleMenu} isItemActive={v.isItemActive} />
+          <SideBar
+            collapsed={v.collapsed}
+            onToggle={v.toggleSidebar}
+            menuItems={v.visibleMenu}
+            isItemActive={v.isItemActive}
+          />
         </div>
 
         <DynamicContainer
           pageTitle={v.pageTitle}
           showPageHeader={v.showPageHeader}
+          fullBleed={v.fullBleed}
           sidebarWidth={v.sidebarWidth}
           collapsed={v.collapsed}
         >

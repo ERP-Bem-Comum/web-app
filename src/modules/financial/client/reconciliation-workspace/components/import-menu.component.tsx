@@ -7,7 +7,7 @@ import { useRef } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { UploadIcon } from '#shared/ui/icons/index.ts'
+import { ChevronDownIcon, UploadIcon } from '#shared/ui/icons/index.ts'
 
 import * as s from '../page/reconciliation-workspace.css.ts'
 import type { BankStatementImport } from '../reconciliation-workspace.view-model.ts'
@@ -35,6 +35,7 @@ export function ImportMenu({ importing, summary, errorTag, onPickFile }: ImportM
       >
         <UploadIcon />
         {t('financial.recon.import')}
+        <ChevronDownIcon />
       </button>
       <input
         ref={inputRef}

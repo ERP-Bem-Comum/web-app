@@ -7,13 +7,7 @@
  */
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import {
-  CalendarDaysIcon,
-  CheckCircleIcon,
-  DownloadIcon,
-  EyeIcon,
-  EyeOffIcon,
-} from '#shared/ui/icons/index.ts'
+import { CalendarDaysIcon, CheckCircleIcon, ChevronDownIcon, DownloadIcon } from '#shared/ui/icons/index.ts'
 
 import { useReconciliationWorkspace } from '../reconciliation-workspace.binding.ts'
 import { centsToBRL, isPending, type AssocTab } from '../reconciliation-workspace.view-model.ts'
@@ -100,6 +94,10 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
           <button type="button" className={s.periodBtn}>
             <CalendarDaysIcon />
             <span className={s.periodLbl}>{t('financial.recon.period')}</span>
+            <span className={s.periodValue}>{t('financial.recon.period.value')}</span>
+            <span className={s.periodChev}>
+              <ChevronDownIcon />
+            </span>
           </button>
           {/* Importar OFX/CSV (US2); PDF via OCR fica anunciado (#145) */}
           <ImportMenu
@@ -155,8 +153,8 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
             }}
           >
             <span className={ui.showGuesses ? s.switchTrack.on : s.switchTrack.off} aria-hidden="true" />
-            {ui.showGuesses ? <EyeIcon /> : <EyeOffIcon />}
             {t('financial.recon.guesses')}
+            <span className={s.guessesHint}>{t('financial.recon.guessesHint')}</span>
           </button>
         </div>
       </div>
@@ -239,9 +237,11 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
           </div>
         ) : (
           <StatementGrid
-            hasStatement={ui.statementId !== null}
-            items={vm.extrato.items}
+            hasStatement={vm.extrato.hasStatement}
+            days={vm.extrato.days}
             totals={vm.extrato.totals}
+            count={vm.extrato.count}
+            counts={vm.extrato.counts}
             filter={ui.extratoFilter}
             onFilter={vm.setExtratoFilter}
           />
@@ -250,9 +250,31 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
 
       {/* bottombar */}
       <footer className={s.bottombar}>
-        <span className={s.auditNote}>
-          {vm.closePeriod.closed ? t('financial.recon.close.success') : t('financial.recon.bottombar.audit')}
-        </span>
+        <div className={s.legend}>
+          <span className={s.legendItem}>
+            <span className={s.legendDot.alta} aria-hidden />
+            {t('financial.recon.legend.alta')}
+          </span>
+          <span className={s.legendItem}>
+            <span className={s.legendDot.parcial} aria-hidden />
+            {t('financial.recon.legend.parcial')}
+          </span>
+          <span className={s.legendItem}>
+            <span className={s.legendDot.semMatch} aria-hidden />
+            {t('financial.recon.legend.semMatch')}
+          </span>
+          <span className={s.legendItem}>
+            <span className={s.legendDot.conciliado} aria-hidden />
+            {t('financial.recon.legend.conciliado')}
+          </span>
+          <span className={s.legendSep} aria-hidden />
+          <span className={s.auditNote}>
+            <span className={s.auditDot} aria-hidden />
+            {vm.closePeriod.closed
+              ? t('financial.recon.close.success')
+              : t('financial.recon.bottombar.audit')}
+          </span>
+        </div>
         <div className={s.bottomActions}>
           {vm.closePeriod.errorTag !== null ? (
             <span className={s.errorText}>{t(vm.closePeriod.errorTag)}</span>
@@ -267,6 +289,7 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
           >
             <DownloadIcon />
             {t('financial.recon.bottombar.export')}
+            <ChevronDownIcon />
           </button>
           {/* Fechar período (US7) — bloqueado se há pendentes ou sem extrato */}
           <button

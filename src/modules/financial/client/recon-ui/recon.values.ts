@@ -69,6 +69,8 @@ export const recon = {
       bg: 'rgba(124, 92, 184, 0.10)',
     },
     overlay: 'rgba(28, 30, 40, 0.42)',
+    // badge PIX do mock (verde-água suave, fora das escalas acima)
+    pix: { bg: 'rgb(238, 246, 245)', text: 'rgb(52, 132, 124)' },
   },
   // Tipografia da MARCA do cliente (sem serif/Fraunces): Inter (texto/títulos) + JetBrains Mono (valores).
   font: {

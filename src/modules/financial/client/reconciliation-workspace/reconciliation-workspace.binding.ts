@@ -13,6 +13,7 @@ import {
   extratoTotals,
   filterExtrato,
   filterTransactions,
+  groupExtratoDays,
   groupTransactionsByDay,
   initialWorkspaceUiState,
   isPending,
@@ -21,6 +22,7 @@ import {
   workspaceReducer,
   type AssocTab,
   type DayGroup,
+  type ExtratoDayGroup,
   type ExtratoFilter,
   type ExtratoTotals,
   type ListFilter,
@@ -84,7 +86,19 @@ export type WorkspaceBinding = Readonly<{
   selectedTx: StatementTransaction | null
   suggestions: SuggestionState
   payables: readonly PaidPayable[]
-  extrato: Readonly<{ items: readonly StatementTransaction[]; totals: ExtratoTotals }>
+  extrato: Readonly<{
+    hasStatement: boolean
+    days: readonly ExtratoDayGroup[]
+    totals: ExtratoTotals
+    count: number
+    counts: Readonly<{
+      todos: number
+      entradas: number
+      saidas: number
+      conciliados: number
+      pendentes: number
+    }>
+  }>
   import: ImportBinding
   reconcile: ReconcileBinding
   searchCreate: SearchCreateBinding
@@ -160,7 +174,19 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
   }
 
   const extratoItems = filterExtrato(allTx, ui.extratoFilter)
-  const extrato = { items: extratoItems, totals: extratoTotals(extratoItems) }
+  const extrato = {
+    hasStatement: ui.statementId !== null,
+    days: groupExtratoDays(extratoItems),
+    totals: extratoTotals(extratoItems),
+    count: extratoItems.length,
+    counts: {
+      todos: allTx.length,
+      entradas: allTx.filter((tx) => tx.movement === 'Credit').length,
+      saidas: allTx.filter((tx) => tx.movement === 'Debit').length,
+      conciliados: allTx.filter((tx) => !isPending(tx)).length,
+      pendentes: pendentesCount,
+    },
+  }
 
   const txList: TxListState = (() => {
     if (ui.statementId === null) return { tag: 'idle' }

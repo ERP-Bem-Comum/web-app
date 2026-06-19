@@ -1,10 +1,12 @@
 /**
- * StatementGrid (Vitest/jsdom) — view burra (US8): aba Extrato. Filtros, linhas e totais. Props.
+ * StatementGrid (Vitest/jsdom) — view burra (US8): aba Extrato. Divisor por dia, linhas, conc-mark e
+ * totais. Props (dias já agrupados + contagens). Verifica também o ponto pendente × check conciliado.
  */
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 
 import { StatementGrid } from '#modules/financial/client/reconciliation-workspace/components/statement-grid.component.tsx'
+import { groupExtratoDays } from '#modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
 import type { StatementTransaction } from '#modules/financial/client/data/model/reconciliation.model.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 
@@ -27,8 +29,16 @@ const tx = (
 
 const items = [
   tx({ id: 'in1' }),
-  tx({ id: 'out1', movement: 'Debit', payeeName: 'Saída Y', valueCents: '12000' }),
+  tx({
+    id: 'out1',
+    movement: 'Debit',
+    payeeName: 'Saída Y',
+    valueCents: '12000',
+    reconciliationStatus: 'Pending',
+  }),
 ]
+
+const counts = { todos: 2, entradas: 1, saidas: 1, conciliados: 1, pendentes: 1 } as const
 
 afterEach(() => {
   cleanup()
@@ -39,8 +49,10 @@ describe('StatementGrid', () => {
     render(
       <StatementGrid
         hasStatement={false}
-        items={[]}
+        days={[]}
         totals={{ inCents: 0, outCents: 0 }}
+        count={0}
+        counts={{ todos: 0, entradas: 0, saidas: 0, conciliados: 0, pendentes: 0 }}
         filter="todos"
         onFilter={vi.fn()}
       />,
@@ -53,15 +65,18 @@ describe('StatementGrid', () => {
     render(
       <StatementGrid
         hasStatement
-        items={items}
+        days={groupExtratoDays(items)}
         totals={{ inCents: 30000, outCents: 12000 }}
+        count={items.length}
+        counts={counts}
         filter="todos"
         onFilter={onFilter}
       />,
     )
     expect(screen.getByText('Entrada X')).toBeTruthy()
     expect(screen.getByText('Saída Y')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: tr('financial.recon.ext.filter.entradas') }))
+    const label = tr('financial.recon.ext.filter.entradas')
+    fireEvent.click(screen.getByRole('button', { name: (name: string) => name.startsWith(label) }))
     expect(onFilter).toHaveBeenCalledWith('entradas')
   })
 })

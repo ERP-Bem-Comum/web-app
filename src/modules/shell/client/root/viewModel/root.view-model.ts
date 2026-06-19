@@ -86,8 +86,16 @@ export const rootViewModel = {
     !isPrefixPath(path, '/usuarios') &&
     !isPrefixPath(path, '/minha-conta') &&
     !isPrefixPath(path, '/programas') &&
+    // Workspace de conciliação (uma conta) já tem o hero da conta como header — sem h1 do shell.
+    // O grid /financeiro/conciliacao (sem barra final) mantém o h1 "Contas Bancárias".
+    !path.startsWith('/financeiro/conciliacao/') &&
     // Lançar Documento tem topbar própria (modal-like, ←/✕) — o grid mantém o h1 do shell.
     !isPrefixPath(path, '/financeiro/contas-a-pagar/lancar'),
+
+  // Conteúdo "full-bleed" (sem o padding do shell): o workspace de conciliação espelha o mock — hero, abas,
+  // corpo e footer encostam nas bordas da área de conteúdo (igual incluir contrato). Só o workspace
+  // (sub-rota), não o grid /financeiro/conciliacao, que mantém o layout padrão com h1.
+  fullBleedContent: (path: string): boolean => path.startsWith('/financeiro/conciliacao/'),
 
   /**
    * RBAC: remove seções/subitens cujo `requiredPermission` não está em `permissions`. Uma seção de

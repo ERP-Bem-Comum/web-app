@@ -10,7 +10,7 @@ import type {
 } from '#modules/financial/client/data/model/reconciliation.model.ts'
 
 // Re-export p/ as views (ui) formatarem dinheiro sem importar de client/data (boundary §I).
-export { centsToBRL } from '#modules/financial/client/data/money.ts'
+export { centsToBRL, centsToReais } from '#modules/financial/client/data/money.ts'
 
 // Re-export dos tipos de model p/ as views tiparem sem importar de client/data (boundary §I).
 export type {
@@ -230,3 +230,68 @@ export const extratoTotals = (txs: readonly StatementTransaction[]): ExtratoTota
   inCents: txs.filter((t) => t.movement === 'Credit').reduce((a, t) => a + parseCents(t.valueCents), 0),
   outCents: txs.filter((t) => t.movement === 'Debit').reduce((a, t) => a + parseCents(t.valueCents), 0),
 })
+
+// ── Formatação de data + badge de tipo (puro) ───────────────────────────────────
+const WEEKDAYS_PT = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'] as const
+const MONTHS_PT = [
+  'jan',
+  'fev',
+  'mar',
+  'abr',
+  'mai',
+  'jun',
+  'jul',
+  'ago',
+  'set',
+  'out',
+  'nov',
+  'dez',
+] as const
+
+/** ISO `YYYY-MM-DD` → "18 mai 2026 · sexta" (cabeçalho do dia no extrato). */
+export const formatDayHeader = (iso: string): string => {
+  const [y, m, d] = iso.split('-').map((n) => Number.parseInt(n, 10))
+  if (y === undefined || m === undefined || d === undefined || !Number.isFinite(y * m * d)) return iso
+  const weekday = WEEKDAYS_PT[new Date(Date.UTC(y, m - 1, d)).getUTCDay()] ?? ''
+  return `${String(d)} ${MONTHS_PT[m - 1] ?? ''} ${String(y)} · ${weekday}`
+}
+
+/** ISO `YYYY-MM-DD` → "18/05" (coluna Data). */
+export const formatDayShort = (iso: string): string => {
+  const [, m, d] = iso.split('-')
+  return m !== undefined && d !== undefined ? `${d}/${m}` : iso
+}
+
+/** Classe do badge de tipo (cor) a partir do `entryType` livre. */
+export type ExtratoKind = 'pix' | 'ted' | 'doc' | 'tar' | 'apl' | 'default'
+export const extratoKindClass = (entryType: string): ExtratoKind => {
+  const e = entryType.toUpperCase()
+  if (e.includes('PIX')) return 'pix'
+  if (e.includes('TED')) return 'ted'
+  if (e.includes('DOC')) return 'doc'
+  if (e.includes('TAR') || e.includes('FEE')) return 'tar'
+  if (e.includes('APL') || e.includes('INVEST') || e.includes('RESG') || e.includes('REDEM')) return 'apl'
+  return 'default'
+}
+
+/** Grupo de dia no extrato: cabeçalho formatado, totais do dia e saldo de fechamento (1ª linha). */
+export type ExtratoDayGroup = Readonly<{
+  date: string
+  header: string
+  inCents: number
+  outCents: number
+  saldoCents: string
+  items: readonly StatementTransaction[]
+}>
+export const groupExtratoDays = (txs: readonly StatementTransaction[]): readonly ExtratoDayGroup[] =>
+  groupTransactionsByDay(txs).map((g) => {
+    const totals = extratoTotals(g.items)
+    return {
+      date: g.date,
+      header: formatDayHeader(g.date),
+      inCents: totals.inCents,
+      outCents: totals.outCents,
+      saldoCents: g.items[0]?.balanceAfterCents ?? '0', // saldo de fechamento = 1ª linha (mais recente)
+      items: g.items,
+    }
+  })
