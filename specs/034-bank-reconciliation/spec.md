@@ -8,6 +8,14 @@
 
 **Input**: Módulo de Conciliação Bancária (Financeiro) — 2 telas espelhando o protótipo da consultoria (§9.4.x): grid de contas-cedente + workspace de conciliação. Front + BFF (server functions como única fronteira), consumindo o backend de conciliação do core-api (PR #152, issues #118–#125). UI 100% fiel aos mocks em `Desktop/CONSULTORIA/Financeiro/conciliacao/`.
 
+## Clarifications
+
+### Session 2026-06-18
+
+- Q: Sem o backend de conta-cedente (#168), como o operador chega ao workspace para importar/conciliar agora? → A: **Seletor temporário de conta do seed** — um seletor simples lê uma conta-cedente já existente no backend (seed) para destravar o fluxo ponta-a-ponta; o grid de contas fica chrome honesto até #168.
+- Q: As respostas de sugestões e de títulos Pagos não trazem nome do fornecedor / nº do documento. Como exibir o título? → A: **Exibir o mínimo** (documentId/valor/vencimento/forma) até o backend enriquecer (core-api#172); não resolver client-side por ora.
+- Q: Exportar exige periodId, mas não há endpoint para listar períodos. Como habilitar o Exportar? → A: **Exportar fica como chrome** (desabilitado/anunciado) até o backend permitir obter o periodId (core-api#173); o fluxo de Fechar período funciona normalmente.
+
 ## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Conciliar uma transação por sugestão do sistema (Priority: P1)
@@ -152,7 +160,7 @@ O operador alterna para a aba "Extrato" e vê o extrato completo da conta (entra
 - **FR-003**: O sistema MUST permitir importar extrato nos formatos **OFX e CSV**, exibindo após o processamento: nº importadas, nº duplicadas descartadas e o período coberto.
 - **FR-004**: O sistema MUST descartar transações duplicadas na importação (por identificador único) sem erro e refletir isso no resumo.
 - **FR-005**: O sistema MUST listar as movimentações importadas agrupadas por dia, com tipo (entrada/saída/transferência/tarifa/aplicação), valor, e indicador de palpite (alta/média/sem match/conciliado), e MUST permitir filtrar por Pendentes/Conciliadas/Todas.
-- **FR-006**: O sistema MUST exibir, para a transação selecionada, a **sugestão de match** com título(s) Pago(s): comparação lado a lado, critérios atendidos e nível de confiança.
+- **FR-006**: O sistema MUST exibir, para a transação selecionada, a **sugestão de match** com título(s) Pago(s): comparação lado a lado, critérios atendidos e nível de confiança. Até o backend enriquecer a resposta (core-api#172), o título é exibido com o **mínimo disponível** (documento/valor/vencimento/forma); nome do fornecedor e nº do documento aparecem quando #172 entregar.
 - **FR-007**: Usuários MUST poder **conciliar** uma transação com um título sugerido (1:1) e **rejeitar** uma sugestão (que não reaparece).
 - **FR-008**: Usuários MUST poder conciliar uma transação com **vários títulos** (N:1), vendo a soma comparada ao valor do extrato.
 - **FR-009**: Quando a soma não igualar o valor do extrato, o sistema MUST exigir a **classificação da diferença** (Juros/Multa/Desconto/Tarifa/Parcial) antes de permitir conciliar (conciliação parcial), e MUST bloquear a conciliação enquanto não balancear.
@@ -160,12 +168,12 @@ O operador alterna para a aba "Extrato" e vê o extrato completo da conta (entra
 - **FR-011**: Usuários MUST poder **desfazer** uma conciliação (com motivo opcional), retornando transação a pendente e título a Pago, preservando o registro como "desfeito" (trilha de auditoria).
 - **FR-012**: O sistema MUST permitir **conciliar em lote** a partir de várias transações com um mesmo modelo de classificação (best-effort, reportando falhas parciais).
 - **FR-013**: Usuários MUST poder **fechar o período** de uma conta, sendo bloqueado se houver movimentações pendentes; após fechado, importar/conciliar/desfazer naquele período ficam bloqueados.
-- **FR-014**: Usuários MUST poder **exportar a conciliação** do período em OFX e CSV (download de arquivo).
+- **FR-014**: Usuários MUST poder **exportar a conciliação** do período em OFX e CSV (download de arquivo). Como não há endpoint para listar períodos/obter o `periodId` fora do fechamento, o **Exportar fica como chrome (desabilitado/anunciado)** até core-api#173; o fluxo de Fechar período funciona normalmente.
 - **FR-015**: O sistema MUST oferecer a aba **Extrato** com a visão completa (entradas/saídas/saldo por dia) e filtros, compartilhando o filtro de período com a conciliação.
 - **FR-016**: O sistema MUST oferecer um **filtro de período** e um **toggle "Exibir palpites"** que oculta/mostra as sugestões automáticas.
 - **FR-017**: O sistema MUST exibir mensagens de erro claras e em PT-BR para as condições do backend (período fechado, não balanceado, título não-Pago, formato inválido, já conciliada/desfeita) sem expor detalhes internos.
 - **FR-018**: A UI MUST replicar os mocks da consultoria com alta fidelidade, usando o design system do app (tokens-only), e MUST ser aditiva sem regressão no módulo de Contas a Pagar.
-- **FR-019** _(chrome honesto / dependências)_: Onde o backend não existe — listagem/criação de **conta-cedente** e saldo/contagens (core-api#168) e import de **PDF via OCR** (core-api#145) — o sistema MUST apresentar a UI com estado desabilitado/anunciado, sem dados fabricados, deixando a costura (porta/gateway/server function) pronta para ligar.
+- **FR-019** _(chrome honesto / dependências)_: Onde o backend não existe, o sistema MUST apresentar a UI com estado desabilitado/anunciado, sem dados fabricados, deixando a costura (porta/gateway/server function) pronta para ligar. Dependências: **conta-cedente** listar/criar/saldo/contagens (core-api#168) — até lá, a seleção de conta no workspace usa um **seletor temporário de conta do seed** e o grid de contas é chrome; **enriquecimento** de sugestões/títulos com nome/nº doc (core-api#172) — exibir mínimo até lá; **listar períodos** p/ Exportar (core-api#173) — Exportar é chrome até lá; import **PDF via OCR** (core-api#145) — opção desabilitada.
 
 ### Key Entities _(include if feature involves data)_
 
@@ -199,7 +207,9 @@ O operador alterna para a aba "Extrato" e vê o extrato completo da conta (entra
 
 ## Assumptions
 
-- **Conta-cedente via #168**: até o backend expor listar/criar conta-cedente (e saldo/contagens), o grid de contas e a seleção de conta na importação são UI fiel com chrome honesto (sem dados fabricados). A costura (porta/gateway/server fn) já fica pronta para ligar.
+- **Conta-cedente via #168**: até o backend expor listar/criar conta-cedente (e saldo/contagens), o **grid de contas** é UI fiel com chrome honesto, e a **seleção de conta no workspace** usa um **seletor temporário que lê uma conta-cedente do seed** (para destravar import/conciliação ponta-a-ponta agora). A costura (porta/gateway/server fn) já fica pronta para o seletor real do grid quando #168 entregar.
+- **Exibição de título = mínimo até #172**: o match card e o grid de títulos mostram só o que a API dá (documento/valor/vencimento/forma); nome do fornecedor e nº do documento entram quando core-api#172 enriquecer a resposta.
+- **Exportar = chrome até #173**: sem endpoint para obter o `periodId` fora do fechamento, o Exportar OFX/CSV fica desabilitado/anunciado até core-api#173 (listar períodos). Fechar período funciona.
 - **Só "Pago" é conciliável**: a lista de títulos conciliáveis usa `GET /payables?status=Paid`; o protótipo mostra outros status, mas vale a regra do código.
 - **Dinheiro em centavos (string)**; datas ISO; valores exibidos em pt-BR (mono).
 - **Filtros de período e de lista** (Pendentes/Conciliadas/Todas, entradas/saídas) são **client-side** sobre o que o backend retorna (a listagem de transações não filtra no servidor).
