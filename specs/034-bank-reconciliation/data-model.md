@@ -34,25 +34,32 @@
 ### Transação do extrato (StatementTransaction)
 
 - Campos: `id (TransactionId)`, `fitid (string)`, `date (IsoDate)`,
-  `movement: 'Debit'|'Credit'`, `entryType (string)`, `payeeName (string)`, `memo (string)`,
-  `valueCents (Cents)`, `balanceAfterCents (Cents)`,
-  `reconciliationStatus: 'Pending'|'Reconciled'|'ManualEntry'`.
+  `movement: 'Debit'|'Credit'`, `entryType (string LIVRE — não enum)`, `payeeName (string)`,
+  `memo (string)`, `valueCents (Cents)`, `balanceAfterCents (Cents)`,
+  `reconciliationStatus: 'Pending'|'Reconciled'|'ManualEntry'` (este é enum fechado).
 - Origem: `GET /bank-statements/:id/transactions` (sem filtro server-side → filtra no client).
-- Derivações de UI: agrupar por **dia** (`date`), ícone por `movement`+`entryType`
-  (entrada/saída/transferência/tarifa/aplicação), tag de palpite (alta/média/sem match/conciliado).
+- ⚠️ `entryType` é **string livre** (passthrough OFX/CSV em UPPERCASE, fallback `'Other'`, fake=`'TED'`);
+  **não** modelar como union. Só `movement` é confiável para entrada/saída.
+- Derivações de UI: agrupar por **dia** (`date`); ícone via **heurística** sobre `entryType` normalizado
+  (`FEE`/`TAR`→tarifa, `INT`/`JUR`→juros, `XFER`/`TED`/`DOC`→transferência, `APLIC`/`INVEST`→aplicação,
+  `RESG`/`REDEM`→resgate) **com fallback genérico por `movement`** (entrada/saída); tag de palpite
+  (alta/média/sem match/conciliado).
 
 ### Título conciliável (PaidPayable)
 
-- Campos: `id (PayableId)`, `documentId (string)`, `valueCents (Cents)`, `dueDate (IsoDate)`,
-  `paymentMethod (string)`. **(mínimo até #172; supplierName/docNumber entram depois.)**
-- Origem: `GET /payables?status=Paid` — **só Pago é conciliável** (regra de domínio, vale o código).
+- Campos: `id (PayableId)`, `documentId (uuid)`, `valueCents (Cents, string)`,
+  `dueDate (date-only 'YYYY-MM-DD')`, `paymentMethod (string)`.
+  **(mínimo até #172; supplierName/docNumber entram depois.)**
+- Origem: `GET /payables?status=Paid` (query `status` é `literal('Paid')`, obrigatória) — **só Pago é
+  conciliável** (regra de domínio, vale o código). Raiz da resposta: `{ items: [...] }`.
 
 ### Sugestão de match (MatchSuggestion)
 
-- Campos: `payableId (PayableId)`, `score (Score)`, `band: 'alta'|'media'`,
+- Campos: `payableId (PayableId)`, `score (Score, int 0..100)`, `band: 'alta'|'media'`,
   `criteria: { payeeMatch:boolean, exactValue:boolean, dateD0:boolean, memoRef:boolean,
-supplierOpenCount:number }`. (band `baixa` não vem do backend.)
-- Origem: `GET /statement-transactions/:id/suggestions`.
+supplierOpenCount:number }`. (band `baixa` (<50) é filtrada pelo backend, nunca chega.)
+- Origem: `GET /statement-transactions/:id/suggestions`. ⚠️ Raiz da resposta é `{ suggestions: [...] }`
+  (**não** `items`).
 - Ação: rejeitar (`reject-suggestion`) remove e **não reaparece** (FR-007; rastrear rejeitadas em UI-state
   - refetch).
 
@@ -63,7 +70,10 @@ difference?: { valueCents:int(pode negativo), treatment } }` →
   `{ reconciliationId, type: 'Individual'|'Multiple'|'Partial', itemCount }`.
 - **Invariante de balanceamento** (pura, D10): `Σ(payable.valueCents) + (difference?.valueCents ?? 0)`
   === `|transaction.valueCents|`. Sem isso a UI bloqueia (FR-009) e o backend recusa (422).
-- `type` derivado: 1 título sem diferença → `Individual`; ≥2 → `Multiple`; com `difference` → `Partial`.
+- `type` derivado **pelo backend** (`deriveType`, verificado): **havendo `difference` (qualquer
+  treatment) → `Partial`** (o gatilho é `difference !== undefined`, NÃO `treatment==='Partial'`); sem
+  diferença, 1 título → `Individual`, ≥2 → `Multiple`. `difference.valueCents` é **int e pode ser
+  negativo** (ex.: Discount), não string. O 4º valor de domínio `ManualEntry` **não** sai deste endpoint.
 - Desfazer (`POST /reconciliations/:id/undo` `{ reason? }`) → `status:'Undone'`: transação volta
   `Pending`, título volta `Pago`, registro preservado (trilha).
 

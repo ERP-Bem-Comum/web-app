@@ -62,7 +62,7 @@ seletor de conta (seed)** — compartilhados por US1/US2 em diante.
 ### Cliente core-api base + repositório-porta
 
 - [ ] T010 Estender o cliente em `src/modules/financial/server/adapters/core-api/core-api-financial.ts` com o helper de chamada ao namespace `/api/v2/financial` para conciliação (reuso do `resultFetch`/auth já existente; nada de endpoint novo no core-api).
-- [ ] T011 [P] Criar o model Zod do client em `src/modules/financial/client/data/model/reconciliation.model.ts` (BankStatement, StatementTransaction, PaidPayable, MatchSuggestion, Reconciliation, ManualEntry, ReconciliationPeriod — campos de fornecedor/nº doc **opcionais**, mínimo até #172).
+- [ ] T011 [P] Criar o model Zod do client em `src/modules/financial/client/data/model/reconciliation.model.ts` (BankStatement, StatementTransaction, PaidPayable, MatchSuggestion, Reconciliation, ManualEntry, ReconciliationPeriod — campos de fornecedor/nº doc **opcionais**, mínimo até #172). ⚠️ Verificado #152: `entryType` = **string livre** (não enum); `payables.dueDate` = **date-only `YYYY-MM-DD`**; raiz de suggestions = **`{ suggestions }`** (não `items`); `band: ['alta','media']`; `difference.valueCents` = **int (pode negativo)**.
 - [ ] T012 Estender a porta `src/modules/financial/client/data/repository/financial.repository.ts` (+ `financial.repository.instance.ts`) com as assinaturas finais de conciliação (import, listTransactions, listPaidPayables, getSuggestions, rejectSuggestion, reconcile, undo, manualEntry, batch, closePeriod, **listAccounts/getAccount = costura #168**, export = costura #173) devolvendo `Result`.
 
 ### Shell do workspace + seletor de conta (seed) — compartilhado US1/US2
@@ -70,7 +70,7 @@ seletor de conta (seed)** — compartilhados por US1/US2 em diante.
 - [ ] T013 [P] Teste (RED) DOM do shell em `tests/modules/financial/client/reconciliation-workspace/reconciliation-workspace.page.spec.tsx` (header da conta, tabs Extrato|Conciliação, toggle "Exibir palpites", bottombar — sem dados ainda).
 - [ ] T014 Implementar o shell da TELA 2: `src/modules/financial/client/reconciliation-workspace/page/reconciliation-workspace.page.tsx` (+ `.css.ts` tokens-only) com acc-header, tabs e bottombar burros, recebendo tudo por props da view-model. Fidelidade ao mock `conciliacao_bancaria` (Figma node 8:7).
 - [ ] T015 Criar a view-model base do workspace em `src/modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts` (UI-state via reducer: activeTab, showGuesses, period, listFilter, selectedTransactionId, assocTab) e `reconciliation-workspace.query.ts` (query keys por conta/extrato).
-- [ ] T016 Criar `account-selector.binding.ts` em `reconciliation-workspace/` — **seletor temporário (seed)**: usa um `AccountRef` do seed (input de uuid validado / ref configurável) para destravar o fluxo; consome a porta `getAccount` que devolve "indisponível" (#168) sem fabricar dados (chrome honesto, D2).
+- [ ] T016 Criar `account-selector.binding.ts` em `reconciliation-workspace/` — **seletor temporário com UUID v4 fixo de placeholder** (constante local; verificado no #152: não há conta de seed nem UUID conhecido, e o import não valida o ref). Reusar o **mesmo** uuid em todas as chamadas correlacionadas do extrato. A porta `getAccount` devolve "indisponível" (#168) sem fabricar dados (chrome honesto, D2). Liga ao grid real (`listAccounts`) quando #168 chegar.
 
 **Checkpoint**: workspace abre em `/financeiro/conciliacao/$accountId` com shell fiel, tabs e seletor de
 conta (seed) funcionando; `pnpm verify` + `pnpm test:dom` verdes. Nenhuma US implementada ainda.
@@ -96,10 +96,10 @@ Conciliar → sai dos pendentes e progresso sobe; Rejeitar → some e mostra alt
 
 ### Client — view-model derivações, queries/bindings, UI da aba Sugestão
 
-- [ ] T023 [US1] Teste (RED) puro das derivações da view-model em `tests/modules/financial/client/reconciliation-workspace/workspace-derivations.test.ts` (agrupar transações por dia; filtro Pendentes/Conciliadas/Todas; progresso "conciliado X/N"; tag de palpite alta/média/sem match/conciliado).
+- [ ] T023 [US1] Teste (RED) puro das derivações da view-model em `tests/modules/financial/client/reconciliation-workspace/workspace-derivations.test.ts` (agrupar transações por dia; filtro Pendentes/Conciliadas/Todas; progresso "conciliado X/N"; tag de palpite alta/média/sem match/conciliado; **heurística `entryType`→ícone com fallback por `movement`**, incluindo um `entryType` desconhecido caindo no fallback).
 - [ ] T024 [US1] Implementar essas derivações puras na `reconciliation-workspace.view-model.ts` e ligar as queries em `reconciliation-workspace.query.ts` (transações, payables Pago, sugestões) via repository, até T023 passar.
 - [ ] T025 [P] [US1] Criar `reconcile.binding.ts` (conciliar 1:1 + invalidações: transações/progresso) e estender o tracking de **sugestões rejeitadas** (UI-state + refetch) em `reconciliation-workspace/`.
-- [ ] T026 [US1] Implementar a coluna ESQUERDA (imports-list agrupada por dia, ícone por movement/entryType, tag de palpite, filtro Pendentes/Conciliadas/Todas) em `components/imports-list.component.tsx` (+ `.css.ts`), view burra. Fidelidade ao mock.
+- [ ] T026 [US1] Implementar a coluna ESQUERDA (imports-list agrupada por dia, tag de palpite, filtro Pendentes/Conciliadas/Todas) em `components/imports-list.component.tsx` (+ `.css.ts`), view burra. **Ícone via heurística** sobre `entryType` normalizado (string livre: `FEE`/`TAR`, `INT`/`JUR`, `XFER`/`TED`/`DOC`, `APLIC`/`INVEST`, `RESG`/`REDEM`) **com fallback por `movement`** (entrada/saída) — nunca union fechado. Fidelidade ao mock.
 - [ ] T027 [US1] Implementar a aba **Sugestão** em `components/suggestion-pane.component.tsx` (+ `.css.ts`): match card lado a lado (extrato × título, **mínimo** até #172), critérios + confiança, botões Conciliar/Rejeitar, "outras possibilidades".
 - [ ] T028 [US1] Teste (RED→GREEN) DOM em `tests/modules/financial/client/reconciliation-workspace/suggestion-pane.spec.tsx` (selecionar transação → Conciliar move p/ conciliada e sobe progresso; Rejeitar some e não reaparece; transação sem palpite mostra estado vazio + ofertas Nova/Buscar).
 

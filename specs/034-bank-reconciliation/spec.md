@@ -12,7 +12,7 @@
 
 ### Session 2026-06-18
 
-- Q: Sem o backend de conta-cedente (#168), como o operador chega ao workspace para importar/conciliar agora? → A: **Seletor temporário de conta do seed** — um seletor simples lê uma conta-cedente já existente no backend (seed) para destravar o fluxo ponta-a-ponta; o grid de contas fica chrome honesto até #168.
+- Q: Sem o backend de conta-cedente (#168), como o operador chega ao workspace para importar/conciliar agora? → A: **Seletor temporário de conta (placeholder)** para destravar o fluxo ponta-a-ponta; o grid de contas fica chrome honesto até #168. **Nota técnica (verificado no core-api #152):** não há conta de seed nem UUID fixo conhecido, e `POST /bank-statements` **não valida** o `debitAccountRef` contra o store de cedentes — então o placeholder é um **UUID v4 fixo no front**, reusado de forma consistente em todas as chamadas correlacionadas (ele agrupa transações/período do extrato).
 - Q: As respostas de sugestões e de títulos Pagos não trazem nome do fornecedor / nº do documento. Como exibir o título? → A: **Exibir o mínimo** (documentId/valor/vencimento/forma) até o backend enriquecer (core-api#172); não resolver client-side por ora.
 - Q: Exportar exige periodId, mas não há endpoint para listar períodos. Como habilitar o Exportar? → A: **Exportar fica como chrome** (desabilitado/anunciado) até o backend permitir obter o periodId (core-api#173); o fluxo de Fechar período funciona normalmente.
 
@@ -173,7 +173,7 @@ O operador alterna para a aba "Extrato" e vê o extrato completo da conta (entra
 - **FR-016**: O sistema MUST oferecer um **filtro de período** e um **toggle "Exibir palpites"** que oculta/mostra as sugestões automáticas.
 - **FR-017**: O sistema MUST exibir mensagens de erro claras e em PT-BR para as condições do backend (período fechado, não balanceado, título não-Pago, formato inválido, já conciliada/desfeita) sem expor detalhes internos.
 - **FR-018**: A UI MUST replicar os mocks da consultoria com alta fidelidade, usando o design system do app (tokens-only), e MUST ser aditiva sem regressão no módulo de Contas a Pagar.
-- **FR-019** _(chrome honesto / dependências)_: Onde o backend não existe, o sistema MUST apresentar a UI com estado desabilitado/anunciado, sem dados fabricados, deixando a costura (porta/gateway/server function) pronta para ligar. Dependências: **conta-cedente** listar/criar/saldo/contagens (core-api#168) — até lá, a seleção de conta no workspace usa um **seletor temporário de conta do seed** e o grid de contas é chrome; **enriquecimento** de sugestões/títulos com nome/nº doc (core-api#172) — exibir mínimo até lá; **listar períodos** p/ Exportar (core-api#173) — Exportar é chrome até lá; import **PDF via OCR** (core-api#145) — opção desabilitada.
+- **FR-019** _(chrome honesto / dependências)_: Onde o backend não existe, o sistema MUST apresentar a UI com estado desabilitado/anunciado, sem dados fabricados, deixando a costura (porta/gateway/server function) pronta para ligar. Dependências: **conta-cedente** listar/criar/saldo/contagens (core-api#168) — até lá, a seleção de conta no workspace usa um **seletor temporário com UUID v4 fixo de placeholder** (não há conta de seed; o import não valida o ref contra o store) e o grid de contas é chrome; **enriquecimento** de sugestões/títulos com nome/nº doc (core-api#172) — exibir mínimo até lá; **listar períodos** p/ Exportar (core-api#173) — Exportar é chrome até lá; import **PDF via OCR** (core-api#145) — opção desabilitada.
 
 ### Key Entities _(include if feature involves data)_
 
@@ -207,7 +207,7 @@ O operador alterna para a aba "Extrato" e vê o extrato completo da conta (entra
 
 ## Assumptions
 
-- **Conta-cedente via #168**: até o backend expor listar/criar conta-cedente (e saldo/contagens), o **grid de contas** é UI fiel com chrome honesto, e a **seleção de conta no workspace** usa um **seletor temporário que lê uma conta-cedente do seed** (para destravar import/conciliação ponta-a-ponta agora). A costura (porta/gateway/server fn) já fica pronta para o seletor real do grid quando #168 entregar.
+- **Conta-cedente via #168**: até o backend expor listar/criar conta-cedente (e saldo/contagens), o **grid de contas** é UI fiel com chrome honesto, e a **seleção de conta no workspace** usa um **seletor temporário com UUID v4 fixo de placeholder** (verificado no #152: não há conta de seed nem UUID conhecido, e `POST /bank-statements` não valida o `debitAccountRef` contra o store — qualquer uuid v4 válido destrava o fluxo, desde que reusado de forma consistente). A costura (porta/gateway/server fn) já fica pronta para o seletor real do grid quando #168 entregar.
 - **Exibição de título = mínimo até #172**: o match card e o grid de títulos mostram só o que a API dá (documento/valor/vencimento/forma); nome do fornecedor e nº do documento entram quando core-api#172 enriquecer a resposta.
 - **Exportar = chrome até #173**: sem endpoint para obter o `periodId` fora do fechamento, o Exportar OFX/CSV fica desabilitado/anunciado até core-api#173 (listar períodos). Fechar período funciona.
 - **Só "Pago" é conciliável**: a lista de títulos conciliáveis usa `GET /payables?status=Paid`; o protótipo mostra outros status, mas vale a regra do código.

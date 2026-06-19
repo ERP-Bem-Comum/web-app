@@ -19,6 +19,21 @@
 | 9   | `batch-reconcile.service.fn.ts`             | mutation | `POST /reconciliations/batch`                        | `{ transactionIds:[1..500], template }`                                                                               | `{ created, reconciliationIds[], failed[] }`                         | US4 (lote) |
 | 10  | `close-reconciliation-period.service.fn.ts` | mutation | `POST /reconciliation-periods/close`                 | `{ debitAccountRef, periodStart, periodEnd }`                                                                         | `{ periodId, status:'Closed' }`                                      | US7        |
 
+### Notas verificadas no core-api #152 (vale o código)
+
+- **#2 transações** (`{ items: [...] }`): `entryType` é **string livre** (não enum); só `movement:
+'Debit'|'Credit'` é fechado; `reconciliationStatus: 'Pending'|'Reconciled'|'ManualEntry'`.
+- **#3 payables** (`{ items: [...] }`): `dueDate` é **date-only `YYYY-MM-DD`**; `valueCents` string;
+  `documentId` uuid; query `status=Paid` é `literal` obrigatório.
+- **#4 suggestions**: raiz é **`{ suggestions: [...] }`** (não `items`); `band: 'alta'|'media'`
+  (`baixa`<50 filtrada); `score` int 0..100; `criteria{payeeMatch,exactValue,dateD0,memoRef,
+supplierOpenCount}`.
+- **#6 reconciliations**: `difference.valueCents` é **int e pode ser negativo** (não string).
+  `type` derivado **pelo backend**: `difference` presente (qualquer treatment) → `Partial`; senão 1→
+  `Individual`, ≥2→`Multiple`. `treatment ∈ Interest|Penalty|Discount|Fee|Partial`.
+- **#1/#10 `debitAccountRef`**: `z.uuid()`. **Não há** endpoint nem conta de seed de cedente (#168) e o
+  import **não valida** o ref → placeholder = **uuid v4 fixo no front** (D2/chrome-gaps).
+
 ## Mapa de erros (core-api → AppError.kind → tag i18n PT-BR)
 
 | HTTP | erro do core-api                  | AppError.kind (proposto)         | tag i18n (PT-BR, exemplo)                 |

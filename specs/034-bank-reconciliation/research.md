@@ -19,14 +19,21 @@ o `/speckit-tasks`.
 ## D2 — Conta-cedente sem endpoint (#168): seletor temporário do seed
 
 - **Decisão**: a TELA 1 (grid) é **chrome honesto** (UI fiel, estado anunciado, "Adicionar conta"
-  desabilitado) até #168. A TELA 2 obtém a conta via **seletor temporário que lê uma conta-cedente já
-  existente no seed do backend**, destravando import/conciliação ponta-a-ponta. A costura
+  desabilitado) até #168. A TELA 2 obtém a conta via **seletor temporário com UUID v4 fixo de
+  placeholder** (constante local no front), destravando import/conciliação ponta-a-ponta. A costura
   (porta `listAccounts/getAccount` no repository + server-fn) já fica criada, devolvendo "indisponível"
   até #168 — trocar o adapter liga o fluxo real.
+- **Verificado no core-api #152**: **não existe** endpoint de conta-cedente, **nem** conta de seed,
+  **nem** UUID fixo conhecido (os únicos UUIDs vivem em testes, via `CedenteAccountId.generate()`
+  random; in-memory store inicia vazio; não há seed script). Além disso, `POST /bank-statements`
+  **não valida** o `debitAccountRef` contra o `CedenteAccountStore` (o use-case `import-bank-statement`
+  só usa a string para FITID/escopo de período). Logo o placeholder é seguro: **qualquer uuid v4 válido**
+  funciona, desde que **reusado de forma consistente** entre as chamadas correlacionadas do mesmo extrato.
 - **Rationale**: entrega US1–US5 (o núcleo) já, sem fabricar dados de conta; o grid liga depois sem
   refactor de fronteira. Espelha o padrão OCR ("adapter devolve indisponível até #62").
-- **Alternativas**: mockar contas (rejeitado: viola "sem dados que enganem", SC-006); bloquear o
-  módulo inteiro até #168 (rejeitado: trava o maior valor por uma porta de entrada).
+- **Alternativas**: mockar contas (rejeitado: viola "sem dados que enganem", SC-006); tentar "descobrir"
+  uma conta do seed (rejeitado: não existe); bloquear o módulo inteiro até #168 (rejeitado: trava o
+  maior valor por uma porta de entrada).
 
 ## D3 — Exibição de título = mínimo até #172
 
@@ -92,14 +99,21 @@ o `/speckit-tasks`.
 
 ## D9 — Discriminated unions do domínio (estados ilegais irrepresentáveis)
 
-- **Decisão**: modelar como unions de literais + `switch` exaustivo:
-  `movement: 'Debit'|'Credit'`; `reconciliationStatus: 'Pending'|'Reconciled'|'ManualEntry'`;
-  `reconciliation type: 'Individual'|'Multiple'|'Partial'`; `difference treatment:
+- **Decisão**: modelar como unions de literais + `switch` exaustivo (campos **fechados**, verificados no
+  #152): `movement: 'Debit'|'Credit'`; `reconciliationStatus: 'Pending'|'Reconciled'|'ManualEntry'`;
+  `reconciliation type: 'Individual'|'Multiple'|'Partial'` (no **response** do POST /reconciliations;
+  `ManualEntry` existe no domínio mas **não** sai desse endpoint); `difference treatment:
 'Interest'|'Penalty'|'Discount'|'Fee'|'Partial'`; `manual-entry type:
 'Payment'|'Receipt'|'Transfer'|'FeePenaltyInterest'|'Investment'|'Redemption'`; `suggestion band:
-'alta'|'media'`. Transferência/Aplicação/Resgate exigem `destinationAccount` + confirmação consciente
-  (modelado como estado que bloqueia submit até confirmado).
-- **Rationale**: princípio IV/VI; `as const`, sem `enum`.
+'alta'|'media'` (`baixa` é filtrada pelo backend, nunca chega). Transferência/Aplicação/Resgate exigem
+  `destinationAccount` + confirmação consciente (estado que bloqueia submit até confirmado).
+- **⚠️ `entryType` NÃO é union** (verificado: `z.string()`, passthrough do OFX/CSV em UPPERCASE com
+  fallback `'Other'`; o fake-parser devolve `'TED'`). **Não** modelar como literal fechado — o único campo
+  confiável para entrada/saída é `movement`. Ícone (entrada/saída/transferência/tarifa/aplicação) =
+  **heurística** sobre `entryType` normalizado (`includes` em `FEE`/`TAR`, `INT`/`JUR`, `XFER`/`TED`/`DOC`,
+  `APLIC`/`INVEST`, `RESG`/`REDEM`) **com fallback genérico por `movement`**.
+- **Rationale**: princípio IV/VI; `as const`, sem `enum`. Modelar `entryType` como union quebraria com
+  qualquer banco que emita um código fora da lista.
 
 ## D10 — Regra de balanceamento (pura, testável primeiro)
 
