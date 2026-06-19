@@ -68,6 +68,7 @@ export const recon = {
       deep: 'rgb(86, 60, 142)',
       bg: 'rgba(124, 92, 184, 0.10)',
     },
+    overlay: 'rgba(28, 30, 40, 0.42)',
   },
   font: {
     sans: SANS,

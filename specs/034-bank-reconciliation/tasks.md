@@ -181,12 +181,12 @@ workspace; encerrada não abre. **Dados reais só após #168** → chrome honest
 **Independent Test**: abrir Conciliação → ver grid; filtrar; clicar conta abre workspace; encerrada
 impedida; sem #168 a tela exibe estado honesto e "Adicionar conta" desabilitado.
 
-- [ ] T046 [P] [US6] Teste (RED) puro das derivações do grid em `tests/modules/financial/client/reconciliation-accounts/accounts-derivations.test.ts` (busca por banco/agência/conta; filtro status; ordenação pendências/saldo/nome/atualização; estado vazio honesto quando a porta devolve "indisponível").
-- [ ] T047 [US6] Implementar `reconciliation-accounts.view-model.ts` + `reconciliation-accounts.query.ts` (consome a porta `listAccounts` = costura #168) e os bindings de filtro/ordenação, até T046 passar.
-- [ ] T048 [US6] Implementar a TELA 1: `page/reconciliation-accounts.page.tsx` (+ `.css.ts`) com topbar (saldo consolidado/contagens), filter-bar (busca + chips Todas/Com pendências/Em dia/Encerradas + Ordenar) e o grid de contas (bank-mark, última atualização, saldo, pill de conciliação, seta) e footer. Estado **chrome honesto** (sem dados fabricados) até #168. Fidelidade ao mock (Figma node 8:6).
-- [ ] T049 [US6] Implementar o modal **Adicionar conta bancária** em `components/add-account-modal.component.tsx` (+ `.css.ts`): seletor de banco buscável, tipo, agência, conta-DV, apelido, saldo de abertura — **desabilitado/anunciado** até #168 (costura `createAccount` pronta).
-- [ ] T050 [US6] Ligar a navegação grid→workspace (clicar conta ativa → `/financeiro/conciliacao/$accountId`; encerrada não abre, com aviso) e substituir o seletor temporário (seed) pelo grid quando #168 entregar (mesma porta).
-- [ ] T051 [US6] Teste (RED→GREEN) DOM em `tests/modules/financial/client/reconciliation-accounts/accounts-page.spec.tsx` (filtros/ordenação respondem; conta encerrada não abre; sem #168 mostra estado honesto e Adicionar desabilitado).
+- [x] T046 [P] [US6] Teste (RED) puro das derivações do grid em `tests/modules/financial/client/reconciliation-accounts/accounts-derivations.test.ts` (busca por banco/agência/conta; filtro status; ordenação pendências/saldo/nome/atualização; estado vazio honesto quando a porta devolve "indisponível").
+- [x] T047 [US6] Implementar `reconciliation-accounts.view-model.ts` + `reconciliation-accounts.query.ts` (consome a porta `listAccounts` = costura #168) e os bindings de filtro/ordenação, até T046 passar.
+- [x] T048 [US6] Implementar a TELA 1: `page/reconciliation-accounts.page.tsx` (+ `.css.ts`) com topbar (saldo consolidado/contagens), filter-bar (busca + chips Todas/Com pendências/Em dia/Encerradas + Ordenar) e o grid de contas (bank-mark, última atualização, saldo, pill de conciliação, seta) e footer. Estado **chrome honesto** (sem dados fabricados) até #168. Fidelidade ao mock (Figma node 8:6).
+- [x] T049 [US6] Implementar o modal **Adicionar conta bancária** em `components/add-account-modal.component.tsx` (+ `.css.ts`): seletor de banco buscável, tipo, agência, conta-DV, apelido, saldo de abertura — **desabilitado/anunciado** até #168 (costura `createAccount` pronta).
+- [x] T050 [US6] Ligar a navegação grid→workspace (clicar conta ativa → `/financeiro/conciliacao/$accountId`; encerrada não abre, com aviso) e substituir o seletor temporário (seed) pelo grid quando #168 entregar (mesma porta).
+- [x] T051 [US6] Teste (RED→GREEN) DOM em `tests/modules/financial/client/reconciliation-accounts/accounts-page.spec.tsx` (filtros/ordenação respondem; conta encerrada não abre; sem #168 mostra estado honesto e Adicionar desabilitado).
 
 **Checkpoint**: porta de entrada do módulo pronta (fiel + honesta).
 
