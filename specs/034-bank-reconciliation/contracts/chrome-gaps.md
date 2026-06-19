@@ -12,6 +12,13 @@
 | **Listar períodos** para obter `periodId` fora do fechamento              | **core-api#173** | **Exportar** (OFX/CSV) na bottombar fica desabilitado/anunciado. **Fechar período funciona** normalmente.                                                          | `reconciliation.gateway.ts` (download) + `export-period.server-fn` stub prontos; habilita Exportar quando #173 permitir obter o `periodId`.                              |
 | Importar **PDF via OCR**                                                  | **core-api#145** | No menu Importar, a opção **PDF** fica desabilitada/anunciada; OFX/CSV funcionam.                                                                                  | Menu já lista PDF como indisponível; liga quando #145 entregar (mesma server-fn de import com `format` novo ou rota OCR).                                                |
 
+## Lacunas descobertas na implementação (abertas como issues)
+
+- **core-api#174** — sugestões de match **em lote** por extrato. Sem isso, o **palpite por linha** (alta/média)
+  na lista é inviável (seria N requisições); a banda aparece só no painel da transação selecionada.
+- **core-api#175** — expor **`reconciliationId`** na listagem de transações (ou lookup por transação). Sem
+  isso, o **Desfazer** só funciona para conciliações feitas na mesma sessão; pós-reload fica anunciado.
+
 ## Princípios do chrome honesto (todos)
 
 - **Nunca** renderizar números/linhas falsas: estado vazio + aviso claro ("disponível quando … #NNN").
