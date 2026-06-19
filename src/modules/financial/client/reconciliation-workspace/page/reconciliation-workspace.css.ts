@@ -45,7 +45,7 @@ export const bankMark = style({
   justifyContent: 'center',
   background: `linear-gradient(135deg, ${c.teal.normal}, ${c.teal.deep})`,
   color: c.paper.default,
-  fontFamily: recon.font.serif,
+  fontFamily: recon.font.sans,
   fontSize: fs.xl,
   fontWeight: recon.weight.semibold,
   flexShrink: 0,
@@ -62,7 +62,7 @@ export const overline = style({
 })
 
 export const accName = style({
-  fontFamily: recon.font.serif,
+  fontFamily: recon.font.sans,
   fontSize: fs['2xl'],
   fontWeight: recon.weight.medium,
   color: c.ink[1],

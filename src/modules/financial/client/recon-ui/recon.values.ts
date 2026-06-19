@@ -4,16 +4,16 @@
  * literais (arquivo `*.values.ts` — isento do lint "só-tokens"; §X exceção). Os `.css.ts` do módulo
  * importam `recon` e referenciam `recon.color.teal.normal` etc. — nunca literais crus.
  *
- * Por que módulo-escopo e não o DS global: a linguagem visual da consultoria (teal/paper/ink/Fraunces)
- * não existe no `#shared/ui/tokens` (que é azul/Nunito). Mantemos aqui, aditivo e isolado (zero
- * regressão no DS), espelhando 1:1 o protótipo. Pode ser promovido ao DS global depois.
+ * Por que módulo-escopo e não o DS global: a paleta da consultoria (teal/paper/ink) não existe no
+ * `#shared/ui/tokens` (que é azul/Nunito). Mantemos aqui, aditivo e isolado (zero regressão no DS),
+ * espelhando o protótipo. Pode ser promovido ao DS global depois.
  *
- * Fontes: Inter Variable e JetBrains Mono já são self-host (fontsource). Fraunces ainda NÃO está
- * bundlada → cai no fallback serif (Georgia) até adicionarmos `@fontsource-variable/fraunces`.
+ * Tipografia = MARCA DO CLIENTE (decisão do P.O.): Inter (texto/títulos) + JetBrains Mono (valores),
+ * ambas self-host (fontsource). O mock usa Fraunces (serif) em alguns títulos; NÃO adotamos — mantemos a
+ * estética da marca em Inter.
  */
 
 const SANS = '"Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-const SERIF = '"Fraunces Variable", Fraunces, Georgia, "Times New Roman", serif'
 const MONO = '"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace'
 
 export const recon = {
@@ -70,9 +70,9 @@ export const recon = {
     },
     overlay: 'rgba(28, 30, 40, 0.42)',
   },
+  // Tipografia da MARCA do cliente (sem serif/Fraunces): Inter (texto/títulos) + JetBrains Mono (valores).
   font: {
     sans: SANS,
-    serif: SERIF,
     mono: MONO,
   },
   // Degrau de tamanhos do mock (px → rem em /16).

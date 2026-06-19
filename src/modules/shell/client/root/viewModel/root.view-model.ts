@@ -55,7 +55,7 @@ const PAGE_TITLES: Readonly<Record<string, string>> = {
   // Financeiro — o título é desenhado pelo PageHeader do shell (padrão Contratos, Nunito); sem isto
   // cairia no fallback "ERP Bem Comum".
   '/financeiro/contas-a-pagar': 'Contas a Pagar',
-  '/financeiro/conciliacao': 'Contas bancárias',
+  '/financeiro/conciliacao': 'Contas Bancárias',
   '/login': 'Login',
 }
 

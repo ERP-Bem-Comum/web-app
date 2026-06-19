@@ -34,7 +34,7 @@ export const topbar = style({
   borderBlockEnd: `${bw.thin} solid ${c.paper.rule}`,
 })
 export const topTitle = style({
-  fontFamily: recon.font.serif,
+  fontFamily: recon.font.sans,
   fontSize: fs.xl,
   fontWeight: recon.weight.medium,
   color: c.ink[1],
@@ -244,7 +244,7 @@ export const bankMark = style({
   flexShrink: 0,
   background: `linear-gradient(135deg, ${c.teal.normal}, ${c.teal.deep})`,
   color: c.paper.default,
-  fontFamily: recon.font.serif,
+  fontFamily: recon.font.sans,
   fontSize: fs.lg,
   fontWeight: recon.weight.semibold,
 })
@@ -350,7 +350,7 @@ export const stateBox = style({
   textAlign: 'center',
 })
 export const stateTitle = style({
-  fontFamily: recon.font.serif,
+  fontFamily: recon.font.sans,
   fontSize: fs.xl,
   fontWeight: recon.weight.semibold,
   color: c.ink[1],
@@ -476,9 +476,9 @@ export const modalHead = style({
   borderBlockEnd: `${bw.thin} solid ${c.paper.rule}`,
 })
 export const modalTitle = style({
-  fontFamily: recon.font.serif,
-  fontSize: fs.xl,
-  fontWeight: recon.weight.semibold,
+  fontFamily: recon.font.sans, // sans (Inter) p/ consistência com o restante do modal — sem o serif do header
+  fontSize: fs.lg,
+  fontWeight: recon.weight.bold,
   color: c.ink[1],
 })
 export const modalSub = style({ fontFamily: recon.font.sans, fontSize: fs.sm, color: c.ink[4] })
@@ -508,6 +508,8 @@ export const formField = style({ display: 'flex', flexDirection: 'column', gap: 
 export const fieldLabel = style({ fontFamily: recon.font.sans, fontSize: fs.sm, color: c.ink[3] })
 export const input = style({
   inlineSize: '100%',
+  boxSizing: 'border-box',
+  blockSize: '2.375rem', // altura padrão dos campos (igual ao seletor de banco)
   paddingInline: sp.lg,
   paddingBlock: sp.sm,
   borderRadius: r.md,
@@ -547,3 +549,68 @@ export const modalFoot = style({
   borderBlockStart: `${bw.thin} solid ${c.paper.rule}`,
 })
 export const spacer = style({ flex: 1 })
+
+// ── refinamentos do modal "Nova Conta Bancária" (fiel ao mock) ───────────────────
+export const mhIc = style({
+  inlineSize: '2.25rem',
+  blockSize: '2.25rem',
+  borderRadius: r.md,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexShrink: 0,
+  background: c.teal.bg,
+  color: c.teal.deep,
+})
+export const mhText = style({ display: 'flex', flexDirection: 'column', gap: '0.0625rem', minInlineSize: 0 })
+export const sectionTitleRow = style({ display: 'flex', alignItems: 'center', gap: sp.sm })
+export const optionalTag = style({
+  fontFamily: recon.font.sans,
+  fontSize: fs['3xs'],
+  fontWeight: recon.weight.medium,
+  color: c.teal.deep,
+  background: c.teal.bg,
+  borderRadius: r.sm,
+  paddingInline: sp.xs,
+  paddingBlock: '0.0625rem',
+  textTransform: 'none',
+})
+export const aliasHint = style({ fontFamily: recon.font.sans, fontSize: fs['3xs'], color: c.ink[5] })
+export const selectField = style({
+  inlineSize: '100%',
+  boxSizing: 'border-box',
+  blockSize: '2.375rem', // mesma altura dos inputs (proporcional aos demais campos)
+  paddingInline: sp.lg,
+  paddingBlock: sp.sm,
+  borderRadius: r.md,
+  border: `${bw.thin} solid ${c.paper.rule}`,
+  background: c.paper.default,
+  fontFamily: recon.font.sans,
+  fontSize: fs.md,
+  color: c.ink[4],
+  cursor: 'pointer',
+})
+export const inputMono = style({ fontFamily: recon.font.mono })
+export const infoNotice = style({
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: sp.sm,
+  padding: sp.lg,
+  borderRadius: r.md,
+  background: c.teal.bg,
+  border: `${bw.thin} solid ${c.teal.line}`,
+  color: c.teal.deep,
+})
+export const infoNoticeIcon = style({ flexShrink: 0, marginBlockStart: '0.0625rem' })
+export const infoNoticeText = style({
+  fontFamily: recon.font.sans,
+  fontSize: fs.sm,
+  lineHeight: 1.5,
+  color: c.ink[3],
+})
+export const pendingHint = style({
+  fontFamily: recon.font.sans,
+  fontSize: fs['3xs'],
+  color: c.ink[5],
+  marginInlineEnd: 'auto',
+})
