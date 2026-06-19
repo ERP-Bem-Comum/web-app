@@ -131,6 +131,8 @@ export type PaidPayable = Readonly<{
   paymentMethod: string
   supplierName: string | null
   documentNumber: string | null
+  category: string | null // core-api#172: categoria do título (coluna Categoria)
+  documentType: string | null // core-api#172: tipo de documento (NFS-e/DANFE/IRRF/CSRF/INSS…) p/ filtro Tipo
 }>
 
 export type SuggestionCriteria = Readonly<{

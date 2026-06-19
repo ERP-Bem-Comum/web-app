@@ -6,11 +6,14 @@
  */
 import type {
   Movement,
+  PaidPayable,
+  ReconciliationAccount,
   StatementTransaction,
 } from '#modules/financial/client/data/model/reconciliation.model.ts'
+import { centsToBRL, centsToReais } from '#modules/financial/client/data/money.ts'
 
 // Re-export p/ as views (ui) formatarem dinheiro sem importar de client/data (boundary §I).
-export { centsToBRL, centsToReais } from '#modules/financial/client/data/money.ts'
+export { centsToBRL, centsToReais }
 
 // Re-export dos tipos de model p/ as views tiparem sem importar de client/data (boundary §I).
 export type {
@@ -18,6 +21,7 @@ export type {
   BankStatementImport,
   Movement,
   PaidPayable,
+  ReconciliationAccount,
   DifferenceTreatment,
   ManualEntryType,
 } from '#modules/financial/client/data/model/reconciliation.model.ts'
@@ -199,6 +203,36 @@ export const deriveReconType = (selectedCount: number, hasDifference: boolean): 
 export const requiresDestination = (type: string): boolean =>
   type === 'Transfer' || type === 'Investment' || type === 'Redemption'
 
+// ── Buscar / Criar vários (US3) — filtros de títulos Pago (puro) ────────────────
+/** Opções do filtro Tipo = tipos de DOCUMENTO distintos presentes (NFS-e, DANFE, IRRF, CSRF, INSS, ISS…). */
+export const payableTypeOptions = (payables: readonly PaidPayable[]): readonly string[] => {
+  const seen: string[] = []
+  for (const p of payables) {
+    if (p.documentType !== null && !seen.includes(p.documentType)) seen.push(p.documentType)
+  }
+  return seen
+}
+
+const payableMatchesSearch = (p: PaidPayable, q: string): boolean => {
+  const needle = q.trim().toLowerCase()
+  if (needle === '') return true
+  return [p.supplierName, p.documentNumber, p.documentId, p.category, p.documentType]
+    .filter((v): v is string => v !== null)
+    .join(' ')
+    .toLowerCase()
+    .includes(needle)
+}
+
+/** Filtra os títulos Pago por busca textual + Tipo de documento ('all' = todos os tipos). */
+export const filterPayables = (
+  payables: readonly PaidPayable[],
+  search: string,
+  documentType: string,
+): readonly PaidPayable[] =>
+  payables.filter(
+    (p) => payableMatchesSearch(p, search) && (documentType === 'all' || p.documentType === documentType),
+  )
+
 // ── Aba Extrato (puro — US8) ────────────────────────────────────────────────────
 
 /** Aplica o filtro do extrato (Todos/Entradas/Saídas/Conciliados/Pendentes). */
@@ -295,3 +329,96 @@ export const groupExtratoDays = (txs: readonly StatementTransaction[]): readonly
       items: g.items,
     }
   })
+
+// ── Modal "Alterar conta" — troca de conta sem voltar ao grid (puro) ────────────
+/** Item de conta no modal de troca (derivado da conta-cedente; depende de #168 p/ a listagem real). */
+export type ChangeAccountItem = Readonly<{
+  id: string
+  initials: string
+  name: string
+  meta: string
+  balanceBRL: string
+  updated: string
+  openable: boolean // conta encerrada não abre o workspace
+  isCurrent: boolean
+}>
+export type ChangeAccountGroups = Readonly<{
+  active: readonly ChangeAccountItem[]
+  closed: readonly ChangeAccountItem[]
+}>
+
+const toChangeAccountItem = (a: ReconciliationAccount, currentId: string): ChangeAccountItem => ({
+  id: a.id,
+  initials: a.bankName.slice(0, 2).toUpperCase(),
+  name: a.alias,
+  meta: `${a.bankCode} · Ag ${a.branch} · CC ${a.accountNumber}-${a.accountDv}`,
+  balanceBRL: centsToBRL(a.currentBalanceCents),
+  updated: a.lastUpdatedAt,
+  openable: a.status !== 'Closed',
+  isCurrent: a.id === currentId,
+})
+
+const matchesAccountSearch = (a: ReconciliationAccount, q: string): boolean => {
+  const needle = q.trim().toLowerCase()
+  if (needle === '') return true
+  return [a.alias, a.bankName, a.bankCode, a.branch, a.accountNumber].join(' ').toLowerCase().includes(needle)
+}
+
+// ── Modal "Detalhes da conciliação" — clique numa linha conciliada do Extrato (puro) ──
+const MATCH_DASH = '—'
+export type MatchDetailsDoc = Readonly<{
+  name: string
+  documento: string
+  vencimento: string
+  categoria: string
+  valueBRL: string
+}>
+export type MatchDetailsAudit = Readonly<{ when: string; who: string }>
+export type MatchDetailsView = Readonly<{
+  isManualEntry: boolean
+  ext: Readonly<{ name: string; date: string; kind: string; id: string; valueBRL: string }>
+  // doc/audit dependem do backend expor os detalhes da conciliação (sem GET de detalhes hoje, #175) →
+  // sem dados, preenche com "—" (estado honesto, igual ao default do mock). Em preview vêm preenchidos.
+  doc: MatchDetailsDoc
+  audit: MatchDetailsAudit
+}>
+
+const DASH_DOC: MatchDetailsDoc = {
+  name: MATCH_DASH,
+  documento: MATCH_DASH,
+  vencimento: MATCH_DASH,
+  categoria: MATCH_DASH,
+  valueBRL: MATCH_DASH,
+}
+const DASH_AUDIT: MatchDetailsAudit = { when: MATCH_DASH, who: MATCH_DASH }
+
+/** Monta a visão do modal de detalhes a partir da transação conciliada (lado extrato = real) + detalhes. */
+export const matchDetailsView = (
+  tx: StatementTransaction,
+  doc: MatchDetailsDoc | null,
+  audit: MatchDetailsAudit | null,
+): MatchDetailsView => ({
+  isManualEntry: tx.reconciliationStatus === 'ManualEntry',
+  ext: {
+    name: tx.payeeName,
+    date: formatDayHeader(tx.date),
+    kind: tx.entryType,
+    id: tx.fitid,
+    valueBRL: centsToBRL(tx.valueCents),
+  },
+  doc: doc ?? DASH_DOC,
+  audit: audit ?? DASH_AUDIT,
+})
+
+/** Agrupa as contas em ativas/encerradas p/ o modal de troca, filtrando pela busca e marcando a atual. */
+export const groupAccountsForSwitch = (
+  accounts: readonly ReconciliationAccount[],
+  currentId: string,
+  search: string,
+): ChangeAccountGroups => {
+  const filtered = accounts.filter((a) => matchesAccountSearch(a, search))
+  return {
+    active: filtered.filter((a) => a.status !== 'Closed').map((a) => toChangeAccountItem(a, currentId)),
+    closed: filtered.filter((a) => a.status === 'Closed').map((a) => toChangeAccountItem(a, currentId)),
+  }
+}

@@ -5,7 +5,7 @@
  * transação selecionada. A page e os componentes são burros (só consomem este hook). US1 (conciliar por
  * sugestão) + US2 (importar) ligados; US3–US8 entram nas próximas fatias.
  */
-import { useCallback, useReducer, useState } from 'react'
+import { useCallback, useEffect, useReducer, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
 import {
@@ -30,6 +30,9 @@ import {
   type WorkspaceUiState,
 } from './reconciliation-workspace.view-model.ts'
 import { useAccountSelector } from './account-selector.binding.ts'
+import { useChangeAccount, type ChangeAccountBinding } from './change-account.binding.ts'
+import { useMatchDetails, type MatchDetailsBinding } from './match-details.binding.ts'
+import { useHeaderMenus, type HeaderMenusBinding } from './header-menus.binding.ts'
 import { useImport, type ImportBinding } from './import.binding.ts'
 import { useReconcile, type ReconcileBinding } from './reconcile.binding.ts'
 import { useSearchCreate, type SearchCreateBinding } from './search-create.binding.ts'
@@ -99,6 +102,9 @@ export type WorkspaceBinding = Readonly<{
       pendentes: number
     }>
   }>
+  changeAccount: ChangeAccountBinding
+  matchDetails: MatchDetailsBinding
+  headerMenus: HeaderMenusBinding
   import: ImportBinding
   reconcile: ReconcileBinding
   searchCreate: SearchCreateBinding
@@ -126,6 +132,9 @@ const toMatchView = (s: MatchSuggestion, payables: ReadonlyMap<string, PaidPayab
 export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBinding {
   const [ui, dispatch] = useReducer(workspaceReducer, initialWorkspaceUiState)
   const { accountRef, identityAvailable, account } = useAccountSelector(routeAccountRef)
+  const changeAccountBinding = useChangeAccount(accountRef)
+  const matchDetailsBinding = useMatchDetails()
+  const headerMenusBinding = useHeaderMenus()
 
   const txQuery = useQuery(transactionsQueryOptions(ui.statementId))
   const payablesQuery = useQuery(paidPayablesQueryOptions())
@@ -156,6 +165,16 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     ui.selectedTransactionId === null ? null : (allTx.find((t) => t.id === ui.selectedTransactionId) ?? null)
 
   const pendentesCount = allTx.filter(isPending).length
+
+  // Aba Conciliação: o motor de sugestão já aparece para a transação do TOPO da lista (sem exigir clique).
+  // Auto-seleciona a 1ª transação do filtro atual enquanto nada estiver selecionado; depois respeita a
+  // escolha do usuário. Cobre o load inicial (aba padrão) e a volta do Extrato sem seleção.
+  const topTransactionId = filterTransactions(allTx, ui.listFilter)[0]?.id ?? null
+  useEffect(() => {
+    if (ui.activeTab === 'conciliacao' && ui.selectedTransactionId === null && topTransactionId !== null) {
+      dispatch({ type: 'select-transaction', id: topTransactionId })
+    }
+  }, [ui.activeTab, ui.selectedTransactionId, topTransactionId])
 
   const reconcileBinding = useReconcile(recordReconciliation)
   const searchCreateBinding = useSearchCreate(selectedTx, payables, recordReconciliation)
@@ -240,6 +259,9 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     suggestions,
     payables,
     extrato,
+    changeAccount: changeAccountBinding,
+    matchDetails: matchDetailsBinding,
+    headerMenus: headerMenusBinding,
     import: importBinding,
     reconcile: reconcileBinding,
     searchCreate: searchCreateBinding,

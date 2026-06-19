@@ -57,14 +57,19 @@ describe('ReconciliationWorkspacePage (shell)', () => {
     expect(toggle.getAttribute('aria-pressed')).toBe('false')
   })
 
-  it('Importar (US2) habilitado; Exportar (#173) e Fechar período (US7) anunciados/desabilitados', () => {
+  it('Importar (US2) habilitado; Exportar abre menu (itens #173 anunciados); Fechar período (US7) desabilitado', () => {
     renderPage()
     expect(screen.getByRole('button', { name: has('financial.recon.import') }).hasAttribute('disabled')).toBe(
       false,
     )
+    // Exportar agora é um dropdown: o gatilho abre o menu (anuncia indisponibilidade no title)…
     const exportBtn = screen.getByRole('button', { name: has('financial.recon.bottombar.export') })
-    expect(exportBtn.hasAttribute('disabled')).toBe(true)
     expect(exportBtn.getAttribute('title')).toBe(tr('financial.recon.bottombar.exportUnavailable'))
+    fireEvent.click(exportBtn)
+    // …e os formatos (OFX/CSV/PDF) ficam desabilitados (chrome até #173)
+    expect(
+      screen.getByRole('menuitem', { name: has('financial.recon.export.ofx') }).hasAttribute('disabled'),
+    ).toBe(true)
     expect(
       screen.getByRole('button', { name: has('financial.recon.bottombar.close') }).hasAttribute('disabled'),
     ).toBe(true)

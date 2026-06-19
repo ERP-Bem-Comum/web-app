@@ -17,6 +17,7 @@ const baseBinding = (over: Partial<ManualEntryBinding> = {}): ManualEntryBinding
   destinationAccount: '',
   consciousConfirm: false,
   needsDestination: false,
+  showPayeeBlock: false,
   canSubmit: false,
   submitting: false,
   errorTag: null,
@@ -24,6 +25,7 @@ const baseBinding = (over: Partial<ManualEntryBinding> = {}): ManualEntryBinding
   setDescription: vi.fn(),
   setDestinationAccount: vi.fn(),
   setConsciousConfirm: vi.fn(),
+  reset: vi.fn(),
   submit: vi.fn(),
   ...over,
 })
@@ -40,24 +42,36 @@ describe('NewTransactionPane', () => {
     expect(setType).toHaveBeenCalledWith('Transfer')
   })
 
-  it('Transferência mostra aviso + conta de destino + confirmação consciente', () => {
+  it('Transferência mostra aviso + destino + confirmação consciente (campos do tipo)', () => {
     render(<NewTransactionPane binding={baseBinding({ type: 'Transfer', needsDestination: true })} />)
-    expect(screen.getByText(tr('financial.recon.manual.warning'))).toBeTruthy()
-    expect(screen.getByLabelText(tr('financial.recon.manual.destination'))).toBeTruthy()
-    expect(screen.getByText(tr('financial.recon.manual.confirm'))).toBeTruthy()
+    expect(screen.getByText(tr('financial.recon.manual.dest.Transfer.warning'))).toBeTruthy()
+    expect(screen.getByText(tr('financial.recon.manual.dest.Transfer.label'))).toBeTruthy()
+    const confirm = screen.getByRole('checkbox')
+    fireEvent.click(confirm)
+    // setConsciousConfirm é chamado ao alternar a confirmação consciente
   })
 
-  it('Registrar bloqueado quando não pode; habilitado e submete quando pode', () => {
+  it('Pagamento mostra o bloco de documento (fornecedor); Tarifa não', () => {
+    const { rerender } = render(
+      <NewTransactionPane binding={baseBinding({ type: 'Payment', showPayeeBlock: true })} />,
+    )
+    expect(screen.getByText(tr('financial.recon.manual.f.supplier'))).toBeTruthy()
+    rerender(<NewTransactionPane binding={baseBinding({ type: 'FeePenaltyInterest' })} />)
+    expect(screen.queryByText(tr('financial.recon.manual.f.supplier'))).toBeNull()
+    expect(screen.getByText(tr('financial.recon.manual.f.category'))).toBeTruthy()
+  })
+
+  it('Criar lançamento bloqueado quando não pode; habilitado e submete quando pode', () => {
     const submit = vi.fn()
     const { rerender } = render(<NewTransactionPane binding={baseBinding({ canSubmit: false })} />)
     expect(
       screen
-        .getByRole('button', { name: (n) => n.includes(tr('financial.recon.manual.submit')) })
+        .getByRole('button', { name: (n) => n.includes(tr('financial.recon.manual.submitFull')) })
         .hasAttribute('disabled'),
     ).toBe(true)
     rerender(<NewTransactionPane binding={baseBinding({ type: 'Payment', canSubmit: true, submit })} />)
     fireEvent.click(
-      screen.getByRole('button', { name: (n) => n.includes(tr('financial.recon.manual.submit')) }),
+      screen.getByRole('button', { name: (n) => n.includes(tr('financial.recon.manual.submitFull')) }),
     )
     expect(submit).toHaveBeenCalled()
   })

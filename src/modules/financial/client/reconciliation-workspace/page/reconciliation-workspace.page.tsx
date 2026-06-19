@@ -7,7 +7,7 @@
  */
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { CalendarDaysIcon, CheckCircleIcon, ChevronDownIcon, DownloadIcon } from '#shared/ui/icons/index.ts'
+import { CheckCircleIcon } from '#shared/ui/icons/index.ts'
 
 import { useReconciliationWorkspace } from '../reconciliation-workspace.binding.ts'
 import { centsToBRL, isPending, type AssocTab } from '../reconciliation-workspace.view-model.ts'
@@ -18,6 +18,10 @@ import { SearchCreatePane } from '../components/search-create-pane.component.tsx
 import { NewTransactionPane } from '../components/new-transaction-pane.component.tsx'
 import { ReconciledBanner } from '../components/reconciled-banner.component.tsx'
 import { StatementGrid } from '../components/statement-grid.component.tsx'
+import { ChangeAccountModal } from '../components/change-account-modal.component.tsx'
+import { MatchDetailsModal } from '../components/match-details-modal.component.tsx'
+import { PeriodMenu } from '../components/period-menu.component.tsx'
+import { ExportMenu } from '../components/export-menu.component.tsx'
 import * as s from './reconciliation-workspace.css.ts'
 
 const ASSOC_TABS: readonly { id: AssocTab; tag: string }[] = [
@@ -61,7 +65,7 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
               ) : (
                 <span>{t('financial.recon.account.metaPlaceholder')}</span>
               )}
-              <button type="button" className={s.changeAcc}>
+              <button type="button" className={s.changeAcc} onClick={vm.changeAccount.openModal}>
                 {t('financial.recon.account.changeAcc')}
               </button>
             </span>
@@ -91,14 +95,7 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
         </div>
 
         <div className={s.accActions}>
-          <button type="button" className={s.periodBtn}>
-            <CalendarDaysIcon />
-            <span className={s.periodLbl}>{t('financial.recon.period')}</span>
-            <span className={s.periodValue}>{t('financial.recon.period.value')}</span>
-            <span className={s.periodChev}>
-              <ChevronDownIcon />
-            </span>
-          </button>
+          <PeriodMenu menus={vm.headerMenus} />
           {/* Importar OFX/CSV (US2); PDF via OCR fica anunciado (#145) */}
           <ImportMenu
             importing={vm.import.importing}
@@ -244,6 +241,7 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
             counts={vm.extrato.counts}
             filter={ui.extratoFilter}
             onFilter={vm.setExtratoFilter}
+            onOpenDetails={vm.matchDetails.openFor}
           />
         )}
       </div>
@@ -279,18 +277,8 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
           {vm.closePeriod.errorTag !== null ? (
             <span className={s.errorText}>{t(vm.closePeriod.errorTag)}</span>
           ) : null}
-          {/* Exportar = chrome até #173 (sem endpoint p/ obter o periodId) */}
-          <button
-            type="button"
-            className={s.btnSecondary}
-            disabled
-            aria-disabled="true"
-            title={t('financial.recon.bottombar.exportUnavailable')}
-          >
-            <DownloadIcon />
-            {t('financial.recon.bottombar.export')}
-            <ChevronDownIcon />
-          </button>
+          {/* Exportar OFX/CSV/PDF = chrome até #173 (sem endpoint p/ obter o periodId) */}
+          <ExportMenu menus={vm.headerMenus} />
           {/* Fechar período (US7) — bloqueado se há pendentes ou sem extrato */}
           <button
             type="button"
@@ -313,6 +301,34 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
           </button>
         </div>
       </footer>
+
+      <ChangeAccountModal
+        open={vm.changeAccount.open}
+        search={vm.changeAccount.search}
+        list={vm.changeAccount.list}
+        onClose={vm.changeAccount.close}
+        onSearch={vm.changeAccount.setSearch}
+        onSelect={vm.changeAccount.select}
+        onAdd={vm.changeAccount.add}
+      />
+
+      <MatchDetailsModal
+        open={vm.matchDetails.open}
+        view={vm.matchDetails.view}
+        canUndo={vm.matchDetails.tx !== null && vm.reconciliationIdFor(vm.matchDetails.tx.id) !== null}
+        undoing={vm.undo.undoing}
+        onUndo={() => {
+          const target = vm.matchDetails.tx
+          if (target === null) return
+          const reconciliationId = vm.reconciliationIdFor(target.id)
+          if (reconciliationId !== null) {
+            vm.undo.undo(reconciliationId, target.id)
+          }
+          vm.matchDetails.close()
+        }}
+        onViewTitle={() => undefined}
+        onClose={vm.matchDetails.close}
+      />
     </div>
   )
 }

@@ -12,7 +12,9 @@ import { reconciliationErrorTag } from '#modules/financial/client/data/helpers/r
 import {
   canReconcileMulti,
   deriveReconType,
+  filterPayables,
   parseCents,
+  payableTypeOptions,
   residualCents,
   sumCentsOf,
   type DifferenceTreatment,
@@ -30,6 +32,14 @@ export type SearchCreateBinding = Readonly<{
   reconType: ReconType
   submitting: boolean
   errorTag: string | null
+  // filtros (busca textual + Tipo/categoria — viabiliza achar/selecionar impostos retidos)
+  search: string
+  typeBucket: string // 'all' | <bucket de categoria>
+  typeOptions: readonly string[]
+  filtered: readonly PaidPayable[]
+  totalCount: number
+  setSearch: (v: string) => void
+  setTypeBucket: (v: string) => void
   toggle: (payableId: string) => void
   setTreatment: (treatment: DifferenceTreatment) => void
   clear: () => void
@@ -45,6 +55,11 @@ export function useSearchCreate(
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(() => new Set())
   const [treatment, setTreatment] = useState<DifferenceTreatment | null>(null)
   const [errorTag, setErrorTag] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const [typeBucket, setTypeBucket] = useState('all')
+
+  const typeOptions = payableTypeOptions(payables)
+  const filtered = filterPayables(payables, search, typeBucket)
 
   const selected = payables.filter((p) => selectedIds.has(p.id))
   const selectedSumCents = sumCentsOf(selected)
@@ -81,6 +96,17 @@ export function useSearchCreate(
     reconType,
     submitting: mut.isPending,
     errorTag,
+    search,
+    typeBucket,
+    typeOptions,
+    filtered,
+    totalCount: payables.length,
+    setSearch: (v) => {
+      setSearch(v)
+    },
+    setTypeBucket: (v) => {
+      setTypeBucket(v)
+    },
     toggle: (payableId) => {
       setSelectedIds((prev) => {
         const next = new Set(prev)

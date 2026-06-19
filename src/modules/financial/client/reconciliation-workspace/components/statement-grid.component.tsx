@@ -53,6 +53,7 @@ export type StatementGridProps = Readonly<{
   counts: ExtratoCounts
   filter: ExtratoFilter
   onFilter: (filter: ExtratoFilter) => void
+  onOpenDetails: (tx: StatementTransaction) => void
 }>
 
 function ConcMark({ tx }: { tx: StatementTransaction }) {
@@ -66,11 +67,17 @@ function ConcMark({ tx }: { tx: StatementTransaction }) {
   )
 }
 
-function ExtratoRow({ tx }: { tx: StatementTransaction }) {
+function ExtratoRow({
+  tx,
+  onOpenDetails,
+}: {
+  tx: StatementTransaction
+  onOpenDetails: (tx: StatementTransaction) => void
+}) {
   const reconciled = tx.reconciliationStatus !== 'Pending'
   const isCredit = tx.movement === 'Credit'
-  return (
-    <div className={reconciled ? s.extRow.reconciled : s.extRow.base}>
+  const cells = (
+    <>
       <ConcMark tx={tx} />
       <span className={s.extDt}>{formatDayShort(tx.date)}</span>
       <span className={s.extKind[extratoKindClass(tx.entryType)]}>{tx.entryType}</span>
@@ -86,8 +93,23 @@ function ExtratoRow({ tx }: { tx: StatementTransaction }) {
         {!isCredit ? centsToBRL(tx.valueCents) : DASH}
       </span>
       <span className={s.extSaldo}>{centsToBRL(tx.balanceAfterCents)}</span>
-    </div>
+    </>
   )
+  // Linha conciliada abre o modal de detalhes (clicável); pendente é só leitura.
+  if (reconciled) {
+    return (
+      <button
+        type="button"
+        className={s.extRow.reconciled}
+        onClick={() => {
+          onOpenDetails(tx)
+        }}
+      >
+        {cells}
+      </button>
+    )
+  }
+  return <div className={s.extRow.base}>{cells}</div>
 }
 
 function DayDivider({ day }: { day: ExtratoDayGroup }) {
@@ -121,6 +143,7 @@ export function StatementGrid({
   counts,
   filter,
   onFilter,
+  onOpenDetails,
 }: StatementGridProps) {
   if (!hasStatement) {
     return <div className={s.emptyState}>{t('financial.recon.ext.idle')}</div>
@@ -170,7 +193,7 @@ export function StatementGrid({
               <div key={day.date}>
                 <DayDivider day={day} />
                 {day.items.map((tx) => (
-                  <ExtratoRow key={tx.id} tx={tx} />
+                  <ExtratoRow key={tx.id} tx={tx} onOpenDetails={onOpenDetails} />
                 ))}
               </div>
             ))}

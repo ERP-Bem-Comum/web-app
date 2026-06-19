@@ -21,6 +21,7 @@ export type ManualEntryBinding = Readonly<{
   destinationAccount: string
   consciousConfirm: boolean
   needsDestination: boolean
+  showPayeeBlock: boolean
   canSubmit: boolean
   submitting: boolean
   errorTag: string | null
@@ -28,6 +29,7 @@ export type ManualEntryBinding = Readonly<{
   setDescription: (v: string) => void
   setDestinationAccount: (v: string) => void
   setConsciousConfirm: (v: boolean) => void
+  reset: () => void
   submit: () => void
 }>
 
@@ -43,7 +45,9 @@ export function useManualEntry(
   const [errorTag, setErrorTag] = useState<string | null>(null)
 
   const needsDestination = type !== null && requiresDestination(type)
-  const destinationOk = !needsDestination || (destinationAccount.trim() !== '' && consciousConfirm)
+  const showPayeeBlock = type === 'Payment' || type === 'Receipt'
+  // Destino/produto é chrome (depende de #168/lista de produtos); o gating consciente fica no checkbox.
+  const destinationOk = !needsDestination || consciousConfirm
   const canSubmit = type !== null && destinationOk
 
   const mut = useMutation({
@@ -74,11 +78,13 @@ export function useManualEntry(
     destinationAccount,
     consciousConfirm,
     needsDestination,
+    showPayeeBlock,
     canSubmit,
     submitting: mut.isPending,
     errorTag,
     setType: (tp) => {
       setType(tp)
+      setConsciousConfirm(false)
     },
     setDescription: (v) => {
       setDescription(v)
@@ -88,6 +94,13 @@ export function useManualEntry(
     },
     setConsciousConfirm: (v) => {
       setConsciousConfirm(v)
+    },
+    reset: () => {
+      setType(null)
+      setDescription('')
+      setDestinationAccount('')
+      setConsciousConfirm(false)
+      setErrorTag(null)
     },
     submit: () => {
       if (selectedTx === null || type === null || !canSubmit) return

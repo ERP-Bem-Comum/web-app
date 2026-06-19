@@ -13,6 +13,8 @@ import { centsToBRL, type StatementTransaction } from '../reconciliation-workspa
 import type { MatchView, SuggestionState } from '../reconciliation-workspace.binding.ts'
 
 const t = createTranslator(ptBR)
+const DOT = '·'
+const DASH = '—'
 
 export type SuggestionPaneProps = Readonly<{
   state: SuggestionState
@@ -153,16 +155,32 @@ export function SuggestionPane({
 
       {alternatives.length > 0 ? (
         <div className={s.altList}>
-          <span className={s.sideLbl}>{t('financial.recon.sugg.alternatives')}</span>
+          <span className={s.altOverline}>
+            {t('financial.recon.sugg.alternatives')} {DOT} {alternatives.length}
+          </span>
           {alternatives.map((alt) => (
             <div key={alt.payableId} className={s.altCard}>
-              <span className={s.txName}>
-                {alt.payable?.documentNumber ?? alt.payable?.documentId ?? alt.payableId}
+              <div className={s.altInfo}>
+                <div className={s.altNm}>
+                  {alt.payable?.supplierName ?? alt.payable?.documentNumber ?? alt.payableId}
+                </div>
+                <div className={s.altMeta}>
+                  <span className={s.altDocRef}>{alt.payable?.documentNumber ?? alt.payableId}</span>
+                  <span className={s.altStatusMini.pago}>{t('financial.recon.sugg.paid')}</span>
+                  <span className={s.altConfMini}>
+                    {`${String(alt.score)}% ${t('financial.recon.sugg.matchWord')}`}
+                    {alt.payable !== null
+                      ? ` ${DOT} ${t('financial.recon.sugg.vencWord')} ${alt.payable.dueDate}`
+                      : ''}
+                  </span>
+                </div>
+              </div>
+              <span className={s.altAmt}>
+                {alt.payable !== null ? centsToBRL(alt.payable.valueCents) : DASH}
               </span>
-              <span className={s.sideVal}>{`${String(alt.score)}%`}</span>
               <button
                 type="button"
-                className={s.btnSecondary}
+                className={s.altBtn}
                 disabled={reconciling}
                 onClick={() => {
                   onReconcile(alt.payableId)

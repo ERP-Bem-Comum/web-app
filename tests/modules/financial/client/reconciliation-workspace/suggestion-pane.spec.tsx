@@ -40,6 +40,8 @@ const ready: SuggestionState = {
       paymentMethod: 'PIX',
       supplierName: null,
       documentNumber: '0847',
+      category: null,
+      documentType: null,
     },
   },
   alternatives: [],

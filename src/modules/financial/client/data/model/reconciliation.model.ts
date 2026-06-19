@@ -103,6 +103,11 @@ export type PaidPayable = Readonly<{
   paymentMethod: string
   supplierName: string | null
   documentNumber: string | null
+  // Categoria (ex.: "Serviços / Consultoria", "Imposto / ISS") = mínimo até core-api#172 (coluna Categoria).
+  category: string | null
+  // Tipo de DOCUMENTO (ex.: "NFS-e", "DANFE", "IRRF", "CSRF", "INSS", "ISS") = mínimo até core-api#172;
+  // alimenta o filtro Tipo na aba Buscar/Criar vários (achar impostos retidos: IRRF/CSRF/INSS…).
+  documentType: string | null
 }>
 export type SuggestionCriteria = Readonly<{
   payeeMatch: boolean

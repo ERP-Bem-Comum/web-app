@@ -24,9 +24,16 @@ import {
   requiresDestination,
   filterExtrato,
   extratoTotals,
+  groupAccountsForSwitch,
+  matchDetailsView,
+  centsToBRL,
+  filterPayables,
+  payableTypeOptions,
 } from '../../../../../src/modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
 import type {
   Movement,
+  PaidPayable,
+  ReconciliationAccount,
   ReconciliationStatus,
   StatementTransaction,
 } from '../../../../../src/modules/financial/client/data/model/reconciliation.model.ts'
@@ -244,5 +251,149 @@ describe('aba Extrato (US8)', () => {
     const totals = extratoTotals(all)
     assert.equal(totals.inCents, 30000)
     assert.equal(totals.outCents, 20000)
+  })
+})
+
+describe('modal Alterar conta — groupAccountsForSwitch', () => {
+  const acc = (
+    over: Partial<ReconciliationAccount> & Pick<ReconciliationAccount, 'id'>,
+  ): ReconciliationAccount => ({
+    bankCode: '237',
+    bankName: 'Bradesco',
+    branch: '1462',
+    accountNumber: '0012345',
+    accountDv: '7',
+    alias: 'Bradesco · Movimento',
+    type: 'Corrente',
+    status: 'Active',
+    currentBalanceCents: '100000',
+    lastUpdatedAt: 'hoje',
+    pendingCount: 0,
+    ...over,
+  })
+  const accounts = [
+    acc({ id: 'a1' }),
+    acc({ id: 'a2', bankName: 'Itaú', alias: 'Itaú · Reserva' }),
+    acc({ id: 'a3', bankName: 'Santander', alias: 'Santander · Antiga', status: 'Closed' }),
+  ]
+
+  it('separa ativas/encerradas e marca a conta atual', () => {
+    const groups = groupAccountsForSwitch(accounts, 'a2', '')
+    assert.deepEqual(
+      groups.active.map((i) => i.id),
+      ['a1', 'a2'],
+    )
+    assert.deepEqual(
+      groups.closed.map((i) => i.id),
+      ['a3'],
+    )
+    assert.equal(groups.active.find((i) => i.id === 'a2')?.isCurrent, true)
+    assert.equal(groups.active.find((i) => i.id === 'a1')?.isCurrent, false)
+  })
+
+  it('conta encerrada não é abrível (openable=false) e a meta segue o formato do mock', () => {
+    const groups = groupAccountsForSwitch(accounts, 'a1', '')
+    assert.equal(groups.closed[0]?.openable, false)
+    assert.equal(groups.active[0]?.openable, true)
+    assert.equal(groups.active[0]?.meta, '237 · Ag 1462 · CC 0012345-7')
+    assert.equal(groups.active[0]?.initials, 'BR')
+  })
+
+  it('filtra pela busca (banco/alias/número), case-insensitive', () => {
+    assert.deepEqual(
+      groupAccountsForSwitch(accounts, 'a1', 'itaú').active.map((i) => i.id),
+      ['a2'],
+    )
+    assert.deepEqual(
+      groupAccountsForSwitch(accounts, 'a1', 'santander').closed.map((i) => i.id),
+      ['a3'],
+    )
+    assert.equal(groupAccountsForSwitch(accounts, 'a1', 'zzz').active.length, 0)
+  })
+})
+
+describe('modal Detalhes da conciliação — matchDetailsView', () => {
+  const base = tx({
+    id: 'r1',
+    payeeName: 'Gráfica Horizonte',
+    entryType: 'DOC',
+    fitid: 'E2E-004',
+    valueCents: '95000',
+    reconciliationStatus: 'Reconciled',
+  })
+
+  it('lado extrato é real (vindo da transação)', () => {
+    const v = matchDetailsView(base, null, null)
+    assert.equal(v.ext.name, 'Gráfica Horizonte')
+    assert.equal(v.ext.kind, 'DOC')
+    assert.equal(v.ext.id, 'E2E-004')
+    assert.equal(v.ext.valueBRL, centsToBRL('95000'))
+    assert.equal(v.isManualEntry, false)
+  })
+
+  it('sem detalhes (backend ausente, #175) → título/auditoria viram "—"', () => {
+    const v = matchDetailsView(base, null, null)
+    assert.equal(v.doc.name, '—')
+    assert.equal(v.doc.vencimento, '—')
+    assert.equal(v.audit.when, '—')
+    assert.equal(v.audit.who, '—')
+  })
+
+  it('com detalhes, repassa título/auditoria; ManualEntry marca isManualEntry', () => {
+    const doc = {
+      name: 'NF 0847',
+      documento: '0847',
+      vencimento: '10/06/2026',
+      categoria: 'Serviços',
+      valueBRL: 'R$ 950,00',
+    }
+    const audit = { when: '18/06/2026', who: 'admin' }
+    const v = matchDetailsView({ ...base, reconciliationStatus: 'ManualEntry' }, doc, audit)
+    assert.equal(v.isManualEntry, true)
+    assert.equal(v.doc.documento, '0847')
+    assert.equal(v.audit.who, 'admin')
+  })
+})
+
+describe('Buscar/Criar vários — filtros de títulos (filterPayables por tipo de documento)', () => {
+  const pay = (over: Partial<PaidPayable> & Pick<PaidPayable, 'id'>): PaidPayable => ({
+    documentId: 'd',
+    valueCents: '1000',
+    dueDate: '2026-05-10',
+    paymentMethod: 'PIX',
+    supplierName: 'TS Da Silva',
+    documentNumber: 'NFS-0001',
+    category: 'Serviços / Consultoria',
+    documentType: 'NFS-e',
+    ...over,
+  })
+  const list = [
+    pay({ id: 'a' }),
+    pay({ id: 'b', documentNumber: 'ISS retido', category: 'Imposto / ISS', documentType: 'ISS' }),
+    pay({ id: 'c', documentNumber: 'IRRF retido', category: 'Imposto / IRRF', documentType: 'IRRF' }),
+    pay({ id: 'd', documentType: null }),
+  ]
+
+  it('payableTypeOptions traz os tipos de documento distintos presentes', () => {
+    assert.deepEqual(payableTypeOptions(list), ['NFS-e', 'ISS', 'IRRF'])
+  })
+
+  it('filtra por Tipo de documento (ex.: IRRF) e por busca textual', () => {
+    assert.deepEqual(
+      filterPayables(list, '', 'IRRF').map((p) => p.id),
+      ['c'],
+    )
+    assert.deepEqual(
+      filterPayables(list, '', 'ISS').map((p) => p.id),
+      ['b'],
+    )
+    assert.deepEqual(
+      filterPayables(list, 'iss', 'all').map((p) => p.id),
+      ['b'],
+    )
+    assert.deepEqual(
+      filterPayables(list, '', 'all').map((p) => p.id),
+      ['a', 'b', 'c', 'd'],
+    )
   })
 })

@@ -144,6 +144,8 @@ export const paidPayablesToModel = (raw: unknown): Result<readonly PaidPayable[]
     paymentMethod: p.paymentMethod,
     supplierName: p.supplierName,
     documentNumber: p.documentNumber,
+    category: null, // core-api#172: categoria do título ainda não vem no contrato
+    documentType: null, // core-api#172: tipo de documento ainda não vem no contrato
   }))
   return ok(items)
 }

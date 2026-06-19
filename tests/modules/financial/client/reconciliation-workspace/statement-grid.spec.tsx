@@ -55,6 +55,7 @@ describe('StatementGrid', () => {
         counts={{ todos: 0, entradas: 0, saidas: 0, conciliados: 0, pendentes: 0 }}
         filter="todos"
         onFilter={vi.fn()}
+        onOpenDetails={vi.fn()}
       />,
     )
     expect(screen.getByText(tr('financial.recon.ext.idle'))).toBeTruthy()
@@ -71,6 +72,7 @@ describe('StatementGrid', () => {
         counts={counts}
         filter="todos"
         onFilter={onFilter}
+        onOpenDetails={vi.fn()}
       />,
     )
     expect(screen.getByText('Entrada X')).toBeTruthy()
