@@ -14,6 +14,7 @@ import type {
   ClosePeriodInput,
   CreateReconciliationInput,
   GetSuggestionsInput,
+  GetTransactionReconciliationInput,
   ImportStatementInput,
   ListTransactionsInput,
   ManualEntryCreated,
@@ -26,6 +27,7 @@ import type {
   RejectSuggestionInput,
   RejectedSuggestion,
   StatementTransaction,
+  TransactionReconciliation,
   UndoReconciliationInput,
 } from '#modules/financial/server/domain/reconciliation.io.ts'
 
@@ -49,6 +51,10 @@ export type ReconciliationClient = Readonly<{
     i: GetSuggestionsInput,
     token: string,
   ) => Promise<Result<readonly MatchSuggestion[], ReconciliationError>>
+  getTransactionReconciliation: (
+    i: GetTransactionReconciliationInput,
+    token: string,
+  ) => Promise<Result<TransactionReconciliation | null, ReconciliationError>>
   rejectSuggestion: (
     i: RejectSuggestionInput,
     token: string,
@@ -108,6 +114,14 @@ export const createGetSuggestions =
   (deps: Deps) =>
   (i: GetSuggestionsInput, token: string): Promise<Result<readonly MatchSuggestion[], ReconciliationError>> =>
     deps.client.getSuggestions(i, token)
+
+export const createGetTransactionReconciliation =
+  (deps: Deps) =>
+  (
+    i: GetTransactionReconciliationInput,
+    token: string,
+  ): Promise<Result<TransactionReconciliation | null, ReconciliationError>> =>
+    deps.client.getTransactionReconciliation(i, token)
 
 export const createRejectSuggestion =
   (deps: Deps) =>

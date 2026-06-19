@@ -14,6 +14,7 @@ import {
   cedenteAccountsToModel,
   cedenteAccountToModel,
   accountStatementSummary,
+  transactionReconciliationToModel,
   suggestionsToModel,
   importToModel,
   reconciliationCreatedToModel,
@@ -225,6 +226,68 @@ describe('accountStatementSummary (#139)', () => {
 
   it('shape inválido → err(server)', () => {
     assert.ok(isErr(accountStatementSummary({ nope: true })))
+  })
+})
+
+describe('transactionReconciliationToModel (#175)', () => {
+  it('mapeia id→reconciliationId, type/status tolerantes, itens e differenceCents', () => {
+    const raw = {
+      id: 'rec-1',
+      transactionId: 'tx-1',
+      type: 'Multiple',
+      status: 'Active',
+      reconciledBy: 'user-42',
+      reconciledAt: '2026-06-18T13:45:00.000Z',
+      differenceCents: '-250',
+      items: [
+        { payableId: 'p1', reconciledValueCents: '10000' },
+        { payableId: 'p2', reconciledValueCents: '5000' },
+      ],
+    }
+    const r = transactionReconciliationToModel(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value.reconciliationId, 'rec-1')
+      assert.equal(r.value.type, 'Multiple')
+      assert.equal(r.value.status, 'Active')
+      assert.equal(r.value.reconciledBy, 'user-42')
+      assert.equal(r.value.differenceCents, '-250')
+      assert.equal(r.value.items.length, 2)
+      assert.equal(r.value.items[0]?.payableId, 'p1')
+    }
+  })
+
+  it('type drift → Individual; differenceCents ausente → null; ManualEntry preservado', () => {
+    const drift = transactionReconciliationToModel({
+      id: 'r',
+      transactionId: 't',
+      type: 'ZZZ',
+      status: 'whatever',
+      reconciledBy: 'u',
+      reconciledAt: '2026-06-18T00:00:00.000Z',
+      items: [],
+    })
+    assert.ok(isOk(drift))
+    if (isOk(drift)) {
+      assert.equal(drift.value.type, 'Individual')
+      assert.equal(drift.value.status, 'Active') // só 'Undone' vira Undone
+      assert.equal(drift.value.differenceCents, null)
+    }
+    const manual = transactionReconciliationToModel({
+      id: 'r',
+      transactionId: 't',
+      type: 'ManualEntry',
+      status: 'Active',
+      reconciledBy: 'u',
+      reconciledAt: '2026-06-18T00:00:00.000Z',
+      items: [],
+    })
+    assert.ok(isOk(manual))
+    if (isOk(manual)) assert.equal(manual.value.type, 'ManualEntry')
+  })
+
+  it('shape inválido → err(server)', () => {
+    assert.ok(isErr(transactionReconciliationToModel({ nope: true })))
   })
 })
 

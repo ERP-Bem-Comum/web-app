@@ -42,6 +42,7 @@ import { useClosePeriod, type ClosePeriodBinding } from './close-period.binding.
 import {
   paidPayablesQueryOptions,
   suggestionsQueryOptions,
+  transactionReconciliationQueryOptions,
   transactionsQueryOptions,
 } from './reconciliation-workspace.query.ts'
 import { reconciliationErrorTag } from '#modules/financial/client/data/helpers/reconciliation-error-tag.ts'
@@ -133,19 +134,10 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
   const [ui, dispatch] = useReducer(workspaceReducer, initialWorkspaceUiState)
   const { accountRef, identityAvailable, account } = useAccountSelector(routeAccountRef)
   const changeAccountBinding = useChangeAccount(accountRef)
-  const matchDetailsBinding = useMatchDetails()
   const headerMenusBinding = useHeaderMenus()
 
-  const txQuery = useQuery(transactionsQueryOptions(ui.statementId))
-  const payablesQuery = useQuery(paidPayablesQueryOptions())
-  const suggestionsQuery = useQuery(suggestionsQueryOptions(ui.selectedTransactionId))
-
-  const importBinding = useImport(accountRef, (statementId) => {
-    dispatch({ type: 'set-statement', statementId })
-  })
-
-  // Mapa de sessão transação→conciliação (o contrato não expõe o id na listagem — habilita o Desfazer
-  // só para conciliações feitas nesta sessão; ver undo.binding). Após recarregar, fica chrome.
+  // Mapa de sessão transação→conciliação (fast-path: conciliações feitas agora têm o id em memória). O
+  // lookup #175 cobre o pós-reload; o `reconciliationId` prefere a sessão e cai no lookup.
   const [recMap, setRecMap] = useState<ReadonlyMap<string, string>>(() => new Map())
   const recordReconciliation = useCallback((transactionId: string, reconciliationId: string) => {
     setRecMap((prev) => new Map(prev).set(transactionId, reconciliationId))
@@ -157,12 +149,29 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
       return next
     })
   }, [])
+  const sessionIdFor = (transactionId: string): string | null => recMap.get(transactionId) ?? null
+
+  const matchDetailsBinding = useMatchDetails(sessionIdFor)
+
+  const txQuery = useQuery(transactionsQueryOptions(ui.statementId))
+  const payablesQuery = useQuery(paidPayablesQueryOptions())
+  const suggestionsQuery = useQuery(suggestionsQueryOptions(ui.selectedTransactionId))
+
+  const importBinding = useImport(accountRef, (statementId) => {
+    dispatch({ type: 'set-statement', statementId })
+  })
 
   // ── Lista de transações (server-state → estado da tela via view-model pura) ──
   const allTx: readonly StatementTransaction[] = txQuery.data?.ok === true ? txQuery.data.value : []
   const payables: readonly PaidPayable[] = payablesQuery.data?.ok === true ? payablesQuery.data.value : []
   const selectedTx =
     ui.selectedTransactionId === null ? null : (allTx.find((t) => t.id === ui.selectedTransactionId) ?? null)
+
+  // Lookup #175 da transação selecionada (quando conciliada) → habilita o Desfazer do banner pós-reload.
+  const selectedReconLookupTxId = selectedTx !== null && !isPending(selectedTx) ? selectedTx.id : null
+  const selectedReconQuery = useQuery(transactionReconciliationQueryOptions(selectedReconLookupTxId))
+  const selectedReconId =
+    selectedReconQuery.data?.ok === true ? (selectedReconQuery.data.value?.reconciliationId ?? null) : null
 
   const pendentesCount = allTx.filter(isPending).length
 
@@ -268,7 +277,10 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     manualEntry: manualEntryBinding,
     undo: undoBinding,
     closePeriod: closePeriodBinding,
-    reconciliationIdFor: (transactionId) => recMap.get(transactionId) ?? null,
+    reconciliationIdFor: (transactionId) =>
+      recMap.get(transactionId) ??
+      (transactionId === selectedReconLookupTxId ? selectedReconId : null) ??
+      null,
     setTab: (tab) => {
       dispatch({ type: 'set-tab', tab })
     },

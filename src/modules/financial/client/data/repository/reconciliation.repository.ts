@@ -28,6 +28,7 @@ import type {
   RejectSuggestionInput,
   RejectedSuggestion,
   StatementTransaction,
+  TransactionReconciliation,
 } from '#modules/financial/client/data/model/reconciliation.model.ts'
 import type {
   ReconFnResult,
@@ -42,6 +43,9 @@ type ListPayablesFn = () => Promise<ReconFnResult<readonly PaidPayable[]>>
 type SuggestionsFn = (opts: {
   data: GetSuggestionsInput
 }) => Promise<ReconFnResult<readonly MatchSuggestion[]>>
+type GetTxReconFn = (opts: {
+  data: { transactionId: string }
+}) => Promise<ReconFnResult<TransactionReconciliation | null>>
 type RejectFn = (opts: { data: RejectSuggestionInput }) => Promise<ReconFnResult<RejectedSuggestion>>
 type ReconcileFn = (opts: {
   data: CreateReconciliationInput
@@ -65,6 +69,9 @@ export type ReconciliationRepository = Readonly<{
   ) => Promise<Result<readonly StatementTransaction[], ReconciliationError>>
   listPaidPayables: () => Promise<Result<readonly PaidPayable[], ReconciliationError>>
   getSuggestions: (i: GetSuggestionsInput) => Promise<Result<readonly MatchSuggestion[], ReconciliationError>>
+  getTransactionReconciliation: (
+    transactionId: string,
+  ) => Promise<Result<TransactionReconciliation | null, ReconciliationError>>
   rejectSuggestion: (i: RejectSuggestionInput) => Promise<Result<RejectedSuggestion, ReconciliationError>>
   createReconciliation: (
     i: CreateReconciliationInput,
@@ -89,6 +96,7 @@ export const createReconciliationRepository = (
     listTransactionsFn: ListTxFn
     listPaidPayablesFn: ListPayablesFn
     getSuggestionsFn: SuggestionsFn
+    getTransactionReconciliationFn: GetTxReconFn
     rejectSuggestionFn: RejectFn
     createReconciliationFn: ReconcileFn
     undoReconciliationFn: UndoFn
@@ -114,6 +122,10 @@ export const createReconciliationRepository = (
   },
   getSuggestions: async (i) => {
     const res = await deps.getSuggestionsFn({ data: i })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  getTransactionReconciliation: async (transactionId) => {
+    const res = await deps.getTransactionReconciliationFn({ data: { transactionId } })
     return res.ok ? ok(res.data) : err(res.error)
   },
   rejectSuggestion: async (i) => {

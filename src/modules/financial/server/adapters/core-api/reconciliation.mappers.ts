@@ -24,6 +24,7 @@ import type {
   RejectedSuggestion,
   StatementTransaction,
   SuggestionBand,
+  TransactionReconciliation,
 } from '#modules/financial/server/domain/reconciliation.io.ts'
 import {
   CoreApiAccountStatementSchema,
@@ -38,6 +39,7 @@ import {
   CoreApiReconciliationCreatedSchema,
   CoreApiRejectSchema,
   CoreApiSuggestionsSchema,
+  CoreApiTransactionReconciliationSchema,
   CoreApiTransactionsSchema,
   CoreApiUndoSchema,
 } from './reconciliation.schema.ts'
@@ -104,6 +106,17 @@ const mapReconType = (raw: string): ReconciliationType =>
   RECON_TYPES.includes(raw as ReconciliationType) ? (raw as ReconciliationType) : 'Individual'
 
 const mapBand = (raw: string): SuggestionBand => (raw === 'alta' ? 'alta' : 'media')
+
+const TX_RECON_TYPES: readonly TransactionReconciliation['type'][] = [
+  'Individual',
+  'Multiple',
+  'Partial',
+  'ManualEntry',
+]
+const mapTxReconType = (raw: string): TransactionReconciliation['type'] =>
+  TX_RECON_TYPES.includes(raw as TransactionReconciliation['type'])
+    ? (raw as TransactionReconciliation['type'])
+    : 'Individual'
 
 // ── API → Model (parse de borda; drift → err('server')) ─────────────────────────
 export const importToModel = (raw: unknown): Result<BankStatementImport, ReconciliationError> => {
@@ -226,6 +239,24 @@ export const suggestionsToModel = (raw: unknown): Result<readonly MatchSuggestio
     criteria: { ...s.criteria },
   }))
   return ok(items)
+}
+
+export const transactionReconciliationToModel = (
+  raw: unknown,
+): Result<TransactionReconciliation, ReconciliationError> => {
+  const parsed = CoreApiTransactionReconciliationSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  const d = parsed.data
+  return ok({
+    reconciliationId: d.id,
+    transactionId: d.transactionId,
+    type: mapTxReconType(d.type),
+    status: d.status === 'Undone' ? 'Undone' : 'Active',
+    reconciledBy: d.reconciledBy,
+    reconciledAt: d.reconciledAt,
+    differenceCents: d.differenceCents,
+    items: d.items.map((i) => ({ payableId: i.payableId, reconciledValueCents: i.reconciledValueCents })),
+  })
 }
 
 export const reconciliationCreatedToModel = (

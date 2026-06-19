@@ -3,10 +3,8 @@
  * devolvendo a transação a pendente; o registro fica como desfeito (trilha). Invalida as transações.
  * Erros → tag i18n.
  *
- * Limitação honesta: o contrato (#152) NÃO expõe o `reconciliationId` na listagem de transações nem um
- * lookup por transação — então o Desfazer só funciona para conciliações feitas **nesta sessão** (o id é
- * guardado no momento de conciliar). Após recarregar, o Desfazer fica anunciado/desabilitado até o
- * backend expor o id (candidato a issue).
+ * O `reconciliationId` vem do mapa de sessão (conciliações feitas agora) OU do lookup #175
+ * (`GET /statement-transactions/:id/reconciliation`) — então o Desfazer funciona inclusive após reload.
  */
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'

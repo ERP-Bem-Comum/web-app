@@ -7,6 +7,7 @@ import { importBankStatementFn } from '#modules/financial/server/adapters/server
 import { listStatementTransactionsFn } from '#modules/financial/server/adapters/server-fns/list-statement-transactions.query.fn.ts'
 import { listPaidPayablesFn } from '#modules/financial/server/adapters/server-fns/list-paid-payables.query.fn.ts'
 import { getTransactionSuggestionsFn } from '#modules/financial/server/adapters/server-fns/get-transaction-suggestions.query.fn.ts'
+import { getTransactionReconciliationFn } from '#modules/financial/server/adapters/server-fns/get-transaction-reconciliation.query.fn.ts'
 import { rejectSuggestionFn } from '#modules/financial/server/adapters/server-fns/reject-suggestion.service.fn.ts'
 import { createReconciliationFn } from '#modules/financial/server/adapters/server-fns/create-reconciliation.service.fn.ts'
 import { undoReconciliationFn } from '#modules/financial/server/adapters/server-fns/undo-reconciliation.service.fn.ts'
@@ -24,6 +25,7 @@ export const reconciliationRepository = createReconciliationRepository({
   listTransactionsFn: (opts) => listStatementTransactionsFn(opts),
   listPaidPayablesFn: () => listPaidPayablesFn(),
   getSuggestionsFn: (opts) => getTransactionSuggestionsFn(opts),
+  getTransactionReconciliationFn: (opts) => getTransactionReconciliationFn(opts),
   rejectSuggestionFn: (opts) => rejectSuggestionFn(opts),
   createReconciliationFn: (opts) => createReconciliationFn(opts),
   undoReconciliationFn: (opts) => undoReconciliationFn(opts),

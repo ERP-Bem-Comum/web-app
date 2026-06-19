@@ -315,15 +315,13 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
       <MatchDetailsModal
         open={vm.matchDetails.open}
         view={vm.matchDetails.view}
-        canUndo={vm.matchDetails.tx !== null && vm.reconciliationIdFor(vm.matchDetails.tx.id) !== null}
+        canUndo={vm.matchDetails.tx !== null && vm.matchDetails.reconciliationId !== null}
         undoing={vm.undo.undoing}
         onUndo={() => {
           const target = vm.matchDetails.tx
-          if (target === null) return
-          const reconciliationId = vm.reconciliationIdFor(target.id)
-          if (reconciliationId !== null) {
-            vm.undo.undo(reconciliationId, target.id)
-          }
+          const reconciliationId = vm.matchDetails.reconciliationId
+          if (target === null || reconciliationId === null) return
+          vm.undo.undo(reconciliationId, target.id)
           vm.matchDetails.close()
         }}
         onViewTitle={() => undefined}

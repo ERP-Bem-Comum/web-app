@@ -24,3 +24,12 @@ export const suggestionsQueryOptions = (transactionId: string | null) => ({
   enabled: transactionId !== null,
   staleTime: 15_000,
 })
+
+// Conciliação ativa de uma transação (#175) — só busca p/ transação conciliada (id != null). Habilita
+// Desfazer pós-reload + auditoria do modal de detalhes.
+export const transactionReconciliationQueryOptions = (transactionId: string | null) => ({
+  queryKey: ['financial', 'reconciliation', 'tx-reconciliation', transactionId] as const,
+  queryFn: () => reconciliationRepository.getTransactionReconciliation(transactionId ?? ''),
+  enabled: transactionId !== null,
+  staleTime: 15_000,
+})

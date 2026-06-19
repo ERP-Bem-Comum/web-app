@@ -43,6 +43,11 @@ export interface GetSuggestionsInput {
   transactionId: string
 }
 
+// Conciliação ativa de uma transação (GET /statement-transactions/:id/reconciliation, #175).
+export interface GetTransactionReconciliationInput {
+  transactionId: string
+}
+
 // Rejeitar uma sugestão (POST /statement-transactions/:id/reject-suggestion).
 export interface RejectSuggestionInput {
   transactionId: string
@@ -183,6 +188,24 @@ export type MatchSuggestion = Readonly<{
 }>
 
 export type RejectedSuggestion = Readonly<{ transactionId: string; payableId: string }>
+
+// Lookup da conciliação ativa por transação (#175 — GET /statement-transactions/:id/reconciliation).
+// 404 no core-api = transação sem conciliação ativa → a borda devolve `null` (não é erro). `type` inclui
+// 'ManualEntry'. Os itens trazem só `payableId`+valor conciliado (sem fornecedor/nº doc até #172).
+export type TransactionReconciliationItem = Readonly<{
+  payableId: string
+  reconciledValueCents: string
+}>
+export type TransactionReconciliation = Readonly<{
+  reconciliationId: string
+  transactionId: string
+  type: 'Individual' | 'Multiple' | 'Partial' | 'ManualEntry'
+  status: 'Active' | 'Undone'
+  reconciledBy: string
+  reconciledAt: string // ISO datetime
+  differenceCents: string | null // centavos; pode ser negativo (Discount); null se não houver diferença
+  items: readonly TransactionReconciliationItem[]
+}>
 
 export type ReconciliationCreated = Readonly<{
   reconciliationId: string

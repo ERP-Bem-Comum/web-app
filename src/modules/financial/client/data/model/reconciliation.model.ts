@@ -137,6 +137,22 @@ export type MatchSuggestion = Readonly<{
   criteria: SuggestionCriteria
 }>
 export type RejectedSuggestion = Readonly<{ transactionId: string; payableId: string }>
+// Conciliação ativa de uma transação (#175). `null` no repository = sem conciliação ativa. Itens trazem
+// só payableId+valor conciliado (sem fornecedor/nº doc até #172).
+export type TransactionReconciliationItem = Readonly<{
+  payableId: string
+  reconciledValueCents: string
+}>
+export type TransactionReconciliation = Readonly<{
+  reconciliationId: string
+  transactionId: string
+  type: 'Individual' | 'Multiple' | 'Partial' | 'ManualEntry'
+  status: 'Active' | 'Undone'
+  reconciledBy: string
+  reconciledAt: string // ISO datetime
+  differenceCents: string | null
+  items: readonly TransactionReconciliationItem[]
+}>
 export type ReconciliationCreated = Readonly<{
   reconciliationId: string
   type: ReconciliationType

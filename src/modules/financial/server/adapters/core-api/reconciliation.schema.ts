@@ -96,6 +96,22 @@ export const CoreApiSuggestionSchema = z.object({
 export type CoreApiSuggestion = z.infer<typeof CoreApiSuggestionSchema>
 export const CoreApiSuggestionsSchema = z.object({ suggestions: z.array(CoreApiSuggestionSchema) })
 
+// Conciliação ativa de uma transação (#175 — GET /statement-transactions/:id/reconciliation). `id` é o
+// reconciliationId. `treatment` da diferença NÃO é serializado pelo core-api hoje (só differenceCents).
+export const CoreApiTransactionReconciliationSchema = z.object({
+  id: z.string().trim(),
+  transactionId: z.string().trim(),
+  type: z.string().trim(), // 'Individual' | 'Multiple' | 'Partial' | 'ManualEntry'
+  status: z.string().trim(), // 'Active' | 'Undone' (lookup só devolve Active)
+  reconciledBy: z.string().trim(),
+  reconciledAt: z.string().trim(), // ISO datetime
+  differenceCents: z.string().trim().nullable().catch(null),
+  items: z
+    .array(z.object({ payableId: z.string().trim(), reconciledValueCents: z.string().trim() }))
+    .catch([]),
+})
+export type CoreApiTransactionReconciliation = z.infer<typeof CoreApiTransactionReconciliationSchema>
+
 // Conciliar (POST /reconciliations).
 export const CoreApiReconciliationCreatedSchema = z.object({
   reconciliationId: z.string().trim(),

@@ -21,6 +21,7 @@ import {
   reconciliationCreatedToModel,
   rejectToModel,
   suggestionsToModel,
+  transactionReconciliationToModel,
   transactionsToModel,
   undoToModel,
 } from './reconciliation.mappers.ts'
@@ -120,6 +121,19 @@ export const createCoreApiReconciliationClient = (baseUrl: string): Reconciliati
     })
     if (isErr(r)) return err(mapHttpError(r.error))
     return suggestionsToModel(r.value)
+  },
+  getTransactionReconciliation: async (i, token) => {
+    const r = await resultFetch<unknown>(
+      `${baseUrl}/statement-transactions/${i.transactionId}/reconciliation`,
+      { token },
+    )
+    if (isErr(r)) {
+      const mapped = mapHttpError(r.error)
+      // 404 = transação sem conciliação ativa (pendente/já desfeita) → vazio, não erro.
+      if (mapped === 'not-found') return ok(null)
+      return err(mapped)
+    }
+    return transactionReconciliationToModel(r.value)
   },
   rejectSuggestion: async (i, token) => {
     const r = await resultFetch<unknown>(
