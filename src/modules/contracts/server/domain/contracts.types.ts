@@ -13,31 +13,31 @@
 // Vive no domínio (puro); adapters e client-data REEXPORTAM daqui (boundary: domain não importa nada
 // de fora). Antes havia 3 cópias divergentes (domain/errors, adapters/shared, client/repository).
 export type ContractsError =
-  | 'invalid-code'           // código/sequentialNumber inválido
-  | 'invalid-value'          // valor <= 0 ou teto de OS excedido
-  | 'invalid-period'         // período de vigência inválido
-  | 'missing-contractor'     // contratante obrigatório não informado
-  | 'contract-not-found'     // 404
-  | 'amendment-not-found'    // 404 aditivo
+  | 'invalid-code' // código/sequentialNumber inválido
+  | 'invalid-value' // valor <= 0 ou teto de OS excedido
+  | 'invalid-period' // período de vigência inválido
+  | 'missing-contractor' // contratante obrigatório não informado
+  | 'contract-not-found' // 404
+  | 'amendment-not-found' // 404 aditivo
   | 'invalid-amendment-type' // tipo de aditivo inválido
-  | 'contract-not-active'    // 409: aditivo só é permitido em contrato Ativo (Em Andamento)
-  | 'amendment-not-extending'        // 422: nova data de término não estende a vigência atual
+  | 'contract-not-active' // 409: aditivo só é permitido em contrato Ativo (Em Andamento)
+  | 'amendment-not-extending' // 422: nova data de término não estende a vigência atual
   | 'amendment-invalid-new-end-date' // 422: nova data de término inválida
   | 'amendment-cannot-extend-indefinite' // 422: contrato com vigência indeterminada não tem prazo a estender
   | 'amendment-suppression-exceeds-value' // 422: supressão maior que o valor atual do contrato
-  | 'connectivity'           // backend fora / timeout
-  | 'server'                 // 5xx / inesperado
-  | 'unauthorized'           // 401 / 403
-  | 'not-implemented'        // operação ainda não existe no core-api (sem rota)
-  | 'invalid-pdf'            // arquivo não é PDF assinado válido (magic bytes %PDF)
-  | 'file-too-large'         // documento acima do limite (20 MiB)
-  | 'invalid-signed-at'      // data de assinatura ausente/inválida/futura
-  | 'no-signed-document'     // ativar sem documento assinado anexado
-  | 'document-conflict'      // documento já anexado/substituído/removido ou de outro contrato
-  | 'storage-unavailable'    // backend de objetos (MinIO/S3) indisponível
-  | 'terminate-no-document'  // 422 terminate-no-signed-document: distrato sem doc `signed_termination`
+  | 'connectivity' // backend fora / timeout
+  | 'server' // 5xx / inesperado
+  | 'unauthorized' // 401 / 403
+  | 'not-implemented' // operação ainda não existe no core-api (sem rota)
+  | 'invalid-pdf' // arquivo não é PDF assinado válido (magic bytes %PDF)
+  | 'file-too-large' // documento acima do limite (20 MiB)
+  | 'invalid-signed-at' // data de assinatura ausente/inválida/futura
+  | 'no-signed-document' // ativar sem documento assinado anexado
+  | 'document-conflict' // documento já anexado/substituído/removido ou de outro contrato
+  | 'storage-unavailable' // backend de objetos (MinIO/S3) indisponível
+  | 'terminate-no-document' // 422 terminate-no-signed-document: distrato sem doc `signed_termination`
   | 'terminate-invalid-date' // 422 terminate-invalid-date: data efetiva ausente/inválida/futura
-  | 'contract-not-pending'   // 409 ContractNotPending: cancelamento só é permitido em contrato Pendente
+  | 'contract-not-pending' // 409 ContractNotPending: cancelamento só é permitido em contrato Pendente
 
 export type ContractClassification = 'Contract' | 'ServiceOrder'
 export type ContractModel = 'Service' | 'Donation'
@@ -158,6 +158,9 @@ export interface ListContractsInput {
   minValue?: number
   maxValue?: number
   budgetPlanId?: string
+  // #116: filtro por contraparte (server-side). contractorType = enum minúsculo do core-api (= PartnerKind).
+  contractorId?: string
+  contractorType?: 'supplier' | 'financier' | 'collaborator' | 'act'
   order: 'ASC' | 'DESC'
 }
 

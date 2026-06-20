@@ -1,8 +1,10 @@
 /**
  * Hidratação do parceiro selecionado (Lançar Documento) — ADAPTER React. Para QUALQUER tipo de favorecido
- * (Fornecedor/Financiador/Colaborador/Ato), busca (cross-módulo só via public-api — §I) o contrato
- * "Em Andamento" do parceiro (`listContractsFn` + match client-side pelo id correspondente ao tipo, pois o
- * list-input não filtra por contratado) → preenche a Categorização + chip do contrato.
+ * (Fornecedor/Financiador/Colaborador/Ato), busca (cross-módulo só via public-api — §I) os contratos
+ * "Em Andamento" do parceiro com filtro **server-side** por contraparte (`contractorId`+`contractorType`,
+ * #116) → preenche a Categorização + chip do contrato. O match client-side (`contractMatchesPartner`)
+ * permanece como rede de segurança (o servidor já restringe ao parceiro; antes do #116 o filtro era SÓ no
+ * client sobre a 1ª página, podendo perder contratos além do limite).
  *
  * Banco: só o Fornecedor tem `getSupplierFn` (card "Conta do fornecedor"); demais tipos exibem o hint.
  * Exibição agora; a PERSISTÊNCIA da categorização derivada vem do backend (core-api#48). O create já envia
@@ -61,9 +63,17 @@ export function usePartnerHydration(supplierRef: string, kind: PartnerKind | nul
     enabled,
     queryFn: async (): Promise<PartnerHydration> => {
       if (kind === null) return EMPTY_HYDRATION
-      // Contrato "Em Andamento" do parceiro — para TODOS os tipos (match pelo id do tipo).
+      // Contratos "Em Andamento" do parceiro — filtro server-side por contraparte (#116): só os deste
+      // parceiro voltam (não mais "1ª página + filtro no client"). contractorType = kind (mesmos literais).
       const contracts = await listContractsFn({
-        data: { status: 'Em Andamento', page: 1, limit: 100, order: 'DESC' },
+        data: {
+          status: 'Em Andamento',
+          contractorId: supplierRef,
+          contractorType: kind,
+          page: 1,
+          limit: 100,
+          order: 'DESC',
+        },
       })
       // TODOS os contratos "Em Andamento" do parceiro (pode haver mais de um → "Alterar" no chip).
       const partnerContracts = contracts.ok

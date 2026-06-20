@@ -38,11 +38,11 @@ export const SLUG_TO_ERROR: Partial<Record<string, ContractsError>> = {
   'invalid-value': 'invalid-value',
   'invalid-period': 'invalid-period',
   'missing-contractor': 'missing-contractor',
-  'unauthorized': 'unauthorized',
+  unauthorized: 'unauthorized',
   'contract-sequential-number-duplicated': 'server',
   // Cancelamento (§1.7, #32): 409 ao cancelar contrato não-Pendente. O core-api envia
   // `ContractNotPending` (PascalCase) e/ou `contract-not-pending` (kebab) — cobrimos ambos.
-  'ContractNotPending': 'contract-not-pending',
+  ContractNotPending: 'contract-not-pending',
   'contract-not-pending': 'contract-not-pending',
   'amendment-contract-mismatch': 'server',
   'activate-contract-no-signed-document': 'no-signed-document',
@@ -54,7 +54,7 @@ export const SLUG_TO_ERROR: Partial<Record<string, ContractsError>> = {
   AmendmentImpactValueZero: 'invalid-value',
   'amendment-impact-value-zero': 'invalid-value',
   'money-negative-value': 'invalid-value',
-  'ContractNotActive': 'contract-not-active',
+  ContractNotActive: 'contract-not-active',
   // Aditivo de PRAZO: a nova data de término precisa estender a vigência atual (ser posterior).
   'create-amendment-term-change-not-extending': 'amendment-not-extending',
   'create-amendment-invalid-new-end-date': 'amendment-invalid-new-end-date',
@@ -112,7 +112,9 @@ export const statusApiToDomain = (apiStatus: string): Contract['status'] => {
   return map[apiStatus] ?? 'Finalizado'
 }
 
-export const statusDomainToApi = (domainStatus: Contract['status']): 'Pending' | 'Active' | 'Expired' | 'Terminated' | 'Cancelled' | undefined => {
+export const statusDomainToApi = (
+  domainStatus: Contract['status'],
+): 'Pending' | 'Active' | 'Expired' | 'Terminated' | 'Cancelled' | undefined => {
   const map: Record<Contract['status'], 'Pending' | 'Active' | 'Expired' | 'Terminated' | 'Cancelled'> = {
     Pendente: 'Pending',
     'Em Andamento': 'Active',
@@ -129,7 +131,9 @@ const parseIsoDate = (s: string): Date => new Date(s)
 const blankToUndefined = (s: string | null | undefined): string | undefined =>
   s != null && s.trim() !== '' ? s : undefined
 
-const apiPeriodToDomain = (p: { kind: 'Fixed'; start: string; end: string } | { kind: 'Indefinite'; start: string }) => ({
+const apiPeriodToDomain = (
+  p: { kind: 'Fixed'; start: string; end: string } | { kind: 'Indefinite'; start: string },
+) => ({
   start: parseIsoDate(p.start),
   end: p.kind === 'Fixed' ? parseIsoDate(p.end) : parseIsoDate(p.start),
 })
@@ -175,7 +179,10 @@ const apiAmendmentToDomain = (a: {
   startDate?: string
   signedAt?: string | null
 }): Amendment => {
-  const base: Pick<Amendment, 'id' | 'amendmentNumber' | 'description' | 'status' | 'createdAt' | 'type' | 'startDate' | 'signedAt'> = {
+  const base: Pick<
+    Amendment,
+    'id' | 'amendmentNumber' | 'description' | 'status' | 'createdAt' | 'type' | 'startDate' | 'signedAt'
+  > = {
     id: a.id,
     amendmentNumber: a.amendmentNumber,
     description: a.description || undefined,
@@ -328,7 +335,17 @@ const mapContractorToDomain = (k: ContractorDto): Partial<Contract> => {
     financier: k.type === 'financier' ? snapshot : undefined,
     collaborator: k.type === 'collaborator' ? snapshot : undefined,
     act: k.type === 'act' ? snapshot : undefined,
-    ...(bank != null ? { bancaryInfo: { bank: bank.bank, agency: bank.agency, accountNumber: bank.accountNumber, dv: bank.checkDigit, updatedAt } } : {}),
+    ...(bank != null
+      ? {
+          bancaryInfo: {
+            bank: bank.bank,
+            agency: bank.agency,
+            accountNumber: bank.accountNumber,
+            dv: bank.checkDigit,
+            updatedAt,
+          },
+        }
+      : {}),
     ...(pix != null ? { pixInfo: { keyType: pix.keyType, key: pix.key, updatedAt } } : {}),
   }
 }
@@ -389,7 +406,9 @@ const apiTimelineEntryToDomain = (e: Record<string, unknown>): ContractHistoryEv
   description: toStr(e.kind), // Backend não envia description; usamos kind como fallback
   occurredAt: toStr(e.occurredAt),
   ...(typeof e.actor === 'string' ? { userName: e.actor } : {}),
-  ...(typeof e.subjectAmendmentId === 'string' ? { metadata: { subjectAmendmentId: e.subjectAmendmentId } } : {}),
+  ...(typeof e.subjectAmendmentId === 'string'
+    ? { metadata: { subjectAmendmentId: e.subjectAmendmentId } }
+    : {}),
 })
 
 const apiTimelineToDomain = (raw: unknown): Result<readonly ContractHistoryEvent[], ContractsError> => {
@@ -397,7 +416,12 @@ const apiTimelineToDomain = (raw: unknown): Result<readonly ContractHistoryEvent
   if (!parsed.success) {
     // Tentar formato antigo { events: [...] } para compatibilidade
     const legacyShape = { events: [] as unknown[] }
-    if (raw && typeof raw === 'object' && 'events' in raw && Array.isArray((raw as Record<string, unknown>).events)) {
+    if (
+      raw &&
+      typeof raw === 'object' &&
+      'events' in raw &&
+      Array.isArray((raw as Record<string, unknown>).events)
+    ) {
       legacyShape.events = (raw as Record<string, unknown>).events as unknown[]
     }
     if (legacyShape.events.length > 0) {
@@ -420,45 +444,86 @@ export type CoreApiContractsClient = Readonly<{
   getById: (id: string, token: string) => Promise<Result<Contract, ContractsError>>
   create: (input: CreateContractInput, token: string) => Promise<Result<Contract, ContractsError>>
   update: (input: UpdateContractInput, token: string) => Promise<Result<Contract, ContractsError>>
-  createAmendment: (contractId: string, input: CreateAmendmentInput, token: string) => Promise<Result<Amendment, ContractsError>>
+  createAmendment: (
+    contractId: string,
+    input: CreateAmendmentInput,
+    token: string,
+  ) => Promise<Result<Amendment, ContractsError>>
   getHistory: (id: string, token: string) => Promise<Result<readonly ContractHistoryEvent[], ContractsError>>
-  uploadDocument: (contractId: string, input: Readonly<{ bytes: Uint8Array; fileName: string }>, token: string) => Promise<Result<void, ContractsError>>
-  uploadTerminationDocument: (contractId: string, input: Readonly<{ bytes: Uint8Array; fileName: string }>, token: string) => Promise<Result<void, ContractsError>>
-  activate: (contractId: string, signedAtIso: string, token: string) => Promise<Result<Contract, ContractsError>>
-  uploadAmendmentDocument: (contractId: string, amendmentId: string, input: Readonly<{ bytes: Uint8Array; fileName: string; signedAt: string }>, token: string) => Promise<Result<void, ContractsError>>
-  homologateAmendment: (contractId: string, amendmentId: string, homologatedBy: string, token: string) => Promise<Result<Contract, ContractsError>>
-  endContract: (contractId: string, terminatedAt: string, reason: string, token: string) => Promise<Result<Contract, ContractsError>>
+  uploadDocument: (
+    contractId: string,
+    input: Readonly<{ bytes: Uint8Array; fileName: string }>,
+    token: string,
+  ) => Promise<Result<void, ContractsError>>
+  uploadTerminationDocument: (
+    contractId: string,
+    input: Readonly<{ bytes: Uint8Array; fileName: string }>,
+    token: string,
+  ) => Promise<Result<void, ContractsError>>
+  activate: (
+    contractId: string,
+    signedAtIso: string,
+    token: string,
+  ) => Promise<Result<Contract, ContractsError>>
+  uploadAmendmentDocument: (
+    contractId: string,
+    amendmentId: string,
+    input: Readonly<{ bytes: Uint8Array; fileName: string; signedAt: string }>,
+    token: string,
+  ) => Promise<Result<void, ContractsError>>
+  homologateAmendment: (
+    contractId: string,
+    amendmentId: string,
+    homologatedBy: string,
+    token: string,
+  ) => Promise<Result<Contract, ContractsError>>
+  endContract: (
+    contractId: string,
+    terminatedAt: string,
+    reason: string,
+    token: string,
+  ) => Promise<Result<Contract, ContractsError>>
   // Cancelamento (§1.7) — DELETE /contracts/:id (soft): Pendente → Cancelled. SEPARADO do distrato (D5).
   cancelContract: (contractId: string, token: string) => Promise<Result<Contract, ContractsError>>
-  getDocumentContent: (contractId: string, documentId: string, token: string) => Promise<Result<Readonly<{ bytes: Uint8Array; fileName: string; contentType: string }>, ContractsError>>
+  getDocumentContent: (
+    contractId: string,
+    documentId: string,
+    token: string,
+  ) => Promise<Result<Readonly<{ bytes: Uint8Array; fileName: string; contentType: string }>, ContractsError>>
 }>
+
+// Query string da listagem (GET /contracts) — PURA (testável). Status traduz domínio→API; #116 envia o
+// filtro por contraparte (contractorId+contractorType). Filtros que o backend ainda ignore são inócuos.
+export const buildContractListQuery = (input: ListContractsInput): string => {
+  const params = new URLSearchParams()
+  params.set('page', String(input.page))
+  params.set('limit', String(input.limit))
+  params.set('order', input.order)
+  if (input.search) params.set('search', input.search)
+  if (input.status) {
+    const apiStatus = statusDomainToApi(input.status)
+    if (apiStatus) params.set('status', apiStatus)
+  }
+  if (input.contractType) params.set('contractType', input.contractType)
+  if (input.contractPeriodStart)
+    params.set('contractPeriodStart', input.contractPeriodStart.toISOString().slice(0, 10))
+  if (input.contractPeriodEnd)
+    params.set('contractPeriodEnd', input.contractPeriodEnd.toISOString().slice(0, 10))
+  if (input.minValue !== undefined) params.set('minValue', String(input.minValue))
+  if (input.maxValue !== undefined) params.set('maxValue', String(input.maxValue))
+  if (input.budgetPlanId !== undefined) params.set('budgetPlanId', input.budgetPlanId)
+  // #116: filtro por contraparte server-side (AND com os demais).
+  if (input.contractorId) params.set('contractorId', input.contractorId)
+  if (input.contractorType) params.set('contractorType', input.contractorType)
+  return params.toString()
+}
 
 export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsClient => {
   const authHeader = (token: string) => ({ Authorization: `Bearer ${token}` })
 
-  const toQuery = (input: ListContractsInput): string => {
-    const params = new URLSearchParams()
-    params.set('page', String(input.page))
-    params.set('limit', String(input.limit))
-    params.set('order', input.order)
-    if (input.search) params.set('search', input.search)
-    if (input.status) {
-      const apiStatus = statusDomainToApi(input.status)
-      if (apiStatus) params.set('status', apiStatus)
-    }
-    // Send all filters even if backend currently ignores some
-    if (input.contractType) params.set('contractType', input.contractType)
-    if (input.contractPeriodStart) params.set('contractPeriodStart', input.contractPeriodStart.toISOString().slice(0, 10))
-    if (input.contractPeriodEnd) params.set('contractPeriodEnd', input.contractPeriodEnd.toISOString().slice(0, 10))
-    if (input.minValue !== undefined) params.set('minValue', String(input.minValue))
-    if (input.maxValue !== undefined) params.set('maxValue', String(input.maxValue))
-    if (input.budgetPlanId !== undefined) params.set('budgetPlanId', input.budgetPlanId)
-    return params.toString()
-  }
-
   return {
     list: async (input, token) => {
-      const r = await resultFetch<unknown>(`${baseUrl}/contracts?${toQuery(input)}`, {
+      const r = await resultFetch<unknown>(`${baseUrl}/contracts?${buildContractListQuery(input)}`, {
         method: 'GET',
         headers: authHeader(token),
       })
@@ -590,13 +655,18 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
       // com o sentido no `kind` (supressão com valor negativo → money-negative-value 422).
       const kind =
         input.type === 'valor'
-          ? signedValue < 0 ? 'Suppression' : 'Addition'
+          ? signedValue < 0
+            ? 'Suppression'
+            : 'Addition'
           : amendmentTypeToKind(input.type)
       const body: Record<string, unknown> = {
         kind,
         amendmentNumber: `ADT-${String(Date.now())}`,
         // Gambiarra distrato: marca a descrição p/ a leitura reconhecer (kind no backend é Misc).
-        description: input.type === 'distrato' ? `${DISTRATO_MARKER}${input.description ?? ''}` : input.description ?? '',
+        description:
+          input.type === 'distrato'
+            ? `${DISTRATO_MARKER}${input.description ?? ''}`
+            : (input.description ?? ''),
       }
       if (kind === 'Addition' || kind === 'Suppression') {
         body.impactValueCents = Math.abs(signedValue)
@@ -683,11 +753,20 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
       // POST /contracts/:id/amendments/:amendmentId/documents — binário (octet-stream) + metadados na query.
       // #32: a query de doc de ADITIVO exige `signedAt` (data de assinatura no MESMO passo do upload+attach —
       // amendmentDocumentUploadQuerySchema). Sem ele o core-api responde 400 validation.
-      const r = await octetStreamFetch<unknown>(`${baseUrl}/contracts/${contractId}/amendments/${amendmentId}/documents`, {
-        token,
-        bytes,
-        query: { categoria: 'signed_amendment', fileName, mimeType: 'application/pdf', signedElectronically: 'true', signedAt },
-      })
+      const r = await octetStreamFetch<unknown>(
+        `${baseUrl}/contracts/${contractId}/amendments/${amendmentId}/documents`,
+        {
+          token,
+          bytes,
+          query: {
+            categoria: 'signed_amendment',
+            fileName,
+            mimeType: 'application/pdf',
+            signedElectronically: 'true',
+            signedAt,
+          },
+        },
+      )
       if (isErr(r)) return err(mapHttpError(r.error))
       const parsed = CoreApiDocumentSchema.safeParse(r.value)
       if (!parsed.success) return err('server')
@@ -697,11 +776,14 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
     homologateAmendment: async (contractId, amendmentId, homologatedBy, token) => {
       // POST /contracts/:id/amendments/:amendmentId/homologate — { homologatedBy }. Exige o documento
       // signed_amendment já enviado (parsePendingWithDocument no backend). Devolve o contrato atualizado.
-      const r = await resultFetch<unknown>(`${baseUrl}/contracts/${contractId}/amendments/${amendmentId}/homologate`, {
-        method: 'POST',
-        body: { homologatedBy },
-        headers: authHeader(token),
-      })
+      const r = await resultFetch<unknown>(
+        `${baseUrl}/contracts/${contractId}/amendments/${amendmentId}/homologate`,
+        {
+          method: 'POST',
+          body: { homologatedBy },
+          headers: authHeader(token),
+        },
+      )
       if (isErr(r)) return err(mapHttpError(r.error))
       return apiContractDetailToDomain(r.value)
     },
@@ -733,9 +815,16 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
     getDocumentContent: async (contractId, documentId, token) => {
       // GET /contracts/:id/documents/:documentId/content — bytes do documento (preview/download via BFF).
       // CTR-HTTP-DOCUMENT-CONTENT. Ownership (doc ↔ contrato, direto ou via aditivo) é verificada no core-api.
-      const r = await documentContentFetch(`${baseUrl}/contracts/${contractId}/documents/${documentId}/content`, { token })
+      const r = await documentContentFetch(
+        `${baseUrl}/contracts/${contractId}/documents/${documentId}/content`,
+        { token },
+      )
       if (isErr(r)) return err(mapHttpError(r.error))
-      return ok({ bytes: r.value.bytes, fileName: r.value.fileName ?? 'documento.pdf', contentType: r.value.contentType })
+      return ok({
+        bytes: r.value.bytes,
+        fileName: r.value.fileName ?? 'documento.pdf',
+        contentType: r.value.contentType,
+      })
     },
   }
 }

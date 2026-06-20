@@ -10,7 +10,13 @@ import type * as D from '../domain/contracts.types.ts'
 export const ContractClassificationSchema = z.enum(['Contract', 'ServiceOrder'])
 export const ContractModelSchema = z.enum(['Service', 'Donation'])
 export const ContractTypeSchema = z.enum(['Supplier', 'Financier', 'Collaborator', 'ACT'])
-export const ContractStatusSchema = z.enum(['Pendente', 'Em Andamento', 'Finalizado', 'Distrato', 'Cancelado'])
+export const ContractStatusSchema = z.enum([
+  'Pendente',
+  'Em Andamento',
+  'Finalizado',
+  'Distrato',
+  'Cancelado',
+])
 export const AmendmentTypeSchema = z.enum(['prazo', 'valor', 'escopo', 'outro', 'distrato'])
 export const AmendmentStatusSchema = z.enum(['Pendente', 'Homologado'])
 
@@ -95,7 +101,9 @@ export const ContractSchema = z.object({
   program: z.object({ id: z.uuid(), name: z.string().trim(), sigla: z.string().trim() }).optional(),
   budgetPlanId: z.uuid().optional(),
   // budgetPlan (bloco) ainda não retornado pelo #32 (só budgetPlanId) → opcional/undefined (follow-up).
-  budgetPlan: z.object({ id: z.uuid(), scenarioName: z.string().trim(), year: z.number(), version: z.number() }).optional(),
+  budgetPlan: z
+    .object({ id: z.uuid(), scenarioName: z.string().trim(), year: z.number(), version: z.number() })
+    .optional(),
   categorizacao: z.string().trim().optional(),
   centroDeCusto: z.string().trim().optional(),
   observations: z.string().trim().optional(),
@@ -121,6 +129,9 @@ export const ListContractsInputSchema = z.object({
   minValue: z.number().optional(),
   maxValue: z.number().optional(),
   budgetPlanId: z.uuid().optional(),
+  // #116: filtro por contraparte (server-side). contractorType minúsculo = enum do core-api (= PartnerKind).
+  contractorId: z.string().trim().optional(),
+  contractorType: z.enum(['supplier', 'financier', 'collaborator', 'act']).optional(),
   order: z.enum(['ASC', 'DESC']).default('DESC'),
 })
 
@@ -150,7 +161,12 @@ export const CreateContractInputSchema = z.object({
 export const AttachSignedDocumentInputSchema = z.object({
   contractId: z.uuid(),
   fileBase64: z.string().trim().min(1),
-  fileName: z.string().trim().min(1).max(255).regex(/^[^/\\:*?"<>|]+$/, 'invalid-file-name'),
+  fileName: z
+    .string()
+    .trim()
+    .min(1)
+    .max(255)
+    .regex(/^[^/\\:*?"<>|]+$/, 'invalid-file-name'),
   // String ISO (ex.: "2026-06-01") vinda do <input type="date">. Validação de data válida/não-futura
   // acontece na borda da server fn (decodificação + checagem), não aqui.
   signedAt: z.string().trim().min(1),
@@ -160,7 +176,12 @@ export const AttachAmendmentDocumentInputSchema = z.object({
   contractId: z.uuid(),
   amendmentId: z.uuid(),
   fileBase64: z.string().trim().min(1),
-  fileName: z.string().trim().min(1).max(255).regex(/^[^/\\:*?"<>|]+$/, 'invalid-file-name'),
+  fileName: z
+    .string()
+    .trim()
+    .min(1)
+    .max(255)
+    .regex(/^[^/\\:*?"<>|]+$/, 'invalid-file-name'),
   signedAt: z.string().trim().min(1),
 })
 
@@ -170,7 +191,12 @@ export const AttachAmendmentDocumentInputSchema = z.object({
 export const EndContractInputSchema = z.object({
   contractId: z.uuid(),
   fileBase64: z.string().trim().min(1),
-  fileName: z.string().trim().min(1).max(255).regex(/^[^/\\:*?"<>|]+$/, 'invalid-file-name'),
+  fileName: z
+    .string()
+    .trim()
+    .min(1)
+    .max(255)
+    .regex(/^[^/\\:*?"<>|]+$/, 'invalid-file-name'),
   terminatedAt: z.string().trim().min(1),
   reason: z.string().trim().min(1),
 })
@@ -211,7 +237,7 @@ export const ListContractsResponseSchema = z.object({
 // de ser atribuível e o typecheck falha AQUI (não nos consumidores). Unidirecional por causa do
 // readonly do domínio vs. arrays mutáveis do z.infer.
 type AssertEqual<A, B> = [A] extends [B] ? true : never
- 
+
 const _g_money: AssertEqual<z.infer<typeof MoneySchema>, D.Money> = true
 const _g_period: AssertEqual<z.infer<typeof PeriodSchema>, D.Period> = true
 const _g_partner: AssertEqual<z.infer<typeof PartnerSnapshotSchema>, D.PartnerSnapshot> = true
@@ -222,15 +248,36 @@ const _g_file: AssertEqual<z.infer<typeof ContractFileSchema>, D.ContractFile> =
 const _g_contract: AssertEqual<z.infer<typeof ContractSchema>, D.Contract> = true
 const _g_listInput: AssertEqual<z.infer<typeof ListContractsInputSchema>, D.ListContractsInput> = true
 const _g_createInput: AssertEqual<z.infer<typeof CreateContractInputSchema>, D.CreateContractInput> = true
-const _g_attachSigned: AssertEqual<z.infer<typeof AttachSignedDocumentInputSchema>, D.AttachSignedDocumentInput> = true
-const _g_attachAmend: AssertEqual<z.infer<typeof AttachAmendmentDocumentInputSchema>, D.AttachAmendmentDocumentInput> = true
+const _g_attachSigned: AssertEqual<
+  z.infer<typeof AttachSignedDocumentInputSchema>,
+  D.AttachSignedDocumentInput
+> = true
+const _g_attachAmend: AssertEqual<
+  z.infer<typeof AttachAmendmentDocumentInputSchema>,
+  D.AttachAmendmentDocumentInput
+> = true
 const _g_endInput: AssertEqual<z.infer<typeof EndContractInputSchema>, D.EndContractInput> = true
 const _g_updateInput: AssertEqual<z.infer<typeof UpdateContractInputSchema>, D.UpdateContractInput> = true
 const _g_cancelInput: AssertEqual<z.infer<typeof CancelContractInputSchema>, D.CancelContractInput> = true
 const _g_createAmend: AssertEqual<z.infer<typeof CreateAmendmentInputSchema>, D.CreateAmendmentInput> = true
 const _g_listResp: AssertEqual<z.infer<typeof ListContractsResponseSchema>, D.ListContractsResponse> = true
- 
+
 void [
-  _g_money, _g_period, _g_partner, _g_bank, _g_pix, _g_amendment, _g_file, _g_contract,
-  _g_listInput, _g_createInput, _g_attachSigned, _g_attachAmend, _g_endInput, _g_updateInput, _g_cancelInput, _g_createAmend, _g_listResp,
+  _g_money,
+  _g_period,
+  _g_partner,
+  _g_bank,
+  _g_pix,
+  _g_amendment,
+  _g_file,
+  _g_contract,
+  _g_listInput,
+  _g_createInput,
+  _g_attachSigned,
+  _g_attachAmend,
+  _g_endInput,
+  _g_updateInput,
+  _g_cancelInput,
+  _g_createAmend,
+  _g_listResp,
 ]
