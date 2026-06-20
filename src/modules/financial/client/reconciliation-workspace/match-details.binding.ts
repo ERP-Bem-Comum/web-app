@@ -1,0 +1,51 @@
+/**
+ * useMatchDetails — controller do modal "Detalhes da conciliação" (clique numa linha conciliada do
+ * Extrato). UI-state (qual transação está aberta) + lookup da conciliação ativa (#175) p/ AUDITORIA real
+ * (quando/quem) e o `reconciliationId` do Desfazer (mesmo após reload). O lado EXTRATO é real; o lado
+ * TÍTULO segue "—" até o backend enriquecer (#172). O `reconciliationId` prefere o mapa de sessão
+ * (conciliações feitas agora) e cai no lookup; assim o Desfazer funciona em ambos os casos.
+ */
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+
+import { transactionReconciliationQueryOptions } from './reconciliation-workspace.query.ts'
+import {
+  matchAuditFromLookup,
+  matchDetailsView,
+  type MatchDetailsView,
+} from './reconciliation-workspace.view-model.ts'
+import type { StatementTransaction } from '#modules/financial/client/data/model/reconciliation.model.ts'
+
+export type MatchDetailsBinding = Readonly<{
+  open: boolean
+  tx: StatementTransaction | null
+  view: MatchDetailsView | null
+  reconciliationId: string | null
+  openFor: (tx: StatementTransaction) => void
+  close: () => void
+}>
+
+export function useMatchDetails(sessionIdFor: (transactionId: string) => string | null): MatchDetailsBinding {
+  const [tx, setTx] = useState<StatementTransaction | null>(null)
+  // Só busca a conciliação de transação conciliada (Reconciled/ManualEntry). Pending → sem lookup.
+  const lookupTxId = tx !== null && tx.reconciliationStatus !== 'Pending' ? tx.id : null
+  const lookupQuery = useQuery(transactionReconciliationQueryOptions(lookupTxId))
+  const lookup = lookupQuery.data?.ok === true ? lookupQuery.data.value : null
+
+  const audit = lookup !== null ? matchAuditFromLookup(lookup) : null
+  const view = tx === null ? null : matchDetailsView(tx, null, audit)
+  const reconciliationId = tx === null ? null : (sessionIdFor(tx.id) ?? lookup?.reconciliationId ?? null)
+
+  return {
+    open: tx !== null,
+    tx,
+    view,
+    reconciliationId,
+    openFor: (t) => {
+      setTx(t)
+    },
+    close: () => {
+      setTx(null)
+    },
+  }
+}

@@ -69,6 +69,15 @@ describe('rootViewModel.sidebarWidth / showPageHeader', () => {
     // Financeiro: o grid mantém o h1 do shell; o Lançar Documento tem topbar própria.
     assert.strictEqual(rootViewModel.showPageHeader('/financeiro/contas-a-pagar'), true)
     assert.strictEqual(rootViewModel.showPageHeader('/financeiro/contas-a-pagar/lancar'), false)
+    // Conciliação: o grid (Contas Bancárias) mantém o h1; o workspace de uma conta usa o hero próprio.
+    assert.strictEqual(rootViewModel.showPageHeader('/financeiro/conciliacao'), true)
+    assert.strictEqual(rootViewModel.showPageHeader('/financeiro/conciliacao/acc-123'), false)
+  })
+
+  it('fullBleedContent: só o workspace de conciliação é full-bleed (o grid mantém o padding)', () => {
+    assert.strictEqual(rootViewModel.fullBleedContent('/financeiro/conciliacao/acc-123'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/financeiro/conciliacao'), false)
+    assert.strictEqual(rootViewModel.fullBleedContent('/dashboard'), false)
   })
 })
 

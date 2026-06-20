@@ -1,0 +1,196 @@
+/**
+ * Use-cases da Conciliação Bancária (application) — thin sobre a borda; sem I/O direto (o client é
+ * injetado). Result em tudo (§II). `ReconciliationClient` é a porta — implementada em adapters
+ * (`core-api-reconciliation.ts`). Espelha `financial.use-cases.ts`.
+ */
+import type { Result } from '#shared/primitives/result.ts'
+import type { ReconciliationError } from '#modules/financial/server/domain/errors/reconciliation.errors.ts'
+import type {
+  BankStatementImport,
+  BatchReconcileInput,
+  BatchResult,
+  CedenteAccount,
+  CreateCedenteAccountInput,
+  ClosePeriodInput,
+  CreateReconciliationInput,
+  ExportReconciliationInput,
+  GetStatementSuggestionsInput,
+  GetSuggestionsInput,
+  GetTransactionReconciliationInput,
+  ImportStatementInput,
+  ListReconciliationPeriodsInput,
+  ListTransactionsInput,
+  ManualEntryCreated,
+  ManualEntryInput,
+  MatchSuggestion,
+  PaidPayable,
+  PeriodClosed,
+  ReconciliationCreated,
+  ReconciliationExport,
+  ReconciliationPeriod,
+  ReconciliationUndone,
+  RejectSuggestionInput,
+  RejectedSuggestion,
+  StatementSuggestion,
+  StatementTransaction,
+  TransactionReconciliation,
+  UndoReconciliationInput,
+} from '#modules/financial/server/domain/reconciliation.io.ts'
+
+export type ReconciliationClient = Readonly<{
+  importStatement: (
+    i: ImportStatementInput,
+    token: string,
+  ) => Promise<Result<BankStatementImport, ReconciliationError>>
+  listTransactions: (
+    i: ListTransactionsInput,
+    token: string,
+  ) => Promise<Result<readonly StatementTransaction[], ReconciliationError>>
+  listPaidPayables: (token: string) => Promise<Result<readonly PaidPayable[], ReconciliationError>>
+  listCedenteAccounts: (token: string) => Promise<Result<readonly CedenteAccount[], ReconciliationError>>
+  getCedenteAccount: (id: string, token: string) => Promise<Result<CedenteAccount, ReconciliationError>>
+  createCedenteAccount: (
+    i: CreateCedenteAccountInput,
+    token: string,
+  ) => Promise<Result<CedenteAccount, ReconciliationError>>
+  getSuggestions: (
+    i: GetSuggestionsInput,
+    token: string,
+  ) => Promise<Result<readonly MatchSuggestion[], ReconciliationError>>
+  getStatementSuggestions: (
+    i: GetStatementSuggestionsInput,
+    token: string,
+  ) => Promise<Result<readonly StatementSuggestion[], ReconciliationError>>
+  getTransactionReconciliation: (
+    i: GetTransactionReconciliationInput,
+    token: string,
+  ) => Promise<Result<TransactionReconciliation | null, ReconciliationError>>
+  rejectSuggestion: (
+    i: RejectSuggestionInput,
+    token: string,
+  ) => Promise<Result<RejectedSuggestion, ReconciliationError>>
+  createReconciliation: (
+    i: CreateReconciliationInput,
+    token: string,
+  ) => Promise<Result<ReconciliationCreated, ReconciliationError>>
+  undoReconciliation: (
+    i: UndoReconciliationInput,
+    token: string,
+  ) => Promise<Result<ReconciliationUndone, ReconciliationError>>
+  createManualEntry: (
+    i: ManualEntryInput,
+    token: string,
+  ) => Promise<Result<ManualEntryCreated, ReconciliationError>>
+  batchReconcile: (i: BatchReconcileInput, token: string) => Promise<Result<BatchResult, ReconciliationError>>
+  closePeriod: (i: ClosePeriodInput, token: string) => Promise<Result<PeriodClosed, ReconciliationError>>
+  listReconciliationPeriods: (
+    i: ListReconciliationPeriodsInput,
+    token: string,
+  ) => Promise<Result<readonly ReconciliationPeriod[], ReconciliationError>>
+  exportReconciliation: (
+    i: ExportReconciliationInput,
+    token: string,
+  ) => Promise<Result<ReconciliationExport, ReconciliationError>>
+}>
+
+type Deps = Readonly<{ client: ReconciliationClient }>
+
+export const createImportStatement =
+  (deps: Deps) =>
+  (i: ImportStatementInput, token: string): Promise<Result<BankStatementImport, ReconciliationError>> =>
+    deps.client.importStatement(i, token)
+
+export const createListTransactions =
+  (deps: Deps) =>
+  (
+    i: ListTransactionsInput,
+    token: string,
+  ): Promise<Result<readonly StatementTransaction[], ReconciliationError>> =>
+    deps.client.listTransactions(i, token)
+
+export const createListPaidPayables =
+  (deps: Deps) =>
+  (token: string): Promise<Result<readonly PaidPayable[], ReconciliationError>> =>
+    deps.client.listPaidPayables(token)
+
+export const createListCedenteAccounts =
+  (deps: Deps) =>
+  (token: string): Promise<Result<readonly CedenteAccount[], ReconciliationError>> =>
+    deps.client.listCedenteAccounts(token)
+
+export const createGetCedenteAccount =
+  (deps: Deps) =>
+  (id: string, token: string): Promise<Result<CedenteAccount, ReconciliationError>> =>
+    deps.client.getCedenteAccount(id, token)
+
+export const createCreateCedenteAccount =
+  (deps: Deps) =>
+  (i: CreateCedenteAccountInput, token: string): Promise<Result<CedenteAccount, ReconciliationError>> =>
+    deps.client.createCedenteAccount(i, token)
+
+export const createGetSuggestions =
+  (deps: Deps) =>
+  (i: GetSuggestionsInput, token: string): Promise<Result<readonly MatchSuggestion[], ReconciliationError>> =>
+    deps.client.getSuggestions(i, token)
+
+export const createGetStatementSuggestions =
+  (deps: Deps) =>
+  (
+    i: GetStatementSuggestionsInput,
+    token: string,
+  ): Promise<Result<readonly StatementSuggestion[], ReconciliationError>> =>
+    deps.client.getStatementSuggestions(i, token)
+
+export const createGetTransactionReconciliation =
+  (deps: Deps) =>
+  (
+    i: GetTransactionReconciliationInput,
+    token: string,
+  ): Promise<Result<TransactionReconciliation | null, ReconciliationError>> =>
+    deps.client.getTransactionReconciliation(i, token)
+
+export const createRejectSuggestion =
+  (deps: Deps) =>
+  (i: RejectSuggestionInput, token: string): Promise<Result<RejectedSuggestion, ReconciliationError>> =>
+    deps.client.rejectSuggestion(i, token)
+
+export const createCreateReconciliation =
+  (deps: Deps) =>
+  (
+    i: CreateReconciliationInput,
+    token: string,
+  ): Promise<Result<ReconciliationCreated, ReconciliationError>> =>
+    deps.client.createReconciliation(i, token)
+
+export const createUndoReconciliation =
+  (deps: Deps) =>
+  (i: UndoReconciliationInput, token: string): Promise<Result<ReconciliationUndone, ReconciliationError>> =>
+    deps.client.undoReconciliation(i, token)
+
+export const createCreateManualEntry =
+  (deps: Deps) =>
+  (i: ManualEntryInput, token: string): Promise<Result<ManualEntryCreated, ReconciliationError>> =>
+    deps.client.createManualEntry(i, token)
+
+export const createBatchReconcile =
+  (deps: Deps) =>
+  (i: BatchReconcileInput, token: string): Promise<Result<BatchResult, ReconciliationError>> =>
+    deps.client.batchReconcile(i, token)
+
+export const createClosePeriod =
+  (deps: Deps) =>
+  (i: ClosePeriodInput, token: string): Promise<Result<PeriodClosed, ReconciliationError>> =>
+    deps.client.closePeriod(i, token)
+
+export const createListReconciliationPeriods =
+  (deps: Deps) =>
+  (
+    i: ListReconciliationPeriodsInput,
+    token: string,
+  ): Promise<Result<readonly ReconciliationPeriod[], ReconciliationError>> =>
+    deps.client.listReconciliationPeriods(i, token)
+
+export const createExportReconciliation =
+  (deps: Deps) =>
+  (i: ExportReconciliationInput, token: string): Promise<Result<ReconciliationExport, ReconciliationError>> =>
+    deps.client.exportReconciliation(i, token)

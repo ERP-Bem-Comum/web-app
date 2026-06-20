@@ -55,6 +55,7 @@ const PAGE_TITLES: Readonly<Record<string, string>> = {
   // Financeiro — o título é desenhado pelo PageHeader do shell (padrão Contratos, Nunito); sem isto
   // cairia no fallback "ERP Bem Comum".
   '/financeiro/contas-a-pagar': 'Contas a Pagar',
+  '/financeiro/conciliacao': 'Contas Bancárias',
   '/login': 'Login',
 }
 
@@ -63,6 +64,8 @@ const isPrefixPath = (path: string, route: string): boolean => path === route ||
 
 export const rootViewModel = {
   resolvePageTitle: (path: string): string => {
+    // Conciliação: grid (entrada) = "Contas Bancárias"; workspace de uma conta = "Conciliação bancária".
+    if (path.startsWith('/financeiro/conciliacao/')) return 'Conciliação bancária'
     for (const [route, title] of Object.entries(PAGE_TITLES)) {
       if (isPrefixPath(path, route)) return title
     }
@@ -83,8 +86,16 @@ export const rootViewModel = {
     !isPrefixPath(path, '/usuarios') &&
     !isPrefixPath(path, '/minha-conta') &&
     !isPrefixPath(path, '/programas') &&
+    // Workspace de conciliação (uma conta) já tem o hero da conta como header — sem h1 do shell.
+    // O grid /financeiro/conciliacao (sem barra final) mantém o h1 "Contas Bancárias".
+    !path.startsWith('/financeiro/conciliacao/') &&
     // Lançar Documento tem topbar própria (modal-like, ←/✕) — o grid mantém o h1 do shell.
     !isPrefixPath(path, '/financeiro/contas-a-pagar/lancar'),
+
+  // Conteúdo "full-bleed" (sem o padding do shell): o workspace de conciliação espelha o mock — hero, abas,
+  // corpo e footer encostam nas bordas da área de conteúdo (igual incluir contrato). Só o workspace
+  // (sub-rota), não o grid /financeiro/conciliacao, que mantém o layout padrão com h1.
+  fullBleedContent: (path: string): boolean => path.startsWith('/financeiro/conciliacao/'),
 
   /**
    * RBAC: remove seções/subitens cujo `requiredPermission` não está em `permissions`. Uma seção de

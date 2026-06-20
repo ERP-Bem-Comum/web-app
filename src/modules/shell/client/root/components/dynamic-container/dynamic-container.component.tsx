@@ -10,6 +10,7 @@ import * as s from './dynamic-container.css.ts'
 export interface DynamicContainerProps {
   readonly pageTitle: string
   readonly showPageHeader: boolean
+  readonly fullBleed?: boolean
   readonly sidebarWidth: number
   readonly collapsed: boolean
   readonly children: ReactNode
@@ -18,12 +19,13 @@ export interface DynamicContainerProps {
 export function DynamicContainer({
   pageTitle,
   showPageHeader,
+  fullBleed = false,
   sidebarWidth,
   collapsed,
   children,
 }: DynamicContainerProps): ReactNode {
   return (
-    <main className={s.main}>
+    <main className={fullBleed ? `${s.main} ${s.mainFullBleed}` : s.main}>
       {showPageHeader && (
         <header className={s.pageHeader}>
           <h1 className={s.pageTitle}>{pageTitle}</h1>
