@@ -11,6 +11,7 @@ import { useId, useState } from 'react'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { UploadIcon } from '#shared/ui/icons/index.ts'
+import { isPdfFile } from '#shared/files/pdf-file.ts'
 import type { Contract } from '#modules/contracts/public-api/index.ts'
 import * as s from './attach-document-modal.css.ts'
 
@@ -33,7 +34,14 @@ function formatDate(date: Date | null | undefined): string {
   return date ? date.toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '—'
 }
 
-export function AttachDocumentModal({ open, contract, onClose, onSubmit, submitting, errorTag }: AttachDocumentModalProps): ReactNode {
+export function AttachDocumentModal({
+  open,
+  contract,
+  onClose,
+  onSubmit,
+  submitting,
+  errorTag,
+}: AttachDocumentModalProps): ReactNode {
   const [file, setFile] = useState<File | null>(null)
   const [signedAt, setSignedAt] = useState('')
   const [dragOver, setDragOver] = useState(false)
@@ -46,19 +54,25 @@ export function AttachDocumentModal({ open, contract, onClose, onSubmit, submitt
   const isPending = contract.status === 'Pendente'
   const contractNumber = `${contract.classification === 'Contract' ? 'CT' : 'OS'} ${contract.sequentialNumber}`
   const existingDoc = contract.files[0]
-  const partnerName = contract.supplier?.name ?? contract.financier?.name ?? contract.collaborator?.name ?? '—'
+  const partnerName =
+    contract.supplier?.name ?? contract.financier?.name ?? contract.collaborator?.name ?? '—'
   const period = contract.currentPeriod ?? contract.originalPeriod
   // Preview de status: Pendente vira "Em Andamento" ao anexar (como no modal de finalização do create).
   const previewActive = isPending ? file !== null : true
   const statusLabel = isPending ? (file !== null ? 'Em Andamento' : 'Pendente') : contract.status
 
   const pickFile = (f: File | undefined): void => {
-    if (f?.type === 'application/pdf') setFile(f)
+    // Aceita por MIME OU extensão (.pdf) — File.type é não-confiável; o backend valida magic bytes.
+    if (f !== undefined && isPdfFile(f)) setFile(f)
   }
   const handleDrop = (e: DragEvent<HTMLDivElement>): void => {
-    e.preventDefault(); setDragOver(false); pickFile(e.dataTransfer.files[0])
+    e.preventDefault()
+    setDragOver(false)
+    pickFile(e.dataTransfer.files[0])
   }
-  const handleSelect = (e: ChangeEvent<HTMLInputElement>): void => { pickFile(e.target.files?.[0]) }
+  const handleSelect = (e: ChangeEvent<HTMLInputElement>): void => {
+    pickFile(e.target.files?.[0])
+  }
 
   const canSubmit = file !== null && signedAt !== '' && !submitting
 
@@ -70,11 +84,20 @@ export function AttachDocumentModal({ open, contract, onClose, onSubmit, submitt
       ref={(el) => {
         if (el !== null && !el.open) {
           // jsdom não implementa showModal() → fallback abre o dialog (open) p/ o conteúdo ficar acessível.
-          try { el.showModal() } catch { el.open = true }
+          try {
+            el.showModal()
+          } catch {
+            el.open = true
+          }
         }
       }}
-      onCancel={(e) => { e.preventDefault(); onClose() }}
-      onClick={(e) => { if (e.currentTarget === e.target) onClose() }}
+      onCancel={(e) => {
+        e.preventDefault()
+        onClose()
+      }}
+      onClick={(e) => {
+        if (e.currentTarget === e.target) onClose()
+      }}
     >
       <div className={s.content}>
         <div className={s.header}>
@@ -87,7 +110,14 @@ export function AttachDocumentModal({ open, contract, onClose, onSubmit, submitt
               {isPending ? t('contracts.attach.subtitle') : 'Documento anexado e contrato efetivado.'}
             </div>
           </div>
-          <button type="button" className={s.close} onClick={onClose} aria-label={t('contracts.attach.cancel')}>×</button>
+          <button
+            type="button"
+            className={s.close}
+            onClick={onClose}
+            aria-label={t('contracts.attach.cancel')}
+          >
+            ×
+          </button>
         </div>
 
         <div className={s.body}>
@@ -95,7 +125,9 @@ export function AttachDocumentModal({ open, contract, onClose, onSubmit, submitt
           <div className={s.summaryGrid}>
             <div className={s.summaryCard}>
               <span className={s.summaryLabel}>Contratado</span>
-              <span className={s.summaryValue} title={partnerName}>{partnerName}</span>
+              <span className={s.summaryValue} title={partnerName}>
+                {partnerName}
+              </span>
             </div>
             <div className={s.summaryCard}>
               <span className={s.summaryLabel}>Valor</span>
@@ -103,13 +135,17 @@ export function AttachDocumentModal({ open, contract, onClose, onSubmit, submitt
             </div>
             <div className={s.summaryCard}>
               <span className={s.summaryLabel}>Vigência</span>
-              <span className={s.summaryValue}>{formatDate(period.start)} → {formatDate(period.end)}</span>
+              <span className={s.summaryValue}>
+                {formatDate(period.start)} → {formatDate(period.end)}
+              </span>
             </div>
           </div>
 
           <div className={s.statusRow}>
             <span className={s.statusRowLabel}>Status do contrato</span>
-            <span className={`${s.statusBadge} ${previewActive ? s.statusBadgeActive : s.statusBadgePending}`}>
+            <span
+              className={`${s.statusBadge} ${previewActive ? s.statusBadgeActive : s.statusBadgePending}`}
+            >
               <span style={{ fontSize: '0.5rem', lineHeight: 1 }}>●</span>
               {statusLabel}
             </span>
@@ -117,7 +153,9 @@ export function AttachDocumentModal({ open, contract, onClose, onSubmit, submitt
 
           {/* Data de assinatura */}
           <div className={s.field}>
-            <label className={s.label} htmlFor={`${inputId}-date`}>{t('contracts.attach.dateLabel')}</label>
+            <label className={s.label} htmlFor={`${inputId}-date`}>
+              {t('contracts.attach.dateLabel')}
+            </label>
             {isPending ? (
               <>
                 <input
@@ -125,31 +163,61 @@ export function AttachDocumentModal({ open, contract, onClose, onSubmit, submitt
                   className={s.input}
                   type="date"
                   value={signedAt}
-                  onChange={(e) => { setSignedAt(e.target.value) }}
+                  onChange={(e) => {
+                    setSignedAt(e.target.value)
+                  }}
                 />
                 <span className={s.hint}>{t('contracts.attach.dateHint')}</span>
               </>
             ) : (
-              <div className={s.input}><span>{formatDate(contract.signedAt)}</span></div>
+              <div className={s.input}>
+                <span>{formatDate(contract.signedAt)}</span>
+              </div>
             )}
           </div>
 
           {/* Documento */}
           <div className={s.field}>
-            <label className={s.label} htmlFor={`${inputId}-file`}>{t('contracts.attach.fileLabel')}</label>
+            <label className={s.label} htmlFor={`${inputId}-file`}>
+              {t('contracts.attach.fileLabel')}
+            </label>
             {isPending ? (
               <div
                 className={`${s.uploadZone} ${dragOver ? s.uploadZoneActive : ''}`}
                 onDrop={handleDrop}
-                onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
-                onDragLeave={() => { setDragOver(false) }}
+                onDragOver={(e) => {
+                  e.preventDefault()
+                  setDragOver(true)
+                }}
+                onDragLeave={() => {
+                  setDragOver(false)
+                }}
               >
-                <input id={`${inputId}-file`} type="file" accept="application/pdf" style={{ display: 'none' }} onChange={handleSelect} />
-                <label htmlFor={`${inputId}-file`} style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%', cursor: 'pointer' }}>
+                <input
+                  id={`${inputId}-file`}
+                  type="file"
+                  accept="application/pdf"
+                  style={{ display: 'none' }}
+                  onChange={handleSelect}
+                />
+                <label
+                  htmlFor={`${inputId}-file`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    width: '100%',
+                    cursor: 'pointer',
+                  }}
+                >
                   <UploadIcon />
                   <div className={s.uploadInfo}>
-                    <span className={s.uploadName}>{file !== null ? file.name : t('contracts.attach.fileHint')}</span>
-                    <span className={s.uploadMeta}>{file !== null ? `${(file.size / 1024 / 1024).toFixed(1)} MB` : 'PDF · ≤ 20 MB'}</span>
+                    <span className={s.uploadName}>
+                      {file !== null ? file.name : t('contracts.attach.fileHint')}
+                    </span>
+                    <span className={s.uploadMeta}>
+                      {file !== null ? `${(file.size / 1024 / 1024).toFixed(1)} MB` : 'PDF · ≤ 20 MB'}
+                    </span>
                   </div>
                 </label>
               </div>
@@ -164,24 +232,34 @@ export function AttachDocumentModal({ open, contract, onClose, onSubmit, submitt
             )}
           </div>
 
-          {errorTag !== null && (<div className={s.errorAlert} role="alert">{t(errorTag)}</div>)}
+          {errorTag !== null && (
+            <div className={s.errorAlert} role="alert">
+              {t(errorTag)}
+            </div>
+          )}
         </div>
 
         <div className={s.footer}>
           {isPending ? (
             <>
-              <button type="button" className={s.buttonSecondary} onClick={onClose}>{t('contracts.attach.cancel')}</button>
+              <button type="button" className={s.buttonSecondary} onClick={onClose}>
+                {t('contracts.attach.cancel')}
+              </button>
               <button
                 type="button"
                 className={s.buttonPrimary}
                 disabled={!canSubmit}
-                onClick={() => { if (file !== null) onSubmit({ file, signedAt }) }}
+                onClick={() => {
+                  if (file !== null) onSubmit({ file, signedAt })
+                }}
               >
                 {submitting ? t('common.loading') : t('contracts.attach.submit')}
               </button>
             </>
           ) : (
-            <button type="button" className={s.buttonSecondary} onClick={onClose}>Fechar</button>
+            <button type="button" className={s.buttonSecondary} onClick={onClose}>
+              Fechar
+            </button>
           )}
         </div>
       </div>
