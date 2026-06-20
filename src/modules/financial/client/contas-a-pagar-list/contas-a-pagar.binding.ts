@@ -38,6 +38,7 @@ export type ContasAPagarBinding = Readonly<{
   onAddFilter: (id: FilterDimId) => void
   onRemoveFilter: (id: FilterDimId) => void
   onSetVencimento: (from: string | undefined, to: string | undefined) => void
+  onSetEmissao: (from: string | undefined, to: string | undefined) => void
   onSetTipo: (tipo: DocumentType | undefined) => void
   onSetFornecedor: (ref: string | undefined) => void
   onClearFilters: () => void
@@ -63,6 +64,8 @@ export function useContasAPagar(): ContasAPagarBinding {
       supplierRef: filters.fornecedor,
       dueFrom: filters.vencimento?.from,
       dueTo: filters.vencimento?.to,
+      issuedFrom: filters.emissao?.from, // #163
+      issuedTo: filters.emissao?.to,
     }),
   )
 
@@ -91,6 +94,7 @@ export function useContasAPagar(): ContasAPagarBinding {
   // Remove uma dimensão ativa E limpa o valor correspondente no `filters`.
   const dropFilterValue = (id: FilterDimId): void => {
     if (id === 'vencimento') setFilters((f) => ({ ...f, vencimento: undefined }))
+    else if (id === 'emissao') setFilters((f) => ({ ...f, emissao: undefined }))
     else if (id === 'tipo') setFilters((f) => ({ ...f, tipo: undefined }))
     else setFilters((f) => ({ ...f, fornecedor: undefined }))
   }
@@ -120,6 +124,10 @@ export function useContasAPagar(): ContasAPagarBinding {
     },
     onSetVencimento: (from, to) => {
       setFilters((f) => ({ ...f, vencimento: { from, to } }))
+      setPage(1)
+    },
+    onSetEmissao: (from, to) => {
+      setFilters((f) => ({ ...f, emissao: { from, to } }))
       setPage(1)
     },
     onSetTipo: (tipo) => {

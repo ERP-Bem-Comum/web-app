@@ -22,6 +22,7 @@ const fields = (over: Partial<DocumentFormFields> = {}): DocumentFormFields => (
   supplierRef: '',
   paymentMethod: '',
   grossValue: '',
+  issueDate: '',
   dueDate: '',
   description: '',
   discounts: '',
@@ -77,6 +78,15 @@ describe('DocumentForm', () => {
     expect(screen.getByText(tr('financial.create.section.identificacao'))).toBeTruthy()
     expect(screen.getByLabelText(tr('financial.create.field.type'))).toBeTruthy()
     expect(screen.getByLabelText(tr('financial.create.field.grossValue'))).toBeTruthy()
+  })
+
+  it('#163: campo Emissão é editável e dispara onText("issueDate")', () => {
+    const onText = vi.fn()
+    render(<DocumentForm {...baseProps({ onText })} />)
+    const input = screen.getByLabelText(tr('financial.create.field.emissao'))
+    expect((input as HTMLInputElement).disabled).toBe(false)
+    fireEvent.change(input, { target: { value: '2026-06-01' } })
+    expect(onText).toHaveBeenCalledWith('issueDate', '2026-06-01')
   })
 
   it('mostra o bloco de retenções (6 inputs) para NFS-e', () => {

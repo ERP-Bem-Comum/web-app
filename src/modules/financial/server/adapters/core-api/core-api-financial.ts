@@ -28,6 +28,8 @@ const buildListQuery = (input: ListDocumentsInput): string => {
   if (input.type !== undefined) p.set('type', input.type)
   if (input.dueFrom !== undefined) p.set('dueFrom', input.dueFrom)
   if (input.dueTo !== undefined) p.set('dueTo', input.dueTo)
+  if (input.issuedFrom !== undefined) p.set('issuedFrom', input.issuedFrom) // #163
+  if (input.issuedTo !== undefined) p.set('issuedTo', input.issuedTo)
   p.set('page', String(input.page))
   p.set('pageSize', String(input.pageSize))
   return p.toString()

@@ -113,6 +113,7 @@ export type DocumentFormFields = Readonly<{
   supplierRef: string
   paymentMethod: PaymentMethod | ''
   grossValue: string
+  issueDate: string // data de emissão (#163) — opcional; ISO YYYY-MM-DD vindo do <input type=date>
   dueDate: string
   description: string
   // Composição: Descontos (discountsCents) e Juros/Multa (interestCents). Editáveis (OCR ou manual).
@@ -332,6 +333,7 @@ export const buildCreateInput = (fields: DocumentFormFields): CreateDocumentInpu
     programRef: trimToUndefined(fields.programRef),
     retentions,
     registeredTaxes: buildRegisteredTaxInputs(fields),
+    issueDate: trimToUndefined(fields.issueDate),
     dueDate: fields.dueDate,
     description: trimToUndefined(fields.description),
   }
@@ -370,6 +372,7 @@ export const buildDraftInput = (fields: DocumentFormFields): CreateDocumentInput
     programRef: trimToUndefined(fields.programRef),
     retentions,
     registeredTaxes: buildRegisteredTaxInputs(fields),
+    issueDate: trimToUndefined(fields.issueDate),
     dueDate: trimToUndefined(fields.dueDate),
     description: trimToUndefined(fields.description),
     asDraft: true,
@@ -389,6 +392,7 @@ export type FieldLocks = Readonly<{
   supplier: boolean
   paymentMethod: boolean
   grossValue: boolean
+  issueDate: boolean // #163 — imutável após criação (o PATCH não aceita issueDate)
   dueDate: boolean
   description: boolean
   retentions: boolean
@@ -401,6 +405,7 @@ export const NO_LOCKS: FieldLocks = {
   supplier: false,
   paymentMethod: false,
   grossValue: false,
+  issueDate: false,
   dueDate: false,
   description: false,
   retentions: false,
@@ -416,6 +421,7 @@ export const editLocksFor = (status: DocumentStatus): FieldLocks => {
     supplier: true,
     paymentMethod: true,
     retentions: true,
+    issueDate: true, // #163 — emissão não é ajustável (o PATCH não a aceita)
     // Ajustáveis — liberados apenas em "Aberto".
     grossValue: !open,
     dueDate: !open,
@@ -458,6 +464,7 @@ export const hydrateFieldsFromDetail = (d: DocumentDetail): DocumentFormFields =
     supplierRef: d.supplierRef ?? '',
     paymentMethod: d.paymentMethod ?? '',
     grossValue: d.grossValueCents !== null ? centsToReais(d.grossValueCents) : '',
+    issueDate: d.issueDate ?? '', // #163 — hidrata a emissão no modo edição/consulta
     dueDate: d.dueDate ?? '',
     description: d.description ?? '',
     discounts: '', // composição não exposta no detalhe hoje (core-api#95) → edição via composição fica no create
@@ -504,6 +511,7 @@ export const ocrToFormPatch = (f: OcrExtractedFields): Partial<DocumentFormField
   ...(f.documentNumber !== undefined ? { documentNumber: f.documentNumber } : {}),
   ...(f.series !== undefined ? { series: f.series } : {}),
   ...(f.grossValueCents !== undefined ? { grossValue: centsToReais(f.grossValueCents) } : {}),
+  ...(f.issueDate !== undefined ? { issueDate: f.issueDate } : {}), // #163 — OCR extrai a emissão
   ...(f.dueDate !== undefined ? { dueDate: f.dueDate } : {}),
   ...(f.description !== undefined ? { description: f.description } : {}),
   ...(f.retentions !== undefined && f.retentions.length > 0

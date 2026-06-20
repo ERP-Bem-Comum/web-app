@@ -54,6 +54,7 @@ const base: DocumentFormFields = {
   supplierRef: 's-1',
   paymentMethod: 'PIX',
   grossValue: 'R$ 10.000,00',
+  issueDate: '',
   dueDate: '2026-06-10',
   description: 'Consultoria',
   discounts: '',
@@ -179,6 +180,12 @@ describe('buildCreateInput', () => {
   })
   it('null quando não pode submeter', () => {
     assert.equal(buildCreateInput({ ...base, documentNumber: '' }), null)
+  })
+  it('#163: envia issueDate quando preenchida; undefined quando vazia', () => {
+    const com = buildCreateInput({ ...base, issueDate: '2026-06-01' })
+    assert.equal(com?.issueDate, '2026-06-01')
+    const sem = buildCreateInput({ ...base, issueDate: '' })
+    assert.equal(sem?.issueDate, undefined)
   })
 })
 
@@ -368,6 +375,7 @@ const detail: DocumentDetail = {
   paymentMethod: 'PIX',
   grossValueCents: '1000000',
   netValueCents: '793500',
+  issueDate: '2026-06-01',
   dueDate: '2026-06-10',
   description: 'Consultoria',
   version: 3,
@@ -418,6 +426,10 @@ describe('hydrateFieldsFromDetail', () => {
     // CSRF (agregado) é hidratado em `pis` p/ o líquido/títulos baterem (read-only na edição).
     assert.match(f.retentions.pis, /255,00/)
   })
+  it('#163: hidrata a emissão do detalhe (issueDate)', () => {
+    assert.equal(hydrateFieldsFromDetail(detail).issueDate, '2026-06-01')
+    assert.equal(hydrateFieldsFromDetail({ ...detail, issueDate: null }).issueDate, '')
+  })
 })
 
 describe('canSaveEdit / buildAdjustInput', () => {
@@ -459,6 +471,8 @@ describe('ocrToFormPatch (costura OCR → form)', () => {
     assert.equal(patch.documentNumber, '0847')
     assert.equal(patch.grossValue, '1.600,00')
     assert.equal(patch.dueDate, '2026-07-10')
+    // #163 — não veio issueDate → não entra no patch
+    assert.equal('issueDate' in patch, false)
     // não veio série/descrição/retenção → não entram no patch
     assert.equal('series' in patch, false)
     assert.equal('retentions' in patch, false)
@@ -474,6 +488,10 @@ describe('ocrToFormPatch (costura OCR → form)', () => {
     assert.equal(patch.retentions?.irrf, '150,00')
     assert.equal(patch.retentions?.pis, '46,50')
     assert.equal(patch.retentions?.iss, '')
+  })
+
+  it('#163: mapeia issueDate quando o OCR a extrai', () => {
+    assert.equal(ocrToFormPatch({ issueDate: '2026-06-01' }).issueDate, '2026-06-01')
   })
 
   it('vazio → patch vazio', () => {

@@ -49,7 +49,7 @@ export type GridRow = Readonly<{
   supplierDoc: string | null // CNPJ já mascarado (ex.: "37.364.305/0001-92") ou null
   contract: string // número do contrato vinculado ("0003/2026") ou "—"
   paymentMethod: PaymentMethod | null // forma de pagamento (a view traduz via i18n)
-  emissao: string // data de emissão — GATED (não vem na lista; core-api#95) → "—" até o backend expor
+  emissao: string // data de emissão (#163), DD/MM/YYYY; "—" quando não informada
   gross: string // valor bruto formatado (BRL) ou "—"
   grossCents: string | null // bruto em centavos p/ o somatório da seleção
   due: string
@@ -85,7 +85,7 @@ export type ListState =
   | Readonly<{ tag: 'ready'; rows: readonly GridRow[]; page: PageInfo }>
 
 // Colunas (Figma 205-638), enriquecidas pela 012/#47: + Contrato, Forma de Pagamento, Emissão, Bruto.
-// `Emissão` entra como coluna (placeholder "—") até o backend expô-la na lista (core-api#95).
+// `Emissão` (#163) já vem na lista (issueDate); "—" quando o documento não a informou.
 export const COLUMNS = [
   { key: 'type', labelTag: 'financial.list.col.type', align: 'left' },
   { key: 'documentNumber', labelTag: 'financial.list.col.documentNumber', align: 'left' },
@@ -126,10 +126,10 @@ export const STATUS_CHIPS = [
 
 // ── Filtros avançados ("Adicionar filtro", estilo do mock) ────────────────────
 // Só as dimensões com filtro REAL no backend (server-side, combinam com os status chips): Vencimento
-// (dueFrom/dueTo), Tipo (type) e Fornecedor (supplierRef). As demais do protótipo (Nº doc, CNPJ/CPF,
-// Competência, Valor, Contrato, Programa) foram DESCARTADAS por ora — voltam quando o backend expor
-// (core-api#164/#163) e o cliente exigir. `enabled` mantido p/ reintroduzir como chrome no futuro.
-export type FilterDimId = 'vencimento' | 'tipo' | 'fornecedor'
+// (dueFrom/dueTo), Emissão (issuedFrom/issuedTo, #163), Tipo (type) e Fornecedor (supplierRef). As demais
+// do protótipo (Nº doc, CNPJ/CPF, Competência, Valor, Contrato, Programa) seguem DESCARTADAS por ora —
+// voltam quando o backend expor (core-api#164) e o cliente exigir.
+export type FilterDimId = 'vencimento' | 'emissao' | 'tipo' | 'fornecedor'
 export type FilterTypeTag = 'TEXTO' | 'PERÍODO' | 'VALOR' | 'LISTA' | 'BUSCA'
 export type FilterDim = Readonly<{
   id: FilterDimId
@@ -148,6 +148,13 @@ export const FILTER_DIMS: readonly FilterDim[] = [
     enabled: true,
   },
   {
+    id: 'emissao',
+    labelTag: 'financial.list.filter.dim.emissao',
+    groupTag: 'financial.list.filter.group.datas',
+    typeTag: 'PERÍODO',
+    enabled: true, // #163 — issuedFrom/issuedTo
+  },
+  {
     id: 'tipo',
     labelTag: 'financial.list.filter.dim.tipo',
     groupTag: 'financial.list.filter.group.classificacao',
@@ -161,12 +168,6 @@ export const FILTER_DIMS: readonly FilterDim[] = [
     typeTag: 'BUSCA',
     enabled: true,
   },
-  // TODO(core-api#163): quando a EMISSÃO (issueDate) for modelada no backend + ganhar filtro na lista
-  // (issuedFrom/issuedTo), adicionar aqui a dimensão de Emissão (grupo "Datas", tipo PERÍODO):
-  //   { id: 'emissao', labelTag: 'financial.list.filter.dim.emissao', groupTag: '…group.datas',
-  //     typeTag: 'PERÍODO', enabled: true }
-  // + 'emissao' no FilterDimId, em AdvancedFilters ({ emissao?: {from?,to?} }), no binding (issuedFrom/
-  //   issuedTo no query) e um chip no ActiveFiltersRow. O resto do framework já suporta.
 ]
 
 // Ordem dos grupos no menu (espelha o mock; só os grupos com dimensão ativa).
@@ -218,6 +219,7 @@ export const filterByLabel = <T extends Readonly<{ label: string }>>(
 // Valores dos filtros avançados ativos (só os com backend). Vazio = sem filtro.
 export type AdvancedFilters = Readonly<{
   vencimento?: Readonly<{ from?: string; to?: string }> // YYYY-MM-DD → dueFrom/dueTo
+  emissao?: Readonly<{ from?: string; to?: string }> // YYYY-MM-DD → issuedFrom/issuedTo (#163)
   tipo?: DocumentType
   fornecedor?: string // supplierRef (uuid)
 }>
@@ -246,7 +248,7 @@ const toRow = (
   supplierDoc: maskCnpj(resolveDoc?.(it.supplierRef) ?? null),
   contract: it.contractRef !== null ? (resolveContract?.(it.contractRef) ?? it.contractRef) : DASH,
   paymentMethod: it.paymentMethod,
-  emissao: DASH, // GATED: a emissão só virá quando o backend expô-la na lista (core-api#95)
+  emissao: it.issueDate !== null && it.issueDate !== '' ? formatDue(it.issueDate) : DASH, // #163
   gross: it.grossValueCents !== null && it.grossValueCents !== '' ? centsToBRL(it.grossValueCents) : DASH,
   grossCents: it.grossValueCents,
   due: it.dueDate !== null && it.dueDate !== '' ? formatDue(it.dueDate) : DASH,
@@ -367,7 +369,7 @@ export type DocumentDetailView = Readonly<{
   status: DocumentStatus
   supplier: string
   supplierDoc: string | null // CNPJ mascarado do favorecido (sublinha do Fornecedor no drawer)
-  emissao: string // GATED — placeholder "—" até o detalhe expor a emissão (core-api#95)
+  emissao: string // data de emissão (#163), DD/MM/YYYY; "—" quando não informada
   due: string
   gross: string
   net: string
@@ -403,7 +405,7 @@ export const mapDocumentDetail = (
   status: d.status,
   supplier: resolveSupplier(d.supplierRef),
   supplierDoc: maskCnpj(resolveDoc?.(d.supplierRef) ?? null),
-  emissao: DASH, // GATED: emissão não vem no detalhe ainda (core-api#95)
+  emissao: d.issueDate !== null && d.issueDate !== '' ? formatDue(d.issueDate) : DASH, // #163
   due: d.dueDate !== null && d.dueDate !== '' ? formatDue(d.dueDate) : DASH,
   gross: d.grossValueCents !== null && d.grossValueCents !== '' ? centsToBRL(d.grossValueCents) : DASH,
   net: d.netValueCents !== null && d.netValueCents !== '' ? centsToBRL(d.netValueCents) : DASH,

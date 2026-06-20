@@ -61,6 +61,7 @@ const validDoc = {
   paymentMethod: 'PIX',
   grossValueCents: '1000000',
   netValueCents: '793500',
+  issueDate: '2026-06-01',
   dueDate: '2026-06-10',
   description: 'Consultoria',
   payables: [
@@ -80,6 +81,14 @@ describe('detailToModel', () => {
       assert.equal(r.value.payables[1]?.retentionType, 'ISS')
     }
   })
+  it('#163: mapeia issueDate; ausente (backend antigo) → null', () => {
+    const r = detailToModel(validDoc)
+    if (isOk(r)) assert.equal(r.value.issueDate, '2026-06-01')
+    const { issueDate, ...semEmissao } = validDoc
+    void issueDate
+    const r2 = detailToModel(semEmissao)
+    if (isOk(r2)) assert.equal(r2.value.issueDate, null)
+  })
   it('drift de contrato → err(server)', () => {
     assert.equal(isErr(detailToModel({ id: 1 })), true)
   })
@@ -92,5 +101,14 @@ describe('listToModel', () => {
   })
   it('drift → err(server)', () => {
     assert.equal(isErr(listToModel({ items: 'x' })), true)
+  })
+  it('#163: mapeia issueDate no item da lista', () => {
+    const r = listToModel({
+      items: [{ ...validDoc, series: null, contractRef: null, version: 0 }],
+      page: 1,
+      pageSize: 20,
+      total: 1,
+    })
+    if (isOk(r)) assert.equal(r.value.items[0]?.issueDate, '2026-06-01')
   })
 })

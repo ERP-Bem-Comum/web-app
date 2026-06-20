@@ -25,6 +25,7 @@ export const CoreApiDocumentSchema = z.object({
   paymentMethod: z.string().trim().nullable(),
   grossValueCents: z.string().trim().nullable(),
   netValueCents: z.string().trim().nullable(),
+  issueDate: z.string().trim().nullable().catch(null), // #163 — drift-tolerante (backend antigo → null)
   dueDate: z.string().trim().nullable(),
   description: z.string().trim().nullable(),
   payables: z.array(CoreApiPayableSchema),
@@ -42,6 +43,7 @@ export const CoreApiDocumentSummarySchema = z.object({
   supplierRef: z.string().trim().nullable(),
   netValueCents: z.string().trim().nullable(),
   dueDate: z.string().trim().nullable(),
+  issueDate: z.string().trim().nullable().catch(null), // #163 — data de emissão no grid
   // Enriquecido pela 012/#47: campos locais do documento no grid de Contas a Pagar.
   series: z.string().trim().nullable().catch(null),
   grossValueCents: z.string().trim().nullable().catch(null),
