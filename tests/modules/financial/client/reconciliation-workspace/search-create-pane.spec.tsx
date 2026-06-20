@@ -43,6 +43,8 @@ const baseBinding = (over: Partial<SearchCreateBinding> = {}): SearchCreateBindi
   selectedSumCents: 0,
   residualCents: 0,
   canReconcile: false,
+  canConfirm: false,
+  showTreatment: false,
   reconType: 'Individual',
   submitting: false,
   errorTag: null,
@@ -56,7 +58,7 @@ const baseBinding = (over: Partial<SearchCreateBinding> = {}): SearchCreateBindi
   toggle: vi.fn(),
   setTreatment: vi.fn(),
   clear: vi.fn(),
-  submit: vi.fn(),
+  confirm: vi.fn(),
   ...over,
 })
 
@@ -75,7 +77,24 @@ describe('SearchCreatePane', () => {
     expect(toggle).toHaveBeenCalledWith('p1')
   })
 
-  it('com diferença, mostra as opções de tratamento; setTreatment ao clicar', () => {
+  it('#9.4.6: com diferença mas SEM revelar, o painel de tratamento NÃO aparece', () => {
+    render(
+      <SearchCreatePane
+        binding={baseBinding({
+          selectedIds: new Set(['p1']),
+          selectedSumCents: 100000,
+          residualCents: 50000,
+          showTreatment: false, // ainda não clicou Conciliar
+        })}
+        payables={payables}
+        extratoValueCents="150000"
+      />,
+    )
+    expect(screen.queryByText(tr('financial.recon.multi.diffTreat'))).toBeNull()
+    expect(screen.queryByRole('button', { name: tr('financial.recon.treatment.Interest') })).toBeNull()
+  })
+
+  it('#9.4.6: com showTreatment, mostra as opções; setTreatment ao clicar', () => {
     const setTreatment = vi.fn()
     render(
       <SearchCreatePane
@@ -83,6 +102,7 @@ describe('SearchCreatePane', () => {
           selectedIds: new Set(['p1']),
           selectedSumCents: 100000,
           residualCents: 50000,
+          showTreatment: true,
           setTreatment,
         })}
         payables={payables}
@@ -94,11 +114,11 @@ describe('SearchCreatePane', () => {
     expect(setTreatment).toHaveBeenCalledWith('Interest')
   })
 
-  it('Conciliar bloqueado quando não balanceia; habilitado e submete quando pode', () => {
-    const submit = vi.fn()
+  it('Conciliar bloqueado quando !canConfirm; habilitado dispara confirm', () => {
+    const confirm = vi.fn()
     const { rerender } = render(
       <SearchCreatePane
-        binding={baseBinding({ canReconcile: false })}
+        binding={baseBinding({ canConfirm: false })}
         payables={payables}
         extratoValueCents="150000"
       />,
@@ -110,7 +130,7 @@ describe('SearchCreatePane', () => {
     ).toBe(true)
     rerender(
       <SearchCreatePane
-        binding={baseBinding({ canReconcile: true, selectedIds: new Set(['p1', 'p2']), submit })}
+        binding={baseBinding({ canConfirm: true, selectedIds: new Set(['p1', 'p2']), confirm })}
         payables={payables}
         extratoValueCents="150000"
       />,
@@ -118,6 +138,6 @@ describe('SearchCreatePane', () => {
     fireEvent.click(
       screen.getByRole('button', { name: (n) => n.includes(tr('financial.recon.multi.confirm')) }),
     )
-    expect(submit).toHaveBeenCalled()
+    expect(confirm).toHaveBeenCalled()
   })
 })

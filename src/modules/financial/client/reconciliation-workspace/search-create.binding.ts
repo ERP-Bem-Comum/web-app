@@ -29,6 +29,10 @@ export type SearchCreateBinding = Readonly<{
   selectedSumCents: number
   residualCents: number
   canReconcile: boolean
+  /** Habilita o botão Conciliar: revela o tratamento (se há diferença) OU submete (se balanceado/classificado). */
+  canConfirm: boolean
+  /** Painel de tratamento da diferença visível — só DEPOIS de clicar Conciliar com diferença (fiel ao mock §9.4.6). */
+  showTreatment: boolean
   reconType: ReconType
   submitting: boolean
   errorTag: string | null
@@ -43,7 +47,8 @@ export type SearchCreateBinding = Readonly<{
   toggle: (payableId: string) => void
   setTreatment: (treatment: DifferenceTreatment) => void
   clear: () => void
-  submit: () => void
+  /** Ação do botão Conciliar: 1º clique com diferença → revela o tratamento; depois classifica → submete. */
+  confirm: () => void
 }>
 
 export function useSearchCreate(
@@ -57,6 +62,9 @@ export function useSearchCreate(
   const [errorTag, setErrorTag] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [typeBucket, setTypeBucket] = useState('all')
+  // #9.4.6: o tratamento da diferença só aparece DEPOIS de clicar Conciliar com diferença (não na hora
+  // que a soma diverge). Reposto a cada mudança de seleção / clear / sucesso.
+  const [revealTreatment, setRevealTreatment] = useState(false)
 
   const typeOptions = payableTypeOptions(payables)
   const filtered = filterPayables(payables, search, typeBucket)
@@ -67,6 +75,10 @@ export function useSearchCreate(
   const residual = residualCents(txValue, selectedSumCents)
   const canReconcile = canReconcileMulti(selectedIds.size, residual, treatment !== null)
   const reconType = deriveReconType(selectedIds.size, residual !== 0)
+  // Painel de tratamento: só com diferença E depois do 1º clique em Conciliar.
+  const showTreatment = revealTreatment && residual !== 0
+  // Botão habilitado: balanceado (submete) | diferença ainda não revelada (revela) | já classificado (submete).
+  const canConfirm = selectedIds.size > 0 && (residual === 0 || !revealTreatment || treatment !== null)
 
   const mut = useMutation({
     mutationFn: (v: {
@@ -79,6 +91,7 @@ export function useSearchCreate(
         setErrorTag(null)
         setSelectedIds(new Set())
         setTreatment(null)
+        setRevealTreatment(false)
         void qc.invalidateQueries({ queryKey: ['financial', 'reconciliation', 'transactions'] })
         onReconciled(v.transactionId, res.value.reconciliationId)
       } else {
@@ -93,6 +106,8 @@ export function useSearchCreate(
     selectedSumCents,
     residualCents: residual,
     canReconcile,
+    canConfirm,
+    showTreatment,
     reconType,
     submitting: mut.isPending,
     errorTag,
@@ -108,6 +123,8 @@ export function useSearchCreate(
       setTypeBucket(v)
     },
     toggle: (payableId) => {
+      // Mudar a seleção re-fecha o painel de tratamento: ele só reabre via clique em Conciliar.
+      setRevealTreatment(false)
       setSelectedIds((prev) => {
         const next = new Set(prev)
         if (next.has(payableId)) next.delete(payableId)
@@ -121,9 +138,17 @@ export function useSearchCreate(
     clear: () => {
       setSelectedIds(new Set())
       setTreatment(null)
+      setRevealTreatment(false)
     },
-    submit: () => {
-      if (selectedTx === null || !canReconcile) return
+    confirm: () => {
+      if (selectedTx === null || selectedIds.size === 0 || mut.isPending) return
+      // 1º clique com diferença ainda não revelada → abre o tratamento (não submete).
+      if (residual !== 0 && !revealTreatment) {
+        setRevealTreatment(true)
+        return
+      }
+      // Balanceado, ou diferença já classificada → submete.
+      if (!canReconcile) return
       mut.mutate({
         transactionId: selectedTx.id,
         payableIds: [...selectedIds],

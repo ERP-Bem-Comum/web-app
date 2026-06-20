@@ -1479,7 +1479,7 @@ export const pmGridHead = style({
   color: c.ink[5],
 })
 export const pmRight = style({ textAlign: 'end', justifySelf: 'end' })
-export const pmRows = style({ maxBlockSize: '12.5rem', overflowY: 'auto', ...scrollSoft })
+export const pmRows = style({ maxBlockSize: '24rem', overflowY: 'auto', ...scrollSoft })
 const pmRowBase = {
   ...pmGridCols,
   blockSize: '2.75rem',

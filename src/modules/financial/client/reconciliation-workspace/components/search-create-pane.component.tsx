@@ -201,8 +201,8 @@ export function SearchCreatePane({ binding, extratoValueCents }: SearchCreatePan
         </div>
       )}
 
-      {/* Tratamento da diferença (conciliação parcial) */}
-      {hasDiff ? (
+      {/* Tratamento da diferença — só após clicar Conciliar com diferença (§9.4.6) */}
+      {binding.showTreatment ? (
         <div className={s.diffTreat}>
           <div className={s.dtHead}>
             <span className={s.dtHeadIc} aria-hidden>
@@ -286,9 +286,9 @@ export function SearchCreatePane({ binding, extratoValueCents }: SearchCreatePan
         <button
           type="button"
           className={s.btnConfirm}
-          disabled={!binding.canReconcile || binding.submitting}
+          disabled={!binding.canConfirm || binding.submitting}
           onClick={() => {
-            binding.submit()
+            binding.confirm()
           }}
         >
           <LinkIcon />
