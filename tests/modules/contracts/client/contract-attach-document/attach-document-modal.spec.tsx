@@ -53,6 +53,18 @@ describe('AttachDocumentModal', () => {
     expect(submit.disabled).toBe(false)
   })
 
+  it('aceita PDF mesmo com MIME vazio (fix: File.type não-confiável → casa por extensão)', () => {
+    const { container } = render(<AttachDocumentModal {...baseProps()} />)
+    const submit = screen.getByRole('button', { name: 'Salvar e efetivar' }) as HTMLButtonElement
+    const fileInput = container.querySelector<HTMLInputElement>('input[type="file"]')
+    const dateInput = container.querySelector<HTMLInputElement>('input[type="date"]')
+    if (fileInput === null || dateInput === null) throw new Error('inputs ausentes')
+    // PDF com type='' (caso real do bug que rejeitava silenciosamente).
+    fireEvent.change(fileInput, { target: { files: [new File(['%PDF-1.4'], 'contrato.pdf', { type: '' })] } })
+    fireEvent.change(dateInput, { target: { value: '2026-06-01' } })
+    expect(submit.disabled).toBe(false) // antes do fix: ficava desabilitado (arquivo descartado)
+  })
+
   it('dispara onSubmit com file + signedAt', () => {
     const onSubmit = vi.fn()
     const { container } = render(<AttachDocumentModal {...baseProps({ onSubmit })} />)

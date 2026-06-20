@@ -4,11 +4,21 @@ import { useNavigate } from '@tanstack/react-router'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { UploadIcon } from '#shared/ui/icons/index.ts'
-import { getSupplierFn, getActFn, getFinancierFn, getCollaboratorFn } from '#modules/partners/public-api/index.ts'
+import { isPdfFile } from '#shared/files/pdf-file.ts'
+import {
+  getSupplierFn,
+  getActFn,
+  getFinancierFn,
+  getCollaboratorFn,
+} from '#modules/partners/public-api/index.ts'
 import { partnerDetailToContractFields, type ContractPrefill } from '../partner-detail-to-contract.ts'
 import { useAttachSignedDocumentBinding } from '#modules/contracts/client/contract-attach-document/attach-signed-document.binding.ts'
 import { useContractEditBinding } from '#modules/contracts/client/contract-edit/contract-edit.binding.ts'
-import { useContractCreateBinding, usePartnerSearchBinding, useContractProgramOptionsBinding } from '../contract-create.binding.ts'
+import {
+  useContractCreateBinding,
+  usePartnerSearchBinding,
+  useContractProgramOptionsBinding,
+} from '../contract-create.binding.ts'
 import { useContractFormController } from '../components/contract-form.controller.ts'
 import type { SelectedPartner } from '../components/contract-form.controller.ts'
 import { ContractForm } from '../components/contract-form.component.tsx'
@@ -84,48 +94,60 @@ export function ContractCreatePage(): ReactNode {
     setPartnerQuery(q)
   }, [])
 
-  const handleSelectPartner = useCallback((partner: SelectedPartner) => {
-    form.setSelectedPartner(partner)
-    // Reset dos campos derivados do contratado anterior (evita vazar banco/PIX/contato ao TROCAR de tipo).
-    form.update('supplierId', '')
-    form.update('financierId', '')
-    form.update('collaboratorId', '')
-    form.update('actId', '')
-    form.update('bancaryInfo', { bank: '', agency: '', accountNumber: '', dv: '' })
-    form.update('pixInfo', { keyType: '', key: '' })
-    form.update('email', '')
-    form.update('telephone', '')
+  const handleSelectPartner = useCallback(
+    (partner: SelectedPartner) => {
+      form.setSelectedPartner(partner)
+      // Reset dos campos derivados do contratado anterior (evita vazar banco/PIX/contato ao TROCAR de tipo).
+      form.update('supplierId', '')
+      form.update('financierId', '')
+      form.update('collaboratorId', '')
+      form.update('actId', '')
+      form.update('bancaryInfo', { bank: '', agency: '', accountNumber: '', dv: '' })
+      form.update('pixInfo', { keyType: '', key: '' })
+      form.update('email', '')
+      form.update('telephone', '')
 
-    // Pré-preenche os campos do contrato com o detalhe do parceiro. Banco/PIX são SOMENTE-LEITURA
-    // (campos disabled — só alimentamos p/ exibição); e-mail/telefone (Contato) são editáveis.
-    const applyPrefill = (fields: ContractPrefill): void => {
-      if (fields.bancaryInfo) form.update('bancaryInfo', fields.bancaryInfo)
-      if (fields.pixInfo) form.update('pixInfo', { keyType: fields.pixInfo.keyType, key: fields.pixInfo.key })
-      if (fields.email !== undefined) form.update('email', fields.email)
-      if (fields.telephone !== undefined) form.update('telephone', fields.telephone)
-    }
+      // Pré-preenche os campos do contrato com o detalhe do parceiro. Banco/PIX são SOMENTE-LEITURA
+      // (campos disabled — só alimentamos p/ exibição); e-mail/telefone (Contato) são editáveis.
+      const applyPrefill = (fields: ContractPrefill): void => {
+        if (fields.bancaryInfo) form.update('bancaryInfo', fields.bancaryInfo)
+        if (fields.pixInfo)
+          form.update('pixInfo', { keyType: fields.pixInfo.keyType, key: fields.pixInfo.key })
+        if (fields.email !== undefined) form.update('email', fields.email)
+        if (fields.telephone !== undefined) form.update('telephone', fields.telephone)
+      }
 
-    // O tipo do contrato é DERIVADO do parceiro escolhido (busca unificada). Buscamos o DETALHE por tipo
-    // (a busca/dropdown não traz banco/PIX/contato) — falha não trava o form (degrada p/ preenchimento manual).
-    if (partner.kind === 'Fornecedor') {
-      form.update('contractType', 'Supplier')
-      form.update('supplierId', partner.id)
-      void getSupplierFn({ data: { id: partner.id } }).then((res) => { if (res.ok) applyPrefill(partnerDetailToContractFields(res.data)) })
-    } else if (partner.kind === 'Financiador') {
-      form.update('contractType', 'Financier')
-      form.update('financierId', partner.id)
-      void getFinancierFn({ data: { id: partner.id } }).then((res) => { if (res.ok) applyPrefill(partnerDetailToContractFields(res.data)) })
-    } else if (partner.kind === 'Acordo') {
-      // Acordo de Cooperação Técnica (ACT) como contratado — #32 aceita contractor.type='act'.
-      form.update('contractType', 'ACT')
-      form.update('actId', partner.id)
-      void getActFn({ data: { id: partner.id } }).then((res) => { if (res.ok) applyPrefill(partnerDetailToContractFields(res.data)) })
-    } else {
-      form.update('contractType', 'Collaborator')
-      form.update('collaboratorId', partner.id)
-      void getCollaboratorFn({ data: { id: partner.id } }).then((res) => { if (res.ok) applyPrefill(partnerDetailToContractFields(res.data)) })
-    }
-  }, [form])
+      // O tipo do contrato é DERIVADO do parceiro escolhido (busca unificada). Buscamos o DETALHE por tipo
+      // (a busca/dropdown não traz banco/PIX/contato) — falha não trava o form (degrada p/ preenchimento manual).
+      if (partner.kind === 'Fornecedor') {
+        form.update('contractType', 'Supplier')
+        form.update('supplierId', partner.id)
+        void getSupplierFn({ data: { id: partner.id } }).then((res) => {
+          if (res.ok) applyPrefill(partnerDetailToContractFields(res.data))
+        })
+      } else if (partner.kind === 'Financiador') {
+        form.update('contractType', 'Financier')
+        form.update('financierId', partner.id)
+        void getFinancierFn({ data: { id: partner.id } }).then((res) => {
+          if (res.ok) applyPrefill(partnerDetailToContractFields(res.data))
+        })
+      } else if (partner.kind === 'Acordo') {
+        // Acordo de Cooperação Técnica (ACT) como contratado — #32 aceita contractor.type='act'.
+        form.update('contractType', 'ACT')
+        form.update('actId', partner.id)
+        void getActFn({ data: { id: partner.id } }).then((res) => {
+          if (res.ok) applyPrefill(partnerDetailToContractFields(res.data))
+        })
+      } else {
+        form.update('contractType', 'Collaborator')
+        form.update('collaboratorId', partner.id)
+        void getCollaboratorFn({ data: { id: partner.id } }).then((res) => {
+          if (res.ok) applyPrefill(partnerDetailToContractFields(res.data))
+        })
+      }
+    },
+    [form],
+  )
 
   const handleRemovePartner = useCallback(() => {
     form.setSelectedPartner(null)
@@ -146,8 +168,12 @@ export function ContractCreatePage(): ReactNode {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
 
-  const openModal = useCallback(() => { setShowModal(true) }, [])
-  const closeModal = useCallback(() => { setShowModal(false) }, [])
+  const openModal = useCallback(() => {
+    setShowModal(true)
+  }, [])
+  const closeModal = useCallback(() => {
+    setShowModal(false)
+  }, [])
 
   const handleConfirm = useCallback(() => {
     if (form.isOvertopOS || form.checklist.done < form.checklist.total) {
@@ -162,7 +188,11 @@ export function ContractCreatePage(): ReactNode {
     // Se o contrato já foi criado (retry após falha no anexo), não cria de novo: só reanexa.
     if (createCommand.result !== null) {
       if (uploadedFile !== null) {
-        attachCommand.execute({ contractId: createCommand.result.id, file: uploadedFile, signedAt: signatureDate })
+        attachCommand.execute({
+          contractId: createCommand.result.id,
+          file: uploadedFile,
+          signedAt: signatureDate,
+        })
       }
       return
     }
@@ -171,7 +201,9 @@ export function ContractCreatePage(): ReactNode {
   }, [form, createCommand, attachCommand, closeModal, uploadedFile, signatureDate])
 
   const handleCancel = useCallback(() => {
-    navigate({ to: '/contratos' }).catch(() => { /* noop */ })
+    navigate({ to: '/contratos' }).catch(() => {
+      /* noop */
+    })
   }, [navigate])
 
   /* Pós-criação: se há documento assinado, anexar e efetivar (Pendente → Em Andamento) ANTES de
@@ -191,20 +223,36 @@ export function ContractCreatePage(): ReactNode {
     if (uploadedFile !== null && signatureDate !== '') {
       attachCommand.execute({ contractId: id, file: uploadedFile, signedAt: signatureDate })
     } else {
-      navigate({ to: '/contratos' }).catch(() => { /* noop */ })
+      navigate({ to: '/contratos' }).catch(() => {
+        /* noop */
+      })
     }
-  }, [createCommand.result, uploadedFile, signatureDate, attachCommand, navigate, contatoEditCommand, form.state.email, form.state.telephone, form.state.observations])
+  }, [
+    createCommand.result,
+    uploadedFile,
+    signatureDate,
+    attachCommand,
+    navigate,
+    contatoEditCommand,
+    form.state.email,
+    form.state.telephone,
+    form.state.observations,
+  ])
 
   /* Anexo bem-sucedido → contrato efetivado (Em Andamento): redireciona para a grade. */
   useEffect(() => {
     if (attachCommand.result !== null) {
-      navigate({ to: '/contratos' }).catch(() => { /* noop */ })
+      navigate({ to: '/contratos' }).catch(() => {
+        /* noop */
+      })
     }
   }, [attachCommand.result, navigate])
 
   const handleCreateNewPartner = useCallback(() => {
     // Direciona ao módulo de parceiros (mesma aba) levando o retorno; ao cadastrar, volta para cá.
-    navigate({ to: '/parceiros/fornecedores/criar', search: { returnTo: '/contratos/criar' } }).catch(() => { /* noop */ })
+    navigate({ to: '/parceiros/fornecedores/criar', search: { returnTo: '/contratos/criar' } }).catch(() => {
+      /* noop */
+    })
   }, [navigate])
 
   /* Upload handlers */
@@ -212,7 +260,8 @@ export function ContractCreatePage(): ReactNode {
     e.preventDefault()
     setIsDragOver(false)
     const file = e.dataTransfer.files[0]
-    if (file?.type === 'application/pdf') {
+    // Aceita por MIME OU extensão (.pdf) — File.type é não-confiável; o backend valida magic bytes.
+    if (file !== undefined && isPdfFile(file)) {
       setUploadedFile(file)
     }
   }, [])
@@ -228,13 +277,15 @@ export function ContractCreatePage(): ReactNode {
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file?.type === 'application/pdf') {
+    // Aceita por MIME OU extensão (.pdf) — File.type é não-confiável; o backend valida magic bytes.
+    if (file !== undefined && isPdfFile(file)) {
       setUploadedFile(file)
     }
   }, [])
 
   /* Status preview: arquivo anexado → Em Andamento; sem arquivo → Pendente */
-  const statusLabel = uploadedFile !== null ? t('contracts.status.Em Andamento') : t('contracts.status.Pendente')
+  const statusLabel =
+    uploadedFile !== null ? t('contracts.status.Em Andamento') : t('contracts.status.Pendente')
   const statusStyle = uploadedFile !== null ? statusBadgeActive : statusBadgePending
 
   return (
@@ -258,8 +309,12 @@ export function ContractCreatePage(): ReactNode {
         partnerSearchResults={partnerResults}
         partnerSearchLoading={partnerLoading}
         partnerSearchOpen={partnerOpen}
-        onPartnerSearchOpen={() => { setPartnerOpen(true) }}
-        onPartnerSearchClose={() => { setPartnerOpen(false) }}
+        onPartnerSearchOpen={() => {
+          setPartnerOpen(true)
+        }}
+        onPartnerSearchClose={() => {
+          setPartnerOpen(false)
+        }}
         onCreateNewPartner={handleCreateNewPartner}
         documentUploaded={uploadedFile !== null}
         currentYear={form.currentYear}
@@ -269,7 +324,12 @@ export function ContractCreatePage(): ReactNode {
       {/* Modal de finalização */}
       {showModal && (
         <div className={modalOverlay} onClick={closeModal}>
-          <div className={modalContent} onClick={(e) => { e.stopPropagation() }}>
+          <div
+            className={modalContent}
+            onClick={(e) => {
+              e.stopPropagation()
+            }}
+          >
             {/* Header */}
             <div className={modalHeader}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
@@ -279,7 +339,9 @@ export function ContractCreatePage(): ReactNode {
                   <span className={modalSubtitle}>Revise os dados e anexe o documento assinado</span>
                 </div>
               </div>
-              <button type="button" className={modalClose} onClick={closeModal} aria-label="Fechar">×</button>
+              <button type="button" className={modalClose} onClick={closeModal} aria-label="Fechar">
+                ×
+              </button>
             </div>
 
             {/* Body */}
@@ -296,12 +358,15 @@ export function ContractCreatePage(): ReactNode {
                   </div>
                   <div className={summaryCard}>
                     <div className={summaryCardLabel}>Valor</div>
-                    <div className={summaryCardValue}>{formatCurrencyCents(form.state.originalValueCents)}</div>
+                    <div className={summaryCardValue}>
+                      {formatCurrencyCents(form.state.originalValueCents)}
+                    </div>
                   </div>
                   <div className={summaryCard}>
                     <div className={summaryCardLabel}>Vigência</div>
                     <div className={summaryCardValue}>
-                      {formatDateOrDash(form.state.originalPeriodStart)} → {formatDateOrDash(form.state.originalPeriodEnd)}
+                      {formatDateOrDash(form.state.originalPeriodStart)} →{' '}
+                      {formatDateOrDash(form.state.originalPeriodEnd)}
                     </div>
                   </div>
                 </div>
@@ -323,7 +388,9 @@ export function ContractCreatePage(): ReactNode {
                   className={`${input} ${uploadedFile && !signatureDate ? inputError : ''}`}
                   type="date"
                   value={signatureDate}
-                  onChange={(e) => { setSignatureDate(e.target.value) }}
+                  onChange={(e) => {
+                    setSignatureDate(e.target.value)
+                  }}
                 />
                 {uploadedFile && !signatureDate ? (
                   <div className={fieldHintError}>
@@ -351,7 +418,16 @@ export function ContractCreatePage(): ReactNode {
                     id="contract-upload"
                     onChange={handleFileSelect}
                   />
-                  <label htmlFor="contract-upload" style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%', cursor: 'pointer' }}>
+                  <label
+                    htmlFor="contract-upload"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '1rem',
+                      width: '100%',
+                      cursor: 'pointer',
+                    }}
+                  >
                     <div className={uploadIconWrap}>
                       <UploadIcon />
                     </div>
@@ -360,7 +436,9 @@ export function ContractCreatePage(): ReactNode {
                         {uploadedFile ? uploadedFile.name : 'Clique para escolher o arquivo'}
                       </div>
                       <div className={uploadFileSize}>
-                        {uploadedFile ? `${(uploadedFile.size / 1024 / 1024).toFixed(1)} MB` : 'PDF assinado · até 20MB'}
+                        {uploadedFile
+                          ? `${(uploadedFile.size / 1024 / 1024).toFixed(1)} MB`
+                          : 'PDF assinado · até 20MB'}
                       </div>
                     </div>
                     <div className={uploadAction}>{uploadedFile ? 'Trocar' : 'Escolher'}</div>
@@ -383,7 +461,12 @@ export function ContractCreatePage(): ReactNode {
               <button
                 type="button"
                 className={buttonPrimary}
-                disabled={createCommand.running || attachCommand.running || form.isOvertopOS || (uploadedFile !== null && signatureDate === '')}
+                disabled={
+                  createCommand.running ||
+                  attachCommand.running ||
+                  form.isOvertopOS ||
+                  (uploadedFile !== null && signatureDate === '')
+                }
                 onClick={handleConfirm}
               >
                 {createCommand.running || attachCommand.running ? t('common.loading') : 'Confirmar e salvar'}
@@ -392,7 +475,6 @@ export function ContractCreatePage(): ReactNode {
           </div>
         </div>
       )}
-
     </div>
   )
 }
