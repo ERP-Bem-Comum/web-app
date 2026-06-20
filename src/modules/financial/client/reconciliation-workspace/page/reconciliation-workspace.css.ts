@@ -570,6 +570,26 @@ export const txTag = styleVariants({
   reconciled: { ...tagBase, color: c.green.deep, background: c.green.bg },
 })
 
+// #174: palpite de topo por linha (gated por "Exibir palpites") — ponto colorido por banda + score%.
+export const rowGuess = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '0.25rem',
+  fontFamily: recon.font.mono,
+  fontSize: fs['3xs'],
+  color: c.ink[4],
+})
+const guessDotBase = {
+  inlineSize: '0.5rem',
+  blockSize: '0.5rem',
+  borderRadius: r.pill,
+  flexShrink: 0,
+} as const
+export const rowGuessDot = styleVariants({
+  alta: { ...guessDotBase, background: c.green.normal },
+  media: { ...guessDotBase, background: c.orange.normal },
+})
+
 // ── coluna de associação ────────────────────────────────────────────────────────
 export const assocCol = style({
   flex: 1,

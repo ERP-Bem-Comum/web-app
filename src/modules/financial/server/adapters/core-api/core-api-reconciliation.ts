@@ -21,6 +21,7 @@ import {
   reconciliationCreatedToModel,
   reconciliationPeriodsToModel,
   rejectToModel,
+  statementSuggestionsToModel,
   suggestionsToModel,
   transactionReconciliationToModel,
   transactionsToModel,
@@ -122,6 +123,14 @@ export const createCoreApiReconciliationClient = (baseUrl: string): Reconciliati
     })
     if (isErr(r)) return err(mapHttpError(r.error))
     return suggestionsToModel(r.value)
+  },
+  getStatementSuggestions: async (i, token) => {
+    // #174: palpites de topo em lote por extrato (uma chamada pinta a banda de todas as transações).
+    const r = await resultFetch<unknown>(`${baseUrl}/bank-statements/${i.statementId}/suggestions`, {
+      token,
+    })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return statementSuggestionsToModel(r.value)
   },
   getTransactionReconciliation: async (i, token) => {
     const r = await resultFetch<unknown>(

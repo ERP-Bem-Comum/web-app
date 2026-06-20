@@ -165,6 +165,7 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
               filter={ui.listFilter}
               counts={vm.filterCounts}
               selectedId={ui.selectedTransactionId}
+              guesses={vm.guesses}
               onFilter={vm.setListFilter}
               onSelect={vm.selectTransaction}
             />

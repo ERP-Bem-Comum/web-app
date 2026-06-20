@@ -43,6 +43,11 @@ export interface GetSuggestionsInput {
   transactionId: string
 }
 
+// Palpite de topo por transação do extrato em lote (#174 — GET /bank-statements/:id/suggestions).
+export interface GetStatementSuggestionsInput {
+  statementId: string
+}
+
 // Conciliação ativa de uma transação (GET /statement-transactions/:id/reconciliation, #175).
 export interface GetTransactionReconciliationInput {
   transactionId: string
@@ -210,6 +215,14 @@ export type MatchSuggestion = Readonly<{
   band: SuggestionBand
   criteria: SuggestionCriteria
   criteriaBreakdown: readonly CriterionResult[] // #140; vazio se o backend não enviar (drift)
+}>
+
+// Palpite de topo por transação (#174). `topBand`/`topScore` = null quando a transação não é Pending ou
+// não há candidato — o front pinta a banda por linha sem N requisições de detalhe.
+export type StatementSuggestion = Readonly<{
+  transactionId: string
+  topBand: SuggestionBand | null
+  topScore: number | null
 }>
 
 export type RejectedSuggestion = Readonly<{ transactionId: string; payableId: string }>

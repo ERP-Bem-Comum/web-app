@@ -108,6 +108,18 @@ export const CoreApiSuggestionSchema = z.object({
 export type CoreApiSuggestion = z.infer<typeof CoreApiSuggestionSchema>
 export const CoreApiSuggestionsSchema = z.object({ suggestions: z.array(CoreApiSuggestionSchema) })
 
+// Palpite de topo por transação em lote (#174 — GET /bank-statements/:id/suggestions → { items }).
+// topBand/topScore nulos quando a transação não é Pending ou não há candidato.
+export const CoreApiStatementSuggestionSchema = z.object({
+  transactionId: z.string().trim(),
+  topBand: z.string().trim().nullable().catch(null), // 'alta' | 'media' | null
+  topScore: z.int().nullable().catch(null),
+})
+export type CoreApiStatementSuggestion = z.infer<typeof CoreApiStatementSuggestionSchema>
+export const CoreApiStatementSuggestionsSchema = z.object({
+  items: z.array(CoreApiStatementSuggestionSchema),
+})
+
 // Conciliação ativa de uma transação (#175 — GET /statement-transactions/:id/reconciliation). `id` é o
 // reconciliationId. `treatment` da diferença NÃO é serializado pelo core-api hoje (só differenceCents).
 export const CoreApiTransactionReconciliationSchema = z.object({

@@ -1404,6 +1404,9 @@ export const ptBR: Catalog = {
   'financial.recon.crit.memoRef': 'Ref. no memo',
   // #140 — rótulo do critério supplierOpen (breakdown ponderado no chip do painel de sugestão).
   'financial.recon.crit.supplierOpen': 'Títulos em aberto',
+  // #174 — palpite de topo por linha na lista (banda + score), exibido com "Exibir palpites" ligado.
+  'financial.recon.list.guessHigh': 'Palpite de alta confiança',
+  'financial.recon.list.guessMid': 'Palpite de confiança média',
   // Buscar / Criar vários (US3)
   'financial.recon.multi.extratoValue': 'Valor do extrato',
   'financial.recon.multi.selected': 'Selecionados',

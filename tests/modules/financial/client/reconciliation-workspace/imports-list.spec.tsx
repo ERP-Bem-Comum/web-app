@@ -9,11 +9,14 @@ import { ImportsList } from '#modules/financial/client/reconciliation-workspace/
 import type {
   TxListState,
   FilterCounts,
+  RowGuess,
 } from '#modules/financial/client/reconciliation-workspace/reconciliation-workspace.binding.ts'
 import type { StatementTransaction } from '#modules/financial/client/data/model/reconciliation.model.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 
 const tr = (k: string): string => ptBR[k] ?? k
+
+const noGuesses: ReadonlyMap<string, RowGuess> = new Map()
 
 const tx = (
   over: Partial<StatementTransaction> & Pick<StatementTransaction, 'id'>,
@@ -48,6 +51,7 @@ describe('ImportsList', () => {
         filter="pendentes"
         counts={counts}
         selectedId={null}
+        guesses={noGuesses}
         onFilter={vi.fn()}
         onSelect={vi.fn()}
       />,
@@ -62,6 +66,7 @@ describe('ImportsList', () => {
         filter="pendentes"
         counts={counts}
         selectedId={null}
+        guesses={noGuesses}
         onFilter={vi.fn()}
         onSelect={vi.fn()}
       />,
@@ -80,12 +85,30 @@ describe('ImportsList', () => {
         filter="pendentes"
         counts={counts}
         selectedId={null}
+        guesses={noGuesses}
         onFilter={vi.fn()}
         onSelect={onSelect}
       />,
     )
     fireEvent.click(screen.getByText('Fornecedor X'))
     expect(onSelect).toHaveBeenCalledWith('t1')
+  })
+
+  it('#174: pinta o palpite de topo (score%) na linha pendente com guess', () => {
+    const guesses: ReadonlyMap<string, RowGuess> = new Map([['t1', { band: 'alta', score: 92 }]])
+    render(
+      <ImportsList
+        state={ready}
+        filter="pendentes"
+        counts={counts}
+        selectedId={null}
+        guesses={guesses}
+        onFilter={vi.fn()}
+        onSelect={vi.fn()}
+      />,
+    )
+    expect(screen.getByText('92%')).toBeTruthy()
+    expect(screen.getByLabelText(`${tr('financial.recon.list.guessHigh')} 92%`)).toBeTruthy()
   })
 
   it('trocar o filtro dispara onFilter', () => {
@@ -96,6 +119,7 @@ describe('ImportsList', () => {
         filter="pendentes"
         counts={counts}
         selectedId={null}
+        guesses={noGuesses}
         onFilter={onFilter}
         onSelect={vi.fn()}
       />,

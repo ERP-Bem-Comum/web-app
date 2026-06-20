@@ -15,6 +15,7 @@ import type {
   CreateCedenteAccountInput,
   CreateReconciliationInput,
   ExportReconciliationInput,
+  GetStatementSuggestionsInput,
   GetSuggestionsInput,
   ImportStatementInput,
   ListTransactionsInput,
@@ -30,6 +31,7 @@ import type {
   ReconciliationUndone,
   RejectSuggestionInput,
   RejectedSuggestion,
+  StatementSuggestion,
   StatementTransaction,
   TransactionReconciliation,
 } from '#modules/financial/client/data/model/reconciliation.model.ts'
@@ -46,6 +48,9 @@ type ListPayablesFn = () => Promise<ReconFnResult<readonly PaidPayable[]>>
 type SuggestionsFn = (opts: {
   data: GetSuggestionsInput
 }) => Promise<ReconFnResult<readonly MatchSuggestion[]>>
+type StatementSuggestionsFn = (opts: {
+  data: GetStatementSuggestionsInput
+}) => Promise<ReconFnResult<readonly StatementSuggestion[]>>
 type GetTxReconFn = (opts: {
   data: { transactionId: string }
 }) => Promise<ReconFnResult<TransactionReconciliation | null>>
@@ -76,6 +81,9 @@ export type ReconciliationRepository = Readonly<{
   ) => Promise<Result<readonly StatementTransaction[], ReconciliationError>>
   listPaidPayables: () => Promise<Result<readonly PaidPayable[], ReconciliationError>>
   getSuggestions: (i: GetSuggestionsInput) => Promise<Result<readonly MatchSuggestion[], ReconciliationError>>
+  getStatementSuggestions: (
+    i: GetStatementSuggestionsInput,
+  ) => Promise<Result<readonly StatementSuggestion[], ReconciliationError>>
   getTransactionReconciliation: (
     transactionId: string,
   ) => Promise<Result<TransactionReconciliation | null, ReconciliationError>>
@@ -110,6 +118,7 @@ export const createReconciliationRepository = (
     listTransactionsFn: ListTxFn
     listPaidPayablesFn: ListPayablesFn
     getSuggestionsFn: SuggestionsFn
+    getStatementSuggestionsFn: StatementSuggestionsFn
     getTransactionReconciliationFn: GetTxReconFn
     rejectSuggestionFn: RejectFn
     createReconciliationFn: ReconcileFn
@@ -138,6 +147,10 @@ export const createReconciliationRepository = (
   },
   getSuggestions: async (i) => {
     const res = await deps.getSuggestionsFn({ data: i })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  getStatementSuggestions: async (i) => {
+    const res = await deps.getStatementSuggestionsFn({ data: i })
     return res.ok ? ok(res.data) : err(res.error)
   },
   getTransactionReconciliation: async (transactionId) => {

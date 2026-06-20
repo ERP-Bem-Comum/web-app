@@ -47,6 +47,7 @@ export type ImportStatementInput = Readonly<{
 }>
 export type ListTransactionsInput = Readonly<{ statementId: string }>
 export type GetSuggestionsInput = Readonly<{ transactionId: string }>
+export type GetStatementSuggestionsInput = Readonly<{ statementId: string }>
 // Criar conta-cedente (#138). `document` = CNPJ da organização (obrigatório no core-api). Saldo de
 // abertura opcional (já em centavos). type = AccountType do front (mapeado p/ minúsculo na borda).
 export type CreateCedenteAccountInput = Readonly<{
@@ -146,6 +147,13 @@ export type MatchSuggestion = Readonly<{
   band: SuggestionBand
   criteria: SuggestionCriteria
   criteriaBreakdown: readonly CriterionResult[] // #140; vazio = backend antigo (fallback p/ chips booleanos)
+}>
+// Palpite de topo por transação em lote (#174). null = transação não-Pending ou sem candidato → o grid da
+// aba Conciliação pinta a banda por linha sem N requisições de detalhe.
+export type StatementSuggestion = Readonly<{
+  transactionId: string
+  topBand: SuggestionBand | null
+  topScore: number | null
 }>
 export type RejectedSuggestion = Readonly<{ transactionId: string; payableId: string }>
 // Conciliação ativa de uma transação (#175). `null` no repository = sem conciliação ativa. Itens trazem

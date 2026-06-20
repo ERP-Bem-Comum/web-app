@@ -16,6 +16,7 @@ import {
   accountStatementSummary,
   transactionReconciliationToModel,
   reconciliationPeriodsToModel,
+  statementSuggestionsToModel,
   suggestionsToModel,
   importToModel,
   reconciliationCreatedToModel,
@@ -436,6 +437,27 @@ describe('suggestionsToModel', () => {
     const r = suggestionsToModel(raw)
     assert.ok(isOk(r))
     if (isOk(r)) assert.deepEqual(r.value[0]?.criteriaBreakdown, [])
+  })
+
+  it('#174: statement suggestions — lê { items }; topBand/topScore nulos preservados; drift → null', () => {
+    const raw = {
+      items: [
+        { transactionId: 't1', topBand: 'alta', topScore: 92 },
+        { transactionId: 't2', topBand: null, topScore: null }, // não-Pending/sem candidato
+        { transactionId: 't3', topBand: 'zzz', topScore: 30 }, // banda drift → null
+      ],
+    }
+    const r = statementSuggestionsToModel(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.deepEqual(r.value[0], { transactionId: 't1', topBand: 'alta', topScore: 92 })
+      assert.deepEqual(r.value[1], { transactionId: 't2', topBand: null, topScore: null })
+      assert.deepEqual(r.value[2], { transactionId: 't3', topBand: null, topScore: 30 })
+    }
+  })
+
+  it('#174: usar a chave suggestions (errada) → err(server)', () => {
+    assert.ok(isErr(statementSuggestionsToModel({ suggestions: [] })))
   })
 
   it('#140: critério desconhecido é descartado; result drift → falha', () => {

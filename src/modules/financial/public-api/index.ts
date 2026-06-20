@@ -37,6 +37,8 @@ export type {
   CriterionKey,
   CriterionOutcome,
   CriterionResult,
+  StatementSuggestion,
+  GetStatementSuggestionsInput,
   ReconciliationCreated,
   ReconciliationUndone,
   ManualEntryCreated,

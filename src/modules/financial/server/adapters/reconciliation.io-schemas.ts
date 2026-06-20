@@ -47,6 +47,8 @@ export const CreateCedenteAccountInputSchema = z.object({
 
 export const GetSuggestionsInputSchema = z.object({ transactionId: z.uuid() })
 
+export const GetStatementSuggestionsInputSchema = z.object({ statementId: z.uuid() })
+
 export const GetTransactionReconciliationInputSchema = z.object({ transactionId: z.uuid() })
 
 export const RejectSuggestionInputSchema = z.object({ transactionId: z.uuid(), payableId: z.uuid() })
@@ -102,6 +104,10 @@ type AssertEqual<A, B> = [A] extends [B] ? ([B] extends [A] ? true : never) : ne
 const _g_import: AssertEqual<z.infer<typeof ImportStatementInputSchema>, R.ImportStatementInput> = true
 const _g_listTx: AssertEqual<z.infer<typeof ListTransactionsInputSchema>, R.ListTransactionsInput> = true
 const _g_sugg: AssertEqual<z.infer<typeof GetSuggestionsInputSchema>, R.GetSuggestionsInput> = true
+const _g_stmtSugg: AssertEqual<
+  z.infer<typeof GetStatementSuggestionsInputSchema>,
+  R.GetStatementSuggestionsInput
+> = true
 const _g_getTxRecon: AssertEqual<
   z.infer<typeof GetTransactionReconciliationInputSchema>,
   R.GetTransactionReconciliationInput
@@ -131,6 +137,7 @@ const _g_createAcc: AssertEqual<
 void _g_import
 void _g_listTx
 void _g_sugg
+void _g_stmtSugg
 void _g_getTxRecon
 void _g_reject
 void _g_recon

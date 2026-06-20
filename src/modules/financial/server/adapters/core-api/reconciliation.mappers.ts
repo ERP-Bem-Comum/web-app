@@ -26,6 +26,7 @@ import type {
   ReconciliationType,
   ReconciliationUndone,
   RejectedSuggestion,
+  StatementSuggestion,
   StatementTransaction,
   SuggestionBand,
   TransactionReconciliation,
@@ -43,6 +44,7 @@ import {
   CoreApiReconciliationCreatedSchema,
   CoreApiReconciliationPeriodsSchema,
   CoreApiRejectSchema,
+  CoreApiStatementSuggestionsSchema,
   CoreApiSuggestionsSchema,
   CoreApiTransactionReconciliationSchema,
   CoreApiTransactionsSchema,
@@ -111,6 +113,11 @@ const mapReconType = (raw: string): ReconciliationType =>
   RECON_TYPES.includes(raw as ReconciliationType) ? (raw as ReconciliationType) : 'Individual'
 
 const mapBand = (raw: string): SuggestionBand => (raw === 'alta' ? 'alta' : 'media')
+
+// Batch (#174): preserva null (não-Pending / sem candidato); banda desconhecida (drift) → null (não
+// fabrica palpite). Diferente de `mapBand`, que assume sempre haver banda.
+const mapTopBand = (raw: string | null): SuggestionBand | null =>
+  raw === 'alta' ? 'alta' : raw === 'media' ? 'media' : null
 
 // Breakdown (#140): critérios é conjunto fechado — desconhecido é descartado (não há fallback seguro p/
 // peso). result drift → 'falha' (conservador). `mapCriterion` devolve null p/ a borda filtrar.
@@ -268,6 +275,19 @@ export const suggestionsToModel = (raw: unknown): Result<readonly MatchSuggestio
     band: mapBand(s.band),
     criteria: { ...s.criteria },
     criteriaBreakdown: toBreakdown(s.criteriaBreakdown),
+  }))
+  return ok(items)
+}
+
+export const statementSuggestionsToModel = (
+  raw: unknown,
+): Result<readonly StatementSuggestion[], ReconciliationError> => {
+  const parsed = CoreApiStatementSuggestionsSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  const items: readonly StatementSuggestion[] = parsed.data.items.map((s) => ({
+    transactionId: s.transactionId,
+    topBand: mapTopBand(s.topBand),
+    topScore: s.topScore,
   }))
   return ok(items)
 }

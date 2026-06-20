@@ -42,6 +42,7 @@ import { useClosePeriod, type ClosePeriodBinding } from './close-period.binding.
 import { useExportConciliacao, type ExportBinding } from './export-conciliacao.binding.ts'
 import {
   paidPayablesQueryOptions,
+  statementSuggestionsQueryOptions,
   suggestionsQueryOptions,
   transactionReconciliationQueryOptions,
   transactionsQueryOptions,
@@ -65,6 +66,9 @@ export type TxListState =
   | Readonly<{ tag: 'ready'; groups: readonly DayGroup[] }>
 
 export type FilterCounts = Readonly<{ pendentes: number; conciliadas: number; todas: number }>
+
+// #174: palpite de topo de uma linha (banda + score), p/ o grid pintar sem N requisições de detalhe.
+export type RowGuess = Readonly<{ band: SuggestionBand; score: number }>
 
 export type MatchView = Readonly<{
   payableId: string
@@ -90,6 +94,8 @@ export type WorkspaceBinding = Readonly<{
   progress: Readonly<{ label: string; percent: number; reconciled: number; total: number }>
   txList: TxListState
   filterCounts: FilterCounts
+  /** #174: palpite de topo por transação (banda + score). Vazio quando "Exibir palpites" está off. */
+  guesses: ReadonlyMap<string, RowGuess>
   selectedTx: StatementTransaction | null
   suggestions: SuggestionState
   payables: readonly PaidPayable[]
@@ -161,6 +167,10 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
   const txQuery = useQuery(transactionsQueryOptions(ui.statementId))
   const payablesQuery = useQuery(paidPayablesQueryOptions())
   const suggestionsQuery = useQuery(suggestionsQueryOptions(ui.selectedTransactionId))
+  // #174: palpites em lote do extrato — busca só com "Exibir palpites" ligado (evita custo N+1 do backend).
+  const statementSuggestionsQuery = useQuery(
+    statementSuggestionsQueryOptions(ui.showGuesses ? ui.statementId : null),
+  )
 
   const importBinding = useImport(accountRef, (statementId) => {
     dispatch({ type: 'set-statement', statementId })
@@ -257,6 +267,16 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     }
   })()
 
+  // #174: mapa transação→palpite de topo (só bandas reais; null = não-Pending/sem candidato é ignorado).
+  // flatMap + checks de null narrowam band/score sem type-assertion (`as`).
+  const guesses: ReadonlyMap<string, RowGuess> = new Map(
+    (statementSuggestionsQuery.data?.ok === true ? statementSuggestionsQuery.data.value : []).flatMap((g) =>
+      g.topBand !== null && g.topScore !== null
+        ? [[g.transactionId, { band: g.topBand, score: g.topScore }] as const]
+        : [],
+    ),
+  )
+
   const reconciled = countReconciled(allTx)
   const total = allTx.length
 
@@ -273,6 +293,7 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     },
     txList,
     filterCounts,
+    guesses,
     selectedTx,
     suggestions,
     payables,
