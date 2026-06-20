@@ -26,12 +26,30 @@ export type SuggestionPaneProps = Readonly<{
   onReject: (payableId: string) => void
 }>
 
+// Fallback (backend antigo, breakdown vazio): chips booleanos atendido/não-atendido.
 const CRITS: readonly { key: keyof MatchView['criteria']; tag: string }[] = [
   { key: 'payeeMatch', tag: 'financial.recon.crit.payeeMatch' },
   { key: 'exactValue', tag: 'financial.recon.crit.exactValue' },
   { key: 'dateD0', tag: 'financial.recon.crit.dateD0' },
   { key: 'memoRef', tag: 'financial.recon.crit.memoRef' },
 ]
+
+// #140 — breakdown ponderado: rótulo por critério + classe por resultado (3 estados). Tipos derivados do
+// MatchView (sem novo import; respeita a fronteira da view burra).
+type CritKey = MatchView['criteriaBreakdown'][number]['criterion']
+type CritOutcome = MatchView['criteriaBreakdown'][number]['result']
+const CRIT_LABEL: Readonly<Record<CritKey, string>> = {
+  exactValue: 'financial.recon.crit.exactValue',
+  payeeMatch: 'financial.recon.crit.payeeMatch',
+  dateD0: 'financial.recon.crit.dateD0',
+  memoRef: 'financial.recon.crit.memoRef',
+  supplierOpen: 'financial.recon.crit.supplierOpen',
+}
+const OUTCOME_CLASS: Readonly<Record<CritOutcome, string>> = {
+  ok: s.crit.ok,
+  parcial: s.crit.warn,
+  falha: s.crit.falha,
+}
 
 function TituloSide({ m }: Readonly<{ m: MatchView }>) {
   return (
@@ -118,11 +136,21 @@ export function SuggestionPane({
         </div>
 
         <div className={s.critList}>
-          {CRITS.map((c) => (
-            <span key={c.key} className={top.criteria[c.key] ? s.crit.ok : s.crit.warn}>
-              {t(c.tag)}
-            </span>
-          ))}
+          {top.criteriaBreakdown.length > 0
+            ? top.criteriaBreakdown.map((c) => (
+                <span key={c.criterion} className={OUTCOME_CLASS[c.result]}>
+                  <span>
+                    {t(CRIT_LABEL[c.criterion])}
+                    {c.criterion === 'supplierOpen' && c.detail !== '' ? ` (${c.detail})` : ''}
+                  </span>
+                  <span className={s.critWeight}>{String(c.weight)}</span>
+                </span>
+              ))
+            : CRITS.map((c) => (
+                <span key={c.key} className={top.criteria[c.key] ? s.crit.ok : s.crit.warn}>
+                  {t(c.tag)}
+                </span>
+              ))}
         </div>
 
         <div className={s.matchActions}>

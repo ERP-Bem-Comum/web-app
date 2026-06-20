@@ -1402,6 +1402,8 @@ export const ptBR: Catalog = {
   'financial.recon.crit.exactValue': 'Valor exato',
   'financial.recon.crit.dateD0': 'Mesma data',
   'financial.recon.crit.memoRef': 'Ref. no memo',
+  // #140 — rótulo do critério supplierOpen (breakdown ponderado no chip do painel de sugestão).
+  'financial.recon.crit.supplierOpen': 'Títulos em aberto',
   // Buscar / Criar vários (US3)
   'financial.recon.multi.extratoValue': 'Valor do extrato',
   'financial.recon.multi.selected': 'Selecionados',

@@ -193,11 +193,23 @@ export type SuggestionCriteria = Readonly<{
   supplierOpenCount: number
 }>
 
+// Breakdown ponderado dos critérios (#140): peso + resultado por critério, p/ a UI renderizar os chips
+// (ok|parcial|falha) sem heurística própria. `detail` só preenchido em `supplierOpen` (count como string).
+export type CriterionKey = 'exactValue' | 'payeeMatch' | 'dateD0' | 'memoRef' | 'supplierOpen'
+export type CriterionOutcome = 'ok' | 'parcial' | 'falha'
+export type CriterionResult = Readonly<{
+  criterion: CriterionKey
+  weight: number // 0..100
+  result: CriterionOutcome
+  detail: string
+}>
+
 export type MatchSuggestion = Readonly<{
   payableId: string
   score: number // 0..100
   band: SuggestionBand
   criteria: SuggestionCriteria
+  criteriaBreakdown: readonly CriterionResult[] // #140; vazio se o backend não enviar (drift)
 }>
 
 export type RejectedSuggestion = Readonly<{ transactionId: string; payableId: string }>

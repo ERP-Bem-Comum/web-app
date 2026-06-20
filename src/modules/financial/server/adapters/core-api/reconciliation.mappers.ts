@@ -12,6 +12,9 @@ import type {
   BankStatementImport,
   BatchResult,
   CedenteAccount,
+  CriterionKey,
+  CriterionOutcome,
+  CriterionResult,
   ManualEntryCreated,
   MatchSuggestion,
   Movement,
@@ -108,6 +111,22 @@ const mapReconType = (raw: string): ReconciliationType =>
   RECON_TYPES.includes(raw as ReconciliationType) ? (raw as ReconciliationType) : 'Individual'
 
 const mapBand = (raw: string): SuggestionBand => (raw === 'alta' ? 'alta' : 'media')
+
+// Breakdown (#140): critérios é conjunto fechado — desconhecido é descartado (não há fallback seguro p/
+// peso). result drift → 'falha' (conservador). `mapCriterion` devolve null p/ a borda filtrar.
+const CRITERION_KEYS: readonly CriterionKey[] = [
+  'exactValue',
+  'payeeMatch',
+  'dateD0',
+  'memoRef',
+  'supplierOpen',
+]
+const mapCriterion = (raw: string): CriterionKey | null =>
+  CRITERION_KEYS.includes(raw as CriterionKey) ? (raw as CriterionKey) : null
+
+const CRITERION_OUTCOMES: readonly CriterionOutcome[] = ['ok', 'parcial', 'falha']
+const mapOutcome = (raw: string): CriterionOutcome =>
+  CRITERION_OUTCOMES.includes(raw as CriterionOutcome) ? (raw as CriterionOutcome) : 'falha'
 
 const TX_RECON_TYPES: readonly TransactionReconciliation['type'][] = [
   'Individual',
@@ -231,6 +250,15 @@ export const accountStatementSummary = (
   })
 }
 
+const toBreakdown = (
+  raw: readonly { criterion: string; weight: number; result: string; detail: string }[],
+): readonly CriterionResult[] =>
+  raw.flatMap((c) => {
+    const criterion = mapCriterion(c.criterion)
+    if (criterion === null) return [] // critério desconhecido (drift) → descarta
+    return [{ criterion, weight: c.weight, result: mapOutcome(c.result), detail: c.detail }]
+  })
+
 export const suggestionsToModel = (raw: unknown): Result<readonly MatchSuggestion[], ReconciliationError> => {
   const parsed = CoreApiSuggestionsSchema.safeParse(raw)
   if (!parsed.success) return err('server')
@@ -239,6 +267,7 @@ export const suggestionsToModel = (raw: unknown): Result<readonly MatchSuggestio
     score: s.score,
     band: mapBand(s.band),
     criteria: { ...s.criteria },
+    criteriaBreakdown: toBreakdown(s.criteriaBreakdown),
   }))
   return ok(items)
 }

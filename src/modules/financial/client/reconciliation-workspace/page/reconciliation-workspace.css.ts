@@ -701,7 +701,11 @@ const critBase = {
 export const crit = styleVariants({
   ok: { ...critBase, color: c.green.deep, background: c.green.bg },
   warn: { ...critBase, color: c.orange.deep, background: c.orange.bg },
+  // #140: critério não atendido — neutro/apagado (não alarmante como o vermelho de erro).
+  falha: { ...critBase, color: c.ink[5], background: c.paper.beige },
 })
+// #140: peso do critério (badge minúsculo dentro do chip), tom apagado p/ não competir com o rótulo.
+export const critWeight = style({ fontFamily: recon.font.mono, opacity: 0.6 })
 
 export const matchActions = style({
   display: 'flex',

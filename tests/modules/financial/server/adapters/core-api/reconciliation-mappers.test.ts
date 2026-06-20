@@ -384,6 +384,89 @@ describe('suggestionsToModel', () => {
   it('usar a chave items (errada) → err(server)', () => {
     assert.ok(isErr(suggestionsToModel({ items: [] })))
   })
+
+  it('#140: mapeia criteriaBreakdown (peso + resultado + detail)', () => {
+    const raw = {
+      suggestions: [
+        {
+          payableId: 'p1',
+          score: 75,
+          band: 'alta',
+          criteria: {
+            payeeMatch: true,
+            exactValue: true,
+            dateD0: false,
+            memoRef: false,
+            supplierOpenCount: 2,
+          },
+          criteriaBreakdown: [
+            { criterion: 'exactValue', weight: 40, result: 'ok', detail: '' },
+            { criterion: 'supplierOpen', weight: 5, result: 'parcial', detail: '2' },
+          ],
+        },
+      ],
+    }
+    const r = suggestionsToModel(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      const bd = r.value[0]?.criteriaBreakdown ?? []
+      assert.equal(bd.length, 2)
+      assert.deepEqual(bd[0], { criterion: 'exactValue', weight: 40, result: 'ok', detail: '' })
+      assert.deepEqual(bd[1], { criterion: 'supplierOpen', weight: 5, result: 'parcial', detail: '2' })
+    }
+  })
+
+  it('#140: breakdown ausente (backend antigo) → []', () => {
+    const raw = {
+      suggestions: [
+        {
+          payableId: 'p1',
+          score: 50,
+          band: 'media',
+          criteria: {
+            payeeMatch: false,
+            exactValue: false,
+            dateD0: false,
+            memoRef: false,
+            supplierOpenCount: 0,
+          },
+        },
+      ],
+    }
+    const r = suggestionsToModel(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) assert.deepEqual(r.value[0]?.criteriaBreakdown, [])
+  })
+
+  it('#140: critério desconhecido é descartado; result drift → falha', () => {
+    const raw = {
+      suggestions: [
+        {
+          payableId: 'p1',
+          score: 20,
+          band: 'media',
+          criteria: {
+            payeeMatch: false,
+            exactValue: false,
+            dateD0: false,
+            memoRef: false,
+            supplierOpenCount: 0,
+          },
+          criteriaBreakdown: [
+            { criterion: 'mysteryCriterion', weight: 99, result: 'ok', detail: '' },
+            { criterion: 'dateD0', weight: 20, result: 'xx', detail: '' },
+          ],
+        },
+      ],
+    }
+    const r = suggestionsToModel(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      const bd = r.value[0]?.criteriaBreakdown ?? []
+      assert.equal(bd.length, 1)
+      assert.deepEqual(bd[0], { criterion: 'dateD0', weight: 20, result: 'falha', detail: '' })
+    }
+  })
 })
 
 describe('importToModel / reconciliationCreatedToModel / undoToModel', () => {

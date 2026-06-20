@@ -48,6 +48,7 @@ import {
 } from './reconciliation-workspace.query.ts'
 import { reconciliationErrorTag } from '#modules/financial/client/data/helpers/reconciliation-error-tag.ts'
 import type {
+  CriterionResult,
   MatchSuggestion,
   PaidPayable,
   ReconciliationAccount as ReconciliationAccountModel,
@@ -70,6 +71,7 @@ export type MatchView = Readonly<{
   score: number
   band: SuggestionBand
   criteria: SuggestionCriteria
+  criteriaBreakdown: readonly CriterionResult[] // #140; vazio → pane cai nos chips booleanos
   payable: PaidPayable | null // mínimo até #172; null se não estiver na lista de Pagos
 }>
 
@@ -129,6 +131,7 @@ const toMatchView = (s: MatchSuggestion, payables: ReadonlyMap<string, PaidPayab
   score: s.score,
   band: s.band,
   criteria: s.criteria,
+  criteriaBreakdown: s.criteriaBreakdown,
   payable: payables.get(s.payableId) ?? null,
 })
 

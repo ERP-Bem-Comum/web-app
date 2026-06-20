@@ -32,6 +32,11 @@ const ready: SuggestionState = {
     score: 87,
     band: 'alta',
     criteria: { payeeMatch: true, exactValue: true, dateD0: true, memoRef: false, supplierOpenCount: 1 },
+    criteriaBreakdown: [
+      { criterion: 'exactValue', weight: 40, result: 'ok', detail: '' },
+      { criterion: 'memoRef', weight: 10, result: 'falha', detail: '' },
+      { criterion: 'supplierOpen', weight: 5, result: 'parcial', detail: '2' },
+    ],
     payable: {
       id: 'p1',
       documentId: 'DOC-1',
@@ -76,6 +81,25 @@ describe('SuggestionPane', () => {
     expect(screen.getByText(tr('financial.recon.sugg.high'))).toBeTruthy()
     expect(screen.getByText('87%')).toBeTruthy()
     expect(screen.getByText('0847')).toBeTruthy() // documentNumber (mínimo #172)
+  })
+
+  it('#140: renderiza chips do breakdown com peso e count do supplierOpen', () => {
+    render(<SuggestionPane {...base} state={ready} />)
+    // rótulo do critério novo + count do supplierOpen (parcial) no mesmo span
+    expect(screen.getByText(`${tr('financial.recon.crit.supplierOpen')} (2)`)).toBeTruthy()
+    expect(screen.getByText('40')).toBeTruthy() // peso (badge) do exactValue
+    expect(screen.getByText('5')).toBeTruthy() // peso do supplierOpen
+  })
+
+  it('#140: breakdown vazio cai no fallback dos chips booleanos', () => {
+    const noBreakdown: SuggestionState = {
+      ...ready,
+      top: { ...ready.top, criteriaBreakdown: [] },
+    }
+    render(<SuggestionPane {...base} state={noBreakdown} />)
+    expect(screen.getByText(tr('financial.recon.crit.payeeMatch'))).toBeTruthy()
+    // sem breakdown não há badge de peso
+    expect(screen.queryByText('40')).toBeNull()
   })
 
   it('Conciliar dispara onReconcile com o payableId', () => {

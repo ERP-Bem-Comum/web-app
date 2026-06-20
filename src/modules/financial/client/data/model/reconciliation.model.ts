@@ -130,11 +130,22 @@ export type SuggestionCriteria = Readonly<{
   memoRef: boolean
   supplierOpenCount: number
 }>
+// Breakdown ponderado dos critérios (#140): peso + resultado por critério p/ os chips (ok|parcial|falha).
+// `detail` só preenchido em `supplierOpen` (count como string). Espelha `reconciliation.io.ts`.
+export type CriterionKey = 'exactValue' | 'payeeMatch' | 'dateD0' | 'memoRef' | 'supplierOpen'
+export type CriterionOutcome = 'ok' | 'parcial' | 'falha'
+export type CriterionResult = Readonly<{
+  criterion: CriterionKey
+  weight: number
+  result: CriterionOutcome
+  detail: string
+}>
 export type MatchSuggestion = Readonly<{
   payableId: string
   score: number
   band: SuggestionBand
   criteria: SuggestionCriteria
+  criteriaBreakdown: readonly CriterionResult[] // #140; vazio = backend antigo (fallback p/ chips booleanos)
 }>
 export type RejectedSuggestion = Readonly<{ transactionId: string; payableId: string }>
 // Conciliação ativa de uma transação (#175). `null` no repository = sem conciliação ativa. Itens trazem

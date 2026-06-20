@@ -80,6 +80,16 @@ export const CoreApiAccountStatementSchema = z.object({
 })
 export type CoreApiAccountStatement = z.infer<typeof CoreApiAccountStatementSchema>
 
+// Breakdown ponderado de um critério (#140). criterion/result vêm como string tolerante (mapper traduz);
+// `detail` opcional (só preenchido em supplierOpen). Ausente em backend antigo → o pai usa `.catch([])`.
+export const CoreApiCriterionResultSchema = z.object({
+  criterion: z.string().trim(), // 'exactValue'|'payeeMatch'|'dateD0'|'memoRef'|'supplierOpen'
+  weight: z.int(),
+  result: z.string().trim(), // 'ok'|'parcial'|'falha'
+  detail: z.string().trim().catch(''),
+})
+export type CoreApiCriterionResult = z.infer<typeof CoreApiCriterionResultSchema>
+
 // Sugestões (GET /statement-transactions/:id/suggestions → { suggestions }, NÃO items).
 export const CoreApiSuggestionSchema = z.object({
   payableId: z.string().trim(),
@@ -92,6 +102,8 @@ export const CoreApiSuggestionSchema = z.object({
     memoRef: z.boolean(),
     supplierOpenCount: z.int(),
   }),
+  // #140 — vazio quando o backend não envia (drift); o mapper filtra critérios desconhecidos.
+  criteriaBreakdown: z.array(CoreApiCriterionResultSchema).catch([]),
 })
 export type CoreApiSuggestion = z.infer<typeof CoreApiSuggestionSchema>
 export const CoreApiSuggestionsSchema = z.object({ suggestions: z.array(CoreApiSuggestionSchema) })
