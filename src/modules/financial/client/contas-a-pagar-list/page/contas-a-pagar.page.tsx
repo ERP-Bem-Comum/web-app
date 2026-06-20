@@ -82,6 +82,7 @@ export function ContasAPagarPage(): ReactNode {
     onAddFilter,
     onRemoveFilter,
     onSetVencimento,
+    onSetEmissao,
     onSetTipo,
     onSetFornecedor,
     onClearFilters,
@@ -230,6 +231,7 @@ export function ContasAPagarPage(): ReactNode {
           onRemoveFilter(id)
         }}
         onSetVencimento={onSetVencimento}
+        onSetEmissao={onSetEmissao}
         onSetTipo={onSetTipo}
         onClearFilters={() => {
           setFornecedorQuery('')

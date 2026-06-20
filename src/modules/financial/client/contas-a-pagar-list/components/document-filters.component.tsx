@@ -106,6 +106,7 @@ export type ActiveFiltersRowProps = Readonly<{
   filters: AdvancedFilters
   onRemoveFilter: (id: FilterDimId) => void
   onSetVencimento: (from: string | undefined, to: string | undefined) => void
+  onSetEmissao: (from: string | undefined, to: string | undefined) => void
   onSetTipo: (tipo: DocumentType | undefined) => void
   onClearFilters: () => void
   // Filtro Fornecedor = busca/autocomplete (pode haver inúmeros; não lista tudo num dropdown).
@@ -154,6 +155,43 @@ export function ActiveFiltersRow(props: ActiveFiltersRowProps): ReactNode {
             aria-label={t('financial.list.filter.remove')}
             onClick={() => {
               props.onRemoveFilter('vencimento')
+            }}
+          >
+            ×
+          </button>
+        </span>
+      ) : null}
+
+      {activeDims.has('emissao') ? (
+        <span className={filterChip}>
+          <span className={filterChipLabel}>{t('financial.list.filter.dim.emissao')}</span>
+          <span className={filterChipRange}>
+            <input
+              type="date"
+              className={filterChipInput}
+              value={filters.emissao?.from ?? ''}
+              aria-label={t('financial.list.filter.from')}
+              onChange={(e) => {
+                props.onSetEmissao(emptyToUndef(e.target.value), filters.emissao?.to)
+              }}
+            />
+            <span aria-hidden="true">→</span>
+            <input
+              type="date"
+              className={filterChipInput}
+              value={filters.emissao?.to ?? ''}
+              aria-label={t('financial.list.filter.to')}
+              onChange={(e) => {
+                props.onSetEmissao(filters.emissao?.from, emptyToUndef(e.target.value))
+              }}
+            />
+          </span>
+          <button
+            type="button"
+            className={filterChipRemove}
+            aria-label={t('financial.list.filter.remove')}
+            onClick={() => {
+              props.onRemoveFilter('emissao')
             }}
           >
             ×

@@ -65,6 +65,7 @@ describe('ActiveFiltersRow', () => {
   const noop = {
     onRemoveFilter: vi.fn(),
     onSetVencimento: vi.fn(),
+    onSetEmissao: vi.fn(),
     onSetTipo: vi.fn(),
     onClearFilters: vi.fn(),
     fornecedorQuery: '',
@@ -113,6 +114,23 @@ describe('ActiveFiltersRow', () => {
       target: { value: '2026-07-31' },
     })
     expect(onSetVencimento).toHaveBeenCalledWith('2026-07-01', '2026-07-31')
+  })
+
+  it('#163: chip de Emissão dispara onSetEmissao (de/até)', () => {
+    const onSetEmissao = vi.fn()
+    render(
+      <ActiveFiltersRow
+        activeDims={new Set(['emissao'])}
+        filters={{ emissao: { from: '2026-06-01' } }}
+        {...noop}
+        onSetEmissao={onSetEmissao}
+      />,
+    )
+    expect(screen.getByText(tr('financial.list.filter.dim.emissao'))).toBeTruthy()
+    fireEvent.change(screen.getByLabelText(tr('financial.list.filter.to')), {
+      target: { value: '2026-06-30' },
+    })
+    expect(onSetEmissao).toHaveBeenCalledWith('2026-06-01', '2026-06-30')
   })
 
   it('Fornecedor: busca dispara onFornecedorQuery; escolher um match dispara onPickFornecedor', () => {

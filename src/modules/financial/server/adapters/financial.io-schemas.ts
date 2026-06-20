@@ -66,6 +66,7 @@ export const CreateDocumentInputSchema = z.object({
   interestCents: CentsSchema.optional(),
   retentions: z.array(RetentionItemSchema).readonly(),
   registeredTaxes: z.array(RegisteredTaxItemSchema).readonly(),
+  issueDate: DateSchema.optional(), // data de emissão (#163) — opcional em Rascunho e Aberto
   dueDate: DateSchema.optional(), // opcional p/ rascunho; o lançamento exige (gating na UI)
   description: z.string().trim().max(500).optional(),
   asDraft: z.boolean().optional(), // true → Rascunho; default false → Aberto (core-api)
@@ -101,6 +102,8 @@ export const ListDocumentsInputSchema = z.object({
   type: z.string().trim().optional(),
   dueFrom: DateSchema.optional(),
   dueTo: DateSchema.optional(),
+  issuedFrom: DateSchema.optional(), // filtro por data de emissão (#163), janela inclusiva
+  issuedTo: DateSchema.optional(),
   page: z.int().min(1).default(1),
   pageSize: z.int().min(1).max(100).default(20),
 })

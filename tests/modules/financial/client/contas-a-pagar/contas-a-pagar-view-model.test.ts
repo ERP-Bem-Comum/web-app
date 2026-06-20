@@ -43,6 +43,7 @@ const summary = (over: Partial<DocumentSummary> = {}): DocumentSummary => ({
   contractRef: null,
   version: 0,
   dueDate: '2026-07-10',
+  issueDate: '2026-07-01',
   ...over,
 })
 
@@ -88,6 +89,21 @@ describe('deriveListState', () => {
       assert.equal(s.rows[0]?.supplier, 'Bambu Educação')
       assert.equal(s.page.total, 47)
     }
+  })
+
+  it('#163: emissão populada (DD/MM/YYYY) e "—" quando ausente', () => {
+    const withDate = deriveListState({
+      isLoading: false,
+      data: ok(response([summary({ issueDate: '2026-07-01' })])),
+      resolveSupplier,
+    })
+    if (withDate.tag === 'ready') assert.equal(withDate.rows[0]?.emissao, '01/07/2026')
+    const without = deriveListState({
+      isLoading: false,
+      data: ok(response([summary({ issueDate: null })])),
+      resolveSupplier,
+    })
+    if (without.tag === 'ready') assert.equal(without.rows[0]?.emissao, '—')
   })
 })
 
@@ -266,10 +282,10 @@ describe('STATUS_CHIPS (filtro por status)', () => {
 })
 
 describe('FILTER_DIMS (filtros avançados)', () => {
-  it('só expõe as 3 dimensões com backend (Vencimento/Tipo/Fornecedor), todas habilitadas', () => {
+  it('expõe as 4 dimensões com backend (Vencimento/Emissão/Tipo/Fornecedor), todas habilitadas', () => {
     assert.deepEqual(
       FILTER_DIMS.map((d) => d.id),
-      ['vencimento', 'tipo', 'fornecedor'],
+      ['vencimento', 'emissao', 'tipo', 'fornecedor'],
     )
     assert.ok(FILTER_DIMS.every((d) => d.enabled))
   })

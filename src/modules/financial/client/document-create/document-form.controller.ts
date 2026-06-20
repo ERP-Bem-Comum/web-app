@@ -24,6 +24,7 @@ const EMPTY_FIELDS: DocumentFormFields = {
   supplierRef: '',
   paymentMethod: '',
   grossValue: '',
+  issueDate: '',
   dueDate: '',
   description: '',
   discounts: '',
@@ -44,6 +45,7 @@ type TextKey =
   | 'documentNumber'
   | 'series'
   | 'grossValue'
+  | 'issueDate'
   | 'dueDate'
   | 'description'
   | 'discounts'

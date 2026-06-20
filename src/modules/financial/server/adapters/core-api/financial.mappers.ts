@@ -124,6 +124,7 @@ export const detailToModel = (raw: unknown): Result<DocumentDetail, FinancialErr
     paymentMethod: mapPaymentMethod(d.paymentMethod),
     grossValueCents: d.grossValueCents,
     netValueCents: d.netValueCents,
+    issueDate: d.issueDate, // #163 — date-only (YYYY-MM-DD), igual ao dueDate
     dueDate: d.dueDate,
     description: d.description,
     payables: d.payables.map(payableToModel),
@@ -143,6 +144,7 @@ export const listToModel = (raw: unknown): Result<DocumentListResponse, Financia
     supplierRef: s.supplierRef,
     netValueCents: s.netValueCents,
     dueDate: s.dueDate,
+    issueDate: s.issueDate, // #163 — data de emissão no grid
     series: s.series,
     grossValueCents: s.grossValueCents,
     paymentMethod: mapPaymentMethod(s.paymentMethod),

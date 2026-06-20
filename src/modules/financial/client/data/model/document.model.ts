@@ -57,6 +57,7 @@ export type CreateDocumentInput = Readonly<{
   interestCents?: string
   retentions: readonly RetentionInput[]
   registeredTaxes: readonly RegisteredTaxInput[]
+  issueDate?: string // data de emissão (#163) — opcional em Rascunho e Aberto
   dueDate?: string // opcional p/ rascunho (asDraft); obrigatório no lançamento (gating na UI)
   description?: string
   asDraft?: boolean // true → Rascunho (campos opcionais, sem títulos); default false → Aberto
@@ -84,6 +85,8 @@ export type ListDocumentsInput = Readonly<{
   type?: string
   dueFrom?: string
   dueTo?: string
+  issuedFrom?: string // filtro por data de emissão (#163), janela inclusiva
+  issuedTo?: string
   page: number
   pageSize: number
 }>
@@ -106,6 +109,7 @@ export type DocumentDetail = Readonly<{
   paymentMethod: PaymentMethod | null
   grossValueCents: string | null
   netValueCents: string | null
+  issueDate: string | null // YYYY-MM-DD (#163); null quando não informado
   dueDate: string | null
   description: string | null
   payables: readonly Payable[]
@@ -126,6 +130,7 @@ export type DocumentSummary = Readonly<{
   contractRef: string | null
   version: number
   dueDate: string | null
+  issueDate: string | null // YYYY-MM-DD (#163); null quando não informado
 }>
 
 export type DocumentListResponse = Readonly<{

@@ -1233,6 +1233,7 @@ export const ptBR: Catalog = {
   'financial.list.filter.dim.numDoc': 'Nº Documento',
   'financial.list.filter.dim.cnpjCpf': 'CNPJ/CPF',
   'financial.list.filter.dim.vencimento': 'Vencimento',
+  'financial.list.filter.dim.emissao': 'Emissão',
   'financial.list.filter.dim.competencia': 'Competência',
   'financial.list.filter.dim.valor': 'Valor',
   'financial.list.filter.dim.tipo': 'Tipo de Documento',

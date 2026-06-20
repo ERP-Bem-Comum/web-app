@@ -207,6 +207,7 @@ export type DocumentFormProps = Readonly<{
       | 'documentNumber'
       | 'series'
       | 'grossValue'
+      | 'issueDate'
       | 'dueDate'
       | 'description'
       | 'accessKey'
@@ -331,12 +332,19 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             />
           </div>
           <div className={field}>
-            <span className={fieldLabel}>{t('financial.create.field.emissao')}</span>
+            <label className={fieldLabel} htmlFor="fin-emissao">
+              {t('financial.create.field.emissao')}
+            </label>
             <input
-              className={controlDisabled}
-              disabled
-              placeholder="DD/MM/AAAA"
+              id="fin-emissao"
+              type="date"
+              className={locks.issueDate ? controlDisabled : control}
+              disabled={locks.issueDate}
+              value={fields.issueDate}
               aria-label={t('financial.create.field.emissao')}
+              onChange={(e) => {
+                props.onText('issueDate', e.target.value)
+              }}
             />
           </div>
 
