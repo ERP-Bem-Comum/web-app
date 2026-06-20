@@ -32,12 +32,15 @@ export const recon = {
       beige: 'rgb(242, 237, 229)',
       rule: 'rgb(229, 222, 212)',
     },
+    // Acento da Conciliação alinhado ao AZUL DA MARCA do cliente (DS: brand.normal #2B6CB0 / hover
+    // #3F84C6), substituindo o teal da consultoria. Mantém o mesmo ramp de claridade (bg→deep) para
+    // não quebrar contrastes; a chave segue `teal` para não tocar os ~40 usos no CSS do módulo.
     teal: {
-      bg: 'rgb(232, 245, 250)',
-      bg2: 'rgb(199, 229, 242)',
-      line: 'rgb(140, 199, 222)',
-      normal: 'rgb(41, 140, 171)',
-      deep: 'rgb(26, 112, 140)',
+      bg: 'rgb(231, 239, 248)', // brand claro (canvas) — fundos sutis/selecionados
+      bg2: 'rgb(197, 217, 240)',
+      line: 'rgb(140, 178, 220)', // bordas
+      normal: 'rgb(43, 108, 176)', // brand.normal #2B6CB0 — avatares, botões, acento
+      deep: 'rgb(31, 84, 144)', // brand mais escuro — hover/texto/deep
     },
     amber: {
       bg: 'rgb(255, 247, 224)',
