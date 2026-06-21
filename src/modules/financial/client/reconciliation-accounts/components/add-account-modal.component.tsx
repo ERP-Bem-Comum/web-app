@@ -21,6 +21,13 @@ const TYPES: readonly { value: AccountType; tag: string }[] = [
   { value: 'Investimento', tag: 'financial.recon.add.type.investimento' },
 ]
 
+// Tipos pedidos pelo cliente (cartão corporativo tem movimentação a conciliar) — CHROME honesto:
+// desabilitados até o backend ampliar o enum `type` (core-api#206). Mostram a intenção sem quebrar o POST.
+const SOON_TYPES: readonly { key: string; tag: string }[] = [
+  { key: 'cartao', tag: 'financial.recon.add.type.cartao' },
+  { key: 'outro', tag: 'financial.recon.add.type.outro' },
+]
+
 export type AddAccountModalProps = Readonly<{
   open: boolean
   onClose: () => void
@@ -91,7 +98,20 @@ export function AddAccountModal({ open, onClose, binding }: AddAccountModalProps
                     {t(tp.tag)}
                   </button>
                 ))}
+                {SOON_TYPES.map((tp) => (
+                  <button
+                    key={tp.key}
+                    type="button"
+                    className={s.segBtn.disabled}
+                    disabled
+                    aria-disabled="true"
+                    title={t('financial.recon.add.type.soonHint')}
+                  >
+                    {t(tp.tag)}
+                  </button>
+                ))}
               </div>
+              <span className={s.segHint}>{t('financial.recon.add.type.soonHint')}</span>
             </div>
           </section>
 

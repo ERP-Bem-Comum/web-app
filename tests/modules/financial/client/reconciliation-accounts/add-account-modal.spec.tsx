@@ -66,4 +66,19 @@ describe('AddAccountModal (#138)', () => {
     fireEvent.click(screen.getByRole('button', { name: tr('financial.recon.add.type.poupanca') }))
     expect(setType).toHaveBeenCalledWith('Poupanca')
   })
+
+  it('Cartão corporativo e Outro aparecem como chrome desabilitado (até backend #206)', () => {
+    const setType = vi.fn()
+    render(<AddAccountModal open binding={base({ setType })} onClose={vi.fn()} />)
+    const cartao = screen.getByRole('button', {
+      name: tr('financial.recon.add.type.cartao'),
+    }) as HTMLButtonElement
+    const outro = screen.getByRole('button', {
+      name: tr('financial.recon.add.type.outro'),
+    }) as HTMLButtonElement
+    expect(cartao.disabled).toBe(true)
+    expect(outro.disabled).toBe(true)
+    fireEvent.click(cartao)
+    expect(setType).not.toHaveBeenCalled()
+  })
 })
