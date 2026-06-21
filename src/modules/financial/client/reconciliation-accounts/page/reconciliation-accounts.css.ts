@@ -539,6 +539,13 @@ export const segBtn = styleVariants({
     borderColor: c.teal.normal,
     fontWeight: recon.weight.semibold,
   },
+  // Chrome honesto: tipo ainda não aceito pelo backend (cartão/outro, core-api#206).
+  disabled: { ...segBase, color: c.ink[3], opacity: 0.45, cursor: 'not-allowed' },
+})
+export const segHint = style({
+  marginBlockStart: sp.xs,
+  fontSize: fs.xs,
+  color: c.ink[3],
 })
 export const modalFoot = style({
   display: 'flex',
