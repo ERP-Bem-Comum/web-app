@@ -6,13 +6,19 @@
  * permanece como rede de segurança (o servidor já restringe ao parceiro; antes do #116 o filtro era SÓ no
  * client sobre a 1ª página, podendo perder contratos além do limite).
  *
- * Banco: só o Fornecedor tem `getSupplierFn` (card "Conta do fornecedor"); demais tipos exibem o hint.
+ * Banco: TODOS os tipos de favorecido têm dados bancários (`bankAccount`+`pixKey`) e seu próprio `get*Fn`
+ * (Fornecedor/Financiador/Colaborador/Ato) → o card "Conta do favorecido" é exibido para qualquer tipo.
  * Exibição agora; a PERSISTÊNCIA da categorização derivada vem do backend (core-api#48). O create já envia
  * o `contractRef` (ver page).
  */
 import { useQuery } from '@tanstack/react-query'
 
-import { getSupplierFn } from '#modules/partners/public-api/index.ts'
+import {
+  getSupplierFn,
+  getFinancierFn,
+  getCollaboratorFn,
+  getActFn,
+} from '#modules/partners/public-api/index.ts'
 import { listContractsFn } from '#modules/contracts/public-api/index.ts'
 import type { Contract } from '#modules/contracts/public-api/index.ts'
 
@@ -56,6 +62,26 @@ function contractMatchesPartner(c: Contract, ref: string, kind: PartnerKind): bo
   }
 }
 
+/** Conta bancária + PIX do favorecido conforme o TIPO (todos têm `get*Fn` e `bankAccount`/`pixKey`). */
+async function loadPartnerBank(kind: PartnerKind, ref: string): Promise<SupplierBankView | null> {
+  const r =
+    kind === 'supplier'
+      ? await getSupplierFn({ data: { id: ref } })
+      : kind === 'financier'
+        ? await getFinancierFn({ data: { id: ref } })
+        : kind === 'collaborator'
+          ? await getCollaboratorFn({ data: { id: ref } })
+          : await getActFn({ data: { id: ref } })
+  if (!r.ok) return null
+  const acc = r.data.bankAccount
+  const pix = r.data.pixKey
+  if (acc === null && pix === null) return null
+  return {
+    line: acc !== null ? `${acc.bank} · Ag ${acc.agency} · CC ${acc.accountNumber}` : '',
+    pix: pix !== null ? `PIX · ${pix.key}` : null,
+  }
+}
+
 export function usePartnerHydration(supplierRef: string, kind: PartnerKind | null): PartnerHydration {
   const enabled = supplierRef !== '' && kind !== null
   const query = useQuery({
@@ -80,21 +106,8 @@ export function usePartnerHydration(supplierRef: string, kind: PartnerKind | nul
         ? contracts.data.items.filter((c) => contractMatchesPartner(c, supplierRef, kind)).map(toContract)
         : []
 
-      // Banco: só o Fornecedor tem getSupplierFn hoje; demais tipos → hint (sem dado fabricado).
-      let bank: SupplierBankView | null = null
-      if (kind === 'supplier') {
-        const supplier = await getSupplierFn({ data: { id: supplierRef } })
-        if (supplier.ok) {
-          const acc = supplier.data.bankAccount
-          const pix = supplier.data.pixKey
-          if (acc !== null || pix !== null) {
-            bank = {
-              line: acc !== null ? `${acc.bank} · Ag ${acc.agency} · CC ${acc.accountNumber}` : '',
-              pix: pix !== null ? `PIX · ${pix.key}` : null,
-            }
-          }
-        }
-      }
+      // Banco: detalhe do favorecido conforme o tipo (todos têm bankAccount/pixKey + get*Fn).
+      const bank = await loadPartnerBank(kind, supplierRef)
 
       return { bank, contracts: partnerContracts }
     },

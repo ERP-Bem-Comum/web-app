@@ -1106,8 +1106,8 @@ export const ptBR: Catalog = {
   'financial.create.payMethod.currencyLabel': 'Moeda / detalhes do câmbio',
   'financial.create.payMethod.currencyHint':
     'Moeda estrangeira e cotação da conversão — aguardando backend (core-api#89).',
-  'financial.create.pagamento.contaFornecedor': 'Conta do fornecedor',
-  'financial.create.pagamento.contaFornecedorHint': 'Conforme dados bancários do fornecedor',
+  'financial.create.pagamento.contaFornecedor': 'Conta do favorecido',
+  'financial.create.pagamento.contaFornecedorHint': 'Conforme dados bancários do favorecido',
   'financial.create.pagamento.aprovador': 'Aprovador',
   'financial.create.pagamento.aprovadorHint': 'Definido no fluxo de aprovação',
   'financial.create.categorizacao.semContrato': 'Sem contrato',
