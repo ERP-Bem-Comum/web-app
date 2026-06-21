@@ -67,15 +67,33 @@ const buildPeriodOptions = (now: Date): readonly PeriodOption[] => {
   ]
 }
 
+/** ISO `YYYY-MM-DD` → `DD/MM/YYYY` (sem `Date` — evita recuo de fuso). Vazio → ''. PURA. */
+const fmtBR = (iso: string): string => {
+  const p = iso.split('-')
+  return p.length === 3 ? `${p[2] ?? ''}/${p[1] ?? ''}/${p[0] ?? ''}` : ''
+}
+
+/** Rótulo do intervalo personalizado (Personalizado): "DD/MM/AAAA – DD/MM/AAAA". `null` se ambos vazios. */
+export const formatCustomRange = (start: string, end: string): string | null => {
+  if (start === '' && end === '') return null
+  return `${fmtBR(start) || '…'} – ${fmtBR(end) || '…'}`
+}
+
 export type HeaderMenusBinding = Readonly<{
   periodOpen: boolean
   exportOpen: boolean
   period: PeriodPreset
   periodOptions: readonly PeriodOption[]
+  // Intervalo personalizado (preset 'custom') — datas ISO YYYY-MM-DD; `customLabel` = rótulo exibível.
+  customStart: string
+  customEnd: string
+  customLabel: string | null
   togglePeriod: () => void
   toggleExport: () => void
   closeAll: () => void
   selectPeriod: (p: PeriodPreset) => void
+  setCustomStart: (v: string) => void
+  setCustomEnd: (v: string) => void
 }>
 
 export function useHeaderMenus(): HeaderMenusBinding {
@@ -83,12 +101,17 @@ export function useHeaderMenus(): HeaderMenusBinding {
   const [periodOpen, setPeriodOpen] = useState(false)
   const [exportOpen, setExportOpen] = useState(false)
   const [period, setPeriod] = useState<PeriodPreset>('last7')
+  const [customStart, setCustomStart] = useState('')
+  const [customEnd, setCustomEnd] = useState('')
 
   return {
     periodOpen,
     exportOpen,
     period,
     periodOptions: buildPeriodOptions(now),
+    customStart,
+    customEnd,
+    customLabel: formatCustomRange(customStart, customEnd),
     togglePeriod: () => {
       setExportOpen(false)
       setPeriodOpen((v) => !v)
@@ -103,7 +126,16 @@ export function useHeaderMenus(): HeaderMenusBinding {
     },
     selectPeriod: (p) => {
       setPeriod(p)
-      setPeriodOpen(false)
+      // 'Personalizado' mantém o menu aberto p/ o usuário escolher as datas no calendário; os demais fecham.
+      if (p !== 'custom') setPeriodOpen(false)
+    },
+    setCustomStart: (v) => {
+      setCustomStart(v)
+      setPeriod('custom')
+    },
+    setCustomEnd: (v) => {
+      setCustomEnd(v)
+      setPeriod('custom')
     },
   }
 }

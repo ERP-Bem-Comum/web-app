@@ -1784,6 +1784,39 @@ export const pmDivider = style({
   marginInline: '0.375rem',
 })
 
+// Personalizado: linha com os dois campos de data (calendário nativo) dentro do menu de período.
+export const periodCustomRow = style({
+  display: 'flex',
+  gap: sp.sm,
+  paddingInline: '0.625rem',
+  paddingBlock: sp.sm,
+})
+export const periodCustomField = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.1875rem',
+  flex: 1,
+})
+export const periodCustomLbl = style({
+  fontFamily: recon.font.sans,
+  fontSize: fs['3xs'],
+  fontWeight: recon.weight.bold,
+  letterSpacing: '0.04em',
+  textTransform: 'uppercase',
+  color: c.ink[5],
+})
+export const periodCustomInput = style({
+  fontFamily: recon.font.mono,
+  fontSize: fs.xs,
+  color: c.ink[2],
+  background: c.paper.default,
+  border: `${bw.thin} solid ${c.paper.rule}`,
+  borderRadius: r.sm,
+  paddingInline: sp.sm,
+  paddingBlock: '0.3125rem',
+  selectors: { '&:focus': { outline: 'none', borderColor: c.teal.normal } },
+})
+
 // menu de itens (Exportar / Importar) — grupo + item com ícone
 export const ddGroup = style({
   display: 'flex',
