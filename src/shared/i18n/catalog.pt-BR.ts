@@ -1301,6 +1301,12 @@ export const ptBR: Catalog = {
   'financial.recon.bottombar.exportUnavailable':
     'Exportar disponível quando o backend listar períodos (#173)',
   'financial.recon.bottombar.close': 'Fechar período',
+  // Menu de ações de período no footer (Fechar/Abrir período).
+  'financial.recon.bottombar.periodActions': 'Gerenciar período',
+  'financial.recon.period.actionsGroup': 'Período',
+  'financial.recon.close.reopen': 'Abrir período',
+  'financial.recon.close.reopenUnavailable': 'Reabertura de período disponível em breve.',
+  'financial.recon.close.soon': 'em breve',
   // legenda do footer (pontos coloridos)
   'financial.recon.legend.alta': 'Match alto (≥75%)',
   'financial.recon.legend.parcial': 'Match parcial',

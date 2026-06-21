@@ -7,7 +7,6 @@
  */
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { CheckCircleIcon } from '#shared/ui/icons/index.ts'
 
 import { useReconciliationWorkspace } from '../reconciliation-workspace.binding.ts'
 import { centsToBRL, isPending, type AssocTab } from '../reconciliation-workspace.view-model.ts'
@@ -22,6 +21,7 @@ import { ChangeAccountModal } from '../components/change-account-modal.component
 import { MatchDetailsModal } from '../components/match-details-modal.component.tsx'
 import { PeriodMenu } from '../components/period-menu.component.tsx'
 import { ExportMenu } from '../components/export-menu.component.tsx'
+import { PeriodActionsMenu } from '../components/period-actions-menu.component.tsx'
 import * as s from './reconciliation-workspace.css.ts'
 
 const ASSOC_TABS: readonly { id: AssocTab; tag: string }[] = [
@@ -280,26 +280,22 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
           ) : null}
           {/* Exportar OFX/CSV reais (#173, exporta o período mais recente); PDF segue chrome (#145) */}
           <ExportMenu menus={vm.headerMenus} exportBinding={vm.exportConciliacao} />
-          {/* Fechar período (US7) — bloqueado se há pendentes ou sem extrato */}
-          <button
-            type="button"
-            className={s.btnPrimary}
-            disabled={!vm.closePeriod.canClose}
-            aria-disabled={!vm.closePeriod.canClose}
-            title={
+          {/* Período (US7): dropdown Fechar/Abrir período. Fechar gated (sem extrato/pendências);
+              Abrir = chrome até o backend (core-api#203). */}
+          <PeriodActionsMenu
+            menus={vm.headerMenus}
+            canClose={vm.closePeriod.canClose}
+            closeHint={
               ui.statementId === null
                 ? t('financial.recon.close.noStatement')
                 : vm.filterCounts.pendentes > 0
                   ? t('financial.recon.close.pendingBlocked')
-                  : undefined
+                  : null
             }
-            onClick={() => {
+            onClosePeriod={() => {
               vm.closePeriod.close()
             }}
-          >
-            <CheckCircleIcon />
-            {t('financial.recon.bottombar.close')}
-          </button>
+          />
         </div>
       </footer>
 

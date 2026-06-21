@@ -73,8 +73,14 @@ describe('ReconciliationWorkspacePage (shell)', () => {
     expect(
       screen.getByRole('menuitem', { name: has('financial.recon.export.pdf') }).getAttribute('title'),
     ).toBe(tr('financial.recon.export.pdfUnavailable'))
+    // Período vira dropdown (Fechar/Abrir): o gatilho abre o menu; "Fechar período" fica desabilitado
+    // sem extrato (US7) e "Abrir período" é chrome (até core-api#203).
+    fireEvent.click(screen.getByRole('button', { name: has('financial.recon.bottombar.periodActions') }))
     expect(
-      screen.getByRole('button', { name: has('financial.recon.bottombar.close') }).hasAttribute('disabled'),
+      screen.getByRole('menuitem', { name: has('financial.recon.bottombar.close') }).hasAttribute('disabled'),
+    ).toBe(true)
+    expect(
+      screen.getByRole('menuitem', { name: has('financial.recon.close.reopen') }).hasAttribute('disabled'),
     ).toBe(true)
   })
 

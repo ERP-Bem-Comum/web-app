@@ -82,6 +82,8 @@ export const formatCustomRange = (start: string, end: string): string | null => 
 export type HeaderMenusBinding = Readonly<{
   periodOpen: boolean
   exportOpen: boolean
+  /** Dropdown de ações de período no footer (Fechar/Abrir período). */
+  periodActionsOpen: boolean
   period: PeriodPreset
   periodOptions: readonly PeriodOption[]
   // Intervalo personalizado (preset 'custom') — datas ISO YYYY-MM-DD; `customLabel` = rótulo exibível.
@@ -90,6 +92,7 @@ export type HeaderMenusBinding = Readonly<{
   customLabel: string | null
   togglePeriod: () => void
   toggleExport: () => void
+  togglePeriodActions: () => void
   closeAll: () => void
   selectPeriod: (p: PeriodPreset) => void
   setCustomStart: (v: string) => void
@@ -100,6 +103,7 @@ export function useHeaderMenus(): HeaderMenusBinding {
   const [now] = useState(() => new Date())
   const [periodOpen, setPeriodOpen] = useState(false)
   const [exportOpen, setExportOpen] = useState(false)
+  const [periodActionsOpen, setPeriodActionsOpen] = useState(false)
   const [period, setPeriod] = useState<PeriodPreset>('last7')
   const [customStart, setCustomStart] = useState('')
   const [customEnd, setCustomEnd] = useState('')
@@ -107,6 +111,7 @@ export function useHeaderMenus(): HeaderMenusBinding {
   return {
     periodOpen,
     exportOpen,
+    periodActionsOpen,
     period,
     periodOptions: buildPeriodOptions(now),
     customStart,
@@ -114,15 +119,23 @@ export function useHeaderMenus(): HeaderMenusBinding {
     customLabel: formatCustomRange(customStart, customEnd),
     togglePeriod: () => {
       setExportOpen(false)
+      setPeriodActionsOpen(false)
       setPeriodOpen((v) => !v)
     },
     toggleExport: () => {
       setPeriodOpen(false)
+      setPeriodActionsOpen(false)
       setExportOpen((v) => !v)
+    },
+    togglePeriodActions: () => {
+      setPeriodOpen(false)
+      setExportOpen(false)
+      setPeriodActionsOpen((v) => !v)
     },
     closeAll: () => {
       setPeriodOpen(false)
       setExportOpen(false)
+      setPeriodActionsOpen(false)
     },
     selectPeriod: (p) => {
       setPeriod(p)
