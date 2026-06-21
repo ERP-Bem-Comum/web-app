@@ -141,6 +141,11 @@ const toMatchView = (s: MatchSuggestion, payables: ReadonlyMap<string, PaidPayab
   payable: payables.get(s.payableId) ?? null,
 })
 
+// Persistência do extrato por conta: o `statementId` do extrato importado é efêmero no reducer, mas o
+// statement em si vive no backend. Guardamos o id em localStorage (por conta) para restaurar ao recarregar
+// — sem isso, reload/rebuild "apagava" o extrato. Não há degradação: o caminho de carga (Ref/saldo) é o mesmo.
+const lastStatementKey = (ref: string): string => `recon.lastStatement.${ref}`
+
 export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBinding {
   const [ui, dispatch] = useReducer(workspaceReducer, initialWorkspaceUiState)
   const { accountRef, identityAvailable, account } = useAccountSelector(routeAccountRef)
@@ -174,7 +179,27 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
 
   const importBinding = useImport(accountRef, (statementId) => {
     dispatch({ type: 'set-statement', statementId })
+    // Persiste o extrato visível desta conta → sobrevive a reload/rebuild (o backend mantém o statement).
+    try {
+      window.localStorage.setItem(lastStatementKey(accountRef), statementId)
+    } catch {
+      // localStorage indisponível (SSR/modo privado) → o extrato já foi setado no reducer; só não persiste.
+      void statementId
+    }
   })
+
+  // Restaura o extrato persistido ao montar/trocar de conta (o id é efêmero no reducer; o real fica no
+  // localStorage). Só restaura se ainda não há extrato em tela. Cobre o "apaga no reload".
+  useEffect(() => {
+    if (accountRef === '' || ui.statementId !== null) return
+    try {
+      const saved = window.localStorage.getItem(lastStatementKey(accountRef))
+      if (saved !== null && saved !== '') dispatch({ type: 'set-statement', statementId: saved })
+    } catch {
+      // localStorage indisponível → ignora (extrato segue efêmero).
+      void accountRef
+    }
+  }, [accountRef, ui.statementId])
 
   // ── Lista de transações (server-state → estado da tela via view-model pura) ──
   const allTx: readonly StatementTransaction[] = txQuery.data?.ok === true ? txQuery.data.value : []
