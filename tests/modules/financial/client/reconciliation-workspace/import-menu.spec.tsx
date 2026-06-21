@@ -3,7 +3,7 @@
  * pós-import e erro (tag i18n). Recebe tudo por props.
  */
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { render, screen, cleanup } from '@testing-library/react'
+import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 
 import { ImportMenu } from '#modules/financial/client/reconciliation-workspace/components/import-menu.component.tsx'
 import type { BankStatementImport } from '#modules/financial/client/data/model/reconciliation.model.ts'
@@ -23,10 +23,15 @@ afterEach(() => {
 })
 
 describe('ImportMenu', () => {
-  it('mostra o botão Importar e o chip PDF anunciado (#145)', () => {
+  it('clicar em Importar abre o dropdown com OFX/CSV (reais) e PDF desabilitado (#145)', () => {
     render(<ImportMenu importing={false} summary={null} errorTag={null} onPickFile={vi.fn()} />)
-    expect(screen.getByRole('button', { name: (n) => n.includes(tr('financial.recon.import')) })).toBeTruthy()
-    expect(screen.getByText(tr('financial.recon.import.pdfChip'))).toBeTruthy()
+    // Fechado: as opções não aparecem.
+    expect(screen.queryByRole('menuitem', { name: (n) => n.includes('OFX') })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: (n) => n.includes(tr('financial.recon.import')) }))
+    expect(screen.getByRole('menuitem', { name: (n) => n.includes('OFX') })).toBeTruthy()
+    expect(screen.getByRole('menuitem', { name: (n) => n.includes('CSV') })).toBeTruthy()
+    const pdf = screen.getByRole('menuitem', { name: (n) => n.includes('PDF') }) as HTMLButtonElement
+    expect(pdf.disabled).toBe(true)
   })
 
   it('exibe o resumo pós-import (importadas/duplicadas/período)', () => {
