@@ -228,7 +228,12 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
   const reconcileBinding = useReconcile(recordReconciliation)
   const searchCreateBinding = useSearchCreate(selectedTx, payables, recordReconciliation)
   const manualEntryBinding = useManualEntry(selectedTx, recordReconciliation)
-  const undoBinding = useUndo(forgetReconciliation)
+  // No sucesso do Desfazer: esquece o id de sessão E fecha o modal de detalhes. Em falha (ex.: período
+  // fechado), o modal permanece aberto exibindo o erro (a confirmação fica na própria view).
+  const undoBinding = useUndo((transactionId) => {
+    forgetReconciliation(transactionId)
+    matchDetailsBinding.close()
+  })
   const closePeriodBinding = useClosePeriod(
     accountRef,
     importBinding.summary?.period ?? null,

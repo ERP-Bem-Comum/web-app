@@ -314,12 +314,14 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
         view={vm.matchDetails.view}
         canUndo={vm.matchDetails.tx !== null && vm.matchDetails.reconciliationId !== null}
         undoing={vm.undo.undoing}
+        undoErrorTag={vm.undo.errorTag}
         onUndo={() => {
           const target = vm.matchDetails.tx
           const reconciliationId = vm.matchDetails.reconciliationId
           if (target === null || reconciliationId === null) return
+          // Não fecha aqui: o modal fecha no SUCESSO (via binding). Em falha (ex.: período fechado), o
+          // modal permanece aberto mostrando o erro.
           vm.undo.undo(reconciliationId, target.id)
-          vm.matchDetails.close()
         }}
         onViewTitle={() => undefined}
         onClose={vm.matchDetails.close}

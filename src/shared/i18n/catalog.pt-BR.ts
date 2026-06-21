@@ -1258,6 +1258,14 @@ export const ptBR: Catalog = {
   'financial.recon.match.totalConciliado': 'Total conciliado',
   'financial.recon.match.titlesHint':
     'Esta saída foi conciliada com vários títulos. Nº e detalhes de cada título disponíveis em breve.',
+  // Confirmação do Desfazer (US5) — consequência por tipo.
+  'financial.recon.match.undoConfirmQ': 'Desfazer esta conciliação?',
+  'financial.recon.match.undoConsequenceTitles':
+    'O(s) título(s) voltam para o status PAGO e a movimentação volta a pendente.',
+  'financial.recon.match.undoConsequenceManual':
+    'O lançamento (manual/transferência) será desfeito e a movimentação volta a pendente.',
+  'financial.recon.match.undoConfirmBtn': 'Confirmar',
+  'financial.recon.match.undoCancelBtn': 'Cancelar',
   'financial.recon.match.auditLbl': 'Auditoria',
   'financial.recon.match.auditWhen': 'Conciliada em',
   'financial.recon.match.auditWho': 'Por',
