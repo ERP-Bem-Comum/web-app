@@ -393,6 +393,14 @@ export type MatchDetailsDoc = Readonly<{
   valueBRL: string
 }>
 export type MatchDetailsAudit = Readonly<{ when: string; who: string }>
+// Lado "Título" quando a saída foi conciliada com VÁRIOS títulos (#175 com >1 item): valor conciliado por
+// título + total. Nome/nº de cada título depende do enriquecimento (#172).
+export type MatchTitleLine = Readonly<{ valueBRL: string }>
+export type MatchTitlesView = Readonly<{
+  count: number
+  lines: readonly MatchTitleLine[]
+  totalBRL: string
+}>
 export type MatchDetailsView = Readonly<{
   isManualEntry: boolean
   ext: Readonly<{ name: string; date: string; kind: string; id: string; valueBRL: string }>
@@ -400,6 +408,8 @@ export type MatchDetailsView = Readonly<{
   // sem dados, preenche com "—" (estado honesto, igual ao default do mock). Em preview vêm preenchidos.
   doc: MatchDetailsDoc
   audit: MatchDetailsAudit
+  // Preenchido só quando a conciliação é de 1 saída → N títulos (>1 item); senão null (usa `doc`).
+  multi: MatchTitlesView | null
 }>
 
 const DASH_DOC: MatchDetailsDoc = {
@@ -421,11 +431,26 @@ export const matchAuditFromLookup = (r: TransactionReconciliation): MatchDetails
   who: r.reconciledBy,
 })
 
+/**
+ * Lado "Título" do modal quando UMA saída foi conciliada com VÁRIOS títulos (#175 com >1 item): contagem +
+ * valor conciliado por título + total (deixa explícito o rateio). null quando há só 1 item (usa `doc`).
+ */
+export const buildMatchTitles = (r: TransactionReconciliation): MatchTitlesView | null => {
+  if (r.items.length <= 1) return null
+  const totalCents = r.items.reduce((acc, it) => acc + Number(it.reconciledValueCents), 0)
+  return {
+    count: r.items.length,
+    lines: r.items.map((it) => ({ valueBRL: centsToBRL(it.reconciledValueCents) })),
+    totalBRL: centsToBRL(String(totalCents)),
+  }
+}
+
 /** Monta a visão do modal de detalhes a partir da transação conciliada (lado extrato = real) + detalhes. */
 export const matchDetailsView = (
   tx: StatementTransaction,
   doc: MatchDetailsDoc | null,
   audit: MatchDetailsAudit | null,
+  multi: MatchTitlesView | null = null,
 ): MatchDetailsView => ({
   isManualEntry: tx.reconciliationStatus === 'ManualEntry',
   ext: {
@@ -437,6 +462,7 @@ export const matchDetailsView = (
   },
   doc: doc ?? DASH_DOC,
   audit: audit ?? DASH_AUDIT,
+  multi,
 })
 
 /** Agrupa as contas em ativas/encerradas p/ o modal de troca, filtrando pela busca e marcando a atual. */

@@ -1251,6 +1251,13 @@ export const ptBR: Catalog = {
   'financial.recon.match.rowDue': 'Vencimento',
   'financial.recon.match.rowCat': 'Categoria',
   'financial.recon.match.rowValueDoc': 'Valor conciliado',
+  // Conciliação 1 saída → N títulos (lado Título com múltiplos itens).
+  'financial.recon.match.titlesLbl': 'Títulos no sistema',
+  'financial.recon.match.titlesWord': 'títulos conciliados',
+  'financial.recon.match.titleN': 'Título',
+  'financial.recon.match.totalConciliado': 'Total conciliado',
+  'financial.recon.match.titlesHint':
+    'Esta saída foi conciliada com vários títulos. Nº e detalhes de cada título disponíveis em breve.',
   'financial.recon.match.auditLbl': 'Auditoria',
   'financial.recon.match.auditWhen': 'Conciliada em',
   'financial.recon.match.auditWho': 'Por',
