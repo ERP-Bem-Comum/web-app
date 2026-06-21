@@ -1730,6 +1730,13 @@ export const exportMenu = style({
   insetInlineStart: 0,
   minInlineSize: '17.5rem',
 })
+// Dropdown do Importar (header) — abre p/ BAIXO, alinhado à direita do botão.
+export const importMenu = style({
+  ...ddMenuBase,
+  insetBlockStart: 'calc(100% + 0.375rem)',
+  insetInlineEnd: 0,
+  minInlineSize: '17.5rem',
+})
 
 const pmItemBase = {
   display: 'flex',

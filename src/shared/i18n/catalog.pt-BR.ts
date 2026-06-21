@@ -1402,6 +1402,12 @@ export const ptBR: Catalog = {
   // Importar (US2)
   'financial.recon.import.pdfChip': 'PDF (OCR)',
   'financial.recon.import.pdfUnavailable': 'Importar PDF via OCR — em breve (#145)',
+  // Dropdown de formato do Importar (OFX/CSV reais; PDF chrome até OCR #145).
+  'financial.recon.import.group': 'Formato do extrato',
+  'financial.recon.import.ofxLabel': 'OFX — extrato bancário',
+  'financial.recon.import.csvLabel': 'CSV — planilha de lançamentos',
+  'financial.recon.import.pdfLabel': 'PDF — leitura por OCR',
+  'financial.recon.import.pdfHint': 'Em breve',
   'financial.recon.import.summary': '{imported} importadas · {dups} duplicadas · {start}–{end}',
   // Lista de movimentações (US1)
   'financial.recon.list.idle': 'Importe um extrato para ver as movimentações.',
