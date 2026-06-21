@@ -1,86 +1,20 @@
 /**
- * ExportDropdown — dropdown com opções PDF/CSV para exportação da lista.
- * Componente BURRO: recebe rows + funções de exportação por props.
+ * ExportDropdown — dropdown com opções CSV/PDF para exportação da lista.
+ * Componente BURRO: o CSV (todos os contratos, legível) é montado/baixado pela ViewModel via `onExportCsv`
+ * (recebido por props); o PDF usa `window.print()`. Sem data-hooks, sem montar dados aqui.
  */
 import type { ReactNode, MouseEvent } from 'react'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import type { ContractRow } from '#modules/contracts/client/contract-list/contract-list.view-model.ts'
-import {
-  formatContractNumber,
-  formatCurrency,
-  formatDate,
-  deriveStatus,
-  getMostRecentChild,
-  exportFileStamp,
-} from '#modules/contracts/client/contract-list/contract-list.view-model.ts'
 import { DownloadIcon, FileTextIcon, FileChartIcon } from '#shared/ui/icons/index.ts'
 import { wrapper, trigger, menu, menuItem, menuItemBorder } from './export-dropdown.css.ts'
 
 const t = createTranslator(ptBR)
 
 export interface ExportDropdownProps {
-  readonly rows: readonly ContractRow[]
-}
-
-function getContractorName(row: ContractRow): string {
-  const c = row.supplier ?? row.financier ?? row.collaborator
-  return c?.name ?? c?.corporateName ?? c?.fantasyName ?? '—'
-}
-
-function getContractorDoc(row: ContractRow): string {
-  const c = row.supplier ?? row.financier ?? row.collaborator
-  return c?.cnpj ?? c?.cpf ?? ''
-}
-
-function buildCsv(rows: readonly ContractRow[]): string {
-  const headers = [
-    'Número',
-    'Contratado',
-    'CNPJ/CPF',
-    'Objeto',
-    'Tipo',
-    'Programa',
-    'Valor Atual',
-    'Saldo',
-    'Início',
-    'Fim',
-    'Status',
-  ]
-  const lines = rows.map((row) => {
-    const info = getMostRecentChild(row)
-    const derived = deriveStatus(info, !!(row.children?.length ?? 0))
-    const valorAtual = row.currentValue ?? row.totalValue
-    return [
-      formatContractNumber(row.contractCode),
-      getContractorName(row),
-      getContractorDoc(row),
-      row.object,
-      row.contractType,
-      row.program?.name ?? '',
-      formatCurrency(valorAtual),
-      '—',
-      formatDate(row.contractPeriod.start),
-      formatDate(row.contractPeriod.end),
-      derived.label,
-    ]
-      .map((cell) => `"${cell.replace(/"/g, '""')}"`)
-      .join(';')
-  })
-  return [headers.join(';'), ...lines].join('\n')
-}
-
-function downloadCsv(rows: readonly ContractRow[]): void {
-  const csv = buildCsv(rows)
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = `contratos-${exportFileStamp()}.csv`
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
+  readonly onExportCsv: () => void
+  readonly exporting: boolean
+  readonly errorTag: string | null
 }
 
 function downloadPdf(): void {
@@ -92,13 +26,10 @@ function closeDetails(e: MouseEvent<HTMLButtonElement>) {
   if (details) details.open = false
 }
 
-export function ExportDropdown({ rows }: ExportDropdownProps): ReactNode {
+export function ExportDropdown({ onExportCsv, exporting, errorTag }: ExportDropdownProps): ReactNode {
   return (
     <details className={wrapper}>
-      <summary
-        style={{ listStyle: 'none', cursor: 'pointer' }}
-        aria-label={t('contracts.list.export')}
-      >
+      <summary style={{ listStyle: 'none', cursor: 'pointer' }} aria-label={t('contracts.list.export')}>
         <span className={trigger}>
           <DownloadIcon />
           {t('contracts.list.export')}
@@ -109,19 +40,32 @@ export function ExportDropdown({ rows }: ExportDropdownProps): ReactNode {
         <button
           type="button"
           className={menuItem}
-          onClick={(e) => { downloadCsv(rows); closeDetails(e) }}
+          disabled={exporting}
+          aria-disabled={exporting}
+          onClick={(e) => {
+            onExportCsv()
+            closeDetails(e)
+          }}
         >
           <FileTextIcon />
-          CSV
+          {exporting ? t('contracts.list.exporting') : 'CSV'}
         </button>
         <button
           type="button"
           className={`${menuItem} ${menuItemBorder}`}
-          onClick={(e) => { downloadPdf(); closeDetails(e) }}
+          onClick={(e) => {
+            downloadPdf()
+            closeDetails(e)
+          }}
         >
           <FileChartIcon />
           PDF
         </button>
+        {errorTag !== null ? (
+          <span className={menuItem} role="alert">
+            {t(errorTag)}
+          </span>
+        ) : null}
       </div>
     </details>
   )
