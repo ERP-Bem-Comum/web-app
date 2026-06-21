@@ -29,7 +29,13 @@ export function PeriodMenu({ menus }: PeriodMenuProps) {
       >
         <CalendarDaysIcon />
         <span className={s.periodLbl}>{t('financial.recon.period')}</span>
-        <span className={s.periodValue}>{current !== undefined ? t(current.labelTag) : ''}</span>
+        <span className={s.periodValue}>
+          {menus.period === 'custom' && menus.customLabel !== null
+            ? menus.customLabel
+            : current !== undefined
+              ? t(current.labelTag)
+              : ''}
+        </span>
         <span className={menus.periodOpen ? s.periodChevOpen : s.periodChev}>
           <ChevronDownIcon />
         </span>
@@ -58,9 +64,42 @@ export function PeriodMenu({ menus }: PeriodMenuProps) {
                 >
                   <span>{t(o.labelTag)}</span>
                   <span className={o.preset === menus.period ? s.periodOptMeta.on : s.periodOptMeta.off}>
-                    {o.preset === 'custom' ? t('financial.recon.period.customMeta') : o.meta}
+                    {o.preset === 'custom'
+                      ? (menus.customLabel ?? t('financial.recon.period.customMeta'))
+                      : o.meta}
                   </span>
                 </button>
+                {/* Personalizado selecionado → calendário (datas inicial/final via <input type=date>) */}
+                {o.preset === 'custom' && menus.period === 'custom' ? (
+                  <div className={s.periodCustomRow}>
+                    <label className={s.periodCustomField}>
+                      <span className={s.periodCustomLbl}>{t('financial.recon.period.customStart')}</span>
+                      <input
+                        type="date"
+                        className={s.periodCustomInput}
+                        value={menus.customStart}
+                        max={menus.customEnd !== '' ? menus.customEnd : undefined}
+                        aria-label={t('financial.recon.period.customStart')}
+                        onChange={(e) => {
+                          menus.setCustomStart(e.target.value)
+                        }}
+                      />
+                    </label>
+                    <label className={s.periodCustomField}>
+                      <span className={s.periodCustomLbl}>{t('financial.recon.period.customEnd')}</span>
+                      <input
+                        type="date"
+                        className={s.periodCustomInput}
+                        value={menus.customEnd}
+                        min={menus.customStart !== '' ? menus.customStart : undefined}
+                        aria-label={t('financial.recon.period.customEnd')}
+                        onChange={(e) => {
+                          menus.setCustomEnd(e.target.value)
+                        }}
+                      />
+                    </label>
+                  </div>
+                ) : null}
               </Fragment>
             ))}
           </div>

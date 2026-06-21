@@ -1268,6 +1268,8 @@ export const ptBR: Catalog = {
   'financial.recon.period.quarter': 'Este trimestre',
   'financial.recon.period.custom': 'Personalizado…',
   'financial.recon.period.customMeta': 'data inicial → final',
+  'financial.recon.period.customStart': 'Data inicial',
+  'financial.recon.period.customEnd': 'Data final',
   'financial.recon.period.hint': 'Filtrar por período depende do backend (#173) — por ora ajusta só a visão.',
   // Menu Exportar conciliação (espelha o Importar) — chrome até #173
   'financial.recon.export.group': 'Exportar conciliação',
