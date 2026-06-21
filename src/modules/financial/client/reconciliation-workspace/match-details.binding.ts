@@ -10,6 +10,7 @@ import { useQuery } from '@tanstack/react-query'
 
 import { transactionReconciliationQueryOptions } from './reconciliation-workspace.query.ts'
 import {
+  buildMatchTitles,
   matchAuditFromLookup,
   matchDetailsView,
   type MatchDetailsView,
@@ -33,7 +34,9 @@ export function useMatchDetails(sessionIdFor: (transactionId: string) => string 
   const lookup = lookupQuery.data?.ok === true ? lookupQuery.data.value : null
 
   const audit = lookup !== null ? matchAuditFromLookup(lookup) : null
-  const view = tx === null ? null : matchDetailsView(tx, null, audit)
+  // Conciliação 1 saída → N títulos: monta o lado "Título" com a lista de valores conciliados (#175 items).
+  const multi = lookup !== null ? buildMatchTitles(lookup) : null
+  const view = tx === null ? null : matchDetailsView(tx, null, audit, multi)
   const reconciliationId = tx === null ? null : (sessionIdFor(tx.id) ?? lookup?.reconciliationId ?? null)
 
   return {

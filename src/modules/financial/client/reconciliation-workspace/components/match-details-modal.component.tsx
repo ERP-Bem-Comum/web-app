@@ -101,26 +101,52 @@ export function MatchDetailsModal({
             </div>
 
             <div className={s.mmSide.doc}>
-              <div className={s.mmSideLbl.doc}>
-                {manual ? t('financial.recon.match.docLblManual') : t('financial.recon.match.docLbl')}
-              </div>
-              <div className={s.mmSideTitle}>{view.doc.name}</div>
-              <div className={s.mmSideRow}>
-                <span className={s.mmSideK}>{t('financial.recon.match.rowDoc')}</span>
-                <span className={s.mmSideV}>{view.doc.documento}</span>
-              </div>
-              <div className={s.mmSideRow}>
-                <span className={s.mmSideK}>{t('financial.recon.match.rowDue')}</span>
-                <span className={s.mmSideV}>{view.doc.vencimento}</span>
-              </div>
-              <div className={s.mmSideRow}>
-                <span className={s.mmSideK}>{t('financial.recon.match.rowCat')}</span>
-                <span className={s.mmSideV}>{view.doc.categoria}</span>
-              </div>
-              <div className={s.mmSideRow}>
-                <span className={s.mmSideK}>{t('financial.recon.match.rowValueDoc')}</span>
-                <span className={s.mmSideVAmt.doc}>{view.doc.valueBRL}</span>
-              </div>
+              {view.multi !== null ? (
+                <>
+                  <div className={s.mmSideLbl.doc}>
+                    {`${t('financial.recon.match.titlesLbl')} (${String(view.multi.count)})`}
+                  </div>
+                  <div className={s.mmSideTitle}>
+                    {`${String(view.multi.count)} ${t('financial.recon.match.titlesWord')}`}
+                  </div>
+                  {view.multi.lines.map((ln, i) => (
+                    <div className={s.mmSideRow} key={`${String(i)}-${ln.valueBRL}`}>
+                      <span
+                        className={s.mmSideK}
+                      >{`${t('financial.recon.match.titleN')} ${String(i + 1)}`}</span>
+                      <span className={s.mmSideV}>{ln.valueBRL}</span>
+                    </div>
+                  ))}
+                  <div className={s.mmTotalRow}>
+                    <span className={s.mmSideK}>{t('financial.recon.match.totalConciliado')}</span>
+                    <span className={s.mmSideVAmt.doc}>{view.multi.totalBRL}</span>
+                  </div>
+                  <span className={s.mmMultiHint}>{t('financial.recon.match.titlesHint')}</span>
+                </>
+              ) : (
+                <>
+                  <div className={s.mmSideLbl.doc}>
+                    {manual ? t('financial.recon.match.docLblManual') : t('financial.recon.match.docLbl')}
+                  </div>
+                  <div className={s.mmSideTitle}>{view.doc.name}</div>
+                  <div className={s.mmSideRow}>
+                    <span className={s.mmSideK}>{t('financial.recon.match.rowDoc')}</span>
+                    <span className={s.mmSideV}>{view.doc.documento}</span>
+                  </div>
+                  <div className={s.mmSideRow}>
+                    <span className={s.mmSideK}>{t('financial.recon.match.rowDue')}</span>
+                    <span className={s.mmSideV}>{view.doc.vencimento}</span>
+                  </div>
+                  <div className={s.mmSideRow}>
+                    <span className={s.mmSideK}>{t('financial.recon.match.rowCat')}</span>
+                    <span className={s.mmSideV}>{view.doc.categoria}</span>
+                  </div>
+                  <div className={s.mmSideRow}>
+                    <span className={s.mmSideK}>{t('financial.recon.match.rowValueDoc')}</span>
+                    <span className={s.mmSideVAmt.doc}>{view.doc.valueBRL}</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 

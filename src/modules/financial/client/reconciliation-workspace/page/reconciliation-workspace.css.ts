@@ -2528,6 +2528,24 @@ export const mmSideRow = style({
   gap: sp.lg,
   paddingBlock: '0.25rem',
 })
+// Linha do TOTAL conciliado (conciliação 1 saída → N títulos): separador acima p/ destacar o somatório.
+export const mmTotalRow = style({
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'baseline',
+  gap: sp.lg,
+  paddingBlockStart: sp.sm,
+  marginBlockStart: sp.xs,
+  borderBlockStart: `${recon.border.thin} solid ${c.paper.rule}`,
+})
+// Dica do lado multi-título (nome/nº de cada título dependem do enriquecimento do backend).
+export const mmMultiHint = style({
+  display: 'block',
+  marginBlockStart: sp.sm,
+  fontFamily: recon.font.sans,
+  fontSize: fs.xs,
+  color: c.ink[5],
+})
 export const mmSideK = style({
   fontFamily: recon.font.sans,
   fontSize: '0.71875rem',
