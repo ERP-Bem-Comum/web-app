@@ -4,6 +4,8 @@
  * de Auditoria e rodapé (Desfazer · Ver título · Fechar). O lado extrato é real; título/auditoria vêm "—"
  * até o backend (#175). Só props.
  */
+import { useState } from 'react'
+
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { FileTextIcon, LinkIcon } from '#shared/ui/icons/index.ts'
@@ -19,6 +21,8 @@ export type MatchDetailsModalProps = Readonly<{
   view: MatchDetailsView | null
   canUndo: boolean
   undoing: boolean
+  /** Erro do desfazer (ex.: período fechado) — mostrado no modal em vez de fechar silenciosamente. */
+  undoErrorTag: string | null
   onUndo: () => void
   onViewTitle: () => void
   onClose: () => void
@@ -29,12 +33,27 @@ export function MatchDetailsModal({
   view,
   canUndo,
   undoing,
+  undoErrorTag,
   onUndo,
   onViewTitle,
   onClose,
 }: MatchDetailsModalProps) {
+  // Passo de confirmação do Desfazer (US5): 1º clique pede confirmação com a consequência; 2º confirma.
+  const [confirming, setConfirming] = useState(false)
+  // Reseta a confirmação ao abrir/fechar (padrão React de ajuste no render, sem efeito) — evita carregar
+  // um "confirmando" antigo p/ a próxima conciliação aberta.
+  const [prevOpen, setPrevOpen] = useState(open)
+  if (open !== prevOpen) {
+    setPrevOpen(open)
+    setConfirming(false)
+  }
+
   if (!open || view === null) return null
   const manual = view.isManualEntry
+  // Consequência honesta: títulos voltam a PAGO; lançamento manual/transferência é desfeito (vira pendente).
+  const undoConsequence = manual
+    ? t('financial.recon.match.undoConsequenceManual')
+    : t('financial.recon.match.undoConsequenceTitles')
   return (
     <div
       className={s.modalOverlay}
@@ -162,33 +181,69 @@ export function MatchDetailsModal({
           </div>
         </div>
 
+        {undoErrorTag !== null ? <div className={s.mmUndoError}>{t(undoErrorTag)}</div> : null}
+
         <footer className={s.matchFoot}>
-          <button
-            type="button"
-            className={s.footBtnUndo}
-            disabled={!canUndo || undoing}
-            aria-disabled={!canUndo || undoing}
-            title={canUndo ? undefined : t('financial.recon.match.undoUnavailable')}
-            onClick={onUndo}
-          >
-            <LinkIcon />
-            {t('financial.recon.match.undo')}
-          </button>
-          <span className={s.matchFootSpacer} />
-          <button
-            type="button"
-            className={s.footBtnSecondary}
-            disabled
-            aria-disabled="true"
-            title={t('financial.recon.match.viewTitleUnavailable')}
-            onClick={onViewTitle}
-          >
-            <FileTextIcon />
-            {t('financial.recon.match.viewTitle')}
-          </button>
-          <button type="button" className={s.footBtnPrimary} onClick={onClose}>
-            {t('financial.recon.match.close')}
-          </button>
+          {confirming ? (
+            <>
+              <span className={s.mmUndoConfirm}>
+                {`${t('financial.recon.match.undoConfirmQ')} ${undoConsequence}`}
+              </span>
+              <span className={s.matchFootSpacer} />
+              <button
+                type="button"
+                className={s.footBtnSecondary}
+                disabled={undoing}
+                aria-disabled={undoing}
+                onClick={() => {
+                  setConfirming(false)
+                }}
+              >
+                {t('financial.recon.match.undoCancelBtn')}
+              </button>
+              <button
+                type="button"
+                className={s.footBtnUndo}
+                disabled={undoing}
+                aria-disabled={undoing}
+                onClick={onUndo}
+              >
+                <LinkIcon />
+                {t('financial.recon.match.undoConfirmBtn')}
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className={s.footBtnUndo}
+                disabled={!canUndo || undoing}
+                aria-disabled={!canUndo || undoing}
+                title={canUndo ? undefined : t('financial.recon.match.undoUnavailable')}
+                onClick={() => {
+                  setConfirming(true)
+                }}
+              >
+                <LinkIcon />
+                {t('financial.recon.match.undo')}
+              </button>
+              <span className={s.matchFootSpacer} />
+              <button
+                type="button"
+                className={s.footBtnSecondary}
+                disabled
+                aria-disabled="true"
+                title={t('financial.recon.match.viewTitleUnavailable')}
+                onClick={onViewTitle}
+              >
+                <FileTextIcon />
+                {t('financial.recon.match.viewTitle')}
+              </button>
+              <button type="button" className={s.footBtnPrimary} onClick={onClose}>
+                {t('financial.recon.match.close')}
+              </button>
+            </>
+          )}
         </footer>
       </div>
     </div>

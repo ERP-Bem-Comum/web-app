@@ -2667,6 +2667,25 @@ export const matchFoot = style({
   borderBlockStart: `${bw.hairline} solid ${c.paper.rule}`,
 })
 export const matchFootSpacer = style({ flex: 1 })
+// Mensagem de consequência ao confirmar o Desfazer (títulos → Pago / lançamento desfeito).
+export const mmUndoConfirm = style({
+  flex: 1,
+  fontFamily: recon.font.sans,
+  fontSize: fs.sm,
+  color: c.ink[2],
+  lineHeight: 1.35,
+})
+// Barra de erro do Desfazer (ex.: período fechado) — full-width acima do rodapé.
+export const mmUndoError = style({
+  flexShrink: 0,
+  paddingBlock: sp.sm,
+  paddingInline: '1.25rem',
+  background: c.red.bg,
+  color: c.red.deep,
+  fontFamily: recon.font.sans,
+  fontSize: fs.sm,
+  borderBlockStart: `${bw.hairline} solid ${c.paper.rule}`,
+})
 const footBtnBase = {
   display: 'inline-flex',
   alignItems: 'center',
