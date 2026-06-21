@@ -21,10 +21,16 @@ const baseBinding = (over: Partial<ManualEntryBinding> = {}): ManualEntryBinding
   canSubmit: false,
   submitting: false,
   errorTag: null,
+  supplierRef: '',
+  programRef: '',
+  partnerOptions: [],
+  programOptions: [],
   setType: vi.fn(),
   setDescription: vi.fn(),
   setDestinationAccount: vi.fn(),
   setConsciousConfirm: vi.fn(),
+  setSupplierRef: vi.fn(),
+  setProgramRef: vi.fn(),
   reset: vi.fn(),
   submit: vi.fn(),
   ...over,
@@ -59,6 +65,31 @@ describe('NewTransactionPane', () => {
     rerender(<NewTransactionPane binding={baseBinding({ type: 'FeePenaltyInterest' })} />)
     expect(screen.queryByText(tr('financial.recon.manual.f.supplier'))).toBeNull()
     expect(screen.getByText(tr('financial.recon.manual.f.category'))).toBeTruthy()
+  })
+
+  it('Fornecedor e Programa são selects REAIS (dispara setSupplierRef/setProgramRef)', () => {
+    const setSupplierRef = vi.fn()
+    const setProgramRef = vi.fn()
+    render(
+      <NewTransactionPane
+        binding={baseBinding({
+          type: 'Payment',
+          showPayeeBlock: true,
+          partnerOptions: [{ value: 'p1', label: 'ACME · 12.345.678/0001-90' }],
+          programOptions: [{ value: 'pr1', label: 'EDU — Educação' }],
+          setSupplierRef,
+          setProgramRef,
+        })}
+      />,
+    )
+    const supplier = screen.getByLabelText(tr('financial.recon.manual.f.supplier'))
+    expect(supplier.hasAttribute('disabled')).toBe(false)
+    fireEvent.change(supplier, { target: { value: 'p1' } })
+    expect(setSupplierRef).toHaveBeenCalledWith('p1')
+
+    const program = screen.getByLabelText(tr('financial.recon.manual.f.program'))
+    fireEvent.change(program, { target: { value: 'pr1' } })
+    expect(setProgramRef).toHaveBeenCalledWith('pr1')
   })
 
   it('Criar lançamento bloqueado quando não pode; habilitado e submete quando pode', () => {

@@ -1499,7 +1499,7 @@ export const ptBR: Catalog = {
   'financial.recon.manual.descPlaceholder':
     'Descrição operacional do lançamento (aparece no relatório de conciliação)…',
   'financial.recon.manual.backendHint':
-    'Fornecedor, documento, programa, categoria e centro de custo chegam com o backend (hoje o lançamento manual aceita tipo + descrição).',
+    'Fornecedor e Programa já estão ligados. Categoria, centro de custo e os campos de documento chegam com o backend.',
   // labels dos campos
   'financial.recon.manual.f.supplier': 'Fornecedor',
   'financial.recon.manual.f.supplierPlaceholder': 'Buscar por nome ou CNPJ…',

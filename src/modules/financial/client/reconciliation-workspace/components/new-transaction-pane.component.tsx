@@ -4,9 +4,10 @@
  * (fornecedor/tipo/data/valor/programa); Transferência/Aplicação/Resgate mostram aviso + confirmação
  * consciente + destino/produto; todos têm Categorização (categoria/centro/descrição).
  *
- * Honestidade: o contrato de manual-entry (#152) aceita só `type` + refs + `description`; as listas de
- * opções (fornecedor/programa/categoria/centro/produto) e os campos de documento dependem do backend →
- * ficam como chrome (desabilitados, em estado de placeholder). Tipo + Descrição + confirmação funcionam.
+ * Honestidade: o manual-entry (#152) aceita `type` + refs (`supplierRef`/`programRef`/…) + `description`.
+ * LIGADOS (reais): Tipo, Fornecedor (parceiros), Programa (programas ativos), Descrição e a confirmação
+ * consciente. CHROME (sem fonte hoje): Categoria/Centro de custo (core-api#200/#147), campos de documento
+ * (não fazem parte do contrato) e Destino/produto da transferência (core-api#143).
  */
 import type { ComponentType } from 'react'
 
@@ -77,6 +78,41 @@ function ChromeInput({
         disabled
         aria-disabled="true"
       />
+    </label>
+  )
+}
+
+// Select REAL (ligado): Fornecedor/Programa — o backend aceita supplierRef/programRef no manual-entry.
+function RealSelect({
+  label,
+  placeholder,
+  value,
+  options,
+  onChange,
+}: Readonly<{
+  label: string
+  placeholder: string
+  value: string
+  options: readonly Readonly<{ value: string; label: string }>[]
+  onChange: (v: string) => void
+}>) {
+  return (
+    <label className={s.ntField}>
+      <span className={s.ntLabel}>{label}</span>
+      <select
+        className={s.ntSelect}
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value)
+        }}
+      >
+        <option value="">{placeholder}</option>
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
     </label>
   )
 }
@@ -166,10 +202,15 @@ export function NewTransactionPane({ binding }: NewTransactionPaneProps) {
           {binding.showPayeeBlock ? (
             <>
               <div className={`${s.ntRow} ${s.ntRowCols2}`}>
-                <ChromeInput
+                {/* Fornecedor — REAL: opções de parceiros ativos (envia supplierRef). */}
+                <RealSelect
                   label={t('financial.recon.manual.f.supplier')}
                   placeholder={t('financial.recon.manual.f.supplierPlaceholder')}
+                  value={binding.supplierRef}
+                  options={binding.partnerOptions}
+                  onChange={binding.setSupplierRef}
                 />
+                {/* Tipo de documento — chrome: não faz parte do contrato do manual-entry (#172). */}
                 <ChromeSelect
                   label={t('financial.recon.manual.f.docType')}
                   placeholder={t('financial.recon.manual.f.docTypePlaceholder')}
@@ -180,9 +221,13 @@ export function NewTransactionPane({ binding }: NewTransactionPaneProps) {
                 <ChromeInput label={t('financial.recon.manual.f.docValue')} placeholder="R$ 0,00" mono />
               </div>
               <div className={s.ntRow}>
-                <ChromeSelect
+                {/* Programa — REAL: programas ativos (envia programRef). */}
+                <RealSelect
                   label={t('financial.recon.manual.f.program')}
                   placeholder={t('financial.recon.manual.f.programPlaceholder')}
+                  value={binding.programRef}
+                  options={binding.programOptions}
+                  onChange={binding.setProgramRef}
                 />
               </div>
             </>
