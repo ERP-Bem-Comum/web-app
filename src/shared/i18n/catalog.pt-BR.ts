@@ -72,6 +72,8 @@ export const ptBR: Catalog = {
   'contracts.list.title': 'Contratos',
   'contracts.list.new': 'Novo Contrato',
   'contracts.list.export': 'Exportar',
+  'contracts.list.exporting': 'Exportando…',
+  'contracts.list.exportError': 'Não foi possível exportar os contratos. Tente novamente.',
   'contracts.list.search': 'Buscar contratos…',
   'contracts.list.columns.code': 'Código',
   'contracts.list.columns.title': 'Título',

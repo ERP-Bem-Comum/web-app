@@ -165,6 +165,48 @@ export function getContractorFromRow(row: ContractRow): ContractRow['supplier'] 
   }
 }
 
+// CSV legível da listagem (todas as colunas de negócio: contratado, doc, valores formatados, datas).
+// PURO. Usado pelo export "todos os contratos" (pagina a lista e monta o arquivo completo).
+const CSV_HEADERS: readonly string[] = [
+  'Número',
+  'Contratado',
+  'CNPJ/CPF',
+  'Objeto',
+  'Tipo',
+  'Programa',
+  'Valor Atual',
+  'Saldo',
+  'Início',
+  'Fim',
+  'Status',
+]
+const csvCell = (v: string): string => `"${v.replace(/"/g, '""')}"`
+
+export function buildContractsCsv(rows: readonly ContractRow[]): string {
+  const lines = rows.map((row) => {
+    const c = getContractorFromRow(row)
+    const info = getMostRecentChild(row)
+    const derived = deriveStatus(info, !!(row.children?.length ?? 0))
+    const valorAtual = row.currentValue ?? row.totalValue
+    return [
+      formatContractNumber(row.contractCode),
+      c?.name ?? '—',
+      c?.cnpj ?? c?.cpf ?? '',
+      row.object,
+      row.contractType,
+      row.program?.name ?? '',
+      formatCurrency(valorAtual),
+      '—',
+      formatDate(row.contractPeriod.start),
+      formatDate(row.contractPeriod.end),
+      derived.label,
+    ]
+      .map(csvCell)
+      .join(';')
+  })
+  return [CSV_HEADERS.join(';'), ...lines].join('\n')
+}
+
 // Máscara de documento (CPF 11 / CNPJ 14 alfanumérico Serpro/2026) p/ exibição em documentos.
 const maskDocForDoc = (raw: string): string => {
   const len = normalizeCnpj(raw).length
