@@ -63,6 +63,7 @@ const base: DocumentFormFields = {
   paymentComplement: '',
   contractRef: '',
   programRef: '',
+  categoryRef: '',
   centroCusto: '',
   categoria: '',
   subcategoria: '',
@@ -135,6 +136,14 @@ describe('buildCreateInput — Descontos / Juros·Multa', () => {
     const input = buildCreateInput(base)
     assert.equal(input?.discountsCents, undefined)
     assert.equal(input?.interestCents, undefined)
+  })
+})
+
+describe('buildCreateInput — Categorização (categoryRef · 020/#200)', () => {
+  it('envia categoryRef quando escolhido; omite quando vazio', () => {
+    const ref = '7c9e6679-7425-40de-944b-e07fc1f90ae7'
+    assert.equal(buildCreateInput({ ...base, categoryRef: ref })?.categoryRef, ref)
+    assert.equal(buildCreateInput(base)?.categoryRef, undefined)
   })
 })
 

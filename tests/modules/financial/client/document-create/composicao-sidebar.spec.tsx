@@ -31,6 +31,7 @@ const fields = (over: Partial<DocumentFormFields> = {}): DocumentFormFields => (
   paymentComplement: '',
   contractRef: '',
   programRef: '',
+  categoryRef: '',
   centroCusto: '',
   categoria: '',
   subcategoria: '',
