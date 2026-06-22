@@ -18,6 +18,7 @@ import { useDocumentEditing } from '../edit-document.binding.ts'
 import { usePartnersOptions } from '../partners-options.binding.ts'
 import { usePartnerHydration } from '../partner-hydration.binding.ts'
 import { useProgramOptions } from '../program-options.binding.ts'
+import { useCategoryOptions } from '../category-options.binding.ts'
 import {
   buildCreateInput,
   buildDraftInput,
@@ -70,6 +71,7 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
   // Programa (Categorização) — opções reais + valor efetivo: o escolhido pelo usuário tem prioridade;
   // senão herda o programa do contrato selecionado (quando houver).
   const programOptions = useProgramOptions()
+  const categoryOptions = useCategoryOptions()
   const programValue =
     controller.fields.programRef !== '' ? controller.fields.programRef : (selectedContract?.programRef ?? '')
 
@@ -181,8 +183,10 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
             programOptions={programOptions}
             programValue={programValue}
             onProgram={controller.setProgramRef}
+            categoryValue={controller.fields.categoryRef}
+            onCategory={controller.setCategoryRef}
             centroCustoOptions={[]}
-            categoriaOptions={[]}
+            categoriaOptions={categoryOptions}
             subcategoriaOptions={[]}
             planoOptions={[]}
             contract={selectedContract}

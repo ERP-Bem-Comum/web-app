@@ -127,6 +127,7 @@ export type DocumentFormFields = Readonly<{
   paymentComplement: string
   contractRef: string // Categorização: contrato escolhido (UUID) via "Alterar". Vazio = o 1º "Em Andamento".
   programRef: string // Categorização: Programa escolhido (UUID). Vazio = herda o do contrato (se houver).
+  categoryRef: string // Categorização: Categoria escolhida (UUID, taxonomia #200). Vazio = não enviada.
   // Categorização editável (texto livre, herdada do contrato mas sobrescrevível). Persistência pendente
   // (core-api#147 — listas/refs). Vazio = herda o valor do contrato selecionado.
   centroCusto: string
@@ -331,6 +332,7 @@ export const buildCreateInput = (fields: DocumentFormFields): CreateDocumentInpu
     // "Juros / Multa" (campo único) → interestCents; ambos somam ao líquido, então o total fica correto.
     interestCents: jurosMultaCents(fields) > 0 ? String(jurosMultaCents(fields)) : undefined,
     programRef: trimToUndefined(fields.programRef),
+    categoryRef: trimToUndefined(fields.categoryRef),
     retentions,
     registeredTaxes: buildRegisteredTaxInputs(fields),
     issueDate: trimToUndefined(fields.issueDate),
@@ -370,6 +372,7 @@ export const buildDraftInput = (fields: DocumentFormFields): CreateDocumentInput
     discountsCents: discountsCents(fields) > 0 ? String(discountsCents(fields)) : undefined,
     interestCents: jurosMultaCents(fields) > 0 ? String(jurosMultaCents(fields)) : undefined,
     programRef: trimToUndefined(fields.programRef),
+    categoryRef: trimToUndefined(fields.categoryRef),
     retentions,
     registeredTaxes: buildRegisteredTaxInputs(fields),
     issueDate: trimToUndefined(fields.issueDate),
@@ -473,6 +476,7 @@ export const hydrateFieldsFromDetail = (d: DocumentDetail): DocumentFormFields =
     paymentComplement: '', // não exposto no detalhe (core-api#89/#95)
     contractRef: '', // o GET /:id não expõe o contrato vinculado (core-api#95) → vazio na hidratação
     programRef: '', // o GET /:id não expõe a categorização (core-api#95) → vazio na hidratação
+    categoryRef: '',
     centroCusto: '',
     categoria: '',
     subcategoria: '',
