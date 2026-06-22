@@ -20,6 +20,9 @@ export type AuthUser = Readonly<{ userId: string; permissions: readonly string[]
 /** Política pública de senha (#32: GET /api/v2/auth/password-policy). */
 export type PasswordPolicy = Readonly<{ minLength: number; maxLength: number }>
 
+// Aprovador elegível (#148) — projeção lean p/ o dropdown (id + nome). Fonte: GET /api/v1/approvers.
+export type Approver = Readonly<{ id: string; name: string }>
+
 export type Session = Readonly<{
   sessionId: SessionId
   userId: string

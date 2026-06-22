@@ -33,6 +33,7 @@ const fields = (over: Partial<DocumentFormFields> = {}): DocumentFormFields => (
   programRef: '',
   categoryRef: '',
   costCenterRef: '',
+  approverRef: '',
   centroCusto: '',
   categoria: '',
   subcategoria: '',

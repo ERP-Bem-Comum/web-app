@@ -33,6 +33,7 @@ const fields = (over: Partial<DocumentFormFields> = {}): DocumentFormFields => (
   programRef: '',
   categoryRef: '',
   costCenterRef: '',
+  approverRef: '',
   centroCusto: '',
   categoria: '',
   subcategoria: '',
@@ -57,6 +58,9 @@ const baseProps = (over: Record<string, unknown> = {}) => ({
   onCategory: vi.fn(),
   costCenterValue: '',
   onCostCenter: vi.fn(),
+  approverValue: '',
+  onApprover: vi.fn(),
+  approverOptions: [],
   centroCustoOptions: [],
   categoriaOptions: [],
   subcategoriaOptions: [],
@@ -245,6 +249,19 @@ describe('DocumentForm', () => {
     expect((cc as HTMLSelectElement).disabled).toBe(false)
     fireEvent.change(cc, { target: { value: 'cc1' } })
     expect(onCostCenter).toHaveBeenCalledWith('cc1')
+  })
+
+  it('Aprovador (#148) é um dropdown REAL (habilitado na criação) e dispara onApprover', () => {
+    const onApprover = vi.fn()
+    render(
+      <DocumentForm
+        {...baseProps({ onApprover, approverOptions: [{ value: 'u1', label: 'Ana Aprovadora' }] })}
+      />,
+    )
+    const ap = screen.getByLabelText(tr('financial.create.pagamento.aprovador'))
+    expect((ap as HTMLSelectElement).disabled).toBe(false)
+    fireEvent.change(ap, { target: { value: 'u1' } })
+    expect(onApprover).toHaveBeenCalledWith('u1')
   })
 
   it('dispara onText ao digitar o número', () => {

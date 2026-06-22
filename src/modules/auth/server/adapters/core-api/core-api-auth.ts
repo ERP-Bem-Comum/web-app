@@ -8,8 +8,13 @@ import type { HttpError } from '#shared/http/http-error.types.ts'
 import { parseErrorEnvelope } from '#shared/http/error-envelope.ts'
 import { resultFetch } from '#external/core-api/result-fetch.ts'
 import type { AuthError } from '#modules/auth/server/domain/errors/auth.errors.ts'
-import type { AuthTokens, AuthUser, PasswordPolicy } from '#modules/auth/server/domain/session/session.types.ts'
-import { AuthTokensSchema, MeSchema, PasswordPolicySchema } from './auth.schema.ts'
+import type {
+  Approver,
+  AuthTokens,
+  AuthUser,
+  PasswordPolicy,
+} from '#modules/auth/server/domain/session/session.types.ts'
+import { ApproversSchema, AuthTokensSchema, MeSchema, PasswordPolicySchema } from './auth.schema.ts'
 
 // Slugs do core-api → AuthError do nosso domínio (ver contracts/core-api-auth.md).
 const SLUG_TO_AUTH_ERROR: Partial<Record<string, AuthError>> = {
@@ -54,14 +59,20 @@ export type CoreApiAuthClient = Readonly<{
   logout: (refreshToken: string) => Promise<Result<void, AuthError>>
   me: (accessToken: string) => Promise<Result<AuthUser, AuthError>>
   getPasswordPolicy: () => Promise<Result<PasswordPolicy, AuthError>>
+  listApprovers: (accessToken: string) => Promise<Result<readonly Approver[], AuthError>>
 }>
 
-export const createCoreApiAuthClient = (baseUrl: string): CoreApiAuthClient => ({
+// `baseUrl` = .../api/v2 (auth). `baseUrlV1` = .../api/v1 — onde vivem os aprovadores (#148).
+export const createCoreApiAuthClient = (baseUrl: string, baseUrlV1: string): CoreApiAuthClient => ({
   login: async ({ email, password }) =>
-    toTokens(await resultFetch<unknown>(`${baseUrl}/auth/login`, { method: 'POST', body: { email, password } })),
+    toTokens(
+      await resultFetch<unknown>(`${baseUrl}/auth/login`, { method: 'POST', body: { email, password } }),
+    ),
 
   refresh: async (refreshToken) =>
-    toTokens(await resultFetch<unknown>(`${baseUrl}/auth/refresh`, { method: 'POST', body: { refreshToken } })),
+    toTokens(
+      await resultFetch<unknown>(`${baseUrl}/auth/refresh`, { method: 'POST', body: { refreshToken } }),
+    ),
 
   logout: async (refreshToken) => {
     const r = await resultFetch<unknown>(`${baseUrl}/auth/logout`, { method: 'POST', body: { refreshToken } })
@@ -81,5 +92,14 @@ export const createCoreApiAuthClient = (baseUrl: string): CoreApiAuthClient => (
     if (isErr(r)) return err(mapHttpToAuthError(r.error))
     const parsed = PasswordPolicySchema.safeParse(r.value)
     return parsed.success ? ok(parsed.data) : err('server')
+  },
+
+  // Aprovadores elegíveis (#148): GET /api/v1/approvers (RBAC user:list). name null → fallback p/ o id.
+  listApprovers: async (accessToken) => {
+    const r = await resultFetch<unknown>(`${baseUrlV1}/approvers`, { method: 'GET', token: accessToken })
+    if (isErr(r)) return err(mapHttpToAuthError(r.error))
+    const parsed = ApproversSchema.safeParse(r.value)
+    if (!parsed.success) return err('server')
+    return ok(parsed.data.items.map((u) => ({ id: u.id, name: u.name ?? u.id })))
   },
 })

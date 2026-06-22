@@ -19,6 +19,7 @@ import { usePartnersOptions } from '../partners-options.binding.ts'
 import { usePartnerHydration } from '../partner-hydration.binding.ts'
 import { useProgramOptions } from '../program-options.binding.ts'
 import { useCategoryOptions, useCostCenterOptions } from '../category-options.binding.ts'
+import { useApproverOptions } from '../approver-options.binding.ts'
 import {
   buildCreateInput,
   buildDraftInput,
@@ -73,6 +74,7 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
   const programOptions = useProgramOptions()
   const categoryOptions = useCategoryOptions()
   const costCenterOptions = useCostCenterOptions()
+  const approverOptions = useApproverOptions()
   const programValue =
     controller.fields.programRef !== '' ? controller.fields.programRef : (selectedContract?.programRef ?? '')
 
@@ -190,6 +192,9 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
             onCategory={controller.setCategoryRef}
             costCenterValue={controller.fields.costCenterRef}
             onCostCenter={controller.setCostCenterRef}
+            approverValue={controller.fields.approverRef}
+            onApprover={controller.setApproverRef}
+            approverOptions={approverOptions}
             centroCustoOptions={costCenterOptions}
             categoriaOptions={categoryOptions}
             subcategoriaOptions={[]}

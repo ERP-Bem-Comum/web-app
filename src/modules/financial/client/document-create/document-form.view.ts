@@ -129,6 +129,7 @@ export type DocumentFormFields = Readonly<{
   programRef: string // Categorização: Programa escolhido (UUID). Vazio = herda o do contrato (se houver).
   categoryRef: string // Categorização: Categoria escolhida (UUID, taxonomia #200). Vazio = não enviada.
   costCenterRef: string // Categorização: Centro de custo escolhido (UUID, #147). Vazio = não enviado.
+  approverRef: string // Aprovador escolhido (UUID de usuário, #148). Vazio = não enviado.
   // Categorização editável (texto livre, herdada do contrato mas sobrescrevível). Persistência pendente
   // (core-api#147 — listas/refs). Vazio = herda o valor do contrato selecionado.
   centroCusto: string
@@ -335,6 +336,7 @@ export const buildCreateInput = (fields: DocumentFormFields): CreateDocumentInpu
     programRef: trimToUndefined(fields.programRef),
     categoryRef: trimToUndefined(fields.categoryRef),
     costCenterRef: trimToUndefined(fields.costCenterRef),
+    approverRef: trimToUndefined(fields.approverRef),
     retentions,
     registeredTaxes: buildRegisteredTaxInputs(fields),
     issueDate: trimToUndefined(fields.issueDate),
@@ -376,6 +378,7 @@ export const buildDraftInput = (fields: DocumentFormFields): CreateDocumentInput
     programRef: trimToUndefined(fields.programRef),
     categoryRef: trimToUndefined(fields.categoryRef),
     costCenterRef: trimToUndefined(fields.costCenterRef),
+    approverRef: trimToUndefined(fields.approverRef),
     retentions,
     registeredTaxes: buildRegisteredTaxInputs(fields),
     issueDate: trimToUndefined(fields.issueDate),
@@ -481,6 +484,7 @@ export const hydrateFieldsFromDetail = (d: DocumentDetail): DocumentFormFields =
     programRef: '', // o GET /:id não expõe a categorização (core-api#95) → vazio na hidratação
     categoryRef: '',
     costCenterRef: '',
+    approverRef: '',
     centroCusto: '',
     categoria: '',
     subcategoria: '',
