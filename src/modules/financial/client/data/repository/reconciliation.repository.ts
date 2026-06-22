@@ -15,6 +15,7 @@ import type {
   CreateCedenteAccountInput,
   CreateReconciliationInput,
   ExportReconciliationInput,
+  FinancialReferences,
   GetStatementSuggestionsInput,
   GetSuggestionsInput,
   ImportStatementInput,
@@ -45,6 +46,7 @@ type ListTxFn = (opts: {
   data: ListTransactionsInput
 }) => Promise<ReconFnResult<readonly StatementTransaction[]>>
 type ListPayablesFn = () => Promise<ReconFnResult<readonly PaidPayable[]>>
+type ListReferencesFn = () => Promise<ReconFnResult<FinancialReferences>>
 type SuggestionsFn = (opts: {
   data: GetSuggestionsInput
 }) => Promise<ReconFnResult<readonly MatchSuggestion[]>>
@@ -80,6 +82,8 @@ export type ReconciliationRepository = Readonly<{
     i: ListTransactionsInput,
   ) => Promise<Result<readonly StatementTransaction[], ReconciliationError>>
   listPaidPayables: () => Promise<Result<readonly PaidPayable[], ReconciliationError>>
+  // Referências da categorização (020 · #200/#147) — categorias + centros de custo.
+  getReferences: () => Promise<Result<FinancialReferences, ReconciliationError>>
   getSuggestions: (i: GetSuggestionsInput) => Promise<Result<readonly MatchSuggestion[], ReconciliationError>>
   getStatementSuggestions: (
     i: GetStatementSuggestionsInput,
@@ -117,6 +121,7 @@ export const createReconciliationRepository = (
     importStatementFn: ImportFn
     listTransactionsFn: ListTxFn
     listPaidPayablesFn: ListPayablesFn
+    listReferencesFn: ListReferencesFn
     getSuggestionsFn: SuggestionsFn
     getStatementSuggestionsFn: StatementSuggestionsFn
     getTransactionReconciliationFn: GetTxReconFn
@@ -143,6 +148,10 @@ export const createReconciliationRepository = (
   },
   listPaidPayables: async () => {
     const res = await deps.listPaidPayablesFn()
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  getReferences: async () => {
+    const res = await deps.listReferencesFn()
     return res.ok ? ok(res.data) : err(res.error)
   },
   getSuggestions: async (i) => {

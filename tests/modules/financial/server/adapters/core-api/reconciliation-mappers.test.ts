@@ -21,6 +21,8 @@ import {
   importToModel,
   reconciliationCreatedToModel,
   undoToModel,
+  categoriesToModel,
+  costCentersToModel,
 } from '../../../../../../src/modules/financial/server/adapters/core-api/reconciliation.mappers.ts'
 import { isOk, isErr } from '../../../../../../src/shared/primitives/result.ts'
 import type { HttpError } from '../../../../../../src/shared/http/http-error.types.ts'
@@ -516,5 +518,34 @@ describe('importToModel / reconciliationCreatedToModel / undoToModel', () => {
     const r = undoToModel({ reconciliationId: 'r1', status: 'whatever' })
     assert.ok(isOk(r))
     if (isOk(r)) assert.equal(r.value.status, 'Undone')
+  })
+})
+
+describe('referências da categorização (020 · #200) — array nu', () => {
+  it('categoriesToModel: parseia array, normaliza group (fallback despesa), parentId nullable', () => {
+    const r = categoriesToModel([
+      { id: 'c1', name: 'Serviços', group: 'despesa', parentId: null },
+      { id: 'c2', name: 'ISS', group: 'ajuste', parentId: 'c1' },
+      { id: 'c3', name: 'Estranho', group: 'xyz' }, // group desconhecido → despesa; parentId ausente → null
+    ])
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value.length, 3)
+      assert.deepEqual(r.value[0], { id: 'c1', name: 'Serviços', group: 'despesa', parentId: null })
+      assert.equal(r.value[1]?.group, 'ajuste')
+      assert.equal(r.value[2]?.group, 'despesa')
+      assert.equal(r.value[2]?.parentId, null)
+    }
+  })
+
+  it('costCentersToModel: parseia array {id,code,name}', () => {
+    const r = costCentersToModel([{ id: 'cc1', code: '001', name: 'Administrativo' }])
+    assert.ok(isOk(r))
+    if (isOk(r)) assert.deepEqual(r.value[0], { id: 'cc1', code: '001', name: 'Administrativo' })
+  })
+
+  it('shape inválido → err(server)', () => {
+    assert.ok(isErr(categoriesToModel([{ id: 'x' }])))
+    assert.ok(isErr(costCentersToModel('nope')))
   })
 })

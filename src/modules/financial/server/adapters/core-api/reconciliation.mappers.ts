@@ -30,10 +30,14 @@ import type {
   StatementTransaction,
   SuggestionBand,
   TransactionReconciliation,
+  FinancialCategory,
+  FinancialCostCenter,
 } from '#modules/financial/server/domain/reconciliation.io.ts'
 import {
   CoreApiAccountStatementSchema,
   CoreApiBatchSchema,
+  CoreApiCategoriesSchema,
+  CoreApiCostCentersSchema,
   CoreApiCedenteAccountSchema,
   CoreApiCedenteAccountsSchema,
   type CoreApiCedenteAccount,
@@ -373,4 +377,31 @@ export const rejectToModel = (raw: unknown): Result<RejectedSuggestion, Reconcil
   const parsed = CoreApiRejectSchema.safeParse(raw)
   if (!parsed.success) return err('server')
   return ok({ transactionId: parsed.data.transactionId, payableId: parsed.data.payableId })
+}
+
+// Referências da categorização (020). Resposta = array nu. `group` tolerante → union (fallback 'despesa').
+const mapCategoryGroup = (g: string): FinancialCategory['group'] =>
+  g === 'receita' ? 'receita' : g === 'ajuste' ? 'ajuste' : 'despesa'
+
+export const categoriesToModel = (
+  raw: unknown,
+): Result<readonly FinancialCategory[], ReconciliationError> => {
+  const parsed = CoreApiCategoriesSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  return ok(
+    parsed.data.map((c) => ({
+      id: c.id,
+      name: c.name,
+      group: mapCategoryGroup(c.group),
+      parentId: c.parentId,
+    })),
+  )
+}
+
+export const costCentersToModel = (
+  raw: unknown,
+): Result<readonly FinancialCostCenter[], ReconciliationError> => {
+  const parsed = CoreApiCostCentersSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  return ok(parsed.data.map((c) => ({ id: c.id, code: c.code, name: c.name })))
 }

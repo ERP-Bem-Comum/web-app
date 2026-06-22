@@ -11,8 +11,10 @@ import type { CedenteAccount } from '#modules/financial/server/domain/reconcilia
 import {
   accountStatementSummary,
   batchToModel,
+  categoriesToModel,
   cedenteAccountToModel,
   cedenteAccountsToModel,
+  costCentersToModel,
   importToModel,
   manualEntryToModel,
   mapHttpError,
@@ -80,6 +82,20 @@ export const createCoreApiReconciliationClient = (baseUrl: string): Reconciliati
     const r = await resultFetch<unknown>(`${baseUrl}/payables?status=Paid`, { token })
     if (isErr(r)) return err(mapHttpError(r.error))
     return paidPayablesToModel(r.value)
+  },
+  listReferences: async (token) => {
+    // Referências da categorização (020 · #200): categorias + centros de custo (RBAC reference:read).
+    const [cats, ccs] = await Promise.all([
+      resultFetch<unknown>(`${baseUrl}/categories`, { token }),
+      resultFetch<unknown>(`${baseUrl}/cost-centers`, { token }),
+    ])
+    if (isErr(cats)) return err(mapHttpError(cats.error))
+    if (isErr(ccs)) return err(mapHttpError(ccs.error))
+    const categories = categoriesToModel(cats.value)
+    if (isErr(categories)) return categories
+    const costCenters = costCentersToModel(ccs.value)
+    if (isErr(costCenters)) return costCenters
+    return ok({ categories: categories.value, costCenters: costCenters.value })
   },
   listCedenteAccounts: async (token) => {
     const r = await resultFetch<unknown>(`${baseUrl}/cedente-accounts`, { token })
