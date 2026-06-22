@@ -40,14 +40,20 @@ export type RegisteredTaxInput = Readonly<{
 }>
 
 // ── Inputs enviados pelo repository (a server fn valida no server) ──
+// Tipo do favorecido (#90) — espelha o enum do core-api; mesmos valores do PartnerKind do front.
+export type PayeeKind = 'supplier' | 'financier' | 'act' | 'collaborator'
+
 export type CreateDocumentInput = Readonly<{
   type: DocumentType
   documentNumber: string
   series?: string
   supplierRef: string
+  payeeKind?: PayeeKind // tipo do favorecido (#90) — derivado do parceiro; backend default 'supplier'
+  approverRef?: string // aprovador escolhido (#148) — UUID de usuário com payable:approve
   contractRef?: string
   budgetPlanRef?: string
   categoryRef?: string
+  costCenterRef?: string // centro de custo (#147) — backend aceita no documento (corrige drift do schema)
   programRef?: string
   paymentMethod: PaymentMethod
   grossValueCents: string

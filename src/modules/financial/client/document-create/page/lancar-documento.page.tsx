@@ -18,7 +18,7 @@ import { useDocumentEditing } from '../edit-document.binding.ts'
 import { usePartnersOptions } from '../partners-options.binding.ts'
 import { usePartnerHydration } from '../partner-hydration.binding.ts'
 import { useProgramOptions } from '../program-options.binding.ts'
-import { useCategoryOptions } from '../category-options.binding.ts'
+import { useCategoryOptions, useCostCenterOptions } from '../category-options.binding.ts'
 import {
   buildCreateInput,
   buildDraftInput,
@@ -72,6 +72,7 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
   // senão herda o programa do contrato selecionado (quando houver).
   const programOptions = useProgramOptions()
   const categoryOptions = useCategoryOptions()
+  const costCenterOptions = useCostCenterOptions()
   const programValue =
     controller.fields.programRef !== '' ? controller.fields.programRef : (selectedContract?.programRef ?? '')
 
@@ -101,17 +102,19 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
   // Anexa os refs do contrato "Em Andamento" e dispara o create (backend deriva a categorização — #48).
   const submit = (base: ReturnType<typeof buildCreateInput>): void => {
     if (base === null) return
+    // payeeKind (#90) derivado do parceiro selecionado (mesmos valores do enum do backend); default server 'supplier'.
+    const withPayee = { ...base, payeeKind: selectedPartner?.kind ?? undefined }
     const c = selectedContract
     command.execute(
       c !== null
         ? {
-            ...base,
+            ...withPayee,
             contractRef: c.ref,
             // Programa escolhido pelo usuário tem prioridade; senão herda o do contrato.
             programRef: base.programRef ?? c.programRef ?? undefined,
             budgetPlanRef: c.budgetPlanRef ?? undefined,
           }
-        : base,
+        : withPayee,
     )
   }
 
@@ -185,7 +188,9 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
             onProgram={controller.setProgramRef}
             categoryValue={controller.fields.categoryRef}
             onCategory={controller.setCategoryRef}
-            centroCustoOptions={[]}
+            costCenterValue={controller.fields.costCenterRef}
+            onCostCenter={controller.setCostCenterRef}
+            centroCustoOptions={costCenterOptions}
             categoriaOptions={categoryOptions}
             subcategoriaOptions={[]}
             planoOptions={[]}
