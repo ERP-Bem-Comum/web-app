@@ -227,6 +227,9 @@ export type DocumentFormProps = Readonly<{
   // Categoria (Categorização) — dropdown editável REAL (taxonomia #200). Envia `categoryRef` no create.
   categoryValue: string
   onCategory: (value: string) => void
+  // Centro de custo (Categorização) — dropdown editável REAL (#147). Envia `costCenterRef` no create.
+  costCenterValue: string
+  onCostCenter: (value: string) => void
   // Opções dos dropdowns da Categorização (Centro de Custo/Categoria/Subcategoria/Plano). Vazias até o
   // backend expor as listas (core-api#147); o select já fica pronto.
   centroCustoOptions: readonly Readonly<{ value: string; label: string }>[]
@@ -696,18 +699,16 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
           </span>
         </div>
         {/* Categorização EDITÁVEL: herda do contrato selecionado (quando houver), mas o usuário pode
-            sobrescrever. Em edição/consulta fica somente-leitura. Persistência REAL: Programa (programRef)
-            e Categoria (categoryRef, taxonomia #200). Centro de custo (fora do contrato do documento),
-            Subcategoria e Plano Orçamentário (budget-plans, core-api#113) seguem chrome. */}
+            sobrescrever. Em edição/consulta fica somente-leitura. Persistência REAL: Programa (programRef),
+            Categoria (categoryRef) e Centro de custo (costCenterRef) — taxonomia #200/#147. Subcategoria e
+            Plano Orçamentário (budget-plans, core-api#113) seguem chrome. */}
         <div className={fieldGrid.three}>
           <CategoSelect
             label={t('financial.create.field.centroCusto')}
             disabled={catDisabled}
-            value={fields.centroCusto}
+            value={props.costCenterValue}
             options={props.centroCustoOptions}
-            onChange={(v) => {
-              props.onText('centroCusto', v)
-            }}
+            onChange={props.onCostCenter}
           />
           <CategoSelect
             label={t('financial.create.field.categoria')}

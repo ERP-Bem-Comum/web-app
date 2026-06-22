@@ -64,6 +64,7 @@ const base: DocumentFormFields = {
   contractRef: '',
   programRef: '',
   categoryRef: '',
+  costCenterRef: '',
   centroCusto: '',
   categoria: '',
   subcategoria: '',
@@ -139,11 +140,16 @@ describe('buildCreateInput — Descontos / Juros·Multa', () => {
   })
 })
 
-describe('buildCreateInput — Categorização (categoryRef · 020/#200)', () => {
-  it('envia categoryRef quando escolhido; omite quando vazio', () => {
-    const ref = '7c9e6679-7425-40de-944b-e07fc1f90ae7'
-    assert.equal(buildCreateInput({ ...base, categoryRef: ref })?.categoryRef, ref)
-    assert.equal(buildCreateInput(base)?.categoryRef, undefined)
+describe('buildCreateInput — Categorização (categoryRef/costCenterRef · 020/#200/#147)', () => {
+  it('envia categoryRef e costCenterRef quando escolhidos; omite quando vazios', () => {
+    const cat = '7c9e6679-7425-40de-944b-e07fc1f90ae7'
+    const cc = 'f1ca7e90-0000-4000-8000-000000000099'
+    const withRefs = buildCreateInput({ ...base, categoryRef: cat, costCenterRef: cc })
+    assert.equal(withRefs?.categoryRef, cat)
+    assert.equal(withRefs?.costCenterRef, cc)
+    const empty = buildCreateInput(base)
+    assert.equal(empty?.categoryRef, undefined)
+    assert.equal(empty?.costCenterRef, undefined)
   })
 })
 
