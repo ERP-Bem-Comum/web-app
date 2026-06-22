@@ -393,6 +393,20 @@ const sumRetentionsBRL = (payables: DocumentDetail['payables']): string | null =
   return centsToBRL(String(totalCents))
 }
 
+/**
+ * Status efetivo do documento no drawer — espelha a derivação read-time do grid (#204): documento `Pago`
+ * com ≥1 título e TODOS `Conciliado` aparece como `Conciliado`. O GET /:id devolve o status CRU (`Pago`)
+ * porque o backend só deriva na listagem; sem isto, o "Status atual" do drawer diverge do grid e do
+ * próprio título exibido logo abaixo. PURA.
+ */
+export const deriveDetailStatus = (
+  docStatus: DocumentStatus,
+  payables: readonly { status: DocumentStatus }[],
+): DocumentStatus =>
+  docStatus === 'Pago' && payables.length > 0 && payables.every((p) => p.status === 'Conciliado')
+    ? 'Conciliado'
+    : docStatus
+
 /** DocumentDetail (GET /:id) → view do drawer. PURA. Resolve nome + CNPJ do fornecedor pelos resolvers. */
 export const mapDocumentDetail = (
   d: DocumentDetail,
@@ -402,7 +416,8 @@ export const mapDocumentDetail = (
   id: d.id,
   type: d.type ?? DASH,
   documentNumber: d.documentNumber ?? DASH,
-  status: d.status,
+  // Status efetivo (consistente com o grid e com o título): deriva Conciliado quando aplicável.
+  status: deriveDetailStatus(d.status, d.payables),
   supplier: resolveSupplier(d.supplierRef),
   supplierDoc: maskCnpj(resolveDoc?.(d.supplierRef) ?? null),
   emissao: d.issueDate !== null && d.issueDate !== '' ? formatDue(d.issueDate) : DASH, // #163
