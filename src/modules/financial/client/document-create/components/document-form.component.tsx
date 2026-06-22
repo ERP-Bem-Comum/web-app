@@ -6,8 +6,8 @@
  * Reforma Tributária (CBS/IBS): campos VIVOS de registro de valor (OCR/manual) — enviados em
  * registeredTaxes[] do core-api; não geram filho nem abatem o líquido (regra FIN-DOCUMENTO-INGESTAO).
  *
- * Chrome (sem backend no v1, decisão #7): Competência/Emissão, "Pagar da Conta", cards Conta/Aprovador
- * e toda a Categorização são DESABILITADOS (sem dado fabricado) até os DTOs do core-api (#47/#48) e o
+ * Chrome (sem backend no v1, decisão #7): Competência/Emissão, "Pagar da Conta" e o card Conta do
+ * favorecido seguem DESABILITADOS (sem dado fabricado) até os DTOs do core-api (#47/#48) e o
  * cadastro de contas/categorias existirem. A faixa âmbar de OCR do Figma é omitida de propósito —
  * sinalizaria preenchimento automático que não acontece sem o OCR.
  */
@@ -15,7 +15,7 @@ import type { ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { WalletIcon, UsersIcon } from '#shared/ui/index.ts'
+import { WalletIcon } from '#shared/ui/index.ts'
 import {
   retentionsEnabledFor,
   reformaTributariaEnabledFor,
@@ -230,6 +230,10 @@ export type DocumentFormProps = Readonly<{
   // Centro de custo (Categorização) — dropdown editável REAL (#147). Envia `costCenterRef` no create.
   costCenterValue: string
   onCostCenter: (value: string) => void
+  // Aprovador (#148) — dropdown REAL (usuários com payable:approve). Envia `approverRef` no create.
+  approverValue: string
+  onApprover: (value: string) => void
+  approverOptions: readonly Readonly<{ value: string; label: string }>[]
   // Opções dos dropdowns da Categorização (Centro de Custo/Categoria/Subcategoria/Plano). Vazias até o
   // backend expor as listas (core-api#147); o select já fica pronto.
   centroCustoOptions: readonly Readonly<{ value: string; label: string }>[]
@@ -529,10 +533,13 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             value={bankLine}
             icon={<WalletIcon size={16} />}
           />
-          <EntityCard
+          {/* Aprovador REAL (#148): usuários com payable:approve (GET /api/v1/approvers). Envia approverRef. */}
+          <CategoSelect
             label={t('financial.create.pagamento.aprovador')}
-            hint={t('financial.create.pagamento.aprovadorHint')}
-            icon={<UsersIcon size={16} />}
+            disabled={catDisabled}
+            value={props.approverValue}
+            options={props.approverOptions}
+            onChange={props.onApprover}
           />
         </div>
         {/* Campo complementar controlado pela forma (boleto → linha digitável; cartão; câmbio; outro).

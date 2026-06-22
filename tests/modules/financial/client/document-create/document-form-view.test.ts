@@ -65,6 +65,7 @@ const base: DocumentFormFields = {
   programRef: '',
   categoryRef: '',
   costCenterRef: '',
+  approverRef: '',
   centroCusto: '',
   categoria: '',
   subcategoria: '',
@@ -150,6 +151,11 @@ describe('buildCreateInput — Categorização (categoryRef/costCenterRef · 020
     const empty = buildCreateInput(base)
     assert.equal(empty?.categoryRef, undefined)
     assert.equal(empty?.costCenterRef, undefined)
+  })
+  it('envia approverRef quando escolhido; omite quando vazio (#148)', () => {
+    const ap = 'a1b2c3d4-0000-4000-8000-000000000148'
+    assert.equal(buildCreateInput({ ...base, approverRef: ap })?.approverRef, ap)
+    assert.equal(buildCreateInput(base)?.approverRef, undefined)
   })
 })
 

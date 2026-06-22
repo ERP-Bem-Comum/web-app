@@ -25,7 +25,10 @@ type AuthServer = ReturnType<typeof build>
 
 const build = () => {
   const env = loadEnvOrThrow() // lê process.env aqui (não no módulo)
-  const client = createCoreApiAuthClient(coreApiBase(env.CORE_API_URL, 'v2'))
+  const client = createCoreApiAuthClient(
+    coreApiBase(env.CORE_API_URL, 'v2'),
+    coreApiBase(env.CORE_API_URL, 'v1'), // aprovadores (#148) vivem em /api/v1
+  )
   const refreshSession = createRefreshSession({ client, store, now, decodeExp: decodeAccessExp })
   return {
     store,
@@ -35,6 +38,8 @@ const build = () => {
     resolveSession: createResolveSession({ store, refreshSession, now }),
     // Leitura pública da política de senha (#32) — passthrough do client (sem use-case próprio).
     getPasswordPolicy: () => client.getPasswordPolicy(),
+    // Aprovadores elegíveis (#148) — passthrough do client (RBAC user:list no core-api).
+    listApprovers: (accessToken: string) => client.listApprovers(accessToken),
   }
 }
 
