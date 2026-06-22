@@ -21,6 +21,7 @@ import {
   filterRowsBySearch,
   STATUS_CHIPS,
   FILTER_DIMS,
+  deriveDetailStatus,
 } from '../../../../../src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts'
 import { ok, err } from '../../../../../src/shared/primitives/result.ts'
 import type {
@@ -357,5 +358,25 @@ describe('maskCnpj', () => {
     assert.equal(maskCnpj(null), null)
     assert.equal(maskCnpj(''), null)
     assert.equal(maskCnpj('123'), '123')
+  })
+})
+
+describe('deriveDetailStatus (drawer espelha a derivação do grid #204)', () => {
+  it('Pago + todos os títulos Conciliados → Conciliado', () => {
+    assert.equal(deriveDetailStatus('Pago', [{ status: 'Conciliado' }]), 'Conciliado')
+    assert.equal(
+      deriveDetailStatus('Pago', [{ status: 'Conciliado' }, { status: 'Conciliado' }]),
+      'Conciliado',
+    )
+  })
+  it('Pago mas algum título NÃO conciliado → segue Pago', () => {
+    assert.equal(deriveDetailStatus('Pago', [{ status: 'Conciliado' }, { status: 'Pago' }]), 'Pago')
+  })
+  it('Pago sem títulos → segue Pago', () => {
+    assert.equal(deriveDetailStatus('Pago', []), 'Pago')
+  })
+  it('status não-Pago é preservado (não deriva)', () => {
+    assert.equal(deriveDetailStatus('Aprovado', [{ status: 'Conciliado' }]), 'Aprovado')
+    assert.equal(deriveDetailStatus('Aberto', [{ status: 'Pago' }]), 'Aberto')
   })
 })
