@@ -282,3 +282,16 @@ export type ReconciliationPeriod = Readonly<{
 
 // Conteúdo exportado (texto cru OFX/CSV) + o formato pedido (p/ a UI nomear o arquivo / content-type).
 export type ReconciliationExport = Readonly<{ content: string; format: ExportFormat }>
+
+// Dados de referência da categorização (020 · #200/#147). `parentId` = subcategoria (null = top-level).
+export type FinancialCategory = Readonly<{
+  id: string
+  name: string
+  group: 'despesa' | 'receita' | 'ajuste'
+  parentId: string | null
+}>
+export type FinancialCostCenter = Readonly<{ id: string; code: string; name: string }>
+export type FinancialReferences = Readonly<{
+  categories: readonly FinancialCategory[]
+  costCenters: readonly FinancialCostCenter[]
+}>

@@ -5,9 +5,9 @@
  * consciente + destino/produto; todos têm Categorização (categoria/centro/descrição).
  *
  * Honestidade: o manual-entry (#152) aceita `type` + refs (`supplierRef`/`programRef`/…) + `description`.
- * LIGADOS (reais): Tipo, Fornecedor (parceiros), Programa (programas ativos), Descrição e a confirmação
- * consciente. CHROME (sem fonte hoje): Categoria/Centro de custo (core-api#200/#147), campos de documento
- * (não fazem parte do contrato) e Destino/produto da transferência (core-api#143).
+ * LIGADOS (reais): Tipo, Fornecedor (parceiros), Programa (programas ativos), Categoria + Centro de custo
+ * (referências 020 · #200), Descrição e a confirmação consciente. CHROME: campos de documento (tipo/emissão/
+ * valor — fora do contrato do manual-entry) e Destino/produto da transferência (core-api#143).
  */
 import type { ComponentType } from 'react'
 
@@ -234,13 +234,20 @@ export function NewTransactionPane({ binding }: NewTransactionPaneProps) {
           ) : null}
 
           <div className={`${s.ntRow} ${s.ntRowCols2}`}>
-            <ChromeSelect
+            {/* Categoria + Centro de custo — REAIS: dados de referência (020 · #200), envia category/costCenterRef. */}
+            <RealSelect
               label={t('financial.recon.manual.f.category')}
               placeholder={t('financial.recon.manual.f.categoryPlaceholder')}
+              value={binding.categoryRef}
+              options={binding.categoryOptions}
+              onChange={binding.setCategoryRef}
             />
-            <ChromeSelect
+            <RealSelect
               label={t('financial.recon.manual.f.costCenter')}
               placeholder={t('financial.recon.manual.f.costCenterPlaceholder')}
+              value={binding.costCenterRef}
+              options={binding.costCenterOptions}
+              onChange={binding.setCostCenterRef}
             />
           </div>
           <div className={s.ntRow}>

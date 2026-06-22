@@ -15,6 +15,7 @@ import { reconciliationRepository } from '#modules/financial/client/data/reposit
 import { reconciliationErrorTag } from '#modules/financial/client/data/helpers/reconciliation-error-tag.ts'
 import { listAllPartnersFn } from '#modules/partners/public-api/index.ts'
 import { listProgramsFn } from '#modules/programs/public-api/index.ts'
+import { referencesQueryOptions } from './reconciliation-workspace.query.ts'
 import {
   requiresDestination,
   type ManualEntryType,
@@ -36,14 +37,20 @@ export type ManualEntryBinding = Readonly<{
   errorTag: string | null
   supplierRef: string
   programRef: string
+  categoryRef: string
+  costCenterRef: string
   partnerOptions: readonly ManualEntryOption[]
   programOptions: readonly ManualEntryOption[]
+  categoryOptions: readonly ManualEntryOption[]
+  costCenterOptions: readonly ManualEntryOption[]
   setType: (type: ManualEntryType) => void
   setDescription: (v: string) => void
   setDestinationAccount: (v: string) => void
   setConsciousConfirm: (v: boolean) => void
   setSupplierRef: (v: string) => void
   setProgramRef: (v: string) => void
+  setCategoryRef: (v: string) => void
+  setCostCenterRef: (v: string) => void
   reset: () => void
   submit: () => void
 }>
@@ -94,10 +101,19 @@ export function useManualEntry(
   const [consciousConfirm, setConsciousConfirm] = useState(false)
   const [supplierRef, setSupplierRef] = useState('')
   const [programRef, setProgramRef] = useState('')
+  const [categoryRef, setCategoryRef] = useState('')
+  const [costCenterRef, setCostCenterRef] = useState('')
   const [errorTag, setErrorTag] = useState<string | null>(null)
 
   const partnerOptions = useQuery(partnerOptionsQuery).data ?? []
   const programOptions = useQuery(programOptionsQuery).data ?? []
+  // Referências da categorização (020 · #200): a query devolve um Result → desembrulha p/ as opções.
+  const referencesResult = useQuery(referencesQueryOptions()).data
+  const references = referencesResult?.ok === true ? referencesResult.value : null
+  const categoryOptions: readonly ManualEntryOption[] =
+    references?.categories.map((c) => ({ value: c.id, label: c.name })) ?? []
+  const costCenterOptions: readonly ManualEntryOption[] =
+    references?.costCenters.map((c) => ({ value: c.id, label: `${c.code} — ${c.name}` })) ?? []
 
   const needsDestination = type !== null && requiresDestination(type)
   const showPayeeBlock = type === 'Payment' || type === 'Receipt'
@@ -113,6 +129,8 @@ export function useManualEntry(
       destinationAccount?: string
       supplierRef?: string
       programRef?: string
+      categoryRef?: string
+      costCenterRef?: string
     }) => reconciliationRepository.createManualEntry(v),
     onSuccess: (res, v) => {
       if (res.ok) {
@@ -123,6 +141,8 @@ export function useManualEntry(
         setConsciousConfirm(false)
         setSupplierRef('')
         setProgramRef('')
+        setCategoryRef('')
+        setCostCenterRef('')
         void qc.invalidateQueries({ queryKey: ['financial', 'reconciliation', 'transactions'] })
         onReconciled(v.transactionId, res.value.reconciliationId)
       } else {
@@ -143,8 +163,12 @@ export function useManualEntry(
     errorTag,
     supplierRef,
     programRef,
+    categoryRef,
+    costCenterRef,
     partnerOptions,
     programOptions,
+    categoryOptions,
+    costCenterOptions,
     setType: (tp) => {
       setType(tp)
       setConsciousConfirm(false)
@@ -164,6 +188,12 @@ export function useManualEntry(
     setProgramRef: (v) => {
       setProgramRef(v)
     },
+    setCategoryRef: (v) => {
+      setCategoryRef(v)
+    },
+    setCostCenterRef: (v) => {
+      setCostCenterRef(v)
+    },
     reset: () => {
       setType(null)
       setDescription('')
@@ -171,6 +201,8 @@ export function useManualEntry(
       setConsciousConfirm(false)
       setSupplierRef('')
       setProgramRef('')
+      setCategoryRef('')
+      setCostCenterRef('')
       setErrorTag(null)
     },
     submit: () => {
@@ -182,6 +214,8 @@ export function useManualEntry(
         destinationAccount: needsDestination ? destinationAccount.trim() : undefined,
         supplierRef: supplierRef === '' ? undefined : supplierRef,
         programRef: programRef === '' ? undefined : programRef,
+        categoryRef: categoryRef === '' ? undefined : categoryRef,
+        costCenterRef: costCenterRef === '' ? undefined : costCenterRef,
       })
     },
   }

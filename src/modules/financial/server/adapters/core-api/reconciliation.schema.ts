@@ -187,3 +187,19 @@ export const CoreApiRejectSchema = z.object({
   transactionId: z.string().trim(),
   payableId: z.string().trim(),
 })
+
+// Referências da categorização (020 · #200/#147) — respostas são ARRAY NU (não {items}).
+// `group` tolerante (string) p/ drift; o mapper normaliza. `parentId` nullable (subcategoria).
+export const CoreApiCategorySchema = z.object({
+  id: z.string().trim(),
+  name: z.string().trim(),
+  group: z.string().trim(),
+  parentId: z.string().trim().nullable().catch(null),
+})
+export const CoreApiCategoriesSchema = z.array(CoreApiCategorySchema)
+export const CoreApiCostCenterSchema = z.object({
+  id: z.string().trim(),
+  code: z.string().trim(),
+  name: z.string().trim(),
+})
+export const CoreApiCostCentersSchema = z.array(CoreApiCostCenterSchema)

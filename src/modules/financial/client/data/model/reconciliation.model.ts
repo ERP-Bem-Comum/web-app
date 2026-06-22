@@ -205,3 +205,16 @@ export type ExportFormat = 'ofx' | 'csv'
 export type ListReconciliationPeriodsInput = Readonly<{ debitAccountRef: string }>
 export type ExportReconciliationInput = Readonly<{ periodId: string; format: ExportFormat }>
 export type ReconciliationExport = Readonly<{ content: string; format: ExportFormat }>
+
+// Dados de referência da categorização (020 · #200/#147). `parentId` = subcategoria (null = top-level).
+export type FinancialCategory = Readonly<{
+  id: string
+  name: string
+  group: 'despesa' | 'receita' | 'ajuste'
+  parentId: string | null
+}>
+export type FinancialCostCenter = Readonly<{ id: string; code: string; name: string }>
+export type FinancialReferences = Readonly<{
+  categories: readonly FinancialCategory[]
+  costCenters: readonly FinancialCostCenter[]
+}>

@@ -18,6 +18,13 @@ export const paidPayablesQueryOptions = () => ({
   staleTime: 30_000,
 })
 
+// Referências da categorização (020 · #200/#147) — categorias + centros de custo. Mudam pouco → cache longo.
+export const referencesQueryOptions = () => ({
+  queryKey: ['financial', 'reconciliation', 'references'] as const,
+  queryFn: () => reconciliationRepository.getReferences(),
+  staleTime: 300_000,
+})
+
 export const suggestionsQueryOptions = (transactionId: string | null) => ({
   queryKey: ['financial', 'reconciliation', 'suggestions', transactionId] as const,
   queryFn: () => reconciliationRepository.getSuggestions({ transactionId: transactionId ?? '' }),

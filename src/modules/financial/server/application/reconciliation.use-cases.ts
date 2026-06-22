@@ -14,6 +14,7 @@ import type {
   ClosePeriodInput,
   CreateReconciliationInput,
   ExportReconciliationInput,
+  FinancialReferences,
   GetStatementSuggestionsInput,
   GetSuggestionsInput,
   GetTransactionReconciliationInput,
@@ -47,6 +48,7 @@ export type ReconciliationClient = Readonly<{
     token: string,
   ) => Promise<Result<readonly StatementTransaction[], ReconciliationError>>
   listPaidPayables: (token: string) => Promise<Result<readonly PaidPayable[], ReconciliationError>>
+  listReferences: (token: string) => Promise<Result<FinancialReferences, ReconciliationError>>
   listCedenteAccounts: (token: string) => Promise<Result<readonly CedenteAccount[], ReconciliationError>>
   getCedenteAccount: (id: string, token: string) => Promise<Result<CedenteAccount, ReconciliationError>>
   createCedenteAccount: (
@@ -112,6 +114,11 @@ export const createListPaidPayables =
   (deps: Deps) =>
   (token: string): Promise<Result<readonly PaidPayable[], ReconciliationError>> =>
     deps.client.listPaidPayables(token)
+
+export const createListReferences =
+  (deps: Deps) =>
+  (token: string): Promise<Result<FinancialReferences, ReconciliationError>> =>
+    deps.client.listReferences(token)
 
 export const createListCedenteAccounts =
   (deps: Deps) =>
