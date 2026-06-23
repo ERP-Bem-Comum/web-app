@@ -29,6 +29,9 @@ type DeactivateFn = (opts: { data: CollaboratorDeactivateInput }) => Promise<FnR
 type ReactivateFn = (opts: { data: { id: string } }) => Promise<FnResult<CollaboratorDetail>>
 type ImportFn = (opts: { data: CollaboratorImportInput }) => Promise<FnResult<CollaboratorImportResult>>
 type ExportHistoryFn = (opts: { data: { id: string } }) => Promise<FnResult<CollaboratorExportFile>>
+type ExportGridHistoryFn = (opts: {
+  data: { search?: string; active?: boolean }
+}) => Promise<FnResult<CollaboratorExportFile>>
 
 export type CollaboratorRepository = Readonly<{
   list: (input: CollaboratorListInput) => Promise<Result<CollaboratorListResponse, PartnersError>>
@@ -44,6 +47,10 @@ export type CollaboratorRepository = Readonly<{
   reactivate: (id: string) => Promise<Result<CollaboratorDetail, PartnersError>>
   importCsv: (input: CollaboratorImportInput) => Promise<Result<CollaboratorImportResult, PartnersError>>
   exportHistory: (id: string) => Promise<Result<CollaboratorExportFile, PartnersError>>
+  // Histórico do GRID (#126): CSV com o histórico de todos os colaboradores do filtro atual.
+  exportAllHistory: (
+    filters: Readonly<{ search?: string; active?: boolean }>,
+  ) => Promise<Result<CollaboratorExportFile, PartnersError>>
 }>
 
 export const createCollaboratorRepository = (
@@ -57,6 +64,7 @@ export const createCollaboratorRepository = (
     reactivateCollaboratorFn: ReactivateFn
     importCollaboratorsFn: ImportFn
     exportCollaboratorHistoryFn: ExportHistoryFn
+    exportCollaboratorsHistoryFn: ExportGridHistoryFn
   }>,
 ): CollaboratorRepository => ({
   list: async (input) => {
@@ -93,6 +101,10 @@ export const createCollaboratorRepository = (
   },
   exportHistory: async (id) => {
     const res = await deps.exportCollaboratorHistoryFn({ data: { id } })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  exportAllHistory: async (filters) => {
+    const res = await deps.exportCollaboratorsHistoryFn({ data: filters })
     return res.ok ? ok(res.data) : err(res.error)
   },
 })

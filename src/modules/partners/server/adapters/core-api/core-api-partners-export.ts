@@ -14,6 +14,7 @@ export type PartnerExportQuery = Readonly<{
   search?: string
   active?: boolean
   categories?: readonly string[] // só suppliers; ignorado pelos demais recursos
+  type?: 'history' // só collaborators (#126): export do histórico de alterações em vez do cadastro
 }>
 
 export type PartnerExportFile = Readonly<{ filename: string; csv: string }>
@@ -50,6 +51,7 @@ export const buildExportQuery = (q: PartnerExportQuery): string => {
   if (q.search !== undefined && q.search !== '') p.set('search', q.search)
   if (q.active !== undefined) p.set('active', q.active ? '1' : '0')
   for (const c of q.categories ?? []) p.append('categories', c)
+  if (q.type !== undefined) p.set('type', q.type)
   return p.toString()
 }
 
@@ -72,7 +74,11 @@ export const exportPartnerCsv = async (
   }
   if (!response.ok) return err(await mapResponseError(response))
   const csv = await response.text().catch(() => '')
-  return ok({ filename: partnerExportFilename(resource), csv })
+  // Preserva o nome do core-api (ex.: collaborators-history.csv no type=history); fallback p/ {resource}.csv.
+  const filename =
+    parseContentDispositionFilename(response.headers.get('content-disposition')) ??
+    partnerExportFilename(resource)
+  return ok({ filename, csv })
 }
 
 /** Nome de arquivo de fallback do histórico de um colaborador (espelha o Content-Disposition do core-api). */

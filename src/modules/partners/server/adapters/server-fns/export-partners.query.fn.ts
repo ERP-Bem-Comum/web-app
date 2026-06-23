@@ -17,6 +17,7 @@ const ExportPartnersInputSchema = z.object({
   search: z.string().trim().max(120).optional(),
   active: z.boolean().optional(),
   categories: z.array(z.string().trim().max(80)).optional(), // só suppliers
+  type: z.literal('history').optional(), // só collaborators (#126): histórico em vez do cadastro
 })
 
 export type ExportPartnersFnResult =

@@ -18,6 +18,7 @@ import { CollaboratorFilters, type StatusFilter } from '../components/collaborat
 import { CollaboratorPaginator } from '../components/collaborator-paginator.component.tsx'
 import { ImportReportModal } from '../components/import-report-modal.component.tsx'
 import { CollaboratorExportDropdown } from '#modules/partners/client/shared/collaborator-export-dropdown.component.tsx'
+import { downloadCsvFile } from '#modules/partners/client/shared/download-file.ts'
 import { PartnersPrintable } from '#modules/partners/client/shared/partners-printable.component.tsx'
 import { contentWrap, contentWrapPrintHidden } from '#modules/partners/client/shared/export-print.css.ts'
 import { screen, toolbarActions, importButton, nameCell, avatar, nameText } from './collaborator-list.css.ts'
@@ -50,7 +51,12 @@ function statusFromActive(active: boolean | undefined): StatusFilter {
 export function CollaboratorListPage(): ReactNode {
   const search = routeApi.useSearch()
   const navigate = useNavigate()
-  const { state, canCreate, importCommand } = useCollaboratorListBinding(search)
+  const { state, canCreate, importCommand, exportHistoryCommand } = useCollaboratorListBinding(
+    search,
+    (file) => {
+      downloadCsvFile(file.filename, file.csv)
+    },
+  )
   const [printing, setPrinting] = useState(false)
   // Modal de relatório DERIVADO do comando (sem setState em efeito): aparece quando há resultado/erro e
   // o usuário ainda não dispensou; cada nova importação reabre.
@@ -246,11 +252,14 @@ export function CollaboratorListPage(): ReactNode {
               exportLabel={t('partners.collaborators.filters.export')}
               tudoLabel={t('partners.collaborators.export.tudo')}
               historicoLabel={t('partners.collaborators.export.historico')}
-              historicoGatedHint={t('partners.collaborators.export.historico.gated')}
               templateLabel={t('partners.collaborators.export.template')}
               onPrint={() => {
                 setPrinting(true)
               }}
+              onHistory={() => {
+                exportHistoryCommand.execute()
+              }}
+              historicoRunning={exportHistoryCommand.running}
             />
           }
           onSearch={(value) =>

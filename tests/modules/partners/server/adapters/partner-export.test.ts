@@ -39,6 +39,12 @@ describe('buildExportQuery', () => {
     assert.strictEqual(params.get('active'), '0')
     assert.strictEqual(params.has('search'), false)
   })
+
+  it('type=history serializa ?type=history (export do histórico do grid · #126)', () => {
+    const params = new URLSearchParams(buildExportQuery({ type: 'history', search: 'ana' }))
+    assert.strictEqual(params.get('type'), 'history')
+    assert.strictEqual(params.get('search'), 'ana')
+  })
 })
 
 describe('collaboratorHistoryFilename', () => {

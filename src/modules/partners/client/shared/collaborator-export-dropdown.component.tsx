@@ -8,16 +8,18 @@ import type { ReactNode, MouseEvent } from 'react'
 import { FileChartIcon, FileTextIcon } from '#shared/ui/icons/index.ts'
 import { buildCsv, COLLABORATOR_IMPORT_HEADERS } from '#modules/partners/client/domain/export-csv.ts'
 
-import { wrapper, trigger, menu, menuItem, menuItemBorder, menuItemDisabled, menuItemHint } from './export-dropdown.css.ts'
+import { wrapper, trigger, menu, menuItem, menuItemBorder, menuItemDisabled } from './export-dropdown.css.ts'
 
 export type CollaboratorExportDropdownProps = Readonly<{
   exportLabel: string
   tudoLabel: string
   historicoLabel: string
-  /** Aviso do "Histórico" gated — pendente do backend (ver ticket PAR-COLLABORATOR-HISTORY-EXPORT). */
-  historicoGatedHint: string
   templateLabel: string
   onPrint: () => void
+  /** Dispara o export do histórico (CSV) — backend #126 liberado. */
+  onHistory: () => void
+  /** Histórico em andamento → desabilita o item enquanto baixa. */
+  historicoRunning: boolean
 }>
 
 function downloadTemplate(): void {
@@ -45,18 +47,39 @@ export function CollaboratorExportDropdown(props: CollaboratorExportDropdownProp
         {props.exportLabel}
       </summary>
       <div className={menu}>
-        <button type="button" className={menuItem} onClick={(e) => { props.onPrint(); closeDetails(e) }}>
+        <button
+          type="button"
+          className={menuItem}
+          onClick={(e) => {
+            props.onPrint()
+            closeDetails(e)
+          }}
+        >
           <FileChartIcon />
           {props.tudoLabel}
         </button>
-        {/* Histórico gated: no legado gerava CSV de histórico (tabela collaborator_history); o core-api
-            ainda não expõe esse dado (ticket PAR-COLLABORATOR-HISTORY-EXPORT). Desabilitado até liberar. */}
-        <button type="button" className={`${menuItem} ${menuItemBorder} ${menuItemDisabled}`} disabled aria-disabled="true">
+        {/* Histórico REAL (#126): CSV do histórico de alterações (GET /collaborators/export?type=history). */}
+        <button
+          type="button"
+          className={`${menuItem} ${menuItemBorder}${props.historicoRunning ? ` ${menuItemDisabled}` : ''}`}
+          disabled={props.historicoRunning}
+          aria-disabled={props.historicoRunning}
+          onClick={(e) => {
+            props.onHistory()
+            closeDetails(e)
+          }}
+        >
           <FileChartIcon />
           {props.historicoLabel}
         </button>
-        <span className={menuItemHint}>{props.historicoGatedHint}</span>
-        <button type="button" className={`${menuItem} ${menuItemBorder}`} onClick={(e) => { downloadTemplate(); closeDetails(e) }}>
+        <button
+          type="button"
+          className={`${menuItem} ${menuItemBorder}`}
+          onClick={(e) => {
+            downloadTemplate()
+            closeDetails(e)
+          }}
+        >
           <FileTextIcon />
           {props.templateLabel}
         </button>
