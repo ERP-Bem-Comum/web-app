@@ -43,6 +43,7 @@ export type ResolveContract = (ref: string | null) => string | null
 
 export type GridRow = Readonly<{
   id: string
+  documentId: string // #201: id do documento (= id em modo doc; documentId do título em modo título) p/ o drawer
   type: string
   documentNumber: string
   series: string | null // sublinha "série …" da coluna Documento (Figma); null = sem série
@@ -242,6 +243,7 @@ const toRow = (
   resolveContract?: ResolveContract,
 ): GridRow => ({
   id: it.id,
+  documentId: it.id, // modo documento: a linha já é o documento
   type: it.type ?? DASH,
   documentNumber: it.documentNumber ?? DASH,
   series: it.series !== null && it.series !== '' ? it.series : null,
@@ -482,48 +484,60 @@ export const deriveListState = (args: {
 // Um título vira uma linha do grid existente. `id` = payableId (checkbox/seleção por título). Lacunas
 // honestas até o backend enriquecer /payable-titles (issueDate, paymentMethod, version, bruto/líquido):
 // Emissão e Forma de pagamento ficam "—"; Bruto/Líquido recebem o `valor` do título; `version` = 0.
+// Órgão arrecadador de um título filho (retenção) — mesmo padrão do drawer (ISS=município/SEFIN; demais=
+// Receita Federal). Recebido como resolver (o rótulo é i18n; a view-model é pura).
+export type ResolveRetentionDestino = (rt: RetentionType) => string
+
 const toTitleRow = (
   it: PayableTitleItem,
   resolveSupplier: ResolveSupplier,
+  resolveDestino: ResolveRetentionDestino,
   resolveKind?: ResolveSupplierKind,
   resolveDoc?: ResolveSupplierDoc,
   resolveContract?: ResolveContract,
-): GridRow => ({
-  id: it.payableId,
-  type: it.type ?? DASH,
-  documentNumber: it.documentNumber ?? DASH,
-  series: it.series !== null && it.series !== '' ? it.series : null,
-  supplier: resolveSupplier(it.supplierRef),
-  supplierKind: resolveKind?.(it.supplierRef) ?? null,
-  supplierDoc: maskCnpj(resolveDoc?.(it.supplierRef) ?? null),
-  contract: it.contractRef !== null ? (resolveContract?.(it.contractRef) ?? it.contractRef) : DASH,
-  paymentMethod: null, // gap: /payable-titles não traz forma de pagamento
-  emissao: DASH, // gap: emissão (= do documento pai) não vem no /payable-titles
-  gross: it.valueCents !== '' ? centsToBRL(it.valueCents) : DASH,
-  grossCents: it.valueCents,
-  due: it.dueDate !== '' ? formatDue(it.dueDate.slice(0, 10)) : DASH, // dueDate pode vir ISO datetime
-  net: it.valueCents !== '' ? centsToBRL(it.valueCents) : DASH,
-  netCents: it.valueCents,
-  version: 0, // gap: /payable-titles não traz version → ações por título ficam desabilitadas
-  status: it.status,
-})
+): GridRow => {
+  // Filho (retenção): tipo = tipo do imposto; fornecedor = órgão arrecadador (igual ao drawer).
+  // `childRetention` != null SÓ em filho com retenção → narrowing limpo (sem checagem redundante).
+  const childRetention = it.kind === 'Child' ? it.retentionType : null
+  return {
+    id: it.payableId,
+    documentId: it.documentId, // p/ o drawer (detalhe é por documento)
+    type: childRetention ?? it.type ?? DASH,
+    documentNumber: it.documentNumber ?? DASH,
+    series: it.series !== null && it.series !== '' ? it.series : null,
+    supplier: childRetention !== null ? resolveDestino(childRetention) : resolveSupplier(it.supplierRef),
+    supplierKind: childRetention !== null ? null : (resolveKind?.(it.supplierRef) ?? null),
+    supplierDoc: childRetention !== null ? null : maskCnpj(resolveDoc?.(it.supplierRef) ?? null),
+    contract: it.contractRef !== null ? (resolveContract?.(it.contractRef) ?? it.contractRef) : DASH,
+    paymentMethod: null, // gap: /payable-titles não traz forma de pagamento
+    emissao: DASH, // gap: emissão (= do documento pai) não vem no /payable-titles
+    gross: it.valueCents !== '' ? centsToBRL(it.valueCents) : DASH,
+    grossCents: it.valueCents,
+    due: it.dueDate !== '' ? formatDue(it.dueDate.slice(0, 10)) : DASH, // dueDate pode vir ISO datetime
+    net: it.valueCents !== '' ? centsToBRL(it.valueCents) : DASH,
+    netCents: it.valueCents,
+    version: 0, // gap: /payable-titles não traz version → ações em massa por título ficam desabilitadas
+    status: it.status,
+  }
+}
 
 export const deriveTitleListState = (args: {
   isLoading: boolean
   data: Result<PayableTitleListResponse, FinancialError> | undefined
   resolveSupplier: ResolveSupplier
+  resolveDestino: ResolveRetentionDestino
   resolveKind?: ResolveSupplierKind
   resolveDoc?: ResolveSupplierDoc
   resolveContract?: ResolveContract
 }): ListState => {
-  const { isLoading, data, resolveSupplier, resolveKind, resolveDoc, resolveContract } = args
+  const { isLoading, data, resolveSupplier, resolveDestino, resolveKind, resolveDoc, resolveContract } = args
   if (isLoading || data === undefined) return { tag: 'loading' }
   if (!data.ok) return { tag: 'error', errorTag: financialErrorTag(data.error) }
   if (data.value.items.length === 0) return { tag: 'empty' }
   return {
     tag: 'ready',
     rows: data.value.items.map((it) =>
-      toTitleRow(it, resolveSupplier, resolveKind, resolveDoc, resolveContract),
+      toTitleRow(it, resolveSupplier, resolveDestino, resolveKind, resolveDoc, resolveContract),
     ),
     page: pageInfo(data.value.page, data.value.pageSize, data.value.total),
   }

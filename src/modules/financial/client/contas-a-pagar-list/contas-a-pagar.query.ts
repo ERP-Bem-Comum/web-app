@@ -11,9 +11,10 @@ import type {
 export const contasAPagarQueryKey = (input: ListDocumentsInput) =>
   ['financial', 'documents', 'list', input] as const
 
-export const contasAPagarQueryOptions = (input: ListDocumentsInput) => ({
+export const contasAPagarQueryOptions = (input: ListDocumentsInput, enabled = true) => ({
   queryKey: contasAPagarQueryKey(input),
   queryFn: () => financialRepository.list(input),
+  enabled, // #201: grid é só por título → a listagem por documento fica desligada
   staleTime: 30_000, // evita refetch agressivo na navegação da lista
 })
 

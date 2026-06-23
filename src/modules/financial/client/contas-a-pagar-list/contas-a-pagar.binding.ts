@@ -6,6 +6,9 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
+import { createTranslator } from '#shared/i18n/index.ts'
+import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
+
 import { contasAPagarQueryOptions, payableTitlesQueryOptions } from './contas-a-pagar.query.ts'
 import { partnersMapQueryOptions } from './partners-map.binding.ts'
 import { contractsMapQueryOptions } from './contracts-map.binding.ts'
@@ -23,9 +26,17 @@ import {
 
 // #201: modo de visualização do grid — por documento (atual) ou por título (pai+filhos).
 export type ViewMode = 'document' | 'title'
-import type { DocumentStatus, DocumentType } from '#modules/financial/client/data/model/document.model.ts'
+import type {
+  DocumentStatus,
+  DocumentType,
+  RetentionType,
+} from '#modules/financial/client/data/model/document.model.ts'
 
 const DEFAULT_PAGE_SIZE = 12
+const t = createTranslator(ptBR)
+// #201: órgão arrecadador por retenção (igual ao drawer): ISS → SEFIN (municipal); demais → Receita Federal.
+const retentionDestino = (rt: RetentionType): string =>
+  rt === 'ISS' ? t('financial.create.titulos.dest.iss') : t('financial.create.titulos.dest.federal')
 
 export type SupplierOption = Readonly<{ value: string; label: string }>
 
@@ -58,24 +69,28 @@ export type ContasAPagarBinding = Readonly<{
 export function useContasAPagar(): ContasAPagarBinding {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
-  const [viewMode, setViewMode] = useState<ViewMode>('document')
+  // #201: grid SÓ por título (o seletor por documento foi removido a pedido da P.O.).
+  const [viewMode, setViewMode] = useState<ViewMode>('title')
   const [selectedStatus, setSelectedStatus] = useState<DocumentStatus | null>(null)
   const [activeDims, setActiveDims] = useState<ReadonlySet<FilterDimId>>(() => new Set())
   const [filters, setFilters] = useState<AdvancedFilters>({})
   const partners = useQuery(partnersMapQueryOptions)
   const contracts = useQuery(contractsMapQueryOptions)
   const list = useQuery(
-    contasAPagarQueryOptions({
-      page,
-      pageSize,
-      status: selectedStatus ?? undefined,
-      type: filters.tipo,
-      supplierRef: filters.fornecedor,
-      dueFrom: filters.vencimento?.from,
-      dueTo: filters.vencimento?.to,
-      issuedFrom: filters.emissao?.from, // #163
-      issuedTo: filters.emissao?.to,
-    }),
+    contasAPagarQueryOptions(
+      {
+        page,
+        pageSize,
+        status: selectedStatus ?? undefined,
+        type: filters.tipo,
+        supplierRef: filters.fornecedor,
+        dueFrom: filters.vencimento?.from,
+        dueTo: filters.vencimento?.to,
+        issuedFrom: filters.emissao?.from, // #163
+        issuedTo: filters.emissao?.to,
+      },
+      viewMode === 'document',
+    ), // desligada: grid é só por título
   )
   // #201: listagem por título — mesmos filtros (sem emissão, que o endpoint não aceita). Só busca no modo 'title'.
   const titles = useQuery(
@@ -114,6 +129,7 @@ export function useContasAPagar(): ContasAPagarBinding {
     isLoading: viewMode === 'title' && titles.isLoading,
     data: titles.data,
     resolveSupplier,
+    resolveDestino: retentionDestino,
     resolveKind,
     resolveDoc,
     resolveContract,

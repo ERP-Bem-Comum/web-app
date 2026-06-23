@@ -20,6 +20,7 @@ const readyState: ListState = {
   rows: [
     {
       id: 'd1',
+      documentId: 'd1',
       type: 'NFS-e',
       documentNumber: '0847',
       series: 'A1',

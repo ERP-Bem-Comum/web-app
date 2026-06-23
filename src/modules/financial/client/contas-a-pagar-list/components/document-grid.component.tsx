@@ -54,7 +54,7 @@ const t = createTranslator(ptBR)
 
 export type DocumentGridProps = Readonly<{
   state: ListState
-  onRowClick?: (id: string, status: DocumentStatus) => void
+  onRowClick?: (id: string, status: DocumentStatus, documentId: string) => void
   // Seleção (mock): checkbox por linha + "selecionar todos". Opcional (aditivo — sem isso, sem coluna).
   selectedIds?: ReadonlySet<string>
   allSelected?: boolean
@@ -105,12 +105,12 @@ export function DocumentGrid(props: DocumentGridProps): ReactNode {
               tabIndex={0}
               key={r.id}
               onClick={() => {
-                props.onRowClick?.(r.id, r.status)
+                props.onRowClick?.(r.id, r.status, r.documentId)
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault()
-                  props.onRowClick?.(r.id, r.status)
+                  props.onRowClick?.(r.id, r.status, r.documentId)
                 }
               }}
             >
