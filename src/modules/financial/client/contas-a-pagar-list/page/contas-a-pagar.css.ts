@@ -627,11 +627,12 @@ export const statusBadge = style({
 export const statusVariant = styleVariants({
   Rascunho: { background: vars.color.status.cancelledBg, color: vars.color.status.cancelledText },
   Aberto: { background: vars.color.status.pendingBg, color: vars.color.status.pendingText },
-  Aprovado: { background: vars.color.status.activeBg, color: vars.color.status.activeText },
+  // #201: Aprovado = AZUL CLARO; Transmitido = AZUL (finished); Pago = VERDE (active); Conciliado = ROXO.
+  // Aberto = amarelo (pending). Todas distintas; os dois azuis diferem na tonalidade (claro × forte).
+  Aprovado: { background: vars.color.status.approvedBg, color: vars.color.status.approvedText },
   Transmitido: { background: vars.color.status.finishedBg, color: vars.color.status.finishedText },
   Recusado: { background: vars.color.status.terminatedBg, color: vars.color.status.terminatedText },
-  // #201: Pago (teal) e Conciliado (roxo) com tonalidades próprias — sem repetir Aprovado/Transmitido.
-  Pago: { background: vars.color.status.paidBg, color: vars.color.status.paidText },
+  Pago: { background: vars.color.status.activeBg, color: vars.color.status.activeText },
   Conciliado: { background: vars.color.status.reconciledBg, color: vars.color.status.reconciledText },
 })
 

@@ -112,10 +112,10 @@ export const tokenValues = {
       aditEscopoText: '#8A5A33',
       aditOutroBg: '#FFF1E0',
       aditOutroText: '#D9772E',
-      // #201 — Pago (teal/esmeralda, distinto do verde de "Aprovado") e Conciliado (roxo, distinto do
-      // azul de "Transmitido") p/ evitar repetição de cor nos badges de status do grid de Contas a Pagar.
-      paidBg: '#DCF1EC',
-      paidText: '#0F766E',
+      // #201 — Aprovado = AZUL CLARO (distinto do azul de "Transmitido"=finished) e Conciliado = ROXO,
+      // p/ não repetir cor nos badges (Pago=verde/active, Transmitido=azul/finished, Aberto=amarelo/pending).
+      approvedBg: '#EAF4FE',
+      approvedText: '#1E88E5',
       reconciledBg: '#EBE5F7',
       reconciledText: '#5B3D9E',
     },
