@@ -25,6 +25,7 @@ import {
   bulkDueDateTargets,
   filterByLabel,
   filterRowsBySearch,
+  filterRowsByTipo,
   type ListState,
 } from '../contas-a-pagar.view-model.ts'
 import { DocumentGrid } from '../components/document-grid.component.tsx'
@@ -100,11 +101,12 @@ export function ContasAPagarPage(): ReactNode {
   const isTitleMode = viewMode === 'title'
   const page = baseState.tag === 'ready' ? baseState.page : null
   const allRows = baseState.tag === 'ready' ? baseState.rows : []
-  const rows = filterRowsBySearch(allRows, search)
-  // Estado passado ao grid: linhas filtradas; se a busca zerar os resultados, mostra o vazio.
+  // Busca rápida + #201: filtro de Tipo por imposto (filho) — ambos CLIENT-SIDE na página carregada.
+  const rows = filterRowsByTipo(filterRowsBySearch(allRows, search), filters.tipo)
+  // Estado passado ao grid: linhas filtradas; se o filtro zerar os resultados, mostra o vazio.
   const gridState: ListState =
     baseState.tag === 'ready'
-      ? rows.length === 0 && search.trim() !== ''
+      ? rows.length === 0
         ? { tag: 'empty' }
         : { tag: 'ready', rows, page: baseState.page }
       : baseState

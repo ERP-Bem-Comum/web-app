@@ -6,7 +6,11 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
-import { deriveTitleListState } from '../../../../../src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts'
+import {
+  deriveTitleListState,
+  filterRowsByTipo,
+  isRetentionTipo,
+} from '../../../../../src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts'
 import { ok } from '../../../../../src/shared/primitives/result.ts'
 import type {
   PayableTitleItem,
@@ -103,5 +107,37 @@ describe('deriveTitleListState (#201)', () => {
       }).tag,
       'loading',
     )
+  })
+})
+
+describe('filtro de Tipo no grid por título (#201)', () => {
+  const st = deriveTitleListState({
+    isLoading: false,
+    data: ok({
+      ...resp,
+      items: [
+        item, // NFS-e (pai)
+        { ...item, payableId: 'c1', kind: 'Child', retentionType: 'IRRF' },
+        { ...item, payableId: 'c2', kind: 'Child', retentionType: 'ISS' },
+      ],
+      total: 3,
+    }),
+    resolveSupplier: () => 'X',
+    resolveDestino: dest,
+  })
+  const rows = st.tag === 'ready' ? st.rows : []
+
+  it('isRetentionTipo: só impostos', () => {
+    assert.equal(isRetentionTipo('IRRF'), true)
+    assert.equal(isRetentionTipo('ISS'), true)
+    assert.equal(isRetentionTipo('NFS-e'), false)
+    assert.equal(isRetentionTipo(undefined), false)
+  })
+  it('filtra client-side por imposto (filho); tipo de documento passa direto (server-side)', () => {
+    assert.equal(filterRowsByTipo(rows, 'IRRF').length, 1)
+    assert.equal(filterRowsByTipo(rows, 'IRRF')[0]?.type, 'IRRF')
+    // tipo de documento → não filtra aqui (é server-side): devolve tudo
+    assert.equal(filterRowsByTipo(rows, 'NFS-e').length, 3)
+    assert.equal(filterRowsByTipo(rows, undefined).length, 3)
   })
 })

@@ -1635,6 +1635,9 @@ export const ptBR: Catalog = {
   'financial.list.filter.dim.competencia': 'Competência',
   'financial.list.filter.dim.valor': 'Valor',
   'financial.list.filter.dim.tipo': 'Tipo de Documento',
+  // #201: grupos do filtro Tipo no grid por título (documento × imposto/retenção).
+  'financial.list.filter.tipo.group.documento': 'Documento',
+  'financial.list.filter.tipo.group.imposto': 'Imposto (retenção)',
   'financial.list.filter.dim.fornecedor': 'Fornecedor',
   'financial.list.filter.dim.contrato': 'Contrato',
   'financial.list.filter.dim.programa': 'Programa',

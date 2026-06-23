@@ -13,9 +13,10 @@ import {
   FILTER_DIMS,
   FILTER_GROUPS,
   DOCUMENT_TYPE_OPTIONS,
+  RETENTION_TYPE_OPTIONS,
   type FilterDimId,
   type AdvancedFilters,
-  type DocumentType,
+  type TipoFilter,
 } from '../contas-a-pagar.view-model.ts'
 import type { SupplierOption } from '../contas-a-pagar.binding.ts'
 import {
@@ -107,7 +108,7 @@ export type ActiveFiltersRowProps = Readonly<{
   onRemoveFilter: (id: FilterDimId) => void
   onSetVencimento: (from: string | undefined, to: string | undefined) => void
   onSetEmissao: (from: string | undefined, to: string | undefined) => void
-  onSetTipo: (tipo: DocumentType | undefined) => void
+  onSetTipo: (tipo: TipoFilter | undefined) => void
   onClearFilters: () => void
   // Filtro Fornecedor = busca/autocomplete (pode haver inúmeros; não lista tudo num dropdown).
   fornecedorQuery: string
@@ -207,15 +208,25 @@ export function ActiveFiltersRow(props: ActiveFiltersRowProps): ReactNode {
             value={filters.tipo ?? ''}
             aria-label={t('financial.list.filter.dim.tipo')}
             onChange={(e) => {
-              props.onSetTipo(e.target.value === '' ? undefined : (e.target.value as DocumentType))
+              props.onSetTipo(e.target.value === '' ? undefined : (e.target.value as TipoFilter))
             }}
           >
             <option value="">{t('financial.list.filter.any')}</option>
-            {DOCUMENT_TYPE_OPTIONS.map((tp) => (
-              <option key={tp} value={tp}>
-                {tp}
-              </option>
-            ))}
+            <optgroup label={t('financial.list.filter.tipo.group.documento')}>
+              {DOCUMENT_TYPE_OPTIONS.map((tp) => (
+                <option key={tp} value={tp}>
+                  {tp}
+                </option>
+              ))}
+            </optgroup>
+            {/* #201: tipos dos títulos filhos (impostos) — filtra a página carregada (client-side). */}
+            <optgroup label={t('financial.list.filter.tipo.group.imposto')}>
+              {RETENTION_TYPE_OPTIONS.map((tp) => (
+                <option key={tp} value={tp}>
+                  {tp}
+                </option>
+              ))}
+            </optgroup>
           </select>
           <button
             type="button"

@@ -15,7 +15,9 @@ import { contractsMapQueryOptions } from './contracts-map.binding.ts'
 import {
   deriveListState,
   deriveTitleListState,
+  isRetentionTipo,
   type ListState,
+  type TipoFilter,
   type ResolveSupplier,
   type ResolveSupplierKind,
   type ResolveSupplierDoc,
@@ -26,11 +28,7 @@ import {
 
 // #201: modo de visualização do grid — por documento (atual) ou por título (pai+filhos).
 export type ViewMode = 'document' | 'title'
-import type {
-  DocumentStatus,
-  DocumentType,
-  RetentionType,
-} from '#modules/financial/client/data/model/document.model.ts'
+import type { DocumentStatus, RetentionType } from '#modules/financial/client/data/model/document.model.ts'
 
 const DEFAULT_PAGE_SIZE = 12
 const t = createTranslator(ptBR)
@@ -58,7 +56,7 @@ export type ContasAPagarBinding = Readonly<{
   onRemoveFilter: (id: FilterDimId) => void
   onSetVencimento: (from: string | undefined, to: string | undefined) => void
   onSetEmissao: (from: string | undefined, to: string | undefined) => void
-  onSetTipo: (tipo: DocumentType | undefined) => void
+  onSetTipo: (tipo: TipoFilter | undefined) => void
   onSetFornecedor: (ref: string | undefined) => void
   onClearFilters: () => void
   onPrev: () => void
@@ -82,7 +80,8 @@ export function useContasAPagar(): ContasAPagarBinding {
         page,
         pageSize,
         status: selectedStatus ?? undefined,
-        type: filters.tipo,
+        type: isRetentionTipo(filters.tipo) ? undefined : filters.tipo, // imposto filtra client-side
+
         supplierRef: filters.fornecedor,
         dueFrom: filters.vencimento?.from,
         dueTo: filters.vencimento?.to,
@@ -99,7 +98,8 @@ export function useContasAPagar(): ContasAPagarBinding {
         page,
         pageSize,
         status: selectedStatus ?? undefined,
-        type: filters.tipo,
+        type: isRetentionTipo(filters.tipo) ? undefined : filters.tipo, // imposto filtra client-side
+
         supplierRef: filters.fornecedor,
         dueFrom: filters.vencimento?.from,
         dueTo: filters.vencimento?.to,

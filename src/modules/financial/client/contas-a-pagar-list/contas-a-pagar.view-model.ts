@@ -190,6 +190,22 @@ export const DOCUMENT_TYPE_OPTIONS: readonly DocumentType[] = [
   'Imposto',
 ]
 
+// #201: o filtro "Tipo" do grid por título inclui os tipos dos FILHOS (impostos). Documento → server-side
+// (documentType); imposto → CLIENT-SIDE na página (o /payable-titles não filtra por retentionType ainda —
+// core-api#229). `TipoFilter` = tipo de documento OU de imposto.
+export const RETENTION_TYPE_OPTIONS: readonly RetentionType[] = ['IRRF', 'ISS', 'INSS', 'CSRF']
+export type TipoFilter = DocumentType | RetentionType
+const RETENTION_TIPO_SET: ReadonlySet<string> = new Set(RETENTION_TYPE_OPTIONS)
+export const isRetentionTipo = (tipo: string | undefined): tipo is RetentionType =>
+  tipo !== undefined && RETENTION_TIPO_SET.has(tipo)
+
+// Filtro de Tipo por imposto (filho) — CLIENT-SIDE (página carregada), como a busca rápida. Tipo de
+// documento passa direto (filtrado no servidor). PURA.
+export const filterRowsByTipo = (
+  rows: readonly GridRow[],
+  tipo: TipoFilter | undefined,
+): readonly GridRow[] => (isRetentionTipo(tipo) ? rows.filter((r) => r.type === tipo) : rows)
+
 // Busca rápida (campo do topo) — filtra as linhas DA PÁGINA carregada por fornecedor / número / CNPJ.
 // ⚠️ É client-side: só enxerga a página atual (busca server-side cross-página = core-api#167). PURA.
 export const filterRowsBySearch = (rows: readonly GridRow[], query: string): readonly GridRow[] => {
@@ -223,7 +239,7 @@ export const filterByLabel = <T extends Readonly<{ label: string }>>(
 export type AdvancedFilters = Readonly<{
   vencimento?: Readonly<{ from?: string; to?: string }> // YYYY-MM-DD → dueFrom/dueTo
   emissao?: Readonly<{ from?: string; to?: string }> // YYYY-MM-DD → issuedFrom/issuedTo (#163)
-  tipo?: DocumentType
+  tipo?: TipoFilter // documento (server) ou imposto/retenção (client-side na página)
   fornecedor?: string // supplierRef (uuid)
 }>
 
