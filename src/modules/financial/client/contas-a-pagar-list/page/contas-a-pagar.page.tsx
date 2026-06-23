@@ -11,7 +11,7 @@ import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { SearchIcon } from '#shared/ui/icons/index.ts'
 
-import { useContasAPagar, type ViewMode } from '../contas-a-pagar.binding.ts'
+import { useContasAPagar } from '../contas-a-pagar.binding.ts'
 import { useDocumentDetail } from '../document-detail.binding.ts'
 import { useBulkStatus } from '../bulk-status.binding.ts'
 import { useBulkDelete } from '../bulk-delete.binding.ts'
@@ -75,7 +75,6 @@ export function ContasAPagarPage(): ReactNode {
     state,
     viewMode,
     titleState,
-    onViewMode,
     pageSize,
     selectedStatus,
     onStatusFilter,
@@ -141,13 +140,6 @@ export function ContasAPagarPage(): ReactNode {
   }
   const clearSelection = (): void => {
     setSelected(new Set())
-  }
-  // #201: troca de visão limpa a seleção e fecha o drawer (linhas/ids mudam de documento↔título).
-  const switchView = (mode: ViewMode): void => {
-    if (mode === viewMode) return
-    onViewMode(mode)
-    clearSelection()
-    setSelectedId(null)
   }
 
   // ── Mudar Status em massa: Aprovar (Aberto→Aprovado) · Voltar p/ edição (Aprovado→Aberto) ──
@@ -220,29 +212,6 @@ export function ContasAPagarPage(): ReactNode {
         </div>
 
         <div className={fbarRight}>
-          {/* #201: alterna o grid entre Por documento (atual) e Por título (pai+filhos). */}
-          <div className={statusChips} role="group" aria-label={t('financial.list.view.label')}>
-            <button
-              type="button"
-              className={viewMode === 'document' ? chipActive : chip}
-              aria-pressed={viewMode === 'document'}
-              onClick={() => {
-                switchView('document')
-              }}
-            >
-              {t('financial.list.view.document')}
-            </button>
-            <button
-              type="button"
-              className={viewMode === 'title' ? chipActive : chip}
-              aria-pressed={viewMode === 'title'}
-              onClick={() => {
-                switchView('title')
-              }}
-            >
-              {t('financial.list.view.title')}
-            </button>
-          </div>
           <AddFilterButton
             menuOpen={filterMenuOpen}
             onToggleMenu={() => {
@@ -298,19 +267,15 @@ export function ContasAPagarPage(): ReactNode {
       <div className={gridWrap}>
         <DocumentGrid
           state={gridState}
-          onRowClick={
-            isTitleMode
-              ? undefined // #201: no modo título o id é payableId; drawer/Lançar são por documento (gap)
-              : (id, status) => {
-                  // Rascunho → abre o Lançar p/ FINALIZAR a inclusão (modo draft, tudo editável).
-                  // Demais status → drawer de detalhe.
-                  if (status === 'Rascunho') {
-                    void navigate({ to: '/financeiro/contas-a-pagar/lancar', search: { id } })
-                  } else {
-                    setSelectedId(id)
-                  }
-                }
-          }
+          onRowClick={(id, status, documentId) => {
+            // #201: no modo título, abre o DRAWER do documento (documentId); seleção/checkbox usa o
+            // payableId. Rascunho (só no modo documento) → Lançar p/ finalizar a inclusão.
+            if (status === 'Rascunho') {
+              void navigate({ to: '/financeiro/contas-a-pagar/lancar', search: { id } })
+            } else {
+              setSelectedId(documentId)
+            }
+          }}
           activeId={selectedId}
           selectedIds={selected}
           allSelected={allSelected}
