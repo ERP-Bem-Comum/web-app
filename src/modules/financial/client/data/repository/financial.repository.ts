@@ -12,10 +12,13 @@ import type {
   AdjustDocumentInput,
   ApproveInput,
   CancelInput,
+  ListPayableTitlesInput,
+  PayableTitleListResponse,
 } from '#modules/financial/client/data/model/document.model.ts'
 import type { FinancialError, FnResult } from '#modules/financial/client/data/repository/financial-error.ts'
 
 type ListFn = (opts: { data: ListDocumentsInput }) => Promise<FnResult<DocumentListResponse>>
+type ListTitlesFn = (opts: { data: ListPayableTitlesInput }) => Promise<FnResult<PayableTitleListResponse>>
 type GetFn = (opts: { data: { id: string } }) => Promise<FnResult<DocumentDetail>>
 type CreateFn = (opts: { data: CreateDocumentInput }) => Promise<FnResult<DocumentDetail>>
 type AdjustFn = (opts: { data: AdjustDocumentInput }) => Promise<FnResult<DocumentDetail>>
@@ -26,6 +29,10 @@ type CancelFn = (opts: {
 
 export type FinancialRepository = Readonly<{
   list: (input: ListDocumentsInput) => Promise<Result<DocumentListResponse, FinancialError>>
+  // #201: listagem por título (pai + filhos).
+  listPayableTitles: (
+    input: ListPayableTitlesInput,
+  ) => Promise<Result<PayableTitleListResponse, FinancialError>>
   getById: (id: string) => Promise<Result<DocumentDetail, FinancialError>>
   create: (input: CreateDocumentInput) => Promise<Result<DocumentDetail, FinancialError>>
   adjust: (input: AdjustDocumentInput) => Promise<Result<DocumentDetail, FinancialError>>
@@ -37,6 +44,7 @@ export type FinancialRepository = Readonly<{
 export const createFinancialRepository = (
   deps: Readonly<{
     listDocumentsFn: ListFn
+    listPayableTitlesFn: ListTitlesFn
     getDocumentFn: GetFn
     createDocumentFn: CreateFn
     adjustDocumentFn: AdjustFn
@@ -47,6 +55,10 @@ export const createFinancialRepository = (
 ): FinancialRepository => ({
   list: async (input) => {
     const res = await deps.listDocumentsFn({ data: input })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  listPayableTitles: async (input) => {
+    const res = await deps.listPayableTitlesFn({ data: input })
     return res.ok ? ok(res.data) : err(res.error)
   },
   getById: async (id) => {

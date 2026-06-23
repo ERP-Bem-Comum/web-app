@@ -61,3 +61,26 @@ export const CoreApiDocumentListSchema = z.object({
   total: z.int(),
 })
 export type CoreApiDocumentList = z.infer<typeof CoreApiDocumentListSchema>
+
+// #201: listagem payable-centric (GET /financial/payable-titles) — pai + filhos como linhas pagáveis.
+export const CoreApiPayableTitleSchema = z.object({
+  payableId: z.string().trim(),
+  documentId: z.string().trim(),
+  documentNumber: z.string().trim().nullable().catch(null),
+  series: z.string().trim().nullable().catch(null),
+  documentType: z.string().trim().nullable().catch(null),
+  kind: z.string().trim(),
+  retentionType: z.string().trim().nullable().catch(null),
+  valueCents: z.string().trim(),
+  dueDate: z.string().trim(),
+  status: z.string().trim(),
+  supplierRef: z.string().trim().nullable().catch(null),
+  contractRef: z.string().trim().nullable().catch(null),
+})
+export const CoreApiPayableTitleListSchema = z.object({
+  items: z.array(CoreApiPayableTitleSchema),
+  page: z.int(),
+  pageSize: z.int(),
+  total: z.int(),
+})
+export type CoreApiPayableTitleList = z.infer<typeof CoreApiPayableTitleListSchema>

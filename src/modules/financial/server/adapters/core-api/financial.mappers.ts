@@ -17,8 +17,15 @@ import type {
   PayableKind,
   RetentionType,
   DocumentListResponse,
+  PayableTitleListResponse,
+  PayableTitleItem,
 } from '#modules/financial/server/domain/document.io.ts'
-import { CoreApiDocumentSchema, CoreApiDocumentListSchema, type CoreApiPayable } from './financial.schema.ts'
+import {
+  CoreApiDocumentSchema,
+  CoreApiDocumentListSchema,
+  CoreApiPayableTitleListSchema,
+  type CoreApiPayable,
+} from './financial.schema.ts'
 
 // ── Erro: slug do core-api → FinancialError ─────────────────────────────────────
 const SLUG_TO_ERROR: Partial<Record<string, FinancialError>> = {
@@ -150,6 +157,28 @@ export const listToModel = (raw: unknown): Result<DocumentListResponse, Financia
     paymentMethod: mapPaymentMethod(s.paymentMethod),
     contractRef: s.contractRef,
     version: s.version,
+  }))
+  return ok({ items, page: l.page, pageSize: l.pageSize, total: l.total })
+}
+
+// #201: listagem por TÍTULO (pai + filhos). Reusa os mesmos enums tolerantes (status EN→PT, kind, etc).
+export const payableTitlesToModel = (raw: unknown): Result<PayableTitleListResponse, FinancialError> => {
+  const parsed = CoreApiPayableTitleListSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  const l = parsed.data
+  const items: readonly PayableTitleItem[] = l.items.map((p) => ({
+    payableId: p.payableId,
+    documentId: p.documentId,
+    documentNumber: p.documentNumber,
+    series: p.series,
+    type: mapType(p.documentType),
+    kind: mapPayableKind(p.kind),
+    retentionType: mapRetentionType(p.retentionType),
+    valueCents: p.valueCents,
+    dueDate: p.dueDate,
+    status: mapStatus(p.status),
+    supplierRef: p.supplierRef,
+    contractRef: p.contractRef,
   }))
   return ok({ items, page: l.page, pageSize: l.pageSize, total: l.total })
 }

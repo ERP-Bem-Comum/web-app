@@ -6,11 +6,12 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
-import { contasAPagarQueryOptions } from './contas-a-pagar.query.ts'
+import { contasAPagarQueryOptions, payableTitlesQueryOptions } from './contas-a-pagar.query.ts'
 import { partnersMapQueryOptions } from './partners-map.binding.ts'
 import { contractsMapQueryOptions } from './contracts-map.binding.ts'
 import {
   deriveListState,
+  deriveTitleListState,
   type ListState,
   type ResolveSupplier,
   type ResolveSupplierKind,
@@ -19,6 +20,9 @@ import {
   type AdvancedFilters,
   type FilterDimId,
 } from './contas-a-pagar.view-model.ts'
+
+// #201: modo de visualização do grid — por documento (atual) ou por título (pai+filhos).
+export type ViewMode = 'document' | 'title'
 import type { DocumentStatus, DocumentType } from '#modules/financial/client/data/model/document.model.ts'
 
 const DEFAULT_PAGE_SIZE = 12
@@ -27,6 +31,10 @@ export type SupplierOption = Readonly<{ value: string; label: string }>
 
 export type ContasAPagarBinding = Readonly<{
   state: ListState
+  // #201: visão por título (pai+filhos) — mesmo grid/ListState; só carrega no modo 'title'.
+  viewMode: ViewMode
+  titleState: ListState
+  onViewMode: (mode: ViewMode) => void
   pageSize: number
   // Filtro de status (chips): null = "Todos". Trocar o filtro reseta a página.
   selectedStatus: DocumentStatus | null
@@ -50,6 +58,7 @@ export type ContasAPagarBinding = Readonly<{
 export function useContasAPagar(): ContasAPagarBinding {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
+  const [viewMode, setViewMode] = useState<ViewMode>('document')
   const [selectedStatus, setSelectedStatus] = useState<DocumentStatus | null>(null)
   const [activeDims, setActiveDims] = useState<ReadonlySet<FilterDimId>>(() => new Set())
   const [filters, setFilters] = useState<AdvancedFilters>({})
@@ -68,6 +77,21 @@ export function useContasAPagar(): ContasAPagarBinding {
       issuedTo: filters.emissao?.to,
     }),
   )
+  // #201: listagem por título — mesmos filtros (sem emissão, que o endpoint não aceita). Só busca no modo 'title'.
+  const titles = useQuery(
+    payableTitlesQueryOptions(
+      {
+        page,
+        pageSize,
+        status: selectedStatus ?? undefined,
+        type: filters.tipo,
+        supplierRef: filters.fornecedor,
+        dueFrom: filters.vencimento?.from,
+        dueTo: filters.vencimento?.to,
+      },
+      viewMode === 'title',
+    ),
+  )
 
   const resolveSupplier: ResolveSupplier = (ref) =>
     ref === null ? '—' : (partners.data?.get(ref)?.name ?? ref)
@@ -80,6 +104,15 @@ export function useContasAPagar(): ContasAPagarBinding {
   const state = deriveListState({
     isLoading: list.isLoading,
     data: list.data,
+    resolveSupplier,
+    resolveKind,
+    resolveDoc,
+    resolveContract,
+  })
+
+  const titleState = deriveTitleListState({
+    isLoading: viewMode === 'title' && titles.isLoading,
+    data: titles.data,
     resolveSupplier,
     resolveKind,
     resolveDoc,
@@ -101,6 +134,12 @@ export function useContasAPagar(): ContasAPagarBinding {
 
   return {
     state,
+    viewMode,
+    titleState,
+    onViewMode: (mode) => {
+      setViewMode(mode)
+      setPage(1)
+    },
     pageSize,
     selectedStatus,
     onStatusFilter: (status) => {

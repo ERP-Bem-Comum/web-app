@@ -13,10 +13,16 @@ import type {
   AdjustDocumentInput,
   ApproveInput,
   CancelInput,
+  ListPayableTitlesInput,
+  PayableTitleListResponse,
 } from '#modules/financial/server/domain/document.io.ts'
 
 export type FinancialClient = Readonly<{
   list: (input: ListDocumentsInput, token: string) => Promise<Result<DocumentListResponse, FinancialError>>
+  listPayableTitles: (
+    input: ListPayableTitlesInput,
+    token: string,
+  ) => Promise<Result<PayableTitleListResponse, FinancialError>>
   getById: (id: string, token: string) => Promise<Result<DocumentDetail, FinancialError>>
   create: (input: CreateDocumentInput, token: string) => Promise<Result<DocumentDetail, FinancialError>>
   adjust: (input: AdjustDocumentInput, token: string) => Promise<Result<DocumentDetail, FinancialError>>
@@ -31,6 +37,11 @@ export const createListDocuments =
   (deps: Deps) =>
   (input: ListDocumentsInput, token: string): Promise<Result<DocumentListResponse, FinancialError>> =>
     deps.client.list(input, token)
+
+export const createListPayableTitles =
+  (deps: Deps) =>
+  (input: ListPayableTitlesInput, token: string): Promise<Result<PayableTitleListResponse, FinancialError>> =>
+    deps.client.listPayableTitles(input, token)
 
 export const createGetDocument =
   (deps: Deps) =>

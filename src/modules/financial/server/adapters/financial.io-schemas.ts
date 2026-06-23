@@ -111,6 +111,17 @@ export const ListDocumentsInputSchema = z.object({
   pageSize: z.int().min(1).max(100).default(20),
 })
 
+// #201: listagem por título (sem emissão; o endpoint filtra por status/tipo/fornecedor/vencimento).
+export const ListPayableTitlesInputSchema = z.object({
+  status: z.enum(DOCUMENT_STATUSES).optional(),
+  type: z.string().trim().optional(),
+  supplierRef: z.uuid().optional(),
+  dueFrom: DateSchema.optional(),
+  dueTo: DateSchema.optional(),
+  page: z.int().min(1).default(1),
+  pageSize: z.int().min(1).max(100).default(20),
+})
+
 // ── Guardas schema ≡ domínio (§IV/§VI) ──────────────────────────────────────────
 type AssertEqual<A, B> = [A] extends [B] ? ([B] extends [A] ? true : never) : never
 const _g_create: AssertEqual<z.infer<typeof CreateDocumentInputSchema>, D.CreateDocumentInput> = true

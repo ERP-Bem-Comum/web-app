@@ -8,6 +8,7 @@ import { coreApiBase } from '#external/core-api/api-base.ts'
 import { createCoreApiFinancialClient } from './core-api/core-api-financial.ts'
 import {
   createListDocuments,
+  createListPayableTitles,
   createGetDocument,
   createCreateDocument,
   createAdjustDocument,
@@ -23,6 +24,7 @@ const build = () => {
   const client = createCoreApiFinancialClient(`${coreApiBase(env.CORE_API_URL, 'v2')}/financial`)
   return {
     listDocuments: createListDocuments({ client }),
+    listPayableTitles: createListPayableTitles({ client }),
     getDocument: createGetDocument({ client }),
     createDocument: createCreateDocument({ client }),
     adjustDocument: createAdjustDocument({ client }),

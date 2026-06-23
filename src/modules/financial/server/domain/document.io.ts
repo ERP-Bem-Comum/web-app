@@ -160,3 +160,34 @@ export type DocumentListResponse = Readonly<{
   pageSize: number
   total: number
 }>
+
+// ── Listagem payable-centric (#201 — GET /financial/payable-titles): pai + filhos como linhas ──
+export type ListPayableTitlesInput = Readonly<{
+  status?: DocumentStatus
+  type?: string
+  supplierRef?: string
+  dueFrom?: string
+  dueTo?: string
+  page: number
+  pageSize: number
+}>
+export type PayableTitleItem = Readonly<{
+  payableId: string
+  documentId: string
+  documentNumber: string | null
+  series: string | null
+  type: DocumentType | null
+  kind: PayableKind
+  retentionType: RetentionType | null
+  valueCents: string
+  dueDate: string
+  status: DocumentStatus
+  supplierRef: string | null
+  contractRef: string | null
+}>
+export type PayableTitleListResponse = Readonly<{
+  items: readonly PayableTitleItem[]
+  page: number
+  pageSize: number
+  total: number
+}>

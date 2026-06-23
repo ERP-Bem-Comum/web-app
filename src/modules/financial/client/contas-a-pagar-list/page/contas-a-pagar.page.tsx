@@ -11,7 +11,7 @@ import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { SearchIcon } from '#shared/ui/icons/index.ts'
 
-import { useContasAPagar } from '../contas-a-pagar.binding.ts'
+import { useContasAPagar, type ViewMode } from '../contas-a-pagar.binding.ts'
 import { useDocumentDetail } from '../document-detail.binding.ts'
 import { useBulkStatus } from '../bulk-status.binding.ts'
 import { useBulkDelete } from '../bulk-delete.binding.ts'
@@ -73,6 +73,9 @@ export function ContasAPagarPage(): ReactNode {
   const navigate = useNavigate()
   const {
     state,
+    viewMode,
+    titleState,
+    onViewMode,
     pageSize,
     selectedStatus,
     onStatusFilter,
@@ -92,16 +95,20 @@ export function ContasAPagarPage(): ReactNode {
   } = useContasAPagar()
   // Busca rápida do topo — filtra CLIENT-SIDE as linhas da página carregada (core-api#167 = server-side).
   const [search, setSearch] = useState('')
-  const page = state.tag === 'ready' ? state.page : null
-  const allRows = state.tag === 'ready' ? state.rows : []
+  // #201: o grid (e toda a seleção) opera sobre o modo ativo — documento (atual) ou título (pai+filhos).
+  // Em modo documento, `baseState === state` → comportamento idêntico (sem regressão).
+  const baseState = viewMode === 'title' ? titleState : state
+  const isTitleMode = viewMode === 'title'
+  const page = baseState.tag === 'ready' ? baseState.page : null
+  const allRows = baseState.tag === 'ready' ? baseState.rows : []
   const rows = filterRowsBySearch(allRows, search)
   // Estado passado ao grid: linhas filtradas; se a busca zerar os resultados, mostra o vazio.
   const gridState: ListState =
-    state.tag === 'ready'
+    baseState.tag === 'ready'
       ? rows.length === 0 && search.trim() !== ''
         ? { tag: 'empty' }
-        : { tag: 'ready', rows, page: state.page }
-      : state
+        : { tag: 'ready', rows, page: baseState.page }
+      : baseState
 
   // UI-state local (toggles), no padrão dos demais (selectedId/selected): menu "Adicionar filtro".
   const [filterMenuOpen, setFilterMenuOpen] = useState(false)
@@ -134,6 +141,13 @@ export function ContasAPagarPage(): ReactNode {
   }
   const clearSelection = (): void => {
     setSelected(new Set())
+  }
+  // #201: troca de visão limpa a seleção e fecha o drawer (linhas/ids mudam de documento↔título).
+  const switchView = (mode: ViewMode): void => {
+    if (mode === viewMode) return
+    onViewMode(mode)
+    clearSelection()
+    setSelectedId(null)
   }
 
   // ── Mudar Status em massa: Aprovar (Aberto→Aprovado) · Voltar p/ edição (Aprovado→Aberto) ──
@@ -206,6 +220,29 @@ export function ContasAPagarPage(): ReactNode {
         </div>
 
         <div className={fbarRight}>
+          {/* #201: alterna o grid entre Por documento (atual) e Por título (pai+filhos). */}
+          <div className={statusChips} role="group" aria-label={t('financial.list.view.label')}>
+            <button
+              type="button"
+              className={viewMode === 'document' ? chipActive : chip}
+              aria-pressed={viewMode === 'document'}
+              onClick={() => {
+                switchView('document')
+              }}
+            >
+              {t('financial.list.view.document')}
+            </button>
+            <button
+              type="button"
+              className={viewMode === 'title' ? chipActive : chip}
+              aria-pressed={viewMode === 'title'}
+              onClick={() => {
+                switchView('title')
+              }}
+            >
+              {t('financial.list.view.title')}
+            </button>
+          </div>
           <AddFilterButton
             menuOpen={filterMenuOpen}
             onToggleMenu={() => {
@@ -261,15 +298,19 @@ export function ContasAPagarPage(): ReactNode {
       <div className={gridWrap}>
         <DocumentGrid
           state={gridState}
-          onRowClick={(id, status) => {
-            // Rascunho → abre o Lançar p/ FINALIZAR a inclusão (modo draft, tudo editável).
-            // Demais status → drawer de detalhe.
-            if (status === 'Rascunho') {
-              void navigate({ to: '/financeiro/contas-a-pagar/lancar', search: { id } })
-            } else {
-              setSelectedId(id)
-            }
-          }}
+          onRowClick={
+            isTitleMode
+              ? undefined // #201: no modo título o id é payableId; drawer/Lançar são por documento (gap)
+              : (id, status) => {
+                  // Rascunho → abre o Lançar p/ FINALIZAR a inclusão (modo draft, tudo editável).
+                  // Demais status → drawer de detalhe.
+                  if (status === 'Rascunho') {
+                    void navigate({ to: '/financeiro/contas-a-pagar/lancar', search: { id } })
+                  } else {
+                    setSelectedId(id)
+                  }
+                }
+          }
           activeId={selectedId}
           selectedIds={selected}
           allSelected={allSelected}
@@ -328,35 +369,42 @@ export function ContasAPagarPage(): ReactNode {
             <button type="button" className={selClear} onClick={clearSelection}>
               {t('financial.list.selection.clear')}
             </button>
-            {/* Alterar vencimento de 1+ títulos Aberto (abre o modal); aplica via PATCH por id. */}
-            <button
-              type="button"
-              className={selClear}
-              disabled={dueTargets.editable.length === 0 || dueEdit.running}
-              title={dueTargets.editable.length === 0 ? t('financial.list.dueDate.needOpen') : undefined}
-              onClick={() => {
-                setDueOpen(true)
-              }}
-            >
-              {t('financial.list.dueDate.bulk')}
-            </button>
-            <StatusActions
-              canApprove={targets.approve.length > 0}
-              canReopen={targets.reopen.length > 0}
-              canDelete={deleteTargets.deletable.length > 0}
-              running={bulk.running || del.running}
-              onApprove={() => {
-                bulk.approve(targets.approve)
-              }}
-              onReopen={() => {
-                bulk.reopen(targets.reopen)
-              }}
-              onDelete={() => {
-                setDeleteOpen(true)
-              }}
-            />
-            {bulk.errorTag !== null ? <span className={selError}>{t(bulk.errorTag)}</span> : null}
-            {del.errorTag !== null ? <span className={selError}>{t(del.errorTag)}</span> : null}
+            {/* #201: ações em massa só no modo DOCUMENTO (por título faltam version/rotas — gap honesto). */}
+            {!isTitleMode ? (
+              <>
+                {/* Alterar vencimento de 1+ títulos Aberto (abre o modal); aplica via PATCH por id. */}
+                <button
+                  type="button"
+                  className={selClear}
+                  disabled={dueTargets.editable.length === 0 || dueEdit.running}
+                  title={dueTargets.editable.length === 0 ? t('financial.list.dueDate.needOpen') : undefined}
+                  onClick={() => {
+                    setDueOpen(true)
+                  }}
+                >
+                  {t('financial.list.dueDate.bulk')}
+                </button>
+                <StatusActions
+                  canApprove={targets.approve.length > 0}
+                  canReopen={targets.reopen.length > 0}
+                  canDelete={deleteTargets.deletable.length > 0}
+                  running={bulk.running || del.running}
+                  onApprove={() => {
+                    bulk.approve(targets.approve)
+                  }}
+                  onReopen={() => {
+                    bulk.reopen(targets.reopen)
+                  }}
+                  onDelete={() => {
+                    setDeleteOpen(true)
+                  }}
+                />
+                {bulk.errorTag !== null ? <span className={selError}>{t(bulk.errorTag)}</span> : null}
+                {del.errorTag !== null ? <span className={selError}>{t(del.errorTag)}</span> : null}
+              </>
+            ) : (
+              <span className={selSumLabel}>{t('financial.list.view.titleActionsSoon')}</span>
+            )}
           </div>
         ) : page !== null ? (
           <nav className={pagination} aria-label={t('financial.list.pagination')}>

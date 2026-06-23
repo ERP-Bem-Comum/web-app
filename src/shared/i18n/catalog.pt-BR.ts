@@ -1610,6 +1610,11 @@ export const ptBR: Catalog = {
   'financial.list.status.payHint': 'registra a baixa',
   'financial.list.search': 'Buscar por fornecedor, número, CNPJ…',
   'financial.list.statusFilter': 'Filtrar por status',
+  // #201: alternância de visão do grid (documento × título).
+  'financial.list.view.label': 'Visualização',
+  'financial.list.view.document': 'Por documento',
+  'financial.list.view.title': 'Por título',
+  'financial.list.view.titleActionsSoon': 'Ações por título em breve',
   'financial.list.filter.label': 'Filtro',
   'financial.list.filter.add': 'Adicionar',
   'financial.list.filter.activeLabel': 'Filtros',
