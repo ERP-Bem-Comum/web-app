@@ -15,17 +15,14 @@ import type { AddAccountBinding } from '../add-account.binding.ts'
 const t = createTranslator(ptBR)
 const CLOSE_GLYPH = '✕'
 
+// #206: todos os tipos REAIS — incl. cartão corporativo (tem movimentação a conciliar) e "outro".
+// Cartao/Outro pedem um rótulo livre (typeLabel) p/ identificar a conta.
 const TYPES: readonly { value: AccountType; tag: string }[] = [
   { value: 'Corrente', tag: 'financial.recon.add.type.corrente' },
   { value: 'Poupanca', tag: 'financial.recon.add.type.poupanca' },
   { value: 'Investimento', tag: 'financial.recon.add.type.investimento' },
-]
-
-// Tipos pedidos pelo cliente (cartão corporativo tem movimentação a conciliar) — CHROME honesto:
-// desabilitados até o backend ampliar o enum `type` (core-api#206). Mostram a intenção sem quebrar o POST.
-const SOON_TYPES: readonly { key: string; tag: string }[] = [
-  { key: 'cartao', tag: 'financial.recon.add.type.cartao' },
-  { key: 'outro', tag: 'financial.recon.add.type.outro' },
+  { value: 'Cartao', tag: 'financial.recon.add.type.cartao' },
+  { value: 'Outro', tag: 'financial.recon.add.type.outro' },
 ]
 
 export type AddAccountModalProps = Readonly<{
@@ -98,20 +95,23 @@ export function AddAccountModal({ open, onClose, binding }: AddAccountModalProps
                     {t(tp.tag)}
                   </button>
                 ))}
-                {SOON_TYPES.map((tp) => (
-                  <button
-                    key={tp.key}
-                    type="button"
-                    className={s.segBtn.disabled}
-                    disabled
-                    aria-disabled="true"
-                    title={t('financial.recon.add.type.soonHint')}
-                  >
-                    {t(tp.tag)}
-                  </button>
-                ))}
               </div>
-              <span className={s.segHint}>{t('financial.recon.add.type.soonHint')}</span>
+              {binding.needsTypeLabel ? (
+                <div className={s.formField}>
+                  <label className={s.fieldLabel} htmlFor="add-type-label">
+                    {t('financial.recon.add.field.typeLabel')}
+                  </label>
+                  <input
+                    id="add-type-label"
+                    className={s.input}
+                    placeholder={t('financial.recon.add.placeholder.typeLabel')}
+                    value={binding.typeLabel}
+                    onChange={(e) => {
+                      binding.setTypeLabel(e.target.value)
+                    }}
+                  />
+                </div>
+              ) : null}
             </div>
           </section>
 

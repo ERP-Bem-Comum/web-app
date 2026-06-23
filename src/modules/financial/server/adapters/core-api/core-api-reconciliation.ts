@@ -116,11 +116,18 @@ export const createCoreApiReconciliationClient = (baseUrl: string): Reconciliati
     return ok(await enrichAccountWithStatement(baseUrl, acc.value, token)) // #139: saldo/pendências p/ o hero
   },
   createCedenteAccount: async (i, token) => {
-    const typeMap = { Corrente: 'corrente', Poupanca: 'poupanca', Investimento: 'investimento' } as const
+    const typeMap = {
+      Corrente: 'corrente',
+      Poupanca: 'poupanca',
+      Investimento: 'investimento',
+      Cartao: 'cartao', // #206
+      Outro: 'outro',
+    } as const
     const body = {
       bankCode: i.bankCode,
       ...(i.bankName !== undefined ? { bankName: i.bankName } : {}),
       type: typeMap[i.type],
+      ...(i.typeLabel !== undefined ? { typeLabel: i.typeLabel } : {}), // #206
       agency: i.agency,
       accountNumber: i.accountNumber,
       accountDigit: i.accountDigit,

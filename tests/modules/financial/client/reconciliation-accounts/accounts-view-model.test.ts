@@ -22,6 +22,7 @@ const acc = (
   accountDv: '7',
   alias: 'Conta Movimento',
   type: 'Corrente',
+  typeLabel: null,
   status: 'Active',
   currentBalanceCents: '24539218',
   lastUpdatedAt: '2026-06-18',

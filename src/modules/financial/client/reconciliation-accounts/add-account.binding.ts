@@ -17,6 +17,8 @@ import type {
 export type AddAccountBinding = Readonly<{
   bankCode: string
   type: AccountType
+  typeLabel: string // #206: texto livre exigido p/ Cartao/Outro
+  needsTypeLabel: boolean // true quando type = Cartao/Outro (a UI mostra o campo)
   agency: string
   account: string // "número-DV" combinado (ex.: 0012345-7); separado em accountNumber/accountDigit no submit
   document: string
@@ -28,6 +30,7 @@ export type AddAccountBinding = Readonly<{
   errorTag: string | null
   setBank: (code: string) => void
   setType: (t: AccountType) => void
+  setTypeLabel: (v: string) => void
   setAgency: (v: string) => void
   setAccount: (v: string) => void
   setDocument: (v: string) => void
@@ -45,6 +48,7 @@ export function useAddAccount(
   const qc = useQueryClient()
   const [bankCode, setBankCode] = useState('')
   const [type, setType] = useState<AccountType>('Corrente')
+  const [typeLabel, setTypeLabel] = useState('')
   const [agency, setAgency] = useState('')
   const [account, setAccount] = useState('')
   const [document, setDocument] = useState('')
@@ -56,6 +60,7 @@ export function useAddAccount(
   const reset = () => {
     setBankCode('')
     setType('Corrente')
+    setTypeLabel('')
     setAgency('')
     setAccount('')
     setDocument('')
@@ -79,12 +84,20 @@ export function useAddAccount(
     },
   })
 
+  // #206: Cartao/Outro exigem um rótulo livre que identifique a conta.
+  const needsTypeLabel = type === 'Cartao' || type === 'Outro'
   const canSubmit =
-    bankCode.trim() !== '' && agency.trim() !== '' && account.trim() !== '' && document.trim() !== ''
+    bankCode.trim() !== '' &&
+    agency.trim() !== '' &&
+    account.trim() !== '' &&
+    document.trim() !== '' &&
+    (!needsTypeLabel || typeLabel.trim() !== '')
 
   return {
     bankCode,
     type,
+    typeLabel,
+    needsTypeLabel,
     agency,
     account,
     document,
@@ -99,6 +112,9 @@ export function useAddAccount(
     },
     setType: (t) => {
       setType(t)
+    },
+    setTypeLabel: (v) => {
+      setTypeLabel(v)
     },
     setAgency: (v) => {
       setAgency(v)
@@ -141,6 +157,7 @@ export function useAddAccount(
         bankCode,
         bankName,
         type,
+        ...(needsTypeLabel && typeLabel.trim() !== '' ? { typeLabel: typeLabel.trim() } : {}), // #206
         agency: agency.trim(),
         accountNumber,
         accountDigit,
