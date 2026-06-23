@@ -12,6 +12,7 @@ import { deactivateCollaboratorFn } from '#modules/partners/server/adapters/serv
 import { reactivateCollaboratorFn } from '#modules/partners/server/adapters/server-fns/collaborator/reactivate-collaborator.service.fn.ts'
 import { importCollaboratorsFn } from '#modules/partners/server/adapters/server-fns/collaborator/import-collaborators.service.fn.ts'
 import { exportCollaboratorHistoryFn } from '#modules/partners/server/adapters/server-fns/collaborator/export-collaborator-history.query.fn.ts'
+import { exportPartnersFn } from '#modules/partners/server/adapters/server-fns/export-partners.query.fn.ts'
 
 import { createCollaboratorRepository } from './collaborator.repository.ts'
 
@@ -25,4 +26,7 @@ export const collaboratorRepository = createCollaboratorRepository({
   reactivateCollaboratorFn: (opts) => reactivateCollaboratorFn(opts),
   importCollaboratorsFn: (opts) => importCollaboratorsFn(opts),
   exportCollaboratorHistoryFn: (opts) => exportCollaboratorHistoryFn(opts),
+  // Histórico do grid: reusa o export genérico de parceiros com resource+type fixos (#126).
+  exportCollaboratorsHistoryFn: (opts) =>
+    exportPartnersFn({ data: { resource: 'collaborators', type: 'history', ...opts.data } }),
 })

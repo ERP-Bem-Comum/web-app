@@ -10,7 +10,11 @@ import { can, grantedPermissions } from '#modules/partners/client/data/helpers/c
 import { partnersErrorTag } from '#modules/partners/client/data/helpers/partners-error-tag.ts'
 import { collaboratorRepository } from '#modules/partners/client/data/repository/collaborator.repository.instance.ts'
 import type { CollaboratorListFilters } from '#modules/partners/client/data/collaborator-list-filters.schema.ts'
-import type { CollaboratorImportInput, CollaboratorImportResult } from '#modules/partners/client/data/model/collaborator.model.ts'
+import type {
+  CollaboratorImportInput,
+  CollaboratorImportResult,
+  CollaboratorExportFile,
+} from '#modules/partners/client/data/model/collaborator.model.ts'
 
 import {
   mapResponseToRows,
@@ -26,16 +30,35 @@ export type CollaboratorImportCommand = Readonly<{
   reset: () => void
 }>
 
+/** Comando de export do HISTÓRICO do grid (CSV, #126). O download (Blob/anchor) é feito na UI via `onFile`. */
+export type CollaboratorExportHistoryCommand = Readonly<{
+  running: boolean
+  errorTag: string | null
+  execute: () => void
+}>
+
 export type CollaboratorListBinding = Readonly<{
   state: CollaboratorListState
   canCreate: boolean
   importCommand: CollaboratorImportCommand
+  exportHistoryCommand: CollaboratorExportHistoryCommand
 }>
 
-export function useCollaboratorListBinding(filters: CollaboratorListFilters): CollaboratorListBinding {
+export function useCollaboratorListBinding(
+  filters: CollaboratorListFilters,
+  onHistoryFile: (file: CollaboratorExportFile) => void,
+): CollaboratorListBinding {
   const queryClient = useQueryClient()
   const query = useQuery(collaboratorListViewModel.query(filters))
   const current = useCurrentUser()
+  const exportHistoryMutation = useMutation({
+    mutationKey: ['collaborators', 'export-history-grid'] as const,
+    mutationFn: () =>
+      collaboratorRepository.exportAllHistory({ search: filters.search, active: filters.active }),
+    onSuccess: (res) => {
+      if (isOk(res)) onHistoryFile(res.value)
+    },
+  })
   const importMutation = useMutation({
     mutationKey: ['collaborators', 'import'] as const,
     mutationFn: (input: CollaboratorImportInput) => collaboratorRepository.importCsv(input),
@@ -58,8 +81,27 @@ export function useCollaboratorListBinding(filters: CollaboratorListFilters): Co
           ? 'partners.error.server'
           : null,
     result: idata !== undefined && isOk(idata) ? idata.value : null,
-    execute: (input) => { importMutation.mutate(input) },
-    reset: () => { importMutation.reset() },
+    execute: (input) => {
+      importMutation.mutate(input)
+    },
+    reset: () => {
+      importMutation.reset()
+    },
+  }
+
+  const edata = exportHistoryMutation.data
+  const exportHistoryCommand: CollaboratorExportHistoryCommand = {
+    running: exportHistoryMutation.isPending,
+    errorTag: exportHistoryMutation.isPending
+      ? null
+      : edata !== undefined && !isOk(edata)
+        ? partnersErrorTag(edata.error)
+        : exportHistoryMutation.isError
+          ? 'partners.error.server'
+          : null,
+    execute: () => {
+      exportHistoryMutation.mutate()
+    },
   }
 
   const state: CollaboratorListState = ((): CollaboratorListState => {
@@ -70,5 +112,5 @@ export function useCollaboratorListBinding(filters: CollaboratorListFilters): Co
     return { status: 'ready', rows: mapResponseToRows(res.value), meta: res.value.meta }
   })()
 
-  return { state, canCreate, importCommand }
+  return { state, canCreate, importCommand, exportHistoryCommand }
 }
