@@ -465,7 +465,9 @@ export const confirmDateInput = style({
 // Larguras balanceadas (espaço proporcional entre as colunas); Fornecedor é a flexível (minmax).
 // Ordem: checkbox · Tipo · Documento · Fornecedor · Contrato · Forma · Emissão · Venc · Bruto · Líquido ·
 // Status. (Emissão é placeholder "—" até o backend expô-la na lista — core-api#95.)
-const GRID_COLS = '2.25rem 4.75rem 7rem minmax(15rem, 1.4fr) 6.5rem 8.5rem 6.5rem 6.5rem 7rem 7rem 7.5rem'
+// tracks: checkbox · type · doc · supplier · contract · forma · emissão · vencimento · pagamento(#231) · bruto · líquido · status
+const GRID_COLS =
+  '2.25rem 4.75rem 7rem minmax(15rem, 1.4fr) 6.5rem 8.5rem 6.5rem 6.5rem 6.5rem 7rem 7rem 7.5rem'
 
 // Wrapper rola na horizontal (como o grid largo do Figma) quando a viewport é estreita.
 export const gridWrap = style({

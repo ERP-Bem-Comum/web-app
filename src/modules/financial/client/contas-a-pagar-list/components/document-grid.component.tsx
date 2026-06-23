@@ -166,6 +166,8 @@ export function DocumentGrid(props: DocumentGridProps): ReactNode {
               <span className={cell}>{r.emissao}</span>
               {/* Vencimento é só-leitura aqui. Alteração: drawer → "Editar pagamento" (1) ou footer (1+). */}
               <span className={cell}>{r.due}</span>
+              {/* #231: data da baixa (pagamento) — ancora o match da conciliação (pagamento == saída bancária). */}
+              <span className={cell}>{r.pagamento}</span>
               <span className={cellGross}>{r.gross}</span>
               <span className={cellNet}>{r.net}</span>
               <span className={`${statusBadge} ${statusVariant[r.status]}`}>{r.status}</span>

@@ -30,6 +30,7 @@ const readyState: ListState = {
       contract: '0001/2026',
       paymentMethod: 'PIX',
       emissao: '—',
+      pagamento: '—',
       gross: 'R$ 1.600,00',
       grossCents: '160000',
       due: '10/07/2026',

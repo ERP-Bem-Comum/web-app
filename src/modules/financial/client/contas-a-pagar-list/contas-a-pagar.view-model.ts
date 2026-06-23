@@ -53,6 +53,7 @@ export type GridRow = Readonly<{
   contract: string // número do contrato vinculado ("0003/2026") ou "—"
   paymentMethod: PaymentMethod | null // forma de pagamento (a view traduz via i18n)
   emissao: string // data de emissão (#163), DD/MM/YYYY; "—" quando não informada
+  pagamento: string // data da baixa (core-api#231), DD/MM/YYYY; "—" enquanto não pago / backend não expõe
   gross: string // valor bruto formatado (BRL) ou "—"
   grossCents: string | null // bruto em centavos p/ o somatório da seleção
   due: string
@@ -97,6 +98,7 @@ export const COLUMNS = [
   { key: 'paymentMethod', labelTag: 'financial.list.col.paymentMethod', align: 'left' },
   { key: 'emissao', labelTag: 'financial.list.col.emissao', align: 'left' },
   { key: 'due', labelTag: 'financial.list.col.due', align: 'left' },
+  { key: 'pagamento', labelTag: 'financial.list.col.pagamento', align: 'left' },
   { key: 'gross', labelTag: 'financial.list.col.gross', align: 'right' },
   { key: 'net', labelTag: 'financial.list.col.net', align: 'right' },
   { key: 'status', labelTag: 'financial.list.col.status', align: 'left' },
@@ -269,6 +271,7 @@ const toRow = (
   contract: it.contractRef !== null ? (resolveContract?.(it.contractRef) ?? it.contractRef) : DASH,
   paymentMethod: it.paymentMethod,
   emissao: it.issueDate !== null && it.issueDate !== '' ? formatDue(it.issueDate) : DASH, // #163
+  pagamento: DASH, // modo documento (desligado): summary não traz paidAt — só o título resolve
   gross: it.grossValueCents !== null && it.grossValueCents !== '' ? centsToBRL(it.grossValueCents) : DASH,
   grossCents: it.grossValueCents,
   due: it.dueDate !== null && it.dueDate !== '' ? formatDue(it.dueDate) : DASH,
@@ -528,6 +531,8 @@ const toTitleRow = (
     // #201: imposto (filho) → forma de pagamento é sempre Guia de Recolhimento (padrão). Pai = gap até #229.
     paymentMethod: childRetention !== null ? 'GuiaRecolhimento' : null,
     emissao: DASH, // gap: emissão (= do documento pai) não vem no /payable-titles (core-api#229)
+    // #231: data da baixa. Acende sozinho quando o backend expuser o paidAt no /payable-titles.
+    pagamento: it.paidAt !== null && it.paidAt !== '' ? formatDue(it.paidAt.slice(0, 10)) : DASH,
     gross: it.valueCents !== '' ? centsToBRL(it.valueCents) : DASH,
     grossCents: it.valueCents,
     due: it.dueDate !== '' ? formatDue(it.dueDate.slice(0, 10)) : DASH, // dueDate pode vir ISO datetime

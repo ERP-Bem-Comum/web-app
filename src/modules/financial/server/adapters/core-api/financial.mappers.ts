@@ -179,6 +179,7 @@ export const payableTitlesToModel = (raw: unknown): Result<PayableTitleListRespo
     status: mapStatus(p.status),
     supplierRef: p.supplierRef,
     contractRef: p.contractRef,
+    paidAt: p.paidAt ?? null, // core-api#231: ausente hoje → null
   }))
   return ok({ items, page: l.page, pageSize: l.pageSize, total: l.total })
 }

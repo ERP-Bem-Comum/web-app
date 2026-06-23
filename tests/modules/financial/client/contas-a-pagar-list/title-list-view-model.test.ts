@@ -30,6 +30,7 @@ const item: PayableTitleItem = {
   status: 'Aberto',
   supplierRef: 's1',
   contractRef: null,
+  paidAt: null,
 }
 const resp: PayableTitleListResponse = { items: [item], page: 1, pageSize: 20, total: 1 }
 // órgão arrecadador (igual ao drawer): ISS → SEFIN; demais → Receita Federal.

@@ -1681,6 +1681,7 @@ export const ptBR: Catalog = {
   'financial.list.col.paymentMethod': 'Forma Pag.',
   'financial.list.col.emissao': 'Emissão',
   'financial.list.col.due': 'Vencimento',
+  'financial.list.col.pagamento': 'Pagamento',
   'financial.list.col.gross': 'Bruto',
   'financial.list.col.net': 'Líquido',
   'financial.list.col.status': 'Status',
