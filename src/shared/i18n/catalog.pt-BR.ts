@@ -1594,6 +1594,7 @@ export const ptBR: Catalog = {
   'financial.list.selection.clear': 'limpar',
   'financial.list.selection.sumGrossLabel': 'Soma (bruto):',
   'financial.list.selection.sumLabel': 'Soma (líquido):',
+  'financial.list.selection.resolving': 'carregando ações…',
   // Mudar Status (chrome — transições pendentes no backend)
   'financial.list.status.change': 'Mudar Status',
   'financial.list.status.soon': 'Indisponível no v1 — pendente no backend',
