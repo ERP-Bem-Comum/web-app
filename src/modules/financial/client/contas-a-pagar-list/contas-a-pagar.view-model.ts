@@ -525,8 +525,9 @@ const toTitleRow = (
     supplierKind: childRetention !== null ? null : (resolveKind?.(it.supplierRef) ?? null),
     supplierDoc: childRetention !== null ? null : maskCnpj(resolveDoc?.(it.supplierRef) ?? null),
     contract: it.contractRef !== null ? (resolveContract?.(it.contractRef) ?? it.contractRef) : DASH,
-    paymentMethod: null, // gap: /payable-titles não traz forma de pagamento
-    emissao: DASH, // gap: emissão (= do documento pai) não vem no /payable-titles
+    // #201: imposto (filho) → forma de pagamento é sempre Guia de Recolhimento (padrão). Pai = gap até #229.
+    paymentMethod: childRetention !== null ? 'GuiaRecolhimento' : null,
+    emissao: DASH, // gap: emissão (= do documento pai) não vem no /payable-titles (core-api#229)
     gross: it.valueCents !== '' ? centsToBRL(it.valueCents) : DASH,
     grossCents: it.valueCents,
     due: it.dueDate !== '' ? formatDue(it.dueDate.slice(0, 10)) : DASH, // dueDate pode vir ISO datetime

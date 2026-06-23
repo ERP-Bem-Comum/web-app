@@ -112,6 +112,12 @@ export const tokenValues = {
       aditEscopoText: '#8A5A33',
       aditOutroBg: '#FFF1E0',
       aditOutroText: '#D9772E',
+      // #201 — Pago (teal/esmeralda, distinto do verde de "Aprovado") e Conciliado (roxo, distinto do
+      // azul de "Transmitido") p/ evitar repetição de cor nos badges de status do grid de Contas a Pagar.
+      paidBg: '#DCF1EC',
+      paidText: '#0F766E',
+      reconciledBg: '#EBE5F7',
+      reconciledText: '#5B3D9E',
     },
     // Tipos de parceiro/contrato (badges). Paleta por tipo (brand do cliente):
     //   Fornecedor = azul · Colaborador = amarelo · Financiador = verde · ACT = laranja.

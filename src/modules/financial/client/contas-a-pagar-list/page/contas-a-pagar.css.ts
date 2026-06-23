@@ -630,8 +630,9 @@ export const statusVariant = styleVariants({
   Aprovado: { background: vars.color.status.activeBg, color: vars.color.status.activeText },
   Transmitido: { background: vars.color.status.finishedBg, color: vars.color.status.finishedText },
   Recusado: { background: vars.color.status.terminatedBg, color: vars.color.status.terminatedText },
-  Pago: { background: vars.color.status.activeBg, color: vars.color.status.activeText },
-  Conciliado: { background: vars.color.status.finishedBg, color: vars.color.status.finishedText },
+  // #201: Pago (teal) e Conciliado (roxo) com tonalidades próprias — sem repetir Aprovado/Transmitido.
+  Pago: { background: vars.color.status.paidBg, color: vars.color.status.paidText },
+  Conciliado: { background: vars.color.status.reconciledBg, color: vars.color.status.reconciledText },
 })
 
 export const placeholder = style({
