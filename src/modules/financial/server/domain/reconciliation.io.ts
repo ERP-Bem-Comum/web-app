@@ -179,6 +179,24 @@ export type CreateCedenteAccountInput = Readonly<{
   openingBalanceDate?: string
 }>
 
+// Extrato por PERÍODO (#205 — GET /cedente-accounts/:id/statement?from&to). Input do read-model.
+export type StatementFilter = 'all' | 'in' | 'out' | 'reconciled' | 'pending'
+export interface GetAccountStatementInput {
+  accountId: string
+  from: string // YYYY-MM-DD
+  to: string // YYYY-MM-DD
+  filter?: StatementFilter
+}
+
+// Saldo do PERÍODO conciliado (#205): abertura = saldo acumulado ATÉ `from`; fechamento = ao fim do período.
+// `totalIn/Out` somam as entradas/saídas dos dias do período (centavos). Base da faixa "saldo do período".
+export type AccountStatementPeriod = Readonly<{
+  openingBalanceCents: string
+  closingBalanceCents: string
+  totalInCents: string
+  totalOutCents: string
+}>
+
 // Título conciliável (só Pago). `supplierName`/`documentNumber` chegam quando core-api#172 enriquecer.
 export type PaidPayable = Readonly<{
   id: string

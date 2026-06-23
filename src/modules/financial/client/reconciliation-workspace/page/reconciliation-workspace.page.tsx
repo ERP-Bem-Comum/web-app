@@ -17,6 +17,7 @@ import { SearchCreatePane } from '../components/search-create-pane.component.tsx
 import { NewTransactionPane } from '../components/new-transaction-pane.component.tsx'
 import { ReconciledBanner } from '../components/reconciled-banner.component.tsx'
 import { StatementGrid } from '../components/statement-grid.component.tsx'
+import { PeriodBalanceBand } from '../components/period-balance-band.component.tsx'
 import { ChangeAccountModal } from '../components/change-account-modal.component.tsx'
 import { MatchDetailsModal } from '../components/match-details-modal.component.tsx'
 import { PeriodMenu } from '../components/period-menu.component.tsx'
@@ -41,6 +42,12 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
   const { ui, progress, account } = vm
   const balanceParts = account !== null ? centsToBRL(account.currentBalanceCents).split(',') : null
   const bankInitials = account !== null ? account.bankName.slice(0, 2).toUpperCase() : DASH
+  // Rótulo do período selecionado p/ a faixa de saldo (#205): personalizado usa o range; presets, a meta.
+  const hm = vm.headerMenus
+  const periodRangeLabel =
+    hm.period === 'custom'
+      ? (hm.customLabel ?? t('financial.recon.period.custom'))
+      : (hm.periodOptions.find((o) => o.preset === hm.period)?.meta ?? '')
 
   return (
     <div className={s.screen}>
@@ -234,16 +241,23 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
             )}
           </div>
         ) : (
-          <StatementGrid
-            hasStatement={vm.extrato.hasStatement}
-            days={vm.extrato.days}
-            totals={vm.extrato.totals}
-            count={vm.extrato.count}
-            counts={vm.extrato.counts}
-            filter={ui.extratoFilter}
-            onFilter={vm.setExtratoFilter}
-            onOpenDetails={vm.matchDetails.openFor}
-          />
+          <div className={s.extratoView}>
+            <PeriodBalanceBand
+              loading={vm.periodBalance.loading}
+              data={vm.periodBalance.data}
+              rangeLabel={periodRangeLabel}
+            />
+            <StatementGrid
+              hasStatement={vm.extrato.hasStatement}
+              days={vm.extrato.days}
+              totals={vm.extrato.totals}
+              count={vm.extrato.count}
+              counts={vm.extrato.counts}
+              filter={ui.extratoFilter}
+              onFilter={vm.setExtratoFilter}
+              onOpenDetails={vm.matchDetails.openFor}
+            />
+          </div>
         )}
       </div>
 

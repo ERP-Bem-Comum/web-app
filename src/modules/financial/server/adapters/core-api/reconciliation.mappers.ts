@@ -9,6 +9,7 @@ import type { HttpError } from '#shared/http/http-error.types.ts'
 import { parseErrorEnvelope } from '#shared/http/error-envelope.ts'
 import type { ReconciliationError } from '#modules/financial/server/domain/errors/reconciliation.errors.ts'
 import type {
+  AccountStatementPeriod,
   BankStatementImport,
   BatchResult,
   CedenteAccount,
@@ -267,6 +268,24 @@ export const accountStatementSummary = (
     closingBalanceCents: d.closingBalanceCents,
     pendingCount: d.counters.pending,
     lastDate: lastDay ? lastDay.date.slice(0, 10) : null,
+  })
+}
+
+// #205: saldo do PERÍODO (abertura acumulada até `from` + fechamento) e soma das entradas/saídas dos dias.
+// Soma em BigInt p/ não perder precisão de centavos. Espelha o read-model do extrato por período.
+export const accountStatementPeriodToModel = (
+  raw: unknown,
+): Result<AccountStatementPeriod, ReconciliationError> => {
+  const parsed = CoreApiAccountStatementSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  const d = parsed.data
+  const sumBy = (pick: (x: { inCents: string; outCents: string }) => string): string =>
+    String(d.days.reduce((acc, day) => acc + BigInt(pick(day) || '0'), 0n))
+  return ok({
+    openingBalanceCents: d.openingBalanceCents,
+    closingBalanceCents: d.closingBalanceCents,
+    totalInCents: sumBy((x) => x.inCents),
+    totalOutCents: sumBy((x) => x.outCents),
   })
 }
 

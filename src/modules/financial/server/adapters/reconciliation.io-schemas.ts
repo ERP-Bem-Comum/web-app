@@ -32,6 +32,14 @@ export const ListTransactionsInputSchema = z.object({ statementId: z.uuid() })
 
 export const GetCedenteAccountInputSchema = z.object({ id: z.uuid() })
 
+// #205: extrato por período. `from`/`to` date-only (YYYY-MM-DD); filter opcional.
+export const GetAccountStatementInputSchema = z.object({
+  accountId: z.uuid(),
+  from: z.string().trim(),
+  to: z.string().trim(),
+  filter: z.enum(['all', 'in', 'out', 'reconciled', 'pending']).optional(),
+})
+
 export const CreateCedenteAccountInputSchema = z.object({
   bankCode: z.string().trim().min(1).max(10),
   bankName: z.string().trim().min(1).max(120).optional(),
@@ -133,6 +141,10 @@ const _g_export: AssertEqual<
 const _g_createAcc: AssertEqual<
   z.infer<typeof CreateCedenteAccountInputSchema>,
   R.CreateCedenteAccountInput
+> = true
+const _g_getStmt: AssertEqual<
+  z.infer<typeof GetAccountStatementInputSchema>,
+  R.GetAccountStatementInput
 > = true
 
 void _g_import

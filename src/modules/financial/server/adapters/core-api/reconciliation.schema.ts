@@ -77,7 +77,16 @@ export const CoreApiAccountStatementSchema = z.object({
     reconciled: z.int().catch(0),
     pending: z.int(),
   }),
-  days: z.array(z.object({ date: z.string().trim() })).catch([]),
+  // #205: in/out por dia p/ somar entradas/saídas do período (a faixa de saldo do período).
+  days: z
+    .array(
+      z.object({
+        date: z.string().trim(),
+        inCents: z.string().trim().catch('0'),
+        outCents: z.string().trim().catch('0'),
+      }),
+    )
+    .catch([]),
 })
 export type CoreApiAccountStatement = z.infer<typeof CoreApiAccountStatementSchema>
 

@@ -2736,3 +2736,44 @@ export const footBtnPrimary = style({
   fontWeight: recon.weight.semibold,
   selectors: { '&:hover': { background: c.teal.deep } },
 })
+
+// #205: faixa de SALDO DO PERÍODO (topo da aba Extrato) — saldo inicial acumulado → final + entradas/saídas.
+export const periodBand = style({
+  display: 'flex',
+  alignItems: 'center',
+  flexWrap: 'wrap',
+  gap: sp['3xl'],
+  padding: `${sp.lg} ${sp['2xl']}`,
+  marginBlockEnd: sp.lg,
+  background: c.paper.warm,
+  border: `${bw.thin} solid ${c.paper.rule}`,
+  borderRadius: r.lg,
+})
+export const periodBandHead = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.125rem',
+  minInlineSize: 0,
+})
+export const periodBandTitle = style({
+  fontSize: fs['2xs'],
+  fontWeight: recon.weight.semibold,
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+  color: c.ink[5],
+})
+export const periodBandRange = style({ fontSize: fs.sm, fontWeight: recon.weight.medium, color: c.ink[2] })
+export const periodFig = style({ display: 'flex', flexDirection: 'column', gap: '0.125rem' })
+export const periodFigLbl = style({ fontSize: fs['2xs'], color: c.ink[5] })
+export const periodFigVal = style({
+  fontSize: fs.lg,
+  fontWeight: recon.weight.semibold,
+  color: c.ink[2],
+  fontFamily: recon.font.mono,
+})
+export const periodFigIn = style({ color: c.green.deep })
+export const periodFigOut = style({ color: c.red.deep })
+export const periodBandMuted = style({ fontSize: fs.sm, color: c.ink[5] })
+
+// Coluna da aba Extrato: faixa de saldo do período (#205) + grid do extrato.
+export const extratoView = style({ display: 'flex', flexDirection: 'column', minBlockSize: 0 })
