@@ -13,6 +13,8 @@ const tr = (k: string): string => ptBR[k] ?? k
 
 const base = (over: Partial<AddAccountBinding> = {}): AddAccountBinding => ({
   bankCode: '',
+  customBankName: '',
+  needsBankName: false,
   type: 'Corrente',
   typeLabel: '',
   needsTypeLabel: false,
@@ -26,6 +28,7 @@ const base = (over: Partial<AddAccountBinding> = {}): AddAccountBinding => ({
   submitting: false,
   errorTag: null,
   setBank: vi.fn(),
+  setCustomBankName: vi.fn(),
   setType: vi.fn(),
   setTypeLabel: vi.fn(),
   setAgency: vi.fn(),
@@ -85,6 +88,20 @@ describe('AddAccountModal (#138)', () => {
     expect(setType).toHaveBeenCalledWith('Cartao')
     fireEvent.click(outro)
     expect(setType).toHaveBeenCalledWith('Outro')
+  })
+
+  it('banco "Outro" (#206): campo de instituição aparece só quando needsBankName + dispara setCustomBankName', () => {
+    const setCustomBankName = vi.fn()
+    const { rerender } = render(
+      <AddAccountModal open binding={base({ needsBankName: false })} onClose={vi.fn()} />,
+    )
+    expect(screen.queryByLabelText(tr('financial.recon.add.field.bankName'))).toBeNull()
+    rerender(
+      <AddAccountModal open binding={base({ needsBankName: true, setCustomBankName })} onClose={vi.fn()} />,
+    )
+    const field = screen.getByLabelText(tr('financial.recon.add.field.bankName'))
+    fireEvent.change(field, { target: { value: 'Cooperativa XYZ' } })
+    expect(setCustomBankName).toHaveBeenCalledWith('Cooperativa XYZ')
   })
 
   it('campo de identificação (typeLabel) aparece só quando needsTypeLabel + dispara setTypeLabel', () => {

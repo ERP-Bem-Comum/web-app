@@ -9,14 +9,15 @@ import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { CheckCircleIcon, WalletIcon } from '#shared/ui/icons/index.ts'
 
 import * as s from '../page/reconciliation-accounts.css.ts'
-import { BANKS, type AccountType } from '../reconciliation-accounts.view-model.ts'
+import { BANKS, OTHER_BANK_CODE, type AccountType } from '../reconciliation-accounts.view-model.ts'
 import type { AddAccountBinding } from '../add-account.binding.ts'
 
 const t = createTranslator(ptBR)
 const CLOSE_GLYPH = '✕'
 
-// #206: todos os tipos REAIS — incl. cartão corporativo (tem movimentação a conciliar) e "outro".
-// Cartao/Outro pedem um rótulo livre (typeLabel) p/ identificar a conta.
+// #206: tipos REAIS de conta — incl. cartão corporativo (tem movimentação a conciliar) e "Outro".
+// Cartão corporativo/Outro pedem a "Identificação da conta". "Outro" também existe na lista de BANCOS
+// (instituição não listada) — são coisas distintas (tipo de conta × instituição).
 const TYPES: readonly { value: AccountType; tag: string }[] = [
   { value: 'Corrente', tag: 'financial.recon.add.type.corrente' },
   { value: 'Poupanca', tag: 'financial.recon.add.type.poupanca' },
@@ -74,11 +75,28 @@ export function AddAccountModal({ open, onClose, binding }: AddAccountModalProps
                 </option>
                 {BANKS.map((b) => (
                   <option key={b.code} value={b.code}>
-                    {`${b.code} · ${b.name}`}
+                    {/* #206: "Outro" sem prefixo de código (não é um banco com código real) */}
+                    {b.code === OTHER_BANK_CODE ? b.name : `${b.code} · ${b.name}`}
                   </option>
                 ))}
               </select>
             </div>
+            {binding.needsBankName ? (
+              <div className={s.formField}>
+                <label className={s.fieldLabel} htmlFor="add-bank-name">
+                  {t('financial.recon.add.field.bankName')}
+                </label>
+                <input
+                  id="add-bank-name"
+                  className={s.input}
+                  placeholder={t('financial.recon.add.placeholder.bankName')}
+                  value={binding.customBankName}
+                  onChange={(e) => {
+                    binding.setCustomBankName(e.target.value)
+                  }}
+                />
+              </div>
+            ) : null}
             <div className={s.formField}>
               <span className={s.fieldLabel}>{t('financial.recon.add.field.type')}</span>
               <div className={s.segmented}>

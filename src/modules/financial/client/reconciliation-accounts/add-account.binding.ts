@@ -13,11 +13,14 @@ import type {
   AccountType,
   CreateCedenteAccountInput,
 } from '#modules/financial/client/data/model/reconciliation.model.ts'
+import { OTHER_BANK_CODE } from './reconciliation-accounts.view-model.ts'
 
 export type AddAccountBinding = Readonly<{
   bankCode: string
+  customBankName: string // #206: instituição digitada quando banco = "Outro"
+  needsBankName: boolean // true quando banco = "Outro" (a UI mostra o campo de instituição)
   type: AccountType
-  typeLabel: string // #206: texto livre exigido p/ Cartao/Outro
+  typeLabel: string // #206: "Identificação da conta" exigida p/ Cartão corporativo/Outro
   needsTypeLabel: boolean // true quando type = Cartao/Outro (a UI mostra o campo)
   agency: string
   account: string // "número-DV" combinado (ex.: 0012345-7); separado em accountNumber/accountDigit no submit
@@ -29,6 +32,7 @@ export type AddAccountBinding = Readonly<{
   submitting: boolean
   errorTag: string | null
   setBank: (code: string) => void
+  setCustomBankName: (v: string) => void
   setType: (t: AccountType) => void
   setTypeLabel: (v: string) => void
   setAgency: (v: string) => void
@@ -47,6 +51,7 @@ export function useAddAccount(
 ): AddAccountBinding {
   const qc = useQueryClient()
   const [bankCode, setBankCode] = useState('')
+  const [customBankName, setCustomBankName] = useState('')
   const [type, setType] = useState<AccountType>('Corrente')
   const [typeLabel, setTypeLabel] = useState('')
   const [agency, setAgency] = useState('')
@@ -59,6 +64,7 @@ export function useAddAccount(
 
   const reset = () => {
     setBankCode('')
+    setCustomBankName('')
     setType('Corrente')
     setTypeLabel('')
     setAgency('')
@@ -84,17 +90,21 @@ export function useAddAccount(
     },
   })
 
-  // #206: Cartao/Outro exigem um rótulo livre que identifique a conta.
+  // #206: banco "Outro" pede o nome da instituição; tipo Cartão corporativo/Outro pede a identificação da conta.
+  const needsBankName = bankCode === OTHER_BANK_CODE
   const needsTypeLabel = type === 'Cartao' || type === 'Outro'
   const canSubmit =
     bankCode.trim() !== '' &&
     agency.trim() !== '' &&
     account.trim() !== '' &&
     document.trim() !== '' &&
+    (!needsBankName || customBankName.trim() !== '') &&
     (!needsTypeLabel || typeLabel.trim() !== '')
 
   return {
     bankCode,
+    customBankName,
+    needsBankName,
     type,
     typeLabel,
     needsTypeLabel,
@@ -109,6 +119,9 @@ export function useAddAccount(
     errorTag,
     setBank: (code) => {
       setBankCode(code)
+    },
+    setCustomBankName: (v) => {
+      setCustomBankName(v)
     },
     setType: (t) => {
       setType(t)
@@ -152,7 +165,8 @@ export function useAddAccount(
       const dash = acc.lastIndexOf('-')
       const accountNumber = dash > 0 ? acc.slice(0, dash) : acc
       const accountDigit = dash > 0 ? acc.slice(dash + 1, dash + 3) : ''
-      const bankName = bankNameOf(bankCode)
+      // #206: banco "Outro" → o nome vem do campo livre; senão, do catálogo.
+      const bankName = needsBankName ? customBankName.trim() : bankNameOf(bankCode)
       mut.mutate({
         bankCode,
         bankName,
