@@ -13,7 +13,11 @@ const tr = (k: string): string => ptBR[k] ?? k
 
 const base = (over: Partial<AddAccountBinding> = {}): AddAccountBinding => ({
   bankCode: '',
+  customBankName: '',
+  needsBankName: false,
   type: 'Corrente',
+  typeLabel: '',
+  needsTypeLabel: false,
   agency: '',
   account: '',
   document: '',
@@ -24,7 +28,9 @@ const base = (over: Partial<AddAccountBinding> = {}): AddAccountBinding => ({
   submitting: false,
   errorTag: null,
   setBank: vi.fn(),
+  setCustomBankName: vi.fn(),
   setType: vi.fn(),
+  setTypeLabel: vi.fn(),
   setAgency: vi.fn(),
   setAccount: vi.fn(),
   setDocument: vi.fn(),
@@ -67,7 +73,7 @@ describe('AddAccountModal (#138)', () => {
     expect(setType).toHaveBeenCalledWith('Poupanca')
   })
 
-  it('Cartão corporativo e Outro aparecem como chrome desabilitado (até backend #206)', () => {
+  it('Cartão corporativo e Outro são tipos REAIS (#206) e disparam setType', () => {
     const setType = vi.fn()
     render(<AddAccountModal open binding={base({ setType })} onClose={vi.fn()} />)
     const cartao = screen.getByRole('button', {
@@ -76,9 +82,39 @@ describe('AddAccountModal (#138)', () => {
     const outro = screen.getByRole('button', {
       name: tr('financial.recon.add.type.outro'),
     }) as HTMLButtonElement
-    expect(cartao.disabled).toBe(true)
-    expect(outro.disabled).toBe(true)
+    expect(cartao.disabled).toBe(false)
+    expect(outro.disabled).toBe(false)
     fireEvent.click(cartao)
-    expect(setType).not.toHaveBeenCalled()
+    expect(setType).toHaveBeenCalledWith('Cartao')
+    fireEvent.click(outro)
+    expect(setType).toHaveBeenCalledWith('Outro')
+  })
+
+  it('banco "Outro" (#206): campo de instituição aparece só quando needsBankName + dispara setCustomBankName', () => {
+    const setCustomBankName = vi.fn()
+    const { rerender } = render(
+      <AddAccountModal open binding={base({ needsBankName: false })} onClose={vi.fn()} />,
+    )
+    expect(screen.queryByLabelText(tr('financial.recon.add.field.bankName'))).toBeNull()
+    rerender(
+      <AddAccountModal open binding={base({ needsBankName: true, setCustomBankName })} onClose={vi.fn()} />,
+    )
+    const field = screen.getByLabelText(tr('financial.recon.add.field.bankName'))
+    fireEvent.change(field, { target: { value: 'Cooperativa XYZ' } })
+    expect(setCustomBankName).toHaveBeenCalledWith('Cooperativa XYZ')
+  })
+
+  it('campo de identificação (typeLabel) aparece só quando needsTypeLabel + dispara setTypeLabel', () => {
+    const setTypeLabel = vi.fn()
+    const { rerender } = render(
+      <AddAccountModal open binding={base({ needsTypeLabel: false })} onClose={vi.fn()} />,
+    )
+    expect(screen.queryByLabelText(tr('financial.recon.add.field.typeLabel'))).toBeNull()
+    rerender(
+      <AddAccountModal open binding={base({ needsTypeLabel: true, setTypeLabel })} onClose={vi.fn()} />,
+    )
+    const field = screen.getByLabelText(tr('financial.recon.add.field.typeLabel'))
+    fireEvent.change(field, { target: { value: 'Cartão Visa' } })
+    expect(setTypeLabel).toHaveBeenCalledWith('Cartão Visa')
   })
 })

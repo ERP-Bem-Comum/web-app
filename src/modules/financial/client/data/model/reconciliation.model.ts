@@ -21,7 +21,7 @@ export type SuggestionBand = 'alta' | 'media'
 export type StatementFormat = 'OFX' | 'CSV'
 
 // Conta-cedente (depende de core-api#168; sem endpoint hoje). `status` Closed não abre workspace.
-export type AccountType = 'Corrente' | 'Poupanca' | 'Investimento'
+export type AccountType = 'Corrente' | 'Poupanca' | 'Investimento' | 'Cartao' | 'Outro'
 export type AccountStatus = 'Active' | 'Closed'
 export type ReconciliationAccount = Readonly<{
   id: string
@@ -32,6 +32,7 @@ export type ReconciliationAccount = Readonly<{
   accountDv: string
   alias: string
   type: AccountType
+  typeLabel: string | null // #206: texto livre quando type = Cartao/Outro
   status: AccountStatus
   currentBalanceCents: string
   lastUpdatedAt: string
@@ -54,6 +55,7 @@ export type CreateCedenteAccountInput = Readonly<{
   bankCode: string
   bankName?: string
   type: AccountType
+  typeLabel?: string // #206: texto livre p/ Cartao/Outro
   agency: string
   accountNumber: string
   accountDigit: string

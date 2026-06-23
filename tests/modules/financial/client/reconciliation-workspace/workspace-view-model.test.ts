@@ -266,6 +266,7 @@ describe('modal Alterar conta — groupAccountsForSwitch', () => {
     accountDv: '7',
     alias: 'Bradesco · Movimento',
     type: 'Corrente',
+    typeLabel: null,
     status: 'Active',
     currentBalanceCents: '100000',
     lastUpdatedAt: 'hoje',

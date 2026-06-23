@@ -1375,8 +1375,11 @@ export const ptBR: Catalog = {
   'financial.recon.add.type.investimento': 'Investimento',
   'financial.recon.add.type.cartao': 'Cartão corporativo',
   'financial.recon.add.type.outro': 'Outro',
-  'financial.recon.add.type.soonHint':
-    'Cartão corporativo e Outro disponíveis em breve (depende do backend).',
+  'financial.recon.add.field.typeLabel': 'Identificação da conta',
+  'financial.recon.add.placeholder.typeLabel': 'Ex.: Cartão Visa Corporativo, Caixinha do programa…',
+  // #206: banco "Outro" → instituição digitada manualmente (vira o bankName).
+  'financial.recon.add.field.bankName': 'Instituição financeira',
+  'financial.recon.add.placeholder.bankName': 'Ex.: Cooperativa de Crédito XYZ',
   'financial.recon.add.field.branch': 'Agência',
   'financial.recon.add.placeholder.branch': '0000',
   'financial.recon.add.field.account': 'Conta-DV',

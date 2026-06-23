@@ -155,7 +155,8 @@ export type CedenteAccount = Readonly<{
   accountNumber: string
   accountDv: string
   alias: string
-  type: 'Corrente' | 'Poupanca' | 'Investimento'
+  type: 'Corrente' | 'Poupanca' | 'Investimento' | 'Cartao' | 'Outro'
+  typeLabel: string | null // #206: texto livre identificando a conta quando type = Cartao/Outro
   status: 'Active' | 'Closed'
   currentBalanceCents: string
   lastUpdatedAt: string
@@ -167,7 +168,8 @@ export type CedenteAccount = Readonly<{
 export type CreateCedenteAccountInput = Readonly<{
   bankCode: string
   bankName?: string
-  type: 'Corrente' | 'Poupanca' | 'Investimento'
+  type: 'Corrente' | 'Poupanca' | 'Investimento' | 'Cartao' | 'Outro'
+  typeLabel?: string // #206: texto livre p/ identificar conta Outro (ou complementar Cartao)
   agency: string
   accountNumber: string
   accountDigit: string

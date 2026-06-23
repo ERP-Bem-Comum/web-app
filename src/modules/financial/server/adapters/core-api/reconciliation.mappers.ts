@@ -205,7 +205,15 @@ export const paidPayablesToModel = (raw: unknown): Result<readonly PaidPayable[]
 
 // ── Conta-cedente (#138) ────────────────────────────────────────────────────────
 const mapAccountType = (t: string | null): CedenteAccount['type'] =>
-  t === 'poupanca' ? 'Poupanca' : t === 'investimento' ? 'Investimento' : 'Corrente'
+  t === 'poupanca'
+    ? 'Poupanca'
+    : t === 'investimento'
+      ? 'Investimento'
+      : t === 'cartao' // #206
+        ? 'Cartao'
+        : t === 'outro'
+          ? 'Outro'
+          : 'Corrente'
 const mapAccountStatus = (s: string): CedenteAccount['status'] =>
   s.toLowerCase() === 'closed' ? 'Closed' : 'Active'
 
@@ -218,6 +226,7 @@ const toCedenteAccount = (a: CoreApiCedenteAccount): CedenteAccount => ({
   accountDv: a.accountDigit,
   alias: a.nickname ?? a.bankName ?? a.bankCode,
   type: mapAccountType(a.type),
+  typeLabel: a.typeLabel, // #206
   status: mapAccountStatus(a.status),
   // saldo corrente, lastUpdated e contagem de pendências dependem do read-model #139 → defaults honestos
   currentBalanceCents: a.openingBalanceCents ?? '0',

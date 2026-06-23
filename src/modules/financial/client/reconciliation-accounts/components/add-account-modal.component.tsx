@@ -9,23 +9,21 @@ import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { CheckCircleIcon, WalletIcon } from '#shared/ui/icons/index.ts'
 
 import * as s from '../page/reconciliation-accounts.css.ts'
-import { BANKS, type AccountType } from '../reconciliation-accounts.view-model.ts'
+import { BANKS, OTHER_BANK_CODE, type AccountType } from '../reconciliation-accounts.view-model.ts'
 import type { AddAccountBinding } from '../add-account.binding.ts'
 
 const t = createTranslator(ptBR)
 const CLOSE_GLYPH = '✕'
 
+// #206: tipos REAIS de conta — incl. cartão corporativo (tem movimentação a conciliar) e "Outro".
+// Cartão corporativo/Outro pedem a "Identificação da conta". "Outro" também existe na lista de BANCOS
+// (instituição não listada) — são coisas distintas (tipo de conta × instituição).
 const TYPES: readonly { value: AccountType; tag: string }[] = [
   { value: 'Corrente', tag: 'financial.recon.add.type.corrente' },
   { value: 'Poupanca', tag: 'financial.recon.add.type.poupanca' },
   { value: 'Investimento', tag: 'financial.recon.add.type.investimento' },
-]
-
-// Tipos pedidos pelo cliente (cartão corporativo tem movimentação a conciliar) — CHROME honesto:
-// desabilitados até o backend ampliar o enum `type` (core-api#206). Mostram a intenção sem quebrar o POST.
-const SOON_TYPES: readonly { key: string; tag: string }[] = [
-  { key: 'cartao', tag: 'financial.recon.add.type.cartao' },
-  { key: 'outro', tag: 'financial.recon.add.type.outro' },
+  { value: 'Cartao', tag: 'financial.recon.add.type.cartao' },
+  { value: 'Outro', tag: 'financial.recon.add.type.outro' },
 ]
 
 export type AddAccountModalProps = Readonly<{
@@ -77,11 +75,28 @@ export function AddAccountModal({ open, onClose, binding }: AddAccountModalProps
                 </option>
                 {BANKS.map((b) => (
                   <option key={b.code} value={b.code}>
-                    {`${b.code} · ${b.name}`}
+                    {/* #206: "Outro" sem prefixo de código (não é um banco com código real) */}
+                    {b.code === OTHER_BANK_CODE ? b.name : `${b.code} · ${b.name}`}
                   </option>
                 ))}
               </select>
             </div>
+            {binding.needsBankName ? (
+              <div className={s.formField}>
+                <label className={s.fieldLabel} htmlFor="add-bank-name">
+                  {t('financial.recon.add.field.bankName')}
+                </label>
+                <input
+                  id="add-bank-name"
+                  className={s.input}
+                  placeholder={t('financial.recon.add.placeholder.bankName')}
+                  value={binding.customBankName}
+                  onChange={(e) => {
+                    binding.setCustomBankName(e.target.value)
+                  }}
+                />
+              </div>
+            ) : null}
             <div className={s.formField}>
               <span className={s.fieldLabel}>{t('financial.recon.add.field.type')}</span>
               <div className={s.segmented}>
@@ -98,20 +113,23 @@ export function AddAccountModal({ open, onClose, binding }: AddAccountModalProps
                     {t(tp.tag)}
                   </button>
                 ))}
-                {SOON_TYPES.map((tp) => (
-                  <button
-                    key={tp.key}
-                    type="button"
-                    className={s.segBtn.disabled}
-                    disabled
-                    aria-disabled="true"
-                    title={t('financial.recon.add.type.soonHint')}
-                  >
-                    {t(tp.tag)}
-                  </button>
-                ))}
               </div>
-              <span className={s.segHint}>{t('financial.recon.add.type.soonHint')}</span>
+              {binding.needsTypeLabel ? (
+                <div className={s.formField}>
+                  <label className={s.fieldLabel} htmlFor="add-type-label">
+                    {t('financial.recon.add.field.typeLabel')}
+                  </label>
+                  <input
+                    id="add-type-label"
+                    className={s.input}
+                    placeholder={t('financial.recon.add.placeholder.typeLabel')}
+                    value={binding.typeLabel}
+                    onChange={(e) => {
+                      binding.setTypeLabel(e.target.value)
+                    }}
+                  />
+                </div>
+              ) : null}
             </div>
           </section>
 

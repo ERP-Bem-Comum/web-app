@@ -50,6 +50,7 @@ export const CoreApiCedenteAccountSchema = z.object({
   bankCode: z.string().trim(),
   bankName: z.string().trim().nullable().catch(null),
   type: z.string().trim().nullable().catch(null),
+  typeLabel: z.string().trim().nullable().catch(null), // #206: texto livre p/ cartao/outro
   agency: z.string().trim(),
   accountNumber: z.string().trim(),
   accountDigit: z.string().trim(),

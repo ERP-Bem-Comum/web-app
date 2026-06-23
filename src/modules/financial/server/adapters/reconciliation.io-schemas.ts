@@ -35,7 +35,8 @@ export const GetCedenteAccountInputSchema = z.object({ id: z.uuid() })
 export const CreateCedenteAccountInputSchema = z.object({
   bankCode: z.string().trim().min(1).max(10),
   bankName: z.string().trim().min(1).max(120).optional(),
-  type: z.enum(['Corrente', 'Poupanca', 'Investimento']),
+  type: z.enum(['Corrente', 'Poupanca', 'Investimento', 'Cartao', 'Outro']),
+  typeLabel: z.string().trim().min(1).max(120).optional(), // #206: texto livre p/ Cartao/Outro
   agency: z.string().trim().min(1).max(10),
   accountNumber: z.string().trim().min(1).max(20),
   accountDigit: z.string().trim().max(2),

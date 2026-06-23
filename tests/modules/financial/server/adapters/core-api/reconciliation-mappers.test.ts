@@ -190,6 +190,21 @@ describe('cedenteAccountsToModel / cedenteAccountToModel (#138)', () => {
   it('shape inválido → err(server)', () => {
     assert.ok(isErr(cedenteAccountsToModel({ nope: true })))
   })
+
+  it('#206: type cartao/outro mapeados + typeLabel preservado; ausente → null', () => {
+    const r = cedenteAccountToModel({ ...raw, type: 'cartao', typeLabel: 'Cartão Visa Corp' })
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value.type, 'Cartao')
+      assert.equal(r.value.typeLabel, 'Cartão Visa Corp')
+    }
+    const r2 = cedenteAccountToModel({ ...raw, type: 'outro' }) // typeLabel ausente
+    assert.ok(isOk(r2))
+    if (isOk(r2)) {
+      assert.equal(r2.value.type, 'Outro')
+      assert.equal(r2.value.typeLabel, null)
+    }
+  })
 })
 
 describe('accountStatementSummary (#139)', () => {

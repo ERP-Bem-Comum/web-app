@@ -20,6 +20,8 @@ export type SortKey = 'pendencias' | 'saldo' | 'nome' | 'atualizacao'
 // Lista estática dos principais bancos (FEBRABAN) para o seletor do form Nova Conta. Vocabulário de UI
 // (não dado de negócio); o core-api aceita bankCode livre — esta lista só guia o comum.
 export type BankOption = Readonly<{ code: string; name: string }>
+// Sentinela p/ instituição não listada (#206): seleciona "Outro" e digita o nome (vira `bankName`).
+export const OTHER_BANK_CODE = 'OUTRO'
 export const BANKS: readonly BankOption[] = [
   { code: '001', name: 'Banco do Brasil' },
   { code: '033', name: 'Santander' },
@@ -33,6 +35,7 @@ export const BANKS: readonly BankOption[] = [
   { code: '756', name: 'Sicoob' },
   { code: '212', name: 'Banco Original' },
   { code: '422', name: 'Banco Safra' },
+  { code: OTHER_BANK_CODE, name: 'Outro' }, // #206: instituição não listada → nome manual
 ]
 export const bankNameByCode = (code: string): string | undefined => BANKS.find((b) => b.code === code)?.name
 
