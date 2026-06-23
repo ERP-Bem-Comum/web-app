@@ -122,5 +122,18 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
       if (isErr(r)) return err(mapHttpError(r.error))
       return ok(undefined)
     },
+    registerManualPayment: async (input, token) => {
+      // #224: baixa manual de UM título. `version` = do documento (optimistic lock do agregado).
+      const r = await resultFetch<unknown>(
+        `${docs}/${input.documentId}/payables/${input.payableId}/manual-payment`,
+        {
+          method: 'POST',
+          body: { version: input.version, ...(input.reason !== undefined ? { reason: input.reason } : {}) },
+          token,
+        },
+      )
+      if (isErr(r)) return err(mapHttpError(r.error))
+      return detailToModel(r.value)
+    },
   }
 }

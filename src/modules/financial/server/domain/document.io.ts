@@ -93,6 +93,14 @@ export interface ApproveInput {
   version: number
 }
 
+// #224: baixa manual de UM título (Aprovado→Pago). `version` = do DOCUMENTO (optimistic lock do agregado).
+export interface ManualPaymentInput {
+  documentId: string
+  payableId: string
+  version: number
+  reason?: string
+}
+
 // Cancelar (DELETE /documents/:id) — só em Aberto; hard-delete. `version` = optimistic lock (corpo).
 export interface CancelInput {
   id: string

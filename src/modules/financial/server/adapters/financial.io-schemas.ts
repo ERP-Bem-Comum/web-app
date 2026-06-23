@@ -98,6 +98,14 @@ export const ApproveInputSchema = z.object({
 // Cancelar (DELETE /documents/:id). `version` = optimistic lock exigido pelo core-api no corpo.
 export const CancelInputSchema = z.object({ id: z.uuid(), version: z.int().min(0) })
 
+// #224: baixa manual de um título (POST /documents/:id/payables/:payableId/manual-payment).
+export const ManualPaymentInputSchema = z.object({
+  documentId: z.uuid(),
+  payableId: z.uuid(),
+  version: z.int().min(0),
+  reason: z.string().trim().min(1).max(500).optional(),
+})
+
 // Listagem (GET /documents).
 export const ListDocumentsInputSchema = z.object({
   status: z.enum(DOCUMENT_STATUSES).optional(),
@@ -128,4 +136,5 @@ const _g_create: AssertEqual<z.infer<typeof CreateDocumentInputSchema>, D.Create
 const _g_adjust: AssertEqual<z.infer<typeof AdjustDocumentInputSchema>, D.AdjustDocumentInput> = true
 const _g_approve: AssertEqual<z.infer<typeof ApproveInputSchema>, D.ApproveInput> = true
 const _g_cancel: AssertEqual<z.infer<typeof CancelInputSchema>, D.CancelInput> = true
+const _g_manualpay: AssertEqual<z.infer<typeof ManualPaymentInputSchema>, D.ManualPaymentInput> = true
 const _g_list: AssertEqual<z.infer<typeof ListDocumentsInputSchema>, D.ListDocumentsInput> = true

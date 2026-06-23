@@ -12,6 +12,7 @@ import type {
   AdjustDocumentInput,
   ApproveInput,
   CancelInput,
+  ManualPaymentInput,
   ListPayableTitlesInput,
   PayableTitleListResponse,
 } from '#modules/financial/client/data/model/document.model.ts'
@@ -26,6 +27,7 @@ type ApproveFn = (opts: { data: ApproveInput }) => Promise<FnResult<DocumentDeta
 type CancelFn = (opts: {
   data: CancelInput
 }) => Promise<Readonly<{ ok: true }> | Readonly<{ ok: false; error: FinancialError }>>
+type PayFn = (opts: { data: ManualPaymentInput }) => Promise<FnResult<DocumentDetail>>
 
 export type FinancialRepository = Readonly<{
   list: (input: ListDocumentsInput) => Promise<Result<DocumentListResponse, FinancialError>>
@@ -39,6 +41,8 @@ export type FinancialRepository = Readonly<{
   approve: (input: ApproveInput) => Promise<Result<DocumentDetail, FinancialError>>
   undoApproval: (input: ApproveInput) => Promise<Result<DocumentDetail, FinancialError>>
   cancel: (input: CancelInput) => Promise<Result<void, FinancialError>>
+  // #224: baixa manual de um título (Aprovado→Pago).
+  registerManualPayment: (input: ManualPaymentInput) => Promise<Result<DocumentDetail, FinancialError>>
 }>
 
 export const createFinancialRepository = (
@@ -51,6 +55,7 @@ export const createFinancialRepository = (
     approveDocumentFn: ApproveFn
     undoApprovalFn: ApproveFn
     cancelDocumentFn: CancelFn
+    registerManualPaymentFn: PayFn
   }>,
 ): FinancialRepository => ({
   list: async (input) => {
@@ -84,5 +89,9 @@ export const createFinancialRepository = (
   cancel: async (input) => {
     const res = await deps.cancelDocumentFn({ data: input })
     return res.ok ? ok(undefined) : err(res.error)
+  },
+  registerManualPayment: async (input) => {
+    const res = await deps.registerManualPaymentFn({ data: input })
+    return res.ok ? ok(res.data) : err(res.error)
   },
 })

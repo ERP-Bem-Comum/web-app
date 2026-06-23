@@ -16,6 +16,7 @@ import { useDocumentDetail } from '../document-detail.binding.ts'
 import { useBulkStatus } from '../bulk-status.binding.ts'
 import { useBulkDelete } from '../bulk-delete.binding.ts'
 import { useBulkDueDate } from '../bulk-due-date.binding.ts'
+import { useBulkPay, type PayTarget } from '../bulk-pay.binding.ts'
 import { useSelectedDocs, type SelectedDoc } from '../selected-docs.binding.ts'
 import {
   STATUS_CHIPS,
@@ -180,6 +181,18 @@ export function ContasAPagarPage(): ReactNode {
     deletable: aberto.map(toTarget),
     draftCount: selectedDocs.filter((d) => d.status === 'Rascunho').length,
   }
+
+  // ── Marcar como pago (baixa manual, #224) — por TÍTULO Aprovado (Aprovado→Pago). O `version` é o do
+  //    DOCUMENTO (selectedDocs); títulos do mesmo doc são baixados em sequência (o binding encadeia). ──
+  const docVersionById = new Map(selectedDocs.map((d) => [d.id, d.version]))
+  const pay = useBulkPay(clearSelection)
+  const payTargets: readonly PayTarget[] = rows
+    .filter((r) => selected.has(r.id) && r.status === 'Aprovado')
+    .map((r) => ({
+      documentId: r.documentId,
+      payableId: r.id,
+      version: docVersionById.get(r.documentId) ?? 0,
+    }))
 
   return (
     <div className={screen}>
@@ -372,7 +385,8 @@ export function ContasAPagarPage(): ReactNode {
               canApprove={targets.approve.length > 0}
               canReopen={targets.reopen.length > 0}
               canDelete={deleteTargets.deletable.length > 0}
-              running={bulk.running || del.running || resolvingDocs}
+              canPay={payTargets.length > 0 && !resolvingDocs}
+              running={bulk.running || del.running || pay.running || resolvingDocs}
               onApprove={() => {
                 bulk.approve(targets.approve)
               }}
@@ -382,9 +396,13 @@ export function ContasAPagarPage(): ReactNode {
               onDelete={() => {
                 setDeleteOpen(true)
               }}
+              onPay={() => {
+                pay.pay(payTargets)
+              }}
             />
             {bulk.errorTag !== null ? <span className={selError}>{t(bulk.errorTag)}</span> : null}
             {del.errorTag !== null ? <span className={selError}>{t(del.errorTag)}</span> : null}
+            {pay.errorTag !== null ? <span className={selError}>{t(pay.errorTag)}</span> : null}
           </div>
         ) : page !== null ? (
           <nav className={pagination} aria-label={t('financial.list.pagination')}>

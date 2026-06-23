@@ -84,6 +84,13 @@ export type AdjustDocumentInput = Readonly<{
 
 export type ApproveInput = Readonly<{ id: string; version: number }>
 export type CancelInput = Readonly<{ id: string; version: number }>
+// #224: baixa manual de um título (Aprovado→Pago). version = do documento (optimistic lock).
+export type ManualPaymentInput = Readonly<{
+  documentId: string
+  payableId: string
+  version: number
+  reason?: string
+}>
 
 export type ListDocumentsInput = Readonly<{
   status?: DocumentStatus

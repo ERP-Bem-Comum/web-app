@@ -37,14 +37,17 @@ export type StatusActionsProps = Readonly<{
   canReopen: boolean
   // Excluir (hard-delete) — só Aberto (Rascunho dá 409, core-api#166). Abre o modal de confirmação.
   canDelete: boolean
+  // Marcar como pago (baixa manual, #224) — só títulos Aprovados (Aprovado→Pago).
+  canPay: boolean
   running: boolean
   onApprove: () => void
   onReopen: () => void
   onDelete: () => void
+  onPay: () => void
 }>
 
 export function StatusActions(props: StatusActionsProps): ReactNode {
-  const { canApprove, canReopen, canDelete, running } = props
+  const { canApprove, canReopen, canDelete, canPay, running } = props
   return (
     <details className={wrapper}>
       <summary
@@ -92,14 +95,18 @@ export function StatusActions(props: StatusActionsProps): ReactNode {
           </span>
         </button>
 
-        {/* "Marcar como pago" — sem rota no backend (chrome). ("Enviar p/ aprovação" foi removido:
-            a finalização do rascunho acontece reabrindo o documento na tela de Lançar, e a aprovação
-            já é coberta por "Aprovar".) */}
+        {/* "Marcar como pago" — baixa manual (#224): Aprovado→Pago por título. ("Enviar p/ aprovação"
+            foi removido: a finalização do rascunho acontece reabrindo o documento na tela de Lançar, e a
+            aprovação já é coberta por "Aprovar".) */}
         <button
           type="button"
-          className={`${menuItem} ${menuItemBorder} ${menuItemDisabled}`}
-          disabled
-          title={t('financial.list.status.soon')}
+          className={`${menuItem} ${menuItemBorder}${canPay && !running ? '' : ` ${menuItemDisabled}`}`}
+          disabled={!canPay || running}
+          title={canPay ? undefined : t('financial.list.status.needApprovedToPay')}
+          onClick={(e) => {
+            props.onPay()
+            closeDetails(e)
+          }}
         >
           <span className={itemCol}>
             {t('financial.list.status.pay')}

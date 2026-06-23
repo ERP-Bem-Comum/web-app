@@ -1609,6 +1609,8 @@ export const ptBR: Catalog = {
   'financial.list.status.submitHint': 'Rascunho → Aberto',
   'financial.list.status.pay': 'Marcar como pago',
   'financial.list.status.payHint': 'registra a baixa',
+  'financial.list.status.needApprovedToPay': 'Selecione títulos "Aprovado" para dar baixa',
+  'financial.list.status.bulkPayError': 'Algumas baixas não foram concluídas (atualize e tente de novo)',
   'financial.list.search': 'Buscar por fornecedor, número, CNPJ…',
   'financial.list.statusFilter': 'Filtrar por status',
   // #201: grid por título — ações em massa por título aguardam o backend (core-api#229).
