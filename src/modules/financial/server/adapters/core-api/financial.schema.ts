@@ -76,6 +76,9 @@ export const CoreApiPayableTitleSchema = z.object({
   status: z.string().trim(),
   supplierRef: z.string().trim().nullable().catch(null),
   contractRef: z.string().trim().nullable().catch(null),
+  // Data de pagamento (baixa). Hoje o core-api NÃO devolve (core-api#231); tolerante p/ acender sozinho
+  // quando o backend expuser o `paidAt`. Match da conciliação: pagamento == saída bancária.
+  paidAt: z.string().trim().nullable().catch(null).optional(),
 })
 export const CoreApiPayableTitleListSchema = z.object({
   items: z.array(CoreApiPayableTitleSchema),

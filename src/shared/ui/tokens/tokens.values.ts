@@ -112,6 +112,12 @@ export const tokenValues = {
       aditEscopoText: '#8A5A33',
       aditOutroBg: '#FFF1E0',
       aditOutroText: '#D9772E',
+      // #201 — Aprovado = AZUL CLARO (distinto do azul de "Transmitido"=finished) e Conciliado = ROXO,
+      // p/ não repetir cor nos badges (Pago=verde/active, Transmitido=azul/finished, Aberto=amarelo/pending).
+      approvedBg: '#EAF4FE',
+      approvedText: '#1E88E5',
+      reconciledBg: '#EBE5F7',
+      reconciledText: '#5B3D9E',
     },
     // Tipos de parceiro/contrato (badges). Paleta por tipo (brand do cliente):
     //   Fornecedor = azul · Colaborador = amarelo · Financiador = verde · ACT = laranja.

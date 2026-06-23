@@ -82,6 +82,10 @@ describe('contract — extensibilidade (tema alternativo)', () => {
           aditEscopoText: '#c8a06a',
           aditOutroBg: '#3a2e1f',
           aditOutroText: '#ffb774',
+          approvedBg: '#16263a',
+          approvedText: '#64b5f6',
+          reconciledBg: '#2a2440',
+          reconciledText: '#b39ddb',
         },
         partnerType: {
           supplier: {

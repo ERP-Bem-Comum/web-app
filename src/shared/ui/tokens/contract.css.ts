@@ -76,6 +76,10 @@ export const vars = createThemeContract({
       aditEscopoText: null,
       aditOutroBg: null,
       aditOutroText: null,
+      approvedBg: null,
+      approvedText: null,
+      reconciledBg: null,
+      reconciledText: null,
     },
     partnerType: {
       supplier: { text: null, background: null, border: null },

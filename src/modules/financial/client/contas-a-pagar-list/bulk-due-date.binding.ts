@@ -40,6 +40,9 @@ export function useBulkDueDate(onCompleted: () => void): BulkDueDateBinding {
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: ['financial', 'documents', 'list'] })
       void queryClient.invalidateQueries({ queryKey: ['financial', 'documents', 'detail'] })
+      // #201: grid por título + meta dos selecionados também refletem o novo vencimento.
+      void queryClient.invalidateQueries({ queryKey: ['financial', 'payable-titles'] })
+      void queryClient.invalidateQueries({ queryKey: ['financial', 'documents', 'selected-meta'] })
       if (failures(data) === 0) onCompleted()
     },
   })

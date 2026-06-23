@@ -33,6 +33,9 @@ export function useBulkStatus(onCompleted: () => void): BulkStatusBinding {
   const afterRun = (data: BulkResult): void => {
     void queryClient.invalidateQueries({ queryKey: ['financial', 'documents', 'list'] })
     void queryClient.invalidateQueries({ queryKey: ['financial', 'documents', 'detail'] })
+    // #201: o grid por título e a meta dos selecionados (version muda) também refletem a transição.
+    void queryClient.invalidateQueries({ queryKey: ['financial', 'payable-titles'] })
+    void queryClient.invalidateQueries({ queryKey: ['financial', 'documents', 'selected-meta'] })
     if (failures(data) === 0) onCompleted()
   }
 

@@ -16,15 +16,15 @@ import { useDocumentDetail } from '../document-detail.binding.ts'
 import { useBulkStatus } from '../bulk-status.binding.ts'
 import { useBulkDelete } from '../bulk-delete.binding.ts'
 import { useBulkDueDate } from '../bulk-due-date.binding.ts'
+import { useSelectedDocs, type SelectedDoc } from '../selected-docs.binding.ts'
 import {
   STATUS_CHIPS,
   sumSelectedNetBRL,
   sumSelectedGrossBRL,
-  bulkStatusTargets,
-  bulkDeleteTargets,
-  bulkDueDateTargets,
   filterByLabel,
   filterRowsBySearch,
+  filterRowsByTipo,
+  type StatusTarget,
   type ListState,
 } from '../contas-a-pagar.view-model.ts'
 import { DocumentGrid } from '../components/document-grid.component.tsx'
@@ -97,14 +97,14 @@ export function ContasAPagarPage(): ReactNode {
   // #201: o grid (e toda a seleção) opera sobre o modo ativo — documento (atual) ou título (pai+filhos).
   // Em modo documento, `baseState === state` → comportamento idêntico (sem regressão).
   const baseState = viewMode === 'title' ? titleState : state
-  const isTitleMode = viewMode === 'title'
   const page = baseState.tag === 'ready' ? baseState.page : null
   const allRows = baseState.tag === 'ready' ? baseState.rows : []
-  const rows = filterRowsBySearch(allRows, search)
-  // Estado passado ao grid: linhas filtradas; se a busca zerar os resultados, mostra o vazio.
+  // Busca rápida + #201: filtro de Tipo por imposto (filho) — ambos CLIENT-SIDE na página carregada.
+  const rows = filterRowsByTipo(filterRowsBySearch(allRows, search), filters.tipo)
+  // Estado passado ao grid: linhas filtradas; se o filtro zerar os resultados, mostra o vazio.
   const gridState: ListState =
     baseState.tag === 'ready'
-      ? rows.length === 0 && search.trim() !== ''
+      ? rows.length === 0
         ? { tag: 'empty' }
         : { tag: 'ready', rows, page: baseState.page }
       : baseState
@@ -142,12 +142,22 @@ export function ContasAPagarPage(): ReactNode {
     setSelected(new Set())
   }
 
+  // ── #201: ações em massa por DOCUMENTO sobre os títulos selecionados. O grid por título não traz o
+  //    `version`/status do documento (core-api#229) → resolvemos sob demanda (GET /documents/:id por
+  //    documento distinto) e derivamos os alvos. Aprovar/Reabrir/Excluir/Vencimento operam no documento.
+  const selectedDocIds = [...new Set(rows.filter((r) => selected.has(r.id)).map((r) => r.documentId))]
+  const { docs: selectedDocs, loading: resolvingDocs } = useSelectedDocs(selectedDocIds)
+  const toTarget = (d: SelectedDoc): StatusTarget => ({ id: d.id, version: d.version })
+  const aberto = selectedDocs.filter((d) => d.status === 'Aberto')
+
   // ── Mudar Status em massa: Aprovar (Aberto→Aprovado) · Voltar p/ edição (Aprovado→Aberto) ──
   const bulk = useBulkStatus(clearSelection)
-  const targets = bulkStatusTargets(rows, selected)
+  const targets = {
+    approve: aberto.map(toTarget),
+    reopen: selectedDocs.filter((d) => d.status === 'Aprovado').map(toTarget),
+  }
 
-  // ── Alterar vencimento (1+) — modal com seletor de data; aplica a cada Aberto via PATCH (core-api#162
-  //    é só otimização). A edição de UM título também pode ser feita pelo drawer → "Editar pagamento". ──
+  // ── Alterar vencimento (1+) — modal com seletor de data; aplica a cada Aberto via PATCH. ──
   const [dueOpen, setDueOpen] = useState(false)
   const [dueValue, setDueValue] = useState('')
   const dueEdit = useBulkDueDate(() => {
@@ -155,7 +165,10 @@ export function ContasAPagarPage(): ReactNode {
     setDueOpen(false)
     setDueValue('')
   })
-  const dueTargets = bulkDueDateTargets(rows, selected)
+  const dueTargets = {
+    editable: aberto.map(toTarget),
+    blockedCount: selectedDocs.length - aberto.length,
+  }
 
   // ── Excluir (hard-delete) em massa — só Aberto (Rascunho dá 409, core-api#166). Modal de confirmação. ──
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -163,7 +176,10 @@ export function ContasAPagarPage(): ReactNode {
     clearSelection()
     setDeleteOpen(false)
   })
-  const deleteTargets = bulkDeleteTargets(rows, selected)
+  const deleteTargets = {
+    deletable: aberto.map(toTarget),
+    draftCount: selectedDocs.filter((d) => d.status === 'Rascunho').length,
+  }
 
   return (
     <div className={screen}>
@@ -334,42 +350,41 @@ export function ContasAPagarPage(): ReactNode {
             <button type="button" className={selClear} onClick={clearSelection}>
               {t('financial.list.selection.clear')}
             </button>
-            {/* #201: ações em massa só no modo DOCUMENTO (por título faltam version/rotas — gap honesto). */}
-            {!isTitleMode ? (
-              <>
-                {/* Alterar vencimento de 1+ títulos Aberto (abre o modal); aplica via PATCH por id. */}
-                <button
-                  type="button"
-                  className={selClear}
-                  disabled={dueTargets.editable.length === 0 || dueEdit.running}
-                  title={dueTargets.editable.length === 0 ? t('financial.list.dueDate.needOpen') : undefined}
-                  onClick={() => {
-                    setDueOpen(true)
-                  }}
-                >
-                  {t('financial.list.dueDate.bulk')}
-                </button>
-                <StatusActions
-                  canApprove={targets.approve.length > 0}
-                  canReopen={targets.reopen.length > 0}
-                  canDelete={deleteTargets.deletable.length > 0}
-                  running={bulk.running || del.running}
-                  onApprove={() => {
-                    bulk.approve(targets.approve)
-                  }}
-                  onReopen={() => {
-                    bulk.reopen(targets.reopen)
-                  }}
-                  onDelete={() => {
-                    setDeleteOpen(true)
-                  }}
-                />
-                {bulk.errorTag !== null ? <span className={selError}>{t(bulk.errorTag)}</span> : null}
-                {del.errorTag !== null ? <span className={selError}>{t(del.errorTag)}</span> : null}
-              </>
-            ) : (
-              <span className={selSumLabel}>{t('financial.list.view.titleActionsSoon')}</span>
-            )}
+            {/* #201: ações em massa por DOCUMENTO (Aprovar/Reabrir/Excluir/Vencimento) sobre os títulos
+                selecionados. O grid por título não traz version/status do documento → resolvidos sob
+                demanda (useSelectedDocs); enquanto resolve, as ações ficam desabilitadas. (core-api#229) */}
+            {resolvingDocs ? (
+              <span className={selSumLabel}>{t('financial.list.selection.resolving')}</span>
+            ) : null}
+            {/* Alterar vencimento de 1+ títulos Aberto (abre o modal); aplica via PATCH por id. */}
+            <button
+              type="button"
+              className={selClear}
+              disabled={dueTargets.editable.length === 0 || dueEdit.running || resolvingDocs}
+              title={dueTargets.editable.length === 0 ? t('financial.list.dueDate.needOpen') : undefined}
+              onClick={() => {
+                setDueOpen(true)
+              }}
+            >
+              {t('financial.list.dueDate.bulk')}
+            </button>
+            <StatusActions
+              canApprove={targets.approve.length > 0}
+              canReopen={targets.reopen.length > 0}
+              canDelete={deleteTargets.deletable.length > 0}
+              running={bulk.running || del.running || resolvingDocs}
+              onApprove={() => {
+                bulk.approve(targets.approve)
+              }}
+              onReopen={() => {
+                bulk.reopen(targets.reopen)
+              }}
+              onDelete={() => {
+                setDeleteOpen(true)
+              }}
+            />
+            {bulk.errorTag !== null ? <span className={selError}>{t(bulk.errorTag)}</span> : null}
+            {del.errorTag !== null ? <span className={selError}>{t(del.errorTag)}</span> : null}
           </div>
         ) : page !== null ? (
           <nav className={pagination} aria-label={t('financial.list.pagination')}>

@@ -465,7 +465,9 @@ export const confirmDateInput = style({
 // Larguras balanceadas (espaço proporcional entre as colunas); Fornecedor é a flexível (minmax).
 // Ordem: checkbox · Tipo · Documento · Fornecedor · Contrato · Forma · Emissão · Venc · Bruto · Líquido ·
 // Status. (Emissão é placeholder "—" até o backend expô-la na lista — core-api#95.)
-const GRID_COLS = '2.25rem 4.75rem 7rem minmax(15rem, 1.4fr) 6.5rem 8.5rem 6.5rem 6.5rem 7rem 7rem 7.5rem'
+// tracks: checkbox · type · doc · supplier · contract · forma · emissão · vencimento · pagamento(#231) · bruto · líquido · status
+const GRID_COLS =
+  '2.25rem 4.75rem 7rem minmax(15rem, 1.4fr) 6.5rem 8.5rem 6.5rem 6.5rem 6.5rem 7rem 7rem 7.5rem'
 
 // Wrapper rola na horizontal (como o grid largo do Figma) quando a viewport é estreita.
 export const gridWrap = style({
@@ -627,11 +629,13 @@ export const statusBadge = style({
 export const statusVariant = styleVariants({
   Rascunho: { background: vars.color.status.cancelledBg, color: vars.color.status.cancelledText },
   Aberto: { background: vars.color.status.pendingBg, color: vars.color.status.pendingText },
-  Aprovado: { background: vars.color.status.activeBg, color: vars.color.status.activeText },
+  // #201: Aprovado = AZUL CLARO; Transmitido = AZUL (finished); Pago = VERDE (active); Conciliado = ROXO.
+  // Aberto = amarelo (pending). Todas distintas; os dois azuis diferem na tonalidade (claro × forte).
+  Aprovado: { background: vars.color.status.approvedBg, color: vars.color.status.approvedText },
   Transmitido: { background: vars.color.status.finishedBg, color: vars.color.status.finishedText },
   Recusado: { background: vars.color.status.terminatedBg, color: vars.color.status.terminatedText },
   Pago: { background: vars.color.status.activeBg, color: vars.color.status.activeText },
-  Conciliado: { background: vars.color.status.finishedBg, color: vars.color.status.finishedText },
+  Conciliado: { background: vars.color.status.reconciledBg, color: vars.color.status.reconciledText },
 })
 
 export const placeholder = style({

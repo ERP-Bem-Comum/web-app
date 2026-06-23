@@ -1594,6 +1594,7 @@ export const ptBR: Catalog = {
   'financial.list.selection.clear': 'limpar',
   'financial.list.selection.sumGrossLabel': 'Soma (bruto):',
   'financial.list.selection.sumLabel': 'Soma (líquido):',
+  'financial.list.selection.resolving': 'carregando ações…',
   // Mudar Status (chrome — transições pendentes no backend)
   'financial.list.status.change': 'Mudar Status',
   'financial.list.status.soon': 'Indisponível no v1 — pendente no backend',
@@ -1635,6 +1636,9 @@ export const ptBR: Catalog = {
   'financial.list.filter.dim.competencia': 'Competência',
   'financial.list.filter.dim.valor': 'Valor',
   'financial.list.filter.dim.tipo': 'Tipo de Documento',
+  // #201: grupos do filtro Tipo no grid por título (documento × imposto/retenção).
+  'financial.list.filter.tipo.group.documento': 'Documento',
+  'financial.list.filter.tipo.group.imposto': 'Imposto (retenção)',
   'financial.list.filter.dim.fornecedor': 'Fornecedor',
   'financial.list.filter.dim.contrato': 'Contrato',
   'financial.list.filter.dim.programa': 'Programa',
@@ -1677,6 +1681,7 @@ export const ptBR: Catalog = {
   'financial.list.col.paymentMethod': 'Forma Pag.',
   'financial.list.col.emissao': 'Emissão',
   'financial.list.col.due': 'Vencimento',
+  'financial.list.col.pagamento': 'Pagamento',
   'financial.list.col.gross': 'Bruto',
   'financial.list.col.net': 'Líquido',
   'financial.list.col.status': 'Status',
