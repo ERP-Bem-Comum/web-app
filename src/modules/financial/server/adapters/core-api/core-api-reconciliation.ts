@@ -10,6 +10,7 @@ import type { ReconciliationClient } from '#modules/financial/server/application
 import type { CedenteAccount } from '#modules/financial/server/domain/reconciliation.io.ts'
 import {
   accountStatementSummary,
+  accountStatementPeriodToModel,
   batchToModel,
   categoriesToModel,
   cedenteAccountToModel,
@@ -139,6 +140,17 @@ export const createCoreApiReconciliationClient = (baseUrl: string): Reconciliati
     const r = await resultFetch<unknown>(`${baseUrl}/cedente-accounts`, { method: 'POST', token, body })
     if (isErr(r)) return err(mapHttpError(r.error))
     return cedenteAccountToModel(r.value)
+  },
+  getAccountStatementPeriod: async (i, token) => {
+    // #205: extrato por período (from/to date-only). filter opcional. Mapeia p/ o saldo do período.
+    const qs = new URLSearchParams({ from: i.from, to: i.to })
+    if (i.filter !== undefined) qs.set('filter', i.filter)
+    const r = await resultFetch<unknown>(
+      `${baseUrl}/cedente-accounts/${i.accountId}/statement?${qs.toString()}`,
+      { token },
+    )
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return accountStatementPeriodToModel(r.value)
   },
   getSuggestions: async (i, token) => {
     const r = await resultFetch<unknown>(`${baseUrl}/statement-transactions/${i.transactionId}/suggestions`, {

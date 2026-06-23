@@ -14,6 +14,7 @@ import {
   cedenteAccountsToModel,
   cedenteAccountToModel,
   accountStatementSummary,
+  accountStatementPeriodToModel,
   transactionReconciliationToModel,
   reconciliationPeriodsToModel,
   statementSuggestionsToModel,
@@ -245,6 +246,43 @@ describe('accountStatementSummary (#139)', () => {
 
   it('shape inválido → err(server)', () => {
     assert.ok(isErr(accountStatementSummary({ nope: true })))
+  })
+})
+
+describe('accountStatementPeriodToModel (#205)', () => {
+  it('extrai abertura/fechamento e SOMA entradas/saídas dos dias (BigInt, centavos)', () => {
+    const r = accountStatementPeriodToModel({
+      openingBalanceCents: '500000',
+      closingBalanceCents: '512000',
+      counters: { all: 3, in: 2, out: 1, reconciled: 0, pending: 3 },
+      days: [
+        { date: '2026-05-02', inCents: '10000', outCents: '3000' },
+        { date: '2026-05-09', inCents: '8000', outCents: '3000' },
+      ],
+    })
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value.openingBalanceCents, '500000')
+      assert.equal(r.value.closingBalanceCents, '512000')
+      assert.equal(r.value.totalInCents, '18000')
+      assert.equal(r.value.totalOutCents, '6000')
+    }
+  })
+  it('sem dias → totais zerados; abertura ausente → 0 (catch)', () => {
+    const r = accountStatementPeriodToModel({
+      closingBalanceCents: '0',
+      counters: { pending: 0 },
+      days: [],
+    })
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value.openingBalanceCents, '0')
+      assert.equal(r.value.totalInCents, '0')
+      assert.equal(r.value.totalOutCents, '0')
+    }
+  })
+  it('shape inválido → err(server)', () => {
+    assert.ok(isErr(accountStatementPeriodToModel({ nope: true })))
   })
 })
 

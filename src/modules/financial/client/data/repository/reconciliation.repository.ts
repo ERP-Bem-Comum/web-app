@@ -14,8 +14,10 @@ import type {
   ClosePeriodInput,
   CreateCedenteAccountInput,
   CreateReconciliationInput,
+  AccountStatementPeriod,
   ExportReconciliationInput,
   FinancialReferences,
+  GetAccountStatementInput,
   GetStatementSuggestionsInput,
   GetSuggestionsInput,
   ImportStatementInput,
@@ -47,6 +49,9 @@ type ListTxFn = (opts: {
 }) => Promise<ReconFnResult<readonly StatementTransaction[]>>
 type ListPayablesFn = () => Promise<ReconFnResult<readonly PaidPayable[]>>
 type ListReferencesFn = () => Promise<ReconFnResult<FinancialReferences>>
+type GetStatementPeriodFn = (opts: {
+  data: GetAccountStatementInput
+}) => Promise<ReconFnResult<AccountStatementPeriod>>
 type SuggestionsFn = (opts: {
   data: GetSuggestionsInput
 }) => Promise<ReconFnResult<readonly MatchSuggestion[]>>
@@ -84,6 +89,10 @@ export type ReconciliationRepository = Readonly<{
   listPaidPayables: () => Promise<Result<readonly PaidPayable[], ReconciliationError>>
   // Referências da categorização (020 · #200/#147) — categorias + centros de custo.
   getReferences: () => Promise<Result<FinancialReferences, ReconciliationError>>
+  // Saldo do PERÍODO do extrato (#205).
+  getAccountStatementPeriod: (
+    i: GetAccountStatementInput,
+  ) => Promise<Result<AccountStatementPeriod, ReconciliationError>>
   getSuggestions: (i: GetSuggestionsInput) => Promise<Result<readonly MatchSuggestion[], ReconciliationError>>
   getStatementSuggestions: (
     i: GetStatementSuggestionsInput,
@@ -122,6 +131,7 @@ export const createReconciliationRepository = (
     listTransactionsFn: ListTxFn
     listPaidPayablesFn: ListPayablesFn
     listReferencesFn: ListReferencesFn
+    getAccountStatementPeriodFn: GetStatementPeriodFn
     getSuggestionsFn: SuggestionsFn
     getStatementSuggestionsFn: StatementSuggestionsFn
     getTransactionReconciliationFn: GetTxReconFn
@@ -152,6 +162,10 @@ export const createReconciliationRepository = (
   },
   getReferences: async () => {
     const res = await deps.listReferencesFn()
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  getAccountStatementPeriod: async (i) => {
+    const res = await deps.getAccountStatementPeriodFn({ data: i })
     return res.ok ? ok(res.data) : err(res.error)
   },
   getSuggestions: async (i) => {

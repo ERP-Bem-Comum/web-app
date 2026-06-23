@@ -51,6 +51,21 @@ export type GetSuggestionsInput = Readonly<{ transactionId: string }>
 export type GetStatementSuggestionsInput = Readonly<{ statementId: string }>
 // Criar conta-cedente (#138). `document` = CNPJ da organização (obrigatório no core-api). Saldo de
 // abertura opcional (já em centavos). type = AccountType do front (mapeado p/ minúsculo na borda).
+// #205: saldo do PERÍODO do extrato (abertura acumulada até `from` + fechamento + entradas/saídas).
+export type StatementFilter = 'all' | 'in' | 'out' | 'reconciled' | 'pending'
+export type GetAccountStatementInput = Readonly<{
+  accountId: string
+  from: string
+  to: string
+  filter?: StatementFilter
+}>
+export type AccountStatementPeriod = Readonly<{
+  openingBalanceCents: string
+  closingBalanceCents: string
+  totalInCents: string
+  totalOutCents: string
+}>
+
 export type CreateCedenteAccountInput = Readonly<{
   bankCode: string
   bankName?: string

@@ -32,7 +32,7 @@ import {
 import { useAccountSelector } from './account-selector.binding.ts'
 import { useChangeAccount, type ChangeAccountBinding } from './change-account.binding.ts'
 import { useMatchDetails, type MatchDetailsBinding } from './match-details.binding.ts'
-import { useHeaderMenus, type HeaderMenusBinding } from './header-menus.binding.ts'
+import { useHeaderMenus, resolvePeriodRange, type HeaderMenusBinding } from './header-menus.binding.ts'
 import { useImport, type ImportBinding } from './import.binding.ts'
 import { useReconcile, type ReconcileBinding } from './reconcile.binding.ts'
 import { useSearchCreate, type SearchCreateBinding } from './search-create.binding.ts'
@@ -41,6 +41,7 @@ import { useUndo, type UndoBinding } from './undo.binding.ts'
 import { useClosePeriod, type ClosePeriodBinding } from './close-period.binding.ts'
 import { useExportConciliacao, type ExportBinding } from './export-conciliacao.binding.ts'
 import {
+  accountStatementPeriodQueryOptions,
   paidPayablesQueryOptions,
   statementSuggestionsQueryOptions,
   suggestionsQueryOptions,
@@ -49,6 +50,7 @@ import {
 } from './reconciliation-workspace.query.ts'
 import { reconciliationErrorTag } from '#modules/financial/client/data/helpers/reconciliation-error-tag.ts'
 import type {
+  AccountStatementPeriod as AccountStatementPeriodModel,
   CriterionResult,
   MatchSuggestion,
   PaidPayable,
@@ -112,6 +114,9 @@ export type WorkspaceBinding = Readonly<{
       pendentes: number
     }>
   }>
+  // #205: saldo do PERÍODO selecionado (abertura acumulada até `from` → fechamento + entradas/saídas).
+  // `data` null enquanto carrega ou se o período não resolve (ex.: personalizado incompleto).
+  periodBalance: Readonly<{ loading: boolean; data: AccountStatementPeriodModel | null }>
   changeAccount: ChangeAccountBinding
   matchDetails: MatchDetailsBinding
   headerMenus: HeaderMenusBinding
@@ -151,6 +156,21 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
   const { accountRef, identityAvailable, account } = useAccountSelector(routeAccountRef)
   const changeAccountBinding = useChangeAccount(accountRef)
   const headerMenusBinding = useHeaderMenus()
+
+  // #205: extrato por período — resolve o preset/intervalo do header em from/to e busca o saldo do período.
+  // `now` estável (sessão) p/ não recalcular o intervalo a cada render.
+  const [periodNow] = useState(() => new Date())
+  const periodRange = resolvePeriodRange(
+    headerMenusBinding.period,
+    headerMenusBinding.customStart,
+    headerMenusBinding.customEnd,
+    periodNow,
+  )
+  const periodQuery = useQuery(accountStatementPeriodQueryOptions(accountRef, periodRange))
+  const periodBalance = {
+    loading: periodQuery.isFetching,
+    data: periodQuery.data?.ok === true ? periodQuery.data.value : null,
+  }
 
   // Mapa de sessão transação→conciliação (fast-path: conciliações feitas agora têm o id em memória). O
   // lookup #175 cobre o pós-reload; o `reconciliationId` prefere a sessão e cai no lookup.
@@ -328,6 +348,7 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     suggestions,
     payables,
     extrato,
+    periodBalance,
     changeAccount: changeAccountBinding,
     matchDetails: matchDetailsBinding,
     headerMenus: headerMenusBinding,

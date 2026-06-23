@@ -32,6 +32,23 @@ export const suggestionsQueryOptions = (transactionId: string | null) => ({
   staleTime: 15_000,
 })
 
+// Saldo do PERÍODO do extrato (#205) — abertura acumulada até `from` + fechamento + entradas/saídas.
+// Habilita só com conta + intervalo resolvidos. Espelha o período selecionado no header.
+export const accountStatementPeriodQueryOptions = (
+  accountId: string,
+  range: Readonly<{ from: string; to: string }> | null,
+) => ({
+  queryKey: ['financial', 'reconciliation', 'statement-period', accountId, range?.from, range?.to] as const,
+  queryFn: () =>
+    reconciliationRepository.getAccountStatementPeriod({
+      accountId,
+      from: range?.from ?? '',
+      to: range?.to ?? '',
+    }),
+  enabled: accountId !== '' && range !== null,
+  staleTime: 30_000,
+})
+
 // Palpites de topo em lote por extrato (#174) — uma chamada pinta a banda por linha no grid. Habilita só
 // com extrato importado; mais "fresco" que o detalhe (segue o ciclo de conciliação da sessão).
 export const statementSuggestionsQueryOptions = (statementId: string | null) => ({

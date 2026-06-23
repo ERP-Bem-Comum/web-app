@@ -79,6 +79,48 @@ export const formatCustomRange = (start: string, end: string): string | null => 
   return `${fmtBR(start) || '…'} – ${fmtBR(end) || '…'}`
 }
 
+/** Data local → ISO `YYYY-MM-DD` (sem UTC, evita recuo de fuso). PURA. */
+const isoLocal = (d: Date): string =>
+  `${String(d.getFullYear())}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+/**
+ * Resolve o preset (+ datas do personalizado) em um intervalo `from`/`to` (ISO date-only) p/ o extrato por
+ * período (#205). `custom` sem ambas as datas → null (não busca). `now` injetado → PURA/testável.
+ */
+export const resolvePeriodRange = (
+  preset: PeriodPreset,
+  customStart: string,
+  customEnd: string,
+  now: Date,
+): Readonly<{ from: string; to: string }> | null => {
+  const y = now.getFullYear()
+  const m = now.getMonth()
+  switch (preset) {
+    case 'today':
+      return { from: isoLocal(now), to: isoLocal(now) }
+    case 'yesterday': {
+      const d = shiftDays(now, -1)
+      return { from: isoLocal(d), to: isoLocal(d) }
+    }
+    case 'last7':
+      return { from: isoLocal(shiftDays(now, -6)), to: isoLocal(now) }
+    case 'month':
+      return { from: isoLocal(new Date(y, m, 1)), to: isoLocal(new Date(y, m + 1, 0)) }
+    case 'lastMonth':
+      return { from: isoLocal(new Date(y, m - 1, 1)), to: isoLocal(new Date(y, m, 0)) }
+    case 'quarter': {
+      const q = Math.floor(m / 3) * 3
+      return { from: isoLocal(new Date(y, q, 1)), to: isoLocal(new Date(y, q + 3, 0)) }
+    }
+    case 'custom':
+      return customStart !== '' && customEnd !== '' ? { from: customStart, to: customEnd } : null
+    default: {
+      const _exhaustive: never = preset
+      return _exhaustive
+    }
+  }
+}
+
 export type HeaderMenusBinding = Readonly<{
   periodOpen: boolean
   exportOpen: boolean
