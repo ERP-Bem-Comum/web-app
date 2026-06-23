@@ -10,8 +10,34 @@ import type { FinancialError } from '#modules/financial/server/domain/errors/fin
 import type {
   DocumentListResponse,
   ListDocumentsInput,
+  ListPayableTitlesInput,
+  PayableTitleListResponse,
 } from '#modules/financial/server/domain/document.io.ts'
-import { detailToModel, listToModel, mapHttpError } from './financial.mappers.ts'
+import { detailToModel, listToModel, payableTitlesToModel, mapHttpError } from './financial.mappers.ts'
+
+// #201: status PT→EN completo (a listagem por título cobre os 7 status, não só os da Fatia 1).
+const STATUS_TO_BACKEND_FULL: Partial<Record<string, string>> = {
+  Rascunho: 'Draft',
+  Aberto: 'Open',
+  Aprovado: 'Approved',
+  Transmitido: 'Transmitted',
+  Recusado: 'Refused',
+  Pago: 'Paid',
+  Conciliado: 'Reconciled',
+}
+
+const buildTitlesQuery = (input: ListPayableTitlesInput): string => {
+  const p = new URLSearchParams()
+  const status = input.status === undefined ? undefined : STATUS_TO_BACKEND_FULL[input.status]
+  if (status !== undefined) p.set('status', status)
+  if (input.type !== undefined) p.set('documentType', input.type) // endpoint usa `documentType`
+  if (input.supplierRef !== undefined) p.set('supplierRef', input.supplierRef)
+  if (input.dueFrom !== undefined) p.set('dueFrom', input.dueFrom)
+  if (input.dueTo !== undefined) p.set('dueTo', input.dueTo)
+  p.set('page', String(input.page))
+  p.set('pageSize', String(input.pageSize))
+  return p.toString()
+}
 
 // Status do front (PT) → status do core-api (EN) para o filtro de lista (Fatia 1: Draft|Open|Approved).
 const STATUS_TO_BACKEND: Partial<Record<string, string>> = {
@@ -42,6 +68,11 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
       const r = await resultFetch<unknown>(`${docs}?${buildListQuery(input)}`, { token })
       if (isErr(r)) return err(mapHttpError(r.error))
       return listToModel(r.value)
+    },
+    listPayableTitles: async (input, token): Promise<Result<PayableTitleListResponse, FinancialError>> => {
+      const r = await resultFetch<unknown>(`${baseUrl}/payable-titles?${buildTitlesQuery(input)}`, { token })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      return payableTitlesToModel(r.value)
     },
     getById: async (id, token) => {
       const r = await resultFetch<unknown>(`${docs}/${id}`, { token })

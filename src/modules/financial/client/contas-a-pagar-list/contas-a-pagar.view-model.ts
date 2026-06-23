@@ -17,6 +17,8 @@ import type {
   DocumentDetail,
   RetentionType,
   PaymentMethod,
+  PayableTitleItem,
+  PayableTitleListResponse,
 } from '#modules/financial/client/data/model/document.model.ts'
 
 // Re-export p/ as views (ui) tiparem sem importar de client/data (boundary §I).
@@ -472,6 +474,57 @@ export const deriveListState = (args: {
   return {
     tag: 'ready',
     rows: buildRows(data.value.items, resolveSupplier, resolveKind, resolveDoc, resolveContract),
+    page: pageInfo(data.value.page, data.value.pageSize, data.value.total),
+  }
+}
+
+// ── #201: listagem por TÍTULO (grid payable-centric: pai + filhos) — REUSA o mesmo GridRow/ListState ──
+// Um título vira uma linha do grid existente. `id` = payableId (checkbox/seleção por título). Lacunas
+// honestas até o backend enriquecer /payable-titles (issueDate, paymentMethod, version, bruto/líquido):
+// Emissão e Forma de pagamento ficam "—"; Bruto/Líquido recebem o `valor` do título; `version` = 0.
+const toTitleRow = (
+  it: PayableTitleItem,
+  resolveSupplier: ResolveSupplier,
+  resolveKind?: ResolveSupplierKind,
+  resolveDoc?: ResolveSupplierDoc,
+  resolveContract?: ResolveContract,
+): GridRow => ({
+  id: it.payableId,
+  type: it.type ?? DASH,
+  documentNumber: it.documentNumber ?? DASH,
+  series: it.series !== null && it.series !== '' ? it.series : null,
+  supplier: resolveSupplier(it.supplierRef),
+  supplierKind: resolveKind?.(it.supplierRef) ?? null,
+  supplierDoc: maskCnpj(resolveDoc?.(it.supplierRef) ?? null),
+  contract: it.contractRef !== null ? (resolveContract?.(it.contractRef) ?? it.contractRef) : DASH,
+  paymentMethod: null, // gap: /payable-titles não traz forma de pagamento
+  emissao: DASH, // gap: emissão (= do documento pai) não vem no /payable-titles
+  gross: it.valueCents !== '' ? centsToBRL(it.valueCents) : DASH,
+  grossCents: it.valueCents,
+  due: it.dueDate !== '' ? formatDue(it.dueDate.slice(0, 10)) : DASH, // dueDate pode vir ISO datetime
+  net: it.valueCents !== '' ? centsToBRL(it.valueCents) : DASH,
+  netCents: it.valueCents,
+  version: 0, // gap: /payable-titles não traz version → ações por título ficam desabilitadas
+  status: it.status,
+})
+
+export const deriveTitleListState = (args: {
+  isLoading: boolean
+  data: Result<PayableTitleListResponse, FinancialError> | undefined
+  resolveSupplier: ResolveSupplier
+  resolveKind?: ResolveSupplierKind
+  resolveDoc?: ResolveSupplierDoc
+  resolveContract?: ResolveContract
+}): ListState => {
+  const { isLoading, data, resolveSupplier, resolveKind, resolveDoc, resolveContract } = args
+  if (isLoading || data === undefined) return { tag: 'loading' }
+  if (!data.ok) return { tag: 'error', errorTag: financialErrorTag(data.error) }
+  if (data.value.items.length === 0) return { tag: 'empty' }
+  return {
+    tag: 'ready',
+    rows: data.value.items.map((it) =>
+      toTitleRow(it, resolveSupplier, resolveKind, resolveDoc, resolveContract),
+    ),
     page: pageInfo(data.value.page, data.value.pageSize, data.value.total),
   }
 }

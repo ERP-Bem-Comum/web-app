@@ -11,6 +11,7 @@ import {
   mapHttpError,
   detailToModel,
   listToModel,
+  payableTitlesToModel,
 } from '../../../../../../src/modules/financial/server/adapters/core-api/financial.mappers.ts'
 import { isOk, isErr } from '../../../../../../src/shared/primitives/result.ts'
 import type { HttpError } from '../../../../../../src/shared/http/http-error.types.ts'
@@ -110,5 +111,41 @@ describe('listToModel', () => {
       total: 1,
     })
     if (isOk(r)) assert.equal(r.value.items[0]?.issueDate, '2026-06-01')
+  })
+})
+
+describe('payableTitlesToModel (#201)', () => {
+  const item = {
+    payableId: 'p1',
+    documentId: 'd1',
+    documentNumber: 'NF-1',
+    series: '1',
+    documentType: 'NFS-e',
+    kind: 'Parent',
+    retentionType: null,
+    valueCents: '15000',
+    dueDate: '2026-07-10',
+    status: 'Open',
+    supplierRef: 's1',
+    contractRef: null,
+  }
+  it('mapeia pai+filho; status EN→PT, kind e retentionType tolerantes', () => {
+    const r = payableTitlesToModel({
+      items: [item, { ...item, payableId: 'p2', kind: 'Child', retentionType: 'ISS', status: 'Paid' }],
+      page: 1,
+      pageSize: 20,
+      total: 2,
+    })
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value.items[0]?.kind, 'Parent')
+      assert.equal(r.value.items[0]?.status, 'Aberto')
+      assert.equal(r.value.items[1]?.kind, 'Child')
+      assert.equal(r.value.items[1]?.retentionType, 'ISS')
+      assert.equal(r.value.items[1]?.status, 'Pago')
+    }
+  })
+  it('drift → err(server)', () => {
+    assert.equal(isErr(payableTitlesToModel({ items: 'x' })), true)
   })
 })
