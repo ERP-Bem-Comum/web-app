@@ -42,7 +42,7 @@ const item: PayableTitleItem = {
 const resp: PayableTitleListResponse = { items: [item], page: 1, pageSize: 20, total: 1 }
 // órgão arrecadador (igual ao drawer): ISS → SEFIN; demais → Receita Federal.
 const dest = (rt: 'ISS' | 'IRRF' | 'INSS' | 'CSRF'): string =>
-  rt === 'ISS' ? 'SEFIN (municipal)' : 'Receita Federal'
+  rt === 'ISS' ? 'SEFIN - Secretaria Municipal das Finanças de Fortaleza' : 'Receita Federal'
 
 describe('deriveTitleListState (#201)', () => {
   it('PAI: id=payableId, documentId p/ drawer, valor nas colunas de valor, lacunas honestas', () => {
@@ -87,7 +87,7 @@ describe('deriveTitleListState (#201)', () => {
       assert.equal(st.rows[0]?.supplier, 'Receita Federal')
       assert.equal(st.rows[0]?.supplierDoc, null) // filho não mostra CNPJ do documento
       assert.equal(st.rows[1]?.type, 'ISS')
-      assert.equal(st.rows[1]?.supplier, 'SEFIN (municipal)')
+      assert.equal(st.rows[1]?.supplier, 'SEFIN - Secretaria Municipal das Finanças de Fortaleza')
     }
   })
   it('dueDate ISO datetime → DD/MM/YYYY (corta o horário)', () => {
