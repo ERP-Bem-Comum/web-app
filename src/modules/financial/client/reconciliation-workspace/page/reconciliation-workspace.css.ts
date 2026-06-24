@@ -2749,6 +2749,9 @@ export const periodBand = style({
   background: c.paper.default, // branco nos saldos (a conferência tem o próprio chip azul)
   border: `${bw.thin} solid ${c.paper.rule}`,
   borderRadius: r.lg,
+  // Rótulos (título/período/Saldo inicial/Entradas/Saídas/Saldo final) na Inter da marca — herdavam
+  // serifa (Times). Os VALORES seguem em mono (override próprio do periodFigVal).
+  fontFamily: recon.font.sans,
 })
 export const periodBandHead = style({
   display: 'flex',
