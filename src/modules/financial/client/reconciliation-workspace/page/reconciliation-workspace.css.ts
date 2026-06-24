@@ -2775,5 +2775,32 @@ export const periodFigIn = style({ color: c.green.deep })
 export const periodFigOut = style({ color: c.red.deep })
 export const periodBandMuted = style({ fontSize: fs.sm, color: c.ink[5] })
 
+// #205: linha de "Conferência" — APOIO discreto (bem menos evidência que o saldo do período acima).
+export const periodConferencia = style({
+  display: 'flex',
+  alignItems: 'center',
+  flexWrap: 'wrap',
+  gap: sp.md,
+  inlineSize: '100%',
+  marginBlockStart: sp.sm,
+  paddingBlockStart: sp.sm,
+  borderBlockStart: `${bw.hairline} solid ${c.paper.rule}`,
+  fontSize: fs.sm,
+  color: c.ink[5],
+})
+export const periodConfNum = style({ fontFamily: recon.font.mono, color: c.ink[3] })
+export const periodConfWarn = style({ fontFamily: recon.font.mono, color: c.amber.deep })
+export const periodConfOk = style({ color: c.green.deep, fontWeight: recon.weight.medium })
+export const periodConfTrack = style({
+  inlineSize: '3.25rem',
+  blockSize: sp['2xs'],
+  borderRadius: r.pill,
+  background: c.paper.rule,
+  overflow: 'hidden',
+  display: 'inline-block',
+})
+export const periodConfFill = style({ display: 'block', blockSize: '100%', background: c.ink[4] })
+export const periodConfProg = style({ display: 'inline-flex', alignItems: 'center', gap: sp.sm })
+
 // Coluna da aba Extrato: faixa de saldo do período (#205) + grid do extrato.
 export const extratoView = style({ display: 'flex', flexDirection: 'column', minBlockSize: 0 })

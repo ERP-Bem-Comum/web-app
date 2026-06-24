@@ -246,6 +246,7 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
               loading={vm.periodBalance.loading}
               data={vm.periodBalance.data}
               rangeLabel={periodRangeLabel}
+              conferencia={vm.conferencia}
             />
             <StatementGrid
               hasStatement={vm.extrato.hasStatement}

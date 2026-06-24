@@ -195,11 +195,21 @@ export interface GetAccountStatementInput {
 
 // Saldo do PERÍODO conciliado (#205): abertura = saldo acumulado ATÉ `from`; fechamento = ao fim do período.
 // `totalIn/Out` somam as entradas/saídas dos dias do período (centavos). Base da faixa "saldo do período".
+export type StatementPeriodCounters = Readonly<{
+  all: number
+  in: number
+  out: number
+  reconciled: number
+  pending: number
+}>
 export type AccountStatementPeriod = Readonly<{
   openingBalanceCents: string
   closingBalanceCents: string
   totalInCents: string
   totalOutCents: string
+  // #205: movimentos do período + contadores (p/ a aba Extrato dirigida pelo período).
+  counters: StatementPeriodCounters
+  movements: readonly StatementTransaction[]
 }>
 
 // Título conciliável (só Pago). `supplierName`/`documentNumber` chegam quando core-api#172 enriquecer.
