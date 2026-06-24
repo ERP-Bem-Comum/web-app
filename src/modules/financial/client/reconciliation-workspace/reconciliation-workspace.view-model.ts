@@ -208,10 +208,15 @@ export const deriveReconType = (selectedCount: number, hasDifference: boolean): 
 export const requiresDestination = (type: string): boolean =>
   type === 'Transfer' || type === 'Investment' || type === 'Redemption'
 
-// Títulos pendentes de conciliação (Pago), MAIS RECENTE no topo — por vencimento desc (proxy honesto do
-// "mais recente"; o backend não expõe data de pagamento por título). PURO. Não muta o array de entrada.
-export const sortPayablesRecent = (payables: readonly PaidPayable[]): readonly PaidPayable[] =>
-  [...payables].sort((a, b) => b.dueDate.localeCompare(a.dueDate))
+// Títulos pendentes de conciliação (Pago), MAIS ANTIGO no topo — pela DATA DE PAGAMENTO (`paidAt`), a data
+// relevante p/ o match da conciliação (≈ saída bancária). Sem `paidAt` (seed antigo / rota ainda não expõe)
+// vão ao FIM. PURO; não muta a entrada.
+export const sortPendingByPayment = (payables: readonly PaidPayable[]): readonly PaidPayable[] =>
+  [...payables].sort((a, b) => {
+    if (a.paidAt === null) return b.paidAt === null ? 0 : 1
+    if (b.paidAt === null) return -1
+    return a.paidAt.localeCompare(b.paidAt)
+  })
 
 // ── Buscar / Criar vários (US3) — filtros de títulos Pago (puro) ────────────────
 /** Opções do filtro Tipo = tipos de DOCUMENTO distintos presentes (NFS-e, DANFE, IRRF, CSRF, INSS, ISS…). */
@@ -350,6 +355,13 @@ export const periodRangeLabel = (p: ReconciliationPeriod): string =>
 export const formatDayShort = (iso: string): string => {
   const [, m, d] = iso.split('-')
   return m !== undefined && d !== undefined ? `${d}/${m}` : iso
+}
+
+/** ISO `YYYY-MM-DD` → "18/05/2026" (DD/MM/AAAA). null → "—" (sem data de pagamento ainda). */
+export const formatDateBR = (iso: string | null): string => {
+  if (iso === null) return '—'
+  const [y, m, d] = iso.split('-')
+  return y !== undefined && m !== undefined && d !== undefined ? `${d}/${m}/${y}` : iso
 }
 
 /** Classe do badge de tipo (cor) a partir do `entryType` livre. */

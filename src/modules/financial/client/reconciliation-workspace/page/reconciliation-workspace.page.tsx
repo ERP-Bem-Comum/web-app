@@ -12,7 +12,7 @@ import { useReconciliationWorkspace } from '../reconciliation-workspace.binding.
 import {
   centsToBRL,
   isPending,
-  sortPayablesRecent,
+  sortPendingByPayment,
   type AssocTab,
 } from '../reconciliation-workspace.view-model.ts'
 import { ImportMenu } from '../components/import-menu.component.tsx'
@@ -192,7 +192,7 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
               // Sem extrato importado: mostra os títulos pendentes de conciliação (mais recente no topo),
               // p/ a aba não ficar vazia. Com extrato, segue a SuggestionPane (máquina de sugestão).
               ui.statementId === null ? (
-                <PendingTitlesPane payables={sortPayablesRecent(vm.payables)} />
+                <PendingTitlesPane payables={sortPendingByPayment(vm.payables)} />
               ) : (
                 <SuggestionPane
                   state={{ tag: 'idle' }}

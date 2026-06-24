@@ -31,7 +31,7 @@ import {
   centsToBRL,
   filterPayables,
   payableTypeOptions,
-  sortPayablesRecent,
+  sortPendingByPayment,
 } from '../../../../../src/modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
 import type {
   Movement,
@@ -408,6 +408,7 @@ describe('Buscar/Criar vários — filtros de títulos (filterPayables por tipo 
     documentId: 'd',
     valueCents: '1000',
     dueDate: '2026-05-10',
+    paidAt: null,
     paymentMethod: 'PIX',
     supplierName: 'TS Da Silva',
     documentNumber: 'NFS-0001',
@@ -445,17 +446,18 @@ describe('Buscar/Criar vários — filtros de títulos (filterPayables por tipo 
     )
   })
 
-  it('sortPayablesRecent: mais recente (vencimento desc) no topo, sem mutar a entrada', () => {
+  it('sortPendingByPayment: mais antigo por data de PAGAMENTO no topo; sem paidAt vão ao fim; não muta', () => {
     const entrada = [
-      pay({ id: 'x', dueDate: '2026-05-01' }),
-      pay({ id: 'y', dueDate: '2026-07-20' }),
-      pay({ id: 'z', dueDate: '2026-06-10' }),
+      pay({ id: 'semData', paidAt: null }),
+      pay({ id: 'jul', paidAt: '2026-07-20' }),
+      pay({ id: 'mai', paidAt: '2026-05-01' }),
+      pay({ id: 'jun', paidAt: '2026-06-10' }),
     ]
     assert.deepEqual(
-      sortPayablesRecent(entrada).map((p) => p.id),
-      ['y', 'z', 'x'],
+      sortPendingByPayment(entrada).map((p) => p.id),
+      ['mai', 'jun', 'jul', 'semData'], // asc por paidAt; null ao fim
     )
-    assert.equal(entrada[0]?.id, 'x') // entrada preservada (cópia)
+    assert.equal(entrada[0]?.id, 'semData') // entrada preservada (cópia)
   })
 })
 

@@ -1436,6 +1436,7 @@ export const ptBR: Catalog = {
   'financial.recon.pending.hint': 'Importe um extrato para conciliar estes títulos.',
   'financial.recon.pending.empty': 'Nenhum título pendente de conciliação.',
   'financial.recon.pending.untitled': 'Título pago',
+  'financial.recon.pending.paidWord': 'pago em',
   'financial.recon.sugg.high': 'Sugestão de alta confiança',
   'financial.recon.sugg.mid': 'Sugestão de confiança média',
   'financial.recon.sugg.side.extrato': 'Extrato',

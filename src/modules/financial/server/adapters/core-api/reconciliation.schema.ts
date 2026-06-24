@@ -36,6 +36,9 @@ export const CoreApiPaidPayableSchema = z.object({
   documentId: z.string().trim(),
   valueCents: z.string().trim(),
   dueDate: z.string().trim(), // date-only YYYY-MM-DD
+  // Data de pagamento (baixa). TOLERANTE: a rota /financial/payables ainda NÃO a monta (só /payable-titles
+  // tem, via #231); ausente → undefined → null no mapper. Acende quando o backend expor (core-api#265).
+  paidAt: z.string().trim().nullable().optional().catch(null),
   paymentMethod: z.string().trim(),
   supplierName: z.string().trim().nullable().catch(null),
   documentNumber: z.string().trim().nullable().catch(null),
