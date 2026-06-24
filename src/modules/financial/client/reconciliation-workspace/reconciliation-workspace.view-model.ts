@@ -5,6 +5,7 @@
  * `contas-a-pagar.view-model.ts` (derivação pura) + reducer de UI-state.
  */
 import type {
+  AccountStatementPeriod,
   Movement,
   PaidPayable,
   ReconciliationAccount,
@@ -268,6 +269,37 @@ export const extratoTotals = (txs: readonly StatementTransaction[]): ExtratoTota
   inCents: txs.filter((t) => t.movement === 'Credit').reduce((a, t) => a + parseCents(t.valueCents), 0),
   outCents: txs.filter((t) => t.movement === 'Debit').reduce((a, t) => a + parseCents(t.valueCents), 0),
 })
+
+// ── Conferência da conciliação (#205, apoio p/ fechar o período) — PURO ──────────
+// Saldo conciliado = saldo inicial do período + Σ(movimentos já conciliados, com sinal). A "diferença"
+// (saldo final − conciliado) = soma do que falta conciliar; quando 0, o período fecha certinho. É só apoio
+// — o saldo em destaque é o real (saldo do período/do banco), não este.
+export type Conferencia = Readonly<{
+  conciliadoCents: number
+  diferencaCents: number
+  reconciledCount: number
+  totalCount: number
+  pendingCount: number
+}>
+export const deriveConferencia = (st: AccountStatementPeriod | null): Conferencia | null => {
+  if (st === null) return null
+  const opening = parseCents(st.openingBalanceCents)
+  const closing = parseCents(st.closingBalanceCents)
+  const reconciledSum = st.movements
+    .filter((m) => !isPending(m))
+    .reduce(
+      (acc, m) => acc + (m.movement === 'Credit' ? parseCents(m.valueCents) : -parseCents(m.valueCents)),
+      0,
+    )
+  const conciliadoCents = opening + reconciledSum
+  return {
+    conciliadoCents,
+    diferencaCents: closing - conciliadoCents,
+    reconciledCount: st.counters.reconciled,
+    totalCount: st.counters.all,
+    pendingCount: st.counters.pending,
+  }
+}
 
 // ── Formatação de data + badge de tipo (puro) ───────────────────────────────────
 const WEEKDAYS_PT = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'] as const

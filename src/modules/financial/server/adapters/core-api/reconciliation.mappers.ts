@@ -283,11 +283,29 @@ export const accountStatementPeriodToModel = (
   const d = parsed.data
   const sumBy = (pick: (x: { inCents: string; outCents: string }) => string): string =>
     String(d.days.reduce((acc, day) => acc + BigInt(pick(day) || '0'), 0n))
+  // #205: linhas (dia → movimentos) achatadas em StatementTransaction p/ a aba Extrato reusar o grid.
+  // `balanceAfterCents` = saldo CORRENTE por linha (runningBalanceCents); `date` date-only.
+  const movements: readonly StatementTransaction[] = d.days.flatMap((day) =>
+    day.lines.map((ln) => ({
+      id: ln.id,
+      fitid: '',
+      date: ln.date.slice(0, 10),
+      movement: mapMovement(ln.movement),
+      entryType: ln.entryType,
+      payeeName: ln.payeeName,
+      memo: ln.memo,
+      valueCents: ln.valueCents,
+      balanceAfterCents: ln.runningBalanceCents,
+      reconciliationStatus: mapReconStatus(ln.reconciliationStatus),
+    })),
+  )
   return ok({
     openingBalanceCents: d.openingBalanceCents,
     closingBalanceCents: d.closingBalanceCents,
     totalInCents: sumBy((x) => x.inCents),
     totalOutCents: sumBy((x) => x.outCents),
+    counters: d.counters,
+    movements,
   })
 }
 

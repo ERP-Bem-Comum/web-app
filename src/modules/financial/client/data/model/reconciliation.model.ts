@@ -59,11 +59,21 @@ export type GetAccountStatementInput = Readonly<{
   to: string
   filter?: StatementFilter
 }>
+export type StatementPeriodCounters = Readonly<{
+  all: number
+  in: number
+  out: number
+  reconciled: number
+  pending: number
+}>
 export type AccountStatementPeriod = Readonly<{
   openingBalanceCents: string
   closingBalanceCents: string
   totalInCents: string
   totalOutCents: string
+  // #205: movimentos do período (linhas com saldo corrente por linha) + contadores p/ a aba Extrato.
+  counters: StatementPeriodCounters
+  movements: readonly StatementTransaction[]
 }>
 
 export type CreateCedenteAccountInput = Readonly<{

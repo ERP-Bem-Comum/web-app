@@ -77,13 +77,29 @@ export const CoreApiAccountStatementSchema = z.object({
     reconciled: z.int().catch(0),
     pending: z.int(),
   }),
-  // #205: in/out por dia p/ somar entradas/saídas do período (a faixa de saldo do período).
+  // #205: movimentos por dia (entradas/saídas + linhas com saldo corrente por linha p/ a aba Extrato).
   days: z
     .array(
       z.object({
         date: z.string().trim(),
         inCents: z.string().trim().catch('0'),
         outCents: z.string().trim().catch('0'),
+        dayBalanceCents: z.string().trim().catch('0'),
+        lines: z
+          .array(
+            z.object({
+              id: z.string().trim(),
+              date: z.string().trim(),
+              movement: z.string().trim(), // 'Debit' | 'Credit' (tolerante → mapMovement)
+              entryType: z.string().trim().catch(''),
+              payeeName: z.string().trim().catch(''),
+              memo: z.string().trim().catch(''),
+              valueCents: z.string().trim(),
+              runningBalanceCents: z.string().trim().catch('0'),
+              reconciliationStatus: z.string().trim(), // 'Pending' | 'Reconciled' | 'ManualEntry'
+            }),
+          )
+          .catch([]),
       }),
     )
     .catch([]),

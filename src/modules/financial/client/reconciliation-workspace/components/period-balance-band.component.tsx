@@ -7,7 +7,7 @@ import type { ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { centsToBRL } from '../reconciliation-workspace.view-model.ts'
+import { centsToBRL, type Conferencia } from '../reconciliation-workspace.view-model.ts'
 import * as s from '../page/reconciliation-workspace.css.ts'
 
 const t = createTranslator(ptBR)
@@ -23,9 +23,20 @@ export type PeriodBalanceBandProps = Readonly<{
   loading: boolean
   data: PeriodBalanceData | null
   rangeLabel: string
+  // #205: apoio discreto p/ fechar o período (conciliado × diferença). Menos evidência que o saldo acima.
+  conferencia: Conferencia | null
 }>
 
-export function PeriodBalanceBand({ loading, data, rangeLabel }: PeriodBalanceBandProps): ReactNode {
+export function PeriodBalanceBand({
+  loading,
+  data,
+  rangeLabel,
+  conferencia,
+}: PeriodBalanceBandProps): ReactNode {
+  const pct =
+    conferencia !== null && conferencia.totalCount > 0
+      ? Math.round((conferencia.reconciledCount / conferencia.totalCount) * 100)
+      : 0
   return (
     <div className={s.periodBand}>
       <div className={s.periodBandHead}>
@@ -60,6 +71,36 @@ export function PeriodBalanceBand({ loading, data, rangeLabel }: PeriodBalanceBa
             <span className={s.periodFigLbl}>{t('financial.recon.period.balance.closing')}</span>
             <span className={s.periodFigVal}>{centsToBRL(data.closingBalanceCents)}</span>
           </div>
+          {conferencia !== null ? (
+            <div className={s.periodConferencia}>
+              <span>{t('financial.recon.period.conf.label')}</span>
+              {conferencia.pendingCount === 0 ? (
+                <span className={s.periodConfOk}>{t('financial.recon.period.conf.done')}</span>
+              ) : (
+                <>
+                  <span>
+                    {t('financial.recon.period.conf.reconciled')}{' '}
+                    <span className={s.periodConfNum}>{centsToBRL(String(conferencia.conciliadoCents))}</span>
+                  </span>
+                  <span aria-hidden="true">·</span>
+                  <span>
+                    {t('financial.recon.period.conf.pending')}{' '}
+                    <span className={s.periodConfWarn}>
+                      {centsToBRL(String(Math.abs(conferencia.diferencaCents)))}
+                    </span>{' '}
+                    ({conferencia.pendingCount})
+                  </span>
+                  <span aria-hidden="true">·</span>
+                  <span className={s.periodConfProg}>
+                    {conferencia.reconciledCount}/{conferencia.totalCount}
+                    <span className={s.periodConfTrack}>
+                      <span className={s.periodConfFill} style={{ inlineSize: `${String(pct)}%` }} />
+                    </span>
+                  </span>
+                </>
+              )}
+            </div>
+          ) : null}
         </>
       )}
     </div>

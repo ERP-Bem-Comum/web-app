@@ -10,6 +10,7 @@ import { useQuery } from '@tanstack/react-query'
 
 import {
   countReconciled,
+  deriveConferencia,
   extratoTotals,
   filterExtrato,
   filterTransactions,
@@ -21,6 +22,7 @@ import {
   progressPercent,
   workspaceReducer,
   type AssocTab,
+  type Conferencia,
   type DayGroup,
   type ExtratoDayGroup,
   type ExtratoFilter,
@@ -118,6 +120,8 @@ export type WorkspaceBinding = Readonly<{
   // #205: saldo do PERÍODO selecionado (abertura acumulada até `from` → fechamento + entradas/saídas).
   // `data` null enquanto carrega ou se o período não resolve (ex.: personalizado incompleto).
   periodBalance: Readonly<{ loading: boolean; data: AccountStatementPeriodModel | null }>
+  // #205: conferência da conciliação (apoio discreto p/ fechar o período); null sem dados do período.
+  conferencia: Conferencia | null
   changeAccount: ChangeAccountBinding
   matchDetails: MatchDetailsBinding
   headerMenus: HeaderMenusBinding
@@ -277,18 +281,23 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     todas: allTx.length,
   }
 
-  const extratoItems = filterExtrato(allTx, ui.extratoFilter)
+  // #205: a aba Extrato é dirigida pelo PERÍODO (movimentos da conta), não pelo extrato importado. Saldo
+  //   por linha (runningBalance), contadores e a "conferência" (apoio p/ fechar) saem todos do #205.
+  const extratoMovements = periodBalance.data?.movements ?? []
+  const extratoItems = filterExtrato(extratoMovements, ui.extratoFilter)
+  const conferencia = deriveConferencia(periodBalance.data)
+  const c = periodBalance.data?.counters ?? null
   const extrato = {
-    hasStatement: ui.statementId !== null,
+    hasStatement: periodRange !== null, // "pronto" = há período resolvido (idle só sem período)
     days: groupExtratoDays(extratoItems),
     totals: extratoTotals(extratoItems),
     count: extratoItems.length,
     counts: {
-      todos: allTx.length,
-      entradas: allTx.filter((tx) => tx.movement === 'Credit').length,
-      saidas: allTx.filter((tx) => tx.movement === 'Debit').length,
-      conciliados: allTx.filter((tx) => !isPending(tx)).length,
-      pendentes: pendentesCount,
+      todos: c?.all ?? 0,
+      entradas: c?.in ?? 0,
+      saidas: c?.out ?? 0,
+      conciliados: c?.reconciled ?? 0,
+      pendentes: c?.pending ?? 0,
     },
   }
 
@@ -356,6 +365,7 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     payables,
     extrato,
     periodBalance,
+    conferencia,
     changeAccount: changeAccountBinding,
     matchDetails: matchDetailsBinding,
     headerMenus: headerMenusBinding,

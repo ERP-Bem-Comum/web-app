@@ -24,6 +24,7 @@ import {
   requiresDestination,
   filterExtrato,
   extratoTotals,
+  deriveConferencia,
   groupAccountsForSwitch,
   matchDetailsView,
   buildMatchTitles,
@@ -441,5 +442,61 @@ describe('Buscar/Criar vários — filtros de títulos (filterPayables por tipo 
       filterPayables(list, '', 'all').map((p) => p.id),
       ['a', 'b', 'c', 'd'],
     )
+  })
+})
+
+describe('deriveConferencia (#205 — conferência da conciliação)', () => {
+  const mov = (
+    id: string,
+    movement: 'Credit' | 'Debit',
+    valueCents: string,
+    status: 'Pending' | 'Reconciled',
+  ) => ({
+    id,
+    fitid: '',
+    date: '2026-06-02',
+    movement,
+    entryType: 'PIX',
+    payeeName: 'x',
+    memo: '',
+    valueCents,
+    balanceAfterCents: '0',
+    reconciliationStatus: status,
+  })
+  const base = {
+    openingBalanceCents: '184230090', // 1.842.300,90
+    closingBalanceCents: '185014235', // 1.850.142,35
+    totalInCents: '1030000',
+    totalOutCents: '245855',
+    counters: { all: 3, in: 2, out: 1, reconciled: 2, pending: 1 },
+    movements: [
+      mov('a', 'Credit', '600000', 'Reconciled'),
+      mov('b', 'Credit', '430000', 'Reconciled'),
+      mov('c', 'Debit', '245855', 'Pending'),
+    ],
+  }
+
+  it('conciliado = inicial + conciliados (com sinal); diferença = final − conciliado', () => {
+    const conf = deriveConferencia(base)
+    assert.equal(conf?.conciliadoCents, 185260090) // 1.842.300,90 + 6.000 + 4.300
+    assert.equal(conf?.diferencaCents, -245855) // 1.850.142,35 − 1.852.600,90 (1 saída pendente)
+    assert.equal(conf?.reconciledCount, 2)
+    assert.equal(conf?.totalCount, 3)
+    assert.equal(conf?.pendingCount, 1)
+  })
+
+  it('tudo conciliado → conciliado == saldo final e diferença = 0', () => {
+    const conf = deriveConferencia({
+      ...base,
+      counters: { all: 3, in: 2, out: 1, reconciled: 3, pending: 0 },
+      movements: base.movements.map((m) => ({ ...m, reconciliationStatus: 'Reconciled' as const })),
+    })
+    assert.equal(conf?.conciliadoCents, 185014235) // == closing
+    assert.equal(conf?.diferencaCents, 0)
+    assert.equal(conf?.pendingCount, 0)
+  })
+
+  it('null → null', () => {
+    assert.equal(deriveConferencia(null), null)
   })
 })

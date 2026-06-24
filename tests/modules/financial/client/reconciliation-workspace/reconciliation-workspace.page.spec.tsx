@@ -43,10 +43,11 @@ describe('ReconciliationWorkspacePage (shell)', () => {
     expect(extrato.getAttribute('aria-selected')).toBe('false')
   })
 
-  it('trocar para a aba Extrato mostra o estado idle do extrato (sem extrato importado)', () => {
+  it('trocar para a aba Extrato (dirigida pelo período): sem movimentos no período → estado vazio (#205)', () => {
     renderPage()
     fireEvent.click(screen.getByRole('tab', { name: tr('financial.recon.tab.extrato') }))
-    expect(screen.getByText(tr('financial.recon.ext.idle'))).toBeTruthy()
+    // com período selecionado (default) e sem #205 → grid vazio do período (não mais "importe um extrato").
+    expect(screen.getByText(tr('financial.recon.ext.empty'))).toBeTruthy()
   })
 
   it('toggle "Exibir palpites" alterna aria-pressed', () => {

@@ -1290,6 +1290,11 @@ export const ptBR: Catalog = {
   'financial.recon.period.balance.out': 'Saídas',
   'financial.recon.period.balance.closing': 'Saldo final',
   'financial.recon.period.balance.loading': 'Carregando saldo do período…',
+  // #205: conferência (apoio discreto p/ fechar o período)
+  'financial.recon.period.conf.label': 'Conferência:',
+  'financial.recon.period.conf.reconciled': 'conciliado',
+  'financial.recon.period.conf.pending': 'falta conciliar',
+  'financial.recon.period.conf.done': 'tudo conciliado — confere',
   'financial.recon.period.balance.pickRange': 'Selecione um período para ver o saldo.',
   'financial.recon.period.customStart': 'Data inicial',
   'financial.recon.period.customEnd': 'Data final',
@@ -1572,8 +1577,8 @@ export const ptBR: Catalog = {
   'financial.recon.ext.movimentacoes': 'movimentações',
   'financial.recon.ext.totals': 'Totais',
   'financial.recon.ext.daySaldo': 'Saldo:',
-  'financial.recon.ext.empty': 'Sem movimentações neste filtro.',
-  'financial.recon.ext.idle': 'Importe um extrato para ver as movimentações.',
+  'financial.recon.ext.empty': 'Sem movimentações neste período.',
+  'financial.recon.ext.idle': 'Selecione um período para ver as movimentações.',
   // Fechar período (US7)
   'financial.recon.close.success': 'Período fechado.',
   'financial.recon.close.pendingBlocked': 'Há movimentações pendentes — trate todas antes de fechar.',

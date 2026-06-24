@@ -2742,12 +2742,16 @@ export const periodBand = style({
   display: 'flex',
   alignItems: 'center',
   flexWrap: 'wrap',
-  gap: sp['3xl'],
-  padding: `${sp.lg} ${sp['2xl']}`,
+  columnGap: sp['3xl'], // espaçamento horizontal entre os saldos (generoso)
+  rowGap: sp.sm, // vertical: saldos ↔ conferência fica justo (antes herdava o 3xl horizontal)
+  padding: `${sp.md} ${sp['2xl']}`,
   marginBlockEnd: sp.lg,
-  background: c.paper.warm,
+  background: c.paper.default, // branco nos saldos (a conferência tem o próprio chip azul)
   border: `${bw.thin} solid ${c.paper.rule}`,
   borderRadius: r.lg,
+  // Rótulos (título/período/Saldo inicial/Entradas/Saídas/Saldo final) na Inter da marca — herdavam
+  // serifa (Times). Os VALORES seguem em mono (override próprio do periodFigVal).
+  fontFamily: recon.font.sans,
 })
 export const periodBandHead = style({
   display: 'flex',
@@ -2775,5 +2779,41 @@ export const periodFigIn = style({ color: c.green.deep })
 export const periodFigOut = style({ color: c.red.deep })
 export const periodBandMuted = style({ fontSize: fs.sm, color: c.ink[5] })
 
-// Coluna da aba Extrato: faixa de saldo do período (#205) + grid do extrato.
-export const extratoView = style({ display: 'flex', flexDirection: 'column', minBlockSize: 0 })
+// #205: faixa de "Conferência" — APOIO discreto (bem menos evidência que o saldo do período acima).
+// Chip em AZUL CLARO da marca (c.teal.bg = brand canvas), p/ diferenciar do bege do extrato. Fonte = Inter
+// da marca (recon.font.sans) — antes herdava serifa (Times). Valores em mono (marca).
+export const periodConferencia = style({
+  display: 'flex',
+  alignItems: 'center',
+  flexWrap: 'wrap',
+  gap: sp.md,
+  inlineSize: '100%',
+  padding: `${sp.sm} ${sp.lg}`,
+  borderRadius: r.md,
+  background: c.teal.bg,
+  fontFamily: recon.font.sans,
+  fontSize: fs.sm,
+  color: c.ink[4],
+})
+export const periodConfNum = style({ fontFamily: recon.font.mono, color: c.ink[2] })
+export const periodConfWarn = style({ fontFamily: recon.font.mono, color: c.amber.deep })
+export const periodConfOk = style({ color: c.green.deep, fontWeight: recon.weight.medium })
+export const periodConfTrack = style({
+  inlineSize: '3.25rem',
+  blockSize: sp['2xs'],
+  borderRadius: r.pill,
+  background: c.paper.rule,
+  overflow: 'hidden',
+  display: 'inline-block',
+})
+export const periodConfFill = style({ display: 'block', blockSize: '100%', background: c.ink[4] })
+export const periodConfProg = style({ display: 'inline-flex', alignItems: 'center', gap: sp.sm })
+
+// Coluna da aba Extrato: faixa de saldo do período (#205) + grid do extrato. Fundo BRANCO (a faixa e o
+// grid são brancos; sem o canvas bege "vazando" em volta/abaixo da faixa).
+export const extratoView = style({
+  display: 'flex',
+  flexDirection: 'column',
+  minBlockSize: 0,
+  background: c.paper.default,
+})
