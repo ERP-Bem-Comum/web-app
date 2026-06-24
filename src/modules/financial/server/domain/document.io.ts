@@ -93,6 +93,16 @@ export interface ApproveInput {
   version: number
 }
 
+// #224: baixa manual de UM título (Aprovado→Pago). `version` = do DOCUMENTO (optimistic lock do agregado).
+// `paidAt` (#232) = data de pagamento (saída bancária, pode ser retroativa); ausente → backend usa now.
+export interface ManualPaymentInput {
+  documentId: string
+  payableId: string
+  version: number
+  paidAt?: string
+  reason?: string
+}
+
 // Cancelar (DELETE /documents/:id) — só em Aberto; hard-delete. `version` = optimistic lock (corpo).
 export interface CancelInput {
   id: string

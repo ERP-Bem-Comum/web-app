@@ -13,6 +13,7 @@ import type {
   AdjustDocumentInput,
   ApproveInput,
   CancelInput,
+  ManualPaymentInput,
   ListPayableTitlesInput,
   PayableTitleListResponse,
 } from '#modules/financial/server/domain/document.io.ts'
@@ -29,6 +30,10 @@ export type FinancialClient = Readonly<{
   approve: (input: ApproveInput, token: string) => Promise<Result<DocumentDetail, FinancialError>>
   undoApproval: (input: ApproveInput, token: string) => Promise<Result<DocumentDetail, FinancialError>>
   cancel: (input: CancelInput, token: string) => Promise<Result<void, FinancialError>>
+  registerManualPayment: (
+    input: ManualPaymentInput,
+    token: string,
+  ) => Promise<Result<DocumentDetail, FinancialError>>
 }>
 
 type Deps = Readonly<{ client: FinancialClient }>
@@ -72,3 +77,8 @@ export const createCancelDocument =
   (deps: Deps) =>
   (input: CancelInput, token: string): Promise<Result<void, FinancialError>> =>
     deps.client.cancel(input, token)
+
+export const createRegisterManualPayment =
+  (deps: Deps) =>
+  (input: ManualPaymentInput, token: string): Promise<Result<DocumentDetail, FinancialError>> =>
+    deps.client.registerManualPayment(input, token)

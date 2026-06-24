@@ -10,6 +10,7 @@ import { adjustDocumentFn } from '#modules/financial/server/adapters/server-fns/
 import { approveDocumentFn } from '#modules/financial/server/adapters/server-fns/approve-document.service.fn.ts'
 import { undoApprovalFn } from '#modules/financial/server/adapters/server-fns/undo-approval.service.fn.ts'
 import { cancelDocumentFn } from '#modules/financial/server/adapters/server-fns/cancel-document.service.fn.ts'
+import { registerManualPaymentFn } from '#modules/financial/server/adapters/server-fns/register-manual-payment.service.fn.ts'
 
 import { createFinancialRepository } from './financial.repository.ts'
 
@@ -22,4 +23,5 @@ export const financialRepository = createFinancialRepository({
   approveDocumentFn: (opts) => approveDocumentFn(opts),
   undoApprovalFn: (opts) => undoApprovalFn(opts),
   cancelDocumentFn: (opts) => cancelDocumentFn(opts),
+  registerManualPaymentFn: (opts) => registerManualPaymentFn(opts),
 })
