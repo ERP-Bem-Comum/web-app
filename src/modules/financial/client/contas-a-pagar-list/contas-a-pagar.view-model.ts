@@ -120,8 +120,10 @@ export const STATUS_CHIPS = [
     filterable: false,
   },
   { key: 'recusado', labelTag: 'financial.list.chip.recusado', status: 'Recusado', filterable: false },
-  { key: 'pago', labelTag: 'financial.list.chip.pago', status: 'Pago', filterable: false },
-  { key: 'conciliado', labelTag: 'financial.list.chip.conciliado', status: 'Conciliado', filterable: false },
+  // Pago/Conciliado já operam nos títulos (baixa #224, conciliação) e o /payable-titles filtra por
+  // Paid/Reconciled → chips ativos. (Transmitido/Recusado seguem fora do enum do backend → desabilitados.)
+  { key: 'pago', labelTag: 'financial.list.chip.pago', status: 'Pago', filterable: true },
+  { key: 'conciliado', labelTag: 'financial.list.chip.conciliado', status: 'Conciliado', filterable: true },
 ] as const satisfies readonly {
   key: string
   labelTag: string
