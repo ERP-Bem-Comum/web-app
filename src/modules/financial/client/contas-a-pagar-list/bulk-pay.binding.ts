@@ -12,7 +12,12 @@ import { financialRepository } from '#modules/financial/client/data/repository/f
 import type { DocumentDetail } from '#modules/financial/client/data/model/document.model.ts'
 import type { FinancialError } from '#modules/financial/client/data/repository/financial-error.ts'
 
-export type PayTarget = Readonly<{ documentId: string; payableId: string; version: number }>
+export type PayTarget = Readonly<{
+  documentId: string
+  payableId: string
+  version: number
+  paidAt: string // data de pagamento informada no modal (#232), YYYY-MM-DD
+}>
 type BulkResult = readonly Result<DocumentDetail, FinancialError>[]
 
 const failures = (data: BulkResult | undefined): number =>
@@ -47,6 +52,7 @@ export function useBulkPay(onCompleted: () => void): BulkPayBinding {
             documentId: t.documentId,
             payableId: t.payableId,
             version,
+            paidAt: t.paidAt,
           })
           results.push(r)
           if (isOk(r)) version = r.value.version

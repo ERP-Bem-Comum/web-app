@@ -94,10 +94,12 @@ export interface ApproveInput {
 }
 
 // #224: baixa manual de UM título (Aprovado→Pago). `version` = do DOCUMENTO (optimistic lock do agregado).
+// `paidAt` (#232) = data de pagamento (saída bancária, pode ser retroativa); ausente → backend usa now.
 export interface ManualPaymentInput {
   documentId: string
   payableId: string
   version: number
+  paidAt?: string
   reason?: string
 }
 

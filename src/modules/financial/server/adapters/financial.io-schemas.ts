@@ -103,6 +103,7 @@ export const ManualPaymentInputSchema = z.object({
   documentId: z.uuid(),
   payableId: z.uuid(),
   version: z.int().min(0),
+  paidAt: DateSchema.optional(), // #232: data de pagamento (YYYY-MM-DD); ausente → backend usa now
   reason: z.string().trim().min(1).max(500).optional(),
 })
 

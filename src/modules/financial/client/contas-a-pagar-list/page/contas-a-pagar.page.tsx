@@ -33,6 +33,7 @@ import { AddFilterButton, ActiveFiltersRow } from '../components/document-filter
 import { DocumentDetailDrawer } from '../components/document-detail-drawer.component.tsx'
 import { DeleteConfirmModal } from '../components/delete-confirm.component.tsx'
 import { DueDateModal } from '../components/due-date-modal.component.tsx'
+import { PaymentDateModal } from '../components/payment-date-modal.component.tsx'
 import { ExportDropdown } from '../components/export-dropdown.component.tsx'
 import { StatusActions } from '../components/status-actions.component.tsx'
 import {
@@ -182,17 +183,29 @@ export function ContasAPagarPage(): ReactNode {
     draftCount: selectedDocs.filter((d) => d.status === 'Rascunho').length,
   }
 
-  // ── Marcar como pago (baixa manual, #224) — por TÍTULO Aprovado (Aprovado→Pago). O `version` é o do
-  //    DOCUMENTO (selectedDocs); títulos do mesmo doc são baixados em sequência (o binding encadeia). ──
+  // ── Marcar como pago (baixa manual, #224/#232) — por TÍTULO Aprovado (Aprovado→Pago). Abre modal p/
+  //    INFORMAR a data de pagamento (= saída bancária, retroativa). `version` = do DOCUMENTO (selectedDocs);
+  //    títulos do mesmo doc são baixados em sequência (o binding encadeia o version da resposta). ──
+  const [payOpen, setPayOpen] = useState(false)
+  const [payValue, setPayValue] = useState('')
   const docVersionById = new Map(selectedDocs.map((d) => [d.id, d.version]))
-  const pay = useBulkPay(clearSelection)
-  const payTargets: readonly PayTarget[] = rows
+  const pay = useBulkPay(() => {
+    clearSelection()
+    setPayOpen(false)
+    setPayValue('')
+  })
+  // Elegíveis (sem a data — ela vem do modal). paidAt é anexado no apply.
+  const payEligible = rows
     .filter((r) => selected.has(r.id) && r.status === 'Aprovado')
     .map((r) => ({
       documentId: r.documentId,
       payableId: r.id,
       version: docVersionById.get(r.documentId) ?? 0,
     }))
+  const applyPay = (): void => {
+    const targets: readonly PayTarget[] = payEligible.map((t) => ({ ...t, paidAt: payValue }))
+    pay.pay(targets)
+  }
 
   return (
     <div className={screen}>
@@ -350,6 +363,18 @@ export function ContasAPagarPage(): ReactNode {
         }}
       />
 
+      <PaymentDateModal
+        open={payOpen}
+        count={payEligible.length}
+        value={payValue}
+        running={pay.running}
+        onChange={setPayValue}
+        onApply={applyPay}
+        onCancel={() => {
+          setPayOpen(false)
+        }}
+      />
+
       <footer className={bottombar}>
         {selectedCount > 0 ? (
           <div className={selBar}>
@@ -385,7 +410,7 @@ export function ContasAPagarPage(): ReactNode {
               canApprove={targets.approve.length > 0}
               canReopen={targets.reopen.length > 0}
               canDelete={deleteTargets.deletable.length > 0}
-              canPay={payTargets.length > 0 && !resolvingDocs}
+              canPay={payEligible.length > 0 && !resolvingDocs}
               running={bulk.running || del.running || pay.running || resolvingDocs}
               onApprove={() => {
                 bulk.approve(targets.approve)
@@ -397,7 +422,7 @@ export function ContasAPagarPage(): ReactNode {
                 setDeleteOpen(true)
               }}
               onPay={() => {
-                pay.pay(payTargets)
+                setPayOpen(true)
               }}
             />
             {bulk.errorTag !== null ? <span className={selError}>{t(bulk.errorTag)}</span> : null}

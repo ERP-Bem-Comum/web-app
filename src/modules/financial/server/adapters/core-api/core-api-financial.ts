@@ -128,7 +128,11 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
         `${docs}/${input.documentId}/payables/${input.payableId}/manual-payment`,
         {
           method: 'POST',
-          body: { version: input.version, ...(input.reason !== undefined ? { reason: input.reason } : {}) },
+          body: {
+            version: input.version,
+            ...(input.paidAt !== undefined ? { paidAt: input.paidAt } : {}),
+            ...(input.reason !== undefined ? { reason: input.reason } : {}),
+          },
           token,
         },
       )
