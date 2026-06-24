@@ -65,7 +65,6 @@ export function useBulkPay(onCompleted: () => void): BulkPayBinding {
       void queryClient.invalidateQueries({ queryKey: ['financial', 'documents', 'list'] })
       void queryClient.invalidateQueries({ queryKey: ['financial', 'documents', 'detail'] })
       void queryClient.invalidateQueries({ queryKey: ['financial', 'payable-titles'] })
-      void queryClient.invalidateQueries({ queryKey: ['financial', 'documents', 'selected-meta'] })
       if (failures(data) === 0) onCompleted()
     },
   })
