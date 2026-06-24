@@ -66,6 +66,7 @@ const base: DocumentFormFields = {
   categoryRef: '',
   costCenterRef: '',
   approverRef: '',
+  contaDebitoRef: '',
   centroCusto: '',
   categoria: '',
   subcategoria: '',
@@ -156,6 +157,11 @@ describe('buildCreateInput — Categorização (categoryRef/costCenterRef · 020
     const ap = 'a1b2c3d4-0000-4000-8000-000000000148'
     assert.equal(buildCreateInput({ ...base, approverRef: ap })?.approverRef, ap)
     assert.equal(buildCreateInput(base)?.approverRef, undefined)
+  })
+  it('envia contaDebitoRef (conta-débito) quando escolhido; omite quando vazio (#197)', () => {
+    const acc = 'a1b2c3d4-0000-4000-8000-000000000197'
+    assert.equal(buildCreateInput({ ...base, contaDebitoRef: acc })?.contaDebitoRef, acc)
+    assert.equal(buildCreateInput(base)?.contaDebitoRef, undefined)
   })
 })
 

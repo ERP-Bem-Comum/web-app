@@ -34,6 +34,7 @@ const fields = (over: Partial<DocumentFormFields> = {}): DocumentFormFields => (
   categoryRef: '',
   costCenterRef: '',
   approverRef: '',
+  contaDebitoRef: '',
   centroCusto: '',
   categoria: '',
   subcategoria: '',

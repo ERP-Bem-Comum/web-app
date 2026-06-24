@@ -80,20 +80,6 @@ import {
 
 const t = createTranslator(ptBR)
 
-/** Campo chrome (desabilitado) — dropdown sem backend; mostra "Selecione…" e o caret nativo. */
-function ChromeSelect({ label }: Readonly<{ label: string }>): ReactNode {
-  return (
-    <div className={field}>
-      <span className={fieldLabel}>{label}</span>
-      <div className={selectWrap}>
-        <select className={selectControlDisabled} disabled aria-label={label}>
-          <option>{t('financial.create.select')}</option>
-        </select>
-      </div>
-    </div>
-  )
-}
-
 /**
  * Card de entidade (Conta do fornecedor / Aprovador). Com `value` (dado real, ex.: banco do fornecedor)
  * mostra o valor em destaque; sem ele, o hint discreto (chrome).
@@ -234,6 +220,11 @@ export type DocumentFormProps = Readonly<{
   approverValue: string
   onApprover: (value: string) => void
   approverOptions: readonly Readonly<{ value: string; label: string }>[]
+  // "Pagar da conta" (#197) — dropdown REAL: contas-cedente da Conciliação. Envia `contaDebitoRef`; a baixa
+  // do título vai p/ essa conta.
+  contaDebitoValue: string
+  onContaDebito: (value: string) => void
+  contaDebitoOptions: readonly Readonly<{ value: string; label: string }>[]
   // Opções dos dropdowns da Categorização (Centro de Custo/Categoria/Subcategoria/Plano). Vazias até o
   // backend expor as listas (core-api#147); o select já fica pronto.
   centroCustoOptions: readonly Readonly<{ value: string; label: string }>[]
@@ -524,7 +515,15 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
               </button>
             )}
           </div>
-          <ChromeSelect label={t('financial.create.field.payFromAccount')} />
+          {/* "Pagar da conta" REAL (#197): contas-cedente da Conciliação. Envia contaDebitoRef → a baixa
+              do título é direcionada a essa conta. */}
+          <CategoSelect
+            label={t('financial.create.field.payFromAccount')}
+            disabled={catDisabled}
+            value={props.contaDebitoValue}
+            options={props.contaDebitoOptions}
+            onChange={props.onContaDebito}
+          />
         </div>
         <div className={fieldGrid.two}>
           <EntityCard

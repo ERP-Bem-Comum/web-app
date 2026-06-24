@@ -61,6 +61,7 @@ export const CreateDocumentInputSchema = z.object({
   categoryRef: z.uuid().optional(),
   costCenterRef: z.uuid().optional(),
   programRef: z.uuid().optional(),
+  contaDebitoRef: z.uuid().optional(), // #197: conta-débito (conta-cedente) — direciona a baixa
   paymentMethod: z.enum(PAYMENT_METHODS),
   grossValueCents: CentsSchema,
   sourceDiscountsCents: CentsSchema.optional(),

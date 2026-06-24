@@ -130,6 +130,7 @@ export type DocumentFormFields = Readonly<{
   categoryRef: string // Categorização: Categoria escolhida (UUID, taxonomia #200). Vazio = não enviada.
   costCenterRef: string // Categorização: Centro de custo escolhido (UUID, #147). Vazio = não enviado.
   approverRef: string // Aprovador escolhido (UUID de usuário, #148). Vazio = não enviado.
+  contaDebitoRef: string // "Pagar da conta" — conta-cedente escolhida (UUID, #197). Vazio = não enviada.
   // Categorização editável (texto livre, herdada do contrato mas sobrescrevível). Persistência pendente
   // (core-api#147 — listas/refs). Vazio = herda o valor do contrato selecionado.
   centroCusto: string
@@ -337,6 +338,7 @@ export const buildCreateInput = (fields: DocumentFormFields): CreateDocumentInpu
     categoryRef: trimToUndefined(fields.categoryRef),
     costCenterRef: trimToUndefined(fields.costCenterRef),
     approverRef: trimToUndefined(fields.approverRef),
+    contaDebitoRef: trimToUndefined(fields.contaDebitoRef),
     retentions,
     registeredTaxes: buildRegisteredTaxInputs(fields),
     issueDate: trimToUndefined(fields.issueDate),
@@ -379,6 +381,7 @@ export const buildDraftInput = (fields: DocumentFormFields): CreateDocumentInput
     categoryRef: trimToUndefined(fields.categoryRef),
     costCenterRef: trimToUndefined(fields.costCenterRef),
     approverRef: trimToUndefined(fields.approverRef),
+    contaDebitoRef: trimToUndefined(fields.contaDebitoRef),
     retentions,
     registeredTaxes: buildRegisteredTaxInputs(fields),
     issueDate: trimToUndefined(fields.issueDate),
@@ -485,6 +488,7 @@ export const hydrateFieldsFromDetail = (d: DocumentDetail): DocumentFormFields =
     categoryRef: '',
     costCenterRef: '',
     approverRef: '',
+    contaDebitoRef: '', // o GET /:id não expõe a conta-débito (core-api#95) → vazio na hidratação
     centroCusto: '',
     categoria: '',
     subcategoria: '',
