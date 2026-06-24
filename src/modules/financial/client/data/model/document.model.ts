@@ -55,6 +55,7 @@ export type CreateDocumentInput = Readonly<{
   categoryRef?: string
   costCenterRef?: string // centro de custo (#147) — backend aceita no documento (corrige drift do schema)
   programRef?: string
+  contaDebitoRef?: string // #197: conta-débito (conta-cedente da conciliação) — a baixa vai p/ ela
   paymentMethod: PaymentMethod
   grossValueCents: string
   sourceDiscountsCents?: string

@@ -59,6 +59,7 @@ export interface CreateDocumentInput {
   budgetPlanRef?: string
   categoryRef?: string
   programRef?: string
+  contaDebitoRef?: string // #197: conta-débito (conta-cedente) — a baixa é direcionada a ela
   paymentMethod: PaymentMethod
   grossValueCents: string
   sourceDiscountsCents?: string
