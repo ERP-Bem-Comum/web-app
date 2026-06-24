@@ -21,6 +21,7 @@ import type {
   Movement,
   PaidPayable,
   PeriodClosed,
+  PeriodReopened,
   ReconciliationCreated,
   ReconciliationPeriod,
   ReconciliationStatus,
@@ -46,6 +47,7 @@ import {
   CoreApiManualEntrySchema,
   CoreApiPaidPayablesSchema,
   CoreApiPeriodClosedSchema,
+  CoreApiPeriodReopenedSchema,
   CoreApiReconciliationCreatedSchema,
   CoreApiReconciliationPeriodsSchema,
   CoreApiRejectSchema,
@@ -382,6 +384,13 @@ export const periodClosedToModel = (raw: unknown): Result<PeriodClosed, Reconcil
   const parsed = CoreApiPeriodClosedSchema.safeParse(raw)
   if (!parsed.success) return err('server')
   return ok({ periodId: parsed.data.periodId, status: 'Closed' })
+}
+
+// #203: reabrir período.
+export const periodReopenedToModel = (raw: unknown): Result<PeriodReopened, ReconciliationError> => {
+  const parsed = CoreApiPeriodReopenedSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  return ok({ periodId: parsed.data.periodId, status: 'Open' })
 }
 
 export const reconciliationPeriodsToModel = (

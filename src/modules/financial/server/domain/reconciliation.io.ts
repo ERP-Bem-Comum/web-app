@@ -109,6 +109,11 @@ export interface ClosePeriodInput {
   periodEnd: string
 }
 
+// #203: reabrir período (Closed → Open). Só o periodId; o ator (reopenedBy) vem do servidor.
+export interface ReopenPeriodInput {
+  periodId: string
+}
+
 // Listar períodos de conciliação por conta (#173 — GET /reconciliation-periods?debitAccountRef=).
 export interface ListReconciliationPeriodsInput {
   debitAccountRef: string
@@ -288,6 +293,7 @@ export type BatchResult = Readonly<{
 }>
 
 export type PeriodClosed = Readonly<{ periodId: string; status: 'Closed' }>
+export type PeriodReopened = Readonly<{ periodId: string; status: 'Open' }> // #203
 
 // Período de conciliação (#173). `id` = periodId p/ exportar. Datas date-only. `closedAt` ISO ou null.
 export type ReconciliationPeriod = Readonly<{

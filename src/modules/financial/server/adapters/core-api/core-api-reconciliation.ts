@@ -21,6 +21,7 @@ import {
   mapHttpError,
   paidPayablesToModel,
   periodClosedToModel,
+  periodReopenedToModel,
   reconciliationCreatedToModel,
   reconciliationPeriodsToModel,
   rejectToModel,
@@ -233,6 +234,15 @@ export const createCoreApiReconciliationClient = (baseUrl: string): Reconciliati
     })
     if (isErr(r)) return err(mapHttpError(r.error))
     return periodClosedToModel(r.value)
+  },
+  reopenPeriod: async (i, token) => {
+    // #203: reabre o período (Closed → Open). Sem body; o ator vem do servidor (req.userId).
+    const r = await resultFetch<unknown>(`${baseUrl}/reconciliation-periods/${i.periodId}/reopen`, {
+      method: 'POST',
+      token,
+    })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return periodReopenedToModel(r.value)
   },
   listReconciliationPeriods: async (i, token) => {
     const r = await resultFetch<unknown>(

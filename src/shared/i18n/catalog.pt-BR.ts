@@ -1328,7 +1328,7 @@ export const ptBR: Catalog = {
   'financial.recon.bottombar.periodActions': 'Gerenciar período',
   'financial.recon.period.actionsGroup': 'Período',
   'financial.recon.close.reopen': 'Abrir período',
-  'financial.recon.close.reopenUnavailable': 'Reabertura de período disponível em breve.',
+  'financial.recon.close.reopenUnavailable': 'Nenhum período fechado para reabrir.',
   'financial.recon.close.soon': 'em breve',
   // legenda do footer (pontos coloridos)
   'financial.recon.legend.alta': 'Match alto (≥75%)',

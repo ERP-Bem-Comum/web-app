@@ -36,30 +36,79 @@ afterEach(() => {
 
 describe('PeriodActionsMenu', () => {
   it('mostra as duas opções: Fechar período e Abrir período', () => {
-    render(<PeriodActionsMenu menus={menus()} canClose closeHint={null} onClosePeriod={vi.fn()} />)
+    render(
+      <PeriodActionsMenu
+        menus={menus()}
+        canClose
+        closeHint={null}
+        onClosePeriod={vi.fn()}
+        canReopen={false}
+        onReopenPeriod={vi.fn()}
+      />,
+    )
     expect(screen.getByRole('menuitem', { name: tr('financial.recon.bottombar.close') })).toBeTruthy()
     expect(
       screen.getByRole('menuitem', { name: (n) => n.includes(tr('financial.recon.close.reopen')) }),
     ).toBeTruthy()
   })
 
-  it('Abrir período é sempre desabilitado (chrome até backend)', () => {
-    render(<PeriodActionsMenu menus={menus()} canClose closeHint={null} onClosePeriod={vi.fn()} />)
-    const abrir = screen.getByRole('menuitem', {
-      name: (n) => n.includes(tr('financial.recon.close.reopen')),
-    }) as HTMLButtonElement
-    expect(abrir.disabled).toBe(true)
+  it('Abrir período (#203): desabilitado quando !canReopen; dispara onReopenPeriod quando habilitado', () => {
+    const onReopenPeriod = vi.fn()
+    const { rerender } = render(
+      <PeriodActionsMenu
+        menus={menus()}
+        canClose
+        closeHint={null}
+        onClosePeriod={vi.fn()}
+        canReopen={false}
+        onReopenPeriod={onReopenPeriod}
+      />,
+    )
+    const abrir = () =>
+      screen.getByRole('menuitem', {
+        name: (n) => n.includes(tr('financial.recon.close.reopen')),
+      }) as HTMLButtonElement
+    expect(abrir().disabled).toBe(true)
+    rerender(
+      <PeriodActionsMenu
+        menus={menus()}
+        canClose
+        closeHint={null}
+        onClosePeriod={vi.fn()}
+        canReopen
+        onReopenPeriod={onReopenPeriod}
+      />,
+    )
+    expect(abrir().disabled).toBe(false)
+    fireEvent.click(abrir())
+    expect(onReopenPeriod).toHaveBeenCalled()
   })
 
   it('Fechar período: desabilitado quando !canClose; dispara onClosePeriod quando habilitado', () => {
     const onClosePeriod = vi.fn()
     const { rerender } = render(
-      <PeriodActionsMenu menus={menus()} canClose={false} closeHint="x" onClosePeriod={onClosePeriod} />,
+      <PeriodActionsMenu
+        menus={menus()}
+        canClose={false}
+        closeHint="x"
+        onClosePeriod={onClosePeriod}
+        canReopen={false}
+        onReopenPeriod={vi.fn()}
+      />,
     )
     const closeItem = () =>
       screen.getByRole('menuitem', { name: tr('financial.recon.bottombar.close') }) as HTMLButtonElement
     expect(closeItem().disabled).toBe(true)
-    rerender(<PeriodActionsMenu menus={menus()} canClose closeHint={null} onClosePeriod={onClosePeriod} />)
+    rerender(
+      <PeriodActionsMenu
+        menus={menus()}
+        canClose
+        closeHint={null}
+        onClosePeriod={onClosePeriod}
+        canReopen={false}
+        onReopenPeriod={vi.fn()}
+      />,
+    )
     fireEvent.click(closeItem())
     expect(onClosePeriod).toHaveBeenCalled()
   })

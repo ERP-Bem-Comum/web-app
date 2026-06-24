@@ -17,6 +17,7 @@ import { undoReconciliationFn } from '#modules/financial/server/adapters/server-
 import { createManualEntryFn } from '#modules/financial/server/adapters/server-fns/create-manual-entry.service.fn.ts'
 import { batchReconcileFn } from '#modules/financial/server/adapters/server-fns/batch-reconcile.service.fn.ts'
 import { closeReconciliationPeriodFn } from '#modules/financial/server/adapters/server-fns/close-reconciliation-period.service.fn.ts'
+import { reopenReconciliationPeriodFn } from '#modules/financial/server/adapters/server-fns/reopen-reconciliation-period.service.fn.ts'
 import { listReconciliationPeriodsFn } from '#modules/financial/server/adapters/server-fns/list-reconciliation-periods.query.fn.ts'
 import { exportReconciliationFn } from '#modules/financial/server/adapters/server-fns/export-reconciliation.query.fn.ts'
 import { listCedenteAccountsFn } from '#modules/financial/server/adapters/server-fns/list-cedente-accounts.query.fn.ts'
@@ -40,6 +41,7 @@ export const reconciliationRepository = createReconciliationRepository({
   createManualEntryFn: (opts) => createManualEntryFn(opts),
   batchReconcileFn: (opts) => batchReconcileFn(opts),
   closePeriodFn: (opts) => closeReconciliationPeriodFn(opts),
+  reopenPeriodFn: (opts) => reopenReconciliationPeriodFn(opts),
   listReconciliationPeriodsFn: (opts) => listReconciliationPeriodsFn(opts),
   exportReconciliationFn: (opts) => exportReconciliationFn(opts),
   listAccountsFn: () => listCedenteAccountsFn(),

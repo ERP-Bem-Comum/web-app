@@ -292,10 +292,13 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
           {vm.closePeriod.errorTag !== null ? (
             <span className={s.errorText}>{t(vm.closePeriod.errorTag)}</span>
           ) : null}
+          {vm.reopenPeriod.errorTag !== null ? (
+            <span className={s.errorText}>{t(vm.reopenPeriod.errorTag)}</span>
+          ) : null}
           {/* Exportar OFX/CSV reais (#173, exporta o período mais recente); PDF segue chrome (#145) */}
           <ExportMenu menus={vm.headerMenus} exportBinding={vm.exportConciliacao} />
           {/* Período (US7): dropdown Fechar/Abrir período. Fechar gated (sem extrato/pendências);
-              Abrir = chrome até o backend (core-api#203). */}
+              Abrir = reabre o período fechado mais recente (core-api#203). */}
           <PeriodActionsMenu
             menus={vm.headerMenus}
             canClose={vm.closePeriod.canClose}
@@ -308,6 +311,10 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
             }
             onClosePeriod={() => {
               vm.closePeriod.close()
+            }}
+            canReopen={vm.reopenPeriod.canReopen}
+            onReopenPeriod={() => {
+              vm.reopenPeriod.reopen()
             }}
           />
         </div>

@@ -179,6 +179,12 @@ export const CoreApiPeriodClosedSchema = z.object({
   status: z.string().trim(), // 'Closed'
 })
 
+// #203: reabrir período (POST /reconciliation-periods/:id/reopen).
+export const CoreApiPeriodReopenedSchema = z.object({
+  periodId: z.string().trim(),
+  status: z.string().trim(), // 'Open'
+})
+
 // Período de conciliação (#173 — GET /reconciliation-periods → array). `id` = periodId p/ exportar.
 export const CoreApiReconciliationPeriodSchema = z.object({
   id: z.string().trim(),
