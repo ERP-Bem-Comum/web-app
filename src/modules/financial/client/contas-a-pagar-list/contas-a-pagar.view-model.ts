@@ -331,6 +331,47 @@ export const bulkDueDateTargets = (
   }
 }
 
+// #201/#229: ações em massa no grid por TÍTULO. O ciclo de status é do TÍTULO; Aprovar é a regra que
+// cascateia pai→filhos (transição do documento), assim como Reabrir/Excluir/Vencimento. Aqui derivamos os
+// alvos por DOCUMENTO (dedup por documentId) a partir do `status`+`version` DA PRÓPRIA LINHA — o #229 trouxe
+// o version do documento na linha, então NÃO há busca extra (sem GET /documents/:id). O backend valida
+// transição inválida (ex.: filho cujo status divergiu do documento) → falha segura, sem corromper estado.
+export type TitleActionTargets = Readonly<{
+  approve: readonly StatusTarget[] // documentos distintos com título Aberto (Aprovar cascateia)
+  reopen: readonly StatusTarget[] // documentos com título Aprovado
+  deletable: readonly StatusTarget[] // = Aberto (hard-delete só em Aberto, core-api#166)
+  draftCount: number // documentos Rascunho na seleção (aviso no modal)
+  dueEditable: readonly StatusTarget[] // = Aberto (PATCH de vencimento só em Aberto)
+  dueBlockedCount: number // documentos selecionados não-editáveis (aviso no modal)
+}>
+export const deriveTitleActionTargets = (
+  rows: readonly GridRow[],
+  selected: ReadonlySet<string>,
+): TitleActionTargets => {
+  const sel = rows.filter((r) => selected.has(r.id))
+  // Dedup por documento: vários títulos do mesmo doc → 1 alvo (id=documentId, version do doc).
+  const dedupByDoc = (subset: readonly GridRow[]): StatusTarget[] => {
+    const seen = new Set<string>()
+    const out: StatusTarget[] = []
+    for (const r of subset) {
+      if (seen.has(r.documentId)) continue
+      seen.add(r.documentId)
+      out.push({ id: r.documentId, version: r.version })
+    }
+    return out
+  }
+  const aberto = dedupByDoc(sel.filter((r) => r.status === 'Aberto'))
+  const allDocs = dedupByDoc(sel)
+  return {
+    approve: aberto,
+    reopen: dedupByDoc(sel.filter((r) => r.status === 'Aprovado')),
+    deletable: aberto,
+    draftCount: dedupByDoc(sel.filter((r) => r.status === 'Rascunho')).length,
+    dueEditable: aberto,
+    dueBlockedCount: allDocs.length - aberto.length,
+  }
+}
+
 /** Soma (BRL) de um campo de centavos das linhas selecionadas — PURA (Intl fica no `centsToBRL`). */
 const sumSelectedCentsBRL = (
   rows: readonly GridRow[],

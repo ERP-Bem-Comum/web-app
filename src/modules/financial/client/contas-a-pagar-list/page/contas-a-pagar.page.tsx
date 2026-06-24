@@ -17,7 +17,6 @@ import { useBulkStatus } from '../bulk-status.binding.ts'
 import { useBulkDelete } from '../bulk-delete.binding.ts'
 import { useBulkDueDate } from '../bulk-due-date.binding.ts'
 import { useBulkPay, type PayTarget } from '../bulk-pay.binding.ts'
-import { useSelectedDocs, type SelectedDoc } from '../selected-docs.binding.ts'
 import {
   STATUS_CHIPS,
   sumSelectedNetBRL,
@@ -25,7 +24,7 @@ import {
   filterByLabel,
   filterRowsBySearch,
   filterRowsByTipo,
-  type StatusTarget,
+  deriveTitleActionTargets,
   type ListState,
 } from '../contas-a-pagar.view-model.ts'
 import { DocumentGrid } from '../components/document-grid.component.tsx'
@@ -144,20 +143,14 @@ export function ContasAPagarPage(): ReactNode {
     setSelected(new Set())
   }
 
-  // ── #201: ações em massa por DOCUMENTO sobre os títulos selecionados. O grid por título não traz o
-  //    `version`/status do documento (core-api#229) → resolvemos sob demanda (GET /documents/:id por
-  //    documento distinto) e derivamos os alvos. Aprovar/Reabrir/Excluir/Vencimento operam no documento.
-  const selectedDocIds = [...new Set(rows.filter((r) => selected.has(r.id)).map((r) => r.documentId))]
-  const { docs: selectedDocs, loading: resolvingDocs } = useSelectedDocs(selectedDocIds)
-  const toTarget = (d: SelectedDoc): StatusTarget => ({ id: d.id, version: d.version })
-  const aberto = selectedDocs.filter((d) => d.status === 'Aberto')
+  // ── #201/#229: ações em massa derivadas da PRÓPRIA LINHA (status do título + version do documento, que
+  //    o #229 trouxe na linha) — sem buscar o documento. O ciclo de status é do título; Aprovar/Reabrir/
+  //    Excluir/Vencimento são transições do documento (Aprovar cascateia pai→filhos), agregadas por doc
+  //    (dedup). A baixa (Marcar como pago) é por título, independente. Backend valida transição inválida. ──
+  const titleTargets = deriveTitleActionTargets(rows, selected)
 
   // ── Mudar Status em massa: Aprovar (Aberto→Aprovado) · Voltar p/ edição (Aprovado→Aberto) ──
   const bulk = useBulkStatus(clearSelection)
-  const targets = {
-    approve: aberto.map(toTarget),
-    reopen: selectedDocs.filter((d) => d.status === 'Aprovado').map(toTarget),
-  }
 
   // ── Alterar vencimento (1+) — modal com seletor de data; aplica a cada Aberto via PATCH. ──
   const [dueOpen, setDueOpen] = useState(false)
@@ -167,10 +160,6 @@ export function ContasAPagarPage(): ReactNode {
     setDueOpen(false)
     setDueValue('')
   })
-  const dueTargets = {
-    editable: aberto.map(toTarget),
-    blockedCount: selectedDocs.length - aberto.length,
-  }
 
   // ── Excluir (hard-delete) em massa — só Aberto (Rascunho dá 409, core-api#166). Modal de confirmação. ──
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -178,30 +167,21 @@ export function ContasAPagarPage(): ReactNode {
     clearSelection()
     setDeleteOpen(false)
   })
-  const deleteTargets = {
-    deletable: aberto.map(toTarget),
-    draftCount: selectedDocs.filter((d) => d.status === 'Rascunho').length,
-  }
 
   // ── Marcar como pago (baixa manual, #224/#232) — por TÍTULO Aprovado (Aprovado→Pago). Abre modal p/
-  //    INFORMAR a data de pagamento (= saída bancária, retroativa). `version` = do DOCUMENTO (selectedDocs);
-  //    títulos do mesmo doc são baixados em sequência (o binding encadeia o version da resposta). ──
+  //    INFORMAR a data de pagamento (= saída bancária, retroativa). `version` (do documento) e elegibilidade
+  //    (status do título) vêm da própria linha (#229); títulos do mesmo doc são baixados em sequência. ──
   const [payOpen, setPayOpen] = useState(false)
   const [payValue, setPayValue] = useState('')
-  const docVersionById = new Map(selectedDocs.map((d) => [d.id, d.version]))
   const pay = useBulkPay(() => {
     clearSelection()
     setPayOpen(false)
     setPayValue('')
   })
-  // Elegíveis (sem a data — ela vem do modal). paidAt é anexado no apply.
+  // Elegíveis (sem a data — ela vem do modal). paidAt é anexado no apply. Por TÍTULO (não dedupa por doc).
   const payEligible = rows
     .filter((r) => selected.has(r.id) && r.status === 'Aprovado')
-    .map((r) => ({
-      documentId: r.documentId,
-      payableId: r.id,
-      version: docVersionById.get(r.documentId) ?? 0,
-    }))
+    .map((r) => ({ documentId: r.documentId, payableId: r.id, version: r.version }))
   const applyPay = (): void => {
     const targets: readonly PayTarget[] = payEligible.map((t) => ({ ...t, paidAt: payValue }))
     pay.pay(targets)
@@ -337,11 +317,11 @@ export function ContasAPagarPage(): ReactNode {
 
       <DeleteConfirmModal
         open={deleteOpen}
-        count={deleteTargets.deletable.length}
-        draftCount={deleteTargets.draftCount}
+        count={titleTargets.deletable.length}
+        draftCount={titleTargets.draftCount}
         running={del.running}
         onConfirm={() => {
-          del.remove(deleteTargets.deletable)
+          del.remove(titleTargets.deletable)
         }}
         onCancel={() => {
           setDeleteOpen(false)
@@ -350,13 +330,13 @@ export function ContasAPagarPage(): ReactNode {
 
       <DueDateModal
         open={dueOpen}
-        count={dueTargets.editable.length}
-        blockedCount={dueTargets.blockedCount}
+        count={titleTargets.dueEditable.length}
+        blockedCount={titleTargets.dueBlockedCount}
         value={dueValue}
         running={dueEdit.running}
         onChange={setDueValue}
         onApply={() => {
-          dueEdit.apply(dueTargets.editable, dueValue)
+          dueEdit.apply(titleTargets.dueEditable, dueValue)
         }}
         onCancel={() => {
           setDueOpen(false)
@@ -388,18 +368,15 @@ export function ContasAPagarPage(): ReactNode {
             <button type="button" className={selClear} onClick={clearSelection}>
               {t('financial.list.selection.clear')}
             </button>
-            {/* #201: ações em massa por DOCUMENTO (Aprovar/Reabrir/Excluir/Vencimento) sobre os títulos
-                selecionados. O grid por título não traz version/status do documento → resolvidos sob
-                demanda (useSelectedDocs); enquanto resolve, as ações ficam desabilitadas. (core-api#229) */}
-            {resolvingDocs ? (
-              <span className={selSumLabel}>{t('financial.list.selection.resolving')}</span>
-            ) : null}
-            {/* Alterar vencimento de 1+ títulos Aberto (abre o modal); aplica via PATCH por id. */}
+            {/* #201/#229: ações em massa derivadas da própria linha (status do título + version do doc).
+                Aprovar/Reabrir/Excluir/Vencimento agregam por documento (Aprovar cascateia pai→filhos);
+                Marcar como pago é por título. Sem busca extra ao documento. */}
+            {/* Alterar vencimento de 1+ títulos Aberto (abre o modal); aplica via PATCH por documento. */}
             <button
               type="button"
               className={selClear}
-              disabled={dueTargets.editable.length === 0 || dueEdit.running || resolvingDocs}
-              title={dueTargets.editable.length === 0 ? t('financial.list.dueDate.needOpen') : undefined}
+              disabled={titleTargets.dueEditable.length === 0 || dueEdit.running}
+              title={titleTargets.dueEditable.length === 0 ? t('financial.list.dueDate.needOpen') : undefined}
               onClick={() => {
                 setDueOpen(true)
               }}
@@ -407,16 +384,16 @@ export function ContasAPagarPage(): ReactNode {
               {t('financial.list.dueDate.bulk')}
             </button>
             <StatusActions
-              canApprove={targets.approve.length > 0}
-              canReopen={targets.reopen.length > 0}
-              canDelete={deleteTargets.deletable.length > 0}
-              canPay={payEligible.length > 0 && !resolvingDocs}
-              running={bulk.running || del.running || pay.running || resolvingDocs}
+              canApprove={titleTargets.approve.length > 0}
+              canReopen={titleTargets.reopen.length > 0}
+              canDelete={titleTargets.deletable.length > 0}
+              canPay={payEligible.length > 0}
+              running={bulk.running || del.running || pay.running}
               onApprove={() => {
-                bulk.approve(targets.approve)
+                bulk.approve(titleTargets.approve)
               }}
               onReopen={() => {
-                bulk.reopen(targets.reopen)
+                bulk.reopen(titleTargets.reopen)
               }}
               onDelete={() => {
                 setDeleteOpen(true)

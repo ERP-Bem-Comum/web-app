@@ -33,9 +33,8 @@ export function useBulkDelete(onCompleted: () => void): BulkDeleteBinding {
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: ['financial', 'documents', 'list'] })
       void queryClient.invalidateQueries({ queryKey: ['financial', 'documents', 'detail'] })
-      // #201: grid por título + meta dos selecionados também refletem a exclusão.
+      // #201: grid por título também reflete a exclusão.
       void queryClient.invalidateQueries({ queryKey: ['financial', 'payable-titles'] })
-      void queryClient.invalidateQueries({ queryKey: ['financial', 'documents', 'selected-meta'] })
       if (failures(data) === 0) onCompleted()
     },
   })
