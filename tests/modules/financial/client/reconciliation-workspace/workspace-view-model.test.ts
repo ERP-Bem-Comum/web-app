@@ -31,6 +31,7 @@ import {
   centsToBRL,
   filterPayables,
   payableTypeOptions,
+  sortPayablesRecent,
 } from '../../../../../src/modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
 import type {
   Movement,
@@ -442,6 +443,19 @@ describe('Buscar/Criar vários — filtros de títulos (filterPayables por tipo 
       filterPayables(list, '', 'all').map((p) => p.id),
       ['a', 'b', 'c', 'd'],
     )
+  })
+
+  it('sortPayablesRecent: mais recente (vencimento desc) no topo, sem mutar a entrada', () => {
+    const entrada = [
+      pay({ id: 'x', dueDate: '2026-05-01' }),
+      pay({ id: 'y', dueDate: '2026-07-20' }),
+      pay({ id: 'z', dueDate: '2026-06-10' }),
+    ]
+    assert.deepEqual(
+      sortPayablesRecent(entrada).map((p) => p.id),
+      ['y', 'z', 'x'],
+    )
+    assert.equal(entrada[0]?.id, 'x') // entrada preservada (cópia)
   })
 })
 

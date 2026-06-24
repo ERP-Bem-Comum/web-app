@@ -208,6 +208,11 @@ export const deriveReconType = (selectedCount: number, hasDifference: boolean): 
 export const requiresDestination = (type: string): boolean =>
   type === 'Transfer' || type === 'Investment' || type === 'Redemption'
 
+// Títulos pendentes de conciliação (Pago), MAIS RECENTE no topo — por vencimento desc (proxy honesto do
+// "mais recente"; o backend não expõe data de pagamento por título). PURO. Não muta o array de entrada.
+export const sortPayablesRecent = (payables: readonly PaidPayable[]): readonly PaidPayable[] =>
+  [...payables].sort((a, b) => b.dueDate.localeCompare(a.dueDate))
+
 // ── Buscar / Criar vários (US3) — filtros de títulos Pago (puro) ────────────────
 /** Opções do filtro Tipo = tipos de DOCUMENTO distintos presentes (NFS-e, DANFE, IRRF, CSRF, INSS, ISS…). */
 export const payableTypeOptions = (payables: readonly PaidPayable[]): readonly string[] => {

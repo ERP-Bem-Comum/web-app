@@ -9,10 +9,16 @@ import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 
 import { useReconciliationWorkspace } from '../reconciliation-workspace.binding.ts'
-import { centsToBRL, isPending, type AssocTab } from '../reconciliation-workspace.view-model.ts'
+import {
+  centsToBRL,
+  isPending,
+  sortPayablesRecent,
+  type AssocTab,
+} from '../reconciliation-workspace.view-model.ts'
 import { ImportMenu } from '../components/import-menu.component.tsx'
 import { ImportsList } from '../components/imports-list.component.tsx'
 import { SuggestionPane } from '../components/suggestion-pane.component.tsx'
+import { PendingTitlesPane } from '../components/pending-titles-pane.component.tsx'
 import { SearchCreatePane } from '../components/search-create-pane.component.tsx'
 import { NewTransactionPane } from '../components/new-transaction-pane.component.tsx'
 import { ReconciledBanner } from '../components/reconciled-banner.component.tsx'
@@ -183,15 +189,21 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
                 transactionId={vm.selectedTx.id}
               />
             ) : vm.selectedTx === null ? (
-              <SuggestionPane
-                state={{ tag: 'idle' }}
-                selectedTx={null}
-                reconciling={false}
-                rejecting={false}
-                errorTag={null}
-                onReconcile={() => undefined}
-                onReject={() => undefined}
-              />
+              // Sem extrato importado: mostra os títulos pendentes de conciliação (mais recente no topo),
+              // p/ a aba não ficar vazia. Com extrato, segue a SuggestionPane (máquina de sugestão).
+              ui.statementId === null ? (
+                <PendingTitlesPane payables={sortPayablesRecent(vm.payables)} />
+              ) : (
+                <SuggestionPane
+                  state={{ tag: 'idle' }}
+                  selectedTx={null}
+                  reconciling={false}
+                  rejecting={false}
+                  errorTag={null}
+                  onReconcile={() => undefined}
+                  onReject={() => undefined}
+                />
+              )
             ) : (
               <div className={s.importsCol}>
                 <div className={s.assocTabs} role="tablist" aria-label={t('financial.recon.assoc.sugestao')}>

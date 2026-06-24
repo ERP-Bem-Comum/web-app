@@ -604,6 +604,13 @@ export const assocCol = style({
   fontSize: fs.md,
   ...scrollSoft,
 })
+// Dica discreta abaixo da lista de pendentes (#205): "importe um extrato para conciliar".
+export const assocHint = style({
+  fontFamily: recon.font.sans,
+  fontSize: fs.sm,
+  color: c.ink[5],
+  margin: 0,
+})
 
 export const assocTabs = style({
   flexShrink: 0,

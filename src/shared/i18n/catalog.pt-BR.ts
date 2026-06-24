@@ -1431,6 +1431,11 @@ export const ptBR: Catalog = {
   // Painel de sugestão (US1)
   'financial.recon.sugg.idle': 'Selecione uma movimentação para conciliar.',
   'financial.recon.sugg.none': 'Sem palpite para esta movimentação.',
+  // Títulos pendentes de conciliação (quando não há extrato importado).
+  'financial.recon.pending.title': 'Títulos pendentes de conciliação',
+  'financial.recon.pending.hint': 'Importe um extrato para conciliar estes títulos.',
+  'financial.recon.pending.empty': 'Nenhum título pendente de conciliação.',
+  'financial.recon.pending.untitled': 'Título pago',
   'financial.recon.sugg.high': 'Sugestão de alta confiança',
   'financial.recon.sugg.mid': 'Sugestão de confiança média',
   'financial.recon.sugg.side.extrato': 'Extrato',
