@@ -2775,20 +2775,24 @@ export const periodFigIn = style({ color: c.green.deep })
 export const periodFigOut = style({ color: c.red.deep })
 export const periodBandMuted = style({ fontSize: fs.sm, color: c.ink[5] })
 
-// #205: linha de "Conferência" — APOIO discreto (bem menos evidência que o saldo do período acima).
+// #205: faixa de "Conferência" — APOIO discreto (bem menos evidência que o saldo do período acima).
+// Chip em AZUL CLARO da marca (c.teal.bg = brand canvas), p/ diferenciar do bege do extrato. Fonte = Inter
+// da marca (recon.font.sans) — antes herdava serifa (Times). Valores em mono (marca).
 export const periodConferencia = style({
   display: 'flex',
   alignItems: 'center',
   flexWrap: 'wrap',
   gap: sp.md,
   inlineSize: '100%',
-  marginBlockStart: sp.sm,
-  paddingBlockStart: sp.sm,
-  borderBlockStart: `${bw.hairline} solid ${c.paper.rule}`,
+  marginBlockStart: sp.md,
+  padding: `${sp.sm} ${sp.lg}`,
+  borderRadius: r.md,
+  background: c.teal.bg,
+  fontFamily: recon.font.sans,
   fontSize: fs.sm,
-  color: c.ink[5],
+  color: c.ink[4],
 })
-export const periodConfNum = style({ fontFamily: recon.font.mono, color: c.ink[3] })
+export const periodConfNum = style({ fontFamily: recon.font.mono, color: c.ink[2] })
 export const periodConfWarn = style({ fontFamily: recon.font.mono, color: c.amber.deep })
 export const periodConfOk = style({ color: c.green.deep, fontWeight: recon.weight.medium })
 export const periodConfTrack = style({
