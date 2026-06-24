@@ -1142,7 +1142,7 @@ export const ptBR: Catalog = {
   'financial.create.sidebar.jurosMulta': 'Juros / Multa',
   'financial.create.sidebar.validacao': 'Validação',
   'financial.create.sidebar.semTitulos': 'Preencha o valor para ver os títulos.',
-  'financial.create.titulos.dest.iss': 'SEFIN (municipal)',
+  'financial.create.titulos.dest.iss': 'SEFIN - Secretaria Municipal das Finanças de Fortaleza',
   'financial.create.titulos.dest.federal': 'Receita Federal',
   'financial.create.validation.supplier': 'Fornecedor identificado',
   'financial.create.validation.calc': 'Cálculo bruto → líquido íntegro',

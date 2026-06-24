@@ -32,7 +32,7 @@ import type { DocumentStatus, RetentionType } from '#modules/financial/client/da
 
 const DEFAULT_PAGE_SIZE = 12
 const t = createTranslator(ptBR)
-// #201: órgão arrecadador por retenção (igual ao drawer): ISS → SEFIN (municipal); demais → Receita Federal.
+// #201: órgão arrecadador por retenção (igual ao drawer): ISS → SEFIN (Sec. Mun. Finanças Fortaleza); demais → Receita Federal.
 const retentionDestino = (rt: RetentionType): string =>
   rt === 'ISS' ? t('financial.create.titulos.dest.iss') : t('financial.create.titulos.dest.federal')
 
