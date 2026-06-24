@@ -2809,5 +2809,11 @@ export const periodConfTrack = style({
 export const periodConfFill = style({ display: 'block', blockSize: '100%', background: c.ink[4] })
 export const periodConfProg = style({ display: 'inline-flex', alignItems: 'center', gap: sp.sm })
 
-// Coluna da aba Extrato: faixa de saldo do período (#205) + grid do extrato.
-export const extratoView = style({ display: 'flex', flexDirection: 'column', minBlockSize: 0 })
+// Coluna da aba Extrato: faixa de saldo do período (#205) + grid do extrato. Fundo BRANCO (a faixa e o
+// grid são brancos; sem o canvas bege "vazando" em volta/abaixo da faixa).
+export const extratoView = style({
+  display: 'flex',
+  flexDirection: 'column',
+  minBlockSize: 0,
+  background: c.paper.default,
+})
