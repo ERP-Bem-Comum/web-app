@@ -518,6 +518,9 @@ const toTitleRow = (
   // Filho (retenção): tipo = tipo do imposto; fornecedor = órgão arrecadador (igual ao drawer).
   // `childRetention` != null SÓ em filho com retenção → narrowing limpo (sem checagem redundante).
   const childRetention = it.kind === 'Child' ? it.retentionType : null
+  // #229: pai exibe bruto/líquido do documento; filho (retenção) tem valor único → usa valueCents nas duas.
+  const grossCents = childRetention !== null ? it.valueCents : it.grossValueCents
+  const netCents = childRetention !== null ? it.valueCents : it.netValueCents
   return {
     id: it.payableId,
     documentId: it.documentId, // p/ o drawer (detalhe é por documento)
@@ -528,17 +531,19 @@ const toTitleRow = (
     supplierKind: childRetention !== null ? null : (resolveKind?.(it.supplierRef) ?? null),
     supplierDoc: childRetention !== null ? null : maskCnpj(resolveDoc?.(it.supplierRef) ?? null),
     contract: it.contractRef !== null ? (resolveContract?.(it.contractRef) ?? it.contractRef) : DASH,
-    // #201: imposto (filho) → forma de pagamento é sempre Guia de Recolhimento (padrão). Pai = gap até #229.
-    paymentMethod: childRetention !== null ? 'GuiaRecolhimento' : null,
-    emissao: DASH, // gap: emissão (= do documento pai) não vem no /payable-titles (core-api#229)
-    // #231: data da baixa. Acende sozinho quando o backend expuser o paidAt no /payable-titles.
+    // #201/#229: imposto (filho) → forma sempre Guia de Recolhimento (padrão); pai → forma real do documento.
+    paymentMethod: childRetention !== null ? 'GuiaRecolhimento' : it.paymentMethod,
+    // #229: emissão = do documento pai (herdada pelos filhos), date-only.
+    emissao: it.issueDate !== null && it.issueDate !== '' ? formatDue(it.issueDate.slice(0, 10)) : DASH,
+    // #231: data da baixa (null até pago).
     pagamento: it.paidAt !== null && it.paidAt !== '' ? formatDue(it.paidAt.slice(0, 10)) : DASH,
-    gross: it.valueCents !== '' ? centsToBRL(it.valueCents) : DASH,
-    grossCents: it.valueCents,
+    // #229: pai mostra bruto/líquido do documento; filho (retenção) tem valor único → repete nas duas.
+    gross: grossCents !== null && grossCents !== '' ? centsToBRL(grossCents) : DASH,
+    grossCents,
     due: it.dueDate !== '' ? formatDue(it.dueDate.slice(0, 10)) : DASH, // dueDate pode vir ISO datetime
-    net: it.valueCents !== '' ? centsToBRL(it.valueCents) : DASH,
-    netCents: it.valueCents,
-    version: 0, // gap: /payable-titles não traz version → ações em massa por título ficam desabilitadas
+    net: netCents !== null && netCents !== '' ? centsToBRL(netCents) : DASH,
+    netCents,
+    version: it.version, // #229: version do DOCUMENTO (optimistic lock) agora vem na linha
     status: it.status,
   }
 }

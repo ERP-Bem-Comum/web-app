@@ -194,7 +194,13 @@ export type PayableTitleItem = Readonly<{
   status: DocumentStatus
   supplierRef: string | null
   contractRef: string | null
-  paidAt: string | null // data da baixa (core-api#231); null até o backend expor
+  paidAt: string | null // data da baixa (core-api#231); null até pago
+  // #229: derivados do documento pai (paridade com o grid por documento).
+  issueDate: string | null
+  paymentMethod: PaymentMethod | null
+  version: number
+  grossValueCents: string | null
+  netValueCents: string | null
 }>
 export type PayableTitleListResponse = Readonly<{
   items: readonly PayableTitleItem[]

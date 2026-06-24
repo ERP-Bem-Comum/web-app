@@ -179,7 +179,13 @@ export const payableTitlesToModel = (raw: unknown): Result<PayableTitleListRespo
     status: mapStatus(p.status),
     supplierRef: p.supplierRef,
     contractRef: p.contractRef,
-    paidAt: p.paidAt ?? null, // core-api#231: ausente hoje → null
+    paidAt: p.paidAt ?? null, // core-api#231: data da baixa (null até pago)
+    // #229: derivados do documento pai (paridade com o grid por documento).
+    issueDate: p.issueDate ?? null,
+    paymentMethod: mapPaymentMethod(p.paymentMethod ?? null),
+    version: p.version ?? 0,
+    grossValueCents: p.grossValueCents ?? null,
+    netValueCents: p.netValueCents ?? null,
   }))
   return ok({ items, page: l.page, pageSize: l.pageSize, total: l.total })
 }

@@ -1,7 +1,7 @@
 /**
  * deriveTitleListState (#201) — listagem por TÍTULO reusa o mesmo GridRow/ListState do grid de documentos.
- * PURO (node:test, imports relativos). Cobre o mapeamento título→linha + as lacunas honestas (emissão/forma
- * "—", valor nas colunas de valor, version 0).
+ * PURO (node:test, imports relativos). Cobre o mapeamento título→linha, incl. os campos derivados do
+ * documento pai (#229: emissão, forma, bruto/líquido, version) e o filho = tipo do imposto + órgão.
  */
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
@@ -31,6 +31,12 @@ const item: PayableTitleItem = {
   supplierRef: 's1',
   contractRef: null,
   paidAt: null,
+  // #229: derivados do documento pai.
+  issueDate: '2026-07-01',
+  paymentMethod: 'Boleto',
+  version: 3,
+  grossValueCents: '20000',
+  netValueCents: '15000',
 }
 const resp: PayableTitleListResponse = { items: [item], page: 1, pageSize: 20, total: 1 }
 // órgão arrecadador (igual ao drawer): ISS → SEFIN; demais → Receita Federal.
@@ -53,9 +59,12 @@ describe('deriveTitleListState (#201)', () => {
       assert.equal(r?.type, 'NFS-e') // pai = tipo do documento
       assert.equal(r?.supplier, 'Fornecedor X')
       assert.equal(r?.due, '10/07/2026')
-      assert.equal(r?.grossCents, '15000')
-      assert.equal(r?.emissao, '—') // gap: /payable-titles não traz emissão
-      assert.equal(r?.version, 0) // gap: sem version → ações por título desabilitadas
+      // #229: pai exibe bruto/líquido do documento (não o valueCents).
+      assert.equal(r?.grossCents, '20000')
+      assert.equal(r?.netCents, '15000')
+      assert.equal(r?.emissao, '01/07/2026') // #229: emissão do documento pai
+      assert.equal(r?.paymentMethod, 'Boleto') // #229: forma real do documento (pai)
+      assert.equal(r?.version, 3) // #229: version do documento → ações por título habilitadas
     }
   })
   it('FILHO: type = tipo do imposto; fornecedor = órgão arrecadador (igual ao drawer)', () => {
