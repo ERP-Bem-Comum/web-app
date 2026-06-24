@@ -28,6 +28,8 @@ import type {
   MatchSuggestion,
   PaidPayable,
   PeriodClosed,
+  PeriodReopened,
+  ReopenPeriodInput,
   ReconciliationCreated,
   ReconciliationExport,
   ReconciliationPeriod,
@@ -91,6 +93,7 @@ export type ReconciliationClient = Readonly<{
   ) => Promise<Result<ManualEntryCreated, ReconciliationError>>
   batchReconcile: (i: BatchReconcileInput, token: string) => Promise<Result<BatchResult, ReconciliationError>>
   closePeriod: (i: ClosePeriodInput, token: string) => Promise<Result<PeriodClosed, ReconciliationError>>
+  reopenPeriod: (i: ReopenPeriodInput, token: string) => Promise<Result<PeriodReopened, ReconciliationError>>
   listReconciliationPeriods: (
     i: ListReconciliationPeriodsInput,
     token: string,
@@ -202,6 +205,11 @@ export const createClosePeriod =
   (deps: Deps) =>
   (i: ClosePeriodInput, token: string): Promise<Result<PeriodClosed, ReconciliationError>> =>
     deps.client.closePeriod(i, token)
+
+export const createReopenPeriod =
+  (deps: Deps) =>
+  (i: ReopenPeriodInput, token: string): Promise<Result<PeriodReopened, ReconciliationError>> =>
+    deps.client.reopenPeriod(i, token)
 
 export const createListReconciliationPeriods =
   (deps: Deps) =>

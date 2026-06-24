@@ -9,6 +9,7 @@ import { createCoreApiReconciliationClient } from './core-api/core-api-reconcili
 import {
   createBatchReconcile,
   createClosePeriod,
+  createReopenPeriod,
   createCreateManualEntry,
   createCreateCedenteAccount,
   createCreateReconciliation,
@@ -51,6 +52,7 @@ const build = () => {
     createManualEntry: createCreateManualEntry({ client }),
     batchReconcile: createBatchReconcile({ client }),
     closePeriod: createClosePeriod({ client }),
+    reopenPeriod: createReopenPeriod({ client }),
     listReconciliationPeriods: createListReconciliationPeriods({ client }),
     exportReconciliation: createExportReconciliation({ client }),
   }

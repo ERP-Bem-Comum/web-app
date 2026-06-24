@@ -12,6 +12,7 @@ import type {
   BatchReconcileInput,
   BatchResult,
   ClosePeriodInput,
+  ReopenPeriodInput,
   CreateCedenteAccountInput,
   CreateReconciliationInput,
   AccountStatementPeriod,
@@ -27,6 +28,7 @@ import type {
   MatchSuggestion,
   PaidPayable,
   PeriodClosed,
+  PeriodReopened,
   ReconciliationAccount,
   ReconciliationCreated,
   ReconciliationExport,
@@ -71,6 +73,7 @@ type UndoFn = (opts: {
 type ManualFn = (opts: { data: ManualEntryInput }) => Promise<ReconFnResult<ManualEntryCreated>>
 type BatchFn = (opts: { data: BatchReconcileInput }) => Promise<ReconFnResult<BatchResult>>
 type CloseFn = (opts: { data: ClosePeriodInput }) => Promise<ReconFnResult<PeriodClosed>>
+type ReopenFn = (opts: { data: ReopenPeriodInput }) => Promise<ReconFnResult<PeriodReopened>>
 type ListPeriodsFn = (opts: {
   data: { debitAccountRef: string }
 }) => Promise<ReconFnResult<readonly ReconciliationPeriod[]>>
@@ -110,6 +113,7 @@ export type ReconciliationRepository = Readonly<{
   createManualEntry: (i: ManualEntryInput) => Promise<Result<ManualEntryCreated, ReconciliationError>>
   batchReconcile: (i: BatchReconcileInput) => Promise<Result<BatchResult, ReconciliationError>>
   closePeriod: (i: ClosePeriodInput) => Promise<Result<PeriodClosed, ReconciliationError>>
+  reopenPeriod: (i: ReopenPeriodInput) => Promise<Result<PeriodReopened, ReconciliationError>> // #203
   // Períodos + export reais (#173).
   listReconciliationPeriods: (
     debitAccountRef: string,
@@ -141,6 +145,7 @@ export const createReconciliationRepository = (
     createManualEntryFn: ManualFn
     batchReconcileFn: BatchFn
     closePeriodFn: CloseFn
+    reopenPeriodFn: ReopenFn
     listReconciliationPeriodsFn: ListPeriodsFn
     exportReconciliationFn: ExportFn
     listAccountsFn: ListAccountsFn
@@ -202,6 +207,10 @@ export const createReconciliationRepository = (
   },
   closePeriod: async (i) => {
     const res = await deps.closePeriodFn({ data: i })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  reopenPeriod: async (i) => {
+    const res = await deps.reopenPeriodFn({ data: i })
     return res.ok ? ok(res.data) : err(res.error)
   },
   listReconciliationPeriods: async (debitAccountRef) => {

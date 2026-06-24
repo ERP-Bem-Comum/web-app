@@ -106,6 +106,7 @@ export type ClosePeriodInput = Readonly<{
   periodStart: string
   periodEnd: string
 }>
+export type ReopenPeriodInput = Readonly<{ periodId: string }> // #203
 
 // ── Outputs (Model que a UI consome) ──
 export type StatementPeriod = Readonly<{ start: string; end: string }>
@@ -207,6 +208,7 @@ export type BatchResult = Readonly<{
   failed: readonly BatchFailure[]
 }>
 export type PeriodClosed = Readonly<{ periodId: string; status: 'Closed' }>
+export type PeriodReopened = Readonly<{ periodId: string; status: 'Open' }> // #203
 // Período de conciliação (#173). `id` = periodId p/ exportar. Datas date-only.
 export type ReconciliationPeriod = Readonly<{
   id: string

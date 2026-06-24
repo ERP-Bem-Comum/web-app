@@ -39,6 +39,7 @@ import { useSearchCreate, type SearchCreateBinding } from './search-create.bindi
 import { useManualEntry, type ManualEntryBinding } from './manual-entry.binding.ts'
 import { useUndo, type UndoBinding } from './undo.binding.ts'
 import { useClosePeriod, type ClosePeriodBinding } from './close-period.binding.ts'
+import { useReopenPeriod, type ReopenPeriodBinding } from './reopen-period.binding.ts'
 import { useExportConciliacao, type ExportBinding } from './export-conciliacao.binding.ts'
 import {
   accountStatementPeriodQueryOptions,
@@ -126,6 +127,7 @@ export type WorkspaceBinding = Readonly<{
   manualEntry: ManualEntryBinding
   undo: UndoBinding
   closePeriod: ClosePeriodBinding
+  reopenPeriod: ReopenPeriodBinding
   exportConciliacao: ExportBinding
   /** id da conciliação da transação: mapa de sessão (conciliação feita agora) OU lookup #175. */
   reconciliationIdFor: (transactionId: string) => string | null
@@ -263,6 +265,11 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     accountRef === '' ? null : accountRef,
     headerMenusBinding.closeAll,
   )
+  // #203: reabrir período (Closed → Open). Fecha o dropdown de ações ao concluir.
+  const reopenPeriodBinding = useReopenPeriod(
+    accountRef === '' ? null : accountRef,
+    headerMenusBinding.closeAll,
+  )
 
   const filterCounts: FilterCounts = {
     pendentes: pendentesCount,
@@ -358,6 +365,7 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     manualEntry: manualEntryBinding,
     undo: undoBinding,
     closePeriod: closePeriodBinding,
+    reopenPeriod: reopenPeriodBinding,
     exportConciliacao: exportBinding,
     reconciliationIdFor: (transactionId) =>
       recMap.get(transactionId) ??

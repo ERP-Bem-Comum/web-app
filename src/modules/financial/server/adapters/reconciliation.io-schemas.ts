@@ -101,6 +101,8 @@ export const ClosePeriodInputSchema = z.object({
   periodEnd: DateSchema,
 })
 
+export const ReopenPeriodInputSchema = z.object({ periodId: z.uuid() }) // #203
+
 export const ListReconciliationPeriodsInputSchema = z.object({ debitAccountRef: z.uuid() })
 
 export const ExportReconciliationInputSchema = z.object({
@@ -130,6 +132,7 @@ const _g_undo: AssertEqual<z.infer<typeof UndoReconciliationInputSchema>, R.Undo
 const _g_manual: AssertEqual<z.infer<typeof ManualEntryInputSchema>, R.ManualEntryInput> = true
 const _g_batch: AssertEqual<z.infer<typeof BatchReconcileInputSchema>, R.BatchReconcileInput> = true
 const _g_close: AssertEqual<z.infer<typeof ClosePeriodInputSchema>, R.ClosePeriodInput> = true
+const _g_reopen: AssertEqual<z.infer<typeof ReopenPeriodInputSchema>, R.ReopenPeriodInput> = true
 const _g_listPeriods: AssertEqual<
   z.infer<typeof ListReconciliationPeriodsInputSchema>,
   R.ListReconciliationPeriodsInput
@@ -158,5 +161,6 @@ void _g_undo
 void _g_manual
 void _g_batch
 void _g_close
+void _g_reopen
 void _g_listPeriods
 void _g_export
