@@ -2742,10 +2742,11 @@ export const periodBand = style({
   display: 'flex',
   alignItems: 'center',
   flexWrap: 'wrap',
-  gap: sp['3xl'],
-  padding: `${sp.lg} ${sp['2xl']}`,
+  columnGap: sp['3xl'], // espaçamento horizontal entre os saldos (generoso)
+  rowGap: sp.sm, // vertical: saldos ↔ conferência fica justo (antes herdava o 3xl horizontal)
+  padding: `${sp.md} ${sp['2xl']}`,
   marginBlockEnd: sp.lg,
-  background: c.paper.warm,
+  background: c.paper.default, // branco nos saldos (a conferência tem o próprio chip azul)
   border: `${bw.thin} solid ${c.paper.rule}`,
   borderRadius: r.lg,
 })
@@ -2784,7 +2785,6 @@ export const periodConferencia = style({
   flexWrap: 'wrap',
   gap: sp.md,
   inlineSize: '100%',
-  marginBlockStart: sp.md,
   padding: `${sp.sm} ${sp.lg}`,
   borderRadius: r.md,
   background: c.teal.bg,
