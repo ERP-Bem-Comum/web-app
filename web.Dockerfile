@@ -1,21 +1,23 @@
 # syntax=docker/dockerfile:1.10
 #
-# Front + BFF (TanStack Start + Nitro) — multi-stage. Runtime DISTROLESS (ADR-0015).
+# Front + BFF (TanStack Start + Nitro) — multi-stage. Runtime CHAINGUARD/WOLFI (ADR-0015).
 #
 #   base    → node 24 (toolchain de build) + pnpm via corepack          [digest-pin]
 #   deps    → pnpm install (frozen, ignore-scripts) c/ supply-chain do pnpm-workspace.yaml (ADR-0003)
 #   build   → pnpm build → .output (servidor Nitro node-server, SELF-CONTAINED, sem node_modules)
 #   dev     → target de desenvolvimento (HMR; bind-mount de ./src vem do override do ERP-INFRA)
-#   runtime → gcr.io/distroless/nodejs24 (non-root, SEM shell), roda .output/server/index.mjs
+#   runtime → cgr.dev/chainguard/node (Wolfi, non-root 65532, zero-CVE), roda .output/server/index.mjs
 #
-# Por que distroless no runtime (ADR-0015): o `.output` do Nitro é JS puro (sem deps nativas em
-# runtime), então a base pode ser mínima/sem shell — superfície e CVEs mínimas, non-root por padrão.
-# O healthcheck é via `node` (a base distroless não tem curl/wget). Debug do container: via tailnet +
-# logs/traces (ADR-0019), nunca shell em produção.
+# Por que Chainguard/Wolfi no runtime (ADR-0015): o `.output` do Nitro é JS puro (sem deps nativas em
+# runtime), então a base pode ser mínima. A Chainguard patcha as CVEs da base muito mais rápido que o
+# distroless Debian (que ficou com libssl3 vulnerável sem rebuild) — meta de zero HIGH/CRITICAL no Trivy.
+# ⚠️ O tier free só publica :latest (hoje Node 26; Node 24 fixo exige Chainguard pago). O runtime roda o
+# bundle portável do Nitro, então o major do Node do runtime ≠ do build (node:24) é aceitável.
+# Healthcheck via `node` (sem curl/wget). Debug do container: via tailnet + logs/traces (ADR-0019).
 #
 # Atualizar digests:
 #   docker buildx imagetools inspect node:24-bookworm-slim --format '{{.Manifest.Digest}}'
-#   docker buildx imagetools inspect gcr.io/distroless/nodejs24-debian12:nonroot --format '{{.Manifest.Digest}}'
+#   docker buildx imagetools inspect cgr.dev/chainguard/node:latest --format '{{.Manifest.Digest}}'
 # ─────────────────────────────────────────────────────────────────────────────
 
 # ── Stage 1 — base (toolchain) ───────────────────────────────────────────────
@@ -46,12 +48,12 @@ COPY . .
 CMD ["pnpm", "dev", "--host", "0.0.0.0", "--port", "3000"]
 
 # ── Stage 5 — runtime (produção, distroless) ─────────────────────────────────
-FROM gcr.io/distroless/nodejs24-debian12:nonroot@sha256:14d42e2511532589a7c7e01a753667a74fcc96266e137e8125006b87b0c32d0a AS runtime
+FROM cgr.dev/chainguard/node:latest@sha256:05d2ed6a0b3e6d3b9ca1d7f0b76e88dd06b91fa95c4f1e849f99bba7bd5a21b8 AS runtime
 LABEL org.opencontainers.image.title="bemcomum-web" \
       org.opencontainers.image.description="ERP Bem Comum — Front + BFF (TanStack Start)." \
       org.opencontainers.image.vendor="Envolve / Bem Comum" \
       org.opencontainers.image.licenses="proprietary" \
-      org.opencontainers.image.base.name="gcr.io/distroless/nodejs24-debian12"
+      org.opencontainers.image.base.name="cgr.dev/chainguard/node"
 
 # NODE_OPTIONS: heap cap p/ caber no envelope do container (default seguro p/ ~512 MB de prod;
 # o deploy (compose/IaC do ERP-INFRA) sobrescreve por ambiente — ex.: 288 na VPS QA de 448 MB).
@@ -69,10 +71,10 @@ USER 65532:65532
 EXPOSE 3000
 STOPSIGNAL SIGTERM
 
-# Distroless = sem shell/curl → probe via node (a ENTRYPOINT da base já é /nodejs/bin/node).
-# /health não toca o backend (liveness — src/routes/health.tsx).
+# Chainguard/Wolfi (zero-CVE): probe via node (sem curl/wget). /health não toca o backend
+# (liveness — src/routes/health.tsx). O binário node fica em /usr/bin/node nesta base.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD ["/nodejs/bin/node", "-e", "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+  CMD ["/usr/bin/node", "-e", "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
 
-# ENTRYPOINT herdada da base = ["/nodejs/bin/node"]; passamos o entry do Nitro como CMD.
+# ENTRYPOINT herdada da base = ["/usr/bin/node"]; passamos o entry do Nitro como CMD.
 CMD ["/app/.output/server/index.mjs"]
