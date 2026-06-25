@@ -107,6 +107,8 @@ export function ReconciliationAccountsPage() {
           <div className={s.grid}>
             <AccountsGrid
               rows={vm.state.rows}
+              expanded={vm.expanded}
+              onToggle={vm.toggleExpanded}
               onOpen={(row) => {
                 if (row.openable) {
                   void navigate({

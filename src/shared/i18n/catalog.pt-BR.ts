@@ -1370,6 +1370,11 @@ export const ptBR: Catalog = {
   'financial.recon.accounts.saldoLbl': 'Saldo atual',
   'financial.recon.accounts.status.pending': '{n} pendentes',
   'financial.recon.accounts.status.upToDate': 'Em dia',
+  // Expand do cadastro da conta (seta na linha do grid).
+  'financial.recon.accounts.expand.aria': 'Detalhes do cadastro da conta',
+  'financial.recon.accounts.expand.tipo': 'Tipo da conta',
+  'financial.recon.accounts.expand.saldoInicial': 'Saldo inicial do cadastro',
+  'financial.recon.accounts.expand.dataCadastro': 'Data do cadastro',
   'financial.recon.accounts.status.closed': 'Encerrada',
   'financial.recon.accounts.foot.pending': 'Movimentações pendentes',
   'financial.recon.accounts.foot.count': '{n} contas',

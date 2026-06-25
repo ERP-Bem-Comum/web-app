@@ -36,11 +36,13 @@ export type AccountsBinding = Readonly<{
   sort: SortKey
   addOpen: boolean
   add: AddAccountBinding
+  expanded: ReadonlySet<string> // ids das contas com o expand do cadastro aberto
   setSearch: (v: string) => void
   setStatus: (v: StatusFilter) => void
   setSort: (v: SortKey) => void
   openAdd: () => void
   closeAdd: () => void
+  toggleExpanded: (id: string) => void
 }>
 
 export function useReconciliationAccounts(): AccountsBinding {
@@ -48,6 +50,7 @@ export function useReconciliationAccounts(): AccountsBinding {
   const [status, setStatus] = useState<StatusFilter>('todas')
   const [sort, setSort] = useState<SortKey>('pendencias')
   const [addOpen, setAddOpen] = useState(false)
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set())
   const add = useAddAccount(bankNameByCode, () => {
     setAddOpen(false)
   })
@@ -82,6 +85,15 @@ export function useReconciliationAccounts(): AccountsBinding {
     sort,
     addOpen,
     add,
+    expanded,
+    toggleExpanded: (id) => {
+      setExpanded((prev) => {
+        const next = new Set(prev)
+        if (next.has(id)) next.delete(id)
+        else next.add(id)
+        return next
+      })
+    },
     setSearch: (v) => {
       setSearch(v)
     },

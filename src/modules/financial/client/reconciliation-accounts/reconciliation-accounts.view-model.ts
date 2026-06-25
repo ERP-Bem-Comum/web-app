@@ -5,7 +5,19 @@
  * Espelha `contas-a-pagar.view-model.ts`.
  */
 import { centsToBRL } from '#modules/financial/client/data/money.ts'
-import type { ReconciliationAccount } from '#modules/financial/client/data/model/reconciliation.model.ts'
+import type {
+  AccountType,
+  ReconciliationAccount,
+} from '#modules/financial/client/data/model/reconciliation.model.ts'
+
+// Tipo da conta → tag i18n (a view traduz; view-model fica i18n-agnóstica). typeLabel livre (#206) p/ Cartão/Outro.
+const ACCOUNT_TYPE_TAG: Readonly<Record<AccountType, string>> = {
+  Corrente: 'financial.recon.add.type.corrente',
+  Poupanca: 'financial.recon.add.type.poupanca',
+  Investimento: 'financial.recon.add.type.investimento',
+  Cartao: 'financial.recon.add.type.cartao',
+  Outro: 'financial.recon.add.type.outro',
+}
 
 export { centsToBRL } from '#modules/financial/client/data/money.ts'
 export type {
@@ -52,12 +64,26 @@ export type AccountRow = Readonly<{
   pendingCount: number
   status: AccountStatusKind
   openable: boolean // encerrada não abre o workspace
+  // Dados do cadastro (expand da linha): tipo, saldo inicial + data informados no cadastro ("—" se ausentes).
+  typeTag: string // tag i18n do tipo da conta (a view traduz)
+  typeLabel: string | null // #206: texto livre identificando a conta (Cartão corporativo/Outro); null caso contrário
+  openingBalanceBRL: string
+  openingDate: string
 }>
 
 /** Situação de conciliação da conta (encerrada > pendências > em dia). */
 export const accountStatus = (a: ReconciliationAccount): AccountStatusKind => {
   if (a.status === 'Closed') return 'closed'
   return a.pendingCount > 0 ? 'pending' : 'up-to-date'
+}
+
+const DASH = '—'
+
+/** ISO `YYYY-MM-DD` → "01/06/2026" (DD/MM/AAAA); null/vazio → "—". */
+export const formatCadastroDate = (iso: string | null): string => {
+  if (iso === null || iso === '') return DASH
+  const [y, m, d] = iso.slice(0, 10).split('-')
+  return y !== undefined && m !== undefined && d !== undefined ? `${d}/${m}/${y}` : iso
 }
 
 export const toAccountRow = (a: ReconciliationAccount): AccountRow => {
@@ -75,6 +101,10 @@ export const toAccountRow = (a: ReconciliationAccount): AccountRow => {
     pendingCount: a.pendingCount,
     status,
     openable: status !== 'closed',
+    typeTag: ACCOUNT_TYPE_TAG[a.type],
+    typeLabel: a.typeLabel,
+    openingBalanceBRL: a.openingBalanceCents !== null ? centsToBRL(a.openingBalanceCents) : DASH,
+    openingDate: formatCadastroDate(a.openingBalanceDate),
   }
 }
 

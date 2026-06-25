@@ -273,6 +273,8 @@ describe('modal Alterar conta — groupAccountsForSwitch', () => {
     currentBalanceCents: '100000',
     lastUpdatedAt: 'hoje',
     pendingCount: 0,
+    openingBalanceCents: '100000',
+    openingBalanceDate: '2026-06-01',
     ...over,
   })
   const accounts = [

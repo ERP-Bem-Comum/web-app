@@ -37,6 +37,10 @@ export type ReconciliationAccount = Readonly<{
   currentBalanceCents: string
   lastUpdatedAt: string
   pendingCount: number
+  // Dados do CADASTRO da conta (#138/#206) — saldo inicial e a data informados no cadastro. Distintos do
+  // saldo "corrente" (placeholder até #139). `null` quando não informados. Expostos no expand do grid.
+  openingBalanceCents: string | null
+  openingBalanceDate: string | null
 }>
 
 // ── Inputs enviados pelo repository (a server fn valida no server) ──

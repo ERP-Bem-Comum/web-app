@@ -236,6 +236,9 @@ const toCedenteAccount = (a: CoreApiCedenteAccount): CedenteAccount => ({
   currentBalanceCents: a.openingBalanceCents ?? '0',
   lastUpdatedAt: a.openingBalanceDate ?? '',
   pendingCount: 0,
+  // Dados do cadastro REAIS (distintos do "corrente" placeholder) — alimentam o expand do grid de contas.
+  openingBalanceCents: a.openingBalanceCents,
+  openingBalanceDate: a.openingBalanceDate,
 })
 
 export const cedenteAccountsToModel = (
