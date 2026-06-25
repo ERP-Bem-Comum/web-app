@@ -32,9 +32,9 @@ export type UserFormProps = Readonly<{
 
 /**
  * Formulário de inclusão de Usuário (estilo espelhado do ACT). Campos funcionais: Nome, CPF, E-mail,
- * Telefone (→ POST /users). "Foto de Perfil" e "Aprovador em Massa" aparecem para paridade com o legado
- * mas estão DESABILITADOS: a foto é um PUT separado (pós-criação) e o "Aprovador em Massa" é derivado dos
- * perfis de acesso (read-only no backend). Ver gaps/ticket.
+ * Telefone (→ POST /users). "Foto de Perfil" segue gated (upload é PUT pós-criação). "Aprovador em Massa"
+ * é SETTÁVEL (o core-api aceita `massApprovalPermission`) — concede o role etl:mass-approver; enviado só
+ * quando marcado. Setar exige `user:assign-role` no ator (senão o backend recusa com 403).
  */
 export function UserForm(props: UserFormProps): ReactNode {
   const { controller: c } = props
@@ -50,23 +50,55 @@ export function UserForm(props: UserFormProps): ReactNode {
       }}
     >
       {props.errorTag !== null ? (
-        <div className={errorBanner} role="alert">{t(props.errorTag)}</div>
+        <div className={errorBanner} role="alert">
+          {t(props.errorTag)}
+        </div>
       ) : null}
 
       <section className={section}>
-        <h2 className={sectionTitle}><UsersIcon size={18} />{t('users.form.section.data')}</h2>
+        <h2 className={sectionTitle}>
+          <UsersIcon size={18} />
+          {t('users.form.section.data')}
+        </h2>
         <div className={grid}>
           <Field htmlFor="user-name" label={t('users.form.name')} error={invalid('name')}>
-            <Input id="user-name" value={c.state.name} onChange={(v) => { c.setField('name', v); }} />
+            <Input
+              id="user-name"
+              value={c.state.name}
+              onChange={(v) => {
+                c.setField('name', v)
+              }}
+            />
           </Field>
           <Field htmlFor="user-cpf" label={t('users.form.cpf')} error={invalid('cpf')}>
-            <Input id="user-cpf" mask="cpf" value={c.state.cpf} onChange={(v) => { c.setField('cpf', v); }} />
+            <Input
+              id="user-cpf"
+              mask="cpf"
+              value={c.state.cpf}
+              onChange={(v) => {
+                c.setField('cpf', v)
+              }}
+            />
           </Field>
           <Field htmlFor="user-email" label={t('users.form.email')} error={invalid('email')}>
-            <Input id="user-email" type="email" value={c.state.email} onChange={(v) => { c.setField('email', v); }} />
+            <Input
+              id="user-email"
+              type="email"
+              value={c.state.email}
+              onChange={(v) => {
+                c.setField('email', v)
+              }}
+            />
           </Field>
           <Field htmlFor="user-telephone" label={t('users.form.telephone')} error={invalid('telephone')}>
-            <Input id="user-telephone" mask="phone" value={c.state.telephone} onChange={(v) => { c.setField('telephone', v); }} />
+            <Input
+              id="user-telephone"
+              mask="phone"
+              value={c.state.telephone}
+              onChange={(v) => {
+                c.setField('telephone', v)
+              }}
+            />
           </Field>
         </div>
 
@@ -80,13 +112,20 @@ export function UserForm(props: UserFormProps): ReactNode {
           <p className={gatedHint}>{t('users.form.photo.gated')}</p>
         </div>
 
-        {/* Aprovador em Massa — gated (derivado dos perfis de acesso, read-only no backend). */}
+        {/* Aprovador em Massa — settável (core-api aceita massApprovalPermission); concede etl:mass-approver. */}
         <div className={gatedField}>
           <label className={checkboxRow}>
-            <input type="checkbox" checked={false} disabled aria-label={t('users.form.massApproval')} onChange={() => { /* gated */ }} />
+            <input
+              type="checkbox"
+              checked={c.state.massApprovalPermission}
+              aria-label={t('users.form.massApproval')}
+              onChange={(e) => {
+                c.setField('massApprovalPermission', e.target.checked)
+              }}
+            />
             <span>{t('users.form.massApproval')}</span>
           </label>
-          <p className={gatedHint}>{t('users.form.massApproval.gated')}</p>
+          <p className={gatedHint}>{t('users.form.massApproval.note')}</p>
         </div>
       </section>
 

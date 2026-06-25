@@ -16,12 +16,15 @@ export interface ListUsersInput {
 }
 
 // Criação administrativa (POST /api/v1/users) — body { name, cpf, email, telephone }.
-// Foto (PUT /users/:id/photo) e "Aprovador em Massa" (derivado de papéis, read-only) NÃO entram aqui.
+// Foto (PUT /users/:id/photo) NÃO entra aqui (upload pós-criação). "Aprovador em Massa" agora É settável
+// (core-api aceita `massApprovalPermission` no POST /users) — enviado SÓ quando true (ver CreateUserInput).
 export interface CreateUserInput {
   name: string
   cpf: string
   email: string
   telephone: string
+  // Concede o role etl:mass-approver. `undefined` (ausente) não concede e não gateia; true exige `user:assign-role`.
+  massApprovalPermission?: boolean
 }
 
 export type CreatedUser = Readonly<{ id: string }>

@@ -508,15 +508,41 @@ export const mapDocumentDetail = (
 })
 
 // ── Exportar (client-side, padrão Contratos) ──────────────────────────────────
-const CSV_HEADERS = ['Tipo', 'Documento', 'Fornecedor', 'Vencimento', 'Líquido', 'Status'] as const
+// + Pagamento (data da baixa, #231 — já no GridRow) e uma linha de TOTAL do Líquido ao final. Tudo
+// derivado das linhas que o cliente já tem (sem backend): o paidAt vem no /payable-titles, a soma é local.
+const CSV_HEADERS = [
+  'Tipo',
+  'Documento',
+  'Fornecedor',
+  'Vencimento',
+  'Pagamento',
+  'Líquido',
+  'Status',
+] as const
 
-/** Monta o CSV (`;`) das linhas exibidas — PURO. Escapa aspas (RFC 4180). */
+/** Monta o CSV (`;`) das linhas exibidas + linha de total do Líquido — PURO. Escapa aspas (RFC 4180). */
 export const buildDocumentsCsv = (rows: readonly GridRow[]): string => {
   const cell = (v: string): string => `"${v.replace(/"/g, '""')}"`
   const lines = rows.map((r) =>
-    [r.type, r.documentNumber, r.supplier, r.due, r.net, r.status].map(cell).join(';'),
+    [r.type, r.documentNumber, r.supplier, r.due, r.pagamento, r.net, r.status].map(cell).join(';'),
   )
-  return [CSV_HEADERS.join(';'), ...lines].join('\n')
+  // Total do Líquido = soma dos centavos das linhas exportadas (ignora linhas sem valor).
+  const totalCents = rows.reduce(
+    (acc, r) => acc + (r.netCents !== null ? Number.parseInt(r.netCents, 10) || 0 : 0),
+    0,
+  )
+  const totalRow = [
+    '',
+    '',
+    `Total (${String(rows.length)} títulos)`,
+    '',
+    '',
+    centsToBRL(String(totalCents)),
+    '',
+  ]
+    .map(cell)
+    .join(';')
+  return [CSV_HEADERS.join(';'), ...lines, totalRow].join('\n')
 }
 
 /** Carimbo YYYY-MM-DD p/ o nome do arquivo. O relógio mora na view-model (não na view — §XI). */

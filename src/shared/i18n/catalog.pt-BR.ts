@@ -904,6 +904,8 @@ export const ptBR: Catalog = {
   'users.photo.hint': 'JPG, PNG ou WEBP · até 5 MB',
   'users.form.massApproval': 'Aprovador em Massa',
   'users.form.massApproval.gated': 'Definido pelos perfis de acesso do usuário (somente leitura).',
+  'users.form.massApproval.note':
+    'Concede a capacidade de aprovar lançamentos em massa. Exige permissão de gestão de acessos.',
   'users.form.invalid': 'Campo inválido.',
   'users.form.cancel': 'Cancelar',
   'users.form.save': 'Adicionar',
