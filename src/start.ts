@@ -20,6 +20,7 @@ import { getRequestHeader, setResponseHeader } from '@tanstack/react-start/serve
 
 import { buildSecurityHeaders, isHttpsFromForwardedProto } from '#shared/http/security-headers.ts'
 import { generateCspNonce, setRequestCspNonce } from '#external/http/csp-nonce.ts'
+import { deriveRequestId, setRequestId } from '#external/http/request-id.ts'
 
 const securityHeadersMiddleware = createMiddleware().server(({ next }) => {
   const https = isHttpsFromForwardedProto(getRequestHeader('x-forwarded-proto'))
@@ -27,6 +28,11 @@ const securityHeadersMiddleware = createMiddleware().server(({ next }) => {
   // no mesmo h3Event) e injetado no script-src para liberar o <script> inline de bootstrap do Start.
   const nonce = generateCspNonce()
   setRequestCspNonce(nonce)
+  // request_id (reference id de correlação — D8/ADR-0019): honra X-Request-Id de entrada ou gera UUID;
+  // publica no request-scope (server fns/logger leem) e ecoa na resposta. Não é segredo (sem redact).
+  const requestId = deriveRequestId()
+  setRequestId(requestId)
+  setResponseHeader('X-Request-Id', requestId)
   for (const [name, value] of buildSecurityHeaders({ https, nonce })) {
     setResponseHeader(name, value)
   }
