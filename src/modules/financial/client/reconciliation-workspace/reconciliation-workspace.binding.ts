@@ -14,10 +14,12 @@ import {
   extratoTotals,
   filterExtrato,
   filterTransactions,
+  formatDateBR,
   groupExtratoDays,
   groupTransactionsByDay,
   initialWorkspaceUiState,
   isPending,
+  pickLatestPeriod,
   progressLabel,
   progressPercent,
   workspaceReducer,
@@ -133,6 +135,15 @@ export type WorkspaceBinding = Readonly<{
   undo: UndoBinding
   closePeriod: ClosePeriodBinding
   reopenPeriod: ReopenPeriodBinding
+  // Confirmação de fechar/reabrir período (modal): menciona o intervalo (DD/MM/AAAA). `confirm` null = fechado.
+  periodActions: Readonly<{
+    confirm: Readonly<{ action: 'close' | 'reopen'; fromBR: string; toBR: string }> | null
+    busy: boolean
+    requestClose: () => void
+    requestReopen: () => void
+    onConfirm: () => void
+    onCancel: () => void
+  }>
   exportConciliacao: ExportBinding
   /** id da conciliação da transação: mapa de sessão (conciliação feita agora) OU lookup #175. */
   reconciliationIdFor: (transactionId: string) => string | null
@@ -335,6 +346,43 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     headerMenusBinding.closeAll,
   )
 
+  // Confirmação de fechar/reabrir período (modal que menciona o intervalo). Fechar usa o período SELECIONADO;
+  // reabrir age sobre o período FECHADO mais recente (mesmo alvo do reopen binding). Datas em DD/MM/AAAA.
+  const [periodConfirm, setPeriodConfirm] = useState<Readonly<{
+    action: 'close' | 'reopen'
+    fromBR: string
+    toBR: string
+  }> | null>(null)
+  const latestPeriod = pickLatestPeriod(periods)
+  const periodActions = {
+    confirm: periodConfirm,
+    busy: closePeriodBinding.closing || reopenPeriodBinding.reopening,
+    requestClose: () => {
+      if (periodRange !== null)
+        setPeriodConfirm({
+          action: 'close',
+          fromBR: formatDateBR(periodRange.from),
+          toBR: formatDateBR(periodRange.to),
+        })
+    },
+    requestReopen: () => {
+      if (latestPeriod !== null && latestPeriod.status === 'Closed')
+        setPeriodConfirm({
+          action: 'reopen',
+          fromBR: formatDateBR(latestPeriod.periodStart),
+          toBR: formatDateBR(latestPeriod.periodEnd),
+        })
+    },
+    onConfirm: () => {
+      if (periodConfirm?.action === 'close') closePeriodBinding.close()
+      else if (periodConfirm?.action === 'reopen') reopenPeriodBinding.reopen()
+      setPeriodConfirm(null)
+    },
+    onCancel: () => {
+      setPeriodConfirm(null)
+    },
+  }
+
   const filterCounts: FilterCounts = {
     pendentes: pendentesCount,
     conciliadas: allTx.filter((t) => !isPending(t)).length,
@@ -438,6 +486,7 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     undo: undoBinding,
     closePeriod: closePeriodBinding,
     reopenPeriod: reopenPeriodBinding,
+    periodActions,
     exportConciliacao: exportBinding,
     reconciliationIdFor: (transactionId) =>
       recMap.get(transactionId) ??

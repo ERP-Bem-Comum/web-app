@@ -1612,6 +1612,14 @@ export const ptBR: Catalog = {
   'financial.recon.close.pendingBlocked': 'Há movimentações pendentes — trate todas antes de fechar.',
   'financial.recon.close.noStatement': 'Importe um extrato para poder fechar o período.',
   'financial.recon.close.alreadyClosed': 'Período já fechado. Use "Abrir período" para reabri-lo.',
+  'financial.recon.period.confirm.titleClose': 'Fechar período',
+  'financial.recon.period.confirm.titleReopen': 'Reabrir período',
+  'financial.recon.period.confirm.qClose': 'Você confirma o fechamento do período de',
+  'financial.recon.period.confirm.qReopen': 'Você confirma a reabertura do período de',
+  'financial.recon.period.confirm.until': 'até',
+  'financial.recon.period.confirm.cancel': 'Cancelar',
+  'financial.recon.period.confirm.okClose': 'Fechar período',
+  'financial.recon.period.confirm.okReopen': 'Reabrir período',
 
   // ── Contas a Pagar — grid (US2, lista real Fatia 2) ──
   'financial.list.title': 'Contas a Pagar',
