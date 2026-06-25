@@ -1,12 +1,15 @@
-name: build-publish
+name: build-publish-deploy (QA)
 
-# Builda a imagem de produção do web-app (front + BFF, target `runtime` distroless) e publica no GHCR.
-# O ambiente (VPS QA / AWS) NUNCA compila — só puxa (ADR-0015/0018). O deploy vive no `deploy-qa.yml`.
+# Pipeline de QA: builda a imagem de produção (front + BFF, target `runtime` Chainguard), publica no GHCR
+# e DEPLOYA na VPS de QA — tudo num workflow só. O deploy é um job `needs: build-push` (mesmo run), NÃO um
+# `workflow_run` separado: aquele só dispara se o arquivo estiver na branch DEFAULT (main), o que quebrava
+# o auto-deploy enquanto a develop está à frente. O ambiente NUNCA compila — só puxa (ADR-0015/0018).
 #
 # Segurança (OWASP CI/CD Top 10 — ADR-0016/0018):
 #  - actions de terceiros PINADAS POR COMMIT SHA (CICD-SEC-8); a tag legível fica no comentário ao lado.
-#  - GITHUB_TOKEN de permissão mínima; provenance + SBOM keyless via OIDC do GitHub (id-token/attestations).
+#  - GITHUB_TOKEN de permissão mínima POR JOB; provenance + SBOM keyless via OIDC (id-token/attestations).
 #  - trigger = push em `develop` (branch de QA), NUNCA `pull_request` de fork com segredo (CICD-SEC-4).
+#  - deploy SEM segredo longevo: tailnet (auth key tag:ci → TS_AUTHKEY); SSH por identidade (CICD-SEC-6).
 #
 # Atualizar um SHA: gh api repos/<owner>/<action>/commits/<tag> --jq .sha
 
@@ -21,8 +24,10 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: build-publish-${{ github.ref }}
-  cancel-in-progress: true
+  # Serializa por ref e NÃO cancela em andamento — um deploy de QA jamais é abortado no meio (pushes
+  # rápidos enfileiram em vez de cancelar o deploy anterior).
+  group: build-publish-deploy-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -82,3 +87,35 @@ jobs:
           severity: CRITICAL,HIGH
           exit-code: "1"
           ignore-unfixed: true # não bloqueia em CVE sem fix upstream (base distroless); revisar periodicamente
+
+  # ── Deploy QA ────────────────────────────────────────────────────────────────
+  # Roda APÓS o build-push (mesmo run → sem o `workflow_run`, que exigiria o arquivo na branch default).
+  # Só em `develop`. Entra no tailnet (auth key tag:ci) e roda o deploy.sh da VPS por SSH/identidade.
+  #
+  # PRÉ-REQUISITOS DE INFRA (configurados 2026-06-25 via Tailscale API):
+  #   1. ✅ Auth key tag:ci → secret TS_AUTHKEY. ⚠️ EXPIRA 2026-09-23 → rotacionar (issue #92).
+  #   2. ✅ ACL: ssh tag:ci → tag:cd-target (ubuntu); nó erp-bem-comum-qa = tag:cd-target.
+  #   3. ✅ Tailscale SSH na VPS.  4. ⚠️ /opt/erp-qa/ provisionado (ERP-INFRA/platform/vps-qa).
+  deploy-qa:
+    needs: build-push
+    runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/develop' }} # só a branch de QA deploya; outro ref só builda
+    permissions:
+      contents: read # least privilege: o deploy não precisa de packages/id-token/attestations
+    steps:
+      - name: Conectar na tailnet (efêmero, tag:ci)
+        uses: tailscale/github-action@306e68a486fd2350f2bfc3b19fcd143891a4a2d8 # v4.1.2
+        with:
+          authkey: ${{ secrets.TS_AUTHKEY }} # já é tag:ci + ephemeral → dispensa oauth/tags
+
+      - name: Deploy na VPS via Tailscale SSH (sem chave longeva)
+        run: |
+          # Identidade via tailnet/ACL (Tailscale SSH) — sem chave SSH no repo (CICD-SEC-6). deploy.sh faz
+          # `docker compose pull` da :qa + up --wait; sai !=0 se um container não ficar healthy → job vermelho.
+          # Auto-cura de disco (VPS de 10 GB): prune ANTES do pull — NÃO usa --volumes (MySQL intacto).
+          ssh -o StrictHostKeyChecking=accept-new ubuntu@erp-bem-comum-qa \
+            'docker system prune -af && /opt/erp-qa/deploy.sh'
+
+# TODO produção (AWS — ADR-0018): job `deploy-prod` com `permissions.id-token: write` +
+# aws-actions/configure-aws-credentials (assume-role OIDC, SEM chave longeva), quando a infra de prod
+# (Codebit/AWS) estiver provisionada. Lembrete: o CORE_API_URL de prod deve terminar em /api/v2 (ADR-0020).
