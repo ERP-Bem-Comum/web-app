@@ -27,6 +27,7 @@ import { PeriodBalanceBand } from '../components/period-balance-band.component.t
 import { ChangeAccountModal } from '../components/change-account-modal.component.tsx'
 import { MatchDetailsModal } from '../components/match-details-modal.component.tsx'
 import { ImportMismatchDialog } from '../components/import-mismatch-dialog.component.tsx'
+import { PeriodConfirmModal } from '../components/period-confirm-modal.component.tsx'
 import { PeriodMenu } from '../components/period-menu.component.tsx'
 import { ExportMenu } from '../components/export-menu.component.tsx'
 import { PeriodActionsMenu } from '../components/period-actions-menu.component.tsx'
@@ -325,13 +326,9 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
                     ? t('financial.recon.close.pendingBlocked')
                     : null
             }
-            onClosePeriod={() => {
-              vm.closePeriod.close()
-            }}
+            onClosePeriod={vm.periodActions.requestClose}
             canReopen={vm.reopenPeriod.canReopen}
-            onReopenPeriod={() => {
-              vm.reopenPeriod.reopen()
-            }}
+            onReopenPeriod={vm.periodActions.requestReopen}
           />
         </div>
       </footer>
@@ -373,6 +370,13 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
         }
         onConfirm={vm.import.confirmImport}
         onCancel={vm.import.cancelImport}
+      />
+
+      <PeriodConfirmModal
+        confirm={vm.periodActions.confirm}
+        busy={vm.periodActions.busy}
+        onConfirm={vm.periodActions.onConfirm}
+        onCancel={vm.periodActions.onCancel}
       />
     </div>
   )
