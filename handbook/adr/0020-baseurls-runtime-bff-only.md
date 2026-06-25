@@ -8,6 +8,13 @@
 - **Feature:** `specs/035-prod-deploy-hardening/` (D9) · **Pesquisa:** `research.md` R6, R7
 - **Relacionado:** reafirma §III/§IX, ADR-0010 (BFF orquestrador), e o ADR-0005 do **core-api** (thin BFF) sob novo contexto
 
+> **Emenda (2026-06-25) — incidente de prod:** o `CORE_API_URL` de prod foi setado **sem o `/api`** (só o host).
+> Como era uma URL válida, passava no boot; mas `coreApiBase()` derivava `{host}/v2` → **todo `/auth/*` dava 404**
+> → o BFF mapeava pra `"server"` e o login quebrava silenciosamente (o `/ready` passava porque só sonda o
+> `/health` do host). **Correção:** o `EnvSchema` agora valida que `coreApiBase(CORE_API_URL, 'v2')` termina em
+> `/api/v2` (refine Zod) → **fail-fast no boot** (boot-env) e **`/ready` 503**, em vez de degradar em runtime.
+> Contrato reforçado: `CORE_API_URL` **deve incluir `/api`** (`https://host/api` ou `…/api/v2`).
+
 ---
 
 ## Contexto

@@ -24,7 +24,8 @@ const LoginFnInputSchema = z.object({
 
 export type LoginFnResult =
   | Readonly<{ ok: true; userId: string }>
-  // `reference` (request_id) só no erro INESPERADO (catch-all) — correlação p/ debug seguro (D8/ADR-0019).
+  // `reference` (request_id) acompanha o erro 'server' (INESPERADO: catch-all OU core-api não-mapeado) —
+  // correlação p/ debug seguro (D8/ADR-0019). Erros esperados (invalid-credentials…) não levam reference.
   | Readonly<{ ok: false; error: AuthError; reference?: string }>
 
 export const loginFn = createServerFn({ method: 'POST' })
@@ -43,7 +44,15 @@ export const loginFn = createServerFn({ method: 'POST' })
 
     try {
       const r = await authServer().login(data)
-      if (isErr(r)) return { ok: false, error: r.error }
+      if (isErr(r)) {
+        // 'server' = erro INESPERADO do core-api (5xx, 404 não-mapeado etc. — vide core-api-auth, que loga
+        // status+slug com o MESMO request_id) → anexa o reference (= request_id) p/ a UI exibir e correlacionar
+        // (FR-024), não só no catch-all. Erros ESPERADOS (invalid-credentials, user-disabled…) são acionáveis
+        // pelo usuário → SEM reference.
+        return r.error === 'server'
+          ? { ok: false, error: r.error, reference: getRequestId() }
+          : { ok: false, error: r.error }
+      }
 
       const session = r.value
       const maxAgeSeconds = Math.max(0, Math.floor((session.refreshExpiresAt - Date.now()) / 1000))
