@@ -4,9 +4,17 @@ import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Badge, Field, Input } from '#shared/ui/index.ts'
 import { UsersIcon } from '#shared/ui/icons/index.ts'
-import type { UserFormController, UserFormState } from '#modules/users/client/users-create/components/user-form.controller.ts'
+import type { UserFormController } from '#modules/users/client/users-create/components/user-form.controller.ts'
 
-import { stack, section, sectionTitle, statusRow, fieldGrid, readonlyRow, readonlyLabel } from './user-detail-content.css.ts'
+import {
+  stack,
+  section,
+  sectionTitle,
+  statusRow,
+  fieldGrid,
+  readonlyRow,
+  readonlyLabel,
+} from './user-detail-content.css.ts'
 
 const t = createTranslator(ptBR)
 
@@ -23,20 +31,33 @@ export function UserDetailContent(props: UserDetailContentProps): ReactNode {
     c.errors[key] === true ? t('users.form.invalid') : undefined
 
   const txt = (
-    key: keyof UserFormState,
+    // Só os campos de TEXTO (massApprovalPermission é boolean e não usa este helper de Input).
+    key: 'name' | 'cpf' | 'email' | 'telephone',
     label: string,
     type?: 'text' | 'email',
     mask?: 'cpf' | 'phone',
   ): ReactNode => (
     <Field htmlFor={`ud-${key}`} label={label} error={invalid(key)}>
-      <Input id={`ud-${key}`} type={type} mask={mask} value={c.state[key]} disabled={!editing} onChange={(v) => { c.setField(key, v); }} />
+      <Input
+        id={`ud-${key}`}
+        type={type}
+        mask={mask}
+        value={c.state[key]}
+        disabled={!editing}
+        onChange={(v) => {
+          c.setField(key, v)
+        }}
+      />
     </Field>
   )
 
   return (
     <div className={stack}>
       <section className={section}>
-        <h2 className={sectionTitle}><UsersIcon size={18} />{t('users.form.section.data')}</h2>
+        <h2 className={sectionTitle}>
+          <UsersIcon size={18} />
+          {t('users.form.section.data')}
+        </h2>
         <div className={statusRow}>
           <Badge variant={props.active ? 'active' : 'terminated'} uppercase size="sm">
             {t(props.active ? 'users.status.active' : 'users.status.inactive')}

@@ -11,9 +11,7 @@ export const ListUsersInputSchema = z.object({
   search: z.string().trim().max(128).optional(),
   status: z.enum(['active', 'inactive', 'all']).default('all'),
   page: z.int().min(1).default(1),
-  pageSize: z
-    .union([z.literal(5), z.literal(10), z.literal(25)])
-    .default(5),
+  pageSize: z.union([z.literal(5), z.literal(10), z.literal(25)]).default(5),
 })
 
 // Criação (POST /api/v1/users). Validação de FORMATO (cpf/email/telefone) é do core-api (VOs → 422);
@@ -23,6 +21,8 @@ export const CreateUserInputSchema = z.object({
   cpf: z.string().trim().min(1).max(14),
   email: z.string().trim().min(1).max(254),
   telephone: z.string().trim().min(1).max(20),
+  // "Aprovador em Massa" — settável no core-api. Optional: ausente não concede nem gateia (só flui quando true).
+  massApprovalPermission: z.boolean().optional(),
 })
 
 // Edição (PUT /api/v1/users/:id) — mesma forma do create (envia os 4 campos).

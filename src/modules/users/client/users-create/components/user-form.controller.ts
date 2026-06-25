@@ -15,14 +15,18 @@ export type UserFormState = Readonly<{
   cpf: string
   email: string
   telephone: string
+  massApprovalPermission: boolean // checkbox "Aprovador em Massa"
 }>
 
 export type UserFormErrors = Readonly<Record<string, boolean>>
 
-const EMPTY: UserFormState = { name: '', cpf: '', email: '', telephone: '' }
+const EMPTY: UserFormState = { name: '', cpf: '', email: '', telephone: '', massApprovalPermission: false }
 
+// massApprovalPermission não vem do `UserFormValues` (não é validado) — começa false; o usuário marca no form.
 const stateFromValues = (v: UserFormValues | undefined): UserFormState =>
-  v === undefined ? EMPTY : { name: v.name, cpf: v.cpf, email: v.email, telephone: v.telephone }
+  v === undefined
+    ? EMPTY
+    : { name: v.name, cpf: v.cpf, email: v.email, telephone: v.telephone, massApprovalPermission: false }
 
 export type UserFormController = Readonly<{
   state: UserFormState

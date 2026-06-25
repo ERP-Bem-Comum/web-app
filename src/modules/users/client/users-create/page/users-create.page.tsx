@@ -20,7 +20,9 @@ export function UsersCreatePage(): ReactNode {
   // Valores válidos aguardando confirmação no modal (submit valida → abre o modal → confirma → cria).
   const [pending, setPending] = useState<UserFormValues | null>(null)
   const controller = useUserFormController({
-    onSubmit: (values) => { setPending(values); },
+    onSubmit: (values) => {
+      setPending(values)
+    },
   })
 
   return (
@@ -28,7 +30,9 @@ export function UsersCreatePage(): ReactNode {
       <PageHeader
         title={t('users.create.title')}
         subtitle={t('users.create.subtitle')}
-        onBack={() => { router.history.back(); }}
+        onBack={() => {
+          router.history.back()
+        }}
         backLabel={t('common.back')}
       />
       <UserForm
@@ -41,19 +45,25 @@ export function UsersCreatePage(): ReactNode {
       <ConfirmDialog
         open={pending !== null}
         title={t('users.create.confirm.title')}
-        message={
-          pending !== null
-            ? t('users.create.confirm.message').replace('{name}', pending.name)
-            : ''
-        }
+        message={pending !== null ? t('users.create.confirm.message').replace('{name}', pending.name) : ''}
         confirmLabel={t('users.form.save')}
         cancelLabel={t('users.form.cancel')}
         running={createCommand.running}
         onConfirm={() => {
-          if (pending !== null) createCommand.execute(pending)
+          if (pending !== null) {
+            // Envia massApprovalPermission SÓ quando marcado (lido do estado do controller, fora do schema):
+            // `undefined` (ausente) não concede e não dispara o gate `user:assign-role`; enviar `false`
+            // gatearia toda criação. Ver use-case do core-api.
+            createCommand.execute({
+              ...pending,
+              massApprovalPermission: controller.state.massApprovalPermission ? true : undefined,
+            })
+          }
           setPending(null)
         }}
-        onCancel={() => { setPending(null); }}
+        onCancel={() => {
+          setPending(null)
+        }}
       />
     </div>
   )

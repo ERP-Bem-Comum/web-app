@@ -33,6 +33,9 @@ export type CreateUserInput = Readonly<{
   cpf: string
   email: string
   telephone: string
+  // Concede a capacidade "Aprovador em Massa" (role etl:mass-approver). Enviado SÓ quando true — `undefined`
+  // (ausente) não concede E não dispara o gate `user:assign-role`. Setar (true) exige essa permissão no ator.
+  massApprovalPermission?: boolean
 }>
 
 export type CreatedUser = Readonly<{ id: string }>
@@ -86,7 +89,9 @@ export const TelephoneFieldSchema = z
   .transform(onlyDigits)
   .refine((d) => d.length >= 10 && d.length <= 11, { error: 'telephone-invalid' })
 
-/** Formulário de inclusão de Usuário — campos que vão ao POST /users. */
+/** Formulário de inclusão de Usuário — campos VALIDADOS que vão ao POST /users (4 campos; compartilhado
+ * com a edição). O checkbox "Aprovador em Massa" fica fora daqui (vive no estado do controller do create e
+ * é lido direto pela page) para não acoplar a edição. */
 export const UserFormSchema = z.object({
   name: z.string().trim().min(1).max(200),
   cpf: CpfFieldSchema,
