@@ -64,7 +64,9 @@ export function useImport(
         setSummary(res.value)
         setErrorTag(null)
         onImported(res.value.statementId)
-        void qc.invalidateQueries({ queryKey: ['financial', 'reconciliation', 'transactions'] })
+        // Import muda múltiplas derivações: extrato por período (#205, aba Extrato), saldos do grid e
+        // a lista da Conciliação. Invalida o namespace inteiro (prefixo) p/ nenhuma aba ficar com cache velho.
+        void qc.invalidateQueries({ queryKey: ['financial', 'reconciliation'] })
       } else {
         setErrorTag(reconciliationErrorTag(res.error))
       }
