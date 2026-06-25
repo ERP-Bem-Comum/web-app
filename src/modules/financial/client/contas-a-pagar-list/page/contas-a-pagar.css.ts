@@ -646,6 +646,7 @@ export const placeholder = style({
   paddingBlock: vars.space.xl,
   paddingInline: vars.space.lg,
   color: vars.color.text.muted,
+  fontFamily: vars.font.family.body, // Nunito (marca) — a frase do vazio/loading herdava a serifa do body
   fontSize: vars.font.size.sm,
   textAlign: 'center',
 })
