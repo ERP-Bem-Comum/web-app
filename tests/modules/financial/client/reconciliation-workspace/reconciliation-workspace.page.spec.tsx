@@ -4,7 +4,7 @@
  * US7), estado vazio. Envolto em QueryClientProvider (a costura `getAccount` é pura → err('unavailable')).
  */
 import { describe, it, expect, afterEach } from 'vitest'
-import { render, screen, cleanup, fireEvent, within } from '@testing-library/react'
+import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import { ReconciliationWorkspacePage } from '#modules/financial/client/reconciliation-workspace/page/reconciliation-workspace.page.tsx'
@@ -85,9 +85,10 @@ describe('ReconciliationWorkspacePage (shell)', () => {
     ).toBe(true)
   })
 
-  it('sem extrato importado, a lista mostra o estado idle honesto', () => {
+  it('sem movimento no período (#205), a Conciliação cai nos títulos pendentes (fallback honesto)', async () => {
+    // Conciliação e Extrato leem a MESMA fonte (movimentos do período). Sem #205 → lista vazia → a aba
+    // mostra os títulos pendentes (aqui vazios, sem backend) em vez de fabricar dados.
     renderPage()
-    const panel = screen.getByRole('tabpanel')
-    expect(within(panel).getByText(tr('financial.recon.list.idle'))).toBeTruthy()
+    expect(await screen.findByText(tr('financial.recon.pending.empty'))).toBeTruthy()
   })
 })

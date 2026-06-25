@@ -27,6 +27,7 @@ const menus = (over: Partial<HeaderMenusBinding> = {}): HeaderMenusBinding => ({
   selectPeriod: vi.fn(),
   setCustomStart: vi.fn(),
   setCustomEnd: vi.fn(),
+  applyImportedPeriod: vi.fn(),
   ...over,
 })
 

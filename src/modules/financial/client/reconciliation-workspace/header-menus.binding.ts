@@ -4,7 +4,7 @@
  * (adapter, client-only). Período é display-only (filtro por intervalo é refinamento futuro). A AÇÃO de
  * Exportar vive em `export-conciliacao.binding.ts` (#173); aqui só o abrir/fechar do dropdown. Sem I/O.
  */
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 
 export type PeriodPreset = 'today' | 'yesterday' | 'last7' | 'month' | 'lastMonth' | 'quarter' | 'custom'
 
@@ -139,6 +139,9 @@ export type HeaderMenusBinding = Readonly<{
   selectPeriod: (p: PeriodPreset) => void
   setCustomStart: (v: string) => void
   setCustomEnd: (v: string) => void
+  // Pula o seletor para um intervalo ISO específico (preset 'custom'). Usado ao importar/restaurar um
+  // extrato → a aba Extrato já abre no período do arquivo, sem o usuário caçar o mês.
+  applyImportedPeriod: (start: string, end: string) => void
 }>
 
 export function useHeaderMenus(): HeaderMenusBinding {
@@ -149,6 +152,13 @@ export function useHeaderMenus(): HeaderMenusBinding {
   const [period, setPeriod] = useState<PeriodPreset>('last7')
   const [customStart, setCustomStart] = useState('')
   const [customEnd, setCustomEnd] = useState('')
+
+  // Estável (setters de useState são estáveis) → seguro como dep de efeito no workspace (restauração).
+  const applyImportedPeriod = useCallback((start: string, end: string) => {
+    setCustomStart(start)
+    setCustomEnd(end)
+    setPeriod('custom')
+  }, [])
 
   return {
     periodOpen,
@@ -192,5 +202,6 @@ export function useHeaderMenus(): HeaderMenusBinding {
       setCustomEnd(v)
       setPeriod('custom')
     },
+    applyImportedPeriod,
   }
 }

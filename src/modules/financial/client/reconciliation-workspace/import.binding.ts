@@ -15,6 +15,7 @@ import { reconciliationErrorTag } from '#modules/financial/client/data/helpers/r
 import type {
   BankStatementImport,
   StatementFormat,
+  StatementPeriod,
 } from '#modules/financial/client/data/model/reconciliation.model.ts'
 import {
   parseOfxAccount,
@@ -41,7 +42,7 @@ export type ImportBinding = Readonly<{
 export function useImport(
   accountRef: string,
   account: AccountIdentity | null,
-  onImported: (statementId: string) => void,
+  onImported: (statementId: string, period: StatementPeriod) => void,
 ): ImportBinding {
   const qc = useQueryClient()
   const [summary, setSummary] = useState<BankStatementImport | null>(null)
@@ -63,7 +64,7 @@ export function useImport(
       if (res.ok) {
         setSummary(res.value)
         setErrorTag(null)
-        onImported(res.value.statementId)
+        onImported(res.value.statementId, res.value.period)
         // Import muda múltiplas derivações: extrato por período (#205, aba Extrato), saldos do grid e
         // a lista da Conciliação. Invalida o namespace inteiro (prefixo) p/ nenhuma aba ficar com cache velho.
         void qc.invalidateQueries({ queryKey: ['financial', 'reconciliation'] })

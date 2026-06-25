@@ -32,7 +32,8 @@ export function useUndo(onUndone: (transactionId: string) => void): UndoBinding 
       if (res.ok) {
         setErrorTag(null)
         setReason('')
-        void qc.invalidateQueries({ queryKey: ['financial', 'reconciliation', 'transactions'] })
+        // Desfazer volta a transação a Pendente → invalida o namespace (lista do período + contadores).
+        void qc.invalidateQueries({ queryKey: ['financial', 'reconciliation'] })
         onUndone(v.transactionId)
       } else {
         setErrorTag(reconciliationErrorTag(res.error))

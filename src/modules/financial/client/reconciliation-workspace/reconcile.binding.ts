@@ -28,8 +28,9 @@ export function useReconcile(
   const [errorTag, setErrorTag] = useState<string | null>(null)
 
   const invalidate = () => {
-    void qc.invalidateQueries({ queryKey: ['financial', 'reconciliation', 'transactions'] })
-    void qc.invalidateQueries({ queryKey: ['financial', 'reconciliation', 'suggestions'] })
+    // Conciliar muda a lista (movimentos do período #205), as sugestões e os contadores das abas →
+    // invalida o namespace inteiro p/ Extrato e Conciliação refletirem o novo status juntos.
+    void qc.invalidateQueries({ queryKey: ['financial', 'reconciliation'] })
   }
 
   const reconcileMut = useMutation({
