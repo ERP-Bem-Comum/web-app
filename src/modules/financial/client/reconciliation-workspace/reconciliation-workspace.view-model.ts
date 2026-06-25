@@ -6,6 +6,7 @@
  */
 import type {
   AccountStatementPeriod,
+  ManualEntryType,
   Movement,
   PaidPayable,
   ReconciliationAccount,
@@ -499,6 +500,9 @@ export type MatchTitlesView = Readonly<{
 }>
 export type MatchDetailsView = Readonly<{
   isManualEntry: boolean
+  // Tag i18n da FORMA do lançamento manual (Pagamento/Transferência/Aplicação/Resgate/Tarifa…) quando
+  // conhecida (sessão; ou backend via #268); senão a genérica "Nova transação". A view traduz.
+  manualKindTag: string
   ext: Readonly<{ name: string; date: string; kind: string; id: string; valueBRL: string }>
   // doc/audit dependem do backend expor os detalhes da conciliação (sem GET de detalhes hoje, #175) →
   // sem dados, preenche com "—" (estado honesto, igual ao default do mock). Em preview vêm preenchidos.
@@ -550,8 +554,12 @@ export const matchDetailsView = (
   // A FORMA da conciliação vem do `type` da reconciliation (lookup #175), NÃO do status da transação —
   // uma nova transação grava a transação como 'Reconciled' (igual ao match); só o tipo a distingue.
   isManualEntry = false,
+  // Tipo específico do lançamento manual (Payment/Transfer/Investment/…), conhecido na sessão. null → genérico.
+  manualType: ManualEntryType | null = null,
 ): MatchDetailsView => ({
   isManualEntry,
+  manualKindTag:
+    manualType !== null ? `financial.recon.manualType.${manualType}` : 'financial.recon.match.manualKind',
   ext: {
     name: tx.payeeName,
     date: formatDayHeader(tx.date),

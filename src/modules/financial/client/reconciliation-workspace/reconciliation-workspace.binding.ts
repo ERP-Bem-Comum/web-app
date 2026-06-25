@@ -54,6 +54,7 @@ import { reconciliationErrorTag } from '#modules/financial/client/data/helpers/r
 import type {
   AccountStatementPeriod as AccountStatementPeriodModel,
   CriterionResult,
+  ManualEntryType,
   MatchSuggestion,
   PaidPayable,
   ReconciliationAccount as ReconciliationAccountModel,
@@ -188,19 +189,33 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
   // Mapa de sessão transação→conciliação (fast-path: conciliações feitas agora têm o id em memória). O
   // lookup #175 cobre o pós-reload; o `reconciliationId` prefere a sessão e cai no lookup.
   const [recMap, setRecMap] = useState<ReadonlyMap<string, string>>(() => new Map())
-  const recordReconciliation = useCallback((transactionId: string, reconciliationId: string) => {
-    setRecMap((prev) => new Map(prev).set(transactionId, reconciliationId))
-  }, [])
+  // Forma do lançamento manual feito na sessão (Payment/Transfer/Investment/…) → o detalhe mostra o tipo
+  // específico antes do backend expô-lo no lookup (#268). Só nova transação grava aqui; match não.
+  const [recTypeMap, setRecTypeMap] = useState<ReadonlyMap<string, ManualEntryType>>(() => new Map())
+  const recordReconciliation = useCallback(
+    (transactionId: string, reconciliationId: string, manualType?: ManualEntryType) => {
+      setRecMap((prev) => new Map(prev).set(transactionId, reconciliationId))
+      if (manualType !== undefined) setRecTypeMap((prev) => new Map(prev).set(transactionId, manualType))
+    },
+    [],
+  )
   const forgetReconciliation = useCallback((transactionId: string) => {
     setRecMap((prev) => {
       const next = new Map(prev)
       next.delete(transactionId)
       return next
     })
+    setRecTypeMap((prev) => {
+      const next = new Map(prev)
+      next.delete(transactionId)
+      return next
+    })
   }, [])
   const sessionIdFor = (transactionId: string): string | null => recMap.get(transactionId) ?? null
+  const sessionManualTypeFor = (transactionId: string): ManualEntryType | null =>
+    recTypeMap.get(transactionId) ?? null
 
-  const matchDetailsBinding = useMatchDetails(sessionIdFor)
+  const matchDetailsBinding = useMatchDetails(sessionIdFor, sessionManualTypeFor)
 
   const payablesQuery = useQuery(paidPayablesQueryOptions())
   const suggestionsQuery = useQuery(suggestionsQueryOptions(ui.selectedTransactionId))

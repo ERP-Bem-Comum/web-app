@@ -95,7 +95,7 @@ const programOptionsQuery = {
 export function useManualEntry(
   accountRef: string,
   selectedTx: StatementTransaction | null,
-  onReconciled: (transactionId: string, reconciliationId: string) => void,
+  onReconciled: (transactionId: string, reconciliationId: string, manualType?: ManualEntryType) => void,
 ): ManualEntryBinding {
   const qc = useQueryClient()
   const [type, setType] = useState<ManualEntryType | null>(null)
@@ -167,7 +167,7 @@ export function useManualEntry(
         setCostCenterRef('')
         // Baixa manual concilia a transação → invalida o namespace (lista do período + contadores).
         void qc.invalidateQueries({ queryKey: ['financial', 'reconciliation'] })
-        onReconciled(v.transactionId, res.value.reconciliationId)
+        onReconciled(v.transactionId, res.value.reconciliationId, v.type)
       } else {
         setErrorTag(reconciliationErrorTag(res.error))
       }
