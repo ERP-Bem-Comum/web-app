@@ -199,8 +199,8 @@ provê o `local/` (este repo só precisa expor o **target `dev`** e o contrato d
 **Config / env / secrets**
 - **FR-008**: Toda configuração DEVE ser **server-only**, validada por **Zod fail-fast no boot**, **nunca** com
   prefixo `VITE_` (não pode ir ao bundle do browser).
-- **FR-009**: O `.env.example` DEVE documentar o **contrato de env**: **base URL(s) do core-api**
-  (`CORE_API_URL` + adicionais se houver — ex.: pública/interna ou v1/v2) como **env server-side runtime**
+- **FR-009**: O `.env.example` DEVE documentar o **contrato de env**: **base URL do core-api** (`CORE_API_URL`;
+  v1/v2 saem da mesma base via `coreApiBase()`, ADR-0033 — base adicional só p/ host distinto) como **env server-side runtime**
   (trocar DNS = mudar env + restart, **sem recompilar**); `LOG_LEVEL`/`NODE_ENV` opcionais; e os **slots
   futuros** do catálogo do ERP-INFRA que o BFF lerá (`JWT_SIGNING_KEY`, `SESSION_SECRET`,
   `OIDC_CLIENT_ID/SECRET`) — marcados como roadmap. **(D9.)**

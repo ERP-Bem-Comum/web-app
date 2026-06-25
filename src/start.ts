@@ -7,6 +7,8 @@
  *    Defesa em camadas: o Caddy também seta headers estáticos na borda; a CSP dinâmica fica aqui.
  * 2. `csrfMiddleware` — ⚠️ criar `src/start.ts` DESATIVA o CSRF automático do Start. Precisamos
  *    re-registrá-lo explicitamente (senão server functions ficam sem a proteção nativa + warning em dev).
+ * 3. boot fail-fast da config — fica num **Nitro startup plugin** (`src/server/plugins/boot-env.ts`), NÃO
+ *    aqui: o factory do `createStart` roda em request-time e throws ali viram 500. Ver FR-002/ADR-0020.
  *
  * HTTPS detection (research R1 — trust-proxy): lemos `x-forwarded-proto` que o Caddy injeta. Só é
  * confiável atrás do proxy (em prod/docker o Caddy é o único exposto). Em `pnpm dev` puro o header não

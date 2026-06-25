@@ -7,8 +7,8 @@
  * Contrato de base URLs (ADR-0020): as URLs do core-api são lidas em RUNTIME daqui — trocar o DNS é
  * mudar a env + reiniciar, SEM recompilar (`VITE_*` seria inlined no build → rebuild, e vazaria ao
  * client). O browser fala só com o BFF; mesmo com o core-api público via HTTPS, o client não o chama
- * direto. Base URLs ADICIONAIS (ex.: `CORE_API_V1_URL` — espelho legado, ADR-0033 do core-api) entram
- * aqui no mesmo padrão, quando houver uso.
+ * direto. v1 e v2 saem da MESMA base via `coreApiBase()` (ADR-0033) — não há URL por versão; uma base
+ * ADICIONAL só entra aqui se for um HOST/serviço distinto.
  *
  * `LOG_LEVEL`/`NODE_ENV` NÃO entram no EnvSchema de propósito: o logger os lê direto de `process.env`
  * (camada mais baixa, precisa funcionar mesmo se a config quebrar — ADR-0014).

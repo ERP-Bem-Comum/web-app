@@ -32,8 +32,10 @@ Mesmo com o core-api **público via HTTPS**, **o browser do nosso front continua
 (server function). Toda chamada client→core-api é **server-side**; preserva §III/§IX, ADR-0005/0010 e a
 postura **same-origin sem CORS**.
 
-As **base URLs** do core-api (`CORE_API_URL` + adicionais, ex.: pública/interna ou v1/v2) são **env
-server-side runtime**, validadas por Zod no boot (`src/external/config/env.config.ts`). **Nunca `VITE_`** —
+As **base URLs** do core-api são **env server-side runtime**, validadas por Zod (`src/external/config/
+env.config.ts`). Hoje uma única `CORE_API_URL` cobre **v1 e v2** (o helper `coreApiBase()` deriva a versão —
+ADR-0033 do core-api); uma base **adicional** só entra para um **host/serviço distinto** (não para versão).
+**Nunca `VITE_`** —
 trocar DNS = mudar env + restart, **sem recompilar**. Garantia por lint/teste: **nenhuma URL/segredo** em
 variável `VITE_`.
 
