@@ -2807,6 +2807,7 @@ export const periodConfOk = style({ color: c.green.deep, fontWeight: recon.weigh
 // Coluna da aba Extrato: faixa de saldo do período (#205) + grid do extrato. Fundo BRANCO (a faixa e o
 // grid são brancos; sem o canvas bege "vazando" em volta/abaixo da faixa).
 export const extratoView = style({
+  flex: 1, // preenche toda a altura do workspace → o branco vai até o fim (sem o canvas bege vazando embaixo)
   display: 'flex',
   flexDirection: 'column',
   minBlockSize: 0,
