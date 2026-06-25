@@ -7,6 +7,7 @@ import { ok, err, isErr, type Result } from '#shared/primitives/result.ts'
 import type { HttpError } from '#shared/http/http-error.types.ts'
 import { parseErrorEnvelope } from '#shared/http/error-envelope.ts'
 import { resultFetch } from '#external/core-api/result-fetch.ts'
+import { logger } from '#external/logging/logger.ts'
 import type { AuthError } from '#modules/auth/server/domain/errors/auth.errors.ts'
 import type {
   Approver,
@@ -27,11 +28,21 @@ const SLUG_TO_AUTH_ERROR: Partial<Record<string, AuthError>> = {
   unauthorized: 'unauthorized',
 }
 
+// Log de inconsistência de contrato com o core-api (server-only): o detalhe (issues do Zod) fica no
+// LOG; o chamador segue recebendo só o AuthError genérico. Ver ADR-0014.
+const logSchemaMismatch = (schema: string, cause: unknown): void => {
+  logger.error({ err: cause, schema }, 'core-api-auth:response-schema-mismatch')
+}
+
 const mapHttpToAuthError = (e: HttpError): AuthError => {
   switch (e.kind) {
     case 'http': {
       const slug = parseErrorEnvelope(e.body)?.error.code
       const mapped = slug === undefined ? undefined : SLUG_TO_AUTH_ERROR[slug]
+      if (mapped === undefined) {
+        // core-api respondeu um erro que não mapeamos (contrato divergente) → vira 'server' genérico.
+        logger.warn({ status: e.status, slug }, 'core-api-auth:unmapped-error-slug')
+      }
       return mapped ?? 'server'
     }
     case 'network':
@@ -50,7 +61,11 @@ const mapHttpToAuthError = (e: HttpError): AuthError => {
 const toTokens = (r: Result<unknown, HttpError>): Result<AuthTokens, AuthError> => {
   if (isErr(r)) return err(mapHttpToAuthError(r.error))
   const parsed = AuthTokensSchema.safeParse(r.value)
-  return parsed.success ? ok(parsed.data) : err('server')
+  if (!parsed.success) {
+    logSchemaMismatch('AuthTokens', parsed.error)
+    return err('server')
+  }
+  return ok(parsed.data)
 }
 
 export type CoreApiAuthClient = Readonly<{
@@ -83,7 +98,11 @@ export const createCoreApiAuthClient = (baseUrl: string, baseUrlV1: string): Cor
     const r = await resultFetch<unknown>(`${baseUrl}/auth/me`, { method: 'GET', token: accessToken })
     if (isErr(r)) return err(mapHttpToAuthError(r.error))
     const parsed = MeSchema.safeParse(r.value)
-    return parsed.success ? ok(parsed.data) : err('server')
+    if (!parsed.success) {
+      logSchemaMismatch('Me', parsed.error)
+      return err('server')
+    }
+    return ok(parsed.data)
   },
 
   // Público (sem token): política de senha (#32). Valida o response na borda (§VI).
@@ -91,7 +110,11 @@ export const createCoreApiAuthClient = (baseUrl: string, baseUrlV1: string): Cor
     const r = await resultFetch<unknown>(`${baseUrl}/auth/password-policy`, { method: 'GET' })
     if (isErr(r)) return err(mapHttpToAuthError(r.error))
     const parsed = PasswordPolicySchema.safeParse(r.value)
-    return parsed.success ? ok(parsed.data) : err('server')
+    if (!parsed.success) {
+      logSchemaMismatch('PasswordPolicy', parsed.error)
+      return err('server')
+    }
+    return ok(parsed.data)
   },
 
   // Aprovadores elegíveis (#148): GET /api/v1/approvers (RBAC user:list). name null → fallback p/ o id.
@@ -99,7 +122,10 @@ export const createCoreApiAuthClient = (baseUrl: string, baseUrlV1: string): Cor
     const r = await resultFetch<unknown>(`${baseUrlV1}/approvers`, { method: 'GET', token: accessToken })
     if (isErr(r)) return err(mapHttpToAuthError(r.error))
     const parsed = ApproversSchema.safeParse(r.value)
-    if (!parsed.success) return err('server')
+    if (!parsed.success) {
+      logSchemaMismatch('Approvers', parsed.error)
+      return err('server')
+    }
     return ok(parsed.data.items.map((u) => ({ id: u.id, name: u.name ?? u.id })))
   },
 })
