@@ -15,6 +15,24 @@
 
 ---
 
+## Status — 2026-06-25
+
+Implementado (commits na branch `035-prod-deploy-hardening`):
+
+- ✅ **Phase 2** — ADRs 0015–0020 + amenda 0006 + contrato de env · `c4583c0`
+- ✅ **US1** — imagem distroless + boot fail-fast (Nitro plugin) · `6d74493`
+- ✅ **US2** — headers cross-origin (COOP/CORP/Permissions-Policy/no-store) + sem-CORS · `995da98`
+- ✅ **US3** — observabilidade: correlation-id (`X-Request-Id`) + `/ready` + redaction + reference-id na UI · `66e8eba`, `5d1cb00`
+- ✅ **US4** — CI build-publish (provenance/SBOM, SHA-pin, Trivy) + deploy-qa (Tailscale) · `f0642f6`
+- ✅ **US5** — paridade dev (target `dev` validado por `docker build --check`) + README
+- ✅ **Phase 8** — gate verde + issue de hardening no ERP-INFRA (**#3**) + índice de ADRs
+- ⏳ **Phase 9** (Fase 1 obs — OTel + SigNoz/GlitchTip): **pós-MVP**, não iniciada
+- 🔧 Infra a provisionar (US4): secrets `TS_OAUTH_*`, ACL `tag:ci`→ssh `ubuntu@erp-bem-comum-qa`, Tailscale SSH na VPS — ver **ERP-INFRA#3**
+
+Gate: `pnpm verify` (typecheck + lint + **792** node:test) + **255** Vitest verdes. Smoke da imagem (container): `/health` 200; sem `CORE_API_URL` → exited 1.
+
+---
+
 ## Phase 1: Setup
 
 **Purpose**: ponto de partida verde + reservar governança.
