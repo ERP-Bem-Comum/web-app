@@ -6,6 +6,7 @@
  */
 import type {
   AccountStatementPeriod,
+  AccountType,
   ManualEntryType,
   Movement,
   PaidPayable,
@@ -448,11 +449,21 @@ export const groupExtratoDays = (txs: readonly StatementTransaction[]): readonly
 
 // ── Modal "Alterar conta" — troca de conta sem voltar ao grid (puro) ────────────
 /** Item de conta no modal de troca (derivado da conta-cedente; depende de #168 p/ a listagem real). */
+// Tipo da conta → tag i18n (a view traduz; view-model fica i18n-agnóstica p/ o tipo).
+const SWITCH_TYPE_TAG: Readonly<Record<AccountType, string>> = {
+  Corrente: 'financial.recon.add.type.corrente',
+  Poupanca: 'financial.recon.add.type.poupanca',
+  Investimento: 'financial.recon.add.type.investimento',
+  Cartao: 'financial.recon.add.type.cartao',
+  Outro: 'financial.recon.add.type.outro',
+}
+
 export type ChangeAccountItem = Readonly<{
   id: string
   initials: string
   name: string
   meta: string
+  typeTag: string // tag i18n do tipo (Corrente/Investimento/Cartão…) p/ exibir abaixo do apelido
   balanceBRL: string
   updated: string
   openable: boolean // conta encerrada não abre o workspace
@@ -468,6 +479,7 @@ const toChangeAccountItem = (a: ReconciliationAccount, currentId: string): Chang
   initials: a.bankName.slice(0, 2).toUpperCase(),
   name: a.alias,
   meta: `${a.bankCode} · Ag ${a.branch} · CC ${a.accountNumber}-${a.accountDv}`,
+  typeTag: SWITCH_TYPE_TAG[a.type],
   balanceBRL: centsToBRL(a.currentBalanceCents),
   updated: a.lastUpdatedAt,
   openable: a.status !== 'Closed',
