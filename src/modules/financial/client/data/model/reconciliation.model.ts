@@ -142,7 +142,10 @@ export type PaidPayable = Readonly<{
   id: string
   documentId: string
   valueCents: string
-  dueDate: string
+  dueDate: string // date-only YYYY-MM-DD
+  // Data de PAGAMENTO (baixa) — a data relevante p/ a conciliação (≈ saída bancária). null enquanto o
+  // backend não a expõe nesta rota (core-api: /financial/payables não monta paidAt — core-api#265).
+  paidAt: string | null
   paymentMethod: string
   supplierName: string | null
   documentNumber: string | null
