@@ -1408,6 +1408,8 @@ export const ptBR: Catalog = {
   'financial.recon.add.field.document': 'CNPJ da organização',
   'financial.recon.add.placeholder.document': '00.000.000/0000-00',
   'financial.recon.add.invalidBalance': 'Saldo de abertura inválido.',
+  'financial.recon.add.invalidDate': 'Data do saldo inválida (use DD/MM/AAAA).',
+  'financial.recon.add.balancePair': 'Informe o saldo inicial E a data — ou deixe ambos em branco.',
   'financial.recon.add.field.alias': 'Apelido da conta',
   'financial.recon.add.placeholder.alias': 'ex: Conta Movimento, Reserva Operacional…',
   'financial.recon.add.aliasHint': 'Nome amigável que aparece no grid e nos relatórios',

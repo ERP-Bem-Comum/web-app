@@ -9,11 +9,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { reconciliationRepository } from '#modules/financial/client/data/repository/reconciliation.repository.instance.ts'
 import { reconciliationErrorTag } from '#modules/financial/client/data/helpers/reconciliation-error-tag.ts'
 import { maskMoneyBRL, reaisToCents } from '#modules/financial/client/data/money.ts'
+import { maskCnpj, unmaskCnpj } from '#shared/document/cnpj.ts'
 import type {
   AccountType,
   CreateCedenteAccountInput,
 } from '#modules/financial/client/data/model/reconciliation.model.ts'
-import { OTHER_BANK_CODE } from './reconciliation-accounts.view-model.ts'
+import { OTHER_BANK_CODE, maskDateInput, dateInputToIso } from './reconciliation-accounts.view-model.ts'
 
 export type AddAccountBinding = Readonly<{
   bankCode: string
@@ -136,7 +137,7 @@ export function useAddAccount(
       setAccount(v)
     },
     setDocument: (v) => {
-      setDocument(v)
+      setDocument(maskCnpj(v)) // máscara CNPJ ao digitar (cru vai ao backend no submit via unmaskCnpj)
     },
     setNickname: (v) => {
       setNickname(v)
@@ -145,11 +146,18 @@ export function useAddAccount(
       setOpeningBalance(maskMoneyBRL(v))
     },
     setOpeningBalanceDate: (v) => {
-      setOpeningBalanceDate(v)
+      setOpeningBalanceDate(maskDateInput(v)) // máscara DD/MM/AAAA (convertida p/ ISO no submit)
     },
     reset,
     submit: () => {
       if (!canSubmit) return
+      // Saldo de abertura: o backend exige saldo E data juntos (ou ambos vazios) — valida cedo c/ msg clara.
+      const hasBalance = openingBalance.trim() !== ''
+      const hasDate = openingBalanceDate.trim() !== ''
+      if (hasBalance !== hasDate) {
+        setErrorTag('financial.recon.add.balancePair')
+        return
+      }
       const balance = openingBalance.trim()
       let openingBalanceCents: string | undefined
       if (balance !== '') {
@@ -159,6 +167,17 @@ export function useAddAccount(
           return
         }
         openingBalanceCents = r.value
+      }
+      // Data do saldo: "DD/MM/AAAA" → ISO "AAAA-MM-DD" (o backend exige z.iso.date). Vazia → undefined.
+      let isoDate: string | undefined
+      const dateStr = openingBalanceDate.trim()
+      if (dateStr !== '') {
+        const iso = dateInputToIso(dateStr)
+        if (iso === null) {
+          setErrorTag('financial.recon.add.invalidDate')
+          return
+        }
+        isoDate = iso
       }
       // "0012345-7" → número "0012345" + DV "7"; sem '-' → DV vazio.
       const acc = account.trim()
@@ -175,10 +194,10 @@ export function useAddAccount(
         agency: agency.trim(),
         accountNumber,
         accountDigit,
-        document: document.trim(),
+        document: unmaskCnpj(document.trim()), // CNPJ cru (só alfanum.) — a UI guarda mascarado
         nickname: nickname.trim() === '' ? undefined : nickname.trim(),
         openingBalanceCents,
-        openingBalanceDate: openingBalanceDate.trim() === '' ? undefined : openingBalanceDate.trim(),
+        openingBalanceDate: isoDate,
       })
     },
   }
