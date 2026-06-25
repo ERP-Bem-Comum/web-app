@@ -43,6 +43,8 @@ export type ManualEntryBinding = Readonly<{
   programOptions: readonly ManualEntryOption[]
   categoryOptions: readonly ManualEntryOption[]
   costCenterOptions: readonly ManualEntryOption[]
+  // #143: contas-cedente ATIVAS (exceto a própria origem) p/ Transferência/Aplicação/Resgate entre contas.
+  accountOptions: readonly ManualEntryOption[]
   setType: (type: ManualEntryType) => void
   setDescription: (v: string) => void
   setDestinationAccount: (v: string) => void
@@ -91,6 +93,7 @@ const programOptionsQuery = {
 }
 
 export function useManualEntry(
+  accountRef: string,
   selectedTx: StatementTransaction | null,
   onReconciled: (transactionId: string, reconciliationId: string) => void,
 ): ManualEntryBinding {
@@ -114,11 +117,29 @@ export function useManualEntry(
     references?.categories.map((c) => ({ value: c.id, label: c.name })) ?? []
   const costCenterOptions: readonly ManualEntryOption[] =
     references?.costCenters.map((c) => ({ value: c.id, label: `${c.code} — ${c.name}` })) ?? []
+  // #143: contas-cedente ATIVAS p/ destino da transferência/aplicação/resgate — exclui a própria origem
+  // (o backend rejeita destino == origem). Reusa `listAccounts` (#138), as MESMAS contas do grid.
+  const accountOptions =
+    useQuery({
+      queryKey: ['financial', 'recon', 'manual-account-options'] as const,
+      queryFn: async () => {
+        const r = await reconciliationRepository.listAccounts()
+        return r.ok ? r.value : []
+      },
+      staleTime: 60_000,
+      select: (accounts): readonly ManualEntryOption[] =>
+        accounts
+          .filter((a) => a.status === 'Active' && a.id !== accountRef)
+          .map((a) => ({
+            value: a.id,
+            label: `${a.alias} · ${a.bankName} · CC ${a.accountNumber}-${a.accountDv}`,
+          })),
+    }).data ?? []
 
   const needsDestination = type !== null && requiresDestination(type)
   const showPayeeBlock = type === 'Payment' || type === 'Receipt'
-  // Destino/produto é chrome (depende de #168/lista de produtos); o gating consciente fica no checkbox.
-  const destinationOk = !needsDestination || consciousConfirm
+  // Transferência/Aplicação/Resgate exigem a conta de destino selecionada E a confirmação consciente.
+  const destinationOk = !needsDestination || (consciousConfirm && destinationAccount.trim() !== '')
   const canSubmit = type !== null && destinationOk
 
   const mut = useMutation({
@@ -170,6 +191,7 @@ export function useManualEntry(
     programOptions,
     categoryOptions,
     costCenterOptions,
+    accountOptions,
     setType: (tp) => {
       setType(tp)
       setConsciousConfirm(false)
@@ -212,7 +234,8 @@ export function useManualEntry(
         transactionId: selectedTx.id,
         type,
         description: description.trim() === '' ? undefined : description.trim(),
-        destinationAccount: needsDestination ? destinationAccount.trim() : undefined,
+        destinationAccount:
+          needsDestination && destinationAccount.trim() !== '' ? destinationAccount.trim() : undefined,
         supplierRef: supplierRef === '' ? undefined : supplierRef,
         programRef: programRef === '' ? undefined : programRef,
         categoryRef: categoryRef === '' ? undefined : categoryRef,

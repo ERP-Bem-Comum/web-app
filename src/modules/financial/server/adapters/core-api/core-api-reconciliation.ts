@@ -208,10 +208,16 @@ export const createCoreApiReconciliationClient = (baseUrl: string): Reconciliati
     return undoToModel(r.value)
   },
   createManualEntry: async (i, token) => {
-    const { transactionId, ...template } = i
+    const { transactionId, destinationAccount, ...template } = i
     const r = await resultFetch<unknown>(`${baseUrl}/statement-transactions/${transactionId}/manual-entry`, {
       method: 'POST',
-      body: { ...template },
+      // #143: a borda HTTP do core-api espera `destinationAccountRef` (renomeado de destinationAccount).
+      body: {
+        ...template,
+        ...(destinationAccount !== undefined && destinationAccount !== ''
+          ? { destinationAccountRef: destinationAccount }
+          : {}),
+      },
       token,
     })
     if (isErr(r)) return err(mapHttpError(r.error))
