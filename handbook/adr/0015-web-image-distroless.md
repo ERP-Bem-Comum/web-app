@@ -1,11 +1,21 @@
 [← Voltar para ADRs](./README.md)
 
-# ADR-0015: Imagem de produção do web-app em base distroless/hardened (non-root, sem shell)
+# ADR-0015: Imagem de produção do web-app em base hardened (Chainguard/Wolfi) — non-root, mínima
 
 - **Status:** Accepted
 - **Date:** 2026-06-24
 - **Deciders:** Gabriel Aderaldo (Tech Lead) + assistente
 - **Feature:** `specs/035-prod-deploy-hardening/` (D2) · **Pesquisa:** `research.md` R1
+
+> **Emenda (2026-06-25):** a base de runtime passou a ser **`cgr.dev/chainguard/node`** (Wolfi), não o
+> distroless Debian. Motivo concreto: a camada Debian do `gcr.io/distroless/nodejs24-debian12` ficou com
+> **6 CVEs HIGH/CRITICAL em libssl3** (CVE-2026-31789 et al.) **sem rebuild upstream** — o Trivy (SC-001)
+> reprovava o `build-publish`. Chainguard/Wolfi patcha a base muito mais rápido: **Trivy local = 0
+> vulnerabilidades**. Seleciona a variante "Chainguard" que esta ADR já admitia (ver Alternativas).
+> Trade-offs novos: (a) a base **tem** `/bin/sh` (variante non-dev) — leve regressão vs distroless, aceita
+> pelo ganho de CVE; (b) o tier **free** só publica `:latest` (hoje **Node 26**; Node 24 fixo exige
+> Chainguard pago) — o `.output` do Nitro é JS portável, então build (Node 24) ≠ runtime (Node 26) é
+> aceitável, validado por smoke (boot + `/health` 200).
 
 ---
 
@@ -23,10 +33,10 @@ surface." Como o runtime do web-app **não tem dependências nativas** (diferent
 
 ## Decisão
 
-A imagem de **runtime** usa base **distroless** (`gcr.io/distroless/nodejs24`) **ou** uma Docker Hardened
-Image — **non-root por padrão, sem shell, superfície mínima**. O build é **multi-stage** (`deps` → `build` →
-`dev` → `runtime`), com o estágio de build em `node` slim/alpine (tem toolchain), e o `runtime` copiando só o
-`.output`.
+A imagem de **runtime** usa base **hardened mínima non-root** — **`cgr.dev/chainguard/node`** (Wolfi) na
+prática (ver emenda; distroless/Docker Hardened Image são equivalentes aceitáveis). O build é **multi-stage**
+(`deps` → `build` → `dev` → `runtime`), com o estágio de build em `node` slim (tem toolchain), e o `runtime`
+copiando só o `.output`.
 
 Detalhes:
 - **Digest pin** da base (ADR-0003); atualização do digest é mudança revisada.
