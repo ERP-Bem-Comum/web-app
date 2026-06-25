@@ -157,17 +157,30 @@ describe('pageInfo', () => {
 })
 
 describe('buildDocumentsCsv', () => {
-  it('cabeçalho + linhas com `;`, valores entre aspas (RFC 4180)', () => {
+  it('cabeçalho (com Pagamento) + linhas com `;`, valores entre aspas (RFC 4180)', () => {
     const csv = buildDocumentsCsv(buildRows([summary()], supplierName))
     const [header, row] = csv.split('\n')
-    assert.equal(header, 'Tipo;Documento;Fornecedor;Vencimento;Líquido;Status')
-    assert.ok(row?.startsWith('"NFS-e";"0847";"Bambu Educação";"10/07/2026";'))
+    assert.equal(header, 'Tipo;Documento;Fornecedor;Vencimento;Pagamento;Líquido;Status')
+    // Vencimento → Pagamento ("—" sem paidAt em modo documento) → Líquido → Status
+    assert.ok(row?.startsWith('"NFS-e";"0847";"Bambu Educação";"10/07/2026";"—";'))
     assert.ok(row?.endsWith(';"Aberto"'))
   })
 
   it('escapa aspas internas duplicando-as', () => {
     const csv = buildDocumentsCsv(buildRows([summary({ documentNumber: 'A"B' })], supplierName))
     assert.ok(csv.includes('"A""B"'))
+  })
+
+  it('última linha = TOTAL do Líquido (soma client-side dos centavos)', () => {
+    // 150000 + 249999 = 399999 centavos → R$ 3.999,99
+    const rows = buildRows(
+      [summary({ id: 'a', netValueCents: '150000' }), summary({ id: 'b', netValueCents: '249999' })],
+      supplierName,
+    )
+    const lines = buildDocumentsCsv(rows).split('\n')
+    const total = lines[lines.length - 1] ?? ''
+    assert.ok(total.includes('Total (2 títulos)'))
+    assert.ok(total.replace(/\s/g, ' ').includes('R$ 3.999,99'))
   })
 })
 
