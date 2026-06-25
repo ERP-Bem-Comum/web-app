@@ -15,6 +15,8 @@ export type ClosePeriodBinding = Readonly<{
   canClose: boolean
   closing: boolean
   closed: boolean
+  /** O período selecionado JÁ está fechado no backend (não é só desta sessão). */
+  alreadyClosed: boolean
   errorTag: string | null
   close: () => void
 }>
@@ -23,10 +25,13 @@ export function useClosePeriod(
   accountRef: string,
   period: StatementPeriod | null,
   hasPending: boolean,
+  // O período do intervalo selecionado já existe fechado no backend (evita re-fechar → erro de chave única).
+  alreadyClosed: boolean,
 ): ClosePeriodBinding {
   const qc = useQueryClient()
-  const [closed, setClosed] = useState(false)
+  const [closedThisSession, setClosedThisSession] = useState(false)
   const [errorTag, setErrorTag] = useState<string | null>(null)
+  const closed = closedThisSession || alreadyClosed
 
   const mut = useMutation({
     mutationFn: (v: { debitAccountRef: string; periodStart: string; periodEnd: string }) =>
@@ -34,7 +39,7 @@ export function useClosePeriod(
     onSuccess: (res) => {
       if (res.ok) {
         setErrorTag(null)
-        setClosed(true)
+        setClosedThisSession(true)
         void qc.invalidateQueries({ queryKey: ['financial', 'reconciliation', 'transactions'] })
         // Fechar cria/sela o período → o Exportar (#173) precisa relê-los p/ habilitar sem reload.
         void qc.invalidateQueries({ queryKey: ['financial', 'reconciliation', 'periods'] })
@@ -50,6 +55,7 @@ export function useClosePeriod(
     canClose,
     closing: mut.isPending,
     closed,
+    alreadyClosed,
     errorTag,
     close: () => {
       if (period === null || hasPending || closed) return

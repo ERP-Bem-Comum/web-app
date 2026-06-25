@@ -1611,6 +1611,7 @@ export const ptBR: Catalog = {
   'financial.recon.close.success': 'Período fechado.',
   'financial.recon.close.pendingBlocked': 'Há movimentações pendentes — trate todas antes de fechar.',
   'financial.recon.close.noStatement': 'Importe um extrato para poder fechar o período.',
+  'financial.recon.close.alreadyClosed': 'Período já fechado. Use "Abrir período" para reabri-lo.',
 
   // ── Contas a Pagar — grid (US2, lista real Fatia 2) ──
   'financial.list.title': 'Contas a Pagar',
