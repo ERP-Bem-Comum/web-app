@@ -23,6 +23,8 @@ const row = (over: Partial<AccountRow> & Pick<AccountRow, 'id'>): AccountRow => 
   pendingCount: 0,
   status: 'up-to-date',
   openable: true,
+  typeTag: 'financial.recon.add.type.corrente',
+  typeLabel: null,
   openingBalanceBRL: 'R$ 245.392,18',
   openingDate: '01/06/2026',
   ...over,

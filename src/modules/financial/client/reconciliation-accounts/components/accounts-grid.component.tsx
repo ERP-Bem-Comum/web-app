@@ -43,8 +43,13 @@ function StatusPill({ row }: Readonly<{ row: AccountRow }>) {
 }
 
 function ExpandPanel({ row }: Readonly<{ row: AccountRow }>) {
+  const tipo = row.typeLabel !== null ? `${t(row.typeTag)} · ${row.typeLabel}` : t(row.typeTag)
   return (
     <div className={s.expandPanel}>
+      <div className={s.expandItem}>
+        <span className={s.expandLbl}>{t('financial.recon.accounts.expand.tipo')}</span>
+        <span className={s.expandVal}>{tipo}</span>
+      </div>
       <div className={s.expandItem}>
         <span className={s.expandLbl}>{t('financial.recon.accounts.expand.saldoInicial')}</span>
         <span className={s.expandVal}>{row.openingBalanceBRL}</span>
