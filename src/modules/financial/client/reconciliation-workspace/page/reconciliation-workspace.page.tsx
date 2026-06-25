@@ -317,11 +317,13 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
             menus={vm.headerMenus}
             canClose={vm.closePeriod.canClose}
             closeHint={
-              vm.txList.tag === 'empty'
-                ? t('financial.recon.close.noStatement')
-                : vm.filterCounts.pendentes > 0
-                  ? t('financial.recon.close.pendingBlocked')
-                  : null
+              vm.closePeriod.alreadyClosed
+                ? t('financial.recon.close.alreadyClosed')
+                : vm.txList.tag === 'empty'
+                  ? t('financial.recon.close.noStatement')
+                  : vm.filterCounts.pendentes > 0
+                    ? t('financial.recon.close.pendingBlocked')
+                    : null
             }
             onClosePeriod={() => {
               vm.closePeriod.close()

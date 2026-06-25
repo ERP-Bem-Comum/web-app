@@ -46,6 +46,7 @@ import { useExportConciliacao, type ExportBinding } from './export-conciliacao.b
 import {
   accountStatementPeriodQueryOptions,
   paidPayablesQueryOptions,
+  reconciliationPeriodsQueryOptions,
   statementSuggestionsQueryOptions,
   suggestionsQueryOptions,
   transactionReconciliationQueryOptions,
@@ -304,13 +305,25 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     forgetReconciliation(transactionId)
     matchDetailsBinding.close()
   })
+  // Períodos já fechados/abertos da conta (#173) — para o front saber o ESTADO REAL do período selecionado
+  // (não só o que foi fechado nesta sessão) e não tentar re-fechar (o backend insere → erro de chave única).
+  const periodsResult = useQuery(
+    reconciliationPeriodsQueryOptions(accountRef === '' ? null : accountRef),
+  ).data
+  const periods = periodsResult?.ok === true ? periodsResult.value : []
+  const selectedAlreadyClosed =
+    periodRange !== null &&
+    periods.some(
+      (p) => p.periodStart === periodRange.from && p.periodEnd === periodRange.to && p.status === 'Closed',
+    )
   // Fechar usa o PERÍODO SELECIONADO no header (não o extrato importado nesta sessão) — coerente com o
   // modelo period-driven (#104): você fecha o intervalo que está vendo, mesmo sem importar agora. Só há o
-  // que fechar quando o período TEM movimentos (período vazio → sem período a fechar).
+  // que fechar quando o período TEM movimentos (período vazio → sem período a fechar) e ainda não está fechado.
   const closePeriodBinding = useClosePeriod(
     accountRef,
     periodRange !== null && allTx.length > 0 ? { start: periodRange.from, end: periodRange.to } : null,
     pendentesCount > 0,
+    selectedAlreadyClosed,
   )
   const exportBinding = useExportConciliacao(
     accountRef === '' ? null : accountRef,
