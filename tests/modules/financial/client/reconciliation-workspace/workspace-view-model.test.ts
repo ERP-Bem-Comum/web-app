@@ -348,7 +348,7 @@ describe('modal Detalhes da conciliação — matchDetailsView', () => {
     assert.equal(v.audit.who, '—')
   })
 
-  it('com detalhes, repassa título/auditoria; ManualEntry marca isManualEntry', () => {
+  it('com detalhes, repassa título/auditoria; isManualEntry vem do parâmetro (type do lookup)', () => {
     const doc = {
       name: 'NF 0847',
       documento: '0847',
@@ -357,7 +357,8 @@ describe('modal Detalhes da conciliação — matchDetailsView', () => {
       valueBRL: 'R$ 950,00',
     }
     const audit = { when: '18/06/2026', who: 'admin' }
-    const v = matchDetailsView({ ...base, reconciliationStatus: 'ManualEntry' }, doc, audit)
+    // isManualEntry agora vem do 5º parâmetro (type da reconciliation), não do status da transação.
+    const v = matchDetailsView(base, doc, audit, null, true)
     assert.equal(v.isManualEntry, true)
     assert.equal(v.doc.documento, '0847')
     assert.equal(v.audit.who, 'admin')
