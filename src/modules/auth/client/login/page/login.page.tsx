@@ -37,6 +37,11 @@ export function LoginPage(): ReactNode {
             password={form.password}
             submitting={loginCommand.running}
             errorText={loginCommand.errorTag === null ? null : t(loginCommand.errorTag)}
+            errorReference={
+              loginCommand.errorReference === null
+                ? null
+                : `${t('auth.error.reference-label')} ${loginCommand.errorReference}`
+            }
             onEmailChange={form.setEmail}
             onPasswordChange={form.setPassword}
             onSubmit={form.submit}

@@ -6,6 +6,8 @@
  */
 import type { HttpError } from '#shared/http/http-error.types.ts'
 import { ok, err, type Result } from '#shared/primitives/result.ts'
+import { logger } from '#external/logging/logger.ts'
+import { getRequestId } from '#external/http/request-id.ts'
 
 export type ResultFetchOptions = Readonly<{
   method?: string
@@ -63,11 +65,12 @@ export const resultFetchText = async (
   let response: Response
   try {
     response = await globalThis.fetch(url, { method, headers: requestHeaders, signal: controller.signal })
-  } catch {
+  } catch (cause) {
     clearTimeout(timeoutId)
     if (controller.signal.aborted) {
       return err(signal?.aborted === true ? { kind: 'aborted' } : { kind: 'timeout' })
     }
+    logger.error({ err: cause, url, method, request_id: getRequestId() }, 'core-api-fetch:network-error')
     return err({ kind: 'network' })
   }
   clearTimeout(timeoutId)
@@ -116,11 +119,12 @@ export const resultFetch = async <T>(
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
       signal: controller.signal,
     })
-  } catch {
+  } catch (cause) {
     clearTimeout(timeoutId)
     if (controller.signal.aborted) {
       return err(signal?.aborted === true ? { kind: 'aborted' } : { kind: 'timeout' })
     }
+    logger.error({ err: cause, url, method, request_id: getRequestId() }, 'core-api-fetch:network-error')
     return err({ kind: 'network' })
   }
   clearTimeout(timeoutId)
@@ -139,7 +143,8 @@ export const resultFetch = async <T>(
   try {
     // Boundary: o response do backend é validado por Zod no schema do módulo; aqui o cast é o ponto único.
     return ok(JSON.parse(text) as T)
-  } catch {
+  } catch (cause) {
+    logger.error({ err: cause, url, method, request_id: getRequestId() }, 'core-api-fetch:json-parse-error')
     return err({ kind: 'parse' })
   }
 }

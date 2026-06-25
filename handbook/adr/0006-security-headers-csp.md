@@ -1,6 +1,6 @@
 # ADR-0006 — Security Headers & CSP (middleware global + Caddy)
 
-**Status**: Aceito (amendado 2026-06-01, 2026-06-09) · **Data**: 2026-05-30 · **Contexto**: spec `003-auth-security-hardening`
+**Status**: Aceito (amendado 2026-06-01, 2026-06-09, 2026-06-24) · **Data**: 2026-05-30 · **Contexto**: spec `003-auth-security-hardening`
 
 > **Amendência 2026-06-01 (CSP nonce):** a Decisão #3 abaixo partia de uma premissa **incorreta** — o
 > TanStack Start injeta SIM um `<script>` **inline** de bootstrap (`window.$_TSR`, dehydrated state) que
@@ -35,6 +35,13 @@ A auditoria OWASP da Auth (003) confirmou que **nenhum security header** existia
    - A tela de detalhe do contrato pré-visualiza o PDF do documento (contrato/aditivo) num `<iframe>`. O BFF entrega os **bytes** (same-origin, via server-fn) e o client cria um `blob:` (`URL.createObjectURL`) como `src` do iframe.
    - Sem uma diretiva `frame-src`, o framing do `blob:` caía no `default-src 'self'` e era **bloqueado** (iframe abria em branco). Adicionamos `frame-src 'self' blob:` — restrito a same-origin + blob (o blob é gerado pelo nosso próprio JS a partir de bytes same-origin; `script-src` segue travado, sem injeção de blob por terceiros).
    - **Não** abrimos `frame-src` para `http(s)://` externo nem `*` (coberto por teste em `tests/shared/http/security-headers.test.ts`). `frame-ancestors 'none'` (anti-clickjacking) permanece intacto.
+
+7. **Headers adicionais (adicionado 2026-06-24 — feature `035-prod-deploy-hardening`, D6):** com base no
+   **OWASP Secure Headers** (research R5 da 035), o conjunto ganha **`Cross-Origin-Opener-Policy: same-origin`**,
+   **`Cross-Origin-Resource-Policy: same-origin`** e **`Permissions-Policy`** (desligando APIs de browser não
+   usadas), além de **`Cache-Control: no-store`** em respostas sensíveis. Não altera as decisões 1–6 — só amplia
+   a defesa em camadas. `X-XSS-Protection` permanece **omitido** (OWASP: `0`/omitir). Builder puro em
+   `src/shared/http/security-headers.ts`; teste de governança estendido.
 
 ## Consequências
 

@@ -24,8 +24,10 @@ export default defineConfig({
         generatedRouteTree: 'app/routeTree.gen.ts',
       },
     }),
-    // preset 'node-server' (default do Nitro) → emite .output/server/index.mjs que escuta sozinho
-    nitro(),
+    // preset 'node-server' (default do Nitro) → emite .output/server/index.mjs que escuta sozinho.
+    // `plugins`: startup plugin de boot fail-fast da env (FR-002/ADR-0020) — roda antes do listen e
+    // aborta o boot (exit ≠ 0) se a config for inválida. Registro explícito (Nitro 3 não faz autoscan).
+    nitro({ plugins: ['./src/server/plugins/boot-env.ts'] }),
     // react's vite plugin must come after start's vite plugin
     viteReact(),
   ],

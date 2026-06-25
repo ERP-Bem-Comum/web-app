@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './../routes/__root'
+import { Route as ReadyRouteImport } from './../routes/ready'
 import { Route as LoginRouteImport } from './../routes/login'
 import { Route as HealthRouteImport } from './../routes/health'
 import { Route as AuthenticatedRouteRouteImport } from './../routes/_authenticated/route'
@@ -48,6 +49,11 @@ import { Route as AuthenticatedParceirosFornecedoresIdEditarRouteImport } from '
 import { Route as AuthenticatedParceirosFinanciadoresIdEditarRouteImport } from './../routes/_authenticated/parceiros/financiadores/$id.editar'
 import { Route as AuthenticatedParceirosAtosIdEditarRouteImport } from './../routes/_authenticated/parceiros/atos/$id.editar'
 
+const ReadyRoute = ReadyRouteImport.update({
+  id: '/ready',
+  path: '/ready',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -273,6 +279,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
+  '/ready': typeof ReadyRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/showcase/organisms': typeof ShowcaseOrganismsRoute
   '/contratos/$id': typeof AuthenticatedContratosIdRouteWithChildren
@@ -312,6 +319,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
+  '/ready': typeof ReadyRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/showcase/organisms': typeof ShowcaseOrganismsRoute
   '/contratos/$id': typeof AuthenticatedContratosIdRouteWithChildren
@@ -353,6 +361,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
+  '/ready': typeof ReadyRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/showcase/organisms': typeof ShowcaseOrganismsRoute
   '/_authenticated/contratos/$id': typeof AuthenticatedContratosIdRouteWithChildren
@@ -394,6 +403,7 @@ export interface FileRouteTypes {
     | '/'
     | '/health'
     | '/login'
+    | '/ready'
     | '/dashboard'
     | '/showcase/organisms'
     | '/contratos/$id'
@@ -433,6 +443,7 @@ export interface FileRouteTypes {
     | '/'
     | '/health'
     | '/login'
+    | '/ready'
     | '/dashboard'
     | '/showcase/organisms'
     | '/contratos/$id'
@@ -473,6 +484,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/health'
     | '/login'
+    | '/ready'
     | '/_authenticated/dashboard'
     | '/showcase/organisms'
     | '/_authenticated/contratos/$id'
@@ -514,11 +526,19 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   HealthRoute: typeof HealthRoute
   LoginRoute: typeof LoginRoute
+  ReadyRoute: typeof ReadyRoute
   ShowcaseOrganismsRoute: typeof ShowcaseOrganismsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/ready': {
+      id: '/ready'
+      path: '/ready'
+      fullPath: '/ready'
+      preLoaderRoute: typeof ReadyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -934,6 +954,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   HealthRoute: HealthRoute,
   LoginRoute: LoginRoute,
+  ReadyRoute: ReadyRoute,
   ShowcaseOrganismsRoute: ShowcaseOrganismsRoute,
 }
 export const routeTree = rootRouteImport

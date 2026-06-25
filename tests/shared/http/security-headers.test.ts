@@ -135,3 +135,32 @@ describe('cspWithScriptNonce (puro)', () => {
     assert.deepEqual(out['default-src'], CSP_BASELINE['default-src'])
   })
 })
+
+describe('buildSecurityHeaders — isolamento cross-origin + no-CORS (D6 / ADR-0006)', () => {
+  const find = (set: readonly (readonly [string, string])[], name: string): string | undefined =>
+    set.find(([n]) => n.toLowerCase() === name.toLowerCase())?.[1]
+
+  it('inclui COOP e CORP = same-origin', () => {
+    const set = buildSecurityHeaders({ https: true })
+    assert.equal(find(set, 'Cross-Origin-Opener-Policy'), 'same-origin')
+    assert.equal(find(set, 'Cross-Origin-Resource-Policy'), 'same-origin')
+  })
+
+  it('inclui Permissions-Policy desligando câmera, microfone e geolocation', () => {
+    const pp = find(buildSecurityHeaders({ https: false }), 'Permissions-Policy')
+    assert.ok(pp, 'Permissions-Policy presente')
+    assert.match(pp, /camera=\(\)/)
+    assert.match(pp, /microphone=\(\)/)
+    assert.match(pp, /geolocation=\(\)/)
+  })
+
+  it('inclui Cache-Control: no-store (respostas do BFF são sensíveis)', () => {
+    assert.equal(find(buildSecurityHeaders({ https: true }), 'Cache-Control'), 'no-store')
+  })
+
+  it('NÃO emite nenhum header Access-Control-* (invariante same-origin, sem CORS — FR-012/029)', () => {
+    const set = buildSecurityHeaders({ https: true, nonce: 'n0nc3' })
+    const cors = set.filter(([n]) => n.toLowerCase().startsWith('access-control-'))
+    assert.deepEqual(cors, [])
+  })
+})

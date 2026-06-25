@@ -1,26 +1,32 @@
 # syntax=docker/dockerfile:1.10
 #
-# Front + BFF (TanStack Start + Nitro) — multi-stage.
-# Modelo: core-api/Dockerfile (digest-pin, non-root, signal-safe, BuildKit cache).
+# Front + BFF (TanStack Start + Nitro) — multi-stage. Runtime DISTROLESS (ADR-0015).
 #
-#   base    → node 24 alpine (digest-pin) + tini + pnpm via corepack
-#   deps    → pnpm install (frozen, ignore-scripts) com supply-chain de pnpm-workspace.yaml
-#   build   → pnpm build → .output (servidor Nitro standalone, self-contained)
-#   dev     → target de desenvolvimento (HMR via bind-mount no compose.override)
-#   runtime → imagem final mínima, non-root, roda node .output/server/index.mjs
+#   base    → node 24 (toolchain de build) + pnpm via corepack          [digest-pin]
+#   deps    → pnpm install (frozen, ignore-scripts) c/ supply-chain do pnpm-workspace.yaml (ADR-0003)
+#   build   → pnpm build → .output (servidor Nitro node-server, SELF-CONTAINED, sem node_modules)
+#   dev     → target de desenvolvimento (HMR; bind-mount de ./src vem do override do ERP-INFRA)
+#   runtime → gcr.io/distroless/nodejs24 (non-root, SEM shell), roda .output/server/index.mjs
 #
-# Atualizar digest: docker buildx imagetools inspect node:24-alpine --format '{{.Manifest.Digest}}'
+# Por que distroless no runtime (ADR-0015): o `.output` do Nitro é JS puro (sem deps nativas em
+# runtime), então a base pode ser mínima/sem shell — superfície e CVEs mínimas, non-root por padrão.
+# O healthcheck é via `node` (a base distroless não tem curl/wget). Debug do container: via tailnet +
+# logs/traces (ADR-0019), nunca shell em produção.
+#
+# Atualizar digests:
+#   docker buildx imagetools inspect node:24-bookworm-slim --format '{{.Manifest.Digest}}'
+#   docker buildx imagetools inspect gcr.io/distroless/nodejs24-debian12:nonroot --format '{{.Manifest.Digest}}'
 # ─────────────────────────────────────────────────────────────────────────────
 
-# ── Stage 1 — base ───────────────────────────────────────────────────────────
-FROM node:24-alpine@sha256:2bdb65ed1dab192432bc31c95f94155ca5ad7fc1392fb7eb7526ab682fa5bf14 AS base
-RUN apk add --no-cache tini
-# packageManager em package.json fixa pnpm@11.5.0; corepack lê dele.
+# ── Stage 1 — base (toolchain) ───────────────────────────────────────────────
+FROM node:24-bookworm-slim@sha256:b31e7a42fdf8b8aa5f5ed477c72d694301273f1069c5a2f71d53c6482e99a2fc AS base
+# packageManager em package.json fixa a versão; corepack lê dela.
 RUN corepack enable && corepack prepare pnpm@11.5.0 --activate
 WORKDIR /app
 
 # ── Stage 2 — deps ───────────────────────────────────────────────────────────
-# pnpm-workspace.yaml é OBRIGATÓRIO: carrega minimumReleaseAge / trustPolicy / allowBuilds.
+# pnpm-workspace.yaml é OBRIGATÓRIO: carrega a política de supply-chain (minimumReleaseAge / trust /
+# allowBuilds — ADR-0003). --ignore-scripts barra postinstall malicioso; --prod=false p/ ter o build.
 FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
@@ -31,42 +37,42 @@ FROM deps AS build
 COPY . .
 RUN pnpm build
 
-# ── Stage 4 — dev ────────────────────────────────────────────────────────────
-# Usado pelo compose.override com bind-mount de ./src. node_modules vem da imagem.
+# ── Stage 4 — dev (HMR) ──────────────────────────────────────────────────────
+# Consumido pelo override do ERP-INFRA (build: target: dev) com bind-mount de ./src.
 FROM deps AS dev
 ENV NODE_ENV=development
 EXPOSE 3000
 COPY . .
-ENTRYPOINT ["tini", "--"]
 CMD ["pnpm", "dev", "--host", "0.0.0.0", "--port", "3000"]
 
-# ── Stage 5 — runtime (produção) ─────────────────────────────────────────────
-FROM base AS runtime
+# ── Stage 5 — runtime (produção, distroless) ─────────────────────────────────
+FROM gcr.io/distroless/nodejs24-debian12:nonroot@sha256:14d42e2511532589a7c7e01a753667a74fcc96266e137e8125006b87b0c32d0a AS runtime
 LABEL org.opencontainers.image.title="bemcomum-web" \
       org.opencontainers.image.description="ERP Bem Comum — Front + BFF (TanStack Start)." \
       org.opencontainers.image.vendor="Envolve / Bem Comum" \
       org.opencontainers.image.licenses="proprietary" \
-      org.opencontainers.image.base.name="docker.io/library/node:24-alpine"
+      org.opencontainers.image.base.name="gcr.io/distroless/nodejs24-debian12"
 
+# NODE_OPTIONS: heap cap p/ caber no envelope do container (default seguro p/ ~512 MB de prod;
+# o deploy (compose/IaC do ERP-INFRA) sobrescreve por ambiente — ex.: 288 na VPS QA de 448 MB).
 ENV NODE_ENV=production \
     PORT=3000 \
-    HOST=0.0.0.0
+    HOST=0.0.0.0 \
+    NODE_OPTIONS="--max-old-space-size=384"
 
-# Nitro empacota tudo em .output (self-contained, sem node_modules — verificado).
-COPY --from=build /app/.output ./.output
+WORKDIR /app
+# Nitro empacota tudo em .output (self-contained, sem node_modules). Owner = nonroot (uid 65532).
+COPY --from=build --chown=65532:65532 /app/.output ./.output
 
-ARG APP_UID=10001
-ARG APP_GID=10001
-RUN addgroup -S -g ${APP_GID} app \
- && adduser -S -u ${APP_UID} -G app -h /app -s /sbin/nologin app \
- && chown -R app:app /app
-USER app:app
-
+# Non-root explícito (a tag :nonroot já usa 65532; reforço p/ CIS/Docker-Bench — ADR-0015).
+USER 65532:65532
 EXPOSE 3000
 STOPSIGNAL SIGTERM
 
-# /health não toca o backend (src/routes/health.tsx) — alvo de liveness ideal.
+# Distroless = sem shell/curl → probe via node (a ENTRYPOINT da base já é /nodejs/bin/node).
+# /health não toca o backend (liveness — src/routes/health.tsx).
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD ["node","-e","fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+  CMD ["/nodejs/bin/node", "-e", "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
 
-ENTRYPOINT ["tini", "--", "node", ".output/server/index.mjs"]
+# ENTRYPOINT herdada da base = ["/nodejs/bin/node"]; passamos o entry do Nitro como CMD.
+CMD ["/app/.output/server/index.mjs"]

@@ -17,13 +17,14 @@ dist
 *.log
 count.txt
 
-# Tooling / specs / docs — não entram na imagem
+# Tooling / specs / docs / testes — não entram na imagem
 .claude
 .specify
 .planning
 handbook
 specs
 tests
+e2e
 .github
 .vscode
 .mcp.json
