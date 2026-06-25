@@ -1431,6 +1431,14 @@ export const ptBR: Catalog = {
   'financial.recon.import.pdfLabel': 'PDF — leitura por OCR',
   'financial.recon.import.pdfHint': 'Em breve',
   'financial.recon.import.summary': '{imported} importadas · {dups} duplicadas · {start}–{end}',
+  // Validação de conta no upload de OFX (conta do arquivo ≠ conta da tela) — bloqueio com confirmação.
+  'financial.recon.import.mismatch.title': 'Conta diferente',
+  'financial.recon.import.mismatch.intro': 'Este extrato parece ser de outra conta:',
+  'financial.recon.import.mismatch.fileLbl': 'Arquivo:',
+  'financial.recon.import.mismatch.currentLbl': 'Conta atual:',
+  'financial.recon.import.mismatch.question': 'Importar mesmo assim?',
+  'financial.recon.import.mismatch.cancel': 'Cancelar',
+  'financial.recon.import.mismatch.confirm': 'Importar mesmo assim',
   // Lista de movimentações (US1)
   'financial.recon.list.idle': 'Importe um extrato para ver as movimentações.',
   'financial.recon.list.empty': 'Nenhuma movimentação neste extrato.',

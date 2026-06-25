@@ -203,7 +203,7 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     statementSuggestionsQueryOptions(ui.showGuesses ? ui.statementId : null),
   )
 
-  const importBinding = useImport(accountRef, (statementId) => {
+  const importBinding = useImport(accountRef, account, (statementId) => {
     dispatch({ type: 'set-statement', statementId })
     // Persiste o extrato visível desta conta → sobrevive a reload/rebuild (o backend mantém o statement).
     try {

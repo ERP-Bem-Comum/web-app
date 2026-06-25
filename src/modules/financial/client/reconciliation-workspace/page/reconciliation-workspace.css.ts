@@ -2289,6 +2289,26 @@ export const modalBody = style({
   ...scrollSoft,
 })
 
+// Aviso "conta diferente" no upload de OFX (texto + rodapé de ações).
+export const modalMessage = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: sp.sm,
+  fontFamily: recon.font.sans,
+  fontSize: fs.sm,
+  lineHeight: 1.5,
+  color: c.ink[3],
+  paddingBlock: sp.md,
+  paddingInline: '0.375rem',
+})
+export const modalMessageStrong = style({ fontWeight: recon.weight.semibold, color: c.ink[1] })
+export const modalFooter = style({
+  display: 'flex',
+  justifyContent: 'flex-end',
+  gap: sp.md,
+  paddingBlockStart: sp.md,
+})
+
 export const accGroup = style({
   display: 'flex',
   alignItems: 'center',

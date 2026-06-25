@@ -26,6 +26,7 @@ import { StatementGrid } from '../components/statement-grid.component.tsx'
 import { PeriodBalanceBand } from '../components/period-balance-band.component.tsx'
 import { ChangeAccountModal } from '../components/change-account-modal.component.tsx'
 import { MatchDetailsModal } from '../components/match-details-modal.component.tsx'
+import { ImportMismatchDialog } from '../components/import-mismatch-dialog.component.tsx'
 import { PeriodMenu } from '../components/period-menu.component.tsx'
 import { ExportMenu } from '../components/export-menu.component.tsx'
 import { PeriodActionsMenu } from '../components/period-actions-menu.component.tsx'
@@ -359,6 +360,17 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
         }}
         onViewTitle={() => undefined}
         onClose={vm.matchDetails.close}
+      />
+
+      <ImportMismatchDialog
+        fileAccountLabel={vm.import.mismatch?.fileAccountLabel ?? null}
+        currentAccountLabel={
+          account !== null
+            ? `${account.bankCode} ${account.bankName} · Ag ${account.branch} · CC ${account.accountNumber}-${account.accountDv}`
+            : ''
+        }
+        onConfirm={vm.import.confirmImport}
+        onCancel={vm.import.cancelImport}
       />
     </div>
   )
