@@ -116,6 +116,12 @@ jobs:
           ssh -o StrictHostKeyChecking=accept-new ubuntu@erp-bem-comum-qa \
             'docker system prune -af && /opt/erp-qa/deploy.sh'
 
+      - name: Smoke-check pós-deploy (/ready do container web)
+        run: |
+          # O `up --wait` garante /health (liveness). Aqui validamos /ready (config + sonda /api/v2 do core-api)
+          # DENTRO do container web → pega CORE_API_URL ruim / core-api fora ANTES de dar o deploy como verde.
+          ssh -o StrictHostKeyChecking=accept-new ubuntu@erp-bem-comum-qa "cd /opt/erp-qa && docker compose exec -T web node -e 'fetch(\"http://127.0.0.1:3000/ready\").then(async r=>{console.log(\"ready\", r.status, await r.text()); process.exit(r.ok ? 0 : 1)}).catch(e => {console.error(e); process.exit(1)})'"
+
 # TODO produção (AWS — ADR-0018): job `deploy-prod` com `permissions.id-token: write` +
 # aws-actions/configure-aws-credentials (assume-role OIDC, SEM chave longeva), quando a infra de prod
 # (Codebit/AWS) estiver provisionada. Lembrete: o CORE_API_URL de prod deve terminar em /api/v2 (ADR-0020).
