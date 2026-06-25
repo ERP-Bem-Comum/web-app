@@ -1,0 +1,84 @@
+name: build-publish
+
+# Builda a imagem de produção do web-app (front + BFF, target `runtime` distroless) e publica no GHCR.
+# O ambiente (VPS QA / AWS) NUNCA compila — só puxa (ADR-0015/0018). O deploy vive no `deploy-qa.yml`.
+#
+# Segurança (OWASP CI/CD Top 10 — ADR-0016/0018):
+#  - actions de terceiros PINADAS POR COMMIT SHA (CICD-SEC-8); a tag legível fica no comentário ao lado.
+#  - GITHUB_TOKEN de permissão mínima; provenance + SBOM keyless via OIDC do GitHub (id-token/attestations).
+#  - trigger = push em `develop` (branch de QA), NUNCA `pull_request` de fork com segredo (CICD-SEC-4).
+#
+# Atualizar um SHA: gh api repos/<owner>/<action>/commits/<tag> --jq .sha
+
+on:
+  push:
+    branches: [develop]
+    paths-ignore:
+      - "**/*.md"
+      - "handbook/**"
+      - "specs/**"
+      - "e2e/**"
+  workflow_dispatch:
+
+concurrency:
+  group: build-publish-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write # push no GHCR
+  id-token: write # OIDC keyless p/ as attestations (provenance/SBOM)
+  attestations: write # grava as attestations no GHCR
+
+env:
+  IMAGE: ghcr.io/erp-bem-comum/bemcomum-web
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
+
+      - name: Login no ghcr.io
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Metadata (tags + labels OCI)
+        id: meta
+        uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6.1.0
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,value=qa
+            type=sha,prefix=sha-,format=short
+
+      - name: Build + push (linux/amd64, target runtime, provenance + SBOM)
+        id: build
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+        with:
+          context: .
+          file: ./web.Dockerfile
+          target: runtime
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true # SLSA build provenance attestation (D3/ADR-0016) — keyless via OIDC
+          sbom: true # SBOM attestation
+
+      - name: Scan da imagem (Trivy — falha em HIGH/CRITICAL, SC-001)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE }}@${{ steps.build.outputs.digest }}
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true # não bloqueia em CVE sem fix upstream (base distroless); revisar periodicamente

@@ -1,91 +1,53 @@
 name: deploy-qa
 
-# Build da imagem de QA do web-app (front + BFF TanStack Start) e publicação no
-# GitHub Container Registry. Dispara em push na branch `develop` (a branch de QA
-# deste repo). O deploy na VPS é feito pelo Watchtower (pull-based): quando a tag
-# :qa muda no ghcr, a VPS atualiza o container sozinha. O build (pnpm + vite) roda
-# aqui no runner — a VPS de QA não compila (ver ERP-INFRA/platform/vps-qa).
+# Deploy da QA (VPS Magalu, PBE — ADR-0021) SEM segredo longevo (ADR-0018): o runner entra na tailnet e
+# roda o `deploy.sh` do ERP-INFRA na VPS (que faz `docker compose pull` da :qa + up --wait). A VPS NÃO é
+# exposta por SSH público. Dispara após o build-publish concluir com sucesso em `develop`, ou manualmente.
 #
-# Versões das actions conferidas na doc oficial (jun/2026):
-#   https://docs.github.com/en/actions/tutorials/publish-packages/publish-docker-images
-#   https://github.com/docker/build-push-action
+# ⚠️ PRÉ-REQUISITOS DE INFRA (FORA deste repo — coordenar com infra antes de habilitar):
+#   1. Tailscale OAuth client → secrets `TS_OAUTH_CLIENT_ID` + `TS_OAUTH_SECRET` (escopo: auth keys, tag:ci).
+#   2. ACL do tailnet: permitir `tag:ci` abrir SSH como `ubuntu` no nó `erp-bem-comum-qa` (Tailscale SSH).
+#   3. Tailscale SSH habilitado na VPS (`tailscale up --ssh`) — autenticação por identidade, SEM chave.
+#   4. /opt/erp-qa/ provisionado (compose.yaml + .env + ./secrets via init-secrets.sh) — ERP-INFRA/platform/vps-qa.
+#
+# Enquanto (1)–(4) não existirem, o job falha de propósito (é o sinal de que falta provisionar).
 
 on:
-  push:
-    branches: [develop]
-    paths-ignore:
-      - "**/*.md"
-      - "handbook/**"
-      - "specs/**"
-      - "e2e/**"
+  workflow_run:
+    workflows: [build-publish]
+    types: [completed]
   workflow_dispatch:
 
 concurrency:
-  group: deploy-qa-${{ github.ref }}
-  cancel-in-progress: true
+  group: deploy-qa
+  cancel-in-progress: false # nunca cancelar um deploy em andamento
 
 permissions:
   contents: read
-  packages: write
-
-env:
-  IMAGE: ghcr.io/erp-bem-comum/bemcomum-web
-  # Opta pelo Node 24 nas JS actions (metadata-action@v5 ainda roda em Node 20,
-  # deprecado a partir de set/2026). Silencia o aviso de deprecação.
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
-  build-push:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Set up Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Login no ghcr.io
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Metadata (tags + labels OCI)
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.IMAGE }}
-          tags: |
-            type=raw,value=qa
-            type=sha,prefix=sha-,format=short
-
-      - name: Build + push (linux/amd64, target runtime)
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: ./web.Dockerfile
-          target: runtime
-          platforms: linux/amd64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          provenance: false
-
   deploy:
-    needs: build-push
     runs-on: ubuntu-latest
+    # Só deploya em disparo manual OU quando o build-publish passou em `develop`.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'develop')
     steps:
-      - name: Deploy QA via SSH (forced command na VPS)
-        env:
-          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      - name: Conectar na tailnet (efêmero, tag:ci)
+        uses: tailscale/github-action@306e68a486fd2350f2bfc3b19fcd143891a4a2d8 # v4.1.2
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Deploy na VPS via Tailscale SSH (sem chave longeva)
         run: |
-          mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          # A chave está travada (forced command) p/ rodar só /opt/erp-qa/deploy.sh.
-          # Se um container não ficar healthy, deploy.sh sai != 0 e este job fica vermelho.
-          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
-            ubuntu@201.23.88.74 deploy
+          # Identidade via tailnet/ACL (Tailscale SSH) — sem chave SSH armazenada no repo (CICD-SEC-6).
+          # deploy.sh: `docker compose pull` da :qa + up --wait; sai !=0 se um container não ficar healthy
+          # → este job fica vermelho. Rollback = fixar CORE_API_IMAGE/WEB_IMAGE num digest anterior e re-rodar.
+          ssh -o StrictHostKeyChecking=accept-new ubuntu@erp-bem-comum-qa /opt/erp-qa/deploy.sh
+
+# TODO produção (AWS — ADR-0018): job separado com `permissions.id-token: write` +
+# aws-actions/configure-aws-credentials (role-to-assume via OIDC, SEM chave longeva) → deploy no alvo AWS,
+# quando a infra de produção (Codebit) estiver provisionada.
