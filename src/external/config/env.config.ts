@@ -16,9 +16,17 @@
 import * as z from 'zod';
 
 import { ok, err, isErr, type Result } from '#shared/primitives/result.ts'
+import { coreApiBase } from '#external/core-api/api-base.ts'
 
 const EnvSchema = z.object({
-  CORE_API_URL: z.url(),
+  // Não basta ser URL: precisa resolver para a base `/api` do core-api. Se vier só o host (sem `/api`),
+  // `coreApiBase` deriva `{host}/v2` e TODO `/auth/*` dá 404 → vira `"server"` (o incidente 2026-06-25).
+  // Validar aqui = fail-fast no boot (boot-env) + `/ready` 503, em vez de falhar silencioso em runtime.
+  CORE_API_URL: z
+    .url()
+    .refine((u) => coreApiBase(u, 'v2').endsWith('/api/v2'), {
+      error: 'deve apontar para a base /api do core-api (ex.: https://host/api ou https://host/api/v2)',
+    }),
 })
 
 export type EnvConfig = Readonly<z.infer<typeof EnvSchema>>

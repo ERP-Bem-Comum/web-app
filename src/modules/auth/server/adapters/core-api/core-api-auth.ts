@@ -8,6 +8,7 @@ import type { HttpError } from '#shared/http/http-error.types.ts'
 import { parseErrorEnvelope } from '#shared/http/error-envelope.ts'
 import { resultFetch } from '#external/core-api/result-fetch.ts'
 import { logger } from '#external/logging/logger.ts'
+import { getRequestId } from '#external/http/request-id.ts'
 import type { AuthError } from '#modules/auth/server/domain/errors/auth.errors.ts'
 import type {
   Approver,
@@ -31,7 +32,7 @@ const SLUG_TO_AUTH_ERROR: Partial<Record<string, AuthError>> = {
 // Log de inconsistência de contrato com o core-api (server-only): o detalhe (issues do Zod) fica no
 // LOG; o chamador segue recebendo só o AuthError genérico. Ver ADR-0014.
 const logSchemaMismatch = (schema: string, cause: unknown): void => {
-  logger.error({ err: cause, schema }, 'core-api-auth:response-schema-mismatch')
+  logger.error({ err: cause, schema, request_id: getRequestId() }, 'core-api-auth:response-schema-mismatch')
 }
 
 const mapHttpToAuthError = (e: HttpError): AuthError => {
@@ -41,7 +42,7 @@ const mapHttpToAuthError = (e: HttpError): AuthError => {
       const mapped = slug === undefined ? undefined : SLUG_TO_AUTH_ERROR[slug]
       if (mapped === undefined) {
         // core-api respondeu um erro que não mapeamos (contrato divergente) → vira 'server' genérico.
-        logger.warn({ status: e.status, slug }, 'core-api-auth:unmapped-error-slug')
+        logger.warn({ status: e.status, slug, request_id: getRequestId() }, 'core-api-auth:unmapped-error-slug')
       }
       return mapped ?? 'server'
     }
