@@ -23,6 +23,7 @@ const baseProps = (over: Partial<LoginFormProps> = {}): LoginFormProps => ({
   password: '',
   submitting: false,
   errorText: null,
+  errorReference: null,
   onEmailChange: vi.fn(),
   onPasswordChange: vi.fn(),
   onSubmit: vi.fn(),
@@ -58,6 +59,15 @@ describe('LoginForm (vestida)', () => {
   it('mostra o erro com role="alert"', () => {
     render(<LoginForm {...baseProps({ errorText: 'E-mail ou senha inválidos.' })} />)
     expect(screen.getByRole('alert').textContent).toBe('E-mail ou senha inválidos.')
+  })
+
+  it('mostra o reference id (código) junto do erro quando presente (FR-024)', () => {
+    render(
+      <LoginForm
+        {...baseProps({ errorText: 'Algo deu errado.', errorReference: 'Código de referência: abc-123' })}
+      />,
+    )
+    expect(screen.getByRole('alert').textContent).toContain('Código de referência: abc-123')
   })
 
   it('submitting: botão desabilitado + aria-busy (loading)', () => {

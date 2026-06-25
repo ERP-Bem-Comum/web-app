@@ -22,7 +22,10 @@ const LoginFnInputSchema = z.object({
   rememberDevice: z.boolean(),
 })
 
-export type LoginFnResult = Readonly<{ ok: true; userId: string }> | Readonly<{ ok: false; error: AuthError }>
+export type LoginFnResult =
+  | Readonly<{ ok: true; userId: string }>
+  // `reference` (request_id) só no erro INESPERADO (catch-all) — correlação p/ debug seguro (D8/ADR-0019).
+  | Readonly<{ ok: false; error: AuthError; reference?: string }>
 
 export const loginFn = createServerFn({ method: 'POST' })
   .inputValidator(LoginFnInputSchema)
@@ -56,6 +59,8 @@ export const loginFn = createServerFn({ method: 'POST' })
       // sem rastro e chegava ao client como erro genérico/`ok:null`. Logamos o stack e devolvemos um
       // Result tipado — o client passa a ver `error: 'server'` (limpo), e o stack vive no log do BFF.
       logger.error({ err: cause, fn: 'loginFn', request_id: getRequestId() }, 'login-server-fn:unhandled-exception')
-      return { ok: false, error: 'server' }
+      // Devolve o reference id (= request_id) p/ a UI exibir (FR-024): o usuário cita o código, o dev
+      // grepa o log pelo mesmo id. Erros ESPERADOS (invalid-credentials etc.) não levam reference.
+      return { ok: false, error: 'server', reference: getRequestId() }
     }
   })

@@ -24,6 +24,7 @@ export const ptBR: Catalog = {
   'auth.error.user-disabled': 'Sua conta está desativada. Procure o administrador.',
   'auth.error.connectivity': 'Serviço temporariamente indisponível. Tente novamente.',
   'auth.error.unexpected': 'Algo deu errado. Tente novamente.',
+  'auth.error.reference-label': 'Código de referência:',
   // Contracts — Errors
   'contracts.error.invalid-code': 'Código do contrato inválido.',
   'contracts.error.invalid-value': 'Valor inválido ou excede o teto permitido.',
@@ -1713,4 +1714,9 @@ export const ptBR: Catalog = {
   'financial.list.chip.recusado': 'Recusado',
   'financial.list.chip.pago': 'Pago',
   'financial.list.chip.conciliado': 'Conciliado',
+
+  // ── Shell (top bar) ──
+  'shell.topbar.brand': 'Bem Comum',
+  'shell.topbar.greeting': 'Olá, {{name}}',
+  'shell.topbar.logout': 'Sair',
 }

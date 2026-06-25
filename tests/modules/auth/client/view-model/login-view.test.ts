@@ -31,7 +31,7 @@ describe('loginViewModel', () => {
 
   it('onSuccess (err): NÃO emite evento', () => {
     const events: AuthEvent[] = []
-    loginViewModel.onSuccess(err('invalid-credentials'), { emit: (e) => events.push(e) })
+    loginViewModel.onSuccess(err({ code: 'invalid-credentials' }), { emit: (e) => events.push(e) })
     assert.equal(events.length, 0)
   })
 })

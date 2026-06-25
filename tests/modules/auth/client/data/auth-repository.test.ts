@@ -20,10 +20,18 @@ describe('auth.repository.login', () => {
     assert.equal(isOk(r) && r.value.userId === 'u', true)
   })
 
-  it('falha de auth → err(AuthError)', async () => {
+  it('falha de auth → err(LoginFailure com code)', async () => {
     const loginFn = (_o: { data: LoginInput }): Promise<LoginFnResult> =>
       Promise.resolve({ ok: false, error: 'invalid-credentials' })
     const r = await createAuthRepository({ loginFn }).login(input)
-    assert.equal(isErr(r) && r.error === 'invalid-credentials', true)
+    assert.equal(isErr(r) && r.error.code === 'invalid-credentials', true)
+    assert.equal(isErr(r) && r.error.reference === undefined, true)
+  })
+
+  it('erro server com reference → propaga code + reference (FR-024)', async () => {
+    const loginFn = (_o: { data: LoginInput }): Promise<LoginFnResult> =>
+      Promise.resolve({ ok: false, error: 'server', reference: 'req-xyz' })
+    const r = await createAuthRepository({ loginFn }).login(input)
+    assert.equal(isErr(r) && r.error.code === 'server' && r.error.reference === 'req-xyz', true)
   })
 })

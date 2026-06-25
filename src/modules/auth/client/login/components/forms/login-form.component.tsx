@@ -30,6 +30,7 @@ export type LoginFormProps = Readonly<{
   password: string
   submitting: boolean
   errorText: string | null
+  errorReference: string | null
   onEmailChange: (value: string) => void
   onPasswordChange: (value: string) => void
   onSubmit: () => void
@@ -88,6 +89,12 @@ export function LoginForm(props: LoginFormProps): ReactNode {
         {props.errorText !== null ? (
           <p role="alert" className={errorText}>
             {props.errorText}
+            {props.errorReference !== null ? (
+              <>
+                <br />
+                <small>{props.errorReference}</small>
+              </>
+            ) : null}
           </p>
         ) : null}
 

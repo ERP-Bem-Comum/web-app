@@ -15,6 +15,7 @@ import { loginViewModel } from '../viewModel/login.view-model.ts'
 export type LoginCommand = Readonly<{
   running: boolean
   errorTag: string | null
+  errorReference: string | null
   result: AuthenticatedUser | null
   execute: (input: LoginInput) => void
   resetError: () => void
@@ -45,14 +46,17 @@ export const useLoginBinding = (): Readonly<{ loginCommand: LoginCommand }> => {
   // server, RPC) não vira valor — vai para mutation.error; sem este ramo a UI ficaria SILENCIOSA.
   const errorTag =
     data !== undefined && isErr(data)
-      ? loginViewModel.toErrorTag(data.error)
+      ? loginViewModel.toErrorTag(data.error.code)
       : mutation.isError
         ? loginViewModel.unexpectedErrorTag
         : null
+  // reference id (correlação) só existe no erro de VALOR inesperado (server) — exibido na UI (FR-024).
+  const errorReference = data !== undefined && isErr(data) ? (data.error.reference ?? null) : null
   return {
     loginCommand: {
       running: mutation.isPending,
       errorTag,
+      errorReference,
       result: data !== undefined && isOk(data) ? data.value : null,
       execute: (input) => {
         mutation.mutate(input)
