@@ -148,6 +148,7 @@ export function useManualEntry(
       type: ManualEntryType
       description?: string
       destinationAccount?: string
+      productLabel?: string
       supplierRef?: string
       programRef?: string
       categoryRef?: string
@@ -230,12 +231,17 @@ export function useManualEntry(
     },
     submit: () => {
       if (selectedTx === null || type === null || !canSubmit) return
+      // Aplicação/Resgate: o backend exige um "produto" (texto). Como modelamos entre contas, mandamos o
+      // nome da conta de destino como `productLabel` (satisfaz a regra) + o `destinationAccount` real.
+      const isProductRealloc = type === 'Investment' || type === 'Redemption'
+      const destLabel = accountOptions.find((o) => o.value === destinationAccount.trim())?.label
       mut.mutate({
         transactionId: selectedTx.id,
         type,
         description: description.trim() === '' ? undefined : description.trim(),
         destinationAccount:
           needsDestination && destinationAccount.trim() !== '' ? destinationAccount.trim() : undefined,
+        productLabel: isProductRealloc && destLabel !== undefined ? destLabel.slice(0, 120) : undefined,
         supplierRef: supplierRef === '' ? undefined : supplierRef,
         programRef: programRef === '' ? undefined : programRef,
         categoryRef: categoryRef === '' ? undefined : categoryRef,
