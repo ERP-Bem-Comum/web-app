@@ -275,10 +275,11 @@ describe('STATUS_CHIPS (filtro por status)', () => {
     assert.equal(byKey.rascunho?.status, 'Rascunho')
     assert.equal(byKey.aberto?.status, 'Aberto')
     assert.equal(byKey.aprovado?.status, 'Aprovado')
-    for (const k of ['rascunho', 'aberto', 'aprovado']) assert.equal(byKey[k]?.filterable, true)
-    // Estados que o backend ainda não produz → desabilitados.
-    for (const k of ['transmitido', 'recusado', 'pago', 'conciliado'])
-      assert.equal(byKey[k]?.filterable, false)
+    // Pago/Conciliado também filtram (backend aceita Paid/Reconciled em /payable-titles).
+    for (const k of ['rascunho', 'aberto', 'aprovado', 'pago', 'conciliado'])
+      assert.equal(byKey[k]?.filterable, true)
+    // Transmitido/Recusado seguem fora do enum de filtro do backend → desabilitados.
+    for (const k of ['transmitido', 'recusado']) assert.equal(byKey[k]?.filterable, false)
   })
 })
 
