@@ -3,6 +3,15 @@
  * `parseEnv` é pura (testável, retorna Result); `loadEnvOrThrow` é a borda de infra
  * que lança no boot se a config for inválida. NUNCA importar de código client/UI
  * nem usar prefixo `VITE_` (não pode ir ao bundle do browser).
+ *
+ * Contrato de base URLs (ADR-0020): as URLs do core-api são lidas em RUNTIME daqui — trocar o DNS é
+ * mudar a env + reiniciar, SEM recompilar (`VITE_*` seria inlined no build → rebuild, e vazaria ao
+ * client). O browser fala só com o BFF; mesmo com o core-api público via HTTPS, o client não o chama
+ * direto. Base URLs ADICIONAIS (ex.: `CORE_API_V1_URL` — espelho legado, ADR-0033 do core-api) entram
+ * aqui no mesmo padrão, quando houver uso.
+ *
+ * `LOG_LEVEL`/`NODE_ENV` NÃO entram no EnvSchema de propósito: o logger os lê direto de `process.env`
+ * (camada mais baixa, precisa funcionar mesmo se a config quebrar — ADR-0014).
  */
 import * as z from 'zod';
 

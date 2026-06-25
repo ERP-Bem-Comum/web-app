@@ -6,7 +6,7 @@
 
 ## Para que servem
 
-Um ADR responde *"por que o projeto é assim?"* de forma durável. Ao contrário de um comentário
+Um ADR responde _"por que o projeto é assim?"_ de forma durável. Ao contrário de um comentário
 no código (que conta o **o quê**), o ADR registra o **trade-off** que levou à escolha — incluindo
 as alternativas **rejeitadas** e por quê. É a fonte que um dev novo (ou um agente de IA) lê para
 **entender as intenções** antes de mexer, evitando "desfazer" decisões deliberadas por engano.
@@ -26,20 +26,28 @@ as alternativas **rejeitadas** e por quê. É a fonte que um dev novo (ou um age
 
 ## Índice
 
-| ADR | Título | Status |
-| :-- | :----- | :----- |
-| [0001](./0001-vertical-modular-architecture.md) | Arquitetura vertical-modular (modules/shared/external + public-api) | Accepted (layout interno refinado por 0004) |
-| [0002](./0002-errors-as-values.md) | Erros como valores (Result) + QueryError como única subclasse de Error | Accepted |
-| [0003](./0003-pnpm-v11-supply-chain.md) | pnpm v11 pinado + supply-chain hardening | Accepted |
-| [0004](./0004-client-server-split-mvvm-ddd.md) | Separação client (MVVM) × server (BFF/DDD) + Event Bus + Controller | Accepted |
-| [0005](./0005-auth-session-refresh-decisions.md) | Auth: sessão opaca, refresh single-flight, JWT decode-only, /me só userId | Accepted |
-| [0006](./0006-security-headers-csp.md) | Security headers & CSP (middleware global em src/start.ts + Caddy; script-src 'self') | Accepted |
-| [0007](./0007-design-system-vanilla-extract.md) | vanilla-extract como engine do design system (zero-runtime, type-safe; Panda/Tailwind rejeitados) | Accepted |
-| [0008](./0008-self-host-webfonts-fontsource.md) | Self-host de webfonts via @fontsource (assets puros + provenance; CDN/woff2-manual rejeitados) | Accepted |
-| [0009](./0009-framework-agnostic-client.md) | Cliente agnóstico de framework: ViewModel puro + Command, UI como adaptador plugável (binding hook), use-case opcional | Accepted |
-| [0010](./0010-bff-orchestration-fn-naming.md) | BFF orquestrador: uma `fn` completa por caso de uso, client não compõe; nomenclatura `.query.fn` / `.service.fn` | Accepted |
-| [0011](./0011-no-mocks-in-production.md) | Sem mocks em produção (`src/`): `not-implemented` como placeholder; fixtures só em `tests/` (governance test) | Accepted |
-| [0012](./0012-shell-as-root-screen-mvvm.md) | Shell autenticado é uma TELA MVVM (`root`) em `modules/shell/client`, client-only; `user`/`permissions` por route context (sem double-fetch) | Accepted |
+| ADR                                              | Título                                                                                                                                       | Status                                      |
+| :----------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------ |
+| [0001](./0001-vertical-modular-architecture.md)  | Arquitetura vertical-modular (modules/shared/external + public-api)                                                                          | Accepted (layout interno refinado por 0004) |
+| [0002](./0002-errors-as-values.md)               | Erros como valores (Result) + QueryError como única subclasse de Error                                                                       | Accepted                                    |
+| [0003](./0003-pnpm-v11-supply-chain.md)          | pnpm v11 pinado + supply-chain hardening                                                                                                     | Accepted                                    |
+| [0004](./0004-client-server-split-mvvm-ddd.md)   | Separação client (MVVM) × server (BFF/DDD) + Event Bus + Controller                                                                          | Accepted                                    |
+| [0005](./0005-auth-session-refresh-decisions.md) | Auth: sessão opaca, refresh single-flight, JWT decode-only, /me só userId                                                                    | Accepted                                    |
+| [0006](./0006-security-headers-csp.md)           | Security headers & CSP (middleware global em src/start.ts + Caddy; script-src 'self')                                                        | Accepted                                    |
+| [0007](./0007-design-system-vanilla-extract.md)  | vanilla-extract como engine do design system (zero-runtime, type-safe; Panda/Tailwind rejeitados)                                            | Accepted                                    |
+| [0008](./0008-self-host-webfonts-fontsource.md)  | Self-host de webfonts via @fontsource (assets puros + provenance; CDN/woff2-manual rejeitados)                                               | Accepted                                    |
+| [0009](./0009-framework-agnostic-client.md)      | Cliente agnóstico de framework: ViewModel puro + Command, UI como adaptador plugável (binding hook), use-case opcional                       | Accepted                                    |
+| [0010](./0010-bff-orchestration-fn-naming.md)    | BFF orquestrador: uma `fn` completa por caso de uso, client não compõe; nomenclatura `.query.fn` / `.service.fn`                             | Accepted                                    |
+| [0011](./0011-no-mocks-in-production.md)         | Sem mocks em produção (`src/`): `not-implemented` como placeholder; fixtures só em `tests/` (governance test)                                | Accepted                                    |
+| [0012](./0012-shell-as-root-screen-mvvm.md)      | Shell autenticado é uma TELA MVVM (`root`) em `modules/shell/client`, client-only; `user`/`permissions` por route context (sem double-fetch) | Accepted                                    |
+| [0013](./0013-id-format-convention.md)           | Convenção de formatos de ID — UUID canônico para identidade, número de negócio para exibição                                                 | Accepted                                    |
+| [0014](./0014-structured-logging-bff.md)         | Logging estruturado no BFF (pino, log-na-borda, redaction); telemetria/OTel adiada                                                           | Accepted                                    |
+| [0015](./0015-web-image-distroless.md)           | Imagem de produção distroless/hardened (non-root, sem shell; Nitro `.output` self-contained)                                                 | Accepted (035)                              |
+| [0016](./0016-image-provenance-sbom.md)          | Cadeia de suprimentos da imagem — provenance + SBOM attestations (cosign como reforço)                                                       | Accepted (035)                              |
+| [0017](./0017-edge-caddy-rate-limit.md)          | Borda HTTPS = Caddy; rate-limit no AWS WAF (prod) + throttle de login do core-api                                                            | Accepted (035)                              |
+| [0018](./0018-deploy-tailscale-oidc.md)          | Deploy sem segredo longevo — Tailscale (QA) + GitHub OIDC→AWS (prod); actions por SHA                                                        | Accepted (035)                              |
+| [0019](./0019-observability-secure-debug.md)     | Observabilidade p/ debug seguro (correlation-id + OTel faseado + self-hosted no tailnet) — avança ADR-0014                                    | Accepted (035)                              |
+| [0020](./0020-baseurls-runtime-bff-only.md)      | core-api público via HTTPS, mas browser só fala com o BFF; base URLs em env runtime (nunca `VITE_`)                                           | Accepted (035)                              |
 
 > Próximos ADRs a registrar conforme as decisões surgirem (ex.: i18n, módulo de usuários Zero Trust).
 > Decisões já tomadas e ainda não "adritizadas" vivem na constituição e em `specs/*/research.md`.
