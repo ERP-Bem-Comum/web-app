@@ -9,6 +9,8 @@ import {
   accountStatus,
   deriveAccountRows,
   consolidate,
+  maskDateInput,
+  dateInputToIso,
 } from '../../../../../src/modules/financial/client/reconciliation-accounts/reconciliation-accounts.view-model.ts'
 import type { ReconciliationAccount } from '../../../../../src/modules/financial/client/data/model/reconciliation.model.ts'
 
@@ -97,5 +99,23 @@ describe('consolidate', () => {
     assert.equal(cons.accountsCount, 2)
     assert.equal(cons.pendingTotal, 5)
     assert.match(cons.balanceBRL, /150,00/) // 15000 centavos = R$ 150,00
+  })
+})
+
+describe('máscara/parse da data do saldo (maskDateInput / dateInputToIso)', () => {
+  it('maskDateInput: dígitos → DD/MM/AAAA progressivo', () => {
+    assert.equal(maskDateInput('0'), '0')
+    assert.equal(maskDateInput('0105'), '01/05')
+    assert.equal(maskDateInput('01052026'), '01/05/2026')
+    assert.equal(maskDateInput('010520269999'), '01/05/2026') // corta em 8 dígitos
+    assert.equal(maskDateInput('01/05/2026'), '01/05/2026') // idempotente
+  })
+
+  it('dateInputToIso: DD/MM/AAAA → ISO; null se incompleto/inválido', () => {
+    assert.equal(dateInputToIso('01/05/2026'), '2026-05-01')
+    assert.equal(dateInputToIso('01052026'), '2026-05-01')
+    assert.equal(dateInputToIso('01/05'), null) // incompleto
+    assert.equal(dateInputToIso('32/05/2026'), null) // dia inválido
+    assert.equal(dateInputToIso('01/13/2026'), null) // mês inválido
   })
 })

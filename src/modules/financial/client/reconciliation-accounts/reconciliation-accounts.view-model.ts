@@ -86,6 +86,28 @@ export const formatCadastroDate = (iso: string | null): string => {
   return y !== undefined && m !== undefined && d !== undefined ? `${d}/${m}/${y}` : iso
 }
 
+// ── Máscara/parse da DATA do saldo de abertura (input do modal de Nova Conta) ──────────────────────────
+/** Máscara progressiva: dígitos → "DD/MM/AAAA" (idempotente; aceita cru ou já mascarado). */
+export const maskDateInput = (v: string): string => {
+  const d = v.replace(/\D/g, '').slice(0, 8)
+  if (d.length <= 2) return d
+  if (d.length <= 4) return `${d.slice(0, 2)}/${d.slice(2)}`
+  return `${d.slice(0, 2)}/${d.slice(2, 4)}/${d.slice(4)}`
+}
+
+/** "DD/MM/AAAA" → ISO "AAAA-MM-DD". null se incompleto/inválido (dia/mês fora de faixa). */
+export const dateInputToIso = (masked: string): string | null => {
+  const d = masked.replace(/\D/g, '')
+  if (d.length !== 8) return null
+  const dd = d.slice(0, 2)
+  const mm = d.slice(2, 4)
+  const yyyy = d.slice(4)
+  const day = Number.parseInt(dd, 10)
+  const mon = Number.parseInt(mm, 10)
+  if (mon < 1 || mon > 12 || day < 1 || day > 31) return null
+  return `${yyyy}-${mm}-${dd}`
+}
+
 export const toAccountRow = (a: ReconciliationAccount): AccountRow => {
   const status = accountStatus(a)
   return {
