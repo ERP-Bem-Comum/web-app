@@ -10,15 +10,20 @@
 import { createFileRoute } from '@tanstack/react-router'
 
 import { loadEnvOrThrow } from '#external/config/env.config.ts'
+import { coreApiBase } from '#external/core-api/api-base.ts'
 
 const PROBE_TIMEOUT_MS = 2000
 
-/** Probe leve do core-api: GET no `/health` do ORIGIN do CORE_API_URL, com timeout curto. */
+/**
+ * Probe do core-api: GET numa rota REAL sob `/api/v2` (password-policy — pública, sem token, barata),
+ * NÃO o `/health` do host. Assim o readiness pega um `CORE_API_URL` com PATH errado (ex.: sem `/api` →
+ * 404), não só "host no ar" — o ponto cego do incidente 2026-06-25. Timeout curto.
+ */
 async function probeCoreApi(coreApiUrl: string): Promise<boolean> {
   const ac = new AbortController()
   const timer = setTimeout(() => { ac.abort(); }, PROBE_TIMEOUT_MS)
   try {
-    const res = await fetch(new URL('/health', coreApiUrl), {
+    const res = await fetch(`${coreApiBase(coreApiUrl, 'v2')}/auth/password-policy`, {
       method: 'GET',
       signal: ac.signal,
       headers: { accept: 'application/json' },
