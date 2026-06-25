@@ -27,6 +27,8 @@ const acc = (
   currentBalanceCents: '24539218',
   lastUpdatedAt: '2026-06-18',
   pendingCount: 0,
+  openingBalanceCents: '24539218',
+  openingBalanceDate: '2026-06-01',
   ...over,
 })
 

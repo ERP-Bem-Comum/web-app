@@ -52,12 +52,24 @@ export type AccountRow = Readonly<{
   pendingCount: number
   status: AccountStatusKind
   openable: boolean // encerrada não abre o workspace
+  // Dados do cadastro (expand da linha): saldo inicial + data informados no cadastro ("—" se ausentes).
+  openingBalanceBRL: string
+  openingDate: string
 }>
 
 /** Situação de conciliação da conta (encerrada > pendências > em dia). */
 export const accountStatus = (a: ReconciliationAccount): AccountStatusKind => {
   if (a.status === 'Closed') return 'closed'
   return a.pendingCount > 0 ? 'pending' : 'up-to-date'
+}
+
+const DASH = '—'
+
+/** ISO `YYYY-MM-DD` → "01/06/2026" (DD/MM/AAAA); null/vazio → "—". */
+export const formatCadastroDate = (iso: string | null): string => {
+  if (iso === null || iso === '') return DASH
+  const [y, m, d] = iso.slice(0, 10).split('-')
+  return y !== undefined && m !== undefined && d !== undefined ? `${d}/${m}/${y}` : iso
 }
 
 export const toAccountRow = (a: ReconciliationAccount): AccountRow => {
@@ -75,6 +87,8 @@ export const toAccountRow = (a: ReconciliationAccount): AccountRow => {
     pendingCount: a.pendingCount,
     status,
     openable: status !== 'closed',
+    openingBalanceBRL: a.openingBalanceCents !== null ? centsToBRL(a.openingBalanceCents) : DASH,
+    openingDate: formatCadastroDate(a.openingBalanceDate),
   }
 }
 

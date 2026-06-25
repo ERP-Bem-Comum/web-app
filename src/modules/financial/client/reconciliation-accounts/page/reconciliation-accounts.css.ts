@@ -312,6 +312,44 @@ export const pillDot = styleVariants({
 })
 export const colArrow = style({ display: 'flex', justifyContent: 'flex-end', color: c.ink[5] })
 
+// Seta = botão que alterna o EXPAND do cadastro (substitui o colArrow decorativo). Fica na 5ª coluna.
+export const colArrowBtn = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'flex-end',
+  border: 'none',
+  background: 'transparent',
+  padding: 0,
+  cursor: 'pointer',
+  color: c.ink[5],
+  blockSize: '100%',
+  selectors: { '&:hover': { color: c.ink[2] } },
+})
+const chevronBase = { display: 'inline-flex', transition: `transform ${recon.tFast}` } as const
+export const chevron = style(chevronBase)
+export const chevronOpen = style({ ...chevronBase, transform: 'rotate(180deg)' })
+
+// Painel expandido (dados do cadastro: saldo inicial + data), logo abaixo da linha. Indentado p/ alinhar
+// sob o nome da conta (depois do bank-mark). Fundo discreto + linha embaixo, no padrão do grid.
+export const expandPanel = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: sp['3xl'],
+  paddingBlock: sp.lg,
+  paddingInlineEnd: sp.xl,
+  paddingInlineStart: `calc(2.625rem + ${sp.lg} + ${sp.xl})`,
+  background: c.paper.warm,
+  borderBlockEnd: `${bw.thin} solid ${c.paper.rule}`,
+})
+export const expandItem = style({ display: 'flex', flexDirection: 'column', gap: '0.125rem' })
+export const expandLbl = style({ fontFamily: recon.font.sans, fontSize: fs['3xs'], color: c.ink[5] })
+export const expandVal = style({
+  fontFamily: recon.font.mono,
+  fontSize: fs.sm,
+  fontWeight: recon.weight.semibold,
+  color: c.ink[2],
+})
+
 // ── footer da grade ──────────────────────────────────────────────────────────
 export const gridFoot = style({
   ...gridCols,

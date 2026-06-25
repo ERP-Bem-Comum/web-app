@@ -166,6 +166,9 @@ export type CedenteAccount = Readonly<{
   currentBalanceCents: string
   lastUpdatedAt: string
   pendingCount: number
+  // Dados do cadastro (#138/#206): saldo inicial + data informados no cadastro (null se ausentes).
+  openingBalanceCents: string | null
+  openingBalanceDate: string | null
 }>
 
 // Criar conta-cedente (#138). `document` = CNPJ (obrigatório). type = AccountType do front (mapeado p/
