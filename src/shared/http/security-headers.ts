@@ -11,6 +11,9 @@
  *   `'unsafe-inline'` da diretiva, e o `style-src` ainda depende dele (vanilla-extract/Vite injetam
  *   `<style>` por JS em dev). Endurecer com nonce em style-src é follow-up (exige carimbar esses estilos).
  * - HSTS só em https (R1/trust-proxy): em dev http omitir para não "travar" localhost.
+ * - COOP/CORP `same-origin` + `Permissions-Policy` + `Cache-Control: no-store` (D6 / amenda ADR-0006,
+ *   feature 035): isolamento cross-origin (OWASP Secure Headers/XS-Leaks) e respostas do BFF não-cacheáveis.
+ *   `X-XSS-Protection` permanece OMITIDO (OWASP: `0`/omitir). Sem CORS (invariante same-origin — FR-012/029).
  */
 
 export type CspDirectives = Readonly<Record<string, readonly string[]>>
@@ -65,6 +68,26 @@ export type SecurityHeaderSet = readonly SecurityHeader[]
 const HSTS_VALUE = 'max-age=63072000; includeSubDomains; preload'
 
 /**
+ * Permissions-Policy — desliga APIs de browser que o ERP não usa (defesa em profundidade, D6/ADR-0006).
+ * `()` = nenhum origin pode usar; `(self)` = só a própria origem. Ajustar se uma feature passar a precisar.
+ */
+const PERMISSIONS_POLICY = [
+  'accelerometer=()',
+  'autoplay=()',
+  'camera=()',
+  'display-capture=()',
+  'encrypted-media=()',
+  'fullscreen=(self)',
+  'geolocation=()',
+  'gyroscope=()',
+  'magnetometer=()',
+  'microphone=()',
+  'midi=()',
+  'payment=()',
+  'usb=()',
+].join(', ')
+
+/**
  * Conjunto de headers de segurança para TODA resposta. `https` controla a emissão do HSTS.
  * `nonce` (per-request) habilita o inline de bootstrap do Start em `script-src`. `csp` permite
  * sobrescrever a política inteira (default: `CSP_BASELINE`, com nonce em script-src se fornecido).
@@ -78,6 +101,13 @@ export const buildSecurityHeaders = (
     ['X-Content-Type-Options', 'nosniff'],
     ['X-Frame-Options', 'DENY'],
     ['Referrer-Policy', 'strict-origin-when-cross-origin'],
+    // Isolamento cross-origin (OWASP Secure Headers / XS-Leaks — D6/ADR-0006). same-origin: front+BFF.
+    ['Cross-Origin-Opener-Policy', 'same-origin'],
+    ['Cross-Origin-Resource-Policy', 'same-origin'],
+    ['Permissions-Policy', PERMISSIONS_POLICY],
+    // Respostas do BFF (SSR + server fns) carregam dado sensível → não cachear (OWASP). Os assets
+    // estáticos (hash no nome) são servidos FORA deste middleware, então seguem cacheáveis.
+    ['Cache-Control', 'no-store'],
     ['Content-Security-Policy', csp],
   ]
   return opts.https ? [...base, ['Strict-Transport-Security', HSTS_VALUE]] : base
