@@ -744,6 +744,11 @@ export const matchActions = style({
 })
 export const spacer = style({ flex: 1 })
 
+// Banner da movimentação conciliada (US5): Motivo + Desfazer na MESMA linha → banner estreito (o cliente
+// tem muitas movimentações, aproveita o espaço vertical). Botão alinhado à base do input (label acima).
+export const undoRow = style({ display: 'flex', alignItems: 'flex-end', gap: sp.md })
+export const undoField = style({ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 })
+
 export const btnConfirm = style({
   display: 'inline-flex',
   alignItems: 'center',

@@ -27,23 +27,20 @@ export function ReconciledBanner({ undo, reconciliationId, transactionId }: Reco
           <CheckCircleIcon />
           {t('financial.recon.undo.banner')}
         </span>
-        <div className={s.formField}>
-          <label className={s.fieldLabel} htmlFor="recon-undo-reason">
-            {t('financial.recon.undo.reason')}
-          </label>
-          <input
-            id="recon-undo-reason"
-            className={s.input}
-            value={undo.reason}
-            onChange={(e) => {
-              undo.setReason(e.target.value)
-            }}
-          />
-        </div>
-        {!canUndo ? <p className={s.summaryLbl}>{t('financial.recon.undo.unavailable')}</p> : null}
-        {undo.errorTag !== null ? <p className={s.errorText}>{t(undo.errorTag)}</p> : null}
-        <div className={s.matchActions}>
-          <span className={s.spacer} />
+        <div className={s.undoRow}>
+          <div className={s.undoField}>
+            <label className={s.fieldLabel} htmlFor="recon-undo-reason">
+              {t('financial.recon.undo.reason')}
+            </label>
+            <input
+              id="recon-undo-reason"
+              className={s.input}
+              value={undo.reason}
+              onChange={(e) => {
+                undo.setReason(e.target.value)
+              }}
+            />
+          </div>
           <button
             type="button"
             className={s.btnSecondary}
@@ -56,6 +53,8 @@ export function ReconciledBanner({ undo, reconciliationId, transactionId }: Reco
             {t('financial.recon.undo.button')}
           </button>
         </div>
+        {!canUndo ? <p className={s.summaryLbl}>{t('financial.recon.undo.unavailable')}</p> : null}
+        {undo.errorTag !== null ? <p className={s.errorText}>{t(undo.errorTag)}</p> : null}
       </div>
     </div>
   )
