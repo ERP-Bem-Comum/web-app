@@ -29,6 +29,7 @@ const baseBinding = (over: Partial<ManualEntryBinding> = {}): ManualEntryBinding
   programOptions: [],
   categoryOptions: [],
   costCenterOptions: [],
+  accountOptions: [],
   setType: vi.fn(),
   setDescription: vi.fn(),
   setDestinationAccount: vi.fn(),

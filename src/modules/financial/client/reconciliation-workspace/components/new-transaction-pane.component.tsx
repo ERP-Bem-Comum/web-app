@@ -188,7 +188,14 @@ export function NewTransactionPane({ binding }: NewTransactionPaneProps) {
               </div>
             </div>
             <div className={`${s.ntRow} ${s.ntRowCols2}`}>
-              <ChromeSelect label={t(`${destKeyBase}.label`)} placeholder={t(`${destKeyBase}.placeholder`)} />
+              {/* Destino REAL (#143): contas-cedente ativas (envia destinationAccountRef). */}
+              <RealSelect
+                label={t(`${destKeyBase}.label`)}
+                placeholder={t(`${destKeyBase}.placeholder`)}
+                value={binding.destinationAccount}
+                options={binding.accountOptions}
+                onChange={binding.setDestinationAccount}
+              />
               <ChromeInput label={t('financial.recon.manual.f.effective')} placeholder="DD/MM/AAAA" mono />
             </div>
           </div>
