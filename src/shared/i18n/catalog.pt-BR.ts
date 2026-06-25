@@ -1243,6 +1243,7 @@ export const ptBR: Catalog = {
   'financial.recon.match.docLbl': 'Título no sistema',
   'financial.recon.match.docLblManual': 'Lançamento manual',
   'financial.recon.match.manualKind': 'Nova transação',
+  'financial.recon.match.rowDestAccount': 'Conta destino',
   'financial.recon.match.manualHint':
     'Conciliado por nova transação — sem título a pagar (ex.: tarifa, despesa).',
   'financial.recon.match.badge': 'Conciliado',

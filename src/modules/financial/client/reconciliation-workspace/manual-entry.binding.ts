@@ -95,7 +95,12 @@ const programOptionsQuery = {
 export function useManualEntry(
   accountRef: string,
   selectedTx: StatementTransaction | null,
-  onReconciled: (transactionId: string, reconciliationId: string, manualType?: ManualEntryType) => void,
+  onReconciled: (
+    transactionId: string,
+    reconciliationId: string,
+    manualType?: ManualEntryType,
+    counterparty?: string,
+  ) => void,
 ): ManualEntryBinding {
   const qc = useQueryClient()
   const [type, setType] = useState<ManualEntryType | null>(null)
@@ -167,7 +172,14 @@ export function useManualEntry(
         setCostCenterRef('')
         // Baixa manual concilia a transação → invalida o namespace (lista do período + contadores).
         void qc.invalidateQueries({ queryKey: ['financial', 'reconciliation'] })
-        onReconciled(v.transactionId, res.value.reconciliationId, v.type)
+        // Contraparte p/ o detalhe (sessão): conta de destino (realocação) ou fornecedor (pagamento/recebimento).
+        const counterparty =
+          v.type === 'Transfer' || v.type === 'Investment' || v.type === 'Redemption'
+            ? accountOptions.find((o) => o.value === v.destinationAccount)?.label
+            : v.type === 'Payment' || v.type === 'Receipt'
+              ? partnerOptions.find((o) => o.value === v.supplierRef)?.label
+              : undefined
+        onReconciled(v.transactionId, res.value.reconciliationId, v.type, counterparty)
       } else {
         setErrorTag(reconciliationErrorTag(res.error))
       }

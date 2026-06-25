@@ -34,6 +34,8 @@ export function useMatchDetails(
   // Tipo do lançamento manual feito NESTA sessão (Payment/Transfer/Investment/…). O backend ainda não
   // expõe no lookup (#268); até lá, mostramos o tipo específico só p/ lançamentos da sessão.
   sessionManualTypeFor: (transactionId: string) => ManualEntryType | null,
+  // Contraparte do lançamento na sessão (conta de destino ou fornecedor) — mesma limitação do tipo.
+  sessionCounterpartyFor: (transactionId: string) => string | null,
 ): MatchDetailsBinding {
   const [tx, setTx] = useState<StatementTransaction | null>(null)
   // Só busca a conciliação de transação conciliada (Reconciled/ManualEntry). Pending → sem lookup.
@@ -47,7 +49,9 @@ export function useMatchDetails(
   // A forma da conciliação (match vs nova transação) vem do `type` da reconciliation, não do status da tx.
   const isManualEntry = lookup?.type === 'ManualEntry'
   const manualType = tx !== null ? sessionManualTypeFor(tx.id) : null
-  const view = tx === null ? null : matchDetailsView(tx, null, audit, multi, isManualEntry, manualType)
+  const counterparty = tx !== null ? sessionCounterpartyFor(tx.id) : null
+  const view =
+    tx === null ? null : matchDetailsView(tx, null, audit, multi, isManualEntry, manualType, counterparty)
   const reconciliationId = tx === null ? null : (sessionIdFor(tx.id) ?? lookup?.reconciliationId ?? null)
 
   return {

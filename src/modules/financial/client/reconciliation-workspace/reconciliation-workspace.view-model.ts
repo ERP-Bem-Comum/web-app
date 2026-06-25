@@ -503,6 +503,9 @@ export type MatchDetailsView = Readonly<{
   // Tag i18n da FORMA do lançamento manual (Pagamento/Transferência/Aplicação/Resgate/Tarifa…) quando
   // conhecida (sessão; ou backend via #268); senão a genérica "Nova transação". A view traduz.
   manualKindTag: string
+  // CONTRAPARTE do lançamento: conta de destino (transferência/aplicação/resgate) ou fornecedor
+  // (pagamento/recebimento). `labelTag` vazio → não há linha (ex.: tarifa). `value` "—" até saber (sessão/#268).
+  manualCounterparty: Readonly<{ labelTag: string; value: string }>
   ext: Readonly<{ name: string; date: string; kind: string; id: string; valueBRL: string }>
   // doc/audit dependem do backend expor os detalhes da conciliação (sem GET de detalhes hoje, #175) →
   // sem dados, preenche com "—" (estado honesto, igual ao default do mock). Em preview vêm preenchidos.
@@ -556,10 +559,22 @@ export const matchDetailsView = (
   isManualEntry = false,
   // Tipo específico do lançamento manual (Payment/Transfer/Investment/…), conhecido na sessão. null → genérico.
   manualType: ManualEntryType | null = null,
+  // Contraparte (conta de destino ou fornecedor) conhecida na sessão; null → "—" (até o backend, #268).
+  counterparty: string | null = null,
 ): MatchDetailsView => ({
   isManualEntry,
   manualKindTag:
     manualType !== null ? `financial.recon.manualType.${manualType}` : 'financial.recon.match.manualKind',
+  manualCounterparty: {
+    // Transferência/Aplicação/Resgate → conta de destino; Pagamento/Recebimento → fornecedor; senão, sem linha.
+    labelTag:
+      manualType === 'Transfer' || manualType === 'Investment' || manualType === 'Redemption'
+        ? 'financial.recon.match.rowDestAccount'
+        : manualType === 'Payment' || manualType === 'Receipt'
+          ? 'financial.recon.manual.f.supplier'
+          : '',
+    value: counterparty ?? MATCH_DASH,
+  },
   ext: {
     name: tx.payeeName,
     date: formatDayHeader(tx.date),
