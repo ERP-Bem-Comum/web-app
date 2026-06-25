@@ -46,7 +46,10 @@ jobs:
           # Identidade via tailnet/ACL (Tailscale SSH) — sem chave SSH armazenada no repo (CICD-SEC-6).
           # deploy.sh: `docker compose pull` da :qa + up --wait; sai !=0 se um container não ficar healthy
           # → este job fica vermelho. Rollback = fixar CORE_API_IMAGE/WEB_IMAGE num digest anterior e re-rodar.
-          ssh -o StrictHostKeyChecking=accept-new ubuntu@erp-bem-comum-qa /opt/erp-qa/deploy.sh
+          # Auto-cura de disco: a VPS tem só 10 GB e enche com imagens antigas. Limpa imagens/cache/containers
+          # órfãos ANTES do pull — NÃO usa --volumes, então o volume do MySQL fica intacto.
+          ssh -o StrictHostKeyChecking=accept-new ubuntu@erp-bem-comum-qa \
+            'docker system prune -af && /opt/erp-qa/deploy.sh'
 
 # TODO produção (AWS — ADR-0018): job separado com `permissions.id-token: write` +
 # aws-actions/configure-aws-credentials (role-to-assume via OIDC, SEM chave longeva) → deploy no alvo AWS,
