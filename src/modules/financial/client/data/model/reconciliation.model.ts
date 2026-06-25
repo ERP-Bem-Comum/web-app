@@ -109,6 +109,9 @@ export type ManualEntryTemplate = Readonly<{
   programRef?: string
   description?: string
   destinationAccount?: string
+  // #143: Aplicação/Resgate o backend exige um "produto" (texto). Como o cliente modela entre contas,
+  // mandamos o nome da conta de destino aqui (satisfaz a regra) + `destinationAccount` (o vínculo real).
+  productLabel?: string
 }>
 export type ManualEntryInput = ManualEntryTemplate & Readonly<{ transactionId: string }>
 export type BatchReconcileInput = Readonly<{

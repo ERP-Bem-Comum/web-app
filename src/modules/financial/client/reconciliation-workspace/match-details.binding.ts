@@ -15,7 +15,10 @@ import {
   matchDetailsView,
   type MatchDetailsView,
 } from './reconciliation-workspace.view-model.ts'
-import type { StatementTransaction } from '#modules/financial/client/data/model/reconciliation.model.ts'
+import type {
+  ManualEntryType,
+  StatementTransaction,
+} from '#modules/financial/client/data/model/reconciliation.model.ts'
 
 export type MatchDetailsBinding = Readonly<{
   open: boolean
@@ -26,7 +29,12 @@ export type MatchDetailsBinding = Readonly<{
   close: () => void
 }>
 
-export function useMatchDetails(sessionIdFor: (transactionId: string) => string | null): MatchDetailsBinding {
+export function useMatchDetails(
+  sessionIdFor: (transactionId: string) => string | null,
+  // Tipo do lançamento manual feito NESTA sessão (Payment/Transfer/Investment/…). O backend ainda não
+  // expõe no lookup (#268); até lá, mostramos o tipo específico só p/ lançamentos da sessão.
+  sessionManualTypeFor: (transactionId: string) => ManualEntryType | null,
+): MatchDetailsBinding {
   const [tx, setTx] = useState<StatementTransaction | null>(null)
   // Só busca a conciliação de transação conciliada (Reconciled/ManualEntry). Pending → sem lookup.
   const lookupTxId = tx !== null && tx.reconciliationStatus !== 'Pending' ? tx.id : null
@@ -38,7 +46,8 @@ export function useMatchDetails(sessionIdFor: (transactionId: string) => string 
   const multi = lookup !== null ? buildMatchTitles(lookup) : null
   // A forma da conciliação (match vs nova transação) vem do `type` da reconciliation, não do status da tx.
   const isManualEntry = lookup?.type === 'ManualEntry'
-  const view = tx === null ? null : matchDetailsView(tx, null, audit, multi, isManualEntry)
+  const manualType = tx !== null ? sessionManualTypeFor(tx.id) : null
+  const view = tx === null ? null : matchDetailsView(tx, null, audit, multi, isManualEntry, manualType)
   const reconciliationId = tx === null ? null : (sessionIdFor(tx.id) ?? lookup?.reconciliationId ?? null)
 
   return {

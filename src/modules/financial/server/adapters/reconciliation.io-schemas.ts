@@ -86,6 +86,7 @@ const ManualEntryTemplateSchema = z.object({
   programRef: z.uuid().optional(),
   description: z.string().trim().max(500).optional(),
   destinationAccount: z.uuid().optional(),
+  productLabel: z.string().trim().min(1).max(120).optional(), // #143: produto da Aplicação/Resgate
 })
 
 export const ManualEntryInputSchema = ManualEntryTemplateSchema.extend({ transactionId: z.uuid() })

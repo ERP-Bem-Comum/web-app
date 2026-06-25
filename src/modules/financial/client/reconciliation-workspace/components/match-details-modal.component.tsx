@@ -147,7 +147,7 @@ export function MatchDetailsModal({
                 // o valor conciliado real e a categoria (acende quando o backend enriquecer — core-api#268).
                 <>
                   <div className={s.mmSideLbl.doc}>{t('financial.recon.match.docLblManual')}</div>
-                  <div className={s.mmSideTitle}>{t('financial.recon.match.manualKind')}</div>
+                  <div className={s.mmSideTitle}>{t(view.manualKindTag)}</div>
                   <div className={s.mmSideRow}>
                     <span className={s.mmSideK}>{t('financial.recon.match.rowCat')}</span>
                     <span className={s.mmSideV}>{view.doc.categoria}</span>

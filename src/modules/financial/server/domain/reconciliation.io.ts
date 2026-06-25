@@ -89,6 +89,7 @@ export interface ManualEntryTemplate {
   programRef?: string
   description?: string
   destinationAccount?: string
+  productLabel?: string // #143: "produto" exigido p/ Aplicação/Resgate (mandamos o nome da conta destino)
 }
 
 // Lançamento manual (POST /statement-transactions/:id/manual-entry).

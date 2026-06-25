@@ -13,6 +13,7 @@ const tr = (k: string): string => ptBR[k] ?? k
 
 const view = (over: Partial<MatchDetailsView> = {}): MatchDetailsView => ({
   isManualEntry: false,
+  manualKindTag: 'financial.recon.match.manualKind',
   ext: {
     name: 'Fornecedor Persist A',
     date: '5 out 2026',

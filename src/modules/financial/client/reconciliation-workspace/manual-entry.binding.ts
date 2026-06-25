@@ -95,7 +95,7 @@ const programOptionsQuery = {
 export function useManualEntry(
   accountRef: string,
   selectedTx: StatementTransaction | null,
-  onReconciled: (transactionId: string, reconciliationId: string) => void,
+  onReconciled: (transactionId: string, reconciliationId: string, manualType?: ManualEntryType) => void,
 ): ManualEntryBinding {
   const qc = useQueryClient()
   const [type, setType] = useState<ManualEntryType | null>(null)
@@ -148,6 +148,7 @@ export function useManualEntry(
       type: ManualEntryType
       description?: string
       destinationAccount?: string
+      productLabel?: string
       supplierRef?: string
       programRef?: string
       categoryRef?: string
@@ -166,7 +167,7 @@ export function useManualEntry(
         setCostCenterRef('')
         // Baixa manual concilia a transação → invalida o namespace (lista do período + contadores).
         void qc.invalidateQueries({ queryKey: ['financial', 'reconciliation'] })
-        onReconciled(v.transactionId, res.value.reconciliationId)
+        onReconciled(v.transactionId, res.value.reconciliationId, v.type)
       } else {
         setErrorTag(reconciliationErrorTag(res.error))
       }
@@ -230,12 +231,17 @@ export function useManualEntry(
     },
     submit: () => {
       if (selectedTx === null || type === null || !canSubmit) return
+      // Aplicação/Resgate: o backend exige um "produto" (texto). Como modelamos entre contas, mandamos o
+      // nome da conta de destino como `productLabel` (satisfaz a regra) + o `destinationAccount` real.
+      const isProductRealloc = type === 'Investment' || type === 'Redemption'
+      const destLabel = accountOptions.find((o) => o.value === destinationAccount.trim())?.label
       mut.mutate({
         transactionId: selectedTx.id,
         type,
         description: description.trim() === '' ? undefined : description.trim(),
         destinationAccount:
           needsDestination && destinationAccount.trim() !== '' ? destinationAccount.trim() : undefined,
+        productLabel: isProductRealloc && destLabel !== undefined ? destLabel.slice(0, 120) : undefined,
         supplierRef: supplierRef === '' ? undefined : supplierRef,
         programRef: programRef === '' ? undefined : programRef,
         categoryRef: categoryRef === '' ? undefined : categoryRef,

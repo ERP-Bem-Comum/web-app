@@ -364,6 +364,13 @@ describe('modal Detalhes da conciliação — matchDetailsView', () => {
     assert.equal(v.audit.who, 'admin')
   })
 
+  it('manualKindTag: tipo específico quando conhecido, genérico quando não', () => {
+    const comTipo = matchDetailsView(base, null, null, null, true, 'Investment')
+    assert.equal(comTipo.manualKindTag, 'financial.recon.manualType.Investment')
+    const semTipo = matchDetailsView(base, null, null, null, true)
+    assert.equal(semTipo.manualKindTag, 'financial.recon.match.manualKind')
+  })
+
   it('multi=null por padrão (conciliação individual)', () => {
     const v = matchDetailsView(base, null, null)
     assert.equal(v.multi, null)
