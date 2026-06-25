@@ -148,6 +148,13 @@ export function MatchDetailsModal({
                 <>
                   <div className={s.mmSideLbl.doc}>{t('financial.recon.match.docLblManual')}</div>
                   <div className={s.mmSideTitle}>{t(view.manualKindTag)}</div>
+                  {view.manualCounterparty.labelTag !== '' ? (
+                    // Contraparte: conta de destino (transferência/aplicação/resgate) ou fornecedor.
+                    <div className={s.mmSideRow}>
+                      <span className={s.mmSideK}>{t(view.manualCounterparty.labelTag)}</span>
+                      <span className={s.mmSideV}>{view.manualCounterparty.value}</span>
+                    </div>
+                  ) : null}
                   <div className={s.mmSideRow}>
                     <span className={s.mmSideK}>{t('financial.recon.match.rowCat')}</span>
                     <span className={s.mmSideV}>{view.doc.categoria}</span>

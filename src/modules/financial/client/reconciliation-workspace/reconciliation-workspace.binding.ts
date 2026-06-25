@@ -192,30 +192,44 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
   // Forma do lançamento manual feito na sessão (Payment/Transfer/Investment/…) → o detalhe mostra o tipo
   // específico antes do backend expô-lo no lookup (#268). Só nova transação grava aqui; match não.
   const [recTypeMap, setRecTypeMap] = useState<ReadonlyMap<string, ManualEntryType>>(() => new Map())
+  // Contraparte do lançamento da sessão (conta de destino p/ transferência/aplicação/resgate; fornecedor
+  // p/ pagamento/recebimento) → o detalhe mostra "p/ onde foi/de onde veio" antes do backend (#268).
+  const [recCounterpartyMap, setRecCounterpartyMap] = useState<ReadonlyMap<string, string>>(() => new Map())
   const recordReconciliation = useCallback(
-    (transactionId: string, reconciliationId: string, manualType?: ManualEntryType) => {
+    (
+      transactionId: string,
+      reconciliationId: string,
+      manualType?: ManualEntryType,
+      counterparty?: string,
+    ) => {
       setRecMap((prev) => new Map(prev).set(transactionId, reconciliationId))
       if (manualType !== undefined) setRecTypeMap((prev) => new Map(prev).set(transactionId, manualType))
+      if (counterparty !== undefined && counterparty !== '')
+        setRecCounterpartyMap((prev) => new Map(prev).set(transactionId, counterparty))
     },
     [],
   )
   const forgetReconciliation = useCallback((transactionId: string) => {
-    setRecMap((prev) => {
+    const drop = (prev: ReadonlyMap<string, string>) => {
       const next = new Map(prev)
       next.delete(transactionId)
       return next
-    })
+    }
+    setRecMap(drop)
     setRecTypeMap((prev) => {
       const next = new Map(prev)
       next.delete(transactionId)
       return next
     })
+    setRecCounterpartyMap(drop)
   }, [])
   const sessionIdFor = (transactionId: string): string | null => recMap.get(transactionId) ?? null
   const sessionManualTypeFor = (transactionId: string): ManualEntryType | null =>
     recTypeMap.get(transactionId) ?? null
+  const sessionCounterpartyFor = (transactionId: string): string | null =>
+    recCounterpartyMap.get(transactionId) ?? null
 
-  const matchDetailsBinding = useMatchDetails(sessionIdFor, sessionManualTypeFor)
+  const matchDetailsBinding = useMatchDetails(sessionIdFor, sessionManualTypeFor, sessionCounterpartyFor)
 
   const payablesQuery = useQuery(paidPayablesQueryOptions())
   const suggestionsQuery = useQuery(suggestionsQueryOptions(ui.selectedTransactionId))
@@ -291,10 +305,11 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     matchDetailsBinding.close()
   })
   // Fechar usa o PERÍODO SELECIONADO no header (não o extrato importado nesta sessão) — coerente com o
-  // modelo period-driven (#104): você fecha o intervalo que está vendo, mesmo sem importar agora.
+  // modelo period-driven (#104): você fecha o intervalo que está vendo, mesmo sem importar agora. Só há o
+  // que fechar quando o período TEM movimentos (período vazio → sem período a fechar).
   const closePeriodBinding = useClosePeriod(
     accountRef,
-    periodRange !== null ? { start: periodRange.from, end: periodRange.to } : null,
+    periodRange !== null && allTx.length > 0 ? { start: periodRange.from, end: periodRange.to } : null,
     pendentesCount > 0,
   )
   const exportBinding = useExportConciliacao(
