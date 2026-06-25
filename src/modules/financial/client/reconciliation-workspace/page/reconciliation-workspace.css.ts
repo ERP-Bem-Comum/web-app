@@ -2289,24 +2289,64 @@ export const modalBody = style({
   ...scrollSoft,
 })
 
-// Aviso "conta diferente" no upload de OFX (texto + rodapé de ações).
+// Aviso "conta diferente" no upload de OFX (texto + comparativo + rodapé de ações). Padding alinhado ao
+// cabeçalho do modal (1.25rem); rodapé com linha de topo, no padrão de modal da marca.
 export const modalMessage = style({
   display: 'flex',
   flexDirection: 'column',
-  gap: sp.sm,
+  gap: sp.md,
   fontFamily: recon.font.sans,
   fontSize: fs.sm,
   lineHeight: 1.5,
   color: c.ink[3],
-  paddingBlock: sp.md,
-  paddingInline: '0.375rem',
+  paddingBlock: '1rem',
+  paddingInline: '1.25rem',
 })
 export const modalMessageStrong = style({ fontWeight: recon.weight.semibold, color: c.ink[1] })
+// Comparativo arquivo × conta atual — bloco com destaque âmbar (sinaliza o aviso sem ícone).
+export const mismatchCompare = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.375rem',
+  padding: sp.md,
+  borderRadius: r.md,
+  background: c.paper.warm,
+  borderInlineStart: `0.1875rem solid ${c.amber.deep}`,
+})
+export const mismatchRow = style({ display: 'flex', flexWrap: 'wrap', gap: sp.sm, alignItems: 'baseline' })
+export const mismatchLbl = style({ color: c.ink[5], minInlineSize: '5.5rem' })
+export const mismatchVal = style({
+  fontFamily: recon.font.mono,
+  color: c.ink[1],
+  fontWeight: recon.weight.semibold,
+})
 export const modalFooter = style({
   display: 'flex',
   justifyContent: 'flex-end',
   gap: sp.md,
-  paddingBlockStart: sp.md,
+  paddingBlock: sp.md,
+  paddingInline: '1.25rem',
+  borderBlockStart: `${bw.hairline} solid ${c.paper.rule}`,
+})
+// Botão primário do modal — altura casada com o btnSecondary + cor de ação da marca (teal, não verde).
+export const modalBtnPrimary = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: sp.xs,
+  boxSizing: 'border-box',
+  blockSize: '2.375rem',
+  paddingInline: sp.xl,
+  borderRadius: r.md,
+  border: 'none',
+  background: c.teal.deep,
+  color: c.paper.default,
+  fontFamily: recon.font.sans,
+  fontSize: fs.sm,
+  fontWeight: recon.weight.semibold,
+  cursor: 'pointer',
+  transition: `opacity ${recon.tFast}`,
+  selectors: { '&:hover': { opacity: 0.92 } },
 })
 
 export const accGroup = style({

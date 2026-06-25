@@ -53,14 +53,16 @@ export function ImportMismatchDialog({
 
         <div className={s.modalMessage}>
           <p>{t('financial.recon.import.mismatch.intro')}</p>
-          <p>
-            <span className={s.modalMessageStrong}>{t('financial.recon.import.mismatch.fileLbl')}</span>{' '}
-            {fileAccountLabel}
-          </p>
-          <p>
-            <span className={s.modalMessageStrong}>{t('financial.recon.import.mismatch.currentLbl')}</span>{' '}
-            {currentAccountLabel}
-          </p>
+          <div className={s.mismatchCompare}>
+            <span className={s.mismatchRow}>
+              <span className={s.mismatchLbl}>{t('financial.recon.import.mismatch.fileLbl')}</span>
+              <span className={s.mismatchVal}>{fileAccountLabel}</span>
+            </span>
+            <span className={s.mismatchRow}>
+              <span className={s.mismatchLbl}>{t('financial.recon.import.mismatch.currentLbl')}</span>
+              <span className={s.mismatchVal}>{currentAccountLabel}</span>
+            </span>
+          </div>
           <p>{t('financial.recon.import.mismatch.question')}</p>
         </div>
 
@@ -68,7 +70,7 @@ export function ImportMismatchDialog({
           <button type="button" className={s.btnSecondary} onClick={onCancel}>
             {t('financial.recon.import.mismatch.cancel')}
           </button>
-          <button type="button" className={s.btnConfirm} onClick={onConfirm}>
+          <button type="button" className={s.modalBtnPrimary} onClick={onConfirm}>
             {t('financial.recon.import.mismatch.confirm')}
           </button>
         </div>
