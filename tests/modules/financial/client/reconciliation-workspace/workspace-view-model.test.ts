@@ -32,6 +32,9 @@ import {
   filterPayables,
   payableTypeOptions,
   sortPendingByPayment,
+  parseOfxAccount,
+  ofxMatchesAccount,
+  ofxAccountLabel,
 } from '../../../../../src/modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
 import type {
   Movement,
@@ -516,5 +519,50 @@ describe('deriveConferencia (#205 — conferência da conciliação)', () => {
 
   it('null → null', () => {
     assert.equal(deriveConferencia(null), null)
+  })
+})
+
+describe('validação de conta do OFX (parseOfxAccount / ofxMatchesAccount)', () => {
+  const ofx = [
+    '<BANKACCTFROM>',
+    '<BANKID>001',
+    '<BRANCHID>1234',
+    '<ACCTID>00123457',
+    '<ACCTTYPE>CHECKING',
+    '</BANKACCTFROM>',
+  ].join('\n')
+  const conta = { bankCode: '001', branch: '1234', accountNumber: '0012345', accountDv: '7' }
+
+  it('parseOfxAccount extrai banco/agência/conta/tipo; null sem ACCTID', () => {
+    const a = parseOfxAccount(ofx)
+    assert.deepEqual(a, { bankId: '001', branchId: '1234', acctId: '00123457', acctType: 'CHECKING' })
+    assert.equal(parseOfxAccount('arquivo csv sem bancos'), null)
+  })
+
+  it('ofxMatchesAccount: bate com a conta (conta+dígito, tolerante a zeros)', () => {
+    const a = parseOfxAccount(ofx)
+    assert.ok(a !== null)
+    assert.equal(ofxMatchesAccount(a, conta), true)
+    // conta sem o dígito embutido (ACCTID = só o número) também bate
+    const semDv = parseOfxAccount('<ACCTID>0012345')
+    assert.ok(semDv !== null && ofxMatchesAccount(semDv, conta))
+  })
+
+  it('ofxMatchesAccount: NÃO bate quando o número da conta é outro (aplicação × corrente)', () => {
+    const outra = parseOfxAccount('<BANKID>001\n<ACCTID>99887766')
+    assert.ok(outra !== null)
+    assert.equal(ofxMatchesAccount(outra, conta), false)
+  })
+
+  it('ofxMatchesAccount: NÃO bate quando o banco é outro', () => {
+    const outroBanco = parseOfxAccount('<BANKID>237\n<ACCTID>00123457')
+    assert.ok(outroBanco !== null)
+    assert.equal(ofxMatchesAccount(outroBanco, conta), false)
+  })
+
+  it('ofxAccountLabel formata "001 · Ag 1234 · CC 00123457"', () => {
+    const a = parseOfxAccount(ofx)
+    assert.ok(a !== null)
+    assert.equal(ofxAccountLabel(a), '001 · Ag 1234 · CC 00123457')
   })
 })

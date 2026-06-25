@@ -364,6 +364,53 @@ export const formatDateBR = (iso: string | null): string => {
   return y !== undefined && m !== undefined && d !== undefined ? `${d}/${m}/${y}` : iso
 }
 
+// ── Validação do extrato OFX (conta do arquivo × conta atual) — front puro, ANTES de importar ──────────
+// Lê o <BANKACCTFROM> do OFX (banco/agência/conta+dígito) e compara com a conta da tela. Se for de OUTRA
+// conta, a UI pede confirmação ("Importar mesmo assim?"). Evita conciliar com o extrato da conta errada.
+export type OfxAccount = Readonly<{
+  bankId: string | null
+  branchId: string | null
+  acctId: string
+  acctType: string | null
+}>
+
+/** Extrai a conta do OFX (SGML: tag-valor sem fechamento). null se não houver ACCTID (ex.: CSV/sem bloco). */
+export const parseOfxAccount = (content: string): OfxAccount | null => {
+  const grab = (tag: string): string | null => {
+    const m = new RegExp(`<${tag}>\\s*([^\\s<\\r\\n]+)`, 'i').exec(content)
+    return m?.[1] !== undefined ? m[1].trim() : null
+  }
+  const acctId = grab('ACCTID')
+  if (acctId === null || acctId === '') return null
+  return { bankId: grab('BANKID'), branchId: grab('BRANCHID'), acctId, acctType: grab('ACCTTYPE') }
+}
+
+// Só dígitos, sem zeros à esquerda (tolerante a formatação: "0012345" ≡ "12345").
+const acctDigits = (s: string | null): string => (s ?? '').replace(/\D/g, '').replace(/^0+/, '')
+
+export type AccountIdentity = Readonly<{
+  bankCode: string
+  branch: string
+  accountNumber: string
+  accountDv: string
+}>
+
+/** O OFX é da conta atual? Compara banco (se presente) + número da conta (com/sem dígito). Branch é frouxo. */
+export const ofxMatchesAccount = (ofx: OfxAccount, account: AccountIdentity): boolean => {
+  const bankOk = ofx.bankId === null || acctDigits(ofx.bankId) === acctDigits(account.bankCode)
+  const fileAcct = acctDigits(ofx.acctId)
+  const withDv = acctDigits(account.accountNumber + account.accountDv)
+  const noDv = acctDigits(account.accountNumber)
+  const acctOk = fileAcct === withDv || fileAcct === noDv
+  return bankOk && acctOk
+}
+
+/** Rótulo da conta do arquivo p/ a mensagem de confirmação (ex.: "001 · Ag 1234 · CC 00123457"). */
+export const ofxAccountLabel = (ofx: OfxAccount): string => {
+  const parts = [ofx.bankId, ofx.branchId !== null ? `Ag ${ofx.branchId}` : null, `CC ${ofx.acctId}`]
+  return parts.filter((p): p is string => p !== null && p !== '').join(' · ')
+}
+
 /** Classe do badge de tipo (cor) a partir do `entryType` livre. */
 export type ExtratoKind = 'pix' | 'ted' | 'doc' | 'tar' | 'apl' | 'default'
 export const extratoKindClass = (entryType: string): ExtratoKind => {
