@@ -102,7 +102,24 @@ jobs:
     if: ${{ github.ref == 'refs/heads/develop' }} # só a branch de QA deploya; outro ref só builda
     permissions:
       contents: read # least privilege: o deploy não precisa de packages/id-token/attestations
+      issues: write # p/ o aviso de expiração da TS_AUTHKEY abrir/comentar uma issue
     steps:
+      # Aviso de expiração roda AQUI (no pipeline de push em develop) porque schedule/workflow_dispatch
+      # do GitHub só disparam da branch DEFAULT (main) — e os workflows vivem na develop. Cadência = deploys.
+      - name: Aviso de expiração da TS_AUTHKEY (<14d, NÃO bloqueia)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          KEY_EXPIRY: "2026-09-23" # ⚠️ ATUALIZAR na rotação (runbook RB-008)
+        run: |
+          days=$(( ( $(date -u -d "$KEY_EXPIRY" +%s) - $(date -u +%s) ) / 86400 ))
+          echo "TS_AUTHKEY expira em $days dia(s) ($KEY_EXPIRY)."
+          if [ "$days" -le 14 ]; then
+            echo "::warning::TS_AUTHKEY expira em $days dia(s) ($KEY_EXPIRY) — rotacionar (RB-008, #92)."
+            msg="⏰ TS_AUTHKEY (deploy QA) expira em **$days dia(s)** ($KEY_EXPIRY). Rotacionar via RB-008 do runbook + atualizar KEY_EXPIRY no build-publish.yml. (aviso automático do deploy)"
+            num=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "rotacionar TS_AUTHKEY in:title" --json number --jq '.[0].number // empty')
+            if [ -n "$num" ]; then gh issue comment "$num" --repo "$GITHUB_REPOSITORY" --body "$msg"; else gh issue create --repo "$GITHUB_REPOSITORY" --title "⏰ Rotacionar TS_AUTHKEY ($KEY_EXPIRY)" --body "$msg"; fi
+          fi
+
       - name: Conectar na tailnet (efêmero, tag:ci)
         uses: tailscale/github-action@306e68a486fd2350f2bfc3b19fcd143891a4a2d8 # v4.1.2
         with:
