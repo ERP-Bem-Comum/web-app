@@ -44,6 +44,7 @@ export const topbarBack = style({
   blockSize: '1.75rem',
   borderRadius: vars.radius.md,
   color: vars.color.institutional.blueDeep,
+  fontFamily: vars.font.family.body, // marca — o glyph ← herdava a serifa do body
   fontSize: vars.font.size.lg,
   textDecoration: 'none',
   ':hover': { background: vars.color.institutional.blueBg },
@@ -56,6 +57,7 @@ export const topbarClose = style({
   blockSize: '1.75rem',
   borderRadius: vars.radius.md,
   color: vars.color.institutional.ink4,
+  fontFamily: vars.font.family.body, // marca — o glyph ✕ herdava a serifa do body
   fontSize: vars.font.size.md,
   textDecoration: 'none',
   ':hover': { background: vars.color.institutional.paperWarm },
