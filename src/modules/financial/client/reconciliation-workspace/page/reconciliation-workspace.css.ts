@@ -2415,7 +2415,25 @@ export const accMark = style({
   fontWeight: recon.weight.semibold,
   letterSpacing: '-0.02em',
 })
-export const accItemInfo = style({ minInlineSize: 0, textAlign: 'start' })
+export const accItemInfo = style({
+  minInlineSize: 0,
+  textAlign: 'start',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.125rem',
+})
+// Sub-linha abaixo do apelido: número da conta (mono) + tipo (chip).
+export const accItemSub = style({ display: 'flex', alignItems: 'center', gap: '0.375rem', minInlineSize: 0 })
+export const accItemType = style({
+  fontFamily: recon.font.sans,
+  fontSize: fs.xs,
+  color: c.ink[3],
+  background: c.paper.warm,
+  paddingInline: '0.375rem',
+  paddingBlock: '0.0625rem',
+  borderRadius: r.sm,
+  whiteSpace: 'nowrap',
+})
 export const accItemName = style({
   fontFamily: recon.font.sans,
   fontSize: fs.lg,

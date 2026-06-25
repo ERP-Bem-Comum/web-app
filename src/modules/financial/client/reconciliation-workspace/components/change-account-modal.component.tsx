@@ -36,7 +36,10 @@ function AccountItem({ item, onSelect }: { item: ChangeAccountItem; onSelect: (i
       </span>
       <span className={s.accItemInfo}>
         <span className={s.accItemName}>{item.name}</span>
-        <span className={s.accItemMeta}>{item.meta}</span>
+        <span className={s.accItemSub}>
+          <span className={s.accItemMeta}>{item.meta}</span>
+          <span className={s.accItemType}>{t(item.typeTag)}</span>
+        </span>
       </span>
       <span className={s.accItemBal}>
         <span className={s.accBalVal}>{item.balanceBRL}</span>
