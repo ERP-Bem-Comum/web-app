@@ -547,8 +547,11 @@ export const matchDetailsView = (
   doc: MatchDetailsDoc | null,
   audit: MatchDetailsAudit | null,
   multi: MatchTitlesView | null = null,
+  // A FORMA da conciliação vem do `type` da reconciliation (lookup #175), NÃO do status da transação —
+  // uma nova transação grava a transação como 'Reconciled' (igual ao match); só o tipo a distingue.
+  isManualEntry = false,
 ): MatchDetailsView => ({
-  isManualEntry: tx.reconciliationStatus === 'ManualEntry',
+  isManualEntry,
   ext: {
     name: tx.payeeName,
     date: formatDayHeader(tx.date),
@@ -556,7 +559,9 @@ export const matchDetailsView = (
     id: tx.fitid,
     valueBRL: centsToBRL(tx.valueCents),
   },
-  doc: doc ?? DASH_DOC,
+  // Nova transação (lançamento manual) não tem título: o "valor conciliado" é o valor da própria
+  // transação (a saída inteira foi lançada). Tipo/categoria/descrição dependem do backend (core-api#268).
+  doc: isManualEntry ? { ...(doc ?? DASH_DOC), valueBRL: centsToBRL(tx.valueCents) } : (doc ?? DASH_DOC),
   audit: audit ?? DASH_AUDIT,
   multi,
 })

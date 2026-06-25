@@ -142,11 +142,25 @@ export function MatchDetailsModal({
                   </div>
                   <span className={s.mmMultiHint}>{t('financial.recon.match.titlesHint')}</span>
                 </>
+              ) : manual ? (
+                // Nova transação: não há título a casar (ex.: tarifa). Mostra a FORMA (lançamento manual),
+                // o valor conciliado real e a categoria (acende quando o backend enriquecer — core-api#268).
+                <>
+                  <div className={s.mmSideLbl.doc}>{t('financial.recon.match.docLblManual')}</div>
+                  <div className={s.mmSideTitle}>{t('financial.recon.match.manualKind')}</div>
+                  <div className={s.mmSideRow}>
+                    <span className={s.mmSideK}>{t('financial.recon.match.rowCat')}</span>
+                    <span className={s.mmSideV}>{view.doc.categoria}</span>
+                  </div>
+                  <div className={s.mmSideRow}>
+                    <span className={s.mmSideK}>{t('financial.recon.match.rowValueDoc')}</span>
+                    <span className={s.mmSideVAmt.doc}>{view.doc.valueBRL}</span>
+                  </div>
+                  <span className={s.mmMultiHint}>{t('financial.recon.match.manualHint')}</span>
+                </>
               ) : (
                 <>
-                  <div className={s.mmSideLbl.doc}>
-                    {manual ? t('financial.recon.match.docLblManual') : t('financial.recon.match.docLbl')}
-                  </div>
+                  <div className={s.mmSideLbl.doc}>{t('financial.recon.match.docLbl')}</div>
                   <div className={s.mmSideTitle}>{view.doc.name}</div>
                   <div className={s.mmSideRow}>
                     <span className={s.mmSideK}>{t('financial.recon.match.rowDoc')}</span>
