@@ -15,6 +15,7 @@
       "Bash(pnpm test:e2e)",
       "Bash(pnpm test:watch)",
       "Bash(pnpm claude:check)",
+      "Bash(pnpm dlx @tanstack/intent@latest *)",
       "Bash(git status)",
       "Bash(git status:*)",
       "Bash(git diff:*)",
@@ -38,6 +39,30 @@
     ]
   },
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/session-start-context.sh",
+            "args": [],
+            "statusMessage": "Carregando contexto do web-app…"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/inject-spec-context.sh",
+            "args": [],
+            "statusMessage": "Detectando feature spec-kit corrente…"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Bash",
