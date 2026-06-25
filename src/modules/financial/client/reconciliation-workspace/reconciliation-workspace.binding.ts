@@ -290,9 +290,11 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     forgetReconciliation(transactionId)
     matchDetailsBinding.close()
   })
+  // Fechar usa o PERÍODO SELECIONADO no header (não o extrato importado nesta sessão) — coerente com o
+  // modelo period-driven (#104): você fecha o intervalo que está vendo, mesmo sem importar agora.
   const closePeriodBinding = useClosePeriod(
     accountRef,
-    importBinding.summary?.period ?? null,
+    periodRange !== null ? { start: periodRange.from, end: periodRange.to } : null,
     pendentesCount > 0,
   )
   const exportBinding = useExportConciliacao(
