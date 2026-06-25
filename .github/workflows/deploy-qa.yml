@@ -4,13 +4,14 @@ name: deploy-qa
 # roda o `deploy.sh` do ERP-INFRA na VPS (que faz `docker compose pull` da :qa + up --wait). A VPS NÃO é
 # exposta por SSH público. Dispara após o build-publish concluir com sucesso em `develop`, ou manualmente.
 #
-# ⚠️ PRÉ-REQUISITOS DE INFRA (FORA deste repo — coordenar com infra antes de habilitar):
-#   1. Tailscale OAuth client → secrets `TS_OAUTH_CLIENT_ID` + `TS_OAUTH_SECRET` (escopo: auth keys, tag:ci).
-#   2. ACL do tailnet: permitir `tag:ci` abrir SSH como `ubuntu` no nó `erp-bem-comum-qa` (Tailscale SSH).
-#   3. Tailscale SSH habilitado na VPS (`tailscale up --ssh`) — autenticação por identidade, SEM chave.
-#   4. /opt/erp-qa/ provisionado (compose.yaml + .env + ./secrets via init-secrets.sh) — ERP-INFRA/platform/vps-qa.
+# PRÉ-REQUISITOS DE INFRA (configurados em 2026-06-25 via Tailscale API):
+#   1. ✅ Auth key `tag:ci` (reusable+ephemeral+preauth) → secret `TS_AUTHKEY`. ⚠️ EXPIRA ~90 DIAS
+#      (criada 2026-06-25 → expira 2026-09-23): rotacionar antes (nova key tag:ci + re-setar o secret).
+#   2. ✅ ACL do tailnet: `ssh` permite `tag:ci` → `tag:cd-target` como `ubuntu`; nó erp-bem-comum-qa = tag:cd-target.
+#   3. ✅ Tailscale SSH habilitado na VPS — autenticação por identidade, SEM chave.
+#   4. ⚠️ /opt/erp-qa/ provisionado na VPS (compose.yaml + .env + ./secrets via init-secrets.sh) — ERP-INFRA/platform/vps-qa.
 #
-# Enquanto (1)–(4) não existirem, o job falha de propósito (é o sinal de que falta provisionar).
+# Se o deploy falhar no passo SSH/compose, verificar (4) e a validade da auth key (1).
 
 on:
   workflow_run:
@@ -37,9 +38,8 @@ jobs:
       - name: Conectar na tailnet (efêmero, tag:ci)
         uses: tailscale/github-action@306e68a486fd2350f2bfc3b19fcd143891a4a2d8 # v4.1.2
         with:
-          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
-          tags: tag:ci
+          # Auth key já é tag:ci + ephemeral → dispensa oauth/tags. Rotacionar a key ≤90d (ver topo).
+          authkey: ${{ secrets.TS_AUTHKEY }}
 
       - name: Deploy na VPS via Tailscale SSH (sem chave longeva)
         run: |
