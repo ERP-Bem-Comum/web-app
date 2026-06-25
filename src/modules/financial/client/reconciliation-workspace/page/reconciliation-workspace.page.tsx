@@ -190,9 +190,9 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
                 transactionId={vm.selectedTx.id}
               />
             ) : vm.selectedTx === null ? (
-              // Sem extrato importado: mostra os títulos pendentes de conciliação (mais recente no topo),
-              // p/ a aba não ficar vazia. Com extrato, segue a SuggestionPane (máquina de sugestão).
-              ui.statementId === null ? (
+              // Sem movimento importado no período (txList vazio): mostra os títulos pendentes de
+              // conciliação (mais recente no topo). Com movimentos, segue a SuggestionPane.
+              vm.txList.tag === 'empty' ? (
                 <PendingTitlesPane payables={sortPendingByPayment(vm.payables)} />
               ) : (
                 <SuggestionPane
@@ -317,7 +317,7 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
             menus={vm.headerMenus}
             canClose={vm.closePeriod.canClose}
             closeHint={
-              ui.statementId === null
+              vm.txList.tag === 'empty'
                 ? t('financial.recon.close.noStatement')
                 : vm.filterCounts.pendentes > 0
                   ? t('financial.recon.close.pendingBlocked')

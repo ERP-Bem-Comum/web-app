@@ -49,7 +49,6 @@ import {
   statementSuggestionsQueryOptions,
   suggestionsQueryOptions,
   transactionReconciliationQueryOptions,
-  transactionsQueryOptions,
 } from './reconciliation-workspace.query.ts'
 import { reconciliationErrorTag } from '#modules/financial/client/data/helpers/reconciliation-error-tag.ts'
 import type {
@@ -156,6 +155,14 @@ const toMatchView = (s: MatchSuggestion, payables: ReadonlyMap<string, PaidPayab
 // statement em si vive no backend. Guardamos o id em localStorage (por conta) para restaurar ao recarregar
 // — sem isso, reload/rebuild "apagava" o extrato. Não há degradação: o caminho de carga (Ref/saldo) é o mesmo.
 const lastStatementKey = (ref: string): string => `recon.lastStatement.${ref}`
+// Período do último extrato importado por conta → a aba Extrato reabre nesse intervalo após reload/rebuild.
+const lastPeriodKey = (ref: string): string => `recon.lastPeriod.${ref}`
+/** Lê o período persistido ("YYYY-MM-DD|YYYY-MM-DD") → {start,end}; null se ausente/malformado. */
+const readPersistedPeriod = (raw: string | null): Readonly<{ start: string; end: string }> | null => {
+  if (raw === null) return null
+  const [start, end] = raw.split('|')
+  return start !== undefined && start !== '' && end !== undefined && end !== '' ? { start, end } : null
+}
 
 export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBinding {
   const [ui, dispatch] = useReducer(workspaceReducer, initialWorkspaceUiState)
@@ -195,7 +202,6 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
 
   const matchDetailsBinding = useMatchDetails(sessionIdFor)
 
-  const txQuery = useQuery(transactionsQueryOptions(ui.statementId))
   const payablesQuery = useQuery(paidPayablesQueryOptions())
   const suggestionsQuery = useQuery(suggestionsQueryOptions(ui.selectedTransactionId))
   // #174: palpites em lote do extrato — busca só com "Exibir palpites" ligado (evita custo N+1 do backend).
@@ -203,32 +209,41 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     statementSuggestionsQueryOptions(ui.showGuesses ? ui.statementId : null),
   )
 
-  const importBinding = useImport(accountRef, account, (statementId) => {
+  const importBinding = useImport(accountRef, account, (statementId, period) => {
     dispatch({ type: 'set-statement', statementId })
-    // Persiste o extrato visível desta conta → sobrevive a reload/rebuild (o backend mantém o statement).
+    // Pula a aba Extrato para o período do arquivo importado → as movimentações aparecem na hora, sem o
+    // usuário ter que adivinhar/selecionar o mês.
+    headerMenusBinding.applyImportedPeriod(period.start, period.end)
+    // Persiste extrato + período desta conta → sobrevivem a reload/rebuild (o backend mantém o statement).
     try {
       window.localStorage.setItem(lastStatementKey(accountRef), statementId)
+      window.localStorage.setItem(lastPeriodKey(accountRef), `${period.start}|${period.end}`)
     } catch {
-      // localStorage indisponível (SSR/modo privado) → o extrato já foi setado no reducer; só não persiste.
+      // localStorage indisponível (SSR/modo privado) → já setado em memória; só não persiste.
       void statementId
     }
   })
 
-  // Restaura o extrato persistido ao montar/trocar de conta (o id é efêmero no reducer; o real fica no
-  // localStorage). Só restaura se ainda não há extrato em tela. Cobre o "apaga no reload".
+  // Restaura o extrato + período persistidos ao montar/trocar de conta (efêmeros no reducer; o real fica no
+  // localStorage). Só restaura se ainda não há extrato em tela. Cobre o "apaga no reload" (extrato E período).
   useEffect(() => {
     if (accountRef === '' || ui.statementId !== null) return
     try {
       const saved = window.localStorage.getItem(lastStatementKey(accountRef))
       if (saved !== null && saved !== '') dispatch({ type: 'set-statement', statementId: saved })
+      const savedPeriod = readPersistedPeriod(window.localStorage.getItem(lastPeriodKey(accountRef)))
+      if (savedPeriod !== null) headerMenusBinding.applyImportedPeriod(savedPeriod.start, savedPeriod.end)
     } catch {
-      // localStorage indisponível → ignora (extrato segue efêmero).
+      // localStorage indisponível → ignora (extrato/período seguem efêmeros).
       void accountRef
     }
-  }, [accountRef, ui.statementId])
+  }, [accountRef, ui.statementId, headerMenusBinding.applyImportedPeriod])
 
-  // ── Lista de transações (server-state → estado da tela via view-model pura) ──
-  const allTx: readonly StatementTransaction[] = txQuery.data?.ok === true ? txQuery.data.value : []
+  // ── Lista de transações: a Conciliação e o Extrato leem a MESMA fonte (movimentos da conta no período,
+  //    #205) → coerência total entre as abas. Cada linha já traz o `reconciliationStatus` real (Pendente/
+  //    Conciliado) e o `id` da transação (sugestões/conciliação operam por id). Sem extrato no período →
+  //    lista vazia → a aba cai nos títulos pendentes (gatilho `txList.tag === 'empty'`). ──
+  const allTx: readonly StatementTransaction[] = periodBalance.data?.movements ?? []
   const payables: readonly PaidPayable[] = payablesQuery.data?.ok === true ? payablesQuery.data.value : []
   const selectedTx =
     ui.selectedTransactionId === null ? null : (allTx.find((t) => t.id === ui.selectedTransactionId) ?? null)
@@ -301,11 +316,13 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     },
   }
 
+  // Estado da lista da Conciliação — dirigido pelo PERÍODO (#205), como o Extrato. `empty` = não há
+  // movimento importado no período → a view mostra os títulos pendentes (fallback honesto).
   const txList: TxListState = (() => {
-    if (ui.statementId === null) return { tag: 'idle' }
-    if (txQuery.isLoading) return { tag: 'loading' }
-    if (txQuery.data?.ok === false)
-      return { tag: 'error', errorTag: reconciliationErrorTag(txQuery.data.error) }
+    if (periodRange === null) return { tag: 'idle' }
+    if (periodQuery.isLoading) return { tag: 'loading' }
+    if (periodQuery.data?.ok === false)
+      return { tag: 'error', errorTag: reconciliationErrorTag(periodQuery.data.error) }
     if (allTx.length === 0) return { tag: 'empty' }
     const groups = groupTransactionsByDay(filterTransactions(allTx, ui.listFilter))
     return { tag: 'ready', groups }

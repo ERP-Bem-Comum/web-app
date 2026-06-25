@@ -92,7 +92,8 @@ export function useSearchCreate(
         setSelectedIds(new Set())
         setTreatment(null)
         setRevealTreatment(false)
-        void qc.invalidateQueries({ queryKey: ['financial', 'reconciliation', 'transactions'] })
+        // Conciliar muda a lista do período + contadores das duas abas → invalida o namespace.
+        void qc.invalidateQueries({ queryKey: ['financial', 'reconciliation'] })
         onReconciled(v.transactionId, res.value.reconciliationId)
       } else {
         setErrorTag(reconciliationErrorTag(res.error))

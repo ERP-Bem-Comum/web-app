@@ -143,7 +143,8 @@ export function useManualEntry(
         setProgramRef('')
         setCategoryRef('')
         setCostCenterRef('')
-        void qc.invalidateQueries({ queryKey: ['financial', 'reconciliation', 'transactions'] })
+        // Baixa manual concilia a transação → invalida o namespace (lista do período + contadores).
+        void qc.invalidateQueries({ queryKey: ['financial', 'reconciliation'] })
         onReconciled(v.transactionId, res.value.reconciliationId)
       } else {
         setErrorTag(reconciliationErrorTag(res.error))
