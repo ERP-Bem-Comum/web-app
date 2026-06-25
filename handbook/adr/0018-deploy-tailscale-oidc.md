@@ -1,11 +1,15 @@
 [← Voltar para ADRs](./README.md)
 
-# ADR-0018: Deploy sem segredo longevo — Tailscale (QA) + GitHub OIDC→AWS (prod); actions por SHA
+# ADR-0018: Deploy sem segredo longevo — Tailscale (QA) + GitHub OIDC→AWS (prod gerenciada); actions por SHA
 
 - **Status:** Accepted
 - **Date:** 2026-06-24
 - **Deciders:** Gabriel Aderaldo (Tech Lead) + assistente
 - **Feature:** `specs/035-prod-deploy-hardening/` (D7) · **Pesquisa:** `research.md` R8
+
+> **Emenda (2026-06-25):** reconciliado com **ERP-INFRA ADR-0002** (produção econômica em **AWS Lightsail
+> single-node**, interina). O princípio "sem segredo longevo" e o SHA-pin permanecem; a produção **gerenciada**
+> (OIDC→AWS/ECS) passa a ser explicitamente o **alvo de migração** (gatilhos do ADR-0002), não o baseline atual.
 
 ---
 
@@ -19,14 +23,19 @@ forced-command, e actions referenciadas por **tag** (`@v6`). A fonte fria (OWASP
 - **CICD-SEC-8 (3rd-party):** **pinar actions por commit SHA** (tags são mutáveis).
 - **CICD-SEC-4 (PPE):** não executar código de PR de fork com segredos.
 
-Fato relevante da infra: a VPS de QA (`erp-bem-comum-qa`) **já está no tailnet** (Tailscale); a produção é AWS.
+Fato relevante da infra: a VPS de QA (`erp-bem-comum-qa`) **já está no tailnet** (Tailscale). A produção, no
+baseline atual, é **AWS Lightsail single-node** (Docker Compose; ERP-INFRA ADR-0002); o alvo **gerenciado**
+(ECS/RDS) só entra na migração (gatilhos do ADR-0002).
 
 ## Decisão
 
 Deploy **sem segredo longevo**:
 - **QA:** disparo via **Tailscale** — a VPS está no tailnet, então o deploy chega por identidade de
   dispositivo (ACL), **sem SSH público** com chave longeva.
-- **Produção:** **GitHub OIDC → AWS** (assume-role com credenciais efêmeras) — **sem** chave AWS de longa duração.
+- **Produção (baseline atual — ERP-INFRA ADR-0002, Lightsail single-node):** deploy por **script versionado**
+  na instância (mesmo modelo do QA — imagens por digest, sem compilar no host); pode entrar pelo tailnet como o QA.
+- **Produção gerenciada (alvo de migração):** **GitHub OIDC → AWS** (assume-role com credenciais efêmeras) —
+  **sem** chave AWS de longa duração — quando a prod migrar para ECS/Fargate (gatilhos do ADR-0002).
 - **Transversal:** actions de terceiros **pinadas por commit SHA**; `GITHUB_TOKEN` com **permissão mínima**;
   workflows não rodam PR de fork com segredos (anti-PPE). Rollback por **digest**.
 
@@ -54,4 +63,4 @@ Deploy **sem segredo longevo**:
 
 - `specs/035-prod-deploy-hardening/research.md` R8 · `spec.md` FR-020/022/023
 - OWASP CI/CD Top 10: CICD-SEC-4/6/8 · ADR-0016 (cosign keyless via OIDC) · constituição §IX
-- ERP-INFRA `platform/vps-qa/` · tailnet (`erp-bem-comum-qa`)
+- ERP-INFRA `platform/vps-qa/` · `platform/aws-lightsail-prod/` · **ERP-INFRA ADR-0002** (Lightsail) · tailnet (`erp-bem-comum-qa`)
