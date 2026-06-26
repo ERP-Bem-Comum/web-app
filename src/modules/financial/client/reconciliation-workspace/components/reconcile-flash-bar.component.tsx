@@ -1,6 +1,6 @@
 /**
  * ReconcileFlashBar — barra de confirmação TRANSIENTE do fluxo contínuo de conciliação. Aparece no topo
- * ao conciliar (a sugestão logo abaixo já mostra o próximo match) e some sozinha em ~5s; o timer PAUSA
+ * ao conciliar (a sugestão logo abaixo já mostra o próximo match) e some sozinha em ~3s; o timer PAUSA
  * enquanto o mouse está sobre a barra (dá tempo de clicar "Desfazer"). View burra — recebe tudo por props;
  * remonta a cada nova conciliação via `key` (timer reinicia). Espelha o mock da P.O.
  */
@@ -14,7 +14,7 @@ import * as s from '../page/reconciliation-workspace.css.ts'
 
 const t = createTranslator(ptBR)
 const DOT = '·'
-const DISMISS_MS = 5000
+const DISMISS_MS = 3000
 
 export type ReconcileFlashBarProps = Readonly<{
   tituloLabel: string // "NFS-e 2024-0537" ou "" (sem título → texto genérico)
