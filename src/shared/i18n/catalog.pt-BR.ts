@@ -1620,6 +1620,13 @@ export const ptBR: Catalog = {
   'financial.recon.period.confirm.cancel': 'Cancelar',
   'financial.recon.period.confirm.okClose': 'Fechar período',
   'financial.recon.period.confirm.okReopen': 'Reabrir período',
+  'financial.recon.pattern.title': 'Conciliar transações parecidas',
+  'financial.recon.pattern.intro':
+    'Encontramos transações pendentes com a mesma descrição. Aplicar o mesmo padrão:',
+  'financial.recon.pattern.review':
+    'Revise abaixo e desmarque o que não quiser — nada é conciliado sem a sua confirmação.',
+  'financial.recon.pattern.cancel': 'Cancelar',
+  'financial.recon.pattern.confirm': 'Conciliar selecionadas',
 
   // ── Contas a Pagar — grid (US2, lista real Fatia 2) ──
   'financial.list.title': 'Contas a Pagar',

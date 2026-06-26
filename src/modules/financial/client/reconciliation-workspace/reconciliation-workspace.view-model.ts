@@ -174,6 +174,30 @@ export const groupTransactionsByDay = (txs: readonly StatementTransaction[]): re
 export const countReconciled = (txs: readonly StatementTransaction[]): number =>
   txs.filter((t) => !isPending(t)).length
 
+// ── Sugestão de conciliação em LOTE por padrão (front) ──────────────────────────
+/** Normaliza a descrição (payeeName) p/ comparar transações "do mesmo tipo": case/espaço-insensível. */
+export const normalizeDesc = (s: string): string => s.trim().toLowerCase().replace(/\s+/g, ' ')
+
+// Tipos de lançamento manual que o LOTE (confirmBatch) suporta hoje — NÃO precisam de conta de destino/
+// produto (o template do batch do backend não os carrega). Resgate/Aplicação/Transferência ficam de fora.
+export const BATCHABLE_MANUAL_TYPES: readonly ManualEntryType[] = ['Payment', 'Receipt', 'FeePenaltyInterest']
+export const isBatchableManualType = (type: ManualEntryType): boolean => BATCHABLE_MANUAL_TYPES.includes(type)
+
+/**
+ * Transações PENDENTES com o MESMO perfil (descrição normalizada + sinal/movimento iguais) de uma já
+ * conciliada — p/ sugerir conciliar em lote com o mesmo padrão aplicado. Exclui a própria (`excludeId`).
+ */
+export const findSimilarPending = (
+  txs: readonly StatementTransaction[],
+  descKey: string,
+  movement: Movement,
+  excludeId: string,
+): readonly StatementTransaction[] =>
+  txs.filter(
+    (t) =>
+      isPending(t) && t.id !== excludeId && t.movement === movement && normalizeDesc(t.payeeName) === descKey,
+  )
+
 // ── Balanceamento da conciliação N:1 / parcial (puro — US3) ─────────────────────
 
 /** String de centavos → inteiro (defensivo: vazio/NaN → 0). */

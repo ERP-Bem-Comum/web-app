@@ -35,6 +35,9 @@ import {
   parseOfxAccount,
   ofxMatchesAccount,
   ofxAccountLabel,
+  findSimilarPending,
+  isBatchableManualType,
+  normalizeDesc,
 } from '../../../../../src/modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
 import type {
   Movement,
@@ -572,5 +575,46 @@ describe('validação de conta do OFX (parseOfxAccount / ofxMatchesAccount)', ()
     const a = parseOfxAccount(ofx)
     assert.ok(a !== null)
     assert.equal(ofxAccountLabel(a), '001 · Ag 1234 · CC 00123457')
+  })
+})
+
+describe('conciliação em lote por padrão (findSimilarPending / isBatchableManualType)', () => {
+  const tx = (
+    over: Partial<StatementTransaction> & Pick<StatementTransaction, 'id'>,
+  ): StatementTransaction => ({
+    fitid: '',
+    date: '2026-06-03',
+    movement: 'Debit',
+    entryType: 'FEE',
+    payeeName: 'Tarifa bancária',
+    memo: '',
+    valueCents: '590',
+    balanceAfterCents: '0',
+    reconciliationStatus: 'Pending',
+    ...over,
+  })
+
+  it('isBatchableManualType: só tipos sem conta de destino', () => {
+    assert.equal(isBatchableManualType('FeePenaltyInterest'), true)
+    assert.equal(isBatchableManualType('Payment'), true)
+    assert.equal(isBatchableManualType('Receipt'), true)
+    assert.equal(isBatchableManualType('Transfer'), false)
+    assert.equal(isBatchableManualType('Investment'), false)
+    assert.equal(isBatchableManualType('Redemption'), false)
+  })
+
+  it('findSimilarPending: pendentes com mesma descrição (normalizada) + mesmo sinal; exclui semente/conciliadas', () => {
+    const txs = [
+      tx({ id: 'seed' }),
+      tx({ id: 'a', payeeName: 'TARIFA  BANCÁRIA' }), // mesma após normalizar
+      tx({ id: 'b', reconciliationStatus: 'Reconciled' }), // já conciliada
+      tx({ id: 'c', movement: 'Credit' }), // sinal diferente
+      tx({ id: 'd', payeeName: 'Outra coisa' }), // descrição diferente
+    ]
+    const found = findSimilarPending(txs, normalizeDesc('Tarifa bancária'), 'Debit', 'seed')
+    assert.deepEqual(
+      found.map((t) => t.id),
+      ['a'],
+    )
   })
 })

@@ -2301,9 +2301,9 @@ export const modalMessage = style({
   flexDirection: 'column',
   gap: sp.md,
   fontFamily: recon.font.sans,
-  fontSize: fs.sm,
-  lineHeight: 1.5,
-  color: c.ink[3],
+  fontSize: fs.md,
+  lineHeight: 1.55,
+  color: c.ink[2],
   paddingBlock: '1rem',
   paddingInline: '1.25rem',
 })
@@ -2433,6 +2433,77 @@ export const accItemType = style({
   paddingBlock: '0.0625rem',
   borderRadius: r.sm,
   whiteSpace: 'nowrap',
+})
+
+// Modal de sugestão de conciliação em LOTE (padrão): lista de candidatas (checkbox + data + descrição + valor).
+export const patternList = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.5rem',
+  maxBlockSize: '19rem',
+  overflowY: 'auto',
+  paddingInline: sp.xl,
+  paddingBlock: '0.75rem',
+})
+const patternRowBase = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.75rem',
+  paddingInline: '0.875rem',
+  paddingBlock: '0.6875rem',
+  borderRadius: r.lg,
+  border: `${bw.thin} solid ${c.paper.rule}`,
+  cursor: 'pointer',
+  textAlign: 'start',
+} as const
+export const patternRow = styleVariants({
+  on: {
+    ...patternRowBase,
+    background: c.green.bg,
+    borderColor: c.green.line,
+    ':hover': { borderColor: c.green.deep },
+  },
+  off: {
+    ...patternRowBase,
+    background: c.paper.default,
+    ':hover': { background: c.paper.warm },
+  },
+})
+const patternCbBase = {
+  inlineSize: '1.375rem',
+  blockSize: '1.375rem',
+  borderRadius: r.sm,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontSize: fs.md,
+  flexShrink: 0,
+} as const
+export const patternCb = styleVariants({
+  on: { ...patternCbBase, background: c.green.deep, color: c.paper.default },
+  off: { ...patternCbBase, background: c.paper.default, border: `${bw.thin} solid ${c.ink[5]}` },
+})
+export const patternRowDate = style({
+  fontFamily: recon.font.mono,
+  fontSize: fs.sm,
+  color: c.ink[4],
+  flexShrink: 0,
+})
+export const patternRowDesc = style({
+  fontFamily: recon.font.sans,
+  fontSize: fs.md,
+  color: c.ink[1],
+  flex: 1,
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+})
+export const patternRowVal = style({
+  fontFamily: recon.font.mono,
+  fontSize: fs.lg,
+  fontWeight: recon.weight.semibold,
+  color: c.ink[1],
+  flexShrink: 0,
 })
 export const accItemName = style({
   fontFamily: recon.font.sans,
