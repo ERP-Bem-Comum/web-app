@@ -94,7 +94,12 @@ export type CreateCedenteAccountInput = Readonly<{
   openingBalanceDate?: string
 }>
 export type RejectSuggestionInput = Readonly<{ transactionId: string; payableId: string }>
-export type DifferenceInput = Readonly<{ valueCents: number; treatment: DifferenceTreatment }>
+export type DifferenceInput = Readonly<{
+  valueCents: number
+  treatment: DifferenceTreatment
+  costCenterRef?: string
+  note?: string
+}>
 export type CreateReconciliationInput = Readonly<{
   transactionId: string
   payableIds: readonly string[]

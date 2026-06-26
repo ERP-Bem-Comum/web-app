@@ -241,8 +241,19 @@ export function SearchCreatePane({ binding, extratoValueCents }: SearchCreatePan
               <div className={`${s.ntRow} ${s.ntRowCols2}`}>
                 <label className={s.ntField}>
                   <span className={s.ntLabel}>{t('financial.recon.multi.diffCostCenter')}</span>
-                  <select className={s.ntSelect} disabled aria-disabled="true" defaultValue="">
+                  <select
+                    className={s.ntSelect}
+                    value={binding.costCenterRef}
+                    onChange={(e) => {
+                      binding.setCostCenterRef(e.target.value)
+                    }}
+                  >
                     <option value="">{t('financial.recon.multi.diffCostCenterPlaceholder')}</option>
+                    {binding.costCenterOptions.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
                   </select>
                 </label>
                 <label className={s.ntField}>
@@ -254,8 +265,10 @@ export function SearchCreatePane({ binding, extratoValueCents }: SearchCreatePan
                     type="text"
                     className={s.ntInput}
                     placeholder={t('financial.recon.multi.diffNotePlaceholder')}
-                    disabled
-                    aria-disabled="true"
+                    value={binding.observation}
+                    onChange={(e) => {
+                      binding.setObservation(e.target.value)
+                    }}
                   />
                 </label>
               </div>

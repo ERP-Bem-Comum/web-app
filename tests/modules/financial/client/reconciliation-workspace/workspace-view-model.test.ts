@@ -43,6 +43,7 @@ import {
   nextPendingWithMatch,
   tituloLabel,
   formatDateDash,
+  deriveManualKindFromTx,
 } from '../../../../../src/modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
 import type {
   Movement,
@@ -459,6 +460,34 @@ describe('buildMatchTitles (1 saída → N títulos, #175 items)', () => {
     assert.equal(r?.differenceBRL, centsToBRL('500'))
     assert.equal(r?.differenceTag, 'financial.recon.match.diffDiscount')
     assert.equal(r?.totalBRL, centsToBRL('4500'))
+  })
+})
+
+describe('deriveManualKindFromTx (tipo do lançamento manual pelo texto — #268)', () => {
+  const k = (payeeName: string, entryType = 'Other') =>
+    deriveManualKindFromTx(tx({ id: 'm', payeeName, entryType }))
+
+  it('Resgate vence Aplicação ("resgate de aplicação")', () => {
+    assert.equal(k('Resgate automatico aplicacao para pagamentos'), 'Redemption')
+    assert.equal(k('Resgate enviado para conta corrente'), 'Redemption')
+  })
+  it('Tarifa vence Transferência ("tarifa de transferência")', () => {
+    assert.equal(k('Tarifa transferencia interna'), 'FeePenaltyInterest')
+    assert.equal(k('Tarifa bancaria mensal'), 'FeePenaltyInterest')
+  })
+  it('Aplicação', () => {
+    assert.equal(k('Aplicacao recebida da conta corrente'), 'Investment')
+  })
+  it('Transferência (sem tarifa)', () => {
+    assert.equal(k('Transferencia para fornecedor'), 'Transfer')
+    assert.equal(k('TED enviada'), 'Transfer')
+  })
+  it('Pagamento (fornecedor/DANFE/boleto)', () => {
+    assert.equal(k('Fornecedor Persist B'), 'Payment')
+    assert.equal(k('DANFE 43545 - Padaria Bartolomeu LTDA'), 'Payment')
+  })
+  it('sem casamento → null (cai no genérico "Nova transação")', () => {
+    assert.equal(k('Movimento diverso'), null)
   })
 })
 

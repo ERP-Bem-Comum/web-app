@@ -65,6 +65,8 @@ export const RejectSuggestionInputSchema = z.object({ transactionId: z.uuid(), p
 const DifferenceInputSchema = z.object({
   valueCents: z.int(), // pode ser negativo (ex.: Discount)
   treatment: z.enum(DIFFERENCE_TREATMENTS),
+  costCenterRef: z.string().trim().min(1).max(64).optional(),
+  note: z.string().trim().min(1).max(500).optional(),
 })
 
 export const CreateReconciliationInputSchema = z.object({

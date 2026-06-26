@@ -5,10 +5,11 @@
  * via `createReconciliation` e invalida as queries. Erros → tag i18n.
  */
 import { useState } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { reconciliationRepository } from '#modules/financial/client/data/repository/reconciliation.repository.instance.ts'
 import { reconciliationErrorTag } from '#modules/financial/client/data/helpers/reconciliation-error-tag.ts'
+import { referencesQueryOptions } from './reconciliation-workspace.query.ts'
 import {
   canReconcileMulti,
   deriveReconType,
@@ -36,6 +37,12 @@ export type SearchCreateBinding = Readonly<{
   reconType: ReconType
   submitting: boolean
   errorTag: string | null
+  // Tratamento da diferença: centro de custo (opções reais) + observação (texto livre).
+  costCenterRef: string
+  observation: string
+  costCenterOptions: readonly { value: string; label: string }[]
+  setCostCenterRef: (v: string) => void
+  setObservation: (v: string) => void
   // filtros (busca textual + Tipo/categoria — viabiliza achar/selecionar impostos retidos)
   search: string
   typeBucket: string // 'all' | <bucket de categoria>
@@ -65,6 +72,14 @@ export function useSearchCreate(
   // #9.4.6: o tratamento da diferença só aparece DEPOIS de clicar Conciliar com diferença (não na hora
   // que a soma diverge). Reposto a cada mudança de seleção / clear / sucesso.
   const [revealTreatment, setRevealTreatment] = useState(false)
+  const [costCenterRef, setCostCenterRef] = useState('')
+  const [observation, setObservation] = useState('')
+
+  // Centro de custo da diferença (020 · #200): a query devolve um Result → desembrulha p/ as opções reais.
+  const referencesResult = useQuery(referencesQueryOptions()).data
+  const references = referencesResult?.ok === true ? referencesResult.value : null
+  const costCenterOptions: readonly { value: string; label: string }[] =
+    references?.costCenters.map((c) => ({ value: c.id, label: `${c.code} — ${c.name}` })) ?? []
 
   const typeOptions = payableTypeOptions(payables)
   const filtered = filterPayables(payables, search, typeBucket)
@@ -84,7 +99,12 @@ export function useSearchCreate(
     mutationFn: (v: {
       transactionId: string
       payableIds: readonly string[]
-      difference?: { valueCents: number; treatment: DifferenceTreatment }
+      difference?: {
+        valueCents: number
+        treatment: DifferenceTreatment
+        costCenterRef?: string
+        note?: string
+      }
     }) => reconciliationRepository.createReconciliation(v),
     onSuccess: (res, v) => {
       if (res.ok) {
@@ -92,6 +112,8 @@ export function useSearchCreate(
         setSelectedIds(new Set())
         setTreatment(null)
         setRevealTreatment(false)
+        setCostCenterRef('')
+        setObservation('')
         // Conciliar muda a lista do período + contadores das duas abas → invalida o namespace.
         void qc.invalidateQueries({ queryKey: ['financial', 'reconciliation'] })
         onReconciled(v.transactionId, res.value.reconciliationId)
@@ -112,6 +134,15 @@ export function useSearchCreate(
     reconType,
     submitting: mut.isPending,
     errorTag,
+    costCenterRef,
+    observation,
+    costCenterOptions,
+    setCostCenterRef: (v) => {
+      setCostCenterRef(v)
+    },
+    setObservation: (v) => {
+      setObservation(v)
+    },
     search,
     typeBucket,
     typeOptions,
@@ -126,6 +157,8 @@ export function useSearchCreate(
     toggle: (payableId) => {
       // Mudar a seleção re-fecha o painel de tratamento: ele só reabre via clique em Conciliar.
       setRevealTreatment(false)
+      setCostCenterRef('')
+      setObservation('')
       setSelectedIds((prev) => {
         const next = new Set(prev)
         if (next.has(payableId)) next.delete(payableId)
@@ -140,6 +173,8 @@ export function useSearchCreate(
       setSelectedIds(new Set())
       setTreatment(null)
       setRevealTreatment(false)
+      setCostCenterRef('')
+      setObservation('')
     },
     confirm: () => {
       if (selectedTx === null || selectedIds.size === 0 || mut.isPending) return
@@ -150,10 +185,19 @@ export function useSearchCreate(
       }
       // Balanceado, ou diferença já classificada → submete.
       if (!canReconcile) return
+      const note = observation.trim()
       mut.mutate({
         transactionId: selectedTx.id,
         payableIds: [...selectedIds],
-        difference: residual !== 0 && treatment !== null ? { valueCents: residual, treatment } : undefined,
+        difference:
+          residual !== 0 && treatment !== null
+            ? {
+                valueCents: residual,
+                treatment,
+                ...(costCenterRef !== '' ? { costCenterRef } : {}),
+                ...(note !== '' ? { note } : {}),
+              }
+            : undefined,
       })
     },
   }

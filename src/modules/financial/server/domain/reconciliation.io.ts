@@ -63,6 +63,8 @@ export interface RejectSuggestionInput {
 export interface DifferenceInput {
   valueCents: number
   treatment: DifferenceTreatment
+  costCenterRef?: string
+  note?: string
 }
 
 // Conciliar (POST /reconciliations). 1 título sem diferença → Individual; ≥2 → Multiple; com
