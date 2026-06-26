@@ -607,7 +607,10 @@ export type MatchTitleLine = Readonly<{ valueBRL: string }>
 export type MatchTitlesView = Readonly<{
   count: number
   lines: readonly MatchTitleLine[]
-  totalBRL: string
+  // Diferença (extrato − Σtítulos): acréscimo (multa/juros) ou desconto. null quando não há diferença.
+  differenceBRL: string | null
+  differenceTag: string // i18n da linha de diferença ('' quando não há)
+  totalBRL: string // total conciliado = VALOR DO EXTRATO (= Σtítulos + diferença)
 }>
 export type MatchDetailsView = Readonly<{
   isManualEntry: boolean
@@ -647,15 +650,30 @@ export const matchAuditFromLookup = (r: TransactionReconciliation): MatchDetails
 
 /**
  * Lado "Título" do modal quando UMA saída foi conciliada com VÁRIOS títulos (#175 com >1 item): contagem +
- * valor conciliado por título + total (deixa explícito o rateio). null quando há só 1 item (usa `doc`).
+ * valor por título + DIFERENÇA (acréscimo multa/juros ou desconto) + total = VALOR DO EXTRATO. null quando há
+ * só 1 item (usa `doc`). A diferença é derivada do extrato − Σtítulos (auto-consistente: o total bate com o
+ * extrato exibido à esquerda); o TIPO exato da diferença (multa/juros/desconto/tarifa) ainda não vem no
+ * lookup do core-api — então o rótulo só distingue acréscimo × desconto pelo sinal.
  */
-export const buildMatchTitles = (r: TransactionReconciliation): MatchTitlesView | null => {
+export const buildMatchTitles = (
+  r: TransactionReconciliation,
+  extratoCents: string | null,
+): MatchTitlesView | null => {
   if (r.items.length <= 1) return null
-  const totalCents = r.items.reduce((acc, it) => acc + Number(it.reconciledValueCents), 0)
+  const subtotalCents = r.items.reduce((acc, it) => acc + Number(it.reconciledValueCents), 0)
+  const extrato = extratoCents !== null && extratoCents !== '' ? Number(extratoCents) : subtotalCents
+  const diffCents = extrato - subtotalCents
+  const hasDiff = diffCents !== 0
   return {
     count: r.items.length,
     lines: r.items.map((it) => ({ valueBRL: centsToBRL(it.reconciledValueCents) })),
-    totalBRL: centsToBRL(String(totalCents)),
+    differenceBRL: hasDiff ? centsToBRL(String(Math.abs(diffCents))) : null,
+    differenceTag: hasDiff
+      ? diffCents > 0
+        ? 'financial.recon.match.diffSurplus'
+        : 'financial.recon.match.diffDiscount'
+      : '',
+    totalBRL: centsToBRL(String(extrato)),
   }
 }
 

@@ -136,6 +136,13 @@ export function MatchDetailsModal({
                       <span className={s.mmSideV}>{ln.valueBRL}</span>
                     </div>
                   ))}
+                  {/* Diferença (acréscimo multa/juros ou desconto) — fecha o total com o valor do extrato. */}
+                  {view.multi.differenceBRL !== null ? (
+                    <div className={s.mmSideRow}>
+                      <span className={s.mmSideK}>{t(view.multi.differenceTag)}</span>
+                      <span className={s.mmSideV}>{view.multi.differenceBRL}</span>
+                    </div>
+                  ) : null}
                   <div className={s.mmTotalRow}>
                     <span className={s.mmSideK}>{t('financial.recon.match.totalConciliado')}</span>
                     <span className={s.mmSideVAmt.doc}>{view.multi.totalBRL}</span>

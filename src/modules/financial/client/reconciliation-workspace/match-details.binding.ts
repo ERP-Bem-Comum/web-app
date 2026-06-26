@@ -45,7 +45,7 @@ export function useMatchDetails(
 
   const audit = lookup !== null ? matchAuditFromLookup(lookup) : null
   // Conciliação 1 saída → N títulos: monta o lado "Título" com a lista de valores conciliados (#175 items).
-  const multi = lookup !== null ? buildMatchTitles(lookup) : null
+  const multi = lookup !== null ? buildMatchTitles(lookup, tx?.valueCents ?? null) : null
   // A forma da conciliação (match vs nova transação) vem do `type` da reconciliation, não do status da tx.
   const isManualEntry = lookup?.type === 'ManualEntry'
   const manualType = tx !== null ? sessionManualTypeFor(tx.id) : null

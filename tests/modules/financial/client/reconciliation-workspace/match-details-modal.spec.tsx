@@ -41,7 +41,9 @@ describe('MatchDetailsModal — 1 saída → N títulos', () => {
           multi: {
             count: 3,
             lines: [{ valueBRL: 'R$ 300,00' }, { valueBRL: 'R$ 200,00' }, { valueBRL: 'R$ 242,00' }],
-            totalBRL: 'R$ 742,00',
+            differenceBRL: 'R$ 190,00',
+            differenceTag: 'financial.recon.match.diffSurplus',
+            totalBRL: 'R$ 932,00',
           },
         })}
         canUndo
