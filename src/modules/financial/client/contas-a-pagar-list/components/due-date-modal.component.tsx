@@ -13,6 +13,7 @@ import {
   confirmDialog,
   confirmTitle,
   confirmText,
+  confirmWarn,
   confirmDateInput,
   confirmActions,
   confirmCancelBtn,
@@ -58,6 +59,8 @@ export function DueDateModal(props: DueDateModalProps): ReactNode {
           aria-label={t('financial.list.dueDate.modalTitle')}
           onChange={onChange}
         />
+        {/* Interim (core-api#270): o backend propaga o vencimento p/ todos os títulos do documento. */}
+        <p className={confirmWarn}>{t('financial.list.dueDate.modalAffectsAll')}</p>
         {props.blockedCount > 0 ? (
           <p className={confirmText}>{t('financial.list.dueDate.modalBlocked')}</p>
         ) : null}
