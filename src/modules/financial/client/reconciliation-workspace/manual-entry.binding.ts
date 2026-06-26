@@ -31,7 +31,6 @@ export type ManualEntryBinding = Readonly<{
   type: ManualEntryType | null
   description: string
   destinationAccount: string
-  consciousConfirm: boolean
   needsDestination: boolean
   showPayeeBlock: boolean
   canSubmit: boolean
@@ -50,7 +49,6 @@ export type ManualEntryBinding = Readonly<{
   setType: (type: ManualEntryType) => void
   setDescription: (v: string) => void
   setDestinationAccount: (v: string) => void
-  setConsciousConfirm: (v: boolean) => void
   setSupplierRef: (v: string) => void
   setProgramRef: (v: string) => void
   setCategoryRef: (v: string) => void
@@ -109,7 +107,6 @@ export function useManualEntry(
   const [type, setType] = useState<ManualEntryType | null>(null)
   const [description, setDescription] = useState('')
   const [destinationAccount, setDestinationAccount] = useState('')
-  const [consciousConfirm, setConsciousConfirm] = useState(false)
   const [supplierRef, setSupplierRef] = useState('')
   const [programRef, setProgramRef] = useState('')
   const [categoryRef, setCategoryRef] = useState('')
@@ -146,8 +143,9 @@ export function useManualEntry(
 
   const needsDestination = type !== null && requiresDestination(type)
   const showPayeeBlock = type === 'Payment' || type === 'Receipt'
-  // Transferência/Aplicação/Resgate exigem a conta de destino selecionada E a confirmação consciente.
-  const destinationOk = !needsDestination || (consciousConfirm && destinationAccount.trim() !== '')
+  // Transferência/Aplicação/Resgate exigem a conta de destino selecionada (regra do backend). A confirmação
+  // consciente foi removida a pedido da P.O. — só atrapalhava; engano é reversível pelo "desfazer".
+  const destinationOk = !needsDestination || destinationAccount.trim() !== ''
   const canSubmit = type !== null && destinationOk
 
   const mut = useMutation({
@@ -168,7 +166,6 @@ export function useManualEntry(
         setType(null)
         setDescription('')
         setDestinationAccount('')
-        setConsciousConfirm(false)
         setSupplierRef('')
         setProgramRef('')
         setCategoryRef('')
@@ -202,7 +199,6 @@ export function useManualEntry(
     type,
     description,
     destinationAccount,
-    consciousConfirm,
     needsDestination,
     showPayeeBlock,
     canSubmit,
@@ -219,16 +215,12 @@ export function useManualEntry(
     accountOptions,
     setType: (tp) => {
       setType(tp)
-      setConsciousConfirm(false)
     },
     setDescription: (v) => {
       setDescription(v)
     },
     setDestinationAccount: (v) => {
       setDestinationAccount(v)
-    },
-    setConsciousConfirm: (v) => {
-      setConsciousConfirm(v)
     },
     setSupplierRef: (v) => {
       setSupplierRef(v)
@@ -246,7 +238,6 @@ export function useManualEntry(
       setType(null)
       setDescription('')
       setDestinationAccount('')
-      setConsciousConfirm(false)
       setSupplierRef('')
       setProgramRef('')
       setCategoryRef('')

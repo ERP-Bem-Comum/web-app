@@ -27,7 +27,6 @@ import type { ManualEntryType } from '../reconciliation-workspace.view-model.ts'
 import type { ManualEntryBinding } from '../manual-entry.binding.ts'
 
 const t = createTranslator(ptBR)
-const CHECK_GLYPH = '✓'
 const BANG_GLYPH = '!'
 
 const TYPES: readonly ManualEntryType[] = [
@@ -159,34 +158,10 @@ export function NewTransactionPane({ binding }: NewTransactionPaneProps) {
           </div>
         </div>
 
-        {/* Bloco especial: aviso + confirmação consciente + destino/produto + data de efetivação */}
+        {/* Bloco especial: destino/produto + data de efetivação (a confirmação consciente foi removida a
+            pedido da P.O. — só atrapalhava; engano é reversível pelo "desfazer conciliação"). */}
         {special ? (
           <div className={s.ntSection}>
-            <div className={s.ntWarn}>
-              <span className={s.ntWarnIc} aria-hidden>
-                <LinkIcon />
-              </span>
-              <div className={s.ntWarnTxt}>
-                {t(`${destKeyBase}.warning`)}
-                <button
-                  type="button"
-                  role="checkbox"
-                  aria-checked={binding.consciousConfirm}
-                  className={s.ntConfirm}
-                  onClick={() => {
-                    binding.setConsciousConfirm(!binding.consciousConfirm)
-                  }}
-                >
-                  <span
-                    className={binding.consciousConfirm ? s.ntConfirmCb.on : s.ntConfirmCb.off}
-                    aria-hidden
-                  >
-                    {binding.consciousConfirm ? CHECK_GLYPH : ''}
-                  </span>
-                  {t(`${destKeyBase}.confirm`)}
-                </button>
-              </div>
-            </div>
             <div className={`${s.ntRow} ${s.ntRowCols2}`}>
               {/* Destino REAL (#143): contas-cedente ativas (envia destinationAccountRef). */}
               <RealSelect

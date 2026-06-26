@@ -1240,60 +1240,6 @@ export const ntInput = style(ntControlBase)
 export const ntInputMono = style({ ...ntControlBase, fontFamily: recon.font.mono })
 export const ntSelect = style(ntControlBase)
 export const ntTextarea = style({ ...ntControlBase, minBlockSize: '3.75rem', resize: 'vertical' })
-export const ntWarn = style({
-  display: 'flex',
-  alignItems: 'flex-start',
-  gap: sp.md,
-  paddingBlock: '0.6875rem',
-  paddingInline: sp.xl,
-  marginBlockEnd: sp.xl,
-  background: c.orange.bg,
-  border: `${bw.hairline} solid ${c.orange.line}`,
-  borderRadius: r.md,
-})
-export const ntWarnIc = style({
-  color: c.orange.deep,
-  flexShrink: 0,
-  display: 'inline-flex',
-  marginBlockStart: '0.0625rem',
-})
-export const ntWarnTxt = style({
-  fontFamily: recon.font.sans,
-  fontSize: '0.71875rem',
-  color: c.orange.deep,
-  lineHeight: 1.45,
-})
-export const ntConfirm = style({
-  marginBlockStart: sp.xs,
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: sp.xs,
-  border: 'none',
-  background: 'transparent',
-  padding: 0,
-  fontFamily: recon.font.sans,
-  fontSize: fs.sm,
-  fontWeight: recon.weight.semibold,
-  color: c.orange.deep,
-  cursor: 'pointer',
-})
-const ntConfirmCbBase = {
-  inlineSize: '0.8125rem',
-  blockSize: '0.8125rem',
-  border: `${bw.thick} solid ${c.orange.normal}`,
-  borderRadius: '0.1875rem',
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  flexShrink: 0,
-  fontSize: fs['3xs'],
-  fontWeight: recon.weight.bold,
-  color: c.paper.default,
-} as const
-export const ntConfirmCb = styleVariants({
-  off: { ...ntConfirmCbBase, background: 'transparent' },
-  on: { ...ntConfirmCbBase, background: c.orange.normal },
-})
 export const ntActions = style({
   display: 'flex',
   alignItems: 'center',
