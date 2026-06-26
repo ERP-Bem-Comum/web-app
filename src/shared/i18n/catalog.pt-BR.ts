@@ -1725,6 +1725,8 @@ export const ptBR: Catalog = {
   'financial.list.dueDate.modalBodyManySuffix': 'títulos selecionados.',
   'financial.list.dueDate.modalBlocked':
     'Documentos selecionados que não estão em Aberto não serão alterados.',
+  'financial.list.dueDate.modalAffectsAll':
+    'Atenção: o novo vencimento é aplicado a TODOS os títulos do documento (principal e filhos de retenção), não apenas ao selecionado.',
   'financial.list.dueDate.modalCancel': 'Cancelar',
   'financial.list.dueDate.modalApply': 'Aplicar',
   // Marcar como pago (baixa manual #224/#232) — modal de data de pagamento.
