@@ -677,6 +677,31 @@ export const buildMatchTitles = (
   }
 }
 
+/**
+ * Deriva o TIPO do lançamento manual a partir do texto da transação (payeeName/memo/entryType) quando o
+ * backend não o expõe no lookup (#268) e não há tipo da sessão. O `entryType` costuma vir "Other", então
+ * a pista real está no payeeName. Ordem importa: "Resgate de aplicação" é RESGATE (não aplicação);
+ * "Tarifa de transferência" é TARIFA (não transferência). Sem casamento → null (cai no genérico).
+ */
+export const deriveManualKindFromTx = (tx: StatementTransaction): ManualEntryType | null => {
+  const hay = `${tx.entryType} ${tx.payeeName} ${tx.memo}`.toUpperCase()
+  if (hay.includes('RESG') || hay.includes('REDEM') || hay.includes('RETIRAD')) return 'Redemption'
+  if (
+    hay.includes('TARIF') ||
+    hay.includes('FEE') ||
+    hay.includes('JUR') ||
+    hay.includes('MULTA') ||
+    hay.includes('ENCARG')
+  )
+    return 'FeePenaltyInterest'
+  if (hay.includes('APLIC') || hay.includes('INVEST')) return 'Investment'
+  if (hay.includes('TRANSF') || hay.includes('XFER') || hay.includes('TED') || hay.includes('PIX'))
+    return 'Transfer'
+  if (hay.includes('FORNEC') || hay.includes('PAGAMENT') || hay.includes('DANFE') || hay.includes('BOLETO'))
+    return 'Payment'
+  return null
+}
+
 /** Monta a visão do modal de detalhes a partir da transação conciliada (lado extrato = real) + detalhes. */
 export const matchDetailsView = (
   tx: StatementTransaction,
@@ -690,33 +715,39 @@ export const matchDetailsView = (
   manualType: ManualEntryType | null = null,
   // Contraparte (conta de destino ou fornecedor) conhecida na sessão; null → "—" (até o backend, #268).
   counterparty: string | null = null,
-): MatchDetailsView => ({
-  isManualEntry,
-  manualKindTag:
-    manualType !== null ? `financial.recon.manualType.${manualType}` : 'financial.recon.match.manualKind',
-  manualCounterparty: {
-    // Transferência/Aplicação/Resgate → conta de destino; Pagamento/Recebimento → fornecedor; senão, sem linha.
-    labelTag:
-      manualType === 'Transfer' || manualType === 'Investment' || manualType === 'Redemption'
-        ? 'financial.recon.match.rowDestAccount'
-        : manualType === 'Payment' || manualType === 'Receipt'
-          ? 'financial.recon.manual.f.supplier'
-          : '',
-    value: counterparty ?? MATCH_DASH,
-  },
-  ext: {
-    name: tx.payeeName,
-    date: formatDayHeader(tx.date),
-    kind: tx.entryType,
-    id: tx.fitid,
-    valueBRL: centsToBRL(tx.valueCents),
-  },
-  // Nova transação (lançamento manual) não tem título: o "valor conciliado" é o valor da própria
-  // transação (a saída inteira foi lançada). Tipo/categoria/descrição dependem do backend (core-api#268).
-  doc: isManualEntry ? { ...(doc ?? DASH_DOC), valueBRL: centsToBRL(tx.valueCents) } : (doc ?? DASH_DOC),
-  audit: audit ?? DASH_AUDIT,
-  multi,
-})
+): MatchDetailsView => {
+  // Tipo efetivo: o da sessão (preciso) ou, na falta, o derivado do texto da transação (#268).
+  const effectiveManualType = manualType ?? (isManualEntry ? deriveManualKindFromTx(tx) : null)
+  return {
+    isManualEntry,
+    manualKindTag:
+      effectiveManualType !== null
+        ? `financial.recon.manualType.${effectiveManualType}`
+        : 'financial.recon.match.manualKind',
+    manualCounterparty: {
+      // Transferência/Aplicação/Resgate → conta de destino; Pagamento/Recebimento → fornecedor; senão, sem linha.
+      labelTag:
+        manualType === 'Transfer' || manualType === 'Investment' || manualType === 'Redemption'
+          ? 'financial.recon.match.rowDestAccount'
+          : manualType === 'Payment' || manualType === 'Receipt'
+            ? 'financial.recon.manual.f.supplier'
+            : '',
+      value: counterparty ?? MATCH_DASH,
+    },
+    ext: {
+      name: tx.payeeName,
+      date: formatDayHeader(tx.date),
+      kind: tx.entryType,
+      id: tx.fitid,
+      valueBRL: centsToBRL(tx.valueCents),
+    },
+    // Nova transação (lançamento manual) não tem título: o "valor conciliado" é o valor da própria
+    // transação (a saída inteira foi lançada). Tipo/categoria/descrição dependem do backend (core-api#268).
+    doc: isManualEntry ? { ...(doc ?? DASH_DOC), valueBRL: centsToBRL(tx.valueCents) } : (doc ?? DASH_DOC),
+    audit: audit ?? DASH_AUDIT,
+    multi,
+  }
+}
 
 /** Agrupa as contas em ativas/encerradas p/ o modal de troca, filtrando pela busca e marcando a atual. */
 export const groupAccountsForSwitch = (
