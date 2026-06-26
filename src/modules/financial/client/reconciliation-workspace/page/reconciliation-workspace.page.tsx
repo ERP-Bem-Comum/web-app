@@ -28,6 +28,7 @@ import { ChangeAccountModal } from '../components/change-account-modal.component
 import { MatchDetailsModal } from '../components/match-details-modal.component.tsx'
 import { ImportMismatchDialog } from '../components/import-mismatch-dialog.component.tsx'
 import { PeriodConfirmModal } from '../components/period-confirm-modal.component.tsx'
+import { PatternBatchModal } from '../components/pattern-batch-modal.component.tsx'
 import { PeriodMenu } from '../components/period-menu.component.tsx'
 import { ExportMenu } from '../components/export-menu.component.tsx'
 import { PeriodActionsMenu } from '../components/period-actions-menu.component.tsx'
@@ -378,6 +379,8 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
         onConfirm={vm.periodActions.onConfirm}
         onCancel={vm.periodActions.onCancel}
       />
+
+      <PatternBatchModal binding={vm.patternBatch} />
     </div>
   )
 }

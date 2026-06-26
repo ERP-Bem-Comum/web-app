@@ -21,6 +21,7 @@ import {
   type ManualEntryType,
   type StatementTransaction,
 } from './reconciliation-workspace.view-model.ts'
+import type { ManualEntryTemplate } from '#modules/financial/client/data/model/reconciliation.model.ts'
 
 // Opção de dropdown real (Fornecedor/Programa) — `value` = ref (UUID) enviado ao manual-entry.
 export type ManualEntryOption = Readonly<{ value: string; label: string }>
@@ -100,6 +101,7 @@ export function useManualEntry(
     reconciliationId: string,
     manualType?: ManualEntryType,
     counterparty?: string,
+    template?: ManualEntryTemplate,
   ) => void,
 ): ManualEntryBinding {
   const qc = useQueryClient()
@@ -179,7 +181,16 @@ export function useManualEntry(
             : v.type === 'Payment' || v.type === 'Receipt'
               ? partnerOptions.find((o) => o.value === v.supplierRef)?.label
               : undefined
-        onReconciled(v.transactionId, res.value.reconciliationId, v.type, counterparty)
+        // Template do padrão aplicado → reuso na sugestão de conciliação em lote (só campos sem destino).
+        const template: ManualEntryTemplate = {
+          type: v.type,
+          ...(v.supplierRef !== undefined ? { supplierRef: v.supplierRef } : {}),
+          ...(v.categoryRef !== undefined ? { categoryRef: v.categoryRef } : {}),
+          ...(v.costCenterRef !== undefined ? { costCenterRef: v.costCenterRef } : {}),
+          ...(v.programRef !== undefined ? { programRef: v.programRef } : {}),
+          ...(v.description !== undefined ? { description: v.description } : {}),
+        }
+        onReconciled(v.transactionId, res.value.reconciliationId, v.type, counterparty, template)
       } else {
         setErrorTag(reconciliationErrorTag(res.error))
       }

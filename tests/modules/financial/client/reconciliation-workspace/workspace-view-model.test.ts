@@ -35,6 +35,10 @@ import {
   parseOfxAccount,
   ofxMatchesAccount,
   ofxAccountLabel,
+  findSimilarPending,
+  isBatchableManualType,
+  isFeeLikeTransaction,
+  normalizeDesc,
 } from '../../../../../src/modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
 import type {
   Movement,
@@ -572,5 +576,98 @@ describe('validação de conta do OFX (parseOfxAccount / ofxMatchesAccount)', ()
     const a = parseOfxAccount(ofx)
     assert.ok(a !== null)
     assert.equal(ofxAccountLabel(a), '001 · Ag 1234 · CC 00123457')
+  })
+})
+
+describe('conciliação em lote por padrão (findSimilarPending / isBatchableManualType)', () => {
+  const tx = (
+    over: Partial<StatementTransaction> & Pick<StatementTransaction, 'id'>,
+  ): StatementTransaction => ({
+    fitid: '',
+    date: '2026-06-03',
+    movement: 'Debit',
+    entryType: 'FEE',
+    payeeName: 'Tarifa bancária',
+    memo: '',
+    valueCents: '590',
+    balanceAfterCents: '0',
+    reconciliationStatus: 'Pending',
+    ...over,
+  })
+
+  it('isBatchableManualType: só tipos sem conta de destino', () => {
+    assert.equal(isBatchableManualType('FeePenaltyInterest'), true)
+    assert.equal(isBatchableManualType('Payment'), true)
+    assert.equal(isBatchableManualType('Receipt'), true)
+    assert.equal(isBatchableManualType('Transfer'), false)
+    assert.equal(isBatchableManualType('Investment'), false)
+    assert.equal(isBatchableManualType('Redemption'), false)
+  })
+
+  it('findSimilarPending: pendentes com mesma descrição (normalizada) + mesmo sinal; exclui semente/conciliadas', () => {
+    const txs = [
+      tx({ id: 'seed' }),
+      tx({ id: 'a', payeeName: 'TARIFA  BANCÁRIA' }), // mesma após normalizar
+      tx({ id: 'b', reconciliationStatus: 'Reconciled' }), // já conciliada
+      tx({ id: 'c', movement: 'Credit' }), // sinal diferente
+      tx({ id: 'd', payeeName: 'Outra coisa' }), // descrição diferente
+    ]
+    const found = findSimilarPending(txs, normalizeDesc('Tarifa bancária'), 'Debit', 'seed')
+    assert.deepEqual(
+      found.map((t) => t.id),
+      ['a'],
+    )
+  })
+})
+
+describe('agrupamento por PERFIL de tarifa (matchFeeLike / isFeeLikeTransaction)', () => {
+  const ft = (
+    over: Partial<StatementTransaction> & Pick<StatementTransaction, 'id'>,
+  ): StatementTransaction => ({
+    fitid: '',
+    date: '2026-07-05',
+    movement: 'Debit',
+    entryType: 'Other',
+    payeeName: 'Tarifa bancaria mensal',
+    memo: '',
+    valueCents: '1500',
+    balanceAfterCents: '0',
+    reconciliationStatus: 'Pending',
+    ...over,
+  })
+
+  it('isFeeLikeTransaction: detecta tarifa/IOF/juros/multa no tipo/descrição/memo', () => {
+    assert.equal(
+      isFeeLikeTransaction(ft({ id: '1', payeeName: 'Banco Tarifas', memo: 'Tarifa de manutenção' })),
+      true,
+    )
+    assert.equal(isFeeLikeTransaction(ft({ id: '2', payeeName: 'X', memo: '', entryType: 'FEE' })), true)
+    assert.equal(isFeeLikeTransaction(ft({ id: '3', payeeName: 'Cobrança IOF' })), true)
+    assert.equal(
+      isFeeLikeTransaction(
+        ft({ id: '4', payeeName: 'Fornecedor X', memo: 'Pagamento NF', entryType: 'TED' }),
+      ),
+      false,
+    )
+  })
+
+  it('findSimilarPending matchFeeLike: tarifa agrupa por perfil (descrição diferente com cara de tarifa)', () => {
+    const txs = [
+      ft({ id: 'seed' }),
+      ft({ id: 'a' }), // descrição idêntica
+      ft({ id: 'b', payeeName: 'Banco Tarifas', memo: 'Tarifa de manutenção' }), // fee-like, desc diferente
+      ft({ id: 'c', payeeName: 'Fornecedor X', memo: 'Pagamento NF', entryType: 'TED' }), // NÃO fee-like
+    ]
+    const key = normalizeDesc('Tarifa bancaria mensal')
+    // sem matchFeeLike → só a idêntica
+    assert.deepEqual(
+      findSimilarPending(txs, key, 'Debit', 'seed').map((t) => t.id),
+      ['a'],
+    )
+    // com matchFeeLike → idêntica + fee-like (b); fornecedor (c) fica de fora
+    assert.deepEqual(
+      findSimilarPending(txs, key, 'Debit', 'seed', true).map((t) => t.id),
+      ['a', 'b'],
+    )
   })
 })

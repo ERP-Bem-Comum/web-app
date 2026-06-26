@@ -9,16 +9,20 @@ import { useCallback, useEffect, useReducer, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
 import {
+  centsToBRL,
   countReconciled,
   deriveConferencia,
   extratoTotals,
   filterExtrato,
   filterTransactions,
+  findSimilarPending,
   formatDateBR,
   groupExtratoDays,
   groupTransactionsByDay,
   initialWorkspaceUiState,
+  isBatchableManualType,
   isPending,
+  normalizeDesc,
   pickLatestPeriod,
   progressLabel,
   progressPercent,
@@ -45,6 +49,7 @@ import { useUndo, type UndoBinding } from './undo.binding.ts'
 import { useClosePeriod, type ClosePeriodBinding } from './close-period.binding.ts'
 import { useReopenPeriod, type ReopenPeriodBinding } from './reopen-period.binding.ts'
 import { useExportConciliacao, type ExportBinding } from './export-conciliacao.binding.ts'
+import { usePatternBatch } from './pattern-batch.binding.ts'
 import {
   accountStatementPeriodQueryOptions,
   paidPayablesQueryOptions,
@@ -57,6 +62,7 @@ import { reconciliationErrorTag } from '#modules/financial/client/data/helpers/r
 import type {
   AccountStatementPeriod as AccountStatementPeriodModel,
   CriterionResult,
+  ManualEntryTemplate,
   ManualEntryType,
   MatchSuggestion,
   PaidPayable,
@@ -144,6 +150,26 @@ export type WorkspaceBinding = Readonly<{
     onConfirm: () => void
     onCancel: () => void
   }>
+  // Sugestão de conciliação em LOTE por padrão: após conciliar 1 transação por nova transação (tipo sem
+  // destino), oferece aplicar o mesmo padrão às pendentes parecidas (mesma descrição + sinal). `active`
+  // false → sem sugestão. Sempre exige confirmação do usuário (revisar e conciliar).
+  patternBatch: Readonly<{
+    active: boolean
+    typeTag: string
+    candidates: readonly Readonly<{
+      id: string
+      dateBR: string
+      valueBRL: string
+      desc: string
+      checked: boolean
+    }>[]
+    selectedCount: number
+    busy: boolean
+    errorTag: string | null
+    toggle: (id: string) => void
+    onConfirm: () => void
+    onCancel: () => void
+  }>
   exportConciliacao: ExportBinding
   /** id da conciliação da transação: mapa de sessão (conciliação feita agora) OU lookup #175. */
   reconciliationIdFor: (transactionId: string) => string | null
@@ -207,17 +233,32 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
   // Contraparte do lançamento da sessão (conta de destino p/ transferência/aplicação/resgate; fornecedor
   // p/ pagamento/recebimento) → o detalhe mostra "p/ onde foi/de onde veio" antes do backend (#268).
   const [recCounterpartyMap, setRecCounterpartyMap] = useState<ReadonlyMap<string, string>>(() => new Map())
+  // Sugestão de conciliação em LOTE por padrão: ao conciliar uma transação por nova transação de tipo
+  // "batchável" (Tarifa/Pagamento/Recebimento), guardamos a semente (transação + template) p/ achar as
+  // pendentes parecidas e oferecer aplicar o mesmo padrão. `unchecked` = candidatas desmarcadas no review.
+  const [patternSeed, setPatternSeed] = useState<Readonly<{
+    txId: string
+    type: ManualEntryType
+    template: ManualEntryTemplate
+  }> | null>(null)
+  const [patternUnchecked, setPatternUnchecked] = useState<ReadonlySet<string>>(() => new Set())
   const recordReconciliation = useCallback(
     (
       transactionId: string,
       reconciliationId: string,
       manualType?: ManualEntryType,
       counterparty?: string,
+      template?: ManualEntryTemplate,
     ) => {
       setRecMap((prev) => new Map(prev).set(transactionId, reconciliationId))
       if (manualType !== undefined) setRecTypeMap((prev) => new Map(prev).set(transactionId, manualType))
       if (counterparty !== undefined && counterparty !== '')
         setRecCounterpartyMap((prev) => new Map(prev).set(transactionId, counterparty))
+      // Só dispara a sugestão de lote p/ tipos que o backend do batch suporta (sem conta de destino).
+      if (template !== undefined && isBatchableManualType(template.type)) {
+        setPatternSeed({ txId: transactionId, type: template.type, template })
+        setPatternUnchecked(new Set())
+      }
     },
     [],
   )
@@ -383,6 +424,57 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     },
   }
 
+  // ── Sugestão de conciliação em LOTE por padrão ──
+  const patternBatchBinding = usePatternBatch(() => {
+    setPatternSeed(null)
+    setPatternUnchecked(new Set())
+  })
+  // Transação semente (já conciliada, ainda na lista do período) → descrição/sinal p/ achar as parecidas.
+  const patternSeedTx = patternSeed !== null ? (allTx.find((t) => t.id === patternSeed.txId) ?? null) : null
+  const patternCandidatesTx =
+    patternSeed !== null && patternSeedTx !== null
+      ? findSimilarPending(
+          allTx,
+          normalizeDesc(patternSeedTx.payeeName),
+          patternSeedTx.movement,
+          patternSeed.txId,
+          // Tarifa agrupa por PERFIL (todas as tarifas, mesmo de descrição diferente); demais, descrição idêntica.
+          patternSeed.type === 'FeePenaltyInterest',
+        )
+      : []
+  const patternCandidates = patternCandidatesTx.map((t) => ({
+    id: t.id,
+    dateBR: formatDateBR(t.date),
+    valueBRL: centsToBRL(t.valueCents),
+    desc: t.payeeName,
+    checked: !patternUnchecked.has(t.id),
+  }))
+  const patternSelectedIds = patternCandidates.filter((c) => c.checked).map((c) => c.id)
+  const patternBatch = {
+    active: patternSeed !== null && patternCandidates.length > 0,
+    typeTag: patternSeed !== null ? `financial.recon.manualType.${patternSeed.type}` : '',
+    candidates: patternCandidates,
+    selectedCount: patternSelectedIds.length,
+    busy: patternBatchBinding.applying,
+    errorTag: patternBatchBinding.errorTag,
+    toggle: (id: string) => {
+      setPatternUnchecked((prev) => {
+        const next = new Set(prev)
+        if (next.has(id)) next.delete(id)
+        else next.add(id)
+        return next
+      })
+    },
+    onConfirm: () => {
+      if (patternSeed !== null && patternSelectedIds.length > 0)
+        patternBatchBinding.apply(patternSelectedIds, patternSeed.template)
+    },
+    onCancel: () => {
+      setPatternSeed(null)
+      setPatternUnchecked(new Set())
+    },
+  }
+
   const filterCounts: FilterCounts = {
     pendentes: pendentesCount,
     conciliadas: allTx.filter((t) => !isPending(t)).length,
@@ -487,6 +579,7 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     closePeriod: closePeriodBinding,
     reopenPeriod: reopenPeriodBinding,
     periodActions,
+    patternBatch,
     exportConciliacao: exportBinding,
     reconciliationIdFor: (transactionId) =>
       recMap.get(transactionId) ??
