@@ -50,6 +50,7 @@ const t = createTranslator(ptBR)
 export interface ContractRowProps {
   readonly row: ContractRow
   readonly index: number
+  readonly saldoText: string // saldo = valor − Σ bruto conciliado (calculado na page)
   readonly onRequestDelete: (row: ContractRow) => void
   readonly onGenerateDoc: (row: ContractRow, kind: 'quitacao' | 'historico') => void
 }
@@ -79,7 +80,13 @@ function closeDropdown(e: MouseEvent<HTMLButtonElement>) {
   if (details) details.open = false
 }
 
-export function ContractRow({ row, index, onRequestDelete, onGenerateDoc }: ContractRowProps): ReactNode {
+export function ContractRow({
+  row,
+  index,
+  saldoText,
+  onRequestDelete,
+  onGenerateDoc,
+}: ContractRowProps): ReactNode {
   const navigate = useNavigate()
   // Status REAL do contrato (inclui Distrato/Finalizado). Antes derivava do aditivo mais recente,
   // o que mascarava o status do contrato quando havia aditivos homologados.
@@ -128,10 +135,8 @@ export function ContractRow({ row, index, onRequestDelete, onGenerateDoc }: Cont
       <td className={`${cell} ${cellRight}`}>
         <span className={currencyText}>{formatCurrency(valorAtual)}</span>
       </td>
-      <td className={`${cell} ${cellCenter}`}>
-        <span className={balanceText} title="Saldo será exibido quando o módulo Financeiro estiver integrado">
-          {'—'}
-        </span>
+      <td className={`${cell} ${cellRight}`}>
+        <span className={balanceText}>{saldoText}</span>
       </td>
       <td className={`${cell} ${cellCenter}`}>
         <span className={periodText}>

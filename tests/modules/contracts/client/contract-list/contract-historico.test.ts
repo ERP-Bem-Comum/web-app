@@ -1,12 +1,16 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
-import { buildHistoricoRows } from '../../../../../src/modules/contracts/client/contract-list/contract-list.view-model.ts'
+import {
+  buildHistoricoRows,
+  contractSaldoText,
+} from '../../../../../src/modules/contracts/client/contract-list/contract-list.view-model.ts'
+import type { ContractRow } from '../../../../../src/modules/contracts/client/domain/types.ts'
 import type { ContractPayment } from '../../../../../src/modules/financial/public-api/index.ts'
 
 const pay = (over: Partial<ContractPayment>): ContractPayment => ({
   documentNumber: '100',
-  paymentLabel: 'PIX',
+  documentType: 'Boleto',
   paidAt: '2026-06-10',
   grossValueCents: '100000', // R$ 1.000,00
   ...over,
@@ -43,7 +47,7 @@ describe('buildHistoricoRows (Histórico de Pagamento)', () => {
 
   it('pagamentos sem data vão para o fim; documento/forma ausentes viram "—"', () => {
     const rows = buildHistoricoRows(10000, 'X', [
-      pay({ documentNumber: null, paidAt: null, paymentLabel: '—' }),
+      pay({ documentNumber: null, paidAt: null, documentType: '—' }),
       pay({ documentNumber: '7', paidAt: '2026-06-01' }),
     ])
     assert.equal(rows[0]?.document, '7') // o datado vem primeiro
@@ -53,5 +57,23 @@ describe('buildHistoricoRows (Histórico de Pagamento)', () => {
 
   it('lista vazia → nenhuma linha', () => {
     assert.equal(buildHistoricoRows(10000, 'X', []).length, 0)
+  })
+})
+
+describe('coluna Tipo = tipo do DOCUMENTO (não a forma de pagamento)', () => {
+  it('a linha usa o documentType', () => {
+    const rows = buildHistoricoRows(10000, 'X', [pay({ documentType: 'NFS-e' })])
+    assert.equal(rows[0]?.type, 'NFS-e')
+  })
+})
+
+describe('contractSaldoText (Saldo do grid de contratos)', () => {
+  const mkRow = (over: Partial<ContractRow>): ContractRow => over as unknown as ContractRow
+  it('saldo = valor − Σ bruto conciliado (centavos); sem pagamentos → valor cheio', () => {
+    const row = mkRow({ id: 'ct-1' as ContractRow['id'], currentValue: 88250 })
+    // 657567 (987600) + 345 (345000) = 1.332.600 centavos = R$ 13.326,00 → 88.250 − 13.326 = 74.924
+    // (compara só a parte numérica: formatCurrency usa espaço não-quebrável entre "R$" e o número)
+    assert.ok(contractSaldoText(row, { 'ct-1': 1332600 }).includes('74.924,00'))
+    assert.ok(contractSaldoText(row, {}).includes('88.250,00'))
   })
 })

@@ -6,11 +6,16 @@
  */
 import { useQuery } from '@tanstack/react-query'
 
-import { contractPaymentsQueryOptions, type ContractPayment } from '#modules/financial/public-api/index.ts'
+import {
+  contractPaymentsQueryOptions,
+  reconciledGrossByContractQueryOptions,
+  type ContractPayment,
+} from '#modules/financial/public-api/index.ts'
 
 // Referência ESTÁVEL p/ o caso vazio — senão `q.data ?? []` criaria um array novo a cada render, e o
 // efeito que depende de `payments` re-dispararia em loop (especialmente em loading/erro).
 const EMPTY: readonly ContractPayment[] = []
+const EMPTY_MAP: Readonly<Record<string, number>> = {}
 
 export function useContractHistoricoPayments(
   contractRef: string | null,
@@ -24,4 +29,10 @@ export function useContractHistoricoPayments(
     payments: q.data ?? EMPTY,
     ready: contractRef !== null && (q.isSuccess || q.isError),
   }
+}
+
+// Mapa contractRef → total do valor BRUTO conciliado (centavos), p/ a coluna "Saldo" do grid de contratos.
+export function useReconciledGrossByContract(): Readonly<Record<string, number>> {
+  const q = useQuery(reconciledGrossByContractQueryOptions())
+  return q.data ?? EMPTY_MAP
 }

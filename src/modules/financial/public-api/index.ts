@@ -56,5 +56,6 @@ export type { ReconciliationError } from '#modules/financial/client/data/reposit
 // ── Pagamentos conciliados por contrato (o módulo Contratos consome p/ o Histórico de Pagamento, §I) ──
 export {
   contractPaymentsQueryOptions,
+  reconciledGrossByContractQueryOptions,
   type ContractPayment,
 } from '#modules/financial/client/contas-a-pagar-list/contract-payments.query.ts'
