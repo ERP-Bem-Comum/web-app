@@ -62,7 +62,7 @@ function TituloSide({ m }: Readonly<{ m: MatchView }>) {
         <>
           <span className={s.sideRow}>
             <span className={s.sideKey}>{t('financial.recon.sugg.value')}</span>
-            <span className={s.sideVal}>{centsToBRL(m.payable.valueCents)}</span>
+            <span className={s.sideValStrong}>{centsToBRL(m.payable.valueCents)}</span>
           </span>
           <span className={s.sideRow}>
             <span className={s.sideKey}>{t('financial.recon.sugg.due')}</span>
@@ -122,7 +122,7 @@ export function SuggestionPane({
             <span className={s.sideTitle}>{selectedTx.payeeName}</span>
             <span className={s.sideRow}>
               <span className={s.sideKey}>{t('financial.recon.sugg.value')}</span>
-              <span className={s.sideVal}>{centsToBRL(selectedTx.valueCents)}</span>
+              <span className={s.sideValStrong}>{centsToBRL(selectedTx.valueCents)}</span>
             </span>
             <span className={s.sideRow}>
               <span className={s.sideKey}>{t('financial.recon.sugg.due')}</span>

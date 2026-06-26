@@ -573,9 +573,11 @@ const tagBase = {
   fontFamily: recon.font.sans,
   fontSize: fs['3xs'],
   paddingInline: sp.sm,
-  paddingBlock: '0.0625rem',
+  paddingBlock: '0.125rem',
   borderRadius: r.pill,
-  fontWeight: recon.weight.medium,
+  fontWeight: recon.weight.semibold,
+  textTransform: 'uppercase',
+  letterSpacing: '0.03em',
 } as const
 export const txTag = styleVariants({
   pending: { ...tagBase, color: c.orange.deep, background: c.orange.bg },
@@ -671,7 +673,8 @@ export const matchHead = style({
   background: c.green.bg,
   color: c.green.deep,
   fontFamily: recon.font.mono,
-  fontSize: fs['3xs'],
+  fontSize: fs.sm,
+  fontWeight: recon.weight.bold,
   textTransform: 'uppercase',
   letterSpacing: '0.04em',
   borderBlockEnd: `${bw.thin} solid ${c.green.line}`,
@@ -719,6 +722,14 @@ export const sideRow = style({
 })
 export const sideKey = style({ color: c.ink[5] })
 export const sideVal = style({ fontFamily: recon.font.mono, color: c.ink[3] })
+// Valor do card de match (extrato/título) em destaque: maior, negrito, tabular.
+export const sideValStrong = style({
+  fontFamily: recon.font.mono,
+  fontSize: fs.lg,
+  fontWeight: recon.weight.bold,
+  color: c.ink[1],
+  fontVariantNumeric: 'tabular-nums',
+})
 
 export const critList = style({
   display: 'flex',
@@ -733,8 +744,8 @@ const critBase = {
   gap: '0.25rem',
   fontFamily: recon.font.sans,
   fontSize: fs['3xs'],
-  paddingInline: sp.sm,
-  paddingBlock: '0.125rem',
+  paddingInline: sp.xs,
+  paddingBlock: '0.0625rem',
   borderRadius: r.sm,
 } as const
 export const crit = styleVariants({
