@@ -5,7 +5,7 @@
  * transação selecionada. A page e os componentes são burros (só consomem este hook). US1 (conciliar por
  * sugestão) + US2 (importar) ligados; US3–US8 entram nas próximas fatias.
  */
-import { useCallback, useEffect, useReducer, useState } from 'react'
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
 import {
@@ -22,10 +22,12 @@ import {
   initialWorkspaceUiState,
   isBatchableManualType,
   isPending,
+  nextPendingWithMatch,
   normalizeDesc,
   pickLatestPeriod,
   progressLabel,
   progressPercent,
+  tituloLabel,
   workspaceReducer,
   type AssocTab,
   type Conferencia,
@@ -173,6 +175,11 @@ export type WorkspaceBinding = Readonly<{
     onCancel: () => void
   }>
   exportConciliacao: ExportBinding
+  /** Barra de confirmação transiente (fluxo contínuo): dados do último match conciliado; null = oculta. */
+  flash: Readonly<{ transactionId: string; reconciliationId: string; tituloLabel: string }> | null
+  /** "Arma" o título do match (pelo payableId) antes do clique Conciliar — alimenta a barra de confirmação. */
+  armFlash: (payableId: string) => void
+  dismissFlash: () => void
   /** id da conciliação da transação: mapa de sessão (conciliação feita agora) OU lookup #175. */
   reconciliationIdFor: (transactionId: string) => string | null
   setTab: (tab: WorkspaceTab) => void
@@ -249,26 +256,43 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     template: ManualEntryTemplate
   }> | null>(null)
   const [patternUnchecked, setPatternUnchecked] = useState<ReadonlySet<string>>(() => new Set())
-  const recordReconciliation = useCallback(
-    (
-      transactionId: string,
-      reconciliationId: string,
-      manualType?: ManualEntryType,
-      counterparty?: string,
-      template?: ManualEntryTemplate,
-    ) => {
-      setRecMap((prev) => new Map(prev).set(transactionId, reconciliationId))
-      if (manualType !== undefined) setRecTypeMap((prev) => new Map(prev).set(transactionId, manualType))
-      if (counterparty !== undefined && counterparty !== '')
-        setRecCounterpartyMap((prev) => new Map(prev).set(transactionId, counterparty))
-      // Só dispara a sugestão de lote p/ tipos que o backend do batch suporta (sem conta de destino).
-      if (template !== undefined && isBatchableManualType(template.type)) {
-        setPatternSeed({ txId: transactionId, type: template.type, template })
-        setPatternUnchecked(new Set())
-      }
-    },
-    [],
-  )
+  // Fluxo contínuo (P.O.): ao conciliar por MATCH, mostra a barra transiente de confirmação + auto-avança
+  // pro próximo match. `flash` = dados da barra; `pendingAdvance` = a tx recém-conciliada (avança após o
+  // refetch); `armedLabelRef` = título do match, "armado" pela page no clique (o match não passa o título).
+  const [flash, setFlash] = useState<Readonly<{
+    transactionId: string
+    reconciliationId: string
+    tituloLabel: string
+  }> | null>(null)
+  const [pendingAdvance, setPendingAdvance] = useState<string | null>(null)
+  const armedLabelRef = useRef<string | null>(null)
+  // Função simples (sem useCallback): o React Compiler memoiza; o `useCallback` conflitava com a mutação
+  // do `armedLabelRef` ("Existing memoization could not be preserved").
+  const recordReconciliation = (
+    transactionId: string,
+    reconciliationId: string,
+    manualType?: ManualEntryType,
+    counterparty?: string,
+    template?: ManualEntryTemplate,
+  ): void => {
+    setRecMap((prev) => new Map(prev).set(transactionId, reconciliationId))
+    if (manualType !== undefined) setRecTypeMap((prev) => new Map(prev).set(transactionId, manualType))
+    if (counterparty !== undefined && counterparty !== '')
+      setRecCounterpartyMap((prev) => new Map(prev).set(transactionId, counterparty))
+    // Só dispara a sugestão de lote p/ tipos que o backend do batch suporta (sem conta de destino).
+    if (template !== undefined && isBatchableManualType(template.type)) {
+      setPatternSeed({ txId: transactionId, type: template.type, template })
+      setPatternUnchecked(new Set())
+    }
+    // Conciliação por MATCH/busca (sem `manualType`): barra de confirmação + auto-avanço pro próximo match.
+    // Nova transação (tarifa/etc.) já tem o seu fluxo (modal de lote) — não auto-avança.
+    if (manualType === undefined) {
+      const label = armedLabelRef.current ?? counterparty ?? ''
+      armedLabelRef.current = null
+      setFlash({ transactionId, reconciliationId, tituloLabel: label })
+      setPendingAdvance(transactionId)
+    }
+  }
   const forgetReconciliation = useCallback((transactionId: string) => {
     const drop = (prev: ReadonlyMap<string, string>) => {
       const next = new Map(prev)
@@ -552,6 +576,32 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     ),
   )
 
+  // Fluxo contínuo: quando a tx recém-conciliada some das pendentes (refetch concluído), seleciona a
+  // PRÓXIMA pendente COM match → a sugestão nunca fica vazia. setState DIFERIDO (sem render em cascata).
+  useEffect(() => {
+    if (pendingAdvance === null) return
+    const reconciledTx = allTx.find((t) => t.id === pendingAdvance)
+    if (reconciledTx !== undefined && isPending(reconciledTx)) return // espera o refetch invalidar a tx
+    const nextId = nextPendingWithMatch(allTx, guesses, pendingAdvance)
+    const id = window.setTimeout(() => {
+      setPendingAdvance(null)
+      dispatch({ type: 'select-transaction', id: nextId })
+    }, 0)
+    return () => {
+      window.clearTimeout(id)
+    }
+  }, [pendingAdvance, allTx, guesses])
+
+  // Título do match "armado" pela page no clique de Conciliar (o callback do match não carrega o título).
+  const armFlash = (payableId: string): void => {
+    if (suggestions.tag !== 'ready') {
+      armedLabelRef.current = null
+      return
+    }
+    const m = [suggestions.top, ...suggestions.alternatives].find((x) => x.payableId === payableId)
+    armedLabelRef.current = tituloLabel(m?.payable ?? null)
+  }
+
   const reconciled = countReconciled(allTx)
   const total = allTx.length
 
@@ -589,6 +639,11 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     periodActions,
     patternBatch,
     exportConciliacao: exportBinding,
+    flash,
+    armFlash,
+    dismissFlash: () => {
+      setFlash(null)
+    },
     reconciliationIdFor: (transactionId) =>
       recMap.get(transactionId) ??
       (transactionId === selectedReconLookupTxId ? selectedReconId : null) ??

@@ -1584,6 +1584,12 @@ export const ptBR: Catalog = {
     'Essa movimentação é um resgate de aplicação. Diferente de um recebimento de cliente, ela não gera receita — é o retorno do principal investido (com ou sem rendimento).',
   'financial.recon.manual.dest.Redemption.confirm':
     'Confirmo que é um resgate de aplicação, não um recebimento de cliente',
+  // Barra de confirmação transiente (fluxo contínuo) — aparece ao conciliar e some sozinha
+  'financial.recon.flash.prefixWith': 'Esta transação está conciliada com',
+  'financial.recon.flash.prefix': 'Esta transação está conciliada',
+  'financial.recon.flash.now': 'conciliada agora',
+  'financial.recon.flash.by': 'por',
+  'financial.recon.flash.you': 'você',
   // Desfazer (US5)
   'financial.recon.undo.banner': 'Movimentação conciliada.',
   'financial.recon.undo.reason': 'Motivo (opcional)',
