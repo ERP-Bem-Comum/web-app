@@ -15,7 +15,6 @@ const baseBinding = (over: Partial<ManualEntryBinding> = {}): ManualEntryBinding
   type: null,
   description: '',
   destinationAccount: '',
-  consciousConfirm: false,
   needsDestination: false,
   showPayeeBlock: false,
   canSubmit: false,
@@ -33,7 +32,6 @@ const baseBinding = (over: Partial<ManualEntryBinding> = {}): ManualEntryBinding
   setType: vi.fn(),
   setDescription: vi.fn(),
   setDestinationAccount: vi.fn(),
-  setConsciousConfirm: vi.fn(),
   setSupplierRef: vi.fn(),
   setProgramRef: vi.fn(),
   setCategoryRef: vi.fn(),
@@ -55,13 +53,12 @@ describe('NewTransactionPane', () => {
     expect(setType).toHaveBeenCalledWith('Transfer')
   })
 
-  it('Transferência mostra aviso + destino + confirmação consciente (campos do tipo)', () => {
+  it('Transferência mostra o destino, SEM aviso/confirmação consciente (removidos a pedido da P.O.)', () => {
     render(<NewTransactionPane binding={baseBinding({ type: 'Transfer', needsDestination: true })} />)
-    expect(screen.getByText(tr('financial.recon.manual.dest.Transfer.warning'))).toBeTruthy()
     expect(screen.getByText(tr('financial.recon.manual.dest.Transfer.label'))).toBeTruthy()
-    const confirm = screen.getByRole('checkbox')
-    fireEvent.click(confirm)
-    // setConsciousConfirm é chamado ao alternar a confirmação consciente
+    // o aviso e o checkbox de confirmação consciente não existem mais
+    expect(screen.queryByText(tr('financial.recon.manual.dest.Transfer.warning'))).toBeNull()
+    expect(screen.queryByRole('checkbox')).toBeNull()
   })
 
   it('Pagamento mostra o bloco de documento (fornecedor); Tarifa não', () => {

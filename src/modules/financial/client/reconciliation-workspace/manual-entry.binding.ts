@@ -17,6 +17,7 @@ import { listAllPartnersFn } from '#modules/partners/public-api/index.ts'
 import { listProgramsFn } from '#modules/programs/public-api/index.ts'
 import { referencesQueryOptions } from './reconciliation-workspace.query.ts'
 import {
+  relabelReconCategory,
   requiresDestination,
   type ManualEntryType,
   type StatementTransaction,
@@ -30,7 +31,6 @@ export type ManualEntryBinding = Readonly<{
   type: ManualEntryType | null
   description: string
   destinationAccount: string
-  consciousConfirm: boolean
   needsDestination: boolean
   showPayeeBlock: boolean
   canSubmit: boolean
@@ -49,7 +49,6 @@ export type ManualEntryBinding = Readonly<{
   setType: (type: ManualEntryType) => void
   setDescription: (v: string) => void
   setDestinationAccount: (v: string) => void
-  setConsciousConfirm: (v: boolean) => void
   setSupplierRef: (v: string) => void
   setProgramRef: (v: string) => void
   setCategoryRef: (v: string) => void
@@ -108,7 +107,6 @@ export function useManualEntry(
   const [type, setType] = useState<ManualEntryType | null>(null)
   const [description, setDescription] = useState('')
   const [destinationAccount, setDestinationAccount] = useState('')
-  const [consciousConfirm, setConsciousConfirm] = useState(false)
   const [supplierRef, setSupplierRef] = useState('')
   const [programRef, setProgramRef] = useState('')
   const [categoryRef, setCategoryRef] = useState('')
@@ -121,7 +119,7 @@ export function useManualEntry(
   const referencesResult = useQuery(referencesQueryOptions()).data
   const references = referencesResult?.ok === true ? referencesResult.value : null
   const categoryOptions: readonly ManualEntryOption[] =
-    references?.categories.map((c) => ({ value: c.id, label: c.name })) ?? []
+    references?.categories.map((c) => ({ value: c.id, label: relabelReconCategory(c.name) })) ?? []
   const costCenterOptions: readonly ManualEntryOption[] =
     references?.costCenters.map((c) => ({ value: c.id, label: `${c.code} — ${c.name}` })) ?? []
   // #143: contas-cedente ATIVAS p/ destino da transferência/aplicação/resgate — exclui a própria origem
@@ -145,8 +143,9 @@ export function useManualEntry(
 
   const needsDestination = type !== null && requiresDestination(type)
   const showPayeeBlock = type === 'Payment' || type === 'Receipt'
-  // Transferência/Aplicação/Resgate exigem a conta de destino selecionada E a confirmação consciente.
-  const destinationOk = !needsDestination || (consciousConfirm && destinationAccount.trim() !== '')
+  // Transferência/Aplicação/Resgate exigem a conta de destino selecionada (regra do backend). A confirmação
+  // consciente foi removida a pedido da P.O. — só atrapalhava; engano é reversível pelo "desfazer".
+  const destinationOk = !needsDestination || destinationAccount.trim() !== ''
   const canSubmit = type !== null && destinationOk
 
   const mut = useMutation({
@@ -167,7 +166,6 @@ export function useManualEntry(
         setType(null)
         setDescription('')
         setDestinationAccount('')
-        setConsciousConfirm(false)
         setSupplierRef('')
         setProgramRef('')
         setCategoryRef('')
@@ -201,7 +199,6 @@ export function useManualEntry(
     type,
     description,
     destinationAccount,
-    consciousConfirm,
     needsDestination,
     showPayeeBlock,
     canSubmit,
@@ -218,16 +215,12 @@ export function useManualEntry(
     accountOptions,
     setType: (tp) => {
       setType(tp)
-      setConsciousConfirm(false)
     },
     setDescription: (v) => {
       setDescription(v)
     },
     setDestinationAccount: (v) => {
       setDestinationAccount(v)
-    },
-    setConsciousConfirm: (v) => {
-      setConsciousConfirm(v)
     },
     setSupplierRef: (v) => {
       setSupplierRef(v)
@@ -245,7 +238,6 @@ export function useManualEntry(
       setType(null)
       setDescription('')
       setDestinationAccount('')
-      setConsciousConfirm(false)
       setSupplierRef('')
       setProgramRef('')
       setCategoryRef('')

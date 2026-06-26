@@ -174,6 +174,19 @@ export const groupTransactionsByDay = (txs: readonly StatementTransaction[]): re
 export const countReconciled = (txs: readonly StatementTransaction[]): number =>
   txs.filter((t) => !isPending(t)).length
 
+// ── Relabel TEMPORÁRIO de categorias (só no front) ──────────────────────────────
+// Pedido P.O.: a Nova transação da conciliação precisa das categorias "Transferência entre contas",
+// "Resgate" e "Aplicação", mas SEM mexer no backend por ora. Reaproveitamos 3 categorias de referência
+// existentes pelo NOME — o `id` (UUID) segue intacto p/ o backend (que valida igual). Quando o backend
+// ganhar categorias dedicadas a movimentos entre contas, basta remover este mapa.
+// ⚠️ É só rótulo de UI: o lançamento fica gravado na categoria original (ex.: "Aplicação" = id de "Aluguel").
+const RECON_CATEGORY_RELABEL: Readonly<Record<string, string>> = {
+  'Ajuste de conciliação': 'Transferência entre contas',
+  Estorno: 'Resgate',
+  Aluguel: 'Aplicação',
+}
+export const relabelReconCategory = (name: string): string => RECON_CATEGORY_RELABEL[name] ?? name
+
 // ── Sugestão de conciliação em LOTE por padrão (front) ──────────────────────────
 /** Normaliza a descrição (payeeName) p/ comparar transações "do mesmo tipo": case/espaço-insensível. */
 export const normalizeDesc = (s: string): string => s.trim().toLowerCase().replace(/\s+/g, ' ')
