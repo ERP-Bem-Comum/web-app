@@ -40,6 +40,8 @@ import {
   isFeeLikeTransaction,
   normalizeDesc,
   relabelReconCategory,
+  nextPendingWithMatch,
+  tituloLabel,
 } from '../../../../../src/modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
 import type {
   Movement,
@@ -683,5 +685,46 @@ describe('relabel temporário de categorias (relabelReconCategory)', () => {
     assert.equal(relabelReconCategory('Tarifas bancárias'), 'Tarifas bancárias')
     assert.equal(relabelReconCategory('Doações'), 'Doações')
     assert.equal(relabelReconCategory(''), '')
+  })
+})
+
+describe('fluxo contínuo: nextPendingWithMatch + tituloLabel', () => {
+  it('nextPendingWithMatch: próxima pendente COM match (prefere alta, cíclico, exclui sem-palpite/conciliada)', () => {
+    const txs = [
+      tx({ id: 'a' }),
+      tx({ id: 'b' }),
+      tx({ id: 'c' }),
+      tx({ id: 'd', reconciliationStatus: 'Reconciled' }),
+    ]
+    const guesses = new Map<string, { band: 'alta' | 'media' }>([
+      ['b', { band: 'media' }],
+      ['c', { band: 'alta' }],
+      ['d', { band: 'alta' }],
+    ])
+    assert.equal(nextPendingWithMatch(txs, guesses, 'a'), 'c') // prefere 'alta' (c); 'd' está conciliada
+    assert.equal(nextPendingWithMatch(txs, new Map([['b', { band: 'media' as const }]]), 'a'), 'b') // sem alta → media
+    assert.equal(nextPendingWithMatch(txs, new Map(), 'a'), null) // ninguém com palpite
+    assert.equal(nextPendingWithMatch(txs, new Map([['a', { band: 'alta' as const }]]), 'a'), null) // só a própria
+  })
+  it('tituloLabel: "Tipo Número"; vazio quando null/sem dados', () => {
+    const mkPayable = (over: Partial<PaidPayable>): PaidPayable => ({
+      id: 'p',
+      documentId: 'd',
+      valueCents: '0',
+      dueDate: '2026-06-01',
+      paidAt: null,
+      paymentMethod: '',
+      supplierName: null,
+      documentNumber: null,
+      category: null,
+      documentType: null,
+      ...over,
+    })
+    assert.equal(
+      tituloLabel(mkPayable({ documentType: 'NFS-e', documentNumber: '2024-0537' })),
+      'NFS-e 2024-0537',
+    )
+    assert.equal(tituloLabel(mkPayable({})), '')
+    assert.equal(tituloLabel(null), '')
   })
 })

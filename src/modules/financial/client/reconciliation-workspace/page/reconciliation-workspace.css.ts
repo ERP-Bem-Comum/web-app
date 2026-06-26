@@ -424,12 +424,21 @@ export const conciliacaoView = style({
 })
 
 export const importsCol = style({
+  flex: 1, // preenche a coluna 2 abaixo da barra de confirmação (quando dentro do assocColumn)
   display: 'flex',
   flexDirection: 'column',
   minBlockSize: 0,
   overflow: 'hidden',
   background: c.paper.default,
   borderInlineEnd: `${bw.thin} solid ${c.paper.rule}`,
+})
+
+// Coluna 2 (associação) — empilha a barra de confirmação transiente acima do conteúdo (abas/sugestão).
+export const assocColumn = style({
+  minBlockSize: 0,
+  display: 'flex',
+  flexDirection: 'column',
+  overflow: 'hidden',
 })
 
 export const importsHead = style({
@@ -1841,6 +1850,53 @@ export const ddItemIc = style({
 export const ddItemLbl = style({ flex: 1, fontWeight: recon.weight.medium })
 export const ddItemHint = style({ fontFamily: recon.font.sans, fontSize: fs['2xs'], color: c.ink[5] })
 export const periodChevOpen = style({ color: c.ink[5], display: 'inline-flex', transform: 'rotate(180deg)' })
+
+// ── Barra de confirmação transiente (fluxo contínuo) ────────────────────────────
+export const flashBar = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: sp.lg,
+  flexShrink: 0,
+  paddingBlock: sp.md,
+  paddingInline: sp.xl,
+  marginBlock: sp.lg,
+  marginInline: sp.xl,
+  borderRadius: r.lg,
+  background: c.green.bg,
+  border: `${bw.thin} solid ${c.green.line}`,
+})
+export const flashText = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: sp.xs,
+  color: c.green.deep,
+  fontFamily: recon.font.sans,
+  fontSize: fs.sm,
+})
+export const flashTitulo = style({ fontWeight: recon.weight.bold })
+export const flashMeta = style({ color: c.green.deep, opacity: 0.7 })
+export const flashUndo = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: sp.xs,
+  flexShrink: 0,
+  boxSizing: 'border-box',
+  blockSize: '2.125rem',
+  paddingInline: sp.lg,
+  borderRadius: r.md,
+  border: `${bw.thin} solid ${c.green.line}`,
+  background: c.paper.default,
+  color: c.green.deep,
+  fontFamily: recon.font.sans,
+  fontSize: fs.sm,
+  fontWeight: recon.weight.medium,
+  cursor: 'pointer',
+  selectors: {
+    '&:hover:not(:disabled)': { background: c.paper.warm },
+    '&:disabled': { opacity: 0.5, cursor: 'not-allowed' },
+  },
+})
 
 // ── Desfazer (US5) ──────────────────────────────────────────────────────────────
 export const banner = style({

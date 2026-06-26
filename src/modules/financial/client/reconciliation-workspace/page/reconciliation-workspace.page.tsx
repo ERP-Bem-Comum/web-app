@@ -22,6 +22,7 @@ import { PendingTitlesPane } from '../components/pending-titles-pane.component.t
 import { SearchCreatePane } from '../components/search-create-pane.component.tsx'
 import { NewTransactionPane } from '../components/new-transaction-pane.component.tsx'
 import { ReconciledBanner } from '../components/reconciled-banner.component.tsx'
+import { ReconcileFlashBar } from '../components/reconcile-flash-bar.component.tsx'
 import { StatementGrid } from '../components/statement-grid.component.tsx'
 import { PeriodBalanceBand } from '../components/period-balance-band.component.tsx'
 import { ChangeAccountModal } from '../components/change-account-modal.component.tsx'
@@ -185,75 +186,99 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
               onFilter={vm.setListFilter}
               onSelect={vm.selectTransaction}
             />
-            {vm.selectedTx !== null && !isPending(vm.selectedTx) ? (
-              <ReconciledBanner
-                undo={vm.undo}
-                reconciliationId={vm.reconciliationIdFor(vm.selectedTx.id)}
-                transactionId={vm.selectedTx.id}
-              />
-            ) : vm.selectedTx === null ? (
-              // Sem movimento importado no período (txList vazio): mostra os títulos pendentes de
-              // conciliação (mais recente no topo). Com movimentos, segue a SuggestionPane.
-              vm.txList.tag === 'empty' ? (
-                <PendingTitlesPane payables={sortPendingByPayment(vm.payables)} />
-              ) : (
-                <SuggestionPane
-                  state={{ tag: 'idle' }}
-                  selectedTx={null}
-                  reconciling={false}
-                  rejecting={false}
-                  errorTag={null}
-                  onReconcile={() => undefined}
-                  onReject={() => undefined}
+            <div className={s.assocColumn}>
+              {vm.flash !== null ? (
+                <ReconcileFlashBar
+                  key={vm.flash.reconciliationId}
+                  tituloLabel={vm.flash.tituloLabel}
+                  byUser=""
+                  canUndo={vm.reconciliationIdFor(vm.flash.transactionId) !== null}
+                  undoing={vm.undo.undoing}
+                  onUndo={() => {
+                    const f = vm.flash
+                    if (f === null) return
+                    const rid = vm.reconciliationIdFor(f.transactionId)
+                    if (rid !== null) vm.undo.undo(rid, f.transactionId)
+                    vm.dismissFlash()
+                  }}
+                  onDismiss={vm.dismissFlash}
                 />
-              )
-            ) : (
-              <div className={s.importsCol}>
-                <div className={s.assocTabs} role="tablist" aria-label={t('financial.recon.assoc.sugestao')}>
-                  {ASSOC_TABS.map((a) => (
-                    <button
-                      key={a.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={ui.assocTab === a.id}
-                      className={ui.assocTab === a.id ? s.assocTab.active : s.assocTab.inactive}
-                      onClick={() => {
-                        vm.setAssocTab(a.id)
-                      }}
-                    >
-                      {t(a.tag)}
-                    </button>
-                  ))}
-                </div>
-                {ui.assocTab === 'sugestao' ? (
-                  <SuggestionPane
-                    state={ui.showGuesses ? vm.suggestions : { tag: 'idle' }}
-                    selectedTx={vm.selectedTx}
-                    reconciling={vm.reconcile.reconciling}
-                    rejecting={vm.reconcile.rejecting}
-                    errorTag={vm.reconcile.errorTag}
-                    onReconcile={(payableId) => {
-                      if (ui.selectedTransactionId !== null) {
-                        vm.reconcile.reconcileOne(ui.selectedTransactionId, payableId)
-                      }
-                    }}
-                    onReject={(payableId) => {
-                      if (ui.selectedTransactionId !== null) {
-                        vm.reconcile.rejectOne(ui.selectedTransactionId, payableId)
-                      }
-                    }}
-                  />
-                ) : ui.assocTab === 'nova' ? (
-                  <NewTransactionPane binding={vm.manualEntry} />
+              ) : null}
+              {vm.selectedTx !== null && !isPending(vm.selectedTx) ? (
+                <ReconciledBanner
+                  undo={vm.undo}
+                  reconciliationId={vm.reconciliationIdFor(vm.selectedTx.id)}
+                  transactionId={vm.selectedTx.id}
+                />
+              ) : vm.selectedTx === null ? (
+                // Sem movimento importado no período (txList vazio): mostra os títulos pendentes de
+                // conciliação (mais recente no topo). Com movimentos, segue a SuggestionPane.
+                vm.txList.tag === 'empty' ? (
+                  <PendingTitlesPane payables={sortPendingByPayment(vm.payables)} />
                 ) : (
-                  <SearchCreatePane
-                    binding={vm.searchCreate}
-                    payables={vm.payables}
-                    extratoValueCents={vm.selectedTx.valueCents}
+                  <SuggestionPane
+                    state={{ tag: 'idle' }}
+                    selectedTx={null}
+                    reconciling={false}
+                    rejecting={false}
+                    errorTag={null}
+                    onReconcile={() => undefined}
+                    onReject={() => undefined}
                   />
-                )}
-              </div>
-            )}
+                )
+              ) : (
+                <div className={s.importsCol}>
+                  <div
+                    className={s.assocTabs}
+                    role="tablist"
+                    aria-label={t('financial.recon.assoc.sugestao')}
+                  >
+                    {ASSOC_TABS.map((a) => (
+                      <button
+                        key={a.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={ui.assocTab === a.id}
+                        className={ui.assocTab === a.id ? s.assocTab.active : s.assocTab.inactive}
+                        onClick={() => {
+                          vm.setAssocTab(a.id)
+                        }}
+                      >
+                        {t(a.tag)}
+                      </button>
+                    ))}
+                  </div>
+                  {ui.assocTab === 'sugestao' ? (
+                    <SuggestionPane
+                      state={ui.showGuesses ? vm.suggestions : { tag: 'idle' }}
+                      selectedTx={vm.selectedTx}
+                      reconciling={vm.reconcile.reconciling}
+                      rejecting={vm.reconcile.rejecting}
+                      errorTag={vm.reconcile.errorTag}
+                      onReconcile={(payableId) => {
+                        if (ui.selectedTransactionId !== null) {
+                          vm.armFlash(payableId) // captura o título do match p/ a barra de confirmação
+                          vm.reconcile.reconcileOne(ui.selectedTransactionId, payableId)
+                        }
+                      }}
+                      onReject={(payableId) => {
+                        if (ui.selectedTransactionId !== null) {
+                          vm.reconcile.rejectOne(ui.selectedTransactionId, payableId)
+                        }
+                      }}
+                    />
+                  ) : ui.assocTab === 'nova' ? (
+                    <NewTransactionPane binding={vm.manualEntry} />
+                  ) : (
+                    <SearchCreatePane
+                      binding={vm.searchCreate}
+                      payables={vm.payables}
+                      extratoValueCents={vm.selectedTx.valueCents}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <div className={s.extratoView}>

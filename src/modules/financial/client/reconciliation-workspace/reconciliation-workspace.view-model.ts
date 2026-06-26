@@ -13,6 +13,7 @@ import type {
   ReconciliationAccount,
   ReconciliationPeriod,
   StatementTransaction,
+  SuggestionBand,
   TransactionReconciliation,
 } from '#modules/financial/client/data/model/reconciliation.model.ts'
 import { centsToBRL, centsToReais } from '#modules/financial/client/data/money.ts'
@@ -173,6 +174,41 @@ export const groupTransactionsByDay = (txs: readonly StatementTransaction[]): re
 /** Conta as transações já tratadas (não-pendentes) — alimenta o progresso "X/N". */
 export const countReconciled = (txs: readonly StatementTransaction[]): number =>
   txs.filter((t) => !isPending(t)).length
+
+// ── Fluxo contínuo: auto-avanço + barra de confirmação ──────────────────────────
+/** Rótulo do título p/ a barra de confirmação: "Tipo Número" (ex.: "NFS-e 2024-0537"). Vazio se sem dados. */
+export const tituloLabel = (p: PaidPayable | null): string => {
+  if (p === null) return ''
+  return [p.documentType ?? '', p.documentNumber ?? '']
+    .filter((s) => s !== '')
+    .join(' ')
+    .trim()
+}
+
+/**
+ * Próxima transação PENDENTE com match (palpite no `guesses`) a partir de `afterId` — busca CÍCLICA na
+ * ordem da lista, preferindo banda 'alta' (alta confiança); senão qualquer match. Pula as sem palpite e a
+ * própria `afterId`. `null` quando não há nenhuma pendente com match. PURA. (P.O.: manter sempre um match ativo.)
+ */
+export const nextPendingWithMatch = (
+  txs: readonly StatementTransaction[],
+  guesses: ReadonlyMap<string, { band: SuggestionBand }>,
+  afterId: string,
+): string | null => {
+  const n = txs.length
+  if (n === 0) return null
+  const start = txs.findIndex((t) => t.id === afterId)
+  const scan = (wantAlta: boolean): string | null => {
+    for (let i = 1; i <= n; i++) {
+      const t = txs[(start + i) % n]
+      if (t === undefined || t.id === afterId || !isPending(t)) continue
+      const g = guesses.get(t.id)
+      if (g !== undefined && (!wantAlta || g.band === 'alta')) return t.id
+    }
+    return null
+  }
+  return scan(true) ?? scan(false)
+}
 
 // ── Relabel TEMPORÁRIO de categorias (só no front) ──────────────────────────────
 // Pedido P.O.: a Nova transação da conciliação precisa das categorias "Transferência entre contas",
