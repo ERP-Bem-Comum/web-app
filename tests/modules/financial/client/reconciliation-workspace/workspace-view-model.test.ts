@@ -39,6 +39,7 @@ import {
   isBatchableManualType,
   isFeeLikeTransaction,
   normalizeDesc,
+  relabelReconCategory,
 } from '../../../../../src/modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
 import type {
   Movement,
@@ -669,5 +670,18 @@ describe('agrupamento por PERFIL de tarifa (matchFeeLike / isFeeLikeTransaction)
       findSimilarPending(txs, key, 'Debit', 'seed', true).map((t) => t.id),
       ['a', 'b'],
     )
+  })
+})
+
+describe('relabel temporário de categorias (relabelReconCategory)', () => {
+  it('renomeia as 3 categorias pedidas pela P.O.', () => {
+    assert.equal(relabelReconCategory('Ajuste de conciliação'), 'Transferência entre contas')
+    assert.equal(relabelReconCategory('Estorno'), 'Resgate')
+    assert.equal(relabelReconCategory('Aluguel'), 'Aplicação')
+  })
+  it('mantém as demais categorias intactas', () => {
+    assert.equal(relabelReconCategory('Tarifas bancárias'), 'Tarifas bancárias')
+    assert.equal(relabelReconCategory('Doações'), 'Doações')
+    assert.equal(relabelReconCategory(''), '')
   })
 })

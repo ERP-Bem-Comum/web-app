@@ -17,6 +17,7 @@ import { listAllPartnersFn } from '#modules/partners/public-api/index.ts'
 import { listProgramsFn } from '#modules/programs/public-api/index.ts'
 import { referencesQueryOptions } from './reconciliation-workspace.query.ts'
 import {
+  relabelReconCategory,
   requiresDestination,
   type ManualEntryType,
   type StatementTransaction,
@@ -121,7 +122,7 @@ export function useManualEntry(
   const referencesResult = useQuery(referencesQueryOptions()).data
   const references = referencesResult?.ok === true ? referencesResult.value : null
   const categoryOptions: readonly ManualEntryOption[] =
-    references?.categories.map((c) => ({ value: c.id, label: c.name })) ?? []
+    references?.categories.map((c) => ({ value: c.id, label: relabelReconCategory(c.name) })) ?? []
   const costCenterOptions: readonly ManualEntryOption[] =
     references?.costCenters.map((c) => ({ value: c.id, label: `${c.code} — ${c.name}` })) ?? []
   // #143: contas-cedente ATIVAS p/ destino da transferência/aplicação/resgate — exclui a própria origem
