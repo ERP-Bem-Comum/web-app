@@ -996,7 +996,9 @@ export const contratoMenu = style({
   position: 'absolute',
   top: 'calc(100% + 0.375rem)',
   insetInlineEnd: 0,
-  zIndex: 20,
+  // Acima do `pickerBackdrop` (zIndex 199): senão o backdrop cobre o menu e o clique na opção só fecha o
+  // dropdown sem selecionar o contrato (mesmo nível do menu do seletor de fornecedor).
+  zIndex: 200,
   minInlineSize: '15rem',
   maxBlockSize: '16rem',
   overflowY: 'auto',
