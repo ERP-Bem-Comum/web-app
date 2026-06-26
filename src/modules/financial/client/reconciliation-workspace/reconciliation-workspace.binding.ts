@@ -104,6 +104,8 @@ export type WorkspaceBinding = Readonly<{
   accountRef: string
   identityAvailable: boolean
   account: ReconciliationAccountModel | null
+  /** Data do dia (DD/MM/AAAA) p/ o "Atualizado" do saldo — o saldo é live. */
+  nowBR: string
   ui: WorkspaceUiState
   progress: Readonly<{ label: string; percent: number; reconciled: number; total: number }>
   txList: TxListState
@@ -217,6 +219,11 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     headerMenusBinding.customStart,
     headerMenusBinding.customEnd,
     periodNow,
+  )
+  // "Atualizado · <hoje>" no header: o saldo é buscado ao vivo, então a referência honesta é a DATA DO DIA
+  // (não o `lastUpdatedAt` da conta, que é um carimbo de seed). DD/MM/AAAA via o mesmo formatador da UI.
+  const nowBR = formatDateBR(
+    `${String(periodNow.getFullYear())}-${String(periodNow.getMonth() + 1).padStart(2, '0')}-${String(periodNow.getDate()).padStart(2, '0')}`,
   )
   const periodQuery = useQuery(accountStatementPeriodQueryOptions(accountRef, periodRange))
   const periodBalance = {
@@ -552,6 +559,7 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     accountRef,
     identityAvailable,
     account,
+    nowBR,
     ui,
     progress: {
       label: progressLabel(reconciled, total),
