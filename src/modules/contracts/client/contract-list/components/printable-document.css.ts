@@ -80,6 +80,13 @@ export const table = style({
   fontSize: vars.font.size.sm,
 })
 
+export const tdEmpty = style({
+  paddingBlock: vars.space.lg,
+  paddingInline: vars.space.sm,
+  textAlign: 'center',
+  color: vars.color.institutional.ink4,
+})
+
 export const th = style({
   textAlign: 'left',
   paddingBlock: vars.space.sm,
@@ -87,13 +94,39 @@ export const th = style({
   borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.ink3}`,
   fontFamily: vars.font.family.heading,
   fontWeight: vars.font.weight.bold,
+  fontSize: vars.font.size.xs,
 })
+export const thNum = style([th, { textAlign: 'center' }])
+export const thRight = style([th, { textAlign: 'right' }])
 
-export const tdEmpty = style({
-  paddingBlock: vars.space.lg,
+export const td = style({
+  paddingBlock: vars.space.xs,
   paddingInline: vars.space.sm,
-  textAlign: 'center',
-  color: vars.color.institutional.ink4,
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.ink4}`,
+  verticalAlign: 'top',
+})
+export const tdNum = style([td, { textAlign: 'center', color: vars.color.institutional.ink4 }])
+export const tdRight = style([td, { textAlign: 'right', fontVariantNumeric: 'tabular-nums' }])
+
+// Linha do "Saldo inicial do contrato" — destaque acima da tabela do histórico.
+export const openingLine = style({
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'baseline',
+  paddingBlock: vars.space.sm,
+  marginBlockEnd: vars.space.md,
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.ink3}`,
+})
+export const openingLabel = style({
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.bold,
+  color: vars.color.institutional.ink3,
+})
+export const openingValue = style({
+  fontSize: vars.font.size.md,
+  fontWeight: vars.font.weight.bold,
+  color: vars.color.institutional.ink2,
+  fontVariantNumeric: 'tabular-nums',
 })
 
 export const signatures = style({

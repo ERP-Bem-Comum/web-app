@@ -105,7 +105,7 @@ export const ptBR: Catalog = {
   'contracts.amendment.delete.unavailable':
     'Exclusão de aditivo ainda não disponível — aguardando suporte do backend.',
   // Contracts — documentos imprimíveis (PDF via window.print → "Salvar como PDF")
-  'contracts.doc.org': 'Instituto Bem Comum',
+  'contracts.doc.org': 'Associação Bem Comum',
   'contracts.doc.emittedAt': 'Documento emitido em',
   'contracts.doc.field.number': 'Contrato nº',
   'contracts.doc.field.contractor': 'Contratado',
@@ -119,11 +119,15 @@ export const ptBR: Catalog = {
   'contracts.doc.quitacao.declaration':
     'Declaramos, para os devidos fins de direito, que o contrato acima identificado encontra-se integralmente QUITADO, nada mais havendo a reclamar, a qualquer título, quanto aos valores e obrigações nele previstos.',
   'contracts.doc.historico.title': 'HISTÓRICO DE PAGAMENTO',
-  'contracts.doc.historico.col.date': 'Data',
-  'contracts.doc.historico.col.description': 'Descrição',
-  'contracts.doc.historico.col.value': 'Valor',
-  'contracts.doc.historico.empty':
-    'Os lançamentos de pagamento serão exibidos quando o módulo Financeiro estiver integrado.',
+  'contracts.doc.historico.openingBalance': 'Saldo inicial do contrato',
+  'contracts.doc.historico.col.index': '#',
+  'contracts.doc.historico.col.type': 'Tipo',
+  'contracts.doc.historico.col.document': 'Nº documento',
+  'contracts.doc.historico.col.supplier': 'Fornecedor',
+  'contracts.doc.historico.col.date': 'Data do pagamento',
+  'contracts.doc.historico.col.gross': 'Valor bruto',
+  'contracts.doc.historico.col.balance': 'Saldo',
+  'contracts.doc.historico.empty': 'Nenhum pagamento conciliado para este contrato até o momento.',
   'contracts.doc.placeDateLine': 'Local e data',
   'contracts.doc.signatureLine': 'Assinatura e carimbo',
   // Contracts — modal de exclusão (confirmação)

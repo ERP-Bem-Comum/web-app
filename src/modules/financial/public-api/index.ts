@@ -52,3 +52,9 @@ export type {
   ClosePeriodInput,
 } from '#modules/financial/client/data/model/reconciliation.model.ts'
 export type { ReconciliationError } from '#modules/financial/client/data/repository/reconciliation-error.ts'
+
+// ── Pagamentos conciliados por contrato (o módulo Contratos consome p/ o Histórico de Pagamento, §I) ──
+export {
+  contractPaymentsQueryOptions,
+  type ContractPayment,
+} from '#modules/financial/client/contas-a-pagar-list/contract-payments.query.ts'

@@ -18,8 +18,10 @@ import {
   parseDateParam,
   filterExpiringRows,
   buildContractDocData,
+  buildContractHistoricoData,
   formatEmittedDate,
 } from '../contract-list.view-model.ts'
+import { useContractHistoricoPayments } from '../contract-payments.binding.ts'
 import { ContractStatusChips } from '../components/contract-status-chips.component.tsx'
 import { ContractFilters } from '../components/contract-filters.component.tsx'
 import { ContractsTable } from '../components/contracts-table.component.tsx'
@@ -66,6 +68,12 @@ export function ContractListPage(): ReactNode {
     data: PrintableDocData
     emittedAt: string
   } | null>(null)
+  // Histórico de Pagamento é ASSÍNCRONO (busca os pagamentos conciliados do contrato antes de imprimir).
+  const [historicoTarget, setHistoricoTarget] = useState<ContractRowData | null>(null)
+  const historicoPayments = useContractHistoricoPayments(
+    historicoTarget !== null ? String(historicoTarget.id) : null,
+    historicoTarget?.supplierId ?? undefined,
+  )
 
   // Cancelamento (§1.7): o modal SOME ao concluir (derivação server-state→"concluído" vive no binding,
   // `succeeded`, A1 — sem setState no efeito). A lista é invalidada no binding. O gatilho reseta o
@@ -85,8 +93,28 @@ export function ContractListPage(): ReactNode {
     }
   }, [printDoc])
 
+  // Quando os pagamentos do contrato-alvo assentam, monta o Histórico e imprime (depois limpa o alvo).
+  // setState DIFERIDO (mesmo padrão do efeito de impressão) p/ não disparar render em cascata no efeito.
+  useEffect(() => {
+    if (historicoTarget === null || !historicoPayments.ready) return
+    const data = buildContractHistoricoData(historicoTarget, historicoPayments.payments)
+    const emittedAt = formatEmittedDate(nowMs)
+    const id = window.setTimeout(() => {
+      setPrintDoc({ kind: 'historico', data, emittedAt })
+      setHistoricoTarget(null)
+    }, 0)
+    return () => {
+      window.clearTimeout(id)
+    }
+  }, [historicoTarget, historicoPayments.ready, historicoPayments.payments, nowMs])
+
   const handleGenerateDoc = (row: ContractRowData, kind: PrintableDocKind): void => {
     // Data de emissão derivada do `nowMs` (controller) — sem relógio no render (C1/§XI).
+    if (kind === 'historico') {
+      // Assíncrono: dispara a busca dos pagamentos conciliados; o efeito acima imprime quando assenta.
+      setHistoricoTarget(row)
+      return
+    }
     setPrintDoc({ kind, data: buildContractDocData(row), emittedAt: formatEmittedDate(nowMs) })
   }
 
