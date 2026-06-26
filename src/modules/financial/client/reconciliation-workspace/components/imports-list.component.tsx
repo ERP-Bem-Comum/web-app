@@ -7,19 +7,38 @@
  */
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  ArrowLeftRightIcon,
+  TagIcon,
+  ZapIcon,
+  type IconComponent,
+} from '#shared/ui/icons/index.ts'
 
 import * as s from '../page/reconciliation-workspace.css.ts'
 import {
   centsToBRL,
   entryTypeIcon,
+  formatDateDash,
   isPending,
   transactionTag,
   type ListFilter,
   type StatementTransaction,
+  type TxIconKind,
 } from '../reconciliation-workspace.view-model.ts'
 import type { TxListState, FilterCounts, RowGuess } from '../reconciliation-workspace.binding.ts'
 
 const t = createTranslator(ptBR)
+
+// Glifo por tipo de movimento (retorno de `entryTypeIcon`). As cores do quadrinho vêm do `txIconKind`.
+const TX_ICON: Readonly<Record<TxIconKind, IconComponent>> = {
+  in: ArrowDownIcon,
+  out: ArrowUpIcon,
+  transfer: ArrowLeftRightIcon,
+  fee: TagIcon,
+  investment: ZapIcon,
+}
 
 export type ImportsListProps = Readonly<{
   state: TxListState
@@ -60,6 +79,7 @@ function Row({
 }>) {
   const variant = selected ? s.txRow.selected : isPending(tx) ? s.txRow.base : s.txRow.reconciled
   const kind = entryTypeIcon(tx.entryType, tx.movement)
+  const Icon = TX_ICON[kind]
   const tag = transactionTag(tx)
   return (
     <button
@@ -70,9 +90,11 @@ function Row({
         onSelect(tx.id)
       }}
     >
-      <span className={`${s.txIcon} ${s.txIconKind[kind]}`} aria-hidden="true" />
+      <span className={`${s.txIcon} ${s.txIconKind[kind]}`} aria-hidden="true">
+        <Icon size={15} />
+      </span>
       <span className={s.txBody}>
-        <span className={s.txDate}>{tx.date}</span>
+        <span className={s.txDate}>{formatDateDash(tx.date)}</span>
         <span className={s.txName}>{tx.payeeName}</span>
         <span className={s.txDesc}>{tx.memo}</span>
       </span>
@@ -127,7 +149,7 @@ export function ImportsList({
         {state.tag === 'ready'
           ? state.groups.map((g) => (
               <div key={g.date}>
-                <div className={s.dayDivider}>{g.date}</div>
+                <div className={s.dayDivider}>{formatDateDash(g.date)}</div>
                 {g.items.map((tx) => (
                   <Row
                     key={tx.id}

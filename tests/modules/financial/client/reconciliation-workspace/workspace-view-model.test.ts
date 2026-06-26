@@ -42,6 +42,7 @@ import {
   relabelReconCategory,
   nextPendingWithMatch,
   tituloLabel,
+  formatDateDash,
 } from '../../../../../src/modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
 import type {
   Movement,
@@ -726,5 +727,17 @@ describe('fluxo contínuo: nextPendingWithMatch + tituloLabel', () => {
     )
     assert.equal(tituloLabel(mkPayable({})), '')
     assert.equal(tituloLabel(null), '')
+  })
+})
+
+describe('formatDateDash', () => {
+  it('ISO → dd-mm-aaaa', () => {
+    assert.equal(formatDateDash('2026-05-18'), '18-05-2026')
+  })
+  it('null → travessão', () => {
+    assert.equal(formatDateDash(null), '—')
+  })
+  it('vazio → travessão', () => {
+    assert.equal(formatDateDash(''), '—')
   })
 })

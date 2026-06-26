@@ -73,8 +73,8 @@ describe('ImportsList', () => {
     )
     expect(screen.getByText('Fornecedor X')).toBeTruthy()
     expect(screen.getByText('Outro')).toBeTruthy()
-    // a data aparece no divisor do dia e em cada linha
-    expect(screen.getAllByText('2026-06-01').length).toBeGreaterThanOrEqual(1)
+    // a data aparece (formatada dd-mm-aaaa) no divisor do dia e em cada linha
+    expect(screen.getAllByText('01-06-2026').length).toBeGreaterThanOrEqual(1)
   })
 
   it('selecionar uma linha dispara onSelect com o id', () => {

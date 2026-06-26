@@ -453,6 +453,13 @@ export const formatDateBR = (iso: string | null): string => {
   return y !== undefined && m !== undefined && d !== undefined ? `${d}/${m}/${y}` : iso
 }
 
+/** ISO (YYYY-MM-DD) → dd-mm-aaaa (sem `new Date`, evita fuso). "—" se nulo. */
+export const formatDateDash = (iso: string | null): string => {
+  if (iso === null || iso === '') return '—'
+  const [y, m, d] = iso.slice(0, 10).split('-')
+  return y !== undefined && m !== undefined && d !== undefined ? `${d}-${m}-${y}` : iso
+}
+
 // ── Validação do extrato OFX (conta do arquivo × conta atual) — front puro, ANTES de importar ──────────
 // Lê o <BANKACCTFROM> do OFX (banco/agência/conta+dígito) e compara com a conta da tela. Se for de OUTRA
 // conta, a UI pede confirmação ("Importar mesmo assim?"). Evita conciliar com o extrato da conta errada.

@@ -25,4 +25,9 @@ export {
   HeartPulseIcon,
   UploadIcon,
   CheckCircleIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+  ArrowLeftRightIcon,
+  TagIcon,
+  ZapIcon,
 } from './icons.tsx'
