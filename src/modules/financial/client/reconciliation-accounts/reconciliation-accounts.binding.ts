@@ -65,7 +65,10 @@ export function useReconciliationAccounts(): AccountsBinding {
     }
     const accounts = q.data?.ok === true ? q.data.value : []
     if (accounts.length === 0) return { tag: 'empty' }
-    const rows = deriveAccountRows(accounts, { search, status, sort })
+    // "Hoje" (ISO local YYYY-MM-DD) p/ clampar a "última atualização" que vier futura (seed). new Date()
+    // mora no binding (React); o view-model recebe pronto e segue puro/testável.
+    const today = new Date().toLocaleDateString('en-CA')
+    const rows = deriveAccountRows(accounts, { search, status, sort, today })
     return { tag: 'ready', rows, consolidated: consolidate(accounts) }
   })()
 

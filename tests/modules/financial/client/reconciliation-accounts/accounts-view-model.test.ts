@@ -11,6 +11,7 @@ import {
   consolidate,
   maskDateInput,
   dateInputToIso,
+  formatUpdateDate,
 } from '../../../../../src/modules/financial/client/reconciliation-accounts/reconciliation-accounts.view-model.ts'
 import type { ReconciliationAccount } from '../../../../../src/modules/financial/client/data/model/reconciliation.model.ts'
 
@@ -39,6 +40,33 @@ describe('accountStatus', () => {
     assert.equal(accountStatus(acc({ id: 'a', status: 'Closed', pendingCount: 5 })), 'closed')
     assert.equal(accountStatus(acc({ id: 'b', pendingCount: 3 })), 'pending')
     assert.equal(accountStatus(acc({ id: 'c', pendingCount: 0 })), 'up-to-date')
+  })
+})
+
+describe('formatUpdateDate (DD-MM-AAAA + clampa data futura em hoje)', () => {
+  const today = '2026-06-26'
+  it('formata ISO → DD-MM-AAAA', () => {
+    assert.equal(formatUpdateDate('2026-06-01', today), '01-06-2026')
+    assert.equal(formatUpdateDate('2026-06-18T00:00:00.000Z', today), '18-06-2026')
+  })
+  it('data FUTURA é clampada em hoje', () => {
+    assert.equal(formatUpdateDate('2026-10-20', today), '26-06-2026')
+  })
+  it('hoje e passado passam direto', () => {
+    assert.equal(formatUpdateDate('2026-06-26', today), '26-06-2026')
+    assert.equal(formatUpdateDate('2025-12-31', today), '31-12-2025')
+  })
+  it('vazio → "—"', () => {
+    assert.equal(formatUpdateDate('', today), '—')
+  })
+  it('a linha derivada já vem clampada e em DD-MM-AAAA', () => {
+    const rows = deriveAccountRows([acc({ id: 'r', lastUpdatedAt: '2026-10-20' })], {
+      search: '',
+      status: 'todas',
+      sort: 'nome',
+      today,
+    })
+    assert.equal(rows[0]?.lastUpdatedAt, '26-06-2026')
   })
 })
 

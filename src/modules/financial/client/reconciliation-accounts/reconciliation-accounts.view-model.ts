@@ -86,6 +86,19 @@ export const formatCadastroDate = (iso: string | null): string => {
   return y !== undefined && m !== undefined && d !== undefined ? `${d}/${m}/${y}` : iso
 }
 
+/**
+ * Última atualização → "20-10-2026" (DD-MM-AAAA); vazio → "—". A data nunca pode ser FUTURA (uma conta
+ * não foi "atualizada" amanhã): se o último movimento for posterior a `today` (ISO YYYY-MM-DD), clampa em
+ * hoje. `today` entra por parâmetro (view-model puro/testável; o `new Date()` fica no binding).
+ */
+export const formatUpdateDate = (iso: string, today: string): string => {
+  if (iso === '') return DASH
+  const day = iso.slice(0, 10)
+  const eff = today !== '' && day > today ? today : day
+  const [y, m, d] = eff.split('-')
+  return y !== undefined && m !== undefined && d !== undefined ? `${d}-${m}-${y}` : eff
+}
+
 // ── Máscara/parse da DATA do saldo de abertura (input do modal de Nova Conta) ──────────────────────────
 /** Máscara progressiva: dígitos → "DD/MM/AAAA" (idempotente; aceita cru ou já mascarado). */
 export const maskDateInput = (v: string): string => {
@@ -108,7 +121,7 @@ export const dateInputToIso = (masked: string): string | null => {
   return `${yyyy}-${mm}-${dd}`
 }
 
-export const toAccountRow = (a: ReconciliationAccount): AccountRow => {
+export const toAccountRow = (a: ReconciliationAccount, today = ''): AccountRow => {
   const status = accountStatus(a)
   return {
     id: a.id,
@@ -119,7 +132,7 @@ export const toAccountRow = (a: ReconciliationAccount): AccountRow => {
     accountNumber: a.accountNumber,
     accountDv: a.accountDv,
     balanceBRL: centsToBRL(a.currentBalanceCents),
-    lastUpdatedAt: a.lastUpdatedAt,
+    lastUpdatedAt: formatUpdateDate(a.lastUpdatedAt, today),
     pendingCount: a.pendingCount,
     status,
     openable: status !== 'closed',
@@ -180,13 +193,13 @@ const compareBy =
 /** Aplica busca + filtro de status + ordenação e mapeia para linhas. */
 export const deriveAccountRows = (
   accounts: readonly ReconciliationAccount[],
-  opts: Readonly<{ search: string; status: StatusFilter; sort: SortKey }>,
+  opts: Readonly<{ search: string; status: StatusFilter; sort: SortKey; today?: string }>,
 ): readonly AccountRow[] =>
   accounts
     .filter((a) => matchesSearch(a, opts.search) && matchesStatus(a, opts.status))
     .slice()
     .sort(compareBy(opts.sort))
-    .map(toAccountRow)
+    .map((a) => toAccountRow(a, opts.today ?? ''))
 
 export type Consolidated = Readonly<{ balanceBRL: string; accountsCount: number; pendingTotal: number }>
 
