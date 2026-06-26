@@ -438,6 +438,8 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
           normalizeDesc(patternSeedTx.payeeName),
           patternSeedTx.movement,
           patternSeed.txId,
+          // Tarifa agrupa por PERFIL (todas as tarifas, mesmo de descrição diferente); demais, descrição idêntica.
+          patternSeed.type === 'FeePenaltyInterest',
         )
       : []
   const patternCandidates = patternCandidatesTx.map((t) => ({

@@ -183,19 +183,33 @@ export const normalizeDesc = (s: string): string => s.trim().toLowerCase().repla
 export const BATCHABLE_MANUAL_TYPES: readonly ManualEntryType[] = ['Payment', 'Receipt', 'FeePenaltyInterest']
 export const isBatchableManualType = (type: ManualEntryType): boolean => BATCHABLE_MANUAL_TYPES.includes(type)
 
+// Palavras-chave de TARIFA bancária (descrição/tipo) — p/ agrupar tarifas de descrições DIFERENTES no lote
+// (ex.: "Tarifa bancária mensal" + "Tarifa de manutenção de conta"). Conciliam do mesmo jeito.
+const FEE_KEYWORDS: readonly string[] = ['TARIFA', 'IOF', 'JUROS', 'MULTA', 'ANUIDADE', 'FEE']
+/** Transação com cara de tarifa bancária (palavra-chave no tipo/descrição/memo). */
+export const isFeeLikeTransaction = (tx: StatementTransaction): boolean => {
+  const hay = `${tx.entryType} ${tx.payeeName} ${tx.memo}`.toUpperCase()
+  return FEE_KEYWORDS.some((k) => hay.includes(k))
+}
+
 /**
- * Transações PENDENTES com o MESMO perfil (descrição normalizada + sinal/movimento iguais) de uma já
- * conciliada — p/ sugerir conciliar em lote com o mesmo padrão aplicado. Exclui a própria (`excludeId`).
+ * Transações PENDENTES do MESMO perfil (mesmo sinal/movimento) de uma já conciliada — p/ sugerir conciliar
+ * em lote com o mesmo padrão. Exclui a própria (`excludeId`). Casa por descrição idêntica; e, p/ TARIFA
+ * (`matchFeeLike`), também por PERFIL de tarifa (qualquer transação com cara de tarifa) — todas conciliam igual.
  */
 export const findSimilarPending = (
   txs: readonly StatementTransaction[],
   descKey: string,
   movement: Movement,
   excludeId: string,
+  matchFeeLike = false,
 ): readonly StatementTransaction[] =>
   txs.filter(
     (t) =>
-      isPending(t) && t.id !== excludeId && t.movement === movement && normalizeDesc(t.payeeName) === descKey,
+      isPending(t) &&
+      t.id !== excludeId &&
+      t.movement === movement &&
+      (normalizeDesc(t.payeeName) === descKey || (matchFeeLike && isFeeLikeTransaction(t))),
   )
 
 // ── Balanceamento da conciliação N:1 / parcial (puro — US3) ─────────────────────

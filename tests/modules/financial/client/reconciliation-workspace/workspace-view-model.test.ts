@@ -37,6 +37,7 @@ import {
   ofxAccountLabel,
   findSimilarPending,
   isBatchableManualType,
+  isFeeLikeTransaction,
   normalizeDesc,
 } from '../../../../../src/modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
 import type {
@@ -615,6 +616,58 @@ describe('conciliação em lote por padrão (findSimilarPending / isBatchableMan
     assert.deepEqual(
       found.map((t) => t.id),
       ['a'],
+    )
+  })
+})
+
+describe('agrupamento por PERFIL de tarifa (matchFeeLike / isFeeLikeTransaction)', () => {
+  const ft = (
+    over: Partial<StatementTransaction> & Pick<StatementTransaction, 'id'>,
+  ): StatementTransaction => ({
+    fitid: '',
+    date: '2026-07-05',
+    movement: 'Debit',
+    entryType: 'Other',
+    payeeName: 'Tarifa bancaria mensal',
+    memo: '',
+    valueCents: '1500',
+    balanceAfterCents: '0',
+    reconciliationStatus: 'Pending',
+    ...over,
+  })
+
+  it('isFeeLikeTransaction: detecta tarifa/IOF/juros/multa no tipo/descrição/memo', () => {
+    assert.equal(
+      isFeeLikeTransaction(ft({ id: '1', payeeName: 'Banco Tarifas', memo: 'Tarifa de manutenção' })),
+      true,
+    )
+    assert.equal(isFeeLikeTransaction(ft({ id: '2', payeeName: 'X', memo: '', entryType: 'FEE' })), true)
+    assert.equal(isFeeLikeTransaction(ft({ id: '3', payeeName: 'Cobrança IOF' })), true)
+    assert.equal(
+      isFeeLikeTransaction(
+        ft({ id: '4', payeeName: 'Fornecedor X', memo: 'Pagamento NF', entryType: 'TED' }),
+      ),
+      false,
+    )
+  })
+
+  it('findSimilarPending matchFeeLike: tarifa agrupa por perfil (descrição diferente com cara de tarifa)', () => {
+    const txs = [
+      ft({ id: 'seed' }),
+      ft({ id: 'a' }), // descrição idêntica
+      ft({ id: 'b', payeeName: 'Banco Tarifas', memo: 'Tarifa de manutenção' }), // fee-like, desc diferente
+      ft({ id: 'c', payeeName: 'Fornecedor X', memo: 'Pagamento NF', entryType: 'TED' }), // NÃO fee-like
+    ]
+    const key = normalizeDesc('Tarifa bancaria mensal')
+    // sem matchFeeLike → só a idêntica
+    assert.deepEqual(
+      findSimilarPending(txs, key, 'Debit', 'seed').map((t) => t.id),
+      ['a'],
+    )
+    // com matchFeeLike → idêntica + fee-like (b); fornecedor (c) fica de fora
+    assert.deepEqual(
+      findSimilarPending(txs, key, 'Debit', 'seed', true).map((t) => t.id),
+      ['a', 'b'],
     )
   })
 })
