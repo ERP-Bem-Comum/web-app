@@ -1242,6 +1242,8 @@ export const ptBR: Catalog = {
   'financial.recon.match.title': 'Conciliação realizada',
   'financial.recon.match.titleManual': 'Lançamento manual',
   'financial.recon.match.sub': 'detalhes do vínculo e trilha de auditoria',
+  'financial.recon.match.subManual': 'lançamento manual · trilha de auditoria',
+  'financial.recon.match.subMulti': 'vários títulos · trilha de auditoria',
   'financial.recon.match.close': 'Fechar',
   'financial.recon.match.extLbl': 'Extrato bancário',
   'financial.recon.match.docLbl': 'Título no sistema',

@@ -59,7 +59,7 @@ export function MatchDetailsModal({
       className={s.modalOverlay}
       role="dialog"
       aria-modal="true"
-      aria-label={manual ? t('financial.recon.match.titleManual') : t('financial.recon.match.title')}
+      aria-label={t('financial.recon.match.title')}
       onClick={onClose}
     >
       <div
@@ -73,10 +73,15 @@ export function MatchDetailsModal({
             <LinkIcon />
           </span>
           <div className={s.matchHeadText}>
-            <h3 className={s.matchTitle}>
-              {manual ? t('financial.recon.match.titleManual') : t('financial.recon.match.title')}
-            </h3>
-            <span className={s.matchSub}>{t('financial.recon.match.sub')}</span>
+            {/* Título SEMPRE "Conciliação realizada" (padrão); a particularidade do tipo vai no subtítulo. */}
+            <h3 className={s.matchTitle}>{t('financial.recon.match.title')}</h3>
+            <span className={s.matchSub}>
+              {manual
+                ? t('financial.recon.match.subManual')
+                : view.multi !== null
+                  ? t('financial.recon.match.subMulti')
+                  : t('financial.recon.match.sub')}
+            </span>
           </div>
           <button
             type="button"
