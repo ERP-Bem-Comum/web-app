@@ -328,6 +328,7 @@ export const progressBar = style({
 })
 
 export const progressFill = style({
+  display: 'block', // sem isto o <span> inline ignora inline-size/block-size → a barra não enche proporcional
   blockSize: '100%',
   background: `linear-gradient(90deg, ${c.teal.normal}, ${c.green.normal})`,
   transition: `inline-size ${recon.tMid} ${recon.ease}`,
@@ -874,7 +875,12 @@ export const altBtn = style({
 })
 
 export const errorText = style({ color: c.red.deep, fontFamily: recon.font.sans, fontSize: fs.sm })
-export const summaryNote = style({ color: c.green.deep, fontFamily: recon.font.mono, fontSize: fs['3xs'] })
+export const summaryNote = style({
+  marginInlineStart: sp.lg, // respiro do botão Importar (não colar a info de import no botão)
+  color: c.green.deep,
+  fontFamily: recon.font.mono,
+  fontSize: fs['3xs'],
+})
 
 // ── bottombar (h ~52px) ─────────────────────────────────────────────────────────
 export const bottombar = style({

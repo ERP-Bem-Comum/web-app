@@ -103,7 +103,7 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
           {account !== null ? (
             <span className={s.balanceUpd}>
               <span className={s.pulseDot} aria-hidden="true" />
-              {`${t('financial.recon.account.updated')} ${DOT} ${account.lastUpdatedAt}`}
+              {`${t('financial.recon.account.updated')} ${DOT} ${vm.nowBR}`}
             </span>
           ) : (
             <span className={s.balanceUpd}>{t('financial.recon.account.balanceUnavailable')}</span>
