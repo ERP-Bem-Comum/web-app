@@ -191,6 +191,7 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
                 <ReconcileFlashBar
                   key={vm.flash.reconciliationId}
                   tituloLabel={vm.flash.tituloLabel}
+                  tituloValue={vm.flash.tituloValue}
                   byUser=""
                   canUndo={vm.reconciliationIdFor(vm.flash.transactionId) !== null}
                   undoing={vm.undo.undoing}

@@ -725,6 +725,11 @@ describe('fluxo contínuo: nextPendingWithMatch + tituloLabel', () => {
       tituloLabel(mkPayable({ documentType: 'NFS-e', documentNumber: '2024-0537' })),
       'NFS-e 2024-0537',
     )
+    // só número (sem tipo) → número
+    assert.equal(tituloLabel(mkPayable({ documentNumber: '456456' })), '456456')
+    // sem número (gap #172) → cai no fornecedor
+    assert.equal(tituloLabel(mkPayable({ supplierName: 'Receita Federal' })), 'Receita Federal')
+    // sem nada → "" (a barra mostra só o valor)
     assert.equal(tituloLabel(mkPayable({})), '')
     assert.equal(tituloLabel(null), '')
   })

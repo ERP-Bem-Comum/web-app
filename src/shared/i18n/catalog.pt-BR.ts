@@ -1587,6 +1587,7 @@ export const ptBR: Catalog = {
   // Barra de confirmação transiente (fluxo contínuo) — aparece ao conciliar e some sozinha
   'financial.recon.flash.prefixWith': 'Esta transação está conciliada com',
   'financial.recon.flash.prefix': 'Esta transação está conciliada',
+  'financial.recon.flash.comTituloDe': 'com o título de',
   'financial.recon.flash.now': 'conciliada agora',
   'financial.recon.flash.by': 'por',
   'financial.recon.flash.you': 'você',

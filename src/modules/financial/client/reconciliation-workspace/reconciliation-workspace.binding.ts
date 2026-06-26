@@ -176,7 +176,12 @@ export type WorkspaceBinding = Readonly<{
   }>
   exportConciliacao: ExportBinding
   /** Barra de confirmação transiente (fluxo contínuo): dados do último match conciliado; null = oculta. */
-  flash: Readonly<{ transactionId: string; reconciliationId: string; tituloLabel: string }> | null
+  flash: Readonly<{
+    transactionId: string
+    reconciliationId: string
+    tituloLabel: string
+    tituloValue: string
+  }> | null
   /** "Arma" o título do match (pelo payableId) antes do clique Conciliar — alimenta a barra de confirmação. */
   armFlash: (payableId: string) => void
   dismissFlash: () => void
@@ -258,16 +263,18 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
   const [patternUnchecked, setPatternUnchecked] = useState<ReadonlySet<string>>(() => new Set())
   // Fluxo contínuo (P.O.): ao conciliar por MATCH, mostra a barra transiente de confirmação + auto-avança
   // pro próximo match. `flash` = dados da barra; `pendingAdvance` = a tx recém-conciliada (avança após o
-  // refetch); `armedLabelRef` = título do match, "armado" pela page no clique (o match não passa o título).
+  // refetch); `armedTituloRef` = título do match (rótulo+valor), "armado" pela page no clique de Conciliar.
   const [flash, setFlash] = useState<Readonly<{
     transactionId: string
     reconciliationId: string
     tituloLabel: string
+    tituloValue: string
   }> | null>(null)
   const [pendingAdvance, setPendingAdvance] = useState<string | null>(null)
-  const armedLabelRef = useRef<string | null>(null)
+  // título do match "armado" pela page no clique (o match não passa o título no callback): rótulo + valor.
+  const armedTituloRef = useRef<{ label: string; value: string } | null>(null)
   // Função simples (sem useCallback): o React Compiler memoiza; o `useCallback` conflitava com a mutação
-  // do `armedLabelRef` ("Existing memoization could not be preserved").
+  // do ref ("Existing memoization could not be preserved").
   const recordReconciliation = (
     transactionId: string,
     reconciliationId: string,
@@ -287,9 +294,14 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     // Conciliação por MATCH/busca (sem `manualType`): barra de confirmação + auto-avanço pro próximo match.
     // Nova transação (tarifa/etc.) já tem o seu fluxo (modal de lote) — não auto-avança.
     if (manualType === undefined) {
-      const label = armedLabelRef.current ?? counterparty ?? ''
-      armedLabelRef.current = null
-      setFlash({ transactionId, reconciliationId, tituloLabel: label })
+      const armed = armedTituloRef.current
+      armedTituloRef.current = null
+      setFlash({
+        transactionId,
+        reconciliationId,
+        tituloLabel: armed?.label ?? counterparty ?? '',
+        tituloValue: armed?.value ?? '',
+      })
       setPendingAdvance(transactionId)
     }
   }
@@ -592,14 +604,18 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     }
   }, [pendingAdvance, allTx, guesses])
 
-  // Título do match "armado" pela page no clique de Conciliar (o callback do match não carrega o título).
+  // Título do match "armado" pela page no clique de Conciliar (o callback do match não carrega o título):
+  // rótulo (documento/fornecedor) + valor do título, p/ a barra de confirmação mostrar os dados do título.
   const armFlash = (payableId: string): void => {
     if (suggestions.tag !== 'ready') {
-      armedLabelRef.current = null
+      armedTituloRef.current = null
       return
     }
-    const m = [suggestions.top, ...suggestions.alternatives].find((x) => x.payableId === payableId)
-    armedLabelRef.current = tituloLabel(m?.payable ?? null)
+    const p = [suggestions.top, ...suggestions.alternatives].find((x) => x.payableId === payableId)?.payable
+    armedTituloRef.current = {
+      label: tituloLabel(p ?? null),
+      value: p != null ? centsToBRL(p.valueCents) : '',
+    }
   }
 
   const reconciled = countReconciled(allTx)
