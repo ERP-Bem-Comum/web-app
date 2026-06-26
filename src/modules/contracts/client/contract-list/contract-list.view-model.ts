@@ -11,6 +11,7 @@ import {
 import { formatContractNumber, formatCurrency, formatDate } from '#modules/contracts/client/domain/format.ts'
 import { normalizeCnpj, maskCnpj, maskCpf } from '#shared/document/cnpj.ts'
 import type { ContractRow, ContractStatus, ContractType } from '#modules/contracts/client/domain/types.ts'
+import type { ContractPayment } from '#modules/financial/public-api/index.ts'
 import type {
   Contract as ContractModel,
   Amendment as AmendmentModel,
@@ -215,6 +216,17 @@ const maskDocForDoc = (raw: string): string => {
   return raw
 }
 
+// Uma linha do Histórico de Pagamento (já formatada p/ a view imprimível).
+export interface ContractPaymentRow {
+  readonly index: string // 1, 2, 3… na ordem cronológica do pagamento
+  readonly type: string // forma de pagamento (PIX, Boleto…)
+  readonly document: string // nº do documento
+  readonly supplier: string // nome do fornecedor
+  readonly date: string // data do pagamento (DD/MM/AAAA) ou "—"
+  readonly gross: string // valor bruto do documento (BRL)
+  readonly balance: string // saldo do contrato após este pagamento (cascata)
+}
+
 export interface ContractDocData {
   readonly number: string
   readonly contractor: string
@@ -224,6 +236,8 @@ export interface ContractDocData {
   readonly value: string
   readonly period: string
   readonly status: string
+  readonly openingBalance: string // saldo inicial do contrato (= valor atual) formatado
+  readonly payments: readonly ContractPaymentRow[] // só no Histórico; vazio no Termo de Quitação
 }
 
 // Monta (puro) os dados padronizados de um contrato para os documentos imprimíveis (Termo de
@@ -244,7 +258,56 @@ export function buildContractDocData(row: ContractRow): ContractDocData {
     value: formatCurrency(valor),
     period: `${formatDate(row.contractPeriod.start)} — ${formatDate(row.contractPeriod.end)}`,
     status: derived.label,
+    openingBalance: formatCurrency(valor),
+    payments: [],
   }
+}
+
+// Data-only ISO (YYYY-MM-DD) → DD/MM/AAAA sem passar por `new Date` (evita deslocamento de fuso).
+const formatPaidDate = (iso: string): string => {
+  const [y, m, d] = iso.slice(0, 10).split('-')
+  return y !== undefined && m !== undefined && d !== undefined ? `${d}/${m}/${y}` : iso
+}
+
+// Ordena por data de pagamento ASC (mais antigo no topo); sem data vai para o fim.
+const byPaidAtAsc = (a: ContractPayment, b: ContractPayment): number => {
+  if (a.paidAt === null && b.paidAt === null) return 0
+  if (a.paidAt === null) return 1
+  if (b.paidAt === null) return -1
+  return a.paidAt < b.paidAt ? -1 : a.paidAt > b.paidAt ? 1 : 0
+}
+
+// Linhas do histórico (puro/testável): pagamentos em ordem cronológica (mais antigo no topo), numerados
+// 1,2,3…, com o saldo do contrato deduzido em CASCATA a partir do saldo inicial (em reais). Sem `ContractRow`.
+export function buildHistoricoRows(
+  openingValueReais: number,
+  supplierName: string,
+  payments: readonly ContractPayment[],
+): readonly ContractPaymentRow[] {
+  let runningCents = Math.round(openingValueReais * 100)
+  return [...payments].sort(byPaidAtAsc).map((p, i) => {
+    const grossCents = p.grossValueCents !== null ? Number.parseInt(p.grossValueCents, 10) || 0 : 0
+    runningCents -= grossCents
+    return {
+      index: String(i + 1),
+      type: p.paymentLabel,
+      document: p.documentNumber ?? '—',
+      supplier: supplierName,
+      date: p.paidAt !== null ? formatPaidDate(p.paidAt) : '—',
+      gross: formatCurrency(grossCents / 100),
+      balance: formatCurrency(runningCents / 100),
+    }
+  })
+}
+
+// Histórico de Pagamento (puro): pagamentos CONCILIADOS do contrato com o saldo em cascata.
+export function buildContractHistoricoData(
+  row: ContractRow,
+  payments: readonly ContractPayment[],
+): ContractDocData {
+  const base = buildContractDocData(row)
+  const valor = row.currentValue ?? row.totalValue
+  return { ...base, payments: buildHistoricoRows(valor, base.contractor, payments) }
 }
 
 export const contractListViewModel = {
