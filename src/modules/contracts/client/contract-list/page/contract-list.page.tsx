@@ -19,9 +19,10 @@ import {
   filterExpiringRows,
   buildContractDocData,
   buildContractHistoricoData,
+  contractSaldoText,
   formatEmittedDate,
 } from '../contract-list.view-model.ts'
-import { useContractHistoricoPayments } from '../contract-payments.binding.ts'
+import { useContractHistoricoPayments, useReconciledGrossByContract } from '../contract-payments.binding.ts'
 import { ContractStatusChips } from '../components/contract-status-chips.component.tsx'
 import { ContractFilters } from '../components/contract-filters.component.tsx'
 import { ContractsTable } from '../components/contracts-table.component.tsx'
@@ -74,6 +75,8 @@ export function ContractListPage(): ReactNode {
     historicoTarget !== null ? String(historicoTarget.id) : null,
     historicoTarget?.supplierId ?? undefined,
   )
+  // Coluna "Saldo" do grid: total bruto conciliado por contrato (uma busca p/ todas as linhas).
+  const grossByContract = useReconciledGrossByContract()
 
   // Cancelamento (§1.7): o modal SOME ao concluir (derivação server-state→"concluído" vive no binding,
   // `succeeded`, A1 — sem setState no efeito). A lista é invalidada no binding. O gatilho reseta o
@@ -303,6 +306,7 @@ export function ContractListPage(): ReactNode {
                   key={row.id}
                   row={row}
                   index={index}
+                  saldoText={contractSaldoText(row, grossByContract)}
                   onRequestDelete={(r) => {
                     cancelCommand.reset()
                     setDeleteTarget(r)

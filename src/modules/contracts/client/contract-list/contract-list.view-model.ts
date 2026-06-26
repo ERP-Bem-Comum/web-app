@@ -290,7 +290,7 @@ export function buildHistoricoRows(
     runningCents -= grossCents
     return {
       index: String(i + 1),
-      type: p.paymentLabel,
+      type: p.documentType,
       document: p.documentNumber ?? '—',
       supplier: supplierName,
       date: p.paidAt !== null ? formatPaidDate(p.paidAt) : '—',
@@ -308,6 +308,17 @@ export function buildContractHistoricoData(
   const base = buildContractDocData(row)
   const valor = row.currentValue ?? row.totalValue
   return { ...base, payments: buildHistoricoRows(valor, base.contractor, payments) }
+}
+
+// Saldo do contrato no grid = valor (atual, reais) − Σ do valor BRUTO conciliado (centavos) do contrato.
+// Sem pagamentos → o saldo é o próprio valor. `grossByContractCents`: contractRef → total bruto (centavos).
+export function contractSaldoText(
+  row: ContractRow,
+  grossByContractCents: Readonly<Record<string, number>>,
+): string {
+  const valor = row.currentValue ?? row.totalValue
+  const paidCents = grossByContractCents[String(row.id)] ?? 0
+  return formatCurrency(valor - paidCents / 100)
 }
 
 export const contractListViewModel = {
