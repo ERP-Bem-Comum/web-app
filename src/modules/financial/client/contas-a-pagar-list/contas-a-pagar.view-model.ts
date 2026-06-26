@@ -17,6 +17,7 @@ import type {
   DocumentDetail,
   RetentionType,
   PaymentMethod,
+  PayableKind,
   PayableTitleItem,
   PayableTitleListResponse,
 } from '#modules/financial/client/data/model/document.model.ts'
@@ -460,18 +461,16 @@ const sumRetentionsBRL = (payables: DocumentDetail['payables']): string | null =
 }
 
 /**
- * Status efetivo do documento no drawer — espelha a derivação read-time do grid (#204): documento `Pago`
- * com ≥1 título e TODOS `Conciliado` aparece como `Conciliado`. O GET /:id devolve o status CRU (`Pago`)
- * porque o backend só deriva na listagem; sem isto, o "Status atual" do drawer diverge do grid e do
- * próprio título exibido logo abaixo. PURA.
+ * Status efetivo do documento no drawer — o GET /:id devolve o status CRU do agregado (ex.: `Aprovado`)
+ * porque o backend não propaga pagamento/conciliação ao documento; sem isto o "Status atual" diverge do
+ * título logo abaixo (P.O.: "dois status diferentes"). Regra (P.O.): reflete o título PAI (o documento em
+ * si); o status dos FILHOS (guias de retenção ISS/IRRF/…) NÃO conta — uma retenção ainda só `Pago` não
+ * impede o documento de aparecer `Conciliado`. Sem título-pai → mantém o status cru do documento. PURA.
  */
 export const deriveDetailStatus = (
   docStatus: DocumentStatus,
-  payables: readonly { status: DocumentStatus }[],
-): DocumentStatus =>
-  docStatus === 'Pago' && payables.length > 0 && payables.every((p) => p.status === 'Conciliado')
-    ? 'Conciliado'
-    : docStatus
+  payables: readonly { status: DocumentStatus; kind: PayableKind }[],
+): DocumentStatus => payables.find((p) => p.kind === 'Parent')?.status ?? docStatus
 
 /** DocumentDetail (GET /:id) → view do drawer. PURA. Resolve nome + CNPJ do fornecedor pelos resolvers. */
 export const mapDocumentDetail = (

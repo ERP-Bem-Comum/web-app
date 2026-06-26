@@ -27,6 +27,7 @@ import { ok, err } from '../../../../../src/shared/primitives/result.ts'
 import type {
   DocumentListResponse,
   DocumentSummary,
+  DocumentStatus,
 } from '../../../../../src/modules/financial/client/data/model/document.model.ts'
 
 const supplierName = (ref: string | null): string => (ref === 's1' ? 'Bambu Educação' : (ref ?? '—'))
@@ -375,22 +376,28 @@ describe('maskCnpj', () => {
   })
 })
 
-describe('deriveDetailStatus (drawer espelha a derivação do grid #204)', () => {
-  it('Pago + todos os títulos Conciliados → Conciliado', () => {
-    assert.equal(deriveDetailStatus('Pago', [{ status: 'Conciliado' }]), 'Conciliado')
+describe('deriveDetailStatus (status do drawer reflete o título PAI; filhos não contam)', () => {
+  const parent = (status: DocumentStatus) => ({ status, kind: 'Parent' as const })
+  const child = (status: DocumentStatus) => ({ status, kind: 'Child' as const })
+
+  it('reflete o PAI mesmo com filho (retenção) menos avançado — caso do print da P.O.', () => {
+    // doc Aprovado, pai Conciliado, filhos mistos (1 ainda Pago) → Conciliado (segue o pai)
     assert.equal(
-      deriveDetailStatus('Pago', [{ status: 'Conciliado' }, { status: 'Conciliado' }]),
+      deriveDetailStatus('Aprovado', [
+        parent('Conciliado'),
+        child('Conciliado'),
+        child('Conciliado'),
+        child('Pago'),
+      ]),
       'Conciliado',
     )
   })
-  it('Pago mas algum título NÃO conciliado → segue Pago', () => {
-    assert.equal(deriveDetailStatus('Pago', [{ status: 'Conciliado' }, { status: 'Pago' }]), 'Pago')
+  it('o status cru do documento é ignorado quando há pai (o pai é a verdade)', () => {
+    assert.equal(deriveDetailStatus('Aprovado', [parent('Pago'), child('Conciliado')]), 'Pago')
+    assert.equal(deriveDetailStatus('Pago', [parent('Conciliado')]), 'Conciliado')
   })
-  it('Pago sem títulos → segue Pago', () => {
+  it('sem título-pai → mantém o status cru do documento', () => {
     assert.equal(deriveDetailStatus('Pago', []), 'Pago')
-  })
-  it('status não-Pago é preservado (não deriva)', () => {
-    assert.equal(deriveDetailStatus('Aprovado', [{ status: 'Conciliado' }]), 'Aprovado')
-    assert.equal(deriveDetailStatus('Aberto', [{ status: 'Pago' }]), 'Aberto')
+    assert.equal(deriveDetailStatus('Aprovado', [child('Conciliado')]), 'Aprovado')
   })
 })
