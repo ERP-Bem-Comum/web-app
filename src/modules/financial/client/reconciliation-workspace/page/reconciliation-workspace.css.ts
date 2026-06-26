@@ -434,11 +434,13 @@ export const importsCol = style({
 })
 
 // Coluna 2 (associação) — empilha a barra de confirmação transiente acima do conteúdo (abas/sugestão).
+// Fundo branco: senão o bege do workspace vaza nas margens da barra (acima/abaixo/laterais).
 export const assocColumn = style({
   minBlockSize: 0,
   display: 'flex',
   flexDirection: 'column',
   overflow: 'hidden',
+  background: c.paper.default,
 })
 
 export const importsHead = style({
