@@ -17,7 +17,8 @@ const DOT = '·'
 const DISMISS_MS = 3000
 
 export type ReconcileFlashBarProps = Readonly<{
-  tituloLabel: string // "NFS-e 2024-0537" ou "" (sem título → texto genérico)
+  tituloLabel: string // documento/fornecedor do título (ex.: "NFS-e 2024-0537") ou "" (gap #172)
+  tituloValue: string // valor do título em BRL (ex.: "R$ 234,00") ou ""
   byUser: string // nome do usuário ou "" → "você"
   canUndo: boolean
   undoing: boolean
@@ -27,6 +28,7 @@ export type ReconcileFlashBarProps = Readonly<{
 
 export function ReconcileFlashBar({
   tituloLabel,
+  tituloValue,
   byUser,
   canUndo,
   undoing,
@@ -64,6 +66,17 @@ export function ReconcileFlashBar({
         {tituloLabel !== '' ? (
           <>
             {t('financial.recon.flash.prefixWith')} <strong className={s.flashTitulo}>{tituloLabel}</strong>
+            {tituloValue !== '' ? (
+              <>
+                {' '}
+                {DOT} <strong className={s.flashTitulo}>{tituloValue}</strong>
+              </>
+            ) : null}
+          </>
+        ) : tituloValue !== '' ? (
+          <>
+            {t('financial.recon.flash.prefix')} {t('financial.recon.flash.comTituloDe')}{' '}
+            <strong className={s.flashTitulo}>{tituloValue}</strong>
           </>
         ) : (
           t('financial.recon.flash.prefix')

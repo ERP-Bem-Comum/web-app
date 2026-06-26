@@ -176,13 +176,18 @@ export const countReconciled = (txs: readonly StatementTransaction[]): number =>
   txs.filter((t) => !isPending(t)).length
 
 // ── Fluxo contínuo: auto-avanço + barra de confirmação ──────────────────────────
-/** Rótulo do título p/ a barra de confirmação: "Tipo Número" (ex.: "NFS-e 2024-0537"). Vazio se sem dados. */
+/**
+ * Rótulo do título p/ a barra de confirmação. Preferência: "Tipo Número" (ex.: "NFS-e 2024-0537") →
+ * fornecedor → tipo → "". O nº/tipo do documento ainda não vêm na rota /payables (gap core-api#172, sai
+ * null/UUID), então no seed cai no fornecedor ou em "" e a barra mostra só o VALOR; acende sozinho com #172.
+ */
 export const tituloLabel = (p: PaidPayable | null): string => {
   if (p === null) return ''
-  return [p.documentType ?? '', p.documentNumber ?? '']
-    .filter((s) => s !== '')
-    .join(' ')
-    .trim()
+  const docType = p.documentType ?? ''
+  const docNum = p.documentNumber ?? ''
+  if (docNum !== '') return docType !== '' ? `${docType} ${docNum}` : docNum
+  if (p.supplierName !== null && p.supplierName !== '') return p.supplierName
+  return docType
 }
 
 /**
