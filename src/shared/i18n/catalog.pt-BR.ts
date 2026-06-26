@@ -1265,6 +1265,8 @@ export const ptBR: Catalog = {
   'financial.recon.match.titlesWord': 'títulos conciliados',
   'financial.recon.match.titleN': 'Título',
   'financial.recon.match.totalConciliado': 'Total conciliado',
+  'financial.recon.match.diffSurplus': 'Diferença (multa/juros)',
+  'financial.recon.match.diffDiscount': 'Diferença (desconto)',
   'financial.recon.match.titlesHint':
     'Esta saída foi conciliada com vários títulos. Nº e detalhes de cada título disponíveis em breve.',
   // Confirmação do Desfazer (US5) — consequência por tipo.

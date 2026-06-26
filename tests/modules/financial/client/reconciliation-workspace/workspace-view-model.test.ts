@@ -385,7 +385,13 @@ describe('modal Detalhes da conciliação — matchDetailsView', () => {
   })
 
   it('multi preenchido quando passado (1 saída → N títulos)', () => {
-    const multi = { count: 3, lines: [{ valueBRL: 'R$ 300,00' }], totalBRL: 'R$ 742,00' }
+    const multi = {
+      count: 3,
+      lines: [{ valueBRL: 'R$ 300,00' }],
+      differenceBRL: null,
+      differenceTag: '',
+      totalBRL: 'R$ 742,00',
+    }
     const v = matchDetailsView(base, null, null, multi)
     assert.equal(v.multi?.count, 3)
     assert.equal(v.multi?.totalBRL, 'R$ 742,00')
@@ -406,21 +412,53 @@ describe('buildMatchTitles (1 saída → N títulos, #175 items)', () => {
     }) as Parameters<typeof buildMatchTitles>[0]
 
   it('null quando há só 1 item (conciliação individual)', () => {
-    assert.equal(buildMatchTitles(lookup([{ payableId: 'p1', reconciledValueCents: '74200' }])), null)
+    assert.equal(
+      buildMatchTitles(lookup([{ payableId: 'p1', reconciledValueCents: '74200' }]), '74200'),
+      null,
+    )
   })
 
-  it('com >1 item: conta, lista por título e soma o total', () => {
+  it('extrato == soma dos títulos: sem linha de diferença; total = soma', () => {
     const r = buildMatchTitles(
       lookup([
         { payableId: 'p1', reconciledValueCents: '30000' },
         { payableId: 'p2', reconciledValueCents: '20000' },
         { payableId: 'p3', reconciledValueCents: '24200' },
       ]),
+      '74200',
     )
     assert.equal(r?.count, 3)
-    assert.equal(r?.lines.length, 3)
-    assert.equal(r?.lines[0]?.valueBRL, centsToBRL('30000'))
+    assert.equal(r?.differenceBRL, null)
+    assert.equal(r?.differenceTag, '')
     assert.equal(r?.totalBRL, centsToBRL('74200'))
+  })
+
+  it('extrato MAIOR que a soma: diferença = ACRÉSCIMO (multa/juros); total = extrato (caso da P.O.)', () => {
+    // 3 títulos = R$ 30,50; extrato = R$ 220,50 → diferença R$ 190,00 a mais
+    const r = buildMatchTitles(
+      lookup([
+        { payableId: 'p1', reconciledValueCents: '850' },
+        { payableId: 'p2', reconciledValueCents: '1200' },
+        { payableId: 'p3', reconciledValueCents: '1000' },
+      ]),
+      '22050',
+    )
+    assert.equal(r?.differenceBRL, centsToBRL('19000'))
+    assert.equal(r?.differenceTag, 'financial.recon.match.diffSurplus')
+    assert.equal(r?.totalBRL, centsToBRL('22050'))
+  })
+
+  it('extrato MENOR que a soma: diferença = DESCONTO', () => {
+    const r = buildMatchTitles(
+      lookup([
+        { payableId: 'p1', reconciledValueCents: '3000' },
+        { payableId: 'p2', reconciledValueCents: '2000' },
+      ]),
+      '4500',
+    )
+    assert.equal(r?.differenceBRL, centsToBRL('500'))
+    assert.equal(r?.differenceTag, 'financial.recon.match.diffDiscount')
+    assert.equal(r?.totalBRL, centsToBRL('4500'))
   })
 })
 
