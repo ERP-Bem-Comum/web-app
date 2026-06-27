@@ -715,6 +715,9 @@ export const matchDetailsView = (
   manualType: ManualEntryType | null = null,
   // Contraparte (conta de destino ou fornecedor) conhecida na sessão; null → "—" (até o backend, #268).
   counterparty: string | null = null,
+  // Valor conciliado de um match 1:1 (1 título): vem do PRÓPRIO lookup (#175 items[0].reconciledValueCents).
+  // Acende o "Valor conciliado" do lado Título sem depender do enriquecimento do documento (#172). null → "—".
+  singleMatchValueCents: string | null = null,
 ): MatchDetailsView => {
   // Tipo efetivo: o da sessão (preciso) ou, na falta, o derivado do texto da transação (#268).
   const effectiveManualType = manualType ?? (isManualEntry ? deriveManualKindFromTx(tx) : null)
@@ -743,7 +746,12 @@ export const matchDetailsView = (
     },
     // Nova transação (lançamento manual) não tem título: o "valor conciliado" é o valor da própria
     // transação (a saída inteira foi lançada). Tipo/categoria/descrição dependem do backend (core-api#268).
-    doc: isManualEntry ? { ...(doc ?? DASH_DOC), valueBRL: centsToBRL(tx.valueCents) } : (doc ?? DASH_DOC),
+    doc: isManualEntry
+      ? { ...(doc ?? DASH_DOC), valueBRL: centsToBRL(tx.valueCents) }
+      : (doc ??
+        (singleMatchValueCents !== null
+          ? { ...DASH_DOC, valueBRL: centsToBRL(singleMatchValueCents) }
+          : DASH_DOC)),
     audit: audit ?? DASH_AUDIT,
     multi,
   }
