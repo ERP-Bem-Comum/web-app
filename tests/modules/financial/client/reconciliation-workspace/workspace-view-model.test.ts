@@ -373,6 +373,19 @@ describe('modal Detalhes da conciliação — matchDetailsView', () => {
     assert.equal(v.audit.who, 'admin')
   })
 
+  it('match 1:1: "Valor conciliado" acende do lookup (singleMatchValueCents) mesmo sem doc', () => {
+    const v = matchDetailsView(base, null, null, null, false, null, null, '48550')
+    assert.equal(v.doc.valueBRL, centsToBRL('48550'))
+    // os demais campos do título seguem "—" até o enriquecimento (#172)
+    assert.equal(v.doc.documento, '—')
+    assert.equal(v.doc.categoria, '—')
+  })
+
+  it('singleMatchValueCents é ignorado em lançamento manual (usa o valor do tx)', () => {
+    const v = matchDetailsView(base, null, null, null, true, null, null, '48550')
+    assert.equal(v.doc.valueBRL, centsToBRL('95000'))
+  })
+
   it('manualKindTag: tipo específico quando conhecido, genérico quando não', () => {
     const comTipo = matchDetailsView(base, null, null, null, true, 'Investment')
     assert.equal(comTipo.manualKindTag, 'financial.recon.manualType.Investment')

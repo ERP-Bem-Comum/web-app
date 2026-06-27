@@ -50,8 +50,25 @@ export function useMatchDetails(
   const isManualEntry = lookup?.type === 'ManualEntry'
   const manualType = tx !== null ? sessionManualTypeFor(tx.id) : null
   const counterparty = tx !== null ? sessionCounterpartyFor(tx.id) : null
+  // Match 1:1 (1 título): o valor conciliado já vem no lookup (items[0]); acende o "Valor conciliado" do
+  // lado Título sem depender do enriquecimento do documento (#172). N:1 usa `multi`; manual usa o tx.
+  const singleMatchValueCents =
+    !isManualEntry && lookup !== null && lookup.items.length === 1
+      ? (lookup.items[0]?.reconciledValueCents ?? null)
+      : null
   const view =
-    tx === null ? null : matchDetailsView(tx, null, audit, multi, isManualEntry, manualType, counterparty)
+    tx === null
+      ? null
+      : matchDetailsView(
+          tx,
+          null,
+          audit,
+          multi,
+          isManualEntry,
+          manualType,
+          counterparty,
+          singleMatchValueCents,
+        )
   const reconciliationId = tx === null ? null : (sessionIdFor(tx.id) ?? lookup?.reconciliationId ?? null)
 
   return {
