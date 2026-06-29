@@ -110,7 +110,7 @@ export const ListReconciliationPeriodsInputSchema = z.object({ debitAccountRef: 
 
 export const ExportReconciliationInputSchema = z.object({
   periodId: z.uuid(),
-  format: z.enum(['ofx', 'csv']),
+  format: z.enum(['ofx', 'csv', 'csv-nibo']),
 })
 
 // ── Guardas schema ≡ domínio (§IV/§VI) ──────────────────────────────────────────

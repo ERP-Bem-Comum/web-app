@@ -244,8 +244,9 @@ export type ReconciliationPeriod = Readonly<{
   closedAt: string | null
   closedBy: string | null
 }>
-// Export real (#173). `format` minúsculo. Conteúdo = texto cru OFX/CSV. PDF fica fora (#145).
-export type ExportFormat = 'ofx' | 'csv'
+// Export real (#173). `format` minúsculo. Conteúdo = texto cru OFX/CSV. `csv-nibo` = layout Nibo
+// "Importação em Lotes" (#146: separador `;`, data dd/MM/yyyy). PDF fica fora (#145).
+export type ExportFormat = 'ofx' | 'csv' | 'csv-nibo'
 export type ListReconciliationPeriodsInput = Readonly<{ debitAccountRef: string }>
 export type ExportReconciliationInput = Readonly<{ periodId: string; format: ExportFormat }>
 export type ReconciliationExport = Readonly<{ content: string; format: ExportFormat }>

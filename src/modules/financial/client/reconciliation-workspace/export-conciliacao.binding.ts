@@ -18,6 +18,14 @@ import {
 const CONTENT_TYPE: Readonly<Record<ExportFormat, string>> = {
   ofx: 'application/x-ofx;charset=utf-8;',
   csv: 'text/csv;charset=utf-8;',
+  'csv-nibo': 'text/csv;charset=utf-8;',
+}
+
+// Extensão do arquivo por formato — `csv-nibo` é um CSV (layout Nibo), baixa como `.csv`.
+const FILE_EXT: Readonly<Record<ExportFormat, string>> = {
+  ofx: 'ofx',
+  csv: 'csv',
+  'csv-nibo': 'csv',
 }
 
 const triggerDownload = (filename: string, content: string, type: string): void => {
@@ -67,7 +75,7 @@ export function useExportConciliacao(debitAccountRef: string | null, onDone: () 
     errorTag,
     exportAs: (format) => {
       if (latest === null) return
-      const filename = `conciliacao_${latest.periodStart}_a_${latest.periodEnd}.${format}`
+      const filename = `conciliacao_${latest.periodStart}_a_${latest.periodEnd}.${FILE_EXT[format]}`
       mut.mutate({ periodId: latest.id, format, filename })
     },
   }
