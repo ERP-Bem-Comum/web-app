@@ -38,11 +38,17 @@ const logSchemaMismatch = (schema: string, cause: unknown): void => {
 const mapHttpToAuthError = (e: HttpError): AuthError => {
   switch (e.kind) {
     case 'http': {
+      // 429 = rate limit do core-api (anti-brute-force de login). Sinal confiável pelo STATUS — o `code`
+      // do envelope varia; vira um erro acionável próprio ('rate-limited'), não o genérico 'server'.
+      if (e.status === 429) return 'rate-limited'
       const slug = parseErrorEnvelope(e.body)?.error.code
       const mapped = slug === undefined ? undefined : SLUG_TO_AUTH_ERROR[slug]
       if (mapped === undefined) {
         // core-api respondeu um erro que não mapeamos (contrato divergente) → vira 'server' genérico.
-        logger.warn({ status: e.status, slug, request_id: getRequestId() }, 'core-api-auth:unmapped-error-slug')
+        logger.warn(
+          { status: e.status, slug, request_id: getRequestId() },
+          'core-api-auth:unmapped-error-slug',
+        )
       }
       return mapped ?? 'server'
     }

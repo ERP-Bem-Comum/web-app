@@ -11,5 +11,6 @@ export type AuthError =
   | 'refresh-expired' // 401 refresh
   | 'unauthorized' // 401 /me (sem/expirado/inválido)
   | 'session-not-found' // sessão local ausente/expirada
+  | 'rate-limited' // 429 — muitas tentativas (anti-brute-force do core-api)
   | 'connectivity' // backend fora / timeout
   | 'server' // 5xx / inesperado

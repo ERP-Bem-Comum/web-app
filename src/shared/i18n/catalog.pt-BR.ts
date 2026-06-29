@@ -23,6 +23,7 @@ export const ptBR: Catalog = {
   'auth.error.invalid-credentials': 'E-mail ou senha inválidos.',
   'auth.error.user-disabled': 'Sua conta está desativada. Procure o administrador.',
   'auth.error.connectivity': 'Serviço temporariamente indisponível. Tente novamente.',
+  'auth.error.rate-limited': 'Muitas tentativas de login. Aguarde alguns instantes e tente de novo.',
   'auth.error.unexpected': 'Algo deu errado. Tente novamente.',
   'auth.error.reference-label': 'Código de referência:',
   // Contracts — Errors
