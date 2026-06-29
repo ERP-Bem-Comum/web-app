@@ -22,7 +22,12 @@ const ITEMS: readonly { ic: string; lblTag: string; hintTag?: string; format: Ex
     hintTag: 'financial.recon.export.ofxHint',
     format: 'ofx',
   },
-  { ic: 'CSV', lblTag: 'financial.recon.export.csv', format: 'csv' },
+  {
+    ic: 'CSV',
+    lblTag: 'financial.recon.export.csv',
+    hintTag: 'financial.recon.export.csvHint',
+    format: 'csv-nibo',
+  },
   // PDF segue chrome até #145 (sem endpoint).
   {
     ic: 'PDF',

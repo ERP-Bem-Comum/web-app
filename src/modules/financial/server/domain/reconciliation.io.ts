@@ -123,8 +123,9 @@ export interface ListReconciliationPeriodsInput {
 }
 
 // Exportar conciliação de um período (GET /reconciliation-periods/:id/export?format=). `format` é
-// minúsculo no core-api. Exporta período Open ou Closed (sem guard de status). PDF fica fora (#145).
-export type ExportFormat = 'ofx' | 'csv'
+// minúsculo no core-api. `csv-nibo` = layout Nibo "Importação em Lotes" (#146). Exporta período Open ou
+// Closed (sem guard de status). PDF fica fora (#145).
+export type ExportFormat = 'ofx' | 'csv' | 'csv-nibo'
 export interface ExportReconciliationInput {
   periodId: string
   format: ExportFormat
