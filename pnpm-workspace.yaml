@@ -2,6 +2,14 @@
 # Fonte: handbook/reference/pnpm/supply-chain-security.md + settings.md
 # Todos os settings (exceto auth/registry) vivem AQUI, nunca em .npmrc. (settings.md:8)
 
+# --- 0. Overrides de segurança (força versão corrigida em trans-deps) ---
+# undici: CVEs de DoS (WebSocket — memória ilimitada) + bypass de validação de cert TLS, faixa
+# vulnerável >=7.23.0 <7.28.0. Só entra como trans-dep de DEV (jsdom→undici, via vitest), mas o
+# audit/Trivy flagam o lockfile → força >=7.28.0 (corrigido). Pareia com o web.Dockerfile (runtime
+# Chainguard re-pinado p/ o node-gyp Wolfi). pnpm 11: overrides vivem AQUI (package.json.pnpm não é lido).
+overrides:
+  undici: '^7.28.0'
+
 # --- 1. Postinstall scripts: allowlist explícita (allowBuilds) ---
 # strictDepBuilds=true (default) => deps com build NÃO listadas aqui falham o install.
 # unrs-resolver: resolver nativo do eslint-import-resolver-typescript. Funciona via

@@ -48,7 +48,7 @@ COPY . .
 CMD ["pnpm", "dev", "--host", "0.0.0.0", "--port", "3000"]
 
 # ── Stage 5 — runtime (produção, distroless) ─────────────────────────────────
-FROM cgr.dev/chainguard/node:latest@sha256:05d2ed6a0b3e6d3b9ca1d7f0b76e88dd06b91fa95c4f1e849f99bba7bd5a21b8 AS runtime
+FROM cgr.dev/chainguard/node:latest@sha256:955b52dd59f8a73419fe1931e13a9b9eb822e7e5fda21ca754688b55753ea6ca AS runtime
 LABEL org.opencontainers.image.title="bemcomum-web" \
       org.opencontainers.image.description="ERP Bem Comum — Front + BFF (TanStack Start)." \
       org.opencontainers.image.vendor="Envolve / Bem Comum" \
