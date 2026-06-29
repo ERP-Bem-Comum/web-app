@@ -16,6 +16,9 @@ describe('authErrorTag', () => {
   it('connectivity → tag de conectividade', () => {
     assert.equal(authErrorTag('connectivity'), 'auth.error.connectivity')
   })
+  it('rate-limited (429) → tag de muitas tentativas', () => {
+    assert.equal(authErrorTag('rate-limited'), 'auth.error.rate-limited')
+  })
   it('erro inesperado (ex.: refresh-rotated no login) → tag genérica', () => {
     assert.equal(authErrorTag('refresh-rotated'), 'auth.error.unexpected')
   })

@@ -13,6 +13,8 @@ export const authErrorTag = (e: AuthError): string => {
       return 'auth.error.user-disabled'
     case 'connectivity':
       return 'auth.error.connectivity'
+    case 'rate-limited':
+      return 'auth.error.rate-limited'
     // Erros que não fazem sentido no login (sessão/refresh/server) → mensagem genérica.
     // Switch exaustivo (sem default): AuthError ganhar variante quebra a compilação aqui.
     case 'refresh-not-found':
