@@ -120,7 +120,7 @@ export type DocumentFormFields = Readonly<{
   // Descontos SUBTRAEM; Juros/Multa SOMAM ao bruto no líquido (mesma fórmula do core-api, financial-data.ts).
   discounts: string
   jurosMulta: string
-  // Chave de acesso (44 dígitos) — só DANFE. Editável (OCR/manual). Persistência pendente (core-api#115).
+  // Chave de acesso (44 dígitos) — só DANFE. Editável (OCR/manual). Enviada e exigida no lançamento (#115).
   accessKey: string
   // Complemento da Forma de Pagamento (boleto/cartão/câmbio/outro) — capturado no form; persistência no
   // backend pendente (core-api#89). Só 1 visível por vez (controlado pela forma escolhida).
@@ -179,6 +179,34 @@ export const issAllowedFor = (type: DocumentType | ''): boolean => type === 'NFS
  */
 export const reformaTributariaEnabledFor = (type: DocumentType | ''): boolean =>
   type === 'NFS-e' || type === 'RPA'
+
+/**
+ * Forma de pagamento DEFAULT por tipo (a pedido da P.O.): Boleto→Boleto, Fatura→Boleto,
+ * Imposto→Guia de Recolhimento. Selecionar esses tipos pré-seleciona a forma (o operador pode trocar
+ * depois). Demais tipos → null (não mexe na forma já escolhida). Pura.
+ */
+export const defaultPaymentMethodFor = (type: DocumentType | ''): PaymentMethod | null => {
+  switch (type) {
+    case 'Boleto':
+    case 'Fatura':
+      return 'Boleto'
+    case 'Imposto':
+      return 'GuiaRecolhimento'
+    case 'NFS-e':
+    case 'DANFE':
+    case 'RPA':
+    case 'Recibo':
+    case '':
+      return null
+  }
+}
+
+/** Chave de acesso só os dígitos (a borda do core-api normaliza removendo não-dígitos — #115). */
+export const ACCESS_KEY_LEN = 44
+export const accessKeyDigits = (accessKey: string): string => accessKey.replace(/\D/g, '')
+/** DANFE exige chave de acesso de 44 dígitos (invariante do backend #115); demais tipos não usam. */
+export const accessKeyValidFor = (type: DocumentType | '', accessKey: string): boolean =>
+  type !== 'DANFE' || accessKeyDigits(accessKey).length === ACCESS_KEY_LEN
 
 type RetentionTotals = Readonly<{ iss: number; irrf: number; inss: number; csrf: number; sum: number }>
 
@@ -273,7 +301,9 @@ export const canSubmit = (fields: DocumentFormFields): boolean => {
     fields.paymentMethod !== '' &&
     gross > 0 &&
     fields.dueDate.trim() !== '' &&
-    net > 0
+    net > 0 &&
+    // DANFE só lança com a chave de acesso (44 dígitos) — senão o backend recusa (#115).
+    accessKeyValidFor(fields.type, fields.accessKey)
   )
 }
 
@@ -330,6 +360,11 @@ export const buildCreateInput = (fields: DocumentFormFields): CreateDocumentInpu
     series: trimToUndefined(fields.series),
     supplierRef: fields.supplierRef,
     paymentMethod: fields.paymentMethod,
+    // Chave de acesso (44 dígitos) só faz sentido na DANFE; demais tipos → undefined (#115).
+    accessKey:
+      accessKeyDigits(fields.accessKey).length === ACCESS_KEY_LEN
+        ? accessKeyDigits(fields.accessKey)
+        : undefined,
     grossValueCents: String(gross),
     discountsCents: discountsCents(fields) > 0 ? String(discountsCents(fields)) : undefined,
     // "Juros / Multa" (campo único) → interestCents; ambos somam ao líquido, então o total fica correto.
@@ -374,6 +409,11 @@ export const buildDraftInput = (fields: DocumentFormFields): CreateDocumentInput
     series: trimToUndefined(fields.series),
     supplierRef: fields.supplierRef,
     paymentMethod: fields.paymentMethod,
+    // Rascunho não exige a chave, mas se já houver 44 dígitos, persiste junto (#115).
+    accessKey:
+      accessKeyDigits(fields.accessKey).length === ACCESS_KEY_LEN
+        ? accessKeyDigits(fields.accessKey)
+        : undefined,
     grossValueCents: String(gross),
     discountsCents: discountsCents(fields) > 0 ? String(discountsCents(fields)) : undefined,
     interestCents: jurosMultaCents(fields) > 0 ? String(jurosMultaCents(fields)) : undefined,

@@ -381,8 +381,8 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             />
           </div>
         </div>
-        {/* Chave de acesso — só DANFE. Editável (OCR ou preenchimento manual). Persistência no create do
-            core-api ainda pendente (core-api#115) → não enviada até o backend aceitar o campo. */}
+        {/* Chave de acesso — só DANFE. Editável (OCR ou manual). Enviada e persistida no create (#115);
+            o backend EXIGE 44 dígitos na DANFE (o canSubmit trava o lançamento sem ela). */}
         {fields.type === 'DANFE' ? (
           <div className={fieldGrid.wide}>
             <div className={field}>

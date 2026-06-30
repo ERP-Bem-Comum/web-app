@@ -60,6 +60,7 @@ export interface CreateDocumentInput {
   categoryRef?: string
   programRef?: string
   contaDebitoRef?: string // #197: conta-débito (conta-cedente) — a baixa é direcionada a ela
+  accessKey?: string // #115: chave de acesso (44 dígitos) — obrigatória p/ DANFE no lançamento
   paymentMethod: PaymentMethod
   grossValueCents: string
   sourceDiscountsCents?: string

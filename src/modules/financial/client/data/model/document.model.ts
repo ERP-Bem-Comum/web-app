@@ -56,6 +56,7 @@ export type CreateDocumentInput = Readonly<{
   costCenterRef?: string // centro de custo (#147) — backend aceita no documento (corrige drift do schema)
   programRef?: string
   contaDebitoRef?: string // #197: conta-débito (conta-cedente da conciliação) — a baixa vai p/ ela
+  accessKey?: string // #115: chave de acesso (44 dígitos) — obrigatória p/ DANFE no lançamento
   paymentMethod: PaymentMethod
   grossValueCents: string
   sourceDiscountsCents?: string

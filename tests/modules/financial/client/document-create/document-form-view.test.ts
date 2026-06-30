@@ -9,6 +9,8 @@ import assert from 'node:assert/strict'
 import {
   retentionsEnabledFor,
   reformaTributariaEnabledFor,
+  defaultPaymentMethodFor,
+  accessKeyValidFor,
   issAllowedFor,
   allowedRetentionKeysFor,
   netPreviewCents,
@@ -87,6 +89,48 @@ describe('retentionsEnabledFor', () => {
     assert.equal(retentionsEnabledFor('RPA'), true)
     assert.equal(retentionsEnabledFor('Boleto'), false)
     assert.equal(retentionsEnabledFor(''), false)
+  })
+})
+
+describe('defaultPaymentMethodFor (forma default por tipo)', () => {
+  it('Boleto e Fatura → Boleto; Imposto → GuiaRecolhimento', () => {
+    assert.equal(defaultPaymentMethodFor('Boleto'), 'Boleto')
+    assert.equal(defaultPaymentMethodFor('Fatura'), 'Boleto')
+    assert.equal(defaultPaymentMethodFor('Imposto'), 'GuiaRecolhimento')
+  })
+  it('tipos sem default (NFS-e/DANFE/RPA/Recibo/vazio) → null', () => {
+    assert.equal(defaultPaymentMethodFor('NFS-e'), null)
+    assert.equal(defaultPaymentMethodFor('DANFE'), null)
+    assert.equal(defaultPaymentMethodFor('RPA'), null)
+    assert.equal(defaultPaymentMethodFor('Recibo'), null)
+    assert.equal(defaultPaymentMethodFor(''), null)
+  })
+})
+
+describe('DANFE exige chave de acesso (44 dígitos) — #115', () => {
+  const key44 = '1'.repeat(44)
+  // DANFE não tem retenções (gating zera no cálculo, mesmo com o fixture base preenchido).
+  const danfe: DocumentFormFields = { ...base, type: 'DANFE' }
+
+  it('accessKeyValidFor: DANFE só com 44 dígitos; demais tipos sempre ok', () => {
+    assert.equal(accessKeyValidFor('DANFE', ''), false)
+    assert.equal(accessKeyValidFor('DANFE', '123'), false)
+    assert.equal(accessKeyValidFor('DANFE', key44), true)
+    assert.equal(accessKeyValidFor('NFS-e', ''), true)
+    assert.equal(accessKeyValidFor('Boleto', '123'), true)
+  })
+  it('canSubmit: DANFE sem chave → false; com 44 dígitos → true', () => {
+    assert.equal(canSubmit({ ...danfe, accessKey: '' }), false)
+    assert.equal(canSubmit({ ...danfe, accessKey: key44 }), true)
+  })
+  it('buildCreateInput: DANFE envia a chave (só dígitos); não-DANFE não envia', () => {
+    const input = buildCreateInput({ ...danfe, accessKey: key44 })
+    assert.equal(input?.accessKey, key44)
+    // máscara com não-dígitos é normalizada p/ os 44 dígitos
+    const masked = buildCreateInput({ ...danfe, accessKey: `${key44.slice(0, 4)} ${key44.slice(4)}` })
+    assert.equal(masked?.accessKey, key44)
+    // NFS-e (base) não envia accessKey
+    assert.equal(buildCreateInput(base)?.accessKey, undefined)
   })
 })
 
