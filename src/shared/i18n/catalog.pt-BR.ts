@@ -1071,7 +1071,7 @@ export const ptBR: Catalog = {
     'Apenas registro do valor (OCR ou manual) — não gera título filho nem retenção.',
   'financial.create.field.accessKey': 'Chave de acesso',
   'financial.create.accessKey.hint':
-    'Chave de acesso da NF-e (44 dígitos) — aguardando suporte do backend (core-api#115).',
+    'Chave de acesso da NF-e (44 dígitos) — obrigatória para lançar a DANFE.',
   // Modal "Tipo de Documento" (cards com classe fiscal + descrição).
   'financial.create.docType.modalTitle': 'Tipo de Documento',
   'financial.create.docType.modalSubtitle':

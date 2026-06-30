@@ -62,6 +62,7 @@ export const CreateDocumentInputSchema = z.object({
   costCenterRef: z.uuid().optional(),
   programRef: z.uuid().optional(),
   contaDebitoRef: z.uuid().optional(), // #197: conta-débito (conta-cedente) — direciona a baixa
+  accessKey: z.string().trim().min(1).max(64).optional(), // #115: chave de acesso (DANFE); core-api normaliza/valida 44 dígitos
   paymentMethod: z.enum(PAYMENT_METHODS),
   grossValueCents: CentsSchema,
   sourceDiscountsCents: CentsSchema.optional(),

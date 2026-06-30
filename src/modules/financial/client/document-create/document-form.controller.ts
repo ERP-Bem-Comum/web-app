@@ -12,6 +12,7 @@ import {
   retentionsEnabledFor,
   reformaTributariaEnabledFor,
   issAllowedFor,
+  defaultPaymentMethodFor,
   type DocumentFormFields,
   type RetentionFieldsReais,
   type ReformaTributariaFieldsReais,
@@ -86,6 +87,10 @@ const reducer = (state: DocumentFormFields, action: FormAction): DocumentFormFie
       const retentions = retentionsEnabledFor(action.value)
         ? { ...state.retentions, iss: issAllowedFor(action.value) ? state.retentions.iss : '' }
         : EMPTY_RETENTIONS
+      // Forma de pagamento default do tipo (Boleto/Fatura→Boleto, Imposto→Guia): pré-seleciona e zera o
+      // complemento (cada forma tem o seu). Tipos sem default não mexem na forma já escolhida.
+      const defaultPay = defaultPaymentMethodFor(action.value)
+      const payPatch = defaultPay !== null ? { paymentMethod: defaultPay, paymentComplement: '' } : {}
       return {
         ...state,
         type: action.value,
@@ -93,6 +98,7 @@ const reducer = (state: DocumentFormFields, action: FormAction): DocumentFormFie
         reformaTributaria: reformaTributariaEnabledFor(action.value)
           ? state.reformaTributaria
           : EMPTY_REFORMA_TRIBUTARIA,
+        ...payPatch,
       }
     }
     case 'setPaymentMethod':
