@@ -93,6 +93,13 @@ export const FOOD_CATEGORIES = [
   'PREFIRO_NAO_RESPONDER',
 ] as const
 
+// Perfil completo (US2). Sexo biológico (≠ identidade de gênero) e estado civil — valores batem 1:1
+// com o domínio do core-api (sex.ts: 'F'|'M'; civil-status.ts: snake_case EN).
+export const SEXES = ['F', 'M'] as const
+export type Sex = (typeof SEXES)[number]
+export const MARITAL_STATUSES = ['single', 'married', 'divorced', 'widowed', 'stable_union'] as const
+export type MaritalStatus = (typeof MARITAL_STATUSES)[number]
+
 /** Valores REAIS do enum `disableBy` do core-api (a UI mapeia p/ label via i18n). */
 export const DEACTIVATION_REASONS = [
   'DESLIGAMENTO_ABC',
@@ -133,6 +140,19 @@ export type CollaboratorDetail = CollaboratorListItem &
     education?: string
     biography?: string
     experienceInThePublicSector?: boolean
+    // Perfil completo (US2).
+    sex?: string
+    maritalStatus?: string
+    hasChildren?: boolean
+    childrenCount?: number
+    childrenAges?: number[]
+    isPwd?: boolean
+    pwdDescription?: string
+    isOnLeave?: boolean
+    leaveDuration?: string
+    leaveRenewable?: boolean
+    leaveRenewalDuration?: string
+    publicSectorExperienceDuration?: string
     territory: Territory | null // #42
     bankAccount: BankAccount | null // #40 — create-only; exibido read-only no detalhe
     pixKey: PixKey | null // #40 — create-only; exibido read-only no detalhe
@@ -192,6 +212,19 @@ export type CollaboratorCompleteInput = Readonly<{
   allergies?: string
   biography?: string
   experienceInThePublicSector?: boolean
+  // Perfil completo (US2).
+  sex?: string
+  maritalStatus?: string
+  hasChildren?: boolean
+  childrenCount?: number
+  childrenAges?: number[]
+  isPwd?: boolean
+  pwdDescription?: string
+  isOnLeave?: boolean
+  leaveDuration?: string
+  leaveRenewable?: boolean
+  leaveRenewalDuration?: string
+  publicSectorExperienceDuration?: string
 }>
 
 export type CollaboratorDeactivateInput = Readonly<{ id: string; reason: DeactivationReason }>
