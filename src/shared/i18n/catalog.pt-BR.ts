@@ -1734,8 +1734,8 @@ export const ptBR: Catalog = {
     'Atenção: o novo vencimento é aplicado a TODOS os títulos do documento (principal e filhos de retenção), não apenas ao selecionado.',
   'financial.list.dueDate.modalCancel': 'Cancelar',
   'financial.list.dueDate.modalApply': 'Aplicar',
-  // Marcar como pago (baixa manual #224/#232) — modal de data de pagamento.
-  'financial.list.pay.modalTitle': 'Marcar como pago',
+  // Baixa de Pagamento (baixa manual #224/#232) — modal de data de pagamento (a ação na linha é "Marcar como pago").
+  'financial.list.pay.modalTitle': 'Baixa de Pagamento',
   'financial.list.pay.dateLabel': 'Data de pagamento',
   'financial.list.pay.modalBodyOne': 'Informe a data de pagamento (saída bancária) do título selecionado.',
   'financial.list.pay.modalBodyManyPrefix': 'Informe a data de pagamento (saída bancária) dos',
