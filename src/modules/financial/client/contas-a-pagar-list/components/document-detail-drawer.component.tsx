@@ -109,8 +109,11 @@ function PaymentComplement({
   payeeBank: PayeeBankView | null
 }>): ReactNode {
   const tag = paymentComplementLabelTag(method)
-  if (detail !== null && tag !== null) {
-    return <Field label={t(tag)} value={detail} mono />
+  // A forma decide o formato (não a presença do dado): Boleto/Cartão/Câmbio/Outro SEMPRE mostram o
+  // complemento tipado (código de barras etc.) — vazio vira "—", NUNCA cai nos dados bancários. Só as
+  // formas bancárias (PIX/TED/Transferência/Guia) exibem agência/conta/chave do favorecido.
+  if (tag !== null) {
+    return <Field label={t(tag)} value={detail ?? '—'} mono />
   }
   return (
     <>

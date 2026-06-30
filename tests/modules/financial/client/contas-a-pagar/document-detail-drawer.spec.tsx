@@ -96,6 +96,26 @@ describe('DocumentDetailDrawer', () => {
     expect(screen.queryByText('Tipo de Chave')).toBeNull()
   })
 
+  it('#273: Boleto SEM paymentDetail mostra "—" no complemento — NUNCA os dados bancários do favorecido', () => {
+    const payeeBank: PayeeBankView = {
+      bankLine: 'Itaú · Ag 1234 · CC 56789-0',
+      pixType: 'email',
+      pixKey: 'pagamentos@exemplo.com',
+    }
+    render(
+      <DocumentDetailDrawer
+        view={{ ...baseView, paymentMethod: 'Boleto', paymentDetail: null }}
+        payeeBank={payeeBank}
+        onClose={() => undefined}
+      />,
+    )
+    // O Boleto mostra SEMPRE o rótulo do código de barras (vazio → "—"), nunca cai nos dados bancários.
+    expect(screen.getByText('Linha digitável (47-48 dígitos)')).toBeTruthy()
+    expect(screen.queryByText('Tipo de Chave')).toBeNull()
+    expect(screen.queryByText('pagamentos@exemplo.com')).toBeNull()
+    expect(screen.queryByText('Itaú · Ag 1234 · CC 56789-0')).toBeNull()
+  })
+
   it('#273: PIX (sem complemento tipado) mantém os dados bancários gated', () => {
     render(<DocumentDetailDrawer view={baseView} payeeBank={null} onClose={() => undefined} />)
     expect(screen.getByText('Tipo de Chave')).toBeTruthy()
