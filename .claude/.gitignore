@@ -1,0 +1,2 @@
+# Estado transitório dos hooks (marcador de sessão suja, etc.) — não versionar.
+.cache/

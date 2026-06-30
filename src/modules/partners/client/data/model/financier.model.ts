@@ -1,0 +1,92 @@
+/**
+ * Model do client (client-data) — tipos de I/O do repository de Financiadores, espelhando o contrato
+ * do BFF (`financier.io.ts`). Definidos localmente (não importa server/domain nem public-api — boundary
+ * §I); a validação do response contra o core-api já acontece na server fn (§IX). Camada `data`.
+ * Aqui também vive o schema Zod do FORMULÁRIO (validação na borda do cliente), para o controller poder
+ * consumi-lo sem furar a fronteira client-controller↛client-domain.
+ *
+ * Financiador é PJ-only. Diferente do fornecedor: SEM categorias, SEM e-mail/nome-fantasia. Banco/PIX
+ * (payment-target) adicionados em #40 — REUSO dos tipos/validações do Fornecedor (DRY, mesmo shape).
+ */
+import * as z from 'zod'
+
+import {
+  type BankAccount,
+  type SupplierPixKey as PixKey,
+  type PixKeyType,
+  PIX_KEY_TYPES,
+  isPixKeyType,
+  BankAccountFormSchema,
+  PixKeyFormSchema,
+} from './supplier.model.ts'
+import { normalizeCnpj, isValidCnpjFormat } from '#shared/document/cnpj.ts'
+
+export type ActivationStatus = 'active' | 'inactive'
+// Reuso (DRY) dos tipos/enum de payment-target do Fornecedor (#40).
+export type { BankAccount, PixKey, PixKeyType }
+export { PIX_KEY_TYPES, isPixKeyType }
+
+export type FinancierListItem = Readonly<{
+  id: string
+  name: string
+  corporateName: string
+  legalRepresentative: string
+  cnpj: string
+  telephone: string
+  activation: ActivationStatus
+  contractCount: number
+}>
+
+export type FinancierDetail = FinancierListItem &
+  Readonly<{
+    legalRepresentative: string
+    address: string
+    bankAccount: BankAccount | null
+    pixKey: PixKey | null
+  }>
+
+export type FinancierListResponse = Readonly<{
+  items: readonly FinancierListItem[]
+  meta: Readonly<{ page: number; limit: number; total: number }>
+}>
+
+// ── Inputs enviados pelo repository (a server fn valida no server) ──
+export type FinancierListInput = Readonly<{
+  search?: string
+  active?: boolean
+  order: 'ASC' | 'DESC'
+  page: number
+  limit: number
+}>
+
+export type FinancierWriteInput = Readonly<{
+  name: string
+  corporateName: string
+  legalRepresentative: string
+  cnpj: string
+  telephone: string
+  address: string
+  bankAccount: BankAccount | null
+  pixKey: PixKey | null
+}>
+
+// ── Schema do formulário (validação na borda do cliente) ──
+/** CNPJ (Serpro/2026): aceita com/sem máscara; normaliza p/ 14 alfanuméricos maiúsculos e valida formato. */
+export const CnpjFieldSchema = z
+  .string()
+  .trim()
+  .transform(normalizeCnpj)
+  .refine(isValidCnpjFormat, { error: 'cnpj-invalid' })
+
+/** Formulário PJ-only — campos obrigatórios + banco/PIX opcionais (#40, reuso das schemas do Fornecedor). */
+export const FinancierFormSchema = z.object({
+  name: z.string().trim().min(1).max(200),
+  corporateName: z.string().trim().min(1).max(200),
+  legalRepresentative: z.string().trim().min(1).max(200),
+  cnpj: CnpjFieldSchema,
+  telephone: z.string().trim().min(1).max(20),
+  address: z.string().trim().min(1).max(300),
+  bankAccount: BankAccountFormSchema.nullable().default(null),
+  pixKey: PixKeyFormSchema.nullable().default(null),
+})
+export type FinancierFormValues = z.infer<typeof FinancierFormSchema>

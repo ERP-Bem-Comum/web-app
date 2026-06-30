@@ -1,0 +1,144 @@
+name: build-publish-deploy (QA)
+
+# Pipeline de QA: builda a imagem de produção (front + BFF, target `runtime` Chainguard), publica no GHCR
+# e DEPLOYA na VPS de QA — tudo num workflow só. O deploy é um job `needs: build-push` (mesmo run), NÃO um
+# `workflow_run` separado: aquele só dispara se o arquivo estiver na branch DEFAULT (main), o que quebrava
+# o auto-deploy enquanto a develop está à frente. O ambiente NUNCA compila — só puxa (ADR-0015/0018).
+#
+# Segurança (OWASP CI/CD Top 10 — ADR-0016/0018):
+#  - actions de terceiros PINADAS POR COMMIT SHA (CICD-SEC-8); a tag legível fica no comentário ao lado.
+#  - GITHUB_TOKEN de permissão mínima POR JOB; provenance + SBOM keyless via OIDC (id-token/attestations).
+#  - trigger = push em `develop` (branch de QA), NUNCA `pull_request` de fork com segredo (CICD-SEC-4).
+#  - deploy SEM segredo longevo: tailnet (auth key tag:ci → TS_AUTHKEY); SSH por identidade (CICD-SEC-6).
+#
+# Atualizar um SHA: gh api repos/<owner>/<action>/commits/<tag> --jq .sha
+
+on:
+  push:
+    branches: [develop]
+    paths-ignore:
+      - "**/*.md"
+      - "handbook/**"
+      - "specs/**"
+      - "e2e/**"
+  workflow_dispatch:
+
+concurrency:
+  # Serializa por ref e NÃO cancela em andamento — um deploy de QA jamais é abortado no meio (pushes
+  # rápidos enfileiram em vez de cancelar o deploy anterior).
+  group: build-publish-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write # push no GHCR
+  id-token: write # OIDC keyless p/ as attestations (provenance/SBOM)
+  attestations: write # grava as attestations no GHCR
+
+env:
+  IMAGE: ghcr.io/erp-bem-comum/bemcomum-web
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
+
+      - name: Login no ghcr.io
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Metadata (tags + labels OCI)
+        id: meta
+        uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6.1.0
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,value=qa
+            type=sha,prefix=sha-,format=short
+
+      - name: Build + push (linux/amd64, target runtime, provenance + SBOM)
+        id: build
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+        with:
+          context: .
+          file: ./web.Dockerfile
+          target: runtime
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true # SLSA build provenance attestation (D3/ADR-0016) — keyless via OIDC
+          sbom: true # SBOM attestation
+
+      - name: Scan da imagem (Trivy — falha em HIGH/CRITICAL, SC-001)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE }}@${{ steps.build.outputs.digest }}
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true # não bloqueia em CVE sem fix upstream (base distroless); revisar periodicamente
+
+  # ── Deploy QA ────────────────────────────────────────────────────────────────
+  # Roda APÓS o build-push (mesmo run → sem o `workflow_run`, que exigiria o arquivo na branch default).
+  # Só em `develop`. Entra no tailnet (auth key tag:ci) e roda o deploy.sh da VPS por SSH/identidade.
+  #
+  # PRÉ-REQUISITOS DE INFRA (configurados 2026-06-25 via Tailscale API):
+  #   1. ✅ Auth key tag:ci → secret TS_AUTHKEY. ⚠️ EXPIRA 2026-09-23 → rotacionar (issue #92).
+  #   2. ✅ ACL: ssh tag:ci → tag:cd-target (ubuntu); nó erp-bem-comum-qa = tag:cd-target.
+  #   3. ✅ Tailscale SSH na VPS.  4. ⚠️ /opt/erp-qa/ provisionado (ERP-INFRA/platform/vps-qa).
+  deploy-qa:
+    needs: build-push
+    runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/develop' }} # só a branch de QA deploya; outro ref só builda
+    permissions:
+      contents: read # least privilege: o deploy não precisa de packages/id-token/attestations
+      issues: write # p/ o aviso de expiração da TS_AUTHKEY abrir/comentar uma issue
+    steps:
+      # Aviso de expiração roda AQUI (no pipeline de push em develop) porque schedule/workflow_dispatch
+      # do GitHub só disparam da branch DEFAULT (main) — e os workflows vivem na develop. Cadência = deploys.
+      - name: Aviso de expiração da TS_AUTHKEY (<14d, NÃO bloqueia)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          KEY_EXPIRY: "2026-09-23" # ⚠️ ATUALIZAR na rotação (runbook RB-008)
+        run: |
+          days=$(( ( $(date -u -d "$KEY_EXPIRY" +%s) - $(date -u +%s) ) / 86400 ))
+          echo "TS_AUTHKEY expira em $days dia(s) ($KEY_EXPIRY)."
+          if [ "$days" -le 14 ]; then
+            echo "::warning::TS_AUTHKEY expira em $days dia(s) ($KEY_EXPIRY) — rotacionar (RB-008, #92)."
+            msg="⏰ TS_AUTHKEY (deploy QA) expira em **$days dia(s)** ($KEY_EXPIRY). Rotacionar via RB-008 do runbook + atualizar KEY_EXPIRY no build-publish.yml. (aviso automático do deploy)"
+            num=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "rotacionar TS_AUTHKEY in:title" --json number --jq '.[0].number // empty')
+            if [ -n "$num" ]; then gh issue comment "$num" --repo "$GITHUB_REPOSITORY" --body "$msg"; else gh issue create --repo "$GITHUB_REPOSITORY" --title "⏰ Rotacionar TS_AUTHKEY ($KEY_EXPIRY)" --body "$msg"; fi
+          fi
+
+      - name: Conectar na tailnet (efêmero, tag:ci)
+        uses: tailscale/github-action@306e68a486fd2350f2bfc3b19fcd143891a4a2d8 # v4.1.2
+        with:
+          authkey: ${{ secrets.TS_AUTHKEY }} # já é tag:ci + ephemeral → dispensa oauth/tags
+
+      - name: Deploy na VPS via Tailscale SSH (sem chave longeva)
+        run: |
+          # Identidade via tailnet/ACL (Tailscale SSH) — sem chave SSH no repo (CICD-SEC-6). deploy.sh faz
+          # `docker compose pull` da :qa + up --wait; sai !=0 se um container não ficar healthy → job vermelho.
+          # Auto-cura de disco (VPS de 10 GB): prune ANTES do pull — NÃO usa --volumes (MySQL intacto).
+          ssh -o StrictHostKeyChecking=accept-new ubuntu@erp-bem-comum-qa \
+            'docker system prune -af && /opt/erp-qa/deploy.sh'
+
+      - name: Smoke-check pós-deploy (/ready do container web)
+        run: |
+          # O `up --wait` garante /health (liveness). Aqui validamos /ready (config + sonda /api/v2 do core-api)
+          # DENTRO do container web → pega CORE_API_URL ruim / core-api fora ANTES de dar o deploy como verde.
+          ssh -o StrictHostKeyChecking=accept-new ubuntu@erp-bem-comum-qa "cd /opt/erp-qa && docker compose exec -T web node -e 'fetch(\"http://127.0.0.1:3000/ready\").then(async r=>{console.log(\"ready\", r.status, await r.text()); process.exit(r.ok ? 0 : 1)}).catch(e => {console.error(e); process.exit(1)})'"
+
+# TODO produção (AWS — ADR-0018): job `deploy-prod` com `permissions.id-token: write` +
+# aws-actions/configure-aws-credentials (assume-role OIDC, SEM chave longeva), quando a infra de prod
+# (Codebit/AWS) estiver provisionada. Lembrete: o CORE_API_URL de prod deve terminar em /api/v2 (ADR-0020).

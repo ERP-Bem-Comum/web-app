@@ -1,0 +1,32 @@
+node_modules
+.output
+.nitro
+.tanstack
+dist
+count.txt
+*.log
+.DS_Store
+
+# Env (server-only; valores reais NUNCA versionados — use .env.example como modelo)
+.env
+.env.*
+!.env.example
+
+# Playwright (E2E) — artefatos de execução
+/playwright-report
+/test-results
+/blob-report
+/playwright/.cache
+# Store local efêmero criado pelo container ao gerar baselines visuais -linux (ver guia visual-testing)
+.pnpm-store/
+
+# Kimi Code CLI — config pessoal do dev (pode conter API key/credenciais em .kimi/config.toml).
+# NUNCA versionar. As skills/regras compartilhadas vivem em .claude/ + AGENTS.md (versionados).
+.kimi/
+
+# .claude/ é versionado (agents/skills/rules), MAS a memória dos subagents é runtime/efêmera por sessão.
+.claude/agent-memory/
+
+# Cópia perdida do backend dentro do front (o core-api canônico é a pasta-irmã ../core-api).
+# Não pertence a este repo — ignorada p/ não poluir num 'git add .'.
+/core-api/

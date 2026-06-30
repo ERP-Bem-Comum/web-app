@@ -1,0 +1,604 @@
+/**
+ * Mappers do core-api conciliação (puro, node:test): mapHttpError slug→ReconciliationError, e
+ * transactions/payables/suggestions/import/reconcile/undo→Model com parse de borda. Verificado contra o
+ * contrato real (#152): entryType string livre, suggestions raiz `{ suggestions }`, band alta/media,
+ * type derivado pelo backend. Import relativo (os #alias resolvem só no bundler).
+ */
+import { describe, it } from 'node:test'
+import assert from 'node:assert/strict'
+
+import {
+  mapHttpError,
+  transactionsToModel,
+  paidPayablesToModel,
+  cedenteAccountsToModel,
+  cedenteAccountToModel,
+  accountStatementSummary,
+  accountStatementPeriodToModel,
+  transactionReconciliationToModel,
+  reconciliationPeriodsToModel,
+  statementSuggestionsToModel,
+  suggestionsToModel,
+  importToModel,
+  reconciliationCreatedToModel,
+  undoToModel,
+  categoriesToModel,
+  costCentersToModel,
+} from '../../../../../../src/modules/financial/server/adapters/core-api/reconciliation.mappers.ts'
+import { isOk, isErr } from '../../../../../../src/shared/primitives/result.ts'
+import type { HttpError } from '../../../../../../src/shared/http/http-error.types.ts'
+
+describe('mapHttpError (conciliação)', () => {
+  const http = (status: number, code?: string): HttpError => ({
+    kind: 'http',
+    status,
+    body: code === undefined ? null : { error: { code, message: '', requestId: 'r' } },
+  })
+
+  it('mapeia slugs do contrato', () => {
+    assert.equal(mapHttpError(http(422, 'reconciliation-not-balanced')), 'reconciliation-not-balanced')
+    assert.equal(mapHttpError(http(422, 'title-not-paid')), 'title-not-paid')
+    assert.equal(mapHttpError(http(409, 'period-closed')), 'period-closed')
+    assert.equal(mapHttpError(http(409, 'transaction-already-reconciled')), 'transaction-already-reconciled')
+    assert.equal(mapHttpError(http(400, 'unsupported-format')), 'import-unsupported-format')
+    assert.equal(mapHttpError(http(422, 'period-has-pending-transactions')), 'period-has-pending')
+  })
+
+  it('cai no status quando não há slug', () => {
+    assert.equal(mapHttpError(http(404)), 'not-found')
+    assert.equal(mapHttpError(http(403)), 'forbidden')
+    assert.equal(mapHttpError(http(409)), 'conflict')
+    assert.equal(mapHttpError(http(422)), 'validation')
+    assert.equal(mapHttpError(http(500)), 'server')
+  })
+
+  it('rede/timeout → connectivity; parse → server', () => {
+    assert.equal(mapHttpError({ kind: 'network' }), 'connectivity')
+    assert.equal(mapHttpError({ kind: 'timeout' }), 'connectivity')
+    assert.equal(mapHttpError({ kind: 'parse' }), 'server')
+  })
+})
+
+describe('transactionsToModel', () => {
+  it('mapeia items; entryType passa cru; movement/status tolerantes', () => {
+    const raw = {
+      items: [
+        {
+          id: 't1',
+          fitid: 'F1',
+          date: '2026-06-01',
+          movement: 'Credit',
+          entryType: 'XFER',
+          payeeName: 'Fulano',
+          memo: 'pix',
+          valueCents: '15000',
+          balanceAfterCents: '20000',
+          reconciliationStatus: 'Pending',
+        },
+        {
+          id: 't2',
+          fitid: 'F2',
+          date: '2026-06-02',
+          movement: 'WAT', // drift → Debit
+          entryType: 'TARIFA',
+          payeeName: '',
+          memo: '',
+          valueCents: '500',
+          balanceAfterCents: '19500',
+          reconciliationStatus: 'ZZZ', // drift → Pending
+        },
+      ],
+    }
+    const r = transactionsToModel(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value.length, 2)
+      assert.equal(r.value[0]?.movement, 'Credit')
+      assert.equal(r.value[0]?.entryType, 'XFER')
+      assert.equal(r.value[1]?.movement, 'Debit')
+      assert.equal(r.value[1]?.reconciliationStatus, 'Pending')
+    }
+  })
+
+  it('normaliza date ISO datetime do core-api p/ date-only (YYYY-MM-DD)', () => {
+    const raw = {
+      items: [
+        {
+          id: 't1',
+          fitid: 'F1',
+          date: '2026-06-18T00:00:00.000Z',
+          movement: 'Debit',
+          entryType: 'PIX',
+          payeeName: 'X',
+          memo: '',
+          valueCents: '100',
+          balanceAfterCents: '0',
+          reconciliationStatus: 'Pending',
+        },
+      ],
+    }
+    const r = transactionsToModel(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) assert.equal(r.value[0]?.date, '2026-06-18')
+  })
+
+  it('shape inválido → err(server)', () => {
+    assert.ok(isErr(transactionsToModel({ nope: true })))
+  })
+})
+
+describe('paidPayablesToModel', () => {
+  it('mapeia mínimo; supplier/docNumber ausentes → null (#172)', () => {
+    const raw = {
+      items: [
+        { id: 'p1', documentId: 'd1', valueCents: '15000', dueDate: '2026-06-10', paymentMethod: 'PIX' },
+      ],
+    }
+    const r = paidPayablesToModel(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value[0]?.supplierName, null)
+      assert.equal(r.value[0]?.documentNumber, null)
+      assert.equal(r.value[0]?.dueDate, '2026-06-10')
+    }
+  })
+})
+
+describe('cedenteAccountsToModel / cedenteAccountToModel (#138)', () => {
+  const raw = {
+    id: 'b1a7c0de-0000-4000-8000-000000000168',
+    bankCode: '237',
+    bankName: 'Bradesco',
+    type: 'poupanca',
+    agency: '1462',
+    accountNumber: '0012345',
+    accountDigit: '7',
+    convenio: '',
+    document: '12345678000190',
+    status: 'closed',
+    nickname: 'Conta Movimento',
+    openingBalanceCents: '24539218',
+    openingBalanceDate: '2026-06-18',
+  }
+
+  it('mapeia branch/accountDv/alias e normaliza type/status; defaults #139', () => {
+    const r = cedenteAccountToModel(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value.branch, '1462')
+      assert.equal(r.value.accountDv, '7')
+      assert.equal(r.value.alias, 'Conta Movimento')
+      assert.equal(r.value.type, 'Poupanca')
+      assert.equal(r.value.status, 'Closed')
+      assert.equal(r.value.currentBalanceCents, '24539218') // saldo de abertura até #139
+      assert.equal(r.value.pendingCount, 0) // #139
+    }
+  })
+
+  it('lista é array; bankName/nickname nulos → fallback p/ bankCode; type ausente → Corrente', () => {
+    const r = cedenteAccountsToModel([
+      { ...raw, bankName: null, nickname: null, type: null, status: 'active' },
+    ])
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value[0]?.bankName, '237')
+      assert.equal(r.value[0]?.alias, '237')
+      assert.equal(r.value[0]?.type, 'Corrente')
+      assert.equal(r.value[0]?.status, 'Active')
+    }
+  })
+
+  it('shape inválido → err(server)', () => {
+    assert.ok(isErr(cedenteAccountsToModel({ nope: true })))
+  })
+
+  it('#206: type cartao/outro mapeados + typeLabel preservado; ausente → null', () => {
+    const r = cedenteAccountToModel({ ...raw, type: 'cartao', typeLabel: 'Cartão Visa Corp' })
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value.type, 'Cartao')
+      assert.equal(r.value.typeLabel, 'Cartão Visa Corp')
+    }
+    const r2 = cedenteAccountToModel({ ...raw, type: 'outro' }) // typeLabel ausente
+    assert.ok(isOk(r2))
+    if (isOk(r2)) {
+      assert.equal(r2.value.type, 'Outro')
+      assert.equal(r2.value.typeLabel, null)
+    }
+  })
+})
+
+describe('accountStatementSummary (#139)', () => {
+  it('extrai saldo corrente (closing), pendências (counters.pending) e última data (último dia)', () => {
+    const raw = {
+      openingBalanceCents: '100000',
+      closingBalanceCents: '24539218',
+      counters: { all: 12, in: 5, out: 7, reconciled: 9, pending: 3 },
+      days: [{ date: '2026-06-01' }, { date: '2026-06-18' }],
+    }
+    const r = accountStatementSummary(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value.closingBalanceCents, '24539218')
+      assert.equal(r.value.pendingCount, 3)
+      assert.equal(r.value.lastDate, '2026-06-18')
+    }
+  })
+
+  it('sem dias → lastDate null; date ISO datetime → date-only', () => {
+    const semDias = accountStatementSummary({
+      openingBalanceCents: '0',
+      closingBalanceCents: '0',
+      counters: { all: 0, in: 0, out: 0, reconciled: 0, pending: 0 },
+      days: [],
+    })
+    assert.ok(isOk(semDias))
+    if (isOk(semDias)) assert.equal(semDias.value.lastDate, null)
+
+    const iso = accountStatementSummary({
+      closingBalanceCents: '500',
+      counters: { all: 1, in: 1, out: 0, reconciled: 0, pending: 1 },
+      days: [{ date: '2026-06-18T00:00:00.000Z' }],
+    })
+    assert.ok(isOk(iso))
+    if (isOk(iso)) assert.equal(iso.value.lastDate, '2026-06-18')
+  })
+
+  it('shape inválido → err(server)', () => {
+    assert.ok(isErr(accountStatementSummary({ nope: true })))
+  })
+})
+
+describe('accountStatementPeriodToModel (#205)', () => {
+  it('extrai abertura/fechamento e SOMA entradas/saídas dos dias (BigInt, centavos)', () => {
+    const r = accountStatementPeriodToModel({
+      openingBalanceCents: '500000',
+      closingBalanceCents: '512000',
+      counters: { all: 3, in: 2, out: 1, reconciled: 0, pending: 3 },
+      days: [
+        { date: '2026-05-02', inCents: '10000', outCents: '3000' },
+        { date: '2026-05-09', inCents: '8000', outCents: '3000' },
+      ],
+    })
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value.openingBalanceCents, '500000')
+      assert.equal(r.value.closingBalanceCents, '512000')
+      assert.equal(r.value.totalInCents, '18000')
+      assert.equal(r.value.totalOutCents, '6000')
+    }
+  })
+  it('sem dias → totais zerados; abertura ausente → 0 (catch)', () => {
+    const r = accountStatementPeriodToModel({
+      closingBalanceCents: '0',
+      counters: { pending: 0 },
+      days: [],
+    })
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value.openingBalanceCents, '0')
+      assert.equal(r.value.totalInCents, '0')
+      assert.equal(r.value.totalOutCents, '0')
+    }
+  })
+  it('shape inválido → err(server)', () => {
+    assert.ok(isErr(accountStatementPeriodToModel({ nope: true })))
+  })
+})
+
+describe('transactionReconciliationToModel (#175)', () => {
+  it('mapeia id→reconciliationId, type/status tolerantes, itens e differenceCents', () => {
+    const raw = {
+      id: 'rec-1',
+      transactionId: 'tx-1',
+      type: 'Multiple',
+      status: 'Active',
+      reconciledBy: 'user-42',
+      reconciledAt: '2026-06-18T13:45:00.000Z',
+      differenceCents: '-250',
+      items: [
+        { payableId: 'p1', reconciledValueCents: '10000' },
+        { payableId: 'p2', reconciledValueCents: '5000' },
+      ],
+    }
+    const r = transactionReconciliationToModel(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value.reconciliationId, 'rec-1')
+      assert.equal(r.value.type, 'Multiple')
+      assert.equal(r.value.status, 'Active')
+      assert.equal(r.value.reconciledBy, 'user-42')
+      assert.equal(r.value.differenceCents, '-250')
+      assert.equal(r.value.items.length, 2)
+      assert.equal(r.value.items[0]?.payableId, 'p1')
+    }
+  })
+
+  it('type drift → Individual; differenceCents ausente → null; ManualEntry preservado', () => {
+    const drift = transactionReconciliationToModel({
+      id: 'r',
+      transactionId: 't',
+      type: 'ZZZ',
+      status: 'whatever',
+      reconciledBy: 'u',
+      reconciledAt: '2026-06-18T00:00:00.000Z',
+      items: [],
+    })
+    assert.ok(isOk(drift))
+    if (isOk(drift)) {
+      assert.equal(drift.value.type, 'Individual')
+      assert.equal(drift.value.status, 'Active') // só 'Undone' vira Undone
+      assert.equal(drift.value.differenceCents, null)
+    }
+    const manual = transactionReconciliationToModel({
+      id: 'r',
+      transactionId: 't',
+      type: 'ManualEntry',
+      status: 'Active',
+      reconciledBy: 'u',
+      reconciledAt: '2026-06-18T00:00:00.000Z',
+      items: [],
+    })
+    assert.ok(isOk(manual))
+    if (isOk(manual)) assert.equal(manual.value.type, 'ManualEntry')
+  })
+
+  it('shape inválido → err(server)', () => {
+    assert.ok(isErr(transactionReconciliationToModel({ nope: true })))
+  })
+})
+
+describe('reconciliationPeriodsToModel (#173)', () => {
+  it('array → períodos; status tolerante; datas date-only; closedAt/By nulos preservados', () => {
+    const r = reconciliationPeriodsToModel([
+      {
+        id: 'per-1',
+        debitAccountRef: 'acc-1',
+        periodStart: '2026-05-18T00:00:00.000Z',
+        periodEnd: '2026-06-17T00:00:00.000Z',
+        status: 'Closed',
+        closedAt: '2026-06-18T10:00:00.000Z',
+        closedBy: 'user-1',
+      },
+      {
+        id: 'per-2',
+        debitAccountRef: 'acc-1',
+        periodStart: '2026-06-18',
+        periodEnd: '2026-07-17',
+        status: 'Open',
+        closedAt: null,
+        closedBy: null,
+      },
+    ])
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value.length, 2)
+      assert.equal(r.value[0]?.periodStart, '2026-05-18')
+      assert.equal(r.value[0]?.periodEnd, '2026-06-17')
+      assert.equal(r.value[0]?.status, 'Closed')
+      assert.equal(r.value[1]?.status, 'Open')
+      assert.equal(r.value[1]?.closedAt, null)
+    }
+  })
+
+  it('status drift → Open; shape inválido → err(server)', () => {
+    const drift = reconciliationPeriodsToModel([
+      {
+        id: 'p',
+        debitAccountRef: 'a',
+        periodStart: '2026-06-01',
+        periodEnd: '2026-06-30',
+        status: 'ZZZ',
+        closedAt: null,
+        closedBy: null,
+      },
+    ])
+    assert.ok(isOk(drift))
+    if (isOk(drift)) assert.equal(drift.value[0]?.status, 'Open')
+    assert.ok(isErr(reconciliationPeriodsToModel({ nope: true })))
+  })
+})
+
+describe('suggestionsToModel', () => {
+  it('lê a raiz { suggestions } (não items); band tolerante', () => {
+    const raw = {
+      suggestions: [
+        {
+          payableId: 'p1',
+          score: 88,
+          band: 'alta',
+          criteria: {
+            payeeMatch: true,
+            exactValue: true,
+            dateD0: true,
+            memoRef: false,
+            supplierOpenCount: 2,
+          },
+        },
+        {
+          payableId: 'p2',
+          score: 55,
+          band: 'xx', // drift → media
+          criteria: {
+            payeeMatch: false,
+            exactValue: false,
+            dateD0: false,
+            memoRef: false,
+            supplierOpenCount: 0,
+          },
+        },
+      ],
+    }
+    const r = suggestionsToModel(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value[0]?.band, 'alta')
+      assert.equal(r.value[1]?.band, 'media')
+    }
+  })
+
+  it('usar a chave items (errada) → err(server)', () => {
+    assert.ok(isErr(suggestionsToModel({ items: [] })))
+  })
+
+  it('#140: mapeia criteriaBreakdown (peso + resultado + detail)', () => {
+    const raw = {
+      suggestions: [
+        {
+          payableId: 'p1',
+          score: 75,
+          band: 'alta',
+          criteria: {
+            payeeMatch: true,
+            exactValue: true,
+            dateD0: false,
+            memoRef: false,
+            supplierOpenCount: 2,
+          },
+          criteriaBreakdown: [
+            { criterion: 'exactValue', weight: 40, result: 'ok', detail: '' },
+            { criterion: 'supplierOpen', weight: 5, result: 'parcial', detail: '2' },
+          ],
+        },
+      ],
+    }
+    const r = suggestionsToModel(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      const bd = r.value[0]?.criteriaBreakdown ?? []
+      assert.equal(bd.length, 2)
+      assert.deepEqual(bd[0], { criterion: 'exactValue', weight: 40, result: 'ok', detail: '' })
+      assert.deepEqual(bd[1], { criterion: 'supplierOpen', weight: 5, result: 'parcial', detail: '2' })
+    }
+  })
+
+  it('#140: breakdown ausente (backend antigo) → []', () => {
+    const raw = {
+      suggestions: [
+        {
+          payableId: 'p1',
+          score: 50,
+          band: 'media',
+          criteria: {
+            payeeMatch: false,
+            exactValue: false,
+            dateD0: false,
+            memoRef: false,
+            supplierOpenCount: 0,
+          },
+        },
+      ],
+    }
+    const r = suggestionsToModel(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) assert.deepEqual(r.value[0]?.criteriaBreakdown, [])
+  })
+
+  it('#174: statement suggestions — lê { items }; topBand/topScore nulos preservados; drift → null', () => {
+    const raw = {
+      items: [
+        { transactionId: 't1', topBand: 'alta', topScore: 92 },
+        { transactionId: 't2', topBand: null, topScore: null }, // não-Pending/sem candidato
+        { transactionId: 't3', topBand: 'zzz', topScore: 30 }, // banda drift → null
+      ],
+    }
+    const r = statementSuggestionsToModel(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.deepEqual(r.value[0], { transactionId: 't1', topBand: 'alta', topScore: 92 })
+      assert.deepEqual(r.value[1], { transactionId: 't2', topBand: null, topScore: null })
+      assert.deepEqual(r.value[2], { transactionId: 't3', topBand: null, topScore: 30 })
+    }
+  })
+
+  it('#174: usar a chave suggestions (errada) → err(server)', () => {
+    assert.ok(isErr(statementSuggestionsToModel({ suggestions: [] })))
+  })
+
+  it('#140: critério desconhecido é descartado; result drift → falha', () => {
+    const raw = {
+      suggestions: [
+        {
+          payableId: 'p1',
+          score: 20,
+          band: 'media',
+          criteria: {
+            payeeMatch: false,
+            exactValue: false,
+            dateD0: false,
+            memoRef: false,
+            supplierOpenCount: 0,
+          },
+          criteriaBreakdown: [
+            { criterion: 'mysteryCriterion', weight: 99, result: 'ok', detail: '' },
+            { criterion: 'dateD0', weight: 20, result: 'xx', detail: '' },
+          ],
+        },
+      ],
+    }
+    const r = suggestionsToModel(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      const bd = r.value[0]?.criteriaBreakdown ?? []
+      assert.equal(bd.length, 1)
+      assert.deepEqual(bd[0], { criterion: 'dateD0', weight: 20, result: 'falha', detail: '' })
+    }
+  })
+})
+
+describe('importToModel / reconciliationCreatedToModel / undoToModel', () => {
+  it('import mapeia resumo + período', () => {
+    const r = importToModel({
+      statementId: 's1',
+      imported: 10,
+      duplicatesDiscarded: 2,
+      period: { start: '2026-06-01', end: '2026-06-30' },
+    })
+    assert.ok(isOk(r))
+    if (isOk(r)) assert.equal(r.value.duplicatesDiscarded, 2)
+  })
+
+  it('reconcile mapeia type tolerante', () => {
+    const r = reconciliationCreatedToModel({ reconciliationId: 'r1', type: 'Partial', itemCount: 2 })
+    assert.ok(isOk(r))
+    if (isOk(r)) assert.equal(r.value.type, 'Partial')
+    const drift = reconciliationCreatedToModel({ reconciliationId: 'r2', type: 'ZZZ', itemCount: 1 })
+    assert.ok(isOk(drift))
+    if (isOk(drift)) assert.equal(drift.value.type, 'Individual')
+  })
+
+  it('undo sempre status Undone', () => {
+    const r = undoToModel({ reconciliationId: 'r1', status: 'whatever' })
+    assert.ok(isOk(r))
+    if (isOk(r)) assert.equal(r.value.status, 'Undone')
+  })
+})
+
+describe('referências da categorização (020 · #200) — array nu', () => {
+  it('categoriesToModel: parseia array, normaliza group (fallback despesa), parentId nullable', () => {
+    const r = categoriesToModel([
+      { id: 'c1', name: 'Serviços', group: 'despesa', parentId: null },
+      { id: 'c2', name: 'ISS', group: 'ajuste', parentId: 'c1' },
+      { id: 'c3', name: 'Estranho', group: 'xyz' }, // group desconhecido → despesa; parentId ausente → null
+    ])
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value.length, 3)
+      assert.deepEqual(r.value[0], { id: 'c1', name: 'Serviços', group: 'despesa', parentId: null })
+      assert.equal(r.value[1]?.group, 'ajuste')
+      assert.equal(r.value[2]?.group, 'despesa')
+      assert.equal(r.value[2]?.parentId, null)
+    }
+  })
+
+  it('costCentersToModel: parseia array {id,code,name}', () => {
+    const r = costCentersToModel([{ id: 'cc1', code: '001', name: 'Administrativo' }])
+    assert.ok(isOk(r))
+    if (isOk(r)) assert.deepEqual(r.value[0], { id: 'cc1', code: '001', name: 'Administrativo' })
+  })
+
+  it('shape inválido → err(server)', () => {
+    assert.ok(isErr(categoriesToModel([{ id: 'x' }])))
+    assert.ok(isErr(costCentersToModel('nope')))
+  })
+})
