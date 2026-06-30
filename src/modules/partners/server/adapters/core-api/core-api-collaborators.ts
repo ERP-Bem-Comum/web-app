@@ -115,6 +115,19 @@ const detailToModel = (raw: unknown): Result<CollaboratorDetail, PartnersError> 
     education: u(c.education),
     biography: u(c.biography),
     experienceInThePublicSector: c.experienceInThePublicSector ?? undefined,
+    // Perfil completo (US2) — null/'' legado → undefined; arrays/numbers/bools → undefined quando ausentes.
+    sex: u(c.sex),
+    maritalStatus: u(c.maritalStatus),
+    hasChildren: c.hasChildren ?? undefined,
+    childrenCount: c.childrenCount ?? undefined,
+    childrenAges: c.childrenAges ?? undefined,
+    isPwd: c.isPwd ?? undefined,
+    pwdDescription: u(c.pwdDescription),
+    isOnLeave: c.isOnLeave ?? undefined,
+    leaveDuration: u(c.leaveDuration),
+    leaveRenewable: c.leaveRenewable ?? undefined,
+    leaveRenewalDuration: u(c.leaveRenewalDuration),
+    publicSectorExperienceDuration: u(c.publicSectorExperienceDuration),
     territory: c.territory, // #42
     bankAccount: c.bankAccount, // #40 — create-only; read-only no detalhe
     pixKey: c.pixKey, // #40 — create-only; read-only no detalhe

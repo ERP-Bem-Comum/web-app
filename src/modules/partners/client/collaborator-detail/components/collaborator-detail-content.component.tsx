@@ -18,26 +18,14 @@ import {
   RACES,
   EDUCATION_LEVELS,
   FOOD_CATEGORIES,
+  MARITAL_STATUSES,
   PIX_KEY_TYPES,
   type CollaboratorDetailFormController,
   type CollaboratorDetailFormState,
 } from './collaborator-detail-form.controller.ts'
-import {
-  grid,
-  gridFull,
-  gatedNote,
-  section,
-  sectionTitle,
-  select,
-  textarea,
-} from './collaborator-detail-content.css.ts'
+import { grid, gridFull, section, sectionTitle, select, textarea } from './collaborator-detail-content.css.ts'
 
 const t = createTranslator(ptBR)
-
-// Campos pedidos pelo cliente ainda SEM suporte no backend (ticket PAR-COLLABORATOR-PROFILE-FIELDS):
-// renderizados VISÍVEIS porém DESABILITADOS ("gated"), como a seção bancária. Ao liberar o backend,
-// habilitar + ligar no controller/mapeador. NÃO são enviados (buildComplete não os inclui).
-const MARITAL = ['single', 'married', 'divorced', 'widowed', 'stable_union'] as const
 
 export type CollaboratorDetailContentProps = Readonly<{
   controller: CollaboratorDetailFormController
@@ -52,19 +40,19 @@ export function CollaboratorDetailContent({
   showComplete,
   preTitle,
 }: CollaboratorDetailContentProps): ReactNode {
-  const hint = t('partners.collaborators.detail.gatedHint')
-
   const txt = (
     key: keyof CollaboratorDetailFormState,
     label: string,
     type?: 'text' | 'email' | 'date',
     mask?: 'cpf' | 'cnpj' | 'phone',
+    placeholder?: string,
   ): ReactNode => (
     <Field htmlFor={`cd-${key}`} label={label}>
       <Input
         id={`cd-${key}`}
         type={type}
         mask={mask}
+        placeholder={placeholder}
         value={c.state[key]}
         disabled={!editing}
         onChange={(v) => {
@@ -89,37 +77,6 @@ export function CollaboratorDetailContent({
           c.setField(key, e.target.value)
         }}
       >
-        <option value="">{t('partners.collaborators.form.select')}</option>
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-    </Field>
-  )
-
-  // Campos GATED (aguardando backend) — desabilitados, sem estado/envio.
-  const gatedTxt = (id: string, label: string, placeholder?: string): ReactNode => (
-    <Field htmlFor={`cd-${id}`} label={label}>
-      <Input
-        id={`cd-${id}`}
-        value=""
-        placeholder={placeholder}
-        disabled
-        onChange={() => {
-          /* gated */
-        }}
-      />
-    </Field>
-  )
-  const gatedSel = (
-    id: string,
-    label: string,
-    options: readonly Readonly<{ value: string; label: string }>[],
-  ): ReactNode => (
-    <Field htmlFor={`cd-${id}`} label={label}>
-      <select id={`cd-${id}`} className={select} disabled defaultValue="" title={hint} aria-label={label}>
         <option value="">{t('partners.collaborators.form.select')}</option>
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -156,7 +113,7 @@ export function CollaboratorDetailContent({
     { value: 'F', label: t('partners.collaborators.detail.sex.F') },
     { value: 'M', label: t('partners.collaborators.detail.sex.M') },
   ]
-  const maritalOptions = MARITAL.map((v) => ({
+  const maritalOptions = MARITAL_STATUSES.map((v) => ({
     value: v,
     label: t(`partners.collaborators.detail.marital.${v}`),
   }))
@@ -298,13 +255,9 @@ export function CollaboratorDetailContent({
               {t('partners.collaborators.detail.section.personal')}
             </h2>
             <div className={grid}>
-              {gatedSel('sex', t('partners.collaborators.detail.field.sex'), sexOptions)}
+              {sel('sex', t('partners.collaborators.detail.field.sex'), sexOptions)}
               {sel('race', t('partners.collaborators.detail.field.race'), raceOptions)}
-              {gatedSel(
-                'maritalStatus',
-                t('partners.collaborators.detail.field.maritalStatus'),
-                maritalOptions,
-              )}
+              {sel('maritalStatus', t('partners.collaborators.detail.field.maritalStatus'), maritalOptions)}
               {txt('rg', t('partners.collaborators.detail.field.rg'))}
               {txt('completeAddress', t('partners.collaborators.detail.field.completeAddress'))}
               {txt('dateOfBirth', t('partners.collaborators.detail.field.dateOfBirth'), 'date')}
@@ -315,23 +268,27 @@ export function CollaboratorDetailContent({
                 t('partners.collaborators.detail.field.experience'),
                 simNao,
               )}
-              {gatedTxt('exp-duration', t('partners.collaborators.detail.field.experienceDuration'))}
+              {txt(
+                'publicSectorExperienceDuration',
+                t('partners.collaborators.detail.field.experienceDuration'),
+              )}
             </div>
           </section>
 
-          {/* Bloco 2 — Informações Familiares (GATED). */}
+          {/* Bloco 2 — Informações Familiares. */}
           <section className={section}>
             <h2 className={sectionTitle}>
               <HeartHandshakeIcon size={18} />
               {t('partners.collaborators.detail.section.family')}
             </h2>
-            <p className={gatedNote}>{t('partners.collaborators.detail.gatedHint')}</p>
             <div className={grid}>
-              {gatedSel('has-children', t('partners.collaborators.detail.field.hasChildren'), simNao)}
-              {gatedTxt('children-count', t('partners.collaborators.detail.field.childrenCount'))}
-              {gatedTxt(
-                'children-ages',
+              {sel('hasChildren', t('partners.collaborators.detail.field.hasChildren'), simNao)}
+              {txt('childrenCount', t('partners.collaborators.detail.field.childrenCount'))}
+              {txt(
+                'childrenAges',
                 t('partners.collaborators.detail.field.childrenAges'),
+                undefined,
+                undefined,
                 t('partners.collaborators.detail.field.childrenAgesPlaceholder'),
               )}
             </div>
@@ -350,26 +307,22 @@ export function CollaboratorDetailContent({
                 'foodCategoryDescription',
                 t('partners.collaborators.detail.field.foodCategoryDescription'),
               )}
-              {gatedSel('is-pwd', t('partners.collaborators.detail.field.isPwd'), simNao)}
-              {gatedTxt('pwd-description', t('partners.collaborators.detail.field.pwdDescription'))}
+              {sel('isPwd', t('partners.collaborators.detail.field.isPwd'), simNao)}
+              {txt('pwdDescription', t('partners.collaborators.detail.field.pwdDescription'))}
             </div>
           </section>
 
-          {/* Bloco 4 — Informações Contratuais (GATED). */}
+          {/* Bloco 4 — Informações Contratuais. */}
           <section className={section}>
             <h2 className={sectionTitle}>
               <FileTextIcon size={18} />
               {t('partners.collaborators.detail.section.contractual')}
             </h2>
-            <p className={gatedNote}>{t('partners.collaborators.detail.gatedHint')}</p>
             <div className={grid}>
-              {gatedSel('is-on-leave', t('partners.collaborators.detail.field.isOnLeave'), simNao)}
-              {gatedTxt('leave-duration', t('partners.collaborators.detail.field.leaveDuration'))}
-              {gatedSel('leave-renewable', t('partners.collaborators.detail.field.leaveRenewable'), simNao)}
-              {gatedTxt(
-                'leave-renewal-duration',
-                t('partners.collaborators.detail.field.leaveRenewalDuration'),
-              )}
+              {sel('isOnLeave', t('partners.collaborators.detail.field.isOnLeave'), simNao)}
+              {txt('leaveDuration', t('partners.collaborators.detail.field.leaveDuration'))}
+              {sel('leaveRenewable', t('partners.collaborators.detail.field.leaveRenewable'), simNao)}
+              {txt('leaveRenewalDuration', t('partners.collaborators.detail.field.leaveRenewalDuration'))}
             </div>
           </section>
 
