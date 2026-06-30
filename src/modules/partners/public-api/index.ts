@@ -62,6 +62,10 @@ export { reactivateActFn } from '#modules/partners/server/adapters/server-fns/ac
 
 export type { ActListItem, ActDetail, ActListResponse } from '#modules/partners/server/domain/act/act.io.ts'
 
+// Tipo de chave PIX — compartilhado pelos 4 tipos de favorecido (mesmos literais 'cpf'|'cnpj'|...|'random-key').
+// Exposto p/ consumidores cross-módulo (ex.: resolução dos dados bancários do favorecido no Financeiro).
+export type { PixKeyType } from '#modules/partners/server/domain/act/act.types.ts'
+
 // ── Agregador dos 4 tipos (GET /api/v1/partners) — lista unificada com document (CPF/CNPJ) resolvido ──
 export { listAllPartnersFn } from '#modules/partners/server/adapters/server-fns/list-all-partners.query.fn.ts'
 export type {

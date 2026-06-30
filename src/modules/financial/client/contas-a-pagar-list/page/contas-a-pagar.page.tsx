@@ -309,6 +309,7 @@ export function ContasAPagarPage(): ReactNode {
       {detail.view !== null ? (
         <DocumentDetailDrawer
           view={detail.view}
+          payeeBank={detail.payeeBank}
           onClose={() => {
             setSelectedId(null)
           }}

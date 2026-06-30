@@ -441,6 +441,7 @@ export type DocumentDetailView = Readonly<{
   gross: string
   net: string
   paymentMethod: PaymentMethod | null
+  paymentDetail: string | null // #273: complemento da forma (linha digitável / id de cartão / ref de câmbio); null quando não há
   description: string
   retentions: readonly RetentionLine[]
   // Total das retenções (soma dos filhos), formatado em BRL. `null` quando não há retenção.
@@ -448,6 +449,26 @@ export type DocumentDetailView = Readonly<{
   retentionsTotal: string | null
   payables: readonly DetailPayableView[]
 }>
+
+// Rótulo i18n do complemento da forma (espelha o create). null = forma sem complemento tipado.
+export const paymentComplementLabelTag = (method: PaymentMethod | null): string | null => {
+  switch (method) {
+    case 'Boleto':
+      return 'financial.create.payMethod.boletoLabel'
+    case 'CartaoCorporativo':
+      return 'financial.create.payMethod.cardLabel'
+    case 'Cambio':
+      return 'financial.create.payMethod.currencyLabel'
+    case 'Outro':
+      return 'financial.create.payMethod.freeLabel'
+    case 'PIX':
+    case 'TED':
+    case 'TransferenciaBancaria':
+    case 'GuiaRecolhimento':
+    case null:
+      return null
+  }
+}
 
 /** Soma (centavos) dos títulos-filho de retenção → BRL formatado; `null` quando não há retenção. PURA. */
 const sumRetentionsBRL = (payables: DocumentDetail['payables']): string | null => {
@@ -490,6 +511,7 @@ export const mapDocumentDetail = (
   gross: d.grossValueCents !== null && d.grossValueCents !== '' ? centsToBRL(d.grossValueCents) : DASH,
   net: d.netValueCents !== null && d.netValueCents !== '' ? centsToBRL(d.netValueCents) : DASH,
   paymentMethod: d.paymentMethod,
+  paymentDetail: d.paymentDetail, // #273: complemento da forma (espelha o create)
   description: d.description ?? '',
   retentions: d.payables.flatMap((p) =>
     p.kind === 'Child' && p.retentionType !== null

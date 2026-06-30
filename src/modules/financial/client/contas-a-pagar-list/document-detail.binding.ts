@@ -10,6 +10,7 @@ import { financialRepository } from '#modules/financial/client/data/repository/f
 import type { DocumentDetail } from '#modules/financial/client/data/model/document.model.ts'
 
 import { partnersMapQueryOptions } from './partners-map.binding.ts'
+import { usePayeeBank, type PayeeBankView } from './payee-bank.binding.ts'
 import {
   mapDocumentDetail,
   type DocumentDetailView,
@@ -19,6 +20,7 @@ import {
 
 export type DocumentDetailBinding = Readonly<{
   view: DocumentDetailView | null
+  payeeBank: PayeeBankView | null
   loading: boolean
 }>
 
@@ -38,5 +40,9 @@ export function useDocumentDetail(id: string | null): DocumentDetailBinding {
   const resolveDoc: ResolveSupplierDoc = (ref) =>
     ref === null ? null : (partners.data?.get(ref)?.document ?? null)
   const view = detail.data != null ? mapDocumentDetail(detail.data, resolve, resolveDoc) : null
-  return { view, loading: id !== null && detail.isLoading }
+  // Banco/PIX do favorecido resolvidos CLIENT-SIDE (sem core-api#95) — kind sai do partners-map.
+  const supplierRef = detail.data?.supplierRef ?? null
+  const kind = supplierRef !== null ? (partners.data?.get(supplierRef)?.kind ?? null) : null
+  const payeeBank = usePayeeBank(supplierRef, kind)
+  return { view, payeeBank, loading: id !== null && detail.isLoading }
 }
