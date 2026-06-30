@@ -609,6 +609,8 @@ export const buildAdjustInput = (
     grossValueCents: String(grossCents(fields)),
     dueDate: fields.dueDate,
     description: trimToUndefined(fields.description) ?? null,
+    // #284: complemento da forma editável no ajuste — vazio vira null (limpa no backend).
+    paymentDetail: trimToUndefined(fields.paymentComplement) ?? null,
   }
 }
 

@@ -84,6 +84,7 @@ export type AdjustDocumentInput = Readonly<{
   retentions?: readonly RetentionInput[]
   dueDate?: string
   description?: string | null
+  paymentDetail?: string | null // #273/#284: complemento da forma — editável no ajuste; null = limpar
 }>
 
 export type ApproveInput = Readonly<{ id: string; version: number }>
