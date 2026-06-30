@@ -23,6 +23,7 @@ export const CoreApiDocumentSchema = z.object({
   documentNumber: z.string().trim().nullable(),
   supplierRef: z.string().trim().nullable(),
   paymentMethod: z.string().trim().nullable(),
+  paymentDetail: z.string().trim().nullable().catch(null), // #273 — drift-tolerante (backend antigo → null)
   grossValueCents: z.string().trim().nullable(),
   netValueCents: z.string().trim().nullable(),
   issueDate: z.string().trim().nullable().catch(null), // #163 — drift-tolerante (backend antigo → null)

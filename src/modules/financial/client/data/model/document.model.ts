@@ -57,6 +57,7 @@ export type CreateDocumentInput = Readonly<{
   programRef?: string
   contaDebitoRef?: string // #197: conta-débito (conta-cedente da conciliação) — a baixa vai p/ ela
   accessKey?: string // #115: chave de acesso (44 dígitos) — obrigatória p/ DANFE no lançamento
+  paymentDetail?: string // #273: complemento da forma de pagamento (linha digitável, id de cartão, ref de câmbio)
   paymentMethod: PaymentMethod
   grossValueCents: string
   sourceDiscountsCents?: string
@@ -124,6 +125,7 @@ export type DocumentDetail = Readonly<{
   documentNumber: string | null
   supplierRef: string | null
   paymentMethod: PaymentMethod | null
+  paymentDetail: string | null // #273: complemento da forma de pagamento; null quando não informado
   grossValueCents: string | null
   netValueCents: string | null
   issueDate: string | null // YYYY-MM-DD (#163); null quando não informado
