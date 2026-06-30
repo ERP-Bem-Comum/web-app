@@ -36,6 +36,9 @@ import {
   canSaveEdit,
   buildAdjustInput,
   ocrToFormPatch,
+  maskCompetencia,
+  competenciaToIso,
+  competenciaFromIso,
   EMPTY_REFORMA_TRIBUTARIA,
   type DocumentFormFields,
   type PartnerOption,
@@ -57,6 +60,7 @@ const base: DocumentFormFields = {
   paymentMethod: 'PIX',
   grossValue: 'R$ 10.000,00',
   issueDate: '',
+  competencia: '',
   dueDate: '2026-06-10',
   description: 'Consultoria',
   discounts: '',
@@ -151,6 +155,50 @@ describe('paymentDetail (complemento da forma de pagamento) — #273', () => {
     const complement = 'cartao-corp-0042'
     assert.equal(buildDraftInput({ ...base, paymentComplement: complement })?.paymentDetail, complement)
     assert.equal(buildDraftInput({ ...base, paymentComplement: '' })?.paymentDetail, undefined)
+  })
+})
+
+describe('competência (#197) — helpers MM/AAAA ↔ YYYY-MM', () => {
+  it('maskCompetencia: dígitos → MM/AAAA (máx 6); idempotente', () => {
+    assert.equal(maskCompetencia(''), '')
+    assert.equal(maskCompetencia('1'), '1')
+    assert.equal(maskCompetencia('12'), '12')
+    assert.equal(maskCompetencia('122'), '12/2')
+    assert.equal(maskCompetencia('122026'), '12/2026')
+    // ignora não-dígitos e excesso
+    assert.equal(maskCompetencia('06/2026'), '06/2026')
+    assert.equal(maskCompetencia('1220261'), '12/2026')
+    // idempotência: aplicar de novo no resultado não muda
+    assert.equal(maskCompetencia(maskCompetencia('122026')), '12/2026')
+    assert.equal(maskCompetencia(maskCompetencia('06/2026')), '06/2026')
+  })
+  it('competenciaToIso: MM/AAAA → YYYY-MM; null se incompleto/inválido', () => {
+    assert.equal(competenciaToIso('06/2026'), '2026-06')
+    assert.equal(competenciaToIso('12/2026'), '2026-12')
+    // incompleto
+    assert.equal(competenciaToIso(''), null)
+    assert.equal(competenciaToIso('06/202'), null)
+    assert.equal(competenciaToIso('6/2026'), null)
+    // mês inválido
+    assert.equal(competenciaToIso('00/2026'), null)
+    assert.equal(competenciaToIso('13/2026'), null)
+  })
+  it('competenciaFromIso: YYYY-MM → MM/AAAA', () => {
+    assert.equal(competenciaFromIso('2026-06'), '06/2026')
+    assert.equal(competenciaFromIso('2026-12'), '12/2026')
+  })
+})
+
+describe('buildCreateInput / buildDraftInput — competência (#197)', () => {
+  it('buildCreateInput: MM/AAAA → YYYY-MM; vazio/incompleto → undefined', () => {
+    assert.equal(buildCreateInput({ ...base, competencia: '06/2026' })?.competencia, '2026-06')
+    assert.equal(buildCreateInput({ ...base, competencia: '' })?.competencia, undefined)
+    assert.equal(buildCreateInput({ ...base, competencia: '06/202' })?.competencia, undefined)
+    assert.equal(buildCreateInput({ ...base, competencia: '13/2026' })?.competencia, undefined)
+  })
+  it('buildDraftInput: mesmo comportamento no rascunho', () => {
+    assert.equal(buildDraftInput({ ...base, competencia: '06/2026' })?.competencia, '2026-06')
+    assert.equal(buildDraftInput({ ...base, competencia: '' })?.competencia, undefined)
   })
 })
 
@@ -465,6 +513,7 @@ const detail: DocumentDetail = {
   supplierRef: 's-1',
   paymentMethod: 'PIX',
   paymentDetail: '34191.79001 01043.510047 91020.150008 5 95860000010000',
+  competencia: '2026-06',
   grossValueCents: '1000000',
   netValueCents: '793500',
   issueDate: '2026-06-01',
@@ -528,6 +577,10 @@ describe('hydrateFieldsFromDetail', () => {
       '34191.79001 01043.510047 91020.150008 5 95860000010000',
     )
     assert.equal(hydrateFieldsFromDetail({ ...detail, paymentDetail: null }).paymentComplement, '')
+  })
+  it('#197: hidrata a competência (YYYY-MM → MM/AAAA); null → ""', () => {
+    assert.equal(hydrateFieldsFromDetail(detail).competencia, '06/2026')
+    assert.equal(hydrateFieldsFromDetail({ ...detail, competencia: null }).competencia, '')
   })
 })
 

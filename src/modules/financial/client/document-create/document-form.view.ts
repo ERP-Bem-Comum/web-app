@@ -114,6 +114,7 @@ export type DocumentFormFields = Readonly<{
   paymentMethod: PaymentMethod | ''
   grossValue: string
   issueDate: string // data de emissão (#163) — opcional; ISO YYYY-MM-DD vindo do <input type=date>
+  competencia: string // competência (#197) — opcional; mascarada MM/AAAA (backend recebe YYYY-MM)
   dueDate: string
   description: string
   // Composição: Descontos (discountsCents) e Juros/Multa (interestCents). Editáveis (OCR ou manual).
@@ -367,6 +368,8 @@ export const buildCreateInput = (fields: DocumentFormFields): CreateDocumentInpu
         : undefined,
     // #273: complemento da forma de pagamento (linha digitável/cartão/câmbio/livre) — persiste se preenchido.
     paymentDetail: trimToUndefined(fields.paymentComplement),
+    // #197: competência (MM/AAAA → YYYY-MM); undefined se incompleta/inválida.
+    competencia: competenciaToIso(fields.competencia) ?? undefined,
     grossValueCents: String(gross),
     discountsCents: discountsCents(fields) > 0 ? String(discountsCents(fields)) : undefined,
     // "Juros / Multa" (campo único) → interestCents; ambos somam ao líquido, então o total fica correto.
@@ -418,6 +421,8 @@ export const buildDraftInput = (fields: DocumentFormFields): CreateDocumentInput
         : undefined,
     // #273: complemento da forma de pagamento — persiste no rascunho se já preenchido.
     paymentDetail: trimToUndefined(fields.paymentComplement),
+    // #197: competência (MM/AAAA → YYYY-MM); undefined se incompleta/inválida.
+    competencia: competenciaToIso(fields.competencia) ?? undefined,
     grossValueCents: String(gross),
     discountsCents: discountsCents(fields) > 0 ? String(discountsCents(fields)) : undefined,
     interestCents: jurosMultaCents(fields) > 0 ? String(jurosMultaCents(fields)) : undefined,
@@ -449,6 +454,7 @@ export type FieldLocks = Readonly<{
   paymentMethod: boolean
   grossValue: boolean
   issueDate: boolean // #163 — imutável após criação (o PATCH não aceita issueDate)
+  competencia: boolean // #197 — imutável após criação (mesma regra do issueDate)
   dueDate: boolean
   description: boolean
   retentions: boolean
@@ -462,6 +468,7 @@ export const NO_LOCKS: FieldLocks = {
   paymentMethod: false,
   grossValue: false,
   issueDate: false,
+  competencia: false,
   dueDate: false,
   description: false,
   retentions: false,
@@ -478,6 +485,7 @@ export const editLocksFor = (status: DocumentStatus): FieldLocks => {
     paymentMethod: true,
     retentions: true,
     issueDate: true, // #163 — emissão não é ajustável (o PATCH não a aceita)
+    competencia: true, // #197 — competência não é ajustável (mesma regra do issueDate)
     // Ajustáveis — liberados apenas em "Aberto".
     grossValue: !open,
     dueDate: !open,
@@ -521,6 +529,7 @@ export const hydrateFieldsFromDetail = (d: DocumentDetail): DocumentFormFields =
     paymentMethod: d.paymentMethod ?? '',
     grossValue: d.grossValueCents !== null ? centsToReais(d.grossValueCents) : '',
     issueDate: d.issueDate ?? '', // #163 — hidrata a emissão no modo edição/consulta
+    competencia: d.competencia !== null ? competenciaFromIso(d.competencia) : '', // #197 — YYYY-MM → MM/AAAA
     dueDate: d.dueDate ?? '',
     description: d.description ?? '',
     discounts: '', // composição não exposta no detalhe hoje (core-api#95) → edição via composição fica no create
@@ -747,4 +756,27 @@ export const formatReaisBRL = (reais: string): string => {
 export const formatDue = (iso: string): string => {
   const p = iso.split('-')
   return p.length === 3 ? `${p[2] ?? ''}/${p[1] ?? ''}/${p[0] ?? ''}` : iso
+}
+
+// ── Competência (#197) — UI usa MM/AAAA; backend quer YYYY-MM. Helpers de conversão nas duas pontas. ──
+/** Máscara as-you-type p/ Competência: dígitos → "MM/AAAA" (2 do mês + 4 do ano). Idempotente. */
+export const maskCompetencia = (v: string): string => {
+  const digits = v.replace(/\D/g, '').slice(0, 6)
+  if (digits.length <= 2) return digits
+  return `${digits.slice(0, 2)}/${digits.slice(2)}`
+}
+
+/** "MM/AAAA" → "YYYY-MM"; null se incompleto/inválido (mês 1–12, ano 4 dígitos). */
+export const competenciaToIso = (masked: string): string | null => {
+  const digits = masked.replace(/\D/g, '')
+  if (digits.length !== 6) return null
+  const month = Number.parseInt(digits.slice(0, 2), 10)
+  if (month < 1 || month > 12) return null
+  return `${digits.slice(2)}-${digits.slice(0, 2)}`
+}
+
+/** "YYYY-MM" → "MM/AAAA". */
+export const competenciaFromIso = (iso: string): string => {
+  const p = iso.split('-')
+  return p.length === 2 ? `${p[1] ?? ''}/${p[0] ?? ''}` : iso
 }

@@ -23,6 +23,7 @@ const fields = (over: Partial<DocumentFormFields> = {}): DocumentFormFields => (
   paymentMethod: '',
   grossValue: '',
   issueDate: '',
+  competencia: '',
   dueDate: '',
   description: '',
   discounts: '',
