@@ -23,6 +23,7 @@ const fields = (over: Partial<DocumentFormFields> = {}): DocumentFormFields => (
   paymentMethod: 'PIX',
   grossValue: 'R$ 1.000,00',
   issueDate: '',
+  competencia: '',
   dueDate: '2026-06-10',
   description: '',
   discounts: '',

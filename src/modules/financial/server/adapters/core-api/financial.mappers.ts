@@ -130,6 +130,7 @@ export const detailToModel = (raw: unknown): Result<DocumentDetail, FinancialErr
     supplierRef: d.supplierRef,
     paymentMethod: mapPaymentMethod(d.paymentMethod),
     paymentDetail: d.paymentDetail ?? null, // #273 — complemento da forma de pagamento
+    competencia: d.competencia ?? null, // #197 — competência (YYYY-MM)
     grossValueCents: d.grossValueCents,
     netValueCents: d.netValueCents,
     issueDate: d.issueDate, // #163 — date-only (YYYY-MM-DD), igual ao dueDate

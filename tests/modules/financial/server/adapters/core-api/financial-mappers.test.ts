@@ -90,6 +90,12 @@ describe('detailToModel', () => {
     const r2 = detailToModel(semEmissao)
     if (isOk(r2)) assert.equal(r2.value.issueDate, null)
   })
+  it('#197: mapeia competencia; ausente (backend antigo) → null', () => {
+    const r = detailToModel({ ...validDoc, competencia: '2026-06' })
+    if (isOk(r)) assert.equal(r.value.competencia, '2026-06')
+    const r2 = detailToModel(validDoc) // sem a chave → drift-tolerante → null
+    if (isOk(r2)) assert.equal(r2.value.competencia, null)
+  })
   it('drift de contrato → err(server)', () => {
     assert.equal(isErr(detailToModel({ id: 1 })), true)
   })

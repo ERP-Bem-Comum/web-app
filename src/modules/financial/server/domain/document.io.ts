@@ -62,6 +62,7 @@ export interface CreateDocumentInput {
   contaDebitoRef?: string // #197: conta-débito (conta-cedente) — a baixa é direcionada a ela
   accessKey?: string // #115: chave de acesso (44 dígitos) — obrigatória p/ DANFE no lançamento
   paymentDetail?: string // #273: complemento da forma de pagamento (linha digitável, id de cartão, ref de câmbio)
+  competencia?: string // #197: competência (YYYY-MM) — opcional; validada por VO no domínio do backend
   paymentMethod: PaymentMethod
   grossValueCents: string
   sourceDiscountsCents?: string
@@ -142,6 +143,7 @@ export type DocumentDetail = Readonly<{
   supplierRef: string | null
   paymentMethod: PaymentMethod | null
   paymentDetail: string | null // #273: complemento da forma de pagamento; null quando não informado
+  competencia: string | null // #197: competência (YYYY-MM); null quando não informada
   grossValueCents: string | null
   netValueCents: string | null // null em Rascunho
   issueDate: string | null // YYYY-MM-DD (#163); null quando não informado

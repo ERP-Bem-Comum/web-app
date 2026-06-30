@@ -6,9 +6,9 @@
  * Reforma Tributária (CBS/IBS): campos VIVOS de registro de valor (OCR/manual) — enviados em
  * registeredTaxes[] do core-api; não geram filho nem abatem o líquido (regra FIN-DOCUMENTO-INGESTAO).
  *
- * Chrome (sem backend no v1, decisão #7): Competência/Emissão, "Pagar da Conta" e o card Conta do
- * favorecido seguem DESABILITADOS (sem dado fabricado) até os DTOs do core-api (#47/#48) e o
- * cadastro de contas/categorias existirem. A faixa âmbar de OCR do Figma é omitida de propósito —
+ * Chrome (sem backend no v1, decisão #7): o card Conta do favorecido segue DESABILITADO (sem dado
+ * fabricado) até os DTOs do core-api (#47/#48) e o cadastro de contas/categorias existirem.
+ * (Competência #197 e Emissão #163 já são reais.) A faixa âmbar de OCR do Figma é omitida de propósito —
  * sinalizaria preenchimento automático que não acontece sem o OCR.
  */
 import type { ReactNode } from 'react'
@@ -21,6 +21,7 @@ import {
   reformaTributariaEnabledFor,
   allowedRetentionKeysFor,
   maskMoney,
+  maskCompetencia,
   REFORMA_TRIBUTARIA_KEYS,
   paymentComplementaryOf,
   paymentMethodNameTag,
@@ -194,6 +195,7 @@ export type DocumentFormProps = Readonly<{
       | 'series'
       | 'grossValue'
       | 'issueDate'
+      | 'competencia'
       | 'dueDate'
       | 'description'
       | 'accessKey'
@@ -322,14 +324,19 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             </div>
           </div>
 
-          {/* Competência / Emissão — chrome (sem campo no DTO de criação). */}
+          {/* Competência (#197) — MM/AAAA; persistida no create (backend converte p/ YYYY-MM via VO). */}
           <div className={field}>
             <span className={fieldLabel}>{t('financial.create.field.competencia')}</span>
             <input
-              className={controlDisabled}
-              disabled
+              className={locks.competencia ? controlDisabled : control}
+              disabled={locks.competencia}
+              inputMode="numeric"
               placeholder="MM/AAAA"
+              value={fields.competencia}
               aria-label={t('financial.create.field.competencia')}
+              onChange={(e) => {
+                props.onText('competencia', maskCompetencia(e.target.value))
+              }}
             />
           </div>
           <div className={field}>
