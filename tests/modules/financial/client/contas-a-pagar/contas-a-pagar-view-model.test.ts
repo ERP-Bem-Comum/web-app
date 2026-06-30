@@ -22,6 +22,7 @@ import {
   STATUS_CHIPS,
   FILTER_DIMS,
   deriveDetailStatus,
+  paymentComplementLabelTag,
 } from '../../../../../src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts'
 import { ok, err } from '../../../../../src/shared/primitives/result.ts'
 import type {
@@ -399,5 +400,21 @@ describe('deriveDetailStatus (status do drawer reflete o título PAI; filhos nã
   it('sem título-pai → mantém o status cru do documento', () => {
     assert.equal(deriveDetailStatus('Pago', []), 'Pago')
     assert.equal(deriveDetailStatus('Aprovado', [child('Conciliado')]), 'Aprovado')
+  })
+})
+
+describe('paymentComplementLabelTag (#273 — rótulo do complemento da forma, espelha o create)', () => {
+  it('formas com complemento tipado → rótulo i18n do create', () => {
+    assert.equal(paymentComplementLabelTag('Boleto'), 'financial.create.payMethod.boletoLabel')
+    assert.equal(paymentComplementLabelTag('CartaoCorporativo'), 'financial.create.payMethod.cardLabel')
+    assert.equal(paymentComplementLabelTag('Cambio'), 'financial.create.payMethod.currencyLabel')
+    assert.equal(paymentComplementLabelTag('Outro'), 'financial.create.payMethod.freeLabel')
+  })
+  it('formas sem complemento tipado (e null) → null', () => {
+    assert.equal(paymentComplementLabelTag('PIX'), null)
+    assert.equal(paymentComplementLabelTag('TED'), null)
+    assert.equal(paymentComplementLabelTag('TransferenciaBancaria'), null)
+    assert.equal(paymentComplementLabelTag('GuiaRecolhimento'), null)
+    assert.equal(paymentComplementLabelTag(null), null)
   })
 })

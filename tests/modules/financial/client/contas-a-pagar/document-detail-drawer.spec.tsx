@@ -8,6 +8,7 @@ vi.mock('@tanstack/react-router', () => ({
 }))
 
 import { DocumentDetailDrawer } from '#modules/financial/client/contas-a-pagar-list/components/document-detail-drawer.component.tsx'
+import type { PayeeBankView } from '#modules/financial/client/contas-a-pagar-list/payee-bank.binding.ts'
 import type { DocumentDetailView } from '#modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts'
 
 afterEach(() => {
@@ -26,6 +27,7 @@ const baseView: DocumentDetailView = {
   gross: 'R$ 540,00',
   net: 'R$ 540,00',
   paymentMethod: 'PIX',
+  paymentDetail: null,
   description: 'teste rpa',
   retentions: [],
   retentionsTotal: null,
@@ -34,18 +36,24 @@ const baseView: DocumentDetailView = {
 
 describe('DocumentDetailDrawer', () => {
   it('renderiza a descrição do documento quando há texto', () => {
-    render(<DocumentDetailDrawer view={baseView} onClose={() => undefined} />)
+    render(<DocumentDetailDrawer view={baseView} payeeBank={null} onClose={() => undefined} />)
     expect(screen.getByText('Descrição')).toBeTruthy()
     expect(screen.getByText('teste rpa')).toBeTruthy()
   })
 
   it('omite a seção de descrição quando vazia', () => {
-    render(<DocumentDetailDrawer view={{ ...baseView, description: '' }} onClose={() => undefined} />)
+    render(
+      <DocumentDetailDrawer
+        view={{ ...baseView, description: '' }}
+        payeeBank={null}
+        onClose={() => undefined}
+      />,
+    )
     expect(screen.queryByText('Descrição')).toBeNull()
   })
 
   it('exibe o favorecido (real) na Forma de Pagamento', () => {
-    render(<DocumentDetailDrawer view={baseView} onClose={() => undefined} />)
+    render(<DocumentDetailDrawer view={baseView} payeeBank={null} onClose={() => undefined} />)
     // "Alexandre Novaes" aparece no cabeçalho do fornecedor e como Favorecido no pagamento.
     expect(screen.getAllByText(/Alexandre Novaes/).length).toBeGreaterThanOrEqual(2)
   })
@@ -61,6 +69,7 @@ describe('DocumentDetailDrawer', () => {
           ],
           retentionsTotal: 'R$ 550,00',
         }}
+        payeeBank={null}
         onClose={() => undefined}
       />,
     )
@@ -69,7 +78,41 @@ describe('DocumentDetailDrawer', () => {
   })
 
   it('Composição: sem retenções, a linha de Retenções não aparece', () => {
-    render(<DocumentDetailDrawer view={baseView} onClose={() => undefined} />)
+    render(<DocumentDetailDrawer view={baseView} payeeBank={null} onClose={() => undefined} />)
     expect(screen.queryByText(/− Retenções/)).toBeNull()
+  })
+
+  it('#273: Boleto com paymentDetail mostra o complemento (linha digitável) no lugar dos dados bancários gated', () => {
+    render(
+      <DocumentDetailDrawer
+        view={{ ...baseView, paymentMethod: 'Boleto', paymentDetail: '12345.67890 12345.678901' }}
+        payeeBank={null}
+        onClose={() => undefined}
+      />,
+    )
+    expect(screen.getByText('Linha digitável (47-48 dígitos)')).toBeTruthy()
+    expect(screen.getByText('12345.67890 12345.678901')).toBeTruthy()
+    // Sem dados bancários gated quando há complemento tipado.
+    expect(screen.queryByText('Tipo de Chave')).toBeNull()
+  })
+
+  it('#273: PIX (sem complemento tipado) mantém os dados bancários gated', () => {
+    render(<DocumentDetailDrawer view={baseView} payeeBank={null} onClose={() => undefined} />)
+    expect(screen.getByText('Tipo de Chave')).toBeTruthy()
+  })
+
+  it('resolve banco/chave reais do favorecido (client-side) quando há payeeBank — não "—"', () => {
+    const payeeBank: PayeeBankView = {
+      bankLine: 'Itaú · Ag 1234 · CC 56789-0',
+      pixType: 'email',
+      pixKey: 'pagamentos@exemplo.com',
+    }
+    render(<DocumentDetailDrawer view={baseView} payeeBank={payeeBank} onClose={() => undefined} />)
+    // Tipo de chave = rótulo do catálogo Partners (email → "E-mail"); chave e banco reais.
+    expect(screen.getByText('E-mail')).toBeTruthy()
+    expect(screen.getByText('pagamentos@exemplo.com')).toBeTruthy()
+    expect(screen.getByText('Itaú · Ag 1234 · CC 56789-0')).toBeTruthy()
+    // A seção de pagamento segue ativa (o método PIX continua no card).
+    expect(screen.getByText('Tipo de Chave')).toBeTruthy()
   })
 })

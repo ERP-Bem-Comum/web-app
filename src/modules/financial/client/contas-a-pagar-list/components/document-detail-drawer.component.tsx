@@ -12,7 +12,11 @@ import { Link } from '@tanstack/react-router'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 
+import type { PixKeyType } from '#modules/partners/public-api/index.ts'
+
 import type { DocumentDetailView, RetentionType } from '../contas-a-pagar.view-model.ts'
+import { paymentComplementLabelTag } from '../contas-a-pagar.view-model.ts'
+import type { PayeeBankView } from '../payee-bank.binding.ts'
 import {
   statusVariant,
   dwStatusPill,
@@ -63,6 +67,9 @@ const t = createTranslator(ptBR)
 const destino = (rt: RetentionType): string =>
   rt === 'ISS' ? t('financial.create.titulos.dest.iss') : t('financial.create.titulos.dest.federal')
 
+// Rótulo do tipo de chave PIX (reusa o catálogo do módulo Partners — mesmos literais nos 4 tipos).
+const pixTypeLabel = (type: PixKeyType): string => t(`partners.suppliers.pix.${type}`)
+
 function SectionLabel({ label, count }: Readonly<{ label: string; count?: number }>): ReactNode {
   return (
     <div className={dwSectionLabel}>
@@ -86,9 +93,44 @@ function Field({
   )
 }
 
-export type DocumentDetailDrawerProps = Readonly<{ view: DocumentDetailView; onClose: () => void }>
+/**
+ * #273: complemento da forma de pagamento (espelha o create). Boleto/Cartão/Câmbio/Outro têm complemento
+ * tipado (`paymentDetail` + rótulo do create) → mostra o valor real no lugar das linhas bancárias.
+ * Demais formas (PIX/TED/Transferência/Guia) mostram os dados bancários do favorecido resolvidos
+ * CLIENT-SIDE (`payeeBank`, sem core-api#95); cada linha cai p/ "—" só quando o favorecido não a tem.
+ */
+function PaymentComplement({
+  detail,
+  method,
+  payeeBank,
+}: Readonly<{
+  detail: string | null
+  method: DocumentDetailView['paymentMethod']
+  payeeBank: PayeeBankView | null
+}>): ReactNode {
+  const tag = paymentComplementLabelTag(method)
+  if (detail !== null && tag !== null) {
+    return <Field label={t(tag)} value={detail} mono />
+  }
+  return (
+    <>
+      <Field
+        label={t('financial.detail.label.tipoChave')}
+        value={payeeBank?.pixType != null ? pixTypeLabel(payeeBank.pixType) : '—'}
+      />
+      <Field label={t('financial.detail.label.chave')} value={payeeBank?.pixKey ?? '—'} mono />
+      <Field label={t('financial.detail.label.banco')} value={payeeBank?.bankLine ?? '—'} />
+    </>
+  )
+}
 
-export function DocumentDetailDrawer({ view, onClose }: DocumentDetailDrawerProps): ReactNode {
+export type DocumentDetailDrawerProps = Readonly<{
+  view: DocumentDetailView
+  payeeBank: PayeeBankView | null
+  onClose: () => void
+}>
+
+export function DocumentDetailDrawer({ view, payeeBank, onClose }: DocumentDetailDrawerProps): ReactNode {
   return (
     <div className={drawerOverlay} role="dialog" aria-modal="true" onClick={onClose}>
       <div
@@ -223,9 +265,11 @@ export function DocumentDetailDrawer({ view, onClose }: DocumentDetailDrawerProp
                   {t(`financial.paymentMethod.${view.paymentMethod}`)}
                 </span>
                 <div className={detailGrid}>
-                  <Field label={t('financial.detail.label.tipoChave')} value="—" />
-                  <Field label={t('financial.detail.label.chave')} value="—" mono />
-                  <Field label={t('financial.detail.label.banco')} value="—" />
+                  <PaymentComplement
+                    detail={view.paymentDetail}
+                    method={view.paymentMethod}
+                    payeeBank={payeeBank}
+                  />
                   {/* Favorecido já é conhecido (favorecido do documento); banco/chave seguem gated (#95). */}
                   <Field label={t('financial.detail.label.favorecido')} value={view.supplier} />
                 </div>
