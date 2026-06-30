@@ -239,6 +239,7 @@ export const pickerItem = style({
 export const pickerItemSelected = style({ background: vars.color.institutional.blueBg })
 export const pickerEmpty = style({
   padding: vars.space.sm,
+  fontFamily: vars.font.family.body, // senão vaza a serifa (Times) default do body
   fontSize: vars.font.size.xs,
   color: vars.color.text.muted,
 })
@@ -534,6 +535,7 @@ export const errorBanner = style({
   borderRadius: vars.radius.md,
   background: vars.color.feedback.errorBg,
   color: vars.color.feedback.errorText,
+  fontFamily: vars.font.family.body, // senão vaza a serifa (Times) default do body
   fontSize: vars.font.size.sm,
 })
 export const bottombar = style({
