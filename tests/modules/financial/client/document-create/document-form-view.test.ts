@@ -134,6 +134,26 @@ describe('DANFE exige chave de acesso (44 dígitos) — #115', () => {
   })
 })
 
+describe('paymentDetail (complemento da forma de pagamento) — #273', () => {
+  it('buildCreateInput: envia o paymentComplement preenchido; undefined quando vazio', () => {
+    const complement = '34191.79001 01043.510047 91020.150008 5 95860000010000'
+    assert.equal(buildCreateInput({ ...base, paymentComplement: complement })?.paymentDetail, complement)
+    // trim de espaços nas bordas
+    assert.equal(
+      buildCreateInput({ ...base, paymentComplement: `  ${complement}  ` })?.paymentDetail,
+      complement,
+    )
+    // vazio (ou só espaços) → undefined
+    assert.equal(buildCreateInput({ ...base, paymentComplement: '' })?.paymentDetail, undefined)
+    assert.equal(buildCreateInput({ ...base, paymentComplement: '   ' })?.paymentDetail, undefined)
+  })
+  it('buildDraftInput: mesmo comportamento no rascunho', () => {
+    const complement = 'cartao-corp-0042'
+    assert.equal(buildDraftInput({ ...base, paymentComplement: complement })?.paymentDetail, complement)
+    assert.equal(buildDraftInput({ ...base, paymentComplement: '' })?.paymentDetail, undefined)
+  })
+})
+
 describe('issAllowedFor / allowedRetentionKeysFor (ISS em NFS-e e RPA)', () => {
   it('ISS em NFS-e e RPA (a UI exibe; o backend ainda gateia RPA — ver issue)', () => {
     assert.equal(issAllowedFor('NFS-e'), true)
@@ -444,6 +464,7 @@ const detail: DocumentDetail = {
   documentNumber: '0847',
   supplierRef: 's-1',
   paymentMethod: 'PIX',
+  paymentDetail: '34191.79001 01043.510047 91020.150008 5 95860000010000',
   grossValueCents: '1000000',
   netValueCents: '793500',
   issueDate: '2026-06-01',
@@ -500,6 +521,13 @@ describe('hydrateFieldsFromDetail', () => {
   it('#163: hidrata a emissão do detalhe (issueDate)', () => {
     assert.equal(hydrateFieldsFromDetail(detail).issueDate, '2026-06-01')
     assert.equal(hydrateFieldsFromDetail({ ...detail, issueDate: null }).issueDate, '')
+  })
+  it('#273: hidrata o complemento da forma de pagamento (paymentDetail → paymentComplement)', () => {
+    assert.equal(
+      hydrateFieldsFromDetail(detail).paymentComplement,
+      '34191.79001 01043.510047 91020.150008 5 95860000010000',
+    )
+    assert.equal(hydrateFieldsFromDetail({ ...detail, paymentDetail: null }).paymentComplement, '')
   })
 })
 

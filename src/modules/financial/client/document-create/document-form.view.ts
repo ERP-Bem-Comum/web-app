@@ -365,6 +365,8 @@ export const buildCreateInput = (fields: DocumentFormFields): CreateDocumentInpu
       accessKeyDigits(fields.accessKey).length === ACCESS_KEY_LEN
         ? accessKeyDigits(fields.accessKey)
         : undefined,
+    // #273: complemento da forma de pagamento (linha digitável/cartão/câmbio/livre) — persiste se preenchido.
+    paymentDetail: trimToUndefined(fields.paymentComplement),
     grossValueCents: String(gross),
     discountsCents: discountsCents(fields) > 0 ? String(discountsCents(fields)) : undefined,
     // "Juros / Multa" (campo único) → interestCents; ambos somam ao líquido, então o total fica correto.
@@ -414,6 +416,8 @@ export const buildDraftInput = (fields: DocumentFormFields): CreateDocumentInput
       accessKeyDigits(fields.accessKey).length === ACCESS_KEY_LEN
         ? accessKeyDigits(fields.accessKey)
         : undefined,
+    // #273: complemento da forma de pagamento — persiste no rascunho se já preenchido.
+    paymentDetail: trimToUndefined(fields.paymentComplement),
     grossValueCents: String(gross),
     discountsCents: discountsCents(fields) > 0 ? String(discountsCents(fields)) : undefined,
     interestCents: jurosMultaCents(fields) > 0 ? String(jurosMultaCents(fields)) : undefined,
@@ -522,7 +526,7 @@ export const hydrateFieldsFromDetail = (d: DocumentDetail): DocumentFormFields =
     discounts: '', // composição não exposta no detalhe hoje (core-api#95) → edição via composição fica no create
     jurosMulta: '',
     accessKey: '', // não exposto no detalhe (core-api#115/#95)
-    paymentComplement: '', // não exposto no detalhe (core-api#89/#95)
+    paymentComplement: d.paymentDetail ?? '', // #273 — o detalhe expõe o complemento da forma de pagamento
     contractRef: '', // o GET /:id não expõe o contrato vinculado (core-api#95) → vazio na hidratação
     programRef: '', // o GET /:id não expõe a categorização (core-api#95) → vazio na hidratação
     categoryRef: '',
