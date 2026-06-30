@@ -1101,17 +1101,16 @@ export const ptBR: Catalog = {
   'financial.create.payMethod.desc.Cambio': 'Operação de câmbio / moeda estrangeira.',
   'financial.create.payMethod.desc.GuiaRecolhimento': 'Guia de recolhimento (DARF / GPS).',
   'financial.create.payMethod.desc.Outro': 'Cheque, dinheiro, compensação.',
-  // Campos complementares por método (chrome até o backend aceitar — core-api#89).
+  // Campos complementares por método — o complemento é persistido (#273/#284: create + edit). OCR ainda pendente (#62/#145).
   'financial.create.payMethod.boletoLabel': 'Linha digitável (47-48 dígitos)',
   'financial.create.payMethod.boletoHint':
-    'Será preenchida via OCR ou manual — aguardando backend (core-api#89).',
+    'Linha digitável do boleto — preenchimento manual (o OCR automático será integrado depois).',
   'financial.create.payMethod.cardLabel': 'Cartão corporativo',
-  'financial.create.payMethod.cardHint': 'Cartão da empresa — aguardando backend (core-api#89).',
+  'financial.create.payMethod.cardHint': 'Identificação do cartão da empresa usado no pagamento.',
   'financial.create.payMethod.freeLabel': 'Especifique a forma de pagamento',
-  'financial.create.payMethod.freeHint': 'Cheque, dinheiro, compensação… — aguardando backend (core-api#89).',
+  'financial.create.payMethod.freeHint': 'Cheque, dinheiro, compensação…',
   'financial.create.payMethod.currencyLabel': 'Moeda / detalhes do câmbio',
-  'financial.create.payMethod.currencyHint':
-    'Moeda estrangeira e cotação da conversão — aguardando backend (core-api#89).',
+  'financial.create.payMethod.currencyHint': 'Moeda estrangeira e cotação da conversão.',
   'financial.create.pagamento.contaFornecedor': 'Conta do favorecido',
   'financial.create.pagamento.contaFornecedorHint': 'Conforme dados bancários do favorecido',
   'financial.create.pagamento.aprovador': 'Aprovador',

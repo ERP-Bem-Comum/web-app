@@ -549,7 +549,7 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
           />
         </div>
         {/* Campo complementar controlado pela forma (boleto → linha digitável; cartão; câmbio; outro).
-            Editável (OCR/manual). ⚠️ Persistência pendente no core-api#89 — não é enviado no create ainda. */}
+            Editável manualmente e PERSISTIDO (#273/#284: enviado no create e no ajuste/PATCH). OCR ainda pendente (#62/#145). */}
         {paymentComplementaryOf(fields.paymentMethod) === 'boleto' ? (
           <div className={fieldGrid.wide}>
             <div className={field}>

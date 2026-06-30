@@ -606,6 +606,15 @@ describe('canSaveEdit / buildAdjustInput', () => {
     assert.equal('retentions' in (input ?? {}), false)
   })
 
+  it('buildAdjustInput: envia paymentDetail (complemento); vazio → null p/ limpar (#284)', () => {
+    assert.equal(
+      buildAdjustInput({ ...fields, paymentComplement: '12345.67890' }, detail)?.paymentDetail,
+      '12345.67890',
+    )
+    assert.equal(buildAdjustInput({ ...fields, paymentComplement: '' }, detail)?.paymentDetail, null)
+    assert.equal(buildAdjustInput({ ...fields, paymentComplement: '   ' }, detail)?.paymentDetail, null)
+  })
+
   it('buildAdjustInput: null quando não pode salvar', () => {
     assert.equal(buildAdjustInput({ ...fields, dueDate: '' }, detail), null)
   })

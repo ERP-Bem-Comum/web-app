@@ -95,6 +95,7 @@ export const AdjustDocumentInputSchema = z.object({
   retentions: z.array(RetentionItemSchema).readonly().optional(),
   dueDate: DateSchema.optional(),
   description: z.string().trim().max(500).nullable().optional(),
+  paymentDetail: z.string().trim().min(1).max(255).nullable().optional(), // #284: editar o complemento; null = limpar
 })
 
 // Aprovar / desfazer aprovação (POST /documents/:id/{approve,undo-approval}).

@@ -89,6 +89,7 @@ export interface AdjustDocumentInput {
   retentions?: readonly RetentionInput[]
   dueDate?: string
   description?: string | null
+  paymentDetail?: string | null // #273/#284: complemento da forma — editável no ajuste; null = limpar
 }
 
 // Aprovar / desfazer aprovação (POST /documents/:id/{approve,undo-approval}).
