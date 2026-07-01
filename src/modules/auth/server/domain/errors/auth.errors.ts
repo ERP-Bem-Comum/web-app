@@ -10,6 +10,7 @@ export type AuthError =
   | 'refresh-rotated' // 401 refresh — reuse detectado: cadeia revogada → sessão morta
   | 'refresh-expired' // 401 refresh
   | 'unauthorized' // 401 /me (sem/expirado/inválido)
+  | 'reset-token-invalid' // 400 reset-password — link inválido/expirado/usado (não diferenciado)
   | 'session-not-found' // sessão local ausente/expirada
   | 'rate-limited' // 429 — muitas tentativas (anti-brute-force do core-api)
   | 'connectivity' // backend fora / timeout

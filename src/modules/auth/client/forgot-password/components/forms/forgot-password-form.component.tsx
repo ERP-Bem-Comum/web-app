@@ -1,52 +1,48 @@
 /**
- * LoginForm — componente BURRO (§XI, ADR-0009): a "view" do formulário de login.
- * Réplica fiel da tela de login da v1 (referência visual 2026-06-03).
- * Só props (strings + callbacks) → JSX. Zero fetch/estado de negócio.
+ * ForgotPasswordForm — componente BURRO (§XI, ADR-0009): a "view" do formulário "Recuperar Senha".
+ * Espelha o layout do login (logo + título + underline). Só props (strings + callbacks) → JSX.
+ * Zero fetch/estado de negócio.
  */
-import { useState } from 'react'
 import type { ReactNode } from 'react'
 
-import { Button, Field, Logo, InputWithIcon, MailIcon, EyeIcon, EyeOffIcon } from '#shared/ui/index.ts'
+import { Button, Field, Logo, InputWithIcon, MailIcon } from '#shared/ui/index.ts'
 import {
   content,
   header,
   title,
   titleUnderline,
+  subtitle,
   form,
-  forgotLink,
   buttonWrap,
+  cancelLink,
   errorText,
-} from './login-form.css.ts'
+} from './forgot-password-form.css.ts'
 
-export type LoginFormProps = Readonly<{
+export type ForgotPasswordFormProps = Readonly<{
   title: string
+  subtitle: string
   emailLabel: string
-  passwordLabel: string
   emailPlaceholder: string
-  passwordPlaceholder: string
   submitLabel: string
-  forgotLabel: string
+  cancelLabel: string
   loadingLabel: string
   email: string
-  password: string
   submitting: boolean
   errorText: string | null
   errorReference: string | null
   onEmailChange: (value: string) => void
-  onPasswordChange: (value: string) => void
   onSubmit: () => void
-  onForgotPassword: () => void
+  onCancel: () => void
 }>
 
-export function LoginForm(props: LoginFormProps): ReactNode {
-  const [showPassword, setShowPassword] = useState(false)
-
+export function ForgotPasswordForm(props: ForgotPasswordFormProps): ReactNode {
   return (
     <div className={content}>
       <div className={header}>
         <Logo src="/images/logo-bem-comum.png" alt="Bem Comum" size={56} />
         <h1 className={title}>{props.title}</h1>
         <span className={titleUnderline} aria-hidden="true" />
+        <p className={subtitle}>{props.subtitle}</p>
       </div>
 
       <form
@@ -56,9 +52,9 @@ export function LoginForm(props: LoginFormProps): ReactNode {
           props.onSubmit()
         }}
       >
-        <Field htmlFor="login-email" label={props.emailLabel}>
+        <Field htmlFor="forgot-email" label={props.emailLabel}>
           <InputWithIcon
-            id="login-email"
+            id="forgot-email"
             type="email"
             value={props.email}
             placeholder={props.emailPlaceholder}
@@ -67,26 +63,6 @@ export function LoginForm(props: LoginFormProps): ReactNode {
             icon={<MailIcon size={18} />}
           />
         </Field>
-
-        <Field htmlFor="login-password" label={props.passwordLabel}>
-          <InputWithIcon
-            id="login-password"
-            type={showPassword ? 'text' : 'password'}
-            value={props.password}
-            placeholder={props.passwordPlaceholder}
-            autoComplete="current-password"
-            onChange={props.onPasswordChange}
-            icon={showPassword ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
-            iconOrange
-            iconAction={() => {
-              setShowPassword((prev) => !prev)
-            }}
-          />
-        </Field>
-
-        <button type="button" className={forgotLink} onClick={props.onForgotPassword}>
-          {props.forgotLabel}
-        </button>
 
         {props.errorText !== null ? (
           <p role="alert" className={errorText}>
@@ -105,6 +81,10 @@ export function LoginForm(props: LoginFormProps): ReactNode {
             {props.submitLabel}
           </Button>
         </div>
+
+        <button type="button" className={cancelLink} onClick={props.onCancel}>
+          {props.cancelLabel}
+        </button>
       </form>
     </div>
   )

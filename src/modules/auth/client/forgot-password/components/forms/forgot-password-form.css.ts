@@ -2,14 +2,14 @@ import { style } from '@vanilla-extract/css'
 
 import { vars } from '#shared/ui/tokens/index.ts'
 
-// Conteúdo interno: stack vertical com gap consistente.
+// Conteúdo interno: stack vertical com gap consistente (espelha o login).
 export const content = style({
   display: 'flex',
   flexDirection: 'column',
   gap: vars.space.lg,
 })
 
-// Cabeçalho: logo + título com underline decorativo. Stack compacto (logo ↔ título ↔ barra).
+// Cabeçalho: logo + título com underline decorativo.
 export const header = style({
   display: 'flex',
   flexDirection: 'column',
@@ -26,7 +26,7 @@ export const title = style({
   margin: 0,
 })
 
-// Underline decorativo laranja abaixo do título. O respiro vem do `gap` do header (stack compacto).
+// Underline decorativo laranja abaixo do título.
 export const titleUnderline = style({
   display: 'block',
   inlineSize: '2.5rem',
@@ -36,6 +36,14 @@ export const titleUnderline = style({
   marginInline: 'auto',
 })
 
+// Texto de apoio abaixo do título (instrução curta).
+export const subtitle = style({
+  margin: 0,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+  color: vars.color.text.secondary,
+})
+
 // Formulário: stack vertical com respiro entre campos.
 export const form = style({
   display: 'flex',
@@ -43,11 +51,14 @@ export const form = style({
   gap: vars.space.lg,
 })
 
-// Botão-link "Esqueci Minha Senha" — posicionado acima do botão, estilo bold. É um <button> (navega
-// via callback do binding, mantendo a view burra) com aparência de link.
-export const forgotLink = style({
+// Wrapper do botão submit (espelha o login — botão não é full-width).
+export const buttonWrap = style({
+  paddingInline: vars.space.lg,
+})
+
+// Link/botão "Cancelar" — volta ao login.
+export const cancelLink = style({
   display: 'block',
-  inlineSize: '100%',
   textAlign: 'center',
   fontFamily: vars.font.family.body,
   fontSize: vars.font.size.sm,
@@ -58,7 +69,6 @@ export const forgotLink = style({
   textDecoration: 'none',
   cursor: 'pointer',
   transition: 'color 150ms',
-  marginBlockEnd: vars.space.md,
   selectors: {
     '&:hover': { color: vars.color.text.primary },
     '&:focus-visible': {
@@ -67,11 +77,6 @@ export const forgotLink = style({
       borderRadius: vars.radius.sm,
     },
   },
-})
-
-// Wrapper do botão submit: margens nas laterais (botão não é full-width no login).
-export const buttonWrap = style({
-  paddingInline: vars.space.lg,
 })
 
 // Bloco de alerta de erro (role="alert" na View).
