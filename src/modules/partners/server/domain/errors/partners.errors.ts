@@ -16,6 +16,9 @@ export type PartnersError =
   | 'collaborator-import-malformed' // CSV malformado
   | 'invalid-registration-transition' // situação cadastral só avança Pré → Cadastrado
   | 'deactivation-reason-required' // desativar colaborador exige motivo
+  // autocadastro (#040) — rota pública token-based da 2ª fase do cadastro
+  | 'autocadastro-invalid' // token desconhecido/expirado/usado (404) — anti-enumeração
+  | 'autocadastro-cpf-mismatch' // 400 collaborator-autocadastro-cpf-mismatch — token preservado
   // fornecedores
   | 'invalid-service-category' // categoria fora do catálogo (39)
   // acordos (ACT)

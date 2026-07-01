@@ -31,6 +31,11 @@ const PUBLIC_ROUTES: readonly string[] = [
   // link do e-mail de convite (?token=...). Mesma tela do reset (variant='activate'), mesmo server fn.
   // Sem sessão; beforeLoad redireciona ao dashboard se já autenticado.
   'activate.tsx',
+  // Fluxo "Autocadastro de Colaborador" (#040): rota pública por construção — o colaborador convidado
+  // chega deslogado pelo link do e-mail (?token=...) para preencher a 2ª fase (dados pessoais). Pode NÃO
+  // ter conta no sistema, então NÃO há redirect de sessão. O token só cruza a fronteira via a server fn
+  // (Zod + CSRF-origin); anti-enumeração (404) garantida no BFF; nada de sessão no browser.
+  'autocadastro.tsx',
 ]
 
 /** Infra do router (não são rotas de conteúdo). */

@@ -387,8 +387,28 @@ export const ptBR: Catalog = {
   'partners.error.collaborator-import-malformed': 'Arquivo de importação malformado.',
   'partners.error.invalid-registration-transition': 'Transição de situação cadastral inválida.',
   'partners.error.deactivation-reason-required': 'Informe o motivo da desativação.',
+  'partners.error.autocadastro-invalid': 'Este convite é inválido ou expirou.',
+  'partners.error.autocadastro-cpf-mismatch': 'O CPF informado não confere. Verifique e tente novamente.',
   'partners.error.invalid-state': 'UF inválida.',
   'partners.error.invalid-ibge-code': 'Município inválido.',
+
+  // ── Partners › Autocadastro do Colaborador (spec 040, rota pública /autocadastro) ──
+  'partners.autocadastro.greeting': 'Olá, {{name}}!',
+  'partners.autocadastro.subtitle': 'Complete seu cadastro para finalizar seu registro. Seu CPF:',
+  'partners.autocadastro.loading': 'Carregando seu convite…',
+  'partners.autocadastro.section.identity': 'Confirmação de identidade',
+  'partners.autocadastro.field.cpfPrefix': 'Confirme os primeiros dígitos do seu CPF',
+  'partners.autocadastro.field.cpfPrefixPlaceholder': 'Ex: 123',
+  'partners.autocadastro.form.select': 'Selecione…',
+  'partners.autocadastro.yes': 'Sim',
+  'partners.autocadastro.no': 'Não',
+  'partners.autocadastro.submit': 'Concluir cadastro',
+  'partners.autocadastro.invalid.title': 'Convite inválido ou expirou',
+  'partners.autocadastro.invalid.body':
+    'Este convite é inválido ou expirou. Entre em contato com a ABC para receber um novo link.',
+  'partners.autocadastro.success.title': 'Cadastro concluído com sucesso!',
+  'partners.autocadastro.success.body': 'Seus dados foram enviados. Obrigado por completar seu cadastro.',
+  'partners.autocadastro.success.confirm': 'Entendi',
 
   // ── Partners › Fornecedores (spec 010) ──
   'partners.export.label': 'Exportar',

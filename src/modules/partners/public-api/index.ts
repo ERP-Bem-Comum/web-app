@@ -41,6 +41,14 @@ export type {
   CollaboratorListResponse,
 } from '#modules/partners/server/domain/collaborator/collaborator.io.ts'
 
+// Autocadastro (#040) — rota PÚBLICA token-based da 2ª fase do cadastro (sem sessão).
+export { autocadastroPreviewFn } from '#modules/partners/server/adapters/server-fns/collaborator/autocadastro-preview.query.fn.ts'
+export { autocadastroSubmitFn } from '#modules/partners/server/adapters/server-fns/collaborator/autocadastro-submit.service.fn.ts'
+export type {
+  AutocadastroPreview,
+  AutocadastroSubmitInput,
+} from '#modules/partners/server/domain/collaborator/collaborator-autocadastro.io.ts'
+
 // ── Geografia: Estados (US4) + Municípios (US5) ─────────────────────────────
 export { listPartnerStatesFn } from '#modules/partners/server/adapters/server-fns/geography/list-partner-states.query.fn.ts'
 export { togglePartnerStateFn } from '#modules/partners/server/adapters/server-fns/geography/toggle-partner-state.service.fn.ts'

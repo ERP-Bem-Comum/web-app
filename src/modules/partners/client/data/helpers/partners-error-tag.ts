@@ -26,6 +26,10 @@ export const partnersErrorTag = (e: PartnersError): string => {
       return 'partners.error.invalid-registration-transition'
     case 'deactivation-reason-required':
       return 'partners.error.deactivation-reason-required'
+    case 'autocadastro-invalid':
+      return 'partners.error.autocadastro-invalid'
+    case 'autocadastro-cpf-mismatch':
+      return 'partners.error.autocadastro-cpf-mismatch'
     case 'invalid-service-category':
       return 'partners.error.invalid-service-category'
     case 'act-number-duplicate':
