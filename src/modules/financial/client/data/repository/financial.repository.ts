@@ -16,6 +16,7 @@ import type {
   ListPayableTitlesInput,
   PayableTitleListResponse,
 } from '#modules/financial/client/data/model/document.model.ts'
+import type { RecentPayment } from '#modules/financial/client/data/model/recent-payment.model.ts'
 import type { FinancialError, FnResult } from '#modules/financial/client/data/repository/financial-error.ts'
 
 type ListFn = (opts: { data: ListDocumentsInput }) => Promise<FnResult<DocumentListResponse>>
@@ -28,6 +29,8 @@ type CancelFn = (opts: {
   data: CancelInput
 }) => Promise<Readonly<{ ok: true }> | Readonly<{ ok: false; error: FinancialError }>>
 type PayFn = (opts: { data: ManualPaymentInput }) => Promise<FnResult<DocumentDetail>>
+// 042: widget "Últimos pagamentos" — sem input (Top-5 do backend).
+type RecentPaymentsFn = () => Promise<FnResult<readonly RecentPayment[]>>
 
 export type FinancialRepository = Readonly<{
   list: (input: ListDocumentsInput) => Promise<Result<DocumentListResponse, FinancialError>>
@@ -43,6 +46,8 @@ export type FinancialRepository = Readonly<{
   cancel: (input: CancelInput) => Promise<Result<void, FinancialError>>
   // #224: baixa manual de um título (Aprovado→Pago).
   registerManualPayment: (input: ManualPaymentInput) => Promise<Result<DocumentDetail, FinancialError>>
+  // 042: Top-5 pagamentos recentes (widget do Dashboard). Sem input.
+  getRecentPayments: () => Promise<Result<readonly RecentPayment[], FinancialError>>
 }>
 
 export const createFinancialRepository = (
@@ -56,6 +61,7 @@ export const createFinancialRepository = (
     undoApprovalFn: ApproveFn
     cancelDocumentFn: CancelFn
     registerManualPaymentFn: PayFn
+    recentPaymentsFn: RecentPaymentsFn
   }>,
 ): FinancialRepository => ({
   list: async (input) => {
@@ -92,6 +98,10 @@ export const createFinancialRepository = (
   },
   registerManualPayment: async (input) => {
     const res = await deps.registerManualPaymentFn({ data: input })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  getRecentPayments: async () => {
+    const res = await deps.recentPaymentsFn()
     return res.ok ? ok(res.data) : err(res.error)
   },
 })

@@ -65,7 +65,8 @@ describe('rootViewModel.sidebarWidth / showPageHeader', () => {
     assert.strictEqual(rootViewModel.showPageHeader('/minha-conta'), false)
     assert.strictEqual(rootViewModel.showPageHeader('/programas'), false)
     assert.strictEqual(rootViewModel.showPageHeader('/programas/criar'), false)
-    assert.strictEqual(rootViewModel.showPageHeader('/dashboard'), true)
+    // Dashboard (043): full-bleed com canvas próprio e SEM título (pedido da P.O.) → shell não renderiza h1.
+    assert.strictEqual(rootViewModel.showPageHeader('/dashboard'), false)
     // Financeiro: o grid mantém o h1 do shell; o Lançar Documento tem topbar própria.
     assert.strictEqual(rootViewModel.showPageHeader('/financeiro/contas-a-pagar'), true)
     assert.strictEqual(rootViewModel.showPageHeader('/financeiro/contas-a-pagar/lancar'), false)
@@ -74,10 +75,11 @@ describe('rootViewModel.sidebarWidth / showPageHeader', () => {
     assert.strictEqual(rootViewModel.showPageHeader('/financeiro/conciliacao/acc-123'), false)
   })
 
-  it('fullBleedContent: só o workspace de conciliação é full-bleed (o grid mantém o padding)', () => {
+  it('fullBleedContent: workspace de conciliação e Dashboard são full-bleed (o grid de conciliação mantém o padding)', () => {
     assert.strictEqual(rootViewModel.fullBleedContent('/financeiro/conciliacao/acc-123'), true)
     assert.strictEqual(rootViewModel.fullBleedContent('/financeiro/conciliacao'), false)
-    assert.strictEqual(rootViewModel.fullBleedContent('/dashboard'), false)
+    // Dashboard (043): canvas bege preenche toda a área de conteúdo (sem a margem branca do shell).
+    assert.strictEqual(rootViewModel.fullBleedContent('/dashboard'), true)
   })
 })
 
