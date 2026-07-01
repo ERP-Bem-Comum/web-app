@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './../routes/__root'
+import { Route as RecuperarSenhaRouteImport } from './../routes/recuperar-senha'
 import { Route as ReadyRouteImport } from './../routes/ready'
 import { Route as LoginRouteImport } from './../routes/login'
 import { Route as HealthRouteImport } from './../routes/health'
@@ -49,6 +50,11 @@ import { Route as AuthenticatedParceirosFornecedoresIdEditarRouteImport } from '
 import { Route as AuthenticatedParceirosFinanciadoresIdEditarRouteImport } from './../routes/_authenticated/parceiros/financiadores/$id.editar'
 import { Route as AuthenticatedParceirosAtosIdEditarRouteImport } from './../routes/_authenticated/parceiros/atos/$id.editar'
 
+const RecuperarSenhaRoute = RecuperarSenhaRouteImport.update({
+  id: '/recuperar-senha',
+  path: '/recuperar-senha',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReadyRoute = ReadyRouteImport.update({
   id: '/ready',
   path: '/ready',
@@ -280,6 +286,7 @@ export interface FileRoutesByFullPath {
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/ready': typeof ReadyRoute
+  '/recuperar-senha': typeof RecuperarSenhaRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/showcase/organisms': typeof ShowcaseOrganismsRoute
   '/contratos/$id': typeof AuthenticatedContratosIdRouteWithChildren
@@ -320,6 +327,7 @@ export interface FileRoutesByTo {
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/ready': typeof ReadyRoute
+  '/recuperar-senha': typeof RecuperarSenhaRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/showcase/organisms': typeof ShowcaseOrganismsRoute
   '/contratos/$id': typeof AuthenticatedContratosIdRouteWithChildren
@@ -362,6 +370,7 @@ export interface FileRoutesById {
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/ready': typeof ReadyRoute
+  '/recuperar-senha': typeof RecuperarSenhaRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/showcase/organisms': typeof ShowcaseOrganismsRoute
   '/_authenticated/contratos/$id': typeof AuthenticatedContratosIdRouteWithChildren
@@ -404,6 +413,7 @@ export interface FileRouteTypes {
     | '/health'
     | '/login'
     | '/ready'
+    | '/recuperar-senha'
     | '/dashboard'
     | '/showcase/organisms'
     | '/contratos/$id'
@@ -444,6 +454,7 @@ export interface FileRouteTypes {
     | '/health'
     | '/login'
     | '/ready'
+    | '/recuperar-senha'
     | '/dashboard'
     | '/showcase/organisms'
     | '/contratos/$id'
@@ -485,6 +496,7 @@ export interface FileRouteTypes {
     | '/health'
     | '/login'
     | '/ready'
+    | '/recuperar-senha'
     | '/_authenticated/dashboard'
     | '/showcase/organisms'
     | '/_authenticated/contratos/$id'
@@ -527,11 +539,19 @@ export interface RootRouteChildren {
   HealthRoute: typeof HealthRoute
   LoginRoute: typeof LoginRoute
   ReadyRoute: typeof ReadyRoute
+  RecuperarSenhaRoute: typeof RecuperarSenhaRoute
   ShowcaseOrganismsRoute: typeof ShowcaseOrganismsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/recuperar-senha': {
+      id: '/recuperar-senha'
+      path: '/recuperar-senha'
+      fullPath: '/recuperar-senha'
+      preLoaderRoute: typeof RecuperarSenhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ready': {
       id: '/ready'
       path: '/ready'
@@ -955,6 +975,7 @@ const rootRouteChildren: RootRouteChildren = {
   HealthRoute: HealthRoute,
   LoginRoute: LoginRoute,
   ReadyRoute: ReadyRoute,
+  RecuperarSenhaRoute: RecuperarSenhaRoute,
   ShowcaseOrganismsRoute: ShowcaseOrganismsRoute,
 }
 export const routeTree = rootRouteImport

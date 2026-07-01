@@ -40,6 +40,8 @@ const build = () => {
     getPasswordPolicy: () => client.getPasswordPolicy(),
     // Aprovadores elegíveis (#148) — passthrough do client (RBAC user:list no core-api).
     listApprovers: (accessToken: string) => client.listApprovers(accessToken),
+    // Recuperação de senha (#037) — passthrough público (sem sessão). Anti-enumeração: sempre 202.
+    forgotPassword: (input: Readonly<{ email: string }>) => client.forgotPassword(input),
   }
 }
 

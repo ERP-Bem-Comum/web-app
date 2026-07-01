@@ -83,6 +83,24 @@ describe('transporte', () => {
   })
 })
 
+describe('forgotPassword (#037 — POST /auth/forgot-password, anti-enumeração)', () => {
+  it('202 → ok (SEMPRE completa, sem revelar se o e-mail existe)', async () => {
+    globalThis.fetch = () => Promise.resolve(new Response(null, { status: 202 }))
+    const r = await createCoreApiAuthClient(BASE, BASE_V1).forgotPassword({ email: 'a@b.com' })
+    assert.equal(isOk(r), true)
+  })
+  it('rede (fetch rejeita) → err(connectivity)', async () => {
+    globalThis.fetch = () => Promise.reject(new TypeError('conn'))
+    const r = await createCoreApiAuthClient(BASE, BASE_V1).forgotPassword({ email: 'a@b.com' })
+    assert.equal(isErr(r) && r.error === 'connectivity', true)
+  })
+  it('500 → err(server)', async () => {
+    globalThis.fetch = () => Promise.resolve(jsonResponse(500, errEnvelope('boom')))
+    const r = await createCoreApiAuthClient(BASE, BASE_V1).forgotPassword({ email: 'a@b.com' })
+    assert.equal(isErr(r) && r.error === 'server', true)
+  })
+})
+
 describe('listApprovers (#148 — GET /api/v1/approvers)', () => {
   it('200 → mapeia items; name null cai p/ o id', async () => {
     globalThis.fetch = () =>

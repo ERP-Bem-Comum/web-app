@@ -15,6 +15,17 @@ export const ptBR: Catalog = {
   'auth.login.remember-device': 'Lembrar este dispositivo',
   'auth.login.submit': 'Entrar',
   'auth.login.forgot-password': 'Esqueci Minha Senha',
+  // Recuperar Senha (Esqueci Minha Senha)
+  'auth.forgot.title': 'Recuperar Senha',
+  'auth.forgot.subtitle': 'Informe seu e-mail para receber o link de redefinição.',
+  'auth.forgot.email-label': 'E-mail',
+  'auth.forgot.email-placeholder': 'seu@email.com',
+  'auth.forgot.submit': 'Enviar link para meu e-mail',
+  'auth.forgot.cancel': 'Cancelar',
+  'auth.forgot.success-title': 'Verifique seu e-mail',
+  'auth.forgot.success-body':
+    'Se esse email estiver cadastrado no sistema, enviaremos um link para a redefinição de senha.',
+  'auth.forgot.understood': 'Entendi',
   // Comum (reutilizável)
   'common.loading': 'Carregando…',
   'common.back': 'Voltar',

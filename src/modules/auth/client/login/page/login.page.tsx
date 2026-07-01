@@ -3,6 +3,7 @@
  * Layout fiel à referência visual da v1 (2026-06-03): fundo com formas, card com barra laranja.
  */
 import type { ReactNode } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
@@ -14,6 +15,7 @@ import { screen, shapeTopRight, shapeBottomLeft, cardWrapper, accentBar, cardCon
 const t = createTranslator(ptBR)
 
 export function LoginPage(): ReactNode {
+  const navigate = useNavigate()
   const { loginCommand } = useLoginBinding()
   const form = useLoginFormController(loginCommand.execute, loginCommand.resetError)
 
@@ -32,6 +34,7 @@ export function LoginPage(): ReactNode {
             emailPlaceholder={t('auth.login.email-placeholder')}
             passwordPlaceholder={t('auth.login.password-placeholder')}
             submitLabel={t('auth.login.submit')}
+            forgotLabel={t('auth.login.forgot-password')}
             loadingLabel={t('common.loading')}
             email={form.email}
             password={form.password}
@@ -45,6 +48,9 @@ export function LoginPage(): ReactNode {
             onEmailChange={form.setEmail}
             onPasswordChange={form.setPassword}
             onSubmit={form.submit}
+            onForgotPassword={() => {
+              void navigate({ to: '/recuperar-senha' })
+            }}
           />
         </div>
       </div>

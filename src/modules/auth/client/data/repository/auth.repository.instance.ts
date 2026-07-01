@@ -4,8 +4,10 @@
  * (boundary). O token nunca vem ao client (a server fn devolve só { ok, userId } | { ok:false, error }).
  */
 import { loginFn } from '#modules/auth/server/adapters/server-fns/login.server-fn.ts'
+import { requestPasswordResetFn } from '#modules/auth/server/adapters/server-fns/request-password-reset.server-fn.ts'
 import { createAuthRepository } from './auth.repository.ts'
 
 export const authRepository = createAuthRepository({
   loginFn: (opts) => loginFn(opts),
+  requestPasswordResetFn: (opts) => requestPasswordResetFn(opts),
 })

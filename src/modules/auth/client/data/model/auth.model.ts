@@ -11,6 +11,12 @@ export const LoginInputSchema = z.object({
 })
 export type LoginInput = z.infer<typeof LoginInputSchema>
 
+/** Input do "Esqueci Minha Senha" (#037) — só o e-mail (validado na borda do client, §VI). */
+export const ForgotPasswordInputSchema = z.object({
+  email: z.email(),
+})
+export type ForgotPasswordInput = z.infer<typeof ForgotPasswordInputSchema>
+
 export const CurrentUserSchema = z.object({
   userId: z.string().trim(),
   // RBAC hint de UI (FR-020 partners) — o `can()` lê daqui. Default [] mantém compat.

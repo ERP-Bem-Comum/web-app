@@ -82,6 +82,7 @@ export type CoreApiAuthClient = Readonly<{
   me: (accessToken: string) => Promise<Result<AuthUser, AuthError>>
   getPasswordPolicy: () => Promise<Result<PasswordPolicy, AuthError>>
   listApprovers: (accessToken: string) => Promise<Result<readonly Approver[], AuthError>>
+  forgotPassword: (input: Readonly<{ email: string }>) => Promise<Result<void, AuthError>>
 }>
 
 // `baseUrl` = .../api/v2 (auth). `baseUrlV1` = .../api/v1 — onde vivem os aprovadores (#148).
@@ -134,5 +135,16 @@ export const createCoreApiAuthClient = (baseUrl: string, baseUrlV1: string): Cor
       return err('server')
     }
     return ok(parsed.data.items.map((u) => ({ id: u.id, name: u.name ?? u.id })))
+  },
+
+  // Recuperação de senha: POST /auth/forgot-password { email }. Anti-enumeração (BE-REC-003): o core-api
+  // responde SEMPRE 202, sem revelar se o e-mail existe — dispara `PasswordResetRequested`. Não há body de
+  // sucesso para validar; só distinguimos "completou" (ok) de "não completou" (AuthError de rede/5xx).
+  forgotPassword: async ({ email }) => {
+    const r = await resultFetch<unknown>(`${baseUrl}/auth/forgot-password`, {
+      method: 'POST',
+      body: { email },
+    })
+    return isErr(r) ? err(mapHttpToAuthError(r.error)) : ok(undefined)
   },
 })

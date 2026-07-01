@@ -16,7 +16,14 @@ const here = dirname(fileURLToPath(import.meta.url))
 const routesDir = join(here, '..', '..', 'src', 'routes')
 
 /** Rotas públicas permitidas FORA de `_authenticated/`. Mudou? Edite aqui conscientemente. */
-const PUBLIC_ROUTES: readonly string[] = ['index.tsx', 'login.tsx', 'health.tsx']
+const PUBLIC_ROUTES: readonly string[] = [
+  'index.tsx',
+  'login.tsx',
+  'health.tsx',
+  // Fluxo "Esqueci Minha Senha" (#037): rota pública por construção (usuário deslogado). Sem sessão;
+  // beforeLoad redireciona ao dashboard se já autenticado. Anti-enumeração garantida no BFF.
+  'recuperar-senha.tsx',
+]
 
 /** Infra do router (não são rotas de conteúdo). */
 const ROUTER_INFRA: readonly string[] = ['__root.tsx']
