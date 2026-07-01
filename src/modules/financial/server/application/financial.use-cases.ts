@@ -16,6 +16,7 @@ import type {
   ManualPaymentInput,
   ListPayableTitlesInput,
   PayableTitleListResponse,
+  RecentPayment,
 } from '#modules/financial/server/domain/document.io.ts'
 
 export type FinancialClient = Readonly<{
@@ -34,6 +35,7 @@ export type FinancialClient = Readonly<{
     input: ManualPaymentInput,
     token: string,
   ) => Promise<Result<DocumentDetail, FinancialError>>
+  getRecentPayments: (token: string) => Promise<Result<readonly RecentPayment[], FinancialError>>
 }>
 
 type Deps = Readonly<{ client: FinancialClient }>
@@ -82,3 +84,8 @@ export const createRegisterManualPayment =
   (deps: Deps) =>
   (input: ManualPaymentInput, token: string): Promise<Result<DocumentDetail, FinancialError>> =>
     deps.client.registerManualPayment(input, token)
+
+export const createGetRecentPayments =
+  (deps: Deps) =>
+  (token: string): Promise<Result<readonly RecentPayment[], FinancialError>> =>
+    deps.client.getRecentPayments(token)

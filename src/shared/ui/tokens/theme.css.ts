@@ -29,6 +29,7 @@ createGlobalTheme(':root', vars, {
       financier: { ...tokenValues.color.partnerType.financier },
       act: { ...tokenValues.color.partnerType.act },
     },
+    chart: { ...tokenValues.color.chart },
     institutional: { ...tokenValues.color.institutional },
   },
   radius: { ...tokenValues.radius },

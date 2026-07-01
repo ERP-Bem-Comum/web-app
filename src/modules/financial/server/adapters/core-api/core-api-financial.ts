@@ -12,8 +12,15 @@ import type {
   ListDocumentsInput,
   ListPayableTitlesInput,
   PayableTitleListResponse,
+  RecentPayment,
 } from '#modules/financial/server/domain/document.io.ts'
-import { detailToModel, listToModel, payableTitlesToModel, mapHttpError } from './financial.mappers.ts'
+import {
+  detailToModel,
+  listToModel,
+  payableTitlesToModel,
+  recentPaymentsToModel,
+  mapHttpError,
+} from './financial.mappers.ts'
 
 // #201: status PT→EN completo (a listagem por título cobre os 7 status, não só os da Fatia 1).
 const STATUS_TO_BACKEND_FULL: Partial<Record<string, string>> = {
@@ -73,6 +80,11 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
       const r = await resultFetch<unknown>(`${baseUrl}/payable-titles?${buildTitlesQuery(input)}`, { token })
       if (isErr(r)) return err(mapHttpError(r.error))
       return payableTitlesToModel(r.value)
+    },
+    getRecentPayments: async (token): Promise<Result<readonly RecentPayment[], FinancialError>> => {
+      const r = await resultFetch<unknown>(`${baseUrl}/dashboard/recent-payments`, { token })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      return recentPaymentsToModel(r.value)
     },
     getById: async (id, token) => {
       const r = await resultFetch<unknown>(`${docs}/${id}`, { token })

@@ -94,3 +94,17 @@ export const CoreApiPayableTitleListSchema = z.object({
   total: z.int(),
 })
 export type CoreApiPayableTitleList = z.infer<typeof CoreApiPayableTitleListSchema>
+
+// 042: widget "Últimos pagamentos" (GET /financial/dashboard/recent-payments) — Top-5 pagos.
+export const CoreApiRecentPaymentSchema = z.object({
+  payableId: z.string().trim(),
+  documentId: z.string().trim(),
+  supplierRef: z.string().trim().nullable().catch(null),
+  debitAccountRef: z.string().trim().nullable().catch(null),
+  valueCents: z.string().trim().catch('0'),
+  paidAt: z.string().trim().nullable().catch(null),
+})
+export type CoreApiRecentPayment = z.infer<typeof CoreApiRecentPaymentSchema>
+
+export const CoreApiRecentPaymentListSchema = z.array(CoreApiRecentPaymentSchema)
+export type CoreApiRecentPaymentList = z.infer<typeof CoreApiRecentPaymentListSchema>
