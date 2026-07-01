@@ -5,25 +5,26 @@
 **Política**: zero-mock (ADR-0011) · zero-regressão · testes antes (TDD, `node:test`) · valores em **centavos**.
 Cada page só integra quando o endpoint do core-api existir; até lá, adianta-se o que independe do backend.
 
-## Fase 1 — Setup (estrutura do módulo)
+## Fase 1 — Setup (estrutura do módulo) ✅
 
-- [ ] T001 Criar estrutura `src/modules/budget-plans/{server,client,public-api}` espelhando `auth`.
-- [ ] T002 `public-api/index.ts` (stub de exports).
+- [x] T001 Estrutura `src/modules/budget-plans/{server,client,public-api}` espelhando `auth`.
+- [x] T002 `public-api/index.ts`.
 
-## Fase 2 — Fundação PURA (independe do backend) 🎯 começa agora
+## Fase 2 — Fundação PURA (independe do backend) ✅ CONCLUÍDA (commit 1afcc47d7)
 
-- [ ] T003 [P] Enums `as const` + Zod em `client/data/model/enums.ts`: `BudgetPlanStatus` (RASCUNHO/EM_CALIBRACAO/APROVADO), `ReleaseType` (IPCA/CAED/DESPESAS_PESSOAIS/DESPESAS_LOGISTICAS), `SubCategoryType` (INSTITUCIONAL/REDE), `CostCenterType` ("A PAGAR"/"A RECEBER").
-- [ ] T004 [P] Tipos de input dos 4 lançamentos (união discriminada por `releaseType`) em `client/domain/calc/types.ts` (campos `*InCents`).
-- [ ] T005 [P] **RED**: testes das 4 fórmulas em `tests/modules/budget-plans/calc-preview.test.ts` (casos derivados do legado).
-- [ ] T006 As 4 funções puras de preview + dispatcher em `client/domain/calc/preview.ts` (espelha `calc-total-value-result.ts`, retorna centavos inteiros) → testes GREEN.
-- [ ] T007 [P] Helpers de derivação: `deriveEditable(status)`, `sumMonths`, `formatCentsBRL` (via `Intl`) em `client/domain/calc/derive.ts` + testes.
+- [x] T003 [P] Enums `as const` + Zod em `client/data/model/enums.ts`.
+- [x] T004 [P] Tipos de input dos 4 lançamentos (união discriminada) em `client/domain/calc/types.ts`.
+- [x] T005 [P] Testes das 4 fórmulas em `tests/modules/budget-plans/calc-preview.test.ts`.
+- [x] T006 As 4 funções puras de preview + dispatcher em `client/domain/calc/preview.ts` (GREEN).
+- [x] T007 [P] Derivações `deriveEditable`/`sumMonths`/`formatCentsBRL` em `client/domain/calc/derive.ts` + testes.
 
-## Fase 3 — US1 Listar/criar plano (Priority: P1) — _aguarda endpoints_
+## Fase 3 — US1 Listar/criar plano (Priority: P1) — _page aguarda endpoints_
 
-- [ ] T010 [P] [US1] `client/data/model/budget-plan.model.ts` (Zod do retorno do BFF: plano + children + parceiros).
+- [x] T010 [P] [US1] `client/data/model/budget-plan.model.ts` (Zod: plano + children + parceiros + params + create).
+- [x] T013a [US1] `client/planejamento/planejamento-list.view-model.ts` PURO (status/rótulos/ações do menu §1.3) + testes.
 - [ ] T011 [US1] `server/adapters/server-fns/list-budget-plans.server-fn.ts` (+ schema Zod) — **gate: `GET /budget-plans`**.
 - [ ] T012 [US1] `server/adapters/server-fns/create-budget-plan.server-fn.ts` — **gate: `POST /budget-plans`**.
-- [ ] T013 [US1] `client/data/repository/budget-plans.repository.ts` + `viewModel` da lista (filtros/paginação/derivações).
+- [ ] T013b [US1] `client/data/repository/budget-plans.repository.ts` (porta → server fn) — **gate: endpoints**.
 - [ ] T014 [US1] `client/planejamento/page` + `components` (TreeTable, StatusBadge, Criar Plano modal) + `bind` + rota `src/routes/planejamento`.
 - [ ] T015 [US1] Testes DOM (Vitest) da page/binding.
 
