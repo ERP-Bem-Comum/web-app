@@ -215,3 +215,13 @@ export type PayableTitleListResponse = Readonly<{
   pageSize: number
   total: number
 }>
+
+// ── Widget "Últimos pagamentos" (042 — GET /financial/dashboard/recent-payments): Top-5 pagos ──
+export interface RecentPayment {
+  payableId: string
+  documentId: string
+  supplierRef: string | null
+  debitAccountRef: string | null
+  valueCents: string // STRING de centavos — formata na view
+  paidAt: string | null // ISO YYYY-MM-DD
+}

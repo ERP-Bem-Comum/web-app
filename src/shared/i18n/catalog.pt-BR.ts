@@ -1834,6 +1834,45 @@ export const ptBR: Catalog = {
   'financial.list.chip.pago': 'Pago',
   'financial.list.chip.conciliado': 'Conciliado',
 
+  // ── Dashboard "Resumo Mensal" (043 — reprodução fiel do legado) ──
+  'dashboard.title': 'Dashboard - Resumo Mensal',
+
+  // Linha 1 — 4 cards de métrica (placeholder; ligar em core-api#112)
+  'dashboard.metric.expenses.label': 'Gastos',
+  'dashboard.metric.expenses.trend': 'Último mês',
+  'dashboard.metric.revenue.label': 'Arrecadação',
+  'dashboard.metric.revenue.trend': 'Último mês',
+  'dashboard.metric.top-financier.label': 'Top Financiador',
+  'dashboard.metric.top-financier.trend': 'Financiador',
+  'dashboard.metric.top-cost-center.label': 'Top Centro de Custo',
+  'dashboard.metric.top-cost-center.trend': 'Centro de Custo',
+
+  // Linha 2 — esquerda: card "Visão geral" + gráfico de linha (Previsto x Realizado)
+  'dashboard.overview.title': 'Visão geral',
+  'dashboard.overview.subtitle': 'Previsto x Realizado',
+  'dashboard.overview.see-all': 'Ver tudo',
+  'dashboard.chart.series.forecast': 'Previsto',
+  'dashboard.chart.series.realized': 'Realizado',
+
+  // Linha 2 — direita-topo: donut "Pagamentos por Centro de Custo em %"
+  'dashboard.cost-center.title': 'Pagamentos por Centro de Custo em %',
+  'dashboard.cost-center.empty': 'Sem gastos no mês anterior',
+
+  // Linha 2 — direita-baixo: card "Fornecedores sem Contrato"
+  'dashboard.suppliers-no-contract.title': 'Fornecedores sem Contrato',
+  'dashboard.suppliers-no-contract.see-all': 'Ver todas',
+
+  // Linha 3 — widget "Últimos pagamentos" (042, dados REAIS). Headers alinhados ao legado.
+  'dashboard.recent-payments.title': 'Últimos Pagamentos Realizados',
+  'dashboard.recent-payments.col.supplier': 'Nome',
+  'dashboard.recent-payments.col.debit-account': 'Conta',
+  'dashboard.recent-payments.col.value': 'Valor',
+  'dashboard.recent-payments.col.paid-at': 'Vencimento',
+  'dashboard.recent-payments.empty': 'Nenhum pagamento recente.',
+  'dashboard.recent-payments.error': 'Não foi possível carregar os pagamentos.',
+  'dashboard.recent-payments.forbidden': 'Você não tem permissão para ver os pagamentos.',
+  'dashboard.recent-payments.loading': 'Carregando…',
+
   // ── Shell (top bar) ──
   'shell.topbar.brand': 'Bem Comum',
   'shell.topbar.greeting': 'Olá, {{name}}',

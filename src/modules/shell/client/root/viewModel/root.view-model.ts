@@ -86,6 +86,9 @@ export const rootViewModel = {
     !isPrefixPath(path, '/usuarios') &&
     !isPrefixPath(path, '/minha-conta') &&
     !isPrefixPath(path, '/programas') &&
+    // Dashboard (043): tela full-bleed com fundo de canvas próprio e sem título (pedido da P.O.) —
+    // o h1 do shell criaria título + margem branca. O document.title continua vindo de PAGE_TITLES.
+    !isPrefixPath(path, '/dashboard') &&
     // Workspace de conciliação (uma conta) já tem o hero da conta como header — sem h1 do shell.
     // O grid /financeiro/conciliacao (sem barra final) mantém o h1 "Contas Bancárias".
     !path.startsWith('/financeiro/conciliacao/') &&
@@ -93,9 +96,10 @@ export const rootViewModel = {
     !isPrefixPath(path, '/financeiro/contas-a-pagar/lancar'),
 
   // Conteúdo "full-bleed" (sem o padding do shell): o workspace de conciliação espelha o mock — hero, abas,
-  // corpo e footer encostam nas bordas da área de conteúdo (igual incluir contrato). Só o workspace
-  // (sub-rota), não o grid /financeiro/conciliacao, que mantém o layout padrão com h1.
-  fullBleedContent: (path: string): boolean => path.startsWith('/financeiro/conciliacao/'),
+  // corpo e footer encostam nas bordas da área de conteúdo (igual incluir contrato). O Dashboard (043)
+  // também é full-bleed: o canvas bege preenche toda a área de conteúdo (sem a margem branca do shell).
+  fullBleedContent: (path: string): boolean =>
+    path.startsWith('/financeiro/conciliacao/') || isPrefixPath(path, '/dashboard'),
 
   /**
    * RBAC: remove seções/subitens cujo `requiredPermission` não está em `permissions`. Uma seção de

@@ -19,11 +19,13 @@ import type {
   DocumentListResponse,
   PayableTitleListResponse,
   PayableTitleItem,
+  RecentPayment,
 } from '#modules/financial/server/domain/document.io.ts'
 import {
   CoreApiDocumentSchema,
   CoreApiDocumentListSchema,
   CoreApiPayableTitleListSchema,
+  CoreApiRecentPaymentListSchema,
   type CoreApiPayable,
 } from './financial.schema.ts'
 
@@ -161,6 +163,21 @@ export const listToModel = (raw: unknown): Result<DocumentListResponse, Financia
     version: s.version,
   }))
   return ok({ items, page: l.page, pageSize: l.pageSize, total: l.total })
+}
+
+// 042: widget "Últimos pagamentos" (Top-5 pagos). Array parse tolerante; drift → err('server').
+export const recentPaymentsToModel = (raw: unknown): Result<readonly RecentPayment[], FinancialError> => {
+  const parsed = CoreApiRecentPaymentListSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  const items: readonly RecentPayment[] = parsed.data.map((p) => ({
+    payableId: p.payableId,
+    documentId: p.documentId,
+    supplierRef: p.supplierRef,
+    debitAccountRef: p.debitAccountRef,
+    valueCents: p.valueCents,
+    paidAt: p.paidAt,
+  }))
+  return ok(items)
 }
 
 // #201: listagem por TÍTULO (pai + filhos). Reusa os mesmos enums tolerantes (status EN→PT, kind, etc).

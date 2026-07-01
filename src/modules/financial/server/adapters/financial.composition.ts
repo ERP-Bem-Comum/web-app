@@ -16,6 +16,7 @@ import {
   createUndoApproval,
   createCancelDocument,
   createRegisterManualPayment,
+  createGetRecentPayments,
 } from '#modules/financial/server/application/financial.use-cases.ts'
 
 type FinancialServer = ReturnType<typeof build>
@@ -33,6 +34,7 @@ const build = () => {
     undoApproval: createUndoApproval({ client }),
     cancelDocument: createCancelDocument({ client }),
     registerManualPayment: createRegisterManualPayment({ client }),
+    getRecentPayments: createGetRecentPayments({ client }),
   }
 }
 
