@@ -48,6 +48,18 @@ export const ptBR: Catalog = {
   'auth.reset.invalid-link-body': 'Este link é inválido ou expirou. Solicite um novo.',
   'auth.reset.invalid-link-cta': 'Solicitar novo link',
   'auth.reset.error.link-invalid': 'Este link é inválido ou expirou. Solicite um novo.',
+  // Ativação de Conta (#039) — mesma tela do reset (variant='activate'); só o texto muda. Checklist
+  // da policy e labels de campo reusam `auth.reset.*`.
+  'auth.activate.title': 'Criar Senha',
+  'auth.activate.subtitle': 'Boas-vindas! Defina uma senha para acessar o sistema.',
+  'auth.activate.submit': 'Criar senha',
+  'auth.activate.success-title': 'Conta ativada!',
+  'auth.activate.success-body': 'Sua senha foi criada. Você já pode entrar no sistema.',
+  'auth.activate.success-cta': 'Ir para o login',
+  'auth.activate.invalid-link-title': 'Convite inválido',
+  'auth.activate.invalid-link-body': 'Este convite é inválido ou expirou. Peça um novo ao administrador.',
+  'auth.activate.invalid-link-cta': 'Ir para o login',
+  'auth.activate.error.link-invalid': 'Este convite é inválido ou expirou.',
   // Comum (reutilizável)
   'common.loading': 'Carregando…',
   'common.back': 'Voltar',
