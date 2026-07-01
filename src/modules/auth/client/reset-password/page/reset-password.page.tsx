@@ -1,10 +1,12 @@
 /**
  * ResetPasswordPage — template/composição (§XI, ADR-0009): liga o binding + Controller + Views burras +
- * modal de sucesso do fluxo "Redefinir Senha" (#038). Reaproveita o SHELL visual do login (só-tokens):
- * fundo com formas, card branco sobre a barra laranja.
+ * modal de sucesso da tela de "definir senha". Serve DOIS fluxos IDÊNTICOS via `variant`:
+ * 'reset' (Redefinir Senha #038) e 'activate' (Ativação de Conta #039). Só o TEXTO e o destino do CTA
+ * de link inválido mudam (via `setPasswordCopy`); form/checklist/modal/binding/view-model/server-fn
+ * são reusados iguais. Reaproveita o SHELL visual do login (só-tokens): fundo com formas, card branco.
  *
- * Estados: (a) `token` ausente/vazio → ResetPasswordInvalidLink (sem form) → "Recuperar Senha";
- * (b) sucesso (2xx) → ResetPasswordSuccessModal → login; (c) erro 400 → mensagem única "link inválido"
+ * Estados: (a) `token` ausente/vazio → ResetPasswordInvalidLink (sem form) → CTA da variant;
+ * (b) sucesso (2xx) → ResetPasswordSuccessModal → login; (c) erro 400 → mensagem única da variant
  * dentro do form; rede/5xx → mensagem genérica. O `token` vem da ROTA (search param) por prop.
  */
 import type { ReactNode } from 'react'
@@ -31,10 +33,15 @@ import {
 } from '../components/forms/reset-password-form.component.tsx'
 import { ResetPasswordInvalidLink } from '../components/invalid-link.component.tsx'
 import { ResetPasswordSuccessModal } from '../components/success-modal.component.tsx'
+import { setPasswordCopy, setPasswordErrorKey, type SetPasswordVariant } from './set-password.copy.ts'
 
 const t = createTranslator(ptBR)
 
-export type ResetPasswordPageProps = Readonly<{ token: string | null }>
+export type ResetPasswordPageProps = Readonly<{
+  token: string | null
+  /** 'reset' (#038, default) ou 'activate' (#039). Só troca copy + destino do CTA de link inválido. */
+  variant?: SetPasswordVariant
+}>
 
 function ResetPasswordShell(props: Readonly<{ children: ReactNode }>): ReactNode {
   return (
@@ -50,9 +57,11 @@ function ResetPasswordShell(props: Readonly<{ children: ReactNode }>): ReactNode
 }
 
 export function ResetPasswordPage(props: ResetPasswordPageProps): ReactNode {
+  const variant: SetPasswordVariant = props.variant ?? 'reset'
+  const copy = setPasswordCopy(variant)
   const navigate = useNavigate()
-  const goToForgot = (): void => {
-    void navigate({ to: '/recuperar-senha' })
+  const goToInvalidTarget = (): void => {
+    void navigate({ to: copy.invalidTarget })
   }
 
   // Sem token no link → estado inválido (sem form). Nunca renderiza o formulário.
@@ -60,20 +69,21 @@ export function ResetPasswordPage(props: ResetPasswordPageProps): ReactNode {
     return (
       <ResetPasswordShell>
         <ResetPasswordInvalidLink
-          title={t('auth.reset.invalid-link-title')}
-          message={t('auth.reset.invalid-link-body')}
-          ctaLabel={t('auth.reset.invalid-link-cta')}
-          onCta={goToForgot}
+          title={t(copy.invalidTitleKey)}
+          message={t(copy.invalidBodyKey)}
+          ctaLabel={t(copy.invalidCtaKey)}
+          onCta={goToInvalidTarget}
         />
       </ResetPasswordShell>
     )
   }
 
-  return <ResetPasswordFormBody token={props.token} onGoToForgot={goToForgot} />
+  return <ResetPasswordFormBody token={props.token} variant={variant} />
 }
 
 // Corpo com token válido: separado para os hooks só rodarem quando há form (regra dos hooks).
-function ResetPasswordFormBody(props: Readonly<{ token: string; onGoToForgot: () => void }>): ReactNode {
+function ResetPasswordFormBody(props: Readonly<{ token: string; variant: SetPasswordVariant }>): ReactNode {
+  const copy = setPasswordCopy(props.variant)
   const { resetPasswordCommand, passwordLimits } = useResetPasswordBinding()
   const form = useResetPasswordFormController(
     props.token,
@@ -104,11 +114,11 @@ function ResetPasswordFormBody(props: Readonly<{ token: string; onGoToForgot: ()
   return (
     <ResetPasswordShell>
       <ResetPasswordForm
-        title={t('auth.reset.title')}
-        subtitle={t('auth.reset.subtitle')}
+        title={t(copy.titleKey)}
+        subtitle={t(copy.subtitleKey)}
         newLabel={t('auth.reset.new-label')}
         confirmLabel={t('auth.reset.confirm-label')}
-        submitLabel={t('auth.reset.submit')}
+        submitLabel={t(copy.submitKey)}
         backLabel={t('auth.reset.back-to-login')}
         loadingLabel={t('common.loading')}
         requirementsLabel={t('auth.reset.requirements')}
@@ -122,7 +132,11 @@ function ResetPasswordFormBody(props: Readonly<{ token: string; onGoToForgot: ()
         showMismatch={showMismatch}
         canSubmit={canSubmit}
         submitting={resetPasswordCommand.running}
-        errorText={resetPasswordCommand.errorTag === null ? null : t(resetPasswordCommand.errorTag)}
+        errorText={
+          resetPasswordCommand.errorTag === null
+            ? null
+            : t(setPasswordErrorKey(props.variant, resetPasswordCommand.errorTag))
+        }
         errorReference={
           resetPasswordCommand.errorReference === null
             ? null
@@ -138,9 +152,9 @@ function ResetPasswordFormBody(props: Readonly<{ token: string; onGoToForgot: ()
 
       <ResetPasswordSuccessModal
         open={resetPasswordCommand.succeeded}
-        title={t('auth.reset.success-title')}
-        message={t('auth.reset.success-body')}
-        confirmLabel={t('auth.reset.success-cta')}
+        title={t(copy.successTitleKey)}
+        message={t(copy.successBodyKey)}
+        confirmLabel={t(copy.successCtaKey)}
         onConfirm={resetPasswordCommand.backToLogin}
       />
     </ResetPasswordShell>

@@ -14,6 +14,7 @@ import { Route as RecuperarSenhaRouteImport } from './../routes/recuperar-senha'
 import { Route as ReadyRouteImport } from './../routes/ready'
 import { Route as LoginRouteImport } from './../routes/login'
 import { Route as HealthRouteImport } from './../routes/health'
+import { Route as ActivateRouteImport } from './../routes/activate'
 import { Route as AuthenticatedRouteRouteImport } from './../routes/_authenticated/route'
 import { Route as IndexRouteImport } from './../routes/index'
 import { Route as ShowcaseOrganismsRouteImport } from './../routes/showcase/organisms'
@@ -74,6 +75,11 @@ const LoginRoute = LoginRouteImport.update({
 const HealthRoute = HealthRouteImport.update({
   id: '/health',
   path: '/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ActivateRoute = ActivateRouteImport.update({
+  id: '/activate',
+  path: '/activate',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -289,6 +295,7 @@ const AuthenticatedParceirosAtosIdEditarRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/activate': typeof ActivateRoute
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/ready': typeof ReadyRoute
@@ -331,6 +338,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/activate': typeof ActivateRoute
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/ready': typeof ReadyRoute
@@ -375,6 +383,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/activate': typeof ActivateRoute
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/ready': typeof ReadyRoute
@@ -419,6 +428,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/activate'
     | '/health'
     | '/login'
     | '/ready'
@@ -461,6 +471,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/activate'
     | '/health'
     | '/login'
     | '/ready'
@@ -504,6 +515,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/activate'
     | '/health'
     | '/login'
     | '/ready'
@@ -548,6 +560,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  ActivateRoute: typeof ActivateRoute
   HealthRoute: typeof HealthRoute
   LoginRoute: typeof LoginRoute
   ReadyRoute: typeof ReadyRoute
@@ -591,6 +604,13 @@ declare module '@tanstack/react-router' {
       path: '/health'
       fullPath: '/health'
       preLoaderRoute: typeof HealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/activate': {
+      id: '/activate'
+      path: '/activate'
+      fullPath: '/activate'
+      preLoaderRoute: typeof ActivateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -992,6 +1012,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  ActivateRoute: ActivateRoute,
   HealthRoute: HealthRoute,
   LoginRoute: LoginRoute,
   ReadyRoute: ReadyRoute,

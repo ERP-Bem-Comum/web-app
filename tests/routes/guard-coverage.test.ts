@@ -27,6 +27,10 @@ const PUBLIC_ROUTES: readonly string[] = [
   // do e-mail (?token=...). Sem sessão; beforeLoad redireciona ao dashboard se já autenticado. O token
   // só cruza a fronteira via a server fn (Zod + CSRF-origin); nada de sessão no browser.
   'reset-password.tsx',
+  // Fluxo "Ativação de Conta" (#039): rota pública por construção — o convidado chega deslogado pelo
+  // link do e-mail de convite (?token=...). Mesma tela do reset (variant='activate'), mesmo server fn.
+  // Sem sessão; beforeLoad redireciona ao dashboard se já autenticado.
+  'activate.tsx',
 ]
 
 /** Infra do router (não são rotas de conteúdo). */
