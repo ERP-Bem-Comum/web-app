@@ -11,6 +11,9 @@ import type {
 import type { BudgetPlanStatus } from '#modules/budget-plans/client/data/model/enums.ts'
 import { deriveEditable, formatCentsBRL } from '#modules/budget-plans/client/domain/calc/derive.ts'
 
+// A view (client-ui) consome o tipo de status POR AQUI (o boundary §XI não a deixa tocar `data/`).
+export type { BudgetPlanStatus } from '#modules/budget-plans/client/data/model/enums.ts'
+
 export type StatusTone = 'neutral' | 'info' | 'success'
 export type StatusView = Readonly<{ label: string; tone: StatusTone }>
 
@@ -41,6 +44,19 @@ export const derivePlanDisplayName = (node: BudgetPlanNode): string =>
 /** Rótulo/subtítulo da versão-filha: nome do cenário ou "Inicial". */
 export const deriveVersionLabel = (node: BudgetPlanNode): string | null =>
   node.scenarioName ?? (node.version % 1 !== 0 ? 'Inicial' : null)
+
+/**
+ * Trilha de auditoria "{usuário} alteração {dd/mm/aaaa hh:mm}" (HANDBOOK §1.1). PURA: recebe o ISO e
+ * formata em pt-BR sem depender do fuso do runtime (usa os componentes UTC do timestamp).
+ */
+export const deriveAuditLabel = (updatedByName: string, updatedAtIso: string): string => {
+  const d = new Date(updatedAtIso)
+  if (Number.isNaN(d.getTime())) return updatedByName
+  const p2 = (n: number): string => String(n).padStart(2, '0')
+  const date = `${p2(d.getUTCDate())}/${p2(d.getUTCMonth() + 1)}/${String(d.getUTCFullYear())}`
+  const time = `${p2(d.getUTCHours())}:${p2(d.getUTCMinutes())}`
+  return `${updatedByName} alteração ${date} ${time}`
+}
 
 export const PLAN_ACTIONS = [
   'share',
@@ -79,6 +95,7 @@ export type PlanRow = Readonly<{
   totalLabel: string
   partnersLabel: string
   status: StatusView
+  auditLabel: string
   editable: boolean
   actions: readonly PlanAction[]
   children: readonly PlanRow[]
@@ -97,8 +114,70 @@ export const toPlanRow = (node: BudgetPlanNode, isRoot = true, hasApprovedSiblin
     totalLabel: formatCentsBRL(node.totalInCents),
     partnersLabel: derivePartnersLabel(node.partnersCount, node.networkKind),
     status: deriveStatusView(node.status),
+    auditLabel: deriveAuditLabel(node.updatedByName, node.updatedAt),
     editable: deriveEditable(node.status),
     actions: derivePlanActions({ isRoot, status: node.status, hasApprovedSibling }),
     children: node.children.map((c) => toPlanRow(c, false, childrenHaveApproved)),
   }
+}
+
+/** Filtro (funil §1.1): Ano/Programa/Status + busca textual. Aplicado só às RAÍZES (as filhas seguem o pai). */
+export type PlanFilter = Readonly<{
+  search?: string
+  year?: number
+  program?: string
+  status?: BudgetPlanStatus
+}>
+
+const matchesSearch = (node: BudgetPlanNode, term: string): boolean => {
+  const haystack = [
+    String(node.year),
+    node.programAbbreviation ?? '',
+    node.programName,
+    node.scenarioName ?? '',
+    node.version.toFixed(1),
+  ]
+    .join(' ')
+    .toLowerCase()
+  return haystack.includes(term.toLowerCase())
+}
+
+/** Filtra as raízes (mantém a árvore-filha intacta). `program` casa contra abreviação OU nome (case-insensitive). */
+export const filterPlans = (
+  roots: readonly BudgetPlanNode[],
+  filter: PlanFilter,
+): readonly BudgetPlanNode[] =>
+  roots.filter((node) => {
+    if (filter.year !== undefined && node.year !== filter.year) return false
+    if (filter.status !== undefined && node.status !== filter.status) return false
+    if (filter.program !== undefined && filter.program !== '') {
+      const p = filter.program.toLowerCase()
+      const abbr = (node.programAbbreviation ?? '').toLowerCase()
+      const name = node.programName.toLowerCase()
+      if (abbr !== p && name !== p) return false
+    }
+    if (
+      filter.search !== undefined &&
+      filter.search.trim() !== '' &&
+      !matchesSearch(node, filter.search.trim())
+    ) {
+      return false
+    }
+    return true
+  })
+
+export type Paginated<T> = Readonly<{
+  items: readonly T[]
+  page: number
+  totalPages: number
+  total: number
+}>
+
+/** Paginação client-side sobre as raízes filtradas (o backend paginará de verdade quando existir). */
+export const paginatePlans = <T>(items: readonly T[], page: number, limit: number): Paginated<T> => {
+  const total = items.length
+  const totalPages = Math.max(1, Math.ceil(total / Math.max(1, limit)))
+  const safePage = Math.min(Math.max(1, page), totalPages)
+  const start = (safePage - 1) * limit
+  return { items: items.slice(start, start + limit), page: safePage, totalPages, total }
 }

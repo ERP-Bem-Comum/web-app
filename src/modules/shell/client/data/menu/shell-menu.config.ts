@@ -58,7 +58,15 @@ export const MENU: readonly MenuSection[] = [
     iconId: 'calendar-check',
     subItems: [{ label: 'Contratos', to: '/contratos' }],
   },
-  { label: 'Plano Orçamentário', iconId: 'calendar-days' },
+  {
+    label: 'Plano Orçamentário',
+    iconId: 'calendar-days',
+    // Subitem SEM `requiredPermission` (mesmo critério de Programas/Contratos): o módulo `budget-plans`
+    // ainda não existe no core-api (#113); o acesso será cobrado pelo backend quando o endpoint nascer.
+    // Consolidado ABC (/consolidado) entra numa fatia posterior. `shell` não importa `budget-plans`
+    // (boundaries) — o `to` é literal.
+    subItems: [{ label: 'Planejamento', to: '/planejamento' }],
+  },
   { label: 'Relatórios', iconId: 'trending-up' },
   {
     label: 'Financeiro',

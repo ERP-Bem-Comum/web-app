@@ -52,6 +52,9 @@ const PAGE_TITLES: Readonly<Record<string, string>> = {
   '/usuarios': 'Usuários',
   '/minha-conta': 'Minha Conta',
   '/programas': 'Programas',
+  // Plano Orçamentário → Planejamento — a page tem seu próprio PageHeader (padrão Colaboradores); isto
+  // só alimenta o document.title (senão cairia no fallback "ERP Bem Comum").
+  '/planejamento': 'Planejamento',
   // Financeiro — o título é desenhado pelo PageHeader do shell (padrão Contratos, Nunito); sem isto
   // cairia no fallback "ERP Bem Comum".
   '/financeiro/contas-a-pagar': 'Contas a Pagar',
@@ -86,6 +89,8 @@ export const rootViewModel = {
     !isPrefixPath(path, '/usuarios') &&
     !isPrefixPath(path, '/minha-conta') &&
     !isPrefixPath(path, '/programas') &&
+    // /planejamento tem PageHeader próprio (padrão Colaboradores) — evita título duplicado.
+    !isPrefixPath(path, '/planejamento') &&
     // Workspace de conciliação (uma conta) já tem o hero da conta como header — sem h1 do shell.
     // O grid /financeiro/conciliacao (sem barra final) mantém o h1 "Contas Bancárias".
     !path.startsWith('/financeiro/conciliacao/') &&

@@ -19,6 +19,7 @@ import { Route as ActivateRouteImport } from './../routes/activate'
 import { Route as AuthenticatedRouteRouteImport } from './../routes/_authenticated/route'
 import { Route as IndexRouteImport } from './../routes/index'
 import { Route as ShowcaseOrganismsRouteImport } from './../routes/showcase/organisms'
+import { Route as AuthenticatedPlanejamentoRouteImport } from './../routes/_authenticated/planejamento'
 import { Route as AuthenticatedDashboardRouteImport } from './../routes/_authenticated/dashboard'
 import { Route as AuthenticatedUsuariosIndexRouteImport } from './../routes/_authenticated/usuarios/index'
 import { Route as AuthenticatedProgramasIndexRouteImport } from './../routes/_authenticated/programas/index'
@@ -102,6 +103,12 @@ const ShowcaseOrganismsRoute = ShowcaseOrganismsRouteImport.update({
   path: '/showcase/organisms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedPlanejamentoRoute =
+  AuthenticatedPlanejamentoRouteImport.update({
+    id: '/planejamento',
+    path: '/planejamento',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -309,6 +316,7 @@ export interface FileRoutesByFullPath {
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/reset-password': typeof ResetPasswordRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/planejamento': typeof AuthenticatedPlanejamentoRoute
   '/showcase/organisms': typeof ShowcaseOrganismsRoute
   '/contratos/$id': typeof AuthenticatedContratosIdRouteWithChildren
   '/contratos/criar': typeof AuthenticatedContratosCriarRoute
@@ -353,6 +361,7 @@ export interface FileRoutesByTo {
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/reset-password': typeof ResetPasswordRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/planejamento': typeof AuthenticatedPlanejamentoRoute
   '/showcase/organisms': typeof ShowcaseOrganismsRoute
   '/contratos/$id': typeof AuthenticatedContratosIdRouteWithChildren
   '/contratos/criar': typeof AuthenticatedContratosCriarRoute
@@ -399,6 +408,7 @@ export interface FileRoutesById {
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/planejamento': typeof AuthenticatedPlanejamentoRoute
   '/showcase/organisms': typeof ShowcaseOrganismsRoute
   '/_authenticated/contratos/$id': typeof AuthenticatedContratosIdRouteWithChildren
   '/_authenticated/contratos/criar': typeof AuthenticatedContratosCriarRoute
@@ -445,6 +455,7 @@ export interface FileRouteTypes {
     | '/recuperar-senha'
     | '/reset-password'
     | '/dashboard'
+    | '/planejamento'
     | '/showcase/organisms'
     | '/contratos/$id'
     | '/contratos/criar'
@@ -489,6 +500,7 @@ export interface FileRouteTypes {
     | '/recuperar-senha'
     | '/reset-password'
     | '/dashboard'
+    | '/planejamento'
     | '/showcase/organisms'
     | '/contratos/$id'
     | '/contratos/criar'
@@ -534,6 +546,7 @@ export interface FileRouteTypes {
     | '/recuperar-senha'
     | '/reset-password'
     | '/_authenticated/dashboard'
+    | '/_authenticated/planejamento'
     | '/showcase/organisms'
     | '/_authenticated/contratos/$id'
     | '/_authenticated/contratos/criar'
@@ -653,6 +666,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/showcase/organisms'
       preLoaderRoute: typeof ShowcaseOrganismsRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/planejamento': {
+      id: '/_authenticated/planejamento'
+      path: '/planejamento'
+      fullPath: '/planejamento'
+      preLoaderRoute: typeof AuthenticatedPlanejamentoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
@@ -949,6 +969,7 @@ const AuthenticatedParceirosFornecedoresIdRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedPlanejamentoRoute: typeof AuthenticatedPlanejamentoRoute
   AuthenticatedContratosIdRoute: typeof AuthenticatedContratosIdRouteWithChildren
   AuthenticatedContratosCriarRoute: typeof AuthenticatedContratosCriarRoute
   AuthenticatedProgramasIdRoute: typeof AuthenticatedProgramasIdRoute
@@ -981,6 +1002,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedPlanejamentoRoute: AuthenticatedPlanejamentoRoute,
   AuthenticatedContratosIdRoute: AuthenticatedContratosIdRouteWithChildren,
   AuthenticatedContratosCriarRoute: AuthenticatedContratosCriarRoute,
   AuthenticatedProgramasIdRoute: AuthenticatedProgramasIdRoute,
