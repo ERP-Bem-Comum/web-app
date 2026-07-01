@@ -17,6 +17,13 @@ export const ForgotPasswordInputSchema = z.object({
 })
 export type ForgotPasswordInput = z.infer<typeof ForgotPasswordInputSchema>
 
+/** Input do "Redefinir Senha" (#038) — token do link + nova senha (validado na borda do client, §VI). */
+export const ResetPasswordInputSchema = z.object({
+  token: z.string().trim().min(1),
+  newPassword: z.string().trim().min(1),
+})
+export type ResetPasswordInput = z.infer<typeof ResetPasswordInputSchema>
+
 export const CurrentUserSchema = z.object({
   userId: z.string().trim(),
   // RBAC hint de UI (FR-020 partners) — o `can()` lê daqui. Default [] mantém compat.

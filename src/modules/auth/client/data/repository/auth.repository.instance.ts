@@ -5,9 +5,11 @@
  */
 import { loginFn } from '#modules/auth/server/adapters/server-fns/login.server-fn.ts'
 import { requestPasswordResetFn } from '#modules/auth/server/adapters/server-fns/request-password-reset.server-fn.ts'
+import { resetPasswordFn } from '#modules/auth/server/adapters/server-fns/reset-password.server-fn.ts'
 import { createAuthRepository } from './auth.repository.ts'
 
 export const authRepository = createAuthRepository({
   loginFn: (opts) => loginFn(opts),
   requestPasswordResetFn: (opts) => requestPasswordResetFn(opts),
+  resetPasswordFn: (opts) => resetPasswordFn(opts),
 })

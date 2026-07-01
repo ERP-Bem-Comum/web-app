@@ -23,6 +23,10 @@ const PUBLIC_ROUTES: readonly string[] = [
   // Fluxo "Esqueci Minha Senha" (#037): rota pública por construção (usuário deslogado). Sem sessão;
   // beforeLoad redireciona ao dashboard se já autenticado. Anti-enumeração garantida no BFF.
   'recuperar-senha.tsx',
+  // Fluxo "Redefinir Senha" (#038): rota pública por construção — o usuário chega deslogado pelo link
+  // do e-mail (?token=...). Sem sessão; beforeLoad redireciona ao dashboard se já autenticado. O token
+  // só cruza a fronteira via a server fn (Zod + CSRF-origin); nada de sessão no browser.
+  'reset-password.tsx',
 ]
 
 /** Infra do router (não são rotas de conteúdo). */

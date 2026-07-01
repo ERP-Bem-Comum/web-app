@@ -9,26 +9,41 @@ import { createAuthRepository } from '#modules/auth/client/data/repository/auth.
 import { isOk, isErr } from '#shared/primitives/result.ts'
 import type { LoginFnResult } from '#modules/auth/server/adapters/server-fns/login.server-fn.ts'
 import type { RequestPasswordResetFnResult } from '#modules/auth/server/adapters/server-fns/request-password-reset.server-fn.ts'
-import type { LoginInput, ForgotPasswordInput } from '#modules/auth/client/data/model/auth.model.ts'
+import type { ResetPasswordFnResult } from '#modules/auth/server/adapters/server-fns/reset-password.server-fn.ts'
+import type {
+  LoginInput,
+  ForgotPasswordInput,
+  ResetPasswordInput,
+} from '#modules/auth/client/data/model/auth.model.ts'
 
 const input: LoginInput = { email: 'a@b.com', password: 'p', rememberDevice: false }
 
-// Stub padrão do reset (o login não o exercita; presença satisfaz a assinatura da porta).
+// Stubs padrão (o login não os exercita; presença satisfaz a assinatura da porta).
 const noopReset = (_o: { data: ForgotPasswordInput }): Promise<RequestPasswordResetFnResult> =>
+  Promise.resolve({ ok: true })
+const noopResetPassword = (_o: { data: ResetPasswordInput }): Promise<ResetPasswordFnResult> =>
   Promise.resolve({ ok: true })
 
 describe('auth.repository.login', () => {
   it('sucesso → ok(CurrentUser)', async () => {
     const loginFn = (_o: { data: LoginInput }): Promise<LoginFnResult> =>
       Promise.resolve({ ok: true, userId: 'u' })
-    const r = await createAuthRepository({ loginFn, requestPasswordResetFn: noopReset }).login(input)
+    const r = await createAuthRepository({
+      loginFn,
+      requestPasswordResetFn: noopReset,
+      resetPasswordFn: noopResetPassword,
+    }).login(input)
     assert.equal(isOk(r) && r.value.userId === 'u', true)
   })
 
   it('falha de auth → err(LoginFailure com code)', async () => {
     const loginFn = (_o: { data: LoginInput }): Promise<LoginFnResult> =>
       Promise.resolve({ ok: false, error: 'invalid-credentials' })
-    const r = await createAuthRepository({ loginFn, requestPasswordResetFn: noopReset }).login(input)
+    const r = await createAuthRepository({
+      loginFn,
+      requestPasswordResetFn: noopReset,
+      resetPasswordFn: noopResetPassword,
+    }).login(input)
     assert.equal(isErr(r) && r.error.code === 'invalid-credentials', true)
     assert.equal(isErr(r) && r.error.reference === undefined, true)
   })
@@ -36,7 +51,11 @@ describe('auth.repository.login', () => {
   it('erro server com reference → propaga code + reference (FR-024)', async () => {
     const loginFn = (_o: { data: LoginInput }): Promise<LoginFnResult> =>
       Promise.resolve({ ok: false, error: 'server', reference: 'req-xyz' })
-    const r = await createAuthRepository({ loginFn, requestPasswordResetFn: noopReset }).login(input)
+    const r = await createAuthRepository({
+      loginFn,
+      requestPasswordResetFn: noopReset,
+      resetPasswordFn: noopResetPassword,
+    }).login(input)
     assert.equal(isErr(r) && r.error.code === 'server' && r.error.reference === 'req-xyz', true)
   })
 })
@@ -50,7 +69,11 @@ describe('auth.repository.requestPasswordReset (#037 — anti-enumeração)', ()
     const requestPasswordResetFn = (_o: {
       data: ForgotPasswordInput
     }): Promise<RequestPasswordResetFnResult> => Promise.resolve({ ok: true })
-    const r = await createAuthRepository({ loginFn, requestPasswordResetFn }).requestPasswordReset(forgot)
+    const r = await createAuthRepository({
+      loginFn,
+      requestPasswordResetFn,
+      resetPasswordFn: noopResetPassword,
+    }).requestPasswordReset(forgot)
     assert.equal(isOk(r), true)
   })
 
@@ -58,7 +81,39 @@ describe('auth.repository.requestPasswordReset (#037 — anti-enumeração)', ()
     const requestPasswordResetFn = (_o: {
       data: ForgotPasswordInput
     }): Promise<RequestPasswordResetFnResult> => Promise.resolve({ ok: false, error: 'connectivity' })
-    const r = await createAuthRepository({ loginFn, requestPasswordResetFn }).requestPasswordReset(forgot)
+    const r = await createAuthRepository({
+      loginFn,
+      requestPasswordResetFn,
+      resetPasswordFn: noopResetPassword,
+    }).requestPasswordReset(forgot)
     assert.equal(isErr(r) && r.error.code === 'connectivity', true)
+  })
+})
+
+describe('auth.repository.resetPassword (#038)', () => {
+  const loginFn = (_o: { data: LoginInput }): Promise<LoginFnResult> =>
+    Promise.resolve({ ok: true, userId: 'u' })
+  const reset: ResetPasswordInput = { token: 'tok', newPassword: 'Aa1!aaaaaaaa' }
+
+  it('2xx (ok) → ok(void)', async () => {
+    const resetPasswordFn = (_o: { data: ResetPasswordInput }): Promise<ResetPasswordFnResult> =>
+      Promise.resolve({ ok: true })
+    const r = await createAuthRepository({
+      loginFn,
+      requestPasswordResetFn: noopReset,
+      resetPasswordFn,
+    }).resetPassword(reset)
+    assert.equal(isOk(r), true)
+  })
+
+  it('400 → err(reset-token-invalid) — link inválido/expirado/usado (não diferenciado)', async () => {
+    const resetPasswordFn = (_o: { data: ResetPasswordInput }): Promise<ResetPasswordFnResult> =>
+      Promise.resolve({ ok: false, error: 'reset-token-invalid' })
+    const r = await createAuthRepository({
+      loginFn,
+      requestPasswordResetFn: noopReset,
+      resetPasswordFn,
+    }).resetPassword(reset)
+    assert.equal(isErr(r) && r.error.code === 'reset-token-invalid', true)
   })
 })
