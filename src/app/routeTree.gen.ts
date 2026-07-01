@@ -14,6 +14,7 @@ import { Route as RecuperarSenhaRouteImport } from './../routes/recuperar-senha'
 import { Route as ReadyRouteImport } from './../routes/ready'
 import { Route as LoginRouteImport } from './../routes/login'
 import { Route as HealthRouteImport } from './../routes/health'
+import { Route as AutocadastroRouteImport } from './../routes/autocadastro'
 import { Route as ActivateRouteImport } from './../routes/activate'
 import { Route as AuthenticatedRouteRouteImport } from './../routes/_authenticated/route'
 import { Route as IndexRouteImport } from './../routes/index'
@@ -75,6 +76,11 @@ const LoginRoute = LoginRouteImport.update({
 const HealthRoute = HealthRouteImport.update({
   id: '/health',
   path: '/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AutocadastroRoute = AutocadastroRouteImport.update({
+  id: '/autocadastro',
+  path: '/autocadastro',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ActivateRoute = ActivateRouteImport.update({
@@ -296,6 +302,7 @@ const AuthenticatedParceirosAtosIdEditarRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/activate': typeof ActivateRoute
+  '/autocadastro': typeof AutocadastroRoute
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/ready': typeof ReadyRoute
@@ -339,6 +346,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/activate': typeof ActivateRoute
+  '/autocadastro': typeof AutocadastroRoute
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/ready': typeof ReadyRoute
@@ -384,6 +392,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/activate': typeof ActivateRoute
+  '/autocadastro': typeof AutocadastroRoute
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/ready': typeof ReadyRoute
@@ -429,6 +438,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/activate'
+    | '/autocadastro'
     | '/health'
     | '/login'
     | '/ready'
@@ -472,6 +482,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/activate'
+    | '/autocadastro'
     | '/health'
     | '/login'
     | '/ready'
@@ -516,6 +527,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/activate'
+    | '/autocadastro'
     | '/health'
     | '/login'
     | '/ready'
@@ -561,6 +573,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   ActivateRoute: typeof ActivateRoute
+  AutocadastroRoute: typeof AutocadastroRoute
   HealthRoute: typeof HealthRoute
   LoginRoute: typeof LoginRoute
   ReadyRoute: typeof ReadyRoute
@@ -604,6 +617,13 @@ declare module '@tanstack/react-router' {
       path: '/health'
       fullPath: '/health'
       preLoaderRoute: typeof HealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/autocadastro': {
+      id: '/autocadastro'
+      path: '/autocadastro'
+      fullPath: '/autocadastro'
+      preLoaderRoute: typeof AutocadastroRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/activate': {
@@ -1013,6 +1033,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   ActivateRoute: ActivateRoute,
+  AutocadastroRoute: AutocadastroRoute,
   HealthRoute: HealthRoute,
   LoginRoute: LoginRoute,
   ReadyRoute: ReadyRoute,

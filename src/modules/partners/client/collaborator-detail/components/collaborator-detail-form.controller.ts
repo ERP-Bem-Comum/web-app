@@ -24,6 +24,16 @@ import {
   type PixKeyType,
 } from '#modules/partners/client/data/model/collaborator.model.ts'
 
+// Núcleo PURO dos campos da 2ª etapa — extraído p/ reuso pelo Autocadastro (#040) sem mudar comportamento.
+import {
+  parseChildrenAges,
+  formatChildrenAges,
+  boolToTri,
+  buildCompleteFields,
+  computeHasCompleteData as computeHasCompleteFields,
+  type CollaboratorCompleteFieldsState,
+} from './collaborator-complete-fields.ts'
+
 // Re-export p/ a view burra (component) consumir os enums sem importar `data/` direto (boundary §XI).
 export {
   OCCUPATION_AREAS,
@@ -38,63 +48,33 @@ export {
   isPixKeyType,
 }
 
-// ── Helpers puros p/ "Idade dos filhos" (texto livre ↔ int[]) — testáveis isoladamente ──
-/** Extrai todos os inteiros não-negativos do texto, na ordem (ex.: "5 anos, 12 anos" → [5, 12]). */
-export const parseChildrenAges = (raw: string): number[] =>
-  (raw.match(/\d+/g) ?? []).map((d) => Number.parseInt(d, 10)).filter((n) => Number.isInteger(n) && n >= 0)
+// Re-export dos helpers puros de "Idade dos filhos" (agora em `children-ages.ts`) — API estável p/ quem
+// já importava daqui (detail component + testes). Comportamento idêntico.
+export { parseChildrenAges, formatChildrenAges }
 
-/** Formata int[] como texto legível p/ hidratação (ex.: [5, 12] → "5, 12"). */
-export const formatChildrenAges = (ages: readonly number[] | undefined): string =>
-  ages === undefined ? '' : ages.join(', ')
-
-export type CollaboratorDetailFormState = Readonly<{
-  // pré-cadastro
-  name: string
-  email: string
-  cpf: string
-  occupationArea: string
-  role: string
-  startOfContract: string
-  employmentRelationship: string
-  // cadastro completo (2ª etapa)
-  rg: string
-  dateOfBirth: string
-  completeAddress: string
-  telephone: string
-  emergencyContactName: string
-  emergencyContactTelephone: string
-  genderIdentity: string
-  race: string
-  allergies: string
-  foodCategory: string
-  foodCategoryDescription: string
-  education: string
-  biography: string
-  experienceInThePublicSector: '' | 'sim' | 'nao'
-  // Perfil completo (US2). Booleans como select sim/não (espelham experienceInThePublicSector).
-  sex: string
-  maritalStatus: string
-  publicSectorExperienceDuration: string
-  hasChildren: '' | 'sim' | 'nao'
-  childrenCount: string
-  childrenAges: string // texto livre ("5 anos, 12 anos") ↔ int[] via parse/format
-  isPwd: '' | 'sim' | 'nao'
-  pwdDescription: string
-  isOnLeave: '' | 'sim' | 'nao'
-  leaveDuration: string
-  leaveRenewable: '' | 'sim' | 'nao'
-  leaveRenewalDuration: string
-  // Território (#42) — somente leitura no detalhe (o PUT omite território).
-  uf: string
-  municipality: string
-  // Banco/PIX (#40) — create-only; somente leitura no detalhe (o PUT omite).
-  bank: string
-  agency: string
-  accountNumber: string
-  checkDigit: string
-  pixKeyType: PixKeyType
-  pixKey: string
-}>
+// O estado do form do detalhe = os campos da 2ª etapa (núcleo puro reusável) + pré-cadastro + território
+// + banco/PIX (estes últimos read-only no detalhe). `CollaboratorCompleteFieldsState` vem do módulo puro.
+export type CollaboratorDetailFormState = CollaboratorCompleteFieldsState &
+  Readonly<{
+    // pré-cadastro
+    name: string
+    email: string
+    cpf: string
+    occupationArea: string
+    role: string
+    startOfContract: string
+    employmentRelationship: string
+    // Território (#42) — somente leitura no detalhe (o PUT omite território).
+    uf: string
+    municipality: string
+    // Banco/PIX (#40) — create-only; somente leitura no detalhe (o PUT omite).
+    bank: string
+    agency: string
+    accountNumber: string
+    checkDigit: string
+    pixKeyType: PixKeyType
+    pixKey: string
+  }>
 
 const fromDetail = (c: CollaboratorDetail): CollaboratorDetailFormState => ({
   name: c.name,
@@ -142,90 +122,18 @@ const fromDetail = (c: CollaboratorDetail): CollaboratorDetailFormState => ({
   pixKey: c.pixKey?.key ?? '',
 })
 
-const blank = (s: string): string | undefined => (s.trim() === '' ? undefined : s.trim())
-
-// Tri-state do select sim/não ↔ boolean opcional (mesma semântica de experienceInThePublicSector).
-const boolToTri = (v: boolean | undefined): '' | 'sim' | 'nao' => (v === undefined ? '' : v ? 'sim' : 'nao')
-const triToBool = (v: '' | 'sim' | 'nao'): boolean | undefined => (v === '' ? undefined : v === 'sim')
-
-// childrenCount: texto → int (vazio/NaN → undefined). Reusa o parser de dígitos.
-const blankInt = (s: string): number | undefined => {
-  const t = s.trim()
-  if (t === '') return undefined
-  const n = Number.parseInt(t, 10)
-  return Number.isInteger(n) && n >= 0 ? n : undefined
-}
-
 /**
  * Monta o input do PATCH complete-registration a partir do estado do form (PURO — testável sem React).
- * Campos vazios → `undefined` (semântica "não informado"); booleans via tri-state; idades via parser.
+ * Delega a montagem dos campos ao núcleo puro (`buildCompleteFields`) e anexa o `id` do colaborador.
+ * Campos vazios → `undefined`; booleans via tri-state; idades via parser (comportamento inalterado).
  */
 export const buildCompleteInput = (
   state: CollaboratorDetailFormState,
   id: string,
-): CollaboratorCompleteInput => {
-  const ages = parseChildrenAges(state.childrenAges)
-  return {
-    id,
-    rg: blank(state.rg),
-    dateOfBirth: blank(state.dateOfBirth),
-    genderIdentity: blank(state.genderIdentity),
-    race: blank(state.race),
-    education: blank(state.education),
-    foodCategory: blank(state.foodCategory),
-    foodCategoryDescription: blank(state.foodCategoryDescription),
-    completeAddress: blank(state.completeAddress),
-    telephone: blank(state.telephone),
-    emergencyContactName: blank(state.emergencyContactName),
-    emergencyContactTelephone: blank(state.emergencyContactTelephone),
-    allergies: blank(state.allergies),
-    biography: blank(state.biography),
-    experienceInThePublicSector: triToBool(state.experienceInThePublicSector),
-    // Perfil completo (US2).
-    sex: blank(state.sex),
-    maritalStatus: blank(state.maritalStatus),
-    publicSectorExperienceDuration: blank(state.publicSectorExperienceDuration),
-    hasChildren: triToBool(state.hasChildren),
-    childrenCount: blankInt(state.childrenCount),
-    childrenAges: ages.length === 0 ? undefined : ages,
-    isPwd: triToBool(state.isPwd),
-    pwdDescription: blank(state.pwdDescription),
-    isOnLeave: triToBool(state.isOnLeave),
-    leaveDuration: blank(state.leaveDuration),
-    leaveRenewable: triToBool(state.leaveRenewable),
-    leaveRenewalDuration: blank(state.leaveRenewalDuration),
-  }
-}
+): CollaboratorCompleteInput => ({ id, ...buildCompleteFields(state) })
 
-/** Há algum dado de perfil (2ª etapa) preenchido? (PURO — testável sem React). */
-export const computeHasCompleteData = (f: CollaboratorDetailFormState): boolean => {
-  const texts = [
-    f.rg,
-    f.dateOfBirth,
-    f.completeAddress,
-    f.telephone,
-    f.emergencyContactName,
-    f.emergencyContactTelephone,
-    f.genderIdentity,
-    f.race,
-    f.allergies,
-    f.foodCategory,
-    f.foodCategoryDescription,
-    f.education,
-    f.biography,
-    // Perfil completo (US2).
-    f.sex,
-    f.maritalStatus,
-    f.publicSectorExperienceDuration,
-    f.childrenCount,
-    f.childrenAges,
-    f.pwdDescription,
-    f.leaveDuration,
-    f.leaveRenewalDuration,
-  ]
-  const tris = [f.experienceInThePublicSector, f.hasChildren, f.isPwd, f.isOnLeave, f.leaveRenewable]
-  return texts.some((v) => v.trim() !== '') || tris.some((v) => v !== '')
-}
+/** Há algum dado de perfil (2ª etapa) preenchido? (PURO — testável sem React). Delega ao núcleo puro. */
+export const computeHasCompleteData = (f: CollaboratorDetailFormState): boolean => computeHasCompleteFields(f)
 
 /** Hidratação PURA do estado do form a partir do detalhe carregado (testável sem React). */
 export const stateFromDetail = (detail: CollaboratorDetail): CollaboratorDetailFormState => fromDetail(detail)
