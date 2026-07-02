@@ -13,6 +13,7 @@ import {
   header,
   backButton,
   breadcrumb,
+  resultCard,
   titleRow,
   title,
   totalPlan,
@@ -65,17 +66,19 @@ export function PlanDetailPage(): ReactNode {
         <p className={notFound}>{t('budget-plans.detail.notFound')}</p>
       ) : (
         <>
-          <div className={titleRow}>
-            <h1 className={title}>
-              {state.header.title}
-              <Badge variant={BADGE_VARIANT[state.header.status.tone]} size="sm" uppercase>
-                {state.header.status.label}
-              </Badge>
-            </h1>
-            <span className={totalPlan}>
-              {t('budget-plans.detail.totalPlan')}{' '}
-              <span className={totalValue}>{state.header.totalLabel}</span>
-            </span>
+          <div className={resultCard}>
+            <div className={titleRow}>
+              <h1 className={title}>
+                {state.header.title}
+                <Badge variant={BADGE_VARIANT[state.header.status.tone]} size="sm" uppercase>
+                  {state.header.status.label}
+                </Badge>
+              </h1>
+              <span className={totalPlan}>
+                {t('budget-plans.detail.totalPlan')}{' '}
+                <span className={totalValue}>{state.header.totalLabel}</span>
+              </span>
+            </div>
           </div>
 
           <div className={actionBar}>

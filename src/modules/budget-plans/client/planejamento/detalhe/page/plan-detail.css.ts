@@ -52,6 +52,17 @@ export const breadcrumb = style({
   color: vars.color.text.primary,
 })
 
+// Card do RESULTADO (título + status + Total Plano) — reproduz o card do Consolidado: branco, borda leve.
+export const resultCard = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: vars.space.md,
+  padding: vars.space.lg,
+  borderRadius: vars.radius.lg,
+  border: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
+  background: vars.color.surface.default,
+})
+
 export const titleRow = style({
   display: 'flex',
   alignItems: 'center',
@@ -71,17 +82,24 @@ export const title = style({
   color: vars.color.text.primary,
 })
 
+// "Total Plano:" — rótulo pequeno e cinza + valor em AZUL de marca grande (mesmo padrão do Consolidado).
 export const totalPlan = style({
-  fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.md,
-  color: vars.color.nav.background,
+  display: 'inline-flex',
+  alignItems: 'baseline',
+  gap: vars.space.xs,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+  color: vars.color.text.secondary,
 })
 
 export const totalValue = style({
+  fontSize: vars.font.size.xl,
   fontWeight: vars.font.weight.bold,
+  color: vars.color.brand.normal,
   fontVariantNumeric: 'tabular-nums',
 })
 
+// Barra de filtros/ações — cinza clara SEM borda (removida a pedido; espelha a barra do Orçamento).
 export const actionBar = style({
   display: 'flex',
   alignItems: 'center',
@@ -89,9 +107,8 @@ export const actionBar = style({
   gap: vars.space.md,
   flexWrap: 'wrap',
   padding: vars.space.md,
-  borderRadius: vars.radius.lg,
-  border: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
-  background: vars.color.surface.default,
+  borderRadius: vars.radius.md,
+  background: vars.color.surface.subtle,
 })
 
 export const filterGroup = style({
