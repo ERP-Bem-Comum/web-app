@@ -12,26 +12,32 @@ export const header = style({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  paddingInline: vars.space.lg,
+  // Sem padding à esquerda: o slot do logo (4rem) fica colado à borda p/ centralizar o "B" sobre a
+  // coluna de ícones da sidebar recolhida (mesma largura). Padding fica só à direita (menu do usuário).
+  paddingInlineStart: 0,
+  paddingInlineEnd: vars.space.lg,
   zIndex: 1000,
 })
 
 export const brand = style({
   display: 'flex',
   alignItems: 'center',
-  gap: '0.625rem',
+  gap: vars.space.xs,
+  // `md` à esquerda p/ o "B" (34px) centrar ~x=33 ≈ centro da coluna de ícones da sidebar recolhida (32px),
+  // mantendo o nome "Bem Comum" colado ao ícone.
+  paddingInlineStart: vars.space.md,
 })
 
 export const logoImg = style({
   objectFit: 'contain',
-  borderRadius: vars.radius.md,
 })
 
 export const brandTitle = style({
   fontSize: vars.font.size.md,
   fontWeight: vars.font.weight.bold,
   color: vars.color.nav.ink,
-  fontFamily: vars.font.family.heading,
+  // Nunito (body) — padrão de marca alinhado aos títulos das telas.
+  fontFamily: vars.font.family.body,
 })
 
 export const userMenu = style({
