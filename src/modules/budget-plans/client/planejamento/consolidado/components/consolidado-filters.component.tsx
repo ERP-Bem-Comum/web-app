@@ -1,9 +1,14 @@
 import { useState, type ReactNode } from 'react'
 
+import { CalendarDaysIcon, ChevronDownIcon, FilterIcon, DownloadIcon } from '#shared/ui/index.ts'
+
 import {
   bar,
   fieldWrap,
   fieldLabel,
+  selectWrap,
+  selectIcon,
+  selectChevron,
   select,
   programChips,
   chip,
@@ -11,6 +16,7 @@ import {
   spacer,
   applyButton,
   exportButton,
+  buttonIcon,
 } from './consolidado-filters.css.ts'
 
 export type ConsolidadoFiltersLabels = Readonly<{
@@ -51,19 +57,27 @@ export function ConsolidadoFilters(props: ConsolidadoFiltersProps): ReactNode {
     <div className={bar}>
       <label className={fieldWrap}>
         <span className={fieldLabel}>{props.labels.yearBase}</span>
-        <select
-          className={select}
-          value={String(year)}
-          onChange={(e) => {
-            setYear(Number(e.target.value))
-          }}
-        >
-          {props.years.map((y) => (
-            <option key={y} value={String(y)}>
-              {y}
-            </option>
-          ))}
-        </select>
+        <span className={selectWrap}>
+          <span className={selectIcon} aria-hidden="true">
+            <CalendarDaysIcon size={16} />
+          </span>
+          <select
+            className={select}
+            value={String(year)}
+            onChange={(e) => {
+              setYear(Number(e.target.value))
+            }}
+          >
+            {props.years.map((y) => (
+              <option key={y} value={String(y)}>
+                {y}
+              </option>
+            ))}
+          </select>
+          <span className={selectChevron} aria-hidden="true">
+            <ChevronDownIcon size={16} />
+          </span>
+        </span>
       </label>
 
       <div className={fieldWrap}>
@@ -95,12 +109,18 @@ export function ConsolidadoFilters(props: ConsolidadoFiltersProps): ReactNode {
           props.onApply({ year, programs })
         }}
       >
+        <span className={buttonIcon} aria-hidden="true">
+          <FilterIcon size={15} />
+        </span>
         {props.labels.apply}
       </button>
 
       <span className={spacer} />
 
       <button type="button" className={exportButton} onClick={props.onExport}>
+        <span className={buttonIcon} aria-hidden="true">
+          <DownloadIcon size={15} />
+        </span>
         {props.labels.exportExcel}
       </button>
     </div>

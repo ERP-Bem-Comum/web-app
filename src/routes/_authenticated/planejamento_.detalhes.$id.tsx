@@ -6,6 +6,6 @@ import { createFileRoute } from '@tanstack/react-router'
 
 import { PlanDetailPage } from '#modules/budget-plans/client/planejamento/detalhe/page/plan-detail.page.tsx'
 
-export const Route = createFileRoute('/_authenticated/planejamento/detalhes/$id')({
+export const Route = createFileRoute('/_authenticated/planejamento_/detalhes/$id')({
   component: PlanDetailPage,
 })

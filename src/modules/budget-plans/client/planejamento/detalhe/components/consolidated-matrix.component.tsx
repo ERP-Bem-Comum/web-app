@@ -1,6 +1,15 @@
 import { Fragment, useState, type ReactNode } from 'react'
 
-import { ChevronDownIcon, ChevronUpIcon } from '#shared/ui/index.ts'
+import {
+  ChevronDownIcon,
+  ChevronUpIcon,
+  FileChartIcon,
+  UsersIcon,
+  GraduationCapIcon,
+  FileTextIcon,
+  ScaleIcon,
+} from '#shared/ui/index.ts'
+import type { IconComponent } from '#shared/ui/icons/index.ts'
 import type {
   MatrixView,
   MatrixRow,
@@ -9,6 +18,8 @@ import type {
 import {
   section,
   sectionHeader,
+  sectionTitleGroup,
+  sectionTitleIcon,
   sectionTitle,
   controls,
   toggleGroup,
@@ -21,14 +32,22 @@ import {
   th,
   thMonth,
   row,
+  childRow,
   nameCell,
   indent,
+  connector,
+  connectorDot,
   chevronButton,
+  rowIcon,
   nameText,
+  rowName,
+  rowNameChild,
   ccSubtotal,
   monthCell,
   totalRow,
   totalLabelCell,
+  totalLabelGroup,
+  totalLabelIcon,
   totalMonthCell,
 } from './consolidated-matrix.css.ts'
 
@@ -58,8 +77,20 @@ export type ConsolidatedMatrixProps = Readonly<{
 }>
 
 /**
- * Matriz consolidada (view BURRA) — serve às visões "Por Mês" e "Por Rede" (mesmo shape `MatrixView`).
- * Linhas em árvore expansíveis + linha TOTAL. Expansão = UI-state local (não server-state).
+ * Ícone do chip por PROFUNDIDADE do nó (mock mostra ícones distintos por nível):
+ * centro de custo (pessoas) → categoria (chapéu de formatura) → subcategoria (documento).
+ */
+const ICON_BY_DEPTH: Readonly<Record<MatrixRow['depth'], IconComponent>> = {
+  0: UsersIcon,
+  1: GraduationCapIcon,
+  2: FileTextIcon,
+}
+
+/**
+ * Matriz consolidada (view BURRA) — serve às visões "Por Mês" e "Por Rede" (mesmo shape `MatrixView`) e é
+ * compartilhada pelo Detalhe e pelo Consolidado ABC. Espelha o grid de Planejamento aprovado: linha-pai
+ * branca (nome/total índigo bold) + linhas-filhas azul-clarinho (conector + dot + chip por nível) e rodapé
+ * TOTAL azul-clarinho com totais mensais em índigo. Expansão = UI-state local (não server-state).
  */
 export function ConsolidatedMatrix(props: ConsolidatedMatrixProps): ReactNode {
   const [expanded, setExpanded] = useState<ReadonlySet<number>>(new Set())
@@ -77,14 +108,24 @@ export function ConsolidatedMatrix(props: ConsolidatedMatrixProps): ReactNode {
   const renderRow = (r: MatrixRow): ReactNode => {
     const hasChildren = r.children.length > 0
     const isOpen = expanded.has(r.id)
+    const isChild = r.depth > 0
+    const RowIcon = ICON_BY_DEPTH[r.depth]
     return (
       <Fragment key={`${String(r.depth)}-${String(r.id)}`}>
-        <tr className={row}>
+        <tr className={isChild ? childRow : row}>
           <td>
             <div className={nameCell}>
-              {Array.from({ length: r.depth }, (_, i) => (
-                <span key={i} className={indent} aria-hidden="true" />
-              ))}
+              {/* Indent crescente por nível + conector (linha + dot) na coluna do nome (só nas filhas). */}
+              {isChild ? (
+                <>
+                  {Array.from({ length: r.depth - 1 }, (_, i) => (
+                    <span key={i} className={indent} aria-hidden="true" />
+                  ))}
+                  <span className={connector} aria-hidden="true">
+                    <span className={connectorDot} />
+                  </span>
+                </>
+              ) : null}
               {hasChildren ? (
                 <button
                   type="button"
@@ -97,11 +138,14 @@ export function ConsolidatedMatrix(props: ConsolidatedMatrixProps): ReactNode {
                 >
                   {isOpen ? <ChevronUpIcon size={16} /> : <ChevronDownIcon size={16} />}
                 </button>
-              ) : (
+              ) : !isChild ? (
                 <span className={indent} aria-hidden="true" />
-              )}
+              ) : null}
+              <span className={rowIcon} aria-hidden="true">
+                <RowIcon size={16} />
+              </span>
               <span className={nameText}>
-                {r.name}
+                <span className={isChild ? rowNameChild : rowName}>{r.name}</span>
                 <span className={ccSubtotal}>{r.totalLabel}</span>
               </span>
             </div>
@@ -120,7 +164,12 @@ export function ConsolidatedMatrix(props: ConsolidatedMatrixProps): ReactNode {
   return (
     <div className={section}>
       <div className={sectionHeader}>
-        <h2 className={sectionTitle}>{props.labels.sectionTitle}</h2>
+        <span className={sectionTitleGroup}>
+          <span className={sectionTitleIcon} aria-hidden="true">
+            <FileChartIcon size={18} />
+          </span>
+          <h2 className={sectionTitle}>{props.labels.sectionTitle}</h2>
+        </span>
         <div className={controls}>
           <div className={toggleGroup} role="group">
             <button type="button" className={toggle} onClick={props.onSelectCentroCusto}>
@@ -180,7 +229,14 @@ export function ConsolidatedMatrix(props: ConsolidatedMatrixProps): ReactNode {
           <tfoot>
             <tr className={totalRow}>
               <td className={totalLabelCell}>
-                {props.labels.total}: {props.matrix.total.totalLabel}
+                <span className={totalLabelGroup}>
+                  <span className={totalLabelIcon} aria-hidden="true">
+                    <ScaleIcon size={16} />
+                  </span>
+                  <span>
+                    {props.labels.total}: {props.matrix.total.totalLabel}
+                  </span>
+                </span>
               </td>
               {props.matrix.total.cellLabels.map((label, i) => (
                 <td key={i} className={totalMonthCell}>

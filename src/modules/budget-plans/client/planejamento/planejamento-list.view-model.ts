@@ -58,6 +58,22 @@ export const deriveAuditLabel = (updatedByName: string, updatedAtIso: string): s
   return `${updatedByName} alteração ${date} ${time}`
 }
 
+/**
+ * Auditoria em 2 PARTES (coluna "Última alteração" — mock base): `who` = "{usuário} alteração" e
+ * `when` = "dd/mm/aaaa hh:mm". PURA, formata em UTC (independe do fuso do runtime).
+ */
+export const deriveAuditParts = (
+  updatedByName: string,
+  updatedAtIso: string,
+): { readonly who: string; readonly when: string } => {
+  const d = new Date(updatedAtIso)
+  if (Number.isNaN(d.getTime())) return { who: updatedByName, when: '' }
+  const p2 = (n: number): string => String(n).padStart(2, '0')
+  const date = `${p2(d.getUTCDate())}/${p2(d.getUTCMonth() + 1)}/${String(d.getUTCFullYear())}`
+  const time = `${p2(d.getUTCHours())}:${p2(d.getUTCMinutes())}`
+  return { who: `${updatedByName} alteração`, when: `${date} ${time}` }
+}
+
 export const PLAN_ACTIONS = [
   'share',
   'planned-vs-actual',
@@ -95,7 +111,8 @@ export type PlanRow = Readonly<{
   totalLabel: string
   partnersLabel: string
   status: StatusView
-  auditLabel: string
+  auditWho: string
+  auditWhen: string
   editable: boolean
   actions: readonly PlanAction[]
   children: readonly PlanRow[]
@@ -114,7 +131,8 @@ export const toPlanRow = (node: BudgetPlanNode, isRoot = true, hasApprovedSiblin
     totalLabel: formatCentsBRL(node.totalInCents),
     partnersLabel: derivePartnersLabel(node.partnersCount, node.networkKind),
     status: deriveStatusView(node.status),
-    auditLabel: deriveAuditLabel(node.updatedByName, node.updatedAt),
+    auditWho: deriveAuditParts(node.updatedByName, node.updatedAt).who,
+    auditWhen: deriveAuditParts(node.updatedByName, node.updatedAt).when,
     editable: deriveEditable(node.status),
     actions: derivePlanActions({ isRoot, status: node.status, hasApprovedSibling }),
     children: node.children.map((c) => toPlanRow(c, false, childrenHaveApproved)),

@@ -12,9 +12,15 @@ import { useMemo } from 'react'
 import type { PlanejamentoListFilters } from '#modules/budget-plans/client/data/planejamento-list-filters.schema.ts'
 import { FILTER_YEARS } from '#modules/budget-plans/client/data/planejamento-list-filters.schema.ts'
 import { PLANEJAMENTO_PLACEHOLDER } from '#modules/budget-plans/client/data/planejamento-list.placeholder.ts'
+import { formatCentsBRL } from '#modules/budget-plans/client/domain/calc/derive.ts'
 
 // Re-export dos anos do funil pela camada de binding (a VIEW não importa `data` direto — §XI MVVM).
 export { FILTER_YEARS }
+
+// TOTAL geral (rodapé do grid) = soma dos planos-raiz. Constante do placeholder até #113.
+export const PLANEJAMENTO_GRAND_TOTAL_LABEL = formatCentsBRL(
+  PLANEJAMENTO_PLACEHOLDER.reduce((acc, p) => acc + p.totalInCents, 0),
+)
 import {
   filterPlans,
   paginatePlans,

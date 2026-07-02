@@ -28,7 +28,7 @@ import {
 } from './plan-detail.css.ts'
 
 const t = createTranslator(ptBR)
-const routeApi = getRouteApi('/_authenticated/planejamento/detalhes/$id')
+const routeApi = getRouteApi('/_authenticated/planejamento_/detalhes/$id')
 
 const BADGE_VARIANT: Readonly<Record<StatusTone, BadgeProps['variant']>> = {
   neutral: 'outro',

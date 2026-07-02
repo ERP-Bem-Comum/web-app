@@ -3,12 +3,13 @@ import { useState, type ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { PageHeader } from '#shared/ui/index.ts'
+import { PageHeader, BarChartIcon } from '#shared/ui/index.ts'
 
 import {
   usePlanejamentoList,
   PLANEJAMENTO_PROGRAM_OPTIONS,
   FILTER_YEARS,
+  PLANEJAMENTO_GRAND_TOTAL_LABEL,
 } from '#modules/budget-plans/client/planejamento/planejamento-list.binding.ts'
 import type { PlanAction } from '#modules/budget-plans/client/planejamento/planejamento-list.view-model.ts'
 import { useCreatePlan, IMPORT_YEARS } from '#modules/budget-plans/client/planejamento/create-plan.binding.ts'
@@ -18,7 +19,7 @@ import { PlanFilters } from '../components/plan-filters.component.tsx'
 import { PlanTreeTable } from '../components/plan-tree-table.component.tsx'
 import { PlanPaginator } from '../components/plan-paginator.component.tsx'
 import { CreatePlanModal } from '../components/create-plan-modal.component.tsx'
-import { screen, card } from './planejamento-list.css.ts'
+import { screen, card, titleIcon } from './planejamento-list.css.ts'
 
 const t = createTranslator(ptBR)
 const routeApi = getRouteApi('/_authenticated/planejamento')
@@ -64,7 +65,15 @@ export function PlanejamentoListPage(): ReactNode {
 
   return (
     <div className={screen}>
-      <PageHeader title={t('budget-plans.list.title')} subtitle={t('budget-plans.list.subtitle')} />
+      <PageHeader
+        title={t('budget-plans.list.title')}
+        subtitle={t('budget-plans.list.subtitle')}
+        icon={
+          <span className={titleIcon}>
+            <BarChartIcon size={24} />
+          </span>
+        }
+      />
 
       <div className={card}>
         <PlanFilters
@@ -125,15 +134,18 @@ export function PlanejamentoListPage(): ReactNode {
         <PlanTreeTable
           rows={state.rows}
           emptyLabel={emptyLabel}
+          grandTotalLabel={PLANEJAMENTO_GRAND_TOTAL_LABEL}
           labels={{
             plan: t('budget-plans.columns.plan'),
             total: t('budget-plans.columns.total'),
             partners: t('budget-plans.columns.partners'),
             status: t('budget-plans.columns.status'),
+            audit: t('budget-plans.columns.audit'),
             actionsHeader: t('budget-plans.columns.actions'),
             actionsTrigger: t('budget-plans.list.rowActions'),
             expand: t('budget-plans.list.expand'),
             collapse: t('budget-plans.list.collapse'),
+            totalRow: t('budget-plans.list.totalRow'),
           }}
           actionLabelFor={(action) => t(actionKey(action))}
           onOpenPlan={(id) => {

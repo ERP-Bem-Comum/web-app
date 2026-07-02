@@ -36,10 +36,12 @@ const labels = {
   total: 'Total',
   partners: 'Parceiros',
   status: 'Status',
+  audit: 'Última alteração',
   actionsHeader: 'Ações',
   actionsTrigger: 'Ações do plano',
   expand: 'Expandir versões',
   collapse: 'Recolher versões',
+  totalRow: 'TOTAL',
 } as const
 
 const actionLabelFor = (a: string): string => `ação:${a}`
@@ -53,6 +55,7 @@ function renderTable(
       rows={rows}
       labels={labels}
       emptyLabel="Nenhum plano"
+      grandTotalLabel="R$ 0,00"
       actionLabelFor={actionLabelFor}
       onOpenPlan={() => undefined}
       onAction={() => undefined}
@@ -67,13 +70,15 @@ describe('PlanTreeTable', () => {
     expect(screen.getByText('Nenhum plano')).toBeTruthy()
   })
 
-  it('renderiza nome, total BRL, parceiros, badge de status e trilha de auditoria', () => {
+  it('renderiza nome, total BRL, parceiros, badge de status e auditoria (2 linhas)', () => {
     renderTable([toPlanRow(node({ totalInCents: 3_243_872, partnersCount: 1 }))])
     expect(screen.getByRole('button', { name: '2026 ETI 1.0' })).toBeTruthy()
     expect(screen.getByText(/R\$\s?32\.438,72/)).toBeTruthy()
     expect(screen.getByText('1 estados')).toBeTruthy()
     expect(screen.getByText('Aprovado')).toBeTruthy()
-    expect(screen.getByText('Administrador alteração 30/06/2026 22:06')).toBeTruthy()
+    // Coluna "Última alteração" em 2 partes: "{usuário} alteração" + "dd/mm/aaaa hh:mm".
+    expect(screen.getByText('Administrador alteração')).toBeTruthy()
+    expect(screen.getByText('30/06/2026 22:06')).toBeTruthy()
   })
 
   it('chevron: versões-filhas ficam ocultas até expandir', () => {

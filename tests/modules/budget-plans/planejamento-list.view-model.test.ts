@@ -123,7 +123,8 @@ describe('toPlanRow', () => {
     })
     const row = toPlanRow(tree)
     assert.equal(norm(row.totalLabel), 'R$ 25.784.474,03')
-    assert.equal(row.auditLabel, 'Administrador alteração 30/06/2026 22:06')
+    assert.equal(row.auditWho, 'Administrador alteração')
+    assert.equal(row.auditWhen, '30/06/2026 22:06')
     assert.equal(row.editable, false) // Aprovado (raiz)
     assert.equal(row.versionLabel, null) // raiz não mostra rótulo
     // filho 1.1 tem irmão aprovado (2.0) → sem "approve"

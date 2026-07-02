@@ -1,6 +1,17 @@
 import { Fragment, useState, type ReactNode } from 'react'
 
-import { Badge, ChevronDownIcon, ChevronUpIcon, type BadgeProps } from '#shared/ui/index.ts'
+import {
+  Badge,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  CheckCircleIcon,
+  ZapIcon,
+  FileTextIcon,
+  CalendarDaysIcon,
+  FolderIcon,
+  type BadgeProps,
+} from '#shared/ui/index.ts'
+import type { IconComponent } from '#shared/ui/icons/index.ts'
 import type {
   PlanRow,
   PlanAction,
@@ -19,14 +30,28 @@ import {
   tdActions,
   nameCell,
   indent,
+  connector,
+  connectorDot,
+  planIcon,
   chevronButton,
   nameText,
   planNameLink,
+  planNameLinkChild,
   versionLabel,
   statusCell,
-  auditTrail,
+  statusBadgeContent,
+  auditCell,
+  auditWho,
+  auditWhen,
   totalCell,
+  totalCellChild,
   stateCell,
+  sortIcon,
+  footerRow,
+  footerLabel,
+  footerLabelContent,
+  footerIcon,
+  footerTotal,
 } from './plan-tree-table.css.ts'
 
 /** Badge tem variantes semânticas próprias; mapeamos o TOM do status → variante da badge (cinza/azul/verde). */
@@ -36,15 +61,25 @@ const BADGE_VARIANT: Readonly<Record<StatusTone, BadgeProps['variant']>> = {
   success: 'active',
 }
 
+// Ícone por status (leitura rápida): Rascunho=documento · Em Calibração=raio · Aprovado=check.
+const STATUS_ICON: Readonly<Record<StatusTone, IconComponent>> = {
+  neutral: FileTextIcon,
+  info: ZapIcon,
+  success: CheckCircleIcon,
+}
+
 export type PlanTreeTableColumnLabels = Readonly<{
   plan: string
   total: string
   partners: string
   status: string
+  audit: string
   actionsHeader: string
   actionsTrigger: string
   expand: string
   collapse: string
+  /** Rótulo da linha de TOTAL geral (rodapé). */
+  totalRow: string
 }>
 
 export type PlanTreeTableProps = Readonly<{
@@ -52,6 +87,8 @@ export type PlanTreeTableProps = Readonly<{
   labels: PlanTreeTableColumnLabels
   /** Estado da tabela (empty é tratado com o rótulo apropriado pela page). */
   emptyLabel: string
+  /** TOTAL geral (rodapé), já formatado (R$). */
+  grandTotalLabel: string
   /** Rótulo i18n de cada ação do menu "…". */
   actionLabelFor: (action: PlanAction) => string
   /** Navega ao detalhe do plano (clique no nome). No-op/TODO permitido nesta fatia. */
@@ -79,32 +116,53 @@ export function PlanTreeTable(props: PlanTreeTableProps): ReactNode {
   const renderRow = (r: PlanRow, depth: number): ReactNode => {
     const hasChildren = r.children.length > 0
     const isOpen = expanded.has(r.id)
+    const isChild = depth > 0
+    // Pai permanece BRANCO (mesmo expandido); só a versão-filha fica azul (mock base).
+    const StatusIcon = STATUS_ICON[r.status.tone]
+    const trClass = isChild ? childRow : row
     return (
       <Fragment key={r.id}>
-        <tr className={depth === 0 ? row : childRow}>
+        <tr
+          className={trClass}
+          onClick={() => {
+            props.onOpenPlan(r.id)
+          }}
+        >
           <td className={td}>
             <div className={nameCell}>
-              {depth > 0 ? <span className={indent} aria-hidden="true" /> : null}
+              {isChild ? (
+                <>
+                  <span className={indent} aria-hidden="true" />
+                  <span className={connector} aria-hidden="true">
+                    <span className={connectorDot} />
+                  </span>
+                </>
+              ) : null}
               {hasChildren ? (
                 <button
                   type="button"
                   className={chevronButton}
                   aria-expanded={isOpen}
                   aria-label={isOpen ? props.labels.collapse : props.labels.expand}
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation()
                     toggle(r.id)
                   }}
                 >
                   {isOpen ? <ChevronUpIcon size={16} /> : <ChevronDownIcon size={16} />}
                 </button>
-              ) : (
+              ) : !isChild ? (
                 <span className={indent} aria-hidden="true" />
-              )}
+              ) : null}
+              <span className={planIcon} aria-hidden="true">
+                <CalendarDaysIcon size={16} />
+              </span>
               <span className={nameText}>
                 <button
                   type="button"
-                  className={planNameLink}
-                  onClick={() => {
+                  className={isChild ? planNameLinkChild : planNameLink}
+                  onClick={(e) => {
+                    e.stopPropagation()
                     props.onOpenPlan(r.id)
                   }}
                 >
@@ -115,18 +173,31 @@ export function PlanTreeTable(props: PlanTreeTableProps): ReactNode {
             </div>
           </td>
           <td className={td}>
-            <span className={totalCell}>{r.totalLabel}</span>
+            <span className={isChild ? totalCellChild : totalCell}>{r.totalLabel}</span>
           </td>
           <td className={td}>{r.partnersLabel}</td>
           <td className={td}>
             <span className={statusCell}>
               <Badge variant={BADGE_VARIANT[r.status.tone]} size="sm" uppercase>
-                {r.status.label}
+                <span className={statusBadgeContent}>
+                  <StatusIcon size={12} />
+                  {r.status.label}
+                </span>
               </Badge>
-              <span className={auditTrail}>{r.auditLabel}</span>
             </span>
           </td>
-          <td className={tdActions}>
+          <td className={td}>
+            <span className={auditCell}>
+              <span className={auditWho}>{r.auditWho}</span>
+              <span className={auditWhen}>{r.auditWhen}</span>
+            </span>
+          </td>
+          <td
+            className={tdActions}
+            onClick={(e) => {
+              e.stopPropagation()
+            }}
+          >
             <PlanActionsMenu
               actions={r.actions}
               labelFor={props.actionLabelFor}
@@ -148,16 +219,22 @@ export function PlanTreeTable(props: PlanTreeTableProps): ReactNode {
         <thead>
           <tr>
             <th className={th}>{props.labels.plan}</th>
-            <th className={th}>{props.labels.total}</th>
+            <th className={th}>
+              {props.labels.total}
+              <span className={sortIcon} aria-hidden="true">
+                ↕
+              </span>
+            </th>
             <th className={th}>{props.labels.partners}</th>
             <th className={th}>{props.labels.status}</th>
+            <th className={th}>{props.labels.audit}</th>
             <th className={thActions} aria-label={props.labels.actionsHeader} />
           </tr>
         </thead>
         <tbody>
           {props.rows.length === 0 ? (
             <tr>
-              <td className={stateCell} colSpan={5}>
+              <td className={stateCell} colSpan={6}>
                 {props.emptyLabel}
               </td>
             </tr>
@@ -165,6 +242,22 @@ export function PlanTreeTable(props: PlanTreeTableProps): ReactNode {
             props.rows.map((r) => renderRow(r, 0))
           )}
         </tbody>
+        {props.rows.length > 0 ? (
+          <tfoot>
+            <tr className={footerRow}>
+              <td className={footerLabel}>
+                <span className={footerLabelContent}>
+                  <span className={footerIcon} aria-hidden="true">
+                    <FolderIcon size={16} />
+                  </span>
+                  {props.labels.totalRow}
+                </span>
+              </td>
+              <td className={footerTotal}>{props.grandTotalLabel}</td>
+              <td colSpan={4} />
+            </tr>
+          </tfoot>
+        ) : null}
       </table>
     </div>
   )
