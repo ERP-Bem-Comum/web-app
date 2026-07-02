@@ -35,4 +35,8 @@ export {
   GraduationCapIcon,
   ScaleIcon,
   PieChartIcon,
+  CalculatorIcon,
+  EditIcon,
+  TrashIcon,
+  InfoIcon,
 } from './icons.tsx'

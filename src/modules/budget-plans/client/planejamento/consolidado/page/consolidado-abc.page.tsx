@@ -117,6 +117,7 @@ export function ConsolidadoAbcPage(): ReactNode {
             total: t('budget-plans.matrix.total'),
             expand: t('budget-plans.matrix.expand'),
             collapse: t('budget-plans.matrix.collapse'),
+            edit: t('budget-plans.detail.edit'),
           }}
           onPrev={prevSemester}
           onNext={nextSemester}

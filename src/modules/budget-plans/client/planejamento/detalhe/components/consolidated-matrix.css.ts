@@ -122,6 +122,31 @@ export const navDisabled = style({
   selectors: { '&:hover': { background: vars.color.surface.default } },
 })
 
+// "Editar" (filtro por Rede aplicado): botão de ação cyan da marca (§X — ciano = ação), altura do nav.
+export const editButton = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  blockSize: '2rem',
+  paddingInline: vars.space.lg,
+  borderRadius: vars.radius.md,
+  border: 'none',
+  background: vars.color.brand.normal,
+  color: vars.color.brand.onBrand,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.semibold,
+  cursor: 'pointer',
+  whiteSpace: 'nowrap',
+  selectors: {
+    '&:hover': { background: vars.color.brand.hover },
+    '&:focus-visible': {
+      outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
+      outlineOffset: vars.focusRing.offset,
+    },
+  },
+})
+
 // Contorno leve (como no grid de Planejamento) — o azul fica só no cabeçalho e no rodapé.
 export const container = style({
   inlineSize: '100%',

@@ -28,6 +28,7 @@ import {
   toggleActive,
   navButton,
   navDisabled,
+  editButton,
   container,
   table,
   th,
@@ -63,6 +64,7 @@ export type ConsolidatedMatrixLabels = Readonly<{
   total: string
   expand: string
   collapse: string
+  edit: string
 }>
 
 export type ConsolidatedMatrixProps = Readonly<{
@@ -75,6 +77,9 @@ export type ConsolidatedMatrixProps = Readonly<{
   onSelectCentroCusto: () => void
   onSelectPorMes: () => void
   onSelectPorRede: () => void
+  /** Modo edição (filtro por Rede aplicado): esconde os toggles e mostra "Editar" à direita. */
+  editMode?: boolean
+  onEdit?: () => void
 }>
 
 /**
@@ -186,27 +191,30 @@ export function ConsolidatedMatrix(props: ConsolidatedMatrixProps): ReactNode {
           <h2 className={sectionTitle}>{props.labels.sectionTitle}</h2>
         </span>
         <div className={controls}>
-          <div className={toggleGroup} role="group">
-            <button type="button" className={toggle} onClick={props.onSelectCentroCusto}>
-              {props.labels.centroCusto}
-            </button>
-            <button
-              type="button"
-              className={isMonth ? `${toggle} ${toggleActive}` : toggle}
-              aria-pressed={isMonth}
-              onClick={props.onSelectPorMes}
-            >
-              {props.labels.porMes}
-            </button>
-            <button
-              type="button"
-              className={isMonth ? toggle : `${toggle} ${toggleActive}`}
-              aria-pressed={!isMonth}
-              onClick={props.onSelectPorRede}
-            >
-              {props.labels.porRede}
-            </button>
-          </div>
+          {/* Sem filtro por Rede: toggles de visão. Com filtro aplicado: só a navegação + "Editar". */}
+          {props.editMode !== true ? (
+            <div className={toggleGroup} role="group">
+              <button type="button" className={toggle} onClick={props.onSelectCentroCusto}>
+                {props.labels.centroCusto}
+              </button>
+              <button
+                type="button"
+                className={isMonth ? `${toggle} ${toggleActive}` : toggle}
+                aria-pressed={isMonth}
+                onClick={props.onSelectPorMes}
+              >
+                {props.labels.porMes}
+              </button>
+              <button
+                type="button"
+                className={isMonth ? toggle : `${toggle} ${toggleActive}`}
+                aria-pressed={!isMonth}
+                onClick={props.onSelectPorRede}
+              >
+                {props.labels.porRede}
+              </button>
+            </div>
+          ) : null}
           <button
             type="button"
             className={!isMonth || props.matrix.semester === 0 ? `${navButton} ${navDisabled}` : navButton}
@@ -225,6 +233,11 @@ export function ConsolidatedMatrix(props: ConsolidatedMatrixProps): ReactNode {
           >
             {'›'}
           </button>
+          {props.editMode === true ? (
+            <button type="button" className={editButton} onClick={props.onEdit}>
+              {props.labels.edit}
+            </button>
+          ) : null}
         </div>
       </div>
 

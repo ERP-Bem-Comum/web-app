@@ -13,6 +13,7 @@ import {
   header,
   backButton,
   breadcrumb,
+  resultCard,
   titleRow,
   title,
   totalPlan,
@@ -20,6 +21,7 @@ import {
   actionBar,
   filterGroup,
   stateSelect,
+  municipioSelect,
   filterButton,
   actionsRight,
   secondaryButton,
@@ -40,7 +42,7 @@ export function PlanDetailPage(): ReactNode {
   const params = routeApi.useParams()
   const navigate = useNavigate()
   const id = Number(params.id)
-  const { state, view, setView, prevSemester, nextSemester } = usePlanDetail(id)
+  const { state, view, setView, prevSemester, nextSemester, filter } = usePlanDetail(id)
 
   const goBack = (): void => {
     void navigate({ to: '/planejamento' })
@@ -64,26 +66,62 @@ export function PlanDetailPage(): ReactNode {
         <p className={notFound}>{t('budget-plans.detail.notFound')}</p>
       ) : (
         <>
-          <div className={titleRow}>
-            <h1 className={title}>
-              {state.header.title}
-              <Badge variant={BADGE_VARIANT[state.header.status.tone]} size="sm" uppercase>
-                {state.header.status.label}
-              </Badge>
-            </h1>
-            <span className={totalPlan}>
-              {t('budget-plans.detail.totalPlan')}{' '}
-              <span className={totalValue}>{state.header.totalLabel}</span>
-            </span>
+          <div className={resultCard}>
+            <div className={titleRow}>
+              <h1 className={title}>
+                {state.header.title}
+                <Badge variant={BADGE_VARIANT[state.header.status.tone]} size="sm" uppercase>
+                  {state.header.status.label}
+                </Badge>
+              </h1>
+              <span className={totalPlan}>
+                {t('budget-plans.detail.totalPlan')}{' '}
+                <span className={totalValue}>{state.header.totalLabel}</span>
+              </span>
+            </div>
           </div>
 
           <div className={actionBar}>
-            {/* 🔁 TODO(#113/US2b): filtro por Rede (Estado[+Município]) habilita "Editar" → tela de Orçamento. */}
+            {/* Filtro por Rede: Estado + Município. Ao aplicar ("Filtrar") com ambos, a matriz troca os
+                toggles por "Editar" (entrada da edição de Orçamento — US2.4, próxima parte). */}
             <div className={filterGroup}>
-              <select className={stateSelect} aria-label={t('budget-plans.detail.stateFilter')} disabled>
-                <option>{t('budget-plans.detail.stateFilter')}</option>
+              <select
+                className={stateSelect}
+                aria-label={t('budget-plans.detail.stateFilter')}
+                value={filter.estado}
+                onChange={(e) => {
+                  filter.setEstado(e.target.value)
+                }}
+              >
+                <option value="">{t('budget-plans.detail.stateFilter')}</option>
+                {filter.estadoOptions.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
               </select>
-              <button type="button" className={filterButton} disabled>
+              <select
+                className={municipioSelect}
+                aria-label={t('budget-plans.detail.municipioFilter')}
+                value={filter.municipio}
+                disabled={filter.estado === ''}
+                onChange={(e) => {
+                  filter.setMunicipio(e.target.value)
+                }}
+              >
+                <option value="">{t('budget-plans.detail.municipioFilter')}</option>
+                {filter.municipioOptions.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className={filterButton}
+                disabled={filter.estado === '' || filter.municipio === ''}
+                onClick={filter.apply}
+              >
                 {t('budget-plans.detail.filter')}
               </button>
             </div>
@@ -120,6 +158,15 @@ export function PlanDetailPage(): ReactNode {
               total: t('budget-plans.matrix.total'),
               expand: t('budget-plans.matrix.expand'),
               collapse: t('budget-plans.matrix.collapse'),
+              edit: t('budget-plans.detail.edit'),
+            }}
+            editMode={filter.editMode}
+            onEdit={() => {
+              void navigate({
+                to: '/planejamento/detalhes/$id/orcamento',
+                params: { id: String(id) },
+                search: { estado: filter.estado, municipio: filter.municipio },
+              })
             }}
             onPrev={prevSemester}
             onNext={nextSemester}

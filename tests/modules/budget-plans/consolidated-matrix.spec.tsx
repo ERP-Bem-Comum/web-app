@@ -71,6 +71,7 @@ const labels = {
   total: 'TOTAL',
   expand: 'Expandir',
   collapse: 'Recolher',
+  edit: 'Editar',
 }
 
 const noop = (): void => undefined
@@ -81,6 +82,8 @@ type Handlers = Readonly<{
   onSelectCentroCusto?: () => void
   onSelectPorMes?: () => void
   onSelectPorRede?: () => void
+  editMode?: boolean
+  onEdit?: () => void
 }>
 
 const renderMatrix = (matrix: ReturnType<typeof buildMonthlyMatrix>, handlers: Handlers = {}) =>
@@ -88,6 +91,8 @@ const renderMatrix = (matrix: ReturnType<typeof buildMonthlyMatrix>, handlers: H
     <ConsolidatedMatrix
       matrix={matrix}
       labels={labels}
+      editMode={handlers.editMode}
+      onEdit={handlers.onEdit ?? noop}
       onPrev={handlers.onPrev ?? noop}
       onNext={handlers.onNext ?? noop}
       onSelectCentroCusto={handlers.onSelectCentroCusto ?? noop}
@@ -123,6 +128,29 @@ describe('ConsolidatedMatrix — visão Por Mês', () => {
     renderMatrix(buildMonthlyMatrix(detail, 0), { onSelectPorRede })
     fireEvent.click(screen.getByText('Por Rede'))
     expect(onSelectPorRede).toHaveBeenCalledOnce()
+  })
+})
+
+describe('ConsolidatedMatrix — modo edição (filtro por Rede aplicado)', () => {
+  it('esconde os toggles e mostra "Editar" (mantendo a navegação de semestre)', () => {
+    renderMatrix(buildMonthlyMatrix(detail, 0), { editMode: true })
+    expect(screen.queryByText('Por Mês')).toBeNull()
+    expect(screen.queryByText('Por Rede')).toBeNull()
+    expect(screen.getByText('Editar')).toBeTruthy()
+    expect(screen.getByLabelText('Próximo semestre')).toBeTruthy()
+  })
+
+  it('clicar em "Editar" dispara onEdit', () => {
+    const onEdit = vi.fn()
+    renderMatrix(buildMonthlyMatrix(detail, 0), { editMode: true, onEdit })
+    fireEvent.click(screen.getByText('Editar'))
+    expect(onEdit).toHaveBeenCalledOnce()
+  })
+
+  it('sem editMode, os toggles aparecem e "Editar" não', () => {
+    renderMatrix(buildMonthlyMatrix(detail, 0))
+    expect(screen.getByText('Por Mês')).toBeTruthy()
+    expect(screen.queryByText('Editar')).toBeNull()
   })
 })
 

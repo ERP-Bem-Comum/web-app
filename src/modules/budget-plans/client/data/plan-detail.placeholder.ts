@@ -5,6 +5,8 @@
  * 🔁 TODO(#113): trocar pela server fn.
  */
 import type { PlanDetail, MonthlyCents } from '#modules/budget-plans/client/data/model/plan-detail.model.ts'
+import type { BudgetPlanNode } from '#modules/budget-plans/client/data/model/budget-plan.model.ts'
+import { PLANEJAMENTO_PLACEHOLDER } from '#modules/budget-plans/client/data/planejamento-list.placeholder.ts'
 
 /** Monta os 12 meses (Jan…Dez) a partir de pares {mês(1-12): centavos}; resto = 0. */
 const months = (values: Readonly<Record<number, number>>): MonthlyCents =>
@@ -109,7 +111,31 @@ const PLAN_3: PlanDetail = {
   ],
 }
 
-const BY_ID: ReadonlyMap<number, PlanDetail> = new Map([[PLAN_3.id, PLAN_3]])
+/** Achata a árvore da lista (raízes + versões-filhas) num índice por id. */
+const flattenNodes = (nodes: readonly BudgetPlanNode[]): readonly BudgetPlanNode[] =>
+  nodes.flatMap((n) => [n, ...flattenNodes(n.children)])
 
-/** Detalhe placeholder por id (null se não houver — a page mostra estado "não encontrado"). */
-export const planDetailPlaceholder = (id: number): PlanDetail | null => BY_ID.get(id) ?? null
+const NODE_BY_ID: ReadonlyMap<number, BudgetPlanNode> = new Map(
+  flattenNodes(PLANEJAMENTO_PLACEHOLDER).map((n) => [n.id, n]),
+)
+
+/**
+ * Detalhe placeholder de QUALQUER plano da lista (null se o id não existir). A IDENTIDADE (ano/programa/
+ * versão/cenário/status) vem do plano clicado; a estrutura consolidada (centros/meses/redes + total) usa
+ * o template ETI 1.2 (`PLAN_3`) enquanto não há dados reais por plano.
+ * 🔁 TODO(#113): trocar pela server fn `GET /budget-plans/:id` (matriz/total reais por plano).
+ */
+export const planDetailPlaceholder = (id: number): PlanDetail | null => {
+  const node = NODE_BY_ID.get(id)
+  if (node === undefined) return null
+  return {
+    ...PLAN_3,
+    id: node.id,
+    year: node.year,
+    programName: node.programName,
+    programAbbreviation: node.programAbbreviation,
+    version: node.version,
+    scenarioName: node.scenarioName,
+    status: node.status,
+  }
+}
