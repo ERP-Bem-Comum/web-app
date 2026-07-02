@@ -5,9 +5,10 @@
  */
 import { useState, type ReactNode } from 'react'
 
-import { EditIcon, TrashIcon, CalculatorIcon } from '#shared/ui/index.ts'
+import { EditIcon, TrashIcon, CalculatorIcon, InfoIcon } from '#shared/ui/index.ts'
 
 import type { CalcGastosBinding } from './calc-gastos.binding.ts'
+import { formatCentsBRL } from './calc-gastos.view-model.ts'
 import {
   overlay,
   panel,
@@ -22,6 +23,8 @@ import {
   columns,
   column,
   columnTitle,
+  columnHead,
+  infoButton,
   list,
   item,
   itemActive,
@@ -30,10 +33,21 @@ import {
   despesaName,
   despesaEnd,
   despesaValue,
-  despesaInput,
   iconButton,
   calcularButton,
   empty,
+  configForm,
+  configSection,
+  configSectionTitle,
+  switchRow,
+  field,
+  fieldLabel,
+  fieldInput,
+  custoTotalBox,
+  checkRow,
+  formActions,
+  cancelButton,
+  applyButton,
 } from './calculando-gastos.css.ts'
 
 export type CalculandoGastosLabels = Readonly<{
@@ -48,6 +62,17 @@ export type CalculandoGastosLabels = Readonly<{
   editValue: string
   clearValue: string
   empty: string
+  info: string
+  config: string
+  usePreviousYear: string
+  totalReajustado: string
+  justificativa: string
+  ipca: string
+  custoTotal: string
+  aplicarMeses: string
+  todos: string
+  aplicar: string
+  cancelar: string
 }>
 
 export type CalculandoGastosProps = Readonly<{
@@ -64,15 +89,56 @@ const parseCentsBR = (s: string): number => {
   return Number.isFinite(n) ? Math.max(0, Math.round(n * 100)) : 0
 }
 
+type FormState = Readonly<{
+  months: ReadonlySet<number>
+  total: string
+  justificativa: string
+  ipca: string
+  usePrev: boolean
+}>
+
 export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
   const { binding: b, labels } = props
-  const [editing, setEditing] = useState<{ index: number; text: string } | null>(null)
+  // Form "Configuração" (tipo geral/Rede) que abre ao clicar no lápis — UI-state local.
+  const [form, setForm] = useState<FormState | null>(null)
 
-  const commit = (): void => {
-    if (editing !== null) {
-      b.setMonthValue(editing.index, parseCentsBR(editing.text))
-      setEditing(null)
-    }
+  const openForm = (monthIndex: number, cents: number): void => {
+    setForm({
+      months: new Set([monthIndex]),
+      total: String(cents / 100),
+      justificativa: '',
+      ipca: '0',
+      usePrev: false,
+    })
+  }
+
+  const custoTotalCents =
+    form === null
+      ? 0
+      : Math.round(parseCentsBR(form.total) * (1 + (Number(form.ipca.replace(',', '.')) || 0) / 100))
+
+  const toggleMonth = (i: number): void => {
+    setForm((f) => {
+      if (f === null) return f
+      const next = new Set(f.months)
+      if (next.has(i)) next.delete(i)
+      else next.add(i)
+      return { ...f, months: next }
+    })
+  }
+
+  const toggleAllMonths = (): void => {
+    setForm((f) => {
+      if (f === null) return f
+      const all = f.months.size === b.despesas.length
+      return { ...f, months: all ? new Set() : new Set(b.despesas.map((d) => d.monthIndex)) }
+    })
+  }
+
+  const applyForm = (): void => {
+    if (form === null) return
+    b.applyToMonths([...form.months], custoTotalCents)
+    setForm(null)
   }
 
   return (
@@ -160,41 +226,114 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
           </div>
 
           <div className={column}>
-            <h3 className={columnTitle}>{labels.despesas}</h3>
-            {b.hasData ? (
+            <div className={columnHead}>
+              <h3 className={columnTitle}>{labels.despesas}</h3>
+              {b.hasData ? (
+                <button type="button" className={infoButton} aria-label={labels.info}>
+                  <InfoIcon size={16} />
+                </button>
+              ) : null}
+            </div>
+
+            {!b.hasData ? (
+              <p className={empty}>{labels.empty}</p>
+            ) : form !== null ? (
+              <div className={configForm}>
+                <div className={configSection}>
+                  <span className={configSectionTitle}>{labels.config}</span>
+                  <label className={switchRow}>
+                    <input
+                      type="checkbox"
+                      role="switch"
+                      checked={form.usePrev}
+                      onChange={() => {
+                        setForm({ ...form, usePrev: !form.usePrev })
+                      }}
+                    />
+                    {labels.usePreviousYear}
+                  </label>
+                  <label className={field}>
+                    <span className={fieldLabel}>{labels.totalReajustado}</span>
+                    <input
+                      className={fieldInput}
+                      inputMode="decimal"
+                      value={form.total}
+                      onChange={(e) => {
+                        setForm({ ...form, total: e.target.value })
+                      }}
+                    />
+                  </label>
+                  <label className={field}>
+                    <span className={fieldLabel}>{labels.justificativa}</span>
+                    <input
+                      className={fieldInput}
+                      value={form.justificativa}
+                      onChange={(e) => {
+                        setForm({ ...form, justificativa: e.target.value })
+                      }}
+                    />
+                  </label>
+                  <label className={field}>
+                    <span className={fieldLabel}>{labels.ipca}</span>
+                    <input
+                      className={fieldInput}
+                      inputMode="decimal"
+                      value={form.ipca}
+                      onChange={(e) => {
+                        setForm({ ...form, ipca: e.target.value })
+                      }}
+                    />
+                  </label>
+                  <div className={custoTotalBox}>{formatCentsBRL(custoTotalCents)}</div>
+                </div>
+
+                <div className={configSection}>
+                  <span className={configSectionTitle}>{labels.aplicarMeses}</span>
+                  <label className={checkRow}>
+                    <input
+                      type="checkbox"
+                      checked={form.months.size === b.despesas.length}
+                      onChange={toggleAllMonths}
+                    />
+                    {labels.todos}
+                  </label>
+                  {b.despesas.map((d) => (
+                    <label key={d.monthIndex} className={checkRow}>
+                      <input
+                        type="checkbox"
+                        checked={form.months.has(d.monthIndex)}
+                        onChange={() => {
+                          toggleMonth(d.monthIndex)
+                        }}
+                      />
+                      {d.name}
+                    </label>
+                  ))}
+                </div>
+
+                <div className={formActions}>
+                  <button
+                    type="button"
+                    className={cancelButton}
+                    onClick={() => {
+                      setForm(null)
+                    }}
+                  >
+                    {labels.cancelar}
+                  </button>
+                  <button type="button" className={applyButton} onClick={applyForm}>
+                    {labels.aplicar}
+                  </button>
+                </div>
+              </div>
+            ) : (
               <>
                 <div className={list}>
                   {b.despesas.map((d) => (
                     <div key={d.monthIndex} className={despesaRow}>
                       <span className={despesaName}>{d.name}</span>
                       <span className={despesaEnd}>
-                        {editing !== null && editing.index === d.monthIndex ? (
-                          <input
-                            className={despesaInput}
-                            inputMode="decimal"
-                            value={editing.text}
-                            onChange={(e) => {
-                              setEditing({ index: d.monthIndex, text: e.target.value })
-                            }}
-                            onBlur={commit}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') commit()
-                              if (e.key === 'Escape') setEditing(null)
-                            }}
-                          />
-                        ) : (
-                          <span className={despesaValue}>{d.label}</span>
-                        )}
-                        <button
-                          type="button"
-                          className={iconButton}
-                          aria-label={labels.editValue}
-                          onClick={() => {
-                            setEditing({ index: d.monthIndex, text: String(d.cents / 100) })
-                          }}
-                        >
-                          <EditIcon size={14} />
-                        </button>
+                        <span className={despesaValue}>{d.label}</span>
                         <button
                           type="button"
                           className={iconButton}
@@ -205,17 +344,25 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
                         >
                           <TrashIcon size={14} />
                         </button>
+                        <button
+                          type="button"
+                          className={iconButton}
+                          aria-label={labels.editValue}
+                          onClick={() => {
+                            openForm(d.monthIndex, d.cents)
+                          }}
+                        >
+                          <EditIcon size={14} />
+                        </button>
                       </span>
                     </div>
                   ))}
                 </div>
-                <button type="button" className={calcularButton} onClick={commit}>
+                <button type="button" className={calcularButton} onClick={applyForm} disabled>
                   <CalculatorIcon size={16} />
                   {labels.calcular}
                 </button>
               </>
-            ) : (
-              <p className={empty}>{labels.empty}</p>
             )}
           </div>
         </div>

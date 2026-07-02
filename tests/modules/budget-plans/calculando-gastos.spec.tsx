@@ -69,6 +69,17 @@ const labels = {
   editValue: 'Editar valor',
   clearValue: 'Limpar valor',
   empty: 'Sem despesas para exibir.',
+  info: 'Configuração da despesa',
+  config: 'Configuração',
+  usePreviousYear: 'Utilizar ano anterior',
+  totalReajustado: 'Total reajustado',
+  justificativa: 'Justificativa',
+  ipca: 'IPCA (%)',
+  custoTotal: 'Custo Total',
+  aplicarMeses: 'Aplicar aos meses',
+  todos: 'Todos',
+  aplicar: 'Aplicar',
+  cancelar: 'Cancelar',
 } as const
 
 function Harness(): ReactNode {
@@ -97,13 +108,15 @@ describe('CalculandoGastos', () => {
     expect(within(monthRow('Fevereiro')).getByText(/R\$\s?1,00/)).toBeTruthy()
   })
 
-  it('lápis abre input; digitar + Enter atualiza o valor do mês', () => {
+  it('lápis abre o form "Configuração"; Total reajustado + Aplicar atualiza o mês marcado', () => {
     render(<Harness />)
-    const janeiro = monthRow('Janeiro')
-    fireEvent.click(within(janeiro).getByLabelText('Editar valor'))
-    const input = within(janeiro).getByRole('textbox')
-    fireEvent.change(input, { target: { value: '5,00' } })
-    fireEvent.keyDown(input, { key: 'Enter' })
+    fireEvent.click(within(monthRow('Janeiro')).getByLabelText('Editar valor'))
+    // form abriu (não é mais input inline)
+    expect(screen.getByText('Configuração')).toBeTruthy()
+    expect(screen.getByText('Aplicar aos meses')).toBeTruthy()
+    fireEvent.change(screen.getByLabelText('Total reajustado'), { target: { value: '5' } })
+    fireEvent.click(screen.getByText('Aplicar'))
+    // de volta à lista: Janeiro (pré-marcado) = R$ 5,00
     expect(within(monthRow('Janeiro')).getByText(/R\$\s?5,00/)).toBeTruthy()
   })
 

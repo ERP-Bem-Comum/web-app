@@ -38,4 +38,5 @@ export {
   CalculatorIcon,
   EditIcon,
   TrashIcon,
+  InfoIcon,
 } from './icons.tsx'

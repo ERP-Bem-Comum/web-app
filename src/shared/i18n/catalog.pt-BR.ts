@@ -1921,6 +1921,18 @@ export const ptBR: Catalog = {
   'budget-plans.calcGastos.editValue': 'Editar valor',
   'budget-plans.calcGastos.clearValue': 'Limpar valor',
   'budget-plans.calcGastos.empty': 'Sem despesas para exibir.',
+  // Form "Configuração" (tipo geral/Rede) que abre no lápis
+  'budget-plans.calcGastos.info': 'Configuração da despesa',
+  'budget-plans.calcGastos.config': 'Configuração',
+  'budget-plans.calcGastos.usePreviousYear': 'Utilizar ano anterior',
+  'budget-plans.calcGastos.totalReajustado': 'Total reajustado',
+  'budget-plans.calcGastos.justificativa': 'Justificativa',
+  'budget-plans.calcGastos.ipca': 'IPCA (%)',
+  'budget-plans.calcGastos.custoTotal': 'Custo Total',
+  'budget-plans.calcGastos.aplicarMeses': 'Aplicar aos meses',
+  'budget-plans.calcGastos.todos': 'Todos',
+  'budget-plans.calcGastos.aplicar': 'Aplicar',
+  'budget-plans.calcGastos.cancelar': 'Cancelar',
 
   // ── Consolidado ABC (/consolidado — HANDBOOK §2) ──
   'budget-plans.consolidado.title': 'Consolidado ABC',

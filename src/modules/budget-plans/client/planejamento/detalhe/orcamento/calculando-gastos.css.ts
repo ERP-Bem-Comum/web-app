@@ -283,3 +283,122 @@ export const empty = style({
   color: vars.color.text.secondary,
   fontSize: vars.font.size.sm,
 })
+
+// ── Form "Configuração" (abre no lápis) ──
+export const columnHead = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  position: 'relative',
+})
+
+export const infoButton = style({
+  position: 'absolute',
+  insetInlineEnd: 0,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  border: 'none',
+  background: 'transparent',
+  color: vars.color.text.secondary,
+  cursor: 'pointer',
+})
+
+export const configForm = style({ display: 'flex', flexDirection: 'column', gap: vars.space.md })
+
+export const configSection = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: vars.space.sm,
+  padding: vars.space.md,
+  borderRadius: vars.radius.md,
+  background: `color-mix(in srgb, ${vars.color.brand.normal} 6%, white)`,
+})
+
+export const configSectionTitle = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.xs,
+  fontWeight: vars.font.weight.bold,
+  letterSpacing: '0.04em',
+  color: vars.color.text.secondary,
+})
+
+export const switchRow = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  fontSize: vars.font.size.sm,
+  color: vars.color.text.primary,
+  cursor: 'pointer',
+})
+
+export const field = style({ display: 'flex', flexDirection: 'column', gap: vars.space.xs })
+
+export const fieldLabel = style({
+  fontSize: vars.font.size.xs,
+  color: vars.color.text.secondary,
+})
+
+export const fieldInput = style({
+  inlineSize: '100%',
+  paddingBlock: vars.space.sm,
+  paddingInline: vars.space.md,
+  borderRadius: vars.radius.md,
+  border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
+  background: vars.color.surface.default,
+  color: vars.color.text.primary,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+})
+
+export const custoTotalBox = style({
+  marginBlockStart: vars.space.xs,
+  paddingBlock: vars.space.sm,
+  textAlign: 'center',
+  borderRadius: vars.radius.md,
+  background: `color-mix(in srgb, ${vars.color.brand.normal} 22%, white)`,
+  color: vars.color.text.primary,
+  fontWeight: vars.font.weight.bold,
+  fontVariantNumeric: 'tabular-nums',
+})
+
+export const checkRow = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  paddingBlock: vars.space.xs,
+  fontSize: vars.font.size.sm,
+  color: vars.color.text.primary,
+  cursor: 'pointer',
+  borderBlockEnd: `${vars.borderWidth.thin} solid color-mix(in srgb, ${vars.color.brand.normal} 20%, transparent)`,
+})
+
+export const formActions = style({ display: 'flex', gap: vars.space.sm, marginBlockStart: vars.space.sm })
+
+export const cancelButton = style({
+  flex: 1,
+  paddingBlock: vars.space.sm,
+  borderRadius: vars.radius.md,
+  border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
+  background: vars.color.surface.default,
+  color: vars.color.text.primary,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.semibold,
+  cursor: 'pointer',
+  selectors: { '&:hover': { background: vars.color.surface.subtle } },
+})
+
+export const applyButton = style({
+  flex: 1,
+  paddingBlock: vars.space.sm,
+  borderRadius: vars.radius.md,
+  border: 'none',
+  background: vars.color.brand.normal,
+  color: vars.color.brand.onBrand,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.semibold,
+  cursor: 'pointer',
+  selectors: { '&:hover': { background: vars.color.brand.hover } },
+})

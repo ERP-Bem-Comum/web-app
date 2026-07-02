@@ -179,6 +179,17 @@ export function OrcamentoPage(): ReactNode {
             editValue: t('budget-plans.calcGastos.editValue'),
             clearValue: t('budget-plans.calcGastos.clearValue'),
             empty: t('budget-plans.calcGastos.empty'),
+            info: t('budget-plans.calcGastos.info'),
+            config: t('budget-plans.calcGastos.config'),
+            usePreviousYear: t('budget-plans.calcGastos.usePreviousYear'),
+            totalReajustado: t('budget-plans.calcGastos.totalReajustado'),
+            justificativa: t('budget-plans.calcGastos.justificativa'),
+            ipca: t('budget-plans.calcGastos.ipca'),
+            custoTotal: t('budget-plans.calcGastos.custoTotal'),
+            aplicarMeses: t('budget-plans.calcGastos.aplicarMeses'),
+            todos: t('budget-plans.calcGastos.todos'),
+            aplicar: t('budget-plans.calcGastos.aplicar'),
+            cancelar: t('budget-plans.calcGastos.cancelar'),
           }}
           onClose={() => {
             setCalcOpen(false)

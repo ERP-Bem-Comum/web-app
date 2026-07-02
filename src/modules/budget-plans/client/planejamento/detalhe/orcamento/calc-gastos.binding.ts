@@ -31,6 +31,8 @@ export type CalcGastosBinding = Readonly<{
   prevCentro: () => void
   nextCentro: () => void
   setMonthValue: (monthIndex: number, cents: number) => void
+  /** Aplica um mesmo valor a vários meses de uma vez (form "Aplicar aos meses"). */
+  applyToMonths: (monthIndices: readonly number[], cents: number) => void
   clearMonth: (monthIndex: number) => void
 }>
 
@@ -71,11 +73,15 @@ export function useCalcGastos(detail: PlanDetail | null): CalcGastosBinding {
     setSubId(cat?.subCategories[0]?.id ?? null)
   }
 
-  const editMonth = (monthIndex: number, cents: number): void => {
+  const setMonths = (indices: ReadonlySet<number>, cents: number): void => {
     if (activeSub === null) return
     const base = monthsOf(activeSub.id, activeSub.monthsInCents)
-    const next = base.map((v, i) => (i === monthIndex ? Math.max(0, cents) : v))
+    const next = base.map((v, i) => (indices.has(i) ? Math.max(0, cents) : v))
     setOverrides((prev) => ({ ...prev, [activeSub.id]: next }))
+  }
+
+  const editMonth = (monthIndex: number, cents: number): void => {
+    setMonths(new Set([monthIndex]), cents)
   }
 
   const activeMonths = activeSub !== null ? monthsOf(activeSub.id, activeSub.monthsInCents) : []
@@ -106,6 +112,9 @@ export function useCalcGastos(detail: PlanDetail | null): CalcGastosBinding {
       if (next !== undefined) goCentro(next.id)
     },
     setMonthValue: editMonth,
+    applyToMonths: (monthIndices, cents) => {
+      setMonths(new Set(monthIndices), cents)
+    },
     clearMonth: (monthIndex) => {
       editMonth(monthIndex, 0)
     },
