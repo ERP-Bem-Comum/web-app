@@ -33,6 +33,10 @@ describe('rootViewModel.resolvePageTitle', () => {
     assert.strictEqual(rootViewModel.resolvePageTitle('/programas'), 'Programas')
     assert.strictEqual(rootViewModel.resolvePageTitle('/programas/criar'), 'Programas')
     assert.strictEqual(rootViewModel.resolvePageTitle('/financeiro/contas-a-pagar'), 'Contas a Pagar')
+    // Plano Orçamentário: Planejamento (lista + detalhe) e Consolidado ABC
+    assert.strictEqual(rootViewModel.resolvePageTitle('/planejamento'), 'Planejamento')
+    assert.strictEqual(rootViewModel.resolvePageTitle('/planejamento/detalhes/3'), 'Planejamento')
+    assert.strictEqual(rootViewModel.resolvePageTitle('/consolidado'), 'Consolidado ABC')
   })
   it('cai no fallback para rota desconhecida e não casa substring solta', () => {
     assert.strictEqual(rootViewModel.resolvePageTitle('/desconhecida'), 'ERP Bem Comum')
@@ -65,6 +69,10 @@ describe('rootViewModel.sidebarWidth / showPageHeader', () => {
     assert.strictEqual(rootViewModel.showPageHeader('/minha-conta'), false)
     assert.strictEqual(rootViewModel.showPageHeader('/programas'), false)
     assert.strictEqual(rootViewModel.showPageHeader('/programas/criar'), false)
+    // Plano Orçamentário: cada page tem PageHeader próprio → shell não renderiza h1.
+    assert.strictEqual(rootViewModel.showPageHeader('/planejamento'), false)
+    assert.strictEqual(rootViewModel.showPageHeader('/planejamento/detalhes/3'), false)
+    assert.strictEqual(rootViewModel.showPageHeader('/consolidado'), false)
     // Dashboard (043): full-bleed com canvas próprio e SEM título (pedido da P.O.) → shell não renderiza h1.
     assert.strictEqual(rootViewModel.showPageHeader('/dashboard'), false)
     // Financeiro: o grid mantém o h1 do shell; o Lançar Documento tem topbar própria.
@@ -273,5 +281,37 @@ describe('rootViewModel.visibleMenu (MENU real — geografia)', () => {
       'ACTs',
       'Estados e Municípios',
     ])
+  })
+})
+
+// Regressão de CONFIGURAÇÃO do "Plano Orçamentário" (feature 041 — Consolidado ABC). Deixou de ser link
+// direto e virou accordion com 2 subitens (Planejamento + Consolidado ABC), ambos SEM requiredPermission
+// (o backend cobra o acesso quando #113 nascer). A seção sobrevive com permissions vazias.
+describe('rootViewModel.visibleMenu (MENU real — Plano Orçamentário)', () => {
+  const findPlano = (menu: readonly MenuSection[]): MenuSection | undefined =>
+    menu.find((s) => s.label === 'Plano Orçamentário')
+
+  it('é accordion (sem `to` direto) com Planejamento e Consolidado ABC', () => {
+    const plano = findPlano(MENU)
+    assert.ok(plano, 'a seção "Plano Orçamentário" deve existir')
+    assert.strictEqual(plano?.to, undefined, 'não é mais link direto')
+    assert.deepStrictEqual(
+      plano?.subItems?.map((s) => s.label),
+      ['Planejamento', 'Consolidado ABC'],
+    )
+    assert.deepStrictEqual(
+      plano?.subItems?.map((s) => s.to),
+      ['/planejamento', '/consolidado'],
+    )
+  })
+
+  it('sobrevive com permissions vazias (subitens públicos)', () => {
+    const v = rootViewModel.visibleMenu(MENU, [])
+    const plano = findPlano(v)
+    assert.ok(plano, 'a seção deve aparecer sem RBAC')
+    assert.deepStrictEqual(
+      plano?.subItems?.map((s) => s.label),
+      ['Planejamento', 'Consolidado ABC'],
+    )
   })
 })

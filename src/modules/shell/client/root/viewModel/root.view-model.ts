@@ -52,6 +52,11 @@ const PAGE_TITLES: Readonly<Record<string, string>> = {
   '/usuarios': 'Usuários',
   '/minha-conta': 'Minha Conta',
   '/programas': 'Programas',
+  // Plano Orçamentário → Planejamento — a page tem seu próprio PageHeader (padrão Colaboradores); isto
+  // só alimenta o document.title (senão cairia no fallback "ERP Bem Comum").
+  '/planejamento': 'Planejamento',
+  // Plano Orçamentário → Consolidado ABC — mesma lógica (PageHeader próprio; alimenta o document.title).
+  '/consolidado': 'Consolidado ABC',
   // Financeiro — o título é desenhado pelo PageHeader do shell (padrão Contratos, Nunito); sem isto
   // cairia no fallback "ERP Bem Comum".
   '/financeiro/contas-a-pagar': 'Contas a Pagar',
@@ -86,6 +91,10 @@ export const rootViewModel = {
     !isPrefixPath(path, '/usuarios') &&
     !isPrefixPath(path, '/minha-conta') &&
     !isPrefixPath(path, '/programas') &&
+    // /planejamento tem PageHeader próprio (padrão Colaboradores) — evita título duplicado.
+    !isPrefixPath(path, '/planejamento') &&
+    // /consolidado (Consolidado ABC) tem PageHeader próprio — mesma lógica de /planejamento.
+    !isPrefixPath(path, '/consolidado') &&
     // Dashboard (043): tela full-bleed com fundo de canvas próprio e sem título (pedido da P.O.) —
     // o h1 do shell criaria título + margem branca. O document.title continua vindo de PAGE_TITLES.
     !isPrefixPath(path, '/dashboard') &&

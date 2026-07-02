@@ -147,7 +147,7 @@ export const tooltipVal = style({
 export const yLabel = style([
   axisText,
   {
-    fontSize: vars.font.size.xs,
+    fontSize: vars.font.size['2xs'],
     fontFamily: vars.font.family.body,
   },
 ])
@@ -155,7 +155,7 @@ export const yLabel = style([
 export const monthLabel = style([
   axisText,
   {
-    fontSize: vars.font.size.xs,
+    fontSize: vars.font.size['2xs'],
     fontFamily: vars.font.family.body,
   },
 ])

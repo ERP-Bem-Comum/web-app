@@ -30,4 +30,9 @@ export {
   ArrowLeftRightIcon,
   TagIcon,
   ZapIcon,
+  FolderIcon,
+  BarChartIcon,
+  GraduationCapIcon,
+  ScaleIcon,
+  PieChartIcon,
 } from './icons.tsx'

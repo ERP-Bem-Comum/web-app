@@ -58,7 +58,18 @@ export const MENU: readonly MenuSection[] = [
     iconId: 'calendar-check',
     subItems: [{ label: 'Contratos', to: '/contratos' }],
   },
-  { label: 'Plano Orçamentário', iconId: 'calendar-days' },
+  {
+    label: 'Plano Orçamentário',
+    iconId: 'calendar-days',
+    // Accordion com 2 subitens (HANDBOOK §2): Planejamento (/planejamento) e Consolidado ABC (/consolidado).
+    // Sem `requiredPermission` (mesmo critério de Contratos/Programas): o módulo `budget-plans` ainda não
+    // existe no core-api (#113); o acesso será cobrado pelo backend quando os endpoints nascerem.
+    // `shell` não importa `budget-plans` (boundaries) — os `to` são literais.
+    subItems: [
+      { label: 'Planejamento', to: '/planejamento' },
+      { label: 'Consolidado ABC', to: '/consolidado' },
+    ],
+  },
   { label: 'Relatórios', iconId: 'trending-up' },
   {
     label: 'Financeiro',
