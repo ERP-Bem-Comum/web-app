@@ -1,55 +1,79 @@
-# Tasks: Módulo Plano Orçamentário (Planejamento + Consolidado ABC)
+# Tasks / Slices — Módulo Plano Orçamentário (Planejamento + Consolidado ABC)
 
-**Input**: `specs/041-plano-orcamentario-reproducao/{spec.md, plan.md}` + `HANDBOOK-plano-orcamentario-mapa.md` (Apêndice B).
+**Input**: `spec.md` + `plan.md` + `HANDBOOK-plano-orcamentario-mapa.md` (mapa das telas + Apêndice B).
 
-**Política**: zero-mock (ADR-0011) · zero-regressão · testes antes (TDD, `node:test`) · valores em **centavos**.
-Cada page só integra quando o endpoint do core-api existir; até lá, adianta-se o que independe do backend.
+**Política**: zero-mock (ADR-0011) · zero-regressão · valores em **centavos** · MVVM (view burra + binding).
+Cada _page_ só **integra** quando o endpoint do core-api existir (**#113**); até lá, o front **adianta** tudo que
+independe do backend, com **dados placeholder** (const, sem mocks/fixtures) e ações de escrita como `TODO(#113)`.
 
-## Fase 1 — Setup (estrutura do módulo) ✅
+**Legenda de prontidão:** ✅ feito · 🟩 **front-first (dá pra fazer agora)** · 🔴 backend-gated (#113).
 
-- [x] T001 Estrutura `src/modules/budget-plans/{server,client,public-api}` espelhando `auth`.
-- [x] T002 `public-api/index.ts`.
+---
 
-## Fase 2 — Fundação PURA (independe do backend) ✅ CONCLUÍDA (commit 1afcc47d7)
+## Fase 0 — Fundação pura ✅ (independe de backend)
 
-- [x] T003 [P] Enums `as const` + Zod em `client/data/model/enums.ts`.
-- [x] T004 [P] Tipos de input dos 4 lançamentos (união discriminada) em `client/domain/calc/types.ts`.
-- [x] T005 [P] Testes das 4 fórmulas em `tests/modules/budget-plans/calc-preview.test.ts`.
-- [x] T006 As 4 funções puras de preview + dispatcher em `client/domain/calc/preview.ts` (GREEN).
-- [x] T007 [P] Derivações `deriveEditable`/`sumMonths`/`formatCentsBRL` em `client/domain/calc/derive.ts` + testes.
+- [x] Estrutura `src/modules/budget-plans/{client,server,public-api}` + `public-api/index.ts`.
+- [x] Enums (`enums.ts`), inputs dos 4 lançamentos (`calc/types.ts`), **4 previews puros** (`calc/preview.ts`) + testes.
+- [x] Derivações `deriveEditable`/`sumMonths`/`formatCentsBRL` (`calc/derive.ts`) + testes.
 
-## Fase 3 — US1 Listar/criar plano (Priority: P1) — _page aguarda endpoints_
+## Fase 1 — US1 Planejamento (`/planejamento`)
 
-- [x] T010 [P] [US1] `client/data/model/budget-plan.model.ts` (Zod: plano + children + parceiros + params + create).
-- [x] T013a [US1] `client/planejamento/planejamento-list.view-model.ts` PURO (status/rótulos/ações do menu §1.3) + testes.
-- [ ] T011 [US1] `server/adapters/server-fns/list-budget-plans.server-fn.ts` (+ schema Zod) — **gate: `GET /budget-plans`**.
-- [ ] T012 [US1] `server/adapters/server-fns/create-budget-plan.server-fn.ts` — **gate: `POST /budget-plans`**.
-- [ ] T013b [US1] `client/data/repository/budget-plans.repository.ts` (porta → server fn) — **gate: endpoints**.
-- [ ] T014 [US1] `client/planejamento/page` + `components` (TreeTable, StatusBadge, Criar Plano modal) + `bind` + rota `src/routes/planejamento`.
-- [ ] T015 [US1] Testes DOM (Vitest) da page/binding.
+- [x] **S1.1 · Lista** ✅ (placeholder) — grid em árvore (versões-filhas expansíveis), filtros/funil (Ano/Programa/Status),
+      busca, badges + trilha de auditoria, menu "…", paginação. View-model puro (`toPlanRow`) + binding + testes.
+- [x] **S1.1b · Navegação lista→detalhe** ✅ — clicar no nome abre `/planejamento/detalhes/$id`.
+- [ ] **S1.2 · Criar Plano** 🟩 — modal "Adicionar Plano Orçamentário": Ano + Programa, toggle "Importar dados"
+      ("Criar a partir do ano de"), validação de **unicidade Ano+Programa** (mensagem legado). Submit = `TODO(#113 POST /budget-plans)`.
+- [ ] **S1.3 · Execução das ações do menu "…"** 🔴 — aprovar/excluir/cenário/calibração/CSV (a UI/menu já existe; a
+      execução depende das mutations do BFF).
 
-## Fase 4 — US2 Estrutura + edição com preview (Priority: P2) — _aguarda endpoints_
+## Fase 2 — US2 Detalhe + estrutura + edição de orçamento
 
-- [ ] T020 [US2] Models/server-fns: getPlan, manageCostCenters, addBudget/deleteBudget, saveResult (4 tipos), getLastYearResults.
-- [ ] T021 [US2] Página Detalhe (matriz mês/rede, toggles, Adicionar Orçamento, Insights) + Página Orçamento (grid + "Calculando Gastos" 3 colunas usando os previews da Fase 2).
-- [ ] T022 [US2] Regra de edição por status (Aprovado = read-only) no viewModel + guard.
+- [x] **S2.1 · Detalhe (Consolidado por Mês + Por Rede)** ✅ (placeholder) — `/planejamento/detalhes/$id`: cabeçalho
+      (plano + status + Total), toggles de visão, matriz Centro→Categoria→Subcategoria (linhas expansíveis + TOTAL),
+      navegação de semestre (Por Mês) e colunas por rede (Por Rede). `MatrixView` único + testes node/DOM.
+- [ ] **S2.2 · Toggle "Centro de Custo" → modal de gestão** 🟩 — árvore de centros/categorias/subcategorias +
+      forms Adicionar/Editar (com `Tipo` Institucional/Rede e `Tipo de lançamento`). Persistência = `TODO(#113)`.
+- [ ] **S2.3 · Modal "Adicionar Orçamento" (por Rede)** 🟩 — Estado (+ Município se municipal), **exatamente 1 parceiro**,
+      bloquear parceiro duplicado (validação client). Submit = `TODO(#113)`.
+- [ ] **S2.4 · Edição de Orçamento (`/…/orcamento/$oid`) + modal "Calculando Gastos"** 🟩 **(alto valor — preview pronto)**
+      — grid editável por subcategoria/mês + os **4 tipos** (Pessoal/IPCA/CAED/Logística) com **preview do valor ao vivo**
+      (reusa `calc/preview.ts`, já testado). Regra de edição por status (Aprovado = read-only via `deriveEditable`). Save = `TODO(#113)`.
+- [ ] **S2.5 · Insights** 🔴 — histórico 5 anos, planejado × realizado (Realizado = CONCILIADO do financeiro), média por rede.
 
-## Fase 5 — US3 Versionamento/insights (P3) & US4 Consolidado ABC (P3) — _aguarda endpoints_
+## Fase 3 — US3 Ciclo de vida
 
-- [ ] T030 [US3] approve/scenery/calibrate/delete (confirmações + toasts + estado "Calculando…"); Insights (realizado = CONCILIADO).
-- [ ] T040 [US4] Página Consolidado ABC + disparo de CSV (backend gera).
+- [ ] **S3.1 · Confirmações/toasts** 🟩 (visual) — modais de Aprovar (3 passos + "Calculando…"), Excluir (cascata, botão
+      vermelho), Criar cenário (nome), Iniciar Calibração (auto-nome `X.0`), + mensagem de RBAC negado. Execução real = 🔴 (#113).
+
+## Fase 4 — US4 Consolidado ABC (`/consolidado`)
+
+- [ ] **S4.1 · Página Consolidado** 🟩 (placeholder) — filtro Ano Base + Programa(s), matriz Centro × meses, total; estado vazio.
+- [ ] **S4.2 · Exportar Excel/CSV** 🔴 — arquivo gerado pelo backend.
+
+## Fase 5 — Integração backend (quando #113 existir) 🔴
+
+- [ ] Server-fns + `repository` por caso de uso (listar/criar plano; árvore de centros; add/del orçamento; upsert de
+      lançamento por tipo; aprovar/cenário/calibração/excluir; insights; consolidado; disparo de CSV). Ligar cada page:
+      trocar placeholder → `useQuery` do repository; validar resposta contra o `*.model.ts` (Zod). Rastreado em `api-readiness-report.md`.
 
 ## Fase 6 — Polish
 
-- [ ] T050 ADR "Preview de cálculo no client espelhando o backend" (skill `adr-author`).
-- [ ] T051 Suíte de equivalência preview↔backend (quando os endpoints existirem).
-- [ ] T052 `pnpm verify` + `test:dom` verdes; i18n PT das mensagens.
+- [ ] ADR "Preview de cálculo no client espelhando o backend" (`adr-author`).
+- [ ] Suíte de equivalência **preview ↔ backend** (quando os endpoints existirem).
+- [ ] `pnpm verify` + `test:dom` verdes; i18n PT completo.
+
+---
+
+## Ordem recomendada (front-first, maior valor primeiro)
+
+1. **S2.4 Calculando Gastos + preview** (o "coração"; a lógica de cálculo já está pronta e testada).
+2. **S2.2 modal Centros de Custo** e **S2.3 Adicionar Orçamento** (completam o Detalhe).
+3. **S1.2 Criar Plano** (fecha o fluxo de entrada da US1).
+4. **S4.1 Consolidado ABC** (matriz/formatos) e **S3.1 confirmações** (visual).
+5. **Fase 5** integra tudo quando o core-api #113 nascer.
 
 ## Dependências
 
-- Fase 2 é **pré-requisito** de tudo e **não depende de backend** — feita primeiro.
-- Fases 3–5: cada page é gateada pelo endpoint correspondente (🔴 hoje). Model/viewModel/validação podem adiantar; integração só com endpoint real.
-
-## Estratégia
-
-MVP incremental por PR: Fase 2 (pura) → US1 → US2 → US3/US4, cada uma testável e sem quebrar as anteriores.
+- Fase 0 é pré-requisito de tudo e **não** depende de backend.
+- Toda **escrita** (criar/aprovar/excluir/salvar lançamento) e os **Insights** dependem do #113 → hoje ficam como `TODO(#113)`.
+- **Leitura** (listas, matrizes, previews) é toda adiantável com placeholder.

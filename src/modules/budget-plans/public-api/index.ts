@@ -77,3 +77,28 @@ export type {
   StatusView,
   StatusTone,
 } from '#modules/budget-plans/client/planejamento/planejamento-list.view-model.ts'
+
+export {
+  PlanDetailSchema,
+  CostCenterConsolidatedSchema,
+  MonthlyCentsSchema,
+} from '#modules/budget-plans/client/data/model/plan-detail.model.ts'
+export type {
+  PlanDetail,
+  CostCenterConsolidated,
+  CategoryConsolidated,
+  SubCategoryConsolidated,
+} from '#modules/budget-plans/client/data/model/plan-detail.model.ts'
+
+export {
+  buildMonthlyMatrix,
+  buildNetworkMatrix,
+  derivePlanDetailHeader,
+  MONTH_HEADERS,
+} from '#modules/budget-plans/client/planejamento/detalhe/plan-detail.view-model.ts'
+export type {
+  MatrixView,
+  MatrixRow,
+  Semester,
+  PlanDetailHeader,
+} from '#modules/budget-plans/client/planejamento/detalhe/plan-detail.view-model.ts'

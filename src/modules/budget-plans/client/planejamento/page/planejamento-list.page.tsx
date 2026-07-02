@@ -124,8 +124,11 @@ export function PlanejamentoListPage(): ReactNode {
             collapse: t('budget-plans.list.collapse'),
           }}
           actionLabelFor={(action) => t(actionKey(action))}
-          onOpenPlan={() => {
-            // TODO(#113): navegar a /planejamento/detalhes/:id (US2) — rota/endpoint ainda não existem.
+          onOpenPlan={(id) => {
+            void navigate({
+              to: '/planejamento/detalhes/$id',
+              params: { id: String(id) },
+            })
           }}
           onAction={() => {
             // TODO(#113): executar a ação (aprovar/excluir/calibração/cenário) — depende das mutations do BFF.
