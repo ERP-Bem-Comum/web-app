@@ -36,4 +36,6 @@ export {
   ScaleIcon,
   PieChartIcon,
   CalculatorIcon,
+  EditIcon,
+  TrashIcon,
 } from './icons.tsx'

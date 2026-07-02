@@ -8,6 +8,7 @@
 import { useMemo, useState } from 'react'
 
 import { planDetailPlaceholder } from '#modules/budget-plans/client/data/plan-detail.placeholder.ts'
+import type { PlanDetail } from '#modules/budget-plans/client/data/model/plan-detail.model.ts'
 import {
   buildOrcamentoMatrix,
   orcamentoCentroOptions,
@@ -30,6 +31,8 @@ export type OrcamentoState =
 
 export type OrcamentoBinding = Readonly<{
   state: OrcamentoState
+  /** Detalhe cru do plano — usado pelo modal "Calculando Gastos" (2.4b). */
+  detail: PlanDetail | null
   centroOptions: readonly RegionOption[]
   centro: string
   setCentro: (value: string) => void
@@ -69,6 +72,7 @@ export function useOrcamento(id: number, estado: string): OrcamentoBinding {
 
   return {
     state,
+    detail,
     centroOptions: options,
     centro,
     setCentro,

@@ -1909,6 +1909,19 @@ export const ptBR: Catalog = {
   'budget-plans.orcamento.calcRow': 'Calcular gasto desta linha',
   'budget-plans.orcamento.notFound': 'Orçamento não encontrado.',
 
+  // ── Calculando Gastos (modal — US2.4b) ──
+  'budget-plans.calcGastos.titlePrefix': 'Calculando Gastos -',
+  'budget-plans.calcGastos.close': 'Fechar',
+  'budget-plans.calcGastos.prevCentro': 'Centro anterior',
+  'budget-plans.calcGastos.nextCentro': 'Próximo centro',
+  'budget-plans.calcGastos.categoria': 'Categoria',
+  'budget-plans.calcGastos.subcategoria': 'Subcategoria',
+  'budget-plans.calcGastos.despesas': 'Despesas',
+  'budget-plans.calcGastos.calcular': 'Calcular',
+  'budget-plans.calcGastos.editValue': 'Editar valor',
+  'budget-plans.calcGastos.clearValue': 'Limpar valor',
+  'budget-plans.calcGastos.empty': 'Sem despesas para exibir.',
+
   // ── Consolidado ABC (/consolidado — HANDBOOK §2) ──
   'budget-plans.consolidado.title': 'Consolidado ABC',
   'budget-plans.consolidado.subtitle': 'Consolidação dos planos aprovados por ano e programa.',

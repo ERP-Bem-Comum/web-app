@@ -52,7 +52,7 @@ import { Route as AuthenticatedFinanceiroContasAPagarLancarRouteImport } from '.
 import { Route as AuthenticatedFinanceiroConciliacaoAccountIdRouteImport } from './../routes/_authenticated/financeiro/conciliacao/$accountId'
 import { Route as AuthenticatedContratosAditivoIdRouteImport } from './../routes/_authenticated/contratos/aditivo.$id'
 import { Route as AuthenticatedContratosIdEditarRouteImport } from './../routes/_authenticated/contratos/$id.editar'
-import { Route as AuthenticatedPlanejamentoDetalhesIdOrcamentoRouteImport } from './../routes/_authenticated/planejamento_.detalhes.$id.orcamento'
+import { Route as AuthenticatedPlanejamentoDetalhesIdOrcamentoRouteImport } from './../routes/_authenticated/planejamento_.detalhes.$id_.orcamento'
 import { Route as AuthenticatedParceirosFornecedoresIdEditarRouteImport } from './../routes/_authenticated/parceiros/fornecedores/$id.editar'
 import { Route as AuthenticatedParceirosFinanciadoresIdEditarRouteImport } from './../routes/_authenticated/parceiros/financiadores/$id.editar'
 import { Route as AuthenticatedParceirosAtosIdEditarRouteImport } from './../routes/_authenticated/parceiros/atos/$id.editar'
@@ -304,9 +304,9 @@ const AuthenticatedContratosIdEditarRoute =
   } as any)
 const AuthenticatedPlanejamentoDetalhesIdOrcamentoRoute =
   AuthenticatedPlanejamentoDetalhesIdOrcamentoRouteImport.update({
-    id: '/orcamento',
-    path: '/orcamento',
-    getParentRoute: () => AuthenticatedPlanejamentoDetalhesIdRoute,
+    id: '/planejamento_/detalhes/$id_/orcamento',
+    path: '/planejamento/detalhes/$id/orcamento',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedParceirosFornecedoresIdEditarRoute =
   AuthenticatedParceirosFornecedoresIdEditarRouteImport.update({
@@ -362,7 +362,7 @@ export interface FileRoutesByFullPath {
   '/parceiros/financiadores/criar': typeof AuthenticatedParceirosFinanciadoresCriarRoute
   '/parceiros/fornecedores/$id': typeof AuthenticatedParceirosFornecedoresIdRouteWithChildren
   '/parceiros/fornecedores/criar': typeof AuthenticatedParceirosFornecedoresCriarRoute
-  '/planejamento/detalhes/$id': typeof AuthenticatedPlanejamentoDetalhesIdRouteWithChildren
+  '/planejamento/detalhes/$id': typeof AuthenticatedPlanejamentoDetalhesIdRoute
   '/financeiro/conciliacao/': typeof AuthenticatedFinanceiroConciliacaoIndexRoute
   '/financeiro/contas-a-pagar/': typeof AuthenticatedFinanceiroContasAPagarIndexRoute
   '/parceiros/atos/': typeof AuthenticatedParceirosAtosIndexRoute
@@ -410,7 +410,7 @@ export interface FileRoutesByTo {
   '/parceiros/financiadores/criar': typeof AuthenticatedParceirosFinanciadoresCriarRoute
   '/parceiros/fornecedores/$id': typeof AuthenticatedParceirosFornecedoresIdRouteWithChildren
   '/parceiros/fornecedores/criar': typeof AuthenticatedParceirosFornecedoresCriarRoute
-  '/planejamento/detalhes/$id': typeof AuthenticatedPlanejamentoDetalhesIdRouteWithChildren
+  '/planejamento/detalhes/$id': typeof AuthenticatedPlanejamentoDetalhesIdRoute
   '/financeiro/conciliacao': typeof AuthenticatedFinanceiroConciliacaoIndexRoute
   '/financeiro/contas-a-pagar': typeof AuthenticatedFinanceiroContasAPagarIndexRoute
   '/parceiros/atos': typeof AuthenticatedParceirosAtosIndexRoute
@@ -460,7 +460,7 @@ export interface FileRoutesById {
   '/_authenticated/parceiros/financiadores/criar': typeof AuthenticatedParceirosFinanciadoresCriarRoute
   '/_authenticated/parceiros/fornecedores/$id': typeof AuthenticatedParceirosFornecedoresIdRouteWithChildren
   '/_authenticated/parceiros/fornecedores/criar': typeof AuthenticatedParceirosFornecedoresCriarRoute
-  '/_authenticated/planejamento_/detalhes/$id': typeof AuthenticatedPlanejamentoDetalhesIdRouteWithChildren
+  '/_authenticated/planejamento_/detalhes/$id': typeof AuthenticatedPlanejamentoDetalhesIdRoute
   '/_authenticated/financeiro/conciliacao/': typeof AuthenticatedFinanceiroConciliacaoIndexRoute
   '/_authenticated/financeiro/contas-a-pagar/': typeof AuthenticatedFinanceiroContasAPagarIndexRoute
   '/_authenticated/parceiros/atos/': typeof AuthenticatedParceirosAtosIndexRoute
@@ -471,7 +471,7 @@ export interface FileRoutesById {
   '/_authenticated/parceiros/atos/$id/editar': typeof AuthenticatedParceirosAtosIdEditarRoute
   '/_authenticated/parceiros/financiadores/$id/editar': typeof AuthenticatedParceirosFinanciadoresIdEditarRoute
   '/_authenticated/parceiros/fornecedores/$id/editar': typeof AuthenticatedParceirosFornecedoresIdEditarRoute
-  '/_authenticated/planejamento_/detalhes/$id/orcamento': typeof AuthenticatedPlanejamentoDetalhesIdOrcamentoRoute
+  '/_authenticated/planejamento_/detalhes/$id_/orcamento': typeof AuthenticatedPlanejamentoDetalhesIdOrcamentoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -618,7 +618,7 @@ export interface FileRouteTypes {
     | '/_authenticated/parceiros/atos/$id/editar'
     | '/_authenticated/parceiros/financiadores/$id/editar'
     | '/_authenticated/parceiros/fornecedores/$id/editar'
-    | '/_authenticated/planejamento_/detalhes/$id/orcamento'
+    | '/_authenticated/planejamento_/detalhes/$id_/orcamento'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -937,12 +937,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedContratosIdEditarRouteImport
       parentRoute: typeof AuthenticatedContratosIdRoute
     }
-    '/_authenticated/planejamento_/detalhes/$id/orcamento': {
-      id: '/_authenticated/planejamento_/detalhes/$id/orcamento'
-      path: '/orcamento'
+    '/_authenticated/planejamento_/detalhes/$id_/orcamento': {
+      id: '/_authenticated/planejamento_/detalhes/$id_/orcamento'
+      path: '/planejamento/detalhes/$id/orcamento'
       fullPath: '/planejamento/detalhes/$id/orcamento'
       preLoaderRoute: typeof AuthenticatedPlanejamentoDetalhesIdOrcamentoRouteImport
-      parentRoute: typeof AuthenticatedPlanejamentoDetalhesIdRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/parceiros/fornecedores/$id/editar': {
       id: '/_authenticated/parceiros/fornecedores/$id/editar'
@@ -1027,21 +1027,6 @@ const AuthenticatedParceirosFornecedoresIdRouteWithChildren =
     AuthenticatedParceirosFornecedoresIdRouteChildren,
   )
 
-interface AuthenticatedPlanejamentoDetalhesIdRouteChildren {
-  AuthenticatedPlanejamentoDetalhesIdOrcamentoRoute: typeof AuthenticatedPlanejamentoDetalhesIdOrcamentoRoute
-}
-
-const AuthenticatedPlanejamentoDetalhesIdRouteChildren: AuthenticatedPlanejamentoDetalhesIdRouteChildren =
-  {
-    AuthenticatedPlanejamentoDetalhesIdOrcamentoRoute:
-      AuthenticatedPlanejamentoDetalhesIdOrcamentoRoute,
-  }
-
-const AuthenticatedPlanejamentoDetalhesIdRouteWithChildren =
-  AuthenticatedPlanejamentoDetalhesIdRoute._addFileChildren(
-    AuthenticatedPlanejamentoDetalhesIdRouteChildren,
-  )
-
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedConsolidadoRoute: typeof AuthenticatedConsolidadoRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
@@ -1067,7 +1052,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedParceirosFinanciadoresCriarRoute: typeof AuthenticatedParceirosFinanciadoresCriarRoute
   AuthenticatedParceirosFornecedoresIdRoute: typeof AuthenticatedParceirosFornecedoresIdRouteWithChildren
   AuthenticatedParceirosFornecedoresCriarRoute: typeof AuthenticatedParceirosFornecedoresCriarRoute
-  AuthenticatedPlanejamentoDetalhesIdRoute: typeof AuthenticatedPlanejamentoDetalhesIdRouteWithChildren
+  AuthenticatedPlanejamentoDetalhesIdRoute: typeof AuthenticatedPlanejamentoDetalhesIdRoute
   AuthenticatedFinanceiroConciliacaoIndexRoute: typeof AuthenticatedFinanceiroConciliacaoIndexRoute
   AuthenticatedFinanceiroContasAPagarIndexRoute: typeof AuthenticatedFinanceiroContasAPagarIndexRoute
   AuthenticatedParceirosAtosIndexRoute: typeof AuthenticatedParceirosAtosIndexRoute
@@ -1075,6 +1060,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedParceirosFinanciadoresIndexRoute: typeof AuthenticatedParceirosFinanciadoresIndexRoute
   AuthenticatedParceirosFornecedoresIndexRoute: typeof AuthenticatedParceirosFornecedoresIndexRoute
   AuthenticatedParceirosTerritoriosIndexRoute: typeof AuthenticatedParceirosTerritoriosIndexRoute
+  AuthenticatedPlanejamentoDetalhesIdOrcamentoRoute: typeof AuthenticatedPlanejamentoDetalhesIdOrcamentoRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1112,7 +1098,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedParceirosFornecedoresCriarRoute:
     AuthenticatedParceirosFornecedoresCriarRoute,
   AuthenticatedPlanejamentoDetalhesIdRoute:
-    AuthenticatedPlanejamentoDetalhesIdRouteWithChildren,
+    AuthenticatedPlanejamentoDetalhesIdRoute,
   AuthenticatedFinanceiroConciliacaoIndexRoute:
     AuthenticatedFinanceiroConciliacaoIndexRoute,
   AuthenticatedFinanceiroContasAPagarIndexRoute:
@@ -1126,6 +1112,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedParceirosFornecedoresIndexRoute,
   AuthenticatedParceirosTerritoriosIndexRoute:
     AuthenticatedParceirosTerritoriosIndexRoute,
+  AuthenticatedPlanejamentoDetalhesIdOrcamentoRoute:
+    AuthenticatedPlanejamentoDetalhesIdOrcamentoRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

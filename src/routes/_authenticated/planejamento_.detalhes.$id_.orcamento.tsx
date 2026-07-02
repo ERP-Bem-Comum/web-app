@@ -9,7 +9,7 @@ import { OrcamentoPage } from '#modules/budget-plans/client/planejamento/detalhe
 
 type OrcamentoSearch = Readonly<{ estado: string; municipio: string }>
 
-export const Route = createFileRoute('/_authenticated/planejamento_/detalhes/$id/orcamento')({
+export const Route = createFileRoute('/_authenticated/planejamento_/detalhes/$id_/orcamento')({
   validateSearch: (search: Record<string, unknown>): OrcamentoSearch => ({
     estado: typeof search.estado === 'string' ? search.estado : '',
     municipio: typeof search.municipio === 'string' ? search.municipio : '',

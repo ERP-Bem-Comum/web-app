@@ -1,12 +1,14 @@
 import { useNavigate, getRouteApi } from '@tanstack/react-router'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { ChevronUpIcon, CalculatorIcon } from '#shared/ui/index.ts'
 
 import { useOrcamento } from './orcamento.binding.ts'
+import { useCalcGastos } from './calc-gastos.binding.ts'
 import { OrcamentoGrid } from './orcamento-grid.component.tsx'
+import { CalculandoGastos } from './calculando-gastos.component.tsx'
 import {
   screen,
   header,
@@ -34,24 +36,26 @@ import {
 } from './orcamento.css.ts'
 
 const t = createTranslator(ptBR)
-const routeApi = getRouteApi('/_authenticated/planejamento_/detalhes/$id/orcamento')
+const routeApi = getRouteApi('/_authenticated/planejamento_/detalhes/$id_/orcamento')
 
 export function OrcamentoPage(): ReactNode {
   const params = routeApi.useParams()
   const search = routeApi.useSearch()
   const navigate = useNavigate()
   const id = Number(params.id)
-  const { state, centroOptions, centro, setCentro, apply, prevSemester, nextSemester } = useOrcamento(
+  const { state, detail, centroOptions, centro, setCentro, apply, prevSemester, nextSemester } = useOrcamento(
     id,
     search.estado,
   )
+  const calc = useCalcGastos(detail)
+  const [calcOpen, setCalcOpen] = useState(false)
 
   const goBack = (): void => {
     void navigate({ to: '/planejamento/detalhes/$id', params: { id: String(id) } })
   }
 
   const openCalcular = (): void => {
-    // TODO(US2.4b): abrir a tela "Calculando Gastos" (aba do centro / linha selecionada).
+    setCalcOpen(true)
   }
 
   return (
@@ -158,6 +162,29 @@ export function OrcamentoPage(): ReactNode {
           />
         </div>
       )}
+
+      {calcOpen && state.status === 'ready' ? (
+        <CalculandoGastos
+          title={state.title}
+          binding={calc}
+          labels={{
+            titlePrefix: t('budget-plans.calcGastos.titlePrefix'),
+            close: t('budget-plans.calcGastos.close'),
+            prevCentro: t('budget-plans.calcGastos.prevCentro'),
+            nextCentro: t('budget-plans.calcGastos.nextCentro'),
+            categoria: t('budget-plans.calcGastos.categoria'),
+            subcategoria: t('budget-plans.calcGastos.subcategoria'),
+            despesas: t('budget-plans.calcGastos.despesas'),
+            calcular: t('budget-plans.calcGastos.calcular'),
+            editValue: t('budget-plans.calcGastos.editValue'),
+            clearValue: t('budget-plans.calcGastos.clearValue'),
+            empty: t('budget-plans.calcGastos.empty'),
+          }}
+          onClose={() => {
+            setCalcOpen(false)
+          }}
+        />
+      ) : null}
     </div>
   )
 }
