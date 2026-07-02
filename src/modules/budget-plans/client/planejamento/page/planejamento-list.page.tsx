@@ -1,5 +1,5 @@
 import { useNavigate, getRouteApi } from '@tanstack/react-router'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
@@ -11,10 +11,13 @@ import {
   FILTER_YEARS,
 } from '#modules/budget-plans/client/planejamento/planejamento-list.binding.ts'
 import type { PlanAction } from '#modules/budget-plans/client/planejamento/planejamento-list.view-model.ts'
+import { useCreatePlan, IMPORT_YEARS } from '#modules/budget-plans/client/planejamento/create-plan.binding.ts'
+import type { CreatePlanError } from '#modules/budget-plans/client/planejamento/create-plan.view-model.ts'
 
 import { PlanFilters } from '../components/plan-filters.component.tsx'
 import { PlanTreeTable } from '../components/plan-tree-table.component.tsx'
 import { PlanPaginator } from '../components/plan-paginator.component.tsx'
+import { CreatePlanModal } from '../components/create-plan-modal.component.tsx'
 import { screen, card } from './planejamento-list.css.ts'
 
 const t = createTranslator(ptBR)
@@ -47,6 +50,15 @@ export function PlanejamentoListPage(): ReactNode {
   const search = routeApi.useSearch()
   const navigate = useNavigate()
   const { state } = usePlanejamentoList(search)
+  const [createOpen, setCreateOpen] = useState(false)
+  const createPlan = useCreatePlan(PLANEJAMENTO_PROGRAM_OPTIONS, () => {
+    setCreateOpen(false)
+  })
+
+  const closeCreate = (): void => {
+    createPlan.reset()
+    setCreateOpen(false)
+  }
 
   const emptyLabel = state.filtered ? t('budget-plans.list.noResults') : t('budget-plans.list.empty')
 
@@ -106,7 +118,7 @@ export function PlanejamentoListPage(): ReactNode {
             })
           }
           onCreate={() => {
-            // TODO(#113): abrir o modal "Adicionar Plano Orçamentário" (US1) — depende de POST /budget-plans.
+            setCreateOpen(true)
           }}
         />
 
@@ -155,6 +167,32 @@ export function PlanejamentoListPage(): ReactNode {
           }
         />
       </div>
+
+      <CreatePlanModal
+        open={createOpen}
+        form={createPlan.form}
+        errorTag={createPlan.errorTag}
+        programOptions={PLANEJAMENTO_PROGRAM_OPTIONS}
+        importYears={IMPORT_YEARS}
+        labels={{
+          title: t('budget-plans.create.title'),
+          close: t('budget-plans.create.close'),
+          year: t('budget-plans.create.year'),
+          program: t('budget-plans.create.program'),
+          programPlaceholder: t('budget-plans.create.programPlaceholder'),
+          importData: t('budget-plans.create.importData'),
+          importFromYear: t('budget-plans.create.importFromYear'),
+          add: t('budget-plans.create.add'),
+          cancel: t('budget-plans.create.cancel'),
+        }}
+        translateError={(tag: CreatePlanError) => t(tag)}
+        onClose={closeCreate}
+        onYear={createPlan.setYear}
+        onProgram={createPlan.setProgram}
+        onToggleImport={createPlan.toggleImport}
+        onImportFromYear={createPlan.setImportFromYear}
+        onSubmit={createPlan.submit}
+      />
     </div>
   )
 }

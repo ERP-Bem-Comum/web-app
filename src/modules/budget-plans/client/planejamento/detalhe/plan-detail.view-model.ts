@@ -59,7 +59,7 @@ export type MatrixView = Readonly<{
   total: Readonly<{ totalLabel: string; cellLabels: readonly string[] }>
 }>
 
-type CellsOf = (
+export type CellsOf = (
   node: CostCenterConsolidated | CategoryConsolidated | SubCategoryConsolidated,
 ) => readonly number[]
 
@@ -82,7 +82,7 @@ const categoryToRow = (cat: CategoryConsolidated, cells: CellsOf): MatrixRow => 
 })
 
 /** Centro de custo: rótulo inclui a natureza (ex.: "Consultoria - A PAGAR"), como no legado. */
-const costCenterToRow = (cc: CostCenterConsolidated, cells: CellsOf): MatrixRow => ({
+export const costCenterToRow = (cc: CostCenterConsolidated, cells: CellsOf): MatrixRow => ({
   id: cc.id,
   name: `${cc.name} - ${cc.type}`,
   depth: 0,
@@ -91,25 +91,36 @@ const costCenterToRow = (cc: CostCenterConsolidated, cells: CellsOf): MatrixRow 
   children: cc.categories.map((cat) => categoryToRow(cat, cells)),
 })
 
-/** Constrói a matriz "Consolidado por Mês" para o semestre pedido. */
-export const buildMonthlyMatrix = (detail: PlanDetail, semester: Semester): MatrixView => {
+/**
+ * Núcleo compartilhado da matriz "Por Mês": recebe os centros de custo + total já consolidados e monta a
+ * `MatrixView` para o semestre pedido. Reusável pelo Detalhe (1 plano) E pelo Consolidado ABC (multi-plano).
+ */
+export const buildMonthlyMatrixFrom = (
+  costCenters: readonly CostCenterConsolidated[],
+  totalInCents: number,
+  semester: Semester,
+): MatrixView => {
   const window = windowFor(semester)
   const start = semester === 0 ? 0 : 6
   const cells: CellsOf = (node) => window.map((i) => node.monthlyInCents[i] ?? 0)
   const totalPerMonth = window.map((i) =>
-    detail.costCenters.reduce((acc, cc) => acc + (cc.monthlyInCents[i] ?? 0), 0),
+    costCenters.reduce((acc, cc) => acc + (cc.monthlyInCents[i] ?? 0), 0),
   )
   return {
     kind: 'month',
     semester,
     columnHeaders: MONTH_HEADERS.slice(start, start + 6),
-    rows: detail.costCenters.map((cc) => costCenterToRow(cc, cells)),
+    rows: costCenters.map((cc) => costCenterToRow(cc, cells)),
     total: {
-      totalLabel: formatCentsBRL(detail.totalInCents),
+      totalLabel: formatCentsBRL(totalInCents),
       cellLabels: totalPerMonth.map(formatCentsBRL),
     },
   }
 }
+
+/** Constrói a matriz "Consolidado por Mês" do Detalhe (1 plano) para o semestre pedido. */
+export const buildMonthlyMatrix = (detail: PlanDetail, semester: Semester): MatrixView =>
+  buildMonthlyMatrixFrom(detail.costCenters, detail.totalInCents, semester)
 
 /** Constrói a matriz "Por Rede" (Consolidado dos parceiros): colunas = redes, MAIÚSCULAS como no legado. */
 export const buildNetworkMatrix = (detail: PlanDetail): MatrixView => {

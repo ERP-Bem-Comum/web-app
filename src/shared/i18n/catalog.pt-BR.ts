@@ -1891,6 +1891,32 @@ export const ptBR: Catalog = {
   'budget-plans.matrix.expand': 'Expandir',
   'budget-plans.matrix.collapse': 'Recolher',
 
+  // ── Consolidado ABC (/consolidado — HANDBOOK §2) ──
+  'budget-plans.consolidado.title': 'Consolidado ABC',
+  'budget-plans.consolidado.subtitle': 'Consolidação dos planos aprovados por ano e programa.',
+  'budget-plans.consolidado.yearBase': 'Ano Base',
+  'budget-plans.consolidado.programs': 'Programas',
+  'budget-plans.consolidado.apply': 'Filtrar',
+  'budget-plans.consolidado.exportExcel': 'Exportar Excel/CSV',
+  'budget-plans.consolidado.total': 'Total:',
+  'budget-plans.consolidado.programSubtotal': 'Programa {program}:',
+  'budget-plans.consolidado.sectionTitle': 'Consolidado dos programas',
+  'budget-plans.consolidado.noResults': 'Nenhum resultado encontrado',
+
+  // ── Criar Plano (modal "Adicionar Plano Orçamentário" — HANDBOOK §1.2) ──
+  'budget-plans.create.title': 'Adicionar Plano Orçamentário',
+  'budget-plans.create.close': 'Fechar',
+  'budget-plans.create.year': 'Ano',
+  'budget-plans.create.program': 'Programa',
+  'budget-plans.create.programPlaceholder': 'Selecione o programa',
+  'budget-plans.create.importData': 'Importar dados',
+  'budget-plans.create.importFromYear': 'Criar a partir do ano de',
+  'budget-plans.create.add': 'Adicionar',
+  'budget-plans.create.cancel': 'Cancelar',
+  'budget-plans.create.duplicate': 'Atenção! Já existe um plano orçamentário com essas informações.',
+  'budget-plans.create.requiredYear': 'Informe o ano do plano.',
+  'budget-plans.create.requiredProgram': 'Selecione o programa.',
+
   // ── Dashboard "Resumo Mensal" (043 — reprodução fiel do legado) ──
   'dashboard.title': 'Dashboard - Resumo Mensal',
 

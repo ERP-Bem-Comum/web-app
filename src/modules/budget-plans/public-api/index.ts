@@ -92,6 +92,7 @@ export type {
 
 export {
   buildMonthlyMatrix,
+  buildMonthlyMatrixFrom,
   buildNetworkMatrix,
   derivePlanDetailHeader,
   MONTH_HEADERS,
@@ -102,3 +103,27 @@ export type {
   Semester,
   PlanDetailHeader,
 } from '#modules/budget-plans/client/planejamento/detalhe/plan-detail.view-model.ts'
+
+export { ConsolidatedAbcSchema } from '#modules/budget-plans/client/data/model/consolidado-abc.model.ts'
+export type { ConsolidatedAbc } from '#modules/budget-plans/client/data/model/consolidado-abc.model.ts'
+
+export {
+  deriveConsolidadoHeader,
+  hasConsolidadoResult,
+  buildConsolidadoMatrix,
+} from '#modules/budget-plans/client/planejamento/consolidado/consolidado-abc.view-model.ts'
+export type {
+  ConsolidadoAbcHeader,
+  ProgramSubtotal,
+} from '#modules/budget-plans/client/planejamento/consolidado/consolidado-abc.view-model.ts'
+
+export {
+  isDuplicatePlan,
+  validateCreatePlan,
+  createPlanInitialForm,
+  IMPORT_YEARS,
+} from '#modules/budget-plans/client/planejamento/create-plan.view-model.ts'
+export type {
+  CreatePlanForm,
+  CreatePlanError,
+} from '#modules/budget-plans/client/planejamento/create-plan.view-model.ts'

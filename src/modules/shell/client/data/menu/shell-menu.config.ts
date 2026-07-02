@@ -61,11 +61,14 @@ export const MENU: readonly MenuSection[] = [
   {
     label: 'Plano Orçamentário',
     iconId: 'calendar-days',
-    // LINK DIRETO por ora (1 clique abre a lista de Planejamento). O módulo `budget-plans` ainda não
-    // existe no core-api (#113); o acesso será cobrado pelo backend quando o endpoint nascer. Quando o
-    // Consolidado ABC (/consolidado) entrar (fatia futura), isto vira accordion com 2 subitens.
-    // `shell` não importa `budget-plans` (boundaries) — o `to` é literal.
-    to: '/planejamento',
+    // Accordion com 2 subitens (HANDBOOK §2): Planejamento (/planejamento) e Consolidado ABC (/consolidado).
+    // Sem `requiredPermission` (mesmo critério de Contratos/Programas): o módulo `budget-plans` ainda não
+    // existe no core-api (#113); o acesso será cobrado pelo backend quando os endpoints nascerem.
+    // `shell` não importa `budget-plans` (boundaries) — os `to` são literais.
+    subItems: [
+      { label: 'Planejamento', to: '/planejamento' },
+      { label: 'Consolidado ABC', to: '/consolidado' },
+    ],
   },
   { label: 'Relatórios', iconId: 'trending-up' },
   {
