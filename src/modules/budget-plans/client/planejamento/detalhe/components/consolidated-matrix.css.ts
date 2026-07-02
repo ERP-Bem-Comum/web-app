@@ -50,7 +50,8 @@ export const sectionTitle = style({
   fontFamily: vars.font.family.body,
   fontSize: vars.font.size.lg,
   fontWeight: vars.font.weight.bold,
-  color: vars.color.nav.background,
+  // "Consolidado dos programas" em PRETO (mock), não no índigo.
+  color: vars.color.text.primary,
 })
 
 export const controls = style({
@@ -201,14 +202,15 @@ export const connector = style({
   alignItems: 'center',
   justifyContent: 'center',
   selectors: {
+    // Linha PONTILHADA (mock do Consolidado): borda esquerda dotted em vez de fundo sólido.
     '&::before': {
       content: '""',
       position: 'absolute',
       insetBlock: `calc(-1 * ${vars.space.md})`,
       insetInlineStart: '50%',
-      inlineSize: vars.borderWidth.thick,
+      inlineSize: 0,
+      borderInlineStart: `${vars.borderWidth.thick} dotted ${vars.color.brand.normal}`,
       transform: 'translateX(-50%)',
-      background: vars.color.brand.normal,
     },
   },
 })

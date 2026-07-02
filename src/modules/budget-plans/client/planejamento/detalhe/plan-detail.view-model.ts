@@ -9,7 +9,11 @@ import type {
   CostCenterConsolidated,
   CategoryConsolidated,
   SubCategoryConsolidated,
+  MatrixIconKind,
 } from '#modules/budget-plans/client/data/model/plan-detail.model.ts'
+
+/** Re-export p/ a view burra consumir o tipo do ícone SEM furar o boundary client-ui ↛ client-data. */
+export type { MatrixIconKind } from '#modules/budget-plans/client/data/model/plan-detail.model.ts'
 import { formatCentsBRL } from '#modules/budget-plans/client/domain/calc/derive.ts'
 import {
   deriveStatusView,
@@ -44,6 +48,8 @@ export type MatrixRow = Readonly<{
   totalLabel: string
   cellLabels: readonly string[]
   children: readonly MatrixRow[]
+  /** Ícone semântico da linha (mock); ausente ⇒ a view usa o padrão por profundidade. */
+  iconKind?: MatrixIconKind
 }>
 
 /**
@@ -63,6 +69,10 @@ export type CellsOf = (
   node: CostCenterConsolidated | CategoryConsolidated | SubCategoryConsolidated,
 ) => readonly number[]
 
+/** Propaga a dica de ícone só quando presente (respeita `exactOptionalPropertyTypes`). */
+const iconOf = (kind: MatrixIconKind | undefined): { iconKind?: MatrixIconKind } =>
+  kind !== undefined ? { iconKind: kind } : {}
+
 const subToRow = (sub: SubCategoryConsolidated, cells: CellsOf): MatrixRow => ({
   id: sub.id,
   name: sub.name,
@@ -70,6 +80,7 @@ const subToRow = (sub: SubCategoryConsolidated, cells: CellsOf): MatrixRow => ({
   totalLabel: formatCentsBRL(sub.totalInCents),
   cellLabels: cells(sub).map(formatCentsBRL),
   children: [],
+  ...iconOf(sub.iconKind),
 })
 
 const categoryToRow = (cat: CategoryConsolidated, cells: CellsOf): MatrixRow => ({
@@ -79,6 +90,7 @@ const categoryToRow = (cat: CategoryConsolidated, cells: CellsOf): MatrixRow => 
   totalLabel: formatCentsBRL(cat.totalInCents),
   cellLabels: cells(cat).map(formatCentsBRL),
   children: cat.subCategories.map((sub) => subToRow(sub, cells)),
+  ...iconOf(cat.iconKind),
 })
 
 /** Centro de custo: rótulo inclui a natureza (ex.: "Consultoria - A PAGAR"), como no legado. */
@@ -89,6 +101,7 @@ export const costCenterToRow = (cc: CostCenterConsolidated, cells: CellsOf): Mat
   totalLabel: formatCentsBRL(cc.totalInCents),
   cellLabels: cells(cc).map(formatCentsBRL),
   children: cc.categories.map((cat) => categoryToRow(cat, cells)),
+  ...iconOf(cc.iconKind),
 })
 
 /**

@@ -23,15 +23,16 @@ export const card = style({
   paddingBlock: vars.space.md,
 })
 
-// Chip do ícone ao lado do título "Planejamento" (mock base): quadrado arredondado azul-claro + ícone índigo.
+// Chip do ícone ao lado do título "Planejamento": quadrado arredondado azul-claro + ícone índigo.
+// 3.25rem ≈ altura do título (xl) + gap + legenda (sm) — MESMA proporção do chip do Consolidado.
 export const titleIcon = style({
   flexShrink: 0,
+  alignSelf: 'flex-start',
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  // Chip ~44px (xl+sm) p/ o ícone do título ficar proporcional ao título grande (mock base).
-  inlineSize: `calc(${vars.space.xl} + ${vars.space.sm})`,
-  blockSize: `calc(${vars.space.xl} + ${vars.space.sm})`,
+  inlineSize: '3.25rem',
+  blockSize: '3.25rem',
   borderRadius: vars.radius.md,
   background: `color-mix(in srgb, ${vars.color.brand.normal} 10%, white)`,
   color: vars.color.nav.background,
