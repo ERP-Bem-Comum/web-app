@@ -57,6 +57,7 @@ const CC_CONSULTORIA: CostCenterConsolidated = {
       monthlyInCents: outrasConsultorias,
       networkInCents: [...NO_NET],
       subCategories: [],
+      iconKind: 'doc',
     },
   ],
 }
@@ -69,6 +70,7 @@ const CC_AVALIACAO: CostCenterConsolidated = {
   totalInCents: sum(avaliacao),
   monthlyInCents: avaliacao,
   networkInCents: [...NO_NET],
+  iconKind: 'report',
   categories: [
     {
       id: 41,
@@ -77,6 +79,7 @@ const CC_AVALIACAO: CostCenterConsolidated = {
       monthlyInCents: avaliacao,
       networkInCents: [...NO_NET],
       subCategories: [],
+      iconKind: 'report',
     },
   ],
 }

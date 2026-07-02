@@ -32,6 +32,14 @@ export const NetworkRefSchema: z.ZodType<NetworkRef> = z.object({
 export const NetworkCentsSchema = z.array(z.int())
 export type NetworkCents = z.infer<typeof NetworkCentsSchema>
 
+/**
+ * Dica de apresentação p/ o ícone do nó na matriz consolidada (o mock usa ícones semânticos por LINHA, não
+ * por nível): pessoas (consultoria), formatura (educacional), documento (outras), relatório (avaliação).
+ * Opcional — quando ausente, a view cai no ícone padrão por profundidade.
+ */
+export const MatrixIconKindSchema = z.enum(['people', 'grad', 'doc', 'report'])
+export type MatrixIconKind = z.infer<typeof MatrixIconKindSchema>
+
 /** Nó folha (subcategoria) da matriz consolidada. */
 export type SubCategoryConsolidated = Readonly<{
   id: number
@@ -39,6 +47,7 @@ export type SubCategoryConsolidated = Readonly<{
   totalInCents: number
   monthlyInCents: MonthlyCents
   networkInCents: NetworkCents
+  iconKind?: MatrixIconKind
 }>
 
 /** Categoria (agrupa subcategorias). */
@@ -49,6 +58,7 @@ export type CategoryConsolidated = Readonly<{
   monthlyInCents: MonthlyCents
   networkInCents: NetworkCents
   subCategories: readonly SubCategoryConsolidated[]
+  iconKind?: MatrixIconKind
 }>
 
 /** Centro de custo (raiz da árvore consolidada). */
@@ -60,6 +70,7 @@ export type CostCenterConsolidated = Readonly<{
   monthlyInCents: MonthlyCents
   networkInCents: NetworkCents
   categories: readonly CategoryConsolidated[]
+  iconKind?: MatrixIconKind
 }>
 
 /** Detalhe do plano com a estrutura consolidada (por mês e por rede). */
@@ -82,6 +93,7 @@ export const SubCategoryConsolidatedSchema: z.ZodType<SubCategoryConsolidated> =
   totalInCents: z.int(),
   monthlyInCents: MonthlyCentsSchema,
   networkInCents: NetworkCentsSchema,
+  iconKind: MatrixIconKindSchema.optional(),
 })
 export const CategoryConsolidatedSchema: z.ZodType<CategoryConsolidated> = z.object({
   id: z.int(),
@@ -90,6 +102,7 @@ export const CategoryConsolidatedSchema: z.ZodType<CategoryConsolidated> = z.obj
   monthlyInCents: MonthlyCentsSchema,
   networkInCents: NetworkCentsSchema,
   subCategories: z.array(SubCategoryConsolidatedSchema),
+  iconKind: MatrixIconKindSchema.optional(),
 })
 export const CostCenterConsolidatedSchema: z.ZodType<CostCenterConsolidated> = z.object({
   id: z.int(),
@@ -99,6 +112,7 @@ export const CostCenterConsolidatedSchema: z.ZodType<CostCenterConsolidated> = z
   monthlyInCents: MonthlyCentsSchema,
   networkInCents: NetworkCentsSchema,
   categories: z.array(CategoryConsolidatedSchema),
+  iconKind: MatrixIconKindSchema.optional(),
 })
 export const PlanDetailSchema: z.ZodType<PlanDetail> = z.object({
   id: z.int(),

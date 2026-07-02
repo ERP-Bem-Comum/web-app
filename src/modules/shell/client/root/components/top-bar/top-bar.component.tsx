@@ -39,12 +39,18 @@ export function TopBar({ user, onLogout }: TopBarProps): ReactNode {
   return (
     <header className={s.header}>
       <div className={s.brand}>
-        <img src="/images/logo-bem-comum.png" alt="" width={32} height={32} className={s.logoImg} />
+        <img src="/images/logo-bem-comum-b.png" alt="" width={34} height={34} className={s.logoImg} />
         <span className={s.brandTitle}>Bem Comum</span>
       </div>
 
       <div ref={containerRef} className={s.userMenu}>
-        <button type="button" className={s.userTrigger} onClick={toggle} aria-haspopup="menu" aria-expanded={open}>
+        <button
+          type="button"
+          className={s.userTrigger}
+          onClick={toggle}
+          aria-haspopup="menu"
+          aria-expanded={open}
+        >
           <span className={s.avatar}>{initials}</span>
           <span className={s.greeting}>Olá, {displayName}</span>
           <ChevronDownIcon />

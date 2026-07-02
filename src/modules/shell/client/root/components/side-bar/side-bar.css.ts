@@ -114,8 +114,8 @@ export const subItem = style({
   color: vars.color.nav.textMuted,
   background: 'transparent',
   textDecoration: 'none',
-  // +1px sobre o `xs` (12px) → 13px (submódulo), acompanhando o aumento dos módulos.
-  fontSize: '0.8125rem',
+  // Submódulo em `sm` (14px) — +1px sobre o 13px anterior, por pedido de legibilidade.
+  fontSize: vars.font.size.sm,
   fontFamily: vars.font.family.body,
   fontWeight: vars.font.weight.regular,
   borderInlineStart: `${vars.borderWidth.thick} solid transparent`,
@@ -131,5 +131,14 @@ export const subItem = style({
       borderInlineStartColor: vars.color.brand.normal,
       fontWeight: vars.font.weight.semibold,
     },
+  },
+})
+
+// Rótulo do submódulo: no hover desliza levemente p/ o lado (destaque sutil). Só transform → sem reflow.
+export const subItemLabel = style({
+  display: 'inline-block',
+  transition: 'transform 150ms ease',
+  selectors: {
+    [`${subItem}:hover &`]: { transform: 'translateX(0.1875rem)' },
   },
 })

@@ -70,7 +70,7 @@ export function PlanejamentoListPage(): ReactNode {
         subtitle={t('budget-plans.list.subtitle')}
         icon={
           <span className={titleIcon}>
-            <BarChartIcon size={24} />
+            <BarChartIcon size={28} />
           </span>
         }
       />

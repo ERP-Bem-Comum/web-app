@@ -13,6 +13,7 @@ import type { IconComponent } from '#shared/ui/icons/index.ts'
 import type {
   MatrixView,
   MatrixRow,
+  MatrixIconKind,
 } from '#modules/budget-plans/client/planejamento/detalhe/plan-detail.view-model.ts'
 
 import {
@@ -77,7 +78,7 @@ export type ConsolidatedMatrixProps = Readonly<{
 }>
 
 /**
- * Ícone do chip por PROFUNDIDADE do nó (mock mostra ícones distintos por nível):
+ * Ícone do chip por PROFUNDIDADE do nó — fallback quando a linha não traz `iconKind`:
  * centro de custo (pessoas) → categoria (chapéu de formatura) → subcategoria (documento).
  */
 const ICON_BY_DEPTH: Readonly<Record<MatrixRow['depth'], IconComponent>> = {
@@ -85,6 +86,20 @@ const ICON_BY_DEPTH: Readonly<Record<MatrixRow['depth'], IconComponent>> = {
   1: GraduationCapIcon,
   2: FileTextIcon,
 }
+
+/**
+ * Ícone SEMÂNTICO por linha (mock): o dado (`iconKind`) manda quando presente — ex.: "Outras consultorias"
+ * = documento e "Avaliação Externa" = relatório, ambos fora do padrão por nível.
+ */
+const ICON_BY_KIND: Readonly<Record<MatrixIconKind, IconComponent>> = {
+  people: UsersIcon,
+  grad: GraduationCapIcon,
+  doc: FileTextIcon,
+  report: FileChartIcon,
+}
+
+const iconFor = (r: MatrixRow): IconComponent =>
+  r.iconKind !== undefined ? ICON_BY_KIND[r.iconKind] : ICON_BY_DEPTH[r.depth]
 
 /**
  * Matriz consolidada (view BURRA) — serve às visões "Por Mês" e "Por Rede" (mesmo shape `MatrixView`) e é
@@ -109,7 +124,7 @@ export function ConsolidatedMatrix(props: ConsolidatedMatrixProps): ReactNode {
     const hasChildren = r.children.length > 0
     const isOpen = expanded.has(r.id)
     const isChild = r.depth > 0
-    const RowIcon = ICON_BY_DEPTH[r.depth]
+    const RowIcon = iconFor(r)
     return (
       <Fragment key={`${String(r.depth)}-${String(r.id)}`}>
         <tr className={isChild ? childRow : row}>
