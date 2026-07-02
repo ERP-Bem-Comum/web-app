@@ -184,6 +184,54 @@ export const buildNetworkMatrix = (detail: PlanDetail): MatrixView => {
   }
 }
 
+/**
+ * Grid da EDIÇÃO de Orçamento (US2.4): escopo a UM centro de custo. As CATEGORIAS viram linhas raiz
+ * (depth 0) e as subcategorias os filhos (depth 1). Colunas = meses do semestre; total = do centro.
+ */
+export const buildOrcamentoMatrix = (
+  detail: PlanDetail,
+  centroId: number,
+  semester: Semester,
+): MatrixView | null => {
+  const cc = detail.costCenters.find((c) => c.id === centroId)
+  if (cc === undefined) return null
+  const window = windowFor(semester)
+  const start = semester === 0 ? 0 : 6
+  const cells: CellsOf = (node) => window.map((i) => node.monthlyInCents[i] ?? 0)
+  const totalPerMonth = window.map((i) =>
+    cc.categories.reduce((acc, cat) => acc + (cat.monthlyInCents[i] ?? 0), 0),
+  )
+  const catRow = (cat: CategoryConsolidated): MatrixRow => ({
+    id: cat.id,
+    name: cat.name,
+    depth: 0,
+    totalLabel: formatCentsBRL(cat.totalInCents),
+    cellLabels: cells(cat).map(formatCentsBRL),
+    children: cat.subCategories.map((sub) => ({
+      id: sub.id,
+      name: sub.name,
+      depth: 1 as const,
+      totalLabel: formatCentsBRL(sub.totalInCents),
+      cellLabels: cells(sub).map(formatCentsBRL),
+      children: [],
+    })),
+  })
+  return {
+    kind: 'month',
+    semester,
+    columnHeaders: MONTH_HEADERS.slice(start, start + 6),
+    rows: cc.categories.map(catRow),
+    total: {
+      totalLabel: formatCentsBRL(cc.totalInCents),
+      cellLabels: totalPerMonth.map(formatCentsBRL),
+    },
+  }
+}
+
+/** Opções do filtro "Centro de Custo" na edição de Orçamento (a partir dos centros do plano). */
+export const orcamentoCentroOptions = (detail: PlanDetail): readonly RegionOption[] =>
+  detail.costCenters.map((cc) => ({ value: String(cc.id), label: cc.name }))
+
 export type PlanDetailHeader = Readonly<{
   title: string
   status: StatusView

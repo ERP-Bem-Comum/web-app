@@ -1895,6 +1895,20 @@ export const ptBR: Catalog = {
   'budget-plans.matrix.expand': 'Expandir',
   'budget-plans.matrix.collapse': 'Recolher',
 
+  // ── Edição de Orçamento (/…/orcamento — US2.4) ──
+  'budget-plans.orcamento.breadcrumb': 'Planejamento > Detalhes > Orçamento',
+  'budget-plans.orcamento.back': 'Voltar',
+  'budget-plans.orcamento.totalBudget': 'Total Orçamento:',
+  'budget-plans.orcamento.centroCusto': 'Centro de Custo',
+  'budget-plans.orcamento.filter': 'Filtrar',
+  'budget-plans.orcamento.discard': 'Descartar Alterações',
+  'budget-plans.orcamento.save': 'Salvar',
+  'budget-plans.orcamento.moreActions': 'Mais ações',
+  'budget-plans.orcamento.calcGasto': 'Calcular Gasto',
+  'budget-plans.orcamento.categoriesHeader': 'Categorias',
+  'budget-plans.orcamento.calcRow': 'Calcular gasto desta linha',
+  'budget-plans.orcamento.notFound': 'Orçamento não encontrado.',
+
   // ── Consolidado ABC (/consolidado — HANDBOOK §2) ──
   'budget-plans.consolidado.title': 'Consolidado ABC',
   'budget-plans.consolidado.subtitle': 'Consolidação dos planos aprovados por ano e programa.',

@@ -159,7 +159,11 @@ export function PlanDetailPage(): ReactNode {
             }}
             editMode={filter.editMode}
             onEdit={() => {
-              // TODO(US2.4 — próxima parte): abrir a tela/edição de Orçamento do parceiro selecionado.
+              void navigate({
+                to: '/planejamento/detalhes/$id/orcamento',
+                params: { id: String(id) },
+                search: { estado: filter.estado, municipio: filter.municipio },
+              })
             }}
             onPrev={prevSemester}
             onNext={nextSemester}

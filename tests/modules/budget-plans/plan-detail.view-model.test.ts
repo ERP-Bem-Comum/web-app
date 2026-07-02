@@ -13,6 +13,8 @@ import {
   derivePlanDetailHeader,
   municipiosForEstado,
   PLAN_FILTER_ESTADOS,
+  buildOrcamentoMatrix,
+  orcamentoCentroOptions,
   MONTH_HEADERS,
 } from '#modules/budget-plans/client/planejamento/detalhe/plan-detail.view-model.ts'
 
@@ -143,5 +145,33 @@ describe('filtro por Rede — opções de Estado/Município (placeholder front-f
   it('estado vazio/desconhecido → sem municípios', () => {
     assert.equal(municipiosForEstado('').length, 0)
     assert.equal(municipiosForEstado('ZZ').length, 0)
+  })
+})
+
+describe('buildOrcamentoMatrix (edição de Orçamento — escopo a 1 centro)', () => {
+  it('categorias viram linhas raiz (depth 0) → subcategorias (depth 1), com meses e total do centro', () => {
+    const mx = buildOrcamentoMatrix(detail, 1, 0)
+    assert.ok(mx !== null)
+    assert.deepEqual([...mx.columnHeaders], [...MONTH_HEADERS.slice(0, 6)])
+    const cat = at(mx.rows, 0)
+    assert.equal(cat.name, 'Consultoria Educacional')
+    assert.equal(cat.depth, 0)
+    assert.equal(norm(at(cat.cellLabels, 1)), 'R$ 16.219,36') // Fevereiro
+    const sub = at(cat.children, 0)
+    assert.equal(sub.name, 'Formação de professores')
+    assert.equal(sub.depth, 1)
+    assert.equal(norm(mx.total.totalLabel), 'R$ 32.438,72')
+  })
+  it('centro inexistente → null', () => {
+    assert.equal(buildOrcamentoMatrix(detail, 999, 0), null)
+  })
+})
+
+describe('orcamentoCentroOptions', () => {
+  it('deriva {value:id, label:nome} dos centros do plano', () => {
+    assert.deepEqual(orcamentoCentroOptions(detail), [
+      { value: '1', label: 'Consultoria' },
+      { value: '2', label: 'Comunicação' },
+    ])
   })
 })
