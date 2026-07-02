@@ -175,7 +175,7 @@ export function LineChart(props: LineChartProps): ReactNode {
               d={smoothPath(s.points.map((p) => ({ x: xFor(p.month), y: yFor(p.value) })))}
               pathLength={1}
               fill="none"
-              strokeWidth={1.75}
+              strokeWidth={1.5}
               strokeLinejoin="round"
               strokeLinecap="round"
             />
