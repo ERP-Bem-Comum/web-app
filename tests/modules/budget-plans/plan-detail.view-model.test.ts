@@ -11,6 +11,8 @@ import {
   buildMonthlyMatrix,
   buildNetworkMatrix,
   derivePlanDetailHeader,
+  municipiosForEstado,
+  PLAN_FILTER_ESTADOS,
   MONTH_HEADERS,
 } from '#modules/budget-plans/client/planejamento/detalhe/plan-detail.view-model.ts'
 
@@ -127,5 +129,19 @@ describe('buildNetworkMatrix', () => {
     // TOTAL da coluna
     assert.equal(norm(at(mx.total.cellLabels, 0)), 'R$ 32.438,72')
     assert.equal(norm(mx.total.totalLabel), 'R$ 32.438,72')
+  })
+})
+
+describe('filtro por Rede — opções de Estado/Município (placeholder front-first)', () => {
+  it('lista os estados e resolve os municípios do estado', () => {
+    assert.ok(PLAN_FILTER_ESTADOS.some((e) => e.value === 'CE'))
+    assert.deepEqual(
+      municipiosForEstado('CE').map((mun) => mun.label),
+      ['Fortaleza', 'Caucaia', 'Sobral'],
+    )
+  })
+  it('estado vazio/desconhecido → sem municípios', () => {
+    assert.equal(municipiosForEstado('').length, 0)
+    assert.equal(municipiosForEstado('ZZ').length, 0)
   })
 })

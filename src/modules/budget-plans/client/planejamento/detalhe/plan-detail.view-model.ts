@@ -38,6 +38,36 @@ export const MONTH_HEADERS = [
 
 export type Semester = 0 | 1
 
+/** Opção de filtro (Estado/Município) da barra de Detalhe. */
+export type RegionOption = Readonly<{ value: string; label: string }>
+
+/**
+ * Estados/Municípios do filtro por Rede — front-first placeholder. Quando o #113 existir, estas listas
+ * virão dos PARCEIROS do plano (redes cadastradas), não de um mapa fixo.
+ */
+export const PLAN_FILTER_ESTADOS: readonly RegionOption[] = [
+  { value: 'CE', label: 'Ceará' },
+  { value: 'SP', label: 'São Paulo' },
+  { value: 'AC', label: 'Acre' },
+]
+
+const MUNICIPIOS_BY_ESTADO: Readonly<Record<string, readonly RegionOption[]>> = {
+  CE: [
+    { value: 'fortaleza', label: 'Fortaleza' },
+    { value: 'caucaia', label: 'Caucaia' },
+    { value: 'sobral', label: 'Sobral' },
+  ],
+  SP: [
+    { value: 'sao-paulo', label: 'São Paulo' },
+    { value: 'campinas', label: 'Campinas' },
+  ],
+  AC: [{ value: 'rio-branco', label: 'Rio Branco' }],
+}
+
+/** Municípios de um estado (vazio se estado não escolhido/desconhecido). */
+export const municipiosForEstado = (estado: string): readonly RegionOption[] =>
+  MUNICIPIOS_BY_ESTADO[estado] ?? []
+
 /** Janela de índices de mês por semestre: 0 → Jan–Jun (0..5), 1 → Jul–Dez (6..11). */
 const windowFor = (s: Semester): readonly number[] => (s === 0 ? [0, 1, 2, 3, 4, 5] : [6, 7, 8, 9, 10, 11])
 

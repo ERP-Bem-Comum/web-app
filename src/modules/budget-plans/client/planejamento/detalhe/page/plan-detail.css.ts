@@ -100,7 +100,7 @@ export const filterGroup = style({
   gap: vars.space.sm,
 })
 
-export const stateSelect = style({
+const selectBase = {
   paddingBlock: vars.space.sm,
   paddingInline: vars.space.md,
   borderRadius: vars.radius.md,
@@ -110,7 +110,18 @@ export const stateSelect = style({
   fontFamily: vars.font.family.body,
   fontSize: vars.font.size.sm,
   minInlineSize: '8rem',
-})
+  cursor: 'pointer',
+  selectors: {
+    '&:disabled': { opacity: 0.55, cursor: 'not-allowed', background: vars.color.surface.subtle },
+    '&:focus-visible': {
+      outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
+      outlineOffset: vars.focusRing.offset,
+    },
+  },
+} as const
+
+export const stateSelect = style(selectBase)
+export const municipioSelect = style(selectBase)
 
 const buttonBase = style({
   paddingBlock: vars.space.sm,
