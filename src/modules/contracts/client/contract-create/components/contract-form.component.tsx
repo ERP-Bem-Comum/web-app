@@ -24,6 +24,7 @@ import {
   fieldLabel,
   grid2,
   grid2ValuePeriod,
+  grid3,
   grid4Contract,
   input,
   inputError,
@@ -475,7 +476,27 @@ export function ContractForm({
               </div>
             </div>
 
-            <div className={grid2}>
+            {/* Hierarquia Centro de Custo → Categoria → Subcategoria (EPIC web-app#150). Centro + Categoria
+                seguem opções placeholder (strings livres); Subcategoria é placeholder VISUAL (não persiste
+                até o backend ter o campo + core-api#341 para os dados reais da cascata). */}
+            <div className={grid3}>
+              <div className={field}>
+                <label className={fieldLabel}>{t('contracts.create.field.centroDeCusto')}</label>
+                <select
+                  className={`${select} ${validationAttempted && !state.centroDeCusto ? inputError : ''}`}
+                  value={state.centroDeCusto ?? ''}
+                  onChange={(e) => {
+                    onUpdate('centroDeCusto', e.target.value || null)
+                  }}
+                >
+                  <option value="">Selecione…</option>
+                  <option value="RH">{t('contracts.create.field.centroDeCusto.rh')}</option>
+                  <option value="Serviços Gerais">
+                    {t('contracts.create.field.centroDeCusto.services')}
+                  </option>
+                  <option value="Eventos">{t('contracts.create.field.centroDeCusto.events')}</option>
+                </select>
+              </div>
               <div className={field}>
                 <label className={fieldLabel}>{t('contracts.create.field.categorizacao')}</label>
                 <select
@@ -492,20 +513,10 @@ export function ContractForm({
                 </select>
               </div>
               <div className={field}>
-                <label className={fieldLabel}>{t('contracts.create.field.centroDeCusto')}</label>
-                <select
-                  className={`${select} ${validationAttempted && !state.centroDeCusto ? inputError : ''}`}
-                  value={state.centroDeCusto ?? ''}
-                  onChange={(e) => {
-                    onUpdate('centroDeCusto', e.target.value || null)
-                  }}
-                >
-                  <option value="">Selecione…</option>
-                  <option value="RH">{t('contracts.create.field.centroDeCusto.rh')}</option>
-                  <option value="Serviços Gerais">
-                    {t('contracts.create.field.centroDeCusto.services')}
-                  </option>
-                  <option value="Eventos">{t('contracts.create.field.centroDeCusto.events')}</option>
+                <label className={fieldLabel}>{t('contracts.create.field.subcategoria')}</label>
+                {/* TODO(core-api#341 + campo `subcategoria` no contrato): opções reais da cascata + persistência. */}
+                <select className={select} disabled aria-disabled="true" defaultValue="">
+                  <option value="">{t('contracts.create.field.subcategoria.placeholder')}</option>
                 </select>
               </div>
             </div>
@@ -638,7 +649,7 @@ export function ContractForm({
               <CheckItem done={checklist.checks.valor} label="Valor original informado" />
               <CheckItem done={checklist.checks.vigencia} label="Início e fim da vigência" />
               <CheckItem done={checklist.checks.programa} label="Programa e plano orçamentário" />
-              <CheckItem done={checklist.checks.categorizacao} label="Categorização preenchida" />
+              <CheckItem done={checklist.checks.categorizacao} label="Categoria preenchida" />
               <CheckItem done={checklist.checks.centroDeCusto} label="Centro de custo selecionado" />
               <CheckItem done={documentUploaded} label="Documento principal anexado" />
             </div>
