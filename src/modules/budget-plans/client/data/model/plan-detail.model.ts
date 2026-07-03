@@ -9,6 +9,8 @@ import * as z from 'zod'
 import {
   BudgetPlanStatusSchema,
   CostCenterTypeSchema,
+  ReleaseTypeSchema,
+  type ReleaseType,
 } from '#modules/budget-plans/client/data/model/enums.ts'
 
 /** 12 valores mensais em centavos (Janeiro…Dezembro). */
@@ -48,6 +50,8 @@ export type SubCategoryConsolidated = Readonly<{
   monthlyInCents: MonthlyCents
   networkInCents: NetworkCents
   iconKind?: MatrixIconKind
+  /** Modelo de cálculo do lançamento (Calculando Gastos §1.8). Ausente ⇒ IPCA (Tipo B, form padrão). */
+  releaseType?: ReleaseType
 }>
 
 /** Categoria (agrupa subcategorias). */
@@ -94,6 +98,7 @@ export const SubCategoryConsolidatedSchema: z.ZodType<SubCategoryConsolidated> =
   monthlyInCents: MonthlyCentsSchema,
   networkInCents: NetworkCentsSchema,
   iconKind: MatrixIconKindSchema.optional(),
+  releaseType: ReleaseTypeSchema.optional(),
 })
 export const CategoryConsolidatedSchema: z.ZodType<CategoryConsolidated> = z.object({
   id: z.int(),

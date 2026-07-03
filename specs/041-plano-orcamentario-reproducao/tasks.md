@@ -46,7 +46,11 @@ independe do backend, com **dados placeholder** (const, sem mocks/fixtures) e a�
         visão padrão; o **lápis** abre o FORMULÁRIO detalhado (Tipo/Remuneração/Encargos %/Benefícios/Provisões/Custo Total,
         `computePessoal` puro e testado). **Cancelar/Descartar** dispara **modal de confirmação** de descarte; trocar de
         aba/categoria/subcategoria fecha o form aberto. `Salvar` aplica o Custo Mensal aos meses marcados (persistência `TODO(#113)`).
-  - [ ] **S2.4d · Demais tipos de preview** (IPCA/CAED/Logística) reusando `calc/preview.ts`.
+  - [x] **S2.4d · Demais tipos de preview (IPCA/CAED/Logística)** ✅ — o lápis roteia o form pelo **Tipo de
+        lançamento** da subcategoria (`releaseType` no model/placeholder): Pessoal→form detalhado, IPCA→form
+        "Configuração", **CAED** (matrículas × custo unitário) e **Logística** (viagem: passagem + hospedagem/
+        despesas·diárias, com cards-resumo) reusando `previewCaed`/`previewLogisticsExpenses` (domínio, testados).
+        view-models puros + node:test + roteamento coberto no `calculando-gastos.spec`.
 - [ ] **S2.5 · Insights** 🔴 — histórico 5 anos, planejado × realizado (Realizado = CONCILIADO do financeiro), média por rede.
 
 ## Fase 3 — US3 Ciclo de vida

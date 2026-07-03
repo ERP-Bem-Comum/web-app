@@ -10,6 +10,8 @@ import { EditIcon, TrashIcon, CalculatorIcon, InfoIcon } from '#shared/ui/index.
 import type { CalcGastosBinding } from './calc-gastos.binding.ts'
 import { formatCentsBRL } from './calc-gastos.view-model.ts'
 import { PessoalForm, type PessoalFormLabels } from './pessoal-form.component.tsx'
+import { CaedForm, type CaedFormLabels } from './caed-form.component.tsx'
+import { LogisticaForm, type LogisticaFormLabels } from './logistica-form.component.tsx'
 import {
   overlay,
   panel,
@@ -82,6 +84,8 @@ export type CalculandoGastosLabels = Readonly<{
   aplicar: string
   cancelar: string
   pessoal: PessoalFormLabels
+  caed: CaedFormLabels
+  logistica: LogisticaFormLabels
   discardTitle: string
   discardBody: string
   discardKeep: string
@@ -114,20 +118,22 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
   const { binding: b, labels } = props
   // Form "Configuração" (tipo geral/Rede) que abre ao clicar no lápis — UI-state local.
   const [form, setForm] = useState<FormState | null>(null)
-  // Form de Pessoal (US2.4c) — também abre pelo lápis; o grid de meses continua sendo a visão padrão.
+  // Forms específicos por Tipo de lançamento (US2.4c/d) — também abrem pelo lápis; o grid de meses é a
+  // visão padrão. Só um fica aberto por vez.
   const [pessoalOpen, setPessoalOpen] = useState(false)
-  // "Descartar" no form de Pessoal remonta o form (limpa os campos) via key.
+  const [caedOpen, setCaedOpen] = useState(false)
+  const [logisticaOpen, setLogisticaOpen] = useState(false)
+  // "Descartar" nos forms específicos remonta o form (limpa os campos) via key.
   const [pessoalResetKey, setPessoalResetKey] = useState(0)
   // Modal de confirmação de descarte (Cancelar/Descartar com edição não salva).
   const [confirmOpen, setConfirmOpen] = useState(false)
-
-  // Centro "Pessoal" usa o FORMULÁRIO de custo detalhado no lápis (em vez do form "Configuração").
-  const isPessoal = b.centros.find((c) => c.active)?.name === 'Pessoal'
 
   // Trocar de centro/categoria/subcategoria fecha qualquer form aberto (evita form "órfão").
   const closeForms = (): void => {
     setForm(null)
     setPessoalOpen(false)
+    setCaedOpen(false)
+    setLogisticaOpen(false)
     setConfirmOpen(false)
   }
   const selectCentro = (id: number): void => {
@@ -143,10 +149,23 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
     b.setSub(id)
   }
 
-  // Lápis: Pessoal → form detalhado; demais → form "Configuração" do mês.
+  // Lápis: roteia o form pelo Tipo de lançamento da subcategoria ativa; IPCA (Tipo B) = form "Configuração".
   const openPencil = (monthIndex: number, cents: number): void => {
-    if (isPessoal) setPessoalOpen(true)
-    else openForm(monthIndex, cents)
+    switch (b.activeReleaseType) {
+      case 'DESPESAS_PESSOAIS':
+        setPessoalOpen(true)
+        break
+      case 'CAED':
+        setCaedOpen(true)
+        break
+      case 'DESPESAS_LOGISTICAS':
+        setLogisticaOpen(true)
+        break
+      case 'IPCA':
+      default:
+        openForm(monthIndex, cents)
+        break
+    }
   }
 
   // Cancelar/Descartar pede confirmação; só descarta de fato ao confirmar.
@@ -156,6 +175,8 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
   const confirmDiscardYes = (): void => {
     setForm(null)
     setPessoalOpen(false)
+    setCaedOpen(false)
+    setLogisticaOpen(false)
     setPessoalResetKey((k) => k + 1)
     setConfirmOpen(false)
   }
@@ -323,6 +344,32 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
                 onSalvar={(custoMensalCents, meses) => {
                   b.applyToMonths([...meses], custoMensalCents)
                   setPessoalOpen(false)
+                }}
+              />
+            ) : caedOpen ? (
+              <CaedForm
+                key={pessoalResetKey}
+                labels={labels.caed}
+                initialMeses={b.despesas.filter((d) => d.cents > 0).map((d) => d.monthIndex)}
+                monthAbbrevs={b.despesas.map((d) => d.name.slice(0, 3))}
+                formatCents={formatCentsBRL}
+                onDescartar={requestDiscard}
+                onSalvar={(custoMensalCents, meses) => {
+                  b.applyToMonths([...meses], custoMensalCents)
+                  setCaedOpen(false)
+                }}
+              />
+            ) : logisticaOpen ? (
+              <LogisticaForm
+                key={pessoalResetKey}
+                labels={labels.logistica}
+                initialMeses={b.despesas.filter((d) => d.cents > 0).map((d) => d.monthIndex)}
+                monthAbbrevs={b.despesas.map((d) => d.name.slice(0, 3))}
+                formatCents={formatCentsBRL}
+                onDescartar={requestDiscard}
+                onSalvar={(custoMensalCents, meses) => {
+                  b.applyToMonths([...meses], custoMensalCents)
+                  setLogisticaOpen(false)
                 }}
               />
             ) : form !== null ? (

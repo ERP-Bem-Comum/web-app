@@ -4,7 +4,11 @@
  * O "Calcular" front-first soma os meses (a lógica sofisticada — ex.: Pessoal — vem na 2.4c/#113).
  */
 import type { PlanDetail } from '#modules/budget-plans/client/data/model/plan-detail.model.ts'
+import type { ReleaseType } from '#modules/budget-plans/client/data/model/enums.ts'
 import { formatCentsBRL, sumMonths } from '#modules/budget-plans/client/domain/calc/derive.ts'
+
+/** Re-export p/ a view burra rotear o form pelo Tipo de lançamento SEM furar o boundary client-ui ↛ data. */
+export type { ReleaseType } from '#modules/budget-plans/client/data/model/enums.ts'
 
 /** Meses em Title Case (coluna Despesas do modal), Janeiro…Dezembro. */
 export const MONTH_NAMES = [
@@ -22,7 +26,12 @@ export const MONTH_NAMES = [
   'Dezembro',
 ] as const
 
-export type CalcSub = Readonly<{ id: number; name: string; monthsInCents: readonly number[] }>
+export type CalcSub = Readonly<{
+  id: number
+  name: string
+  monthsInCents: readonly number[]
+  releaseType?: ReleaseType
+}>
 export type CalcCategory = Readonly<{ id: number; name: string; subCategories: readonly CalcSub[] }>
 export type CalcCentro = Readonly<{ id: number; name: string; categories: readonly CalcCategory[] }>
 
@@ -38,6 +47,7 @@ export const buildCalcGastosCentros = (detail: PlanDetail): readonly CalcCentro[
         id: sub.id,
         name: sub.name,
         monthsInCents: sub.monthlyInCents,
+        releaseType: sub.releaseType,
       })),
     })),
   }))

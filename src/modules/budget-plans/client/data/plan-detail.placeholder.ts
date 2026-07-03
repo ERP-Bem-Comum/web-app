@@ -64,6 +64,7 @@ const PLAN_3: PlanDetail = {
               totalInCents: 0,
               monthlyInCents: zero,
               networkInCents: [...NET_ZERO],
+              releaseType: 'DESPESAS_LOGISTICAS',
             },
             {
               id: 113,
@@ -71,6 +72,7 @@ const PLAN_3: PlanDetail = {
               totalInCents: 0,
               monthlyInCents: zero,
               networkInCents: [...NET_ZERO],
+              releaseType: 'CAED',
             },
           ],
         },
@@ -136,6 +138,7 @@ const PLAN_3: PlanDetail = {
               totalInCents: SAL_TOTAL,
               monthlyInCents: salarioMes,
               networkInCents: [...NET_ALL],
+              releaseType: 'DESPESAS_PESSOAIS',
             },
             {
               id: 512,
@@ -143,6 +146,7 @@ const PLAN_3: PlanDetail = {
               totalInCents: 0,
               monthlyInCents: zero,
               networkInCents: [...NET_ZERO],
+              releaseType: 'DESPESAS_PESSOAIS',
             },
             {
               id: 513,
@@ -150,6 +154,7 @@ const PLAN_3: PlanDetail = {
               totalInCents: 0,
               monthlyInCents: zero,
               networkInCents: [...NET_ZERO],
+              releaseType: 'DESPESAS_PESSOAIS',
             },
             {
               id: 514,
@@ -157,6 +162,7 @@ const PLAN_3: PlanDetail = {
               totalInCents: 0,
               monthlyInCents: zero,
               networkInCents: [...NET_ZERO],
+              releaseType: 'DESPESAS_PESSOAIS',
             },
             {
               id: 515,
@@ -164,6 +170,7 @@ const PLAN_3: PlanDetail = {
               totalInCents: 0,
               monthlyInCents: zero,
               networkInCents: [...NET_ZERO],
+              releaseType: 'DESPESAS_PESSOAIS',
             },
           ],
         },
@@ -180,6 +187,7 @@ const PLAN_3: PlanDetail = {
               totalInCents: 0,
               monthlyInCents: zero,
               networkInCents: [...NET_ZERO],
+              releaseType: 'DESPESAS_PESSOAIS',
             },
           ],
         },

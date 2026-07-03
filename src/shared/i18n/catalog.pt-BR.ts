@@ -2044,6 +2044,37 @@ export const ptBR: Catalog = {
   'budget-plans.calcGastos.pessoal.descartar': 'Descartar',
   'budget-plans.calcGastos.pessoal.salvar': 'Salvar',
 
+  // ── Form CAED (Tipo C — matrículas × custo unitário) ──
+  'budget-plans.calcGastos.caed.title': 'CAED',
+  'budget-plans.calcGastos.caed.matriculas': 'Qtd. matrículas',
+  'budget-plans.calcGastos.caed.custoUnitario': 'Custo unitário (R$)',
+  'budget-plans.calcGastos.caed.meses': 'Meses aplicados',
+  'budget-plans.calcGastos.caed.mensal': 'Custo Mensal',
+  'budget-plans.calcGastos.caed.anual': 'Custo Anual',
+  'budget-plans.calcGastos.caed.descartar': 'Descartar',
+  'budget-plans.calcGastos.caed.salvar': 'Salvar',
+
+  // ── Form Logística (Tipo D — viagem) ──
+  'budget-plans.calcGastos.logistica.viagem': 'Viagem',
+  'budget-plans.calcGastos.logistica.pessoas': 'Qtd. pessoas',
+  'budget-plans.calcGastos.logistica.viagens': 'Qtd. viagens',
+  'budget-plans.calcGastos.logistica.custos': 'Custos por viagem',
+  'budget-plans.calcGastos.logistica.passagem': 'Passagem aérea (R$)',
+  'budget-plans.calcGastos.logistica.hospedagem': 'Hospedagem (R$)',
+  'budget-plans.calcGastos.logistica.alimentacao': 'Alimentação (R$)',
+  'budget-plans.calcGastos.logistica.transporte': 'Transporte (R$)',
+  'budget-plans.calcGastos.logistica.carroCombustivel': 'Aluguel carro + combustível (R$)',
+  'budget-plans.calcGastos.logistica.diarias': 'Diárias',
+  'budget-plans.calcGastos.logistica.resumo': 'Resumo',
+  'budget-plans.calcGastos.logistica.resumoPassagens': 'Passagens Aéreas',
+  'budget-plans.calcGastos.logistica.resumoHospedagem': 'Hospedagem',
+  'budget-plans.calcGastos.logistica.resumoDespesas': 'Despesas',
+  'budget-plans.calcGastos.logistica.meses': 'Meses aplicados',
+  'budget-plans.calcGastos.logistica.mensal': 'Custo Mensal',
+  'budget-plans.calcGastos.logistica.anual': 'Custo Anual',
+  'budget-plans.calcGastos.logistica.descartar': 'Descartar',
+  'budget-plans.calcGastos.logistica.salvar': 'Salvar',
+
   // ── Confirmação de descarte (Cancelar/Descartar no form) ──
   'budget-plans.calcGastos.discard.title': 'Descartar alterações?',
   'budget-plans.calcGastos.discard.body':

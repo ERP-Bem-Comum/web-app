@@ -76,6 +76,43 @@ const detail: PlanDetail = {
               totalInCents: 200,
               monthlyInCents: m({ 1: 200 }),
               networkInCents: [],
+              releaseType: 'DESPESAS_PESSOAIS',
+            },
+          ],
+        },
+      ],
+    },
+    {
+      // Centro com subcategorias CAED e Logística — o lápis roteia por Tipo de lançamento.
+      id: 3,
+      name: 'Logística',
+      type: 'A PAGAR',
+      totalInCents: 300,
+      monthlyInCents: m({ 1: 300 }),
+      networkInCents: [],
+      categories: [
+        {
+          id: 31,
+          name: 'Viagens',
+          totalInCents: 300,
+          monthlyInCents: m({ 1: 300 }),
+          networkInCents: [],
+          subCategories: [
+            {
+              id: 311,
+              name: 'Matrículas CAED',
+              totalInCents: 300,
+              monthlyInCents: m({ 1: 300 }),
+              networkInCents: [],
+              releaseType: 'CAED',
+            },
+            {
+              id: 312,
+              name: 'Viagem de formação',
+              totalInCents: 0,
+              monthlyInCents: m({}),
+              networkInCents: [],
+              releaseType: 'DESPESAS_LOGISTICAS',
             },
           ],
         },
@@ -135,6 +172,37 @@ const labels = {
     decimoEncargos: '13º + Encargos',
     fgtsMultaAdicional: 'FGTS Multa + Adicional',
     totalProvisoes: 'Total Provisões',
+    mensal: 'Custo Mensal',
+    anual: 'Custo Anual',
+    descartar: 'Descartar',
+    salvar: 'Salvar',
+  },
+  caed: {
+    title: 'CAED',
+    matriculas: 'Qtd. matrículas',
+    custoUnitario: 'Custo unitário (R$)',
+    meses: 'Meses aplicados',
+    mensal: 'Custo Mensal',
+    anual: 'Custo Anual',
+    descartar: 'Descartar',
+    salvar: 'Salvar',
+  },
+  logistica: {
+    viagem: 'Viagem',
+    pessoas: 'Qtd. pessoas',
+    viagens: 'Qtd. viagens',
+    custos: 'Custos por viagem',
+    passagem: 'Passagem aérea (R$)',
+    hospedagem: 'Hospedagem (R$)',
+    alimentacao: 'Alimentação (R$)',
+    transporte: 'Transporte (R$)',
+    carroCombustivel: 'Aluguel carro + combustível (R$)',
+    diarias: 'Diárias',
+    resumo: 'Resumo',
+    resumoPassagens: 'Passagens Aéreas',
+    resumoHospedagem: 'Hospedagem',
+    resumoDespesas: 'Despesas',
+    meses: 'Meses aplicados',
     mensal: 'Custo Mensal',
     anual: 'Custo Anual',
     descartar: 'Descartar',
@@ -239,5 +307,23 @@ describe('CalculandoGastos', () => {
     // de volta à lista de meses (form sumiu)
     expect(screen.queryByText('Salário Total')).toBeNull()
     expect(within(monthRow('Janeiro')).getByText(/R\$\s?2,00/)).toBeTruthy()
+  })
+
+  it('CAED: o lápis abre o form CAED (matrículas × custo unitário)', () => {
+    render(<Harness />)
+    fireEvent.click(screen.getByText('Logística')) // centro id 3
+    // subcategoria ativa = "Matrículas CAED" (releaseType CAED)
+    fireEvent.click(within(monthRow('Janeiro')).getByLabelText('Editar valor'))
+    expect(screen.getByText('Qtd. matrículas')).toBeTruthy()
+    expect(screen.getByText('Custo unitário (R$)')).toBeTruthy()
+  })
+
+  it('Logística: selecionar a subcategoria de viagem e o lápis abre o form de Logística', () => {
+    render(<Harness />)
+    fireEvent.click(screen.getByText('Logística'))
+    fireEvent.click(screen.getByText('Viagem de formação')) // sub releaseType DESPESAS_LOGISTICAS
+    fireEvent.click(within(monthRow('Janeiro')).getByLabelText('Editar valor'))
+    expect(screen.getByText('Passagens Aéreas')).toBeTruthy()
+    expect(screen.getByText('Custos por viagem')).toBeTruthy()
   })
 })
