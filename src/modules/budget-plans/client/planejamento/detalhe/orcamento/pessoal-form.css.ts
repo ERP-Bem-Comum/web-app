@@ -10,8 +10,7 @@ export const form = style({
   display: 'flex',
   flexDirection: 'column',
   gap: vars.space.md,
-  overflowY: 'auto',
-  minBlockSize: 0,
+  // Sem scroll próprio: a área de colunas rola; o rodapé de ações (formActions) é uma barra fixa full-width.
 })
 
 export const row2 = style({ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: vars.space.sm })

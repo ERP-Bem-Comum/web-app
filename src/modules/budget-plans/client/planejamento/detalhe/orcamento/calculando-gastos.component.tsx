@@ -37,7 +37,6 @@ import {
   despesaEnd,
   despesaValue,
   iconButton,
-  calcularButton,
   empty,
   configForm,
   configSection,
@@ -487,10 +486,12 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
                     </div>
                   ))}
                 </div>
-                <button type="button" className={calcularButton} onClick={applyForm} disabled>
-                  <CalculatorIcon size={16} />
-                  {labels.calcular}
-                </button>
+                <div className={formActions}>
+                  <button type="button" className={applyButton} onClick={applyForm} disabled>
+                    <CalculatorIcon size={16} />
+                    {labels.calcular}
+                  </button>
+                </div>
               </>
             )}
           </div>
