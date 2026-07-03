@@ -31,10 +31,12 @@ independe do backend, com **dados placeholder** (const, sem mocks/fixtures) e a�
 - [x] **S2.1 · Detalhe (Consolidado por Mês + Por Rede)** ✅ (placeholder) — `/planejamento/detalhes/$id`: cabeçalho
       (plano + status + Total), toggles de visão, matriz Centro→Categoria→Subcategoria (linhas expansíveis + TOTAL),
       navegação de semestre (Por Mês) e colunas por rede (Por Rede). `MatrixView` único + testes node/DOM.
-- [ ] **S2.2 · Toggle "Centro de Custo" → modal de gestão** 🟩 — árvore de centros/categorias/subcategorias +
-      forms Adicionar/Editar (com `Tipo` Institucional/Rede e `Tipo de lançamento`). Persistência = `TODO(#113)`.
-- [ ] **S2.3 · Modal "Adicionar Orçamento" (por Rede)** 🟩 — Estado (+ Município se municipal), **exatamente 1 parceiro**,
-      bloquear parceiro duplicado (validação client). Submit = `TODO(#113)`.
+- [x] **S2.2 · Toggle "Centro de Custo" → modal de gestão** ✅ — modal "Centros de Custo - {Programa}" (dropdown de
+      centro + "Adicionar centro"), árvore de 3 níveis com ações por linha (+ Categoria/+ Sub · Editar · Desativar) e
+      painel de formulário por modo: Centro (Nome + Tipo A PAGAR/A RECEBER), Categoria (Nome), Subcategoria (Nome +
+      `Tipo` Institucional/Rede + `Tipo de lançamento` = 4 modelos canônicos). Binding + view-model puro + testes. Persistência = `TODO(#113)`.
+- [x] **S2.3 · Modal "Adicionar Orçamento" (por Rede)** ✅ — dropdown Estado + Adicionar; bloqueia estado já existente
+      ("Já existe um orçamento com essas informações."). view-model puro + testes. Submit = `TODO(#113)`.
 - [~] **S2.4 · Edição de Orçamento (`/…/orcamento/$oid`) + modal "Calculando Gastos"** 🟩 **(alto valor — preview pronto)**
   — grid editável por subcategoria/mês + os **4 tipos** (Pessoal/IPCA/CAED/Logística) com **preview do valor ao vivo**
   (reusa `calc/preview.ts`, já testado). Regra de edição por status (Aprovado = read-only via `deriveEditable`). Save = `TODO(#113)`.
@@ -49,8 +51,10 @@ independe do backend, com **dados placeholder** (const, sem mocks/fixtures) e a�
 
 ## Fase 3 — US3 Ciclo de vida
 
-- [ ] **S3.1 · Confirmações/toasts** 🟩 (visual) — modais de Aprovar (3 passos + "Calculando…"), Excluir (cascata, botão
-      vermelho), Criar cenário (nome), Iniciar Calibração (auto-nome `X.0`), + mensagem de RBAC negado. Execução real = 🔴 (#113).
+- [~] **S3.1 · Confirmações/toasts** 🟩 (visual) — menu "…" da lista ligado ao `ConfirmActionModal`: **Aprovar**,
+  **Excluir** (botão vermelho + aviso de cascata), **Iniciar Calibração**, **Criar Cenário** (campo Nome) + **toast**
+  de sucesso transitório. view-model puro (`confirmSpecFor`) + testes. Execução real (mutations) = 🔴 (#113); mensagem
+  de RBAC negado (`budget-plans.confirm.denied`) pronta para quando a permissão for verificada no BFF.
 
 ## Fase 4 — US4 Consolidado ABC (`/consolidado`)
 

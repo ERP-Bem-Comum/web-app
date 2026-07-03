@@ -8,6 +8,9 @@ import type { StatusTone } from '#modules/budget-plans/client/planejamento/plane
 
 import { usePlanDetail } from '../plan-detail.binding.ts'
 import { ConsolidatedMatrix } from '../components/consolidated-matrix.component.tsx'
+import { AddBudgetModal } from '../components/add-budget-modal.component.tsx'
+import type { AddBudgetError } from '../add-budget.view-model.ts'
+import { CentrosCustoModal } from '../components/centros-custo-modal.component.tsx'
 import {
   screen,
   header,
@@ -42,7 +45,8 @@ export function PlanDetailPage(): ReactNode {
   const params = routeApi.useParams()
   const navigate = useNavigate()
   const id = Number(params.id)
-  const { state, view, setView, prevSemester, nextSemester, filter } = usePlanDetail(id)
+  const { state, view, setView, prevSemester, nextSemester, filter, addBudget, centrosCusto } =
+    usePlanDetail(id)
 
   const goBack = (): void => {
     void navigate({ to: '/planejamento' })
@@ -130,7 +134,7 @@ export function PlanDetailPage(): ReactNode {
               <button type="button" className={secondaryButton} disabled>
                 {t('budget-plans.detail.insights')}
               </button>
-              <button type="button" className={secondaryButton} disabled>
+              <button type="button" className={secondaryButton} onClick={addBudget.openModal}>
                 {t('budget-plans.detail.addBudget')}
               </button>
               <button
@@ -170,9 +174,7 @@ export function PlanDetailPage(): ReactNode {
             }}
             onPrev={prevSemester}
             onNext={nextSemester}
-            onSelectCentroCusto={() => {
-              /* TODO(US2a-cont): modal de gestão de Centros de Custo */
-            }}
+            onSelectCentroCusto={centrosCusto.openModal}
             onSelectPorMes={() => {
               setView('month')
             }}
@@ -182,6 +184,72 @@ export function PlanDetailPage(): ReactNode {
           />
         </>
       )}
+
+      <AddBudgetModal
+        open={addBudget.open}
+        estado={addBudget.form.estado}
+        options={addBudget.options}
+        errorTag={addBudget.errorTag}
+        labels={{
+          title: t('budget-plans.addBudget.title'),
+          close: t('budget-plans.addBudget.close'),
+          estado: t('budget-plans.addBudget.estado'),
+          estadoPlaceholder: t('budget-plans.addBudget.estadoPlaceholder'),
+          add: t('budget-plans.addBudget.add'),
+          cancel: t('budget-plans.addBudget.cancel'),
+        }}
+        translateError={(tag: AddBudgetError) => t(`budget-plans.addBudget.error.${tag}`)}
+        onClose={addBudget.close}
+        onEstado={addBudget.setEstado}
+        onSubmit={addBudget.submit}
+      />
+
+      <CentrosCustoModal
+        binding={centrosCusto}
+        labels={{
+          titlePrefix: t('budget-plans.centrosCusto.titlePrefix'),
+          subtitle: t('budget-plans.centrosCusto.subtitle'),
+          close: t('budget-plans.centrosCusto.close'),
+          centro: t('budget-plans.centrosCusto.centro'),
+          addCentro: t('budget-plans.centrosCusto.addCentro'),
+          addCategoria: t('budget-plans.centrosCusto.addCategoria'),
+          addSub: t('budget-plans.centrosCusto.addSub'),
+          edit: t('budget-plans.centrosCusto.edit'),
+          deactivate: t('budget-plans.centrosCusto.deactivate'),
+          activate: t('budget-plans.centrosCusto.activate'),
+          expand: t('budget-plans.centrosCusto.expand'),
+          collapse: t('budget-plans.centrosCusto.collapse'),
+          nome: t('budget-plans.centrosCusto.nome'),
+          centroTipo: t('budget-plans.centrosCusto.centroTipo'),
+          subTipo: t('budget-plans.centrosCusto.subTipo'),
+          releaseType: t('budget-plans.centrosCusto.releaseType'),
+          cancel: t('budget-plans.centrosCusto.cancel'),
+          save: t('budget-plans.centrosCusto.save'),
+          add: t('budget-plans.centrosCusto.add'),
+          formTitle: {
+            'add-centro': t('budget-plans.centrosCusto.form.add-centro'),
+            'edit-centro': t('budget-plans.centrosCusto.form.edit-centro'),
+            'add-categoria': t('budget-plans.centrosCusto.form.add-categoria'),
+            'edit-categoria': t('budget-plans.centrosCusto.form.edit-categoria'),
+            'add-sub': t('budget-plans.centrosCusto.form.add-sub'),
+            'edit-sub': t('budget-plans.centrosCusto.form.edit-sub'),
+          },
+        }}
+        centroTipoLabels={{
+          'A PAGAR': t('budget-plans.centroTipo.a-pagar'),
+          'A RECEBER': t('budget-plans.centroTipo.a-receber'),
+        }}
+        subTipoLabels={{
+          INSTITUCIONAL: t('budget-plans.subTipo.institucional'),
+          REDE: t('budget-plans.subTipo.rede'),
+        }}
+        releaseTypeLabels={{
+          DESPESAS_PESSOAIS: t('budget-plans.releaseType.pessoal'),
+          IPCA: t('budget-plans.releaseType.ipca'),
+          CAED: t('budget-plans.releaseType.caed'),
+          DESPESAS_LOGISTICAS: t('budget-plans.releaseType.logistica'),
+        }}
+      />
     </div>
   )
 }

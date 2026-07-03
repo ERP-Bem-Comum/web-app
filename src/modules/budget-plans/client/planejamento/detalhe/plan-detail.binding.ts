@@ -20,6 +20,16 @@ import {
   type PlanDetailHeader,
   type Semester,
 } from '#modules/budget-plans/client/planejamento/detalhe/plan-detail.view-model.ts'
+import {
+  emptyAddBudgetForm,
+  validateAddBudget,
+  type AddBudgetForm,
+  type AddBudgetError,
+} from '#modules/budget-plans/client/planejamento/detalhe/add-budget.view-model.ts'
+import {
+  useCentrosCusto,
+  type CentrosCustoBinding,
+} from '#modules/budget-plans/client/planejamento/detalhe/centros-custo.binding.ts'
 
 /** Visões da seção consolidada (HANDBOOK §1.4): por mês (semestres) ou por rede (parceiros). */
 export type DetailView = 'month' | 'network'
@@ -41,6 +51,18 @@ export type PlanDetailFilter = Readonly<{
   editMode: boolean
 }>
 
+/** UI-state do modal "Adicionar Orçamento" (§1.6). Front-first: submeter valida e fecha (persistência #113). */
+export type AddBudgetBinding = Readonly<{
+  open: boolean
+  form: AddBudgetForm
+  options: readonly RegionOption[]
+  errorTag: AddBudgetError | null
+  openModal: () => void
+  close: () => void
+  setEstado: (v: string) => void
+  submit: () => void
+}>
+
 export type PlanDetailBinding = Readonly<{
   state: PlanDetailState
   view: DetailView
@@ -48,6 +70,8 @@ export type PlanDetailBinding = Readonly<{
   prevSemester: () => void
   nextSemester: () => void
   filter: PlanDetailFilter
+  addBudget: AddBudgetBinding
+  centrosCusto: CentrosCustoBinding
 }>
 
 export function usePlanDetail(id: number): PlanDetailBinding {
@@ -59,6 +83,15 @@ export function usePlanDetail(id: number): PlanDetailBinding {
   const [estado, setEstadoRaw] = useState('')
   const [municipio, setMunicipio] = useState('')
   const [applied, setApplied] = useState(false)
+
+  // Modal "Adicionar Orçamento" — UI-state local.
+  const [addOpen, setAddOpen] = useState(false)
+  const [addForm, setAddForm] = useState<AddBudgetForm>(emptyAddBudgetForm)
+  const [addError, setAddError] = useState<AddBudgetError | null>(null)
+  const existingNames = detail?.networks.map((n) => n.name) ?? []
+
+  // Modal "Centros de Custo" (§1.5) — binding próprio, alimentado pelo mesmo `detail`.
+  const centrosCusto = useCentrosCusto(detail)
 
   const state = useMemo<PlanDetailState>(() => {
     if (detail === null) return { status: 'not-found' }
@@ -89,6 +122,34 @@ export function usePlanDetail(id: number): PlanDetailBinding {
     editMode: applied && estado !== '' && municipio !== '',
   }
 
+  const addBudget: AddBudgetBinding = {
+    open: addOpen,
+    form: addForm,
+    options: PLAN_FILTER_ESTADOS,
+    errorTag: addError,
+    openModal: () => {
+      setAddForm(emptyAddBudgetForm())
+      setAddError(null)
+      setAddOpen(true)
+    },
+    close: () => {
+      setAddOpen(false)
+    },
+    setEstado: (v) => {
+      setAddForm({ estado: v })
+      setAddError(null)
+    },
+    submit: () => {
+      const err = validateAddBudget(addForm, PLAN_FILTER_ESTADOS, existingNames)
+      if (err !== null) {
+        setAddError(err)
+        return
+      }
+      // Front-first: sem persistência (a nova coluna real chega com o #113) — fecha o modal.
+      setAddOpen(false)
+    },
+  }
+
   return {
     state,
     view,
@@ -100,5 +161,7 @@ export function usePlanDetail(id: number): PlanDetailBinding {
       setSemester(1)
     },
     filter,
+    addBudget,
+    centrosCusto,
   }
 }
