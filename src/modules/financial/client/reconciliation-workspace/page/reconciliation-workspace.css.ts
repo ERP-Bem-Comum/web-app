@@ -432,6 +432,10 @@ export const importsCol = style({
   background: c.paper.default,
   borderInlineEnd: `${bw.thin} solid ${c.paper.rule}`,
 })
+// Canvas BEGE só na coluna de conteúdo da association (Sugestão/Nova transação/Buscar vários — mock).
+// A barra de abas (`assocTabs`) tem fundo branco próprio → continua branca; os cards internos (form,
+// sugestão) também. Aplicado como modificador p/ NÃO afetar a lista de importações do extrato.
+export const importsColBeige = style({ background: c.paper.warm })
 
 // Coluna 2 (associação) — empilha a barra de confirmação transiente acima do conteúdo (abas/sugestão).
 // Fundo branco: senão o bege do workspace vaza nas margens da barra (acima/abaixo/laterais).
@@ -440,16 +444,18 @@ export const assocColumn = style({
   display: 'flex',
   flexDirection: 'column',
   overflow: 'hidden',
-  background: c.paper.default,
+  // Canvas BEGE claro em TODOS os estados da association (idle "selecione…", abas, banner). As barras de
+  // abas têm bg branco próprio → seguem brancas. O extrato (importsCol) é outra coluna, não é afetado.
+  background: c.paper.warm,
 })
 
 export const importsHead = style({
   flexShrink: 0,
+  blockSize: '3rem', // mesma altura da barra de abas (assocTabs) da coluna ao lado → barras alinhadas
   display: 'flex',
   alignItems: 'center',
   gap: sp.sm,
-  paddingInline: sp.xl,
-  paddingBlock: sp.lg,
+  paddingInline: sp['3xl'], // mesmo recuo lateral da assocTabs (era xl) p/ alinhar horizontalmente também
   borderBlockEnd: `${bw.thin} solid ${c.paper.rule}`,
 })
 
@@ -628,7 +634,9 @@ export const assocHint = style({
 
 export const assocTabs = style({
   flexShrink: 0,
+  blockSize: '3rem', // mesma altura da extHead (coluna do extrato) p/ as duas barras alinharem
   display: 'flex',
+  alignItems: 'stretch', // abas preenchem a altura → underline no rodapé, alinhado à borda da barra
   gap: sp.sm,
   paddingInline: sp['3xl'],
   borderBlockEnd: `${bw.thin} solid ${c.paper.rule}`,
@@ -638,8 +646,10 @@ export const assocTabs = style({
 const assocTabBase = {
   border: 'none',
   background: 'transparent',
+  display: 'inline-flex',
+  alignItems: 'center', // texto centralizado verticalmente na barra de 3rem
   paddingInline: sp.sm,
-  paddingBlock: sp.lg,
+  paddingBlock: 0,
   fontFamily: recon.font.sans,
   fontSize: fs.md,
   cursor: 'pointer',
@@ -1136,7 +1146,7 @@ export const ntForm = style({
   paddingInline: '1.25rem',
 })
 export const ntSection = style({
-  marginBlockEnd: sp['2xl'],
+  marginBlockEnd: sp.lg,
   selectors: { '&:last-child': { marginBlockEnd: 0 } },
 })
 export const ntSectionLbl = style({
@@ -1152,15 +1162,18 @@ export const ntSectionLbl = style({
   color: c.ink[5],
   selectors: { '&::after': { content: '""', flex: 1, blockSize: bw.hairline, background: c.paper.rule } },
 })
-export const ntTypeGrid = style({ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: sp.sm })
+// 6 tipos numa ÚNICA fila — libera altura p/ o botão "Conciliar" não ficar escondido abaixo da dobra.
+export const ntTypeGrid = style({ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: sp.xs })
+// Card COMPACTO vertical (ícone em cima, rótulo embaixo) — encaixa em coluna estreita (6 por linha).
 const ntCardBase = {
   position: 'relative',
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
+  justifyContent: 'center',
   gap: sp.xs,
-  paddingBlock: sp.lg,
-  paddingInline: sp.sm,
+  paddingBlock: sp.sm,
+  paddingInline: sp.xs,
   background: c.paper.default,
   border: `${bw.hairline} solid ${c.paper.rule}`,
   borderRadius: r.md,
@@ -1187,7 +1200,15 @@ const ntCardIcBase = {
   flexShrink: 0,
 } as const
 export const ntCardIc = styleVariants({
-  off: { ...ntCardIcBase, background: c.paper.warm, color: c.ink[4] },
+  off: {
+    ...ntCardIcBase,
+    background: c.paper.warm,
+    color: c.ink[4],
+    // No hover do card, o ícone também vira teal (mesmo tom do estado ativo).
+    selectors: {
+      [`${ntCard.off}:hover &`]: { background: c.paper.default, color: c.teal.deep },
+    },
+  },
   on: { ...ntCardIcBase, background: c.paper.default, color: c.teal.deep },
 })
 export const ntCardName = styleVariants({
@@ -2067,6 +2088,9 @@ export const extKind = styleVariants({
   doc: { ...extKindBase, background: c.amber.bg, color: c.amber.deep },
   tar: { ...extKindBase, background: c.paper.beige, color: c.ink[3] },
   apl: { ...extKindBase, background: c.purple.bg, color: c.purple.deep },
+  // Genérico por natureza (Entrada/Saída): verde p/ crédito, vermelho p/ débito.
+  entrada: { ...extKindBase, background: c.green.bg, color: c.green.deep },
+  saida: { ...extKindBase, background: c.red.bg, color: c.red.deep },
   default: { ...extKindBase, background: c.paper.beige, color: c.ink[3] },
 })
 

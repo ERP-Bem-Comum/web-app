@@ -228,7 +228,7 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
                   />
                 )
               ) : (
-                <div className={s.importsCol}>
+                <div className={`${s.importsCol} ${s.importsColBeige}`}>
                   <div
                     className={s.assocTabs}
                     role="tablist"

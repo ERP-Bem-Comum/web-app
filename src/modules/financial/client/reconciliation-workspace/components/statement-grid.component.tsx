@@ -13,7 +13,8 @@ import * as s from '../page/reconciliation-workspace.css.ts'
 import {
   centsToBRL,
   centsToReais,
-  extratoKindClass,
+  extratoBadgeKind,
+  extratoTypeTag,
   formatDayShort,
   type ExtratoDayGroup,
   type ExtratoFilter,
@@ -80,7 +81,12 @@ function ExtratoRow({
     <>
       <ConcMark tx={tx} />
       <span className={s.extDt}>{formatDayShort(tx.date)}</span>
-      <span className={s.extKind[extratoKindClass(tx.entryType)]}>{tx.entryType}</span>
+      <span className={s.extKind[extratoBadgeKind(tx)]}>
+        {((): string => {
+          const tag = extratoTypeTag(tx)
+          return tag !== null ? t(tag) : tx.entryType
+        })()}
+      </span>
       <span className={reconciled ? `${s.extName} ${s.extNameReconciled}` : s.extName}>{tx.payeeName}</span>
       <span className={s.extDesc}>{tx.memo}</span>
       <span className={s.extRef}>

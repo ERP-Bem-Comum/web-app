@@ -292,7 +292,7 @@ export const accountStatementPeriodToModel = (
   const movements: readonly StatementTransaction[] = d.days.flatMap((day) =>
     day.lines.map((ln) => ({
       id: ln.id,
-      fitid: '',
+      fitid: ln.fitid, // '' até o read-model do período projetar o fitid (core-api) — ver issue
       date: ln.date.slice(0, 10),
       movement: mapMovement(ln.movement),
       entryType: ln.entryType,

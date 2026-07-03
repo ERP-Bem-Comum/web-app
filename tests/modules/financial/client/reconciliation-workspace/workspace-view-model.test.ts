@@ -11,6 +11,7 @@ import {
   progressLabel,
   progressPercent,
   entryTypeIcon,
+  extratoTypeTag,
   isPending,
   transactionTag,
   filterTransactions,
@@ -824,5 +825,72 @@ describe('formatDateDash', () => {
   })
   it('vazio → travessão', () => {
     assert.equal(formatDateDash(''), '—')
+  })
+})
+
+// ── Cascata Centro → Categoria → Subcategoria (EPIC #150) ──
+import {
+  topLevelCategories,
+  subcategoriesOf,
+  categoriesForCostCenter,
+} from '../../../../../src/modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
+import type { FinancialReferences } from '../../../../../src/modules/financial/client/data/model/reconciliation.model.ts'
+
+const REFS: FinancialReferences = {
+  costCenters: [
+    { id: 'cc-A', code: '01', name: 'Centro A' },
+    { id: 'cc-B', code: '02', name: 'Centro B' },
+  ],
+  categories: [
+    { id: 'cat-1', name: 'Cat 1', group: 'despesa', parentId: null },
+    { id: 'cat-2', name: 'Cat 2', group: 'despesa', parentId: null },
+    { id: 'sub-1a', name: 'Sub 1a', group: 'despesa', parentId: 'cat-1' },
+    { id: 'sub-1b', name: 'Sub 1b', group: 'despesa', parentId: 'cat-1' },
+  ],
+}
+
+describe('cascata categorização', () => {
+  it('topLevelCategories: só as sem parentId', () => {
+    assert.deepEqual(
+      topLevelCategories(REFS).map((c) => c.id),
+      ['cat-1', 'cat-2'],
+    )
+  })
+  it('subcategoriesOf: filhas por parentId; vazio se nenhuma categoria', () => {
+    assert.deepEqual(
+      subcategoriesOf(REFS, 'cat-1').map((c) => c.id),
+      ['sub-1a', 'sub-1b'],
+    )
+    assert.deepEqual(subcategoriesOf(REFS, 'cat-2'), [])
+    assert.deepEqual(subcategoriesOf(REFS, ''), [])
+  })
+  it('categoriesForCostCenter (placeholder round-robin): vazio sem centro; particiona por índice', () => {
+    assert.deepEqual(categoriesForCostCenter(REFS, ''), [])
+    // 2 centros → cat-1 (idx0) no centro A, cat-2 (idx1) no centro B
+    assert.deepEqual(
+      categoriesForCostCenter(REFS, 'cc-A').map((c) => c.id),
+      ['cat-1'],
+    )
+    assert.deepEqual(
+      categoriesForCostCenter(REFS, 'cc-B').map((c) => c.id),
+      ['cat-2'],
+    )
+  })
+})
+
+describe('extratoTypeTag (TIPO do extrato)', () => {
+  it('tipo específico (PIX/TED/…) → null (a view mostra o entryType cru)', () => {
+    assert.equal(extratoTypeTag(tx({ id: '1', entryType: 'TED', movement: 'Debit' })), null)
+    assert.equal(extratoTypeTag(tx({ id: '2', entryType: 'PIX RECEBIDO', movement: 'Credit' })), null)
+  })
+  it('genérico ("Other") → direção do movimento (Entrada/Saída)', () => {
+    assert.equal(
+      extratoTypeTag(tx({ id: '3', entryType: 'Other', movement: 'Credit' })),
+      'financial.recon.ext.type.entrada',
+    )
+    assert.equal(
+      extratoTypeTag(tx({ id: '4', entryType: 'Other', movement: 'Debit' })),
+      'financial.recon.ext.type.saida',
+    )
   })
 })
