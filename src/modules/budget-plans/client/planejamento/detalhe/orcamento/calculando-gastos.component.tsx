@@ -9,6 +9,7 @@ import { EditIcon, TrashIcon, CalculatorIcon, InfoIcon } from '#shared/ui/index.
 
 import type { CalcGastosBinding } from './calc-gastos.binding.ts'
 import { formatCentsBRL } from './calc-gastos.view-model.ts'
+import { PessoalForm, type PessoalFormLabels } from './pessoal-form.component.tsx'
 import {
   overlay,
   panel,
@@ -48,6 +49,13 @@ import {
   formActions,
   cancelButton,
   applyButton,
+  confirmOverlay,
+  confirmDialog,
+  confirmTitle,
+  confirmBody,
+  confirmFooter,
+  confirmKeep,
+  confirmDiscard as confirmDiscardButton,
 } from './calculando-gastos.css.ts'
 
 export type CalculandoGastosLabels = Readonly<{
@@ -73,6 +81,11 @@ export type CalculandoGastosLabels = Readonly<{
   todos: string
   aplicar: string
   cancelar: string
+  pessoal: PessoalFormLabels
+  discardTitle: string
+  discardBody: string
+  discardKeep: string
+  discardConfirm: string
 }>
 
 export type CalculandoGastosProps = Readonly<{
@@ -101,6 +114,51 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
   const { binding: b, labels } = props
   // Form "Configuração" (tipo geral/Rede) que abre ao clicar no lápis — UI-state local.
   const [form, setForm] = useState<FormState | null>(null)
+  // Form de Pessoal (US2.4c) — também abre pelo lápis; o grid de meses continua sendo a visão padrão.
+  const [pessoalOpen, setPessoalOpen] = useState(false)
+  // "Descartar" no form de Pessoal remonta o form (limpa os campos) via key.
+  const [pessoalResetKey, setPessoalResetKey] = useState(0)
+  // Modal de confirmação de descarte (Cancelar/Descartar com edição não salva).
+  const [confirmOpen, setConfirmOpen] = useState(false)
+
+  // Centro "Pessoal" usa o FORMULÁRIO de custo detalhado no lápis (em vez do form "Configuração").
+  const isPessoal = b.centros.find((c) => c.active)?.name === 'Pessoal'
+
+  // Trocar de centro/categoria/subcategoria fecha qualquer form aberto (evita form "órfão").
+  const closeForms = (): void => {
+    setForm(null)
+    setPessoalOpen(false)
+    setConfirmOpen(false)
+  }
+  const selectCentro = (id: number): void => {
+    closeForms()
+    b.setCentro(id)
+  }
+  const selectCategoria = (id: number): void => {
+    closeForms()
+    b.setCategoria(id)
+  }
+  const selectSub = (id: number): void => {
+    closeForms()
+    b.setSub(id)
+  }
+
+  // Lápis: Pessoal → form detalhado; demais → form "Configuração" do mês.
+  const openPencil = (monthIndex: number, cents: number): void => {
+    if (isPessoal) setPessoalOpen(true)
+    else openForm(monthIndex, cents)
+  }
+
+  // Cancelar/Descartar pede confirmação; só descarta de fato ao confirmar.
+  const requestDiscard = (): void => {
+    setConfirmOpen(true)
+  }
+  const confirmDiscardYes = (): void => {
+    setForm(null)
+    setPessoalOpen(false)
+    setPessoalResetKey((k) => k + 1)
+    setConfirmOpen(false)
+  }
 
   const openForm = (monthIndex: number, cents: number): void => {
     setForm({
@@ -159,7 +217,15 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
         </div>
 
         <div className={tabsBar}>
-          <button type="button" className={navButton} aria-label={labels.prevCentro} onClick={b.prevCentro}>
+          <button
+            type="button"
+            className={navButton}
+            aria-label={labels.prevCentro}
+            onClick={() => {
+              closeForms()
+              b.prevCentro()
+            }}
+          >
             {'‹'}
           </button>
           <div className={tabsScroll}>
@@ -170,14 +236,22 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
                 className={c.active ? `${tab} ${tabActive}` : tab}
                 aria-pressed={c.active}
                 onClick={() => {
-                  b.setCentro(c.id)
+                  selectCentro(c.id)
                 }}
               >
                 {c.name}
               </button>
             ))}
           </div>
-          <button type="button" className={navButton} aria-label={labels.nextCentro} onClick={b.nextCentro}>
+          <button
+            type="button"
+            className={navButton}
+            aria-label={labels.nextCentro}
+            onClick={() => {
+              closeForms()
+              b.nextCentro()
+            }}
+          >
             {'›'}
           </button>
         </div>
@@ -192,7 +266,7 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
                   type="button"
                   className={c.active ? `${item} ${itemActive}` : item}
                   onClick={() => {
-                    b.setCategoria(c.id)
+                    selectCategoria(c.id)
                   }}
                 >
                   <span>{c.name}</span>
@@ -213,7 +287,7 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
                   type="button"
                   className={s.active ? `${item} ${itemActive}` : item}
                   onClick={() => {
-                    b.setSub(s.id)
+                    selectSub(s.id)
                   }}
                 >
                   <span>{s.name}</span>
@@ -237,6 +311,20 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
 
             {!b.hasData ? (
               <p className={empty}>{labels.empty}</p>
+            ) : pessoalOpen ? (
+              <PessoalForm
+                key={pessoalResetKey}
+                labels={labels.pessoal}
+                initialSalarioCents={b.despesas.find((d) => d.cents > 0)?.cents ?? 0}
+                initialMeses={b.despesas.filter((d) => d.cents > 0).map((d) => d.monthIndex)}
+                monthAbbrevs={b.despesas.map((d) => d.name.slice(0, 3))}
+                formatCents={formatCentsBRL}
+                onDescartar={requestDiscard}
+                onSalvar={(custoMensalCents, meses) => {
+                  b.applyToMonths([...meses], custoMensalCents)
+                  setPessoalOpen(false)
+                }}
+              />
             ) : form !== null ? (
               <div className={configForm}>
                 <div className={configSection}>
@@ -312,13 +400,7 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
                 </div>
 
                 <div className={formActions}>
-                  <button
-                    type="button"
-                    className={cancelButton}
-                    onClick={() => {
-                      setForm(null)
-                    }}
-                  >
+                  <button type="button" className={cancelButton} onClick={requestDiscard}>
                     {labels.cancelar}
                   </button>
                   <button type="button" className={applyButton} onClick={applyForm}>
@@ -349,7 +431,7 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
                           className={iconButton}
                           aria-label={labels.editValue}
                           onClick={() => {
-                            openForm(d.monthIndex, d.cents)
+                            openPencil(d.monthIndex, d.cents)
                           }}
                         >
                           <EditIcon size={14} />
@@ -367,6 +449,34 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
           </div>
         </div>
       </div>
+
+      {confirmOpen ? (
+        <div className={confirmOverlay} role="presentation">
+          <div
+            className={confirmDialog}
+            role="alertdialog"
+            aria-modal="true"
+            aria-label={labels.discardTitle}
+          >
+            <h3 className={confirmTitle}>{labels.discardTitle}</h3>
+            <p className={confirmBody}>{labels.discardBody}</p>
+            <div className={confirmFooter}>
+              <button
+                type="button"
+                className={confirmKeep}
+                onClick={() => {
+                  setConfirmOpen(false)
+                }}
+              >
+                {labels.discardKeep}
+              </button>
+              <button type="button" className={confirmDiscardButton} onClick={confirmDiscardYes}>
+                {labels.discardConfirm}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

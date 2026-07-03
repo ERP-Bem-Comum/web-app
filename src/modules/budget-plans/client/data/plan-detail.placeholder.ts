@@ -16,6 +16,11 @@ const zero = months({})
 
 const consultoriaMonthly = months({ 2: 1_621_936, 3: 1_621_936 }) // Fev/Mar
 
+// Pessoal (US2.4c): salário mensal placeholder (R$ 34.336,73) em todos os meses — o custo real é calculado
+// no FORMULÁRIO de Pessoal; aqui é só o dado do grid geral (frame 5).
+const salarioMes: MonthlyCents = Array.from({ length: 12 }, () => 3_433_673)
+const SAL_TOTAL = 3_433_673 * 12 // 41.204.076
+
 // 1 rede (Acre) — HANDBOOK §1.4: "Consolidado dos parceiros" tinha só a coluna ACRE.
 const NET_ALL = [3_243_872] as const
 const NET_ZERO = [0] as const
@@ -107,6 +112,78 @@ const PLAN_3: PlanDetail = {
       networkInCents: [...NET_ZERO],
       iconKind: 'report',
       categories: [],
+    },
+    {
+      // Pessoal (US2.4c) — abre o FORMULÁRIO de custo de pessoal no "Calculando Gastos" (frame 4).
+      id: 5,
+      name: 'Pessoal',
+      type: 'A PAGAR',
+      totalInCents: SAL_TOTAL,
+      monthlyInCents: salarioMes,
+      networkInCents: [...NET_ALL],
+      iconKind: 'people',
+      categories: [
+        {
+          id: 51,
+          name: '2.1 SALÁRIOS, ENCARGOS E BENEFÍCIOS',
+          totalInCents: SAL_TOTAL,
+          monthlyInCents: salarioMes,
+          networkInCents: [...NET_ALL],
+          subCategories: [
+            {
+              id: 511,
+              name: 'Diretora Adjunta EpV',
+              totalInCents: SAL_TOTAL,
+              monthlyInCents: salarioMes,
+              networkInCents: [...NET_ALL],
+            },
+            {
+              id: 512,
+              name: 'Coordenador Estadual',
+              totalInCents: 0,
+              monthlyInCents: zero,
+              networkInCents: [...NET_ZERO],
+            },
+            {
+              id: 513,
+              name: 'Coordenador Assistente',
+              totalInCents: 0,
+              monthlyInCents: zero,
+              networkInCents: [...NET_ZERO],
+            },
+            {
+              id: 514,
+              name: 'Assistente Administrativo',
+              totalInCents: 0,
+              monthlyInCents: zero,
+              networkInCents: [...NET_ZERO],
+            },
+            {
+              id: 515,
+              name: 'Assistente TI',
+              totalInCents: 0,
+              monthlyInCents: zero,
+              networkInCents: [...NET_ZERO],
+            },
+          ],
+        },
+        {
+          id: 52,
+          name: '2.2 CONSULTORIA ESTRATÉGICA',
+          totalInCents: 0,
+          monthlyInCents: zero,
+          networkInCents: [...NET_ZERO],
+          subCategories: [
+            {
+              id: 521,
+              name: 'Consultor Sênior',
+              totalInCents: 0,
+              monthlyInCents: zero,
+              networkInCents: [...NET_ZERO],
+            },
+          ],
+        },
+      ],
     },
   ],
 }

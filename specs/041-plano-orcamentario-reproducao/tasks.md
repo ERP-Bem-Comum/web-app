@@ -35,9 +35,16 @@ independe do backend, com **dados placeholder** (const, sem mocks/fixtures) e a�
       forms Adicionar/Editar (com `Tipo` Institucional/Rede e `Tipo de lançamento`). Persistência = `TODO(#113)`.
 - [ ] **S2.3 · Modal "Adicionar Orçamento" (por Rede)** 🟩 — Estado (+ Município se municipal), **exatamente 1 parceiro**,
       bloquear parceiro duplicado (validação client). Submit = `TODO(#113)`.
-- [ ] **S2.4 · Edição de Orçamento (`/…/orcamento/$oid`) + modal "Calculando Gastos"** 🟩 **(alto valor — preview pronto)**
-      — grid editável por subcategoria/mês + os **4 tipos** (Pessoal/IPCA/CAED/Logística) com **preview do valor ao vivo**
-      (reusa `calc/preview.ts`, já testado). Regra de edição por status (Aprovado = read-only via `deriveEditable`). Save = `TODO(#113)`.
+- [~] **S2.4 · Edição de Orçamento (`/…/orcamento/$oid`) + modal "Calculando Gastos"** 🟩 **(alto valor — preview pronto)**
+  — grid editável por subcategoria/mês + os **4 tipos** (Pessoal/IPCA/CAED/Logística) com **preview do valor ao vivo**
+  (reusa `calc/preview.ts`, já testado). Regra de edição por status (Aprovado = read-only via `deriveEditable`). Save = `TODO(#113)`.
+  - [x] **S2.4b · Base "Calculando Gastos"** ✅ — modal full-screen Centro (abas) → Categoria → Subcategoria → 12 meses;
+        lápis abre o form "Configuração" (Total reajustado + IPCA + Aplicar aos meses); lixeira zera. Binding real + testes.
+  - [x] **S2.4c · Form de Pessoal + fluxo lápis→form→descarte** ✅ — centro **Pessoal**: lista de meses continua como
+        visão padrão; o **lápis** abre o FORMULÁRIO detalhado (Tipo/Remuneração/Encargos %/Benefícios/Provisões/Custo Total,
+        `computePessoal` puro e testado). **Cancelar/Descartar** dispara **modal de confirmação** de descarte; trocar de
+        aba/categoria/subcategoria fecha o form aberto. `Salvar` aplica o Custo Mensal aos meses marcados (persistência `TODO(#113)`).
+  - [ ] **S2.4d · Demais tipos de preview** (IPCA/CAED/Logística) reusando `calc/preview.ts`.
 - [ ] **S2.5 · Insights** 🔴 — histórico 5 anos, planejado × realizado (Realizado = CONCILIADO do financeiro), média por rede.
 
 ## Fase 3 — US3 Ciclo de vida

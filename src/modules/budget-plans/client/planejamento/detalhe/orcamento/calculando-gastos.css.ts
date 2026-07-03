@@ -402,3 +402,72 @@ export const applyButton = style({
   cursor: 'pointer',
   selectors: { '&:hover': { background: vars.color.brand.hover } },
 })
+
+// ── Modal de confirmação de descarte (Cancelar no form) ──
+export const confirmOverlay = style({
+  position: 'fixed',
+  inset: 0,
+  zIndex: 1300,
+  background: vars.color.institutional.overlay,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: vars.space.lg,
+})
+
+export const confirmDialog = style({
+  inlineSize: '100%',
+  maxInlineSize: '26rem',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: vars.space.md,
+  padding: vars.space.lg,
+  borderRadius: vars.radius.lg,
+  background: vars.color.surface.default,
+  fontFamily: vars.font.family.body,
+})
+
+export const confirmTitle = style({
+  margin: 0,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.md,
+  fontWeight: vars.font.weight.bold,
+  color: vars.color.text.primary,
+})
+
+export const confirmBody = style({
+  margin: 0,
+  fontSize: vars.font.size.sm,
+  color: vars.color.text.secondary,
+  lineHeight: 1.5,
+})
+
+export const confirmFooter = style({ display: 'flex', gap: vars.space.sm, justifyContent: 'flex-end' })
+
+export const confirmKeep = style({
+  paddingBlock: vars.space.sm,
+  paddingInline: vars.space.md,
+  borderRadius: vars.radius.md,
+  border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
+  background: vars.color.surface.default,
+  color: vars.color.text.primary,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.semibold,
+  cursor: 'pointer',
+  selectors: { '&:hover': { background: vars.color.surface.subtle } },
+})
+
+export const confirmDiscard = style({
+  paddingBlock: vars.space.sm,
+  paddingInline: vars.space.md,
+  borderRadius: vars.radius.md,
+  border: 'none',
+  background: vars.color.feedback.errorText,
+  color: vars.color.surface.default,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.semibold,
+  cursor: 'pointer',
+  selectors: { '&:hover': { opacity: 0.9 } },
+})

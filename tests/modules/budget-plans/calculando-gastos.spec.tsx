@@ -54,6 +54,33 @@ const detail: PlanDetail = {
         },
       ],
     },
+    {
+      // Centro "Pessoal" — o lápis abre o FORMULÁRIO detalhado (US2.4c), não o form "Configuração".
+      id: 2,
+      name: 'Pessoal',
+      type: 'A PAGAR',
+      totalInCents: 200,
+      monthlyInCents: m({ 1: 200 }),
+      networkInCents: [],
+      categories: [
+        {
+          id: 21,
+          name: 'Salários',
+          totalInCents: 200,
+          monthlyInCents: m({ 1: 200 }),
+          networkInCents: [],
+          subCategories: [
+            {
+              id: 211,
+              name: 'Diretor',
+              totalInCents: 200,
+              monthlyInCents: m({ 1: 200 }),
+              networkInCents: [],
+            },
+          ],
+        },
+      ],
+    },
   ],
 }
 
@@ -80,6 +107,43 @@ const labels = {
   todos: 'Todos',
   aplicar: 'Aplicar',
   cancelar: 'Cancelar',
+  pessoal: {
+    tipo: 'Tipo',
+    nivel: 'Nível',
+    vinculo: 'Vínculo',
+    remuneracao: 'Remuneração Bruta Mensal',
+    qtd: 'Qtd.',
+    meses: 'Meses aplicados',
+    salario: 'Salário (R$)',
+    reajuste: 'Reajuste (%)',
+    salarioTotal: 'Salário Total',
+    encargos: 'Encargos Mensais (%)',
+    inssPatronal: 'INSS Patronal',
+    inss: 'INSS',
+    fgts: 'FGTS',
+    pis: 'PIS',
+    totalEncargos: 'Total Encargos',
+    beneficios: 'Benefícios Mensais (R$)',
+    valeTransporte: 'Vale-Transporte',
+    alimentacao: 'Alimentação',
+    planoSaude: 'Plano de Saúde',
+    seguroVida: 'Seguro de Vida',
+    totalBeneficios: 'Total Benefícios',
+    provisoes: 'Provisões Mensais (R$)',
+    feriasEncargos: 'Férias + Encargos',
+    abono: 'Abono',
+    decimoEncargos: '13º + Encargos',
+    fgtsMultaAdicional: 'FGTS Multa + Adicional',
+    totalProvisoes: 'Total Provisões',
+    mensal: 'Custo Mensal',
+    anual: 'Custo Anual',
+    descartar: 'Descartar',
+    salvar: 'Salvar',
+  },
+  discardTitle: 'Descartar alterações?',
+  discardBody: 'As informações preenchidas não foram salvas e serão perdidas. Deseja continuar?',
+  discardKeep: 'Continuar editando',
+  discardConfirm: 'Descartar',
 } as const
 
 function Harness(): ReactNode {
@@ -124,5 +188,56 @@ describe('CalculandoGastos', () => {
     render(<Harness />)
     fireEvent.click(within(monthRow('Fevereiro')).getByLabelText('Limpar valor'))
     expect(within(monthRow('Fevereiro')).getByText(/R\$\s?0,00/)).toBeTruthy()
+  })
+
+  it('Cancelar no form abre a confirmação; "Continuar editando" mantém o form', () => {
+    render(<Harness />)
+    fireEvent.click(within(monthRow('Janeiro')).getByLabelText('Editar valor'))
+    expect(screen.getByText('Configuração')).toBeTruthy()
+    fireEvent.click(screen.getByText('Cancelar'))
+    // modal de confirmação apareceu
+    const dialog = screen.getByRole('alertdialog')
+    expect(within(dialog).getByText('Descartar alterações?')).toBeTruthy()
+    // "Continuar editando" fecha o modal e mantém o form
+    fireEvent.click(within(dialog).getByText('Continuar editando'))
+    expect(screen.queryByRole('alertdialog')).toBeNull()
+    expect(screen.getByText('Configuração')).toBeTruthy()
+  })
+
+  it('Cancelar → "Descartar" na confirmação volta para a lista de meses', () => {
+    render(<Harness />)
+    fireEvent.click(within(monthRow('Janeiro')).getByLabelText('Editar valor'))
+    fireEvent.click(screen.getByText('Cancelar'))
+    const dialog = screen.getByRole('alertdialog')
+    fireEvent.click(within(dialog).getByText('Descartar'))
+    // form fechou; lista de meses de volta (sem "Configuração")
+    expect(screen.queryByText('Configuração')).toBeNull()
+    expect(screen.getByText('Janeiro')).toBeTruthy()
+  })
+
+  it('Pessoal: lista de meses aparece primeiro; o lápis abre o FORMULÁRIO detalhado', () => {
+    render(<Harness />)
+    fireEvent.click(screen.getByText('Pessoal'))
+    // ainda é a lista de meses (não o form) — Janeiro = R$ 2,00 (200 centavos)
+    expect(within(monthRow('Janeiro')).getByText(/R\$\s?2,00/)).toBeTruthy()
+    expect(screen.queryByText('Salário Total')).toBeNull()
+    // lápis abre o form detalhado
+    fireEvent.click(within(monthRow('Janeiro')).getByLabelText('Editar valor'))
+    expect(screen.getByText('Salário Total')).toBeTruthy()
+    expect(screen.getByText('Custo Mensal')).toBeTruthy()
+  })
+
+  it('Pessoal: "Descartar" no form pede confirmação e volta para a lista', () => {
+    render(<Harness />)
+    fireEvent.click(screen.getByText('Pessoal'))
+    fireEvent.click(within(monthRow('Janeiro')).getByLabelText('Editar valor'))
+    // botão Descartar do form (único antes do modal)
+    fireEvent.click(screen.getByText('Descartar'))
+    const dialog = screen.getByRole('alertdialog')
+    expect(within(dialog).getByText('Descartar alterações?')).toBeTruthy()
+    fireEvent.click(within(dialog).getByText('Descartar'))
+    // de volta à lista de meses (form sumiu)
+    expect(screen.queryByText('Salário Total')).toBeNull()
+    expect(within(monthRow('Janeiro')).getByText(/R\$\s?2,00/)).toBeTruthy()
   })
 })
