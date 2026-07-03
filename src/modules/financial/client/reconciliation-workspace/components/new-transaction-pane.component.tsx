@@ -121,6 +121,45 @@ export function NewTransactionPane({ binding }: NewTransactionPaneProps) {
   const special = type !== null && isSpecial(type)
   const destKeyBase = special ? `financial.recon.manual.dest.${type}` : ''
 
+  // Selects da categorização definidos uma vez p/ arranjar em 2 colunas (sem campos full-width → sem rolagem):
+  // com bloco de documento → [Programa | Centro] + [Categoria | Subcategoria]; senão → [Centro | Categoria] + [Subcategoria].
+  const programaSelect = (
+    <RealSelect
+      label={t('financial.recon.manual.f.program')}
+      placeholder={t('financial.recon.manual.f.programPlaceholder')}
+      value={binding.programRef}
+      options={binding.programOptions}
+      onChange={binding.setProgramRef}
+    />
+  )
+  const centroSelect = (
+    <RealSelect
+      label={t('financial.recon.manual.f.costCenter')}
+      placeholder={t('financial.recon.manual.f.costCenterPlaceholder')}
+      value={binding.costCenterRef}
+      options={binding.costCenterOptions}
+      onChange={binding.setCostCenterRef}
+    />
+  )
+  const categoriaSelect = (
+    <RealSelect
+      label={t('financial.recon.manual.f.category')}
+      placeholder={t('financial.recon.manual.f.categoryPlaceholder')}
+      value={binding.categoryRef}
+      options={binding.categoryOptions}
+      onChange={binding.setCategoryRef}
+    />
+  )
+  const subcategoriaSelect = (
+    <RealSelect
+      label={t('financial.recon.manual.f.subcategory')}
+      placeholder={t('financial.recon.manual.f.subcategoryPlaceholder')}
+      value={binding.subcategoryRef}
+      options={binding.subcategoryOptions}
+      onChange={binding.setSubcategoryRef}
+    />
+  )
+
   return (
     <div className={s.assocCol}>
       <div className={s.ntForm}>
@@ -202,36 +241,32 @@ export function NewTransactionPane({ binding }: NewTransactionPaneProps) {
                 <ChromeInput label={t('financial.recon.manual.f.emission')} placeholder="DD/MM/AAAA" mono />
                 <ChromeInput label={t('financial.recon.manual.f.docValue')} placeholder="R$ 0,00" mono />
               </div>
-              <div className={s.ntRow}>
-                {/* Programa — REAL: programas ativos (envia programRef). */}
-                <RealSelect
-                  label={t('financial.recon.manual.f.program')}
-                  placeholder={t('financial.recon.manual.f.programPlaceholder')}
-                  value={binding.programRef}
-                  options={binding.programOptions}
-                  onChange={binding.setProgramRef}
-                />
-              </div>
             </>
           ) : null}
 
-          <div className={`${s.ntRow} ${s.ntRowCols2}`}>
-            {/* Categoria + Centro de custo — REAIS: dados de referência (020 · #200), envia category/costCenterRef. */}
-            <RealSelect
-              label={t('financial.recon.manual.f.category')}
-              placeholder={t('financial.recon.manual.f.categoryPlaceholder')}
-              value={binding.categoryRef}
-              options={binding.categoryOptions}
-              onChange={binding.setCategoryRef}
-            />
-            <RealSelect
-              label={t('financial.recon.manual.f.costCenter')}
-              placeholder={t('financial.recon.manual.f.costCenterPlaceholder')}
-              value={binding.costCenterRef}
-              options={binding.costCenterOptions}
-              onChange={binding.setCostCenterRef}
-            />
-          </div>
+          {/* Cascata co-dependente Centro de Custo → Categoria → Subcategoria (EPIC #150), em 2 linhas 2-col
+              (sem campos full-width). Escolher o centro filtra as categorias (placeholder #341); a categoria
+              filtra as subcategorias (real, via parentId). Envia a folha (subcategoria|categoria) como categoryRef. */}
+          {binding.showPayeeBlock ? (
+            <>
+              <div className={`${s.ntRow} ${s.ntRowCols2}`}>
+                {programaSelect}
+                {centroSelect}
+              </div>
+              <div className={`${s.ntRow} ${s.ntRowCols2}`}>
+                {categoriaSelect}
+                {subcategoriaSelect}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className={`${s.ntRow} ${s.ntRowCols2}`}>
+                {centroSelect}
+                {categoriaSelect}
+              </div>
+              <div className={`${s.ntRow} ${s.ntRowCols2}`}>{subcategoriaSelect}</div>
+            </>
+          )}
           <div className={s.ntRow}>
             <label className={s.ntField}>
               <span className={s.ntLabel}>

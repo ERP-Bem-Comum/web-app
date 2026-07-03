@@ -92,6 +92,9 @@ export const CoreApiAccountStatementSchema = z.object({
           .array(
             z.object({
               id: z.string().trim(),
+              // fitid (REF · IDENTIF do extrato): o read-model do período ainda NÃO projeta (core-api).
+              // `.catch('')` mantém compatível; quando o backend enviar, o REF aparece sem mexer no front.
+              fitid: z.string().trim().catch(''),
               date: z.string().trim(),
               movement: z.string().trim(), // 'Debit' | 'Credit' (tolerante → mapMovement)
               entryType: z.string().trim().catch(''),

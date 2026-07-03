@@ -19,6 +19,8 @@ import { referencesQueryOptions } from './reconciliation-workspace.query.ts'
 import {
   relabelReconCategory,
   requiresDestination,
+  categoriesForCostCenter,
+  subcategoriesOf,
   type ManualEntryType,
   type StatementTransaction,
 } from './reconciliation-workspace.view-model.ts'
@@ -39,10 +41,12 @@ export type ManualEntryBinding = Readonly<{
   supplierRef: string
   programRef: string
   categoryRef: string
+  subcategoryRef: string
   costCenterRef: string
   partnerOptions: readonly ManualEntryOption[]
   programOptions: readonly ManualEntryOption[]
   categoryOptions: readonly ManualEntryOption[]
+  subcategoryOptions: readonly ManualEntryOption[]
   costCenterOptions: readonly ManualEntryOption[]
   // #143: contas-cedente ATIVAS (exceto a própria origem) p/ Transferência/Aplicação/Resgate entre contas.
   accountOptions: readonly ManualEntryOption[]
@@ -52,6 +56,7 @@ export type ManualEntryBinding = Readonly<{
   setSupplierRef: (v: string) => void
   setProgramRef: (v: string) => void
   setCategoryRef: (v: string) => void
+  setSubcategoryRef: (v: string) => void
   setCostCenterRef: (v: string) => void
   reset: () => void
   submit: () => void
@@ -110,6 +115,7 @@ export function useManualEntry(
   const [supplierRef, setSupplierRef] = useState('')
   const [programRef, setProgramRef] = useState('')
   const [categoryRef, setCategoryRef] = useState('')
+  const [subcategoryRef, setSubcategoryRef] = useState('')
   const [costCenterRef, setCostCenterRef] = useState('')
   const [errorTag, setErrorTag] = useState<string | null>(null)
 
@@ -118,10 +124,24 @@ export function useManualEntry(
   // Referências da categorização (020 · #200): a query devolve um Result → desembrulha p/ as opções.
   const referencesResult = useQuery(referencesQueryOptions()).data
   const references = referencesResult?.ok === true ? referencesResult.value : null
-  const categoryOptions: readonly ManualEntryOption[] =
-    references?.categories.map((c) => ({ value: c.id, label: relabelReconCategory(c.name) })) ?? []
+  // Cascata Centro → Categoria → Subcategoria (EPIC #150). Categoria filtra pelo centro (placeholder
+  // #341 até o backend ligar categoria→centro); Subcategoria filtra pela categoria via `parentId` (real).
   const costCenterOptions: readonly ManualEntryOption[] =
     references?.costCenters.map((c) => ({ value: c.id, label: `${c.code} — ${c.name}` })) ?? []
+  const categoryOptions: readonly ManualEntryOption[] =
+    references !== null
+      ? categoriesForCostCenter(references, costCenterRef).map((c) => ({
+          value: c.id,
+          label: relabelReconCategory(c.name),
+        }))
+      : []
+  const subcategoryOptions: readonly ManualEntryOption[] =
+    references !== null
+      ? subcategoriesOf(references, categoryRef).map((c) => ({
+          value: c.id,
+          label: relabelReconCategory(c.name),
+        }))
+      : []
   // #143: contas-cedente ATIVAS p/ destino da transferência/aplicação/resgate — exclui a própria origem
   // (o backend rejeita destino == origem). Reusa `listAccounts` (#138), as MESMAS contas do grid.
   const accountOptions =
@@ -169,6 +189,7 @@ export function useManualEntry(
         setSupplierRef('')
         setProgramRef('')
         setCategoryRef('')
+        setSubcategoryRef('')
         setCostCenterRef('')
         // Baixa manual concilia a transação → invalida o namespace (lista do período + contadores).
         void qc.invalidateQueries({ queryKey: ['financial', 'reconciliation'] })
@@ -207,10 +228,12 @@ export function useManualEntry(
     supplierRef,
     programRef,
     categoryRef,
+    subcategoryRef,
     costCenterRef,
     partnerOptions,
     programOptions,
     categoryOptions,
+    subcategoryOptions,
     costCenterOptions,
     accountOptions,
     setType: (tp) => {
@@ -230,9 +253,15 @@ export function useManualEntry(
     },
     setCategoryRef: (v) => {
       setCategoryRef(v)
+      setSubcategoryRef('') // trocar a categoria zera a subcategoria (cascata)
+    },
+    setSubcategoryRef: (v) => {
+      setSubcategoryRef(v)
     },
     setCostCenterRef: (v) => {
       setCostCenterRef(v)
+      setCategoryRef('') // trocar o centro zera categoria + subcategoria (cascata)
+      setSubcategoryRef('')
     },
     reset: () => {
       setType(null)
@@ -241,6 +270,7 @@ export function useManualEntry(
       setSupplierRef('')
       setProgramRef('')
       setCategoryRef('')
+      setSubcategoryRef('')
       setCostCenterRef('')
       setErrorTag(null)
     },
@@ -250,6 +280,9 @@ export function useManualEntry(
       // nome da conta de destino como `productLabel` (satisfaz a regra) + o `destinationAccount` real.
       const isProductRealloc = type === 'Investment' || type === 'Redemption'
       const destLabel = accountOptions.find((o) => o.value === destinationAccount.trim())?.label
+      // Envia a FOLHA da cascata como categoryRef: subcategoria (se escolhida) senão a categoria. Ambas são
+      // categorias válidas p/ o backend (subcategoria = categoria com parentId). TODO #341: enviar refs separadas.
+      const leafCategory = subcategoryRef !== '' ? subcategoryRef : categoryRef
       mut.mutate({
         transactionId: selectedTx.id,
         type,
@@ -259,7 +292,7 @@ export function useManualEntry(
         productLabel: isProductRealloc && destLabel !== undefined ? destLabel.slice(0, 120) : undefined,
         supplierRef: supplierRef === '' ? undefined : supplierRef,
         programRef: programRef === '' ? undefined : programRef,
-        categoryRef: categoryRef === '' ? undefined : categoryRef,
+        categoryRef: leafCategory === '' ? undefined : leafCategory,
         costCenterRef: costCenterRef === '' ? undefined : costCenterRef,
       })
     },

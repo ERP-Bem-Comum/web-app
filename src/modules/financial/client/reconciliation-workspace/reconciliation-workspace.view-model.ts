@@ -7,6 +7,8 @@
 import type {
   AccountStatementPeriod,
   AccountType,
+  FinancialCategory,
+  FinancialReferences,
   ManualEntryType,
   Movement,
   PaidPayable,
@@ -227,6 +229,36 @@ const RECON_CATEGORY_RELABEL: Readonly<Record<string, string>> = {
   Aluguel: 'Aplicação',
 }
 export const relabelReconCategory = (name: string): string => RECON_CATEGORY_RELABEL[name] ?? name
+
+// ── Cascata Centro de Custo → Categoria → Subcategoria (US · legado; ver EPIC web-app#150) ──────────
+/** Categorias de TOPO (sem `parentId`). */
+export const topLevelCategories = (refs: FinancialReferences): readonly FinancialCategory[] =>
+  refs.categories.filter((c) => c.parentId === null)
+
+/** Subcategorias de uma categoria (`parentId` === id da categoria). Vazio se nenhuma categoria escolhida. */
+export const subcategoriesOf = (
+  refs: FinancialReferences,
+  categoryId: string,
+): readonly FinancialCategory[] =>
+  categoryId === '' ? [] : refs.categories.filter((c) => c.parentId === categoryId)
+
+/**
+ * ⚠️ PLACEHOLDER (TODO core-api#341): as referências AINDA não ligam categoria→centro (categoria não tem
+ * `costCenterId`). Só p/ validar a UI da cascata, agrupamos as categorias de topo por centro de forma
+ * DETERMINÍSTICA (round-robin por ordem). Quando o backend expuser `costCenterId`, troca-se por um filtro
+ * real e este helper some. `id` (UUID) segue intacto p/ o backend.
+ */
+export const categoriesForCostCenter = (
+  refs: FinancialReferences,
+  costCenterId: string,
+): readonly FinancialCategory[] => {
+  if (costCenterId === '') return []
+  const idx = refs.costCenters.findIndex((cc) => cc.id === costCenterId)
+  if (idx < 0) return []
+  const tops = topLevelCategories(refs)
+  const n = refs.costCenters.length
+  return n <= 1 ? tops : tops.filter((_, i) => i % n === idx)
+}
 
 // ── Sugestão de conciliação em LOTE por padrão (front) ──────────────────────────
 /** Normaliza a descrição (payeeName) p/ comparar transações "do mesmo tipo": case/espaço-insensível. */
@@ -513,7 +545,7 @@ export const ofxAccountLabel = (ofx: OfxAccount): string => {
 }
 
 /** Classe do badge de tipo (cor) a partir do `entryType` livre. */
-export type ExtratoKind = 'pix' | 'ted' | 'doc' | 'tar' | 'apl' | 'default'
+export type ExtratoKind = 'pix' | 'ted' | 'doc' | 'tar' | 'apl' | 'entrada' | 'saida' | 'default'
 export const extratoKindClass = (entryType: string): ExtratoKind => {
   const e = entryType.toUpperCase()
   if (e.includes('PIX')) return 'pix'
@@ -522,6 +554,26 @@ export const extratoKindClass = (entryType: string): ExtratoKind => {
   if (e.includes('TAR') || e.includes('FEE')) return 'tar'
   if (e.includes('APL') || e.includes('INVEST') || e.includes('RESG') || e.includes('REDEM')) return 'apl'
   return 'default'
+}
+
+/**
+ * Rótulo do TIPO no extrato. Tipo específico reconhecido (PIX/TED/DOC/Tarifa/Aplicação) → mostra o próprio
+ * `entryType`. Genérico ("Other"/vazio — comum no seed e quando o OFX não traz TRNTYPE) → cai na DIREÇÃO do
+ * movimento (Entrada/Saída). Devolve TAG i18n OU `null` (null = a view mostra o `entryType` cru).
+ * 🔁 O tipo "de verdade" (PIX/TED/Boleto…) depende do parser do OFX expor o TRNTYPE (backend).
+ */
+export const extratoTypeTag = (tx: StatementTransaction): string | null =>
+  extratoKindClass(tx.entryType) === 'default'
+    ? tx.movement === 'Credit'
+      ? 'financial.recon.ext.type.entrada'
+      : 'financial.recon.ext.type.saida'
+    : null
+
+/** Cor do badge de TIPO: tipo específico mantém sua cor; genérico usa a NATUREZA (Entrada=verde/Saída=vermelho). */
+export const extratoBadgeKind = (tx: StatementTransaction): ExtratoKind => {
+  const kind = extratoKindClass(tx.entryType)
+  if (kind !== 'default') return kind
+  return tx.movement === 'Credit' ? 'entrada' : 'saida'
 }
 
 /** Grupo de dia no extrato: cabeçalho formatado, totais do dia e saldo de fechamento (1ª linha). */
