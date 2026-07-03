@@ -1,5 +1,5 @@
 import { useNavigate, getRouteApi } from '@tanstack/react-router'
-import { useState, type ReactNode } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
@@ -11,14 +11,22 @@ import {
   FILTER_YEARS,
   PLANEJAMENTO_GRAND_TOTAL_LABEL,
 } from '#modules/budget-plans/client/planejamento/planejamento-list.binding.ts'
-import type { PlanAction } from '#modules/budget-plans/client/planejamento/planejamento-list.view-model.ts'
+import type {
+  PlanRow,
+  PlanAction,
+} from '#modules/budget-plans/client/planejamento/planejamento-list.view-model.ts'
 import { useCreatePlan, IMPORT_YEARS } from '#modules/budget-plans/client/planejamento/create-plan.binding.ts'
 import type { CreatePlanError } from '#modules/budget-plans/client/planejamento/create-plan.view-model.ts'
+import {
+  confirmSpecFor,
+  type ConfirmableAction,
+} from '#modules/budget-plans/client/planejamento/plan-actions.view-model.ts'
 
 import { PlanFilters } from '../components/plan-filters.component.tsx'
 import { PlanTreeTable } from '../components/plan-tree-table.component.tsx'
 import { PlanPaginator } from '../components/plan-paginator.component.tsx'
 import { CreatePlanModal } from '../components/create-plan-modal.component.tsx'
+import { ConfirmActionModal, PlanFeedbackToast } from '../components/confirm-action-modal.component.tsx'
 import { screen, card, titleIcon } from './planejamento-list.css.ts'
 
 const t = createTranslator(ptBR)
@@ -47,6 +55,20 @@ const actionKey = (action: PlanAction): string => {
   }
 }
 
+/** Nome de exibição de uma linha (busca recursiva na árvore de planos/versões). */
+const findRowName = (rows: readonly PlanRow[], id: number): string | null => {
+  for (const r of rows) {
+    if (r.id === id) return r.displayName
+    const inChild = findRowName(r.children, id)
+    if (inChild !== null) return inChild
+  }
+  return null
+}
+
+type PendingConfirm = Readonly<{ action: ConfirmableAction; id: number; name: string }>
+
+const TOAST_MS = 3500
+
 export function PlanejamentoListPage(): ReactNode {
   const search = routeApi.useSearch()
   const navigate = useNavigate()
@@ -59,6 +81,36 @@ export function PlanejamentoListPage(): ReactNode {
   const closeCreate = (): void => {
     createPlan.reset()
     setCreateOpen(false)
+  }
+
+  // Confirmações do menu "…" + toast de sucesso (§2.5). Front-first: a execução real depende do #113.
+  const [confirm, setConfirm] = useState<PendingConfirm | null>(null)
+  const [scenaryName, setScenaryName] = useState('')
+  const [toastMsg, setToastMsg] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (toastMsg === null) return
+    const handle = setTimeout(() => {
+      setToastMsg(null)
+    }, TOAST_MS)
+    return () => {
+      clearTimeout(handle)
+    }
+  }, [toastMsg])
+
+  const onAction = (id: number, action: PlanAction): void => {
+    const spec = confirmSpecFor(action)
+    if (spec === null) return // outras ações (compartilhar, CSV, planejado×realizado) são outras telas
+    if (spec.needsName) setScenaryName('')
+    setConfirm({ action: spec.action, id, name: findRowName(state.rows, id) ?? '' })
+  }
+
+  const confirmSpec = confirm !== null ? confirmSpecFor(confirm.action) : null
+
+  const runConfirm = (): void => {
+    if (confirm === null) return
+    setToastMsg(t(`budget-plans.confirm.${confirm.action}.success`))
+    setConfirm(null)
   }
 
   const emptyLabel = state.filtered ? t('budget-plans.list.noResults') : t('budget-plans.list.empty')
@@ -154,9 +206,7 @@ export function PlanejamentoListPage(): ReactNode {
               params: { id: String(id) },
             })
           }}
-          onAction={() => {
-            // TODO(#113): executar a ação (aprovar/excluir/calibração/cenário) — depende das mutations do BFF.
-          }}
+          onAction={onAction}
         />
 
         <PlanPaginator
@@ -205,6 +255,34 @@ export function PlanejamentoListPage(): ReactNode {
         onImportFromYear={createPlan.setImportFromYear}
         onSubmit={createPlan.submit}
       />
+
+      <ConfirmActionModal
+        open={confirm !== null}
+        title={confirm !== null ? t(`budget-plans.confirm.${confirm.action}.title`) : ''}
+        message={
+          confirm !== null
+            ? t(`budget-plans.confirm.${confirm.action}.body`).replace('{nome}', confirm.name)
+            : ''
+        }
+        confirmLabel={confirm !== null ? t(`budget-plans.confirm.${confirm.action}.confirm`) : ''}
+        cancelLabel={t('budget-plans.confirm.cancel')}
+        danger={confirmSpec?.danger ?? false}
+        nameField={
+          confirmSpec?.needsName === true
+            ? {
+                label: t('budget-plans.confirm.create-scenery.nameLabel'),
+                value: scenaryName,
+                onChange: setScenaryName,
+              }
+            : undefined
+        }
+        onConfirm={runConfirm}
+        onClose={() => {
+          setConfirm(null)
+        }}
+      />
+
+      <PlanFeedbackToast message={toastMsg} />
     </div>
   )
 }

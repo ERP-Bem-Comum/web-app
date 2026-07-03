@@ -31,19 +31,34 @@ independe do backend, com **dados placeholder** (const, sem mocks/fixtures) e a�
 - [x] **S2.1 · Detalhe (Consolidado por Mês + Por Rede)** ✅ (placeholder) — `/planejamento/detalhes/$id`: cabeçalho
       (plano + status + Total), toggles de visão, matriz Centro→Categoria→Subcategoria (linhas expansíveis + TOTAL),
       navegação de semestre (Por Mês) e colunas por rede (Por Rede). `MatrixView` único + testes node/DOM.
-- [ ] **S2.2 · Toggle "Centro de Custo" → modal de gestão** 🟩 — árvore de centros/categorias/subcategorias +
-      forms Adicionar/Editar (com `Tipo` Institucional/Rede e `Tipo de lançamento`). Persistência = `TODO(#113)`.
-- [ ] **S2.3 · Modal "Adicionar Orçamento" (por Rede)** 🟩 — Estado (+ Município se municipal), **exatamente 1 parceiro**,
-      bloquear parceiro duplicado (validação client). Submit = `TODO(#113)`.
-- [ ] **S2.4 · Edição de Orçamento (`/…/orcamento/$oid`) + modal "Calculando Gastos"** 🟩 **(alto valor — preview pronto)**
-      — grid editável por subcategoria/mês + os **4 tipos** (Pessoal/IPCA/CAED/Logística) com **preview do valor ao vivo**
-      (reusa `calc/preview.ts`, já testado). Regra de edição por status (Aprovado = read-only via `deriveEditable`). Save = `TODO(#113)`.
+- [x] **S2.2 · Toggle "Centro de Custo" → modal de gestão** ✅ — modal "Centros de Custo - {Programa}" (dropdown de
+      centro + "Adicionar centro"), árvore de 3 níveis com ações por linha (+ Categoria/+ Sub · Editar · Desativar) e
+      painel de formulário por modo: Centro (Nome + Tipo A PAGAR/A RECEBER), Categoria (Nome), Subcategoria (Nome +
+      `Tipo` Institucional/Rede + `Tipo de lançamento` = 4 modelos canônicos). Binding + view-model puro + testes. Persistência = `TODO(#113)`.
+- [x] **S2.3 · Modal "Adicionar Orçamento" (por Rede)** ✅ — dropdown Estado + Adicionar; bloqueia estado já existente
+      ("Já existe um orçamento com essas informações."). view-model puro + testes. Submit = `TODO(#113)`.
+- [~] **S2.4 · Edição de Orçamento (`/…/orcamento/$oid`) + modal "Calculando Gastos"** 🟩 **(alto valor — preview pronto)**
+  — grid editável por subcategoria/mês + os **4 tipos** (Pessoal/IPCA/CAED/Logística) com **preview do valor ao vivo**
+  (reusa `calc/preview.ts`, já testado). Regra de edição por status (Aprovado = read-only via `deriveEditable`). Save = `TODO(#113)`.
+  - [x] **S2.4b · Base "Calculando Gastos"** ✅ — modal full-screen Centro (abas) → Categoria → Subcategoria → 12 meses;
+        lápis abre o form "Configuração" (Total reajustado + IPCA + Aplicar aos meses); lixeira zera. Binding real + testes.
+  - [x] **S2.4c · Form de Pessoal + fluxo lápis→form→descarte** ✅ — centro **Pessoal**: lista de meses continua como
+        visão padrão; o **lápis** abre o FORMULÁRIO detalhado (Tipo/Remuneração/Encargos %/Benefícios/Provisões/Custo Total,
+        `computePessoal` puro e testado). **Cancelar/Descartar** dispara **modal de confirmação** de descarte; trocar de
+        aba/categoria/subcategoria fecha o form aberto. `Salvar` aplica o Custo Mensal aos meses marcados (persistência `TODO(#113)`).
+  - [x] **S2.4d · Demais tipos de preview (IPCA/CAED/Logística)** ✅ — o lápis roteia o form pelo **Tipo de
+        lançamento** da subcategoria (`releaseType` no model/placeholder): Pessoal→form detalhado, IPCA→form
+        "Configuração", **CAED** (matrículas × custo unitário) e **Logística** (viagem: passagem + hospedagem/
+        despesas·diárias, com cards-resumo) reusando `previewCaed`/`previewLogisticsExpenses` (domínio, testados).
+        view-models puros + node:test + roteamento coberto no `calculando-gastos.spec`.
 - [ ] **S2.5 · Insights** 🔴 — histórico 5 anos, planejado × realizado (Realizado = CONCILIADO do financeiro), média por rede.
 
 ## Fase 3 — US3 Ciclo de vida
 
-- [ ] **S3.1 · Confirmações/toasts** 🟩 (visual) — modais de Aprovar (3 passos + "Calculando…"), Excluir (cascata, botão
-      vermelho), Criar cenário (nome), Iniciar Calibração (auto-nome `X.0`), + mensagem de RBAC negado. Execução real = 🔴 (#113).
+- [~] **S3.1 · Confirmações/toasts** 🟩 (visual) — menu "…" da lista ligado ao `ConfirmActionModal`: **Aprovar**,
+  **Excluir** (botão vermelho + aviso de cascata), **Iniciar Calibração**, **Criar Cenário** (campo Nome) + **toast**
+  de sucesso transitório. view-model puro (`confirmSpecFor`) + testes. Execução real (mutations) = 🔴 (#113); mensagem
+  de RBAC negado (`budget-plans.confirm.denied`) pronta para quando a permissão for verificada no BFF.
 
 ## Fase 4 — US4 Consolidado ABC (`/consolidado`)
 

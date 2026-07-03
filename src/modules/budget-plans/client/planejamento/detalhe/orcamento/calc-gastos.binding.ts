@@ -11,6 +11,7 @@ import {
   sumMonths,
   MONTH_NAMES,
   type CalcCentro,
+  type ReleaseType,
 } from './calc-gastos.view-model.ts'
 import type { PlanDetail } from '#modules/budget-plans/client/data/model/plan-detail.model.ts'
 
@@ -25,6 +26,8 @@ export type CalcGastosBinding = Readonly<{
   despesas: readonly CalcDespesa[]
   totalLabel: string
   hasData: boolean
+  /** Modelo de cálculo da subcategoria ativa (roteia o form do lápis). Default IPCA (Tipo B). */
+  activeReleaseType: ReleaseType
   setCentro: (id: number) => void
   setCategoria: (id: number) => void
   setSub: (id: number) => void
@@ -98,6 +101,7 @@ export function useCalcGastos(detail: PlanDetail | null): CalcGastosBinding {
     })),
     totalLabel: formatCentsBRL(sumMonths(activeMonths)),
     hasData: activeSub !== null,
+    activeReleaseType: activeSub?.releaseType ?? 'IPCA',
     setCentro: goCentro,
     setCategoria: goCategoria,
     setSub: setSubId,
