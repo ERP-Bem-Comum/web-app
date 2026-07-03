@@ -252,7 +252,7 @@ export const ptBR: Catalog = {
   'contracts.create.field.periodEnd': 'Fim',
   'contracts.create.field.program': 'Programa',
   'contracts.create.field.budgetPlan': 'Plano Orçamentário',
-  'contracts.create.field.categorizacao': 'Categorização',
+  'contracts.create.field.categorizacao': 'Categoria',
   'contracts.create.field.categorizacao.evaluation': 'Avaliação',
   'contracts.create.field.categorizacao.operational': 'Operacional',
   'contracts.create.field.categorizacao.process': 'Processo',
@@ -260,6 +260,9 @@ export const ptBR: Catalog = {
   'contracts.create.field.centroDeCusto.rh': 'RH',
   'contracts.create.field.centroDeCusto.services': 'Serviços Gerais',
   'contracts.create.field.centroDeCusto.events': 'Eventos',
+  // Subcategoria — placeholder visual (front-first); persistência aguarda campo no contrato + core-api#341.
+  'contracts.create.field.subcategoria': 'Subcategoria',
+  'contracts.create.field.subcategoria.placeholder': 'Selecione…',
   'contracts.create.field.supplier': 'Fornecedor',
   'contracts.create.field.financier': 'Financiador',
   'contracts.create.field.collaborator': 'Colaborador',

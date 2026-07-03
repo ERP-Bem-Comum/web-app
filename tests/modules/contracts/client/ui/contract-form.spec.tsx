@@ -108,7 +108,7 @@ describe('ContractForm', () => {
     expect(screen.getByText('Valor original informado')).toBeTruthy()
     expect(screen.getByText('Início e fim da vigência')).toBeTruthy()
     expect(screen.getByText('Programa e plano orçamentário')).toBeTruthy()
-    expect(screen.getByText('Categorização preenchida')).toBeTruthy()
+    expect(screen.getByText('Categoria preenchida')).toBeTruthy()
     expect(screen.getByText('Centro de custo selecionado')).toBeTruthy()
     expect(screen.getByText('Documento principal anexado')).toBeTruthy()
   })
