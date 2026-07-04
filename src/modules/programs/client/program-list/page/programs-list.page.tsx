@@ -3,55 +3,33 @@ import { getRouteApi, useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
+import { PlusIcon, initialsFrom } from '#shared/ui/index.ts'
 import {
-  Badge,
-  Button,
-  DataTable,
-  PageHeader,
-  AvatarLabel,
-  initialsFrom,
-  type Column,
-  type DataTableState,
-} from '#shared/ui/index.ts'
+  BrandDataTable,
+  BrandChip,
+  BrandNameCell,
+  type BrandColumn,
+  type BrandTableState,
+} from '#shared/ui/brand/brand-data-table.component.tsx'
+import { muted } from '#shared/ui/brand/brand-data-table.css.ts'
+import { BrandPaginator } from '#shared/ui/brand/brand-paginator.component.tsx'
+import {
+  screen,
+  header,
+  headText,
+  headTitle,
+  headActions,
+  primaryButton,
+} from '#shared/ui/brand/brand-page.css.ts'
 
 import { useProgramsListBinding } from '../programs-list.binding.ts'
 import { totalPages, type ProgramsListState, type ProgramRow } from '../programs-list.view-model.ts'
 import { ProgramsFilters } from '../components/programs-filters.component.tsx'
-import { ProgramsPaginator } from '../components/programs-paginator.component.tsx'
-import { screen, logoCell, logoPlaceholder, logoImg } from './programs-list.css.ts'
 
 const t = createTranslator(ptBR)
 const routeApi = getRouteApi('/_authenticated/programas/')
 
-function LogoPlaceholder(): ReactNode {
-  return (
-    <span className={logoPlaceholder} aria-hidden="true">
-      <svg
-        width="22"
-        height="22"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <rect x="3" y="3" width="18" height="18" rx="2" />
-        <circle cx="8.5" cy="8.5" r="1.5" />
-        <path d="m21 15-5-5L5 21" />
-      </svg>
-    </span>
-  )
-}
-
-// Célula do logo: imagem real (data URL) quando o programa tem logo; senão o placeholder.
-function LogoCell({ url, name }: Readonly<{ url: string | null; name: string }>): ReactNode {
-  return (
-    <span className={logoCell}>
-      {url !== null ? <img className={logoImg} src={url} alt={name} /> : <LogoPlaceholder />}
-    </span>
-  )
-}
+const GRID_TEMPLATE = 'minmax(220px,1.6fr) .8fr minmax(200px,1.6fr) 1fr'
 
 export function ProgramsListPage(): ReactNode {
   const search = routeApi.useSearch()
@@ -60,30 +38,31 @@ export function ProgramsListPage(): ReactNode {
 
   const hasFilters = (search.search ?? '') !== ''
 
-  const columns: readonly Column<ProgramRow>[] = [
+  const columns: readonly BrandColumn<ProgramRow>[] = [
     {
-      key: 'logo',
-      header: t('programs.list.columns.logo'),
-      cell: (r) => <LogoCell url={logos.get(r.id) ?? null} name={r.name} />,
-    },
-    {
+      // Avatar = LOGO real do programa (placeholder com iniciais quando não há logo).
       key: 'name',
       header: t('programs.list.columns.name'),
-      cell: (r) => <AvatarLabel variant="neutral" initials={initialsFrom(r.name)} text={r.name} />,
+      cell: (r) => (
+        <BrandNameCell name={r.name} initials={initialsFrom(r.name)} logoUrl={logos.get(r.id) ?? null} />
+      ),
     },
     { key: 'sigla', header: t('programs.list.columns.sigla'), cell: (r) => r.sigla },
     {
       key: 'characteristics',
       header: t('programs.list.columns.characteristics'),
-      cell: (r) => (r.generalCharacteristics !== '' ? r.generalCharacteristics : '—'),
+      cell: (r) => (
+        <span className={muted}>{r.generalCharacteristics !== '' ? r.generalCharacteristics : '—'}</span>
+      ),
     },
     {
       key: 'status',
       header: t('programs.list.columns.status'),
       cell: (r) => (
-        <Badge variant={r.status === 'ATIVO' ? 'active' : 'terminated'} uppercase size="sm">
-          {t(r.status === 'ATIVO' ? 'programs.status.active' : 'programs.status.inactive')}
-        </Badge>
+        <BrandChip
+          tone={r.status === 'ATIVO' ? 'ok' : 'danger'}
+          label={t(r.status === 'ATIVO' ? 'programs.status.active' : 'programs.status.inactive')}
+        />
       ),
     },
   ]
@@ -93,15 +72,22 @@ export function ProgramsListPage(): ReactNode {
 
   return (
     <div className={screen}>
-      <PageHeader
-        title={t('programs.list.title')}
-        actions={
-          // Botão sempre visível (RBAC `program:write` é cobrado pelo backend no submit → 403). O seed do
-          // admin ainda não concede `program:*`; gatear aqui esconderia a ação. TODO(backend): reintroduzir
-          // o gate por `canCreate` quando o seed conceder a permissão.
-          <Button onClick={() => void navigate({ to: '/programas/criar' })}>{t('programs.list.new')}</Button>
-        }
-      />
+      <div className={header}>
+        <div className={headText}>
+          <h1 className={headTitle}>{t('programs.list.title')}</h1>
+        </div>
+        <div className={headActions}>
+          {/* RBAC `program:write` é cobrado pelo backend no submit (403); o seed ainda não concede. */}
+          <button
+            type="button"
+            className={primaryButton}
+            onClick={() => void navigate({ to: '/programas/criar' })}
+          >
+            <PlusIcon size={16} />
+            {t('programs.list.new')}
+          </button>
+        </div>
+      </div>
 
       <ProgramsFilters
         searchValue={search.search ?? ''}
@@ -115,17 +101,18 @@ export function ProgramsListPage(): ReactNode {
         }
       />
 
-      <DataTable<ProgramRow>
+      <BrandDataTable<ProgramRow>
         columns={columns}
+        gridTemplate={GRID_TEMPLATE}
         state={toTableState(state)}
         rowKey={(r) => r.id}
+        caption={t('programs.list.title')}
         emptyLabel={hasFilters ? t('programs.list.no-results') : t('programs.list.empty')}
         loadingLabel={t('programs.list.loading')}
-        caption={t('programs.list.title')}
         onRowClick={(r) => void navigate({ to: '/programas/$id', params: { id: r.id } })}
       />
 
-      <ProgramsPaginator
+      <BrandPaginator
         page={pageNum}
         totalPages={pages}
         perPage={search.limit}
@@ -133,6 +120,7 @@ export function ProgramsListPage(): ReactNode {
           previous: t('programs.paginator.previous'),
           next: t('programs.paginator.next'),
           page: t('programs.paginator.page'),
+          of: t('programs.paginator.of'),
           perPage: t('programs.paginator.perPage'),
         }}
         onPrev={() => void navigate({ to: '.', search: (p) => ({ ...p, page: Math.max(1, pageNum - 1) }) })}
@@ -145,7 +133,7 @@ export function ProgramsListPage(): ReactNode {
   )
 }
 
-function toTableState(state: ProgramsListState): DataTableState<ProgramRow> {
+function toTableState(state: ProgramsListState): BrandTableState<ProgramRow> {
   switch (state.status) {
     case 'loading':
       return { status: 'loading' }

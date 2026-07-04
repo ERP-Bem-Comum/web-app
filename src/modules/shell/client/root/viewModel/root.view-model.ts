@@ -119,7 +119,11 @@ export const rootViewModel = {
     path === '/parceiros/financiadores' ||
     path === '/parceiros/financiadores/' ||
     path === '/parceiros/atos' ||
-    path === '/parceiros/atos/',
+    path === '/parceiros/atos/' ||
+    path === '/programas' ||
+    path === '/programas/' ||
+    path === '/usuarios' ||
+    path === '/usuarios/',
 
   /**
    * RBAC: remove seções/subitens cujo `requiredPermission` não está em `permissions`. Uma seção de
