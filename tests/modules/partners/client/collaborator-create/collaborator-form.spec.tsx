@@ -40,6 +40,7 @@ describe('CollaboratorForm', () => {
         running={false}
         errorTag={null}
         onCancel={() => undefined}
+        onBack={() => undefined}
       />,
     )
     expect(screen.getByLabelText('Nome Completo')).toBeTruthy()
@@ -58,6 +59,7 @@ describe('CollaboratorForm', () => {
         running={false}
         errorTag={null}
         onCancel={() => undefined}
+        onBack={() => undefined}
       />,
     )
     // Área: PARC/DDI/DCE/EPV (+ placeholder) ; Vínculo: CLT/PJ (+ placeholder)
@@ -74,6 +76,7 @@ describe('CollaboratorForm', () => {
         running={false}
         errorTag={null}
         onCancel={() => undefined}
+        onBack={() => undefined}
       />,
     )
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }))
@@ -91,6 +94,7 @@ describe('CollaboratorForm', () => {
         running={false}
         errorTag={null}
         onCancel={() => undefined}
+        onBack={() => undefined}
       />,
     )
     const pixType = screen.getByLabelText('Tipo de chave PIX')
@@ -106,6 +110,7 @@ describe('CollaboratorForm', () => {
         running={false}
         errorTag={'partners.error.server'}
         onCancel={() => undefined}
+        onBack={() => undefined}
       />,
     )
     expect(screen.getByRole('alert')).toBeTruthy()

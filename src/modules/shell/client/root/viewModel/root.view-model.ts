@@ -110,10 +110,10 @@ export const rootViewModel = {
   fullBleedContent: (path: string): boolean =>
     path.startsWith('/financeiro/conciliacao/') ||
     isPrefixPath(path, '/dashboard') ||
-    // Grids da identidade "brand": fundo cinza próprio encosta nas bordas, sem a margem branca do shell.
-    // Só as LISTAS (não /criar nem /$id, que mantêm o padding do shell).
-    path === '/parceiros/colaboradores' ||
-    path === '/parceiros/colaboradores/' ||
+    // Colaboradores: a identidade "brand" cobre TODA a subárvore — lista (grid), Novo Colaborador e o
+    // detalhe do colaborador (formulário "brand" full-bleed com página cinza + barra de ações fixa).
+    isPrefixPath(path, '/parceiros/colaboradores') ||
+    // Demais grids "brand": só as LISTAS (não /criar nem /$id, que mantêm o padding do shell).
     path === '/parceiros/fornecedores' ||
     path === '/parceiros/fornecedores/' ||
     path === '/parceiros/financiadores' ||

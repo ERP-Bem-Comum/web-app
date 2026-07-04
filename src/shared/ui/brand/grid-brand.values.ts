@@ -15,8 +15,11 @@ export const brand = {
     ink400: '#98a2b3',
     line: '#e6e9ef',
     line2: '#eef1f5',
+    lineStrong: '#d3d9e3',
     surface: '#ffffff',
     surfaceAlt: '#f7f8fa',
+    // Asterisco de campo obrigatório (vermelho) nos formulários "brand".
+    reqStar: '#c0392b',
     rowHover: '#f4f7fc',
     pageBg: '#f2f4f7',
     // Chip "ok" (Ativo — verde).
@@ -51,6 +54,7 @@ export const brand = {
   radius: {
     xs: '6px',
     sm: '8px',
+    iconSm: '9px',
     icon: '10px',
     md: '12px',
     lg: '16px',
@@ -60,6 +64,8 @@ export const brand = {
     card: '0 1px 2px rgba(16,24,40,.04),0 1px 3px rgba(16,24,40,.06)',
     btn: '0 1px 2px rgba(16,24,40,.10)',
     focus: '0 0 0 3px rgba(57,100,150,0.14)',
+    // Barra de ações fixa dos formulários "brand" (sombra para cima).
+    actionbar: '0 -1px 3px rgba(16,24,40,.05)',
   },
   text: {
     thead: '11.5px',
@@ -75,6 +81,9 @@ export const brand = {
     panelSub: '12.5px',
     dd: '13px',
     appliedChip: '12.5px',
+    // Formulário "brand".
+    sectionH2: '15px',
+    hint: '12px',
   },
   weight: {
     medium: '500',
@@ -114,6 +123,10 @@ export const brand = {
     iconBox: '40px',
     chipH: '32px',
     chipRemove: '20px',
+    // Formulário "brand": campo (input/select) 42px; caixa do ícone da seção 32px; botão voltar 40px.
+    field: '42px',
+    sectionIconBox: '32px',
+    backBtn: '40px',
   },
   ease: '.12s',
 } as const
