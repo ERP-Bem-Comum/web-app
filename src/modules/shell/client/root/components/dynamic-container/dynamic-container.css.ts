@@ -29,10 +29,25 @@ export const content = style({
   overflow: 'hidden',
 })
 
+// Legenda BEGE do header do shell — SÓ é renderizada para os grids que têm subtítulo no shell
+// (Contas a Pagar e Contas Bancárias, únicas rotas em PAGE_SUBTITLES). Espelha a legenda do grid de
+// Contratos (institutional.ink5), mantendo a identidade de "papel" dos grids financeiros. Não usa o
+// `headSubtitle` compartilhado (que é cinza-azulado e serve ~20 telas) para não afetá-las.
+export const pageSubtitleBeige = style({
+  margin: 0,
+  fontFamily: vars.font.family.heading,
+  fontSize: '0.84375rem',
+  color: vars.color.institutional.ink5,
+  lineHeight: 1.4,
+})
+
 // Faixa do header do shell (título + legenda "brand" dentro). flex-shrink 0 p/ não encolher no flex-column.
+// paddingInline = md: casa com o recuo interno das barras/tabela dos grids financeiros (único caso em que
+// o shell desenha header) → título e tabela ALINHADOS e com folga para a sombra de profundidade à esquerda.
 export const pageHeader = style({
   display: 'flex',
   alignItems: 'flex-start',
   marginBlockEnd: vars.space.lg,
+  paddingInline: vars.space.md,
   flexShrink: 0,
 })

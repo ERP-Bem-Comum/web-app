@@ -109,6 +109,10 @@ export const recon = {
   shadow: {
     menu: '0 1px 2px rgba(15,23,42,0.04), 0 4px 8px -2px rgba(15,23,42,0.06), 0 16px 32px -8px rgba(15,23,42,0.12)',
     card: '0 1px 2px rgba(15,23,42,0.03)',
+    // Profundidade sobre fundo branco (paridade com o grid de Contratos): anel fino (0-offset) dando relevo
+    // em TODAS as bordas (topo/esquerda inclusive) + queda direcional que levanta o cartão.
+    cardDepth:
+      '0 0 0 1px rgba(16,24,40,.04),0 2px 5px -1px rgba(16,24,40,.10),0 8px 20px -4px rgba(16,24,40,.14)',
     toast: '0 8px 24px rgba(0,0,0,0.18)',
   },
   ease: 'cubic-bezier(.2, .7, .2, 1)',

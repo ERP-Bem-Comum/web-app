@@ -4,7 +4,7 @@
  */
 import type { ReactNode } from 'react'
 
-import { headText, headTitle, headSubtitle } from '#shared/ui/brand/brand-page.css.ts'
+import { headText, headTitle } from '#shared/ui/brand/brand-page.css.ts'
 import { SidebarProvider } from '#modules/shell/client/root/sidebar.context.ts'
 import * as s from './dynamic-container.css.ts'
 
@@ -34,7 +34,7 @@ export function DynamicContainer({
         <header className={s.pageHeader}>
           <div className={headText}>
             <h1 className={headTitle}>{pageTitle}</h1>
-            {pageSubtitle !== undefined ? <p className={headSubtitle}>{pageSubtitle}</p> : null}
+            {pageSubtitle !== undefined ? <p className={s.pageSubtitleBeige}>{pageSubtitle}</p> : null}
           </div>
         </header>
       )}
