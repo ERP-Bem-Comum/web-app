@@ -20,7 +20,10 @@ import {
   row,
   childRow,
   nameCell,
+  indent,
   connector,
+  connectorFirst,
+  connectorLast,
   connectorDot,
   chevronButton,
   nameText,
@@ -63,7 +66,7 @@ export function OrcamentoGrid(props: OrcamentoGridProps): ReactNode {
     })
   }
 
-  const renderRow = (r: MatrixRow): ReactNode => {
+  const renderRow = (r: MatrixRow, isFirstChild = false, isLastChild = false): ReactNode => {
     const hasChildren = r.children.length > 0
     const isOpen = expanded.has(r.id)
     const isChild = r.depth > 0
@@ -84,9 +87,19 @@ export function OrcamentoGrid(props: OrcamentoGridProps): ReactNode {
           <td>
             <div className={nameCell}>
               {isChild ? (
-                <span className={connector} aria-hidden="true">
-                  <span className={connectorDot} />
-                </span>
+                <>
+                  {/* Indent = 1 coluna do chevron por nível → o conteúdo (nome+valor) fica à direita do
+                      conector (alinhado ao conteúdo do pai), sem sobrepor a linha/nós da árvore. */}
+                  {Array.from({ length: r.depth }, (_, i) => (
+                    <span key={i} className={indent} aria-hidden="true" />
+                  ))}
+                  <span
+                    className={`${connector} ${isFirstChild ? connectorFirst : ''} ${isLastChild ? connectorLast : ''}`}
+                    aria-hidden="true"
+                  >
+                    <span className={connectorDot} />
+                  </span>
+                </>
               ) : null}
               {hasChildren ? (
                 <button
@@ -129,7 +142,9 @@ export function OrcamentoGrid(props: OrcamentoGridProps): ReactNode {
             </td>
           ))}
         </tr>
-        {hasChildren && isOpen ? r.children.map((child) => renderRow(child)) : null}
+        {hasChildren && isOpen
+          ? r.children.map((child, i) => renderRow(child, i === 0, i === r.children.length - 1))
+          : null}
       </Fragment>
     )
   }

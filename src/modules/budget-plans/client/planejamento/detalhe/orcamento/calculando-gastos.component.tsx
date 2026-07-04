@@ -33,6 +33,7 @@ import {
   list,
   item,
   itemActive,
+  itemName,
   chevron,
   despesaRow,
   despesaName,
@@ -307,7 +308,7 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
                     selectCategoria(c.id)
                   }}
                 >
-                  <span>{c.name}</span>
+                  <span className={itemName}>{c.name}</span>
                   <span className={chevron} aria-hidden="true">
                     {'›'}
                   </span>
@@ -330,7 +331,7 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
                     selectSub(s.id)
                   }}
                 >
-                  <span>{s.name}</span>
+                  <span className={itemName}>{s.name}</span>
                   <span className={chevron} aria-hidden="true">
                     {'›'}
                   </span>

@@ -25,7 +25,9 @@ export const overlay = style({
 export const panel = style({
   inlineSize: '100%',
   margin: 'auto',
-  maxBlockSize: `calc(100vh - (${cg.size.modalMargin} * 2))`,
+  // Altura FIXA (não `max`): o modal não muda de tamanho ao trocar de centro de custo (abas) nem ao
+  // selecionar categorias — o corpo rola internamente. Antes `maxBlockSize` fazia o modal crescer/encolher.
+  blockSize: `calc(100vh - (${cg.size.modalMargin} * 2))`,
   background: brand.color.surface,
   borderRadius: cg.size.modalRadius,
   overflow: 'hidden',
@@ -167,6 +169,10 @@ export const columns = style({
 })
 
 export const column = style({
+  // min-inline-size 0: item de grid não transborda a track (default `auto`) — nomes longos ficam contidos
+  // na coluna, sem sobrepor a coluna vizinha. `overflow:hidden` reforça o clamp.
+  minInlineSize: 0,
+  overflow: 'hidden',
   background: brand.color.surface,
   border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
   borderRadius: cg.size.colRadius,
@@ -237,6 +243,15 @@ export const itemActive = style({
   selectors: { '&:hover': { borderColor: brand.color.primary } },
 })
 
+// Nome do item: ocupa o espaço e trunca com reticências (não transborda/sobrepõe o chevron nem a coluna).
+export const itemName = style({
+  flex: 1,
+  minInlineSize: 0,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+})
+
 export const chevron = style({ flexShrink: 0, opacity: 0.55 })
 
 // ── Linhas de mês (Despesas), zebra ──
@@ -254,12 +269,22 @@ export const despesaRow = style({
 })
 
 export const despesaName = style({
+  minInlineSize: 0,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
   fontSize: cg.size.litemFont,
   fontWeight: brand.weight.medium,
   color: brand.color.ink700,
 })
 
-export const despesaEnd = style({ display: 'flex', alignItems: 'center', gap: brand.space.lg })
+// Valor + ícones: não encolhem (o nome do mês trunca antes de espremer/sobrepor).
+export const despesaEnd = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: brand.space.md,
+  flexShrink: 0,
+})
 
 export const despesaValue = style({
   fontVariantNumeric: 'tabular-nums',
