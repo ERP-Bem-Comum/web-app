@@ -3,7 +3,7 @@ import { useState, type ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { ChevronUpIcon, CalculatorIcon } from '#shared/ui/index.ts'
+import { ChevronLeftIcon, CalculatorIcon } from '#shared/ui/index.ts'
 
 import { useOrcamento } from './orcamento.binding.ts'
 import { useCalcGastos } from './calc-gastos.binding.ts'
@@ -13,6 +13,8 @@ import {
   screen,
   header,
   backButton,
+  headText,
+  headTitle,
   breadcrumb,
   card,
   titleRow,
@@ -67,9 +69,12 @@ export function OrcamentoPage(): ReactNode {
           aria-label={t('budget-plans.orcamento.back')}
           onClick={goBack}
         >
-          <ChevronUpIcon size={18} />
+          <ChevronLeftIcon size={20} />
         </button>
-        <span className={breadcrumb}>{t('budget-plans.orcamento.breadcrumb')}</span>
+        <div className={headText}>
+          <h1 className={headTitle}>{t('budget-plans.orcamento.pageTitle')}</h1>
+          <span className={breadcrumb}>{t('budget-plans.orcamento.breadcrumb')}</span>
+        </div>
       </div>
 
       {state.status === 'not-found' ? (

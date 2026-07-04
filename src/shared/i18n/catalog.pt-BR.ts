@@ -1911,6 +1911,7 @@ export const ptBR: Catalog = {
   'budget-plans.paginator.next': 'Próxima página',
   'budget-plans.paginator.range': '{from}-{to} de {total}',
   'budget-plans.detail.breadcrumb': 'Planejamento > Detalhes',
+  'budget-plans.detail.pageTitle': 'Detalhes do Plano',
   'budget-plans.detail.back': 'Voltar',
   'budget-plans.detail.totalPlan': 'Total Plano:',
   'budget-plans.detail.notFound': 'Plano orçamentário não encontrado.',
@@ -1981,6 +1982,7 @@ export const ptBR: Catalog = {
 
   // ── Edição de Orçamento (/…/orcamento — US2.4) ──
   'budget-plans.orcamento.breadcrumb': 'Planejamento > Detalhes > Orçamento',
+  'budget-plans.orcamento.pageTitle': 'Edição de Orçamento',
   'budget-plans.orcamento.back': 'Voltar',
   'budget-plans.orcamento.totalBudget': 'Total Orçamento:',
   'budget-plans.orcamento.centroCusto': 'Centro de Custo',

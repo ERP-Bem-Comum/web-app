@@ -178,7 +178,15 @@ export const planNameLink = style([
 ])
 
 // Sub-linha: nome levemente mais claro que o pai.
-export const planNameLinkChild = style([planNameLink, { color: planejamento.childName }])
+// Nome do FILHO: cor levemente mais clara + peso médio (sem negrito) + 1px menor → leitura mais leve.
+export const planNameLinkChild = style([
+  planNameLink,
+  {
+    color: planejamento.childName,
+    fontWeight: brand.weight.medium,
+    fontSize: sz.childNameFont,
+  },
+])
 
 // Subtítulo (versionLabel): 12.5px ink500.
 export const versionLabel = style({
@@ -252,6 +260,12 @@ export const totalCellZero = style([
   totalCell,
   { color: brand.color.ink400, fontWeight: brand.weight.medium },
 ])
+// Valor do FILHO: peso médio (sem negrito) + 1px menor → alinhado ao nome mais leve das linhas-filhas.
+export const totalCellChild = style([
+  totalCell,
+  { fontWeight: brand.weight.medium, fontSize: sz.childNameFont },
+])
+export const totalCellChildZero = style([totalCellZero, { fontSize: sz.childNameFont }])
 
 // Parceiros: ink700.
 export const partners = style({ color: brand.color.ink700, whiteSpace: 'nowrap' })

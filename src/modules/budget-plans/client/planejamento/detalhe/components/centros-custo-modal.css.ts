@@ -1,10 +1,15 @@
 /**
- * Estilos do modal "Centros de Custo - {Programa}" (§1.5) — overlay + cartão grande, dropdown de centro +
- * "Adicionar centro", árvore de 3 níveis com ações por linha e painel de formulário lateral. Só tokens (§X).
+ * Estilos do modal "Centros de Custo - {Programa}" (§1.5) no padrão visual "brand" — overlay + cartão grande,
+ * dropdown de centro + "Adicionar centro", árvore de 3 níveis com ações por linha e painel de formulário
+ * lateral. Cores/borda/sombra/inputs vêm de `brand`; `vars.*` só p/ overlay/elevated-shadow/font. Só tokens (§X).
  */
 import { style } from '@vanilla-extract/css'
 
 import { vars } from '#shared/ui/tokens/index.ts'
+import { brand } from '#shared/ui/brand/grid-brand.values.ts'
+
+const CHEVRON_SVG =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7480' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")"
 
 export const overlay = style({
   position: 'fixed',
@@ -13,7 +18,7 @@ export const overlay = style({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  padding: vars.space.lg,
+  padding: brand.space.lg,
   background: vars.color.institutional.overlay,
 })
 
@@ -23,36 +28,38 @@ export const modal = style({
   inlineSize: '100%',
   maxInlineSize: '56rem',
   maxBlockSize: '90vh',
-  borderRadius: vars.radius.lg,
-  background: vars.color.surface.default,
+  borderRadius: brand.radius.lg,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  background: brand.color.surface,
   boxShadow: vars.shadow.cardElevated,
   overflow: 'hidden',
+  fontFamily: vars.font.family.heading, // Inter
 })
 
 export const head = style({
   display: 'flex',
   alignItems: 'flex-start',
   justifyContent: 'space-between',
-  gap: vars.space.md,
-  padding: vars.space.lg,
-  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
+  gap: brand.space.md,
+  padding: brand.space.xl,
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${brand.color.line}`,
 })
 
-export const headTexts = style({ display: 'flex', flexDirection: 'column', gap: vars.space.xs })
+export const headTexts = style({ display: 'flex', flexDirection: 'column', gap: brand.space.xxs })
 
 export const title = style({
   margin: 0,
   fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.lg,
-  fontWeight: vars.font.weight.semibold,
-  color: vars.color.text.primary,
+  fontSize: brand.text.panelTitle,
+  fontWeight: brand.weight.bold,
+  color: brand.color.ink900,
 })
 
 export const subtitle = style({
   margin: 0,
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size.sm,
-  color: vars.color.text.secondary,
+  fontFamily: vars.font.family.heading,
+  fontSize: brand.text.subtitle,
+  color: brand.color.ink400,
 })
 
 export const close = style({
@@ -63,122 +70,140 @@ export const close = style({
   blockSize: '2rem',
   border: 'none',
   background: 'transparent',
-  color: vars.color.text.secondary,
+  color: brand.color.ink500,
   fontSize: vars.font.size.lg,
   lineHeight: 1,
   cursor: 'pointer',
-  borderRadius: vars.radius.sm,
-  selectors: { '&:hover': { background: vars.color.surface.subtle, color: vars.color.text.primary } },
+  borderRadius: brand.radius.sm,
+  selectors: { '&:hover': { background: brand.color.surfaceAlt, color: brand.color.ink900 } },
 })
 
 export const toolbar = style({
   display: 'flex',
   alignItems: 'flex-end',
-  gap: vars.space.md,
-  padding: vars.space.lg,
+  gap: brand.space.md,
+  padding: brand.space.xl,
   paddingBlockEnd: 0,
 })
 
-export const field = style({ display: 'flex', flexDirection: 'column', gap: vars.space.xs, flex: 1 })
+export const field = style({ display: 'flex', flexDirection: 'column', gap: brand.space.xs, flex: 1 })
 
 export const label = style({
   fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.xs,
-  fontWeight: vars.font.weight.semibold,
-  color: vars.color.text.secondary,
+  fontSize: brand.text.label,
+  fontWeight: brand.weight.semibold,
+  color: brand.color.ink700,
 })
 
 export const input = style({
-  blockSize: '2.5rem',
-  paddingInline: vars.space.md,
-  borderRadius: vars.radius.md,
-  border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
-  background: vars.color.surface.default,
-  color: vars.color.text.primary,
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size.sm,
+  blockSize: brand.size.field,
+  paddingInline: brand.space.md,
+  borderRadius: brand.radius.sm,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  background: brand.color.surface,
+  color: brand.color.ink900,
+  fontFamily: vars.font.family.heading,
+  fontSize: brand.text.body,
   selectors: {
+    '&:hover': { borderColor: brand.color.lineStrong },
     '&:focus-visible': {
-      outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
+      outline: `${vars.focusRing.width} solid ${brand.color.primary}`,
       outlineOffset: vars.focusRing.offset,
     },
   },
 })
 
-export const select = style([input])
+// Select brand — mesmo campo + chevron (appearance:none).
+export const select = style([
+  input,
+  {
+    paddingInlineEnd: brand.space.xxl,
+    background: `${brand.color.surface} ${CHEVRON_SVG} no-repeat`,
+    backgroundPosition: `right ${brand.space.md} center`,
+    appearance: 'none',
+    cursor: 'pointer',
+  },
+])
 
 export const body = style({
   display: 'grid',
   gridTemplateColumns: '1fr',
-  gap: vars.space.lg,
-  padding: vars.space.lg,
+  gap: brand.space.lg,
+  padding: brand.space.xl,
   overflowY: 'auto',
   minBlockSize: 0,
 })
 
 export const bodyWithForm = style({ gridTemplateColumns: '1.4fr 1fr' })
 
-export const tree = style({ display: 'flex', flexDirection: 'column', gap: vars.space.sm, minBlockSize: 0 })
+export const tree = style({ display: 'flex', flexDirection: 'column', gap: brand.space.sm, minBlockSize: 0 })
 
 // ── Linhas da árvore (indentação por profundidade) ──
 export const rowCentro = style({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  gap: vars.space.sm,
-  paddingBlock: vars.space.sm,
-  paddingInline: vars.space.md,
-  borderRadius: vars.radius.md,
-  background: `color-mix(in srgb, ${vars.color.brand.normal} 12%, white)`,
+  gap: brand.space.sm,
+  paddingBlock: brand.space.sm,
+  paddingInline: brand.space.md,
+  borderRadius: brand.radius.md,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  background: brand.color.cadBg,
 })
 
 export const rowCategoria = style({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  gap: vars.space.sm,
-  marginInlineStart: vars.space.lg,
-  paddingBlock: vars.space.sm,
-  paddingInline: vars.space.md,
-  borderRadius: vars.radius.md,
-  background: `color-mix(in srgb, ${vars.color.brand.normal} 6%, white)`,
+  gap: brand.space.sm,
+  marginInlineStart: brand.space.lg,
+  paddingBlock: brand.space.sm,
+  paddingInline: brand.space.md,
+  borderRadius: brand.radius.md,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  background: brand.color.surfaceAlt,
 })
 
 // Lista de subcategorias — pequeno respiro branco (gap) entre as linhas ao expandir.
 export const subList = style({
   display: 'flex',
   flexDirection: 'column',
-  gap: vars.space.xs,
-  marginInlineStart: `calc(${vars.space.lg} * 2)`,
-  marginBlockStart: vars.space.xs,
+  gap: brand.space.xs,
+  marginInlineStart: `calc(${brand.space.lg} * 2)`,
+  marginBlockStart: brand.space.xs,
 })
 
 export const rowSub = style({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  gap: vars.space.sm,
-  paddingBlock: vars.space.xs,
-  paddingInline: vars.space.md,
-  borderRadius: vars.radius.sm,
-  border: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
-  background: vars.color.surface.subtle,
+  gap: brand.space.sm,
+  paddingBlock: brand.space.xs,
+  paddingInline: brand.space.md,
+  borderRadius: brand.radius.sm,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line2}`,
+  background: brand.color.surface,
 })
 
 export const rowName = style({
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size.sm,
-  color: vars.color.text.primary,
+  fontFamily: vars.font.family.heading,
+  fontSize: brand.text.body,
+  color: brand.color.ink900,
 })
 
-export const rowNameCentro = style([rowName, { fontWeight: vars.font.weight.semibold }])
+export const rowNameCentro = style([rowName, { fontWeight: brand.weight.semibold }])
 
-export const rowNameOff = style({ textDecoration: 'line-through', color: vars.color.text.secondary })
+export const rowNameOff = style({ textDecoration: 'line-through', color: brand.color.ink400 })
 
-export const rowActions = style({ display: 'flex', alignItems: 'center', gap: vars.space.sm })
+export const rowActions = style({ display: 'flex', alignItems: 'center', gap: brand.space.sm })
 
 // Início da linha: chevron de expandir/recolher + nome.
-export const rowStart = style({ display: 'flex', alignItems: 'center', gap: vars.space.sm, minInlineSize: 0 })
+export const rowStart = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: brand.space.sm,
+  minInlineSize: 0,
+})
 
 export const chevronButton = style({
   display: 'inline-flex',
@@ -189,10 +214,11 @@ export const chevronButton = style({
   flexShrink: 0,
   border: 'none',
   background: 'transparent',
-  color: vars.color.text.secondary,
+  color: brand.color.ink500,
   cursor: 'pointer',
-  borderRadius: vars.radius.sm,
-  selectors: { '&:hover': { color: vars.color.text.primary } },
+  borderRadius: brand.radius.xs,
+  transition: `all ${brand.ease}`,
+  selectors: { '&:hover': { background: brand.color.surface, color: brand.color.ink900 } },
 })
 
 // Espaçador no lugar do chevron (subcategoria = folha, sem expandir) — mantém o alinhamento.
@@ -202,91 +228,99 @@ export const chevronSpacer = style({ inlineSize: '1.5rem', flexShrink: 0 })
 export const editButton = style({
   display: 'inline-flex',
   alignItems: 'center',
-  gap: vars.space.xs,
+  gap: brand.space.xs,
   border: 'none',
   background: 'transparent',
   cursor: 'pointer',
-  borderRadius: vars.radius.sm,
-  paddingBlock: vars.space.xs,
-  paddingInline: vars.space.sm,
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size.xs,
-  fontWeight: vars.font.weight.semibold,
-  color: vars.color.text.secondary,
-  selectors: { '&:hover': { background: vars.color.surface.subtle, color: vars.color.text.primary } },
+  borderRadius: brand.radius.xs,
+  paddingBlock: brand.space.xs,
+  paddingInline: brand.space.sm,
+  fontFamily: vars.font.family.heading,
+  fontSize: brand.text.label,
+  fontWeight: brand.weight.semibold,
+  color: brand.color.ink500,
+  selectors: { '&:hover': { background: brand.color.surface, color: brand.color.ink900 } },
 })
 
 const actionBase = style({
   border: 'none',
   background: 'transparent',
   cursor: 'pointer',
-  borderRadius: vars.radius.sm,
-  paddingBlock: vars.space.xs,
-  paddingInline: vars.space.sm,
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size.xs,
-  color: vars.color.brand.normal,
-  fontWeight: vars.font.weight.semibold,
-  selectors: { '&:hover': { background: `color-mix(in srgb, ${vars.color.brand.normal} 12%, white)` } },
+  borderRadius: brand.radius.xs,
+  paddingBlock: brand.space.xs,
+  paddingInline: brand.space.sm,
+  fontFamily: vars.font.family.heading,
+  fontSize: brand.text.label,
+  color: brand.color.primary,
+  fontWeight: brand.weight.semibold,
+  selectors: { '&:hover': { background: brand.color.surface } },
 })
 
 export const actionLink = style([actionBase])
-export const actionMuted = style([actionBase, { color: vars.color.text.secondary }])
+export const actionMuted = style([actionBase, { color: brand.color.ink500 }])
 
 export const addCentroButton = style({
   alignSelf: 'flex-end',
-  paddingBlock: vars.space.sm,
-  paddingInline: vars.space.lg,
-  borderRadius: vars.radius.md,
-  border: `${vars.borderWidth.thin} solid ${vars.color.brand.normal}`,
-  background: 'transparent',
-  color: vars.color.brand.normal,
+  paddingBlock: brand.space.sm,
+  paddingInline: brand.space.lg,
+  borderRadius: brand.radius.sm,
+  border: `${vars.borderWidth.thin} solid ${brand.color.primary}`,
+  background: brand.color.surface,
+  color: brand.color.primary,
   fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.sm,
-  fontWeight: vars.font.weight.semibold,
+  fontSize: brand.text.body,
+  fontWeight: brand.weight.semibold,
   cursor: 'pointer',
   whiteSpace: 'nowrap',
-  selectors: { '&:hover': { background: `color-mix(in srgb, ${vars.color.brand.normal} 10%, white)` } },
+  transition: `all ${brand.ease}`,
+  selectors: { '&:hover': { background: brand.color.cadBg } },
 })
 
 // ── Painel de formulário lateral ──
 export const formPanel = style({
   display: 'flex',
   flexDirection: 'column',
-  gap: vars.space.md,
-  padding: vars.space.md,
-  borderRadius: vars.radius.md,
-  border: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
-  background: vars.color.surface.subtle,
+  gap: brand.space.md,
+  padding: brand.space.md,
+  borderRadius: brand.radius.md,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  background: brand.color.surfaceAlt,
   blockSize: 'fit-content',
 })
 
 export const formTitle = style({
   margin: 0,
   fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.md,
-  fontWeight: vars.font.weight.semibold,
-  color: vars.color.text.primary,
+  fontSize: brand.text.sectionH2,
+  fontWeight: brand.weight.bold,
+  color: brand.color.ink900,
 })
 
-export const formActions = style({ display: 'flex', gap: vars.space.sm, marginBlockStart: vars.space.xs })
+export const formActions = style({ display: 'flex', gap: brand.space.sm, marginBlockStart: brand.space.xs })
 
 const buttonBase = style({
   flex: 1,
-  paddingBlock: vars.space.sm,
-  borderRadius: vars.radius.md,
+  paddingBlock: brand.space.sm,
+  borderRadius: brand.radius.sm,
   fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.sm,
-  fontWeight: vars.font.weight.semibold,
+  fontSize: brand.text.body,
+  fontWeight: brand.weight.semibold,
   cursor: 'pointer',
+  selectors: {
+    '&:focus-visible': {
+      outline: `${vars.focusRing.width} solid ${brand.color.primary}`,
+      outlineOffset: vars.focusRing.offset,
+    },
+  },
 })
 
 export const cancelButton = style([
   buttonBase,
   {
-    border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
-    background: vars.color.surface.default,
-    color: vars.color.text.secondary,
+    border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+    background: brand.color.surface,
+    color: brand.color.ink700,
+    selectors: { '&:hover': { background: brand.color.surfaceAlt, borderColor: brand.color.ink400 } },
   },
 ])
 
@@ -294,9 +328,10 @@ export const submitButton = style([
   buttonBase,
   {
     border: 'none',
-    background: vars.color.brand.normal,
-    color: vars.color.brand.onBrand,
-    selectors: { '&:hover': { background: vars.color.brand.hover } },
+    background: brand.color.primary,
+    color: brand.color.surface,
+    boxShadow: brand.shadow.btn,
+    selectors: { '&:hover': { background: brand.color.primaryHover } },
   },
 ])
 
@@ -304,7 +339,7 @@ export const submitButton = style([
 export const switchLabel = style({
   display: 'inline-flex',
   alignItems: 'center',
-  gap: vars.space.xs,
+  gap: brand.space.xs,
   cursor: 'pointer',
 })
 
@@ -322,9 +357,9 @@ export const switchTrack = style({
   inlineSize: '2rem',
   blockSize: '1.1rem',
   flexShrink: 0,
-  borderRadius: vars.radius.lg,
-  background: vars.color.border.default,
-  transition: 'background 120ms ease',
+  borderRadius: brand.radius.pill,
+  background: brand.color.lineStrong,
+  transition: `background ${brand.ease}`,
   '::after': {
     content: '""',
     position: 'absolute',
@@ -333,22 +368,22 @@ export const switchTrack = style({
     inlineSize: '0.8rem',
     blockSize: '0.8rem',
     borderRadius: '50%',
-    background: vars.color.surface.default,
-    transition: 'transform 120ms ease',
+    background: brand.color.surface,
+    transition: `transform ${brand.ease}`,
   },
   selectors: {
-    [`${switchInput}:checked + &`]: { background: vars.color.brand.normal },
+    [`${switchInput}:checked + &`]: { background: brand.color.primary },
     [`${switchInput}:checked + &::after`]: { transform: 'translateX(0.9rem)' },
     [`${switchInput}:focus-visible + &`]: {
-      outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
+      outline: `${vars.focusRing.width} solid ${brand.color.primary}`,
       outlineOffset: vars.focusRing.offset,
     },
   },
 })
 
 export const switchText = style({
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size.xs,
-  fontWeight: vars.font.weight.semibold,
-  color: vars.color.text.secondary,
+  fontFamily: vars.font.family.heading,
+  fontSize: brand.text.label,
+  fontWeight: brand.weight.semibold,
+  color: brand.color.ink500,
 })

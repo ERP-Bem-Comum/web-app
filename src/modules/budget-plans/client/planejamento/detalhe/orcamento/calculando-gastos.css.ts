@@ -1,65 +1,81 @@
 /**
- * Estilos do modal "Calculando Gastos" (US2.4b): overlay full-screen, barra de abas (centros de custo) e
- * 3 colunas (Categoria / Subcategoria / Despesas). Só tokens (§X).
+ * Estilos do modal "Calculando Gastos" no padrão visual "brand" (mock `calculando-gastos-brand`): overlay escuro
+ * + card branco (radius 18) em LARGURA CHEIA (sem coluna central estreita — pedido da P.O.), titlebar + breadcrumb,
+ * abas por Tipo de lançamento com setas ‹ ›, corpo com 3 colunas (Categoria/Subcategoria/Despesas) sobre fundo frio,
+ * rodapé "Calcular", e o DRAWER lateral direito onde os forms de edição passam a abrir. Cores/px fora do kit vivem
+ * em `calculando-gastos.values.ts`; o resto vem de `brand`. Fonte Inter (`vars.font.family.heading`). Só tokens (§X).
  */
 import { style } from '@vanilla-extract/css'
 
 import { vars } from '#shared/ui/tokens/index.ts'
+import { brand } from '#shared/ui/brand/grid-brand.values.ts'
 
+import { calcGastos as cg } from './calculando-gastos.values.ts'
+
+// ── Overlay + modal (largura cheia com margem pequena) ──
 export const overlay = style({
   position: 'fixed',
   inset: 0,
   zIndex: 1200,
-  background: vars.color.institutional.overlay,
+  background: cg.color.overlay,
   display: 'flex',
-  alignItems: 'stretch',
-  justifyContent: 'center',
+  padding: cg.size.modalMargin,
 })
 
 export const panel = style({
   inlineSize: '100%',
-  blockSize: '100%',
-  background: vars.color.surface.default,
+  margin: 'auto',
+  maxBlockSize: `calc(100vh - (${cg.size.modalMargin} * 2))`,
+  background: brand.color.surface,
+  borderRadius: cg.size.modalRadius,
+  overflow: 'hidden',
   display: 'flex',
   flexDirection: 'column',
-  fontFamily: vars.font.family.body,
-  overflow: 'hidden',
+  fontFamily: vars.font.family.heading, // Inter
+  color: brand.color.ink700,
+  boxShadow: cg.shadow.modal,
 })
 
+// ── Titlebar ──
 export const header = style({
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: vars.space.md,
-  paddingBlock: vars.space.md,
-  paddingInline: vars.space.lg,
-  background: vars.color.surface.subtle,
-  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
+  gap: brand.space.md,
+  paddingInline: cg.size.titlebarPadInline,
+  blockSize: cg.size.titlebarH,
+  flexShrink: 0,
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${brand.color.line}`,
 })
 
 export const headerTitle = style({
   margin: 0,
-  fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.lg,
-  fontWeight: vars.font.weight.bold,
-  color: vars.color.text.primary,
+  fontSize: brand.text.panelTitle,
+  fontWeight: brand.weight.bold,
+  color: brand.color.ink900,
+})
+
+export const headerCrumb = style({
+  color: brand.color.ink500,
+  fontWeight: brand.weight.medium,
 })
 
 export const closeButton = style({
+  marginInlineStart: 'auto',
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  inlineSize: '2rem',
-  blockSize: '2rem',
-  borderRadius: vars.radius.md,
+  inlineSize: cg.size.closeBox,
+  blockSize: cg.size.closeBox,
+  borderRadius: brand.radius.sm,
   border: 'none',
   background: 'transparent',
-  color: vars.color.text.secondary,
-  fontSize: vars.font.size.lg,
+  color: brand.color.ink500,
+  fontSize: brand.text.panelTitle,
   lineHeight: 1,
   cursor: 'pointer',
+  transition: `background ${brand.ease}, color ${brand.ease}`,
   selectors: {
-    '&:hover': { background: vars.color.surface.default, color: vars.color.text.primary },
+    '&:hover': { background: brand.color.surfaceAlt, color: brand.color.ink900 },
     '&:focus-visible': {
       outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
       outlineOffset: vars.focusRing.offset,
@@ -67,219 +83,111 @@ export const closeButton = style({
   },
 })
 
+// ── Abas (setas ‹ › + abas por Tipo de lançamento) ──
 export const tabsBar = style({
   display: 'flex',
-  alignItems: 'center',
-  gap: vars.space.xs,
-  paddingInline: vars.space.sm,
-  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
+  alignItems: 'stretch',
+  flexShrink: 0,
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${brand.color.line}`,
 })
 
 export const tabsScroll = style({
   display: 'flex',
   flex: 1,
   overflowX: 'auto',
+  scrollbarWidth: 'none',
+  selectors: { '&::-webkit-scrollbar': { display: 'none' } },
 })
 
 export const tab = style({
   flex: 1,
   minInlineSize: 'max-content',
-  paddingBlock: vars.space.md,
-  paddingInline: vars.space.lg,
+  blockSize: cg.size.tabH,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  paddingInline: brand.space.lg,
   border: 'none',
   borderBlockEnd: `${vars.borderWidth.thick} solid transparent`,
   background: 'transparent',
-  color: vars.color.text.secondary,
-  fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.sm,
-  fontWeight: vars.font.weight.semibold,
+  color: brand.color.ink500,
+  fontSize: cg.size.tabFont,
+  fontWeight: brand.weight.semibold,
   whiteSpace: 'nowrap',
   cursor: 'pointer',
+  transition: `color ${brand.ease}, background ${brand.ease}`,
   selectors: {
-    '&:hover': { background: vars.color.surface.subtle },
+    '&:hover': { color: brand.color.ink700, background: brand.color.surfaceAlt },
   },
 })
 
 export const tabActive = style({
-  background: vars.color.brand.normal,
-  color: vars.color.brand.onBrand,
-  borderBlockEndColor: vars.color.brand.normal,
-  selectors: { '&:hover': { background: vars.color.brand.hover } },
+  background: brand.color.primary,
+  color: brand.color.surface,
+  borderRadius: `${cg.size.tabRadius} ${cg.size.tabRadius} 0 0`,
+  borderBlockEndColor: brand.color.primary,
+  selectors: { '&:hover': { background: brand.color.primary, color: brand.color.surface } },
 })
 
 export const navButton = style({
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  inlineSize: '2rem',
-  blockSize: '2rem',
-  flexShrink: 0,
-  borderRadius: vars.radius.md,
+  inlineSize: cg.size.tabNavW,
+  flex: 'none',
+  display: 'grid',
+  placeItems: 'center',
   border: 'none',
   background: 'transparent',
-  color: vars.color.text.primary,
-  fontSize: vars.font.size.lg,
+  color: brand.color.ink400,
+  fontSize: brand.text.panelTitle,
   lineHeight: 1,
   cursor: 'pointer',
+  transition: `color ${brand.ease}`,
   selectors: {
-    '&:hover:not(:disabled)': { background: vars.color.surface.subtle },
-    '&:disabled': { opacity: 0.3, cursor: 'not-allowed' },
+    '&:hover:not(:disabled)': { color: brand.color.ink700 },
+    '&:disabled': { opacity: 0.4, cursor: 'not-allowed' },
   },
 })
 
+// ── Corpo: fundo frio + 3 colunas ──
 export const columns = style({
   flex: 1,
+  padding: cg.size.bodyPad,
+  overflowY: 'auto',
+  background: cg.color.pageBg,
   display: 'grid',
-  gridTemplateColumns: 'repeat(3, 1fr)',
-  // Cada coluna dimensiona pela PRÓPRIA altura (fit-content) — evita cards vazios altos ao rolar.
+  gridTemplateColumns: '1fr 1fr 1.05fr',
   alignItems: 'start',
-  gap: vars.space.lg,
-  padding: vars.space.lg,
-  // Folga no fim para o conteúdo não ficar atrás da barra de ações fixa (formActions).
-  paddingBlockEnd: `calc(${vars.space.xl} * 2.5)`,
-  overflowY: 'scroll',
-  // Barra de rolagem sempre visível (fina, tingida pela marca).
+  gap: cg.size.colsGap,
   scrollbarWidth: 'thin',
-  scrollbarColor: `${vars.color.border.default} transparent`,
+  scrollbarColor: `${cg.color.scrollThumb} transparent`,
   selectors: {
     '&::-webkit-scrollbar': { inlineSize: '0.625rem' },
-    '&::-webkit-scrollbar-thumb': {
-      background: vars.color.border.default,
-      borderRadius: vars.radius.md,
-    },
+    '&::-webkit-scrollbar-thumb': { background: cg.color.scrollThumb, borderRadius: brand.radius.sm },
     '&::-webkit-scrollbar-track': { background: 'transparent' },
   },
 })
 
 export const column = style({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: vars.space.md,
-  padding: vars.space.md,
-  borderRadius: vars.radius.lg,
-  border: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
-  background: vars.color.surface.default,
-  minBlockSize: 0,
+  background: brand.color.surface,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  borderRadius: cg.size.colRadius,
+  boxShadow: brand.shadow.card,
+  padding: cg.size.colPad,
 })
 
-export const columnTitle = style({
-  margin: 0,
-  textAlign: 'center',
-  fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.md,
-  fontWeight: vars.font.weight.semibold,
-  color: vars.color.text.secondary,
-})
-
-export const list = style({ display: 'flex', flexDirection: 'column', gap: vars.space.sm })
-
-export const item = style({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: vars.space.sm,
-  inlineSize: '100%',
-  paddingBlock: vars.space.sm,
-  paddingInline: vars.space.md,
-  borderRadius: vars.radius.md,
-  border: 'none',
-  background: `color-mix(in srgb, ${vars.color.brand.normal} 8%, white)`,
-  color: vars.color.text.primary,
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size.sm,
-  fontWeight: vars.font.weight.semibold,
-  textAlign: 'left',
-  cursor: 'pointer',
-  selectors: {
-    '&:hover': { background: `color-mix(in srgb, ${vars.color.brand.normal} 16%, white)` },
-    '&:focus-visible': {
-      outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
-      outlineOffset: `calc(-1 * ${vars.focusRing.width})`,
-    },
-  },
-})
-
-export const itemActive = style({
-  background: vars.color.brand.normal,
-  color: vars.color.brand.onBrand,
-  selectors: { '&:hover': { background: vars.color.brand.hover } },
-})
-
-export const chevron = style({ flexShrink: 0, opacity: 0.7 })
-
-export const despesaRow = style({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: vars.space.sm,
-  paddingBlock: vars.space.sm,
-  paddingInline: vars.space.md,
-  borderRadius: vars.radius.md,
-  background: `color-mix(in srgb, ${vars.color.brand.normal} 6%, white)`,
-})
-
-export const despesaName = style({
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size.sm,
-  fontWeight: vars.font.weight.semibold,
-  color: vars.color.text.primary,
-})
-
-export const despesaEnd = style({ display: 'flex', alignItems: 'center', gap: vars.space.xs })
-
-export const despesaValue = style({
-  fontVariantNumeric: 'tabular-nums',
-  fontSize: vars.font.size.sm,
-  color: vars.color.text.primary,
-})
-
-export const despesaInput = style({
-  inlineSize: '7rem',
-  paddingBlock: vars.space.xs,
-  paddingInline: vars.space.sm,
-  borderRadius: vars.radius.sm,
-  border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
-  background: vars.color.surface.default,
-  color: vars.color.text.primary,
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size.sm,
-  textAlign: 'right',
-  fontVariantNumeric: 'tabular-nums',
-})
-
-export const iconButton = style({
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  inlineSize: '1.5rem',
-  blockSize: '1.5rem',
-  borderRadius: vars.radius.sm,
-  border: 'none',
-  background: 'transparent',
-  color: vars.color.text.secondary,
-  cursor: 'pointer',
-  selectors: {
-    '&:hover': { background: vars.color.surface.subtle, color: vars.color.text.primary },
-    '&:focus-visible': {
-      outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
-      outlineOffset: vars.focusRing.offset,
-    },
-  },
-})
-
-export const empty = style({
-  padding: vars.space.lg,
-  textAlign: 'center',
-  color: vars.color.text.secondary,
-  fontSize: vars.font.size.sm,
-})
-
-// ── Form "Configuração" (abre no lápis) ──
 export const columnHead = style({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
   position: 'relative',
+  marginBlockEnd: brand.space.lg,
+})
+
+export const columnTitle = style({
+  margin: 0,
+  textAlign: 'center',
+  fontSize: cg.size.colTitleFont,
+  fontWeight: brand.weight.bold,
+  color: brand.color.ink900,
 })
 
 export const infoButton = style({
@@ -290,152 +198,416 @@ export const infoButton = style({
   justifyContent: 'center',
   border: 'none',
   background: 'transparent',
-  color: vars.color.text.secondary,
+  color: brand.color.ink400,
   cursor: 'pointer',
 })
 
-export const configForm = style({ display: 'flex', flexDirection: 'column', gap: vars.space.md })
+export const list = style({ display: 'flex', flexDirection: 'column', gap: brand.space.sm })
 
-export const configSection = style({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: vars.space.sm,
-  padding: vars.space.md,
-  borderRadius: vars.radius.md,
-  background: `color-mix(in srgb, ${vars.color.brand.normal} 6%, white)`,
-})
-
-export const configSectionTitle = style({
-  fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.xs,
-  fontWeight: vars.font.weight.bold,
-  letterSpacing: '0.04em',
-  color: vars.color.text.secondary,
-})
-
-export const switchRow = style({
+export const item = style({
   display: 'flex',
   alignItems: 'center',
-  gap: vars.space.sm,
-  fontSize: vars.font.size.sm,
-  color: vars.color.text.primary,
-  cursor: 'pointer',
-})
-
-export const field = style({ display: 'flex', flexDirection: 'column', gap: vars.space.xs })
-
-export const fieldLabel = style({
-  fontSize: vars.font.size.xs,
-  color: vars.color.text.secondary,
-})
-
-export const fieldInput = style({
+  justifyContent: 'space-between',
+  gap: brand.space.sm,
   inlineSize: '100%',
-  paddingBlock: vars.space.sm,
-  paddingInline: vars.space.md,
-  borderRadius: vars.radius.md,
-  border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
-  background: vars.color.surface.default,
-  color: vars.color.text.primary,
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size.sm,
-})
-
-export const custoTotalBox = style({
-  marginBlockStart: vars.space.xs,
-  paddingBlock: vars.space.sm,
-  textAlign: 'center',
-  borderRadius: vars.radius.md,
-  background: `color-mix(in srgb, ${vars.color.brand.normal} 22%, white)`,
-  color: vars.color.text.primary,
-  fontWeight: vars.font.weight.bold,
-  fontVariantNumeric: 'tabular-nums',
-})
-
-export const checkRow = style({
-  display: 'flex',
-  alignItems: 'center',
-  gap: vars.space.sm,
-  paddingBlock: vars.space.xs,
-  fontSize: vars.font.size.sm,
-  color: vars.color.text.primary,
+  paddingBlock: cg.size.litemPadBlock,
+  paddingInline: cg.size.litemPadInline,
+  borderRadius: cg.size.litemRadius,
+  background: brand.color.surfaceAlt,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line2}`,
+  color: brand.color.ink700,
+  fontSize: cg.size.litemFont,
+  fontWeight: brand.weight.semibold,
+  textAlign: 'left',
   cursor: 'pointer',
-  borderBlockEnd: `${vars.borderWidth.thin} solid color-mix(in srgb, ${vars.color.brand.normal} 20%, transparent)`,
-})
-
-// Rodapé fixo — mesmo padrão da tela "Incluir contrato" (barra branca full-width, botões à direita).
-// O modal é full-screen (cobre a sidebar), então `inset-inline: 0` = borda a borda.
-export const formActions = style({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'flex-end',
-  gap: vars.space.md,
-  blockSize: '3.5rem',
-  paddingInline: vars.space.lg,
-  background: vars.color.surface.default,
-  borderBlockStart: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
-  flexShrink: 0,
-  position: 'fixed',
-  insetBlockEnd: 0,
-  insetInline: 0,
-  zIndex: 1250,
-})
-
-// Botão secundário (Cancelar/Descartar) — igual ao "Incluir contrato".
-export const cancelButton = style({
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: vars.space.sm,
-  blockSize: '2.5rem',
-  paddingInline: vars.space.lg,
-  borderRadius: vars.radius.md,
-  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
-  background: vars.color.surface.default,
-  color: vars.color.institutional.ink4,
-  fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.sm,
-  fontWeight: vars.font.weight.bold,
-  cursor: 'pointer',
-  transition: 'background 150ms, border-color 150ms',
+  transition: `border-color ${brand.ease}`,
   selectors: {
-    '&:hover': {
-      background: vars.color.institutional.blueBg,
-      borderColor: vars.color.institutional.blueLine,
+    '&:hover': { borderColor: cg.color.itemHoverBorder },
+    '&:focus-visible': {
+      outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
+      outlineOffset: `calc(-1 * ${vars.focusRing.width})`,
     },
   },
 })
 
-// Botão primário (Aplicar/Salvar) — igual ao "Incluir contrato" (azul institucional).
-export const applyButton = style({
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: vars.space.sm,
-  blockSize: '2.5rem',
-  paddingInline: vars.space.lg,
-  borderRadius: vars.radius.md,
-  border: 'none',
-  background: vars.color.institutional.blue,
-  color: vars.color.surface.default,
-  fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.sm,
-  fontWeight: vars.font.weight.bold,
-  cursor: 'pointer',
-  transition: 'background 150ms, box-shadow 150ms',
-  selectors: { '&:hover': { background: vars.color.institutional.blueDeep } },
+export const itemActive = style({
+  background: brand.color.primary,
+  borderColor: brand.color.primary,
+  color: brand.color.surface,
+  selectors: { '&:hover': { borderColor: brand.color.primary } },
 })
 
-// ── Modal de confirmação de descarte (Cancelar no form) ──
+export const chevron = style({ flexShrink: 0, opacity: 0.55 })
+
+// ── Linhas de mês (Despesas), zebra ──
+export const despesaRow = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: brand.space.sm,
+  paddingBlock: cg.size.mrowPadBlock,
+  paddingInline: cg.size.mrowPadInline,
+  borderRadius: cg.size.mrowRadius,
+  selectors: {
+    '&:nth-child(odd)': { background: brand.color.surfaceAlt },
+  },
+})
+
+export const despesaName = style({
+  fontSize: cg.size.litemFont,
+  fontWeight: brand.weight.medium,
+  color: brand.color.ink700,
+})
+
+export const despesaEnd = style({ display: 'flex', alignItems: 'center', gap: brand.space.lg })
+
+export const despesaValue = style({
+  fontVariantNumeric: 'tabular-nums',
+  fontWeight: brand.weight.semibold,
+  color: brand.color.ink900,
+})
+
+export const despesaValueZero = style({
+  color: brand.color.ink400,
+  fontWeight: brand.weight.medium,
+})
+
+export const iconButton = style({
+  display: 'grid',
+  placeItems: 'center',
+  inlineSize: '1.25rem',
+  blockSize: '1.25rem',
+  borderRadius: brand.radius.xs,
+  border: 'none',
+  background: 'transparent',
+  color: brand.color.ink400,
+  cursor: 'pointer',
+  transition: `color ${brand.ease}`,
+  selectors: {
+    '&:focus-visible': {
+      outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
+      outlineOffset: vars.focusRing.offset,
+    },
+  },
+})
+
+export const iconButtonEdit = style({ selectors: { '&:hover': { color: brand.color.primary } } })
+export const iconButtonDel = style({ selectors: { '&:hover': { color: cg.color.brandRed } } })
+
+export const empty = style({
+  padding: brand.space.lg,
+  textAlign: 'center',
+  color: brand.color.ink500,
+  fontSize: brand.text.body,
+})
+
+// ── Rodapé do modal ──
+export const modalFoot = style({
+  display: 'flex',
+  justifyContent: 'flex-end',
+  paddingBlock: cg.size.footPadBlock,
+  paddingInline: cg.size.footPadInline,
+  flexShrink: 0,
+  borderBlockStart: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+})
+
+// Botão primário (Calcular / Salvar / Aplicar) — azul da marca.
+export const applyButton = style({
+  blockSize: cg.size.btnH,
+  paddingInline: cg.size.btnPadInline,
+  border: 'none',
+  borderRadius: brand.radius.sm,
+  background: brand.color.primary,
+  color: brand.color.surface,
+  fontFamily: 'inherit',
+  fontWeight: brand.weight.semibold,
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: brand.space.sm,
+  transition: `background ${brand.ease}`,
+  selectors: {
+    '&:hover:not(:disabled)': { background: brand.color.primaryHover },
+    '&:disabled': { opacity: 0.55, cursor: 'not-allowed' },
+  },
+})
+
+// Botão secundário (Cancelar / Descartar) — ghost.
+export const cancelButton = style({
+  blockSize: cg.size.btnH,
+  paddingInline: brand.space.xl,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  borderRadius: brand.radius.sm,
+  background: brand.color.surface,
+  color: brand.color.ink700,
+  fontFamily: 'inherit',
+  fontWeight: brand.weight.semibold,
+  cursor: 'pointer',
+  transition: `border-color ${brand.ease}, background ${brand.ease}`,
+  selectors: {
+    '&:hover': { borderColor: brand.color.lineStrong, background: brand.color.surfaceAlt },
+  },
+})
+
+// ── Drawer lateral direito ──
+export const drawerOverlay = style({
+  position: 'fixed',
+  inset: 0,
+  zIndex: 1250,
+  background: cg.color.drawerOverlay,
+})
+
+export const drawer = style({
+  position: 'fixed',
+  insetBlock: 0,
+  insetInlineEnd: 0,
+  zIndex: 1251,
+  inlineSize: cg.size.drawerW,
+  maxInlineSize: '94vw',
+  background: brand.color.surface,
+  display: 'flex',
+  flexDirection: 'column',
+  boxShadow: cg.size.drawerShadow,
+  fontFamily: vars.font.family.heading,
+})
+
+export const drawerHead = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: brand.space.sm,
+  padding: cg.size.drawerHeadPad,
+  flexShrink: 0,
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+})
+
+export const drawerHeadInfo = style({ color: brand.color.ink400, display: 'inline-flex' })
+
+export const drawerHeadTitle = style({
+  margin: 0,
+  flex: 1,
+  textAlign: 'center',
+  fontSize: cg.size.drawerHeadFont,
+  fontWeight: brand.weight.bold,
+  color: brand.color.ink900,
+})
+
+export const drawerClose = style({
+  inlineSize: cg.size.drawerCloseBox,
+  blockSize: cg.size.drawerCloseBox,
+  display: 'grid',
+  placeItems: 'center',
+  border: 'none',
+  background: 'transparent',
+  borderRadius: brand.radius.sm,
+  color: brand.color.ink500,
+  cursor: 'pointer',
+  transition: `background ${brand.ease}, color ${brand.ease}`,
+  selectors: {
+    '&:hover': { background: brand.color.surfaceAlt, color: brand.color.ink900 },
+  },
+})
+
+export const drawerBody = style({
+  padding: cg.size.drawerBodyPad,
+  overflowY: 'auto',
+  flex: 1,
+  background: cg.color.pageBg,
+  scrollbarWidth: 'thin',
+  scrollbarColor: `${cg.color.scrollThumb} transparent`,
+  selectors: {
+    '&::-webkit-scrollbar': { inlineSize: '0.5rem' },
+    '&::-webkit-scrollbar-thumb': { background: cg.color.scrollThumb, borderRadius: brand.radius.sm },
+    '&::-webkit-scrollbar-track': { background: 'transparent' },
+  },
+})
+
+export const drawerFoot = style({
+  display: 'flex',
+  justifyContent: 'flex-end',
+  gap: brand.space.sm,
+  paddingBlock: cg.size.drawerFootPadBlock,
+  paddingInline: cg.size.drawerFootPadInline,
+  flexShrink: 0,
+  borderBlockStart: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+})
+
+// ── Seções e campos de formulário (usados pelos 4 forms dentro do drawer) ──
+export const configForm = style({ display: 'flex', flexDirection: 'column', gap: brand.space.gridRow })
+
+export const configSection = style({
+  background: cg.color.secBg,
+  border: `${vars.borderWidth.thin} solid ${cg.color.secBorder}`,
+  borderRadius: cg.size.fsecRadius,
+  padding: cg.size.fsecPad,
+  display: 'flex',
+  flexDirection: 'column',
+  gap: brand.space.md,
+})
+
+export const configSectionTitle = style({
+  margin: 0,
+  fontSize: cg.size.fsecTitleFont,
+  fontWeight: brand.weight.bold,
+  color: brand.color.ink900,
+})
+
+export const field = style({ display: 'flex', flexDirection: 'column', gap: brand.space.xs })
+
+export const fieldLabel = style({
+  fontSize: cg.size.fieldLabelFont,
+  fontWeight: brand.weight.semibold,
+  color: brand.color.ink700,
+})
+
+export const fieldControl = style({ position: 'relative' })
+
+export const fieldInput = style({
+  inlineSize: '100%',
+  blockSize: cg.size.fieldH,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  borderRadius: brand.radius.sm,
+  background: brand.color.surface,
+  paddingInline: cg.size.fieldPadInline,
+  fontFamily: 'inherit',
+  fontSize: brand.text.body,
+  color: brand.color.ink900,
+  appearance: 'none',
+  transition: `border-color ${brand.ease}, box-shadow ${brand.ease}`,
+  selectors: {
+    '&::placeholder': { color: brand.color.ink400 },
+    '&:focus': {
+      outline: 'none',
+      borderColor: brand.color.primary,
+      boxShadow: brand.shadow.focus,
+    },
+  },
+})
+
+// Select (chevron desenhado à direita, sem seta nativa).
+export const fieldSelect = style({
+  cursor: 'pointer',
+  paddingInlineEnd: '2.25rem',
+})
+
+export const fieldChevron = style({
+  position: 'absolute',
+  insetInlineEnd: cg.size.fieldChevInset,
+  insetBlockStart: '50%',
+  transform: 'translateY(-50%)',
+  color: brand.color.ink400,
+  pointerEvents: 'none',
+  display: 'inline-flex',
+})
+
+// Input somente-leitura (derivados: Salário Total, Total Encargos…).
+export const derivedInput = style([
+  fieldInput,
+  {
+    background: cg.color.readonlyBg,
+    color: brand.color.ink700,
+    fontWeight: brand.weight.semibold,
+    display: 'flex',
+    alignItems: 'center',
+    fontVariantNumeric: 'tabular-nums',
+  },
+])
+
+export const totalBox = style({
+  background: cg.color.tintBlue,
+  borderRadius: brand.radius.sm,
+  padding: cg.size.totalboxPad,
+  textAlign: 'center',
+  fontWeight: brand.weight.bold,
+  color: brand.color.ink900,
+  fontSize: cg.size.totalboxFont,
+  fontVariantNumeric: 'tabular-nums',
+})
+
+// ── Checkbox rows (Aplicar aos meses) ──
+export const checkRow = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: brand.space.sm,
+  paddingBlock: cg.size.checkRowPadBlock,
+  color: brand.color.ink700,
+  fontWeight: brand.weight.medium,
+  cursor: 'pointer',
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${brand.color.line2}`,
+  selectors: { '&:last-child': { borderBlockEnd: 'none' } },
+})
+
+export const checkbox = style({
+  inlineSize: cg.size.checkbox,
+  blockSize: cg.size.checkbox,
+  accentColor: brand.color.primary,
+  cursor: 'pointer',
+  margin: 0,
+  flexShrink: 0,
+})
+
+// ── Pills de mês ──
+export const mesesRow = style({ display: 'flex', flexWrap: 'wrap', gap: brand.space.xs })
+
+export const mesChip = style({
+  inlineSize: cg.size.mpillW,
+  paddingBlock: cg.size.mpillPadBlock,
+  textAlign: 'center',
+  borderRadius: cg.size.mpillRadius,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  background: brand.color.surface,
+  color: brand.color.ink500,
+  fontWeight: brand.weight.semibold,
+  fontSize: cg.size.mpillFont,
+  cursor: 'pointer',
+  transition: `border-color ${brand.ease}`,
+  selectors: { '&:hover': { borderColor: cg.color.itemHoverBorder } },
+})
+
+export const mesChipOn = style({
+  background: brand.color.primary,
+  borderColor: brand.color.primary,
+  color: brand.color.surface,
+  selectors: { '&:hover': { borderColor: brand.color.primary } },
+})
+
+export const labelMini = style({
+  margin: `0 0 ${brand.space.xs}`,
+  fontSize: cg.size.labelMiniFont,
+  fontWeight: brand.weight.semibold,
+  color: brand.color.ink700,
+})
+
+// ── Caixas de resumo (sumbox) ──
+export const sumRow = style({ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: brand.space.md })
+
+export const sumBox = style({
+  background: brand.color.surface,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  borderRadius: cg.size.sumboxRadius,
+  padding: cg.size.sumboxPad,
+  textAlign: 'center',
+})
+
+export const sumBoxLabel = style({ fontSize: cg.size.sumboxLabelFont, color: brand.color.ink500 })
+
+export const sumBoxValue = style({
+  marginBlockStart: brand.space.xxs,
+  fontSize: cg.size.sumboxValFont,
+  fontWeight: brand.weight.bold,
+  color: brand.color.ink900,
+  fontVariantNumeric: 'tabular-nums',
+})
+
+// ── Modal de confirmação de descarte ──
 export const confirmOverlay = style({
   position: 'fixed',
   inset: 0,
   zIndex: 1300,
-  background: vars.color.institutional.overlay,
+  background: cg.color.overlay,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  padding: vars.space.lg,
+  padding: brand.space.lg,
 })
 
 export const confirmDialog = style({
@@ -443,54 +615,51 @@ export const confirmDialog = style({
   maxInlineSize: '26rem',
   display: 'flex',
   flexDirection: 'column',
-  gap: vars.space.md,
-  padding: vars.space.lg,
-  borderRadius: vars.radius.lg,
-  background: vars.color.surface.default,
-  fontFamily: vars.font.family.body,
+  gap: brand.space.md,
+  padding: brand.space.xl,
+  borderRadius: brand.radius.lg,
+  background: brand.color.surface,
+  fontFamily: vars.font.family.heading,
 })
 
 export const confirmTitle = style({
   margin: 0,
-  fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.md,
-  fontWeight: vars.font.weight.bold,
-  color: vars.color.text.primary,
+  fontSize: brand.text.panelTitle,
+  fontWeight: brand.weight.bold,
+  color: brand.color.ink900,
 })
 
 export const confirmBody = style({
   margin: 0,
-  fontSize: vars.font.size.sm,
-  color: vars.color.text.secondary,
+  fontSize: brand.text.body,
+  color: brand.color.ink500,
   lineHeight: 1.5,
 })
 
-export const confirmFooter = style({ display: 'flex', gap: vars.space.sm, justifyContent: 'flex-end' })
+export const confirmFooter = style({ display: 'flex', gap: brand.space.sm, justifyContent: 'flex-end' })
 
 export const confirmKeep = style({
-  paddingBlock: vars.space.sm,
-  paddingInline: vars.space.md,
-  borderRadius: vars.radius.md,
-  border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
-  background: vars.color.surface.default,
-  color: vars.color.text.primary,
-  fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.sm,
-  fontWeight: vars.font.weight.semibold,
+  paddingBlock: brand.space.sm,
+  paddingInline: brand.space.md,
+  borderRadius: brand.radius.sm,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  background: brand.color.surface,
+  color: brand.color.ink700,
+  fontFamily: 'inherit',
+  fontWeight: brand.weight.semibold,
   cursor: 'pointer',
-  selectors: { '&:hover': { background: vars.color.surface.subtle } },
+  selectors: { '&:hover': { background: brand.color.surfaceAlt } },
 })
 
 export const confirmDiscard = style({
-  paddingBlock: vars.space.sm,
-  paddingInline: vars.space.md,
-  borderRadius: vars.radius.md,
+  paddingBlock: brand.space.sm,
+  paddingInline: brand.space.md,
+  borderRadius: brand.radius.sm,
   border: 'none',
-  background: vars.color.feedback.errorText,
-  color: vars.color.surface.default,
-  fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.sm,
-  fontWeight: vars.font.weight.semibold,
+  background: cg.color.brandRed,
+  color: brand.color.surface,
+  fontFamily: 'inherit',
+  fontWeight: brand.weight.semibold,
   cursor: 'pointer',
   selectors: { '&:hover': { opacity: 0.9 } },
 })

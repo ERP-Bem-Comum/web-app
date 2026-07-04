@@ -39,6 +39,8 @@ import {
   auditWhen,
   totalCell,
   totalCellZero,
+  totalCellChild,
+  totalCellChildZero,
   partners,
   badge,
   badgeTone,
@@ -163,7 +165,19 @@ export function PlanTreeTable(props: PlanTreeTableProps): ReactNode {
             </div>
           </td>
           <td className={tdNum}>
-            <span className={isZeroTotal(r.totalLabel) ? totalCellZero : totalCell}>{r.totalLabel}</span>
+            <span
+              className={
+                isZeroTotal(r.totalLabel)
+                  ? isChild
+                    ? totalCellChildZero
+                    : totalCellZero
+                  : isChild
+                    ? totalCellChild
+                    : totalCell
+              }
+            >
+              {r.totalLabel}
+            </span>
           </td>
           <td className={td}>
             <span className={partners}>{r.partnersLabel}</span>

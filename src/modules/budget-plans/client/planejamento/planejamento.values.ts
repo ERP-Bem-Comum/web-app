@@ -40,6 +40,8 @@ export const planejamento = {
     planIconChild: '30px',
     nameGap: '1px',
     planNameFont: '14.5px',
+    // Nome/valor das linhas-FILHAS: 1px menor que o pai + peso médio (leitura mais leve, distinta do pai).
+    childNameFont: '13.5px',
     subFont: '12.5px',
     // Conector de árvore.
     treeInsetX: '11px',

@@ -1,9 +1,12 @@
 /**
- * PessoalForm — view do formulário de custo de pessoal (US2.4c, frame 4). Estado LOCAL (o que o usuário
- * digita); os totais são derivados ao vivo (`computePessoal`). "Salvar" devolve o Custo Mensal + os meses
- * ao pai (que aplica no grid — frame 5). Front-first: persistência real chega com o backend (#113).
+ * PessoalForm — view do formulário de custo de pessoal (US2.4c, frame 4) DENTRO do drawer. Estado LOCAL (o que o
+ * usuário digita); os totais são derivados ao vivo (`computePessoal`). "Salvar" devolve o Custo Mensal + os meses
+ * ao pai (que aplica no grid — frame 5). Front-first: persistência real chega com o backend (#113). Renderiza o
+ * corpo rolável (seções) + o rodapé de ações do drawer (Descartar/Salvar).
  */
 import { useState, type ReactNode } from 'react'
+
+import { ChevronDownIcon } from '#shared/ui/index.ts'
 
 import {
   computePessoal,
@@ -11,28 +14,26 @@ import {
   type PessoalForm as PessoalFormState,
 } from './pessoal-calc.view-model.ts'
 import {
+  configForm,
   configSection,
   configSectionTitle,
   field,
   fieldLabel,
+  fieldControl,
   fieldInput,
-  formActions,
-  cancelButton,
-  applyButton,
-} from './calculando-gastos.css.ts'
-import {
-  form as pfForm,
-  row2,
-  row3,
+  fieldSelect,
+  fieldChevron,
   derivedInput,
-  custoGrid,
-  custoCell,
-  custoCellLabel,
-  custoCellValue,
   mesesRow,
   mesChip,
   mesChipOn,
-} from './pessoal-form.css.ts'
+  labelMini,
+  drawerBody,
+  drawerFoot,
+  cancelButton,
+  applyButton,
+} from './calculando-gastos.css.ts'
+import { row2, row3, custoGrid, custoCell, custoCellLabel, custoCellValue } from './pessoal-form.css.ts'
 
 export type PessoalFormLabels = Readonly<{
   tipo: string
@@ -84,14 +85,16 @@ function TextField(
   return (
     <label className={field}>
       <span className={fieldLabel}>{props.label}</span>
-      <input
-        className={fieldInput}
-        inputMode={props.numeric === true ? 'decimal' : undefined}
-        value={props.value}
-        onChange={(e) => {
-          props.onChange(e.target.value)
-        }}
-      />
+      <div className={fieldControl}>
+        <input
+          className={fieldInput}
+          inputMode={props.numeric === true ? 'decimal' : undefined}
+          value={props.value}
+          onChange={(e) => {
+            props.onChange(e.target.value)
+          }}
+        />
+      </div>
     </label>
   )
 }
@@ -116,20 +119,25 @@ function SelectField(
   return (
     <label className={field}>
       <span className={fieldLabel}>{props.label}</span>
-      <select
-        className={fieldInput}
-        value={props.value}
-        onChange={(e) => {
-          props.onChange(e.target.value)
-        }}
-      >
-        <option value="">Selecione…</option>
-        {props.options.map((o) => (
-          <option key={o} value={o}>
-            {o}
-          </option>
-        ))}
-      </select>
+      <div className={fieldControl}>
+        <select
+          className={`${fieldInput} ${fieldSelect}`}
+          value={props.value}
+          onChange={(e) => {
+            props.onChange(e.target.value)
+          }}
+        >
+          <option value="">Selecione…</option>
+          {props.options.map((o) => (
+            <option key={o} value={o}>
+              {o}
+            </option>
+          ))}
+        </select>
+        <span className={fieldChevron} aria-hidden="true">
+          <ChevronDownIcon size={16} />
+        </span>
+      </div>
     </label>
   )
 }
@@ -153,130 +161,139 @@ export function PessoalForm(props: PessoalFormProps): ReactNode {
   }
 
   return (
-    <div className={pfForm}>
-      <div className={configSection}>
-        <span className={configSectionTitle}>{L.tipo}</span>
-        <div className={row2}>
-          <SelectField
-            label={L.nivel}
-            value={form.nivel}
-            options={['Superior Completo / Incompleto', 'Médio', 'Fundamental']}
-            onChange={set('nivel')}
-          />
-          <SelectField
-            label={L.vinculo}
-            value={form.vinculo}
-            options={['CLT', 'PJ', 'Estágio', 'Menor Aprendiz']}
-            onChange={set('vinculo')}
-          />
-        </div>
-      </div>
-
-      <div className={configSection}>
-        <span className={configSectionTitle}>{L.remuneracao}</span>
-        <div className={row2}>
-          <TextField label={L.qtd} value={form.qtd} numeric onChange={set('qtd')} />
-          <TextField label={L.salario} value={form.salario} numeric onChange={set('salario')} />
-        </div>
-        <label className={field}>
-          <span className={fieldLabel}>{L.meses}</span>
-          <div className={mesesRow}>
-            {props.monthAbbrevs.map((m, i) => (
-              <button
-                key={m}
-                type="button"
-                className={form.meses.includes(i) ? `${mesChip} ${mesChipOn}` : mesChip}
-                onClick={() => {
-                  toggleMes(i)
-                }}
-              >
-                {m}
-              </button>
-            ))}
+    <>
+      <div className={drawerBody}>
+        <div className={configForm}>
+          <div className={configSection}>
+            <h4 className={configSectionTitle}>{L.tipo}</h4>
+            <div className={row2}>
+              <SelectField
+                label={L.nivel}
+                value={form.nivel}
+                options={['Superior Completo / Incompleto', 'Médio', 'Fundamental']}
+                onChange={set('nivel')}
+              />
+              <SelectField
+                label={L.vinculo}
+                value={form.vinculo}
+                options={['CLT', 'PJ', 'Estágio', 'Menor Aprendiz']}
+                onChange={set('vinculo')}
+              />
+            </div>
           </div>
-        </label>
-        <div className={row2}>
-          <TextField label={L.reajuste} value={form.reajuste} numeric onChange={set('reajuste')} />
-          <DerivedField label={L.salarioTotal} value={formatCents(calc.salarioTotalCents)} />
+
+          <div className={configSection}>
+            <h4 className={configSectionTitle}>{L.remuneracao}</h4>
+            <div className={row2}>
+              <TextField label={L.qtd} value={form.qtd} numeric onChange={set('qtd')} />
+              <TextField label={L.salario} value={form.salario} numeric onChange={set('salario')} />
+            </div>
+            <div>
+              <p className={labelMini}>{L.meses}</p>
+              <div className={mesesRow}>
+                {props.monthAbbrevs.map((m, i) => (
+                  <button
+                    key={m}
+                    type="button"
+                    className={form.meses.includes(i) ? `${mesChip} ${mesChipOn}` : mesChip}
+                    onClick={() => {
+                      toggleMes(i)
+                    }}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className={row2}>
+              <TextField label={L.reajuste} value={form.reajuste} numeric onChange={set('reajuste')} />
+              <DerivedField label={L.salarioTotal} value={formatCents(calc.salarioTotalCents)} />
+            </div>
+          </div>
+
+          <div className={configSection}>
+            <h4 className={configSectionTitle}>{L.encargos}</h4>
+            <div className={row3}>
+              <TextField
+                label={L.inssPatronal}
+                value={form.inssPatronal}
+                numeric
+                onChange={set('inssPatronal')}
+              />
+              <TextField label={L.inss} value={form.inss} numeric onChange={set('inss')} />
+              <TextField label={L.fgts} value={form.fgts} numeric onChange={set('fgts')} />
+            </div>
+            <div className={row2}>
+              <TextField label={L.pis} value={form.pis} numeric onChange={set('pis')} />
+              <DerivedField label={L.totalEncargos} value={formatCents(calc.totalEncargosCents)} />
+            </div>
+          </div>
+
+          <div className={configSection}>
+            <h4 className={configSectionTitle}>{L.beneficios}</h4>
+            <div className={row3}>
+              <TextField
+                label={L.valeTransporte}
+                value={form.valeTransporte}
+                numeric
+                onChange={set('valeTransporte')}
+              />
+              <TextField
+                label={L.alimentacao}
+                value={form.alimentacao}
+                numeric
+                onChange={set('alimentacao')}
+              />
+              <TextField label={L.planoSaude} value={form.planoSaude} numeric onChange={set('planoSaude')} />
+            </div>
+            <div className={row2}>
+              <TextField label={L.seguroVida} value={form.seguroVida} numeric onChange={set('seguroVida')} />
+              <DerivedField label={L.totalBeneficios} value={formatCents(calc.totalBeneficiosCents)} />
+            </div>
+          </div>
+
+          <div className={configSection}>
+            <h4 className={configSectionTitle}>{L.provisoes}</h4>
+            <div className={row3}>
+              <TextField
+                label={L.feriasEncargos}
+                value={form.feriasEncargos}
+                numeric
+                onChange={set('feriasEncargos')}
+              />
+              <TextField label={L.abono} value={form.abono} numeric onChange={set('abono')} />
+              <TextField
+                label={L.decimoEncargos}
+                value={form.decimoEncargos}
+                numeric
+                onChange={set('decimoEncargos')}
+              />
+            </div>
+            <div className={row2}>
+              <TextField
+                label={L.fgtsMultaAdicional}
+                value={form.fgtsMultaAdicional}
+                numeric
+                onChange={set('fgtsMultaAdicional')}
+              />
+              <DerivedField label={L.totalProvisoes} value={formatCents(calc.totalProvisoesCents)} />
+            </div>
+          </div>
+
+          <div className={custoGrid}>
+            <div className={custoCell}>
+              <span className={custoCellLabel}>{L.mensal}</span>
+              <span className={custoCellValue}>{formatCents(calc.custoMensalCents)}</span>
+            </div>
+            <div className={custoCell}>
+              <span className={custoCellLabel}>{L.anual}</span>
+              <span className={custoCellValue}>{formatCents(calc.custoAnualCents)}</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className={configSection}>
-        <span className={configSectionTitle}>{L.encargos}</span>
-        <div className={row3}>
-          <TextField
-            label={L.inssPatronal}
-            value={form.inssPatronal}
-            numeric
-            onChange={set('inssPatronal')}
-          />
-          <TextField label={L.inss} value={form.inss} numeric onChange={set('inss')} />
-          <TextField label={L.fgts} value={form.fgts} numeric onChange={set('fgts')} />
-        </div>
-        <div className={row2}>
-          <TextField label={L.pis} value={form.pis} numeric onChange={set('pis')} />
-          <DerivedField label={L.totalEncargos} value={formatCents(calc.totalEncargosCents)} />
-        </div>
-      </div>
-
-      <div className={configSection}>
-        <span className={configSectionTitle}>{L.beneficios}</span>
-        <div className={row3}>
-          <TextField
-            label={L.valeTransporte}
-            value={form.valeTransporte}
-            numeric
-            onChange={set('valeTransporte')}
-          />
-          <TextField label={L.alimentacao} value={form.alimentacao} numeric onChange={set('alimentacao')} />
-          <TextField label={L.planoSaude} value={form.planoSaude} numeric onChange={set('planoSaude')} />
-        </div>
-        <div className={row2}>
-          <TextField label={L.seguroVida} value={form.seguroVida} numeric onChange={set('seguroVida')} />
-          <DerivedField label={L.totalBeneficios} value={formatCents(calc.totalBeneficiosCents)} />
-        </div>
-      </div>
-
-      <div className={configSection}>
-        <span className={configSectionTitle}>{L.provisoes}</span>
-        <div className={row3}>
-          <TextField
-            label={L.feriasEncargos}
-            value={form.feriasEncargos}
-            numeric
-            onChange={set('feriasEncargos')}
-          />
-          <TextField label={L.abono} value={form.abono} numeric onChange={set('abono')} />
-          <TextField
-            label={L.decimoEncargos}
-            value={form.decimoEncargos}
-            numeric
-            onChange={set('decimoEncargos')}
-          />
-        </div>
-        <div className={row2}>
-          <TextField
-            label={L.fgtsMultaAdicional}
-            value={form.fgtsMultaAdicional}
-            numeric
-            onChange={set('fgtsMultaAdicional')}
-          />
-          <DerivedField label={L.totalProvisoes} value={formatCents(calc.totalProvisoesCents)} />
-        </div>
-      </div>
-
-      <div className={custoGrid}>
-        <div className={custoCell}>
-          <span className={custoCellLabel}>{L.mensal}</span>
-          <span className={custoCellValue}>{formatCents(calc.custoMensalCents)}</span>
-        </div>
-        <div className={custoCell}>
-          <span className={custoCellLabel}>{L.anual}</span>
-          <span className={custoCellValue}>{formatCents(calc.custoAnualCents)}</span>
-        </div>
-      </div>
-
-      <div className={formActions}>
+      <div className={drawerFoot}>
         <button type="button" className={cancelButton} onClick={props.onDescartar}>
           {L.descartar}
         </button>
@@ -290,6 +307,6 @@ export function PessoalForm(props: PessoalFormProps): ReactNode {
           {L.salvar}
         </button>
       </div>
-    </div>
+    </>
   )
 }

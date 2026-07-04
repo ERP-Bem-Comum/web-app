@@ -1,7 +1,8 @@
 /**
  * LogisticaForm — view do formulário de Logística (Tipo D, §1.8): pessoas/viagens + custos por viagem
  * (passagem, hospedagem·diárias, alimentação/transporte/carro·diárias) → cards-resumo (Passagens/Hospedagem/
- * Despesas) + Custo Total. Estado LOCAL; total ao vivo (`computeLogistica`). Front-first (persistência #113).
+ * Despesas) + Custo Total, DENTRO do drawer. Estado LOCAL; total ao vivo (`computeLogistica`). Front-first
+ * (persistência #113). Renderiza o corpo rolável (seções) + o rodapé de ações do drawer (Descartar/Salvar).
  */
 import { useState, type ReactNode } from 'react'
 
@@ -11,27 +12,27 @@ import {
   type LogisticaForm as LogisticaFormState,
 } from './logistica-calc.view-model.ts'
 import {
+  configForm,
   configSection,
   configSectionTitle,
   field,
   fieldLabel,
+  fieldControl,
   fieldInput,
-  formActions,
-  cancelButton,
-  applyButton,
-} from './calculando-gastos.css.ts'
-import {
-  form as pfForm,
-  row2,
-  row3,
-  custoGrid,
-  custoCell,
-  custoCellLabel,
-  custoCellValue,
+  labelMini,
   mesesRow,
   mesChip,
   mesChipOn,
-} from './pessoal-form.css.ts'
+  sumRow,
+  sumBox,
+  sumBoxLabel,
+  sumBoxValue,
+  drawerBody,
+  drawerFoot,
+  cancelButton,
+  applyButton,
+} from './calculando-gastos.css.ts'
+import { row2, custoGrid, custoCell, custoCellLabel, custoCellValue } from './pessoal-form.css.ts'
 
 export type LogisticaFormLabels = Readonly<{
   viagem: string
@@ -70,14 +71,16 @@ function NumField(
   return (
     <label className={field}>
       <span className={fieldLabel}>{props.label}</span>
-      <input
-        className={fieldInput}
-        inputMode="decimal"
-        value={props.value}
-        onChange={(e) => {
-          props.onChange(e.target.value)
-        }}
-      />
+      <div className={fieldControl}>
+        <input
+          className={fieldInput}
+          inputMode="decimal"
+          value={props.value}
+          onChange={(e) => {
+            props.onChange(e.target.value)
+          }}
+        />
+      </div>
     </label>
   )
 }
@@ -99,88 +102,107 @@ export function LogisticaForm(props: LogisticaFormProps): ReactNode {
   }
 
   return (
-    <div className={pfForm}>
-      <div className={configSection}>
-        <span className={configSectionTitle}>{L.viagem}</span>
-        <div className={row2}>
-          <NumField label={L.pessoas} value={form.pessoas} onChange={set('pessoas')} />
-          <NumField label={L.viagens} value={form.viagens} onChange={set('viagens')} />
-        </div>
-      </div>
-
-      <div className={configSection}>
-        <span className={configSectionTitle}>{L.custos}</span>
-        <NumField label={L.passagem} value={form.passagem} onChange={set('passagem')} />
-        <div className={row2}>
-          <NumField label={L.hospedagem} value={form.hospedagem} onChange={set('hospedagem')} />
-          <NumField label={L.diarias} value={form.diariasHospedagem} onChange={set('diariasHospedagem')} />
-        </div>
-        <div className={row2}>
-          <NumField label={L.alimentacao} value={form.alimentacao} onChange={set('alimentacao')} />
-          <NumField label={L.diarias} value={form.diariasAlimentacao} onChange={set('diariasAlimentacao')} />
-        </div>
-        <div className={row2}>
-          <NumField label={L.transporte} value={form.transporte} onChange={set('transporte')} />
-          <NumField label={L.diarias} value={form.diariasTransporte} onChange={set('diariasTransporte')} />
-        </div>
-        <div className={row2}>
-          <NumField
-            label={L.carroCombustivel}
-            value={form.carroCombustivel}
-            onChange={set('carroCombustivel')}
-          />
-          <NumField label={L.diarias} value={form.diariasCarro} onChange={set('diariasCarro')} />
-        </div>
-      </div>
-
-      <div className={configSection}>
-        <span className={configSectionTitle}>{L.resumo}</span>
-        <div className={row3}>
-          <div className={custoCell}>
-            <span className={custoCellLabel}>{L.resumoPassagens}</span>
-            <span className={custoCellValue}>{formatCents(calc.passagensCents)}</span>
+    <>
+      <div className={drawerBody}>
+        <div className={configForm}>
+          <div className={configSection}>
+            <h4 className={configSectionTitle}>{L.viagem}</h4>
+            <div className={row2}>
+              <NumField label={L.pessoas} value={form.pessoas} onChange={set('pessoas')} />
+              <NumField label={L.viagens} value={form.viagens} onChange={set('viagens')} />
+            </div>
           </div>
-          <div className={custoCell}>
-            <span className={custoCellLabel}>{L.resumoHospedagem}</span>
-            <span className={custoCellValue}>{formatCents(calc.hospedagemCents)}</span>
+
+          <div className={configSection}>
+            <h4 className={configSectionTitle}>{L.custos}</h4>
+            <NumField label={L.passagem} value={form.passagem} onChange={set('passagem')} />
+            <div className={row2}>
+              <NumField label={L.hospedagem} value={form.hospedagem} onChange={set('hospedagem')} />
+              <NumField
+                label={L.diarias}
+                value={form.diariasHospedagem}
+                onChange={set('diariasHospedagem')}
+              />
+            </div>
+            <div className={row2}>
+              <NumField label={L.alimentacao} value={form.alimentacao} onChange={set('alimentacao')} />
+              <NumField
+                label={L.diarias}
+                value={form.diariasAlimentacao}
+                onChange={set('diariasAlimentacao')}
+              />
+            </div>
+            <div className={row2}>
+              <NumField label={L.transporte} value={form.transporte} onChange={set('transporte')} />
+              <NumField
+                label={L.diarias}
+                value={form.diariasTransporte}
+                onChange={set('diariasTransporte')}
+              />
+            </div>
+            <div className={row2}>
+              <NumField
+                label={L.carroCombustivel}
+                value={form.carroCombustivel}
+                onChange={set('carroCombustivel')}
+              />
+              <NumField label={L.diarias} value={form.diariasCarro} onChange={set('diariasCarro')} />
+            </div>
           </div>
-          <div className={custoCell}>
-            <span className={custoCellLabel}>{L.resumoDespesas}</span>
-            <span className={custoCellValue}>{formatCents(calc.despesasCents)}</span>
+
+          <div className={configSection}>
+            <h4 className={configSectionTitle}>{L.resumo}</h4>
+            <div className={sumRow}>
+              <div className={sumBox}>
+                <div className={sumBoxLabel}>{L.resumoPassagens}</div>
+                <div className={sumBoxValue}>{formatCents(calc.passagensCents)}</div>
+              </div>
+              <div className={sumBox}>
+                <div className={sumBoxLabel}>{L.resumoHospedagem}</div>
+                <div className={sumBoxValue}>{formatCents(calc.hospedagemCents)}</div>
+              </div>
+              <div className={sumBox}>
+                <div className={sumBoxLabel}>{L.resumoDespesas}</div>
+                <div className={sumBoxValue}>{formatCents(calc.despesasCents)}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className={configSection}>
+            <h4 className={configSectionTitle}>{L.meses}</h4>
+            <div>
+              <p className={labelMini}>{L.meses}</p>
+              <div className={mesesRow}>
+                {props.monthAbbrevs.map((m, i) => (
+                  <button
+                    key={m}
+                    type="button"
+                    className={form.meses.includes(i) ? `${mesChip} ${mesChipOn}` : mesChip}
+                    onClick={() => {
+                      toggleMes(i)
+                    }}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className={custoGrid}>
+            <div className={custoCell}>
+              <span className={custoCellLabel}>{L.mensal}</span>
+              <span className={custoCellValue}>{formatCents(calc.custoMensalCents)}</span>
+            </div>
+            <div className={custoCell}>
+              <span className={custoCellLabel}>{L.anual}</span>
+              <span className={custoCellValue}>{formatCents(calc.custoAnualCents)}</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <label className={field}>
-        <span className={fieldLabel}>{L.meses}</span>
-        <div className={mesesRow}>
-          {props.monthAbbrevs.map((m, i) => (
-            <button
-              key={m}
-              type="button"
-              className={form.meses.includes(i) ? `${mesChip} ${mesChipOn}` : mesChip}
-              onClick={() => {
-                toggleMes(i)
-              }}
-            >
-              {m}
-            </button>
-          ))}
-        </div>
-      </label>
-
-      <div className={custoGrid}>
-        <div className={custoCell}>
-          <span className={custoCellLabel}>{L.mensal}</span>
-          <span className={custoCellValue}>{formatCents(calc.custoMensalCents)}</span>
-        </div>
-        <div className={custoCell}>
-          <span className={custoCellLabel}>{L.anual}</span>
-          <span className={custoCellValue}>{formatCents(calc.custoAnualCents)}</span>
-        </div>
-      </div>
-
-      <div className={formActions}>
+      <div className={drawerFoot}>
         <button type="button" className={cancelButton} onClick={props.onDescartar}>
           {L.descartar}
         </button>
@@ -194,6 +216,6 @@ export function LogisticaForm(props: LogisticaFormProps): ReactNode {
           {L.salvar}
         </button>
       </div>
-    </div>
+    </>
   )
 }

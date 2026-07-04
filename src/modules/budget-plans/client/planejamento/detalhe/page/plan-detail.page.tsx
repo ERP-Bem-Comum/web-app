@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { Badge, ChevronUpIcon, type BadgeProps } from '#shared/ui/index.ts'
+import { Badge, ChevronLeftIcon, type BadgeProps } from '#shared/ui/index.ts'
 import type { StatusTone } from '#modules/budget-plans/client/planejamento/planejamento-list.view-model.ts'
 
 import { usePlanDetail } from '../plan-detail.binding.ts'
@@ -15,6 +15,8 @@ import {
   screen,
   header,
   backButton,
+  headText,
+  headTitle,
   breadcrumb,
   resultCard,
   titleRow,
@@ -61,9 +63,12 @@ export function PlanDetailPage(): ReactNode {
           aria-label={t('budget-plans.detail.back')}
           onClick={goBack}
         >
-          <ChevronUpIcon size={18} />
+          <ChevronLeftIcon size={20} />
         </button>
-        <span className={breadcrumb}>{t('budget-plans.detail.breadcrumb')}</span>
+        <div className={headText}>
+          <h1 className={headTitle}>{t('budget-plans.detail.pageTitle')}</h1>
+          <span className={breadcrumb}>{t('budget-plans.detail.breadcrumb')}</span>
+        </div>
       </div>
 
       {state.status === 'not-found' ? (

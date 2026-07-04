@@ -1,73 +1,99 @@
 /**
- * Layout da página Detalhe do plano (HANDBOOK §1.4): cabeçalho (voltar + breadcrumb), linha de título
- * (nome + status + Total Plano), barra de ações e a matriz consolidada. Só tokens (§X).
+ * Layout da página Detalhe do plano (HANDBOOK §1.4) no padrão visual "brand" (espelha o `screen`/cabeçalho
+ * de `planejamento-list`): container full-bleed com fundo cinza + rolagem própria (Inter), cabeçalho com
+ * botão voltar + título/legenda, card do resultado (surface + borda line + sombra), barra de filtros/ações
+ * com selects/botões brand e o valor "Total Plano" em azul da marca. Só tokens/values (§X).
  */
 import { style } from '@vanilla-extract/css'
 
 import { vars } from '#shared/ui/tokens/index.ts'
+import { brand } from '#shared/ui/brand/grid-brand.values.ts'
 
+// BLOCO (não flex column): os filhos ficam em fluxo de bloco → o `screen` ROLA de verdade (espelha o grid).
 export const screen = style({
-  padding: vars.space.xl,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: vars.space.lg,
+  padding: brand.space.xxl,
   blockSize: '100%',
   overflowY: 'auto',
-  fontFamily: vars.font.family.body,
+  background: brand.color.pageBg,
+  fontFamily: vars.font.family.heading, // Inter
+  color: brand.color.ink700,
+  scrollbarWidth: 'thin',
+  scrollbarColor: `${brand.color.scrollThumb} transparent`,
+  selectors: {
+    '&::-webkit-scrollbar': { inlineSize: '0.625rem' },
+    '&::-webkit-scrollbar-thumb': { background: brand.color.scrollThumb, borderRadius: brand.radius.sm },
+    '&::-webkit-scrollbar-track': { background: 'transparent' },
+  },
 })
 
+// ── Cabeçalho brand: botão voltar (quadrado, borda line) + título/legenda ──
 export const header = style({
   display: 'flex',
   alignItems: 'center',
-  gap: vars.space.sm,
+  gap: brand.space.lg,
+  marginBlockEnd: brand.space.xl,
 })
 
 export const backButton = style({
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  inlineSize: '2rem',
-  blockSize: '2rem',
+  inlineSize: brand.size.backBtn,
+  blockSize: brand.size.backBtn,
   flexShrink: 0,
-  borderRadius: vars.radius.md,
-  border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
-  background: vars.color.surface.default,
-  color: vars.color.text.primary,
+  borderRadius: brand.radius.md,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  background: brand.color.surface,
+  color: brand.color.ink700,
   cursor: 'pointer',
-  // seta "voltar" = chevron rotacionado (‹). Reaproveita o ícone ChevronUp.
-  transform: 'rotate(-90deg)',
+  transition: `all ${brand.ease}`,
   selectors: {
-    '&:hover': { background: vars.color.surface.subtle },
+    '&:hover': { background: brand.color.surfaceAlt, borderColor: brand.color.lineStrong },
     '&:focus-visible': {
-      outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
+      outline: `${vars.focusRing.width} solid ${brand.color.primary}`,
       outlineOffset: vars.focusRing.offset,
     },
   },
 })
 
-export const breadcrumb = style({
+export const headText = style({ display: 'flex', flexDirection: 'column', gap: brand.space.xxs })
+
+// Título "brand" (h1): Inter 22px 700 ink900.
+export const headTitle = style({
+  margin: 0,
   fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.lg,
-  fontWeight: vars.font.weight.bold,
-  color: vars.color.text.primary,
+  fontSize: brand.text.h1,
+  fontWeight: brand.weight.bold,
+  color: brand.color.ink900,
+  letterSpacing: '-.01em',
 })
 
-// Card do RESULTADO (título + status + Total Plano) — reproduz o card do Consolidado: branco, borda leve.
+// Legenda/breadcrumb — 13.5px ink400.
+export const breadcrumb = style({
+  margin: 0,
+  fontFamily: vars.font.family.heading,
+  fontSize: brand.text.subtitle,
+  color: brand.color.ink400,
+})
+
+// Card do RESULTADO (título + status + Total Plano) — surface + borda line + sombra brand + radius lg.
 export const resultCard = style({
   display: 'flex',
   flexDirection: 'column',
-  gap: vars.space.md,
-  padding: vars.space.lg,
-  borderRadius: vars.radius.lg,
-  border: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
-  background: vars.color.surface.default,
+  gap: brand.space.md,
+  padding: brand.space.xl,
+  borderRadius: brand.radius.lg,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  background: brand.color.surface,
+  boxShadow: brand.shadow.card,
+  marginBlockEnd: brand.space.xl,
 })
 
 export const titleRow = style({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  gap: vars.space.md,
+  gap: brand.space.md,
   flexWrap: 'wrap',
 })
 
@@ -75,63 +101,75 @@ export const title = style({
   margin: 0,
   display: 'inline-flex',
   alignItems: 'center',
-  gap: vars.space.sm,
+  gap: brand.space.sm,
   fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.xl,
-  fontWeight: vars.font.weight.bold,
-  color: vars.color.text.primary,
+  fontSize: brand.text.h1,
+  fontWeight: brand.weight.bold,
+  color: brand.color.ink900,
+  letterSpacing: '-.01em',
 })
 
-// "Total Plano:" — rótulo pequeno e cinza + valor em AZUL de marca grande (mesmo padrão do Consolidado).
+// "Total Plano:" — rótulo pequeno e cinza + valor em AZUL de marca grande.
 export const totalPlan = style({
   display: 'inline-flex',
   alignItems: 'baseline',
-  gap: vars.space.xs,
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size.sm,
-  color: vars.color.text.secondary,
+  gap: brand.space.xs,
+  fontFamily: vars.font.family.heading,
+  fontSize: brand.text.subtitle,
+  color: brand.color.ink500,
 })
 
 export const totalValue = style({
-  fontSize: vars.font.size.xl,
-  fontWeight: vars.font.weight.bold,
-  color: vars.color.brand.normal,
+  fontSize: brand.text.h1,
+  fontWeight: brand.weight.bold,
+  color: brand.color.primary,
   fontVariantNumeric: 'tabular-nums',
 })
 
-// Barra de filtros/ações — cinza clara SEM borda (removida a pedido; espelha a barra do Orçamento).
+// Barra de filtros/ações — surface com borda line + radius, sombra sutil.
 export const actionBar = style({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  gap: vars.space.md,
+  gap: brand.space.md,
   flexWrap: 'wrap',
-  padding: vars.space.md,
-  borderRadius: vars.radius.md,
-  background: vars.color.surface.subtle,
+  padding: brand.space.md,
+  borderRadius: brand.radius.md,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  background: brand.color.surface,
+  boxShadow: brand.shadow.card,
+  marginBlockEnd: brand.space.xl,
 })
 
 export const filterGroup = style({
   display: 'flex',
   alignItems: 'center',
-  gap: vars.space.sm,
+  gap: brand.space.sm,
 })
 
+// Select brand: 44px, appearance:none + chevron (data-uri), borda line.
+const CHEVRON_SVG =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7480' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")"
+
 const selectBase = {
-  paddingBlock: vars.space.sm,
-  paddingInline: vars.space.md,
-  borderRadius: vars.radius.md,
-  border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
-  background: vars.color.surface.default,
-  color: vars.color.text.secondary,
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size.sm,
-  minInlineSize: '8rem',
+  blockSize: brand.size.ctrlH,
+  paddingInlineStart: brand.space.md,
+  paddingInlineEnd: brand.space.xxl,
+  borderRadius: brand.radius.sm,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  background: `${brand.color.surface} ${CHEVRON_SVG} no-repeat`,
+  backgroundPosition: `right ${brand.space.md} center`,
+  appearance: 'none',
+  color: brand.color.ink700,
+  fontFamily: vars.font.family.heading,
+  fontSize: brand.text.body,
+  minInlineSize: '9rem',
   cursor: 'pointer',
   selectors: {
-    '&:disabled': { opacity: 0.55, cursor: 'not-allowed', background: vars.color.surface.subtle },
+    '&:disabled': { opacity: 0.55, cursor: 'not-allowed', background: brand.color.surfaceAlt },
+    '&:hover:not(:disabled)': { borderColor: brand.color.lineStrong },
     '&:focus-visible': {
-      outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
+      outline: `${vars.focusRing.width} solid ${brand.color.primary}`,
       outlineOffset: vars.focusRing.offset,
     },
   },
@@ -140,45 +178,69 @@ const selectBase = {
 export const stateSelect = style(selectBase)
 export const municipioSelect = style(selectBase)
 
-const buttonBase = style({
-  paddingBlock: vars.space.sm,
-  paddingInline: vars.space.lg,
-  borderRadius: vars.radius.md,
-  border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
-  background: vars.color.surface.default,
-  color: vars.color.text.primary,
+// Botão base (altura de controle brand).
+const controlButton = style({
+  blockSize: brand.size.ctrlH,
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: brand.space.sm,
+  paddingInline: brand.space.lg,
+  borderRadius: brand.radius.sm,
   fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.sm,
-  fontWeight: vars.font.weight.semibold,
+  fontSize: brand.text.body,
+  fontWeight: brand.weight.semibold,
   cursor: 'pointer',
   whiteSpace: 'nowrap',
   selectors: {
     '&:disabled': { opacity: 0.55, cursor: 'not-allowed' },
-    '&:hover:not(:disabled)': { background: vars.color.surface.subtle },
     '&:focus-visible': {
-      outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
+      outline: `${vars.focusRing.width} solid ${brand.color.primary}`,
       outlineOffset: vars.focusRing.offset,
     },
   },
 })
 
-export const filterButton = style([buttonBase])
-export const secondaryButton = style([buttonBase])
+// Ghost brand (borda line, surface, hover surfaceAlt) — secundários.
+const ghostButton = style([
+  controlButton,
+  {
+    border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+    background: brand.color.surface,
+    color: brand.color.ink700,
+    selectors: {
+      '&:hover:not(:disabled)': { background: brand.color.surfaceAlt, borderColor: brand.color.ink400 },
+    },
+  },
+])
+
+// Primário brand (azul da marca).
+export const filterButton = style([
+  controlButton,
+  {
+    border: 'none',
+    background: brand.color.primary,
+    color: brand.color.surface,
+    boxShadow: brand.shadow.btn,
+    selectors: { '&:hover:not(:disabled)': { background: brand.color.primaryHover } },
+  },
+])
+
+export const secondaryButton = style([ghostButton])
 
 export const actionsRight = style({
   display: 'flex',
   alignItems: 'center',
-  gap: vars.space.sm,
+  gap: brand.space.sm,
 })
 
 export const moreButton = style([
-  buttonBase,
-  { paddingInline: vars.space.md, fontSize: vars.font.size.lg, lineHeight: 1 },
+  ghostButton,
+  { paddingInline: brand.space.md, fontSize: brand.text.h1, lineHeight: 1 },
 ])
 
 export const notFound = style({
-  padding: vars.space.xl,
+  padding: brand.space.xxl,
   textAlign: 'center',
-  color: vars.color.text.secondary,
-  fontFamily: vars.font.family.body,
+  color: brand.color.ink500,
+  fontFamily: vars.font.family.heading,
 })
