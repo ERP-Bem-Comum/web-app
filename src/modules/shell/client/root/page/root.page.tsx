@@ -34,6 +34,7 @@ export function RootPage({ user, children }: RootPageProps): ReactNode {
 
         <DynamicContainer
           pageTitle={v.pageTitle}
+          pageSubtitle={v.pageSubtitle}
           showPageHeader={v.showPageHeader}
           fullBleed={v.fullBleed}
           sidebarWidth={v.sidebarWidth}

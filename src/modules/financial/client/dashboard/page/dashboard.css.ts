@@ -43,16 +43,6 @@ export const page = style({
 })
 
 // Título da página — mesmo estilo dos demais módulos (PageHeader do shell): Nunito, xl, bold, tinta do chrome.
-// Renderizado NA página (não no shell) porque a rota é full-bleed: assim o título respeita o padding do
-// canvas em vez de encostar na borda.
-export const pageTitle = style({
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size.xl,
-  fontWeight: vars.font.weight.bold,
-  color: vars.color.nav.ink,
-  margin: 0,
-})
-
 // Linha 1 — 4 cards de métrica. auto-fit com largura mínima: 4 colunas no desktop, colapsa no mobile.
 export const metricsRow = style({
   display: 'grid',

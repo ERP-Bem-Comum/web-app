@@ -83,6 +83,24 @@ describe('rootViewModel.sidebarWidth / showPageHeader', () => {
     assert.strictEqual(rootViewModel.showPageHeader('/financeiro/conciliacao/acc-123'), false)
   })
 
+  it('resolvePageSubtitle: legenda no header do shell só p/ Contratos, Contas a Pagar e Contas Bancárias', () => {
+    assert.strictEqual(
+      rootViewModel.resolvePageSubtitle('/contratos'),
+      'Gestão de contratos e ordens de serviço',
+    )
+    assert.strictEqual(
+      rootViewModel.resolvePageSubtitle('/financeiro/contas-a-pagar'),
+      'Gestão de documentos e pagamentos do programa',
+    )
+    assert.strictEqual(
+      rootViewModel.resolvePageSubtitle('/financeiro/conciliacao'),
+      'Contas cedentes e conciliação bancária',
+    )
+    // Telas com legenda própria na page (ou sem header do shell) não recebem legenda do shell.
+    assert.strictEqual(rootViewModel.resolvePageSubtitle('/dashboard'), undefined)
+    assert.strictEqual(rootViewModel.resolvePageSubtitle('/parceiros/colaboradores'), undefined)
+  })
+
   it('fullBleedContent: workspace de conciliação e Dashboard são full-bleed (o grid de conciliação mantém o padding)', () => {
     assert.strictEqual(rootViewModel.fullBleedContent('/financeiro/conciliacao/acc-123'), true)
     assert.strictEqual(rootViewModel.fullBleedContent('/financeiro/conciliacao'), false)

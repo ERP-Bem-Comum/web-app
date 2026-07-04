@@ -64,6 +64,14 @@ const PAGE_TITLES: Readonly<Record<string, string>> = {
   '/login': 'Login',
 }
 
+// Legendas (subtítulo) das telas cujo TÍTULO é desenhado pelo shell (padrão Colaboradores: título + legenda).
+// Só as telas com header do shell (showPageHeader) precisam — as demais têm legenda própria na page.
+const PAGE_SUBTITLES: Readonly<Record<string, string>> = {
+  '/contratos': 'Gestão de contratos e ordens de serviço',
+  '/financeiro/contas-a-pagar': 'Gestão de documentos e pagamentos do programa',
+  '/financeiro/conciliacao': 'Contas cedentes e conciliação bancária',
+}
+
 // match por SEGMENTO (igual, ou prefixo seguido de '/') — nunca substring solta.
 const isPrefixPath = (path: string, route: string): boolean => path === route || path.startsWith(route + '/')
 
@@ -75,6 +83,14 @@ export const rootViewModel = {
       if (isPrefixPath(path, route)) return title
     }
     return 'ERP Bem Comum'
+  },
+
+  // Legenda do header do shell (undefined = sem legenda). Espelha o padrão do grid de Colaboradores.
+  resolvePageSubtitle: (path: string): string | undefined => {
+    for (const [route, subtitle] of Object.entries(PAGE_SUBTITLES)) {
+      if (isPrefixPath(path, route)) return subtitle
+    }
+    return undefined
   },
 
   isItemActive: (activePath: string, to: string): boolean => isPrefixPath(activePath, to),

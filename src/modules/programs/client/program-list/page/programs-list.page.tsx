@@ -18,6 +18,7 @@ import {
   header,
   headText,
   headTitle,
+  headSubtitle,
   headActions,
   primaryButton,
 } from '#shared/ui/brand/brand-page.css.ts'
@@ -75,6 +76,7 @@ export function ProgramsListPage(): ReactNode {
       <div className={header}>
         <div className={headText}>
           <h1 className={headTitle}>{t('programs.list.title')}</h1>
+          <p className={headSubtitle}>{t('programs.list.subtitle')}</p>
         </div>
         <div className={headActions}>
           {/* RBAC `program:write` é cobrado pelo backend no submit (403); o seed ainda não concede. */}
