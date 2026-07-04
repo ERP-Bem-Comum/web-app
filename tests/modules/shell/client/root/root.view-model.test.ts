@@ -120,6 +120,11 @@ describe('rootViewModel.sidebarWidth / showPageHeader', () => {
     assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/atos/abc-1'), true)
     // Estados e Municípios: cards "brand" full-bleed (canvas azul-claro ocupando a largura).
     assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/territorios'), true)
+    // Planejamento: só a LISTA é full-bleed; o detalhe/orçamento mantém o padding do shell.
+    assert.strictEqual(rootViewModel.fullBleedContent('/planejamento'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/planejamento/detalhes/abc'), false)
+    // Consolidado ABC: full-bleed.
+    assert.strictEqual(rootViewModel.fullBleedContent('/consolidado'), true)
     // Programas/Usuários: subárvore "brand" completa (lista + criar + detalhe) → full-bleed.
     assert.strictEqual(rootViewModel.fullBleedContent('/programas'), true)
     assert.strictEqual(rootViewModel.fullBleedContent('/programas/criar'), true)

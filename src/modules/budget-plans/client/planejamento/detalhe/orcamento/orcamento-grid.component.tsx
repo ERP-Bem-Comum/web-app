@@ -24,8 +24,11 @@ import {
   connectorDot,
   chevronButton,
   nameText,
+  nameLine,
   rowName,
   rowNameChild,
+  payTag,
+  payTagReceive,
   ccSubtotal,
   monthCell,
   totalRow,
@@ -99,7 +102,12 @@ export function OrcamentoGrid(props: OrcamentoGridProps): ReactNode {
                 </button>
               ) : null}
               <span className={nameText}>
-                <span className={isChild ? rowNameChild : rowName}>{r.name}</span>
+                <span className={nameLine}>
+                  <span className={isChild ? rowNameChild : rowName}>{r.name}</span>
+                  {r.tag !== undefined ? (
+                    <span className={r.tag === 'A RECEBER' ? payTagReceive : payTag}>{r.tag}</span>
+                  ) : null}
+                </span>
                 <span className={ccSubtotal}>{r.totalLabel}</span>
               </span>
               <button

@@ -137,6 +137,11 @@ export const rootViewModel = {
     // Programas e Usuários: identidade "brand" cobrindo TODA a subárvore (lista + criar + detalhe).
     isPrefixPath(path, '/programas') ||
     isPrefixPath(path, '/usuarios') ||
+    // Planejamento: só a LISTA é "brand" full-bleed (o detalhe/orçamento mantém o padding do shell).
+    path === '/planejamento' ||
+    path === '/planejamento/' ||
+    // Consolidado ABC: tela "brand" full-bleed (canvas cinza ocupando a largura).
+    isPrefixPath(path, '/consolidado') ||
     // Minha Conta: cartão de perfil no shell "brand" (página cinza + barra de ações fixa).
     isPrefixPath(path, '/minha-conta'),
 

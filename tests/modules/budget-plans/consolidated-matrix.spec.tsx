@@ -106,7 +106,9 @@ describe('ConsolidatedMatrix — visão Por Mês', () => {
     renderMatrix(buildMonthlyMatrix(detail, 0))
     expect(screen.getByText('JANEIRO')).toBeTruthy()
     expect(screen.getByText('JUNHO')).toBeTruthy()
-    expect(screen.getByText('Consultoria - A PAGAR')).toBeTruthy()
+    // Nome e natureza separados: nome limpo + badge "A PAGAR" ao lado.
+    expect(screen.getByText('Consultoria')).toBeTruthy()
+    expect(screen.getByText('A PAGAR')).toBeTruthy()
     expect(screen.getByText(/TOTAL/)).toBeTruthy()
     // ‹ desabilitado no 1º semestre, › habilitado
     expect(screen.getByLabelText('Semestre anterior').hasAttribute('disabled')).toBe(true)

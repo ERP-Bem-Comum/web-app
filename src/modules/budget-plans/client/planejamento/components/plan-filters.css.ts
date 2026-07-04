@@ -1,137 +1,141 @@
 /**
- * Estilos da barra de filtros da lista de Planejamento (§1.1): funil + "Pesquise" + "Criar Plano"; o funil
- * expande a linha Ano/Programa/Status + "Filtrar". Espelha o modelo visual dos grids de parceiros (funil,
- * painel azul-claro, select, botão de aplicar) — reescrito no módulo (cross-módulo só via public-api).
- * Só tokens (§X).
+ * Toolbar da lista de Planejamento no padrão "brand" (mock `planejamento-brand`): botão-ícone de filtro
+ * quadrado (42px) + busca ocupando o resto (input 42px com lupa à esquerda, foco azul) + botão primário
+ * "Criar plano". O funil expande o painel Ano/Programa/Status + Filtrar/Limpar (funcionalidade preservada).
+ * Cores/px fora do kit vivem em `planejamento.values.ts`; o resto vem de `brand`/`vars`. Só tokens (§X).
  */
 import { style } from '@vanilla-extract/css'
 
 import { vars } from '#shared/ui/tokens/index.ts'
+import { brand } from '#shared/ui/brand/grid-brand.values.ts'
+
+import { planejamento } from '../planejamento.values.ts'
 
 export const toolbar = style({
   display: 'flex',
   flexDirection: 'column',
-  gap: vars.space.sm,
-  marginBlockEnd: vars.space.md,
+  gap: brand.space.md,
+  fontFamily: vars.font.family.heading, // Inter
 })
 
 export const toolbarRow = style({
   display: 'flex',
   alignItems: 'center',
-  gap: vars.space.sm,
+  gap: brand.space.md,
 })
 
-export const search = style({
-  flex: '1 1 16rem',
-  minInlineSize: '12rem',
-})
-
-const funnelBase = style({
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  inlineSize: '2.5rem',
-  blockSize: '2.5rem',
+// Botão-ícone quadrado 42px (filtro).
+const iconBtnBase = style({
+  inlineSize: brand.size.field,
+  blockSize: brand.size.field,
   flexShrink: 0,
-  borderRadius: vars.radius.md,
-  border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
-  background: vars.color.surface.default,
-  color: vars.color.text.secondary,
+  display: 'grid',
+  placeItems: 'center',
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  background: brand.color.surface,
+  borderRadius: brand.radius.sm,
+  color: brand.color.ink500,
   cursor: 'pointer',
+  transition: `all ${brand.ease}`,
   selectors: {
-    '&:hover': { background: vars.color.surface.subtle },
+    '&:hover': { borderColor: brand.color.lineStrong, color: brand.color.ink700 },
     '&:focus-visible': {
-      outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
+      outline: `${vars.focusRing.width} solid ${brand.color.primary}`,
       outlineOffset: vars.focusRing.offset,
     },
   },
 })
-export const funnelButton = style([funnelBase])
+export const funnelButton = style([iconBtnBase])
 export const funnelButtonActive = style([
-  funnelBase,
+  iconBtnBase,
   {
-    background: vars.color.brand.normal,
-    color: vars.color.brand.onBrand,
-    borderColor: vars.color.brand.normal,
+    background: brand.color.primary,
+    color: brand.color.surface,
+    borderColor: brand.color.primary,
+    selectors: { '&:hover': { background: brand.color.primaryHover, color: brand.color.surface } },
   },
 ])
 
-/** Campo de busca (input + ícone). */
+// Busca: ocupa o resto; input 42px com lupa à esquerda.
 export const searchWrap = style({
   position: 'relative',
-  flex: '1 1 16rem',
-  minInlineSize: '12rem',
+  flex: 1,
   display: 'flex',
   alignItems: 'center',
-})
-
-export const searchInput = style({
-  inlineSize: '100%',
-  blockSize: '2.5rem',
-  paddingInlineStart: '2.5rem',
-  paddingInlineEnd: vars.space.md,
-  borderRadius: vars.radius.md,
-  border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
-  background: vars.color.surface.default,
-  color: vars.color.text.primary,
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size.sm,
-  selectors: {
-    '&:focus-visible': {
-      outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
-      outlineOffset: vars.focusRing.offset,
-    },
-  },
 })
 
 export const searchIcon = style({
   position: 'absolute',
-  insetInlineStart: vars.space.sm,
+  insetInlineStart: planejamento.size.searchIconInset,
   display: 'inline-flex',
-  color: vars.color.text.secondary,
+  color: brand.color.ink400,
   pointerEvents: 'none',
 })
 
-export const spacer = style({ flex: '1 1 auto' })
-
-/** Botão primário "Criar Plano" (ciano). */
-export const createButton = style({
-  paddingBlock: vars.space.sm,
-  paddingInline: vars.space.lg,
-  borderRadius: vars.radius.md,
-  border: 'none',
-  background: vars.color.brand.normal,
-  color: vars.color.brand.onBrand,
+export const searchInput = style({
+  inlineSize: '100%',
+  blockSize: brand.size.field,
+  paddingInlineStart: brand.size.searchPadStart,
+  paddingInlineEnd: brand.space.lg,
+  borderRadius: brand.radius.sm,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  background: brand.color.surface,
+  color: brand.color.ink700,
   fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.sm,
-  fontWeight: vars.font.weight.semibold,
+  fontSize: brand.text.body,
+  transition: `all ${brand.ease}`,
+  selectors: {
+    '&::placeholder': { color: brand.color.ink400 },
+    '&:focus': {
+      outline: 'none',
+      borderColor: brand.color.primary,
+      boxShadow: planejamento.searchFocusRing,
+    },
+  },
+})
+
+export const spacer = style({ display: 'none' })
+
+// Botão primário "Criar plano" (42px, azul da marca).
+export const createButton = style({
+  blockSize: brand.size.field,
+  paddingInline: planejamento.size.createPadInline,
+  borderRadius: brand.radius.sm,
+  border: 'none',
+  background: brand.color.primary,
+  color: brand.color.surface,
+  fontFamily: vars.font.family.heading,
+  fontSize: brand.text.body,
+  fontWeight: brand.weight.semibold,
   cursor: 'pointer',
   whiteSpace: 'nowrap',
+  boxShadow: brand.shadow.btn,
+  transition: `background ${brand.ease}`,
   selectors: {
-    '&:hover': { background: vars.color.brand.hover },
+    '&:hover': { background: brand.color.primaryHover },
     '&:focus-visible': {
-      outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
+      outline: `${vars.focusRing.width} solid ${brand.color.primary}`,
       outlineOffset: vars.focusRing.offset,
     },
   },
 })
 
-/** Painel expansível do funil — fundo azul-claro, campos + footer. */
+// ── Painel expansível do funil (Ano/Programa/Status + Filtrar/Limpar) ──
 export const panel = style({
   display: 'flex',
   flexDirection: 'column',
-  gap: vars.space.md,
-  padding: vars.space.md,
-  borderRadius: vars.radius.lg,
-  border: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
-  background: vars.color.surface.canvas,
+  gap: brand.space.md,
+  padding: brand.space.lg,
+  borderRadius: brand.radius.md,
+  border: `${vars.borderWidth.thin} solid ${brand.color.panelBorder}`,
+  background: brand.color.panelBg,
 })
 
 export const groupGrid = style({
   display: 'grid',
   gridTemplateColumns: 'repeat(1, minmax(0, 1fr))',
-  columnGap: vars.space.md,
-  rowGap: vars.space.sm,
+  columnGap: brand.space.md,
+  rowGap: brand.space.sm,
   alignItems: 'end',
   '@media': {
     '(min-width: 48rem)': { gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' },
@@ -141,27 +145,27 @@ export const groupGrid = style({
 export const fieldWrap = style({
   display: 'flex',
   flexDirection: 'column',
-  gap: vars.space.xs,
+  gap: brand.space.xs,
   minInlineSize: 0,
 })
 
 export const fieldLabel = style({
   fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.xs,
-  fontWeight: vars.font.weight.semibold,
-  color: vars.color.text.secondary,
+  fontSize: brand.text.label,
+  fontWeight: brand.weight.semibold,
+  color: brand.color.groupFg,
   whiteSpace: 'nowrap',
 })
 
 export const select = style({
-  blockSize: '2.5rem',
-  paddingInline: vars.space.md,
-  borderRadius: vars.radius.md,
-  border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
-  background: vars.color.surface.default,
-  color: vars.color.text.primary,
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size.sm,
+  blockSize: brand.size.field,
+  paddingInline: brand.space.md,
+  borderRadius: brand.radius.sm,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  background: brand.color.surface,
+  color: brand.color.ink700,
+  fontFamily: vars.font.family.heading,
+  fontSize: brand.text.dd,
   inlineSize: '100%',
 })
 
@@ -170,31 +174,35 @@ export const panelFooter = style({
   alignItems: 'center',
   justifyContent: 'flex-end',
   flexWrap: 'wrap',
-  gap: vars.space.sm,
-  paddingBlockStart: vars.space.sm,
-  borderBlockStart: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
+  gap: brand.space.sm,
+  paddingBlockStart: brand.space.sm,
+  borderBlockStart: `${vars.borderWidth.thin} solid ${brand.color.panelBorder}`,
 })
 
 const footerButtonBase = style({
-  paddingBlock: vars.space.sm,
-  paddingInline: vars.space.lg,
-  borderRadius: vars.radius.md,
+  paddingBlock: brand.space.sm,
+  paddingInline: brand.space.xl,
+  borderRadius: brand.radius.sm,
   fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.sm,
-  fontWeight: vars.font.weight.semibold,
+  fontSize: brand.text.body,
+  fontWeight: brand.weight.semibold,
   cursor: 'pointer',
-  border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
 })
 export const applyButton = style([
   footerButtonBase,
   {
-    background: vars.color.brand.normal,
-    color: vars.color.brand.onBrand,
-    borderColor: vars.color.brand.normal,
-    selectors: { '&:hover': { background: vars.color.brand.hover, borderColor: vars.color.brand.hover } },
+    background: brand.color.primary,
+    color: brand.color.surface,
+    borderColor: brand.color.primary,
+    selectors: { '&:hover': { background: brand.color.primaryHover, borderColor: brand.color.primaryHover } },
   },
 ])
 export const clearButton = style([
   footerButtonBase,
-  { background: 'transparent', color: vars.color.text.secondary },
+  {
+    background: 'transparent',
+    color: brand.color.ink500,
+    selectors: { '&:hover': { background: brand.color.surface } },
+  },
 ])

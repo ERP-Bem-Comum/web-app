@@ -1,179 +1,164 @@
 /**
- * Estilos da TABELA EM ÁRVORE de Planejamento (linha-pai + versões-filhas via chevron). Só tokens (§X).
- * Reproduz o mapa §1.1/§4: cabeçalho azul-claro, chevron de expansão, badge + trilha de auditoria na
- * célula de status, linha expandida com fundo azul-clarinho. A cor não vem por dado aqui — é fixa por token.
+ * Estilos da TABELA EM ÁRVORE de Planejamento no padrão visual "brand" (mock `planejamento-brand`):
+ * card surface + borda + sombra + radius lg, thead uppercase sobre `surfaceAlt`, linhas com hover,
+ * chip de calendário, badges de status (dot + label), conector de árvore nas sub-linhas e rodapé "Total geral".
+ * Cores/px fora do kit vivem em `planejamento.values.ts`; o resto vem de `brand`/`vars`. Só tokens (§X).
  */
-import { style } from '@vanilla-extract/css'
+import { style, styleVariants } from '@vanilla-extract/css'
 
 import { vars } from '#shared/ui/tokens/index.ts'
+import { brand } from '#shared/ui/brand/grid-brand.values.ts'
 
-// Contorno leve (como no mockup base) — o azul (cyan) fica só no cabeçalho e no rodapé.
+import { planejamento } from '../planejamento.values.ts'
+
+const sz = planejamento.size
+
+// Card em volta da tabela (surface + borda + sombra + radius lg, overflow hidden).
 export const container = style({
   inlineSize: '100%',
   overflowX: 'auto',
-  borderRadius: vars.radius.lg,
-  border: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
-  background: vars.color.surface.default,
+  background: brand.color.surface,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  borderRadius: brand.radius.lg,
+  boxShadow: brand.shadow.card,
 })
 
 export const table = style({
   inlineSize: '100%',
   borderCollapse: 'collapse',
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size.sm,
-  color: vars.color.text.primary,
+  fontFamily: vars.font.family.heading, // Inter
+  fontSize: brand.text.body,
+  color: brand.color.ink700,
 })
 
-// Cabeçalho: Nunito (body), sem MAIÚSCULAS, peso forte, tinta índigo, sobre AZUL BEM CLARINHO
-// (índigo bem diluído em branco), como no mock base.
+// thead: bg surfaceAlt, border-bottom line, 12px 600 uppercase letter-spacing .03em ink500.
 export const th = style({
   textAlign: 'start',
-  padding: `${vars.space.sm} ${vars.space.md}`,
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size.sm,
-  fontWeight: vars.font.weight.bold,
-  color: vars.color.nav.background,
-  background: `color-mix(in srgb, ${vars.color.nav.background} 6%, white)`,
-  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
+  paddingBlock: sz.theadPadBlock,
+  paddingInline: brand.size.rowPadInline,
+  fontFamily: vars.font.family.heading,
+  fontSize: sz.theadFont,
+  fontWeight: brand.weight.semibold,
+  letterSpacing: '.03em',
+  textTransform: 'uppercase',
+  color: brand.color.ink500,
+  background: brand.color.surfaceAlt,
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${brand.color.line}`,
   whiteSpace: 'nowrap',
 })
 
-export const thActions = style([th, { textAlign: 'end', inlineSize: '3rem' }])
+// Coluna Total: alinhada à direita com o ícone de ordenação.
+export const thNum = style([th, { textAlign: 'end' }])
+export const thActions = style([th, { inlineSize: '3rem' }])
 
-// Linha clicável (navega ao detalhe do plano) — cursor + hover discreto (igual DataTable).
+// Linha-pai: padding ~16px 22px, border-bottom line2, hover rowHover.
 export const row = style({
   cursor: 'pointer',
-  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
-  transitionProperty: 'background-color',
-  transitionDuration: '120ms',
+  transition: `background ${brand.ease}`,
   selectors: {
-    '&:hover': { background: vars.color.surface.subtle },
-  },
-  '@media': {
-    '(prefers-reduced-motion: reduce)': { transitionDuration: '0.01ms' },
+    '&:hover': { background: brand.color.rowHover },
   },
 })
 
-/** Linha-filha (versão expandida) — AZUL claro de marca (mais azulado que cinza). O PAI permanece branco;
- * a "linha do grupo" vem do CONECTOR (linha + dots) na coluna do nome, não de um acento na borda. */
+// Sub-linha (versão-filha): fundo levemente diferente.
 export const childRow = style([
   row,
   {
-    background: `color-mix(in srgb, ${vars.color.brand.normal} 8%, white)`,
+    background: planejamento.childBg,
     selectors: {
-      '&:hover': { background: `color-mix(in srgb, ${vars.color.brand.normal} 13%, white)` },
+      '&:hover': { background: brand.color.rowHover },
     },
   },
 ])
 
-// Linhas mais altas (mais respiro vertical — menos denso).
 export const td = style({
-  paddingBlock: vars.space.md,
-  paddingInline: vars.space.md,
+  paddingBlock: sz.rowPadBlock,
+  paddingInline: brand.size.rowPadInline,
   verticalAlign: 'middle',
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${brand.color.line2}`,
 })
 
+export const tdNum = style([td, { textAlign: 'end' }])
 export const tdActions = style([td, { textAlign: 'end' }])
 
-/** Célula do nome: chevron (se tem filhos) + nome + rótulo/subtítulo da versão. */
+// Célula do nome: chevron + chip de calendário + nome/subtítulo.
 export const nameCell = style({
   display: 'flex',
   alignItems: 'center',
-  gap: vars.space.sm,
+  gap: brand.space.md,
   minInlineSize: 0,
+  position: 'relative',
 })
+
+// Recuo da sub-linha (abre espaço para o conector de árvore).
+export const nameCellChild = style([nameCell, { paddingInlineStart: sz.childIndent }])
 
 export const indent = style({
   display: 'inline-block',
-  inlineSize: vars.space.lg,
+  inlineSize: sz.indent,
   flexShrink: 0,
 })
 
-// Conector da versão-filha (linha vertical + dot), como no mock. `alignSelf:stretch` faz o wrapper ocupar
-// a altura da linha; o `::before` (linha) estende ±md p/ ATRAVESSAR o padding e ligar às linhas vizinhas.
-export const connector = style({
-  position: 'relative',
-  flexShrink: 0,
-  alignSelf: 'stretch',
-  inlineSize: vars.space.lg,
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  selectors: {
-    '&::before': {
-      content: '""',
-      position: 'absolute',
-      insetBlock: `calc(-1 * ${vars.space.md})`,
-      insetInlineStart: '50%',
-      inlineSize: vars.borderWidth.thick,
-      transform: 'translateX(-50%)',
-      background: vars.color.brand.normal,
-    },
-  },
-})
-
-export const connectorDot = style({
-  position: 'relative',
-  zIndex: 1,
-  inlineSize: vars.space.sm,
-  blockSize: vars.space.sm,
-  borderRadius: '50%',
-  background: vars.color.brand.normal,
-})
-
-// Chip de ícone antes do nome do plano (mockup base): quadrado arredondado cyan-claro + ícone índigo.
-export const planIcon = style({
-  flexShrink: 0,
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  inlineSize: `calc(${vars.space.lg} + ${vars.space.xs})`,
-  blockSize: `calc(${vars.space.lg} + ${vars.space.xs})`,
-  borderRadius: vars.radius.md,
-  background: vars.color.surface.canvas,
-  color: vars.color.nav.background,
-})
-
+// Chevron (22px, transparente, ink400, hover bg iconHover) que gira ao expandir.
 export const chevronButton = style({
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  inlineSize: '1.5rem',
-  blockSize: '1.5rem',
+  display: 'grid',
+  placeItems: 'center',
+  inlineSize: sz.chevron,
+  blockSize: sz.chevron,
   flexShrink: 0,
   padding: 0,
   border: 'none',
   background: 'transparent',
-  color: vars.color.text.secondary,
+  color: brand.color.ink400,
   cursor: 'pointer',
-  borderRadius: vars.radius.sm,
+  borderRadius: sz.chevronRadius,
+  transition: `all ${brand.ease}`,
   selectors: {
-    '&:hover': { background: vars.color.surface.subtle, color: vars.color.text.primary },
+    '&:hover': { background: planejamento.iconHover, color: brand.color.ink700 },
     '&:focus-visible': {
-      outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
+      outline: `${vars.focusRing.width} solid ${brand.color.primary}`,
       outlineOffset: vars.focusRing.offset,
     },
   },
 })
 
+// Ícone do chevron (ChevronDown): fechado aponta p/ direita (−90°); aberto aponta p/ baixo (0°).
+export const chevronIcon = style({ display: 'inline-flex', transition: 'transform .18s ease' })
+export const chevronIconClosed = style({ transform: 'rotate(-90deg)' })
+
+// Chip de calendário (34px, bg cadBg, cor primary, radius iconSm).
+export const planIcon = style({
+  flexShrink: 0,
+  display: 'grid',
+  placeItems: 'center',
+  inlineSize: sz.planIcon,
+  blockSize: sz.planIcon,
+  borderRadius: brand.radius.iconSm,
+  background: brand.color.cadBg,
+  color: brand.color.primary,
+})
+
+// Chip de calendário menor nas sub-linhas.
+export const planIconChild = style([planIcon, { inlineSize: sz.planIconChild, blockSize: sz.planIconChild }])
+
 export const nameText = style({
   display: 'flex',
   flexDirection: 'column',
-  gap: '0.125rem',
+  gap: sz.nameGap,
   minInlineSize: 0,
 })
 
-// Nome do plano — Nunito (body), em PRETO (tinta primária), como no mockup base.
+// Nome do plano: 14.5px 600 ink900.
 export const planName = style({
-  fontFamily: vars.font.family.body,
-  fontWeight: vars.font.weight.semibold,
-  color: vars.color.text.primary,
+  fontFamily: vars.font.family.heading,
+  fontSize: sz.planNameFont,
+  fontWeight: brand.weight.semibold,
+  color: brand.color.ink900,
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
 })
 
-/** Nome clicável do PAI (vai ao detalhe) — índigo (mock base). */
 export const planNameLink = style([
   planName,
   {
@@ -182,142 +167,191 @@ export const planNameLink = style([
     padding: 0,
     textAlign: 'start',
     cursor: 'pointer',
-    color: vars.color.nav.background,
-    fontWeight: vars.font.weight.bold,
-    fontSize: vars.font.size.md,
     selectors: {
       '&:hover': { textDecoration: 'underline' },
       '&:focus-visible': {
-        outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
+        outline: `${vars.focusRing.width} solid ${brand.color.primary}`,
         outlineOffset: vars.focusRing.offset,
       },
     },
   },
 ])
 
-/** Nome da versão-filha — PRETO e um degrau MENOR que o pai (hierarquia, mock base). */
-export const planNameLinkChild = style([
-  planNameLink,
-  { color: vars.color.text.primary, fontSize: vars.font.size.sm },
+// Sub-linha: nome levemente mais claro que o pai.
+export const planNameLinkChild = style([planNameLink, { color: planejamento.childName }])
+
+// Subtítulo (versionLabel): 12.5px ink500.
+export const versionLabel = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: sz.subFont,
+  color: brand.color.ink500,
+})
+
+// ── Conector de árvore (linha vertical + nó + ramo horizontal) ──
+export const connector = style({
+  position: 'absolute',
+  insetInlineStart: sz.treeInsetX,
+  insetBlockStart: sz.treeInsetY,
+  insetBlockEnd: sz.treeInsetY,
+  inlineSize: sz.treeWidth,
+  flexShrink: 0,
+  selectors: {
+    // Linha vertical.
+    '&::before': {
+      content: '""',
+      position: 'absolute',
+      insetInlineStart: sz.treeLineOffset,
+      insetBlockStart: 0,
+      insetBlockEnd: 0,
+      inlineSize: sz.treeLineWidth,
+      background: planejamento.treeLine,
+    },
+    // Ramo horizontal (nó).
+    '&::after': {
+      content: '""',
+      position: 'absolute',
+      insetInlineStart: sz.treeLineOffset,
+      insetBlockStart: '50%',
+      inlineSize: sz.treeBranch,
+      blockSize: sz.treeLineWidth,
+      background: planejamento.treeLine,
+    },
+  },
+})
+
+// Última sub-linha do grupo: a linha vertical para na metade (não continua abaixo do nó).
+export const connectorLast = style({
+  selectors: {
+    '&::before': { insetBlockEnd: '50%' },
+  },
+})
+
+// Nó do conector (círculo com borda primary).
+export const connectorDot = style({
+  position: 'absolute',
+  insetInlineStart: sz.treeDotInset,
+  insetBlockStart: '50%',
+  transform: 'translateY(-50%)',
+  inlineSize: sz.treeDot,
+  blockSize: sz.treeDot,
+  borderRadius: '50%',
+  background: brand.color.surface,
+  border: `${sz.treeDotBorder} ${brand.color.primary}`,
+  zIndex: 1,
+})
+
+// Total (linha-pai): 700 ink900, tabular; zero = ink400 500.
+export const totalCell = style({
+  fontFamily: vars.font.family.heading,
+  fontVariantNumeric: 'tabular-nums',
+  fontWeight: brand.weight.bold,
+  color: brand.color.ink900,
+  whiteSpace: 'nowrap',
+})
+export const totalCellZero = style([
+  totalCell,
+  { color: brand.color.ink400, fontWeight: brand.weight.medium },
 ])
 
-export const versionLabel = style({
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size.xs,
-  color: vars.color.text.secondary,
+// Parceiros: ink700.
+export const partners = style({ color: brand.color.ink700, whiteSpace: 'nowrap' })
+
+// ── Badges de status (pill 12px 600 + dot 7px) ──
+export const badge = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: brand.space.xs,
+  paddingBlock: sz.badgePadBlock,
+  paddingInlineStart: sz.badgePadStart,
+  paddingInlineEnd: sz.badgePadEnd,
+  borderRadius: brand.radius.pill,
+  fontFamily: vars.font.family.heading,
+  fontSize: sz.badgeFont,
+  fontWeight: brand.weight.semibold,
+  letterSpacing: '.01em',
+  whiteSpace: 'nowrap',
+})
+export const badgeTone = styleVariants({
+  neutral: { background: planejamento.draftBg, color: planejamento.draftFg },
+  info: { background: brand.color.cadBg, color: brand.color.cadFg },
+  success: { background: brand.color.okBg, color: brand.color.okFg },
+})
+export const badgeDot = style({ inlineSize: sz.dot, blockSize: sz.dot, borderRadius: '50%' })
+export const badgeDotTone = styleVariants({
+  neutral: { background: planejamento.draftDot },
+  info: { background: brand.color.cadDot },
+  success: { background: brand.color.okDot },
 })
 
-/** Célula de status: badge em cima, trilha de auditoria embaixo. */
-export const statusCell = style({
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'flex-start',
-  gap: vars.space.xs,
-})
-
-// Coluna "Última alteração" — 2 linhas (mock base): "{usuário} alteração" + "dd/mm/aaaa hh:mm".
+// Última alteração: who (ink700 500) + when (ink500 12.5px).
 export const auditCell = style({
   display: 'flex',
   flexDirection: 'column',
-  gap: vars.space.xs,
-  fontFamily: vars.font.family.body,
+  gap: sz.nameGap,
+  fontFamily: vars.font.family.heading,
 })
+export const auditWho = style({ color: brand.color.ink700, fontWeight: brand.weight.medium })
+export const auditWhen = style({ color: brand.color.ink500, fontSize: sz.subFont })
 
-export const auditWho = style({
-  fontSize: vars.font.size.sm,
-  color: vars.color.text.secondary,
-})
-
-export const auditWhen = style({
-  fontSize: vars.font.size.xs,
-  color: vars.color.text.muted,
-})
-
-// Seta de ordenação (↕) no cabeçalho do Total — afordância visual (ordenação funcional depois).
+// Ícone de ordenação (↕) no cabeçalho do Total.
 export const sortIcon = style({
   display: 'inline-flex',
   alignItems: 'center',
-  marginInlineStart: vars.space.xs,
-  color: vars.color.nav.background,
-  verticalAlign: 'middle',
+  gap: sz.sortGap,
 })
+export const sortIconGlyph = style({ opacity: 0.55, marginInlineStart: sz.sortGap })
 
-// Total (linha-pai) — Nunito, ÍNDIGO, BOLD, tabular, um degrau maior (mock base).
-export const totalCell = style({
-  fontFamily: vars.font.family.body,
-  fontVariantNumeric: 'tabular-nums',
-  fontWeight: vars.font.weight.bold,
-  fontSize: vars.font.size.md,
-  color: vars.color.nav.background,
-  whiteSpace: 'nowrap',
-})
-
-/** Total da versão-filha (expandida): PRETO, SEM negrito, um degrau menor. */
-export const totalCellChild = style([
-  totalCell,
-  {
-    color: vars.color.text.primary,
-    fontWeight: vars.font.weight.regular,
-    fontSize: vars.font.size.sm,
-  },
-])
-
-// Badge de status com ícone (inline-flex + gap pequeno).
-export const statusBadgeContent = style({
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: vars.space.xs,
-})
-
-// Rodapé "TOTAL geral" — AZUL BEM CLARINHO (mesmo tom do cabeçalho) + peso forte.
+// ── Rodapé "Total geral" ──
 export const footerRow = style({
-  background: `color-mix(in srgb, ${vars.color.nav.background} 6%, white)`,
-  borderBlockStart: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
+  background: brand.color.surfaceAlt,
+  borderBlockStart: `${vars.borderWidth.thin} solid ${brand.color.line}`,
 })
 
 export const footerLabel = style({
-  paddingBlock: vars.space.md,
-  paddingInline: vars.space.md,
-  fontFamily: vars.font.family.body,
-  fontWeight: vars.font.weight.bold,
-  color: vars.color.nav.background,
+  paddingBlock: sz.rowPadBlock,
+  paddingInline: brand.size.rowPadInline,
   whiteSpace: 'nowrap',
 })
 
-// Conteúdo do rótulo do rodapé: chip (pasta) + "TOTAL", em linha.
 export const footerLabelContent = style({
   display: 'inline-flex',
   alignItems: 'center',
-  gap: vars.space.sm,
+  gap: sz.footerGap,
+  fontFamily: vars.font.family.heading,
+  fontWeight: brand.weight.semibold,
+  color: brand.color.ink700,
 })
 
-// Chip branco arredondado com o ícone de PASTA (como no mockup) — sobre a faixa cyan do rodapé.
+// Chip de ícone (pasta) do rodapé.
 export const footerIcon = style({
   flexShrink: 0,
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  inlineSize: `calc(${vars.space.lg} + ${vars.space.xs})`,
-  blockSize: `calc(${vars.space.lg} + ${vars.space.xs})`,
-  borderRadius: vars.radius.md,
-  background: vars.color.surface.default,
-  color: vars.color.nav.background,
+  display: 'grid',
+  placeItems: 'center',
+  inlineSize: sz.planIcon,
+  blockSize: sz.planIcon,
+  borderRadius: brand.radius.iconSm,
+  background: brand.color.cadBg,
+  color: brand.color.primary,
 })
 
+// Valor grand: 700 15px primary, tabular.
 export const footerTotal = style({
-  paddingBlock: vars.space.md,
-  paddingInline: vars.space.md,
-  fontFamily: vars.font.family.body,
+  paddingBlock: sz.rowPadBlock,
+  paddingInline: brand.size.rowPadInline,
+  textAlign: 'end',
+  fontFamily: vars.font.family.heading,
   fontVariantNumeric: 'tabular-nums',
-  fontWeight: vars.font.weight.bold,
-  color: vars.color.nav.background,
+  fontWeight: brand.weight.bold,
+  fontSize: sz.grandFont,
+  color: brand.color.primary,
   whiteSpace: 'nowrap',
 })
 
-/** Estado vazio / carregando / erro dentro da tabela. */
+// Estado vazio / carregando / erro dentro da tabela.
 export const stateCell = style({
-  padding: vars.space.xl,
+  paddingBlock: brand.space.xxl,
+  paddingInline: brand.size.rowPadInline,
   textAlign: 'center',
-  color: vars.color.text.secondary,
-  fontFamily: vars.font.family.body,
+  color: brand.color.ink500,
+  fontFamily: vars.font.family.heading,
 })
