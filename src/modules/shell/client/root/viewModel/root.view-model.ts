@@ -132,6 +132,8 @@ export const rootViewModel = {
     isPrefixPath(path, '/parceiros/fornecedores') ||
     isPrefixPath(path, '/parceiros/financiadores') ||
     isPrefixPath(path, '/parceiros/atos') ||
+    // Estados e Municípios: cards "brand" sobre canvas azul-claro, ocupando toda a largura (mock).
+    isPrefixPath(path, '/parceiros/territorios') ||
     // Programas e Usuários: identidade "brand" cobrindo TODA a subárvore (lista + criar + detalhe).
     isPrefixPath(path, '/programas') ||
     isPrefixPath(path, '/usuarios') ||
