@@ -3,31 +3,44 @@ import { getRouteApi, useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
+import { PlusIcon, formatMask, initialsFrom, vars } from '#shared/ui/index.ts'
 import {
-  Badge,
-  Button,
-  DataTable,
-  PageHeader,
-  formatMask,
-  AvatarLabel,
-  initialsFrom,
-  type Column,
-  type DataTableState,
-} from '#shared/ui/index.ts'
+  BrandDataTable,
+  BrandChip,
+  BrandNameCell,
+  type BrandColumn,
+  type BrandTableState,
+} from '#shared/ui/brand/brand-data-table.component.tsx'
+import { numZero } from '#shared/ui/brand/brand-data-table.css.ts'
+import { BrandPaginator } from '#shared/ui/brand/brand-paginator.component.tsx'
+import {
+  screen,
+  header,
+  headText,
+  headTitle,
+  headSubtitle,
+  headActions,
+  primaryButton,
+} from '#shared/ui/brand/brand-page.css.ts'
 
 import { useFinancierListBinding } from '../financier-list.binding.ts'
 import { totalPages, type FinancierListState, type FinancierRow } from '../financier-list.view-model.ts'
 import { FinancierFilters, type StatusFilter } from '../components/financier-filters.component.tsx'
-import { FinancierPaginator } from '../components/financier-paginator.component.tsx'
+import { exportTrigger } from '../components/financier-filters.css.ts'
 import { PartnersExportDropdown } from '#modules/partners/client/shared/partners-export-dropdown.component.tsx'
 import { PartnersPrintable } from '#modules/partners/client/shared/partners-printable.component.tsx'
 import { contentWrap, contentWrapPrintHidden } from '#modules/partners/client/shared/export-print.css.ts'
-import { cnpjCell, screen } from './financier-list.css.ts'
+import { cnpjCell } from './financier-list.css.ts'
 
 const t = createTranslator(ptBR)
 const routeApi = getRouteApi('/_authenticated/parceiros/financiadores/')
 
-/** CNPJ (14 dígitos) → máscara; entrada inesperada volta crua. */
+const AVATAR = {
+  bg: vars.color.partnerType.financier.background,
+  fg: vars.color.partnerType.financier.text,
+}
+const GRID_TEMPLATE = 'minmax(200px,1.6fr) minmax(160px,1.4fr) 1.1fr 1.1fr .8fr 1fr'
+
 function formatCnpj(digits: string): string {
   if (digits.length !== 14) return digits
   return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}`
@@ -57,12 +70,17 @@ export function FinancierListPage(): ReactNode {
 
   const hasFilters = (search.search ?? '') !== '' || search.active !== undefined
 
-  const columns: readonly Column<FinancierRow>[] = [
+  const columns: readonly BrandColumn<FinancierRow>[] = [
     {
       key: 'corporateName',
       header: t('partners.financiers.columns.corporateName'),
       cell: (r) => (
-        <AvatarLabel variant="financier" initials={initialsFrom(r.corporateName)} text={r.corporateName} />
+        <BrandNameCell
+          name={r.corporateName}
+          initials={initialsFrom(r.corporateName)}
+          bg={AVATAR.bg}
+          fg={AVATAR.fg}
+        />
       ),
     },
     {
@@ -81,18 +99,18 @@ export function FinancierListPage(): ReactNode {
       cell: (r) => formatMask('phone', r.telephone),
     },
     {
-      // Contratos/Aditivos: contagem de contratos ativos vinda do item da lista (#46).
       key: 'contracts',
       header: t('partners.financiers.columns.contracts'),
-      cell: (r) => String(r.contractCount),
+      cell: (r) => <span className={r.contractCount === 0 ? numZero : undefined}>{r.contractCount}</span>,
     },
     {
       key: 'status',
       header: t('partners.financiers.columns.status'),
       cell: (r) => (
-        <Badge variant={r.activation === 'active' ? 'active' : 'terminated'} uppercase size="sm">
-          {t(`partners.financiers.status.${r.activation}`)}
-        </Badge>
+        <BrandChip
+          tone={r.activation === 'active' ? 'ok' : 'danger'}
+          label={t(`partners.financiers.status.${r.activation}`)}
+        />
       ),
     },
   ]
@@ -120,17 +138,24 @@ export function FinancierListPage(): ReactNode {
   return (
     <div className={screen}>
       <div className={printing ? contentWrapPrintHidden : contentWrap}>
-        <PageHeader
-          title={t('partners.financiers.list.title')}
-          subtitle={t('partners.financiers.list.subtitle')}
-          actions={
-            canCreate ? (
-              <Button onClick={() => void navigate({ to: '/parceiros/financiadores/criar' })}>
+        <div className={header}>
+          <div className={headText}>
+            <h1 className={headTitle}>{t('partners.financiers.list.title')}</h1>
+            <p className={headSubtitle}>{t('partners.financiers.list.subtitle')}</p>
+          </div>
+          {canCreate ? (
+            <div className={headActions}>
+              <button
+                type="button"
+                className={primaryButton}
+                onClick={() => void navigate({ to: '/parceiros/financiadores/criar' })}
+              >
+                <PlusIcon size={16} />
                 {t('partners.financiers.list.new')}
-              </Button>
-            ) : undefined
-          }
-        />
+              </button>
+            </div>
+          ) : null}
+        </div>
 
         <FinancierFilters
           searchValue={search.search ?? ''}
@@ -143,6 +168,7 @@ export function FinancierListPage(): ReactNode {
           }}
           exportSlot={
             <PartnersExportDropdown
+              triggerClassName={exportTrigger}
               exportLabel={t('partners.export.label')}
               filenameBase="financiadores"
               headers={exportColumns}
@@ -168,19 +194,20 @@ export function FinancierListPage(): ReactNode {
           }
         />
 
-        <DataTable<FinancierRow>
+        <BrandDataTable<FinancierRow>
           columns={columns}
+          gridTemplate={GRID_TEMPLATE}
           state={tableState}
           rowKey={(r) => r.id}
+          caption={t('partners.financiers.list.title')}
           emptyLabel={
             hasFilters ? t('partners.financiers.list.no-results') : t('partners.financiers.list.empty')
           }
           loadingLabel={t('partners.financiers.list.loading')}
-          caption={t('partners.financiers.list.title')}
           onRowClick={(r) => void navigate({ to: '/parceiros/financiadores/$id', params: { id: r.id } })}
         />
 
-        <FinancierPaginator
+        <BrandPaginator
           page={pageNum}
           totalPages={pages}
           perPage={search.limit}
@@ -188,6 +215,7 @@ export function FinancierListPage(): ReactNode {
             previous: t('partners.financiers.paginator.previous'),
             next: t('partners.financiers.paginator.next'),
             page: t('partners.financiers.paginator.page'),
+            of: t('partners.financiers.paginator.of'),
             perPage: t('partners.financiers.paginator.perPage'),
           }}
           onPrev={() => void navigate({ to: '.', search: (p) => ({ ...p, page: Math.max(1, pageNum - 1) }) })}
@@ -209,7 +237,7 @@ export function FinancierListPage(): ReactNode {
   )
 }
 
-function toTableState(state: FinancierListState): DataTableState<FinancierRow> {
+function toTableState(state: FinancierListState): BrandTableState<FinancierRow> {
   switch (state.status) {
     case 'loading':
       return { status: 'loading' }

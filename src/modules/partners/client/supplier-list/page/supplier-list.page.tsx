@@ -3,28 +3,43 @@ import { getRouteApi, useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
+import { PlusIcon, initialsFrom, vars } from '#shared/ui/index.ts'
 import {
-  Badge,
-  Button,
-  DataTable,
-  PageHeader,
-  AvatarLabel,
-  initialsFrom,
-  type Column,
-  type DataTableState,
-} from '#shared/ui/index.ts'
+  BrandDataTable,
+  BrandChip,
+  BrandNameCell,
+  type BrandColumn,
+  type BrandTableState,
+} from '#shared/ui/brand/brand-data-table.component.tsx'
+import { numZero } from '#shared/ui/brand/brand-data-table.css.ts'
+import { BrandPaginator } from '#shared/ui/brand/brand-paginator.component.tsx'
+import {
+  screen,
+  header,
+  headText,
+  headTitle,
+  headSubtitle,
+  headActions,
+  primaryButton,
+} from '#shared/ui/brand/brand-page.css.ts'
 
 import { useSupplierListBinding } from '../supplier-list.binding.ts'
 import { totalPages, type SupplierListState, type SupplierRow } from '../supplier-list.view-model.ts'
 import { SupplierFilters, type StatusFilter } from '../components/supplier-filters.component.tsx'
-import { SupplierPaginator } from '../components/supplier-paginator.component.tsx'
+import { exportTrigger } from '../components/supplier-filters.css.ts'
 import { PartnersExportDropdown } from '#modules/partners/client/shared/partners-export-dropdown.component.tsx'
 import { PartnersPrintable } from '#modules/partners/client/shared/partners-printable.component.tsx'
 import { contentWrap, contentWrapPrintHidden } from '#modules/partners/client/shared/export-print.css.ts'
-import { cnpjCell, screen } from './supplier-list.css.ts'
+import { cnpjCell } from './supplier-list.css.ts'
 
 const t = createTranslator(ptBR)
 const routeApi = getRouteApi('/_authenticated/parceiros/fornecedores/')
+
+const AVATAR = {
+  bg: vars.color.partnerType.supplier.background,
+  fg: vars.color.partnerType.supplier.text,
+}
+const GRID_TEMPLATE = 'minmax(220px,1.8fr) minmax(200px,1.6fr) 1.1fr .9fr 1fr'
 
 /** CNPJ (14 dígitos) → máscara; entrada inesperada volta crua. */
 function formatCnpj(digits: string): string {
@@ -43,7 +58,6 @@ export function SupplierListPage(): ReactNode {
   const { state, canCreate, categories } = useSupplierListBinding(search)
   const [printing, setPrinting] = useState(false)
 
-  // PDF = window.print (mesmo mecanismo dos Contratos): liga o printable, imprime e desliga.
   useEffect(() => {
     if (!printing) return
     const id = setTimeout(() => {
@@ -58,11 +72,13 @@ export function SupplierListPage(): ReactNode {
   const hasFilters =
     (search.search ?? '') !== '' || search.active !== undefined || (search.categories?.length ?? 0) > 0
 
-  const columns: readonly Column<SupplierRow>[] = [
+  const columns: readonly BrandColumn<SupplierRow>[] = [
     {
       key: 'name',
       header: t('partners.suppliers.columns.name'),
-      cell: (r) => <AvatarLabel variant="supplier" initials={initialsFrom(r.name)} text={r.name} />,
+      cell: (r) => (
+        <BrandNameCell name={r.name} initials={initialsFrom(r.name)} bg={AVATAR.bg} fg={AVATAR.fg} />
+      ),
     },
     { key: 'email', header: t('partners.suppliers.columns.email'), cell: (r) => r.email },
     {
@@ -71,18 +87,18 @@ export function SupplierListPage(): ReactNode {
       cell: (r) => <span className={cnpjCell}>{formatCnpj(r.cnpj)}</span>,
     },
     {
-      // Contratos/Aditivos: contagem de contratos ativos vinda do item da lista (#46).
       key: 'contracts',
       header: t('partners.suppliers.columns.contracts'),
-      cell: (r) => String(r.contractCount),
+      cell: (r) => <span className={r.contractCount === 0 ? numZero : undefined}>{r.contractCount}</span>,
     },
     {
       key: 'status',
       header: t('partners.suppliers.columns.status'),
       cell: (r) => (
-        <Badge variant={r.activation === 'active' ? 'active' : 'terminated'} uppercase size="sm">
-          {t(`partners.suppliers.status.${r.activation}`)}
-        </Badge>
+        <BrandChip
+          tone={r.activation === 'active' ? 'ok' : 'danger'}
+          label={t(`partners.suppliers.status.${r.activation}`)}
+        />
       ),
     },
   ]
@@ -108,17 +124,24 @@ export function SupplierListPage(): ReactNode {
   return (
     <div className={screen}>
       <div className={printing ? contentWrapPrintHidden : contentWrap}>
-        <PageHeader
-          title={t('partners.suppliers.list.title')}
-          subtitle={t('partners.suppliers.list.subtitle')}
-          actions={
-            canCreate ? (
-              <Button onClick={() => void navigate({ to: '/parceiros/fornecedores/criar' })}>
+        <div className={header}>
+          <div className={headText}>
+            <h1 className={headTitle}>{t('partners.suppliers.list.title')}</h1>
+            <p className={headSubtitle}>{t('partners.suppliers.list.subtitle')}</p>
+          </div>
+          {canCreate ? (
+            <div className={headActions}>
+              <button
+                type="button"
+                className={primaryButton}
+                onClick={() => void navigate({ to: '/parceiros/fornecedores/criar' })}
+              >
+                <PlusIcon size={16} />
                 {t('partners.suppliers.list.new')}
-              </Button>
-            ) : undefined
-          }
-        />
+              </button>
+            </div>
+          ) : null}
+        </div>
 
         <SupplierFilters
           searchValue={search.search ?? ''}
@@ -147,6 +170,7 @@ export function SupplierListPage(): ReactNode {
           }}
           exportSlot={
             <PartnersExportDropdown
+              triggerClassName={exportTrigger}
               exportLabel={t('partners.suppliers.filters.export')}
               filenameBase="fornecedores"
               headers={exportColumns}
@@ -193,19 +217,20 @@ export function SupplierListPage(): ReactNode {
           }
         />
 
-        <DataTable<SupplierRow>
+        <BrandDataTable<SupplierRow>
           columns={columns}
+          gridTemplate={GRID_TEMPLATE}
           state={tableState}
           rowKey={(r) => r.id}
+          caption={t('partners.suppliers.list.title')}
           emptyLabel={
             hasFilters ? t('partners.suppliers.list.no-results') : t('partners.suppliers.list.empty')
           }
           loadingLabel={t('partners.suppliers.list.loading')}
-          caption={t('partners.suppliers.list.title')}
           onRowClick={(r) => void navigate({ to: '/parceiros/fornecedores/$id', params: { id: r.id } })}
         />
 
-        <SupplierPaginator
+        <BrandPaginator
           page={pageNum}
           totalPages={pages}
           perPage={search.limit}
@@ -213,6 +238,7 @@ export function SupplierListPage(): ReactNode {
             previous: t('partners.suppliers.paginator.previous'),
             next: t('partners.suppliers.paginator.next'),
             page: t('partners.suppliers.paginator.page'),
+            of: t('partners.suppliers.paginator.of'),
             perPage: t('partners.suppliers.paginator.perPage'),
           }}
           onPrev={() => void navigate({ to: '.', search: (p) => ({ ...p, page: Math.max(1, pageNum - 1) }) })}
@@ -234,7 +260,7 @@ export function SupplierListPage(): ReactNode {
   )
 }
 
-function toTableState(state: SupplierListState): DataTableState<SupplierRow> {
+function toTableState(state: SupplierListState): BrandTableState<SupplierRow> {
   switch (state.status) {
     case 'loading':
       return { status: 'loading' }

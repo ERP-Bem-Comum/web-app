@@ -88,10 +88,14 @@ describe('rootViewModel.sidebarWidth / showPageHeader', () => {
     assert.strictEqual(rootViewModel.fullBleedContent('/financeiro/conciliacao'), false)
     // Dashboard (043): canvas bege preenche toda a área de conteúdo (sem a margem branca do shell).
     assert.strictEqual(rootViewModel.fullBleedContent('/dashboard'), true)
-    // Colaboradores (nova identidade): só a LISTA é full-bleed; criar/detalhe mantêm o padding do shell.
+    // Grids "brand": só as LISTAS são full-bleed; criar/detalhe mantêm o padding do shell.
     assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/colaboradores'), true)
     assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/colaboradores/criar'), false)
     assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/colaboradores/abc-1'), false)
+    assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/fornecedores'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/financiadores'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/atos'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/fornecedores/criar'), false)
   })
 })
 

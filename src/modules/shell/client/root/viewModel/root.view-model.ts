@@ -110,10 +110,16 @@ export const rootViewModel = {
   fullBleedContent: (path: string): boolean =>
     path.startsWith('/financeiro/conciliacao/') ||
     isPrefixPath(path, '/dashboard') ||
-    // Grid de Colaboradores (nova identidade): fundo cinza próprio encosta nas bordas, sem a margem
-    // branca do shell. Só a LISTA (não /criar nem /$id, que mantêm o padding do shell).
+    // Grids da identidade "brand": fundo cinza próprio encosta nas bordas, sem a margem branca do shell.
+    // Só as LISTAS (não /criar nem /$id, que mantêm o padding do shell).
     path === '/parceiros/colaboradores' ||
-    path === '/parceiros/colaboradores/',
+    path === '/parceiros/colaboradores/' ||
+    path === '/parceiros/fornecedores' ||
+    path === '/parceiros/fornecedores/' ||
+    path === '/parceiros/financiadores' ||
+    path === '/parceiros/financiadores/' ||
+    path === '/parceiros/atos' ||
+    path === '/parceiros/atos/',
 
   /**
    * RBAC: remove seções/subitens cujo `requiredPermission` não está em `permissions`. Uma seção de
