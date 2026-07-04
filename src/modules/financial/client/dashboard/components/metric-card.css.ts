@@ -7,6 +7,7 @@
 import { style, styleVariants } from '@vanilla-extract/css'
 
 import { vars } from '#shared/ui/tokens/index.ts'
+import { brand } from '#shared/ui/brand/grid-brand.values.ts'
 
 // Accent do ÍCONE → círculo com DEGRADÊ suave da cor do acento + glyph BRANCO (currentColor=onBrand).
 // Classe (a view não importa tokens — §boundaries). O degradê (mistura com `white` via color-mix, sem hex
@@ -25,9 +26,10 @@ export const iconAccent = styleVariants({
 export const card = style({
   fontFamily: vars.font.family.body,
   background: vars.color.surface.default,
-  border: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
+  // Borda + profundidade do card do grid de Colaboradores (brand): linha neutra + sombra em camadas.
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
   borderRadius: vars.radius.lg,
-  boxShadow: vars.shadow.card,
+  boxShadow: brand.shadow.card,
   padding: vars.space.md,
   display: 'flex',
   alignItems: 'center',

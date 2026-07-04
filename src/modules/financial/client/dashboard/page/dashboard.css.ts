@@ -12,10 +12,13 @@
 import { style } from '@vanilla-extract/css'
 
 import { vars } from '#shared/ui/tokens/index.ts'
+import { brand } from '#shared/ui/brand/grid-brand.values.ts'
+
+import { dashboard } from '../dashboard.values.ts'
 
 export const page = style({
   fontFamily: vars.font.family.body,
-  background: vars.color.surface.canvas,
+  background: dashboard.canvas,
   color: vars.color.text.secondary,
   // O shell (DynamicContainer) é altura-fixa + overflow:hidden. `blockSize:100%` dá altura LIMITADA
   // (= a área de conteúdo) para o próprio `page` ser o container de rolagem: com `overflowY:auto`, o
@@ -82,9 +85,11 @@ export const rightColumn = style({
 const cardBase = style({
   fontFamily: vars.font.family.body,
   background: vars.color.surface.default,
-  border: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
+  // Borda + profundidade idênticas ao card da tabela do grid de Colaboradores (brand): linha neutra
+  // #e6e9ef + sombra em camadas (depth sutil), no lugar da borda azulada + sombra difusa anteriores.
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
   borderRadius: vars.radius.lg,
-  boxShadow: vars.shadow.card,
+  boxShadow: brand.shadow.card,
   padding: vars.space.md,
 })
 
