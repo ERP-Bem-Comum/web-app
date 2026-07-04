@@ -1,6 +1,7 @@
 import { style, styleVariants } from '@vanilla-extract/css'
 
 import { vars } from '#shared/ui/tokens/index.ts'
+import { brand } from '#shared/ui/brand/grid-brand.values.ts'
 
 // Container dos chips — fundo quente com micro-padding (2px = 0.125rem).
 export const container = style({
@@ -12,6 +13,9 @@ export const container = style({
   borderRadius: vars.radius.md,
   minWidth: 0,
   overflowX: 'auto',
+  // Borda sutil (clara) + profundidade (kit de grid) — pedido da P.O. para o filtro de status.
+  border: `${vars.borderWidth.thin} solid color-mix(in srgb, ${vars.color.institutional.paperRule} 55%, ${vars.color.institutional.paperWarm})`,
+  boxShadow: brand.shadow.cardDepth,
 })
 
 // Base compartilhada de cada chip.
@@ -19,7 +23,8 @@ const chipBase = style({
   display: 'inline-flex',
   alignItems: 'center',
   gap: vars.space.xs,
-  blockSize: '1.875rem',
+  // 40px de chip + 2×2px de padding do container = 44px, casando com busca/funil/exportar.
+  blockSize: '2.5rem',
   paddingInline: '0.625rem',
   borderRadius: vars.radius.sm,
   fontFamily: vars.font.family.body,

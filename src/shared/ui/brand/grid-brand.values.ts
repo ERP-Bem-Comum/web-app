@@ -62,6 +62,8 @@ export const brand = {
   },
   shadow: {
     card: '0 1px 2px rgba(16,24,40,.04),0 1px 3px rgba(16,24,40,.06)',
+    // Profundidade mais visível para controles sobre fundo BRANCO (busca/filtro/exportar/tabela do grid).
+    cardDepth: '0 1px 3px rgba(16,24,40,.10),0 6px 16px -4px rgba(16,24,40,.12)',
     btn: '0 1px 2px rgba(16,24,40,.10)',
     focus: '0 0 0 3px rgba(57,100,150,0.14)',
     // Barra de ações fixa dos formulários "brand" (sombra para cima).
