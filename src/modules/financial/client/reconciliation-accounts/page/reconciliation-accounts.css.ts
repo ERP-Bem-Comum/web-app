@@ -64,7 +64,9 @@ export const filterBar = style({
   display: 'flex',
   alignItems: 'center',
   gap: sp.lg,
-  paddingInline: sp['3xl'],
+  // paddingInline 1rem (=16px): MESMO recuo do título (shell desenha o header com paddingInline md=1rem) →
+  // barra e tabela ALINHADAS ao título, com folga para a sombra de profundidade à esquerda.
+  paddingInline: '1rem',
   paddingBlock: sp.lg,
   background: c.paper.default,
 })
@@ -72,12 +74,16 @@ export const search = style({
   display: 'flex',
   alignItems: 'center',
   gap: sp.sm,
-  inlineSize: '20rem',
-  maxInlineSize: '40%',
+  boxSizing: 'border-box',
+  blockSize: '2.75rem', // 44px — mesma altura dos demais controles (padrão Contratos)
+  // Ocupa TODO o espaço disponível até os chips de status (sem largura fixa) — padrão Contratos.
+  flex: 1,
+  minInlineSize: '14rem',
   paddingInline: sp.lg,
-  paddingBlock: sp.sm,
   borderRadius: r.md,
-  border: `${bw.thin} solid ${c.paper.rule}`,
+  // Borda clareada (color-mix rule→warm) + profundidade (paridade com o grid de Contratos).
+  border: `${bw.thin} solid color-mix(in srgb, ${c.paper.rule} 55%, ${c.paper.warm})`,
+  boxShadow: recon.shadow.cardDepth,
   background: c.paper.warm,
   color: c.ink[4],
 })
@@ -99,12 +105,15 @@ export const statusChips = style({
   background: c.paper.warm,
   borderRadius: r.md,
   overflowX: 'auto',
+  // Borda clareada + profundidade (paridade com o grid de Contratos).
+  border: `${bw.thin} solid color-mix(in srgb, ${c.paper.rule} 55%, ${c.paper.warm})`,
+  boxShadow: recon.shadow.cardDepth,
 })
 const chipBase = {
   display: 'inline-flex',
   alignItems: 'center',
   gap: sp.xs,
-  blockSize: '1.875rem',
+  blockSize: '2.5rem', // 40px + 2×2px do trilho = 44px (casando com busca/ordenar/Contratos)
   paddingInline: sp.md,
   border: 'none',
   borderRadius: r.sm,
@@ -156,16 +165,20 @@ export const chipDot = styleVariants({
   },
   closed: { inlineSize: '0.4375rem', blockSize: '0.4375rem', borderRadius: r.pill, background: c.ink[5] },
 })
-export const sortWrap = style({ marginInlineStart: 'auto' })
+// Sem `marginInlineStart: auto`: a margem auto engoliria o espaço livre antes do flex-grow e travaria o
+// crescimento da busca. Sem ela, a busca (flex:1) cresce até os chips e o "Ordenar" fica à direita.
+export const sortWrap = style({ flexShrink: 0 })
 export const sortBtn = style({
   display: 'inline-flex',
   alignItems: 'center',
   gap: sp.xs,
-  border: `${bw.thin} solid ${c.paper.rule}`,
+  boxSizing: 'border-box',
+  blockSize: '2.75rem', // 44px — alinhado à busca/chips
+  border: `${bw.thin} solid color-mix(in srgb, ${c.paper.rule} 55%, ${c.paper.warm})`,
   background: c.paper.default,
   borderRadius: r.md,
+  boxShadow: recon.shadow.cardDepth,
   paddingInline: sp.lg,
-  paddingBlock: sp.sm,
   fontFamily: recon.font.sans,
   fontSize: fs.sm,
   color: c.ink[2],
@@ -175,12 +188,15 @@ export const sortBtn = style({
 // ── grid ──────────────────────────────────────────────────────────────────────
 // Padrão do grid de Contas a Pagar: card com borda + raio, header sticky, linhas com hairline (última
 // sem borda), scroller interno discreto.
-export const gridWrap = style({ flex: 1, minBlockSize: 0, paddingInline: sp['3xl'], paddingBlock: sp.lg })
+// paddingInline 1rem: alinha a tabela ao título (mesmo recuo) e dá folga para a sombra à esquerda.
+export const gridWrap = style({ flex: 1, minBlockSize: 0, paddingInline: '1rem', paddingBlock: sp.lg })
 export const grid = style({
   overflow: 'auto',
-  border: `${bw.thin} solid ${c.paper.rule}`,
+  // Borda clareada + profundidade (paridade com o grid de Contratos).
+  border: `${bw.thin} solid color-mix(in srgb, ${c.paper.rule} 55%, ${c.paper.warm})`,
   borderRadius: r.lg,
   background: c.paper.default,
+  boxShadow: recon.shadow.cardDepth,
 })
 const gridCols = {
   display: 'grid',

@@ -28,10 +28,11 @@ export const contentWrapPrintHidden = style([contentWrap, { '@media': { print: {
 
 // Cabeçalho PRÓPRIO da lista de Contratos (o shell não desenha header aqui — showPageHeader false):
 // título institucional + legenda BEGE (ink5), identidade de "papel" específica deste grid.
+// Título no MESMO recuo (md) da barra de filtros e da tabela → título e tabela alinhados, com folga para a
+// sombra de profundidade à esquerda. Vertical espelha o header do shell (sem paddingTop; marginBlockEnd lg).
 export const pageHead = style({
   paddingInline: vars.space.md,
-  paddingTop: vars.space.md,
-  paddingBottom: vars.space.sm,
+  marginBlockEnd: vars.space.lg,
 })
 
 export const pageSubtitle = style({

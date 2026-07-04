@@ -6,6 +6,7 @@
 import { style, styleVariants, globalStyle } from '@vanilla-extract/css'
 
 import { vars } from '#shared/ui/tokens/index.ts'
+import { brand } from '#shared/ui/brand/grid-brand.values.ts'
 
 export const screen = style({
   display: 'flex',
@@ -19,7 +20,9 @@ export const filterBar = style({
   display: 'flex',
   alignItems: 'center',
   gap: '0.875rem', // Figma: 14px
-  paddingInline: vars.space.lg, // 24px
+  // paddingInline = md: MESMO recuo do título (o shell desenha o header com paddingInline md) → barra e
+  // tabela ALINHADAS ao título, e a folga dá espaço para a sombra de profundidade à esquerda.
+  paddingInline: vars.space.md,
   paddingBlock: vars.space.sm,
   background: vars.color.surface.default,
   // Sem régua entre a busca e a tabela (pedido P.O.) — a separação fica no header sticky do grid.
@@ -29,14 +32,18 @@ export const searchWrap = style({
   position: 'relative',
   display: 'flex',
   alignItems: 'center',
+  boxSizing: 'border-box',
+  blockSize: '2.75rem', // 44px — mesma altura dos demais controles (padrão Contratos/Colaboradores)
   background: vars.color.surface.default,
-  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  // Borda clareada (color-mix paperRule→paperWarm) + profundidade sobre fundo branco (kit de grid).
+  border: `${vars.borderWidth.thin} solid color-mix(in srgb, ${vars.color.institutional.paperRule} 55%, ${vars.color.institutional.paperWarm})`,
   borderRadius: vars.radius.md,
-  paddingBlock: '0.5rem', // 8px — campo um pouco mais alto/confortável
+  boxShadow: brand.shadow.cardDepth,
   paddingInlineStart: '2.25rem', // 36px (espaço do ícone)
   paddingInlineEnd: '0.875rem', // 14px (sem atalho ⌘K dentro do campo)
-  inlineSize: '24rem', // largura fixa, mais larga (sem o chip de atalho)
-  maxInlineSize: '100%',
+  // Ocupa TODO o espaço disponível até os chips de status (sem largura fixa) — padrão Contratos.
+  flex: 1,
+  minInlineSize: '14rem',
 })
 export const searchIcon = style({
   position: 'absolute',
@@ -79,12 +86,15 @@ export const statusChips = style({
   borderRadius: vars.radius.md,
   minInlineSize: 0,
   overflowX: 'auto',
+  // Borda clareada + profundidade (kit de grid) — mesmo tratamento do grid de Contratos.
+  border: `${vars.borderWidth.thin} solid color-mix(in srgb, ${vars.color.institutional.paperRule} 55%, ${vars.color.institutional.paperWarm})`,
+  boxShadow: brand.shadow.cardDepth,
 })
 const chipBase = style({
   display: 'inline-flex',
   alignItems: 'center',
   gap: vars.space.xs,
-  blockSize: '1.875rem', // 30px (Contratos)
+  blockSize: '2.5rem', // 40px + 2×2px do trilho = 44px (casando com busca/filtro/Contratos)
   paddingInline: '0.625rem', // 10px
   borderRadius: vars.radius.sm,
   fontFamily: vars.font.family.body, // Nunito (Contratos)
@@ -147,17 +157,20 @@ export const chipCountOnActive = style([
 
 // ── Filtros avançados ("Adicionar filtro", estilo do mock) ────────────────────
 // Empurra o bloco de filtros para a direita da filter-bar (igual ao fbar-right do mock).
-export const fbarRight = style({ marginInlineStart: 'auto', display: 'inline-flex', gap: vars.space.sm })
+// Sem `marginInlineStart: auto`: a margem auto absorveria o espaço livre antes do flex-grow e travaria o
+// crescimento da busca. Sem ela, a busca (flex:1) cresce até os chips e o bloco de filtro fica à direita.
+export const fbarRight = style({ display: 'inline-flex', gap: vars.space.sm, flexShrink: 0 })
 export const fltWrap = style({ position: 'relative', display: 'inline-flex' })
 export const addFilterBtn = style({
   display: 'inline-flex',
   alignItems: 'center',
   gap: vars.space.xs,
-  blockSize: '2rem',
-  paddingInline: '0.625rem',
-  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  blockSize: '2.75rem', // 44px — alinhado à busca/chips/Exportar
+  paddingInline: '0.875rem',
+  border: `${vars.borderWidth.thin} solid color-mix(in srgb, ${vars.color.institutional.paperRule} 55%, ${vars.color.institutional.paperWarm})`,
   borderRadius: vars.radius.md,
   background: vars.color.surface.default,
+  boxShadow: brand.shadow.cardDepth,
   fontFamily: vars.font.family.body,
   fontSize: '0.6875rem',
   fontWeight: vars.font.weight.semibold,
@@ -244,7 +257,8 @@ export const activeFilters = style({
   flexWrap: 'wrap',
   alignItems: 'center',
   gap: vars.space.sm,
-  paddingInline: vars.space.lg,
+  // Alinhado ao título/tabela (mesmo recuo md).
+  paddingInline: vars.space.md,
   paddingBlockEnd: vars.space.sm,
   background: vars.color.surface.default,
 })
@@ -471,7 +485,8 @@ const GRID_COLS =
 
 // Wrapper rola na horizontal (como o grid largo do Figma) quando a viewport é estreita.
 export const gridWrap = style({
-  paddingInline: vars.space.lg,
+  // paddingInline = md: alinha a tabela ao título (mesmo recuo) e dá folga para a sombra à esquerda.
+  paddingInline: vars.space.md,
   paddingBlock: vars.space.md,
   minBlockSize: 0, // permite o scroller interno encolher dentro do flex da tela
 })
@@ -483,9 +498,11 @@ export const grid = style({
   // linha nunca ficar coberta pelo bottombar (antes 15rem deixava a borda inferior sob o rodapé).
   maxBlockSize: 'calc(100dvh - 18rem)',
   overflow: 'auto',
-  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  // Borda clareada + profundidade (kit de grid) — mesmo tratamento do grid de Contratos.
+  border: `${vars.borderWidth.thin} solid color-mix(in srgb, ${vars.color.institutional.paperRule} 55%, ${vars.color.institutional.paperWarm})`,
   borderRadius: vars.radius.lg,
   background: vars.color.surface.default,
+  boxShadow: brand.shadow.cardDepth,
   selectors: {
     '&::-webkit-scrollbar': { width: '0.625rem', height: '0.625rem' },
     '&::-webkit-scrollbar-track': {

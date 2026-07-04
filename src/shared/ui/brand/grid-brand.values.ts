@@ -62,8 +62,11 @@ export const brand = {
   },
   shadow: {
     card: '0 1px 2px rgba(16,24,40,.04),0 1px 3px rgba(16,24,40,.06)',
-    // Profundidade mais visível para controles sobre fundo BRANCO (busca/filtro/exportar/tabela do grid).
-    cardDepth: '0 1px 3px rgba(16,24,40,.10),0 6px 16px -4px rgba(16,24,40,.12)',
+    // Profundidade sobre fundo BRANCO (busca/filtro/exportar/tabela do grid). O 1º nível é um anel fino
+    // (0-offset) que dá relevo em TODAS as bordas — inclusive topo e lateral esquerda; os demais são a
+    // queda direcional (embaixo/direita) que levanta o cartão.
+    cardDepth:
+      '0 0 0 1px rgba(16,24,40,.04),0 2px 5px -1px rgba(16,24,40,.10),0 8px 20px -4px rgba(16,24,40,.14)',
     btn: '0 1px 2px rgba(16,24,40,.10)',
     focus: '0 0 0 3px rgba(57,100,150,0.14)',
     // Barra de ações fixa dos formulários "brand" (sombra para cima).
