@@ -1,15 +1,10 @@
 import { style } from '@vanilla-extract/css'
 
-import { vars } from '#shared/ui/tokens/index.ts'
-
+// Container full-height: o próprio formulário "brand" (`brand-form.css.ts → page`) preenche a área,
+// desenha o fundo cinza e cuida da rolagem + barra de ações fixa. Rota marcada em `fullBleedContent`.
 export const screen = style({
-  boxSizing: 'border-box',
   blockSize: '100%',
-  overflowY: 'auto',
-  padding: vars.space.xl,
   display: 'flex',
   flexDirection: 'column',
-  gap: vars.space.lg,
-  scrollbarWidth: 'thin',
-  scrollbarColor: `${vars.color.border.default} transparent`,
+  minBlockSize: 0,
 })

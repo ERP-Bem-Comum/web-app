@@ -3,7 +3,7 @@ import { useState, useEffect, type ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { PageHeader, BarChartIcon } from '#shared/ui/index.ts'
+import { header, headText, headTitle, headSubtitle } from '#shared/ui/brand/brand-page.css.ts'
 
 import {
   usePlanejamentoList,
@@ -27,7 +27,7 @@ import { PlanTreeTable } from '../components/plan-tree-table.component.tsx'
 import { PlanPaginator } from '../components/plan-paginator.component.tsx'
 import { CreatePlanModal } from '../components/create-plan-modal.component.tsx'
 import { ConfirmActionModal, PlanFeedbackToast } from '../components/confirm-action-modal.component.tsx'
-import { screen, card, titleIcon } from './planejamento-list.css.ts'
+import { screen, card } from './planejamento-list.css.ts'
 
 const t = createTranslator(ptBR)
 const routeApi = getRouteApi('/_authenticated/planejamento')
@@ -117,15 +117,12 @@ export function PlanejamentoListPage(): ReactNode {
 
   return (
     <div className={screen}>
-      <PageHeader
-        title={t('budget-plans.list.title')}
-        subtitle={t('budget-plans.list.subtitle')}
-        icon={
-          <span className={titleIcon}>
-            <BarChartIcon size={28} />
-          </span>
-        }
-      />
+      <div className={header}>
+        <div className={headText}>
+          <h1 className={headTitle}>{t('budget-plans.list.title')}</h1>
+          <p className={headSubtitle}>{t('budget-plans.list.subtitle')}</p>
+        </div>
+      </div>
 
       <div className={card}>
         <PlanFilters

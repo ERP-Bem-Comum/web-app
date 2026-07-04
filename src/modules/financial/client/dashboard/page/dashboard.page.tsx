@@ -10,6 +10,8 @@
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 
+import { header, headText, headTitle, headSubtitle } from '#shared/ui/brand/brand-page.css.ts'
+
 import { useRecentPayments } from '../recent-payments.binding.ts'
 import { RecentPaymentsWidget } from '../components/recent-payments-widget.component.tsx'
 import { MetricCard } from '../components/metric-card.component.tsx'
@@ -27,7 +29,6 @@ import {
 } from '../dashboard-summary.view-model.ts'
 import {
   page,
-  pageTitle,
   metricsRow,
   contentRow,
   overviewCard,
@@ -68,7 +69,12 @@ export function DashboardPage() {
 
   return (
     <div className={page}>
-      <h1 className={pageTitle}>{t('dashboard.title')}</h1>
+      <div className={header}>
+        <div className={headText}>
+          <h1 className={headTitle}>{t('dashboard.title')}</h1>
+          <p className={headSubtitle}>{t('dashboard.subtitle')}</p>
+        </div>
+      </div>
 
       {/* Linha 1 — 4 cards de métrica (placeholder) */}
       <div className={metricsRow}>

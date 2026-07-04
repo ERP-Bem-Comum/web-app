@@ -4,11 +4,13 @@
  */
 import type { ReactNode } from 'react'
 
+import { headText, headTitle, headSubtitle } from '#shared/ui/brand/brand-page.css.ts'
 import { SidebarProvider } from '#modules/shell/client/root/sidebar.context.ts'
 import * as s from './dynamic-container.css.ts'
 
 export interface DynamicContainerProps {
   readonly pageTitle: string
+  readonly pageSubtitle?: string | undefined
   readonly showPageHeader: boolean
   readonly fullBleed?: boolean
   readonly sidebarWidth: number
@@ -18,6 +20,7 @@ export interface DynamicContainerProps {
 
 export function DynamicContainer({
   pageTitle,
+  pageSubtitle,
   showPageHeader,
   fullBleed = false,
   sidebarWidth,
@@ -27,8 +30,12 @@ export function DynamicContainer({
   return (
     <main className={fullBleed ? `${s.main} ${s.mainFullBleed}` : s.main}>
       {showPageHeader && (
+        // Título + legenda no padrão do grid de Colaboradores (brand: Inter 22px + subtítulo 13.5px).
         <header className={s.pageHeader}>
-          <h1 className={s.pageTitle}>{pageTitle}</h1>
+          <div className={headText}>
+            <h1 className={headTitle}>{pageTitle}</h1>
+            {pageSubtitle !== undefined ? <p className={headSubtitle}>{pageSubtitle}</p> : null}
+          </div>
         </header>
       )}
       <div className={s.content}>

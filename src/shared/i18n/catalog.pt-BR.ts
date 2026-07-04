@@ -1003,6 +1003,7 @@ export const ptBR: Catalog = {
 
   // ─── Gestão de Programas — slice Programas ───────────────────────────────────
   'programs.list.title': 'Programas',
+  'programs.list.subtitle': 'Gestão de programas da organização',
   'programs.list.search': 'Pesquise',
   'programs.list.new': 'Adicionar Programa',
   'programs.list.empty': 'Nenhum programa cadastrado.',
@@ -2116,6 +2117,7 @@ export const ptBR: Catalog = {
 
   // ── Dashboard "Resumo Mensal" (043 — reprodução fiel do legado) ──
   'dashboard.title': 'Dashboard - Resumo Mensal',
+  'dashboard.subtitle': 'Visão geral financeira do programa',
 
   // Linha 1 — 4 cards de métrica (placeholder; ligar em core-api#112)
   'dashboard.metric.expenses.label': 'Gastos',

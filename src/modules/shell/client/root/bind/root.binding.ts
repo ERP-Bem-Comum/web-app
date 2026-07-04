@@ -27,6 +27,7 @@ export type RootView = Readonly<{
   collapsed: boolean
   sidebarWidth: number
   pageTitle: string
+  pageSubtitle: string | undefined
   showPageHeader: boolean
   fullBleed: boolean
   visibleMenu: readonly MenuSection[]
@@ -78,6 +79,7 @@ export function useRootBinding(user: RootUser): RootView {
     collapsed: state.collapsed,
     sidebarWidth,
     pageTitle,
+    pageSubtitle: rootViewModel.resolvePageSubtitle(path),
     showPageHeader: rootViewModel.showPageHeader(path),
     fullBleed: rootViewModel.fullBleedContent(path),
     visibleMenu: rootViewModel.visibleMenu(MENU, user.permissions),

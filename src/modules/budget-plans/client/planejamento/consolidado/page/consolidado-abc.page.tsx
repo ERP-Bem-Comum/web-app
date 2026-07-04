@@ -3,7 +3,8 @@ import type { ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { PageHeader, PieChartIcon, FileChartIcon } from '#shared/ui/index.ts'
+import { FileChartIcon } from '#shared/ui/index.ts'
+import { header, headText, headTitle, headSubtitle } from '#shared/ui/brand/brand-page.css.ts'
 
 import {
   useConsolidadoAbc,
@@ -16,7 +17,6 @@ import { ConsolidadoFilters } from '../components/consolidado-filters.component.
 import {
   screen,
   resultCard,
-  titleIcon,
   resultHeader,
   resultTitleGroup,
   resultTitleIcon,
@@ -41,15 +41,12 @@ export function ConsolidadoAbcPage(): ReactNode {
 
   return (
     <div className={screen}>
-      <PageHeader
-        title={t('budget-plans.consolidado.title')}
-        subtitle={t('budget-plans.consolidado.subtitle')}
-        icon={
-          <span className={titleIcon}>
-            <PieChartIcon size={28} />
-          </span>
-        }
-      />
+      <div className={header}>
+        <div className={headText}>
+          <h1 className={headTitle}>{t('budget-plans.consolidado.title')}</h1>
+          <p className={headSubtitle}>{t('budget-plans.consolidado.subtitle')}</p>
+        </div>
+      </div>
 
       <ConsolidadoFilters
         value={{ year: search.year, programs }}

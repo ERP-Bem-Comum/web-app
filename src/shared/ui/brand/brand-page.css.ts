@@ -37,12 +37,20 @@ export const header = style({
 export const headText = style({ display: 'flex', flexDirection: 'column', gap: brand.space.xxs })
 export const headTitle = style({
   margin: 0,
+  // fontFamily explícito (Inter): a classe não pode depender do container herdar a fonte — fora do grid
+  // (shell, Dashboard) o default é serifa/Nunito e o título vazava. Autossuficiente.
+  fontFamily: vars.font.family.heading,
   fontSize: brand.text.h1,
   fontWeight: brand.weight.bold,
   color: brand.color.ink900,
   letterSpacing: '-.01em',
 })
-export const headSubtitle = style({ margin: 0, fontSize: brand.text.subtitle, color: brand.color.ink400 })
+export const headSubtitle = style({
+  margin: 0,
+  fontFamily: vars.font.family.heading,
+  fontSize: brand.text.subtitle,
+  color: brand.color.ink400,
+})
 export const headActions = style({ marginInlineStart: 'auto', display: 'flex', gap: brand.space.sm })
 
 const headerButton = style({

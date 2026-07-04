@@ -29,19 +29,10 @@ export const content = style({
   overflow: 'hidden',
 })
 
+// Faixa do header do shell (título + legenda "brand" dentro). flex-shrink 0 p/ não encolher no flex-column.
 export const pageHeader = style({
   display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
+  alignItems: 'flex-start',
   marginBlockEnd: vars.space.lg,
   flexShrink: 0,
-})
-
-export const pageTitle = style({
-  fontSize: vars.font.size.xl,
-  fontWeight: vars.font.weight.bold,
-  color: vars.color.nav.ink,
-  // Nunito (corpo), igual ao título das telas via PageHeader — consistência entre módulos.
-  fontFamily: vars.font.family.body,
-  margin: 0,
 })

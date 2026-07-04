@@ -28,22 +28,6 @@ export const resultCard = style({
   background: vars.color.surface.default,
 })
 
-// Chip do ícone ao lado do título "Consolidado ABC" (mock): chip mais ALTO (~3.25rem/52px) p/ preencher a
-// ALTURA do título + subtítulo, ícone ~28, ancorado ao TOPO do bloco de texto. Tinta índigo (mesmo padrão do
-// titleIcon de Planejamento). `alignSelf:flex-start` mantém o chip alinhado ao topo dentro do leftGroup.
-export const titleIcon = style({
-  flexShrink: 0,
-  alignSelf: 'flex-start',
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  inlineSize: '3.25rem',
-  blockSize: '3.25rem',
-  borderRadius: vars.radius.md,
-  background: `color-mix(in srgb, ${vars.color.brand.normal} 10%, white)`,
-  color: vars.color.nav.background,
-})
-
 // Cabeçalho do resultado ("{ano} ABC") com chip de ícone menor (prancheta) à esquerda — mock §2.
 export const resultTitleGroup = style({
   display: 'inline-flex',
