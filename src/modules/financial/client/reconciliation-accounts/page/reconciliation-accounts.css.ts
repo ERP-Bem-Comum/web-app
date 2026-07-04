@@ -192,6 +192,10 @@ export const sortBtn = style({
 export const gridWrap = style({ flex: 1, minBlockSize: 0, paddingInline: '1rem', paddingBlock: sp.lg })
 export const grid = style({
   overflow: 'auto',
+  // Cap de altura (paridade com Contratos/Contas a Pagar): o scroll fica DENTRO da tabela. Sem isto, se a
+  // lista de contas — ou vários painéis expandidos — passar da viewport, o shell (overflow:hidden) cortaria
+  // as linhas de baixo sem barra para alcançá-las (a janela nunca rola: shell travado em 100dvh).
+  maxBlockSize: 'calc(100dvh - 18rem)',
   // Borda clareada + profundidade (paridade com o grid de Contratos).
   border: `${bw.thin} solid color-mix(in srgb, ${c.paper.rule} 55%, ${c.paper.warm})`,
   borderRadius: r.lg,
