@@ -1,10 +1,14 @@
 import type { ReactNode } from 'react'
 
+import { createTranslator } from '#shared/i18n/index.ts'
+import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import {
   useSupplierFormController,
   type SupplierFormValues,
 } from '#modules/partners/client/supplier-create/components/supplier-form.controller.ts'
 import { SupplierForm } from '#modules/partners/client/supplier-create/components/supplier-form.component.tsx'
+
+const t = createTranslator(ptBR)
 
 export type SupplierEditFormProps = Readonly<{
   initial: SupplierFormValues
@@ -15,6 +19,7 @@ export type SupplierEditFormProps = Readonly<{
   errorTag: string | null
   onSubmit: (values: SupplierFormValues) => void
   onCancel: () => void
+  onBack: () => void
 }>
 
 /**
@@ -32,6 +37,8 @@ export function SupplierEditForm(props: SupplierEditFormProps): ReactNode {
       running={props.running}
       errorTag={props.errorTag}
       onCancel={props.onCancel}
+      onBack={props.onBack}
+      title={t('partners.suppliers.edit.title')}
     />
   )
 }

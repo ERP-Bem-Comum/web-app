@@ -1,10 +1,14 @@
 import type { ReactNode } from 'react'
 
+import { createTranslator } from '#shared/i18n/index.ts'
+import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import {
   useFinancierFormController,
   type FinancierFormValues,
 } from '#modules/partners/client/financier-create/components/financier-form.controller.ts'
 import { FinancierForm } from '#modules/partners/client/financier-create/components/financier-form.component.tsx'
+
+const t = createTranslator(ptBR)
 
 export type FinancierEditFormProps = Readonly<{
   initial: FinancierFormValues
@@ -12,6 +16,7 @@ export type FinancierEditFormProps = Readonly<{
   errorTag: string | null
   onSubmit: (values: FinancierFormValues) => void
   onCancel: () => void
+  onBack: () => void
 }>
 
 /**
@@ -26,6 +31,8 @@ export function FinancierEditForm(props: FinancierEditFormProps): ReactNode {
       running={props.running}
       errorTag={props.errorTag}
       onCancel={props.onCancel}
+      onBack={props.onBack}
+      title={t('partners.financiers.edit.title')}
     />
   )
 }

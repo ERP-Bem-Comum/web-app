@@ -2,8 +2,8 @@ import type { ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { Badge, Checkbox, Field, Input } from '#shared/ui/index.ts'
-import { FileTextIcon, HeartHandshakeIcon, WalletIcon } from '#shared/ui/icons/index.ts'
+import { Badge, Checkbox, formatMask, unmask, type InputMask } from '#shared/ui/index.ts'
+import { ChevronDownIcon, FileTextIcon, HeartHandshakeIcon, WalletIcon } from '#shared/ui/icons/index.ts'
 import {
   OCCUPATION_AREAS,
   PIX_KEY_TYPES,
@@ -11,8 +11,22 @@ import {
   type ActFormController,
   type ActFormState,
 } from '#modules/partners/client/act-create/components/act-form.controller.ts'
-
-import { stack, section, sectionTitle, statusRow, fieldGrid, select } from './act-detail-content.css.ts'
+import {
+  sectionCard,
+  sectionHeader,
+  sectionIcon,
+  sectionH2,
+  sectionBody,
+  grid,
+  field,
+  fieldLabel,
+  control,
+  input,
+  select,
+  chevron,
+  controlError,
+  fieldError,
+} from '#shared/ui/brand/brand-form.css.ts'
 
 const t = createTranslator(ptBR)
 
@@ -22,10 +36,47 @@ export type ActDetailContentProps = Readonly<{
   active: boolean
 }>
 
+// Wrapper de <select> "brand": appearance:none + chevron desenhado (o mock remove a seta nativa).
+function SelectControl({
+  id,
+  value,
+  ariaLabel,
+  disabled,
+  invalid = false,
+  onChange,
+  children,
+}: {
+  id: string
+  value: string
+  ariaLabel?: string
+  disabled: boolean
+  invalid?: boolean
+  onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void
+  children: ReactNode
+}): ReactNode {
+  return (
+    <div className={control}>
+      <select
+        id={id}
+        className={`${select} ${invalid ? controlError : ''}`}
+        value={value}
+        aria-label={ariaLabel}
+        disabled={disabled}
+        onChange={onChange}
+      >
+        {children}
+      </select>
+      <span className={chevron}>
+        <ChevronDownIcon size={16} />
+      </span>
+    </div>
+  )
+}
+
 export function ActDetailContent(props: ActDetailContentProps): ReactNode {
   const { controller: c, editing } = props
-  const invalid = (key: string): string | undefined =>
-    c.errors[key] === true ? t('partners.acts.form.invalid') : undefined
+  const invalidMsg = (key: string): string | null =>
+    c.errors[key] === true ? t('partners.acts.form.invalid') : null
 
   // Só campos string do estado (exclui o boolean `hasFinancialTransfer` e o enum `pixKeyType`).
   type TextKey = {
@@ -35,92 +86,159 @@ export function ActDetailContent(props: ActDetailContentProps): ReactNode {
     key: Exclude<TextKey, 'pixKeyType'>,
     label: string,
     errKey: string,
-    opts?: Readonly<{ type?: 'text' | 'email' | 'date'; mask?: 'cpf' | 'cnpj' | 'phone' }>,
-  ): ReactNode => (
-    <Field htmlFor={`ad-${key}`} label={label} error={invalid(errKey)}>
-      <Input
-        id={`ad-${key}`}
-        type={opts?.type}
-        mask={opts?.mask}
-        value={c.state[key]}
-        disabled={!editing}
-        onChange={(v) => { c.setField(key, v); }}
-      />
-    </Field>
-  )
+    opts?: Readonly<{ type?: 'text' | 'email' | 'date'; mask?: InputMask }>,
+  ): ReactNode => {
+    const display = opts?.mask !== undefined ? formatMask(opts.mask, c.state[key]) : c.state[key]
+    return (
+      <div className={field}>
+        <label htmlFor={`ad-${key}`} className={fieldLabel}>
+          {label}
+        </label>
+        <input
+          id={`ad-${key}`}
+          type={opts?.type ?? 'text'}
+          className={`${input} ${c.errors[errKey] === true ? controlError : ''}`}
+          value={display}
+          disabled={!editing}
+          inputMode={opts?.mask !== undefined ? 'numeric' : undefined}
+          onChange={(e) => {
+            c.setField(key, opts?.mask !== undefined ? unmask(e.target.value, opts.mask) : e.target.value)
+          }}
+        />
+        {invalidMsg(errKey) !== null ? <span className={fieldError}>{invalidMsg(errKey)}</span> : null}
+      </div>
+    )
+  }
 
   return (
-    <div className={stack}>
-      <section className={section}>
-        <h2 className={sectionTitle}><FileTextIcon size={18} />{t('partners.acts.form.section.instrument')}</h2>
-        <div className={statusRow}>
-          <Badge variant={props.active ? 'active' : 'terminated'} uppercase size="sm">
-            {t(`partners.acts.status.${props.active ? 'active' : 'inactive'}`)}
-          </Badge>
+    <>
+      <section className={sectionCard}>
+        <div className={sectionHeader}>
+          <span className={sectionIcon}>
+            <FileTextIcon size={17} />
+          </span>
+          <h2 className={sectionH2}>{t('partners.acts.form.section.instrument')}</h2>
         </div>
-        <div className={fieldGrid}>
-          {txt('actNumber', t('partners.acts.form.actNumber'), 'actNumber')}
-          {txt('name', t('partners.acts.form.name'), 'name')}
-          <Field htmlFor="ad-occupationArea" label={t('partners.acts.form.occupationArea')} error={invalid('occupationArea')}>
-            <select
-              id="ad-occupationArea"
-              className={select}
-              value={c.state.occupationArea}
-              disabled={!editing}
-              onChange={(e) => { c.setField('occupationArea', e.target.value); }}
-            >
-              <option value="">{t('partners.acts.form.select')}</option>
-              {OCCUPATION_AREAS.map((a) => (
-                <option key={a} value={a}>{t(`partners.acts.area.${a}`)}</option>
-              ))}
-            </select>
-          </Field>
-          {txt('startDate', t('partners.acts.form.startDate'), 'startDate', { type: 'date' })}
-          {txt('endDate', t('partners.acts.form.endDate'), 'endDate', { type: 'date' })}
-        </div>
-      </section>
-
-      <section className={section}>
-        <h2 className={sectionTitle}><HeartHandshakeIcon size={18} />{t('partners.acts.form.section.institution')}</h2>
-        <div className={fieldGrid}>
-          {txt('cnpj', t('partners.acts.form.cnpj'), 'cnpj', { mask: 'cnpj' })}
-          {txt('corporateName', t('partners.acts.form.corporateName'), 'corporateName')}
-          {txt('fantasyName', t('partners.acts.form.fantasyName'), 'fantasyName')}
-          {txt('legalRepresentative', t('partners.acts.form.legalRepresentative'), 'legalRepresentative')}
-          {txt('email', t('partners.acts.form.email'), 'email', { type: 'email' })}
-        </div>
-      </section>
-
-      <section className={section}>
-        <h2 className={sectionTitle}><WalletIcon size={18} />{t('partners.acts.form.section.payment')}</h2>
-        <div className={fieldGrid}>
-          <Field htmlFor="ad-transfer" label={t('partners.acts.form.hasFinancialTransfer')} error={invalid('hasFinancialTransfer')}>
-            <Checkbox id="ad-transfer" checked={c.state.hasFinancialTransfer} disabled={!editing} onChange={(v) => { c.setField('hasFinancialTransfer', v); }} />
-          </Field>
-        </div>
-        {c.state.hasFinancialTransfer ? (
-          <div className={fieldGrid}>
-            {txt('bank', t('partners.acts.form.bank'), 'bankAccount.bank')}
-            {txt('agency', t('partners.acts.form.agency'), 'bankAccount.agency')}
-            {txt('accountNumber', t('partners.acts.form.accountNumber'), 'bankAccount.accountNumber')}
-            {txt('checkDigit', t('partners.acts.form.checkDigit'), 'bankAccount.checkDigit')}
-            <Field htmlFor="ad-pix-type" label={t('partners.acts.form.pixType')} error={invalid('pixKey.keyType')}>
-              <select
-                id="ad-pix-type"
-                className={select}
-                value={c.state.pixKeyType}
-                disabled={!editing}
-                onChange={(e) => { if (isPixKeyType(e.target.value)) c.setField('pixKeyType', e.target.value) }}
-              >
-                {PIX_KEY_TYPES.map((pt) => (
-                  <option key={pt} value={pt}>{t(`partners.acts.pix.${pt}`)}</option>
-                ))}
-              </select>
-            </Field>
-            {txt('pixKey', t('partners.acts.form.pixKey'), 'pixKey.key')}
+        <div className={sectionBody}>
+          <div style={{ marginBottom: '0.75rem' }}>
+            <Badge variant={props.active ? 'active' : 'terminated'} uppercase size="sm">
+              {t(`partners.acts.status.${props.active ? 'active' : 'inactive'}`)}
+            </Badge>
           </div>
-        ) : null}
+          <div className={grid}>
+            {txt('actNumber', t('partners.acts.form.actNumber'), 'actNumber')}
+            {txt('name', t('partners.acts.form.name'), 'name')}
+            <div className={field}>
+              <label htmlFor="ad-occupationArea" className={fieldLabel}>
+                {t('partners.acts.form.occupationArea')}
+              </label>
+              <SelectControl
+                id="ad-occupationArea"
+                value={c.state.occupationArea}
+                ariaLabel={t('partners.acts.form.occupationArea')}
+                disabled={!editing}
+                invalid={c.errors.occupationArea === true}
+                onChange={(e) => {
+                  c.setField('occupationArea', e.target.value)
+                }}
+              >
+                <option value="">{t('partners.acts.form.select')}</option>
+                {OCCUPATION_AREAS.map((a) => (
+                  <option key={a} value={a}>
+                    {t(`partners.acts.area.${a}`)}
+                  </option>
+                ))}
+              </SelectControl>
+              {invalidMsg('occupationArea') !== null ? (
+                <span className={fieldError}>{invalidMsg('occupationArea')}</span>
+              ) : null}
+            </div>
+            {txt('startDate', t('partners.acts.form.startDate'), 'startDate', { type: 'date' })}
+            {txt('endDate', t('partners.acts.form.endDate'), 'endDate', { type: 'date' })}
+          </div>
+        </div>
       </section>
-    </div>
+
+      <section className={sectionCard}>
+        <div className={sectionHeader}>
+          <span className={sectionIcon}>
+            <HeartHandshakeIcon size={17} />
+          </span>
+          <h2 className={sectionH2}>{t('partners.acts.form.section.institution')}</h2>
+        </div>
+        <div className={sectionBody}>
+          <div className={grid}>
+            {txt('cnpj', t('partners.acts.form.cnpj'), 'cnpj', { mask: 'cnpj' })}
+            {txt('corporateName', t('partners.acts.form.corporateName'), 'corporateName')}
+            {txt('fantasyName', t('partners.acts.form.fantasyName'), 'fantasyName')}
+            {txt('legalRepresentative', t('partners.acts.form.legalRepresentative'), 'legalRepresentative')}
+            {txt('email', t('partners.acts.form.email'), 'email', { type: 'email' })}
+          </div>
+        </div>
+      </section>
+
+      <section className={sectionCard}>
+        <div className={sectionHeader}>
+          <span className={sectionIcon}>
+            <WalletIcon size={17} />
+          </span>
+          <h2 className={sectionH2}>{t('partners.acts.form.section.payment')}</h2>
+        </div>
+        <div className={sectionBody}>
+          <div className={grid}>
+            <div className={field}>
+              <label htmlFor="ad-transfer" className={fieldLabel}>
+                {t('partners.acts.form.hasFinancialTransfer')}
+              </label>
+              <Checkbox
+                id="ad-transfer"
+                checked={c.state.hasFinancialTransfer}
+                disabled={!editing}
+                onChange={(v) => {
+                  c.setField('hasFinancialTransfer', v)
+                }}
+              />
+              {invalidMsg('hasFinancialTransfer') !== null ? (
+                <span className={fieldError}>{invalidMsg('hasFinancialTransfer')}</span>
+              ) : null}
+            </div>
+
+            {c.state.hasFinancialTransfer ? (
+              <>
+                {txt('bank', t('partners.acts.form.bank'), 'bankAccount.bank')}
+                {txt('agency', t('partners.acts.form.agency'), 'bankAccount.agency')}
+                {txt('accountNumber', t('partners.acts.form.accountNumber'), 'bankAccount.accountNumber')}
+                {txt('checkDigit', t('partners.acts.form.checkDigit'), 'bankAccount.checkDigit')}
+                <div className={field}>
+                  <label htmlFor="ad-pix-type" className={fieldLabel}>
+                    {t('partners.acts.form.pixType')}
+                  </label>
+                  <SelectControl
+                    id="ad-pix-type"
+                    value={c.state.pixKeyType}
+                    ariaLabel={t('partners.acts.form.pixType')}
+                    disabled={!editing}
+                    invalid={c.errors['pixKey.keyType'] === true}
+                    onChange={(e) => {
+                      if (isPixKeyType(e.target.value)) c.setField('pixKeyType', e.target.value)
+                    }}
+                  >
+                    {PIX_KEY_TYPES.map((pt) => (
+                      <option key={pt} value={pt}>
+                        {t(`partners.acts.pix.${pt}`)}
+                      </option>
+                    ))}
+                  </SelectControl>
+                  {invalidMsg('pixKey.keyType') !== null ? (
+                    <span className={fieldError}>{invalidMsg('pixKey.keyType')}</span>
+                  ) : null}
+                </div>
+                {txt('pixKey', t('partners.acts.form.pixKey'), 'pixKey.key')}
+              </>
+            ) : null}
+          </div>
+        </div>
+      </section>
+    </>
   )
 }
