@@ -924,6 +924,7 @@ export const ptBR: Catalog = {
   'users.paginator.previous': 'Anterior',
   'users.paginator.next': 'Próximo',
   'users.paginator.page': 'Página',
+  'users.paginator.of': 'de',
   'users.paginator.perPage': 'Itens por página:',
   // Slices criar/detalhe (telas a seguir; stubs por enquanto)
   'users.create.title': 'Adicionar Usuário',
@@ -1017,6 +1018,7 @@ export const ptBR: Catalog = {
   'programs.paginator.previous': 'Anterior',
   'programs.paginator.next': 'Próximo',
   'programs.paginator.page': 'Página',
+  'programs.paginator.of': 'de',
   'programs.paginator.perPage': 'Itens por página:',
   // Inclusão / detalhe
   'programs.create.title': 'Novo Programa',
