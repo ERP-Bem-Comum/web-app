@@ -2,86 +2,39 @@ import { useState, type ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { Button, PageHeader, formatMask } from '#shared/ui/index.ts'
+import { formatMask } from '#shared/ui/index.ts'
+import { UsersIcon } from '#shared/ui/icons/index.ts'
+import {
+  page,
+  scrollArea,
+  content,
+  head,
+  headTitle,
+  sectionCard,
+  sectionHeader,
+  sectionIcon,
+  sectionH2,
+  sectionBody,
+  grid,
+  field,
+  fieldLabel,
+  input,
+  actionbar,
+  actionbarInner,
+  btnGhost,
+  btnPrimary,
+} from '#shared/ui/brand/brand-form.css.ts'
 
 import { useMyAccountBinding, type MyAccountBinding } from '../my-account.binding.ts'
 import { initialsFromName, type UserDetail } from '../my-account.view-model.ts'
 import { EditProfileModal } from '../components/edit-profile-modal.component.tsx'
 import { ResetPasswordModal } from '../components/reset-password-modal.component.tsx'
 import { UserAvatarUploader } from '../../user-photo/user-avatar-uploader.component.tsx'
-import {
-  actions,
-  body,
-  card,
-  editWrap,
-  infoIcon,
-  infoRow,
-  name as nameClass,
-  resetButton,
-  screen,
-} from './my-account.css.ts'
+import { screen, avatarRow, identity, accountName, accountEmail, stateMessage } from './my-account.css.ts'
 
 const t = createTranslator(ptBR)
 
 type Modal = 'none' | 'edit' | 'password'
-
-function IconUser(): ReactNode {
-  return (
-    <svg
-      className={infoIcon}
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" />
-    </svg>
-  )
-}
-function IconMail(): ReactNode {
-  return (
-    <svg
-      className={infoIcon}
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <rect x="3" y="5" width="18" height="14" rx="2" />
-      <path d="m3 7 9 6 9-6" />
-    </svg>
-  )
-}
-function IconPhone(): ReactNode {
-  return (
-    <svg
-      className={infoIcon}
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <rect x="7" y="2" width="10" height="20" rx="2" />
-      <path d="M11 18h2" />
-    </svg>
-  )
-}
 
 export function MyAccountPage(): ReactNode {
   const [modal, setModal] = useState<Modal>('none')
@@ -93,25 +46,48 @@ export function MyAccountPage(): ReactNode {
 
   return (
     <div className={screen}>
-      <PageHeader title={t('users.account.title')} />
+      <div className={page}>
+        <div className={scrollArea}>
+          <div className={content}>
+            <div className={head}>
+              <h1 className={headTitle}>{t('users.account.title')}</h1>
+            </div>
 
-      {state.status === 'loading' ? (
-        <p className={infoRow}>{t('users.list.loading')}</p>
-      ) : state.status === 'error' ? (
-        <p className={infoRow}>{t(state.errorTag)}</p>
-      ) : (
-        <Ready
-          me={state.me}
-          photo={photo}
-          photoUpload={photoUpload}
-          onEdit={() => {
-            setModal('edit')
-          }}
-          onResetPassword={() => {
-            setModal('password')
-          }}
-        />
-      )}
+            {state.status === 'loading' ? (
+              <p className={stateMessage}>{t('users.list.loading')}</p>
+            ) : state.status === 'error' ? (
+              <p className={stateMessage}>{t(state.errorTag)}</p>
+            ) : (
+              <ReadyCard me={state.me} photo={photo} photoUpload={photoUpload} />
+            )}
+          </div>
+        </div>
+
+        {state.status === 'ready' ? (
+          <div className={actionbar}>
+            <div className={actionbarInner}>
+              <button
+                type="button"
+                className={btnGhost}
+                onClick={() => {
+                  setModal('password')
+                }}
+              >
+                {t('users.account.resetPassword')}
+              </button>
+              <button
+                type="button"
+                className={btnPrimary}
+                onClick={() => {
+                  setModal('edit')
+                }}
+              >
+                {t('users.account.edit')}
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </div>
 
       {state.status === 'ready' ? (
         <>
@@ -146,59 +122,79 @@ export function MyAccountPage(): ReactNode {
   )
 }
 
-function Ready({
+function ReadyCard({
   me,
   photo,
   photoUpload,
-  onEdit,
-  onResetPassword,
 }: Readonly<{
   me: UserDetail
   photo: MyAccountBinding['photo']
   photoUpload: MyAccountBinding['photoUpload']
-  onEdit: () => void
-  onResetPassword: () => void
 }>): ReactNode {
   return (
-    <div className={card}>
-      <UserAvatarUploader
-        url={photo.url}
-        initials={initialsFromName(me.name)}
-        name={me.name}
-        canEdit
-        running={photo.loading || photoUpload.running}
-        errorTag={photoUpload.errorTag}
-        onUpload={(fileBase64, mimeType) => {
-          photoUpload.execute(fileBase64, mimeType)
-        }}
-      />
-      <div className={body}>
-        <h2 className={nameClass}>{me.name !== '' ? me.name : t('users.account.unnamed')}</h2>
-        {me.cpf !== '' ? (
-          <span className={infoRow}>
-            <IconUser />
-            {formatMask('cpf', me.cpf)}
-          </span>
-        ) : null}
-        <span className={infoRow}>
-          <IconMail />
-          {me.email}
+    <section className={sectionCard}>
+      <div className={sectionHeader}>
+        <span className={sectionIcon}>
+          <UsersIcon size={17} />
         </span>
-        {me.telephone !== '' ? (
-          <span className={infoRow}>
-            <IconPhone />
-            {formatMask('phone', me.telephone)}
-          </span>
-        ) : null}
+        <h2 className={sectionH2}>{t('users.form.section.data')}</h2>
       </div>
-      <div className={actions}>
-        <button type="button" className={resetButton} onClick={onResetPassword}>
-          {t('users.account.resetPassword')}
-        </button>
-        <div className={editWrap}>
-          <Button onClick={onEdit}>{t('users.account.edit')}</Button>
+      <div className={sectionBody}>
+        <div className={avatarRow}>
+          <UserAvatarUploader
+            url={photo.url}
+            initials={initialsFromName(me.name)}
+            name={me.name}
+            canEdit
+            running={photo.loading || photoUpload.running}
+            errorTag={photoUpload.errorTag}
+            onUpload={(fileBase64, mimeType) => {
+              photoUpload.execute(fileBase64, mimeType)
+            }}
+          />
+          <div className={identity}>
+            <h2 className={accountName}>{me.name !== '' ? me.name : t('users.account.unnamed')}</h2>
+            <span className={accountEmail}>{me.email}</span>
+          </div>
+        </div>
+
+        <div className={grid}>
+          <div className={field}>
+            <label htmlFor="acc-name" className={fieldLabel}>
+              {t('users.form.name')}
+            </label>
+            <input id="acc-name" className={input} value={me.name} disabled />
+          </div>
+          <div className={field}>
+            <label htmlFor="acc-cpf" className={fieldLabel}>
+              {t('users.form.cpf')}
+            </label>
+            <input
+              id="acc-cpf"
+              className={input}
+              value={me.cpf !== '' ? formatMask('cpf', me.cpf) : ''}
+              disabled
+            />
+          </div>
+          <div className={field}>
+            <label htmlFor="acc-email" className={fieldLabel}>
+              {t('users.form.email')}
+            </label>
+            <input id="acc-email" className={input} value={me.email} disabled />
+          </div>
+          <div className={field}>
+            <label htmlFor="acc-phone" className={fieldLabel}>
+              {t('users.form.telephone')}
+            </label>
+            <input
+              id="acc-phone"
+              className={input}
+              value={me.telephone !== '' ? formatMask('phone', me.telephone) : ''}
+              disabled
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </section>
   )
 }

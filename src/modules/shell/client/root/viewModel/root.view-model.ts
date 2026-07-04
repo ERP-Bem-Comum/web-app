@@ -116,11 +116,11 @@ export const rootViewModel = {
     isPrefixPath(path, '/parceiros/fornecedores') ||
     isPrefixPath(path, '/parceiros/financiadores') ||
     isPrefixPath(path, '/parceiros/atos') ||
-    // Grids "brand" ainda só com a LISTA full-bleed (criar/detalhe mantêm o padding do shell).
-    path === '/programas' ||
-    path === '/programas/' ||
-    path === '/usuarios' ||
-    path === '/usuarios/',
+    // Programas e Usuários: identidade "brand" cobrindo TODA a subárvore (lista + criar + detalhe).
+    isPrefixPath(path, '/programas') ||
+    isPrefixPath(path, '/usuarios') ||
+    // Minha Conta: cartão de perfil no shell "brand" (página cinza + barra de ações fixa).
+    isPrefixPath(path, '/minha-conta'),
 
   /**
    * RBAC: remove seções/subitens cujo `requiredPermission` não está em `permissions`. Uma seção de

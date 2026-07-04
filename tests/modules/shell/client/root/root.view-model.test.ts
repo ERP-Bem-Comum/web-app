@@ -100,10 +100,15 @@ describe('rootViewModel.sidebarWidth / showPageHeader', () => {
     assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/financiadores/criar'), true)
     assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/atos'), true)
     assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/atos/abc-1'), true)
-    // Programas/Usuários ainda só a LISTA (Lote 2 pendente): criar/detalhe mantêm o padding do shell.
+    // Programas/Usuários: subárvore "brand" completa (lista + criar + detalhe) → full-bleed.
     assert.strictEqual(rootViewModel.fullBleedContent('/programas'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/programas/criar'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/programas/abc-1'), true)
     assert.strictEqual(rootViewModel.fullBleedContent('/usuarios'), true)
-    assert.strictEqual(rootViewModel.fullBleedContent('/programas/criar'), false)
+    assert.strictEqual(rootViewModel.fullBleedContent('/usuarios/criar'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/usuarios/abc-1'), true)
+    // Minha Conta: cartão de perfil no shell "brand" → full-bleed.
+    assert.strictEqual(rootViewModel.fullBleedContent('/minha-conta'), true)
   })
 })
 
