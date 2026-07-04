@@ -3,6 +3,7 @@ import { Fragment, useState, type ReactNode } from 'react'
 import {
   ChevronDownIcon,
   ChevronUpIcon,
+  ChevronLeftIcon,
   FileChartIcon,
   UsersIcon,
   GraduationCapIcon,
@@ -28,6 +29,7 @@ import {
   toggleActive,
   navButton,
   navDisabled,
+  navIconFlip,
   editButton,
   container,
   table,
@@ -38,12 +40,18 @@ import {
   nameCell,
   indent,
   connector,
+  connectorFirst,
+  connectorLast,
   connectorDot,
   chevronButton,
   rowIcon,
+  rowIconChild,
   nameText,
+  nameLine,
   rowName,
   rowNameChild,
+  payTag,
+  payTagReceive,
   ccSubtotal,
   monthCell,
   totalRow,
@@ -51,6 +59,7 @@ import {
   totalLabelGroup,
   totalLabelIcon,
   totalMonthCell,
+  totalMonthGrand,
 } from './consolidated-matrix.css.ts'
 
 export type ConsolidatedMatrixLabels = Readonly<{
@@ -125,7 +134,7 @@ export function ConsolidatedMatrix(props: ConsolidatedMatrixProps): ReactNode {
     })
   }
 
-  const renderRow = (r: MatrixRow): ReactNode => {
+  const renderRow = (r: MatrixRow, isFirstChild = false, isLastChild = false): ReactNode => {
     const hasChildren = r.children.length > 0
     const isOpen = expanded.has(r.id)
     const isChild = r.depth > 0
@@ -138,10 +147,15 @@ export function ConsolidatedMatrix(props: ConsolidatedMatrixProps): ReactNode {
               {/* Indent crescente por nível + conector (linha + dot) na coluna do nome (só nas filhas). */}
               {isChild ? (
                 <>
-                  {Array.from({ length: r.depth - 1 }, (_, i) => (
+                  {/* Indent = 1 coluna do chevron por nível → o chip do filho fica VERTICALMENTE alinhado
+                      sob o chip do pai (um abaixo do outro). O conector (absoluto) fica na margem à esquerda. */}
+                  {Array.from({ length: r.depth }, (_, i) => (
                     <span key={i} className={indent} aria-hidden="true" />
                   ))}
-                  <span className={connector} aria-hidden="true">
+                  <span
+                    className={`${connector} ${isFirstChild ? connectorFirst : ''} ${isLastChild ? connectorLast : ''}`}
+                    aria-hidden="true"
+                  >
                     <span className={connectorDot} />
                   </span>
                 </>
@@ -161,11 +175,16 @@ export function ConsolidatedMatrix(props: ConsolidatedMatrixProps): ReactNode {
               ) : !isChild ? (
                 <span className={indent} aria-hidden="true" />
               ) : null}
-              <span className={rowIcon} aria-hidden="true">
-                <RowIcon size={16} />
+              <span className={isChild ? rowIconChild : rowIcon} aria-hidden="true">
+                <RowIcon size={isChild ? 15 : 16} />
               </span>
               <span className={nameText}>
-                <span className={isChild ? rowNameChild : rowName}>{r.name}</span>
+                <span className={nameLine}>
+                  <span className={isChild ? rowNameChild : rowName}>{r.name}</span>
+                  {r.tag !== undefined ? (
+                    <span className={r.tag === 'A RECEBER' ? payTagReceive : payTag}>{r.tag}</span>
+                  ) : null}
+                </span>
                 <span className={ccSubtotal}>{r.totalLabel}</span>
               </span>
             </div>
@@ -176,7 +195,9 @@ export function ConsolidatedMatrix(props: ConsolidatedMatrixProps): ReactNode {
             </td>
           ))}
         </tr>
-        {hasChildren && isOpen ? r.children.map((child) => renderRow(child)) : null}
+        {hasChildren && isOpen
+          ? r.children.map((child, i) => renderRow(child, i === 0, i === r.children.length - 1))
+          : null}
       </Fragment>
     )
   }
@@ -222,7 +243,7 @@ export function ConsolidatedMatrix(props: ConsolidatedMatrixProps): ReactNode {
             disabled={!isMonth || props.matrix.semester === 0}
             onClick={props.onPrev}
           >
-            {'‹'}
+            <ChevronLeftIcon size={16} />
           </button>
           <button
             type="button"
@@ -231,7 +252,10 @@ export function ConsolidatedMatrix(props: ConsolidatedMatrixProps): ReactNode {
             disabled={!isMonth || props.matrix.semester === 1}
             onClick={props.onNext}
           >
-            {'›'}
+            {/* "Próximo" = seta esquerda espelhada (não há ChevronRightIcon no kit). */}
+            <span className={navIconFlip}>
+              <ChevronLeftIcon size={16} />
+            </span>
           </button>
           {props.editMode === true ? (
             <button type="button" className={editButton} onClick={props.onEdit}>
@@ -267,7 +291,12 @@ export function ConsolidatedMatrix(props: ConsolidatedMatrixProps): ReactNode {
                 </span>
               </td>
               {props.matrix.total.cellLabels.map((label, i) => (
-                <td key={i} className={totalMonthCell}>
+                <td
+                  key={i}
+                  className={
+                    i === props.matrix.total.cellLabels.length - 1 ? totalMonthGrand : totalMonthCell
+                  }
+                >
                   {label}
                 </td>
               ))}

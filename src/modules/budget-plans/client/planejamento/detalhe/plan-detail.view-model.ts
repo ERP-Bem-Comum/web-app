@@ -80,6 +80,8 @@ export type MatrixRow = Readonly<{
   children: readonly MatrixRow[]
   /** Ícone semântico da linha (mock); ausente ⇒ a view usa o padrão por profundidade. */
   iconKind?: MatrixIconKind
+  /** Natureza do centro de custo ("A PAGAR"/"A RECEBER") — renderizada como badge ao lado do nome (mock). */
+  tag?: string
 }>
 
 /**
@@ -123,10 +125,11 @@ const categoryToRow = (cat: CategoryConsolidated, cells: CellsOf): MatrixRow => 
   ...iconOf(cat.iconKind),
 })
 
-/** Centro de custo: rótulo inclui a natureza (ex.: "Consultoria - A PAGAR"), como no legado. */
+/** Centro de custo: nome + a natureza ("A PAGAR"/"A RECEBER") como `tag` (badge âmbar ao lado, como o mock). */
 export const costCenterToRow = (cc: CostCenterConsolidated, cells: CellsOf): MatrixRow => ({
   id: cc.id,
-  name: `${cc.name} - ${cc.type}`,
+  name: cc.name,
+  tag: cc.type,
   depth: 0,
   totalLabel: formatCentsBRL(cc.totalInCents),
   cellLabels: cells(cc).map(formatCentsBRL),

@@ -1,7 +1,8 @@
 /**
- * CalculandoGastos — view do modal full-screen (US2.4b). Navega Centro (abas) → Categoria → Subcategoria
- * e edita os 12 meses (Despesas). Estado de EDIÇÃO do input é UI-state local (efêmero, como o accordion
- * da matriz); o resto chega pronto pelo binding. O total é derivado; "Calcular" aplica a edição pendente.
+ * CalculandoGastos — view do modal "Calculando Gastos" (US2.4b) no padrão visual "brand". Overlay escuro + card
+ * branco (largura cheia), abas por Tipo de lançamento, e 3 colunas (Categoria → Subcategoria → Despesas). A
+ * edição de um mês (lápis) abre um DRAWER lateral direito com o form roteado pelo Tipo de lançamento; salvar/
+ * descartar volta ao grid. Estado de EDIÇÃO é UI-state local (efêmero); o resto chega pronto pelo binding.
  */
 import { useState, type ReactNode } from 'react'
 
@@ -17,6 +18,7 @@ import {
   panel,
   header,
   headerTitle,
+  headerCrumb,
   closeButton,
   tabsBar,
   tabsScroll,
@@ -31,25 +33,38 @@ import {
   list,
   item,
   itemActive,
+  itemName,
   chevron,
   despesaRow,
   despesaName,
   despesaEnd,
   despesaValue,
+  despesaValueZero,
   iconButton,
+  iconButtonEdit,
+  iconButtonDel,
   empty,
+  modalFoot,
+  applyButton,
+  cancelButton,
+  drawerOverlay,
+  drawer,
+  drawerHead,
+  drawerHeadInfo,
+  drawerHeadTitle,
+  drawerClose,
+  drawerBody,
+  drawerFoot,
   configForm,
   configSection,
   configSectionTitle,
-  switchRow,
   field,
   fieldLabel,
+  fieldControl,
   fieldInput,
-  custoTotalBox,
+  totalBox,
   checkRow,
-  formActions,
-  cancelButton,
-  applyButton,
+  checkbox,
   confirmOverlay,
   confirmDialog,
   confirmTitle,
@@ -117,8 +132,8 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
   const { binding: b, labels } = props
   // Form "Configuração" (tipo geral/Rede) que abre ao clicar no lápis — UI-state local.
   const [form, setForm] = useState<FormState | null>(null)
-  // Forms específicos por Tipo de lançamento (US2.4c/d) — também abrem pelo lápis; o grid de meses é a
-  // visão padrão. Só um fica aberto por vez.
+  // Forms específicos por Tipo de lançamento (US2.4c/d) — também abrem pelo lápis, agora num DRAWER lateral.
+  // Só um fica aberto por vez.
   const [pessoalOpen, setPessoalOpen] = useState(false)
   const [caedOpen, setCaedOpen] = useState(false)
   const [logisticaOpen, setLogisticaOpen] = useState(false)
@@ -126,6 +141,8 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
   const [pessoalResetKey, setPessoalResetKey] = useState(0)
   // Modal de confirmação de descarte (Cancelar/Descartar com edição não salva).
   const [confirmOpen, setConfirmOpen] = useState(false)
+
+  const drawerOpen = form !== null || pessoalOpen || caedOpen || logisticaOpen
 
   // Trocar de centro/categoria/subcategoria fecha qualquer form aberto (evita form "órfão").
   const closeForms = (): void => {
@@ -229,7 +246,7 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
       <div className={panel}>
         <div className={header}>
           <h2 className={headerTitle}>
-            {labels.titlePrefix} {props.title}
+            {labels.titlePrefix} <span className={headerCrumb}>· {props.title}</span>
           </h2>
           <button type="button" className={closeButton} aria-label={labels.close} onClick={props.onClose}>
             {'×'}
@@ -278,7 +295,9 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
 
         <div className={columns}>
           <div className={column}>
-            <h3 className={columnTitle}>{labels.categoria}</h3>
+            <div className={columnHead}>
+              <h3 className={columnTitle}>{labels.categoria}</h3>
+            </div>
             <div className={list}>
               {b.categories.map((c) => (
                 <button
@@ -289,7 +308,7 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
                     selectCategoria(c.id)
                   }}
                 >
-                  <span>{c.name}</span>
+                  <span className={itemName}>{c.name}</span>
                   <span className={chevron} aria-hidden="true">
                     {'›'}
                   </span>
@@ -299,7 +318,9 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
           </div>
 
           <div className={column}>
-            <h3 className={columnTitle}>{labels.subcategoria}</h3>
+            <div className={columnHead}>
+              <h3 className={columnTitle}>{labels.subcategoria}</h3>
+            </div>
             <div className={list}>
               {b.subCategories.map((s) => (
                 <button
@@ -310,7 +331,7 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
                     selectSub(s.id)
                   }}
                 >
-                  <span>{s.name}</span>
+                  <span className={itemName}>{s.name}</span>
                   <span className={chevron} aria-hidden="true">
                     {'›'}
                   </span>
@@ -331,7 +352,71 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
 
             {!b.hasData ? (
               <p className={empty}>{labels.empty}</p>
-            ) : pessoalOpen ? (
+            ) : (
+              <div className={list}>
+                {b.despesas.map((d) => (
+                  <div key={d.monthIndex} className={despesaRow}>
+                    <span className={despesaName}>{d.name}</span>
+                    <span className={despesaEnd}>
+                      <span className={d.cents > 0 ? despesaValue : `${despesaValue} ${despesaValueZero}`}>
+                        {d.label}
+                      </span>
+                      <button
+                        type="button"
+                        className={`${iconButton} ${iconButtonDel}`}
+                        aria-label={labels.clearValue}
+                        onClick={() => {
+                          b.clearMonth(d.monthIndex)
+                        }}
+                      >
+                        <TrashIcon size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        className={`${iconButton} ${iconButtonEdit}`}
+                        aria-label={labels.editValue}
+                        onClick={() => {
+                          openPencil(d.monthIndex, d.cents)
+                        }}
+                      >
+                        <EditIcon size={16} />
+                      </button>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className={modalFoot}>
+          <button type="button" className={applyButton} onClick={applyForm} disabled>
+            <CalculatorIcon size={16} />
+            {labels.calcular}
+          </button>
+        </div>
+      </div>
+
+      {drawerOpen ? (
+        <>
+          <div className={drawerOverlay} role="presentation" onClick={requestDiscard} />
+          <aside className={drawer} role="dialog" aria-modal="true" aria-label={labels.despesas}>
+            <div className={drawerHead}>
+              <span className={drawerHeadInfo} aria-hidden="true">
+                <InfoIcon size={18} />
+              </span>
+              <h3 className={drawerHeadTitle}>{labels.despesas}</h3>
+              <button
+                type="button"
+                className={drawerClose}
+                aria-label={labels.close}
+                onClick={requestDiscard}
+              >
+                {'×'}
+              </button>
+            </div>
+
+            {pessoalOpen ? (
               <PessoalForm
                 key={pessoalResetKey}
                 labels={labels.pessoal}
@@ -372,80 +457,93 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
                 }}
               />
             ) : form !== null ? (
-              <div className={configForm}>
-                <div className={configSection}>
-                  <span className={configSectionTitle}>{labels.config}</span>
-                  <label className={switchRow}>
-                    <input
-                      type="checkbox"
-                      role="switch"
-                      checked={form.usePrev}
-                      onChange={() => {
-                        setForm({ ...form, usePrev: !form.usePrev })
-                      }}
-                    />
-                    {labels.usePreviousYear}
-                  </label>
-                  <label className={field}>
-                    <span className={fieldLabel}>{labels.totalReajustado}</span>
-                    <input
-                      className={fieldInput}
-                      inputMode="decimal"
-                      value={form.total}
-                      onChange={(e) => {
-                        setForm({ ...form, total: e.target.value })
-                      }}
-                    />
-                  </label>
-                  <label className={field}>
-                    <span className={fieldLabel}>{labels.justificativa}</span>
-                    <input
-                      className={fieldInput}
-                      value={form.justificativa}
-                      onChange={(e) => {
-                        setForm({ ...form, justificativa: e.target.value })
-                      }}
-                    />
-                  </label>
-                  <label className={field}>
-                    <span className={fieldLabel}>{labels.ipca}</span>
-                    <input
-                      className={fieldInput}
-                      inputMode="decimal"
-                      value={form.ipca}
-                      onChange={(e) => {
-                        setForm({ ...form, ipca: e.target.value })
-                      }}
-                    />
-                  </label>
-                  <div className={custoTotalBox}>{formatCentsBRL(custoTotalCents)}</div>
+              <>
+                <div className={drawerBody}>
+                  <div className={configForm}>
+                    <div className={configSection}>
+                      <h4 className={configSectionTitle}>{labels.config}</h4>
+                      <label className={checkRow}>
+                        <input
+                          type="checkbox"
+                          className={checkbox}
+                          role="switch"
+                          checked={form.usePrev}
+                          onChange={() => {
+                            setForm({ ...form, usePrev: !form.usePrev })
+                          }}
+                        />
+                        {labels.usePreviousYear}
+                      </label>
+                      <label className={field}>
+                        <span className={fieldLabel}>{labels.totalReajustado}</span>
+                        <div className={fieldControl}>
+                          <input
+                            className={fieldInput}
+                            inputMode="decimal"
+                            value={form.total}
+                            onChange={(e) => {
+                              setForm({ ...form, total: e.target.value })
+                            }}
+                          />
+                        </div>
+                      </label>
+                      <label className={field}>
+                        <span className={fieldLabel}>{labels.justificativa}</span>
+                        <div className={fieldControl}>
+                          <input
+                            className={fieldInput}
+                            value={form.justificativa}
+                            onChange={(e) => {
+                              setForm({ ...form, justificativa: e.target.value })
+                            }}
+                          />
+                        </div>
+                      </label>
+                      <label className={field}>
+                        <span className={fieldLabel}>{labels.ipca}</span>
+                        <div className={fieldControl}>
+                          <input
+                            className={fieldInput}
+                            inputMode="decimal"
+                            value={form.ipca}
+                            onChange={(e) => {
+                              setForm({ ...form, ipca: e.target.value })
+                            }}
+                          />
+                        </div>
+                      </label>
+                      <div className={totalBox}>{formatCentsBRL(custoTotalCents)}</div>
+                    </div>
+
+                    <div className={configSection}>
+                      <h4 className={configSectionTitle}>{labels.aplicarMeses}</h4>
+                      <label className={checkRow}>
+                        <input
+                          type="checkbox"
+                          className={checkbox}
+                          checked={form.months.size === b.despesas.length}
+                          onChange={toggleAllMonths}
+                        />
+                        {labels.todos}
+                      </label>
+                      {b.despesas.map((d) => (
+                        <label key={d.monthIndex} className={checkRow}>
+                          <input
+                            type="checkbox"
+                            className={checkbox}
+                            checked={form.months.has(d.monthIndex)}
+                            onChange={() => {
+                              toggleMonth(d.monthIndex)
+                            }}
+                          />
+                          {d.name}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
-                <div className={configSection}>
-                  <span className={configSectionTitle}>{labels.aplicarMeses}</span>
-                  <label className={checkRow}>
-                    <input
-                      type="checkbox"
-                      checked={form.months.size === b.despesas.length}
-                      onChange={toggleAllMonths}
-                    />
-                    {labels.todos}
-                  </label>
-                  {b.despesas.map((d) => (
-                    <label key={d.monthIndex} className={checkRow}>
-                      <input
-                        type="checkbox"
-                        checked={form.months.has(d.monthIndex)}
-                        onChange={() => {
-                          toggleMonth(d.monthIndex)
-                        }}
-                      />
-                      {d.name}
-                    </label>
-                  ))}
-                </div>
-
-                <div className={formActions}>
+                <div className={drawerFoot}>
                   <button type="button" className={cancelButton} onClick={requestDiscard}>
                     {labels.cancelar}
                   </button>
@@ -453,50 +551,11 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
                     {labels.aplicar}
                   </button>
                 </div>
-              </div>
-            ) : (
-              <>
-                <div className={list}>
-                  {b.despesas.map((d) => (
-                    <div key={d.monthIndex} className={despesaRow}>
-                      <span className={despesaName}>{d.name}</span>
-                      <span className={despesaEnd}>
-                        <span className={despesaValue}>{d.label}</span>
-                        <button
-                          type="button"
-                          className={iconButton}
-                          aria-label={labels.clearValue}
-                          onClick={() => {
-                            b.clearMonth(d.monthIndex)
-                          }}
-                        >
-                          <TrashIcon size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          className={iconButton}
-                          aria-label={labels.editValue}
-                          onClick={() => {
-                            openPencil(d.monthIndex, d.cents)
-                          }}
-                        >
-                          <EditIcon size={14} />
-                        </button>
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                <div className={formActions}>
-                  <button type="button" className={applyButton} onClick={applyForm} disabled>
-                    <CalculatorIcon size={16} />
-                    {labels.calcular}
-                  </button>
-                </div>
               </>
-            )}
-          </div>
-        </div>
-      </div>
+            ) : null}
+          </aside>
+        </>
+      ) : null}
 
       {confirmOpen ? (
         <div className={confirmOverlay} role="presentation">

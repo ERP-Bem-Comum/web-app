@@ -1,23 +1,22 @@
 import { useState, type ReactNode } from 'react'
 
-import { CalendarDaysIcon, ChevronDownIcon, FilterIcon, DownloadIcon } from '#shared/ui/index.ts'
+import { createTranslator } from '#shared/i18n/index.ts'
+import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
+import { ChevronDownIcon, FilterIcon, DownloadIcon } from '#shared/ui/index.ts'
 
 import {
   bar,
   fieldWrap,
   fieldLabel,
   selectWrap,
-  selectIcon,
   selectChevron,
   select,
-  programChips,
-  chip,
-  chipActive,
-  spacer,
   applyButton,
   exportButton,
   buttonIcon,
 } from './consolidado-filters.css.ts'
+
+const t = createTranslator(ptBR)
 
 export type ConsolidadoFiltersLabels = Readonly<{
   yearBase: string
@@ -41,29 +40,24 @@ export type ConsolidadoFiltersProps = Readonly<{
 }>
 
 /**
- * Barra de filtros do Consolidado ABC (view BURRA §2): Ano Base (dropdown) + Programa(s) (multi-seleção por
- * chips) + "Filtrar"; à direita "Exportar Excel/CSV". Estado local até "Filtrar"; a URL é a fonte de verdade
- * (recebida por `value`).
+ * Barra de filtros do Consolidado ABC (view BURRA §2): Ano Base (dropdown) + Programa (dropdown SINGLE-select
+ * — um programa por vez; "" = Todos) + "Filtrar"; à direita "Exportar Excel/CSV". Estado local até "Filtrar";
+ * a URL é a fonte de verdade (recebida por `value`). Mantém o contrato `programs: readonly string[]` (0 ou 1
+ * elemento) para não mexer no binding/onApply.
  */
 export function ConsolidadoFilters(props: ConsolidadoFiltersProps): ReactNode {
   const [year, setYear] = useState<number>(props.value.year)
-  const [programs, setPrograms] = useState<readonly string[]>(props.value.programs)
-
-  const toggleProgram = (p: string): void => {
-    setPrograms((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]))
-  }
+  const [program, setProgram] = useState<string>(props.value.programs[0] ?? '')
 
   return (
     <div className={bar}>
-      <label className={fieldWrap}>
+      <div className={fieldWrap}>
         <span className={fieldLabel}>{props.labels.yearBase}</span>
         <span className={selectWrap}>
-          <span className={selectIcon} aria-hidden="true">
-            <CalendarDaysIcon size={16} />
-          </span>
           <select
             className={select}
             value={String(year)}
+            aria-label={props.labels.yearBase}
             onChange={(e) => {
               setYear(Number(e.target.value))
             }}
@@ -78,35 +72,37 @@ export function ConsolidadoFilters(props: ConsolidadoFiltersProps): ReactNode {
             <ChevronDownIcon size={16} />
           </span>
         </span>
-      </label>
+      </div>
 
       <div className={fieldWrap}>
         <span className={fieldLabel}>{props.labels.programs}</span>
-        <div className={programChips} role="group" aria-label={props.labels.programs}>
-          {props.programOptions.map((p) => {
-            const on = programs.includes(p)
-            return (
-              <button
-                key={p}
-                type="button"
-                className={on ? chipActive : chip}
-                aria-pressed={on}
-                onClick={() => {
-                  toggleProgram(p)
-                }}
-              >
+        <span className={selectWrap}>
+          <select
+            className={select}
+            value={program}
+            aria-label={props.labels.programs}
+            onChange={(e) => {
+              setProgram(e.target.value)
+            }}
+          >
+            <option value="">{t('budget-plans.consolidado.programsAll')}</option>
+            {props.programOptions.map((p) => (
+              <option key={p} value={p}>
                 {p}
-              </button>
-            )
-          })}
-        </div>
+              </option>
+            ))}
+          </select>
+          <span className={selectChevron} aria-hidden="true">
+            <ChevronDownIcon size={16} />
+          </span>
+        </span>
       </div>
 
       <button
         type="button"
         className={applyButton}
         onClick={() => {
-          props.onApply({ year, programs })
+          props.onApply({ year, programs: program === '' ? [] : [program] })
         }}
       >
         <span className={buttonIcon} aria-hidden="true">
@@ -114,8 +110,6 @@ export function ConsolidadoFilters(props: ConsolidadoFiltersProps): ReactNode {
         </span>
         {props.labels.apply}
       </button>
-
-      <span className={spacer} />
 
       <button type="button" className={exportButton} onClick={props.onExport}>
         <span className={buttonIcon} aria-hidden="true">

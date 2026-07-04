@@ -132,9 +132,15 @@ export const rootViewModel = {
     isPrefixPath(path, '/parceiros/fornecedores') ||
     isPrefixPath(path, '/parceiros/financiadores') ||
     isPrefixPath(path, '/parceiros/atos') ||
+    // Estados e Municípios: cards "brand" sobre canvas azul-claro, ocupando toda a largura (mock).
+    isPrefixPath(path, '/parceiros/territorios') ||
     // Programas e Usuários: identidade "brand" cobrindo TODA a subárvore (lista + criar + detalhe).
     isPrefixPath(path, '/programas') ||
     isPrefixPath(path, '/usuarios') ||
+    // Planejamento: toda a subárvore "brand" full-bleed (lista + detalhe + orçamento).
+    isPrefixPath(path, '/planejamento') ||
+    // Consolidado ABC: tela "brand" full-bleed (canvas cinza ocupando a largura).
+    isPrefixPath(path, '/consolidado') ||
     // Minha Conta: cartão de perfil no shell "brand" (página cinza + barra de ações fixa).
     isPrefixPath(path, '/minha-conta'),
 

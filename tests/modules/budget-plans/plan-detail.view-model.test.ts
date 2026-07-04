@@ -97,7 +97,9 @@ describe('buildMonthlyMatrix', () => {
     assert.equal(mx.kind, 'month')
     assert.deepEqual([...mx.columnHeaders], [...MONTH_HEADERS.slice(0, 6)])
     const consultoria = at(mx.rows, 0)
-    assert.equal(consultoria.name, 'Consultoria - A PAGAR')
+    // Nome e natureza separados: `name` limpo + `tag` (renderizado como badge âmbar ao lado, mock).
+    assert.equal(consultoria.name, 'Consultoria')
+    assert.equal(consultoria.tag, 'A PAGAR')
     assert.equal(consultoria.depth, 0)
     assert.equal(norm(at(consultoria.cellLabels, 0)), 'R$ 0,00')
     assert.equal(norm(at(consultoria.cellLabels, 1)), 'R$ 16.219,36')
@@ -124,7 +126,8 @@ describe('buildNetworkMatrix', () => {
     assert.equal(mx.kind, 'network')
     assert.deepEqual([...mx.columnHeaders], ['ACRE'])
     const consultoria = at(mx.rows, 0)
-    assert.equal(consultoria.name, 'Consultoria - A PAGAR')
+    assert.equal(consultoria.name, 'Consultoria')
+    assert.equal(consultoria.tag, 'A PAGAR')
     assert.equal(norm(at(consultoria.cellLabels, 0)), 'R$ 32.438,72')
     // Comunicação zerada na coluna ACRE
     assert.equal(norm(at(at(mx.rows, 1).cellLabels, 0)), 'R$ 0,00')

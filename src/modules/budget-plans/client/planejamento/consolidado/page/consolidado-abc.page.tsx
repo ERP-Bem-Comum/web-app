@@ -3,8 +3,8 @@ import type { ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { FileChartIcon } from '#shared/ui/index.ts'
-import { header, headText, headTitle, headSubtitle } from '#shared/ui/brand/brand-page.css.ts'
+import { PieChartIcon, FileTextIcon } from '#shared/ui/index.ts'
+import { headText, headTitle, headSubtitle } from '#shared/ui/brand/brand-page.css.ts'
 
 import {
   useConsolidadoAbc,
@@ -16,9 +16,9 @@ import { ConsolidatedMatrix } from '../../detalhe/components/consolidated-matrix
 import { ConsolidadoFilters } from '../components/consolidado-filters.component.tsx'
 import {
   screen,
+  pageHead,
+  pageIcon,
   resultCard,
-  resultHeader,
-  resultTitleGroup,
   resultTitleIcon,
   resultTitleText,
   resultTitle,
@@ -41,7 +41,10 @@ export function ConsolidadoAbcPage(): ReactNode {
 
   return (
     <div className={screen}>
-      <div className={header}>
+      <div className={pageHead}>
+        <span className={pageIcon} aria-hidden="true">
+          <PieChartIcon size={24} />
+        </span>
         <div className={headText}>
           <h1 className={headTitle}>{t('budget-plans.consolidado.title')}</h1>
           <p className={headSubtitle}>{t('budget-plans.consolidado.subtitle')}</p>
@@ -74,30 +77,26 @@ export function ConsolidadoAbcPage(): ReactNode {
       />
 
       <div className={resultCard}>
-        <div className={resultHeader}>
-          <span className={resultTitleGroup}>
-            <span className={resultTitleIcon} aria-hidden="true">
-              <FileChartIcon size={20} />
-            </span>
-            <span className={resultTitleText}>
-              <h2 className={resultTitle}>{state.header.title}</h2>
-              {state.header.subtotals.length > 0 ? (
-                <ul className={subtotals}>
-                  {state.header.subtotals.map((s) => (
-                    <li key={s.program} className={subtotalItem}>
-                      {t('budget-plans.consolidado.programLabel')}{' '}
-                      <span className={subtotalProgram}>{s.program}</span>: {s.label}
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </span>
-          </span>
-          <span className={totalLine}>
-            <span className={totalLabel}>{t('budget-plans.consolidado.total')}</span>
-            <span className={totalValue}>{state.header.totalLabel}</span>
-          </span>
-        </div>
+        <span className={resultTitleIcon} aria-hidden="true">
+          <FileTextIcon size={22} />
+        </span>
+        <span className={resultTitleText}>
+          <h2 className={resultTitle}>{state.header.title}</h2>
+          {state.header.subtotals.length > 0 ? (
+            <ul className={subtotals}>
+              {state.header.subtotals.map((s) => (
+                <li key={s.program} className={subtotalItem}>
+                  {t('budget-plans.consolidado.programLabel')}{' '}
+                  <span className={subtotalProgram}>{s.program}</span> · {s.label}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </span>
+        <span className={totalLine}>
+          <span className={totalLabel}>{t('budget-plans.consolidado.total')}</span>
+          <span className={totalValue}>{state.header.totalLabel}</span>
+        </span>
       </div>
 
       {state.hasResult ? (

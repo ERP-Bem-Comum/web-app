@@ -1,116 +1,131 @@
 /**
- * Estilos da matriz consolidada (Detalhe do plano E Consolidado ABC — componente compartilhado). Só tokens
- * (§X). ESPELHA o grid de Planejamento já aprovado (`plan-tree-table.css.ts`): fonte Nunito (body) em toda a
- * matriz; cabeçalho e rodapé AZUL bem clarinho com tinta índigo (sem MAIÚSCULAS forçadas); linha-pai branca
- * com nome/total em índigo bold (um degrau maior); linha-filha azul-clarinho de marca com texto preto (um
- * degrau menor). Conector (linha vertical + dot) + indent por nível na coluna do nome; chip de ícone por
- * PROFUNDIDADE do nó. A cor não vem por dado aqui — é fixa por token.
+ * Estilos da matriz consolidada (Detalhe/Orçamento do plano E Consolidado ABC — componente COMPARTILHADO) no
+ * padrão visual "brand" (mock `consolidado-brand`). Só tokens (§X). Espelha o grid de Planejamento aprovado:
+ * card surface + borda line + sombra + radius lg; primeira coluna STICKY ao rolar na horizontal; cabeçalho
+ * uppercase 11.5px ink500 sobre surfaceAlt; linhas com hover; célula de nome com chevron + chip 32px
+ * cadBg/primary + nome 14px 600 ink900 + subtítulo 12px ink500; sub-linhas com fundo levemente diferente +
+ * conector de árvore (linha vertical + nó + ramo); rodapé "Total" surfaceAlt com valores 700 e grand primary.
+ * Números tabulares. Cores/px fora do kit vivem em `consolidado.values.ts`; o resto vem de `brand`/`vars`.
+ *
+ * ⚠️ Este arquivo é IMPORTADO por `orcamento-grid.component.tsx` (matriz EDITÁVEL). Só o VISUAL muda aqui —
+ * os nomes exportados abaixo (container/table/th/thMonth/row/childRow/nameCell/connector/connectorDot/
+ * chevronButton/nameText/rowName/rowNameChild/ccSubtotal/monthCell/totalRow/totalLabelCell/totalMonthCell)
+ * são contrato do Orçamento e NÃO podem ser renomeados/removidos.
  */
-import { style } from '@vanilla-extract/css'
+import { style, styleVariants, globalStyle } from '@vanilla-extract/css'
 
 import { vars } from '#shared/ui/tokens/index.ts'
+import { brand } from '#shared/ui/brand/grid-brand.values.ts'
+
+import { consolidado } from '../../consolidado/consolidado.values.ts'
+
+const sz = consolidado.size
 
 export const section = style({
   display: 'flex',
   flexDirection: 'column',
-  gap: vars.space.md,
+  gap: brand.space.lg,
+  fontFamily: vars.font.family.heading, // Inter
 })
 
+// ── Section head: chip de ícone (34px) + h2 + controle segmentado + nav ──
 export const sectionHeader = style({
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: vars.space.md,
+  gap: brand.space.md,
   flexWrap: 'wrap',
 })
 
-// Título da seção com chip de ícone à esquerda (mini-cabeçalho: "Consolidado por Mês" etc.).
 export const sectionTitleGroup = style({
   display: 'inline-flex',
   alignItems: 'center',
-  gap: vars.space.sm,
+  gap: brand.space.md,
 })
 
-// Chip menor (proporcional aos mini-cabeçalhos internos) — quadrado arredondado azul-claro + ícone índigo.
+// Chip do ícone da seção — 34px, cadBg/primary, radius iconSm.
 export const sectionTitleIcon = style({
   flexShrink: 0,
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  inlineSize: `calc(${vars.space.lg} + ${vars.space.sm})`,
-  blockSize: `calc(${vars.space.lg} + ${vars.space.sm})`,
-  borderRadius: vars.radius.md,
-  background: `color-mix(in srgb, ${vars.color.brand.normal} 10%, white)`,
-  color: vars.color.nav.background,
+  display: 'grid',
+  placeItems: 'center',
+  inlineSize: sz.sectionDoc,
+  blockSize: sz.sectionDoc,
+  borderRadius: brand.radius.iconSm,
+  background: brand.color.cadBg,
+  color: brand.color.primary,
 })
 
-// Título da seção — Nunito (body), índigo, peso forte (bate com o chrome do grid de Planejamento).
+// "Consolidado dos programas" — 16px 700 ink900.
 export const sectionTitle = style({
   margin: 0,
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size.lg,
-  fontWeight: vars.font.weight.bold,
-  // "Consolidado dos programas" em PRETO (mock), não no índigo.
-  color: vars.color.text.primary,
+  fontFamily: vars.font.family.heading,
+  fontSize: sz.sectionTitleFont,
+  fontWeight: brand.weight.bold,
+  color: brand.color.ink900,
 })
 
 export const controls = style({
+  marginInlineStart: 'auto',
   display: 'flex',
   alignItems: 'center',
-  gap: vars.space.sm,
+  gap: brand.space.sm,
 })
 
+// Controle segmentado (`.seg` do mock): trilho surfaceAlt + border line, botão ativo surface/primary + sombra.
 export const toggleGroup = style({
   display: 'inline-flex',
-  borderRadius: vars.radius.md,
-  border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
-  overflow: 'hidden',
+  gap: 0,
+  padding: sz.segPad,
+  borderRadius: brand.radius.sm,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  background: brand.color.surfaceAlt,
 })
 
 export const toggle = style({
-  paddingBlock: vars.space.sm,
-  paddingInline: vars.space.md,
   border: 'none',
-  background: vars.color.surface.default,
-  color: vars.color.text.secondary,
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size.sm,
-  fontWeight: vars.font.weight.semibold,
+  background: 'transparent',
+  paddingBlock: sz.segBtnPadBlock,
+  paddingInline: sz.segBtnPadInline,
+  borderRadius: brand.radius.xs,
+  fontFamily: vars.font.family.heading,
+  fontSize: sz.segBtnFont,
+  fontWeight: brand.weight.semibold,
+  color: brand.color.ink500,
   cursor: 'pointer',
   whiteSpace: 'nowrap',
+  transition: `all ${brand.ease}`,
   selectors: {
-    '&:hover': { background: vars.color.surface.subtle },
     '&:focus-visible': {
-      outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
+      outline: `${vars.focusRing.width} solid ${brand.color.primary}`,
       outlineOffset: `calc(-1 * ${vars.focusRing.width})`,
     },
   },
 })
 
-// Toggle ativo = azul de marca (mock).
+// Segmento ativo — surface + primary + sombra sutil.
 export const toggleActive = style({
-  background: vars.color.brand.normal,
-  color: vars.color.brand.onBrand,
-  selectors: { '&:hover': { background: vars.color.brand.hover } },
+  background: brand.color.surface,
+  color: brand.color.primary,
+  boxShadow: brand.shadow.btn,
 })
 
+// Nav prev/next — botões 34px border line.
 export const navButton = style({
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  inlineSize: '2rem',
-  blockSize: '2rem',
-  borderRadius: vars.radius.md,
-  border: `${vars.borderWidth.thin} solid ${vars.color.border.default}`,
-  background: vars.color.surface.default,
-  color: vars.color.text.primary,
-  fontSize: vars.font.size.lg,
+  display: 'grid',
+  placeItems: 'center',
+  inlineSize: sz.navBtn,
+  blockSize: sz.navBtn,
+  borderRadius: brand.radius.sm,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  background: brand.color.surface,
+  color: brand.color.ink500,
+  fontSize: brand.text.body,
   lineHeight: 1,
   cursor: 'pointer',
+  transition: `all ${brand.ease}`,
   selectors: {
-    '&:hover': { background: vars.color.surface.subtle },
+    '&:hover': { borderColor: brand.color.lineStrong, color: brand.color.ink700 },
     '&:focus-visible': {
-      outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
+      outline: `${vars.focusRing.width} solid ${brand.color.primary}`,
       outlineOffset: vars.focusRing.offset,
     },
   },
@@ -119,254 +134,346 @@ export const navButton = style({
 export const navDisabled = style({
   opacity: 0.4,
   cursor: 'not-allowed',
-  selectors: { '&:hover': { background: vars.color.surface.default } },
+  selectors: { '&:hover': { borderColor: brand.color.line, color: brand.color.ink500 } },
 })
 
-// "Editar" (filtro por Rede aplicado): botão de ação cyan da marca (§X — ciano = ação), altura do nav.
+// "Próximo" reusa a seta esquerda espelhada (não há ChevronRightIcon no kit).
+export const navIconFlip = style({ display: 'inline-flex', transform: 'rotate(180deg)' })
+
+// "Editar" (filtro por Rede aplicado no Detalhe) — primary preenchido, altura do nav.
 export const editButton = style({
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  blockSize: '2rem',
-  paddingInline: vars.space.lg,
-  borderRadius: vars.radius.md,
+  blockSize: sz.navBtn,
+  paddingInline: brand.space.lg,
+  borderRadius: brand.radius.sm,
   border: 'none',
-  background: vars.color.brand.normal,
-  color: vars.color.brand.onBrand,
+  background: brand.color.primary,
+  color: brand.color.surface,
+  boxShadow: brand.shadow.btn,
   fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.sm,
-  fontWeight: vars.font.weight.semibold,
+  fontSize: brand.text.body,
+  fontWeight: brand.weight.semibold,
   cursor: 'pointer',
   whiteSpace: 'nowrap',
   selectors: {
-    '&:hover': { background: vars.color.brand.hover },
+    '&:hover': { background: brand.color.primaryHover },
     '&:focus-visible': {
-      outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
+      outline: `${vars.focusRing.width} solid ${brand.color.primary}`,
       outlineOffset: vars.focusRing.offset,
     },
   },
 })
 
-// Contorno leve (como no grid de Planejamento) — o azul fica só no cabeçalho e no rodapé.
+// ── Card + tabela ──
 export const container = style({
   inlineSize: '100%',
   overflowX: 'auto',
-  borderRadius: vars.radius.lg,
-  border: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
-  background: vars.color.surface.default,
+  background: brand.color.surface,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  borderRadius: brand.radius.lg,
+  boxShadow: brand.shadow.card,
+  scrollbarWidth: 'thin',
+  scrollbarColor: `${brand.color.scrollThumb} transparent`,
 })
 
 export const table = style({
   inlineSize: '100%',
+  minInlineSize: sz.gridMinW,
   borderCollapse: 'collapse',
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size.sm,
-  color: vars.color.text.primary,
+  fontFamily: vars.font.family.heading, // Inter
+  fontSize: brand.text.body,
+  color: brand.color.ink700,
 })
 
-// Cabeçalho: Nunito (body), SEM MAIÚSCULAS, peso forte, tinta índigo, sobre AZUL BEM CLARINHO.
+// Primeira coluna STICKY (nome dos centros de custo) ao rolar na horizontal — vale p/ head/linhas/rodapé.
+// `selectors` do vanilla-extract não aceita descendente (`& th:first-child`); via `globalStyle`.
+globalStyle(`${table} th:first-child, ${table} td:first-child`, {
+  position: 'sticky',
+  insetInlineStart: 0,
+  zIndex: 1,
+  background: 'inherit',
+  borderInlineEnd: `${vars.borderWidth.thin} solid ${brand.color.line2}`,
+})
+
+// thead: surfaceAlt, uppercase 11.5px 600 ink500, border-bottom line.
 export const th = style({
-  textAlign: 'start',
-  padding: `${vars.space.sm} ${vars.space.md}`,
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size.sm,
-  fontWeight: vars.font.weight.bold,
-  color: vars.color.nav.background,
-  background: `color-mix(in srgb, ${vars.color.nav.background} 6%, white)`,
-  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
+  textAlign: 'end',
+  paddingBlock: sz.theadPadBlock,
+  paddingInline: sz.rowPadInline,
+  fontFamily: vars.font.family.heading,
+  fontSize: sz.theadFont,
+  fontWeight: brand.weight.semibold,
+  letterSpacing: '.03em',
+  textTransform: 'uppercase',
+  color: brand.color.ink500,
+  background: brand.color.surfaceAlt,
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${brand.color.line}`,
   whiteSpace: 'nowrap',
-})
-
-// Colunas de valor alinhadas à ESQUERDA (mock): os totais mensais ficam encostados na borda inicial da coluna.
-export const thMonth = style([th, { textAlign: 'start' }])
-
-// Linha-pai (centro de custo) — permanece BRANCA; a "linha do grupo" vem do CONECTOR na coluna do nome.
-export const row = style({
-  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
-  transitionProperty: 'background-color',
-  transitionDuration: '120ms',
-  selectors: { '&:hover': { background: vars.color.surface.subtle } },
-  '@media': {
-    '(prefers-reduced-motion: reduce)': { transitionDuration: '0.01ms' },
+  selectors: {
+    // A 1ª coluna do head fica alinhada à esquerda e mantém o fundo surfaceAlt mesmo sticky.
+    '&:first-child': { textAlign: 'start', background: brand.color.surfaceAlt },
   },
 })
 
-// Linha-filha (categoria/subcategoria expandida) — AZUL claro de marca, texto preto (mock).
+// Colunas de mês do cabeçalho (à direita, como o mock).
+export const thMonth = style([th])
+
+// Linha-pai (branca). Fundo próprio (não 'inherit' vazio) p/ a 1ª coluna sticky herdar branco.
+export const row = style({
+  background: brand.color.surface,
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${brand.color.line2}`,
+  transition: `background ${brand.ease}`,
+  selectors: {
+    '&:hover': { background: consolidado.rowHover },
+  },
+})
+
+// Sub-linha (categoria/subcategoria) — fundo levemente diferente (#fafbfd).
 export const childRow = style([
   row,
   {
-    background: `color-mix(in srgb, ${vars.color.brand.normal} 8%, white)`,
+    background: consolidado.childBg,
     selectors: {
-      '&:hover': { background: `color-mix(in srgb, ${vars.color.brand.normal} 13%, white)` },
+      '&:hover': { background: consolidado.rowHover },
     },
   },
 ])
 
+// Célula do nome: chevron + chip + nome/subtítulo. Padding aplicado direto (a `td` não tem classe própria).
 export const nameCell = style({
   display: 'flex',
   alignItems: 'center',
-  gap: vars.space.sm,
-  padding: `${vars.space.md} ${vars.space.md}`,
-  minInlineSize: '16rem',
+  gap: brand.space.md,
+  paddingBlock: sz.rowPadBlock,
+  paddingInline: sz.rowPadInline,
+  minInlineSize: sz.firstColMin,
+  position: 'relative',
 })
 
+// Recuo da sub-linha (abre espaço p/ o conector de árvore).
 export const indent = style({
   display: 'inline-block',
-  inlineSize: vars.space.lg,
+  inlineSize: brand.space.xl,
   flexShrink: 0,
 })
 
-// Conector da linha-filha (linha vertical + dot), como no grid de Planejamento. `alignSelf:stretch` faz o
-// wrapper ocupar a altura da linha; o `::before` estende ±md p/ ATRAVESSAR o padding e ligar às vizinhas.
+// ── Conector de árvore (linha vertical + nó + ramo horizontal) — igual ao Planejamento ──
 export const connector = style({
-  position: 'relative',
+  position: 'absolute',
+  insetInlineStart: sz.treeInsetX,
+  insetBlockStart: sz.treeInsetY,
+  insetBlockEnd: sz.treeInsetY,
+  inlineSize: sz.treeWidth,
   flexShrink: 0,
-  alignSelf: 'stretch',
-  inlineSize: vars.space.lg,
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
   selectors: {
-    // Linha PONTILHADA (mock do Consolidado): borda esquerda dotted em vez de fundo sólido.
     '&::before': {
       content: '""',
       position: 'absolute',
-      insetBlock: `calc(-1 * ${vars.space.md})`,
-      insetInlineStart: '50%',
-      inlineSize: 0,
-      borderInlineStart: `${vars.borderWidth.thick} dotted ${vars.color.brand.normal}`,
-      transform: 'translateX(-50%)',
+      insetInlineStart: sz.treeLineOffset,
+      insetBlockStart: 0,
+      insetBlockEnd: 0,
+      inlineSize: sz.treeLineWidth,
+      background: consolidado.treeLine,
+    },
+    '&::after': {
+      content: '""',
+      position: 'absolute',
+      insetInlineStart: sz.treeLineOffset,
+      insetBlockStart: '50%',
+      inlineSize: sz.treeBranch,
+      blockSize: sz.treeLineWidth,
+      background: consolidado.treeLine,
     },
   },
 })
 
-export const connectorDot = style({
-  position: 'relative',
-  zIndex: 1,
-  inlineSize: vars.space.sm,
-  blockSize: vars.space.sm,
-  borderRadius: '50%',
-  background: vars.color.brand.normal,
+// Primeiro filho: a linha vertical começa no TOPO da própria linha (não sobe para o pai).
+export const connectorFirst = style({
+  selectors: {
+    '&::before': { insetBlockStart: sz.treeInsetYPos },
+  },
 })
 
+// Último filho: a linha vertical para no NÓ (não desce para a linha seguinte) — como no mock.
+export const connectorLast = style({
+  selectors: {
+    '&::before': { insetBlockEnd: '50%' },
+  },
+})
+
+// Nó do conector (círculo com borda primary).
+export const connectorDot = style({
+  position: 'absolute',
+  insetInlineStart: sz.treeDotInset,
+  insetBlockStart: '50%',
+  transform: 'translateY(-50%)',
+  inlineSize: sz.treeDot,
+  blockSize: sz.treeDot,
+  borderRadius: '50%',
+  background: brand.color.surface,
+  border: `${sz.treeDotBorder} ${brand.color.primary}`,
+  zIndex: 1,
+})
+
+// Chevron (22px, transparente, ink400, hover bg iconHover) — gira via ícone Up/Down do componente.
 export const chevronButton = style({
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  inlineSize: '1.5rem',
-  blockSize: '1.5rem',
+  display: 'grid',
+  placeItems: 'center',
+  inlineSize: sz.chevron,
+  blockSize: sz.chevron,
   flexShrink: 0,
   padding: 0,
   border: 'none',
   background: 'transparent',
-  color: vars.color.text.secondary,
+  color: brand.color.ink400,
   cursor: 'pointer',
-  borderRadius: vars.radius.sm,
+  borderRadius: sz.chevronRadius,
+  transition: `all ${brand.ease}`,
   selectors: {
-    '&:hover': { background: vars.color.surface.subtle, color: vars.color.text.primary },
+    '&:hover': { background: consolidado.iconHover, color: brand.color.ink700 },
     '&:focus-visible': {
-      outline: `${vars.focusRing.width} solid ${vars.color.border.focus}`,
+      outline: `${vars.focusRing.width} solid ${brand.color.primary}`,
       outlineOffset: vars.focusRing.offset,
     },
   },
 })
 
-// Chip de ícone antes do nome da linha (quadrado arredondado azul-claro + ícone índigo, igual ao planIcon).
+// Chip de ícone antes do nome (32px cadBg/primary, radius iconSm).
 export const rowIcon = style({
   flexShrink: 0,
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  inlineSize: `calc(${vars.space.lg} + ${vars.space.xs})`,
-  blockSize: `calc(${vars.space.lg} + ${vars.space.xs})`,
-  borderRadius: vars.radius.md,
-  background: vars.color.surface.canvas,
-  color: vars.color.nav.background,
+  display: 'grid',
+  placeItems: 'center',
+  inlineSize: sz.ccChip,
+  blockSize: sz.ccChip,
+  borderRadius: sz.ccChipRadius,
+  background: brand.color.cadBg,
+  color: brand.color.primary,
 })
+
+// Chip menor nas linhas-filhas (mock: `.cc-chip.sm` = 28px).
+export const rowIconChild = style([rowIcon, { inlineSize: sz.ccChipSm, blockSize: sz.ccChipSm }])
 
 export const nameText = style({
   display: 'flex',
   flexDirection: 'column',
-  gap: '0.125rem',
+  alignItems: 'flex-start',
+  gap: sz.nameGap,
   minInlineSize: 0,
+  textAlign: 'start',
 })
 
-// Nome da linha-pai — Nunito, ÍNDIGO, BOLD, um degrau maior (hierarquia, mock).
+// Linha do nome: nome + badge da natureza inline (à esquerda), como no mock.
+export const nameLine = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'flex-start',
+  minInlineSize: 0,
+  maxInlineSize: '100%',
+})
+
+// Nome da linha-pai — 14px 600 ink900.
 export const rowName = style({
-  fontFamily: vars.font.family.body,
-  fontWeight: vars.font.weight.bold,
-  fontSize: vars.font.size.md,
-  color: vars.color.nav.background,
+  fontFamily: vars.font.family.heading,
+  fontSize: sz.nameFont,
+  fontWeight: brand.weight.semibold,
+  color: brand.color.ink900,
+  whiteSpace: 'nowrap',
   overflow: 'hidden',
   textOverflow: 'ellipsis',
 })
 
-// Nome da linha-filha — PRETO e um degrau MENOR que o pai.
-export const rowNameChild = style([
-  rowName,
-  {
-    color: vars.color.text.primary,
-    fontWeight: vars.font.weight.semibold,
-    fontSize: vars.font.size.sm,
-  },
-])
+// Nome da linha-filha — mesma família; fica com o tom ink900 do mock.
+export const rowNameChild = style([rowName])
 
-// Subtotal do nó (abaixo do nome) — Nunito, tabular, secundário.
+// Subtítulo (subtotal do nó) — 12px ink500, tabular.
 export const ccSubtotal = style({
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size.xs,
-  color: vars.color.text.secondary,
+  fontFamily: vars.font.family.heading,
+  fontSize: sz.subFont,
+  color: brand.color.ink500,
   fontVariantNumeric: 'tabular-nums',
-})
-
-export const monthCell = style({
-  padding: `${vars.space.md} ${vars.space.md}`,
-  // Alinhado à ESQUERDA (mock): valores mensais encostam na borda inicial da coluna, não à direita.
   textAlign: 'start',
+})
+
+// Tag da natureza do centro de custo, ao lado do nome (mock). "A pagar" = âmbar; "A receber" = verde.
+const payTagBase = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  flexShrink: 0,
+  marginInlineStart: brand.space.sm,
+  paddingBlock: sz.payPadBlock,
+  paddingInline: sz.payPadInline,
+  borderRadius: brand.radius.xs,
+  fontSize: sz.payFont,
+  fontWeight: brand.weight.bold,
+  letterSpacing: '.04em',
+  textTransform: 'uppercase',
   whiteSpace: 'nowrap',
+})
+
+export const payTag = style([payTagBase, { background: consolidado.payBg, color: consolidado.payFg }])
+
+// "A receber" — verde (tom "ok" da marca), para distinguir da natureza "a pagar".
+export const payTagReceive = style([payTagBase, { background: brand.color.okBg, color: brand.color.okFg }])
+
+// Célula de mês — número tabular ink700, alinhado à direita (mock).
+export const monthCell = style({
+  paddingBlock: sz.rowPadBlock,
+  paddingInline: sz.rowPadInline,
+  textAlign: 'end',
+  whiteSpace: 'nowrap',
+  color: brand.color.ink700,
   fontVariantNumeric: 'tabular-nums',
 })
 
-// Rodapé "TOTAL" — AZUL BEM CLARINHO (mesmo tom do cabeçalho) + tinta índigo bold.
+// Variantes de ênfase p/ os números (zero apagado / strong) — usadas quando a view classificar a célula.
+export const monthCellTone = styleVariants({
+  zero: { color: brand.color.ink400 },
+  strong: { fontWeight: brand.weight.semibold, color: brand.color.ink900 },
+})
+
+// ── Rodapé "Total" — surfaceAlt, border-top line, valores 700, grand primary ──
 export const totalRow = style({
-  background: `color-mix(in srgb, ${vars.color.nav.background} 6%, white)`,
-  borderBlockStart: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
+  background: brand.color.surfaceAlt,
+  borderBlockStart: `${vars.borderWidth.thin} solid ${brand.color.line}`,
 })
 
 export const totalLabelCell = style({
-  padding: `${vars.space.md} ${vars.space.md}`,
-  fontFamily: vars.font.family.body,
-  fontWeight: vars.font.weight.bold,
-  color: vars.color.nav.background,
+  paddingBlock: sz.footerPadBlock,
+  paddingInline: sz.rowPadInline,
+  fontFamily: vars.font.family.heading,
+  fontWeight: brand.weight.bold,
+  color: brand.color.ink900,
   whiteSpace: 'nowrap',
+  selectors: { '&:first-child': { background: brand.color.surfaceAlt } },
 })
 
-// "TOTAL: R$ …" com a balança à esquerda (mock).
 export const totalLabelGroup = style({
   display: 'inline-flex',
   alignItems: 'center',
-  gap: vars.space.sm,
+  gap: brand.space.md,
 })
 
-// Chip da balança no rodapé — quadrado arredondado azul-claro + ícone índigo (igual ao chip das linhas).
+// Chip da balança no rodapé — igual ao chip das linhas (levemente mais frio).
 export const totalLabelIcon = style({
   flexShrink: 0,
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  inlineSize: `calc(${vars.space.lg} + ${vars.space.xs})`,
-  blockSize: `calc(${vars.space.lg} + ${vars.space.xs})`,
-  borderRadius: vars.radius.md,
-  background: vars.color.surface.canvas,
-  color: vars.color.nav.background,
+  display: 'grid',
+  placeItems: 'center',
+  inlineSize: sz.ccChip,
+  blockSize: sz.ccChip,
+  borderRadius: sz.ccChipRadius,
+  background: consolidado.footerChipBg,
+  color: brand.color.primary,
 })
 
-// Totais por mês/coluna no rodapé — ÍNDIGO bold, tabular (mock: totais mensais no rodapé).
+// Totais por mês no rodapé — 700 ink900, tabular; o ÚLTIMO (grand) fica em primary via `totalMonthGrand`.
 export const totalMonthCell = style([
   monthCell,
   {
-    fontFamily: vars.font.family.body,
-    fontWeight: vars.font.weight.bold,
-    color: vars.color.nav.background,
+    fontWeight: brand.weight.bold,
+    color: brand.color.ink900,
   },
 ])
+
+export const totalMonthGrand = style([totalMonthCell, { color: brand.color.primary }])

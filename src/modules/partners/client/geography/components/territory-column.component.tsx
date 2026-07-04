@@ -1,12 +1,17 @@
 import type { ReactNode } from 'react'
 
-import { Input, MapPinIcon } from '#shared/ui/index.ts'
+import { MapPinIcon, SearchIcon } from '#shared/ui/index.ts'
 
 import {
   card,
   header,
+  ic,
   title,
   count,
+  body,
+  search,
+  searchIcon,
+  searchInput,
   tableHead,
   list,
   row,
@@ -51,7 +56,16 @@ export type TerritoryColumnProps = Readonly<{
 
 function PlusIcon(): ReactNode {
   return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden="true">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
       <path d="M7 3v8M3 7h8" />
     </svg>
   )
@@ -59,7 +73,16 @@ function PlusIcon(): ReactNode {
 
 function MinusIcon(): ReactNode {
   return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden="true">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
       <path d="M3 7h8" />
     </svg>
   )
@@ -69,30 +92,43 @@ export function TerritoryColumn(props: TerritoryColumnProps): ReactNode {
   return (
     <section className={card}>
       <div className={header}>
-        <h3 className={title}><MapPinIcon size={18} />{props.title}</h3>
+        <span className={ic}>
+          <MapPinIcon size={17} />
+        </span>
+        <h3 className={title}>{props.title}</h3>
         {props.countLabel !== undefined && props.countLabel !== null ? (
           <span className={count}>{props.countLabel}</span>
         ) : null}
       </div>
 
-      {props.placeholder !== undefined ? (
-        <p className={message}>{props.placeholder}</p>
-      ) : (
-        <>
-          {props.beforeSearch}
-          <Input
-            id={props.searchId}
-            value={props.searchValue}
-            placeholder={props.searchPlaceholder}
-            onChange={props.onSearch}
-          />
-          <div className={tableHead}>
-            <span>{props.columnLabel}</span>
-            <span>{props.actionLabel}</span>
-          </div>
-          <Body {...props} />
-        </>
-      )}
+      <div className={body}>
+        {props.placeholder !== undefined ? (
+          <p className={message}>{props.placeholder}</p>
+        ) : (
+          <>
+            {props.beforeSearch}
+            <div className={search}>
+              <span className={searchIcon}>
+                <SearchIcon size={18} />
+              </span>
+              <input
+                id={props.searchId}
+                className={searchInput}
+                value={props.searchValue}
+                placeholder={props.searchPlaceholder}
+                onChange={(e) => {
+                  props.onSearch(e.target.value)
+                }}
+              />
+            </div>
+            <div className={tableHead}>
+              <span>{props.columnLabel}</span>
+              <span>{props.actionLabel}</span>
+            </div>
+            <Body {...props} />
+          </>
+        )}
+      </div>
     </section>
   )
 }
@@ -123,7 +159,9 @@ function Body(props: TerritoryColumnProps): ReactNode {
                     aria-label={props.removeAria}
                     title={props.removeAria}
                     disabled={props.disabled}
-                    onClick={() => { props.onAction(item.key, true); }}
+                    onClick={() => {
+                      props.onAction(item.key, true)
+                    }}
                   >
                     <MinusIcon />
                   </button>
@@ -134,7 +172,9 @@ function Body(props: TerritoryColumnProps): ReactNode {
                     aria-label={props.addAria}
                     title={props.addAria}
                     disabled={props.disabled}
-                    onClick={() => { props.onAction(item.key, false); }}
+                    onClick={() => {
+                      props.onAction(item.key, false)
+                    }}
                   >
                     <PlusIcon />
                   </button>
