@@ -108,7 +108,12 @@ export const rootViewModel = {
   // corpo e footer encostam nas bordas da área de conteúdo (igual incluir contrato). O Dashboard (043)
   // também é full-bleed: o canvas bege preenche toda a área de conteúdo (sem a margem branca do shell).
   fullBleedContent: (path: string): boolean =>
-    path.startsWith('/financeiro/conciliacao/') || isPrefixPath(path, '/dashboard'),
+    path.startsWith('/financeiro/conciliacao/') ||
+    isPrefixPath(path, '/dashboard') ||
+    // Grid de Colaboradores (nova identidade): fundo cinza próprio encosta nas bordas, sem a margem
+    // branca do shell. Só a LISTA (não /criar nem /$id, que mantêm o padding do shell).
+    path === '/parceiros/colaboradores' ||
+    path === '/parceiros/colaboradores/',
 
   /**
    * RBAC: remove seções/subitens cujo `requiredPermission` não está em `permissions`. Uma seção de

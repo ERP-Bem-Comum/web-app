@@ -20,6 +20,8 @@ export type CollaboratorExportDropdownProps = Readonly<{
   onHistory: () => void
   /** Histórico em andamento → desabilita o item enquanto baixa. */
   historicoRunning: boolean
+  /** Sobrescreve o estilo do gatilho (ex.: nova identidade de Colaboradores). Default: `trigger` compartilhado. */
+  triggerClassName?: string
 }>
 
 function downloadTemplate(): void {
@@ -43,7 +45,11 @@ function closeDetails(e: MouseEvent<HTMLButtonElement>): void {
 export function CollaboratorExportDropdown(props: CollaboratorExportDropdownProps): ReactNode {
   return (
     <details className={wrapper}>
-      <summary style={{ listStyle: 'none' }} className={trigger} aria-label={props.exportLabel}>
+      <summary
+        style={{ listStyle: 'none' }}
+        className={props.triggerClassName ?? trigger}
+        aria-label={props.exportLabel}
+      >
         {props.exportLabel}
       </summary>
       <div className={menu}>
