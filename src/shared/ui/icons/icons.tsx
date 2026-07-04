@@ -230,6 +230,24 @@ export function ChevronUpIcon({ size = 14 }: IconProps): ReactNode {
   )
 }
 
+export function ChevronLeftIcon({ size = 18 }: IconProps): ReactNode {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <polyline points="15 18 9 12 15 6" />
+    </svg>
+  )
+}
+
 export function MenuIcon({ size = 20 }: IconProps): ReactNode {
   return (
     <svg

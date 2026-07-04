@@ -4,7 +4,6 @@ import { useNavigate, useRouter, useSearch } from '@tanstack/react-router'
 import { safeRedirect } from '#modules/auth/public-api/index.ts'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { PageHeader } from '#shared/ui/index.ts'
 
 import { useCollaboratorCreateBinding } from '../collaborator-create.binding.ts'
 import {
@@ -45,18 +44,14 @@ export function CollaboratorCreatePage(): ReactNode {
 
   return (
     <div className={screen}>
-      <PageHeader
-        title={t('partners.collaborators.create.title')}
-        onBack={() => {
-          router.history.back()
-        }}
-        backLabel={t('common.back')}
-      />
       <CollaboratorForm
         controller={controller}
         running={createCommand.running}
         errorTag={createCommand.errorTag}
         onCancel={() => void navigate({ to: '/parceiros/colaboradores' })}
+        onBack={() => {
+          router.history.back()
+        }}
       />
 
       <PartnersConfirmDialog

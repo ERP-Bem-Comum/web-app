@@ -11,6 +11,7 @@ export {
   WalletIcon,
   ChevronDownIcon,
   ChevronUpIcon,
+  ChevronLeftIcon,
   MenuIcon,
   LogOutIcon,
   MailIcon,
