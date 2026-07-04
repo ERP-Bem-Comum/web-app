@@ -3,16 +3,25 @@ import { getRouteApi, useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
+import { PlusIcon, initialsFrom, vars } from '#shared/ui/index.ts'
 import {
-  Badge,
-  Button,
-  DataTable,
-  PageHeader,
-  AvatarLabel,
-  initialsFrom,
-  type Column,
-  type DataTableState,
-} from '#shared/ui/index.ts'
+  BrandDataTable,
+  BrandChip,
+  BrandNameCell,
+  type BrandColumn,
+  type BrandTableState,
+} from '#shared/ui/brand/brand-data-table.component.tsx'
+import { muted, numZero } from '#shared/ui/brand/brand-data-table.css.ts'
+import { BrandPaginator } from '#shared/ui/brand/brand-paginator.component.tsx'
+import {
+  screen,
+  header,
+  headText,
+  headTitle,
+  headSubtitle,
+  headActions,
+  primaryButton,
+} from '#shared/ui/brand/brand-page.css.ts'
 
 import { useActListBinding } from '../act-list.binding.ts'
 import {
@@ -23,20 +32,21 @@ import {
   type OccupationArea,
 } from '../act-list.view-model.ts'
 import { ActFilters, type StatusFilter, type TransferFilter } from '../components/act-filters.component.tsx'
-import { ActPaginator } from '../components/act-paginator.component.tsx'
+import { exportTrigger } from '../components/act-filters.css.ts'
 import { PartnersExportDropdown } from '#modules/partners/client/shared/partners-export-dropdown.component.tsx'
 import { PartnersPrintable } from '#modules/partners/client/shared/partners-printable.component.tsx'
 import { contentWrap, contentWrapPrintHidden } from '#modules/partners/client/shared/export-print.css.ts'
-import { screen } from './act-list.css.ts'
 
 const t = createTranslator(ptBR)
 const routeApi = getRouteApi('/_authenticated/parceiros/atos/')
+
+const AVATAR = { bg: vars.color.partnerType.act.background, fg: vars.color.partnerType.act.text }
+const GRID_TEMPLATE = '.9fr minmax(180px,1.5fr) minmax(180px,1.5fr) 1fr .9fr .8fr 1fr'
 
 function statusFromActive(active: boolean | undefined): StatusFilter {
   if (active === undefined) return 'all'
   return active ? 'active' : 'inactive'
 }
-
 function transferFrom(value: boolean | undefined): TransferFilter {
   if (value === undefined) return 'all'
   return value ? 'yes' : 'no'
@@ -70,20 +80,25 @@ export function ActListPage(): ReactNode {
   const transferLabel = (v: boolean): string =>
     v ? t('partners.acts.transfer.yes') : t('partners.acts.transfer.no')
 
-  const columns: readonly Column<ActRow>[] = [
+  const columns: readonly BrandColumn<ActRow>[] = [
     { key: 'number', header: t('partners.acts.columns.actNumber'), cell: (r) => r.actNumber },
     {
       key: 'partner',
       header: t('partners.acts.columns.partner'),
       cell: (r) => (
-        <AvatarLabel variant="act" initials={initialsFrom(r.corporateName)} text={r.corporateName} />
+        <BrandNameCell
+          name={r.corporateName}
+          initials={initialsFrom(r.corporateName)}
+          bg={AVATAR.bg}
+          fg={AVATAR.fg}
+        />
       ),
     },
     { key: 'title', header: t('partners.acts.columns.objectTitle'), cell: (r) => r.name },
     {
       key: 'area',
       header: t('partners.acts.columns.occupationArea'),
-      cell: (r) => areaLabel(r.occupationArea),
+      cell: (r) => <span className={muted}>{areaLabel(r.occupationArea)}</span>,
     },
     {
       key: 'transfer',
@@ -91,18 +106,18 @@ export function ActListPage(): ReactNode {
       cell: (r) => transferLabel(r.hasFinancialTransfer),
     },
     {
-      // Contratos/Aditivos: contagem de contratos ativos vinda do item da lista (#46).
       key: 'contracts',
       header: t('partners.acts.columns.contracts'),
-      cell: (r) => String(r.contractCount),
+      cell: (r) => <span className={r.contractCount === 0 ? numZero : undefined}>{r.contractCount}</span>,
     },
     {
       key: 'status',
       header: t('partners.acts.columns.status'),
       cell: (r) => (
-        <Badge variant={r.active ? 'active' : 'terminated'} uppercase size="sm">
-          {t(`partners.acts.status.${r.active ? 'active' : 'inactive'}`)}
-        </Badge>
+        <BrandChip
+          tone={r.active ? 'ok' : 'danger'}
+          label={t(`partners.acts.status.${r.active ? 'active' : 'inactive'}`)}
+        />
       ),
     },
   ]
@@ -132,17 +147,24 @@ export function ActListPage(): ReactNode {
   return (
     <div className={screen}>
       <div className={printing ? contentWrapPrintHidden : contentWrap}>
-        <PageHeader
-          title={t('partners.acts.list.title')}
-          subtitle={t('partners.acts.list.subtitle')}
-          actions={
-            canCreate ? (
-              <Button onClick={() => void navigate({ to: '/parceiros/atos/criar' })}>
+        <div className={header}>
+          <div className={headText}>
+            <h1 className={headTitle}>{t('partners.acts.list.title')}</h1>
+            <p className={headSubtitle}>{t('partners.acts.list.subtitle')}</p>
+          </div>
+          {canCreate ? (
+            <div className={headActions}>
+              <button
+                type="button"
+                className={primaryButton}
+                onClick={() => void navigate({ to: '/parceiros/atos/criar' })}
+              >
+                <PlusIcon size={16} />
                 {t('partners.acts.list.new')}
-              </Button>
-            ) : undefined
-          }
-        />
+              </button>
+            </div>
+          ) : null}
+        </div>
 
         <ActFilters
           searchValue={search.search ?? ''}
@@ -173,6 +195,7 @@ export function ActListPage(): ReactNode {
           }}
           exportSlot={
             <PartnersExportDropdown
+              triggerClassName={exportTrigger}
               exportLabel={t('partners.acts.filters.export')}
               filenameBase="acordos"
               headers={exportColumns}
@@ -240,17 +263,18 @@ export function ActListPage(): ReactNode {
           }
         />
 
-        <DataTable<ActRow>
+        <BrandDataTable<ActRow>
           columns={columns}
+          gridTemplate={GRID_TEMPLATE}
           state={tableState}
           rowKey={(r) => r.id}
+          caption={t('partners.acts.list.title')}
           emptyLabel={hasFilters ? t('partners.acts.list.no-results') : t('partners.acts.list.empty')}
           loadingLabel={t('partners.acts.list.loading')}
-          caption={t('partners.acts.list.title')}
           onRowClick={(r) => void navigate({ to: '/parceiros/atos/$id', params: { id: r.id } })}
         />
 
-        <ActPaginator
+        <BrandPaginator
           page={pageNum}
           totalPages={pages}
           perPage={search.limit}
@@ -258,6 +282,7 @@ export function ActListPage(): ReactNode {
             previous: t('partners.acts.paginator.previous'),
             next: t('partners.acts.paginator.next'),
             page: t('partners.acts.paginator.page'),
+            of: t('partners.acts.paginator.of'),
             perPage: t('partners.acts.paginator.perPage'),
           }}
           onPrev={() => void navigate({ to: '.', search: (p) => ({ ...p, page: Math.max(1, pageNum - 1) }) })}
@@ -279,7 +304,7 @@ export function ActListPage(): ReactNode {
   )
 }
 
-function toTableState(state: ActListState): DataTableState<ActRow> {
+function toTableState(state: ActListState): BrandTableState<ActRow> {
   switch (state.status) {
     case 'loading':
       return { status: 'loading' }

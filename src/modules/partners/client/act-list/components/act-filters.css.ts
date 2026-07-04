@@ -1,10 +1,20 @@
 /**
- * Estilos do filtro de ACT = modelo compartilhado (`shared/filters.css.ts`) + chip aplicado na cor de
- * ACT (laranja). Fonte de verdade do visual: `partners/client/shared/filters.css.ts`.
+ * Estilos do filtro de ACT = kit "brand" + chip de filtro aplicado na COR do tipo (laranja, igual ao
+ * avatar). Sobrescreve `appliedChip`/`appliedChipRemove` da kit (shadow do `export *`).
  */
-import { appliedChipVariant, appliedChipRemoveVariant } from '#modules/partners/client/shared/filters.css.ts'
+import { style } from '@vanilla-extract/css'
 
-export * from '#modules/partners/client/shared/filters.css.ts'
+import { vars } from '#shared/ui/tokens/index.ts'
+import { appliedChipBase, appliedChipRemoveBase } from '#shared/ui/brand/brand-filters.css.ts'
 
-export const appliedChip = appliedChipVariant.act
-export const appliedChipRemove = appliedChipRemoveVariant.act
+export * from '#shared/ui/brand/brand-filters.css.ts'
+
+export const appliedChip = style([
+  appliedChipBase,
+  {
+    background: vars.color.partnerType.act.background,
+    borderColor: vars.color.partnerType.act.border,
+    color: vars.color.partnerType.act.text,
+  },
+])
+export const appliedChipRemove = style([appliedChipRemoveBase, { color: vars.color.partnerType.act.text }])

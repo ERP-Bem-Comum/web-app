@@ -2,18 +2,23 @@
  * Layout da página de Planejamento (lista). Cartão branco com a barra de filtros + tabela + paginação,
  * dentro da área de conteúdo do shell (altura fixa → rola o próprio conteúdo). Só tokens (§X).
  */
-import { style } from '@vanilla-extract/css'
+import { style, globalStyle } from '@vanilla-extract/css'
 
 import { vars } from '#shared/ui/tokens/index.ts'
+import { scrollableY } from '#shared/ui/scroll.css.ts'
 
-export const screen = style({
-  padding: vars.space.xl,
-  display: 'flex',
-  flexDirection: 'column',
-  blockSize: '100%',
-  overflowY: 'auto',
-  fontFamily: vars.font.family.body,
-})
+export const screen = style([
+  scrollableY,
+  {
+    padding: vars.space.xl,
+    display: 'flex',
+    flexDirection: 'column',
+    fontFamily: vars.font.family.body,
+  },
+])
+
+// Filhos não encolhem (senão a tabela é espremida ao invés de o container rolar).
+globalStyle(`${screen} > *`, { flexShrink: 0 })
 
 export const card = style({
   display: 'flex',

@@ -115,8 +115,11 @@ export const chipActive = style([
   { background: brand.color.surface, color: brand.color.primary, boxShadow: brand.shadow.btn },
 ])
 
-// ── Chips de filtro aplicado (âmbar) ──
-export const appliedChip = style({
+// ── Chips de filtro aplicado ──
+// A FORMA fica na base (sem cor); a COR vem por grid (cada tipo usa a sua — Fornecedor azul, Financiador
+// verde, ACT laranja). O default exportado é o âmbar (Colaboradores). Cada `*-filters.css.ts` de parceiro
+// sobrescreve `appliedChip`/`appliedChipRemove` com `partnerType.*`.
+export const appliedChipBase = style({
   display: 'inline-flex',
   alignItems: 'center',
   gap: brand.space.sm,
@@ -124,28 +127,31 @@ export const appliedChip = style({
   paddingInlineStart: brand.space.md,
   paddingInlineEnd: brand.space.xs,
   borderRadius: brand.radius.pill,
-  background: brand.color.chipBg,
-  border: `${vars.borderWidth.thin} solid ${brand.color.chipBorder}`,
-  color: brand.color.chipFg,
+  border: `${vars.borderWidth.thin} solid transparent`,
   fontFamily: vars.font.family.heading,
   fontWeight: brand.weight.semibold,
   fontSize: brand.text.appliedChip,
   whiteSpace: 'nowrap',
 })
-export const appliedChipRemove = style({
+export const appliedChip = style([
+  appliedChipBase,
+  { background: brand.color.chipBg, borderColor: brand.color.chipBorder, color: brand.color.chipFg },
+])
+
+export const appliedChipRemoveBase = style({
   display: 'grid',
   placeItems: 'center',
   inlineSize: brand.size.chipRemove,
   blockSize: brand.size.chipRemove,
   border: 'none',
   background: 'transparent',
-  color: brand.color.chipFg,
   borderRadius: '50%',
   opacity: 0.7,
   cursor: 'pointer',
-  transition: `opacity ${brand.ease}, background ${brand.ease}`,
-  selectors: { '&:hover': { opacity: 1, background: brand.color.chipRemoveHover } },
+  transition: `opacity ${brand.ease}`,
+  selectors: { '&:hover': { opacity: 1 } },
 })
+export const appliedChipRemove = style([appliedChipRemoveBase, { color: brand.color.chipFg }])
 export const chipsRow = style({
   display: 'flex',
   alignItems: 'center',

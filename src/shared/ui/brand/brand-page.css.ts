@@ -3,16 +3,17 @@
  * + filhos não encolhem), cabeçalho (título/subtítulo/ações) e botões (ghost/primary). Cada grid importa
  * daqui. A rota deve ser marcada em `root.view-model → fullBleedContent` para o shell zerar o padding.
  */
-import { style, globalStyle } from '@vanilla-extract/css'
+import { style } from '@vanilla-extract/css'
 
 import { vars } from '#shared/ui/tokens/index.ts'
 
 import { brand } from './grid-brand.values.ts'
 
+// BLOCO (não flex column) de propósito: os filhos ficam em fluxo de bloco (não encolhem) → ao expandir o
+// filtro o conteúdo transborda e o `screen` ROLA de verdade. Flex column faria os filhos encolherem (ainda
+// mais com o `contentWrap` display:contents no meio), espremendo a tabela sem gerar scroll.
 export const screen = style({
   padding: brand.space.xxl,
-  display: 'flex',
-  flexDirection: 'column',
   blockSize: '100%',
   overflowY: 'auto',
   background: brand.color.pageBg,
@@ -26,9 +27,6 @@ export const screen = style({
     '&::-webkit-scrollbar-track': { background: 'transparent' },
   },
 })
-
-// Impede os filhos flex de encolher — ao expandir o filtro, o container ROLA (não espreme a tabela).
-globalStyle(`${screen} > *`, { flexShrink: 0 })
 
 export const header = style({
   display: 'flex',

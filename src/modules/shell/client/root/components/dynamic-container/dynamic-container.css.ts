@@ -5,6 +5,9 @@ import { vars } from '#shared/ui/tokens/index.ts'
 // Container do conteúdo dinâmico (onde o <Outlet/> de cada rota renderiza).
 export const main = style({
   flex: 1,
+  // min-block-size:0 (item de grid/flex): sem isto, `main` cresce com o conteúdo (min-height:auto padrão)
+  // e o `screen` da rota (100%) nunca ganha overflow → a lista não rola e o scrollbar "some".
+  minBlockSize: 0,
   padding: vars.space.xl,
   background: vars.color.nav.surface,
   overflow: 'hidden',
@@ -21,6 +24,8 @@ export const mainFullBleed = style({
 
 export const content = style({
   flex: 1,
+  // idem `main`: limita a altura para o `screen` interno (100% + overflow:auto) rolar de verdade.
+  minBlockSize: 0,
   overflow: 'hidden',
 })
 

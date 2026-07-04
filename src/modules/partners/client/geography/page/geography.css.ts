@@ -1,18 +1,21 @@
-import { style } from '@vanilla-extract/css'
+import { style, globalStyle } from '@vanilla-extract/css'
 
 import { vars } from '#shared/ui/tokens/index.ts'
+import { scrollableY } from '#shared/ui/scroll.css.ts'
 
-export const screen = style({
-  boxSizing: 'border-box',
-  blockSize: '100%',
-  overflowY: 'auto',
-  padding: vars.space.xl,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: vars.space.lg,
-  scrollbarWidth: 'thin',
-  scrollbarColor: `${vars.color.border.default} transparent`,
-})
+export const screen = style([
+  scrollableY,
+  {
+    boxSizing: 'border-box',
+    padding: vars.space.xl,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: vars.space.lg,
+  },
+])
+
+// Filhos não encolhem (senão a tabela é espremida ao invés de o container rolar).
+globalStyle(`${screen} > *`, { flexShrink: 0 })
 
 export const section = style({
   display: 'flex',

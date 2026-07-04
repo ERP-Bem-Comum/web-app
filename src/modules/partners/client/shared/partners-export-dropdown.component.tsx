@@ -16,9 +16,15 @@ export type PartnersExportDropdownProps = Readonly<{
   headers: readonly string[]
   rows: readonly (readonly string[])[]
   onPrint: () => void
+  /** Sobrescreve o estilo do gatilho (ex.: identidade de grid "brand"). Default: `trigger` compartilhado. */
+  triggerClassName?: string
 }>
 
-function downloadCsv(filenameBase: string, headers: readonly string[], rows: readonly (readonly string[])[]): void {
+function downloadCsv(
+  filenameBase: string,
+  headers: readonly string[],
+  rows: readonly (readonly string[])[],
+): void {
   const csv = buildCsv(headers, rows)
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
@@ -39,14 +45,21 @@ function closeDetails(e: MouseEvent<HTMLButtonElement>): void {
 export function PartnersExportDropdown(props: PartnersExportDropdownProps): ReactNode {
   return (
     <details className={wrapper}>
-      <summary style={{ listStyle: 'none' }} className={trigger} aria-label={props.exportLabel}>
+      <summary
+        style={{ listStyle: 'none' }}
+        className={props.triggerClassName ?? trigger}
+        aria-label={props.exportLabel}
+      >
         {props.exportLabel}
       </summary>
       <div className={menu}>
         <button
           type="button"
           className={menuItem}
-          onClick={(e) => { downloadCsv(props.filenameBase, props.headers, props.rows); closeDetails(e) }}
+          onClick={(e) => {
+            downloadCsv(props.filenameBase, props.headers, props.rows)
+            closeDetails(e)
+          }}
         >
           <FileTextIcon />
           CSV
@@ -54,7 +67,10 @@ export function PartnersExportDropdown(props: PartnersExportDropdownProps): Reac
         <button
           type="button"
           className={`${menuItem} ${menuItemBorder}`}
-          onClick={(e) => { props.onPrint(); closeDetails(e) }}
+          onClick={(e) => {
+            props.onPrint()
+            closeDetails(e)
+          }}
         >
           <FileChartIcon />
           PDF
