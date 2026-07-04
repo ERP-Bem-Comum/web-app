@@ -67,7 +67,8 @@ const PAGE_TITLES: Readonly<Record<string, string>> = {
 // Legendas (subtítulo) das telas cujo TÍTULO é desenhado pelo shell (padrão Colaboradores: título + legenda).
 // Só as telas com header do shell (showPageHeader) precisam — as demais têm legenda própria na page.
 const PAGE_SUBTITLES: Readonly<Record<string, string>> = {
-  '/contratos': 'Gestão de contratos e ordens de serviço',
+  // /contratos NÃO entra aqui: a lista de Contratos desenha o PRÓPRIO cabeçalho (título + legenda BEGE,
+  // identidade institucional do grid) — o shell não renderiza header para /contratos (showPageHeader false).
   '/financeiro/contas-a-pagar': 'Gestão de documentos e pagamentos do programa',
   '/financeiro/conciliacao': 'Contas cedentes e conciliação bancária',
 }
@@ -98,11 +99,11 @@ export const rootViewModel = {
   sidebarWidth: (collapsed: boolean): number =>
     collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED,
 
-  // Não renderiza o h1 do shell em /parceiros/* e /usuarios/* (cada tela já tem seu PageHeader) nem em
-  // qualquer sub-rota de /contratos/ (criar, detalhe, editar, aditivo — cada tela tem seu próprio header).
-  // A lista /contratos mantém o h1. Evita o título duplicado e libera o espaço vertical da tela.
+  // Não renderiza o h1 do shell em /parceiros/*, /usuarios/* etc. (cada tela tem seu próprio header) nem em
+  // /contratos (a LISTA agora desenha o próprio cabeçalho com legenda BEGE — identidade do grid) nem nas
+  // sub-rotas /contratos/* (criar/detalhe/editar/aditivo). Evita título duplicado.
   showPageHeader: (path: string): boolean =>
-    !path.startsWith('/contratos/') &&
+    !isPrefixPath(path, '/contratos') &&
     !isPrefixPath(path, '/parceiros') &&
     !isPrefixPath(path, '/usuarios') &&
     !isPrefixPath(path, '/minha-conta') &&

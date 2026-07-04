@@ -60,7 +60,8 @@ describe('rootViewModel.sidebarWidth / showPageHeader', () => {
   })
   it('esconde o header do shell em /contratos/criar e em /parceiros/* (que têm header próprio)', () => {
     assert.strictEqual(rootViewModel.showPageHeader('/contratos/criar'), false)
-    assert.strictEqual(rootViewModel.showPageHeader('/contratos'), true)
+    // A lista /contratos agora desenha o próprio cabeçalho (legenda bege) — shell não renderiza o h1.
+    assert.strictEqual(rootViewModel.showPageHeader('/contratos'), false)
     assert.strictEqual(rootViewModel.showPageHeader('/parceiros/fornecedores'), false)
     assert.strictEqual(rootViewModel.showPageHeader('/parceiros/colaboradores'), false)
     // Usuários (lista + sub-rotas) têm PageHeader próprio → shell não renderiza h1 (igual a parceiros)
@@ -83,11 +84,9 @@ describe('rootViewModel.sidebarWidth / showPageHeader', () => {
     assert.strictEqual(rootViewModel.showPageHeader('/financeiro/conciliacao/acc-123'), false)
   })
 
-  it('resolvePageSubtitle: legenda no header do shell só p/ Contratos, Contas a Pagar e Contas Bancárias', () => {
-    assert.strictEqual(
-      rootViewModel.resolvePageSubtitle('/contratos'),
-      'Gestão de contratos e ordens de serviço',
-    )
+  it('resolvePageSubtitle: legenda no header do shell só p/ Contas a Pagar e Contas Bancárias', () => {
+    // /contratos desenha o próprio cabeçalho (legenda bege na página) → sem legenda do shell.
+    assert.strictEqual(rootViewModel.resolvePageSubtitle('/contratos'), undefined)
     assert.strictEqual(
       rootViewModel.resolvePageSubtitle('/financeiro/contas-a-pagar'),
       'Gestão de documentos e pagamentos do programa',

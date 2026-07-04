@@ -117,6 +117,7 @@ export const ptBR: Catalog = {
   'contracts.distrato.error.invalid-date': 'Data efetiva do distrato inválida (não pode ser futura).',
   // Contracts — Listagem
   'contracts.list.title': 'Contratos',
+  'contracts.list.subtitle': 'Gestão de contratos e ordens de serviço',
   'contracts.list.new': 'Novo Contrato',
   'contracts.list.export': 'Exportar',
   'contracts.list.exporting': 'Exportando…',

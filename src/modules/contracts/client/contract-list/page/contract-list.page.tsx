@@ -38,8 +38,11 @@ import {
 import type { ContractListFilters, ContractRow as ContractRowData } from '../contract-list.view-model.ts'
 import { FilterIcon, SearchIcon } from '#shared/ui/icons/index.ts'
 
+import { headText, headTitle } from '#shared/ui/brand/brand-page.css.ts'
 import {
   screen,
+  pageHead,
+  pageSubtitle,
   header,
   filterToggle,
   filterToggleActive,
@@ -229,6 +232,14 @@ export function ContractListPage(): ReactNode {
   return (
     <div className={screen}>
       <div className={printDoc !== null ? contentWrapPrintHidden : contentWrap}>
+        {/* Cabeçalho próprio do grid (título + legenda BEGE — identidade institucional de "papel") */}
+        <div className={pageHead}>
+          <div className={headText}>
+            <h1 className={headTitle}>{t('contracts.list.title')}</h1>
+            <p className={pageSubtitle}>{t('contracts.list.subtitle')}</p>
+          </div>
+        </div>
+
         {/* Header */}
         <div className={header}>
           <button
