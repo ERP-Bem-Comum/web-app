@@ -24,6 +24,7 @@ export {
   LinkIcon,
   HeartPulseIcon,
   UploadIcon,
+  PlusIcon,
   CheckCircleIcon,
   ArrowUpIcon,
   ArrowDownIcon,

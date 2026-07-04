@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import { paginator, label, button, perPageWrap, perPageSelect } from './collaborator-paginator.css.ts'
+import { paginator, label, button, pager, perPageWrap, perPageSelect } from './collaborator-paginator.css.ts'
 
 const PER_PAGE_OPTIONS = [5, 10, 25] as const
 
@@ -8,7 +8,7 @@ export type CollaboratorPaginatorProps = Readonly<{
   page: number
   totalPages: number
   perPage: number
-  labels: Readonly<{ previous: string; next: string; page: string; perPage: string }>
+  labels: Readonly<{ previous: string; next: string; page: string; of: string; perPage: string }>
   onPrev: () => void
   onNext: () => void
   onPerPage: (perPage: number) => void
@@ -23,27 +23,33 @@ export function CollaboratorPaginator(props: CollaboratorPaginatorProps): ReactN
           className={perPageSelect}
           aria-label={props.labels.perPage}
           value={props.perPage}
-          onChange={(e) => { props.onPerPage(Number(e.target.value)); }}
+          onChange={(e) => {
+            props.onPerPage(Number(e.target.value))
+          }}
         >
           {PER_PAGE_OPTIONS.map((n) => (
-            <option key={n} value={n}>{n}</option>
+            <option key={n} value={n}>
+              {n}
+            </option>
           ))}
         </select>
       </span>
-      <button type="button" className={button} disabled={props.page <= 1} onClick={props.onPrev}>
-        {props.labels.previous}
-      </button>
-      <span className={label}>
-        {props.labels.page} {props.page} / {props.totalPages}
+      <span className={pager}>
+        <button type="button" className={button} disabled={props.page <= 1} onClick={props.onPrev}>
+          {props.labels.previous}
+        </button>
+        <span className={label}>
+          {props.labels.page} {props.page} {props.labels.of} {props.totalPages}
+        </span>
+        <button
+          type="button"
+          className={button}
+          disabled={props.page >= props.totalPages}
+          onClick={props.onNext}
+        >
+          {props.labels.next}
+        </button>
       </span>
-      <button
-        type="button"
-        className={button}
-        disabled={props.page >= props.totalPages}
-        onClick={props.onNext}
-      >
-        {props.labels.next}
-      </button>
     </nav>
   )
 }

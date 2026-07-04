@@ -827,6 +827,7 @@ export const ptBR: Catalog = {
   'partners.collaborators.paginator.previous': 'Anterior',
   'partners.collaborators.paginator.next': 'Próxima',
   'partners.collaborators.paginator.page': 'Página',
+  'partners.collaborators.paginator.of': 'de',
   'partners.collaborators.area.PARC': 'Parcerias',
   'partners.collaborators.area.DDI': 'DDI',
   'partners.collaborators.area.DCE': 'DCE',

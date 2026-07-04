@@ -3,7 +3,7 @@ import { getRouteApi, useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { Badge, Button, DataTable, PageHeader, type Column, type DataTableState } from '#shared/ui/index.ts'
+import { UploadIcon, PlusIcon } from '#shared/ui/index.ts'
 
 import { useCollaboratorListBinding } from '../collaborator-list.binding.ts'
 import {
@@ -11,17 +11,30 @@ import {
   EMPLOYMENT_RELATIONSHIPS,
   totalPages,
   type CollaboratorListState,
-  type CollaboratorRow,
   type OccupationArea,
 } from '../collaborator-list.view-model.ts'
 import { CollaboratorFilters, type StatusFilter } from '../components/collaborator-filters.component.tsx'
+import { exportTrigger } from '../components/collaborator-filters.css.ts'
 import { CollaboratorPaginator } from '../components/collaborator-paginator.component.tsx'
+import {
+  CollaboratorTable,
+  type CollaboratorTableStatus,
+} from '../components/collaborator-table.component.tsx'
 import { ImportReportModal } from '../components/import-report-modal.component.tsx'
 import { CollaboratorExportDropdown } from '#modules/partners/client/shared/collaborator-export-dropdown.component.tsx'
 import { downloadCsvFile } from '#modules/partners/client/shared/download-file.ts'
 import { PartnersPrintable } from '#modules/partners/client/shared/partners-printable.component.tsx'
 import { contentWrap, contentWrapPrintHidden } from '#modules/partners/client/shared/export-print.css.ts'
-import { screen, toolbarActions, importButton, nameCell, avatar, nameText } from './collaborator-list.css.ts'
+import {
+  screen,
+  header,
+  headText,
+  headTitle,
+  headSubtitle,
+  headActions,
+  importButton,
+  newButton,
+} from './collaborator-list.css.ts'
 
 const t = createTranslator(ptBR)
 const routeApi = getRouteApi('/_authenticated/parceiros/colaboradores/')
@@ -91,54 +104,6 @@ export function CollaboratorListPage(): ReactNode {
     (search.role ?? '') !== '' ||
     search.year !== undefined
 
-  const columns: readonly Column<CollaboratorRow>[] = [
-    {
-      key: 'name',
-      header: t('partners.collaborators.columns.legalRepresentative'),
-      cell: (r) => (
-        <div className={nameCell}>
-          <span className={avatar} aria-hidden="true">
-            {initials(r.name)}
-          </span>
-          <span className={nameText}>{r.name}</span>
-        </div>
-      ),
-    },
-    { key: 'email', header: t('partners.collaborators.columns.email'), cell: (r) => r.email },
-    {
-      key: 'area',
-      header: t('partners.collaborators.columns.occupationArea'),
-      cell: (r) => areaLabel(r.occupationArea),
-    },
-    {
-      // Contratos/Aditivos: contagem de contratos ativos vinda do item da lista (#46).
-      key: 'contracts',
-      header: t('partners.collaborators.columns.contracts'),
-      cell: (r) => String(r.contractCount),
-    },
-    { key: 'role', header: t('partners.collaborators.columns.role'), cell: (r) => r.role },
-    {
-      // Status (ativação) — coluna própria.
-      key: 'status',
-      header: t('partners.collaborators.columns.status'),
-      cell: (r) => (
-        <Badge variant={r.activation === 'active' ? 'active' : 'terminated'} uppercase size="sm">
-          {t(`partners.collaborators.status.${r.activation}`)}
-        </Badge>
-      ),
-    },
-    {
-      // Situação cadastral (pré-cadastro/cadastrado) — coluna própria.
-      key: 'situacao',
-      header: t('partners.collaborators.columns.situacao'),
-      cell: (r) => (
-        <Badge variant={r.registration === 'pre-registration' ? 'pending' : 'finished'} uppercase size="sm">
-          {t(`partners.collaborators.registration.${r.registration}`)}
-        </Badge>
-      ),
-    },
-  ]
-
   const tableState = toTableState(state)
   const pageNum = search.page
   const pages = state.status === 'ready' ? totalPages(state.meta) : 1
@@ -164,44 +129,50 @@ export function CollaboratorListPage(): ReactNode {
   return (
     <div className={screen}>
       <div className={printing ? contentWrapPrintHidden : contentWrap}>
-        <PageHeader
-          title={t('partners.collaborators.list.title')}
-          subtitle={t('partners.collaborators.list.subtitle')}
-          actions={
-            canCreate ? (
-              <div className={toolbarActions}>
-                {/* Importar CSV/Excel — abre o seletor de arquivo → importCsv → relatório (criados/falhas). */}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".csv,text/csv"
-                  style={{ display: 'none' }}
-                  onChange={(e) => {
-                    const f = e.target.files?.[0]
-                    if (f) void onPickFile(f)
-                    e.target.value = ''
-                  }}
-                />
-                <button
-                  type="button"
-                  className={importButton}
-                  title={t('partners.collaborators.list.import')}
-                  disabled={importCommand.running}
-                  onClick={() => {
-                    fileInputRef.current?.click()
-                  }}
-                >
-                  {importCommand.running
-                    ? t('partners.collaborators.import.running')
-                    : t('partners.collaborators.list.import')}
-                </button>
-                <Button onClick={() => void navigate({ to: '/parceiros/colaboradores/criar' })}>
-                  {t('partners.collaborators.list.new')}
-                </Button>
-              </div>
-            ) : undefined
-          }
-        />
+        <div className={header}>
+          <div className={headText}>
+            <h1 className={headTitle}>{t('partners.collaborators.list.title')}</h1>
+            <p className={headSubtitle}>{t('partners.collaborators.list.subtitle')}</p>
+          </div>
+          {canCreate ? (
+            <div className={headActions}>
+              {/* Importar CSV/Excel — abre o seletor de arquivo → importCsv → relatório (criados/falhas). */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,text/csv"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) void onPickFile(f)
+                  e.target.value = ''
+                }}
+              />
+              <button
+                type="button"
+                className={importButton}
+                title={t('partners.collaborators.list.import')}
+                disabled={importCommand.running}
+                onClick={() => {
+                  fileInputRef.current?.click()
+                }}
+              >
+                <UploadIcon size={16} />
+                {importCommand.running
+                  ? t('partners.collaborators.import.running')
+                  : t('partners.collaborators.list.import')}
+              </button>
+              <button
+                type="button"
+                className={newButton}
+                onClick={() => void navigate({ to: '/parceiros/colaboradores/criar' })}
+              >
+                <PlusIcon size={16} />
+                {t('partners.collaborators.list.new')}
+              </button>
+            </div>
+          ) : null}
+        </div>
 
         <CollaboratorFilters
           searchValue={search.search ?? ''}
@@ -249,6 +220,7 @@ export function CollaboratorListPage(): ReactNode {
           }}
           exportSlot={
             <CollaboratorExportDropdown
+              triggerClassName={exportTrigger}
               exportLabel={t('partners.collaborators.filters.export')}
               tudoLabel={t('partners.collaborators.export.tudo')}
               historicoLabel={t('partners.collaborators.export.historico')}
@@ -335,15 +307,28 @@ export function CollaboratorListPage(): ReactNode {
           }
         />
 
-        <DataTable<CollaboratorRow>
-          columns={columns}
+        <CollaboratorTable
           state={tableState}
-          rowKey={(r) => r.id}
-          emptyLabel={
-            hasFilters ? t('partners.collaborators.list.no-results') : t('partners.collaborators.list.empty')
-          }
-          loadingLabel={t('partners.collaborators.list.loading')}
-          caption={t('partners.collaborators.list.title')}
+          areaLabel={areaLabel}
+          initials={initials}
+          labels={{
+            caption: t('partners.collaborators.list.title'),
+            name: t('partners.collaborators.columns.legalRepresentative'),
+            email: t('partners.collaborators.columns.email'),
+            area: t('partners.collaborators.columns.occupationArea'),
+            contracts: t('partners.collaborators.columns.contracts'),
+            role: t('partners.collaborators.columns.role'),
+            status: t('partners.collaborators.columns.status'),
+            situacao: t('partners.collaborators.columns.situacao'),
+            statusActive: t('partners.collaborators.status.active'),
+            statusInactive: t('partners.collaborators.status.inactive'),
+            situacaoComplete: t('partners.collaborators.registration.complete'),
+            situacaoPreRegistration: t('partners.collaborators.registration.pre-registration'),
+            empty: hasFilters
+              ? t('partners.collaborators.list.no-results')
+              : t('partners.collaborators.list.empty'),
+            loading: t('partners.collaborators.list.loading'),
+          }}
           onRowClick={(r) => void navigate({ to: '/parceiros/colaboradores/$id', params: { id: r.id } })}
         />
 
@@ -355,6 +340,7 @@ export function CollaboratorListPage(): ReactNode {
             previous: t('partners.collaborators.paginator.previous'),
             next: t('partners.collaborators.paginator.next'),
             page: t('partners.collaborators.paginator.page'),
+            of: t('partners.collaborators.paginator.of'),
             perPage: t('partners.collaborators.paginator.perPage'),
           }}
           onPrev={() => void navigate({ to: '.', search: (p) => ({ ...p, page: Math.max(1, pageNum - 1) }) })}
@@ -386,7 +372,7 @@ export function CollaboratorListPage(): ReactNode {
   )
 }
 
-function toTableState(state: CollaboratorListState): DataTableState<CollaboratorRow> {
+function toTableState(state: CollaboratorListState): CollaboratorTableStatus {
   switch (state.status) {
     case 'loading':
       return { status: 'loading' }
