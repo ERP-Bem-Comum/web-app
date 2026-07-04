@@ -3,28 +3,16 @@ import { getRouteApi, useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { UploadIcon, PlusIcon } from '#shared/ui/index.ts'
-
-import { useCollaboratorListBinding } from '../collaborator-list.binding.ts'
+import { UploadIcon, PlusIcon, vars } from '#shared/ui/index.ts'
 import {
-  OCCUPATION_AREAS,
-  EMPLOYMENT_RELATIONSHIPS,
-  totalPages,
-  type CollaboratorListState,
-  type OccupationArea,
-} from '../collaborator-list.view-model.ts'
-import { CollaboratorFilters, type StatusFilter } from '../components/collaborator-filters.component.tsx'
-import { exportTrigger } from '../components/collaborator-filters.css.ts'
-import { CollaboratorPaginator } from '../components/collaborator-paginator.component.tsx'
-import {
-  CollaboratorTable,
-  type CollaboratorTableStatus,
-} from '../components/collaborator-table.component.tsx'
-import { ImportReportModal } from '../components/import-report-modal.component.tsx'
-import { CollaboratorExportDropdown } from '#modules/partners/client/shared/collaborator-export-dropdown.component.tsx'
-import { downloadCsvFile } from '#modules/partners/client/shared/download-file.ts'
-import { PartnersPrintable } from '#modules/partners/client/shared/partners-printable.component.tsx'
-import { contentWrap, contentWrapPrintHidden } from '#modules/partners/client/shared/export-print.css.ts'
+  BrandDataTable,
+  BrandChip,
+  BrandNameCell,
+  type BrandColumn,
+  type BrandTableState,
+} from '#shared/ui/brand/brand-data-table.component.tsx'
+import { muted, numZero } from '#shared/ui/brand/brand-data-table.css.ts'
+import { BrandPaginator } from '#shared/ui/brand/brand-paginator.component.tsx'
 import {
   screen,
   header,
@@ -32,9 +20,32 @@ import {
   headTitle,
   headSubtitle,
   headActions,
-  importButton,
-  newButton,
-} from './collaborator-list.css.ts'
+  ghostButton,
+  primaryButton,
+} from '#shared/ui/brand/brand-page.css.ts'
+
+import { useCollaboratorListBinding } from '../collaborator-list.binding.ts'
+import {
+  OCCUPATION_AREAS,
+  EMPLOYMENT_RELATIONSHIPS,
+  totalPages,
+  type CollaboratorListState,
+  type CollaboratorRow,
+  type OccupationArea,
+} from '../collaborator-list.view-model.ts'
+import { CollaboratorFilters, type StatusFilter } from '../components/collaborator-filters.component.tsx'
+import { exportTrigger } from '../components/collaborator-filters.css.ts'
+import { ImportReportModal } from '../components/import-report-modal.component.tsx'
+import { CollaboratorExportDropdown } from '#modules/partners/client/shared/collaborator-export-dropdown.component.tsx'
+import { downloadCsvFile } from '#modules/partners/client/shared/download-file.ts'
+import { PartnersPrintable } from '#modules/partners/client/shared/partners-printable.component.tsx'
+import { contentWrap, contentWrapPrintHidden } from '#modules/partners/client/shared/export-print.css.ts'
+
+const COLLAB_AVATAR = {
+  bg: vars.color.partnerType.collaborator.background,
+  fg: vars.color.partnerType.collaborator.text,
+}
+const GRID_TEMPLATE = 'minmax(220px,1.6fr) minmax(200px,1.4fr) .9fr 1fr 1.1fr .8fr 1fr'
 
 const t = createTranslator(ptBR)
 const routeApi = getRouteApi('/_authenticated/parceiros/colaboradores/')
@@ -109,6 +120,53 @@ export function CollaboratorListPage(): ReactNode {
   const pages = state.status === 'ready' ? totalPages(state.meta) : 1
   const rows = state.status === 'ready' ? state.rows : []
 
+  const columns: readonly BrandColumn<CollaboratorRow>[] = [
+    {
+      key: 'name',
+      header: t('partners.collaborators.columns.legalRepresentative'),
+      cell: (r) => (
+        <BrandNameCell
+          name={r.name}
+          initials={initials(r.name)}
+          bg={COLLAB_AVATAR.bg}
+          fg={COLLAB_AVATAR.fg}
+        />
+      ),
+    },
+    { key: 'email', header: t('partners.collaborators.columns.email'), cell: (r) => r.email },
+    {
+      key: 'area',
+      header: t('partners.collaborators.columns.occupationArea'),
+      cell: (r) => <span className={muted}>{areaLabel(r.occupationArea)}</span>,
+    },
+    {
+      key: 'contracts',
+      header: t('partners.collaborators.columns.contracts'),
+      cell: (r) => <span className={r.contractCount === 0 ? numZero : undefined}>{r.contractCount}</span>,
+    },
+    { key: 'role', header: t('partners.collaborators.columns.role'), cell: (r) => r.role },
+    {
+      key: 'status',
+      header: t('partners.collaborators.columns.status'),
+      cell: (r) => (
+        <BrandChip
+          tone={r.activation === 'active' ? 'ok' : 'danger'}
+          label={t(`partners.collaborators.status.${r.activation}`)}
+        />
+      ),
+    },
+    {
+      key: 'situacao',
+      header: t('partners.collaborators.columns.situacao'),
+      cell: (r) => (
+        <BrandChip
+          tone={r.registration === 'pre-registration' ? 'warn' : 'cad'}
+          label={t(`partners.collaborators.registration.${r.registration}`)}
+        />
+      ),
+    },
+  ]
+
   const exportColumns: readonly string[] = [
     t('partners.collaborators.columns.legalRepresentative'),
     t('partners.collaborators.columns.email'),
@@ -150,7 +208,7 @@ export function CollaboratorListPage(): ReactNode {
               />
               <button
                 type="button"
-                className={importButton}
+                className={ghostButton}
                 title={t('partners.collaborators.list.import')}
                 disabled={importCommand.running}
                 onClick={() => {
@@ -164,7 +222,7 @@ export function CollaboratorListPage(): ReactNode {
               </button>
               <button
                 type="button"
-                className={newButton}
+                className={primaryButton}
                 onClick={() => void navigate({ to: '/parceiros/colaboradores/criar' })}
               >
                 <PlusIcon size={16} />
@@ -307,32 +365,20 @@ export function CollaboratorListPage(): ReactNode {
           }
         />
 
-        <CollaboratorTable
+        <BrandDataTable<CollaboratorRow>
+          columns={columns}
+          gridTemplate={GRID_TEMPLATE}
           state={tableState}
-          areaLabel={areaLabel}
-          initials={initials}
-          labels={{
-            caption: t('partners.collaborators.list.title'),
-            name: t('partners.collaborators.columns.legalRepresentative'),
-            email: t('partners.collaborators.columns.email'),
-            area: t('partners.collaborators.columns.occupationArea'),
-            contracts: t('partners.collaborators.columns.contracts'),
-            role: t('partners.collaborators.columns.role'),
-            status: t('partners.collaborators.columns.status'),
-            situacao: t('partners.collaborators.columns.situacao'),
-            statusActive: t('partners.collaborators.status.active'),
-            statusInactive: t('partners.collaborators.status.inactive'),
-            situacaoComplete: t('partners.collaborators.registration.complete'),
-            situacaoPreRegistration: t('partners.collaborators.registration.pre-registration'),
-            empty: hasFilters
-              ? t('partners.collaborators.list.no-results')
-              : t('partners.collaborators.list.empty'),
-            loading: t('partners.collaborators.list.loading'),
-          }}
+          rowKey={(r) => r.id}
+          caption={t('partners.collaborators.list.title')}
+          emptyLabel={
+            hasFilters ? t('partners.collaborators.list.no-results') : t('partners.collaborators.list.empty')
+          }
+          loadingLabel={t('partners.collaborators.list.loading')}
           onRowClick={(r) => void navigate({ to: '/parceiros/colaboradores/$id', params: { id: r.id } })}
         />
 
-        <CollaboratorPaginator
+        <BrandPaginator
           page={pageNum}
           totalPages={pages}
           perPage={search.limit}
@@ -372,7 +418,7 @@ export function CollaboratorListPage(): ReactNode {
   )
 }
 
-function toTableState(state: CollaboratorListState): CollaboratorTableStatus {
+function toTableState(state: CollaboratorListState): BrandTableState<CollaboratorRow> {
   switch (state.status) {
     case 'loading':
       return { status: 'loading' }

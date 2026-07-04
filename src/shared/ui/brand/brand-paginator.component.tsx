@@ -1,20 +1,32 @@
+/**
+ * BrandPaginator — footer/paginação reutilizável (identidade "brand"). View burra: recebe página/total e
+ * dispara callbacks. "Itens por página" (5/10/25) à esquerda; pager à direita.
+ */
 import type { ReactNode } from 'react'
 
-import { paginator, label, button, pager, perPageWrap, perPageSelect } from './collaborator-paginator.css.ts'
+import { paginator, label, button, pager, perPageWrap, perPageSelect } from './brand-paginator.css.ts'
 
 const PER_PAGE_OPTIONS = [5, 10, 25] as const
 
-export type CollaboratorPaginatorProps = Readonly<{
+export type BrandPaginatorLabels = Readonly<{
+  previous: string
+  next: string
+  page: string
+  of: string
+  perPage: string
+}>
+
+export type BrandPaginatorProps = Readonly<{
   page: number
   totalPages: number
   perPage: number
-  labels: Readonly<{ previous: string; next: string; page: string; of: string; perPage: string }>
+  labels: BrandPaginatorLabels
   onPrev: () => void
   onNext: () => void
   onPerPage: (perPage: number) => void
 }>
 
-export function CollaboratorPaginator(props: CollaboratorPaginatorProps): ReactNode {
+export function BrandPaginator(props: BrandPaginatorProps): ReactNode {
   return (
     <nav className={paginator} aria-label={props.labels.page}>
       <span className={perPageWrap}>
