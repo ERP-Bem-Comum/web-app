@@ -30,6 +30,7 @@ function Harness(): ReactNode {
       running={false}
       errorTag={null}
       onCancel={noop}
+      onBack={noop}
     />
   )
 }
@@ -74,7 +75,9 @@ describe('useSupplierFormController — avaliação no submit', () => {
       result.current.setField('serviceRating', 'BOM')
       result.current.setField('ratingComment', 'Atende bem')
     })
-    act(() => { result.current.submit() })
+    act(() => {
+      result.current.submit()
+    })
     expect(onSubmit).toHaveBeenCalledTimes(1)
     const values = onSubmit.mock.calls[0]?.[0] as { serviceRating: unknown; ratingComment: unknown }
     expect(values.serviceRating).toBe('BOM')
@@ -84,8 +87,12 @@ describe('useSupplierFormController — avaliação no submit', () => {
   it('emite null quando sem avaliação (opção vazia)', () => {
     const onSubmit = vi.fn()
     const { result } = renderHook(() => useSupplierFormController({ onSubmit }))
-    act(() => { fillRequired(result.current) })
-    act(() => { result.current.submit() })
+    act(() => {
+      fillRequired(result.current)
+    })
+    act(() => {
+      result.current.submit()
+    })
     expect(onSubmit).toHaveBeenCalledTimes(1)
     const values = onSubmit.mock.calls[0]?.[0] as { serviceRating: unknown; ratingComment: unknown }
     expect(values.serviceRating).toBeNull()

@@ -92,10 +92,15 @@ describe('rootViewModel.sidebarWidth / showPageHeader', () => {
     assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/colaboradores'), true)
     assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/colaboradores/criar'), true)
     assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/colaboradores/abc-1'), true)
+    // Fornecedores/Financiadores/ATOS: subárvore "brand" completa (lista + criar + detalhe) → full-bleed.
     assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/fornecedores'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/fornecedores/criar'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/fornecedores/abc-1'), true)
     assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/financiadores'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/financiadores/criar'), true)
     assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/atos'), true)
-    assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/fornecedores/criar'), false)
+    assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/atos/abc-1'), true)
+    // Programas/Usuários ainda só a LISTA (Lote 2 pendente): criar/detalhe mantêm o padding do shell.
     assert.strictEqual(rootViewModel.fullBleedContent('/programas'), true)
     assert.strictEqual(rootViewModel.fullBleedContent('/usuarios'), true)
     assert.strictEqual(rootViewModel.fullBleedContent('/programas/criar'), false)

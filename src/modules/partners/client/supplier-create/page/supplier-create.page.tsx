@@ -3,7 +3,6 @@ import { useNavigate, useRouter } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { PageHeader } from '#shared/ui/index.ts'
 
 import { useSupplierCreateBinding } from '../supplier-create.binding.ts'
 import { useSupplierFormController, type SupplierFormValues } from '../components/supplier-form.controller.ts'
@@ -23,16 +22,13 @@ export function SupplierCreatePage(): ReactNode {
   const { createCommand, canWrite, categories } = useSupplierCreateBinding()
   const [pending, setPending] = useState<SupplierFormValues | null>(null)
   const controller = useSupplierFormController({
-    onSubmit: (values) => { setPending(values) },
+    onSubmit: (values) => {
+      setPending(values)
+    },
   })
 
   return (
     <div className={screen}>
-      <PageHeader
-        title={t('partners.suppliers.create.title')}
-        onBack={() => { router.history.back(); }}
-        backLabel={t('common.back')}
-      />
       <SupplierForm
         controller={controller}
         categories={categories}
@@ -40,6 +36,9 @@ export function SupplierCreatePage(): ReactNode {
         running={createCommand.running}
         errorTag={createCommand.errorTag}
         onCancel={() => void navigate({ to: '/parceiros/fornecedores' })}
+        onBack={() => {
+          router.history.back()
+        }}
       />
 
       <PartnersConfirmDialog
@@ -49,8 +48,13 @@ export function SupplierCreatePage(): ReactNode {
         confirmLabel={t('partners.confirm.confirm')}
         cancelLabel={t('partners.confirm.cancel')}
         running={createCommand.running}
-        onConfirm={() => { if (pending !== null) createCommand.execute(pending); setPending(null) }}
-        onCancel={() => { setPending(null) }}
+        onConfirm={() => {
+          if (pending !== null) createCommand.execute(pending)
+          setPending(null)
+        }}
+        onCancel={() => {
+          setPending(null)
+        }}
       />
     </div>
   )

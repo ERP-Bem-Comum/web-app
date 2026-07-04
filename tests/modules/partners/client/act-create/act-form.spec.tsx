@@ -6,7 +6,15 @@ import { ActForm } from '#modules/partners/client/act-create/components/act-form
 
 function Harness(): ReturnType<typeof ActForm> {
   const controller = useActFormController({ onSubmit: vi.fn() })
-  return <ActForm controller={controller} running={false} errorTag={null} onCancel={vi.fn()} />
+  return (
+    <ActForm
+      controller={controller}
+      running={false}
+      errorTag={null}
+      onCancel={vi.fn()}
+      onBack={() => undefined}
+    />
+  )
 }
 
 describe('ActForm', () => {
