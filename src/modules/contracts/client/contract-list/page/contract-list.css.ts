@@ -18,6 +18,11 @@ export const screen = style({
   flexDirection: 'column',
   height: '100%',
   minHeight: '100vh',
+  // Full-bleed (o shell não aplica padding): o próprio screen provê o recuo da MARCA (28px) no topo e nas
+  // laterais — título e tabela a 28px da barra de menu, igual aos demais grids. As seções internas não
+  // repetem paddingInline (herdam este recuo); a bottombar é fixa e ignora o padding.
+  paddingTop: brand.space.xxl,
+  paddingInline: brand.space.xxl,
 })
 
 // Wrapper transparente do conteúdo da lista (display:contents → não altera o layout flex do `screen`).
@@ -28,10 +33,8 @@ export const contentWrapPrintHidden = style([contentWrap, { '@media': { print: {
 
 // Cabeçalho PRÓPRIO da lista de Contratos (o shell não desenha header aqui — showPageHeader false):
 // título institucional + legenda BEGE (ink5), identidade de "papel" específica deste grid.
-// Título no MESMO recuo (md) da barra de filtros e da tabela → título e tabela alinhados, com folga para a
-// sombra de profundidade à esquerda. Vertical espelha o header do shell (sem paddingTop; marginBlockEnd lg).
+// Título: recuo lateral herdado do `screen` (28px). marginBlockEnd espelha o gap do header do shell (lg).
 export const pageHead = style({
-  paddingInline: vars.space.md,
   marginBlockEnd: vars.space.lg,
 })
 
@@ -49,7 +52,7 @@ export const header = style({
   alignItems: 'center',
   gap: vars.space.md,
   minHeight: '3.5rem',
-  paddingInline: vars.space.md,
+  // paddingInline herdado do `screen` (28px).
   paddingBlock: '0.625rem',
 })
 
@@ -146,7 +149,7 @@ export const filtersArea = style({
 
 export const tableWrap = style({
   flex: '0 0 auto',
-  paddingInline: vars.space.md,
+  // paddingInline herdado do `screen` (28px).
   paddingTop: vars.space.md,
   paddingBottom: '5rem',
   overflow: 'visible',

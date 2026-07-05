@@ -20,9 +20,9 @@ export const filterBar = style({
   display: 'flex',
   alignItems: 'center',
   gap: '0.875rem', // Figma: 14px
-  // paddingInline = md: MESMO recuo do título (o shell desenha o header com paddingInline md) → barra e
-  // tabela ALINHADAS ao título, e a folga dá espaço para a sombra de profundidade à esquerda.
-  paddingInline: vars.space.md,
+  // paddingInline = 28px (brand.space.xxl): recuo da MARCA, igual ao título (header do shell) e aos demais
+  // grids full-bleed (Usuários etc.) → título e tabela a 28px da barra de menu, alinhados.
+  paddingInline: brand.space.xxl,
   paddingBlock: vars.space.sm,
   background: vars.color.surface.default,
   // Sem régua entre a busca e a tabela (pedido P.O.) — a separação fica no header sticky do grid.
@@ -257,8 +257,8 @@ export const activeFilters = style({
   flexWrap: 'wrap',
   alignItems: 'center',
   gap: vars.space.sm,
-  // Alinhado ao título/tabela (mesmo recuo md).
-  paddingInline: vars.space.md,
+  // Alinhado ao título/tabela (recuo da marca, 28px).
+  paddingInline: brand.space.xxl,
   paddingBlockEnd: vars.space.sm,
   background: vars.color.surface.default,
 })
@@ -485,8 +485,8 @@ const GRID_COLS =
 
 // Wrapper rola na horizontal (como o grid largo do Figma) quando a viewport é estreita.
 export const gridWrap = style({
-  // paddingInline = md: alinha a tabela ao título (mesmo recuo) e dá folga para a sombra à esquerda.
-  paddingInline: vars.space.md,
+  // paddingInline = 28px (brand.space.xxl): recuo da marca — alinha a tabela ao título e dá folga p/ a sombra.
+  paddingInline: brand.space.xxl,
   paddingBlock: vars.space.md,
   minBlockSize: 0, // permite o scroller interno encolher dentro do flex da tela
 })

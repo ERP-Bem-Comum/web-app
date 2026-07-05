@@ -100,9 +100,16 @@ describe('rootViewModel.sidebarWidth / showPageHeader', () => {
     assert.strictEqual(rootViewModel.resolvePageSubtitle('/parceiros/colaboradores'), undefined)
   })
 
-  it('fullBleedContent: workspace de conciliação e Dashboard são full-bleed (o grid de conciliação mantém o padding)', () => {
+  it('fullBleedContent: workspace de conciliação e Dashboard são full-bleed', () => {
     assert.strictEqual(rootViewModel.fullBleedContent('/financeiro/conciliacao/acc-123'), true)
-    assert.strictEqual(rootViewModel.fullBleedContent('/financeiro/conciliacao'), false)
+    // Grids financeiros + Contratos (LISTA) agora são full-bleed (recuo da marca, 28px, igual aos demais);
+    // as sub-rotas (criar/detalhe/lançar) mantêm o layout próprio (não full-bleed).
+    assert.strictEqual(rootViewModel.fullBleedContent('/financeiro/conciliacao'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/financeiro/contas-a-pagar'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/financeiro/contas-a-pagar/lancar'), false)
+    assert.strictEqual(rootViewModel.fullBleedContent('/contratos'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/contratos/criar'), false)
+    assert.strictEqual(rootViewModel.fullBleedContent('/contratos/abc-1'), false)
     // Dashboard (043): canvas bege preenche toda a área de conteúdo (sem a margem branca do shell).
     assert.strictEqual(rootViewModel.fullBleedContent('/dashboard'), true)
     // Colaboradores: a identidade "brand" cobre TODA a subárvore (lista + criar + detalhe) → full-bleed.

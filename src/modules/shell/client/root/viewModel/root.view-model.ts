@@ -143,7 +143,13 @@ export const rootViewModel = {
     // Consolidado ABC: tela "brand" full-bleed (canvas cinza ocupando a largura).
     isPrefixPath(path, '/consolidado') ||
     // Minha Conta: cartão de perfil no shell "brand" (página cinza + barra de ações fixa).
-    isPrefixPath(path, '/minha-conta'),
+    isPrefixPath(path, '/minha-conta') ||
+    // Grids de Contratos, Contas a Pagar e Contas Bancárias (LISTA): full-bleed no padrão da marca (recuo
+    // de 28px, igual aos demais grids). Só a rota EXATA da lista — as sub-rotas (criar/detalhe/lançar e o
+    // workspace de conciliação, já coberto acima) mantêm o próprio layout.
+    path === '/contratos' ||
+    path === '/financeiro/contas-a-pagar' ||
+    path === '/financeiro/conciliacao',
 
   /**
    * RBAC: remove seções/subitens cujo `requiredPermission` não está em `permissions`. Uma seção de
