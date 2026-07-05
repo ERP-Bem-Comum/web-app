@@ -2160,6 +2160,33 @@ export const ptBR: Catalog = {
   'dashboard.recent-payments.forbidden': 'Você não tem permissão para ver os pagamentos.',
   'dashboard.recent-payments.loading': 'Carregando…',
 
+  // ── Relatórios → Fornecedores sem Contrato (044) ──
+  'reports.suppliersWithoutContract.title': 'Fornecedores sem Contrato',
+  'reports.suppliersWithoutContract.subtitle':
+    'Pagáveis sem contrato vinculado por fornecedor e plano orçamentário',
+  'reports.suppliersWithoutContract.columns.supplier': 'Fornecedor',
+  'reports.suppliersWithoutContract.columns.valorTotal': 'Valor Total',
+  'reports.suppliersWithoutContract.columns.utilizado': 'Total Utilizado (%)',
+  'reports.suppliersWithoutContract.columns.restante': 'Total Restante',
+  'reports.suppliersWithoutContract.tree.expand': 'Expandir',
+  'reports.suppliersWithoutContract.tree.collapse': 'Recolher',
+  'reports.suppliersWithoutContract.empty': 'Nenhum fornecedor sem contrato.',
+  'reports.suppliersWithoutContract.filters.title': 'Filtros',
+  'reports.suppliersWithoutContract.filters.subtitle':
+    'Refine o relatório por programa, plano orçamentário, período e limite.',
+  'reports.suppliersWithoutContract.filters.programa': 'Programa',
+  'reports.suppliersWithoutContract.filters.plano': 'Plano Orçamentário',
+  'reports.suppliersWithoutContract.filters.periodo': 'Período',
+  'reports.suppliersWithoutContract.filters.limite': 'Limite',
+  'reports.suppliersWithoutContract.filters.centro': 'Centro de custo',
+  'reports.suppliersWithoutContract.filters.categoria': 'Categoria de custo',
+  'reports.suppliersWithoutContract.filters.subcategoria': 'Subcategoria de custo',
+  'reports.suppliersWithoutContract.filters.allOption': 'Todos',
+  'reports.suppliersWithoutContract.filters.filtrar': 'Filtrar',
+  'reports.suppliersWithoutContract.export.label': 'Exportar',
+  'reports.suppliersWithoutContract.export.csv': 'CSV',
+  'reports.suppliersWithoutContract.export.pdf': 'PDF',
+
   // ── Shell (top bar) ──
   'shell.topbar.brand': 'Bem Comum',
   'shell.topbar.greeting': 'Olá, {{name}}',

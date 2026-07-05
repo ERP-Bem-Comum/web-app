@@ -70,7 +70,14 @@ export const MENU: readonly MenuSection[] = [
       { label: 'Consolidado ABC', to: '/consolidado' },
     ],
   },
-  { label: 'Relatórios', iconId: 'trending-up' },
+  {
+    label: 'Relatórios',
+    iconId: 'trending-up',
+    // Accordion de Relatórios (mesmo padrão de Plano Orçamentário). Front-first: "Fornecedores sem Contrato"
+    // usa dados placeholder até o endpoint do core-api (#114) nascer. Sem `requiredPermission` (o relatório
+    // não tem RBAC) — o acesso será cobrado pelo backend quando os endpoints existirem.
+    subItems: [{ label: 'Fornecedores sem Contrato', to: '/relatorios/fornecedores-sem-contrato' }],
+  },
   {
     label: 'Financeiro',
     iconId: 'wallet',
