@@ -1,6 +1,7 @@
 import { style } from '@vanilla-extract/css'
 
 import { vars } from '#shared/ui/tokens/index.ts'
+import { brand } from '#shared/ui/brand/grid-brand.values.ts'
 
 // Container do conteúdo dinâmico (onde o <Outlet/> de cada rota renderiza).
 export const main = style({
@@ -42,12 +43,14 @@ export const pageSubtitleBeige = style({
 })
 
 // Faixa do header do shell (título + legenda "brand" dentro). flex-shrink 0 p/ não encolher no flex-column.
-// paddingInline = md: casa com o recuo interno das barras/tabela dos grids financeiros (único caso em que
-// o shell desenha header) → título e tabela ALINHADOS e com folga para a sombra de profundidade à esquerda.
+// Só é renderizado para os grids de Contas a Pagar e Contas Bancárias — agora full-bleed (main padding 0),
+// então o próprio header provê o recuo da MARCA (28px) no topo e nas laterais, igual ao `screen` dos demais
+// grids. Assim título e tabela ficam a 28px da barra de menu, alinhados e com folga para a sombra.
 export const pageHeader = style({
   display: 'flex',
   alignItems: 'flex-start',
+  paddingBlockStart: brand.space.xxl,
+  paddingInline: brand.space.xxl,
   marginBlockEnd: vars.space.lg,
-  paddingInline: vars.space.md,
   flexShrink: 0,
 })

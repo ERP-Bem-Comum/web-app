@@ -64,9 +64,9 @@ export const filterBar = style({
   display: 'flex',
   alignItems: 'center',
   gap: sp.lg,
-  // paddingInline 1rem (=16px): MESMO recuo do título (shell desenha o header com paddingInline md=1rem) →
-  // barra e tabela ALINHADAS ao título, com folga para a sombra de profundidade à esquerda.
-  paddingInline: '1rem',
+  // paddingInline 1.75rem (=28px = brand.space.xxl): recuo da MARCA, igual ao título (header do shell) e aos
+  // demais grids full-bleed → barra e tabela a 28px da barra de menu, alinhadas ao título.
+  paddingInline: '1.75rem',
   paddingBlock: sp.lg,
   background: c.paper.default,
 })
@@ -188,8 +188,8 @@ export const sortBtn = style({
 // ── grid ──────────────────────────────────────────────────────────────────────
 // Padrão do grid de Contas a Pagar: card com borda + raio, header sticky, linhas com hairline (última
 // sem borda), scroller interno discreto.
-// paddingInline 1rem: alinha a tabela ao título (mesmo recuo) e dá folga para a sombra à esquerda.
-export const gridWrap = style({ flex: 1, minBlockSize: 0, paddingInline: '1rem', paddingBlock: sp.lg })
+// paddingInline 1.75rem (28px = brand.space.xxl): recuo da marca — alinha a tabela ao título, com folga p/ a sombra.
+export const gridWrap = style({ flex: 1, minBlockSize: 0, paddingInline: '1.75rem', paddingBlock: sp.lg })
 export const grid = style({
   overflow: 'auto',
   // Cap de altura (paridade com Contratos/Contas a Pagar): o scroll fica DENTRO da tabela. Sem isto, se a

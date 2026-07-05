@@ -8,7 +8,7 @@ export const container = style({
   alignItems: 'flex-end',
   gap: vars.space.md,
   padding: `${vars.space.md} ${vars.space.lg}`,
-  borderBottom: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  // Sem borderBottom: régua abaixo do painel de filtros removida (pedido P.O.).
 })
 
 // força picker de data no tema claro (evita dark-mode no calendário nativo)
