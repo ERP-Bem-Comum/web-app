@@ -21,8 +21,9 @@ export const rowStyle = style({
 export const cell = style({
   paddingInline: vars.space.md,
   verticalAlign: 'middle',
-  // Brand: linhas da tabela em Nunito (body), não mais mono.
-  fontFamily: vars.font.family.body,
+  // Linhas da tabela em Inter (heading), no padrão de fonte dos demais grids da marca (só a família mudou;
+  // tamanhos/pesos por coluna preservados).
+  fontFamily: vars.font.family.heading,
 })
 
 // Variantes de alinhamento do conteúdo da célula (text-align afeta inline / inline-flex como as badges).
@@ -30,7 +31,7 @@ export const cellCenter = style({ textAlign: 'center' })
 export const cellRight = style({ textAlign: 'right' })
 
 export const numberText = style({
-  fontFamily: vars.font.family.body,
+  fontFamily: vars.font.family.heading,
   fontSize: '0.75rem', // +1px (era 0.6875rem) — dá mais destaque ao número do contrato
   fontWeight: vars.font.weight.bold,
   color: vars.color.institutional.ink2,
@@ -91,7 +92,7 @@ export const contractorName = style({
 })
 
 export const contractorDoc = style({
-  fontFamily: vars.font.family.body,
+  fontFamily: vars.font.family.heading,
   fontSize: '0.6875rem',
   color: vars.color.institutional.ink4,
 })
@@ -127,32 +128,44 @@ const gridBadgeBase = style({
 })
 
 export const tipoVariant = styleVariants({
-  Fornecedor: [gridBadgeBase, {
-    color: vars.color.partnerType.supplier.text,
-    background: vars.color.partnerType.supplier.background,
-  }],
-  Colaborador: [gridBadgeBase, {
-    color: vars.color.partnerType.collaborator.text,
-    background: vars.color.partnerType.collaborator.background,
-  }],
-  Financiador: [gridBadgeBase, {
-    color: vars.color.partnerType.financier.text,
-    background: vars.color.partnerType.financier.background,
-  }],
-  ACT: [gridBadgeBase, {
-    color: vars.color.partnerType.act.text,
-    background: vars.color.partnerType.act.background,
-  }],
+  Fornecedor: [
+    gridBadgeBase,
+    {
+      color: vars.color.partnerType.supplier.text,
+      background: vars.color.partnerType.supplier.background,
+    },
+  ],
+  Colaborador: [
+    gridBadgeBase,
+    {
+      color: vars.color.partnerType.collaborator.text,
+      background: vars.color.partnerType.collaborator.background,
+    },
+  ],
+  Financiador: [
+    gridBadgeBase,
+    {
+      color: vars.color.partnerType.financier.text,
+      background: vars.color.partnerType.financier.background,
+    },
+  ],
+  ACT: [
+    gridBadgeBase,
+    {
+      color: vars.color.partnerType.act.text,
+      background: vars.color.partnerType.act.background,
+    },
+  ],
 })
 
 export const programText = style({
-  fontFamily: vars.font.family.body,
+  fontFamily: vars.font.family.heading,
   fontSize: '0.6875rem',
   color: vars.color.institutional.ink4,
 })
 
 export const currencyText = style({
-  fontFamily: vars.font.family.body,
+  fontFamily: vars.font.family.heading,
   fontSize: '0.75rem',
   color: vars.color.institutional.ink2,
 })
@@ -188,27 +201,42 @@ export const additiveEmpty = style({
 // compartilhado com Parceiros). Reaproveita `gridBadgeBase` (mesmo look da badge de TIPO), SEM borda
 // (só fundo tonalizado + texto), p/ um visual mais suave.
 export const statusVariant = styleVariants({
-  pending: [gridBadgeBase, {
-    background: vars.color.status.pendingBg,
-    color: vars.color.status.pendingText,
-  }],
-  active: [gridBadgeBase, {
-    background: vars.color.status.activeBg,
-    color: vars.color.status.activeText,
-  }],
-  finished: [gridBadgeBase, {
-    background: vars.color.status.finishedBg,
-    color: vars.color.status.finishedText,
-  }],
-  terminated: [gridBadgeBase, {
-    background: vars.color.status.terminatedBg,
-    color: vars.color.status.terminatedText,
-  }],
+  pending: [
+    gridBadgeBase,
+    {
+      background: vars.color.status.pendingBg,
+      color: vars.color.status.pendingText,
+    },
+  ],
+  active: [
+    gridBadgeBase,
+    {
+      background: vars.color.status.activeBg,
+      color: vars.color.status.activeText,
+    },
+  ],
+  finished: [
+    gridBadgeBase,
+    {
+      background: vars.color.status.finishedBg,
+      color: vars.color.status.finishedText,
+    },
+  ],
+  terminated: [
+    gridBadgeBase,
+    {
+      background: vars.color.status.terminatedBg,
+      color: vars.color.status.terminatedText,
+    },
+  ],
   // Cancelado (§1.7) — NEUTRO/cinza (token cancelled*), distinto do vermelho do distrato.
-  cancelled: [gridBadgeBase, {
-    background: vars.color.status.cancelledBg,
-    color: vars.color.status.cancelledText,
-  }],
+  cancelled: [
+    gridBadgeBase,
+    {
+      background: vars.color.status.cancelledBg,
+      color: vars.color.status.cancelledText,
+    },
+  ],
 })
 
 export const detailsWrap = style({

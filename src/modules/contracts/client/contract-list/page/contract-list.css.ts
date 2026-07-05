@@ -143,9 +143,8 @@ export const chipsWrap = style({
   flexShrink: 0,
 })
 
-export const filtersArea = style({
-  borderBottom: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
-})
+// Sem borderBottom: a régua abaixo do painel de filtros expandido foi removida (pedido P.O.).
+export const filtersArea = style({})
 
 export const tableWrap = style({
   flex: '0 0 auto',

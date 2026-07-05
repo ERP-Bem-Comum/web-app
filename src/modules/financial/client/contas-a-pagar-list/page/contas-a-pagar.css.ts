@@ -551,7 +551,7 @@ export const row = style({
   minBlockSize: '3.5rem', // 56px
   paddingInline: vars.space.lg,
   borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
-  fontFamily: vars.font.family.body, // marca: Nunito no corpo da tabela (padroniza com o grid de Contratos)
+  fontFamily: vars.font.family.heading, // Inter no corpo da tabela (só a família; padroniza com o grid de Contratos)
   fontSize: `calc(${vars.font.size.xs} + 0.0625rem)`, // +1px sobre o xs (12px → 13px) nos campos
   color: vars.color.institutional.ink2,
   transition: 'background 120ms ease',
