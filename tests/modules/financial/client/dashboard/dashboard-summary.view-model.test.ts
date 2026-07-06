@@ -59,15 +59,15 @@ describe('dashboard-summary view-model', () => {
     assert.deepEqual(CHART_Y_TICKS, [4_500_000, 9_000_000, 13_500_000, 18_000_000])
   })
 
-  it('DONUT_SLICES tem os centros de custo placeholder (labelKey + value>0 + accent)', () => {
+  it('DONUT_SLICES tem os centros de custo placeholder (labelKey + value>0 + tone)', () => {
     assert.equal(DONUT_SLICES.length, 4)
     for (const s of DONUT_SLICES) {
       assert.ok(s.labelKey.startsWith('dashboard.cost-center.slice.'))
       assert.ok(s.value > 0)
-      assert.ok(['red', 'green', 'indigo', 'orange'].includes(s.accent))
+      assert.ok(['c1', 'c2', 'c3', 'c4'].includes(s.tone))
     }
-    // Cores distintas (uma por fatia) — legibilidade do donut.
-    assert.equal(new Set(DONUT_SLICES.map((s) => s.accent)).size, DONUT_SLICES.length)
+    // Tons distintos (um por fatia) — legibilidade do donut.
+    assert.equal(new Set(DONUT_SLICES.map((s) => s.tone)).size, DONUT_SLICES.length)
   })
 })
 
