@@ -5,10 +5,16 @@
  * linha suavizada (mesma suavização por bézier do mock). A matemática aqui é PRESENTACIONAL (geometria do
  * SVG) — não é regra de domínio (essa fica na ViewModel). Animação: a linha "desenha" via stroke-dashoffset
  * e a área faz fade-in quando `animate` vira true (SSR-safe).
+ *
+ * Hover (padrão do Dashboard): zonas invisíveis por mês capturam o cursor; a linha-guia vertical + o dot
+ * marcam o mês e um TOOLTIP HTML flutuante (card com sombra) mostra o nome do mês + o Planejado em R$. O SVG
+ * é esticado (preserveAspectRatio="none" implícito via width 100%), então a posição do tooltip é em % do
+ * viewBox (viewBox↔render é linear). UI-state LOCAL (índice do mês) — só apresentação; a ViewModel é pura.
  */
-import { useMemo, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 
 import {
+  chartRel,
   lineSvg,
   gridLine,
   axisText,
@@ -19,6 +25,14 @@ import {
   linePath,
   linePathAnimated,
   areaAnimated,
+  hoverGuide,
+  hoverDot,
+  hoverZone,
+  tooltip,
+  tooltipTitle,
+  tooltipRow,
+  tooltipName,
+  tooltipVal,
   emptyState,
 } from './realizado-charts.css.ts'
 
@@ -27,6 +41,12 @@ export type RealizadoLineChartProps = Readonly<{
   monthlyCents: readonly number[]
   /** Iniciais dos 12 meses (jan→dez), ex.: ["J","F","M",…]. */
   monthInitials: readonly string[]
+  /** Nomes/abreviações dos 12 meses (jan→dez) p/ o tooltip, ex.: ["Jan","Fev",…]. */
+  monthNames: readonly string[]
+  /** Rótulo (i18n) do valor no tooltip, ex.: "Planejado". */
+  valueLabel: string
+  /** Formatador BRL (cents → "R$ …") passado pela page (formatação não é regra de domínio). */
+  formatValue: (cents: number) => string
   /** Rótulo acessível do gráfico (ex.: "Distribuição mensal"). */
   ariaLabel: string
   emptyLabel: string
@@ -75,6 +95,9 @@ export function RealizadoLineChart(props: RealizadoLineChartProps): ReactNode {
   // Chave estável da série (o memo depende do conteúdo, não da identidade do array).
   const seriesKey = props.monthlyCents.join(',')
 
+  // UI-state LOCAL do hover: índice do mês sob o cursor. Só apresentação (a ViewModel segue pura).
+  const [hover, setHover] = useState<number | null>(null)
+
   const geom = useMemo(() => {
     const reais = props.monthlyCents.map((c) => c / 100)
     const maxV = Math.max(...reais, 1)
@@ -90,7 +113,7 @@ export function RealizadoLineChart(props: RealizadoLineChartProps): ReactNode {
     const points: readonly (readonly [number, number])[] = reais.map((v, i) => [xAt(i), yAt(v)])
     const line = smoothPath(points)
     const area = `${line} L ${String(X1)} ${String(Y1)} L ${String(X0)} ${String(Y1)} Z`
-    return { gridlines, line, area, maxV }
+    return { gridlines, line, area, maxV, points }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seriesKey])
 
@@ -101,50 +124,109 @@ export function RealizadoLineChart(props: RealizadoLineChartProps): ReactNode {
   // Comprimento aproximado do traçado para a animação de "desenho" (dashoffset).
   const drawLen = 2000
 
+  // Ponto do mês sob o cursor (geometria do SVG) → posição do tooltip em % do viewBox (o SVG é esticado).
+  const hoverPt = hover !== null ? geom.points[hover] : undefined
+  const tip =
+    hover !== null && hoverPt !== undefined
+      ? {
+          left: Math.min(90, Math.max(10, (hoverPt[0] / VB_W) * 100)),
+          top: (hoverPt[1] / VB_H) * 100,
+        }
+      : null
+
+  // Largura da zona de hover invisível (metade do passo p/ cada lado do ponto).
+  const step = (X1 - X0) / (N - 1)
+
   return (
-    <svg
-      className={lineSvg}
-      viewBox={`0 0 ${String(VB_W)} ${String(VB_H)}`}
-      role="img"
-      aria-label={props.ariaLabel}
+    <div
+      className={chartRel}
+      onMouseLeave={() => {
+        setHover(null)
+      }}
     >
-      <defs>
-        <linearGradient id="rxpLineFill" x1="0" y1="0" x2="0" y2="1">
-          <stop className={areaStopTop} offset="0%" />
-          <stop className={areaStopBottom} offset="100%" />
-        </linearGradient>
-      </defs>
+      <svg
+        className={lineSvg}
+        viewBox={`0 0 ${String(VB_W)} ${String(VB_H)}`}
+        role="img"
+        aria-label={props.ariaLabel}
+        preserveAspectRatio="none"
+      >
+        <defs>
+          <linearGradient id="rxpLineFill" x1="0" y1="0" x2="0" y2="1">
+            <stop className={areaStopTop} offset="0%" />
+            <stop className={areaStopBottom} offset="100%" />
+          </linearGradient>
+        </defs>
 
-      <g>
-        {geom.gridlines.map((g) => (
-          <g key={g.label + String(g.y)}>
-            <line className={gridLine} x1={X0} y1={g.y} x2={X1} y2={g.y} />
-            <text className={axisText} x={X0 - 6} y={g.y + 3} textAnchor="end">
-              {g.label}
+        <g>
+          {geom.gridlines.map((g) => (
+            <g key={g.label + String(g.y)}>
+              <line className={gridLine} x1={X0} y1={g.y} x2={X1} y2={g.y} />
+              <text className={axisText} x={X0 - 6} y={g.y + 3} textAnchor="end">
+                {g.label}
+              </text>
+            </g>
+          ))}
+        </g>
+
+        <g>
+          {props.monthInitials.map((label, i) => (
+            <text key={String(i)} className={monthText} x={xAt(i)} y={Y1 + 18} textAnchor="middle">
+              {label}
             </text>
+          ))}
+        </g>
+
+        <path
+          className={`${lineArea} ${props.animate ? areaAnimated : ''}`}
+          d={geom.area}
+          style={{ opacity: props.animate ? 1 : 0 }}
+        />
+        <path
+          className={`${linePath} ${props.animate ? linePathAnimated : ''}`}
+          d={geom.line}
+          strokeDasharray={drawLen}
+          strokeDashoffset={props.animate ? 0 : drawLen}
+        />
+
+        {/* Linha-guia vertical + dot no mês sob o cursor. */}
+        {hover !== null && hoverPt !== undefined && (
+          <g aria-hidden>
+            <line className={hoverGuide} x1={hoverPt[0]} y1={Y0} x2={hoverPt[0]} y2={Y1} />
+            <circle className={hoverDot} cx={hoverPt[0]} cy={hoverPt[1]} r={4} />
           </g>
-        ))}
-      </g>
+        )}
 
-      <g>
-        {props.monthInitials.map((label, i) => (
-          <text key={String(i)} className={monthText} x={xAt(i)} y={Y1 + 18} textAnchor="middle">
-            {label}
-          </text>
+        {/* Zonas de hover invisíveis (uma por mês) — capturam o cursor p/ o tooltip. */}
+        {props.monthInitials.map((_, i) => (
+          <rect
+            key={`hz-${String(i)}`}
+            x={xAt(i) - step / 2}
+            y={Y0}
+            width={step}
+            height={Y1 - Y0}
+            className={hoverZone}
+            onMouseEnter={() => {
+              setHover(i)
+            }}
+          />
         ))}
-      </g>
+      </svg>
 
-      <path
-        className={`${lineArea} ${props.animate ? areaAnimated : ''}`}
-        d={geom.area}
-        style={{ opacity: props.animate ? 1 : 0 }}
-      />
-      <path
-        className={`${linePath} ${props.animate ? linePathAnimated : ''}`}
-        d={geom.line}
-        strokeDasharray={drawLen}
-        strokeDashoffset={props.animate ? 0 : drawLen}
-      />
-    </svg>
+      {/* Tooltip flutuante (HTML sobreposto): mês + valor Planejado em R$. */}
+      {hover !== null && tip !== null && (
+        <div
+          className={tooltip}
+          style={{ left: `${String(tip.left)}%`, top: `${String(tip.top)}%` }}
+          role="status"
+        >
+          <div className={tooltipTitle}>{props.monthNames[hover] ?? props.monthInitials[hover]}</div>
+          <div className={tooltipRow}>
+            <span className={tooltipName}>{props.valueLabel}</span>
+            <span className={tooltipVal}>{props.formatValue(props.monthlyCents[hover] ?? 0)}</span>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }

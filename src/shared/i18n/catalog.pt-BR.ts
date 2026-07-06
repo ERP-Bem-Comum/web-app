@@ -2186,6 +2186,11 @@ export const ptBR: Catalog = {
   'reports.suppliersWithoutContract.export.label': 'Exportar',
   'reports.suppliersWithoutContract.export.csv': 'CSV',
   'reports.suppliersWithoutContract.export.pdf': 'PDF',
+  'reports.suppliersWithoutContract.chart.title': 'Utilização do limite por fornecedor',
+  'reports.suppliersWithoutContract.chart.summary': '{{total}} fornecedores · {{over}} acima do limite',
+  'reports.suppliersWithoutContract.chart.legend.within': 'Dentro do limite',
+  'reports.suppliersWithoutContract.chart.legend.atLimit': 'No limite',
+  'reports.suppliersWithoutContract.chart.legend.over': 'Acima do limite',
 
   // ── Relatório "Realizado × Planejado" ──
   'reports.realizadoXPlanejado.title': 'Realizado × Planejado',

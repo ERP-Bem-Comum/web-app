@@ -15,11 +15,15 @@ src/modules/reports/
   client/
     data/suppliers-without-contract.placeholder.ts   # constantes (cents), fiel ao CSV legado
     suppliers-without-contract.view-model.ts          # PURO (zero React): agregação + math + format + CSV
-    page/suppliers-without-contract.page.tsx          # view (compõe header brand + filtros + tree-table)
+                                                      #   + topSuppliersByValor / complianceCounts (gráfico)
+    page/suppliers-without-contract.page.tsx          # view (header brand + filtros recolhíveis + gráfico + tabela)
+    page/suppliers-without-contract.page.css.ts       # toggle "Filtros" + colapsável + card/legenda do gráfico
     components/
       report-filters.component.tsx / .css.ts          # toolbar/painel brand (reusa brand-filters kit)
       supplier-tree-table.component.tsx / .css.ts      # tree-table brand (chevron, indent, danger)
+      supplier-compliance-bars.component.tsx / .css.ts # gráfico de barras horizontais (cor por status)
       report-export-dropdown.component.tsx / .css.ts   # Exportar → CSV/PDF (padrão Contratos)
+      realizado-charts-mount.component.tsx             # (reuso) wrapper de animação de entrada, SSR-safe
 tests/modules/reports/client/suppliers-without-contract.view-model.test.ts   # node:test puro
 ```
 
@@ -33,10 +37,15 @@ tests/modules/reports/client/suppliers-without-contract.view-model.test.ts   # n
 
 ### View (burra) + binding React mínimo
 
-- A page usa `useState` local só para o input **Limite** (UI-state) e para o conjunto de fornecedores
-  expandidos (UI-state) — tudo o mais é derivação pura via ViewModel. Sem TanStack Query (sem server-state).
-- Filtros Programa/Plano/Período/Centro/Categoria/Subcategoria = selects nativos placeholder (sem data).
+- A page usa `useState` local para o input **Limite**, o conjunto de fornecedores expandidos e o toggle
+  **filtersOpen** (UI-state) — tudo o mais é derivação pura via ViewModel. Sem TanStack Query (sem server-state).
+- Filtros Programa/Plano/Período/Centro/Categoria/Subcategoria = selects nativos placeholder (sem data),
+  agora dentro do painel **recolhível** (fechado por padrão; toggle "Filtros" no cabeçalho).
 - Tree-table espelha o pattern da matriz consolidada (chevron, indent por `depth`, danger via styleVariants).
+- Gráfico de compliance: barra burra recebe `{ id, name, utilizadoPct, status, valueLabel }` já derivados
+  pela page (via `topSuppliersByValor` + mapa `overLimit/atLimit → over/at/within`). Largura visual trava em
+  100% (marcador do Limite); cor por classe (styleVariants `over/at/within`, reusa danger/atLimit/primary).
+  Animação de entrada pelo `RealizadoChartsMount` (requestAnimationFrame → CSS transition, SSR-safe).
 
 ### Export (client-side)
 

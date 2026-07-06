@@ -84,6 +84,41 @@ export function loadSupplierRows(limiteCents: number): readonly SupplierRow[] {
   return aggregateSuppliers(SUPPLIERS_WITHOUT_CONTRACT_RAW, limiteCents)
 }
 
+/**
+ * Top-N fornecedores por `valorTotalCents` em ordem DECRESCENTE (gráfico de barras horizontais
+ * "Utilização do limite por fornecedor"). NÃO muta `rows` (copia antes de ordenar §VII). Empates
+ * preservam a ordem de inserção (sort estável do V8). `n` default 8.
+ */
+export function topSuppliersByValor(rows: readonly SupplierRow[], n = 8): readonly SupplierRow[] {
+  return [...rows].sort((a, b) => b.valorTotalCents - a.valorTotalCents).slice(0, Math.max(0, n))
+}
+
+/** Contagem de compliance para o resumo do card do gráfico. */
+export type ComplianceCounts = Readonly<{
+  /** Fornecedores que ESTOURARAM o limite (> limite estrito). */
+  overLimit: number
+  /** Fornecedores EXATAMENTE no limite (restante = 0). */
+  atLimit: number
+  /** Fornecedores DENTRO do limite (nem estouro nem exato). */
+  within: number
+  /** Total de fornecedores. */
+  total: number
+}>
+
+/**
+ * Conta os fornecedores por status de compliance (estouro / no-limite / dentro), reusando os flags
+ * `overLimit`/`atLimit` já derivados como ÚNICA fonte de verdade. `within` = total - over - at.
+ */
+export function complianceCounts(rows: readonly SupplierRow[]): ComplianceCounts {
+  let overLimit = 0
+  let atLimit = 0
+  for (const r of rows) {
+    if (r.overLimit) overLimit += 1
+    else if (r.atLimit) atLimit += 1
+  }
+  return { overLimit, atLimit, within: rows.length - overLimit - atLimit, total: rows.length }
+}
+
 // ── Formatação ──
 
 const brlFmt = new Intl.NumberFormat('pt-BR', {

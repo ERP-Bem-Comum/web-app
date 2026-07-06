@@ -13,6 +13,63 @@ import { style, styleVariants } from '@vanilla-extract/css'
 import { vars } from '#shared/ui/tokens/index.ts'
 import { brand } from '#shared/ui/brand/grid-brand.values.ts'
 
+// ── Tooltip flutuante (hover) — padrão do Dashboard: card pequeno com sombra, só-tokens. ──
+// Âncora relativa: o container do gráfico precisa de position:relative (chartRel) para o tooltip
+// absoluto se posicionar; a posição (left/top) vem inline (data-driven). z-index alto p/ ficar acima do SVG.
+export const chartRel = style({ position: 'relative', inlineSize: '100%' })
+
+export const tooltip = style({
+  position: 'absolute',
+  transform: 'translate(-50%, -115%)',
+  pointerEvents: 'none',
+  zIndex: 2,
+  background: brand.color.surface,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  borderRadius: brand.radius.md,
+  boxShadow: brand.shadow.cardDepth,
+  padding: brand.space.sm,
+  minInlineSize: '9rem',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: brand.space.xs,
+  fontFamily: 'inherit',
+})
+
+export const tooltipTitle = style({
+  fontSize: brand.text.thead,
+  fontWeight: brand.weight.semibold,
+  color: brand.color.ink900,
+})
+
+export const tooltipRow = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: brand.space.xs,
+  fontSize: brand.text.chip,
+})
+
+export const tooltipSwatch = style({
+  flexShrink: 0,
+  inlineSize: brand.space.sm,
+  blockSize: brand.space.sm,
+  borderRadius: brand.radius.xs,
+})
+
+export const tooltipSwatchColor = styleVariants({
+  realizado: { background: brand.color.rxp.realizado },
+  provisionado: { background: brand.color.rxp.provisionado },
+  previsto: { background: brand.color.rxp.previsto },
+})
+
+export const tooltipName = style({ color: brand.color.ink700 })
+
+export const tooltipVal = style({
+  marginInlineStart: 'auto',
+  fontWeight: brand.weight.semibold,
+  color: brand.color.ink900,
+  fontVariantNumeric: 'tabular-nums',
+})
+
 // ── Barras horizontais "Por centro de custo" ──
 export const hbar = style({
   display: 'grid',
@@ -20,6 +77,7 @@ export const hbar = style({
   alignItems: 'center',
   gap: brand.space.sm,
   marginBlockEnd: brand.space.md,
+  cursor: 'default',
   selectors: { '&:last-child': { marginBlockEnd: 0 } },
 })
 export const hbarName = style({
@@ -38,11 +96,24 @@ export const hbarTrack = style({
   overflow: 'hidden',
 })
 export const hbarFill = style({
+  // display:block — sem isto o <span> fica inline e IGNORA inline-size/block-size (fill invisível).
+  display: 'block',
   blockSize: '100%',
   background: brand.color.rxp.previsto,
   borderRadius: brand.radius.xs,
 })
 export const hbarFillAnimated = style({ transition: 'inline-size .55s ease-out' })
+
+// Cor do fill "Por centro de custo" por CONCENTRAÇÃO no orçamento (destaque conforme alerta): peso alto
+// (participação ≥ limiar) = âmbar de atenção; normal = azul (previsto). Aplicada por CLASSE.
+export const hbarFillConcentration = styleVariants({
+  high: { background: brand.color.rxp.provisionado },
+  normal: { background: brand.color.rxp.previsto },
+})
+export const hbarValueConcentration = styleVariants({
+  high: { color: brand.color.warnFg },
+  normal: { color: brand.color.ink900 },
+})
 export const hbarValue = style({
   fontSize: brand.text.chip,
   fontWeight: brand.weight.semibold,
@@ -82,6 +153,15 @@ export const linePath = style({
 // Ao animar, a linha "desenha" (dashoffset → 0).
 export const linePathAnimated = style({ transition: 'stroke-dashoffset .7s ease-out' })
 export const areaAnimated = style({ transition: 'opacity .6s ease-out' })
+
+// Hover do gráfico de linha: linha-guia vertical no mês sob o cursor, dot preenchido, e zonas invisíveis.
+export const hoverGuide = style({
+  stroke: brand.color.line2,
+  strokeWidth: vars.borderWidth.thin,
+  strokeDasharray: '3 6',
+})
+export const hoverDot = style({ fill: brand.color.rxp.previsto })
+export const hoverZone = style({ fill: 'transparent', cursor: 'pointer' })
 
 // ── Donut "Realizado vs previsto" ──
 export const donutWrap = style({

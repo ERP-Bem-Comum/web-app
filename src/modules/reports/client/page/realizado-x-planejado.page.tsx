@@ -86,6 +86,9 @@ const DEMO_PROVISIONADO_CENTS = 620_000_000
 // Iniciais dos 12 meses (jan→dez) para o eixo X do gráfico de linha.
 const MONTH_INITIALS: readonly string[] = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D']
 
+// Participação (% do total planejado) a partir da qual um centro de custo recebe DESTAQUE de concentração.
+const CONCENTRATION_THRESHOLD = 25
+
 export function RealizadoXPlanejadoPage(): ReactNode {
   // ÚNICO UI-state da page: filtros abertos/fechados.
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -96,11 +99,22 @@ export function RealizadoXPlanejadoPage(): ReactNode {
   // KPIs.
   const execPct = computeAvPct(total)
 
-  // Barras "Por centro de custo" (top 6 por planejado).
+  // Barras "Por centro de custo" (top 6 por planejado) — a LARGURA é a % de participação no total; centros
+  // com participação ≥ CONCENTRATION_THRESHOLD ganham destaque (âmbar). Rótulo = "R$ x · %".
   const costCenterBars: readonly CostCenterBar[] = useMemo(
     () =>
-      topCentroCustoByPlanejado(rows, 6).map((s) => ({ id: s.id, label: s.label, valueCents: s.valueCents })),
-    [rows],
+      topCentroCustoByPlanejado(rows, 6).map((s): CostCenterBar => {
+        const share = sharePercent(s.valueCents, total.planejadoCents)
+        return {
+          id: s.id,
+          label: s.label,
+          sharePct: share,
+          high: share >= CONCENTRATION_THRESHOLD,
+          percentLabel: formatPercent(share),
+          valueTitle: formatBRL(s.valueCents),
+        }
+      }),
+    [rows, total.planejadoCents],
   )
 
   // Série mensal (jan→dez) para o gráfico de linha.
@@ -234,7 +248,6 @@ export function RealizadoXPlanejadoPage(): ReactNode {
                   bars={costCenterBars}
                   emptyLabel={t('reports.realizadoXPlanejado.empty')}
                   animate={animate}
-                  formatValue={formatBRLShort}
                 />
               </div>
             </div>
@@ -247,6 +260,9 @@ export function RealizadoXPlanejadoPage(): ReactNode {
                 <RealizadoLineChart
                   monthlyCents={monthlyCents}
                   monthInitials={MONTH_INITIALS}
+                  monthNames={MONTH_TITLE()}
+                  valueLabel={t('reports.realizadoXPlanejado.columns.planejado')}
+                  formatValue={formatBRL}
                   ariaLabel={t('reports.realizadoXPlanejado.charts.monthly')}
                   emptyLabel={t('reports.realizadoXPlanejado.empty')}
                   animate={animate}
@@ -267,6 +283,7 @@ export function RealizadoXPlanejadoPage(): ReactNode {
                   emptyLabel={t('reports.realizadoXPlanejado.empty')}
                   animate={animate}
                   formatValue={formatBRLShort}
+                  formatPercent={formatPercent}
                 />
               </div>
             </div>
