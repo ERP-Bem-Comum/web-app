@@ -92,6 +92,29 @@ export const brand = {
       // Anel do nó-folha da árvore (tree-node dot) — contorno na cor primary.
       treeNodeBorder: '#396496',
     },
+    // Paleta dos GRÁFICOS do relatório "Equipe ABC" (donut Gênero, barras verticais Raça/Cor, barras
+    // horizontais Idade/Função, linha por Ano). Hex cru permitido aqui (é um `*.values.ts`, isento do lint
+    // só-tokens). A UI aplica via classe (styleVariants no `.css.ts`) — as views não importam tokens
+    // (§boundaries client-ui ↛ ds-tokens). Tons distintos e legíveis, dentro da família "brand".
+    equipe: {
+      // 3 fatias do donut "Distribuição por Gênero".
+      gen1: '#396496', // Mulher Cis — azul da marca
+      gen2: '#32a2c6', // Homem Cis — ciano
+      gen3: '#98a2b3', // Prefiro não responder — cinza neutro
+      // 6 categorias das barras verticais "Distribuição por Raça/Cor" — uma cor por raça.
+      raca1: '#98a2b3', // N/A — cinza neutro
+      raca2: '#396496', // Branco — azul
+      raca3: '#5c3d2e', // Preto — marrom terroso
+      raca4: '#c67c1e', // Pardo — âmbar
+      raca5: '#d4a017', // Amarelo — dourado
+      raca6: '#8a5cd1', // Prefiro não revelar — roxo suave
+      // Barras horizontais e linha (por Ano) — trilho neutro. Duas cores p/ distinguir os dois gráficos de
+      // barras horizontais: `bar` (Idade) = azul da marca; `bar2` (Função) = verde-azulado.
+      bar: '#396496',
+      bar2: '#2f8f6a',
+      barTrack: '#eef1f5',
+      line: '#396496',
+    },
   },
   // Medidas específicas do relatório redesenhado (px cru permitido no `*.values.ts`).
   rxp: {

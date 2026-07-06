@@ -47,6 +47,8 @@ describe('rootViewModel.resolvePageTitle', () => {
       rootViewModel.resolvePageTitle('/relatorios/realizado-x-planejado'),
       'Realizado × Planejado',
     )
+    // Relatórios → Equipe ABC (feature 046)
+    assert.strictEqual(rootViewModel.resolvePageTitle('/relatorios/equipe'), 'Equipe ABC')
   })
   it('cai no fallback para rota desconhecida e não casa substring solta', () => {
     assert.strictEqual(rootViewModel.resolvePageTitle('/desconhecida'), 'ERP Bem Comum')
@@ -390,21 +392,24 @@ describe('rootViewModel.visibleMenu (MENU real — Relatórios)', () => {
   const findRelatorios = (menu: readonly MenuSection[]): MenuSection | undefined =>
     menu.find((s) => s.label === 'Relatórios')
 
-  it('é accordion (sem `to` direto) com os 2 relatórios (Fornecedores sem Contrato + Realizado × Planejado)', () => {
+  it('é accordion (sem `to` direto) com os 3 relatórios (Fornecedores sem Contrato + Realizado × Planejado + Equipe ABC)', () => {
     const rel = findRelatorios(MENU)
     assert.ok(rel, 'a seção "Relatórios" deve existir')
     assert.strictEqual(rel?.to, undefined, 'não é link direto')
     assert.deepStrictEqual(
       rel?.subItems?.map((s) => s.label),
-      ['Fornecedores sem Contrato', 'Realizado × Planejado'],
+      ['Fornecedores sem Contrato', 'Realizado × Planejado', 'Equipe ABC'],
     )
     assert.strictEqual(rel?.subItems?.[0]?.to, '/relatorios/fornecedores-sem-contrato')
     assert.strictEqual(rel?.subItems?.[1]?.to, '/relatorios/realizado-x-planejado')
+    assert.strictEqual(rel?.subItems?.[2]?.to, '/relatorios/equipe')
+    // Equipe ABC sem requiredPermission (RBAC modelado pós-entrega).
+    assert.strictEqual(rel?.subItems?.[2]?.requiredPermission, undefined)
   })
 
   it('sobrevive com permissions vazias (subitens públicos, sem RBAC)', () => {
     const rel = findRelatorios(rootViewModel.visibleMenu(MENU, []))
     assert.ok(rel, 'a seção deve aparecer sem RBAC')
-    assert.strictEqual(rel?.subItems?.length, 2)
+    assert.strictEqual(rel?.subItems?.length, 3)
   })
 })

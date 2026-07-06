@@ -47,3 +47,24 @@ export type {
   ChartSlice,
   MonthBar,
 } from '#modules/reports/client/realizado-x-planejado.view-model.ts'
+
+// ── Relatório "Equipe ABC" (front-first; core-api#114/#112). Dados SINTÉTICOS/anonimizados (LGPD). ──
+export { EquipePage } from '#modules/reports/client/page/equipe.page.tsx'
+
+export {
+  loadTeam,
+  total as equipeTotal,
+  byGenero,
+  byRacaCor,
+  byFaixaEtaria,
+  byAnoContrato,
+  byFuncao,
+  buildCsv as buildEquipeCsv,
+  formatSharePercent,
+  CSV_HEADER as EQUIPE_CSV_HEADER,
+  GENERO_ORDER,
+  RACA_ORDER,
+  FAIXA_ETARIA_LABELS,
+  ANOS,
+} from '#modules/reports/client/equipe.view-model.ts'
+export type { TeamMemberRow, CategoryCount, YearCount } from '#modules/reports/client/equipe.view-model.ts'

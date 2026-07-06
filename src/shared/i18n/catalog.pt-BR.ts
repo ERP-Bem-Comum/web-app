@@ -2274,6 +2274,62 @@ export const ptBR: Catalog = {
   'reports.realizadoXPlanejado.monthTitle.nov': 'Nov',
   'reports.realizadoXPlanejado.monthTitle.dec': 'Dez',
 
+  // ── Relatório "Equipe ABC" (front-first; dados sintéticos/anonimizados — LGPD) ──
+  'reports.equipe.title': 'Relatório Equipe ABC',
+  'reports.equipe.back': 'Voltar',
+  'reports.equipe.empty': 'Nenhum colaborador para exibir.',
+  'reports.equipe.naLabel': 'N/A',
+
+  'reports.equipe.filters.title': 'Filtros',
+  'reports.equipe.filters.searchPlaceholder': 'Pesquise',
+  'reports.equipe.filters.allOption': 'Todos',
+  'reports.equipe.filters.escolaridade': 'Escolaridade',
+  'reports.equipe.filters.raca': 'Raça',
+  'reports.equipe.filters.anoContrato': 'Ano de Contrato',
+  'reports.equipe.filters.desativadoPor': 'Desativado por',
+  'reports.equipe.filters.programa': 'Programa',
+  'reports.equipe.filters.funcao': 'Função',
+  'reports.equipe.filters.genero': 'Identidade de Gênero',
+  'reports.equipe.filters.status': 'Status',
+  'reports.equipe.filters.situacaoCadastral': 'Situação Cadastral',
+  'reports.equipe.filters.idade': 'Idade',
+  'reports.equipe.filters.vinculo': 'Vínculo Empregatício',
+  'reports.equipe.filters.filtrar': 'Filtrar',
+
+  'reports.equipe.export.label': 'Exportar',
+
+  'reports.equipe.charts.genero': 'Distribuição por Gênero',
+  'reports.equipe.charts.racaCor': 'Distribuição por Raça/Cor',
+  'reports.equipe.charts.idade': 'Distribuição por Idade',
+  'reports.equipe.charts.ano': 'Quantitativo de Funcionários por Ano',
+  'reports.equipe.charts.funcao': 'Distribuição por Função',
+  'reports.equipe.charts.centerCaption': 'colaboradores',
+
+  'reports.equipe.table.title': 'Colaboradores',
+  'reports.equipe.table.count': '{{count}} colaboradores',
+  'reports.equipe.columns.nome': 'Nome',
+  'reports.equipe.columns.idade': 'Idade',
+  'reports.equipe.columns.area': 'Área de atuação',
+  'reports.equipe.columns.funcao': 'Função',
+  'reports.equipe.columns.vinculo': 'Vínculo',
+  'reports.equipe.columns.genero': 'Identidade de gênero',
+  'reports.equipe.columns.racaCor': 'Raça/cor',
+  'reports.equipe.columns.escolaridade': 'Escolaridade',
+  'reports.equipe.table.rowAction': 'Ver detalhes de {{nome}}',
+
+  // Paginação da tabela.
+  'reports.equipe.paginator.previous': 'Anterior',
+  'reports.equipe.paginator.next': 'Próxima',
+  'reports.equipe.paginator.page': 'Página',
+  'reports.equipe.paginator.of': 'de',
+  'reports.equipe.paginator.perPage': 'Itens por página',
+
+  // Modal de detalhe do colaborador (só os 9 campos enxutos — LGPD).
+  'reports.equipe.detail.title': 'Detalhes do colaborador',
+  'reports.equipe.detail.anoContrato': 'Ano de contrato',
+  'reports.equipe.detail.close': 'Fechar',
+  'reports.equipe.detail.edit': 'Editar',
+
   // ── Shell (top bar) ──
   'shell.topbar.brand': 'Bem Comum',
   'shell.topbar.greeting': 'Olá, {{name}}',
