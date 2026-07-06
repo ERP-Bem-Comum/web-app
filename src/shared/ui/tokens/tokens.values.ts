@@ -128,13 +128,14 @@ export const tokenValues = {
       financier: { text: '#1c7943', background: 'rgba(51,178,102,0.10)', border: 'rgba(51,178,102,0.25)' }, // verde
       act: { text: '#c2410c', background: 'rgba(234,88,12,0.10)', border: 'rgba(234,88,12,0.22)' }, // laranja
     },
-    // Séries de gráfico (Dashboard "Resumo Mensal", feature 043). Papel dedicado: cor de
-    // SÉRIE/eixo/grid de gráfico SVG nativo, não reaproveita os papéis de badge/status. O ciano
-    // #32C6F4 é fiel ao legado (série "Previsto" = papel de AÇÃO da marca v1); `realized` reusa o
-    // verde institucional (#1f7d55); `grid`/`axis` reusam border.subtle / text.muted.
+    // Séries de gráfico (Dashboard "Visão Geral", feature 043). Papel dedicado: cor de SÉRIE/eixo/grid de
+    // gráfico SVG nativo, não reaproveita os papéis de badge/status. Retonado para tons sóbrios da família
+    // "brand" (harmonizado com o Equipe ABC): `forecast` (Previsto) = azul institucional #396496; `realized`
+    // (Realizado) = verde-azulado #2f8f6a — troca o ciano neon/verde saturado do v1 por um par mais elegante
+    // e legível. `grid`/`axis` reusam border.subtle / text.muted.
     chart: {
-      forecast: '#32C6F4',
-      realized: '#1f7d55',
+      forecast: '#396496',
+      realized: '#2f8f6a',
       grid: '#d6e4ea',
       axis: '#736b61',
     },

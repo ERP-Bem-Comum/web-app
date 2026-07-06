@@ -115,6 +115,16 @@ export const brand = {
       barTrack: '#eef1f5',
       line: '#396496',
     },
+    // Paleta dos GRÁFICOS do Dashboard financeiro (donut "Pagamentos por Centro de Custo"), harmonizada com
+    // o Equipe ABC: tons dessaturados da família "brand" (sem o vermelho de erro que destoava numa categoria
+    // neutra). Set categórico coeso: azul → ciano → verde-azulado → âmbar. A linha "Visão Geral" usa os
+    // tokens de tema `vars.color.chart.*` (retonados junto). Aplicado por classe (styleVariants) — §boundaries.
+    dash: {
+      donut1: '#396496', // azul institucional
+      donut2: '#32a2c6', // ciano suave
+      donut3: '#2f8f6a', // verde-azulado
+      donut4: '#c67c1e', // âmbar (substitui o vermelho)
+    },
   },
   // Medidas específicas do relatório redesenhado (px cru permitido no `*.values.ts`).
   rxp: {

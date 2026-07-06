@@ -5,21 +5,23 @@
 import { style, styleVariants } from '@vanilla-extract/css'
 
 import { vars } from '#shared/ui/tokens/index.ts'
+import { brand } from '#shared/ui/brand/grid-brand.values.ts'
 
-// Accent semântico → cor de token, como CLASSE (a view não importa tokens — §boundaries).
-// `stroke` p/ o arco do donut; `background` p/ o swatch da legenda.
+// Tom categórico da fatia → cor da paleta dedicada do Dashboard, como CLASSE (a view não importa tokens —
+// §boundaries). Set coeso azul→ciano→verde-azulado→âmbar (sem vermelho de erro). `stroke` = arco; `background`
+// = swatch da legenda.
 export const arcStroke = styleVariants({
-  red: { stroke: vars.color.feedback.errorText },
-  green: { stroke: vars.color.status.activeText },
-  indigo: { stroke: vars.color.nav.background },
-  orange: { stroke: vars.color.institutional.orange },
+  c1: { stroke: brand.color.dash.donut1 },
+  c2: { stroke: brand.color.dash.donut2 },
+  c3: { stroke: brand.color.dash.donut3 },
+  c4: { stroke: brand.color.dash.donut4 },
 })
 
 export const swatchColor = styleVariants({
-  red: { background: vars.color.feedback.errorText },
-  green: { background: vars.color.status.activeText },
-  indigo: { background: vars.color.nav.background },
-  orange: { background: vars.color.institutional.orange },
+  c1: { background: brand.color.dash.donut1 },
+  c2: { background: brand.color.dash.donut2 },
+  c3: { background: brand.color.dash.donut3 },
+  c4: { background: brand.color.dash.donut4 },
 })
 
 export const wrap = style({

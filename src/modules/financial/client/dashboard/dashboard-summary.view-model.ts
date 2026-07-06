@@ -43,12 +43,16 @@ export type ChartSeries = Readonly<{
   points: readonly ChartPoint[]
 }>
 
-/** Fatia do donut: rótulo (i18n) + valor + accent semântico da cor. */
+// Tom categórico do donut (paleta dedicada `brand.color.dash.donut*`) — NÃO reaproveita o accent semântico
+// dos cards (evita o vermelho de erro numa categoria neutra). c1=azul · c2=ciano · c3=verde-azulado · c4=âmbar.
+export type DonutTone = 'c1' | 'c2' | 'c3' | 'c4'
+
+/** Fatia do donut: rótulo (i18n) + valor + tom categórico da cor. */
 export type DonutSlice = Readonly<{
   id: string
   labelKey: string
   value: number
-  accent: MetricAccent
+  tone: DonutTone
 }>
 
 /**
@@ -167,12 +171,12 @@ export const CHART_SERIES: readonly ChartSeries[] = [
 
 // ── Donut (linha 2, direita-topo) ─────────────────────────────────────────────
 /** Fatias do donut "Pagamentos por Centro de Custo em %" (placeholder até core-api#112; `value` em centavos —
- * a View calcula a % pela fração do total). Cores distintas via `accent`. */
+ * a View calcula a % pela fração do total). Cores distintas via `tone` (paleta dedicada, sem vermelho). */
 export const DONUT_SLICES: readonly DonutSlice[] = [
-  { id: 'strategic', labelKey: 'dashboard.cost-center.slice.strategic', value: 4_500_000, accent: 'indigo' },
-  { id: 'logistics', labelKey: 'dashboard.cost-center.slice.logistics', value: 3_200_000, accent: 'orange' },
-  { id: 'admin', labelKey: 'dashboard.cost-center.slice.admin', value: 2_800_000, accent: 'green' },
-  { id: 'events', labelKey: 'dashboard.cost-center.slice.events', value: 1_500_000, accent: 'red' },
+  { id: 'strategic', labelKey: 'dashboard.cost-center.slice.strategic', value: 4_500_000, tone: 'c1' },
+  { id: 'logistics', labelKey: 'dashboard.cost-center.slice.logistics', value: 3_200_000, tone: 'c2' },
+  { id: 'admin', labelKey: 'dashboard.cost-center.slice.admin', value: 2_800_000, tone: 'c3' },
+  { id: 'events', labelKey: 'dashboard.cost-center.slice.events', value: 1_500_000, tone: 'c4' },
 ] as const
 
 // ── Fornecedores sem Contrato (linha 2, direita-baixo) ────────────────────────

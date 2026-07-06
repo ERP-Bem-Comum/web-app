@@ -24,8 +24,8 @@ describe('DonutChart', () => {
 
   it('fatias não-vazias → svg role="img" com um <circle> por fatia', () => {
     const slices: readonly DonutSlice[] = [
-      { id: 's1', labelKey: 'donut.slice.a', value: 60, accent: 'red' },
-      { id: 's2', labelKey: 'donut.slice.b', value: 40, accent: 'green' },
+      { id: 's1', labelKey: 'donut.slice.a', value: 60, tone: 'c1' },
+      { id: 's2', labelKey: 'donut.slice.b', value: 40, tone: 'c2' },
     ]
     const { container } = render(
       <DonutChart slices={slices} emptyLabel="Sem dados" sliceLabel={sliceLabel} />,

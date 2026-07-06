@@ -76,7 +76,7 @@ export function DonutChart(props: DonutChartProps): ReactNode {
   const arcs = slices.reduce<
     readonly Readonly<{
       id: string
-      accent: DonutSlice['accent']
+      tone: DonutSlice['tone']
       dash: number
       gap: number
       offset: number
@@ -84,7 +84,7 @@ export function DonutChart(props: DonutChartProps): ReactNode {
   >((acc, s) => {
     const consumed = acc.reduce((sum, a) => sum + a.dash, 0)
     const dash = (s.value / total) * CIRCUMFERENCE
-    return [...acc, { id: s.id, accent: s.accent, dash, gap: CIRCUMFERENCE - dash, offset: -consumed }]
+    return [...acc, { id: s.id, tone: s.tone, dash, gap: CIRCUMFERENCE - dash, offset: -consumed }]
   }, [])
 
   return (
@@ -105,7 +105,7 @@ export function DonutChart(props: DonutChartProps): ReactNode {
           {arcs.map((a, i) => (
             <circle
               key={a.id}
-              className={`${arcStroke[a.accent]} ${arcHover}`}
+              className={`${arcStroke[a.tone]} ${arcHover}`}
               cx={CENTER}
               cy={CENTER}
               r={RADIUS}
@@ -121,7 +121,7 @@ export function DonutChart(props: DonutChartProps): ReactNode {
       <ul className={legend}>
         {slices.map((s, i) => (
           <li key={s.id} className={legendItem} onMouseMove={onMove(i)}>
-            <span className={`${legendSwatch} ${swatchColor[s.accent]}`} aria-hidden />
+            <span className={`${legendSwatch} ${swatchColor[s.tone]}`} aria-hidden />
             <span className={legendLabel}>{props.sliceLabel(s)}</span>
             <span className={legendValue}>{pctLabel(s.value, total)}</span>
           </li>
@@ -135,7 +135,7 @@ export function DonutChart(props: DonutChartProps): ReactNode {
           role="status"
         >
           <div className={tooltipTitle}>
-            <span className={`${legendSwatch} ${swatchColor[active.accent]}`} aria-hidden />
+            <span className={`${legendSwatch} ${swatchColor[active.tone]}`} aria-hidden />
             {props.sliceLabel(active)}
           </div>
           <div className={tooltipRow}>
