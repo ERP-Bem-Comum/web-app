@@ -7,6 +7,8 @@
  *      · DIREITA: DonutChart vazio (topo) + SuppliersWithoutContractCard com lista (embaixo).
  * i18n PT via `createTranslator` (nada hardcoded). Placeholder pronto p/ ligar (core-api#112).
  */
+import { useEffect, useMemo, useState } from 'react'
+
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 
@@ -17,7 +19,10 @@ import { RecentPaymentsWidget } from '../components/recent-payments-widget.compo
 import { MetricCard } from '../components/metric-card.component.tsx'
 import { LineChart } from '../components/line-chart.component.tsx'
 import { DonutChart } from '../components/donut-chart.component.tsx'
-import { SuppliersWithoutContractCard } from '../components/suppliers-without-contract-card.component.tsx'
+import {
+  SuppliersWithoutContractCard,
+  type SupplierBar,
+} from '../components/suppliers-without-contract-card.component.tsx'
 import {
   METRIC_CARDS,
   CHART_SERIES,
@@ -26,6 +31,10 @@ import {
   CHART_MONTHS,
   DONUT_SLICES,
   SUPPLIERS_WITHOUT_CONTRACT,
+  LIMITE_CENTS,
+  deriveSupplierComplianceBars,
+  formatSupplierBRL,
+  formatSupplierPercent,
 } from '../dashboard-summary.view-model.ts'
 import {
   page,
@@ -66,6 +75,34 @@ const MONTH_LABELS = [
 
 export function DashboardPage() {
   const recent = useRecentPayments()
+
+  // Barras de compliance do card "Fornecedores sem Contrato": derivadas (puro) no view-model e já mapeadas
+  // para a view burra (nome + status + % bruta p/ a largura + textos formatados). Preview do resumo: até 6.
+  const supplierBars: readonly SupplierBar[] = useMemo(
+    () =>
+      deriveSupplierComplianceBars(SUPPLIERS_WITHOUT_CONTRACT, LIMITE_CENTS).map(
+        (b): SupplierBar => ({
+          id: b.id,
+          name: b.name,
+          utilizadoPct: b.utilizadoPct,
+          status: b.status,
+          percentLabel: formatSupplierPercent(b.utilizadoPct),
+          valueLabel: formatSupplierBRL(b.valorTotalCents),
+        }),
+      ),
+    [],
+  )
+
+  // Animação de entrada das barras (largura cresce após o mount). SSR-safe: começa false, vira true no client.
+  const [animateBars, setAnimateBars] = useState(false)
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      setAnimateBars(true)
+    })
+    return () => {
+      cancelAnimationFrame(id)
+    }
+  }, [])
 
   return (
     <div className={page}>
@@ -136,7 +173,9 @@ export function DashboardPage() {
           <SuppliersWithoutContractCard
             title={t('dashboard.suppliers-no-contract.title')}
             seeAllLabel={t('dashboard.suppliers-no-contract.see-all')}
-            items={SUPPLIERS_WITHOUT_CONTRACT}
+            emptyLabel={t('dashboard.suppliers-no-contract.empty')}
+            bars={supplierBars}
+            animate={animateBars}
           />
         </div>
       </div>

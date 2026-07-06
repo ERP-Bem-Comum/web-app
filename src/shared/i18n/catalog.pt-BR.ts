@@ -2144,10 +2144,16 @@ export const ptBR: Catalog = {
   // Linha 2 — direita-topo: donut "Pagamentos por Centro de Custo em %"
   'dashboard.cost-center.title': 'Pagamentos por Centro de Custo em %',
   'dashboard.cost-center.empty': 'Sem gastos no mês anterior',
+  // Rótulos placeholder dos centros de custo do donut (dado virá do core-api#112).
+  'dashboard.cost-center.slice.strategic': 'Consultoria Estratégica',
+  'dashboard.cost-center.slice.logistics': 'Logística',
+  'dashboard.cost-center.slice.admin': 'Administração',
+  'dashboard.cost-center.slice.events': 'Eventos',
 
   // Linha 2 — direita-baixo: card "Fornecedores sem Contrato"
   'dashboard.suppliers-no-contract.title': 'Fornecedores sem Contrato',
   'dashboard.suppliers-no-contract.see-all': 'Ver todas',
+  'dashboard.suppliers-no-contract.empty': 'Nenhum fornecedor sem contrato.',
 
   // Linha 3 — widget "Últimos pagamentos" (042, dados REAIS). Headers alinhados ao legado.
   'dashboard.recent-payments.title': 'Últimos Pagamentos Realizados',

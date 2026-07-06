@@ -51,8 +51,27 @@ export type DonutSlice = Readonly<{
   accent: MetricAccent
 }>
 
-/** Item da lista "Fornecedores sem Contrato" (nome + valor já formatado). Placeholder p/ ligar depois. */
-export type SupplierWithoutContract = Readonly<{ id: string; name: string; value: string }>
+/**
+ * Fornecedor sem contrato (linha de origem do card do Dashboard). `valorTotalCents` = total pago ao
+ * fornecedor SEM contrato (centavos inteiros, §IV). Placeholder p/ ligar depois (core-api#112/#114).
+ */
+export type SupplierWithoutContract = Readonly<{ id: string; name: string; valorTotalCents: number }>
+
+/** Status de compliance de um fornecedor perante o limite de dispensa (dirige a cor da barra). */
+export type SupplierComplianceStatus = 'over' | 'at' | 'within'
+
+/**
+ * Barra de compliance JÁ derivada (pura) do fornecedor: nome + total (centavos) + % utilizado BRUTA (pode
+ * passar de 100, usada p/ a LARGURA proporcional) + status (cor). A View não calcula nada — só apresenta.
+ */
+export type SupplierComplianceBar = Readonly<{
+  id: string
+  name: string
+  valorTotalCents: number
+  /** % utilizado do limite (valorTotal / limite * 100). Pode passar de 100. */
+  utilizadoPct: number
+  status: SupplierComplianceStatus
+}>
 
 // ── Placeholder das 4 métricas (linha 1) ──────────────────────────────────────
 export const METRIC_CARDS: readonly MetricCardData[] = [
@@ -147,15 +166,79 @@ export const CHART_SERIES: readonly ChartSeries[] = [
 ] as const
 
 // ── Donut (linha 2, direita-topo) ─────────────────────────────────────────────
-/** Fatias do donut "Pagamentos por Centro de Custo em %". Vazio por ora → estado vazio na View. */
-export const DONUT_SLICES: readonly DonutSlice[] = [] as const
+/** Fatias do donut "Pagamentos por Centro de Custo em %" (placeholder até core-api#112; `value` em centavos —
+ * a View calcula a % pela fração do total). Cores distintas via `accent`. */
+export const DONUT_SLICES: readonly DonutSlice[] = [
+  { id: 'strategic', labelKey: 'dashboard.cost-center.slice.strategic', value: 4_500_000, accent: 'indigo' },
+  { id: 'logistics', labelKey: 'dashboard.cost-center.slice.logistics', value: 3_200_000, accent: 'orange' },
+  { id: 'admin', labelKey: 'dashboard.cost-center.slice.admin', value: 2_800_000, accent: 'green' },
+  { id: 'events', labelKey: 'dashboard.cost-center.slice.events', value: 1_500_000, accent: 'red' },
+] as const
 
 // ── Fornecedores sem Contrato (linha 2, direita-baixo) ────────────────────────
-/** Lista placeholder (nome + valor formatado), fiel ao legado. Ligar quando houver endpoint. */
+/**
+ * Limite de DISPENSA de contrato: R$ 10.000,00 = 1.000.000 centavos (mesmo teto do relatório
+ * "Fornecedores sem Contrato"). Acima dele o fornecedor DEVERIA ter contrato (estouro = danger).
+ */
+export const LIMITE_CENTS = 1_000_000
+
+/**
+ * Placeholder REALISTA (mix) do card de compliance (centavos inteiros). Inclui 2 fornecedores ACIMA do
+ * limite (vermelho), 1 EXATAMENTE no limite (cinza) e 3 DENTRO (azul), para o modelo ficar visível. Nomes
+ * no espírito do relatório. Ligar quando houver endpoint (core-api#112/#114).
+ */
 export const SUPPLIERS_WITHOUT_CONTRACT: readonly SupplierWithoutContract[] = [
-  { id: 'lucas-gabriel', name: 'LUCAS GABRIEL', value: 'R$ 1.100,00' },
-  { id: 'samantha-evelyn', name: 'SAMANTHA EVELYN', value: 'R$ 810,00' },
-  { id: 'beneficio-social', name: 'Beneficio Social', value: 'R$ 352,00' },
-  { id: 'elys-vanny', name: 'ELYS VANNY', value: 'R$ 11,00' },
-  { id: 'associacao-bem-comum', name: 'Associação Bem Comum', value: 'R$ 10,80' },
+  { id: 'wee-travel', name: 'WEE TRAVEL', valorTotalCents: 1_298_185 }, // R$ 12.981,85 → 129,82% (over)
+  { id: 'a3-turismo', name: 'A3 TURISMO', valorTotalCents: 1_142_000 }, // R$ 11.420,00 → 114,20% (over)
+  { id: 'ana-sicilia', name: 'ANA SICILIA', valorTotalCents: 1_000_000 }, // R$ 10.000,00 → 100% (at)
+  { id: 'polo-moveis', name: 'POLO MOVEIS', valorTotalCents: 742_000 }, // R$ 7.420,00 → 74,20% (within)
+  { id: 'tecnovetti', name: 'TECNOVETTI', valorTotalCents: 435_000 }, // R$ 4.350,00 → 43,50% (within)
+  { id: 'associacao-bem-comum', name: 'Associação Bem Comum', valorTotalCents: 128_000 }, // R$ 1.280,00 → 12,80% (within)
 ] as const
+
+/**
+ * Deriva (PURO, §XI) a barra de compliance de cada fornecedor perante `limiteCents`: % utilizado + status
+ * (over > limite; at == limite; within < limite — comparação ESTRITA: 100% exato NÃO estoura). Ordena
+ * DECRESCENTE por `valorTotalCents` (top ofensores primeiro; sort estável do V8 preserva empates). NÃO muta
+ * a entrada (copia antes de ordenar §VII). Fonte ÚNICA de verdade da cor/ordenação das barras.
+ */
+export function deriveSupplierComplianceBars(
+  suppliers: readonly SupplierWithoutContract[],
+  limiteCents: number,
+): readonly SupplierComplianceBar[] {
+  return [...suppliers]
+    .sort((a, b) => b.valorTotalCents - a.valorTotalCents)
+    .map((s) => {
+      const status: SupplierComplianceStatus =
+        s.valorTotalCents > limiteCents ? 'over' : s.valorTotalCents === limiteCents ? 'at' : 'within'
+      return {
+        id: s.id,
+        name: s.name,
+        valorTotalCents: s.valorTotalCents,
+        utilizadoPct: limiteCents === 0 ? 0 : (s.valorTotalCents / limiteCents) * 100,
+        status,
+      }
+    })
+}
+
+const brlFmt = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+})
+
+/** Centavos → "R$ 12.981,85" (valor do fornecedor no card/tooltip). */
+export function formatSupplierBRL(cents: number): string {
+  return brlFmt.format(cents / 100)
+}
+
+/**
+ * Percentual utilizado no formato do relatório: 2 dígitos INTEIROS zero-padded + vírgula + 2 decimais + "%".
+ * Ex.: 129.82 → "129,82%"; 12.8 → "12,80%". A parte inteira só zero-pada até 2 dígitos; ≥ 100 mantém tudo.
+ */
+export function formatSupplierPercent(pct: number): string {
+  const fixed = pct.toFixed(2)
+  const [intPart = '0', decPart = '00'] = fixed.split('.')
+  return `${intPart.padStart(2, '0')},${decPart}%`
+}

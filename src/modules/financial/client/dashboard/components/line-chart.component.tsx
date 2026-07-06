@@ -19,6 +19,9 @@ import {
   seriesStroke,
   seriesPath,
   seriesPathDelayed,
+  seriesArea,
+  areaStopTop,
+  areaStopBottom,
   seriesSwatchColor,
   seriesDotFill,
   tooltip,
@@ -97,6 +100,17 @@ export function LineChart(props: LineChartProps): ReactNode {
 
   const band = months <= 1 ? PLOT_W : PLOT_W / (months - 1)
 
+  // Base do preenchimento de área (linha do eixo X) + caminho fechado da área por série.
+  const baseY = PAD_TOP + PLOT_H
+  const areaPathFor = (s: ChartSeries): string => {
+    const pts = s.points.map((p) => ({ x: xFor(p.month), y: yFor(p.value) }))
+    const line = smoothPath(pts)
+    const first = pts[0]
+    const last = pts[pts.length - 1]
+    if (line === '' || first === undefined || last === undefined) return ''
+    return `${line} L ${String(last.x)} ${String(baseY)} L ${String(first.x)} ${String(baseY)} Z`
+  }
+
   // Posição do tooltip (em % da área do gráfico — o SVG é esticado, então viewBox↔render é linear).
   const tip = ((): { left: number; top: number } | null => {
     if (hover === null) return null
@@ -121,6 +135,16 @@ export function LineChart(props: LineChartProps): ReactNode {
           aria-label={series.map(props.seriesLabel).join(' / ')}
           preserveAspectRatio="none"
         >
+          {/* gradientes de área (um por série) — cor da série no topo → transparente na base */}
+          <defs>
+            {series.map((s) => (
+              <linearGradient key={`grad-${s.id}`} id={`dashAreaFill-${s.id}`} x1="0" y1="0" x2="0" y2="1">
+                <stop className={areaStopTop[s.id]} offset="0%" />
+                <stop className={areaStopBottom[s.id]} offset="100%" />
+              </linearGradient>
+            ))}
+          </defs>
+
           {/* gridlines pontilhadas horizontais + rótulos do eixo Y */}
           {yTicks.map((tick) => {
             const y = yFor(tick)
@@ -166,6 +190,14 @@ export function LineChart(props: LineChartProps): ReactNode {
               {m}
             </text>
           ))}
+
+          {/* área com gradiente sob cada série (padrão "Distribuição mensal") — atrás das linhas */}
+          {series.map((s) => {
+            const d = areaPathFor(s)
+            return d === '' ? null : (
+              <path key={`area-${s.id}`} className={seriesArea} d={d} fill={`url(#dashAreaFill-${s.id})`} />
+            )
+          })}
 
           {/* uma linha SUAVE por série (com animação de "desenho" na entrada) */}
           {series.map((s, si) => (

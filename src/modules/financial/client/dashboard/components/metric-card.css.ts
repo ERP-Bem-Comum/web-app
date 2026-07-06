@@ -22,8 +22,19 @@ export const iconAccent = styleVariants({
   orange: { background: softChip(vars.color.institutional.orange), color: vars.color.brand.onBrand },
 })
 
+// Barra vertical de acento à ESQUERDA do card (padrão dos KPIs do Realizado × Planejado) — cor SÓLIDA do
+// acento, casando com o ícone. Só a cor da barra (`&::before`) muda por acento; a geometria vem do `card`.
+export const barAccent = styleVariants({
+  red: { selectors: { '&::before': { background: vars.color.feedback.errorText } } },
+  green: { selectors: { '&::before': { background: vars.color.status.activeText } } },
+  indigo: { selectors: { '&::before': { background: vars.color.nav.background } } },
+  orange: { selectors: { '&::before': { background: vars.color.institutional.orange } } },
+})
+
 // Card em linha: infos à esquerda, ícone centrado na vertical à direita (space-between + align center).
 export const card = style({
+  position: 'relative',
+  overflow: 'hidden', // clipa a barra de acento aos cantos arredondados
   fontFamily: vars.font.family.body,
   background: vars.color.surface.default,
   // Borda + profundidade do card do grid de Colaboradores (brand): linha neutra + sombra em camadas.
@@ -35,6 +46,17 @@ export const card = style({
   alignItems: 'center',
   justifyContent: 'space-between',
   gap: vars.space.md,
+  // Barra vertical de acento à esquerda (4px = space.xs) — a COR vem por `barAccent` (styleVariant).
+  selectors: {
+    '&::before': {
+      content: '""',
+      position: 'absolute',
+      insetInlineStart: 0,
+      insetBlockStart: 0,
+      insetBlockEnd: 0,
+      inlineSize: vars.space.xs,
+    },
+  },
 })
 
 // Bloco de infos (rótulo · valor · tendência) — empilhado e BEM compacto. Gap mínimo (xs) + line-height

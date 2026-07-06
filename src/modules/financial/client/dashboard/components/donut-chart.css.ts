@@ -23,6 +23,7 @@ export const swatchColor = styleVariants({
 })
 
 export const wrap = style({
+  position: 'relative', // âncora do tooltip de hover (posicionado inline)
   fontFamily: vars.font.family.body,
   display: 'flex',
   flexDirection: 'column',
@@ -30,6 +31,49 @@ export const wrap = style({
   gap: vars.space.md,
   minBlockSize: '9rem',
   justifyContent: 'center',
+})
+
+// ── Tooltip de hover (arco/legenda) — mesmo padrão dos gráficos do Realizado × Planejado ──
+export const arcHover = style({ cursor: 'pointer' })
+
+export const tooltip = style({
+  position: 'absolute',
+  transform: 'translate(-50%, -115%)',
+  pointerEvents: 'none',
+  zIndex: 2,
+  background: vars.color.surface.default,
+  border: `${vars.borderWidth.thin} solid ${vars.color.border.subtle}`,
+  borderRadius: vars.radius.md,
+  boxShadow: vars.shadow.cardElevated,
+  padding: vars.space.sm,
+  minInlineSize: '10rem',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: vars.space.xs,
+})
+export const tooltipTitle = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.xs,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.text.primary,
+})
+export const tooltipRow = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  fontSize: vars.font.size.sm,
+})
+export const tooltipVal = style({
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.text.primary,
+  fontVariantNumeric: 'tabular-nums',
+})
+export const tooltipPct = style({
+  marginInlineStart: 'auto',
+  color: vars.color.text.muted,
+  fontVariantNumeric: 'tabular-nums',
 })
 
 export const svgEl = style({
@@ -72,4 +116,12 @@ export const legendSwatch = style({
 
 export const legendLabel = style({
   color: vars.color.text.secondary,
+})
+
+// % da fatia (empurrado para a direita) — é um donut "em %".
+export const legendValue = style({
+  marginInlineStart: 'auto',
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.text.primary,
+  fontVariantNumeric: 'tabular-nums',
 })
