@@ -30,6 +30,7 @@ import { Route as AuthenticatedUsuariosCriarRouteImport } from './../routes/_aut
 import { Route as AuthenticatedUsuariosIdRouteImport } from './../routes/_authenticated/usuarios/$id'
 import { Route as AuthenticatedRelatoriosRealizadoXPlanejadoRouteImport } from './../routes/_authenticated/relatorios/realizado-x-planejado'
 import { Route as AuthenticatedRelatoriosFornecedoresSemContratoRouteImport } from './../routes/_authenticated/relatorios/fornecedores-sem-contrato'
+import { Route as AuthenticatedRelatoriosEquipeRouteImport } from './../routes/_authenticated/relatorios/equipe'
 import { Route as AuthenticatedProgramasCriarRouteImport } from './../routes/_authenticated/programas/criar'
 import { Route as AuthenticatedProgramasIdRouteImport } from './../routes/_authenticated/programas/$id'
 import { Route as AuthenticatedContratosCriarRouteImport } from './../routes/_authenticated/contratos/criar'
@@ -170,6 +171,12 @@ const AuthenticatedRelatoriosFornecedoresSemContratoRoute =
   AuthenticatedRelatoriosFornecedoresSemContratoRouteImport.update({
     id: '/relatorios/fornecedores-sem-contrato',
     path: '/relatorios/fornecedores-sem-contrato',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRelatoriosEquipeRoute =
+  AuthenticatedRelatoriosEquipeRouteImport.update({
+    id: '/relatorios/equipe',
+    path: '/relatorios/equipe',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedProgramasCriarRoute =
@@ -358,6 +365,7 @@ export interface FileRoutesByFullPath {
   '/contratos/criar': typeof AuthenticatedContratosCriarRoute
   '/programas/$id': typeof AuthenticatedProgramasIdRoute
   '/programas/criar': typeof AuthenticatedProgramasCriarRoute
+  '/relatorios/equipe': typeof AuthenticatedRelatoriosEquipeRoute
   '/relatorios/fornecedores-sem-contrato': typeof AuthenticatedRelatoriosFornecedoresSemContratoRoute
   '/relatorios/realizado-x-planejado': typeof AuthenticatedRelatoriosRealizadoXPlanejadoRoute
   '/usuarios/$id': typeof AuthenticatedUsuariosIdRoute
@@ -408,6 +416,7 @@ export interface FileRoutesByTo {
   '/contratos/criar': typeof AuthenticatedContratosCriarRoute
   '/programas/$id': typeof AuthenticatedProgramasIdRoute
   '/programas/criar': typeof AuthenticatedProgramasCriarRoute
+  '/relatorios/equipe': typeof AuthenticatedRelatoriosEquipeRoute
   '/relatorios/fornecedores-sem-contrato': typeof AuthenticatedRelatoriosFornecedoresSemContratoRoute
   '/relatorios/realizado-x-planejado': typeof AuthenticatedRelatoriosRealizadoXPlanejadoRoute
   '/usuarios/$id': typeof AuthenticatedUsuariosIdRoute
@@ -460,6 +469,7 @@ export interface FileRoutesById {
   '/_authenticated/contratos/criar': typeof AuthenticatedContratosCriarRoute
   '/_authenticated/programas/$id': typeof AuthenticatedProgramasIdRoute
   '/_authenticated/programas/criar': typeof AuthenticatedProgramasCriarRoute
+  '/_authenticated/relatorios/equipe': typeof AuthenticatedRelatoriosEquipeRoute
   '/_authenticated/relatorios/fornecedores-sem-contrato': typeof AuthenticatedRelatoriosFornecedoresSemContratoRoute
   '/_authenticated/relatorios/realizado-x-planejado': typeof AuthenticatedRelatoriosRealizadoXPlanejadoRoute
   '/_authenticated/usuarios/$id': typeof AuthenticatedUsuariosIdRoute
@@ -512,6 +522,7 @@ export interface FileRouteTypes {
     | '/contratos/criar'
     | '/programas/$id'
     | '/programas/criar'
+    | '/relatorios/equipe'
     | '/relatorios/fornecedores-sem-contrato'
     | '/relatorios/realizado-x-planejado'
     | '/usuarios/$id'
@@ -562,6 +573,7 @@ export interface FileRouteTypes {
     | '/contratos/criar'
     | '/programas/$id'
     | '/programas/criar'
+    | '/relatorios/equipe'
     | '/relatorios/fornecedores-sem-contrato'
     | '/relatorios/realizado-x-planejado'
     | '/usuarios/$id'
@@ -613,6 +625,7 @@ export interface FileRouteTypes {
     | '/_authenticated/contratos/criar'
     | '/_authenticated/programas/$id'
     | '/_authenticated/programas/criar'
+    | '/_authenticated/relatorios/equipe'
     | '/_authenticated/relatorios/fornecedores-sem-contrato'
     | '/_authenticated/relatorios/realizado-x-planejado'
     | '/_authenticated/usuarios/$id'
@@ -807,6 +820,13 @@ declare module '@tanstack/react-router' {
       path: '/relatorios/fornecedores-sem-contrato'
       fullPath: '/relatorios/fornecedores-sem-contrato'
       preLoaderRoute: typeof AuthenticatedRelatoriosFornecedoresSemContratoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/relatorios/equipe': {
+      id: '/_authenticated/relatorios/equipe'
+      path: '/relatorios/equipe'
+      fullPath: '/relatorios/equipe'
+      preLoaderRoute: typeof AuthenticatedRelatoriosEquipeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/programas/criar': {
@@ -1075,6 +1095,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedContratosCriarRoute: typeof AuthenticatedContratosCriarRoute
   AuthenticatedProgramasIdRoute: typeof AuthenticatedProgramasIdRoute
   AuthenticatedProgramasCriarRoute: typeof AuthenticatedProgramasCriarRoute
+  AuthenticatedRelatoriosEquipeRoute: typeof AuthenticatedRelatoriosEquipeRoute
   AuthenticatedRelatoriosFornecedoresSemContratoRoute: typeof AuthenticatedRelatoriosFornecedoresSemContratoRoute
   AuthenticatedRelatoriosRealizadoXPlanejadoRoute: typeof AuthenticatedRelatoriosRealizadoXPlanejadoRoute
   AuthenticatedUsuariosIdRoute: typeof AuthenticatedUsuariosIdRoute
@@ -1113,6 +1134,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedContratosCriarRoute: AuthenticatedContratosCriarRoute,
   AuthenticatedProgramasIdRoute: AuthenticatedProgramasIdRoute,
   AuthenticatedProgramasCriarRoute: AuthenticatedProgramasCriarRoute,
+  AuthenticatedRelatoriosEquipeRoute: AuthenticatedRelatoriosEquipeRoute,
   AuthenticatedRelatoriosFornecedoresSemContratoRoute:
     AuthenticatedRelatoriosFornecedoresSemContratoRoute,
   AuthenticatedRelatoriosRealizadoXPlanejadoRoute:

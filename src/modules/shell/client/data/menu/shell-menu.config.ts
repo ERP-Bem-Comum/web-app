@@ -79,6 +79,9 @@ export const MENU: readonly MenuSection[] = [
     subItems: [
       { label: 'Fornecedores sem Contrato', to: '/relatorios/fornecedores-sem-contrato' },
       { label: 'Realizado × Planejado', to: '/relatorios/realizado-x-planejado' },
+      // Equipe ABC: front-first, dados sintéticos/anonimizados (LGPD). SEM `requiredPermission` — o RBAC é
+      // modelado pelo cliente PÓS-entrega (não gateia este relatório agora).
+      { label: 'Equipe ABC', to: '/relatorios/equipe' },
     ],
   },
   {
