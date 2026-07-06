@@ -18,3 +18,32 @@ export type {
   SupplierRow,
   BudgetPlanRow,
 } from '#modules/reports/client/suppliers-without-contract.view-model.ts'
+
+// ── Relatório "Realizado × Planejado" (front-first; core-api#114) ──
+export { RealizadoXPlanejadoPage } from '#modules/reports/client/page/realizado-x-planejado.page.tsx'
+
+export {
+  aggregateBudgetTree,
+  grandTotal,
+  computeAvPct,
+  planejadoByCentroCusto,
+  topCentroCustoByPlanejado,
+  planejadoByMonth,
+  realizadoVsPrevisto,
+  buildCsv as buildRealizadoCsv,
+  formatBRL as formatRealizadoBRL,
+  formatBRLShort,
+  formatPercent as formatRealizadoPercent,
+  sharePercent,
+  loadBudgetTree,
+  MONTH_NAMES_PT,
+} from '#modules/reports/client/realizado-x-planejado.view-model.ts'
+export type {
+  BudgetTreeRow,
+  BudgetDepth,
+  Measures,
+  MonthMeasures,
+  GrandTotal,
+  ChartSlice,
+  MonthBar,
+} from '#modules/reports/client/realizado-x-planejado.view-model.ts'

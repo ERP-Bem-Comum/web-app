@@ -42,6 +42,11 @@ describe('rootViewModel.resolvePageTitle', () => {
       rootViewModel.resolvePageTitle('/relatorios/fornecedores-sem-contrato'),
       'Fornecedores sem Contrato',
     )
+    // Relatórios → Realizado × Planejado (feature 045)
+    assert.strictEqual(
+      rootViewModel.resolvePageTitle('/relatorios/realizado-x-planejado'),
+      'Realizado × Planejado',
+    )
   })
   it('cai no fallback para rota desconhecida e não casa substring solta', () => {
     assert.strictEqual(rootViewModel.resolvePageTitle('/desconhecida'), 'ERP Bem Comum')
@@ -378,26 +383,28 @@ describe('rootViewModel.visibleMenu (MENU real — Plano Orçamentário)', () =>
   })
 })
 
-// Regressão de CONFIGURAÇÃO do "Relatórios" (feature 044). Virou accordion com o subitem "Fornecedores sem
-// Contrato" (sem requiredPermission — o relatório não tem RBAC). Sobrevive com permissions vazias.
+// Regressão de CONFIGURAÇÃO do "Relatórios" (features 044/045). Accordion com os subitens "Fornecedores sem
+// Contrato" e "Realizado × Planejado" (ambos sem requiredPermission — os relatórios não têm RBAC).
+// Sobrevive com permissions vazias.
 describe('rootViewModel.visibleMenu (MENU real — Relatórios)', () => {
   const findRelatorios = (menu: readonly MenuSection[]): MenuSection | undefined =>
     menu.find((s) => s.label === 'Relatórios')
 
-  it('é accordion (sem `to` direto) com "Fornecedores sem Contrato" → /relatorios/fornecedores-sem-contrato', () => {
+  it('é accordion (sem `to` direto) com os 2 relatórios (Fornecedores sem Contrato + Realizado × Planejado)', () => {
     const rel = findRelatorios(MENU)
     assert.ok(rel, 'a seção "Relatórios" deve existir')
     assert.strictEqual(rel?.to, undefined, 'não é link direto')
     assert.deepStrictEqual(
       rel?.subItems?.map((s) => s.label),
-      ['Fornecedores sem Contrato'],
+      ['Fornecedores sem Contrato', 'Realizado × Planejado'],
     )
     assert.strictEqual(rel?.subItems?.[0]?.to, '/relatorios/fornecedores-sem-contrato')
+    assert.strictEqual(rel?.subItems?.[1]?.to, '/relatorios/realizado-x-planejado')
   })
 
-  it('sobrevive com permissions vazias (subitem público, sem RBAC)', () => {
+  it('sobrevive com permissions vazias (subitens públicos, sem RBAC)', () => {
     const rel = findRelatorios(rootViewModel.visibleMenu(MENU, []))
     assert.ok(rel, 'a seção deve aparecer sem RBAC')
-    assert.strictEqual(rel?.subItems?.length, 1)
+    assert.strictEqual(rel?.subItems?.length, 2)
   })
 })
