@@ -38,6 +38,10 @@ export const brand = {
     warnBg: '#fbf0dd',
     warnFg: '#8a5a16',
     warnDot: '#c67c1e',
+    // "No limite" (linha do relatório Sem Contrato com restante = 0 / 100% exato) — tinta neutra suave
+    // (não é violação como o danger; é o teto exatamente esgotado). Mesma sutileza das demais tintas.
+    atLimitBg: '#ecebe7',
+    atLimitFg: '#5c584f',
     focusRing: 'rgba(57,100,150,0.14)',
     zeroNum: '#98a2b3',
     scrollThumb: '#c3ccd8',

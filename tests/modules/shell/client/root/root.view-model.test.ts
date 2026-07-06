@@ -37,6 +37,11 @@ describe('rootViewModel.resolvePageTitle', () => {
     assert.strictEqual(rootViewModel.resolvePageTitle('/planejamento'), 'Planejamento')
     assert.strictEqual(rootViewModel.resolvePageTitle('/planejamento/detalhes/3'), 'Planejamento')
     assert.strictEqual(rootViewModel.resolvePageTitle('/consolidado'), 'Consolidado ABC')
+    // Relatórios → Fornecedores sem Contrato (alimenta o document.title; a page tem PageHeader próprio)
+    assert.strictEqual(
+      rootViewModel.resolvePageTitle('/relatorios/fornecedores-sem-contrato'),
+      'Fornecedores sem Contrato',
+    )
   })
   it('cai no fallback para rota desconhecida e não casa substring solta', () => {
     assert.strictEqual(rootViewModel.resolvePageTitle('/desconhecida'), 'ERP Bem Comum')
@@ -82,6 +87,8 @@ describe('rootViewModel.sidebarWidth / showPageHeader', () => {
     // Conciliação: o grid (Contas Bancárias) mantém o h1; o workspace de uma conta usa o hero próprio.
     assert.strictEqual(rootViewModel.showPageHeader('/financeiro/conciliacao'), true)
     assert.strictEqual(rootViewModel.showPageHeader('/financeiro/conciliacao/acc-123'), false)
+    // Relatórios: a page desenha o próprio PageHeader "brand" → shell não renderiza h1.
+    assert.strictEqual(rootViewModel.showPageHeader('/relatorios/fornecedores-sem-contrato'), false)
   })
 
   it('resolvePageSubtitle: legenda no header do shell só p/ Contas a Pagar e Contas Bancárias', () => {
@@ -141,6 +148,8 @@ describe('rootViewModel.sidebarWidth / showPageHeader', () => {
     assert.strictEqual(rootViewModel.fullBleedContent('/usuarios/abc-1'), true)
     // Minha Conta: cartão de perfil no shell "brand" → full-bleed.
     assert.strictEqual(rootViewModel.fullBleedContent('/minha-conta'), true)
+    // Relatórios: toda a subárvore "brand" full-bleed.
+    assert.strictEqual(rootViewModel.fullBleedContent('/relatorios/fornecedores-sem-contrato'), true)
   })
 })
 
@@ -366,5 +375,29 @@ describe('rootViewModel.visibleMenu (MENU real — Plano Orçamentário)', () =>
       plano?.subItems?.map((s) => s.label),
       ['Planejamento', 'Consolidado ABC'],
     )
+  })
+})
+
+// Regressão de CONFIGURAÇÃO do "Relatórios" (feature 044). Virou accordion com o subitem "Fornecedores sem
+// Contrato" (sem requiredPermission — o relatório não tem RBAC). Sobrevive com permissions vazias.
+describe('rootViewModel.visibleMenu (MENU real — Relatórios)', () => {
+  const findRelatorios = (menu: readonly MenuSection[]): MenuSection | undefined =>
+    menu.find((s) => s.label === 'Relatórios')
+
+  it('é accordion (sem `to` direto) com "Fornecedores sem Contrato" → /relatorios/fornecedores-sem-contrato', () => {
+    const rel = findRelatorios(MENU)
+    assert.ok(rel, 'a seção "Relatórios" deve existir')
+    assert.strictEqual(rel?.to, undefined, 'não é link direto')
+    assert.deepStrictEqual(
+      rel?.subItems?.map((s) => s.label),
+      ['Fornecedores sem Contrato'],
+    )
+    assert.strictEqual(rel?.subItems?.[0]?.to, '/relatorios/fornecedores-sem-contrato')
+  })
+
+  it('sobrevive com permissions vazias (subitem público, sem RBAC)', () => {
+    const rel = findRelatorios(rootViewModel.visibleMenu(MENU, []))
+    assert.ok(rel, 'a seção deve aparecer sem RBAC')
+    assert.strictEqual(rel?.subItems?.length, 1)
   })
 })

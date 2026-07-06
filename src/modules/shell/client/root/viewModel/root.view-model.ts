@@ -61,6 +61,9 @@ const PAGE_TITLES: Readonly<Record<string, string>> = {
   // cairia no fallback "ERP Bem Comum".
   '/financeiro/contas-a-pagar': 'Contas a Pagar',
   '/financeiro/conciliacao': 'Contas Bancárias',
+  // Relatórios → Fornecedores sem Contrato — a page desenha o próprio PageHeader (padrão Colaboradores);
+  // isto só alimenta o document.title (senão cairia no fallback "ERP Bem Comum").
+  '/relatorios/fornecedores-sem-contrato': 'Fornecedores sem Contrato',
   '/login': 'Login',
 }
 
@@ -119,7 +122,9 @@ export const rootViewModel = {
     // O grid /financeiro/conciliacao (sem barra final) mantém o h1 "Contas Bancárias".
     !path.startsWith('/financeiro/conciliacao/') &&
     // Lançar Documento tem topbar própria (modal-like, ←/✕) — o grid mantém o h1 do shell.
-    !isPrefixPath(path, '/financeiro/contas-a-pagar/lancar'),
+    !isPrefixPath(path, '/financeiro/contas-a-pagar/lancar') &&
+    // Relatórios: cada tela desenha o próprio PageHeader "brand" (padrão Colaboradores) → sem h1 do shell.
+    !isPrefixPath(path, '/relatorios'),
 
   // Conteúdo "full-bleed" (sem o padding do shell): o workspace de conciliação espelha o mock — hero, abas,
   // corpo e footer encostam nas bordas da área de conteúdo (igual incluir contrato). O Dashboard (043)
@@ -144,6 +149,8 @@ export const rootViewModel = {
     isPrefixPath(path, '/consolidado') ||
     // Minha Conta: cartão de perfil no shell "brand" (página cinza + barra de ações fixa).
     isPrefixPath(path, '/minha-conta') ||
+    // Relatórios: toda a subárvore "brand" full-bleed (a page desenha header + filtros + tree-table).
+    isPrefixPath(path, '/relatorios') ||
     // Grids de Contratos, Contas a Pagar e Contas Bancárias (LISTA): full-bleed no padrão da marca (recuo
     // de 28px, igual aos demais grids). Só a rota EXATA da lista — as sub-rotas (criar/detalhe/lançar e o
     // workspace de conciliação, já coberto acima) mantêm o próprio layout.
