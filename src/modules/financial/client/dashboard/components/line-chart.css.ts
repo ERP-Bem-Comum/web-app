@@ -37,6 +37,18 @@ export const seriesDotFill = styleVariants({
   realized: { fill: vars.color.chart.realized },
 })
 
+// Área com gradiente sob cada linha (padrão "Distribuição mensal" do Realizado × Planejado): a cor da série
+// no topo (~16% de opacidade) → transparente na base. `fill` vem por url(#gradiente) inline no componente.
+export const seriesArea = style({ stroke: 'none' })
+export const areaStopTop = styleVariants({
+  forecast: { stopColor: vars.color.chart.forecast, stopOpacity: 0.16 },
+  realized: { stopColor: vars.color.chart.realized, stopOpacity: 0.16 },
+})
+export const areaStopBottom = styleVariants({
+  forecast: { stopColor: vars.color.chart.forecast, stopOpacity: 0 },
+  realized: { stopColor: vars.color.chart.realized, stopOpacity: 0 },
+})
+
 // Linha da série com animação de "desenho" na entrada (pathLength=1 no SVG → dash normalizado).
 export const seriesPath = style({
   strokeDasharray: 1,

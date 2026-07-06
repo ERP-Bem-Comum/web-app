@@ -4,7 +4,7 @@
  * cores das fatias vêm de CLASSES de token mapeadas do `accent` semântico (§boundaries: client-ui ↛
  * ds-tokens). Cada arco é um <circle> com stroke-dasharray (donut sem path complexo), pronto p/ dados reais.
  */
-import type { ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 
 import type { DonutSlice } from '../dashboard-summary.view-model.ts'
 import {
@@ -15,9 +15,24 @@ import {
   legendItem,
   legendSwatch,
   legendLabel,
+  legendValue,
   arcStroke,
+  arcHover,
   swatchColor,
+  tooltip,
+  tooltipTitle,
+  tooltipRow,
+  tooltipVal,
+  tooltipPct,
 } from './donut-chart.css.ts'
+
+/** % da fatia (fração do total) formatada pt-BR com 1 casa (ex.: "37,5%"). Presentação pura. */
+const pctLabel = (value: number, total: number): string =>
+  `${((value / total) * 100).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
+
+/** Valor (centavos) em BRL para o tooltip (ex.: "R$ 45.000,00"). Presentação pura. */
+const brlLabel = (cents: number): string =>
+  (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 // Geometria do donut (unidades abstratas do viewBox).
 const SIZE = 160
@@ -36,6 +51,18 @@ export type DonutChartProps = Readonly<{
 export function DonutChart(props: DonutChartProps): ReactNode {
   const { slices } = props
   const total = slices.reduce((sum, s) => sum + s.value, 0)
+
+  // UI-state LOCAL do hover: índice da fatia + posição do cursor (relativa ao `wrap`) p/ o tooltip.
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const [hover, setHover] = useState<{ index: number; x: number; y: number } | null>(null)
+  const onMove =
+    (index: number) =>
+    (e: { clientX: number; clientY: number }): void => {
+      const rect = wrapRef.current?.getBoundingClientRect()
+      if (!rect) return
+      setHover({ index, x: e.clientX - rect.left, y: e.clientY - rect.top })
+    }
+  const active = hover !== null ? slices[hover.index] : undefined
 
   if (slices.length === 0 || total <= 0) {
     return (
@@ -61,7 +88,13 @@ export function DonutChart(props: DonutChartProps): ReactNode {
   }, [])
 
   return (
-    <div className={wrap}>
+    <div
+      ref={wrapRef}
+      className={wrap}
+      onMouseLeave={() => {
+        setHover(null)
+      }}
+    >
       <svg
         className={svgEl}
         viewBox={`0 0 ${String(SIZE)} ${String(SIZE)}`}
@@ -69,10 +102,10 @@ export function DonutChart(props: DonutChartProps): ReactNode {
         aria-label={slices.map(props.sliceLabel).join(', ')}
       >
         <g transform={`rotate(-90 ${String(CENTER)} ${String(CENTER)})`}>
-          {arcs.map((a) => (
+          {arcs.map((a, i) => (
             <circle
               key={a.id}
-              className={arcStroke[a.accent]}
+              className={`${arcStroke[a.accent]} ${arcHover}`}
               cx={CENTER}
               cy={CENTER}
               r={RADIUS}
@@ -80,18 +113,37 @@ export function DonutChart(props: DonutChartProps): ReactNode {
               strokeWidth={STROKE}
               strokeDasharray={`${String(a.dash)} ${String(a.gap)}`}
               strokeDashoffset={a.offset}
+              onMouseMove={onMove(i)}
             />
           ))}
         </g>
       </svg>
       <ul className={legend}>
-        {slices.map((s) => (
-          <li key={s.id} className={legendItem}>
+        {slices.map((s, i) => (
+          <li key={s.id} className={legendItem} onMouseMove={onMove(i)}>
             <span className={`${legendSwatch} ${swatchColor[s.accent]}`} aria-hidden />
             <span className={legendLabel}>{props.sliceLabel(s)}</span>
+            <span className={legendValue}>{pctLabel(s.value, total)}</span>
           </li>
         ))}
       </ul>
+
+      {hover !== null && active !== undefined && (
+        <div
+          className={tooltip}
+          style={{ left: `${String(hover.x)}px`, top: `${String(hover.y)}px` }}
+          role="status"
+        >
+          <div className={tooltipTitle}>
+            <span className={`${legendSwatch} ${swatchColor[active.accent]}`} aria-hidden />
+            {props.sliceLabel(active)}
+          </div>
+          <div className={tooltipRow}>
+            <span className={tooltipVal}>{brlLabel(active.value)}</span>
+            <span className={tooltipPct}>{pctLabel(active.value, total)}</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

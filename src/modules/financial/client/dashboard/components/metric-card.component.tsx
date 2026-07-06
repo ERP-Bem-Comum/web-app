@@ -19,6 +19,7 @@ import {
 import type { MetricAccent, MetricIconName } from '../dashboard-summary.view-model.ts'
 import {
   iconAccent,
+  barAccent,
   card,
   body,
   label,
@@ -50,7 +51,7 @@ export type MetricCardProps = Readonly<{
 export function MetricCard(props: MetricCardProps): ReactNode {
   const Icon = ICON[props.icon]
   return (
-    <section className={card} aria-label={props.label}>
+    <section className={`${card} ${barAccent[props.accent]}`} aria-label={props.label}>
       <div className={body}>
         <p className={label}>{props.label}</p>
         <p className={value}>{props.value}</p>

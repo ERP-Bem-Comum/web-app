@@ -49,8 +49,12 @@ describe('LineChart', () => {
       />,
     )
     expect(screen.getByRole('img')).toBeTruthy()
-    const paths = container.querySelectorAll('path')
-    expect(paths).toHaveLength(CHART_SERIES.length)
+    // Linha SUAVE por série (fill="none"); as áreas com gradiente são <path> com fill=url(...) — não contam.
+    const linePaths = container.querySelectorAll('path[fill="none"]')
+    expect(linePaths).toHaveLength(CHART_SERIES.length)
+    // Uma área com gradiente por série (fill via url(#dashAreaFill-...)).
+    const areaPaths = container.querySelectorAll('path[fill^="url(#dashAreaFill"]')
+    expect(areaPaths).toHaveLength(CHART_SERIES.length)
   })
 
   it('mostra os rótulos de mês passados (Jan..Dez)', () => {
