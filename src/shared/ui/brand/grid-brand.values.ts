@@ -54,6 +54,64 @@ export const brand = {
     chipBorder: '#f0cf7a',
     chipFg: '#916708',
     chipRemoveHover: 'rgba(145,103,8,.12)',
+    // Paleta dos GRÁFICOS do relatório "Realizado × Planejado" (donut/barras SVG). Hex cru permitido aqui
+    // (é um `*.values.ts`, isento do lint só-tokens). A UI aplica via classe (styleVariants no .css.ts) —
+    // as views não importam tokens (§boundaries client-ui ↛ ds-tokens).
+    chart: {
+      // Trio "Realizado vs Previsto" (legendas do legado): Realizado verde, Previsto ciano, Provisionado âmbar.
+      realizado: '#1a6f4b',
+      previsto: '#32a2c6',
+      provisionado: '#c67c1e',
+      // 7 fatias do donut "Distribuição por Centro de Custo" (uma por CC) — tons distintos e legíveis.
+      cc1: '#396496',
+      cc2: '#32a2c6',
+      cc3: '#1a6f4b',
+      cc4: '#c67c1e',
+      cc5: '#8a5cd1',
+      cc6: '#c0453c',
+      cc7: '#5c8a3a',
+      // Barra da "Distribuição Mensal" (planejado por mês).
+      bar: '#396496',
+      barTrack: '#eef1f5',
+    },
+    // Paleta EXATA do mock "realizado-planejado-v2" (relatório redesenhado). Trio de cores das medidas +
+    // fundos dos níveis da árvore. Hex cru permitido aqui (é um `*.values.ts`). A UI aplica via classe.
+    rxp: {
+      // --realizado (verde), --provisionado (âmbar), --previsto = primary (azul).
+      realizado: '#1f7d55',
+      provisionado: '#f8b221',
+      previsto: '#396496',
+      // Fundos dos níveis da árvore: 1º nível (categoria) mais presente; 2º (subcategoria) mais claro.
+      childBg1: '#e7f0fb',
+      childBg2: '#f3f8fd',
+      // Hover dos níveis (levemente mais saturado que o fundo).
+      childBg1Hover: '#dbe9f8',
+      childBg2Hover: '#e9f2fb',
+      // Linha de GRUPOS de mês (thead1) — azul claro, distinta da sub-linha (thead2, cinza surfaceAlt) abaixo.
+      monthHeadBg: '#e6edf7',
+      // Anel do nó-folha da árvore (tree-node dot) — contorno na cor primary.
+      treeNodeBorder: '#396496',
+    },
+  },
+  // Medidas específicas do relatório redesenhado (px cru permitido no `*.values.ts`).
+  rxp: {
+    // Barra de cor à esquerda dos KPIs.
+    kpiAccentWidth: '4px',
+    // Recuo por nível na árvore da tabela (o mock usa 22px/nível).
+    treeIndent: '22px',
+    // Diâmetro do nó-folha (tree-node dot).
+    treeNode: '8px',
+    // Mini-barra de AV% na célula consolidada.
+    avBarWidth: '38px',
+    avBarHeight: '6px',
+    // Track/thumb da barra horizontal "Por centro de custo".
+    hbarHeight: '18px',
+    // Coluna do nome no gráfico de barras horizontais.
+    hbarNameCol: '180px',
+    // Fonte dos rótulos de eixo/mês do SVG e da legenda "execução" do donut.
+    svgAxisFont: '10px',
+    // Espessura da linha do gráfico mensal.
+    lineStroke: '2.5px',
   },
   radius: {
     xs: '6px',

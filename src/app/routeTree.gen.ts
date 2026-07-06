@@ -28,6 +28,7 @@ import { Route as AuthenticatedMinhaContaIndexRouteImport } from './../routes/_a
 import { Route as AuthenticatedContratosIndexRouteImport } from './../routes/_authenticated/contratos/index'
 import { Route as AuthenticatedUsuariosCriarRouteImport } from './../routes/_authenticated/usuarios/criar'
 import { Route as AuthenticatedUsuariosIdRouteImport } from './../routes/_authenticated/usuarios/$id'
+import { Route as AuthenticatedRelatoriosRealizadoXPlanejadoRouteImport } from './../routes/_authenticated/relatorios/realizado-x-planejado'
 import { Route as AuthenticatedRelatoriosFornecedoresSemContratoRouteImport } from './../routes/_authenticated/relatorios/fornecedores-sem-contrato'
 import { Route as AuthenticatedProgramasCriarRouteImport } from './../routes/_authenticated/programas/criar'
 import { Route as AuthenticatedProgramasIdRouteImport } from './../routes/_authenticated/programas/$id'
@@ -159,6 +160,12 @@ const AuthenticatedUsuariosIdRoute = AuthenticatedUsuariosIdRouteImport.update({
   path: '/usuarios/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRelatoriosRealizadoXPlanejadoRoute =
+  AuthenticatedRelatoriosRealizadoXPlanejadoRouteImport.update({
+    id: '/relatorios/realizado-x-planejado',
+    path: '/relatorios/realizado-x-planejado',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedRelatoriosFornecedoresSemContratoRoute =
   AuthenticatedRelatoriosFornecedoresSemContratoRouteImport.update({
     id: '/relatorios/fornecedores-sem-contrato',
@@ -352,6 +359,7 @@ export interface FileRoutesByFullPath {
   '/programas/$id': typeof AuthenticatedProgramasIdRoute
   '/programas/criar': typeof AuthenticatedProgramasCriarRoute
   '/relatorios/fornecedores-sem-contrato': typeof AuthenticatedRelatoriosFornecedoresSemContratoRoute
+  '/relatorios/realizado-x-planejado': typeof AuthenticatedRelatoriosRealizadoXPlanejadoRoute
   '/usuarios/$id': typeof AuthenticatedUsuariosIdRoute
   '/usuarios/criar': typeof AuthenticatedUsuariosCriarRoute
   '/contratos/': typeof AuthenticatedContratosIndexRoute
@@ -401,6 +409,7 @@ export interface FileRoutesByTo {
   '/programas/$id': typeof AuthenticatedProgramasIdRoute
   '/programas/criar': typeof AuthenticatedProgramasCriarRoute
   '/relatorios/fornecedores-sem-contrato': typeof AuthenticatedRelatoriosFornecedoresSemContratoRoute
+  '/relatorios/realizado-x-planejado': typeof AuthenticatedRelatoriosRealizadoXPlanejadoRoute
   '/usuarios/$id': typeof AuthenticatedUsuariosIdRoute
   '/usuarios/criar': typeof AuthenticatedUsuariosCriarRoute
   '/contratos': typeof AuthenticatedContratosIndexRoute
@@ -452,6 +461,7 @@ export interface FileRoutesById {
   '/_authenticated/programas/$id': typeof AuthenticatedProgramasIdRoute
   '/_authenticated/programas/criar': typeof AuthenticatedProgramasCriarRoute
   '/_authenticated/relatorios/fornecedores-sem-contrato': typeof AuthenticatedRelatoriosFornecedoresSemContratoRoute
+  '/_authenticated/relatorios/realizado-x-planejado': typeof AuthenticatedRelatoriosRealizadoXPlanejadoRoute
   '/_authenticated/usuarios/$id': typeof AuthenticatedUsuariosIdRoute
   '/_authenticated/usuarios/criar': typeof AuthenticatedUsuariosCriarRoute
   '/_authenticated/contratos/': typeof AuthenticatedContratosIndexRoute
@@ -503,6 +513,7 @@ export interface FileRouteTypes {
     | '/programas/$id'
     | '/programas/criar'
     | '/relatorios/fornecedores-sem-contrato'
+    | '/relatorios/realizado-x-planejado'
     | '/usuarios/$id'
     | '/usuarios/criar'
     | '/contratos/'
@@ -552,6 +563,7 @@ export interface FileRouteTypes {
     | '/programas/$id'
     | '/programas/criar'
     | '/relatorios/fornecedores-sem-contrato'
+    | '/relatorios/realizado-x-planejado'
     | '/usuarios/$id'
     | '/usuarios/criar'
     | '/contratos'
@@ -602,6 +614,7 @@ export interface FileRouteTypes {
     | '/_authenticated/programas/$id'
     | '/_authenticated/programas/criar'
     | '/_authenticated/relatorios/fornecedores-sem-contrato'
+    | '/_authenticated/relatorios/realizado-x-planejado'
     | '/_authenticated/usuarios/$id'
     | '/_authenticated/usuarios/criar'
     | '/_authenticated/contratos/'
@@ -780,6 +793,13 @@ declare module '@tanstack/react-router' {
       path: '/usuarios/$id'
       fullPath: '/usuarios/$id'
       preLoaderRoute: typeof AuthenticatedUsuariosIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/relatorios/realizado-x-planejado': {
+      id: '/_authenticated/relatorios/realizado-x-planejado'
+      path: '/relatorios/realizado-x-planejado'
+      fullPath: '/relatorios/realizado-x-planejado'
+      preLoaderRoute: typeof AuthenticatedRelatoriosRealizadoXPlanejadoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/relatorios/fornecedores-sem-contrato': {
@@ -1056,6 +1076,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProgramasIdRoute: typeof AuthenticatedProgramasIdRoute
   AuthenticatedProgramasCriarRoute: typeof AuthenticatedProgramasCriarRoute
   AuthenticatedRelatoriosFornecedoresSemContratoRoute: typeof AuthenticatedRelatoriosFornecedoresSemContratoRoute
+  AuthenticatedRelatoriosRealizadoXPlanejadoRoute: typeof AuthenticatedRelatoriosRealizadoXPlanejadoRoute
   AuthenticatedUsuariosIdRoute: typeof AuthenticatedUsuariosIdRoute
   AuthenticatedUsuariosCriarRoute: typeof AuthenticatedUsuariosCriarRoute
   AuthenticatedContratosIndexRoute: typeof AuthenticatedContratosIndexRoute
@@ -1094,6 +1115,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProgramasCriarRoute: AuthenticatedProgramasCriarRoute,
   AuthenticatedRelatoriosFornecedoresSemContratoRoute:
     AuthenticatedRelatoriosFornecedoresSemContratoRoute,
+  AuthenticatedRelatoriosRealizadoXPlanejadoRoute:
+    AuthenticatedRelatoriosRealizadoXPlanejadoRoute,
   AuthenticatedUsuariosIdRoute: AuthenticatedUsuariosIdRoute,
   AuthenticatedUsuariosCriarRoute: AuthenticatedUsuariosCriarRoute,
   AuthenticatedContratosIndexRoute: AuthenticatedContratosIndexRoute,

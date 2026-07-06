@@ -55,6 +55,28 @@ PDF (impressão da tabela) para anexar em prestações de contas.
    linha por par fornecedor→plano e o total agregado (R$).
 2. **Given** a tela carregada, **When** clico Exportar → PDF, **Then** abre `window.print()`.
 
+### User Story 3 - Ler o compliance de relance (gráfico + filtros recolhíveis) (Priority: P2)
+
+Como analista, quero um **gráfico** no topo (antes da tabela) que mostre, por fornecedor, o quanto do limite
+foi utilizado — colorido pelo status (dentro/no-limite/acima) — e quero que os filtros fiquem **recolhidos**
+por padrão (como no relatório "Realizado × Planejado"), para a tela abrir limpa e focada no dado.
+
+**Why this priority**: acelera a leitura de compliance (quem está acima) sem varrer a tabela; alinha o
+padrão de filtros entre os relatórios.
+
+**Independent Test**: acessar a tela e ver, antes da tabela, um card "Utilização do limite por fornecedor"
+com barras horizontais (top 8 por valor), coloridas por status, com marcador de 100% e um resumo
+"N fornecedores · X acima do limite". Os filtros só aparecem ao clicar em "Filtros".
+
+**Acceptance Scenarios**:
+
+1. **Given** a tela carregada, **When** ela abre, **Then** os filtros estão RECOLHIDOS e há um botão
+   "Filtros" (ghost) no cabeçalho; clicar alterna o painel (estado ativo `aria-pressed`).
+2. **Given** o card do gráfico, **When** a tela monta, **Then** as barras crescem (animação discreta) até
+   `min(100%, % utilizado)`; fornecedores acima do limite batem no marcador de 100% e ficam vermelhos.
+3. **Given** troco o **Limite** (dentro do painel), **When** aplico, **Then** o gráfico E a tabela
+   recalculam juntos (mesma fonte de verdade).
+
 ### Edge Cases
 
 - Fornecedor exatamente no limite (100%) → NÃO é danger (regra é `> limite`, estrito).
@@ -79,6 +101,14 @@ PDF (impressão da tabela) para anexar em prestações de contas.
 - **FR-006**: A tela DEVE usar o kit visual "brand" (header, toolbar de filtros, tree-table) e ser
   full-bleed (28px), coerente com o grid de Colaboradores.
 - **FR-007**: Todo texto ao humano DEVE vir de i18n (sem literais hardcoded na view).
+- **FR-008**: Os filtros DEVEM ser recolhíveis (fechados por padrão), acionados por um toggle "Filtros" no
+  cabeçalho (mesmo padrão do "Realizado × Planejado"); o campo **Limite** permanece funcional dentro do
+  painel.
+- **FR-009**: O sistema DEVE exibir, ENTRE os filtros e a tabela, um gráfico de barras horizontais
+  "Utilização do limite por fornecedor" (top 8 por VALOR TOTAL desc), com a largura ∝ `min(100, % utilizado)`,
+  cor por status de compliance (dentro=primary / no-limite=neutro / acima=danger — MESMA lógica da tabela),
+  o **% utilizado** ao lado, um **marcador de 100%** (linha do Limite) no track, animação de entrada
+  discreta e um resumo "N fornecedores · X acima do limite".
 
 _Marcação de incerteza:_
 

@@ -13,7 +13,10 @@ import {
   buildCsv,
   parseLimiteToCents,
   formatLimiteInput,
+  topSuppliersByValor,
+  complianceCounts,
   LIMITE_DEFAULT_CENTS,
+  type SupplierRow,
 } from '../../../../src/modules/reports/client/suppliers-without-contract.view-model.ts'
 import { SUPPLIERS_WITHOUT_CONTRACT_RAW } from '../../../../src/modules/reports/client/data/suppliers-without-contract.placeholder.ts'
 
@@ -121,6 +124,93 @@ describe('parseLimiteToCents / formatLimiteInput — input currency ↔ cents', 
   it('formata cents para exibição sem R$', () => {
     assert.strictEqual(formatLimiteInput(1000000), '10.000,00')
     assert.strictEqual(formatLimiteInput(500000), '5.000,00')
+  })
+})
+
+/** Fábrica de SupplierRow mínima para os testes de derivação do gráfico (só os campos usados). */
+function row(supplier: string, valorTotalCents: number, flags?: Partial<SupplierRow>): SupplierRow {
+  return {
+    supplier,
+    valorTotalCents,
+    utilizadoPct: 0,
+    totalRestanteCents: 0,
+    overLimit: false,
+    atLimit: false,
+    plans: [],
+    ...flags,
+  }
+}
+
+describe('topSuppliersByValor — top-N por valor DESC, sem mutar', () => {
+  it('ordena por valorTotalCents decrescente', () => {
+    const input = [row('A', 100), row('B', 300), row('C', 200)]
+    const top = topSuppliersByValor(input, 3)
+    assert.deepStrictEqual(
+      top.map((r) => r.supplier),
+      ['B', 'C', 'A'],
+    )
+  })
+
+  it('respeita o corte top-N', () => {
+    const input = [row('A', 100), row('B', 300), row('C', 200), row('D', 400)]
+    const top = topSuppliersByValor(input, 2)
+    assert.strictEqual(top.length, 2)
+    assert.deepStrictEqual(
+      top.map((r) => r.supplier),
+      ['D', 'B'],
+    )
+  })
+
+  it('NÃO muta o array de entrada (ordem original preservada)', () => {
+    const input = [row('A', 100), row('B', 300), row('C', 200)]
+    const before = input.map((r) => r.supplier)
+    topSuppliersByValor(input, 3)
+    assert.deepStrictEqual(
+      input.map((r) => r.supplier),
+      before,
+    )
+  })
+
+  it('n padrão = 8 e clampa n negativo para 0', () => {
+    const input = Array.from({ length: 12 }, (_, i) => row(`S${String(i)}`, i))
+    assert.strictEqual(topSuppliersByValor(input).length, 8)
+    assert.strictEqual(topSuppliersByValor(input, -3).length, 0)
+  })
+
+  it('bate com o dado placeholder real (WEE TRAVEL é o maior)', () => {
+    const rows = aggregateSuppliers(SUPPLIERS_WITHOUT_CONTRACT_RAW, LIMITE_DEFAULT_CENTS)
+    const top = topSuppliersByValor(rows, 3)
+    assert.strictEqual(top[0]?.supplier, 'WEE TRAVEL')
+    assert.ok((top[0]?.valorTotalCents ?? 0) >= (top[1]?.valorTotalCents ?? 0))
+  })
+})
+
+describe('complianceCounts — contagem por status (flags como fonte única)', () => {
+  it('conta over / at / within e o total', () => {
+    const input = [
+      row('over1', 0, { overLimit: true }),
+      row('over2', 0, { overLimit: true }),
+      row('at1', 0, { atLimit: true }),
+      row('within1', 0),
+      row('within2', 0),
+    ]
+    assert.deepStrictEqual(complianceCounts(input), {
+      overLimit: 2,
+      atLimit: 1,
+      within: 2,
+      total: 5,
+    })
+  })
+
+  it('lista vazia → tudo zero', () => {
+    assert.deepStrictEqual(complianceCounts([]), { overLimit: 0, atLimit: 0, within: 0, total: 0 })
+  })
+
+  it('within = total - over - at sobre o dado placeholder real', () => {
+    const rows = aggregateSuppliers(SUPPLIERS_WITHOUT_CONTRACT_RAW, LIMITE_DEFAULT_CENTS)
+    const c = complianceCounts(rows)
+    assert.strictEqual(c.total, rows.length)
+    assert.strictEqual(c.within, c.total - c.overLimit - c.atLimit)
   })
 })
 

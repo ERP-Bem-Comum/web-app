@@ -2186,6 +2186,87 @@ export const ptBR: Catalog = {
   'reports.suppliersWithoutContract.export.label': 'Exportar',
   'reports.suppliersWithoutContract.export.csv': 'CSV',
   'reports.suppliersWithoutContract.export.pdf': 'PDF',
+  'reports.suppliersWithoutContract.chart.title': 'Utilização do limite por fornecedor',
+  'reports.suppliersWithoutContract.chart.summary': '{{total}} fornecedores · {{over}} acima do limite',
+  'reports.suppliersWithoutContract.chart.legend.within': 'Dentro do limite',
+  'reports.suppliersWithoutContract.chart.legend.atLimit': 'No limite',
+  'reports.suppliersWithoutContract.chart.legend.over': 'Acima do limite',
+
+  // ── Relatório "Realizado × Planejado" ──
+  'reports.realizadoXPlanejado.title': 'Realizado × Planejado',
+  'reports.realizadoXPlanejado.subtitle':
+    'Execução orçamentária por centro de custo, categoria e subcategoria, mês a mês.',
+  'reports.realizadoXPlanejado.back': 'Voltar',
+  'reports.realizadoXPlanejado.empty': 'Nenhum dado para exibir.',
+  // Colunas da tabela.
+  'reports.realizadoXPlanejado.columns.centroCusto': 'Centro de custo',
+  'reports.realizadoXPlanejado.columns.provisionado': 'Provisionado',
+  'reports.realizadoXPlanejado.columns.realizado': 'Realizado',
+  'reports.realizadoXPlanejado.columns.planejado': 'Planejado',
+  'reports.realizadoXPlanejado.columns.av': 'AV (%) do planejado',
+  'reports.realizadoXPlanejado.columns.avShort': 'AV %',
+  // Sub-colunas por mês (abreviadas).
+  'reports.realizadoXPlanejado.columns.provisAbbrev': 'Provis.',
+  'reports.realizadoXPlanejado.columns.realizAbbrev': 'Realiz.',
+  'reports.realizadoXPlanejado.columns.planejAbbrev': 'Planej.',
+  // KPIs.
+  'reports.realizadoXPlanejado.kpi.planned': 'Total planejado',
+  'reports.realizadoXPlanejado.kpi.realized': 'Total realizado',
+  'reports.realizadoXPlanejado.kpi.provisioned': 'Total provisionado',
+  'reports.realizadoXPlanejado.kpi.execution': 'Execução',
+  'reports.realizadoXPlanejado.kpi.plannedSub': 'Orçamento do período',
+  'reports.realizadoXPlanejado.kpi.realizedSub': '{{pct}} do planejado',
+  'reports.realizadoXPlanejado.kpi.provisionedSub': 'Comprometido a pagar',
+  'reports.realizadoXPlanejado.kpi.executionSub': 'Realizado ÷ planejado',
+  // Faixa de totais (legado — mantida por compat).
+  'reports.realizadoXPlanejado.totals.provisionado': 'Valor total provisionado',
+  'reports.realizadoXPlanejado.totals.realizado': 'Valor total realizado',
+  'reports.realizadoXPlanejado.totals.planejado': 'Valor total planejado',
+  'reports.realizadoXPlanejado.totals.row': 'Total',
+  // Tabela.
+  'reports.realizadoXPlanejado.table.title': 'Detalhamento por mês',
+  'reports.realizadoXPlanejado.table.consolidatedGroup': 'Consolidado do ano',
+  // Passador de meses.
+  'reports.realizadoXPlanejado.pager.prev': 'Meses anteriores',
+  'reports.realizadoXPlanejado.pager.next': 'Próximos meses',
+  // Árvore.
+  'reports.realizadoXPlanejado.tree.expand': 'Expandir',
+  'reports.realizadoXPlanejado.tree.collapse': 'Recolher',
+  // Filtros (placeholders visuais).
+  'reports.realizadoXPlanejado.filters.title': 'Filtros',
+  'reports.realizadoXPlanejado.filters.programa': 'Programa',
+  'reports.realizadoXPlanejado.filters.plano': 'Plano orçamentário',
+  'reports.realizadoXPlanejado.filters.estado': 'Estado',
+  'reports.realizadoXPlanejado.filters.municipio': 'Município',
+  'reports.realizadoXPlanejado.filters.ano': 'Ano',
+  'reports.realizadoXPlanejado.filters.allOption': 'Todos',
+  'reports.realizadoXPlanejado.filters.filtrar': 'Aplicar filtros',
+  // Gráficos.
+  'reports.realizadoXPlanejado.charts.byCostCenter': 'Por centro de custo',
+  'reports.realizadoXPlanejado.charts.monthly': 'Distribuição mensal',
+  'reports.realizadoXPlanejado.charts.realizedVsForecast': 'Realizado vs previsto',
+  'reports.realizadoXPlanejado.charts.exampleHint': 'exemplo',
+  'reports.realizadoXPlanejado.charts.execCaption': 'execução',
+  'reports.realizadoXPlanejado.legend.realizado': 'Realizado',
+  'reports.realizadoXPlanejado.legend.previsto': 'Previsto',
+  'reports.realizadoXPlanejado.legend.provisionado': 'Provisionado',
+  // Export.
+  'reports.realizadoXPlanejado.export.label': 'Exportar',
+  'reports.realizadoXPlanejado.export.csv': 'CSV',
+  'reports.realizadoXPlanejado.export.pdf': 'PDF',
+  // Abreviações Title-case dos meses (grupos de mês da tabela: "Dez/26").
+  'reports.realizadoXPlanejado.monthTitle.jan': 'Jan',
+  'reports.realizadoXPlanejado.monthTitle.feb': 'Fev',
+  'reports.realizadoXPlanejado.monthTitle.mar': 'Mar',
+  'reports.realizadoXPlanejado.monthTitle.apr': 'Abr',
+  'reports.realizadoXPlanejado.monthTitle.may': 'Mai',
+  'reports.realizadoXPlanejado.monthTitle.jun': 'Jun',
+  'reports.realizadoXPlanejado.monthTitle.jul': 'Jul',
+  'reports.realizadoXPlanejado.monthTitle.aug': 'Ago',
+  'reports.realizadoXPlanejado.monthTitle.sep': 'Set',
+  'reports.realizadoXPlanejado.monthTitle.oct': 'Out',
+  'reports.realizadoXPlanejado.monthTitle.nov': 'Nov',
+  'reports.realizadoXPlanejado.monthTitle.dec': 'Dez',
 
   // ── Shell (top bar) ──
   'shell.topbar.brand': 'Bem Comum',

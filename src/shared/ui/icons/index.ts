@@ -12,6 +12,7 @@ export {
   ChevronDownIcon,
   ChevronUpIcon,
   ChevronLeftIcon,
+  ChevronRightIcon,
   MenuIcon,
   LogOutIcon,
   MailIcon,

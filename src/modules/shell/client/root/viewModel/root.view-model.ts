@@ -64,6 +64,7 @@ const PAGE_TITLES: Readonly<Record<string, string>> = {
   // Relatórios → Fornecedores sem Contrato — a page desenha o próprio PageHeader (padrão Colaboradores);
   // isto só alimenta o document.title (senão cairia no fallback "ERP Bem Comum").
   '/relatorios/fornecedores-sem-contrato': 'Fornecedores sem Contrato',
+  '/relatorios/realizado-x-planejado': 'Realizado × Planejado',
   '/login': 'Login',
 }
 
