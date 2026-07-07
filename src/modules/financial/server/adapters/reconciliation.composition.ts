@@ -6,6 +6,7 @@
 import { loadEnvOrThrow } from '#external/config/env.config.ts'
 import { coreApiBase } from '#external/core-api/api-base.ts'
 import { createCoreApiReconciliationClient } from './core-api/core-api-reconciliation.ts'
+import { createReconciliationEnrichmentSource } from './core-api/reconciliation-enrichment.source.ts'
 import {
   createBatchReconcile,
   createClosePeriod,
@@ -33,7 +34,11 @@ type ReconciliationServer = ReturnType<typeof build>
 
 const build = () => {
   const env = loadEnvOrThrow()
-  const client = createCoreApiReconciliationClient(`${coreApiBase(env.CORE_API_URL, 'v2')}/financial`)
+  const financialBase = `${coreApiBase(env.CORE_API_URL, 'v2')}/financial`
+  // INTERINO BFF composite p/ core-api#172/#265: a fonte de enriquecimento costura títulos (v2/financial)
+  // + parceiros (agregador dos 4 tipos, lê a base v1 internamente). REMOVER quando o core-api enriquecer.
+  const enrichmentFor = createReconciliationEnrichmentSource(financialBase)
+  const client = createCoreApiReconciliationClient(financialBase, enrichmentFor)
   return {
     importStatement: createImportStatement({ client }),
     listTransactions: createListTransactions({ client }),

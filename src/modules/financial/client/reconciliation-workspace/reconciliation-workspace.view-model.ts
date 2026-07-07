@@ -17,6 +17,7 @@ import type {
   StatementTransaction,
   SuggestionBand,
   TransactionReconciliation,
+  TransactionReconciliationItem,
 } from '#modules/financial/client/data/model/reconciliation.model.ts'
 import { centsToBRL, centsToReais } from '#modules/financial/client/data/money.ts'
 
@@ -699,6 +700,27 @@ export const matchAuditFromLookup = (r: TransactionReconciliation): MatchDetails
   when: formatDayHeader(r.reconciledAt.slice(0, 10)),
   who: r.reconciledBy,
 })
+
+/**
+ * Lado "Título" de um match INDIVIDUAL (1 item) a partir do item enriquecido no BFF (interim #172):
+ * favorecido (fallback nº doc, fallback payableId), documento, vencimento e valor conciliado. Derivação
+ * PURA (sem React, ADR-0009). `item === null` → null (a view cai no default "—"). O `valueCents` é o valor
+ * conciliado do próprio item (items[0].reconciledValueCents), mantendo o "Valor conciliado" já exibido hoje.
+ */
+export const matchDocFromItem = (
+  item: TransactionReconciliationItem | null,
+  valueCents: string | null,
+): MatchDetailsDoc | null => {
+  if (item === null) return null
+  return {
+    name: item.supplierName ?? item.documentNumber ?? item.payableId,
+    documento: item.documentNumber ?? MATCH_DASH,
+    vencimento: item.dueDate !== null ? formatDayHeader(item.dueDate) : MATCH_DASH,
+    // Categoria NÃO vem do core-api em nenhuma leitura (category_ref write-only); depende de backend expor — issue análoga a #268.
+    categoria: MATCH_DASH,
+    valueBRL: valueCents !== null ? centsToBRL(valueCents) : MATCH_DASH,
+  }
+}
 
 /**
  * Lado "Título" do modal quando UMA saída foi conciliada com VÁRIOS títulos (#175 com >1 item): contagem +

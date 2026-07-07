@@ -200,10 +200,15 @@ export type StatementSuggestion = Readonly<{
 }>
 export type RejectedSuggestion = Readonly<{ transactionId: string; payableId: string }>
 // Conciliação ativa de uma transação (#175). `null` no repository = sem conciliação ativa. Itens trazem
-// só payableId+valor conciliado (sem fornecedor/nº doc até #172).
+// payableId+valor conciliado e os detalhes do título enriquecidos no BFF (interim #172): nº do documento,
+// fornecedor e vencimento — `null` quando o BFF não conseguiu resolver o título. Espelho estrutural do
+// domínio server (o repository repassa `res.data` direto, então esta forma precisa bater com a do server).
 export type TransactionReconciliationItem = Readonly<{
   payableId: string
   reconciledValueCents: string
+  documentNumber: string | null
+  supplierName: string | null
+  dueDate: string | null
 }>
 export type TransactionReconciliation = Readonly<{
   reconciliationId: string

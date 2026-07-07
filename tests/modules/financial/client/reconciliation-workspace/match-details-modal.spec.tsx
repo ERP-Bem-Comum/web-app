@@ -81,6 +81,59 @@ describe('MatchDetailsModal — 1 saída → N títulos', () => {
   })
 })
 
+describe('MatchDetailsModal — título individual enriquecido (interim #172)', () => {
+  it('surfa favorecido, documento e vencimento; categoria segue "—"', () => {
+    render(
+      <MatchDetailsModal
+        open
+        view={view({
+          doc: {
+            name: 'TS Da Silva Serviços Ltda',
+            documento: 'NFS-e 2024-0537',
+            vencimento: '10/06/2026',
+            categoria: '—',
+            valueBRL: 'R$ 1.500,00',
+          },
+        })}
+        canUndo
+        undoing={false}
+        undoErrorTag={null}
+        onUndo={vi.fn()}
+        onViewTitle={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    // Favorecido (headline), documento e vencimento vêm do item enriquecido no BFF.
+    expect(screen.getByText('TS Da Silva Serviços Ltda')).toBeTruthy()
+    expect(screen.getByText('NFS-e 2024-0537')).toBeTruthy()
+    expect(screen.getByText('10/06/2026')).toBeTruthy()
+    expect(screen.getByText('R$ 1.500,00')).toBeTruthy()
+    // Categoria segue "—" (category_ref write-only no core-api — gap de backend).
+    const catLabel = screen.getByText(tr('financial.recon.match.rowCat'))
+    expect(catLabel.nextElementSibling?.textContent).toBe('—')
+  })
+
+  it('item não resolvido pelo BFF (tudo null → "—"): renderiza traços graciosamente', () => {
+    render(
+      <MatchDetailsModal
+        open
+        view={view()}
+        canUndo
+        undoing={false}
+        undoErrorTag={null}
+        onUndo={vi.fn()}
+        onViewTitle={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    // doc all-dashes: documento e vencimento mostram "—".
+    const docLabel = screen.getByText(tr('financial.recon.match.rowDoc'))
+    expect(docLabel.nextElementSibling?.textContent).toBe('—')
+    const dueLabel = screen.getByText(tr('financial.recon.match.rowDue'))
+    expect(dueLabel.nextElementSibling?.textContent).toBe('—')
+  })
+})
+
 describe('MatchDetailsModal — confirmação do Desfazer (US5)', () => {
   const renderModal = (over: Parameters<typeof view>[0] = {}, props: Record<string, unknown> = {}) =>
     render(

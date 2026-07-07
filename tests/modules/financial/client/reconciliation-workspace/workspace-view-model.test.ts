@@ -29,6 +29,7 @@ import {
   groupAccountsForSwitch,
   matchDetailsView,
   buildMatchTitles,
+  matchDocFromItem,
   centsToBRL,
   filterPayables,
   payableTypeOptions,
@@ -44,6 +45,7 @@ import {
   nextPendingWithMatch,
   tituloLabel,
   formatDateDash,
+  formatDayHeader,
   deriveManualKindFromTx,
 } from '../../../../../src/modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
 import type {
@@ -474,6 +476,74 @@ describe('buildMatchTitles (1 saída → N títulos, #175 items)', () => {
     assert.equal(r?.differenceBRL, centsToBRL('500'))
     assert.equal(r?.differenceTag, 'financial.recon.match.diffDiscount')
     assert.equal(r?.totalBRL, centsToBRL('4500'))
+  })
+})
+
+describe('matchDocFromItem (título individual enriquecido no BFF — interim #172)', () => {
+  it('null quando item é null (cai no default "—" da view)', () => {
+    assert.equal(matchDocFromItem(null, '150000'), null)
+  })
+
+  it('item resolvido: favorecido + documento + vencimento formatado + valor conciliado; categoria "—"', () => {
+    const doc = matchDocFromItem(
+      {
+        payableId: 'pay-1',
+        reconciledValueCents: '150000',
+        documentNumber: 'NFS-e 2024-0537',
+        supplierName: 'TS Da Silva Serviços Ltda',
+        dueDate: '2026-06-10',
+      },
+      '150000',
+    )
+    assert.equal(doc?.name, 'TS Da Silva Serviços Ltda')
+    assert.equal(doc?.documento, 'NFS-e 2024-0537')
+    // dueDate ISO é formatado com o mesmo formatDayHeader do resto do arquivo.
+    assert.equal(doc?.vencimento, formatDayHeader('2026-06-10'))
+    assert.equal(doc?.valueBRL, centsToBRL('150000'))
+    // Categoria NÃO vem do core-api (category_ref write-only) — sempre "—".
+    assert.equal(doc?.categoria, '—')
+  })
+
+  it('sem favorecido: headline cai no nº do documento; sem doc: cai no payableId', () => {
+    const byDoc = matchDocFromItem(
+      {
+        payableId: 'pay-2',
+        reconciledValueCents: '5000',
+        documentNumber: 'DOC-9',
+        supplierName: null,
+        dueDate: null,
+      },
+      '5000',
+    )
+    assert.equal(byDoc?.name, 'DOC-9')
+
+    const byId = matchDocFromItem(
+      {
+        payableId: 'pay-3',
+        reconciledValueCents: '5000',
+        documentNumber: null,
+        supplierName: null,
+        dueDate: null,
+      },
+      '5000',
+    )
+    assert.equal(byId?.name, 'pay-3')
+  })
+
+  it('campos null → documento/vencimento "—"; valueCents null → valor "—"', () => {
+    const doc = matchDocFromItem(
+      {
+        payableId: 'pay-4',
+        reconciledValueCents: '0',
+        documentNumber: null,
+        supplierName: 'Fornecedor X',
+        dueDate: null,
+      },
+      null,
+    )
+    assert.equal(doc?.documento, '—')
+    assert.equal(doc?.vencimento, '—')
+    assert.equal(doc?.valueBRL, '—')
   })
 })
 

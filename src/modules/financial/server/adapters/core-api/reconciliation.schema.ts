@@ -136,6 +136,10 @@ export const CoreApiSuggestionSchema = z.object({
   }),
   // #140 — vazio quando o backend não envia (drift); o mapper filtra critérios desconhecidos.
   criteriaBreakdown: z.array(CoreApiCriterionResultSchema).catch([]),
+  // core-api#172: nativamente AUSENTES hoje (o BFF enriquece via join); tolerantes p/ quando o backend
+  // enviar. `.catch(null)` mantém o parse verde mesmo sem os campos.
+  supplierName: z.string().trim().nullable().optional().catch(null),
+  documentNumber: z.string().trim().nullable().optional().catch(null),
 })
 export type CoreApiSuggestion = z.infer<typeof CoreApiSuggestionSchema>
 export const CoreApiSuggestionsSchema = z.object({ suggestions: z.array(CoreApiSuggestionSchema) })

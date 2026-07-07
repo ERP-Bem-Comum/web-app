@@ -544,6 +544,58 @@ describe('suggestionsToModel', () => {
       assert.deepEqual(bd[0], { criterion: 'dateD0', weight: 20, result: 'falha', detail: '' })
     }
   })
+
+  it('#172: supplierName/documentNumber ausentes no contrato → null (o BFF enriquece depois)', () => {
+    const raw = {
+      suggestions: [
+        {
+          payableId: 'p1',
+          score: 88,
+          band: 'alta',
+          criteria: {
+            payeeMatch: true,
+            exactValue: true,
+            dateD0: true,
+            memoRef: false,
+            supplierOpenCount: 1,
+          },
+        },
+      ],
+    }
+    const r = suggestionsToModel(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value[0]?.supplierName, null)
+      assert.equal(r.value[0]?.documentNumber, null)
+    }
+  })
+
+  it('#172: quando o core-api já enviar supplierName/documentNumber, o mapper os propaga', () => {
+    const raw = {
+      suggestions: [
+        {
+          payableId: 'p1',
+          score: 88,
+          band: 'alta',
+          criteria: {
+            payeeMatch: true,
+            exactValue: true,
+            dateD0: true,
+            memoRef: false,
+            supplierOpenCount: 1,
+          },
+          supplierName: 'ACME LTDA',
+          documentNumber: 'NF-123',
+        },
+      ],
+    }
+    const r = suggestionsToModel(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value[0]?.supplierName, 'ACME LTDA')
+      assert.equal(r.value[0]?.documentNumber, 'NF-123')
+    }
+  })
 })
 
 describe('importToModel / reconciliationCreatedToModel / undoToModel', () => {
