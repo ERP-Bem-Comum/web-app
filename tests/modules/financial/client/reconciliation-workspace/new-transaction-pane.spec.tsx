@@ -56,6 +56,20 @@ describe('NewTransactionPane', () => {
     expect(setType).toHaveBeenCalledWith('Transfer')
   })
 
+  it('Tarifa/Juros: mostra a classificação (Tarifa/Multa/Juros) ao lado da subcategoria — honesta (disabled)', () => {
+    render(<NewTransactionPane binding={baseBinding({ type: 'FeePenaltyInterest' })} />)
+    expect(screen.getByText(tr('financial.recon.manual.f.feeKind'))).toBeTruthy()
+    // As 3 opções (Tarifa/Multa/Juros) aparecem; o campo é honesto/desligado até o backend expor.
+    expect(screen.getByRole('option', { name: tr('financial.recon.treatment.Fee') })).toBeTruthy()
+    expect(screen.getByRole('option', { name: tr('financial.recon.treatment.Penalty') })).toBeTruthy()
+    expect(screen.getByRole('option', { name: tr('financial.recon.treatment.Interest') })).toBeTruthy()
+  })
+
+  it('a classificação Tarifa/Multa/Juros NÃO aparece em outros tipos (ex.: Transferência)', () => {
+    render(<NewTransactionPane binding={baseBinding({ type: 'Transfer', needsDestination: true })} />)
+    expect(screen.queryByText(tr('financial.recon.manual.f.feeKind'))).toBeNull()
+  })
+
   it('Transferência mostra o destino, SEM aviso/confirmação consciente (removidos a pedido da P.O.)', () => {
     render(<NewTransactionPane binding={baseBinding({ type: 'Transfer', needsDestination: true })} />)
     expect(screen.getByText(tr('financial.recon.manual.dest.Transfer.label'))).toBeTruthy()

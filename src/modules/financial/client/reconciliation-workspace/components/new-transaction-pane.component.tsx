@@ -160,6 +160,21 @@ export function NewTransactionPane({ binding }: NewTransactionPaneProps) {
     />
   )
 
+  // Classificação Tarifa/Multa/Juros — só faz sentido p/ o tipo Tarifa/Juros (FeePenaltyInterest). Campo
+  // HONESTO/desligado (as opções aparecem, mas o input do manual-entry no core-api ainda não tem campo
+  // estruturado p/ o subtipo): acende quando o backend expor. Reusa os rótulos de tratamento (Fee/Penalty/Interest).
+  const feeKindSelect = (
+    <label className={s.ntField}>
+      <span className={s.ntLabel}>{t('financial.recon.manual.f.feeKind')}</span>
+      <select className={s.ntSelect} disabled aria-disabled="true" defaultValue="">
+        <option value="">{t('financial.recon.manual.f.feeKindPlaceholder')}</option>
+        <option value="Fee">{t('financial.recon.treatment.Fee')}</option>
+        <option value="Penalty">{t('financial.recon.treatment.Penalty')}</option>
+        <option value="Interest">{t('financial.recon.treatment.Interest')}</option>
+      </select>
+    </label>
+  )
+
   return (
     <div className={s.assocCol}>
       <div className={s.ntForm}>
@@ -264,7 +279,11 @@ export function NewTransactionPane({ binding }: NewTransactionPaneProps) {
                 {centroSelect}
                 {categoriaSelect}
               </div>
-              <div className={`${s.ntRow} ${s.ntRowCols2}`}>{subcategoriaSelect}</div>
+              {/* Subcategoria + (só p/ Tarifa/Juros) a classificação Tarifa/Multa/Juros no espaço ao lado. */}
+              <div className={`${s.ntRow} ${s.ntRowCols2}`}>
+                {subcategoriaSelect}
+                {type === 'FeePenaltyInterest' ? feeKindSelect : null}
+              </div>
             </>
           )}
           <div className={s.ntRow}>
