@@ -63,6 +63,10 @@ export const tooltipSwatchColor = styleVariants({
   emAtraso: { background: brand.color.posicao.emAtraso },
   pago: { background: brand.color.posicao.pago },
   aPagar: { background: brand.color.posicao.aPagar },
+  // Posição de RECEBIMENTOS — paleta distinta (posicaoRec).
+  emAtrasoRec: { background: brand.color.posicaoRec.emAtraso },
+  recebido: { background: brand.color.posicaoRec.recebido },
+  aReceber: { background: brand.color.posicaoRec.aReceber },
 })
 
 export const tooltipName = style({ color: brand.color.ink700 })
@@ -207,6 +211,10 @@ export const measureStroke = styleVariants({
   emAtraso: { stroke: brand.color.posicao.emAtraso },
   pago: { stroke: brand.color.posicao.pago },
   aPagar: { stroke: brand.color.posicao.aPagar },
+  // Posição de RECEBIMENTOS — paleta distinta (posicaoRec).
+  emAtrasoRec: { stroke: brand.color.posicaoRec.emAtraso },
+  recebido: { stroke: brand.color.posicaoRec.recebido },
+  aReceber: { stroke: brand.color.posicaoRec.aReceber },
 })
 export const measureDot = styleVariants({
   realizado: { background: brand.color.rxp.realizado },
@@ -215,7 +223,14 @@ export const measureDot = styleVariants({
   emAtraso: { background: brand.color.posicao.emAtraso },
   pago: { background: brand.color.posicao.pago },
   aPagar: { background: brand.color.posicao.aPagar },
+  // Posição de RECEBIMENTOS — paleta distinta (posicaoRec).
+  emAtrasoRec: { background: brand.color.posicaoRec.emAtraso },
+  recebido: { background: brand.color.posicaoRec.recebido },
+  aReceber: { background: brand.color.posicaoRec.aReceber },
 })
+
+// Fill das barras "Distribuição por Financiador" (Posição de RECEBIMENTOS) — roxo, distinto do azul de Pag.
+export const hbarFillRec = style({ background: brand.color.posicaoRec.bar })
 
 // ── Legenda do donut ──
 export const legend = style({ inlineSize: '100%', listStyle: 'none', margin: 0, padding: 0 })

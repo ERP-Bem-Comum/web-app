@@ -145,11 +145,16 @@ describe('loadPosicao — fonte da tela (front-first)', () => {
     assert.ok(measureTotal(r.totals) > 0)
   })
 
-  it("aceita 'r' (assinatura pronta p/ Recebíveis) — hoje cai no placeholder de Pagamentos", () => {
-    const p = loadPosicao('p')
+  it("'r' agrega o placeholder de RECEBIMENTOS (fonte distinta de 'p', não vazia)", () => {
     const rcv = loadPosicao('r')
-    assert.equal(rcv.suppliers.length, p.suppliers.length)
-    assert.equal(rcv.totals.emAtrasoCents, p.totals.emAtrasoCents)
+    assert.ok(rcv.suppliers.length >= 4, 'placeholder de recebimentos tem vários financiadores')
+    assert.ok(measureTotal(rcv.totals) > 0)
+    // Fonte distinta da de Pagamentos (financiadores ≠ fornecedores) — engine NEUTRO, dados diferentes.
+    const p = loadPosicao('p')
+    assert.notDeepEqual(
+      rcv.suppliers.map((s) => s.name),
+      p.suppliers.map((s) => s.name),
+    )
   })
 
   it('o Total Geral bate com a soma direta das linhas cruas do placeholder', () => {

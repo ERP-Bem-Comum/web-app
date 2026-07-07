@@ -30,20 +30,21 @@ export function PosicaoKpis(props: PosicaoKpisProps): ReactNode {
   const L = props.labels
   return (
     <div className={kpis}>
-      <div className={`${kpi} ${kpiAccentPosicao.atrasado}`}>
-        <div className={kpiLabel}>{L.atrasado}</div>
-        <div className={kpiValue}>{props.atrasadoValue}</div>
-        <div className={kpiSub}>{L.atrasadoSub}</div>
+      {/* Ordem: A pagar/receber · Pago/Recebido · Atrasado (3ª — afasta o vermelho do menu azul) · Total. */}
+      <div className={`${kpi} ${kpiAccentPosicao.aPagar}`}>
+        <div className={kpiLabel}>{L.aPagar}</div>
+        <div className={kpiValue}>{props.aPagarValue}</div>
+        <div className={kpiSub}>{L.aPagarSub}</div>
       </div>
       <div className={`${kpi} ${kpiAccentPosicao.pago}`}>
         <div className={kpiLabel}>{L.pago}</div>
         <div className={kpiValue}>{props.pagoValue}</div>
         <div className={kpiSub}>{L.pagoSub}</div>
       </div>
-      <div className={`${kpi} ${kpiAccentPosicao.aPagar}`}>
-        <div className={kpiLabel}>{L.aPagar}</div>
-        <div className={kpiValue}>{props.aPagarValue}</div>
-        <div className={kpiSub}>{L.aPagarSub}</div>
+      <div className={`${kpi} ${kpiAccentPosicao.atrasado}`}>
+        <div className={kpiLabel}>{L.atrasado}</div>
+        <div className={kpiValue}>{props.atrasadoValue}</div>
+        <div className={kpiSub}>{L.atrasadoSub}</div>
       </div>
       <div className={`${kpi} ${kpiAccentPosicao.total}`}>
         <div className={kpiLabel}>{L.total}</div>

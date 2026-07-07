@@ -2382,6 +2382,30 @@ export const ptBR: Catalog = {
   'reports.posicao.tree.expand': 'Expandir',
   'reports.posicao.tree.collapse': 'Recolher',
 
+  // ── Relatório "Posição de Recebimentos" (front-first; core-api#114). Espelha "Posição de Pagamentos"
+  //    reusando o MESMO engine/tela — só as chaves ABAIXO mudam (rótulos do lado de RECEBER); as demais
+  //    (back/filtros/export/emAtraso/kpi.atrasado/kpi.total/chart.resumoTotal/totals.row/tree.*) são
+  //    COMPARTILHADAS com Pagamentos (não duplicadas). PLACEHOLDER sintético só p/ validar a UI; quando o
+  //    Contas a Receber subir, a fonte vem vazia e a tela cai no empty state (`reports.posicao.rec.empty`). ──
+  'reports.posicao.rec.title': 'Posição de Recebimentos',
+  'reports.posicao.rec.financiador': 'Financiador',
+  // Medidas (rótulos do lado de receber): Em atraso (compartilhado) · Recebido · A receber.
+  'reports.posicao.rec.recebido': 'Recebido',
+  'reports.posicao.rec.aReceber': 'A receber',
+  // KPIs — legendas (subtítulos) honestas de recebíveis.
+  'reports.posicao.rec.kpi.atrasadoSub': 'Vencido e não recebido',
+  'reports.posicao.rec.kpi.recebidoSub': 'Valores recebidos',
+  'reports.posicao.rec.kpi.aReceberSub': 'A vencer',
+  'reports.posicao.rec.kpi.totalSub': 'Recebíveis no período',
+  // Gráfico de barras + tabela.
+  'reports.posicao.rec.chart.distribuicao': 'Distribuição por Financiador',
+  'reports.posicao.rec.table.title': 'Posição por financiador',
+  'reports.posicao.rec.columns.name': 'Financiador / Centro de custo / Categoria',
+  // Empty state honesto (nenhum recebível registrado).
+  'reports.posicao.rec.empty': 'Nenhum recebimento registrado',
+  'reports.posicao.rec.emptyHint':
+    'Ainda não há recebíveis lançados. Assim que o Contas a Receber registrar movimentações, elas aparecerão aqui.',
+
   // ── Shell (top bar) ──
   'shell.topbar.brand': 'Bem Comum',
   'shell.topbar.greeting': 'Olá, {{name}}',

@@ -8,6 +8,7 @@
 import { style, styleVariants } from '@vanilla-extract/css'
 
 import { brand } from '#shared/ui/brand/grid-brand.values.ts'
+import { vars } from '#shared/ui/tokens/index.ts'
 
 // Pele compartilhada do RxP (cabeçalho + filtros + cartões + KPIs) — re-export para a page importar tudo daqui.
 export {
@@ -55,4 +56,33 @@ export const charts2 = style({
   marginBlockEnd: brand.space.gridRow,
   alignItems: 'stretch',
   '@media': { 'screen and (max-width: 75rem)': { gridTemplateColumns: '1fr' } },
+})
+
+// ── Empty state HONESTO (relatório vazio: 0 nós, totais 0) — cartão único centralizado, SEM KPIs/gráficos/
+// tabela quebrados. Usado pela Posição de Recebimentos enquanto não há recebível registrado (remover o
+// placeholder → cai aqui). Só-tokens (§X).
+export const emptyPanel = style({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: brand.space.sm,
+  textAlign: 'center',
+  paddingBlock: '4rem',
+  paddingInline: brand.space.xxl,
+})
+
+export const emptyTitle = style({
+  margin: 0,
+  fontFamily: vars.font.family.heading,
+  fontSize: brand.text.panelTitle,
+  fontWeight: brand.weight.bold,
+  color: brand.color.ink900,
+})
+
+export const emptyHint = style({
+  margin: 0,
+  fontSize: brand.text.body,
+  color: brand.color.ink500,
+  maxInlineSize: '32rem',
 })

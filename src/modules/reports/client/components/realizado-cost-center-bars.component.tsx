@@ -24,6 +24,7 @@ import {
   hbarFill,
   hbarFillAnimated,
   hbarFillConcentration,
+  hbarFillRec,
   hbarValue,
   hbarValueConcentration,
   emptyState,
@@ -46,6 +47,8 @@ export type RealizadoCostCenterBarsProps = Readonly<{
   bars: readonly CostCenterBar[]
   emptyLabel: string
   animate: boolean
+  /** Cor do fill: sem prop = padrão (azul/âmbar por concentração); `'rec'` = roxo da Posição de Recebimentos. */
+  fillTone?: 'rec'
 }>
 
 export function RealizadoCostCenterBars(props: RealizadoCostCenterBarsProps): ReactNode {
@@ -67,6 +70,8 @@ export function RealizadoCostCenterBars(props: RealizadoCostCenterBarsProps): Re
     >
       {props.bars.map((b, i) => {
         const tone = b.high ? 'high' : 'normal'
+        // Recebimentos usa o roxo próprio; senão, a cor por concentração (azul/âmbar).
+        const fillClass = props.fillTone === 'rec' ? hbarFillRec : hbarFillConcentration[tone]
         // Largura = % de participação (relativa ao total = 100%); clamp defensivo.
         const widthPct = props.animate ? Math.max(0, Math.min(100, b.sharePct)) : 0
         return (
@@ -84,7 +89,7 @@ export function RealizadoCostCenterBars(props: RealizadoCostCenterBarsProps): Re
             </span>
             <span className={hbarTrack}>
               <span
-                className={`${hbarFill} ${hbarFillConcentration[tone]} ${props.animate ? hbarFillAnimated : ''}`}
+                className={`${hbarFill} ${fillClass} ${props.animate ? hbarFillAnimated : ''}`}
                 style={{ inlineSize: `${String(widthPct)}%` }}
               />
             </span>

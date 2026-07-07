@@ -73,6 +73,9 @@ export type { TeamMemberRow, CategoryCount, YearCount } from '#modules/reports/c
 //    quando o Contas a Receber subir, `loadPosicao('r')` renderiza "Posição de Recebíveis" com a mesma
 //    tabela/agregação (só a fonte + rótulos de nível mudam). Dados SINTÉTICOS até o endpoint nascer. ──
 export { PosicaoPagamentosPage } from '#modules/reports/client/page/posicao-pagamentos.page.tsx'
+// "Posição de Recebimentos": ESPELHO da de Pagamentos (mesmo engine/tela; fonte 'r' + rótulos Financiador/
+// Recebido/A receber). Empty-state-ready: quando o Contas a Receber subir, some o placeholder e cai no vazio.
+export { PosicaoRecebimentosPage } from '#modules/reports/client/page/posicao-recebimentos.page.tsx'
 
 export {
   aggregatePosicao,
@@ -80,6 +83,7 @@ export {
   buildCsv as buildPosicaoCsv,
   formatBRL as formatPosicaoBRL,
   CSV_HEADER as POSICAO_CSV_HEADER,
+  CSV_HEADER_RECEBIMENTOS as POSICAO_RECEBIMENTOS_CSV_HEADER,
 } from '#modules/reports/client/posicao.view-model.ts'
 export type {
   PosicaoLevel,

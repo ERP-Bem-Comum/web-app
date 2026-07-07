@@ -71,6 +71,9 @@ const PAGE_TITLES: Readonly<Record<string, string>> = {
   // Relatórios → Posição de Pagamentos — a page desenha o próprio header "brand"; isto só alimenta o
   // document.title (senão cairia no fallback "ERP Bem Comum").
   '/relatorios/posicao-pagamentos': 'Posição de Pagamentos',
+  // Relatórios → Posição de Recebimentos — espelho da de Pagamentos (header "brand" próprio); só alimenta
+  // o document.title.
+  '/relatorios/posicao-recebimentos': 'Posição de Recebimentos',
   '/login': 'Login',
 }
 

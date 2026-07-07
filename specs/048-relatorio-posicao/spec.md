@@ -93,11 +93,31 @@ MESMO shape neutro (Fornecedor↔Financiador) — agregações e View não mudam
 - `loadPosicao(type = 'p')` é o único ponto que escolhe a FONTE. Hoje só `'p'` tem placeholder.
 - Os rótulos de nível (Fornecedor vs Financiador) vêm por i18n/props — a View é a mesma.
 
+## Posição de Recebimentos (`type: 'r'`) — ENTREGUE (espelho, 2026-07-07)
+
+A engine NEUTRA foi exercitada: entregue a **Posição de Recebimentos** em `/relatorios/posicao-recebimentos`,
+ESPELHANDO a de Pagamentos com o MESMO engine/tela — só a FONTE e os RÓTULOS mudam.
+
+- **Fonte:** `loadPosicao('r')` agrega `POSICAO_RECEBIMENTOS_RAW` (novo placeholder — ~5 **financiadores** →
+  CC → categoria; valores sintéticos nos 3 buckets, sem PII). `'p'` segue Pagamentos.
+- **Medidas (chaves NEUTRAS, rótulos do lado de receber):** **Em atraso** (não recebido + vencido) ·
+  **Recebido** (=`pagoCents`) · **A receber** (=`aPagarCents`). Total = soma.
+- **Rótulos:** título "Posição de Recebimentos"; coluna raiz "Financiador"; cards **Atrasado · Recebido ·
+  A receber · Total**; medidas da tabela/donut **Em atraso · Recebido · A receber**; barras "Distribuição por
+  Financiador". CSV header `Financiador;Centro de custo;Categoria;Em atraso;Recebido;A receber`.
+- **Compartilhamento sem duplicação:** as views burras (tree-table, KPIs, donut, barras) já recebiam rótulos
+  por props; extraiu-se um **`PosicaoReportView`** (corpo da tela) parametrizado por `report` + `labels` +
+  `csvFilename`/`csvHeader`. As pages 'p' e 'r' são wrappers finos (só fonte + i18n). A de Pagamentos seguiu
+  intacta (mesmos textos/comportamento; spec dela verde).
+- **PLACEHOLDER só p/ validar + EMPTY-STATE-READY (diretriz P.O.):** NÃO há recebível registrado (nem no
+  legado). O placeholder existe só p/ validar a UI; **quando o Contas a Receber subir, a fonte retorna `[]`**
+  e a tela cai LIMPA no **empty state honesto** "Nenhum recebimento registrado" (`reports.posicao.rec.empty`)
+  — SEM KPIs/gráficos/tabela quebrados. O empty state está IMPLEMENTADO e TESTADO agora (ambos os caminhos).
+
 ## Fora de escopo
 
-- Recebíveis (`type: 'r'`) — só a assinatura fica pronta; sem placeholder/rota agora.
 - Filtragem real sobre o placeholder (front-first; a forma dos filtros basta).
-- Server function / endpoint real (#114 não existe).
+- Server function / endpoint real (#114 não existe) — ambas as posições são front-first.
 
 ## Critérios de aceite
 
