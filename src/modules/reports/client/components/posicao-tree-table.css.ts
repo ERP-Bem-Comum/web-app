@@ -59,11 +59,19 @@ export const nameSub = style({
   fontVariantNumeric: 'tabular-nums',
 })
 
-// Cor do texto de cada medida (aplicada por classe — as views não importam tokens).
+// Cor por medida — aplicada SÓ no CABEÇALHO da coluna (identidade da coluna). O corpo da tabela fica em tinta
+// neutra (mais elegante que colorir cada valor). As views não importam tokens (cor por classe §X).
 export const measureTone = styleVariants({
-  emAtrasoCents: { color: brand.color.posicao.emAtraso, fontWeight: brand.weight.semibold },
-  pagoCents: { color: brand.color.posicao.pago, fontWeight: brand.weight.semibold },
-  aPagarCents: { color: brand.color.posicao.aPagar, fontWeight: brand.weight.semibold },
+  emAtrasoCents: { color: brand.color.posicao.emAtraso },
+  pagoCents: { color: brand.color.posicao.pago },
+  aPagarCents: { color: brand.color.posicao.aPagar },
+})
+
+// Valor no CORPO da tabela — tinta neutra (ink900), tabular. Não colore por medida (só o header colore).
+export const cellValueNeutral = style({
+  color: brand.color.ink900,
+  fontWeight: brand.weight.medium,
+  fontVariantNumeric: 'tabular-nums',
 })
 
 // Valor ZERO — atenua (cinza) para não competir visualmente com os valores presentes.

@@ -25,6 +25,7 @@
  * Dinheiro em CENTAVOS inteiros (§IV). A árvore preserva a ORDEM DE INSERÇÃO. Sem `throw` nas derivações (§II).
  */
 import { POSICAO_PAGAMENTOS_RAW, type RawPosicaoRow } from './data/posicao-pagamentos.placeholder.ts'
+import { POSICAO_RECEBIMENTOS_RAW } from './data/posicao-recebimentos.placeholder.ts'
 
 /** Nível do nó na árvore: fornecedor (0) → centro de custo (1) → categoria (folha, 2). */
 export type PosicaoLevel = 'supplier' | 'costCenter' | 'category'
@@ -169,14 +170,16 @@ export function supplierTotals(report: PosicaoReport): readonly SupplierTotal[] 
  * Fonte da tela (front-first): a árvore agregada dos dados PLACEHOLDER. Ponto ÚNICO pelo qual a View obtém o
  * relatório — mantém a View sem tocar a `data/` (boundary client-ui ↛ client-data).
  *
- * `type` prepara a REUTILIZAÇÃO: hoje só `'p'` (Pagamentos) tem placeholder; quando o Contas a Receber subir,
- * `'r'` (Recebíveis) plugará aqui a fonte de recebíveis com o MESMO shape agregado (mapeando os 3 buckets
- * dos recebíveis) — sem tocar as agregações nem a View. Enquanto isso, qualquer `type` cai no placeholder.
+ * `type` seleciona a fonte com o MESMO shape agregado (engine NEUTRO): `'p'` (Pagamentos → Fornecedor) usa
+ * `POSICAO_PAGAMENTOS_RAW`; `'r'` (Recebimentos → Financiador) usa `POSICAO_RECEBIMENTOS_RAW`. As agregações e
+ * a View NÃO mudam entre os dois — só a FONTE e os RÓTULOS (estes últimos vêm por props/i18n na tela).
+ *
+ * ⚠️ Ambas as fontes são PLACEHOLDER sintético (front-first) enquanto o core-api#114 não existe. Para
+ * Recebimentos, quando o Contas a Receber subir, basta o placeholder retornar `[]` → a árvore vem VAZIA
+ * (0 nós, totais 0) e a tela cai no empty state honesto ("Nenhum recebimento registrado"). Sem `throw` (§II).
  */
-export function loadPosicao(_type: PosicaoType = 'p'): PosicaoReport {
-  // `_type` fica na assinatura pronto p/ 'r' (Recebíveis) quando o core-api#114 + o A-Receber subirem —
-  // aí ele escolhe a fonte. Hoje qualquer valor cai no placeholder de Pagamentos (prefixo `_` = intencional).
-  return aggregatePosicao(POSICAO_PAGAMENTOS_RAW)
+export function loadPosicao(type: PosicaoType = 'p'): PosicaoReport {
+  return aggregatePosicao(type === 'r' ? POSICAO_RECEBIMENTOS_RAW : POSICAO_PAGAMENTOS_RAW)
 }
 
 // ── Formatação ──
@@ -220,15 +223,20 @@ export function sharePercent(valueCents: number, totalCents: number): number {
 
 // ── Export CSV (client-side; header pt-BR fiel às 3 medidas derivadas) ──
 
+/** Header pt-BR do CSV de PAGAMENTOS (fiel às 3 medidas derivadas na ordem canônica). */
 export const CSV_HEADER = 'Fornecedor;Centro de custo;Categoria;Em atraso;Pago;A pagar'
 
+/** Header pt-BR do CSV de RECEBIMENTOS — rótulos do lado de receber (Financiador · Recebido · A receber). */
+export const CSV_HEADER_RECEBIMENTOS = 'Financiador;Centro de custo;Categoria;Em atraso;Recebido;A receber'
+
 /**
- * Monta o CSV: uma linha por FOLHA (Fornecedor → Centro de Custo → Categoria), com as 3 medidas derivadas em
- * BRL, na ordem Em atraso · Pago · A pagar. Delimitado por ';'. Percorre a árvore agregada até a folha
- * (categoria) — assim as células já são os valores somados por folha (idênticos às linhas cruas).
+ * Monta o CSV: uma linha por FOLHA (raiz → Centro de Custo → Categoria), com as 3 medidas derivadas em BRL,
+ * na ordem canônica (Em atraso · Pago/Recebido · A pagar/A receber). Delimitado por ';'. Percorre a árvore
+ * agregada até a folha (categoria) — assim as células já são os valores somados por folha (idênticos às
+ * linhas cruas). O `header` é parametrizável (Pagamentos vs Recebimentos) — o CORPO é idêntico (só valores).
  */
-export function buildCsv(report: PosicaoReport = loadPosicao('p')): string {
-  const lines: string[] = [CSV_HEADER]
+export function buildCsv(report: PosicaoReport = loadPosicao('p'), header: string = CSV_HEADER): string {
+  const lines: string[] = [header]
   for (const supplier of report.suppliers) {
     for (const costCenter of supplier.children) {
       for (const category of costCenter.children) {

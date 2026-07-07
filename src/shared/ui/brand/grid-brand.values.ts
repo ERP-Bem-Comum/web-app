@@ -136,6 +136,15 @@ export const brand = {
       aPagar: '#f8b221', // âmbar — a vencer
       total: '#396496', // azul institucional — soma das 3
     },
+    // Paleta dos GRÁFICOS da "Posição de RECEBIMENTOS" — família DISTINTA da de Pagamentos (a P.O. pede
+    // diferenciar as duas telas pela cor dos gráficos). Tons mais frios/violeta ("dinheiro que entra"):
+    // âmbar-laranja (em atraso) / verde-azulado (recebido) / ciano (a receber) / roxo (barras por financiador).
+    posicaoRec: {
+      emAtraso: '#c67c1e', // âmbar-laranja — vencido e não recebido (≠ vermelho de Pag)
+      recebido: '#2f8f6a', // verde-azulado — recebido
+      aReceber: '#32a2c6', // ciano — a receber
+      bar: '#7ab5e0', // azul claro — barras "Distribuição por Financiador" (mais leve que o azul de Pag)
+    },
   },
   // Medidas específicas do relatório redesenhado (px cru permitido no `*.values.ts`).
   rxp: {

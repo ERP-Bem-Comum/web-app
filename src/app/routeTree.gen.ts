@@ -29,6 +29,7 @@ import { Route as AuthenticatedContratosIndexRouteImport } from './../routes/_au
 import { Route as AuthenticatedUsuariosCriarRouteImport } from './../routes/_authenticated/usuarios/criar'
 import { Route as AuthenticatedUsuariosIdRouteImport } from './../routes/_authenticated/usuarios/$id'
 import { Route as AuthenticatedRelatoriosRealizadoXPlanejadoRouteImport } from './../routes/_authenticated/relatorios/realizado-x-planejado'
+import { Route as AuthenticatedRelatoriosPosicaoRecebimentosRouteImport } from './../routes/_authenticated/relatorios/posicao-recebimentos'
 import { Route as AuthenticatedRelatoriosPosicaoPagamentosRouteImport } from './../routes/_authenticated/relatorios/posicao-pagamentos'
 import { Route as AuthenticatedRelatoriosFornecedoresSemContratoRouteImport } from './../routes/_authenticated/relatorios/fornecedores-sem-contrato'
 import { Route as AuthenticatedRelatoriosEquipeRouteImport } from './../routes/_authenticated/relatorios/equipe'
@@ -166,6 +167,12 @@ const AuthenticatedRelatoriosRealizadoXPlanejadoRoute =
   AuthenticatedRelatoriosRealizadoXPlanejadoRouteImport.update({
     id: '/relatorios/realizado-x-planejado',
     path: '/relatorios/realizado-x-planejado',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRelatoriosPosicaoRecebimentosRoute =
+  AuthenticatedRelatoriosPosicaoRecebimentosRouteImport.update({
+    id: '/relatorios/posicao-recebimentos',
+    path: '/relatorios/posicao-recebimentos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedRelatoriosPosicaoPagamentosRoute =
@@ -375,6 +382,7 @@ export interface FileRoutesByFullPath {
   '/relatorios/equipe': typeof AuthenticatedRelatoriosEquipeRoute
   '/relatorios/fornecedores-sem-contrato': typeof AuthenticatedRelatoriosFornecedoresSemContratoRoute
   '/relatorios/posicao-pagamentos': typeof AuthenticatedRelatoriosPosicaoPagamentosRoute
+  '/relatorios/posicao-recebimentos': typeof AuthenticatedRelatoriosPosicaoRecebimentosRoute
   '/relatorios/realizado-x-planejado': typeof AuthenticatedRelatoriosRealizadoXPlanejadoRoute
   '/usuarios/$id': typeof AuthenticatedUsuariosIdRoute
   '/usuarios/criar': typeof AuthenticatedUsuariosCriarRoute
@@ -427,6 +435,7 @@ export interface FileRoutesByTo {
   '/relatorios/equipe': typeof AuthenticatedRelatoriosEquipeRoute
   '/relatorios/fornecedores-sem-contrato': typeof AuthenticatedRelatoriosFornecedoresSemContratoRoute
   '/relatorios/posicao-pagamentos': typeof AuthenticatedRelatoriosPosicaoPagamentosRoute
+  '/relatorios/posicao-recebimentos': typeof AuthenticatedRelatoriosPosicaoRecebimentosRoute
   '/relatorios/realizado-x-planejado': typeof AuthenticatedRelatoriosRealizadoXPlanejadoRoute
   '/usuarios/$id': typeof AuthenticatedUsuariosIdRoute
   '/usuarios/criar': typeof AuthenticatedUsuariosCriarRoute
@@ -481,6 +490,7 @@ export interface FileRoutesById {
   '/_authenticated/relatorios/equipe': typeof AuthenticatedRelatoriosEquipeRoute
   '/_authenticated/relatorios/fornecedores-sem-contrato': typeof AuthenticatedRelatoriosFornecedoresSemContratoRoute
   '/_authenticated/relatorios/posicao-pagamentos': typeof AuthenticatedRelatoriosPosicaoPagamentosRoute
+  '/_authenticated/relatorios/posicao-recebimentos': typeof AuthenticatedRelatoriosPosicaoRecebimentosRoute
   '/_authenticated/relatorios/realizado-x-planejado': typeof AuthenticatedRelatoriosRealizadoXPlanejadoRoute
   '/_authenticated/usuarios/$id': typeof AuthenticatedUsuariosIdRoute
   '/_authenticated/usuarios/criar': typeof AuthenticatedUsuariosCriarRoute
@@ -535,6 +545,7 @@ export interface FileRouteTypes {
     | '/relatorios/equipe'
     | '/relatorios/fornecedores-sem-contrato'
     | '/relatorios/posicao-pagamentos'
+    | '/relatorios/posicao-recebimentos'
     | '/relatorios/realizado-x-planejado'
     | '/usuarios/$id'
     | '/usuarios/criar'
@@ -587,6 +598,7 @@ export interface FileRouteTypes {
     | '/relatorios/equipe'
     | '/relatorios/fornecedores-sem-contrato'
     | '/relatorios/posicao-pagamentos'
+    | '/relatorios/posicao-recebimentos'
     | '/relatorios/realizado-x-planejado'
     | '/usuarios/$id'
     | '/usuarios/criar'
@@ -640,6 +652,7 @@ export interface FileRouteTypes {
     | '/_authenticated/relatorios/equipe'
     | '/_authenticated/relatorios/fornecedores-sem-contrato'
     | '/_authenticated/relatorios/posicao-pagamentos'
+    | '/_authenticated/relatorios/posicao-recebimentos'
     | '/_authenticated/relatorios/realizado-x-planejado'
     | '/_authenticated/usuarios/$id'
     | '/_authenticated/usuarios/criar'
@@ -826,6 +839,13 @@ declare module '@tanstack/react-router' {
       path: '/relatorios/realizado-x-planejado'
       fullPath: '/relatorios/realizado-x-planejado'
       preLoaderRoute: typeof AuthenticatedRelatoriosRealizadoXPlanejadoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/relatorios/posicao-recebimentos': {
+      id: '/_authenticated/relatorios/posicao-recebimentos'
+      path: '/relatorios/posicao-recebimentos'
+      fullPath: '/relatorios/posicao-recebimentos'
+      preLoaderRoute: typeof AuthenticatedRelatoriosPosicaoRecebimentosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/relatorios/posicao-pagamentos': {
@@ -1118,6 +1138,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRelatoriosEquipeRoute: typeof AuthenticatedRelatoriosEquipeRoute
   AuthenticatedRelatoriosFornecedoresSemContratoRoute: typeof AuthenticatedRelatoriosFornecedoresSemContratoRoute
   AuthenticatedRelatoriosPosicaoPagamentosRoute: typeof AuthenticatedRelatoriosPosicaoPagamentosRoute
+  AuthenticatedRelatoriosPosicaoRecebimentosRoute: typeof AuthenticatedRelatoriosPosicaoRecebimentosRoute
   AuthenticatedRelatoriosRealizadoXPlanejadoRoute: typeof AuthenticatedRelatoriosRealizadoXPlanejadoRoute
   AuthenticatedUsuariosIdRoute: typeof AuthenticatedUsuariosIdRoute
   AuthenticatedUsuariosCriarRoute: typeof AuthenticatedUsuariosCriarRoute
@@ -1160,6 +1181,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedRelatoriosFornecedoresSemContratoRoute,
   AuthenticatedRelatoriosPosicaoPagamentosRoute:
     AuthenticatedRelatoriosPosicaoPagamentosRoute,
+  AuthenticatedRelatoriosPosicaoRecebimentosRoute:
+    AuthenticatedRelatoriosPosicaoRecebimentosRoute,
   AuthenticatedRelatoriosRealizadoXPlanejadoRoute:
     AuthenticatedRelatoriosRealizadoXPlanejadoRoute,
   AuthenticatedUsuariosIdRoute: AuthenticatedUsuariosIdRoute,

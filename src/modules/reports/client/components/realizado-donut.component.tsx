@@ -42,7 +42,17 @@ import {
  * Planejado"; as 3 últimas ('emAtraso'|'pago'|'aPagar') são do relatório "Posição de Pagamentos", que
  * REUSA este mesmo donut com sua paleta própria (extensão aditiva — RxP intacto).
  */
-export type MeasureKey = 'realizado' | 'provisionado' | 'previsto' | 'emAtraso' | 'pago' | 'aPagar'
+export type MeasureKey =
+  | 'realizado'
+  | 'provisionado'
+  | 'previsto'
+  | 'emAtraso'
+  | 'pago'
+  | 'aPagar'
+  // Posição de RECEBIMENTOS — cores próprias (paleta `posicaoRec`), distintas de Pagamentos.
+  | 'emAtrasoRec'
+  | 'recebido'
+  | 'aReceber'
 
 export type DonutSlice = Readonly<{
   id: string

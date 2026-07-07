@@ -85,6 +85,9 @@ export const MENU: readonly MenuSection[] = [
       // Posição de Pagamentos: front-first, dados sintéticos. Snapshot Fornecedor→CC→Categoria (Pendente/
       // Pago/Atrasado). SEM `requiredPermission` (RBAC pós-entrega). Engine reusável p/ Recebíveis depois.
       { label: 'Posição de Pagamentos', to: '/relatorios/posicao-pagamentos' },
+      // Posição de Recebimentos: ESPELHO da de Pagamentos (Financiador→CC→Categoria; Em atraso/Recebido/A
+      // receber). Front-first, dados sintéticos (empty-state-ready). SEM `requiredPermission` (RBAC pós-entrega).
+      { label: 'Posição de Recebimentos', to: '/relatorios/posicao-recebimentos' },
     ],
   },
   {

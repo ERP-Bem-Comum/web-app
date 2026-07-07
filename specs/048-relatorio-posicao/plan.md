@@ -43,11 +43,52 @@ Pago · A pagar** (Conciliado conta como Pago; Rascunho/Recusado fora).
   2 gráficos, tabela + Total Geral, expand/collapse, export CSV (item do dropdown) dispara.
 - `tests/modules/shell/client/root/root.view-model.test.ts` — +título e +contagem de subitens do menu.
 
-## Estrutura p/ o futuro `type: 'p' | 'r'`
+## Posição de Recebimentos (`type: 'r'`) — ENTREGUE (espelho da de Pagamentos)
 
-- Shape `PosicaoNode`/`PosicaoReport` NEUTRO (level enum, name string) — serve Pagamentos e Recebíveis.
-- `loadPosicao(type)` é o único ponto de escolha da fonte; hoje só `'p'`.
-- Rótulos de nível (Fornecedor/Financiador) por i18n → View única reutilizável.
+Reaproveita AO MÁXIMO o engine + as views (feitas NEUTRAS). Só a fonte e os rótulos mudam.
+
+### Arquivos NOVOS (recebimentos)
+
+1. `src/modules/reports/client/data/posicao-recebimentos.placeholder.ts`
+   - `POSICAO_RECEBIMENTOS_RAW: readonly RawPosicaoRow[]` (reusa o tipo cru de Pagamentos). ~5 **financiadores**
+     → CC → categoria, valores sintéticos (sem PII). Comentário: PLACEHOLDER só p/ validar; some (→ `[]`) quando
+     o Contas a Receber subir → tela cai no empty state.
+2. `src/modules/reports/client/components/posicao-report-view.component.tsx`
+   - CORPO compartilhado da tela (extraído da page de Pagamentos): `report` + `labels` (TODOS os rótulos i18n)
+     - `csvFilename` + `csvHeader`. Contém o **empty state honesto** (`report.suppliers` vazio / total 0 →
+       só cabeçalho + painel "Nenhum recebimento registrado", sem KPIs/gráficos/tabela). UI-state = `filtersOpen`.
+3. `src/modules/reports/client/page/posicao-recebimentos.page.tsx`
+   - Wrapper FINO: `loadPosicao('r')` + rótulos `reports.posicao.rec.*`/compartilhados → `PosicaoReportView`.
+4. `src/routes/_authenticated/relatorios/posicao-recebimentos.tsx`
+   - `createFileRoute` → `PosicaoRecebimentosPage` (via public-api). Sem RBAC.
+
+### Arquivos MODIFICADOS (recebimentos)
+
+- `posicao.view-model.ts` — `loadPosicao('r')` agrega o placeholder de recebimentos; `buildCsv(report, header?)`
+  parametrizado; `CSV_HEADER_RECEBIMENTOS`. Pagamentos intacto.
+- `posicao-pagamentos.page.tsx` — refatorada p/ wrapper fino do `PosicaoReportView` (mesmos textos → intacta).
+- `posicao-pagamentos.page.css.ts` — `emptyPanel`/`emptyTitle`/`emptyHint` (empty state, só-tokens).
+- `public-api/index.ts` — exporta `PosicaoRecebimentosPage` + `CSV_HEADER_RECEBIMENTOS`.
+- `shell-menu.config.ts` — subitem "Posição de Recebimentos".
+- `root.view-model.ts` — `PAGE_TITLES['/relatorios/posicao-recebimentos']`.
+- `catalog.pt-BR.ts` — chaves `reports.posicao.rec.*` (title/financiador/recebido/aReceber/empty/chart/table/kpi
+  subs); as compartilhadas NÃO são duplicadas.
+
+### Testes (recebimentos)
+
+- `tests/modules/reports/client/posicao-recebimentos.view-model.test.ts` (node:test) — `loadPosicao('r')` agrega
+  o placeholder; Total Geral bate; **caso VAZIO (`[]`) → 0 nós, totais 0**; CSV header de recebimentos.
+- `tests/modules/reports/client/posicao-recebimentos.page.spec.tsx` (vitest DOM) — COM placeholder: 4 cards +
+  2 gráficos + tabela (Financiador) + export; **caso VAZIO → empty state "Nenhum recebimento registrado"** (via
+  `PosicaoReportView` com relatório vazio injetado).
+- `posicao.view-model.test.ts` — o teste de `'r'` passou a validar a fonte de recebimentos (≠ Pagamentos).
+- `root.view-model.test.ts` — +título e +subitem (5 relatórios).
+
+## Estrutura NEUTRA (`type: 'p' | 'r'`) — realizada
+
+- Shape `PosicaoNode`/`PosicaoReport` NEUTRO (level enum, name string) — serve Pagamentos e Recebimentos.
+- `loadPosicao(type)` é o único ponto de escolha da fonte; hoje ambos com placeholder front-first.
+- Rótulos de nível (Fornecedor/Financiador) por i18n/props → `PosicaoReportView` única reutilizável.
 
 ## Gates
 

@@ -39,6 +39,7 @@ import {
   tfootCell,
   gridCols,
   measureTone,
+  cellValueNeutral,
   zeroTone,
 } from './posicao-tree-table.css.ts'
 
@@ -146,7 +147,7 @@ export function PosicaoTreeTable(props: PosicaoTreeTableProps): ReactNode {
         <div className={`${thead} ${gridCols}`}>
           <div className={`${colFirstHead} ${theadCellStart}`}>{L.nameCol}</div>
           {MEASURE_KEYS.map((k) => (
-            <div key={k} className={theadCell}>
+            <div key={k} className={`${theadCell} ${measureTone[k]}`}>
               {L.measureLabels[k]}
             </div>
           ))}
@@ -157,7 +158,7 @@ export function PosicaoTreeTable(props: PosicaoTreeTableProps): ReactNode {
           <div key={n.id} className={`${trow} ${trowLvl[DEPTH[n.level]]} ${gridCols}`}>
             {renderName(n)}
             {MEASURE_KEYS.map((k) => (
-              <div key={k} className={`${cell} ${n.measures[k] === 0 ? zeroTone : measureTone[k]}`}>
+              <div key={k} className={`${cell} ${n.measures[k] === 0 ? zeroTone : cellValueNeutral}`}>
                 {formatBRL(n.measures[k])}
               </div>
             ))}
@@ -170,7 +171,7 @@ export function PosicaoTreeTable(props: PosicaoTreeTableProps): ReactNode {
             {L.totalRow}
           </div>
           {MEASURE_KEYS.map((k) => (
-            <div key={k} className={`${tfootCell} ${measureTone[k]}`}>
+            <div key={k} className={`${tfootCell} ${cellValueNeutral}`}>
               {formatBRL(props.report.totals[k])}
             </div>
           ))}
