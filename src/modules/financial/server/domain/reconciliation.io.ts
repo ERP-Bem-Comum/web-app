@@ -258,6 +258,10 @@ export type MatchSuggestion = Readonly<{
   band: SuggestionBand
   criteria: SuggestionCriteria
   criteriaBreakdown: readonly CriterionResult[] // #140; vazio se o backend não enviar (drift)
+  // core-api#172: enriquecidos NO BFF (interino) via join payableId→título→fornecedor. `null` quando
+  // não resolvidos. REMOVER o join quando as suggestions nativas trouxerem esses campos.
+  supplierName: string | null
+  documentNumber: string | null
 }>
 
 // Palpite de topo por transação (#174). `topBand`/`topScore` = null quando a transação não é Pending ou
@@ -272,10 +276,14 @@ export type RejectedSuggestion = Readonly<{ transactionId: string; payableId: st
 
 // Lookup da conciliação ativa por transação (#175 — GET /statement-transactions/:id/reconciliation).
 // 404 no core-api = transação sem conciliação ativa → a borda devolve `null` (não é erro). `type` inclui
-// 'ManualEntry'. Os itens trazem só `payableId`+valor conciliado (sem fornecedor/nº doc até #172).
+// 'ManualEntry'. O core-api cru traz só `payableId`+valor conciliado; documentNumber/supplierName/dueDate
+// são enriquecidos no BFF (INTERINO #172, join por payableId) e ficam `null` quando não resolvidos.
 export type TransactionReconciliationItem = Readonly<{
   payableId: string
   reconciledValueCents: string
+  documentNumber: string | null
+  supplierName: string | null
+  dueDate: string | null
 }>
 export type TransactionReconciliation = Readonly<{
   reconciliationId: string

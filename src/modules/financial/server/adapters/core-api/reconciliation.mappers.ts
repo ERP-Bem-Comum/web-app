@@ -331,6 +331,9 @@ export const suggestionsToModel = (raw: unknown): Result<readonly MatchSuggestio
     band: mapBand(s.band),
     criteria: { ...s.criteria },
     criteriaBreakdown: toBreakdown(s.criteriaBreakdown),
+    // core-api#172: nativamente ausentes → null aqui; o cliente enriquece via join (payableId→título→fornecedor).
+    supplierName: s.supplierName ?? null,
+    documentNumber: s.documentNumber ?? null,
   }))
   return ok(items)
 }
@@ -362,7 +365,15 @@ export const transactionReconciliationToModel = (
     reconciledBy: d.reconciledBy,
     reconciledAt: d.reconciledAt,
     differenceCents: d.differenceCents,
-    items: d.items.map((i) => ({ payableId: i.payableId, reconciledValueCents: i.reconciledValueCents })),
+    // documentNumber/supplierName/dueDate saem null aqui — o passo de enriquecimento (INTERINO #172)
+    // preenche via join por payableId no cliente (core-api-reconciliation.ts).
+    items: d.items.map((i) => ({
+      payableId: i.payableId,
+      reconciledValueCents: i.reconciledValueCents,
+      documentNumber: null,
+      supplierName: null,
+      dueDate: null,
+    })),
   })
 }
 

@@ -1551,8 +1551,11 @@ export const ptBR: Catalog = {
   'financial.recon.sugg.doc': 'Documento',
   'financial.recon.sugg.value': 'Valor',
   'financial.recon.sugg.due': 'Vencimento',
+  // Extrato: data da movimentação bancária. Título: data de pagamento (baixa) = saída bancária (#265).
+  'financial.recon.sugg.txDate': 'Transação',
+  'financial.recon.sugg.paidAt': 'Pagamento',
   'financial.recon.sugg.method': 'Forma',
-  'financial.recon.sugg.supplierPending': 'Fornecedor (chega com #172)',
+  'financial.recon.sugg.supplierPending': 'Fornecedor',
   'financial.recon.sugg.confirm': 'Conciliar',
   'financial.recon.sugg.reject': 'Rejeitar',
   'financial.recon.sugg.alternatives': 'Outras possibilidades',

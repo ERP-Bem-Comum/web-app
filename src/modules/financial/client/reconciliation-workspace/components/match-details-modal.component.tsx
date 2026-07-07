@@ -1,8 +1,9 @@
 /**
  * MatchDetailsModal — view burra: modal "Detalhes da conciliação" (modal-match). Estrutura fiel ao mock:
  * cabeçalho verde de sucesso, comparação lado-a-lado (Extrato ↔ Título) com a ponte "Conciliado", seção
- * de Auditoria e rodapé (Desfazer · Ver título · Fechar). O lado extrato é real; título/auditoria vêm "—"
- * até o backend (#175). Só props.
+ * de Auditoria e rodapé (Desfazer · Ver título · Fechar). O lado extrato é real; para matches INDIVIDUAIS o
+ * título agora vem enriquecido (favorecido/documento/vencimento — interim #172); a Categoria segue "—"
+ * (category_ref é write-only no core-api — gap de backend). Só props.
  */
 import { useState } from 'react'
 
@@ -189,6 +190,7 @@ export function MatchDetailsModal({
                     <span className={s.mmSideK}>{t('financial.recon.match.rowDue')}</span>
                     <span className={s.mmSideV}>{view.doc.vencimento}</span>
                   </div>
+                  {/* Categoria não vem do core-api em nenhuma leitura (category_ref write-only); depende de backend — análogo a #268. */}
                   <div className={s.mmSideRow}>
                     <span className={s.mmSideK}>{t('financial.recon.match.rowCat')}</span>
                     <span className={s.mmSideV}>{view.doc.categoria}</span>

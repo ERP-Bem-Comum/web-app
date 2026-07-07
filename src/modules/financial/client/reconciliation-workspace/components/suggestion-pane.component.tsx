@@ -56,17 +56,28 @@ function TituloSide({ m }: Readonly<{ m: MatchView }>) {
     <div className={s.matchSide.doc}>
       <span className={s.sideLbl}>{t('financial.recon.sugg.side.titulo')}</span>
       <span className={s.sideTitle}>
-        {m.payable?.documentNumber ?? m.payable?.documentId ?? t('financial.recon.sugg.supplierPending')}
+        {m.payable?.supplierName ??
+          m.payable?.documentNumber ??
+          m.payable?.documentId ??
+          t('financial.recon.sugg.supplierPending')}
       </span>
       {m.payable !== null ? (
         <>
+          {/* #172: com o nome do favorecido no título, o nº do documento vira ref abaixo (fiel ao mock). */}
+          {m.payable.supplierName !== null && m.payable.documentNumber !== null ? (
+            <span className={s.sideRow}>
+              <span className={s.sideKey}>{t('financial.recon.sugg.doc')}</span>
+              <span className={s.sideVal}>{m.payable.documentNumber}</span>
+            </span>
+          ) : null}
           <span className={s.sideRow}>
             <span className={s.sideKey}>{t('financial.recon.sugg.value')}</span>
             <span className={s.sideValStrong}>{centsToBRL(m.payable.valueCents)}</span>
           </span>
+          {/* Data relevante p/ o match é o PAGAMENTO (baixa = saída bancária), não o vencimento (#265). */}
           <span className={s.sideRow}>
-            <span className={s.sideKey}>{t('financial.recon.sugg.due')}</span>
-            <span className={s.sideVal}>{m.payable.dueDate}</span>
+            <span className={s.sideKey}>{t('financial.recon.sugg.paidAt')}</span>
+            <span className={s.sideVal}>{m.payable.paidAt ?? DASH}</span>
           </span>
           <span className={s.sideRow}>
             <span className={s.sideKey}>{t('financial.recon.sugg.method')}</span>
@@ -125,7 +136,7 @@ export function SuggestionPane({
               <span className={s.sideValStrong}>{centsToBRL(selectedTx.valueCents)}</span>
             </span>
             <span className={s.sideRow}>
-              <span className={s.sideKey}>{t('financial.recon.sugg.due')}</span>
+              <span className={s.sideKey}>{t('financial.recon.sugg.txDate')}</span>
               <span className={s.sideVal}>{selectedTx.date}</span>
             </span>
           </div>

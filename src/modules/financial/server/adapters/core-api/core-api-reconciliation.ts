@@ -31,6 +31,14 @@ import {
   transactionsToModel,
   undoToModel,
 } from './reconciliation.mappers.ts'
+import {
+  buildEnrichmentMaps,
+  emptyEnrichmentMaps,
+  enrichPaidPayables,
+  enrichSuggestions,
+  enrichTransactionReconciliation,
+  type EnrichmentSource,
+} from './reconciliation-enrichment.ts'
 
 // Janela ampla FIXA (determinística, sem relógio): o read-model soma TODOS os movimentos da conta →
 // closingBalanceCents = saldo corrente real e counters.pending = total de pendentes. `from`/`to` são
@@ -58,7 +66,15 @@ const enrichAccountWithStatement = async (
   }
 }
 
-export const createCoreApiReconciliationClient = (baseUrl: string): ReconciliationClient => ({
+// INTERINO BFF composite p/ core-api#172/#265: fábrica opcional da fonte de enriquecimento (por token).
+// Quando ausente, o cliente NÃO enriquece (mapas vazios) — mantém compat p/ chamadas sem a costura.
+// REMOVER quando o core-api enriquecer os contratos nativos e o join deixar de ser necessário.
+export type ReconciliationEnrichmentFactory = (token: string) => EnrichmentSource
+
+export const createCoreApiReconciliationClient = (
+  baseUrl: string,
+  enrichmentFor?: ReconciliationEnrichmentFactory,
+): ReconciliationClient => ({
   importStatement: async (i, token) => {
     const r = await resultFetch<unknown>(`${baseUrl}/bank-statements`, {
       method: 'POST',
@@ -83,7 +99,15 @@ export const createCoreApiReconciliationClient = (baseUrl: string): Reconciliati
   listPaidPayables: async (token) => {
     const r = await resultFetch<unknown>(`${baseUrl}/payables?status=Paid`, { token })
     if (isErr(r)) return err(mapHttpError(r.error))
-    return paidPayablesToModel(r.value)
+    const base = paidPayablesToModel(r.value)
+    if (isErr(base)) return base
+    // INTERINO BFF composite p/ core-api#172/#265 — enquanto /payables?status=Paid NÃO devolve os campos
+    // nativos (paidAt, supplierName, documentNumber), montamos os 2 mapas UMA vez (títulos + fornecedores)
+    // e enriquecemos. REMOVER estes round-trips extras quando o backend expor os campos nativos.
+    // JOIN: paid-payable `.id` ↔ payable-title `.payableId`; payable-title `.supplierRef` ↔ supplier `.id`.
+    const maps =
+      enrichmentFor === undefined ? emptyEnrichmentMaps() : await buildEnrichmentMaps(enrichmentFor(token))
+    return ok(enrichPaidPayables(maps, base.value))
   },
   listReferences: async (token) => {
     // Referências da categorização (020 · #200): categorias + centros de custo (RBAC reference:read).
@@ -158,7 +182,15 @@ export const createCoreApiReconciliationClient = (baseUrl: string): Reconciliati
       token,
     })
     if (isErr(r)) return err(mapHttpError(r.error))
-    return suggestionsToModel(r.value)
+    const base = suggestionsToModel(r.value)
+    if (isErr(base)) return base
+    // INTERINO BFF composite p/ core-api#172/#265 — o card de match resolve supplierName/documentNumber
+    // por `payableId` usando os MESMOS 2 mapas (títulos + fornecedores). REMOVER estes round-trips extras
+    // quando as suggestions do core-api já vierem enriquecidas.
+    // JOIN: suggestion `.payableId` ↔ payable-title `.payableId` → `.supplierRef` ↔ supplier `.id`.
+    const maps =
+      enrichmentFor === undefined ? emptyEnrichmentMaps() : await buildEnrichmentMaps(enrichmentFor(token))
+    return ok(enrichSuggestions(maps, base.value))
   },
   getStatementSuggestions: async (i, token) => {
     // #174: palpites de topo em lote por extrato (uma chamada pinta a banda de todas as transações).
@@ -179,7 +211,16 @@ export const createCoreApiReconciliationClient = (baseUrl: string): Reconciliati
       if (mapped === 'not-found') return ok(null)
       return err(mapped)
     }
-    return transactionReconciliationToModel(r.value)
+    const base = transactionReconciliationToModel(r.value)
+    if (isErr(base)) return base
+    // INTERINO BFF composite p/ core-api#172/#265 — o modal de detalhe resolve a coluna "TÍTULO NO SISTEMA"
+    // (documentNumber/supplierName/dueDate) por `payableId` usando os MESMOS 2 mapas (títulos + fornecedores).
+    // Best-effort: mapas falham → degradam p/ vazio → campos null (nunca quebra o modal). REMOVER quando o
+    // core-api enriquecer o lookup nativo. JOIN: item `.payableId` ↔ payable-title `.payableId` →
+    // `.supplierRef` ↔ partner `.id`.
+    const maps =
+      enrichmentFor === undefined ? emptyEnrichmentMaps() : await buildEnrichmentMaps(enrichmentFor(token))
+    return ok(enrichTransactionReconciliation(maps, base.value))
   },
   rejectSuggestion: async (i, token) => {
     const r = await resultFetch<unknown>(

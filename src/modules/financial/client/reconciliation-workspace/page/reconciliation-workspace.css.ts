@@ -694,7 +694,9 @@ export const matchSides = style({
   display: 'grid',
   gridTemplateColumns: '1fr 1.75rem 1fr',
   gap: sp.sm,
-  alignItems: 'center',
+  // `stretch` iguala a altura dos dois cards (extrato × título) — o com mais linhas (nº doc + forma) define
+  // a altura; o outro estica p/ acompanhar. O ícone de link no meio continua centrado (matchArrow).
+  alignItems: 'stretch',
   padding: sp.xl,
 })
 

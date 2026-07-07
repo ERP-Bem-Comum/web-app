@@ -42,7 +42,7 @@ const ready: SuggestionState = {
       documentId: 'DOC-1',
       valueCents: '150000',
       dueDate: '2026-06-10',
-      paidAt: null,
+      paidAt: '2026-06-19',
       paymentMethod: 'PIX',
       supplierName: null,
       documentNumber: '0847',
@@ -82,6 +82,34 @@ describe('SuggestionPane', () => {
     expect(screen.getByText(tr('financial.recon.sugg.high'))).toBeTruthy()
     expect(screen.getByText('87%')).toBeTruthy()
     expect(screen.getByText('0847')).toBeTruthy() // documentNumber (mínimo #172)
+  })
+
+  it('#172: com o BFF enriquecendo, o título vira o nome do favorecido + nº do documento como ref', () => {
+    const enriched: SuggestionState = {
+      ...ready,
+      top: {
+        ...ready.top,
+        payable:
+          ready.top.payable === null
+            ? null
+            : { ...ready.top.payable, supplierName: 'TS Da Silva Serviços Ltda' },
+      },
+    }
+    render(<SuggestionPane {...base} state={enriched} />)
+    // Nome do favorecido no título (#172) + nº do documento continua visível como referência.
+    expect(screen.getByText('TS Da Silva Serviços Ltda')).toBeTruthy()
+    expect(screen.getByText('0847')).toBeTruthy()
+  })
+
+  it('datas: extrato mostra a data da TRANSAÇÃO; título mostra a data de PAGAMENTO (baixa), não o vencimento', () => {
+    render(<SuggestionPane {...base} state={ready} />)
+    // Extrato: rótulo "Transação" + data da movimentação (selectedTx.date).
+    expect(screen.getByText(tr('financial.recon.sugg.txDate'))).toBeTruthy()
+    expect(screen.getByText('2026-06-01')).toBeTruthy()
+    // Título: rótulo "Pagamento" + paidAt (baixa = saída bancária); o vencimento (2026-06-10) NÃO aparece.
+    expect(screen.getByText(tr('financial.recon.sugg.paidAt'))).toBeTruthy()
+    expect(screen.getByText('2026-06-19')).toBeTruthy()
+    expect(screen.queryByText('2026-06-10')).toBeNull()
   })
 
   it('#140: renderiza chips do breakdown com peso e count do supplierOpen', () => {

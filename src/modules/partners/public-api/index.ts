@@ -19,6 +19,11 @@ export type {
   SupplierListResponse,
 } from '#modules/partners/server/domain/supplier/supplier.io.ts'
 
+// Agregador server-only `id → name` de TODOS os parceiros (4 tipos) — exposto p/ o enriquecimento INTERINO
+// da Conciliação (#172), resolvendo o favorecido de qualquer tipo (não só suppliers). Mesma fonte do
+// financeiro (picker/grid). Remover quando o core-api enriquecer /payables?status=Paid + suggestions nativo.
+export { listAllPartners } from '#modules/partners/server/adapters/core-api/core-api-partners-aggregate.ts'
+
 // ── Financiadores (US3) ─────────────────────────────────────────────────────
 export { listFinanciersFn } from '#modules/partners/server/adapters/server-fns/financier/list-financiers.query.fn.ts'
 export { getFinancierFn } from '#modules/partners/server/adapters/server-fns/financier/get-financier.query.fn.ts'
