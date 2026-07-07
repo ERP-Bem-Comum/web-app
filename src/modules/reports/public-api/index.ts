@@ -68,3 +68,23 @@ export {
   ANOS,
 } from '#modules/reports/client/equipe.view-model.ts'
 export type { TeamMemberRow, CategoryCount, YearCount } from '#modules/reports/client/equipe.view-model.ts'
+
+// ── Relatório "Posição de Pagamentos" (front-first; core-api#114). Engine de "Posição" REUTILIZÁVEL:
+//    quando o Contas a Receber subir, `loadPosicao('r')` renderiza "Posição de Recebíveis" com a mesma
+//    tabela/agregação (só a fonte + rótulos de nível mudam). Dados SINTÉTICOS até o endpoint nascer. ──
+export { PosicaoPagamentosPage } from '#modules/reports/client/page/posicao-pagamentos.page.tsx'
+
+export {
+  aggregatePosicao,
+  loadPosicao,
+  buildCsv as buildPosicaoCsv,
+  formatBRL as formatPosicaoBRL,
+  CSV_HEADER as POSICAO_CSV_HEADER,
+} from '#modules/reports/client/posicao.view-model.ts'
+export type {
+  PosicaoLevel,
+  PosicaoMeasures,
+  PosicaoNode,
+  PosicaoReport,
+  PosicaoType,
+} from '#modules/reports/client/posicao.view-model.ts'
