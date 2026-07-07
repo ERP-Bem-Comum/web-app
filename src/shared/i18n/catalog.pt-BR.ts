@@ -1649,6 +1649,10 @@ export const ptBR: Catalog = {
   'financial.recon.manual.f.categoryPlaceholder': 'Selecionar categoria…',
   'financial.recon.manual.f.subcategory': 'Subcategoria',
   'financial.recon.manual.f.subcategoryPlaceholder': 'Selecionar subcategoria…',
+  // Classificação do lançamento Tarifa/Juros (Tarifa/Multa/Juros). Campo HONESTO/desligado: o input do
+  // manual-entry no core-api ainda não tem campo estruturado p/ o subtipo → acende quando o backend expor.
+  'financial.recon.manual.f.feeKind': 'Classificação',
+  'financial.recon.manual.f.feeKindPlaceholder': 'Selecionar (chega com o backend)…',
   'financial.recon.manual.f.costCenter': 'Centro de custo',
   'financial.recon.manual.f.costCenterPlaceholder': 'Selecionar centro de custo…',
   'financial.recon.manual.f.effective': 'Data de efetivação',
