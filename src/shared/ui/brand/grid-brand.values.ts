@@ -125,6 +125,17 @@ export const brand = {
       donut3: '#2f8f6a', // verde-azulado
       donut4: '#c67c1e', // âmbar (substitui o vermelho)
     },
+    // Paleta das 3 MEDIDAS DERIVADAS do relatório "Posição de Pagamentos" + o Total. As medidas NÃO são status
+    // crus: Em atraso (não pago e vencido), Pago (liquidado), A pagar (não pago e a vencer); o Total é a soma.
+    // Hex cru permitido aqui (é um `*.values.ts`, isento do lint só-tokens); a UI aplica por classe
+    // (styleVariants no `.css.ts`) — as views não importam tokens (§boundaries client-ui ↛ ds-tokens).
+    // Semântica de cor: vermelho (atenção/atraso) → verde (pago) → âmbar (a pagar) → azul institucional (total).
+    posicao: {
+      emAtraso: '#c0453c', // vermelho — vencido e não pago
+      pago: '#1f7d55', // verde — liquidado
+      aPagar: '#f8b221', // âmbar — a vencer
+      total: '#396496', // azul institucional — soma das 3
+    },
   },
   // Medidas específicas do relatório redesenhado (px cru permitido no `*.values.ts`).
   rxp: {

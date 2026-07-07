@@ -29,6 +29,7 @@ import { Route as AuthenticatedContratosIndexRouteImport } from './../routes/_au
 import { Route as AuthenticatedUsuariosCriarRouteImport } from './../routes/_authenticated/usuarios/criar'
 import { Route as AuthenticatedUsuariosIdRouteImport } from './../routes/_authenticated/usuarios/$id'
 import { Route as AuthenticatedRelatoriosRealizadoXPlanejadoRouteImport } from './../routes/_authenticated/relatorios/realizado-x-planejado'
+import { Route as AuthenticatedRelatoriosPosicaoPagamentosRouteImport } from './../routes/_authenticated/relatorios/posicao-pagamentos'
 import { Route as AuthenticatedRelatoriosFornecedoresSemContratoRouteImport } from './../routes/_authenticated/relatorios/fornecedores-sem-contrato'
 import { Route as AuthenticatedRelatoriosEquipeRouteImport } from './../routes/_authenticated/relatorios/equipe'
 import { Route as AuthenticatedProgramasCriarRouteImport } from './../routes/_authenticated/programas/criar'
@@ -165,6 +166,12 @@ const AuthenticatedRelatoriosRealizadoXPlanejadoRoute =
   AuthenticatedRelatoriosRealizadoXPlanejadoRouteImport.update({
     id: '/relatorios/realizado-x-planejado',
     path: '/relatorios/realizado-x-planejado',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRelatoriosPosicaoPagamentosRoute =
+  AuthenticatedRelatoriosPosicaoPagamentosRouteImport.update({
+    id: '/relatorios/posicao-pagamentos',
+    path: '/relatorios/posicao-pagamentos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedRelatoriosFornecedoresSemContratoRoute =
@@ -367,6 +374,7 @@ export interface FileRoutesByFullPath {
   '/programas/criar': typeof AuthenticatedProgramasCriarRoute
   '/relatorios/equipe': typeof AuthenticatedRelatoriosEquipeRoute
   '/relatorios/fornecedores-sem-contrato': typeof AuthenticatedRelatoriosFornecedoresSemContratoRoute
+  '/relatorios/posicao-pagamentos': typeof AuthenticatedRelatoriosPosicaoPagamentosRoute
   '/relatorios/realizado-x-planejado': typeof AuthenticatedRelatoriosRealizadoXPlanejadoRoute
   '/usuarios/$id': typeof AuthenticatedUsuariosIdRoute
   '/usuarios/criar': typeof AuthenticatedUsuariosCriarRoute
@@ -418,6 +426,7 @@ export interface FileRoutesByTo {
   '/programas/criar': typeof AuthenticatedProgramasCriarRoute
   '/relatorios/equipe': typeof AuthenticatedRelatoriosEquipeRoute
   '/relatorios/fornecedores-sem-contrato': typeof AuthenticatedRelatoriosFornecedoresSemContratoRoute
+  '/relatorios/posicao-pagamentos': typeof AuthenticatedRelatoriosPosicaoPagamentosRoute
   '/relatorios/realizado-x-planejado': typeof AuthenticatedRelatoriosRealizadoXPlanejadoRoute
   '/usuarios/$id': typeof AuthenticatedUsuariosIdRoute
   '/usuarios/criar': typeof AuthenticatedUsuariosCriarRoute
@@ -471,6 +480,7 @@ export interface FileRoutesById {
   '/_authenticated/programas/criar': typeof AuthenticatedProgramasCriarRoute
   '/_authenticated/relatorios/equipe': typeof AuthenticatedRelatoriosEquipeRoute
   '/_authenticated/relatorios/fornecedores-sem-contrato': typeof AuthenticatedRelatoriosFornecedoresSemContratoRoute
+  '/_authenticated/relatorios/posicao-pagamentos': typeof AuthenticatedRelatoriosPosicaoPagamentosRoute
   '/_authenticated/relatorios/realizado-x-planejado': typeof AuthenticatedRelatoriosRealizadoXPlanejadoRoute
   '/_authenticated/usuarios/$id': typeof AuthenticatedUsuariosIdRoute
   '/_authenticated/usuarios/criar': typeof AuthenticatedUsuariosCriarRoute
@@ -524,6 +534,7 @@ export interface FileRouteTypes {
     | '/programas/criar'
     | '/relatorios/equipe'
     | '/relatorios/fornecedores-sem-contrato'
+    | '/relatorios/posicao-pagamentos'
     | '/relatorios/realizado-x-planejado'
     | '/usuarios/$id'
     | '/usuarios/criar'
@@ -575,6 +586,7 @@ export interface FileRouteTypes {
     | '/programas/criar'
     | '/relatorios/equipe'
     | '/relatorios/fornecedores-sem-contrato'
+    | '/relatorios/posicao-pagamentos'
     | '/relatorios/realizado-x-planejado'
     | '/usuarios/$id'
     | '/usuarios/criar'
@@ -627,6 +639,7 @@ export interface FileRouteTypes {
     | '/_authenticated/programas/criar'
     | '/_authenticated/relatorios/equipe'
     | '/_authenticated/relatorios/fornecedores-sem-contrato'
+    | '/_authenticated/relatorios/posicao-pagamentos'
     | '/_authenticated/relatorios/realizado-x-planejado'
     | '/_authenticated/usuarios/$id'
     | '/_authenticated/usuarios/criar'
@@ -813,6 +826,13 @@ declare module '@tanstack/react-router' {
       path: '/relatorios/realizado-x-planejado'
       fullPath: '/relatorios/realizado-x-planejado'
       preLoaderRoute: typeof AuthenticatedRelatoriosRealizadoXPlanejadoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/relatorios/posicao-pagamentos': {
+      id: '/_authenticated/relatorios/posicao-pagamentos'
+      path: '/relatorios/posicao-pagamentos'
+      fullPath: '/relatorios/posicao-pagamentos'
+      preLoaderRoute: typeof AuthenticatedRelatoriosPosicaoPagamentosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/relatorios/fornecedores-sem-contrato': {
@@ -1097,6 +1117,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProgramasCriarRoute: typeof AuthenticatedProgramasCriarRoute
   AuthenticatedRelatoriosEquipeRoute: typeof AuthenticatedRelatoriosEquipeRoute
   AuthenticatedRelatoriosFornecedoresSemContratoRoute: typeof AuthenticatedRelatoriosFornecedoresSemContratoRoute
+  AuthenticatedRelatoriosPosicaoPagamentosRoute: typeof AuthenticatedRelatoriosPosicaoPagamentosRoute
   AuthenticatedRelatoriosRealizadoXPlanejadoRoute: typeof AuthenticatedRelatoriosRealizadoXPlanejadoRoute
   AuthenticatedUsuariosIdRoute: typeof AuthenticatedUsuariosIdRoute
   AuthenticatedUsuariosCriarRoute: typeof AuthenticatedUsuariosCriarRoute
@@ -1137,6 +1158,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRelatoriosEquipeRoute: AuthenticatedRelatoriosEquipeRoute,
   AuthenticatedRelatoriosFornecedoresSemContratoRoute:
     AuthenticatedRelatoriosFornecedoresSemContratoRoute,
+  AuthenticatedRelatoriosPosicaoPagamentosRoute:
+    AuthenticatedRelatoriosPosicaoPagamentosRoute,
   AuthenticatedRelatoriosRealizadoXPlanejadoRoute:
     AuthenticatedRelatoriosRealizadoXPlanejadoRoute,
   AuthenticatedUsuariosIdRoute: AuthenticatedUsuariosIdRoute,

@@ -37,8 +37,12 @@ import {
   emptyState,
 } from './realizado-charts.css.ts'
 
-/** Chave de cor da medida (mapeada a token no .css.ts). */
-export type MeasureKey = 'realizado' | 'provisionado' | 'previsto'
+/**
+ * Chave de cor da medida (mapeada a token no .css.ts). As 3 primeiras são do relatório "Realizado ×
+ * Planejado"; as 3 últimas ('emAtraso'|'pago'|'aPagar') são do relatório "Posição de Pagamentos", que
+ * REUSA este mesmo donut com sua paleta própria (extensão aditiva — RxP intacto).
+ */
+export type MeasureKey = 'realizado' | 'provisionado' | 'previsto' | 'emAtraso' | 'pago' | 'aPagar'
 
 export type DonutSlice = Readonly<{
   id: string

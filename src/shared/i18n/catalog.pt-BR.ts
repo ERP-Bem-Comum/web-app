@@ -2337,6 +2337,51 @@ export const ptBR: Catalog = {
   'reports.equipe.detail.close': 'Fechar',
   'reports.equipe.detail.edit': 'Editar',
 
+  // ── Relatório "Posição de Pagamentos" (front-first; core-api#114) ──
+  'reports.posicao.title': 'Posição de Pagamentos',
+  'reports.posicao.back': 'Voltar',
+  'reports.posicao.empty': 'Nenhum dado para exibir.',
+  // Export (dropdown CSV + PDF).
+  'reports.posicao.export.label': 'Exportar',
+  'reports.posicao.export.csv': 'CSV',
+  'reports.posicao.export.pdf': 'PDF',
+  // Filtros recolhíveis (placeholders visuais front-first).
+  'reports.posicao.filters.title': 'Filtros',
+  'reports.posicao.filters.allOption': 'Todos',
+  'reports.posicao.filters.plano': 'Plano Orçamentário',
+  'reports.posicao.filters.periodo': 'Período de vencimento',
+  'reports.posicao.filters.conta': 'Conta bancária',
+  'reports.posicao.filters.status': 'Status',
+  'reports.posicao.filters.centro': 'Centro de custo',
+  'reports.posicao.filters.categoria': 'Categoria',
+  'reports.posicao.filters.subcategoria': 'Subcategoria',
+  'reports.posicao.filters.fornecedor': 'Fornecedor',
+  'reports.posicao.filters.filtrar': 'Filtrar',
+  // 3 MEDIDAS DERIVADAS (Em atraso = não pago e vencido; Pago = liquidado; A pagar = não pago e a vencer).
+  'reports.posicao.measure.emAtraso': 'Em atraso',
+  'reports.posicao.measure.pago': 'Pago',
+  'reports.posicao.measure.aPagar': 'A pagar',
+  'reports.posicao.measure.total': 'Total',
+  // KPIs (4 cards).
+  'reports.posicao.kpi.atrasado': 'Atrasado',
+  'reports.posicao.kpi.pago': 'Pago',
+  'reports.posicao.kpi.aPagar': 'A pagar',
+  'reports.posicao.kpi.total': 'Total',
+  'reports.posicao.kpi.atrasadoSub': 'Vencido e não pago',
+  'reports.posicao.kpi.pagoSub': 'Títulos liquidados',
+  'reports.posicao.kpi.aPagarSub': 'A vencer',
+  'reports.posicao.kpi.totalSub': 'Obrigações no período',
+  // Gráficos.
+  'reports.posicao.chart.resumoTotal': 'Resumo total',
+  'reports.posicao.chart.distribuicaoFornecedor': 'Distribuição por Fornecedor',
+  'reports.posicao.chart.centerCaption': 'total',
+  // Tabela hierárquica.
+  'reports.posicao.table.title': 'Posição por fornecedor',
+  'reports.posicao.columns.name': 'Fornecedor / Centro de custo / Categoria',
+  'reports.posicao.totals.row': 'Total Geral',
+  'reports.posicao.tree.expand': 'Expandir',
+  'reports.posicao.tree.collapse': 'Recolher',
+
   // ── Shell (top bar) ──
   'shell.topbar.brand': 'Bem Comum',
   'shell.topbar.greeting': 'Olá, {{name}}',

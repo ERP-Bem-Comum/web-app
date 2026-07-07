@@ -82,6 +82,9 @@ export const MENU: readonly MenuSection[] = [
       // Equipe ABC: front-first, dados sintéticos/anonimizados (LGPD). SEM `requiredPermission` — o RBAC é
       // modelado pelo cliente PÓS-entrega (não gateia este relatório agora).
       { label: 'Equipe ABC', to: '/relatorios/equipe' },
+      // Posição de Pagamentos: front-first, dados sintéticos. Snapshot Fornecedor→CC→Categoria (Pendente/
+      // Pago/Atrasado). SEM `requiredPermission` (RBAC pós-entrega). Engine reusável p/ Recebíveis depois.
+      { label: 'Posição de Pagamentos', to: '/relatorios/posicao-pagamentos' },
     ],
   },
   {

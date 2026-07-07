@@ -59,6 +59,10 @@ export const tooltipSwatchColor = styleVariants({
   realizado: { background: brand.color.rxp.realizado },
   provisionado: { background: brand.color.rxp.provisionado },
   previsto: { background: brand.color.rxp.previsto },
+  // Medidas do relatório "Posição de Pagamentos" (reusam o mesmo donut, cores próprias §X).
+  emAtraso: { background: brand.color.posicao.emAtraso },
+  pago: { background: brand.color.posicao.pago },
+  aPagar: { background: brand.color.posicao.aPagar },
 })
 
 export const tooltipName = style({ color: brand.color.ink700 })
@@ -199,11 +203,18 @@ export const measureStroke = styleVariants({
   realizado: { stroke: brand.color.rxp.realizado },
   provisionado: { stroke: brand.color.rxp.provisionado },
   previsto: { stroke: brand.color.rxp.previsto },
+  // Medidas do relatório "Posição de Pagamentos" (reusam o mesmo donut, cores próprias §X).
+  emAtraso: { stroke: brand.color.posicao.emAtraso },
+  pago: { stroke: brand.color.posicao.pago },
+  aPagar: { stroke: brand.color.posicao.aPagar },
 })
 export const measureDot = styleVariants({
   realizado: { background: brand.color.rxp.realizado },
   provisionado: { background: brand.color.rxp.provisionado },
   previsto: { background: brand.color.rxp.previsto },
+  emAtraso: { background: brand.color.posicao.emAtraso },
+  pago: { background: brand.color.posicao.pago },
+  aPagar: { background: brand.color.posicao.aPagar },
 })
 
 // ── Legenda do donut ──
