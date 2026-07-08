@@ -17,6 +17,7 @@ import type {
   PayableTitleListResponse,
 } from '#modules/financial/client/data/model/document.model.ts'
 import type { RecentPayment } from '#modules/financial/client/data/model/recent-payment.model.ts'
+import type { DashboardStatistics } from '#modules/financial/client/data/model/dashboard-statistics.model.ts'
 import type { FinancialError, FnResult } from '#modules/financial/client/data/repository/financial-error.ts'
 
 type ListFn = (opts: { data: ListDocumentsInput }) => Promise<FnResult<DocumentListResponse>>
@@ -31,6 +32,8 @@ type CancelFn = (opts: {
 type PayFn = (opts: { data: ManualPaymentInput }) => Promise<FnResult<DocumentDetail>>
 // 042: widget "Últimos pagamentos" — sem input (Top-5 do backend).
 type RecentPaymentsFn = () => Promise<FnResult<readonly RecentPayment[]>>
+// 052: estatísticas do Dashboard — sem input (o BFF compõe o DTO completo).
+type DashboardStatisticsFn = () => Promise<FnResult<DashboardStatistics>>
 
 export type FinancialRepository = Readonly<{
   list: (input: ListDocumentsInput) => Promise<Result<DocumentListResponse, FinancialError>>
@@ -48,6 +51,8 @@ export type FinancialRepository = Readonly<{
   registerManualPayment: (input: ManualPaymentInput) => Promise<Result<DocumentDetail, FinancialError>>
   // 042: Top-5 pagamentos recentes (widget do Dashboard). Sem input.
   getRecentPayments: () => Promise<Result<readonly RecentPayment[], FinancialError>>
+  // 052: estatísticas do Dashboard (DTO completo composto no BFF). Sem input.
+  getDashboardStatistics: () => Promise<Result<DashboardStatistics, FinancialError>>
 }>
 
 export const createFinancialRepository = (
@@ -62,6 +67,7 @@ export const createFinancialRepository = (
     cancelDocumentFn: CancelFn
     registerManualPaymentFn: PayFn
     recentPaymentsFn: RecentPaymentsFn
+    dashboardStatisticsFn: DashboardStatisticsFn
   }>,
 ): FinancialRepository => ({
   list: async (input) => {
@@ -102,6 +108,10 @@ export const createFinancialRepository = (
   },
   getRecentPayments: async () => {
     const res = await deps.recentPaymentsFn()
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  getDashboardStatistics: async () => {
+    const res = await deps.dashboardStatisticsFn()
     return res.ok ? ok(res.data) : err(res.error)
   },
 })

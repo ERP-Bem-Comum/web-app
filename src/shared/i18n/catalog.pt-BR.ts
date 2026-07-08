@@ -2181,6 +2181,10 @@ export const ptBR: Catalog = {
   'dashboard.recent-payments.forbidden': 'Você não tem permissão para ver os pagamentos.',
   'dashboard.recent-payments.loading': 'Carregando…',
 
+  // Estados da page (052 — o DTO das estatísticas vem do BFF via server fn).
+  'dashboard.state.loading': 'Carregando o resumo…',
+  'dashboard.state.error': 'Não foi possível carregar o resumo do dashboard.',
+
   // ── Relatórios → Fornecedores sem Contrato (044) ──
   'reports.suppliersWithoutContract.title': 'Fornecedores sem Contrato',
   'reports.suppliersWithoutContract.subtitle':
