@@ -363,6 +363,7 @@ export const transactionReconciliationToModel = (
     type: mapTxReconType(d.type),
     status: d.status === 'Undone' ? 'Undone' : 'Active',
     reconciledBy: d.reconciledBy,
+    reconciledByName: d.reconciledByName,
     reconciledAt: d.reconciledAt,
     differenceCents: d.differenceCents,
     // documentNumber/supplierName/dueDate saem null aqui — o passo de enriquecimento (INTERINO #172)

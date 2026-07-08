@@ -216,6 +216,7 @@ export type TransactionReconciliation = Readonly<{
   type: 'Individual' | 'Multiple' | 'Partial' | 'ManualEntry'
   status: 'Active' | 'Undone'
   reconciledBy: string
+  reconciledByName: string | null // #207: nome de quem conciliou (preferido sobre o id cru no modal)
   reconciledAt: string // ISO datetime
   differenceCents: string | null
   items: readonly TransactionReconciliationItem[]

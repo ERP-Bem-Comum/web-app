@@ -47,6 +47,7 @@ import {
   formatDateDash,
   formatDayHeader,
   deriveManualKindFromTx,
+  matchAuditFromLookup,
 } from '../../../../../src/modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
 import type {
   Movement,
@@ -415,6 +416,30 @@ describe('modal Detalhes da conciliação — matchDetailsView', () => {
   })
 })
 
+describe('matchAuditFromLookup (#207 — "Por" mostra nome, não UUID)', () => {
+  const base = {
+    reconciliationId: 'rec1',
+    transactionId: 't1',
+    type: 'Individual' as const,
+    status: 'Active' as const,
+    reconciledBy: 'c562bc57-0000-0000-0000-000000000000',
+    reconciledAt: '2026-06-21T13:45:00.000Z',
+    differenceCents: null,
+    items: [],
+  }
+
+  it('usa reconciledByName quando resolvido pelo core-api (preferido sobre o id cru)', () => {
+    const audit = matchAuditFromLookup({ ...base, reconciledByName: 'Alessandra Castro' })
+    assert.equal(audit.who, 'Alessandra Castro')
+    assert.equal(audit.when, formatDayHeader('2026-06-21'))
+  })
+
+  it('cai no id cru (fallback) enquanto reconciledByName vier null (não-resolvido)', () => {
+    const audit = matchAuditFromLookup({ ...base, reconciledByName: null })
+    assert.equal(audit.who, 'c562bc57-0000-0000-0000-000000000000')
+  })
+})
+
 describe('buildMatchTitles (1 saída → N títulos, #175 items)', () => {
   const lookup = (items: readonly { payableId: string; reconciledValueCents: string }[]) =>
     ({
@@ -423,6 +448,7 @@ describe('buildMatchTitles (1 saída → N títulos, #175 items)', () => {
       type: 'Multiple' as const,
       status: 'Active' as const,
       reconciledBy: 'u1',
+      reconciledByName: null,
       reconciledAt: '2026-06-21T00:00:00.000Z',
       differenceCents: null,
       items,
