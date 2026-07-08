@@ -2468,6 +2468,116 @@ export const ptBR: Catalog = {
   'reports.analise.rec.emptyHint':
     'Ainda não há recebíveis lançados. Assim que o Contas a Receber registrar movimentações, elas aparecerão aqui.',
 
+  // ── Relatório "Fluxo de Caixa" (front-first; core-api#114) ──
+  // Duas seções (Saídas = payables + cartão; Entradas = receivables), cada uma árvore Categoria → Subcategoria
+  // × 2 medidas (Realizado × Previsto); Saldo = Entradas − Saídas; gráfico "por vencimento" (Entradas × Saídas).
+  'reports.fluxoCaixa.title': 'Fluxo de Caixa',
+  'reports.fluxoCaixa.back': 'Voltar',
+  'reports.fluxoCaixa.chartEmptyLabel': 'Sem movimentações no período.',
+  // Export (dropdown CSV + PDF).
+  'reports.fluxoCaixa.export.label': 'Exportar',
+  'reports.fluxoCaixa.export.csv': 'CSV',
+  'reports.fluxoCaixa.export.pdf': 'PDF',
+  // Filtros recolhíveis (placeholders visuais front-first).
+  'reports.fluxoCaixa.filters.title': 'Filtros',
+  'reports.fluxoCaixa.filters.allOption': 'Todos',
+  'reports.fluxoCaixa.filters.programa': 'Programa',
+  'reports.fluxoCaixa.filters.plano': 'Plano Orçamentário',
+  'reports.fluxoCaixa.filters.periodo': 'Período de vencimento',
+  'reports.fluxoCaixa.filters.conta': 'Conta bancária',
+  'reports.fluxoCaixa.filters.centro': 'Centro de custo',
+  'reports.fluxoCaixa.filters.categoria': 'Categoria',
+  'reports.fluxoCaixa.filters.subcategoria': 'Subcategoria',
+  'reports.fluxoCaixa.filters.status': 'Status',
+  'reports.fluxoCaixa.filters.filtrar': 'Filtrar',
+  // As 2 medidas (colunas das tabelas de seção).
+  'reports.fluxoCaixa.measure.realizado': 'Realizado',
+  'reports.fluxoCaixa.measure.previsto': 'Previsto',
+  // KPIs (Saídas · Entradas · Saldo realizado · Saldo previsto).
+  'reports.fluxoCaixa.kpi.saidas': 'Total de Saídas',
+  'reports.fluxoCaixa.kpi.saidasSub': 'Pagamentos + cartão (realizado)',
+  'reports.fluxoCaixa.kpi.entradas': 'Total de Entradas',
+  'reports.fluxoCaixa.kpi.entradasSub': 'Recebimentos (realizado)',
+  'reports.fluxoCaixa.kpi.saldoRealizado': 'Saldo (realizado)',
+  'reports.fluxoCaixa.kpi.saldoRealizadoSub': 'Entradas − Saídas',
+  'reports.fluxoCaixa.kpi.saldoPrevisto': 'Saldo (previsto)',
+  'reports.fluxoCaixa.kpi.saldoPrevistoSub': 'Entradas − Saídas (previsto)',
+  // Gráfico "Fluxo por vencimento" (Entradas × Saídas por mês) — mantido para retrocompatibilidade.
+  'reports.fluxoCaixa.chart.monthly': 'Fluxo por vencimento',
+  'reports.fluxoCaixa.chart.entradas': 'Entradas',
+  'reports.fluxoCaixa.chart.saidas': 'Saídas',
+  // Os 4 gráficos "Previsto × Realizado": linha do tempo (3 séries), barras por Centro de Custo, 2 donuts.
+  'reports.fluxoCaixa.chart.timeline': 'Linha do tempo',
+  'reports.fluxoCaixa.chart.byCostCenter': 'Agrupado por Centro de Custo',
+  'reports.fluxoCaixa.chart.esperado': 'Esperado',
+  'reports.fluxoCaixa.chart.realizado': 'Realizado',
+  'reports.fluxoCaixa.chart.previsto': 'Previsto',
+  'reports.fluxoCaixa.chart.saldo': 'Saldo',
+  'reports.fluxoCaixa.chart.execucao': 'execução',
+  // Seções (Saídas / Entradas) — coluna de nome comum + títulos/totais/empty por seção.
+  'reports.fluxoCaixa.section.nameCol': 'Categoria / Subcategoria',
+  'reports.fluxoCaixa.section.saidas.title': 'Saídas',
+  'reports.fluxoCaixa.section.saidas.totalRow': 'Total de Saídas',
+  'reports.fluxoCaixa.section.saidas.empty': 'Nenhuma saída registrada',
+  'reports.fluxoCaixa.section.saidas.emptyHint':
+    'Ainda não há saídas lançadas no período. Assim que houver pagamentos, eles aparecerão aqui.',
+  'reports.fluxoCaixa.section.entradas.title': 'Entradas',
+  'reports.fluxoCaixa.section.entradas.totalRow': 'Total de Entradas',
+  'reports.fluxoCaixa.section.entradas.empty': 'Nenhuma entrada registrada',
+  'reports.fluxoCaixa.section.entradas.emptyHint':
+    'Ainda não há entradas lançadas. Assim que o Contas a Receber registrar recebimentos, eles aparecerão aqui.',
+  // Árvore.
+  'reports.fluxoCaixa.tree.expand': 'Expandir',
+  'reports.fluxoCaixa.tree.collapse': 'Recolher',
+
+  // ── "Relatório Geral" (front-first; core-api#114) — ledger unificado achatado e paginado ──
+  'reports.geral.title': 'Relatório Geral',
+  'reports.geral.back': 'Voltar',
+  'reports.geral.naLabel': '—',
+  'reports.geral.empty': 'Nenhum lançamento no período',
+  // Export (dropdown CSV + PDF).
+  'reports.geral.export.label': 'Exportar',
+  'reports.geral.export.csv': 'CSV',
+  'reports.geral.export.pdf': 'PDF',
+  // Filtros recolhíveis (placeholders visuais front-first).
+  'reports.geral.filters.title': 'Filtros',
+  'reports.geral.filters.allOption': 'Todos',
+  'reports.geral.filters.periodo': 'Período',
+  'reports.geral.filters.tipo': 'Tipo',
+  'reports.geral.filters.fornecedor': 'Fornecedor',
+  'reports.geral.filters.centro': 'Centro de custo',
+  'reports.geral.filters.categoria': 'Categoria',
+  'reports.geral.filters.filtrar': 'Filtrar',
+  // Cabeçalho da tabela.
+  'reports.geral.table.title': 'Lançamentos',
+  'reports.geral.table.count': '{{count}} lançamentos',
+  // 15 colunas (ordem do legado).
+  'reports.geral.columns.data': 'Data',
+  'reports.geral.columns.vencimento': 'Vencimento',
+  'reports.geral.columns.tipo': 'Tipo',
+  'reports.geral.columns.numeroContrato': 'Nº Contrato',
+  'reports.geral.columns.codigo': 'Código',
+  'reports.geral.columns.parcela': 'Parcela',
+  'reports.geral.columns.apontamento': 'Apontamento',
+  'reports.geral.columns.fornecedor': 'Fornecedor',
+  'reports.geral.columns.financiador': 'Financiador',
+  'reports.geral.columns.colaborador': 'Colaborador',
+  'reports.geral.columns.centroCusto': 'Centro de Custo',
+  'reports.geral.columns.categoria': 'Categoria',
+  'reports.geral.columns.subcategoria': 'Subcategoria',
+  'reports.geral.columns.pixBancario': 'PIX/Bancário',
+  'reports.geral.columns.valor': 'Valor',
+  // Seletor de colunas (botão "Colunas" → menu de checkboxes).
+  'reports.geral.columns.button': 'Colunas',
+  'reports.geral.columns.close': 'Fechar seleção de colunas',
+  'reports.geral.columns.none': 'Selecione ao menos uma coluna para exibir',
+  // Paginação da tabela.
+  'reports.geral.paginator.previous': 'Anterior',
+  'reports.geral.paginator.next': 'Próxima',
+  'reports.geral.paginator.page': 'Página',
+  'reports.geral.paginator.of': 'de',
+  'reports.geral.paginator.perPage': 'Itens por página',
+
   // ── Shell (top bar) ──
   'shell.topbar.brand': 'Bem Comum',
   'shell.topbar.greeting': 'Olá, {{name}}',

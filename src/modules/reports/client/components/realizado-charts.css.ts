@@ -67,6 +67,9 @@ export const tooltipSwatchColor = styleVariants({
   emAtrasoRec: { background: brand.color.posicaoRec.emAtraso },
   recebido: { background: brand.color.posicaoRec.recebido },
   aReceber: { background: brand.color.posicaoRec.aReceber },
+  // Donuts "Previsto × Realizado" do Fluxo de Caixa — ciano/verde (espelho do legado).
+  fluxoPrevisto: { background: brand.color.fluxo.previstoChart },
+  fluxoRealizado: { background: brand.color.fluxo.realizadoChart },
 })
 
 export const tooltipName = style({ color: brand.color.ink700 })
@@ -215,6 +218,9 @@ export const measureStroke = styleVariants({
   emAtrasoRec: { stroke: brand.color.posicaoRec.emAtraso },
   recebido: { stroke: brand.color.posicaoRec.recebido },
   aReceber: { stroke: brand.color.posicaoRec.aReceber },
+  // Donuts "Previsto × Realizado" do Fluxo de Caixa — ciano/verde (espelho do legado).
+  fluxoPrevisto: { stroke: brand.color.fluxo.previstoChart },
+  fluxoRealizado: { stroke: brand.color.fluxo.realizadoChart },
 })
 export const measureDot = styleVariants({
   realizado: { background: brand.color.rxp.realizado },
@@ -227,6 +233,9 @@ export const measureDot = styleVariants({
   emAtrasoRec: { background: brand.color.posicaoRec.emAtraso },
   recebido: { background: brand.color.posicaoRec.recebido },
   aReceber: { background: brand.color.posicaoRec.aReceber },
+  // Donuts "Previsto × Realizado" do Fluxo de Caixa — ciano/verde (espelho do legado).
+  fluxoPrevisto: { background: brand.color.fluxo.previstoChart },
+  fluxoRealizado: { background: brand.color.fluxo.realizadoChart },
 })
 
 // Fill das barras "Distribuição por Financiador" (Posição de RECEBIMENTOS) — roxo, distinto do azul de Pag.

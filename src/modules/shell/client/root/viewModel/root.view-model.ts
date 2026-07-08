@@ -79,6 +79,10 @@ const PAGE_TITLES: Readonly<Record<string, string>> = {
   '/relatorios/analise-pagamentos': 'Análise de Pagamentos',
   // Relatórios → Análise de Recebimentos — espelho da de Pagamentos (header "brand" próprio); só o document.title.
   '/relatorios/analise-recebimentos': 'Análise de Recebimentos',
+  // Relatórios → Fluxo de Caixa — a page desenha o próprio header "brand"; isto só alimenta o document.title.
+  '/relatorios/fluxo-caixa': 'Fluxo de Caixa',
+  // Relatórios → Relatório Geral — ledger achatado/paginado (header "brand" próprio); só o document.title.
+  '/relatorios/geral': 'Relatório Geral',
   '/login': 'Login',
 }
 
