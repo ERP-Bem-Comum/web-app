@@ -6,6 +6,7 @@
 import { loadEnvOrThrow } from '#external/config/env.config.ts'
 import { coreApiBase } from '#external/core-api/api-base.ts'
 import { createCoreApiFinancialClient } from './core-api/core-api-financial.ts'
+import { getDashboardAggregationsPlaceholder } from './dashboard-statistics.placeholder-source.ts'
 import {
   createListDocuments,
   createListPayableTitles,
@@ -18,6 +19,7 @@ import {
   createRegisterManualPayment,
   createGetRecentPayments,
 } from '#modules/financial/server/application/financial.use-cases.ts'
+import { createGetDashboardStatistics } from '#modules/financial/server/application/dashboard.use-cases.ts'
 
 type FinancialServer = ReturnType<typeof build>
 
@@ -35,6 +37,10 @@ const build = () => {
     cancelDocument: createCancelDocument({ client }),
     registerManualPayment: createRegisterManualPayment({ client }),
     getRecentPayments: createGetRecentPayments({ client }),
+    // Dashboard (052/#352): fonte de agregações INTERINA (placeholder até core-api#112) + composição pura.
+    getDashboardStatistics: createGetDashboardStatistics({
+      source: { getAggregations: getDashboardAggregationsPlaceholder },
+    }),
   }
 }
 
