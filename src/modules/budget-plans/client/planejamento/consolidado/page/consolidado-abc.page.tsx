@@ -11,6 +11,7 @@ import {
   CONSOLIDADO_YEARS,
   CONSOLIDADO_PROGRAM_OPTIONS,
 } from '#modules/budget-plans/client/planejamento/consolidado/consolidado-abc.binding.ts'
+import { useConsolidadoExport } from '#modules/budget-plans/client/planejamento/consolidado/consolidado-export.binding.ts'
 
 import { ConsolidatedMatrix } from '../../detalhe/components/consolidated-matrix.component.tsx'
 import { ConsolidadoFilters } from '../components/consolidado-filters.component.tsx'
@@ -38,6 +39,7 @@ export function ConsolidadoAbcPage(): ReactNode {
   const search = routeApi.useSearch()
   const navigate = useNavigate()
   const { state, programs, prevSemester, nextSemester } = useConsolidadoAbc(search)
+  const csvExport = useConsolidadoExport({ year: search.year, programs })
 
   return (
     <div className={screen}>
@@ -59,8 +61,9 @@ export function ConsolidadoAbcPage(): ReactNode {
           yearBase: t('budget-plans.consolidado.yearBase'),
           programs: t('budget-plans.consolidado.programs'),
           apply: t('budget-plans.consolidado.apply'),
-          exportExcel: t('budget-plans.consolidado.exportExcel'),
+          exportCsv: t('budget-plans.consolidado.exportCsv'),
         }}
+        exporting={csvExport.exporting}
         onApply={(v) =>
           void navigate({
             to: '.',
@@ -71,10 +74,13 @@ export function ConsolidadoAbcPage(): ReactNode {
             }),
           })
         }
-        onExport={() => {
-          // TODO(#113): "Exportar Excel/CSV" — o backend gera o arquivo (GET /consolidated-result/csv).
-        }}
+        onExport={csvExport.exportCsv}
       />
+      {csvExport.errorTag !== null ? (
+        <p className={empty} role="alert">
+          {t(csvExport.errorTag)}
+        </p>
+      ) : null}
 
       <div className={resultCard}>
         <span className={resultTitleIcon} aria-hidden="true">
