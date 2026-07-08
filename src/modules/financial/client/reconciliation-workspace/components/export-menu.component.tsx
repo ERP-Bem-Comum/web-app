@@ -1,8 +1,9 @@
 /**
  * ExportMenu — view burra: botão "Exportar conciliação" + dropdown (OFX/CSV/PDF), fiel ao mock (espelha o
  * Importar, abre p/ cima no footer). OFX/CSV ligados ao #173 (exporta o período mais recente da conta, com
- * o range no topo do menu); PDF segue chrome (#145). Recebe o estado de abrir/fechar (`menus`) e a ação de
- * export (`exportBinding`) por props; sem data-hooks.
+ * o range no topo do menu); PDF (#144) imprime o relatório do período visualizado DIRETO (`window.print()`,
+ * sem nova aba/navegação). Recebe o estado de abrir/fechar (`menus`), a ação de export de texto
+ * (`exportBinding`) e a de imprimir o relatório (`reportPdf`).
  */
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
@@ -28,7 +29,7 @@ const ITEMS: readonly { ic: string; lblTag: string; hintTag?: string; format: Ex
     hintTag: 'financial.recon.export.csvHint',
     format: 'csv-nibo',
   },
-  // PDF segue chrome até #145 (sem endpoint).
+  // PDF (#144): caminho separado — imprime o relatório do período visualizado (habilita por conta + período).
   {
     ic: 'PDF',
     lblTag: 'financial.recon.export.pdf',
@@ -37,9 +38,16 @@ const ITEMS: readonly { ic: string; lblTag: string; hintTag?: string; format: Ex
   },
 ]
 
-export type ExportMenuProps = Readonly<{ menus: HeaderMenusBinding; exportBinding: ExportBinding }>
+// #144: o PDF é um caminho SEPARADO do export de texto (OFX/CSV) — dispara `window.print()` DIRETO (sem aba).
+export type ReportPdfMenu = Readonly<{ enabled: boolean; print: () => void }>
 
-export function ExportMenu({ menus, exportBinding }: ExportMenuProps) {
+export type ExportMenuProps = Readonly<{
+  menus: HeaderMenusBinding
+  exportBinding: ExportBinding
+  reportPdf: ReportPdfMenu
+}>
+
+export function ExportMenu({ menus, exportBinding, reportPdf }: ExportMenuProps) {
   const { canExport, periodLabel, exporting, errorTag } = exportBinding
   return (
     <div className={s.ddWrap}>
@@ -71,10 +79,13 @@ export function ExportMenu({ menus, exportBinding }: ExportMenuProps) {
               <div className={s.ddGroup}>{t('financial.recon.export.noPeriod')}</div>
             )}
             {ITEMS.map((it) => {
+              // PDF (#144): habilita por `reportPdf.enabled` (conta + período); OFX/CSV seguem o export de texto.
               const isPdf = it.format === null
-              const disabled = isPdf || !canExport || exporting
+              const disabled = isPdf ? !reportPdf.enabled : !canExport || exporting
               const title = isPdf
-                ? t('financial.recon.export.pdfUnavailable')
+                ? reportPdf.enabled
+                  ? undefined
+                  : t('financial.recon.export.noPeriod')
                 : !canExport
                   ? t('financial.recon.export.noPeriod')
                   : undefined
@@ -88,7 +99,12 @@ export function ExportMenu({ menus, exportBinding }: ExportMenuProps) {
                   aria-disabled={disabled}
                   title={title}
                   onClick={() => {
-                    if (it.format !== null) exportBinding.exportAs(it.format)
+                    if (isPdf) {
+                      menus.closeAll()
+                      reportPdf.print()
+                    } else if (it.format !== null) {
+                      exportBinding.exportAs(it.format)
+                    }
                   }}
                 >
                   <span className={s.ddItemIc} aria-hidden>

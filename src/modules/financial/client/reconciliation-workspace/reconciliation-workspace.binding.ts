@@ -175,6 +175,10 @@ export type WorkspaceBinding = Readonly<{
     onCancel: () => void
   }>
   exportConciliacao: ExportBinding
+  // Relatório da Conciliação em PDF (#144) — caminho SEPARADO do export de texto (OFX/CSV): imprime DIRETO
+  // (`window.print()`) o bloco de relatório OCULTO do workspace, alimentado pelo período ATUALMENTE
+  // selecionado (`from`/`to`). `enabled` = há conta + período resolvido. Sem rota/nova aba.
+  reportPdf: Readonly<{ enabled: boolean; print: () => void; from: string; to: string }>
   /** Barra de confirmação transiente (fluxo contínuo): dados do último match conciliado; null = oculta. */
   flash: Readonly<{
     transactionId: string
@@ -655,6 +659,18 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     periodActions,
     patternBatch,
     exportConciliacao: exportBinding,
+    reportPdf: {
+      // Habilita com conta + período resolvido (mesmo período do saldo/extrato em tela).
+      enabled: accountRef !== '' && periodRange !== null,
+      // `from`/`to` do período visualizado → a page alimenta o bloco de impressão OCULTO (reusa a query #205).
+      from: periodRange?.from ?? '',
+      to: periodRange?.to ?? '',
+      // Impressão DIRETA: o bloco oculto (só-print) já está montado; `window.print()` gera o PDF só do relatório.
+      print: () => {
+        if (accountRef === '' || periodRange === null) return
+        window.print()
+      },
+    },
     flash,
     armFlash,
     dismissFlash: () => {
