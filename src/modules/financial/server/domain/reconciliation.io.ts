@@ -291,6 +291,7 @@ export type TransactionReconciliation = Readonly<{
   type: 'Individual' | 'Multiple' | 'Partial' | 'ManualEntry'
   status: 'Active' | 'Undone'
   reconciledBy: string
+  reconciledByName: string | null // #207: nome de quem conciliou (resolvido pelo core-api); null = não-resolvido
   reconciledAt: string // ISO datetime
   differenceCents: string | null // centavos; pode ser negativo (Discount); null se não houver diferença
   items: readonly TransactionReconciliationItem[]

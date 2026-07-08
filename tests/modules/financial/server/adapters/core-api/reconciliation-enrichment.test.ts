@@ -101,6 +101,7 @@ const txRecon = (items: readonly TransactionReconciliationItem[]): TransactionRe
   type: 'Individual',
   status: 'Active',
   reconciledBy: 'user-1',
+  reconciledByName: null,
   reconciledAt: '2026-01-10T12:00:00Z',
   differenceCents: null,
   items,

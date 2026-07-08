@@ -164,6 +164,7 @@ export const CoreApiTransactionReconciliationSchema = z.object({
   type: z.string().trim(), // 'Individual' | 'Multiple' | 'Partial' | 'ManualEntry'
   status: z.string().trim(), // 'Active' | 'Undone' (lookup só devolve Active)
   reconciledBy: z.string().trim(),
+  reconciledByName: z.string().trim().nullable().catch(null), // #207: nome resolvido server-side; null = não-resolvido
   reconciledAt: z.string().trim(), // ISO datetime
   differenceCents: z.string().trim().nullable().catch(null),
   items: z

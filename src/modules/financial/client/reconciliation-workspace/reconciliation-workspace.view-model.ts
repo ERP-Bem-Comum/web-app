@@ -693,12 +693,13 @@ const DASH_AUDIT: MatchDetailsAudit = { when: MATCH_DASH, who: MATCH_DASH }
 
 /**
  * Auditoria do modal a partir do lookup da conciliação ativa (#175). `when` = data da conciliação
- * (date-only, p/ evitar fuso); `who` = identificador de quem conciliou (id cru do core-api até o backend
- * resolver nome amigável). O lado Título segue "—" (depende do #172).
+ * (date-only, p/ evitar fuso); `who` = nome de quem conciliou, resolvido server-side pelo core-api
+ * (#207); fallback pro id cru enquanto `reconciledByName` vier null (não-resolvido). O lado Título
+ * segue "—" (depende do #172).
  */
 export const matchAuditFromLookup = (r: TransactionReconciliation): MatchDetailsAudit => ({
   when: formatDayHeader(r.reconciledAt.slice(0, 10)),
-  who: r.reconciledBy,
+  who: r.reconciledByName ?? r.reconciledBy,
 })
 
 /**
