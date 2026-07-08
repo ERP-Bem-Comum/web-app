@@ -429,6 +429,27 @@ export type DetailPayableView = Readonly<{
   value: string
   status: DocumentStatus
 }>
+// #95/#147 — Categorização do drawer (Plano Orçamentário). Cada campo já resolvido p/ NOME (ou "—").
+export type CategorizationView = Readonly<{
+  costCenter: string
+  category: string
+  subcategory: string
+  program: string
+  budgetPlan: string
+}>
+
+// Nó de categoria da taxonomia (#200). `parentId !== null` = subcategoria (folha de uma categoria-pai).
+export type CategoryNode = Readonly<{ name: string; parentId: string | null }>
+
+// Resolvers de ref→nome injetados pelo binding (mantêm a view-model PURA/testável). Cada um devolve
+// `null` quando não encontra a ref. `categoryNode` é lookup por id (usado 2x: folha e pai na cascata).
+export type CategorizationResolvers = Readonly<{
+  costCenter: (ref: string) => string | null
+  categoryNode: (ref: string) => CategoryNode | null
+  program: (ref: string) => string | null
+  budgetPlan: (ref: string) => string | null
+}>
+
 export type DocumentDetailView = Readonly<{
   id: string
   type: string
@@ -443,6 +464,7 @@ export type DocumentDetailView = Readonly<{
   paymentMethod: PaymentMethod | null
   paymentDetail: string | null // #273: complemento da forma (linha digitável / id de cartão / ref de câmbio); null quando não há
   description: string
+  categorization: CategorizationView // #95/#147: Centro de Custo / Categoria / Subcategoria / Programa / Plano
   retentions: readonly RetentionLine[]
   // Total das retenções (soma dos filhos), formatado em BRL. `null` quando não há retenção.
   // No drawer aparece numa linha única destacada em vermelho (mock): "− Retenções (IRRF, INSS, ISS)".
@@ -493,11 +515,48 @@ export const deriveDetailStatus = (
   payables: readonly { status: DocumentStatus; kind: PayableKind }[],
 ): DocumentStatus => payables.find((p) => p.kind === 'Parent')?.status ?? docStatus
 
+/**
+ * #95/#147 — Resolve as refs de categorização do documento p/ NOMES (Plano Orçamentário do drawer). PURA.
+ * `categoryRef` é a FOLHA da taxonomia: com `parentId` → Categoria = nome do PAI e Subcategoria = nome da
+ * folha; sem `parentId` → Categoria = nome da folha e Subcategoria = "—" (espelha a cascata do Lançar
+ * Documento). Cada linha degrada para "—" quando a ref é `null` OU não resolve (front-first tolerante).
+ * `budgetPlan` fica "—" enquanto não há fonte de planos no front (budget-plans pende de core-api#113).
+ */
+export const resolveCategorization = (
+  d: Pick<DocumentDetail, 'costCenterRef' | 'categoryRef' | 'programRef' | 'budgetPlanRef'>,
+  r?: CategorizationResolvers,
+): CategorizationView => {
+  const costCenter = d.costCenterRef !== null ? (r?.costCenter(d.costCenterRef) ?? null) : null
+  const program = d.programRef !== null ? (r?.program(d.programRef) ?? null) : null
+  const budgetPlan = d.budgetPlanRef !== null ? (r?.budgetPlan(d.budgetPlanRef) ?? null) : null
+  const leaf = d.categoryRef !== null ? (r?.categoryNode(d.categoryRef) ?? null) : null
+  let category: string | null = null
+  let subcategory: string | null = null
+  if (leaf !== null) {
+    if (leaf.parentId !== null) {
+      // Folha COM pai → é subcategoria; a categoria é o nome do pai (resolvido por outro lookup).
+      category = r?.categoryNode(leaf.parentId)?.name ?? null
+      subcategory = leaf.name
+    } else {
+      // Folha SEM pai → é a própria categoria (top-level); não há subcategoria.
+      category = leaf.name
+    }
+  }
+  return {
+    costCenter: costCenter ?? DASH,
+    category: category ?? DASH,
+    subcategory: subcategory ?? DASH,
+    program: program ?? DASH,
+    budgetPlan: budgetPlan ?? DASH,
+  }
+}
+
 /** DocumentDetail (GET /:id) → view do drawer. PURA. Resolve nome + CNPJ do fornecedor pelos resolvers. */
 export const mapDocumentDetail = (
   d: DocumentDetail,
   resolveSupplier: ResolveSupplier,
   resolveDoc?: ResolveSupplierDoc,
+  catResolvers?: CategorizationResolvers,
 ): DocumentDetailView => ({
   id: d.id,
   type: d.type ?? DASH,
@@ -513,6 +572,7 @@ export const mapDocumentDetail = (
   paymentMethod: d.paymentMethod,
   paymentDetail: d.paymentDetail, // #273: complemento da forma (espelha o create)
   description: d.description ?? '',
+  categorization: resolveCategorization(d, catResolvers), // #95/#147: refs → nomes (Plano Orçamentário)
   retentions: d.payables.flatMap((p) =>
     p.kind === 'Child' && p.retentionType !== null
       ? [{ type: p.retentionType, value: centsToBRL(p.valueCents) }]

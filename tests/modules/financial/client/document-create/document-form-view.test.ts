@@ -519,6 +519,10 @@ const detail: DocumentDetail = {
   issueDate: '2026-06-01',
   dueDate: '2026-06-10',
   description: 'Consultoria',
+  budgetPlanRef: null,
+  categoryRef: null,
+  costCenterRef: null,
+  programRef: null,
   version: 3,
   payables: [
     { id: 'p0', kind: 'Parent', retentionType: null, valueCents: '793500', status: 'Aberto' },

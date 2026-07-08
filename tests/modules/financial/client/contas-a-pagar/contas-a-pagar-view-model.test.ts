@@ -23,12 +23,15 @@ import {
   FILTER_DIMS,
   deriveDetailStatus,
   paymentComplementLabelTag,
+  mapDocumentDetail,
+  type CategorizationResolvers,
 } from '../../../../../src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts'
 import { ok, err } from '../../../../../src/shared/primitives/result.ts'
 import type {
   DocumentListResponse,
   DocumentSummary,
   DocumentStatus,
+  DocumentDetail,
 } from '../../../../../src/modules/financial/client/data/model/document.model.ts'
 
 const supplierName = (ref: string | null): string => (ref === 's1' ? 'Bambu Educação' : (ref ?? '—'))
@@ -400,6 +403,104 @@ describe('deriveDetailStatus (status do drawer reflete o título PAI; filhos nã
   it('sem título-pai → mantém o status cru do documento', () => {
     assert.equal(deriveDetailStatus('Pago', []), 'Pago')
     assert.equal(deriveDetailStatus('Aprovado', [child('Conciliado')]), 'Aprovado')
+  })
+})
+
+describe('mapDocumentDetail — Categorização (#95/#147: refs → nomes, cascata parentId)', () => {
+  const detailBase = (over: Partial<DocumentDetail> = {}): DocumentDetail => ({
+    id: 'd1',
+    status: 'Aberto',
+    type: 'NFS-e',
+    documentNumber: '0847',
+    supplierRef: 's1',
+    paymentMethod: 'PIX',
+    paymentDetail: null,
+    competencia: null,
+    grossValueCents: '1000000',
+    netValueCents: '1000000',
+    issueDate: '2026-06-01',
+    dueDate: '2026-06-10',
+    description: null,
+    budgetPlanRef: null,
+    categoryRef: null,
+    costCenterRef: null,
+    programRef: null,
+    payables: [],
+    version: 0,
+    ...over,
+  })
+  const resolveSupplier = (ref: string | null): string => ref ?? '—'
+  // Taxonomia: 'cat-serv' (top-level "Serviços") com folha 'cat-cons' (subcategoria "Consultoria");
+  // 'cat-imp' é top-level sem filhos. Centros de custo e programas por id.
+  const resolvers: CategorizationResolvers = {
+    costCenter: (ref) => (ref === 'cc-1' ? 'Administrativo' : null),
+    categoryNode: (ref) =>
+      ref === 'cat-serv'
+        ? { name: 'Serviços', parentId: null }
+        : ref === 'cat-cons'
+          ? { name: 'Consultoria', parentId: 'cat-serv' }
+          : ref === 'cat-imp'
+            ? { name: 'Impostos', parentId: null }
+            : null,
+    program: (ref) => (ref === 'prog-1' ? 'Educação Integral' : null),
+    budgetPlan: () => null,
+  }
+
+  it('folha COM parentId → Categoria = pai, Subcategoria = folha', () => {
+    const v = mapDocumentDetail(
+      detailBase({ categoryRef: 'cat-cons', costCenterRef: 'cc-1', programRef: 'prog-1' }),
+      resolveSupplier,
+      undefined,
+      resolvers,
+    )
+    assert.equal(v.categorization.category, 'Serviços')
+    assert.equal(v.categorization.subcategory, 'Consultoria')
+    assert.equal(v.categorization.costCenter, 'Administrativo')
+    assert.equal(v.categorization.program, 'Educação Integral')
+  })
+
+  it('folha SEM parentId → Categoria = folha, Subcategoria = "—"', () => {
+    const v = mapDocumentDetail(detailBase({ categoryRef: 'cat-imp' }), resolveSupplier, undefined, resolvers)
+    assert.equal(v.categorization.category, 'Impostos')
+    assert.equal(v.categorization.subcategory, '—')
+  })
+
+  it('ref null → "—" em todas as linhas; Plano sempre "—" (sem fonte no front)', () => {
+    const v = mapDocumentDetail(detailBase(), resolveSupplier, undefined, resolvers)
+    assert.equal(v.categorization.costCenter, '—')
+    assert.equal(v.categorization.category, '—')
+    assert.equal(v.categorization.subcategory, '—')
+    assert.equal(v.categorization.program, '—')
+    assert.equal(v.categorization.budgetPlan, '—')
+  })
+
+  it('ref presente mas não resolvível → "—" (front-first tolerante)', () => {
+    const v = mapDocumentDetail(
+      detailBase({
+        costCenterRef: 'inexistente',
+        categoryRef: 'sumiu',
+        programRef: 'nada',
+        budgetPlanRef: 'bp',
+      }),
+      resolveSupplier,
+      undefined,
+      resolvers,
+    )
+    assert.equal(v.categorization.costCenter, '—')
+    assert.equal(v.categorization.category, '—')
+    assert.equal(v.categorization.subcategory, '—')
+    assert.equal(v.categorization.program, '—')
+    assert.equal(v.categorization.budgetPlan, '—')
+  })
+
+  it('sem resolvers (undefined) → tudo "—" (degradação segura)', () => {
+    const v = mapDocumentDetail(
+      detailBase({ categoryRef: 'cat-cons', costCenterRef: 'cc-1' }),
+      resolveSupplier,
+    )
+    assert.equal(v.categorization.category, '—')
+    assert.equal(v.categorization.subcategory, '—')
+    assert.equal(v.categorization.costCenter, '—')
   })
 })
 

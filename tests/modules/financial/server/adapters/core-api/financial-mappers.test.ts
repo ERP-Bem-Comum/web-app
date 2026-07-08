@@ -96,6 +96,31 @@ describe('detailToModel', () => {
     const r2 = detailToModel(validDoc) // sem a chave → drift-tolerante → null
     if (isOk(r2)) assert.equal(r2.value.competencia, null)
   })
+  it('#95/#147: lê as refs de categorização quando presentes', () => {
+    const r = detailToModel({
+      ...validDoc,
+      budgetPlanRef: 'bp-1',
+      categoryRef: 'cat-1',
+      costCenterRef: 'cc-1',
+      programRef: 'prog-1',
+    })
+    assert.equal(isOk(r), true)
+    if (isOk(r)) {
+      assert.equal(r.value.budgetPlanRef, 'bp-1')
+      assert.equal(r.value.categoryRef, 'cat-1')
+      assert.equal(r.value.costCenterRef, 'cc-1')
+      assert.equal(r.value.programRef, 'prog-1')
+    }
+  })
+  it('#95/#147: refs ausentes (backend antigo) → null (drift-tolerante)', () => {
+    const r = detailToModel(validDoc)
+    if (isOk(r)) {
+      assert.equal(r.value.budgetPlanRef, null)
+      assert.equal(r.value.categoryRef, null)
+      assert.equal(r.value.costCenterRef, null)
+      assert.equal(r.value.programRef, null)
+    }
+  })
   it('drift de contrato → err(server)', () => {
     assert.equal(isErr(detailToModel({ id: 1 })), true)
   })
