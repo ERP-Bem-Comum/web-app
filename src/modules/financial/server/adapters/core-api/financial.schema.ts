@@ -30,6 +30,11 @@ export const CoreApiDocumentSchema = z.object({
   issueDate: z.string().trim().nullable().catch(null), // #163 — drift-tolerante (backend antigo → null)
   dueDate: z.string().trim().nullable(),
   description: z.string().trim().nullable(),
+  // #95/#147 — categorização: refs que o core JÁ devolve no GET /:id. Drift-tolerante (backend antigo → null).
+  budgetPlanRef: z.string().trim().nullable().catch(null),
+  categoryRef: z.string().trim().nullable().catch(null),
+  costCenterRef: z.string().trim().nullable().catch(null),
+  programRef: z.string().trim().nullable().catch(null),
   payables: z.array(CoreApiPayableSchema),
   // Optimistic lock — necessário p/ o PATCH (ajuste). Tolerante a drift (Fatia 1 pode não enviar) → 0.
   version: z.int().min(0).catch(0),

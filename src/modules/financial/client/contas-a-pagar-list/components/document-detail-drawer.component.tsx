@@ -3,8 +3,9 @@
  * Figma: seções com rótulo + régua, identificação, Composição Financeira, **Títulos Gerados** e Forma de
  * Pagamento. ⚠️ Sem regra de PARCELAMENTO no domínio — os "Títulos" são o PAI + os FILHOS (retenções).
  *
- * Seções do Figma sem dado no DTO de detalhe (arquivo PDF, Emissão, Plano Orçamentário, dados bancários)
- * ficam fora por ora — dependem de enriquecer o GET /:id (core-api#95). Fecha no ✕, no botão ou clicando fora.
+ * A Categorização (Centro de Custo / Categoria / Subcategoria / Programa) já é resolvida CLIENT-SIDE das
+ * refs do GET /:id (#95/#147). Seções ainda sem dado — arquivo PDF (#256) e Plano Orçamentário
+ * (budget-plans, core-api#113) — seguem placeholder. Fecha no ✕, no botão ou clicando fora.
  */
 import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
@@ -245,17 +246,27 @@ export function DocumentDetailDrawer({ view, payeeBank, onClose }: DocumentDetai
             </section>
           ) : null}
 
-          {/* Plano Orçamentário — categorização/contrato GATED (detalhe não expõe; placeholders, core-api#95). */}
+          {/* Plano Orçamentário — categorização resolvida CLIENT-SIDE das refs do GET /:id (#95/#147). Cada
+              linha cai p/ "—" quando a ref é null OU não resolve. Plano segue "—" (budget-plans, core-api#113). */}
           <section className={dwSection}>
             <SectionLabel label={t('financial.detail.section.plano')} />
             <div className={paymentCard}>
               <div className={detailGrid}>
-                <Field label={t('financial.detail.label.centroCusto')} value="—" />
-                <Field label={t('financial.detail.label.categoria')} value="—" />
-                <Field label={t('financial.detail.label.subcategoria')} value="—" />
-                <Field label={t('financial.detail.label.programa')} value="—" />
+                <Field
+                  label={t('financial.detail.label.centroCusto')}
+                  value={view.categorization.costCenter}
+                />
+                <Field label={t('financial.detail.label.categoria')} value={view.categorization.category} />
+                <Field
+                  label={t('financial.detail.label.subcategoria')}
+                  value={view.categorization.subcategory}
+                />
+                <Field label={t('financial.detail.label.programa')} value={view.categorization.program} />
               </div>
-              <Field label={t('financial.detail.label.planoOrcamentario')} value="—" />
+              <Field
+                label={t('financial.detail.label.planoOrcamentario')}
+                value={view.categorization.budgetPlan}
+              />
             </div>
           </section>
 

@@ -29,6 +29,13 @@ const baseView: DocumentDetailView = {
   paymentMethod: 'PIX',
   paymentDetail: null,
   description: 'teste rpa',
+  categorization: {
+    costCenter: '—',
+    category: '—',
+    subcategory: '—',
+    program: '—',
+    budgetPlan: '—',
+  },
   retentions: [],
   retentionsTotal: null,
   payables: [],
@@ -119,6 +126,38 @@ describe('DocumentDetailDrawer', () => {
   it('#273: PIX (sem complemento tipado) mantém os dados bancários gated', () => {
     render(<DocumentDetailDrawer view={baseView} payeeBank={null} onClose={() => undefined} />)
     expect(screen.getByText('Tipo de Chave')).toBeTruthy()
+  })
+
+  it('#95/#147: Plano Orçamentário mostra os nomes de categorização resolvidos', () => {
+    render(
+      <DocumentDetailDrawer
+        view={{
+          ...baseView,
+          categorization: {
+            costCenter: 'Administrativo',
+            category: 'Serviços',
+            subcategory: 'Consultoria',
+            program: 'Educação Integral',
+            budgetPlan: '—',
+          },
+        }}
+        payeeBank={null}
+        onClose={() => undefined}
+      />,
+    )
+    expect(screen.getByText('Administrativo')).toBeTruthy()
+    expect(screen.getByText('Serviços')).toBeTruthy()
+    expect(screen.getByText('Consultoria')).toBeTruthy()
+    expect(screen.getByText('Educação Integral')).toBeTruthy()
+  })
+
+  it('#95/#147: categorização não resolvida (ou ausente) degrada cada linha para "—"', () => {
+    render(<DocumentDetailDrawer view={baseView} payeeBank={null} onClose={() => undefined} />)
+    // A seção Plano Orçamentário existe; os 5 campos caem p/ "—" (nada resolvido no baseView).
+    // "Plano Orçamentário" aparece 2x (rótulo da seção + rótulo do campo do plano).
+    expect(screen.getAllByText('Plano Orçamentário').length).toBeGreaterThanOrEqual(2)
+    expect(screen.getByText('Centro de Custo')).toBeTruthy()
+    // Plano Orçamentário segue "—" (budget-plans, core-api#113) mesmo com o resto resolvido.
   })
 
   it('resolve banco/chave reais do favorecido (client-side) quando há payeeBank — não "—"', () => {

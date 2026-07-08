@@ -150,6 +150,11 @@ export type DocumentDetail = Readonly<{
   issueDate: string | null // YYYY-MM-DD (#163); null quando não informado
   dueDate: string | null // YYYY-MM-DD
   description: string | null
+  // #95/#147 — categorização (refs que o GET /:id devolve; resolvidas p/ nome no client). null = não informado.
+  budgetPlanRef: string | null
+  categoryRef: string | null // FOLHA da cascata (subcategoria); com parentId → pai = categoria
+  costCenterRef: string | null
+  programRef: string | null
   payables: readonly Payable[] // vazio em Rascunho
   version: number // optimistic lock — reenviado no PATCH (ajuste)
 }>
