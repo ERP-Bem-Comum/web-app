@@ -91,6 +91,9 @@ export const MENU: readonly MenuSection[] = [
       // Análise de Pagamentos: matriz TEMPO-orçamentária (Plano Orçamentário → Centro de Custo × série mensal
       // de valores). Front-first, dados sintéticos. SEM `requiredPermission` (RBAC pós-entrega).
       { label: 'Análise de Pagamentos', to: '/relatorios/analise-pagamentos' },
+      // Análise de Recebimentos: ESPELHO da de Pagamentos (mesma matriz tempo-orçamentária, fonte de recebíveis;
+      // paleta distinta dos gráficos). Front-first, dados sintéticos (empty-state-ready). SEM `requiredPermission`.
+      { label: 'Análise de Recebimentos', to: '/relatorios/analise-recebimentos' },
     ],
   },
   {

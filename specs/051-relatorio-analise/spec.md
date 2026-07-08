@@ -56,7 +56,26 @@ ano), com fallback honesto (devolve a própria chave) — jamais "Invalid Date".
 - Server function / integração real com o core-api (só quando #114/consolidated existir).
 - Filtro funcional dos campos (placeholders visuais front-first).
 - RBAC (modelado pós-entrega).
-- Análise de RECEBIMENTOS (o engine já suporta `'r'`, mas só Pagamentos é ligado agora).
+
+## Adendo (escala M) — Análise de Recebimentos (espelho)
+
+- **Rota:** `/relatorios/analise-recebimentos` → `src/routes/_authenticated/relatorios/analise-recebimentos.tsx`.
+- **Espelho** da Análise de Pagamentos: MESMO engine/tela/matriz (Plano Orçamentário → Centro de Custo × série
+  mensal), com o MESMO shape. Muda só a **FONTE** (`loadAnalise('r')` agrega `ANALISE_RECEBIMENTOS_RAW`, um
+  placeholder sintético próprio — 3 planos, 6 meses jan–jun/2026, SEM PII), o **título/rótulos** de RECEBER e a
+  **paleta dos gráficos** (`chartTone='rec'`).
+- **Compartilhamento sem duplicação:** o corpo (cabeçalho → filtros → 2 gráficos → tabela + empty-state) foi
+  EXTRAÍDO para `AnaliseReportView`, parametrizado por `report` + `labels` + `chartTone` + `csvFilename`. As
+  pages de Pagamentos e Recebimentos são wrappers FINOS. A page de Pagamentos ficou intacta em comportamento.
+- **Empty state honesto (crítico):** a tela cai num cartão único "Nenhum recebimento registrado" (sem
+  gráficos/tabela/filtros) quando o relatório vier VAZIO (0 planos OU Total 0). É o caminho para o qual a
+  Análise de Recebimentos cai quando o placeholder for removido (`ANALISE_RECEBIMENTOS_RAW → []`).
+- **Cor distinta (Pag×Rec):** Pagamentos = barras horizontais azul `#396496` + verticais ciano `#32a2c6`;
+  Recebimentos = barras horizontais **verde-azulado** `#2f8f6a` + verticais **roxo** `#8a5cd1`. Aditivo (novos
+  tokens `brand.color.analise.costBarRec/monthBarRec` + variantes de classe), sem tocar o Pagamentos (§X).
+- **Rótulos:** título "Análise de Recebimentos"; export `analise-recebimentos.csv`; empty "Nenhum recebimento
+  registrado"; período "Período de recebimento"; Status alinhado ao CAP (reusa os chips). i18n `reports.analise.rec.*`.
+- **Não-objetivos (mantidos):** server function real, filtro funcional, RBAC.
 
 ## Critérios de aceite
 
@@ -66,3 +85,10 @@ ano), com fallback honesto (devolve a própria chave) — jamais "Invalid Date".
 - Filtros recolhíveis abrem/fecham; Exportar CSV baixa arquivo; PDF via print.
 - Rota + subitem de menu + PAGE_TITLE + i18n `reports.analise.*` + public-api.
 - Gates verdes: `pnpm typecheck && pnpm build && pnpm lint && pnpm test && pnpm test:dom` (lint 0 erros/115 warnings).
+
+### Critérios de aceite — Análise de Recebimentos (espelho)
+
+- `loadAnalise('r')` agrega o placeholder de recebíveis (NÃO vazio); `aggregateAnalise([], months)` → 0 planos, Total 0.
+- COM placeholder: tela cheia (título de receber + 2 gráficos + tabela + passador). VAZIO: empty state honesto.
+- Cor dos gráficos distinta de Pagamentos (`chartTone='rec'`). Export baixa `analise-recebimentos.csv`.
+- A page de Pagamentos permanece intacta (spec dela segue verde). Rota + menu + PAGE_TITLE + i18n `reports.analise.rec.*` + public-api.

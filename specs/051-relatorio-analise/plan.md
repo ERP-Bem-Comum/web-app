@@ -75,3 +75,38 @@ realizado/planejado). ViewModel PURO (ADR-0009, §XI), views burras, só-tokens 
   inline na view).
 - **Sem Date:** a única fonte de meses é `monthsInRange` + `formatMonthLabel` (parse por regex/split), garantindo
   ausência de "Invalid Date" — coberto por teste.
+
+## Adendo (escala M) — Análise de Recebimentos (espelho)
+
+Espelho da Análise de Pagamentos: mesmo engine/tela, muda só a FONTE + rótulos + paleta dos gráficos.
+
+**Arquivos NOVOS:**
+
+- `data/analise-recebimentos.placeholder.ts` — `ANALISE_RECEBIMENTOS_RAW` (mesmo `RawAnaliseRow`; 3 planos
+  CONV/FOM/PATR, 6 meses jan–jun/2026, valores de recebíveis, SEM PII). Comentário: placeholder só p/ validar;
+  quando o Contas a Receber subir, `RAW → []` (empty state).
+- `components/analise-report-view.component.tsx` — CORPO compartilhado (extraído da page monolítica de Pagamentos):
+  header → filtros → 2 gráficos → tabela + **empty state honesto**. Props `report`+`labels`+`csvFilename`+`chartTone`.
+- `page/analise-recebimentos.page.tsx` — wrapper FINO (`loadAnalise('r')` + rótulos de receber + `chartTone='rec'`).
+- `routes/_authenticated/relatorios/analise-recebimentos.tsx` — `createFileRoute` → `AnaliseRecebimentosPage`.
+
+**Arquivos MODIFICADOS:**
+
+- `analise.view-model.ts` — `loadAnalise('r')` passa a agregar `ANALISE_RECEBIMENTOS_RAW` (era `[]`). Engine NEUTRO.
+- `page/analise-pagamentos.page.tsx` — vira wrapper FINO sobre `AnaliseReportView` (comportamento intacto).
+- `page/analise-pagamentos.page.css.ts` — re-exporta `card` + empty-state (`emptyPanel/emptyTitle/emptyHint` da Posição).
+- `components/realizado-cost-center-bars.component.tsx` — `fillTone` aceita `'analiseRec'` (verde-azulado).
+- `components/analise-monthly-bars.component.tsx` + `analise-charts.css.ts` — prop `tone='rec'` → variante roxa.
+- `shared/ui/brand/grid-brand.values.ts` — tokens `brand.color.analise.costBarRec` (#2f8f6a) + `monthBarRec` (#8a5cd1).
+- `realizado-charts.css.ts` — `hbarFillAnaliseRec` (verde-azulado). `analise-charts.css.ts` — `monthlyBarColorRec`/`monthlySwatchRec`.
+- `public-api/index.ts` — exporta `AnaliseRecebimentosPage`.
+- `shell-menu.config.ts` — subitem "Análise de Recebimentos". `root.view-model.ts` — PAGE_TITLE novo.
+- `catalog.pt-BR.ts` — `reports.analise.emptyHint` + bloco `reports.analise.rec.*` (title/periodo/empty/emptyHint).
+
+**Empty state:** `AnaliseReportView` calcula `isEmpty = report.planos.length === 0 || report.totalPeriodo === 0`;
+se vazio, renderiza só o header + cartão único (sem tools/filtros/gráficos/tabela). Remover o placeholder
+(`ANALISE_RECEBIMENTOS_RAW → []`) faz a tela cair limpa nesse estado.
+
+**Testes NOVOS/atualizados:** `analise.view-model.test.ts` (+`'r'` agrega placeholder; +caso `[]`→0/0);
+`analise-recebimentos.page.spec.tsx` (cheia: título/2 gráficos/tabela/passador/filtros/export; **VAZIO: empty state**);
+`root.view-model.test.ts` (+título e +7º subitem). A `analise-pagamentos.page.spec.tsx` segue verde (page intacta).

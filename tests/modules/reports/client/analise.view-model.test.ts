@@ -27,6 +27,7 @@ import {
   ANALISE_PERIOD,
   type RawAnaliseRow,
 } from '../../../../src/modules/reports/client/data/analise-pagamentos.placeholder.ts'
+import { ANALISE_RECEBIMENTOS_RAW } from '../../../../src/modules/reports/client/data/analise-recebimentos.placeholder.ts'
 
 // Fixture pequena e determinística: 2 planos, 3 centros de custo, período de 3 meses (jan–mar/2026).
 const MONTHS = ['2026-01', '2026-02', '2026-03']
@@ -257,11 +258,30 @@ describe('placeholder real (loadAnalise)', () => {
     }
   })
 
-  it("'r' (Recebimentos) vem VAZIO (espelho futuro → empty state)", () => {
+  it("'r' (Recebimentos) agrega o placeholder de recebíveis (espelho — NÃO vazio)", () => {
     const report = loadAnalise('r')
-    assert.strictEqual(report.planos.length, 0)
-    assert.strictEqual(report.totalPeriodo, 0)
-    // Mesmo vazio, os meses do período continuam definidos (a matriz teria colunas).
+    // 3 planos de recebíveis (CONV, FOM, PATR).
+    assert.strictEqual(report.planos.length, 3)
+    const names = report.planos.map((p) => p.name)
+    assert.ok(names.some((n) => n.startsWith('CONV')))
+    assert.ok(names.some((n) => n.startsWith('FOM')))
+    // Total do Período = soma de todas as folhas × meses (trava no valor do placeholder).
+    let expected = 0
+    for (const row of ANALISE_RECEBIMENTOS_RAW) {
+      for (const m of report.months) expected += row.monthValues[m] ?? 0
+    }
+    assert.strictEqual(report.totalPeriodo, expected)
+    assert.ok(report.totalPeriodo > 0)
+    // Mesmo período (6 meses) que Pagamentos.
     assert.strictEqual(report.months.length, 6)
+  })
+
+  it('caso VAZIO (fonte `[]` — remoção futura do placeholder) → 0 planos e Total 0', () => {
+    // Simula o dia em que o placeholder de recebíveis for removido: a agregação de `[]` cai limpa no vazio.
+    const empty = aggregateAnalise([], monthsInRange(ANALISE_PERIOD))
+    assert.strictEqual(empty.planos.length, 0)
+    assert.strictEqual(empty.totalPeriodo, 0)
+    // Mesmo vazio, os meses do período continuam definidos (a matriz teria colunas).
+    assert.strictEqual(empty.months.length, 6)
   })
 })
