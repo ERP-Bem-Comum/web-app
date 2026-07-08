@@ -94,6 +94,12 @@ export const MENU: readonly MenuSection[] = [
       // Análise de Recebimentos: ESPELHO da de Pagamentos (mesma matriz tempo-orçamentária, fonte de recebíveis;
       // paleta distinta dos gráficos). Front-first, dados sintéticos (empty-state-ready). SEM `requiredPermission`.
       { label: 'Análise de Recebimentos', to: '/relatorios/analise-recebimentos' },
+      // Fluxo de Caixa: duas seções (Saídas = payables + cartão; Entradas = receivables) × 2 medidas (Realizado
+      // × Previsto) + Saldo + gráfico por vencimento. Entradas empty-state-ready (A-Receber pós). SEM RBAC.
+      { label: 'Fluxo de Caixa', to: '/relatorios/fluxo-caixa' },
+      // Relatório Geral: ledger unificado achatado e paginado (15 colunas). Front-first, dados sintéticos
+      // (receivable/financiador placeholder até o A-Receber). SEM `requiredPermission` (RBAC pós-entrega).
+      { label: 'Relatório Geral', to: '/relatorios/geral' },
     ],
   },
   {

@@ -31,7 +31,9 @@ import { Route as AuthenticatedUsuariosIdRouteImport } from './../routes/_authen
 import { Route as AuthenticatedRelatoriosRealizadoXPlanejadoRouteImport } from './../routes/_authenticated/relatorios/realizado-x-planejado'
 import { Route as AuthenticatedRelatoriosPosicaoRecebimentosRouteImport } from './../routes/_authenticated/relatorios/posicao-recebimentos'
 import { Route as AuthenticatedRelatoriosPosicaoPagamentosRouteImport } from './../routes/_authenticated/relatorios/posicao-pagamentos'
+import { Route as AuthenticatedRelatoriosGeralRouteImport } from './../routes/_authenticated/relatorios/geral'
 import { Route as AuthenticatedRelatoriosFornecedoresSemContratoRouteImport } from './../routes/_authenticated/relatorios/fornecedores-sem-contrato'
+import { Route as AuthenticatedRelatoriosFluxoCaixaRouteImport } from './../routes/_authenticated/relatorios/fluxo-caixa'
 import { Route as AuthenticatedRelatoriosEquipeRouteImport } from './../routes/_authenticated/relatorios/equipe'
 import { Route as AuthenticatedRelatoriosAnaliseRecebimentosRouteImport } from './../routes/_authenticated/relatorios/analise-recebimentos'
 import { Route as AuthenticatedRelatoriosAnalisePagamentosRouteImport } from './../routes/_authenticated/relatorios/analise-pagamentos'
@@ -183,10 +185,22 @@ const AuthenticatedRelatoriosPosicaoPagamentosRoute =
     path: '/relatorios/posicao-pagamentos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedRelatoriosGeralRoute =
+  AuthenticatedRelatoriosGeralRouteImport.update({
+    id: '/relatorios/geral',
+    path: '/relatorios/geral',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedRelatoriosFornecedoresSemContratoRoute =
   AuthenticatedRelatoriosFornecedoresSemContratoRouteImport.update({
     id: '/relatorios/fornecedores-sem-contrato',
     path: '/relatorios/fornecedores-sem-contrato',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRelatoriosFluxoCaixaRoute =
+  AuthenticatedRelatoriosFluxoCaixaRouteImport.update({
+    id: '/relatorios/fluxo-caixa',
+    path: '/relatorios/fluxo-caixa',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedRelatoriosEquipeRoute =
@@ -396,7 +410,9 @@ export interface FileRoutesByFullPath {
   '/relatorios/analise-pagamentos': typeof AuthenticatedRelatoriosAnalisePagamentosRoute
   '/relatorios/analise-recebimentos': typeof AuthenticatedRelatoriosAnaliseRecebimentosRoute
   '/relatorios/equipe': typeof AuthenticatedRelatoriosEquipeRoute
+  '/relatorios/fluxo-caixa': typeof AuthenticatedRelatoriosFluxoCaixaRoute
   '/relatorios/fornecedores-sem-contrato': typeof AuthenticatedRelatoriosFornecedoresSemContratoRoute
+  '/relatorios/geral': typeof AuthenticatedRelatoriosGeralRoute
   '/relatorios/posicao-pagamentos': typeof AuthenticatedRelatoriosPosicaoPagamentosRoute
   '/relatorios/posicao-recebimentos': typeof AuthenticatedRelatoriosPosicaoRecebimentosRoute
   '/relatorios/realizado-x-planejado': typeof AuthenticatedRelatoriosRealizadoXPlanejadoRoute
@@ -451,7 +467,9 @@ export interface FileRoutesByTo {
   '/relatorios/analise-pagamentos': typeof AuthenticatedRelatoriosAnalisePagamentosRoute
   '/relatorios/analise-recebimentos': typeof AuthenticatedRelatoriosAnaliseRecebimentosRoute
   '/relatorios/equipe': typeof AuthenticatedRelatoriosEquipeRoute
+  '/relatorios/fluxo-caixa': typeof AuthenticatedRelatoriosFluxoCaixaRoute
   '/relatorios/fornecedores-sem-contrato': typeof AuthenticatedRelatoriosFornecedoresSemContratoRoute
+  '/relatorios/geral': typeof AuthenticatedRelatoriosGeralRoute
   '/relatorios/posicao-pagamentos': typeof AuthenticatedRelatoriosPosicaoPagamentosRoute
   '/relatorios/posicao-recebimentos': typeof AuthenticatedRelatoriosPosicaoRecebimentosRoute
   '/relatorios/realizado-x-planejado': typeof AuthenticatedRelatoriosRealizadoXPlanejadoRoute
@@ -508,7 +526,9 @@ export interface FileRoutesById {
   '/_authenticated/relatorios/analise-pagamentos': typeof AuthenticatedRelatoriosAnalisePagamentosRoute
   '/_authenticated/relatorios/analise-recebimentos': typeof AuthenticatedRelatoriosAnaliseRecebimentosRoute
   '/_authenticated/relatorios/equipe': typeof AuthenticatedRelatoriosEquipeRoute
+  '/_authenticated/relatorios/fluxo-caixa': typeof AuthenticatedRelatoriosFluxoCaixaRoute
   '/_authenticated/relatorios/fornecedores-sem-contrato': typeof AuthenticatedRelatoriosFornecedoresSemContratoRoute
+  '/_authenticated/relatorios/geral': typeof AuthenticatedRelatoriosGeralRoute
   '/_authenticated/relatorios/posicao-pagamentos': typeof AuthenticatedRelatoriosPosicaoPagamentosRoute
   '/_authenticated/relatorios/posicao-recebimentos': typeof AuthenticatedRelatoriosPosicaoRecebimentosRoute
   '/_authenticated/relatorios/realizado-x-planejado': typeof AuthenticatedRelatoriosRealizadoXPlanejadoRoute
@@ -565,7 +585,9 @@ export interface FileRouteTypes {
     | '/relatorios/analise-pagamentos'
     | '/relatorios/analise-recebimentos'
     | '/relatorios/equipe'
+    | '/relatorios/fluxo-caixa'
     | '/relatorios/fornecedores-sem-contrato'
+    | '/relatorios/geral'
     | '/relatorios/posicao-pagamentos'
     | '/relatorios/posicao-recebimentos'
     | '/relatorios/realizado-x-planejado'
@@ -620,7 +642,9 @@ export interface FileRouteTypes {
     | '/relatorios/analise-pagamentos'
     | '/relatorios/analise-recebimentos'
     | '/relatorios/equipe'
+    | '/relatorios/fluxo-caixa'
     | '/relatorios/fornecedores-sem-contrato'
+    | '/relatorios/geral'
     | '/relatorios/posicao-pagamentos'
     | '/relatorios/posicao-recebimentos'
     | '/relatorios/realizado-x-planejado'
@@ -676,7 +700,9 @@ export interface FileRouteTypes {
     | '/_authenticated/relatorios/analise-pagamentos'
     | '/_authenticated/relatorios/analise-recebimentos'
     | '/_authenticated/relatorios/equipe'
+    | '/_authenticated/relatorios/fluxo-caixa'
     | '/_authenticated/relatorios/fornecedores-sem-contrato'
+    | '/_authenticated/relatorios/geral'
     | '/_authenticated/relatorios/posicao-pagamentos'
     | '/_authenticated/relatorios/posicao-recebimentos'
     | '/_authenticated/relatorios/realizado-x-planejado'
@@ -881,11 +907,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRelatoriosPosicaoPagamentosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/relatorios/geral': {
+      id: '/_authenticated/relatorios/geral'
+      path: '/relatorios/geral'
+      fullPath: '/relatorios/geral'
+      preLoaderRoute: typeof AuthenticatedRelatoriosGeralRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/relatorios/fornecedores-sem-contrato': {
       id: '/_authenticated/relatorios/fornecedores-sem-contrato'
       path: '/relatorios/fornecedores-sem-contrato'
       fullPath: '/relatorios/fornecedores-sem-contrato'
       preLoaderRoute: typeof AuthenticatedRelatoriosFornecedoresSemContratoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/relatorios/fluxo-caixa': {
+      id: '/_authenticated/relatorios/fluxo-caixa'
+      path: '/relatorios/fluxo-caixa'
+      fullPath: '/relatorios/fluxo-caixa'
+      preLoaderRoute: typeof AuthenticatedRelatoriosFluxoCaixaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/relatorios/equipe': {
@@ -1178,7 +1218,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRelatoriosAnalisePagamentosRoute: typeof AuthenticatedRelatoriosAnalisePagamentosRoute
   AuthenticatedRelatoriosAnaliseRecebimentosRoute: typeof AuthenticatedRelatoriosAnaliseRecebimentosRoute
   AuthenticatedRelatoriosEquipeRoute: typeof AuthenticatedRelatoriosEquipeRoute
+  AuthenticatedRelatoriosFluxoCaixaRoute: typeof AuthenticatedRelatoriosFluxoCaixaRoute
   AuthenticatedRelatoriosFornecedoresSemContratoRoute: typeof AuthenticatedRelatoriosFornecedoresSemContratoRoute
+  AuthenticatedRelatoriosGeralRoute: typeof AuthenticatedRelatoriosGeralRoute
   AuthenticatedRelatoriosPosicaoPagamentosRoute: typeof AuthenticatedRelatoriosPosicaoPagamentosRoute
   AuthenticatedRelatoriosPosicaoRecebimentosRoute: typeof AuthenticatedRelatoriosPosicaoRecebimentosRoute
   AuthenticatedRelatoriosRealizadoXPlanejadoRoute: typeof AuthenticatedRelatoriosRealizadoXPlanejadoRoute
@@ -1223,8 +1265,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRelatoriosAnaliseRecebimentosRoute:
     AuthenticatedRelatoriosAnaliseRecebimentosRoute,
   AuthenticatedRelatoriosEquipeRoute: AuthenticatedRelatoriosEquipeRoute,
+  AuthenticatedRelatoriosFluxoCaixaRoute:
+    AuthenticatedRelatoriosFluxoCaixaRoute,
   AuthenticatedRelatoriosFornecedoresSemContratoRoute:
     AuthenticatedRelatoriosFornecedoresSemContratoRoute,
+  AuthenticatedRelatoriosGeralRoute: AuthenticatedRelatoriosGeralRoute,
   AuthenticatedRelatoriosPosicaoPagamentosRoute:
     AuthenticatedRelatoriosPosicaoPagamentosRoute,
   AuthenticatedRelatoriosPosicaoRecebimentosRoute:

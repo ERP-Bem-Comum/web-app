@@ -53,6 +53,9 @@ export type MeasureKey =
   | 'emAtrasoRec'
   | 'recebido'
   | 'aReceber'
+  // Donuts "Previsto × Realizado" do Fluxo de Caixa — ciano/verde (espelho do legado).
+  | 'fluxoPrevisto'
+  | 'fluxoRealizado'
 
 export type DonutSlice = Readonly<{
   id: string
