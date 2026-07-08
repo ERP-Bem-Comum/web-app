@@ -1856,6 +1856,14 @@ export const ptBR: Catalog = {
   'financial.list.chip.pago': 'Pago',
   'financial.list.chip.conciliado': 'Conciliado',
 
+  // ── Visões salvas (saved views, #351) — snapshot nomeado de filtros (preferência de UI) ──
+  'financial.list.savedViews.button': 'Visões',
+  'financial.list.savedViews.nameLabel': 'Nome da visão',
+  'financial.list.savedViews.namePlaceholder': 'Nome da visão…',
+  'financial.list.savedViews.save': 'Salvar',
+  'financial.list.savedViews.empty': 'Nenhuma visão salva. Salve a combinação de filtros atual.',
+  'financial.list.savedViews.delete': 'Excluir visão',
+
   // ── Plano Orçamentário → Planejamento (lista, feature 041) ──
   'budget-plans.list.title': 'Planejamento',
   'budget-plans.list.subtitle': 'Planos orçamentários por ano e programa.',

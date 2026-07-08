@@ -372,6 +372,74 @@ export const clearAllFilters = style({
   ':hover': { color: vars.color.institutional.ink2, textDecoration: 'underline' },
 })
 
+// ── Visões salvas (saved views, #351) — botão + menu na filter-bar (pele igual ao "Adicionar filtro") ──
+export const savedViewsWrap = style({ position: 'relative', display: 'inline-flex' })
+export const savedViewsBtn = style([addFilterBtn]) // mesma pele do botão de filtro (44px, marca)
+export const savedViewsMenu = style([addFilterMenu, { minInlineSize: '19rem', paddingBlock: vars.space.sm }])
+// Bloco "Salvar visão atual" (input + confirmar) no topo do menu.
+export const savedViewsSaveRow = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.xs,
+  paddingInline: vars.space.md,
+  paddingBlockEnd: vars.space.sm,
+})
+export const savedViewsNameInput = style([chipControlBase, { flex: 1, minInlineSize: 0, blockSize: '2rem' }])
+export const savedViewsSaveBtn = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  blockSize: '2rem',
+  paddingInline: '0.75rem',
+  border: 'none',
+  borderRadius: vars.radius.sm,
+  background: vars.color.institutional.blueDeep,
+  color: vars.color.surface.default,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  fontWeight: vars.font.weight.semibold,
+  cursor: 'pointer',
+  ':disabled': { opacity: 0.5, cursor: 'not-allowed' },
+})
+export const savedViewsDivider = style({
+  blockSize: vars.borderWidth.thin,
+  background: vars.color.institutional.paperRule,
+  marginBlock: vars.space.xs,
+})
+export const savedViewsEmpty = style({
+  paddingInline: vars.space.md,
+  paddingBlock: vars.space.sm,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink5,
+})
+// Uma visão salva na lista: nome (aplica ao clicar) + botão excluir.
+export const savedViewsItem = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.xs,
+  paddingInline: vars.space.sm,
+  paddingInlineStart: vars.space.md,
+})
+export const savedViewsApply = style({
+  flex: 1,
+  minInlineSize: 0,
+  display: 'block',
+  paddingBlock: '0.4375rem',
+  border: 'none',
+  background: 'transparent',
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink2,
+  textAlign: 'start',
+  cursor: 'pointer',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+  borderRadius: vars.radius.sm,
+  ':hover': { background: vars.color.institutional.blueBg },
+})
+export const savedViewsDelete = style([filterChipRemove]) // reusa o × dos chips de filtro
+
 // ── Modal de confirmação de EXCLUSÃO (hard-delete) ────────────────────────────
 export const confirmOverlay = style({
   position: 'fixed',

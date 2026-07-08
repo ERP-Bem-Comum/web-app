@@ -29,6 +29,7 @@ import {
 } from '../contas-a-pagar.view-model.ts'
 import { DocumentGrid } from '../components/document-grid.component.tsx'
 import { AddFilterButton, ActiveFiltersRow } from '../components/document-filters.component.tsx'
+import { SavedViewsMenu } from '../components/saved-views-menu.component.tsx'
 import { DocumentDetailDrawer } from '../components/document-detail-drawer.component.tsx'
 import { DeleteConfirmModal } from '../components/delete-confirm.component.tsx'
 import { DueDateModal } from '../components/due-date-modal.component.tsx'
@@ -89,6 +90,10 @@ export function ContasAPagarPage(): ReactNode {
     onSetTipo,
     onSetFornecedor,
     onClearFilters,
+    savedViews,
+    onSaveView,
+    onApplyView,
+    onDeleteView,
     onPrev,
     onNext,
     onPageSize,
@@ -112,6 +117,8 @@ export function ContasAPagarPage(): ReactNode {
 
   // UI-state local (toggles), no padrão dos demais (selectedId/selected): menu "Adicionar filtro".
   const [filterMenuOpen, setFilterMenuOpen] = useState(false)
+  // Menu "Visões salvas" (#351) — toggle local, mesmo padrão do menu de filtros.
+  const [savedViewsMenuOpen, setSavedViewsMenuOpen] = useState(false)
   // Busca/autocomplete do filtro Fornecedor (texto digitado + dropdown de resultados).
   const [fornecedorQuery, setFornecedorQuery] = useState('')
   const [fornecedorOpen, setFornecedorOpen] = useState(false)
@@ -234,6 +241,25 @@ export function ContasAPagarPage(): ReactNode {
         </div>
 
         <div className={fbarRight}>
+          <SavedViewsMenu
+            menuOpen={savedViewsMenuOpen}
+            onToggleMenu={() => {
+              setSavedViewsMenuOpen((v) => !v)
+            }}
+            onCloseMenu={() => {
+              setSavedViewsMenuOpen(false)
+            }}
+            savedViews={savedViews}
+            onSaveView={onSaveView}
+            onApplyView={(id) => {
+              // Aplicar uma visão pode restaurar o filtro Fornecedor → limpa a busca/autocomplete local
+              // (o rótulo do combo não faz parte da visão; o valor sim, via onApplyView → filters).
+              setFornecedorQuery('')
+              setFornecedorOpen(false)
+              onApplyView(id)
+            }}
+            onDeleteView={onDeleteView}
+          />
           <AddFilterButton
             menuOpen={filterMenuOpen}
             onToggleMenu={() => {

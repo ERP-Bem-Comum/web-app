@@ -25,6 +25,7 @@ import {
   type AdvancedFilters,
   type FilterDimId,
 } from './contas-a-pagar.view-model.ts'
+import { useSavedViews, type SavedViewsBinding } from './contas-a-pagar-saved-views.binding.ts'
 
 // #201: modo de visualização do grid — por documento (atual) ou por título (pai+filhos).
 export type ViewMode = 'document' | 'title'
@@ -59,6 +60,11 @@ export type ContasAPagarBinding = Readonly<{
   onSetTipo: (tipo: TipoFilter | undefined) => void
   onSetFornecedor: (ref: string | undefined) => void
   onClearFilters: () => void
+  // Visões salvas (saved views): snapshot nomeado de { status, dims, filters } — preferência de UI (#351).
+  savedViews: SavedViewsBinding['savedViews']
+  onSaveView: SavedViewsBinding['onSaveView']
+  onApplyView: SavedViewsBinding['onApplyView']
+  onDeleteView: SavedViewsBinding['onDeleteView']
   onPrev: () => void
   onNext: () => void
   onPageSize: (size: number) => void
@@ -148,6 +154,18 @@ export function useContasAPagar(): ContasAPagarBinding {
     else setFilters((f) => ({ ...f, fornecedor: undefined }))
   }
 
+  // Visões salvas (#351): captura o snapshot atual; aplica reconstruindo o estado num ÚNICO update (status +
+  // dims + filters de uma vez — React auto-batcha os setState do mesmo handler → 1 render, não N encadeados).
+  const savedViews = useSavedViews(
+    { status: selectedStatus, dims: Array.from(activeDims), filters },
+    (view) => {
+      setSelectedStatus(view.status)
+      setActiveDims(new Set(view.dims)) // reconstrói o Set de dimensões ativas a partir do array salvo
+      setFilters(view.filters)
+      setPage(1)
+    },
+  )
+
   return {
     state,
     viewMode,
@@ -198,6 +216,10 @@ export function useContasAPagar(): ContasAPagarBinding {
       setFilters({})
       setPage(1)
     },
+    savedViews: savedViews.savedViews,
+    onSaveView: savedViews.onSaveView,
+    onApplyView: savedViews.onApplyView,
+    onDeleteView: savedViews.onDeleteView,
     onPrev: () => {
       setPage((p) => Math.max(1, p - 1))
     },
