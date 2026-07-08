@@ -11,9 +11,10 @@
  * Os rótulos (`Jan/26` …) saem de um array de abreviações POR ÍNDICE de mês (0..11), com fallback seguro; então
  * jamais produzem "Invalid Date" (bug do relatório legado que NÃO reproduzimos). Meses em ordem CRESCENTE.
  *
- * ── FONTE PLUGÁVEL ── quando o core-api (#114/consolidated) subir, `loadAnalise('p'|'r')` troca a fonte: a
- * Análise de RECEBIMENTOS será o ESPELHO (mesmo engine/tela), com placeholder vazio + empty-state, como fizemos
- * na "Posição de Recebimentos". Dinheiro em CENTAVOS inteiros (§IV). Sem `throw` nas derivações (§II).
+ * ── FONTE PLUGÁVEL ── `loadAnalise('p'|'r')` troca só a FONTE: a Análise de RECEBIMENTOS é o ESPELHO (mesmo
+ * engine/tela), hoje com placeholder sintético próprio (`ANALISE_RECEBIMENTOS_RAW`). Quando o Contas a Receber
+ * (#114/consolidated) subir, o placeholder de recebíveis some → `'r'` vem vazio → empty-state, como fizemos na
+ * "Posição de Recebimentos". Dinheiro em CENTAVOS inteiros (§IV). Sem `throw` nas derivações (§II).
  */
 import {
   ANALISE_PAGAMENTOS_RAW,
@@ -21,6 +22,7 @@ import {
   type RawAnaliseRow,
   type MonthRange,
 } from './data/analise-pagamentos.placeholder.ts'
+import { ANALISE_RECEBIMENTOS_RAW } from './data/analise-recebimentos.placeholder.ts'
 
 /** Nível do nó na árvore: plano orçamentário (0) → centro de custo (folha, 1). */
 export type AnaliseLevel = 'plano' | 'costCenter'
@@ -46,7 +48,7 @@ export type AnaliseReport = Readonly<{
   planos: readonly AnaliseNode[]
 }>
 
-/** Tipo de análise: 'p' = Pagamentos · 'r' = Recebimentos (quando o Contas a Receber subir — espelho vazio). */
+/** Tipo de análise: 'p' = Pagamentos · 'r' = Recebimentos (espelho; placeholder próprio até o Contas a Receber). */
 export type AnaliseType = 'p' | 'r'
 
 /** Total por Centro de Custo (soma da série), para o gráfico de barras "Distribuição por Centro de Custo". */
@@ -261,13 +263,14 @@ export function totalByMonth(report: AnaliseReport): readonly MonthTotal[] {
  * relatório — mantém a View sem tocar a `data/` (boundary client-ui ↛ client-data).
  *
  * `type` seleciona a fonte com o MESMO shape agregado (engine NEUTRO): `'p'` (Pagamentos) usa
- * `ANALISE_PAGAMENTOS_RAW`; `'r'` (Recebimentos) hoje retorna VAZIO → a árvore vem sem planos e o Total zero
- * (a tela cai no empty state honesto). Quando o Contas a Receber subir, `'r'` mapeará a fonte real neste mesmo
- * shape — as agregações e a View NÃO mudam; só a FONTE e os RÓTULOS (i18n na tela). Sem `throw` (§II).
+ * `ANALISE_PAGAMENTOS_RAW`; `'r'` (Recebimentos) usa `ANALISE_RECEBIMENTOS_RAW` (placeholder sintético). As
+ * agregações e a View NÃO mudam entre 'p' e 'r' — só a FONTE e os RÓTULOS (i18n na tela). Quando o Contas a
+ * Receber (core-api#114) subir, REMOVE-SE o placeholder de recebíveis (`ANALISE_RECEBIMENTOS_RAW → []`) e a
+ * árvore vem sem planos + Total zero → a tela cai LIMPA no empty state honesto. Sem `throw` (§II).
  */
 export function loadAnalise(type: AnaliseType = 'p'): AnaliseReport {
   const months = monthsInRange(ANALISE_PERIOD)
-  const raw = type === 'r' ? [] : ANALISE_PAGAMENTOS_RAW
+  const raw = type === 'r' ? ANALISE_RECEBIMENTOS_RAW : ANALISE_PAGAMENTOS_RAW
   return aggregateAnalise(raw, months)
 }
 

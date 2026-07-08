@@ -22,11 +22,17 @@ export {
   fldSelect,
   fldChev,
   applyButton,
+  card,
   chartCard,
   chartPad,
   cardHeader,
   cardTitle,
 } from './realizado-x-planejado.page.css.ts'
+
+// Empty state HONESTO (relatório vazio: 0 planos / total 0) — reusa a pele já criada na "Posição" (cartão
+// centralizado, sem gráficos/tabela quebrados). Zero duplicação; é o caminho da Análise de Recebimentos
+// quando o placeholder for removido (fonte `[]`).
+export { emptyPanel, emptyTitle, emptyHint } from './posicao-pagamentos.page.css.ts'
 
 // ── Grade de 2 gráficos (Distribuição por Centro de Custo + Distribuição Mensal) ──
 export const charts2 = style({

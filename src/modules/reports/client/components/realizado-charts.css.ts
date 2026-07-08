@@ -232,6 +232,10 @@ export const measureDot = styleVariants({
 // Fill das barras "Distribuição por Financiador" (Posição de RECEBIMENTOS) — roxo, distinto do azul de Pag.
 export const hbarFillRec = style({ background: brand.color.posicaoRec.bar })
 
+// Fill das barras "Distribuição por Centro de Custo" (ANÁLISE de RECEBIMENTOS) — verde-azulado, distinto do
+// azul institucional das barras da Análise de Pagamentos (diferencia as duas telas pela cor dos gráficos).
+export const hbarFillAnaliseRec = style({ background: brand.color.analise.costBarRec })
+
 // ── Legenda do donut ──
 export const legend = style({ inlineSize: '100%', listStyle: 'none', margin: 0, padding: 0 })
 export const legendItem = style({

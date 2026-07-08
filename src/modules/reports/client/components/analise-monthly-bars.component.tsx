@@ -27,6 +27,8 @@ import {
   emptyState,
   monthlyBarColor,
   monthlySwatch,
+  monthlyBarColorRec,
+  monthlySwatchRec,
 } from './analise-charts.css.ts'
 
 export type MonthlyBar = Readonly<{
@@ -46,6 +48,8 @@ export type AnaliseMonthlyBarsProps = Readonly<{
   formatValue: (cents: number) => string
   /** Formata a % de participação (valor / total). */
   formatShare: (valueCents: number, totalCents: number) => string
+  /** Cor das barras: `'pag'` (padrão, ciano) ou `'rec'` (roxo — Análise de Recebimentos). */
+  tone?: 'pag' | 'rec'
 }>
 
 export function AnaliseMonthlyBars(props: AnaliseMonthlyBarsProps): ReactNode {
@@ -55,6 +59,9 @@ export function AnaliseMonthlyBars(props: AnaliseMonthlyBarsProps): ReactNode {
     return <p className={emptyState}>{props.emptyLabel}</p>
   }
 
+  const isRec = props.tone === 'rec'
+  const barColor = isRec ? monthlyBarColorRec : monthlyBarColor
+  const swatch = isRec ? monthlySwatchRec : monthlySwatch
   const maxValue = Math.max(1, ...props.bars.map((b) => b.valueCents))
   const active = hover !== null ? props.bars[hover.index] : undefined
 
@@ -81,10 +88,7 @@ export function AnaliseMonthlyBars(props: AnaliseMonthlyBarsProps): ReactNode {
             >
               <span className={vbarCount}>{props.formatValue(b.valueCents)}</span>
               <span className={vbarTrack}>
-                <span
-                  className={`${vbarFill} ${monthlyBarColor}`}
-                  style={{ blockSize: `${String(heightPct)}%` }}
-                />
+                <span className={`${vbarFill} ${barColor}`} style={{ blockSize: `${String(heightPct)}%` }} />
               </span>
               <span className={vbarLabel} title={b.label}>
                 {b.label}
@@ -101,7 +105,7 @@ export function AnaliseMonthlyBars(props: AnaliseMonthlyBarsProps): ReactNode {
           role="status"
         >
           <div className={tooltipTitle}>
-            <span className={`${tooltipSwatch} ${monthlySwatch}`} aria-hidden />
+            <span className={`${tooltipSwatch} ${swatch}`} aria-hidden />
             {active.label}
           </div>
           <div className={tooltipRow}>

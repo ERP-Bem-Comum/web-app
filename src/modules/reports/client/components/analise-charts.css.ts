@@ -32,3 +32,8 @@ export {
 // do `vbarFill` (que carrega a geometria: largura/raio/transição). Um swatch idêntico para o tooltip.
 export const monthlyBarColor = style({ background: brand.color.analise.monthBar })
 export const monthlySwatch = style({ background: brand.color.analise.monthBar })
+
+// Variante de RECEBIMENTOS (espelho) — ROXO suave, família DISTINTA da de Pagamentos (a P.O. pede diferenciar
+// as duas telas pela cor dos gráficos). Aplicada por CLASSE, do mesmo modo — sem tocar a de Pagamentos.
+export const monthlyBarColorRec = style({ background: brand.color.analise.monthBarRec })
+export const monthlySwatchRec = style({ background: brand.color.analise.monthBarRec })

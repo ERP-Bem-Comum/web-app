@@ -97,6 +97,10 @@ export type {
 //    árvore Plano Orçamentário → Centro de Custo × série MENSAL de valores. Engine plugável: quando o Contas a
 //    Receber subir, `loadAnalise('r')` renderiza a "Análise de Recebimentos" (espelho vazio → empty state). ──
 export { AnalisePagamentosPage } from '#modules/reports/client/page/analise-pagamentos.page.tsx'
+// "Análise de Recebimentos": ESPELHO da de Pagamentos (mesmo engine/tela; fonte 'r' + rótulos de receber +
+// paleta distinta dos gráficos). Empty-state-ready: quando o Contas a Receber subir, some o placeholder de
+// recebíveis (`ANALISE_RECEBIMENTOS_RAW → []`) e a tela cai no empty state honesto.
+export { AnaliseRecebimentosPage } from '#modules/reports/client/page/analise-recebimentos.page.tsx'
 
 export {
   aggregateAnalise,

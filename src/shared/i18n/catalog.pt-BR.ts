@@ -2453,6 +2453,20 @@ export const ptBR: Catalog = {
   // Passador de meses.
   'reports.analise.pager.prev': 'Meses anteriores',
   'reports.analise.pager.next': 'Próximos meses',
+  // Empty state honesto — usado pela Análise de Recebimentos quando não há dado; a de Pagamentos não o exibe.
+  'reports.analise.emptyHint':
+    'Ainda não há lançamentos no período. Assim que houver movimentações, elas aparecerão aqui.',
+
+  // ── Relatório "Análise de Recebimentos" (front-first; core-api#114/consolidated) — ESPELHO da de Pagamentos.
+  //    Mesma matriz TEMPO-orçamentária; só o título/rótulos de RECEBER e a paleta dos gráficos mudam. Quando o
+  //    Contas a Receber subir, a fonte vem vazia e a tela cai no empty state (`reports.analise.rec.empty`). ──
+  'reports.analise.rec.title': 'Análise de Recebimentos',
+  // Período de PREVISÃO de recebimento (vs. "de vencimento" no lado de pagar).
+  'reports.analise.rec.filters.periodo': 'Período de recebimento',
+  // Empty state honesto (nenhum recebimento registrado).
+  'reports.analise.rec.empty': 'Nenhum recebimento registrado',
+  'reports.analise.rec.emptyHint':
+    'Ainda não há recebíveis lançados. Assim que o Contas a Receber registrar movimentações, elas aparecerão aqui.',
 
   // ── Shell (top bar) ──
   'shell.topbar.brand': 'Bem Comum',

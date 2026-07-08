@@ -146,9 +146,13 @@ export const brand = {
       bar: '#7ab5e0', // azul claro — barras "Distribuição por Financiador" (mais leve que o azul de Pag)
     },
     // Análise de Pagamentos: barras "Distribuição Mensal" em CIANO — distingue do azul institucional das
-    // barras "Distribuição por Centro de Custo" (dois gráficos na mesma tela não repetem a cor).
+    // barras "Distribuição por Centro de Custo" (dois gráficos na mesma tela não repetem a cor). A Análise de
+    // RECEBIMENTOS (espelho) usa uma família DISTINTA (a P.O. pede diferenciar Pag×Rec pela cor dos gráficos):
+    // barras "por Centro de Custo" em VERDE-AZULADO + barras "Mensal" em ROXO — sem tocar as de Pagamentos.
     analise: {
-      monthBar: '#32a2c6', // ciano da marca
+      monthBar: '#32a2c6', // ciano da marca — barras "Distribuição Mensal" (Pagamentos)
+      costBarRec: '#2f8f6a', // verde-azulado — barras "Distribuição por Centro de Custo" (Recebimentos)
+      monthBarRec: '#8a5cd1', // roxo suave — barras "Distribuição Mensal" (Recebimentos)
     },
   },
   // Medidas específicas do relatório redesenhado (px cru permitido no `*.values.ts`).
