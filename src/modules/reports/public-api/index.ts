@@ -92,3 +92,33 @@ export type {
   PosicaoReport,
   PosicaoType,
 } from '#modules/reports/client/posicao.view-model.ts'
+
+// ── Relatório "Análise de Pagamentos" (front-first; core-api#114/consolidated). Matriz TEMPO-orçamentária:
+//    árvore Plano Orçamentário → Centro de Custo × série MENSAL de valores. Engine plugável: quando o Contas a
+//    Receber subir, `loadAnalise('r')` renderiza a "Análise de Recebimentos" (espelho vazio → empty state). ──
+export { AnalisePagamentosPage } from '#modules/reports/client/page/analise-pagamentos.page.tsx'
+
+export {
+  aggregateAnalise,
+  monthsInRange,
+  formatMonthLabel,
+  totalByCostCenter,
+  totalByMonth,
+  loadAnalise,
+  buildCsv as buildAnaliseCsv,
+  buildCsvHeader as buildAnaliseCsvHeader,
+  formatBRL as formatAnaliseBRL,
+  formatBRLShort as formatAnaliseBRLShort,
+  formatPercent as formatAnalisePercent,
+  sharePercent as analiseSharePercent,
+  CSV_HEADER_BASE as ANALISE_CSV_HEADER_BASE,
+  MONTH_ABBR_PT,
+} from '#modules/reports/client/analise.view-model.ts'
+export type {
+  AnaliseLevel,
+  AnaliseNode,
+  AnaliseReport,
+  AnaliseType,
+  CostCenterTotal,
+  MonthTotal,
+} from '#modules/reports/client/analise.view-model.ts'

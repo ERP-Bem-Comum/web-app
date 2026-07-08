@@ -88,6 +88,9 @@ export const MENU: readonly MenuSection[] = [
       // Posição de Recebimentos: ESPELHO da de Pagamentos (Financiador→CC→Categoria; Em atraso/Recebido/A
       // receber). Front-first, dados sintéticos (empty-state-ready). SEM `requiredPermission` (RBAC pós-entrega).
       { label: 'Posição de Recebimentos', to: '/relatorios/posicao-recebimentos' },
+      // Análise de Pagamentos: matriz TEMPO-orçamentária (Plano Orçamentário → Centro de Custo × série mensal
+      // de valores). Front-first, dados sintéticos. SEM `requiredPermission` (RBAC pós-entrega).
+      { label: 'Análise de Pagamentos', to: '/relatorios/analise-pagamentos' },
     ],
   },
   {

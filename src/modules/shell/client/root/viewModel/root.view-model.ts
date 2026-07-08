@@ -74,6 +74,9 @@ const PAGE_TITLES: Readonly<Record<string, string>> = {
   // Relatórios → Posição de Recebimentos — espelho da de Pagamentos (header "brand" próprio); só alimenta
   // o document.title.
   '/relatorios/posicao-recebimentos': 'Posição de Recebimentos',
+  // Relatórios → Análise de Pagamentos — matriz tempo-orçamentária (header "brand" próprio); só alimenta o
+  // document.title.
+  '/relatorios/analise-pagamentos': 'Análise de Pagamentos',
   '/login': 'Login',
 }
 

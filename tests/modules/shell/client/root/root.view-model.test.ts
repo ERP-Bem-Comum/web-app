@@ -59,6 +59,11 @@ describe('rootViewModel.resolvePageTitle', () => {
       rootViewModel.resolvePageTitle('/relatorios/posicao-recebimentos'),
       'Posição de Recebimentos',
     )
+    // Relatórios → Análise de Pagamentos (feature 051 — matriz tempo-orçamentária)
+    assert.strictEqual(
+      rootViewModel.resolvePageTitle('/relatorios/analise-pagamentos'),
+      'Análise de Pagamentos',
+    )
   })
   it('cai no fallback para rota desconhecida e não casa substring solta', () => {
     assert.strictEqual(rootViewModel.resolvePageTitle('/desconhecida'), 'ERP Bem Comum')
@@ -402,7 +407,7 @@ describe('rootViewModel.visibleMenu (MENU real — Relatórios)', () => {
   const findRelatorios = (menu: readonly MenuSection[]): MenuSection | undefined =>
     menu.find((s) => s.label === 'Relatórios')
 
-  it('é accordion (sem `to` direto) com os 5 relatórios (Fornecedores sem Contrato + Realizado × Planejado + Equipe ABC + Posição de Pagamentos + Posição de Recebimentos)', () => {
+  it('é accordion (sem `to` direto) com os 6 relatórios (Fornecedores sem Contrato + Realizado × Planejado + Equipe ABC + Posição de Pagamentos + Posição de Recebimentos + Análise de Pagamentos)', () => {
     const rel = findRelatorios(MENU)
     assert.ok(rel, 'a seção "Relatórios" deve existir')
     assert.strictEqual(rel?.to, undefined, 'não é link direto')
@@ -414,6 +419,7 @@ describe('rootViewModel.visibleMenu (MENU real — Relatórios)', () => {
         'Equipe ABC',
         'Posição de Pagamentos',
         'Posição de Recebimentos',
+        'Análise de Pagamentos',
       ],
     )
     assert.strictEqual(rel?.subItems?.[0]?.to, '/relatorios/fornecedores-sem-contrato')
@@ -421,15 +427,17 @@ describe('rootViewModel.visibleMenu (MENU real — Relatórios)', () => {
     assert.strictEqual(rel?.subItems?.[2]?.to, '/relatorios/equipe')
     assert.strictEqual(rel?.subItems?.[3]?.to, '/relatorios/posicao-pagamentos')
     assert.strictEqual(rel?.subItems?.[4]?.to, '/relatorios/posicao-recebimentos')
-    // Equipe ABC + Posição de Pagamentos + Posição de Recebimentos sem requiredPermission (RBAC pós-entrega).
+    assert.strictEqual(rel?.subItems?.[5]?.to, '/relatorios/analise-pagamentos')
+    // Equipe ABC + Posição (Pag/Rec) + Análise de Pagamentos sem requiredPermission (RBAC pós-entrega).
     assert.strictEqual(rel?.subItems?.[2]?.requiredPermission, undefined)
     assert.strictEqual(rel?.subItems?.[3]?.requiredPermission, undefined)
     assert.strictEqual(rel?.subItems?.[4]?.requiredPermission, undefined)
+    assert.strictEqual(rel?.subItems?.[5]?.requiredPermission, undefined)
   })
 
   it('sobrevive com permissions vazias (subitens públicos, sem RBAC)', () => {
     const rel = findRelatorios(rootViewModel.visibleMenu(MENU, []))
     assert.ok(rel, 'a seção deve aparecer sem RBAC')
-    assert.strictEqual(rel?.subItems?.length, 5)
+    assert.strictEqual(rel?.subItems?.length, 6)
   })
 })
