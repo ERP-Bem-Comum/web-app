@@ -3,7 +3,7 @@
  * Extrato|Conciliação, toggle "Exibir palpites", Importar/Exportar/Fechar período desabilitados (US2/#173/
  * US7), estado vazio. Envolto em QueryClientProvider (a costura `getAccount` é pura → err('unavailable')).
  */
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
@@ -25,6 +25,7 @@ const renderPage = () => {
 
 afterEach(() => {
   cleanup()
+  vi.restoreAllMocks()
 })
 
 describe('ReconciliationWorkspacePage (shell)', () => {
@@ -66,14 +67,14 @@ describe('ReconciliationWorkspacePage (shell)', () => {
     // Exportar é um dropdown: o gatilho abre o menu.
     const exportBtn = screen.getByRole('button', { name: has('financial.recon.bottombar.export') })
     fireEvent.click(exportBtn)
-    // Sem período de conciliação (sem backend no teste), OFX/CSV ficam desabilitados com o motivo honesto;
-    // PDF segue desabilitado (#145). Quando houver período, ligam (validado em tela).
+    // Sem período PERSISTIDO (sem backend no teste), OFX/CSV ficam desabilitados com o motivo honesto. Já o
+    // PDF (#144) reflete o período VISUALIZADO (default last7, resolvido) → fica HABILITADO, sem tooltip de bloqueio.
     const ofx = screen.getByRole('menuitem', { name: has('financial.recon.export.ofx') })
     expect(ofx.hasAttribute('disabled')).toBe(true)
     expect(ofx.getAttribute('title')).toBe(tr('financial.recon.export.noPeriod'))
-    expect(
-      screen.getByRole('menuitem', { name: has('financial.recon.export.pdf') }).getAttribute('title'),
-    ).toBe(tr('financial.recon.export.pdfUnavailable'))
+    const pdf = screen.getByRole('menuitem', { name: has('financial.recon.export.pdf') })
+    expect(pdf.hasAttribute('disabled')).toBe(false)
+    expect(pdf.getAttribute('title')).toBeNull()
     // Período vira dropdown (Fechar/Abrir): o gatilho abre o menu; "Fechar período" fica desabilitado
     // sem extrato (US7) e "Abrir período" é chrome (até core-api#203).
     fireEvent.click(screen.getByRole('button', { name: has('financial.recon.bottombar.periodActions') }))
@@ -83,6 +84,19 @@ describe('ReconciliationWorkspacePage (shell)', () => {
     expect(
       screen.getByRole('menuitem', { name: has('financial.recon.close.reopen') }).hasAttribute('disabled'),
     ).toBe(true)
+  })
+
+  it('clicar PDF imprime DIRETO (window.print), SEM navegação/nova aba (#144)', () => {
+    const printSpy = vi.spyOn(window, 'print').mockImplementation(() => undefined)
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
+    renderPage()
+    fireEvent.click(screen.getByRole('button', { name: has('financial.recon.bottombar.export') }))
+    const pdf = screen.getByRole('menuitem', { name: has('financial.recon.export.pdf') })
+    // Período default (last7) resolvido → PDF habilitado; o clique imprime a própria tela.
+    expect(pdf.hasAttribute('disabled')).toBe(false)
+    fireEvent.click(pdf)
+    expect(printSpy).toHaveBeenCalledTimes(1)
+    expect(openSpy).not.toHaveBeenCalled()
   })
 
   it('sem movimento no período (#205), a Conciliação cai nos títulos pendentes (fallback honesto)', async () => {
