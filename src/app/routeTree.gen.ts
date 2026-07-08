@@ -33,6 +33,7 @@ import { Route as AuthenticatedRelatoriosPosicaoRecebimentosRouteImport } from '
 import { Route as AuthenticatedRelatoriosPosicaoPagamentosRouteImport } from './../routes/_authenticated/relatorios/posicao-pagamentos'
 import { Route as AuthenticatedRelatoriosFornecedoresSemContratoRouteImport } from './../routes/_authenticated/relatorios/fornecedores-sem-contrato'
 import { Route as AuthenticatedRelatoriosEquipeRouteImport } from './../routes/_authenticated/relatorios/equipe'
+import { Route as AuthenticatedRelatoriosAnalisePagamentosRouteImport } from './../routes/_authenticated/relatorios/analise-pagamentos'
 import { Route as AuthenticatedProgramasCriarRouteImport } from './../routes/_authenticated/programas/criar'
 import { Route as AuthenticatedProgramasIdRouteImport } from './../routes/_authenticated/programas/$id'
 import { Route as AuthenticatedContratosCriarRouteImport } from './../routes/_authenticated/contratos/criar'
@@ -191,6 +192,12 @@ const AuthenticatedRelatoriosEquipeRoute =
   AuthenticatedRelatoriosEquipeRouteImport.update({
     id: '/relatorios/equipe',
     path: '/relatorios/equipe',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRelatoriosAnalisePagamentosRoute =
+  AuthenticatedRelatoriosAnalisePagamentosRouteImport.update({
+    id: '/relatorios/analise-pagamentos',
+    path: '/relatorios/analise-pagamentos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedProgramasCriarRoute =
@@ -379,6 +386,7 @@ export interface FileRoutesByFullPath {
   '/contratos/criar': typeof AuthenticatedContratosCriarRoute
   '/programas/$id': typeof AuthenticatedProgramasIdRoute
   '/programas/criar': typeof AuthenticatedProgramasCriarRoute
+  '/relatorios/analise-pagamentos': typeof AuthenticatedRelatoriosAnalisePagamentosRoute
   '/relatorios/equipe': typeof AuthenticatedRelatoriosEquipeRoute
   '/relatorios/fornecedores-sem-contrato': typeof AuthenticatedRelatoriosFornecedoresSemContratoRoute
   '/relatorios/posicao-pagamentos': typeof AuthenticatedRelatoriosPosicaoPagamentosRoute
@@ -432,6 +440,7 @@ export interface FileRoutesByTo {
   '/contratos/criar': typeof AuthenticatedContratosCriarRoute
   '/programas/$id': typeof AuthenticatedProgramasIdRoute
   '/programas/criar': typeof AuthenticatedProgramasCriarRoute
+  '/relatorios/analise-pagamentos': typeof AuthenticatedRelatoriosAnalisePagamentosRoute
   '/relatorios/equipe': typeof AuthenticatedRelatoriosEquipeRoute
   '/relatorios/fornecedores-sem-contrato': typeof AuthenticatedRelatoriosFornecedoresSemContratoRoute
   '/relatorios/posicao-pagamentos': typeof AuthenticatedRelatoriosPosicaoPagamentosRoute
@@ -487,6 +496,7 @@ export interface FileRoutesById {
   '/_authenticated/contratos/criar': typeof AuthenticatedContratosCriarRoute
   '/_authenticated/programas/$id': typeof AuthenticatedProgramasIdRoute
   '/_authenticated/programas/criar': typeof AuthenticatedProgramasCriarRoute
+  '/_authenticated/relatorios/analise-pagamentos': typeof AuthenticatedRelatoriosAnalisePagamentosRoute
   '/_authenticated/relatorios/equipe': typeof AuthenticatedRelatoriosEquipeRoute
   '/_authenticated/relatorios/fornecedores-sem-contrato': typeof AuthenticatedRelatoriosFornecedoresSemContratoRoute
   '/_authenticated/relatorios/posicao-pagamentos': typeof AuthenticatedRelatoriosPosicaoPagamentosRoute
@@ -542,6 +552,7 @@ export interface FileRouteTypes {
     | '/contratos/criar'
     | '/programas/$id'
     | '/programas/criar'
+    | '/relatorios/analise-pagamentos'
     | '/relatorios/equipe'
     | '/relatorios/fornecedores-sem-contrato'
     | '/relatorios/posicao-pagamentos'
@@ -595,6 +606,7 @@ export interface FileRouteTypes {
     | '/contratos/criar'
     | '/programas/$id'
     | '/programas/criar'
+    | '/relatorios/analise-pagamentos'
     | '/relatorios/equipe'
     | '/relatorios/fornecedores-sem-contrato'
     | '/relatorios/posicao-pagamentos'
@@ -649,6 +661,7 @@ export interface FileRouteTypes {
     | '/_authenticated/contratos/criar'
     | '/_authenticated/programas/$id'
     | '/_authenticated/programas/criar'
+    | '/_authenticated/relatorios/analise-pagamentos'
     | '/_authenticated/relatorios/equipe'
     | '/_authenticated/relatorios/fornecedores-sem-contrato'
     | '/_authenticated/relatorios/posicao-pagamentos'
@@ -867,6 +880,13 @@ declare module '@tanstack/react-router' {
       path: '/relatorios/equipe'
       fullPath: '/relatorios/equipe'
       preLoaderRoute: typeof AuthenticatedRelatoriosEquipeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/relatorios/analise-pagamentos': {
+      id: '/_authenticated/relatorios/analise-pagamentos'
+      path: '/relatorios/analise-pagamentos'
+      fullPath: '/relatorios/analise-pagamentos'
+      preLoaderRoute: typeof AuthenticatedRelatoriosAnalisePagamentosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/programas/criar': {
@@ -1135,6 +1155,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedContratosCriarRoute: typeof AuthenticatedContratosCriarRoute
   AuthenticatedProgramasIdRoute: typeof AuthenticatedProgramasIdRoute
   AuthenticatedProgramasCriarRoute: typeof AuthenticatedProgramasCriarRoute
+  AuthenticatedRelatoriosAnalisePagamentosRoute: typeof AuthenticatedRelatoriosAnalisePagamentosRoute
   AuthenticatedRelatoriosEquipeRoute: typeof AuthenticatedRelatoriosEquipeRoute
   AuthenticatedRelatoriosFornecedoresSemContratoRoute: typeof AuthenticatedRelatoriosFornecedoresSemContratoRoute
   AuthenticatedRelatoriosPosicaoPagamentosRoute: typeof AuthenticatedRelatoriosPosicaoPagamentosRoute
@@ -1176,6 +1197,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedContratosCriarRoute: AuthenticatedContratosCriarRoute,
   AuthenticatedProgramasIdRoute: AuthenticatedProgramasIdRoute,
   AuthenticatedProgramasCriarRoute: AuthenticatedProgramasCriarRoute,
+  AuthenticatedRelatoriosAnalisePagamentosRoute:
+    AuthenticatedRelatoriosAnalisePagamentosRoute,
   AuthenticatedRelatoriosEquipeRoute: AuthenticatedRelatoriosEquipeRoute,
   AuthenticatedRelatoriosFornecedoresSemContratoRoute:
     AuthenticatedRelatoriosFornecedoresSemContratoRoute,

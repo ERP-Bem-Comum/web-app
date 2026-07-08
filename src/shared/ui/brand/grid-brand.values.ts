@@ -145,6 +145,11 @@ export const brand = {
       aReceber: '#32a2c6', // ciano — a receber
       bar: '#7ab5e0', // azul claro — barras "Distribuição por Financiador" (mais leve que o azul de Pag)
     },
+    // Análise de Pagamentos: barras "Distribuição Mensal" em CIANO — distingue do azul institucional das
+    // barras "Distribuição por Centro de Custo" (dois gráficos na mesma tela não repetem a cor).
+    analise: {
+      monthBar: '#32a2c6', // ciano da marca
+    },
   },
   // Medidas específicas do relatório redesenhado (px cru permitido no `*.values.ts`).
   rxp: {

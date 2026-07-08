@@ -2406,6 +2406,41 @@ export const ptBR: Catalog = {
   'reports.posicao.rec.emptyHint':
     'Ainda não há recebíveis lançados. Assim que o Contas a Receber registrar movimentações, elas aparecerão aqui.',
 
+  // ── Relatório "Análise de Pagamentos" (front-first; core-api#114/consolidated) ──
+  // Matriz TEMPO-orçamentária: árvore Plano Orçamentário → Centro de Custo × série MENSAL de valores.
+  'reports.analise.title': 'Análise de Pagamentos',
+  'reports.analise.back': 'Voltar',
+  'reports.analise.empty': 'Nenhum dado para exibir.',
+  // Export (dropdown CSV + PDF).
+  'reports.analise.export.label': 'Exportar',
+  'reports.analise.export.csv': 'CSV',
+  'reports.analise.export.pdf': 'PDF',
+  // Filtros recolhíveis (placeholders visuais front-first).
+  'reports.analise.filters.title': 'Filtros',
+  'reports.analise.filters.allOption': 'Todos',
+  'reports.analise.filters.programa': 'Programa',
+  'reports.analise.filters.plano': 'Plano Orçamentário',
+  'reports.analise.filters.periodo': 'Período de vencimento',
+  'reports.analise.filters.conta': 'Conta bancária',
+  'reports.analise.filters.status': 'Status',
+  'reports.analise.filters.centro': 'Centro de custo',
+  'reports.analise.filters.categoria': 'Categoria',
+  'reports.analise.filters.subcategoria': 'Subcategoria',
+  'reports.analise.filters.filtrar': 'Filtrar',
+  // Gráficos.
+  'reports.analise.charts.byCostCenter': 'Distribuição por Centro de Custo',
+  'reports.analise.charts.monthly': 'Distribuição Mensal',
+  // Tabela-matriz (árvore × meses).
+  'reports.analise.table.title': 'Análise por plano orçamentário',
+  'reports.analise.columns.name': 'Plano Orçamentário / Centro de custo',
+  'reports.analise.columns.total': 'Valor total',
+  'reports.analise.totals.row': 'Valor total do período',
+  'reports.analise.tree.expand': 'Expandir',
+  'reports.analise.tree.collapse': 'Recolher',
+  // Passador de meses.
+  'reports.analise.pager.prev': 'Meses anteriores',
+  'reports.analise.pager.next': 'Próximos meses',
+
   // ── Shell (top bar) ──
   'shell.topbar.brand': 'Bem Comum',
   'shell.topbar.greeting': 'Olá, {{name}}',
