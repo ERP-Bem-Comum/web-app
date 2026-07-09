@@ -8,8 +8,8 @@
  *
  * Chrome (sem backend no v1, decisão #7): o card Conta do favorecido segue DESABILITADO (sem dado
  * fabricado) até os DTOs do core-api (#47/#48) e o cadastro de contas/categorias existirem.
- * (Competência #197 e Emissão #163 já são reais.) A faixa âmbar de OCR do Figma é omitida de propósito —
- * sinalizaria preenchimento automático que não acontece sem o OCR.
+ * (Competência #197 e Emissão #163 já são reais.) O destaque âmbar de OCR (borda + tag "OCR") é REAL agora:
+ * acende só os campos de `ocrFields` (numa sessão de OCR) — sinaliza o que a ingestão de fato preencheu.
  */
 import type { ReactNode } from 'react'
 
@@ -33,6 +33,7 @@ import {
   type PartnerHydration,
   type ContractCategoView,
   type FieldLocks,
+  type OcrFieldKey,
 } from '../document-form.view.ts'
 import { DocumentTypeModal } from './document-type-modal.component.tsx'
 import { PaymentMethodModal } from './payment-method-modal.component.tsx'
@@ -47,6 +48,9 @@ import {
   field,
   fieldGrid,
   fieldLabel,
+  fieldLabelRow,
+  ocrAccent,
+  ocrTag,
   numberSeriesRow,
   retentionsHint,
   reformaHead,
@@ -185,6 +189,8 @@ function CategoSelect(
 export type DocumentFormProps = Readonly<{
   fields: DocumentFormFields
   hydration: PartnerHydration
+  /** Campos sinalizados como LIDOS pelo OCR (borda âmbar + tag). Vazio fora de sessão de OCR. */
+  ocrFields: ReadonlySet<OcrFieldKey>
   /** Travas por campo (modo edição). Ausente/criação = nada travado. */
   locks?: FieldLocks
   onType: (value: DocumentType | '') => void
@@ -252,9 +258,23 @@ export type DocumentFormProps = Readonly<{
   onClosePayModal: () => void
 }>
 
+// Rótulo do campo (+ tag "OCR" quando lido do documento). `htmlFor` opcional (células combinadas usam label
+// sem `for`). O acento âmbar do input vem à parte (helper `accent`).
+function FieldLabel(props: Readonly<{ text: string; htmlFor?: string; ocr: boolean }>): ReactNode {
+  return (
+    <label className={props.ocr ? fieldLabelRow : fieldLabel} htmlFor={props.htmlFor}>
+      {props.text}
+      {props.ocr ? <span className={ocrTag}>{t('financial.create.preview.ocrBadge')}</span> : null}
+    </label>
+  )
+}
+
 export function DocumentForm(props: DocumentFormProps): ReactNode {
   const { fields, hydration } = props
   const locks = props.locks ?? NO_LOCKS
+  // Destaque OCR: `isOcr` decide a tag no rótulo; `accent` acrescenta a barra âmbar ao input lido.
+  const isOcr = (key: OcrFieldKey): boolean => props.ocrFields.has(key)
+  const accent = (key: OcrFieldKey): string => (isOcr(key) ? ` ${ocrAccent}` : '')
   const retEnabled = retentionsEnabledFor(fields.type)
   const bank = hydration.bank
   const contract = props.contract
@@ -270,14 +290,12 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
         <h3 className={sectionTitle}>{t('financial.create.section.identificacao')}</h3>
         <div className={fieldGrid.six}>
           <div className={field}>
-            <label className={fieldLabel} htmlFor="fin-type">
-              {t('financial.create.field.type')}
-            </label>
+            <FieldLabel text={t('financial.create.field.type')} htmlFor="fin-type" ocr={isOcr('type')} />
             {/* Tipo abre o modal de seleção (cards com classe fiscal). Travado (edição) → caixa inerte. */}
             {locks.type ? (
               <input
                 id="fin-type"
-                className={controlDisabled}
+                className={`${controlDisabled}${accent('type')}`}
                 disabled
                 value={fields.type === '' ? '—' : fields.type}
                 aria-label={t('financial.create.field.type')}
@@ -286,7 +304,7 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
               <button
                 id="fin-type"
                 type="button"
-                className={typeTrigger}
+                className={`${typeTrigger}${accent('type')}`}
                 aria-label={t('financial.create.field.type')}
                 onClick={props.onOpenTypeModal}
               >
@@ -301,10 +319,13 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
 
           {/* Nº / Série — célula combinada (Figma), dois inputs sob um rótulo. */}
           <div className={field}>
-            <span className={fieldLabel}>{t('financial.create.field.numberSeries')}</span>
+            <FieldLabel
+              text={t('financial.create.field.numberSeries')}
+              ocr={isOcr('documentNumber') || isOcr('series')}
+            />
             <div className={numberSeriesRow}>
               <input
-                className={locks.numberSeries ? controlDisabled : control}
+                className={`${locks.numberSeries ? controlDisabled : control}${accent('documentNumber')}`}
                 disabled={locks.numberSeries}
                 aria-label={t('financial.create.field.documentNumber')}
                 value={fields.documentNumber}
@@ -313,7 +334,7 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
                 }}
               />
               <input
-                className={locks.numberSeries ? controlDisabled : control}
+                className={`${locks.numberSeries ? controlDisabled : control}${accent('series')}`}
                 disabled={locks.numberSeries}
                 aria-label={t('financial.create.field.series')}
                 value={fields.series}
@@ -337,13 +358,15 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             />
           </div>
           <div className={field}>
-            <label className={fieldLabel} htmlFor="fin-emissao">
-              {t('financial.create.field.emissao')}
-            </label>
+            <FieldLabel
+              text={t('financial.create.field.emissao')}
+              htmlFor="fin-emissao"
+              ocr={isOcr('issueDate')}
+            />
             <input
               id="fin-emissao"
               type="date"
-              className={locks.issueDate ? controlDisabled : control}
+              className={`${locks.issueDate ? controlDisabled : control}${accent('issueDate')}`}
               disabled={locks.issueDate}
               value={fields.issueDate}
               aria-label={t('financial.create.field.emissao')}
@@ -354,13 +377,15 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
           </div>
 
           <div className={field}>
-            <label className={fieldLabel} htmlFor="fin-venc">
-              {t('financial.create.field.dueDate')}
-            </label>
+            <FieldLabel
+              text={t('financial.create.field.dueDate')}
+              htmlFor="fin-venc"
+              ocr={isOcr('dueDate')}
+            />
             <input
               id="fin-venc"
               type="date"
-              className={locks.dueDate ? controlDisabled : control}
+              className={`${locks.dueDate ? controlDisabled : control}${accent('dueDate')}`}
               disabled={locks.dueDate}
               value={fields.dueDate}
               onChange={(e) => {
@@ -369,12 +394,14 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             />
           </div>
           <div className={field}>
-            <label className={fieldLabel} htmlFor="fin-bruto">
-              {t('financial.create.field.grossValue')}
-            </label>
+            <FieldLabel
+              text={t('financial.create.field.grossValue')}
+              htmlFor="fin-bruto"
+              ocr={isOcr('grossValue')}
+            />
             <input
               id="fin-bruto"
-              className={locks.grossValue ? controlDisabled : controlMono}
+              className={`${locks.grossValue ? controlDisabled : controlMono}${accent('grossValue')}`}
               disabled={locks.grossValue}
               inputMode="decimal"
               placeholder="0,00"
@@ -390,12 +417,14 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
         {fields.type === 'DANFE' ? (
           <div className={fieldGrid.wide}>
             <div className={field}>
-              <label className={fieldLabel} htmlFor="fin-chave">
-                {t('financial.create.field.accessKey')}
-              </label>
+              <FieldLabel
+                text={t('financial.create.field.accessKey')}
+                htmlFor="fin-chave"
+                ocr={isOcr('accessKey')}
+              />
               <input
                 id="fin-chave"
-                className={control}
+                className={`${control}${accent('accessKey')}`}
                 inputMode="numeric"
                 value={fields.accessKey}
                 onChange={(e) => {
@@ -410,12 +439,14 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
         ) : null}
         <div className={fieldGrid.wide}>
           <div className={field}>
-            <label className={fieldLabel} htmlFor="fin-desc">
-              {t('financial.create.field.description')}
-            </label>
+            <FieldLabel
+              text={t('financial.create.field.description')}
+              htmlFor="fin-desc"
+              ocr={isOcr('description')}
+            />
             <input
               id="fin-desc"
-              className={locks.description ? controlDisabled : control}
+              className={`${locks.description ? controlDisabled : control}${accent('description')}`}
               disabled={locks.description}
               value={fields.description}
               onChange={(e) => {
@@ -435,12 +466,14 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
           <div className={fieldGrid.six}>
             {allowedRetentionKeysFor(fields.type).map((key) => (
               <div className={field} key={key}>
-                <label className={fieldLabel} htmlFor={`fin-ret-${key}`}>
-                  {t(`financial.create.retention.${key}`)}
-                </label>
+                <FieldLabel
+                  text={t(`financial.create.retention.${key}`)}
+                  htmlFor={`fin-ret-${key}`}
+                  ocr={isOcr(key)}
+                />
                 <input
                   id={`fin-ret-${key}`}
-                  className={locks.retentions ? controlDisabled : controlMono}
+                  className={`${locks.retentions ? controlDisabled : controlMono}${accent(key)}`}
                   disabled={locks.retentions}
                   inputMode="decimal"
                   placeholder="0,00"

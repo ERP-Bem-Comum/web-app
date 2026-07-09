@@ -78,7 +78,6 @@ type FormAction =
   | Readonly<{ kind: 'setText'; key: TextKey; value: string }>
   | Readonly<{ kind: 'setRetention'; key: keyof RetentionFieldsReais; value: string }>
   | Readonly<{ kind: 'setReformaTributaria'; key: keyof ReformaTributariaFieldsReais; value: string }>
-  | Readonly<{ kind: 'patch'; patch: Partial<DocumentFormFields> }>
   | Readonly<{ kind: 'hydrate'; fields: DocumentFormFields }>
   | Readonly<{ kind: 'reset' }>
 
@@ -141,9 +140,6 @@ const reducer = (state: DocumentFormFields, action: FormAction): DocumentFormFie
         ...state,
         reformaTributaria: { ...state.reformaTributaria, [action.key]: action.value },
       }
-    case 'patch':
-      // Preenchimento por OCR (parcial) — só sobrescreve os campos extraídos; o operador confirma.
-      return { ...state, ...action.patch }
     case 'hydrate':
       return action.fields
     case 'reset':
@@ -169,7 +165,6 @@ export type DocumentFormController = Readonly<{
   setText: (key: TextKey, value: string) => void
   setRetention: (key: keyof RetentionFieldsReais, value: string) => void
   setReformaTributaria: (key: keyof ReformaTributariaFieldsReais, value: string) => void
-  applyPatch: (patch: Partial<DocumentFormFields>) => void
   reset: () => void
   // Modal "Tipo de Documento" (UI-state).
   typeModalOpen: boolean
@@ -236,9 +231,6 @@ export function useDocumentFormController(initial?: DocumentFormFields | null): 
     },
     setReformaTributaria: (key, value) => {
       dispatch({ kind: 'setReformaTributaria', key, value })
-    },
-    applyPatch: (patch) => {
-      dispatch({ kind: 'patch', patch })
     },
     reset: () => {
       dispatch({ kind: 'reset' })

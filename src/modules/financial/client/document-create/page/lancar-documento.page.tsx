@@ -4,7 +4,7 @@
  * ações. No sucesso, mostra os **títulos gerados** (FR-007). Não usa data-hooks/useReducer direto — só os
  * hooks de binding/controller.
  */
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
@@ -12,6 +12,7 @@ import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 
 import { useDocumentFormController } from '../document-form.controller.ts'
 import { useOcrExtraction } from '../ocr.binding.ts'
+import { useDocumentPreview } from '../document-preview.binding.ts'
 import { useSupplierPickerController } from '../supplier-picker.controller.ts'
 import { useLancarDocumentoBinding } from '../create-document.binding.ts'
 import { useDocumentEditing } from '../edit-document.binding.ts'
@@ -29,6 +30,7 @@ import {
   canSubmit,
   canSaveDraft,
   canSaveEdit,
+  ocrReadFields,
 } from '../document-form.view.ts'
 import { DocumentForm } from '../components/document-form.component.tsx'
 import { SupplierPicker } from '../components/supplier-picker.component.tsx'
@@ -57,8 +59,20 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
   const navigate = useNavigate()
   const edit = useDocumentEditing(documentId)
   const controller = useDocumentFormController(edit.initialFields)
-  // OCR (costura p/ core-api#62): no sucesso, aplica o patch extraído no form. Hoje devolve "indisponível".
-  const ocr = useOcrExtraction(controller.applyPatch)
+  // Ingestão por OCR (core-api#62): no sucesso CRIA UM RASCUNHO e navega p/ o modo edição dele (revisão do
+  // operador). O binding só ingere+navega — nunca cria um 2º documento.
+  const ocr = useOcrExtraction()
+  // Arquivo subido mantido no estado da page (a navegação create→edit é MESMA rota → o componente não
+  // desmonta → o File sobrevive p/ o web view). Um reload direto do `?id` perde o arquivo → sem preview.
+  const [ocrFile, setOcrFile] = useState<File | null>(null)
+  const preview = useDocumentPreview(ocrFile)
+  const handleSelectFile = (file: File): void => {
+    setOcrFile(file)
+    ocr.extract(file)
+  }
+  // Campos LIDOS pelo OCR (destaque âmbar + tag): derivados do rascunho hidratado, só quando há arquivo
+  // ingerido nesta sessão. Baseado no estado INICIAL (não nos edits do operador) — a marca reflete a extração.
+  const ocrFields = ocrReadFields(edit.initialFields ?? null, ocrFile !== null)
   const picker = useSupplierPickerController()
   const command = useLancarDocumentoBinding()
   const partners = usePartnersOptions()
@@ -161,7 +175,14 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
       ) : null}
 
       <div className={body}>
-        <DocumentPreview status={ocr.status} fileName={ocr.fileName} onSelectFile={ocr.extract} />
+        <DocumentPreview
+          status={ocr.status}
+          fileName={ocr.fileName}
+          errorTag={ocr.errorTag}
+          preview={preview}
+          allowReplace={mode === 'create'}
+          onSelectFile={handleSelectFile}
+        />
 
         <div className={`${formCol} ${scrollArea}`}>
           {/* Hero do fornecedor com picker buscável (todos os parceiros) — via MANUAL do fornecedor. */}
@@ -183,6 +204,7 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
           <DocumentForm
             fields={controller.fields}
             hydration={hydration}
+            ocrFields={ocrFields}
             locks={formLocks}
             onType={controller.setType}
             onPaymentMethod={controller.setPaymentMethod}

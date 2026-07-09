@@ -17,7 +17,7 @@ import type {
   RegisteredTaxInput,
   RegisteredTaxType,
 } from '#modules/financial/client/data/model/document.model.ts'
-import type { OcrExtractedFields } from '#modules/financial/client/data/model/ocr.model.ts'
+import type { OcrError } from '#modules/financial/client/data/model/ocr.model.ts'
 
 // Re-export dos tipos que a UI precisa — as views importam SÓ do view-model (§XI), nunca de client-data.
 export type {
@@ -26,7 +26,7 @@ export type {
   RetentionType,
   RegisteredTaxType,
 } from '#modules/financial/client/data/model/document.model.ts'
-export type { OcrExtractedFields } from '#modules/financial/client/data/model/ocr.model.ts'
+export type { OcrError } from '#modules/financial/client/data/model/ocr.model.ts'
 export type SupplierOption = Readonly<{ id: string; name: string }>
 
 // Parceiro selecionável no picker do hero (Fornecedor/Financiador/Ato/Colaborador). `supplierRef` do
@@ -36,6 +36,15 @@ export type SupplierOption = Readonly<{ id: string; name: string }>
 export type PartnerKind = 'supplier' | 'financier' | 'act' | 'collaborator'
 // `subtitle` = linha secundária no picker: CNPJ (PJ: fornecedor/financiador/ato) ou e-mail (colaborador, PF).
 export type PartnerOption = Readonly<{ id: string; name: string; subtitle: string; kind: PartnerKind }>
+
+/**
+ * Fonte do WEB VIEW do documento ingerido (derivada do `File` no binding). PDF vira `blob:` (iframe);
+ * XML vira texto puro; formato fora da allowlist vira `unsupported`. Shape pura (a view a apresenta).
+ */
+export type DocumentPreviewData =
+  | Readonly<{ kind: 'pdf'; url: string; fileName: string }>
+  | Readonly<{ kind: 'xml'; text: string; fileName: string }>
+  | Readonly<{ kind: 'unsupported'; fileName: string }>
 
 /** Rótulo i18n do tipo de parceiro. */
 export const partnerKindTag = (kind: PartnerKind): string => `financial.create.partner.kind.${kind}`
@@ -151,6 +160,62 @@ export const EMPTY_RETENTIONS: RetentionFieldsReais = {
   pis: '',
   cofins: '',
   csll: '',
+}
+
+/**
+ * Chaves de campo que o OCR PODE ter lido do documento (identificação + valores). Exclui os DERIVADOS
+ * (competência = auto da emissão) e os que o operador preenche à mão (pagamento, categorização, aprovador);
+ * a Reforma Tributária (CBS/IBS) também fica de fora do destaque.
+ */
+export type OcrFieldKey =
+  | 'type'
+  | 'documentNumber'
+  | 'series'
+  | 'issueDate'
+  | 'dueDate'
+  | 'grossValue'
+  | 'description'
+  | 'accessKey'
+  | 'iss'
+  | 'irrf'
+  | 'inss'
+  | 'pis'
+  | 'cofins'
+  | 'csll'
+
+// Valor em reais (mascarado) só conta como "lido" se > 0 — "0,00"/vazio não sinaliza.
+const isMoneyFilled = (v: string): boolean => {
+  const digits = v.replace(/\D/g, '')
+  return digits !== '' && Number(digits) > 0
+}
+
+/**
+ * Deriva o conjunto de campos a SINALIZAR como lidos pelo OCR (borda âmbar + tag "OCR"). Só numa sessão de
+ * OCR (`isOcrSession`) e só os campos que o documento de fato preencheu (não-vazios / retenção > 0). Fora do
+ * OCR (edição/consulta normal) devolve vazio — nada é destacado. Função PURA (§XI).
+ */
+export const ocrReadFields = (
+  fields: DocumentFormFields | null,
+  isOcrSession: boolean,
+): ReadonlySet<OcrFieldKey> => {
+  const s = new Set<OcrFieldKey>()
+  if (!isOcrSession || fields === null) return s
+  if (fields.type !== '') s.add('type')
+  if (fields.documentNumber.trim() !== '') s.add('documentNumber')
+  if (fields.series.trim() !== '') s.add('series')
+  if (fields.issueDate !== '') s.add('issueDate')
+  if (fields.dueDate !== '') s.add('dueDate')
+  if (isMoneyFilled(fields.grossValue)) s.add('grossValue')
+  if (fields.description.trim() !== '') s.add('description')
+  if (fields.accessKey.trim() !== '') s.add('accessKey')
+  const r = fields.retentions
+  if (isMoneyFilled(r.iss)) s.add('iss')
+  if (isMoneyFilled(r.irrf)) s.add('irrf')
+  if (isMoneyFilled(r.inss)) s.add('inss')
+  if (isMoneyFilled(r.pis)) s.add('pis')
+  if (isMoneyFilled(r.cofins)) s.add('cofins')
+  if (isMoneyFilled(r.csll)) s.add('csll')
+  return s
 }
 
 export const EMPTY_REFORMA_TRIBUTARIA: ReformaTributariaFieldsReais = {
@@ -571,40 +636,27 @@ export const hydrateFieldsFromDetail = (d: DocumentDetail): DocumentFormFields =
   }
 }
 
-// ── OCR → form (costura p/ core-api#62) ───────────────────────────────────────
-// Converte os campos extraídos pelo OCR (cents/ISO) no shape do form (reais mascarado/ISO). PURA. O
-// resultado é um PATCH parcial: só os campos que o OCR trouxe (o operador confirma; OCR nunca confirma).
-// CSRF agrega em `pis` (mesma convenção da hidratação do detalhe). `supplierTaxId` exige resolver o
-// parceiro (passo futuro) → não entra no patch aqui.
-const ocrRetentionsToFields = (
-  rets: readonly Readonly<{ type: RetentionType; valueCents: string }>[],
-): RetentionFieldsReais => {
-  const out: { -readonly [K in keyof RetentionFieldsReais]: string } = { ...EMPTY_RETENTIONS }
-  for (const r of rets) {
-    const reais = centsToReais(r.valueCents)
-    if (r.type === 'ISS') out.iss = reais
-    else if (r.type === 'IRRF') out.irrf = reais
-    else if (r.type === 'INSS') out.inss = reais
-    else out.pis = reais // CSRF → pis (agregado, igual à hidratação do detalhe)
+// ── Ingestão por OCR (costura core-api#62) ────────────────────────────────────
+// Estado do fluxo de ingestão (a UI exibe a mensagem conforme). `done` = rascunho criado (transitório, antes
+// de navegar p/ o modo edição). Não há mais `unavailable` (o backend existe) nem patch-in-place (o backend
+// persiste os campos extraídos num rascunho; o operador os revisa na tela de edição, não inline).
+export type OcrStatus = 'idle' | 'running' | 'done' | 'error'
+
+/** Tag i18n da mensagem de erro real da ingestão (mime/tamanho/arquivo/auth/servidor). PURA, exaustiva. */
+export const ocrErrorTag = (error: OcrError): string => {
+  switch (error) {
+    case 'invalid-mime':
+      return 'financial.create.ocr.error.invalidMime'
+    case 'file-too-large':
+      return 'financial.create.ocr.error.tooLarge'
+    case 'invalid-file':
+      return 'financial.create.ocr.error.invalidFile'
+    case 'unauthorized':
+      return 'financial.create.ocr.error.unauthorized'
+    case 'server':
+      return 'financial.create.ocr.error.server'
   }
-  return out
 }
-
-// Estado do fluxo de OCR (a UI exibe a mensagem conforme). `unavailable` = backend ausente (core-api#62).
-export type OcrStatus = 'idle' | 'running' | 'unavailable' | 'error' | 'done'
-
-export const ocrToFormPatch = (f: OcrExtractedFields): Partial<DocumentFormFields> => ({
-  ...(f.type !== undefined ? { type: f.type } : {}),
-  ...(f.documentNumber !== undefined ? { documentNumber: f.documentNumber } : {}),
-  ...(f.series !== undefined ? { series: f.series } : {}),
-  ...(f.grossValueCents !== undefined ? { grossValue: centsToReais(f.grossValueCents) } : {}),
-  ...(f.issueDate !== undefined ? { issueDate: f.issueDate } : {}), // #163 — OCR extrai a emissão
-  ...(f.dueDate !== undefined ? { dueDate: f.dueDate } : {}),
-  ...(f.description !== undefined ? { description: f.description } : {}),
-  ...(f.retentions !== undefined && f.retentions.length > 0
-    ? { retentions: ocrRetentionsToFields(f.retentions) }
-    : {}),
-})
 
 /** Pode salvar o AJUSTE? Bruto > 0, vencimento preenchido e líquido (bruto − retenções atuais) > 0. */
 export const canSaveEdit = (fields: DocumentFormFields, detail: DocumentDetail): boolean => {
