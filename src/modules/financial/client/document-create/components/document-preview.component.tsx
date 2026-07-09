@@ -6,7 +6,7 @@
  *    operador LER e conferir o que subiu (essencial no PDF, cuja extração ainda é parcial). A view só
  *    apresenta o estado (running/done/erro) e a fonte de preview que recebe por props.
  */
-import { useState, type ChangeEvent, type DragEvent, type ReactNode } from 'react'
+import { useState, type ChangeEvent, type CSSProperties, type DragEvent, type ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
@@ -25,12 +25,12 @@ import {
   previewHeader,
   previewHeaderText,
   previewPane,
-  previewStrip,
-  previewStripName,
-  previewStripNote,
   previewFrame,
   previewXml,
   previewReplace,
+  zoomControls,
+  zoomBtn,
+  zoomPct,
   ghostButton,
   fileInputHidden,
   scrollArea,
@@ -80,11 +80,50 @@ function FileInput({
   )
 }
 
+// Zoom do web view (ambos os formatos): 50%–200% em passos de 25% (PDF via `#zoom=` nativo; XML via `--ocr-zoom`).
+const ZOOM_MIN = 50
+const ZOOM_MAX = 200
+const ZOOM_STEP = 25
+
+// Controles de zoom (− / % / +) — ao lado do título "Pré-visualização do documento".
+function ZoomControls(props: Readonly<{ zoom: number; onIn: () => void; onOut: () => void }>): ReactNode {
+  return (
+    <div className={zoomControls}>
+      <button
+        type="button"
+        className={zoomBtn}
+        aria-label={t('financial.create.preview.zoomOut')}
+        disabled={props.zoom <= ZOOM_MIN}
+        onClick={props.onOut}
+      >
+        −
+      </button>
+      <span className={zoomPct}>{`${String(props.zoom)}%`}</span>
+      <button
+        type="button"
+        className={zoomBtn}
+        aria-label={t('financial.create.preview.zoomIn')}
+        disabled={props.zoom >= ZOOM_MAX}
+        onClick={props.onIn}
+      >
+        +
+      </button>
+    </div>
+  )
+}
+
 export function DocumentPreview(props: DocumentPreviewProps): ReactNode {
   const tag = noteTag(props.status, props.errorTag)
   // Estado EFÊMERO de UI (drag-over) — como hover; não é server-state.
   const [dragging, setDragging] = useState(false)
+  const [zoom, setZoom] = useState(100)
   const busy = props.status === 'running'
+  const zoomOut = (): void => {
+    setZoom((z) => Math.max(ZOOM_MIN, z - ZOOM_STEP))
+  }
+  const zoomIn = (): void => {
+    setZoom((z) => Math.min(ZOOM_MAX, z + ZOOM_STEP))
+  }
 
   // Drag-and-drop: preventDefault no dragover É OBRIGATÓRIO p/ o drop disparar (senão o navegador ABRE o
   // arquivo e sai do app). No drop, pega o 1º arquivo e delega ao mesmo caminho do seletor.
@@ -109,29 +148,29 @@ export function DocumentPreview(props: DocumentPreviewProps): ReactNode {
       <div className={previewHeader}>
         <span className={previewBadge}>{t('financial.create.preview.ocrBadge')}</span>
         <span className={previewHeaderText}>{t('financial.create.preview.title')}</span>
+        {props.preview !== null && props.preview.kind !== 'unsupported' ? (
+          <ZoomControls zoom={zoom} onIn={zoomIn} onOut={zoomOut} />
+        ) : null}
       </div>
 
       {props.preview !== null ? (
         <>
           <div className={previewPane}>
-            <div className={previewStrip}>
-              <span className={previewStripName} title={props.preview.fileName}>
-                {props.preview.fileName}
-              </span>
-              {tag !== null ? (
-                <span className={previewStripNote} role="status">
-                  {t(tag)}
-                </span>
-              ) : null}
-            </div>
             {props.preview.kind === 'pdf' ? (
               <iframe
                 className={previewFrame}
-                src={props.preview.url}
+                // Remount por zoom (`key`): o visualizador nativo só lê o `#zoom=` no LOAD — trocar só o
+                // fragmento não re-aplica; remontar força a re-navegação no novo zoom (blob local = instantâneo).
+                key={`pdf-${String(zoom)}`}
+                src={`${props.preview.url}#zoom=${String(zoom)}`}
                 title={t('financial.create.preview.frameLabel')}
               />
             ) : props.preview.kind === 'xml' ? (
-              <pre className={previewXml} aria-label={t('financial.create.preview.frameLabel')}>
+              <pre
+                className={previewXml}
+                aria-label={t('financial.create.preview.frameLabel')}
+                style={{ ['--ocr-zoom']: String(zoom / 100) } as CSSProperties}
+              >
                 {props.preview.text}
               </pre>
             ) : (

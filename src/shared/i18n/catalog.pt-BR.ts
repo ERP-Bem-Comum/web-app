@@ -1249,6 +1249,8 @@ export const ptBR: Catalog = {
   'financial.create.preview.frameLabel': 'Documento enviado (pré-visualização)',
   'financial.create.preview.replace': 'Trocar arquivo',
   'financial.create.preview.unsupported': 'Sem pré-visualização para este formato.',
+  'financial.create.preview.zoomIn': 'Aumentar zoom',
+  'financial.create.preview.zoomOut': 'Diminuir zoom',
   'financial.create.ocr.error.invalidMime': 'Formato não suportado. Envie um arquivo PDF ou XML.',
   'financial.create.ocr.error.tooLarge': 'Arquivo muito grande. O limite é 20 MB.',
   'financial.create.ocr.error.invalidFile':

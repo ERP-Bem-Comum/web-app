@@ -250,7 +250,7 @@ export const body = style({
   flex: 1,
   minBlockSize: 0,
   display: 'grid',
-  gridTemplateColumns: 'minmax(16rem, 28rem) minmax(0, 1fr) 21.25rem',
+  gridTemplateColumns: 'minmax(16rem, 32rem) minmax(0, 1fr) 21.25rem',
   // A linha precisa ter a altura do container (senão vira auto = altura do conteúdo e nada rola).
   gridTemplateRows: 'minmax(0, 1fr)',
   overflow: 'hidden', // cada coluna rola sozinha (independent scroll, igual ao mock)
@@ -618,7 +618,7 @@ export const previewCol = style({
   minBlockSize: 0,
   blockSize: '100%',
   overflowY: 'auto',
-  padding: '1.25rem', // 20 (mock)
+  padding: vars.space.sm, // margem azul enxuta (era 20px) → mais largura útil p/ o documento
   background: vars.color.institutional.blueBg, // parte de FORA azul claro (a coluna do OCR)
   borderInlineEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   '@media': { 'screen and (max-width: 75rem)': { display: 'none' } },
@@ -719,32 +719,6 @@ export const previewPane = style({
   background: vars.color.surface.default,
   overflow: 'hidden',
 })
-// Strip superior: nome do arquivo + nota de estado (lendo / rascunho criado / erro).
-export const previewStrip = style({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: vars.space.sm,
-  paddingBlock: vars.space.xs,
-  paddingInline: vars.space.sm,
-  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
-  background: vars.color.institutional.paperWarm,
-})
-export const previewStripName = style({
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size['2xs'],
-  fontWeight: vars.font.weight.bold,
-  color: vars.color.text.secondary,
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-})
-export const previewStripNote = style({
-  flexShrink: 0,
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size['2xs'],
-  color: vars.color.institutional.blueDeep,
-})
 // iframe do PDF (blob:) — ocupa todo o painel.
 export const previewFrame = style({
   flex: 1,
@@ -760,11 +734,44 @@ export const previewXml = style({
   overflow: 'auto',
   padding: vars.space.sm,
   fontFamily: vars.font.family.mono,
-  fontSize: vars.font.size['2xs'],
+  // Zoom do web view: escala a partir do token base por `--ocr-zoom` (1 = 100%).
+  fontSize: `calc(${vars.font.size['2xs']} * var(--ocr-zoom, 1))`,
   lineHeight: 1.5,
   color: vars.color.text.secondary,
   whiteSpace: 'pre-wrap',
   wordBreak: 'break-word',
+})
+export const zoomControls = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: vars.space.xs,
+  marginInlineStart: 'auto', // empurra os controles para o fim do header (ao lado do título)
+})
+export const zoomBtn = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  inlineSize: '1.25rem',
+  blockSize: '1.25rem',
+  padding: 0,
+  borderRadius: vars.radius.sm,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  background: vars.color.surface.default,
+  color: vars.color.institutional.blueDeep,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  lineHeight: 1,
+  cursor: 'pointer',
+  ':disabled': { opacity: 0.4, cursor: 'not-allowed' },
+})
+// Percentual do zoom — largura fixa p/ não "pular" ao mudar (2/3 dígitos).
+export const zoomPct = style({
+  minInlineSize: '2.5rem',
+  textAlign: 'center',
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size['2xs'],
+  fontVariantNumeric: 'tabular-nums',
+  color: vars.color.text.secondary,
 })
 // Rodapé do painel: link discreto para trocar o arquivo (só no modo criação).
 export const previewReplace = style({
