@@ -138,6 +138,11 @@ export const detailToModel = (raw: unknown): Result<DocumentDetail, FinancialErr
     issueDate: d.issueDate, // #163 — date-only (YYYY-MM-DD), igual ao dueDate
     dueDate: d.dueDate,
     description: d.description,
+    // #95/#147 — refs de categorização (resolvidas p/ nome no client; drift → null).
+    budgetPlanRef: d.budgetPlanRef,
+    categoryRef: d.categoryRef,
+    costCenterRef: d.costCenterRef,
+    programRef: d.programRef,
     payables: d.payables.map(payableToModel),
     version: d.version,
   })

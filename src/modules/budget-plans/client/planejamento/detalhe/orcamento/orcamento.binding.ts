@@ -44,7 +44,7 @@ export type OrcamentoBinding = Readonly<{
 const estadoLabelFor = (estado: string): string =>
   PLAN_FILTER_ESTADOS.find((e) => e.value === estado)?.label ?? estado
 
-export function useOrcamento(id: number, estado: string): OrcamentoBinding {
+export function useOrcamento(id: string, estado: string): OrcamentoBinding {
   const detail = useMemo(() => planDetailPlaceholder(id), [id])
   const options = useMemo(() => (detail !== null ? orcamentoCentroOptions(detail) : []), [detail])
   const firstId = options[0] !== undefined ? Number(options[0].value) : null

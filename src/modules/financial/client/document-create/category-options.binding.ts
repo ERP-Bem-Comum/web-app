@@ -16,7 +16,9 @@ export type CategoryOption = Readonly<{ value: string; label: string }>
 
 const EMPTY: FinancialReferences = { categories: [], costCenters: [] }
 
-const referenceOptionsQuery = {
+// Exportada p/ reuso do MESMO cache (mesma queryKey) — ex.: resolver categorização no drawer de Detalhe
+// (`contas-a-pagar-list/document-detail.binding.ts`). Um fetch serve create + drawer.
+export const referenceOptionsQuery = {
   queryKey: ['financial', 'reference-options'] as const,
   queryFn: async (): Promise<FinancialReferences> => {
     const r = await reconciliationRepository.getReferences()

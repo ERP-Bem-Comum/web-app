@@ -168,3 +168,11 @@ export const costCenterTitle = style({
   fontWeight: vars.font.weight.semibold,
   color: vars.color.text.primary,
 })
+
+// Estado transitório da page (carregando / erro do BFF) — mensagem discreta enquanto o DTO não está `ready`.
+export const stateMessage = style({
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+  color: vars.color.text.muted,
+  paddingBlock: vars.space.md,
+})

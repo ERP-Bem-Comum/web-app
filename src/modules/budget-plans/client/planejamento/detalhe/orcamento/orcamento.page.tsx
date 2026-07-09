@@ -44,7 +44,7 @@ export function OrcamentoPage(): ReactNode {
   const params = routeApi.useParams()
   const search = routeApi.useSearch()
   const navigate = useNavigate()
-  const id = Number(params.id)
+  const id = params.id
   const { state, detail, centroOptions, centro, setCentro, apply, prevSemester, nextSemester } = useOrcamento(
     id,
     search.estado,
@@ -53,7 +53,7 @@ export function OrcamentoPage(): ReactNode {
   const [calcOpen, setCalcOpen] = useState(false)
 
   const goBack = (): void => {
-    void navigate({ to: '/planejamento/detalhes/$id', params: { id: String(id) } })
+    void navigate({ to: '/planejamento/detalhes/$id', params: { id } })
   }
 
   const openCalcular = (): void => {

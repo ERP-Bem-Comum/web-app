@@ -59,6 +59,20 @@ describe('rootViewModel.resolvePageTitle', () => {
       rootViewModel.resolvePageTitle('/relatorios/posicao-recebimentos'),
       'Posição de Recebimentos',
     )
+    // Relatórios → Análise de Pagamentos (feature 051 — matriz tempo-orçamentária)
+    assert.strictEqual(
+      rootViewModel.resolvePageTitle('/relatorios/analise-pagamentos'),
+      'Análise de Pagamentos',
+    )
+    // Relatórios → Análise de Recebimentos (feature 051 — espelho da de Pagamentos)
+    assert.strictEqual(
+      rootViewModel.resolvePageTitle('/relatorios/analise-recebimentos'),
+      'Análise de Recebimentos',
+    )
+    // Relatórios → Fluxo de Caixa (feature 053 — Saídas × Entradas × Saldo)
+    assert.strictEqual(rootViewModel.resolvePageTitle('/relatorios/fluxo-caixa'), 'Fluxo de Caixa')
+    // Relatórios → Relatório Geral (feature 053 — ledger achatado/paginado)
+    assert.strictEqual(rootViewModel.resolvePageTitle('/relatorios/geral'), 'Relatório Geral')
   })
   it('cai no fallback para rota desconhecida e não casa substring solta', () => {
     assert.strictEqual(rootViewModel.resolvePageTitle('/desconhecida'), 'ERP Bem Comum')
@@ -402,7 +416,7 @@ describe('rootViewModel.visibleMenu (MENU real — Relatórios)', () => {
   const findRelatorios = (menu: readonly MenuSection[]): MenuSection | undefined =>
     menu.find((s) => s.label === 'Relatórios')
 
-  it('é accordion (sem `to` direto) com os 5 relatórios (Fornecedores sem Contrato + Realizado × Planejado + Equipe ABC + Posição de Pagamentos + Posição de Recebimentos)', () => {
+  it('é accordion (sem `to` direto) com os 7 relatórios (Fornecedores sem Contrato + Realizado × Planejado + Equipe ABC + Posição de Pagamentos + Posição de Recebimentos + Análise de Pagamentos + Análise de Recebimentos)', () => {
     const rel = findRelatorios(MENU)
     assert.ok(rel, 'a seção "Relatórios" deve existir')
     assert.strictEqual(rel?.to, undefined, 'não é link direto')
@@ -414,6 +428,10 @@ describe('rootViewModel.visibleMenu (MENU real — Relatórios)', () => {
         'Equipe ABC',
         'Posição de Pagamentos',
         'Posição de Recebimentos',
+        'Análise de Pagamentos',
+        'Análise de Recebimentos',
+        'Fluxo de Caixa',
+        'Relatório Geral',
       ],
     )
     assert.strictEqual(rel?.subItems?.[0]?.to, '/relatorios/fornecedores-sem-contrato')
@@ -421,15 +439,24 @@ describe('rootViewModel.visibleMenu (MENU real — Relatórios)', () => {
     assert.strictEqual(rel?.subItems?.[2]?.to, '/relatorios/equipe')
     assert.strictEqual(rel?.subItems?.[3]?.to, '/relatorios/posicao-pagamentos')
     assert.strictEqual(rel?.subItems?.[4]?.to, '/relatorios/posicao-recebimentos')
-    // Equipe ABC + Posição de Pagamentos + Posição de Recebimentos sem requiredPermission (RBAC pós-entrega).
+    assert.strictEqual(rel?.subItems?.[5]?.to, '/relatorios/analise-pagamentos')
+    assert.strictEqual(rel?.subItems?.[6]?.to, '/relatorios/analise-recebimentos')
+    // Os 2 novos relatórios (feature 053) — Fluxo de Caixa + Relatório Geral.
+    assert.strictEqual(rel?.subItems?.[7]?.to, '/relatorios/fluxo-caixa')
+    assert.strictEqual(rel?.subItems?.[8]?.to, '/relatorios/geral')
+    // Equipe ABC + Posição (Pag/Rec) + Análise (Pag/Rec) + Fluxo + Geral sem requiredPermission (RBAC pós-entrega).
     assert.strictEqual(rel?.subItems?.[2]?.requiredPermission, undefined)
     assert.strictEqual(rel?.subItems?.[3]?.requiredPermission, undefined)
     assert.strictEqual(rel?.subItems?.[4]?.requiredPermission, undefined)
+    assert.strictEqual(rel?.subItems?.[5]?.requiredPermission, undefined)
+    assert.strictEqual(rel?.subItems?.[6]?.requiredPermission, undefined)
+    assert.strictEqual(rel?.subItems?.[7]?.requiredPermission, undefined)
+    assert.strictEqual(rel?.subItems?.[8]?.requiredPermission, undefined)
   })
 
   it('sobrevive com permissions vazias (subitens públicos, sem RBAC)', () => {
     const rel = findRelatorios(rootViewModel.visibleMenu(MENU, []))
     assert.ok(rel, 'a seção deve aparecer sem RBAC')
-    assert.strictEqual(rel?.subItems?.length, 5)
+    assert.strictEqual(rel?.subItems?.length, 9)
   })
 })

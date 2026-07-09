@@ -46,7 +46,7 @@ const BADGE_VARIANT: Readonly<Record<StatusTone, BadgeProps['variant']>> = {
 export function PlanDetailPage(): ReactNode {
   const params = routeApi.useParams()
   const navigate = useNavigate()
-  const id = Number(params.id)
+  const id = params.id
   const { state, view, setView, prevSemester, nextSemester, filter, addBudget, centrosCusto } =
     usePlanDetail(id)
 
@@ -173,7 +173,7 @@ export function PlanDetailPage(): ReactNode {
             onEdit={() => {
               void navigate({
                 to: '/planejamento/detalhes/$id/orcamento',
-                params: { id: String(id) },
+                params: { id },
                 search: { estado: filter.estado, municipio: filter.municipio },
               })
             }}

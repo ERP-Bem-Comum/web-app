@@ -12,6 +12,7 @@ import { undoApprovalFn } from '#modules/financial/server/adapters/server-fns/un
 import { cancelDocumentFn } from '#modules/financial/server/adapters/server-fns/cancel-document.service.fn.ts'
 import { registerManualPaymentFn } from '#modules/financial/server/adapters/server-fns/register-manual-payment.service.fn.ts'
 import { recentPaymentsFn } from '#modules/financial/server/adapters/server-fns/recent-payments.query.fn.ts'
+import { getDashboardStatisticsFn } from '#modules/financial/server/adapters/server-fns/get-dashboard-statistics.query.fn.ts'
 
 import { createFinancialRepository } from './financial.repository.ts'
 
@@ -26,4 +27,5 @@ export const financialRepository = createFinancialRepository({
   cancelDocumentFn: (opts) => cancelDocumentFn(opts),
   registerManualPaymentFn: (opts) => registerManualPaymentFn(opts),
   recentPaymentsFn: () => recentPaymentsFn(),
+  dashboardStatisticsFn: () => getDashboardStatisticsFn(),
 })

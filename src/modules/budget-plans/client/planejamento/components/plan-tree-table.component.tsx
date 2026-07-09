@@ -83,9 +83,9 @@ export type PlanTreeTableProps = Readonly<{
   /** Rótulo i18n de cada ação do menu "…". */
   actionLabelFor: (action: PlanAction) => string
   /** Navega ao detalhe do plano (clique no nome). No-op/TODO permitido nesta fatia. */
-  onOpenPlan: (id: number) => void
+  onOpenPlan: (id: string) => void
   /** Executa a ação do menu "…" (no-op/TODO nesta fatia). */
-  onAction: (id: number, action: PlanAction) => void
+  onAction: (id: string, action: PlanAction) => void
 }>
 
 /**
@@ -94,9 +94,9 @@ export type PlanTreeTableProps = Readonly<{
  * UI-state local (não server-state).
  */
 export function PlanTreeTable(props: PlanTreeTableProps): ReactNode {
-  const [expanded, setExpanded] = useState<ReadonlySet<number>>(new Set())
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set())
 
-  const toggle = (id: number): void => {
+  const toggle = (id: string): void => {
     setExpanded((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)

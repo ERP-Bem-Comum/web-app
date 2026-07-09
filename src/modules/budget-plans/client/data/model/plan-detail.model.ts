@@ -79,7 +79,7 @@ export type CostCenterConsolidated = Readonly<{
 
 /** Detalhe do plano com a estrutura consolidada (por mês e por rede). */
 export type PlanDetail = Readonly<{
-  id: number
+  id: string
   year: number
   programName: string
   programAbbreviation: string | null
@@ -120,7 +120,7 @@ export const CostCenterConsolidatedSchema: z.ZodType<CostCenterConsolidated> = z
   iconKind: MatrixIconKindSchema.optional(),
 })
 export const PlanDetailSchema: z.ZodType<PlanDetail> = z.object({
-  id: z.int(),
+  id: z.string().trim(),
   year: z.int(),
   programName: z.string().trim(),
   programAbbreviation: z.string().trim().nullable(),

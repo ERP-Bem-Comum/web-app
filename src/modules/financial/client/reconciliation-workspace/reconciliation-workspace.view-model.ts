@@ -20,6 +20,13 @@ import type {
   TransactionReconciliationItem,
 } from '#modules/financial/client/data/model/reconciliation.model.ts'
 import { centsToBRL, centsToReais } from '#modules/financial/client/data/money.ts'
+// Lista CANÔNICA de tipos de documento + impostos retidos (mesma fonte do Contas a Pagar). Reuso dentro da
+// MESMA feature (financial), view-model → view-model (boundary permite `sameFeature('client-view-model')`) —
+// não duplica a fonte da verdade (056). Ambos são núcleo puro (ADR-0009), então node:test resolve os #alias.
+import {
+  DOCUMENT_TYPE_OPTIONS,
+  RETENTION_TYPE_OPTIONS,
+} from '#modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts'
 
 // Re-export p/ as views (ui) formatarem dinheiro sem importar de client/data (boundary §I).
 export { centsToBRL, centsToReais }
@@ -194,6 +201,18 @@ export const tituloLabel = (p: PaidPayable | null): string => {
 }
 
 /**
+ * Favorecido de um TÍTULO DE IMPOSTO RETIDO = o ÓRGÃO arrecadador, não o fornecedor do documento-pai.
+ * Genérico por tipo (`documentType`): ISS → SEFIN (município); federais (IRRF/INSS/CSRF/PIS/COFINS/CSLL) →
+ * Receita Federal. Retorna a TAG i18n do órgão, ou `null` quando não é imposto retido (segue o fornecedor).
+ */
+export const retentionAgencyTag = (retentionType: string | null | undefined): string | null => {
+  if (retentionType === null || retentionType === undefined) return null
+  const rt = retentionType.trim().toUpperCase()
+  if (rt === 'ISS') return 'financial.recon.pending.agency.iss'
+  return rt === 'IRRF' || rt === 'INSS' || rt === 'CSRF' ? 'financial.recon.pending.agency.federal' : null
+}
+
+/**
  * Próxima transação PENDENTE com match (palpite no `guesses`) a partir de `afterId` — busca CÍCLICA na
  * ordem da lista, preferindo banda 'alta' (alta confiança); senão qualquer match. Pula as sem palpite e a
  * própria `afterId`. `null` quando não há nenhuma pendente com match. PURA. (P.O.: manter sempre um match ativo.)
@@ -345,14 +364,38 @@ export const sortPendingByPayment = (payables: readonly PaidPayable[]): readonly
     return a.paidAt.localeCompare(b.paidAt)
   })
 
-// ── Buscar / Criar vários (US3) — filtros de títulos Pago (puro) ────────────────
-/** Opções do filtro Tipo = tipos de DOCUMENTO distintos presentes (NFS-e, DANFE, IRRF, CSRF, INSS, ISS…). */
-export const payableTypeOptions = (payables: readonly PaidPayable[]): readonly string[] => {
-  const seen: string[] = []
-  for (const p of payables) {
-    if (p.documentType !== null && !seen.includes(p.documentType)) seen.push(p.documentType)
-  }
-  return seen
+// ── Buscar / Criar vários (US3/056) — filtros RICOS de títulos Pago (puro) ───────
+/**
+ * Lista CANÔNICA de tipos p/ o filtro Tipo = tipos de documento (NFS-e/DANFE/RPA/Fatura/Boleto/Recibo/
+ * Imposto) + impostos retidos (IRRF/ISS/INSS/CSRF), na mesma ordem do Contas a Pagar. É a lista COMPLETA
+ * (não só os presentes nos dados) — a View mostra tudo; o `documentType` do título casa por igualdade.
+ */
+export const RECON_DOCUMENT_TYPE_OPTIONS: readonly string[] = [
+  ...DOCUMENT_TYPE_OPTIONS,
+  ...RETENTION_TYPE_OPTIONS,
+]
+
+/** Campo de data do filtro de Período: por Vencimento (`due`) ou por Emissão (`issue`). */
+export type PeriodField = 'due' | 'issue'
+
+/**
+ * Critérios do filtro rico (056). `documentType` = 'all' → não filtra. `period.from`/`period.to` vazios =
+ * lado aberto; `field` escolhe dueDate (sempre presente) ou issueDate (pode ser null → excluído quando o
+ * filtro de Emissão está ativo). `value.min/maxCents` = null → lado aberto.
+ */
+export type MultiFilter = Readonly<{
+  search: string
+  documentType: string
+  period: Readonly<{ field: PeriodField; from: string; to: string }>
+  value: Readonly<{ minCents: number | null; maxCents: number | null }>
+}>
+
+/** Filtro neutro (nada filtrando) — default do binding e ponto de partida dos popovers. */
+export const INITIAL_MULTI_FILTER: MultiFilter = {
+  search: '',
+  documentType: 'all',
+  period: { field: 'due', from: '', to: '' },
+  value: { minCents: null, maxCents: null },
 }
 
 const payableMatchesSearch = (p: PaidPayable, q: string): boolean => {
@@ -365,15 +408,62 @@ const payableMatchesSearch = (p: PaidPayable, q: string): boolean => {
     .includes(needle)
 }
 
-/** Filtra os títulos Pago por busca textual + Tipo de documento ('all' = todos os tipos). */
+/**
+ * Converte um valor R$ digitado (PT: milhar com ponto, decimal com vírgula — ex.: "1.234,56") em CENTAVOS.
+ * Parse DEFENSIVO: vazio/inválido → null (= sem limite). Aceita também ponto decimal simples ("1234.56").
+ * Nunca lança; ignora símbolos (R$, espaços). PURO.
+ */
+export const parseBRLToCents = (raw: string): number | null => {
+  const cleaned = raw.trim().replace(/[^\d.,]/g, '')
+  if (cleaned === '') return null
+  // PT: pontos = separador de milhar (removidos); vírgula = separador decimal (vira ponto).
+  const hasComma = cleaned.includes(',')
+  const normalized = hasComma ? cleaned.replace(/\./g, '').replace(',', '.') : cleaned
+  const n = Number.parseFloat(normalized)
+  if (!Number.isFinite(n) || n < 0) return null
+  return Math.round(n * 100)
+}
+
+/**
+ * Inverso de `parseBRLToCents` p/ reidratar o campo de texto ao reabrir o popover: centavos → "1234,56" (PT,
+ * vírgula decimal, sem símbolo/milhar). PURO. Usado só p/ preencher o rascunho editável (não é formatação BRL).
+ */
+export const centsToAmountInput = (cents: number): string => (cents / 100).toFixed(2).replace('.', ',')
+
+/**
+ * Data date-only "YYYY-MM-DD" dentro do intervalo [from, to] por comparação de STRING (lexical, sem fuso —
+ * NUNCA `new Date`). Bordas inclusivas; lado vazio = aberto. PURO.
+ */
+export const dateInRange = (date: string, from: string, to: string): boolean =>
+  (from === '' || date >= from) && (to === '' || date <= to)
+
+/** Valor (centavos) dentro de [minCents, maxCents]. Bordas inclusivas; lado null = aberto. PURO. */
+export const valueInRange = (cents: number, minCents: number | null, maxCents: number | null): boolean =>
+  (minCents === null || cents >= minCents) && (maxCents === null || cents <= maxCents)
+
+/**
+ * Filtra os títulos Pago pelo objeto de critérios rico (056): busca textual + Tipo (documento/imposto, igualdade)
+ * + Período (Vencimento OU Emissão, intervalo de datas por string) + Valor (intervalo min–max em centavos).
+ * Tudo client-side sobre a lista já carregada (puro). No modo Emissão, título sem `issueDate` (null) fica FORA
+ * quando há intervalo — de forma honesta (não inventa data).
+ */
 export const filterPayables = (
   payables: readonly PaidPayable[],
-  search: string,
-  documentType: string,
-): readonly PaidPayable[] =>
-  payables.filter(
-    (p) => payableMatchesSearch(p, search) && (documentType === 'all' || p.documentType === documentType),
-  )
+  filter: MultiFilter,
+): readonly PaidPayable[] => {
+  const { search, documentType, period, value } = filter
+  const periodActive = period.from !== '' || period.to !== ''
+  return payables.filter((p) => {
+    if (!payableMatchesSearch(p, search)) return false
+    if (documentType !== 'all' && p.documentType !== documentType) return false
+    if (periodActive) {
+      const d = period.field === 'due' ? p.dueDate : p.issueDate
+      if (d === null || d === '') return false // Emissão ausente → fora do filtro (honesto)
+      if (!dateInRange(d, period.from, period.to)) return false
+    }
+    return valueInRange(parseCents(p.valueCents), value.minCents, value.maxCents)
+  })
+}
 
 // ── Aba Extrato (puro — US8) ────────────────────────────────────────────────────
 
@@ -693,12 +783,13 @@ const DASH_AUDIT: MatchDetailsAudit = { when: MATCH_DASH, who: MATCH_DASH }
 
 /**
  * Auditoria do modal a partir do lookup da conciliação ativa (#175). `when` = data da conciliação
- * (date-only, p/ evitar fuso); `who` = identificador de quem conciliou (id cru do core-api até o backend
- * resolver nome amigável). O lado Título segue "—" (depende do #172).
+ * (date-only, p/ evitar fuso); `who` = nome de quem conciliou, resolvido server-side pelo core-api
+ * (#207); fallback pro id cru enquanto `reconciledByName` vier null (não-resolvido). O lado Título
+ * segue "—" (depende do #172).
  */
 export const matchAuditFromLookup = (r: TransactionReconciliation): MatchDetailsAudit => ({
   when: formatDayHeader(r.reconciledAt.slice(0, 10)),
-  who: r.reconciledBy,
+  who: r.reconciledByName ?? r.reconciledBy,
 })
 
 /**

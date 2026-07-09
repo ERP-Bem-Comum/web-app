@@ -1131,6 +1131,7 @@ export const ptBR: Catalog = {
   'financial.create.field.supplier': 'Fornecedor',
   'financial.create.field.numberSeries': 'Nº / Série',
   'financial.create.field.competencia': 'Competência',
+  'financial.create.field.competenciaHint': 'Preenchida automaticamente com o mês/ano da Emissão.',
   'financial.create.field.emissao': 'Emissão',
   'financial.create.field.payFromAccount': 'Pagar da Conta',
   'financial.create.field.centroCusto': 'Centro de Custo',
@@ -1227,8 +1228,13 @@ export const ptBR: Catalog = {
   'financial.create.sidebar.semTitulos': 'Preencha o valor para ver os títulos.',
   'financial.create.titulos.dest.iss': 'SEFIN - Secretaria Municipal das Finanças de Fortaleza',
   'financial.create.titulos.dest.federal': 'Receita Federal',
+  'financial.create.validation.type': 'Tipo de documento selecionado',
+  'financial.create.validation.documentNumber': 'Número do documento informado',
   'financial.create.validation.supplier': 'Fornecedor identificado',
+  'financial.create.validation.paymentMethod': 'Forma de pagamento selecionada',
   'financial.create.validation.calc': 'Cálculo bruto → líquido íntegro',
+  'financial.create.validation.dueDate': 'Data de vencimento informada',
+  'financial.create.validation.accessKey': 'Chave de acesso da DANFE (44 dígitos)',
   'financial.create.validation.bank': 'Dados bancários válidos',
   'financial.create.validation.issDivergent': 'Alíquota ISS divergente do padrão SEFIN',
   'financial.create.validation.approval': 'Aguarda aprovação do gestor',
@@ -1402,6 +1408,25 @@ export const ptBR: Catalog = {
   'financial.recon.export.noPeriod': 'Nenhum período de conciliação nesta conta ainda',
   'financial.recon.export.pdfUnavailable': 'Exportação em PDF disponível em breve (#145)',
   'financial.recon.export.exporting': 'Exportando…',
+  // Relatório da Conciliação em PDF (#144) — tela print-friendly (window.print → "Salvar PDF")
+  'financial.recon.report.title': 'Relatório da Conciliação',
+  'financial.recon.report.print': 'Imprimir / Salvar PDF',
+  'financial.recon.report.loading': 'Carregando…',
+  'financial.recon.report.noPeriod': 'Período não informado',
+  'financial.recon.report.emptyMovements': 'Sem movimentos no período',
+  'financial.recon.report.opening': 'Saldo de abertura',
+  'financial.recon.report.closing': 'Saldo de fechamento',
+  'financial.recon.report.totalIn': 'Total de entradas',
+  'financial.recon.report.totalOut': 'Total de saídas',
+  'financial.recon.report.reconciled': 'Conciliadas',
+  'financial.recon.report.pending': 'Pendentes',
+  'financial.recon.report.colDate': 'Data',
+  'financial.recon.report.colDescription': 'Descrição',
+  'financial.recon.report.colValue': 'Valor',
+  'financial.recon.report.colBalance': 'Saldo',
+  'financial.recon.report.colStatus': 'Status',
+  'financial.recon.report.statusReconciled': 'Conciliado',
+  'financial.recon.report.statusPending': 'Pendente',
   'financial.recon.import': 'Importar',
   'financial.recon.guessesHint': '§9.4.7',
   'financial.recon.tab.extrato': 'Extrato',
@@ -1543,6 +1568,8 @@ export const ptBR: Catalog = {
   'financial.recon.pending.hint': 'Importe um extrato para conciliar estes títulos.',
   'financial.recon.pending.empty': 'Nenhum título pendente de conciliação.',
   'financial.recon.pending.untitled': 'Título pago',
+  'financial.recon.pending.agency.iss': 'SEFIN (ISS retido)',
+  'financial.recon.pending.agency.federal': 'Receita Federal (imposto retido)',
   'financial.recon.pending.paidWord': 'pago em',
   'financial.recon.sugg.high': 'Sugestão de alta confiança',
   'financial.recon.sugg.mid': 'Sugestão de confiança média',
@@ -1585,13 +1612,20 @@ export const ptBR: Catalog = {
   // Buscar / Criar vários — busca, filtros, grid (fiel ao mock §9.4.6)
   'financial.recon.multi.searchPlaceholder': 'Buscar por fornecedor, número, descrição…',
   'financial.recon.multi.flt.period': 'Período',
-  'financial.recon.multi.flt.periodValue': 'Todos',
+  'financial.recon.multi.flt.periodBy': 'Filtrar por data de',
+  'financial.recon.multi.flt.periodField.due': 'Vencimento',
+  'financial.recon.multi.flt.periodField.issue': 'Emissão',
+  'financial.recon.multi.flt.from': 'De',
+  'financial.recon.multi.flt.to': 'Até',
   'financial.recon.multi.flt.type': 'Tipo',
   'financial.recon.multi.flt.typeAll': 'Todos',
   'financial.recon.multi.flt.value': 'Valor',
-  'financial.recon.multi.flt.valueValue': 'Todos',
-  'financial.recon.multi.flt.periodHint': 'Filtro por período chega com o backend (#173).',
-  'financial.recon.multi.flt.valueHint': 'Filtro por faixa de valor chega com o backend.',
+  'financial.recon.multi.flt.valuePrefix': 'R$',
+  'financial.recon.multi.flt.min': 'Mínimo',
+  'financial.recon.multi.flt.max': 'Máximo',
+  'financial.recon.multi.flt.apply': 'Aplicar',
+  'financial.recon.multi.flt.clear': 'Limpar',
+  'financial.recon.multi.flt.close': 'Fechar',
   'financial.recon.multi.col.date': 'Data',
   'financial.recon.multi.col.status': 'Status',
   'financial.recon.multi.col.name': 'Nome · Ref',
@@ -1639,6 +1673,8 @@ export const ptBR: Catalog = {
   // labels dos campos
   'financial.recon.manual.f.supplier': 'Fornecedor',
   'financial.recon.manual.f.supplierPlaceholder': 'Buscar por nome ou CNPJ…',
+  'financial.recon.manual.f.docNumber': 'Número do documento',
+  'financial.recon.manual.f.docNumberPlaceholder': 'Ex.: NF 001',
   'financial.recon.manual.f.docType': 'Tipo de documento',
   'financial.recon.manual.f.docTypePlaceholder': 'Selecionar tipo…',
   'financial.recon.manual.f.emission': 'Data de emissão',
@@ -1855,6 +1891,14 @@ export const ptBR: Catalog = {
   'financial.list.chip.recusado': 'Recusado',
   'financial.list.chip.pago': 'Pago',
   'financial.list.chip.conciliado': 'Conciliado',
+
+  // ── Visões salvas (saved views, #351) — snapshot nomeado de filtros (preferência de UI) ──
+  'financial.list.savedViews.button': 'Visões',
+  'financial.list.savedViews.nameLabel': 'Nome da visão',
+  'financial.list.savedViews.namePlaceholder': 'Nome da visão…',
+  'financial.list.savedViews.save': 'Salvar',
+  'financial.list.savedViews.empty': 'Nenhuma visão salva. Salve a combinação de filtros atual.',
+  'financial.list.savedViews.delete': 'Excluir visão',
 
   // ── Plano Orçamentário → Planejamento (lista, feature 041) ──
   'budget-plans.list.title': 'Planejamento',
@@ -2107,7 +2151,8 @@ export const ptBR: Catalog = {
   'budget-plans.consolidado.programsAll': 'Todos os programas',
   'budget-plans.consolidado.programsCount': 'programas selecionados',
   'budget-plans.consolidado.apply': 'Filtrar',
-  'budget-plans.consolidado.exportExcel': 'Exportar Excel/CSV',
+  'budget-plans.consolidado.exportCsv': 'Exportar CSV',
+  'budget-plans.consolidado.exportError': 'Não foi possível exportar o CSV. Tente novamente.',
   'budget-plans.consolidado.total': 'Total',
   'budget-plans.consolidado.programLabel': 'Programa',
   'budget-plans.consolidado.sectionTitle': 'Consolidado dos programas',
@@ -2172,6 +2217,10 @@ export const ptBR: Catalog = {
   'dashboard.recent-payments.error': 'Não foi possível carregar os pagamentos.',
   'dashboard.recent-payments.forbidden': 'Você não tem permissão para ver os pagamentos.',
   'dashboard.recent-payments.loading': 'Carregando…',
+
+  // Estados da page (052 — o DTO das estatísticas vem do BFF via server fn).
+  'dashboard.state.loading': 'Carregando o resumo…',
+  'dashboard.state.error': 'Não foi possível carregar o resumo do dashboard.',
 
   // ── Relatórios → Fornecedores sem Contrato (044) ──
   'reports.suppliersWithoutContract.title': 'Fornecedores sem Contrato',
@@ -2405,6 +2454,165 @@ export const ptBR: Catalog = {
   'reports.posicao.rec.empty': 'Nenhum recebimento registrado',
   'reports.posicao.rec.emptyHint':
     'Ainda não há recebíveis lançados. Assim que o Contas a Receber registrar movimentações, elas aparecerão aqui.',
+
+  // ── Relatório "Análise de Pagamentos" (front-first; core-api#114/consolidated) ──
+  // Matriz TEMPO-orçamentária: árvore Plano Orçamentário → Centro de Custo × série MENSAL de valores.
+  'reports.analise.title': 'Análise de Pagamentos',
+  'reports.analise.back': 'Voltar',
+  'reports.analise.empty': 'Nenhum dado para exibir.',
+  // Export (dropdown CSV + PDF).
+  'reports.analise.export.label': 'Exportar',
+  'reports.analise.export.csv': 'CSV',
+  'reports.analise.export.pdf': 'PDF',
+  // Filtros recolhíveis (placeholders visuais front-first).
+  'reports.analise.filters.title': 'Filtros',
+  'reports.analise.filters.allOption': 'Todos',
+  'reports.analise.filters.programa': 'Programa',
+  'reports.analise.filters.plano': 'Plano Orçamentário',
+  'reports.analise.filters.periodo': 'Período de vencimento',
+  'reports.analise.filters.conta': 'Conta bancária',
+  'reports.analise.filters.status': 'Status',
+  'reports.analise.filters.centro': 'Centro de custo',
+  'reports.analise.filters.categoria': 'Categoria',
+  'reports.analise.filters.subcategoria': 'Subcategoria',
+  'reports.analise.filters.filtrar': 'Filtrar',
+  // Gráficos.
+  'reports.analise.charts.byCostCenter': 'Distribuição por Centro de Custo',
+  'reports.analise.charts.monthly': 'Distribuição Mensal',
+  // Tabela-matriz (árvore × meses).
+  'reports.analise.table.title': 'Análise por plano orçamentário',
+  'reports.analise.columns.name': 'Plano Orçamentário / Centro de custo',
+  'reports.analise.columns.total': 'Valor total',
+  'reports.analise.totals.row': 'Valor total do período',
+  'reports.analise.tree.expand': 'Expandir',
+  'reports.analise.tree.collapse': 'Recolher',
+  // Passador de meses.
+  'reports.analise.pager.prev': 'Meses anteriores',
+  'reports.analise.pager.next': 'Próximos meses',
+  // Empty state honesto — usado pela Análise de Recebimentos quando não há dado; a de Pagamentos não o exibe.
+  'reports.analise.emptyHint':
+    'Ainda não há lançamentos no período. Assim que houver movimentações, elas aparecerão aqui.',
+
+  // ── Relatório "Análise de Recebimentos" (front-first; core-api#114/consolidated) — ESPELHO da de Pagamentos.
+  //    Mesma matriz TEMPO-orçamentária; só o título/rótulos de RECEBER e a paleta dos gráficos mudam. Quando o
+  //    Contas a Receber subir, a fonte vem vazia e a tela cai no empty state (`reports.analise.rec.empty`). ──
+  'reports.analise.rec.title': 'Análise de Recebimentos',
+  // Período de PREVISÃO de recebimento (vs. "de vencimento" no lado de pagar).
+  'reports.analise.rec.filters.periodo': 'Período de recebimento',
+  // Empty state honesto (nenhum recebimento registrado).
+  'reports.analise.rec.empty': 'Nenhum recebimento registrado',
+  'reports.analise.rec.emptyHint':
+    'Ainda não há recebíveis lançados. Assim que o Contas a Receber registrar movimentações, elas aparecerão aqui.',
+
+  // ── Relatório "Fluxo de Caixa" (front-first; core-api#114) ──
+  // Duas seções (Saídas = payables + cartão; Entradas = receivables), cada uma árvore Categoria → Subcategoria
+  // × 2 medidas (Realizado × Previsto); Saldo = Entradas − Saídas; gráfico "por vencimento" (Entradas × Saídas).
+  'reports.fluxoCaixa.title': 'Fluxo de Caixa',
+  'reports.fluxoCaixa.back': 'Voltar',
+  'reports.fluxoCaixa.chartEmptyLabel': 'Sem movimentações no período.',
+  // Export (dropdown CSV + PDF).
+  'reports.fluxoCaixa.export.label': 'Exportar',
+  'reports.fluxoCaixa.export.csv': 'CSV',
+  'reports.fluxoCaixa.export.pdf': 'PDF',
+  // Filtros recolhíveis (placeholders visuais front-first).
+  'reports.fluxoCaixa.filters.title': 'Filtros',
+  'reports.fluxoCaixa.filters.allOption': 'Todos',
+  'reports.fluxoCaixa.filters.programa': 'Programa',
+  'reports.fluxoCaixa.filters.plano': 'Plano Orçamentário',
+  'reports.fluxoCaixa.filters.periodo': 'Período de vencimento',
+  'reports.fluxoCaixa.filters.conta': 'Conta bancária',
+  'reports.fluxoCaixa.filters.centro': 'Centro de custo',
+  'reports.fluxoCaixa.filters.categoria': 'Categoria',
+  'reports.fluxoCaixa.filters.subcategoria': 'Subcategoria',
+  'reports.fluxoCaixa.filters.status': 'Status',
+  'reports.fluxoCaixa.filters.filtrar': 'Filtrar',
+  // As 2 medidas (colunas das tabelas de seção).
+  'reports.fluxoCaixa.measure.realizado': 'Realizado',
+  'reports.fluxoCaixa.measure.previsto': 'Previsto',
+  // KPIs (Saídas · Entradas · Saldo realizado · Saldo previsto).
+  'reports.fluxoCaixa.kpi.saidas': 'Total de Saídas',
+  'reports.fluxoCaixa.kpi.saidasSub': 'Pagamentos + cartão (realizado)',
+  'reports.fluxoCaixa.kpi.entradas': 'Total de Entradas',
+  'reports.fluxoCaixa.kpi.entradasSub': 'Recebimentos (realizado)',
+  'reports.fluxoCaixa.kpi.saldoRealizado': 'Saldo (realizado)',
+  'reports.fluxoCaixa.kpi.saldoRealizadoSub': 'Entradas − Saídas',
+  'reports.fluxoCaixa.kpi.saldoPrevisto': 'Saldo (previsto)',
+  'reports.fluxoCaixa.kpi.saldoPrevistoSub': 'Entradas − Saídas (previsto)',
+  // Gráfico "Fluxo por vencimento" (Entradas × Saídas por mês) — mantido para retrocompatibilidade.
+  'reports.fluxoCaixa.chart.monthly': 'Fluxo por vencimento',
+  'reports.fluxoCaixa.chart.entradas': 'Entradas',
+  'reports.fluxoCaixa.chart.saidas': 'Saídas',
+  // Os 4 gráficos "Previsto × Realizado": linha do tempo (3 séries), barras por Centro de Custo, 2 donuts.
+  'reports.fluxoCaixa.chart.timeline': 'Linha do tempo',
+  'reports.fluxoCaixa.chart.byCostCenter': 'Agrupado por Centro de Custo',
+  'reports.fluxoCaixa.chart.esperado': 'Esperado',
+  'reports.fluxoCaixa.chart.realizado': 'Realizado',
+  'reports.fluxoCaixa.chart.previsto': 'Previsto',
+  'reports.fluxoCaixa.chart.saldo': 'Saldo',
+  'reports.fluxoCaixa.chart.execucao': 'execução',
+  // Seções (Saídas / Entradas) — coluna de nome comum + títulos/totais/empty por seção.
+  'reports.fluxoCaixa.section.nameCol': 'Categoria / Subcategoria',
+  'reports.fluxoCaixa.section.saidas.title': 'Saídas',
+  'reports.fluxoCaixa.section.saidas.totalRow': 'Total de Saídas',
+  'reports.fluxoCaixa.section.saidas.empty': 'Nenhuma saída registrada',
+  'reports.fluxoCaixa.section.saidas.emptyHint':
+    'Ainda não há saídas lançadas no período. Assim que houver pagamentos, eles aparecerão aqui.',
+  'reports.fluxoCaixa.section.entradas.title': 'Entradas',
+  'reports.fluxoCaixa.section.entradas.totalRow': 'Total de Entradas',
+  'reports.fluxoCaixa.section.entradas.empty': 'Nenhuma entrada registrada',
+  'reports.fluxoCaixa.section.entradas.emptyHint':
+    'Ainda não há entradas lançadas. Assim que o Contas a Receber registrar recebimentos, eles aparecerão aqui.',
+  // Árvore.
+  'reports.fluxoCaixa.tree.expand': 'Expandir',
+  'reports.fluxoCaixa.tree.collapse': 'Recolher',
+
+  // ── "Relatório Geral" (front-first; core-api#114) — ledger unificado achatado e paginado ──
+  'reports.geral.title': 'Relatório Geral',
+  'reports.geral.back': 'Voltar',
+  'reports.geral.naLabel': '—',
+  'reports.geral.empty': 'Nenhum lançamento no período',
+  // Export (dropdown CSV + PDF).
+  'reports.geral.export.label': 'Exportar',
+  'reports.geral.export.csv': 'CSV',
+  'reports.geral.export.pdf': 'PDF',
+  // Filtros recolhíveis (placeholders visuais front-first).
+  'reports.geral.filters.title': 'Filtros',
+  'reports.geral.filters.allOption': 'Todos',
+  'reports.geral.filters.periodo': 'Período',
+  'reports.geral.filters.tipo': 'Tipo',
+  'reports.geral.filters.fornecedor': 'Fornecedor',
+  'reports.geral.filters.centro': 'Centro de custo',
+  'reports.geral.filters.categoria': 'Categoria',
+  'reports.geral.filters.filtrar': 'Filtrar',
+  // Cabeçalho da tabela.
+  'reports.geral.table.title': 'Lançamentos',
+  'reports.geral.table.count': '{{count}} lançamentos',
+  // 15 colunas (ordem do legado).
+  'reports.geral.columns.data': 'Data',
+  'reports.geral.columns.vencimento': 'Vencimento',
+  'reports.geral.columns.tipo': 'Tipo',
+  'reports.geral.columns.numeroContrato': 'Nº Contrato',
+  'reports.geral.columns.codigo': 'Código',
+  'reports.geral.columns.parcela': 'Parcela',
+  'reports.geral.columns.apontamento': 'Apontamento',
+  'reports.geral.columns.fornecedor': 'Fornecedor',
+  'reports.geral.columns.financiador': 'Financiador',
+  'reports.geral.columns.colaborador': 'Colaborador',
+  'reports.geral.columns.centroCusto': 'Centro de Custo',
+  'reports.geral.columns.categoria': 'Categoria',
+  'reports.geral.columns.subcategoria': 'Subcategoria',
+  'reports.geral.columns.pixBancario': 'PIX/Bancário',
+  'reports.geral.columns.valor': 'Valor',
+  // Seletor de colunas (botão "Colunas" → menu de checkboxes).
+  'reports.geral.columns.button': 'Colunas',
+  'reports.geral.columns.close': 'Fechar seleção de colunas',
+  'reports.geral.columns.none': 'Selecione ao menos uma coluna para exibir',
+  // Paginação da tabela.
+  'reports.geral.paginator.previous': 'Anterior',
+  'reports.geral.paginator.next': 'Próxima',
+  'reports.geral.paginator.page': 'Página',
+  'reports.geral.paginator.of': 'de',
+  'reports.geral.paginator.perPage': 'Itens por página',
 
   // ── Shell (top bar) ──
   'shell.topbar.brand': 'Bem Comum',

@@ -225,12 +225,14 @@ export type PaidPayable = Readonly<{
   documentId: string
   valueCents: string
   dueDate: string // date-only YYYY-MM-DD
+  issueDate: string | null // data de emissão (date-only YYYY-MM-DD) — filtro de Período por Emissão (056); null se ausente
   paidAt: string | null // data de pagamento (baixa) — relevante p/ conciliação; null até o backend expor
   paymentMethod: string
   supplierName: string | null
   documentNumber: string | null
   category: string | null // core-api#172: categoria do título (coluna Categoria)
   documentType: string | null // core-api#172: tipo de documento (NFS-e/DANFE/IRRF/CSRF/INSS…) p/ filtro Tipo
+  retentionType?: string | null // imposto retido (ISS/IRRF/INSS/CSRF) do título-filho → favorecido = órgão
 }>
 
 export type SuggestionCriteria = Readonly<{
@@ -291,6 +293,7 @@ export type TransactionReconciliation = Readonly<{
   type: 'Individual' | 'Multiple' | 'Partial' | 'ManualEntry'
   status: 'Active' | 'Undone'
   reconciledBy: string
+  reconciledByName: string | null // #207: nome de quem conciliou (resolvido pelo core-api); null = não-resolvido
   reconciledAt: string // ISO datetime
   differenceCents: string | null // centavos; pode ser negativo (Discount); null se não houver diferença
   items: readonly TransactionReconciliationItem[]

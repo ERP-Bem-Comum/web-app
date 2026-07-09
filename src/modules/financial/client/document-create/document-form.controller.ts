@@ -13,6 +13,7 @@ import {
   reformaTributariaEnabledFor,
   issAllowedFor,
   defaultPaymentMethodFor,
+  competenciaFromIssueDate,
   type DocumentFormFields,
   type RetentionFieldsReais,
   type ReformaTributariaFieldsReais,
@@ -123,6 +124,15 @@ const reducer = (state: DocumentFormFields, action: FormAction): DocumentFormFie
     case 'setContaDebitoRef':
       return { ...state, contaDebitoRef: action.value }
     case 'setText':
+      // Competência reflete AUTOMATICAMENTE a Emissão (mês/ano) — não é mais digitável. Editar a Emissão
+      // re-deriva a Competência; qualquer outro texto segue o set genérico.
+      if (action.key === 'issueDate') {
+        return {
+          ...state,
+          issueDate: action.value,
+          competencia: competenciaFromIssueDate(action.value),
+        }
+      }
       return { ...state, [action.key]: action.value }
     case 'setRetention':
       return { ...state, retentions: { ...state.retentions, [action.key]: action.value } }

@@ -1,11 +1,10 @@
 /**
- * ⚠️ DADOS PLACEHOLDER (front-first) — NÃO é mock de teste (ADR-0011): é o conteúdo temporário desta tela
- * enquanto o core-api NÃO tem o módulo `budget-plans` (só o campo solto `budgetPlanRef`, ver HANDBOOK §B).
- * Reproduz com fidelidade visual a lista de Planejamento (HANDBOOK §1.1) para revisão com a P.O.
+ * ⚠️ DADOS PLACEHOLDER (front-first) — NÃO é mock de teste (ADR-0011). Resíduo do front-first: hoje a LISTA
+ * de Planejamento já lê o core-api real (`GET /budget-plans`, ver `budget-plans.repository.ts`). Este arquivo
+ * sobra só para a checagem de unicidade do modal "Adicionar Plano" (create-plan.binding) enquanto o submit
+ * ainda é front-first. `id` é string (UUID no modelo novo — aqui valores sintéticos "p-*").
  *
- * 🔁 A TROCAR por `list-budget-plans.server-fn.ts` + `budget-plans.repository.ts` + `*.query.ts` quando o
- * endpoint `GET /budget-plans` existir (core-api #113). A forma já é `BudgetPlanNode[]` (o contrato real),
- * então a substituição é só a origem dos dados — o ViewModel (`toPlanRow`) e a view não mudam.
+ * 🔁 A REMOVER quando o `POST /budget-plans` for ligado (unicidade passa a ser server-side, 409).
  */
 import type { BudgetPlanNode } from '#modules/budget-plans/client/data/model/budget-plan.model.ts'
 
@@ -16,7 +15,7 @@ import type { BudgetPlanNode } from '#modules/budget-plans/client/data/model/bud
  */
 export const PLANEJAMENTO_PLACEHOLDER: readonly BudgetPlanNode[] = [
   {
-    id: 1,
+    id: 'p-1',
     year: 2026,
     programName: 'Ensino de Tempo Integral',
     programAbbreviation: 'ETI',
@@ -30,7 +29,7 @@ export const PLANEJAMENTO_PLACEHOLDER: readonly BudgetPlanNode[] = [
     partnersCount: 0,
     children: [
       {
-        id: 2,
+        id: 'p-2',
         year: 2026,
         programName: 'Ensino de Tempo Integral',
         programAbbreviation: 'ETI',
@@ -47,7 +46,7 @@ export const PLANEJAMENTO_PLACEHOLDER: readonly BudgetPlanNode[] = [
     ],
   },
   {
-    id: 10,
+    id: 'p-10',
     year: 2026,
     programName: 'Parceria',
     programAbbreviation: 'PARC',
@@ -61,7 +60,7 @@ export const PLANEJAMENTO_PLACEHOLDER: readonly BudgetPlanNode[] = [
     partnersCount: 12,
     children: [
       {
-        id: 11,
+        id: 'p-11',
         year: 2026,
         programName: 'Parceria',
         programAbbreviation: 'PARC',
@@ -78,7 +77,7 @@ export const PLANEJAMENTO_PLACEHOLDER: readonly BudgetPlanNode[] = [
     ],
   },
   {
-    id: 20,
+    id: 'p-20',
     year: 2025,
     programName: 'Parceria',
     programAbbreviation: 'PARC',
@@ -92,7 +91,7 @@ export const PLANEJAMENTO_PLACEHOLDER: readonly BudgetPlanNode[] = [
     partnersCount: 9,
     children: [
       {
-        id: 21,
+        id: 'p-21',
         year: 2025,
         programName: 'Parceria',
         programAbbreviation: 'PARC',
@@ -107,7 +106,7 @@ export const PLANEJAMENTO_PLACEHOLDER: readonly BudgetPlanNode[] = [
         children: [],
       },
       {
-        id: 22,
+        id: 'p-22',
         year: 2025,
         programName: 'Parceria',
         programAbbreviation: 'PARC',
@@ -124,7 +123,7 @@ export const PLANEJAMENTO_PLACEHOLDER: readonly BudgetPlanNode[] = [
     ],
   },
   {
-    id: 30,
+    id: 'p-30',
     year: 2026,
     programName: 'Escola de Valor',
     programAbbreviation: 'EPV',
@@ -139,7 +138,7 @@ export const PLANEJAMENTO_PLACEHOLDER: readonly BudgetPlanNode[] = [
     children: [],
   },
   {
-    id: 40,
+    id: 'p-40',
     year: 2024,
     programName: 'Ensino de Tempo Integral',
     programAbbreviation: 'ETI',
@@ -154,7 +153,7 @@ export const PLANEJAMENTO_PLACEHOLDER: readonly BudgetPlanNode[] = [
     children: [],
   },
   {
-    id: 50,
+    id: 'p-50',
     year: 2023,
     programName: 'Escola de Valor',
     programAbbreviation: 'EPV',

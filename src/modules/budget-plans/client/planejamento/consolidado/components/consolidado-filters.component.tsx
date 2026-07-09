@@ -22,7 +22,7 @@ export type ConsolidadoFiltersLabels = Readonly<{
   yearBase: string
   programs: string
   apply: string
-  exportExcel: string
+  exportCsv: string
 }>
 
 export type ConsolidadoFiltersValue = Readonly<{
@@ -35,6 +35,8 @@ export type ConsolidadoFiltersProps = Readonly<{
   years: readonly number[]
   programOptions: readonly string[]
   labels: ConsolidadoFiltersLabels
+  /** Export CSV em andamento — desabilita o botão (o BFF gera o arquivo server-side). */
+  exporting?: boolean
   onApply: (value: ConsolidadoFiltersValue) => void
   onExport: () => void
 }>
@@ -111,11 +113,16 @@ export function ConsolidadoFilters(props: ConsolidadoFiltersProps): ReactNode {
         {props.labels.apply}
       </button>
 
-      <button type="button" className={exportButton} onClick={props.onExport}>
+      <button
+        type="button"
+        className={exportButton}
+        onClick={props.onExport}
+        disabled={props.exporting === true}
+      >
         <span className={buttonIcon} aria-hidden="true">
           <DownloadIcon size={15} />
         </span>
-        {props.labels.exportExcel}
+        {props.labels.exportCsv}
       </button>
     </div>
   )

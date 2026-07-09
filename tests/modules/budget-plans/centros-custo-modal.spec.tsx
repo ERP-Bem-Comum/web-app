@@ -18,7 +18,7 @@ afterEach(() => {
 const zero: MonthlyCents = Array.from({ length: 12 }, () => 0)
 
 const detail: PlanDetail = {
-  id: 1,
+  id: 'p-1',
   year: 2026,
   programName: 'Ensino Público de Valor',
   programAbbreviation: 'EPV',

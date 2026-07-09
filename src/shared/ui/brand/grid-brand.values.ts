@@ -145,6 +145,34 @@ export const brand = {
       aReceber: '#32a2c6', // ciano — a receber
       bar: '#7ab5e0', // azul claro — barras "Distribuição por Financiador" (mais leve que o azul de Pag)
     },
+    // Análise de Pagamentos: barras "Distribuição Mensal" em CIANO — distingue do azul institucional das
+    // barras "Distribuição por Centro de Custo" (dois gráficos na mesma tela não repetem a cor). A Análise de
+    // RECEBIMENTOS (espelho) usa uma família DISTINTA (a P.O. pede diferenciar Pag×Rec pela cor dos gráficos):
+    // barras "por Centro de Custo" em VERDE-AZULADO + barras "Mensal" em ROXO — sem tocar as de Pagamentos.
+    analise: {
+      monthBar: '#32a2c6', // ciano da marca — barras "Distribuição Mensal" (Pagamentos)
+      costBarRec: '#2f8f6a', // verde-azulado — barras "Distribuição por Centro de Custo" (Recebimentos)
+      monthBarRec: '#8a5cd1', // roxo suave — barras "Distribuição Mensal" (Recebimentos)
+    },
+    // Paleta do relatório "Fluxo de Caixa" — 2 MEDIDAS por seção (Realizado × Previsto) + o gráfico mensal
+    // Entradas × Saídas + o Saldo. Semântica de cor: Realizado verde (efetivado), Previsto azul institucional;
+    // Entradas verde (dinheiro que entra), Saídas âmbar (dinheiro que sai); Saldo positivo verde / negativo
+    // vermelho. Hex cru permitido aqui (é um `*.values.ts`, isento do lint só-tokens); a UI aplica por classe
+    // (styleVariants no `.css.ts`) — as views não importam tokens (§boundaries client-ui ↛ ds-tokens).
+    fluxo: {
+      realizado: '#1f7d55', // verde — valor realizado (efetivado)
+      previsto: '#396496', // azul institucional — valor previsto
+      entrada: '#1f7d55', // verde — Entradas (inflow) no gráfico mensal por vencimento
+      saida: '#c67c1e', // âmbar — Saídas (outflow) no gráfico mensal por vencimento
+      barTrack: '#eef1f5', // trilho neutro das barras
+      saldoPos: '#1f7d55', // verde — Saldo positivo (entradas ≥ saídas)
+      saldoNeg: '#c0453c', // vermelho — Saldo negativo (saídas > entradas)
+      // Cores dos 4 gráficos "Previsto × Realizado" (espelho do legado): Previsto ciano, Realizado verde,
+      // Saldo verde-claro. Distintas dos tokens dos KPIs/tabelas acima (não os alteram).
+      previstoChart: '#32a2c6', // ciano — série "Previsto/Esperado" (timeline, barras CC, donuts)
+      realizadoChart: '#2f8f6a', // verde — série "Realizado"
+      saldoLine: '#7bc9a4', // verde-claro — série "Saldo" na linha do tempo
+    },
   },
   // Medidas específicas do relatório redesenhado (px cru permitido no `*.values.ts`).
   rxp: {

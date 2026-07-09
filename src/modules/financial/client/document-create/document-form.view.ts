@@ -264,9 +264,11 @@ export type ValidationState = 'ok' | 'aviso' | 'pendente'
 export type ValidationItem = Readonly<{ key: string; tag: string; state: ValidationState }>
 
 /**
- * Checklist de Validação (sidebar, Figma). Os dois primeiros itens são DERIVADOS do form (fornecedor
- * identificado, cálculo bruto→líquido íntegro) e o aviso de ISS divergente só aparece quando há ISS;
- * "dados bancários" e "aguarda aprovação" são CHROME (sem backend de validação/aprovação no v1).
+ * Checklist de Validação (sidebar, Figma). Reflete 1:1 os campos OBRIGATÓRIOS do lançamento (o mesmo
+ * conjunto que o `canSubmit` exige / HANDBOOK-financeiro-incluir-documento.md §obrigatórios) para que o
+ * usuário veja CLARAMENTE o que ainda falta preencher: tipo, número, fornecedor, forma de pagamento, valor
+ * (bruto→líquido), vencimento e — só p/ DANFE — chave de acesso. Ao final, os itens informativos (CHROME):
+ * dados bancários, ISS divergente (só quando há ISS) e "aguarda aprovação".
  */
 export const validationChecklist = (
   fields: DocumentFormFields,
@@ -274,17 +276,33 @@ export const validationChecklist = (
 ): readonly ValidationItem[] => {
   const hasSupplier = supplierName.trim() !== '' && fields.supplierRef.trim() !== ''
   const t = retentionTotals(fields)
-  const net = netCents(fields)
-  const calcOk = grossCents(fields) > 0 && net > 0
+  const calcOk = grossCents(fields) > 0 && netCents(fields) > 0
+  const st = (ok: boolean): ValidationState => (ok ? 'ok' : 'pendente')
   const items: ValidationItem[] = [
+    { key: 'type', tag: 'financial.create.validation.type', state: st(fields.type !== '') },
     {
-      key: 'supplier',
-      tag: 'financial.create.validation.supplier',
-      state: hasSupplier ? 'ok' : 'pendente',
+      key: 'documentNumber',
+      tag: 'financial.create.validation.documentNumber',
+      state: st(fields.documentNumber.trim() !== ''),
     },
-    { key: 'calc', tag: 'financial.create.validation.calc', state: calcOk ? 'ok' : 'pendente' },
-    { key: 'bank', tag: 'financial.create.validation.bank', state: 'ok' }, // chrome
+    { key: 'supplier', tag: 'financial.create.validation.supplier', state: st(hasSupplier) },
+    {
+      key: 'paymentMethod',
+      tag: 'financial.create.validation.paymentMethod',
+      state: st(fields.paymentMethod !== ''),
+    },
+    { key: 'calc', tag: 'financial.create.validation.calc', state: st(calcOk) },
+    { key: 'dueDate', tag: 'financial.create.validation.dueDate', state: st(fields.dueDate.trim() !== '') },
   ]
+  // Chave de acesso: obrigatória SÓ p/ DANFE (44 dígitos, #115) — item aparece apenas nesse tipo.
+  if (fields.type === 'DANFE') {
+    items.push({
+      key: 'accessKey',
+      tag: 'financial.create.validation.accessKey',
+      state: st(accessKeyValidFor(fields.type, fields.accessKey)),
+    })
+  }
+  items.push({ key: 'bank', tag: 'financial.create.validation.bank', state: 'ok' }) // chrome
   if (t.iss > 0) {
     items.push({ key: 'iss', tag: 'financial.create.validation.issDivergent', state: 'aviso' }) // chrome
   }
@@ -781,4 +799,16 @@ export const competenciaToIso = (masked: string): string | null => {
 export const competenciaFromIso = (iso: string): string => {
   const p = iso.split('-')
   return p.length === 2 ? `${p[1] ?? ''}/${p[0] ?? ''}` : iso
+}
+
+/**
+ * Emissão (ISO "YYYY-MM-DD" do `<input type=date>`) → Competência "MM/AAAA" (mês/ano da emissão).
+ * Competência deixou de ser digitável: reflete AUTOMATICAMENTE o mês/ano da Emissão. "" quando a emissão
+ * está vazia/incompleta (mantém a competência opcional — #197).
+ */
+export const competenciaFromIssueDate = (issueDate: string): string => {
+  const p = issueDate.split('-') // [YYYY, MM, DD]
+  const year = p[0] ?? ''
+  const month = p[1] ?? ''
+  return year.length === 4 && month.length === 2 ? `${month}/${year}` : ''
 }

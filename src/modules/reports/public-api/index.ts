@@ -92,3 +92,86 @@ export type {
   PosicaoReport,
   PosicaoType,
 } from '#modules/reports/client/posicao.view-model.ts'
+
+// ── Relatório "Análise de Pagamentos" (front-first; core-api#114/consolidated). Matriz TEMPO-orçamentária:
+//    árvore Plano Orçamentário → Centro de Custo × série MENSAL de valores. Engine plugável: quando o Contas a
+//    Receber subir, `loadAnalise('r')` renderiza a "Análise de Recebimentos" (espelho vazio → empty state). ──
+export { AnalisePagamentosPage } from '#modules/reports/client/page/analise-pagamentos.page.tsx'
+// "Análise de Recebimentos": ESPELHO da de Pagamentos (mesmo engine/tela; fonte 'r' + rótulos de receber +
+// paleta distinta dos gráficos). Empty-state-ready: quando o Contas a Receber subir, some o placeholder de
+// recebíveis (`ANALISE_RECEBIMENTOS_RAW → []`) e a tela cai no empty state honesto.
+export { AnaliseRecebimentosPage } from '#modules/reports/client/page/analise-recebimentos.page.tsx'
+
+export {
+  aggregateAnalise,
+  monthsInRange,
+  formatMonthLabel,
+  totalByCostCenter,
+  totalByMonth,
+  loadAnalise,
+  buildCsv as buildAnaliseCsv,
+  buildCsvHeader as buildAnaliseCsvHeader,
+  formatBRL as formatAnaliseBRL,
+  formatBRLShort as formatAnaliseBRLShort,
+  formatPercent as formatAnalisePercent,
+  sharePercent as analiseSharePercent,
+  CSV_HEADER_BASE as ANALISE_CSV_HEADER_BASE,
+  MONTH_ABBR_PT,
+} from '#modules/reports/client/analise.view-model.ts'
+export type {
+  AnaliseLevel,
+  AnaliseNode,
+  AnaliseReport,
+  AnaliseType,
+  CostCenterTotal,
+  MonthTotal,
+} from '#modules/reports/client/analise.view-model.ts'
+
+// ── Relatório "Fluxo de Caixa" (front-first; core-api#114). Duas SEÇÕES (Saídas = payables + cartão; Entradas
+//    = receivables) em árvore Categoria → Subcategoria × 2 medidas (Realizado × Previsto) + Saldo (Entradas −
+//    Saídas) + série mensal por vencimento. Entradas é empty-state-ready: quando o Contas a Receber subir, a
+//    fonte vira `[]` e a seção Entradas cai LIMPA no vazio SEM quebrar Saídas/Saldo. Dados SINTÉTICOS. ──
+export { FluxoCaixaPage } from '#modules/reports/client/page/fluxo-caixa.page.tsx'
+
+export {
+  loadFluxoCaixa,
+  buildReport as buildFluxoReport,
+  aggregateSection as aggregateFluxoSection,
+  computeSaldo as computeFluxoSaldo,
+  monthlyFlow as fluxoMonthlyFlow,
+  monthsInRange as fluxoMonthsInRange,
+  formatMonthLabel as fluxoFormatMonthLabel,
+  measureTotal as fluxoMeasureTotal,
+  buildCsv as buildFluxoCsv,
+  formatBRL as formatFluxoBRL,
+  formatBRLShort as formatFluxoBRLShort,
+  CSV_HEADER as FLUXO_CSV_HEADER,
+  MONTH_ABBR_PT as FLUXO_MONTH_ABBR_PT,
+  FLUXO_PERIOD,
+} from '#modules/reports/client/fluxo-caixa.view-model.ts'
+export type {
+  FluxoLevel,
+  FluxoMeasures,
+  FluxoNode,
+  FluxoSection,
+  FluxoSectionKind,
+  FluxoReport,
+  MonthlyFlow,
+} from '#modules/reports/client/fluxo-caixa.view-model.ts'
+
+// ── "Relatório Geral" (front-first; core-api#114). Ledger unificado ACHATADO e PAGINADO — uma linha por
+//    movimento (payable/receivable/cartão/contrato/apontamento), 15 colunas, nullable → "—". As linhas de
+//    receivable/financiador são PLACEHOLDER até o Contas a Receber subir. Dados SINTÉTICOS. ──
+export { RelatorioGeralPage } from '#modules/reports/client/page/relatorio-geral.page.tsx'
+
+export {
+  loadRelatorioGeral,
+  total as relatorioGeralTotal,
+  buildCsv as buildRelatorioGeralCsv,
+  totalPages as relatorioGeralTotalPages,
+  pageSlice as relatorioGeralPageSlice,
+  formatBRL as formatRelatorioGeralBRL,
+  PER_PAGE_DEFAULT as RELATORIO_GERAL_PER_PAGE_DEFAULT,
+  CSV_HEADER as RELATORIO_GERAL_CSV_HEADER,
+} from '#modules/reports/client/relatorio-geral.view-model.ts'
+export type { LedgerRow } from '#modules/reports/client/relatorio-geral.view-model.ts'

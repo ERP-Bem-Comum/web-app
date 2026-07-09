@@ -36,6 +36,9 @@ export const CoreApiPaidPayableSchema = z.object({
   documentId: z.string().trim(),
   valueCents: z.string().trim(),
   dueDate: z.string().trim(), // date-only YYYY-MM-DD
+  // Data de EMISSÃO (date-only YYYY-MM-DD). TOLERANTE: o core go-live já a devolve; ausente → null. Alimenta
+  // o filtro de Período por Emissão na aba Buscar/Criar vários (056). Comparação por STRING (nunca new Date).
+  issueDate: z.string().trim().nullable().optional().catch(null),
   // Data de pagamento (baixa). TOLERANTE: a rota /financial/payables ainda NÃO a monta (só /payable-titles
   // tem, via #231); ausente → undefined → null no mapper. Acende quando o backend expor (core-api#265).
   paidAt: z.string().trim().nullable().optional().catch(null),
@@ -164,6 +167,7 @@ export const CoreApiTransactionReconciliationSchema = z.object({
   type: z.string().trim(), // 'Individual' | 'Multiple' | 'Partial' | 'ManualEntry'
   status: z.string().trim(), // 'Active' | 'Undone' (lookup só devolve Active)
   reconciledBy: z.string().trim(),
+  reconciledByName: z.string().trim().nullable().catch(null), // #207: nome resolvido server-side; null = não-resolvido
   reconciledAt: z.string().trim(), // ISO datetime
   differenceCents: z.string().trim().nullable().catch(null),
   items: z

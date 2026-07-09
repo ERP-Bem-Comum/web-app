@@ -7,17 +7,28 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { render, screen, cleanup } from '@testing-library/react'
 
 import { LineChart } from '#modules/financial/client/dashboard/components/line-chart.component.tsx'
-import {
-  CHART_SERIES,
-  CHART_Y_MAX,
-  CHART_Y_TICKS,
-  CHART_MONTHS,
-  type ChartSeries,
-} from '#modules/financial/client/dashboard/dashboard-summary.view-model.ts'
+import type { ChartSeries } from '#modules/financial/client/dashboard/dashboard-summary.view-model.ts'
 
 afterEach(() => {
   cleanup()
 })
+
+// Fixture local (as constantes de dados saíram do view-model → agora vêm do DTO do BFF). 2 séries × 12 meses.
+const CHART_MONTHS = 12
+const CHART_Y_MAX = 18_000_000
+const CHART_Y_TICKS: readonly number[] = [4_500_000, 9_000_000, 13_500_000, 18_000_000]
+const CHART_SERIES: readonly ChartSeries[] = [
+  {
+    id: 'forecast',
+    labelKey: 'dashboard.chart.series.forecast',
+    points: Array.from({ length: 12 }, (_, m) => ({ month: m, value: (m + 1) * 1_000_000 })),
+  },
+  {
+    id: 'realized',
+    labelKey: 'dashboard.chart.series.realized',
+    points: Array.from({ length: 12 }, (_, m) => ({ month: m, value: (m + 1) * 800_000 })),
+  },
+]
 
 const MONTH_LABELS = [
   'Jan',

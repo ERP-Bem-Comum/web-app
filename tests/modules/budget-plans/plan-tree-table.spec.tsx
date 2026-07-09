@@ -15,7 +15,7 @@ afterEach(() => {
 })
 
 const node = (over: Partial<BudgetPlanNode>): BudgetPlanNode => ({
-  id: 1,
+  id: 'p-1',
   year: 2026,
   programName: 'Ensino de Tempo Integral',
   programAbbreviation: 'ETI',
@@ -84,7 +84,7 @@ describe('PlanTreeTable', () => {
   it('chevron: versões-filhas ficam ocultas até expandir', () => {
     const tree = node({
       status: 'APROVADO',
-      children: [node({ id: 2, version: 1.2, status: 'RASCUNHO', totalInCents: 100 })],
+      children: [node({ id: 'p-2', version: 1.2, status: 'RASCUNHO', totalInCents: 100 })],
     })
     renderTable([toPlanRow(tree)])
 
@@ -101,19 +101,19 @@ describe('PlanTreeTable', () => {
 
   it('menu "…": abre e lista as ações; onAction recebe id + ação', () => {
     const onAction = vi.fn()
-    renderTable([toPlanRow(node({ id: 7 }))], { onAction })
+    renderTable([toPlanRow(node({ id: 'p-7' }))], { onAction })
 
     fireEvent.click(screen.getByRole('button', { name: 'Ações do plano' }))
     const menu = screen.getByRole('menu')
     // raiz aprovada tem "Aprovar Plano" (approve) entre as ações
     fireEvent.click(within(menu).getByText('ação:approve'))
-    expect(onAction).toHaveBeenCalledWith(7, 'approve')
+    expect(onAction).toHaveBeenCalledWith('p-7', 'approve')
   })
 
   it('clique no nome chama onOpenPlan com o id', () => {
     const onOpenPlan = vi.fn()
-    renderTable([toPlanRow(node({ id: 42 }))], { onOpenPlan })
+    renderTable([toPlanRow(node({ id: 'p-42' }))], { onOpenPlan })
     fireEvent.click(screen.getByRole('button', { name: '2026 ETI 1.0' }))
-    expect(onOpenPlan).toHaveBeenCalledWith(42)
+    expect(onOpenPlan).toHaveBeenCalledWith('p-42')
   })
 })

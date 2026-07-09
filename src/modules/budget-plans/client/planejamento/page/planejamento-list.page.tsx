@@ -8,15 +8,17 @@ import { BarChartIcon } from '#shared/ui/index.ts'
 
 import {
   usePlanejamentoList,
-  PLANEJAMENTO_PROGRAM_OPTIONS,
   FILTER_YEARS,
-  PLANEJAMENTO_GRAND_TOTAL_LABEL,
 } from '#modules/budget-plans/client/planejamento/planejamento-list.binding.ts'
 import type {
   PlanRow,
   PlanAction,
 } from '#modules/budget-plans/client/planejamento/planejamento-list.view-model.ts'
-import { useCreatePlan, IMPORT_YEARS } from '#modules/budget-plans/client/planejamento/create-plan.binding.ts'
+import {
+  useCreatePlan,
+  useCreateProgramOptions,
+  IMPORT_YEARS,
+} from '#modules/budget-plans/client/planejamento/create-plan.binding.ts'
 import type { CreatePlanError } from '#modules/budget-plans/client/planejamento/create-plan.view-model.ts'
 import {
   confirmSpecFor,
@@ -57,7 +59,7 @@ const actionKey = (action: PlanAction): string => {
 }
 
 /** Nome de exibição de uma linha (busca recursiva na árvore de planos/versões). */
-const findRowName = (rows: readonly PlanRow[], id: number): string | null => {
+const findRowName = (rows: readonly PlanRow[], id: string): string | null => {
   for (const r of rows) {
     if (r.id === id) return r.displayName
     const inChild = findRowName(r.children, id)
@@ -66,16 +68,18 @@ const findRowName = (rows: readonly PlanRow[], id: number): string | null => {
   return null
 }
 
-type PendingConfirm = Readonly<{ action: ConfirmableAction; id: number; name: string }>
+type PendingConfirm = Readonly<{ action: ConfirmableAction; id: string; name: string }>
 
 const TOAST_MS = 3500
 
 export function PlanejamentoListPage(): ReactNode {
   const search = routeApi.useSearch()
   const navigate = useNavigate()
-  const { state } = usePlanejamentoList(search)
+  const { state, programOptions, grandTotalLabel } = usePlanejamentoList(search)
+  // Programas do modal "Criar Plano": os REAIS cadastrados (não a lista de planos, vazia até #374).
+  const createProgramOptions = useCreateProgramOptions()
   const [createOpen, setCreateOpen] = useState(false)
-  const createPlan = useCreatePlan(PLANEJAMENTO_PROGRAM_OPTIONS, () => {
+  const createPlan = useCreatePlan(createProgramOptions, () => {
     setCreateOpen(false)
   })
 
@@ -99,7 +103,7 @@ export function PlanejamentoListPage(): ReactNode {
     }
   }, [toastMsg])
 
-  const onAction = (id: number, action: PlanAction): void => {
+  const onAction = (id: string, action: PlanAction): void => {
     const spec = confirmSpecFor(action)
     if (spec === null) return // outras ações (compartilhar, CSV, planejado×realizado) são outras telas
     if (spec.needsName) setScenaryName('')
@@ -137,7 +141,7 @@ export function PlanejamentoListPage(): ReactNode {
             status: search.status ?? '',
           }}
           years={FILTER_YEARS}
-          programs={PLANEJAMENTO_PROGRAM_OPTIONS}
+          programs={programOptions}
           labels={{
             filterToggle: t('budget-plans.filters.toggle'),
             searchPlaceholder: t('budget-plans.filters.search'),
@@ -187,7 +191,7 @@ export function PlanejamentoListPage(): ReactNode {
         <PlanTreeTable
           rows={state.rows}
           emptyLabel={emptyLabel}
-          grandTotalLabel={PLANEJAMENTO_GRAND_TOTAL_LABEL}
+          grandTotalLabel={grandTotalLabel}
           labels={{
             plan: t('budget-plans.columns.plan'),
             total: t('budget-plans.columns.total'),
@@ -204,7 +208,7 @@ export function PlanejamentoListPage(): ReactNode {
           onOpenPlan={(id) => {
             void navigate({
               to: '/planejamento/detalhes/$id',
-              params: { id: String(id) },
+              params: { id },
             })
           }}
           onAction={onAction}
@@ -235,7 +239,7 @@ export function PlanejamentoListPage(): ReactNode {
         open={createOpen}
         form={createPlan.form}
         errorTag={createPlan.errorTag}
-        programOptions={PLANEJAMENTO_PROGRAM_OPTIONS}
+        programOptions={createProgramOptions}
         importYears={IMPORT_YEARS}
         labels={{
           title: t('budget-plans.create.title'),

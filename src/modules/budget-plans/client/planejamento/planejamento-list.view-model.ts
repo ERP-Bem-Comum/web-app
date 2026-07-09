@@ -49,13 +49,14 @@ export const deriveVersionLabel = (node: BudgetPlanNode): string | null =>
  * Trilha de auditoria "{usuário} alteração {dd/mm/aaaa hh:mm}" (HANDBOOK §1.1). PURA: recebe o ISO e
  * formata em pt-BR sem depender do fuso do runtime (usa os componentes UTC do timestamp).
  */
-export const deriveAuditLabel = (updatedByName: string, updatedAtIso: string): string => {
+export const deriveAuditLabel = (updatedByName: string | null, updatedAtIso: string): string => {
   const d = new Date(updatedAtIso)
-  if (Number.isNaN(d.getTime())) return updatedByName
+  if (Number.isNaN(d.getTime())) return updatedByName ?? ''
   const p2 = (n: number): string => String(n).padStart(2, '0')
   const date = `${p2(d.getUTCDate())}/${p2(d.getUTCMonth() + 1)}/${String(d.getUTCFullYear())}`
   const time = `${p2(d.getUTCHours())}:${p2(d.getUTCMinutes())}`
-  return `${updatedByName} alteração ${date} ${time}`
+  // Auditoria "por quem" (core-api#373) ainda ausente → data-only quando updatedByName é null.
+  return updatedByName === null ? `${date} ${time}` : `${updatedByName} alteração ${date} ${time}`
 }
 
 /**
@@ -63,15 +64,17 @@ export const deriveAuditLabel = (updatedByName: string, updatedAtIso: string): s
  * `when` = "dd/mm/aaaa hh:mm". PURA, formata em UTC (independe do fuso do runtime).
  */
 export const deriveAuditParts = (
-  updatedByName: string,
+  updatedByName: string | null,
   updatedAtIso: string,
 ): { readonly who: string; readonly when: string } => {
+  // `who` vazio quando a auditoria "por quem" (core-api#373) ainda não vem — a coluna mostra só `when`.
+  const who = updatedByName === null ? '' : `${updatedByName} alteração`
   const d = new Date(updatedAtIso)
-  if (Number.isNaN(d.getTime())) return { who: updatedByName, when: '' }
+  if (Number.isNaN(d.getTime())) return { who, when: '' }
   const p2 = (n: number): string => String(n).padStart(2, '0')
   const date = `${p2(d.getUTCDate())}/${p2(d.getUTCMonth() + 1)}/${String(d.getUTCFullYear())}`
   const time = `${p2(d.getUTCHours())}:${p2(d.getUTCMinutes())}`
-  return { who: `${updatedByName} alteração`, when: `${date} ${time}` }
+  return { who, when: `${date} ${time}` }
 }
 
 export const PLAN_ACTIONS = [
@@ -105,7 +108,7 @@ export const derivePlanActions = (args: {
 }
 
 export type PlanRow = Readonly<{
-  id: number
+  id: string
   displayName: string
   versionLabel: string | null
   totalLabel: string

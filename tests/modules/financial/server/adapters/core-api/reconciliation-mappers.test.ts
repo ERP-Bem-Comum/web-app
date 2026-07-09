@@ -128,7 +128,7 @@ describe('transactionsToModel', () => {
 })
 
 describe('paidPayablesToModel', () => {
-  it('mapeia mínimo; supplier/docNumber ausentes → null (#172)', () => {
+  it('mapeia mínimo; supplier/docNumber/issueDate ausentes → null (#172/056)', () => {
     const raw = {
       items: [
         { id: 'p1', documentId: 'd1', valueCents: '15000', dueDate: '2026-06-10', paymentMethod: 'PIX' },
@@ -140,6 +140,27 @@ describe('paidPayablesToModel', () => {
       assert.equal(r.value[0]?.supplierName, null)
       assert.equal(r.value[0]?.documentNumber, null)
       assert.equal(r.value[0]?.dueDate, '2026-06-10')
+      assert.equal(r.value[0]?.issueDate, null) // 056: ausente → null (tolerante)
+    }
+  })
+
+  it('056: issueDate do core go-live flui p/ o model (date-only, sem conversão)', () => {
+    const raw = {
+      items: [
+        {
+          id: 'p2',
+          documentId: 'd2',
+          valueCents: '15000',
+          dueDate: '2026-06-10',
+          issueDate: '2026-06-01',
+          paymentMethod: 'PIX',
+        },
+      ],
+    }
+    const r = paidPayablesToModel(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value[0]?.issueDate, '2026-06-01')
     }
   })
 })
@@ -294,6 +315,7 @@ describe('transactionReconciliationToModel (#175)', () => {
       type: 'Multiple',
       status: 'Active',
       reconciledBy: 'user-42',
+      reconciledByName: 'Alessandra Castro',
       reconciledAt: '2026-06-18T13:45:00.000Z',
       differenceCents: '-250',
       items: [
@@ -308,10 +330,25 @@ describe('transactionReconciliationToModel (#175)', () => {
       assert.equal(r.value.type, 'Multiple')
       assert.equal(r.value.status, 'Active')
       assert.equal(r.value.reconciledBy, 'user-42')
+      assert.equal(r.value.reconciledByName, 'Alessandra Castro') // #207: nome resolvido atravessa
       assert.equal(r.value.differenceCents, '-250')
       assert.equal(r.value.items.length, 2)
       assert.equal(r.value.items[0]?.payableId, 'p1')
     }
+  })
+
+  it('#207: reconciledByName ausente no core-api → null (tolerante, catch)', () => {
+    const r = transactionReconciliationToModel({
+      id: 'r',
+      transactionId: 't',
+      type: 'Individual',
+      status: 'Active',
+      reconciledBy: 'u',
+      reconciledAt: '2026-06-18T00:00:00.000Z',
+      items: [],
+    })
+    assert.ok(isOk(r))
+    if (isOk(r)) assert.equal(r.value.reconciledByName, null)
   })
 
   it('type drift → Individual; differenceCents ausente → null; ManualEntry preservado', () => {

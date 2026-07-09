@@ -155,6 +155,10 @@ export type PaidPayable = Readonly<{
   documentId: string
   valueCents: string
   dueDate: string // date-only YYYY-MM-DD
+  // Data de EMISSÃO (date-only YYYY-MM-DD) — alimenta o filtro de Período por Emissão na aba Buscar/Criar
+  // vários (056). O core go-live já a devolve; ausente → null (títulos sem emissão ficam de fora do filtro
+  // de Emissão, de forma honesta). Comparação por STRING (lexical) — nunca `new Date`.
+  issueDate: string | null
   // Data de PAGAMENTO (baixa) — a data relevante p/ a conciliação (≈ saída bancária). null enquanto o
   // backend não a expõe nesta rota (core-api: /financial/payables não monta paidAt — core-api#265).
   paidAt: string | null
@@ -166,6 +170,9 @@ export type PaidPayable = Readonly<{
   // Tipo de DOCUMENTO (ex.: "NFS-e", "DANFE", "IRRF", "CSRF", "INSS", "ISS") = mínimo até core-api#172;
   // alimenta o filtro Tipo na aba Buscar/Criar vários (achar impostos retidos: IRRF/CSRF/INSS…).
   documentType: string | null
+  // Imposto retido (ISS/IRRF/INSS/CSRF) — preenchido nos títulos-FILHO; o favorecido é o ÓRGÃO, não o
+  // fornecedor do documento-pai. `null`/ausente = título comum (segue o fornecedor).
+  retentionType?: string | null
 }>
 export type SuggestionCriteria = Readonly<{
   payeeMatch: boolean
@@ -216,6 +223,7 @@ export type TransactionReconciliation = Readonly<{
   type: 'Individual' | 'Multiple' | 'Partial' | 'ManualEntry'
   status: 'Active' | 'Undone'
   reconciledBy: string
+  reconciledByName: string | null // #207: nome de quem conciliou (preferido sobre o id cru no modal)
   reconciledAt: string // ISO datetime
   differenceCents: string | null
   items: readonly TransactionReconciliationItem[]
