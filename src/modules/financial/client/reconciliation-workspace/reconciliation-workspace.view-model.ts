@@ -201,6 +201,18 @@ export const tituloLabel = (p: PaidPayable | null): string => {
 }
 
 /**
+ * Favorecido de um TÍTULO DE IMPOSTO RETIDO = o ÓRGÃO arrecadador, não o fornecedor do documento-pai.
+ * Genérico por tipo (`documentType`): ISS → SEFIN (município); federais (IRRF/INSS/CSRF/PIS/COFINS/CSLL) →
+ * Receita Federal. Retorna a TAG i18n do órgão, ou `null` quando não é imposto retido (segue o fornecedor).
+ */
+export const retentionAgencyTag = (retentionType: string | null | undefined): string | null => {
+  if (retentionType === null || retentionType === undefined) return null
+  const rt = retentionType.trim().toUpperCase()
+  if (rt === 'ISS') return 'financial.recon.pending.agency.iss'
+  return rt === 'IRRF' || rt === 'INSS' || rt === 'CSRF' ? 'financial.recon.pending.agency.federal' : null
+}
+
+/**
  * Próxima transação PENDENTE com match (palpite no `guesses`) a partir de `afterId` — busca CÍCLICA na
  * ordem da lista, preferindo banda 'alta' (alta confiança); senão qualquer match. Pula as sem palpite e a
  * própria `afterId`. `null` quando não há nenhuma pendente com match. PURA. (P.O.: manter sempre um match ativo.)

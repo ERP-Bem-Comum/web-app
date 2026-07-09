@@ -7,7 +7,9 @@
  * invalidação da query da lista; o form-state e a view NÃO mudam — só o submit passa a integrar de fato.
  */
 import { useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 
+import { listProgramsFn } from '#modules/programs/public-api/index.ts'
 import { CreateBudgetPlanInputSchema } from '#modules/budget-plans/client/data/model/budget-plan.model.ts'
 import { PLANEJAMENTO_PLACEHOLDER } from '#modules/budget-plans/client/data/planejamento-list.placeholder.ts'
 import {
@@ -20,6 +22,23 @@ import {
 
 // A VIEW não importa `data/`/view-model direto (§XI MVVM) — os anos de import passam pela camada de binding.
 export { IMPORT_YEARS }
+
+/**
+ * Opções de PROGRAMA para o modal "Criar Plano" — programas REAIS cadastrados (ATIVOS) via public-api de
+ * `programs` (§I), NÃO derivadas da lista de planos (que fica vazia até o dado subir, core-api#374). Retorna
+ * as SIGLAS (o que o dropdown exibe). Erro/loading/sem-permissão → []. Espelha o Programa do Lançar Documento.
+ */
+export function useCreateProgramOptions(): readonly string[] {
+  const q = useQuery({
+    queryKey: ['programs', 'options', 'budget-plan-create'],
+    queryFn: async (): Promise<readonly string[]> => {
+      const r = await listProgramsFn({ data: { status: 'ATIVO', order: 'ASC', page: 1, limit: 25 } })
+      return r.ok ? r.data.items.map((p) => p.sigla) : []
+    },
+    staleTime: 60_000,
+  })
+  return q.data ?? []
+}
 
 export type CreatePlanController = Readonly<{
   form: CreatePlanForm

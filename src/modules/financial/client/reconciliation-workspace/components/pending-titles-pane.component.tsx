@@ -9,7 +9,12 @@ import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 
 import * as s from '../page/reconciliation-workspace.css.ts'
-import { centsToBRL, formatDateBR, type PaidPayable } from '../reconciliation-workspace.view-model.ts'
+import {
+  centsToBRL,
+  formatDateBR,
+  retentionAgencyTag,
+  type PaidPayable,
+} from '../reconciliation-workspace.view-model.ts'
 
 const t = createTranslator(ptBR)
 
@@ -25,23 +30,29 @@ export function PendingTitlesPane({ payables }: PendingTitlesPaneProps) {
         <span className={s.altOverline}>
           {t('financial.recon.pending.title')} · {payables.length}
         </span>
-        {payables.map((p) => (
-          <div key={p.id} className={s.altCard}>
-            <div className={s.altInfo}>
-              <div className={s.altNm}>
-                {p.supplierName ?? p.documentNumber ?? t('financial.recon.pending.untitled')}
+        {payables.map((p) => {
+          // Imposto retido → favorecido é o ÓRGÃO (genérico por tipo); senão, o fornecedor do documento.
+          const agencyTag = retentionAgencyTag(p.retentionType)
+          const displayName =
+            agencyTag !== null
+              ? t(agencyTag)
+              : (p.supplierName ?? p.documentNumber ?? t('financial.recon.pending.untitled'))
+          return (
+            <div key={p.id} className={s.altCard}>
+              <div className={s.altInfo}>
+                <div className={s.altNm}>{displayName}</div>
+                <div className={s.altMeta}>
+                  {p.documentNumber !== null ? <span className={s.altDocRef}>{p.documentNumber}</span> : null}
+                  <span className={s.altStatusMini.pago}>{t('financial.recon.sugg.paid')}</span>
+                  <span className={s.altConfMini}>
+                    {t('financial.recon.pending.paidWord')} {formatDateBR(p.paidAt)}
+                  </span>
+                </div>
               </div>
-              <div className={s.altMeta}>
-                {p.documentNumber !== null ? <span className={s.altDocRef}>{p.documentNumber}</span> : null}
-                <span className={s.altStatusMini.pago}>{t('financial.recon.sugg.paid')}</span>
-                <span className={s.altConfMini}>
-                  {t('financial.recon.pending.paidWord')} {formatDateBR(p.paidAt)}
-                </span>
-              </div>
+              <span className={s.altAmt}>{centsToBRL(p.valueCents)}</span>
             </div>
-            <span className={s.altAmt}>{centsToBRL(p.valueCents)}</span>
-          </div>
-        ))}
+          )
+        })}
       </div>
       <p className={s.assocHint}>{t('financial.recon.pending.hint')}</p>
     </div>
