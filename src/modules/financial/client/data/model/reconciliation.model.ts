@@ -170,6 +170,9 @@ export type PaidPayable = Readonly<{
   // Tipo de DOCUMENTO (ex.: "NFS-e", "DANFE", "IRRF", "CSRF", "INSS", "ISS") = mínimo até core-api#172;
   // alimenta o filtro Tipo na aba Buscar/Criar vários (achar impostos retidos: IRRF/CSRF/INSS…).
   documentType: string | null
+  // Imposto retido (ISS/IRRF/INSS/CSRF) — preenchido nos títulos-FILHO; o favorecido é o ÓRGÃO, não o
+  // fornecedor do documento-pai. `null`/ausente = título comum (segue o fornecedor).
+  retentionType?: string | null
 }>
 export type SuggestionCriteria = Readonly<{
   payeeMatch: boolean

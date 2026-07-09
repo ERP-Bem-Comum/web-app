@@ -232,6 +232,7 @@ export type PaidPayable = Readonly<{
   documentNumber: string | null
   category: string | null // core-api#172: categoria do título (coluna Categoria)
   documentType: string | null // core-api#172: tipo de documento (NFS-e/DANFE/IRRF/CSRF/INSS…) p/ filtro Tipo
+  retentionType?: string | null // imposto retido (ISS/IRRF/INSS/CSRF) do título-filho → favorecido = órgão
 }>
 
 export type SuggestionCriteria = Readonly<{

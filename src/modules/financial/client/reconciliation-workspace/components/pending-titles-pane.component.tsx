@@ -32,7 +32,7 @@ export function PendingTitlesPane({ payables }: PendingTitlesPaneProps) {
         </span>
         {payables.map((p) => {
           // Imposto retido → favorecido é o ÓRGÃO (genérico por tipo); senão, o fornecedor do documento.
-          const agencyTag = retentionAgencyTag(p.documentType)
+          const agencyTag = retentionAgencyTag(p.retentionType)
           const displayName =
             agencyTag !== null
               ? t(agencyTag)

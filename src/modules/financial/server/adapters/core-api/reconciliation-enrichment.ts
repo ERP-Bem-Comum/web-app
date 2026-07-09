@@ -29,6 +29,7 @@ export type TitleEnrichment = Readonly<{
   paidAt: string | null
   dueDate: string | null
   issueDate: string | null // #163/056: data de emissão do título (p/ o filtro Período por Emissão)
+  retentionType: string | null // imposto retido do título-filho (ISS/IRRF/INSS/CSRF) → favorecido = órgão
 }>
 
 // Item mínimo de parceiro que o enriquecimento consome (id → nome). Estrutural: casa com o
@@ -66,6 +67,7 @@ export const buildEnrichmentMaps = async (source: EnrichmentSource): Promise<Enr
           paidAt: t.paidAt,
           dueDate: t.dueDate,
           issueDate: t.issueDate,
+          retentionType: t.retentionType,
         })
       }
     }
@@ -96,6 +98,7 @@ export const enrichPaidPayable = (maps: EnrichmentMaps, p: PaidPayable): PaidPay
     issueDate: p.issueDate ?? title?.issueDate ?? null, // #163/056: emissão vem do título quando /payables não a traz
     documentNumber: p.documentNumber ?? title?.documentNumber ?? null,
     supplierName: p.supplierName ?? resolveSupplierName(maps, p.id),
+    retentionType: p.retentionType ?? title?.retentionType ?? null,
   }
 }
 
