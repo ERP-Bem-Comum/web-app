@@ -26,7 +26,7 @@ const NET_ALL = [3_243_872] as const
 const NET_ZERO = [0] as const
 
 const PLAN_3: PlanDetail = {
-  id: 3,
+  id: 'p-3',
   year: 2026,
   programName: 'Ensino de Tempo Integral',
   programAbbreviation: 'ETI',
@@ -200,7 +200,7 @@ const PLAN_3: PlanDetail = {
 const flattenNodes = (nodes: readonly BudgetPlanNode[]): readonly BudgetPlanNode[] =>
   nodes.flatMap((n) => [n, ...flattenNodes(n.children)])
 
-const NODE_BY_ID: ReadonlyMap<number, BudgetPlanNode> = new Map(
+const NODE_BY_ID: ReadonlyMap<string, BudgetPlanNode> = new Map(
   flattenNodes(PLANEJAMENTO_PLACEHOLDER).map((n) => [n.id, n]),
 )
 
@@ -210,7 +210,7 @@ const NODE_BY_ID: ReadonlyMap<number, BudgetPlanNode> = new Map(
  * o template ETI 1.2 (`PLAN_3`) enquanto não há dados reais por plano.
  * 🔁 TODO(#113): trocar pela server fn `GET /budget-plans/:id` (matriz/total reais por plano).
  */
-export const planDetailPlaceholder = (id: number): PlanDetail | null => {
+export const planDetailPlaceholder = (id: string): PlanDetail | null => {
   const node = NODE_BY_ID.get(id)
   if (node === undefined) return null
   return {
