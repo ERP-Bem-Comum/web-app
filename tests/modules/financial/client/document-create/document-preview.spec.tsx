@@ -111,7 +111,7 @@ describe('DocumentPreview — web view (com arquivo)', () => {
     fileName: 'nota.xml',
   }
 
-  it('PDF renderiza um <iframe> com a blob URL + nome + nota "rascunho criado"', () => {
+  it('PDF renderiza um <iframe> com a blob URL + fragmento de zoom (100% inicial)', () => {
     const { container } = render(
       <DocumentPreview
         status="done"
@@ -124,9 +124,52 @@ describe('DocumentPreview — web view (com arquivo)', () => {
     )
     const frame = container.querySelector('iframe')
     expect(frame).toBeTruthy()
-    expect(frame?.getAttribute('src')).toBe('blob:pdf-123')
-    expect(screen.getByText('nota.pdf')).toBeTruthy()
-    expect(screen.getByText(tr('financial.create.preview.done'))).toBeTruthy()
+    // A blob URL leva o fragmento `#zoom=` (zoom do visualizador nativo); começa 100%.
+    expect(frame?.getAttribute('src')).toBe('blob:pdf-123#zoom=100')
+  })
+
+  it('zoom: + aumenta o #zoom do PDF; − diminui; respeita os limites (50–200%)', () => {
+    const { container } = render(
+      <DocumentPreview
+        status="done"
+        fileName="nota.pdf"
+        errorTag={null}
+        preview={pdf}
+        allowReplace
+        onSelectFile={vi.fn()}
+      />,
+    )
+    const src = (): string => container.querySelector('iframe')?.getAttribute('src') ?? ''
+    const zoomIn = screen.getByLabelText(tr('financial.create.preview.zoomIn'))
+    const zoomOut = screen.getByLabelText(tr('financial.create.preview.zoomOut'))
+    expect(src()).toBe('blob:pdf-123#zoom=100')
+    fireEvent.click(zoomIn)
+    expect(src()).toBe('blob:pdf-123#zoom=125')
+    fireEvent.click(zoomOut)
+    fireEvent.click(zoomOut)
+    expect(src()).toBe('blob:pdf-123#zoom=75')
+    // limite inferior: 75 → 50 e trava (não passa de 50)
+    fireEvent.click(zoomOut)
+    fireEvent.click(zoomOut)
+    expect(src()).toBe('blob:pdf-123#zoom=50')
+    expect((zoomOut as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('zoom: no XML escala a fonte via --ocr-zoom (não usa #zoom)', () => {
+    const { container } = render(
+      <DocumentPreview
+        status="done"
+        fileName="nota.xml"
+        errorTag={null}
+        preview={xml}
+        allowReplace
+        onSelectFile={vi.fn()}
+      />,
+    )
+    const pre = container.querySelector('pre')
+    expect(pre?.style.getPropertyValue('--ocr-zoom')).toBe('1')
+    fireEvent.click(screen.getByLabelText(tr('financial.create.preview.zoomIn')))
+    expect(pre?.style.getPropertyValue('--ocr-zoom')).toBe('1.25')
   })
 
   it('XML renderiza o texto do documento (sem iframe)', () => {
