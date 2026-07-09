@@ -4,9 +4,57 @@ import { isOk } from '#shared/primitives/result.ts'
 import { partnersRepository } from '#modules/contracts/client/data/repository/partners.repository.instance.ts'
 import type { PartnerSearchResult } from '#modules/contracts/client/data/repository/partners.repository.ts'
 import { listProgramsFn } from '#modules/programs/public-api/index.ts'
+import { listFinancialReferencesFn } from '#modules/financial/public-api/index.ts'
+import { listBudgetPlansFn } from '#modules/budget-plans/public-api/index.ts'
 import { contractCreateViewModel } from './contract-create.view-model.ts'
 
 export type ProgramOption = Readonly<{ value: string; label: string }>
+
+/**
+ * Opções REAIS de Centro de Custo + Categoria para o Novo Contrato — consome as referências de categorização
+ * do Financeiro (cross-módulo via public-api §I): mesma taxonomia (dados legados migrados) que o Lançar
+ * Documento já usa. `value` = NOME (o contrato guarda string livre em `centroDeCusto`/`categorizacao` — o
+ * dropdown exibe o legado p/ seleção sem exigir mudança de contrato no backend). Degradação graciosa → [].
+ */
+export const useContractReferenceOptionsBinding = (): Readonly<{
+  costCenterOptions: readonly ProgramOption[]
+  categoryOptions: readonly ProgramOption[]
+}> => {
+  const q = useQuery({
+    queryKey: ['financial', 'reference-options', 'contract-create'],
+    queryFn: async () => {
+      const res = await listFinancialReferencesFn()
+      return res.ok ? res.data : { categories: [], costCenters: [] }
+    },
+    staleTime: 300_000,
+  })
+  const refs = q.data ?? { categories: [], costCenters: [] }
+  return {
+    costCenterOptions: refs.costCenters.map((c) => ({ value: c.name, label: `${c.code} — ${c.name}` })),
+    categoryOptions: refs.categories.map((c) => ({ value: c.name, label: c.name })),
+  }
+}
+
+/**
+ * Opções REAIS de Plano Orçamentário para o Novo Contrato — consome `GET /budget-plans` (cross-módulo).
+ * `value` = id (UUID, casa com `budgetPlanId`); `label` = "ano sigla versão". Hoje vem vazio (core-api#374:
+ * driver memory + sem dado); acende sem retrabalho quando o backend subir. Degradação graciosa → [].
+ */
+export const useContractBudgetPlanOptionsBinding = (): readonly ProgramOption[] => {
+  const q = useQuery({
+    queryKey: ['budget-plans', 'options', 'contract-create'],
+    queryFn: async (): Promise<readonly ProgramOption[]> => {
+      const res = await listBudgetPlansFn({ data: { page: 1, limit: 100 } })
+      if (!res.ok) return []
+      return res.data.items.map((p) => ({
+        value: p.id,
+        label: `${String(p.year)} ${p.programAbbreviation ?? p.programName} ${p.version.toFixed(1)}`,
+      }))
+    },
+    staleTime: 60_000,
+  })
+  return q.data ?? []
+}
 
 // D8 (ADR-0013): opções reais de Programa para o seletor do create — UUID (value) → sigla (label).
 // Consome a listagem de programas via public-api de `programs` (boundary respeitado). Degradação
@@ -58,7 +106,9 @@ export const useContractCreateBinding = (): Readonly<{ createCommand: CreateCont
       running: mutation.isPending,
       errorTag,
       result: data !== undefined && isOk(data) ? data.value : null,
-      execute: (input) => { mutation.mutate(input); },
+      execute: (input) => {
+        mutation.mutate(input)
+      },
     },
   }
 }

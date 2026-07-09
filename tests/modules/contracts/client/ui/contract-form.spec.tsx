@@ -74,6 +74,9 @@ const baseProps = (over: Record<string, unknown> = {}) => ({
   documentUploaded: false,
   currentYear: 2026,
   programOptions: [],
+  costCenterOptions: [],
+  categoryOptions: [],
+  budgetPlanOptions: [],
   ...over,
 })
 
