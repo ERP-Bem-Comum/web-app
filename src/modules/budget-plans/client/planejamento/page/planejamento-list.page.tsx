@@ -14,7 +14,11 @@ import type {
   PlanRow,
   PlanAction,
 } from '#modules/budget-plans/client/planejamento/planejamento-list.view-model.ts'
-import { useCreatePlan, IMPORT_YEARS } from '#modules/budget-plans/client/planejamento/create-plan.binding.ts'
+import {
+  useCreatePlan,
+  useCreateProgramOptions,
+  IMPORT_YEARS,
+} from '#modules/budget-plans/client/planejamento/create-plan.binding.ts'
 import type { CreatePlanError } from '#modules/budget-plans/client/planejamento/create-plan.view-model.ts'
 import {
   confirmSpecFor,
@@ -72,8 +76,10 @@ export function PlanejamentoListPage(): ReactNode {
   const search = routeApi.useSearch()
   const navigate = useNavigate()
   const { state, programOptions, grandTotalLabel } = usePlanejamentoList(search)
+  // Programas do modal "Criar Plano": os REAIS cadastrados (não a lista de planos, vazia até #374).
+  const createProgramOptions = useCreateProgramOptions()
   const [createOpen, setCreateOpen] = useState(false)
-  const createPlan = useCreatePlan(programOptions, () => {
+  const createPlan = useCreatePlan(createProgramOptions, () => {
     setCreateOpen(false)
   })
 
@@ -233,7 +239,7 @@ export function PlanejamentoListPage(): ReactNode {
         open={createOpen}
         form={createPlan.form}
         errorTag={createPlan.errorTag}
-        programOptions={programOptions}
+        programOptions={createProgramOptions}
         importYears={IMPORT_YEARS}
         labels={{
           title: t('budget-plans.create.title'),
