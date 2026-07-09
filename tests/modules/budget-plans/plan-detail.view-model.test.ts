@@ -34,7 +34,7 @@ const m = (values: Readonly<Record<number, number>>): MonthlyCents =>
 const consult = m({ 2: 1_621_936, 3: 1_621_936 })
 
 const detail: PlanDetail = {
-  id: 3,
+  id: 'p-3',
   year: 2026,
   programName: 'Ensino de Tempo Integral',
   programAbbreviation: 'ETI',

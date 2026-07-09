@@ -11,9 +11,13 @@ import { BudgetPlanStatusSchema } from '#modules/budget-plans/client/data/model/
 export const NetworkKindSchema = z.enum(['ESTADO', 'MUNICIPIO'])
 export type NetworkKind = z.infer<typeof NetworkKindSchema>
 
-/** Nó da árvore de planos (raiz ou versão-filha). `children` recursivo. Valores em centavos. */
+/**
+ * Nó da árvore de planos (raiz ou versão-filha). `children` recursivo. Valores em centavos.
+ * `id` = UUID (o modelo NOVO do core-api usa UUID como PK; o front adaptou de `number`). `updatedByName`
+ * nullable = auditoria "por quem" ainda não rastreada no agregado novo (data-only até core-api#373).
+ */
 export type BudgetPlanNode = Readonly<{
-  id: number
+  id: string
   year: number
   programName: string
   programAbbreviation: string | null
@@ -21,7 +25,7 @@ export type BudgetPlanNode = Readonly<{
   scenarioName: string | null
   status: z.infer<typeof BudgetPlanStatusSchema>
   totalInCents: number
-  updatedByName: string
+  updatedByName: string | null
   updatedAt: string
   networkKind: NetworkKind
   partnersCount: number
@@ -30,7 +34,7 @@ export type BudgetPlanNode = Readonly<{
 
 export const BudgetPlanNodeSchema: z.ZodType<BudgetPlanNode> = z.lazy(() =>
   z.object({
-    id: z.int(),
+    id: z.string().trim(), // UUID no modelo novo (era number no legado)
     year: z.int(),
     programName: z.string().trim(),
     programAbbreviation: z.string().trim().nullable(),
@@ -38,7 +42,7 @@ export const BudgetPlanNodeSchema: z.ZodType<BudgetPlanNode> = z.lazy(() =>
     scenarioName: z.string().trim().nullable(),
     status: BudgetPlanStatusSchema,
     totalInCents: z.int().nonnegative(),
-    updatedByName: z.string().trim(),
+    updatedByName: z.string().trim().nullable(), // auditoria "por quem": core-api#373
     updatedAt: z.string().trim(),
     networkKind: NetworkKindSchema,
     partnersCount: z.int().nonnegative(),

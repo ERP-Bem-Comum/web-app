@@ -21,7 +21,7 @@ const m = (values: Readonly<Record<number, number>>): MonthlyCents =>
   Array.from({ length: 12 }, (_, i) => values[i + 1] ?? 0)
 
 const detail: PlanDetail = {
-  id: 3,
+  id: 'p-3',
   year: 2026,
   programName: 'Ensino de Tempo Integral',
   programAbbreviation: 'ETI',

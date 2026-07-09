@@ -23,7 +23,7 @@ const NBSP = String.fromCharCode(160)
 const norm = (s: string): string => s.split(NBSP).join(' ')
 
 const node = (over: Partial<BudgetPlanNode>): BudgetPlanNode => ({
-  id: 1,
+  id: 'p-1',
   year: 2026,
   programName: 'Parceria',
   programAbbreviation: 'PARC',
@@ -117,8 +117,8 @@ describe('toPlanRow', () => {
       updatedByName: 'Administrador',
       updatedAt: '2026-06-30T22:06:00Z',
       children: [
-        node({ id: 2, version: 1.1, scenarioName: 'Cenário 01 - Bruno', status: 'RASCUNHO' }),
-        node({ id: 3, version: 2.0, status: 'APROVADO', totalInCents: 100 }),
+        node({ id: 'p-2', version: 1.1, scenarioName: 'Cenário 01 - Bruno', status: 'RASCUNHO' }),
+        node({ id: 'p-3', version: 2.0, status: 'APROVADO', totalInCents: 100 }),
       ],
     })
     const row = toPlanRow(tree)
@@ -138,36 +138,36 @@ describe('toPlanRow', () => {
 
 describe('filterPlans', () => {
   const roots = [
-    node({ id: 1, year: 2026, programAbbreviation: 'ETI', status: 'APROVADO' }),
-    node({ id: 2, year: 2026, programAbbreviation: 'PARC', status: 'EM_CALIBRACAO' }),
-    node({ id: 3, year: 2025, programAbbreviation: 'PARC', status: 'RASCUNHO' }),
+    node({ id: 'p-1', year: 2026, programAbbreviation: 'ETI', status: 'APROVADO' }),
+    node({ id: 'p-2', year: 2026, programAbbreviation: 'PARC', status: 'EM_CALIBRACAO' }),
+    node({ id: 'p-3', year: 2025, programAbbreviation: 'PARC', status: 'RASCUNHO' }),
   ]
   it('filtra por ano', () => {
     assert.deepEqual(
       filterPlans(roots, { year: 2025 }).map((n) => n.id),
-      [3],
+      ['p-3'],
     )
   })
   it('filtra por status', () => {
     assert.deepEqual(
       filterPlans(roots, { status: 'APROVADO' }).map((n) => n.id),
-      [1],
+      ['p-1'],
     )
   })
   it('filtra por programa (abreviação, case-insensitive)', () => {
     assert.deepEqual(
       filterPlans(roots, { program: 'parc' }).map((n) => n.id),
-      [2, 3],
+      ['p-2', 'p-3'],
     )
   })
   it('busca textual casa ano/abreviação/versão', () => {
     assert.deepEqual(
       filterPlans(roots, { search: 'ETI' }).map((n) => n.id),
-      [1],
+      ['p-1'],
     )
     assert.deepEqual(
       filterPlans(roots, { search: '2026' }).map((n) => n.id),
-      [1, 2],
+      ['p-1', 'p-2'],
     )
   })
   it('sem filtro devolve tudo', () => {

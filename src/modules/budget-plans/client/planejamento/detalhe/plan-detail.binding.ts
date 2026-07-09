@@ -74,7 +74,7 @@ export type PlanDetailBinding = Readonly<{
   centrosCusto: CentrosCustoBinding
 }>
 
-export function usePlanDetail(id: number): PlanDetailBinding {
+export function usePlanDetail(id: string): PlanDetailBinding {
   const [view, setView] = useState<DetailView>('month')
   const [semester, setSemester] = useState<Semester>(0)
   const detail = useMemo(() => planDetailPlaceholder(id), [id])
