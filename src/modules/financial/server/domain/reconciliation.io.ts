@@ -286,6 +286,9 @@ export type TransactionReconciliationItem = Readonly<{
   documentNumber: string | null
   supplierName: string | null
   dueDate: string | null
+  // Imposto retido do título-filho (ISS/IRRF/INSS/CSRF); null = título-pai. Resolvido no enriquecimento
+  // (#172) via `maps.titles` — a coluna "Título no sistema" mostra o ÓRGÃO, não o fornecedor do pai.
+  retentionType: string | null
 }>
 export type TransactionReconciliation = Readonly<{
   reconciliationId: string

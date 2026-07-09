@@ -22,7 +22,7 @@ const view = (over: Partial<MatchDetailsView> = {}): MatchDetailsView => ({
     id: 'PERSIST-001',
     valueBRL: 'R$ 742,00',
   },
-  doc: { name: '—', documento: '—', vencimento: '—', categoria: '—', valueBRL: '—' },
+  doc: { name: '—', nameTag: null, documento: '—', vencimento: '—', categoria: '—', valueBRL: '—' },
   audit: { when: '21 jun 2026', who: 'c562bc57' },
   multi: null,
   ...over,
@@ -89,6 +89,7 @@ describe('MatchDetailsModal — título individual enriquecido (interim #172)', 
         view={view({
           doc: {
             name: 'TS Da Silva Serviços Ltda',
+            nameTag: null,
             documento: 'NFS-e 2024-0537',
             vencimento: '10/06/2026',
             categoria: '—',
@@ -111,6 +112,33 @@ describe('MatchDetailsModal — título individual enriquecido (interim #172)', 
     // Categoria segue "—" (category_ref write-only no core-api — gap de backend).
     const catLabel = screen.getByText(tr('financial.recon.match.rowCat'))
     expect(catLabel.nextElementSibling?.textContent).toBe('—')
+  })
+
+  it('imposto retido: headline é o ÓRGÃO (nameTag traduzido), não o fornecedor do pai', () => {
+    render(
+      <MatchDetailsModal
+        open
+        view={view({
+          doc: {
+            name: 'Serraria Bom Jesus LTDA', // fornecedor do PAI — não deve aparecer como headline
+            nameTag: 'financial.recon.pending.agency.iss',
+            documento: '3500',
+            vencimento: '30/06/2026',
+            categoria: '—',
+            valueBRL: 'R$ 23,00',
+          },
+        })}
+        canUndo
+        undoing={false}
+        undoErrorTag={null}
+        onUndo={vi.fn()}
+        onViewTitle={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    // O headline mostra o órgão arrecadador (ISS → SEFIN), NÃO o fornecedor do documento-pai.
+    expect(screen.getByText(tr('financial.recon.pending.agency.iss'))).toBeTruthy()
+    expect(screen.queryByText('Serraria Bom Jesus LTDA')).toBeNull()
   })
 
   it('item não resolvido pelo BFF (tudo null → "—"): renderiza traços graciosamente', () => {

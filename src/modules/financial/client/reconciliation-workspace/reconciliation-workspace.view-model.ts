@@ -738,6 +738,9 @@ const matchesAccountSearch = (a: ReconciliationAccount, q: string): boolean => {
 const MATCH_DASH = '—'
 export type MatchDetailsDoc = Readonly<{
   name: string
+  // Tag i18n do favorecido quando o título é imposto retido (ISS→SEFIN, federais→Receita Federal). A view
+  // traduz e prefere sobre `name` — o favorecido do imposto é o ÓRGÃO, não o fornecedor do documento-pai.
+  nameTag: string | null
   documento: string
   vencimento: string
   categoria: string
@@ -774,6 +777,7 @@ export type MatchDetailsView = Readonly<{
 
 const DASH_DOC: MatchDetailsDoc = {
   name: MATCH_DASH,
+  nameTag: null,
   documento: MATCH_DASH,
   vencimento: MATCH_DASH,
   categoria: MATCH_DASH,
@@ -805,6 +809,8 @@ export const matchDocFromItem = (
   if (item === null) return null
   return {
     name: item.supplierName ?? item.documentNumber ?? item.payableId,
+    // Imposto retido → favorecido é o órgão arrecadador (tag i18n); título-pai → null (usa `name`).
+    nameTag: retentionAgencyTag(item.retentionType),
     documento: item.documentNumber ?? MATCH_DASH,
     vencimento: item.dueDate !== null ? formatDayHeader(item.dueDate) : MATCH_DASH,
     // Categoria NÃO vem do core-api em nenhuma leitura (category_ref write-only); depende de backend expor — issue análoga a #268.

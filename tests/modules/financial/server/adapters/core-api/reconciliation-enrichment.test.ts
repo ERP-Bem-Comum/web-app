@@ -93,6 +93,7 @@ const reconItem = (payableId: string): TransactionReconciliationItem => ({
   documentNumber: null,
   supplierName: null,
   dueDate: null,
+  retentionType: null,
 })
 
 // Detalhe completo da conciliação (wrapper) — usa os itens crus.
