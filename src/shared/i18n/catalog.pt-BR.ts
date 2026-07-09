@@ -1241,14 +1241,21 @@ export const ptBR: Catalog = {
   'financial.create.preview.ocrBadge': 'OCR',
   'financial.create.preview.title': 'Pré-visualização do documento',
   'financial.create.preview.hint':
-    'Arraste o PDF da nota aqui ou selecione um arquivo. O OCR vai ler os dados e preencher o formulário.',
+    'Arraste o PDF ou XML da nota aqui ou selecione um arquivo. A leitura automática cria um rascunho pré-preenchido.',
   'financial.create.preview.select': 'Selecionar arquivo',
-  'financial.create.preview.formats': 'PDF, PNG ou JPG · até 10 MB',
+  'financial.create.preview.formats': 'PDF ou XML · até 20 MB',
   'financial.create.preview.reading': 'Lendo o documento…',
-  'financial.create.preview.unavailable':
-    'A leitura automática (OCR) ainda não está disponível — em breve. Preencha o formulário manualmente.',
-  'financial.create.preview.error':
-    'Não foi possível ler o documento. Tente novamente ou preencha manualmente.',
+  'financial.create.preview.done': 'Rascunho criado a partir do documento — revise os dados e confirme.',
+  'financial.create.preview.frameLabel': 'Documento enviado (pré-visualização)',
+  'financial.create.preview.replace': 'Trocar arquivo',
+  'financial.create.preview.unsupported': 'Sem pré-visualização para este formato.',
+  'financial.create.ocr.error.invalidMime': 'Formato não suportado. Envie um arquivo PDF ou XML.',
+  'financial.create.ocr.error.tooLarge': 'Arquivo muito grande. O limite é 20 MB.',
+  'financial.create.ocr.error.invalidFile':
+    'Não foi possível ler o arquivo. Verifique se é um PDF ou XML válido.',
+  'financial.create.ocr.error.unauthorized': 'Sua sessão expirou. Entre novamente para continuar.',
+  'financial.create.ocr.error.server':
+    'Não foi possível processar o documento agora. Tente novamente ou preencha manualmente.',
   'financial.create.success.title': 'Documento lançado',
   'financial.create.success.subtitle': 'Títulos gerados',
   'financial.create.success.novo': 'Lançar outro',

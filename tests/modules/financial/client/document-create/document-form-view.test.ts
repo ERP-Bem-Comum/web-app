@@ -35,7 +35,7 @@ import {
   hydrateFieldsFromDetail,
   canSaveEdit,
   buildAdjustInput,
-  ocrToFormPatch,
+  ocrErrorTag,
   maskCompetencia,
   competenciaToIso,
   competenciaFromIso,
@@ -624,42 +624,12 @@ describe('canSaveEdit / buildAdjustInput', () => {
   })
 })
 
-describe('ocrToFormPatch (costura OCR → form)', () => {
-  it('mapeia só os campos extraídos (cents→reais, dueDate ISO); patch parcial', () => {
-    const patch = ocrToFormPatch({
-      type: 'NFS-e',
-      documentNumber: '0847',
-      grossValueCents: '160000',
-      dueDate: '2026-07-10',
-    })
-    assert.equal(patch.type, 'NFS-e')
-    assert.equal(patch.documentNumber, '0847')
-    assert.equal(patch.grossValue, '1.600,00')
-    assert.equal(patch.dueDate, '2026-07-10')
-    // #163 — não veio issueDate → não entra no patch
-    assert.equal('issueDate' in patch, false)
-    // não veio série/descrição/retenção → não entram no patch
-    assert.equal('series' in patch, false)
-    assert.equal('retentions' in patch, false)
-  })
-
-  it('retenções: CSRF agrega em pis (mesma convenção da hidratação)', () => {
-    const patch = ocrToFormPatch({
-      retentions: [
-        { type: 'IRRF', valueCents: '15000' },
-        { type: 'CSRF', valueCents: '4650' },
-      ],
-    })
-    assert.equal(patch.retentions?.irrf, '150,00')
-    assert.equal(patch.retentions?.pis, '46,50')
-    assert.equal(patch.retentions?.iss, '')
-  })
-
-  it('#163: mapeia issueDate quando o OCR a extrai', () => {
-    assert.equal(ocrToFormPatch({ issueDate: '2026-06-01' }).issueDate, '2026-06-01')
-  })
-
-  it('vazio → patch vazio', () => {
-    assert.deepEqual(ocrToFormPatch({}), {})
+describe('ocrErrorTag (ingestão por OCR → tag i18n)', () => {
+  it('mapeia cada variante de OcrError p/ a chave i18n correspondente', () => {
+    assert.equal(ocrErrorTag('invalid-mime'), 'financial.create.ocr.error.invalidMime')
+    assert.equal(ocrErrorTag('file-too-large'), 'financial.create.ocr.error.tooLarge')
+    assert.equal(ocrErrorTag('invalid-file'), 'financial.create.ocr.error.invalidFile')
+    assert.equal(ocrErrorTag('unauthorized'), 'financial.create.ocr.error.unauthorized')
+    assert.equal(ocrErrorTag('server'), 'financial.create.ocr.error.server')
   })
 })
