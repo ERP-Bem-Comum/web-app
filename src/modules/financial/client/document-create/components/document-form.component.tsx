@@ -40,6 +40,7 @@ import {
   control,
   controlMono,
   controlDisabled,
+  controlReadonly,
   selectWrap,
   selectControl,
   selectControlDisabled,
@@ -327,8 +328,7 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
           <div className={field}>
             <span className={fieldLabel}>{t('financial.create.field.competencia')}</span>
             <input
-              className={controlDisabled}
-              disabled
+              className={controlReadonly}
               readOnly
               placeholder="MM/AAAA"
               value={fields.competencia}

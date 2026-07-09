@@ -352,6 +352,13 @@ export const controlDisabled = style([
   { background: vars.color.institutional.paperBeige, color: vars.color.text.muted, cursor: 'not-allowed' },
 ])
 
+// Campo AUTO/somente-leitura (ex.: Competência derivada da Emissão) — azul claro da marca em vez do bege
+// (que dá "cara de bloqueado"). Sem `not-allowed`: é preenchido pelo sistema, não desabilitado.
+export const controlReadonly = style([
+  controlBase,
+  { background: vars.color.institutional.blueBg, cursor: 'default' },
+])
+
 // Select com aparência custom (Figma/mock): some o caret nativo; o wrapper desenha o ▾ azul.
 export const selectWrap = style({
   position: 'relative',
@@ -870,7 +877,7 @@ export const entityCard = style({
   paddingInline: '0.875rem', // 14px
   borderRadius: vars.radius.lg,
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
-  background: vars.color.institutional.paperWarm,
+  background: vars.color.surface.default,
   minInlineSize: 0,
   transition: 'background 120ms, border-color 120ms',
   // Hover (mock): realce azul claro da marca — mesmo tom da seleção.
@@ -939,7 +946,7 @@ export const contratoPill = style({
   paddingInline: '0.75rem', // 12px (Figma)
   borderRadius: '1.5rem', // pill (sem token de pill no DS)
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
-  background: vars.color.institutional.paperWarm,
+  background: vars.color.surface.default,
   fontFamily: vars.font.family.body, // Nunito (brand) — texto do pill (ex.: "Sem contrato vinculado")
   fontSize: vars.font.size.xs,
   color: vars.color.text.muted,
