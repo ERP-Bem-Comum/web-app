@@ -1665,6 +1665,8 @@ export const ptBR: Catalog = {
   // labels dos campos
   'financial.recon.manual.f.supplier': 'Fornecedor',
   'financial.recon.manual.f.supplierPlaceholder': 'Buscar por nome ou CNPJ…',
+  'financial.recon.manual.f.docNumber': 'Número do documento',
+  'financial.recon.manual.f.docNumberPlaceholder': 'Ex.: NF 001',
   'financial.recon.manual.f.docType': 'Tipo de documento',
   'financial.recon.manual.f.docTypePlaceholder': 'Selecionar tipo…',
   'financial.recon.manual.f.emission': 'Data de emissão',

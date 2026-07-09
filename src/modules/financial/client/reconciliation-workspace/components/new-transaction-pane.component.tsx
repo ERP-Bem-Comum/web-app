@@ -6,8 +6,9 @@
  *
  * Honestidade: o manual-entry (#152) aceita `type` + refs (`supplierRef`/`programRef`/…) + `description`.
  * LIGADOS (reais): Tipo, Fornecedor (parceiros), Programa (programas ativos), Categoria + Centro de custo
- * (referências 020 · #200), Descrição e a confirmação consciente. CHROME: campos de documento (tipo/emissão/
- * valor — fora do contrato do manual-entry) e Destino/produto da transferência (core-api#143).
+ * (referências 020 · #200), Descrição, Destino/produto (core-api#143). CHROME (desabilitados até o backend
+ * ativar): campos de documento — Número/Tipo/Emissão/Valor (core-api#370) e classificação Tarifa/Multa/Juros
+ * (core-api#371). Acendem quando o contrato do manual-entry aceitar + retornar esses campos.
  */
 import type { ComponentType } from 'react'
 
@@ -246,14 +247,22 @@ export function NewTransactionPane({ binding }: NewTransactionPaneProps) {
                   options={binding.partnerOptions}
                   onChange={binding.setSupplierRef}
                 />
-                {/* Tipo de documento — chrome: não faz parte do contrato do manual-entry (#172). */}
+                {/* Número do documento — chrome até o contrato do manual-entry aceitar (core-api#370). */}
+                <ChromeInput
+                  label={t('financial.recon.manual.f.docNumber')}
+                  placeholder={t('financial.recon.manual.f.docNumberPlaceholder')}
+                  mono
+                />
+              </div>
+              <div className={`${s.ntRow} ${s.ntRowCols2}`}>
+                {/* Tipo de documento + Emissão — chrome até core-api#370. */}
                 <ChromeSelect
                   label={t('financial.recon.manual.f.docType')}
                   placeholder={t('financial.recon.manual.f.docTypePlaceholder')}
                 />
+                <ChromeInput label={t('financial.recon.manual.f.emission')} placeholder="DD/MM/AAAA" mono />
               </div>
               <div className={`${s.ntRow} ${s.ntRowCols2}`}>
-                <ChromeInput label={t('financial.recon.manual.f.emission')} placeholder="DD/MM/AAAA" mono />
                 <ChromeInput label={t('financial.recon.manual.f.docValue')} placeholder="R$ 0,00" mono />
               </div>
             </>
