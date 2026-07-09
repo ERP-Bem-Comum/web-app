@@ -369,6 +369,7 @@ describe('modal Detalhes da conciliação — matchDetailsView', () => {
   it('com detalhes, repassa título/auditoria; isManualEntry vem do parâmetro (type do lookup)', () => {
     const doc = {
       name: 'NF 0847',
+      nameTag: null,
       documento: '0847',
       vencimento: '10/06/2026',
       categoria: 'Serviços',
@@ -523,10 +524,12 @@ describe('matchDocFromItem (título individual enriquecido no BFF — interim #1
         documentNumber: 'NFS-e 2024-0537',
         supplierName: 'TS Da Silva Serviços Ltda',
         dueDate: '2026-06-10',
+        retentionType: null,
       },
       '150000',
     )
     assert.equal(doc?.name, 'TS Da Silva Serviços Ltda')
+    assert.equal(doc?.nameTag, null) // título-pai → sem tag de órgão
     assert.equal(doc?.documento, 'NFS-e 2024-0537')
     // dueDate ISO é formatado com o mesmo formatDayHeader do resto do arquivo.
     assert.equal(doc?.vencimento, formatDayHeader('2026-06-10'))
@@ -543,6 +546,7 @@ describe('matchDocFromItem (título individual enriquecido no BFF — interim #1
         documentNumber: 'DOC-9',
         supplierName: null,
         dueDate: null,
+        retentionType: null,
       },
       '5000',
     )
@@ -555,10 +559,40 @@ describe('matchDocFromItem (título individual enriquecido no BFF — interim #1
         documentNumber: null,
         supplierName: null,
         dueDate: null,
+        retentionType: null,
       },
       '5000',
     )
     assert.equal(byId?.name, 'pay-3')
+  })
+
+  it('imposto retido: favorecido é o ÓRGÃO (nameTag), não o fornecedor do documento-pai', () => {
+    const iss = matchDocFromItem(
+      {
+        payableId: 'pay-iss',
+        reconciledValueCents: '2300',
+        documentNumber: '3500',
+        supplierName: 'Serraria Bom Jesus LTDA', // fornecedor do PAI — NÃO deve virar o headline
+        dueDate: '2026-06-30',
+        retentionType: 'ISS',
+      },
+      '2300',
+    )
+    // A tag do órgão dirige o headline; ISS → SEFIN (município).
+    assert.equal(iss?.nameTag, 'financial.recon.pending.agency.iss')
+
+    const irrf = matchDocFromItem(
+      {
+        payableId: 'pay-irrf',
+        reconciledValueCents: '1000',
+        documentNumber: '3500',
+        supplierName: 'Serraria Bom Jesus LTDA',
+        dueDate: '2026-06-30',
+        retentionType: 'IRRF',
+      },
+      '1000',
+    )
+    assert.equal(irrf?.nameTag, 'financial.recon.pending.agency.federal') // federais → Receita Federal
   })
 
   it('campos null → documento/vencimento "—"; valueCents null → valor "—"', () => {
@@ -569,6 +603,7 @@ describe('matchDocFromItem (título individual enriquecido no BFF — interim #1
         documentNumber: null,
         supplierName: 'Fornecedor X',
         dueDate: null,
+        retentionType: null,
       },
       null,
     )
