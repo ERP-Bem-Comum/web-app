@@ -67,6 +67,7 @@ const paidPayable = (id: string): PaidPayable => ({
   documentId: `doc-${id}`,
   valueCents: '1000',
   dueDate: '2026-01-10',
+  issueDate: null,
   paidAt: null,
   paymentMethod: 'boleto',
   supplierName: null,

@@ -225,6 +225,7 @@ export type PaidPayable = Readonly<{
   documentId: string
   valueCents: string
   dueDate: string // date-only YYYY-MM-DD
+  issueDate: string | null // data de emissão (date-only YYYY-MM-DD) — filtro de Período por Emissão (056); null se ausente
   paidAt: string | null // data de pagamento (baixa) — relevante p/ conciliação; null até o backend expor
   paymentMethod: string
   supplierName: string | null

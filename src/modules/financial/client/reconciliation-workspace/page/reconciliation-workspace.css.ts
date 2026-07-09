@@ -1441,6 +1441,22 @@ export const pmMiniFlt = style({
     '&:disabled': { cursor: 'not-allowed', opacity: 0.7 },
   },
 })
+// Chip de filtro ATIVO (intervalo aplicado): realce teal p/ sinalizar que há filtro em vigor.
+export const pmMiniFltOn = style({
+  ...pmMiniBase,
+  cursor: 'pointer',
+  background: c.teal.bg,
+  borderColor: c.teal.normal,
+  color: c.teal.deep,
+  selectors: { '&:hover': { background: c.teal.bg2 } },
+})
+// Ponto indicador de filtro ativo (ao lado do rótulo do chip).
+export const fltDot = style({
+  inlineSize: '0.375rem',
+  blockSize: '0.375rem',
+  borderRadius: r.pill,
+  background: c.teal.normal,
+})
 export const pmMiniSelWrap = style(pmMiniBase)
 export const pmMiniLbl = style({
   fontFamily: recon.font.sans,
@@ -1831,6 +1847,114 @@ export const periodCustomInput = style({
   paddingInline: sp.sm,
   paddingBlock: '0.3125rem',
   selectors: { '&:focus': { outline: 'none', borderColor: c.teal.normal } },
+})
+
+// ── Popovers dos filtros ricos (Período / Valor) — 056 ──────────────────────────
+// Painel absoluto abaixo do chip (mesmo chrome dos dropdowns: ddMenuBase). Abre p/ baixo, alinhado à esquerda.
+export const filterPopover = style({
+  ...ddMenuBase,
+  insetBlockStart: 'calc(100% + 0.375rem)',
+  insetInlineStart: 0,
+  inlineSize: '18rem',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: sp.sm,
+  padding: '0.625rem',
+})
+// Variante ancorada à DIREITA (abre p/ a esquerda) — p/ o chip mais à direita (Valor), evita estourar/clipar
+// a borda direita do painel/drawer.
+export const filterPopoverEnd = style([filterPopover, { insetInlineStart: 'auto', insetInlineEnd: 0 }])
+// Segmented toggle (Vencimento | Emissão).
+export const fltSeg = style({
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr',
+  gap: '0.1875rem',
+  padding: '0.1875rem',
+  background: c.paper.warm,
+  border: `${bw.hairline} solid ${c.paper.rule}`,
+  borderRadius: r.md,
+})
+const fltSegBtnBase = {
+  border: 'none',
+  borderRadius: r.sm,
+  paddingBlock: '0.375rem',
+  fontFamily: recon.font.sans,
+  fontSize: fs.xs,
+  fontWeight: recon.weight.semibold,
+  cursor: 'pointer',
+  transition: `background ${recon.tFast}`,
+} as const
+export const fltSegBtn = styleVariants({
+  off: {
+    ...fltSegBtnBase,
+    background: 'transparent',
+    color: c.ink[4],
+    selectors: { '&:hover': { background: c.paper.default, color: c.ink[2] } },
+  },
+  on: { ...fltSegBtnBase, background: c.teal.normal, color: c.paper.default },
+})
+// Campo monetário: prefixo R$ + input de texto (sem spinner). Reusa periodCustomField/Lbl no layout.
+export const fltMoneyWrap = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: sp.xs,
+  background: c.paper.default,
+  border: `${bw.thin} solid ${c.paper.rule}`,
+  borderRadius: r.sm,
+  paddingInline: sp.sm,
+  paddingBlock: '0.3125rem',
+  selectors: { '&:focus-within': { borderColor: c.teal.normal } },
+})
+export const fltMoneyPrefix = style({
+  fontFamily: recon.font.sans,
+  fontSize: fs.xs,
+  fontWeight: recon.weight.medium,
+  color: c.ink[5],
+})
+export const fltMoneyInput = style({
+  inlineSize: '100%',
+  minInlineSize: 0,
+  border: 'none',
+  background: 'transparent',
+  fontFamily: recon.font.mono,
+  fontSize: fs.xs,
+  color: c.ink[2],
+  outline: 'none',
+  selectors: { '&::placeholder': { color: c.ink[6] } },
+})
+// Rodapé Aplicar/Limpar dos popovers.
+export const fltActions = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: sp.sm,
+  marginBlockStart: '0.125rem',
+})
+export const fltClear = style({
+  border: 'none',
+  background: 'transparent',
+  fontFamily: recon.font.sans,
+  fontSize: fs.xs,
+  fontWeight: recon.weight.medium,
+  color: c.ink[4],
+  cursor: 'pointer',
+  paddingBlock: sp.xs,
+  paddingInline: sp.sm,
+  borderRadius: r.sm,
+  selectors: { '&:hover': { background: c.paper.warm, color: c.ink[2] } },
+})
+export const fltApply = style({
+  border: 'none',
+  background: c.teal.normal,
+  fontFamily: recon.font.sans,
+  fontSize: fs.xs,
+  fontWeight: recon.weight.semibold,
+  color: c.paper.default,
+  cursor: 'pointer',
+  paddingBlock: sp.xs,
+  paddingInline: sp.lg,
+  borderRadius: r.sm,
+  selectors: { '&:hover': { background: c.teal.deep } },
 })
 
 // menu de itens (Exportar / Importar) — grupo + item com ícone

@@ -128,7 +128,7 @@ describe('transactionsToModel', () => {
 })
 
 describe('paidPayablesToModel', () => {
-  it('mapeia mínimo; supplier/docNumber ausentes → null (#172)', () => {
+  it('mapeia mínimo; supplier/docNumber/issueDate ausentes → null (#172/056)', () => {
     const raw = {
       items: [
         { id: 'p1', documentId: 'd1', valueCents: '15000', dueDate: '2026-06-10', paymentMethod: 'PIX' },
@@ -140,6 +140,27 @@ describe('paidPayablesToModel', () => {
       assert.equal(r.value[0]?.supplierName, null)
       assert.equal(r.value[0]?.documentNumber, null)
       assert.equal(r.value[0]?.dueDate, '2026-06-10')
+      assert.equal(r.value[0]?.issueDate, null) // 056: ausente → null (tolerante)
+    }
+  })
+
+  it('056: issueDate do core go-live flui p/ o model (date-only, sem conversão)', () => {
+    const raw = {
+      items: [
+        {
+          id: 'p2',
+          documentId: 'd2',
+          valueCents: '15000',
+          dueDate: '2026-06-10',
+          issueDate: '2026-06-01',
+          paymentMethod: 'PIX',
+        },
+      ],
+    }
+    const r = paidPayablesToModel(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value[0]?.issueDate, '2026-06-01')
     }
   })
 })

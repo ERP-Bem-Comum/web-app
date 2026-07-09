@@ -28,6 +28,7 @@ export type TitleEnrichment = Readonly<{
   supplierRef: string | null
   paidAt: string | null
   dueDate: string | null
+  issueDate: string | null // #163/056: data de emissão do título (p/ o filtro Período por Emissão)
 }>
 
 // Item mínimo de parceiro que o enriquecimento consome (id → nome). Estrutural: casa com o
@@ -64,6 +65,7 @@ export const buildEnrichmentMaps = async (source: EnrichmentSource): Promise<Enr
           supplierRef: t.supplierRef,
           paidAt: t.paidAt,
           dueDate: t.dueDate,
+          issueDate: t.issueDate,
         })
       }
     }
@@ -91,6 +93,7 @@ export const enrichPaidPayable = (maps: EnrichmentMaps, p: PaidPayable): PaidPay
   return {
     ...p,
     paidAt: p.paidAt ?? title?.paidAt ?? null,
+    issueDate: p.issueDate ?? title?.issueDate ?? null, // #163/056: emissão vem do título quando /payables não a traz
     documentNumber: p.documentNumber ?? title?.documentNumber ?? null,
     supplierName: p.supplierName ?? resolveSupplierName(maps, p.id),
   }
