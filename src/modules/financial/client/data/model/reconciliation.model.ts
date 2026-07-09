@@ -155,6 +155,10 @@ export type PaidPayable = Readonly<{
   documentId: string
   valueCents: string
   dueDate: string // date-only YYYY-MM-DD
+  // Data de EMISSÃO (date-only YYYY-MM-DD) — alimenta o filtro de Período por Emissão na aba Buscar/Criar
+  // vários (056). O core go-live já a devolve; ausente → null (títulos sem emissão ficam de fora do filtro
+  // de Emissão, de forma honesta). Comparação por STRING (lexical) — nunca `new Date`.
+  issueDate: string | null
   // Data de PAGAMENTO (baixa) — a data relevante p/ a conciliação (≈ saída bancária). null enquanto o
   // backend não a expõe nesta rota (core-api: /financial/payables não monta paidAt — core-api#265).
   paidAt: string | null

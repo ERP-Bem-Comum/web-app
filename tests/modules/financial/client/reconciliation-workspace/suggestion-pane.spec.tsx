@@ -42,6 +42,7 @@ const ready: SuggestionState = {
       documentId: 'DOC-1',
       valueCents: '150000',
       dueDate: '2026-06-10',
+      issueDate: '2026-06-01',
       paidAt: '2026-06-19',
       paymentMethod: 'PIX',
       supplierName: null,

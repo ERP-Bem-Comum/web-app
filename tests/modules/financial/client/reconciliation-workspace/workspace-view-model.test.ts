@@ -32,7 +32,12 @@ import {
   matchDocFromItem,
   centsToBRL,
   filterPayables,
-  payableTypeOptions,
+  parseBRLToCents,
+  centsToAmountInput,
+  dateInRange,
+  valueInRange,
+  RECON_DOCUMENT_TYPE_OPTIONS,
+  INITIAL_MULTI_FILTER,
   sortPendingByPayment,
   parseOfxAccount,
   ofxMatchesAccount,
@@ -601,17 +606,23 @@ describe('deriveManualKindFromTx (tipo do lançamento manual pelo texto — #268
   })
 })
 
-describe('Buscar/Criar vários — filtros de títulos (filterPayables por tipo de documento)', () => {
+describe('Buscar/Criar vários — filtros RICOS (056: filterPayables por objeto de critérios)', () => {
   const pay = (over: Partial<PaidPayable> & Pick<PaidPayable, 'id'>): PaidPayable => ({
     documentId: 'd',
     valueCents: '1000',
     dueDate: '2026-05-10',
+    issueDate: '2026-05-01',
     paidAt: null,
     paymentMethod: 'PIX',
     supplierName: 'TS Da Silva',
     documentNumber: 'NFS-0001',
     category: 'Serviços / Consultoria',
     documentType: 'NFS-e',
+    ...over,
+  })
+  // Constrói um MultiFilter completo a partir de overrides (defaults = neutro).
+  const mkFilter = (over: Partial<typeof INITIAL_MULTI_FILTER> = {}) => ({
+    ...INITIAL_MULTI_FILTER,
     ...over,
   })
   const list = [
@@ -621,27 +632,167 @@ describe('Buscar/Criar vários — filtros de títulos (filterPayables por tipo 
     pay({ id: 'd', documentType: null }),
   ]
 
-  it('payableTypeOptions traz os tipos de documento distintos presentes', () => {
-    assert.deepEqual(payableTypeOptions(list), ['NFS-e', 'ISS', 'IRRF'])
+  it('RECON_DOCUMENT_TYPE_OPTIONS = lista canônica de documento + impostos retidos (inclui IRRF/CSRF)', () => {
+    assert.ok(RECON_DOCUMENT_TYPE_OPTIONS.includes('NFS-e'))
+    assert.ok(RECON_DOCUMENT_TYPE_OPTIONS.includes('IRRF'))
+    assert.ok(RECON_DOCUMENT_TYPE_OPTIONS.includes('CSRF'))
+    assert.ok(RECON_DOCUMENT_TYPE_OPTIONS.includes('ISS'))
   })
 
-  it('filtra por Tipo de documento (ex.: IRRF) e por busca textual', () => {
+  it('filtra por Tipo (documento/imposto, igualdade) e por busca textual', () => {
     assert.deepEqual(
-      filterPayables(list, '', 'IRRF').map((p) => p.id),
+      filterPayables(list, mkFilter({ documentType: 'IRRF' })).map((p) => p.id),
       ['c'],
     )
     assert.deepEqual(
-      filterPayables(list, '', 'ISS').map((p) => p.id),
+      filterPayables(list, mkFilter({ documentType: 'ISS' })).map((p) => p.id),
       ['b'],
     )
     assert.deepEqual(
-      filterPayables(list, 'iss', 'all').map((p) => p.id),
+      filterPayables(list, mkFilter({ search: 'iss' })).map((p) => p.id),
       ['b'],
     )
     assert.deepEqual(
-      filterPayables(list, '', 'all').map((p) => p.id),
+      filterPayables(list, mkFilter()).map((p) => p.id),
       ['a', 'b', 'c', 'd'],
     )
+  })
+
+  it('dateInRange: comparação por string, bordas inclusivas, lado vazio = aberto', () => {
+    assert.equal(dateInRange('2026-06-10', '2026-06-01', '2026-06-30'), true)
+    assert.equal(dateInRange('2026-06-01', '2026-06-01', '2026-06-30'), true) // borda inferior
+    assert.equal(dateInRange('2026-06-30', '2026-06-01', '2026-06-30'), true) // borda superior
+    assert.equal(dateInRange('2026-07-01', '2026-06-01', '2026-06-30'), false)
+    assert.equal(dateInRange('2026-06-10', '', '2026-06-30'), true) // sem inferior
+    assert.equal(dateInRange('2026-06-10', '2026-06-01', ''), true) // sem superior
+  })
+
+  it('filtra por Período — por VENCIMENTO (due) — client-side', () => {
+    const byDue = [
+      pay({ id: 'mai', dueDate: '2026-05-20', issueDate: '2026-04-01' }),
+      pay({ id: 'jun', dueDate: '2026-06-10', issueDate: '2026-05-01' }),
+    ]
+    assert.deepEqual(
+      filterPayables(byDue, mkFilter({ period: { field: 'due', from: '2026-06-01', to: '2026-06-30' } })).map(
+        (p) => p.id,
+      ),
+      ['jun'],
+    )
+    // Lado aberto (só "de"): pega jun em diante.
+    assert.deepEqual(
+      filterPayables(byDue, mkFilter({ period: { field: 'due', from: '2026-06-01', to: '' } })).map(
+        (p) => p.id,
+      ),
+      ['jun'],
+    )
+  })
+
+  it('filtra por Período — por EMISSÃO (issue); issueDate null fica FORA quando há intervalo', () => {
+    const byIssue = [
+      pay({ id: 'i-abr', dueDate: '2026-06-10', issueDate: '2026-04-15' }),
+      pay({ id: 'i-mai', dueDate: '2026-06-11', issueDate: '2026-05-15' }),
+      pay({ id: 'i-null', dueDate: '2026-06-12', issueDate: null }),
+    ]
+    assert.deepEqual(
+      filterPayables(
+        byIssue,
+        mkFilter({ period: { field: 'issue', from: '2026-05-01', to: '2026-05-31' } }),
+      ).map((p) => p.id),
+      ['i-mai'],
+    )
+    // Sem intervalo (from/to vazios) → o null NÃO é excluído (filtro de emissão inativo).
+    assert.deepEqual(
+      filterPayables(byIssue, mkFilter({ period: { field: 'issue', from: '', to: '' } })).map((p) => p.id),
+      ['i-abr', 'i-mai', 'i-null'],
+    )
+  })
+
+  it('valueInRange + filtra por Valor (min/max em centavos) — bordas inclusivas', () => {
+    assert.equal(valueInRange(10000, 10000, 100000), true) // borda inferior
+    assert.equal(valueInRange(100000, 10000, 100000), true) // borda superior
+    assert.equal(valueInRange(9999, 10000, null), false)
+    assert.equal(valueInRange(5000, null, null), true) // sem limites
+    const byValue = [
+      pay({ id: 'baixo', valueCents: '9999' }),
+      pay({ id: 'cem', valueCents: '10000' }),
+      pay({ id: 'medio', valueCents: '250000' }),
+      pay({ id: 'alto', valueCents: '1500000' }),
+    ]
+    // [R$ 100, R$ 10.000] = [10000, 1000000] centavos → cem + medio.
+    assert.deepEqual(
+      filterPayables(byValue, mkFilter({ value: { minCents: 10000, maxCents: 1000000 } })).map((p) => p.id),
+      ['cem', 'medio'],
+    )
+    // Só mínimo (R$ 1.000 = 100000): medio (R$ 2.500) + alto (R$ 15.000).
+    assert.deepEqual(
+      filterPayables(byValue, mkFilter({ value: { minCents: 100000, maxCents: null } })).map((p) => p.id),
+      ['medio', 'alto'],
+    )
+  })
+
+  it('composição dos 4 critérios (busca + tipo + período + valor)', () => {
+    const composed = [
+      pay({
+        id: 'hit',
+        documentType: 'NFS-e',
+        dueDate: '2026-06-10',
+        valueCents: '50000',
+        supplierName: 'Alpha',
+      }),
+      pay({
+        id: 'wrongType',
+        documentType: 'ISS',
+        dueDate: '2026-06-10',
+        valueCents: '50000',
+        supplierName: 'Alpha',
+      }),
+      pay({
+        id: 'wrongDate',
+        documentType: 'NFS-e',
+        dueDate: '2026-07-10',
+        valueCents: '50000',
+        supplierName: 'Alpha',
+      }),
+      pay({
+        id: 'wrongValue',
+        documentType: 'NFS-e',
+        dueDate: '2026-06-10',
+        valueCents: '5000',
+        supplierName: 'Alpha',
+      }),
+      pay({
+        id: 'wrongSearch',
+        documentType: 'NFS-e',
+        dueDate: '2026-06-10',
+        valueCents: '50000',
+        supplierName: 'Beta',
+      }),
+    ]
+    assert.deepEqual(
+      filterPayables(
+        composed,
+        mkFilter({
+          search: 'alpha',
+          documentType: 'NFS-e',
+          period: { field: 'due', from: '2026-06-01', to: '2026-06-30' },
+          value: { minCents: 10000, maxCents: 1000000 },
+        }),
+      ).map((p) => p.id),
+      ['hit'],
+    )
+  })
+
+  it('parseBRLToCents: PT (milhar/decimal), defensivo (vazio/inválido → null), inverso centsToAmountInput', () => {
+    assert.equal(parseBRLToCents('1.234,56'), 123456)
+    assert.equal(parseBRLToCents('100'), 10000)
+    assert.equal(parseBRLToCents('100,5'), 10050)
+    assert.equal(parseBRLToCents('R$ 2.000,00'), 200000)
+    assert.equal(parseBRLToCents('1234.56'), 123456) // ponto decimal simples
+    assert.equal(parseBRLToCents(''), null)
+    assert.equal(parseBRLToCents('   '), null)
+    assert.equal(parseBRLToCents('abc'), null)
+    assert.equal(centsToAmountInput(123456), '1234,56')
+    assert.equal(centsToAmountInput(10000), '100,00')
   })
 
   it('sortPendingByPayment: mais antigo por data de PAGAMENTO no topo; sem paidAt vão ao fim; não muta', () => {
@@ -890,6 +1041,7 @@ describe('fluxo contínuo: nextPendingWithMatch + tituloLabel', () => {
       documentId: 'd',
       valueCents: '0',
       dueDate: '2026-06-01',
+      issueDate: null,
       paidAt: null,
       paymentMethod: '',
       supplierName: null,

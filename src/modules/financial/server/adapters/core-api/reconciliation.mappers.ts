@@ -197,6 +197,7 @@ export const paidPayablesToModel = (raw: unknown): Result<readonly PaidPayable[]
     documentId: p.documentId,
     valueCents: p.valueCents,
     dueDate: p.dueDate,
+    issueDate: p.issueDate ?? null, // core go-live já devolve; ausente → null (filtro Período por Emissão, 056)
     paidAt: p.paidAt ?? null, // ausente na rota hoje → null; acende quando o backend expor (core-api#265)
     paymentMethod: p.paymentMethod,
     supplierName: p.supplierName,
