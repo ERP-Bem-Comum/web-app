@@ -59,3 +59,7 @@ export {
   reconciledGrossByContractQueryOptions,
   type ContractPayment,
 } from '#modules/financial/client/contas-a-pagar-list/contract-payments.query.ts'
+
+// ── Referências de categorização (Centro de Custo + Categoria) — consumidas cross-módulo (ex.: Contratos §I) ──
+export { listFinancialReferencesFn } from '#modules/financial/server/adapters/server-fns/list-financial-references.query.fn.ts'
+export type { FinancialReferences } from '#modules/financial/client/data/model/reconciliation.model.ts'

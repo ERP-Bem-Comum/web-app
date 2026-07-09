@@ -143,11 +143,19 @@ interface Props {
   currentYear: number
   // Opções reais de Programa (D8 — UUID→sigla), vindas da ViewModel (query de programas no binding).
   programOptions: readonly { readonly value: string; readonly label: string }[]
+  // Opções reais (dados legados) de Centro de Custo / Categoria (referências do Financeiro) e Plano
+  // Orçamentário (GET /budget-plans) — injetadas pela page via bindings cross-módulo.
+  costCenterOptions: readonly { readonly value: string; readonly label: string }[]
+  categoryOptions: readonly { readonly value: string; readonly label: string }[]
+  budgetPlanOptions: readonly { readonly value: string; readonly label: string }[]
 }
 
 export function ContractForm({
   state,
   onUpdate,
+  costCenterOptions,
+  categoryOptions,
+  budgetPlanOptions,
   submitting,
   errorText,
   selectedPartner,
@@ -470,8 +478,13 @@ export function ContractForm({
                     onUpdate('budgetPlanId', e.target.value || null)
                   }}
                 >
-                  {/* Plano Orçamentário: backend ainda não expõe listagem (#32) → follow-up. Sem opções reais. */}
+                  {/* Plano Orçamentário: opções reais via GET /budget-plans (core-api#374 acende o dado). */}
                   <option value="">Selecione…</option>
+                  {budgetPlanOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -489,12 +502,13 @@ export function ContractForm({
                     onUpdate('centroDeCusto', e.target.value || null)
                   }}
                 >
+                  {/* Centro de Custo: opções reais (dados legados) das referências do Financeiro. */}
                   <option value="">Selecione…</option>
-                  <option value="RH">{t('contracts.create.field.centroDeCusto.rh')}</option>
-                  <option value="Serviços Gerais">
-                    {t('contracts.create.field.centroDeCusto.services')}
-                  </option>
-                  <option value="Eventos">{t('contracts.create.field.centroDeCusto.events')}</option>
+                  {costCenterOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className={field}>
@@ -506,10 +520,13 @@ export function ContractForm({
                     onUpdate('categorizacao', e.target.value || null)
                   }}
                 >
+                  {/* Categoria: opções reais (dados legados) das referências do Financeiro. */}
                   <option value="">Selecione…</option>
-                  <option value="Avaliação">{t('contracts.create.field.categorizacao.evaluation')}</option>
-                  <option value="Operacional">{t('contracts.create.field.categorizacao.operational')}</option>
-                  <option value="Processo">{t('contracts.create.field.categorizacao.process')}</option>
+                  {categoryOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className={field}>

@@ -19,6 +19,7 @@ import { usePartnersOptions } from '../partners-options.binding.ts'
 import { usePartnerHydration } from '../partner-hydration.binding.ts'
 import { useProgramOptions } from '../program-options.binding.ts'
 import { useCategoryOptions, useCostCenterOptions } from '../category-options.binding.ts'
+import { usePlanoOrcamentarioOptions } from '../plano-options.binding.ts'
 import { useApproverOptions } from '../approver-options.binding.ts'
 import { useAccountOptions } from '../account-options.binding.ts'
 import {
@@ -75,6 +76,7 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
   const programOptions = useProgramOptions()
   const categoryOptions = useCategoryOptions()
   const costCenterOptions = useCostCenterOptions()
+  const planoOptions = usePlanoOrcamentarioOptions()
   const approverOptions = useApproverOptions()
   const accountOptions = useAccountOptions()
   const programValue =
@@ -203,7 +205,7 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
             centroCustoOptions={costCenterOptions}
             categoriaOptions={categoryOptions}
             subcategoriaOptions={[]}
-            planoOptions={[]}
+            planoOptions={planoOptions}
             contract={selectedContract}
             contracts={hydration.contracts}
             contractPickerOpen={controller.contractPickerOpen}

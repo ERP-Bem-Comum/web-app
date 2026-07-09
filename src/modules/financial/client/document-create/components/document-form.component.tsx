@@ -21,7 +21,6 @@ import {
   reformaTributariaEnabledFor,
   allowedRetentionKeysFor,
   maskMoney,
-  maskCompetencia,
   REFORMA_TRIBUTARIA_KEYS,
   paymentComplementaryOf,
   paymentMethodNameTag,
@@ -41,6 +40,7 @@ import {
   control,
   controlMono,
   controlDisabled,
+  controlReadonly,
   selectWrap,
   selectControl,
   selectControlDisabled,
@@ -324,19 +324,16 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             </div>
           </div>
 
-          {/* Competência (#197) — MM/AAAA; persistida no create (backend converte p/ YYYY-MM via VO). */}
+          {/* Competência (#197) — AUTOMÁTICA: reflete o mês/ano da Emissão (read-only, não digitável). */}
           <div className={field}>
             <span className={fieldLabel}>{t('financial.create.field.competencia')}</span>
             <input
-              className={locks.competencia ? controlDisabled : control}
-              disabled={locks.competencia}
-              inputMode="numeric"
+              className={controlReadonly}
+              readOnly
               placeholder="MM/AAAA"
               value={fields.competencia}
               aria-label={t('financial.create.field.competencia')}
-              onChange={(e) => {
-                props.onText('competencia', maskCompetencia(e.target.value))
-              }}
+              title={t('financial.create.field.competenciaHint')}
             />
           </div>
           <div className={field}>

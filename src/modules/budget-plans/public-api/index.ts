@@ -127,3 +127,7 @@ export type {
   CreatePlanForm,
   CreatePlanError,
 } from '#modules/budget-plans/client/planejamento/create-plan.view-model.ts'
+
+// ── Lista de planos orçamentários (server fn) — consumida cross-módulo p/ o dropdown "Plano Orçamentário"
+// (Financeiro/Lançar Documento e Contratos/Novo Contrato). Acende com core-api#374 (driver + dado). ──
+export { listBudgetPlansFn } from '#modules/budget-plans/server/adapters/server-fns/list-budget-plans.query.fn.ts'

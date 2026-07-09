@@ -18,6 +18,8 @@ import {
   useContractCreateBinding,
   usePartnerSearchBinding,
   useContractProgramOptionsBinding,
+  useContractReferenceOptionsBinding,
+  useContractBudgetPlanOptionsBinding,
 } from '../contract-create.binding.ts'
 import { useContractFormController } from '../components/contract-form.controller.ts'
 import type { SelectedPartner } from '../components/contract-form.controller.ts'
@@ -76,6 +78,8 @@ export function ContractCreatePage(): ReactNode {
   const navigate = useNavigate()
   const { createCommand } = useContractCreateBinding()
   const programOptions = useContractProgramOptionsBinding()
+  const { costCenterOptions, categoryOptions } = useContractReferenceOptionsBinding()
+  const budgetPlanOptions = useContractBudgetPlanOptionsBinding()
   const { attachCommand } = useAttachSignedDocumentBinding()
   // Workaround: o backend não aceita contato no create → PATCH logo após criar (se preenchido).
   const { editCommand: contatoEditCommand } = useContractEditBinding()
@@ -319,6 +323,9 @@ export function ContractCreatePage(): ReactNode {
         documentUploaded={uploadedFile !== null}
         currentYear={form.currentYear}
         programOptions={programOptions}
+        costCenterOptions={costCenterOptions}
+        categoryOptions={categoryOptions}
+        budgetPlanOptions={budgetPlanOptions}
       />
 
       {/* Modal de finalização */}
