@@ -128,7 +128,7 @@ export function SupplierPicker(props: SupplierPickerProps): ReactNode {
                     <AvatarLabel
                       initials={initialsFrom(p.name)}
                       variant={p.kind}
-                      text={`${p.name} · ${t(partnerKindTag(p.kind))}`}
+                      text={p.subtitle !== '' ? `${p.name} · ${maskDocument(p.subtitle)}` : p.name}
                     />
                   </button>
                 ))
