@@ -10,6 +10,7 @@ import type {
   CreateBudgetPlanInput,
   CreatedBudgetPlan,
 } from '#modules/budget-plans/client/data/model/budget-plan.model.ts'
+import type { PlanDetail } from '#modules/budget-plans/client/data/model/plan-detail.model.ts'
 import type {
   BudgetPlansError,
   BudgetPlansFnResult,
@@ -31,11 +32,13 @@ export type ListBudgetPlansArgs = Readonly<{
 type ListFn = (opts: { data: ListBudgetPlansArgs }) => Promise<BudgetPlansFnResult<BudgetPlanListPageResult>>
 type CreateFn = (opts: { data: CreateBudgetPlanInput }) => Promise<BudgetPlansFnResult<CreatedBudgetPlan>>
 type OptionsFn = () => Promise<BudgetPlansFnResult<{ programs: readonly BudgetPlanProgramOption[] }>>
+type GetDetailFn = (opts: { data: { id: string } }) => Promise<BudgetPlansFnResult<PlanDetail>>
 
 export type BudgetPlansRepository = Readonly<{
   listBudgetPlans: (args: ListBudgetPlansArgs) => Promise<Result<BudgetPlanListPageResult, BudgetPlansError>>
   create: (input: CreateBudgetPlanInput) => Promise<Result<CreatedBudgetPlan, BudgetPlansError>>
   getProgramOptions: () => Promise<Result<readonly BudgetPlanProgramOption[], BudgetPlansError>>
+  getPlanDetail: (id: string) => Promise<Result<PlanDetail, BudgetPlansError>>
 }>
 
 export const createBudgetPlansRepository = (
@@ -43,6 +46,7 @@ export const createBudgetPlansRepository = (
     listBudgetPlansFn: ListFn
     createBudgetPlanFn: CreateFn
     listBudgetPlanOptionsFn: OptionsFn
+    getBudgetPlanDetailFn: GetDetailFn
   }>,
 ): BudgetPlansRepository => ({
   listBudgetPlans: async (args) => {
@@ -56,5 +60,9 @@ export const createBudgetPlansRepository = (
   getProgramOptions: async () => {
     const res = await deps.listBudgetPlanOptionsFn()
     return res.ok ? ok(res.data.programs) : err(res.error)
+  },
+  getPlanDetail: async (id) => {
+    const res = await deps.getBudgetPlanDetailFn({ data: { id } })
+    return res.ok ? ok(res.data) : err(res.error)
   },
 })

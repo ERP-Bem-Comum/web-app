@@ -71,9 +71,31 @@ export function PlanDetailPage(): ReactNode {
         </div>
       </div>
 
-      {state.status === 'not-found' ? (
-        <p className={notFound}>{t('budget-plans.detail.notFound')}</p>
-      ) : (
+      {state.status === 'loading' && <p className={notFound}>{t('budget-plans.detail.loading')}</p>}
+      {state.status === 'error' && <p className={notFound}>{t('budget-plans.detail.error')}</p>}
+      {state.status === 'not-found' && <p className={notFound}>{t('budget-plans.detail.notFound')}</p>}
+
+      {state.status === 'empty' && (
+        <>
+          <div className={resultCard}>
+            <div className={titleRow}>
+              <h1 className={title}>
+                {state.header.title}
+                <Badge variant={BADGE_VARIANT[state.header.status.tone]} size="sm" uppercase>
+                  {state.header.status.label}
+                </Badge>
+              </h1>
+              <span className={totalPlan}>
+                {t('budget-plans.detail.totalPlan')}{' '}
+                <span className={totalValue}>{state.header.totalLabel}</span>
+              </span>
+            </div>
+          </div>
+          <p className={notFound}>{t('budget-plans.detail.empty')}</p>
+        </>
+      )}
+
+      {state.status === 'ready' && (
         <>
           <div className={resultCard}>
             <div className={titleRow}>

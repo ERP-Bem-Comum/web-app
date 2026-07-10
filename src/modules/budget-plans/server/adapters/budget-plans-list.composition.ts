@@ -9,6 +9,7 @@ import { createBudgetPlansCoreClient } from './core-api/core-api-budget-plans.ts
 import { createListBudgetPlans } from '#modules/budget-plans/server/application/list-budget-plans.use-case.ts'
 import { createCreateBudgetPlan } from '#modules/budget-plans/server/application/create-budget-plan.use-case.ts'
 import { createListBudgetPlanOptions } from '#modules/budget-plans/server/application/list-budget-plan-options.use-case.ts'
+import { createGetBudgetPlanDetail } from '#modules/budget-plans/server/application/get-budget-plan-detail.use-case.ts'
 
 type BudgetPlansServer = ReturnType<typeof build>
 
@@ -19,6 +20,7 @@ const build = () => {
     listBudgetPlans: createListBudgetPlans({ client }),
     createBudgetPlan: createCreateBudgetPlan({ client }),
     listProgramOptions: createListBudgetPlanOptions({ client }),
+    getPlanDetail: createGetBudgetPlanDetail({ client }),
   }
 }
 
