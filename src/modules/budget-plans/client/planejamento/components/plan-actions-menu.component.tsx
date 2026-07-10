@@ -15,8 +15,8 @@ export type PlanActionsMenuProps = Readonly<{
    * `disabledTitle`, jamais somem (regra da P.O.). `null`/ausente ⇒ nenhuma desabilitada.
    */
   isDisabled?: (action: PlanAction) => boolean
-  /** Tooltip (i18n) do item desabilitado — explica que depende do backend. */
-  disabledTitle?: string
+  /** Tooltip (i18n) do item desabilitado, POR AÇÃO — explica o motivo (sem endpoint × status do plano). */
+  disabledTitle?: (action: PlanAction) => string | undefined
   /** Ação em andamento (mostra pendência no item). `null` ⇒ ociosa. */
   pendingAction?: PlanAction | null
   /** Execução da ação real (approve/start-calibration/create-scenery/export-csv). */
@@ -77,7 +77,7 @@ export function PlanActionsMenu(props: PlanActionsMenuProps): ReactNode {
                   role="menuitem"
                   className={action === 'delete' ? itemDanger : item}
                   disabled={disabled}
-                  title={props.isDisabled?.(action) === true ? props.disabledTitle : undefined}
+                  title={props.isDisabled?.(action) === true ? props.disabledTitle?.(action) : undefined}
                   onClick={() => {
                     setOpen(false)
                     props.onAction(action)

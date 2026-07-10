@@ -8,6 +8,10 @@ import { render, screen, cleanup, fireEvent, within } from '@testing-library/rea
 
 import { PlanTreeTable } from '#modules/budget-plans/client/planejamento/components/plan-tree-table.component.tsx'
 import { toPlanRow } from '#modules/budget-plans/client/planejamento/planejamento-list.view-model.ts'
+import {
+  isActionEnabled,
+  actionDisabledTitleKey,
+} from '#modules/budget-plans/client/planejamento/plan-actions.view-model.ts'
 import type { BudgetPlanNode } from '#modules/budget-plans/client/data/model/budget-plan.model.ts'
 
 afterEach(() => {
@@ -115,5 +119,45 @@ describe('PlanTreeTable', () => {
     renderTable([toPlanRow(node({ id: 'p-42' }))], { onOpenPlan })
     fireEvent.click(screen.getByRole('button', { name: '2026 ETI 1.0' }))
     expect(onOpenPlan).toHaveBeenCalledWith('p-42')
+  })
+
+  const statusGating = {
+    actionIsDisabled: (
+      a: Parameters<typeof isActionEnabled>[0],
+      s: 'RASCUNHO' | 'EM_CALIBRACAO' | 'APROVADO',
+    ) => !isActionEnabled(a, s),
+    actionDisabledTitleFor: (
+      a: Parameters<typeof actionDisabledTitleKey>[0],
+      s: 'RASCUNHO' | 'EM_CALIBRACAO' | 'APROVADO',
+    ) => actionDisabledTitleKey(a, s),
+  }
+
+  it('raiz APROVADA: "criar cenário" desabilitado (tooltip), "calibração" habilitada', () => {
+    renderTable([toPlanRow(node({ id: 'p-ap', status: 'APROVADO' }))], statusGating)
+    fireEvent.click(screen.getByRole('button', { name: 'Ações do plano' }))
+    const menu = screen.getByRole('menu')
+    const scenery = within(menu).getByText('ação:create-scenery')
+    expect(scenery.hasAttribute('disabled')).toBe(true)
+    expect(scenery.getAttribute('title')).toBe('budget-plans.action.disabled.sceneryNeedsDraft')
+    expect(within(menu).getByText('ação:start-calibration').hasAttribute('disabled')).toBe(false)
+  })
+
+  it('raiz RASCUNHO: "calibração" desabilitada (tooltip), "criar cenário" habilitado', () => {
+    renderTable([toPlanRow(node({ id: 'p-dr', status: 'RASCUNHO' }))], statusGating)
+    fireEvent.click(screen.getByRole('button', { name: 'Ações do plano' }))
+    const menu = screen.getByRole('menu')
+    const calib = within(menu).getByText('ação:start-calibration')
+    expect(calib.hasAttribute('disabled')).toBe(true)
+    expect(calib.getAttribute('title')).toBe('budget-plans.action.disabled.calibrationNeedsApproved')
+    expect(within(menu).getByText('ação:create-scenery').hasAttribute('disabled')).toBe(false)
+  })
+
+  it('guarda no clique: ação desabilitada por status não dispara onAction', () => {
+    const onAction = vi.fn()
+    renderTable([toPlanRow(node({ id: 'p-ap2', status: 'APROVADO' }))], { ...statusGating, onAction })
+    fireEvent.click(screen.getByRole('button', { name: 'Ações do plano' }))
+    // botão desabilitado não navega/dispara; a guarda no onAction é defesa extra
+    fireEvent.click(within(screen.getByRole('menu')).getByText('ação:create-scenery'))
+    expect(onAction).not.toHaveBeenCalledWith('p-ap2', 'create-scenery')
   })
 })

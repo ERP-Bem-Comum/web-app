@@ -4,6 +4,7 @@
  * interpolação de {nome}) é montado na view. Front-first: a execução real depende das mutations (#113).
  */
 import type { PlanAction } from '#modules/budget-plans/client/planejamento/planejamento-list.view-model.ts'
+import type { BudgetPlanStatus } from '#modules/budget-plans/client/data/model/enums.ts'
 import type { BudgetPlansError } from '#modules/budget-plans/client/data/repository/budget-plans-error.ts'
 
 /** Ações que abrem um modal de confirmação nesta fatia (as demais são outras features/telas). */
@@ -20,8 +21,34 @@ const ACTIONS_WITHOUT_ENDPOINT: ReadonlySet<PlanAction> = new Set<PlanAction>([
   'delete',
 ])
 
-/** A ação está ligada a um endpoint real? (false ⇒ o item do menu fica `disabled` + tooltip). */
-export const isActionEnabled = (action: PlanAction): boolean => !ACTIONS_WITHOUT_ENDPOINT.has(action)
+/**
+ * A ação está DISPONÍVEL? (false ⇒ o item do menu fica `disabled` + tooltip). Dois eixos (§V, regra da P.O.):
+ *  1. endpoint real (as de `ACTIONS_WITHOUT_ENDPOINT` nunca habilitam);
+ *  2. STATUS do plano (quando informado): `create-scenery` só em plano NÃO aprovado; `start-calibration` só em
+ *     plano APROVADO — espelha a regra de domínio do backend (409 `scenery-needs-draft`/`not-approved`).
+ * Sem `status`, só o eixo (1) é avaliado (compat. com chamadas legadas / quando o status não é conhecido).
+ */
+export const isActionEnabled = (action: PlanAction, status?: BudgetPlanStatus): boolean => {
+  if (ACTIONS_WITHOUT_ENDPOINT.has(action)) return false
+  if (status === undefined) return true
+  if (action === 'create-scenery') return status !== 'APROVADO'
+  if (action === 'start-calibration') return status === 'APROVADO'
+  return true
+}
+
+/**
+ * Chave i18n do tooltip do item DESABILITADO, por ação × status (§V). As gated-by-status trazem o motivo certo;
+ * as demais (sem endpoint) caem no genérico `noEndpoint`. A view traduz — o ViewModel é puro (sem i18n).
+ */
+export const actionDisabledTitleKey = (action: PlanAction, status?: BudgetPlanStatus): string => {
+  if (action === 'create-scenery' && status === 'APROVADO') {
+    return 'budget-plans.action.disabled.sceneryNeedsDraft'
+  }
+  if (action === 'start-calibration' && status !== undefined && status !== 'APROVADO') {
+    return 'budget-plans.action.disabled.calibrationNeedsApproved'
+  }
+  return 'budget-plans.action.noEndpoint'
+}
 
 /**
  * Mapa PURO (§V) do erro do BFF → tag i18n para o feedback da ação. O core-api esconde o slug (OWASP), então
@@ -36,8 +63,10 @@ export const actionErrorTag = (error: BudgetPlansError): string => {
       return 'budget-plans.action.error.notFound'
     case 'budget-plan-already-approved':
       return 'budget-plans.action.error.alreadyApproved'
-    case 'budget-plan-not-approved':
+    case 'budget-plan-not-approved': // start-calibration em plano NÃO aprovado
       return 'budget-plans.action.error.notApproved'
+    case 'budget-plan-scenery-needs-draft': // scenery em plano APROVADO
+      return 'budget-plans.action.error.sceneryNeedsDraft'
     case 'budget-plan-invalid-transition':
       return 'budget-plans.action.error.invalidTransition'
     case 'invalid-input':

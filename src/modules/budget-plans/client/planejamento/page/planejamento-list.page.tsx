@@ -23,6 +23,7 @@ import type { CreatePlanError } from '#modules/budget-plans/client/planejamento/
 import {
   confirmSpecFor,
   isActionEnabled,
+  actionDisabledTitleKey,
   type ConfirmableAction,
 } from '#modules/budget-plans/client/planejamento/plan-actions.view-model.ts'
 import { usePlanActions } from '#modules/budget-plans/client/planejamento/plan-actions.binding.ts'
@@ -231,8 +232,8 @@ export function PlanejamentoListPage(): ReactNode {
             totalRow: t('budget-plans.list.totalRow'),
           }}
           actionLabelFor={(action) => t(actionKey(action))}
-          actionIsDisabled={(action) => !isActionEnabled(action)}
-          actionDisabledTitle={t('budget-plans.action.noEndpoint')}
+          actionIsDisabled={(action, status) => !isActionEnabled(action, status)}
+          actionDisabledTitleFor={(action, status) => t(actionDisabledTitleKey(action, status))}
           onOpenPlan={(id) => {
             void navigate({
               to: '/planejamento/detalhes/$id',

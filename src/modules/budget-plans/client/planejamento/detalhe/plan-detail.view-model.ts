@@ -18,6 +18,7 @@ import { formatCentsBRL } from '#modules/budget-plans/client/domain/calc/derive.
 import {
   deriveStatusView,
   type StatusView,
+  type BudgetPlanStatus,
 } from '#modules/budget-plans/client/planejamento/planejamento-list.view-model.ts'
 
 /** Nomes dos 12 meses (cabeçalho da matriz), MAIÚSCULOS como no legado. */
@@ -238,6 +239,8 @@ export const orcamentoCentroOptions = (detail: PlanDetail): readonly RegionOptio
 export type PlanDetailHeader = Readonly<{
   title: string
   status: StatusView
+  /** Status CRU (§XI) — a page usa p/ gatear as ações do menu por status (create-scenery/start-calibration). */
+  rawStatus: BudgetPlanStatus
   totalLabel: string
 }>
 
@@ -245,5 +248,6 @@ export type PlanDetailHeader = Readonly<{
 export const derivePlanDetailHeader = (detail: PlanDetail): PlanDetailHeader => ({
   title: `${String(detail.year)} ${detail.programAbbreviation ?? detail.programName} ${detail.version.toFixed(1)}`,
   status: deriveStatusView(detail.status),
+  rawStatus: detail.status,
   totalLabel: formatCentsBRL(detail.totalInCents),
 })

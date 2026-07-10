@@ -11,8 +11,9 @@ export type BudgetPlansError =
   // ── Ciclo de vida (feature 060 — ações do menu). Os três são 409 e INDISTINGUÍVEIS por status (o core-api
   // colapsa o slug num `code` público — OWASP), então o mapa é por CONTEXTO do endpoint (mensagem mais provável).
   | 'budget-plan-already-approved' // 409 no `approve` — plano já está aprovado
-  | 'budget-plan-not-approved' // 409 no `scenery` — só planos aprovados geram cenário
-  | 'budget-plan-invalid-transition' // 409 no `start-calibration` — transição de estado inválida (genérico)
+  | 'budget-plan-not-approved' // 409 no `start-calibration` — calibração só em plano APROVADO
+  | 'budget-plan-scenery-needs-draft' // 409 no `scenery` — cenário só em plano NÃO aprovado (rascunho/calibração)
+  | 'budget-plan-invalid-transition' // 409 genérico de transição de estado (reservado; nenhum endpoint mapeia hoje)
   // ── Escrita da estrutura de custo (feature 061 — Grupo B). 409 na escrita de plano não-editável (ex.: aprovado).
   | 'budget-plan-not-editable' // 409 nos POSTs de cost-structure — plano não aceita mais escrita de estrutura
   | 'unexpected' // parse/inesperado (resposta futura do core fora do contrato)
