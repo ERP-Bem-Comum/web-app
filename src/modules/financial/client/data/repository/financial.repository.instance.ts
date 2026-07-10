@@ -5,6 +5,7 @@
 import { listDocumentsFn } from '#modules/financial/server/adapters/server-fns/list-documents.query.fn.ts'
 import { listPayableTitlesFn } from '#modules/financial/server/adapters/server-fns/list-payable-titles.query.fn.ts'
 import { getDocumentFn } from '#modules/financial/server/adapters/server-fns/get-document.query.fn.ts'
+import { getDocumentTimelineFn } from '#modules/financial/server/adapters/server-fns/get-document-timeline.query.fn.ts'
 import { createDocumentFn } from '#modules/financial/server/adapters/server-fns/create-document.service.fn.ts'
 import { adjustDocumentFn } from '#modules/financial/server/adapters/server-fns/adjust-document.service.fn.ts'
 import { bulkUpdateDueDateFn } from '#modules/financial/server/adapters/server-fns/bulk-update-due-date.service.fn.ts'
@@ -21,6 +22,7 @@ export const financialRepository = createFinancialRepository({
   listDocumentsFn: (opts) => listDocumentsFn(opts),
   listPayableTitlesFn: (opts) => listPayableTitlesFn(opts),
   getDocumentFn: (opts) => getDocumentFn(opts),
+  getDocumentTimelineFn: (opts) => getDocumentTimelineFn(opts),
   createDocumentFn: (opts) => createDocumentFn(opts),
   adjustDocumentFn: (opts) => adjustDocumentFn(opts),
   bulkUpdateDueDateFn: (opts) => bulkUpdateDueDateFn(opts),

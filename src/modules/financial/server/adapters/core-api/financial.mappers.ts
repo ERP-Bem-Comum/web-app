@@ -21,6 +21,8 @@ import type {
   PayableTitleItem,
   RecentPayment,
   BulkUpdateDueDateResult,
+  DocumentTimelineEvent,
+  TimelineEventType,
 } from '#modules/financial/server/domain/document.io.ts'
 import {
   CoreApiDocumentSchema,
@@ -28,8 +30,19 @@ import {
   CoreApiPayableTitleListSchema,
   CoreApiRecentPaymentListSchema,
   CoreApiBulkDueDateResultSchema,
+  CoreApiTimelineResponseSchema,
   type CoreApiPayable,
 } from './financial.schema.ts'
+
+const TIMELINE_EVENT_TYPES: ReadonlySet<string> = new Set<TimelineEventType>([
+  'DocumentDraftSaved',
+  'DocumentSaved',
+  'PayableApproved',
+  'ApprovalUndone',
+  'PayableManuallyPaid',
+  'PayableReconciled',
+  'ReconciliationUndone',
+])
 
 // ── Erro: slug do core-api → FinancialError ─────────────────────────────────────
 const SLUG_TO_ERROR: Partial<Record<string, FinancialError>> = {
@@ -185,6 +198,26 @@ export const recentPaymentsToModel = (raw: unknown): Result<readonly RecentPayme
     paidAt: p.paidAt,
   }))
   return ok(items)
+}
+
+// Timeline → eventos CRUS (actor = UUID). Descarta entradas com eventType desconhecido (drift seguro). O
+// enriquecimento do nome do autor acontece na server-fn (BFF).
+export const timelineToModel = (raw: unknown): Result<readonly DocumentTimelineEvent[], FinancialError> => {
+  const parsed = CoreApiTimelineResponseSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  const events: DocumentTimelineEvent[] = []
+  for (const e of parsed.data.entries) {
+    if (!TIMELINE_EVENT_TYPES.has(e.eventType)) continue
+    events.push({
+      eventType: e.eventType as TimelineEventType,
+      targetKind: e.target.kind === 'Payable' ? 'Payable' : 'Document',
+      targetId: e.target.id,
+      occurredAt: e.occurredAt,
+      actor: e.actor,
+      changes: e.changes.map((c) => ({ field: c.field, before: c.before, after: c.after })),
+    })
+  }
+  return ok(events)
 }
 
 // #162: resposta do lote de vencimento → outcome por documento. Falha parcial NÃO é erro do BFF (o backend

@@ -962,6 +962,136 @@ export const drawerBody = style({
   gap: vars.space.lg,
   padding: vars.space.lg,
 })
+
+// ── Abas do drawer (Detalhes | Histórico) ───────────────────────────────────────
+export const dwTabs = style({
+  display: 'flex',
+  gap: vars.space.lg,
+  paddingInline: vars.space.lg,
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+})
+const dwTabBase = {
+  appearance: 'none',
+  border: 'none',
+  background: 'transparent',
+  cursor: 'pointer',
+  paddingBlock: vars.space.sm,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.sm,
+  marginBlockEnd: `-${vars.borderWidth.thin}`,
+} as const
+export const dwTab = styleVariants({
+  active: {
+    ...dwTabBase,
+    color: vars.color.institutional.ink2,
+    fontWeight: vars.font.weight.semibold,
+    borderBlockEnd: `${vars.borderWidth.thick} solid ${vars.color.institutional.blueDeep}`,
+  },
+  inactive: { ...dwTabBase, color: vars.color.institutional.ink5 },
+})
+
+// ── Timeline (Histórico) ─────────────────────────────────────────────────────────
+export const timelineWrap = style({
+  position: 'relative',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: vars.space.lg,
+})
+// Régua contínua no CENTRO dos dots (dot Ø 0.75rem → centro em 0.375rem a partir da borda esquerda do item).
+export const timelineLine = style({
+  position: 'absolute',
+  insetBlockStart: '0.4rem',
+  insetBlockEnd: '0.4rem',
+  insetInlineStart: '0.375rem',
+  inlineSize: vars.borderWidth.thick,
+  background: vars.color.institutional.paperRule,
+})
+// O conteúdo recua 1.5rem (a calha do dot); o dot fica em insetInlineStart:0 → NUNCA sobre o texto.
+export const timelineItem = style({ position: 'relative', paddingInlineStart: '1.5rem' })
+const timelineDotBase = {
+  position: 'absolute',
+  insetInlineStart: 0,
+  insetBlockStart: '0.3rem',
+  inlineSize: '0.75rem',
+  blockSize: '0.75rem',
+  borderRadius: '50%',
+  boxShadow: `0 0 0 0.1875rem ${vars.color.surface.default}`, // "corta" a régua atrás do dot
+} as const
+// Cor do nó = cor do STATUS que o evento representa (paridade com os pills do grid).
+export const timelineDot = styleVariants({
+  paid: { ...timelineDotBase, background: vars.color.status.activeText }, // verde
+  approved: { ...timelineDotBase, background: vars.color.status.approvedText }, // azul
+  reconciled: { ...timelineDotBase, background: vars.color.status.reconciledText }, // roxo
+  open: { ...timelineDotBase, background: vars.color.status.pendingText }, // âmbar
+  draft: { ...timelineDotBase, background: vars.color.status.cancelledText }, // cinza
+})
+export const timelineHead = style({
+  display: 'flex',
+  justifyContent: 'space-between',
+  gap: vars.space.sm,
+  alignItems: 'baseline',
+})
+export const timelineLabelGroup = style({
+  display: 'inline-flex',
+  alignItems: 'baseline',
+  flexWrap: 'wrap',
+  gap: vars.space.xs,
+  minInlineSize: 0,
+})
+export const timelineLabel = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.ink2,
+})
+// Tag do ALVO (Documento / Título principal / Imposto X) — distingue o que ocorreu com cada título.
+export const timelineTargetTag = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.blueDeep,
+  background: vars.color.institutional.blueBg,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.blueLine}`,
+  borderRadius: vars.radius.sm,
+  paddingBlock: '0.0625rem',
+  paddingInline: vars.space.xs,
+  whiteSpace: 'nowrap',
+})
+export const timelineDate = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink5,
+  whiteSpace: 'nowrap',
+})
+export const timelineActor = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink5,
+  marginBlockStart: '0.125rem',
+})
+export const timelineChanges = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: vars.space.xs,
+  marginBlockStart: vars.space.xs,
+})
+export const timelineChangePill = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.xs,
+  background: vars.color.surface.default,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.sm,
+  paddingBlock: '0.125rem',
+  paddingInline: vars.space.sm,
+  color: vars.color.institutional.ink5,
+})
+export const timelineStateBox = style({
+  padding: vars.space.xl,
+  textAlign: 'center',
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.sm,
+  color: vars.color.institutional.ink5,
+})
 export const drawerSectionTitle = style({
   margin: `0 0 ${vars.space.sm}`,
   fontFamily: vars.font.family.heading,
