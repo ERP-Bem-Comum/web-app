@@ -104,6 +104,11 @@ export function PlanejamentoListPage(): ReactNode {
           ? 'budget-plans.action.exportCsv.success'
           : `budget-plans.confirm.${outcome.action}.success`
       setToastMsg(t(key))
+      // Cenário criado é plano-FILHO (não aparece nesta lista de raízes) → navega pro detalhe dele como
+      // feedback visível. Gerenciar todos os cenários (árvore de versões) depende do backend (GET de filhos).
+      if (outcome.action === 'create-scenery' && outcome.sceneryId !== undefined) {
+        void navigate({ to: '/planejamento/detalhes/$id', params: { id: outcome.sceneryId } })
+      }
     } else {
       setToastMsg(t(outcome.errorTag))
     }

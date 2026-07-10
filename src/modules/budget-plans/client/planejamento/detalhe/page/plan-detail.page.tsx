@@ -137,6 +137,10 @@ export function PlanDetailPage(): ReactNode {
           ? 'budget-plans.action.exportCsv.success'
           : `budget-plans.confirm.${outcome.action}.success`
       setToastMsg(t(key))
+      // Cenário criado é plano-FILHO (não some na lista de raízes) → navega pro detalhe do novo cenário.
+      if (outcome.action === 'create-scenery' && outcome.sceneryId !== undefined) {
+        void navigate({ to: '/planejamento/detalhes/$id', params: { id: outcome.sceneryId } })
+      }
     } else {
       setToastMsg(t(outcome.errorTag))
     }

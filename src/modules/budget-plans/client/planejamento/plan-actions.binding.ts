@@ -22,7 +22,9 @@ import { planDetailQueryKey } from '#modules/budget-plans/client/planejamento/de
 export type RunnableAction = 'approve' | 'start-calibration' | 'create-scenery' | 'export-csv'
 
 export type ActionOutcome =
-  | Readonly<{ action: RunnableAction; ok: true }>
+  // `sceneryId` só no sucesso de `create-scenery` — o pai navega até o cenário criado (ele é plano-filho,
+  // não aparece na lista de raízes; navegar é o único feedback visível até haver GET de cenários — core-api).
+  | Readonly<{ action: RunnableAction; ok: true; sceneryId?: string }>
   | Readonly<{ action: RunnableAction; ok: false; errorTag: string }>
 
 type ActionVars =
@@ -54,15 +56,17 @@ const triggerDownload = (file: BudgetPlanCsvFile): void => {
  * `Result` distintos — deixa o `onSuccess` narrable sem casts: `csv` só aparece no sucesso do export.
  */
 type ActionSettled =
-  | Readonly<{ vars: ActionVars; ok: true; csv?: BudgetPlanCsvFile }>
+  | Readonly<{ vars: ActionVars; ok: true; csv?: BudgetPlanCsvFile; sceneryId?: string }>
   | Readonly<{ vars: ActionVars; ok: false; errorTag: string }>
 
 const settle = (
   vars: ActionVars,
   result: Result<unknown, BudgetPlansError>,
-  csv?: BudgetPlanCsvFile,
+  extra?: Readonly<{ csv?: BudgetPlanCsvFile; sceneryId?: string }>,
 ): ActionSettled =>
-  result.ok ? { vars, ok: true, csv } : { vars, ok: false, errorTag: actionErrorTag(result.error) }
+  result.ok
+    ? { vars, ok: true, csv: extra?.csv, sceneryId: extra?.sceneryId }
+    : { vars, ok: false, errorTag: actionErrorTag(result.error) }
 
 export function usePlanActions(onOutcome: (outcome: ActionOutcome) => void): PlanActionsBinding {
   const queryClient = useQueryClient()
@@ -80,11 +84,11 @@ export function usePlanActions(onOutcome: (outcome: ActionOutcome) => void): Pla
         }
         case 'create-scenery': {
           const r = await budgetPlansRepository.createScenery(vars.id, vars.name)
-          return settle(vars, r)
+          return settle(vars, r, { sceneryId: r.ok ? r.value.id : undefined })
         }
         case 'export-csv': {
           const r = await budgetPlansRepository.exportPlanCsv(vars.id)
-          return settle(vars, r, r.ok ? r.value : undefined)
+          return settle(vars, r, { csv: r.ok ? r.value : undefined })
         }
         default: {
           const _exhaustive: never = vars
@@ -104,7 +108,7 @@ export function usePlanActions(onOutcome: (outcome: ActionOutcome) => void): Pla
         void queryClient.invalidateQueries({ queryKey: planejamentoListQueryKey })
         void queryClient.invalidateQueries({ queryKey: planDetailQueryKey(settled.vars.id) })
       }
-      onOutcome({ action: settled.vars.action, ok: true })
+      onOutcome({ action: settled.vars.action, ok: true, sceneryId: settled.sceneryId })
     },
     onError: (_e, vars) => {
       onOutcome({ action: vars.action, ok: false, errorTag: 'budget-plans.action.error.unexpected' })
