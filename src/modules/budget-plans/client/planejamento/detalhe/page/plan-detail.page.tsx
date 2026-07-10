@@ -12,6 +12,7 @@ import {
 import {
   confirmSpecFor,
   isActionEnabled,
+  actionDisabledTitleKey,
   type ConfirmableAction,
 } from '#modules/budget-plans/client/planejamento/plan-actions.view-model.ts'
 import { usePlanActions } from '#modules/budget-plans/client/planejamento/plan-actions.binding.ts'
@@ -96,6 +97,7 @@ const centroErrorKey = (tag: CentrosCustoErrorTag): string => {
     case 'budget-plan-already-exists':
     case 'budget-plan-already-approved':
     case 'budget-plan-not-approved':
+    case 'budget-plan-scenery-needs-draft':
     case 'budget-plan-invalid-transition':
     case 'unexpected':
       return 'budget-plans.centrosCusto.error.unexpected'
@@ -137,6 +139,10 @@ export function PlanDetailPage(): ReactNode {
           ? 'budget-plans.action.exportCsv.success'
           : `budget-plans.confirm.${outcome.action}.success`
       setToastMsg(t(key))
+      // Cenário criado é plano-FILHO (não some na lista de raízes) → navega pro detalhe do novo cenário.
+      if (outcome.action === 'create-scenery' && outcome.sceneryId !== undefined) {
+        void navigate({ to: '/planejamento/detalhes/$id', params: { id: outcome.sceneryId } })
+      }
     } else {
       setToastMsg(t(outcome.errorTag))
     }
@@ -153,9 +159,11 @@ export function PlanDetailPage(): ReactNode {
   }, [toastMsg])
 
   const planTitle = state.status === 'ready' || state.status === 'empty' ? state.header.title : ''
+  // Status CRU do plano corrente (quando carregado) — gateia as ações do menu por status (§V, regra da P.O.).
+  const rawStatus = state.status === 'ready' || state.status === 'empty' ? state.header.rawStatus : undefined
 
   const onAction = (action: PlanAction): void => {
-    if (!isActionEnabled(action)) return
+    if (!isActionEnabled(action, rawStatus)) return
     if (action === 'export-csv') {
       planActions.runAction('export-csv', id)
       return
@@ -273,8 +281,8 @@ export function PlanDetailPage(): ReactNode {
                 actions={PLAN_ACTIONS}
                 labelFor={(action) => t(actionKey(action))}
                 triggerLabel={t('budget-plans.detail.moreActions')}
-                isDisabled={(action) => !isActionEnabled(action)}
-                disabledTitle={t('budget-plans.action.noEndpoint')}
+                isDisabled={(action) => !isActionEnabled(action, state.header.rawStatus)}
+                disabledTitle={(action) => t(actionDisabledTitleKey(action, state.header.rawStatus))}
                 pendingAction={planActions.pendingAction}
                 onAction={onAction}
               />

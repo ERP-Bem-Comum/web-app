@@ -1945,12 +1945,16 @@ export const ptBR: Catalog = {
   'budget-plans.action.delete': 'Excluir Plano',
   // Ações sem endpoint no backend (feature 060) — item visível porém desabilitado, com tooltip.
   'budget-plans.action.noEndpoint': 'Indisponível no momento (depende do backend).',
+  // Ações desabilitadas por STATUS do plano (fix 062) — tooltip específico do motivo.
+  'budget-plans.action.disabled.sceneryNeedsDraft': 'Cenários só em planos não aprovados',
+  'budget-plans.action.disabled.calibrationNeedsApproved': 'Calibração só em planos aprovados',
   'budget-plans.action.exportCsv.success': 'CSV exportado com sucesso!',
   // Feedback de erro das ações (§V) — a tag chega mapeada por contexto do endpoint pelo BFF.
   'budget-plans.action.error.unauthorized': 'Sua sessão expirou. Entre novamente para continuar.',
   'budget-plans.action.error.notFound': 'Plano orçamentário não encontrado.',
   'budget-plans.action.error.alreadyApproved': 'Este plano já está aprovado.',
-  'budget-plans.action.error.notApproved': 'Só planos aprovados podem gerar cenário.',
+  'budget-plans.action.error.notApproved': 'Só planos aprovados podem iniciar calibração.',
+  'budget-plans.action.error.sceneryNeedsDraft': 'Cenários só podem ser criados em planos não aprovados.',
   'budget-plans.action.error.invalidTransition':
     'Não é possível executar esta ação no estado atual do plano.',
   'budget-plans.action.error.invalidInput':

@@ -1,7 +1,7 @@
 /**
  * Server function: CRIAR CENÁRIO (`POST /api/v2/budget-plans/:id/scenery` — fronteira RPC única §III). Body
  * `{ name }` (1..255). Auth NO HANDLER (§ server-fn). Zod na borda (§IX). Erro como valor (§V): a UI trata a
- * tag (409 → `budget-plan-not-approved` — só planos aprovados geram cenário, 404 → not-found).
+ * tag (409 → `budget-plan-scenery-needs-draft` — cenário só em plano NÃO aprovado, 404 → not-found).
  */
 import { createServerFn } from '@tanstack/react-start'
 

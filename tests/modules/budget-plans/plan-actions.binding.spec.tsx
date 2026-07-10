@@ -77,7 +77,8 @@ describe('usePlanActions', () => {
     })
 
     await waitFor(() => {
-      expect(onOutcome).toHaveBeenCalledWith({ action: 'create-scenery', ok: true })
+      // sceneryId volta no outcome → o pai navega pro detalhe do cenário criado (plano-filho, invisível na lista).
+      expect(onOutcome).toHaveBeenCalledWith({ action: 'create-scenery', ok: true, sceneryId: 's1' })
     })
     expect(vi.mocked(budgetPlansRepository.createScenery).mock.calls[0]?.slice(0, 2)).toEqual([
       ID,

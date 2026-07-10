@@ -23,6 +23,7 @@ import type { CreatePlanError } from '#modules/budget-plans/client/planejamento/
 import {
   confirmSpecFor,
   isActionEnabled,
+  actionDisabledTitleKey,
   type ConfirmableAction,
 } from '#modules/budget-plans/client/planejamento/plan-actions.view-model.ts'
 import { usePlanActions } from '#modules/budget-plans/client/planejamento/plan-actions.binding.ts'
@@ -104,6 +105,11 @@ export function PlanejamentoListPage(): ReactNode {
           ? 'budget-plans.action.exportCsv.success'
           : `budget-plans.confirm.${outcome.action}.success`
       setToastMsg(t(key))
+      // Cenário criado é plano-FILHO (não aparece nesta lista de raízes) → navega pro detalhe dele como
+      // feedback visível. Gerenciar todos os cenários (árvore de versões) depende do backend (GET de filhos).
+      if (outcome.action === 'create-scenery' && outcome.sceneryId !== undefined) {
+        void navigate({ to: '/planejamento/detalhes/$id', params: { id: outcome.sceneryId } })
+      }
     } else {
       setToastMsg(t(outcome.errorTag))
     }
@@ -226,8 +232,8 @@ export function PlanejamentoListPage(): ReactNode {
             totalRow: t('budget-plans.list.totalRow'),
           }}
           actionLabelFor={(action) => t(actionKey(action))}
-          actionIsDisabled={(action) => !isActionEnabled(action)}
-          actionDisabledTitle={t('budget-plans.action.noEndpoint')}
+          actionIsDisabled={(action, status) => !isActionEnabled(action, status)}
+          actionDisabledTitleFor={(action, status) => t(actionDisabledTitleKey(action, status))}
           onOpenPlan={(id) => {
             void navigate({
               to: '/planejamento/detalhes/$id',

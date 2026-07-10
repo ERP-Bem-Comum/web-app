@@ -21,7 +21,7 @@ const renderMenu = (onAction: (action: PlanAction) => void = () => undefined) =>
       labelFor={(a) => a}
       triggerLabel="Mais ações"
       isDisabled={(a) => !isActionEnabled(a)}
-      disabledTitle="Depende do backend"
+      disabledTitle={() => 'Depende do backend'}
       onAction={onAction}
     />,
   )

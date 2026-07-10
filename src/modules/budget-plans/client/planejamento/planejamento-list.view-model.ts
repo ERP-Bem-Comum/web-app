@@ -114,6 +114,8 @@ export type PlanRow = Readonly<{
   totalLabel: string
   partnersLabel: string
   status: StatusView
+  /** Status CRU do plano (§XI) — a view usa p/ gatear ações do menu por status (create-scenery/start-calibration). */
+  rawStatus: BudgetPlanStatus
   auditWho: string
   auditWhen: string
   editable: boolean
@@ -134,6 +136,7 @@ export const toPlanRow = (node: BudgetPlanNode, isRoot = true, hasApprovedSiblin
     totalLabel: formatCentsBRL(node.totalInCents),
     partnersLabel: derivePartnersLabel(node.partnersCount, node.networkKind),
     status: deriveStatusView(node.status),
+    rawStatus: node.status,
     auditWho: deriveAuditParts(node.updatedByName, node.updatedAt).who,
     auditWhen: deriveAuditParts(node.updatedByName, node.updatedAt).when,
     editable: deriveEditable(node.status),

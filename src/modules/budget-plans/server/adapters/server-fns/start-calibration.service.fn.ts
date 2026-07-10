@@ -1,7 +1,7 @@
 /**
  * Server function: INICIAR CALIBRAÇÃO (`POST /api/v2/budget-plans/:id/start-calibration` — fronteira RPC única
  * §III). Auth NO HANDLER (§ server-fn). Zod na borda (§IX). Erro como valor (§V): `{ ok, data | error }` — a UI
- * trata a tag (409 → `budget-plan-invalid-transition`, 404 → not-found).
+ * trata a tag (409 → `budget-plan-not-approved` — calibração só em plano APROVADO, 404 → not-found).
  */
 import { createServerFn } from '@tanstack/react-start'
 

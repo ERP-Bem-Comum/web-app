@@ -95,14 +95,14 @@ const mapCalibrationHttpError = (e: HttpError): BudgetPlansError => {
   if (e.kind !== 'http') return 'unexpected'
   if (e.status === 401) return 'unauthorized'
   if (e.status === 404) return 'budget-plan-not-found'
-  if (e.status === 409) return 'budget-plan-invalid-transition'
+  if (e.status === 409) return 'budget-plan-not-approved' // calibração só em plano APROVADO (por contexto)
   return 'unexpected'
 }
 const mapSceneryHttpError = (e: HttpError): BudgetPlansError => {
   if (e.kind !== 'http') return 'unexpected'
   if (e.status === 401) return 'unauthorized'
   if (e.status === 404) return 'budget-plan-not-found'
-  if (e.status === 409) return 'budget-plan-not-approved'
+  if (e.status === 409) return 'budget-plan-scenery-needs-draft' // cenário só em plano NÃO aprovado (por contexto)
   if (e.status === 400 || e.status === 422) return 'invalid-input'
   return 'unexpected'
 }
