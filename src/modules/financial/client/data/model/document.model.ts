@@ -89,6 +89,13 @@ export type AdjustDocumentInput = Readonly<{
 
 export type ApproveInput = Readonly<{ id: string; version: number }>
 export type CancelInput = Readonly<{ id: string; version: number }>
+
+// #162: vencimento em LOTE (N documentos × 1 data). `outcome` por item — falha parcial não é erro global.
+export type BulkDueDateOutcome = 'ok' | 'not-found' | 'version-conflict' | 'invalid-state' | 'error'
+export type BulkDueDateItem = Readonly<{ id: string; version: number }>
+export type BulkUpdateDueDateInput = Readonly<{ items: readonly BulkDueDateItem[]; dueDate: string }>
+export type BulkDueDateItemResult = Readonly<{ documentId: string; outcome: BulkDueDateOutcome }>
+export type BulkUpdateDueDateResult = readonly BulkDueDateItemResult[]
 // #224: baixa manual de um título (Aprovado→Pago). version = do documento (optimistic lock).
 // paidAt (#232) = data de pagamento (saída bancária, retroativa); ausente → backend usa now.
 export type ManualPaymentInput = Readonly<{

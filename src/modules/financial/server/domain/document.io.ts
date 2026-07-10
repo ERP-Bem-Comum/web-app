@@ -98,6 +98,24 @@ export interface ApproveInput {
   version: number
 }
 
+// #162: alteração de vencimento em LOTE (PATCH /documents/due-date). Um mesmo `dueDate` p/ N documentos;
+// cada item leva o `version` (optimistic lock). Falha PARCIAL por item — o backend sempre responde 200 com
+// o `outcome` de cada um; 400 só p/ payload inválido.
+export type BulkDueDateOutcome = 'ok' | 'not-found' | 'version-conflict' | 'invalid-state' | 'error'
+export interface BulkDueDateItem {
+  id: string
+  version: number
+}
+export interface BulkUpdateDueDateInput {
+  items: readonly BulkDueDateItem[]
+  dueDate: string // YYYY-MM-DD
+}
+export interface BulkDueDateItemResult {
+  documentId: string
+  outcome: BulkDueDateOutcome
+}
+export type BulkUpdateDueDateResult = readonly BulkDueDateItemResult[]
+
 // #224: baixa manual de UM título (Aprovado→Pago). `version` = do DOCUMENTO (optimistic lock do agregado).
 // `paidAt` (#232) = data de pagamento (saída bancária, pode ser retroativa); ausente → backend usa now.
 export interface ManualPaymentInput {

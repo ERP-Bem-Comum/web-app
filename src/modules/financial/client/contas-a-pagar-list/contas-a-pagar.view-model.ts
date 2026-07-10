@@ -320,8 +320,8 @@ export const bulkDeleteTargets = (
 }
 
 // Alterar vencimento (1+) — o core-api só ajusta documentos em **Aberto**. `editable` = alvos Aberto
-// (id+version, p/ o PATCH); `blockedCount` = selecionados em outro status (não alteráveis). O "lote" é
-// feito como N PATCHes individuais (core-api#162 = otimização futura p/ 1 chamada só).
+// (id+version, p/ o PATCH); `blockedCount` = selecionados em outro status (não alteráveis). O "lote" vai
+// numa ÚNICA chamada ao endpoint `PATCH /documents/due-date` (#162), com outcome por item.
 export type BulkDueDateTargets = Readonly<{ editable: readonly StatusTarget[]; blockedCount: number }>
 export const bulkDueDateTargets = (
   rows: readonly GridRow[],

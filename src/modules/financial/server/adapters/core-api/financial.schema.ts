@@ -113,3 +113,14 @@ export type CoreApiRecentPayment = z.infer<typeof CoreApiRecentPaymentSchema>
 
 export const CoreApiRecentPaymentListSchema = z.array(CoreApiRecentPaymentSchema)
 export type CoreApiRecentPaymentList = z.infer<typeof CoreApiRecentPaymentListSchema>
+
+// #162: resposta do PATCH /documents/due-date (lote). Enum tolerante — drift → 'error' (fallback seguro).
+export const CoreApiBulkDueDateResultSchema = z.object({
+  results: z.array(
+    z.object({
+      documentId: z.string().trim(),
+      outcome: z.enum(['ok', 'not-found', 'version-conflict', 'invalid-state', 'error']).catch('error'),
+    }),
+  ),
+})
+export type CoreApiBulkDueDateResult = z.infer<typeof CoreApiBulkDueDateResultSchema>

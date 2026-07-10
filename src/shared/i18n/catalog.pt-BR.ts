@@ -1840,6 +1840,8 @@ export const ptBR: Catalog = {
   'financial.list.filter.dim.contrato': 'Contrato',
   'financial.list.filter.dim.programa': 'Programa',
   'financial.list.dueDate.error': 'Não foi possível alterar o vencimento. Tente novamente.',
+  'financial.list.dueDate.errorPartial':
+    'Alguns títulos não tiveram o vencimento alterado (versão desatualizada ou status incompatível). Atualize a lista e tente de novo.',
   'financial.list.delete.action': 'Excluir',
   'financial.list.delete.actionHint': 'apaga o documento definitivamente',
   'financial.list.delete.needOpen': 'Só documentos em Aberto podem ser excluídos (Rascunho em breve).',

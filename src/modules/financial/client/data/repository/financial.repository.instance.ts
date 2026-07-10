@@ -7,6 +7,7 @@ import { listPayableTitlesFn } from '#modules/financial/server/adapters/server-f
 import { getDocumentFn } from '#modules/financial/server/adapters/server-fns/get-document.query.fn.ts'
 import { createDocumentFn } from '#modules/financial/server/adapters/server-fns/create-document.service.fn.ts'
 import { adjustDocumentFn } from '#modules/financial/server/adapters/server-fns/adjust-document.service.fn.ts'
+import { bulkUpdateDueDateFn } from '#modules/financial/server/adapters/server-fns/bulk-update-due-date.service.fn.ts'
 import { approveDocumentFn } from '#modules/financial/server/adapters/server-fns/approve-document.service.fn.ts'
 import { undoApprovalFn } from '#modules/financial/server/adapters/server-fns/undo-approval.service.fn.ts'
 import { cancelDocumentFn } from '#modules/financial/server/adapters/server-fns/cancel-document.service.fn.ts'
@@ -22,6 +23,7 @@ export const financialRepository = createFinancialRepository({
   getDocumentFn: (opts) => getDocumentFn(opts),
   createDocumentFn: (opts) => createDocumentFn(opts),
   adjustDocumentFn: (opts) => adjustDocumentFn(opts),
+  bulkUpdateDueDateFn: (opts) => bulkUpdateDueDateFn(opts),
   approveDocumentFn: (opts) => approveDocumentFn(opts),
   undoApprovalFn: (opts) => undoApprovalFn(opts),
   cancelDocumentFn: (opts) => cancelDocumentFn(opts),

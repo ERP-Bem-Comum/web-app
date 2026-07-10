@@ -15,6 +15,8 @@ import type {
   ManualPaymentInput,
   ListPayableTitlesInput,
   PayableTitleListResponse,
+  BulkUpdateDueDateInput,
+  BulkUpdateDueDateResult,
 } from '#modules/financial/client/data/model/document.model.ts'
 import type { RecentPayment } from '#modules/financial/client/data/model/recent-payment.model.ts'
 import type { DashboardStatistics } from '#modules/financial/client/data/model/dashboard-statistics.model.ts'
@@ -25,6 +27,7 @@ type ListTitlesFn = (opts: { data: ListPayableTitlesInput }) => Promise<FnResult
 type GetFn = (opts: { data: { id: string } }) => Promise<FnResult<DocumentDetail>>
 type CreateFn = (opts: { data: CreateDocumentInput }) => Promise<FnResult<DocumentDetail>>
 type AdjustFn = (opts: { data: AdjustDocumentInput }) => Promise<FnResult<DocumentDetail>>
+type BulkDueDateFn = (opts: { data: BulkUpdateDueDateInput }) => Promise<FnResult<BulkUpdateDueDateResult>>
 type ApproveFn = (opts: { data: ApproveInput }) => Promise<FnResult<DocumentDetail>>
 type CancelFn = (opts: {
   data: CancelInput
@@ -44,6 +47,10 @@ export type FinancialRepository = Readonly<{
   getById: (id: string) => Promise<Result<DocumentDetail, FinancialError>>
   create: (input: CreateDocumentInput) => Promise<Result<DocumentDetail, FinancialError>>
   adjust: (input: AdjustDocumentInput) => Promise<Result<DocumentDetail, FinancialError>>
+  // #162: vencimento em lote (N documentos × 1 data). Result carrega o outcome de cada item.
+  bulkUpdateDueDate: (
+    input: BulkUpdateDueDateInput,
+  ) => Promise<Result<BulkUpdateDueDateResult, FinancialError>>
   approve: (input: ApproveInput) => Promise<Result<DocumentDetail, FinancialError>>
   undoApproval: (input: ApproveInput) => Promise<Result<DocumentDetail, FinancialError>>
   cancel: (input: CancelInput) => Promise<Result<void, FinancialError>>
@@ -62,6 +69,7 @@ export const createFinancialRepository = (
     getDocumentFn: GetFn
     createDocumentFn: CreateFn
     adjustDocumentFn: AdjustFn
+    bulkUpdateDueDateFn: BulkDueDateFn
     approveDocumentFn: ApproveFn
     undoApprovalFn: ApproveFn
     cancelDocumentFn: CancelFn
@@ -88,6 +96,10 @@ export const createFinancialRepository = (
   },
   adjust: async (input) => {
     const res = await deps.adjustDocumentFn({ data: input })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  bulkUpdateDueDate: async (input) => {
+    const res = await deps.bulkUpdateDueDateFn({ data: input })
     return res.ok ? ok(res.data) : err(res.error)
   },
   approve: async (input) => {

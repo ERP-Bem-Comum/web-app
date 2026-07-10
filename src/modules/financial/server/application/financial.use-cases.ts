@@ -17,6 +17,8 @@ import type {
   ListPayableTitlesInput,
   PayableTitleListResponse,
   RecentPayment,
+  BulkUpdateDueDateInput,
+  BulkUpdateDueDateResult,
 } from '#modules/financial/server/domain/document.io.ts'
 
 export type FinancialClient = Readonly<{
@@ -28,6 +30,11 @@ export type FinancialClient = Readonly<{
   getById: (id: string, token: string) => Promise<Result<DocumentDetail, FinancialError>>
   create: (input: CreateDocumentInput, token: string) => Promise<Result<DocumentDetail, FinancialError>>
   adjust: (input: AdjustDocumentInput, token: string) => Promise<Result<DocumentDetail, FinancialError>>
+  // #162: vencimento em lote (N documentos × 1 data). Falha parcial por item (não é erro do Result).
+  bulkUpdateDueDate: (
+    input: BulkUpdateDueDateInput,
+    token: string,
+  ) => Promise<Result<BulkUpdateDueDateResult, FinancialError>>
   approve: (input: ApproveInput, token: string) => Promise<Result<DocumentDetail, FinancialError>>
   undoApproval: (input: ApproveInput, token: string) => Promise<Result<DocumentDetail, FinancialError>>
   cancel: (input: CancelInput, token: string) => Promise<Result<void, FinancialError>>
@@ -64,6 +71,11 @@ export const createAdjustDocument =
   (deps: Deps) =>
   (input: AdjustDocumentInput, token: string): Promise<Result<DocumentDetail, FinancialError>> =>
     deps.client.adjust(input, token)
+
+export const createBulkUpdateDueDate =
+  (deps: Deps) =>
+  (input: BulkUpdateDueDateInput, token: string): Promise<Result<BulkUpdateDueDateResult, FinancialError>> =>
+    deps.client.bulkUpdateDueDate(input, token)
 
 export const createApproveDocument =
   (deps: Deps) =>
