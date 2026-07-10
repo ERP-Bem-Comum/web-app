@@ -36,3 +36,20 @@ export const GetBudgetPlanDetailInputSchema = z.object({
 })
 
 export type GetBudgetPlanDetailInput = z.infer<typeof GetBudgetPlanDetailInputSchema>
+
+/**
+ * Inputs da BORDA (§IX) das AÇÕES do menu (feature 060). `PlanIdInputSchema` cobre approve/start-calibration/
+ * export/insights (só o id do plano). `CreateSceneryInputSchema` acrescenta o `name` (1..255, contrato do core).
+ */
+export const PlanIdInputSchema = z.object({
+  id: z.uuid(),
+})
+
+export type PlanIdInput = z.infer<typeof PlanIdInputSchema>
+
+export const CreateSceneryInputSchema = z.object({
+  id: z.uuid(),
+  name: z.string().trim().min(1).max(255),
+})
+
+export type CreateSceneryInput = z.infer<typeof CreateSceneryInputSchema>

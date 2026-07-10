@@ -10,6 +10,11 @@ import { createListBudgetPlans } from '#modules/budget-plans/server/application/
 import { createCreateBudgetPlan } from '#modules/budget-plans/server/application/create-budget-plan.use-case.ts'
 import { createListBudgetPlanOptions } from '#modules/budget-plans/server/application/list-budget-plan-options.use-case.ts'
 import { createGetBudgetPlanDetail } from '#modules/budget-plans/server/application/get-budget-plan-detail.use-case.ts'
+import { createApproveBudgetPlan } from '#modules/budget-plans/server/application/approve-budget-plan.use-case.ts'
+import { createStartCalibration } from '#modules/budget-plans/server/application/start-calibration.use-case.ts'
+import { createCreateScenery } from '#modules/budget-plans/server/application/create-scenery.use-case.ts'
+import { createExportBudgetPlanCsv } from '#modules/budget-plans/server/application/export-budget-plan-csv.use-case.ts'
+import { createGetBudgetPlanInsights } from '#modules/budget-plans/server/application/get-budget-plan-insights.use-case.ts'
 
 type BudgetPlansServer = ReturnType<typeof build>
 
@@ -21,6 +26,11 @@ const build = () => {
     createBudgetPlan: createCreateBudgetPlan({ client }),
     listProgramOptions: createListBudgetPlanOptions({ client }),
     getPlanDetail: createGetBudgetPlanDetail({ client }),
+    approvePlan: createApproveBudgetPlan({ client }),
+    startCalibration: createStartCalibration({ client }),
+    createScenery: createCreateScenery({ client }),
+    exportPlanCsv: createExportBudgetPlanCsv({ client }),
+    getInsights: createGetBudgetPlanInsights({ client }),
   }
 }
 
