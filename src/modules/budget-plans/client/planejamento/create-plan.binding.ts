@@ -1,20 +1,29 @@
 /**
  * Controller do form "Adicionar Plano Orçamentário" (§XI: form-state em React vive SÓ no controller/binding).
- * UI-state do modal + validação (via ViewModel puro) + submit. Front-first: a unicidade é checada contra o
- * placeholder da lista; o submit monta o `CreateBudgetPlanInput` (Zod) e é TODO(#113 POST /budget-plans).
+ * UI-state do modal + validação (via ViewModel puro) + submit REAL: `useMutation(repository.create)` →
+ * `POST /budget-plans`. No sucesso, invalida a lista (a grid relê o real) e fecha; no 409, mostra o conflito
+ * do BACKEND (a unicidade deixou de ser checada client-side).
  *
- * 🔁 TODO(#113): trocar o `programToId`/placeholder por `useMutation(budgetPlansRepository.create)` +
- * invalidação da query da lista; o form-state e a view NÃO mudam — só o submit passa a integrar de fato.
+ * Dropdown de Programa: usa os PROGRAMAS REAIS (ATIVO) do módulo `programs` (`listProgramsFn`), com
+ * `{ abbreviation: sigla, ref: id }`. O `id` do programa É o mesmo UUID que o catálogo do budget-plans
+ * (`ProgramCatalogFromPrograms`) valida no `POST` — ambos leem `prg_programs`. Evita o `GET /budget-plans/options`,
+ * que hoje quebra na serialização (`redes[].ref` não-UUID — bug de backend, handoff ao tech lead).
  */
-import { useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
+import { isOk } from '#shared/primitives/result.ts'
 import { listProgramsFn } from '#modules/programs/public-api/index.ts'
-import { CreateBudgetPlanInputSchema } from '#modules/budget-plans/client/data/model/budget-plan.model.ts'
-import { PLANEJAMENTO_PLACEHOLDER } from '#modules/budget-plans/client/data/planejamento-list.placeholder.ts'
+import { budgetPlansRepository } from '#modules/budget-plans/client/data/repository/budget-plans.repository.instance.ts'
+import {
+  CreateBudgetPlanInputSchema,
+  type BudgetPlanProgramOption,
+} from '#modules/budget-plans/client/data/model/budget-plan.model.ts'
+import { planejamentoListQueryKey } from '#modules/budget-plans/client/planejamento/planejamento-list.binding.ts'
 import {
   createPlanInitialForm,
   validateCreatePlan,
+  createErrorTag,
   IMPORT_YEARS,
   type CreatePlanForm,
   type CreatePlanError,
@@ -23,26 +32,29 @@ import {
 // A VIEW não importa `data/`/view-model direto (§XI MVVM) — os anos de import passam pela camada de binding.
 export { IMPORT_YEARS }
 
+const EMPTY_OPTIONS: readonly BudgetPlanProgramOption[] = []
+
 /**
- * Opções de PROGRAMA para o modal "Criar Plano" — programas REAIS cadastrados (ATIVOS) via public-api de
- * `programs` (§I), NÃO derivadas da lista de planos (que fica vazia até o dado subir, core-api#374). Retorna
- * as SIGLAS (o que o dropdown exibe). Erro/loading/sem-permissão → []. Espelha o Programa do Lançar Documento.
+ * Opções de PROGRAMA para o modal "Criar Plano" — programas REAIS ATIVO do módulo `programs`, mapeados p/
+ * `{ abbreviation: sigla, ref: id }`. O dropdown exibe `abbreviation`; o submit manda o `ref` (= UUID do
+ * programa, o mesmo que o catálogo do budget-plans valida). Erro/loading/sem-permissão → [].
  */
-export function useCreateProgramOptions(): readonly string[] {
+export function useCreateProgramOptions(): readonly BudgetPlanProgramOption[] {
   const q = useQuery({
     queryKey: ['programs', 'options', 'budget-plan-create'],
-    queryFn: async (): Promise<readonly string[]> => {
+    queryFn: async (): Promise<readonly BudgetPlanProgramOption[]> => {
       const r = await listProgramsFn({ data: { status: 'ATIVO', order: 'ASC', page: 1, limit: 25 } })
-      return r.ok ? r.data.items.map((p) => p.sigla) : []
+      return r.ok ? r.data.items.map((p) => ({ abbreviation: p.sigla, ref: p.id })) : EMPTY_OPTIONS
     },
     staleTime: 60_000,
   })
-  return q.data ?? []
+  return q.data ?? EMPTY_OPTIONS
 }
 
 export type CreatePlanController = Readonly<{
   form: CreatePlanForm
   errorTag: CreatePlanError | null
+  submitting: boolean
   setYear: (v: string) => void
   setProgram: (v: string) => void
   toggleImport: (v: boolean) => void
@@ -51,30 +63,37 @@ export type CreatePlanController = Readonly<{
   submit: () => void
 }>
 
-/**
- * `programToId`: resolve a opção textual do dropdown (abreviação/nome) para o `programId` numérico do
- * `CreateBudgetPlanInput`. Front-first: sem catálogo de programas ainda, mapeia por índice estável (>0).
- */
-export function useCreatePlan(
-  programOptions: readonly string[],
-  onCreated: () => void,
-): CreatePlanController {
+export function useCreatePlan(onCreated: () => void): CreatePlanController {
+  const queryClient = useQueryClient()
   const [form, setForm] = useState<CreatePlanForm>(createPlanInitialForm)
   const [errorTag, setErrorTag] = useState<CreatePlanError | null>(null)
-
-  const programToId = useMemo<ReadonlyMap<string, number>>(
-    () => new Map(programOptions.map((p, i) => [p, i + 1])),
-    [programOptions],
-  )
 
   const reset = (): void => {
     setForm(createPlanInitialForm)
     setErrorTag(null)
   }
 
+  const mutation = useMutation({
+    mutationFn: budgetPlansRepository.create,
+    onSuccess: (res) => {
+      if (isOk(res)) {
+        // A grid lê o real → invalidar a lista faz o plano novo aparecer sem reload (§XI server-state).
+        void queryClient.invalidateQueries({ queryKey: planejamentoListQueryKey })
+        reset()
+        onCreated()
+        return
+      }
+      setErrorTag(createErrorTag(res.error))
+    },
+    onError: () => {
+      setErrorTag('budget-plans.create.unexpected')
+    },
+  })
+
   return {
     form,
     errorTag,
+    submitting: mutation.isPending,
     setYear: (v) => {
       setForm((f) => ({ ...f, year: v }))
       setErrorTag(null)
@@ -91,27 +110,22 @@ export function useCreatePlan(
     },
     reset,
     submit: () => {
-      const error = validateCreatePlan(form, PLANEJAMENTO_PLACEHOLDER)
+      const error = validateCreatePlan(form)
       if (error !== null) {
         setErrorTag(error)
         return
       }
-      const programId = programToId.get(form.program) ?? 0
-      // Monta o input do contrato real (Zod é a fonte da forma). `safeParse` blinda contra estado inválido.
+      // Zod é a fonte da forma: `programRef` precisa ser um UUID válido (blinda contra estado inválido).
       const parsed = CreateBudgetPlanInputSchema.safeParse({
         year: Number(form.year),
-        programId,
-        ...(form.importData && form.importFromYear !== ''
-          ? { yearForImport: Number(form.importFromYear) }
-          : {}),
+        programRef: form.program,
       })
       if (!parsed.success) {
         setErrorTag('budget-plans.create.requiredProgram')
         return
       }
-      // TODO(#113 POST /budget-plans): enviar `parsed.data` via budgetPlansRepository.create + invalidar a lista.
-      reset()
-      onCreated()
+      setErrorTag(null)
+      mutation.mutate(parsed.data)
     },
   }
 }

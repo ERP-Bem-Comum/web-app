@@ -15,3 +15,14 @@ export const ListBudgetPlansInputSchema = z.object({
 })
 
 export type ListBudgetPlansInput = z.infer<typeof ListBudgetPlansInputSchema>
+
+/**
+ * Input da BORDA (§IX) do `POST /budget-plans` (feature 058). Contrato real do core: ano inteiro + `programRef`
+ * (UUID do catálogo do budget-plans). Sem `yearForImport` — o import fica fora desta fase.
+ */
+export const CreateBudgetPlanInputSchema = z.object({
+  year: z.int(),
+  programRef: z.uuid(),
+})
+
+export type CreateBudgetPlanInput = z.infer<typeof CreateBudgetPlanInputSchema>

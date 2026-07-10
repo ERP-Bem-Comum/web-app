@@ -2177,9 +2177,10 @@ export const ptBR: Catalog = {
   'budget-plans.create.importFromYear': 'Criar a partir do ano de',
   'budget-plans.create.add': 'Adicionar',
   'budget-plans.create.cancel': 'Cancelar',
-  'budget-plans.create.duplicate': 'Atenção! Já existe um plano orçamentário com essas informações.',
   'budget-plans.create.requiredYear': 'Informe o ano do plano.',
   'budget-plans.create.requiredProgram': 'Selecione o programa.',
+  'budget-plans.create.conflict': 'Já existe um plano para esse ano e programa.',
+  'budget-plans.create.unexpected': 'Não foi possível criar o plano. Tente novamente.',
 
   // ── Dashboard "Resumo Mensal" (043 — reprodução fiel do legado) ──
   'dashboard.title': 'Dashboard - Resumo Mensal',

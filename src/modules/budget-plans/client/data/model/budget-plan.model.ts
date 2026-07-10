@@ -70,11 +70,29 @@ export const BudgetPlanListParamsSchema = z.object({
 })
 export type BudgetPlanListParams = z.infer<typeof BudgetPlanListParamsSchema>
 
-/** Input de criação de plano (Ano + Programa; import opcional do ano anterior; cenário opcional). */
+/**
+ * Input de criação de plano (contrato real do `POST /budget-plans`, feature 058): Ano + `programRef` (UUID do
+ * catálogo do budget-plans). Sem `programId`/`yearForImport` — o import fica fora desta fase.
+ */
 export const CreateBudgetPlanInputSchema = z.object({
   year: z.int(),
-  programId: z.int(),
-  yearForImport: z.int().optional(),
-  scenarioName: z.string().trim().min(1).optional(),
+  programRef: z.uuid(),
 })
 export type CreateBudgetPlanInput = z.infer<typeof CreateBudgetPlanInputSchema>
+
+/** Opção de programa do catálogo (fonte do `programRef` real do dropdown). O dropdown exibe `abbreviation`. */
+export const BudgetPlanProgramOptionSchema = z.object({
+  ref: z.string().trim(),
+  abbreviation: z.string().trim(),
+})
+export type BudgetPlanProgramOption = z.infer<typeof BudgetPlanProgramOptionSchema>
+
+/** Plano recém-criado (resposta do BFF). O binding só o usa para confirmar a persistência e invalidar a lista. */
+export type CreatedBudgetPlan = Readonly<{
+  id: string
+  year: number
+  programRef: string
+  status: z.infer<typeof BudgetPlanStatusSchema>
+  version: string
+  totalInCents: number
+}>

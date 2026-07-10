@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import type {
   CreatePlanForm,
   CreatePlanError,
+  CreatePlanProgramOption,
 } from '#modules/budget-plans/client/planejamento/create-plan.view-model.ts'
 
 import {
@@ -42,7 +43,8 @@ export type CreatePlanModalProps = Readonly<{
   open: boolean
   form: CreatePlanForm
   errorTag: CreatePlanError | null
-  programOptions: readonly string[]
+  submitting: boolean
+  programOptions: readonly CreatePlanProgramOption[]
   importYears: readonly number[]
   labels: CreatePlanModalLabels
   /** Traduz a tag do erro (a view não conhece o catálogo diretamente). */
@@ -99,8 +101,8 @@ export function CreatePlanModal(props: CreatePlanModalProps): ReactNode {
                 {props.labels.programPlaceholder}
               </option>
               {props.programOptions.map((p) => (
-                <option key={p} value={p}>
-                  {p}
+                <option key={p.ref} value={p.ref}>
+                  {p.abbreviation}
                 </option>
               ))}
             </select>
@@ -151,7 +153,7 @@ export function CreatePlanModal(props: CreatePlanModalProps): ReactNode {
           <button type="button" className={cancelButton} onClick={props.onClose}>
             {props.labels.cancel}
           </button>
-          <button type="button" className={addButton} onClick={props.onSubmit}>
+          <button type="button" className={addButton} onClick={props.onSubmit} disabled={props.submitting}>
             {props.labels.add}
           </button>
         </footer>

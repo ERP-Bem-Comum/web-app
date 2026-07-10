@@ -24,6 +24,16 @@ export const coreListResponseSchema = z.object({
   total: z.int().nonnegative(),
 })
 
+/** `POST /budget-plans` — 201 do plano recém-criado (feature 058). `version` string; `programRef`/`id` UUID. */
+export const coreCreateResponseSchema = z.object({
+  id: z.uuid(),
+  year: z.int(),
+  programRef: z.uuid(),
+  status: coreStatusSchema,
+  version: z.string().trim(),
+  totalInCents: z.int(),
+})
+
 /** `GET /budget-plans/options` — insumos da criação (programas c/ abreviação, anos, redes). */
 export const coreOptionsSchema = z.object({
   programs: z.array(z.object({ ref: z.uuid(), name: z.string().trim(), abbreviation: z.string().trim() })),

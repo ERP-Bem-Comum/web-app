@@ -1,10 +1,15 @@
 /**
  * BudgetPlansRepository — porta do client para o BFF do Plano Orçamentário. Converte `{ ok, data|error }` →
- * `Result` (§II). Tipos do próprio `data/model`; erro do `budget-plans-error.ts` neutro (§I). Fn injetada
+ * `Result` (§II). Tipos do próprio `data/model`; erro do `budget-plans-error.ts` neutro (§I). Fns injetadas
  * (testável). Espelha `reconciliation.repository.ts`.
  */
 import { ok, err, type Result } from '#shared/primitives/result.ts'
-import type { BudgetPlanNode } from '#modules/budget-plans/client/data/model/budget-plan.model.ts'
+import type {
+  BudgetPlanNode,
+  BudgetPlanProgramOption,
+  CreateBudgetPlanInput,
+  CreatedBudgetPlan,
+} from '#modules/budget-plans/client/data/model/budget-plan.model.ts'
 import type {
   BudgetPlansError,
   BudgetPlansFnResult,
@@ -24,16 +29,32 @@ export type ListBudgetPlansArgs = Readonly<{
 }>
 
 type ListFn = (opts: { data: ListBudgetPlansArgs }) => Promise<BudgetPlansFnResult<BudgetPlanListPageResult>>
+type CreateFn = (opts: { data: CreateBudgetPlanInput }) => Promise<BudgetPlansFnResult<CreatedBudgetPlan>>
+type OptionsFn = () => Promise<BudgetPlansFnResult<{ programs: readonly BudgetPlanProgramOption[] }>>
 
 export type BudgetPlansRepository = Readonly<{
   listBudgetPlans: (args: ListBudgetPlansArgs) => Promise<Result<BudgetPlanListPageResult, BudgetPlansError>>
+  create: (input: CreateBudgetPlanInput) => Promise<Result<CreatedBudgetPlan, BudgetPlansError>>
+  getProgramOptions: () => Promise<Result<readonly BudgetPlanProgramOption[], BudgetPlansError>>
 }>
 
 export const createBudgetPlansRepository = (
-  deps: Readonly<{ listBudgetPlansFn: ListFn }>,
+  deps: Readonly<{
+    listBudgetPlansFn: ListFn
+    createBudgetPlanFn: CreateFn
+    listBudgetPlanOptionsFn: OptionsFn
+  }>,
 ): BudgetPlansRepository => ({
   listBudgetPlans: async (args) => {
     const res = await deps.listBudgetPlansFn({ data: args })
     return res.ok ? ok(res.data) : err(res.error)
+  },
+  create: async (input) => {
+    const res = await deps.createBudgetPlanFn({ data: input })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  getProgramOptions: async () => {
+    const res = await deps.listBudgetPlanOptionsFn()
+    return res.ok ? ok(res.data.programs) : err(res.error)
   },
 })
