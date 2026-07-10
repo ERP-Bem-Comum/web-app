@@ -21,10 +21,23 @@ export type MonthlyCents = z.infer<typeof MonthlyCentsSchema>
  * Rede (parceiro) com orçamento no plano — coluna da visão "Por Rede" (Consolidado dos parceiros).
  * Estado OU Município conforme a granularidade do programa (HANDBOOK §1.4).
  */
-export type NetworkRef = Readonly<{ id: number; name: string }>
+// #394: coluna da visão "Por Rede". `ref` = UF/IBGE (chave natural); `totalInCents` = orçamento da rede.
+export type NetworkKind = 'state' | 'municipality'
+export type NetworkRef = Readonly<{
+  id: number
+  name: string
+  ref: string
+  kind: NetworkKind
+  budgetId: string
+  totalInCents: number
+}>
 export const NetworkRefSchema: z.ZodType<NetworkRef> = z.object({
   id: z.int(),
   name: z.string().trim(),
+  ref: z.string().trim(),
+  kind: z.enum(['state', 'municipality']),
+  budgetId: z.string().trim(),
+  totalInCents: z.int(),
 })
 
 /**

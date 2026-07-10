@@ -111,7 +111,15 @@ export const mapPlanDetail = (
     scenarioName: null, // cenários/versões-filhas: core-api#317/#318
     status: header.status,
     totalInCents: header.totalInCents, // real do GET /:id (plano-level; plano novo = 0)
-    networks: [], // visão "Por Rede" só acende na Fase 4
+    // #394: colunas "Por Rede" a partir dos orçamentos reais (id por índice; nome = ref até resolver rótulo).
+    networks: header.budgets.map((b, i) => ({
+      id: i,
+      name: b.partnerRef,
+      ref: b.partnerRef,
+      kind: b.partnerKind,
+      budgetId: b.budgetId,
+      totalInCents: b.valueInCents,
+    })),
     costCenters,
   }
 }

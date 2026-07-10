@@ -73,6 +73,25 @@ export type CostCenterConsolidated = Readonly<{
 // o lookup tolerante).
 
 /** Cabeçalho cru do `GET /budget-plans/:id` (subset relevante ao detalhe). */
+// Orçamento por REDE (#394): partner = estado (UF) ou município (IBGE); valor total do plano naquela rede.
+export type NetworkKind = 'state' | 'municipality'
+export type BudgetInput = Readonly<{
+  budgetId: string
+  partnerKind: NetworkKind
+  partnerRef: string // UF (2 letras) ou código IBGE (7 dígitos)
+  valueInCents: number
+}>
+
+// #394 (Grupo C): comandos de escrita + opção de rede (do /options).
+export type AddBudgetCommand = Readonly<{
+  planId: string
+  partnerKind: NetworkKind
+  partnerRef: string
+  valueInCents: number
+}>
+export type DeleteBudgetCommand = Readonly<{ planId: string; budgetId: string }>
+export type NetworkOption = Readonly<{ ref: string; name: string; kind: NetworkKind }>
+
 export type PlanDetailHeaderInput = Readonly<{
   id: string
   year: number
@@ -80,6 +99,7 @@ export type PlanDetailHeaderInput = Readonly<{
   version: string
   programName: string
   totalInCents: number
+  budgets: readonly BudgetInput[]
 }>
 
 /** Subcategoria crua da cost-structure (só estrutura/nomes; `launchType` string tolerante). */
@@ -115,6 +135,15 @@ export type PlanDetailComposed = Readonly<{
   scenarioName: string | null
   status: BudgetPlanStatus
   totalInCents: number
-  networks: readonly Readonly<{ id: number; name: string }>[]
+  // #394: colunas da visão "Por Rede". `ref` = UF/IBGE (chave natural); `totalInCents` = orçamento da rede
+  // (plano-level). As células por centro de custo (`networkInCents`) só acendem na Fatia de cálculo (C2).
+  networks: readonly Readonly<{
+    id: number
+    name: string
+    ref: string
+    kind: NetworkKind
+    budgetId: string
+    totalInCents: number
+  }>[]
   costCenters: readonly CostCenterConsolidated[]
 }>

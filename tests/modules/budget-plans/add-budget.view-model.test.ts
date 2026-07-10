@@ -1,6 +1,6 @@
 /**
- * Testes do ViewModel puro do modal "Adicionar Orçamento" (§1.6): estado obrigatório + bloqueio de estado
- * já existente (comparado pelo rótulo da opção, case-insensitive).
+ * Testes do ViewModel puro do modal "Adicionar Orçamento" (#394): rede obrigatória, bloqueio de rede já
+ * orçada (por REF/chave natural), valor obrigatório/parse de centavos.
  */
 import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
@@ -8,28 +8,34 @@ import { strict as assert } from 'node:assert'
 import {
   emptyAddBudgetForm,
   validateAddBudget,
+  parseAddBudgetCents,
 } from '#modules/budget-plans/client/planejamento/detalhe/add-budget.view-model.ts'
-import type { RegionOption } from '#modules/budget-plans/client/planejamento/detalhe/plan-detail.view-model.ts'
-
-const OPTIONS: readonly RegionOption[] = [
-  { value: 'CE', label: 'Ceará' },
-  { value: 'AC', label: 'Acre' },
-]
 
 describe('validateAddBudget', () => {
   it('form vazio → estado-required', () => {
-    assert.equal(validateAddBudget(emptyAddBudgetForm(), OPTIONS, []), 'estado-required')
+    assert.equal(validateAddBudget(emptyAddBudgetForm(), []), 'estado-required')
   })
 
-  it('estado novo → sem erro', () => {
-    assert.equal(validateAddBudget({ estado: 'CE' }, OPTIONS, ['Acre']), null)
+  it('rede já orçada (por ref) → estado-duplicate', () => {
+    assert.equal(validateAddBudget({ estado: 'CE', valor: '1000' }, ['CE']), 'estado-duplicate')
   })
 
-  it('estado já existente (pelo rótulo) → estado-duplicate', () => {
-    assert.equal(validateAddBudget({ estado: 'AC' }, OPTIONS, ['Acre']), 'estado-duplicate')
+  it('rede nova mas sem valor → valor-required', () => {
+    assert.equal(validateAddBudget({ estado: 'CE', valor: '' }, ['AC']), 'valor-required')
   })
 
-  it('comparação é case-insensitive', () => {
-    assert.equal(validateAddBudget({ estado: 'CE' }, OPTIONS, ['ceará']), 'estado-duplicate')
+  it('rede nova + valor válido → sem erro', () => {
+    assert.equal(validateAddBudget({ estado: 'CE', valor: '5.000,00' }, ['AC']), null)
+  })
+})
+
+describe('parseAddBudgetCents', () => {
+  it('reais com milhar/decimal → centavos; inválido/≤0 → null', () => {
+    assert.equal(parseAddBudgetCents('5.000,00'), 500_000)
+    assert.equal(parseAddBudgetCents('1234'), 123_400)
+    assert.equal(parseAddBudgetCents('10,5'), 1050)
+    assert.equal(parseAddBudgetCents(''), null)
+    assert.equal(parseAddBudgetCents('0'), null)
+    assert.equal(parseAddBudgetCents('abc'), null)
   })
 })

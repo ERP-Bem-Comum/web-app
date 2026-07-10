@@ -69,6 +69,21 @@ export const AddCostCenterInputSchema = z.object({
 })
 export type AddCostCenterInput = z.infer<typeof AddCostCenterInputSchema>
 
+// #394 (Grupo C): adicionar/remover orçamento por REDE. `partnerRef` = chave natural (UF 2 letras | IBGE 7).
+export const AddBudgetInputSchema = z.object({
+  planId: z.uuid(),
+  partnerKind: z.enum(['state', 'municipality']),
+  partnerRef: z
+    .string()
+    .trim()
+    .regex(/^([A-Z]{2}|[0-9]{7})$/),
+  valueInCents: z.int().min(0),
+})
+export type AddBudgetInput = z.infer<typeof AddBudgetInputSchema>
+
+export const DeleteBudgetInputSchema = z.object({ planId: z.uuid(), budgetId: z.uuid() })
+export type DeleteBudgetInput = z.infer<typeof DeleteBudgetInputSchema>
+
 export const AddCategoryInputSchema = z.object({
   planId: z.uuid(),
   costCenterId: z.uuid(),

@@ -41,7 +41,7 @@ export const coreOptionsSchema = z.object({
   redes: z.array(
     z.object({
       kind: z.enum(['state', 'municipality']),
-      ref: z.uuid(),
+      ref: z.string().trim(), // #394: chave natural (UF/IBGE), não uuid
       name: z.string().trim(),
       uf: z.string().trim(),
     }),
@@ -119,7 +119,8 @@ export const coreDetailSchema = z.object({
   budgets: z.array(
     z.object({
       id: z.uuid(),
-      partner: z.object({ kind: z.enum(['state', 'municipality']), ref: z.uuid() }),
+      // #394: ref da rede = chave natural (UF 2 letras | IBGE 7 dígitos), NÃO uuid.
+      partner: z.object({ kind: z.enum(['state', 'municipality']), ref: z.string().trim() }),
       valueInCents: z.int(),
     }),
   ),

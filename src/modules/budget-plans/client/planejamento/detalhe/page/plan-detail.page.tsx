@@ -330,19 +330,24 @@ export function PlanDetailPage(): ReactNode {
       <AddBudgetModal
         open={addBudget.open}
         estado={addBudget.form.estado}
+        valor={addBudget.form.valor}
         options={addBudget.options}
+        submitting={addBudget.submitting}
         errorTag={addBudget.errorTag}
         labels={{
           title: t('budget-plans.addBudget.title'),
           close: t('budget-plans.addBudget.close'),
           estado: t('budget-plans.addBudget.estado'),
           estadoPlaceholder: t('budget-plans.addBudget.estadoPlaceholder'),
+          valor: t('budget-plans.addBudget.valor'),
+          valorPlaceholder: t('budget-plans.addBudget.valorPlaceholder'),
           add: t('budget-plans.addBudget.add'),
           cancel: t('budget-plans.addBudget.cancel'),
         }}
         translateError={(tag: AddBudgetError) => t(`budget-plans.addBudget.error.${tag}`)}
         onClose={addBudget.close}
         onEstado={addBudget.setEstado}
+        onValor={addBudget.setValor}
         onSubmit={addBudget.submit}
       />
 
