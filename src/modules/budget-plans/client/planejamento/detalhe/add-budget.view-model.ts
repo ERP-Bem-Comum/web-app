@@ -3,26 +3,35 @@
  * adicionar uma nova coluna de orçamento; bloqueia estado já existente. Sem React — testável por node:test.
  * Front-first: a persistência (nova coluna real) chega com o core-api #113.
  */
-import type { RegionOption } from '#modules/budget-plans/client/planejamento/detalhe/plan-detail.view-model.ts'
 
-export type AddBudgetForm = Readonly<{ estado: string }>
+export type AddBudgetForm = Readonly<{ estado: string; valor: string }>
 
-export const emptyAddBudgetForm = (): AddBudgetForm => ({ estado: '' })
-
-/** `estado-required` = nenhum estado escolhido; `estado-duplicate` = já existe orçamento para o estado. */
-export type AddBudgetError = 'estado-required' | 'estado-duplicate'
+export const emptyAddBudgetForm = (): AddBudgetForm => ({ estado: '', valor: '' })
 
 /**
- * Valida a escolha do estado contra os que JÁ têm orçamento (nomes das redes do plano). Compara pelo
- * RÓTULO da opção (ex.: 'AC' → 'Acre'), case-insensitive.
+ * `estado-required` = nenhum estado escolhido; `estado-duplicate` = já existe orçamento para o estado;
+ * `valor-required` = valor vazio/zero (o backend exige valueInCents ≥ 0, mas 0 não faz sentido no cadastro).
+ */
+export type AddBudgetError = 'estado-required' | 'estado-duplicate' | 'valor-required' | 'save-failed'
+
+/** "1.234,56" ou "1234,56" ou "1234" → centavos; inválido/≤0 → null. */
+export const parseAddBudgetCents = (valor: string): number | null => {
+  const clean = valor.trim().replace(/\./g, '').replace(',', '.')
+  if (clean === '') return null
+  const n = Number(clean)
+  if (!Number.isFinite(n) || n <= 0) return null
+  return Math.round(n * 100)
+}
+
+/**
+ * Valida a escolha da rede (por REF/chave natural) contra as que JÁ têm orçamento no plano + o valor.
  */
 export const validateAddBudget = (
   form: AddBudgetForm,
-  options: readonly RegionOption[],
-  existingNames: readonly string[],
+  existingRefs: readonly string[],
 ): AddBudgetError | null => {
   if (form.estado === '') return 'estado-required'
-  const label = options.find((o) => o.value === form.estado)?.label ?? form.estado
-  const taken = existingNames.some((n) => n.trim().toLowerCase() === label.trim().toLowerCase())
-  return taken ? 'estado-duplicate' : null
+  if (existingRefs.some((r) => r === form.estado)) return 'estado-duplicate'
+  if (parseAddBudgetCents(form.valor) === null) return 'valor-required'
+  return null
 }

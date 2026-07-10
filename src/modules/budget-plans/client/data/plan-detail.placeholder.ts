@@ -34,7 +34,9 @@ const PLAN_3: PlanDetail = {
   scenarioName: null,
   status: 'RASCUNHO',
   totalInCents: 3_243_872,
-  networks: [{ id: 1, name: 'Acre' }],
+  networks: [
+    { id: 1, name: 'Acre', ref: 'AC', kind: 'state' as const, budgetId: 'b-ac', totalInCents: 3243872 },
+  ],
   costCenters: [
     {
       id: 1,

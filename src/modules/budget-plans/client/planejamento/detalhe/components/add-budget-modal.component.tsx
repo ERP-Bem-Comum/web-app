@@ -30,6 +30,8 @@ export type AddBudgetModalLabels = Readonly<{
   close: string
   estado: string
   estadoPlaceholder: string
+  valor: string
+  valorPlaceholder: string
   add: string
   cancel: string
 }>
@@ -37,12 +39,15 @@ export type AddBudgetModalLabels = Readonly<{
 export type AddBudgetModalProps = Readonly<{
   open: boolean
   estado: string
+  valor: string
   options: readonly RegionOption[]
+  submitting: boolean
   errorTag: AddBudgetError | null
   labels: AddBudgetModalLabels
   translateError: (tag: AddBudgetError) => string
   onClose: () => void
   onEstado: (v: string) => void
+  onValor: (v: string) => void
   onSubmit: () => void
 }>
 
@@ -79,6 +84,19 @@ export function AddBudgetModal(props: AddBudgetModalProps): ReactNode {
             </select>
           </label>
 
+          <label className={field}>
+            <span className={label}>{props.labels.valor}</span>
+            <input
+              className={select}
+              inputMode="decimal"
+              placeholder={props.labels.valorPlaceholder}
+              value={props.valor}
+              onChange={(e) => {
+                props.onValor(e.target.value)
+              }}
+            />
+          </label>
+
           {props.errorTag !== null ? (
             <p className={errorText} role="alert">
               {props.translateError(props.errorTag)}
@@ -87,10 +105,10 @@ export function AddBudgetModal(props: AddBudgetModalProps): ReactNode {
         </div>
 
         <footer className={foot}>
-          <button type="button" className={cancelButton} onClick={props.onClose}>
+          <button type="button" className={cancelButton} onClick={props.onClose} disabled={props.submitting}>
             {props.labels.cancel}
           </button>
-          <button type="button" className={addButton} onClick={props.onSubmit}>
+          <button type="button" className={addButton} onClick={props.onSubmit} disabled={props.submitting}>
             {props.labels.add}
           </button>
         </footer>

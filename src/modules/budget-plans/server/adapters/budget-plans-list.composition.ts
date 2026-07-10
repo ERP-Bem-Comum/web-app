@@ -20,6 +20,11 @@ import {
   createAddCategory,
   createAddSubcategory,
 } from '#modules/budget-plans/server/application/write-cost-structure.use-case.ts'
+import {
+  createAddBudget,
+  createDeleteBudget,
+  createListNetworkOptions,
+} from '#modules/budget-plans/server/application/budget-write.use-case.ts'
 import { createGetConsolidadoAbc } from '#modules/budget-plans/server/application/get-consolidado-abc.use-case.ts'
 import { createExportConsolidadoAbcCsv } from '#modules/budget-plans/server/application/export-consolidado-abc-csv.use-case.ts'
 
@@ -41,6 +46,9 @@ const build = () => {
     addCostCenter: createAddCostCenter({ client }),
     addCategory: createAddCategory({ client }),
     addSubcategory: createAddSubcategory({ client }),
+    addBudget: createAddBudget({ client }),
+    deleteBudget: createDeleteBudget({ client }),
+    listNetworkOptions: createListNetworkOptions({ client }),
     getConsolidado: createGetConsolidadoAbc({ client }),
     exportConsolidadoCsv: createExportConsolidadoAbcCsv({ client }),
   }

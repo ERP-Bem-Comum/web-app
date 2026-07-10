@@ -59,6 +59,16 @@ type AddCategoryFn = (opts: {
 type AddSubcategoryFn = (opts: {
   data: { planId: string; categoryId: string; name: string; launchType: AddSubcategoryInput['launchType'] }
 }) => Promise<BudgetPlansFnResult<CostStructureTree>>
+// #394 (Grupo C): orçamento por rede. `NetworkKind` = state|municipality; ref = UF/IBGE.
+export type BudgetNetworkKind = 'state' | 'municipality'
+export type BudgetNetworkOption = Readonly<{ ref: string; name: string; kind: BudgetNetworkKind }>
+type WriteVoidResult = Readonly<{ ok: true }> | Readonly<{ ok: false; error: BudgetPlansError }>
+type AddBudgetFn = (opts: {
+  data: { planId: string; partnerKind: BudgetNetworkKind; partnerRef: string; valueInCents: number }
+}) => Promise<WriteVoidResult>
+type DeleteBudgetFn = (opts: { data: { planId: string; budgetId: string } }) => Promise<WriteVoidResult>
+type NetworkOptionsFn = () => Promise<readonly BudgetNetworkOption[]>
+
 /** Filtro do Consolidado ABC: Ano Base (obrigatório) + Programa (uuid opcional). */
 export type ConsolidadoFilters = Readonly<{ year: number; programRef?: string }>
 type GetConsolidadoFn = (opts: {
@@ -78,6 +88,14 @@ export type BudgetPlansRepository = Readonly<{
   addCostCenter: (input: AddCostCenterInput) => Promise<Result<CostStructureTree, BudgetPlansError>>
   addCategory: (input: AddCategoryInput) => Promise<Result<CostStructureTree, BudgetPlansError>>
   addSubcategory: (input: AddSubcategoryInput) => Promise<Result<CostStructureTree, BudgetPlansError>>
+  addBudget: (input: {
+    planId: string
+    partnerKind: BudgetNetworkKind
+    partnerRef: string
+    valueInCents: number
+  }) => Promise<Result<void, BudgetPlansError>>
+  deleteBudget: (input: { planId: string; budgetId: string }) => Promise<Result<void, BudgetPlansError>>
+  getNetworkOptions: () => Promise<readonly BudgetNetworkOption[]>
   getConsolidado: (filters: ConsolidadoFilters) => Promise<Result<ConsolidatedAbc, BudgetPlansError>>
 }>
 
@@ -95,6 +113,9 @@ export const createBudgetPlansRepository = (
     addCostCenterFn: AddCostCenterFn
     addCategoryFn: AddCategoryFn
     addSubcategoryFn: AddSubcategoryFn
+    addBudgetFn: AddBudgetFn
+    deleteBudgetFn: DeleteBudgetFn
+    networkOptionsFn: NetworkOptionsFn
     getConsolidadoFn: GetConsolidadoFn
   }>,
 ): BudgetPlansRepository => ({
@@ -146,6 +167,15 @@ export const createBudgetPlansRepository = (
     const res = await deps.addSubcategoryFn({ data: input })
     return res.ok ? ok(res.data) : err(res.error)
   },
+  addBudget: async (input) => {
+    const res = await deps.addBudgetFn({ data: input })
+    return res.ok ? ok(undefined) : err(res.error)
+  },
+  deleteBudget: async (input) => {
+    const res = await deps.deleteBudgetFn({ data: input })
+    return res.ok ? ok(undefined) : err(res.error)
+  },
+  getNetworkOptions: () => deps.networkOptionsFn(),
   getConsolidado: async (filters) => {
     const res = await deps.getConsolidadoFn({ data: { year: filters.year, programRef: filters.programRef } })
     return res.ok ? ok(res.data) : err(res.error)
