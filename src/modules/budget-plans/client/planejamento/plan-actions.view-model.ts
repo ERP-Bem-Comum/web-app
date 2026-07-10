@@ -43,6 +43,7 @@ export const actionErrorTag = (error: BudgetPlansError): string => {
     case 'invalid-input':
       return 'budget-plans.action.error.invalidInput'
     case 'budget-plan-already-exists':
+    case 'budget-plan-not-editable': // escrita de estrutura (feature 061) — não ocorre nas ações do menu
     case 'unexpected':
       return 'budget-plans.action.error.unexpected'
     default: {

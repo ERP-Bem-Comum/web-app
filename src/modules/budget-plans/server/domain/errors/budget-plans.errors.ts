@@ -13,4 +13,6 @@ export type BudgetPlansError =
   | 'budget-plan-already-approved' // 409 no `approve` — plano já está aprovado
   | 'budget-plan-not-approved' // 409 no `scenery` — só planos aprovados geram cenário
   | 'budget-plan-invalid-transition' // 409 no `start-calibration` — transição de estado inválida (genérico)
+  // ── Escrita da estrutura de custo (feature 061 — Grupo B). 409 na escrita de plano não-editável (ex.: aprovado).
+  | 'budget-plan-not-editable' // 409 nos POSTs de cost-structure — plano não aceita mais escrita de estrutura
   | 'unexpected' // parse/inesperado (resposta futura do core fora do contrato)

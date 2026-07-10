@@ -296,6 +296,13 @@ export const formTitle = style({
   color: brand.color.ink900,
 })
 
+export const formError = style({
+  margin: 0,
+  fontFamily: vars.font.family.heading,
+  fontSize: brand.text.hint,
+  color: vars.color.feedback.errorText,
+})
+
 export const formActions = style({ display: 'flex', gap: brand.space.sm, marginBlockStart: brand.space.xs })
 
 const buttonBase = style({

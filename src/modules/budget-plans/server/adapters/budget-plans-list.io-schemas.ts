@@ -53,3 +53,33 @@ export const CreateSceneryInputSchema = z.object({
 })
 
 export type CreateSceneryInput = z.infer<typeof CreateSceneryInputSchema>
+
+/**
+ * Inputs da BORDA (§IX) da ESCRITA da estrutura de custo (feature 061 — Grupo B). Contrato real do core:
+ * `name` 1..255; `direction`/`launchType` são os literais EXATOS do backend (não o rótulo PT); refs por UUID.
+ */
+const directionSchema = z.enum(['A PAGAR', 'A RECEBER'])
+const launchTypeSchema = z.enum(['IPCA', 'CAED', 'DESPESAS_PESSOAIS', 'DESPESAS_LOGISTICAS'])
+const structureNameSchema = z.string().trim().min(1).max(255)
+
+export const AddCostCenterInputSchema = z.object({
+  planId: z.uuid(),
+  name: structureNameSchema,
+  direction: directionSchema,
+})
+export type AddCostCenterInput = z.infer<typeof AddCostCenterInputSchema>
+
+export const AddCategoryInputSchema = z.object({
+  planId: z.uuid(),
+  costCenterId: z.uuid(),
+  name: structureNameSchema,
+})
+export type AddCategoryInput = z.infer<typeof AddCategoryInputSchema>
+
+export const AddSubcategoryInputSchema = z.object({
+  planId: z.uuid(),
+  categoryId: z.uuid(),
+  name: structureNameSchema,
+  launchType: launchTypeSchema,
+})
+export type AddSubcategoryInput = z.infer<typeof AddSubcategoryInputSchema>

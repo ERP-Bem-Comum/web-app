@@ -38,9 +38,13 @@ export type SubCategoryConsolidated = Readonly<{
   releaseType?: ReleaseType
 }>
 
-/** Categoria (agrupa subcategorias). */
+/**
+ * Categoria (agrupa subcategorias). `ref` = UUID do backend (feature 061 — o POST de subcategoria referencia
+ * a categoria-pai por UUID). Aditivo ao `id` numérico sintético (que segue chave de render/matriz).
+ */
 export type CategoryConsolidated = Readonly<{
   id: number
+  ref: string
   name: string
   totalInCents: number
   monthlyInCents: MonthlyCents
@@ -48,9 +52,13 @@ export type CategoryConsolidated = Readonly<{
   subCategories: readonly SubCategoryConsolidated[]
 }>
 
-/** Centro de custo (raiz da árvore consolidada). */
+/**
+ * Centro de custo (raiz da árvore consolidada). `ref` = UUID do backend (feature 061 — o POST de categoria
+ * referencia o centro-pai por UUID). Aditivo ao `id` numérico sintético.
+ */
 export type CostCenterConsolidated = Readonly<{
   id: number
+  ref: string
   name: string
   type: CostCenterType
   totalInCents: number
@@ -77,14 +85,16 @@ export type PlanDetailHeaderInput = Readonly<{
 /** Subcategoria crua da cost-structure (só estrutura/nomes; `launchType` string tolerante). */
 export type CostStructureSubcategoryInput = Readonly<{ name: string; launchType: string }>
 
-/** Categoria crua da cost-structure. */
+/** Categoria crua da cost-structure. `id` = UUID do backend (insumo do `ref`, feature 061). */
 export type CostStructureCategoryInput = Readonly<{
+  id: string
   name: string
   subcategories: readonly CostStructureSubcategoryInput[]
 }>
 
-/** Centro de custo cru da cost-structure (`direction` string tolerante). */
+/** Centro de custo cru da cost-structure (`direction` string tolerante). `id` = UUID do backend (→ `ref`). */
 export type CostStructureCostCenterInput = Readonly<{
+  id: string
   name: string
   direction: string
   categories: readonly CostStructureCategoryInput[]

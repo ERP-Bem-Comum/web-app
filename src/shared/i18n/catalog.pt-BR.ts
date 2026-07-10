@@ -2044,6 +2044,14 @@ export const ptBR: Catalog = {
   'budget-plans.centrosCusto.form.edit-categoria': 'Editar Categoria',
   'budget-plans.centrosCusto.form.add-sub': 'Adicionar Sub categoria',
   'budget-plans.centrosCusto.form.edit-sub': 'Editar Sub categoria',
+  // Erros da escrita da estrutura (feature 061 — validação client-side + eco do backend §V)
+  'budget-plans.centrosCusto.error.name-required': 'Informe o nome.',
+  'budget-plans.centrosCusto.error.missing-parent': 'Selecione o item ao qual este pertence.',
+  'budget-plans.centrosCusto.error.unauthorized': 'Sua sessão expirou. Entre novamente para continuar.',
+  'budget-plans.centrosCusto.error.invalid-input': 'Dados inválidos. Revise e tente novamente.',
+  'budget-plans.centrosCusto.error.not-found': 'Plano orçamentário não encontrado.',
+  'budget-plans.centrosCusto.error.not-editable': 'Este plano não permite mais alterações na estrutura.',
+  'budget-plans.centrosCusto.error.unexpected': 'Não foi possível salvar. Tente novamente.',
   // Rótulos dos enums (centro/sub/lançamento)
   'budget-plans.centroTipo.a-pagar': 'A PAGAR',
   'budget-plans.centroTipo.a-receber': 'A RECEBER',

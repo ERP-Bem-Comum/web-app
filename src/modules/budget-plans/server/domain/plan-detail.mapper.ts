@@ -70,6 +70,7 @@ export const mapPlanDetail = (
     const centerId = i + 1
     return {
       id: centerId,
+      ref: cc.id, // UUID do backend (feature 061 — o POST de categoria referencia o centro-pai por UUID)
       name: cc.name,
       type: mapDirection(cc.direction),
       totalInCents: 0,
@@ -79,6 +80,7 @@ export const mapPlanDetail = (
         const categoryId = centerId * 100 + (j + 1)
         return {
           id: categoryId,
+          ref: cat.id, // UUID do backend (→ o POST de subcategoria referencia a categoria-pai por UUID)
           name: cat.name,
           totalInCents: 0,
           monthlyInCents: zeros12(),

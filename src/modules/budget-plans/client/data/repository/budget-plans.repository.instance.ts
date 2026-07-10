@@ -11,6 +11,9 @@ import { startCalibrationFn } from '#modules/budget-plans/server/adapters/server
 import { createSceneryFn } from '#modules/budget-plans/server/adapters/server-fns/create-scenery.service.fn.ts'
 import { exportBudgetPlanCsvFn } from '#modules/budget-plans/server/adapters/server-fns/export-budget-plan-csv.query.fn.ts'
 import { getBudgetPlanInsightsFn } from '#modules/budget-plans/server/adapters/server-fns/get-budget-plan-insights.query.fn.ts'
+import { addCostCenterFn } from '#modules/budget-plans/server/adapters/server-fns/add-cost-center.service.fn.ts'
+import { addCategoryFn } from '#modules/budget-plans/server/adapters/server-fns/add-category.service.fn.ts'
+import { addSubcategoryFn } from '#modules/budget-plans/server/adapters/server-fns/add-subcategory.service.fn.ts'
 
 import { createBudgetPlansRepository } from './budget-plans.repository.ts'
 
@@ -24,4 +27,7 @@ export const budgetPlansRepository = createBudgetPlansRepository({
   createSceneryFn: (opts) => createSceneryFn(opts),
   exportBudgetPlanCsvFn: (opts) => exportBudgetPlanCsvFn(opts),
   getBudgetPlanInsightsFn: (opts) => getBudgetPlanInsightsFn(opts),
+  addCostCenterFn: (opts) => addCostCenterFn(opts),
+  addCategoryFn: (opts) => addCategoryFn(opts),
+  addSubcategoryFn: (opts) => addSubcategoryFn(opts),
 })

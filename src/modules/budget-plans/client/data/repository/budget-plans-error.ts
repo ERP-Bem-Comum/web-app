@@ -12,6 +12,7 @@ export type BudgetPlansError =
   | 'budget-plan-already-approved' // approve — plano já aprovado
   | 'budget-plan-not-approved' // scenery — só planos aprovados geram cenário
   | 'budget-plan-invalid-transition' // start-calibration — transição de estado inválida (genérico)
+  | 'budget-plan-not-editable' // escrita de estrutura (feature 061) — plano não aceita mais escrita (ex.: aprovado)
   | 'unexpected' // parse/inesperado
 
 /** Forma do retorno RPC das server fns do Plano Orçamentário (`{ ok, data } | { ok, error }`). */
