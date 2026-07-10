@@ -14,7 +14,7 @@ import {
 } from '#modules/budget-plans/client/data/model/enums.ts'
 
 /** 12 valores mensais em centavos (Janeiro…Dezembro). */
-export const MonthlyCentsSchema = z.array(z.int()).length(12)
+export const MonthlyCentsSchema = z.array(z.int()).length(12).readonly()
 export type MonthlyCents = z.infer<typeof MonthlyCentsSchema>
 
 /**
@@ -31,7 +31,7 @@ export const NetworkRefSchema: z.ZodType<NetworkRef> = z.object({
  * Valores por rede em centavos — MESMA ordem/comprimento de `PlanDetail.networks` (alinhado por índice,
  * como `monthlyInCents` faz com os meses).
  */
-export const NetworkCentsSchema = z.array(z.int())
+export const NetworkCentsSchema = z.array(z.int()).readonly()
 export type NetworkCents = z.infer<typeof NetworkCentsSchema>
 
 /**

@@ -26,3 +26,13 @@ export const CreateBudgetPlanInputSchema = z.object({
 })
 
 export type CreateBudgetPlanInput = z.infer<typeof CreateBudgetPlanInputSchema>
+
+/**
+ * Input da BORDA (§IX) do `GET /budget-plans/:id` (feature 059 — leitura do detalhe). Só o id do plano (UUID
+ * do agregado novo). `z.uuid` é RFC-strict (a rota já valida o path param; a fn revalida — nada confia no client).
+ */
+export const GetBudgetPlanDetailInputSchema = z.object({
+  id: z.uuid(),
+})
+
+export type GetBudgetPlanDetailInput = z.infer<typeof GetBudgetPlanDetailInputSchema>

@@ -1,14 +1,15 @@
 /**
- * Binding do Detalhe do plano — ADAPTER React (§XI). Front-first: lê o placeholder e monta a matriz
- * ("Consolidado por Mês" OU "Por Rede") pelo ViewModel puro. Visão + semestre = UI-state local.
- * A view consome só o state.
- *
- * 🔁 TODO(#113): trocar `planDetailPlaceholder` por `useQuery(GET /budget-plans/:id + GET /budgets)`; o
- * ViewModel/matriz e a view NÃO mudam — só a origem dos dados.
+ * Binding do Detalhe do plano — ADAPTER React (§XI). Lê o DETALHE REAL do core-api (`GET /budget-plans/:id`,
+ * via `budgetPlansRepository.getPlanDetail`) e monta a matriz ("Consolidado por Mês" OU "Por Rede") pelo
+ * ViewModel puro. Visão + semestre = UI-state local. A view consome só o `state` (união discriminada §IV:
+ * loading | error | not-found | empty | ready).
  */
 import { useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 
-import { planDetailPlaceholder } from '#modules/budget-plans/client/data/plan-detail.placeholder.ts'
+import { budgetPlansRepository } from '#modules/budget-plans/client/data/repository/budget-plans.repository.instance.ts'
+import type { PlanDetail } from '#modules/budget-plans/client/data/model/plan-detail.model.ts'
+import type { BudgetPlansError } from '#modules/budget-plans/client/data/repository/budget-plans-error.ts'
 import {
   buildMonthlyMatrix,
   buildNetworkMatrix,
@@ -35,7 +36,10 @@ import {
 export type DetailView = 'month' | 'network'
 
 export type PlanDetailState =
+  | Readonly<{ status: 'loading' }>
+  | Readonly<{ status: 'error'; errorTag: BudgetPlansError }>
   | Readonly<{ status: 'not-found' }>
+  | Readonly<{ status: 'empty'; header: PlanDetailHeader }>
   | Readonly<{ status: 'ready'; header: PlanDetailHeader; matrix: MatrixView }>
 
 /** UI-state do filtro por Rede (Estado + Município). Ao APLICAR ambos, entra em modo edição de orçamento. */
@@ -77,7 +81,14 @@ export type PlanDetailBinding = Readonly<{
 export function usePlanDetail(id: string): PlanDetailBinding {
   const [view, setView] = useState<DetailView>('month')
   const [semester, setSemester] = useState<Semester>(0)
-  const detail = useMemo(() => planDetailPlaceholder(id), [id])
+
+  const query = useQuery({
+    queryKey: ['budget-plans', 'plan-detail', id] as const,
+    queryFn: () => budgetPlansRepository.getPlanDetail(id),
+  })
+
+  const detail: PlanDetail | null = query.data?.ok === true ? query.data.value : null
+  const errorTag: BudgetPlansError | null = query.data?.ok === false ? query.data.error : null
 
   // Filtro por Rede: rascunho (selects) + aplicado (após "Filtrar"). Mudar um select limpa o aplicado.
   const [estado, setEstadoRaw] = useState('')
@@ -94,13 +105,21 @@ export function usePlanDetail(id: string): PlanDetailBinding {
   const centrosCusto = useCentrosCusto(detail)
 
   const state = useMemo<PlanDetailState>(() => {
-    if (detail === null) return { status: 'not-found' }
-    return {
-      status: 'ready',
-      header: derivePlanDetailHeader(detail),
-      matrix: view === 'month' ? buildMonthlyMatrix(detail, semester) : buildNetworkMatrix(detail),
+    if (query.isLoading) return { status: 'loading' }
+    if (errorTag === 'budget-plan-not-found') return { status: 'not-found' }
+    if (errorTag !== null) return { status: 'error', errorTag }
+    if (detail !== null && detail.costCenters.length === 0) {
+      return { status: 'empty', header: derivePlanDetailHeader(detail) }
     }
-  }, [detail, view, semester])
+    if (detail !== null) {
+      return {
+        status: 'ready',
+        header: derivePlanDetailHeader(detail),
+        matrix: view === 'month' ? buildMonthlyMatrix(detail, semester) : buildNetworkMatrix(detail),
+      }
+    }
+    return { status: 'loading' }
+  }, [query.isLoading, errorTag, detail, view, semester])
 
   const filter: PlanDetailFilter = {
     estado,

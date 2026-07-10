@@ -48,6 +48,36 @@ export const coreOptionsSchema = z.object({
   ),
 })
 
+/**
+ * `GET /budget-plans/:id/cost-structure` (feature 059) — SÓ a árvore Centro → Categoria → Subcategoria
+ * (nomes/estrutura, SEM valores). `direction`/`launchType` validados como STRING tolerante (fail-soft: os
+ * literais exatos do backend NÃO estão pinados — o MAPPER faz o lookup, com fallback). Anti-corrupção: valida
+ * antes de mapear. `budgetPlanId`/`id` UUID.
+ */
+export const coreCostStructureSchema = z.object({
+  budgetPlanId: z.uuid(),
+  costCenters: z.array(
+    z.object({
+      id: z.uuid(),
+      name: z.string().trim(),
+      direction: z.string().trim(),
+      categories: z.array(
+        z.object({
+          id: z.uuid(),
+          name: z.string().trim(),
+          subcategories: z.array(
+            z.object({
+              id: z.uuid(),
+              name: z.string().trim(),
+              launchType: z.string().trim(),
+            }),
+          ),
+        }),
+      ),
+    }),
+  ),
+})
+
 /** `GET /budget-plans/:id` — detalhe c/ `budgets[]` (fonte INTERINA de partnersCount/networkKind, core-api#372). */
 export const coreDetailSchema = z.object({
   id: z.uuid(),
