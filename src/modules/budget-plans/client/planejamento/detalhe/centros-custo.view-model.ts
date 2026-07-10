@@ -22,26 +22,45 @@ export type {
 } from '#modules/budget-plans/client/data/model/enums.ts'
 
 export type SubNode = Readonly<{ id: number; name: string }>
-export type CategoriaNode = Readonly<{ id: number; name: string; subCategories: readonly SubNode[] }>
+/** `ref` = UUID do backend (feature 061 — necessário p/ o POST de subcategoria referenciar a categoria-pai). */
+export type CategoriaNode = Readonly<{
+  id: number
+  ref?: string
+  name: string
+  subCategories: readonly SubNode[]
+}>
+/** `ref` = UUID do backend (feature 061 — necessário p/ o POST de categoria referenciar o centro-pai). */
 export type CentroNode = Readonly<{
   id: number
+  ref?: string
   name: string
   type: CostCenterType
   categories: readonly CategoriaNode[]
 }>
 
-/** Achata a árvore consolidada do plano no shape leve da tela de gestão (só id/nome/tipo). */
+/** Achata a árvore consolidada do plano no shape leve da tela de gestão (id/nome/tipo + `ref` uuid p/ escrita). */
 export const buildCentrosTree = (detail: PlanDetail): readonly CentroNode[] =>
   detail.costCenters.map((c) => ({
     id: c.id,
+    ...(c.ref !== undefined ? { ref: c.ref } : {}),
     name: c.name,
     type: c.type,
     categories: c.categories.map((cat) => ({
       id: cat.id,
+      ...(cat.ref !== undefined ? { ref: cat.ref } : {}),
       name: cat.name,
       subCategories: cat.subCategories.map((s) => ({ id: s.id, name: s.name })),
     })),
   }))
+
+/** Erros de submissão do formulário de estrutura (client-side + eco do backend). */
+export type CentroFormError =
+  | 'name-required' // nome vazio (validação client-side, antes do POST)
+  | 'missing-parent' // sem centro/categoria-pai com `ref` (não deveria ocorrer — trava defensiva)
+
+/** Valida o nome do nó (obrigatório). Retorna a tag do erro ou `null`. */
+export const validateCentroName = (nome: string): CentroFormError | null =>
+  nome.trim().length === 0 ? 'name-required' : null
 
 /** Opções dos dropdowns (valor = enum canônico; rótulo = i18n resolvido na view). */
 export const CENTRO_TIPO_OPTIONS: readonly CostCenterType[] = COST_CENTER_TYPE

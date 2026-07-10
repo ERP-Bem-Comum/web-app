@@ -11,7 +11,10 @@ import type {
   SubCategoryType,
   ReleaseType,
 } from '#modules/budget-plans/client/planejamento/detalhe/centros-custo.view-model.ts'
-import type { CentrosCustoBinding } from '#modules/budget-plans/client/planejamento/detalhe/centros-custo.binding.ts'
+import type {
+  CentrosCustoBinding,
+  CentrosCustoErrorTag,
+} from '#modules/budget-plans/client/planejamento/detalhe/centros-custo.binding.ts'
 
 import {
   overlay,
@@ -49,6 +52,7 @@ import {
   addCentroButton,
   formPanel,
   formTitle,
+  formError,
   formActions,
   cancelButton,
   submitButton,
@@ -90,6 +94,8 @@ export type CentrosCustoModalProps = Readonly<{
   centroTipoLabels: Readonly<Record<CostCenterType, string>>
   subTipoLabels: Readonly<Record<SubCategoryType, string>>
   releaseTypeLabels: Readonly<Record<ReleaseType, string>>
+  /** Resolve o rótulo i18n de uma tag de erro da submissão (validação client-side OU eco do backend). */
+  translateError: (tag: CentrosCustoErrorTag) => string
 }>
 
 const CLOSE_GLYPH = '✕'
@@ -349,11 +355,17 @@ export function CentrosCustoModal(props: CentrosCustoModalProps): ReactNode {
                 </>
               ) : null}
 
+              {b.errorTag !== null ? (
+                <p className={formError} role="alert">
+                  {props.translateError(b.errorTag)}
+                </p>
+              ) : null}
+
               <div className={formActions}>
-                <button type="button" className={cancelButton} onClick={b.cancelForm}>
+                <button type="button" className={cancelButton} onClick={b.cancelForm} disabled={b.submitting}>
                   {L.cancel}
                 </button>
-                <button type="button" className={submitButton} onClick={b.submitForm}>
+                <button type="button" className={submitButton} onClick={b.submitForm} disabled={b.submitting}>
                   {mode.kind.startsWith('add') ? L.add : L.save}
                 </button>
               </div>

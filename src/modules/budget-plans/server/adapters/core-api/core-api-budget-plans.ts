@@ -4,6 +4,8 @@
  * partnersCount/networkKind, core-api#372). NUNCA lança (tudo é Result; `throw` só na borda do `resultFetch`).
  * Anti-corrupção: Zod valida a resposta e o mapeamento DTO→cru mora aqui (o use-case não conhece o DTO do core).
  */
+import type * as z from 'zod'
+
 import { ok, err, isErr, type Result } from '#shared/primitives/result.ts'
 import { resultFetch, resultFetchText } from '#external/core-api/result-fetch.ts'
 import type { HttpError } from '#shared/http/http-error.types.ts'
@@ -34,10 +36,17 @@ import type {
   CreatedBudgetPlan,
 } from '#modules/budget-plans/server/application/create-budget-plan.use-case.ts'
 import type { GetBudgetPlanDetailClient } from '#modules/budget-plans/server/application/get-budget-plan-detail.use-case.ts'
+import type { WriteCostStructureClient } from '#modules/budget-plans/server/application/write-cost-structure.use-case.ts'
 import type {
   CostStructureInput,
   PlanDetailHeaderInput,
 } from '#modules/budget-plans/server/domain/plan-detail.io.ts'
+import type {
+  AddCostCenterCommand,
+  AddCategoryCommand,
+  AddSubcategoryCommand,
+  CostStructureTree,
+} from '#modules/budget-plans/server/domain/cost-structure-write.io.ts'
 import {
   coreListResponseSchema,
   coreOptionsSchema,
@@ -98,6 +107,36 @@ const mapSceneryHttpError = (e: HttpError): BudgetPlansError => {
   return 'unexpected'
 }
 
+// Mapa da ESCRITA da estrutura de custo (§V, feature 061): 404 = plano inexistente; 409 = plano não-editável
+// (ex.: aprovado — o core esconde o slug, então é por contexto); 400/422 = payload; 401 = sessão.
+const mapWriteHttpError = (e: HttpError): BudgetPlansError => {
+  if (e.kind !== 'http') return 'unexpected'
+  if (e.status === 401) return 'unauthorized'
+  if (e.status === 404) return 'budget-plan-not-found'
+  if (e.status === 409) return 'budget-plan-not-editable'
+  if (e.status === 400 || e.status === 422) return 'invalid-input'
+  return 'unexpected'
+}
+
+/** Árvore-eco (201 dos POSTs) → forma de domínio (`id` uuid vira `ref`). Anti-corrupção: já validada por Zod. */
+const toCostStructureTree = (parsed: z.infer<typeof coreCostStructureSchema>): CostStructureTree => ({
+  budgetPlanId: parsed.budgetPlanId,
+  costCenters: parsed.costCenters.map((cc) => ({
+    ref: cc.id,
+    name: cc.name,
+    direction: cc.direction,
+    categories: cc.categories.map((cat) => ({
+      ref: cat.id,
+      name: cat.name,
+      subcategories: cat.subcategories.map((sub) => ({
+        ref: sub.id,
+        name: sub.name,
+        launchType: sub.launchType,
+      })),
+    })),
+  })),
+})
+
 const buildListQuery = (p: ListBudgetPlansParams): string => {
   const q = new URLSearchParams()
   q.set('page', String(p.page))
@@ -116,7 +155,8 @@ export const createBudgetPlansCoreClient = (
   StartCalibrationClient &
   CreateSceneryClient &
   ExportBudgetPlanCsvClient &
-  GetBudgetPlanInsightsClient => ({
+  GetBudgetPlanInsightsClient &
+  WriteCostStructureClient => ({
   listBudgetPlans: async (params, token): Promise<Result<RawPlanListPage, BudgetPlansError>> => {
     const r = await resultFetch<unknown>(`${baseUrl}?${buildListQuery(params)}`, { token })
     if (isErr(r)) return err(mapHttpError(r.error))
@@ -177,9 +217,11 @@ export const createBudgetPlansCoreClient = (
     if (!parsed.success) return err('unexpected')
     return ok({
       costCenters: parsed.data.costCenters.map((cc) => ({
+        id: cc.id, // UUID → `ref` no PlanDetail (insumo dos POSTs-filho, feature 061)
         name: cc.name,
         direction: cc.direction,
         categories: cc.categories.map((cat) => ({
+          id: cat.id,
           name: cat.name,
           subcategories: cat.subcategories.map((sub) => ({
             name: sub.name,
@@ -270,5 +312,49 @@ export const createBudgetPlansCoreClient = (
       current: { year: parsed.data.current.year, totalInCents: parsed.data.current.totalInCents },
       previousYears: parsed.data.previousYears.map((y) => ({ year: y.year, totalInCents: y.totalInCents })),
     })
+  },
+  // ── Escrita da estrutura de custo (feature 061). Cada POST devolve a ÁRVORE INTEIRA atualizada
+  // (`coreCostStructureSchema` = a mesma do GET). Anti-corrupção: valida antes de mapear `id`→`ref`. ──
+  addCostCenter: async (
+    command: AddCostCenterCommand,
+    token: string,
+  ): Promise<Result<CostStructureTree, BudgetPlansError>> => {
+    const r = await resultFetch<unknown>(`${baseUrl}/${command.planId}/cost-structure/cost-centers`, {
+      method: 'POST',
+      token,
+      body: { name: command.name, direction: command.direction },
+    })
+    if (isErr(r)) return err(mapWriteHttpError(r.error))
+    const parsed = coreCostStructureSchema.safeParse(r.value)
+    if (!parsed.success) return err('unexpected')
+    return ok(toCostStructureTree(parsed.data))
+  },
+  addCategory: async (
+    command: AddCategoryCommand,
+    token: string,
+  ): Promise<Result<CostStructureTree, BudgetPlansError>> => {
+    const r = await resultFetch<unknown>(`${baseUrl}/${command.planId}/cost-structure/categories`, {
+      method: 'POST',
+      token,
+      body: { costCenterId: command.costCenterId, name: command.name },
+    })
+    if (isErr(r)) return err(mapWriteHttpError(r.error))
+    const parsed = coreCostStructureSchema.safeParse(r.value)
+    if (!parsed.success) return err('unexpected')
+    return ok(toCostStructureTree(parsed.data))
+  },
+  addSubcategory: async (
+    command: AddSubcategoryCommand,
+    token: string,
+  ): Promise<Result<CostStructureTree, BudgetPlansError>> => {
+    const r = await resultFetch<unknown>(`${baseUrl}/${command.planId}/cost-structure/subcategories`, {
+      method: 'POST',
+      token,
+      body: { categoryId: command.categoryId, name: command.name, launchType: command.launchType },
+    })
+    if (isErr(r)) return err(mapWriteHttpError(r.error))
+    const parsed = coreCostStructureSchema.safeParse(r.value)
+    if (!parsed.success) return err('unexpected')
+    return ok(toCostStructureTree(parsed.data))
   },
 })

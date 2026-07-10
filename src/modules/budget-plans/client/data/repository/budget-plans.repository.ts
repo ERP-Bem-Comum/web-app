@@ -10,7 +10,13 @@ import type {
   CreateBudgetPlanInput,
   CreatedBudgetPlan,
 } from '#modules/budget-plans/client/data/model/budget-plan.model.ts'
-import type { PlanDetail } from '#modules/budget-plans/client/data/model/plan-detail.model.ts'
+import type {
+  PlanDetail,
+  AddCostCenterInput,
+  AddCategoryInput,
+  AddSubcategoryInput,
+  CostStructureTree,
+} from '#modules/budget-plans/client/data/model/plan-detail.model.ts'
 import type {
   LifecyclePlan,
   CreatedScenery,
@@ -43,6 +49,15 @@ type PlanIdFn<T> = (opts: { data: { id: string } }) => Promise<BudgetPlansFnResu
 type CreateSceneryFn = (opts: {
   data: { id: string; name: string }
 }) => Promise<BudgetPlansFnResult<CreatedScenery>>
+type AddCostCenterFn = (opts: {
+  data: { planId: string; name: string; direction: AddCostCenterInput['direction'] }
+}) => Promise<BudgetPlansFnResult<CostStructureTree>>
+type AddCategoryFn = (opts: {
+  data: { planId: string; costCenterId: string; name: string }
+}) => Promise<BudgetPlansFnResult<CostStructureTree>>
+type AddSubcategoryFn = (opts: {
+  data: { planId: string; categoryId: string; name: string; launchType: AddSubcategoryInput['launchType'] }
+}) => Promise<BudgetPlansFnResult<CostStructureTree>>
 
 export type BudgetPlansRepository = Readonly<{
   listBudgetPlans: (args: ListBudgetPlansArgs) => Promise<Result<BudgetPlanListPageResult, BudgetPlansError>>
@@ -54,6 +69,9 @@ export type BudgetPlansRepository = Readonly<{
   createScenery: (id: string, name: string) => Promise<Result<CreatedScenery, BudgetPlansError>>
   exportPlanCsv: (id: string) => Promise<Result<BudgetPlanCsvFile, BudgetPlansError>>
   getInsights: (id: string) => Promise<Result<BudgetPlanInsights, BudgetPlansError>>
+  addCostCenter: (input: AddCostCenterInput) => Promise<Result<CostStructureTree, BudgetPlansError>>
+  addCategory: (input: AddCategoryInput) => Promise<Result<CostStructureTree, BudgetPlansError>>
+  addSubcategory: (input: AddSubcategoryInput) => Promise<Result<CostStructureTree, BudgetPlansError>>
 }>
 
 export const createBudgetPlansRepository = (
@@ -67,6 +85,9 @@ export const createBudgetPlansRepository = (
     createSceneryFn: CreateSceneryFn
     exportBudgetPlanCsvFn: PlanIdFn<BudgetPlanCsvFile>
     getBudgetPlanInsightsFn: PlanIdFn<BudgetPlanInsights>
+    addCostCenterFn: AddCostCenterFn
+    addCategoryFn: AddCategoryFn
+    addSubcategoryFn: AddSubcategoryFn
   }>,
 ): BudgetPlansRepository => ({
   listBudgetPlans: async (args) => {
@@ -103,6 +124,18 @@ export const createBudgetPlansRepository = (
   },
   getInsights: async (id) => {
     const res = await deps.getBudgetPlanInsightsFn({ data: { id } })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  addCostCenter: async (input) => {
+    const res = await deps.addCostCenterFn({ data: input })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  addCategory: async (input) => {
+    const res = await deps.addCategoryFn({ data: input })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  addSubcategory: async (input) => {
+    const res = await deps.addSubcategoryFn({ data: input })
     return res.ok ? ok(res.data) : err(res.error)
   },
 })

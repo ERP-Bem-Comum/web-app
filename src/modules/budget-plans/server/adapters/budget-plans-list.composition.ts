@@ -15,6 +15,11 @@ import { createStartCalibration } from '#modules/budget-plans/server/application
 import { createCreateScenery } from '#modules/budget-plans/server/application/create-scenery.use-case.ts'
 import { createExportBudgetPlanCsv } from '#modules/budget-plans/server/application/export-budget-plan-csv.use-case.ts'
 import { createGetBudgetPlanInsights } from '#modules/budget-plans/server/application/get-budget-plan-insights.use-case.ts'
+import {
+  createAddCostCenter,
+  createAddCategory,
+  createAddSubcategory,
+} from '#modules/budget-plans/server/application/write-cost-structure.use-case.ts'
 
 type BudgetPlansServer = ReturnType<typeof build>
 
@@ -31,6 +36,9 @@ const build = () => {
     createScenery: createCreateScenery({ client }),
     exportPlanCsv: createExportBudgetPlanCsv({ client }),
     getInsights: createGetBudgetPlanInsights({ client }),
+    addCostCenter: createAddCostCenter({ client }),
+    addCategory: createAddCategory({ client }),
+    addSubcategory: createAddSubcategory({ client }),
   }
 }
 

@@ -31,19 +31,16 @@ import {
   useCentrosCusto,
   type CentrosCustoBinding,
 } from '#modules/budget-plans/client/planejamento/detalhe/centros-custo.binding.ts'
+import { planDetailQueryKey } from '#modules/budget-plans/client/planejamento/detalhe/plan-detail.query-key.ts'
 
 /** Visões da seção consolidada (HANDBOOK §1.4): por mês (semestres) ou por rede (parceiros). */
 export type DetailView = 'month' | 'network'
 
 /**
- * Query key do DETALHE — fonte única compartilhada (a query aqui + a invalidação das ações em
- * `plan-actions.binding.ts`, após approve/start-calibration/scenery). Evita drift de cache.
+ * Re-export da query key do DETALHE (definida em módulo neutro `plan-detail.query-key.ts` p/ evitar ciclo).
+ * Consumidores existentes (`plan-actions.binding.ts`) seguem importando daqui. Evita drift de cache.
  */
-export const planDetailQueryKey = (id: string): readonly ['budget-plans', 'plan-detail', string] => [
-  'budget-plans',
-  'plan-detail',
-  id,
-]
+export { planDetailQueryKey }
 
 export type PlanDetailState =
   | Readonly<{ status: 'loading' }>
@@ -113,8 +110,9 @@ export function usePlanDetail(id: string): PlanDetailBinding {
   const [addError, setAddError] = useState<AddBudgetError | null>(null)
   const existingNames = detail?.networks.map((n) => n.name) ?? []
 
-  // Modal "Centros de Custo" (§1.5) — binding próprio, alimentado pelo mesmo `detail`.
-  const centrosCusto = useCentrosCusto(detail)
+  // Modal "Centros de Custo" (§1.5) — binding próprio, alimentado pelo mesmo `detail`. Recebe o `id` do plano
+  // p/ a ESCRITA real da estrutura (feature 061) e a invalidação do detalhe após cada POST.
+  const centrosCusto = useCentrosCusto(id, detail)
 
   const state = useMemo<PlanDetailState>(() => {
     if (query.isLoading) return { status: 'loading' }

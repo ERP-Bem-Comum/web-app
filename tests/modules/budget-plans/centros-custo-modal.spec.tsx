@@ -5,6 +5,7 @@
  */
 import { describe, it, expect, afterEach } from 'vitest'
 import { render, screen, cleanup, fireEvent, within } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 
 import { CentrosCustoModal } from '#modules/budget-plans/client/planejamento/detalhe/components/centros-custo-modal.component.tsx'
@@ -97,7 +98,7 @@ const releaseTypeLabels = {
 } as const
 
 function Harness(): ReactNode {
-  const b = useCentrosCusto(detail)
+  const b = useCentrosCusto('p-1', detail)
   return (
     <>
       <button type="button" onClick={b.openModal}>
@@ -109,13 +110,19 @@ function Harness(): ReactNode {
         centroTipoLabels={centroTipoLabels}
         subTipoLabels={subTipoLabels}
         releaseTypeLabels={releaseTypeLabels}
+        translateError={(tag) => tag}
       />
     </>
   )
 }
 
 const openModal = (): void => {
-  render(<Harness />)
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  render(
+    <QueryClientProvider client={client}>
+      <Harness />
+    </QueryClientProvider>,
+  )
   fireEvent.click(screen.getByText('abrir'))
 }
 

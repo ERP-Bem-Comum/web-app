@@ -30,13 +30,18 @@ const header: PlanDetailHeaderInput = {
   totalInCents: 123_456,
 }
 
+const CENTRO_REF = 'c1c1c1c1-1111-4a2b-8c3d-000000000010'
+const CATEGORIA_REF = 'ca7e9017-2222-4a2b-8c3d-000000000020'
+
 const structure: CostStructureInput = {
   costCenters: [
     {
+      id: CENTRO_REF,
       name: 'Consultoria',
       direction: 'A PAGAR',
       categories: [
         {
+          id: CATEGORIA_REF,
           name: 'Consultoria Estratégica',
           subcategories: [
             { name: 'Folha', launchType: 'DESPESAS_PESSOAIS' },
@@ -71,20 +76,22 @@ describe('mapPlanDetail — cabeçalho + árvore', () => {
     assert.deepEqual(detail.networks, [])
   })
 
-  it('centro: id numérico, type mapeado (A PAGAR), zeros', () => {
+  it('centro: id numérico, type mapeado (A PAGAR), zeros, ref = uuid do backend (feature 061)', () => {
     const cc = detail.costCenters[0]
     assert.ok(cc)
     assert.equal(cc.id, 1)
+    assert.equal(cc.ref, CENTRO_REF)
     assert.equal(cc.type, 'A PAGAR')
     assert.equal(cc.totalInCents, 0)
     assert.deepEqual(cc.monthlyInCents, zeros12)
     assert.deepEqual(cc.networkInCents, [])
   })
 
-  it('categoria: id derivado (centro*100 + 1) e zeros', () => {
+  it('categoria: id derivado (centro*100 + 1), ref = uuid do backend e zeros', () => {
     const cat = detail.costCenters[0]?.categories[0]
     assert.ok(cat)
     assert.equal(cat.id, 101)
+    assert.equal(cat.ref, CATEGORIA_REF)
     assert.equal(cat.totalInCents, 0)
     assert.deepEqual(cat.monthlyInCents, zeros12)
     assert.deepEqual(cat.networkInCents, [])
@@ -129,10 +136,12 @@ describe('mapPlanDetail — enums desconhecidos (fallback)', () => {
   const detail = mapPlanDetail(header, {
     costCenters: [
       {
+        id: 'c1c1c1c1-9999-4a2b-8c3d-000000000099',
         name: 'Centro X',
         direction: 'ALGO_ESTRANHO',
         categories: [
           {
+            id: 'ca7e9017-9999-4a2b-8c3d-000000000098',
             name: 'Cat X',
             subcategories: [{ name: 'Sub X', launchType: 'MODELO_DESCONHECIDO' }],
           },

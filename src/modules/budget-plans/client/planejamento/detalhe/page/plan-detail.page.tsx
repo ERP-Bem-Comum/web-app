@@ -28,6 +28,7 @@ import { ConsolidatedMatrix } from '../components/consolidated-matrix.component.
 import { AddBudgetModal } from '../components/add-budget-modal.component.tsx'
 import type { AddBudgetError } from '../add-budget.view-model.ts'
 import { CentrosCustoModal } from '../components/centros-custo-modal.component.tsx'
+import type { CentrosCustoErrorTag } from '../centros-custo.binding.ts'
 import {
   screen,
   header,
@@ -72,6 +73,34 @@ const actionKey = (action: PlanAction): string => {
       return 'budget-plans.action.delete'
     default: {
       const _exhaustive: never = action
+      return _exhaustive
+    }
+  }
+}
+
+/** i18n key de cada tag de erro da escrita da estrutura (§V, exaustivo) — feature 061. */
+const centroErrorKey = (tag: CentrosCustoErrorTag): string => {
+  switch (tag) {
+    case 'name-required':
+      return 'budget-plans.centrosCusto.error.name-required'
+    case 'missing-parent':
+      return 'budget-plans.centrosCusto.error.missing-parent'
+    case 'unauthorized':
+      return 'budget-plans.centrosCusto.error.unauthorized'
+    case 'invalid-input':
+      return 'budget-plans.centrosCusto.error.invalid-input'
+    case 'budget-plan-not-found':
+      return 'budget-plans.centrosCusto.error.not-found'
+    case 'budget-plan-not-editable':
+      return 'budget-plans.centrosCusto.error.not-editable'
+    case 'budget-plan-already-exists':
+    case 'budget-plan-already-approved':
+    case 'budget-plan-not-approved':
+    case 'budget-plan-invalid-transition':
+    case 'unexpected':
+      return 'budget-plans.centrosCusto.error.unexpected'
+    default: {
+      const _exhaustive: never = tag
       return _exhaustive
     }
   }
@@ -354,6 +383,7 @@ export function PlanDetailPage(): ReactNode {
           CAED: t('budget-plans.releaseType.caed'),
           DESPESAS_LOGISTICAS: t('budget-plans.releaseType.logistica'),
         }}
+        translateError={(tag) => t(centroErrorKey(tag))}
       />
 
       <PlanInsightsModal
