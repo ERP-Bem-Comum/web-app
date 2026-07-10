@@ -11,6 +11,8 @@ import {
   type ConsolidadoExportInput,
 } from '#modules/budget-plans/client/data/consolidado-export.gateway.ts'
 
+export type { ConsolidadoExportInput }
+
 /** Dispara o download do CSV no navegador (efeito de UI idempotente; não lança). */
 const triggerDownload = (filename: string, content: string): void => {
   const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' })

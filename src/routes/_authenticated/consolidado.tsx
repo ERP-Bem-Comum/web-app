@@ -1,7 +1,7 @@
 /**
- * Rota /consolidado — Consolidado ABC (Plano Orçamentário), protegida. Filtros Ano Base + Programa(s) nos
- * search params (HANDBOOK §2). Front-first: a page usa dados placeholder até o endpoint
- * `GET /budget-plans/consolidated-result` existir (core-api #113).
+ * Rota /consolidado — Consolidado ABC (Plano Orçamentário), protegida. Filtros Ano Base + Programa (uuid
+ * opcional) nos search params (HANDBOOK §2). Lê o consolidado REAL do core-api
+ * (`GET /budget-plans/consolidated-result`, feature 062).
  */
 import { createFileRoute } from '@tanstack/react-router'
 

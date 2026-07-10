@@ -66,4 +66,3 @@ server fn → repository (client) → query (TanStack) → binding → view-mode
 Testes: node:test da composição pura (DTO correto a partir do placeholder) + atualização dos specs
 existentes do dashboard (view-model.test, line-chart.spec) para a nova origem + DOM test do
 `DashboardContent` (4 cards + gráficos a partir do DTO). Sem `!` (non-null); atenção ao NBSP do BRL.
-</content>

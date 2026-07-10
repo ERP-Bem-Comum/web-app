@@ -11,10 +11,15 @@ export type PlanActionsMenuProps = Readonly<{
   /** Rótulo acessível do gatilho "…" (i18n). */
   triggerLabel: string
   /**
-   * Execução da ação. Nesta fatia (US1) é apresentação: a page passa um no-op/TODO — a lógica real
-   * (aprovar/excluir/calibração/cenário) depende do backend (#113). Mantido no contrato para não
-   * reescrever a view quando as mutations existirem.
+   * Ações VISÍVEIS porém desabilitadas (sem endpoint no backend — feature 060). Ficam com `disabled` + tooltip
+   * `disabledTitle`, jamais somem (regra da P.O.). `null`/ausente ⇒ nenhuma desabilitada.
    */
+  isDisabled?: (action: PlanAction) => boolean
+  /** Tooltip (i18n) do item desabilitado, POR AÇÃO — explica o motivo (sem endpoint × status do plano). */
+  disabledTitle?: (action: PlanAction) => string | undefined
+  /** Ação em andamento (mostra pendência no item). `null` ⇒ ociosa. */
+  pendingAction?: PlanAction | null
+  /** Execução da ação real (approve/start-calibration/create-scenery/export-csv). */
   onAction: (action: PlanAction) => void
 }>
 
@@ -63,21 +68,26 @@ export function PlanActionsMenu(props: PlanActionsMenuProps): ReactNode {
       </button>
       {open ? (
         <ul className={menu} role="menu">
-          {props.actions.map((action) => (
-            <li key={action} role="none">
-              <button
-                type="button"
-                role="menuitem"
-                className={action === 'delete' ? itemDanger : item}
-                onClick={() => {
-                  setOpen(false)
-                  props.onAction(action)
-                }}
-              >
-                {props.labelFor(action)}
-              </button>
-            </li>
-          ))}
+          {props.actions.map((action) => {
+            const disabled = props.isDisabled?.(action) === true || props.pendingAction === action
+            return (
+              <li key={action} role="none">
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={action === 'delete' ? itemDanger : item}
+                  disabled={disabled}
+                  title={props.isDisabled?.(action) === true ? props.disabledTitle?.(action) : undefined}
+                  onClick={() => {
+                    setOpen(false)
+                    props.onAction(action)
+                  }}
+                >
+                  {props.labelFor(action)}
+                </button>
+              </li>
+            )
+          })}
         </ul>
       ) : null}
     </div>

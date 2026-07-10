@@ -20,6 +20,7 @@ export type AccountsGridProps = Readonly<{
   expanded: ReadonlySet<string>
   onOpen: (row: AccountRow) => void
   onToggle: (id: string) => void
+  onRequestClose: (row: AccountRow) => void
 }>
 
 function StatusPill({ row }: Readonly<{ row: AccountRow }>) {
@@ -42,7 +43,10 @@ function StatusPill({ row }: Readonly<{ row: AccountRow }>) {
   )
 }
 
-function ExpandPanel({ row }: Readonly<{ row: AccountRow }>) {
+function ExpandPanel({
+  row,
+  onRequestClose,
+}: Readonly<{ row: AccountRow; onRequestClose: (row: AccountRow) => void }>) {
   const tipo = row.typeLabel !== null ? `${t(row.typeTag)} · ${row.typeLabel}` : t(row.typeTag)
   return (
     <div className={s.expandPanel}>
@@ -58,6 +62,20 @@ function ExpandPanel({ row }: Readonly<{ row: AccountRow }>) {
         <span className={s.expandLbl}>{t('financial.recon.accounts.expand.dataCadastro')}</span>
         <span className={s.expandVal}>{row.openingDate}</span>
       </div>
+      {/* Encerrar só faz sentido em conta ativa (Open→Closed). Conta já encerrada não mostra a ação. */}
+      {row.status !== 'closed' ? (
+        <div className={s.expandAction}>
+          <button
+            type="button"
+            className={s.closeAccountBtn}
+            onClick={() => {
+              onRequestClose(row)
+            }}
+          >
+            {t('financial.recon.accounts.close.action')}
+          </button>
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -67,11 +85,13 @@ function Row({
   expanded,
   onOpen,
   onToggle,
+  onRequestClose,
 }: Readonly<{
   row: AccountRow
   expanded: boolean
   onOpen: (row: AccountRow) => void
   onToggle: (id: string) => void
+  onRequestClose: (row: AccountRow) => void
 }>) {
   const initials = (row.bankName || row.bankCode).slice(0, 2).toUpperCase()
   const meta = `${row.bankCode} ${row.bankName} · Ag ${row.branch} · CC ${row.accountNumber}-${row.accountDv}`
@@ -122,12 +142,12 @@ function Row({
           </span>
         </button>
       </div>
-      {expanded ? <ExpandPanel row={row} /> : null}
+      {expanded ? <ExpandPanel row={row} onRequestClose={onRequestClose} /> : null}
     </>
   )
 }
 
-export function AccountsGrid({ rows, expanded, onOpen, onToggle }: AccountsGridProps) {
+export function AccountsGrid({ rows, expanded, onOpen, onToggle, onRequestClose }: AccountsGridProps) {
   return (
     <>
       <div className={s.gridHead}>
@@ -139,7 +159,14 @@ export function AccountsGrid({ rows, expanded, onOpen, onToggle }: AccountsGridP
       </div>
       <div className={s.gridBody}>
         {rows.map((row) => (
-          <Row key={row.id} row={row} expanded={expanded.has(row.id)} onOpen={onOpen} onToggle={onToggle} />
+          <Row
+            key={row.id}
+            row={row}
+            expanded={expanded.has(row.id)}
+            onOpen={onOpen}
+            onToggle={onToggle}
+            onRequestClose={onRequestClose}
+          />
         ))}
       </div>
     </>

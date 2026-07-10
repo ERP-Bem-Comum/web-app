@@ -307,7 +307,8 @@ export function ContractForm({
                             {contractorInitials(p.name)}
                           </span>
                           <span>
-                            {p.name} · {p.kind}
+                            {p.name}
+                            {p.cnpj ? ` · ${maskDocument(p.cnpj)}` : p.cpf ? ` · ${maskDocument(p.cpf)}` : ''}
                           </span>
                         </div>
                       ))

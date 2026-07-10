@@ -375,6 +375,7 @@ export const transactionReconciliationToModel = (
       documentNumber: null,
       supplierName: null,
       dueDate: null,
+      retentionType: null, // enriquecido via maps.titles (#172)
     })),
   })
 }

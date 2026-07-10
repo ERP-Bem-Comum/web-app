@@ -1,16 +1,35 @@
 import { useNavigate, getRouteApi } from '@tanstack/react-router'
-import type { ReactNode } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Badge, ChevronLeftIcon, type BadgeProps } from '#shared/ui/index.ts'
-import type { StatusTone } from '#modules/budget-plans/client/planejamento/planejamento-list.view-model.ts'
+import {
+  PLAN_ACTIONS,
+  type StatusTone,
+  type PlanAction,
+} from '#modules/budget-plans/client/planejamento/planejamento-list.view-model.ts'
+import {
+  confirmSpecFor,
+  isActionEnabled,
+  actionDisabledTitleKey,
+  type ConfirmableAction,
+} from '#modules/budget-plans/client/planejamento/plan-actions.view-model.ts'
+import { usePlanActions } from '#modules/budget-plans/client/planejamento/plan-actions.binding.ts'
+import { PlanActionsMenu } from '#modules/budget-plans/client/planejamento/components/plan-actions-menu.component.tsx'
+import {
+  ConfirmActionModal,
+  PlanFeedbackToast,
+} from '#modules/budget-plans/client/planejamento/components/confirm-action-modal.component.tsx'
 
 import { usePlanDetail } from '../plan-detail.binding.ts'
+import { usePlanInsights } from '../plan-insights.binding.ts'
+import { PlanInsightsModal } from '../components/plan-insights-modal.component.tsx'
 import { ConsolidatedMatrix } from '../components/consolidated-matrix.component.tsx'
 import { AddBudgetModal } from '../components/add-budget-modal.component.tsx'
 import type { AddBudgetError } from '../add-budget.view-model.ts'
 import { CentrosCustoModal } from '../components/centros-custo-modal.component.tsx'
+import type { CentrosCustoErrorTag } from '../centros-custo.binding.ts'
 import {
   screen,
   header,
@@ -30,12 +49,67 @@ import {
   filterButton,
   actionsRight,
   secondaryButton,
-  moreButton,
   notFound,
 } from './plan-detail.css.ts'
 
 const t = createTranslator(ptBR)
 const routeApi = getRouteApi('/_authenticated/planejamento_/detalhes/$id')
+
+/** Rótulo i18n de cada ação do menu "…" no detalhe (espelha a lista). */
+const actionKey = (action: PlanAction): string => {
+  switch (action) {
+    case 'share':
+      return 'budget-plans.action.share'
+    case 'planned-vs-actual':
+      return 'budget-plans.action.plannedVsActual'
+    case 'start-calibration':
+      return 'budget-plans.action.startCalibration'
+    case 'approve':
+      return 'budget-plans.action.approve'
+    case 'create-scenery':
+      return 'budget-plans.action.createScenery'
+    case 'export-csv':
+      return 'budget-plans.action.exportCsv'
+    case 'delete':
+      return 'budget-plans.action.delete'
+    default: {
+      const _exhaustive: never = action
+      return _exhaustive
+    }
+  }
+}
+
+/** i18n key de cada tag de erro da escrita da estrutura (§V, exaustivo) — feature 061. */
+const centroErrorKey = (tag: CentrosCustoErrorTag): string => {
+  switch (tag) {
+    case 'name-required':
+      return 'budget-plans.centrosCusto.error.name-required'
+    case 'missing-parent':
+      return 'budget-plans.centrosCusto.error.missing-parent'
+    case 'unauthorized':
+      return 'budget-plans.centrosCusto.error.unauthorized'
+    case 'invalid-input':
+      return 'budget-plans.centrosCusto.error.invalid-input'
+    case 'budget-plan-not-found':
+      return 'budget-plans.centrosCusto.error.not-found'
+    case 'budget-plan-not-editable':
+      return 'budget-plans.centrosCusto.error.not-editable'
+    case 'budget-plan-already-exists':
+    case 'budget-plan-already-approved':
+    case 'budget-plan-not-approved':
+    case 'budget-plan-scenery-needs-draft':
+    case 'budget-plan-invalid-transition':
+    case 'unexpected':
+      return 'budget-plans.centrosCusto.error.unexpected'
+    default: {
+      const _exhaustive: never = tag
+      return _exhaustive
+    }
+  }
+}
+
+const TOAST_MS = 3500
+type PendingConfirm = Readonly<{ action: ConfirmableAction; id: string; name: string }>
 
 const BADGE_VARIANT: Readonly<Record<StatusTone, BadgeProps['variant']>> = {
   neutral: 'outro',
@@ -49,6 +123,64 @@ export function PlanDetailPage(): ReactNode {
   const id = params.id
   const { state, view, setView, prevSemester, nextSemester, filter, addBudget, centrosCusto } =
     usePlanDetail(id)
+  const insights = usePlanInsights(id)
+
+  // Menu "…" do detalhe: confirmações + toast + mutations REAIS (mesmo binding da lista). As ações operam sobre
+  // ESTE plano; o backend valida a transição de ciclo de vida (409 → mensagem PT). O filtro por Rede segue
+  // desabilitado (GET /options 500 — core-api#394); só o passador de mês/semestre é client-side.
+  const [confirm, setConfirm] = useState<PendingConfirm | null>(null)
+  const [scenaryName, setScenaryName] = useState('')
+  const [toastMsg, setToastMsg] = useState<string | null>(null)
+
+  const planActions = usePlanActions((outcome) => {
+    if (outcome.ok) {
+      const key =
+        outcome.action === 'export-csv'
+          ? 'budget-plans.action.exportCsv.success'
+          : `budget-plans.confirm.${outcome.action}.success`
+      setToastMsg(t(key))
+      // Cenário criado é plano-FILHO (não some na lista de raízes) → navega pro detalhe do novo cenário.
+      if (outcome.action === 'create-scenery' && outcome.sceneryId !== undefined) {
+        void navigate({ to: '/planejamento/detalhes/$id', params: { id: outcome.sceneryId } })
+      }
+    } else {
+      setToastMsg(t(outcome.errorTag))
+    }
+  })
+
+  useEffect(() => {
+    if (toastMsg === null) return
+    const handle = setTimeout(() => {
+      setToastMsg(null)
+    }, TOAST_MS)
+    return () => {
+      clearTimeout(handle)
+    }
+  }, [toastMsg])
+
+  const planTitle = state.status === 'ready' || state.status === 'empty' ? state.header.title : ''
+  // Status CRU do plano corrente (quando carregado) — gateia as ações do menu por status (§V, regra da P.O.).
+  const rawStatus = state.status === 'ready' || state.status === 'empty' ? state.header.rawStatus : undefined
+
+  const onAction = (action: PlanAction): void => {
+    if (!isActionEnabled(action, rawStatus)) return
+    if (action === 'export-csv') {
+      planActions.runAction('export-csv', id)
+      return
+    }
+    const spec = confirmSpecFor(action)
+    if (spec === null) return
+    if (spec.needsName) setScenaryName('')
+    setConfirm({ action: spec.action, id, name: planTitle })
+  }
+
+  const confirmSpec = confirm !== null ? confirmSpecFor(confirm.action) : null
+
+  const runConfirm = (): void => {
+    if (confirm === null) return
+    planActions.runAction(confirm.action, confirm.id, scenaryName)
+    setConfirm(null)
+  }
 
   const goBack = (): void => {
     void navigate({ to: '/planejamento' })
@@ -71,9 +203,11 @@ export function PlanDetailPage(): ReactNode {
         </div>
       </div>
 
-      {state.status === 'not-found' ? (
-        <p className={notFound}>{t('budget-plans.detail.notFound')}</p>
-      ) : (
+      {state.status === 'loading' && <p className={notFound}>{t('budget-plans.detail.loading')}</p>}
+      {state.status === 'error' && <p className={notFound}>{t('budget-plans.detail.error')}</p>}
+      {state.status === 'not-found' && <p className={notFound}>{t('budget-plans.detail.notFound')}</p>}
+
+      {(state.status === 'ready' || state.status === 'empty') && (
         <>
           <div className={resultCard}>
             <div className={titleRow}>
@@ -134,22 +268,24 @@ export function PlanDetailPage(): ReactNode {
                 {t('budget-plans.detail.filter')}
               </button>
             </div>
-            {/* 🔁 TODO(US2/US3): Insights, Adicionar Orçamento e menu "…" viram modais/fluxos reais. */}
             <div className={actionsRight}>
-              <button type="button" className={secondaryButton} disabled>
+              <button type="button" className={secondaryButton} onClick={insights.openModal}>
                 {t('budget-plans.detail.insights')}
               </button>
               <button type="button" className={secondaryButton} onClick={addBudget.openModal}>
                 {t('budget-plans.detail.addBudget')}
               </button>
-              <button
-                type="button"
-                className={moreButton}
-                aria-label={t('budget-plans.detail.moreActions')}
-                disabled
-              >
-                {'…'}
-              </button>
+              {/* Menu "…" real: ações ligadas (approve/calibração/cenário/CSV); share/planejado×realizado/
+                  excluir ficam desabilitados (sem endpoint). O backend valida a transição de ciclo de vida. */}
+              <PlanActionsMenu
+                actions={PLAN_ACTIONS}
+                labelFor={(action) => t(actionKey(action))}
+                triggerLabel={t('budget-plans.detail.moreActions')}
+                isDisabled={(action) => !isActionEnabled(action, state.header.rawStatus)}
+                disabledTitle={(action) => t(actionDisabledTitleKey(action, state.header.rawStatus))}
+                pendingAction={planActions.pendingAction}
+                onAction={onAction}
+              />
             </div>
           </div>
 
@@ -187,6 +323,7 @@ export function PlanDetailPage(): ReactNode {
               setView('network')
             }}
           />
+          {state.status === 'empty' && <p className={notFound}>{t('budget-plans.detail.empty')}</p>}
         </>
       )}
 
@@ -254,7 +391,50 @@ export function PlanDetailPage(): ReactNode {
           CAED: t('budget-plans.releaseType.caed'),
           DESPESAS_LOGISTICAS: t('budget-plans.releaseType.logistica'),
         }}
+        translateError={(tag) => t(centroErrorKey(tag))}
       />
+
+      <PlanInsightsModal
+        open={insights.open}
+        state={insights.state}
+        labels={{
+          title: t('budget-plans.insights.title'),
+          close: t('budget-plans.insights.close'),
+          currentTotal: t('budget-plans.insights.currentTotal'),
+          loading: t('budget-plans.insights.loading'),
+          error: t('budget-plans.insights.error'),
+          empty: t('budget-plans.insights.empty'),
+        }}
+        onClose={insights.close}
+      />
+
+      <ConfirmActionModal
+        open={confirm !== null}
+        title={confirm !== null ? t(`budget-plans.confirm.${confirm.action}.title`) : ''}
+        message={
+          confirm !== null
+            ? t(`budget-plans.confirm.${confirm.action}.body`).replace('{nome}', confirm.name)
+            : ''
+        }
+        confirmLabel={confirm !== null ? t(`budget-plans.confirm.${confirm.action}.confirm`) : ''}
+        cancelLabel={t('budget-plans.confirm.cancel')}
+        danger={confirmSpec?.danger ?? false}
+        nameField={
+          confirmSpec?.needsName === true
+            ? {
+                label: t('budget-plans.confirm.create-scenery.nameLabel'),
+                value: scenaryName,
+                onChange: setScenaryName,
+              }
+            : undefined
+        }
+        onConfirm={runConfirm}
+        onClose={() => {
+          setConfirm(null)
+        }}
+      />
+
+      <PlanFeedbackToast message={toastMsg} />
     </div>
   )
 }

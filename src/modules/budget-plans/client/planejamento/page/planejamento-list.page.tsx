@@ -22,8 +22,11 @@ import {
 import type { CreatePlanError } from '#modules/budget-plans/client/planejamento/create-plan.view-model.ts'
 import {
   confirmSpecFor,
+  isActionEnabled,
+  actionDisabledTitleKey,
   type ConfirmableAction,
 } from '#modules/budget-plans/client/planejamento/plan-actions.view-model.ts'
+import { usePlanActions } from '#modules/budget-plans/client/planejamento/plan-actions.binding.ts'
 
 import { PlanFilters } from '../components/plan-filters.component.tsx'
 import { PlanTreeTable } from '../components/plan-tree-table.component.tsx'
@@ -76,10 +79,11 @@ export function PlanejamentoListPage(): ReactNode {
   const search = routeApi.useSearch()
   const navigate = useNavigate()
   const { state, programOptions, grandTotalLabel } = usePlanejamentoList(search)
-  // Programas do modal "Criar Plano": os REAIS cadastrados (não a lista de planos, vazia até #374).
+  // Programas do modal "Criar Plano": o CATÁLOGO real do budget-plans ({ ref, abbreviation }) — fonte do
+  // `programRef` que o POST envia (não a lista de planos, que fica vazia até o dado subir).
   const createProgramOptions = useCreateProgramOptions()
   const [createOpen, setCreateOpen] = useState(false)
-  const createPlan = useCreatePlan(createProgramOptions, () => {
+  const createPlan = useCreatePlan(() => {
     setCreateOpen(false)
   })
 
@@ -88,10 +92,28 @@ export function PlanejamentoListPage(): ReactNode {
     setCreateOpen(false)
   }
 
-  // Confirmações do menu "…" + toast de sucesso (§2.5). Front-first: a execução real depende do #113.
+  // Confirmações do menu "…" + toast (§2.5). Agora com as MUTATIONS REAIS (feature 060): o binding invalida a
+  // lista/detalhe no sucesso e devolve o resultado por callback; o toast reflete sucesso OU erro do backend (§V).
   const [confirm, setConfirm] = useState<PendingConfirm | null>(null)
   const [scenaryName, setScenaryName] = useState('')
   const [toastMsg, setToastMsg] = useState<string | null>(null)
+
+  const planActions = usePlanActions((outcome) => {
+    if (outcome.ok) {
+      const key =
+        outcome.action === 'export-csv'
+          ? 'budget-plans.action.exportCsv.success'
+          : `budget-plans.confirm.${outcome.action}.success`
+      setToastMsg(t(key))
+      // Cenário criado é plano-FILHO (não aparece nesta lista de raízes) → navega pro detalhe dele como
+      // feedback visível. Gerenciar todos os cenários (árvore de versões) depende do backend (GET de filhos).
+      if (outcome.action === 'create-scenery' && outcome.sceneryId !== undefined) {
+        void navigate({ to: '/planejamento/detalhes/$id', params: { id: outcome.sceneryId } })
+      }
+    } else {
+      setToastMsg(t(outcome.errorTag))
+    }
+  })
 
   useEffect(() => {
     if (toastMsg === null) return
@@ -104,8 +126,13 @@ export function PlanejamentoListPage(): ReactNode {
   }, [toastMsg])
 
   const onAction = (id: string, action: PlanAction): void => {
+    if (!isActionEnabled(action)) return // share/planned-vs-actual/delete: sem endpoint (o menu já desabilita)
+    if (action === 'export-csv') {
+      planActions.runAction('export-csv', id) // sem confirmação — dispara o download direto
+      return
+    }
     const spec = confirmSpecFor(action)
-    if (spec === null) return // outras ações (compartilhar, CSV, planejado×realizado) são outras telas
+    if (spec === null) return
     if (spec.needsName) setScenaryName('')
     setConfirm({ action: spec.action, id, name: findRowName(state.rows, id) ?? '' })
   }
@@ -114,7 +141,7 @@ export function PlanejamentoListPage(): ReactNode {
 
   const runConfirm = (): void => {
     if (confirm === null) return
-    setToastMsg(t(`budget-plans.confirm.${confirm.action}.success`))
+    planActions.runAction(confirm.action, confirm.id, scenaryName)
     setConfirm(null)
   }
 
@@ -205,6 +232,8 @@ export function PlanejamentoListPage(): ReactNode {
             totalRow: t('budget-plans.list.totalRow'),
           }}
           actionLabelFor={(action) => t(actionKey(action))}
+          actionIsDisabled={(action, status) => !isActionEnabled(action, status)}
+          actionDisabledTitleFor={(action, status) => t(actionDisabledTitleKey(action, status))}
           onOpenPlan={(id) => {
             void navigate({
               to: '/planejamento/detalhes/$id',
@@ -239,6 +268,7 @@ export function PlanejamentoListPage(): ReactNode {
         open={createOpen}
         form={createPlan.form}
         errorTag={createPlan.errorTag}
+        submitting={createPlan.submitting}
         programOptions={createProgramOptions}
         importYears={IMPORT_YEARS}
         labels={{

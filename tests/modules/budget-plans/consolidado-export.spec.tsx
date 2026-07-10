@@ -21,13 +21,13 @@ vi.mock('#modules/budget-plans/client/data/consolidado-export.gateway.ts', () =>
 const mockedExport = vi.mocked(exportConsolidadoAbcCsv)
 
 function Harness(): ReactNode {
-  const exp = useConsolidadoExport({ year: 2026, programs: [] })
+  const exp = useConsolidadoExport({ year: 2026, programRef: undefined })
   return (
     <div>
       <ConsolidadoFilters
-        value={{ year: 2026, programs: [] }}
+        value={{ year: 2026, programRef: undefined }}
         years={[2026]}
-        programOptions={['PARC']}
+        programOptions={[{ ref: 'p1', label: 'PARC' }]}
         labels={{ yearBase: 'Ano Base', programs: 'Programas', apply: 'Filtrar', exportCsv: 'Exportar CSV' }}
         exporting={exp.exporting}
         onApply={() => undefined}
@@ -75,7 +75,7 @@ describe('Consolidado ABC — export CSV (server-side)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Exportar CSV' }))
 
     await waitFor(() => {
-      expect(mockedExport).toHaveBeenCalledWith({ year: 2026, programs: [] })
+      expect(mockedExport).toHaveBeenCalledWith({ year: 2026, programRef: undefined })
     })
   })
 

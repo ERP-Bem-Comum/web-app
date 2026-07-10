@@ -14,7 +14,7 @@ import {
 } from '#modules/budget-plans/client/data/model/enums.ts'
 
 /** 12 valores mensais em centavos (Janeiro…Dezembro). */
-export const MonthlyCentsSchema = z.array(z.int()).length(12)
+export const MonthlyCentsSchema = z.array(z.int()).length(12).readonly()
 export type MonthlyCents = z.infer<typeof MonthlyCentsSchema>
 
 /**
@@ -31,7 +31,7 @@ export const NetworkRefSchema: z.ZodType<NetworkRef> = z.object({
  * Valores por rede em centavos — MESMA ordem/comprimento de `PlanDetail.networks` (alinhado por índice,
  * como `monthlyInCents` faz com os meses).
  */
-export const NetworkCentsSchema = z.array(z.int())
+export const NetworkCentsSchema = z.array(z.int()).readonly()
 export type NetworkCents = z.infer<typeof NetworkCentsSchema>
 
 /**
@@ -54,9 +54,13 @@ export type SubCategoryConsolidated = Readonly<{
   releaseType?: ReleaseType
 }>
 
-/** Categoria (agrupa subcategorias). */
+/**
+ * Categoria (agrupa subcategorias). `ref` = UUID do backend (feature 061 — o POST de subcategoria referencia
+ * a categoria-pai por UUID). Aditivo/opcional: presente no dado REAL do BFF, ausente no placeholder front-first.
+ */
 export type CategoryConsolidated = Readonly<{
   id: number
+  ref?: string
   name: string
   totalInCents: number
   monthlyInCents: MonthlyCents
@@ -65,9 +69,13 @@ export type CategoryConsolidated = Readonly<{
   iconKind?: MatrixIconKind
 }>
 
-/** Centro de custo (raiz da árvore consolidada). */
+/**
+ * Centro de custo (raiz da árvore consolidada). `ref` = UUID do backend (feature 061 — o POST de categoria
+ * referencia o centro-pai por UUID). Aditivo/opcional (real do BFF; ausente no placeholder).
+ */
 export type CostCenterConsolidated = Readonly<{
   id: number
+  ref?: string
   name: string
   type: z.infer<typeof CostCenterTypeSchema>
   totalInCents: number
@@ -102,6 +110,7 @@ export const SubCategoryConsolidatedSchema: z.ZodType<SubCategoryConsolidated> =
 })
 export const CategoryConsolidatedSchema: z.ZodType<CategoryConsolidated> = z.object({
   id: z.int(),
+  ref: z.string().trim().optional(),
   name: z.string().trim(),
   totalInCents: z.int(),
   monthlyInCents: MonthlyCentsSchema,
@@ -111,6 +120,7 @@ export const CategoryConsolidatedSchema: z.ZodType<CategoryConsolidated> = z.obj
 })
 export const CostCenterConsolidatedSchema: z.ZodType<CostCenterConsolidated> = z.object({
   id: z.int(),
+  ref: z.string().trim().optional(),
   name: z.string().trim(),
   type: CostCenterTypeSchema,
   totalInCents: z.int(),
@@ -119,6 +129,42 @@ export const CostCenterConsolidatedSchema: z.ZodType<CostCenterConsolidated> = z
   categories: z.array(CategoryConsolidatedSchema),
   iconKind: MatrixIconKindSchema.optional(),
 })
+// ── Escrita da estrutura de custo (feature 061 — Grupo B). Comandos dos 3 POSTs + a árvore-eco (201). Os
+// literais de `direction`/`launchType` = os enums canônicos (o VALOR já é o do backend). ──
+
+/** Comando: criar centro de custo. `direction` = `CostCenterType` (`'A PAGAR' | 'A RECEBER'`). */
+export type AddCostCenterInput = Readonly<{
+  planId: string
+  name: string
+  direction: z.infer<typeof CostCenterTypeSchema>
+}>
+
+/** Comando: criar categoria sob um centro (`costCenterId` = `ref` uuid do centro). */
+export type AddCategoryInput = Readonly<{ planId: string; costCenterId: string; name: string }>
+
+/** Comando: criar subcategoria sob uma categoria (`categoryId` = `ref` uuid; `launchType` = `ReleaseType`). */
+export type AddSubcategoryInput = Readonly<{
+  planId: string
+  categoryId: string
+  name: string
+  launchType: ReleaseType
+}>
+
+/** Árvore-eco devolvida pelos POSTs (201 = a árvore INTEIRA atualizada, com os UUIDs = `ref`). */
+export type CostStructureTree = Readonly<{
+  budgetPlanId: string
+  costCenters: readonly Readonly<{
+    ref: string
+    name: string
+    direction: string
+    categories: readonly Readonly<{
+      ref: string
+      name: string
+      subcategories: readonly Readonly<{ ref: string; name: string; launchType: string }>[]
+    }>[]
+  }>[]
+}>
+
 export const PlanDetailSchema: z.ZodType<PlanDetail> = z.object({
   id: z.string().trim(),
   year: z.int(),

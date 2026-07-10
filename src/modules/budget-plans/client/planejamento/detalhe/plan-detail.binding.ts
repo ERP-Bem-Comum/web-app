@@ -1,14 +1,15 @@
 /**
- * Binding do Detalhe do plano — ADAPTER React (§XI). Front-first: lê o placeholder e monta a matriz
- * ("Consolidado por Mês" OU "Por Rede") pelo ViewModel puro. Visão + semestre = UI-state local.
- * A view consome só o state.
- *
- * 🔁 TODO(#113): trocar `planDetailPlaceholder` por `useQuery(GET /budget-plans/:id + GET /budgets)`; o
- * ViewModel/matriz e a view NÃO mudam — só a origem dos dados.
+ * Binding do Detalhe do plano — ADAPTER React (§XI). Lê o DETALHE REAL do core-api (`GET /budget-plans/:id`,
+ * via `budgetPlansRepository.getPlanDetail`) e monta a matriz ("Consolidado por Mês" OU "Por Rede") pelo
+ * ViewModel puro. Visão + semestre = UI-state local. A view consome só o `state` (união discriminada §IV:
+ * loading | error | not-found | empty | ready).
  */
 import { useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 
-import { planDetailPlaceholder } from '#modules/budget-plans/client/data/plan-detail.placeholder.ts'
+import { budgetPlansRepository } from '#modules/budget-plans/client/data/repository/budget-plans.repository.instance.ts'
+import type { PlanDetail } from '#modules/budget-plans/client/data/model/plan-detail.model.ts'
+import type { BudgetPlansError } from '#modules/budget-plans/client/data/repository/budget-plans-error.ts'
 import {
   buildMonthlyMatrix,
   buildNetworkMatrix,
@@ -30,12 +31,24 @@ import {
   useCentrosCusto,
   type CentrosCustoBinding,
 } from '#modules/budget-plans/client/planejamento/detalhe/centros-custo.binding.ts'
+import { planDetailQueryKey } from '#modules/budget-plans/client/planejamento/detalhe/plan-detail.query-key.ts'
 
 /** Visões da seção consolidada (HANDBOOK §1.4): por mês (semestres) ou por rede (parceiros). */
 export type DetailView = 'month' | 'network'
 
+/**
+ * Re-export da query key do DETALHE (definida em módulo neutro `plan-detail.query-key.ts` p/ evitar ciclo).
+ * Consumidores existentes (`plan-actions.binding.ts`) seguem importando daqui. Evita drift de cache.
+ */
+export { planDetailQueryKey }
+
 export type PlanDetailState =
+  | Readonly<{ status: 'loading' }>
+  | Readonly<{ status: 'error'; errorTag: BudgetPlansError }>
   | Readonly<{ status: 'not-found' }>
+  // `empty` = plano sem centros de custo ainda; carrega a MATRIZ (vazia) p/ a tela mostrar a chrome inteira
+  // (action bar + matriz vazia) e o operador conseguir COMEÇAR (adicionar centro de custo, insights, menu).
+  | Readonly<{ status: 'empty'; header: PlanDetailHeader; matrix: MatrixView }>
   | Readonly<{ status: 'ready'; header: PlanDetailHeader; matrix: MatrixView }>
 
 /** UI-state do filtro por Rede (Estado + Município). Ao APLICAR ambos, entra em modo edição de orçamento. */
@@ -77,7 +90,14 @@ export type PlanDetailBinding = Readonly<{
 export function usePlanDetail(id: string): PlanDetailBinding {
   const [view, setView] = useState<DetailView>('month')
   const [semester, setSemester] = useState<Semester>(0)
-  const detail = useMemo(() => planDetailPlaceholder(id), [id])
+
+  const query = useQuery({
+    queryKey: planDetailQueryKey(id),
+    queryFn: () => budgetPlansRepository.getPlanDetail(id),
+  })
+
+  const detail: PlanDetail | null = query.data?.ok === true ? query.data.value : null
+  const errorTag: BudgetPlansError | null = query.data?.ok === false ? query.data.error : null
 
   // Filtro por Rede: rascunho (selects) + aplicado (após "Filtrar"). Mudar um select limpa o aplicado.
   const [estado, setEstadoRaw] = useState('')
@@ -90,17 +110,24 @@ export function usePlanDetail(id: string): PlanDetailBinding {
   const [addError, setAddError] = useState<AddBudgetError | null>(null)
   const existingNames = detail?.networks.map((n) => n.name) ?? []
 
-  // Modal "Centros de Custo" (§1.5) — binding próprio, alimentado pelo mesmo `detail`.
-  const centrosCusto = useCentrosCusto(detail)
+  // Modal "Centros de Custo" (§1.5) — binding próprio, alimentado pelo mesmo `detail`. Recebe o `id` do plano
+  // p/ a ESCRITA real da estrutura (feature 061) e a invalidação do detalhe após cada POST.
+  const centrosCusto = useCentrosCusto(id, detail)
 
   const state = useMemo<PlanDetailState>(() => {
-    if (detail === null) return { status: 'not-found' }
-    return {
-      status: 'ready',
-      header: derivePlanDetailHeader(detail),
-      matrix: view === 'month' ? buildMonthlyMatrix(detail, semester) : buildNetworkMatrix(detail),
+    if (query.isLoading) return { status: 'loading' }
+    if (errorTag === 'budget-plan-not-found') return { status: 'not-found' }
+    if (errorTag !== null) return { status: 'error', errorTag }
+    if (detail !== null) {
+      const header = derivePlanDetailHeader(detail)
+      const matrix = view === 'month' ? buildMonthlyMatrix(detail, semester) : buildNetworkMatrix(detail)
+      // Vazio (sem centros) e pronto renderizam a MESMA chrome; só muda a dica de vazio na tela.
+      return detail.costCenters.length === 0
+        ? { status: 'empty', header, matrix }
+        : { status: 'ready', header, matrix }
     }
-  }, [detail, view, semester])
+    return { status: 'loading' }
+  }, [query.isLoading, errorTag, detail, view, semester])
 
   const filter: PlanDetailFilter = {
     estado,

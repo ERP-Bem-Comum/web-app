@@ -1241,14 +1241,23 @@ export const ptBR: Catalog = {
   'financial.create.preview.ocrBadge': 'OCR',
   'financial.create.preview.title': 'Pré-visualização do documento',
   'financial.create.preview.hint':
-    'Arraste o PDF da nota aqui ou selecione um arquivo. O OCR vai ler os dados e preencher o formulário.',
+    'Arraste o PDF ou XML da nota aqui ou selecione um arquivo. A leitura automática cria um rascunho pré-preenchido.',
   'financial.create.preview.select': 'Selecionar arquivo',
-  'financial.create.preview.formats': 'PDF, PNG ou JPG · até 10 MB',
+  'financial.create.preview.formats': 'PDF ou XML · até 20 MB',
   'financial.create.preview.reading': 'Lendo o documento…',
-  'financial.create.preview.unavailable':
-    'A leitura automática (OCR) ainda não está disponível — em breve. Preencha o formulário manualmente.',
-  'financial.create.preview.error':
-    'Não foi possível ler o documento. Tente novamente ou preencha manualmente.',
+  'financial.create.preview.done': 'Rascunho criado a partir do documento — revise os dados e confirme.',
+  'financial.create.preview.frameLabel': 'Documento enviado (pré-visualização)',
+  'financial.create.preview.replace': 'Trocar arquivo',
+  'financial.create.preview.unsupported': 'Sem pré-visualização para este formato.',
+  'financial.create.preview.zoomIn': 'Aumentar zoom',
+  'financial.create.preview.zoomOut': 'Diminuir zoom',
+  'financial.create.ocr.error.invalidMime': 'Formato não suportado. Envie um arquivo PDF ou XML.',
+  'financial.create.ocr.error.tooLarge': 'Arquivo muito grande. O limite é 20 MB.',
+  'financial.create.ocr.error.invalidFile':
+    'Não foi possível ler o arquivo. Verifique se é um PDF ou XML válido.',
+  'financial.create.ocr.error.unauthorized': 'Sua sessão expirou. Entre novamente para continuar.',
+  'financial.create.ocr.error.server':
+    'Não foi possível processar o documento agora. Tente novamente ou preencha manualmente.',
   'financial.create.success.title': 'Documento lançado',
   'financial.create.success.subtitle': 'Títulos gerados',
   'financial.create.success.novo': 'Lançar outro',
@@ -1490,6 +1499,15 @@ export const ptBR: Catalog = {
   'financial.recon.accounts.expand.saldoInicial': 'Saldo inicial do cadastro',
   'financial.recon.accounts.expand.dataCadastro': 'Data do cadastro',
   'financial.recon.accounts.status.closed': 'Encerrada',
+  'financial.recon.accounts.close.action': 'Encerrar conta',
+  'financial.recon.accounts.close.title': 'Encerrar conta bancária',
+  'financial.recon.accounts.close.sub': 'A conta deixa de aparecer para novas conciliações.',
+  'financial.recon.accounts.close.body': 'Tem certeza que deseja encerrar a conta',
+  'financial.recon.accounts.close.warn':
+    'Esta ação é irreversível: a conta não poderá ser reaberta. O histórico e as conciliações já feitas são preservados.',
+  'financial.recon.accounts.close.cancel': 'Cancelar',
+  'financial.recon.accounts.close.confirm': 'Encerrar conta',
+  'financial.recon.accounts.close.closing': 'Encerrando…',
   'financial.recon.accounts.foot.pending': 'Movimentações pendentes',
   'financial.recon.accounts.foot.count': '{n} contas',
   'financial.recon.accounts.loading': 'Carregando contas…',
@@ -1831,6 +1849,8 @@ export const ptBR: Catalog = {
   'financial.list.filter.dim.contrato': 'Contrato',
   'financial.list.filter.dim.programa': 'Programa',
   'financial.list.dueDate.error': 'Não foi possível alterar o vencimento. Tente novamente.',
+  'financial.list.dueDate.errorPartial':
+    'Alguns títulos não tiveram o vencimento alterado (versão desatualizada ou status incompatível). Atualize a lista e tente de novo.',
   'financial.list.delete.action': 'Excluir',
   'financial.list.delete.actionHint': 'apaga o documento definitivamente',
   'financial.list.delete.needOpen': 'Só documentos em Aberto podem ser excluídos (Rascunho em breve).',
@@ -1934,6 +1954,23 @@ export const ptBR: Catalog = {
   'budget-plans.action.createScenery': 'Criar cenário desse plano',
   'budget-plans.action.exportCsv': 'Exportar CSV',
   'budget-plans.action.delete': 'Excluir Plano',
+  // Ações sem endpoint no backend (feature 060) — item visível porém desabilitado, com tooltip.
+  'budget-plans.action.noEndpoint': 'Indisponível no momento (depende do backend).',
+  // Ações desabilitadas por STATUS do plano (fix 062) — tooltip específico do motivo.
+  'budget-plans.action.disabled.sceneryNeedsDraft': 'Cenários só em planos não aprovados',
+  'budget-plans.action.disabled.calibrationNeedsApproved': 'Calibração só em planos aprovados',
+  'budget-plans.action.exportCsv.success': 'CSV exportado com sucesso!',
+  // Feedback de erro das ações (§V) — a tag chega mapeada por contexto do endpoint pelo BFF.
+  'budget-plans.action.error.unauthorized': 'Sua sessão expirou. Entre novamente para continuar.',
+  'budget-plans.action.error.notFound': 'Plano orçamentário não encontrado.',
+  'budget-plans.action.error.alreadyApproved': 'Este plano já está aprovado.',
+  'budget-plans.action.error.notApproved': 'Só planos aprovados podem iniciar calibração.',
+  'budget-plans.action.error.sceneryNeedsDraft': 'Cenários só podem ser criados em planos não aprovados.',
+  'budget-plans.action.error.invalidTransition':
+    'Não é possível executar esta ação no estado atual do plano.',
+  'budget-plans.action.error.invalidInput':
+    'Não foi possível concluir a ação. Verifique os dados e tente novamente.',
+  'budget-plans.action.error.unexpected': 'Não foi possível concluir a ação. Tente novamente.',
 
   // ── Confirmações do menu "…" (§2.5) — {nome} é interpolado na view ──
   'budget-plans.confirm.cancel': 'Cancelar',
@@ -1967,6 +2004,9 @@ export const ptBR: Catalog = {
   'budget-plans.detail.back': 'Voltar',
   'budget-plans.detail.totalPlan': 'Total Plano:',
   'budget-plans.detail.notFound': 'Plano orçamentário não encontrado.',
+  'budget-plans.detail.loading': 'Carregando o plano orçamentário…',
+  'budget-plans.detail.error': 'Não foi possível carregar o plano orçamentário. Tente novamente.',
+  'budget-plans.detail.empty': 'Este plano ainda não possui estrutura de custos.',
   'budget-plans.detail.stateFilter': 'Estado',
   'budget-plans.detail.municipioFilter': 'Município',
   'budget-plans.detail.filter': 'Filtrar',
@@ -1974,6 +2014,14 @@ export const ptBR: Catalog = {
   'budget-plans.detail.addBudget': 'Adicionar Orçamento',
   'budget-plans.detail.moreActions': 'Mais ações',
   'budget-plans.detail.edit': 'Editar',
+
+  // ── Modal de Insights (feature 060) — comparativo do ano atual × anteriores ──
+  'budget-plans.insights.title': 'Insights do Plano',
+  'budget-plans.insights.close': 'Fechar',
+  'budget-plans.insights.currentTotal': 'Total do plano em',
+  'budget-plans.insights.loading': 'Carregando os insights…',
+  'budget-plans.insights.error': 'Não foi possível carregar os insights. Tente novamente.',
+  'budget-plans.insights.empty': 'Sem anos anteriores para comparar.',
 
   // ── Modal "Adicionar Orçamento" (§1.6) ──
   'budget-plans.addBudget.title': 'Adicionar Orçamento',
@@ -2011,6 +2059,14 @@ export const ptBR: Catalog = {
   'budget-plans.centrosCusto.form.edit-categoria': 'Editar Categoria',
   'budget-plans.centrosCusto.form.add-sub': 'Adicionar Sub categoria',
   'budget-plans.centrosCusto.form.edit-sub': 'Editar Sub categoria',
+  // Erros da escrita da estrutura (feature 061 — validação client-side + eco do backend §V)
+  'budget-plans.centrosCusto.error.name-required': 'Informe o nome.',
+  'budget-plans.centrosCusto.error.missing-parent': 'Selecione o item ao qual este pertence.',
+  'budget-plans.centrosCusto.error.unauthorized': 'Sua sessão expirou. Entre novamente para continuar.',
+  'budget-plans.centrosCusto.error.invalid-input': 'Dados inválidos. Revise e tente novamente.',
+  'budget-plans.centrosCusto.error.not-found': 'Plano orçamentário não encontrado.',
+  'budget-plans.centrosCusto.error.not-editable': 'Este plano não permite mais alterações na estrutura.',
+  'budget-plans.centrosCusto.error.unexpected': 'Não foi possível salvar. Tente novamente.',
   // Rótulos dos enums (centro/sub/lançamento)
   'budget-plans.centroTipo.a-pagar': 'A PAGAR',
   'budget-plans.centroTipo.a-receber': 'A RECEBER',
@@ -2149,14 +2205,18 @@ export const ptBR: Catalog = {
   'budget-plans.consolidado.yearBase': 'Ano Base',
   'budget-plans.consolidado.programs': 'Programas',
   'budget-plans.consolidado.programsAll': 'Todos os programas',
-  'budget-plans.consolidado.programsCount': 'programas selecionados',
   'budget-plans.consolidado.apply': 'Filtrar',
   'budget-plans.consolidado.exportCsv': 'Exportar CSV',
   'budget-plans.consolidado.exportError': 'Não foi possível exportar o CSV. Tente novamente.',
   'budget-plans.consolidado.total': 'Total',
-  'budget-plans.consolidado.programLabel': 'Programa',
-  'budget-plans.consolidado.sectionTitle': 'Consolidado dos programas',
   'budget-plans.consolidado.noResults': 'Nenhum resultado encontrado',
+  'budget-plans.consolidado.loading': 'Carregando o consolidado…',
+  'budget-plans.consolidado.error': 'Não foi possível carregar o consolidado. Tente novamente.',
+  // Curva ABC (tabela por programa) — feature 062.
+  'budget-plans.consolidado.curveTitle': 'Curva ABC por programa',
+  'budget-plans.consolidado.colProgram': 'Programa',
+  'budget-plans.consolidado.colTotal': 'Total',
+  'budget-plans.consolidado.colShare': 'Participação',
 
   // ── Criar Plano (modal "Adicionar Plano Orçamentário" — HANDBOOK §1.2) ──
   'budget-plans.create.title': 'Adicionar Plano Orçamentário',
@@ -2168,9 +2228,10 @@ export const ptBR: Catalog = {
   'budget-plans.create.importFromYear': 'Criar a partir do ano de',
   'budget-plans.create.add': 'Adicionar',
   'budget-plans.create.cancel': 'Cancelar',
-  'budget-plans.create.duplicate': 'Atenção! Já existe um plano orçamentário com essas informações.',
   'budget-plans.create.requiredYear': 'Informe o ano do plano.',
   'budget-plans.create.requiredProgram': 'Selecione o programa.',
+  'budget-plans.create.conflict': 'Já existe um plano para esse ano e programa.',
+  'budget-plans.create.unexpected': 'Não foi possível criar o plano. Tente novamente.',
 
   // ── Dashboard "Resumo Mensal" (043 — reprodução fiel do legado) ──
   'dashboard.title': 'Dashboard - Resumo Mensal',

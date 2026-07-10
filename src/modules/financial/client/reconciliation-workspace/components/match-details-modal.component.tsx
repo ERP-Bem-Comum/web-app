@@ -181,7 +181,9 @@ export function MatchDetailsModal({
               ) : (
                 <>
                   <div className={s.mmSideLbl.doc}>{t('financial.recon.match.docLbl')}</div>
-                  <div className={s.mmSideTitle}>{view.doc.name}</div>
+                  <div className={s.mmSideTitle}>
+                    {view.doc.nameTag !== null ? t(view.doc.nameTag) : view.doc.name}
+                  </div>
                   <div className={s.mmSideRow}>
                     <span className={s.mmSideK}>{t('financial.recon.match.rowDoc')}</span>
                     <span className={s.mmSideV}>{view.doc.documento}</span>

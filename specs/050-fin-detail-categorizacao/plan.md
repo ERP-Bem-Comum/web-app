@@ -57,4 +57,3 @@
 
 - Reuso de cache entre `document-create` e `contas-a-pagar-list`: mesma queryKey → 1 fetch. Baixo risco.
 - `budgetPlanRef` sem fonte → decisão consciente de manter "—" (não inventar).
-  </content>

@@ -25,17 +25,20 @@ export type ConsolidadoFiltersLabels = Readonly<{
   exportCsv: string
 }>
 
+/** Opção de programa: valor = uuid (`ref`); rótulo exibido = abreviação (`label`). */
+export type ConsolidadoProgramOption = Readonly<{ ref: string; label: string }>
+
 export type ConsolidadoFiltersValue = Readonly<{
   year: number
-  programs: readonly string[]
+  programRef?: string
 }>
 
 export type ConsolidadoFiltersProps = Readonly<{
   value: ConsolidadoFiltersValue
   years: readonly number[]
-  programOptions: readonly string[]
+  programOptions: readonly ConsolidadoProgramOption[]
   labels: ConsolidadoFiltersLabels
-  /** Export CSV em andamento — desabilita o botão (o BFF gera o arquivo server-side). */
+  /** Export CSV em andamento — desabilita o botão (o BFF repassa o arquivo do core-api). */
   exporting?: boolean
   onApply: (value: ConsolidadoFiltersValue) => void
   onExport: () => void
@@ -43,13 +46,13 @@ export type ConsolidadoFiltersProps = Readonly<{
 
 /**
  * Barra de filtros do Consolidado ABC (view BURRA §2): Ano Base (dropdown) + Programa (dropdown SINGLE-select
- * — um programa por vez; "" = Todos) + "Filtrar"; à direita "Exportar Excel/CSV". Estado local até "Filtrar";
- * a URL é a fonte de verdade (recebida por `value`). Mantém o contrato `programs: readonly string[]` (0 ou 1
- * elemento) para não mexer no binding/onApply.
+ * por `ref`; "" = Todos) + "Filtrar"; à direita "Exportar CSV". Estado local até "Filtrar"; a URL é a fonte de
+ * verdade (recebida por `value`). O endpoint real filtra por UM programa (uuid), então o valor emitido é o
+ * `programRef` (ou `undefined` = Todos).
  */
 export function ConsolidadoFilters(props: ConsolidadoFiltersProps): ReactNode {
   const [year, setYear] = useState<number>(props.value.year)
-  const [program, setProgram] = useState<string>(props.value.programs[0] ?? '')
+  const [program, setProgram] = useState<string>(props.value.programRef ?? '')
 
   return (
     <div className={bar}>
@@ -89,8 +92,8 @@ export function ConsolidadoFilters(props: ConsolidadoFiltersProps): ReactNode {
           >
             <option value="">{t('budget-plans.consolidado.programsAll')}</option>
             {props.programOptions.map((p) => (
-              <option key={p} value={p}>
-                {p}
+              <option key={p.ref} value={p.ref}>
+                {p.label}
               </option>
             ))}
           </select>
@@ -104,7 +107,7 @@ export function ConsolidadoFilters(props: ConsolidadoFiltersProps): ReactNode {
         type="button"
         className={applyButton}
         onClick={() => {
-          props.onApply({ year, programs: program === '' ? [] : [program] })
+          props.onApply({ year, programRef: program === '' ? undefined : program })
         }}
       >
         <span className={buttonIcon} aria-hidden="true">

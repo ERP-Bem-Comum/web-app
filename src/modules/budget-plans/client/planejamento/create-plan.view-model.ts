@@ -1,14 +1,21 @@
 /**
  * ViewModel PURO (§XI) do modal "Adicionar Plano Orçamentário" (HANDBOOK §1.2). Regras testáveis sem React:
- * validação de campos obrigatórios (Ano + Programa) e a UNICIDADE Ano+Programa contra a lista existente
- * (mensagem do legado). Reusa `CreateBudgetPlanInputSchema` como forma do input. Sem React/TanStack.
+ * validação dos campos obrigatórios (Ano + Programa) e o mapeamento do erro do BFF → tag i18n. A UNICIDADE
+ * Ano+Programa deixou de ser client-side: é do backend (`POST /budget-plans` → 409), refletida via `conflict`.
+ * Sem React/TanStack.
  */
-import type { BudgetPlanNode } from '#modules/budget-plans/client/data/model/budget-plan.model.ts'
+import type { BudgetPlansError } from '#modules/budget-plans/client/data/repository/budget-plans-error.ts'
 
 /** Anos oferecidos no "Criar a partir do ano de" (HANDBOOK §1.2: dropdown 2019–2025). */
 export const IMPORT_YEARS = [2019, 2020, 2021, 2022, 2023, 2024, 2025] as const
 
-/** Estado do form (o que a view apresenta e o controller mantém). */
+/**
+ * Opção de programa como a VIEW a consome: exibe `abbreviation`, submete `ref`. Espelha estruturalmente o
+ * `BudgetPlanProgramOption` da `data/` (a view-burra não importa `data` — §XI boundary).
+ */
+export type CreatePlanProgramOption = Readonly<{ ref: string; abbreviation: string }>
+
+/** Estado do form (o que a view apresenta e o controller mantém). `program` guarda o `programRef` selecionado. */
 export type CreatePlanForm = Readonly<{
   year: string
   program: string
@@ -23,34 +30,24 @@ export const createPlanInitialForm: CreatePlanForm = {
   importFromYear: '',
 }
 
-/** Tag i18n do primeiro erro de validação, ou null se o form pode ser submetido. */
+/** Tag i18n de erro do modal: validação de campo OU falha do backend (conflito/genérico). */
 export type CreatePlanError =
   | 'budget-plans.create.requiredYear'
   | 'budget-plans.create.requiredProgram'
-  | 'budget-plans.create.duplicate'
+  | 'budget-plans.create.conflict'
+  | 'budget-plans.create.unexpected'
 
 /**
- * Já existe um plano-RAIZ com esse Ano+Programa? (unicidade Ano+Programa — HANDBOOK §1.2/§B.5). Casa o
- * programa contra abreviação OU nome (case-insensitive), como o funil da lista.
+ * Valida os obrigatórios do form (Ano inteiro + Programa selecionado). Retorna a tag do 1º erro, ou null se
+ * pode ser submetido. A unicidade NÃO é checada aqui — é do backend (409 → `conflict` via `createErrorTag`).
  */
-export const isDuplicatePlan = (roots: readonly BudgetPlanNode[], year: number, program: string): boolean => {
-  const p = program.trim().toLowerCase()
-  return roots.some((node) => {
-    if (node.year !== year) return false
-    const abbr = (node.programAbbreviation ?? '').toLowerCase()
-    const name = node.programName.toLowerCase()
-    return abbr === p || name === p
-  })
-}
-
-/** Valida o form contra os obrigatórios + unicidade. Retorna a tag do 1º erro, ou null se válido. */
-export const validateCreatePlan = (
-  form: CreatePlanForm,
-  existing: readonly BudgetPlanNode[],
-): CreatePlanError | null => {
+export const validateCreatePlan = (form: CreatePlanForm): CreatePlanError | null => {
   const year = Number(form.year)
   if (form.year.trim() === '' || !Number.isInteger(year)) return 'budget-plans.create.requiredYear'
   if (form.program.trim() === '') return 'budget-plans.create.requiredProgram'
-  if (isDuplicatePlan(existing, year, form.program)) return 'budget-plans.create.duplicate'
   return null
 }
+
+/** Mapeia o erro do BFF (§V) para a tag i18n do modal. 409 → conflito; o resto → genérico. */
+export const createErrorTag = (error: BudgetPlansError): CreatePlanError =>
+  error === 'budget-plan-already-exists' ? 'budget-plans.create.conflict' : 'budget-plans.create.unexpected'

@@ -131,6 +131,8 @@ export const enrichReconciliationItems = (
     documentNumber: item.documentNumber ?? maps.titles.get(item.payableId)?.documentNumber ?? null,
     dueDate: item.dueDate ?? maps.titles.get(item.payableId)?.dueDate ?? null,
     supplierName: item.supplierName ?? resolveSupplierName(maps, item.payableId),
+    // Imposto retido do título (#172) → o modal mostra o órgão arrecadador no lugar do fornecedor do pai.
+    retentionType: item.retentionType ?? maps.titles.get(item.payableId)?.retentionType ?? null,
   }))
 
 // TransactionReconciliation: enriquece os itens do lookup (coluna "TÍTULO NO SISTEMA" do modal de detalhe).
