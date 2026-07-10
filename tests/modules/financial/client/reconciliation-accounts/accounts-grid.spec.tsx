@@ -45,6 +45,7 @@ describe('AccountsGrid', () => {
         onOpen={vi.fn()}
         onToggle={vi.fn()}
         onRequestClose={vi.fn()}
+        onRequestEdit={vi.fn()}
       />,
     )
     expect(screen.getByText(tr('financial.recon.accounts.col.conta'))).toBeTruthy()
@@ -59,6 +60,7 @@ describe('AccountsGrid', () => {
         onOpen={vi.fn()}
         onToggle={vi.fn()}
         onRequestClose={vi.fn()}
+        onRequestEdit={vi.fn()}
       />,
     )
     expect(screen.getByText('4 pendentes')).toBeTruthy()
@@ -76,6 +78,7 @@ describe('AccountsGrid', () => {
         onOpen={onOpen}
         onToggle={vi.fn()}
         onRequestClose={vi.fn()}
+        onRequestEdit={vi.fn()}
       />,
     )
     fireEvent.click(screen.getByText('Ativa'))
@@ -94,6 +97,7 @@ describe('AccountsGrid', () => {
         onOpen={onOpen}
         onToggle={onToggle}
         onRequestClose={vi.fn()}
+        onRequestEdit={vi.fn()}
       />,
     )
     expect(screen.getByText(tr('financial.recon.accounts.expand.saldoInicial'))).toBeTruthy()
@@ -117,6 +121,7 @@ describe('AccountsGrid', () => {
         onOpen={vi.fn()}
         onToggle={vi.fn()}
         onRequestClose={onRequestClose}
+        onRequestEdit={vi.fn()}
       />,
     )
     // Só a conta ativa oferece a ação (a encerrada, expandida, não mostra o botão).
@@ -128,5 +133,29 @@ describe('AccountsGrid', () => {
     expect(onRequestClose).toHaveBeenCalledTimes(1)
     const arg = onRequestClose.mock.calls[0]?.[0] as AccountRow | undefined
     expect(arg?.id).toBe('ativa')
+  })
+
+  it('expand mostra "Editar" em qualquer conta (ativa OU encerrada) → dispara onRequestEdit(row)', () => {
+    const onRequestEdit = vi.fn()
+    render(
+      <AccountsGrid
+        rows={[
+          row({ id: 'ativa', alias: 'Ativa' }),
+          row({ id: 'fechada', alias: 'Antiga', status: 'closed', openable: false }),
+        ]}
+        expanded={new Set(['ativa', 'fechada'])}
+        onOpen={vi.fn()}
+        onToggle={vi.fn()}
+        onRequestClose={vi.fn()}
+        onRequestEdit={onRequestEdit}
+      />,
+    )
+    // Editar aparece nas DUAS (ativa e encerrada) — diferente de Encerrar (só na ativa).
+    const editButtons = screen.getAllByText(tr('financial.recon.accounts.edit.action'))
+    expect(editButtons).toHaveLength(2)
+    const first = editButtons[0]
+    if (first === undefined) throw new Error('botão de editar não encontrado')
+    fireEvent.click(first)
+    expect(onRequestEdit).toHaveBeenCalledTimes(1)
   })
 })

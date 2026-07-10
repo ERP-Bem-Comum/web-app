@@ -175,6 +175,33 @@ export const createCoreApiReconciliationClient = (
     if (isErr(r)) return err(mapHttpError(r.error))
     return cedenteAccountToModel(r.value)
   },
+  editCedenteAccount: async (i, token) => {
+    // PATCH parcial: só as chaves presentes (todas opcionais). `type` mapeado p/ o enum minúsculo do backend.
+    const typeMap = {
+      Corrente: 'corrente',
+      Poupanca: 'poupanca',
+      Investimento: 'investimento',
+      Cartao: 'cartao',
+      Outro: 'outro',
+    } as const
+    const body = {
+      ...(i.bankCode !== undefined ? { bankCode: i.bankCode } : {}),
+      ...(i.bankName !== undefined ? { bankName: i.bankName } : {}),
+      ...(i.type !== undefined ? { type: typeMap[i.type] } : {}),
+      ...(i.typeLabel !== undefined ? { typeLabel: i.typeLabel } : {}),
+      ...(i.agency !== undefined ? { agency: i.agency } : {}),
+      ...(i.accountNumber !== undefined ? { accountNumber: i.accountNumber } : {}),
+      ...(i.accountDigit !== undefined ? { accountDigit: i.accountDigit } : {}),
+      ...(i.nickname !== undefined ? { nickname: i.nickname } : {}),
+    }
+    const r = await resultFetch<unknown>(`${baseUrl}/cedente-accounts/${i.id}`, {
+      method: 'PATCH',
+      token,
+      body,
+    })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return cedenteAccountToModel(r.value)
+  },
   getAccountStatementPeriod: async (i, token) => {
     // #205: extrato por período (from/to date-only). filter opcional. Mapeia p/ o saldo do período.
     const qs = new URLSearchParams({ from: i.from, to: i.to })

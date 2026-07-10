@@ -191,6 +191,20 @@ export type CreateCedenteAccountInput = Readonly<{
   openingBalanceDate?: string
 }>
 
+// Editar conta-cedente (PATCH /cedente-accounts/:id). Campos editáveis (todos opcionais); CNPJ e o saldo de
+// abertura são IMUTÁVEIS (não expostos aqui). `id` obrigatório; ao menos 1 campo além do id (gating na UI).
+export type EditCedenteAccountInput = Readonly<{
+  id: string
+  bankCode?: string
+  bankName?: string
+  type?: 'Corrente' | 'Poupanca' | 'Investimento' | 'Cartao' | 'Outro'
+  typeLabel?: string
+  agency?: string
+  accountNumber?: string
+  accountDigit?: string
+  nickname?: string
+}>
+
 // Extrato por PERÍODO (#205 — GET /cedente-accounts/:id/statement?from&to). Input do read-model.
 export type StatementFilter = 'all' | 'in' | 'out' | 'reconciled' | 'pending'
 export interface GetAccountStatementInput {
