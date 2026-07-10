@@ -40,4 +40,3 @@
 - 409 de ciclo de vida indistinguíveis por status (mapa por contexto).
 - `GET /options` 500 (core-api#394) → filtro por Rede segue desabilitado.
 - Sem `DELETE /budget-plans/:id` → Excluir desabilitado.
-  </content>

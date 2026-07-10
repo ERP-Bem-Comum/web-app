@@ -23,6 +23,7 @@ import type {
   BudgetPlanInsights,
   BudgetPlanCsvFile,
 } from '#modules/budget-plans/client/data/model/plan-actions.model.ts'
+import type { ConsolidatedAbc } from '#modules/budget-plans/client/data/model/consolidado-abc.model.ts'
 import type {
   BudgetPlansError,
   BudgetPlansFnResult,
@@ -58,6 +59,11 @@ type AddCategoryFn = (opts: {
 type AddSubcategoryFn = (opts: {
   data: { planId: string; categoryId: string; name: string; launchType: AddSubcategoryInput['launchType'] }
 }) => Promise<BudgetPlansFnResult<CostStructureTree>>
+/** Filtro do Consolidado ABC: Ano Base (obrigatório) + Programa (uuid opcional). */
+export type ConsolidadoFilters = Readonly<{ year: number; programRef?: string }>
+type GetConsolidadoFn = (opts: {
+  data: { year: number; programRef?: string }
+}) => Promise<BudgetPlansFnResult<ConsolidatedAbc>>
 
 export type BudgetPlansRepository = Readonly<{
   listBudgetPlans: (args: ListBudgetPlansArgs) => Promise<Result<BudgetPlanListPageResult, BudgetPlansError>>
@@ -72,6 +78,7 @@ export type BudgetPlansRepository = Readonly<{
   addCostCenter: (input: AddCostCenterInput) => Promise<Result<CostStructureTree, BudgetPlansError>>
   addCategory: (input: AddCategoryInput) => Promise<Result<CostStructureTree, BudgetPlansError>>
   addSubcategory: (input: AddSubcategoryInput) => Promise<Result<CostStructureTree, BudgetPlansError>>
+  getConsolidado: (filters: ConsolidadoFilters) => Promise<Result<ConsolidatedAbc, BudgetPlansError>>
 }>
 
 export const createBudgetPlansRepository = (
@@ -88,6 +95,7 @@ export const createBudgetPlansRepository = (
     addCostCenterFn: AddCostCenterFn
     addCategoryFn: AddCategoryFn
     addSubcategoryFn: AddSubcategoryFn
+    getConsolidadoFn: GetConsolidadoFn
   }>,
 ): BudgetPlansRepository => ({
   listBudgetPlans: async (args) => {
@@ -136,6 +144,10 @@ export const createBudgetPlansRepository = (
   },
   addSubcategory: async (input) => {
     const res = await deps.addSubcategoryFn({ data: input })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  getConsolidado: async (filters) => {
+    const res = await deps.getConsolidadoFn({ data: { year: filters.year, programRef: filters.programRef } })
     return res.ok ? ok(res.data) : err(res.error)
   },
 })

@@ -46,5 +46,4 @@ categories: Array<{ id:uuid, name, subcategories: Array<{ id:uuid, name, launchT
   (→ `DESPESAS_PESSOAIS`/`IPCA`/`CAED`/`DESPESAS_LOGISTICAS`) NÃO estão pinados no handbook
   ("confirmar apenas os rótulos exatos do dropdown"). O mapper é **tolerante** (lookup + fallback) e o
   schema aceita a enum como string livre — confirmar os literais reais com o backend (issue de handoff).
-  </content>
   </invoke>

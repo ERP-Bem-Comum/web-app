@@ -2194,14 +2194,18 @@ export const ptBR: Catalog = {
   'budget-plans.consolidado.yearBase': 'Ano Base',
   'budget-plans.consolidado.programs': 'Programas',
   'budget-plans.consolidado.programsAll': 'Todos os programas',
-  'budget-plans.consolidado.programsCount': 'programas selecionados',
   'budget-plans.consolidado.apply': 'Filtrar',
   'budget-plans.consolidado.exportCsv': 'Exportar CSV',
   'budget-plans.consolidado.exportError': 'Não foi possível exportar o CSV. Tente novamente.',
   'budget-plans.consolidado.total': 'Total',
-  'budget-plans.consolidado.programLabel': 'Programa',
-  'budget-plans.consolidado.sectionTitle': 'Consolidado dos programas',
   'budget-plans.consolidado.noResults': 'Nenhum resultado encontrado',
+  'budget-plans.consolidado.loading': 'Carregando o consolidado…',
+  'budget-plans.consolidado.error': 'Não foi possível carregar o consolidado. Tente novamente.',
+  // Curva ABC (tabela por programa) — feature 062.
+  'budget-plans.consolidado.curveTitle': 'Curva ABC por programa',
+  'budget-plans.consolidado.colProgram': 'Programa',
+  'budget-plans.consolidado.colTotal': 'Total',
+  'budget-plans.consolidado.colShare': 'Participação',
 
   // ── Criar Plano (modal "Adicionar Plano Orçamentário" — HANDBOOK §1.2) ──
   'budget-plans.create.title': 'Adicionar Plano Orçamentário',

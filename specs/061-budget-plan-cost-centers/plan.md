@@ -57,4 +57,3 @@
 
 - Editar/desativar nós sem endpoint (Grupo B só cria) → seguem visuais.
 - 409 na escrita é indistinguível por status (o core esconde o slug) → mapeado por contexto (`not-editable`).
-  </content>

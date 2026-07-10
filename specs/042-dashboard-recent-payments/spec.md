@@ -55,5 +55,4 @@ detalhe do documento.
 4. ViewModel puro testado (node): centavos→BRL, ISO→data, empty. DOM do widget testado (vitest): loading,
    vazio, dados.
 5. `pnpm typecheck | lint | verify | test:dom` verdes. Nada não-relacionado tocado. Regressão zero.
-   </content>
    </invoke>

@@ -69,4 +69,3 @@ desencoraja. A route `_authenticated/dashboard.tsx` fica genérica e delega à p
 ## Gates
 
 `pnpm typecheck` · `pnpm lint` · `pnpm verify` · `pnpm test:dom`. Regressão zero.
-</content>

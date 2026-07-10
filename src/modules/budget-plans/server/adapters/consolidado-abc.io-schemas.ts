@@ -1,12 +1,13 @@
 /**
- * Schemas Zod da BORDA (§IX) da server fn de export do Consolidado ABC. O input do client NUNCA é confiável:
- * `year` inteiro + `programs` (0..N abreviações). Espelha o filtro da tela (Ano Base × Programa).
+ * Schema Zod da BORDA (§IX) das server fns do Consolidado ABC (leitura + export CSV). O input do client NUNCA
+ * é confiável: `year` inteiro (obrigatório) + `programRef` (uuid, opcional) — espelha o filtro da tela
+ * (Ano Base × Programa). `z.uuid` é RFC-strict.
  */
 import * as z from 'zod'
 
-export const ExportConsolidadoAbcInputSchema = z.object({
+export const ConsolidadoAbcQuerySchema = z.object({
   year: z.int(),
-  programs: z.array(z.string().trim()).default([]),
+  programRef: z.uuid().optional(),
 })
 
-export type ExportConsolidadoAbcInput = z.infer<typeof ExportConsolidadoAbcInputSchema>
+export type ConsolidadoAbcQueryInput = z.infer<typeof ConsolidadoAbcQuerySchema>

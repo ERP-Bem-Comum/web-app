@@ -35,7 +35,6 @@
 
 - node: `create-plan.view-model` (validate + `createErrorTag`).
 - vitest DOM: `create-plan.binding` (sucesso invalida+fecha; 409 → tag de conflito).
-  </content>
   </invoke>
   <invoke name="Bash">
   <parameter name="command">cd /Users/alessandracastro/dev/ERP-FRONTEND && cat > .specify/feature.json <<'EOF'

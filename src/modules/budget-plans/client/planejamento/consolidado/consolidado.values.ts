@@ -61,6 +61,11 @@ export const consolidado = {
     nameFont: '14px',
     subFont: '12px',
     nameGap: '1px',
+    // Curva ABC (tabela de programas): barra de participação.
+    shareTrackW: '120px',
+    shareBarH: '8px',
+    shareBarMin: '3px',
+    shareValW: '52px',
     payPadBlock: '2px',
     payPadInline: '8px',
     payFont: '10.5px',

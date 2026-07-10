@@ -38,6 +38,12 @@ import type {
 import type { GetBudgetPlanDetailClient } from '#modules/budget-plans/server/application/get-budget-plan-detail.use-case.ts'
 import type { WriteCostStructureClient } from '#modules/budget-plans/server/application/write-cost-structure.use-case.ts'
 import type {
+  ConsolidatedResultParams,
+  GetConsolidadoAbcClient,
+} from '#modules/budget-plans/server/application/get-consolidado-abc.use-case.ts'
+import type { ExportConsolidadoAbcCsvClient } from '#modules/budget-plans/server/application/export-consolidado-abc-csv.use-case.ts'
+import type { ConsolidatedAbc } from '#modules/budget-plans/server/domain/consolidado-abc.io.ts'
+import type {
   CostStructureInput,
   PlanDetailHeaderInput,
 } from '#modules/budget-plans/server/domain/plan-detail.io.ts'
@@ -57,6 +63,7 @@ import {
   coreScenerySchema,
   coreInsightsSchema,
 } from './budget-plans.schema.ts'
+import { parseConsolidatedResult } from './consolidado-result.schema.ts'
 
 // Transporte → erro de domínio (§V): 401 = sessão; o resto colapsa em `unexpected` (a UI só vê a tag).
 const mapHttpError = (e: HttpError): BudgetPlansError =>
@@ -146,6 +153,14 @@ const buildListQuery = (p: ListBudgetPlansParams): string => {
   return q.toString()
 }
 
+// Query do Consolidado ABC: `year` obrigatório; `programRef` (uuid) opcional filtra por família.
+const buildConsolidatedQuery = (p: ConsolidatedResultParams): string => {
+  const q = new URLSearchParams()
+  q.set('year', String(p.year))
+  if (p.programRef !== undefined) q.set('programRef', p.programRef)
+  return q.toString()
+}
+
 export const createBudgetPlansCoreClient = (
   baseUrl: string,
 ): BudgetPlansCoreClient &
@@ -156,7 +171,9 @@ export const createBudgetPlansCoreClient = (
   CreateSceneryClient &
   ExportBudgetPlanCsvClient &
   GetBudgetPlanInsightsClient &
-  WriteCostStructureClient => ({
+  WriteCostStructureClient &
+  GetConsolidadoAbcClient &
+  ExportConsolidadoAbcCsvClient => ({
   listBudgetPlans: async (params, token): Promise<Result<RawPlanListPage, BudgetPlansError>> => {
     const r = await resultFetch<unknown>(`${baseUrl}?${buildListQuery(params)}`, { token })
     if (isErr(r)) return err(mapHttpError(r.error))
@@ -356,5 +373,29 @@ export const createBudgetPlansCoreClient = (
     const parsed = coreCostStructureSchema.safeParse(r.value)
     if (!parsed.success) return err('unexpected')
     return ok(toCostStructureTree(parsed.data))
+  },
+  // ── Consolidado ABC (relatório, feature 062). `year` obrigatório; `programRef` opcional. Relatório read-only
+  // sem 404 de negócio (ano sem planos → resultado vazio): 401 = sessão; o resto colapsa em `unexpected`. ──
+  getConsolidatedResult: async (
+    params: ConsolidatedResultParams,
+    token: string,
+  ): Promise<Result<ConsolidatedAbc, BudgetPlansError>> => {
+    const r = await resultFetch<unknown>(`${baseUrl}/consolidated-result?${buildConsolidatedQuery(params)}`, {
+      token,
+    })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    const parsed = parseConsolidatedResult(r.value)
+    return parsed === null ? err('unexpected') : ok(parsed)
+  },
+  // `/consolidated-result/csv` responde text/csv (NÃO JSON) → `resultFetchText` (sem JSON.parse). O use-case nomeia.
+  getConsolidatedResultCsv: async (
+    params: ConsolidatedResultParams,
+    token: string,
+  ): Promise<Result<string, BudgetPlansError>> => {
+    const r = await resultFetchText(`${baseUrl}/consolidated-result/csv?${buildConsolidatedQuery(params)}`, {
+      token,
+    })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return ok(r.value)
   },
 })

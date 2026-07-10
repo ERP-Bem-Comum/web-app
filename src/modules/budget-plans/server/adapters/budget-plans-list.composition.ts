@@ -20,6 +20,8 @@ import {
   createAddCategory,
   createAddSubcategory,
 } from '#modules/budget-plans/server/application/write-cost-structure.use-case.ts'
+import { createGetConsolidadoAbc } from '#modules/budget-plans/server/application/get-consolidado-abc.use-case.ts'
+import { createExportConsolidadoAbcCsv } from '#modules/budget-plans/server/application/export-consolidado-abc-csv.use-case.ts'
 
 type BudgetPlansServer = ReturnType<typeof build>
 
@@ -39,6 +41,8 @@ const build = () => {
     addCostCenter: createAddCostCenter({ client }),
     addCategory: createAddCategory({ client }),
     addSubcategory: createAddSubcategory({ client }),
+    getConsolidado: createGetConsolidadoAbc({ client }),
+    exportConsolidadoCsv: createExportConsolidadoAbcCsv({ client }),
   }
 }
 

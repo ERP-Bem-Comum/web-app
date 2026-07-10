@@ -69,4 +69,3 @@ Espelha a Fase 1 (058): mesmo core-client/composition/repository. O BFF **compõ
 - §X só-tokens: sem CSS novo (reusa a matriz existente). ✅
 - §XI MVVM: `data`/view-model sem react; react só no `.binding.ts`; view burra intacta. ✅
 - §XII eventos: N/A.
-  </content>
