@@ -63,6 +63,8 @@ export type ReconciliationClient = Readonly<{
     i: CreateCedenteAccountInput,
     token: string,
   ) => Promise<Result<CedenteAccount, ReconciliationError>>
+  // Encerrar conta-cedente (POST /cedente-accounts/:id/close) — sem body; Open → Closed. Irreversível na UI.
+  closeCedenteAccount: (id: string, token: string) => Promise<Result<CedenteAccount, ReconciliationError>>
   getSuggestions: (
     i: GetSuggestionsInput,
     token: string,
@@ -143,6 +145,11 @@ export const createCreateCedenteAccount =
   (deps: Deps) =>
   (i: CreateCedenteAccountInput, token: string): Promise<Result<CedenteAccount, ReconciliationError>> =>
     deps.client.createCedenteAccount(i, token)
+
+export const createCloseCedenteAccount =
+  (deps: Deps) =>
+  (id: string, token: string): Promise<Result<CedenteAccount, ReconciliationError>> =>
+    deps.client.closeCedenteAccount(id, token)
 
 export const createGetAccountStatementPeriod =
   (deps: Deps) =>

@@ -18,6 +18,7 @@ import {
   type StatusFilter,
 } from './reconciliation-accounts.view-model.ts'
 import { useAddAccount, type AddAccountBinding } from './add-account.binding.ts'
+import { useCloseAccount, type CloseAccountBinding } from './close-account.binding.ts'
 
 export type ChipCounts = Readonly<{ todas: number; pendentes: number; emDia: number; encerradas: number }>
 const EMPTY_COUNTS: ChipCounts = { todas: 0, pendentes: 0, emDia: 0, encerradas: 0 }
@@ -36,6 +37,7 @@ export type AccountsBinding = Readonly<{
   sort: SortKey
   addOpen: boolean
   add: AddAccountBinding
+  close: CloseAccountBinding
   expanded: ReadonlySet<string> // ids das contas com o expand do cadastro aberto
   setSearch: (v: string) => void
   setStatus: (v: StatusFilter) => void
@@ -54,6 +56,7 @@ export function useReconciliationAccounts(): AccountsBinding {
   const add = useAddAccount(bankNameByCode, () => {
     setAddOpen(false)
   })
+  const close = useCloseAccount()
   const q = useQuery(accountsQueryOptions())
 
   const state: AccountsState = (() => {
@@ -88,6 +91,7 @@ export function useReconciliationAccounts(): AccountsBinding {
     sort,
     addOpen,
     add,
+    close,
     expanded,
     toggleExpanded: (id) => {
       setExpanded((prev) => {

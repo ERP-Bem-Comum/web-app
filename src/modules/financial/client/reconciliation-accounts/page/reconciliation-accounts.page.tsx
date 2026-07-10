@@ -14,6 +14,7 @@ import { useReconciliationAccounts, type ChipCounts } from '../reconciliation-ac
 import type { SortKey, StatusFilter } from '../reconciliation-accounts.view-model.ts'
 import { AccountsGrid } from '../components/accounts-grid.component.tsx'
 import { AddAccountModal } from '../components/add-account-modal.component.tsx'
+import { CloseAccountModal } from '../components/close-account-modal.component.tsx'
 import * as s from './reconciliation-accounts.css.ts'
 
 const t = createTranslator(ptBR)
@@ -117,6 +118,9 @@ export function ReconciliationAccountsPage() {
                   })
                 }
               }}
+              onRequestClose={(row) => {
+                vm.close.request(row.id, row.alias)
+              }}
             />
           </div>
         ) : vm.state.tag === 'loading' ? (
@@ -184,6 +188,8 @@ export function ReconciliationAccountsPage() {
           vm.closeAdd()
         }}
       />
+
+      <CloseAccountModal binding={vm.close} />
     </div>
   )
 }

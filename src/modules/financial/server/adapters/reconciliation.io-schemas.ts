@@ -31,6 +31,8 @@ export const ImportStatementInputSchema = z.object({
 export const ListTransactionsInputSchema = z.object({ statementId: z.uuid() })
 
 export const GetCedenteAccountInputSchema = z.object({ id: z.uuid() })
+// Encerrar conta-cedente (POST /cedente-accounts/:id/close) — só o id; sem body.
+export const CloseCedenteAccountInputSchema = z.object({ id: z.uuid() })
 
 // #205: extrato por período. `from`/`to` date-only (YYYY-MM-DD); filter opcional.
 export const GetAccountStatementInputSchema = z.object({

@@ -83,6 +83,7 @@ type GetAccountFn = (opts: { data: { id: string } }) => Promise<ReconFnResult<Re
 type CreateAccountFn = (opts: {
   data: CreateCedenteAccountInput
 }) => Promise<ReconFnResult<ReconciliationAccount>>
+type CloseAccountFn = (opts: { data: { id: string } }) => Promise<ReconFnResult<ReconciliationAccount>>
 
 export type ReconciliationRepository = Readonly<{
   importStatement: (i: ImportStatementInput) => Promise<Result<BankStatementImport, ReconciliationError>>
@@ -125,6 +126,8 @@ export type ReconciliationRepository = Readonly<{
   listAccounts: () => Promise<Result<readonly ReconciliationAccount[], ReconciliationError>>
   getAccount: (id: string) => Promise<Result<ReconciliationAccount, ReconciliationError>>
   createAccount: (i: CreateCedenteAccountInput) => Promise<Result<ReconciliationAccount, ReconciliationError>>
+  // Encerrar conta (Open → Closed). Devolve a conta atualizada; a UI invalida e refaz o grid.
+  closeAccount: (id: string) => Promise<Result<ReconciliationAccount, ReconciliationError>>
 }>
 
 type UndoReconciliationInput = Readonly<{ reconciliationId: string; reason?: string }>
@@ -151,6 +154,7 @@ export const createReconciliationRepository = (
     listAccountsFn: ListAccountsFn
     getAccountFn: GetAccountFn
     createAccountFn: CreateAccountFn
+    closeAccountFn: CloseAccountFn
   }>,
 ): ReconciliationRepository => ({
   importStatement: async (i) => {
@@ -232,6 +236,10 @@ export const createReconciliationRepository = (
   },
   createAccount: async (i) => {
     const res = await deps.createAccountFn({ data: i })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  closeAccount: async (id) => {
+    const res = await deps.closeAccountFn({ data: { id } })
     return res.ok ? ok(res.data) : err(res.error)
   },
 })
