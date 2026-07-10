@@ -114,6 +114,27 @@ export type CoreApiRecentPayment = z.infer<typeof CoreApiRecentPaymentSchema>
 export const CoreApiRecentPaymentListSchema = z.array(CoreApiRecentPaymentSchema)
 export type CoreApiRecentPaymentList = z.infer<typeof CoreApiRecentPaymentListSchema>
 
+// Timeline (GET /documents/:id/timeline). Enum de evento tolerante — drift → descartado no mapper (filtro).
+export const CoreApiTimelineEntrySchema = z.object({
+  eventType: z.string().trim(),
+  target: z.object({ kind: z.string().trim(), id: z.string().trim() }),
+  occurredAt: z.string().trim(),
+  actor: z.string().trim().nullable().catch(null),
+  changes: z
+    .array(
+      z.object({
+        field: z.string().trim().catch(''),
+        before: z.string().trim().nullable().catch(null),
+        after: z.string().trim().nullable().catch(null),
+      }),
+    )
+    .catch([]),
+})
+export const CoreApiTimelineResponseSchema = z.object({
+  entries: z.array(CoreApiTimelineEntrySchema),
+})
+export type CoreApiTimelineResponse = z.infer<typeof CoreApiTimelineResponseSchema>
+
 // #162: resposta do PATCH /documents/due-date (lote). Enum tolerante — drift → 'error' (fallback seguro).
 export const CoreApiBulkDueDateResultSchema = z.object({
   results: z.array(
