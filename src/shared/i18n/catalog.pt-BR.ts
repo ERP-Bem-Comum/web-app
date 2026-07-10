@@ -1943,6 +1943,19 @@ export const ptBR: Catalog = {
   'budget-plans.action.createScenery': 'Criar cenário desse plano',
   'budget-plans.action.exportCsv': 'Exportar CSV',
   'budget-plans.action.delete': 'Excluir Plano',
+  // Ações sem endpoint no backend (feature 060) — item visível porém desabilitado, com tooltip.
+  'budget-plans.action.noEndpoint': 'Indisponível no momento (depende do backend).',
+  'budget-plans.action.exportCsv.success': 'CSV exportado com sucesso!',
+  // Feedback de erro das ações (§V) — a tag chega mapeada por contexto do endpoint pelo BFF.
+  'budget-plans.action.error.unauthorized': 'Sua sessão expirou. Entre novamente para continuar.',
+  'budget-plans.action.error.notFound': 'Plano orçamentário não encontrado.',
+  'budget-plans.action.error.alreadyApproved': 'Este plano já está aprovado.',
+  'budget-plans.action.error.notApproved': 'Só planos aprovados podem gerar cenário.',
+  'budget-plans.action.error.invalidTransition':
+    'Não é possível executar esta ação no estado atual do plano.',
+  'budget-plans.action.error.invalidInput':
+    'Não foi possível concluir a ação. Verifique os dados e tente novamente.',
+  'budget-plans.action.error.unexpected': 'Não foi possível concluir a ação. Tente novamente.',
 
   // ── Confirmações do menu "…" (§2.5) — {nome} é interpolado na view ──
   'budget-plans.confirm.cancel': 'Cancelar',
@@ -1986,6 +1999,14 @@ export const ptBR: Catalog = {
   'budget-plans.detail.addBudget': 'Adicionar Orçamento',
   'budget-plans.detail.moreActions': 'Mais ações',
   'budget-plans.detail.edit': 'Editar',
+
+  // ── Modal de Insights (feature 060) — comparativo do ano atual × anteriores ──
+  'budget-plans.insights.title': 'Insights do Plano',
+  'budget-plans.insights.close': 'Fechar',
+  'budget-plans.insights.currentTotal': 'Total do plano em',
+  'budget-plans.insights.loading': 'Carregando os insights…',
+  'budget-plans.insights.error': 'Não foi possível carregar os insights. Tente novamente.',
+  'budget-plans.insights.empty': 'Sem anos anteriores para comparar.',
 
   // ── Modal "Adicionar Orçamento" (§1.6) ──
   'budget-plans.addBudget.title': 'Adicionar Orçamento',

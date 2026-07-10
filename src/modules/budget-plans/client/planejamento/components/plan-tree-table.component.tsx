@@ -82,9 +82,13 @@ export type PlanTreeTableProps = Readonly<{
   grandTotalLabel: string
   /** Rótulo i18n de cada ação do menu "…". */
   actionLabelFor: (action: PlanAction) => string
+  /** Ações do menu VISÍVEIS porém desabilitadas (sem endpoint — feature 060). Ausente ⇒ nenhuma. */
+  actionIsDisabled?: (action: PlanAction) => boolean
+  /** Tooltip (i18n) do item desabilitado. */
+  actionDisabledTitle?: string
   /** Navega ao detalhe do plano (clique no nome). No-op/TODO permitido nesta fatia. */
   onOpenPlan: (id: string) => void
-  /** Executa a ação do menu "…" (no-op/TODO nesta fatia). */
+  /** Executa a ação do menu "…". */
   onAction: (id: string, action: PlanAction) => void
 }>
 
@@ -204,6 +208,8 @@ export function PlanTreeTable(props: PlanTreeTableProps): ReactNode {
               actions={r.actions}
               labelFor={props.actionLabelFor}
               triggerLabel={props.labels.actionsTrigger}
+              isDisabled={props.actionIsDisabled}
+              disabledTitle={props.actionDisabledTitle}
               onAction={(action) => {
                 props.onAction(r.id, action)
               }}

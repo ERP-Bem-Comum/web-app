@@ -35,11 +35,23 @@ import {
 /** Visões da seção consolidada (HANDBOOK §1.4): por mês (semestres) ou por rede (parceiros). */
 export type DetailView = 'month' | 'network'
 
+/**
+ * Query key do DETALHE — fonte única compartilhada (a query aqui + a invalidação das ações em
+ * `plan-actions.binding.ts`, após approve/start-calibration/scenery). Evita drift de cache.
+ */
+export const planDetailQueryKey = (id: string): readonly ['budget-plans', 'plan-detail', string] => [
+  'budget-plans',
+  'plan-detail',
+  id,
+]
+
 export type PlanDetailState =
   | Readonly<{ status: 'loading' }>
   | Readonly<{ status: 'error'; errorTag: BudgetPlansError }>
   | Readonly<{ status: 'not-found' }>
-  | Readonly<{ status: 'empty'; header: PlanDetailHeader }>
+  // `empty` = plano sem centros de custo ainda; carrega a MATRIZ (vazia) p/ a tela mostrar a chrome inteira
+  // (action bar + matriz vazia) e o operador conseguir COMEÇAR (adicionar centro de custo, insights, menu).
+  | Readonly<{ status: 'empty'; header: PlanDetailHeader; matrix: MatrixView }>
   | Readonly<{ status: 'ready'; header: PlanDetailHeader; matrix: MatrixView }>
 
 /** UI-state do filtro por Rede (Estado + Município). Ao APLICAR ambos, entra em modo edição de orçamento. */
@@ -83,7 +95,7 @@ export function usePlanDetail(id: string): PlanDetailBinding {
   const [semester, setSemester] = useState<Semester>(0)
 
   const query = useQuery({
-    queryKey: ['budget-plans', 'plan-detail', id] as const,
+    queryKey: planDetailQueryKey(id),
     queryFn: () => budgetPlansRepository.getPlanDetail(id),
   })
 
@@ -108,15 +120,13 @@ export function usePlanDetail(id: string): PlanDetailBinding {
     if (query.isLoading) return { status: 'loading' }
     if (errorTag === 'budget-plan-not-found') return { status: 'not-found' }
     if (errorTag !== null) return { status: 'error', errorTag }
-    if (detail !== null && detail.costCenters.length === 0) {
-      return { status: 'empty', header: derivePlanDetailHeader(detail) }
-    }
     if (detail !== null) {
-      return {
-        status: 'ready',
-        header: derivePlanDetailHeader(detail),
-        matrix: view === 'month' ? buildMonthlyMatrix(detail, semester) : buildNetworkMatrix(detail),
-      }
+      const header = derivePlanDetailHeader(detail)
+      const matrix = view === 'month' ? buildMonthlyMatrix(detail, semester) : buildNetworkMatrix(detail)
+      // Vazio (sem centros) e pronto renderizam a MESMA chrome; só muda a dica de vazio na tela.
+      return detail.costCenters.length === 0
+        ? { status: 'empty', header, matrix }
+        : { status: 'ready', header, matrix }
     }
     return { status: 'loading' }
   }, [query.isLoading, errorTag, detail, view, semester])

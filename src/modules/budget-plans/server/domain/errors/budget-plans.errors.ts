@@ -8,4 +8,9 @@ export type BudgetPlansError =
   | 'budget-plan-already-exists' // 409 — já existe plano p/ esse ano+programa (unicidade server-side)
   | 'budget-plan-not-found' // 404 — plano inexistente (GET /budget-plans/:id — leitura do detalhe, feature 059)
   | 'invalid-input' // 400/422 — payload rejeitado pelo core-api
+  // ── Ciclo de vida (feature 060 — ações do menu). Os três são 409 e INDISTINGUÍVEIS por status (o core-api
+  // colapsa o slug num `code` público — OWASP), então o mapa é por CONTEXTO do endpoint (mensagem mais provável).
+  | 'budget-plan-already-approved' // 409 no `approve` — plano já está aprovado
+  | 'budget-plan-not-approved' // 409 no `scenery` — só planos aprovados geram cenário
+  | 'budget-plan-invalid-transition' // 409 no `start-calibration` — transição de estado inválida (genérico)
   | 'unexpected' // parse/inesperado (resposta futura do core fora do contrato)

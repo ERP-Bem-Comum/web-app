@@ -8,6 +8,10 @@ export type BudgetPlansError =
   | 'budget-plan-already-exists' // 409 — já existe plano p/ esse ano+programa (unicidade server-side)
   | 'budget-plan-not-found' // 404 — plano inexistente (GET /budget-plans/:id — leitura do detalhe, feature 059)
   | 'invalid-input' // 400/422 — payload rejeitado pelo core-api
+  // ── Ciclo de vida (feature 060 — ações do menu). 409 mapeado por CONTEXTO do endpoint (o core esconde o slug).
+  | 'budget-plan-already-approved' // approve — plano já aprovado
+  | 'budget-plan-not-approved' // scenery — só planos aprovados geram cenário
+  | 'budget-plan-invalid-transition' // start-calibration — transição de estado inválida (genérico)
   | 'unexpected' // parse/inesperado
 
 /** Forma do retorno RPC das server fns do Plano Orçamentário (`{ ok, data } | { ok, error }`). */

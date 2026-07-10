@@ -22,8 +22,10 @@ import {
 import type { CreatePlanError } from '#modules/budget-plans/client/planejamento/create-plan.view-model.ts'
 import {
   confirmSpecFor,
+  isActionEnabled,
   type ConfirmableAction,
 } from '#modules/budget-plans/client/planejamento/plan-actions.view-model.ts'
+import { usePlanActions } from '#modules/budget-plans/client/planejamento/plan-actions.binding.ts'
 
 import { PlanFilters } from '../components/plan-filters.component.tsx'
 import { PlanTreeTable } from '../components/plan-tree-table.component.tsx'
@@ -89,10 +91,23 @@ export function PlanejamentoListPage(): ReactNode {
     setCreateOpen(false)
   }
 
-  // Confirmações do menu "…" + toast de sucesso (§2.5). Front-first: a execução real depende do #113.
+  // Confirmações do menu "…" + toast (§2.5). Agora com as MUTATIONS REAIS (feature 060): o binding invalida a
+  // lista/detalhe no sucesso e devolve o resultado por callback; o toast reflete sucesso OU erro do backend (§V).
   const [confirm, setConfirm] = useState<PendingConfirm | null>(null)
   const [scenaryName, setScenaryName] = useState('')
   const [toastMsg, setToastMsg] = useState<string | null>(null)
+
+  const planActions = usePlanActions((outcome) => {
+    if (outcome.ok) {
+      const key =
+        outcome.action === 'export-csv'
+          ? 'budget-plans.action.exportCsv.success'
+          : `budget-plans.confirm.${outcome.action}.success`
+      setToastMsg(t(key))
+    } else {
+      setToastMsg(t(outcome.errorTag))
+    }
+  })
 
   useEffect(() => {
     if (toastMsg === null) return
@@ -105,8 +120,13 @@ export function PlanejamentoListPage(): ReactNode {
   }, [toastMsg])
 
   const onAction = (id: string, action: PlanAction): void => {
+    if (!isActionEnabled(action)) return // share/planned-vs-actual/delete: sem endpoint (o menu já desabilita)
+    if (action === 'export-csv') {
+      planActions.runAction('export-csv', id) // sem confirmação — dispara o download direto
+      return
+    }
     const spec = confirmSpecFor(action)
-    if (spec === null) return // outras ações (compartilhar, CSV, planejado×realizado) são outras telas
+    if (spec === null) return
     if (spec.needsName) setScenaryName('')
     setConfirm({ action: spec.action, id, name: findRowName(state.rows, id) ?? '' })
   }
@@ -115,7 +135,7 @@ export function PlanejamentoListPage(): ReactNode {
 
   const runConfirm = (): void => {
     if (confirm === null) return
-    setToastMsg(t(`budget-plans.confirm.${confirm.action}.success`))
+    planActions.runAction(confirm.action, confirm.id, scenaryName)
     setConfirm(null)
   }
 
@@ -206,6 +226,8 @@ export function PlanejamentoListPage(): ReactNode {
             totalRow: t('budget-plans.list.totalRow'),
           }}
           actionLabelFor={(action) => t(actionKey(action))}
+          actionIsDisabled={(action) => !isActionEnabled(action)}
+          actionDisabledTitle={t('budget-plans.action.noEndpoint')}
           onOpenPlan={(id) => {
             void navigate({
               to: '/planejamento/detalhes/$id',
