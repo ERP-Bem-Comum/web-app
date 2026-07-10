@@ -76,10 +76,11 @@ export function PlanejamentoListPage(): ReactNode {
   const search = routeApi.useSearch()
   const navigate = useNavigate()
   const { state, programOptions, grandTotalLabel } = usePlanejamentoList(search)
-  // Programas do modal "Criar Plano": os REAIS cadastrados (não a lista de planos, vazia até #374).
+  // Programas do modal "Criar Plano": o CATÁLOGO real do budget-plans ({ ref, abbreviation }) — fonte do
+  // `programRef` que o POST envia (não a lista de planos, que fica vazia até o dado subir).
   const createProgramOptions = useCreateProgramOptions()
   const [createOpen, setCreateOpen] = useState(false)
-  const createPlan = useCreatePlan(createProgramOptions, () => {
+  const createPlan = useCreatePlan(() => {
     setCreateOpen(false)
   })
 
@@ -239,6 +240,7 @@ export function PlanejamentoListPage(): ReactNode {
         open={createOpen}
         form={createPlan.form}
         errorTag={createPlan.errorTag}
+        submitting={createPlan.submitting}
         programOptions={createProgramOptions}
         importYears={IMPORT_YEARS}
         labels={{

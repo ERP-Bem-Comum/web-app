@@ -15,11 +15,31 @@ import type {
   RawProgramOption,
   RawPlanBudgets,
 } from '#modules/budget-plans/server/application/list-budget-plans.use-case.ts'
-import { coreListResponseSchema, coreOptionsSchema, coreDetailSchema } from './budget-plans.schema.ts'
+import type {
+  CreateBudgetPlanClient,
+  CreateBudgetPlanCommand,
+  CreatedBudgetPlan,
+} from '#modules/budget-plans/server/application/create-budget-plan.use-case.ts'
+import {
+  coreListResponseSchema,
+  coreOptionsSchema,
+  coreDetailSchema,
+  coreCreateResponseSchema,
+} from './budget-plans.schema.ts'
 
 // Transporte → erro de domínio (§V): 401 = sessão; o resto colapsa em `unexpected` (a UI só vê a tag).
 const mapHttpError = (e: HttpError): BudgetPlansError =>
   e.kind === 'http' && e.status === 401 ? 'unauthorized' : 'unexpected'
+
+// Mapa específico da ESCRITA (§V): o `POST` acrescenta 409 (unicidade ano+programa) e 400/422 (payload).
+// O core-api colapsa o slug num `code` público (OWASP), então mapeamos por STATUS, não por slug.
+const mapCreateHttpError = (e: HttpError): BudgetPlansError => {
+  if (e.kind !== 'http') return 'unexpected'
+  if (e.status === 401) return 'unauthorized'
+  if (e.status === 409) return 'budget-plan-already-exists'
+  if (e.status === 400 || e.status === 422) return 'invalid-input'
+  return 'unexpected'
+}
 
 const buildListQuery = (p: ListBudgetPlansParams): string => {
   const q = new URLSearchParams()
@@ -30,7 +50,9 @@ const buildListQuery = (p: ListBudgetPlansParams): string => {
   return q.toString()
 }
 
-export const createBudgetPlansCoreClient = (baseUrl: string): BudgetPlansCoreClient => ({
+export const createBudgetPlansCoreClient = (
+  baseUrl: string,
+): BudgetPlansCoreClient & CreateBudgetPlanClient => ({
   listBudgetPlans: async (params, token): Promise<Result<RawPlanListPage, BudgetPlansError>> => {
     const r = await resultFetch<unknown>(`${baseUrl}?${buildListQuery(params)}`, { token })
     if (isErr(r)) return err(mapHttpError(r.error))
@@ -63,5 +85,26 @@ export const createBudgetPlansCoreClient = (baseUrl: string): BudgetPlansCoreCli
     const parsed = coreDetailSchema.safeParse(r.value)
     if (!parsed.success) return err('unexpected')
     return ok({ budgets: parsed.data.budgets.map((b) => ({ partnerKind: b.partner.kind })) })
+  },
+  createBudgetPlan: async (
+    command: CreateBudgetPlanCommand,
+    token: string,
+  ): Promise<Result<CreatedBudgetPlan, BudgetPlansError>> => {
+    const r = await resultFetch<unknown>(baseUrl, {
+      method: 'POST',
+      token,
+      body: { year: command.year, programRef: command.programRef },
+    })
+    if (isErr(r)) return err(mapCreateHttpError(r.error))
+    const parsed = coreCreateResponseSchema.safeParse(r.value)
+    if (!parsed.success) return err('unexpected')
+    return ok({
+      id: parsed.data.id,
+      year: parsed.data.year,
+      programRef: parsed.data.programRef,
+      status: parsed.data.status,
+      version: parsed.data.version,
+      totalInCents: parsed.data.totalInCents,
+    })
   },
 })

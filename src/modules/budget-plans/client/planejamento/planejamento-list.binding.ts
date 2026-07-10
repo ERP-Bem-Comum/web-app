@@ -29,6 +29,12 @@ export { FILTER_YEARS }
 // Teto do fetch único (o core-api limita `limit` a 100). Suficiente para o volume atual de planos por org.
 const LIST_FETCH_LIMIT = 100
 
+/**
+ * Query key ÚNICA da lista de Planejamento — fonte de verdade compartilhada (a query aqui + a invalidação do
+ * create em `create-plan.binding.ts`). Manter as duas em sincronia via esta constante evita drift de cache.
+ */
+export const planejamentoListQueryKey = ['budget-plans', 'planejamento-list', LIST_FETCH_LIMIT] as const
+
 const EMPTY_NODES: readonly BudgetPlanNode[] = []
 
 export type PlanejamentoListState = Readonly<{
@@ -55,7 +61,7 @@ export type PlanejamentoListBinding = Readonly<{
 
 export function usePlanejamentoList(filters: PlanejamentoListFilters): PlanejamentoListBinding {
   const query = useQuery({
-    queryKey: ['budget-plans', 'planejamento-list', LIST_FETCH_LIMIT],
+    queryKey: planejamentoListQueryKey,
     queryFn: () => budgetPlansRepository.listBudgetPlans({ page: 1, limit: LIST_FETCH_LIMIT }),
   })
 

@@ -6,7 +6,7 @@
 import { createServerFn } from '@tanstack/react-start'
 
 import { getCurrentUserFn, resolveAccessTokenFn } from '#modules/auth/public-api/index.ts'
-import { budgetPlansListServer } from '#modules/budget-plans/server/adapters/budget-plans-list.composition.ts'
+import { budgetPlansServer } from '#modules/budget-plans/server/adapters/budget-plans-list.composition.ts'
 import { ListBudgetPlansInputSchema } from '#modules/budget-plans/server/adapters/budget-plans-list.io-schemas.ts'
 import type { PlanejamentoListPage } from '#modules/budget-plans/server/domain/planejamento-list.io.ts'
 import type { BudgetPlansError } from '#modules/budget-plans/server/domain/errors/budget-plans.errors.ts'
@@ -24,7 +24,7 @@ export const listBudgetPlansFn = createServerFn({ method: 'GET' })
     const accessToken = await resolveAccessTokenFn()
     if (accessToken === null) return { ok: false, error: 'unauthorized' }
 
-    const r = await budgetPlansListServer().listBudgetPlans(
+    const r = await budgetPlansServer().listBudgetPlans(
       { page: data.page, limit: data.limit, year: data.year, status: data.status },
       accessToken,
     )

@@ -5,6 +5,8 @@
  */
 export type BudgetPlansError =
   | 'unauthorized' // 401 — sessão ausente/expirada
+  | 'budget-plan-already-exists' // 409 — já existe plano p/ esse ano+programa (unicidade server-side)
+  | 'invalid-input' // 400/422 — payload rejeitado pelo core-api
   | 'unexpected' // parse/inesperado
 
 /** Forma do retorno RPC das server fns do Plano Orçamentário (`{ ok, data } | { ok, error }`). */
