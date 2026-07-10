@@ -615,6 +615,43 @@ export const modalFoot = style({
 })
 export const spacer = style({ flex: 1 })
 
+// ── Encerrar conta (ação no expand + modal de confirmação, POST /cedente-accounts/:id/close) ────────────
+export const expandAction = style({ marginInlineStart: 'auto', display: 'flex', alignItems: 'center' })
+export const closeAccountBtn = style({
+  ...btnBase,
+  paddingBlock: sp.xs,
+  fontWeight: recon.weight.medium,
+  border: `${bw.thin} solid ${c.red.line}`,
+  background: c.paper.default,
+  color: c.red.deep,
+  selectors: {
+    '&:hover:not(:disabled)': { background: c.red.bg },
+    '&:disabled': { opacity: 0.5, cursor: 'not-allowed' },
+  },
+})
+export const confirmText = style({
+  fontFamily: recon.font.sans,
+  fontSize: fs.md,
+  lineHeight: 1.5,
+  color: c.ink[2],
+})
+export const confirmStrong = style({ fontWeight: recon.weight.semibold, color: c.ink[1] })
+export const confirmError = style({
+  fontFamily: recon.font.sans,
+  fontSize: fs.sm,
+  color: c.red.deep,
+})
+export const btnDanger = style({
+  ...btnBase,
+  border: 'none',
+  background: c.red.normal,
+  color: c.paper.default,
+  selectors: {
+    '&:hover:not(:disabled)': { background: c.red.deep },
+    '&:disabled': { opacity: 0.6, cursor: 'not-allowed' },
+  },
+})
+
 // ── refinamentos do modal "Nova Conta Bancária" (fiel ao mock) ───────────────────
 export const mhIc = style({
   inlineSize: '2.25rem',

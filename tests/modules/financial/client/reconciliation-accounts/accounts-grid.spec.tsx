@@ -44,6 +44,7 @@ describe('AccountsGrid', () => {
         expanded={noExpand}
         onOpen={vi.fn()}
         onToggle={vi.fn()}
+        onRequestClose={vi.fn()}
       />,
     )
     expect(screen.getByText(tr('financial.recon.accounts.col.conta'))).toBeTruthy()
@@ -57,6 +58,7 @@ describe('AccountsGrid', () => {
         expanded={noExpand}
         onOpen={vi.fn()}
         onToggle={vi.fn()}
+        onRequestClose={vi.fn()}
       />,
     )
     expect(screen.getByText('4 pendentes')).toBeTruthy()
@@ -73,6 +75,7 @@ describe('AccountsGrid', () => {
         expanded={noExpand}
         onOpen={onOpen}
         onToggle={vi.fn()}
+        onRequestClose={vi.fn()}
       />,
     )
     fireEvent.click(screen.getByText('Ativa'))
@@ -90,6 +93,7 @@ describe('AccountsGrid', () => {
         expanded={new Set(['a'])}
         onOpen={onOpen}
         onToggle={onToggle}
+        onRequestClose={vi.fn()}
       />,
     )
     expect(screen.getByText(tr('financial.recon.accounts.expand.saldoInicial'))).toBeTruthy()
@@ -99,5 +103,30 @@ describe('AccountsGrid', () => {
     fireEvent.click(screen.getByLabelText(tr('financial.recon.accounts.expand.aria')))
     expect(onToggle).toHaveBeenCalledWith('a')
     expect(onOpen).not.toHaveBeenCalled()
+  })
+
+  it('expand de conta ativa mostra "Encerrar conta" → dispara onRequestClose(row); encerrada não mostra', () => {
+    const onRequestClose = vi.fn()
+    render(
+      <AccountsGrid
+        rows={[
+          row({ id: 'ativa', alias: 'Ativa' }),
+          row({ id: 'fechada', alias: 'Antiga', status: 'closed', openable: false }),
+        ]}
+        expanded={new Set(['ativa', 'fechada'])}
+        onOpen={vi.fn()}
+        onToggle={vi.fn()}
+        onRequestClose={onRequestClose}
+      />,
+    )
+    // Só a conta ativa oferece a ação (a encerrada, expandida, não mostra o botão).
+    const buttons = screen.getAllByText(tr('financial.recon.accounts.close.action'))
+    expect(buttons).toHaveLength(1)
+    const btn = buttons[0]
+    if (btn === undefined) throw new Error('botão de encerrar não encontrado')
+    fireEvent.click(btn)
+    expect(onRequestClose).toHaveBeenCalledTimes(1)
+    const arg = onRequestClose.mock.calls[0]?.[0] as AccountRow | undefined
+    expect(arg?.id).toBe('ativa')
   })
 })

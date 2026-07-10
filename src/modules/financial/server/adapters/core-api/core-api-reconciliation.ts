@@ -166,6 +166,15 @@ export const createCoreApiReconciliationClient = (
     if (isErr(r)) return err(mapHttpError(r.error))
     return cedenteAccountToModel(r.value)
   },
+  closeCedenteAccount: async (id, token) => {
+    // Encerra a conta (Open → Closed). Sem body; o ator vem do servidor. Devolve a conta atualizada.
+    const r = await resultFetch<unknown>(`${baseUrl}/cedente-accounts/${id}/close`, {
+      method: 'POST',
+      token,
+    })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return cedenteAccountToModel(r.value)
+  },
   getAccountStatementPeriod: async (i, token) => {
     // #205: extrato por período (from/to date-only). filter opcional. Mapeia p/ o saldo do período.
     const qs = new URLSearchParams({ from: i.from, to: i.to })
