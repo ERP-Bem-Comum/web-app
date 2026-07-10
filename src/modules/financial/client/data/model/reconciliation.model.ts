@@ -93,6 +93,18 @@ export type CreateCedenteAccountInput = Readonly<{
   openingBalanceCents?: string
   openingBalanceDate?: string
 }>
+// Editar conta-cedente (PATCH) — campos editáveis opcionais; CNPJ e saldo de abertura são imutáveis.
+export type EditCedenteAccountInput = Readonly<{
+  id: string
+  bankCode?: string
+  bankName?: string
+  type?: AccountType
+  typeLabel?: string
+  agency?: string
+  accountNumber?: string
+  accountDigit?: string
+  nickname?: string
+}>
 export type RejectSuggestionInput = Readonly<{ transactionId: string; payableId: string }>
 export type DifferenceInput = Readonly<{
   valueCents: number

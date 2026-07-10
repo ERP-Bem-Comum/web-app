@@ -19,6 +19,7 @@ import {
 } from './reconciliation-accounts.view-model.ts'
 import { useAddAccount, type AddAccountBinding } from './add-account.binding.ts'
 import { useCloseAccount, type CloseAccountBinding } from './close-account.binding.ts'
+import { useEditAccount, type EditAccountBinding } from './edit-account.binding.ts'
 
 export type ChipCounts = Readonly<{ todas: number; pendentes: number; emDia: number; encerradas: number }>
 const EMPTY_COUNTS: ChipCounts = { todas: 0, pendentes: 0, emDia: 0, encerradas: 0 }
@@ -38,6 +39,9 @@ export type AccountsBinding = Readonly<{
   addOpen: boolean
   add: AddAccountBinding
   close: CloseAccountBinding
+  edit: EditAccountBinding
+  /** Abre o modal de edição da conta (lookup por id na lista carregada). */
+  requestEdit: (id: string) => void
   expanded: ReadonlySet<string> // ids das contas com o expand do cadastro aberto
   setSearch: (v: string) => void
   setStatus: (v: StatusFilter) => void
@@ -57,6 +61,7 @@ export function useReconciliationAccounts(): AccountsBinding {
     setAddOpen(false)
   })
   const close = useCloseAccount()
+  const edit = useEditAccount(bankNameByCode, () => undefined)
   const q = useQuery(accountsQueryOptions())
 
   const state: AccountsState = (() => {
@@ -92,6 +97,11 @@ export function useReconciliationAccounts(): AccountsBinding {
     addOpen,
     add,
     close,
+    edit,
+    requestEdit: (id) => {
+      const account = allAccounts.find((a) => a.id === id)
+      if (account !== undefined) edit.open(account)
+    },
     expanded,
     toggleExpanded: (id) => {
       setExpanded((prev) => {

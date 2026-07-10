@@ -615,8 +615,25 @@ export const modalFoot = style({
 })
 export const spacer = style({ flex: 1 })
 
-// ── Encerrar conta (ação no expand + modal de confirmação, POST /cedente-accounts/:id/close) ────────────
-export const expandAction = style({ marginInlineStart: 'auto', display: 'flex', alignItems: 'center' })
+// ── Ações no expand da linha (editar + encerrar) ────────────────────────────────────────────────────────
+export const expandAction = style({
+  marginInlineStart: 'auto',
+  display: 'flex',
+  alignItems: 'center',
+  gap: sp.sm,
+})
+export const editAccountBtn = style({
+  ...btnBase,
+  paddingBlock: sp.xs,
+  fontWeight: recon.weight.medium,
+  border: `${bw.thin} solid ${c.paper.rule}`,
+  background: c.paper.default,
+  color: c.ink[2],
+  selectors: {
+    '&:hover:not(:disabled)': { background: c.paper.warm },
+    '&:disabled': { opacity: 0.5, cursor: 'not-allowed' },
+  },
+})
 export const closeAccountBtn = style({
   ...btnBase,
   paddingBlock: sp.xs,

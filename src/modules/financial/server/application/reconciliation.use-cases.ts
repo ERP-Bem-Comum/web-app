@@ -11,6 +11,7 @@ import type {
   BatchResult,
   CedenteAccount,
   CreateCedenteAccountInput,
+  EditCedenteAccountInput,
   ClosePeriodInput,
   AccountStatementPeriod,
   CreateReconciliationInput,
@@ -65,6 +66,11 @@ export type ReconciliationClient = Readonly<{
   ) => Promise<Result<CedenteAccount, ReconciliationError>>
   // Encerrar conta-cedente (POST /cedente-accounts/:id/close) — sem body; Open → Closed. Irreversível na UI.
   closeCedenteAccount: (id: string, token: string) => Promise<Result<CedenteAccount, ReconciliationError>>
+  // Editar conta-cedente (PATCH /cedente-accounts/:id) — subconjunto editável; devolve a conta atualizada.
+  editCedenteAccount: (
+    i: EditCedenteAccountInput,
+    token: string,
+  ) => Promise<Result<CedenteAccount, ReconciliationError>>
   getSuggestions: (
     i: GetSuggestionsInput,
     token: string,
@@ -150,6 +156,11 @@ export const createCloseCedenteAccount =
   (deps: Deps) =>
   (id: string, token: string): Promise<Result<CedenteAccount, ReconciliationError>> =>
     deps.client.closeCedenteAccount(id, token)
+
+export const createEditCedenteAccount =
+  (deps: Deps) =>
+  (i: EditCedenteAccountInput, token: string): Promise<Result<CedenteAccount, ReconciliationError>> =>
+    deps.client.editCedenteAccount(i, token)
 
 export const createGetAccountStatementPeriod =
   (deps: Deps) =>
