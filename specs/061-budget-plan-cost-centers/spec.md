@@ -50,5 +50,4 @@ Cada POST retorna a **ÁRVORE INTEIRA atualizada** (`costStructureTreeSchema`, =
 4. Nome vazio → validação client-side (tag), sem POST. 400/422 → `invalid-input`; 404 → `not-found`; 409
    (plano não editável/aprovado) → `budget-plan-not-editable`; 401 → `unauthorized`.
 5. Durante a submissão o botão fica desabilitado; erro mostra a tag i18n no painel de formulário.
-   </content>
    </invoke>

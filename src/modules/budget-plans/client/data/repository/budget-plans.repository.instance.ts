@@ -14,6 +14,7 @@ import { getBudgetPlanInsightsFn } from '#modules/budget-plans/server/adapters/s
 import { addCostCenterFn } from '#modules/budget-plans/server/adapters/server-fns/add-cost-center.service.fn.ts'
 import { addCategoryFn } from '#modules/budget-plans/server/adapters/server-fns/add-category.service.fn.ts'
 import { addSubcategoryFn } from '#modules/budget-plans/server/adapters/server-fns/add-subcategory.service.fn.ts'
+import { getConsolidadoAbcFn } from '#modules/budget-plans/server/adapters/server-fns/get-consolidado-abc.query.fn.ts'
 
 import { createBudgetPlansRepository } from './budget-plans.repository.ts'
 
@@ -30,4 +31,5 @@ export const budgetPlansRepository = createBudgetPlansRepository({
   addCostCenterFn: (opts) => addCostCenterFn(opts),
   addCategoryFn: (opts) => addCategoryFn(opts),
   addSubcategoryFn: (opts) => addSubcategoryFn(opts),
+  getConsolidadoFn: (opts) => getConsolidadoAbcFn(opts),
 })

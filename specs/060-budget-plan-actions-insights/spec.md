@@ -42,5 +42,4 @@ precisar de granularidade fina (slug/`code` estável).
 ## Fora de escopo
 
 Centros de custo (Grupo B); Orçamento por rede + cálculo (Grupo C). Não mexer.
-</content>
 </invoke>

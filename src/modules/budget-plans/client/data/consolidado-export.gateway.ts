@@ -6,7 +6,7 @@
 import { err, ok, type Result } from '#shared/primitives/result.ts'
 import { exportConsolidadoAbcCsvFn } from '#modules/budget-plans/server/adapters/server-fns/export-consolidado-abc-csv.query.fn.ts'
 
-export type ConsolidadoExportInput = Readonly<{ year: number; programs: readonly string[] }>
+export type ConsolidadoExportInput = Readonly<{ year: number; programRef?: string }>
 export type ConsolidadoCsvFile = Readonly<{ filename: string; content: string }>
 export type ConsolidadoExportError = 'export-failed'
 
@@ -14,6 +14,6 @@ export type ConsolidadoExportError = 'export-failed'
 export const exportConsolidadoAbcCsv = async (
   input: ConsolidadoExportInput,
 ): Promise<Result<ConsolidadoCsvFile, ConsolidadoExportError>> => {
-  const r = await exportConsolidadoAbcCsvFn({ data: { year: input.year, programs: [...input.programs] } })
+  const r = await exportConsolidadoAbcCsvFn({ data: { year: input.year, programRef: input.programRef } })
   return r.ok ? ok(r.data) : err('export-failed')
 }

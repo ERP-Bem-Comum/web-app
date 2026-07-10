@@ -1,43 +1,40 @@
 /**
- * Zod da BORDA (§IX) para a resposta FUTURA do core-api `GET /budget-plans/consolidated-result`. Enquanto o
- * endpoint não existe, o schema serve para (a) validar a FONTE placeholder contra o contrato e (b) parsear a
- * resposta real quando ela chegar — troca-se só a origem, o serializador permanece. Valores em centavos (§IV).
+ * Zod da BORDA (§IX) para a resposta do core-api `GET /budget-plans/consolidated-result`. O anti-corrupção
+ * mora aqui: valida o DTO cru e o mapeia para `ConsolidatedAbc` (o `totalCents` do core vira `totalInCents`
+ * no domínio). Valores em centavos (§IV). `version` é tolerante (z.number()) — o core pode entregar um
+ * inteiro ou um decimal de cenário sem quebrar a leitura.
  */
 import * as z from 'zod'
 
 import type { ConsolidatedAbc } from '#modules/budget-plans/server/domain/consolidado-abc.io.ts'
 
-const MonthlyCentsSchema = z.array(z.int()).length(12)
-
-const SubCategorySchema = z.object({
-  name: z.string().trim(),
-  totalInCents: z.int(),
-  monthlyInCents: MonthlyCentsSchema,
+const PlanSchema = z.object({
+  id: z.uuid(),
+  programName: z.string().trim(),
+  programAbbreviation: z.string().trim(),
+  version: z.number(),
+  totalCents: z.int(),
 })
 
-const CategorySchema = z.object({
-  name: z.string().trim(),
-  totalInCents: z.int(),
-  monthlyInCents: MonthlyCentsSchema,
-  subCategories: z.array(SubCategorySchema),
-})
-
-const CostCenterSchema = z.object({
-  name: z.string().trim(),
-  totalInCents: z.int(),
-  monthlyInCents: MonthlyCentsSchema,
-  categories: z.array(CategorySchema),
-})
-
-export const ConsolidatedResultSchema: z.ZodType<ConsolidatedAbc> = z.object({
+export const ConsolidatedResultSchema = z.object({
   year: z.int(),
-  totalInCents: z.int(),
-  subtotalsByProgram: z.array(z.object({ program: z.string().trim(), totalInCents: z.int() })),
-  costCenters: z.array(CostCenterSchema),
+  totalCents: z.int(),
+  plans: z.array(PlanSchema),
 })
 
 /** Parseia (borda) um payload desconhecido no `ConsolidatedAbc`. Falha → `null` (o caller mapeia p/ erro-valor). */
 export const parseConsolidatedResult = (raw: unknown): ConsolidatedAbc | null => {
   const parsed = ConsolidatedResultSchema.safeParse(raw)
-  return parsed.success ? parsed.data : null
+  if (!parsed.success) return null
+  return {
+    year: parsed.data.year,
+    totalInCents: parsed.data.totalCents,
+    plans: parsed.data.plans.map((p) => ({
+      id: p.id,
+      programName: p.programName,
+      programAbbreviation: p.programAbbreviation,
+      version: p.version,
+      totalInCents: p.totalCents,
+    })),
+  }
 }

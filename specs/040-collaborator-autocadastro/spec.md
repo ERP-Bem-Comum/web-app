@@ -63,5 +63,4 @@ link + confirmação dos **primeiros dígitos do CPF** (prova de posse leve).
 3. Submit 400 (cpf-mismatch) mantém o form + mensagem própria; 404 → "inválido".
 4. Sucesso → estado/modal de conclusão, sem login.
 5. `parseChildrenAges` extrai idades de texto livre (helper puro).
-   </content>
    </invoke>

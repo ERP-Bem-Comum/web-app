@@ -77,7 +77,7 @@ export const resultTitleIcon = style({
   placeItems: 'center',
 })
 
-// Bloco de texto do resumo: título "{ano} ABC" + linha "Programa {tag} · R$ …" empilhados.
+// Bloco de texto do resumo: título "{ano} ABC".
 export const resultTitleText = style({
   display: 'flex',
   flexDirection: 'column',
@@ -92,41 +92,6 @@ export const resultTitle = style({
   fontSize: consolidado.size.summaryTitle,
   fontWeight: brand.weight.bold,
   color: brand.color.ink900,
-})
-
-// Meta ("Programa {tag}: R$ …") — 13px ink500.
-export const subtotals = style({
-  display: 'flex',
-  flexWrap: 'wrap',
-  alignItems: 'center',
-  gap: brand.space.sm,
-  listStyle: 'none',
-  margin: 0,
-  padding: 0,
-})
-
-export const subtotalItem = style({
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: brand.space.xs,
-  fontFamily: vars.font.family.heading,
-  fontSize: brand.text.subtitle,
-  color: brand.color.ink500,
-  fontVariantNumeric: 'tabular-nums',
-})
-
-// Tag da sigla do programa (ex.: "ETI") — bg cadBg, cor primary, radius xs.
-export const subtotalProgram = style({
-  display: 'inline-flex',
-  alignItems: 'center',
-  paddingBlock: consolidado.size.progTagPadBlock,
-  paddingInline: consolidado.size.progTagPadInline,
-  borderRadius: brand.radius.xs,
-  background: brand.color.cadBg,
-  color: brand.color.primary,
-  fontWeight: brand.weight.semibold,
-  fontSize: consolidado.size.progTagFont,
-  letterSpacing: '.02em',
 })
 
 // Bloco "Total" à direita.

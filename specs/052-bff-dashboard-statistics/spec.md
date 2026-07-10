@@ -81,5 +81,4 @@ query e confere os 4 cards + os gráficos.
   intacto).
 - Nenhuma constante de dados hardcoded permanece no `dashboard-summary.view-model.ts`; a origem é o BFF.
 - A troca pelo #112 toca **só** a FONTE (um arquivo), não a composição.
-  </content>
   </invoke>

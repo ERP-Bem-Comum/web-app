@@ -58,5 +58,4 @@ programRef` (forma tolerante `z.string().trim().nullable().catch(null)`). Só os
 
 `pnpm typecheck && pnpm build && pnpm lint && pnpm test && pnpm test:dom`. Lint baseline: 0 erros /
 115 warnings. Sem non-null assertion `!`.
-</content>
 </invoke>

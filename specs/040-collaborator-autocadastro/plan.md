@@ -88,4 +88,3 @@ MESMA base v1, sem Bearer (rota pública token-based, como o auth reset).
 - **§XII Reatividade por eventos:** N/A (sem cross-feature; sucesso é local).
 
 Gate: `pnpm typecheck && pnpm lint && pnpm verify && pnpm test:dom`. Regressão zero.
-</content>
