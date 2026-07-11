@@ -376,7 +376,8 @@ export const createBudgetPlansCoreClient = (
     if (!parsed.success) return err('unexpected')
     return ok({
       id: parsed.data.id,
-      name: parsed.data.name,
+      // o core devolve o nome em `scenarioName` (nullable); recai no nome enviado no body quando vier null.
+      name: parsed.data.scenarioName ?? command.name,
       status: parsed.data.status,
       version: parsed.data.version,
     })
