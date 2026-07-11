@@ -55,18 +55,19 @@ export const buildCalcGastosCentros = (detail: PlanDetail): readonly CalcCentro[
   }))
 
 /**
- * #C2: resolve o `budgetId` (rede/orçamento) da tela a partir do filtro do Detalhe. A rede editada vem por
- * `municipio` (mais específico, IBGE) OU `estado` (UF); casa contra `networks[].ref` (chave natural #394).
- * `null` = nenhuma rede casa (ex.: filtro sem orçamento cadastrado) → o cálculo não persiste.
+ * #C2: resolve o `budgetId` (rede/orçamento) da tela a partir do filtro do Detalhe. A rede editada casa contra
+ * `networks[].ref` (chave natural #394). Casa primeiro pelo `municipio` (mais específico); se não houver rede
+ * municipal, cai no `estado` (UF) — cobre tanto programas municipais quanto estaduais (a tela força selecionar
+ * ambos p/ editar). `null` = nenhuma rede casa (ex.: filtro sem orçamento cadastrado) → o cálculo não persiste.
  */
 export const resolveNetworkBudgetId = (
   networks: readonly Readonly<{ ref: string; budgetId: string }>[],
   estado: string,
   municipio: string,
 ): string | null => {
-  const wanted = municipio !== '' ? municipio : estado
-  if (wanted === '') return null
-  return networks.find((n) => n.ref === wanted)?.budgetId ?? null
+  const byMunicipio = municipio !== '' ? (networks.find((n) => n.ref === municipio)?.budgetId ?? null) : null
+  if (byMunicipio !== null) return byMunicipio
+  return estado !== '' ? (networks.find((n) => n.ref === estado)?.budgetId ?? null) : null
 }
 
 export { formatCentsBRL, sumMonths }

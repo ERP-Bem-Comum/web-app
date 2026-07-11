@@ -136,6 +136,11 @@ describe('resolveNetworkBudgetId (#C2)', () => {
     assert.equal(resolveNetworkBudgetId(networks, 'CE', ''), 'b-ce')
   })
 
+  it('cai no estado quando há município selecionado mas nenhuma rede municipal casa', () => {
+    // Rede é estadual (ref=CE); a tela força escolher um município → não casa municipal, mas casa o estado.
+    assert.equal(resolveNetworkBudgetId(networks, 'CE', 'fortaleza'), 'b-ce')
+  })
+
   it('null quando nenhuma rede casa', () => {
     assert.equal(resolveNetworkBudgetId(networks, 'SP', ''), null)
   })
