@@ -92,6 +92,15 @@ export type AddBudgetCommand = Readonly<{
 }>
 export type DeleteBudgetCommand = Readonly<{ planId: string; budgetId: string }>
 export type NetworkOption = Readonly<{ ref: string; name: string; kind: NetworkKind }>
+// #C2: resultado de cálculo por subcategoria (dentro de UMA rede/budget). `subcategoryRef` = UUID do backend.
+export type BudgetResultRow = Readonly<{ subcategoryRef: string; valueInCents: number }>
+// #C2: comando do cálculo IPCA (Tipo B) — baseValueInCents * (1 + ipca/100), por rede×subcategoria.
+export type IpcaResultCommand = Readonly<{
+  budgetId: string
+  subcategoryId: string
+  baseValueInCents: number
+  ipca: number
+}>
 
 export type PlanDetailHeaderInput = Readonly<{
   id: string

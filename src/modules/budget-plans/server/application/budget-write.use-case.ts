@@ -8,12 +8,14 @@ import type {
   AddBudgetCommand,
   DeleteBudgetCommand,
   NetworkOption,
+  IpcaResultCommand,
 } from '#modules/budget-plans/server/domain/plan-detail.io.ts'
 
 export type BudgetWriteClient = Readonly<{
   addBudget: (c: AddBudgetCommand, token: string) => Promise<Result<void, BudgetPlansError>>
   deleteBudget: (c: DeleteBudgetCommand, token: string) => Promise<Result<void, BudgetPlansError>>
   getNetworkOptions: (token: string) => Promise<Result<readonly NetworkOption[], BudgetPlansError>>
+  postIpcaResult: (c: IpcaResultCommand, token: string) => Promise<Result<void, BudgetPlansError>>
 }>
 
 type Deps = Readonly<{ client: BudgetWriteClient }>
@@ -32,3 +34,8 @@ export const createListNetworkOptions =
   (deps: Deps) =>
   (token: string): Promise<Result<readonly NetworkOption[], BudgetPlansError>> =>
     deps.client.getNetworkOptions(token)
+
+export const createPostIpcaResult =
+  (deps: Deps) =>
+  (c: IpcaResultCommand, token: string): Promise<Result<void, BudgetPlansError>> =>
+    deps.client.postIpcaResult(c, token)
