@@ -8,6 +8,7 @@ import { strict as assert } from 'node:assert'
 import type { PlanDetail, MonthlyCents } from '#modules/budget-plans/client/data/model/plan-detail.model.ts'
 import {
   buildCalcGastosCentros,
+  resolveNetworkBudgetId,
   sumMonths,
   MONTH_NAMES,
 } from '#modules/budget-plans/client/planejamento/detalhe/orcamento/calc-gastos.view-model.ts'
@@ -79,5 +80,67 @@ describe('buildCalcGastosCentros', () => {
     assert.equal(sub.monthsInCents.length, 12)
     assert.equal(sub.monthsInCents[1], 100) // Fevereiro
     assert.equal(sumMonths(sub.monthsInCents), 100)
+  })
+
+  it('preserva o `ref` (UUID) da subcategoria — necessário p/ persistir o cálculo (#C2)', () => {
+    const withRef: PlanDetail = {
+      ...detail,
+      costCenters: [
+        {
+          id: 1,
+          ref: 'cc-uuid',
+          name: 'Consultoria',
+          type: 'A PAGAR',
+          totalInCents: 100,
+          monthlyInCents: m({ 2: 100 }),
+          networkInCents: [],
+          categories: [
+            {
+              id: 11,
+              ref: 'cat-uuid',
+              name: 'Educacional',
+              totalInCents: 100,
+              monthlyInCents: m({ 2: 100 }),
+              networkInCents: [],
+              subCategories: [
+                {
+                  id: 111,
+                  ref: 'sub-uuid-1',
+                  name: 'Formação',
+                  totalInCents: 100,
+                  monthlyInCents: m({ 2: 100 }),
+                  networkInCents: [],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    }
+    const sub = buildCalcGastosCentros(withRef)[0]?.categories[0]?.subCategories[0]
+    assert.equal(sub?.ref, 'sub-uuid-1')
+  })
+})
+
+describe('resolveNetworkBudgetId (#C2)', () => {
+  const networks = [
+    { ref: 'CE', budgetId: 'b-ce' },
+    { ref: '2304400', budgetId: 'b-fortaleza' },
+  ]
+
+  it('município (IBGE) tem precedência sobre estado quando presente', () => {
+    assert.equal(resolveNetworkBudgetId(networks, 'CE', '2304400'), 'b-fortaleza')
+  })
+
+  it('cai no estado (UF) quando não há município', () => {
+    assert.equal(resolveNetworkBudgetId(networks, 'CE', ''), 'b-ce')
+  })
+
+  it('null quando nenhuma rede casa', () => {
+    assert.equal(resolveNetworkBudgetId(networks, 'SP', ''), null)
+  })
+
+  it('null quando estado e município vazios', () => {
+    assert.equal(resolveNetworkBudgetId(networks, '', ''), null)
   })
 })

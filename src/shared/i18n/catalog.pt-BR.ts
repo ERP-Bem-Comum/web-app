@@ -2154,6 +2154,8 @@ export const ptBR: Catalog = {
   'budget-plans.calcGastos.todos': 'Todos',
   'budget-plans.calcGastos.aplicar': 'Aplicar',
   'budget-plans.calcGastos.cancelar': 'Cancelar',
+  'budget-plans.calcGastos.ipcaSaving': 'Salvando…',
+  'budget-plans.calcGastos.ipcaSaveError': 'Não foi possível salvar o cálculo. Tente novamente.',
 
   // ── Form de Pessoal (US2.4c — frame 4: custo detalhado de pessoal) ──
   'budget-plans.calcGastos.pessoal.tipo': 'Tipo',

@@ -449,11 +449,19 @@ export const drawerBody = style({
 export const drawerFoot = style({
   display: 'flex',
   justifyContent: 'flex-end',
+  alignItems: 'center',
   gap: brand.space.sm,
   paddingBlock: cg.size.drawerFootPadBlock,
   paddingInline: cg.size.drawerFootPadInline,
   flexShrink: 0,
   borderBlockStart: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+})
+
+// #C2 (fase C): mensagem de falha ao persistir o cálculo IPCA — ocupa a esquerda do rodapé do drawer.
+export const ipcaErrorText = style({
+  marginInlineEnd: 'auto',
+  color: cg.color.brandRed,
+  fontSize: brand.text.label,
 })
 
 // ── Seções e campos de formulário (usados pelos 4 forms dentro do drawer) ──

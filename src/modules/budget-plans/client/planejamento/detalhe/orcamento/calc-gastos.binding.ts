@@ -1,12 +1,21 @@
 /**
  * Binding da tela "Calculando Gastos" (US2.4b) — ADAPTER React (§XI). UI-state local: aba (centro),
  * categoria/subcategoria selecionadas e os 12 meses EDITÁVEIS da subcategoria (overrides sobre o
- * placeholder). O total é derivado (soma). "Calcular"/"Salvar" persistem só na 2.4c/#113.
+ * placeholder). O total é derivado (soma).
+ *
+ * #C2 (fase C): o cálculo IPCA (Tipo B) PERSISTE via `budgetPlansRepository.postIpcaResult` — o command
+ * casa a rede (`budgetId`, resolvido do filtro estado/município) × subcategoria (`ref` UUID). Sucesso
+ * invalida o DETALHE do plano (mesma query key) → a matriz "Por Rede" reacende a célula via `fillNetworkCells`.
  */
 import { useMemo, useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
+import { isErr } from '#shared/primitives/result.ts'
+import { budgetPlansRepository } from '#modules/budget-plans/client/data/repository/budget-plans.repository.instance.ts'
+import { planDetailQueryKey } from '#modules/budget-plans/client/planejamento/detalhe/plan-detail.query-key.ts'
 import {
   buildCalcGastosCentros,
+  resolveNetworkBudgetId,
   formatCentsBRL,
   sumMonths,
   MONTH_NAMES,
@@ -37,11 +46,30 @@ export type CalcGastosBinding = Readonly<{
   /** Aplica um mesmo valor a vários meses de uma vez (form "Aplicar aos meses"). */
   applyToMonths: (monthIndices: readonly number[], cents: number) => void
   clearMonth: (monthIndex: number) => void
+  // ── #C2 (fase C): persistência do cálculo IPCA (Tipo B) da subcategoria ativa na rede editada. ──
+  /** `true` quando dá p/ persistir: rede resolvida (`budgetId`) + subcategoria com `ref` (UUID). */
+  canPersistIpca: boolean
+  /** POST do cálculo IPCA (base × (1+ipca/100), anual por rede×subcategoria). No-op se `canPersistIpca` = false. */
+  applyIpca: (baseValueInCents: number, ipca: number) => void
+  ipcaSaving: boolean
+  ipcaError: boolean
+  /** Sobe 1 a cada POST bem-sucedido — a view usa p/ fechar o drawer/limpar erro. */
+  ipcaSavedTick: number
 }>
+
+export type CalcGastosContext = Readonly<{ planId: string; estado: string; municipio: string }>
 
 const firstId = (list: readonly { id: number }[]): number | null => list[0]?.id ?? null
 
-export function useCalcGastos(detail: PlanDetail | null): CalcGastosBinding {
+export function useCalcGastos(ctx: CalcGastosContext): CalcGastosBinding {
+  // #C2 (fase C): o modal opera sobre o DETALHE REAL do plano (mesma query key do Detalhe) — precisa dos `ref`
+  // (UUID) das subcategorias e do `budgetId` das redes p/ persistir o cálculo. O grid atrás segue front-first.
+  const detailQuery = useQuery({
+    queryKey: planDetailQueryKey(ctx.planId),
+    queryFn: () => budgetPlansRepository.getPlanDetail(ctx.planId),
+  })
+  const detail: PlanDetail | null = detailQuery.data?.ok === true ? detailQuery.data.value : null
+
   const centros = useMemo<readonly CalcCentro[]>(
     () => (detail !== null ? buildCalcGastosCentros(detail) : []),
     [detail],
@@ -89,6 +117,25 @@ export function useCalcGastos(detail: PlanDetail | null): CalcGastosBinding {
 
   const activeMonths = activeSub !== null ? monthsOf(activeSub.id, activeSub.monthsInCents) : []
 
+  // #C2 (fase C): persistência do cálculo IPCA. `budgetId` = rede do filtro; `subcategoryId` = ref UUID da sub.
+  const queryClient = useQueryClient()
+  const budgetId = detail !== null ? resolveNetworkBudgetId(detail.networks, ctx.estado, ctx.municipio) : null
+  const activeSubRef = activeSub?.ref ?? null
+  const [ipcaSavedTick, setIpcaSavedTick] = useState(0)
+  const ipcaMutation = useMutation({
+    mutationFn: budgetPlansRepository.postIpcaResult,
+    onSuccess: (res) => {
+      if (isErr(res)) return
+      void queryClient.invalidateQueries({ queryKey: planDetailQueryKey(ctx.planId) })
+      setIpcaSavedTick((t) => t + 1)
+    },
+  })
+  const canPersistIpca = budgetId !== null && activeSubRef !== null
+  const applyIpca = (baseValueInCents: number, ipca: number): void => {
+    if (budgetId === null || activeSubRef === null) return
+    ipcaMutation.mutate({ planId: ctx.planId, budgetId, subcategoryId: activeSubRef, baseValueInCents, ipca })
+  }
+
   return {
     centros: centros.map((c) => ({ id: c.id, name: c.name, active: c.id === activeCentro?.id })),
     categories: cats.map((c) => ({ id: c.id, name: c.name, active: c.id === activeCat?.id })),
@@ -122,5 +169,10 @@ export function useCalcGastos(detail: PlanDetail | null): CalcGastosBinding {
     clearMonth: (monthIndex) => {
       editMonth(monthIndex, 0)
     },
+    canPersistIpca,
+    applyIpca,
+    ipcaSaving: ipcaMutation.isPending,
+    ipcaError: ipcaMutation.isError || (ipcaMutation.data !== undefined && isErr(ipcaMutation.data)),
+    ipcaSavedTick,
   }
 }

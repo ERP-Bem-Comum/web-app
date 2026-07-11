@@ -45,11 +45,14 @@ export function OrcamentoPage(): ReactNode {
   const search = routeApi.useSearch()
   const navigate = useNavigate()
   const id = params.id
-  const { state, detail, centroOptions, centro, setCentro, apply, prevSemester, nextSemester } = useOrcamento(
+  const { state, centroOptions, centro, setCentro, apply, prevSemester, nextSemester } = useOrcamento(
     id,
     search.estado,
   )
-  const calc = useCalcGastos(detail)
+  // #C2 (fase C): o modal "Calculando Gastos" busca o DETALHE REAL do plano dentro do binding (precisa dos
+  // `ref`/`budgetId` reais p/ persistir o IPCA). O grid atrás segue front-first (#113); como o modal é overlay
+  // full-screen, não há mistura visual das duas árvores.
+  const calc = useCalcGastos({ planId: id, estado: search.estado, municipio: search.municipio })
   const [calcOpen, setCalcOpen] = useState(false)
 
   const goBack = (): void => {
@@ -195,6 +198,8 @@ export function OrcamentoPage(): ReactNode {
             todos: t('budget-plans.calcGastos.todos'),
             aplicar: t('budget-plans.calcGastos.aplicar'),
             cancelar: t('budget-plans.calcGastos.cancelar'),
+            ipcaSaving: t('budget-plans.calcGastos.ipcaSaving'),
+            ipcaSaveError: t('budget-plans.calcGastos.ipcaSaveError'),
             pessoal: {
               tipo: t('budget-plans.calcGastos.pessoal.tipo'),
               nivel: t('budget-plans.calcGastos.pessoal.nivel'),

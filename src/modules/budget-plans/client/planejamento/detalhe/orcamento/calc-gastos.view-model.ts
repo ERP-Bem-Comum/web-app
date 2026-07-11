@@ -28,6 +28,7 @@ export const MONTH_NAMES = [
 
 export type CalcSub = Readonly<{
   id: number
+  ref?: string // #C2: UUID do backend (casa com budget-results.subcategoryId — necessário p/ persistir o cálculo)
   name: string
   monthsInCents: readonly number[]
   releaseType?: ReleaseType
@@ -45,11 +46,27 @@ export const buildCalcGastosCentros = (detail: PlanDetail): readonly CalcCentro[
       name: cat.name,
       subCategories: cat.subCategories.map((sub) => ({
         id: sub.id,
+        ref: sub.ref,
         name: sub.name,
         monthsInCents: sub.monthlyInCents,
         releaseType: sub.releaseType,
       })),
     })),
   }))
+
+/**
+ * #C2: resolve o `budgetId` (rede/orçamento) da tela a partir do filtro do Detalhe. A rede editada vem por
+ * `municipio` (mais específico, IBGE) OU `estado` (UF); casa contra `networks[].ref` (chave natural #394).
+ * `null` = nenhuma rede casa (ex.: filtro sem orçamento cadastrado) → o cálculo não persiste.
+ */
+export const resolveNetworkBudgetId = (
+  networks: readonly Readonly<{ ref: string; budgetId: string }>[],
+  estado: string,
+  municipio: string,
+): string | null => {
+  const wanted = municipio !== '' ? municipio : estado
+  if (wanted === '') return null
+  return networks.find((n) => n.ref === wanted)?.budgetId ?? null
+}
 
 export { formatCentsBRL, sumMonths }

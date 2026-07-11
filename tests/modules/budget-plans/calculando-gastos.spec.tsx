@@ -4,10 +4,12 @@
  */
 import { describe, it, expect, afterEach } from 'vitest'
 import { render, screen, cleanup, fireEvent, within } from '@testing-library/react'
-import type { ReactNode } from 'react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { useState, type ReactNode } from 'react'
 
 import { CalculandoGastos } from '#modules/budget-plans/client/planejamento/detalhe/orcamento/calculando-gastos.component.tsx'
 import { useCalcGastos } from '#modules/budget-plans/client/planejamento/detalhe/orcamento/calc-gastos.binding.ts'
+import { planDetailQueryKey } from '#modules/budget-plans/client/planejamento/detalhe/plan-detail.query-key.ts'
 import type { PlanDetail, MonthlyCents } from '#modules/budget-plans/client/data/model/plan-detail.model.ts'
 
 afterEach(() => {
@@ -144,6 +146,8 @@ const labels = {
   todos: 'Todos',
   aplicar: 'Aplicar',
   cancelar: 'Cancelar',
+  ipcaSaving: 'Salvando…',
+  ipcaSaveError: 'Não foi possível salvar o cálculo. Tente novamente.',
   pessoal: {
     tipo: 'Tipo',
     nivel: 'Nível',
@@ -214,10 +218,27 @@ const labels = {
   discardConfirm: 'Descartar',
 } as const
 
-function Harness(): ReactNode {
-  const b = useCalcGastos(detail)
+function Inner(): ReactNode {
+  const b = useCalcGastos({ planId: 'p-1', estado: '', municipio: '' })
   return (
     <CalculandoGastos title="2026 EPV 1.1 > Ceará" binding={b} labels={labels} onClose={() => undefined} />
+  )
+}
+
+// O binding busca o detalhe REAL via `planDetailQueryKey`; semeamos o cache com a fixture (o repository devolve
+// `Result`, então o dado cacheado é `{ ok: true, value: detail }`). Factory em escopo de módulo (estável por render).
+const makeSeededClient = (): QueryClient => {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  qc.setQueryData(planDetailQueryKey('p-1'), { ok: true, value: detail })
+  return qc
+}
+
+function Harness(): ReactNode {
+  const [client] = useState(makeSeededClient)
+  return (
+    <QueryClientProvider client={client}>
+      <Inner />
+    </QueryClientProvider>
   )
 }
 

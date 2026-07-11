@@ -1,6 +1,13 @@
 # 067 — Cálculo dos valores orçados (Grupo C, fatia C2) · budget-results
 
-> **Status: planejado (modelo resolvido do legado; implementação = fatia dedicada).**
+> **Status: IPCA end-to-end IMPLEMENTADO (fases A+B+C). CAED/Pessoal/Logística = follow-up.**
+>
+> - **Fase A** (leitura acende as células): `getBudgetResults(budgetId)` por rede + `fillNetworkCells` no mapper — PR #207.
+> - **Fase B** (write IPCA no BFF): cadeia `POST /budget-results/ipca` completa (io-schema → client → use-case → composition → server-fn → repository) — PR #207.
+> - **Fase C** (fiação da UI): o "Aplicar" do form IPCA (Tipo B) do modal "Calculando Gastos" persiste via `postIpcaResult`,
+>   resolvendo `budgetId` do filtro estado/município (`resolveNetworkBudgetId`) × `subcategoryId` = `ref` (UUID) da sub ativa.
+>   O modal passou a operar sobre o **detalhe REAL** (mesma query key do Detalhe); sucesso invalida o detalhe → a matriz
+>   "Por Rede" reacende a célula. Os outros 3 forms (CAED/Pessoal/Logística) seguem aplicando só local (follow-up).
 
 ## Contexto
 
@@ -25,7 +32,7 @@ O C1 (specs/066) ligou o **orçamento por rede** (colunas + total). Falta **acen
 1. **BFF write** dos 4 cálculos: io-schemas + client (`postBudgetResult*`) + use-cases + composition + 4 server-fns.
 2. **BFF read**: `getBudgetResultsByBudget(budgetId)` → mapear para `{ subcategoryId → valueInCents }`.
 3. **Detalhe/mapper**: preencher `networkInCents[i]` de cada subcategoria com o budget-result da rede i (via read por budget de cada rede do plano). Requer casar `subcategoryId` (UUID do backend) com o nó da árvore — hoje o mapper descarta o UUID da subcategoria (só nomes); **expor o `ref` da subcategoria** (como já foi feito p/ centro/categoria na feature 061).
-4. **UI**: ligar o "Calcular/Salvar" do modal (hoje local) às mutações; a tela `/orcamento/:orcamentoId` scoped ao budgetId; RBAC por status (Aprovado = read-only).
+4. **UI**: ligar o "Calcular/Salvar" do modal (hoje local) às mutações; a tela `/orcamento/:orcamentoId` scoped ao budgetId; RBAC por status (Aprovado = read-only). ✅ **IPCA feito** (fase C); CAED/Pessoal/Logística pendentes. RBAC read-only por status = follow-up.
 
 ## Dependências / gaps
 

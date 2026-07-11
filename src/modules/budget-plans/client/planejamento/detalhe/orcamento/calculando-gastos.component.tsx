@@ -4,7 +4,7 @@
  * edição de um mês (lápis) abre um DRAWER lateral direito com o form roteado pelo Tipo de lançamento; salvar/
  * descartar volta ao grid. Estado de EDIÇÃO é UI-state local (efêmero); o resto chega pronto pelo binding.
  */
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 import { EditIcon, TrashIcon, CalculatorIcon, InfoIcon } from '#shared/ui/index.ts'
 
@@ -72,6 +72,7 @@ import {
   confirmFooter,
   confirmKeep,
   confirmDiscard as confirmDiscardButton,
+  ipcaErrorText,
 } from './calculando-gastos.css.ts'
 
 export type CalculandoGastosLabels = Readonly<{
@@ -97,6 +98,8 @@ export type CalculandoGastosLabels = Readonly<{
   todos: string
   aplicar: string
   cancelar: string
+  ipcaSaving: string
+  ipcaSaveError: string
   pessoal: PessoalFormLabels
   caed: CaedFormLabels
   logistica: LogisticaFormLabels
@@ -230,9 +233,26 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
     })
   }
 
+  // #C2 (fase C): ao persistir o IPCA, o drawer fica em "salvando" e só fecha quando o POST confirma (o tick
+  // do binding sobe). Guardamos o tick no submit p/ detectar a transição sucesso sem fechar em edições futuras.
+  const savedTickAtSubmit = useRef<number | null>(null)
+  useEffect(() => {
+    if (savedTickAtSubmit.current !== null && b.ipcaSavedTick > savedTickAtSubmit.current) {
+      savedTickAtSubmit.current = null
+      setForm(null)
+    }
+  }, [b.ipcaSavedTick])
+
   const applyForm = (): void => {
     if (form === null) return
     b.applyToMonths([...form.months], custoTotalCents)
+    // Persiste o cálculo IPCA (base × (1+ipca/100), anual por rede×subcategoria). Só quando há rede+ref reais;
+    // sem eles (contexto sem orçamento resolvido) mantém o comportamento front-first (aplica local e fecha).
+    if (b.canPersistIpca) {
+      savedTickAtSubmit.current = b.ipcaSavedTick
+      b.applyIpca(parseCentsBR(form.total), Number(form.ipca.replace(',', '.')) || 0)
+      return // o drawer fecha no sucesso (effect acima)
+    }
     setForm(null)
   }
 
@@ -544,11 +564,21 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
                 </div>
 
                 <div className={drawerFoot}>
-                  <button type="button" className={cancelButton} onClick={requestDiscard}>
+                  {b.ipcaError ? (
+                    <p className={ipcaErrorText} role="alert">
+                      {labels.ipcaSaveError}
+                    </p>
+                  ) : null}
+                  <button
+                    type="button"
+                    className={cancelButton}
+                    onClick={requestDiscard}
+                    disabled={b.ipcaSaving}
+                  >
                     {labels.cancelar}
                   </button>
-                  <button type="button" className={applyButton} onClick={applyForm}>
-                    {labels.aplicar}
+                  <button type="button" className={applyButton} onClick={applyForm} disabled={b.ipcaSaving}>
+                    {b.ipcaSaving ? labels.ipcaSaving : labels.aplicar}
                   </button>
                 </div>
               </>
