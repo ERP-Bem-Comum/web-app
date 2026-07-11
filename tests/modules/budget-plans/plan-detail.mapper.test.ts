@@ -45,8 +45,8 @@ const structure: CostStructureInput = {
           id: CATEGORIA_REF,
           name: 'Consultoria Estratégica',
           subcategories: [
-            { name: 'Folha', launchType: 'DESPESAS_PESSOAIS' },
-            { name: 'Reajuste', launchType: 'IPCA' },
+            { id: 'sub-folha-0001', name: 'Folha', launchType: 'DESPESAS_PESSOAIS' },
+            { id: 'sub-reaj-0002', name: 'Reajuste', launchType: 'IPCA' },
           ],
         },
       ],
@@ -147,7 +147,7 @@ describe('mapPlanDetail — enums desconhecidos (fallback)', () => {
           {
             id: 'ca7e9017-9999-4a2b-8c3d-000000000098',
             name: 'Cat X',
-            subcategories: [{ name: 'Sub X', launchType: 'MODELO_DESCONHECIDO' }],
+            subcategories: [{ id: 'sub-x-0003', name: 'Sub X', launchType: 'MODELO_DESCONHECIDO' }],
           },
         ],
       },

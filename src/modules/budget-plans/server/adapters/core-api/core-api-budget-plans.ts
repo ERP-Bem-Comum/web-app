@@ -278,6 +278,7 @@ export const createBudgetPlansCoreClient = (
           id: cat.id,
           name: cat.name,
           subcategories: cat.subcategories.map((sub) => ({
+            id: sub.id,
             name: sub.name,
             launchType: sub.launchType,
           })),

@@ -31,6 +31,7 @@ export type NetworkCents = readonly number[]
 /** Nó folha (subcategoria) da matriz consolidada. `releaseType` só presente quando o launchType casa. */
 export type SubCategoryConsolidated = Readonly<{
   id: number
+  ref: string // #C2: UUID do backend (casa com budget-results.subcategoryId)
   name: string
   totalInCents: number
   monthlyInCents: MonthlyCents
@@ -102,8 +103,8 @@ export type PlanDetailHeaderInput = Readonly<{
   budgets: readonly BudgetInput[]
 }>
 
-/** Subcategoria crua da cost-structure (só estrutura/nomes; `launchType` string tolerante). */
-export type CostStructureSubcategoryInput = Readonly<{ name: string; launchType: string }>
+/** Subcategoria crua da cost-structure. `id` = UUID do backend (→ `ref`; casa com budget-results — C2). */
+export type CostStructureSubcategoryInput = Readonly<{ id: string; name: string; launchType: string }>
 
 /** Categoria crua da cost-structure. `id` = UUID do backend (insumo do `ref`, feature 061). */
 export type CostStructureCategoryInput = Readonly<{

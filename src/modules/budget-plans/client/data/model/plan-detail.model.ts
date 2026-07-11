@@ -58,6 +58,7 @@ export type MatrixIconKind = z.infer<typeof MatrixIconKindSchema>
 /** Nó folha (subcategoria) da matriz consolidada. */
 export type SubCategoryConsolidated = Readonly<{
   id: number
+  ref?: string // #C2: UUID do backend (casa com budget-results.subcategoryId)
   name: string
   totalInCents: number
   monthlyInCents: MonthlyCents
@@ -114,6 +115,7 @@ export type PlanDetail = Readonly<{
 
 export const SubCategoryConsolidatedSchema: z.ZodType<SubCategoryConsolidated> = z.object({
   id: z.int(),
+  ref: z.string().trim().optional(),
   name: z.string().trim(),
   totalInCents: z.int(),
   monthlyInCents: MonthlyCentsSchema,

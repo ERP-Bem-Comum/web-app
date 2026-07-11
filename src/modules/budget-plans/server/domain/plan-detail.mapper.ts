@@ -89,6 +89,7 @@ export const mapPlanDetail = (
             const releaseType = mapLaunchType(sub.launchType)
             return {
               id: categoryId * 100 + (k + 1),
+              ref: sub.id, // #394/C2: UUID do backend → casa com `budget-results.subcategoryId` no cálculo
               name: sub.name,
               totalInCents: 0,
               monthlyInCents: zeros12(),
