@@ -15,6 +15,7 @@ import {
   mapPlanDetail,
   mapDirection,
   mapLaunchType,
+  fillNetworkCells,
 } from '#modules/budget-plans/server/domain/plan-detail.mapper.ts'
 import type {
   CostStructureInput,
@@ -194,5 +195,41 @@ describe('mapLaunchType — dicionário tolerante', () => {
   })
   it('desconhecido → undefined', () => {
     assert.equal(mapLaunchType('nada'), undefined)
+  })
+})
+
+describe('fillNetworkCells (#C2 — acende as células da matriz "Por Rede")', () => {
+  const base = mapPlanDetail(
+    {
+      id: 'a1b2c3d4-1111-4a2b-8c3d-000000000001',
+      year: 2027,
+      status: 'RASCUNHO',
+      version: '1.0',
+      programName: 'P',
+      totalInCents: 0,
+      budgets: [
+        { budgetId: 'bg-rn', partnerKind: 'state', partnerRef: 'RN', valueInCents: 0 },
+        { budgetId: 'bg-ce', partnerKind: 'state', partnerRef: 'CE', valueInCents: 0 },
+      ],
+    },
+    structure,
+  )
+  // 2 redes; resultados só p/ a subcategoria 'Folha' (ref sub-folha-0001) — RN=1000, CE=0.
+  const filled = fillNetworkCells(base, [[{ subcategoryRef: 'sub-folha-0001', valueInCents: 1000 }], []])
+
+  it('preenche a célula da subcategoria pela ref, alinhada por rede', () => {
+    const sub = filled.costCenters[0]?.categories[0]?.subCategories[0] // Folha
+    assert.ok(sub)
+    assert.deepEqual(sub.networkInCents, [1000, 0]) // RN=1000, CE=0
+    assert.equal(sub.totalInCents, 1000) // Σ redes
+  })
+
+  it('roll-up: categoria e centro somam os filhos por rede', () => {
+    const cat = filled.costCenters[0]?.categories[0]
+    const cc = filled.costCenters[0]
+    assert.ok(cat && cc)
+    assert.deepEqual(cat.networkInCents, [1000, 0]) // Folha(1000)+Reajuste(0)
+    assert.deepEqual(cc.networkInCents, [1000, 0])
+    assert.equal(cc.totalInCents, 1000)
   })
 })

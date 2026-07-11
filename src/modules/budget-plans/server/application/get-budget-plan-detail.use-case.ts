@@ -19,13 +19,19 @@ import type {
   CostStructureInput,
   PlanDetailComposed,
   PlanDetailHeaderInput,
+  BudgetResultRow,
 } from '#modules/budget-plans/server/domain/plan-detail.io.ts'
-import { mapPlanDetail } from '#modules/budget-plans/server/domain/plan-detail.mapper.ts'
+import { mapPlanDetail, fillNetworkCells } from '#modules/budget-plans/server/domain/plan-detail.mapper.ts'
 
 // ── Port (application) — o adapter implementa. Entrega os tipos CRUS de domínio (insumo do mapper). ──
 export type GetBudgetPlanDetailClient = Readonly<{
   getPlanDetailHeader: (id: string, token: string) => Promise<Result<PlanDetailHeaderInput, BudgetPlansError>>
   getCostStructure: (id: string, token: string) => Promise<Result<CostStructureInput, BudgetPlansError>>
+  // #C2: resultados de cálculo de UMA rede (budget) → { subcategoryRef → valueInCents }.
+  getBudgetResults: (
+    budgetId: string,
+    token: string,
+  ) => Promise<Result<readonly BudgetResultRow[], BudgetPlansError>>
 }>
 
 export type GetBudgetPlanDetailDeps = Readonly<{ client: GetBudgetPlanDetailClient }>
@@ -39,5 +45,16 @@ export const createGetBudgetPlanDetail =
     const structureRes = await deps.client.getCostStructure(id, token)
     if (isErr(structureRes)) return err(structureRes.error) // CORE: falha propaga (não degrada)
 
-    return ok(mapPlanDetail(headerRes.value, structureRes.value))
+    const detail = mapPlanDetail(headerRes.value, structureRes.value)
+
+    // #C2: acende as células "Por Rede" — fan-out dos resultados de cálculo por rede (best-effort: rede sem
+    // resultado ou erro pontual → zeros, não derruba o detalhe). A ordem espelha `detail.networks`.
+    if (detail.networks.length === 0) return ok(detail)
+    const resultsPerNetwork = await Promise.all(
+      detail.networks.map(async (n): Promise<readonly BudgetResultRow[]> => {
+        const r = await deps.client.getBudgetResults(n.budgetId, token)
+        return isErr(r) ? [] : r.value
+      }),
+    )
+    return ok(fillNetworkCells(detail, resultsPerNetwork))
   }

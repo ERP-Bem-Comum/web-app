@@ -128,3 +128,9 @@ export const coreDetailSchema = z.object({
   createdAt: z.string().trim(),
   updatedAt: z.string().trim(),
 })
+
+/** `GET /budget-plans/budget-results/by-budget/:budgetId` (#C2) — resultados por subcategoria daquela rede. */
+export const coreBudgetResultsSchema = z.object({
+  items: z.array(z.object({ subcategoryId: z.string().trim(), valueInCents: z.int() })),
+  totalInCents: z.int(),
+})

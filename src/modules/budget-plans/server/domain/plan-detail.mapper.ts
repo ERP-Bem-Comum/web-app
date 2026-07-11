@@ -20,6 +20,7 @@ import type {
   PlanDetailComposed,
   PlanDetailHeaderInput,
   ReleaseType,
+  BudgetResultRow,
 } from '#modules/budget-plans/server/domain/plan-detail.io.ts'
 
 /** 12 zeros (série mensal nesta fase — só estrutura, sem valores). Novo array por nó (imutabilidade §VII). */
@@ -123,4 +124,32 @@ export const mapPlanDetail = (
     })),
     costCenters,
   }
+}
+
+// #C2: preenche `networkInCents` da matriz "Por Rede" com os resultados de cálculo. `resultsPerNetwork` está
+// ALINHADO por índice a `detail.networks` (cada item = os resultados daquela rede). Preenche a subcategoria
+// pelo `ref` (UUID) e faz o ROLL-UP (categoria = Σ subs; centro = Σ categorias; total do nó = Σ redes).
+export const fillNetworkCells = (
+  detail: PlanDetailComposed,
+  resultsPerNetwork: readonly (readonly BudgetResultRow[])[],
+): PlanDetailComposed => {
+  const maps = resultsPerNetwork.map((rows) => new Map(rows.map((r) => [r.subcategoryRef, r.valueInCents])))
+  const nets = detail.networks.map((_, i) => i)
+  const sumCols = (rows: readonly (readonly number[])[]): number[] =>
+    nets.map((i) => rows.reduce((acc, r) => acc + (r[i] ?? 0), 0))
+  const total = (cols: readonly number[]): number => cols.reduce((a, b) => a + b, 0)
+
+  const costCenters = detail.costCenters.map((cc) => {
+    const categories = cc.categories.map((cat) => {
+      const subCategories = cat.subCategories.map((sub) => {
+        const cells = nets.map((i) => maps[i]?.get(sub.ref) ?? 0)
+        return { ...sub, networkInCents: cells, totalInCents: total(cells) }
+      })
+      const cells = sumCols(subCategories.map((s) => s.networkInCents))
+      return { ...cat, subCategories, networkInCents: cells, totalInCents: total(cells) }
+    })
+    const cells = sumCols(categories.map((c) => c.networkInCents))
+    return { ...cc, categories, networkInCents: cells, totalInCents: total(cells) }
+  })
+  return { ...detail, costCenters }
 }
