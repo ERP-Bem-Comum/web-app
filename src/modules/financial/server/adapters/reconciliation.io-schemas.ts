@@ -33,6 +33,18 @@ export const ListTransactionsInputSchema = z.object({ statementId: z.uuid() })
 export const GetCedenteAccountInputSchema = z.object({ id: z.uuid() })
 // Encerrar conta-cedente (POST /cedente-accounts/:id/close) — só o id; sem body.
 export const CloseCedenteAccountInputSchema = z.object({ id: z.uuid() })
+// Editar conta-cedente (PATCH /cedente-accounts/:id) — campos editáveis opcionais (CNPJ/saldo são imutáveis).
+export const EditCedenteAccountInputSchema = z.object({
+  id: z.uuid(),
+  bankCode: z.string().trim().min(1).max(10).optional(),
+  bankName: z.string().trim().min(1).max(120).optional(),
+  type: z.enum(['Corrente', 'Poupanca', 'Investimento', 'Cartao', 'Outro']).optional(),
+  typeLabel: z.string().trim().min(1).max(120).optional(),
+  agency: z.string().trim().min(1).max(10).optional(),
+  accountNumber: z.string().trim().min(1).max(20).optional(),
+  accountDigit: z.string().trim().max(2).optional(),
+  nickname: z.string().trim().min(1).max(120).optional(),
+})
 
 // #205: extrato por período. `from`/`to` date-only (YYYY-MM-DD); filter opcional.
 export const GetAccountStatementInputSchema = z.object({

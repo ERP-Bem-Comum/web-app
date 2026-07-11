@@ -28,6 +28,7 @@ const header: PlanDetailHeaderInput = {
   version: '2.0',
   programName: 'Programa Alfa',
   totalInCents: 123_456,
+  budgets: [{ budgetId: 'b1', partnerKind: 'state', partnerRef: 'RN', valueInCents: 500_000 }],
 }
 
 const CENTRO_REF = 'c1c1c1c1-1111-4a2b-8c3d-000000000010'
@@ -44,8 +45,8 @@ const structure: CostStructureInput = {
           id: CATEGORIA_REF,
           name: 'Consultoria Estratégica',
           subcategories: [
-            { name: 'Folha', launchType: 'DESPESAS_PESSOAIS' },
-            { name: 'Reajuste', launchType: 'IPCA' },
+            { id: 'sub-folha-0001', name: 'Folha', launchType: 'DESPESAS_PESSOAIS' },
+            { id: 'sub-reaj-0002', name: 'Reajuste', launchType: 'IPCA' },
           ],
         },
       ],
@@ -70,10 +71,13 @@ describe('mapPlanDetail — cabeçalho + árvore', () => {
     assert.equal(detail.totalInCents, 123_456)
   })
 
-  it('programAbbreviation e scenarioName = null; networks = []', () => {
+  it('programAbbreviation e scenarioName = null; networks = orçamentos por rede (#394)', () => {
     assert.equal(detail.programAbbreviation, null)
     assert.equal(detail.scenarioName, null)
-    assert.deepEqual(detail.networks, [])
+    // #394: a visão "Por Rede" acende dos budgets reais (id por índice, ref = chave natural, total real).
+    assert.deepEqual(detail.networks, [
+      { id: 0, name: 'RN', ref: 'RN', kind: 'state', budgetId: 'b1', totalInCents: 500_000 },
+    ])
   })
 
   it('centro: id numérico, type mapeado (A PAGAR), zeros, ref = uuid do backend (feature 061)', () => {
@@ -143,7 +147,7 @@ describe('mapPlanDetail — enums desconhecidos (fallback)', () => {
           {
             id: 'ca7e9017-9999-4a2b-8c3d-000000000098',
             name: 'Cat X',
-            subcategories: [{ name: 'Sub X', launchType: 'MODELO_DESCONHECIDO' }],
+            subcategories: [{ id: 'sub-x-0003', name: 'Sub X', launchType: 'MODELO_DESCONHECIDO' }],
           },
         ],
       },

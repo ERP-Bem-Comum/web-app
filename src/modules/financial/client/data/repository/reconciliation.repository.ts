@@ -14,6 +14,7 @@ import type {
   ClosePeriodInput,
   ReopenPeriodInput,
   CreateCedenteAccountInput,
+  EditCedenteAccountInput,
   CreateReconciliationInput,
   AccountStatementPeriod,
   ExportReconciliationInput,
@@ -84,6 +85,9 @@ type CreateAccountFn = (opts: {
   data: CreateCedenteAccountInput
 }) => Promise<ReconFnResult<ReconciliationAccount>>
 type CloseAccountFn = (opts: { data: { id: string } }) => Promise<ReconFnResult<ReconciliationAccount>>
+type EditAccountFn = (opts: {
+  data: EditCedenteAccountInput
+}) => Promise<ReconFnResult<ReconciliationAccount>>
 
 export type ReconciliationRepository = Readonly<{
   importStatement: (i: ImportStatementInput) => Promise<Result<BankStatementImport, ReconciliationError>>
@@ -128,6 +132,8 @@ export type ReconciliationRepository = Readonly<{
   createAccount: (i: CreateCedenteAccountInput) => Promise<Result<ReconciliationAccount, ReconciliationError>>
   // Encerrar conta (Open → Closed). Devolve a conta atualizada; a UI invalida e refaz o grid.
   closeAccount: (id: string) => Promise<Result<ReconciliationAccount, ReconciliationError>>
+  // Editar conta (PATCH parcial). Devolve a conta atualizada; a UI invalida e refaz o grid.
+  editAccount: (i: EditCedenteAccountInput) => Promise<Result<ReconciliationAccount, ReconciliationError>>
 }>
 
 type UndoReconciliationInput = Readonly<{ reconciliationId: string; reason?: string }>
@@ -155,6 +161,7 @@ export const createReconciliationRepository = (
     getAccountFn: GetAccountFn
     createAccountFn: CreateAccountFn
     closeAccountFn: CloseAccountFn
+    editAccountFn: EditAccountFn
   }>,
 ): ReconciliationRepository => ({
   importStatement: async (i) => {
@@ -240,6 +247,10 @@ export const createReconciliationRepository = (
   },
   closeAccount: async (id) => {
     const res = await deps.closeAccountFn({ data: { id } })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  editAccount: async (i) => {
+    const res = await deps.editAccountFn({ data: i })
     return res.ok ? ok(res.data) : err(res.error)
   },
 })

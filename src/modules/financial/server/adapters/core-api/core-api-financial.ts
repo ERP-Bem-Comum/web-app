@@ -20,6 +20,7 @@ import {
   payableTitlesToModel,
   recentPaymentsToModel,
   bulkDueDateResultToModel,
+  timelineToModel,
   mapHttpError,
 } from './financial.mappers.ts'
 
@@ -91,6 +92,11 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
       const r = await resultFetch<unknown>(`${docs}/${id}`, { token })
       if (isErr(r)) return err(mapHttpError(r.error))
       return detailToModel(r.value)
+    },
+    getTimeline: async (id, token) => {
+      const r = await resultFetch<unknown>(`${docs}/${id}/timeline`, { token })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      return timelineToModel(r.value)
     },
     create: async (input, token) => {
       const r = await resultFetch<unknown>(docs, {

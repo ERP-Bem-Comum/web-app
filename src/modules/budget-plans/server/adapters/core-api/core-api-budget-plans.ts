@@ -37,6 +37,7 @@ import type {
 } from '#modules/budget-plans/server/application/create-budget-plan.use-case.ts'
 import type { GetBudgetPlanDetailClient } from '#modules/budget-plans/server/application/get-budget-plan-detail.use-case.ts'
 import type { WriteCostStructureClient } from '#modules/budget-plans/server/application/write-cost-structure.use-case.ts'
+import type { BudgetWriteClient } from '#modules/budget-plans/server/application/budget-write.use-case.ts'
 import type {
   ConsolidatedResultParams,
   GetConsolidadoAbcClient,
@@ -46,6 +47,9 @@ import type { ConsolidatedAbc } from '#modules/budget-plans/server/domain/consol
 import type {
   CostStructureInput,
   PlanDetailHeaderInput,
+  AddBudgetCommand,
+  DeleteBudgetCommand,
+  NetworkOption,
 } from '#modules/budget-plans/server/domain/plan-detail.io.ts'
 import type {
   AddCostCenterCommand,
@@ -172,6 +176,7 @@ export const createBudgetPlansCoreClient = (
   ExportBudgetPlanCsvClient &
   GetBudgetPlanInsightsClient &
   WriteCostStructureClient &
+  BudgetWriteClient &
   GetConsolidadoAbcClient &
   ExportConsolidadoAbcCsvClient => ({
   listBudgetPlans: async (params, token): Promise<Result<RawPlanListPage, BudgetPlansError>> => {
@@ -200,6 +205,31 @@ export const createBudgetPlansCoreClient = (
     if (!parsed.success) return err('unexpected')
     return ok(parsed.data.programs.map((p) => ({ ref: p.ref, abbreviation: p.abbreviation })))
   },
+  // #394: redes disponíveis (UF/IBGE + nome) para adicionar orçamento.
+  getNetworkOptions: async (token): Promise<Result<readonly NetworkOption[], BudgetPlansError>> => {
+    const r = await resultFetch<unknown>(`${baseUrl}/options`, { token })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    const parsed = coreOptionsSchema.safeParse(r.value)
+    if (!parsed.success) return err('unexpected')
+    return ok(parsed.data.redes.map((n) => ({ ref: n.ref, name: n.name, kind: n.kind })))
+  },
+  addBudget: async (c: AddBudgetCommand, token): Promise<Result<void, BudgetPlansError>> => {
+    const r = await resultFetch<unknown>(`${baseUrl}/${c.planId}/budgets`, {
+      method: 'POST',
+      token,
+      body: { partnerKind: c.partnerKind, partnerRef: c.partnerRef, valueInCents: c.valueInCents },
+    })
+    if (isErr(r)) return err(mapWriteHttpError(r.error))
+    return ok(undefined)
+  },
+  deleteBudget: async (c: DeleteBudgetCommand, token): Promise<Result<void, BudgetPlansError>> => {
+    const r = await resultFetch<unknown>(`${baseUrl}/${c.planId}/budgets/${c.budgetId}`, {
+      method: 'DELETE',
+      token,
+    })
+    if (isErr(r)) return err(mapWriteHttpError(r.error))
+    return ok(undefined)
+  },
   getPlanBudgets: async (id, token): Promise<Result<RawPlanBudgets, BudgetPlansError>> => {
     const r = await resultFetch<unknown>(`${baseUrl}/${id}`, { token })
     if (isErr(r)) return err(mapHttpError(r.error))
@@ -222,6 +252,13 @@ export const createBudgetPlansCoreClient = (
       version: parsed.data.version,
       programName: parsed.data.programName,
       totalInCents: parsed.data.totalInCents,
+      // #394: orçamentos por rede (chave natural) — insumo da visão "Por Rede".
+      budgets: parsed.data.budgets.map((b) => ({
+        budgetId: b.id,
+        partnerKind: b.partner.kind,
+        partnerRef: b.partner.ref,
+        valueInCents: b.valueInCents,
+      })),
     })
   },
   getCostStructure: async (
@@ -241,6 +278,7 @@ export const createBudgetPlansCoreClient = (
           id: cat.id,
           name: cat.name,
           subcategories: cat.subcategories.map((sub) => ({
+            id: sub.id,
             name: sub.name,
             launchType: sub.launchType,
           })),

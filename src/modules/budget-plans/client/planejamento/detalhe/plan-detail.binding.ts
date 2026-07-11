@@ -5,8 +5,9 @@
  * loading | error | not-found | empty | ready).
  */
 import { useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
+import { isErr } from '#shared/primitives/result.ts'
 import { budgetPlansRepository } from '#modules/budget-plans/client/data/repository/budget-plans.repository.instance.ts'
 import type { PlanDetail } from '#modules/budget-plans/client/data/model/plan-detail.model.ts'
 import type { BudgetPlansError } from '#modules/budget-plans/client/data/repository/budget-plans-error.ts'
@@ -24,6 +25,7 @@ import {
 import {
   emptyAddBudgetForm,
   validateAddBudget,
+  parseAddBudgetCents,
   type AddBudgetForm,
   type AddBudgetError,
 } from '#modules/budget-plans/client/planejamento/detalhe/add-budget.view-model.ts'
@@ -69,10 +71,12 @@ export type AddBudgetBinding = Readonly<{
   open: boolean
   form: AddBudgetForm
   options: readonly RegionOption[]
+  submitting: boolean
   errorTag: AddBudgetError | null
   openModal: () => void
   close: () => void
   setEstado: (v: string) => void
+  setValor: (v: string) => void
   submit: () => void
 }>
 
@@ -104,11 +108,34 @@ export function usePlanDetail(id: string): PlanDetailBinding {
   const [municipio, setMunicipio] = useState('')
   const [applied, setApplied] = useState(false)
 
-  // Modal "Adicionar Orçamento" — UI-state local.
+  // Modal "Adicionar Orçamento" — UI-state local (#394).
+  const queryClient = useQueryClient()
   const [addOpen, setAddOpen] = useState(false)
   const [addForm, setAddForm] = useState<AddBudgetForm>(emptyAddBudgetForm)
   const [addError, setAddError] = useState<AddBudgetError | null>(null)
-  const existingNames = detail?.networks.map((n) => n.name) ?? []
+  const existingRefs = detail?.networks.map((n) => n.ref) ?? []
+  // Redes disponíveis (do /options) → opções do modal { value: ref, label: nome }. Kind guardado p/ o POST.
+  const networkOptionsQuery = useQuery({
+    queryKey: ['budget-plans', 'network-options'] as const,
+    queryFn: () => budgetPlansRepository.getNetworkOptions(),
+    staleTime: 300_000,
+  })
+  const redeOptions = networkOptionsQuery.data ?? []
+  const addBudgetMutation = useMutation({
+    mutationFn: budgetPlansRepository.addBudget,
+    onSuccess: (res) => {
+      if (isErr(res)) {
+        setAddError('save-failed')
+        return
+      }
+      void queryClient.invalidateQueries({ queryKey: planDetailQueryKey(id) })
+      setAddError(null)
+      setAddOpen(false)
+    },
+    onError: () => {
+      setAddError('save-failed')
+    },
+  })
 
   // Modal "Centros de Custo" (§1.5) — binding próprio, alimentado pelo mesmo `detail`. Recebe o `id` do plano
   // p/ a ESCRITA real da estrutura (feature 061) e a invalidação do detalhe após cada POST.
@@ -152,7 +179,8 @@ export function usePlanDetail(id: string): PlanDetailBinding {
   const addBudget: AddBudgetBinding = {
     open: addOpen,
     form: addForm,
-    options: PLAN_FILTER_ESTADOS,
+    options: redeOptions.map((n) => ({ value: n.ref, label: n.name })),
+    submitting: addBudgetMutation.isPending,
     errorTag: addError,
     openModal: () => {
       setAddForm(emptyAddBudgetForm())
@@ -160,20 +188,35 @@ export function usePlanDetail(id: string): PlanDetailBinding {
       setAddOpen(true)
     },
     close: () => {
+      if (addBudgetMutation.isPending) return
       setAddOpen(false)
     },
     setEstado: (v) => {
-      setAddForm({ estado: v })
+      setAddForm((f) => ({ ...f, estado: v }))
+      setAddError(null)
+    },
+    setValor: (v) => {
+      setAddForm((f) => ({ ...f, valor: v }))
       setAddError(null)
     },
     submit: () => {
-      const err = validateAddBudget(addForm, PLAN_FILTER_ESTADOS, existingNames)
+      const err = validateAddBudget(addForm, existingRefs)
       if (err !== null) {
         setAddError(err)
         return
       }
-      // Front-first: sem persistência (a nova coluna real chega com o #113) — fecha o modal.
-      setAddOpen(false)
+      const rede = redeOptions.find((n) => n.ref === addForm.estado)
+      const cents = parseAddBudgetCents(addForm.valor)
+      if (rede === undefined || cents === null) {
+        setAddError('valor-required')
+        return
+      }
+      addBudgetMutation.mutate({
+        planId: id,
+        partnerKind: rede.kind,
+        partnerRef: rede.ref,
+        valueInCents: cents,
+      })
     },
   }
 

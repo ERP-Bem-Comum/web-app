@@ -98,6 +98,42 @@ export interface ApproveInput {
   version: number
 }
 
+// Trilha de auditoria (GET /documents/:id/timeline). 5 eventos de domínio; `actor` = UUID do usuário (null =
+// ação automática do sistema); `changes` = diff campo a campo. O BFF resolve `actor` → `actorName`.
+export type TimelineEventType =
+  | 'DocumentDraftSaved'
+  | 'DocumentSaved'
+  | 'PayableApproved'
+  | 'ApprovalUndone'
+  | 'PayableManuallyPaid'
+  | 'PayableReconciled' // conciliação (agregado separado) — entra na trilha via core-api#406
+  | 'ReconciliationUndone'
+export interface TimelineChange {
+  field: string
+  before: string | null
+  after: string | null
+}
+// Entrada CRUA do core-api (actor = UUID).
+export interface DocumentTimelineEvent {
+  eventType: TimelineEventType
+  targetKind: 'Document' | 'Payable'
+  targetId: string
+  occurredAt: string // ISO-8601 com offset
+  actor: string | null
+  changes: readonly TimelineChange[]
+}
+// Entrada ENRIQUECIDA (o BFF resolve o nome do autor). `isSystem` = ação automática (actor era null);
+// `actorName` null com `isSystem` false = autor humano não-resolvido (a View mostra "—", não "Sistema").
+export interface DocumentTimelineEntry {
+  eventType: TimelineEventType
+  targetKind: 'Document' | 'Payable'
+  targetId: string
+  occurredAt: string
+  isSystem: boolean
+  actorName: string | null
+  changes: readonly TimelineChange[]
+}
+
 // #162: alteração de vencimento em LOTE (PATCH /documents/due-date). Um mesmo `dueDate` p/ N documentos;
 // cada item leva o `version` (optimistic lock). Falha PARCIAL por item — o backend sempre responde 200 com
 // o `outcome` de cada um; 400 só p/ payload inválido.

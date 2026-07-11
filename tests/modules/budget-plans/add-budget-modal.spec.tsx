@@ -22,6 +22,8 @@ const labels = {
   close: 'Fechar',
   estado: 'Estado',
   estadoPlaceholder: 'Selecione o estado',
+  valor: 'Valor do orçamento',
+  valorPlaceholder: 'Ex.: 5.000,00',
   add: 'Adicionar',
   cancel: 'Cancelar',
 } as const
@@ -29,12 +31,15 @@ const labels = {
 const baseProps = (over: Record<string, unknown> = {}) => ({
   open: true,
   estado: '',
+  valor: '',
   options,
+  submitting: false,
   errorTag: null,
   labels,
   translateError: (tag: string) => `erro:${tag}`,
   onClose: vi.fn(),
   onEstado: vi.fn(),
+  onValor: vi.fn(),
   onSubmit: vi.fn(),
   ...over,
 })

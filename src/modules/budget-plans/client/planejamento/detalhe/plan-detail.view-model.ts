@@ -173,9 +173,8 @@ export const buildMonthlyMatrix = (detail: PlanDetail, semester: Semester): Matr
 export const buildNetworkMatrix = (detail: PlanDetail): MatrixView => {
   const indices = detail.networks.map((_, i) => i)
   const cells: CellsOf = (node) => indices.map((i) => node.networkInCents[i] ?? 0)
-  const totalPerNetwork = indices.map((i) =>
-    detail.costCenters.reduce((acc, cc) => acc + (cc.networkInCents[i] ?? 0), 0),
-  )
+  // #394: o total por rede é o ORÇAMENTO da rede (plano-level, real). As células por centro de custo
+  // (`networkInCents`) só acendem na fatia de cálculo (C2) — até lá ficam 0.
   return {
     kind: 'network',
     semester: 0,
@@ -183,7 +182,7 @@ export const buildNetworkMatrix = (detail: PlanDetail): MatrixView => {
     rows: detail.costCenters.map((cc) => costCenterToRow(cc, cells)),
     total: {
       totalLabel: formatCentsBRL(detail.totalInCents),
-      cellLabels: totalPerNetwork.map(formatCentsBRL),
+      cellLabels: detail.networks.map((n) => formatCentsBRL(n.totalInCents)),
     },
   }
 }

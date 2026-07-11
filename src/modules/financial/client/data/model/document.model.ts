@@ -90,6 +90,26 @@ export type AdjustDocumentInput = Readonly<{
 export type ApproveInput = Readonly<{ id: string; version: number }>
 export type CancelInput = Readonly<{ id: string; version: number }>
 
+// Trilha de auditoria (GET /documents/:id/timeline) — entrada ENRIQUECIDA (nome do autor resolvido no BFF).
+export type TimelineEventType =
+  | 'DocumentDraftSaved'
+  | 'DocumentSaved'
+  | 'PayableApproved'
+  | 'ApprovalUndone'
+  | 'PayableManuallyPaid'
+  | 'PayableReconciled' // conciliação (agregado separado) — entra na trilha via core-api#406
+  | 'ReconciliationUndone'
+export type TimelineChange = Readonly<{ field: string; before: string | null; after: string | null }>
+export type DocumentTimelineEntry = Readonly<{
+  eventType: TimelineEventType
+  targetKind: 'Document' | 'Payable'
+  targetId: string
+  occurredAt: string
+  isSystem: boolean // ação automática (actor null); a View mostra "Sistema"
+  actorName: string | null // null com isSystem=false = humano não-resolvido → a View mostra "—"
+  changes: readonly TimelineChange[]
+}>
+
 // #162: vencimento em LOTE (N documentos × 1 data). `outcome` por item — falha parcial não é erro global.
 export type BulkDueDateOutcome = 'ok' | 'not-found' | 'version-conflict' | 'invalid-state' | 'error'
 export type BulkDueDateItem = Readonly<{ id: string; version: number }>

@@ -17,6 +17,7 @@ import type {
   PayableTitleListResponse,
   BulkUpdateDueDateInput,
   BulkUpdateDueDateResult,
+  DocumentTimelineEntry,
 } from '#modules/financial/client/data/model/document.model.ts'
 import type { RecentPayment } from '#modules/financial/client/data/model/recent-payment.model.ts'
 import type { DashboardStatistics } from '#modules/financial/client/data/model/dashboard-statistics.model.ts'
@@ -25,6 +26,7 @@ import type { FinancialError, FnResult } from '#modules/financial/client/data/re
 type ListFn = (opts: { data: ListDocumentsInput }) => Promise<FnResult<DocumentListResponse>>
 type ListTitlesFn = (opts: { data: ListPayableTitlesInput }) => Promise<FnResult<PayableTitleListResponse>>
 type GetFn = (opts: { data: { id: string } }) => Promise<FnResult<DocumentDetail>>
+type TimelineFn = (opts: { data: { id: string } }) => Promise<FnResult<readonly DocumentTimelineEntry[]>>
 type CreateFn = (opts: { data: CreateDocumentInput }) => Promise<FnResult<DocumentDetail>>
 type AdjustFn = (opts: { data: AdjustDocumentInput }) => Promise<FnResult<DocumentDetail>>
 type BulkDueDateFn = (opts: { data: BulkUpdateDueDateInput }) => Promise<FnResult<BulkUpdateDueDateResult>>
@@ -45,6 +47,8 @@ export type FinancialRepository = Readonly<{
     input: ListPayableTitlesInput,
   ) => Promise<Result<PayableTitleListResponse, FinancialError>>
   getById: (id: string) => Promise<Result<DocumentDetail, FinancialError>>
+  // Trilha de auditoria (entradas enriquecidas com o nome do autor).
+  getTimeline: (id: string) => Promise<Result<readonly DocumentTimelineEntry[], FinancialError>>
   create: (input: CreateDocumentInput) => Promise<Result<DocumentDetail, FinancialError>>
   adjust: (input: AdjustDocumentInput) => Promise<Result<DocumentDetail, FinancialError>>
   // #162: vencimento em lote (N documentos × 1 data). Result carrega o outcome de cada item.
@@ -67,6 +71,7 @@ export const createFinancialRepository = (
     listDocumentsFn: ListFn
     listPayableTitlesFn: ListTitlesFn
     getDocumentFn: GetFn
+    getDocumentTimelineFn: TimelineFn
     createDocumentFn: CreateFn
     adjustDocumentFn: AdjustFn
     bulkUpdateDueDateFn: BulkDueDateFn
@@ -88,6 +93,10 @@ export const createFinancialRepository = (
   },
   getById: async (id) => {
     const res = await deps.getDocumentFn({ data: { id } })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  getTimeline: async (id) => {
+    const res = await deps.getDocumentTimelineFn({ data: { id } })
     return res.ok ? ok(res.data) : err(res.error)
   },
   create: async (input) => {

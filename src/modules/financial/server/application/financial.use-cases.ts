@@ -19,6 +19,7 @@ import type {
   RecentPayment,
   BulkUpdateDueDateInput,
   BulkUpdateDueDateResult,
+  DocumentTimelineEvent,
 } from '#modules/financial/server/domain/document.io.ts'
 
 export type FinancialClient = Readonly<{
@@ -28,6 +29,11 @@ export type FinancialClient = Readonly<{
     token: string,
   ) => Promise<Result<PayableTitleListResponse, FinancialError>>
   getById: (id: string, token: string) => Promise<Result<DocumentDetail, FinancialError>>
+  // Trilha de auditoria (GET /documents/:id/timeline). Eventos CRUS (actor = UUID; o nome é resolvido na fn).
+  getTimeline: (
+    id: string,
+    token: string,
+  ) => Promise<Result<readonly DocumentTimelineEvent[], FinancialError>>
   create: (input: CreateDocumentInput, token: string) => Promise<Result<DocumentDetail, FinancialError>>
   adjust: (input: AdjustDocumentInput, token: string) => Promise<Result<DocumentDetail, FinancialError>>
   // #162: vencimento em lote (N documentos × 1 data). Falha parcial por item (não é erro do Result).
@@ -61,6 +67,11 @@ export const createGetDocument =
   (deps: Deps) =>
   (id: string, token: string): Promise<Result<DocumentDetail, FinancialError>> =>
     deps.client.getById(id, token)
+
+export const createGetDocumentTimeline =
+  (deps: Deps) =>
+  (id: string, token: string): Promise<Result<readonly DocumentTimelineEvent[], FinancialError>> =>
+    deps.client.getTimeline(id, token)
 
 export const createCreateDocument =
   (deps: Deps) =>
