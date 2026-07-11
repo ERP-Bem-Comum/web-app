@@ -90,10 +90,14 @@ export const coreLifecyclePlanSchema = z.object({
   totalInCents: z.int(),
 })
 
-/** `POST /budget-plans/:id/scenery` (feature 060) — cenário recém-criado. `name` do body; `version` string. */
+/**
+ * `POST /budget-plans/:id/scenery` (feature 060) — cenário recém-criado. O core responde a forma de transição
+ * (`lifecyclePlanResponseSchema`): o nome do cenário vem em **`scenarioName`** (nullable), NÃO em `name` — o
+ * schema antigo exigia `name` e falhava o parse (→ erro genérico "unexpected"). `version` string ("major.minor").
+ */
 export const coreScenerySchema = z.object({
   id: z.uuid(),
-  name: z.string().trim(),
+  scenarioName: z.string().trim().nullable(),
   status: coreStatusSchema,
   version: z.string().trim(),
 })
