@@ -9,5 +9,6 @@ export { listApproversFn } from '#modules/auth/server/adapters/server-fns/list-a
 export { safeRedirect } from '#modules/auth/client/data/helpers/safe-redirect.ts'
 export { useCurrentUser } from '#modules/auth/client/current-user/current-user.binding.ts'
 export { logoutUseCase } from '#modules/auth/client/logout/logout.composition.ts'
+export { revokeAllSessionsUseCase } from '#modules/auth/client/revoke-all-sessions/revoke-all-sessions.composition.ts'
 export { passwordPolicyQueryOptions } from '#modules/auth/client/password-policy/password-policy.query.ts'
 export type { CurrentUser, PasswordPolicy } from '#modules/auth/client/data/model/auth.model.ts'

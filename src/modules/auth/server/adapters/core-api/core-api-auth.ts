@@ -83,6 +83,7 @@ export type CoreApiAuthClient = Readonly<{
   login: (input: Readonly<{ email: string; password: string }>) => Promise<Result<AuthTokens, AuthError>>
   refresh: (refreshToken: string) => Promise<Result<AuthTokens, AuthError>>
   logout: (refreshToken: string) => Promise<Result<void, AuthError>>
+  revokeAllSessions: (accessToken: string) => Promise<Result<void, AuthError>>
   me: (accessToken: string) => Promise<Result<AuthUser, AuthError>>
   getPasswordPolicy: () => Promise<Result<PasswordPolicy, AuthError>>
   listApprovers: (accessToken: string) => Promise<Result<readonly Approver[], AuthError>>
@@ -104,6 +105,17 @@ export const createCoreApiAuthClient = (baseUrl: string, baseUrlV1: string): Cor
 
   logout: async (refreshToken) => {
     const r = await resultFetch<unknown>(`${baseUrl}/auth/logout`, { method: 'POST', body: { refreshToken } })
+    return isErr(r) ? err(mapHttpToAuthError(r.error)) : ok(undefined)
+  },
+
+  // Encerrar TODAS as sessões (BE-REC-004): POST /auth/sessions/revoke-all, autenticado por access token
+  // (Bearer). Sem body; 204 no sucesso (resultFetch trata 204 → ok(undefined)). Encerra também a sessão
+  // atual no core-api — o cleanup local (apagar sessão + limpar cookie) fica na server-fn.
+  revokeAllSessions: async (accessToken) => {
+    const r = await resultFetch<unknown>(`${baseUrl}/auth/sessions/revoke-all`, {
+      method: 'POST',
+      token: accessToken,
+    })
     return isErr(r) ? err(mapHttpToAuthError(r.error)) : ok(undefined)
   },
 

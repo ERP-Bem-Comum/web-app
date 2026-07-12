@@ -5,13 +5,18 @@
 import type { ReactNode } from 'react'
 
 import type { RootUser } from '#modules/shell/client/root/bind/root.binding.ts'
-import { ChevronDownIcon, LogOutIcon } from '#shared/ui/icons/index.ts'
+import { ChevronDownIcon, LogOutIcon, UsersIcon } from '#shared/ui/icons/index.ts'
+import { createTranslator } from '#shared/i18n/index.ts'
+import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { useTopBarMenuController } from './top-bar.controller.ts'
 import * as s from './top-bar.css.ts'
+
+const t = createTranslator(ptBR)
 
 export interface TopBarProps {
   readonly user: RootUser
   readonly onLogout: () => void
+  readonly onRevokeAllSessions: () => void
 }
 
 function getInitials(name: string | undefined, userId: string): string {
@@ -31,7 +36,7 @@ function getDisplayName(name: string | undefined, userId: string): string {
   return name?.trim() ?? userId
 }
 
-export function TopBar({ user, onLogout }: TopBarProps): ReactNode {
+export function TopBar({ user, onLogout, onRevokeAllSessions }: TopBarProps): ReactNode {
   const { open, toggle, close, containerRef } = useTopBarMenuController()
   const displayName = getDisplayName(user.name, user.userId)
   const initials = getInitials(user.name, user.userId)
@@ -64,11 +69,23 @@ export function TopBar({ user, onLogout }: TopBarProps): ReactNode {
               role="menuitem"
               onClick={() => {
                 close()
+                onRevokeAllSessions()
+              }}
+            >
+              <UsersIcon />
+              {t('shell.topbar.revokeAllSessions')}
+            </button>
+            <button
+              type="button"
+              className={s.logoutItem}
+              role="menuitem"
+              onClick={() => {
+                close()
                 onLogout()
               }}
             >
               <LogOutIcon />
-              Sair
+              {t('shell.topbar.logout')}
             </button>
           </div>
         )}
