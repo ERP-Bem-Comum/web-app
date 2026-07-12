@@ -50,6 +50,8 @@ import type {
   AddBudgetCommand,
   DeleteBudgetCommand,
   NetworkOption,
+  BudgetResultRow,
+  IpcaResultCommand,
 } from '#modules/budget-plans/server/domain/plan-detail.io.ts'
 import type {
   AddCostCenterCommand,
@@ -62,6 +64,7 @@ import {
   coreOptionsSchema,
   coreDetailSchema,
   coreCostStructureSchema,
+  coreBudgetResultsSchema,
   coreCreateResponseSchema,
   coreLifecyclePlanSchema,
   coreScenerySchema,
@@ -230,6 +233,20 @@ export const createBudgetPlansCoreClient = (
     if (isErr(r)) return err(mapWriteHttpError(r.error))
     return ok(undefined)
   },
+  postIpcaResult: async (c: IpcaResultCommand, token): Promise<Result<void, BudgetPlansError>> => {
+    const r = await resultFetch<unknown>(`${baseUrl}/budget-results/ipca`, {
+      method: 'POST',
+      token,
+      body: {
+        budgetId: c.budgetId,
+        subcategoryId: c.subcategoryId,
+        baseValueInCents: c.baseValueInCents,
+        ipca: c.ipca,
+      },
+    })
+    if (isErr(r)) return err(mapWriteHttpError(r.error))
+    return ok(undefined)
+  },
   getPlanBudgets: async (id, token): Promise<Result<RawPlanBudgets, BudgetPlansError>> => {
     const r = await resultFetch<unknown>(`${baseUrl}/${id}`, { token })
     if (isErr(r)) return err(mapHttpError(r.error))
@@ -285,6 +302,18 @@ export const createBudgetPlansCoreClient = (
         })),
       })),
     })
+  },
+  getBudgetResults: async (
+    budgetId: string,
+    token: string,
+  ): Promise<Result<readonly BudgetResultRow[], BudgetPlansError>> => {
+    const r = await resultFetch<unknown>(`${baseUrl}/budget-results/by-budget/${budgetId}`, { token })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    const parsed = coreBudgetResultsSchema.safeParse(r.value)
+    if (!parsed.success) return err('unexpected')
+    return ok(
+      parsed.data.items.map((it) => ({ subcategoryRef: it.subcategoryId, valueInCents: it.valueInCents })),
+    )
   },
   createBudgetPlan: async (
     command: CreateBudgetPlanCommand,
@@ -347,7 +376,8 @@ export const createBudgetPlansCoreClient = (
     if (!parsed.success) return err('unexpected')
     return ok({
       id: parsed.data.id,
-      name: parsed.data.name,
+      // o core devolve o nome em `scenarioName` (nullable); recai no nome enviado no body quando vier null.
+      name: parsed.data.scenarioName ?? command.name,
       status: parsed.data.status,
       version: parsed.data.version,
     })

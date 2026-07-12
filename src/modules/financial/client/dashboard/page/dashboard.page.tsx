@@ -7,6 +7,7 @@
  * loading/erro tratados AQUI; em `ready` renderiza o `DashboardContent` (idêntico ao legado). i18n PT via `t`.
  */
 import { useEffect, useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
@@ -23,6 +24,15 @@ const t = createTranslator(ptBR)
 export function DashboardPage() {
   const stats = useDashboardStatistics()
   const recent = useRecentPayments()
+  const navigate = useNavigate()
+
+  // "Ver tudo" dos cards → módulo de Relatórios (rota específica de cada relatório).
+  const onSeeAllOverview = (): void => {
+    void navigate({ to: '/relatorios/realizado-x-planejado' })
+  }
+  const onSeeAllSuppliers = (): void => {
+    void navigate({ to: '/relatorios/fornecedores-sem-contrato' })
+  }
 
   // Animação de entrada das barras (largura cresce após o mount). SSR-safe: começa false, vira true no client.
   const [animateBars, setAnimateBars] = useState(false)
@@ -49,7 +59,13 @@ export function DashboardPage() {
       ) : stats.status !== 'ready' || stats.data === null ? (
         <p className={stateMessage}>{t('dashboard.state.error')}</p>
       ) : (
-        <DashboardContent data={stats.data} recent={recent} animate={animateBars} />
+        <DashboardContent
+          data={stats.data}
+          recent={recent}
+          animate={animateBars}
+          onSeeAllOverview={onSeeAllOverview}
+          onSeeAllSuppliers={onSeeAllSuppliers}
+        />
       )}
     </div>
   )

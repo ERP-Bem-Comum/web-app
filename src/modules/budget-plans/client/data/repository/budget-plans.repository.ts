@@ -68,6 +68,14 @@ type AddBudgetFn = (opts: {
 }) => Promise<WriteVoidResult>
 type DeleteBudgetFn = (opts: { data: { planId: string; budgetId: string } }) => Promise<WriteVoidResult>
 type NetworkOptionsFn = () => Promise<readonly BudgetNetworkOption[]>
+export type IpcaResultArgs = Readonly<{
+  planId: string
+  budgetId: string
+  subcategoryId: string
+  baseValueInCents: number
+  ipca: number
+}>
+type PostIpcaFn = (opts: { data: IpcaResultArgs }) => Promise<WriteVoidResult>
 
 /** Filtro do Consolidado ABC: Ano Base (obrigatório) + Programa (uuid opcional). */
 export type ConsolidadoFilters = Readonly<{ year: number; programRef?: string }>
@@ -96,6 +104,7 @@ export type BudgetPlansRepository = Readonly<{
   }) => Promise<Result<void, BudgetPlansError>>
   deleteBudget: (input: { planId: string; budgetId: string }) => Promise<Result<void, BudgetPlansError>>
   getNetworkOptions: () => Promise<readonly BudgetNetworkOption[]>
+  postIpcaResult: (input: IpcaResultArgs) => Promise<Result<void, BudgetPlansError>>
   getConsolidado: (filters: ConsolidadoFilters) => Promise<Result<ConsolidatedAbc, BudgetPlansError>>
 }>
 
@@ -116,6 +125,7 @@ export const createBudgetPlansRepository = (
     addBudgetFn: AddBudgetFn
     deleteBudgetFn: DeleteBudgetFn
     networkOptionsFn: NetworkOptionsFn
+    postIpcaResultFn: PostIpcaFn
     getConsolidadoFn: GetConsolidadoFn
   }>,
 ): BudgetPlansRepository => ({
@@ -176,6 +186,10 @@ export const createBudgetPlansRepository = (
     return res.ok ? ok(undefined) : err(res.error)
   },
   getNetworkOptions: () => deps.networkOptionsFn(),
+  postIpcaResult: async (input) => {
+    const res = await deps.postIpcaResultFn({ data: input })
+    return res.ok ? ok(undefined) : err(res.error)
+  },
   getConsolidado: async (filters) => {
     const res = await deps.getConsolidadoFn({ data: { year: filters.year, programRef: filters.programRef } })
     return res.ok ? ok(res.data) : err(res.error)

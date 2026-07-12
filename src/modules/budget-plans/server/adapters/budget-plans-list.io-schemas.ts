@@ -84,6 +84,16 @@ export type AddBudgetInput = z.infer<typeof AddBudgetInputSchema>
 export const DeleteBudgetInputSchema = z.object({ planId: z.uuid(), budgetId: z.uuid() })
 export type DeleteBudgetInput = z.infer<typeof DeleteBudgetInputSchema>
 
+// #C2: cálculo IPCA (Tipo B) — POST /budget-results/ipca. `planId` só p/ invalidar o detalhe no client.
+export const IpcaBudgetResultInputSchema = z.object({
+  planId: z.uuid(),
+  budgetId: z.uuid(),
+  subcategoryId: z.uuid(),
+  baseValueInCents: z.int().min(0),
+  ipca: z.number().min(-100).max(1000),
+})
+export type IpcaBudgetResultInput = z.infer<typeof IpcaBudgetResultInputSchema>
+
 export const AddCategoryInputSchema = z.object({
   planId: z.uuid(),
   costCenterId: z.uuid(),
