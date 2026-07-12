@@ -2706,4 +2706,7 @@ export const ptBR: Catalog = {
   'shell.topbar.brand': 'Bem Comum',
   'shell.topbar.greeting': 'Olá, {{name}}',
   'shell.topbar.logout': 'Sair',
+  'shell.topbar.revokeAllSessions': 'Encerrar todas as sessões',
+  'shell.topbar.revokeAllSessions.confirm':
+    'Isso vai encerrar todas as suas sessões em todos os dispositivos, incluindo este. Você precisará entrar novamente. Deseja continuar?',
 }

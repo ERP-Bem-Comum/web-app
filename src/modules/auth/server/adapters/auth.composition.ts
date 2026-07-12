@@ -35,6 +35,9 @@ const build = () => {
     login: createLogin({ client, store, now, decodeExp: decodeAccessExp, genId }),
     getMe: createGetMe({ client }),
     logout: createLogout({ client, store }),
+    // Encerrar todas as sessões (BE-REC-004) — passthrough autenticado do client. O cleanup local da
+    // sessão atual (store.delete + limpar cookie) é feito na server-fn, espelhando o logout.
+    revokeAllSessions: (accessToken: string) => client.revokeAllSessions(accessToken),
     resolveSession: createResolveSession({ store, refreshSession, now }),
     // Leitura pública da política de senha (#32) — passthrough do client (sem use-case próprio).
     getPasswordPolicy: () => client.getPasswordPolicy(),
