@@ -70,6 +70,10 @@ export type DashboardContentProps = Readonly<{
   recent: RecentPaymentsView
   /** Anima a entrada das barras de compliance (largura cresce quando true). */
   animate: boolean
+  /** "Ver tudo" da "Visão geral" (Previsto × Realizado) → relatório Realizado × Planejado. */
+  onSeeAllOverview: () => void
+  /** "Ver tudo" de "Fornecedores sem contrato" → relatório Fornecedores sem Contrato. */
+  onSeeAllSuppliers: () => void
 }>
 
 export function DashboardContent(props: DashboardContentProps): ReactNode {
@@ -125,7 +129,7 @@ export function DashboardContent(props: DashboardContentProps): ReactNode {
                   <span className={legendRealized}>{t('dashboard.chart.series.realized')}</span>
                 </p>
               </div>
-              <button type="button" className={seeAllLink}>
+              <button type="button" className={seeAllLink} onClick={props.onSeeAllOverview}>
                 {t('dashboard.overview.see-all')}
               </button>
             </div>
@@ -159,6 +163,7 @@ export function DashboardContent(props: DashboardContentProps): ReactNode {
             emptyLabel={t('dashboard.suppliers-no-contract.empty')}
             bars={supplierBars}
             animate={props.animate}
+            onSeeAll={props.onSeeAllSuppliers}
           />
         </div>
       </div>

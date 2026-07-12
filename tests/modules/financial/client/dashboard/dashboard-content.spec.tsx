@@ -4,8 +4,8 @@
  * donut) + o card de fornecedores, tudo a partir do DTO (sem rede). Confirma a nova ORIGEM (server-state) sem
  * regressão: os rótulos i18n dos cards, os gráficos (role="img") e o nome de um fornecedor.
  */
-import { describe, it, expect, afterEach } from 'vitest'
-import { render, screen, cleanup } from '@testing-library/react'
+import { describe, it, expect, afterEach, vi } from 'vitest'
+import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 
 import { DashboardContent } from '#modules/financial/client/dashboard/page/dashboard-content.component.tsx'
 import type { DashboardStatistics } from '#modules/financial/client/data/model/dashboard-statistics.model.ts'
@@ -86,7 +86,15 @@ const RECENT: RecentPaymentsView = { status: 'empty', rows: [] }
 
 describe('DashboardContent', () => {
   it('renderiza os 4 cards de métrica (rótulos i18n) a partir do DTO', () => {
-    render(<DashboardContent data={STATS} recent={RECENT} animate={false} />)
+    render(
+      <DashboardContent
+        data={STATS}
+        recent={RECENT}
+        animate={false}
+        onSeeAllOverview={() => undefined}
+        onSeeAllSuppliers={() => undefined}
+      />,
+    )
     expect(screen.getByText('Gastos')).toBeTruthy()
     expect(screen.getByText('Arrecadação')).toBeTruthy()
     expect(screen.getByText('Top Financiador')).toBeTruthy()
@@ -96,7 +104,15 @@ describe('DashboardContent', () => {
   })
 
   it('renderiza os 2 gráficos (linha + donut) como role="img" a partir do DTO', () => {
-    render(<DashboardContent data={STATS} recent={RECENT} animate={false} />)
+    render(
+      <DashboardContent
+        data={STATS}
+        recent={RECENT}
+        animate={false}
+        onSeeAllOverview={() => undefined}
+        onSeeAllSuppliers={() => undefined}
+      />,
+    )
     // LineChart + DonutChart → 2 svg role="img"
     expect(screen.getAllByRole('img').length).toBeGreaterThanOrEqual(2)
     // legenda do donut resolve os labelKeys das fatias
@@ -105,10 +121,39 @@ describe('DashboardContent', () => {
   })
 
   it('renderiza as barras de fornecedores sem contrato derivadas do DTO', () => {
-    render(<DashboardContent data={STATS} recent={RECENT} animate={false} />)
+    render(
+      <DashboardContent
+        data={STATS}
+        recent={RECENT}
+        animate={false}
+        onSeeAllOverview={() => undefined}
+        onSeeAllSuppliers={() => undefined}
+      />,
+    )
     expect(screen.getByText('WEE TRAVEL')).toBeTruthy()
     expect(screen.getByText('POLO MOVEIS')).toBeTruthy()
     // % utilizado formatado (1.298.185 / 1.000.000 → 129,82%)
     expect(screen.getByText('129,82%')).toBeTruthy()
+  })
+
+  it('"Ver tudo" da Visão geral e "Ver todas" dos Fornecedores acionam os callbacks certos', () => {
+    const onSeeAllOverview = vi.fn()
+    const onSeeAllSuppliers = vi.fn()
+    render(
+      <DashboardContent
+        data={STATS}
+        recent={RECENT}
+        animate={false}
+        onSeeAllOverview={onSeeAllOverview}
+        onSeeAllSuppliers={onSeeAllSuppliers}
+      />,
+    )
+    fireEvent.click(screen.getByText('Ver tudo')) // Visão geral (Previsto × Realizado)
+    expect(onSeeAllOverview).toHaveBeenCalledTimes(1)
+    expect(onSeeAllSuppliers).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByText('Ver todas')) // Fornecedores sem contrato
+    expect(onSeeAllSuppliers).toHaveBeenCalledTimes(1)
+    expect(onSeeAllOverview).toHaveBeenCalledTimes(1)
   })
 })
