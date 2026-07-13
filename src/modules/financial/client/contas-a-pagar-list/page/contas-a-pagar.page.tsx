@@ -16,7 +16,7 @@ import { useDocumentDetail } from '../document-detail.binding.ts'
 import { useDocumentTimeline } from '../document-timeline.binding.ts'
 import { useBulkStatus } from '../bulk-status.binding.ts'
 import { useBulkDelete } from '../bulk-delete.binding.ts'
-import { useBulkDueDate } from '../bulk-due-date.binding.ts'
+import { useIsolatedDueDate } from '../isolated-due-date.binding.ts'
 import { useBulkPay, type PayTarget } from '../bulk-pay.binding.ts'
 import {
   STATUS_CHIPS,
@@ -170,7 +170,7 @@ export function ContasAPagarPage(): ReactNode {
   // ── Alterar vencimento (1+) — modal com seletor de data; aplica a cada Aberto via PATCH. ──
   const [dueOpen, setDueOpen] = useState(false)
   const [dueValue, setDueValue] = useState('')
-  const dueEdit = useBulkDueDate(() => {
+  const dueEdit = useIsolatedDueDate(() => {
     clearSelection()
     setDueOpen(false)
     setDueValue('')

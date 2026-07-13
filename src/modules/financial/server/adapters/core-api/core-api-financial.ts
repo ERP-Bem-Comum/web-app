@@ -133,6 +133,16 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
       if (isErr(r)) return err(mapHttpError(r.error))
       return detailToModel(r.value)
     },
+    // #270: vencimento de UM título isolado (não propaga pai↔filhos). Devolve o documento atualizado.
+    updatePayableDueDate: async (input, token) => {
+      const r = await resultFetch<unknown>(`${docs}/${input.documentId}/payables/${input.payableId}`, {
+        method: 'PATCH',
+        body: { version: input.version, dueDate: input.dueDate },
+        token,
+      })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      return detailToModel(r.value)
+    },
     undoApproval: async (input, token) => {
       const r = await resultFetch<unknown>(`${docs}/${input.id}/undo-approval`, {
         method: 'POST',

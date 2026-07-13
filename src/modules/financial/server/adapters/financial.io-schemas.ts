@@ -107,6 +107,15 @@ export const ApproveInputSchema = z.object({
 // Cancelar (DELETE /documents/:id). `version` = optimistic lock exigido pelo core-api no corpo.
 export const CancelInputSchema = z.object({ id: z.uuid(), version: z.int().min(0) })
 
+// #270: vencimento de UM título ISOLADO (PATCH /documents/:id/payables/:payableId). `version` = optimistic
+// lock; `dueDate` date-only. NÃO propaga pai↔filhos (é o ponto do endpoint).
+export const UpdatePayableDueDateInputSchema = z.object({
+  documentId: z.uuid(),
+  payableId: z.uuid(),
+  version: z.int().min(0),
+  dueDate: DateSchema,
+})
+
 // #162: vencimento em LOTE (PATCH /documents/due-date). ≥1 item, ≤100 (limite do core-api); cada item leva
 // o `version` (optimistic lock). Mesmo `dueDate` p/ todos.
 export const BulkUpdateDueDateInputSchema = z.object({
@@ -158,5 +167,9 @@ const _g_adjust: AssertEqual<z.infer<typeof AdjustDocumentInputSchema>, D.Adjust
 const _g_approve: AssertEqual<z.infer<typeof ApproveInputSchema>, D.ApproveInput> = true
 const _g_cancel: AssertEqual<z.infer<typeof CancelInputSchema>, D.CancelInput> = true
 const _g_bulkdue: AssertEqual<z.infer<typeof BulkUpdateDueDateInputSchema>, D.BulkUpdateDueDateInput> = true
+const _g_paydue: AssertEqual<
+  z.infer<typeof UpdatePayableDueDateInputSchema>,
+  D.UpdatePayableDueDateInput
+> = true
 const _g_manualpay: AssertEqual<z.infer<typeof ManualPaymentInputSchema>, D.ManualPaymentInput> = true
 const _g_list: AssertEqual<z.infer<typeof ListDocumentsInputSchema>, D.ListDocumentsInput> = true
