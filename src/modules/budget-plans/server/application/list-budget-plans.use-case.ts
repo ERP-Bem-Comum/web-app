@@ -1,18 +1,15 @@
 /**
  * Use-case: compor a LISTA de Planejamento a partir do core-api novo (§III: o BFF orquestra; o client não
- * compõe). Costura 3 leituras UMA vez por carga (sem N+1 por render):
- *   1. lista crua           → itens (id, year, status, version, programRef, total, updatedAt).
+ * compõe). Sem N+1 (o fan-out interino B1 foi removido ao fechar #372):
+ *   1. lista crua           → itens já com partnersCount + networkKind (#372) + updatedByRef (#373).
  *   2. opções de programa   → mapa `programRef → abreviação` (best-effort; degrada p/ null).
- *   3. budgets do plano     → partnersCount + networkKind (INTERINO B1, core-api#372).
+ *   3. nomes dos autores     → resolve `updatedByRef → nome` em UMA chamada deduplicada (#373, best-effort).
  *
  * Dependência aponta para dentro (§ server): o PORT (`BudgetPlansCoreClient`) e seus tipos CRUS vivem AQUI
  * (application); o adapter os implementa e mapeia o DTO do core. O use-case não conhece o schema do core.
  *
- * Best-effort por fonte auxiliar: falha em options/budgets NÃO derruba a lista (degrada campo p/ null/0).
+ * Best-effort por fonte auxiliar: falha em options/nomes NÃO derruba a lista (degrada campo p/ null).
  * Erros como valores (§II): só a falha da LISTA (fonte primária) vira `err`.
- *
- * 🔁 Ao fechar core-api#372 (partnersCount/networkKind projetados na lista): o adapter passa a ler os campos
- * do item e `getPlanBudgets` deixa de ser chamado — nada muda aqui.
  */
 import { ok, err, isErr, type Result } from '#shared/primitives/result.ts'
 import type { BudgetPlansError } from '#modules/budget-plans/server/domain/errors/budget-plans.errors.ts'
