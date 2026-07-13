@@ -8,7 +8,7 @@ import * as z from 'zod'
 import { BudgetPlanStatusSchema } from '#modules/budget-plans/client/data/model/enums.ts'
 
 /** Granularidade da rede do programa — decide se o parceiro é Estado ou Município. */
-export const NetworkKindSchema = z.enum(['ESTADO', 'MUNICIPIO'])
+export const NetworkKindSchema = z.enum(['ESTADO', 'MUNICIPIO', 'MISTO'])
 export type NetworkKind = z.infer<typeof NetworkKindSchema>
 
 /**

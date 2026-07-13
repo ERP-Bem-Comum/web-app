@@ -5,8 +5,12 @@
  */
 import { loadEnvOrThrow } from '#external/config/env.config.ts'
 import { coreApiBase } from '#external/core-api/api-base.ts'
+import { getUserFn } from '#modules/users/public-api/index.ts'
 import { createBudgetPlansCoreClient } from './core-api/core-api-budget-plans.ts'
-import { createListBudgetPlans } from '#modules/budget-plans/server/application/list-budget-plans.use-case.ts'
+import {
+  createListBudgetPlans,
+  type ResolveUserNames,
+} from '#modules/budget-plans/server/application/list-budget-plans.use-case.ts'
 import { createCreateBudgetPlan } from '#modules/budget-plans/server/application/create-budget-plan.use-case.ts'
 import { createListBudgetPlanOptions } from '#modules/budget-plans/server/application/list-budget-plan-options.use-case.ts'
 import { createGetBudgetPlanDetail } from '#modules/budget-plans/server/application/get-budget-plan-detail.use-case.ts'
@@ -31,11 +35,23 @@ import { createExportConsolidadoAbcCsv } from '#modules/budget-plans/server/appl
 
 type BudgetPlansServer = ReturnType<typeof build>
 
+// #373: resolve refs de autor → nome cruzando o módulo users (getUserFn). Best-effort e por ref: falha/não
+// encontrado → ausente do mapa (o use-case cai em `updatedByName: null`). Refs já vêm deduplicados.
+const resolveUserNames: ResolveUserNames = async (refs) => {
+  const entries = await Promise.all(
+    refs.map(async (ref): Promise<readonly [string, string] | null> => {
+      const u = await getUserFn({ data: { id: ref } })
+      return u.ok ? [ref, u.data.name] : null
+    }),
+  )
+  return new Map(entries.filter((e): e is readonly [string, string] => e !== null))
+}
+
 const build = () => {
   const env = loadEnvOrThrow()
   const client = createBudgetPlansCoreClient(`${coreApiBase(env.CORE_API_URL, 'v2')}/budget-plans`)
   return {
-    listBudgetPlans: createListBudgetPlans({ client }),
+    listBudgetPlans: createListBudgetPlans({ client, resolveUserNames }),
     createBudgetPlan: createCreateBudgetPlan({ client }),
     listProgramOptions: createListBudgetPlanOptions({ client }),
     getPlanDetail: createGetBudgetPlanDetail({ client }),

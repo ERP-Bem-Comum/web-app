@@ -28,7 +28,6 @@ import type {
   BudgetPlansCoreClient,
   RawPlanListPage,
   RawProgramOption,
-  RawPlanBudgets,
 } from '#modules/budget-plans/server/application/list-budget-plans.use-case.ts'
 import type {
   CreateBudgetPlanClient,
@@ -197,6 +196,9 @@ export const createBudgetPlansCoreClient = (
         programName: it.programName,
         totalInCents: it.totalInCents,
         updatedAt: it.updatedAt,
+        updatedByRef: it.updatedByRef, // #373
+        partnersCount: it.partnersCount, // #372
+        networkKind: it.networkKind, // #372 (state|municipality|mixed|null)
       })),
       total: parsed.data.total,
     })
@@ -246,13 +248,6 @@ export const createBudgetPlansCoreClient = (
     })
     if (isErr(r)) return err(mapWriteHttpError(r.error))
     return ok(undefined)
-  },
-  getPlanBudgets: async (id, token): Promise<Result<RawPlanBudgets, BudgetPlansError>> => {
-    const r = await resultFetch<unknown>(`${baseUrl}/${id}`, { token })
-    if (isErr(r)) return err(mapHttpError(r.error))
-    const parsed = coreDetailSchema.safeParse(r.value)
-    if (!parsed.success) return err('unexpected')
-    return ok({ budgets: parsed.data.budgets.map((b) => ({ partnerKind: b.partner.kind })) })
   },
   getPlanDetailHeader: async (
     id: string,
