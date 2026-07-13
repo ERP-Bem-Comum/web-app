@@ -339,13 +339,17 @@ export const bulkDueDateTargets = (
 // alvos por DOCUMENTO (dedup por documentId) a partir do `status`+`version` DA PRÓPRIA LINHA — o #229 trouxe
 // o version do documento na linha, então NÃO há busca extra (sem GET /documents/:id). O backend valida
 // transição inválida (ex.: filho cujo status divergiu do documento) → falha segura, sem corromper estado.
+// #270: alvo do vencimento ISOLADO por título (payable). NÃO dedup por documento — cada título é independente.
+export type IsolatedDueDateTarget = Readonly<{ documentId: string; payableId: string; version: number }>
+
 export type TitleActionTargets = Readonly<{
   approve: readonly StatusTarget[] // documentos distintos com título Aberto (Aprovar cascateia)
   reopen: readonly StatusTarget[] // documentos com título Aprovado
   deletable: readonly StatusTarget[] // = Aberto (hard-delete só em Aberto, core-api#166)
   draftCount: number // documentos Rascunho na seleção (aviso no modal)
-  dueEditable: readonly StatusTarget[] // = Aberto (PATCH de vencimento só em Aberto)
-  dueBlockedCount: number // documentos selecionados não-editáveis (aviso no modal)
+  // #270: vencimento por TÍTULO (Aberto), isolado — não propaga pai↔filhos. Por payable (sem dedup por doc).
+  dueEditable: readonly IsolatedDueDateTarget[]
+  dueBlockedCount: number // títulos selecionados não-editáveis (não-Aberto) — aviso no modal
 }>
 export const deriveTitleActionTargets = (
   rows: readonly GridRow[],
@@ -364,14 +368,19 @@ export const deriveTitleActionTargets = (
     return out
   }
   const aberto = dedupByDoc(sel.filter((r) => r.status === 'Aberto'))
-  const allDocs = dedupByDoc(sel)
+  // #270: vencimento é por TÍTULO isolado — NÃO dedup por documento; um alvo por payable Aberto selecionado.
+  const selAbertoRows = sel.filter((r) => r.status === 'Aberto')
   return {
     approve: aberto,
     reopen: dedupByDoc(sel.filter((r) => r.status === 'Aprovado')),
     deletable: aberto,
     draftCount: dedupByDoc(sel.filter((r) => r.status === 'Rascunho')).length,
-    dueEditable: aberto,
-    dueBlockedCount: allDocs.length - aberto.length,
+    dueEditable: selAbertoRows.map((r) => ({
+      documentId: r.documentId,
+      payableId: r.id,
+      version: r.version,
+    })),
+    dueBlockedCount: sel.length - selAbertoRows.length,
   }
 }
 

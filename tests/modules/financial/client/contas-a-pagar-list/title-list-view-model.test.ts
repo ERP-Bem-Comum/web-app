@@ -196,16 +196,17 @@ describe('deriveTitleActionTargets (#229 — ações por linha, dedup por docume
     assert.equal(tg.approve.length, 0) // nenhum Aberto selecionado
   })
 
-  it('Aprovar/Excluir/Vencimento: usam os títulos Aberto (id=documentId)', () => {
+  it('Aprovar/Excluir: dedup por documento (id=documentId); Vencimento (#270): por TÍTULO isolado', () => {
     const tg = deriveTitleActionTargets(titleRows, new Set(['p2']))
     assert.deepEqual(tg.approve, [{ id: 'd2', version: 1 }])
     assert.deepEqual(tg.deletable, [{ id: 'd2', version: 1 }])
-    assert.deepEqual(tg.dueEditable, [{ id: 'd2', version: 1 }])
+    // #270: vencimento é por payable (documentId + payableId + version), NÃO deduplicado por documento.
+    assert.deepEqual(tg.dueEditable, [{ documentId: 'd2', payableId: 'p2', version: 1 }])
   })
 
-  it('dueBlockedCount: documentos selecionados não-Aberto entram como bloqueados', () => {
-    const tg = deriveTitleActionTargets(titleRows, new Set(['p1', 'p2'])) // d1 Aprovado (bloqueado) + d2 Aberto
-    assert.equal(tg.dueEditable.length, 1) // só d2
-    assert.equal(tg.dueBlockedCount, 1) // d1
+  it('dueBlockedCount: títulos selecionados não-Aberto entram como bloqueados', () => {
+    const tg = deriveTitleActionTargets(titleRows, new Set(['p1', 'p2'])) // p1 Aprovado (bloqueado) + p2 Aberto
+    assert.equal(tg.dueEditable.length, 1) // só p2
+    assert.equal(tg.dueBlockedCount, 1) // p1
   })
 })

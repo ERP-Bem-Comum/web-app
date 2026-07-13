@@ -88,6 +88,14 @@ export type AdjustDocumentInput = Readonly<{
 }>
 
 export type ApproveInput = Readonly<{ id: string; version: number }>
+
+// #270: vencimento de UM título isolado (não propaga pai↔filhos). `dueDate` date-only YYYY-MM-DD.
+export type UpdatePayableDueDateInput = Readonly<{
+  documentId: string
+  payableId: string
+  version: number
+  dueDate: string
+}>
 export type CancelInput = Readonly<{ id: string; version: number }>
 
 // Trilha de auditoria (GET /documents/:id/timeline) — entrada ENRIQUECIDA (nome do autor resolvido no BFF).

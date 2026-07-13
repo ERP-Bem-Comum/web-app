@@ -12,6 +12,7 @@ import type {
   CreateDocumentInput,
   AdjustDocumentInput,
   ApproveInput,
+  UpdatePayableDueDateInput,
   CancelInput,
   ManualPaymentInput,
   ListPayableTitlesInput,
@@ -42,6 +43,11 @@ export type FinancialClient = Readonly<{
     token: string,
   ) => Promise<Result<BulkUpdateDueDateResult, FinancialError>>
   approve: (input: ApproveInput, token: string) => Promise<Result<DocumentDetail, FinancialError>>
+  // #270: vencimento de UM título isolado (não propaga pai↔filhos). Devolve o documento atualizado.
+  updatePayableDueDate: (
+    input: UpdatePayableDueDateInput,
+    token: string,
+  ) => Promise<Result<DocumentDetail, FinancialError>>
   undoApproval: (input: ApproveInput, token: string) => Promise<Result<DocumentDetail, FinancialError>>
   cancel: (input: CancelInput, token: string) => Promise<Result<void, FinancialError>>
   registerManualPayment: (
@@ -92,6 +98,11 @@ export const createApproveDocument =
   (deps: Deps) =>
   (input: ApproveInput, token: string): Promise<Result<DocumentDetail, FinancialError>> =>
     deps.client.approve(input, token)
+
+export const createUpdatePayableDueDate =
+  (deps: Deps) =>
+  (input: UpdatePayableDueDateInput, token: string): Promise<Result<DocumentDetail, FinancialError>> =>
+    deps.client.updatePayableDueDate(input, token)
 
 export const createUndoApproval =
   (deps: Deps) =>
