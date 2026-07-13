@@ -20,7 +20,6 @@ import type {
   PayableTitleListResponse,
   PayableTitleItem,
   RecentPayment,
-  BulkUpdateDueDateResult,
   DocumentTimelineEvent,
   TimelineEventType,
 } from '#modules/financial/server/domain/document.io.ts'
@@ -29,7 +28,6 @@ import {
   CoreApiDocumentListSchema,
   CoreApiPayableTitleListSchema,
   CoreApiRecentPaymentListSchema,
-  CoreApiBulkDueDateResultSchema,
   CoreApiTimelineResponseSchema,
   type CoreApiPayable,
 } from './financial.schema.ts'
@@ -218,18 +216,6 @@ export const timelineToModel = (raw: unknown): Result<readonly DocumentTimelineE
     })
   }
   return ok(events)
-}
-
-// #162: resposta do lote de vencimento → outcome por documento. Falha parcial NÃO é erro do BFF (o backend
-// devolve 200 com o mapa); quem interpreta é o binding (conta os não-`ok`).
-export const bulkDueDateResultToModel = (raw: unknown): Result<BulkUpdateDueDateResult, FinancialError> => {
-  const parsed = CoreApiBulkDueDateResultSchema.safeParse(raw)
-  if (!parsed.success) return err('server')
-  const results: BulkUpdateDueDateResult = parsed.data.results.map((r) => ({
-    documentId: r.documentId,
-    outcome: r.outcome,
-  }))
-  return ok(results)
 }
 
 // #201: listagem por TÍTULO (pai + filhos). Reusa os mesmos enums tolerantes (status EN→PT, kind, etc).

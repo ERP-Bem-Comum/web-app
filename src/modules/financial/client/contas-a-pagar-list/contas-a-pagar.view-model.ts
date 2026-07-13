@@ -319,21 +319,6 @@ export const bulkDeleteTargets = (
   }
 }
 
-// Alterar vencimento (1+) — o core-api só ajusta documentos em **Aberto**. `editable` = alvos Aberto
-// (id+version, p/ o PATCH); `blockedCount` = selecionados em outro status (não alteráveis). O "lote" vai
-// numa ÚNICA chamada ao endpoint `PATCH /documents/due-date` (#162), com outcome por item.
-export type BulkDueDateTargets = Readonly<{ editable: readonly StatusTarget[]; blockedCount: number }>
-export const bulkDueDateTargets = (
-  rows: readonly GridRow[],
-  selected: ReadonlySet<string>,
-): BulkDueDateTargets => {
-  const sel = rows.filter((r) => selected.has(r.id))
-  return {
-    editable: sel.filter((r) => r.status === 'Aberto').map((r) => ({ id: r.id, version: r.version })),
-    blockedCount: sel.filter((r) => r.status !== 'Aberto').length,
-  }
-}
-
 // #201/#229: ações em massa no grid por TÍTULO. O ciclo de status é do TÍTULO; Aprovar é a regra que
 // cascateia pai→filhos (transição do documento), assim como Reabrir/Excluir/Vencimento. Aqui derivamos os
 // alvos por DOCUMENTO (dedup por documentId) a partir do `status`+`version` DA PRÓPRIA LINHA — o #229 trouxe
