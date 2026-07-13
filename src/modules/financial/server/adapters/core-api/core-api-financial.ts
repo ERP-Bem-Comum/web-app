@@ -19,7 +19,6 @@ import {
   listToModel,
   payableTitlesToModel,
   recentPaymentsToModel,
-  bulkDueDateResultToModel,
   timelineToModel,
   mapHttpError,
 } from './financial.mappers.ts'
@@ -112,17 +111,6 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
       const r = await resultFetch<unknown>(`${docs}/${id}`, { method: 'PATCH', body, token })
       if (isErr(r)) return err(mapHttpError(r.error))
       return detailToModel(r.value)
-    },
-    // #162: vencimento em LOTE — rota ESTÁTICA `/documents/due-date` (precede `/:id` no core-api). Falha
-    // parcial vem 200 com o mapa de outcomes; erro de transporte/payload → mapHttpError.
-    bulkUpdateDueDate: async (input, token) => {
-      const r = await resultFetch<unknown>(`${docs}/due-date`, {
-        method: 'PATCH',
-        body: { items: input.items, dueDate: input.dueDate },
-        token,
-      })
-      if (isErr(r)) return err(mapHttpError(r.error))
-      return bulkDueDateResultToModel(r.value)
     },
     approve: async (input, token) => {
       const r = await resultFetch<unknown>(`${docs}/${input.id}/approve`, {

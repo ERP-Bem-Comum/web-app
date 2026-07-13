@@ -18,8 +18,6 @@ import type {
   ListPayableTitlesInput,
   PayableTitleListResponse,
   RecentPayment,
-  BulkUpdateDueDateInput,
-  BulkUpdateDueDateResult,
   DocumentTimelineEvent,
 } from '#modules/financial/server/domain/document.io.ts'
 
@@ -37,11 +35,6 @@ export type FinancialClient = Readonly<{
   ) => Promise<Result<readonly DocumentTimelineEvent[], FinancialError>>
   create: (input: CreateDocumentInput, token: string) => Promise<Result<DocumentDetail, FinancialError>>
   adjust: (input: AdjustDocumentInput, token: string) => Promise<Result<DocumentDetail, FinancialError>>
-  // #162: vencimento em lote (N documentos × 1 data). Falha parcial por item (não é erro do Result).
-  bulkUpdateDueDate: (
-    input: BulkUpdateDueDateInput,
-    token: string,
-  ) => Promise<Result<BulkUpdateDueDateResult, FinancialError>>
   approve: (input: ApproveInput, token: string) => Promise<Result<DocumentDetail, FinancialError>>
   // #270: vencimento de UM título isolado (não propaga pai↔filhos). Devolve o documento atualizado.
   updatePayableDueDate: (
@@ -88,11 +81,6 @@ export const createAdjustDocument =
   (deps: Deps) =>
   (input: AdjustDocumentInput, token: string): Promise<Result<DocumentDetail, FinancialError>> =>
     deps.client.adjust(input, token)
-
-export const createBulkUpdateDueDate =
-  (deps: Deps) =>
-  (input: BulkUpdateDueDateInput, token: string): Promise<Result<BulkUpdateDueDateResult, FinancialError>> =>
-    deps.client.bulkUpdateDueDate(input, token)
 
 export const createApproveDocument =
   (deps: Deps) =>

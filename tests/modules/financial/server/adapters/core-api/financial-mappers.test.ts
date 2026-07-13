@@ -12,7 +12,6 @@ import {
   detailToModel,
   listToModel,
   payableTitlesToModel,
-  bulkDueDateResultToModel,
   timelineToModel,
 } from '../../../../../../src/modules/financial/server/adapters/core-api/financial.mappers.ts'
 import { isOk, isErr } from '../../../../../../src/shared/primitives/result.ts'
@@ -180,33 +179,6 @@ describe('payableTitlesToModel (#201)', () => {
   })
   it('drift → err(server)', () => {
     assert.equal(isErr(payableTitlesToModel({ items: 'x' })), true)
-  })
-})
-
-describe('bulkDueDateResultToModel (#162)', () => {
-  it('mapeia outcome por documento (ok + conflito + inválido)', () => {
-    const r = bulkDueDateResultToModel({
-      results: [
-        { documentId: 'd1', outcome: 'ok' },
-        { documentId: 'd2', outcome: 'version-conflict' },
-        { documentId: 'd3', outcome: 'invalid-state' },
-      ],
-    })
-    assert.ok(isOk(r))
-    if (isOk(r)) {
-      assert.equal(r.value.length, 3)
-      assert.equal(r.value[0]?.outcome, 'ok')
-      assert.equal(r.value[1]?.outcome, 'version-conflict')
-      assert.equal(r.value[2]?.outcome, 'invalid-state')
-    }
-  })
-  it('outcome desconhecido → fallback seguro "error" (não quebra)', () => {
-    const r = bulkDueDateResultToModel({ results: [{ documentId: 'd1', outcome: 'gremlin' }] })
-    assert.ok(isOk(r))
-    if (isOk(r)) assert.equal(r.value[0]?.outcome, 'error')
-  })
-  it('payload fora de forma → err(server)', () => {
-    assert.equal(isErr(bulkDueDateResultToModel({ results: 'x' })), true)
   })
 })
 
