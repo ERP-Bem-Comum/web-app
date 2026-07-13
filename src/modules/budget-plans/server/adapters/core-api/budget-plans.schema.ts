@@ -7,7 +7,12 @@ import * as z from 'zod'
 
 const coreStatusSchema = z.enum(['RASCUNHO', 'EM_CALIBRACAO', 'APROVADO'])
 
-/** Item de `GET /budget-plans` (envelope `{ items, total }`). `id`/`programRef` UUID; `version` string. */
+/**
+ * Item de `GET /budget-plans` (envelope `{ items, total }`). `id`/`programRef` UUID; `version` string.
+ * #372: `partnersCount` + `networkKind` projetados no item (fim do fan-out interino). #373: `updatedByRef`
+ * (uuid nullable) → o BFF resolve o nome cross-módulo. `networkKind` inclui `mixed` (rede mista, que o
+ * interino não detectava) e pode vir `null` (plano sem rede).
+ */
 export const coreListItemSchema = z.object({
   id: z.uuid(),
   year: z.int(),
@@ -17,6 +22,9 @@ export const coreListItemSchema = z.object({
   programName: z.string().trim(),
   totalInCents: z.int(),
   updatedAt: z.string().trim(),
+  updatedByRef: z.uuid().nullable(),
+  partnersCount: z.int().nonnegative(),
+  networkKind: z.enum(['state', 'municipality', 'mixed']).nullable(),
 })
 
 export const coreListResponseSchema = z.object({

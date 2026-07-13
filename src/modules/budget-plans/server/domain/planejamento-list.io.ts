@@ -13,7 +13,9 @@
  *     → `null`/`[]` (lista flat), sem fabricar árvore.
  */
 
-export type NetworkKind = 'ESTADO' | 'MUNICIPIO'
+// #372: o backend projeta `state|municipality|mixed|null`; o domínio mapeia para ESTADO/MUNICIPIO/MISTO
+// (null → ESTADO, mesmo default do interino B1 anterior).
+export type NetworkKind = 'ESTADO' | 'MUNICIPIO' | 'MISTO'
 
 export type BudgetPlanStatus = 'RASCUNHO' | 'EM_CALIBRACAO' | 'APROVADO'
 
