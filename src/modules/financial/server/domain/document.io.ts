@@ -98,6 +98,15 @@ export interface ApproveInput {
   version: number
 }
 
+// #270: vencimento de UM título ISOLADO (PATCH /documents/:id/payables/:payableId). NÃO propaga ao
+// documento-pai nem aos irmãos (contrasta com o `adjust`/lote, que propagam). `dueDate` date-only YYYY-MM-DD.
+export interface UpdatePayableDueDateInput {
+  documentId: string
+  payableId: string
+  version: number
+  dueDate: string
+}
+
 // Trilha de auditoria (GET /documents/:id/timeline). 5 eventos de domínio; `actor` = UUID do usuário (null =
 // ação automática do sistema); `changes` = diff campo a campo. O BFF resolve `actor` → `actorName`.
 export type TimelineEventType =

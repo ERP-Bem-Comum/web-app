@@ -10,6 +10,7 @@ import { createDocumentFn } from '#modules/financial/server/adapters/server-fns/
 import { adjustDocumentFn } from '#modules/financial/server/adapters/server-fns/adjust-document.service.fn.ts'
 import { bulkUpdateDueDateFn } from '#modules/financial/server/adapters/server-fns/bulk-update-due-date.service.fn.ts'
 import { approveDocumentFn } from '#modules/financial/server/adapters/server-fns/approve-document.service.fn.ts'
+import { updatePayableDueDateFn } from '#modules/financial/server/adapters/server-fns/update-payable-due-date.service.fn.ts'
 import { undoApprovalFn } from '#modules/financial/server/adapters/server-fns/undo-approval.service.fn.ts'
 import { cancelDocumentFn } from '#modules/financial/server/adapters/server-fns/cancel-document.service.fn.ts'
 import { registerManualPaymentFn } from '#modules/financial/server/adapters/server-fns/register-manual-payment.service.fn.ts'
@@ -27,6 +28,7 @@ export const financialRepository = createFinancialRepository({
   adjustDocumentFn: (opts) => adjustDocumentFn(opts),
   bulkUpdateDueDateFn: (opts) => bulkUpdateDueDateFn(opts),
   approveDocumentFn: (opts) => approveDocumentFn(opts),
+  updatePayableDueDateFn: (opts) => updatePayableDueDateFn(opts),
   undoApprovalFn: (opts) => undoApprovalFn(opts),
   cancelDocumentFn: (opts) => cancelDocumentFn(opts),
   registerManualPaymentFn: (opts) => registerManualPaymentFn(opts),

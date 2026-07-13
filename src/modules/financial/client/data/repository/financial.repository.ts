@@ -11,6 +11,7 @@ import type {
   CreateDocumentInput,
   AdjustDocumentInput,
   ApproveInput,
+  UpdatePayableDueDateInput,
   CancelInput,
   ManualPaymentInput,
   ListPayableTitlesInput,
@@ -31,6 +32,7 @@ type CreateFn = (opts: { data: CreateDocumentInput }) => Promise<FnResult<Docume
 type AdjustFn = (opts: { data: AdjustDocumentInput }) => Promise<FnResult<DocumentDetail>>
 type BulkDueDateFn = (opts: { data: BulkUpdateDueDateInput }) => Promise<FnResult<BulkUpdateDueDateResult>>
 type ApproveFn = (opts: { data: ApproveInput }) => Promise<FnResult<DocumentDetail>>
+type UpdatePayableDueDateFn = (opts: { data: UpdatePayableDueDateInput }) => Promise<FnResult<DocumentDetail>>
 type CancelFn = (opts: {
   data: CancelInput
 }) => Promise<Readonly<{ ok: true }> | Readonly<{ ok: false; error: FinancialError }>>
@@ -56,6 +58,8 @@ export type FinancialRepository = Readonly<{
     input: BulkUpdateDueDateInput,
   ) => Promise<Result<BulkUpdateDueDateResult, FinancialError>>
   approve: (input: ApproveInput) => Promise<Result<DocumentDetail, FinancialError>>
+  // #270: vencimento de UM título isolado (não propaga pai↔filhos).
+  updatePayableDueDate: (input: UpdatePayableDueDateInput) => Promise<Result<DocumentDetail, FinancialError>>
   undoApproval: (input: ApproveInput) => Promise<Result<DocumentDetail, FinancialError>>
   cancel: (input: CancelInput) => Promise<Result<void, FinancialError>>
   // #224: baixa manual de um título (Aprovado→Pago).
@@ -76,6 +80,7 @@ export const createFinancialRepository = (
     adjustDocumentFn: AdjustFn
     bulkUpdateDueDateFn: BulkDueDateFn
     approveDocumentFn: ApproveFn
+    updatePayableDueDateFn: UpdatePayableDueDateFn
     undoApprovalFn: ApproveFn
     cancelDocumentFn: CancelFn
     registerManualPaymentFn: PayFn
@@ -113,6 +118,10 @@ export const createFinancialRepository = (
   },
   approve: async (input) => {
     const res = await deps.approveDocumentFn({ data: input })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  updatePayableDueDate: async (input) => {
+    const res = await deps.updatePayableDueDateFn({ data: input })
     return res.ok ? ok(res.data) : err(res.error)
   },
   undoApproval: async (input) => {
