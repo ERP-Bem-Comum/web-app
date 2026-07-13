@@ -25,6 +25,9 @@ import type {
 } from '#modules/budget-plans/server/domain/planejamento-list.io.ts'
 
 // ── Port (application) — o adapter implementa. Tipos CRUS application-owned (não expõem o DTO do core). ──
+// #372/#373: o item da lista já traz `partnersCount` + `networkKind` (state|municipality|mixed|null) e o
+// `updatedByRef` (uuid do autor). Fim do fan-out interino (`getPlanBudgets`).
+export type RawNetworkKind = 'state' | 'municipality' | 'mixed'
 export type RawPlanItem = Readonly<{
   id: string
   year: number
@@ -34,12 +37,12 @@ export type RawPlanItem = Readonly<{
   programName: string
   totalInCents: number
   updatedAt: string
+  updatedByRef: string | null
+  partnersCount: number
+  networkKind: RawNetworkKind | null
 }>
 export type RawPlanListPage = Readonly<{ items: readonly RawPlanItem[]; total: number }>
 export type RawProgramOption = Readonly<{ ref: string; abbreviation: string }>
-export type RawPlanBudgets = Readonly<{
-  budgets: readonly Readonly<{ partnerKind: 'state' | 'municipality' }>[]
-}>
 
 export type BudgetPlansCoreClient = Readonly<{
   listBudgetPlans: (
@@ -47,8 +50,11 @@ export type BudgetPlansCoreClient = Readonly<{
     token: string,
   ) => Promise<Result<RawPlanListPage, BudgetPlansError>>
   getProgramOptions: (token: string) => Promise<Result<readonly RawProgramOption[], BudgetPlansError>>
-  getPlanBudgets: (id: string, token: string) => Promise<Result<RawPlanBudgets, BudgetPlansError>>
 }>
+
+// #373: resolve `updatedByRef` (uuid) → nome do autor (cross-módulo, best-effort). Dedup de refs fica a cargo
+// do use-case; o impl (composição) chama o `getUserFn` do módulo users. Ref não resolvido → ausente do mapa.
+export type ResolveUserNames = (refs: readonly string[]) => Promise<ReadonlyMap<string, string>>
 
 // version "1.0" → 1.0 (float legado). String inválida → 1 (fail-soft; não derruba o mapeamento).
 const parseVersion = (v: string): number => {
@@ -56,12 +62,14 @@ const parseVersion = (v: string): number => {
   return Number.isFinite(n) ? n : 1
 }
 
-// networkKind derivado dos budgets (INTERINO B1, core-api#372). Regra: só-municípios → MUNICIPIO; caso
-// contrário (inclui vazio) → ESTADO. A regra definitiva (incl. mista) fica no #372.
-const deriveNetwork = (budgets: RawPlanBudgets['budgets']): NetworkKind =>
-  budgets.length > 0 && budgets.every((b) => b.partnerKind === 'municipality') ? 'MUNICIPIO' : 'ESTADO'
+// #372: networkKind do core → domínio. `mixed` → MISTO; `null` (plano sem rede) → ESTADO (default do interino).
+const mapNetwork = (kind: RawNetworkKind | null): NetworkKind =>
+  kind === 'municipality' ? 'MUNICIPIO' : kind === 'mixed' ? 'MISTO' : 'ESTADO'
 
-export type ListBudgetPlansDeps = Readonly<{ client: BudgetPlansCoreClient }>
+export type ListBudgetPlansDeps = Readonly<{
+  client: BudgetPlansCoreClient
+  resolveUserNames: ResolveUserNames
+}>
 
 export const createListBudgetPlans =
   (deps: ListBudgetPlansDeps) =>
@@ -79,28 +87,28 @@ export const createListBudgetPlans =
       for (const program of optionsRes.value) abbrByRef.set(program.ref, program.abbreviation)
     }
 
-    // Fan-out de budgets (INTERINO B1): partnersCount + networkKind por item. Best-effort (falha → 0/ESTADO).
-    const items = await Promise.all(
-      listRes.value.items.map(async (item): Promise<PlanejamentoListItem> => {
-        const budgetsRes = await deps.client.getPlanBudgets(item.id, token)
-        const budgets = isErr(budgetsRes) ? [] : budgetsRes.value.budgets
-        return {
-          id: item.id,
-          year: item.year,
-          programName: item.programName,
-          programAbbreviation: abbrByRef.get(item.programRef) ?? null,
-          version: parseVersion(item.version),
-          scenarioName: null, // cenários/versões-filhas: core-api#317/#318 (flat por ora)
-          status: item.status,
-          totalInCents: item.totalInCents,
-          updatedByName: null, // auditoria "por quem": core-api#373 (data-only por ora)
-          updatedAt: item.updatedAt,
-          networkKind: deriveNetwork(budgets),
-          partnersCount: budgets.length,
-          children: [], // árvore de versões: core-api#317/#318
-        }
-      }),
-    )
+    // #373: resolve o nome do autor em UMA chamada deduplicada (best-effort → mapa vazio; nome ausente = null).
+    const refs = [
+      ...new Set(listRes.value.items.map((it) => it.updatedByRef).filter((r): r is string => r !== null)),
+    ]
+    const nameByRef = refs.length > 0 ? await deps.resolveUserNames(refs) : new Map<string, string>()
+
+    // #372: partnersCount + networkKind vêm projetados no item (sem N+1). Mapeamento síncrono.
+    const items: readonly PlanejamentoListItem[] = listRes.value.items.map((item) => ({
+      id: item.id,
+      year: item.year,
+      programName: item.programName,
+      programAbbreviation: abbrByRef.get(item.programRef) ?? null,
+      version: parseVersion(item.version),
+      scenarioName: null, // cenários/versões-filhas: core-api#401 (fatia seguinte; flat por ora)
+      status: item.status,
+      totalInCents: item.totalInCents,
+      updatedByName: item.updatedByRef !== null ? (nameByRef.get(item.updatedByRef) ?? null) : null,
+      updatedAt: item.updatedAt,
+      networkKind: mapNetwork(item.networkKind),
+      partnersCount: item.partnersCount,
+      children: [], // árvore de versões: core-api#401 (fatia seguinte)
+    }))
 
     return ok({ items, total: listRes.value.total })
   }

@@ -52,6 +52,9 @@ describe('derivePartnersLabel', () => {
     assert.equal(derivePartnersLabel(1, 'ESTADO'), '1 estados')
     assert.equal(derivePartnersLabel(3, 'MUNICIPIO'), '3 municípios')
   })
+  it('rede mista → "redes" (#372)', () => {
+    assert.equal(derivePartnersLabel(5, 'MISTO'), '5 redes')
+  })
 })
 
 describe('derivePlanDisplayName / deriveVersionLabel', () => {

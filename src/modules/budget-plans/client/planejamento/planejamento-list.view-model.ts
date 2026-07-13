@@ -34,8 +34,11 @@ export const deriveStatusView = (status: BudgetPlanStatus): StatusView => {
 }
 
 /** "N estados" | "N municípios" conforme a granularidade do programa. */
-export const derivePartnersLabel = (count: number, kind: NetworkKind): string =>
-  `${String(count)} ${kind === 'ESTADO' ? 'estados' : 'municípios'}`
+export const derivePartnersLabel = (count: number, kind: NetworkKind): string => {
+  // #372: rede mista (estados + municípios) → "redes"; senão o plural específico.
+  const noun = kind === 'ESTADO' ? 'estados' : kind === 'MUNICIPIO' ? 'municípios' : 'redes'
+  return `${String(count)} ${noun}`
+}
 
 /** Nome de exibição: "{ano} {abrev|programa} {versão}" (ex.: "2026 PARC 1.0"). */
 export const derivePlanDisplayName = (node: BudgetPlanNode): string =>
