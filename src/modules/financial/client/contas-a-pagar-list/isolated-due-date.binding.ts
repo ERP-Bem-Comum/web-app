@@ -2,9 +2,10 @@
  * Binding de "Alterar vencimento" por TÍTULO ISOLADO (#270) — ADAPTER React. Cada título selecionado (Aberto)
  * tem o vencimento alterado numa chamada PRÓPRIA ao `PATCH /financial/documents/:id/payables/:payableId`, que
  * **NÃO propaga** ao documento-pai nem aos irmãos (títulos são independentes — pedido da P.O.). Como não há
- * endpoint de lote isolado, fazemos fan-out (N chamadas) e contamos as falhas p/ decidir sucesso/parcial.
- * Erros como valores; invalida lista + detalhe + grid por título. (Substitui o "vencimento em lote" #162,
- * que propagava pai↔filhos via `PATCH /documents/due-date`.)
+ * endpoint de lote isolado, N chamadas: SEQUENCIAIS por documento (o `version` é do doc e cada alteração o
+ * incrementa → encadeamos a version devolvida), PARALELAS entre documentos. Contamos as falhas p/ sucesso/
+ * parcial. Erros como valores; invalida lista + detalhe + grid por título. (Substitui o "vencimento em lote"
+ * #162, que propagava pai↔filhos via `PATCH /documents/due-date`.)
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
@@ -27,18 +28,34 @@ export function useIsolatedDueDate(onCompleted: () => void): IsolatedDueDateBind
     mutationFn: async (
       args: Readonly<{ targets: readonly IsolatedDueDateTarget[]; dueIso: string }>,
     ): Promise<number> => {
-      // Fan-out isolado: cada título é uma chamada independente (não propaga). Retorna nº de falhas.
-      const results = await Promise.all(
-        args.targets.map((t) =>
-          financialRepository.updatePayableDueDate({
-            documentId: t.documentId,
-            payableId: t.payableId,
-            version: t.version,
-            dueDate: args.dueIso,
-          }),
-        ),
+      // O `version` (optimistic lock) é do DOCUMENTO e CADA alteração isolada o incrementa. Então títulos do
+      // MESMO documento têm de ir em SEQUÊNCIA, encadeando a version devolvida na resposta — senão o 2º título
+      // bate com version velha (conflito). Documentos DISTINTOS rodam em paralelo. Retorna o total de falhas.
+      const byDoc = new Map<string, IsolatedDueDateTarget[]>()
+      for (const t of args.targets) {
+        const arr = byDoc.get(t.documentId)
+        if (arr === undefined) byDoc.set(t.documentId, [t])
+        else arr.push(t)
+      }
+      const failuresPerDoc = await Promise.all(
+        [...byDoc.values()].map(async (group): Promise<number> => {
+          let version = group[0]?.version ?? 0
+          let failed = 0
+          for (const t of group) {
+            const res = await financialRepository.updatePayableDueDate({
+              documentId: t.documentId,
+              payableId: t.payableId,
+              version,
+              dueDate: args.dueIso,
+            })
+            if (isOk(res))
+              version = res.value.version // nova version do documento p/ o próximo título
+            else failed++
+          }
+          return failed
+        }),
       )
-      return results.filter((r) => !isOk(r)).length
+      return failuresPerDoc.reduce((acc, n) => acc + n, 0)
     },
     onSuccess: (failed) => {
       // Mesmo com falha parcial, algo pode ter passado → invalida sempre.

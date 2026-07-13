@@ -19,12 +19,14 @@ vi.mock('#modules/financial/client/data/repository/financial.repository.instance
 }))
 
 const mocked = vi.mocked(financialRepository.updatePayableDueDate)
+// 2 títulos do MESMO documento → sequencial, encadeando a version devolvida (a 1ª sobe 3→4).
 const TARGETS = [
   { documentId: 'd1', payableId: 'p1', version: 3 },
   { documentId: 'd1', payableId: 'p2', version: 3 },
 ] as const
 
-const detail = { id: 'd1' } as never // o binding só olha ok/err, não o conteúdo
+// A resposta é o documento atualizado com a NOVA version (o binding a usa p/ o próximo título do mesmo doc).
+const detail = { id: 'd1', version: 4 } as never
 
 const setup = (onCompleted: () => void) => {
   const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } })
@@ -40,7 +42,7 @@ afterEach(() => {
 })
 
 describe('useIsolatedDueDate (#270 isolado)', () => {
-  it('(a) todos ok → 1 chamada por título (não propaga), sem erro, chama onCompleted', async () => {
+  it('(a) mesmo doc → sequencial, o 2º título usa a version DEVOLVIDA (3→4), sem erro, chama onCompleted', async () => {
     mocked.mockResolvedValue(ok(detail))
     const onCompleted = vi.fn()
     const { result } = setup(onCompleted)
@@ -50,18 +52,18 @@ describe('useIsolatedDueDate (#270 isolado)', () => {
     await waitFor(() => {
       expect(result.current.running).toBe(false)
     })
-    // uma chamada por título (fan-out), cada uma com seu payableId
+    // uma chamada por título; o 2º usa a version DEVOLVIDA pelo 1º (4), não a original (3) — evita conflito
     expect(mocked).toHaveBeenCalledTimes(2)
-    expect(mocked).toHaveBeenCalledWith({
+    expect(mocked).toHaveBeenNthCalledWith(1, {
       documentId: 'd1',
       payableId: 'p1',
       version: 3,
       dueDate: '2026-08-15',
     })
-    expect(mocked).toHaveBeenCalledWith({
+    expect(mocked).toHaveBeenNthCalledWith(2, {
       documentId: 'd1',
       payableId: 'p2',
-      version: 3,
+      version: 4,
       dueDate: '2026-08-15',
     })
     expect(result.current.errorTag).toBeNull()
