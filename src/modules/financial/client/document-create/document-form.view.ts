@@ -225,6 +225,46 @@ export const EMPTY_REFORMA_TRIBUTARIA: ReformaTributariaFieldsReais = {
   ibsEstadual: '',
 }
 
+/**
+ * Patch do LEITOR client-side (ADR-0021) → campos do form. Já em REAIS mascarados (a conversão reais→máscara
+ * mora no mapa `document-reading.view.ts`). Só carrega os campos que o leitor de fato preencheu (parcial).
+ */
+export type DocumentReadingPatch = Readonly<{
+  type?: DocumentType
+  documentNumber?: string
+  series?: string
+  issueDate?: string
+  competencia?: string
+  grossValue?: string
+  description?: string
+  accessKey?: string
+  supplierRef?: string
+  retentions?: Partial<RetentionFieldsReais>
+  reformaTributaria?: Partial<ReformaTributariaFieldsReais>
+}>
+
+/**
+ * Aplica o patch do leitor SOBRE os campos atuais (overlay ATÔMICO, PURO §XI). Diferente dos setters do
+ * controller, NÃO dispara o gating por tipo (o patch já vem coerente do mapa) — assim a ordem dos campos no
+ * patch é irrelevante e o cliente vence o rascunho do backend na hidratação (ADR-0021). Blocos aninhados
+ * (retenções/reforma) são mesclados campo-a-campo.
+ */
+export const applyReadingPatch = (
+  fields: DocumentFormFields,
+  patch: DocumentReadingPatch,
+): DocumentFormFields => {
+  const { retentions, reformaTributaria, ...flat } = patch
+  return {
+    ...fields,
+    ...flat,
+    retentions: retentions !== undefined ? { ...fields.retentions, ...retentions } : fields.retentions,
+    reformaTributaria:
+      reformaTributaria !== undefined
+        ? { ...fields.reformaTributaria, ...reformaTributaria }
+        : fields.reformaTributaria,
+  }
+}
+
 const toCents = (reais: string): number => {
   const r = reaisToCents(reais)
   return r.ok ? Number.parseInt(r.value, 10) : 0
