@@ -44,7 +44,7 @@ export function useDocumentPreview(file: File | null): DocumentPreviewData | nul
   }, [file])
 
   if (file === null) return null
-  if (isPdf(file)) return pdfUrl !== null ? { kind: 'pdf', url: pdfUrl, fileName: file.name } : null
+  if (isPdf(file)) return pdfUrl !== null ? { kind: 'pdf', file, url: pdfUrl, fileName: file.name } : null
   if (isXml(file)) {
     return xml !== null && xml.file === file ? { kind: 'xml', text: xml.text, fileName: file.name } : null
   }

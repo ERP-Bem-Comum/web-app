@@ -14,7 +14,9 @@ import {
   issAllowedFor,
   defaultPaymentMethodFor,
   competenciaFromIssueDate,
+  applyReadingPatch,
   type DocumentFormFields,
+  type DocumentReadingPatch,
   type RetentionFieldsReais,
   type ReformaTributariaFieldsReais,
 } from './document-form.view.ts'
@@ -78,6 +80,7 @@ type FormAction =
   | Readonly<{ kind: 'setText'; key: TextKey; value: string }>
   | Readonly<{ kind: 'setRetention'; key: keyof RetentionFieldsReais; value: string }>
   | Readonly<{ kind: 'setReformaTributaria'; key: keyof ReformaTributariaFieldsReais; value: string }>
+  | Readonly<{ kind: 'applyReading'; patch: DocumentReadingPatch }>
   | Readonly<{ kind: 'hydrate'; fields: DocumentFormFields }>
   | Readonly<{ kind: 'reset' }>
 
@@ -140,6 +143,9 @@ const reducer = (state: DocumentFormFields, action: FormAction): DocumentFormFie
         ...state,
         reformaTributaria: { ...state.reformaTributaria, [action.key]: action.value },
       }
+    case 'applyReading':
+      // Overlay atômico do leitor client (ADR-0021) — sem gating por tipo (o patch já vem coerente do mapa).
+      return applyReadingPatch(state, action.patch)
     case 'hydrate':
       return action.fields
     case 'reset':
@@ -180,20 +186,33 @@ export type DocumentFormController = Readonly<{
   closeContractPicker: () => void
 }>
 
-export function useDocumentFormController(initial?: DocumentFormFields | null): DocumentFormController {
+export function useDocumentFormController(
+  initial?: DocumentFormFields | null,
+  reading?: DocumentReadingPatch | null,
+): DocumentFormController {
   const [fields, dispatch] = useReducer(reducer, EMPTY_FIELDS)
   const [typeModalOpen, setTypeModalOpen] = useState(false)
   const [payModalOpen, setPayModalOpen] = useState(false)
   const [contractPickerOpen, setContractPickerOpen] = useState(false)
-  // Hidrata UMA vez quando os dados de edição chegam (async). `useRef` evita re-hidratar a cada render,
-  // preservando o que o usuário já editou.
+  // Hidrata UMA vez quando o rascunho do backend chega (async); `hydrated` evita re-hidratar (preserva os edits
+  // do operador). A leitura client-side (ADR-0021) VENCE: na hidratação ela é sobreposta ao rascunho; fora dela,
+  // é aplicada quando surge/troca. `appliedReading` garante um único apply por leitura (sem re-clobber). Um único
+  // efeito depende de [initial, reading] p/ resolver qualquer ordem de chegada com o cliente sempre vencendo.
   const hydrated = useRef(false)
+  const appliedReading = useRef<DocumentReadingPatch | null>(null)
   useEffect(() => {
+    const current = reading ?? null
     if (initial != null && !hydrated.current) {
       hydrated.current = true
-      dispatch({ kind: 'hydrate', fields: initial })
+      appliedReading.current = current
+      dispatch({ kind: 'hydrate', fields: current !== null ? applyReadingPatch(initial, current) : initial })
+      return
     }
-  }, [initial])
+    if (current !== null && appliedReading.current !== current) {
+      appliedReading.current = current
+      dispatch({ kind: 'applyReading', patch: current })
+    }
+  }, [initial, reading])
   return {
     fields,
     setType: (value) => {
