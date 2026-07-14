@@ -32,6 +32,15 @@ export const suggestionsQueryOptions = (transactionId: string | null) => ({
   staleTime: 15_000,
 })
 
+// Contrapartidas esperadas candidatas (US2 do #269) — transferência entre contas. Habilita só com uma
+// transação selecionada; segue o ciclo de conciliação da sessão (curto). Espelha `suggestionsQueryOptions`.
+export const counterpartSuggestionsQueryOptions = (transactionId: string | null) => ({
+  queryKey: ['financial', 'reconciliation', 'counterpart-suggestions', transactionId] as const,
+  queryFn: () => reconciliationRepository.getCounterpartSuggestions({ transactionId: transactionId ?? '' }),
+  enabled: transactionId !== null,
+  staleTime: 15_000,
+})
+
 // Saldo do PERÍODO do extrato (#205) — abertura acumulada até `from` + fechamento + entradas/saídas.
 // Habilita só com conta + intervalo resolvidos. Espelha o período selecionado no header.
 export const accountStatementPeriodQueryOptions = (

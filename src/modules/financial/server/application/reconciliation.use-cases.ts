@@ -10,6 +10,9 @@ import type {
   BatchReconcileInput,
   BatchResult,
   CedenteAccount,
+  ConfirmCounterpartInput,
+  ConfirmCounterpartResult,
+  CounterpartSuggestion,
   CreateCedenteAccountInput,
   EditCedenteAccountInput,
   ClosePeriodInput,
@@ -18,6 +21,7 @@ import type {
   ExportReconciliationInput,
   FinancialReferences,
   GetAccountStatementInput,
+  GetCounterpartSuggestionsInput,
   GetStatementSuggestionsInput,
   GetSuggestionsInput,
   GetTransactionReconciliationInput,
@@ -83,6 +87,14 @@ export type ReconciliationClient = Readonly<{
     i: GetTransactionReconciliationInput,
     token: string,
   ) => Promise<Result<TransactionReconciliation | null, ReconciliationError>>
+  getCounterpartSuggestions: (
+    i: GetCounterpartSuggestionsInput,
+    token: string,
+  ) => Promise<Result<readonly CounterpartSuggestion[], ReconciliationError>>
+  confirmCounterpart: (
+    i: ConfirmCounterpartInput,
+    token: string,
+  ) => Promise<Result<ConfirmCounterpartResult, ReconciliationError>>
   rejectSuggestion: (
     i: RejectSuggestionInput,
     token: string,
@@ -190,6 +202,22 @@ export const createGetTransactionReconciliation =
     token: string,
   ): Promise<Result<TransactionReconciliation | null, ReconciliationError>> =>
     deps.client.getTransactionReconciliation(i, token)
+
+export const createGetCounterpartSuggestions =
+  (deps: Deps) =>
+  (
+    i: GetCounterpartSuggestionsInput,
+    token: string,
+  ): Promise<Result<readonly CounterpartSuggestion[], ReconciliationError>> =>
+    deps.client.getCounterpartSuggestions(i, token)
+
+export const createConfirmCounterpart =
+  (deps: Deps) =>
+  (
+    i: ConfirmCounterpartInput,
+    token: string,
+  ): Promise<Result<ConfirmCounterpartResult, ReconciliationError>> =>
+    deps.client.confirmCounterpart(i, token)
 
 export const createRejectSuggestion =
   (deps: Deps) =>

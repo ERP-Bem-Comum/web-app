@@ -76,6 +76,13 @@ export const GetTransactionReconciliationInputSchema = z.object({ transactionId:
 
 export const RejectSuggestionInputSchema = z.object({ transactionId: z.uuid(), payableId: z.uuid() })
 
+// US2 (#269): contrapartidas de transferência entre contas.
+export const GetCounterpartSuggestionsInputSchema = z.object({ transactionId: z.uuid() })
+export const ConfirmCounterpartInputSchema = z.object({
+  transactionId: z.uuid(),
+  counterpartId: z.uuid(),
+})
+
 const DifferenceInputSchema = z.object({
   valueCents: z.int(), // pode ser negativo (ex.: Discount)
   treatment: z.enum(DIFFERENCE_TREATMENTS),
@@ -141,6 +148,14 @@ const _g_getTxRecon: AssertEqual<
   R.GetTransactionReconciliationInput
 > = true
 const _g_reject: AssertEqual<z.infer<typeof RejectSuggestionInputSchema>, R.RejectSuggestionInput> = true
+const _g_counterpartSugg: AssertEqual<
+  z.infer<typeof GetCounterpartSuggestionsInputSchema>,
+  R.GetCounterpartSuggestionsInput
+> = true
+const _g_confirmCounterpart: AssertEqual<
+  z.infer<typeof ConfirmCounterpartInputSchema>,
+  R.ConfirmCounterpartInput
+> = true
 const _g_recon: AssertEqual<
   z.infer<typeof CreateReconciliationInputSchema>,
   R.CreateReconciliationInput
@@ -173,6 +188,8 @@ void _g_sugg
 void _g_stmtSugg
 void _g_getTxRecon
 void _g_reject
+void _g_counterpartSugg
+void _g_confirmCounterpart
 void _g_recon
 void _g_undo
 void _g_manual

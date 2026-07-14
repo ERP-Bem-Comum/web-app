@@ -908,6 +908,19 @@ export const altBtn = style({
   },
 })
 
+// Seção de CONTRAPARTIDA ESPERADA (#269) no TOPO da aba Sugestão: mesmo layout dos cards de alternativa,
+// mas com respiro próprio de topo-de-seção — pouco espaço acima (encosta na barra de abas com folga) e um
+// separador embaixo p/ dividir dos palpites de título (SuggestionPane) que vêm a seguir.
+export const counterpartSection = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: sp.xs,
+  marginBlockStart: sp.md,
+  marginBlockEnd: sp.lg,
+  paddingBlockEnd: sp.lg,
+  borderBlockEnd: `${bw.hairline} solid ${c.paper.rule}`,
+})
+
 export const errorText = style({ color: c.red.deep, fontFamily: recon.font.sans, fontSize: fs.sm })
 export const summaryNote = style({
   marginInlineStart: sp.lg, // respiro do botão Importar (não colar a info de import no botão)
