@@ -159,10 +159,12 @@ export function DocumentPreview(props: DocumentPreviewProps): ReactNode {
             {props.preview.kind === 'pdf' ? (
               <iframe
                 className={previewFrame}
-                // Remount por zoom (`key`): o visualizador nativo só lê o `#zoom=` no LOAD — trocar só o
+                // Remount por zoom (`key`): o visualizador nativo só lê o fragmento no LOAD — trocar só o
                 // fragmento não re-aplica; remontar força a re-navegação no novo zoom (blob local = instantâneo).
                 key={`pdf-${String(zoom)}`}
-                src={`${props.preview.url}#zoom=${String(zoom)}`}
+                // `toolbar=0&navpanes=0`: esconde a barra e o painel de MINIATURAS do visualizador nativo
+                // (a "faixa preta" lateral) → mostra só o conteúdo do documento. O zoom é o nosso (− % +).
+                src={`${props.preview.url}#toolbar=0&navpanes=0&zoom=${String(zoom)}`}
                 title={t('financial.create.preview.frameLabel')}
               />
             ) : props.preview.kind === 'xml' ? (
