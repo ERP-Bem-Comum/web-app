@@ -16,6 +16,8 @@ import {
   cedenteAccountToModel,
   cedenteAccountsToModel,
   costCentersToModel,
+  counterpartConfirmedToModel,
+  counterpartSuggestionsToModel,
   importToModel,
   manualEntryToModel,
   mapHttpError,
@@ -257,6 +259,25 @@ export const createCoreApiReconciliationClient = (
     const maps =
       enrichmentFor === undefined ? emptyEnrichmentMaps() : await buildEnrichmentMaps(enrichmentFor(token))
     return ok(enrichTransactionReconciliation(maps, base.value))
+  },
+  getCounterpartSuggestions: async (i, token) => {
+    // US2 (#269): contrapartidas esperadas que casam com a transação (transferência entre contas).
+    const r = await resultFetch<unknown>(
+      `${baseUrl}/statement-transactions/${i.transactionId}/counterpart-suggestions`,
+      { token },
+    )
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return counterpartSuggestionsToModel(r.value)
+  },
+  confirmCounterpart: async (i, token) => {
+    // US2 (#269): concilia a transação contra a contrapartida escolhida (POST /reconciliations/counterpart).
+    const r = await resultFetch<unknown>(`${baseUrl}/reconciliations/counterpart`, {
+      method: 'POST',
+      body: { transactionId: i.transactionId, counterpartId: i.counterpartId },
+      token,
+    })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return counterpartConfirmedToModel(r.value)
   },
   rejectSuggestion: async (i, token) => {
     const r = await resultFetch<unknown>(

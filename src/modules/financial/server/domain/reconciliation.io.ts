@@ -53,6 +53,20 @@ export interface GetTransactionReconciliationInput {
   transactionId: string
 }
 
+// Contrapartidas esperadas que casam com uma transação (US2 do #269 — GET /statement-transactions/:id/
+// counterpart-suggestions). Transferência entre contas: a perna de origem cria a contrapartida Pending na
+// conta de destino; aqui listamos as candidatas p/ a transação real de crédito.
+export interface GetCounterpartSuggestionsInput {
+  transactionId: string
+}
+
+// Confirmar contrapartida (US2 do #269 — POST /reconciliations/counterpart). Concilia a transação contra a
+// contrapartida esperada escolhida.
+export interface ConfirmCounterpartInput {
+  transactionId: string
+  counterpartId: string
+}
+
 // Rejeitar uma sugestão (POST /statement-transactions/:id/reject-suggestion).
 export interface RejectSuggestionInput {
   transactionId: string
@@ -289,6 +303,23 @@ export type StatementSuggestion = Readonly<{
 }>
 
 export type RejectedSuggestion = Readonly<{ transactionId: string; payableId: string }>
+
+// Contrapartida esperada candidata (US2 do #269). `originAccountRef` = conta de origem da transferência
+// (uuid; o contrato não enriquece o nome). `valueCents` = string de centavos (convenção do módulo).
+// `expectedDate` = ISO. `score` 0..100 (match por valor exato + mesmo movimento + janela ~5 dias).
+export type CounterpartSuggestion = Readonly<{
+  counterpartId: string
+  originAccountRef: string
+  valueCents: string
+  expectedDate: string // ISO
+  score: number // 0..100
+}>
+
+// Resultado da confirmação da contrapartida (POST /reconciliations/counterpart → 201).
+export type ConfirmCounterpartResult = Readonly<{
+  reconciliationId: string
+  counterpartId: string
+}>
 
 // Lookup da conciliação ativa por transação (#175 — GET /statement-transactions/:id/reconciliation).
 // 404 no core-api = transação sem conciliação ativa → a borda devolve `null` (não é erro). `type` inclui

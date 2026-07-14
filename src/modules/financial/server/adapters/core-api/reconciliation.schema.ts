@@ -159,6 +159,26 @@ export const CoreApiStatementSuggestionsSchema = z.object({
   items: z.array(CoreApiStatementSuggestionSchema),
 })
 
+// Contrapartida esperada candidata (US2 do #269 — GET /statement-transactions/:id/counterpart-suggestions
+// → { suggestions }). Money = string de centavos; `expectedDate` ISO; `score` int 0..100.
+export const CoreApiCounterpartSuggestionSchema = z.object({
+  counterpartId: z.string().trim(),
+  originAccountRef: z.string().trim(),
+  valueCents: z.string().trim(),
+  expectedDate: z.string().trim(),
+  score: z.int(),
+})
+export type CoreApiCounterpartSuggestion = z.infer<typeof CoreApiCounterpartSuggestionSchema>
+export const CoreApiCounterpartSuggestionsSchema = z.object({
+  suggestions: z.array(CoreApiCounterpartSuggestionSchema),
+})
+
+// Confirmar contrapartida (US2 do #269 — POST /reconciliations/counterpart → 201).
+export const CoreApiCounterpartConfirmedSchema = z.object({
+  reconciliationId: z.string().trim(),
+  counterpartId: z.string().trim(),
+})
+
 // Conciliação ativa de uma transação (#175 — GET /statement-transactions/:id/reconciliation). `id` é o
 // reconciliationId. `treatment` da diferença NÃO é serializado pelo core-api hoje (só differenceCents).
 export const CoreApiTransactionReconciliationSchema = z.object({

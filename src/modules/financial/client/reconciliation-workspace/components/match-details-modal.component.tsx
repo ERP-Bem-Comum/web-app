@@ -176,7 +176,7 @@ export function MatchDetailsModal({
                     <span className={s.mmSideK}>{t('financial.recon.match.rowValueDoc')}</span>
                     <span className={s.mmSideVAmt.doc}>{view.doc.valueBRL}</span>
                   </div>
-                  <span className={s.mmMultiHint}>{t('financial.recon.match.manualHint')}</span>
+                  <span className={s.mmMultiHint}>{t(view.manualHintTag)}</span>
                 </>
               ) : (
                 <>

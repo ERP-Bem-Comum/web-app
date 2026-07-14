@@ -26,6 +26,10 @@ export type ReconciliationError =
   | 'title-not-paid'
   | 'empty-reconciliation'
   | 'reconciliation-already-undone'
+  | 'counterpart-not-found'
+  | 'counterpart-not-pending'
+  | 'counterpart-account-mismatch'
+  | 'counterpart-value-mismatch'
   | 'export-unsupported-format'
   | 'unavailable'
 

@@ -1069,6 +1069,11 @@ describe('fluxo contínuo: nextPendingWithMatch + tituloLabel', () => {
     assert.equal(nextPendingWithMatch(txs, new Map([['b', { band: 'media' as const }]]), 'a'), 'b') // sem alta → media
     assert.equal(nextPendingWithMatch(txs, new Map(), 'a'), null) // ninguém com palpite
     assert.equal(nextPendingWithMatch(txs, new Map([['a', { band: 'alta' as const }]]), 'a'), null) // só a própria
+    // afterId inexistente ('') → varre do topo: 1ª pendente COM palpite (usado na auto-seleção ao entrar
+    // em Conciliação — a aba Sugestão nunca abre vazia quando existe match).
+    assert.equal(nextPendingWithMatch(txs, guesses, ''), 'c') // 'c' (alta) antes de 'b' (media)
+    assert.equal(nextPendingWithMatch(txs, new Map([['b', { band: 'media' as const }]]), ''), 'b')
+    assert.equal(nextPendingWithMatch(txs, new Map(), ''), null) // sem palpite → cai no topo (na binding)
   })
   it('tituloLabel: "Tipo Número"; vazio quando null/sem dados', () => {
     const mkPayable = (over: Partial<PaidPayable>): PaidPayable => ({

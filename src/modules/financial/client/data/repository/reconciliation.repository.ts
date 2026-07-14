@@ -13,6 +13,9 @@ import type {
   BatchResult,
   ClosePeriodInput,
   ReopenPeriodInput,
+  ConfirmCounterpartInput,
+  ConfirmCounterpartResult,
+  CounterpartSuggestion,
   CreateCedenteAccountInput,
   EditCedenteAccountInput,
   CreateReconciliationInput,
@@ -20,6 +23,7 @@ import type {
   ExportReconciliationInput,
   FinancialReferences,
   GetAccountStatementInput,
+  GetCounterpartSuggestionsInput,
   GetStatementSuggestionsInput,
   GetSuggestionsInput,
   ImportStatementInput,
@@ -61,6 +65,12 @@ type SuggestionsFn = (opts: {
 type StatementSuggestionsFn = (opts: {
   data: GetStatementSuggestionsInput
 }) => Promise<ReconFnResult<readonly StatementSuggestion[]>>
+type CounterpartSuggestionsFn = (opts: {
+  data: GetCounterpartSuggestionsInput
+}) => Promise<ReconFnResult<readonly CounterpartSuggestion[]>>
+type ConfirmCounterpartFn = (opts: {
+  data: ConfirmCounterpartInput
+}) => Promise<ReconFnResult<ConfirmCounterpartResult>>
 type GetTxReconFn = (opts: {
   data: { transactionId: string }
 }) => Promise<ReconFnResult<TransactionReconciliation | null>>
@@ -105,6 +115,13 @@ export type ReconciliationRepository = Readonly<{
   getStatementSuggestions: (
     i: GetStatementSuggestionsInput,
   ) => Promise<Result<readonly StatementSuggestion[], ReconciliationError>>
+  // Contrapartidas esperadas candidatas (US2 do #269) — transferência entre contas.
+  getCounterpartSuggestions: (
+    i: GetCounterpartSuggestionsInput,
+  ) => Promise<Result<readonly CounterpartSuggestion[], ReconciliationError>>
+  confirmCounterpart: (
+    i: ConfirmCounterpartInput,
+  ) => Promise<Result<ConfirmCounterpartResult, ReconciliationError>>
   getTransactionReconciliation: (
     transactionId: string,
   ) => Promise<Result<TransactionReconciliation | null, ReconciliationError>>
@@ -147,6 +164,8 @@ export const createReconciliationRepository = (
     getAccountStatementPeriodFn: GetStatementPeriodFn
     getSuggestionsFn: SuggestionsFn
     getStatementSuggestionsFn: StatementSuggestionsFn
+    getCounterpartSuggestionsFn: CounterpartSuggestionsFn
+    confirmCounterpartFn: ConfirmCounterpartFn
     getTransactionReconciliationFn: GetTxReconFn
     rejectSuggestionFn: RejectFn
     createReconciliationFn: ReconcileFn
@@ -190,6 +209,14 @@ export const createReconciliationRepository = (
   },
   getStatementSuggestions: async (i) => {
     const res = await deps.getStatementSuggestionsFn({ data: i })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  getCounterpartSuggestions: async (i) => {
+    const res = await deps.getCounterpartSuggestionsFn({ data: i })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  confirmCounterpart: async (i) => {
+    const res = await deps.confirmCounterpartFn({ data: i })
     return res.ok ? ok(res.data) : err(res.error)
   },
   getTransactionReconciliation: async (transactionId) => {

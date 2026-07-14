@@ -63,11 +63,14 @@ function ChromeSelect({ label, placeholder }: Readonly<{ label: string; placehol
     </label>
   )
 }
+// `value` presente = mostra o dado (read-only, não editável); ausente = placeholder cinza (chrome puro).
 function ChromeInput({
   label,
   placeholder,
   mono,
-}: Readonly<{ label: string; placeholder: string; mono?: boolean }>) {
+  value,
+}: Readonly<{ label: string; placeholder: string; mono?: boolean; value?: string }>) {
+  const filled = value !== undefined && value !== ''
   return (
     <label className={s.ntField}>
       <span className={s.ntLabel}>{label}</span>
@@ -75,8 +78,10 @@ function ChromeInput({
         type="text"
         className={mono === true ? s.ntInputMono : s.ntInput}
         placeholder={placeholder}
-        disabled
-        aria-disabled="true"
+        value={value ?? ''}
+        readOnly
+        disabled={!filled}
+        aria-disabled={!filled}
       />
     </label>
   )
@@ -226,75 +231,89 @@ export function NewTransactionPane({ binding }: NewTransactionPaneProps) {
                 options={binding.accountOptions}
                 onChange={binding.setDestinationAccount}
               />
-              <ChromeInput label={t('financial.recon.manual.f.effective')} placeholder="DD/MM/AAAA" mono />
+              {/* Reflete a data da transação bancária selecionada (read-only — o backend usa a data da transação). */}
+              <ChromeInput
+                label={t('financial.recon.manual.f.effective')}
+                placeholder="DD/MM/AAAA"
+                mono
+                value={binding.effectiveDate}
+              />
             </div>
           </div>
         ) : null}
 
-        {/* Categorização */}
+        {/* Categorização — oculta p/ Transferência/Aplicação/Resgate (movimentação entre contas próprias). */}
         <div className={s.ntSection}>
-          <div className={s.ntSectionLbl}>{t('financial.recon.manual.categorize')}</div>
-          <p className={s.ntHint}>{t('financial.recon.manual.backendHint')}</p>
-
-          {binding.showPayeeBlock ? (
+          {binding.showCategorization ? (
             <>
-              <div className={`${s.ntRow} ${s.ntRowCols2}`}>
-                {/* Fornecedor — REAL: opções de parceiros ativos (envia supplierRef). */}
-                <RealSelect
-                  label={t('financial.recon.manual.f.supplier')}
-                  placeholder={t('financial.recon.manual.f.supplierPlaceholder')}
-                  value={binding.supplierRef}
-                  options={binding.partnerOptions}
-                  onChange={binding.setSupplierRef}
-                />
-                {/* Número do documento — chrome até o contrato do manual-entry aceitar (core-api#370). */}
-                <ChromeInput
-                  label={t('financial.recon.manual.f.docNumber')}
-                  placeholder={t('financial.recon.manual.f.docNumberPlaceholder')}
-                  mono
-                />
-              </div>
-              <div className={`${s.ntRow} ${s.ntRowCols2}`}>
-                {/* Tipo de documento + Emissão — chrome até core-api#370. */}
-                <ChromeSelect
-                  label={t('financial.recon.manual.f.docType')}
-                  placeholder={t('financial.recon.manual.f.docTypePlaceholder')}
-                />
-                <ChromeInput label={t('financial.recon.manual.f.emission')} placeholder="DD/MM/AAAA" mono />
-              </div>
-              <div className={`${s.ntRow} ${s.ntRowCols2}`}>
-                <ChromeInput label={t('financial.recon.manual.f.docValue')} placeholder="R$ 0,00" mono />
-              </div>
-            </>
-          ) : null}
+              <div className={s.ntSectionLbl}>{t('financial.recon.manual.categorize')}</div>
+              <p className={s.ntHint}>{t('financial.recon.manual.backendHint')}</p>
 
-          {/* Cascata co-dependente Centro de Custo → Categoria → Subcategoria (EPIC #150), em 2 linhas 2-col
+              {binding.showPayeeBlock ? (
+                <>
+                  <div className={`${s.ntRow} ${s.ntRowCols2}`}>
+                    {/* Fornecedor — REAL: opções de parceiros ativos (envia supplierRef). */}
+                    <RealSelect
+                      label={t('financial.recon.manual.f.supplier')}
+                      placeholder={t('financial.recon.manual.f.supplierPlaceholder')}
+                      value={binding.supplierRef}
+                      options={binding.partnerOptions}
+                      onChange={binding.setSupplierRef}
+                    />
+                    {/* Número do documento — chrome até o contrato do manual-entry aceitar (core-api#370). */}
+                    <ChromeInput
+                      label={t('financial.recon.manual.f.docNumber')}
+                      placeholder={t('financial.recon.manual.f.docNumberPlaceholder')}
+                      mono
+                    />
+                  </div>
+                  <div className={`${s.ntRow} ${s.ntRowCols2}`}>
+                    {/* Tipo de documento + Emissão — chrome até core-api#370. */}
+                    <ChromeSelect
+                      label={t('financial.recon.manual.f.docType')}
+                      placeholder={t('financial.recon.manual.f.docTypePlaceholder')}
+                    />
+                    <ChromeInput
+                      label={t('financial.recon.manual.f.emission')}
+                      placeholder="DD/MM/AAAA"
+                      mono
+                    />
+                  </div>
+                  <div className={`${s.ntRow} ${s.ntRowCols2}`}>
+                    <ChromeInput label={t('financial.recon.manual.f.docValue')} placeholder="R$ 0,00" mono />
+                  </div>
+                </>
+              ) : null}
+
+              {/* Cascata co-dependente Centro de Custo → Categoria → Subcategoria (EPIC #150), em 2 linhas 2-col
               (sem campos full-width). Escolher o centro filtra as categorias (placeholder #341); a categoria
               filtra as subcategorias (real, via parentId). Envia a folha (subcategoria|categoria) como categoryRef. */}
-          {binding.showPayeeBlock ? (
-            <>
-              <div className={`${s.ntRow} ${s.ntRowCols2}`}>
-                {programaSelect}
-                {centroSelect}
-              </div>
-              <div className={`${s.ntRow} ${s.ntRowCols2}`}>
-                {categoriaSelect}
-                {subcategoriaSelect}
-              </div>
+              {binding.showPayeeBlock ? (
+                <>
+                  <div className={`${s.ntRow} ${s.ntRowCols2}`}>
+                    {programaSelect}
+                    {centroSelect}
+                  </div>
+                  <div className={`${s.ntRow} ${s.ntRowCols2}`}>
+                    {categoriaSelect}
+                    {subcategoriaSelect}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className={`${s.ntRow} ${s.ntRowCols2}`}>
+                    {centroSelect}
+                    {categoriaSelect}
+                  </div>
+                  {/* Subcategoria + (só p/ Tarifa/Juros) a classificação Tarifa/Multa/Juros no espaço ao lado. */}
+                  <div className={`${s.ntRow} ${s.ntRowCols2}`}>
+                    {subcategoriaSelect}
+                    {type === 'FeePenaltyInterest' ? feeKindSelect : null}
+                  </div>
+                </>
+              )}
             </>
-          ) : (
-            <>
-              <div className={`${s.ntRow} ${s.ntRowCols2}`}>
-                {centroSelect}
-                {categoriaSelect}
-              </div>
-              {/* Subcategoria + (só p/ Tarifa/Juros) a classificação Tarifa/Multa/Juros no espaço ao lado. */}
-              <div className={`${s.ntRow} ${s.ntRowCols2}`}>
-                {subcategoriaSelect}
-                {type === 'FeePenaltyInterest' ? feeKindSelect : null}
-              </div>
-            </>
-          )}
+          ) : null}
           <div className={s.ntRow}>
             <label className={s.ntField}>
               <span className={s.ntLabel}>

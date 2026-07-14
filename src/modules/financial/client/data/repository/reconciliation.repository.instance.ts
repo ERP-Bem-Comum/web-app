@@ -10,6 +10,8 @@ import { listFinancialReferencesFn } from '#modules/financial/server/adapters/se
 import { getAccountStatementPeriodFn } from '#modules/financial/server/adapters/server-fns/get-account-statement-period.query.fn.ts'
 import { getTransactionSuggestionsFn } from '#modules/financial/server/adapters/server-fns/get-transaction-suggestions.query.fn.ts'
 import { getStatementSuggestionsFn } from '#modules/financial/server/adapters/server-fns/get-statement-suggestions.query.fn.ts'
+import { getCounterpartSuggestionsFn } from '#modules/financial/server/adapters/server-fns/get-counterpart-suggestions.query.fn.ts'
+import { confirmCounterpartFn } from '#modules/financial/server/adapters/server-fns/confirm-counterpart.service.fn.ts'
 import { getTransactionReconciliationFn } from '#modules/financial/server/adapters/server-fns/get-transaction-reconciliation.query.fn.ts'
 import { rejectSuggestionFn } from '#modules/financial/server/adapters/server-fns/reject-suggestion.service.fn.ts'
 import { createReconciliationFn } from '#modules/financial/server/adapters/server-fns/create-reconciliation.service.fn.ts'
@@ -36,6 +38,8 @@ export const reconciliationRepository = createReconciliationRepository({
   getAccountStatementPeriodFn: (opts) => getAccountStatementPeriodFn(opts),
   getSuggestionsFn: (opts) => getTransactionSuggestionsFn(opts),
   getStatementSuggestionsFn: (opts) => getStatementSuggestionsFn(opts),
+  getCounterpartSuggestionsFn: (opts) => getCounterpartSuggestionsFn(opts),
+  confirmCounterpartFn: (opts) => confirmCounterpartFn(opts),
   getTransactionReconciliationFn: (opts) => getTransactionReconciliationFn(opts),
   rejectSuggestionFn: (opts) => rejectSuggestionFn(opts),
   createReconciliationFn: (opts) => createReconciliationFn(opts),

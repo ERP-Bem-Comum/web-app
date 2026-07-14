@@ -45,6 +45,7 @@ import { useMatchDetails, type MatchDetailsBinding } from './match-details.bindi
 import { useHeaderMenus, resolvePeriodRange, type HeaderMenusBinding } from './header-menus.binding.ts'
 import { useImport, type ImportBinding } from './import.binding.ts'
 import { useReconcile, type ReconcileBinding } from './reconcile.binding.ts'
+import { useCounterpart, type CounterpartBinding } from './counterpart.binding.ts'
 import { useSearchCreate, type SearchCreateBinding } from './search-create.binding.ts'
 import { useManualEntry, type ManualEntryBinding } from './manual-entry.binding.ts'
 import { useUndo, type UndoBinding } from './undo.binding.ts'
@@ -140,6 +141,9 @@ export type WorkspaceBinding = Readonly<{
   headerMenus: HeaderMenusBinding
   import: ImportBinding
   reconcile: ReconcileBinding
+  // US2 (#269): contrapartida esperada da transação selecionada (transferência entre contas). O painel só
+  // aparece quando há candidatas (state.tag === 'ready') → invisível p/ transações comuns de título.
+  counterpart: CounterpartBinding
   searchCreate: SearchCreateBinding
   manualEntry: ManualEntryBinding
   undo: UndoBinding
@@ -385,17 +389,13 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
 
   const pendentesCount = allTx.filter(isPending).length
 
-  // Aba Conciliação: o motor de sugestão já aparece para a transação do TOPO da lista (sem exigir clique).
-  // Auto-seleciona a 1ª transação do filtro atual enquanto nada estiver selecionado; depois respeita a
-  // escolha do usuário. Cobre o load inicial (aba padrão) e a volta do Extrato sem seleção.
-  const topTransactionId = filterTransactions(allTx, ui.listFilter)[0]?.id ?? null
-  useEffect(() => {
-    if (ui.activeTab === 'conciliacao' && ui.selectedTransactionId === null && topTransactionId !== null) {
-      dispatch({ type: 'select-transaction', id: topTransactionId })
-    }
-  }, [ui.activeTab, ui.selectedTransactionId, topTransactionId])
-
   const reconcileBinding = useReconcile(recordReconciliation)
+  // US2 (#269): contrapartidas da transação selecionada — só busca p/ transação PENDENTE (confirmar só faz
+  // sentido antes de conciliar). Ao confirmar, o namespace é invalidado (dentro do binding) → a tx vira
+  // conciliada e o Desfazer sai do lookup #175, sem gravação de sessão nova.
+  const counterpartBinding = useCounterpart(
+    selectedTx !== null && isPending(selectedTx) ? selectedTx.id : null,
+  )
   const searchCreateBinding = useSearchCreate(selectedTx, payables, recordReconciliation)
   const manualEntryBinding = useManualEntry(accountRef, selectedTx, recordReconciliation)
   // No sucesso do Desfazer: esquece o id de sessão E fecha o modal de detalhes. Em falha (ex.: período
@@ -592,6 +592,26 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     ),
   )
 
+  // Aba Conciliação: a sugestão aparece sem exigir clique. Auto-seleciona — enquanto nada estiver
+  // selecionado — a 1ª transação PENDENTE COM palpite (banda alta primeiro; #174), pra a aba Sugestão nunca
+  // abrir "vazia" quando existe match (pedido recorrente da P.O.). Sem nenhum palpite, cai na transação do
+  // topo do filtro (Sugestão selecionada, porém vazia). Só dispara depois que o batch de palpites assentou
+  // (`guessesSettled`) — senão selecionaria o topo antes dos palpites carregarem e não corrigiria (a seleção
+  // deixaria de ser null). Depois disso, respeita a escolha do usuário. Cobre load inicial e volta do Extrato.
+  const filteredTx = filterTransactions(allTx, ui.listFilter)
+  const guessesSettled = !ui.showGuesses || statementSuggestionsQuery.isFetched
+  const autoSelectId = nextPendingWithMatch(filteredTx, guesses, '') ?? filteredTx[0]?.id ?? null
+  useEffect(() => {
+    if (
+      ui.activeTab === 'conciliacao' &&
+      ui.selectedTransactionId === null &&
+      guessesSettled &&
+      autoSelectId !== null
+    ) {
+      dispatch({ type: 'select-transaction', id: autoSelectId })
+    }
+  }, [ui.activeTab, ui.selectedTransactionId, guessesSettled, autoSelectId])
+
   // Fluxo contínuo: quando a tx recém-conciliada some das pendentes (refetch concluído), seleciona a
   // PRÓXIMA pendente COM match → a sugestão nunca fica vazia. setState DIFERIDO (sem render em cascata).
   useEffect(() => {
@@ -651,6 +671,7 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     headerMenus: headerMenusBinding,
     import: importBinding,
     reconcile: reconcileBinding,
+    counterpart: counterpartBinding,
     searchCreate: searchCreateBinding,
     manualEntry: manualEntryBinding,
     undo: undoBinding,
