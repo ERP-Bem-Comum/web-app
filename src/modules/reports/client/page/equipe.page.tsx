@@ -17,11 +17,7 @@ import { BrandPaginator } from '#shared/ui/brand/brand-paginator.component.tsx'
 import { ChevronLeftIcon, ChevronDownIcon, FilterIcon, DownloadIcon } from '#shared/ui/index.ts'
 
 import {
-  loadTeam,
   total as computeTotal,
-  byGenero,
-  byRacaCor,
-  byFaixaEtaria,
   byAnoContrato,
   byFuncao,
   buildCsv,
@@ -32,6 +28,9 @@ import {
   ANOS,
   type TeamMemberRow,
 } from '../equipe.view-model.ts'
+import { useEquipe } from '../equipe.binding.ts'
+import type { CategoryCount } from '../equipe.view-model.ts'
+import { ReportStatePanel } from '../components/report-state-panel.component.tsx'
 import { RealizadoChartsMount } from '../components/realizado-charts-mount.component.tsx'
 import { EquipeGeneroDonut } from '../components/equipe-genero-donut.component.tsx'
 import { EquipeVerticalBars } from '../components/equipe-vertical-bars.component.tsx'
@@ -68,6 +67,16 @@ import {
 
 const t = createTranslator(ptBR)
 
+/** Linhas vazias enquanto a query carrega/falha (mantém a ordem dos hooks estável — §XI). */
+const EMPTY_ROWS: readonly TeamMemberRow[] = []
+
+/**
+ * Dataset VAZIO dos 3 gráficos demográficos (Gênero/Idade/Raça-cor): o endpoint LGPD-safe não os fornece →
+ * empty-state honesto, sem inventar distribuição (D3 do plano). Reabilita quando o backend expuser agregação
+ * demográfica.
+ */
+const EMPTY_DEMOGRAPHICS: readonly CategoryCount[] = []
+
 /** Baixa o CSV via Blob + anchor (client-side; o backend entregará JSON depois). */
 function downloadCsv(filename: string, csv: string): void {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
@@ -84,25 +93,35 @@ function downloadCsv(filename: string, csv: string): void {
 export function EquipePage(): ReactNode {
   const navigate = useNavigate()
 
+  // Server-state REAL do core-api (#114, endpoint LGPD-safe): loading | error | ready. Sem idade/gênero/
+  // raça-cor → os 3 gráficos demográficos recebem dataset VAZIO (empty-state honesto); só Ano + Função têm fonte.
+  const state = useEquipe()
+
   // UI-state local da page (§XI): filtros abertos, paginação e o colaborador selecionado no modal.
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(PER_PAGE_DEFAULT)
   const [selected, setSelected] = useState<TeamMemberRow | null>(null)
 
-  const rows = useMemo(() => loadTeam(), [])
+  // Todos os hooks rodam ANTES de qualquer return (regras de hooks): sem dado ainda → linhas vazias.
+  const rows = state.status === 'ready' ? state.rows : EMPTY_ROWS
   const totalCount = useMemo(() => computeTotal(rows), [rows])
 
-  // Datasets dos 5 gráficos (agregações PURAS da ViewModel).
-  const generoSlices = useMemo(() => byGenero(rows), [rows])
-  const racaBars = useMemo(() => byRacaCor(rows), [rows])
-  const idadeBars = useMemo(() => byFaixaEtaria(rows), [rows])
+  // Só os 2 gráficos com FONTE REAL: Ano de contrato (de `startOfContract`) e Função (de `role`). Os 3
+  // demográficos (Gênero/Idade/Raça-cor) recebem `[]` na View (empty-state honesto — o endpoint não os traz).
   const anoCounts = useMemo(() => byAnoContrato(rows), [rows])
   const funcaoBars = useMemo(() => byFuncao(rows), [rows])
 
   // Paginação da tabela (fatia PURA da ViewModel; o UI-state page/perPage mora aqui).
   const pages = totalPages(totalCount, perPage)
   const pageRows = useMemo(() => pageSlice(rows, page, perPage), [rows, page, perPage])
+
+  if (state.status === 'loading') {
+    return <ReportStatePanel title={t('reports.equipe.loading')} />
+  }
+  if (state.status === 'error') {
+    return <ReportStatePanel role="alert" title={t('reports.equipe.errorTitle')} hint={t(state.errorTag)} />
+  }
 
   return (
     <div className={screen}>
@@ -221,10 +240,10 @@ export function EquipePage(): ReactNode {
                 </div>
                 <div className={chartPad}>
                   <EquipeGeneroDonut
-                    slices={generoSlices}
+                    slices={EMPTY_DEMOGRAPHICS}
                     centerValue={String(totalCount)}
                     centerCaption={t('reports.equipe.charts.centerCaption')}
-                    emptyLabel={t('reports.equipe.empty')}
+                    emptyLabel={t('reports.equipe.chartUnavailable')}
                     animate={animate}
                     formatPercent={formatSharePercent}
                   />
@@ -237,9 +256,9 @@ export function EquipePage(): ReactNode {
                 </div>
                 <div className={chartPad}>
                   <EquipeHorizontalBars
-                    bars={idadeBars}
+                    bars={EMPTY_DEMOGRAPHICS}
                     total={totalCount}
-                    emptyLabel={t('reports.equipe.empty')}
+                    emptyLabel={t('reports.equipe.chartUnavailable')}
                     animate={animate}
                     formatPercent={formatSharePercent}
                   />
@@ -252,9 +271,9 @@ export function EquipePage(): ReactNode {
                 </div>
                 <div className={chartPad}>
                   <EquipeVerticalBars
-                    bars={racaBars}
+                    bars={EMPTY_DEMOGRAPHICS}
                     total={totalCount}
-                    emptyLabel={t('reports.equipe.empty')}
+                    emptyLabel={t('reports.equipe.chartUnavailable')}
                     animate={animate}
                     formatPercent={formatSharePercent}
                   />

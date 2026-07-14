@@ -13,6 +13,7 @@ import {
   type Genero,
   type RacaCor,
 } from './data/equipe.placeholder.ts'
+import type { TeamMember } from './data/model/team-report.model.ts'
 
 export type { TeamMemberRow } from './data/equipe.placeholder.ts'
 
@@ -57,21 +58,57 @@ export function loadTeam(): readonly TeamMemberRow[] {
   return EQUIPE_PLACEHOLDER
 }
 
+/** Sentinela honesta para os campos que o endpoint LGPD-safe NÃO fornece (gênero/raça-cor). */
+const NA_SENTINEL = '—'
+
+/**
+ * ADAPTER (puro) DTO real (`TeamMember`) → linha da tabela existente (`TeamMemberRow`). O endpoint
+ * `/reports/team` é LGPD-safe: NÃO traz idade, gênero nem raça-cor → sentinelas honestas (`idade=null` → "N/A"
+ * na tabela; `genero`/`racaCor` = "—"). `programa` (área), `funcao` (role), `vinculo`
+ * (employmentRelationship) e `escolaridade` (education) vêm como STRING real, SEM forçar enum. `anoContrato` =
+ * ano de `startOfContract` (dirige o gráfico por Ano; anos fora de 2019..2025 são ignorados NO gráfico, mas o
+ * valor real aparece no detalhe). Os 3 gráficos demográficos NÃO derivam daqui — a page passa dataset vazio
+ * (empty-state honesto). Sem `throw` (§II).
+ */
+export function toTeamRows(members: readonly TeamMember[]): readonly TeamMemberRow[] {
+  return members.map((m) => ({
+    nome: m.name,
+    idade: null,
+    programa: m.program ?? NA_SENTINEL,
+    funcao: m.role,
+    vinculo: m.employmentRelationship,
+    genero: NA_SENTINEL,
+    racaCor: NA_SENTINEL,
+    escolaridade: m.education ?? NA_SENTINEL,
+    anoContrato: parseContractYear(m.startOfContract),
+  }))
+}
+
+/** Ano de `startOfContract` (ISO "YYYY-…"); não-parseável → 0 (fora do range dos gráficos). Sem `throw` (§II). */
+function parseContractYear(startOfContract: string): number {
+  const year = Number.parseInt(startOfContract.slice(0, 4), 10)
+  return Number.isFinite(year) ? year : 0
+}
+
 /** Total de colaboradores (denominador das % dos gráficos). */
 export function total(rows: readonly TeamMemberRow[] = EQUIPE_PLACEHOLDER): number {
   return rows.length
 }
 
-/** Conta ocorrências mantendo a ORDEM canônica pedida (categorias com 0 continuam aparecendo). */
-function countByOrder<T extends string>(
+/**
+ * Conta ocorrências mantendo a ORDEM canônica pedida (categorias com 0 continuam aparecendo). `order`/`pick`
+ * são `string` (o Model real traz strings livres); chaves fora da ordem canônica são ignoradas (não estouram
+ * a lista de saída, que mapeia só sobre `order`).
+ */
+function countByOrder(
   rows: readonly TeamMemberRow[],
-  order: readonly T[],
-  pick: (r: TeamMemberRow) => T,
+  order: readonly string[],
+  pick: (r: TeamMemberRow) => string,
 ): readonly CategoryCount[] {
-  const counts = new Map<T, number>(order.map((k) => [k, 0]))
+  const counts = new Map<string, number>(order.map((k) => [k, 0]))
   for (const r of rows) {
     const key = pick(r)
-    counts.set(key, (counts.get(key) ?? 0) + 1)
+    if (counts.has(key)) counts.set(key, (counts.get(key) ?? 0) + 1)
   }
   return order.map((k) => ({ id: k, label: k, count: counts.get(k) ?? 0 }))
 }

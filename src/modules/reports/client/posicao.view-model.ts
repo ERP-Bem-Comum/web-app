@@ -26,6 +26,7 @@
  */
 import { POSICAO_PAGAMENTOS_RAW, type RawPosicaoRow } from './data/posicao-pagamentos.placeholder.ts'
 import { POSICAO_RECEBIMENTOS_RAW } from './data/posicao-recebimentos.placeholder.ts'
+import type { PaymentPosition } from './data/model/payment-position.model.ts'
 
 /** Nível do nó na árvore: fornecedor (0) → centro de custo (1) → categoria (folha, 2). */
 export type PosicaoLevel = 'supplier' | 'costCenter' | 'category'
@@ -180,6 +181,24 @@ export function supplierTotals(report: PosicaoReport): readonly SupplierTotal[] 
  */
 export function loadPosicao(type: PosicaoType = 'p'): PosicaoReport {
   return aggregatePosicao(type === 'r' ? POSICAO_RECEBIMENTOS_RAW : POSICAO_PAGAMENTOS_RAW)
+}
+
+/**
+ * ADAPTER (puro) DTO real (`PaymentPosition[]`) → linhas cruas da árvore (`RawPosicaoRow[]`). Mapeamento 1:1
+ * (D1 do plano): `supplierName/costCenterName/categoryName` (nullable → "—") viram os 3 níveis; os 3 buckets
+ * DERIVADOS já vêm prontos do BFF/core-api — `overdueCents→emAtraso`, `paidCents→pago`, `pendingCents→aPagar`.
+ * O binding chama `aggregatePosicao(toRawPosicaoRows(positions))` p/ montar a árvore (a View não muda). Sem
+ * `throw` (§II). Lista vazia → árvore vazia → empty-state honesto na View.
+ */
+export function toRawPosicaoRows(positions: readonly PaymentPosition[]): readonly RawPosicaoRow[] {
+  return positions.map((p) => ({
+    supplier: p.supplierName ?? '—',
+    costCenter: p.costCenterName ?? '—',
+    category: p.categoryName ?? '—',
+    emAtrasoCents: p.overdueCents,
+    pagoCents: p.paidCents,
+    aPagarCents: p.pendingCents,
+  }))
 }
 
 // ── Formatação ──

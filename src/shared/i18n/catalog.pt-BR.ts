@@ -2339,6 +2339,9 @@ export const ptBR: Catalog = {
   'reports.suppliersWithoutContract.tree.expand': 'Expandir',
   'reports.suppliersWithoutContract.tree.collapse': 'Recolher',
   'reports.suppliersWithoutContract.empty': 'Nenhum fornecedor sem contrato.',
+  // Estados da fonte real (#114): carregando + erro (a tag do erro vem por baixo, via reportsErrorTag).
+  'reports.suppliersWithoutContract.loading': 'Carregando fornecedores…',
+  'reports.suppliersWithoutContract.errorTitle': 'Não foi possível carregar o relatório.',
   'reports.suppliersWithoutContract.filters.title': 'Filtros',
   'reports.suppliersWithoutContract.filters.subtitle':
     'Refine o relatório por programa, plano orçamentário, período e limite.',
@@ -2440,6 +2443,10 @@ export const ptBR: Catalog = {
   'reports.equipe.title': 'Relatório Equipe ABC',
   'reports.equipe.back': 'Voltar',
   'reports.equipe.empty': 'Nenhum colaborador para exibir.',
+  // Estados da fonte real (#114, endpoint LGPD-safe): carregando + erro + gráficos demográficos indisponíveis.
+  'reports.equipe.loading': 'Carregando a equipe…',
+  'reports.equipe.errorTitle': 'Não foi possível carregar o relatório.',
+  'reports.equipe.chartUnavailable': 'Dado não disponível',
   'reports.equipe.naLabel': 'N/A',
 
   'reports.equipe.filters.title': 'Filtros',
@@ -2496,6 +2503,15 @@ export const ptBR: Catalog = {
   'reports.posicao.title': 'Posição de Pagamentos',
   'reports.posicao.back': 'Voltar',
   'reports.posicao.empty': 'Nenhum dado para exibir.',
+  // Estados da fonte real (#114): carregando + erro (a tag do erro vem por baixo, via reportsErrorTag).
+  'reports.posicao.loading': 'Carregando a posição…',
+  'reports.posicao.errorTitle': 'Não foi possível carregar o relatório.',
+  // Tags de erro dos Relatórios (§V: a UI trata só a tag i18n; nunca status HTTP).
+  'reports.error.unauthorized': 'Sua sessão expirou. Entre novamente para ver o relatório.',
+  'reports.error.forbidden': 'Você não tem permissão para ver este relatório.',
+  'reports.error.validation': 'Não foi possível interpretar os dados do relatório.',
+  'reports.error.connectivity': 'Falha de conexão ao carregar o relatório. Tente novamente.',
+  'reports.error.server': 'Erro ao carregar o relatório. Tente novamente em instantes.',
   // Export (dropdown CSV + PDF).
   'reports.posicao.export.label': 'Exportar',
   'reports.posicao.export.csv': 'CSV',
