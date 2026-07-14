@@ -143,3 +143,68 @@ export const enrichTransactionReconciliation = (
 ): TransactionReconciliation => ({ ...detail, items: enrichReconciliationItems(maps, detail.items) })
 
 export const emptyEnrichmentMaps = (): EnrichmentMaps => EMPTY
+
+// ── #357 (ADR-0049): enriquecimento do match card via `payables:batch` (de-interina o LOOKUP) ──────────
+// Substitui o join caro (todas as páginas de /payable-titles + agregador de parceiros) por 1 hop targeted:
+// o batch resolve documentNumber/supplierName/dueDate dos itens do lookup. O `retentionType` (ÓRGÃO do
+// imposto retido) NÃO vem no batch → é preservado por um mapa MÍNIMO de títulos, buscado só quando pode
+// haver imposto retido (gate). Tudo PURO aqui; a I/O (batch + títulos) é injetada pela composição.
+
+// Enriquecimento de UM título resolvido pelo batch (o que o merge consome). `documentType` alimenta o gate.
+export type PayableBatchEnrichment = Readonly<{
+  documentNumber: string | null
+  supplierName: string | null
+  dueDate: string | null
+  documentType: string | null
+}>
+
+// Marcadores de `documentType` que indicam imposto retido (título-filho) — nesses casos o batch é
+// insuficiente p/ o ÓRGÃO (ISS×federal colapsam em 'Imposto') e precisamos do `retentionType` do título.
+const RETENTION_DOC_MARKERS: readonly string[] = ['IMPOSTO', 'ISS', 'IRRF', 'INSS', 'CSRF']
+export const isRetentionDocType = (documentType: string | null | undefined): boolean =>
+  documentType !== null &&
+  documentType !== undefined &&
+  RETENTION_DOC_MARKERS.includes(documentType.trim().toUpperCase())
+
+// Gate: precisamos do mapa mínimo de retentionType se ALGUM item do lookup é (ou pode ser) imposto retido.
+// "pode ser" cobre ids ausentes do batch (docType desconhecido → conservador, nunca regride o ÓRGÃO).
+export const needsRetentionMap = (
+  payableIds: readonly string[],
+  batch: ReadonlyMap<string, PayableBatchEnrichment>,
+): boolean =>
+  payableIds.some((id) => {
+    const b = batch.get(id)
+    return b === undefined || isRetentionDocType(b.documentType)
+  })
+
+// Mapa mínimo payableId → retentionType a partir das páginas de títulos (SÓ retentionType; sem parceiros).
+// Best-effort: fonte falha → mapa vazio (degrada p/ null no merge; o headline do imposto retido some, mas
+// nunca quebra). Reusa o `fetchTitles` já existente (todas as páginas, sem filtro de status).
+export const buildRetentionMap = async (
+  fetchTitles: EnrichmentSource['fetchTitles'],
+): Promise<ReadonlyMap<string, string | null>> => {
+  const res = await fetchTitles()
+  const map = new Map<string, string | null>()
+  if (isErr(res)) return map
+  for (const page of res.value) for (const t of page.items) map.set(t.payableId, t.retentionType)
+  return map
+}
+
+// Merge #357: itens do lookup ← batch (documentNumber/supplierName/dueDate) + retentionType (mapa mínimo).
+// Preserva o valor nativo quando já presente. Best-effort: mapas vazios → campos null (view mostra "—").
+export const enrichReconciliationItemsFromBatch = (
+  batch: ReadonlyMap<string, PayableBatchEnrichment>,
+  retentionByPayableId: ReadonlyMap<string, string | null>,
+  items: readonly TransactionReconciliationItem[],
+): readonly TransactionReconciliationItem[] =>
+  items.map((item) => {
+    const b = batch.get(item.payableId)
+    return {
+      ...item,
+      documentNumber: item.documentNumber ?? b?.documentNumber ?? null,
+      dueDate: item.dueDate ?? b?.dueDate ?? null,
+      supplierName: item.supplierName ?? b?.supplierName ?? null,
+      // retentionType NÃO vem no batch → preservado do mapa mínimo de títulos (não regride o ÓRGÃO).
+      retentionType: item.retentionType ?? retentionByPayableId.get(item.payableId) ?? null,
+    }
+  })

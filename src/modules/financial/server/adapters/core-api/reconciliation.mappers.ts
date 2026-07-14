@@ -8,6 +8,7 @@ import { ok, err, type Result } from '#shared/primitives/result.ts'
 import type { HttpError } from '#shared/http/http-error.types.ts'
 import { parseErrorEnvelope } from '#shared/http/error-envelope.ts'
 import type { ReconciliationError } from '#modules/financial/server/domain/errors/reconciliation.errors.ts'
+import type { PayableBatchEnrichment } from './reconciliation-enrichment.ts'
 import type {
   AccountStatementPeriod,
   BankStatementImport,
@@ -50,6 +51,7 @@ import {
   CoreApiImportSchema,
   CoreApiManualEntrySchema,
   CoreApiPaidPayablesSchema,
+  CoreApiPayablesBatchSchema,
   CoreApiPeriodClosedSchema,
   CoreApiPeriodReopenedSchema,
   CoreApiReconciliationCreatedSchema,
@@ -412,6 +414,26 @@ export const transactionReconciliationToModel = (
       retentionType: null, // enriquecido via maps.titles (#172)
     })),
   })
+}
+
+// #357 (ADR-0049): POST /payables:batch → mapa payableId(ref) → enriquecimento. PURO (testável em
+// node:test). `dueDate` normalizado p/ date-only (o core envia ISO; a view formata date-only). drift no
+// envelope → err('server') (best-effort no chamador, que degrada p/ mapa vazio → campos null no modal).
+export const payablesBatchToModel = (
+  raw: unknown,
+): Result<ReadonlyMap<string, PayableBatchEnrichment>, ReconciliationError> => {
+  const parsed = CoreApiPayablesBatchSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  const map = new Map<string, PayableBatchEnrichment>()
+  for (const it of parsed.data.items) {
+    map.set(it.ref, {
+      documentNumber: it.documentNumber,
+      supplierName: it.supplierName,
+      dueDate: it.dueDate.slice(0, 10),
+      documentType: it.documentType,
+    })
+  }
+  return ok(map)
 }
 
 export const reconciliationCreatedToModel = (

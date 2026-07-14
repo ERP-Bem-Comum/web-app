@@ -22,6 +22,7 @@ import {
   manualEntryToModel,
   mapHttpError,
   paidPayablesToModel,
+  payablesBatchToModel,
   periodClosedToModel,
   periodReopenedToModel,
   reconciliationCreatedToModel,
@@ -35,11 +36,14 @@ import {
 } from './reconciliation.mappers.ts'
 import {
   buildEnrichmentMaps,
+  buildRetentionMap,
   emptyEnrichmentMaps,
   enrichPaidPayables,
+  enrichReconciliationItemsFromBatch,
   enrichSuggestions,
-  enrichTransactionReconciliation,
+  needsRetentionMap,
   type EnrichmentSource,
+  type PayableBatchEnrichment,
 } from './reconciliation-enrichment.ts'
 
 // Janela ampla FIXA (determinística, sem relógio): o read-model soma TODOS os movimentos da conta →
@@ -66,6 +70,27 @@ const enrichAccountWithStatement = async (
     pendingCount: sum.value.pendingCount,
     lastUpdatedAt: sum.value.lastDate ?? acc.lastUpdatedAt,
   }
+}
+
+// #357 (ADR-0049): resolve títulos por id em 1 hop (POST /payables:batch). Best-effort → mapa VAZIO em
+// qualquer falha (degrada p/ null no merge; NUNCA vira erro que derruba o modal). O contrato aceita 1..200
+// refs; o lookup de um match tem poucos itens, mas capamos em 200 por segurança. `refs` vazio → sem hop.
+const EMPTY_BATCH: ReadonlyMap<string, PayableBatchEnrichment> = new Map()
+const resolvePayablesBatch = async (
+  baseUrl: string,
+  refs: readonly string[],
+  token: string,
+): Promise<ReadonlyMap<string, PayableBatchEnrichment>> => {
+  if (refs.length === 0) return EMPTY_BATCH
+  const r = await resultFetch<unknown>(`${baseUrl}/payables:batch`, {
+    method: 'POST',
+    body: { refs: refs.slice(0, 200) },
+    token,
+  })
+  if (isErr(r)) return EMPTY_BATCH
+  const model = payablesBatchToModel(r.value)
+  if (isErr(model)) return EMPTY_BATCH
+  return model.value
 }
 
 // INTERINO BFF composite p/ core-api#172/#265: fábrica opcional da fonte de enriquecimento (por token).
@@ -251,14 +276,24 @@ export const createCoreApiReconciliationClient = (
     }
     const base = transactionReconciliationToModel(r.value)
     if (isErr(base)) return base
-    // INTERINO BFF composite p/ core-api#172/#265 — o modal de detalhe resolve a coluna "TÍTULO NO SISTEMA"
-    // (documentNumber/supplierName/dueDate) por `payableId` usando os MESMOS 2 mapas (títulos + fornecedores).
-    // Best-effort: mapas falham → degradam p/ vazio → campos null (nunca quebra o modal). REMOVER quando o
-    // core-api enriquecer o lookup nativo. JOIN: item `.payableId` ↔ payable-title `.payableId` →
-    // `.supplierRef` ↔ partner `.id`.
-    const maps =
-      enrichmentFor === undefined ? emptyEnrichmentMaps() : await buildEnrichmentMaps(enrichmentFor(token))
-    return ok(enrichTransactionReconciliation(maps, base.value))
+    // #357 (ADR-0049): de-interina o LOOKUP do match card. Resolve documentNumber/supplierName/dueDate por
+    // `payableId` em 1 hop TARGETED (`payables:batch`), no lugar de varrer todas as páginas de títulos + o
+    // agregador de parceiros (INTERINO #172). Best-effort: batch falha → mapa vazio → campos null (nunca
+    // quebra o modal). ManualEntry tem `items` vazio → sem hop.
+    const payableIds = base.value.items.map((i) => i.payableId)
+    const batch = await resolvePayablesBatch(baseUrl, payableIds, token)
+    // O batch NÃO devolve `retentionType` — o ÓRGÃO do imposto retido (ISS→SEFIN, federais→Receita) precisa
+    // dele. Buscamos um mapa MÍNIMO de retentionType (só do /payable-titles, SEM parceiros) apenas quando
+    // pode haver imposto retido (gate por documentType do batch + ids ausentes). Caminho comum = 1 hop.
+    // Follow-up: incluir `retentionType` no PayableBatchItem → o mapa mínimo some (1 hop sempre).
+    const retention =
+      enrichmentFor !== undefined && needsRetentionMap(payableIds, batch)
+        ? await buildRetentionMap(enrichmentFor(token).fetchTitles)
+        : new Map<string, string | null>()
+    return ok({
+      ...base.value,
+      items: enrichReconciliationItemsFromBatch(batch, retention, base.value.items),
+    })
   },
   getCounterpartSuggestions: async (i, token) => {
     // US2 (#269): contrapartidas esperadas que casam com a transação (transferência entre contas).

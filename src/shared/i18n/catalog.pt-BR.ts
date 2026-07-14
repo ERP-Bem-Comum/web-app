@@ -1387,7 +1387,7 @@ export const ptBR: Catalog = {
   'financial.recon.match.diffSurplus': 'Diferença (multa/juros)',
   'financial.recon.match.diffDiscount': 'Diferença (desconto)',
   'financial.recon.match.titlesHint':
-    'Esta saída foi conciliada com vários títulos. Nº e detalhes de cada título disponíveis em breve.',
+    'Esta saída foi conciliada com vários títulos. Favorecido e nº do documento por título; a categoria depende do backend.',
   // Confirmação do Desfazer (US5) — consequência por tipo.
   'financial.recon.match.undoConfirmQ': 'Desfazer esta conciliação?',
   'financial.recon.match.undoConsequenceTitles':

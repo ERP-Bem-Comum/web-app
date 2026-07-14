@@ -2890,7 +2890,23 @@ export const mmTotalRow = style({
   marginBlockStart: sp.xs,
   borderBlockStart: `${recon.border.thin} solid ${c.paper.rule}`,
 })
-// Dica do lado multi-título (nome/nº de cada título dependem do enriquecimento do backend).
+// #357: agrupa a linha de UM título no lado N:1 (favorecido/órgão + valor + nº do documento). Separador
+// sutil entre títulos; o primeiro não repete a régua.
+export const mmMultiLine = style({
+  display: 'flex',
+  flexDirection: 'column',
+  paddingBlock: sp.xs,
+  borderBlockStart: `${bw.hairline} solid ${c.paper.rule}`,
+  selectors: { '&:first-of-type': { borderBlockStart: 'none' } },
+})
+// #357: nº do documento do título (secundário, alinhado à direita abaixo do favorecido).
+export const mmMultiDoc = style({
+  fontFamily: recon.font.mono,
+  fontSize: fs.xs,
+  color: c.ink[5],
+  textAlign: 'end',
+})
+// Dica do lado multi-título (agora com favorecido/nº por título; a Categoria segue dependente do backend).
 export const mmMultiHint = style({
   display: 'block',
   marginBlockStart: sp.sm,

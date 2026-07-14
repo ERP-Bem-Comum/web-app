@@ -10,12 +10,17 @@ import assert from 'node:assert/strict'
 
 import {
   buildEnrichmentMaps,
+  buildRetentionMap,
   enrichPaidPayables,
   enrichReconciliationItems,
+  enrichReconciliationItemsFromBatch,
   enrichSuggestions,
   enrichTransactionReconciliation,
+  isRetentionDocType,
+  needsRetentionMap,
   type EnrichmentSource,
   type PartnerNameItem,
+  type PayableBatchEnrichment,
 } from '../../../../../../src/modules/financial/server/adapters/core-api/reconciliation-enrichment.ts'
 import { ok, err } from '../../../../../../src/shared/primitives/result.ts'
 import type { PayableTitleListResponse } from '../../../../../../src/modules/financial/server/domain/document.io.ts'
@@ -343,5 +348,122 @@ describe('enrichTransactionReconciliation / enrichReconciliationItems (#172)', (
     assert.equal(out[0]?.supplierName, 'ACME')
     assert.equal(counts.titles, 1)
     assert.equal(counts.partners, 1)
+  })
+})
+
+// ── #357 (ADR-0049): enriquecimento do match card via payables:batch ─────────────────────────────────
+const batchItem = (over: Partial<PayableBatchEnrichment> = {}): PayableBatchEnrichment => ({
+  documentNumber: 'NFS-e 1',
+  supplierName: 'ACME',
+  dueDate: '2026-06-10',
+  documentType: 'NFS-e',
+  ...over,
+})
+
+describe('isRetentionDocType (#357 — gate do mapa mínimo)', () => {
+  it('marca imposto retido por documentType (Imposto/ISS/IRRF/INSS/CSRF, case-insensitive)', () => {
+    assert.equal(isRetentionDocType('Imposto'), true)
+    assert.equal(isRetentionDocType('iss'), true)
+    assert.equal(isRetentionDocType('  IRRF '), true)
+    assert.equal(isRetentionDocType('NFS-e'), false)
+    assert.equal(isRetentionDocType(null), false)
+    assert.equal(isRetentionDocType(undefined), false)
+  })
+})
+
+describe('needsRetentionMap (#357 — só busca títulos quando pode haver imposto retido)', () => {
+  it('false quando todos resolvidos e nenhum é imposto retido (caminho comum = 1 hop)', () => {
+    const batch = new Map([
+      ['p1', batchItem()],
+      ['p2', batchItem({ documentType: 'DANFE' })],
+    ])
+    assert.equal(needsRetentionMap(['p1', 'p2'], batch), false)
+  })
+
+  it('true quando algum item é imposto retido (documentType Imposto)', () => {
+    const batch = new Map([
+      ['p1', batchItem()],
+      ['p2', batchItem({ documentType: 'Imposto' })],
+    ])
+    assert.equal(needsRetentionMap(['p1', 'p2'], batch), true)
+  })
+
+  it('true (conservador) quando algum id do lookup falta no batch (docType desconhecido)', () => {
+    const batch = new Map([['p1', batchItem()]])
+    assert.equal(needsRetentionMap(['p1', 'pMissing'], batch), true)
+  })
+})
+
+describe('buildRetentionMap (#357 — mapa mínimo payableId→retentionType, best-effort)', () => {
+  const retPage = (): PayableTitleListResponse => {
+    const base = titlePage(
+      [
+        { payableId: 'p1', documentNumber: 'NF', supplierRef: 's1', paidAt: null },
+        { payableId: 'p2', documentNumber: 'NF2', supplierRef: 's1', paidAt: null },
+      ],
+      2,
+    )
+    return {
+      ...base,
+      items: base.items.map((it) => ({ ...it, retentionType: it.payableId === 'p1' ? 'ISS' : null })),
+    }
+  }
+
+  it('resolve retentionType por payableId das páginas de títulos', async () => {
+    const map = await buildRetentionMap(() => Promise.resolve(ok([retPage()])))
+    assert.equal(map.get('p1'), 'ISS')
+    assert.equal(map.get('p2'), null)
+  })
+
+  it('fonte falha → mapa VAZIO (degrada p/ null, nunca quebra)', async () => {
+    const map = await buildRetentionMap(() => Promise.resolve(err('server')))
+    assert.equal(map.size, 0)
+  })
+})
+
+describe('enrichReconciliationItemsFromBatch (#357 — merge batch + retentionType)', () => {
+  it('preenche documentNumber/supplierName/dueDate do batch; retentionType do mapa mínimo', () => {
+    const batch = new Map([
+      ['p1', batchItem({ documentNumber: 'NFS-e 537', supplierName: 'TS Ltda', dueDate: '2026-06-10' })],
+    ])
+    const retention = new Map<string, string | null>([['p1', null]])
+    const [item] = enrichReconciliationItemsFromBatch(batch, retention, [reconItem('p1')])
+    assert.equal(item?.documentNumber, 'NFS-e 537')
+    assert.equal(item?.supplierName, 'TS Ltda')
+    assert.equal(item?.dueDate, '2026-06-10')
+    assert.equal(item?.retentionType, null)
+  })
+
+  it('imposto retido: retentionType preservado do mapa mínimo (NÃO regride o ÓRGÃO)', () => {
+    const batch = new Map([
+      ['p1', batchItem({ supplierName: 'Serraria Bom Jesus', documentType: 'Imposto' })],
+    ])
+    const retention = new Map<string, string | null>([['p1', 'ISS']])
+    const [item] = enrichReconciliationItemsFromBatch(batch, retention, [reconItem('p1')])
+    assert.equal(item?.retentionType, 'ISS')
+  })
+
+  it('batch vazio (falha best-effort): campos degradam p/ null; nunca quebra', () => {
+    const [item] = enrichReconciliationItemsFromBatch(new Map(), new Map(), [reconItem('p1')])
+    assert.equal(item?.documentNumber, null)
+    assert.equal(item?.supplierName, null)
+    assert.equal(item?.dueDate, null)
+    assert.equal(item?.retentionType, null)
+  })
+
+  it('preserva o valor NATIVO do item quando já presente (não sobrescreve)', () => {
+    const native: TransactionReconciliationItem = {
+      payableId: 'p1',
+      reconciledValueCents: '1000',
+      documentNumber: 'NATIVO',
+      supplierName: 'NATIVO SA',
+      dueDate: '2026-01-01',
+      retentionType: 'IRRF',
+    }
+    const batch = new Map([['p1', batchItem()]])
+    const [item] = enrichReconciliationItemsFromBatch(batch, new Map([['p1', 'ISS']]), [native])
+    assert.equal(item?.documentNumber, 'NATIVO')
+    assert.equal(item?.supplierName, 'NATIVO SA')
+    assert.equal(item?.retentionType, 'IRRF')
   })
 })

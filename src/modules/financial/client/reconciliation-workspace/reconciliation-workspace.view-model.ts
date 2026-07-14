@@ -747,9 +747,18 @@ export type MatchDetailsDoc = Readonly<{
   valueBRL: string
 }>
 export type MatchDetailsAudit = Readonly<{ when: string; who: string }>
-// Lado "Título" quando a saída foi conciliada com VÁRIOS títulos (#175 com >1 item): valor conciliado por
-// título + total. Nome/nº de cada título depende do enriquecimento (#172).
-export type MatchTitleLine = Readonly<{ valueBRL: string }>
+// Lado "Título" quando a saída foi conciliada com VÁRIOS títulos (#175 com >1 item): por título, favorecido
+// (ou ÓRGÃO no imposto retido) + nº do documento + valor conciliado. Favorecido/documento vêm do item
+// enriquecido no BFF via `payables:batch` (#357); antes só o valor era exibido.
+export type MatchTitleLine = Readonly<{
+  valueBRL: string
+  // Favorecido: fornecedor (fallback nº doc, fallback payableId). A view prefere `nameTag` quando presente.
+  name: string
+  // Tag i18n do ÓRGÃO arrecadador quando imposto retido (ISS→SEFIN, federais→Receita); null → usa `name`.
+  nameTag: string | null
+  // Nº do documento (ou "—" quando ausente). A view esconde a linha do documento quando "—".
+  documento: string
+}>
 export type MatchTitlesView = Readonly<{
   count: number
   lines: readonly MatchTitleLine[]
@@ -840,7 +849,14 @@ export const buildMatchTitles = (
   const hasDiff = diffCents !== 0
   return {
     count: r.items.length,
-    lines: r.items.map((it) => ({ valueBRL: centsToBRL(it.reconciledValueCents) })),
+    // Cada linha surfa favorecido/órgão + nº do documento do item enriquecido no BFF (#357); mesma regra do
+    // 1:1 (`matchDocFromItem`): imposto retido → headline é o ÓRGÃO (nameTag), não o fornecedor do pai.
+    lines: r.items.map((it) => ({
+      valueBRL: centsToBRL(it.reconciledValueCents),
+      name: it.supplierName ?? it.documentNumber ?? it.payableId,
+      nameTag: retentionAgencyTag(it.retentionType),
+      documento: it.documentNumber ?? MATCH_DASH,
+    })),
     differenceBRL: hasDiff ? centsToBRL(String(Math.abs(diffCents))) : null,
     differenceTag: hasDiff
       ? diffCents > 0
