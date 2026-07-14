@@ -190,9 +190,16 @@ export function loadPosicao(type: PosicaoType = 'p'): PosicaoReport {
  * O binding chama `aggregatePosicao(toRawPosicaoRows(positions))` p/ montar a árvore (a View não muda). Sem
  * `throw` (§II). Lista vazia → árvore vazia → empty-state honesto na View.
  */
-export function toRawPosicaoRows(positions: readonly PaymentPosition[]): readonly RawPosicaoRow[] {
+// `partnersMap` (id → nome) resolve o favorecido de QUALQUER tipo de parceiro (fornecedor/financiador/ato/
+// colaborador) — o read-model do backend só nomeia fornecedor, então o front resolve os demais pelo MESMO
+// mapa que o Contas a Pagar usa (agregador de parceiros). Sem match (ex.: órgão de retenção, que não é
+// parceiro) → cai no `supplierName` do backend e, na falta, "—".
+export function toRawPosicaoRows(
+  positions: readonly PaymentPosition[],
+  partnersMap: ReadonlyMap<string, string> = new Map(),
+): readonly RawPosicaoRow[] {
   return positions.map((p) => ({
-    supplier: p.supplierName ?? '—',
+    supplier: p.supplierName ?? (p.supplierRef !== null ? partnersMap.get(p.supplierRef) : undefined) ?? '—',
     costCenter: p.costCenterName ?? '—',
     category: p.categoryName ?? '—',
     // O backend devolve `pendingCents` = TODOS os não-pagos (Open/Approved), e `overdueCents` = os não-pagos

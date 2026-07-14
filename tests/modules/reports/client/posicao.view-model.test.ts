@@ -98,6 +98,23 @@ describe('toRawPosicaoRows — mapeia a projeção do backend p/ as 3 medidas ex
     assert.equal(row?.costCenter, '—')
     assert.equal(row?.category, '—')
   })
+
+  it('favorecido não-fornecedor (supplierName null) resolve pelo mapa de parceiros via supplierRef', () => {
+    const partners = new Map([['fin-1', 'Financiador Beta']])
+    const [row] = toRawPosicaoRows([mk({ supplierRef: 'fin-1', supplierName: null })], partners)
+    assert.equal(row?.supplier, 'Financiador Beta') // resolvido pelo mapa, não "—"
+  })
+
+  it('supplierName do backend tem prioridade; ref fora do mapa → "—"', () => {
+    const partners = new Map([['x', 'Alguém']])
+    const [comBackend] = toRawPosicaoRows(
+      [mk({ supplierRef: 'x', supplierName: 'Fornecedor Alfa' })],
+      partners,
+    )
+    assert.equal(comBackend?.supplier, 'Fornecedor Alfa') // backend vence
+    const [semMatch] = toRawPosicaoRows([mk({ supplierRef: 'orgao-iss', supplierName: null })], partners)
+    assert.equal(semMatch?.supplier, '—') // órgão de retenção não é parceiro → "—"
+  })
 })
 
 describe('aggregatePosicao — soma folha → CC → fornecedor → total geral', () => {
