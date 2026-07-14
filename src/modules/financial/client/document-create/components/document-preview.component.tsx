@@ -160,6 +160,7 @@ export function DocumentPreview(props: DocumentPreviewProps): ReactNode {
               // IGNORA `#toolbar=0&navpanes=0` e injeta barra + miniaturas. O zoom (− % +) controla a
               // escala de rasterização. Organism reutilizável em `#shared/ui` (specs/071).
               <PdfCanvasPreview
+                file={props.preview.file}
                 url={props.preview.url}
                 zoom={zoom}
                 label={t('financial.create.preview.frameLabel')}

@@ -10,6 +10,12 @@
  * coberto por `default-src 'self'` (não há `worker-src` → fallback). Nada de blob-worker/CDN. `useWasm:false`
  * dispensa `wasm-unsafe-eval` (DANFSe/DANFE são texto/vetor); o pdf.js v6 não usa `eval`.
  *
+ * FONTE = BYTES, não URL (crítico p/ a CSP): o pdf.js recebe `{ data }` lido do próprio `File`
+ * (`file.arrayBuffer()`), NÃO `{ url: blob: }`. Passar a blob URL faria o pdf.js dar `fetch` nela, e o
+ * `connect-src 'self'` NÃO cobre o esquema `blob:` → o fetch é bloqueado (era a causa do "não foi possível
+ * exibir"). Ler os bytes do File é local (sem rede/CSP). Buffer FRESCO a cada render: o pdf.js transfere/
+ * detacha o ArrayBuffer p/ o worker — reusar o mesmo daria "detached ArrayBuffer" no 2º render (zoom).
+ *
  * Ciclo de vida: cada troca de `url`/`zoom`/unmount CANCELA o `renderTask` em voo e DESTRÓI o
  * `loadingTask` (sem vazamento nem "Canvas already in use" — canvases são recriados do zero a cada render).
  */
@@ -33,16 +39,17 @@ export type PdfCanvas = Readonly<{
 }>
 
 /**
- * Renderiza o PDF de `url` (blob same-origin) em canvas na escala derivada de `zoomPct` (× dpr).
- * Devolve a ref do container + o status para a view apresentar. `url === null` → idle (nada a renderizar).
+ * Renderiza o `file` (PDF) em canvas na escala derivada de `zoomPct` (× dpr). Lê os BYTES do File e passa
+ * `{ data }` ao pdf.js (sem fetch/blob → sem esbarrar na CSP). Devolve a ref do container + o status para a
+ * view apresentar. `file === null` → idle (nada a renderizar).
  */
-export function usePdfCanvas(url: string | null, zoomPct: number): PdfCanvas {
+export function usePdfCanvas(file: File | null, zoomPct: number): PdfCanvas {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [status, setStatus] = useState<PdfCanvasStatus>('idle')
 
   useEffect(() => {
     const container = containerRef.current
-    if (url === null || container === null) {
+    if (file === null || container === null) {
       setStatus('idle')
       return
     }
@@ -67,7 +74,11 @@ export function usePdfCanvas(url: string | null, zoomPct: number): PdfCanvas {
           pdfjs.GlobalWorkerOptions.workerSrc = PDF_WORKER_URL
         }
 
-        loadingTask = pdfjs.getDocument({ url, useWasm: false })
+        // Bytes FRESCOS do File (não a blob URL): sem fetch → sem CSP `connect-src`; o pdf.js pode
+        // transferir/detachar o buffer, então um ArrayBuffer novo a cada render é intencional.
+        const bytes = new Uint8Array(await file.arrayBuffer())
+        if (cancelled()) return
+        loadingTask = pdfjs.getDocument({ data: bytes, useWasm: false })
         const doc = await loadingTask.promise
         if (cancelled()) return
 
@@ -105,7 +116,7 @@ export function usePdfCanvas(url: string | null, zoomPct: number): PdfCanvas {
       if (loadingTask !== null) void loadingTask.destroy()
       container.replaceChildren() // libera o backing store dos canvases
     }
-  }, [url, zoomPct])
+  }, [file, zoomPct])
 
   return { containerRef, status }
 }

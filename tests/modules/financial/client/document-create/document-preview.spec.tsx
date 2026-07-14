@@ -117,7 +117,10 @@ describe('DocumentPreview — drop-zone (sem arquivo)', () => {
 })
 
 describe('DocumentPreview — web view (com arquivo)', () => {
-  const pdf: DocumentPreviewData = { kind: 'pdf', url: 'blob:pdf-123', fileName: 'nota.pdf' }
+  const pdfFile = new File([new Uint8Array([0x25, 0x50, 0x44, 0x46])], 'nota.pdf', {
+    type: 'application/pdf',
+  })
+  const pdf: DocumentPreviewData = { kind: 'pdf', file: pdfFile, url: 'blob:pdf-123', fileName: 'nota.pdf' }
   const xml: DocumentPreviewData = {
     kind: 'xml',
     text: '<nfse><numero>42</numero></nfse>',
@@ -140,8 +143,8 @@ describe('DocumentPreview — web view (com arquivo)', () => {
     expect(container.querySelector('iframe')).toBeNull()
     const img = screen.getByRole('img')
     expect(img.getAttribute('aria-label')).toBe(tr('financial.create.preview.frameLabel'))
-    // A blob URL + o zoom inicial (100%) são propagados ao binding do canvas.
-    expect(mockUsePdfCanvas).toHaveBeenCalledWith('blob:pdf-123', 100)
+    // O ARQUIVO (bytes) + o zoom inicial (100%) são propagados ao binding do canvas (não a blob URL).
+    expect(mockUsePdfCanvas).toHaveBeenCalledWith(pdfFile, 100)
   })
 
   it('zoom: + e − ajustam a escala do canvas propagada ao binding (limites 50–200%)', () => {

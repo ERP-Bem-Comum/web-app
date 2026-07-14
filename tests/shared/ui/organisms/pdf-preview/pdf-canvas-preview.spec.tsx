@@ -20,6 +20,9 @@ const labels = {
   errorLabel: 'Falhou',
   downloadLabel: 'Baixar',
 }
+const pdfFile = new File([new Uint8Array([0x25, 0x50, 0x44, 0x46])], 'nota.pdf', {
+  type: 'application/pdf',
+})
 
 afterEach(() => {
   cleanup()
@@ -33,27 +36,27 @@ const withStatus = (status: string): void => {
 describe('PdfCanvasPreview', () => {
   it('monta o container role="img" com o rótulo de acessibilidade', () => {
     withStatus('ready')
-    render(<PdfCanvasPreview url="blob:pdf-1" zoom={100} {...labels} />)
+    render(<PdfCanvasPreview file={pdfFile} url="blob:pdf-1" zoom={100} {...labels} />)
     const img = screen.getByRole('img')
     expect(img.getAttribute('aria-label')).toBe(labels.label)
   })
 
   it('status ready não mostra loading nem erro', () => {
     withStatus('ready')
-    render(<PdfCanvasPreview url="blob:pdf-1" zoom={100} {...labels} />)
+    render(<PdfCanvasPreview file={pdfFile} url="blob:pdf-1" zoom={100} {...labels} />)
     expect(screen.queryByText(labels.loadingLabel)).toBeNull()
     expect(screen.queryByText(labels.errorLabel)).toBeNull()
   })
 
   it('status loading mostra a nota de carregamento', () => {
     withStatus('loading')
-    render(<PdfCanvasPreview url="blob:pdf-1" zoom={100} {...labels} />)
+    render(<PdfCanvasPreview file={pdfFile} url="blob:pdf-1" zoom={100} {...labels} />)
     expect(screen.getByText(labels.loadingLabel)).toBeTruthy()
   })
 
   it('status error mostra a nota honesta + link de download do blob', () => {
     withStatus('error')
-    render(<PdfCanvasPreview url="blob:pdf-1" zoom={100} {...labels} />)
+    render(<PdfCanvasPreview file={pdfFile} url="blob:pdf-1" zoom={100} {...labels} />)
     expect(screen.getByRole('alert')).toBeTruthy()
     expect(screen.getByText(labels.errorLabel)).toBeTruthy()
     const link = screen.getByText(labels.downloadLabel)
@@ -63,13 +66,13 @@ describe('PdfCanvasPreview', () => {
 
   it('no erro sem url não oferece link de download', () => {
     withStatus('error')
-    render(<PdfCanvasPreview url={null} zoom={100} {...labels} />)
+    render(<PdfCanvasPreview file={pdfFile} url={null} zoom={100} {...labels} />)
     expect(screen.queryByText(labels.downloadLabel)).toBeNull()
   })
 
-  it('propaga url e zoom ao binding', () => {
+  it('propaga o arquivo e o zoom ao binding', () => {
     withStatus('ready')
-    render(<PdfCanvasPreview url="blob:pdf-9" zoom={150} {...labels} />)
-    expect(mockUsePdfCanvas).toHaveBeenCalledWith('blob:pdf-9', 150)
+    render(<PdfCanvasPreview file={pdfFile} url="blob:pdf-9" zoom={150} {...labels} />)
+    expect(mockUsePdfCanvas).toHaveBeenCalledWith(pdfFile, 150)
   })
 })

@@ -12,7 +12,9 @@ import { usePdfCanvas } from './use-pdf-canvas.binding.ts'
 import * as s from './pdf-canvas-preview.css.ts'
 
 export type PdfCanvasPreviewProps = Readonly<{
-  /** URL same-origin do PDF (tipicamente um `blob:` do arquivo local). `null` = nada a renderizar. */
+  /** Arquivo PDF — o binding lê os BYTES e passa `{ data }` ao pdf.js (sem blob/fetch → sem CSP). `null` = nada. */
+  file: File | null
+  /** URL do arquivo (blob) SÓ para o link de download no erro. `null` = sem download. */
   url: string | null
   /** Zoom em % (50–200) — controla a escala de rasterização (o binding clampa). */
   zoom: number
@@ -27,7 +29,7 @@ export type PdfCanvasPreviewProps = Readonly<{
 }>
 
 export function PdfCanvasPreview(props: PdfCanvasPreviewProps): ReactNode {
-  const { containerRef, status } = usePdfCanvas(props.url, props.zoom)
+  const { containerRef, status } = usePdfCanvas(props.file, props.zoom)
   return (
     <div className={s.viewport} role="img" aria-label={props.label}>
       <div ref={containerRef} className={s.pages} />
