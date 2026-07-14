@@ -411,7 +411,7 @@ describe('modal Detalhes da conciliação — matchDetailsView', () => {
   it('multi preenchido quando passado (1 saída → N títulos)', () => {
     const multi = {
       count: 3,
-      lines: [{ valueBRL: 'R$ 300,00' }],
+      lines: [{ valueBRL: 'R$ 300,00', name: 'Fornecedor A', nameTag: null, documento: 'NF-1' }],
       differenceBRL: null,
       differenceTag: '',
       totalBRL: 'R$ 742,00',
@@ -508,6 +508,86 @@ describe('buildMatchTitles (1 saída → N títulos, #175 items)', () => {
     assert.equal(r?.differenceBRL, centsToBRL('500'))
     assert.equal(r?.differenceTag, 'financial.recon.match.diffDiscount')
     assert.equal(r?.totalBRL, centsToBRL('4500'))
+  })
+
+  it('#357: linhas surfam favorecido + nº do documento do item enriquecido', () => {
+    const enriched = (items: readonly unknown[]) =>
+      ({
+        reconciliationId: 'rec1',
+        transactionId: 't1',
+        type: 'Multiple' as const,
+        status: 'Active' as const,
+        reconciledBy: 'u1',
+        reconciledByName: null,
+        reconciledAt: '2026-06-21T00:00:00.000Z',
+        differenceCents: null,
+        items,
+      }) as Parameters<typeof buildMatchTitles>[0]
+    const r = buildMatchTitles(
+      enriched([
+        {
+          payableId: 'p1',
+          reconciledValueCents: '30000',
+          documentNumber: 'NFS-e 2024-0537',
+          supplierName: 'TS Da Silva Serviços Ltda',
+          dueDate: '2026-06-10',
+          retentionType: null,
+        },
+        // sem favorecido → cai no nº do documento; sem doc → cai no payableId
+        {
+          payableId: 'p2',
+          reconciledValueCents: '20000',
+          documentNumber: 'DOC-9',
+          supplierName: null,
+          dueDate: null,
+          retentionType: null,
+        },
+      ]),
+      '50000',
+    )
+    assert.equal(r?.lines[0]?.name, 'TS Da Silva Serviços Ltda')
+    assert.equal(r?.lines[0]?.nameTag, null)
+    assert.equal(r?.lines[0]?.documento, 'NFS-e 2024-0537')
+    assert.equal(r?.lines[1]?.name, 'DOC-9')
+    assert.equal(r?.lines[1]?.documento, 'DOC-9')
+  })
+
+  it('#357: imposto retido → headline da linha é o ÓRGÃO (nameTag), não o fornecedor do pai', () => {
+    const enriched = (items: readonly unknown[]) =>
+      ({
+        reconciliationId: 'rec1',
+        transactionId: 't1',
+        type: 'Multiple' as const,
+        status: 'Active' as const,
+        reconciledBy: 'u1',
+        reconciledByName: null,
+        reconciledAt: '2026-06-21T00:00:00.000Z',
+        differenceCents: null,
+        items,
+      }) as Parameters<typeof buildMatchTitles>[0]
+    const r = buildMatchTitles(
+      enriched([
+        {
+          payableId: 'p1',
+          reconciledValueCents: '30000',
+          documentNumber: '3500',
+          supplierName: 'Serraria Bom Jesus LTDA',
+          dueDate: '2026-06-30',
+          retentionType: 'ISS',
+        },
+        {
+          payableId: 'p2',
+          reconciledValueCents: '1000',
+          documentNumber: '3500',
+          supplierName: 'Serraria Bom Jesus LTDA',
+          dueDate: '2026-06-30',
+          retentionType: 'IRRF',
+        },
+      ]),
+      '31000',
+    )
+    assert.equal(r?.lines[0]?.nameTag, 'financial.recon.pending.agency.iss') // ISS → SEFIN
+    assert.equal(r?.lines[1]?.nameTag, 'financial.recon.pending.agency.federal') // federais → Receita
   })
 })
 

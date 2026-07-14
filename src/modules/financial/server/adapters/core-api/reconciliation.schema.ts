@@ -196,6 +196,31 @@ export const CoreApiTransactionReconciliationSchema = z.object({
 })
 export type CoreApiTransactionReconciliation = z.infer<typeof CoreApiTransactionReconciliationSchema>
 
+// #357 (ADR-0049 core-api): resolução em LOTE de títulos por id (POST /payables:batch). De-interina o
+// LOOKUP do match card (#172) — resolve documentNumber/supplierName/dueDate em 1 hop, sem varrer todas as
+// páginas de /payable-titles nem o agregador de parceiros. Schema TOLERANTE (anti-corrupção §IX): o backend
+// devolve `.strict()`, mas do NOSSO lado aceitamos drift (`.catch`). NÃO traz `retentionType` (o ÓRGÃO do
+// imposto retido é preservado à parte — ver reconciliation-enrichment.ts). `supplierName` vem do fin_supplier_view.
+export const CoreApiPayableBatchItemSchema = z.object({
+  ref: z.string().trim(),
+  documentId: z.string().trim(),
+  documentNumber: z.string().trim().nullable().catch(null),
+  documentType: z.string().trim().nullable().catch(null),
+  valueCents: z.string().trim(),
+  dueDate: z.string().trim(),
+  status: z.string().trim(),
+  paymentMethod: z.string().trim().nullable().catch(null),
+  supplierRef: z.string().trim().nullable().catch(null),
+  supplierName: z.string().trim().nullable().catch(null),
+  supplierDocument: z.string().trim().nullable().catch(null),
+})
+export type CoreApiPayableBatchItem = z.infer<typeof CoreApiPayableBatchItemSchema>
+// `missing` = uuids sem registro (degradação graciosa, não aborta). `.catch([])` em ambos p/ nunca quebrar.
+export const CoreApiPayablesBatchSchema = z.object({
+  items: z.array(CoreApiPayableBatchItemSchema).catch([]),
+  missing: z.array(z.string().trim()).catch([]),
+})
+
 // Conciliar (POST /reconciliations).
 export const CoreApiReconciliationCreatedSchema = z.object({
   reconciliationId: z.string().trim(),
