@@ -4,8 +4,15 @@
  *    mostram (ou não) a nota; o accept aceita PDF/XML (core-api#62).
  *  - COM arquivo (`preview`) = web view: PDF vira <iframe blob:>, XML vira texto; a strip mostra o nome + nota.
  */
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import { render, screen, fireEvent, cleanup } from '@testing-library/react'
+
+// O branch PDF agora renderiza o organism `PdfCanvasPreview`, cujo binding roda o pdf.js (canvas + Web
+// Worker — ausentes no jsdom). Mockamos o BINDING: o componente real monta, mas sem tocar plataforma.
+const { mockUsePdfCanvas } = vi.hoisted(() => ({ mockUsePdfCanvas: vi.fn() }))
+vi.mock('#shared/ui/organisms/pdf-preview/use-pdf-canvas.binding.ts', () => ({
+  usePdfCanvas: mockUsePdfCanvas,
+}))
 
 import { DocumentPreview } from '#modules/financial/client/document-create/components/document-preview.component.tsx'
 import type { DocumentPreviewData } from '#modules/financial/client/document-create/document-form.view.ts'
@@ -13,8 +20,14 @@ import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 
 const tr = (k: string): string => ptBR[k] ?? k
 
+beforeEach(() => {
+  // Default do binding mockado: o pdf.js renderizou (status ready). Testes de zoom/erro sobrescrevem.
+  mockUsePdfCanvas.mockReturnValue({ containerRef: { current: null }, status: 'ready' })
+})
+
 afterEach(() => {
   cleanup()
+  mockUsePdfCanvas.mockReset()
 })
 
 describe('DocumentPreview — drop-zone (sem arquivo)', () => {
@@ -111,7 +124,8 @@ describe('DocumentPreview — web view (com arquivo)', () => {
     fileName: 'nota.xml',
   }
 
-  it('PDF renderiza um <iframe> com a blob URL + fragmento de zoom (100% inicial)', () => {
+  it('PDF renderiza o preview em canvas (role="img"), sem <iframe>', () => {
+    mockUsePdfCanvas.mockReturnValue({ containerRef: { current: null }, status: 'ready' })
     const { container } = render(
       <DocumentPreview
         status="done"
@@ -122,14 +136,17 @@ describe('DocumentPreview — web view (com arquivo)', () => {
         onSelectFile={vi.fn()}
       />,
     )
-    const frame = container.querySelector('iframe')
-    expect(frame).toBeTruthy()
-    // A blob URL esconde a barra + o painel de miniaturas (só conteúdo) e leva o `#zoom=`; começa 100%.
-    expect(frame?.getAttribute('src')).toBe('blob:pdf-123#toolbar=0&navpanes=0&zoom=100')
+    // Não usa mais o visualizador nativo (que injeta barra + miniaturas); render próprio em canvas.
+    expect(container.querySelector('iframe')).toBeNull()
+    const img = screen.getByRole('img')
+    expect(img.getAttribute('aria-label')).toBe(tr('financial.create.preview.frameLabel'))
+    // A blob URL + o zoom inicial (100%) são propagados ao binding do canvas.
+    expect(mockUsePdfCanvas).toHaveBeenCalledWith('blob:pdf-123', 100)
   })
 
-  it('zoom: + aumenta o #zoom do PDF; − diminui; respeita os limites (50–200%)', () => {
-    const { container } = render(
+  it('zoom: + e − ajustam a escala do canvas propagada ao binding (limites 50–200%)', () => {
+    mockUsePdfCanvas.mockReturnValue({ containerRef: { current: null }, status: 'ready' })
+    render(
       <DocumentPreview
         status="done"
         fileName="nota.pdf"
@@ -139,19 +156,20 @@ describe('DocumentPreview — web view (com arquivo)', () => {
         onSelectFile={vi.fn()}
       />,
     )
-    const src = (): string => container.querySelector('iframe')?.getAttribute('src') ?? ''
+    // Último zoom que o componente passou ao binding (2º argumento de usePdfCanvas).
+    const lastZoom = (): unknown => mockUsePdfCanvas.mock.calls.at(-1)?.[1]
     const zoomIn = screen.getByLabelText(tr('financial.create.preview.zoomIn'))
     const zoomOut = screen.getByLabelText(tr('financial.create.preview.zoomOut'))
-    expect(src()).toBe('blob:pdf-123#toolbar=0&navpanes=0&zoom=100')
+    expect(lastZoom()).toBe(100)
     fireEvent.click(zoomIn)
-    expect(src()).toBe('blob:pdf-123#toolbar=0&navpanes=0&zoom=125')
+    expect(lastZoom()).toBe(125)
     fireEvent.click(zoomOut)
     fireEvent.click(zoomOut)
-    expect(src()).toBe('blob:pdf-123#toolbar=0&navpanes=0&zoom=75')
+    expect(lastZoom()).toBe(75)
     // limite inferior: 75 → 50 e trava (não passa de 50)
     fireEvent.click(zoomOut)
     fireEvent.click(zoomOut)
-    expect(src()).toBe('blob:pdf-123#toolbar=0&navpanes=0&zoom=50')
+    expect(lastZoom()).toBe(50)
     expect((zoomOut as HTMLButtonElement).disabled).toBe(true)
   })
 

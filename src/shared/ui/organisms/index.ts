@@ -5,11 +5,6 @@
  * Ver specs/009-design-system-organisms.
  */
 export { DataTable } from './data-table/index.ts'
-export type {
-  Column,
-  ColumnAlign,
-  ColumnWidth,
-  DataTableState,
-  DataTableProps,
-} from './data-table/index.ts'
+export type { Column, ColumnAlign, ColumnWidth, DataTableState, DataTableProps } from './data-table/index.ts'
 export { PageHeader, type PageHeaderProps } from './page-header/index.ts'
+export { PdfCanvasPreview, type PdfCanvasPreviewProps } from './pdf-preview/index.ts'
