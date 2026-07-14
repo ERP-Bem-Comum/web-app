@@ -19,6 +19,7 @@ import { referencesQueryOptions } from './reconciliation-workspace.query.ts'
 import {
   relabelReconCategory,
   requiresDestination,
+  formatDateBR,
   categoriesForCostCenter,
   subcategoriesOf,
   type ManualEntryType,
@@ -35,6 +36,12 @@ export type ManualEntryBinding = Readonly<{
   destinationAccount: string
   needsDestination: boolean
   showPayeeBlock: boolean
+  // Data de efetivação = data da transação bancária selecionada (o backend não aceita data no manual-entry;
+  // usa a da transação). Só reflete (read-only) — DD/MM/AAAA. '' quando sem transação selecionada.
+  effectiveDate: string
+  // Transferência/Aplicação/Resgate circulam entre contas da PRÓPRIA empresa → sem categorização (centro/
+  // categoria/subcategoria não se aplicam). `false` p/ esses 3; `true` p/ Pagamento/Recebimento/Tarifa-Juros.
+  showCategorization: boolean
   canSubmit: boolean
   submitting: boolean
   errorTag: string | null
@@ -163,6 +170,10 @@ export function useManualEntry(
 
   const needsDestination = type !== null && requiresDestination(type)
   const showPayeeBlock = type === 'Payment' || type === 'Receipt'
+  // Data de efetivação reflete a data da transação selecionada (read-only). Categorização não se aplica aos
+  // 3 tipos entre contas próprias (Transfer/Investment/Redemption = requiresDestination).
+  const effectiveDate = selectedTx !== null ? formatDateBR(selectedTx.date) : ''
+  const showCategorization = type !== null && !requiresDestination(type)
   // Transferência/Aplicação/Resgate exigem a conta de destino selecionada (regra do backend). A confirmação
   // consciente foi removida a pedido da P.O. — só atrapalhava; engano é reversível pelo "desfazer".
   const destinationOk = !needsDestination || destinationAccount.trim() !== ''
@@ -222,6 +233,8 @@ export function useManualEntry(
     destinationAccount,
     needsDestination,
     showPayeeBlock,
+    effectiveDate,
+    showCategorization,
     canSubmit,
     submitting: mut.isPending,
     errorTag,
@@ -282,7 +295,9 @@ export function useManualEntry(
       const destLabel = accountOptions.find((o) => o.value === destinationAccount.trim())?.label
       // Envia a FOLHA da cascata como categoryRef: subcategoria (se escolhida) senão a categoria. Ambas são
       // categorias válidas p/ o backend (subcategoria = categoria com parentId). TODO #341: enviar refs separadas.
-      const leafCategory = subcategoryRef !== '' ? subcategoryRef : categoryRef
+      // Categorização não se aplica aos 3 tipos entre contas próprias → não envia categoria/centro.
+      const leafCategory = showCategorization ? (subcategoryRef !== '' ? subcategoryRef : categoryRef) : ''
+      const costCenter = showCategorization ? costCenterRef : ''
       mut.mutate({
         transactionId: selectedTx.id,
         type,
@@ -293,7 +308,7 @@ export function useManualEntry(
         supplierRef: supplierRef === '' ? undefined : supplierRef,
         programRef: programRef === '' ? undefined : programRef,
         categoryRef: leafCategory === '' ? undefined : leafCategory,
-        costCenterRef: costCenterRef === '' ? undefined : costCenterRef,
+        costCenterRef: costCenter === '' ? undefined : costCenter,
       })
     },
   }

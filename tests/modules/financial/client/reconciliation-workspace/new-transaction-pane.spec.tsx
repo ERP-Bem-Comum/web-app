@@ -17,6 +17,8 @@ const baseBinding = (over: Partial<ManualEntryBinding> = {}): ManualEntryBinding
   destinationAccount: '',
   needsDestination: false,
   showPayeeBlock: false,
+  effectiveDate: '',
+  showCategorization: true,
   canSubmit: false,
   submitting: false,
   errorTag: null,
@@ -126,5 +128,27 @@ describe('NewTransactionPane', () => {
       screen.getByRole('button', { name: (n) => n.includes(tr('financial.recon.manual.submitFull')) }),
     )
     expect(submit).toHaveBeenCalled()
+  })
+
+  it('Transferência: oculta a Categorização (movimentação entre contas próprias) e reflete a data da transação', () => {
+    render(
+      <NewTransactionPane
+        binding={baseBinding({
+          type: 'Transfer',
+          needsDestination: true,
+          showCategorization: false,
+          effectiveDate: '17/06/2026',
+        })}
+      />,
+    )
+    // Categorização some para transferência/aplicação/resgate...
+    expect(screen.queryByText(tr('financial.recon.manual.categorize'))).toBeNull()
+    // ...mas a Data de efetivação reflete (read-only) a data da transação selecionada.
+    expect(screen.getByDisplayValue('17/06/2026')).toBeTruthy()
+  })
+
+  it('Pagamento: mantém a Categorização', () => {
+    render(<NewTransactionPane binding={baseBinding({ type: 'Payment', showPayeeBlock: true })} />)
+    expect(screen.getByText(tr('financial.recon.manual.categorize'))).toBeTruthy()
   })
 })
