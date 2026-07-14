@@ -758,14 +758,8 @@ export const previewPane = style({
   background: vars.color.surface.default,
   overflow: 'hidden',
 })
-// iframe do PDF (blob:) — ocupa todo o painel.
-export const previewFrame = style({
-  flex: 1,
-  inlineSize: '100%',
-  minBlockSize: 0,
-  border: 0,
-  background: vars.color.surface.default,
-})
+// (O PDF passou a ser rasterizado em canvas pelo organism `PdfCanvasPreview` — specs/071 — que traz o
+// próprio viewport. O antigo `previewFrame` do <iframe> nativo foi removido com a troca.)
 // Texto do XML — mono, rolável, quebra preservada.
 export const previewXml = style({
   flex: 1,

@@ -10,7 +10,7 @@ import { useState, type ChangeEvent, type CSSProperties, type DragEvent, type Re
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { FileTextIcon } from '#shared/ui/index.ts'
+import { FileTextIcon, PdfCanvasPreview } from '#shared/ui/index.ts'
 
 import type { DocumentPreviewData, OcrStatus } from '../document-form.view.ts'
 import {
@@ -25,7 +25,6 @@ import {
   previewHeader,
   previewHeaderText,
   previewPane,
-  previewFrame,
   previewXml,
   previewReplace,
   zoomControls,
@@ -157,15 +156,17 @@ export function DocumentPreview(props: DocumentPreviewProps): ReactNode {
         <>
           <div className={previewPane}>
             {props.preview.kind === 'pdf' ? (
-              <iframe
-                className={previewFrame}
-                // Remount por zoom (`key`): o visualizador nativo só lê o fragmento no LOAD — trocar só o
-                // fragmento não re-aplica; remontar força a re-navegação no novo zoom (blob local = instantâneo).
-                key={`pdf-${String(zoom)}`}
-                // `toolbar=0&navpanes=0`: esconde a barra e o painel de MINIATURAS do visualizador nativo
-                // (a "faixa preta" lateral) → mostra só o conteúdo do documento. O zoom é o nosso (− % +).
-                src={`${props.preview.url}#toolbar=0&navpanes=0&zoom=${String(zoom)}`}
-                title={t('financial.create.preview.frameLabel')}
+              // Render próprio via pdf.js em canvas (só o conteúdo): o visualizador nativo do navegador
+              // IGNORA `#toolbar=0&navpanes=0` e injeta barra + miniaturas. O zoom (− % +) controla a
+              // escala de rasterização. Organism reutilizável em `#shared/ui` (specs/071).
+              <PdfCanvasPreview
+                file={props.preview.file}
+                url={props.preview.url}
+                zoom={zoom}
+                label={t('financial.create.preview.frameLabel')}
+                loadingLabel={t('financial.create.preview.rendering')}
+                errorLabel={t('financial.create.preview.renderError')}
+                downloadLabel={t('financial.create.preview.download')}
               />
             ) : props.preview.kind === 'xml' ? (
               <pre

@@ -42,7 +42,8 @@ export type PartnerOption = Readonly<{ id: string; name: string; subtitle: strin
  * XML vira texto puro; formato fora da allowlist vira `unsupported`. Shape pura (a view a apresenta).
  */
 export type DocumentPreviewData =
-  | Readonly<{ kind: 'pdf'; url: string; fileName: string }>
+  // `file` = fonte do render (pdf.js lê os bytes → sem blob/fetch/CSP); `url` = blob só p/ o link de download.
+  | Readonly<{ kind: 'pdf'; file: File; url: string; fileName: string }>
   | Readonly<{ kind: 'xml'; text: string; fileName: string }>
   | Readonly<{ kind: 'unsupported'; fileName: string }>
 
