@@ -1367,6 +1367,8 @@ export const ptBR: Catalog = {
   'financial.recon.match.rowDestAccount': 'Conta destino',
   'financial.recon.match.manualHint':
     'Conciliado por nova transação — sem título a pagar (ex.: tarifa, despesa).',
+  'financial.recon.match.manualHintTransfer':
+    'Contrapartida — movimentação entre contas próprias, sem título a pagar.',
   'financial.recon.match.badge': 'Conciliado',
   'financial.recon.match.badgeManual': 'Lançamento',
   'financial.recon.match.rowDate': 'Data',

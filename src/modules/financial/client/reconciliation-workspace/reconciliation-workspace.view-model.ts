@@ -766,6 +766,9 @@ export type MatchDetailsView = Readonly<{
   // CONTRAPARTE do lançamento: conta de destino (transferência/aplicação/resgate) ou fornecedor
   // (pagamento/recebimento). `labelTag` vazio → não há linha (ex.: tarifa). `value` "—" até saber (sessão/#268).
   manualCounterparty: Readonly<{ labelTag: string; value: string }>
+  // Hint honesto embaixo do lado manual: transferência/aplicação/resgate = movimentação entre contas
+  // próprias (contrapartida), NÃO tarifa/despesa. Demais tipos mantêm o exemplo tarifa/despesa.
+  manualHintTag: string
   ext: Readonly<{ name: string; date: string; kind: string; id: string; valueBRL: string }>
   // doc/audit dependem do backend expor os detalhes da conciliação (sem GET de detalhes hoje, #175) →
   // sem dados, preenche com "—" (estado honesto, igual ao default do mock). Em preview vêm preenchidos.
@@ -892,6 +895,14 @@ export const matchDetailsView = (
 ): MatchDetailsView => {
   // Tipo efetivo: o da sessão (preciso) ou, na falta, o derivado do texto da transação (#268).
   const effectiveManualType = manualType ?? (isManualEntry ? deriveManualKindFromTx(tx) : null)
+  // Movimentação entre contas próprias (transferência/aplicação/resgate): contrapartida, não tarifa/despesa.
+  const isSelfMove =
+    effectiveManualType === 'Transfer' ||
+    effectiveManualType === 'Investment' ||
+    effectiveManualType === 'Redemption'
+  // Só mostra a linha de contraparte quando há valor real (conta de destino/fornecedor da sessão); sem
+  // valor não renderiza "Conta destino: —" (o hint já diz que é entre contas próprias).
+  const hasCounterparty = counterparty !== null && counterparty !== ''
   return {
     isManualEntry,
     manualKindTag:
@@ -900,14 +911,18 @@ export const matchDetailsView = (
         : 'financial.recon.match.manualKind',
     manualCounterparty: {
       // Transferência/Aplicação/Resgate → conta de destino; Pagamento/Recebimento → fornecedor; senão, sem linha.
-      labelTag:
-        manualType === 'Transfer' || manualType === 'Investment' || manualType === 'Redemption'
+      labelTag: !hasCounterparty
+        ? ''
+        : manualType === 'Transfer' || manualType === 'Investment' || manualType === 'Redemption'
           ? 'financial.recon.match.rowDestAccount'
           : manualType === 'Payment' || manualType === 'Receipt'
             ? 'financial.recon.manual.f.supplier'
             : '',
       value: counterparty ?? MATCH_DASH,
     },
+    manualHintTag: isSelfMove
+      ? 'financial.recon.match.manualHintTransfer'
+      : 'financial.recon.match.manualHint',
     ext: {
       name: tx.payeeName,
       date: formatDayHeader(tx.date),

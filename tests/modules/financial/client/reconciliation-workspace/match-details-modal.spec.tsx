@@ -15,6 +15,7 @@ const view = (over: Partial<MatchDetailsView> = {}): MatchDetailsView => ({
   isManualEntry: false,
   manualKindTag: 'financial.recon.match.manualKind',
   manualCounterparty: { labelTag: '', value: '—' },
+  manualHintTag: 'financial.recon.match.manualHint',
   ext: {
     name: 'Fornecedor Persist A',
     date: '5 out 2026',
@@ -159,6 +160,45 @@ describe('MatchDetailsModal — título individual enriquecido (interim #172)', 
     expect(docLabel.nextElementSibling?.textContent).toBe('—')
     const dueLabel = screen.getByText(tr('financial.recon.match.rowDue'))
     expect(dueLabel.nextElementSibling?.textContent).toBe('—')
+  })
+})
+
+describe('MatchDetailsModal — lado manual: hint ciente do tipo (contrapartida #269)', () => {
+  it('transferência entre contas próprias: hint de contrapartida, NÃO "tarifa/despesa"', () => {
+    render(
+      <MatchDetailsModal
+        open
+        view={view({
+          isManualEntry: true,
+          manualKindTag: 'financial.recon.manualType.Transfer',
+          manualHintTag: 'financial.recon.match.manualHintTransfer',
+        })}
+        canUndo
+        undoing={false}
+        undoErrorTag={null}
+        onUndo={vi.fn()}
+        onViewTitle={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    expect(screen.getByText(tr('financial.recon.match.manualHintTransfer'))).toBeTruthy()
+    expect(screen.queryByText(tr('financial.recon.match.manualHint'))).toBeNull()
+  })
+
+  it('tarifa/despesa: mantém o hint genérico (ex.: tarifa, despesa)', () => {
+    render(
+      <MatchDetailsModal
+        open
+        view={view({ isManualEntry: true, manualHintTag: 'financial.recon.match.manualHint' })}
+        canUndo
+        undoing={false}
+        undoErrorTag={null}
+        onUndo={vi.fn()}
+        onViewTitle={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    expect(screen.getByText(tr('financial.recon.match.manualHint'))).toBeTruthy()
   })
 })
 

@@ -264,6 +264,14 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
                       </div>
                       {ui.assocTab === 'sugestao' ? (
                         <>
+                          {/* US2 (#269): contrapartida esperada (transferência entre contas) da MESMA transação,
+                              NO TOPO como os palpites (pedido da P.O.). Só aparece quando há candidatas. */}
+                          <CounterpartPane
+                            state={vm.counterpart.state}
+                            confirming={vm.counterpart.confirming}
+                            errorTag={vm.counterpart.errorTag}
+                            onConfirm={vm.counterpart.confirm}
+                          />
                           <SuggestionPane
                             state={ui.showGuesses ? vm.suggestions : { tag: 'idle' }}
                             selectedTx={vm.selectedTx}
@@ -281,14 +289,6 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
                                 vm.reconcile.rejectOne(ui.selectedTransactionId, payableId)
                               }
                             }}
-                          />
-                          {/* US2 (#269): contrapartida esperada (transferência entre contas) da MESMA transação.
-                              Só aparece quando o backend devolve candidatas. */}
-                          <CounterpartPane
-                            state={vm.counterpart.state}
-                            confirming={vm.counterpart.confirming}
-                            errorTag={vm.counterpart.errorTag}
-                            onConfirm={vm.counterpart.confirm}
                           />
                         </>
                       ) : ui.assocTab === 'nova' ? (
