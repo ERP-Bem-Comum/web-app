@@ -4,13 +4,15 @@
  * ações. No sucesso, mostra os **títulos gerados** (FR-007). Não usa data-hooks/useReducer direto — só os
  * hooks de binding/controller.
  */
-import { useState, type CSSProperties, type ReactNode } from 'react'
+import { useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 
 import { useDocumentFormController } from '../document-form.controller.ts'
+import { useDocumentReader } from '../reader/document-reader.binding.ts'
+import { mapReadingToPatch, matchPartnerByTaxId } from '../document-reading.view.ts'
 import { useOcrExtraction } from '../ocr.binding.ts'
 import { useDocumentPreview } from '../document-preview.binding.ts'
 import { useOcrPanelResize } from '../ocr-panel-resize.binding.ts'
@@ -32,6 +34,8 @@ import {
   canSaveDraft,
   canSaveEdit,
   ocrReadFields,
+  type DocumentReadingPatch,
+  type OcrFieldKey,
 } from '../document-form.view.ts'
 import { DocumentForm } from '../components/document-form.component.tsx'
 import { SupplierPicker } from '../components/supplier-picker.component.tsx'
@@ -61,26 +65,43 @@ export type LancarDocumentoPageProps = Readonly<{ documentId?: string }>
 export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {}): ReactNode {
   const navigate = useNavigate()
   const edit = useDocumentEditing(documentId)
-  const controller = useDocumentFormController(edit.initialFields)
-  // Ingestão por OCR (core-api#62): no sucesso CRIA UM RASCUNHO e navega p/ o modo edição dele (revisão do
-  // operador). O binding só ingere+navega — nunca cria um 2º documento.
-  const ocr = useOcrExtraction()
   // Largura redimensionável da coluna OCR (arraste/teclado, persistida) — UI-state via binding.
   const ocrResize = useOcrPanelResize()
   // Arquivo subido mantido no estado da page (a navegação create→edit é MESMA rota → o componente não
   // desmonta → o File sobrevive p/ o web view). Um reload direto do `?id` perde o arquivo → sem preview.
   const [ocrFile, setOcrFile] = useState<File | null>(null)
+  const partners = usePartnersOptions()
+  // LEITOR CLIENT-SIDE por gabarito (ADR-0021): lê o arquivo LOCAL (XML por leiaute / PDF por camada de texto)
+  // e mapeia p/ o patch dos campos. Aditivo à ingestão do backend; onde ambos têm o campo, o cliente vence.
+  const clientReader = useDocumentReader(ocrFile)
+  const readingMap = useMemo(
+    () => (clientReader.reading !== null ? mapReadingToPatch(clientReader.reading) : null),
+    [clientReader.reading],
+  )
+  // Patch final = campos mapeados + fornecedor casado por CNPJ contra os parceiros já carregados no client.
+  const readingPatch = useMemo<DocumentReadingPatch | null>(() => {
+    if (readingMap === null || clientReader.reading === null) return null
+    const supplierRef = matchPartnerByTaxId(partners, clientReader.reading.supplier.taxId)
+    return supplierRef !== null ? { ...readingMap.patch, supplierRef } : readingMap.patch
+  }, [readingMap, partners, clientReader.reading])
+  const controller = useDocumentFormController(edit.initialFields, readingPatch)
+  // Ingestão por OCR (core-api#62): no sucesso CRIA UM RASCUNHO e navega p/ o modo edição dele (revisão do
+  // operador). O binding só ingere+navega — nunca cria um 2º documento. PRESERVADO (aditivo ao leitor client).
+  const ocr = useOcrExtraction()
   const preview = useDocumentPreview(ocrFile)
   const handleSelectFile = (file: File): void => {
     setOcrFile(file)
     ocr.extract(file)
   }
-  // Campos LIDOS pelo OCR (destaque âmbar + tag): derivados do rascunho hidratado, só quando há arquivo
-  // ingerido nesta sessão. Baseado no estado INICIAL (não nos edits do operador) — a marca reflete a extração.
-  const ocrFields = ocrReadFields(edit.initialFields ?? null, ocrFile !== null)
+  // Destaque âmbar + tag "OCR": une o que o LEITOR client preencheu (precedência) ao derivado do rascunho
+  // backend (fallback quando o leitor não reconhece o documento). Baseado na extração, não nos edits.
+  const backendOcrFields = ocrReadFields(edit.initialFields ?? null, ocrFile !== null)
+  const ocrFields = useMemo<ReadonlySet<OcrFieldKey>>(
+    () => new Set<OcrFieldKey>([...backendOcrFields, ...(readingMap?.ocrKeys ?? [])]),
+    [backendOcrFields, readingMap],
+  )
   const picker = useSupplierPickerController()
   const command = useLancarDocumentoBinding()
-  const partners = usePartnersOptions()
 
   // Sucesso → o binding invalida a lista e redireciona pro grid (sem card de sucesso inline).
   const selectedPartner = partners.find((p) => p.id === controller.fields.supplierRef) ?? null
