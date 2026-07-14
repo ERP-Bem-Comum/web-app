@@ -10,6 +10,7 @@ import { useQuery } from '@tanstack/react-query'
 
 import { suppliersWithoutContractQueryOptions } from './suppliers-without-contract.query.ts'
 import { toRawSupplierRows } from './suppliers-without-contract.view-model.ts'
+import { reportsPartnersMapQueryOptions, EMPTY_PARTNERS_MAP } from './reports-partners-map.binding.ts'
 import type { RawSupplierRow } from './data/suppliers-without-contract.placeholder.ts'
 import { reportsErrorTag } from './data/helpers/reports-error-tag.ts'
 import type { ReportsError } from './data/repository/reports-error.ts'
@@ -21,14 +22,17 @@ export type SuppliersWithoutContractState =
 
 export function useSuppliersWithoutContract(): SuppliersWithoutContractState {
   const query = useQuery(suppliersWithoutContractQueryOptions())
+  // Mapa de parceiros p/ resolver o favorecido não-fornecedor client-side (best-effort; não bloqueia).
+  const partnersQuery = useQuery(reportsPartnersMapQueryOptions())
 
   const suppliers = query.data?.data ?? null
   const error: ReportsError | null = query.data?.error ?? null
+  const partnersMap = partnersQuery.data ?? EMPTY_PARTNERS_MAP
 
   return useMemo<SuppliersWithoutContractState>(() => {
     if (query.isLoading) return { status: 'loading' }
     if (error !== null) return { status: 'error', error, errorTag: reportsErrorTag(error) }
-    if (suppliers !== null) return { status: 'ready', rawRows: toRawSupplierRows(suppliers) }
+    if (suppliers !== null) return { status: 'ready', rawRows: toRawSupplierRows(suppliers, partnersMap) }
     return { status: 'loading' }
-  }, [query.isLoading, error, suppliers])
+  }, [query.isLoading, error, suppliers, partnersMap])
 }
