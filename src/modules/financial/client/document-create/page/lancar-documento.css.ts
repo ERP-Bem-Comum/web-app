@@ -244,19 +244,58 @@ export const pickerEmpty = style({
   color: vars.color.text.muted,
 })
 
-// Layout 3-col do Figma 626-2: preview/OCR (480) · form (FILL) · sidebar (340). Colapsa por etapas:
-// abaixo de 75rem some o preview (form+sidebar); abaixo de 60rem vira coluna única.
+// Layout 4-col do Figma 626-2: preview/OCR (redimensionável) · alça · form (FILL) · sidebar (340). A
+// largura do OCR é UI-state (var `--ocr-col-width`, px do arraste) com clamp de segurança [16rem, 48rem].
+// Colapsa por etapas: abaixo de 75rem some o preview E a alça (form+sidebar); abaixo de 60rem, coluna única.
 export const body = style({
   flex: 1,
   minBlockSize: 0,
   display: 'grid',
-  gridTemplateColumns: 'minmax(16rem, 32rem) minmax(0, 1fr) 21.25rem',
+  gridTemplateColumns: 'clamp(16rem, var(--ocr-col-width, 28rem), 48rem) auto minmax(0, 1fr) 21.25rem',
   // A linha precisa ter a altura do container (senão vira auto = altura do conteúdo e nada rola).
   gridTemplateRows: 'minmax(0, 1fr)',
   overflow: 'hidden', // cada coluna rola sozinha (independent scroll, igual ao mock)
   '@media': {
     'screen and (max-width: 75rem)': { gridTemplateColumns: 'minmax(0, 1fr) 21.25rem' },
     'screen and (max-width: 60rem)': { gridTemplateColumns: '1fr' },
+  },
+})
+
+// Alça de redimensionamento entre a coluna OCR e o formulário (arraste horizontal · window-splitter).
+// Área de clique fina (6px) com uma linha central discreta que realça no hover/foco/arraste. Some junto
+// com o OCR abaixo de 75rem (onde não há preview a redimensionar).
+export const resizeHandle = style({
+  position: 'relative',
+  inlineSize: '0.375rem', // 6px de área de arraste
+  blockSize: '100%',
+  padding: 0,
+  border: 'none',
+  background: 'transparent',
+  cursor: 'col-resize',
+  touchAction: 'none', // o pointermove controla o arraste (sem scroll/gesto do browser)
+  '::after': {
+    content: '""',
+    position: 'absolute',
+    insetBlock: 0,
+    insetInlineStart: '50%',
+    transform: 'translateX(-50%)',
+    inlineSize: vars.borderWidth.thin,
+    background: vars.color.institutional.paperRule,
+    transition: 'inline-size 120ms, background 120ms',
+  },
+  selectors: {
+    '&:hover::after, &:focus-visible::after': {
+      inlineSize: '0.1875rem', // 3px — engrossa e fica azul no hover/foco
+      background: vars.color.institutional.blueLine,
+    },
+    '&:focus-visible': { outline: 'none' },
+  },
+  '@media': { 'screen and (max-width: 75rem)': { display: 'none' } },
+})
+// Enquanto arrasta: mantém a linha grossa/azul (o pointer sai da alça fina durante o arraste).
+export const resizeHandleActive = style({
+  selectors: {
+    '&::after': { inlineSize: '0.1875rem', background: vars.color.institutional.blue },
   },
 })
 
