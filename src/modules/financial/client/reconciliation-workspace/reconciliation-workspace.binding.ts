@@ -389,16 +389,6 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
 
   const pendentesCount = allTx.filter(isPending).length
 
-  // Aba Conciliação: o motor de sugestão já aparece para a transação do TOPO da lista (sem exigir clique).
-  // Auto-seleciona a 1ª transação do filtro atual enquanto nada estiver selecionado; depois respeita a
-  // escolha do usuário. Cobre o load inicial (aba padrão) e a volta do Extrato sem seleção.
-  const topTransactionId = filterTransactions(allTx, ui.listFilter)[0]?.id ?? null
-  useEffect(() => {
-    if (ui.activeTab === 'conciliacao' && ui.selectedTransactionId === null && topTransactionId !== null) {
-      dispatch({ type: 'select-transaction', id: topTransactionId })
-    }
-  }, [ui.activeTab, ui.selectedTransactionId, topTransactionId])
-
   const reconcileBinding = useReconcile(recordReconciliation)
   // US2 (#269): contrapartidas da transação selecionada — só busca p/ transação PENDENTE (confirmar só faz
   // sentido antes de conciliar). Ao confirmar, o namespace é invalidado (dentro do binding) → a tx vira
@@ -601,6 +591,26 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
         : [],
     ),
   )
+
+  // Aba Conciliação: a sugestão aparece sem exigir clique. Auto-seleciona — enquanto nada estiver
+  // selecionado — a 1ª transação PENDENTE COM palpite (banda alta primeiro; #174), pra a aba Sugestão nunca
+  // abrir "vazia" quando existe match (pedido recorrente da P.O.). Sem nenhum palpite, cai na transação do
+  // topo do filtro (Sugestão selecionada, porém vazia). Só dispara depois que o batch de palpites assentou
+  // (`guessesSettled`) — senão selecionaria o topo antes dos palpites carregarem e não corrigiria (a seleção
+  // deixaria de ser null). Depois disso, respeita a escolha do usuário. Cobre load inicial e volta do Extrato.
+  const filteredTx = filterTransactions(allTx, ui.listFilter)
+  const guessesSettled = !ui.showGuesses || statementSuggestionsQuery.isFetched
+  const autoSelectId = nextPendingWithMatch(filteredTx, guesses, '') ?? filteredTx[0]?.id ?? null
+  useEffect(() => {
+    if (
+      ui.activeTab === 'conciliacao' &&
+      ui.selectedTransactionId === null &&
+      guessesSettled &&
+      autoSelectId !== null
+    ) {
+      dispatch({ type: 'select-transaction', id: autoSelectId })
+    }
+  }, [ui.activeTab, ui.selectedTransactionId, guessesSettled, autoSelectId])
 
   // Fluxo contínuo: quando a tx recém-conciliada some das pendentes (refetch concluído), seleciona a
   // PRÓXIMA pendente COM match → a sugestão nunca fica vazia. setState DIFERIDO (sem render em cascata).

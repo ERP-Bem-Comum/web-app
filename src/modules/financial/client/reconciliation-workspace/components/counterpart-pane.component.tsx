@@ -27,7 +27,7 @@ export function CounterpartPane({ state, confirming, errorTag, onConfirm }: Coun
   if (state.tag !== 'ready') return null
 
   return (
-    <div className={s.altList}>
+    <div className={s.counterpartSection}>
       <span className={s.altOverline}>
         {t('financial.recon.counterpart.title')} {DOT} {state.rows.length}
       </span>
