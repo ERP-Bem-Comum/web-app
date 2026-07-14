@@ -31,6 +31,12 @@ export type ReconciliationError =
   | 'title-not-paid' // 422 title-not-paid
   | 'empty-reconciliation' // 422 empty-reconciliation
   | 'reconciliation-already-undone' // 409 reconciliation-already-undone
+  // contrapartida — transferência entre contas (US2 do #269, POST /reconciliations/counterpart). O core-api
+  // esconde o slug (OWASP) → na prática 422→'validation' e 409→'conflict'; listados p/ forward-compat.
+  | 'counterpart-not-found' // 422 counterpart-not-found
+  | 'counterpart-not-pending' // 409 counterpart-not-pending (já casada/descartada)
+  | 'counterpart-account-mismatch' // 422 counterpart-account-mismatch
+  | 'counterpart-value-mismatch' // 422 counterpart-value-mismatch
   // exportação
   | 'export-unsupported-format' // 400 unsupported-export-format
   // costura (chrome) — backend ainda não existe (#168/#173)

@@ -45,6 +45,7 @@ import { useMatchDetails, type MatchDetailsBinding } from './match-details.bindi
 import { useHeaderMenus, resolvePeriodRange, type HeaderMenusBinding } from './header-menus.binding.ts'
 import { useImport, type ImportBinding } from './import.binding.ts'
 import { useReconcile, type ReconcileBinding } from './reconcile.binding.ts'
+import { useCounterpart, type CounterpartBinding } from './counterpart.binding.ts'
 import { useSearchCreate, type SearchCreateBinding } from './search-create.binding.ts'
 import { useManualEntry, type ManualEntryBinding } from './manual-entry.binding.ts'
 import { useUndo, type UndoBinding } from './undo.binding.ts'
@@ -140,6 +141,9 @@ export type WorkspaceBinding = Readonly<{
   headerMenus: HeaderMenusBinding
   import: ImportBinding
   reconcile: ReconcileBinding
+  // US2 (#269): contrapartida esperada da transação selecionada (transferência entre contas). O painel só
+  // aparece quando há candidatas (state.tag === 'ready') → invisível p/ transações comuns de título.
+  counterpart: CounterpartBinding
   searchCreate: SearchCreateBinding
   manualEntry: ManualEntryBinding
   undo: UndoBinding
@@ -396,6 +400,12 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
   }, [ui.activeTab, ui.selectedTransactionId, topTransactionId])
 
   const reconcileBinding = useReconcile(recordReconciliation)
+  // US2 (#269): contrapartidas da transação selecionada — só busca p/ transação PENDENTE (confirmar só faz
+  // sentido antes de conciliar). Ao confirmar, o namespace é invalidado (dentro do binding) → a tx vira
+  // conciliada e o Desfazer sai do lookup #175, sem gravação de sessão nova.
+  const counterpartBinding = useCounterpart(
+    selectedTx !== null && isPending(selectedTx) ? selectedTx.id : null,
+  )
   const searchCreateBinding = useSearchCreate(selectedTx, payables, recordReconciliation)
   const manualEntryBinding = useManualEntry(accountRef, selectedTx, recordReconciliation)
   // No sucesso do Desfazer: esquece o id de sessão E fecha o modal de detalhes. Em falha (ex.: período
@@ -651,6 +661,7 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     headerMenus: headerMenusBinding,
     import: importBinding,
     reconcile: reconcileBinding,
+    counterpart: counterpartBinding,
     searchCreate: searchCreateBinding,
     manualEntry: manualEntryBinding,
     undo: undoBinding,

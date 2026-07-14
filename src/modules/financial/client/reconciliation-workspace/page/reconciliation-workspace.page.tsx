@@ -20,6 +20,7 @@ import {
 import { ImportMenu } from '../components/import-menu.component.tsx'
 import { ImportsList } from '../components/imports-list.component.tsx'
 import { SuggestionPane } from '../components/suggestion-pane.component.tsx'
+import { CounterpartPane } from '../components/counterpart-pane.component.tsx'
 import { PendingTitlesPane } from '../components/pending-titles-pane.component.tsx'
 import { SearchCreatePane } from '../components/search-create-pane.component.tsx'
 import { NewTransactionPane } from '../components/new-transaction-pane.component.tsx'
@@ -262,24 +263,34 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
                         ))}
                       </div>
                       {ui.assocTab === 'sugestao' ? (
-                        <SuggestionPane
-                          state={ui.showGuesses ? vm.suggestions : { tag: 'idle' }}
-                          selectedTx={vm.selectedTx}
-                          reconciling={vm.reconcile.reconciling}
-                          rejecting={vm.reconcile.rejecting}
-                          errorTag={vm.reconcile.errorTag}
-                          onReconcile={(payableId) => {
-                            if (ui.selectedTransactionId !== null) {
-                              vm.armFlash(payableId) // captura o título do match p/ a barra de confirmação
-                              vm.reconcile.reconcileOne(ui.selectedTransactionId, payableId)
-                            }
-                          }}
-                          onReject={(payableId) => {
-                            if (ui.selectedTransactionId !== null) {
-                              vm.reconcile.rejectOne(ui.selectedTransactionId, payableId)
-                            }
-                          }}
-                        />
+                        <>
+                          <SuggestionPane
+                            state={ui.showGuesses ? vm.suggestions : { tag: 'idle' }}
+                            selectedTx={vm.selectedTx}
+                            reconciling={vm.reconcile.reconciling}
+                            rejecting={vm.reconcile.rejecting}
+                            errorTag={vm.reconcile.errorTag}
+                            onReconcile={(payableId) => {
+                              if (ui.selectedTransactionId !== null) {
+                                vm.armFlash(payableId) // captura o título do match p/ a barra de confirmação
+                                vm.reconcile.reconcileOne(ui.selectedTransactionId, payableId)
+                              }
+                            }}
+                            onReject={(payableId) => {
+                              if (ui.selectedTransactionId !== null) {
+                                vm.reconcile.rejectOne(ui.selectedTransactionId, payableId)
+                              }
+                            }}
+                          />
+                          {/* US2 (#269): contrapartida esperada (transferência entre contas) da MESMA transação.
+                              Só aparece quando o backend devolve candidatas. */}
+                          <CounterpartPane
+                            state={vm.counterpart.state}
+                            confirming={vm.counterpart.confirming}
+                            errorTag={vm.counterpart.errorTag}
+                            onConfirm={vm.counterpart.confirm}
+                          />
+                        </>
                       ) : ui.assocTab === 'nova' ? (
                         <NewTransactionPane binding={vm.manualEntry} />
                       ) : (

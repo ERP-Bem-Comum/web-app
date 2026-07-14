@@ -218,6 +218,18 @@ export type StatementSuggestion = Readonly<{
   topScore: number | null
 }>
 export type RejectedSuggestion = Readonly<{ transactionId: string; payableId: string }>
+// Contrapartida esperada candidata (US2 do #269) — transferência entre contas. `originAccountRef` uuid (o
+// contrato não enriquece o nome). Money = string de centavos; `expectedDate` ISO; `score` 0..100.
+export type CounterpartSuggestion = Readonly<{
+  counterpartId: string
+  originAccountRef: string
+  valueCents: string
+  expectedDate: string
+  score: number
+}>
+export type GetCounterpartSuggestionsInput = Readonly<{ transactionId: string }>
+export type ConfirmCounterpartInput = Readonly<{ transactionId: string; counterpartId: string }>
+export type ConfirmCounterpartResult = Readonly<{ reconciliationId: string; counterpartId: string }>
 // Conciliação ativa de uma transação (#175). `null` no repository = sem conciliação ativa. Itens trazem
 // payableId+valor conciliado e os detalhes do título enriquecidos no BFF (interim #172): nº do documento,
 // fornecedor e vencimento — `null` quando o BFF não conseguiu resolver o título. Espelho estrutural do

@@ -1322,6 +1322,12 @@ export const ptBR: Catalog = {
   'financial.recon.error.title-not-paid': 'Só títulos pagos podem ser conciliados.',
   'financial.recon.error.empty-reconciliation': 'Selecione ao menos um título.',
   'financial.recon.error.reconciliation-already-undone': 'Esta conciliação já foi desfeita.',
+  'financial.recon.error.counterpart-not-found': 'Contrapartida não encontrada.',
+  'financial.recon.error.counterpart-not-pending': 'Esta contrapartida já foi conciliada ou descartada.',
+  'financial.recon.error.counterpart-account-mismatch':
+    'A contrapartida é de outra conta. Verifique a transferência.',
+  'financial.recon.error.counterpart-value-mismatch':
+    'O valor da contrapartida não confere com o da transação.',
   'financial.recon.error.export-unsupported-format': 'Formato de exportação não suportado.',
   'financial.recon.error.unavailable': 'Recurso indisponível até a próxima entrega do backend.',
 
@@ -1631,6 +1637,12 @@ export const ptBR: Catalog = {
   'financial.recon.sugg.matchWord': 'match',
   'financial.recon.sugg.vencWord': 'venc',
   'financial.recon.sugg.viewTitle': 'Ver título',
+  // US2 (#269) — contrapartida esperada (transferência entre contas): seção de palpites da MESMA transação.
+  'financial.recon.counterpart.title': 'Contrapartida esperada',
+  'financial.recon.counterpart.transfer': 'Transferência entre contas',
+  'financial.recon.counterpart.expected': 'Prevista em',
+  'financial.recon.counterpart.matchWord': 'de aderência',
+  'financial.recon.counterpart.confirm': 'Confirmar contrapartida',
   'financial.recon.crit.payeeMatch': 'Favorecido',
   'financial.recon.crit.exactValue': 'Valor exato',
   'financial.recon.crit.dateD0': 'Mesma data',

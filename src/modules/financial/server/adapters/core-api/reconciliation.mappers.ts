@@ -13,6 +13,8 @@ import type {
   BankStatementImport,
   BatchResult,
   CedenteAccount,
+  ConfirmCounterpartResult,
+  CounterpartSuggestion,
   CriterionKey,
   CriterionOutcome,
   CriterionResult,
@@ -43,6 +45,8 @@ import {
   CoreApiCedenteAccountSchema,
   CoreApiCedenteAccountsSchema,
   type CoreApiCedenteAccount,
+  CoreApiCounterpartConfirmedSchema,
+  CoreApiCounterpartSuggestionsSchema,
   CoreApiImportSchema,
   CoreApiManualEntrySchema,
   CoreApiPaidPayablesSchema,
@@ -75,6 +79,11 @@ const SLUG_TO_ERROR: Partial<Record<string, ReconciliationError>> = {
   'title-not-paid': 'title-not-paid',
   'empty-reconciliation': 'empty-reconciliation',
   'reconciliation-already-undone': 'reconciliation-already-undone',
+  // Contrapartida (US2 do #269) — o core-api esconde o slug; listados p/ forward-compat (status fallback cobre).
+  'counterpart-not-found': 'counterpart-not-found',
+  'counterpart-not-pending': 'counterpart-not-pending',
+  'counterpart-account-mismatch': 'counterpart-account-mismatch',
+  'counterpart-value-mismatch': 'counterpart-value-mismatch',
   'unsupported-export-format': 'export-unsupported-format',
   unauthorized: 'unauthorized',
   forbidden: 'forbidden',
@@ -350,6 +359,31 @@ export const statementSuggestionsToModel = (
     topScore: s.topScore,
   }))
   return ok(items)
+}
+
+// US2 (#269): contrapartidas candidatas. `expectedDate` repassado cru (ISO); a view-model formata (a UI é
+// que decide date-only). Sem enums a traduzir — só o passthrough tipado.
+export const counterpartSuggestionsToModel = (
+  raw: unknown,
+): Result<readonly CounterpartSuggestion[], ReconciliationError> => {
+  const parsed = CoreApiCounterpartSuggestionsSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  const items: readonly CounterpartSuggestion[] = parsed.data.suggestions.map((s) => ({
+    counterpartId: s.counterpartId,
+    originAccountRef: s.originAccountRef,
+    valueCents: s.valueCents,
+    expectedDate: s.expectedDate,
+    score: s.score,
+  }))
+  return ok(items)
+}
+
+export const counterpartConfirmedToModel = (
+  raw: unknown,
+): Result<ConfirmCounterpartResult, ReconciliationError> => {
+  const parsed = CoreApiCounterpartConfirmedSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  return ok({ reconciliationId: parsed.data.reconciliationId, counterpartId: parsed.data.counterpartId })
 }
 
 export const transactionReconciliationToModel = (
