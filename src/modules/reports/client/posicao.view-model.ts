@@ -195,9 +195,14 @@ export function toRawPosicaoRows(positions: readonly PaymentPosition[]): readonl
     supplier: p.supplierName ?? '—',
     costCenter: p.costCenterName ?? '—',
     category: p.categoryName ?? '—',
+    // O backend devolve `pendingCents` = TODOS os não-pagos (Open/Approved), e `overdueCents` = os não-pagos
+    // JÁ VENCIDOS (subconjunto de pending). "A pagar" aqui é só o A VENCER → `pending − overdue`; senão os
+    // vencidos contariam nas DUAS colunas (Em atraso E A pagar) e o total inflaria. Assim as 3 medidas são
+    // mutuamente exclusivas e o total (`measureTotal`) = pago + não-pago, sem dupla contagem. `pending ≥
+    // overdue` sempre (overdue ⊆ pending) → nunca negativo.
     emAtrasoCents: p.overdueCents,
     pagoCents: p.paidCents,
-    aPagarCents: p.pendingCents,
+    aPagarCents: p.pendingCents - p.overdueCents,
   }))
 }
 

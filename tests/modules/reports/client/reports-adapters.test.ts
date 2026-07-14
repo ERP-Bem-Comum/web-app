@@ -13,7 +13,7 @@ import type { PaymentPosition } from '../../../../src/modules/reports/client/dat
 import type { SupplierWithoutContract } from '../../../../src/modules/reports/client/data/model/supplier-without-contract.model.ts'
 import type { TeamMember } from '../../../../src/modules/reports/client/data/model/team-report.model.ts'
 
-describe('toRawPosicaoRows (D1 — mapeamento 1:1)', () => {
+describe('toRawPosicaoRows (D1 — mapeamento das 3 medidas)', () => {
   const positions: readonly PaymentPosition[] = [
     {
       supplierRef: 's1',
@@ -22,9 +22,10 @@ describe('toRawPosicaoRows (D1 — mapeamento 1:1)', () => {
       costCenterName: 'Diretoria',
       categoryRef: 'k1',
       categoryName: 'Consultoria',
-      pendingCents: 3000,
+      // pending = TODOS os não-pagos (9000); overdue = os já vencidos (3000, subconjunto de pending).
+      pendingCents: 9000,
       paidCents: 1000,
-      overdueCents: 9000,
+      overdueCents: 3000,
     },
     {
       supplierRef: null,
@@ -39,11 +40,11 @@ describe('toRawPosicaoRows (D1 — mapeamento 1:1)', () => {
     },
   ]
 
-  it('mapeia os 3 buckets (overdue→emAtraso, paid→pago, pending→aPagar)', () => {
+  it('mapeia os 3 buckets exclusivos (overdue→emAtraso, paid→pago, pending−overdue→aPagar)', () => {
     const rows = toRawPosicaoRows(positions)
-    assert.equal(rows[0]?.emAtrasoCents, 9000)
+    assert.equal(rows[0]?.emAtrasoCents, 3000)
     assert.equal(rows[0]?.pagoCents, 1000)
-    assert.equal(rows[0]?.aPagarCents, 3000)
+    assert.equal(rows[0]?.aPagarCents, 6000) // 9000 pending − 3000 overdue (só o a vencer)
     assert.equal(rows[0]?.supplier, 'Fornecedor Alfa')
     assert.equal(rows[0]?.costCenter, 'Diretoria')
     assert.equal(rows[0]?.category, 'Consultoria')

@@ -41,9 +41,10 @@ const POSITIONS: readonly PaymentPosition[] = [
     costCenterName: 'Diretoria',
     categoryRef: 'k1',
     categoryName: 'Consultoria',
-    pendingCents: 3000,
+    // pending = TODOS os não-pagos (inclui os vencidos); overdue ⊆ pending.
+    pendingCents: 9000,
     paidCents: 1000,
-    overdueCents: 9000,
+    overdueCents: 3000,
   },
   {
     supplierRef: 's1',
@@ -52,9 +53,9 @@ const POSITIONS: readonly PaymentPosition[] = [
     costCenterName: 'Operações',
     categoryRef: 'k2',
     categoryName: 'Materiais',
-    pendingCents: 500,
+    pendingCents: 2000,
     paidCents: 0,
-    overdueCents: 2000,
+    overdueCents: 500,
   },
   {
     supplierRef: 's2',
@@ -212,9 +213,9 @@ describe('PosicaoTreeTable (via page) — container', () => {
 describe('fixture sanity', () => {
   it('Fornecedor Alfa soma os buckets certos', async () => {
     await waitFor(() => {
-      expect(firstSupplier?.measures.emAtrasoCents).toBe(11000) // 9000 + 2000
+      expect(firstSupplier?.measures.emAtrasoCents).toBe(3500) // overdue 3000 + 500
     })
     expect(firstSupplier?.measures.pagoCents).toBe(1000)
-    expect(firstSupplier?.measures.aPagarCents).toBe(3500) // 3000 + 500
+    expect(firstSupplier?.measures.aPagarCents).toBe(7500) // (9000−3000) + (2000−500) = 6000 + 1500
   })
 })

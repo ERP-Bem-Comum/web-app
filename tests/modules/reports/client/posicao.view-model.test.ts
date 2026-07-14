@@ -16,11 +16,13 @@ import {
   loadPosicao,
   supplierTotals,
   measureTotal,
+  toRawPosicaoRows,
   buildCsv,
   formatBRL,
   CSV_HEADER,
   type PosicaoReport,
 } from '#modules/reports/client/posicao.view-model.ts'
+import type { PaymentPosition } from '#modules/reports/client/data/model/payment-position.model.ts'
 import {
   POSICAO_PAGAMENTOS_RAW,
   type RawPosicaoRow,
@@ -54,6 +56,49 @@ const FIXTURE: readonly RawPosicaoRow[] = [
     aPagarCents: 700,
   },
 ]
+
+describe('toRawPosicaoRows — mapeia a projeção do backend p/ as 3 medidas exclusivas', () => {
+  // O backend: pendingCents = TODOS os não-pagos (inclui vencidos); overdueCents = os não-pagos vencidos
+  // (subconjunto). "A pagar" na tela é só o A VENCER → pending − overdue (senão o vencido conta 2x).
+  const mk = (over: Partial<PaymentPosition> = {}): PaymentPosition => ({
+    supplierRef: 's1',
+    supplierName: 'Alfa',
+    costCenterRef: 'cc1',
+    costCenterName: 'Administrativo',
+    categoryRef: 'cat1',
+    categoryName: 'Serviços',
+    pendingCents: 0,
+    paidCents: 0,
+    overdueCents: 0,
+    ...over,
+  })
+
+  it('aPagar = pending − overdue (o vencido NÃO conta em A pagar)', () => {
+    // 100 não-pagos, dos quais 30 vencidos, 200 pagos → Em atraso 30 · Pago 200 · A pagar 70.
+    const [row] = toRawPosicaoRows([mk({ pendingCents: 100, overdueCents: 30, paidCents: 200 })])
+    assert.ok(row)
+    assert.equal(row.emAtrasoCents, 30)
+    assert.equal(row.pagoCents, 200)
+    assert.equal(row.aPagarCents, 70) // 100 − 30
+    // total = 300 (pago + não-pago), sem dupla contagem do vencido.
+    assert.equal(measureTotal(row), 300)
+  })
+
+  it('tudo vencido → A pagar 0 (o caso da tela: Em atraso e A pagar não repetem o valor)', () => {
+    const [row] = toRawPosicaoRows([mk({ pendingCents: 1000, overdueCents: 1000, paidCents: 0 })])
+    assert.ok(row)
+    assert.equal(row.emAtrasoCents, 1000)
+    assert.equal(row.aPagarCents, 0)
+    assert.equal(measureTotal(row), 1000)
+  })
+
+  it('favorecido/centro/categoria nulos → "—"', () => {
+    const [row] = toRawPosicaoRows([mk({ supplierName: null, costCenterName: null, categoryName: null })])
+    assert.equal(row?.supplier, '—')
+    assert.equal(row?.costCenter, '—')
+    assert.equal(row?.category, '—')
+  })
+})
 
 describe('aggregatePosicao — soma folha → CC → fornecedor → total geral', () => {
   it('monta a árvore de 3 níveis preservando a ordem de inserção', () => {
