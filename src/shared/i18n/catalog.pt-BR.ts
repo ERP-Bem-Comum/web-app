@@ -1067,6 +1067,7 @@ export const ptBR: Catalog = {
   'financial.create.backLabel': 'Voltar',
   'financial.create.close': '✕',
   'financial.create.closeLabel': 'Fechar',
+  'financial.create.ocrResizeLabel': 'Redimensionar a coluna de pré-visualização (arraste ou use as setas)',
   'financial.create.hero.overline': 'Fornecedor',
   'financial.create.partner.kind.supplier': 'Fornecedor',
   'financial.create.partner.kind.financier': 'Financiador',

@@ -124,8 +124,8 @@ describe('DocumentPreview — web view (com arquivo)', () => {
     )
     const frame = container.querySelector('iframe')
     expect(frame).toBeTruthy()
-    // A blob URL leva o fragmento `#zoom=` (zoom do visualizador nativo); começa 100%.
-    expect(frame?.getAttribute('src')).toBe('blob:pdf-123#zoom=100')
+    // A blob URL esconde a barra + o painel de miniaturas (só conteúdo) e leva o `#zoom=`; começa 100%.
+    expect(frame?.getAttribute('src')).toBe('blob:pdf-123#toolbar=0&navpanes=0&zoom=100')
   })
 
   it('zoom: + aumenta o #zoom do PDF; − diminui; respeita os limites (50–200%)', () => {
@@ -142,16 +142,16 @@ describe('DocumentPreview — web view (com arquivo)', () => {
     const src = (): string => container.querySelector('iframe')?.getAttribute('src') ?? ''
     const zoomIn = screen.getByLabelText(tr('financial.create.preview.zoomIn'))
     const zoomOut = screen.getByLabelText(tr('financial.create.preview.zoomOut'))
-    expect(src()).toBe('blob:pdf-123#zoom=100')
+    expect(src()).toBe('blob:pdf-123#toolbar=0&navpanes=0&zoom=100')
     fireEvent.click(zoomIn)
-    expect(src()).toBe('blob:pdf-123#zoom=125')
+    expect(src()).toBe('blob:pdf-123#toolbar=0&navpanes=0&zoom=125')
     fireEvent.click(zoomOut)
     fireEvent.click(zoomOut)
-    expect(src()).toBe('blob:pdf-123#zoom=75')
+    expect(src()).toBe('blob:pdf-123#toolbar=0&navpanes=0&zoom=75')
     // limite inferior: 75 → 50 e trava (não passa de 50)
     fireEvent.click(zoomOut)
     fireEvent.click(zoomOut)
-    expect(src()).toBe('blob:pdf-123#zoom=50')
+    expect(src()).toBe('blob:pdf-123#toolbar=0&navpanes=0&zoom=50')
     expect((zoomOut as HTMLButtonElement).disabled).toBe(true)
   })
 

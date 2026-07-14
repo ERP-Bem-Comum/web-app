@@ -4,7 +4,7 @@
  * ações. No sucesso, mostra os **títulos gerados** (FR-007). Não usa data-hooks/useReducer direto — só os
  * hooks de binding/controller.
  */
-import { useState, type ReactNode } from 'react'
+import { useState, type CSSProperties, type ReactNode } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
@@ -13,6 +13,7 @@ import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { useDocumentFormController } from '../document-form.controller.ts'
 import { useOcrExtraction } from '../ocr.binding.ts'
 import { useDocumentPreview } from '../document-preview.binding.ts'
+import { useOcrPanelResize } from '../ocr-panel-resize.binding.ts'
 import { useSupplierPickerController } from '../supplier-picker.controller.ts'
 import { useLancarDocumentoBinding } from '../create-document.binding.ts'
 import { useDocumentEditing } from '../edit-document.binding.ts'
@@ -42,6 +43,8 @@ import {
   crumb,
   errorBanner,
   formCol,
+  resizeHandle,
+  resizeHandleActive,
   scrollArea,
   screen,
   sidebarCol,
@@ -62,6 +65,8 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
   // Ingestão por OCR (core-api#62): no sucesso CRIA UM RASCUNHO e navega p/ o modo edição dele (revisão do
   // operador). O binding só ingere+navega — nunca cria um 2º documento.
   const ocr = useOcrExtraction()
+  // Largura redimensionável da coluna OCR (arraste/teclado, persistida) — UI-state via binding.
+  const ocrResize = useOcrPanelResize()
   // Arquivo subido mantido no estado da page (a navegação create→edit é MESMA rota → o componente não
   // desmonta → o File sobrevive p/ o web view). Um reload direto do `?id` perde o arquivo → sem preview.
   const [ocrFile, setOcrFile] = useState<File | null>(null)
@@ -174,7 +179,10 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
         </div>
       ) : null}
 
-      <div className={body}>
+      <div
+        className={body}
+        style={{ ['--ocr-col-width']: `${String(ocrResize.widthPx)}px` } as CSSProperties}
+      >
         <DocumentPreview
           status={ocr.status}
           fileName={ocr.fileName}
@@ -182,6 +190,20 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
           preview={preview}
           allowReplace={mode === 'create'}
           onSelectFile={handleSelectFile}
+        />
+
+        {/* Alça de redimensionamento da coluna OCR (arraste horizontal + setas do teclado). */}
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label={t('financial.create.ocrResizeLabel')}
+          aria-valuenow={ocrResize.widthPx}
+          aria-valuemin={ocrResize.minPx}
+          aria-valuemax={ocrResize.maxPx}
+          tabIndex={0}
+          className={`${resizeHandle} ${ocrResize.resizing ? resizeHandleActive : ''}`}
+          onPointerDown={ocrResize.onHandlePointerDown}
+          onKeyDown={ocrResize.onHandleKeyDown}
         />
 
         <div className={`${formCol} ${scrollArea}`}>
