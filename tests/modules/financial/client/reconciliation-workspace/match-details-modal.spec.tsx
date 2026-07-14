@@ -6,7 +6,10 @@ import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 
 import { MatchDetailsModal } from '#modules/financial/client/reconciliation-workspace/components/match-details-modal.component.tsx'
-import type { MatchDetailsView } from '#modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
+import type {
+  MatchDetailsView,
+  MatchTitleLine,
+} from '#modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 
 const tr = (k: string): string => ptBR[k] ?? k
@@ -33,6 +36,14 @@ afterEach(() => {
   cleanup()
 })
 
+const titleLine = (over: Partial<MatchTitleLine> = {}): MatchTitleLine => ({
+  valueBRL: 'R$ 0,00',
+  name: '—',
+  nameTag: null,
+  documento: '—',
+  ...over,
+})
+
 describe('MatchDetailsModal — 1 saída → N títulos', () => {
   it('com multi: mostra contagem, valor por título e total conciliado', () => {
     render(
@@ -41,7 +52,11 @@ describe('MatchDetailsModal — 1 saída → N títulos', () => {
         view={view({
           multi: {
             count: 3,
-            lines: [{ valueBRL: 'R$ 300,00' }, { valueBRL: 'R$ 200,00' }, { valueBRL: 'R$ 242,00' }],
+            lines: [
+              titleLine({ valueBRL: 'R$ 300,00' }),
+              titleLine({ valueBRL: 'R$ 200,00' }),
+              titleLine({ valueBRL: 'R$ 242,00' }),
+            ],
             differenceBRL: 'R$ 190,00',
             differenceTag: 'financial.recon.match.diffSurplus',
             totalBRL: 'R$ 932,00',
@@ -62,6 +77,75 @@ describe('MatchDetailsModal — 1 saída → N títulos', () => {
     expect(screen.getByText(tr('financial.recon.match.totalConciliado'))).toBeTruthy()
     expect(screen.getAllByText('R$ 742,00').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('R$ 300,00')).toBeTruthy()
+  })
+
+  it('N:1 enriquecido (#357): mostra favorecido + nº do documento por linha', () => {
+    render(
+      <MatchDetailsModal
+        open
+        view={view({
+          multi: {
+            count: 2,
+            lines: [
+              titleLine({
+                valueBRL: 'R$ 300,00',
+                name: 'TS Da Silva Serviços Ltda',
+                documento: 'NFS-e 2024-0537',
+              }),
+              titleLine({ valueBRL: 'R$ 200,00', name: 'Padaria Central ME', documento: 'DANFE 88' }),
+            ],
+            differenceBRL: null,
+            differenceTag: '',
+            totalBRL: 'R$ 500,00',
+          },
+        })}
+        canUndo
+        undoing={false}
+        undoErrorTag={null}
+        onUndo={vi.fn()}
+        onViewTitle={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    expect(screen.getByText('TS Da Silva Serviços Ltda')).toBeTruthy()
+    expect(screen.getByText('NFS-e 2024-0537')).toBeTruthy()
+    expect(screen.getByText('Padaria Central ME')).toBeTruthy()
+    expect(screen.getByText('DANFE 88')).toBeTruthy()
+  })
+
+  it('N:1 imposto retido (#357): a linha mostra o ÓRGÃO, não o fornecedor do pai', () => {
+    render(
+      <MatchDetailsModal
+        open
+        view={view({
+          multi: {
+            count: 2,
+            lines: [
+              titleLine({ valueBRL: 'R$ 300,00', name: 'Serraria Bom Jesus LTDA', documento: 'DANFE 3500' }),
+              // imposto retido ISS → headline é o ÓRGÃO (SEFIN), não o fornecedor do documento-pai.
+              titleLine({
+                valueBRL: 'R$ 23,00',
+                name: 'Serraria Bom Jesus LTDA',
+                nameTag: 'financial.recon.pending.agency.iss',
+                documento: '3500',
+              }),
+            ],
+            differenceBRL: null,
+            differenceTag: '',
+            totalBRL: 'R$ 323,00',
+          },
+        })}
+        canUndo
+        undoing={false}
+        undoErrorTag={null}
+        onUndo={vi.fn()}
+        onViewTitle={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    // O órgão traduzido aparece; o nome do fornecedor aparece só na 1ª linha (não como headline do retido).
+    expect(screen.getByText(tr('financial.recon.pending.agency.iss'))).toBeTruthy()
+    expect(screen.getAllByText('Serraria Bom Jesus LTDA').length).toBe(1)
   })
 
   it('sem multi (individual): mantém o bloco único "Título no sistema"', () => {

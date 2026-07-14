@@ -24,6 +24,7 @@ import {
   undoToModel,
   categoriesToModel,
   costCentersToModel,
+  payablesBatchToModel,
 } from '../../../../../../src/modules/financial/server/adapters/core-api/reconciliation.mappers.ts'
 import { isOk, isErr } from '../../../../../../src/shared/primitives/result.ts'
 import type { HttpError } from '../../../../../../src/shared/http/http-error.types.ts'
@@ -689,5 +690,58 @@ describe('referências da categorização (020 · #200) — array nu', () => {
   it('shape inválido → err(server)', () => {
     assert.ok(isErr(categoriesToModel([{ id: 'x' }])))
     assert.ok(isErr(costCentersToModel('nope')))
+  })
+})
+
+describe('payablesBatchToModel (#357 — POST /payables:batch → mapa por ref)', () => {
+  const item = (over: Record<string, unknown> = {}) => ({
+    ref: 'p1',
+    documentId: 'd1',
+    documentNumber: 'NFS-e 2024-0537',
+    documentType: 'NFS-e',
+    valueCents: '150000',
+    dueDate: '2026-06-10T00:00:00.000Z',
+    status: 'Reconciled',
+    paymentMethod: 'Boleto',
+    supplierRef: 's1',
+    supplierName: 'TS Da Silva Serviços Ltda',
+    supplierDocument: '12345678000190',
+    ...over,
+  })
+
+  it('mapeia items → Map por ref; dueDate normalizado p/ date-only', () => {
+    const r = payablesBatchToModel({ items: [item()], missing: [] })
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      const e = r.value.get('p1')
+      assert.equal(e?.documentNumber, 'NFS-e 2024-0537')
+      assert.equal(e?.supplierName, 'TS Da Silva Serviços Ltda')
+      assert.equal(e?.dueDate, '2026-06-10') // ISO → date-only
+      assert.equal(e?.documentType, 'NFS-e')
+    }
+  })
+
+  it('missing e campos nulos: parseia sem quebrar; ref ausente não entra no mapa', () => {
+    const r = payablesBatchToModel({
+      items: [item({ ref: 'p2', documentNumber: null, supplierName: null })],
+      missing: ['p9'],
+    })
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value.has('p9'), false)
+      const e = r.value.get('p2')
+      assert.equal(e?.documentNumber, null)
+      assert.equal(e?.supplierName, null)
+    }
+  })
+
+  it('tolerante a drift: items/missing ausentes → mapa vazio (não err)', () => {
+    const r = payablesBatchToModel({})
+    assert.ok(isOk(r))
+    if (isOk(r)) assert.equal(r.value.size, 0)
+  })
+
+  it('envelope inválido (não-objeto) → err(server)', () => {
+    assert.ok(isErr(payablesBatchToModel('nope')))
   })
 })
