@@ -2094,13 +2094,10 @@ export const ptBR: Catalog = {
   'budget-plans.addBudget.close': 'Fechar',
   'budget-plans.addBudget.estado': 'Estado',
   'budget-plans.addBudget.estadoPlaceholder': 'Selecione o estado',
-  'budget-plans.addBudget.valor': 'Valor do orçamento',
-  'budget-plans.addBudget.valorPlaceholder': 'Ex.: 5.000,00',
   'budget-plans.addBudget.add': 'Adicionar',
   'budget-plans.addBudget.cancel': 'Cancelar',
   'budget-plans.addBudget.error.estado-required': 'Selecione um estado.',
   'budget-plans.addBudget.error.estado-duplicate': 'Atenção! Já existe um orçamento com essas informações.',
-  'budget-plans.addBudget.error.valor-required': 'Informe um valor válido para o orçamento.',
   'budget-plans.addBudget.error.save-failed': 'Não foi possível salvar o orçamento. Tente novamente.',
 
   // ── Modal "Centros de Custo - {Programa}" (§1.5) ──
