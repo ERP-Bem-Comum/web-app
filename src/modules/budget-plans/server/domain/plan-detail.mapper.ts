@@ -63,9 +63,19 @@ export const mapLaunchType = (launchType: string): ReleaseType | undefined => {
 }
 
 /** Compõe o detalhe pronto (§III: o BFF entrega o `PlanDetail` já montado; o client não compõe). */
+/**
+ * Chave do mapa de nomes de rede. Composta por (kind, ref) DE PROPÓSITO: `ref` é chave natural em DOIS
+ * espaços diferentes — UF pra estado, código IBGE pra município. Chavear só por `ref` misturaria os dois.
+ */
+export const networkNameKey = (kind: string, ref: string): string => `${kind}:${ref}`
+
+/** ref → nome da rede, montado do catálogo (`GET /options`). Ver `networks` abaixo. */
+export type NetworkNames = ReadonlyMap<string, string>
+
 export const mapPlanDetail = (
   header: PlanDetailHeaderInput,
   costStructure: CostStructureInput,
+  networkNames?: NetworkNames,
 ): PlanDetailComposed => {
   const costCenters: readonly CostCenterConsolidated[] = costStructure.costCenters.map((cc, i) => {
     const centerId = i + 1
@@ -113,10 +123,13 @@ export const mapPlanDetail = (
     scenarioName: null, // cenários/versões-filhas: core-api#317/#318
     status: header.status,
     totalInCents: header.totalInCents, // real do GET /:id (plano-level; plano novo = 0)
-    // #394: colunas "Por Rede" a partir dos orçamentos reais (id por índice; nome = ref até resolver rótulo).
+    // #394: colunas "Por Rede" a partir dos orçamentos reais (id por índice). O NOME sai do catálogo de redes
+    // (`GET /options`, que devolve `{kind, ref, name}`); sem ele a coluna mostraria a chave natural CRUA — 'CE'
+    // no lugar de "Ceará", e o código IBGE ('2304400') no lugar de "Fortaleza", que é ilegível. Ausente do mapa
+    // → cai no `ref`: degradado, mas honesto (mostra a chave, não um nome inventado).
     networks: header.budgets.map((b, i) => ({
       id: i,
-      name: b.partnerRef,
+      name: networkNames?.get(networkNameKey(b.partnerKind, b.partnerRef)) ?? b.partnerRef,
       ref: b.partnerRef,
       kind: b.partnerKind,
       budgetId: b.budgetId,

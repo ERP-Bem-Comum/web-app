@@ -17,6 +17,7 @@ import {
   mapLaunchType,
   fillNetworkCells,
   fillMonthlyCells,
+  networkNameKey,
 } from '#modules/budget-plans/server/domain/plan-detail.mapper.ts'
 import type {
   CostStructureInput,
@@ -370,5 +371,74 @@ describe('fillMonthlyCells (§1.7 — a grade Categorias × 12 meses de UMA rede
       Array.from({ length: 12 }, () => 0),
     )
     assert.equal(sub.totalInCents, 0)
+  })
+})
+
+// A coluna do "Por Rede" é o NOME do parceiro (print do legado: "FORTALEZA"), não a chave natural. O nome vem
+// do catálogo (`GET /options`); sem ele a coluna mostraria 'CE' ou, pior, o código IBGE de um município.
+describe('mapPlanDetail — rótulo da rede (nome do catálogo, não a chave crua)', () => {
+  const header = (budgets: readonly PlanDetailHeaderInput['budgets'][number][]): PlanDetailHeaderInput => ({
+    id: 'a1b2c3d4-1111-4a2b-8c3d-000000000001',
+    year: 2026,
+    status: 'RASCUNHO',
+    version: '1.0',
+    programName: 'P',
+    totalInCents: 0,
+    budgets,
+  })
+
+  it('estado: mostra "Ceará", não "CE"', () => {
+    const d = mapPlanDetail(
+      header([{ budgetId: 'b1', partnerKind: 'state', partnerRef: 'CE', valueInCents: 0 }]),
+      structure,
+      new Map([[networkNameKey('state', 'CE'), 'Ceará']]),
+    )
+    assert.equal(d.networks[0]?.name, 'Ceará')
+    assert.equal(d.networks[0]?.ref, 'CE') // a chave natural CONTINUA sendo a ref (é ela que casa o filtro)
+  })
+
+  it('município: mostra "Fortaleza", não o código IBGE', () => {
+    const d = mapPlanDetail(
+      header([{ budgetId: 'b1', partnerKind: 'municipality', partnerRef: '2304400', valueInCents: 0 }]),
+      structure,
+      new Map([[networkNameKey('municipality', '2304400'), 'Fortaleza']]),
+    )
+    assert.equal(d.networks[0]?.name, 'Fortaleza')
+  })
+
+  // `ref` é chave natural em DOIS espaços (UF × IBGE). Chavear só por ref misturaria estado com município.
+  it('mesma ref em kinds diferentes NÃO se confunde', () => {
+    const d = mapPlanDetail(
+      header([
+        { budgetId: 'b1', partnerKind: 'state', partnerRef: '99', valueInCents: 0 },
+        { budgetId: 'b2', partnerKind: 'municipality', partnerRef: '99', valueInCents: 0 },
+      ]),
+      structure,
+      new Map([
+        [networkNameKey('state', '99'), 'Estado Noventa e Nove'],
+        [networkNameKey('municipality', '99'), 'Município Noventa e Nove'],
+      ]),
+    )
+    assert.equal(d.networks[0]?.name, 'Estado Noventa e Nove')
+    assert.equal(d.networks[1]?.name, 'Município Noventa e Nove')
+  })
+
+  // O catálogo é COSMÉTICO: se cair, a tela mostra a chave — feia, mas verdadeira. Nunca um nome inventado.
+  it('sem catálogo → cai na ref (degrada, não mente nem some)', () => {
+    const d = mapPlanDetail(
+      header([{ budgetId: 'b1', partnerKind: 'state', partnerRef: 'CE', valueInCents: 0 }]),
+      structure,
+      new Map(),
+    )
+    assert.equal(d.networks[0]?.name, 'CE')
+  })
+
+  it('rede fora do catálogo → cai na ref (parceiro novo/desativado não apaga a coluna)', () => {
+    const d = mapPlanDetail(
+      header([{ budgetId: 'b1', partnerKind: 'state', partnerRef: 'RN', valueInCents: 0 }]),
+      structure,
+      new Map([[networkNameKey('state', 'CE'), 'Ceará']]),
+    )
+    assert.equal(d.networks[0]?.name, 'RN')
   })
 })

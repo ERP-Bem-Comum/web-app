@@ -20,8 +20,14 @@ import type {
   PlanDetailComposed,
   PlanDetailHeaderInput,
   BudgetResultRow,
+  NetworkOption,
 } from '#modules/budget-plans/server/domain/plan-detail.io.ts'
-import { mapPlanDetail, fillNetworkCells } from '#modules/budget-plans/server/domain/plan-detail.mapper.ts'
+import {
+  mapPlanDetail,
+  fillNetworkCells,
+  networkNameKey,
+  type NetworkNames,
+} from '#modules/budget-plans/server/domain/plan-detail.mapper.ts'
 
 // ── Port (application) — o adapter implementa. Entrega os tipos CRUS de domínio (insumo do mapper). ──
 export type GetBudgetPlanDetailClient = Readonly<{
@@ -32,7 +38,23 @@ export type GetBudgetPlanDetailClient = Readonly<{
     budgetId: string,
     token: string,
   ) => Promise<Result<readonly BudgetResultRow[], BudgetPlansError>>
+  // Catálogo de redes — só p/ RESOLVER O RÓTULO da coluna "Por Rede" (ref → nome). Ver `resolveNetworkNames`.
+  getNetworkOptions: (token: string) => Promise<Result<readonly NetworkOption[], BudgetPlansError>>
 }>
+
+/**
+ * ref → nome, a partir do catálogo de redes. BEST-EFFORT de propósito: o catálogo é COSMÉTICO (só o rótulo da
+ * coluna). Se ele falhar, o detalhe inteiro NÃO pode cair — a tela degrada pro `ref` ('CE' em vez de "Ceará"),
+ * que é a chave real, não um nome inventado. Falhar aqui trocaria uma tela feia por uma tela ausente.
+ */
+export const resolveNetworkNames = async (
+  client: Pick<GetBudgetPlanDetailClient, 'getNetworkOptions'>,
+  token: string,
+): Promise<NetworkNames> => {
+  const r = await client.getNetworkOptions(token)
+  if (isErr(r)) return new Map()
+  return new Map(r.value.map((n) => [networkNameKey(n.kind, n.ref), n.name]))
+}
 
 export type GetBudgetPlanDetailDeps = Readonly<{ client: GetBudgetPlanDetailClient }>
 
@@ -45,7 +67,8 @@ export const createGetBudgetPlanDetail =
     const structureRes = await deps.client.getCostStructure(id, token)
     if (isErr(structureRes)) return err(structureRes.error) // CORE: falha propaga (não degrada)
 
-    const detail = mapPlanDetail(headerRes.value, structureRes.value)
+    const networkNames = await resolveNetworkNames(deps.client, token)
+    const detail = mapPlanDetail(headerRes.value, structureRes.value, networkNames)
 
     // #C2: acende as células "Por Rede" — fan-out dos resultados de cálculo por rede (best-effort: rede sem
     // resultado ou erro pontual → zeros, não derruba o detalhe). A ordem espelha `detail.networks`.

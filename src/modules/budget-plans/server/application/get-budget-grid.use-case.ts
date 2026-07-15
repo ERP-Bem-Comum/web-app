@@ -23,7 +23,10 @@ import { ok, err, isErr, type Result } from '#shared/primitives/result.ts'
 import type { BudgetPlansError } from '#modules/budget-plans/server/domain/errors/budget-plans.errors.ts'
 import type { PlanDetailComposed } from '#modules/budget-plans/server/domain/plan-detail.io.ts'
 import { mapPlanDetail, fillMonthlyCells } from '#modules/budget-plans/server/domain/plan-detail.mapper.ts'
-import type { GetBudgetPlanDetailDeps } from '#modules/budget-plans/server/application/get-budget-plan-detail.use-case.ts'
+import {
+  resolveNetworkNames,
+  type GetBudgetPlanDetailDeps,
+} from '#modules/budget-plans/server/application/get-budget-plan-detail.use-case.ts'
 
 /** A grade da Edição = o detalhe do plano (cabeçalho + árvore) com os 12 meses de UMA rede + qual é a rede. */
 export type BudgetGridComposed = Readonly<{
@@ -47,7 +50,9 @@ export const createGetBudgetGrid =
     const structureRes = await deps.client.getCostStructure(planId, token)
     if (isErr(structureRes)) return err(structureRes.error) // CORE: falha propaga (não degrada)
 
-    const detail = mapPlanDetail(headerRes.value, structureRes.value)
+    // Mesmo catálogo do detalhe: o título da tela diz "… > Ceará", não "… > CE".
+    const networkNames = await resolveNetworkNames(deps.client, token)
+    const detail = mapPlanDetail(headerRes.value, structureRes.value, networkNames)
 
     const network = detail.networks.find((n) => n.ref === networkRef)
     if (network === undefined) return err('budget-plan-not-found') // ver ESCOPO no topo
