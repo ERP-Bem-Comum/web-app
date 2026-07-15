@@ -28,6 +28,24 @@ const HISTORY_YEARS = 5
 /** Placeholder de dado INDISPONÍVEL (≠ zero). Ver "HONESTIDADE" no topo. */
 const UNKNOWN = '—'
 
+// ── Sparkline do Histórico ────────────────────────────────────────────────────
+// O legado mostra uma linha de tendência ao lado da média (print da P.O.). Reproduzimos a ideia, não o bug:
+// no legado o valor sai quebrado ("R$ 129123440160.73Mi"). As COORDENADAS saem daqui (ViewModel puro, §XI) —
+// a view só desenha o `polyline`. viewBox fixo: o SVG escala sozinho, então não precisamos medir o DOM.
+const SPARK_W = 100
+const SPARK_H = 32
+/** Respiro vertical p/ o ponto do topo/base não ser cortado pela borda do viewBox. */
+const SPARK_PAD = 4
+
+/** Ponto da linha do histórico, já em coordenadas do viewBox (0..100 × 0..32). */
+export type SparkPoint = Readonly<{
+  year: number
+  x: number
+  y: number
+  /** Valor formatado — vira `<title>` do ponto (tooltip nativo, acessível). */
+  label: string
+}>
+
 export type InsightsRow = Readonly<{
   year: number
   totalLabel: string
@@ -48,6 +66,11 @@ export type InsightsView = Readonly<{
   networksCountLabel: string
   /** Média do Planejado nos últimos 5 anos anteriores. `UNKNOWN` quando não há ano anterior. */
   historyAvgLabel: string
+  /**
+   * Linha de tendência do Planejado: até 5 anos anteriores + o ano atual, em ordem CRESCENTE. **Vazia com
+   * menos de 2 pontos** — uma "linha" de 1 ponto não é tendência, é um ponto; a view esconde o gráfico.
+   */
+  historyPoints: readonly SparkPoint[]
   rows: readonly InsightsRow[]
 }>
 
@@ -85,6 +108,31 @@ const averagePerNetworkCents = (totalInCents: number, networksCount: number | nu
 const centsLabelOrUnknown = (cents: number | null): string =>
   cents === null ? UNKNOWN : formatCentsBRL(cents)
 
+/**
+ * Linha do histórico: até 5 anos anteriores (os mais recentes) + o ano atual, em ordem CRESCENTE.
+ * Normaliza no viewBox. Série TODA no mesmo valor (span 0) → linha reta no MEIO: dividir por zero daria NaN
+ * e o `polyline` sumiria sem erro. Menos de 2 pontos → `[]` (a view esconde o gráfico).
+ */
+const buildHistoryPoints = (insights: BudgetPlanInsights): readonly SparkPoint[] => {
+  const recent = [...insights.previousYears].sort((a, b) => b.year - a.year).slice(0, HISTORY_YEARS)
+  const series = [...recent, insights.current].sort((a, b) => a.year - b.year)
+  if (series.length < 2) return []
+
+  const values = series.map((y) => y.totalInCents)
+  const max = Math.max(...values)
+  const min = Math.min(...values)
+  const span = max - min
+  const usableH = SPARK_H - SPARK_PAD * 2
+
+  return series.map((y, i) => ({
+    year: y.year,
+    x: (i / (series.length - 1)) * SPARK_W,
+    // SVG cresce p/ BAIXO → invertemos: maior valor = y menor (mais alto na tela).
+    y: span === 0 ? SPARK_H / 2 : SPARK_PAD + usableH - ((y.totalInCents - min) / span) * usableH,
+    label: `${String(y.year)}: ${formatCentsBRL(y.totalInCents)}`,
+  }))
+}
+
 export const buildInsightsView = (insights: BudgetPlanInsights): InsightsView => ({
   currentYear: insights.current.year,
   currentTotalLabel: formatCentsBRL(insights.current.totalInCents),
@@ -94,5 +142,6 @@ export const buildInsightsView = (insights: BudgetPlanInsights): InsightsView =>
   ),
   networksCountLabel: insights.networksCount === null ? UNKNOWN : `${String(insights.networksCount)} redes`,
   historyAvgLabel: centsLabelOrUnknown(historyAverageCents(insights.previousYears)),
+  historyPoints: buildHistoryPoints(insights),
   rows: insights.previousYears.map((prev) => toRow(insights.current, prev)),
 })

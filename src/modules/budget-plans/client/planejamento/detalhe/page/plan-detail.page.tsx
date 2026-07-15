@@ -411,6 +411,7 @@ export function PlanDetailPage(): ReactNode {
           error: t('budget-plans.insights.error'),
           empty: t('budget-plans.insights.empty'),
           history: t('budget-plans.insights.history'),
+          historyChart: t('budget-plans.insights.historyChart'),
           planned: t('budget-plans.insights.planned'),
           realized: t('budget-plans.insights.realized'),
           networksAvg: t('budget-plans.insights.networksAvg'),

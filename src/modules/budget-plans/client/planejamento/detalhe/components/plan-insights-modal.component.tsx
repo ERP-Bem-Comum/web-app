@@ -13,6 +13,9 @@ import {
   headerRow,
   title,
   subtitle,
+  spark,
+  sparkLine,
+  sparkDot,
   closeButton,
   currentBlock,
   currentLabel,
@@ -38,6 +41,8 @@ export type PlanInsightsModalLabels = Readonly<{
   error: string
   empty: string
   history: string
+  /** aria-label do gráfico (leitor de tela — o SVG não tem texto). */
+  historyChart: string
   planned: string
   realized: string
   networksAvg: string
@@ -71,10 +76,30 @@ export function PlanInsightsModal(props: PlanInsightsModalProps): ReactNode {
           <>
             <p className={subtitle}>{labels.subtitle}</p>
 
-            {/* Histórico (§1.6): média do Planejado nos últimos 5 anos anteriores. */}
+            {/* Histórico (§1.6): média do Planejado nos últimos 5 anos + linha de tendência (como o legado).
+                As coordenadas vêm prontas do ViewModel; aqui só desenhamos. Menos de 2 pontos = sem gráfico. */}
             <div className={currentBlock}>
               <span className={currentLabel}>{labels.history}</span>
               <span className={currentValue}>{state.view.historyAvgLabel}</span>
+              {state.view.historyPoints.length >= 2 ? (
+                <svg
+                  className={spark}
+                  viewBox="0 0 100 32"
+                  preserveAspectRatio="none"
+                  role="img"
+                  aria-label={labels.historyChart}
+                >
+                  <polyline
+                    className={sparkLine}
+                    points={state.view.historyPoints.map((p) => `${String(p.x)},${String(p.y)}`).join(' ')}
+                  />
+                  {state.view.historyPoints.map((p) => (
+                    <circle key={p.year} className={sparkDot} cx={p.x} cy={p.y} r={1.5}>
+                      <title>{p.label}</title>
+                    </circle>
+                  ))}
+                </svg>
+              ) : null}
             </div>
 
             {/* Card do ano (§1.6): Planejado · Realizado · Média por rede (#416). */}

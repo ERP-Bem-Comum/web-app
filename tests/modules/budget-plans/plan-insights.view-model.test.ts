@@ -134,3 +134,67 @@ describe('buildInsightsView — honestidade: dado ausente vira "—", nunca R$ 0
     assert.notEqual(zeroReal.realizedLabel, '—')
   })
 })
+
+describe('buildInsightsView — linha do histórico (sparkline)', () => {
+  it('série CRESCENTE por ano: anos anteriores + o atual, no fim', () => {
+    const view = buildInsightsView(insights) // 2024,2025,2026 + atual 2027
+    assert.deepEqual(
+      view.historyPoints.map((p) => p.year),
+      [2024, 2025, 2026, 2027],
+    )
+  })
+
+  it('x distribui do 0 ao 100 (o viewBox escala sozinho)', () => {
+    const view = buildInsightsView(insights)
+    assert.equal(view.historyPoints[0]?.x, 0)
+    assert.equal(view.historyPoints[view.historyPoints.length - 1]?.x, 100)
+  })
+
+  it('y INVERTIDO: maior valor fica mais ALTO na tela (y menor)', () => {
+    const view = buildInsightsView({
+      current: { year: 2027, totalInCents: 100, realizedInCents: null }, // menor
+      previousYears: [{ year: 2026, totalInCents: 900, realizedInCents: null }], // maior
+      networksCount: null,
+    })
+    const p2026 = view.historyPoints.find((p) => p.year === 2026)
+    const p2027 = view.historyPoints.find((p) => p.year === 2027)
+    assert.ok(p2026 !== undefined && p2027 !== undefined)
+    assert.ok(p2026.y < p2027.y, 'o ano de maior valor deve ter y menor')
+  })
+
+  it('menos de 2 pontos → sem linha (1 ponto não é tendência)', () => {
+    const view = buildInsightsView({
+      current: { year: 2027, totalInCents: 100, realizedInCents: null },
+      previousYears: [],
+      networksCount: null,
+    })
+    assert.equal(view.historyPoints.length, 0)
+  })
+
+  it('série TODA no mesmo valor → linha reta no meio, sem NaN (divisão por zero sumiria com o gráfico)', () => {
+    const view = buildInsightsView({
+      current: { year: 2027, totalInCents: 500, realizedInCents: null },
+      previousYears: [{ year: 2026, totalInCents: 500, realizedInCents: null }],
+      networksCount: null,
+    })
+    for (const p of view.historyPoints) {
+      assert.ok(Number.isFinite(p.y), 'y não pode ser NaN')
+      assert.equal(p.y, 16) // SPARK_H / 2
+    }
+  })
+
+  it('usa no máximo 5 anos anteriores + o atual', () => {
+    const many = Array.from({ length: 9 }, (_, i) => ({
+      year: 2018 + i, // 2018..2026
+      totalInCents: 100,
+      realizedInCents: null,
+    }))
+    const view = buildInsightsView({
+      current: { year: 2027, totalInCents: 100, realizedInCents: null },
+      previousYears: many,
+      networksCount: null,
+    })
+    assert.equal(view.historyPoints.length, 6) // 5 anteriores + atual
+    assert.equal(view.historyPoints[0]?.year, 2022) // os 5 MAIS RECENTES
+  })
+})

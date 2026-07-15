@@ -19,6 +19,7 @@ const LABELS = {
   error: 'Erro',
   empty: 'Sem anos anteriores para comparar.',
   history: 'Média de orçamento nos últimos 5 anos',
+  historyChart: 'Evolução do orçamento planejado por ano',
   planned: 'Planejado',
   realized: 'Realizado',
   networksAvg: 'Média de',
@@ -83,5 +84,37 @@ describe('PlanInsightsModal (feature 060)', () => {
       <PlanInsightsModal open={false} state={{ status: 'idle' }} labels={LABELS} onClose={() => undefined} />,
     )
     expect(container.firstChild).toBeNull()
+  })
+})
+
+// O legado mostra uma linha de tendência ao lado da média (print da P.O.). Reproduzimos a ideia.
+describe('PlanInsightsModal — gráfico do Histórico', () => {
+  it('2+ anos → desenha a linha com um ponto por ano', () => {
+    const view = buildInsightsView({
+      current: { year: 2027, totalInCents: 300_000, realizedInCents: null },
+      previousYears: [
+        { year: 2026, totalInCents: 200_000, realizedInCents: null },
+        { year: 2025, totalInCents: 100_000, realizedInCents: null },
+      ],
+      networksCount: null,
+    })
+    const { container } = renderModal({ status: 'ready', view })
+
+    expect(screen.getByRole('img', { name: 'Evolução do orçamento planejado por ano' })).toBeTruthy()
+    // 3 pontos: 2025, 2026 + o ano atual (2027).
+    expect(container.querySelectorAll('circle').length).toBe(3)
+    expect(container.querySelector('polyline')).toBeTruthy()
+  })
+
+  it('só o ano atual → SEM gráfico (1 ponto não é tendência)', () => {
+    const view = buildInsightsView({
+      current: { year: 2027, totalInCents: 300_000, realizedInCents: null },
+      previousYears: [],
+      networksCount: null,
+    })
+    const { container } = renderModal({ status: 'ready', view })
+
+    expect(container.querySelector('polyline')).toBeNull()
+    expect(screen.queryByRole('img')).toBeNull()
   })
 })

@@ -82,6 +82,27 @@ export const subtitle = style({
   color: vars.color.text.secondary,
 })
 
+/** Sparkline do Histórico (§1.6) — linha de tendência do Planejado ano a ano. Escala com o container. */
+export const spark = style({
+  inlineSize: '100%',
+  blockSize: '2.5rem',
+  display: 'block',
+  overflow: 'visible', // os pontos das pontas encostam na borda do viewBox
+})
+
+export const sparkLine = style({
+  fill: 'none',
+  stroke: vars.color.brand.normal,
+  strokeWidth: 1.5,
+  strokeLinejoin: 'round',
+  strokeLinecap: 'round',
+  vectorEffect: 'non-scaling-stroke', // o viewBox estica em X; sem isto a linha engrossaria junto
+})
+
+export const sparkDot = style({
+  fill: vars.color.brand.normal,
+})
+
 /** Card do ano (§1.6): Planejado · Realizado · Média por rede — 3 métricas lado a lado. */
 export const metricsRow = style({
   display: 'grid',

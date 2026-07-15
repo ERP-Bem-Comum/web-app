@@ -2076,6 +2076,7 @@ export const ptBR: Catalog = {
   'budget-plans.insights.empty': 'Sem anos anteriores para comparar.',
   // Histórico (§1.6): média do Planejado nos últimos 5 anos anteriores.
   'budget-plans.insights.history': 'Média de orçamento nos últimos 5 anos',
+  'budget-plans.insights.historyChart': 'Evolução do orçamento planejado por ano',
   // Card do ano (§1.6): Planejado · Realizado · Média por rede.
   'budget-plans.insights.planned': 'Planejado',
   'budget-plans.insights.realized': 'Realizado',
