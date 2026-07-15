@@ -1,7 +1,10 @@
 /**
  * ViewModel PURO (§XI) do FORMULÁRIO de custo de Pessoal (US2.4c — frame 4). Campos como STRING (o que o
- * usuário digita) e o cálculo derivado em centavos. Sem React. Front-first: espelha a fórmula do legado;
- * persistência/valores reais chegam com o backend (core-api#113). Testável por node:test.
+ * usuário digita) e o cálculo derivado em centavos. Sem React. Testável por node:test.
+ *
+ * Espelha a fórmula do legado — agora de fato: até 2026-07-15 este docblock afirmava isso enquanto o cálculo
+ * multiplicava por `qtd`, coisa que o legado não faz (core-api#460). A afirmação era a única "prova" de
+ * paridade, e estava errada; por isso a regra agora é TESTE (paridade contra o print da P.O.), não comentário.
  */
 
 /** "34.336,73" / "34336.73" → centavos (tolerante). */
