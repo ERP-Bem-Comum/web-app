@@ -911,12 +911,17 @@ export const altBtn = style({
 // Seção de CONTRAPARTIDA ESPERADA (#269) no TOPO da aba Sugestão: mesmo layout dos cards de alternativa,
 // mas com respiro próprio de topo-de-seção — pouco espaço acima (encosta na barra de abas com folga) e um
 // separador embaixo p/ dividir dos palpites de título (SuggestionPane) que vêm a seguir.
+// A contrapartida é IRMÃ do SuggestionPane (não filha): fica FORA do `assocCol`, que é quem rola. Por isso
+// ela precisa repetir o recuo horizontal do `assocCol` (`padding: sp['3xl']`) — senão o card vaza até a borda
+// da coluna enquanto os palpites logo abaixo ficam recuados, e as duas seções desalinham. O `borderBlockEnd`
+// fica full-bleed de propósito (a régua atravessa a coluna e separa as duas seções); só o CONTEÚDO recua.
+// O respiro inferior sai do `padding` do próprio `assocCol` → aqui não há `marginBlockEnd` (senão soma dobrado).
 export const counterpartSection = style({
   display: 'flex',
   flexDirection: 'column',
   gap: sp.xs,
-  marginBlockStart: sp.md,
-  marginBlockEnd: sp.lg,
+  paddingInline: sp['3xl'],
+  paddingBlockStart: sp['3xl'],
   paddingBlockEnd: sp.lg,
   borderBlockEnd: `${bw.hairline} solid ${c.paper.rule}`,
 })
