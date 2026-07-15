@@ -121,15 +121,15 @@ describe('PlanTreeTable', () => {
     expect(onOpenPlan).toHaveBeenCalledWith('p-42')
   })
 
+  // Espelha o que a page faz: o gate recebe a LINHA inteira (status + isScenario + sceneryCount), porque o
+  // core-api recusa `create-scenery` em 3 casos e o status cobre só um deles.
   const statusGating = {
-    actionIsDisabled: (
-      a: Parameters<typeof isActionEnabled>[0],
-      s: 'RASCUNHO' | 'EM_CALIBRACAO' | 'APROVADO',
-    ) => !isActionEnabled(a, s),
+    actionIsDisabled: (a: Parameters<typeof isActionEnabled>[0], r: ReturnType<typeof toPlanRow>) =>
+      !isActionEnabled(a, r.rawStatus, { isScenario: r.isScenario, sceneryCount: r.sceneryCount }),
     actionDisabledTitleFor: (
       a: Parameters<typeof actionDisabledTitleKey>[0],
-      s: 'RASCUNHO' | 'EM_CALIBRACAO' | 'APROVADO',
-    ) => actionDisabledTitleKey(a, s),
+      r: ReturnType<typeof toPlanRow>,
+    ) => actionDisabledTitleKey(a, r.rawStatus, { isScenario: r.isScenario, sceneryCount: r.sceneryCount }),
   }
 
   it('raiz APROVADA: "criar cenário" desabilitado (tooltip), "calibração" habilitada', () => {
@@ -159,5 +159,50 @@ describe('PlanTreeTable', () => {
     // botão desabilitado não navega/dispara; a guarda no onAction é defesa extra
     fireEvent.click(within(screen.getByRole('menu')).getByText('ação:create-scenery'))
     expect(onAction).not.toHaveBeenCalledWith('p-ap2', 'create-scenery')
+  })
+})
+
+// #423: após criar um cenário, a página manda o id do PAI em `expandId` — o chevron dele abre sozinho,
+// senão o cenário nasce escondido e o usuário lê como "não deu certo" (relato da P.O. em tela).
+describe('PlanTreeTable — expandId (#423)', () => {
+  const pai = toPlanRow(
+    node({
+      id: 'pai',
+      children: [node({ id: 'cen', version: 1.1, scenarioName: 'North', children: [] })],
+    }),
+  )
+
+  it('sem expandId → o filho começa ESCONDIDO (chevron fechado é o padrão)', () => {
+    renderTable([pai])
+    expect(screen.queryByText('North')).toBeNull()
+  })
+
+  it('com expandId = id do pai → o filho aparece sem clique nenhum', () => {
+    renderTable([pai], { expandId: 'pai' })
+    expect(screen.getByText('North')).toBeTruthy()
+  })
+
+  it('expandId de outra linha não abre este pai', () => {
+    renderTable([pai], { expandId: 'outro-plano' })
+    expect(screen.queryByText('North')).toBeNull()
+  })
+
+  it('expandId NÃO fecha o que o usuário abriu na mão', () => {
+    const { rerender } = renderTable([pai], { expandId: 'pai' })
+    expect(screen.getByText('North')).toBeTruthy()
+    // A página zera o expandId (ex.: outro toast) — o chevron deve continuar aberto.
+    rerender(
+      <PlanTreeTable
+        rows={[pai]}
+        labels={labels}
+        emptyLabel="vazio"
+        grandTotalLabel="R$ 0,00"
+        actionLabelFor={actionLabelFor}
+        onOpenPlan={() => undefined}
+        onAction={() => undefined}
+        expandId={null}
+      />,
+    )
+    expect(screen.getByText('North')).toBeTruthy()
   })
 })

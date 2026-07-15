@@ -97,6 +97,8 @@ export function PlanejamentoListPage(): ReactNode {
   const [confirm, setConfirm] = useState<PendingConfirm | null>(null)
   const [scenaryName, setScenaryName] = useState('')
   const [toastMsg, setToastMsg] = useState<string | null>(null)
+  /** Plano-pai a abrir na árvore após criar um cenário (#423) — a tabela expande quando este id muda. */
+  const [expandId, setExpandId] = useState<string | null>(null)
 
   const planActions = usePlanActions((outcome) => {
     if (outcome.ok) {
@@ -105,11 +107,11 @@ export function PlanejamentoListPage(): ReactNode {
           ? 'budget-plans.action.exportCsv.success'
           : `budget-plans.confirm.${outcome.action}.success`
       setToastMsg(t(key))
-      // Cenário criado é plano-FILHO (não aparece nesta lista de raízes) → navega pro detalhe dele como
-      // feedback visível. Gerenciar todos os cenários (árvore de versões) depende do backend (GET de filhos).
-      if (outcome.action === 'create-scenery' && outcome.sceneryId !== undefined) {
-        void navigate({ to: '/planejamento/detalhes/$id', params: { id: outcome.sceneryId } })
-      }
+      // Cenário criado aparece como FILHO do pai (#423). Abrimos o chevron do pai para ele ficar visível na
+      // hora — o chevron nasce fechado, então sem isto o cenário existe mas some da tela (a P.O. leu como
+      // "não deu certo"). Antes daqui o front NAVEGAVA pro detalhe do cenário: era o único feedback possível
+      // enquanto a lista não tinha a árvore de filhos; com o #423 essa razão deixou de existir.
+      if (outcome.action === 'create-scenery') setExpandId(outcome.id)
     } else {
       setToastMsg(t(outcome.errorTag))
     }
@@ -217,6 +219,7 @@ export function PlanejamentoListPage(): ReactNode {
 
         <PlanTreeTable
           rows={state.rows}
+          expandId={expandId}
           emptyLabel={emptyLabel}
           grandTotalLabel={grandTotalLabel}
           labels={{
@@ -232,8 +235,17 @@ export function PlanejamentoListPage(): ReactNode {
             totalRow: t('budget-plans.list.totalRow'),
           }}
           actionLabelFor={(action) => t(actionKey(action))}
-          actionIsDisabled={(action, status) => !isActionEnabled(action, status)}
-          actionDisabledTitleFor={(action, status) => t(actionDisabledTitleKey(action, status))}
+          actionIsDisabled={(action, r) =>
+            !isActionEnabled(action, r.rawStatus, { isScenario: r.isScenario, sceneryCount: r.sceneryCount })
+          }
+          actionDisabledTitleFor={(action, r) =>
+            t(
+              actionDisabledTitleKey(action, r.rawStatus, {
+                isScenario: r.isScenario,
+                sceneryCount: r.sceneryCount,
+              }),
+            )
+          }
           onOpenPlan={(id) => {
             void navigate({
               to: '/planejamento/detalhes/$id',

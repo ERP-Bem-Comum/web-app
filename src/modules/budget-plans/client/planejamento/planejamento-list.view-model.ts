@@ -119,6 +119,10 @@ export type PlanRow = Readonly<{
   status: StatusView
   /** Status CRU do plano (§XI) — a view usa p/ gatear ações do menu por status (create-scenery/start-calibration). */
   rawStatus: BudgetPlanStatus
+  /** O nó é um CENÁRIO (tem nome de cenário)? Cenário não gera cenário — gate do menu (core-api). */
+  isScenario: boolean
+  /** Quantos cenários já pendem deste plano — gate do teto MAX_SCENERIES (core-api). */
+  sceneryCount: number
   auditWho: string
   auditWhen: string
   editable: boolean
@@ -140,6 +144,10 @@ export const toPlanRow = (node: BudgetPlanNode, isRoot = true, hasApprovedSiblin
     partnersLabel: derivePartnersLabel(node.partnersCount, node.networkKind),
     status: deriveStatusView(node.status),
     rawStatus: node.status,
+    // Gates de `create-scenery` (core-api recusa em 3 casos; o status cobre só o 1º). Contamos os filhos que
+    // são CENÁRIO — calibração (`scenarioName` null) não entra no teto, igual ao domínio do backend.
+    isScenario: node.scenarioName !== null,
+    sceneryCount: node.children.filter((c) => c.scenarioName !== null).length,
     auditWho: deriveAuditParts(node.updatedByName, node.updatedAt).who,
     auditWhen: deriveAuditParts(node.updatedByName, node.updatedAt).when,
     editable: deriveEditable(node.status),

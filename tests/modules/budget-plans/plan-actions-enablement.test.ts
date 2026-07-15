@@ -9,6 +9,7 @@ import {
   isActionEnabled,
   actionDisabledTitleKey,
   actionErrorTag,
+  MAX_SCENERIES,
 } from '#modules/budget-plans/client/planejamento/plan-actions.view-model.ts'
 import { PLAN_ACTIONS } from '#modules/budget-plans/client/planejamento/planejamento-list.view-model.ts'
 
@@ -83,5 +84,44 @@ describe('actionErrorTag', () => {
     assert.equal(actionErrorTag('invalid-input'), 'budget-plans.action.error.invalidInput')
     assert.equal(actionErrorTag('unexpected'), 'budget-plans.action.error.unexpected')
     assert.equal(actionErrorTag('budget-plan-already-exists'), 'budget-plans.action.error.unexpected')
+  })
+})
+
+// O core-api recusa `create-scenery` em 3 casos (domain/budget-plan/budget-plan.ts:145-148) e o front só
+// conhecia o 1º. A P.O. bateu no TETO em tela e recebeu a mensagem do 1º caso — erro que estes testes travam.
+describe('create-scenery — as 3 recusas do core-api', () => {
+  it('1. plano APROVADO → desabilitado', () => {
+    assert.equal(isActionEnabled('create-scenery', 'APROVADO'), false)
+  })
+
+  it('2. o nó É um cenário → desabilitado (cenário não gera cenário)', () => {
+    assert.equal(isActionEnabled('create-scenery', 'RASCUNHO', { isScenario: true }), false)
+    assert.equal(
+      actionDisabledTitleKey('create-scenery', 'RASCUNHO', { isScenario: true }),
+      'budget-plans.action.disabled.sceneryFromScenery',
+    )
+  })
+
+  it('3. já tem MAX_SCENERIES (2) → desabilitado', () => {
+    assert.equal(isActionEnabled('create-scenery', 'RASCUNHO', { sceneryCount: MAX_SCENERIES }), false)
+    assert.equal(
+      actionDisabledTitleKey('create-scenery', 'RASCUNHO', { sceneryCount: MAX_SCENERIES }),
+      'budget-plans.action.disabled.sceneryLimit',
+    )
+  })
+
+  it('rascunho com 1 cenário → AINDA habilitado (o teto é 2, não 1)', () => {
+    assert.equal(isActionEnabled('create-scenery', 'RASCUNHO', { sceneryCount: 1 }), true)
+  })
+
+  it('rascunho sem contexto → habilitado (compat: chamada sem a linha)', () => {
+    assert.equal(isActionEnabled('create-scenery', 'RASCUNHO'), true)
+  })
+
+  it('o tooltip do APROVADO ganha do teto — motivo mais específico primeiro', () => {
+    assert.equal(
+      actionDisabledTitleKey('create-scenery', 'APROVADO', { sceneryCount: 5 }),
+      'budget-plans.action.disabled.sceneryNeedsDraft',
+    )
   })
 })

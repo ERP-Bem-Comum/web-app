@@ -86,13 +86,18 @@ export type PlanTreeTableProps = Readonly<{
    * Ação do menu VISÍVEL porém desabilitada? Recebe a ação + o STATUS CRU da linha (feature 060 + fix 062:
    * sem endpoint OU inválida no status do plano). Ausente ⇒ nenhuma.
    */
-  actionIsDisabled?: (action: PlanAction, status: PlanRow['rawStatus']) => boolean
+  actionIsDisabled?: (action: PlanAction, row: PlanRow) => boolean
   /** Tooltip (i18n) do item desabilitado, por ação + status cru da linha. */
-  actionDisabledTitleFor?: (action: PlanAction, status: PlanRow['rawStatus']) => string
+  actionDisabledTitleFor?: (action: PlanAction, row: PlanRow) => string
   /** Navega ao detalhe do plano (clique no nome). No-op/TODO permitido nesta fatia. */
   onOpenPlan: (id: string) => void
   /** Executa a ação do menu "…". */
   onAction: (id: string, action: PlanAction) => void
+  /**
+   * Id de linha a ABRIR quando este valor muda (#423) — usado após criar um cenário, para o filho novo ficar
+   * visível na hora. Só ADICIONA ao conjunto: nunca fecha o que o usuário abriu na mão.
+   */
+  expandId?: string | null
 }>
 
 /**
@@ -102,6 +107,17 @@ export type PlanTreeTableProps = Readonly<{
  */
 export function PlanTreeTable(props: PlanTreeTableProps): ReactNode {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set())
+  const expandId = props.expandId ?? null
+
+  // Abre o pai pedido pela página (cenário recém-criado, #423). Padrão oficial do React de "ajustar estado
+  // quando uma prop muda": compara no RENDER, não em `useEffect` — o lint barra setState dentro de effect
+  // (cascading renders), e aqui o effect renderizaria o chevron fechado por um frame antes de abrir.
+  const [seenExpandId, setSeenExpandId] = useState<string | null>(null)
+  if (expandId !== seenExpandId) {
+    setSeenExpandId(expandId)
+    // Só ADICIONA: nunca fecha o que o usuário abriu na mão.
+    if (expandId !== null && !expanded.has(expandId)) setExpanded(new Set(expanded).add(expandId))
+  }
 
   const toggle = (id: string): void => {
     setExpanded((prev) => {
@@ -211,11 +227,11 @@ export function PlanTreeTable(props: PlanTreeTableProps): ReactNode {
               actions={r.actions}
               labelFor={props.actionLabelFor}
               triggerLabel={props.labels.actionsTrigger}
-              isDisabled={(action) => props.actionIsDisabled?.(action, r.rawStatus) ?? false}
-              disabledTitle={(action) => props.actionDisabledTitleFor?.(action, r.rawStatus)}
+              isDisabled={(action) => props.actionIsDisabled?.(action, r) ?? false}
+              disabledTitle={(action) => props.actionDisabledTitleFor?.(action, r)}
               onAction={(action) => {
                 // Guarda no clique (defesa): não dispara ação desabilitada pelo status/endpoint da linha.
-                if (props.actionIsDisabled?.(action, r.rawStatus) === true) return
+                if (props.actionIsDisabled?.(action, r) === true) return
                 props.onAction(r.id, action)
               }}
             />

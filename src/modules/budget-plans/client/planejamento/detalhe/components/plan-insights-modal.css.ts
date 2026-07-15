@@ -74,6 +74,60 @@ export const currentValue = style({
   color: vars.color.text.primary,
 })
 
+/** Subtítulo do §1.6 ("Use esses insights para planejar…") — texto de apoio, tom secundário. */
+export const subtitle = style({
+  margin: 0,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+  color: vars.color.text.secondary,
+})
+
+/** Sparkline do Histórico (§1.6) — linha de tendência do Planejado ano a ano. Escala com o container. */
+export const spark = style({
+  inlineSize: '100%',
+  blockSize: '2.5rem',
+  display: 'block',
+  overflow: 'visible', // os pontos das pontas encostam na borda do viewBox
+})
+
+export const sparkLine = style({
+  fill: 'none',
+  stroke: vars.color.brand.normal,
+  strokeWidth: 1.5,
+  strokeLinejoin: 'round',
+  strokeLinecap: 'round',
+  vectorEffect: 'non-scaling-stroke', // o viewBox estica em X; sem isto a linha engrossaria junto
+})
+
+export const sparkDot = style({
+  fill: vars.color.brand.normal,
+})
+
+/** Card do ano (§1.6): Planejado · Realizado · Média por rede — 3 métricas lado a lado. */
+export const metricsRow = style({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(3, 1fr)',
+  gap: vars.space.md,
+  padding: vars.space.md,
+  borderRadius: vars.radius.md,
+  background: vars.color.surface.app,
+})
+
+export const metric = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: vars.space.xs,
+  minInlineSize: 0,
+})
+
+/** Nota de origem do "Realizado" (§1.6) — a P.O. definiu a fonte; a tela não deve deixar dúvida. */
+export const sourceNote = style({
+  margin: 0,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  color: vars.color.text.muted,
+})
+
 export const list = style({
   display: 'flex',
   flexDirection: 'column',

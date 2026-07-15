@@ -37,6 +37,10 @@ export type RawPlanItem = Readonly<{
   updatedByRef: string | null
   partnersCount: number
   networkKind: RawNetworkKind | null
+  /** #423: `null` = plano-raiz; uuid = cenário/calibração pendurado nesse pai. */
+  parentId: string | null
+  /** #423: nome do cenário (subtítulo da linha-filha, ex.: "Inicial"). `null` na raiz/calibração. */
+  scenarioName: string | null
 }>
 export type RawPlanListPage = Readonly<{ items: readonly RawPlanItem[]; total: number }>
 export type RawProgramOption = Readonly<{ ref: string; abbreviation: string }>
@@ -91,21 +95,69 @@ export const createListBudgetPlans =
     const nameByRef = refs.length > 0 ? await deps.resolveUserNames(refs) : new Map<string, string>()
 
     // #372: partnersCount + networkKind vêm projetados no item (sem N+1). Mapeamento síncrono.
-    const items: readonly PlanejamentoListItem[] = listRes.value.items.map((item) => ({
+    const toNode = (item: RawPlanItem): PlanejamentoListItem => ({
       id: item.id,
       year: item.year,
       programName: item.programName,
       programAbbreviation: abbrByRef.get(item.programRef) ?? null,
       version: parseVersion(item.version),
-      scenarioName: null, // cenários/versões-filhas: core-api#401 (fatia seguinte; flat por ora)
+      scenarioName: item.scenarioName, // #423
       status: item.status,
       totalInCents: item.totalInCents,
       updatedByName: item.updatedByRef !== null ? (nameByRef.get(item.updatedByRef) ?? null) : null,
       updatedAt: item.updatedAt,
       networkKind: mapNetwork(item.networkKind),
       partnersCount: item.partnersCount,
-      children: [], // árvore de versões: core-api#401 (fatia seguinte)
-    }))
+      children: [],
+    })
 
+    // ── #423: aninhar cenários sob o plano-pai ──────────────────────────────────────────────────
+    // Montamos a árvore a partir da lista PLANA (sem `?rootsOnly`) DE PROPÓSITO. O #451 também oferece
+    // `?rootsOnly=true` + `GET /:id/children`, mas aquele endpoint devolve só {id, version, scenarioName,
+    // status, totalInCents, updatedByRef} — sem `partnersCount`/`networkKind`/`updatedAt`, que a linha-filha
+    // PRECISA (HANDBOOK §1.1: "2026 ETI 1.2 · Inicial · R$ 32.438,72 · 1 estados · Rascunho"). Na lista plana
+    // o filho vem com a MESMA riqueza do pai, e ainda evitamos o N+1 (1 chamada em vez de 1+N).
+    // Seguro porque o binding busca TUDO de uma vez (`limit` 100) e pagina no client — não há página que
+    // possa separar pai e filho.
+    const childrenByParent = new Map<string, PlanejamentoListItem[]>()
+    const roots: PlanejamentoListItem[] = []
+    const byId = new Set(listRes.value.items.map((it) => it.id))
+
+    for (const item of listRes.value.items) {
+      const node = toNode(item)
+      // Órfão (pai fora do resultado — filtro por ano/status, ou além do teto do fetch) sobe como RAIZ:
+      // some da árvore seria PIOR que mostrar solto — o usuário perderia o plano de vista sem saber.
+      if (item.parentId === null || !byId.has(item.parentId)) {
+        roots.push(node)
+        continue
+      }
+      const siblings = childrenByParent.get(item.parentId)
+      if (siblings === undefined) childrenByParent.set(item.parentId, [node])
+      else siblings.push(node)
+    }
+
+    // RECURSIVO, não um nível só: o HANDBOOK §1.1 diz "uma versão (ex.: 2.0) pode ter seu PRÓPRIO chevron
+    // (sub-versões aninhadas)" — e o dado real tem 3 níveis (plano 1.0 → calibração 2.0 → cenários 2.1/2.2).
+    // Pendurar só nas raízes faria os NETOS sumirem da tela.
+    // Filhos por VERSÃO ascendente (1.1, 1.2, …) — mesma ordem do `GET /:id/children` do core (#401).
+    const attached = new Set<string>()
+    const attach = (node: PlanejamentoListItem): PlanejamentoListItem => {
+      attached.add(node.id)
+      const kids = (childrenByParent.get(node.id) ?? []).filter((k) => !attached.has(k.id))
+      return { ...node, children: [...kids].sort((a, b) => a.version - b.version).map(attach) }
+    }
+    const tree = roots.map(attach)
+
+    // Defensivo: nó cujo pai EXISTE mas que nenhuma raiz alcança (cadeia de parentId em ciclo — dado
+    // corrompido) não pode sumir em silêncio. Sobe solto, como o órfão.
+    const stranded = [...childrenByParent.values()]
+      .flat()
+      .filter((n) => !attached.has(n.id))
+      .map((n) => ({ ...n, children: [] }))
+
+    const items: readonly PlanejamentoListItem[] = [...tree, ...stranded]
+
+    // `total` do core conta TODAS as linhas (raízes + cenários); a UI pagina as RAÍZES pelo tamanho do array
+    // (`paginatePlans`), então o número da paginação sai coerente sem depender deste campo.
     return ok({ items, total: listRes.value.total })
   }
