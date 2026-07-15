@@ -201,6 +201,7 @@ export function OrcamentoPage(): ReactNode {
               vinculo: t('budget-plans.calcGastos.pessoal.vinculo'),
               remuneracao: t('budget-plans.calcGastos.pessoal.remuneracao'),
               qtd: t('budget-plans.calcGastos.pessoal.qtd'),
+              qtdHint: t('budget-plans.calcGastos.pessoal.qtdHint'),
               meses: t('budget-plans.calcGastos.pessoal.meses'),
               salario: t('budget-plans.calcGastos.pessoal.salario'),
               reajuste: t('budget-plans.calcGastos.pessoal.reajuste'),

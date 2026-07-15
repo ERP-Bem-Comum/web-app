@@ -5,6 +5,7 @@
  */
 export type BudgetPlansError =
   | 'unauthorized' // 401 — sessão ausente/expirada
+  | 'forbidden' // 403 (RBAC) — sessão válida, falta `budget-plan:read`/`budget-plan:write` (core-api#374)
   | 'budget-plan-already-exists' // 409 — já existe plano p/ esse ano+programa (unicidade server-side)
   | 'budget-plan-not-found' // 404 — plano inexistente (GET /budget-plans/:id — leitura do detalhe, feature 059)
   | 'invalid-input' // 400/422 — payload rejeitado pelo core-api

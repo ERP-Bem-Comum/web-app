@@ -35,6 +35,7 @@ export type CreatePlanError =
   | 'budget-plans.create.requiredYear'
   | 'budget-plans.create.requiredProgram'
   | 'budget-plans.create.conflict'
+  | 'budget-plans.create.forbidden'
   | 'budget-plans.create.unexpected'
 
 /**
@@ -48,6 +49,17 @@ export const validateCreatePlan = (form: CreatePlanForm): CreatePlanError | null
   return null
 }
 
-/** Mapeia o erro do BFF (§V) para a tag i18n do modal. 409 → conflito; o resto → genérico. */
-export const createErrorTag = (error: BudgetPlansError): CreatePlanError =>
-  error === 'budget-plan-already-exists' ? 'budget-plans.create.conflict' : 'budget-plans.create.unexpected'
+/**
+ * Mapeia o erro do BFF (§V) para a tag i18n do modal. 409 → conflito; **403 → sem permissão**; o resto →
+ * genérico.
+ *
+ * O 403 é separado DE PROPÓSITO: o genérico diz "Tente novamente", e para falta de permissão isso é
+ * **conselho errado** — o usuário repetiria para sempre. Cenário real (core-api#374): ambiente semeado antes
+ * do #315 tem 42 permissões em vez de 44 (faltam `budget-plan:read`/`budget-plan:write`), então o módulo sobe
+ * conectado ao banco e responde 403 — indistinguível, na tela, de "o driver está errado".
+ */
+export const createErrorTag = (error: BudgetPlansError): CreatePlanError => {
+  if (error === 'budget-plan-already-exists') return 'budget-plans.create.conflict'
+  if (error === 'forbidden') return 'budget-plans.create.forbidden'
+  return 'budget-plans.create.unexpected'
+}

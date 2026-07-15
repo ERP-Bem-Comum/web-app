@@ -1,37 +1,35 @@
 /**
- * ViewModel PURO (§XI) do modal "Adicionar Orçamento" (HANDBOOK §1.6). Escolhe um Estado (rede) para
- * adicionar uma nova coluna de orçamento; bloqueia estado já existente. Sem React — testável por node:test.
- * Front-first: a persistência (nova coluna real) chega com o core-api #113.
+ * ViewModel PURO (§XI) do modal "Adicionar Orçamento" (HANDBOOK §1.6). Escolhe uma Rede (Estado/Município)
+ * para adicionar uma nova coluna de orçamento; bloqueia rede que já tem orçamento. Sem React — node:test.
+ *
+ * ── SEM campo de VALOR (core-api#458, decisão da P.O. 2026-07-15) ──
+ * Este modal tinha um campo "Valor do orçamento", **obrigatório**. Os dois eram invenção nossa:
+ *  - o HANDBOOK §1.6 descreve o modal como "dropdown **Estado** + **Adicionar**" — só isso;
+ *  - o DTO do legado é `{ budgetPlanId, partnerStateId?, partnerMunicipalityId? }` — **nenhum valor**;
+ *  - no legado, `budget.valueInCents` é `@Column({ default: 0 })` e **nunca é persistido**: o total sobe
+ *    somando os lançamentos (meses → categoria → centro). A coluna é cache; a verdade é a soma.
+ *
+ * O valor informado criava uma **segunda fonte** para o mesmo número — "Por Rede" mostrava o informado e
+ * "Calculando Gastos" mostrava a soma, e as telas discordavam (#458). Viola o FR-007 da spec 036.
+ *
+ * Enquanto o `valueInCents` não sai do contrato (`addBudgetBodySchema` ainda o exige), o binding envia **0**
+ * — que é EXATAMENTE o estado inicial do legado (`default: 0`), não um número inventado. Quando o core-api
+ * remover o campo, o `0` sai junto.
  */
 
-export type AddBudgetForm = Readonly<{ estado: string; valor: string }>
+export type AddBudgetForm = Readonly<{ estado: string }>
 
-export const emptyAddBudgetForm = (): AddBudgetForm => ({ estado: '', valor: '' })
+export const emptyAddBudgetForm = (): AddBudgetForm => ({ estado: '' })
 
-/**
- * `estado-required` = nenhum estado escolhido; `estado-duplicate` = já existe orçamento para o estado;
- * `valor-required` = valor vazio/zero (o backend exige valueInCents ≥ 0, mas 0 não faz sentido no cadastro).
- */
-export type AddBudgetError = 'estado-required' | 'estado-duplicate' | 'valor-required' | 'save-failed'
+/** `estado-required` = nenhuma rede escolhida; `estado-duplicate` = a rede já tem orçamento no plano. */
+export type AddBudgetError = 'estado-required' | 'estado-duplicate' | 'save-failed'
 
-/** "1.234,56" ou "1234,56" ou "1234" → centavos; inválido/≤0 → null. */
-export const parseAddBudgetCents = (valor: string): number | null => {
-  const clean = valor.trim().replace(/\./g, '').replace(',', '.')
-  if (clean === '') return null
-  const n = Number(clean)
-  if (!Number.isFinite(n) || n <= 0) return null
-  return Math.round(n * 100)
-}
-
-/**
- * Valida a escolha da rede (por REF/chave natural) contra as que JÁ têm orçamento no plano + o valor.
- */
+/** Valida a escolha da rede (por REF/chave natural) contra as que JÁ têm orçamento no plano. */
 export const validateAddBudget = (
   form: AddBudgetForm,
   existingRefs: readonly string[],
 ): AddBudgetError | null => {
   if (form.estado === '') return 'estado-required'
   if (existingRefs.some((r) => r === form.estado)) return 'estado-duplicate'
-  if (parseAddBudgetCents(form.valor) === null) return 'valor-required'
   return null
 }

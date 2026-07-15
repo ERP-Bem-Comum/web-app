@@ -88,6 +88,8 @@ const centroErrorKey = (tag: CentrosCustoErrorTag): string => {
       return 'budget-plans.centrosCusto.error.missing-parent'
     case 'unauthorized':
       return 'budget-plans.centrosCusto.error.unauthorized'
+    case 'forbidden':
+      return 'budget-plans.centrosCusto.error.forbidden'
     case 'invalid-input':
       return 'budget-plans.centrosCusto.error.invalid-input'
     case 'budget-plan-not-found':
@@ -330,7 +332,6 @@ export function PlanDetailPage(): ReactNode {
       <AddBudgetModal
         open={addBudget.open}
         estado={addBudget.form.estado}
-        valor={addBudget.form.valor}
         options={addBudget.options}
         submitting={addBudget.submitting}
         errorTag={addBudget.errorTag}
@@ -339,15 +340,12 @@ export function PlanDetailPage(): ReactNode {
           close: t('budget-plans.addBudget.close'),
           estado: t('budget-plans.addBudget.estado'),
           estadoPlaceholder: t('budget-plans.addBudget.estadoPlaceholder'),
-          valor: t('budget-plans.addBudget.valor'),
-          valorPlaceholder: t('budget-plans.addBudget.valorPlaceholder'),
           add: t('budget-plans.addBudget.add'),
           cancel: t('budget-plans.addBudget.cancel'),
         }}
         translateError={(tag: AddBudgetError) => t(`budget-plans.addBudget.error.${tag}`)}
         onClose={addBudget.close}
         onEstado={addBudget.setEstado}
-        onValor={addBudget.setValor}
         onSubmit={addBudget.submit}
       />
 

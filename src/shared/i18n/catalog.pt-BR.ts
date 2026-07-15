@@ -2007,6 +2007,11 @@ export const ptBR: Catalog = {
   'budget-plans.action.exportCsv.success': 'CSV exportado com sucesso!',
   // Feedback de erro das ações (§V) — a tag chega mapeada por contexto do endpoint pelo BFF.
   'budget-plans.action.error.unauthorized': 'Sua sessão expirou. Entre novamente para continuar.',
+  // 403 (RBAC) — a sessão é VÁLIDA; falta a permissão. NÃO dizer "tente novamente": tentar não resolve, e o
+  // usuário repetiria para sempre. Espelha `reports.error.forbidden`. Causa provável hoje: ambiente semeado
+  // antes do #315 tem 42 permissões em vez de 44 (faltam `budget-plan:read`/`budget-plan:write`) — core-api#374.
+  'budget-plans.action.error.forbidden':
+    'Você não tem permissão para esta ação no Plano Orçamentário. Fale com um administrador.',
   'budget-plans.action.error.notFound': 'Plano orçamentário não encontrado.',
   'budget-plans.action.error.alreadyApproved': 'Este plano já está aprovado.',
   'budget-plans.action.error.notApproved': 'Só planos aprovados podem iniciar calibração.',
@@ -2089,13 +2094,10 @@ export const ptBR: Catalog = {
   'budget-plans.addBudget.close': 'Fechar',
   'budget-plans.addBudget.estado': 'Estado',
   'budget-plans.addBudget.estadoPlaceholder': 'Selecione o estado',
-  'budget-plans.addBudget.valor': 'Valor do orçamento',
-  'budget-plans.addBudget.valorPlaceholder': 'Ex.: 5.000,00',
   'budget-plans.addBudget.add': 'Adicionar',
   'budget-plans.addBudget.cancel': 'Cancelar',
   'budget-plans.addBudget.error.estado-required': 'Selecione um estado.',
   'budget-plans.addBudget.error.estado-duplicate': 'Atenção! Já existe um orçamento com essas informações.',
-  'budget-plans.addBudget.error.valor-required': 'Informe um valor válido para o orçamento.',
   'budget-plans.addBudget.error.save-failed': 'Não foi possível salvar o orçamento. Tente novamente.',
 
   // ── Modal "Centros de Custo - {Programa}" (§1.5) ──
@@ -2128,6 +2130,8 @@ export const ptBR: Catalog = {
   'budget-plans.centrosCusto.error.name-required': 'Informe o nome.',
   'budget-plans.centrosCusto.error.missing-parent': 'Selecione o item ao qual este pertence.',
   'budget-plans.centrosCusto.error.unauthorized': 'Sua sessão expirou. Entre novamente para continuar.',
+  'budget-plans.centrosCusto.error.forbidden':
+    'Você não tem permissão para editar a estrutura de custos. Fale com um administrador.',
   'budget-plans.centrosCusto.error.invalid-input': 'Dados inválidos. Revise e tente novamente.',
   'budget-plans.centrosCusto.error.not-found': 'Plano orçamentário não encontrado.',
   'budget-plans.centrosCusto.error.not-editable': 'Este plano não permite mais alterações na estrutura.',
@@ -2198,7 +2202,12 @@ export const ptBR: Catalog = {
   'budget-plans.calcGastos.pessoal.nivel': 'Nível',
   'budget-plans.calcGastos.pessoal.vinculo': 'Vínculo',
   'budget-plans.calcGastos.pessoal.remuneracao': 'Remuneração Bruta Mensal',
-  'budget-plans.calcGastos.pessoal.qtd': 'Qtd.',
+  // core-api#460 (decisão da P.O., 2026-07-15): a Qtd é METADADO — o legado não multiplica por ela (o
+  // core-api reproduz). O rótulo diz isso, senão a tela sugere que o número entra na conta e engana o
+  // planejador — foi o que motivou a issue.
+  'budget-plans.calcGastos.pessoal.qtd': 'Qtd. (informativo)',
+  'budget-plans.calcGastos.pessoal.qtdHint':
+    'Quantidade é apenas informativa: não multiplica o custo. O valor calculado é o do salário informado.',
   'budget-plans.calcGastos.pessoal.meses': 'Meses aplicados',
   'budget-plans.calcGastos.pessoal.salario': 'Salário (R$)',
   'budget-plans.calcGastos.pessoal.reajuste': 'Reajuste (%)',
@@ -2297,6 +2306,8 @@ export const ptBR: Catalog = {
   'budget-plans.create.requiredProgram': 'Selecione o programa.',
   'budget-plans.create.conflict': 'Já existe um plano para esse ano e programa.',
   'budget-plans.create.unexpected': 'Não foi possível criar o plano. Tente novamente.',
+  'budget-plans.create.forbidden':
+    'Você não tem permissão para criar planos orçamentários. Fale com um administrador.',
 
   // ── Dashboard "Resumo Mensal" (043 — reprodução fiel do legado) ──
   'dashboard.title': 'Dashboard - Resumo Mensal',

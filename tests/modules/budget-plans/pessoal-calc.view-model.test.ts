@@ -1,6 +1,6 @@
 /**
  * Testes do ViewModel puro do FORMULÁRIO de custo de Pessoal (US2.4c): parsing BR, salário reajustado,
- * encargos %, somas de benefícios/provisões, custo mensal × qtd e custo anual × nº de meses.
+ * encargos %, somas de benefícios/provisões, custo mensal (SEM qtd — core-api#460) e anual × nº de meses.
  */
 import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
@@ -74,9 +74,19 @@ describe('computePessoal', () => {
     assert.equal(c.totalProvisoesCents, 10_000)
   })
 
-  it('custo mensal multiplica pela quantidade', () => {
+  // core-api#460 (P.O., 2026-07-15): "se o front tá diferente do backend e o backend tá igual ao legado,
+  // então segue o legado e ajusta o front". O legado (`calc-total-value-result.ts`, DESPESAS_PESSOAIS) devolve
+  // `totalSalary + totalCharges + totalBenefits + totalProvisions` — SEM quantidade. Este teste era o inverso.
+  it('custo mensal NÃO multiplica pela quantidade — a Qtd é metadado', () => {
     const c = computePessoal(form({ salario: '1000', qtd: '3' }))
-    assert.equal(c.custoMensalCents, 300_000)
+    assert.equal(c.custoMensalCents, 100_000) // 1× o salário, não 3×
+  })
+
+  it('qualquer Qtd dá o MESMO custo — 1, 3 ou 99', () => {
+    const base = computePessoal(form({ salario: '1000', qtd: '1' })).custoMensalCents
+    for (const qtd of ['3', '99', '0', '']) {
+      assert.equal(computePessoal(form({ salario: '1000', qtd })).custoMensalCents, base)
+    }
   })
 
   it('custo anual = mensal × nº de meses aplicados', () => {
@@ -85,8 +95,13 @@ describe('computePessoal', () => {
     assert.equal(c.custoAnualCents, 300_000)
   })
 
-  it('qtd < 1 é tratada como 1', () => {
-    const c = computePessoal(form({ salario: '1000', qtd: '0' }))
-    assert.equal(c.custoMensalCents, 100_000)
+  // Paridade com o legado, no cenário do print da P.O.: Diretora Adjunta EpV, Qtd 1, salário R$ 34.336,73,
+  // 12 meses → mensal R$ 34.336,73 e anual R$ 412.040,76 (= 34.336,73 × 12).
+  it('paridade com o legado: R$ 34.336,73 × 12 meses = R$ 412.040,76 anual', () => {
+    const c = computePessoal(
+      form({ salario: '34336,73', qtd: '1', meses: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] }),
+    )
+    assert.equal(c.custoMensalCents, 3_433_673)
+    assert.equal(c.custoAnualCents, 41_204_076)
   })
 })
