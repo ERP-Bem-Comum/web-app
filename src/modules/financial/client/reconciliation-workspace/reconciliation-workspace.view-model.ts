@@ -7,8 +7,6 @@
 import type {
   AccountStatementPeriod,
   AccountType,
-  FinancialCategory,
-  FinancialReferences,
   ManualEntryType,
   Movement,
   PaidPayable,
@@ -250,35 +248,15 @@ const RECON_CATEGORY_RELABEL: Readonly<Record<string, string>> = {
 }
 export const relabelReconCategory = (name: string): string => RECON_CATEGORY_RELABEL[name] ?? name
 
-// ── Cascata Centro de Custo → Categoria → Subcategoria (US · legado; ver EPIC web-app#150) ──────────
-/** Categorias de TOPO (sem `parentId`). */
-export const topLevelCategories = (refs: FinancialReferences): readonly FinancialCategory[] =>
-  refs.categories.filter((c) => c.parentId === null)
-
-/** Subcategorias de uma categoria (`parentId` === id da categoria). Vazio se nenhuma categoria escolhida. */
-export const subcategoriesOf = (
-  refs: FinancialReferences,
-  categoryId: string,
-): readonly FinancialCategory[] =>
-  categoryId === '' ? [] : refs.categories.filter((c) => c.parentId === categoryId)
-
-/**
- * ⚠️ PLACEHOLDER (TODO core-api#341): as referências AINDA não ligam categoria→centro (categoria não tem
- * `costCenterId`). Só p/ validar a UI da cascata, agrupamos as categorias de topo por centro de forma
- * DETERMINÍSTICA (round-robin por ordem). Quando o backend expuser `costCenterId`, troca-se por um filtro
- * real e este helper some. `id` (UUID) segue intacto p/ o backend.
- */
-export const categoriesForCostCenter = (
-  refs: FinancialReferences,
-  costCenterId: string,
-): readonly FinancialCategory[] => {
-  if (costCenterId === '') return []
-  const idx = refs.costCenters.findIndex((cc) => cc.id === costCenterId)
-  if (idx < 0) return []
-  const tops = topLevelCategories(refs)
-  const n = refs.costCenters.length
-  return n <= 1 ? tops : tops.filter((_, i) => i % n === idx)
-}
+// ── Cascata Centro de Custo → Categoria → Subcategoria (EPIC web-app#150 · core-api#341) ────────────
+// As derivações são PURAS e compartilhadas com o Lançar Documento → `data/helpers/categorization-cascade.ts`
+// (spec 074). O placeholder round-robin que fingia a relação centro→categoria MORREU: o #341 entregou o
+// `costCenterId` real na categoria. Re-exportado aqui p/ os call sites (e o teste) desta feature.
+export {
+  topLevelCategories,
+  subcategoriesOf,
+  categoriesForCostCenter,
+} from '#modules/financial/client/data/helpers/categorization-cascade.ts'
 
 // ── Sugestão de conciliação em LOTE por padrão (front) ──────────────────────────
 /** Normaliza a descrição (payeeName) p/ comparar transações "do mesmo tipo": case/espaço-insensível. */

@@ -386,12 +386,15 @@ export type ReconciliationPeriod = Readonly<{
 // Conteúdo exportado (texto cru OFX/CSV) + o formato pedido (p/ a UI nomear o arquivo / content-type).
 export type ReconciliationExport = Readonly<{ content: string; format: ExportFormat }>
 
-// Dados de referência da categorização (020 · #200/#147). `parentId` = subcategoria (null = top-level).
+// Dados de referência da categorização (020 · #200/#147/#341). Hierarquia canônica de 3 níveis:
+// Centro de Custo → Categoria → Subcategoria. `parentId` = subcategoria (null = top-level);
+// `costCenterId` (#341) = o centro da categoria (null = categoria GLOBAL, vale p/ qualquer centro).
 export type FinancialCategory = Readonly<{
   id: string
   name: string
   group: 'despesa' | 'receita' | 'ajuste'
   parentId: string | null
+  costCenterId: string | null
 }>
 export type FinancialCostCenter = Readonly<{ id: string; code: string; name: string }>
 export type FinancialReferences = Readonly<{

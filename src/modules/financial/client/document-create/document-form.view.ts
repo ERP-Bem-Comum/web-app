@@ -4,6 +4,7 @@
  * `CreateDocumentInput`. Money via `money.ts`. No v1, descontos/multa/juros = 0 (sem campos no form).
  */
 import { reaisToCents, centsToBRL, centsToReais, maskMoneyBRL } from '#modules/financial/client/data/money.ts'
+import { leafCategoryRef } from '#modules/financial/client/data/helpers/categorization-cascade.ts'
 import { normalizeCnpj, isCnpjLength, maskCnpj as maskCnpjDoc, maskCpfCnpj } from '#shared/document/cnpj.ts'
 import type {
   CreateDocumentInput,
@@ -139,6 +140,10 @@ export type DocumentFormFields = Readonly<{
   contractRef: string // Categorização: contrato escolhido (UUID) via "Alterar". Vazio = o 1º "Em Andamento".
   programRef: string // Categorização: Programa escolhido (UUID). Vazio = herda o do contrato (se houver).
   categoryRef: string // Categorização: Categoria escolhida (UUID, taxonomia #200). Vazio = não enviada.
+  // Categorização: Subcategoria escolhida (UUID de categoria com `parentId` = categoryRef, #341/#147).
+  // Cascata: filtrada pela Categoria; zerada ao trocar Categoria/Centro. É a FOLHA — quando preenchida,
+  // é ELA que vai ao backend em `categoryRef` (ver `leafCategoryRef`). Vazio = envia a Categoria.
+  subcategoryRef: string
   costCenterRef: string // Categorização: Centro de custo escolhido (UUID, #147). Vazio = não enviado.
   approverRef: string // Aprovador escolhido (UUID de usuário, #148). Vazio = não enviado.
   contaDebitoRef: string // "Pagar da conta" — conta-cedente escolhida (UUID, #197). Vazio = não enviada.
@@ -146,7 +151,6 @@ export type DocumentFormFields = Readonly<{
   // (core-api#147 — listas/refs). Vazio = herda o valor do contrato selecionado.
   centroCusto: string
   categoria: string
-  subcategoria: string
   planoOrcamentario: string
   retentions: RetentionFieldsReais
   reformaTributaria: ReformaTributariaFieldsReais
@@ -499,7 +503,10 @@ export const buildCreateInput = (fields: DocumentFormFields): CreateDocumentInpu
     // "Juros / Multa" (campo único) → interestCents; ambos somam ao líquido, então o total fica correto.
     interestCents: jurosMultaCents(fields) > 0 ? String(jurosMultaCents(fields)) : undefined,
     programRef: trimToUndefined(fields.programRef),
-    categoryRef: trimToUndefined(fields.categoryRef),
+    // FOLHA da cascata (#341): envia a categoria MAIS ESPECÍFICA escolhida — a subcategoria se houver,
+    // senão a categoria. Ambas são categorias válidas p/ o core-api (subcategoria = categoria com
+    // `parentId`), então o contrato é um campo só. Espelha o que a Conciliação já faz.
+    categoryRef: trimToUndefined(leafCategoryRef(fields.categoryRef, fields.subcategoryRef)),
     costCenterRef: trimToUndefined(fields.costCenterRef),
     approverRef: trimToUndefined(fields.approverRef),
     contaDebitoRef: trimToUndefined(fields.contaDebitoRef),
@@ -551,7 +558,10 @@ export const buildDraftInput = (fields: DocumentFormFields): CreateDocumentInput
     discountsCents: discountsCents(fields) > 0 ? String(discountsCents(fields)) : undefined,
     interestCents: jurosMultaCents(fields) > 0 ? String(jurosMultaCents(fields)) : undefined,
     programRef: trimToUndefined(fields.programRef),
-    categoryRef: trimToUndefined(fields.categoryRef),
+    // FOLHA da cascata (#341): envia a categoria MAIS ESPECÍFICA escolhida — a subcategoria se houver,
+    // senão a categoria. Ambas são categorias válidas p/ o core-api (subcategoria = categoria com
+    // `parentId`), então o contrato é um campo só. Espelha o que a Conciliação já faz.
+    categoryRef: trimToUndefined(leafCategoryRef(fields.categoryRef, fields.subcategoryRef)),
     costCenterRef: trimToUndefined(fields.costCenterRef),
     approverRef: trimToUndefined(fields.approverRef),
     contaDebitoRef: trimToUndefined(fields.contaDebitoRef),
@@ -663,12 +673,12 @@ export const hydrateFieldsFromDetail = (d: DocumentDetail): DocumentFormFields =
     contractRef: '', // o GET /:id não expõe o contrato vinculado (core-api#95) → vazio na hidratação
     programRef: '', // o GET /:id não expõe a categorização (core-api#95) → vazio na hidratação
     categoryRef: '',
+    subcategoryRef: '',
     costCenterRef: '',
     approverRef: '',
     contaDebitoRef: '', // o GET /:id não expõe a conta-débito (core-api#95) → vazio na hidratação
     centroCusto: '',
     categoria: '',
-    subcategoria: '',
     planoOrcamentario: '',
     retentions,
     // Reforma Tributária não vem no GET de detalhe hoje (enriquecimento = core-api#95) e é imutável no

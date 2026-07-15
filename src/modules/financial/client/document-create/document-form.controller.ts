@@ -39,12 +39,12 @@ const EMPTY_FIELDS: DocumentFormFields = {
   contractRef: '',
   programRef: '',
   categoryRef: '',
+  subcategoryRef: '',
   costCenterRef: '',
   approverRef: '',
   contaDebitoRef: '',
   centroCusto: '',
   categoria: '',
-  subcategoria: '',
   planoOrcamentario: '',
   retentions: EMPTY_RETENTIONS,
   reformaTributaria: EMPTY_REFORMA_TRIBUTARIA,
@@ -64,7 +64,6 @@ type TextKey =
   | 'paymentComplement'
   | 'centroCusto'
   | 'categoria'
-  | 'subcategoria'
   | 'planoOrcamentario'
 
 type FormAction =
@@ -74,6 +73,7 @@ type FormAction =
   | Readonly<{ kind: 'setContractRef'; value: string }>
   | Readonly<{ kind: 'setProgramRef'; value: string }>
   | Readonly<{ kind: 'setCategoryRef'; value: string }>
+  | Readonly<{ kind: 'setSubcategoryRef'; value: string }>
   | Readonly<{ kind: 'setCostCenterRef'; value: string }>
   | Readonly<{ kind: 'setApproverRef'; value: string }>
   | Readonly<{ kind: 'setContaDebitoRef'; value: string }>
@@ -117,10 +117,14 @@ const reducer = (state: DocumentFormFields, action: FormAction): DocumentFormFie
       return { ...state, contractRef: action.value, programRef: '' }
     case 'setProgramRef':
       return { ...state, programRef: action.value }
+    // Cascata Centro → Categoria → Subcategoria (#341): trocar um nível zera os de BAIXO, senão a folha
+    // ficaria órfã (uma subcategoria que não pertence mais à categoria/centro escolhidos) — §IV.
     case 'setCategoryRef':
-      return { ...state, categoryRef: action.value }
+      return { ...state, categoryRef: action.value, subcategoryRef: '' }
+    case 'setSubcategoryRef':
+      return { ...state, subcategoryRef: action.value }
     case 'setCostCenterRef':
-      return { ...state, costCenterRef: action.value }
+      return { ...state, costCenterRef: action.value, categoryRef: '', subcategoryRef: '' }
     case 'setApproverRef':
       return { ...state, approverRef: action.value }
     case 'setContaDebitoRef':
@@ -165,6 +169,7 @@ export type DocumentFormController = Readonly<{
   setContractRef: (value: string) => void
   setProgramRef: (value: string) => void
   setCategoryRef: (value: string) => void
+  setSubcategoryRef: (value: string) => void
   setCostCenterRef: (value: string) => void
   setApproverRef: (value: string) => void
   setContaDebitoRef: (value: string) => void
@@ -232,6 +237,9 @@ export function useDocumentFormController(
     },
     setCategoryRef: (value) => {
       dispatch({ kind: 'setCategoryRef', value })
+    },
+    setSubcategoryRef: (value) => {
+      dispatch({ kind: 'setSubcategoryRef', value })
     },
     setCostCenterRef: (value) => {
       dispatch({ kind: 'setCostCenterRef', value })

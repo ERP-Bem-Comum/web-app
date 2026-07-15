@@ -1204,20 +1204,24 @@ import {
 } from '../../../../../src/modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
 import type { FinancialReferences } from '../../../../../src/modules/financial/client/data/model/reconciliation.model.ts'
 
+// A regra da cascata é PURA e mora no helper compartilhado (`data/helpers/categorization-cascade.ts`),
+// onde vive a matriz completa de casos (`tests/.../data/categorization-cascade.test.ts`). Aqui só
+// guardamos o RE-EXPORT que os call sites desta feature (`manual-entry.binding.ts`) usam — e que o
+// placeholder round-robin (TODO core-api#341) NÃO voltou.
 const REFS: FinancialReferences = {
   costCenters: [
     { id: 'cc-A', code: '01', name: 'Centro A' },
     { id: 'cc-B', code: '02', name: 'Centro B' },
   ],
   categories: [
-    { id: 'cat-1', name: 'Cat 1', group: 'despesa', parentId: null },
-    { id: 'cat-2', name: 'Cat 2', group: 'despesa', parentId: null },
-    { id: 'sub-1a', name: 'Sub 1a', group: 'despesa', parentId: 'cat-1' },
-    { id: 'sub-1b', name: 'Sub 1b', group: 'despesa', parentId: 'cat-1' },
+    { id: 'cat-1', name: 'Cat 1', group: 'despesa', parentId: null, costCenterId: 'cc-A' },
+    { id: 'cat-2', name: 'Cat 2', group: 'despesa', parentId: null, costCenterId: 'cc-B' },
+    { id: 'sub-1a', name: 'Sub 1a', group: 'despesa', parentId: 'cat-1', costCenterId: 'cc-A' },
+    { id: 'sub-1b', name: 'Sub 1b', group: 'despesa', parentId: 'cat-1', costCenterId: 'cc-A' },
   ],
 }
 
-describe('cascata categorização', () => {
+describe('cascata categorização (re-export do helper compartilhado)', () => {
   it('topLevelCategories: só as sem parentId', () => {
     assert.deepEqual(
       topLevelCategories(REFS).map((c) => c.id),
@@ -1232,9 +1236,7 @@ describe('cascata categorização', () => {
     assert.deepEqual(subcategoriesOf(REFS, 'cat-2'), [])
     assert.deepEqual(subcategoriesOf(REFS, ''), [])
   })
-  it('categoriesForCostCenter (placeholder round-robin): vazio sem centro; particiona por índice', () => {
-    assert.deepEqual(categoriesForCostCenter(REFS, ''), [])
-    // 2 centros → cat-1 (idx0) no centro A, cat-2 (idx1) no centro B
+  it('categoriesForCostCenter: filtra pelo costCenterId REAL (#341), não por partição de índice', () => {
     assert.deepEqual(
       categoriesForCostCenter(REFS, 'cc-A').map((c) => c.id),
       ['cat-1'],
