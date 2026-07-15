@@ -121,15 +121,15 @@ describe('PlanTreeTable', () => {
     expect(onOpenPlan).toHaveBeenCalledWith('p-42')
   })
 
+  // Espelha o que a page faz: o gate recebe a LINHA inteira (status + isScenario + sceneryCount), porque o
+  // core-api recusa `create-scenery` em 3 casos e o status cobre só um deles.
   const statusGating = {
-    actionIsDisabled: (
-      a: Parameters<typeof isActionEnabled>[0],
-      s: 'RASCUNHO' | 'EM_CALIBRACAO' | 'APROVADO',
-    ) => !isActionEnabled(a, s),
+    actionIsDisabled: (a: Parameters<typeof isActionEnabled>[0], r: ReturnType<typeof toPlanRow>) =>
+      !isActionEnabled(a, r.rawStatus, { isScenario: r.isScenario, sceneryCount: r.sceneryCount }),
     actionDisabledTitleFor: (
       a: Parameters<typeof actionDisabledTitleKey>[0],
-      s: 'RASCUNHO' | 'EM_CALIBRACAO' | 'APROVADO',
-    ) => actionDisabledTitleKey(a, s),
+      r: ReturnType<typeof toPlanRow>,
+    ) => actionDisabledTitleKey(a, r.rawStatus, { isScenario: r.isScenario, sceneryCount: r.sceneryCount }),
   }
 
   it('raiz APROVADA: "criar cenário" desabilitado (tooltip), "calibração" habilitada', () => {

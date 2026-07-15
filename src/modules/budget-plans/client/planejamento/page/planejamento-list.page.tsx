@@ -235,8 +235,17 @@ export function PlanejamentoListPage(): ReactNode {
             totalRow: t('budget-plans.list.totalRow'),
           }}
           actionLabelFor={(action) => t(actionKey(action))}
-          actionIsDisabled={(action, status) => !isActionEnabled(action, status)}
-          actionDisabledTitleFor={(action, status) => t(actionDisabledTitleKey(action, status))}
+          actionIsDisabled={(action, r) =>
+            !isActionEnabled(action, r.rawStatus, { isScenario: r.isScenario, sceneryCount: r.sceneryCount })
+          }
+          actionDisabledTitleFor={(action, r) =>
+            t(
+              actionDisabledTitleKey(action, r.rawStatus, {
+                isScenario: r.isScenario,
+                sceneryCount: r.sceneryCount,
+              }),
+            )
+          }
           onOpenPlan={(id) => {
             void navigate({
               to: '/planejamento/detalhes/$id',
