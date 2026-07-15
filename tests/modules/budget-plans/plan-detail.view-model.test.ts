@@ -48,6 +48,7 @@ const detail: PlanDetail = {
   costCenters: [
     {
       id: 1,
+      ref: 'ref-1',
       name: 'Consultoria',
       type: 'A PAGAR',
       totalInCents: 3_243_872,
@@ -56,6 +57,7 @@ const detail: PlanDetail = {
       categories: [
         {
           id: 11,
+          ref: 'ref-11',
           name: 'Consultoria Educacional',
           totalInCents: 3_243_872,
           monthlyInCents: consult,
@@ -63,6 +65,7 @@ const detail: PlanDetail = {
           subCategories: [
             {
               id: 111,
+              ref: 'ref-111',
               name: 'Formação de professores',
               totalInCents: 3_243_872,
               monthlyInCents: consult,
@@ -74,6 +77,7 @@ const detail: PlanDetail = {
     },
     {
       id: 2,
+      ref: 'ref-2',
       name: 'Comunicação',
       type: 'A PAGAR',
       totalInCents: 0,

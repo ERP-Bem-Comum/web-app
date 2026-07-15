@@ -18,7 +18,7 @@ import { addSubcategoryFn } from '#modules/budget-plans/server/adapters/server-f
 import { addBudgetFn } from '#modules/budget-plans/server/adapters/server-fns/add-budget.service.fn.ts'
 import { deleteBudgetFn } from '#modules/budget-plans/server/adapters/server-fns/delete-budget.service.fn.ts'
 import { listNetworkOptionsFn } from '#modules/budget-plans/server/adapters/server-fns/list-network-options.query.fn.ts'
-import { postIpcaResultFn } from '#modules/budget-plans/server/adapters/server-fns/post-ipca-result.service.fn.ts'
+import { postBudgetResultFn } from '#modules/budget-plans/server/adapters/server-fns/post-budget-result.service.fn.ts'
 import { getConsolidadoAbcFn } from '#modules/budget-plans/server/adapters/server-fns/get-consolidado-abc.query.fn.ts'
 
 import { createBudgetPlansRepository } from './budget-plans.repository.ts'
@@ -40,6 +40,6 @@ export const budgetPlansRepository = createBudgetPlansRepository({
   addBudgetFn: (opts) => addBudgetFn(opts),
   deleteBudgetFn: (opts) => deleteBudgetFn(opts),
   networkOptionsFn: () => listNetworkOptionsFn(),
-  postIpcaResultFn: (opts) => postIpcaResultFn(opts),
+  postBudgetResultFn: (opts) => postBudgetResultFn(opts),
   getConsolidadoFn: (opts) => getConsolidadoAbcFn(opts),
 })

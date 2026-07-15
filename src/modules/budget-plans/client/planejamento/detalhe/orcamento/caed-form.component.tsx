@@ -5,7 +5,12 @@
  */
 import { useState, type ReactNode } from 'react'
 
-import { computeCaed, emptyCaedForm, type CaedForm as CaedFormState } from './caed-calc.view-model.ts'
+import {
+  computeCaed,
+  emptyCaedForm,
+  type CaedForm as CaedFormState,
+  type CaedForm as CaedFormValues,
+} from './caed-calc.view-model.ts'
 import {
   configForm,
   configSection,
@@ -42,7 +47,11 @@ export type CaedFormProps = Readonly<{
   monthAbbrevs: readonly string[]
   formatCents: (c: number) => string
   onDescartar: () => void
-  onSalvar: (custoMensalCents: number, meses: readonly number[]) => void
+  /**
+   * Devolve os INSUMOS junto do valor: o POST de cálculo manda os insumos e o core-api recalcula —
+   * `custoMensalCents` serve só p/ o eco otimista na grade enquanto a escrita não volta.
+   */
+  onSalvar: (custoMensalCents: number, meses: readonly number[], form: CaedFormValues) => void
 }>
 
 export function CaedForm(props: CaedFormProps): ReactNode {
@@ -135,7 +144,7 @@ export function CaedForm(props: CaedFormProps): ReactNode {
           type="button"
           className={applyButton}
           onClick={() => {
-            props.onSalvar(calc.custoMensalCents, form.meses)
+            props.onSalvar(calc.custoMensalCents, form.meses, form)
           }}
         >
           {L.salvar}

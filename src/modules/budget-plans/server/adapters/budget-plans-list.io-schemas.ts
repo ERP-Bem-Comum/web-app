@@ -85,14 +85,75 @@ export const DeleteBudgetInputSchema = z.object({ planId: z.uuid(), budgetId: z.
 export type DeleteBudgetInput = z.infer<typeof DeleteBudgetInputSchema>
 
 // #C2: cálculo IPCA (Tipo B) — POST /budget-results/ipca. `planId` só p/ invalidar o detalhe no client.
-export const IpcaBudgetResultInputSchema = z.object({
+// Limites espelhando o core-api (`schemas.ts`): centavos/contagens são INTEIROS ≥ 0; percentuais são números
+// (não centavos) e o IPCA aceita NEGATIVO — deflação existe no histórico do IBGE.
+const centsSchema = z.int().min(0)
+const countSchema = z.int().min(0)
+const percentSchema = z.number().min(0).max(1000)
+
+// Alvo comum aos 4 modelos. `month` 1..12 faz parte da CHAVE (#413) — sem ele os 12 POSTs de uma conta
+// colidiriam. `planId` não vai ao core-api: fica no input só p/ o client invalidar a grade certa.
+const budgetResultTarget = {
   planId: z.uuid(),
   budgetId: z.uuid(),
   subcategoryId: z.uuid(),
-  baseValueInCents: z.int().min(0),
-  ipca: z.number().min(-100).max(1000),
-})
-export type IpcaBudgetResultInput = z.infer<typeof IpcaBudgetResultInputSchema>
+  month: z.int().min(1).max(12),
+}
+
+/**
+ * Input da BORDA (§IX) do "Calculando Gastos" — união DISCRIMINADA por `kind`, espelhando os 4 corpos do
+ * core-api. Discriminada e não `z.object` frouxo: assim o Zod recusa na borda um corpo de CAED com `kind:
+ * 'ipca'`, em vez de deixar o core-api recusar depois (§IV vale na fronteira também).
+ */
+export const PostBudgetResultInputSchema = z.discriminatedUnion('kind', [
+  z.object({
+    ...budgetResultTarget,
+    kind: z.literal('ipca'),
+    baseValueInCents: centsSchema,
+    ipca: z.number().min(-100).max(1000),
+  }),
+  z.object({
+    ...budgetResultTarget,
+    kind: z.literal('caed'),
+    numberOfEnrollments: countSchema,
+    baseValueInCents: centsSchema,
+  }),
+  z.object({
+    ...budgetResultTarget,
+    kind: z.literal('personal'),
+    salaryInCents: centsSchema,
+    salaryAdjustment: percentSchema,
+    inssEmployer: percentSchema,
+    inss: percentSchema,
+    fgtsCharges: percentSchema,
+    pisCharges: percentSchema,
+    foodVoucherInCents: centsSchema,
+    transportationVouchersInCents: centsSchema,
+    healthInsuranceInCents: centsSchema,
+    lifeInsuranceInCents: centsSchema,
+    holidaysAndChargesInCents: centsSchema,
+    allowanceInCents: centsSchema,
+    thirteenthInCents: centsSchema,
+    fgtsInCents: centsSchema,
+  }),
+  z.object({
+    ...budgetResultTarget,
+    kind: z.literal('logistics'),
+    numberOfPeople: countSchema,
+    totalTrips: countSchema,
+    airfareInCents: centsSchema,
+    dailyAccommodation: countSchema,
+    accommodationInCents: centsSchema,
+    dailyFood: countSchema,
+    foodInCents: centsSchema,
+    dailyTransport: countSchema,
+    transportInCents: centsSchema,
+    dailyCarAndFuel: countSchema,
+    carAndFuelInCents: centsSchema,
+  }),
+])
+
+export type PostBudgetResultInput = z.infer<typeof PostBudgetResultInputSchema>
 
 export const AddCategoryInputSchema = z.object({
   planId: z.uuid(),

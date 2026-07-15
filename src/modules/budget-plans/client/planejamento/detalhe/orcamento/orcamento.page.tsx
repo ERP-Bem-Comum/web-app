@@ -45,11 +45,10 @@ export function OrcamentoPage(): ReactNode {
   const search = routeApi.useSearch()
   const navigate = useNavigate()
   const id = params.id
-  const { state, detail, centroOptions, centro, setCentro, apply, prevSemester, nextSemester } = useOrcamento(
-    id,
-    search.estado,
-  )
-  const calc = useCalcGastos(detail)
+  const { state, detail, budgetId, centroOptions, centro, setCentro, apply, prevSemester, nextSemester } =
+    useOrcamento(id, search.estado)
+  // `budgetId` vem RESOLVIDO do BFF (a URL traz a rede, não o orçamento) — é o alvo da escrita do cálculo.
+  const calc = useCalcGastos(detail, { planId: id, budgetId })
   const [calcOpen, setCalcOpen] = useState(false)
 
   const goBack = (): void => {

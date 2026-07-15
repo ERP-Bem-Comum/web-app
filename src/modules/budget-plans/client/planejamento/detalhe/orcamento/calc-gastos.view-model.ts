@@ -28,6 +28,8 @@ export const MONTH_NAMES = [
 
 export type CalcSub = Readonly<{
   id: number
+  /** UUID da subcategoria no core-api — é o ALVO do POST de cálculo. O `id` acima é sintético (render). */
+  ref: string
   name: string
   monthsInCents: readonly number[]
   releaseType?: ReleaseType
@@ -45,6 +47,7 @@ export const buildCalcGastosCentros = (detail: PlanDetail): readonly CalcCentro[
       name: cat.name,
       subCategories: cat.subCategories.map((sub) => ({
         id: sub.id,
+        ref: sub.ref,
         name: sub.name,
         monthsInCents: sub.monthlyInCents,
         releaseType: sub.releaseType,

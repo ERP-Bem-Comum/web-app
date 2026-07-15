@@ -14,6 +14,12 @@ import { PessoalForm, type PessoalFormLabels } from './pessoal-form.component.ts
 import { CaedForm, type CaedFormLabels } from './caed-form.component.tsx'
 import { LogisticaForm, type LogisticaFormLabels } from './logistica-form.component.tsx'
 import {
+  configToPayload,
+  caedToPayload,
+  pessoalToPayload,
+  logisticaToPayload,
+} from './budget-result-command.view-model.ts'
+import {
   overlay,
   panel,
   header,
@@ -232,7 +238,8 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
 
   const applyForm = (): void => {
     if (form === null) return
-    b.applyToMonths([...form.months], custoTotalCents)
+    // O form geral É o modelo IPCA (total × (1 + ipca/100)) — grava como tal.
+    b.saveCalc(configToPayload({ total: form.total, ipca: form.ipca }), [...form.months], custoTotalCents)
     setForm(null)
   }
 
@@ -425,8 +432,9 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
                 monthAbbrevs={b.despesas.map((d) => d.name.slice(0, 3))}
                 formatCents={formatCentsBRL}
                 onDescartar={requestDiscard}
-                onSalvar={(custoMensalCents, meses) => {
-                  b.applyToMonths([...meses], custoMensalCents)
+                onSalvar={(custoMensalCents, meses, form) => {
+                  // GRAVA (um POST por mês) — o `saveCalc` já aplica o eco otimista na grade.
+                  b.saveCalc(pessoalToPayload(form), [...meses], custoMensalCents)
                   setPessoalOpen(false)
                 }}
               />
@@ -438,8 +446,9 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
                 monthAbbrevs={b.despesas.map((d) => d.name.slice(0, 3))}
                 formatCents={formatCentsBRL}
                 onDescartar={requestDiscard}
-                onSalvar={(custoMensalCents, meses) => {
-                  b.applyToMonths([...meses], custoMensalCents)
+                onSalvar={(custoMensalCents, meses, form) => {
+                  // GRAVA (um POST por mês) — o `saveCalc` já aplica o eco otimista na grade.
+                  b.saveCalc(caedToPayload(form), [...meses], custoMensalCents)
                   setCaedOpen(false)
                 }}
               />
@@ -451,8 +460,9 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
                 monthAbbrevs={b.despesas.map((d) => d.name.slice(0, 3))}
                 formatCents={formatCentsBRL}
                 onDescartar={requestDiscard}
-                onSalvar={(custoMensalCents, meses) => {
-                  b.applyToMonths([...meses], custoMensalCents)
+                onSalvar={(custoMensalCents, meses, form) => {
+                  // GRAVA (um POST por mês) — o `saveCalc` já aplica o eco otimista na grade.
+                  b.saveCalc(logisticaToPayload(form), [...meses], custoMensalCents)
                   setLogisticaOpen(false)
                 }}
               />

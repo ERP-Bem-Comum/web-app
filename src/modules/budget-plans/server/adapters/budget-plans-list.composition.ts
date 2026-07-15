@@ -29,7 +29,7 @@ import {
   createAddBudget,
   createDeleteBudget,
   createListNetworkOptions,
-  createPostIpcaResult,
+  createPostBudgetResult,
 } from '#modules/budget-plans/server/application/budget-write.use-case.ts'
 import { createGetConsolidadoAbc } from '#modules/budget-plans/server/application/get-consolidado-abc.use-case.ts'
 import { createExportConsolidadoAbcCsv } from '#modules/budget-plans/server/application/export-consolidado-abc-csv.use-case.ts'
@@ -68,7 +68,7 @@ const build = () => {
     addBudget: createAddBudget({ client }),
     deleteBudget: createDeleteBudget({ client }),
     listNetworkOptions: createListNetworkOptions({ client }),
-    postIpcaResult: createPostIpcaResult({ client }),
+    postBudgetResult: createPostBudgetResult({ client }),
     getConsolidado: createGetConsolidadoAbc({ client }),
     exportConsolidadoCsv: createExportConsolidadoAbcCsv({ client }),
   }

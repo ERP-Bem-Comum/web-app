@@ -31,6 +31,7 @@ const detail: PlanDetail = {
   costCenters: [
     {
       id: 1,
+      ref: 'ref-1',
       name: 'Consultoria',
       type: 'A PAGAR',
       totalInCents: 0,
@@ -39,6 +40,7 @@ const detail: PlanDetail = {
       categories: [
         {
           id: 11,
+          ref: 'ref-11',
           name: 'Consultoria Educacional',
           totalInCents: 0,
           monthlyInCents: zero,
@@ -46,6 +48,7 @@ const detail: PlanDetail = {
           subCategories: [
             {
               id: 111,
+              ref: 'ref-111',
               name: 'Formação de professores',
               totalInCents: 0,
               monthlyInCents: zero,

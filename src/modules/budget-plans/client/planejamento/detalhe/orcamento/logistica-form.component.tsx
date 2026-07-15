@@ -10,6 +10,7 @@ import {
   computeLogistica,
   emptyLogisticaForm,
   type LogisticaForm as LogisticaFormState,
+  type LogisticaForm as LogisticaFormValues,
 } from './logistica-calc.view-model.ts'
 import {
   configForm,
@@ -62,7 +63,11 @@ export type LogisticaFormProps = Readonly<{
   monthAbbrevs: readonly string[]
   formatCents: (c: number) => string
   onDescartar: () => void
-  onSalvar: (custoMensalCents: number, meses: readonly number[]) => void
+  /**
+   * Devolve os INSUMOS junto do valor: o POST de cálculo manda os insumos e o core-api recalcula —
+   * `custoMensalCents` serve só p/ o eco otimista na grade enquanto a escrita não volta.
+   */
+  onSalvar: (custoMensalCents: number, meses: readonly number[], form: LogisticaFormValues) => void
 }>
 
 function NumField(
@@ -210,7 +215,7 @@ export function LogisticaForm(props: LogisticaFormProps): ReactNode {
           type="button"
           className={applyButton}
           onClick={() => {
-            props.onSalvar(calc.custoMensalCents, form.meses)
+            props.onSalvar(calc.custoMensalCents, form.meses, form)
           }}
         >
           {L.salvar}
