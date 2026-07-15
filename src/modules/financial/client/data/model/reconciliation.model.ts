@@ -291,12 +291,16 @@ export type ListReconciliationPeriodsInput = Readonly<{ debitAccountRef: string 
 export type ExportReconciliationInput = Readonly<{ periodId: string; format: ExportFormat }>
 export type ReconciliationExport = Readonly<{ content: string; format: ExportFormat }>
 
-// Dados de referência da categorização (020 · #200/#147). `parentId` = subcategoria (null = top-level).
+// Dados de referência da categorização (020 · #200/#147/#341). Hierarquia canônica de 3 níveis:
+// Centro de Custo → Categoria → Subcategoria. `parentId` = subcategoria (null = top-level);
+// `costCenterId` (#341) = o centro da categoria (null = categoria GLOBAL, vale p/ qualquer centro).
+// Espelha `server/domain/reconciliation.io.ts`. Cascata → `data/helpers/categorization-cascade.ts`.
 export type FinancialCategory = Readonly<{
   id: string
   name: string
   group: 'despesa' | 'receita' | 'ajuste'
   parentId: string | null
+  costCenterId: string | null
 }>
 export type FinancialCostCenter = Readonly<{ id: string; code: string; name: string }>
 export type FinancialReferences = Readonly<{

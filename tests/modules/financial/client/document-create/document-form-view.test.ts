@@ -70,12 +70,12 @@ const base: DocumentFormFields = {
   contractRef: '',
   programRef: '',
   categoryRef: '',
+  subcategoryRef: '',
   costCenterRef: '',
   approverRef: '',
   contaDebitoRef: '',
   centroCusto: '',
   categoria: '',
-  subcategoria: '',
   planoOrcamentario: '',
   retentions: { iss: '350', irrf: '150', inss: '1100', pis: '65', cofins: '300', csll: '100' },
   reformaTributaria: EMPTY_REFORMA_TRIBUTARIA,
@@ -264,6 +264,25 @@ describe('buildCreateInput — Categorização (categoryRef/costCenterRef · 020
     const empty = buildCreateInput(base)
     assert.equal(empty?.categoryRef, undefined)
     assert.equal(empty?.costCenterRef, undefined)
+  })
+  // FOLHA da cascata (#341): o backend recebe UM campo (`categoryRef`) — a categoria mais específica.
+  it('subcategoria escolhida → é ELA que vai em categoryRef (a folha vence a categoria)', () => {
+    const cat = '7c9e6679-7425-40de-944b-e07fc1f90ae7'
+    const sub = '7c9e6679-7425-40de-944b-e07fc1f90ff1'
+    assert.equal(buildCreateInput({ ...base, categoryRef: cat, subcategoryRef: sub })?.categoryRef, sub)
+  })
+  it('sem subcategoria → vai a categoria; sem nenhuma das duas → omite', () => {
+    const cat = '7c9e6679-7425-40de-944b-e07fc1f90ae7'
+    assert.equal(buildCreateInput({ ...base, categoryRef: cat, subcategoryRef: '' })?.categoryRef, cat)
+    assert.equal(buildCreateInput({ ...base, categoryRef: '', subcategoryRef: '' })?.categoryRef, undefined)
+  })
+  // O RASCUNHO usa a mesma regra (é o outro build que carrega categorização). O AJUSTE não entra aqui:
+  // `AdjustDocumentInput` não tem `categoryRef` — o core-api não aceita recategorizar no ajuste.
+  it('a folha vale também no RASCUNHO (mesma regra do create)', () => {
+    const cat = '7c9e6679-7425-40de-944b-e07fc1f90ae7'
+    const sub = '7c9e6679-7425-40de-944b-e07fc1f90ff1'
+    assert.equal(buildDraftInput({ ...base, categoryRef: cat, subcategoryRef: sub })?.categoryRef, sub)
+    assert.equal(buildDraftInput({ ...base, categoryRef: cat, subcategoryRef: '' })?.categoryRef, cat)
   })
   it('envia approverRef quando escolhido; omite quando vazio (#148)', () => {
     const ap = 'a1b2c3d4-0000-4000-8000-000000000148'
