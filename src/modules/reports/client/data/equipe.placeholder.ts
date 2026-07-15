@@ -32,18 +32,23 @@ export type Escolaridade = 'N/A' | 'Superior Completo' | 'Superior Incompleto' |
  * Uma linha ENXUTA de colaborador (só campos de exibição). Por LGPD, campos sensíveis NÃO existem neste tipo:
  * sem cpf, email, telefone, endereço, remuneração, alergias, biografia. `idade` null = "N/A" (sem data de
  * nascimento cadastrada). `anoContrato` = ano de início do vínculo (2019..2025) — dirige o gráfico por ano.
+ *
+ * Os campos de EXIBIÇÃO livre (`programa`/`vinculo`/`escolaridade`/`genero`/`racaCor`) são `string`: o
+ * placeholder sintético usa os enums estreitos (Programa/Vinculo/…) como VALORES, mas o DTO real do core-api
+ * (#114, LGPD-safe) entrega string livre (e sem gênero/raça-cor → sentinela "—"). O adapter `toTeamRows` do
+ * view-model preenche estes campos com a string real sem forçar enum.
  */
 export type TeamMemberRow = Readonly<{
   nome: string
-  /** Idade em anos; null = "N/A" (nascimento não informado). */
+  /** Idade em anos; null = "N/A" (nascimento não informado / endpoint LGPD-safe sem idade). */
   idade: number | null
-  programa: Programa
+  programa: string
   funcao: string
-  vinculo: Vinculo
-  genero: Genero
-  racaCor: RacaCor
-  escolaridade: Escolaridade
-  /** Ano de início do contrato (2019..2025). */
+  vinculo: string
+  genero: string
+  racaCor: string
+  escolaridade: string
+  /** Ano de início do contrato (2019..2025 dirige o gráfico; anos fora do range são ignorados nele). */
   anoContrato: number
 }>
 

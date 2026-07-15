@@ -11,6 +11,10 @@ import {
   SUPPLIERS_WITHOUT_CONTRACT_RAW,
   type RawSupplierRow,
 } from './data/suppliers-without-contract.placeholder.ts'
+import type { SupplierWithoutContract } from './data/model/supplier-without-contract.model.ts'
+
+// Re-export do shape cru p/ a page tipar sem importar `client-data` direto (boundary ui ↛ data — §XI).
+export type { RawSupplierRow } from './data/suppliers-without-contract.placeholder.ts'
 
 /** Total de um plano orçamentário dentro de um fornecedor (linha-filha da árvore). */
 export type BudgetPlanRow = Readonly<{
@@ -82,6 +86,31 @@ export function aggregateSuppliers(
  */
 export function loadSupplierRows(limiteCents: number): readonly SupplierRow[] {
   return aggregateSuppliers(SUPPLIERS_WITHOUT_CONTRACT_RAW, limiteCents)
+}
+
+/**
+ * ADAPTER (puro) DTO real (`SupplierWithoutContract[]`) → linhas cruas (`RawSupplierRow[]`). O endpoint entrega
+ * o total AGREGADO por fornecedor, SEM a quebra por plano orçamentário (D2 do plano) → cada fornecedor vira UMA
+ * linha com `budgetPlan: '—'` (a árvore mostra o fornecedor com um único filho "—"); a matemática do limite
+ * (por fornecedor) fica intacta. `name` nullable/vazio → cai no `supplierRef` como rótulo. O binding aplica o
+ * limite via `aggregateSuppliers(toRawSupplierRows(suppliers), limiteCents)`. Sem `throw` (§II).
+ *
+ * `partnersMap` (id → nome) resolve o favorecido NÃO-fornecedor (financiador/ato/colaborador) client-side —
+ * o read-model do backend só nomeia fornecedor, então o front resolve os demais pelo MESMO mapa do Contas a
+ * Pagar. Prioridade: nome do backend → mapa → o `supplierRef` cru como último recurso (nunca vazio).
+ */
+export function toRawSupplierRows(
+  suppliers: readonly SupplierWithoutContract[],
+  partnersMap: ReadonlyMap<string, string> = new Map(),
+): readonly RawSupplierRow[] {
+  return suppliers.map((s) => {
+    const backendName = s.name !== null && s.name.trim() !== '' ? s.name : null
+    return {
+      supplier: backendName ?? partnersMap.get(s.supplierRef) ?? s.supplierRef,
+      budgetPlan: '—',
+      totalCents: s.totalCents,
+    }
+  })
 }
 
 /**

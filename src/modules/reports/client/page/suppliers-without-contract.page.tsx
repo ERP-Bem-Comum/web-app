@@ -14,7 +14,7 @@ import { screen, header, headText, headTitle, headSubtitle } from '#shared/ui/br
 import { FilterIcon } from '#shared/ui/index.ts'
 
 import {
-  loadSupplierRows,
+  aggregateSuppliers,
   buildCsv,
   parseLimiteToCents,
   formatLimiteInput,
@@ -23,7 +23,10 @@ import {
   topSuppliersByValor,
   complianceCounts,
   LIMITE_DEFAULT_CENTS,
+  type RawSupplierRow,
 } from '../suppliers-without-contract.view-model.ts'
+import { useSuppliersWithoutContract } from '../suppliers-without-contract.binding.ts'
+import { ReportStatePanel } from '../components/report-state-panel.component.tsx'
 import { ReportFilters } from '../components/report-filters.component.tsx'
 import { exportTrigger } from '../components/report-filters.css.ts'
 import { ReportExportDropdown } from '../components/report-export-dropdown.component.tsx'
@@ -74,14 +77,23 @@ function statusOf(row: { overLimit: boolean; atLimit: boolean }): ComplianceStat
   return 'within'
 }
 
+/** Linhas cruas vazias enquanto a query carrega/falha (mantém a ordem dos hooks estável — §XI). */
+const EMPTY_RAW: readonly RawSupplierRow[] = []
+
 export function SuppliersWithoutContractPage(): ReactNode {
+  // Server-state REAL do core-api (#114): fornecedores agregados (sem quebra por plano — D2). O LIMITE é
+  // UI-state reativo → a agregação por limite acontece AQUI (não no binding), preservando a matemática ao vivo.
+  const state = useSuppliersWithoutContract()
+
   // UI-state: painel de filtros aberto/fechado.
   const [filtersOpen, setFiltersOpen] = useState(false)
   // UI-state: o texto do input Limite. Inicia no padrão R$ 10.000,00 → "10.000,00".
   const [limiteText, setLimiteText] = useState(() => formatLimiteInput(LIMITE_DEFAULT_CENTS))
 
   const limiteCents = parseLimiteToCents(limiteText)
-  const rows = useMemo(() => loadSupplierRows(limiteCents), [limiteCents])
+  // Todos os hooks rodam ANTES de qualquer return (regras de hooks): sem dado ainda → linhas vazias.
+  const rawRows = state.status === 'ready' ? state.rawRows : EMPTY_RAW
+  const rows = useMemo(() => aggregateSuppliers(rawRows, limiteCents), [rawRows, limiteCents])
 
   // Barras do gráfico: top-N por valor, já mapeadas para a view burra (nome + status + % formatado).
   const chartBars: readonly ComplianceBar[] = useMemo(
@@ -100,6 +112,19 @@ export function SuppliersWithoutContractPage(): ReactNode {
   )
 
   const counts = useMemo(() => complianceCounts(rows), [rows])
+
+  if (state.status === 'loading') {
+    return <ReportStatePanel title={t('reports.suppliersWithoutContract.loading')} />
+  }
+  if (state.status === 'error') {
+    return (
+      <ReportStatePanel
+        role="alert"
+        title={t('reports.suppliersWithoutContract.errorTitle')}
+        hint={t(state.errorTag)}
+      />
+    )
+  }
 
   return (
     <div className={screen}>
