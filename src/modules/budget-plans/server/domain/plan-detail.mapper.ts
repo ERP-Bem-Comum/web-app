@@ -69,8 +69,12 @@ export const mapLaunchType = (launchType: string): ReleaseType | undefined => {
  */
 export const networkNameKey = (kind: string, ref: string): string => `${kind}:${ref}`
 
-/** ref → nome da rede, montado do catálogo (`GET /options`). Ver `networks` abaixo. */
-export type NetworkNames = ReadonlyMap<string, string>
+/**
+ * (kind, ref) → rótulo da rede, montado do catálogo (`GET /options`). Carrega `uf` além do nome porque o
+ * filtro do detalhe agrupa MUNICÍPIOS por ESTADO (como no legado) — e a `ref` de um município é o código
+ * IBGE, que não diz de que estado ele é.
+ */
+export type NetworkNames = ReadonlyMap<string, Readonly<{ name: string; uf: string }>>
 
 export const mapPlanDetail = (
   header: PlanDetailHeaderInput,
@@ -129,7 +133,11 @@ export const mapPlanDetail = (
     // → cai no `ref`: degradado, mas honesto (mostra a chave, não um nome inventado).
     networks: header.budgets.map((b, i) => ({
       id: i,
-      name: networkNames?.get(networkNameKey(b.partnerKind, b.partnerRef)) ?? b.partnerRef,
+      name: networkNames?.get(networkNameKey(b.partnerKind, b.partnerRef))?.name ?? b.partnerRef,
+      // Fora do catálogo: no ESTADO a própria `ref` É a UF; no município não há como adivinhar → ''.
+      uf:
+        networkNames?.get(networkNameKey(b.partnerKind, b.partnerRef))?.uf ??
+        (b.partnerKind === 'state' ? b.partnerRef : ''),
       ref: b.partnerRef,
       kind: b.partnerKind,
       budgetId: b.budgetId,

@@ -291,7 +291,7 @@ export const createBudgetPlansCoreClient = (
     if (isErr(r)) return err(mapHttpError(r.error))
     const parsed = coreOptionsSchema.safeParse(r.value)
     if (!parsed.success) return err('unexpected')
-    return ok(parsed.data.redes.map((n) => ({ ref: n.ref, name: n.name, kind: n.kind })))
+    return ok(parsed.data.redes.map((n) => ({ ref: n.ref, name: n.name, kind: n.kind, uf: n.uf })))
   },
   addBudget: async (c: AddBudgetCommand, token): Promise<Result<void, BudgetPlansError>> => {
     const r = await resultFetch<unknown>(`${baseUrl}/${c.planId}/budgets`, {

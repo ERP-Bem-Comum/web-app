@@ -91,7 +91,8 @@ export type AddBudgetCommand = Readonly<{
   valueInCents: number
 }>
 export type DeleteBudgetCommand = Readonly<{ planId: string; budgetId: string }>
-export type NetworkOption = Readonly<{ ref: string; name: string; kind: NetworkKind }>
+/** `uf` = estado do parceiro. No município é o que permite o filtro Estado→Município (o legado tem os dois). */
+export type NetworkOption = Readonly<{ ref: string; name: string; kind: NetworkKind; uf: string }>
 /**
  * #C2: resultado de cálculo por subcategoria **e MÊS**, dentro de UMA rede/budget. `subcategoryRef` = UUID do
  * backend; `month` = 1..12 (core-api#413).
@@ -205,6 +206,8 @@ export type PlanDetailComposed = Readonly<{
     name: string
     ref: string
     kind: NetworkKind
+    /** UF do parceiro (no estado, = `ref`). Agrupa os municípios no filtro Estado→Município. */
+    uf: string
     budgetId: string
     totalInCents: number
   }>[]

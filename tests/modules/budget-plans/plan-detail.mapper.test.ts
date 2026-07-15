@@ -79,7 +79,8 @@ describe('mapPlanDetail — cabeçalho + árvore', () => {
     assert.equal(detail.scenarioName, null)
     // #394: a visão "Por Rede" acende dos budgets reais (id por índice, ref = chave natural, total real).
     assert.deepEqual(detail.networks, [
-      { id: 0, name: 'RN', ref: 'RN', kind: 'state', budgetId: 'b1', totalInCents: 500_000 },
+      // Sem catálogo, o ESTADO cai na própria ref — e a `uf` de um estado É a ref (não precisa adivinhar).
+      { id: 0, name: 'RN', ref: 'RN', kind: 'state', uf: 'RN', budgetId: 'b1', totalInCents: 500_000 },
     ])
   })
 
@@ -391,7 +392,7 @@ describe('mapPlanDetail — rótulo da rede (nome do catálogo, não a chave cru
     const d = mapPlanDetail(
       header([{ budgetId: 'b1', partnerKind: 'state', partnerRef: 'CE', valueInCents: 0 }]),
       structure,
-      new Map([[networkNameKey('state', 'CE'), 'Ceará']]),
+      new Map([[networkNameKey('state', 'CE'), { name: 'Ceará', uf: 'CE' }]]),
     )
     assert.equal(d.networks[0]?.name, 'Ceará')
     assert.equal(d.networks[0]?.ref, 'CE') // a chave natural CONTINUA sendo a ref (é ela que casa o filtro)
@@ -401,7 +402,7 @@ describe('mapPlanDetail — rótulo da rede (nome do catálogo, não a chave cru
     const d = mapPlanDetail(
       header([{ budgetId: 'b1', partnerKind: 'municipality', partnerRef: '2304400', valueInCents: 0 }]),
       structure,
-      new Map([[networkNameKey('municipality', '2304400'), 'Fortaleza']]),
+      new Map([[networkNameKey('municipality', '2304400'), { name: 'Fortaleza', uf: 'CE' }]]),
     )
     assert.equal(d.networks[0]?.name, 'Fortaleza')
   })
@@ -415,8 +416,8 @@ describe('mapPlanDetail — rótulo da rede (nome do catálogo, não a chave cru
       ]),
       structure,
       new Map([
-        [networkNameKey('state', '99'), 'Estado Noventa e Nove'],
-        [networkNameKey('municipality', '99'), 'Município Noventa e Nove'],
+        [networkNameKey('state', '99'), { name: 'Estado Noventa e Nove', uf: '99' }],
+        [networkNameKey('municipality', '99'), { name: 'Município Noventa e Nove', uf: 'CE' }],
       ]),
     )
     assert.equal(d.networks[0]?.name, 'Estado Noventa e Nove')
@@ -437,7 +438,7 @@ describe('mapPlanDetail — rótulo da rede (nome do catálogo, não a chave cru
     const d = mapPlanDetail(
       header([{ budgetId: 'b1', partnerKind: 'state', partnerRef: 'RN', valueInCents: 0 }]),
       structure,
-      new Map([[networkNameKey('state', 'CE'), 'Ceará']]),
+      new Map([[networkNameKey('state', 'CE'), { name: 'Ceará', uf: 'CE' }]]),
     )
     assert.equal(d.networks[0]?.name, 'RN')
   })

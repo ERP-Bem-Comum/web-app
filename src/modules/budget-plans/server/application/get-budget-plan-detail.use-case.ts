@@ -53,7 +53,7 @@ export const resolveNetworkNames = async (
 ): Promise<NetworkNames> => {
   const r = await client.getNetworkOptions(token)
   if (isErr(r)) return new Map()
-  return new Map(r.value.map((n) => [networkNameKey(n.kind, n.ref), n.name]))
+  return new Map(r.value.map((n) => [networkNameKey(n.kind, n.ref), { name: n.name, uf: n.uf }]))
 }
 
 export type GetBudgetPlanDetailDeps = Readonly<{ client: GetBudgetPlanDetailClient }>

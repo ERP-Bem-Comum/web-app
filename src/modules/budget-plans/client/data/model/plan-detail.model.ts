@@ -28,6 +28,8 @@ export type NetworkRef = Readonly<{
   name: string
   ref: string
   kind: NetworkKind
+  /** UF do parceiro (no estado, = `ref`). Agrupa os municípios no filtro Estado→Município do §1.4. */
+  uf: string
   budgetId: string
   totalInCents: number
 }>
@@ -36,6 +38,7 @@ export const NetworkRefSchema: z.ZodType<NetworkRef> = z.object({
   name: z.string().trim(),
   ref: z.string().trim(),
   kind: z.enum(['state', 'municipality']),
+  uf: z.string().trim(),
   budgetId: z.string().trim(),
   totalInCents: z.int(),
 })

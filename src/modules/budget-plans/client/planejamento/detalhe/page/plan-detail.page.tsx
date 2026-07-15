@@ -245,26 +245,31 @@ export function PlanDetailPage(): ReactNode {
                   </option>
                 ))}
               </select>
-              <select
-                className={municipioSelect}
-                aria-label={t('budget-plans.detail.municipioFilter')}
-                value={filter.municipio}
-                disabled={filter.estado === ''}
-                onChange={(e) => {
-                  filter.setMunicipio(e.target.value)
-                }}
-              >
-                <option value="">{t('budget-plans.detail.municipioFilter')}</option>
-                {filter.municipioOptions.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
+              {/* Plano de ESTADO não tem município — o legado só mostra o filtro de Estado (print da P.O.).
+                  A natureza da rede é do PLANO, não de ser cenário. */}
+              {filter.networkKind === 'municipality' ? (
+                <select
+                  className={municipioSelect}
+                  aria-label={t('budget-plans.detail.municipioFilter')}
+                  value={filter.municipio}
+                  disabled={filter.estado === ''}
+                  onChange={(e) => {
+                    filter.setMunicipio(e.target.value)
+                  }}
+                >
+                  <option value="">{t('budget-plans.detail.municipioFilter')}</option>
+                  {filter.municipioOptions.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              ) : null}
               <button
                 type="button"
                 className={filterButton}
-                disabled={filter.estado === '' || filter.municipio === ''}
+                // Habilita quando a escolha fecha uma REDE REAL do plano — não "dois selects preenchidos".
+                disabled={filter.networkRef === null}
                 onClick={filter.apply}
               >
                 {t('budget-plans.detail.filter')}
@@ -309,10 +314,13 @@ export function PlanDetailPage(): ReactNode {
             }}
             editMode={filter.editMode}
             onEdit={() => {
+              if (filter.networkRef === null) return // sem rede real não há orçamento a abrir
               void navigate({
                 to: '/planejamento/detalhes/$id/orcamento',
                 params: { id },
-                search: { estado: filter.estado, municipio: filter.municipio },
+                // A URL carrega a REDE (UF no plano de estado, IBGE no de município) — é o que a Edição
+                // precisa resolver. "estado + município" não endereçava a rede nos planos de estado.
+                search: { rede: filter.networkRef },
               })
             }}
             onPrev={prevSemester}
