@@ -71,15 +71,23 @@ import {
 } from './budget-plans.schema.ts'
 import { parseConsolidatedResult } from './consolidado-result.schema.ts'
 
-// Transporte → erro de domínio (§V): 401 = sessão; o resto colapsa em `unexpected` (a UI só vê a tag).
-const mapHttpError = (e: HttpError): BudgetPlansError =>
-  e.kind === 'http' && e.status === 401 ? 'unauthorized' : 'unexpected'
+// Transporte → erro de domínio (§V): 401 = sessão, 403 = RBAC; o resto colapsa em `unexpected` (a UI só vê
+// a tag). O 403 é distinto DE PROPÓSITO: cair em `unexpected` fazia a tela dizer "Tente novamente" para uma
+// falta de permissão — conselho errado, porque tentar de novo nunca resolve (core-api#374: ambiente com 42
+// permissões em vez de 44 sobe conectado ao banco e responde 403).
+const mapHttpError = (e: HttpError): BudgetPlansError => {
+  if (e.kind !== 'http') return 'unexpected'
+  if (e.status === 401) return 'unauthorized'
+  if (e.status === 403) return 'forbidden'
+  return 'unexpected'
+}
 
 // Mapa específico da ESCRITA (§V): o `POST` acrescenta 409 (unicidade ano+programa) e 400/422 (payload).
 // O core-api colapsa o slug num `code` público (OWASP), então mapeamos por STATUS, não por slug.
 const mapCreateHttpError = (e: HttpError): BudgetPlansError => {
   if (e.kind !== 'http') return 'unexpected'
   if (e.status === 401) return 'unauthorized'
+  if (e.status === 403) return 'forbidden'
   if (e.status === 409) return 'budget-plan-already-exists'
   if (e.status === 400 || e.status === 422) return 'invalid-input'
   return 'unexpected'
@@ -90,6 +98,7 @@ const mapCreateHttpError = (e: HttpError): BudgetPlansError => {
 const mapDetailHttpError = (e: HttpError): BudgetPlansError => {
   if (e.kind !== 'http') return 'unexpected'
   if (e.status === 401) return 'unauthorized'
+  if (e.status === 403) return 'forbidden'
   if (e.status === 404) return 'budget-plan-not-found'
   return 'unexpected'
 }
@@ -100,6 +109,7 @@ const mapDetailHttpError = (e: HttpError): BudgetPlansError => {
 const mapApproveHttpError = (e: HttpError): BudgetPlansError => {
   if (e.kind !== 'http') return 'unexpected'
   if (e.status === 401) return 'unauthorized'
+  if (e.status === 403) return 'forbidden'
   if (e.status === 404) return 'budget-plan-not-found'
   if (e.status === 409) return 'budget-plan-already-approved'
   return 'unexpected'
@@ -107,6 +117,7 @@ const mapApproveHttpError = (e: HttpError): BudgetPlansError => {
 const mapCalibrationHttpError = (e: HttpError): BudgetPlansError => {
   if (e.kind !== 'http') return 'unexpected'
   if (e.status === 401) return 'unauthorized'
+  if (e.status === 403) return 'forbidden'
   if (e.status === 404) return 'budget-plan-not-found'
   if (e.status === 409) return 'budget-plan-not-approved' // calibração só em plano APROVADO (por contexto)
   return 'unexpected'
@@ -114,6 +125,7 @@ const mapCalibrationHttpError = (e: HttpError): BudgetPlansError => {
 const mapSceneryHttpError = (e: HttpError): BudgetPlansError => {
   if (e.kind !== 'http') return 'unexpected'
   if (e.status === 401) return 'unauthorized'
+  if (e.status === 403) return 'forbidden'
   if (e.status === 404) return 'budget-plan-not-found'
   if (e.status === 409) return 'budget-plan-scenery-needs-draft' // cenário só em plano NÃO aprovado (por contexto)
   if (e.status === 400 || e.status === 422) return 'invalid-input'
@@ -125,6 +137,7 @@ const mapSceneryHttpError = (e: HttpError): BudgetPlansError => {
 const mapWriteHttpError = (e: HttpError): BudgetPlansError => {
   if (e.kind !== 'http') return 'unexpected'
   if (e.status === 401) return 'unauthorized'
+  if (e.status === 403) return 'forbidden'
   if (e.status === 404) return 'budget-plan-not-found'
   if (e.status === 409) return 'budget-plan-not-editable'
   if (e.status === 400 || e.status === 422) return 'invalid-input'

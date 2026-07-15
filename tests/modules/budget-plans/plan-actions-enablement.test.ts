@@ -125,3 +125,20 @@ describe('create-scenery — as 3 recusas do core-api', () => {
     )
   })
 })
+
+// 403 (RBAC) ≠ erro inesperado. Sem esta distinção a tela dizia "Tente novamente" para falta de permissão —
+// conselho errado: tentar de novo nunca resolve. Cenário real do core-api#374 (42 permissões em vez de 44).
+describe('actionErrorTag — 403 tem mensagem própria, não "tente novamente"', () => {
+  it('forbidden → tag de permissão (não a genérica)', () => {
+    assert.equal(actionErrorTag('forbidden'), 'budget-plans.action.error.forbidden')
+    assert.notEqual(actionErrorTag('forbidden'), 'budget-plans.action.error.unexpected')
+  })
+
+  it('forbidden ≠ unauthorized — 403 não é sessão expirada', () => {
+    assert.notEqual(actionErrorTag('forbidden'), actionErrorTag('unauthorized'))
+  })
+
+  it('o inesperado continua caindo no genérico', () => {
+    assert.equal(actionErrorTag('unexpected'), 'budget-plans.action.error.unexpected')
+  })
+})
