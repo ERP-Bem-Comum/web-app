@@ -92,8 +92,15 @@ export type AddBudgetCommand = Readonly<{
 }>
 export type DeleteBudgetCommand = Readonly<{ planId: string; budgetId: string }>
 export type NetworkOption = Readonly<{ ref: string; name: string; kind: NetworkKind }>
-// #C2: resultado de cálculo por subcategoria (dentro de UMA rede/budget). `subcategoryRef` = UUID do backend.
-export type BudgetResultRow = Readonly<{ subcategoryRef: string; valueInCents: number }>
+/**
+ * #C2: resultado de cálculo por subcategoria **e MÊS**, dentro de UMA rede/budget. `subcategoryRef` = UUID do
+ * backend; `month` = 1..12 (core-api#413).
+ *
+ * ⚠️ Desde o #413 o `GET /budget-results/by-budget/:budgetId` devolve **12 linhas por subcategoria** (uma por
+ * mês), não uma. Quem agrega por subcategoria precisa SOMAR — indexar por `subcategoryRef` sobrescreve e
+ * deixa só o último mês (era o que `fillNetworkCells` fazia; ver o comentário lá).
+ */
+export type BudgetResultRow = Readonly<{ subcategoryRef: string; month: number; valueInCents: number }>
 // #C2: comando do cálculo IPCA (Tipo B) — baseValueInCents * (1 + ipca/100), por rede×subcategoria.
 export type IpcaResultCommand = Readonly<{
   budgetId: string

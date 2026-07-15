@@ -321,8 +321,14 @@ export const createBudgetPlansCoreClient = (
     if (isErr(r)) return err(mapHttpError(r.error))
     const parsed = coreBudgetResultsSchema.safeParse(r.value)
     if (!parsed.success) return err('unexpected')
+    // `month ?? 1` normaliza o ausente (core-api atrás da dev): antes do #413 era 1 valor por subcategoria,
+    // que equivale a um único mês. Com o #413 vêm 12 linhas por subcategoria — quem agrega precisa SOMAR.
     return ok(
-      parsed.data.items.map((it) => ({ subcategoryRef: it.subcategoryId, valueInCents: it.valueInCents })),
+      parsed.data.items.map((it) => ({
+        subcategoryRef: it.subcategoryId,
+        month: it.month ?? 1,
+        valueInCents: it.valueInCents,
+      })),
     )
   },
   createBudgetPlan: async (

@@ -215,7 +215,10 @@ describe('fillNetworkCells (#C2 — acende as células da matriz "Por Rede")', (
     structure,
   )
   // 2 redes; resultados só p/ a subcategoria 'Folha' (ref sub-folha-0001) — RN=1000, CE=0.
-  const filled = fillNetworkCells(base, [[{ subcategoryRef: 'sub-folha-0001', valueInCents: 1000 }], []])
+  const filled = fillNetworkCells(base, [
+    [{ subcategoryRef: 'sub-folha-0001', month: 1, valueInCents: 1000 }],
+    [],
+  ])
 
   it('preenche a célula da subcategoria pela ref, alinhada por rede', () => {
     const sub = filled.costCenters[0]?.categories[0]?.subCategories[0] // Folha
@@ -231,5 +234,55 @@ describe('fillNetworkCells (#C2 — acende as células da matriz "Por Rede")', (
     assert.deepEqual(cat.networkInCents, [1000, 0]) // Folha(1000)+Reajuste(0)
     assert.deepEqual(cc.networkInCents, [1000, 0])
     assert.equal(cc.totalInCents, 1000)
+  })
+})
+
+// ⚠️ core-api#413: o `by-budget` passou a devolver 12 linhas por subcategoria (uma por mês). O anual da rede
+// é a SOMA delas. Antes, `fillNetworkCells` indexava num `Map` por `subcategoryRef` — chave repetida
+// SOBRESCREVE, então o "Por Rede" mostraria o valor do ÚLTIMO mês como se fosse o anual, sem erro nenhum.
+describe('fillNetworkCells — 12 meses por subcategoria (#413)', () => {
+  // `base` próprio: o do describe acima é local a ele.
+  const base = mapPlanDetail(
+    {
+      id: 'a1b2c3d4-1111-4a2b-8c3d-000000000001',
+      year: 2027,
+      status: 'RASCUNHO',
+      version: '1.0',
+      programName: 'P',
+      totalInCents: 0,
+      budgets: [
+        { budgetId: 'bg-rn', partnerKind: 'state', partnerRef: 'RN', valueInCents: 0 },
+        { budgetId: 'bg-ce', partnerKind: 'state', partnerRef: 'CE', valueInCents: 0 },
+      ],
+    },
+    structure,
+  )
+  const doze = (ref: string, cents: number) =>
+    Array.from({ length: 12 }, (_, i) => ({ subcategoryRef: ref, month: i + 1, valueInCents: cents }))
+
+  const filled = fillNetworkCells(base, [doze('sub-folha-0001', 100), []])
+
+  it('o anual da rede é a SOMA dos 12 meses, não o último', () => {
+    const sub = filled.costCenters[0]?.categories[0]?.subCategories[0]
+    assert.ok(sub)
+    assert.deepEqual(sub.networkInCents, [1200, 0]) // 100 × 12 — não 100
+    assert.equal(sub.totalInCents, 1200)
+  })
+
+  it('meses com valores DIFERENTES somam corretamente', () => {
+    const meses = [10, 20, 30].map((v, i) => ({
+      subcategoryRef: 'sub-folha-0001',
+      month: i + 1,
+      valueInCents: v,
+    }))
+    const f = fillNetworkCells(base, [meses, []])
+    const sub = f.costCenters[0]?.categories[0]?.subCategories[0]
+    assert.equal(sub?.networkInCents[0], 60) // 10+20+30
+  })
+
+  it('o roll-up (categoria/centro) usa a soma dos meses', () => {
+    const cc = filled.costCenters[0]
+    assert.deepEqual(cc?.networkInCents, [1200, 0])
+    assert.equal(cc?.totalInCents, 1200)
   })
 })
