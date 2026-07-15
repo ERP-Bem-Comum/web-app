@@ -26,6 +26,7 @@
  */
 import { POSICAO_PAGAMENTOS_RAW, type RawPosicaoRow } from './data/posicao-pagamentos.placeholder.ts'
 import { POSICAO_RECEBIMENTOS_RAW } from './data/posicao-recebimentos.placeholder.ts'
+import type { PaymentPosition } from './data/model/payment-position.model.ts'
 
 /** Nível do nó na árvore: fornecedor (0) → centro de custo (1) → categoria (folha, 2). */
 export type PosicaoLevel = 'supplier' | 'costCenter' | 'category'
@@ -180,6 +181,36 @@ export function supplierTotals(report: PosicaoReport): readonly SupplierTotal[] 
  */
 export function loadPosicao(type: PosicaoType = 'p'): PosicaoReport {
   return aggregatePosicao(type === 'r' ? POSICAO_RECEBIMENTOS_RAW : POSICAO_PAGAMENTOS_RAW)
+}
+
+/**
+ * ADAPTER (puro) DTO real (`PaymentPosition[]`) → linhas cruas da árvore (`RawPosicaoRow[]`). Mapeamento 1:1
+ * (D1 do plano): `supplierName/costCenterName/categoryName` (nullable → "—") viram os 3 níveis; os 3 buckets
+ * DERIVADOS já vêm prontos do BFF/core-api — `overdueCents→emAtraso`, `paidCents→pago`, `pendingCents→aPagar`.
+ * O binding chama `aggregatePosicao(toRawPosicaoRows(positions))` p/ montar a árvore (a View não muda). Sem
+ * `throw` (§II). Lista vazia → árvore vazia → empty-state honesto na View.
+ */
+// `partnersMap` (id → nome) resolve o favorecido de QUALQUER tipo de parceiro (fornecedor/financiador/ato/
+// colaborador) — o read-model do backend só nomeia fornecedor, então o front resolve os demais pelo MESMO
+// mapa que o Contas a Pagar usa (agregador de parceiros). Sem match (ex.: órgão de retenção, que não é
+// parceiro) → cai no `supplierName` do backend e, na falta, "—".
+export function toRawPosicaoRows(
+  positions: readonly PaymentPosition[],
+  partnersMap: ReadonlyMap<string, string> = new Map(),
+): readonly RawPosicaoRow[] {
+  return positions.map((p) => ({
+    supplier: p.supplierName ?? (p.supplierRef !== null ? partnersMap.get(p.supplierRef) : undefined) ?? '—',
+    costCenter: p.costCenterName ?? '—',
+    category: p.categoryName ?? '—',
+    // O backend devolve `pendingCents` = TODOS os não-pagos (Open/Approved), e `overdueCents` = os não-pagos
+    // JÁ VENCIDOS (subconjunto de pending). "A pagar" aqui é só o A VENCER → `pending − overdue`; senão os
+    // vencidos contariam nas DUAS colunas (Em atraso E A pagar) e o total inflaria. Assim as 3 medidas são
+    // mutuamente exclusivas e o total (`measureTotal`) = pago + não-pago, sem dupla contagem. `pending ≥
+    // overdue` sempre (overdue ⊆ pending) → nunca negativo.
+    emAtrasoCents: p.overdueCents,
+    pagoCents: p.paidCents,
+    aPagarCents: p.pendingCents - p.overdueCents,
+  }))
 }
 
 // ── Formatação ──

@@ -8,21 +8,33 @@
  * liquidado; A pagar = não pago e a vencer); o Total é a soma. Front-first: dados placeholder SINTÉTICOS
  * (ver `posicao-pagamentos.placeholder.ts`) até o endpoint do core-api (#114) existir.
  */
-import { useMemo, type ReactNode } from 'react'
+import { type ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 
-import { loadPosicao, CSV_HEADER } from '../posicao.view-model.ts'
+import { CSV_HEADER } from '../posicao.view-model.ts'
+import { usePosicaoPagamentos } from '../posicao.binding.ts'
 import {
   PosicaoReportView,
   type PosicaoReportViewLabels,
 } from '../components/posicao-report-view.component.tsx'
+import { ReportStatePanel } from '../components/report-state-panel.component.tsx'
 
 const t = createTranslator(ptBR)
 
 export function PosicaoPagamentosPage(): ReactNode {
-  const report = useMemo(() => loadPosicao('p'), [])
+  // Server-state REAL do core-api (#114): loading | error | ready. O empty-state honesto (dado real vazio) é
+  // resolvido DENTRO da PosicaoReportView a partir do `report` (0 nós / total 0) — a Posição de Recebimentos
+  // (placeholder → `[]`) continua caindo lá também.
+  const state = usePosicaoPagamentos()
+
+  if (state.status === 'loading') {
+    return <ReportStatePanel title={t('reports.posicao.loading')} />
+  }
+  if (state.status === 'error') {
+    return <ReportStatePanel role="alert" title={t('reports.posicao.errorTitle')} hint={t(state.errorTag)} />
+  }
 
   const labels: PosicaoReportViewLabels = {
     back: t('reports.posicao.back'),
@@ -79,7 +91,7 @@ export function PosicaoPagamentosPage(): ReactNode {
 
   return (
     <PosicaoReportView
-      report={report}
+      report={state.report}
       labels={labels}
       csvFilename="posicao-pagamentos.csv"
       csvHeader={CSV_HEADER}

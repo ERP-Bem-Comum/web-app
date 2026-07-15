@@ -269,7 +269,10 @@ function DetailReady({
             id: collaborator.id,
             pre: c.buildPre(),
             complete: c.buildComplete(collaborator.id),
-            includeComplete: c.hasCompleteData(),
+            // `completeRegistration` é 1x só (o domínio rejeita já-completo → 'collaborator-already-complete'
+            // → conflito "Já existe um registro"). Num colaborador JÁ cadastrado, só o `update` (cadastrais)
+            // roda; os pessoais (data de nascimento etc.) dependem de o backend expor edição pós-cadastro.
+            includeComplete: c.hasCompleteData() && collaborator.registration !== 'complete',
           })
           setConfirmingEdit(false)
         }}
