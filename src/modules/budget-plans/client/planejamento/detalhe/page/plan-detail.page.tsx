@@ -404,11 +404,17 @@ export function PlanDetailPage(): ReactNode {
         state={insights.state}
         labels={{
           title: t('budget-plans.insights.title'),
+          subtitle: t('budget-plans.insights.subtitle'),
           close: t('budget-plans.insights.close'),
           currentTotal: t('budget-plans.insights.currentTotal'),
           loading: t('budget-plans.insights.loading'),
           error: t('budget-plans.insights.error'),
           empty: t('budget-plans.insights.empty'),
+          history: t('budget-plans.insights.history'),
+          planned: t('budget-plans.insights.planned'),
+          realized: t('budget-plans.insights.realized'),
+          networksAvg: t('budget-plans.insights.networksAvg'),
+          realizedSource: t('budget-plans.insights.realizedSource'),
         }}
         onClose={insights.close}
       />

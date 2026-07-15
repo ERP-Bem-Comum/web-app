@@ -199,6 +199,8 @@ export const createBudgetPlansCoreClient = (
         updatedByRef: it.updatedByRef, // #373
         partnersCount: it.partnersCount, // #372
         networkKind: it.networkKind, // #372 (state|municipality|mixed|null)
+        parentId: it.parentId ?? null, // #423 — `?? null` normaliza o ausente (core atrás da dev)
+        scenarioName: it.scenarioName ?? null, // #423
       })),
       total: parsed.data.total,
     })
@@ -388,9 +390,19 @@ export const createBudgetPlansCoreClient = (
     if (isErr(r)) return err(mapDetailHttpError(r.error))
     const parsed = coreInsightsSchema.safeParse(r.value)
     if (!parsed.success) return err('unexpected')
+    // `?? null` normaliza o `undefined` do campo ausente (core-api atrás da dev) para o `null` do domínio.
     return ok({
-      current: { year: parsed.data.current.year, totalInCents: parsed.data.current.totalInCents },
-      previousYears: parsed.data.previousYears.map((y) => ({ year: y.year, totalInCents: y.totalInCents })),
+      current: {
+        year: parsed.data.current.year,
+        totalInCents: parsed.data.current.totalInCents,
+        realizedInCents: parsed.data.current.realizedInCents ?? null,
+      },
+      previousYears: parsed.data.previousYears.map((y) => ({
+        year: y.year,
+        totalInCents: y.totalInCents,
+        realizedInCents: y.realizedInCents ?? null,
+      })),
+      networksCount: parsed.data.networksCount ?? null,
     })
   },
   // ── Escrita da estrutura de custo (feature 061). Cada POST devolve a ÁRVORE INTEIRA atualizada

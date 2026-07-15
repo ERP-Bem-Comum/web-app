@@ -26,6 +26,8 @@ const rawItem = (over: Partial<RawPlanItem>): RawPlanItem => ({
   updatedByRef: null,
   partnersCount: 0,
   networkKind: null,
+  parentId: null, // #423 — default: plano-raiz
+  scenarioName: null,
   ...over,
 })
 
@@ -90,5 +92,82 @@ describe('createListBudgetPlans — #373 autor resolvido em 1 chamada deduplicad
     const client = clientOf([rawItem({ id: 'a', updatedByRef: null })])
     await createListBudgetPlans({ client, resolveUserNames: resolve })(params, 'tok')
     assert.equal(called, false)
+  })
+})
+
+// ── #423: aninhar cenários sob o plano-pai ───────────────────────────────────
+describe('createListBudgetPlans — #423 árvore de cenários', () => {
+  it('cenário com parentId vira FILHO do pai, e some do topo', async () => {
+    const client = clientOf([
+      rawItem({ id: 'pai', version: '1.0' }),
+      rawItem({ id: 'cen', version: '1.1', parentId: 'pai', scenarioName: 'Inicial' }),
+    ])
+    const res = await createListBudgetPlans({ client, resolveUserNames: noNames })(params, 'tok')
+    assert.ok(isOk(res))
+
+    assert.deepEqual(
+      res.value.items.map((i) => i.id),
+      ['pai'],
+    )
+    assert.deepEqual(
+      res.value.items[0]?.children.map((c) => c.id),
+      ['cen'],
+    )
+    assert.equal(res.value.items[0]?.children[0]?.scenarioName, 'Inicial')
+  })
+
+  it('o FILHO mantém a riqueza da linha (valor, rede, autor) — é o motivo de não usar /:id/children', async () => {
+    const client = clientOf([
+      rawItem({ id: 'pai' }),
+      rawItem({
+        id: 'cen',
+        parentId: 'pai',
+        totalInCents: 3_243_872,
+        partnersCount: 1,
+        networkKind: 'state',
+      }),
+    ])
+    const res = await createListBudgetPlans({ client, resolveUserNames: noNames })(params, 'tok')
+    assert.ok(isOk(res))
+
+    const child = res.value.items[0]?.children[0]
+    assert.equal(child?.totalInCents, 3_243_872)
+    assert.equal(child?.partnersCount, 1) // "1 estados" do HANDBOOK §1.1
+    assert.equal(child?.networkKind, 'ESTADO')
+  })
+
+  it('ordena os filhos por VERSÃO ascendente, não pela ordem do core', async () => {
+    const client = clientOf([
+      rawItem({ id: 'pai', version: '1.0' }),
+      rawItem({ id: 'c2', version: '1.2', parentId: 'pai' }),
+      rawItem({ id: 'c1', version: '1.1', parentId: 'pai' }),
+    ])
+    const res = await createListBudgetPlans({ client, resolveUserNames: noNames })(params, 'tok')
+    assert.ok(isOk(res))
+    assert.deepEqual(
+      res.value.items[0]?.children.map((c) => c.id),
+      ['c1', 'c2'],
+    )
+  })
+
+  it('ÓRFÃO (pai fora do resultado) sobe como raiz — nunca some da tela', async () => {
+    const client = clientOf([rawItem({ id: 'orfao', parentId: 'pai-filtrado-fora' })])
+    const res = await createListBudgetPlans({ client, resolveUserNames: noNames })(params, 'tok')
+    assert.ok(isOk(res))
+    assert.deepEqual(
+      res.value.items.map((i) => i.id),
+      ['orfao'],
+    )
+  })
+
+  it('core-api SEM o #423 (parentId sempre null) → lista flat, como antes', async () => {
+    const client = clientOf([rawItem({ id: 'a' }), rawItem({ id: 'b' })])
+    const res = await createListBudgetPlans({ client, resolveUserNames: noNames })(params, 'tok')
+    assert.ok(isOk(res))
+    assert.deepEqual(
+      res.value.items.map((i) => i.id),
+      ['a', 'b'],
+    )
+    assert.ok(res.value.items.every((i) => i.children.length === 0))
   })
 })

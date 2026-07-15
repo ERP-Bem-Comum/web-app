@@ -12,10 +12,14 @@ import {
   dialog,
   headerRow,
   title,
+  subtitle,
   closeButton,
   currentBlock,
   currentLabel,
   currentValue,
+  metricsRow,
+  metric,
+  sourceNote,
   list,
   row,
   rowYear,
@@ -27,11 +31,17 @@ import {
 
 export type PlanInsightsModalLabels = Readonly<{
   title: string
+  subtitle: string
   close: string
   currentTotal: string
   loading: string
   error: string
   empty: string
+  history: string
+  planned: string
+  realized: string
+  networksAvg: string
+  realizedSource: string
 }>
 
 export type PlanInsightsModalProps = Readonly<{
@@ -59,11 +69,36 @@ export function PlanInsightsModal(props: PlanInsightsModalProps): ReactNode {
 
         {state.status === 'ready' && (
           <>
+            <p className={subtitle}>{labels.subtitle}</p>
+
+            {/* Histórico (§1.6): média do Planejado nos últimos 5 anos anteriores. */}
+            <div className={currentBlock}>
+              <span className={currentLabel}>{labels.history}</span>
+              <span className={currentValue}>{state.view.historyAvgLabel}</span>
+            </div>
+
+            {/* Card do ano (§1.6): Planejado · Realizado · Média por rede (#416). */}
             <div className={currentBlock}>
               <span className={currentLabel}>
                 {labels.currentTotal} {state.view.currentYear}
               </span>
-              <span className={currentValue}>{state.view.currentTotalLabel}</span>
+              <div className={metricsRow}>
+                <div className={metric}>
+                  <span className={currentLabel}>{labels.planned}</span>
+                  <span className={currentValue}>{state.view.currentTotalLabel}</span>
+                </div>
+                <div className={metric}>
+                  <span className={currentLabel}>{labels.realized}</span>
+                  <span className={currentValue}>{state.view.realizedLabel}</span>
+                </div>
+                <div className={metric}>
+                  <span className={currentLabel}>
+                    {labels.networksAvg} {state.view.networksCountLabel}
+                  </span>
+                  <span className={currentValue}>{state.view.networksAvgLabel}</span>
+                </div>
+              </div>
+              <p className={sourceNote}>{labels.realizedSource}</p>
             </div>
 
             {state.view.rows.length === 0 ? (

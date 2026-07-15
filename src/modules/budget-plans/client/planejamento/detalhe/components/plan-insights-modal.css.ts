@@ -74,6 +74,39 @@ export const currentValue = style({
   color: vars.color.text.primary,
 })
 
+/** Subtítulo do §1.6 ("Use esses insights para planejar…") — texto de apoio, tom secundário. */
+export const subtitle = style({
+  margin: 0,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+  color: vars.color.text.secondary,
+})
+
+/** Card do ano (§1.6): Planejado · Realizado · Média por rede — 3 métricas lado a lado. */
+export const metricsRow = style({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(3, 1fr)',
+  gap: vars.space.md,
+  padding: vars.space.md,
+  borderRadius: vars.radius.md,
+  background: vars.color.surface.app,
+})
+
+export const metric = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: vars.space.xs,
+  minInlineSize: 0,
+})
+
+/** Nota de origem do "Realizado" (§1.6) — a P.O. definiu a fonte; a tela não deve deixar dúvida. */
+export const sourceNote = style({
+  margin: 0,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  color: vars.color.text.muted,
+})
+
 export const list = style({
   display: 'flex',
   flexDirection: 'column',

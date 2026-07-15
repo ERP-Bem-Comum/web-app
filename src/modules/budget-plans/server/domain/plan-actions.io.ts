@@ -27,12 +27,16 @@ export type CreatedScenery = Readonly<{
 export type InsightsYear = Readonly<{
   year: number
   totalInCents: number
+  /** #416: Σ dos lançamentos CONCILIADOS do ano (fonte definida pela P.O.). `null` = core-api não expõe. */
+  realizedInCents: number | null
 }>
 
 /** Comparativo de Insights: ano atual do plano × anos anteriores (ordem entregue pelo core). */
 export type BudgetPlanInsights = Readonly<{
   current: InsightsYear
   previousYears: readonly InsightsYear[]
+  /** #416: nº de Redes do plano — o FRONT deriva a média por rede. `null` = core-api não expõe. */
+  networksCount: number | null
 }>
 
 /** Artefato CSV do export (`GET /:id/generate-csv`). O BFF busca os bytes; o client dispara o download. */

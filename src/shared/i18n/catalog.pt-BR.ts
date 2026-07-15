@@ -2056,13 +2056,22 @@ export const ptBR: Catalog = {
   'budget-plans.detail.moreActions': 'Mais ações',
   'budget-plans.detail.edit': 'Editar',
 
-  // ── Modal de Insights (feature 060) — comparativo do ano atual × anteriores ──
-  'budget-plans.insights.title': 'Insights do Plano',
+  // ── Modal de Insights (feature 060 + core-api#416) — HANDBOOK §1.6: Histórico + card do ano ──
+  'budget-plans.insights.title': 'Plano Insight',
+  'budget-plans.insights.subtitle': 'Use esses insights para planejar seu plano orçamentário.',
   'budget-plans.insights.close': 'Fechar',
   'budget-plans.insights.currentTotal': 'Total do plano em',
   'budget-plans.insights.loading': 'Carregando os insights…',
   'budget-plans.insights.error': 'Não foi possível carregar os insights. Tente novamente.',
   'budget-plans.insights.empty': 'Sem anos anteriores para comparar.',
+  // Histórico (§1.6): média do Planejado nos últimos 5 anos anteriores.
+  'budget-plans.insights.history': 'Média de orçamento nos últimos 5 anos',
+  // Card do ano (§1.6): Planejado · Realizado · Média por rede.
+  'budget-plans.insights.planned': 'Planejado',
+  'budget-plans.insights.realized': 'Realizado',
+  'budget-plans.insights.networksAvg': 'Média de',
+  // Rodapé do card: origem do "Realizado" (definida pela P.O., §1.6) — a tela não deve deixar dúvida.
+  'budget-plans.insights.realizedSource': 'Realizado = soma dos lançamentos conciliados.',
 
   // ── Modal "Adicionar Orçamento" (§1.6) ──
   'budget-plans.addBudget.title': 'Adicionar Orçamento',
