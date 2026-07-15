@@ -25,7 +25,6 @@ import {
 import {
   emptyAddBudgetForm,
   validateAddBudget,
-  parseAddBudgetCents,
   type AddBudgetForm,
   type AddBudgetError,
 } from '#modules/budget-plans/client/planejamento/detalhe/add-budget.view-model.ts'
@@ -206,16 +205,18 @@ export function usePlanDetail(id: string): PlanDetailBinding {
         return
       }
       const rede = redeOptions.find((n) => n.ref === addForm.estado)
-      const cents = parseAddBudgetCents(addForm.valor)
-      if (rede === undefined || cents === null) {
-        setAddError('valor-required')
+      if (rede === undefined) {
+        setAddError('estado-required')
         return
       }
       addBudgetMutation.mutate({
         planId: id,
         partnerKind: rede.kind,
         partnerRef: rede.ref,
-        valueInCents: cents,
+        // #458: o total da Rede é DERIVADO dos lançamentos — não há valor informado (o legado cria o
+        // orçamento com `default: 0` e deriva o total somando). O `addBudgetBodySchema` ainda EXIGE o campo,
+        // então mandamos o mesmo 0 do legado; quando o core-api removê-lo do contrato, isto sai junto.
+        valueInCents: 0,
       })
     },
   }
