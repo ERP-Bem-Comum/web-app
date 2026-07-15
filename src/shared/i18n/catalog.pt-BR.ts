@@ -1999,6 +1999,10 @@ export const ptBR: Catalog = {
   'budget-plans.action.noEndpoint': 'Indisponível no momento (depende do backend).',
   // Ações desabilitadas por STATUS do plano (fix 062) — tooltip específico do motivo.
   'budget-plans.action.disabled.sceneryNeedsDraft': 'Cenários só em planos não aprovados',
+  // Os 2 motivos abaixo espelham as outras recusas do domínio (core-api budget-plan.ts:145-148). Sem eles o
+  // menu oferecia a ação e a P.O. levava um erro genérico e ERRADO no lugar do motivo real.
+  'budget-plans.action.disabled.sceneryFromScenery': 'Um cenário não pode ter cenários',
+  'budget-plans.action.disabled.sceneryLimit': 'Este plano já tem o máximo de 2 cenários',
   'budget-plans.action.disabled.calibrationNeedsApproved': 'Calibração só em planos aprovados',
   'budget-plans.action.exportCsv.success': 'CSV exportado com sucesso!',
   // Feedback de erro das ações (§V) — a tag chega mapeada por contexto do endpoint pelo BFF.
@@ -2006,7 +2010,13 @@ export const ptBR: Catalog = {
   'budget-plans.action.error.notFound': 'Plano orçamentário não encontrado.',
   'budget-plans.action.error.alreadyApproved': 'Este plano já está aprovado.',
   'budget-plans.action.error.notApproved': 'Só planos aprovados podem iniciar calibração.',
-  'budget-plans.action.error.sceneryNeedsDraft': 'Cenários só podem ser criados em planos não aprovados.',
+  // O core-api esconde o slug (OWASP), então o 409 do `scenery` chega SEM motivo — e ele tem 3 causas
+  // possíveis (aprovado · é cenário · teto de 2). Antes esta mensagem CHUTAVA "não aprovados" e mentia: a
+  // P.O. bateu no teto e leu "não aprovado". O menu já previne os 3 casos na lista; esta mensagem é a rede de
+  // segurança (ex.: detalhe, onde o GET não expõe `scenarioName`, ou lista desatualizada) — então ela ENUMERA
+  // as regras em vez de adivinhar qual delas caiu.
+  'budget-plans.action.error.sceneryNeedsDraft':
+    'Não foi possível criar o cenário. Ele só pode ser criado em um plano não aprovado, que não seja um cenário e que tenha menos de 2 cenários.',
   'budget-plans.action.error.invalidTransition':
     'Não é possível executar esta ação no estado atual do plano.',
   'budget-plans.action.error.invalidInput':
@@ -2056,13 +2066,23 @@ export const ptBR: Catalog = {
   'budget-plans.detail.moreActions': 'Mais ações',
   'budget-plans.detail.edit': 'Editar',
 
-  // ── Modal de Insights (feature 060) — comparativo do ano atual × anteriores ──
-  'budget-plans.insights.title': 'Insights do Plano',
+  // ── Modal de Insights (feature 060 + core-api#416) — HANDBOOK §1.6: Histórico + card do ano ──
+  'budget-plans.insights.title': 'Plano Insight',
+  'budget-plans.insights.subtitle': 'Use esses insights para planejar seu plano orçamentário.',
   'budget-plans.insights.close': 'Fechar',
   'budget-plans.insights.currentTotal': 'Total do plano em',
   'budget-plans.insights.loading': 'Carregando os insights…',
   'budget-plans.insights.error': 'Não foi possível carregar os insights. Tente novamente.',
   'budget-plans.insights.empty': 'Sem anos anteriores para comparar.',
+  // Histórico (§1.6): média do Planejado nos últimos 5 anos anteriores.
+  'budget-plans.insights.history': 'Média de orçamento nos últimos 5 anos',
+  'budget-plans.insights.historyChart': 'Evolução do orçamento planejado por ano',
+  // Card do ano (§1.6): Planejado · Realizado · Média por rede.
+  'budget-plans.insights.planned': 'Planejado',
+  'budget-plans.insights.realized': 'Realizado',
+  'budget-plans.insights.networksAvg': 'Média de',
+  // Rodapé do card: origem do "Realizado" (definida pela P.O., §1.6) — a tela não deve deixar dúvida.
+  'budget-plans.insights.realizedSource': 'Realizado = soma dos lançamentos conciliados.',
 
   // ── Modal "Adicionar Orçamento" (§1.6) ──
   'budget-plans.addBudget.title': 'Adicionar Orçamento',

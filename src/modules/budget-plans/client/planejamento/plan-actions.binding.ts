@@ -22,9 +22,9 @@ import { planDetailQueryKey } from '#modules/budget-plans/client/planejamento/de
 export type RunnableAction = 'approve' | 'start-calibration' | 'create-scenery' | 'export-csv'
 
 export type ActionOutcome =
-  // `sceneryId` só no sucesso de `create-scenery` — o pai navega até o cenário criado (ele é plano-filho,
-  // não aparece na lista de raízes; navegar é o único feedback visível até haver GET de cenários — core-api).
-  | Readonly<{ action: RunnableAction; ok: true; sceneryId?: string }>
+  // `id` = plano em que a ação rodou. No `create-scenery` é o PAI: a lista usa para abrir o chevron dele e
+  // revelar o cenário recém-criado (#423). `sceneryId` = o filho criado (hoje só informativo).
+  | Readonly<{ action: RunnableAction; ok: true; id: string; sceneryId?: string }>
   | Readonly<{ action: RunnableAction; ok: false; errorTag: string }>
 
 type ActionVars =
@@ -108,7 +108,12 @@ export function usePlanActions(onOutcome: (outcome: ActionOutcome) => void): Pla
         void queryClient.invalidateQueries({ queryKey: planejamentoListQueryKey })
         void queryClient.invalidateQueries({ queryKey: planDetailQueryKey(settled.vars.id) })
       }
-      onOutcome({ action: settled.vars.action, ok: true, sceneryId: settled.sceneryId })
+      onOutcome({
+        action: settled.vars.action,
+        ok: true,
+        id: settled.vars.id,
+        sceneryId: settled.sceneryId,
+      })
     },
     onError: (_e, vars) => {
       onOutcome({ action: vars.action, ok: false, errorTag: 'budget-plans.action.error.unexpected' })

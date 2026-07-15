@@ -58,7 +58,7 @@ describe('usePlanActions', () => {
     })
 
     await waitFor(() => {
-      expect(onOutcome).toHaveBeenCalledWith({ action: 'approve', ok: true })
+      expect(onOutcome).toHaveBeenCalledWith({ action: 'approve', ok: true, id: ID, sceneryId: undefined })
     })
     expect(vi.mocked(budgetPlansRepository.approvePlan).mock.calls[0]?.[0]).toBe(ID)
     expect(invalidate).toHaveBeenCalledWith({ queryKey: planejamentoListQueryKey })
@@ -77,8 +77,8 @@ describe('usePlanActions', () => {
     })
 
     await waitFor(() => {
-      // sceneryId volta no outcome → o pai navega pro detalhe do cenário criado (plano-filho, invisível na lista).
-      expect(onOutcome).toHaveBeenCalledWith({ action: 'create-scenery', ok: true, sceneryId: 's1' })
+      // `id` = o PAI: a lista abre o chevron dele para revelar o cenário criado (#423). `sceneryId` = o filho.
+      expect(onOutcome).toHaveBeenCalledWith({ action: 'create-scenery', ok: true, id: ID, sceneryId: 's1' })
     })
     expect(vi.mocked(budgetPlansRepository.createScenery).mock.calls[0]?.slice(0, 2)).toEqual([
       ID,
@@ -102,7 +102,7 @@ describe('usePlanActions', () => {
     })
 
     await waitFor(() => {
-      expect(onOutcome).toHaveBeenCalledWith({ action: 'export-csv', ok: true })
+      expect(onOutcome).toHaveBeenCalledWith({ action: 'export-csv', ok: true, id: ID, sceneryId: undefined })
     })
     expect(clickSpy).toHaveBeenCalledTimes(1)
     expect(createUrl).toHaveBeenCalledTimes(1)

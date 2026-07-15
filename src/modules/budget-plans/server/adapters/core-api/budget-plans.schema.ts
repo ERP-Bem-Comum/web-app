@@ -25,6 +25,11 @@ export const coreListItemSchema = z.object({
   updatedByRef: z.uuid().nullable(),
   partnersCount: z.int().nonnegative(),
   networkKind: z.enum(['state', 'municipality', 'mixed']).nullable(),
+  // #423: `parentId` (null = plano-raiz; uuid = cenário/calibração) + `scenarioName`. NULLISH + `.catch(null)`
+  // DE PROPÓSITO: se o core-api de produção estiver atrás da `dev`, campo obrigatório faria o `safeParse`
+  // falhar e derrubaria a LISTA INTEIRA. Ausente → tudo vira raiz (o comportamento flat de antes).
+  parentId: z.uuid().nullish().catch(null),
+  scenarioName: z.string().trim().nullish().catch(null),
 })
 
 export const coreListResponseSchema = z.object({
@@ -112,12 +117,22 @@ export const coreScenerySchema = z.object({
 
 /**
  * `GET /budget-plans/:id/insights` (feature 060) — comparativo do ano atual × anteriores. Campos extras do
- * core são tolerados (só year + totalInCents são consumidos). `previousYears` pode vir vazio.
+ * core são tolerados. `previousYears` pode vir vazio.
+ *
+ * #416 (core-api): `realizedInCents` (Σ conciliado do ano) e `networksCount` (nº de Redes do plano) são
+ * NULLISH + `.catch(null)` DE PROPÓSITO: o core-api de produção pode estar atrás da `dev`, e um campo
+ * obrigatório faria o `safeParse` falhar → o modal INTEIRO viraria erro por um número a mais. Ausente
+ * vira `null` e a UI mostra "—" (honesto) em vez de `R$ 0,00` (mentira: "nada foi realizado").
  */
-const coreInsightsYearSchema = z.object({ year: z.int(), totalInCents: z.int() })
+const coreInsightsYearSchema = z.object({
+  year: z.int(),
+  totalInCents: z.int(),
+  realizedInCents: z.int().nullish().catch(null),
+})
 export const coreInsightsSchema = z.object({
   current: coreInsightsYearSchema,
   previousYears: z.array(coreInsightsYearSchema),
+  networksCount: z.int().nonnegative().nullish().catch(null),
 })
 
 /** `GET /budget-plans/:id` — detalhe c/ `budgets[]` (fonte INTERINA de partnersCount/networkKind, core-api#372). */

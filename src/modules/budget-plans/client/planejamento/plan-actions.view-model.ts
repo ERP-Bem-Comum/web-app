@@ -28,10 +28,40 @@ const ACTIONS_WITHOUT_ENDPOINT: ReadonlySet<PlanAction> = new Set<PlanAction>([
  *     plano APROVADO — espelha a regra de domínio do backend (409 `scenery-needs-draft`/`not-approved`).
  * Sem `status`, só o eixo (1) é avaliado (compat. com chamadas legadas / quando o status não é conhecido).
  */
-export const isActionEnabled = (action: PlanAction, status?: BudgetPlanStatus): boolean => {
+/**
+ * Teto de cenários por plano — ESPELHA `MAX_SCENERIES` do domínio do core-api
+ * (`budget-plans/domain/budget-plan/budget-plan.ts`). Duplicar regra de domínio no front é um mal necessário
+ * aqui: sem isto o menu OFERECE a ação, o backend devolve 409 e a P.O. leva uma mensagem de erro no lugar de
+ * um item desabilitado com o motivo. Se o backend mudar o teto, isto precisa acompanhar.
+ */
+export const MAX_SCENERIES = 2
+
+/**
+ * Contexto da LINHA que o gate de `create-scenery` precisa além do status. O backend recusa em 3 casos
+ * (`budget-plan.ts:145-148`) e o front só conhecia o 1º:
+ *   1. plano APROVADO            → `budget-plan-already-approved`
+ *   2. o próprio nó é um CENÁRIO → `budget-plan-is-scenario`     (cenário não gera cenário)
+ *   3. já tem MAX_SCENERIES      → `budget-plan-scenery-limit`
+ */
+export type SceneryContext = Readonly<{
+  /** O nó é um cenário? (tem `scenarioName`). */
+  isScenario?: boolean
+  /** Quantos cenários já pendem deste plano. */
+  sceneryCount?: number
+}>
+
+export const isActionEnabled = (
+  action: PlanAction,
+  status?: BudgetPlanStatus,
+  ctx?: SceneryContext,
+): boolean => {
   if (ACTIONS_WITHOUT_ENDPOINT.has(action)) return false
   if (status === undefined) return true
-  if (action === 'create-scenery') return status !== 'APROVADO'
+  if (action === 'create-scenery') {
+    if (status === 'APROVADO') return false
+    if (ctx?.isScenario === true) return false
+    return (ctx?.sceneryCount ?? 0) < MAX_SCENERIES
+  }
   if (action === 'start-calibration') return status === 'APROVADO'
   return true
 }
@@ -40,9 +70,20 @@ export const isActionEnabled = (action: PlanAction, status?: BudgetPlanStatus): 
  * Chave i18n do tooltip do item DESABILITADO, por ação × status (§V). As gated-by-status trazem o motivo certo;
  * as demais (sem endpoint) caem no genérico `noEndpoint`. A view traduz — o ViewModel é puro (sem i18n).
  */
-export const actionDisabledTitleKey = (action: PlanAction, status?: BudgetPlanStatus): string => {
+export const actionDisabledTitleKey = (
+  action: PlanAction,
+  status?: BudgetPlanStatus,
+  ctx?: SceneryContext,
+): string => {
   if (action === 'create-scenery' && status === 'APROVADO') {
     return 'budget-plans.action.disabled.sceneryNeedsDraft'
+  }
+  // Ordem importa: o motivo mais específico primeiro, senão o tooltip mente (foi o que aconteceu em tela).
+  if (action === 'create-scenery' && ctx?.isScenario === true) {
+    return 'budget-plans.action.disabled.sceneryFromScenery'
+  }
+  if (action === 'create-scenery' && (ctx?.sceneryCount ?? 0) >= MAX_SCENERIES) {
+    return 'budget-plans.action.disabled.sceneryLimit'
   }
   if (action === 'start-calibration' && status !== undefined && status !== 'APROVADO') {
     return 'budget-plans.action.disabled.calibrationNeedsApproved'
