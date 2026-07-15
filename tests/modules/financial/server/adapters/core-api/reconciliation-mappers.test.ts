@@ -664,21 +664,38 @@ describe('importToModel / reconciliationCreatedToModel / undoToModel', () => {
   })
 })
 
-describe('referências da categorização (020 · #200) — array nu', () => {
-  it('categoriesToModel: parseia array, normaliza group (fallback despesa), parentId nullable', () => {
+describe('referências da categorização (020 · #200/#341) — array nu', () => {
+  it('categoriesToModel: parseia array, normaliza group (fallback despesa), parentId/costCenterId nullable', () => {
     const r = categoriesToModel([
-      { id: 'c1', name: 'Serviços', group: 'despesa', parentId: null },
-      { id: 'c2', name: 'ISS', group: 'ajuste', parentId: 'c1' },
-      { id: 'c3', name: 'Estranho', group: 'xyz' }, // group desconhecido → despesa; parentId ausente → null
+      { id: 'c1', name: 'Serviços', group: 'despesa', parentId: null, costCenterId: 'cc1' },
+      { id: 'c2', name: 'ISS', group: 'ajuste', parentId: 'c1', costCenterId: null },
+      // group desconhecido → despesa; parentId/costCenterId ausentes → null (o seed real é assim hoje)
+      { id: 'c3', name: 'Estranho', group: 'xyz' },
     ])
     assert.ok(isOk(r))
     if (isOk(r)) {
       assert.equal(r.value.length, 3)
-      assert.deepEqual(r.value[0], { id: 'c1', name: 'Serviços', group: 'despesa', parentId: null })
+      assert.deepEqual(r.value[0], {
+        id: 'c1',
+        name: 'Serviços',
+        group: 'despesa',
+        parentId: null,
+        costCenterId: 'cc1',
+      })
       assert.equal(r.value[1]?.group, 'ajuste')
+      assert.equal(r.value[1]?.costCenterId, null)
       assert.equal(r.value[2]?.group, 'despesa')
       assert.equal(r.value[2]?.parentId, null)
+      assert.equal(r.value[2]?.costCenterId, null)
     }
+  })
+
+  // #341: o campo é novo no core-api. Se ele vier com lixo (ou sumir num rollback), a categoria degrada
+  // p/ "sem centro" (= global) em vez de derrubar a lista INTEIRA de referências.
+  it('categoriesToModel: costCenterId inválido → null (tolerante a drift), não err', () => {
+    const r = categoriesToModel([{ id: 'c1', name: 'X', group: 'despesa', parentId: null, costCenterId: 42 }])
+    assert.ok(isOk(r))
+    if (isOk(r)) assert.equal(r.value[0]?.costCenterId, null)
   })
 
   it('costCentersToModel: parseia array {id,code,name}', () => {

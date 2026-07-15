@@ -281,11 +281,15 @@ export const CoreApiRejectSchema = z.object({
 
 // Referências da categorização (020 · #200/#147) — respostas são ARRAY NU (não {items}).
 // `group` tolerante (string) p/ drift; o mapper normaliza. `parentId` nullable (subcategoria).
+// `costCenterId` (#341) = nível Centro de Custo → Categoria; null = categoria GLOBAL (sem centro).
+// Ambos `.catch(null)`: campo ausente/inválido degrada p/ "sem pai"/"sem centro" em vez de derrubar a
+// lista inteira de referências (o core-api só entregou a CAPACIDADE; o dado do legado é follow-up).
 export const CoreApiCategorySchema = z.object({
   id: z.string().trim(),
   name: z.string().trim(),
   group: z.string().trim(),
   parentId: z.string().trim().nullable().catch(null),
+  costCenterId: z.string().trim().nullable().catch(null),
 })
 export const CoreApiCategoriesSchema = z.array(CoreApiCategorySchema)
 export const CoreApiCostCenterSchema = z.object({

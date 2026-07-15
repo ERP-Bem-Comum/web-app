@@ -22,7 +22,11 @@ import { useDocumentEditing } from '../edit-document.binding.ts'
 import { usePartnersOptions } from '../partners-options.binding.ts'
 import { usePartnerHydration } from '../partner-hydration.binding.ts'
 import { useProgramOptions } from '../program-options.binding.ts'
-import { useCategoryOptions, useCostCenterOptions } from '../category-options.binding.ts'
+import {
+  useCategoryOptions,
+  useCostCenterOptions,
+  useSubcategoryOptions,
+} from '../category-options.binding.ts'
 import { usePlanoOrcamentarioOptions } from '../plano-options.binding.ts'
 import { useApproverOptions } from '../approver-options.binding.ts'
 import { useAccountOptions } from '../account-options.binding.ts'
@@ -114,7 +118,10 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
   // Programa (Categorização) — opções reais + valor efetivo: o escolhido pelo usuário tem prioridade;
   // senão herda o programa do contrato selecionado (quando houver).
   const programOptions = useProgramOptions()
-  const categoryOptions = useCategoryOptions()
+  // Cascata Centro → Categoria → Subcategoria (#341): cada nível filtra pelo escolhido no de cima. Os 3
+  // hooks compartilham o MESMO fetch cacheado de referências (`referenceOptionsQuery`).
+  const categoryOptions = useCategoryOptions(controller.fields.costCenterRef)
+  const subcategoryOptions = useSubcategoryOptions(controller.fields.categoryRef)
   const costCenterOptions = useCostCenterOptions()
   const planoOptions = usePlanoOrcamentarioOptions()
   const approverOptions = useApproverOptions()
@@ -259,6 +266,8 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
             onProgram={controller.setProgramRef}
             categoryValue={controller.fields.categoryRef}
             onCategory={controller.setCategoryRef}
+            subcategoryValue={controller.fields.subcategoryRef}
+            onSubcategory={controller.setSubcategoryRef}
             costCenterValue={controller.fields.costCenterRef}
             onCostCenter={controller.setCostCenterRef}
             approverValue={controller.fields.approverRef}
@@ -269,7 +278,7 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
             contaDebitoOptions={accountOptions}
             centroCustoOptions={costCenterOptions}
             categoriaOptions={categoryOptions}
-            subcategoriaOptions={[]}
+            subcategoriaOptions={subcategoryOptions}
             planoOptions={planoOptions}
             contract={selectedContract}
             contracts={hydration.contracts}

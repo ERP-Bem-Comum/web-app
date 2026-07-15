@@ -208,7 +208,6 @@ export type DocumentFormProps = Readonly<{
       | 'paymentComplement'
       | 'centroCusto'
       | 'categoria'
-      | 'subcategoria'
       | 'planoOrcamentario',
     value: string,
   ) => void
@@ -218,9 +217,13 @@ export type DocumentFormProps = Readonly<{
   programOptions: readonly Readonly<{ id: string; name: string; sigla: string }>[]
   programValue: string
   onProgram: (value: string) => void
-  // Categoria (Categorização) — dropdown editável REAL (taxonomia #200). Envia `categoryRef` no create.
+  // Categoria (Categorização) — dropdown editável REAL (taxonomia #200), filtrado pelo Centro (#341).
   categoryValue: string
   onCategory: (value: string) => void
+  // Subcategoria (Categorização) — dropdown REAL (#147/#341), filtrado pela Categoria. É a FOLHA da
+  // cascata: quando preenchida, é ELA que o create/ajuste envia em `categoryRef`.
+  subcategoryValue: string
+  onSubcategory: (value: string) => void
   // Centro de custo (Categorização) — dropdown editável REAL (#147). Envia `costCenterRef` no create.
   costCenterValue: string
   onCostCenter: (value: string) => void
@@ -233,8 +236,8 @@ export type DocumentFormProps = Readonly<{
   contaDebitoValue: string
   onContaDebito: (value: string) => void
   contaDebitoOptions: readonly Readonly<{ value: string; label: string }>[]
-  // Opções dos dropdowns da Categorização (Centro de Custo/Categoria/Subcategoria/Plano). Vazias até o
-  // backend expor as listas (core-api#147); o select já fica pronto.
+  // Opções dos dropdowns da Categorização. Centro/Categoria/Subcategoria são REAIS e CASCATEIAM
+  // (#147/#341 — a page já entrega cada nível filtrado pelo de cima). Plano segue vazio (core-api#113).
   centroCustoOptions: readonly Readonly<{ value: string; label: string }>[]
   categoriaOptions: readonly Readonly<{ value: string; label: string }>[]
   subcategoriaOptions: readonly Readonly<{ value: string; label: string }>[]
@@ -743,8 +746,9 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
         </div>
         {/* Categorização EDITÁVEL: herda do contrato selecionado (quando houver), mas o usuário pode
             sobrescrever. Em edição/consulta fica somente-leitura. Persistência REAL: Programa (programRef),
-            Categoria (categoryRef) e Centro de custo (costCenterRef) — taxonomia #200/#147. Subcategoria e
-            Plano Orçamentário (budget-plans, core-api#113) seguem chrome. */}
+            Centro de custo (costCenterRef) e a CASCATA de 3 níveis Centro → Categoria → Subcategoria
+            (#200/#147/#341) — o create/ajuste envia a FOLHA (subcategoria ?? categoria) em `categoryRef`.
+            Só o Plano Orçamentário segue chrome (budget-plans, core-api#113). */}
         <div className={fieldGrid.three}>
           <CategoSelect
             label={t('financial.create.field.centroCusto')}
@@ -763,11 +767,9 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
           <CategoSelect
             label={t('financial.create.field.subcategoria')}
             disabled={catDisabled}
-            value={fields.subcategoria}
+            value={props.subcategoryValue}
             options={props.subcategoriaOptions}
-            onChange={(v) => {
-              props.onText('subcategoria', v)
-            }}
+            onChange={props.onSubcategory}
           />
         </div>
         <div className={fieldGrid.two}>

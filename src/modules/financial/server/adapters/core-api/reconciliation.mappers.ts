@@ -523,6 +523,7 @@ export const categoriesToModel = (
       name: c.name,
       group: mapCategoryGroup(c.group),
       parentId: c.parentId,
+      costCenterId: c.costCenterId,
     })),
   )
 }
