@@ -136,11 +136,26 @@ export const createListBudgetPlans =
       else siblings.push(node)
     }
 
+    // RECURSIVO, não um nível só: o HANDBOOK §1.1 diz "uma versão (ex.: 2.0) pode ter seu PRÓPRIO chevron
+    // (sub-versões aninhadas)" — e o dado real tem 3 níveis (plano 1.0 → calibração 2.0 → cenários 2.1/2.2).
+    // Pendurar só nas raízes faria os NETOS sumirem da tela.
     // Filhos por VERSÃO ascendente (1.1, 1.2, …) — mesma ordem do `GET /:id/children` do core (#401).
-    const items: readonly PlanejamentoListItem[] = roots.map((root) => ({
-      ...root,
-      children: (childrenByParent.get(root.id) ?? []).sort((a, b) => a.version - b.version),
-    }))
+    const attached = new Set<string>()
+    const attach = (node: PlanejamentoListItem): PlanejamentoListItem => {
+      attached.add(node.id)
+      const kids = (childrenByParent.get(node.id) ?? []).filter((k) => !attached.has(k.id))
+      return { ...node, children: [...kids].sort((a, b) => a.version - b.version).map(attach) }
+    }
+    const tree = roots.map(attach)
+
+    // Defensivo: nó cujo pai EXISTE mas que nenhuma raiz alcança (cadeia de parentId em ciclo — dado
+    // corrompido) não pode sumir em silêncio. Sobe solto, como o órfão.
+    const stranded = [...childrenByParent.values()]
+      .flat()
+      .filter((n) => !attached.has(n.id))
+      .map((n) => ({ ...n, children: [] }))
+
+    const items: readonly PlanejamentoListItem[] = [...tree, ...stranded]
 
     // `total` do core conta TODAS as linhas (raízes + cenários); a UI pagina as RAÍZES pelo tamanho do array
     // (`paginatePlans`), então o número da paginação sai coerente sem depender deste campo.

@@ -170,4 +170,38 @@ describe('createListBudgetPlans — #423 árvore de cenários', () => {
     )
     assert.ok(res.value.items.every((i) => i.children.length === 0))
   })
+  it('NETO aninha sob o filho — árvore de 3 níveis (HANDBOOK §1.1: "2.0 pode ter seu próprio chevron")', async () => {
+    // Ciclo de vida real: plano 1.0 aprovado → calibração 2.0 → cenários 2.1/2.2 pendurados NA CALIBRAÇÃO.
+    const client = clientOf([
+      rawItem({ id: 'plano', version: '1.0' }),
+      rawItem({ id: 'calib', version: '2.0', parentId: 'plano' }),
+      rawItem({ id: 'cen1', version: '2.1', parentId: 'calib', scenarioName: 'Teste' }),
+      rawItem({ id: 'cen2', version: '2.2', parentId: 'calib' }),
+    ])
+    const res = await createListBudgetPlans({ client, resolveUserNames: noNames })(params, 'tok')
+    assert.ok(isOk(res))
+
+    assert.deepEqual(
+      res.value.items.map((i) => i.id),
+      ['plano'],
+    )
+    const calib = res.value.items[0]?.children[0]
+    assert.equal(calib?.id, 'calib')
+    // O bug que isto trava: pendurar só nas RAÍZES fazia os netos sumirem da tela.
+    assert.deepEqual(
+      calib?.children.map((c) => c.id),
+      ['cen1', 'cen2'],
+    )
+  })
+
+  it('ciclo de parentId (dado corrompido) → os nós sobem soltos, não somem nem travam', async () => {
+    const client = clientOf([
+      rawItem({ id: 'raiz' }),
+      rawItem({ id: 'a', parentId: 'b' }),
+      rawItem({ id: 'b', parentId: 'a' }),
+    ])
+    const res = await createListBudgetPlans({ client, resolveUserNames: noNames })(params, 'tok')
+    assert.ok(isOk(res))
+    assert.deepEqual([...res.value.items.map((i) => i.id)].sort(), ['a', 'b', 'raiz'])
+  })
 })
