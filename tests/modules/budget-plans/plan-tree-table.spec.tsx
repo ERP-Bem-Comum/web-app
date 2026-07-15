@@ -161,3 +161,48 @@ describe('PlanTreeTable', () => {
     expect(onAction).not.toHaveBeenCalledWith('p-ap2', 'create-scenery')
   })
 })
+
+// #423: após criar um cenário, a página manda o id do PAI em `expandId` — o chevron dele abre sozinho,
+// senão o cenário nasce escondido e o usuário lê como "não deu certo" (relato da P.O. em tela).
+describe('PlanTreeTable — expandId (#423)', () => {
+  const pai = toPlanRow(
+    node({
+      id: 'pai',
+      children: [node({ id: 'cen', version: 1.1, scenarioName: 'North', children: [] })],
+    }),
+  )
+
+  it('sem expandId → o filho começa ESCONDIDO (chevron fechado é o padrão)', () => {
+    renderTable([pai])
+    expect(screen.queryByText('North')).toBeNull()
+  })
+
+  it('com expandId = id do pai → o filho aparece sem clique nenhum', () => {
+    renderTable([pai], { expandId: 'pai' })
+    expect(screen.getByText('North')).toBeTruthy()
+  })
+
+  it('expandId de outra linha não abre este pai', () => {
+    renderTable([pai], { expandId: 'outro-plano' })
+    expect(screen.queryByText('North')).toBeNull()
+  })
+
+  it('expandId NÃO fecha o que o usuário abriu na mão', () => {
+    const { rerender } = renderTable([pai], { expandId: 'pai' })
+    expect(screen.getByText('North')).toBeTruthy()
+    // A página zera o expandId (ex.: outro toast) — o chevron deve continuar aberto.
+    rerender(
+      <PlanTreeTable
+        rows={[pai]}
+        labels={labels}
+        emptyLabel="vazio"
+        grandTotalLabel="R$ 0,00"
+        actionLabelFor={actionLabelFor}
+        onOpenPlan={() => undefined}
+        onAction={() => undefined}
+        expandId={null}
+      />,
+    )
+    expect(screen.getByText('North')).toBeTruthy()
+  })
+})
