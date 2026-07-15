@@ -54,3 +54,17 @@ describe('createErrorTag', () => {
     assert.equal(createErrorTag('unexpected'), 'budget-plans.create.unexpected')
   })
 })
+
+// A mensagem que a P.O. VIU em tela ao tentar criar um plano em produção era a genérica ("Tente novamente").
+// Pode ter sido 403 o tempo todo (core-api#374: 42 permissões em vez de 44) — e a tela mandava insistir.
+describe('createErrorTag — 403 não vira "tente novamente"', () => {
+  it('forbidden → tag de permissão', () => {
+    assert.equal(createErrorTag('forbidden'), 'budget-plans.create.forbidden')
+  })
+
+  it('409 continua conflito, e o resto continua genérico', () => {
+    assert.equal(createErrorTag('budget-plan-already-exists'), 'budget-plans.create.conflict')
+    assert.equal(createErrorTag('unexpected'), 'budget-plans.create.unexpected')
+    assert.equal(createErrorTag('unauthorized'), 'budget-plans.create.unexpected')
+  })
+})

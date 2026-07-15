@@ -100,6 +100,9 @@ export const actionErrorTag = (error: BudgetPlansError): string => {
   switch (error) {
     case 'unauthorized':
       return 'budget-plans.action.error.unauthorized'
+    // 403 ≠ erro inesperado: a mensagem NÃO manda "tentar novamente" — permissão não se resolve tentando.
+    case 'forbidden':
+      return 'budget-plans.action.error.forbidden'
     case 'budget-plan-not-found':
       return 'budget-plans.action.error.notFound'
     case 'budget-plan-already-approved':

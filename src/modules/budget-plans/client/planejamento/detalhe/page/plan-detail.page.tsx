@@ -88,6 +88,8 @@ const centroErrorKey = (tag: CentrosCustoErrorTag): string => {
       return 'budget-plans.centrosCusto.error.missing-parent'
     case 'unauthorized':
       return 'budget-plans.centrosCusto.error.unauthorized'
+    case 'forbidden':
+      return 'budget-plans.centrosCusto.error.forbidden'
     case 'invalid-input':
       return 'budget-plans.centrosCusto.error.invalid-input'
     case 'budget-plan-not-found':
