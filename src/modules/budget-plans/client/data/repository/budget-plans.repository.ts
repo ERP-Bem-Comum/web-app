@@ -12,6 +12,7 @@ import type {
 } from '#modules/budget-plans/client/data/model/budget-plan.model.ts'
 import type {
   PlanDetail,
+  BudgetGrid,
   AddCostCenterInput,
   AddCategoryInput,
   AddSubcategoryInput,
@@ -46,6 +47,9 @@ type ListFn = (opts: { data: ListBudgetPlansArgs }) => Promise<BudgetPlansFnResu
 type CreateFn = (opts: { data: CreateBudgetPlanInput }) => Promise<BudgetPlansFnResult<CreatedBudgetPlan>>
 type OptionsFn = () => Promise<BudgetPlansFnResult<{ programs: readonly BudgetPlanProgramOption[] }>>
 type GetDetailFn = (opts: { data: { id: string } }) => Promise<BudgetPlansFnResult<PlanDetail>>
+type GetBudgetGridFn = (opts: {
+  data: { planId: string; networkRef: string }
+}) => Promise<BudgetPlansFnResult<BudgetGrid>>
 type PlanIdFn<T> = (opts: { data: { id: string } }) => Promise<BudgetPlansFnResult<T>>
 type CreateSceneryFn = (opts: {
   data: { id: string; name: string }
@@ -106,6 +110,8 @@ export type BudgetPlansRepository = Readonly<{
   getNetworkOptions: () => Promise<readonly BudgetNetworkOption[]>
   postIpcaResult: (input: IpcaResultArgs) => Promise<Result<void, BudgetPlansError>>
   getConsolidado: (filters: ConsolidadoFilters) => Promise<Result<ConsolidatedAbc, BudgetPlansError>>
+  /** §1.7 — a matriz Categorias × 12 meses de UMA rede, endereçada pela `ref` (UF) que está na URL. */
+  getBudgetGrid: (planId: string, networkRef: string) => Promise<Result<BudgetGrid, BudgetPlansError>>
 }>
 
 export const createBudgetPlansRepository = (
@@ -114,6 +120,7 @@ export const createBudgetPlansRepository = (
     createBudgetPlanFn: CreateFn
     listBudgetPlanOptionsFn: OptionsFn
     getBudgetPlanDetailFn: GetDetailFn
+    getBudgetGridFn: GetBudgetGridFn
     approveBudgetPlanFn: PlanIdFn<LifecyclePlan>
     startCalibrationFn: PlanIdFn<LifecyclePlan>
     createSceneryFn: CreateSceneryFn
@@ -143,6 +150,10 @@ export const createBudgetPlansRepository = (
   },
   getPlanDetail: async (id) => {
     const res = await deps.getBudgetPlanDetailFn({ data: { id } })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  getBudgetGrid: async (planId, networkRef) => {
+    const res = await deps.getBudgetGridFn({ data: { planId, networkRef } })
     return res.ok ? ok(res.data) : err(res.error)
   },
   approvePlan: async (id) => {

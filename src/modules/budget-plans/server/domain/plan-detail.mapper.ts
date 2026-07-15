@@ -164,3 +164,48 @@ export const fillNetworkCells = (
   })
   return { ...detail, costCenters }
 }
+
+/**
+ * #413: preenche `monthlyInCents` (12 posições, Jan..Dez) com os lançamentos de **UMA** rede — é o que a
+ * EDIÇÃO de Orçamento (HANDBOOK §1.7) mostra: a matriz Categorias × 12 meses daquela rede.
+ *
+ * Difere do `fillNetworkCells`, que agrega o ANUAL por rede (colunas = redes). Aqui as colunas são MESES e a
+ * rede é uma só — por isso a Edição tem cadeia própria (§III: uma fn completa por caso de uso).
+ *
+ * `month` vem 1..12 do core-api e vira índice 0..11. Mês fora da faixa é IGNORADO (o schema já valida na
+ * borda; aqui é defesa em profundidade — um índice inválido corromperia a série silenciosamente).
+ * Roll-up: categoria = Σ subs por mês; centro = Σ categorias por mês; `totalInCents` do nó = Σ dos 12.
+ */
+export const fillMonthlyCells = (
+  detail: PlanDetailComposed,
+  rows: readonly BudgetResultRow[],
+): PlanDetailComposed => {
+  // subcategoryRef → série de 12 meses (soma: o mesmo (sub, mês) não deve repetir — o backend tem UNIQUE —,
+  // mas somar é o comportamento correto se repetir, e não perde dado como um `set` perderia.
+  const bySub = new Map<string, number[]>()
+  for (const r of rows) {
+    if (!Number.isInteger(r.month) || r.month < 1 || r.month > 12) continue
+    const serie = bySub.get(r.subcategoryRef) ?? zeros12().slice()
+    serie[r.month - 1] = (serie[r.month - 1] ?? 0) + r.valueInCents
+    bySub.set(r.subcategoryRef, serie)
+  }
+
+  const sumSeries = (series: readonly (readonly number[])[]): number[] =>
+    Array.from({ length: 12 }, (_, m) => series.reduce((acc, s) => acc + (s[m] ?? 0), 0))
+  const total = (serie: readonly number[]): number => serie.reduce((a, b) => a + b, 0)
+
+  const costCenters = detail.costCenters.map((cc) => {
+    const categories = cc.categories.map((cat) => {
+      const subCategories = cat.subCategories.map((sub) => {
+        const serie = bySub.get(sub.ref) ?? zeros12()
+        return { ...sub, monthlyInCents: serie, totalInCents: total(serie) }
+      })
+      const serie = sumSeries(subCategories.map((s) => s.monthlyInCents))
+      return { ...cat, subCategories, monthlyInCents: serie, totalInCents: total(serie) }
+    })
+    const serie = sumSeries(categories.map((c) => c.monthlyInCents))
+    return { ...cc, categories, monthlyInCents: serie, totalInCents: total(serie) }
+  })
+
+  return { ...detail, costCenters }
+}

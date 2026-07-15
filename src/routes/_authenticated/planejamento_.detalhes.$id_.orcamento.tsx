@@ -1,7 +1,8 @@
 /**
- * Rota /planejamento/detalhes/$id/orcamento — EDIÇÃO de Orçamento por Rede (US2.4). Protegida.
- * `estado`/`municipio` (search) vêm do filtro do Detalhe (botão "Editar"). Front-first: placeholder
- * até `GET /budget-plans/:id` + persistência existirem (core-api #113).
+ * Rota /planejamento/detalhes/$id/orcamento — EDIÇÃO de Orçamento por Rede (§1.7). Protegida.
+ * `estado`/`municipio` (search) vêm do filtro do Detalhe (botão "Editar"). O `estado` é a `ref` da REDE: o BFF
+ * resolve rede→orçamento e devolve a grade com os 12 meses REAIS (`getBudgetGridFn`). LEITURA ligada; a
+ * persistência do Salvar segue pendente (core-api #113).
  */
 import { createFileRoute } from '@tanstack/react-router'
 

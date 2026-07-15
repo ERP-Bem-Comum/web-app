@@ -192,3 +192,14 @@ export const PlanDetailSchema: z.ZodType<PlanDetail> = z.object({
   networks: z.array(NetworkRefSchema),
   costCenters: z.array(CostCenterConsolidatedSchema),
 })
+
+/**
+ * Grade da EDIÇÃO de Orçamento (§1.7) — o BFF entrega PRONTA (§III): o detalhe do plano com `monthlyInCents`
+ * já preenchido com os valores REAIS de UMA rede, mais qual rede é. O `budgetId` vem resolvido pelo BFF a
+ * partir do `?estado=` da URL; a tela o carrega só pra devolver na ESCRITA (o Salvar da próxima fatia).
+ */
+export type BudgetGrid = Readonly<{
+  detail: PlanDetail
+  budgetId: string
+  networkLabel: string
+}>

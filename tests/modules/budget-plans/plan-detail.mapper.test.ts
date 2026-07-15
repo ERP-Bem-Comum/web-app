@@ -16,6 +16,7 @@ import {
   mapDirection,
   mapLaunchType,
   fillNetworkCells,
+  fillMonthlyCells,
 } from '#modules/budget-plans/server/domain/plan-detail.mapper.ts'
 import type {
   CostStructureInput,
@@ -284,5 +285,90 @@ describe('fillNetworkCells — 12 meses por subcategoria (#413)', () => {
     const cc = filled.costCenters[0]
     assert.deepEqual(cc?.networkInCents, [1200, 0])
     assert.equal(cc?.totalInCents, 1200)
+  })
+})
+
+// A EDIÇÃO de Orçamento (§1.7) — colunas = MESES de UMA rede. É a outra pergunta ao mesmo dado do #413:
+// `fillNetworkCells` agrega o ANUAL por rede; aqui a série mensal fica INTEIRA, mês a mês (é o que se orça).
+describe('fillMonthlyCells (§1.7 — a grade Categorias × 12 meses de UMA rede)', () => {
+  const base = mapPlanDetail(
+    {
+      id: 'a1b2c3d4-1111-4a2b-8c3d-000000000001',
+      year: 2027,
+      status: 'RASCUNHO',
+      version: '1.0',
+      programName: 'P',
+      totalInCents: 0,
+      budgets: [{ budgetId: 'bg-rn', partnerKind: 'state', partnerRef: 'RN', valueInCents: 0 }],
+    },
+    structure,
+  )
+
+  it('cada mês cai no SEU índice (month 1..12 → 0..11)', () => {
+    const filled = fillMonthlyCells(base, [
+      { subcategoryRef: 'sub-folha-0001', month: 1, valueInCents: 100 },
+      { subcategoryRef: 'sub-folha-0001', month: 2, valueInCents: 200 },
+      { subcategoryRef: 'sub-folha-0001', month: 12, valueInCents: 300 },
+    ])
+    const sub = filled.costCenters[0]?.categories[0]?.subCategories[0]
+    assert.ok(sub)
+    assert.equal(sub.monthlyInCents[0], 100) // Janeiro
+    assert.equal(sub.monthlyInCents[1], 200) // Fevereiro
+    assert.equal(sub.monthlyInCents[11], 300) // Dezembro
+    assert.equal(sub.monthlyInCents.length, 12)
+  })
+
+  it('mês SEM lançamento fica 0 e a série continua com 12 posições (a grade não encolhe)', () => {
+    const filled = fillMonthlyCells(base, [{ subcategoryRef: 'sub-folha-0001', month: 6, valueInCents: 500 }])
+    const sub = filled.costCenters[0]?.categories[0]?.subCategories[0]
+    assert.ok(sub)
+    assert.deepEqual([...sub.monthlyInCents], [0, 0, 0, 0, 0, 500, 0, 0, 0, 0, 0, 0])
+  })
+
+  it('o total da subcategoria é a SOMA dos 12 — o anual não é campo próprio (#413)', () => {
+    const filled = fillMonthlyCells(
+      base,
+      Array.from({ length: 12 }, (_, i) => ({
+        subcategoryRef: 'sub-folha-0001',
+        month: i + 1,
+        valueInCents: 100,
+      })),
+    )
+    const sub = filled.costCenters[0]?.categories[0]?.subCategories[0]
+    assert.equal(sub?.totalInCents, 1200) // 100 × 12, não 100
+  })
+
+  it('roll-up: categoria e centro somam os filhos MÊS A MÊS (não só no anual)', () => {
+    const filled = fillMonthlyCells(base, [{ subcategoryRef: 'sub-folha-0001', month: 3, valueInCents: 70 }])
+    const cat = filled.costCenters[0]?.categories[0]
+    const cc = filled.costCenters[0]
+    assert.equal(cat?.monthlyInCents[2], 70)
+    assert.equal(cc?.monthlyInCents[2], 70)
+    assert.equal(cc?.totalInCents, 70)
+  })
+
+  // Defesa em profundidade: o schema já barra na borda. Se um mês fora da faixa passasse, um índice inválido
+  // corromperia a série em silêncio (ou estouraria pra 13ª posição numa grade de 12).
+  it('mês fora de 1..12 é IGNORADO — não cria posição nem quebra a série', () => {
+    const filled = fillMonthlyCells(base, [
+      { subcategoryRef: 'sub-folha-0001', month: 0, valueInCents: 999 },
+      { subcategoryRef: 'sub-folha-0001', month: 13, valueInCents: 999 },
+      { subcategoryRef: 'sub-folha-0001', month: 5, valueInCents: 50 },
+    ])
+    const sub = filled.costCenters[0]?.categories[0]?.subCategories[0]
+    assert.ok(sub)
+    assert.equal(sub.monthlyInCents.length, 12)
+    assert.equal(sub.totalInCents, 50) // só o mês válido entrou
+  })
+
+  it('subcategoria sem lançamento nenhum → 12 zeros (grade completa, não vazia)', () => {
+    const filled = fillMonthlyCells(base, [])
+    const sub = filled.costCenters[0]?.categories[0]?.subCategories[0]
+    assert.ok(sub)
+    assert.deepEqual(
+      [...sub.monthlyInCents],
+      Array.from({ length: 12 }, () => 0),
+    )
+    assert.equal(sub.totalInCents, 0)
   })
 })

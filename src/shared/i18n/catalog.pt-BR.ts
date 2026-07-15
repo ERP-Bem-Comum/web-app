@@ -2171,6 +2171,11 @@ export const ptBR: Catalog = {
   'budget-plans.orcamento.categoriesHeader': 'Categorias',
   'budget-plans.orcamento.calcRow': 'Calcular gasto desta linha',
   'budget-plans.orcamento.notFound': 'Orçamento não encontrado.',
+  'budget-plans.orcamento.loading': 'Carregando o orçamento…',
+  'budget-plans.orcamento.error': 'Não foi possível carregar o orçamento. Tente novamente.',
+  // 403 tem mensagem PRÓPRIA: "tente novamente" é conselho ERRADO p/ permissão — tentar de novo dá 403 de
+  // novo. Cenário real e recorrente: ambiente semeado sem as 2 permissões de budget-plan (core-api#374).
+  'budget-plans.orcamento.forbidden': 'Você não tem permissão para ver este orçamento.',
 
   // ── Calculando Gastos (modal — US2.4b) ──
   'budget-plans.calcGastos.titlePrefix': 'Calculando Gastos -',

@@ -108,3 +108,15 @@ export const AddSubcategoryInputSchema = z.object({
   launchType: launchTypeSchema,
 })
 export type AddSubcategoryInput = z.infer<typeof AddSubcategoryInputSchema>
+
+/**
+ * Input da EDIÇÃO DE ORÇAMENTO (§1.7): plano + REDE (`ref` = UF/IBGE, a chave natural que já está na URL como
+ * `?estado=`). O id do orçamento NÃO entra aqui — quem o resolve é o use-case, cruzando com as redes do plano
+ * (ver ESCOPO em `get-budget-grid.use-case.ts`). `ref` é chave natural, não uuid: validamos só o não-vazio.
+ */
+export const GetBudgetGridInputSchema = z.object({
+  planId: z.uuid(),
+  networkRef: z.string().trim().min(1),
+})
+
+export type GetBudgetGridInput = z.infer<typeof GetBudgetGridInputSchema>

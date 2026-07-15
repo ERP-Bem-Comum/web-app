@@ -77,7 +77,18 @@ export function OrcamentoPage(): ReactNode {
         </div>
       </div>
 
-      {state.status === 'not-found' ? (
+      {state.status === 'loading' ? (
+        <p className={notFound}>{t('budget-plans.orcamento.loading')}</p>
+      ) : state.status === 'error' ? (
+        <p className={notFound}>
+          {/* 403 ≠ falha transitória: mandar "tente novamente" quando falta permissão é conselho errado. */}
+          {t(
+            state.errorTag === 'forbidden' || state.errorTag === 'unauthorized'
+              ? 'budget-plans.orcamento.forbidden'
+              : 'budget-plans.orcamento.error',
+          )}
+        </p>
+      ) : state.status === 'not-found' ? (
         <p className={notFound}>{t('budget-plans.orcamento.notFound')}</p>
       ) : (
         <div className={card}>
