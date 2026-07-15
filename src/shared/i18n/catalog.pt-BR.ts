@@ -2198,7 +2198,12 @@ export const ptBR: Catalog = {
   'budget-plans.calcGastos.pessoal.nivel': 'Nível',
   'budget-plans.calcGastos.pessoal.vinculo': 'Vínculo',
   'budget-plans.calcGastos.pessoal.remuneracao': 'Remuneração Bruta Mensal',
-  'budget-plans.calcGastos.pessoal.qtd': 'Qtd.',
+  // core-api#460 (decisão da P.O., 2026-07-15): a Qtd é METADADO — o legado não multiplica por ela (o
+  // core-api reproduz). O rótulo diz isso, senão a tela sugere que o número entra na conta e engana o
+  // planejador — foi o que motivou a issue.
+  'budget-plans.calcGastos.pessoal.qtd': 'Qtd. (informativo)',
+  'budget-plans.calcGastos.pessoal.qtdHint':
+    'Quantidade é apenas informativa: não multiplica o custo. O valor calculado é o do salário informado.',
   'budget-plans.calcGastos.pessoal.meses': 'Meses aplicados',
   'budget-plans.calcGastos.pessoal.salario': 'Salário (R$)',
   'budget-plans.calcGastos.pessoal.reajuste': 'Reajuste (%)',

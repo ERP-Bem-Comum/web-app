@@ -76,8 +76,21 @@ export type PessoalCalc = Readonly<{
  * - Salário Total = Salário × (1 + Reajuste%).
  * - Total Encargos = Salário Total × (INSS Patronal + INSS + FGTS + PIS)%.
  * - Total Benefícios/Provisões = soma dos respectivos campos.
- * - Custo Mensal = (Salário Total + Encargos + Benefícios + Provisões) × Qtd.
+ * - Custo Mensal = Salário Total + Encargos + Benefícios + Provisões.
  * - Custo Anual = Custo Mensal × nº de meses aplicados.
+ *
+ * ── A "Qtd" NÃO multiplica (core-api#460, decisão da P.O. 2026-07-15) ──
+ * Este cálculo multiplicava por `qtd` e o docblock dizia "espelha a fórmula do legado" — **não espelhava**.
+ * O legado (`calc-total-value-result.ts`, `DESPESAS_PESSOAIS`) devolve `totalSalary + totalCharges +
+ * totalBenefits + totalProvisions`, **sem quantidade nenhuma** — e o core-api reproduz isso (`calc-model.ts`).
+ * Éramos nós que divergíamos: com Qtd > 1 o preview do front mostrava N× o valor que o backend gravaria.
+ *
+ * Não é distração do legado: ele SABE multiplicar por contagem — faz isso em `CAED`
+ * (`numberOfEnrollments * baseValueInCents`) e em `DESPESAS_LOGISTICAS` (`numberOfPeople * totalTrips`).
+ * Na folha, deliberadamente não faz: o campo se chama `numberOfFinancialDirectors`, nunca entra em cálculo
+ * algum e o import de Excel do legado o força em `1` — é METADADO.
+ *
+ * `qtd` segue no form (o legado o exibe e persiste), mas fora da conta.
  */
 export const computePessoal = (f: PessoalForm): PessoalCalc => {
   const salarioCents = parseCentsBR(f.salario)
@@ -94,9 +107,8 @@ export const computePessoal = (f: PessoalForm): PessoalCalc => {
     parseCentsBR(f.abono) +
     parseCentsBR(f.decimoEncargos) +
     parseCentsBR(f.fgtsMultaAdicional)
-  const qtd = Math.max(1, Math.trunc(Number(f.qtd) || 1))
-  const custoMensalCents =
-    (salarioTotalCents + totalEncargosCents + totalBeneficiosCents + totalProvisoesCents) * qtd
+  // `f.qtd` NÃO entra aqui — é metadado (ver docblock / core-api#460).
+  const custoMensalCents = salarioTotalCents + totalEncargosCents + totalBeneficiosCents + totalProvisoesCents
   const custoAnualCents = custoMensalCents * Math.max(0, f.meses.length)
   return {
     salarioTotalCents,

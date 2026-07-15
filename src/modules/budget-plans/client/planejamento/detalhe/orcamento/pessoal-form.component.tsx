@@ -41,6 +41,8 @@ export type PessoalFormLabels = Readonly<{
   vinculo: string
   remuneracao: string
   qtd: string
+  /** Ajuda da Qtd — ela é metadado, não multiplica (core-api#460). */
+  qtdHint: string
   meses: string
   salario: string
   reajuste: string
@@ -80,10 +82,17 @@ export type PessoalFormProps = Readonly<{
 }>
 
 function TextField(
-  props: Readonly<{ label: string; value: string; numeric?: boolean; onChange: (v: string) => void }>,
+  props: Readonly<{
+    label: string
+    value: string
+    numeric?: boolean
+    /** Ajuda (tooltip nativo). Usado na "Qtd", que é METADADO e não entra no cálculo (core-api#460). */
+    hint?: string
+    onChange: (v: string) => void
+  }>,
 ): ReactNode {
   return (
-    <label className={field}>
+    <label className={field} title={props.hint}>
       <span className={fieldLabel}>{props.label}</span>
       <div className={fieldControl}>
         <input
@@ -185,7 +194,7 @@ export function PessoalForm(props: PessoalFormProps): ReactNode {
           <div className={configSection}>
             <h4 className={configSectionTitle}>{L.remuneracao}</h4>
             <div className={row2}>
-              <TextField label={L.qtd} value={form.qtd} numeric onChange={set('qtd')} />
+              <TextField label={L.qtd} hint={L.qtdHint} value={form.qtd} numeric onChange={set('qtd')} />
               <TextField label={L.salario} value={form.salario} numeric onChange={set('salario')} />
             </div>
             <div>
