@@ -53,6 +53,8 @@ type GetBudgetGridFn = (opts: {
   data: { planId: string; networkRef: string }
 }) => Promise<BudgetPlansFnResult<BudgetGrid>>
 type PlanIdFn<T> = (opts: { data: { id: string } }) => Promise<BudgetPlansFnResult<T>>
+/** DELETE do plano (feature 076): 204 sem body → resultado sem `data`. */
+type DeletePlanFn = (opts: { data: { id: string } }) => Promise<WriteVoidResult>
 type CreateSceneryFn = (opts: {
   data: { id: string; name: string }
 }) => Promise<BudgetPlansFnResult<CreatedScenery>>
@@ -96,6 +98,11 @@ export type BudgetPlansRepository = Readonly<{
   getProgramOptions: () => Promise<Result<readonly BudgetPlanProgramOption[], BudgetPlansError>>
   getPlanDetail: (id: string) => Promise<Result<PlanDetail, BudgetPlansError>>
   approvePlan: (id: string) => Promise<Result<LifecyclePlan, BudgetPlansError>>
+  /**
+   * §2.5 — EXCLUI o plano (feature 076). IRREVERSÍVEL: leva junto orçamentos e lançamentos. Não confundir com
+   * `deleteBudget`, que remove um ORÇAMENTO por rede. Sem retorno (204).
+   */
+  deletePlan: (id: string) => Promise<Result<void, BudgetPlansError>>
   startCalibration: (id: string) => Promise<Result<LifecyclePlan, BudgetPlansError>>
   createScenery: (id: string, name: string) => Promise<Result<CreatedScenery, BudgetPlansError>>
   exportPlanCsv: (id: string) => Promise<Result<BudgetPlanCsvFile, BudgetPlansError>>
@@ -128,6 +135,7 @@ export const createBudgetPlansRepository = (
     getBudgetPlanDetailFn: GetDetailFn
     getBudgetGridFn: GetBudgetGridFn
     approveBudgetPlanFn: PlanIdFn<LifecyclePlan>
+    deleteBudgetPlanFn: DeletePlanFn
     startCalibrationFn: PlanIdFn<LifecyclePlan>
     createSceneryFn: CreateSceneryFn
     exportBudgetPlanCsvFn: PlanIdFn<BudgetPlanCsvFile>
@@ -162,6 +170,10 @@ export const createBudgetPlansRepository = (
   getBudgetGrid: async (planId, networkRef) => {
     const res = await deps.getBudgetGridFn({ data: { planId, networkRef } })
     return res.ok ? ok(res.data) : err(res.error)
+  },
+  deletePlan: async (id) => {
+    const res = await deps.deleteBudgetPlanFn({ data: { id } })
+    return res.ok ? ok(undefined) : err(res.error)
   },
   approvePlan: async (id) => {
     const res = await deps.approveBudgetPlanFn({ data: { id } })

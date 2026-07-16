@@ -20,13 +20,36 @@ describe('isActionEnabled', () => {
     assert.equal(isActionEnabled('create-scenery'), true)
     assert.equal(isActionEnabled('export-csv'), true)
   })
+  // `delete` SAIU desta lista na feature 076 (o `DELETE /:id` existe — core-api #453). Agora ele é gated por
+  // status + cenários, como o `create-scenery` — ver o bloco próprio abaixo.
   it('ações SEM endpoint → desabilitadas (mesmo com status)', () => {
     assert.equal(isActionEnabled('share'), false)
     assert.equal(isActionEnabled('planned-vs-actual'), false)
-    assert.equal(isActionEnabled('delete'), false)
-    assert.equal(isActionEnabled('delete', 'APROVADO'), false)
     assert.equal(isActionEnabled('share', 'RASCUNHO'), false)
   })
+  // Feature 076 — o gate espelha as 2 recusas do `DELETE /:id`. Pesa mais que o do `create-scenery`: os dois
+  // 409 do delete são indistinguíveis, então sem o gate a usuária confirmaria algo IRREVERSÍVEL e levaria um
+  // erro sem motivo.
+  describe('delete: só folha RASCUNHO/EM_CALIBRACAO', () => {
+    it('plano APROVADO não sai (o Consolidado ABC agrega aprovados)', () => {
+      assert.equal(isActionEnabled('delete', 'APROVADO'), false)
+      // Aprovado barra mesmo sem cenário nenhum.
+      assert.equal(isActionEnabled('delete', 'APROVADO', { sceneryCount: 0 }), false)
+    })
+    it('plano COM cenário não sai — apaga-se de baixo pra cima', () => {
+      assert.equal(isActionEnabled('delete', 'RASCUNHO', { sceneryCount: 1 }), false)
+      assert.equal(isActionEnabled('delete', 'EM_CALIBRACAO', { sceneryCount: 2 }), false)
+    })
+    it('folha não aprovada e sem cenário SAI', () => {
+      assert.equal(isActionEnabled('delete', 'RASCUNHO', { sceneryCount: 0 }), true)
+      assert.equal(isActionEnabled('delete', 'EM_CALIBRACAO', { sceneryCount: 0 }), true)
+    })
+    it('o próprio nó ser um CENÁRIO não impede — cenário é folha, e folha sai', () => {
+      // Diferente do `create-scenery`, onde `isScenario` barra. Aqui o que importa é ter filho, não ser filho.
+      assert.equal(isActionEnabled('delete', 'RASCUNHO', { isScenario: true, sceneryCount: 0 }), true)
+    })
+  })
+
   it('create-scenery: só em plano NÃO aprovado', () => {
     assert.equal(isActionEnabled('create-scenery', 'RASCUNHO'), true)
     assert.equal(isActionEnabled('create-scenery', 'EM_CALIBRACAO'), true)
@@ -58,8 +81,24 @@ describe('actionDisabledTitleKey', () => {
     )
   })
   it('ações sem endpoint (ou fora do gate de status) → tooltip genérico', () => {
-    assert.equal(actionDisabledTitleKey('delete', 'RASCUNHO'), 'budget-plans.action.noEndpoint')
     assert.equal(actionDisabledTitleKey('share'), 'budget-plans.action.noEndpoint')
+  })
+  // Feature 076: o tooltip do delete PODE ser específico (a linha traz status e contagem de cenários) — é a
+  // mensagem de ERRO que não pode, porque lá os dois 409 chegam indistinguíveis.
+  it('delete: diz QUAL das 2 recusas barrou', () => {
+    assert.equal(actionDisabledTitleKey('delete', 'APROVADO'), 'budget-plans.action.disabled.deleteApproved')
+    assert.equal(
+      actionDisabledTitleKey('delete', 'RASCUNHO', { sceneryCount: 1 }),
+      'budget-plans.action.disabled.deleteHasChildren',
+    )
+  })
+  it('delete aprovado E com cenário: cita o APROVADO (o estado que a usuária vê na linha)', () => {
+    // Ordem importa — a mesma lição que o `create-scenery` aprendeu em tela: o motivo mais específico primeiro,
+    // senão o tooltip mente.
+    assert.equal(
+      actionDisabledTitleKey('delete', 'APROVADO', { sceneryCount: 3 }),
+      'budget-plans.action.disabled.deleteApproved',
+    )
   })
 })
 
@@ -77,6 +116,9 @@ describe('actionErrorTag', () => {
       actionErrorTag('budget-plan-invalid-transition'),
       'budget-plans.action.error.invalidTransition',
     )
+    // DELETE (feature 076): UMA tag para os 2 casos (aprovado · tem cenário) — o core não manda o slug, então
+    // eleger um deles seria adivinhar. A mensagem enumera as duas regras.
+    assert.equal(actionErrorTag('budget-plan-not-deletable'), 'budget-plans.action.error.notDeletable')
   })
   it('mapeia 401/404/genéricos', () => {
     assert.equal(actionErrorTag('unauthorized'), 'budget-plans.action.error.unauthorized')

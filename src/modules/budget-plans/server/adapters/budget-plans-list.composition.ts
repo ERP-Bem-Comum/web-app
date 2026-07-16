@@ -16,6 +16,7 @@ import { createListBudgetPlanOptions } from '#modules/budget-plans/server/applic
 import { createGetBudgetPlanDetail } from '#modules/budget-plans/server/application/get-budget-plan-detail.use-case.ts'
 import { createGetBudgetGrid } from '#modules/budget-plans/server/application/get-budget-grid.use-case.ts'
 import { createApproveBudgetPlan } from '#modules/budget-plans/server/application/approve-budget-plan.use-case.ts'
+import { createDeleteBudgetPlan } from '#modules/budget-plans/server/application/delete-budget-plan.use-case.ts'
 import { createStartCalibration } from '#modules/budget-plans/server/application/start-calibration.use-case.ts'
 import { createCreateScenery } from '#modules/budget-plans/server/application/create-scenery.use-case.ts'
 import { createExportBudgetPlanCsv } from '#modules/budget-plans/server/application/export-budget-plan-csv.use-case.ts'
@@ -59,6 +60,7 @@ const build = () => {
     getPlanDetail: createGetBudgetPlanDetail({ client }),
     getBudgetGrid: createGetBudgetGrid({ client }),
     approvePlan: createApproveBudgetPlan({ client }),
+    deletePlan: createDeleteBudgetPlan({ client }),
     startCalibration: createStartCalibration({ client }),
     createScenery: createCreateScenery({ client }),
     exportPlanCsv: createExportBudgetPlanCsv({ client }),
