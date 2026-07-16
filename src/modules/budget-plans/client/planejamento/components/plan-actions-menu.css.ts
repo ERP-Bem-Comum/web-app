@@ -69,13 +69,28 @@ export const item = style({
   cursor: 'pointer',
   whiteSpace: 'nowrap',
   selectors: {
-    '&:hover': { background: brand.color.surfaceAlt },
+    // `:not(:disabled)`: o hover destacava o item MESMO desabilitado, reforçando a promessa falsa de clique.
+    '&:hover:not(:disabled)': { background: brand.color.surfaceAlt },
     '&:focus-visible': {
       outline: `${vars.focusRing.width} solid ${brand.color.primary}`,
       outlineOffset: `-${vars.focusRing.width}`,
     },
+    /**
+     * Item desabilitado tem que PARECER desabilitado. Antes não havia regra `:disabled` nenhuma: ele mantinha
+     * a cor cheia, o `cursor: pointer` e o realce no hover — pixel a pixel igual a um item ativo. A P.O. clicou
+     * no "Excluir Plano" barrado (plano aprovado), nada aconteceu, e concluiu que a função não tinha sido
+     * ligada — o motivo só existia no `title`, que exige hover e paciência.
+     *
+     * Espelha o padrão que o DS já usa (`brand-filters.css.ts`): tom `ink400` + `not-allowed`. O `ink400` aqui
+     * também neutraliza o vermelho do `itemDanger` (a pseudo-classe tem mais especificidade que a cor-base),
+     * e isso é proposital: item barrado não deve gritar "ação destrutiva disponível".
+     */
+    '&:disabled': {
+      color: brand.color.ink400,
+      cursor: 'not-allowed',
+    },
   },
 })
 
-/** Ação destrutiva (Excluir) — texto em tom de erro. */
+/** Ação destrutiva (Excluir) — texto em tom de erro. Desabilitado, cai no `ink400` do `&:disabled` acima. */
 export const itemDanger = style([item, { color: brand.color.dangerFg }])
