@@ -40,8 +40,14 @@ export const budgetGridQueryKey = (
 export type OrcamentoState =
   | Readonly<{ status: 'loading' }>
   | Readonly<{ status: 'error'; errorTag: BudgetPlansError }>
-  // Cobre plano inexistente, rede fora do plano (404 do BFF) e plano sem centro de custo — nos 3 não há grade.
+  /** O ORÇAMENTO não existe: plano inexistente, ou rede que não é deste plano (404 do BFF). */
   | Readonly<{ status: 'not-found' }>
+  /**
+   * O orçamento EXISTE — o plano é que ainda não tem estrutura de custo. Carrega o cabeçalho p/ a tela
+   * aparecer (título + total) e dizer o que falta. Antes isto caía em `not-found`, que MENTIA: o plano, a
+   * rede e o orçamento existiam; faltava onde lançar. (Achado da P.O. em tela.)
+   */
+  | Readonly<{ status: 'empty'; title: string; totalLabel: string }>
   | Readonly<{
       status: 'ready'
       title: string
@@ -85,22 +91,30 @@ export function useOrcamento(id: string, estado: string): OrcamentoBinding {
 
   const state = useMemo<OrcamentoState>(() => {
     if (estado !== '' && query.isPending) return { status: 'loading' }
+    // 404 do BFF = a rede não é deste plano (ou o plano sumiu) → "não encontrado", não "tente novamente":
+    // tentar de novo dá o mesmo. Os demais erros são transitórios/permissão e a page os separa.
+    if (errorTag === 'budget-plan-not-found') return { status: 'not-found' }
     if (errorTag !== null) return { status: 'error', errorTag }
     if (grid === null || detail === null) return { status: 'not-found' }
 
+    const header = derivePlanDetailHeader(detail)
+    const title = `${header.title} > ${grid.networkLabel}`
+
+    // Plano sem centro de custo: o orçamento EXISTE, falta a estrutura. A tela aparece e diz o que falta —
+    // dizer "não encontrado" aqui mandaria o operador procurar um orçamento que está bem na frente dele.
+    if (detail.costCenters.length === 0) return { status: 'empty', title, totalLabel: header.totalLabel }
+
     // O centro só existe depois que a grade chega, então o "aplicado" cai no primeiro até o usuário escolher.
     const centroId = appliedCentro ?? firstId
-    if (centroId === null) return { status: 'not-found' } // plano sem centro de custo: não há o que orçar
+    if (centroId === null) return { status: 'empty', title, totalLabel: header.totalLabel }
 
     const matrix = buildOrcamentoMatrix(detail, centroId, semester)
-    if (matrix === null) return { status: 'not-found' }
-
-    const header = derivePlanDetailHeader(detail)
+    if (matrix === null) return { status: 'empty', title, totalLabel: header.totalLabel }
     const centroName = options.find((o) => o.value === String(centroId))?.label ?? ''
     return {
       status: 'ready',
       // O rótulo da rede vem do BFF (nome real do parceiro), não de uma lista fixa de UFs no front.
-      title: `${header.title} > ${grid.networkLabel}`,
+      title,
       totalLabel: header.totalLabel,
       centroName,
       matrix,

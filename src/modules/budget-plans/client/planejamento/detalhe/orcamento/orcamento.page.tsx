@@ -89,6 +89,18 @@ export function OrcamentoPage(): ReactNode {
         </p>
       ) : state.status === 'not-found' ? (
         <p className={notFound}>{t('budget-plans.orcamento.notFound')}</p>
+      ) : state.status === 'empty' ? (
+        /* O orçamento EXISTE: mostra o cabeçalho (título + total) e diz o que falta. Antes isto caía em
+           "não encontrado" — o operador procuraria um orçamento que estava bem na frente dele. */
+        <div className={card}>
+          <div className={titleRow}>
+            <h1 className={title}>{state.title}</h1>
+            <span className={totalBudget}>
+              {t('budget-plans.orcamento.totalBudget')} <span className={totalValue}>{state.totalLabel}</span>
+            </span>
+          </div>
+          <p className={notFound}>{t('budget-plans.orcamento.empty')}</p>
+        </div>
       ) : (
         <div className={card}>
           <div className={titleRow}>

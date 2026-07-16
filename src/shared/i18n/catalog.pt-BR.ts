@@ -2172,6 +2172,9 @@ export const ptBR: Catalog = {
   'budget-plans.orcamento.calcRow': 'Calcular gasto desta linha',
   'budget-plans.orcamento.notFound': 'Orçamento não encontrado.',
   'budget-plans.orcamento.loading': 'Carregando o orçamento…',
+  // O orçamento EXISTE — falta a estrutura. Diz ONDE resolver: a estrutura se cadastra no Detalhe do plano.
+  'budget-plans.orcamento.empty':
+    'Este plano ainda não possui estrutura de custos. Volte ao Detalhe do plano e cadastre os centros de custo para começar a orçar.',
   'budget-plans.orcamento.error': 'Não foi possível carregar o orçamento. Tente novamente.',
   // 403 tem mensagem PRÓPRIA: "tente novamente" é conselho ERRADO p/ permissão — tentar de novo dá 403 de
   // novo. Cenário real e recorrente: ambiente semeado sem as 2 permissões de budget-plan (core-api#374).
