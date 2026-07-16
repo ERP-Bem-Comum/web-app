@@ -19,8 +19,10 @@ import {
   fillMonthlyCells,
   networkNameKey,
   deriveTotalsFromCells,
+  mergeConsolidatedMatrices,
 } from '#modules/budget-plans/server/domain/plan-detail.mapper.ts'
 import type {
+  PlanDetailComposed,
   CostStructureInput,
   PlanDetailHeaderInput,
 } from '#modules/budget-plans/server/domain/plan-detail.io.ts'
@@ -549,5 +551,107 @@ describe('detalhe: "Por Rede" e "Por Mês" convergem no mesmo total', () => {
     assert.equal(somaMeses, 350)
     assert.equal(somaRedes, 350)
     assert.equal(detail.totalInCents, 350)
+  })
+})
+
+// Consolidado ABC (§2) — a matriz Centro × meses do legado (print da P.O.). As duas regras do handbook:
+// centro FUNDE por nome; categoria ganha o SUFIXO do programa ("porque agrega múltiplos programas").
+describe('mergeConsolidatedMatrices (§2 — funde os programas numa matriz só)', () => {
+  const planoCom = (centro: string, categoria: string, monthly: readonly number[]): PlanDetailComposed => ({
+    id: 'p',
+    year: 2026,
+    programName: 'P',
+    programAbbreviation: null,
+    version: 1,
+    scenarioName: null,
+    status: 'APROVADO',
+    totalInCents: 0,
+    networks: [],
+    costCenters: [
+      {
+        id: 1,
+        ref: 'cc',
+        name: centro,
+        type: 'A PAGAR',
+        totalInCents: 0,
+        monthlyInCents: monthly,
+        networkInCents: [],
+        categories: [
+          {
+            id: 11,
+            ref: 'cat',
+            name: categoria,
+            totalInCents: 0,
+            monthlyInCents: monthly,
+            networkInCents: [],
+            subCategories: [],
+          },
+        ],
+      },
+    ],
+  })
+  const jan = (v: number): readonly number[] => [v, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+  it('mesmo centro em 2 programas → UMA linha, somada mês a mês', () => {
+    const m = mergeConsolidatedMatrices([
+      { programAbbreviation: 'ETI', detail: planoCom('ADMINISTRAÇÃO', 'Custeio', jan(100)) },
+      { programAbbreviation: 'EPV', detail: planoCom('ADMINISTRAÇÃO', 'Custeio', jan(50)) },
+    ])
+    assert.equal(m.length, 1) // fundiu — é o que "consolidar programas" significa
+    assert.equal(m[0]?.name, 'ADMINISTRAÇÃO')
+    assert.equal(m[0]?.monthlyInCents[0], 150)
+    assert.equal(m[0]?.totalInCents, 150)
+  })
+
+  // A regra não-óbvia: sem o sufixo, categorias homônimas de programas diferentes viram UMA linha e o
+  // operador não sabe de quem é o dinheiro.
+  it('categorias homônimas de programas diferentes NÃO colidem — o sufixo as separa', () => {
+    const m = mergeConsolidatedMatrices([
+      { programAbbreviation: 'ETI', detail: planoCom('ADMINISTRAÇÃO', 'Custeio', jan(100)) },
+      { programAbbreviation: 'EPV', detail: planoCom('ADMINISTRAÇÃO', 'Custeio', jan(50)) },
+    ])
+    assert.deepEqual(
+      m[0]?.categories.map((c) => c.name),
+      ['Custeio (ETI)', 'Custeio (EPV)'],
+    )
+    assert.equal(m[0]?.categories[0]?.monthlyInCents[0], 100) // o dinheiro do ETI fica no ETI
+    assert.equal(m[0]?.categories[1]?.monthlyInCents[0], 50)
+  })
+
+  it('centros DIFERENTES continuam separados', () => {
+    const m = mergeConsolidatedMatrices([
+      { programAbbreviation: 'ETI', detail: planoCom('EVENTOS', 'X', jan(10)) },
+      { programAbbreviation: 'EPV', detail: planoCom('LOGÍSTICA', 'Y', jan(20)) },
+    ])
+    assert.equal(m.length, 2)
+  })
+
+  it('mesmo programa, mesma categoria em 2 planos → soma (não duplica a linha)', () => {
+    const m = mergeConsolidatedMatrices([
+      { programAbbreviation: 'ETI', detail: planoCom('ADM', 'Custeio', jan(30)) },
+      { programAbbreviation: 'ETI', detail: planoCom('ADM', 'Custeio', jan(70)) },
+    ])
+    assert.equal(m[0]?.categories.length, 1)
+    assert.equal(m[0]?.categories[0]?.monthlyInCents[0], 100)
+  })
+
+  it('o total do centro é Σ dos 12 meses (o anual é a soma dos meses — #413)', () => {
+    const doze = Array.from({ length: 12 }, () => 100)
+    const m = mergeConsolidatedMatrices([
+      { programAbbreviation: 'ETI', detail: planoCom('ADM', 'Custeio', doze) },
+    ])
+    assert.equal(m[0]?.totalInCents, 1200)
+  })
+
+  it('nenhum plano → matriz vazia (empty state, não erro)', () => {
+    assert.equal(mergeConsolidatedMatrices([]).length, 0)
+  })
+
+  // O handbook: "agrega ATÉ o nível de Categoria; a coluna Subcategoria fica vazia neste export".
+  it('não desce até subcategoria — o Consolidado para na categoria', () => {
+    const m = mergeConsolidatedMatrices([
+      { programAbbreviation: 'ETI', detail: planoCom('ADM', 'Custeio', jan(10)) },
+    ])
+    assert.equal(m[0]?.categories[0]?.subCategories.length, 0)
   })
 })

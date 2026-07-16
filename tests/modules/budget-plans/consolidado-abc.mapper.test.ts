@@ -35,6 +35,7 @@ const REAL_RESPONSE = {
       totalCents: 200_000,
     },
   ],
+  costCenters: [],
 }
 
 describe('parseConsolidatedResult (borda do core-api)', () => {
@@ -86,6 +87,7 @@ describe('deriveConsolidadoCurve', () => {
       plans: [
         { id: 'a', programName: 'Parcerias', programAbbreviation: 'PARC', version: 1, totalInCents: 0 },
       ],
+      costCenters: [],
     }
     assert.equal(hasConsolidadoResult(zero), true)
     const rows = deriveConsolidadoCurve(zero)

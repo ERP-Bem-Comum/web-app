@@ -13,6 +13,7 @@ import {
 import { useConsolidadoExport } from '#modules/budget-plans/client/planejamento/consolidado/consolidado-export.binding.ts'
 
 import { ConsolidadoCurve } from '../components/consolidado-curve.component.tsx'
+import { ConsolidatedMatrix } from '#modules/budget-plans/client/planejamento/detalhe/components/consolidated-matrix.component.tsx'
 import { ConsolidadoFilters } from '../components/consolidado-filters.component.tsx'
 import {
   screen,
@@ -34,7 +35,7 @@ const routeApi = getRouteApi('/_authenticated/consolidado')
 export function ConsolidadoAbcPage(): ReactNode {
   const search = routeApi.useSearch()
   const navigate = useNavigate()
-  const { state, programOptions } = useConsolidadoAbc(search)
+  const { state, programOptions, prevSemester, nextSemester } = useConsolidadoAbc(search)
   const csvExport = useConsolidadoExport({ year: search.year, programRef: search.programRef })
 
   return (
@@ -97,15 +98,42 @@ export function ConsolidadoAbcPage(): ReactNode {
           </div>
 
           {state.status === 'ready' ? (
-            <ConsolidadoCurve
-              rows={state.rows}
-              labels={{
-                title: t('budget-plans.consolidado.curveTitle'),
-                colProgram: t('budget-plans.consolidado.colProgram'),
-                colTotal: t('budget-plans.consolidado.colTotal'),
-                colShare: t('budget-plans.consolidado.colShare'),
-              }}
-            />
+            <>
+              {/* §2: a matriz "Consolidado dos programas" — Centro × meses (o que o legado mostra). Mesma
+                  matriz do Detalhe: a pergunta é idêntica. Sem toggles: aqui não há "Por Rede" (agrega
+                  PROGRAMAS) nem gestão de estrutura (read-only). */}
+              <ConsolidatedMatrix
+                matrix={state.matrix}
+                hideViewToggles
+                labels={{
+                  sectionTitle: t('budget-plans.consolidado.matrixTitle'),
+                  centrosHeader: t('budget-plans.consolidado.matrixCentros'),
+                  centroCusto: '',
+                  porMes: '',
+                  porRede: '',
+                  prev: t('budget-plans.matrix.prev'),
+                  next: t('budget-plans.matrix.next'),
+                  total: t('budget-plans.matrix.total'),
+                  expand: t('budget-plans.matrix.expand'),
+                  collapse: t('budget-plans.matrix.collapse'),
+                  edit: '',
+                }}
+                onPrev={prevSemester}
+                onNext={nextSemester}
+                onSelectCentroCusto={() => undefined}
+                onSelectPorMes={() => undefined}
+                onSelectPorRede={() => undefined}
+              />
+              <ConsolidadoCurve
+                rows={state.rows}
+                labels={{
+                  title: t('budget-plans.consolidado.curveTitle'),
+                  colProgram: t('budget-plans.consolidado.colProgram'),
+                  colTotal: t('budget-plans.consolidado.colTotal'),
+                  colShare: t('budget-plans.consolidado.colShare'),
+                }}
+              />
+            </>
           ) : (
             <p className={empty}>{t('budget-plans.consolidado.noResults')}</p>
           )}

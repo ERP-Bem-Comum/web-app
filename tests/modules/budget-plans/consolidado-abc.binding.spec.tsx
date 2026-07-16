@@ -46,8 +46,9 @@ const RESULT: ConsolidatedAbc = {
       totalInCents: 200_000,
     },
   ],
+  costCenters: [],
 }
-const EMPTY_RESULT: ConsolidatedAbc = { year: 2026, totalInCents: 0, plans: [] }
+const EMPTY_RESULT: ConsolidatedAbc = { year: 2026, totalInCents: 0, plans: [], costCenters: [] }
 
 const setup = () => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })

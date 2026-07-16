@@ -88,6 +88,12 @@ export type ConsolidatedMatrixProps = Readonly<{
   onSelectPorRede: () => void
   /** Modo edição (filtro por Rede aplicado): esconde os toggles e mostra "Editar" à direita. */
   editMode?: boolean
+  /**
+   * Esconde os toggles de visão (Centro de Custo / Por Mês / Por Rede) — sobra só a navegação de meses.
+   * É o Consolidado ABC (§2): lá não existe "Por Rede" (ele agrega PROGRAMAS, não redes) nem gestão de
+   * estrutura (é read-only). A matriz é a mesma pergunta — Centro × meses —, então reusa em vez de duplicar.
+   */
+  hideViewToggles?: boolean
   onEdit?: () => void
 }>
 
@@ -212,8 +218,8 @@ export function ConsolidatedMatrix(props: ConsolidatedMatrixProps): ReactNode {
           <h2 className={sectionTitle}>{props.labels.sectionTitle}</h2>
         </span>
         <div className={controls}>
-          {/* Sem filtro por Rede: toggles de visão. Com filtro aplicado: só a navegação + "Editar". */}
-          {props.editMode !== true ? (
+          {/* Sem filtro por Rede: toggles de visão. Com filtro aplicado (ou no Consolidado): só a navegação. */}
+          {props.editMode !== true && props.hideViewToggles !== true ? (
             <div className={toggleGroup} role="group">
               <button type="button" className={toggle} onClick={props.onSelectCentroCusto}>
                 {props.labels.centroCusto}
