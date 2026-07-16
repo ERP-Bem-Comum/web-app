@@ -2165,12 +2165,30 @@ export const ptBR: Catalog = {
   'budget-plans.orcamento.centroCusto': 'Centro de Custo',
   'budget-plans.orcamento.filter': 'Filtrar',
   'budget-plans.orcamento.discard': 'Descartar Alterações',
+  'budget-plans.orcamento.discard.title': 'Descartar alterações?',
+  'budget-plans.orcamento.discard.body':
+    'Ao confirmar essa opção todas as suas alterações não salvas serão perdidas. O que já foi salvo pelo cálculo é mantido.',
+  'budget-plans.orcamento.discard.confirm': 'Sim, descartar alterações',
+  'budget-plans.orcamento.discard.keep': 'Não descartar alterações',
+  'budget-plans.orcamento.discard.nothing': 'Não há alterações não salvas para descartar.',
+  // O Salvar da página é herança do legado, onde também não processa nada (a P.O. verificou em tela): quem
+  // grava é o Salvar do formulário de cálculo, que é a ÚNICA escrita que o core-api aceita. O botão fica —
+  // decisão da P.O. — mas dizendo onde se salva, em vez de fingir que salva.
+  'budget-plans.orcamento.save.hint': 'As alterações são salvas ao confirmar o cálculo, em "Calcular Gasto".',
   'budget-plans.orcamento.save': 'Salvar',
   'budget-plans.orcamento.moreActions': 'Mais ações',
   'budget-plans.orcamento.calcGasto': 'Calcular Gasto',
   'budget-plans.orcamento.categoriesHeader': 'Categorias',
   'budget-plans.orcamento.calcRow': 'Calcular gasto desta linha',
   'budget-plans.orcamento.notFound': 'Orçamento não encontrado.',
+  'budget-plans.orcamento.loading': 'Carregando o orçamento…',
+  // O orçamento EXISTE — falta a estrutura. Diz ONDE resolver: a estrutura se cadastra no Detalhe do plano.
+  'budget-plans.orcamento.empty':
+    'Este plano ainda não possui estrutura de custos. Volte ao Detalhe do plano e cadastre os centros de custo para começar a orçar.',
+  'budget-plans.orcamento.error': 'Não foi possível carregar o orçamento. Tente novamente.',
+  // 403 tem mensagem PRÓPRIA: "tente novamente" é conselho ERRADO p/ permissão — tentar de novo dá 403 de
+  // novo. Cenário real e recorrente: ambiente semeado sem as 2 permissões de budget-plan (core-api#374).
+  'budget-plans.orcamento.forbidden': 'Você não tem permissão para ver este orçamento.',
 
   // ── Calculando Gastos (modal — US2.4b) ──
   'budget-plans.calcGastos.titlePrefix': 'Calculando Gastos -',

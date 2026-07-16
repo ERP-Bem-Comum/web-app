@@ -8,14 +8,14 @@ import type {
   AddBudgetCommand,
   DeleteBudgetCommand,
   NetworkOption,
-  IpcaResultCommand,
+  BudgetResultCommand,
 } from '#modules/budget-plans/server/domain/plan-detail.io.ts'
 
 export type BudgetWriteClient = Readonly<{
   addBudget: (c: AddBudgetCommand, token: string) => Promise<Result<void, BudgetPlansError>>
   deleteBudget: (c: DeleteBudgetCommand, token: string) => Promise<Result<void, BudgetPlansError>>
   getNetworkOptions: (token: string) => Promise<Result<readonly NetworkOption[], BudgetPlansError>>
-  postIpcaResult: (c: IpcaResultCommand, token: string) => Promise<Result<void, BudgetPlansError>>
+  postBudgetResult: (c: BudgetResultCommand, token: string) => Promise<Result<void, BudgetPlansError>>
 }>
 
 type Deps = Readonly<{ client: BudgetWriteClient }>
@@ -35,7 +35,9 @@ export const createListNetworkOptions =
   (token: string): Promise<Result<readonly NetworkOption[], BudgetPlansError>> =>
     deps.client.getNetworkOptions(token)
 
-export const createPostIpcaResult =
+// "Calculando Gastos" — grava UM mês de UMA subcategoria numa rede. O fan-out dos N meses selecionados é do
+// client (não há endpoint de lote); aqui é uma escrita, uma resposta.
+export const createPostBudgetResult =
   (deps: Deps) =>
-  (c: IpcaResultCommand, token: string): Promise<Result<void, BudgetPlansError>> =>
-    deps.client.postIpcaResult(c, token)
+  (c: BudgetResultCommand, token: string): Promise<Result<void, BudgetPlansError>> =>
+    deps.client.postBudgetResult(c, token)

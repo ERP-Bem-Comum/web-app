@@ -30,6 +30,7 @@ const detail: PlanDetail = {
   costCenters: [
     {
       id: 1,
+      ref: 'ref-1',
       name: 'Consultoria',
       type: 'A PAGAR',
       totalInCents: 0,
@@ -38,12 +39,20 @@ const detail: PlanDetail = {
       categories: [
         {
           id: 11,
+          ref: 'ref-11',
           name: 'Educacional',
           totalInCents: 0,
           monthlyInCents: zero,
           networkInCents: [],
           subCategories: [
-            { id: 111, name: 'Formação', totalInCents: 0, monthlyInCents: zero, networkInCents: [] },
+            {
+              id: 111,
+              ref: 'ref-111',
+              name: 'Formação',
+              totalInCents: 0,
+              monthlyInCents: zero,
+              networkInCents: [],
+            },
           ],
         },
       ],

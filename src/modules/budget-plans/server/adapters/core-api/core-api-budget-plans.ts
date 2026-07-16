@@ -50,7 +50,7 @@ import type {
   DeleteBudgetCommand,
   NetworkOption,
   BudgetResultRow,
-  IpcaResultCommand,
+  BudgetResultCommand,
 } from '#modules/budget-plans/server/domain/plan-detail.io.ts'
 import type {
   AddCostCenterCommand,
@@ -180,6 +180,66 @@ const buildConsolidatedQuery = (p: ConsolidatedResultParams): string => {
   return q.toString()
 }
 
+/**
+ * Rota + corpo de cada modelo de cálculo. `switch` EXAUSTIVO (§IV): o `never` no default faz o compilador
+ * recusar o build se um 5º modelo entrar na união sem rota aqui — o alvo comum (`budgetId`/`subcategoryId`/
+ * `month`) é adicionado por quem chama, porque é igual nos 4 (`budgetResultTargetSchema` do core-api).
+ */
+const budgetResultRequest = (
+  c: BudgetResultCommand,
+): Readonly<{ path: string; body: Record<string, number> }> => {
+  switch (c.kind) {
+    case 'ipca':
+      return { path: 'ipca', body: { baseValueInCents: c.baseValueInCents, ipca: c.ipca } }
+    case 'caed':
+      return {
+        path: 'caed',
+        body: { numberOfEnrollments: c.numberOfEnrollments, baseValueInCents: c.baseValueInCents },
+      }
+    case 'personal':
+      return {
+        path: 'personal-expenses',
+        body: {
+          salaryInCents: c.salaryInCents,
+          salaryAdjustment: c.salaryAdjustment,
+          inssEmployer: c.inssEmployer,
+          inss: c.inss,
+          fgtsCharges: c.fgtsCharges,
+          pisCharges: c.pisCharges,
+          foodVoucherInCents: c.foodVoucherInCents,
+          transportationVouchersInCents: c.transportationVouchersInCents,
+          healthInsuranceInCents: c.healthInsuranceInCents,
+          lifeInsuranceInCents: c.lifeInsuranceInCents,
+          holidaysAndChargesInCents: c.holidaysAndChargesInCents,
+          allowanceInCents: c.allowanceInCents,
+          thirteenthInCents: c.thirteenthInCents,
+          fgtsInCents: c.fgtsInCents,
+        },
+      }
+    case 'logistics':
+      return {
+        path: 'logistics-expenses',
+        body: {
+          numberOfPeople: c.numberOfPeople,
+          totalTrips: c.totalTrips,
+          airfareInCents: c.airfareInCents,
+          dailyAccommodation: c.dailyAccommodation,
+          accommodationInCents: c.accommodationInCents,
+          dailyFood: c.dailyFood,
+          foodInCents: c.foodInCents,
+          dailyTransport: c.dailyTransport,
+          transportInCents: c.transportInCents,
+          dailyCarAndFuel: c.dailyCarAndFuel,
+          carAndFuelInCents: c.carAndFuelInCents,
+        },
+      }
+    default: {
+      const _exhaustive: never = c
+      return _exhaustive
+    }
+  }
+}
+
 export const createBudgetPlansCoreClient = (
   baseUrl: string,
 ): BudgetPlansCoreClient &
@@ -231,7 +291,7 @@ export const createBudgetPlansCoreClient = (
     if (isErr(r)) return err(mapHttpError(r.error))
     const parsed = coreOptionsSchema.safeParse(r.value)
     if (!parsed.success) return err('unexpected')
-    return ok(parsed.data.redes.map((n) => ({ ref: n.ref, name: n.name, kind: n.kind })))
+    return ok(parsed.data.redes.map((n) => ({ ref: n.ref, name: n.name, kind: n.kind, uf: n.uf })))
   },
   addBudget: async (c: AddBudgetCommand, token): Promise<Result<void, BudgetPlansError>> => {
     const r = await resultFetch<unknown>(`${baseUrl}/${c.planId}/budgets`, {
@@ -242,24 +302,20 @@ export const createBudgetPlansCoreClient = (
     if (isErr(r)) return err(mapWriteHttpError(r.error))
     return ok(undefined)
   },
-  deleteBudget: async (c: DeleteBudgetCommand, token): Promise<Result<void, BudgetPlansError>> => {
-    const r = await resultFetch<unknown>(`${baseUrl}/${c.planId}/budgets/${c.budgetId}`, {
-      method: 'DELETE',
+  postBudgetResult: async (c: BudgetResultCommand, token): Promise<Result<void, BudgetPlansError>> => {
+    const { path, body } = budgetResultRequest(c)
+    const r = await resultFetch<unknown>(`${baseUrl}/budget-results/${path}`, {
+      method: 'POST',
       token,
+      body: { budgetId: c.budgetId, subcategoryId: c.subcategoryId, month: c.month, ...body },
     })
     if (isErr(r)) return err(mapWriteHttpError(r.error))
     return ok(undefined)
   },
-  postIpcaResult: async (c: IpcaResultCommand, token): Promise<Result<void, BudgetPlansError>> => {
-    const r = await resultFetch<unknown>(`${baseUrl}/budget-results/ipca`, {
-      method: 'POST',
+  deleteBudget: async (c: DeleteBudgetCommand, token): Promise<Result<void, BudgetPlansError>> => {
+    const r = await resultFetch<unknown>(`${baseUrl}/${c.planId}/budgets/${c.budgetId}`, {
+      method: 'DELETE',
       token,
-      body: {
-        budgetId: c.budgetId,
-        subcategoryId: c.subcategoryId,
-        baseValueInCents: c.baseValueInCents,
-        ipca: c.ipca,
-      },
     })
     if (isErr(r)) return err(mapWriteHttpError(r.error))
     return ok(undefined)

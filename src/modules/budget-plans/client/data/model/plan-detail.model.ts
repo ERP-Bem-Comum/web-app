@@ -28,6 +28,8 @@ export type NetworkRef = Readonly<{
   name: string
   ref: string
   kind: NetworkKind
+  /** UF do parceiro (no estado, = `ref`). Agrupa os municípios no filtro Estado→Município do §1.4. */
+  uf: string
   budgetId: string
   totalInCents: number
 }>
@@ -36,6 +38,7 @@ export const NetworkRefSchema: z.ZodType<NetworkRef> = z.object({
   name: z.string().trim(),
   ref: z.string().trim(),
   kind: z.enum(['state', 'municipality']),
+  uf: z.string().trim(),
   budgetId: z.string().trim(),
   totalInCents: z.int(),
 })
@@ -58,7 +61,7 @@ export type MatrixIconKind = z.infer<typeof MatrixIconKindSchema>
 /** Nó folha (subcategoria) da matriz consolidada. */
 export type SubCategoryConsolidated = Readonly<{
   id: number
-  ref?: string // #C2: UUID do backend (casa com budget-results.subcategoryId)
+  ref: string // #C2: UUID do backend (casa com budget-results.subcategoryId) — ALVO do POST de cálculo
   name: string
   totalInCents: number
   monthlyInCents: MonthlyCents
@@ -70,11 +73,12 @@ export type SubCategoryConsolidated = Readonly<{
 
 /**
  * Categoria (agrupa subcategorias). `ref` = UUID do backend (feature 061 — o POST de subcategoria referencia
- * a categoria-pai por UUID). Aditivo/opcional: presente no dado REAL do BFF, ausente no placeholder front-first.
+ * a categoria-pai por UUID). Era opcional enquanto existia o placeholder front-first; ele saiu (o BFF entrega
+ * o detalhe real), então o `ref` é OBRIGATÓRIO — espelha o `SubCategoryConsolidated` do server.
  */
 export type CategoryConsolidated = Readonly<{
   id: number
-  ref?: string
+  ref: string
   name: string
   totalInCents: number
   monthlyInCents: MonthlyCents
@@ -89,7 +93,7 @@ export type CategoryConsolidated = Readonly<{
  */
 export type CostCenterConsolidated = Readonly<{
   id: number
-  ref?: string
+  ref: string
   name: string
   type: z.infer<typeof CostCenterTypeSchema>
   totalInCents: number
@@ -115,7 +119,7 @@ export type PlanDetail = Readonly<{
 
 export const SubCategoryConsolidatedSchema: z.ZodType<SubCategoryConsolidated> = z.object({
   id: z.int(),
-  ref: z.string().trim().optional(),
+  ref: z.string().trim(),
   name: z.string().trim(),
   totalInCents: z.int(),
   monthlyInCents: MonthlyCentsSchema,
@@ -125,7 +129,7 @@ export const SubCategoryConsolidatedSchema: z.ZodType<SubCategoryConsolidated> =
 })
 export const CategoryConsolidatedSchema: z.ZodType<CategoryConsolidated> = z.object({
   id: z.int(),
-  ref: z.string().trim().optional(),
+  ref: z.string().trim(),
   name: z.string().trim(),
   totalInCents: z.int(),
   monthlyInCents: MonthlyCentsSchema,
@@ -135,7 +139,7 @@ export const CategoryConsolidatedSchema: z.ZodType<CategoryConsolidated> = z.obj
 })
 export const CostCenterConsolidatedSchema: z.ZodType<CostCenterConsolidated> = z.object({
   id: z.int(),
-  ref: z.string().trim().optional(),
+  ref: z.string().trim(),
   name: z.string().trim(),
   type: CostCenterTypeSchema,
   totalInCents: z.int(),
@@ -192,3 +196,14 @@ export const PlanDetailSchema: z.ZodType<PlanDetail> = z.object({
   networks: z.array(NetworkRefSchema),
   costCenters: z.array(CostCenterConsolidatedSchema),
 })
+
+/**
+ * Grade da EDIÇÃO de Orçamento (§1.7) — o BFF entrega PRONTA (§III): o detalhe do plano com `monthlyInCents`
+ * já preenchido com os valores REAIS de UMA rede, mais qual rede é. O `budgetId` vem resolvido pelo BFF a
+ * partir do `?estado=` da URL; a tela o carrega só pra devolver na ESCRITA (o Salvar da próxima fatia).
+ */
+export type BudgetGrid = Readonly<{
+  detail: PlanDetail
+  budgetId: string
+  networkLabel: string
+}>

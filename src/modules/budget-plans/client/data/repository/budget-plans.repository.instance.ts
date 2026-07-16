@@ -6,6 +6,7 @@ import { listBudgetPlansFn } from '#modules/budget-plans/server/adapters/server-
 import { createBudgetPlanFn } from '#modules/budget-plans/server/adapters/server-fns/create-budget-plan.service.fn.ts'
 import { listBudgetPlanOptionsFn } from '#modules/budget-plans/server/adapters/server-fns/list-budget-plan-options.query.fn.ts'
 import { getBudgetPlanDetailFn } from '#modules/budget-plans/server/adapters/server-fns/get-budget-plan-detail.query.fn.ts'
+import { getBudgetGridFn } from '#modules/budget-plans/server/adapters/server-fns/get-budget-grid.query.fn.ts'
 import { approveBudgetPlanFn } from '#modules/budget-plans/server/adapters/server-fns/approve-budget-plan.service.fn.ts'
 import { startCalibrationFn } from '#modules/budget-plans/server/adapters/server-fns/start-calibration.service.fn.ts'
 import { createSceneryFn } from '#modules/budget-plans/server/adapters/server-fns/create-scenery.service.fn.ts'
@@ -17,7 +18,7 @@ import { addSubcategoryFn } from '#modules/budget-plans/server/adapters/server-f
 import { addBudgetFn } from '#modules/budget-plans/server/adapters/server-fns/add-budget.service.fn.ts'
 import { deleteBudgetFn } from '#modules/budget-plans/server/adapters/server-fns/delete-budget.service.fn.ts'
 import { listNetworkOptionsFn } from '#modules/budget-plans/server/adapters/server-fns/list-network-options.query.fn.ts'
-import { postIpcaResultFn } from '#modules/budget-plans/server/adapters/server-fns/post-ipca-result.service.fn.ts'
+import { postBudgetResultFn } from '#modules/budget-plans/server/adapters/server-fns/post-budget-result.service.fn.ts'
 import { getConsolidadoAbcFn } from '#modules/budget-plans/server/adapters/server-fns/get-consolidado-abc.query.fn.ts'
 
 import { createBudgetPlansRepository } from './budget-plans.repository.ts'
@@ -27,6 +28,7 @@ export const budgetPlansRepository = createBudgetPlansRepository({
   createBudgetPlanFn: (opts) => createBudgetPlanFn(opts),
   listBudgetPlanOptionsFn: () => listBudgetPlanOptionsFn(),
   getBudgetPlanDetailFn: (opts) => getBudgetPlanDetailFn(opts),
+  getBudgetGridFn: (opts) => getBudgetGridFn(opts),
   approveBudgetPlanFn: (opts) => approveBudgetPlanFn(opts),
   startCalibrationFn: (opts) => startCalibrationFn(opts),
   createSceneryFn: (opts) => createSceneryFn(opts),
@@ -38,6 +40,6 @@ export const budgetPlansRepository = createBudgetPlansRepository({
   addBudgetFn: (opts) => addBudgetFn(opts),
   deleteBudgetFn: (opts) => deleteBudgetFn(opts),
   networkOptionsFn: () => listNetworkOptionsFn(),
-  postIpcaResultFn: (opts) => postIpcaResultFn(opts),
+  postBudgetResultFn: (opts) => postBudgetResultFn(opts),
   getConsolidadoFn: (opts) => getConsolidadoAbcFn(opts),
 })

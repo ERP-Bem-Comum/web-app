@@ -14,6 +14,44 @@ export const parseCentsBR = (s: string): number => {
   return Number.isFinite(n) ? Math.max(0, Math.round(n * 100)) : 0
 }
 
+/**
+ * Agrupa o milhar SEM regex. A forma clássica (`/\B(?=(\d{3})+(?!\d))/g`) tem quantificador aninhado — é o
+ * padrão de ReDoS que o `security/detect-unsafe-regex` acusa, e isto roda a CADA TECLA. Este laço é linear.
+ */
+const groupThousands = (digits: string): string => {
+  let out = ''
+  for (let i = 0; i < digits.length; i++) {
+    if (i > 0 && (digits.length - i) % 3 === 0) out += '.'
+    out += digits[i] ?? ''
+  }
+  return out
+}
+
+/**
+ * Máscara de VALOR enquanto o usuário digita (pedido da P.O.: o campo tem que parecer dinheiro, como os
+ * totais). Agrupa o milhar e aceita UMA vírgula decimal: "2500" → "2.500"; "2500,5" → "2.500,5".
+ *
+ * ⚠️ NÃO é máscara de centavos (aquela em que "2500" vira "25,00"): o que se digita continua valendo REAIS,
+ * exatamente como antes. A escolha foi da P.O. — a de centavos mudaria o significado de todo número já
+ * digitado (os mesmos "2500" passariam a valer 100× menos), inclusive do que já está gravado.
+ *
+ * Casa com `parseCentsBR`, que ignora o ponto de milhar e lê a vírgula como decimal — máscara e parser são
+ * o mesmo par: formatar de um jeito e ler de outro faria o mostrado divergir do gravado.
+ */
+export const maskValorBR = (raw: string): string => {
+  // Só dígitos e vírgula; a PRIMEIRA vírgula manda (digitar outra não quebra o número, é ignorada).
+  const cleaned = raw.replace(/[^\d,]/g, '')
+  const [intRaw = '', ...rest] = cleaned.split(',')
+  const decRaw = rest.join('')
+  // Centavos: 2 casas bastam (dinheiro). Digitar mais não some com o dígito — só não entra.
+  const dec = decRaw.slice(0, 2)
+  // Zeros à esquerda saem ("007" → "7"), mas "" continua "" (campo vazio ≠ zero).
+  const int = intRaw.replace(/^0+(?=\d)/, '')
+  const grouped = groupThousands(int)
+  if (!cleaned.includes(',')) return grouped
+  return `${grouped},${dec}` // vírgula digitada FICA, mesmo sem decimal ainda ("2500," → "2.500,")
+}
+
 /** "12,5" / "12.5" → número (percentual). */
 export const parsePct = (s: string): number => {
   const n = Number(s.replace(',', '.'))

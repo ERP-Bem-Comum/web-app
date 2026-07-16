@@ -28,6 +28,7 @@ const detail: PlanDetail = {
   costCenters: [
     {
       id: 1,
+      ref: 'cc-uuid-1',
       name: 'Consultoria',
       type: 'A PAGAR',
       totalInCents: 100,
@@ -36,6 +37,7 @@ const detail: PlanDetail = {
       categories: [
         {
           id: 11,
+          ref: 'cat-uuid-11',
           name: 'Educacional',
           totalInCents: 100,
           monthlyInCents: m({ 2: 100 }),
@@ -43,6 +45,7 @@ const detail: PlanDetail = {
           subCategories: [
             {
               id: 111,
+              ref: 'sub-uuid-111',
               name: 'Formação',
               totalInCents: 100,
               monthlyInCents: m({ 2: 100 }),

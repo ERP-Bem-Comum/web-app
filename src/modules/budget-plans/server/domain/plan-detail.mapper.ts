@@ -63,9 +63,23 @@ export const mapLaunchType = (launchType: string): ReleaseType | undefined => {
 }
 
 /** Compõe o detalhe pronto (§III: o BFF entrega o `PlanDetail` já montado; o client não compõe). */
+/**
+ * Chave do mapa de nomes de rede. Composta por (kind, ref) DE PROPÓSITO: `ref` é chave natural em DOIS
+ * espaços diferentes — UF pra estado, código IBGE pra município. Chavear só por `ref` misturaria os dois.
+ */
+export const networkNameKey = (kind: string, ref: string): string => `${kind}:${ref}`
+
+/**
+ * (kind, ref) → rótulo da rede, montado do catálogo (`GET /options`). Carrega `uf` além do nome porque o
+ * filtro do detalhe agrupa MUNICÍPIOS por ESTADO (como no legado) — e a `ref` de um município é o código
+ * IBGE, que não diz de que estado ele é.
+ */
+export type NetworkNames = ReadonlyMap<string, Readonly<{ name: string; uf: string }>>
+
 export const mapPlanDetail = (
   header: PlanDetailHeaderInput,
   costStructure: CostStructureInput,
+  networkNames?: NetworkNames,
 ): PlanDetailComposed => {
   const costCenters: readonly CostCenterConsolidated[] = costStructure.costCenters.map((cc, i) => {
     const centerId = i + 1
@@ -113,10 +127,17 @@ export const mapPlanDetail = (
     scenarioName: null, // cenários/versões-filhas: core-api#317/#318
     status: header.status,
     totalInCents: header.totalInCents, // real do GET /:id (plano-level; plano novo = 0)
-    // #394: colunas "Por Rede" a partir dos orçamentos reais (id por índice; nome = ref até resolver rótulo).
+    // #394: colunas "Por Rede" a partir dos orçamentos reais (id por índice). O NOME sai do catálogo de redes
+    // (`GET /options`, que devolve `{kind, ref, name}`); sem ele a coluna mostraria a chave natural CRUA — 'CE'
+    // no lugar de "Ceará", e o código IBGE ('2304400') no lugar de "Fortaleza", que é ilegível. Ausente do mapa
+    // → cai no `ref`: degradado, mas honesto (mostra a chave, não um nome inventado).
     networks: header.budgets.map((b, i) => ({
       id: i,
-      name: b.partnerRef,
+      name: networkNames?.get(networkNameKey(b.partnerKind, b.partnerRef))?.name ?? b.partnerRef,
+      // Fora do catálogo: no ESTADO a própria `ref` É a UF; no município não há como adivinhar → ''.
+      uf:
+        networkNames?.get(networkNameKey(b.partnerKind, b.partnerRef))?.uf ??
+        (b.partnerKind === 'state' ? b.partnerRef : ''),
       ref: b.partnerRef,
       kind: b.partnerKind,
       budgetId: b.budgetId,
@@ -163,4 +184,77 @@ export const fillNetworkCells = (
     return { ...cc, categories, networkInCents: cells, totalInCents: total(cells) }
   })
   return { ...detail, costCenters }
+}
+
+/**
+ * #413: preenche `monthlyInCents` (12 posições, Jan..Dez) com os lançamentos de **UMA** rede — é o que a
+ * EDIÇÃO de Orçamento (HANDBOOK §1.7) mostra: a matriz Categorias × 12 meses daquela rede.
+ *
+ * Difere do `fillNetworkCells`, que agrega o ANUAL por rede (colunas = redes). Aqui as colunas são MESES e a
+ * rede é uma só — por isso a Edição tem cadeia própria (§III: uma fn completa por caso de uso).
+ *
+ * `month` vem 1..12 do core-api e vira índice 0..11. Mês fora da faixa é IGNORADO (o schema já valida na
+ * borda; aqui é defesa em profundidade — um índice inválido corromperia a série silenciosamente).
+ * Roll-up: categoria = Σ subs por mês; centro = Σ categorias por mês; `totalInCents` do nó = Σ dos 12.
+ */
+export const fillMonthlyCells = (
+  detail: PlanDetailComposed,
+  rows: readonly BudgetResultRow[],
+): PlanDetailComposed => {
+  // subcategoryRef → série de 12 meses (soma: o mesmo (sub, mês) não deve repetir — o backend tem UNIQUE —,
+  // mas somar é o comportamento correto se repetir, e não perde dado como um `set` perderia.
+  const bySub = new Map<string, number[]>()
+  for (const r of rows) {
+    if (!Number.isInteger(r.month) || r.month < 1 || r.month > 12) continue
+    const serie = bySub.get(r.subcategoryRef) ?? zeros12().slice()
+    serie[r.month - 1] = (serie[r.month - 1] ?? 0) + r.valueInCents
+    bySub.set(r.subcategoryRef, serie)
+  }
+
+  const sumSeries = (series: readonly (readonly number[])[]): number[] =>
+    Array.from({ length: 12 }, (_, m) => series.reduce((acc, s) => acc + (s[m] ?? 0), 0))
+  const total = (serie: readonly number[]): number => serie.reduce((a, b) => a + b, 0)
+
+  const costCenters = detail.costCenters.map((cc) => {
+    const categories = cc.categories.map((cat) => {
+      const subCategories = cat.subCategories.map((sub) => {
+        const serie = bySub.get(sub.ref) ?? zeros12()
+        return { ...sub, monthlyInCents: serie, totalInCents: total(serie) }
+      })
+      const serie = sumSeries(subCategories.map((s) => s.monthlyInCents))
+      return { ...cat, subCategories, monthlyInCents: serie, totalInCents: total(serie) }
+    })
+    const serie = sumSeries(categories.map((c) => c.monthlyInCents))
+    return { ...cc, categories, monthlyInCents: serie, totalInCents: total(serie) }
+  })
+
+  return { ...detail, costCenters }
+}
+
+/**
+ * INTERINO (core-api#458): deriva o TOTAL do plano e o de cada rede dos LANÇAMENTOS já preenchidos na matriz.
+ *
+ * Por que existe: `bgp_budgets.value_cents` está **0** para toda rede — o core-api guarda o total como campo
+ * e nunca o deriva dos lançamentos. Resultado em tela: "Total Orçamento: R$ 0,00" ao lado de uma grade
+ * somando R$ 149.879,22 (achado da P.O.). A verdade chega no MESMO payload; exibir zero seria mentir com o
+ * dado certo na mão.
+ *
+ * Não é fórmula nova: é a mesma que o #458 pede ao backend (total = Σ lançamentos). Quando o core-api
+ * derivar, o número dele e este coincidem — e esta função vira redundante, não conflitante.
+ *
+ * ⚠️ Só vale onde os lançamentos foram carregados (detalhe/edição). A LISTA não os busca, então o total de
+ * lá continua vindo do core-api — e continua 0 até o #458. A divergência é conhecida e é do backend.
+ *
+ * Chamar SEMPRE depois de `fillNetworkCells` (é dele que saem as células por rede).
+ */
+export const deriveTotalsFromCells = (detail: PlanDetailComposed): PlanDetailComposed => {
+  const perNetwork = detail.networks.map((_, i) =>
+    detail.costCenters.reduce((acc, cc) => acc + (cc.networkInCents[i] ?? 0), 0),
+  )
+  const planTotal = perNetwork.reduce((a, b) => a + b, 0)
+  return {
+    ...detail,
+    totalInCents: planTotal,
+    networks: detail.networks.map((n, i) => ({ ...n, totalInCents: perNetwork[i] ?? 0 })),
+  }
 }

@@ -10,6 +10,7 @@ import {
   computeLogistica,
   emptyLogisticaForm,
   type LogisticaForm as LogisticaFormState,
+  type LogisticaForm as LogisticaFormValues,
 } from './logistica-calc.view-model.ts'
 import {
   configForm,
@@ -62,11 +63,23 @@ export type LogisticaFormProps = Readonly<{
   monthAbbrevs: readonly string[]
   formatCents: (c: number) => string
   onDescartar: () => void
-  onSalvar: (custoMensalCents: number, meses: readonly number[]) => void
+  /**
+   * Devolve os INSUMOS junto do valor: o POST de cálculo manda os insumos e o core-api recalcula —
+   * `custoMensalCents` serve só p/ o eco otimista na grade enquanto a escrita não volta.
+   */
+  onSalvar: (custoMensalCents: number, meses: readonly number[], form: LogisticaFormValues) => void
 }>
 
+import { maskValorBR } from './pessoal-calc.view-model.ts'
+
 function NumField(
-  props: Readonly<{ label: string; value: string; onChange: (v: string) => void }>,
+  props: Readonly<{
+    label: string
+    value: string
+    /** DINHEIRO: mascara o milhar enquanto digita. Nº de pessoas/viagens/diárias são CONTAGEM — não usam. */
+    currency?: boolean
+    onChange: (v: string) => void
+  }>,
 ): ReactNode {
   return (
     <label className={field}>
@@ -77,7 +90,7 @@ function NumField(
           inputMode="decimal"
           value={props.value}
           onChange={(e) => {
-            props.onChange(e.target.value)
+            props.onChange(props.currency === true ? maskValorBR(e.target.value) : e.target.value)
           }}
         />
       </div>
@@ -115,9 +128,9 @@ export function LogisticaForm(props: LogisticaFormProps): ReactNode {
 
           <div className={configSection}>
             <h4 className={configSectionTitle}>{L.custos}</h4>
-            <NumField label={L.passagem} value={form.passagem} onChange={set('passagem')} />
+            <NumField label={L.passagem} value={form.passagem} currency onChange={set('passagem')} />
             <div className={row2}>
-              <NumField label={L.hospedagem} value={form.hospedagem} onChange={set('hospedagem')} />
+              <NumField label={L.hospedagem} value={form.hospedagem} currency onChange={set('hospedagem')} />
               <NumField
                 label={L.diarias}
                 value={form.diariasHospedagem}
@@ -125,7 +138,12 @@ export function LogisticaForm(props: LogisticaFormProps): ReactNode {
               />
             </div>
             <div className={row2}>
-              <NumField label={L.alimentacao} value={form.alimentacao} onChange={set('alimentacao')} />
+              <NumField
+                label={L.alimentacao}
+                value={form.alimentacao}
+                currency
+                onChange={set('alimentacao')}
+              />
               <NumField
                 label={L.diarias}
                 value={form.diariasAlimentacao}
@@ -133,7 +151,7 @@ export function LogisticaForm(props: LogisticaFormProps): ReactNode {
               />
             </div>
             <div className={row2}>
-              <NumField label={L.transporte} value={form.transporte} onChange={set('transporte')} />
+              <NumField label={L.transporte} value={form.transporte} currency onChange={set('transporte')} />
               <NumField
                 label={L.diarias}
                 value={form.diariasTransporte}
@@ -144,6 +162,7 @@ export function LogisticaForm(props: LogisticaFormProps): ReactNode {
               <NumField
                 label={L.carroCombustivel}
                 value={form.carroCombustivel}
+                currency
                 onChange={set('carroCombustivel')}
               />
               <NumField label={L.diarias} value={form.diariasCarro} onChange={set('diariasCarro')} />
@@ -210,7 +229,7 @@ export function LogisticaForm(props: LogisticaFormProps): ReactNode {
           type="button"
           className={applyButton}
           onClick={() => {
-            props.onSalvar(calc.custoMensalCents, form.meses)
+            props.onSalvar(calc.custoMensalCents, form.meses, form)
           }}
         >
           {L.salvar}

@@ -25,14 +25,14 @@ export type SubNode = Readonly<{ id: number; name: string }>
 /** `ref` = UUID do backend (feature 061 — necessário p/ o POST de subcategoria referenciar a categoria-pai). */
 export type CategoriaNode = Readonly<{
   id: number
-  ref?: string
+  ref: string
   name: string
   subCategories: readonly SubNode[]
 }>
 /** `ref` = UUID do backend (feature 061 — necessário p/ o POST de categoria referenciar o centro-pai). */
 export type CentroNode = Readonly<{
   id: number
-  ref?: string
+  ref: string
   name: string
   type: CostCenterType
   categories: readonly CategoriaNode[]
@@ -42,12 +42,12 @@ export type CentroNode = Readonly<{
 export const buildCentrosTree = (detail: PlanDetail): readonly CentroNode[] =>
   detail.costCenters.map((c) => ({
     id: c.id,
-    ...(c.ref !== undefined ? { ref: c.ref } : {}),
+    ref: c.ref,
     name: c.name,
     type: c.type,
     categories: c.categories.map((cat) => ({
       id: cat.id,
-      ...(cat.ref !== undefined ? { ref: cat.ref } : {}),
+      ref: cat.ref,
       name: cat.name,
       subCategories: cat.subCategories.map((s) => ({ id: s.id, name: s.name })),
     })),
