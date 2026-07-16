@@ -3,18 +3,14 @@
  * Cobre:
  *   1. `parseConsolidatedResult` sobre a resposta REAL (`totalCents`→`totalInCents`, `plans[]`) e o rejeito;
  *   2. `deriveConsolidadoHeader` ("{ano} ABC" + total BRL);
- *   3. `deriveConsolidadoCurve` (ordena por contribuição desc + participação % + total 0 → 0%).
+ *   3. o subtotal do programa filtrado no cabeçalho (handbook §2 + print do legado).
  */
 import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
 
 import { parseConsolidatedResult } from '#modules/budget-plans/server/adapters/core-api/consolidado-result.schema.ts'
 import type { ConsolidatedAbc } from '#modules/budget-plans/client/data/model/consolidado-abc.model.ts'
-import {
-  deriveConsolidadoHeader,
-  deriveConsolidadoCurve,
-  hasConsolidadoResult,
-} from '#modules/budget-plans/client/planejamento/consolidado/consolidado-abc.view-model.ts'
+import { deriveConsolidadoHeader } from '#modules/budget-plans/client/planejamento/consolidado/consolidado-abc.view-model.ts'
 
 const REAL_RESPONSE = {
   year: 2026,
@@ -67,31 +63,43 @@ describe('deriveConsolidadoHeader', () => {
   })
 })
 
-describe('deriveConsolidadoCurve', () => {
-  const parsed = parseConsolidatedResult(REAL_RESPONSE) as ConsolidatedAbc
-
-  it('ordena por contribuição desc e calcula a participação', () => {
-    const rows = deriveConsolidadoCurve(parsed)
-    assert.equal(rows[0]?.program, 'ETI') // 200k > 100k → primeiro
-    assert.equal(rows[0]?.sharePct, (200_000 / 300_000) * 100)
-    assert.equal(rows[0]?.shareLabel, '66,7%')
-    assert.equal(rows[0]?.versionLabel, 'v2')
-    assert.equal(rows[1]?.program, 'PARC')
-    assert.equal(rows[1]?.shareLabel, '33,3%')
+// Handbook §2 + print do legado: "2026 ABC / Total: R$ 25.824.688,03 / **Programa PARC: R$ 25.824.688,03**"
+// — o subtotal só aparece quando há UM programa (filtro aplicado).
+describe('deriveConsolidadoHeader — subtotal do programa filtrado', () => {
+  const abc = (plans: ConsolidatedAbc['plans'], totalInCents: number): ConsolidatedAbc => ({
+    year: 2026,
+    totalInCents,
+    plans,
+    costCenters: [],
+  })
+  const plano = (abbr: string, cents: number): ConsolidatedAbc['plans'][number] => ({
+    id: `p-${abbr}`,
+    programName: abbr,
+    programAbbreviation: abbr,
+    version: 1,
+    totalInCents: cents,
   })
 
-  it('participação = 0% quando o total do ano é 0 (planos aprovados sem orçamento, core-api#394)', () => {
-    const zero: ConsolidatedAbc = {
-      year: 2026,
-      totalInCents: 0,
-      plans: [
-        { id: 'a', programName: 'Parcerias', programAbbreviation: 'PARC', version: 1, totalInCents: 0 },
-      ],
-      costCenters: [],
-    }
-    assert.equal(hasConsolidadoResult(zero), true)
-    const rows = deriveConsolidadoCurve(zero)
-    assert.equal(rows[0]?.sharePct, 0)
-    assert.equal(rows[0]?.shareLabel, '0,0%')
+  it('UM programa (filtrado) → "Programa {SIGLA}: R$ …"', () => {
+    const h = deriveConsolidadoHeader(abc([plano('PARC', 2_582_468_803)], 2_582_468_803))
+    // `includes` e não igualdade: o formatador pt-BR usa espaço NÃO-QUEBRÁVEL depois do "R$".
+    assert.ok(h.programSubtotalLabel?.startsWith('Programa PARC: R$'))
+    assert.ok(h.programSubtotalLabel?.includes('25.824.688,03'))
+  })
+
+  // Repetir o total como "subtotal" logo abaixo dele não informa nada — só polui.
+  it('VÁRIOS programas → sem subtotal', () => {
+    const h = deriveConsolidadoHeader(abc([plano('ETI', 100), plano('EPV', 50)], 150))
+    assert.equal(h.programSubtotalLabel, null)
+  })
+
+  it('nenhum programa → sem subtotal (nem título de programa inventado)', () => {
+    assert.equal(deriveConsolidadoHeader(abc([], 0)).programSubtotalLabel, null)
+  })
+
+  it('o título e o total geral seguem intactos', () => {
+    const h = deriveConsolidadoHeader(abc([plano('ETI', 100)], 100))
+    assert.equal(h.title, '2026 ABC')
+    assert.ok(h.totalLabel.includes('1,00'))
   })
 })

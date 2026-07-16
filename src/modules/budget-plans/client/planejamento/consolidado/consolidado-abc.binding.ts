@@ -22,10 +22,8 @@ import {
 import type { BudgetPlansError } from '#modules/budget-plans/client/data/repository/budget-plans-error.ts'
 import {
   deriveConsolidadoHeader,
-  deriveConsolidadoCurve,
   hasConsolidadoResult,
   type ConsolidadoAbcHeader,
-  type ConsolidadoCurveRow,
 } from '#modules/budget-plans/client/planejamento/consolidado/consolidado-abc.view-model.ts'
 
 // A VIEW não importa `data/` direto (§XI MVVM) — os anos do filtro passam pela camada de binding.
@@ -41,7 +39,6 @@ export type ConsolidadoAbcState =
   | Readonly<{
       status: 'ready'
       header: ConsolidadoAbcHeader
-      rows: readonly ConsolidadoCurveRow[]
       /** §2: matriz "Consolidado dos programas" — Centro × meses, do semestre visível. */
       matrix: MatrixView
     }>
@@ -90,7 +87,6 @@ export function useConsolidadoAbc(filters: ConsolidadoAbcFilters): ConsolidadoAb
         ? {
             status: 'ready',
             header,
-            rows: deriveConsolidadoCurve(result),
             // Reusa a MESMA matriz do Detalhe (§1.4): a pergunta é idêntica — Centro × meses. O que muda é a
             // origem (lá um plano; aqui vários programas fundidos, já resolvido no BFF).
             matrix: buildMonthlyMatrixFrom(result.costCenters, result.totalInCents, semester),

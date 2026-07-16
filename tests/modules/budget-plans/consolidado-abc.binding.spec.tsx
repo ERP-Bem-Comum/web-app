@@ -75,8 +75,6 @@ describe('useConsolidadoAbc (GET /budget-plans/consolidated-result)', () => {
     const state = result.current.state
     if (state.status !== 'ready') throw new Error('esperava status ready')
     expect(state.header.title).toBe('2026 ABC')
-    expect(state.rows[0]?.program).toBe('ETI') // maior contribuição primeiro
-    expect(state.rows).toHaveLength(2)
     expect(result.current.programOptions).toEqual([{ ref: 'p2', label: 'ETI' }])
     expect(mockedGetConsolidado).toHaveBeenCalledWith({ year: 2026, programRef: undefined })
   })

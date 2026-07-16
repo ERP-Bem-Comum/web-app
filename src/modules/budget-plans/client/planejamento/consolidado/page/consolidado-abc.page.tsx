@@ -12,7 +12,6 @@ import {
 } from '#modules/budget-plans/client/planejamento/consolidado/consolidado-abc.binding.ts'
 import { useConsolidadoExport } from '#modules/budget-plans/client/planejamento/consolidado/consolidado-export.binding.ts'
 
-import { ConsolidadoCurve } from '../components/consolidado-curve.component.tsx'
 import { ConsolidatedMatrix } from '#modules/budget-plans/client/planejamento/detalhe/components/consolidated-matrix.component.tsx'
 import { ConsolidadoFilters } from '../components/consolidado-filters.component.tsx'
 import {
@@ -94,6 +93,10 @@ export function ConsolidadoAbcPage(): ReactNode {
             <span className={totalLine}>
               <span className={totalLabel}>{t('budget-plans.consolidado.total')}</span>
               <span className={totalValue}>{state.header.totalLabel}</span>
+              {/* §2: com filtro de programa, o legado mostra "Programa PARC: R$ …" sob o total. */}
+              {state.header.programSubtotalLabel !== null ? (
+                <span className={totalLabel}>{state.header.programSubtotalLabel}</span>
+              ) : null}
             </span>
           </div>
 
@@ -123,15 +126,6 @@ export function ConsolidadoAbcPage(): ReactNode {
                 onSelectCentroCusto={() => undefined}
                 onSelectPorMes={() => undefined}
                 onSelectPorRede={() => undefined}
-              />
-              <ConsolidadoCurve
-                rows={state.rows}
-                labels={{
-                  title: t('budget-plans.consolidado.curveTitle'),
-                  colProgram: t('budget-plans.consolidado.colProgram'),
-                  colTotal: t('budget-plans.consolidado.colTotal'),
-                  colShare: t('budget-plans.consolidado.colShare'),
-                }}
               />
             </>
           ) : (
