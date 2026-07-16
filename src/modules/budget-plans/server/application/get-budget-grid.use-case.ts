@@ -21,8 +21,16 @@
  */
 import { ok, err, isErr, type Result } from '#shared/primitives/result.ts'
 import type { BudgetPlansError } from '#modules/budget-plans/server/domain/errors/budget-plans.errors.ts'
-import type { PlanDetailComposed } from '#modules/budget-plans/server/domain/plan-detail.io.ts'
-import { mapPlanDetail, fillMonthlyCells } from '#modules/budget-plans/server/domain/plan-detail.mapper.ts'
+import type {
+  PlanDetailComposed,
+  BudgetResultRow,
+} from '#modules/budget-plans/server/domain/plan-detail.io.ts'
+import {
+  mapPlanDetail,
+  fillNetworkCells,
+  fillMonthlyCells,
+  deriveTotalsFromCells,
+} from '#modules/budget-plans/server/domain/plan-detail.mapper.ts'
 import {
   resolveNetworkNames,
   type GetBudgetPlanDetailDeps,
@@ -63,8 +71,21 @@ export const createGetBudgetGrid =
     const rowsRes = await deps.client.getBudgetResults(network.budgetId, token)
     if (isErr(rowsRes)) return err(rowsRes.error)
 
+    // A grade mostra os 12 meses DESTA rede; o cabeçalho, o total do PLANO (todas as redes) — é o mesmo
+    // número do Detalhe, e o operador compara os dois. Por isso o fan-out também aqui: sem ele o cabeçalho
+    // mostraria só esta rede (ou 0, que é o que o core-api manda — #458).
+    const perNetwork = await Promise.all(
+      detail.networks.map(async (n): Promise<readonly BudgetResultRow[]> => {
+        if (n.budgetId === network.budgetId) return rowsRes.value // já buscado: não pede de novo
+        const r = await deps.client.getBudgetResults(n.budgetId, token)
+        return isErr(r) ? [] : r.value // best-effort: rede vizinha que falha não derruba ESTA grade
+      }),
+    )
+    const withTotals = deriveTotalsFromCells(fillNetworkCells(detail, perNetwork))
+
     return ok({
-      detail: fillMonthlyCells(detail, rowsRes.value),
+      // A GRADE é só desta rede (`rowsRes`), mas os totais do cabeçalho são do plano inteiro.
+      detail: fillMonthlyCells(withTotals, rowsRes.value),
       budgetId: network.budgetId,
       networkLabel: network.name,
     })

@@ -18,6 +18,7 @@ import {
   fillNetworkCells,
   fillMonthlyCells,
   networkNameKey,
+  deriveTotalsFromCells,
 } from '#modules/budget-plans/server/domain/plan-detail.mapper.ts'
 import type {
   CostStructureInput,
@@ -441,5 +442,112 @@ describe('mapPlanDetail — rótulo da rede (nome do catálogo, não a chave cru
       new Map([[networkNameKey('state', 'CE'), { name: 'Ceará', uf: 'CE' }]]),
     )
     assert.equal(d.networks[0]?.name, 'RN')
+  })
+})
+
+// INTERINO #458: o core-api guarda o total da rede como CAMPO e nunca o deriva — vem 0 pra toda rede. Em tela
+// isso era "Total Orçamento: R$ 0,00" ao lado de uma grade somando R$ 149.879,22 (achado da P.O.).
+describe('deriveTotalsFromCells (#458 — o total sai dos lançamentos, não do campo zerado)', () => {
+  const base = mapPlanDetail(
+    {
+      id: 'a1b2c3d4-1111-4a2b-8c3d-000000000001',
+      year: 2027,
+      status: 'RASCUNHO',
+      version: '1.0',
+      programName: 'P',
+      totalInCents: 0, // ⟵ o que o core-api manda hoje: ZERO
+      budgets: [
+        { budgetId: 'bg-rn', partnerKind: 'state', partnerRef: 'RN', valueInCents: 0 },
+        { budgetId: 'bg-ce', partnerKind: 'state', partnerRef: 'CE', valueInCents: 0 },
+      ],
+    },
+    structure,
+  )
+
+  it('total do PLANO = Σ de todas as redes, mesmo com o campo do core-api zerado', () => {
+    const filled = fillNetworkCells(base, [
+      [{ subcategoryRef: 'sub-folha-0001', month: 1, valueInCents: 1000 }],
+      [{ subcategoryRef: 'sub-folha-0001', month: 1, valueInCents: 500 }],
+    ])
+    assert.equal(filled.totalInCents, 0) // antes de derivar, ainda é o zero do core-api
+    const d = deriveTotalsFromCells(filled)
+    assert.equal(d.totalInCents, 1500) // 1000 (RN) + 500 (CE)
+  })
+
+  it('total de CADA rede = Σ dos lançamentos dela', () => {
+    const d = deriveTotalsFromCells(
+      fillNetworkCells(base, [
+        [{ subcategoryRef: 'sub-folha-0001', month: 1, valueInCents: 1000 }],
+        [{ subcategoryRef: 'sub-folha-0001', month: 1, valueInCents: 500 }],
+      ]),
+    )
+    assert.equal(d.networks[0]?.totalInCents, 1000) // RN
+    assert.equal(d.networks[1]?.totalInCents, 500) // CE
+  })
+
+  it('soma os 12 meses da rede (não o último) — o anual é Σ dos meses (#413)', () => {
+    const doze = Array.from({ length: 12 }, (_, i) => ({
+      subcategoryRef: 'sub-folha-0001',
+      month: i + 1,
+      valueInCents: 100,
+    }))
+    const d = deriveTotalsFromCells(fillNetworkCells(base, [doze, []]))
+    assert.equal(d.totalInCents, 1200)
+  })
+
+  it('sem lançamento nenhum → 0 (zero DERIVADO é honesto; zero por campo esquecido não era)', () => {
+    const d = deriveTotalsFromCells(fillNetworkCells(base, [[], []]))
+    assert.equal(d.totalInCents, 0)
+    assert.equal(d.networks[0]?.totalInCents, 0)
+  })
+})
+
+// A tela alterna "Por Mês" × "Por Rede" sobre a MESMA matriz — as duas passadas têm que convergir. Se
+// divergirem, uma está errada e o operador vê dois números pro mesmo plano.
+describe('detalhe: "Por Rede" e "Por Mês" convergem no mesmo total', () => {
+  const base = mapPlanDetail(
+    {
+      id: 'a1b2c3d4-1111-4a2b-8c3d-000000000001',
+      year: 2027,
+      status: 'RASCUNHO',
+      version: '1.0',
+      programName: 'P',
+      totalInCents: 0,
+      budgets: [
+        { budgetId: 'bg-rn', partnerKind: 'state', partnerRef: 'RN', valueInCents: 0 },
+        { budgetId: 'bg-ce', partnerKind: 'state', partnerRef: 'CE', valueInCents: 0 },
+      ],
+    },
+    structure,
+  )
+  const rn = [
+    { subcategoryRef: 'sub-folha-0001', month: 1, valueInCents: 100 },
+    { subcategoryRef: 'sub-folha-0001', month: 2, valueInCents: 200 },
+  ]
+  const ce = [{ subcategoryRef: 'sub-folha-0001', month: 2, valueInCents: 50 }]
+
+  // É o que o use-case do detalhe faz: rede primeiro, depois mês com os lançamentos ACHATADOS (= Σ redes).
+  const detail = deriveTotalsFromCells(fillMonthlyCells(fillNetworkCells(base, [rn, ce]), [...rn, ...ce]))
+
+  it('"Por Mês" soma TODAS as redes por mês (era o bug: meses zerados no detalhe)', () => {
+    const sub = detail.costCenters[0]?.categories[0]?.subCategories[0]
+    assert.ok(sub)
+    assert.equal(sub.monthlyInCents[0], 100) // Jan: só RN
+    assert.equal(sub.monthlyInCents[1], 250) // Fev: RN 200 + CE 50
+  })
+
+  it('"Por Rede" continua intacta depois da passada do mês (uma não apaga a outra)', () => {
+    const sub = detail.costCenters[0]?.categories[0]?.subCategories[0]
+    assert.deepEqual(sub?.networkInCents, [300, 50]) // RN=100+200, CE=50
+  })
+
+  it('Σ 12 meses == Σ redes == total do plano (as 3 leituras do MESMO dado)', () => {
+    const sub = detail.costCenters[0]?.categories[0]?.subCategories[0]
+    assert.ok(sub)
+    const somaMeses = sub.monthlyInCents.reduce((a, b) => a + b, 0)
+    const somaRedes = sub.networkInCents.reduce((a, b) => a + b, 0)
+    assert.equal(somaMeses, 350)
+    assert.equal(somaRedes, 350)
+    assert.equal(detail.totalInCents, 350)
   })
 })

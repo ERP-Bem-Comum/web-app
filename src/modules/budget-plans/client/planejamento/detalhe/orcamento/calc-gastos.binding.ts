@@ -65,6 +65,13 @@ export type CalcGastosBinding = Readonly<{
   saveError: BudgetPlansError | null
   /** Some quando o usuário mexe de novo — erro velho na tela mente sobre o estado atual. */
   clearSaveError: () => void
+  /** Há edição local NÃO gravada (lixeira/célula)? É o que o "Descartar Alterações" da página joga fora. */
+  hasLocalChanges: boolean
+  /**
+   * Joga fora a edição local e relê do servidor. O que foi GRAVADO (o Salvar do drawer) sobrevive — só o
+   * que nunca saiu da tela some. Ver `hasLocalChanges`.
+   */
+  discardLocalChanges: () => void
 }>
 
 /** Alvo da escrita: sem rede não há onde gravar (a grade é sempre de UMA rede). */
@@ -199,6 +206,13 @@ export function useCalcGastos(detail: PlanDetail | null, target: CalcGastosTarge
     saveError,
     clearSaveError: () => {
       setSaveError(null)
+    },
+    hasLocalChanges: Object.keys(overrides).length > 0,
+    discardLocalChanges: () => {
+      setOverrides({})
+      setSaveError(null)
+      // Relê: a tela volta a mostrar o que está GRAVADO, não o que ficou na memória.
+      void queryClient.invalidateQueries({ queryKey: ['budget-plans'] })
     },
   }
 }

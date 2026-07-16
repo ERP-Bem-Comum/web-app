@@ -25,6 +25,8 @@ import type {
 import {
   mapPlanDetail,
   fillNetworkCells,
+  fillMonthlyCells,
+  deriveTotalsFromCells,
   networkNameKey,
   type NetworkNames,
 } from '#modules/budget-plans/server/domain/plan-detail.mapper.ts'
@@ -79,5 +81,14 @@ export const createGetBudgetPlanDetail =
         return isErr(r) ? [] : r.value
       }),
     )
-    return ok(fillNetworkCells(detail, resultsPerNetwork))
+    // DUAS visões da mesma matriz, e a tela alterna entre elas (§1.4):
+    //   "Por Rede" → colunas = redes, valor = anual da rede        → fillNetworkCells
+    //   "Por Mês"  → colunas = meses, valor = TODAS as redes somadas → fillMonthlyCells (rows achatados)
+    // Achatar é o que soma as redes: `fillMonthlyCells` agrega por (subcategoria, mês), então juntar os
+    // lançamentos de todas as redes dá o mensal do PLANO. As duas passadas convergem no mesmo
+    // `totalInCents` (Σ redes == Σ 12 meses == Σ lançamentos) — se divergirem, uma delas está errada.
+    const withNetworks = fillNetworkCells(detail, resultsPerNetwork)
+    const withMonths = fillMonthlyCells(withNetworks, resultsPerNetwork.flat())
+    // O total do core-api vem 0 (#458) — deriva dos lançamentos que já estão aqui. Ver `deriveTotalsFromCells`.
+    return ok(deriveTotalsFromCells(withMonths))
   }

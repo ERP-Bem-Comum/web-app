@@ -9,6 +9,16 @@ import { useOrcamento } from './orcamento.binding.ts'
 import { useCalcGastos } from './calc-gastos.binding.ts'
 import { OrcamentoGrid } from './orcamento-grid.component.tsx'
 import { CalculandoGastos } from './calculando-gastos.component.tsx'
+// Reusa o diálogo de descarte do "Calculando Gastos" — é o mesmo padrão visual e a mesma pergunta.
+import {
+  confirmOverlay,
+  confirmDialog,
+  confirmTitle,
+  confirmBody,
+  confirmFooter,
+  confirmKeep,
+  confirmDiscard as confirmDiscardButton,
+} from './calculando-gastos.css.ts'
 import {
   screen,
   header,
@@ -50,6 +60,7 @@ export function OrcamentoPage(): ReactNode {
   // `budgetId` vem RESOLVIDO do BFF (a URL traz a rede, não o orçamento) — é o alvo da escrita do cálculo.
   const calc = useCalcGastos(detail, { planId: id, budgetId })
   const [calcOpen, setCalcOpen] = useState(false)
+  const [discardOpen, setDiscardOpen] = useState(false)
 
   const goBack = (): void => {
     void navigate({ to: '/planejamento/detalhes/$id', params: { id } })
@@ -131,11 +142,26 @@ export function OrcamentoPage(): ReactNode {
               </button>
             </div>
             <div className={actionsRight}>
-              <button type="button" className={discardButton} disabled>
+              <button
+                type="button"
+                className={discardButton}
+                title={calc.hasLocalChanges ? undefined : t('budget-plans.orcamento.discard.nothing')}
+                disabled={!calc.hasLocalChanges}
+                onClick={() => {
+                  setDiscardOpen(true)
+                }}
+              >
                 {t('budget-plans.orcamento.discard')}
               </button>
-              {/* TODO(US2.4b/#113): Salvar persiste as alterações via server fn. */}
-              <button type="button" className={saveButton} disabled>
+              {/* Salvar: no legado também não processa nada (a P.O. verificou em tela) — quem grava é o
+                  formulário de cálculo, a única escrita que o core-api aceita. O botão fica (decisão da
+                  P.O.), com tooltip dizendo ONDE se salva, em vez de fingir que salva. */}
+              <button
+                type="button"
+                className={saveButton}
+                title={t('budget-plans.orcamento.save.hint')}
+                disabled
+              >
                 {t('budget-plans.orcamento.save')}
               </button>
               <button
@@ -189,6 +215,42 @@ export function OrcamentoPage(): ReactNode {
           />
         </div>
       )}
+
+      {discardOpen ? (
+        <div className={confirmOverlay} role="presentation">
+          <div
+            className={confirmDialog}
+            role="alertdialog"
+            aria-modal="true"
+            aria-label={t('budget-plans.orcamento.discard.title')}
+          >
+            <h3 className={confirmTitle}>{t('budget-plans.orcamento.discard.title')}</h3>
+            {/* Diz o que NÃO se perde: o cálculo já salvo fica. Sem isso o usuário teme perder o que gravou. */}
+            <p className={confirmBody}>{t('budget-plans.orcamento.discard.body')}</p>
+            <div className={confirmFooter}>
+              <button
+                type="button"
+                className={confirmKeep}
+                onClick={() => {
+                  setDiscardOpen(false)
+                }}
+              >
+                {t('budget-plans.orcamento.discard.keep')}
+              </button>
+              <button
+                type="button"
+                className={confirmDiscardButton}
+                onClick={() => {
+                  calc.discardLocalChanges()
+                  setDiscardOpen(false)
+                }}
+              >
+                {t('budget-plans.orcamento.discard.confirm')}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {calcOpen && state.status === 'ready' ? (
         <CalculandoGastos

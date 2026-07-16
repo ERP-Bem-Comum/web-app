@@ -230,3 +230,31 @@ export const fillMonthlyCells = (
 
   return { ...detail, costCenters }
 }
+
+/**
+ * INTERINO (core-api#458): deriva o TOTAL do plano e o de cada rede dos LANÇAMENTOS já preenchidos na matriz.
+ *
+ * Por que existe: `bgp_budgets.value_cents` está **0** para toda rede — o core-api guarda o total como campo
+ * e nunca o deriva dos lançamentos. Resultado em tela: "Total Orçamento: R$ 0,00" ao lado de uma grade
+ * somando R$ 149.879,22 (achado da P.O.). A verdade chega no MESMO payload; exibir zero seria mentir com o
+ * dado certo na mão.
+ *
+ * Não é fórmula nova: é a mesma que o #458 pede ao backend (total = Σ lançamentos). Quando o core-api
+ * derivar, o número dele e este coincidem — e esta função vira redundante, não conflitante.
+ *
+ * ⚠️ Só vale onde os lançamentos foram carregados (detalhe/edição). A LISTA não os busca, então o total de
+ * lá continua vindo do core-api — e continua 0 até o #458. A divergência é conhecida e é do backend.
+ *
+ * Chamar SEMPRE depois de `fillNetworkCells` (é dele que saem as células por rede).
+ */
+export const deriveTotalsFromCells = (detail: PlanDetailComposed): PlanDetailComposed => {
+  const perNetwork = detail.networks.map((_, i) =>
+    detail.costCenters.reduce((acc, cc) => acc + (cc.networkInCents[i] ?? 0), 0),
+  )
+  const planTotal = perNetwork.reduce((a, b) => a + b, 0)
+  return {
+    ...detail,
+    totalInCents: planTotal,
+    networks: detail.networks.map((n, i) => ({ ...n, totalInCents: perNetwork[i] ?? 0 })),
+  }
+}

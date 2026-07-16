@@ -186,3 +186,62 @@ describe('saveCalc — falha não é escondida', () => {
     expect(postMock).not.toHaveBeenCalled()
   })
 })
+
+// "Descartar Alterações" da página (§1.7). A P.O. verificou no LEGADO: o Salvar da página não processa nada
+// (quem grava é o Salvar do drawer) e o Descartar abre confirmação. Mantivemos os dois botões — decisão dela.
+describe('discardLocalChanges — joga fora só o que NÃO foi gravado', () => {
+  it('sem edição local → nada a descartar (o botão fica desabilitado)', () => {
+    const { result } = setup()
+    expect(result.current.hasLocalChanges).toBe(false)
+  })
+
+  it('editar um mês na mão (lixeira/célula) marca alteração local', () => {
+    const { result } = setup()
+    act(() => {
+      result.current.setMonthValue(0, 999)
+    })
+    expect(result.current.hasLocalChanges).toBe(true)
+  })
+
+  it('descartar limpa a edição local', () => {
+    const { result } = setup()
+    act(() => {
+      result.current.setMonthValue(0, 999)
+    })
+    act(() => {
+      result.current.discardLocalChanges()
+    })
+    expect(result.current.hasLocalChanges).toBe(false)
+  })
+
+  it('descartar NÃO desfaz o que foi GRAVADO — não dispara nenhum POST/DELETE', async () => {
+    const { result } = setup()
+    act(() => {
+      result.current.saveCalc(IPCA, [0], 100_000)
+    })
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledTimes(1)
+    })
+    postMock.mockClear()
+    act(() => {
+      result.current.discardLocalChanges()
+    })
+    // Descartar relê do servidor; o que foi gravado, gravado está. Nada de escrita aqui.
+    expect(postMock).not.toHaveBeenCalled()
+  })
+
+  it('descartar limpa um erro velho na tela (ele mentiria sobre o estado atual)', async () => {
+    postMock.mockResolvedValue(err('unexpected'))
+    const { result } = setup()
+    act(() => {
+      result.current.saveCalc(IPCA, [0], 1)
+    })
+    await waitFor(() => {
+      expect(result.current.saveError).toBe('unexpected')
+    })
+    act(() => {
+      result.current.discardLocalChanges()
+    })
+    expect(result.current.saveError).toBeNull()
+  })
+})

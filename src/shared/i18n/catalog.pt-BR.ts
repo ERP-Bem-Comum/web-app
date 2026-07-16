@@ -2165,6 +2165,16 @@ export const ptBR: Catalog = {
   'budget-plans.orcamento.centroCusto': 'Centro de Custo',
   'budget-plans.orcamento.filter': 'Filtrar',
   'budget-plans.orcamento.discard': 'Descartar Alterações',
+  'budget-plans.orcamento.discard.title': 'Descartar alterações?',
+  'budget-plans.orcamento.discard.body':
+    'Ao confirmar essa opção todas as suas alterações não salvas serão perdidas. O que já foi salvo pelo cálculo é mantido.',
+  'budget-plans.orcamento.discard.confirm': 'Sim, descartar alterações',
+  'budget-plans.orcamento.discard.keep': 'Não descartar alterações',
+  'budget-plans.orcamento.discard.nothing': 'Não há alterações não salvas para descartar.',
+  // O Salvar da página é herança do legado, onde também não processa nada (a P.O. verificou em tela): quem
+  // grava é o Salvar do formulário de cálculo, que é a ÚNICA escrita que o core-api aceita. O botão fica —
+  // decisão da P.O. — mas dizendo onde se salva, em vez de fingir que salva.
+  'budget-plans.orcamento.save.hint': 'As alterações são salvas ao confirmar o cálculo, em "Calcular Gasto".',
   'budget-plans.orcamento.save': 'Salvar',
   'budget-plans.orcamento.moreActions': 'Mais ações',
   'budget-plans.orcamento.calcGasto': 'Calcular Gasto',
