@@ -109,13 +109,9 @@ export type { ConsolidatedAbc } from '#modules/budget-plans/client/data/model/co
 
 export {
   deriveConsolidadoHeader,
-  deriveConsolidadoCurve,
   hasConsolidadoResult,
 } from '#modules/budget-plans/client/planejamento/consolidado/consolidado-abc.view-model.ts'
-export type {
-  ConsolidadoAbcHeader,
-  ConsolidadoCurveRow,
-} from '#modules/budget-plans/client/planejamento/consolidado/consolidado-abc.view-model.ts'
+export type { ConsolidadoAbcHeader } from '#modules/budget-plans/client/planejamento/consolidado/consolidado-abc.view-model.ts'
 
 export {
   validateCreatePlan,

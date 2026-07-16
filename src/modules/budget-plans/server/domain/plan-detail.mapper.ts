@@ -258,3 +258,68 @@ export const deriveTotalsFromCells = (detail: PlanDetailComposed): PlanDetailCom
     networks: detail.networks.map((n, i) => ({ ...n, totalInCents: perNetwork[i] ?? 0 })),
   }
 }
+
+/**
+ * Consolidado ABC (§2): funde as matrizes de VÁRIOS planos numa só — a "matriz Centro de Custo × meses" que o
+ * legado mostra (print da P.O.) e o handbook especifica.
+ *
+ * As duas regras vêm do handbook, e a segunda é a não-óbvia:
+ *   1. **Centro de custo funde por NOME.** "ADMINISTRAÇÃO" do programa A e do B viram UMA linha — é o que
+ *      "consolidar programas" significa. (Cada plano tem seu próprio uuid de centro; o nome é o que casa.)
+ *   2. **Categoria ganha o SUFIXO do programa**: `Consultoria Educacional (ETI)`. Sem ele, duas categorias
+ *      homônimas de programas diferentes colidiriam numa linha só e o operador não saberia de quem é o
+ *      dinheiro — o handbook é explícito: "porque agrega múltiplos programas".
+ *
+ * `monthlyInCents` de cada plano JÁ vem preenchido (`fillMonthlyCells` com os lançamentos achatados). Aqui é
+ * só soma posicional: mês a mês, e o total do nó = Σ dos 12 (o anual é sempre a soma dos meses — #413).
+ *
+ * IDs sintéticos por índice (como no `mapPlanDetail`): o uuid do backend não sobrevive à fusão — dois centros
+ * viraram um. `ref` fica '' pelo mesmo motivo: NÃO existe um uuid único pra linha fundida, e inventar um que
+ * o backend não conhece seria pior que assumir a ausência (a tela é read-only, não escreve).
+ */
+export const mergeConsolidatedMatrices = (
+  plans: readonly Readonly<{ programAbbreviation: string; detail: PlanDetailComposed }>[],
+): readonly CostCenterConsolidated[] => {
+  const sum12 = (a: readonly number[], b: readonly number[]): number[] =>
+    Array.from({ length: 12 }, (_, i) => (a[i] ?? 0) + (b[i] ?? 0))
+  const total = (serie: readonly number[]): number => serie.reduce((x, y) => x + y, 0)
+
+  // nome do centro → (nome da categoria já sufixada → série de 12 meses)
+  const centers = new Map<string, Map<string, number[]>>()
+  const centerType = new Map<string, CostCenterType>()
+
+  for (const { programAbbreviation, detail } of plans) {
+    for (const cc of detail.costCenters) {
+      const cats = centers.get(cc.name) ?? new Map<string, number[]>()
+      centerType.set(cc.name, centerType.get(cc.name) ?? cc.type)
+      for (const cat of cc.categories) {
+        const label = `${cat.name} (${programAbbreviation})`
+        cats.set(label, sum12(cats.get(label) ?? [], cat.monthlyInCents))
+      }
+      centers.set(cc.name, cats)
+    }
+  }
+
+  return [...centers.entries()].map(([name, cats], i) => {
+    const categories = [...cats.entries()].map(([catName, serie], j) => ({
+      id: (i + 1) * 100 + j + 1,
+      ref: '',
+      name: catName,
+      totalInCents: total(serie),
+      monthlyInCents: serie,
+      networkInCents: [], // a visão "Por Rede" não existe no Consolidado (ele agrega programas, não redes)
+      subCategories: [], // o handbook agrega ATÉ a categoria: "a coluna Subcategoria fica vazia"
+    }))
+    const serie = categories.reduce<readonly number[]>((acc, c) => sum12(acc, c.monthlyInCents), [])
+    return {
+      id: i + 1,
+      ref: '',
+      name,
+      type: centerType.get(name) ?? 'A PAGAR',
+      totalInCents: total(serie),
+      monthlyInCents: serie,
+      networkInCents: [],
+      categories,
+    }
+  })
+}
