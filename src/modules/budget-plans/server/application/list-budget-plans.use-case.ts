@@ -20,6 +20,10 @@ import type {
   PlanejamentoListItem,
   PlanejamentoListPage,
 } from '#modules/budget-plans/server/domain/planejamento-list.io.ts'
+import type {
+  PlanDetailHeaderInput,
+  BudgetResultRow,
+} from '#modules/budget-plans/server/domain/plan-detail.io.ts'
 
 // ── Port (application) — o adapter implementa. Tipos CRUS application-owned (não expõem o DTO do core). ──
 // #372/#373: o item da lista já traz `partnersCount` + `networkKind` (state|municipality|mixed|null) e o
@@ -51,6 +55,12 @@ export type BudgetPlansCoreClient = Readonly<{
     token: string,
   ) => Promise<Result<RawPlanListPage, BudgetPlansError>>
   getProgramOptions: (token: string) => Promise<Result<readonly RawProgramOption[], BudgetPlansError>>
+  // INTERINO (#458): as 2 leituras que permitem derivar o total do plano. Ver `deriveTotals` abaixo.
+  getPlanDetailHeader: (id: string, token: string) => Promise<Result<PlanDetailHeaderInput, BudgetPlansError>>
+  getBudgetResults: (
+    budgetId: string,
+    token: string,
+  ) => Promise<Result<readonly BudgetResultRow[], BudgetPlansError>>
 }>
 
 // #373: resolve `updatedByRef` (uuid) → nome do autor (cross-módulo, best-effort). Dedup de refs fica a cargo
@@ -66,6 +76,48 @@ const parseVersion = (v: string): number => {
 // #372: networkKind do core → domínio. `mixed` → MISTO; `null` (plano sem rede) → ESTADO (default do interino).
 const mapNetwork = (kind: RawNetworkKind | null): NetworkKind =>
   kind === 'municipality' ? 'MUNICIPIO' : kind === 'mixed' ? 'MISTO' : 'ESTADO'
+
+/**
+ * INTERINO (core-api#458): total do plano = Σ dos LANÇAMENTOS. O core-api soma o `valueInCents` **informado**
+ * do orçamento — campo que NINGUÉM preenche (a P.O. decidiu que ele não existe no legado, e o front manda 0).
+ * Resultado: a lista mostrava `R$ 0,00` em todo plano enquanto o Detalhe do MESMO plano mostrava o valor real.
+ * Dois números pro mesmo plano na mesma sessão é pior que um número feio — não parece erro, parece mentira.
+ *
+ * O fan-out (1 detalhe + 1 by-budget por rede) foi removido daqui ao fechar o #372, e volta com o MESMO
+ * caráter: interino. Quando o #458 existir, o `totalInCents` do core passa a valer e isto sai inteiro.
+ *
+ * Custo contido por 3 decisões:
+ *   1. **`partnersCount === 0` → PULA**: plano sem rede tem total zero DE VERDADE. Não há o que buscar, e é
+ *      a maioria dos planos. É o que mantém o fan-out barato no caso real.
+ *   2. tudo em PARALELO: o custo é a chamada mais lenta, não a soma delas.
+ *   3. BEST-EFFORT por plano: falha numa rede → aquele plano fica com o total do core (0). A LISTA não cai
+ *      por causa de um total.
+ */
+const deriveTotals = async (
+  deps: Pick<BudgetPlansCoreClient, 'getPlanDetailHeader' | 'getBudgetResults'>,
+  items: readonly RawPlanItem[],
+  token: string,
+): Promise<ReadonlyMap<string, number>> => {
+  // Age SÓ onde o core diz 0 E existe rede. As duas condições importam:
+  //   `partnersCount > 0` → sem rede o total é zero DE VERDADE (a maioria dos planos; é o que barateia).
+  //   `totalInCents === 0` → se o core mandar um total, ELE MANDA. No dia em que o #458 subir, esta função
+  //      para de agir SOZINHA, sem PR — e nunca sobrescreve a resposta do backend com um palpite nosso.
+  const comRede = items.filter((it) => it.partnersCount > 0 && it.totalInCents === 0)
+  const entries = await Promise.all(
+    comRede.map(async (it): Promise<readonly [string, number] | null> => {
+      const header = await deps.getPlanDetailHeader(it.id, token)
+      if (isErr(header)) return null
+      const perNetwork = await Promise.all(
+        header.value.budgets.map(async (b): Promise<number> => {
+          const rows = await deps.getBudgetResults(b.budgetId, token)
+          return isErr(rows) ? 0 : rows.value.reduce((acc, r) => acc + r.valueInCents, 0)
+        }),
+      )
+      return [it.id, perNetwork.reduce((a, b) => a + b, 0)]
+    }),
+  )
+  return new Map(entries.filter((e): e is readonly [string, number] => e !== null))
+}
 
 export type ListBudgetPlansDeps = Readonly<{
   client: BudgetPlansCoreClient
@@ -94,7 +146,9 @@ export const createListBudgetPlans =
     ]
     const nameByRef = refs.length > 0 ? await deps.resolveUserNames(refs) : new Map<string, string>()
 
-    // #372: partnersCount + networkKind vêm projetados no item (sem N+1). Mapeamento síncrono.
+    // INTERINO #458: o total do core vem 0 — deriva dos lançamentos. Ver `deriveTotals`.
+    const totalByPlan = await deriveTotals(deps.client, listRes.value.items, token)
+
     const toNode = (item: RawPlanItem): PlanejamentoListItem => ({
       id: item.id,
       year: item.year,
@@ -103,7 +157,8 @@ export const createListBudgetPlans =
       version: parseVersion(item.version),
       scenarioName: item.scenarioName, // #423
       status: item.status,
-      totalInCents: item.totalInCents,
+      // Derivado só quando o core disse 0 (ver `deriveTotals`); senão vale o do core, que é o contrato.
+      totalInCents: totalByPlan.get(item.id) ?? item.totalInCents,
       updatedByName: item.updatedByRef !== null ? (nameByRef.get(item.updatedByRef) ?? null) : null,
       updatedAt: item.updatedAt,
       networkKind: mapNetwork(item.networkKind),
