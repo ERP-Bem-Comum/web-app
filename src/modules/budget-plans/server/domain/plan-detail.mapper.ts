@@ -126,14 +126,25 @@ export const mapPlanDetail = (
   }
 }
 
-// #C2: preenche `networkInCents` da matriz "Por Rede" com os resultados de cálculo. `resultsPerNetwork` está
-// ALINHADO por índice a `detail.networks` (cada item = os resultados daquela rede). Preenche a subcategoria
-// pelo `ref` (UUID) e faz o ROLL-UP (categoria = Σ subs; centro = Σ categorias; total do nó = Σ redes).
+/**
+ * #C2: preenche `networkInCents` da matriz "Por Rede" com os resultados de cálculo. `resultsPerNetwork` está
+ * ALINHADO por índice a `detail.networks` (cada item = os resultados daquela rede). Preenche a subcategoria
+ * pelo `ref` (UUID) e faz o ROLL-UP (categoria = Σ subs; centro = Σ categorias; total do nó = Σ redes).
+ *
+ * ⚠️ O ANUAL da rede é a **soma dos 12 meses** (core-api#413). Isto era um `new Map(rows.map(...))`, que com
+ * chave repetida **sobrescreve**: quando o backend passou a devolver 12 linhas por subcategoria (uma por mês),
+ * o "Por Rede" mostraria o valor do ÚLTIMO mês como se fosse o anual — em silêncio, sem erro. Agora soma.
+ */
 export const fillNetworkCells = (
   detail: PlanDetailComposed,
   resultsPerNetwork: readonly (readonly BudgetResultRow[])[],
 ): PlanDetailComposed => {
-  const maps = resultsPerNetwork.map((rows) => new Map(rows.map((r) => [r.subcategoryRef, r.valueInCents])))
+  const maps = resultsPerNetwork.map((rows) =>
+    rows.reduce(
+      (acc, r) => acc.set(r.subcategoryRef, (acc.get(r.subcategoryRef) ?? 0) + r.valueInCents),
+      new Map<string, number>(),
+    ),
+  )
   const nets = detail.networks.map((_, i) => i)
   const sumCols = (rows: readonly (readonly number[])[]): number[] =>
     nets.map((i) => rows.reduce((acc, r) => acc + (r[i] ?? 0), 0))
