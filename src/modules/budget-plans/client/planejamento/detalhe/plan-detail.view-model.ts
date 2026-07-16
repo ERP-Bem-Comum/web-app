@@ -5,6 +5,7 @@
  * no MESMO shape (`MatrixView`), então a view burra é uma só. Sem React/TanStack — testável por `node:test`.
  */
 import type {
+  NetworkKind,
   PlanDetail,
   CostCenterConsolidated,
   CategoryConsolidated,
@@ -43,31 +44,56 @@ export type Semester = 0 | 1
 export type RegionOption = Readonly<{ value: string; label: string }>
 
 /**
- * Estados/Municípios do filtro por Rede — front-first placeholder. Quando o #113 existir, estas listas
- * virão dos PARCEIROS do plano (redes cadastradas), não de um mapa fixo.
+ * Opções do filtro por Rede — derivadas das REDES DO PLANO (§1.4), não de uma lista fixa.
+ *
+ * A regra é do legado e a P.O. a confirmou pela coluna PARCEIROS da lista ("1 estados" × "1 municípios"): a
+ * natureza da rede é do PLANO. Plano de ESTADO → só o filtro de Estado. Plano de MUNICÍPIO → Estado (que
+ * agrupa) + Município (que é a rede). Por isso o `uf` viaja junto da rede: a `ref` de um município é o código
+ * IBGE, que não diz de que estado ele é.
+ *
+ * Até 2026-07-15 isto era um mapa fixo (CE/SP/AC + 3 municípios de mentira) — o placeholder front-first do
+ * #113. Resultado em tela: o usuário escolhia "Ceará" num plano que não tinha rede nenhuma, e a Edição
+ * respondia "não foi possível carregar". A grade já era real; a PORTA continuava fake.
  */
-export const PLAN_FILTER_ESTADOS: readonly RegionOption[] = [
-  { value: 'CE', label: 'Ceará' },
-  { value: 'SP', label: 'São Paulo' },
-  { value: 'AC', label: 'Acre' },
-]
 
-const MUNICIPIOS_BY_ESTADO: Readonly<Record<string, readonly RegionOption[]>> = {
-  CE: [
-    { value: 'fortaleza', label: 'Fortaleza' },
-    { value: 'caucaia', label: 'Caucaia' },
-    { value: 'sobral', label: 'Sobral' },
-  ],
-  SP: [
-    { value: 'sao-paulo', label: 'São Paulo' },
-    { value: 'campinas', label: 'Campinas' },
-  ],
-  AC: [{ value: 'rio-branco', label: 'Rio Branco' }],
+/** Natureza das redes do plano. `null` = plano sem rede — não há o que filtrar (nem o que editar). */
+export const planNetworkKind = (detail: PlanDetail): NetworkKind | null => detail.networks[0]?.kind ?? null
+
+const byValue = (a: RegionOption, b: RegionOption): number => a.label.localeCompare(b.label, 'pt-BR')
+
+/** Dedup por `value` preservando o rótulo — dois municípios do mesmo estado geram uma opção de Estado só. */
+const distinct = (options: readonly RegionOption[]): readonly RegionOption[] =>
+  [...new Map(options.map((o) => [o.value, o])).values()].sort(byValue)
+
+/**
+ * Estados do filtro. Plano de ESTADO: as próprias redes (o estado É a rede). Plano de MUNICÍPIO: as UFs
+ * distintas das redes — o Estado aqui só ESTREITA a lista de municípios, não é a rede.
+ */
+export const estadoOptionsFor = (detail: PlanDetail): readonly RegionOption[] => {
+  const kind = planNetworkKind(detail)
+  if (kind === null) return []
+  if (kind === 'state') return distinct(detail.networks.map((n) => ({ value: n.ref, label: n.name })))
+  // Município: a UF vem do catálogo; sem ela não dá pra agrupar (e a opção seria um rótulo vazio).
+  return distinct(detail.networks.filter((n) => n.uf !== '').map((n) => ({ value: n.uf, label: n.uf })))
 }
 
-/** Municípios de um estado (vazio se estado não escolhido/desconhecido). */
-export const municipiosForEstado = (estado: string): readonly RegionOption[] =>
-  MUNICIPIOS_BY_ESTADO[estado] ?? []
+/** Municípios-rede de um estado. Vazio p/ plano de estado (lá o município não existe) ou UF não escolhida. */
+export const municipioOptionsFor = (detail: PlanDetail, uf: string): readonly RegionOption[] => {
+  if (planNetworkKind(detail) !== 'municipality' || uf === '') return []
+  return distinct(detail.networks.filter((n) => n.uf === uf).map((n) => ({ value: n.ref, label: n.name })))
+}
+
+/**
+ * A REDE escolhida (o que a Edição precisa) — `null` enquanto a escolha não fecha uma rede real. É o `ref`
+ * que endereça a tela: UF no plano de estado, código IBGE no de município.
+ */
+export const selectedNetworkRef = (detail: PlanDetail, estado: string, municipio: string): string | null => {
+  const kind = planNetworkKind(detail)
+  if (kind === null) return null
+  const ref = kind === 'state' ? estado : municipio
+  if (ref === '') return null
+  return detail.networks.some((n) => n.ref === ref) ? ref : null
+}
 
 /** Janela de índices de mês por semestre: 0 → Jan–Jun (0..5), 1 → Jul–Dez (6..11). */
 const windowFor = (s: Semester): readonly number[] => (s === 0 ? [0, 1, 2, 3, 4, 5] : [6, 7, 8, 9, 10, 11])

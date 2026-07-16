@@ -10,9 +10,16 @@ import { EditIcon, TrashIcon, CalculatorIcon, InfoIcon } from '#shared/ui/index.
 
 import type { CalcGastosBinding } from './calc-gastos.binding.ts'
 import { formatCentsBRL } from './calc-gastos.view-model.ts'
+import { maskValorBR } from './pessoal-calc.view-model.ts'
 import { PessoalForm, type PessoalFormLabels } from './pessoal-form.component.tsx'
 import { CaedForm, type CaedFormLabels } from './caed-form.component.tsx'
 import { LogisticaForm, type LogisticaFormLabels } from './logistica-form.component.tsx'
+import {
+  configToPayload,
+  caedToPayload,
+  pessoalToPayload,
+  logisticaToPayload,
+} from './budget-result-command.view-model.ts'
 import {
   overlay,
   panel,
@@ -200,7 +207,9 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
   const openForm = (monthIndex: number, cents: number): void => {
     setForm({
       months: new Set([monthIndex]),
-      total: String(cents / 100),
+      // Mascarado ao ABRIR também: o campo não pode nascer cru ("2500") e só formatar na 1ª tecla.
+      // `.` → `,` porque o JS decimaliza com ponto e o campo (e o parser) falam vírgula.
+      total: maskValorBR(String(cents / 100).replace('.', ',')),
       justificativa: '',
       ipca: '0',
       usePrev: false,
@@ -232,7 +241,8 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
 
   const applyForm = (): void => {
     if (form === null) return
-    b.applyToMonths([...form.months], custoTotalCents)
+    // O form geral É o modelo IPCA (total × (1 + ipca/100)) — grava como tal.
+    b.saveCalc(configToPayload({ total: form.total, ipca: form.ipca }), [...form.months], custoTotalCents)
     setForm(null)
   }
 
@@ -390,7 +400,17 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
         </div>
 
         <div className={modalFoot}>
-          <button type="button" className={applyButton} onClick={applyForm} disabled>
+          {/* "Calcular" abre o form da SUBCATEGORIA (o form é que escolhe os meses — "Meses aplicados"), pelo
+              mesmo roteamento do lápis. Estava `disabled` fixo desde antes de haver onde gravar (#413).
+              Sem subcategoria selecionada não há o que calcular. */}
+          <button
+            type="button"
+            className={applyButton}
+            onClick={() => {
+              openPencil(0, 0)
+            }}
+            disabled={!b.hasData || b.saving}
+          >
             <CalculatorIcon size={16} />
             {labels.calcular}
           </button>
@@ -425,8 +445,9 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
                 monthAbbrevs={b.despesas.map((d) => d.name.slice(0, 3))}
                 formatCents={formatCentsBRL}
                 onDescartar={requestDiscard}
-                onSalvar={(custoMensalCents, meses) => {
-                  b.applyToMonths([...meses], custoMensalCents)
+                onSalvar={(custoMensalCents, meses, form) => {
+                  // GRAVA (um POST por mês) — o `saveCalc` já aplica o eco otimista na grade.
+                  b.saveCalc(pessoalToPayload(form), [...meses], custoMensalCents)
                   setPessoalOpen(false)
                 }}
               />
@@ -438,8 +459,9 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
                 monthAbbrevs={b.despesas.map((d) => d.name.slice(0, 3))}
                 formatCents={formatCentsBRL}
                 onDescartar={requestDiscard}
-                onSalvar={(custoMensalCents, meses) => {
-                  b.applyToMonths([...meses], custoMensalCents)
+                onSalvar={(custoMensalCents, meses, form) => {
+                  // GRAVA (um POST por mês) — o `saveCalc` já aplica o eco otimista na grade.
+                  b.saveCalc(caedToPayload(form), [...meses], custoMensalCents)
                   setCaedOpen(false)
                 }}
               />
@@ -451,8 +473,9 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
                 monthAbbrevs={b.despesas.map((d) => d.name.slice(0, 3))}
                 formatCents={formatCentsBRL}
                 onDescartar={requestDiscard}
-                onSalvar={(custoMensalCents, meses) => {
-                  b.applyToMonths([...meses], custoMensalCents)
+                onSalvar={(custoMensalCents, meses, form) => {
+                  // GRAVA (um POST por mês) — o `saveCalc` já aplica o eco otimista na grade.
+                  b.saveCalc(logisticaToPayload(form), [...meses], custoMensalCents)
                   setLogisticaOpen(false)
                 }}
               />
@@ -482,7 +505,8 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
                             inputMode="decimal"
                             value={form.total}
                             onChange={(e) => {
-                              setForm({ ...form, total: e.target.value })
+                              // DINHEIRO: mascara o milhar (o IPCA abaixo é PERCENTUAL — fica cru).
+                              setForm({ ...form, total: maskValorBR(e.target.value) })
                             }}
                           />
                         </div>

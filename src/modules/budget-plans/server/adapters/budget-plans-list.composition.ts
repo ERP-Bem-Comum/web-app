@@ -14,6 +14,7 @@ import {
 import { createCreateBudgetPlan } from '#modules/budget-plans/server/application/create-budget-plan.use-case.ts'
 import { createListBudgetPlanOptions } from '#modules/budget-plans/server/application/list-budget-plan-options.use-case.ts'
 import { createGetBudgetPlanDetail } from '#modules/budget-plans/server/application/get-budget-plan-detail.use-case.ts'
+import { createGetBudgetGrid } from '#modules/budget-plans/server/application/get-budget-grid.use-case.ts'
 import { createApproveBudgetPlan } from '#modules/budget-plans/server/application/approve-budget-plan.use-case.ts'
 import { createStartCalibration } from '#modules/budget-plans/server/application/start-calibration.use-case.ts'
 import { createCreateScenery } from '#modules/budget-plans/server/application/create-scenery.use-case.ts'
@@ -28,7 +29,7 @@ import {
   createAddBudget,
   createDeleteBudget,
   createListNetworkOptions,
-  createPostIpcaResult,
+  createPostBudgetResult,
 } from '#modules/budget-plans/server/application/budget-write.use-case.ts'
 import { createGetConsolidadoAbc } from '#modules/budget-plans/server/application/get-consolidado-abc.use-case.ts'
 import { createExportConsolidadoAbcCsv } from '#modules/budget-plans/server/application/export-consolidado-abc-csv.use-case.ts'
@@ -55,6 +56,7 @@ const build = () => {
     createBudgetPlan: createCreateBudgetPlan({ client }),
     listProgramOptions: createListBudgetPlanOptions({ client }),
     getPlanDetail: createGetBudgetPlanDetail({ client }),
+    getBudgetGrid: createGetBudgetGrid({ client }),
     approvePlan: createApproveBudgetPlan({ client }),
     startCalibration: createStartCalibration({ client }),
     createScenery: createCreateScenery({ client }),
@@ -66,7 +68,7 @@ const build = () => {
     addBudget: createAddBudget({ client }),
     deleteBudget: createDeleteBudget({ client }),
     listNetworkOptions: createListNetworkOptions({ client }),
-    postIpcaResult: createPostIpcaResult({ client }),
+    postBudgetResult: createPostBudgetResult({ client }),
     getConsolidado: createGetConsolidadoAbc({ client }),
     exportConsolidadoCsv: createExportConsolidadoAbcCsv({ client }),
   }

@@ -12,6 +12,8 @@ import {
   computePessoal,
   emptyPessoalForm,
   type PessoalForm as PessoalFormState,
+  type PessoalForm as PessoalFormValues,
+  maskValorBR,
 } from './pessoal-calc.view-model.ts'
 import {
   configForm,
@@ -78,7 +80,11 @@ export type PessoalFormProps = Readonly<{
   monthAbbrevs: readonly string[]
   formatCents: (c: number) => string
   onDescartar: () => void
-  onSalvar: (custoMensalCents: number, meses: readonly number[]) => void
+  /**
+   * Devolve os INSUMOS junto do valor: o POST de cálculo manda os insumos e o core-api recalcula —
+   * `custoMensalCents` serve só p/ o eco otimista na grade enquanto a escrita não volta.
+   */
+  onSalvar: (custoMensalCents: number, meses: readonly number[], form: PessoalFormValues) => void
 }>
 
 function TextField(
@@ -86,6 +92,8 @@ function TextField(
     label: string
     value: string
     numeric?: boolean
+    /** Campo de DINHEIRO: mascara o milhar enquanto digita (pedido da P.O.). % e contagem NÃO usam. */
+    currency?: boolean
     /** Ajuda (tooltip nativo). Usado na "Qtd", que é METADADO e não entra no cálculo (core-api#460). */
     hint?: string
     onChange: (v: string) => void
@@ -100,7 +108,7 @@ function TextField(
           inputMode={props.numeric === true ? 'decimal' : undefined}
           value={props.value}
           onChange={(e) => {
-            props.onChange(e.target.value)
+            props.onChange(props.currency === true ? maskValorBR(e.target.value) : e.target.value)
           }}
         />
       </div>
@@ -195,7 +203,7 @@ export function PessoalForm(props: PessoalFormProps): ReactNode {
             <h4 className={configSectionTitle}>{L.remuneracao}</h4>
             <div className={row2}>
               <TextField label={L.qtd} hint={L.qtdHint} value={form.qtd} numeric onChange={set('qtd')} />
-              <TextField label={L.salario} value={form.salario} numeric onChange={set('salario')} />
+              <TextField label={L.salario} value={form.salario} numeric currency onChange={set('salario')} />
             </div>
             <div>
               <p className={labelMini}>{L.meses}</p>
@@ -245,18 +253,32 @@ export function PessoalForm(props: PessoalFormProps): ReactNode {
                 label={L.valeTransporte}
                 value={form.valeTransporte}
                 numeric
+                currency
                 onChange={set('valeTransporte')}
               />
               <TextField
                 label={L.alimentacao}
                 value={form.alimentacao}
                 numeric
+                currency
                 onChange={set('alimentacao')}
               />
-              <TextField label={L.planoSaude} value={form.planoSaude} numeric onChange={set('planoSaude')} />
+              <TextField
+                label={L.planoSaude}
+                value={form.planoSaude}
+                numeric
+                currency
+                onChange={set('planoSaude')}
+              />
             </div>
             <div className={row2}>
-              <TextField label={L.seguroVida} value={form.seguroVida} numeric onChange={set('seguroVida')} />
+              <TextField
+                label={L.seguroVida}
+                value={form.seguroVida}
+                numeric
+                currency
+                onChange={set('seguroVida')}
+              />
               <DerivedField label={L.totalBeneficios} value={formatCents(calc.totalBeneficiosCents)} />
             </div>
           </div>
@@ -268,13 +290,15 @@ export function PessoalForm(props: PessoalFormProps): ReactNode {
                 label={L.feriasEncargos}
                 value={form.feriasEncargos}
                 numeric
+                currency
                 onChange={set('feriasEncargos')}
               />
-              <TextField label={L.abono} value={form.abono} numeric onChange={set('abono')} />
+              <TextField label={L.abono} value={form.abono} numeric currency onChange={set('abono')} />
               <TextField
                 label={L.decimoEncargos}
                 value={form.decimoEncargos}
                 numeric
+                currency
                 onChange={set('decimoEncargos')}
               />
             </div>
@@ -283,6 +307,7 @@ export function PessoalForm(props: PessoalFormProps): ReactNode {
                 label={L.fgtsMultaAdicional}
                 value={form.fgtsMultaAdicional}
                 numeric
+                currency
                 onChange={set('fgtsMultaAdicional')}
               />
               <DerivedField label={L.totalProvisoes} value={formatCents(calc.totalProvisoesCents)} />
@@ -310,7 +335,7 @@ export function PessoalForm(props: PessoalFormProps): ReactNode {
           type="button"
           className={applyButton}
           onClick={() => {
-            props.onSalvar(calc.custoMensalCents, form.meses)
+            props.onSalvar(calc.custoMensalCents, form.meses, form)
           }}
         >
           {L.salvar}

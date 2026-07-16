@@ -30,11 +30,20 @@ const detail: PlanDetail = {
   status: 'RASCUNHO',
   totalInCents: 3_243_872,
   networks: [
-    { id: 1, name: 'Acre', ref: 'AC', kind: 'state' as const, budgetId: 'b-ac', totalInCents: 3243872 },
+    {
+      id: 1,
+      name: 'Acre',
+      ref: 'AC',
+      kind: 'state' as const,
+      uf: 'AC',
+      budgetId: 'b-ac',
+      totalInCents: 3243872,
+    },
   ],
   costCenters: [
     {
       id: 1,
+      ref: 'ref-1',
       name: 'Consultoria',
       type: 'A PAGAR',
       totalInCents: 3_243_872,
@@ -43,6 +52,7 @@ const detail: PlanDetail = {
       categories: [
         {
           id: 11,
+          ref: 'ref-11',
           name: 'Consultoria Educacional',
           totalInCents: 3_243_872,
           monthlyInCents: m({ 2: 1_621_936, 3: 1_621_936 }),
@@ -50,6 +60,7 @@ const detail: PlanDetail = {
           subCategories: [
             {
               id: 111,
+              ref: 'ref-111',
               name: 'Formação de professores',
               totalInCents: 3_243_872,
               monthlyInCents: m({ 2: 1_621_936, 3: 1_621_936 }),

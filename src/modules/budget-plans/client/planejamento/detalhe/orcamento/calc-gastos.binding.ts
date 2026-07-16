@@ -1,9 +1,28 @@
 /**
- * Binding da tela "Calculando Gastos" (US2.4b) — ADAPTER React (§XI). UI-state local: aba (centro),
- * categoria/subcategoria selecionadas e os 12 meses EDITÁVEIS da subcategoria (overrides sobre o
- * placeholder). O total é derivado (soma). "Calcular"/"Salvar" persistem só na 2.4c/#113.
+ * Binding da tela "Calculando Gastos" (§1.7) — ADAPTER React (§XI). UI-state local: aba (centro),
+ * categoria/subcategoria selecionadas e os 12 meses da subcategoria. O total é derivado (soma).
+ *
+ * GRAVA de verdade (core-api#413 destravou): cada form de cálculo vira **um POST por mês selecionado** —
+ * não há endpoint de lote, e a chave `(rede, subcategoria, mês)` é o que permite os 12 sem colidir.
+ * Recalcular um mês que já tem valor SUBSTITUI (upsert no core-api).
+ *
+ * Os POSTs vão em SEQUÊNCIA, não em `Promise.all`: são 12 escritas na MESMA chave-vizinhança, e o upsert do
+ * core-api não promete ordem sob concorrência. Sequencial é mais lento e previsível — e 12 requests é pouco.
+ *
+ * FALHA PARCIAL é possível (mês 5 grava, mês 6 falha). Não escondemos: paramos no primeiro erro, invalidamos
+ * a grade (o que gravou, gravou — a tela mostra a verdade) e devolvemos o erro. Fingir "salvo" com metade no
+ * banco seria pior que a falha.
  */
 import { useMemo, useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+
+import { isErr } from '#shared/primitives/result.ts'
+import { budgetPlansRepository } from '#modules/budget-plans/client/data/repository/budget-plans.repository.instance.ts'
+import type { BudgetPlansError } from '#modules/budget-plans/client/data/repository/budget-plans-error.ts'
+import {
+  toExerciseMonths,
+  type BudgetResultPayload,
+} from '#modules/budget-plans/client/planejamento/detalhe/orcamento/budget-result-command.view-model.ts'
 
 import {
   buildCalcGastosCentros,
@@ -37,11 +56,30 @@ export type CalcGastosBinding = Readonly<{
   /** Aplica um mesmo valor a vários meses de uma vez (form "Aplicar aos meses"). */
   applyToMonths: (monthIndices: readonly number[], cents: number) => void
   clearMonth: (monthIndex: number) => void
+  /**
+   * GRAVA o cálculo nos meses escolhidos (um POST por mês). Aplica no estado local ANTES de gravar, p/ a
+   * tela responder na hora; o refetch da grade depois confirma (ou desmente) com a verdade do servidor.
+   */
+  saveCalc: (payload: BudgetResultPayload, monthIndices: readonly number[], cents: number) => void
+  saving: boolean
+  saveError: BudgetPlansError | null
+  /** Some quando o usuário mexe de novo — erro velho na tela mente sobre o estado atual. */
+  clearSaveError: () => void
+  /** Há edição local NÃO gravada (lixeira/célula)? É o que o "Descartar Alterações" da página joga fora. */
+  hasLocalChanges: boolean
+  /**
+   * Joga fora a edição local e relê do servidor. O que foi GRAVADO (o Salvar do drawer) sobrevive — só o
+   * que nunca saiu da tela some. Ver `hasLocalChanges`.
+   */
+  discardLocalChanges: () => void
 }>
+
+/** Alvo da escrita: sem rede não há onde gravar (a grade é sempre de UMA rede). */
+export type CalcGastosTarget = Readonly<{ planId: string; budgetId: string | null }>
 
 const firstId = (list: readonly { id: number }[]): number | null => list[0]?.id ?? null
 
-export function useCalcGastos(detail: PlanDetail | null): CalcGastosBinding {
+export function useCalcGastos(detail: PlanDetail | null, target: CalcGastosTarget): CalcGastosBinding {
   const centros = useMemo<readonly CalcCentro[]>(
     () => (detail !== null ? buildCalcGastosCentros(detail) : []),
     [detail],
@@ -89,6 +127,40 @@ export function useCalcGastos(detail: PlanDetail | null): CalcGastosBinding {
 
   const activeMonths = activeSub !== null ? monthsOf(activeSub.id, activeSub.monthsInCents) : []
 
+  // ── Escrita ────────────────────────────────────────────────────────────────
+  const queryClient = useQueryClient()
+  const [saveError, setSaveError] = useState<BudgetPlansError | null>(null)
+
+  const saveMutation = useMutation({
+    mutationFn: async (
+      v: Readonly<{ payload: BudgetResultPayload; subcategoryRef: string; months: readonly number[] }>,
+    ): Promise<BudgetPlansError | null> => {
+      if (target.budgetId === null) return 'invalid-input' // sem rede não há alvo — não deveria chegar aqui
+      // Sequencial e PARANDO no primeiro erro: 12 escritas na mesma vizinhança de chave; e continuar depois
+      // de uma falha só espalharia o estrago sem informar melhor.
+      for (const month of v.months) {
+        const r = await budgetPlansRepository.postBudgetResult({
+          ...v.payload,
+          planId: target.planId,
+          budgetId: target.budgetId,
+          subcategoryId: v.subcategoryRef,
+          month,
+        })
+        if (isErr(r)) return r.error
+      }
+      return null
+    },
+    onSuccess: (error) => {
+      setSaveError(error)
+      // Invalida SEMPRE — inclusive no erro parcial: o que gravou, gravou, e a tela tem que mostrar isso.
+      void queryClient.invalidateQueries({ queryKey: ['budget-plans'] })
+    },
+    onError: () => {
+      setSaveError('unexpected')
+      void queryClient.invalidateQueries({ queryKey: ['budget-plans'] })
+    },
+  })
+
   return {
     centros: centros.map((c) => ({ id: c.id, name: c.name, active: c.id === activeCentro?.id })),
     categories: cats.map((c) => ({ id: c.id, name: c.name, active: c.id === activeCat?.id })),
@@ -121,6 +193,26 @@ export function useCalcGastos(detail: PlanDetail | null): CalcGastosBinding {
     },
     clearMonth: (monthIndex) => {
       editMonth(monthIndex, 0)
+    },
+    saveCalc: (payload, monthIndices, cents) => {
+      if (activeSub === null) return
+      const months = toExerciseMonths(monthIndices)
+      if (months.length === 0) return // nenhum mês marcado: não há o que gravar
+      setSaveError(null)
+      setMonths(new Set(monthIndices), cents) // eco otimista; o refetch confirma
+      saveMutation.mutate({ payload, subcategoryRef: activeSub.ref, months })
+    },
+    saving: saveMutation.isPending,
+    saveError,
+    clearSaveError: () => {
+      setSaveError(null)
+    },
+    hasLocalChanges: Object.keys(overrides).length > 0,
+    discardLocalChanges: () => {
+      setOverrides({})
+      setSaveError(null)
+      // Relê: a tela volta a mostrar o que está GRAVADO, não o que ficou na memória.
+      void queryClient.invalidateQueries({ queryKey: ['budget-plans'] })
     },
   }
 }

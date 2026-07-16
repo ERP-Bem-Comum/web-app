@@ -183,7 +183,7 @@ export function useCentrosCusto(planId: string, detail: PlanDetail | null): Cent
       setErrorTag(null)
       // Snapshot dos refs conhecidos AGORA (antes do POST) — o auto-select diffa contra ele na resposta, sem
       // depender do `centros` do render em que o onSuccess roda (que já pode ter relido a árvore com o novo nó).
-      const knownRefs = new Set(centros.map((c) => c.ref).filter((r): r is string => r !== undefined))
+      const knownRefs = new Set(centros.map((c) => c.ref))
       addCostCenterMutation.mutate(
         { planId, name: form.nome.trim(), direction: form.centroTipo },
         {

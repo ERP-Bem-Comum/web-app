@@ -45,6 +45,7 @@ const PLAN: PlanDetail = {
   costCenters: [
     {
       id: 1,
+      ref: 'ref-1',
       name: 'Consultoria',
       type: 'A PAGAR',
       totalInCents: 0,

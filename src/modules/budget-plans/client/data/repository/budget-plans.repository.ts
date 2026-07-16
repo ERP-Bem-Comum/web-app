@@ -4,6 +4,7 @@
  * (testável). Espelha `reconciliation.repository.ts`.
  */
 import { ok, err, type Result } from '#shared/primitives/result.ts'
+import type { PostBudgetResultInput } from '#modules/budget-plans/server/adapters/budget-plans-list.io-schemas.ts'
 import type {
   BudgetPlanNode,
   BudgetPlanProgramOption,
@@ -12,6 +13,7 @@ import type {
 } from '#modules/budget-plans/client/data/model/budget-plan.model.ts'
 import type {
   PlanDetail,
+  BudgetGrid,
   AddCostCenterInput,
   AddCategoryInput,
   AddSubcategoryInput,
@@ -46,6 +48,9 @@ type ListFn = (opts: { data: ListBudgetPlansArgs }) => Promise<BudgetPlansFnResu
 type CreateFn = (opts: { data: CreateBudgetPlanInput }) => Promise<BudgetPlansFnResult<CreatedBudgetPlan>>
 type OptionsFn = () => Promise<BudgetPlansFnResult<{ programs: readonly BudgetPlanProgramOption[] }>>
 type GetDetailFn = (opts: { data: { id: string } }) => Promise<BudgetPlansFnResult<PlanDetail>>
+type GetBudgetGridFn = (opts: {
+  data: { planId: string; networkRef: string }
+}) => Promise<BudgetPlansFnResult<BudgetGrid>>
 type PlanIdFn<T> = (opts: { data: { id: string } }) => Promise<BudgetPlansFnResult<T>>
 type CreateSceneryFn = (opts: {
   data: { id: string; name: string }
@@ -68,14 +73,13 @@ type AddBudgetFn = (opts: {
 }) => Promise<WriteVoidResult>
 type DeleteBudgetFn = (opts: { data: { planId: string; budgetId: string } }) => Promise<WriteVoidResult>
 type NetworkOptionsFn = () => Promise<readonly BudgetNetworkOption[]>
-export type IpcaResultArgs = Readonly<{
-  planId: string
-  budgetId: string
-  subcategoryId: string
-  baseValueInCents: number
-  ipca: number
-}>
-type PostIpcaFn = (opts: { data: IpcaResultArgs }) => Promise<WriteVoidResult>
+/**
+ * Argumento do "Calculando Gastos" — a MESMA união discriminada da borda (`PostBudgetResultInput`), importada
+ * do schema em vez de redeclarada: se um modelo ganhar campo no core-api, o compilador cobra AQUI também.
+ * `planId` só serve p/ invalidar a grade; `month` faz parte da chave (#413).
+ */
+export type BudgetResultArgs = PostBudgetResultInput
+type PostBudgetResultFn = (opts: { data: BudgetResultArgs }) => Promise<WriteVoidResult>
 
 /** Filtro do Consolidado ABC: Ano Base (obrigatório) + Programa (uuid opcional). */
 export type ConsolidadoFilters = Readonly<{ year: number; programRef?: string }>
@@ -104,8 +108,11 @@ export type BudgetPlansRepository = Readonly<{
   }) => Promise<Result<void, BudgetPlansError>>
   deleteBudget: (input: { planId: string; budgetId: string }) => Promise<Result<void, BudgetPlansError>>
   getNetworkOptions: () => Promise<readonly BudgetNetworkOption[]>
-  postIpcaResult: (input: IpcaResultArgs) => Promise<Result<void, BudgetPlansError>>
+  /** §1.7 — grava UM mês de UMA subcategoria. Recalcular o mesmo mês SUBSTITUI (upsert no core-api). */
+  postBudgetResult: (input: BudgetResultArgs) => Promise<Result<void, BudgetPlansError>>
   getConsolidado: (filters: ConsolidadoFilters) => Promise<Result<ConsolidatedAbc, BudgetPlansError>>
+  /** §1.7 — a matriz Categorias × 12 meses de UMA rede, endereçada pela `ref` (UF) que está na URL. */
+  getBudgetGrid: (planId: string, networkRef: string) => Promise<Result<BudgetGrid, BudgetPlansError>>
 }>
 
 export const createBudgetPlansRepository = (
@@ -114,6 +121,7 @@ export const createBudgetPlansRepository = (
     createBudgetPlanFn: CreateFn
     listBudgetPlanOptionsFn: OptionsFn
     getBudgetPlanDetailFn: GetDetailFn
+    getBudgetGridFn: GetBudgetGridFn
     approveBudgetPlanFn: PlanIdFn<LifecyclePlan>
     startCalibrationFn: PlanIdFn<LifecyclePlan>
     createSceneryFn: CreateSceneryFn
@@ -125,7 +133,7 @@ export const createBudgetPlansRepository = (
     addBudgetFn: AddBudgetFn
     deleteBudgetFn: DeleteBudgetFn
     networkOptionsFn: NetworkOptionsFn
-    postIpcaResultFn: PostIpcaFn
+    postBudgetResultFn: PostBudgetResultFn
     getConsolidadoFn: GetConsolidadoFn
   }>,
 ): BudgetPlansRepository => ({
@@ -143,6 +151,10 @@ export const createBudgetPlansRepository = (
   },
   getPlanDetail: async (id) => {
     const res = await deps.getBudgetPlanDetailFn({ data: { id } })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  getBudgetGrid: async (planId, networkRef) => {
+    const res = await deps.getBudgetGridFn({ data: { planId, networkRef } })
     return res.ok ? ok(res.data) : err(res.error)
   },
   approvePlan: async (id) => {
@@ -186,8 +198,8 @@ export const createBudgetPlansRepository = (
     return res.ok ? ok(undefined) : err(res.error)
   },
   getNetworkOptions: () => deps.networkOptionsFn(),
-  postIpcaResult: async (input) => {
-    const res = await deps.postIpcaResultFn({ data: input })
+  postBudgetResult: async (input) => {
+    const res = await deps.postBudgetResultFn({ data: input })
     return res.ok ? ok(undefined) : err(res.error)
   },
   getConsolidado: async (filters) => {

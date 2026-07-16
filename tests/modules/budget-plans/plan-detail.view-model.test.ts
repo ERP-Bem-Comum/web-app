@@ -6,13 +6,19 @@
 import { describe, it } from 'node:test'
 import { strict as assert } from 'node:assert'
 
-import type { PlanDetail, MonthlyCents } from '#modules/budget-plans/client/data/model/plan-detail.model.ts'
+import type {
+  PlanDetail,
+  MonthlyCents,
+  NetworkRef,
+} from '#modules/budget-plans/client/data/model/plan-detail.model.ts'
 import {
   buildMonthlyMatrix,
   buildNetworkMatrix,
   derivePlanDetailHeader,
-  municipiosForEstado,
-  PLAN_FILTER_ESTADOS,
+  estadoOptionsFor,
+  municipioOptionsFor,
+  planNetworkKind,
+  selectedNetworkRef,
   buildOrcamentoMatrix,
   orcamentoCentroOptions,
   MONTH_HEADERS,
@@ -43,11 +49,20 @@ const detail: PlanDetail = {
   status: 'RASCUNHO',
   totalInCents: 3_243_872,
   networks: [
-    { id: 1, name: 'Acre', ref: 'AC', kind: 'state' as const, budgetId: 'b-ac', totalInCents: 3243872 },
+    {
+      id: 1,
+      name: 'Acre',
+      ref: 'AC',
+      kind: 'state' as const,
+      uf: 'AC',
+      budgetId: 'b-ac',
+      totalInCents: 3243872,
+    },
   ],
   costCenters: [
     {
       id: 1,
+      ref: 'ref-1',
       name: 'Consultoria',
       type: 'A PAGAR',
       totalInCents: 3_243_872,
@@ -56,6 +71,7 @@ const detail: PlanDetail = {
       categories: [
         {
           id: 11,
+          ref: 'ref-11',
           name: 'Consultoria Educacional',
           totalInCents: 3_243_872,
           monthlyInCents: consult,
@@ -63,6 +79,7 @@ const detail: PlanDetail = {
           subCategories: [
             {
               id: 111,
+              ref: 'ref-111',
               name: 'Formação de professores',
               totalInCents: 3_243_872,
               monthlyInCents: consult,
@@ -74,6 +91,7 @@ const detail: PlanDetail = {
     },
     {
       id: 2,
+      ref: 'ref-2',
       name: 'Comunicação',
       type: 'A PAGAR',
       totalInCents: 0,
@@ -139,17 +157,85 @@ describe('buildNetworkMatrix', () => {
   })
 })
 
-describe('filtro por Rede — opções de Estado/Município (placeholder front-first)', () => {
-  it('lista os estados e resolve os municípios do estado', () => {
-    assert.ok(PLAN_FILTER_ESTADOS.some((e) => e.value === 'CE'))
+// O filtro lista as REDES DO PLANO. Até 2026-07-15 era um mapa fixo (CE/SP/AC + municípios de mentira) — em
+// tela, escolher "Ceará" num plano sem rede levava a Edição a dizer "não foi possível carregar" (achado da
+// P.O.). A regra (natureza da rede é do PLANO) veio da coluna PARCEIROS do legado: "1 estados" × "1 municípios".
+const rede = (over: Partial<NetworkRef>): NetworkRef => ({
+  id: 0,
+  name: 'Ceará',
+  ref: 'CE',
+  kind: 'state',
+  uf: 'CE',
+  budgetId: 'bg-1',
+  totalInCents: 0,
+  ...over,
+})
+const withNetworks = (networks: readonly NetworkRef[]): PlanDetail => ({ ...detail, networks })
+
+describe('filtro por Rede — as opções saem das REDES DO PLANO', () => {
+  it('plano de ESTADO: os estados SÃO as redes (o estado é a rede)', () => {
+    const d = withNetworks([rede({}), rede({ id: 1, ref: 'RN', name: 'Rio Grande do Norte', uf: 'RN' })])
+    assert.equal(planNetworkKind(d), 'state')
     assert.deepEqual(
-      municipiosForEstado('CE').map((mun) => mun.label),
-      ['Fortaleza', 'Caucaia', 'Sobral'],
+      estadoOptionsFor(d).map((o) => o.value),
+      ['CE', 'RN'],
     )
   })
-  it('estado vazio/desconhecido → sem municípios', () => {
-    assert.equal(municipiosForEstado('').length, 0)
-    assert.equal(municipiosForEstado('ZZ').length, 0)
+
+  it('plano de ESTADO: NÃO tem município (o legado só mostra o filtro de Estado)', () => {
+    assert.equal(municipioOptionsFor(withNetworks([rede({})]), 'CE').length, 0)
+  })
+
+  it('plano de MUNICÍPIO: o Estado agrupa; o município é a rede', () => {
+    const d = withNetworks([
+      rede({ id: 0, kind: 'municipality', ref: '2304400', name: 'Fortaleza', uf: 'CE' }),
+      rede({ id: 1, kind: 'municipality', ref: '2303709', name: 'Caucaia', uf: 'CE' }),
+      rede({ id: 2, kind: 'municipality', ref: '3550308', name: 'São Paulo', uf: 'SP' }),
+    ])
+    assert.equal(planNetworkKind(d), 'municipality')
+    // 3 municípios em 2 UFs → 2 opções de estado (dedup), não 3.
+    assert.deepEqual(
+      estadoOptionsFor(d).map((o) => o.value),
+      ['CE', 'SP'],
+    )
+    assert.deepEqual(
+      municipioOptionsFor(d, 'CE').map((o) => o.label),
+      ['Caucaia', 'Fortaleza'],
+    )
+    assert.deepEqual(
+      municipioOptionsFor(d, 'SP').map((o) => o.label),
+      ['São Paulo'],
+    )
+  })
+
+  it('plano SEM rede → nada a filtrar (era aqui que a lista fixa mentia)', () => {
+    const d = withNetworks([])
+    assert.equal(planNetworkKind(d), null)
+    assert.equal(estadoOptionsFor(d).length, 0)
+    assert.equal(municipioOptionsFor(d, 'CE').length, 0)
+    assert.equal(selectedNetworkRef(d, 'CE', ''), null)
+  })
+
+  it('selectedNetworkRef: no plano de ESTADO a rede é o estado escolhido', () => {
+    const d = withNetworks([rede({})])
+    assert.equal(selectedNetworkRef(d, 'CE', ''), 'CE')
+  })
+
+  it('selectedNetworkRef: no plano de MUNICÍPIO a rede é o MUNICÍPIO, não o estado', () => {
+    const d = withNetworks([rede({ kind: 'municipality', ref: '2304400', name: 'Fortaleza', uf: 'CE' })])
+    assert.equal(selectedNetworkRef(d, 'CE', ''), null) // só o estado não fecha uma rede
+    assert.equal(selectedNetworkRef(d, 'CE', '2304400'), '2304400')
+  })
+
+  // A guarda que teria evitado o bug: escolha que não existe no plano não vira rede.
+  it('rede que NÃO existe no plano → null (não deixa "filtrar" o inexistente)', () => {
+    const d = withNetworks([rede({})])
+    assert.equal(selectedNetworkRef(d, 'SP', ''), null)
+  })
+
+  it('município sem UF no catálogo → fica FORA do filtro de estado (não vira opção em branco)', () => {
+    const d = withNetworks([rede({ kind: 'municipality', ref: '9999999', name: '9999999', uf: '' })])
+    assert.equal(estadoOptionsFor(d).length, 0)
   })
 })
 

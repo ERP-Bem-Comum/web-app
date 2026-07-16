@@ -156,8 +156,21 @@ export const coreDetailSchema = z.object({
   updatedAt: z.string().trim(),
 })
 
-/** `GET /budget-plans/budget-results/by-budget/:budgetId` (#C2) — resultados por subcategoria daquela rede. */
+/**
+ * `GET /budget-plans/budget-results/by-budget/:budgetId` (#C2) — resultados por subcategoria **e MÊS** daquela
+ * rede. Desde o core-api#413 vêm **12 itens por subcategoria** (um por mês do exercício).
+ *
+ * `month` é NULLISH + `.catch(1)`: o core-api de produção pode estar atrás da `dev`, e um campo obrigatório
+ * faria o `safeParse` falhar — derrubando o DETALHE inteiro por um número a mais. Ausente → 1 (janeiro):
+ * o comportamento antigo era "um valor por subcategoria", que equivale a um único mês.
+ */
 export const coreBudgetResultsSchema = z.object({
-  items: z.array(z.object({ subcategoryId: z.string().trim(), valueInCents: z.int() })),
+  items: z.array(
+    z.object({
+      subcategoryId: z.string().trim(),
+      month: z.int().min(1).max(12).nullish().catch(1),
+      valueInCents: z.int(),
+    }),
+  ),
   totalInCents: z.int(),
 })

@@ -11,12 +11,15 @@ import { isErr } from '#shared/primitives/result.ts'
 import { budgetPlansRepository } from '#modules/budget-plans/client/data/repository/budget-plans.repository.instance.ts'
 import type { PlanDetail } from '#modules/budget-plans/client/data/model/plan-detail.model.ts'
 import type { BudgetPlansError } from '#modules/budget-plans/client/data/repository/budget-plans-error.ts'
+import type { NetworkKind } from '#modules/budget-plans/client/data/model/plan-detail.model.ts'
 import {
   buildMonthlyMatrix,
   buildNetworkMatrix,
   derivePlanDetailHeader,
-  municipiosForEstado,
-  PLAN_FILTER_ESTADOS,
+  estadoOptionsFor,
+  municipioOptionsFor,
+  planNetworkKind,
+  selectedNetworkRef,
   type RegionOption,
   type MatrixView,
   type PlanDetailHeader,
@@ -56,12 +59,16 @@ export type PlanDetailState =
 export type PlanDetailFilter = Readonly<{
   estado: string
   municipio: string
+  /** Natureza das redes DO PLANO. `null` = plano sem rede. No 'state' a view esconde o select de município. */
+  networkKind: NetworkKind | null
+  /** A rede escolhida (`ref`) — endereça a Edição. `null` enquanto a escolha não fecha uma rede real. */
+  networkRef: string | null
   estadoOptions: readonly RegionOption[]
   municipioOptions: readonly RegionOption[]
   setEstado: (estado: string) => void
   setMunicipio: (municipio: string) => void
   apply: () => void
-  /** Ambos selecionados E aplicados (Filtrar) → habilita "Editar" no lugar dos toggles. */
+  /** Rede REAL escolhida e aplicada (Filtrar) → habilita "Editar" no lugar dos toggles. */
   editMode: boolean
 }>
 
@@ -155,11 +162,19 @@ export function usePlanDetail(id: string): PlanDetailBinding {
     return { status: 'loading' }
   }, [query.isLoading, errorTag, detail, view, semester])
 
+  // As opções saem das REDES DO PLANO (§1.4), não de lista fixa: um plano sem rede não filtra nada, e um
+  // plano de estado não tem município. `detail` null (carregando/erro) → sem opções, sem edição.
+  const networkKind = detail !== null ? planNetworkKind(detail) : null
+  // A rede escolhida — é ela que endereça a Edição (UF no plano de estado, IBGE no de município).
+  const networkRef = detail !== null ? selectedNetworkRef(detail, estado, municipio) : null
+
   const filter: PlanDetailFilter = {
     estado,
     municipio,
-    estadoOptions: PLAN_FILTER_ESTADOS,
-    municipioOptions: municipiosForEstado(estado),
+    networkKind,
+    networkRef,
+    estadoOptions: detail !== null ? estadoOptionsFor(detail) : [],
+    municipioOptions: detail !== null ? municipioOptionsFor(detail, estado) : [],
     setEstado: (next) => {
       setEstadoRaw(next)
       setMunicipio('') // troca de estado zera o município
@@ -170,9 +185,14 @@ export function usePlanDetail(id: string): PlanDetailBinding {
       setApplied(false)
     },
     apply: () => {
-      if (estado !== '' && municipio !== '') setApplied(true)
+      // Só aplica quando a escolha fecha uma REDE REAL do plano. Antes bastavam dois selects preenchidos —
+      // e como as listas eram fixas, dava pra "filtrar" uma rede que não existia no plano (a Edição então
+      // respondia "não foi possível carregar", que era conselho errado: não havia o que carregar).
+      if (networkRef !== null) setApplied(true)
     },
-    editMode: applied && estado !== '' && municipio !== '',
+    // Plano de ESTADO não tem município (o legado só mostra o filtro de Estado) — exigir os dois travaria
+    // o Editar pra sempre nesses planos.
+    editMode: applied && networkRef !== null,
   }
 
   const addBudget: AddBudgetBinding = {

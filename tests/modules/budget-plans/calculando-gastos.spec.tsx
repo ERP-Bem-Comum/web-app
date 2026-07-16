@@ -1,10 +1,18 @@
 /**
- * Testes DOM (Vitest + jsdom) do modal "Calculando Gastos" (US2.4b): renderiza abas/colunas, edita um mês
+ * Testes DOM (Vitest + jsdom) do modal "Calculando Gastos" (§1.7): renderiza abas/colunas, edita um mês
  * (lápis → input → commit) e limpa (lixeira). Usa o binding REAL (useCalcGastos) via um harness.
+ *
+ * O binding GRAVA (core-api#413) → usa TanStack Query → o harness precisa do provider. O repositório fica
+ * mockado: estes testes são do COMPORTAMENTO da tela, não da escrita (essa é do `calc-gastos.binding.spec`).
  */
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, screen, cleanup, fireEvent, within } from '@testing-library/react'
-import type { ReactNode } from 'react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { useState, type ReactNode } from 'react'
+
+vi.mock('#modules/budget-plans/client/data/repository/budget-plans.repository.instance.ts', () => ({
+  budgetPlansRepository: { postBudgetResult: vi.fn() },
+}))
 
 import { CalculandoGastos } from '#modules/budget-plans/client/planejamento/detalhe/orcamento/calculando-gastos.component.tsx'
 import { useCalcGastos } from '#modules/budget-plans/client/planejamento/detalhe/orcamento/calc-gastos.binding.ts'
@@ -30,6 +38,7 @@ const detail: PlanDetail = {
   costCenters: [
     {
       id: 1,
+      ref: 'cc-uuid-1',
       name: 'Consultoria',
       type: 'A PAGAR',
       totalInCents: 100,
@@ -38,6 +47,7 @@ const detail: PlanDetail = {
       categories: [
         {
           id: 11,
+          ref: 'cat-uuid-11',
           name: 'Educacional',
           totalInCents: 100,
           monthlyInCents: m({ 2: 100 }),
@@ -45,6 +55,7 @@ const detail: PlanDetail = {
           subCategories: [
             {
               id: 111,
+              ref: 'sub-uuid-111',
               name: 'Formação',
               totalInCents: 100,
               monthlyInCents: m({ 2: 100 }),
@@ -57,6 +68,7 @@ const detail: PlanDetail = {
     {
       // Centro "Pessoal" — o lápis abre o FORMULÁRIO detalhado (US2.4c), não o form "Configuração".
       id: 2,
+      ref: 'ref-2',
       name: 'Pessoal',
       type: 'A PAGAR',
       totalInCents: 200,
@@ -65,6 +77,7 @@ const detail: PlanDetail = {
       categories: [
         {
           id: 21,
+          ref: 'ref-21',
           name: 'Salários',
           totalInCents: 200,
           monthlyInCents: m({ 1: 200 }),
@@ -72,6 +85,7 @@ const detail: PlanDetail = {
           subCategories: [
             {
               id: 211,
+              ref: 'ref-211',
               name: 'Diretor',
               totalInCents: 200,
               monthlyInCents: m({ 1: 200 }),
@@ -85,6 +99,7 @@ const detail: PlanDetail = {
     {
       // Centro com subcategorias CAED e Logística — o lápis roteia por Tipo de lançamento.
       id: 3,
+      ref: 'ref-3',
       name: 'Logística',
       type: 'A PAGAR',
       totalInCents: 300,
@@ -93,6 +108,7 @@ const detail: PlanDetail = {
       categories: [
         {
           id: 31,
+          ref: 'ref-31',
           name: 'Viagens',
           totalInCents: 300,
           monthlyInCents: m({ 1: 300 }),
@@ -100,6 +116,7 @@ const detail: PlanDetail = {
           subCategories: [
             {
               id: 311,
+              ref: 'ref-311',
               name: 'Matrículas CAED',
               totalInCents: 300,
               monthlyInCents: m({ 1: 300 }),
@@ -108,6 +125,7 @@ const detail: PlanDetail = {
             },
             {
               id: 312,
+              ref: 'ref-312',
               name: 'Viagem de formação',
               totalInCents: 0,
               monthlyInCents: m({}),
@@ -215,10 +233,21 @@ const labels = {
   discardConfirm: 'Descartar',
 } as const
 
-function Harness(): ReactNode {
-  const b = useCalcGastos(detail)
+function Inner(): ReactNode {
+  const b = useCalcGastos(detail, { planId: 'plan-1', budgetId: 'bg-1' })
   return (
     <CalculandoGastos title="2026 EPV 1.1 > Ceará" binding={b} labels={labels} onClose={() => undefined} />
+  )
+}
+
+function Harness(): ReactNode {
+  // `useState` com inicializador: um QueryClient POR MONTAGEM. Recriar a cada render zeraria o cache no meio
+  // do teste — o lint cobra, e com razão.
+  const [client] = useState(() => new QueryClient({ defaultOptions: { queries: { retry: false } } }))
+  return (
+    <QueryClientProvider client={client}>
+      <Inner />
+    </QueryClientProvider>
   )
 }
 

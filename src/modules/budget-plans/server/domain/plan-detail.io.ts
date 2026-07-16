@@ -91,16 +91,70 @@ export type AddBudgetCommand = Readonly<{
   valueInCents: number
 }>
 export type DeleteBudgetCommand = Readonly<{ planId: string; budgetId: string }>
-export type NetworkOption = Readonly<{ ref: string; name: string; kind: NetworkKind }>
-// #C2: resultado de cálculo por subcategoria (dentro de UMA rede/budget). `subcategoryRef` = UUID do backend.
-export type BudgetResultRow = Readonly<{ subcategoryRef: string; valueInCents: number }>
-// #C2: comando do cálculo IPCA (Tipo B) — baseValueInCents * (1 + ipca/100), por rede×subcategoria.
-export type IpcaResultCommand = Readonly<{
-  budgetId: string
-  subcategoryId: string
-  baseValueInCents: number
-  ipca: number
-}>
+/** `uf` = estado do parceiro. No município é o que permite o filtro Estado→Município (o legado tem os dois). */
+export type NetworkOption = Readonly<{ ref: string; name: string; kind: NetworkKind; uf: string }>
+/**
+ * #C2: resultado de cálculo por subcategoria **e MÊS**, dentro de UMA rede/budget. `subcategoryRef` = UUID do
+ * backend; `month` = 1..12 (core-api#413).
+ *
+ * ⚠️ Desde o #413 o `GET /budget-results/by-budget/:budgetId` devolve **12 linhas por subcategoria** (uma por
+ * mês), não uma. Quem agrega por subcategoria precisa SOMAR — indexar por `subcategoryRef` sobrescreve e
+ * deixa só o último mês (era o que `fillNetworkCells` fazia; ver o comentário lá).
+ */
+export type BudgetResultRow = Readonly<{ subcategoryRef: string; month: number; valueInCents: number }>
+/**
+ * ALVO de um lançamento de cálculo ("Calculando Gastos"). O MÊS faz parte da identidade (core-api#413): a
+ * chave é `(budgetId, subcategoryId, month)` — é ela que permite os 12 POSTs de uma mesma conta sem colidir.
+ * Recalcular o mesmo mês SUBSTITUI o valor (upsert no core-api), não soma.
+ */
+export type BudgetResultTarget = Readonly<{ budgetId: string; subcategoryId: string; month: number }>
+
+/**
+ * Comando de cálculo — UNIÃO DISCRIMINADA pelos 4 modelos do legado (§IV: estados ilegais irrepresentáveis).
+ * Cada modelo tem endpoint e corpo PRÓPRIOS no core-api; o `kind` é o que os separa. Modelado como união (e
+ * não 4 comandos soltos) porque assim é IMPOSSÍVEL mandar campo de CAED pro endpoint da folha, e o `switch`
+ * exaustivo do adapter obriga a tratar todos — inclusive um 5º modelo no dia em que existir.
+ *
+ * Convenções do core-api que o tipo carrega: percentuais são NÚMEROS (não centavos); `ipca` aceita negativo
+ * (deflação); na logística a passagem NÃO multiplica por diária; na folha a quantidade NÃO entra no cálculo
+ * (é metadado — core-api#460, decidido pela P.O. contra o print do legado).
+ */
+export type BudgetResultCommand = BudgetResultTarget &
+  (
+    | Readonly<{ kind: 'ipca'; baseValueInCents: number; ipca: number }>
+    | Readonly<{ kind: 'caed'; numberOfEnrollments: number; baseValueInCents: number }>
+    | Readonly<{
+        kind: 'personal'
+        salaryInCents: number
+        salaryAdjustment: number
+        inssEmployer: number
+        inss: number
+        fgtsCharges: number
+        pisCharges: number
+        foodVoucherInCents: number
+        transportationVouchersInCents: number
+        healthInsuranceInCents: number
+        lifeInsuranceInCents: number
+        holidaysAndChargesInCents: number
+        allowanceInCents: number
+        thirteenthInCents: number
+        fgtsInCents: number
+      }>
+    | Readonly<{
+        kind: 'logistics'
+        numberOfPeople: number
+        totalTrips: number
+        airfareInCents: number
+        dailyAccommodation: number
+        accommodationInCents: number
+        dailyFood: number
+        foodInCents: number
+        dailyTransport: number
+        transportInCents: number
+        dailyCarAndFuel: number
+        carAndFuelInCents: number
+      }>
+  )
 
 export type PlanDetailHeaderInput = Readonly<{
   id: string
@@ -152,6 +206,8 @@ export type PlanDetailComposed = Readonly<{
     name: string
     ref: string
     kind: NetworkKind
+    /** UF do parceiro (no estado, = `ref`). Agrupa os municípios no filtro Estado→Município. */
+    uf: string
     budgetId: string
     totalInCents: number
   }>[]
