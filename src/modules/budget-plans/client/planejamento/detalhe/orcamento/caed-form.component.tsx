@@ -11,6 +11,7 @@ import {
   type CaedForm as CaedFormState,
   type CaedForm as CaedFormValues,
 } from './caed-calc.view-model.ts'
+import { maskValorBR } from './pessoal-calc.view-model.ts'
 import {
   configForm,
   configSection,
@@ -98,7 +99,8 @@ export function CaedForm(props: CaedFormProps): ReactNode {
                     inputMode="decimal"
                     value={form.custoUnitario}
                     onChange={(e) => {
-                      set('custoUnitario')(e.target.value)
+                      // DINHEIRO: mascara o milhar (o nº de matrículas acima é CONTAGEM — fica cru).
+                      set('custoUnitario')(maskValorBR(e.target.value))
                     }}
                   />
                 </div>

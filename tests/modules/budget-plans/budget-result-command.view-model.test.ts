@@ -13,7 +13,11 @@ import {
   logisticaToPayload,
   toExerciseMonths,
 } from '#modules/budget-plans/client/planejamento/detalhe/orcamento/budget-result-command.view-model.ts'
-import { emptyPessoalForm } from '#modules/budget-plans/client/planejamento/detalhe/orcamento/pessoal-calc.view-model.ts'
+import {
+  emptyPessoalForm,
+  maskValorBR,
+  parseCentsBR,
+} from '#modules/budget-plans/client/planejamento/detalhe/orcamento/pessoal-calc.view-model.ts'
 import { emptyLogisticaForm } from '#modules/budget-plans/client/planejamento/detalhe/orcamento/logistica-calc.view-model.ts'
 
 describe('toExerciseMonths — índice da UI (0..11) → mês do exercício (1..12)', () => {
@@ -166,5 +170,59 @@ describe('logisticaToPayload — os 11 campos da viagem', () => {
     assert.equal(p.transportInCents, 6000)
     assert.equal(p.dailyCarAndFuel, 7)
     assert.equal(p.carAndFuelInCents, 9000)
+  })
+})
+
+// Máscara de valor (pedido da P.O.: o campo tem que parecer dinheiro). A regra que NÃO pode quebrar: o que se
+// digita continua valendo REAIS — a máscara formata, não reinterpreta.
+describe('maskValorBR — formata sem mudar o significado', () => {
+  it('agrupa o milhar: "2500" → "2.500"', () => {
+    assert.equal(maskValorBR('2500'), '2.500')
+  })
+
+  it('milhões: "1234567" → "1.234.567"', () => {
+    assert.equal(maskValorBR('1234567'), '1.234.567')
+  })
+
+  it('abaixo de mil não ganha ponto', () => {
+    assert.equal(maskValorBR('999'), '999')
+  })
+
+  it('a vírgula decimal fica, com até 2 casas', () => {
+    assert.equal(maskValorBR('2500,5'), '2.500,5')
+    assert.equal(maskValorBR('2500,50'), '2.500,50')
+    assert.equal(maskValorBR('2500,509'), '2.500,50')
+  })
+
+  it('vírgula recém-digitada NÃO some (senão o campo brigaria com o usuário)', () => {
+    assert.equal(maskValorBR('2500,'), '2.500,')
+  })
+
+  it('segunda vírgula é ignorada — não vira dois decimais', () => {
+    assert.equal(maskValorBR('1,2,3'), '1,23')
+  })
+
+  it('letra/símbolo não entra', () => {
+    assert.equal(maskValorBR('R$ 2.500,00abc'), '2.500,00')
+  })
+
+  it('vazio continua vazio (campo em branco ≠ zero — a regra da honestidade)', () => {
+    assert.equal(maskValorBR(''), '')
+  })
+
+  it('zero à esquerda sai, mas o zero sozinho fica', () => {
+    assert.equal(maskValorBR('007'), '7')
+    assert.equal(maskValorBR('0'), '0')
+  })
+
+  // O par máscara↔parser: formatar de um jeito e ler de outro faria o mostrado divergir do gravado.
+  it('IDEMPOTENTE: mascarar de novo não muda (o campo relê o próprio valor a cada tecla)', () => {
+    const once = maskValorBR('1234567,89')
+    assert.equal(maskValorBR(once), once)
+  })
+
+  it('o PARSER entende a máscara: "2.500" continua valendo R$ 2.500,00 (não 2,50)', () => {
+    assert.equal(parseCentsBR(maskValorBR('2500')), 250_000)
+    assert.equal(parseCentsBR(maskValorBR('2500,50')), 250_050)
   })
 })

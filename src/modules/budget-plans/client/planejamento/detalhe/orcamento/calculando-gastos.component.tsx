@@ -10,6 +10,7 @@ import { EditIcon, TrashIcon, CalculatorIcon, InfoIcon } from '#shared/ui/index.
 
 import type { CalcGastosBinding } from './calc-gastos.binding.ts'
 import { formatCentsBRL } from './calc-gastos.view-model.ts'
+import { maskValorBR } from './pessoal-calc.view-model.ts'
 import { PessoalForm, type PessoalFormLabels } from './pessoal-form.component.tsx'
 import { CaedForm, type CaedFormLabels } from './caed-form.component.tsx'
 import { LogisticaForm, type LogisticaFormLabels } from './logistica-form.component.tsx'
@@ -206,7 +207,9 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
   const openForm = (monthIndex: number, cents: number): void => {
     setForm({
       months: new Set([monthIndex]),
-      total: String(cents / 100),
+      // Mascarado ao ABRIR também: o campo não pode nascer cru ("2500") e só formatar na 1ª tecla.
+      // `.` → `,` porque o JS decimaliza com ponto e o campo (e o parser) falam vírgula.
+      total: maskValorBR(String(cents / 100).replace('.', ',')),
       justificativa: '',
       ipca: '0',
       usePrev: false,
@@ -397,7 +400,17 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
         </div>
 
         <div className={modalFoot}>
-          <button type="button" className={applyButton} onClick={applyForm} disabled>
+          {/* "Calcular" abre o form da SUBCATEGORIA (o form é que escolhe os meses — "Meses aplicados"), pelo
+              mesmo roteamento do lápis. Estava `disabled` fixo desde antes de haver onde gravar (#413).
+              Sem subcategoria selecionada não há o que calcular. */}
+          <button
+            type="button"
+            className={applyButton}
+            onClick={() => {
+              openPencil(0, 0)
+            }}
+            disabled={!b.hasData || b.saving}
+          >
             <CalculatorIcon size={16} />
             {labels.calcular}
           </button>
@@ -492,7 +505,8 @@ export function CalculandoGastos(props: CalculandoGastosProps): ReactNode {
                             inputMode="decimal"
                             value={form.total}
                             onChange={(e) => {
-                              setForm({ ...form, total: e.target.value })
+                              // DINHEIRO: mascara o milhar (o IPCA abaixo é PERCENTUAL — fica cru).
+                              setForm({ ...form, total: maskValorBR(e.target.value) })
                             }}
                           />
                         </div>
