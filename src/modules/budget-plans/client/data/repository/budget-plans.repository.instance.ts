@@ -15,6 +15,7 @@ import { getBudgetPlanInsightsFn } from '#modules/budget-plans/server/adapters/s
 import { addCostCenterFn } from '#modules/budget-plans/server/adapters/server-fns/add-cost-center.service.fn.ts'
 import { addCategoryFn } from '#modules/budget-plans/server/adapters/server-fns/add-category.service.fn.ts'
 import { addSubcategoryFn } from '#modules/budget-plans/server/adapters/server-fns/add-subcategory.service.fn.ts'
+import { patchCostNodeFn } from '#modules/budget-plans/server/adapters/server-fns/patch-cost-node.service.fn.ts'
 import { addBudgetFn } from '#modules/budget-plans/server/adapters/server-fns/add-budget.service.fn.ts'
 import { deleteBudgetFn } from '#modules/budget-plans/server/adapters/server-fns/delete-budget.service.fn.ts'
 import { listNetworkOptionsFn } from '#modules/budget-plans/server/adapters/server-fns/list-network-options.query.fn.ts'
@@ -37,6 +38,7 @@ export const budgetPlansRepository = createBudgetPlansRepository({
   addCostCenterFn: (opts) => addCostCenterFn(opts),
   addCategoryFn: (opts) => addCategoryFn(opts),
   addSubcategoryFn: (opts) => addSubcategoryFn(opts),
+  patchCostNodeFn: (opts) => patchCostNodeFn(opts),
   addBudgetFn: (opts) => addBudgetFn(opts),
   deleteBudgetFn: (opts) => deleteBudgetFn(opts),
   networkOptionsFn: () => listNetworkOptionsFn(),

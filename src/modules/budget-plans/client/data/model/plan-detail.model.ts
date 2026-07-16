@@ -58,11 +58,17 @@ export type NetworkCents = z.infer<typeof NetworkCentsSchema>
 export const MatrixIconKindSchema = z.enum(['people', 'grad', 'doc', 'report'])
 export type MatrixIconKind = z.infer<typeof MatrixIconKindSchema>
 
-/** Nó folha (subcategoria) da matriz consolidada. */
+/**
+ * Nó folha (subcategoria) da matriz consolidada.
+ *
+ * `active` (feature 075) é o estado EFETIVO (nó ∧ ancestrais), derivado pelo core na leitura — NÃO a intenção
+ * individual do nó, que o core não expõe (core-api#469). Não recalcule herança aqui: mostre o que vem.
+ */
 export type SubCategoryConsolidated = Readonly<{
   id: number
   ref: string // #C2: UUID do backend (casa com budget-results.subcategoryId) — ALVO do POST de cálculo
   name: string
+  active: boolean
   totalInCents: number
   monthlyInCents: MonthlyCents
   networkInCents: NetworkCents
@@ -80,6 +86,8 @@ export type CategoryConsolidated = Readonly<{
   id: number
   ref: string
   name: string
+  /** Efetivo (categoria ∧ centro) — ver `SubCategoryConsolidated.active`. */
+  active: boolean
   totalInCents: number
   monthlyInCents: MonthlyCents
   networkInCents: NetworkCents
@@ -96,6 +104,8 @@ export type CostCenterConsolidated = Readonly<{
   ref: string
   name: string
   type: z.infer<typeof CostCenterTypeSchema>
+  /** Na raiz, efetivo == intenção (não há ancestral) — ver `SubCategoryConsolidated.active`. */
+  active: boolean
   totalInCents: number
   monthlyInCents: MonthlyCents
   networkInCents: NetworkCents
@@ -121,6 +131,7 @@ export const SubCategoryConsolidatedSchema: z.ZodType<SubCategoryConsolidated> =
   id: z.int(),
   ref: z.string().trim(),
   name: z.string().trim(),
+  active: z.boolean(),
   totalInCents: z.int(),
   monthlyInCents: MonthlyCentsSchema,
   networkInCents: NetworkCentsSchema,
@@ -131,6 +142,7 @@ export const CategoryConsolidatedSchema: z.ZodType<CategoryConsolidated> = z.obj
   id: z.int(),
   ref: z.string().trim(),
   name: z.string().trim(),
+  active: z.boolean(),
   totalInCents: z.int(),
   monthlyInCents: MonthlyCentsSchema,
   networkInCents: NetworkCentsSchema,
@@ -142,6 +154,7 @@ export const CostCenterConsolidatedSchema: z.ZodType<CostCenterConsolidated> = z
   ref: z.string().trim(),
   name: z.string().trim(),
   type: CostCenterTypeSchema,
+  active: z.boolean(),
   totalInCents: z.int(),
   monthlyInCents: MonthlyCentsSchema,
   networkInCents: NetworkCentsSchema,
@@ -169,17 +182,41 @@ export type AddSubcategoryInput = Readonly<{
   launchType: ReleaseType
 }>
 
-/** Árvore-eco devolvida pelos POSTs (201 = a árvore INTEIRA atualizada, com os UUIDs = `ref`). */
+/** Nível do nó no PATCH (feature 075) — o core tem uma ROTA por nível. */
+export type CostNodeLevel = 'cost-center' | 'category' | 'subcategory'
+
+/**
+ * Comando: renomear e/ou (des)ativar um nó (feature 075 — #454 gap 3). `nodeId` = `ref` uuid do nó.
+ *
+ * Ao menos um entre `name`/`active` — o core recusa `{}` com 400 (a borda do BFF também barra). Não há DELETE
+ * de nó: desativar é `active: false` (soft), porque lançamento aponta p/ subcategoria SEM FK.
+ */
+export type PatchCostNodeInput = Readonly<{
+  planId: string
+  level: CostNodeLevel
+  nodeId: string
+  name?: string
+  active?: boolean
+}>
+
+/** Árvore-eco devolvida pelos POSTs (201) e pelo PATCH (200) = a árvore INTEIRA atualizada, com `ref` uuid. */
 export type CostStructureTree = Readonly<{
   budgetPlanId: string
   costCenters: readonly Readonly<{
     ref: string
     name: string
     direction: string
+    active: boolean
     categories: readonly Readonly<{
       ref: string
       name: string
-      subcategories: readonly Readonly<{ ref: string; name: string; launchType: string }>[]
+      active: boolean
+      subcategories: readonly Readonly<{
+        ref: string
+        name: string
+        launchType: string
+        active: boolean
+      }>[]
     }>[]
   }>[]
 }>

@@ -2111,6 +2111,9 @@ export const ptBR: Catalog = {
   'budget-plans.centrosCusto.edit': 'Editar',
   'budget-plans.centrosCusto.deactivate': 'Desativar',
   'budget-plans.centrosCusto.activate': 'Ativar',
+  'budget-plans.centrosCusto.inherited': 'Inativo por herança',
+  'budget-plans.centrosCusto.lockedByAncestor':
+    'Inativo porque "{{ancestor}}" está desativado. Reative "{{ancestor}}" para editar este item.',
   'budget-plans.centrosCusto.expand': 'Expandir',
   'budget-plans.centrosCusto.collapse': 'Recolher',
   'budget-plans.centrosCusto.nome': 'Nome',
@@ -2135,6 +2138,9 @@ export const ptBR: Catalog = {
   'budget-plans.centrosCusto.error.invalid-input': 'Dados inválidos. Revise e tente novamente.',
   'budget-plans.centrosCusto.error.not-found': 'Plano orçamentário não encontrado.',
   'budget-plans.centrosCusto.error.not-editable': 'Este plano não permite mais alterações na estrutura.',
+  // "Tente novamente" seria conselho errado: o item sumiu, repetir não traz de volta. O que resolve é reler.
+  'budget-plans.centrosCusto.error.node-not-found':
+    'Este item não existe mais. Feche e abra o plano para ver a estrutura atualizada.',
   'budget-plans.centrosCusto.error.unexpected': 'Não foi possível salvar. Tente novamente.',
   // Rótulos dos enums (centro/sub/lançamento)
   'budget-plans.centroTipo.a-pagar': 'A PAGAR',

@@ -24,6 +24,7 @@ import {
   createAddCostCenter,
   createAddCategory,
   createAddSubcategory,
+  createPatchCostNode,
 } from '#modules/budget-plans/server/application/write-cost-structure.use-case.ts'
 import {
   createAddBudget,
@@ -65,6 +66,7 @@ const build = () => {
     addCostCenter: createAddCostCenter({ client }),
     addCategory: createAddCategory({ client }),
     addSubcategory: createAddSubcategory({ client }),
+    patchCostNode: createPatchCostNode({ client }),
     addBudget: createAddBudget({ client }),
     deleteBudget: createDeleteBudget({ client }),
     listNetworkOptions: createListNetworkOptions({ client }),
