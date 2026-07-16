@@ -12,14 +12,12 @@ export type ConfirmableAction = 'approve' | 'delete' | 'start-calibration' | 'cr
 
 /**
  * Ações SEM endpoint no backend (feature 060) — ficam VISÍVEIS porém desabilitadas (regra da P.O.: "o que não
- * tiver, deixe desativado"), com tooltip i18n. `share`/`planned-vs-actual` não têm rota; `delete` não tem
- * `DELETE /budget-plans/:id` (só `/:id/budgets/:budgetId`, que é orçamento — Grupo C).
+ * tiver, deixe desativado"), com tooltip i18n. `share`/`planned-vs-actual` não têm rota.
+ *
+ * `delete` saiu daqui na feature 076: o `DELETE /budget-plans/:id` existe (core-api #453). Ele passou a ser
+ * gated por STATUS + CENÁRIOS, como o `create-scenery` — não mais por ausência de rota.
  */
-const ACTIONS_WITHOUT_ENDPOINT: ReadonlySet<PlanAction> = new Set<PlanAction>([
-  'share',
-  'planned-vs-actual',
-  'delete',
-])
+const ACTIONS_WITHOUT_ENDPOINT: ReadonlySet<PlanAction> = new Set<PlanAction>(['share', 'planned-vs-actual'])
 
 /**
  * A ação está DISPONÍVEL? (false ⇒ o item do menu fica `disabled` + tooltip). Dois eixos (§V, regra da P.O.):
@@ -62,6 +60,15 @@ export const isActionEnabled = (
     if (ctx?.isScenario === true) return false
     return (ctx?.sceneryCount ?? 0) < MAX_SCENERIES
   }
+  // `delete` (feature 076): ESPELHA as 2 recusas do domínio do core (`delete-budget-plan.ts`, #453). Duplicar
+  // regra de domínio aqui é o mesmo mal necessário do `create-scenery` acima — e aqui pesa mais: os dois 409 do
+  // DELETE são INDISTINGUÍVEIS na resposta (o core esconde o slug), então sem este gate a usuária confirmaria
+  // uma ação IRREVERSÍVEL e levaria "não foi possível excluir" sem saber por quê. Se o backend afrouxar, isto
+  // acompanha.
+  if (action === 'delete') {
+    if (status === 'APROVADO') return false // aprovado é imutável: o Consolidado ABC agrega aprovados
+    return (ctx?.sceneryCount ?? 0) === 0 // apaga-se de baixo pra cima: cenário-filho barra o pai
+  }
   if (action === 'start-calibration') return status === 'APROVADO'
   return true
 }
@@ -88,6 +95,15 @@ export const actionDisabledTitleKey = (
   if (action === 'start-calibration' && status !== undefined && status !== 'APROVADO') {
     return 'budget-plans.action.disabled.calibrationNeedsApproved'
   }
+  // `delete` (feature 076). Ordem: o motivo mais específico primeiro, senão o tooltip mente — a mesma lição que
+  // o `create-scenery` acima aprendeu em tela. Um plano aprovado COM cenário é barrado pelos dois; citar o
+  // aprovado é o mais útil (é o estado que a usuária vê na linha).
+  if (action === 'delete' && status === 'APROVADO') {
+    return 'budget-plans.action.disabled.deleteApproved'
+  }
+  if (action === 'delete' && (ctx?.sceneryCount ?? 0) > 0) {
+    return 'budget-plans.action.disabled.deleteHasChildren'
+  }
   return 'budget-plans.action.noEndpoint'
 }
 
@@ -113,10 +129,16 @@ export const actionErrorTag = (error: BudgetPlansError): string => {
       return 'budget-plans.action.error.sceneryNeedsDraft'
     case 'budget-plan-invalid-transition':
       return 'budget-plans.action.error.invalidTransition'
+    // DELETE (feature 076): 409 por aprovado OU por ter cenário — indistinguíveis, uma mensagem cobre os dois.
+    // Só chega em CORRIDA (aprovaram/criaram cenário entre o render e o clique); no normal o item já está
+    // desabilitado com o motivo certo.
+    case 'budget-plan-not-deletable':
+      return 'budget-plans.action.error.notDeletable'
     case 'invalid-input':
       return 'budget-plans.action.error.invalidInput'
     case 'budget-plan-already-exists':
     case 'budget-plan-not-editable': // escrita de estrutura (feature 061) — não ocorre nas ações do menu
+    case 'cost-node-not-found': // PATCH de nó (feature 075) — idem: só o modal §1.5 edita a árvore
     case 'unexpected':
       return 'budget-plans.action.error.unexpected'
     default: {

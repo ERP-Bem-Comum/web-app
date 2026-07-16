@@ -8,6 +8,7 @@ import { listBudgetPlanOptionsFn } from '#modules/budget-plans/server/adapters/s
 import { getBudgetPlanDetailFn } from '#modules/budget-plans/server/adapters/server-fns/get-budget-plan-detail.query.fn.ts'
 import { getBudgetGridFn } from '#modules/budget-plans/server/adapters/server-fns/get-budget-grid.query.fn.ts'
 import { approveBudgetPlanFn } from '#modules/budget-plans/server/adapters/server-fns/approve-budget-plan.service.fn.ts'
+import { deleteBudgetPlanFn } from '#modules/budget-plans/server/adapters/server-fns/delete-budget-plan.service.fn.ts'
 import { startCalibrationFn } from '#modules/budget-plans/server/adapters/server-fns/start-calibration.service.fn.ts'
 import { createSceneryFn } from '#modules/budget-plans/server/adapters/server-fns/create-scenery.service.fn.ts'
 import { exportBudgetPlanCsvFn } from '#modules/budget-plans/server/adapters/server-fns/export-budget-plan-csv.query.fn.ts'
@@ -15,6 +16,7 @@ import { getBudgetPlanInsightsFn } from '#modules/budget-plans/server/adapters/s
 import { addCostCenterFn } from '#modules/budget-plans/server/adapters/server-fns/add-cost-center.service.fn.ts'
 import { addCategoryFn } from '#modules/budget-plans/server/adapters/server-fns/add-category.service.fn.ts'
 import { addSubcategoryFn } from '#modules/budget-plans/server/adapters/server-fns/add-subcategory.service.fn.ts'
+import { patchCostNodeFn } from '#modules/budget-plans/server/adapters/server-fns/patch-cost-node.service.fn.ts'
 import { addBudgetFn } from '#modules/budget-plans/server/adapters/server-fns/add-budget.service.fn.ts'
 import { deleteBudgetFn } from '#modules/budget-plans/server/adapters/server-fns/delete-budget.service.fn.ts'
 import { listNetworkOptionsFn } from '#modules/budget-plans/server/adapters/server-fns/list-network-options.query.fn.ts'
@@ -30,6 +32,7 @@ export const budgetPlansRepository = createBudgetPlansRepository({
   getBudgetPlanDetailFn: (opts) => getBudgetPlanDetailFn(opts),
   getBudgetGridFn: (opts) => getBudgetGridFn(opts),
   approveBudgetPlanFn: (opts) => approveBudgetPlanFn(opts),
+  deleteBudgetPlanFn: (opts) => deleteBudgetPlanFn(opts),
   startCalibrationFn: (opts) => startCalibrationFn(opts),
   createSceneryFn: (opts) => createSceneryFn(opts),
   exportBudgetPlanCsvFn: (opts) => exportBudgetPlanCsvFn(opts),
@@ -37,6 +40,7 @@ export const budgetPlansRepository = createBudgetPlansRepository({
   addCostCenterFn: (opts) => addCostCenterFn(opts),
   addCategoryFn: (opts) => addCategoryFn(opts),
   addSubcategoryFn: (opts) => addSubcategoryFn(opts),
+  patchCostNodeFn: (opts) => patchCostNodeFn(opts),
   addBudgetFn: (opts) => addBudgetFn(opts),
   deleteBudgetFn: (opts) => deleteBudgetFn(opts),
   networkOptionsFn: () => listNetworkOptionsFn(),

@@ -2004,6 +2004,10 @@ export const ptBR: Catalog = {
   'budget-plans.action.disabled.sceneryFromScenery': 'Um cenário não pode ter cenários',
   'budget-plans.action.disabled.sceneryLimit': 'Este plano já tem o máximo de 2 cenários',
   'budget-plans.action.disabled.calibrationNeedsApproved': 'Calibração só em planos aprovados',
+  // Excluir (feature 076) — espelha as 2 recusas do `DELETE /:id` (core-api #453). Aqui o tooltip PODE ser
+  // específico (o front sabe o status e a contagem de cenários da linha); é a mensagem de erro que não pode.
+  'budget-plans.action.disabled.deleteApproved': 'Planos aprovados não podem ser excluídos',
+  'budget-plans.action.disabled.deleteHasChildren': 'Exclua os cenários deste plano antes de excluí-lo',
   'budget-plans.action.exportCsv.success': 'CSV exportado com sucesso!',
   // Feedback de erro das ações (§V) — a tag chega mapeada por contexto do endpoint pelo BFF.
   'budget-plans.action.error.unauthorized': 'Sua sessão expirou. Entre novamente para continuar.',
@@ -2024,6 +2028,11 @@ export const ptBR: Catalog = {
     'Não foi possível criar o cenário. Ele só pode ser criado em um plano não aprovado, que não seja um cenário e que tenha menos de 2 cenários.',
   'budget-plans.action.error.invalidTransition':
     'Não é possível executar esta ação no estado atual do plano.',
+  // Mesma lição do `sceneryNeedsDraft` acima: o 409 do DELETE tem 2 causas (aprovado · tem cenário) e chega SEM
+  // motivo, então a mensagem ENUMERA em vez de chutar qual caiu. O menu já previne as duas na lista — isto só
+  // aparece em CORRIDA (aprovaram ou criaram um cenário depois que a tela carregou), daí o "Recarregue".
+  'budget-plans.action.error.notDeletable':
+    'Não foi possível excluir o plano. Ele não pode estar aprovado nem ter cenários. Recarregue a lista para ver o estado atual.',
   'budget-plans.action.error.invalidInput':
     'Não foi possível concluir a ação. Verifique os dados e tente novamente.',
   'budget-plans.action.error.unexpected': 'Não foi possível concluir a ação. Tente novamente.',
@@ -2035,8 +2044,11 @@ export const ptBR: Catalog = {
   'budget-plans.confirm.approve.confirm': 'Aprovar',
   'budget-plans.confirm.approve.success': 'Plano Orçamentário aprovado com sucesso!',
   'budget-plans.confirm.delete.title': 'Excluir Plano Orçamentário',
+  // Dizia "e seus itens filhos" — era FALSO (feature 076): o core recusa apagar plano COM filho (409), então
+  // cascata de planos não existe. O que some junto são os ORÇAMENTOS e LANÇAMENTOS do próprio plano, na mesma
+  // transação. É isso que a usuária precisa saber antes de confirmar algo irreversível.
   'budget-plans.confirm.delete.body':
-    "Atenção, você está prestes a excluir o plano '{nome}' e seus itens filhos, isso não pode ser desfeito. Tem certeza?",
+    "Atenção, você está prestes a excluir o plano '{nome}', com todos os seus orçamentos e lançamentos. Isso não pode ser desfeito. Tem certeza?",
   'budget-plans.confirm.delete.confirm': 'Excluir',
   'budget-plans.confirm.delete.success': 'Plano excluído com sucesso!',
   'budget-plans.confirm.start-calibration.title': 'Iniciar Calibração',
@@ -2111,6 +2123,9 @@ export const ptBR: Catalog = {
   'budget-plans.centrosCusto.edit': 'Editar',
   'budget-plans.centrosCusto.deactivate': 'Desativar',
   'budget-plans.centrosCusto.activate': 'Ativar',
+  'budget-plans.centrosCusto.inherited': 'Inativo por herança',
+  'budget-plans.centrosCusto.lockedByAncestor':
+    'Inativo porque "{{ancestor}}" está desativado. Reative "{{ancestor}}" para editar este item.',
   'budget-plans.centrosCusto.expand': 'Expandir',
   'budget-plans.centrosCusto.collapse': 'Recolher',
   'budget-plans.centrosCusto.nome': 'Nome',
@@ -2135,6 +2150,9 @@ export const ptBR: Catalog = {
   'budget-plans.centrosCusto.error.invalid-input': 'Dados inválidos. Revise e tente novamente.',
   'budget-plans.centrosCusto.error.not-found': 'Plano orçamentário não encontrado.',
   'budget-plans.centrosCusto.error.not-editable': 'Este plano não permite mais alterações na estrutura.',
+  // "Tente novamente" seria conselho errado: o item sumiu, repetir não traz de volta. O que resolve é reler.
+  'budget-plans.centrosCusto.error.node-not-found':
+    'Este item não existe mais. Feche e abra o plano para ver a estrutura atualizada.',
   'budget-plans.centrosCusto.error.unexpected': 'Não foi possível salvar. Tente novamente.',
   // Rótulos dos enums (centro/sub/lançamento)
   'budget-plans.centroTipo.a-pagar': 'A PAGAR',

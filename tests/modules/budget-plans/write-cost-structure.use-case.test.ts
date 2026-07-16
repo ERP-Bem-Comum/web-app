@@ -22,6 +22,7 @@ const TREE: CostStructureTree = {
       ref: 'c1c1c1c1-1111-4a2b-8c3d-000000000010',
       name: 'Consultoria',
       direction: 'A PAGAR',
+      active: true,
       categories: [],
     },
   ],
@@ -45,6 +46,10 @@ const makeClient = (): {
     addSubcategory: (command, token) => {
       calls.push({ method: 'addSubcategory', command, token })
       return Promise.resolve(err('budget-plan-not-editable'))
+    },
+    patchCostNode: (command, token) => {
+      calls.push({ method: 'patchCostNode', command, token })
+      return Promise.resolve(ok(TREE))
     },
   }
   return { client, calls }

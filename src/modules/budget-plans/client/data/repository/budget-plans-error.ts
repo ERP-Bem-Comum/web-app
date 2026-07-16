@@ -14,7 +14,11 @@ export type BudgetPlansError =
   | 'budget-plan-not-approved' // start-calibration — calibração só em plano APROVADO
   | 'budget-plan-scenery-needs-draft' // scenery — cenário só em plano NÃO aprovado (rascunho/calibração)
   | 'budget-plan-invalid-transition' // transição de estado inválida (genérico; reservado)
+  // DELETE /:id (feature 076) — 409 por plano APROVADO OU por ter cenário; os dois são indistinguíveis na
+  // resposta, então UMA tag cobre ambos. Só chega em corrida: o menu já desabilita nos 2 casos.
+  | 'budget-plan-not-deletable'
   | 'budget-plan-not-editable' // escrita de estrutura (feature 061) — plano não aceita mais escrita (ex.: aprovado)
+  | 'cost-node-not-found' // 404 no PATCH de nó (feature 075) — nó (ou plano) sumiu: a árvore em mãos está velha
   | 'unexpected' // parse/inesperado
 
 /** Forma do retorno RPC das server fns do Plano Orçamentário (`{ ok, data } | { ok, error }`). */

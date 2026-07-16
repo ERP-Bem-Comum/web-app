@@ -96,11 +96,16 @@ const centroErrorKey = (tag: CentrosCustoErrorTag): string => {
       return 'budget-plans.centrosCusto.error.not-found'
     case 'budget-plan-not-editable':
       return 'budget-plans.centrosCusto.error.not-editable'
+    // Feature 075: o nó (ou o plano) sumiu entre a leitura da árvore e o PATCH — a árvore em mãos está velha.
+    // Mensagem própria: "tente de novo" seria conselho errado; o que resolve é reabrir/recarregar.
+    case 'cost-node-not-found':
+      return 'budget-plans.centrosCusto.error.node-not-found'
     case 'budget-plan-already-exists':
     case 'budget-plan-already-approved':
     case 'budget-plan-not-approved':
     case 'budget-plan-scenery-needs-draft':
     case 'budget-plan-invalid-transition':
+    case 'budget-plan-not-deletable': // DELETE do plano (feature 076) — não ocorre na escrita da estrutura
     case 'unexpected':
       return 'budget-plans.centrosCusto.error.unexpected'
     default: {
@@ -144,6 +149,11 @@ export function PlanDetailPage(): ReactNode {
       // Cenário criado é plano-FILHO (não some na lista de raízes) → navega pro detalhe do novo cenário.
       if (outcome.action === 'create-scenery' && outcome.sceneryId !== undefined) {
         void navigate({ to: '/planejamento/detalhes/$id', params: { id: outcome.sceneryId } })
+      }
+      // Excluído (feature 076): ESTA página é o detalhe do plano que acabou de sumir — ficar aqui mostraria um
+      // plano morto (e o refetch daria 404). Volta pra lista, que já foi invalidada.
+      if (outcome.action === 'delete') {
+        void navigate({ to: '/planejamento' })
       }
     } else {
       setToastMsg(t(outcome.errorTag))
@@ -370,6 +380,12 @@ export function PlanDetailPage(): ReactNode {
           edit: t('budget-plans.centrosCusto.edit'),
           deactivate: t('budget-plans.centrosCusto.deactivate'),
           activate: t('budget-plans.centrosCusto.activate'),
+          inherited: t('budget-plans.centrosCusto.inherited'),
+          // `createTranslator` não interpola (é `catalog[key] ?? key`), então o `{{ancestor}}` sai aqui, no
+          // ponto que conhece o valor. Local de propósito: dar interpolação ao i18n inteiro é decisão de
+          // arquitetura (pede ADR), não efeito colateral de um tooltip.
+          lockedByAncestor: (ancestorName) =>
+            t('budget-plans.centrosCusto.lockedByAncestor').replaceAll('{{ancestor}}', ancestorName),
           expand: t('budget-plans.centrosCusto.expand'),
           collapse: t('budget-plans.centrosCusto.collapse'),
           nome: t('budget-plans.centrosCusto.nome'),

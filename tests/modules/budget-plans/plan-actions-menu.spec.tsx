@@ -1,6 +1,10 @@
 /**
  * PlanActionsMenu (Vitest/jsdom) — feature 060. Cobre que as ações COM endpoint disparam `onAction`, enquanto
- * as SEM endpoint (share/planned-vs-actual/delete) aparecem VISÍVEIS porém `disabled` com tooltip (não somem).
+ * as SEM endpoint (share/planned-vs-actual) aparecem VISÍVEIS porém `disabled` com tooltip (não somem).
+ *
+ * O `delete` saiu do grupo "sem endpoint" na feature 076 (o `DELETE /:id` existe — core-api #453). Aqui o menu
+ * é renderizado SEM status, então ele aparece habilitado; as recusas dele (aprovado · tem cenário) dependem do
+ * contexto da linha e são cobertas no teste PURO (`plan-actions-enablement.test.ts`), não nesta view burra.
  */
 import { describe, it, expect, afterEach } from 'vitest'
 import { render, screen, cleanup, fireEvent } from '@testing-library/react'
@@ -31,12 +35,18 @@ describe('PlanActionsMenu (feature 060)', () => {
     renderMenu()
     fireEvent.click(screen.getByRole('button', { name: 'Mais ações' }))
 
-    for (const disabled of ['share', 'planned-vs-actual', 'delete'] as const) {
+    for (const disabled of ['share', 'planned-vs-actual'] as const) {
       const item = screen.getByRole('menuitem', { name: disabled })
       expect(item.hasAttribute('disabled')).toBe(true)
       expect(item.getAttribute('title')).toBe('Depende do backend')
     }
-    for (const enabled of ['approve', 'start-calibration', 'create-scenery', 'export-csv'] as const) {
+    for (const enabled of [
+      'approve',
+      'start-calibration',
+      'create-scenery',
+      'export-csv',
+      'delete',
+    ] as const) {
       expect(screen.getByRole('menuitem', { name: enabled }).hasAttribute('disabled')).toBe(false)
     }
   })

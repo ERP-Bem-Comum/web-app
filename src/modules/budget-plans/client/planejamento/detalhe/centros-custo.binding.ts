@@ -1,17 +1,21 @@
 /**
+/**
  * Binding do modal "Centros de Custo" (§1.5) — ADAPTER React (§XI). UI-state (aberto, centro selecionado, modo
- * do painel, campos do form, nós desativados/recolhidos) + ESCRITA REAL da estrutura (feature 061 — Grupo B):
- * criar Centro → Categoria → Subcategoria via server-fn. Cada `onSuccess` invalida `planDetailQueryKey(id)` (a
- * árvore relê pronta do BFF §III), e o centro recém-criado é auto-selecionado (cascata: habilita criar sob ele).
- * Erros como valores (§V): `errorTag` (client-side `name-required` OU tag do backend). Editar/desativar seguem
- * front-first (o contrato do Grupo B só tem os 3 POSTs de criação).
+ * do painel, campos do form, nós recolhidos) + ESCRITA REAL da estrutura via server-fn:
+ * criar Centro → Categoria → Subcategoria (feature 061) e renomear/(des)ativar (feature 075).
+ * Cada `onSuccess` invalida `planDetailQueryKey(id)` (a árvore relê pronta do BFF §III), e o centro
+ * recém-criado é auto-selecionado (cascata: habilita criar sob ele).
+ * Erros como valores (§V): `errorTag` (client-side `name-required` OU tag do backend).
+ *
+ * `active` é SERVER-STATE (§XI): mora na árvore relida, não num Set local. Até a feature 075 "desativar" era
+ * um Set em memória — não saía do navegador e voltava no F5.
  */
 import { useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { isErr } from '#shared/primitives/result.ts'
 import { budgetPlansRepository } from '#modules/budget-plans/client/data/repository/budget-plans.repository.instance.ts'
-import type { PlanDetail } from '#modules/budget-plans/client/data/model/plan-detail.model.ts'
+import type { PlanDetail, CostNodeLevel } from '#modules/budget-plans/client/data/model/plan-detail.model.ts'
 import type { BudgetPlansError } from '#modules/budget-plans/client/data/repository/budget-plans-error.ts'
 import { planDetailQueryKey } from '#modules/budget-plans/client/planejamento/detalhe/plan-detail.query-key.ts'
 import {
@@ -19,6 +23,8 @@ import {
   emptyCentroFormFields,
   nodeKey,
   validateCentroName,
+  categoriaLock,
+  subLock,
   CENTRO_TIPO_OPTIONS,
   SUB_TIPO_OPTIONS,
   RELEASE_TYPE_OPTIONS,
@@ -26,6 +32,7 @@ import {
   type CentroFormMode,
   type CentroFormFields,
   type CentroFormError,
+  type NodeLock,
 } from '#modules/budget-plans/client/planejamento/detalhe/centros-custo.view-model.ts'
 import type {
   CostCenterType,
@@ -49,9 +56,13 @@ export type CentrosCustoBinding = Readonly<{
   releaseTypeOptions: readonly ReleaseType[]
   /** Tag de erro da submissão (ou `null`). A view resolve o rótulo i18n. */
   errorTag: CentrosCustoErrorTag | null
-  /** Submissão em curso (algum dos 3 POSTs pendente) — a view desabilita o botão de salvar. */
+  /** Submissão em curso (algum dos 3 POSTs ou o PATCH pendente) — a view desabilita o botão de salvar. */
   submitting: boolean
-  isDeactivated: (kind: 'centro' | 'categoria' | 'sub', id: number) => boolean
+  /**
+   * Trava do switch por herança + o ancestral que a causou (`null` = livre). A view desabilita e explica.
+   * `sub`: passe `categoriaId`; `centro` nunca trava (é raiz).
+   */
+  lockOf: (target: ToggleTarget) => NodeLock
   isCollapsed: (kind: 'centro' | 'categoria', id: number) => boolean
   toggleCollapse: (kind: 'centro' | 'categoria', id: number) => void
   openModal: () => void
@@ -64,8 +75,18 @@ export type CentrosCustoBinding = Readonly<{
   setSubTipo: (v: SubCategoryType) => void
   setReleaseType: (v: ReleaseType) => void
   submitForm: () => void
-  toggleDeactivate: (kind: 'centro' | 'categoria' | 'sub', id: number) => void
+  /** Liga/desliga o nó (PATCH `{ active }`). No-op se travado por herança — a view já desabilita. */
+  toggleActive: (target: ToggleTarget) => void
 }>
+
+/**
+ * Alvo do switch. União discriminada (§IV) em vez de `(kind, id)` solto porque a subcategoria só é endereçável
+ * SABENDO a categoria-pai: a árvore é aninhada e o `id` numérico é sintético (chave de render), não global.
+ */
+export type ToggleTarget =
+  | Readonly<{ kind: 'centro'; centroId: number }>
+  | Readonly<{ kind: 'categoria'; centroId: number; categoriaId: number }>
+  | Readonly<{ kind: 'sub'; centroId: number; categoriaId: number; subId: number }>
 
 export function useCentrosCusto(planId: string, detail: PlanDetail | null): CentrosCustoBinding {
   const queryClient = useQueryClient()
@@ -79,7 +100,6 @@ export function useCentrosCusto(planId: string, detail: PlanDetail | null): Cent
   const [selectedCentroId, setSelectedCentroId] = useState<number | null>(centros[0]?.id ?? null)
   const [formMode, setFormMode] = useState<CentroFormMode>({ kind: 'none' })
   const [form, setForm] = useState<CentroFormFields>(emptyCentroFormFields)
-  const [deactivated, setDeactivated] = useState<ReadonlySet<string>>(new Set())
   // Nós recolhidos (chevron); por padrão tudo expandido → o Set guarda só os fechados.
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set())
   const [errorTag, setErrorTag] = useState<CentrosCustoErrorTag | null>(null)
@@ -145,8 +165,28 @@ export function useCentrosCusto(planId: string, detail: PlanDetail | null): Cent
     },
   })
 
+  // Feature 075: renomear e (des)ativar caem no MESMO PATCH (`{ name?, active? }`) — uma mutation p/ os dois.
+  const patchCostNodeMutation = useMutation({
+    mutationFn: budgetPlansRepository.patchCostNode,
+    onSuccess: (res) => {
+      if (isErr(res)) {
+        setErrorTag(res.error)
+        return
+      }
+      invalidateDetail()
+      setErrorTag(null)
+      setFormMode({ kind: 'none' })
+    },
+    onError: () => {
+      setErrorTag('unexpected')
+    },
+  })
+
   const submitting =
-    addCostCenterMutation.isPending || addCategoryMutation.isPending || addSubcategoryMutation.isPending
+    addCostCenterMutation.isPending ||
+    addCategoryMutation.isPending ||
+    addSubcategoryMutation.isPending ||
+    patchCostNodeMutation.isPending
 
   // Pré-preenche o form ao ENTRAR num modo de edição; add começa vazio. Limpa o erro anterior.
   const startForm = (mode: CentroFormMode): void => {
@@ -236,8 +276,55 @@ export function useCentrosCusto(planId: string, detail: PlanDetail | null): Cent
       return
     }
 
-    // edit-* / none: escrita fora do escopo do Grupo B (sem endpoint) — fecha o painel (front-first).
+    // ── edit-* (feature 075): renomear via PATCH. O `id` numérico é sintético (chave de render), então o
+    // alvo é sempre o `ref` uuid. Só o NOME sai daqui: o tipo do centro e o modelo de cálculo da subcategoria
+    // não entram no contrato do PATCH (`{ name?, active? }`) — a view não os oferece na edição.
+    if (mode.kind === 'edit-centro' || mode.kind === 'edit-categoria' || mode.kind === 'edit-sub') {
+      const nameErr = validateCentroName(form.nome)
+      if (nameErr !== null) {
+        setErrorTag(nameErr)
+        return
+      }
+      const target = resolveEditTarget(mode)
+      if (target === null) {
+        setErrorTag('missing-parent') // trava defensiva: a árvore mudou embaixo do painel aberto
+        return
+      }
+      setErrorTag(null)
+      patchCostNodeMutation.mutate({
+        planId,
+        level: target.level,
+        nodeId: target.ref,
+        name: form.nome.trim(),
+      })
+      return
+    }
+
     setFormMode({ kind: 'none' })
+  }
+
+  /** Modo de edição → (nível, `ref` uuid do nó). `null` = o nó sumiu da árvore (não deveria ocorrer). */
+  const resolveEditTarget = (
+    mode: CentroFormMode,
+  ): Readonly<{ level: CostNodeLevel; ref: string }> | null => {
+    if (mode.kind === 'edit-centro') {
+      const c = centros.find((x) => x.id === mode.centroId)
+      return c === undefined ? null : { level: 'cost-center', ref: c.ref }
+    }
+    if (mode.kind === 'edit-categoria') {
+      const cat = centros
+        .find((x) => x.id === mode.centroId)
+        ?.categories.find((y) => y.id === mode.categoriaId)
+      return cat === undefined ? null : { level: 'category', ref: cat.ref }
+    }
+    if (mode.kind === 'edit-sub') {
+      const sub = centros
+        .find((x) => x.id === mode.centroId)
+        ?.categories.find((y) => y.id === mode.categoriaId)
+        ?.subCategories.find((s) => s.id === mode.subId)
+      return sub === undefined ? null : { level: 'subcategory', ref: sub.ref }
+    }
+    return null
   }
 
   return {
@@ -253,7 +340,14 @@ export function useCentrosCusto(planId: string, detail: PlanDetail | null): Cent
     releaseTypeOptions: RELEASE_TYPE_OPTIONS,
     errorTag,
     submitting,
-    isDeactivated: (kind, id) => deactivated.has(nodeKey(kind, id)),
+    lockOf: (target) => {
+      const centro = centros.find((c) => c.id === target.centroId)
+      if (centro === undefined) return null
+      if (target.kind === 'centro') return null // raiz: não tem ancestral que a desligue
+      const categoria = centro.categories.find((cat) => cat.id === target.categoriaId)
+      if (categoria === undefined) return null
+      return target.kind === 'categoria' ? categoriaLock(centro) : subLock(centro, categoria)
+    },
     isCollapsed: (kind, id) => collapsed.has(nodeKey(kind, id)),
     toggleCollapse: (kind, id) => {
       const key = nodeKey(kind, id)
@@ -297,13 +391,49 @@ export function useCentrosCusto(planId: string, detail: PlanDetail | null): Cent
       setForm((f) => ({ ...f, releaseType: v }))
     },
     submitForm,
-    toggleDeactivate: (kind, id) => {
-      const key = nodeKey(kind, id)
-      setDeactivated((prev) => {
-        const next = new Set(prev)
-        if (next.has(key)) next.delete(key)
-        else next.add(key)
-        return next
+    toggleActive: (target) => {
+      const centro = centros.find((c) => c.id === target.centroId)
+      if (centro === undefined) return
+      const categoria =
+        target.kind === 'centro' ? undefined : centro.categories.find((cat) => cat.id === target.categoriaId)
+
+      // O nó e o nível, pelo `ref` uuid (o `id` numérico é sintético — chave de render, não endereço).
+      const node =
+        target.kind === 'centro'
+          ? { level: 'cost-center' as const, ref: centro.ref, active: centro.active }
+          : target.kind === 'categoria'
+            ? categoria === undefined
+              ? null
+              : { level: 'category' as const, ref: categoria.ref, active: categoria.active }
+            : (() => {
+                const sub = categoria?.subCategories.find((s) => s.id === target.subId)
+                return sub === undefined
+                  ? null
+                  : { level: 'subcategory' as const, ref: sub.ref, active: sub.active }
+              })()
+      if (node === null) return
+
+      // Travado por herança: no-op. A view já desabilita o switch — isto é a rede de segurança, não a regra.
+      // Deixar passar mandaria um PATCH que "funciona" (200) e não muda o que se vê: o core gravaria a
+      // intenção e devolveria o efetivo `false` do mesmo jeito, e o switch voltaria sozinho (core-api#469).
+      const lock =
+        target.kind === 'centro'
+          ? null
+          : target.kind === 'categoria'
+            ? categoriaLock(centro)
+            : categoria === undefined
+              ? null
+              : subLock(centro, categoria)
+      if (lock !== null) return
+
+      setErrorTag(null)
+      // Só `active` (sem `name`): (des)ativar não renomeia. O core aceita os dois campos no mesmo PATCH, mas
+      // mandar o nome atual junto reescreveria o nó por engano se a árvore em mãos estivesse velha.
+      patchCostNodeMutation.mutate({
+        planId,
+        level: node.level,
+        nodeId: node.ref,
+        active: !node.active,
       })
     },
   }

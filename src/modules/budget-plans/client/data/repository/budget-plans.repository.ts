@@ -17,6 +17,7 @@ import type {
   AddCostCenterInput,
   AddCategoryInput,
   AddSubcategoryInput,
+  PatchCostNodeInput,
   CostStructureTree,
 } from '#modules/budget-plans/client/data/model/plan-detail.model.ts'
 import type {
@@ -52,6 +53,8 @@ type GetBudgetGridFn = (opts: {
   data: { planId: string; networkRef: string }
 }) => Promise<BudgetPlansFnResult<BudgetGrid>>
 type PlanIdFn<T> = (opts: { data: { id: string } }) => Promise<BudgetPlansFnResult<T>>
+/** DELETE do plano (feature 076): 204 sem body → resultado sem `data`. */
+type DeletePlanFn = (opts: { data: { id: string } }) => Promise<WriteVoidResult>
 type CreateSceneryFn = (opts: {
   data: { id: string; name: string }
 }) => Promise<BudgetPlansFnResult<CreatedScenery>>
@@ -64,6 +67,8 @@ type AddCategoryFn = (opts: {
 type AddSubcategoryFn = (opts: {
   data: { planId: string; categoryId: string; name: string; launchType: AddSubcategoryInput['launchType'] }
 }) => Promise<BudgetPlansFnResult<CostStructureTree>>
+// Feature 075: renomear e/ou (des)ativar. `name`/`active` opcionais (ao menos um — a `fn` valida com Zod).
+type PatchCostNodeFn = (opts: { data: PatchCostNodeInput }) => Promise<BudgetPlansFnResult<CostStructureTree>>
 // #394 (Grupo C): orçamento por rede. `NetworkKind` = state|municipality; ref = UF/IBGE.
 export type BudgetNetworkKind = 'state' | 'municipality'
 export type BudgetNetworkOption = Readonly<{ ref: string; name: string; kind: BudgetNetworkKind }>
@@ -93,6 +98,11 @@ export type BudgetPlansRepository = Readonly<{
   getProgramOptions: () => Promise<Result<readonly BudgetPlanProgramOption[], BudgetPlansError>>
   getPlanDetail: (id: string) => Promise<Result<PlanDetail, BudgetPlansError>>
   approvePlan: (id: string) => Promise<Result<LifecyclePlan, BudgetPlansError>>
+  /**
+   * §2.5 — EXCLUI o plano (feature 076). IRREVERSÍVEL: leva junto orçamentos e lançamentos. Não confundir com
+   * `deleteBudget`, que remove um ORÇAMENTO por rede. Sem retorno (204).
+   */
+  deletePlan: (id: string) => Promise<Result<void, BudgetPlansError>>
   startCalibration: (id: string) => Promise<Result<LifecyclePlan, BudgetPlansError>>
   createScenery: (id: string, name: string) => Promise<Result<CreatedScenery, BudgetPlansError>>
   exportPlanCsv: (id: string) => Promise<Result<BudgetPlanCsvFile, BudgetPlansError>>
@@ -100,6 +110,8 @@ export type BudgetPlansRepository = Readonly<{
   addCostCenter: (input: AddCostCenterInput) => Promise<Result<CostStructureTree, BudgetPlansError>>
   addCategory: (input: AddCategoryInput) => Promise<Result<CostStructureTree, BudgetPlansError>>
   addSubcategory: (input: AddSubcategoryInput) => Promise<Result<CostStructureTree, BudgetPlansError>>
+  /** §1.5 — renomear e/ou (des)ativar um nó (feature 075). Devolve a árvore INTEIRA atualizada. */
+  patchCostNode: (input: PatchCostNodeInput) => Promise<Result<CostStructureTree, BudgetPlansError>>
   addBudget: (input: {
     planId: string
     partnerKind: BudgetNetworkKind
@@ -123,6 +135,7 @@ export const createBudgetPlansRepository = (
     getBudgetPlanDetailFn: GetDetailFn
     getBudgetGridFn: GetBudgetGridFn
     approveBudgetPlanFn: PlanIdFn<LifecyclePlan>
+    deleteBudgetPlanFn: DeletePlanFn
     startCalibrationFn: PlanIdFn<LifecyclePlan>
     createSceneryFn: CreateSceneryFn
     exportBudgetPlanCsvFn: PlanIdFn<BudgetPlanCsvFile>
@@ -130,6 +143,7 @@ export const createBudgetPlansRepository = (
     addCostCenterFn: AddCostCenterFn
     addCategoryFn: AddCategoryFn
     addSubcategoryFn: AddSubcategoryFn
+    patchCostNodeFn: PatchCostNodeFn
     addBudgetFn: AddBudgetFn
     deleteBudgetFn: DeleteBudgetFn
     networkOptionsFn: NetworkOptionsFn
@@ -156,6 +170,10 @@ export const createBudgetPlansRepository = (
   getBudgetGrid: async (planId, networkRef) => {
     const res = await deps.getBudgetGridFn({ data: { planId, networkRef } })
     return res.ok ? ok(res.data) : err(res.error)
+  },
+  deletePlan: async (id) => {
+    const res = await deps.deleteBudgetPlanFn({ data: { id } })
+    return res.ok ? ok(undefined) : err(res.error)
   },
   approvePlan: async (id) => {
     const res = await deps.approveBudgetPlanFn({ data: { id } })
@@ -187,6 +205,10 @@ export const createBudgetPlansRepository = (
   },
   addSubcategory: async (input) => {
     const res = await deps.addSubcategoryFn({ data: input })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  patchCostNode: async (input) => {
+    const res = await deps.patchCostNodeFn({ data: input })
     return res.ok ? ok(res.data) : err(res.error)
   },
   addBudget: async (input) => {
