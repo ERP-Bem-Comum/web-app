@@ -17,6 +17,7 @@ import type {
   BudgetPlanInsights,
 } from '#modules/budget-plans/server/domain/plan-actions.io.ts'
 import type { ApproveBudgetPlanClient } from '#modules/budget-plans/server/application/approve-budget-plan.use-case.ts'
+import type { DeleteBudgetPlanClient } from '#modules/budget-plans/server/application/delete-budget-plan.use-case.ts'
 import type { StartCalibrationClient } from '#modules/budget-plans/server/application/start-calibration.use-case.ts'
 import type {
   CreateSceneryClient,
@@ -144,6 +145,16 @@ const mapWriteHttpError = (e: HttpError): BudgetPlansError => {
   return 'unexpected'
 }
 
+// Mapa do DELETE do plano (§V, feature 076 — #453). Só o 409 difere do `mapWriteHttpError`: aqui ele significa
+// "aprovado OU tem cenário", e as duas causas são indistinguíveis (o core não manda o slug). UMA tag para as
+// duas — eleger uma seria adivinhar. `budget-plan-not-editable` seria errado: o plano é editável, é a EXCLUSÃO
+// que não passa.
+const mapDeletePlanHttpError = (e: HttpError): BudgetPlansError => {
+  if (e.kind !== 'http') return 'unexpected'
+  if (e.status === 409) return 'budget-plan-not-deletable'
+  return mapWriteHttpError(e)
+}
+
 /** Árvore-eco (201 dos POSTs) → forma de domínio (`id` uuid vira `ref`). Anti-corrupção: já validada por Zod. */
 const toCostStructureTree = (parsed: z.infer<typeof coreCostStructureSchema>): CostStructureTree => ({
   budgetPlanId: parsed.budgetPlanId,
@@ -246,6 +257,7 @@ export const createBudgetPlansCoreClient = (
   CreateBudgetPlanClient &
   GetBudgetPlanDetailClient &
   ApproveBudgetPlanClient &
+  DeleteBudgetPlanClient &
   StartCalibrationClient &
   CreateSceneryClient &
   ExportBudgetPlanCsvClient &
@@ -318,6 +330,13 @@ export const createBudgetPlansCoreClient = (
       token,
     })
     if (isErr(r)) return err(mapWriteHttpError(r.error))
+    return ok(undefined)
+  },
+  // Excluir o PLANO inteiro (feature 076 — #453). 204 sem body. Não confundir com `deleteBudget` acima, que
+  // remove um ORÇAMENTO por rede (`/:id/budgets/:budgetId`). 409 = aprovado OU tem cenário (indistinguíveis).
+  deletePlan: async (id: string, token: string): Promise<Result<void, BudgetPlansError>> => {
+    const r = await resultFetch<unknown>(`${baseUrl}/${id}`, { method: 'DELETE', token })
+    if (isErr(r)) return err(mapDeletePlanHttpError(r.error))
     return ok(undefined)
   },
   getPlanDetailHeader: async (

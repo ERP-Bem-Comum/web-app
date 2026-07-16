@@ -101,6 +101,7 @@ const centroErrorKey = (tag: CentrosCustoErrorTag): string => {
     case 'budget-plan-not-approved':
     case 'budget-plan-scenery-needs-draft':
     case 'budget-plan-invalid-transition':
+    case 'budget-plan-not-deletable': // DELETE do plano (feature 076) — não ocorre na escrita da estrutura
     case 'unexpected':
       return 'budget-plans.centrosCusto.error.unexpected'
     default: {
@@ -144,6 +145,11 @@ export function PlanDetailPage(): ReactNode {
       // Cenário criado é plano-FILHO (não some na lista de raízes) → navega pro detalhe do novo cenário.
       if (outcome.action === 'create-scenery' && outcome.sceneryId !== undefined) {
         void navigate({ to: '/planejamento/detalhes/$id', params: { id: outcome.sceneryId } })
+      }
+      // Excluído (feature 076): ESTA página é o detalhe do plano que acabou de sumir — ficar aqui mostraria um
+      // plano morto (e o refetch daria 404). Volta pra lista, que já foi invalidada.
+      if (outcome.action === 'delete') {
+        void navigate({ to: '/planejamento' })
       }
     } else {
       setToastMsg(t(outcome.errorTag))

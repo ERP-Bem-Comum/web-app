@@ -62,14 +62,18 @@ const actionKey = (action: PlanAction): string => {
 }
 
 /** Nome de exibição de uma linha (busca recursiva na árvore de planos/versões). */
-const findRowName = (rows: readonly PlanRow[], id: string): string | null => {
+/** Acha a linha na ÁRVORE (cenários são `children` da raiz). `null` = não está na página carregada. */
+const findRow = (rows: readonly PlanRow[], id: string): PlanRow | null => {
   for (const r of rows) {
-    if (r.id === id) return r.displayName
-    const inChild = findRowName(r.children, id)
+    if (r.id === id) return r
+    const inChild = findRow(r.children, id)
     if (inChild !== null) return inChild
   }
   return null
 }
+
+const findRowName = (rows: readonly PlanRow[], id: string): string | null =>
+  findRow(rows, id)?.displayName ?? null
 
 type PendingConfirm = Readonly<{ action: ConfirmableAction; id: string; name: string }>
 
@@ -128,7 +132,17 @@ export function PlanejamentoListPage(): ReactNode {
   }, [toastMsg])
 
   const onAction = (id: string, action: PlanAction): void => {
-    if (!isActionEnabled(action)) return // share/planned-vs-actual/delete: sem endpoint (o menu já desabilita)
+    // Revalida com o CONTEXTO REAL da linha — o mesmo que desabilita o item no menu (§V). Antes bastava
+    // `isActionEnabled(action)` porque as ações barradas aqui não tinham endpoint e o Set as pegava sem
+    // precisar de status. O `delete` (feature 076) saiu do Set: sem a linha, o gate deixaria passar. E ele é
+    // IRREVERSÍVEL — depender só do `disabled` no DOM é fino demais para uma exclusão.
+    const row = findRow(state.rows, id)
+    const enabled = isActionEnabled(
+      action,
+      row?.rawStatus,
+      row === null ? undefined : { isScenario: row.isScenario, sceneryCount: row.sceneryCount },
+    )
+    if (!enabled) return
     if (action === 'export-csv') {
       planActions.runAction('export-csv', id) // sem confirmação — dispara o download direto
       return

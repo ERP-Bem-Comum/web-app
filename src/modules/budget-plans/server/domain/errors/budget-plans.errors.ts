@@ -20,6 +20,12 @@ export type BudgetPlansError =
   | 'budget-plan-not-approved' // 409 no `start-calibration` — calibração só em plano APROVADO
   | 'budget-plan-scenery-needs-draft' // 409 no `scenery` — cenário só em plano NÃO aprovado (rascunho/calibração)
   | 'budget-plan-invalid-transition' // 409 genérico de transição de estado (reservado; nenhum endpoint mapeia hoje)
+  // ── Exclusão do plano (feature 076 — #453). O `DELETE /:id` recusa em DOIS casos, ambos 409 e
+  // INDISTINGUÍVEIS na resposta (o core esconde o slug): plano APROVADO e plano COM FILHO (cenário). UMA tag
+  // para os dois de propósito — eleger um deles seria adivinhar qual foi, e a mensagem cobre ambos.
+  // No caminho normal isto não chega: o menu já desabilita nos 2 casos (o front sabe `status` e `sceneryCount`
+  // na linha). Sobra a CORRIDA — aprovaram/criaram cenário entre o render e o clique — onde o 409 vem mesmo.
+  | 'budget-plan-not-deletable'
   // ── Escrita da estrutura de custo (feature 061 — Grupo B). 409 na escrita de plano não-editável (ex.: aprovado).
   | 'budget-plan-not-editable' // 409 nos POSTs de cost-structure — plano não aceita mais escrita de estrutura
   | 'unexpected' // parse/inesperado (resposta futura do core fora do contrato)

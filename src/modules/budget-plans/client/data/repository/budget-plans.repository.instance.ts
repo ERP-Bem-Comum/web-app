@@ -8,6 +8,7 @@ import { listBudgetPlanOptionsFn } from '#modules/budget-plans/server/adapters/s
 import { getBudgetPlanDetailFn } from '#modules/budget-plans/server/adapters/server-fns/get-budget-plan-detail.query.fn.ts'
 import { getBudgetGridFn } from '#modules/budget-plans/server/adapters/server-fns/get-budget-grid.query.fn.ts'
 import { approveBudgetPlanFn } from '#modules/budget-plans/server/adapters/server-fns/approve-budget-plan.service.fn.ts'
+import { deleteBudgetPlanFn } from '#modules/budget-plans/server/adapters/server-fns/delete-budget-plan.service.fn.ts'
 import { startCalibrationFn } from '#modules/budget-plans/server/adapters/server-fns/start-calibration.service.fn.ts'
 import { createSceneryFn } from '#modules/budget-plans/server/adapters/server-fns/create-scenery.service.fn.ts'
 import { exportBudgetPlanCsvFn } from '#modules/budget-plans/server/adapters/server-fns/export-budget-plan-csv.query.fn.ts'
@@ -30,6 +31,7 @@ export const budgetPlansRepository = createBudgetPlansRepository({
   getBudgetPlanDetailFn: (opts) => getBudgetPlanDetailFn(opts),
   getBudgetGridFn: (opts) => getBudgetGridFn(opts),
   approveBudgetPlanFn: (opts) => approveBudgetPlanFn(opts),
+  deleteBudgetPlanFn: (opts) => deleteBudgetPlanFn(opts),
   startCalibrationFn: (opts) => startCalibrationFn(opts),
   createSceneryFn: (opts) => createSceneryFn(opts),
   exportBudgetPlanCsvFn: (opts) => exportBudgetPlanCsvFn(opts),

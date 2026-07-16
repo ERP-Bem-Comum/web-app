@@ -19,7 +19,7 @@ import { planejamentoListQueryKey } from '#modules/budget-plans/client/planejame
 import { planDetailQueryKey } from '#modules/budget-plans/client/planejamento/detalhe/plan-detail.binding.ts'
 
 /** Ações do menu com endpoint REAL (as demais ficam desabilitadas — ver `isActionEnabled`). */
-export type RunnableAction = 'approve' | 'start-calibration' | 'create-scenery' | 'export-csv'
+export type RunnableAction = 'approve' | 'start-calibration' | 'create-scenery' | 'export-csv' | 'delete'
 
 export type ActionOutcome =
   // `id` = plano em que a ação rodou. No `create-scenery` é o PAI: a lista usa para abrir o chevron dele e
@@ -28,7 +28,7 @@ export type ActionOutcome =
   | Readonly<{ action: RunnableAction; ok: false; errorTag: string }>
 
 type ActionVars =
-  | Readonly<{ action: 'approve' | 'start-calibration' | 'export-csv'; id: string }>
+  | Readonly<{ action: 'approve' | 'start-calibration' | 'export-csv' | 'delete'; id: string }>
   | Readonly<{ action: 'create-scenery'; id: string; name: string }>
 
 export type PlanActionsBinding = Readonly<{
@@ -90,6 +90,10 @@ export function usePlanActions(onOutcome: (outcome: ActionOutcome) => void): Pla
           const r = await budgetPlansRepository.exportPlanCsv(vars.id)
           return settle(vars, r, { csv: r.ok ? r.value : undefined })
         }
+        case 'delete': {
+          const r = await budgetPlansRepository.deletePlan(vars.id)
+          return settle(vars, r)
+        }
         default: {
           const _exhaustive: never = vars
           return _exhaustive
@@ -103,6 +107,12 @@ export function usePlanActions(onOutcome: (outcome: ActionOutcome) => void): Pla
       }
       if (settled.csv !== undefined) {
         triggerDownload(settled.csv) // export-csv: só baixa o artefato do BFF (não invalida)
+      } else if (settled.vars.action === 'delete') {
+        // O plano NÃO EXISTE mais: invalidar o detalhe mandaria o cache buscar um plano morto (404 garantido,
+        // e o `planDetailQueryKey` continuaria montado se a exclusão saiu do próprio detalhe). Remove em vez de
+        // invalidar; a lista relê e a linha some. Quem navega para fora é o pai, pelo `onOutcome`.
+        void queryClient.invalidateQueries({ queryKey: planejamentoListQueryKey })
+        queryClient.removeQueries({ queryKey: planDetailQueryKey(settled.vars.id) })
       } else {
         // Mudou o estado do plano → a lista e o detalhe relêem o real (status/versão novos).
         void queryClient.invalidateQueries({ queryKey: planejamentoListQueryKey })
@@ -126,15 +136,15 @@ export function usePlanActions(onOutcome: (outcome: ActionOutcome) => void): Pla
         case 'approve':
         case 'start-calibration':
         case 'export-csv':
+        case 'delete': // feature 076 — irreversível; quem confirma é o modal de `confirmSpecFor` (danger)
           mutation.mutate({ action, id })
           return
         case 'create-scenery':
           mutation.mutate({ action, id, name: name ?? '' })
           return
-        // share/planned-vs-actual/delete não têm endpoint — o menu já os desabilita (isActionEnabled).
+        // share/planned-vs-actual não têm endpoint — o menu já os desabilita (isActionEnabled).
         case 'share':
         case 'planned-vs-actual':
-        case 'delete':
           return
         default: {
           const _exhaustive: never = action
