@@ -2305,6 +2305,8 @@ export const ptBR: Catalog = {
   'budget-plans.consolidado.loading': 'Carregando o consolidado…',
   'budget-plans.consolidado.error': 'Não foi possível carregar o consolidado. Tente novamente.',
   // Curva ABC (tabela por programa) — feature 062.
+  'budget-plans.consolidado.matrixTitle': 'Consolidado dos programas',
+  'budget-plans.consolidado.matrixCentros': 'CENTROS DE CUSTO',
   'budget-plans.consolidado.curveTitle': 'Curva ABC por programa',
   'budget-plans.consolidado.colProgram': 'Programa',
   'budget-plans.consolidado.colTotal': 'Total',

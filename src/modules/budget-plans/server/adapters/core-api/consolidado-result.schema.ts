@@ -29,6 +29,8 @@ export const parseConsolidatedResult = (raw: unknown): ConsolidatedAbc | null =>
   return {
     year: parsed.data.year,
     totalInCents: parsed.data.totalCents,
+    // A matriz é composta pelo USE-CASE (fan-out por plano vigente) — o endpoint não a entrega.
+    costCenters: [],
     plans: parsed.data.plans.map((p) => ({
       id: p.id,
       programName: p.programName,
