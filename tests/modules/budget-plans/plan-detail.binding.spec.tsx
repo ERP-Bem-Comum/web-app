@@ -47,6 +47,7 @@ const PLAN: PlanDetail = {
       id: 1,
       ref: 'ref-1',
       name: 'Consultoria',
+      active: true,
       type: 'A PAGAR',
       totalInCents: 0,
       monthlyInCents: zero,

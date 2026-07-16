@@ -28,4 +28,9 @@ export type BudgetPlansError =
   | 'budget-plan-not-deletable'
   // ── Escrita da estrutura de custo (feature 061 — Grupo B). 409 na escrita de plano não-editável (ex.: aprovado).
   | 'budget-plan-not-editable' // 409 nos POSTs de cost-structure — plano não aceita mais escrita de estrutura
+  // ── Editar/desativar nó (feature 075 — #454 gap 3). 404 no PATCH de cost-structure. O core devolve 404 tanto
+  // p/ plano inexistente quanto p/ nó inexistente (`cost-node-not-found`), e o slug não vem — mas as duas causas
+  // significam a MESMA coisa p/ a tela: a árvore em mãos está velha. Tag por CONTEXTO do endpoint (como os 409
+  // acima), pra não dizer "plano não encontrado" quando o plano está aberto na frente da usuária.
+  | 'cost-node-not-found'
   | 'unexpected' // parse/inesperado (resposta futura do core fora do contrato)

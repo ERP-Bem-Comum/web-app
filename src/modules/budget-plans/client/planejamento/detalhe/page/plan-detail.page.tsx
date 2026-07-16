@@ -96,6 +96,10 @@ const centroErrorKey = (tag: CentrosCustoErrorTag): string => {
       return 'budget-plans.centrosCusto.error.not-found'
     case 'budget-plan-not-editable':
       return 'budget-plans.centrosCusto.error.not-editable'
+    // Feature 075: o nó (ou o plano) sumiu entre a leitura da árvore e o PATCH — a árvore em mãos está velha.
+    // Mensagem própria: "tente de novo" seria conselho errado; o que resolve é reabrir/recarregar.
+    case 'cost-node-not-found':
+      return 'budget-plans.centrosCusto.error.node-not-found'
     case 'budget-plan-already-exists':
     case 'budget-plan-already-approved':
     case 'budget-plan-not-approved':
@@ -376,6 +380,12 @@ export function PlanDetailPage(): ReactNode {
           edit: t('budget-plans.centrosCusto.edit'),
           deactivate: t('budget-plans.centrosCusto.deactivate'),
           activate: t('budget-plans.centrosCusto.activate'),
+          inherited: t('budget-plans.centrosCusto.inherited'),
+          // `createTranslator` não interpola (é `catalog[key] ?? key`), então o `{{ancestor}}` sai aqui, no
+          // ponto que conhece o valor. Local de propósito: dar interpolação ao i18n inteiro é decisão de
+          // arquitetura (pede ADR), não efeito colateral de um tooltip.
+          lockedByAncestor: (ancestorName) =>
+            t('budget-plans.centrosCusto.lockedByAncestor').replaceAll('{{ancestor}}', ancestorName),
           expand: t('budget-plans.centrosCusto.expand'),
           collapse: t('budget-plans.centrosCusto.collapse'),
           nome: t('budget-plans.centrosCusto.nome'),

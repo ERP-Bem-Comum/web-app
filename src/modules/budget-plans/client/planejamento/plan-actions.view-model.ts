@@ -138,6 +138,7 @@ export const actionErrorTag = (error: BudgetPlansError): string => {
       return 'budget-plans.action.error.invalidInput'
     case 'budget-plan-already-exists':
     case 'budget-plan-not-editable': // escrita de estrutura (feature 061) — não ocorre nas ações do menu
+    case 'cost-node-not-found': // PATCH de nó (feature 075) — idem: só o modal §1.5 edita a árvore
     case 'unexpected':
       return 'budget-plans.action.error.unexpected'
     default: {

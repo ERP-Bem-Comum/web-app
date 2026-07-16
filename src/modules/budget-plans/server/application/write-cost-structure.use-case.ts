@@ -12,6 +12,7 @@ import type {
   AddCostCenterCommand,
   AddCategoryCommand,
   AddSubcategoryCommand,
+  PatchCostNodeCommand,
   CostStructureTree,
 } from '#modules/budget-plans/server/domain/cost-structure-write.io.ts'
 
@@ -26,6 +27,10 @@ export type WriteCostStructureClient = Readonly<{
   ) => Promise<Result<CostStructureTree, BudgetPlansError>>
   addSubcategory: (
     command: AddSubcategoryCommand,
+    token: string,
+  ) => Promise<Result<CostStructureTree, BudgetPlansError>>
+  patchCostNode: (
+    command: PatchCostNodeCommand,
     token: string,
   ) => Promise<Result<CostStructureTree, BudgetPlansError>>
 }>
@@ -46,3 +51,9 @@ export const createAddSubcategory =
   (deps: WriteCostStructureDeps) =>
   (command: AddSubcategoryCommand, token: string): Promise<Result<CostStructureTree, BudgetPlansError>> =>
     deps.client.addSubcategory(command, token)
+
+/** Renomear e/ou (des)ativar um nó (feature 075). Um caso de uso p/ os 3 níveis: o `level` roteia o PATH. */
+export const createPatchCostNode =
+  (deps: WriteCostStructureDeps) =>
+  (command: PatchCostNodeCommand, token: string): Promise<Result<CostStructureTree, BudgetPlansError>> =>
+    deps.client.patchCostNode(command, token)

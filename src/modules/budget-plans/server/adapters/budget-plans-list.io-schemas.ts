@@ -171,6 +171,26 @@ export const AddSubcategoryInputSchema = z.object({
 export type AddSubcategoryInput = z.infer<typeof AddSubcategoryInputSchema>
 
 /**
+ * Input do PATCH de nó (feature 075 — #454 gap 3): renomear e/ou (des)ativar, nos 3 níveis.
+ *
+ * `.refine`: ao menos um campo. O core recusa `{}` com 400 (`cost-node-patch-empty`) — barrar aqui evita a
+ * ida à rede p/ um pedido que já sabemos inválido, e mantém a borda como a dona da regra de forma (§IX).
+ * `name` espelha o `structureNameSchema` do add: editar não pode aceitar o que criar recusa.
+ */
+export const PatchCostNodeInputSchema = z
+  .object({
+    planId: z.uuid(),
+    level: z.enum(['cost-center', 'category', 'subcategory']),
+    nodeId: z.uuid(),
+    name: structureNameSchema.optional(),
+    active: z.boolean().optional(),
+  })
+  .refine((v) => v.name !== undefined || v.active !== undefined, {
+    error: 'patch-precisa-de-name-ou-active',
+  })
+export type PatchCostNodeInput = z.infer<typeof PatchCostNodeInputSchema>
+
+/**
  * Input da EDIÇÃO DE ORÇAMENTO (§1.7): plano + REDE (`ref` = UF/IBGE, a chave natural que já está na URL como
  * `?estado=`). O id do orçamento NÃO entra aqui — quem o resolve é o use-case, cruzando com as redes do plano
  * (ver ESCOPO em `get-budget-grid.use-case.ts`). `ref` é chave natural, não uuid: validamos só o não-vazio.

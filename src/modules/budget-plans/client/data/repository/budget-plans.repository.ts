@@ -17,6 +17,7 @@ import type {
   AddCostCenterInput,
   AddCategoryInput,
   AddSubcategoryInput,
+  PatchCostNodeInput,
   CostStructureTree,
 } from '#modules/budget-plans/client/data/model/plan-detail.model.ts'
 import type {
@@ -66,6 +67,8 @@ type AddCategoryFn = (opts: {
 type AddSubcategoryFn = (opts: {
   data: { planId: string; categoryId: string; name: string; launchType: AddSubcategoryInput['launchType'] }
 }) => Promise<BudgetPlansFnResult<CostStructureTree>>
+// Feature 075: renomear e/ou (des)ativar. `name`/`active` opcionais (ao menos um — a `fn` valida com Zod).
+type PatchCostNodeFn = (opts: { data: PatchCostNodeInput }) => Promise<BudgetPlansFnResult<CostStructureTree>>
 // #394 (Grupo C): orçamento por rede. `NetworkKind` = state|municipality; ref = UF/IBGE.
 export type BudgetNetworkKind = 'state' | 'municipality'
 export type BudgetNetworkOption = Readonly<{ ref: string; name: string; kind: BudgetNetworkKind }>
@@ -107,6 +110,8 @@ export type BudgetPlansRepository = Readonly<{
   addCostCenter: (input: AddCostCenterInput) => Promise<Result<CostStructureTree, BudgetPlansError>>
   addCategory: (input: AddCategoryInput) => Promise<Result<CostStructureTree, BudgetPlansError>>
   addSubcategory: (input: AddSubcategoryInput) => Promise<Result<CostStructureTree, BudgetPlansError>>
+  /** §1.5 — renomear e/ou (des)ativar um nó (feature 075). Devolve a árvore INTEIRA atualizada. */
+  patchCostNode: (input: PatchCostNodeInput) => Promise<Result<CostStructureTree, BudgetPlansError>>
   addBudget: (input: {
     planId: string
     partnerKind: BudgetNetworkKind
@@ -138,6 +143,7 @@ export const createBudgetPlansRepository = (
     addCostCenterFn: AddCostCenterFn
     addCategoryFn: AddCategoryFn
     addSubcategoryFn: AddSubcategoryFn
+    patchCostNodeFn: PatchCostNodeFn
     addBudgetFn: AddBudgetFn
     deleteBudgetFn: DeleteBudgetFn
     networkOptionsFn: NetworkOptionsFn
@@ -199,6 +205,10 @@ export const createBudgetPlansRepository = (
   },
   addSubcategory: async (input) => {
     const res = await deps.addSubcategoryFn({ data: input })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  patchCostNode: async (input) => {
+    const res = await deps.patchCostNodeFn({ data: input })
     return res.ok ? ok(res.data) : err(res.error)
   },
   addBudget: async (input) => {

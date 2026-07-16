@@ -45,14 +45,16 @@ const structure: CostStructureInput = {
     {
       id: CENTRO_REF,
       name: 'Consultoria',
+      active: true,
       direction: 'A PAGAR',
       categories: [
         {
           id: CATEGORIA_REF,
           name: 'Consultoria Estratégica',
+          active: true,
           subcategories: [
-            { id: 'sub-folha-0001', name: 'Folha', launchType: 'DESPESAS_PESSOAIS' },
-            { id: 'sub-reaj-0002', name: 'Reajuste', launchType: 'IPCA' },
+            { id: 'sub-folha-0001', name: 'Folha', launchType: 'DESPESAS_PESSOAIS', active: true },
+            { id: 'sub-reaj-0002', name: 'Reajuste', launchType: 'IPCA', active: true },
           ],
         },
       ],
@@ -149,12 +151,16 @@ describe('mapPlanDetail — enums desconhecidos (fallback)', () => {
       {
         id: 'c1c1c1c1-9999-4a2b-8c3d-000000000099',
         name: 'Centro X',
+        active: true,
         direction: 'ALGO_ESTRANHO',
         categories: [
           {
             id: 'ca7e9017-9999-4a2b-8c3d-000000000098',
             name: 'Cat X',
-            subcategories: [{ id: 'sub-x-0003', name: 'Sub X', launchType: 'MODELO_DESCONHECIDO' }],
+            active: true,
+            subcategories: [
+              { id: 'sub-x-0003', name: 'Sub X', launchType: 'MODELO_DESCONHECIDO', active: true },
+            ],
           },
         ],
       },
@@ -572,6 +578,7 @@ describe('mergeConsolidatedMatrices (§2 — funde os programas numa matriz só)
         id: 1,
         ref: 'cc',
         name: centro,
+        active: true,
         type: 'A PAGAR',
         totalInCents: 0,
         monthlyInCents: monthly,
@@ -581,6 +588,7 @@ describe('mergeConsolidatedMatrices (§2 — funde os programas numa matriz só)
             id: 11,
             ref: 'cat',
             name: categoria,
+            active: true,
             totalInCents: 0,
             monthlyInCents: monthly,
             networkInCents: [],

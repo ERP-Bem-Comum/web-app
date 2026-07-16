@@ -38,6 +38,7 @@ const mkCat = (
   id,
   ref,
   name,
+  active: true,
   totalInCents: 0,
   monthlyInCents: zero,
   networkInCents: [],
@@ -52,6 +53,7 @@ const mkCentro = (
   id,
   ref,
   name,
+  active: true,
   type: 'A PAGAR',
   totalInCents: 0,
   monthlyInCents: zero,
@@ -203,6 +205,12 @@ describe('useCentrosCusto — escrita da estrutura (cascata)', () => {
 function mkTree(centerRefs: readonly string[] = ['C1']): CostStructureTree {
   return {
     budgetPlanId: 'p1',
-    costCenters: centerRefs.map((ref) => ({ ref, name: ref, direction: 'A PAGAR', categories: [] })),
+    costCenters: centerRefs.map((ref) => ({
+      ref,
+      name: ref,
+      direction: 'A PAGAR',
+      active: true,
+      categories: [],
+    })),
   }
 }

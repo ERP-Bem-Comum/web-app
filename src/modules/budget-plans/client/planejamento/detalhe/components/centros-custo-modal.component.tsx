@@ -14,6 +14,7 @@ import type {
 import type {
   CentrosCustoBinding,
   CentrosCustoErrorTag,
+  ToggleTarget,
 } from '#modules/budget-plans/client/planejamento/detalhe/centros-custo.binding.ts'
 
 import {
@@ -69,6 +70,10 @@ export type CentrosCustoLabels = Readonly<{
   edit: string
   deactivate: string
   activate: string
+  /** Texto do switch travado por herança (no lugar de "Ativar"/"Desativar") — ex.: "Inativo por herança". */
+  inherited: string
+  /** Tooltip do switch travado: diz QUAL ancestral desligou o nó e como destravar. */
+  lockedByAncestor: (ancestorName: string) => string
   expand: string
   collapse: string
   nome: string
@@ -108,10 +113,7 @@ export function CentrosCustoModal(props: CentrosCustoModalProps): ReactNode {
   const showForm = mode.kind !== 'none'
   const centro = b.selectedCentro
 
-  const nameClass = (kind: 'centro' | 'categoria' | 'sub', id: number, base: string): string =>
-    b.isDeactivated(kind, id) ? `${base} ${rowNameOff}` : base
-  const deactivateLabel = (kind: 'centro' | 'categoria' | 'sub', id: number): string =>
-    b.isDeactivated(kind, id) ? L.activate : L.deactivate
+  const nameClass = (active: boolean, base: string): string => (active ? base : `${base} ${rowNameOff}`)
 
   const chevron = (kind: 'centro' | 'categoria', id: number): ReactNode => {
     const collapsed = b.isCollapsed(kind, id)
@@ -137,22 +139,34 @@ export function CentrosCustoModal(props: CentrosCustoModalProps): ReactNode {
     </button>
   )
 
-  const activeSwitch = (kind: 'centro' | 'categoria' | 'sub', id: number): ReactNode => (
-    <label className={switchLabel}>
-      <input
-        type="checkbox"
-        role="switch"
-        className={switchInput}
-        checked={!b.isDeactivated(kind, id)}
-        aria-label={deactivateLabel(kind, id)}
-        onChange={() => {
-          b.toggleDeactivate(kind, id)
-        }}
-      />
-      <span className={switchTrack} aria-hidden="true" />
-      <span className={switchText}>{deactivateLabel(kind, id)}</span>
-    </label>
-  )
+  /**
+   * Switch de (des)ativação. TRAVA quando um ancestral está inativo: o `active` que chega é o EFETIVO, mas o
+   * PATCH grava a INTENÇÃO — ligar o filho com o pai desligado gravaria `true` e a releitura devolveria
+   * `false`, e o switch voltaria sozinho, parecendo bug (core-api#469). Travado + `title` dizendo QUEM
+   * desligou é o que dá p/ afirmar com honestidade enquanto o core não expõe a intenção individual.
+   */
+  const activeSwitch = (target: ToggleTarget, active: boolean): ReactNode => {
+    const lock = b.lockOf(target)
+    const label = active ? L.deactivate : L.activate
+    const lockedTitle = lock === null ? undefined : L.lockedByAncestor(lock.ancestorName)
+    return (
+      <label className={switchLabel} title={lockedTitle}>
+        <input
+          type="checkbox"
+          role="switch"
+          className={switchInput}
+          checked={active}
+          disabled={lock !== null || b.submitting}
+          aria-label={lockedTitle ?? label}
+          onChange={() => {
+            b.toggleActive(target)
+          }}
+        />
+        <span className={switchTrack} aria-hidden="true" />
+        <span className={switchText}>{lock === null ? label : L.inherited}</span>
+      </label>
+    )
+  }
 
   return (
     <div className={overlay} role="dialog" aria-modal="true" aria-label={`${L.titlePrefix} ${b.programName}`}>
@@ -204,7 +218,7 @@ export function CentrosCustoModal(props: CentrosCustoModalProps): ReactNode {
                 <div className={rowCentro}>
                   <span className={rowStart}>
                     {chevron('centro', centro.id)}
-                    <span className={nameClass('centro', centro.id, rowNameCentro)}>
+                    <span className={nameClass(centro.active, rowNameCentro)}>
                       {centro.name} - {props.centroTipoLabels[centro.type]}
                     </span>
                   </span>
@@ -221,7 +235,7 @@ export function CentrosCustoModal(props: CentrosCustoModalProps): ReactNode {
                     {editAction(() => {
                       b.startForm({ kind: 'edit-centro', centroId: centro.id })
                     })}
-                    {activeSwitch('centro', centro.id)}
+                    {activeSwitch({ kind: 'centro', centroId: centro.id }, centro.active)}
                   </span>
                 </div>
 
@@ -232,7 +246,7 @@ export function CentrosCustoModal(props: CentrosCustoModalProps): ReactNode {
                         <div className={rowCategoria}>
                           <span className={rowStart}>
                             {chevron('categoria', cat.id)}
-                            <span className={nameClass('categoria', cat.id, rowName)}>{cat.name}</span>
+                            <span className={nameClass(cat.active, rowName)}>{cat.name}</span>
                           </span>
                           <span className={rowActions}>
                             <button
@@ -251,7 +265,10 @@ export function CentrosCustoModal(props: CentrosCustoModalProps): ReactNode {
                                 categoriaId: cat.id,
                               })
                             })}
-                            {activeSwitch('categoria', cat.id)}
+                            {activeSwitch(
+                              { kind: 'categoria', centroId: centro.id, categoriaId: cat.id },
+                              cat.active,
+                            )}
                           </span>
                         </div>
 
@@ -261,7 +278,7 @@ export function CentrosCustoModal(props: CentrosCustoModalProps): ReactNode {
                               <div key={sub.id} className={rowSub}>
                                 <span className={rowStart}>
                                   <span className={chevronSpacer} aria-hidden="true" />
-                                  <span className={nameClass('sub', sub.id, rowName)}>{sub.name}</span>
+                                  <span className={nameClass(sub.active, rowName)}>{sub.name}</span>
                                 </span>
                                 <span className={rowActions}>
                                   {editAction(() => {
@@ -272,7 +289,15 @@ export function CentrosCustoModal(props: CentrosCustoModalProps): ReactNode {
                                       subId: sub.id,
                                     })
                                   })}
-                                  {activeSwitch('sub', sub.id)}
+                                  {activeSwitch(
+                                    {
+                                      kind: 'sub',
+                                      centroId: centro.id,
+                                      categoriaId: cat.id,
+                                      subId: sub.id,
+                                    },
+                                    sub.active,
+                                  )}
                                 </span>
                               </div>
                             ))}
