@@ -15,6 +15,7 @@ export type BudgetPlansError =
   | 'budget-plan-scenery-needs-draft' // scenery — cenário só em plano NÃO aprovado (rascunho/calibração)
   | 'budget-plan-invalid-transition' // transição de estado inválida (genérico; reservado)
   | 'budget-plan-not-editable' // escrita de estrutura (feature 061) — plano não aceita mais escrita (ex.: aprovado)
+  | 'cost-node-not-found' // 404 no PATCH de nó (feature 075) — nó (ou plano) sumiu: a árvore em mãos está velha
   | 'unexpected' // parse/inesperado
 
 /** Forma do retorno RPC das server fns do Plano Orçamentário (`{ ok, data } | { ok, error }`). */

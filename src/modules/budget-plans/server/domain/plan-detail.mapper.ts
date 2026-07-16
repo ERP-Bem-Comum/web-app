@@ -88,6 +88,9 @@ export const mapPlanDetail = (
       ref: cc.id, // UUID do backend (feature 061 — o POST de categoria referencia o centro-pai por UUID)
       name: cc.name,
       type: mapDirection(cc.direction),
+      // `active` passa DIRETO (feature 075): já vem efetivo (nó ∧ ancestrais) do core. Não há herança a
+      // recalcular aqui — o core não expõe a intenção individual justamente p/ não duplicar essa regra (#469).
+      active: cc.active,
       totalInCents: 0,
       monthlyInCents: zeros12(),
       networkInCents: [],
@@ -97,6 +100,7 @@ export const mapPlanDetail = (
           id: categoryId,
           ref: cat.id, // UUID do backend (→ o POST de subcategoria referencia a categoria-pai por UUID)
           name: cat.name,
+          active: cat.active,
           totalInCents: 0,
           monthlyInCents: zeros12(),
           networkInCents: [],
@@ -106,6 +110,7 @@ export const mapPlanDetail = (
               id: categoryId * 100 + (k + 1),
               ref: sub.id, // #394/C2: UUID do backend → casa com `budget-results.subcategoryId` no cálculo
               name: sub.name,
+              active: sub.active,
               totalInCents: 0,
               monthlyInCents: zeros12(),
               networkInCents: [],
@@ -305,6 +310,7 @@ export const mergeConsolidatedMatrices = (
       id: (i + 1) * 100 + j + 1,
       ref: '',
       name: catName,
+      active: true, // idem `ref: ''` — nó sintético, sem `active` próprio p/ herdar (ver o centro abaixo)
       totalInCents: total(serie),
       monthlyInCents: serie,
       networkInCents: [], // a visão "Por Rede" não existe no Consolidado (ele agrega programas, não redes)
@@ -316,6 +322,13 @@ export const mergeConsolidatedMatrices = (
       ref: '',
       name,
       type: centerType.get(name) ?? 'A PAGAR',
+      // `active` NÃO se aplica ao Consolidado, pelo mesmo motivo do `ref: ''` logo acima: este nó é SINTÉTICO
+      // — agrega centros homônimos de VÁRIOS planos, então não tem identidade nem estado no backend. O campo
+      // existe porque o tipo é compartilhado com a árvore real do plano (§1.5), única que se edita. `true`
+      // aqui = "não aplicável", não "está ativo": o Consolidado é relatório read-only de plano APROVADO e
+      // nenhuma tela dele lê `active`. Se um dia ele precisar refletir desativação, o caminho é dar tipos
+      // próprios ao agregado — não ensinar este merge a herdar herança.
+      active: true,
       totalInCents: total(serie),
       monthlyInCents: serie,
       networkInCents: [],

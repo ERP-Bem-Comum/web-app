@@ -28,11 +28,17 @@ export type MonthlyCents = readonly number[]
 /** Valores por rede em centavos — alinhado por índice a `networks`; nesta fase, sempre []. */
 export type NetworkCents = readonly number[]
 
-/** Nó folha (subcategoria) da matriz consolidada. `releaseType` só presente quando o launchType casa. */
+/**
+ * Nó folha (subcategoria) da matriz consolidada. `releaseType` só presente quando o launchType casa.
+ *
+ * `active` (feature 075) = estado EFETIVO (nó ∧ ancestrais), derivado pelo core na leitura. A intenção
+ * individual não é exposta (core-api#469) — não recalcule herança aqui.
+ */
 export type SubCategoryConsolidated = Readonly<{
   id: number
   ref: string // #C2: UUID do backend (casa com budget-results.subcategoryId)
   name: string
+  active: boolean
   totalInCents: number
   monthlyInCents: MonthlyCents
   networkInCents: NetworkCents
@@ -47,6 +53,8 @@ export type CategoryConsolidated = Readonly<{
   id: number
   ref: string
   name: string
+  /** Efetivo (categoria ∧ centro) — ver `SubCategoryConsolidated.active`. */
+  active: boolean
   totalInCents: number
   monthlyInCents: MonthlyCents
   networkInCents: NetworkCents
@@ -62,6 +70,8 @@ export type CostCenterConsolidated = Readonly<{
   ref: string
   name: string
   type: CostCenterType
+  /** Na raiz, efetivo == intenção (não há ancestral) — ver `SubCategoryConsolidated.active`. */
+  active: boolean
   totalInCents: number
   monthlyInCents: MonthlyCents
   networkInCents: NetworkCents
@@ -166,13 +176,22 @@ export type PlanDetailHeaderInput = Readonly<{
   budgets: readonly BudgetInput[]
 }>
 
-/** Subcategoria crua da cost-structure. `id` = UUID do backend (→ `ref`; casa com budget-results — C2). */
-export type CostStructureSubcategoryInput = Readonly<{ id: string; name: string; launchType: string }>
+/**
+ * Subcategoria crua da cost-structure. `id` = UUID do backend (→ `ref`; casa com budget-results — C2).
+ * `active` (feature 075) = o EFETIVO que o core derivou na leitura; passa direto até a view.
+ */
+export type CostStructureSubcategoryInput = Readonly<{
+  id: string
+  name: string
+  launchType: string
+  active: boolean
+}>
 
 /** Categoria crua da cost-structure. `id` = UUID do backend (insumo do `ref`, feature 061). */
 export type CostStructureCategoryInput = Readonly<{
   id: string
   name: string
+  active: boolean
   subcategories: readonly CostStructureSubcategoryInput[]
 }>
 
@@ -181,6 +200,7 @@ export type CostStructureCostCenterInput = Readonly<{
   id: string
   name: string
   direction: string
+  active: boolean
   categories: readonly CostStructureCategoryInput[]
 }>
 

@@ -33,6 +33,7 @@ const detail: PlanDetail = {
       id: 1,
       ref: 'ref-1',
       name: 'Consultoria',
+      active: true,
       type: 'A PAGAR',
       totalInCents: 0,
       monthlyInCents: zero,
@@ -42,6 +43,7 @@ const detail: PlanDetail = {
           id: 11,
           ref: 'ref-11',
           name: 'Consultoria Educacional',
+          active: true,
           totalInCents: 0,
           monthlyInCents: zero,
           networkInCents: [],
@@ -50,6 +52,7 @@ const detail: PlanDetail = {
               id: 111,
               ref: 'ref-111',
               name: 'Formação de professores',
+              active: true,
               totalInCents: 0,
               monthlyInCents: zero,
               networkInCents: [],
@@ -72,6 +75,9 @@ const labels = {
   edit: 'Editar',
   deactivate: 'Desativar',
   activate: 'Ativar',
+  inherited: 'Inativo por herança',
+  lockedByAncestor: (ancestorName: string) =>
+    `Inativo porque "${ancestorName}" está desativado. Reative "${ancestorName}" para editar este item.`,
   expand: 'Expandir',
   collapse: 'Recolher',
   nome: 'Nome',
@@ -100,8 +106,8 @@ const releaseTypeLabels = {
   DESPESAS_LOGISTICAS: 'Despesas de Logística',
 } as const
 
-function Harness(): ReactNode {
-  const b = useCentrosCusto('p-1', detail)
+function Harness({ detail: d }: { detail: PlanDetail }): ReactNode {
+  const b = useCentrosCusto('p-1', d)
   return (
     <>
       <button type="button" onClick={b.openModal}>
@@ -119,15 +125,49 @@ function Harness(): ReactNode {
   )
 }
 
-const openModal = (): void => {
+/** Renderiza o harness com a árvore dada e abre o modal. `openModal()` = a árvore padrão (tudo ativo). */
+const renderModal = (d: PlanDetail): void => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
     <QueryClientProvider client={client}>
-      <Harness />
+      <Harness detail={d} />
     </QueryClientProvider>,
   )
   fireEvent.click(screen.getByText('abrir'))
 }
+
+const openModal = (): void => {
+  renderModal(detail)
+}
+
+// ── Árvores com um nó inativo. `active` é o EFETIVO que o core entrega: desativar o CENTRO já chega com os
+// filhos em `false` (herança derivada lá, não aqui) — é isso que estas fixtures reproduzem. ──
+
+const withSubActive = (active: boolean): PlanDetail => ({
+  ...detail,
+  costCenters: detail.costCenters.map((c) => ({
+    ...c,
+    categories: c.categories.map((cat) => ({
+      ...cat,
+      subCategories: cat.subCategories.map((s) => ({ ...s, active })),
+    })),
+  })),
+})
+
+const withCentroActive = (active: boolean): PlanDetail => ({
+  ...detail,
+  costCenters: detail.costCenters.map((c) => ({
+    ...c,
+    active,
+    // Efetivo: o core aplica `cc.active && cat.active` na leitura. Com o centro desligado, os descendentes
+    // chegam `false` mesmo tendo intenção `true` — é exatamente o caso que trava os switches dos filhos.
+    categories: c.categories.map((cat) => ({
+      ...cat,
+      active,
+      subCategories: cat.subCategories.map((s) => ({ ...s, active })),
+    })),
+  })),
+})
 
 describe('CentrosCustoModal', () => {
   it('abrir renderiza o título com o programa e a árvore', () => {
@@ -153,13 +193,33 @@ describe('CentrosCustoModal', () => {
     expect(screen.getByRole('option', { name: 'Despesas de Pessoal' })).toBeTruthy()
   })
 
-  it('a chave (switch) desativa: rótulo vira "Ativar"', () => {
-    openModal()
+  // O switch reflete o `active` do SERVIDOR (feature 075), não um palpite otimista local: antes ele mexia num
+  // Set em memória (o nó voltava ativo no F5). Por isso o estado é afirmado renderizando outra árvore — não
+  // clicando: o clique só dispara o PATCH, e quem muda o rótulo é a releitura.
+  it('o switch mostra o estado do servidor: nó inativo → rótulo "Ativar"', () => {
+    renderModal(withSubActive(false))
     const subRow = screen.getByText('Formação de professores').closest('div') as HTMLElement
-    const sw = within(subRow).getByRole('switch')
-    expect(sw.getAttribute('aria-label')).toBe('Desativar')
-    fireEvent.click(sw)
+    // checkbox nativo com role="switch": o estado está na propriedade `checked`, não num `aria-checked`.
+    expect((within(subRow).getByRole('switch') as HTMLInputElement).checked).toBe(false)
     expect(within(subRow).getByText('Ativar')).toBeTruthy()
+  })
+
+  // A armadilha do core-api#469: o `active` que chega é o EFETIVO (nó ∧ ancestrais), mas o PATCH grava a
+  // INTENÇÃO. Ligar o filho com o pai desligado faria o switch voltar sozinho. Travar + dizer QUEM desligou.
+  it('filho de centro inativo: switch travado, dizendo quem o desligou', () => {
+    renderModal(withCentroActive(false))
+    const catRow = screen.getByText('Consultoria Educacional').closest('div') as HTMLElement
+    const sw = within(catRow).getByRole('switch') as HTMLInputElement
+
+    expect(sw.disabled).toBe(true)
+    expect(sw.getAttribute('aria-label')).toContain('Consultoria')
+    expect(within(catRow).getByText('Inativo por herança')).toBeTruthy()
+  })
+
+  it('centro é raiz: o switch nunca trava por herança', () => {
+    renderModal(withCentroActive(false))
+    const centroRow = screen.getByText('Consultoria - A PAGAR').closest('div') as HTMLElement
+    expect((within(centroRow).getByRole('switch') as HTMLInputElement).disabled).toBe(false)
   })
 
   it('recolher o centro (chevron) esconde as categorias', () => {

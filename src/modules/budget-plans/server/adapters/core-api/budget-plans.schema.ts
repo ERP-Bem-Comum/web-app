@@ -67,6 +67,10 @@ export const coreOptionsSchema = z.object({
  * literais exatos do backend NÃO estão pinados — o MAPPER faz o lookup, com fallback). Anti-corrupção: valida
  * antes de mapear. `budgetPlanId`/`id` UUID.
  */
+/**
+ * Árvore de custo do core — resposta do `GET /:id/cost-structure` E do eco dos POSTs/PATCH (é o mesmo schema
+ * lá). `active` (feature 075 — #454 gap 3) é o estado EFETIVO (nó ∧ ancestrais), derivado na leitura do core.
+ */
 export const coreCostStructureSchema = z.object({
   budgetPlanId: z.uuid(),
   costCenters: z.array(
@@ -74,15 +78,18 @@ export const coreCostStructureSchema = z.object({
       id: z.uuid(),
       name: z.string().trim(),
       direction: z.string().trim(),
+      active: z.boolean(),
       categories: z.array(
         z.object({
           id: z.uuid(),
           name: z.string().trim(),
+          active: z.boolean(),
           subcategories: z.array(
             z.object({
               id: z.uuid(),
               name: z.string().trim(),
               launchType: z.string().trim(),
+              active: z.boolean(),
             }),
           ),
         }),
