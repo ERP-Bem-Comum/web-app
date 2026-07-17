@@ -69,7 +69,20 @@ export const thead = style([
     letterSpacing: '.03em',
     textTransform: 'uppercase',
     color: brand.color.ink500,
-    whiteSpace: 'nowrap',
+    /**
+     * Header QUEBRA em 2 linhas; o corpo é que fica em 1 (`cell` tem nowrap + ellipsis).
+     *
+     * Era `nowrap` SEM `overflow`/`ellipsis` — diferente das células do corpo, que têm os dois. Resultado:
+     * todo rótulo maior que a coluna vazava POR CIMA do vizinho. Em produção a P.O. leu "ÁREA DE ATUAÇÃOFUNÇÃO"
+     * grudado: "Área de atuação" em maiúsculas + `letterSpacing` não cabe nos 6rem da coluna. "Identidade de
+     * gênero" (9rem) tinha o mesmo defeito.
+     *
+     * Por que quebrar em vez de alargar a coluna ou cortar com "…": alargar rouba espaço das colunas flexíveis
+     * (Nome/Função) e só empurra o problema pro próximo rótulo longo; e um CABEÇALHO truncado ("ÁREA DE
+     * ATUA…") esconde o nome da coluna — pior que duas linhas. `alignItems: center` do `gridRow` mantém o
+     * alinhamento, e o `sticky` segue funcionando.
+     */
+    lineHeight: 1.2, // igual ao `equipe-charts.css.ts` vizinho (não há token de line-height no kit)
   },
 ])
 
