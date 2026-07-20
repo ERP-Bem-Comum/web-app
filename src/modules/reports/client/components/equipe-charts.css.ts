@@ -60,6 +60,10 @@ export const hbarsFill = style({
   blockSize: '100%',
   display: 'flex',
   flexDirection: 'column',
+  // Respiro entre as linhas. Sem isto, com muitas categorias (Função tem 25) cada linha encolhe até a
+  // altura da própria barra e elas ficam COLADAS, virando um bloco só. O `gap` garante a separação
+  // independentemente da contagem — diferente de margem por linha, que some quando o espaço aperta.
+  gap: brand.space.xs,
 })
 
 /**
@@ -82,6 +86,9 @@ export const hbarFillEquipe = style({
   display: 'block',
   blockSize: '100%',
   borderRadius: brand.radius.xs,
+  // Levemente translúcida: em listas longas (Função) o bloco de cor sólida pesa muito na tela e compete
+  // com o rótulo. `opacity` em vez de uma cor nova mantém o token da marca como fonte única do matiz.
+  opacity: 0.88,
 })
 export const hbarFillAnimatedEquipe = style({ transition: 'inline-size .55s ease-out' })
 
