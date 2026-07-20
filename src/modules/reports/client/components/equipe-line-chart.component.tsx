@@ -53,6 +53,18 @@ const X1 = 446
 const Y0 = 16
 const Y1 = 216
 const GRID_STEPS = 3
+
+/**
+ * Teto "bonito" do eixo: menor múltiplo de `steps` ≥ `max` cujo passo seja 1, 2, 5 ou 10 × potência de 10.
+ * Puro e sem `throw` (§II). Ex.: max 24, steps 3 → passo 10 → teto 30; max 5 → passo 2 → teto 6.
+ */
+const niceCeil = (max: number, steps: number): number => {
+  const rough = Math.max(1, max) / steps
+  const magnitude = 10 ** Math.floor(Math.log10(rough))
+  const normalized = rough / magnitude
+  const niceStep = (normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10) * magnitude
+  return niceStep * steps
+}
 const SMOOTH_R = 8
 
 /** Caminho suavizado (arredonda os vértices por bézier quadrática) — igual ao mock do RxP. */
@@ -90,8 +102,13 @@ export function EquipeLineChart(props: EquipeLineChartProps): ReactNode {
   const geom = useMemo(() => {
     const values = [...props.counts]
     const maxV = Math.max(...values, 1)
-    // Escala do eixo Y: teto inteiro acima do máximo (evita a linha colar no topo).
-    const yMax = Math.max(1, maxV)
+    // Escala do eixo Y "redonda", como no legado (0 · 6 · 12 · 18 · 24).
+    //
+    // Antes o teto era o próprio máximo, e os rótulos saíam de `maxV * tick / GRID_STEPS` arredondado —
+    // com máximo 1 e 3 divisões isso dava 0 · 0,33 · 0,66 · 1 → "0 · 0 · 1 · 1", com linhas repetidas.
+    // Agora o passo é arredondado para cima até um valor "bonito" (1, 2, 5, 10, 20, 50…) e o teto é
+    // `passo × divisões`: os rótulos são sempre inteiros distintos, e a linha nunca cola no topo.
+    const yMax = niceCeil(maxV, GRID_STEPS)
     const yAt = (v: number): number => Y0 + (1 - v / yMax) * (Y1 - Y0)
 
     const gridlines = Array.from({ length: GRID_STEPS + 1 }, (_, tick) => {

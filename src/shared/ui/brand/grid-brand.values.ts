@@ -97,21 +97,42 @@ export const brand = {
     // só-tokens). A UI aplica via classe (styleVariants no `.css.ts`) — as views não importam tokens
     // (§boundaries client-ui ↛ ds-tokens). Tons distintos e legíveis, dentro da família "brand".
     equipe: {
-      // 3 fatias do donut "Distribuição por Gênero".
-      gen1: '#396496', // Mulher Cis — azul da marca
-      gen2: '#32a2c6', // Homem Cis — ciano
-      gen3: '#98a2b3', // Prefiro não responder — cinza neutro
-      // 6 categorias das barras verticais "Distribuição por Raça/Cor" — uma cor por raça.
-      raca1: '#98a2b3', // N/A — cinza neutro
-      raca2: '#396496', // Branco — azul
-      raca3: '#5c3d2e', // Preto — marrom terroso
-      raca4: '#c67c1e', // Pardo — âmbar
-      raca5: '#d4a017', // Amarelo — dourado
-      raca6: '#8a5cd1', // Prefiro não revelar — roxo suave
-      // Barras horizontais e linha (por Ano) — trilho neutro. Duas cores p/ distinguir os dois gráficos de
-      // barras horizontais: `bar` (Idade) = azul da marca; `bar2` (Função) = verde-azulado.
-      bar: '#396496',
-      bar2: '#2f8f6a',
+      // ── Cores por CATEGORIA, chaveadas pelo `id` canônico do backend (core-api#477) ──
+      // Antes eram `gen1..3`/`raca1..6` aplicadas por ÍNDICE, casando com a ordem da lista canônica local.
+      // Quando o endpoint agregado passou a mandar 9 gêneros e 7 raças em OUTRA ordem, cada cor foi parar
+      // na categoria errada (Pardo com o marrom do Preto, N/A com o roxo do "prefiro não revelar").
+      // Chavear pelo `id` — que é estável e é justamente o que o backend garante — elimina a classe do bug:
+      // categoria nova sem cor cai no neutro, em vez de roubar a cor da vizinha.
+      genero: {
+        MULHER_CIS: '#396496', // azul da marca
+        HOMEM_CIS: '#32a2c6', // ciano
+        MULHER_TRANS: '#7b5ea7', // roxo
+        HOMEM_TRANS: '#2f8f6a', // verde-azulado
+        TRAVESTI: '#c2557a', // rosa queimado
+        NAO_BINARIO: '#c67c1e', // âmbar
+        OUTRO: '#7a8794', // cinza médio
+        PREFIRO_NAO_RESPONDER: '#b8c0cc', // cinza claro — não-resposta
+        NA: '#d5dae1', // cinza mais claro — ausência de dado
+      },
+      raca: {
+        BRANCO: '#396496', // azul
+        PRETO: '#5c3d2e', // marrom terroso
+        PARDO: '#c67c1e', // âmbar
+        AMARELO: '#d4a017', // dourado
+        INDIGENA: '#2f8f6a', // verde — categoria que o front antigo OMITIA
+        PREFIRO_NAO_RESPONDER: '#b8c0cc', // cinza claro — não-resposta
+        NA: '#d5dae1', // cinza mais claro — ausência de dado
+      },
+      /** Cor de categoria desconhecida (ex.: balde `OUTROS`): neutro, nunca a cor de outra categoria. */
+      categoriaFallback: '#98a2b3',
+      /** Contorno do rótulo escrito DENTRO da fatia da pizza — dá contraste sobre fatias claras. */
+      pieLabelOutline: 'rgba(0,0,0,.35)',
+      // Barras horizontais e linha (por Ano) — trilho neutro. `bar` (Idade) = ciano da marca, como no
+      // legado. `bar2` (Função) = azul mais escuro: no legado os dois são ciano, mas aqui eles aparecem
+      // LADO A LADO na mesma linha da grade, e duas cores iguais fazem parecer o mesmo gráfico repetido
+      // (a P.O. apontou em tela). Mesma família, tom distinto — diferencia sem quebrar a identidade.
+      bar: '#32a2c6',
+      bar2: '#2b6d8f',
       barTrack: '#eef1f5',
       line: '#396496',
     },

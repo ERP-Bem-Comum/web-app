@@ -8,9 +8,6 @@ import { describe, it } from 'node:test'
 import assert from 'node:assert'
 
 import {
-  byGenero,
-  byRacaCor,
-  byFaixaEtaria,
   byAnoContrato,
   byFuncao,
   buildCsv,
@@ -20,9 +17,6 @@ import {
   totalPages,
   pageSlice,
   PER_PAGE_DEFAULT,
-  GENERO_ORDER,
-  RACA_ORDER,
-  FAIXA_ETARIA_LABELS,
   ANOS,
 } from '../../../../src/modules/reports/client/equipe.view-model.ts'
 import {
@@ -99,90 +93,6 @@ const FIX: readonly TeamMemberRow[] = [
     anoContrato: 2018,
   },
 ]
-
-describe('byGenero — donut (3 fatias na ordem canônica)', () => {
-  const slices = byGenero(FIX)
-
-  it('mantém a ordem canônica e todas as 3 categorias', () => {
-    assert.deepStrictEqual(
-      slices.map((s) => s.label),
-      [...GENERO_ORDER],
-    )
-  })
-
-  it('conta corretamente (Mulher Cis 3, Homem Cis 2, Prefiro não responder 1)', () => {
-    const byLabel = new Map(slices.map((s) => [s.label, s.count]))
-    assert.strictEqual(byLabel.get('Mulher Cis'), 3)
-    assert.strictEqual(byLabel.get('Homem Cis'), 2)
-    assert.strictEqual(byLabel.get('Prefiro não responder'), 1)
-  })
-
-  it('a soma das fatias = total de colaboradores', () => {
-    assert.strictEqual(
-      slices.reduce((s, x) => s + x.count, 0),
-      FIX.length,
-    )
-  })
-})
-
-describe('byRacaCor — barras verticais (6 categorias na ordem canônica)', () => {
-  const bars = byRacaCor(FIX)
-
-  it('produz as 6 categorias na ordem canônica', () => {
-    assert.deepStrictEqual(
-      bars.map((b) => b.label),
-      [...RACA_ORDER],
-    )
-  })
-
-  it('conta N/A 1, Branco 2, Preto 1, Pardo 1, Amarelo 1, Prefiro não revelar 0', () => {
-    const byLabel = new Map(bars.map((b) => [b.label, b.count]))
-    assert.strictEqual(byLabel.get('N/A'), 1)
-    assert.strictEqual(byLabel.get('Branco'), 2)
-    assert.strictEqual(byLabel.get('Preto'), 1)
-    assert.strictEqual(byLabel.get('Pardo'), 1)
-    assert.strictEqual(byLabel.get('Amarelo'), 1)
-    assert.strictEqual(byLabel.get('Prefiro não revelar'), 0)
-  })
-})
-
-describe('byFaixaEtaria — barras horizontais (buckets incl. N/A)', () => {
-  const bars = byFaixaEtaria(FIX)
-
-  it('produz os 6 buckets na ordem canônica', () => {
-    assert.deepStrictEqual(
-      bars.map((b) => b.label),
-      [...FAIXA_ETARIA_LABELS],
-    )
-  })
-
-  it('bucketiza idade (22→Até 29, 35→30 a 39, 45→40 a 49, 55→50 a 59, 66→60+, null→N/A)', () => {
-    const byLabel = new Map(bars.map((b) => [b.label, b.count]))
-    assert.strictEqual(byLabel.get('Até 29'), 1)
-    assert.strictEqual(byLabel.get('30 a 39'), 1)
-    assert.strictEqual(byLabel.get('40 a 49'), 1)
-    assert.strictEqual(byLabel.get('50 a 59'), 1)
-    assert.strictEqual(byLabel.get('60+'), 1)
-    assert.strictEqual(byLabel.get('N/A'), 1)
-  })
-
-  it('idade null cai SEMPRE no bucket N/A (sem throw, sem NaN)', () => {
-    const nullRow: TeamMemberRow = {
-      nome: 'X',
-      idade: null,
-      programa: 'DDI',
-      funcao: 'Analista',
-      vinculo: 'CLT',
-      genero: 'Mulher Cis',
-      racaCor: 'N/A',
-      escolaridade: 'N/A',
-      anoContrato: 2020,
-    }
-    const onlyNull = byFaixaEtaria([nullRow])
-    const na = onlyNull.find((b) => b.label === 'N/A')
-    assert.strictEqual(na?.count, 1)
-  })
-})
 
 describe('byAnoContrato — linha (2019..2025)', () => {
   const points = byAnoContrato(FIX)
@@ -347,21 +257,9 @@ describe('placeholder sintético (LGPD)', () => {
     assert.ok(temNull, 'deve haver ao menos uma idade N/A (null)')
   })
 
-  it('as 5 agregações sobre o placeholder somam consistentemente', () => {
+  it('as agregações não-demográficas sobre o placeholder somam consistentemente', () => {
     const rows = loadTeam()
     const n = rows.length
-    assert.strictEqual(
-      byGenero(rows).reduce((s, x) => s + x.count, 0),
-      n,
-    )
-    assert.strictEqual(
-      byRacaCor(rows).reduce((s, x) => s + x.count, 0),
-      n,
-    )
-    assert.strictEqual(
-      byFaixaEtaria(rows).reduce((s, x) => s + x.count, 0),
-      n,
-    )
     assert.strictEqual(
       byFuncao(rows).reduce((s, x) => s + x.count, 0),
       n,

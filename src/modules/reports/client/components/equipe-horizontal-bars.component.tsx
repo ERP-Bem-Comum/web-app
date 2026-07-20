@@ -22,6 +22,9 @@ import {
   hbarTrack,
   hbarFillEquipe,
   hbarFillEquipeTone,
+  hbarsFill,
+  hbarRowFill,
+  hbarNarrowName,
   hbarFillAnimatedEquipe,
   hbarCount,
   emptyState,
@@ -56,7 +59,7 @@ export function EquipeHorizontalBars(props: EquipeHorizontalBarsProps): ReactNod
 
   return (
     <div
-      className={chartRel}
+      className={`${chartRel} ${hbarsFill}`}
       onMouseLeave={() => {
         setHover(null)
       }}
@@ -67,7 +70,7 @@ export function EquipeHorizontalBars(props: EquipeHorizontalBarsProps): ReactNod
         return (
           <div
             key={b.id}
-            className={hbar}
+            className={`${hbar} ${hbarRowFill} ${hbarNarrowName}`}
             onMouseMove={(e) => {
               const rect = e.currentTarget.parentElement?.getBoundingClientRect()
               if (!rect) return

@@ -23,6 +23,21 @@ export const CoreApiTeamReportSchema = z.object({
   team: z.array(CoreApiTeamMemberSchema),
 })
 
+// GET /reports/team/demographics → { totalActive, gender[], ageRange[], race[] } (core-api#477).
+// `id` canônico + `label` PT-BR pronto: o front NÃO mantém mapa id→label (era ele que descartava
+// `INDIGENA` e 5 das 8 identidades de gênero). `count` é a contagem real — sem k-anonimato (P.O.).
+const CoreApiCategoryCountSchema = z.object({
+  id: z.string().trim(),
+  label: z.string().trim(),
+  count: z.int().nonnegative(),
+})
+export const CoreApiTeamDemographicsSchema = z.object({
+  totalActive: z.int().nonnegative(),
+  gender: z.array(CoreApiCategoryCountSchema),
+  ageRange: z.array(CoreApiCategoryCountSchema),
+  race: z.array(CoreApiCategoryCountSchema),
+})
+
 // GET /reports/suppliers-without-contract → { suppliers: [...] }
 const CoreApiSupplierWithoutContractSchema = z.object({
   supplierRef: z.string().trim(),

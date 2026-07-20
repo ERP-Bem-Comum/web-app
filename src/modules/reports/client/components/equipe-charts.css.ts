@@ -47,6 +47,37 @@ export {
 } from './realizado-charts.css.ts'
 
 // ── Barras horizontais (Idade / Função) — fill na cor única da marca (sem semântica de concentração) ──
+/**
+ * Pilha de barras horizontais que PREENCHE o card (Idade e Função).
+ *
+ * As linhas da base têm altura fixa (18px + margem), então o gráfico ocupava só o topo e o resto do card
+ * ficava vazio — a grade é `stretch`, e o card é tão alto quanto o vizinho mais alto da linha. Aqui a
+ * pilha vira coluna flex e cada linha ganha `flex: 1`: as barras se distribuem pelo espaço disponível,
+ * qualquer que seja a quantidade de categorias. A ALTURA DA BARRA em si continua fixa (o `hbarTrack`
+ * centralizado na linha) — barra gorda demais viraria bloco, e o que precisa respirar é o espaçamento.
+ */
+export const hbarsFill = style({
+  blockSize: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+})
+
+/**
+ * Coluna do rótulo mais estreita que a da base (180px). Nos cards do Equipe — que dividem a linha em 2 ou
+ * 3 — 180px fixos comiam quase metade da largura e jogavam as barras para a direita, mesmo com rótulos
+ * curtos ("Até 29"). `max-content` limitado deixa a coluna caber no texto e devolve o espaço à barra.
+ */
+export const hbarNarrowName = style({
+  gridTemplateColumns: `minmax(0, max-content) 1fr auto`,
+})
+
+/** Linha que cresce igualmente. `minBlockSize: 0` impede o overflow clássico de item flex em coluna. */
+export const hbarRowFill = style({
+  flex: 1,
+  minBlockSize: 0,
+  marginBlockEnd: 0,
+})
+
 export const hbarFillEquipe = style({
   display: 'block',
   blockSize: '100%',
@@ -67,7 +98,14 @@ export const vbars = style({
   alignItems: 'flex-end',
   justifyContent: 'space-around',
   gap: brand.space.sm,
-  blockSize: '11rem',
+  // Preenche o card (a grade dos 3 é `stretch`: todos ficam com a altura do maior). Antes era `11rem`
+  // fixo, o que achatava as barras no rodapé com um vazio enorme por cima.
+  //
+  // ⚠️ Tem que ser `blockSize: 100%`, NÃO `flex: 1`: a altura da barra (`vbarFill`) é uma PORCENTAGEM, e
+  // porcentagem só resolve contra pai de altura DEFINIDA. Com `flex: 1` a cadeia deixa de ser definida e
+  // toda barra colapsa para zero — o gráfico fica só com os números e os rótulos, sem barra nenhuma.
+  blockSize: '100%',
+  minBlockSize: '11rem',
   paddingBlockStart: brand.space.md,
 })
 export const vbarCol = style({
@@ -113,41 +151,52 @@ export const vbarLabel = style({
   overflowWrap: 'anywhere',
 })
 
-// Cor da barra vertical POR categoria de raça/cor — aplicada por classe (styleVariants). A chave é o índice
-// da ordem canônica (0..5) para casar com `RACA_ORDER` da ViewModel.
-export const racaFill = styleVariants({
-  '0': { background: brand.color.equipe.raca1 },
-  '1': { background: brand.color.equipe.raca2 },
-  '2': { background: brand.color.equipe.raca3 },
-  '3': { background: brand.color.equipe.raca4 },
-  '4': { background: brand.color.equipe.raca5 },
-  '5': { background: brand.color.equipe.raca6 },
-})
-export const racaSwatch = styleVariants({
-  '0': { background: brand.color.equipe.raca1 },
-  '1': { background: brand.color.equipe.raca2 },
-  '2': { background: brand.color.equipe.raca3 },
-  '3': { background: brand.color.equipe.raca4 },
-  '4': { background: brand.color.equipe.raca5 },
-  '5': { background: brand.color.equipe.raca6 },
+/**
+ * Donut do Equipe: maior que a base (7.5rem) — no legado o gráfico de gênero é o elemento dominante do
+ * card, não uma miniatura acima de uma lista. Definido aqui e não na base para não afetar o relatório
+ * Realizado × Planejado, que compartilha os mesmos átomos.
+ */
+/**
+ * Rótulo escrito DENTRO da fatia da pizza (legado). Branco com leve sombra: as fatias têm cores de
+ * luminância bem diferente (do dourado ao marrom escuro), e só branco puro sumiria nas claras.
+ */
+export const pieLabel = style({
+  fill: brand.color.surface,
+  fontSize: '0.5rem',
+  fontWeight: brand.weight.semibold,
+  paintOrder: 'stroke',
+  stroke: brand.color.equipe.pieLabelOutline,
+  strokeWidth: '0.06rem',
+  pointerEvents: 'none',
 })
 
-// Cor do arco/ponto do donut POR fatia de gênero (0..2) — aplicada por classe.
-export const generoStroke = styleVariants({
-  '0': { stroke: brand.color.equipe.gen1 },
-  '1': { stroke: brand.color.equipe.gen2 },
-  '2': { stroke: brand.color.equipe.gen3 },
-})
+export const donutLg = style({ inlineSize: '11rem', blockSize: '11rem' })
+
+// Cor POR CATEGORIA, chaveada pelo `id` canônico do backend (core-api#477) — NÃO pelo índice.
+// O índice quebrou quando o endpoint agregado passou a mandar 9 gêneros e 7 raças em outra ordem: cada
+// cor foi parar na categoria errada. `id` é estável, então a cor acompanha a categoria para sempre.
+// Categoria sem cor mapeada (ex.: balde `OUTROS`) cai no neutro — nunca rouba a cor de outra.
+const racaColors = brand.color.equipe.raca
+const generoColors = brand.color.equipe.genero
+const fallback = brand.color.equipe.categoriaFallback
+
+export const racaFill = styleVariants({
+  ...Object.fromEntries(Object.entries(racaColors).map(([k, v]) => [k, { background: v }])),
+  OUTROS: { background: fallback },
+} as Record<string, { background: string }>)
+export const racaSwatch = racaFill
+
 export const generoDot = styleVariants({
-  '0': { background: brand.color.equipe.gen1 },
-  '1': { background: brand.color.equipe.gen2 },
-  '2': { background: brand.color.equipe.gen3 },
-})
-export const generoSwatch = styleVariants({
-  '0': { background: brand.color.equipe.gen1 },
-  '1': { background: brand.color.equipe.gen2 },
-  '2': { background: brand.color.equipe.gen3 },
-})
+  ...Object.fromEntries(Object.entries(generoColors).map(([k, v]) => [k, { background: v }])),
+  OUTROS: { background: fallback },
+} as Record<string, { background: string }>)
+export const generoSwatch = generoDot
+
+/** Traço do arco do donut — mesma chave por `id` (o SVG usa `stroke`, não `background`). */
+export const generoStroke = styleVariants({
+  ...Object.fromEntries(Object.entries(generoColors).map(([k, v]) => [k, { stroke: v }])),
+  OUTROS: { stroke: fallback },
+} as Record<string, { stroke: string }>)
 
 // Swatch do tooltip (pequeno quadrado colorido) — mesma medida do tooltip do RxP.
 export const tooltipSwatch = style({

@@ -9,11 +9,13 @@ import { parseErrorEnvelope } from '#shared/http/error-envelope.ts'
 import type { ReportsError } from '#modules/reports/server/domain/errors/reports.errors.ts'
 import type {
   TeamMember,
+  TeamDemographics,
   SupplierWithoutContract,
   PaymentPosition,
 } from '#modules/reports/server/domain/reports.io.ts'
 import {
   CoreApiTeamReportSchema,
+  CoreApiTeamDemographicsSchema,
   CoreApiSuppliersWithoutContractSchema,
   CoreApiPaymentPositionSchema,
 } from './reports.schema.ts'
@@ -68,6 +70,22 @@ export const teamReportToModel = (raw: unknown): Result<readonly TeamMember[], R
     experienceInPublicSector: m.experienceInPublicSector,
   }))
   return ok(members)
+}
+
+/**
+ * Demografia agregada (core-api#477). Passa DIRETO — `id`/`label`/`count` já vêm prontos do backend, que
+ * é o dono da lista canônica e do rótulo PT. Não há mapa id→label aqui de propósito: era exatamente o mapa
+ * local que descartava `INDIGENA` e 5 das 8 identidades de gênero.
+ */
+export const teamDemographicsToModel = (raw: unknown): Result<TeamDemographics, ReportsError> => {
+  const parsed = CoreApiTeamDemographicsSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  return ok({
+    totalActive: parsed.data.totalActive,
+    gender: parsed.data.gender.map((c) => ({ id: c.id, label: c.label, count: c.count })),
+    ageRange: parsed.data.ageRange.map((c) => ({ id: c.id, label: c.label, count: c.count })),
+    race: parsed.data.race.map((c) => ({ id: c.id, label: c.label, count: c.count })),
+  })
 }
 
 export const suppliersWithoutContractToModel = (
