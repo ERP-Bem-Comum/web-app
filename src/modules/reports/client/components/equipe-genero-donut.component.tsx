@@ -17,19 +17,12 @@ import {
   tooltipSwatch,
   donutWrap,
   donut,
+  donutLg,
+  pieLabel,
   donutSvg,
-  donutCenter,
-  donutBig,
-  donutCap,
   arcAnimated,
   generoStroke,
-  generoDot,
   generoSwatch,
-  legend,
-  legendItem,
-  legendDot,
-  legendName,
-  legendValue,
   emptyState,
 } from './equipe-charts.css.ts'
 
@@ -47,13 +40,33 @@ export type EquipeGeneroDonutProps = Readonly<{
   formatPercent: (count: number, total: number) => string
 }>
 
-const R = 45
-const STROKE = 16
+/**
+ * Geometria da PIZZA (paridade com o legado, P.O. 2026-07-20). O desenho continua sendo um `<circle>` com
+ * `stroke-dasharray` — o truque para fechar o furo do donut é fazer o traço ir do centro à borda:
+ * a coroa vai de `R - STROKE/2` a `R + STROKE/2`, então `R = 30` e `STROKE = 60` cobrem de 0 a 60.
+ * Sem `path`/arco manual: mesma técnica, mesma acessibilidade, zero matemática de bezier.
+ */
+const R = 30
+const STROKE = 60
 const CENTER = 60
 const CIRC = 2 * Math.PI * R
 
+/** Raio onde o rótulo da fatia é escrito (dentro da pizza, entre o centro e a borda). */
+const LABEL_R = 34
+
+/**
+ * Fatia pequena não recebe rótulo escrito: abaixo disso o texto sai maior que a fatia e vira sujeira por
+ * cima das vizinhas (no legado o rótulo de uma fatia de 1 pessoa vazava para fora do gráfico). Quem ficar
+ * sem rótulo continua identificável pelo tooltip.
+ */
+const MIN_SHARE_FOR_LABEL = 0.08
+
 /** Chave de cor (índice da fatia como string) — casa com os styleVariants por índice do .css.ts. */
-const colorKey = (i: number): '0' | '1' | '2' => (i === 0 ? '0' : i === 1 ? '1' : '2')
+/**
+ * Cor pela CHAVE CANÔNICA da categoria (`MULHER_CIS`, `NA`…), não pelo índice. O índice quebrou quando o
+ * backend passou a mandar 9 categorias em outra ordem — cada cor ia parar na categoria errada.
+ */
+const colorKey = (id: string): string => id
 
 export function EquipeGeneroDonut(props: EquipeGeneroDonutProps): ReactNode {
   const [hover, setHover] = useState<{ index: number; x: number; y: number } | null>(null)
@@ -65,11 +78,36 @@ export function EquipeGeneroDonut(props: EquipeGeneroDonutProps): ReactNode {
   }
 
   const arcs = props.slices.reduce<
-    readonly Readonly<{ id: string; index: number; dash: number; gap: number; offset: number }>[]
+    readonly Readonly<{
+      id: string
+      index: number
+      dash: number
+      gap: number
+      offset: number
+      share: number
+      labelX: number
+      labelY: number
+    }>[]
   >((acc, s, i) => {
     const consumed = acc.reduce((sum, a) => sum + a.dash, 0)
-    const dash = (s.count / total) * CIRC
-    return [...acc, { id: s.id, index: i, dash, gap: CIRC - dash, offset: -consumed }]
+    const share = s.count / total
+    const dash = share * CIRC
+    // Ângulo do MEIO da fatia, a partir do topo e no sentido horário (o `<g>` já rotaciona -90°).
+    const midTurn = consumed / CIRC + share / 2
+    const angle = midTurn * 2 * Math.PI
+    return [
+      ...acc,
+      {
+        id: s.id,
+        index: i,
+        dash,
+        gap: CIRC - dash,
+        offset: -consumed,
+        share,
+        labelX: CENTER + LABEL_R * Math.sin(angle),
+        labelY: CENTER - LABEL_R * Math.cos(angle),
+      },
+    ]
   }, [])
 
   const active = hover !== null ? props.slices[hover.index] : undefined
@@ -87,7 +125,7 @@ export function EquipeGeneroDonut(props: EquipeGeneroDonutProps): ReactNode {
         setHover(null)
       }}
     >
-      <div className={donut}>
+      <div className={`${donut} ${donutLg}`}>
         <svg
           className={donutSvg}
           viewBox="0 0 120 120"
@@ -98,7 +136,7 @@ export function EquipeGeneroDonut(props: EquipeGeneroDonutProps): ReactNode {
             {arcs.map((a) => (
               <circle
                 key={a.id}
-                className={`${generoStroke[colorKey(a.index)]} ${props.animate ? arcAnimated : ''}`}
+                className={`${generoStroke[colorKey(a.id)] ?? ''} ${props.animate ? arcAnimated : ''}`}
                 cx={CENTER}
                 cy={CENTER}
                 r={R}
@@ -110,22 +148,25 @@ export function EquipeGeneroDonut(props: EquipeGeneroDonutProps): ReactNode {
               />
             ))}
           </g>
+          {/* Rótulo DENTRO da fatia (legado). Fora do `<g>` rotacionado: o texto fica na horizontal,
+              legível, enquanto as coordenadas já vêm calculadas no ângulo certo. */}
+          {arcs.map((a) =>
+            a.share < MIN_SHARE_FOR_LABEL ? null : (
+              <text
+                key={`lbl-${a.id}`}
+                className={pieLabel}
+                x={a.labelX}
+                y={a.labelY}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                aria-hidden="true"
+              >
+                {props.slices[a.index]?.label ?? ''}
+              </text>
+            ),
+          )}
         </svg>
-        <div className={donutCenter}>
-          <span className={donutBig}>{props.centerValue}</span>
-          <span className={donutCap}>{props.centerCaption}</span>
-        </div>
       </div>
-
-      <ul className={legend}>
-        {props.slices.map((s, i) => (
-          <li key={s.id} className={legendItem} onMouseMove={track(i)}>
-            <span className={`${legendDot} ${generoDot[colorKey(i)]}`} aria-hidden="true" />
-            <span className={legendName}>{s.label}</span>
-            <span className={legendValue}>{s.count}</span>
-          </li>
-        ))}
-      </ul>
 
       {hover !== null && active !== undefined && (
         <div
@@ -134,7 +175,7 @@ export function EquipeGeneroDonut(props: EquipeGeneroDonutProps): ReactNode {
           role="status"
         >
           <div className={tooltipTitle}>
-            <span className={`${tooltipSwatch} ${generoSwatch[colorKey(hover.index)]}`} aria-hidden />
+            <span className={`${tooltipSwatch} ${generoSwatch[colorKey(active.id)] ?? ''}`} aria-hidden />
             {active.label}
           </div>
           <div className={tooltipRow}>

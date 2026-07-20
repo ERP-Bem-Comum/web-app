@@ -28,8 +28,7 @@ import {
   ANOS,
   type TeamMemberRow,
 } from '../equipe.view-model.ts'
-import { useEquipe } from '../equipe.binding.ts'
-import type { CategoryCount } from '../equipe.view-model.ts'
+import { useEquipe, useEquipeDemographics } from '../equipe.binding.ts'
 import { ReportStatePanel } from '../components/report-state-panel.component.tsx'
 import { RealizadoChartsMount } from '../components/realizado-charts-mount.component.tsx'
 import { EquipeGeneroDonut } from '../components/equipe-genero-donut.component.tsx'
@@ -75,7 +74,6 @@ const EMPTY_ROWS: readonly TeamMemberRow[] = []
  * empty-state honesto, sem inventar distribuição (D3 do plano). Reabilita quando o backend expuser agregação
  * demográfica.
  */
-const EMPTY_DEMOGRAPHICS: readonly CategoryCount[] = []
 
 /** Baixa o CSV via Blob + anchor (client-side; o backend entregará JSON depois). */
 function downloadCsv(filename: string, csv: string): void {
@@ -96,6 +94,8 @@ export function EquipePage(): ReactNode {
   // Server-state REAL do core-api (#114, endpoint LGPD-safe): loading | error | ready. Sem idade/gênero/
   // raça-cor → os 3 gráficos demográficos recebem dataset VAZIO (empty-state honesto); só Ano + Função têm fonte.
   const state = useEquipe()
+  // Query SEPARADA (core-api#477): se a demografia falhar/403, os gráficos ficam vazios e a TABELA segue.
+  const demographics = useEquipeDemographics()
 
   // UI-state local da page (§XI): filtros abertos, paginação e o colaborador selecionado no modal.
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -240,7 +240,7 @@ export function EquipePage(): ReactNode {
                 </div>
                 <div className={chartPad}>
                   <EquipeGeneroDonut
-                    slices={EMPTY_DEMOGRAPHICS}
+                    slices={demographics.gender}
                     centerValue={String(totalCount)}
                     centerCaption={t('reports.equipe.charts.centerCaption')}
                     emptyLabel={t('reports.equipe.chartUnavailable')}
@@ -256,7 +256,7 @@ export function EquipePage(): ReactNode {
                 </div>
                 <div className={chartPad}>
                   <EquipeHorizontalBars
-                    bars={EMPTY_DEMOGRAPHICS}
+                    bars={demographics.ageRange}
                     total={totalCount}
                     emptyLabel={t('reports.equipe.chartUnavailable')}
                     animate={animate}
@@ -271,7 +271,7 @@ export function EquipePage(): ReactNode {
                 </div>
                 <div className={chartPad}>
                   <EquipeVerticalBars
-                    bars={EMPTY_DEMOGRAPHICS}
+                    bars={demographics.race}
                     total={totalCount}
                     emptyLabel={t('reports.equipe.chartUnavailable')}
                     animate={animate}

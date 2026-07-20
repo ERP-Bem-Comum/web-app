@@ -10,11 +10,13 @@ import type { ReportsClient } from '#modules/reports/server/application/reports.
 import type { ReportsError } from '#modules/reports/server/domain/errors/reports.errors.ts'
 import type {
   TeamMember,
+  TeamDemographics,
   SupplierWithoutContract,
   PaymentPosition,
 } from '#modules/reports/server/domain/reports.io.ts'
 import {
   teamReportToModel,
+  teamDemographicsToModel,
   suppliersWithoutContractToModel,
   paymentPositionToModel,
   mapHttpError,
@@ -25,6 +27,12 @@ export const createCoreApiReportsClient = (baseUrl: string): ReportsClient => ({
     const r = await resultFetch<unknown>(`${baseUrl}/team`, { token })
     if (isErr(r)) return err(mapHttpError(r.error))
     return teamReportToModel(r.value)
+  },
+  // Demografia agregada (core-api#477). Sensível: só a ESTATÍSTICA cruza — nunca linha por pessoa.
+  getTeamDemographics: async (token): Promise<Result<TeamDemographics, ReportsError>> => {
+    const r = await resultFetch<unknown>(`${baseUrl}/team/demographics`, { token })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return teamDemographicsToModel(r.value)
   },
   getSuppliersWithoutContract: async (
     token,

@@ -1,18 +1,20 @@
 /**
- * ViewModel PURA do relatório "Equipe ABC" (ADR-0009, §XI): agrega as linhas ENXUTAS de colaboradores nos 5
- * datasets dos gráficos (por gênero / raça-cor / faixa etária / ano de contrato / função), monta o CSV enxuto
- * e formata percentuais. ZERO React/TanStack (o lint barra `react`/`@tanstack/react-*` em `*.view-model.ts`).
- * Testável em node:test. Sem `throw` nas derivações (§II) — idade null cai no bucket "N/A".
+ * ViewModel PURA do relatório "Equipe ABC" (ADR-0009, §XI): agrega as linhas ENXUTAS de colaboradores nos
+ * datasets dos gráficos NÃO-demográficos (ano de contrato / função), monta o CSV enxuto e formata percentuais.
  *
- * As agregações partem SEMPRE das mesmas linhas placeholder → os 5 gráficos ficam internamente consistentes
- * (soma das fatias = total de colaboradores). Nada de dinheiro aqui.
+ * ── Gênero / raça-cor / faixa etária saíram daqui (core-api#477) ──
+ * As 3 distribuições vêm AGREGADAS do backend (`/reports/team/demographics`), com `id` canônico + `label`
+ * PT-BR prontos. As funções locais (`byGenero`/`byRacaCor`/`byFaixaEtaria`) e as listas canônicas
+ * (`GENERO_ORDER`/`RACA_ORDER`/`FAIXA_ETARIA_LABELS`) foram REMOVIDAS — e não por elegância: o
+ * `countByOrder` ignorava toda chave fora da lista, e as listas estavam erradas (gênero tinha 3 das 8
+ * identidades; raça não tinha `INDIGENA`). Na prática o gráfico apagava justamente quem é minoria, sem
+ * avisar — a soma das fatias não batia com o total e ninguém percebia. Agora o backend garante a
+ * invariante (soma == totalActive, com teste) e valor desconhecido cai no balde `OUTROS`.
+ *
+ * ZERO React/TanStack (o lint barra `react`/`@tanstack/react-*` em `*.view-model.ts`). Testável em
+ * node:test. Sem `throw` nas derivações (§II). Nada de dinheiro aqui.
  */
-import {
-  EQUIPE_PLACEHOLDER,
-  type TeamMemberRow,
-  type Genero,
-  type RacaCor,
-} from './data/equipe.placeholder.ts'
+import { EQUIPE_PLACEHOLDER, type TeamMemberRow } from './data/equipe.placeholder.ts'
 import type { TeamMember } from './data/model/team-report.model.ts'
 
 export type { TeamMemberRow } from './data/equipe.placeholder.ts'
@@ -22,29 +24,6 @@ export type CategoryCount = Readonly<{ id: string; label: string; count: number 
 
 /** Ponto anual (gráfico de linha "por Ano"): ano + contagem. */
 export type YearCount = Readonly<{ year: number; count: number }>
-
-/** Ordem canônica das 3 fatias de gênero (donut). */
-export const GENERO_ORDER: readonly Genero[] = ['Mulher Cis', 'Homem Cis', 'Prefiro não responder']
-
-/** Ordem canônica das 6 categorias de raça/cor (barras verticais). */
-export const RACA_ORDER: readonly RacaCor[] = [
-  'N/A',
-  'Branco',
-  'Preto',
-  'Pardo',
-  'Amarelo',
-  'Prefiro não revelar',
-]
-
-/** Faixas etárias (barras horizontais) — rótulos + predicado; "N/A" cobre idade null. */
-export const FAIXA_ETARIA_LABELS: readonly string[] = [
-  'Até 29',
-  '30 a 39',
-  '40 a 49',
-  '50 a 59',
-  '60+',
-  'N/A',
-]
 
 /** Anos do gráfico de linha (2019..2025). */
 export const ANOS: readonly number[] = [2019, 2020, 2021, 2022, 2023, 2024, 2025]
@@ -93,54 +72,6 @@ function parseContractYear(startOfContract: string): number {
 /** Total de colaboradores (denominador das % dos gráficos). */
 export function total(rows: readonly TeamMemberRow[] = EQUIPE_PLACEHOLDER): number {
   return rows.length
-}
-
-/**
- * Conta ocorrências mantendo a ORDEM canônica pedida (categorias com 0 continuam aparecendo). `order`/`pick`
- * são `string` (o Model real traz strings livres); chaves fora da ordem canônica são ignoradas (não estouram
- * a lista de saída, que mapeia só sobre `order`).
- */
-function countByOrder(
-  rows: readonly TeamMemberRow[],
-  order: readonly string[],
-  pick: (r: TeamMemberRow) => string,
-): readonly CategoryCount[] {
-  const counts = new Map<string, number>(order.map((k) => [k, 0]))
-  for (const r of rows) {
-    const key = pick(r)
-    if (counts.has(key)) counts.set(key, (counts.get(key) ?? 0) + 1)
-  }
-  return order.map((k) => ({ id: k, label: k, count: counts.get(k) ?? 0 }))
-}
-
-/** Distribuição por Gênero (donut) — 3 fatias na ordem canônica. */
-export function byGenero(rows: readonly TeamMemberRow[] = EQUIPE_PLACEHOLDER): readonly CategoryCount[] {
-  return countByOrder(rows, GENERO_ORDER, (r) => r.genero)
-}
-
-/** Distribuição por Raça/Cor (barras verticais) — 6 categorias na ordem canônica. */
-export function byRacaCor(rows: readonly TeamMemberRow[] = EQUIPE_PLACEHOLDER): readonly CategoryCount[] {
-  return countByOrder(rows, RACA_ORDER, (r) => r.racaCor)
-}
-
-/** Índice da faixa etária (0..4) para uma idade não-nula; 5 (="N/A") para idade null. */
-function faixaIndex(idade: number | null): number {
-  if (idade === null) return 5
-  if (idade <= 29) return 0
-  if (idade <= 39) return 1
-  if (idade <= 49) return 2
-  if (idade <= 59) return 3
-  return 4
-}
-
-/** Distribuição por Idade (barras horizontais) — 6 buckets ("Até 29"…"60+", "N/A"). */
-export function byFaixaEtaria(rows: readonly TeamMemberRow[] = EQUIPE_PLACEHOLDER): readonly CategoryCount[] {
-  const counts = new Array<number>(FAIXA_ETARIA_LABELS.length).fill(0)
-  for (const r of rows) {
-    const i = faixaIndex(r.idade)
-    counts[i] = (counts[i] ?? 0) + 1
-  }
-  return FAIXA_ETARIA_LABELS.map((label, i) => ({ id: label, label, count: counts[i] ?? 0 }))
 }
 
 /** Quantitativo por Ano de Contrato (linha) — 2019..2025 (anos sem contrato ficam com 0). */

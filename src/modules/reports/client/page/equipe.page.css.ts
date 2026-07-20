@@ -239,7 +239,11 @@ export const chartPad = style({
   flex: 1,
   display: 'flex',
   flexDirection: 'column',
-  justifyContent: 'center',
+  // `flex-start`, NÃO `center`: a grade dos 3 cards é `stretch`, então todos ficam com a altura do MAIOR.
+  // Centralizar empurrava o conteúdo dos cards menores para o meio e abria um vazio enorme em cima e
+  // embaixo — foi o que a P.O. viu. Alinhado ao topo, o gráfico começa logo abaixo do título e o espaço
+  // que sobra fica no fim do card, onde não incomoda.
+  justifyContent: 'flex-start',
 })
 
 // Grade 2-up (linha de baixo: Ano + Função) — colapsa em 1 coluna no responsivo.

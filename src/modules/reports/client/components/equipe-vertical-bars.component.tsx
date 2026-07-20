@@ -39,10 +39,11 @@ export type EquipeVerticalBarsProps = Readonly<{
   formatPercent: (count: number, total: number) => string
 }>
 
-/** Chaves de cor 0..5 (ordem canônica de raça/cor) — casam com os styleVariants por índice do .css.ts. */
-const COLOR_KEYS = ['0', '1', '2', '3', '4', '5'] as const
-type RacaColorKey = (typeof COLOR_KEYS)[number]
-const colorKey = (i: number): RacaColorKey => COLOR_KEYS[Math.max(0, Math.min(5, i))] ?? '5'
+/**
+ * Cor pela CHAVE CANÔNICA da categoria (`BRANCO`, `INDIGENA`, `NA`…), não pelo índice — o índice fazia a
+ * cor escorregar para a categoria vizinha quando a lista do backend mudava de tamanho/ordem.
+ */
+const colorKey = (id: string): string => id
 
 export function EquipeVerticalBars(props: EquipeVerticalBarsProps): ReactNode {
   const [hover, setHover] = useState<{ index: number; x: number; y: number } | null>(null)
@@ -78,7 +79,7 @@ export function EquipeVerticalBars(props: EquipeVerticalBarsProps): ReactNode {
               <span className={vbarCount}>{b.count}</span>
               <span className={vbarTrack}>
                 <span
-                  className={`${vbarFill} ${racaFill[colorKey(i)]}`}
+                  className={`${vbarFill} ${racaFill[colorKey(b.id)] ?? ''}`}
                   style={{ blockSize: `${String(heightPct)}%` }}
                 />
               </span>
@@ -97,7 +98,7 @@ export function EquipeVerticalBars(props: EquipeVerticalBarsProps): ReactNode {
           role="status"
         >
           <div className={tooltipTitle}>
-            <span className={`${tooltipSwatch} ${racaSwatch[colorKey(hover.index)]}`} aria-hidden />
+            <span className={`${tooltipSwatch} ${racaSwatch[colorKey(active.id)] ?? ''}`} aria-hidden />
             {active.label}
           </div>
           <div className={tooltipRow}>
