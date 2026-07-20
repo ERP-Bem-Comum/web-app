@@ -7,12 +7,15 @@ import type { Result } from '#shared/primitives/result.ts'
 import type { ReportsError } from '#modules/reports/server/domain/errors/reports.errors.ts'
 import type {
   TeamMember,
+  TeamDemographics,
   SupplierWithoutContract,
   PaymentPosition,
 } from '#modules/reports/server/domain/reports.io.ts'
 
 export type ReportsClient = Readonly<{
   getTeam: (token: string) => Promise<Result<readonly TeamMember[], ReportsError>>
+  /** Demografia AGREGADA (core-api#477) — só estatística cruza a fronteira, nunca linha por pessoa. */
+  getTeamDemographics: (token: string) => Promise<Result<TeamDemographics, ReportsError>>
   getSuppliersWithoutContract: (
     token: string,
   ) => Promise<Result<readonly SupplierWithoutContract[], ReportsError>>
@@ -25,6 +28,11 @@ export const createGetTeamReport =
   (deps: Deps) =>
   (token: string): Promise<Result<readonly TeamMember[], ReportsError>> =>
     deps.client.getTeam(token)
+
+export const createGetTeamDemographics =
+  (deps: Deps) =>
+  (token: string): Promise<Result<TeamDemographics, ReportsError>> =>
+    deps.client.getTeamDemographics(token)
 
 export const createGetSuppliersWithoutContract =
   (deps: Deps) =>

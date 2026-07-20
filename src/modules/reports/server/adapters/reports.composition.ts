@@ -8,6 +8,7 @@ import { coreApiBase } from '#external/core-api/api-base.ts'
 import { createCoreApiReportsClient } from './core-api/core-api-reports.ts'
 import {
   createGetTeamReport,
+  createGetTeamDemographics,
   createGetSuppliersWithoutContract,
   createGetPaymentPosition,
 } from '#modules/reports/server/application/reports.use-cases.ts'
@@ -19,6 +20,7 @@ const build = () => {
   const client = createCoreApiReportsClient(`${coreApiBase(env.CORE_API_URL, 'v2')}/reports`)
   return {
     getTeamReport: createGetTeamReport({ client }),
+    getTeamDemographics: createGetTeamDemographics({ client }),
     getSuppliersWithoutContract: createGetSuppliersWithoutContract({ client }),
     getPaymentPosition: createGetPaymentPosition({ client }),
   }

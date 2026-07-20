@@ -25,6 +25,36 @@ export type TeamMember = Readonly<{
   experienceInPublicSector: boolean | null
 }>
 
+/**
+ * Uma fatia de distribuição demográfica (core-api#477). `id` é a chave CANÔNICA e estável
+ * (`MULHER_CIS`, `INDIGENA`, `ATE_29`, `OUTROS`, `NA`); `label` é o texto PT-BR já pronto para exibição.
+ *
+ * O `label` viaja junto de propósito: era o front que mantinha o mapa id→label, e era ele que
+ * **descartava em silêncio** o `INDIGENA` e 5 das 8 identidades de gênero (a lista canônica local só
+ * conhecia 3). Com o rótulo vindo da API, categoria nova aparece sozinha — sem release de front.
+ */
+export type CategoryCount = Readonly<{
+  id: string
+  label: string
+  count: number
+}>
+
+/**
+ * Distribuições demográficas agregadas da equipe (`GET /reports/team/demographics`).
+ *
+ * Só ESTATÍSTICA cruza a fronteira — raça, identidade de gênero e data de nascimento nunca saem como
+ * linha por pessoa (decisão da P.O., Opção A). Sem k-anonimato (P.O. 2026-07-20): a contagem é a real.
+ *
+ * **Invariante do backend:** a soma dos `count` de cada dimensão == `totalActive`. Valor fora da lista
+ * canônica cai no balde `OUTROS` e continua somando — ninguém some da distribuição.
+ */
+export type TeamDemographics = Readonly<{
+  totalActive: number
+  gender: readonly CategoryCount[]
+  ageRange: readonly CategoryCount[]
+  race: readonly CategoryCount[]
+}>
+
 /** Fornecedor sem contrato: total AGREGADO pago sem contrato + contagem de títulos. `name` nullable. */
 export type SupplierWithoutContract = Readonly<{
   supplierRef: string

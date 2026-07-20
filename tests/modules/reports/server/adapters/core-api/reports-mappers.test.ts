@@ -9,6 +9,7 @@ import assert from 'node:assert/strict'
 
 import {
   teamReportToModel,
+  teamDemographicsToModel,
   suppliersWithoutContractToModel,
   paymentPositionToModel,
   mapHttpError,
@@ -178,5 +179,81 @@ describe('paymentPositionToModel', () => {
   it('drift (shape inválido) → err(server)', () => {
     assert.equal(isErr(paymentPositionToModel({ positions: [{ supplierRef: 'x' }] })), true)
     assert.equal(isErr(paymentPositionToModel({ rows: [] })), true)
+  })
+})
+
+/**
+ * `teamDemographicsToModel` (core-api#477) — o mapper do endpoint que substituiu as agregações locais.
+ *
+ * O que estes testes protegem: o front NÃO mantém mais lista canônica de gênero/raça/faixa. Se este mapper
+ * filtrasse, reordenasse ou "corrigisse" o que vem da API, o bug que a #477 consertou voltaria pela porta
+ * dos fundos — categoria desconhecida sumindo em silêncio. Por isso as asserções são de PASSAGEM ÍNTEGRA.
+ */
+describe('teamDemographicsToModel', () => {
+  const raw = {
+    totalActive: 6,
+    gender: [
+      { id: 'MULHER_CIS', label: 'Mulher cis', count: 3 },
+      { id: 'TRAVESTI', label: 'Travesti', count: 1 },
+      { id: 'NAO_BINARIO', label: 'Não binário', count: 0 },
+      { id: 'NA', label: 'N/A', count: 2 },
+    ],
+    ageRange: [
+      { id: 'ATE_29', label: 'Até 29', count: 4 },
+      { id: 'MAIS_60', label: '60+', count: 2 },
+    ],
+    race: [
+      { id: 'INDIGENA', label: 'Indígena', count: 1 },
+      { id: 'PRETO', label: 'Preto', count: 4 },
+      { id: 'OUTROS', label: 'Outros', count: 1 },
+    ],
+  }
+
+  it('mapeia as 3 dimensões preservando id, label e count', () => {
+    const r = teamDemographicsToModel(raw)
+    assert.ok(isOk(r))
+    assert.strictEqual(r.value.totalActive, 6)
+    assert.deepStrictEqual(r.value.gender[0], { id: 'MULHER_CIS', label: 'Mulher cis', count: 3 })
+    assert.deepStrictEqual(r.value.race[0], { id: 'INDIGENA', label: 'Indígena', count: 1 })
+  })
+
+  // Regressão do bug que motivou a #477: a lista local do front tinha 3 das 8 identidades de gênero e
+  // omitia INDIGENA — quem estava fora sumia do gráfico. O mapper não pode reintroduzir esse filtro.
+  it('NÃO descarta categoria fora da antiga lista canônica do front (TRAVESTI, INDIGENA, OUTROS)', () => {
+    const r = teamDemographicsToModel(raw)
+    assert.ok(isOk(r))
+    assert.ok(r.value.gender.some((c) => c.id === 'TRAVESTI'))
+    assert.ok(r.value.race.some((c) => c.id === 'INDIGENA'))
+    assert.ok(r.value.race.some((c) => c.id === 'OUTROS'))
+  })
+
+  it('preserva categoria com count 0 (o gráfico não muda de forma conforme a amostra)', () => {
+    const r = teamDemographicsToModel(raw)
+    assert.ok(isOk(r))
+    assert.ok(r.value.gender.some((c) => c.id === 'NAO_BINARIO' && c.count === 0))
+  })
+
+  it('preserva a ORDEM que o backend mandou (ele é o dono da ordem canônica)', () => {
+    const r = teamDemographicsToModel(raw)
+    assert.ok(isOk(r))
+    assert.deepStrictEqual(
+      r.value.race.map((c) => c.id),
+      ['INDIGENA', 'PRETO', 'OUTROS'],
+    )
+  })
+
+  it('a soma de cada dimensão bate com totalActive (invariante do backend)', () => {
+    const r = teamDemographicsToModel(raw)
+    assert.ok(isOk(r))
+    const sum = (xs: readonly { count: number }[]): number => xs.reduce((s, x) => s + x.count, 0)
+    assert.strictEqual(sum(r.value.gender), r.value.totalActive)
+    assert.strictEqual(sum(r.value.ageRange), r.value.totalActive)
+    assert.strictEqual(sum(r.value.race), r.value.totalActive)
+  })
+
+  it('drift de shape → err("server") (não inventa dado)', () => {
+    assert.ok(isErr(teamDemographicsToModel({ totalActive: 6 })))
+    assert.ok(isErr(teamDemographicsToModel({ ...raw, gender: [{ id: 'X', label: 'X' }] })))
+    assert.ok(isErr(teamDemographicsToModel(null)))
   })
 })

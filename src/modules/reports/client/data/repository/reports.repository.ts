@@ -5,17 +5,20 @@
  * LEITURA (sem input; a server fn checa a sessão no handler e manda só o token ao core-api).
  */
 import { ok, err, type Result } from '#shared/primitives/result.ts'
-import type { TeamMember } from '#modules/reports/client/data/model/team-report.model.ts'
+import type { TeamMember, TeamDemographics } from '#modules/reports/client/data/model/team-report.model.ts'
 import type { SupplierWithoutContract } from '#modules/reports/client/data/model/supplier-without-contract.model.ts'
 import type { PaymentPosition } from '#modules/reports/client/data/model/payment-position.model.ts'
 import type { ReportsError, FnResult } from '#modules/reports/client/data/repository/reports-error.ts'
 
 type TeamFn = () => Promise<FnResult<readonly TeamMember[]>>
+type TeamDemographicsFn = () => Promise<FnResult<TeamDemographics>>
 type SuppliersFn = () => Promise<FnResult<readonly SupplierWithoutContract[]>>
 type PaymentPositionFn = () => Promise<FnResult<readonly PaymentPosition[]>>
 
 export type ReportsRepository = Readonly<{
   getTeam: () => Promise<Result<readonly TeamMember[], ReportsError>>
+  /** Demografia AGREGADA (core-api#477) — só estatística; nunca linha por pessoa. */
+  getTeamDemographics: () => Promise<Result<TeamDemographics, ReportsError>>
   getSuppliersWithoutContract: () => Promise<Result<readonly SupplierWithoutContract[], ReportsError>>
   getPaymentPosition: () => Promise<Result<readonly PaymentPosition[], ReportsError>>
 }>
@@ -23,12 +26,17 @@ export type ReportsRepository = Readonly<{
 export const createReportsRepository = (
   deps: Readonly<{
     teamReportFn: TeamFn
+    teamDemographicsFn: TeamDemographicsFn
     suppliersWithoutContractFn: SuppliersFn
     paymentPositionFn: PaymentPositionFn
   }>,
 ): ReportsRepository => ({
   getTeam: async () => {
     const res = await deps.teamReportFn()
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  getTeamDemographics: async () => {
+    const res = await deps.teamDemographicsFn()
     return res.ok ? ok(res.data) : err(res.error)
   },
   getSuppliersWithoutContract: async () => {
