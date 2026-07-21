@@ -16,6 +16,12 @@ import {
   subcategoriesOf,
 } from '#modules/financial/client/data/helpers/categorization-cascade.ts'
 import type { FinancialReferences } from '#modules/financial/client/data/model/reconciliation.model.ts'
+import { getBudgetPlanDetailFn, type PlanDetail } from '#modules/budget-plans/public-api/index.ts'
+import {
+  planCostCenterOptions,
+  planCategoryOptions,
+  planSubcategoryOptions,
+} from '#modules/financial/client/data/helpers/plan-taxonomy-cascade.ts'
 
 export type CategoryOption = Readonly<{ value: string; label: string }>
 
@@ -62,4 +68,61 @@ export function useCostCenterOptions(): readonly CategoryOption[] {
       refs.costCenters.map((c) => ({ value: c.id, label: `${c.code} — ${c.name}` })),
   })
   return query.data ?? []
+}
+
+// ── Cascata a partir da ÁRVORE DO PLANO (ADR-0051, Fatia 1) ──
+// Com um Plano Orçamentário selecionado, os 3 dropdowns vêm da árvore CADASTRADA no Orçamento para aquele
+// plano — não do catálogo operacional (`fin_categories`). Sem plano, cai no operacional (regime sem-plano do
+// ADR-0051: `Estorno`/`Ajuste`, que nunca existem num plano). A troca de fonte é só no binding; a page passa
+// o `planoRef` e não sabe de onde vêm as opções.
+
+/**
+ * O campo `planoOrcamentario` carrega o UUID quando escolhido no DROPDOWN, mas a hidratação por contrato
+ * ainda o preenche com o NOME do cenário (inconsistência pré-existente — ver handoff no PR). Buscar a árvore
+ * com um nome daria 404 e esvaziaria os dropdowns em silêncio. Por isso a fonte-plano só entra quando o valor
+ * é um UUID de verdade; qualquer outra coisa (nome, vazio) cai no catálogo operacional — nunca esvazia.
+ */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const isPlanId = (v: string): boolean => UUID_RE.test(v)
+
+/** Query da árvore do plano — só habilita com um UUID válido (sem plano/nome → não busca, cai no operacional). */
+const planDetailQuery = (planoRef: string) => ({
+  queryKey: ['budget-plans', 'detail', 'categorization', planoRef] as const,
+  queryFn: async (): Promise<PlanDetail | null> => {
+    const r = await getBudgetPlanDetailFn({ data: { id: planoRef } })
+    return r.ok ? r.data : null
+  },
+  enabled: isPlanId(planoRef),
+  staleTime: 300_000,
+})
+
+/**
+ * Centros de custo: da árvore do plano quando há `planoRef`; senão do catálogo operacional.
+ * `planoRef` vazio → a query do plano fica `enabled:false` (não busca) e devolve as opções operacionais.
+ */
+export function useCostCenterOptionsFromPlan(planoRef: string): readonly CategoryOption[] {
+  const operational = useCostCenterOptions()
+  const plan = useQuery(planDetailQuery(planoRef))
+  if (!isPlanId(planoRef)) return operational
+  return plan.data == null ? [] : planCostCenterOptions(plan.data)
+}
+
+export function useCategoryOptionsFromPlan(
+  planoRef: string,
+  costCenterRef: string,
+): readonly CategoryOption[] {
+  const operational = useCategoryOptions(costCenterRef)
+  const plan = useQuery(planDetailQuery(planoRef))
+  if (!isPlanId(planoRef)) return operational
+  return plan.data == null ? [] : planCategoryOptions(plan.data, costCenterRef)
+}
+
+export function useSubcategoryOptionsFromPlan(
+  planoRef: string,
+  categoryRef: string,
+): readonly CategoryOption[] {
+  const operational = useSubcategoryOptions(categoryRef)
+  const plan = useQuery(planDetailQuery(planoRef))
+  if (!isPlanId(planoRef)) return operational
+  return plan.data == null ? [] : planSubcategoryOptions(plan.data, categoryRef)
 }
