@@ -23,9 +23,9 @@ import { usePartnersOptions } from '../partners-options.binding.ts'
 import { usePartnerHydration } from '../partner-hydration.binding.ts'
 import { useProgramOptions } from '../program-options.binding.ts'
 import {
-  useCategoryOptions,
-  useCostCenterOptions,
-  useSubcategoryOptions,
+  useCategoryOptionsFromPlan,
+  useCostCenterOptionsFromPlan,
+  useSubcategoryOptionsFromPlan,
 } from '../category-options.binding.ts'
 import { usePlanoOrcamentarioOptions } from '../plano-options.binding.ts'
 import { useApproverOptions } from '../approver-options.binding.ts'
@@ -120,9 +120,13 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
   const programOptions = useProgramOptions()
   // Cascata Centro → Categoria → Subcategoria (#341): cada nível filtra pelo escolhido no de cima. Os 3
   // hooks compartilham o MESMO fetch cacheado de referências (`referenceOptionsQuery`).
-  const categoryOptions = useCategoryOptions(controller.fields.costCenterRef)
-  const subcategoryOptions = useSubcategoryOptions(controller.fields.categoryRef)
-  const costCenterOptions = useCostCenterOptions()
+  // Cascata da CATEGORIZAÇÃO (Fatia 1 · ADR-0051): com um Plano Orçamentário selecionado, os 3 níveis vêm da
+  // ÁRVORE cadastrada no Orçamento para aquele plano; sem plano, do catálogo operacional. A troca de fonte é
+  // no binding — a page só passa o `planoOrcamentario`.
+  const planoRef = controller.fields.planoOrcamentario
+  const categoryOptions = useCategoryOptionsFromPlan(planoRef, controller.fields.costCenterRef)
+  const subcategoryOptions = useSubcategoryOptionsFromPlan(planoRef, controller.fields.categoryRef)
+  const costCenterOptions = useCostCenterOptionsFromPlan(planoRef)
   const planoOptions = usePlanoOrcamentarioOptions()
   const approverOptions = useApproverOptions()
   const accountOptions = useAccountOptions()

@@ -16,10 +16,21 @@ export function usePlanoOrcamentarioOptions(): readonly PlanoOption[] {
     queryFn: async (): Promise<readonly PlanoOption[]> => {
       const r = await listBudgetPlansFn({ data: { page: 1, limit: 100 } })
       if (!r.ok) return []
-      return r.data.items.map((p) => ({
-        value: p.id,
-        label: `${String(p.year)} ${p.programAbbreviation ?? p.programName} ${p.version.toFixed(1)}`,
-      }))
+      return (
+        r.data.items
+          // Só APROVADOS (decisão da P.O.): a categorização usa a estrutura COMPROMETIDA do plano, não um
+          // rascunho em edição. Também remove o ruído — o catálogo tem vários rascunhos duplicados de teste
+          // "2026 ABC 1.0" que colidem no rótulo e fariam a usuária escolher uma árvore vazia sem querer.
+          .filter((p) => p.status === 'APROVADO')
+          .map((p) => ({
+            value: p.id,
+            // Cenário no rótulo p/ distinguir planos homônimos (dois aprovados do mesmo ano/programa/versão
+            // só diferem pelo cenário). Sem cenário → rótulo base.
+            label:
+              `${String(p.year)} ${p.programAbbreviation ?? p.programName} ${p.version.toFixed(1)}` +
+              (p.scenarioName !== null ? ` · ${p.scenarioName}` : ''),
+          }))
+      )
     },
     staleTime: 60_000,
   })

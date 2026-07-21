@@ -749,6 +749,26 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             Centro de custo (costCenterRef) e a CASCATA de 3 níveis Centro → Categoria → Subcategoria
             (#200/#147/#341) — o create/ajuste envia a FOLHA (subcategoria ?? categoria) em `categoryRef`.
             Só o Plano Orçamentário segue chrome (budget-plans, core-api#113). */}
+        {/* Programa + Plano Orçamentário em CIMA (pedido da P.O.): o Plano é o que ancora a árvore da cascata
+            (ADR-0051) — natural escolhê-lo ANTES do Centro/Categoria/Subcategoria que dependem dele. */}
+        <div className={fieldGrid.two}>
+          <ProgramSelect
+            label={t('financial.create.field.programa')}
+            value={props.programValue}
+            disabled={catDisabled}
+            options={props.programOptions}
+            onChange={props.onProgram}
+          />
+          <CategoSelect
+            label={t('financial.create.field.planoOrcamentario')}
+            disabled={catDisabled}
+            value={fields.planoOrcamentario}
+            options={props.planoOptions}
+            onChange={(v) => {
+              props.onText('planoOrcamentario', v)
+            }}
+          />
+        </div>
         <div className={fieldGrid.three}>
           <CategoSelect
             label={t('financial.create.field.centroCusto')}
@@ -770,24 +790,6 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             value={props.subcategoryValue}
             options={props.subcategoriaOptions}
             onChange={props.onSubcategory}
-          />
-        </div>
-        <div className={fieldGrid.two}>
-          <ProgramSelect
-            label={t('financial.create.field.programa')}
-            value={props.programValue}
-            disabled={catDisabled}
-            options={props.programOptions}
-            onChange={props.onProgram}
-          />
-          <CategoSelect
-            label={t('financial.create.field.planoOrcamentario')}
-            disabled={catDisabled}
-            value={fields.planoOrcamentario}
-            options={props.planoOptions}
-            onChange={(v) => {
-              props.onText('planoOrcamentario', v)
-            }}
           />
         </div>
       </section>
