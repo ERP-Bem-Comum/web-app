@@ -127,3 +127,7 @@ export type {
 // ── Lista de planos orçamentários (server fn) — consumida cross-módulo p/ o dropdown "Plano Orçamentário"
 // (Financeiro/Lançar Documento e Contratos/Novo Contrato). Acende com core-api#374 (driver + dado). ──
 export { listBudgetPlansFn } from '#modules/budget-plans/server/adapters/server-fns/list-budget-plans.query.fn.ts'
+// Detalhe do plano COM a árvore de custos (Centro → Categoria → Subcategoria). Consumido cross-módulo pela
+// categorização do financeiro (ADR-0051: a árvore do PLANO é a taxonomia planejável). Só via public-api (§I).
+export { getBudgetPlanDetailFn } from '#modules/budget-plans/server/adapters/server-fns/get-budget-plan-detail.query.fn.ts'
+export type { GetBudgetPlanDetailFnResult } from '#modules/budget-plans/server/adapters/server-fns/get-budget-plan-detail.query.fn.ts'

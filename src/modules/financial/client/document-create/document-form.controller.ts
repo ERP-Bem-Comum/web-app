@@ -139,6 +139,18 @@ const reducer = (state: DocumentFormFields, action: FormAction): DocumentFormFie
           competencia: competenciaFromIssueDate(action.value),
         }
       }
+      // Trocar o Plano Orçamentário troca a FONTE da cascata (ADR-0051: cada plano tem sua árvore
+      // Centro→Categoria→Subcategoria). Um centro/categoria/sub do plano anterior não existe no novo →
+      // zeramos os 3, senão a categorização gravada seria uma folha órfã (§IV). Mesma regra do `setCostCenterRef`.
+      if (action.key === 'planoOrcamentario') {
+        return {
+          ...state,
+          planoOrcamentario: action.value,
+          costCenterRef: '',
+          categoryRef: '',
+          subcategoryRef: '',
+        }
+      }
       return { ...state, [action.key]: action.value }
     case 'setRetention':
       return { ...state, retentions: { ...state.retentions, [action.key]: action.value } }
