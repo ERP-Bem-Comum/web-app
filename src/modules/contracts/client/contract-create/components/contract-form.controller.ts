@@ -39,11 +39,16 @@ export type ContractFormState = Readonly<{
   financierId: string
   collaboratorId: string
   actId: string
-  // IDs técnicos = UUID string (ADR-0013). categorizacao/centroDeCusto = string livre.
+  // IDs técnicos = UUID string (ADR-0013). #502/S3: a categorização vem da ÁRVORE do plano — guardamos o
+  // REF (UUID, o que linka) em costCenterRef/categoryRef/subcategoryRef E o NOME exibível em
+  // centroDeCusto/categorizacao (o grid/detalhe do contrato mostra o texto; refs são opacos).
   programId: string | null
   budgetPlanId: string | null
-  categorizacao: string | null
-  centroDeCusto: string | null
+  categorizacao: string | null // nome da categoria (exibível)
+  centroDeCusto: string | null // nome do centro de custo (exibível)
+  costCenterRef: string | null // ref da árvore do plano
+  categoryRef: string | null // ref da árvore do plano
+  subcategoryRef: string | null // ref da árvore do plano (folha) — sem texto exibível próprio
   email: string
   telephone: string
   observations: string
@@ -66,6 +71,12 @@ export interface ContractFormController {
   readonly isOvertopOS: boolean
   readonly validationAttempted: boolean
   readonly update: <K extends keyof ContractFormState>(key: K, value: ContractFormState[K]) => void
+  // #502/S3: seletores cascata-aware da taxonomia do plano — setam o ref (linka) + o nome (exibível) e
+  // zeram os níveis de baixo (senão a folha gravada ficaria órfã, §IV). Trocar o plano zera os 3.
+  readonly selectPlan: (id: string | null) => void
+  readonly selectCostCenter: (ref: string, name: string) => void
+  readonly selectCategory: (ref: string, name: string) => void
+  readonly selectSubcategory: (ref: string) => void
   readonly setSelectedPartner: (partner: SelectedPartner | null) => void
   readonly openModal: () => void
   readonly closeModal: () => void
@@ -106,6 +117,9 @@ export const useContractFormController = (): ContractFormController => {
     budgetPlanId: null,
     categorizacao: null,
     centroDeCusto: null,
+    costCenterRef: null,
+    categoryRef: null,
+    subcategoryRef: null,
     email: '',
     telephone: '',
     observations: '',
@@ -123,9 +137,45 @@ export const useContractFormController = (): ContractFormController => {
     setState((s) => ({ ...s, [key]: value }))
   }, [])
 
-  const openModal = useCallback(() => { setShowModal(true) }, [])
-  const closeModal = useCallback(() => { setShowModal(false) }, [])
-  const triggerValidation = useCallback(() => { setValidationAttempted(true) }, [])
+  // #502/S3: cascata da árvore do plano. Cada nível guarda o ref (linka) + o nome (exibível) e zera os de
+  // baixo. Trocar o plano troca a ÁRVORE → zera os 3. Valor '' (opção vazia) → null (limpa).
+  const selectPlan = useCallback((id: string | null) => {
+    setState((s) => ({
+      ...s,
+      budgetPlanId: id,
+      costCenterRef: null,
+      centroDeCusto: null,
+      categoryRef: null,
+      categorizacao: null,
+      subcategoryRef: null,
+    }))
+  }, [])
+  const selectCostCenter = useCallback((ref: string, name: string) => {
+    setState((s) => ({
+      ...s,
+      costCenterRef: ref || null,
+      centroDeCusto: name || null,
+      categoryRef: null,
+      categorizacao: null,
+      subcategoryRef: null,
+    }))
+  }, [])
+  const selectCategory = useCallback((ref: string, name: string) => {
+    setState((s) => ({ ...s, categoryRef: ref || null, categorizacao: name || null, subcategoryRef: null }))
+  }, [])
+  const selectSubcategory = useCallback((ref: string) => {
+    setState((s) => ({ ...s, subcategoryRef: ref || null }))
+  }, [])
+
+  const openModal = useCallback(() => {
+    setShowModal(true)
+  }, [])
+  const closeModal = useCallback(() => {
+    setShowModal(false)
+  }, [])
+  const triggerValidation = useCallback(() => {
+    setValidationAttempted(true)
+  }, [])
 
   const isOvertopOS = useMemo(() => {
     return state.classification === 'ServiceOrder' && state.originalValueCents > 999_999
@@ -133,7 +183,8 @@ export const useContractFormController = (): ContractFormController => {
 
   const checklist = useMemo(() => {
     const checks = {
-      contratado: !!selectedPartner || !!(state.supplierId || state.financierId || state.collaboratorId || state.actId),
+      contratado:
+        !!selectedPartner || !!(state.supplierId || state.financierId || state.collaboratorId || state.actId),
       contrato: !!state.objective,
       valor: (state.originalValueCents || 0) > 0,
       vigencia: !!state.originalPeriodStart && !!state.originalPeriodEnd,
@@ -166,6 +217,10 @@ export const useContractFormController = (): ContractFormController => {
       budgetPlanId: state.budgetPlanId ?? undefined,
       categorizacao: state.categorizacao ?? undefined,
       centroDeCusto: state.centroDeCusto ?? undefined,
+      // #502/S3: refs da árvore do plano (linkam a taxonomia planejável; nome exibível já vai acima).
+      costCenterRef: state.costCenterRef ?? undefined,
+      categoryRef: state.categoryRef ?? undefined,
+      subcategoryRef: state.subcategoryRef ?? undefined,
       email: state.email || undefined,
       telephone: state.telephone || undefined,
       observations: state.observations || undefined,
@@ -181,6 +236,10 @@ export const useContractFormController = (): ContractFormController => {
     isOvertopOS,
     validationAttempted,
     update,
+    selectPlan,
+    selectCostCenter,
+    selectCategory,
+    selectSubcategory,
     setSelectedPartner,
     openModal,
     closeModal,

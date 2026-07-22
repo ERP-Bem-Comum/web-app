@@ -143,11 +143,17 @@ interface Props {
   currentYear: number
   // Opções reais de Programa (D8 — UUID→sigla), vindas da ViewModel (query de programas no binding).
   programOptions: readonly { readonly value: string; readonly label: string }[]
-  // Opções reais (dados legados) de Centro de Custo / Categoria (referências do Financeiro) e Plano
-  // Orçamentário (GET /budget-plans) — injetadas pela page via bindings cross-módulo.
+  // #502/S3: Centro de Custo / Categoria / Subcategoria vêm da ÁRVORE do plano selecionado (value = ref UUID);
+  // Plano Orçamentário (GET /budget-plans, só aprovados) — injetadas pela page via bindings cross-módulo.
   costCenterOptions: readonly { readonly value: string; readonly label: string }[]
   categoryOptions: readonly { readonly value: string; readonly label: string }[]
+  subcategoryOptions: readonly { readonly value: string; readonly label: string }[]
   budgetPlanOptions: readonly { readonly value: string; readonly label: string }[]
+  // Seletores cascata-aware (setam ref + nome, zeram os de baixo) — do controller.
+  onSelectPlan: (id: string | null) => void
+  onSelectCostCenter: (ref: string, name: string) => void
+  onSelectCategory: (ref: string, name: string) => void
+  onSelectSubcategory: (ref: string) => void
 }
 
 export function ContractForm({
@@ -155,7 +161,12 @@ export function ContractForm({
   onUpdate,
   costCenterOptions,
   categoryOptions,
+  subcategoryOptions,
   budgetPlanOptions,
+  onSelectPlan,
+  onSelectCostCenter,
+  onSelectCategory,
+  onSelectSubcategory,
   submitting,
   errorText,
   selectedPartner,
@@ -476,10 +487,11 @@ export function ContractForm({
                   className={`${select} ${validationAttempted && !state.budgetPlanId ? inputError : ''}`}
                   value={state.budgetPlanId ?? ''}
                   onChange={(e) => {
-                    onUpdate('budgetPlanId', e.target.value || null)
+                    // #502/S3: trocar o plano troca a ÁRVORE da cascata → zera centro/categoria/subcategoria.
+                    onSelectPlan(e.target.value || null)
                   }}
                 >
-                  {/* Plano Orçamentário: opções reais via GET /budget-plans (core-api#374 acende o dado). */}
+                  {/* Plano Orçamentário: só APROVADOS + cenário no rótulo (dirige a cascata da árvore). */}
                   <option value="">Selecione…</option>
                   {budgetPlanOptions.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -490,21 +502,22 @@ export function ContractForm({
               </div>
             </div>
 
-            {/* Hierarquia Centro de Custo → Categoria → Subcategoria (EPIC web-app#150). Centro + Categoria
-                seguem opções placeholder (strings livres); Subcategoria é placeholder VISUAL (não persiste
-                até o backend ter o campo + core-api#341 para os dados reais da cascata). */}
+            {/* #502/S3: Centro de Custo → Categoria → Subcategoria vêm da ÁRVORE do plano selecionado (ADR-0051),
+                como o Lançar Documento. value = ref (UUID); o nome exibível é guardado junto (centroDeCusto/
+                categorizacao). Sem plano → vazio (o plano é o catálogo). Trocar um nível zera os de baixo. */}
             <div className={grid3}>
               <div className={field}>
                 <label className={fieldLabel}>{t('contracts.create.field.centroDeCusto')}</label>
                 <select
-                  className={`${select} ${validationAttempted && !state.centroDeCusto ? inputError : ''}`}
-                  value={state.centroDeCusto ?? ''}
+                  className={`${select} ${validationAttempted && !state.costCenterRef ? inputError : ''}`}
+                  value={state.costCenterRef ?? ''}
+                  disabled={!state.budgetPlanId}
                   onChange={(e) => {
-                    onUpdate('centroDeCusto', e.target.value || null)
+                    const label = costCenterOptions.find((o) => o.value === e.target.value)?.label ?? ''
+                    onSelectCostCenter(e.target.value, label)
                   }}
                 >
-                  {/* Centro de Custo: opções reais (dados legados) das referências do Financeiro. */}
-                  <option value="">Selecione…</option>
+                  <option value="">{state.budgetPlanId ? 'Selecione…' : 'Escolha o plano primeiro'}</option>
                   {costCenterOptions.map((opt) => (
                     <option key={opt.value} value={opt.value}>
                       {opt.label}
@@ -515,14 +528,15 @@ export function ContractForm({
               <div className={field}>
                 <label className={fieldLabel}>{t('contracts.create.field.categorizacao')}</label>
                 <select
-                  className={`${select} ${validationAttempted && !state.categorizacao ? inputError : ''}`}
-                  value={state.categorizacao ?? ''}
+                  className={`${select} ${validationAttempted && !state.categoryRef ? inputError : ''}`}
+                  value={state.categoryRef ?? ''}
+                  disabled={!state.costCenterRef}
                   onChange={(e) => {
-                    onUpdate('categorizacao', e.target.value || null)
+                    const label = categoryOptions.find((o) => o.value === e.target.value)?.label ?? ''
+                    onSelectCategory(e.target.value, label)
                   }}
                 >
-                  {/* Categoria: opções reais (dados legados) das referências do Financeiro. */}
-                  <option value="">Selecione…</option>
+                  <option value="">{state.costCenterRef ? 'Selecione…' : 'Escolha o centro primeiro'}</option>
                   {categoryOptions.map((opt) => (
                     <option key={opt.value} value={opt.value}>
                       {opt.label}
@@ -532,9 +546,25 @@ export function ContractForm({
               </div>
               <div className={field}>
                 <label className={fieldLabel}>{t('contracts.create.field.subcategoria')}</label>
-                {/* TODO(core-api#341 + campo `subcategoria` no contrato): opções reais da cascata + persistência. */}
-                <select className={select} disabled aria-disabled="true" defaultValue="">
-                  <option value="">{t('contracts.create.field.subcategoria.placeholder')}</option>
+                {/* #502/S3: Subcategoria REAL (folha da árvore do plano) — persiste como subcategoryRef. */}
+                <select
+                  className={select}
+                  value={state.subcategoryRef ?? ''}
+                  disabled={!state.categoryRef}
+                  onChange={(e) => {
+                    onSelectSubcategory(e.target.value)
+                  }}
+                >
+                  <option value="">
+                    {state.categoryRef
+                      ? t('contracts.create.field.subcategoria.placeholder')
+                      : 'Escolha a categoria primeiro'}
+                  </option>
+                  {subcategoryOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
