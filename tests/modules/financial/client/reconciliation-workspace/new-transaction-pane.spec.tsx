@@ -23,12 +23,14 @@ const baseBinding = (over: Partial<ManualEntryBinding> = {}): ManualEntryBinding
   submitting: false,
   errorTag: null,
   supplierRef: '',
+  budgetPlanRef: '',
   programRef: '',
   categoryRef: '',
   subcategoryRef: '',
   costCenterRef: '',
   partnerOptions: [],
   programOptions: [],
+  planoOptions: [],
   categoryOptions: [],
   subcategoryOptions: [],
   costCenterOptions: [],
@@ -37,6 +39,7 @@ const baseBinding = (over: Partial<ManualEntryBinding> = {}): ManualEntryBinding
   setDescription: vi.fn(),
   setDestinationAccount: vi.fn(),
   setSupplierRef: vi.fn(),
+  setBudgetPlanRef: vi.fn(),
   setProgramRef: vi.fn(),
   setCategoryRef: vi.fn(),
   setSubcategoryRef: vi.fn(),
@@ -65,6 +68,38 @@ describe('NewTransactionPane', () => {
     expect(screen.getByRole('option', { name: tr('financial.recon.treatment.Fee') })).toBeTruthy()
     expect(screen.getByRole('option', { name: tr('financial.recon.treatment.Penalty') })).toBeTruthy()
     expect(screen.getByRole('option', { name: tr('financial.recon.treatment.Interest') })).toBeTruthy()
+  })
+
+  it('#502/S2: mostra o Plano Orçamentário na categorização (dirige a cascata)', () => {
+    render(
+      <NewTransactionPane
+        binding={baseBinding({
+          type: 'Payment',
+          showPayeeBlock: true,
+          planoOptions: [{ value: 'p-1', label: '2026 ABC 1.0' }],
+        })}
+      />,
+    )
+    expect(screen.getByText(tr('financial.recon.manual.f.plano'))).toBeTruthy()
+    expect(screen.getByRole('option', { name: '2026 ABC 1.0' })).toBeTruthy()
+  })
+
+  it('trocar o Plano dispara setBudgetPlanRef', () => {
+    const setBudgetPlanRef = vi.fn()
+    render(
+      <NewTransactionPane
+        binding={baseBinding({
+          type: 'Payment',
+          showPayeeBlock: true,
+          planoOptions: [{ value: 'p-1', label: '2026 ABC 1.0' }],
+          setBudgetPlanRef,
+        })}
+      />,
+    )
+    fireEvent.change(screen.getByDisplayValue(tr('financial.recon.manual.f.planoPlaceholder')), {
+      target: { value: 'p-1' },
+    })
+    expect(setBudgetPlanRef).toHaveBeenCalledWith('p-1')
   })
 
   it('a classificação Tarifa/Multa/Juros NÃO aparece em outros tipos (ex.: Transferência)', () => {

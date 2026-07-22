@@ -121,7 +121,10 @@ export type UndoReconciliationInput = Readonly<{ reconciliationId: string; reaso
 export type ManualEntryTemplate = Readonly<{
   type: ManualEntryType
   supplierRef?: string
+  // #502/S2: taxonomia planejável no título manual — plano + subcategoria (folha), coerente com o documento.
+  budgetPlanRef?: string
   categoryRef?: string
+  subcategoryRef?: string
   costCenterRef?: string
   programRef?: string
   description?: string

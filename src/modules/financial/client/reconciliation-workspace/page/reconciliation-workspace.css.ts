@@ -1265,6 +1265,7 @@ export const ntCardBadge = style({
 })
 export const ntRow = style({ display: 'grid', gap: sp.lg, marginBlockEnd: sp.lg })
 export const ntRowCols2 = style({ gridTemplateColumns: '1fr 1fr' })
+export const ntRowCols3 = style({ gridTemplateColumns: '1fr 1fr 1fr' })
 export const ntField = style({ display: 'flex', flexDirection: 'column', gap: '0.3125rem', minInlineSize: 0 })
 export const ntLabel = style({
   fontFamily: recon.font.sans,

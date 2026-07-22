@@ -138,6 +138,16 @@ export function NewTransactionPane({ binding }: NewTransactionPaneProps) {
       onChange={binding.setProgramRef}
     />
   )
+  // #502/S2: Plano Orçamentário — dirige a fonte da cascata (árvore do plano vs operacional), como no documento.
+  const planoSelect = (
+    <RealSelect
+      label={t('financial.recon.manual.f.plano')}
+      placeholder={t('financial.recon.manual.f.planoPlaceholder')}
+      value={binding.budgetPlanRef}
+      options={binding.planoOptions}
+      onChange={binding.setBudgetPlanRef}
+    />
+  )
   const centroSelect = (
     <RealSelect
       label={t('financial.recon.manual.f.costCenter')}
@@ -267,8 +277,8 @@ export function NewTransactionPane({ binding }: NewTransactionPaneProps) {
                       mono
                     />
                   </div>
-                  <div className={`${s.ntRow} ${s.ntRowCols2}`}>
-                    {/* Tipo de documento + Emissão — chrome até core-api#370. */}
+                  {/* Tipo de doc + Emissão + Valor — chrome até core-api#370, lado a lado (3 colunas). */}
+                  <div className={`${s.ntRow} ${s.ntRowCols3}`}>
                     <ChromeSelect
                       label={t('financial.recon.manual.f.docType')}
                       placeholder={t('financial.recon.manual.f.docTypePlaceholder')}
@@ -278,8 +288,6 @@ export function NewTransactionPane({ binding }: NewTransactionPaneProps) {
                       placeholder="DD/MM/AAAA"
                       mono
                     />
-                  </div>
-                  <div className={`${s.ntRow} ${s.ntRowCols2}`}>
                     <ChromeInput label={t('financial.recon.manual.f.docValue')} placeholder="R$ 0,00" mono />
                   </div>
                 </>
@@ -290,25 +298,30 @@ export function NewTransactionPane({ binding }: NewTransactionPaneProps) {
               filtra as subcategorias (real, via parentId). Envia a folha (subcategoria|categoria) como categoryRef. */}
               {binding.showPayeeBlock ? (
                 <>
+                  {/* Programa + Plano lado a lado (o Plano dirige a cascata); Centro/Categoria/Subcategoria em 3 colunas. */}
                   <div className={`${s.ntRow} ${s.ntRowCols2}`}>
                     {programaSelect}
-                    {centroSelect}
+                    {planoSelect}
                   </div>
-                  <div className={`${s.ntRow} ${s.ntRowCols2}`}>
+                  <div className={`${s.ntRow} ${s.ntRowCols3}`}>
+                    {centroSelect}
                     {categoriaSelect}
                     {subcategoriaSelect}
                   </div>
                 </>
               ) : (
                 <>
+                  {/* Tarifa/Juros (único tipo não-payee que categoriza): Plano + a classificação lado a lado
+                  (o Plano dirige a cascata); Centro/Categoria/Subcategoria em 3 colunas. A classificação é
+                  gated por tipo (só FeePenaltyInterest a tem). */}
                   <div className={`${s.ntRow} ${s.ntRowCols2}`}>
+                    {planoSelect}
+                    {type === 'FeePenaltyInterest' ? feeKindSelect : null}
+                  </div>
+                  <div className={`${s.ntRow} ${s.ntRowCols3}`}>
                     {centroSelect}
                     {categoriaSelect}
-                  </div>
-                  {/* Subcategoria + (só p/ Tarifa/Juros) a classificação Tarifa/Multa/Juros no espaço ao lado. */}
-                  <div className={`${s.ntRow} ${s.ntRowCols2}`}>
                     {subcategoriaSelect}
-                    {type === 'FeePenaltyInterest' ? feeKindSelect : null}
                   </div>
                 </>
               )}
