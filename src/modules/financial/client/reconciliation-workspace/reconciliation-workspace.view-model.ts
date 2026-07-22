@@ -235,6 +235,32 @@ export const nextPendingWithMatch = (
   return scan(true) ?? scan(false)
 }
 
+/**
+ * Motor de palpite — alvo da seleção na aba Conciliação (P.O.: "como um motor", sempre landar numa transação
+ * COM palpite). Retorna o txId a selecionar, ou `null` (não mexe na seleção). PURA. Regras:
+ *  - fora da aba, palpites não assentados, ou sem nenhum match → não mexe;
+ *  - nada selecionado (load inicial / novo extrato) → `fallbackId` (1º match, ou topo se não há match);
+ *  - acabou de ENTRAR na aba e a tx atual NÃO tem palpite → o próximo COM palpite (`firstMatchId`), só se existir;
+ *  - já dentro da aba e escolhendo à mão → respeita a escolha (retorna null).
+ * O auto-avanço ao conciliar é tratado à parte (`nextPendingWithMatch` a partir da tx conciliada).
+ */
+export const engineTarget = (
+  p: Readonly<{
+    onConciliacao: boolean
+    justEntered: boolean
+    guessesSettled: boolean
+    selectedId: string | null
+    selectedIsMatch: boolean
+    firstMatchId: string | null
+    fallbackId: string | null
+  }>,
+): string | null => {
+  if (!p.onConciliacao || !p.guessesSettled) return null
+  if (p.selectedId === null) return p.fallbackId
+  if (p.justEntered && !p.selectedIsMatch && p.firstMatchId !== null) return p.firstMatchId
+  return null
+}
+
 // ── Relabel TEMPORÁRIO de categorias (só no front) ──────────────────────────────
 // Pedido P.O.: a Nova transação da conciliação precisa das categorias "Transferência entre contas",
 // "Resgate" e "Aplicação", mas SEM mexer no backend por ora. Reaproveitamos 3 categorias de referência

@@ -23,6 +23,7 @@ import {
   isBatchableManualType,
   isPending,
   nextPendingWithMatch,
+  engineTarget,
   normalizeDesc,
   pickLatestPeriod,
   progressLabel,
@@ -600,17 +601,28 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
   // deixaria de ser null). Depois disso, respeita a escolha do usuário. Cobre load inicial e volta do Extrato.
   const filteredTx = filterTransactions(allTx, ui.listFilter)
   const guessesSettled = !ui.showGuesses || statementSuggestionsQuery.isFetched
-  const autoSelectId = nextPendingWithMatch(filteredTx, guesses, '') ?? filteredTx[0]?.id ?? null
+  // 1º match (null = nenhum) e o fallback (match ou topo do filtro) p/ o motor de palpite.
+  const firstMatchId = nextPendingWithMatch(filteredTx, guesses, '')
+  const autoSelectId = firstMatchId ?? filteredTx[0]?.id ?? null
+  const selectedIsMatch = ui.selectedTransactionId !== null && guesses.has(ui.selectedTransactionId)
+  // Motor de palpite (P.O.): landa numa transação COM palpite ao ENTRAR na aba (mesmo se já houver uma tx
+  // SEM palpite selecionada) e no load inicial/novo extrato. Dentro da aba, respeita a navegação do usuário.
+  // O auto-avanço ao conciliar é o efeito de `pendingAdvance` abaixo. `prevTab` detecta a entrada na aba.
+  const prevTabRef = useRef(ui.activeTab)
   useEffect(() => {
-    if (
-      ui.activeTab === 'conciliacao' &&
-      ui.selectedTransactionId === null &&
-      guessesSettled &&
-      autoSelectId !== null
-    ) {
-      dispatch({ type: 'select-transaction', id: autoSelectId })
-    }
-  }, [ui.activeTab, ui.selectedTransactionId, guessesSettled, autoSelectId])
+    const justEntered = ui.activeTab === 'conciliacao' && prevTabRef.current !== 'conciliacao'
+    prevTabRef.current = ui.activeTab
+    const target = engineTarget({
+      onConciliacao: ui.activeTab === 'conciliacao',
+      justEntered,
+      guessesSettled,
+      selectedId: ui.selectedTransactionId,
+      selectedIsMatch,
+      firstMatchId,
+      fallbackId: autoSelectId,
+    })
+    if (target !== null) dispatch({ type: 'select-transaction', id: target })
+  }, [ui.activeTab, ui.selectedTransactionId, guessesSettled, firstMatchId, autoSelectId, selectedIsMatch])
 
   // Fluxo contínuo: quando a tx recém-conciliada some das pendentes (refetch concluído), seleciona a
   // PRÓXIMA pendente COM match → a sugestão nunca fica vazia. setState DIFERIDO (sem render em cascata).
