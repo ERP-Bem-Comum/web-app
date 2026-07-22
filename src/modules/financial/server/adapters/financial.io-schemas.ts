@@ -59,6 +59,7 @@ export const CreateDocumentInputSchema = z.object({
   contractRef: z.uuid().optional(),
   budgetPlanRef: z.uuid().optional(),
   categoryRef: z.uuid().optional(),
+  subcategoryRef: z.uuid().optional(), // #502 (S1): folha da árvore do plano — carimbo próprio no documento
   costCenterRef: z.uuid().optional(),
   programRef: z.uuid().optional(),
   contaDebitoRef: z.uuid().optional(), // #197: conta-débito (conta-cedente) — direciona a baixa
