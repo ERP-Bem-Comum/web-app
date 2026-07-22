@@ -8,12 +8,17 @@ import { ok, err, type Result } from '#shared/primitives/result.ts'
 import type { TeamMember, TeamDemographics } from '#modules/reports/client/data/model/team-report.model.ts'
 import type { SupplierWithoutContract } from '#modules/reports/client/data/model/supplier-without-contract.model.ts'
 import type { PaymentPosition } from '#modules/reports/client/data/model/payment-position.model.ts'
+import type {
+  RealizedReportQuery,
+  RealizedBudgetRow,
+} from '#modules/reports/client/data/model/realized-report.model.ts'
 import type { ReportsError, FnResult } from '#modules/reports/client/data/repository/reports-error.ts'
 
 type TeamFn = () => Promise<FnResult<readonly TeamMember[]>>
 type TeamDemographicsFn = () => Promise<FnResult<TeamDemographics>>
 type SuppliersFn = () => Promise<FnResult<readonly SupplierWithoutContract[]>>
 type PaymentPositionFn = () => Promise<FnResult<readonly PaymentPosition[]>>
+type RealizedReportFn = (query: RealizedReportQuery) => Promise<FnResult<readonly RealizedBudgetRow[]>>
 
 export type ReportsRepository = Readonly<{
   getTeam: () => Promise<Result<readonly TeamMember[], ReportsError>>
@@ -21,6 +26,9 @@ export type ReportsRepository = Readonly<{
   getTeamDemographics: () => Promise<Result<TeamDemographics, ReportsError>>
   getSuppliersWithoutContract: () => Promise<Result<readonly SupplierWithoutContract[], ReportsError>>
   getPaymentPosition: () => Promise<Result<readonly PaymentPosition[], ReportsError>>
+  getRealizedReport: (
+    query: RealizedReportQuery,
+  ) => Promise<Result<readonly RealizedBudgetRow[], ReportsError>>
 }>
 
 export const createReportsRepository = (
@@ -29,6 +37,7 @@ export const createReportsRepository = (
     teamDemographicsFn: TeamDemographicsFn
     suppliersWithoutContractFn: SuppliersFn
     paymentPositionFn: PaymentPositionFn
+    realizedReportFn: RealizedReportFn
   }>,
 ): ReportsRepository => ({
   getTeam: async () => {
@@ -45,6 +54,10 @@ export const createReportsRepository = (
   },
   getPaymentPosition: async () => {
     const res = await deps.paymentPositionFn()
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  getRealizedReport: async (query) => {
+    const res = await deps.realizedReportFn(query)
     return res.ok ? ok(res.data) : err(res.error)
   },
 })

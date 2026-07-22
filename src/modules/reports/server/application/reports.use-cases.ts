@@ -10,6 +10,8 @@ import type {
   TeamDemographics,
   SupplierWithoutContract,
   PaymentPosition,
+  RealizedReportQuery,
+  RealizedBudgetRow,
 } from '#modules/reports/server/domain/reports.io.ts'
 
 export type ReportsClient = Readonly<{
@@ -20,6 +22,11 @@ export type ReportsClient = Readonly<{
     token: string,
   ) => Promise<Result<readonly SupplierWithoutContract[], ReportsError>>
   getPaymentPosition: (token: string) => Promise<Result<readonly PaymentPosition[], ReportsError>>
+  /** Realizado × Planejado — árvore achatada em linhas folha; `year` obrigatório + filtros opcionais. */
+  getRealizedReport: (
+    query: RealizedReportQuery,
+    token: string,
+  ) => Promise<Result<readonly RealizedBudgetRow[], ReportsError>>
 }>
 
 type Deps = Readonly<{ client: ReportsClient }>
@@ -43,3 +50,8 @@ export const createGetPaymentPosition =
   (deps: Deps) =>
   (token: string): Promise<Result<readonly PaymentPosition[], ReportsError>> =>
     deps.client.getPaymentPosition(token)
+
+export const createGetRealizedReport =
+  (deps: Deps) =>
+  (query: RealizedReportQuery, token: string): Promise<Result<readonly RealizedBudgetRow[], ReportsError>> =>
+    deps.client.getRealizedReport(query, token)

@@ -12,12 +12,15 @@ import type {
   TeamDemographics,
   SupplierWithoutContract,
   PaymentPosition,
+  RealizedBudgetRow,
+  RealizedMonthCell,
 } from '#modules/reports/server/domain/reports.io.ts'
 import {
   CoreApiTeamReportSchema,
   CoreApiTeamDemographicsSchema,
   CoreApiSuppliersWithoutContractSchema,
   CoreApiPaymentPositionSchema,
+  CoreApiRealizedReportSchema,
 } from './reports.schema.ts'
 
 // ── Erro: status/slug do core-api → ReportsError (read-only) ─────────────────────
@@ -117,4 +120,52 @@ export const paymentPositionToModel = (raw: unknown): Result<readonly PaymentPos
     overdueCents: p.overdueCents,
   }))
   return ok(positions)
+}
+
+/**
+ * Realizado × Planejado — ACHATA a árvore centro→categoria→subcategoria em linhas folha. Uma linha por
+ * subcategoria; categoria sem subcategorias vira UMA linha com `subcategoria: ''` (usando os `months` da
+ * própria categoria). Conversão do mês: backend 1..12 → front 0..11 (`month - 1`). Unidade já em centavos.
+ */
+type RawRealizedMonth = Readonly<{
+  month: number
+  expected: number
+  realized: number
+  provisioned: number
+}>
+
+const monthCellsToModel = (months: readonly RawRealizedMonth[]): readonly RealizedMonthCell[] =>
+  months.map((m) => ({
+    month: m.month - 1,
+    planejadoCents: m.expected,
+    realizadoCents: m.realized,
+    provisionadoCents: m.provisioned,
+  }))
+
+export const realizedReportToModel = (raw: unknown): Result<readonly RealizedBudgetRow[], ReportsError> => {
+  const parsed = CoreApiRealizedReportSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  const rows: RealizedBudgetRow[] = []
+  for (const cc of parsed.data.costCenters) {
+    for (const cat of cc.categories) {
+      if (cat.subCategories.length > 0) {
+        for (const sub of cat.subCategories) {
+          rows.push({
+            centroCusto: cc.name,
+            categoria: cat.name,
+            subcategoria: sub.name,
+            months: monthCellsToModel(sub.months),
+          })
+        }
+      } else {
+        rows.push({
+          centroCusto: cc.name,
+          categoria: cat.name,
+          subcategoria: '',
+          months: monthCellsToModel(cat.months),
+        })
+      }
+    }
+  }
+  return ok(rows)
 }

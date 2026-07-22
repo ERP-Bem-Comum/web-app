@@ -12,6 +12,7 @@ import {
   teamDemographicsToModel,
   suppliersWithoutContractToModel,
   paymentPositionToModel,
+  realizedReportToModel,
   mapHttpError,
 } from '../../../../../../src/modules/reports/server/adapters/core-api/reports.mappers.ts'
 import { isOk, isErr } from '../../../../../../src/shared/primitives/result.ts'
@@ -255,5 +256,97 @@ describe('teamDemographicsToModel', () => {
     assert.ok(isErr(teamDemographicsToModel({ totalActive: 6 })))
     assert.ok(isErr(teamDemographicsToModel({ ...raw, gender: [{ id: 'X', label: 'X' }] })))
     assert.ok(isErr(teamDemographicsToModel(null)))
+  })
+})
+
+describe('realizedReportToModel (S6 · #502) — achata a árvore, converte mês 1..12 → 0..11, centavos diretos', () => {
+  const zeros12 = () =>
+    Array.from({ length: 12 }, (_unused, i) => ({ month: i + 1, expected: 0, realized: 0, provisioned: 0 }))
+  const withCell = (m: number, e: number, r: number, p: number) => {
+    const arr = zeros12()
+    arr[m - 1] = { month: m, expected: e, realized: r, provisioned: p }
+    return arr
+  }
+  const raw = {
+    totalExpected: 1500,
+    totalRealized: 300,
+    totalProvisioned: 100,
+    costCenters: [
+      {
+        id: 'cc1',
+        name: 'Luz',
+        budgetPlanId: 'p1',
+        totalExpected: 1500,
+        totalRealized: 300,
+        totalProvisioned: 100,
+        categories: [
+          {
+            id: 'cat1',
+            name: 'Noite',
+            totalExpected: 1000,
+            totalRealized: 300,
+            totalProvisioned: 100,
+            months: withCell(3, 1000, 300, 100),
+            subCategories: [
+              {
+                id: 's1',
+                name: 'Dia',
+                totalExpected: 1000,
+                totalRealized: 300,
+                totalProvisioned: 100,
+                months: withCell(3, 1000, 300, 100),
+              },
+              {
+                id: 's2',
+                name: 'Tarde',
+                totalExpected: 0,
+                totalRealized: 0,
+                totalProvisioned: 0,
+                months: zeros12(),
+              },
+            ],
+          },
+          // Categoria SEM subcategorias → uma linha com subcategoria ''.
+          {
+            id: 'cat2',
+            name: 'Solo',
+            totalExpected: 500,
+            totalRealized: 0,
+            totalProvisioned: 0,
+            months: withCell(1, 500, 0, 0),
+            subCategories: [],
+          },
+        ],
+      },
+    ],
+  }
+
+  it('achata em uma linha por subcategoria (+ categoria sem sub vira subcategoria "")', () => {
+    const r = realizedReportToModel(raw)
+    assert.ok(isOk(r))
+    assert.equal(r.value.length, 3)
+    assert.deepEqual(
+      r.value.map((row) => `${row.centroCusto}/${row.categoria}/${row.subcategoria}`),
+      ['Luz/Noite/Dia', 'Luz/Noite/Tarde', 'Luz/Solo/'],
+    )
+  })
+
+  it('converte o mês (backend 3 = março → front índice 2) e mantém os centavos', () => {
+    const r = realizedReportToModel(raw)
+    assert.ok(isOk(r))
+    const dia = r.value[0]
+    const marco = dia?.months[2]
+    assert.equal(marco?.month, 2)
+    assert.equal(marco?.planejadoCents, 1000)
+    assert.equal(marco?.realizadoCents, 300)
+    assert.equal(marco?.provisionadoCents, 100)
+    // categoria sem sub: valor no índice 0 (janeiro)
+    const solo = r.value[2]
+    assert.equal(solo?.months[0]?.planejadoCents, 500)
+  })
+
+  it('drift de shape → err("server") (não inventa dado)', () => {
+    assert.ok(isErr(realizedReportToModel(null)))
+    assert.ok(isErr(realizedReportToModel(42)))
   })
 })
