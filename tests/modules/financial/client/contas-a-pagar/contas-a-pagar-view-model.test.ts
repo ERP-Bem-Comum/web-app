@@ -402,6 +402,7 @@ describe('mapDocumentDetail — Categorização (#95/#147: refs → nomes, casca
     description: null,
     budgetPlanRef: null,
     categoryRef: null,
+    subcategoryRef: null,
     costCenterRef: null,
     programRef: null,
     payables: [],
@@ -442,6 +443,31 @@ describe('mapDocumentDetail — Categorização (#95/#147: refs → nomes, casca
     const v = mapDocumentDetail(detailBase({ categoryRef: 'cat-imp' }), resolveSupplier, undefined, resolvers)
     assert.equal(v.categorization.category, 'Impostos')
     assert.equal(v.categorization.subcategory, '—')
+  })
+
+  // #502 (S1): docs NOVOS carimbam a subcategoria em `subcategoryRef` (categoryRef = a Categoria).
+  it('doc novo — subcategoryRef presente é a FOLHA (categoryRef = a categoria)', () => {
+    const v = mapDocumentDetail(
+      detailBase({ categoryRef: 'cat-serv', subcategoryRef: 'cat-cons' }),
+      resolveSupplier,
+      undefined,
+      resolvers,
+    )
+    assert.equal(v.categorization.category, 'Serviços')
+    assert.equal(v.categorization.subcategory, 'Consultoria')
+  })
+
+  // A folha é `subcategoryRef ?? categoryRef` — a subcategoria VENCE quando presente.
+  it('subcategoryRef tem precedência sobre categoryRef como folha', () => {
+    const v = mapDocumentDetail(
+      detailBase({ categoryRef: 'cat-imp', subcategoryRef: 'cat-cons' }),
+      resolveSupplier,
+      undefined,
+      resolvers,
+    )
+    // Se usasse categoryRef ('cat-imp', sem pai) → "Impostos"/"—". Com a subcategoria vence → pai/folha.
+    assert.equal(v.categorization.category, 'Serviços')
+    assert.equal(v.categorization.subcategory, 'Consultoria')
   })
 
   it('ref null → "—" em todas as linhas; Plano sempre "—" (sem fonte no front)', () => {

@@ -33,6 +33,7 @@ export const CoreApiDocumentSchema = z.object({
   // #95/#147 — categorização: refs que o core JÁ devolve no GET /:id. Drift-tolerante (backend antigo → null).
   budgetPlanRef: z.string().trim().nullable().catch(null),
   categoryRef: z.string().trim().nullable().catch(null),
+  subcategoryRef: z.string().trim().nullable().catch(null), // #502 (S1): folha da árvore do plano (backend antigo → null)
   costCenterRef: z.string().trim().nullable().catch(null),
   programRef: z.string().trim().nullable().catch(null),
   payables: z.array(CoreApiPayableSchema),

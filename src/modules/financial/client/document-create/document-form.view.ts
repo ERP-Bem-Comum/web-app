@@ -4,7 +4,6 @@
  * `CreateDocumentInput`. Money via `money.ts`. No v1, descontos/multa/juros = 0 (sem campos no form).
  */
 import { reaisToCents, centsToBRL, centsToReais, maskMoneyBRL } from '#modules/financial/client/data/money.ts'
-import { leafCategoryRef } from '#modules/financial/client/data/helpers/categorization-cascade.ts'
 import { normalizeCnpj, isCnpjLength, maskCnpj as maskCnpjDoc, maskCpfCnpj } from '#shared/document/cnpj.ts'
 import type {
   CreateDocumentInput,
@@ -140,9 +139,9 @@ export type DocumentFormFields = Readonly<{
   contractRef: string // Categorização: contrato escolhido (UUID) via "Alterar". Vazio = o 1º "Em Andamento".
   programRef: string // Categorização: Programa escolhido (UUID). Vazio = herda o do contrato (se houver).
   categoryRef: string // Categorização: Categoria escolhida (UUID, taxonomia #200). Vazio = não enviada.
-  // Categorização: Subcategoria escolhida (UUID de categoria com `parentId` = categoryRef, #341/#147).
-  // Cascata: filtrada pela Categoria; zerada ao trocar Categoria/Centro. É a FOLHA — quando preenchida,
-  // é ELA que vai ao backend em `categoryRef` (ver `leafCategoryRef`). Vazio = envia a Categoria.
+  // Categorização: Subcategoria escolhida (UUID). Cascata: filtrada pela Categoria; zerada ao trocar
+  // Categoria/Centro. #502 (S1): vai ao backend em CAMPO PRÓPRIO `subcategoryRef` (não mais dobrada em
+  // `categoryRef`) — carimbo fiel à árvore + grão fino p/ o relatório Realizado × Planejado. Vazio = não enviada.
   subcategoryRef: string
   costCenterRef: string // Categorização: Centro de custo escolhido (UUID, #147). Vazio = não enviado.
   approverRef: string // Aprovador escolhido (UUID de usuário, #148). Vazio = não enviado.
@@ -503,10 +502,10 @@ export const buildCreateInput = (fields: DocumentFormFields): CreateDocumentInpu
     // "Juros / Multa" (campo único) → interestCents; ambos somam ao líquido, então o total fica correto.
     interestCents: jurosMultaCents(fields) > 0 ? String(jurosMultaCents(fields)) : undefined,
     programRef: trimToUndefined(fields.programRef),
-    // FOLHA da cascata (#341): envia a categoria MAIS ESPECÍFICA escolhida — a subcategoria se houver,
-    // senão a categoria. Ambas são categorias válidas p/ o core-api (subcategoria = categoria com
-    // `parentId`), então o contrato é um campo só. Espelha o que a Conciliação já faz.
-    categoryRef: trimToUndefined(leafCategoryRef(fields.categoryRef, fields.subcategoryRef)),
+    // #502 (S1): categoria e subcategoria em campos SEPARADOS — `categoryRef` = a Categoria, `subcategoryRef`
+    // = a FOLHA (subcategoria). O relatório Realizado × Planejado casa pela folha; não dobramos mais em um só.
+    categoryRef: trimToUndefined(fields.categoryRef),
+    subcategoryRef: trimToUndefined(fields.subcategoryRef),
     costCenterRef: trimToUndefined(fields.costCenterRef),
     approverRef: trimToUndefined(fields.approverRef),
     contaDebitoRef: trimToUndefined(fields.contaDebitoRef),
@@ -558,10 +557,9 @@ export const buildDraftInput = (fields: DocumentFormFields): CreateDocumentInput
     discountsCents: discountsCents(fields) > 0 ? String(discountsCents(fields)) : undefined,
     interestCents: jurosMultaCents(fields) > 0 ? String(jurosMultaCents(fields)) : undefined,
     programRef: trimToUndefined(fields.programRef),
-    // FOLHA da cascata (#341): envia a categoria MAIS ESPECÍFICA escolhida — a subcategoria se houver,
-    // senão a categoria. Ambas são categorias válidas p/ o core-api (subcategoria = categoria com
-    // `parentId`), então o contrato é um campo só. Espelha o que a Conciliação já faz.
-    categoryRef: trimToUndefined(leafCategoryRef(fields.categoryRef, fields.subcategoryRef)),
+    // #502 (S1): categoria e subcategoria em campos SEPARADOS (mesma regra do create) — persiste no rascunho.
+    categoryRef: trimToUndefined(fields.categoryRef),
+    subcategoryRef: trimToUndefined(fields.subcategoryRef),
     costCenterRef: trimToUndefined(fields.costCenterRef),
     approverRef: trimToUndefined(fields.approverRef),
     contaDebitoRef: trimToUndefined(fields.contaDebitoRef),

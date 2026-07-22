@@ -58,6 +58,7 @@ export interface CreateDocumentInput {
   contractRef?: string
   budgetPlanRef?: string
   categoryRef?: string
+  subcategoryRef?: string // #502 (S1): folha da árvore do plano — campo próprio (não mais dobrada em categoryRef)
   programRef?: string
   contaDebitoRef?: string // #197: conta-débito (conta-cedente) — a baixa é direcionada a ela
   accessKey?: string // #115: chave de acesso (44 dígitos) — obrigatória p/ DANFE no lançamento
@@ -197,7 +198,8 @@ export type DocumentDetail = Readonly<{
   description: string | null
   // #95/#147 — categorização (refs que o GET /:id devolve; resolvidas p/ nome no client). null = não informado.
   budgetPlanRef: string | null
-  categoryRef: string | null // FOLHA da cascata (subcategoria); com parentId → pai = categoria
+  categoryRef: string | null // categoria escolhida; #502(S1): docs novos = a CATEGORIA (não mais a folha)
+  subcategoryRef: string | null // #502 (S1): folha da árvore do plano; null em docs antigos (folha vinha em categoryRef)
   costCenterRef: string | null
   programRef: string | null
   payables: readonly Payable[] // vazio em Rascunho
