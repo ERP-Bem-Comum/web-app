@@ -13,12 +13,14 @@ import type {
   TeamDemographics,
   SupplierWithoutContract,
   PaymentPosition,
+  RealizedBudgetRow,
 } from '#modules/reports/server/domain/reports.io.ts'
 import {
   teamReportToModel,
   teamDemographicsToModel,
   suppliersWithoutContractToModel,
   paymentPositionToModel,
+  realizedReportToModel,
   mapHttpError,
 } from './reports.mappers.ts'
 
@@ -45,5 +47,16 @@ export const createCoreApiReportsClient = (baseUrl: string): ReportsClient => ({
     const r = await resultFetch<unknown>(`${baseUrl}/payment-position`, { token })
     if (isErr(r)) return err(mapHttpError(r.error))
     return paymentPositionToModel(r.value)
+  },
+  getRealizedReport: async (query, token): Promise<Result<readonly RealizedBudgetRow[], ReportsError>> => {
+    const qs = new URLSearchParams({ year: String(query.year) })
+    if (query.programId !== undefined) qs.set('programId', query.programId)
+    if (query.budgetPlanId !== undefined) qs.set('budgetPlanId', query.budgetPlanId)
+    if (query.partnerStateId !== undefined) qs.set('partnerStateId', query.partnerStateId)
+    if (query.partnerMunicipalityId !== undefined)
+      qs.set('partnerMunicipalityId', query.partnerMunicipalityId)
+    const r = await resultFetch<unknown>(`${baseUrl}/realized?${qs.toString()}`, { token })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return realizedReportToModel(r.value)
   },
 })

@@ -2440,6 +2440,8 @@ export const ptBR: Catalog = {
     'Execução orçamentária por centro de custo, categoria e subcategoria, mês a mês.',
   'reports.realizadoXPlanejado.back': 'Voltar',
   'reports.realizadoXPlanejado.empty': 'Nenhum dado para exibir.',
+  'reports.realizadoXPlanejado.loading': 'Carregando o relatório…',
+  'reports.realizadoXPlanejado.errorTitle': 'Não foi possível carregar o relatório.',
   // Colunas da tabela.
   'reports.realizadoXPlanejado.columns.centroCusto': 'Centro de custo',
   'reports.realizadoXPlanejado.columns.provisionado': 'Provisionado',
