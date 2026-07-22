@@ -4,7 +4,7 @@
  * ações. No sucesso, mostra os **títulos gerados** (FR-007). Não usa data-hooks/useReducer direto — só os
  * hooks de binding/controller.
  */
-import { useMemo, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
@@ -152,6 +152,36 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
   const formLocks = mode === 'edit' || mode === 'view' ? (edit.locks ?? undefined) : undefined
   // Bottombar: rascunho reaproveita as ações de criação (Salvar Documento / Salvar rascunho).
   const bottombarMode = mode === 'draft' ? 'create' : mode
+
+  // #502/S3 — HERANÇA da categorização do contrato: quando o fornecedor tem contrato ATIVO vinculado, a cascata
+  // (Programa → Plano → Centro → Categoria → Subcategoria) é PRÉ-PREENCHIDA a partir dos refs do contrato — igual
+  // aos dados bancários. Só em create/draft (edição/consulta hidratam do próprio documento). Aplica UMA vez por
+  // contrato (guard por ref) → o operador pode editar depois sem ser sobrescrito; trocar de contrato re-herda.
+  const inheritCategorization = controller.hydrateCategorization
+  const appliedContractRef = useRef<string | null>(null)
+  const cRef = selectedContract?.ref ?? null
+  const cProgram = selectedContract?.programRef ?? ''
+  const cPlan = selectedContract?.budgetPlanRef ?? ''
+  const cCost = selectedContract?.costCenterRef ?? ''
+  const cCat = selectedContract?.categoryRef ?? ''
+  const cSub = selectedContract?.subcategoryRef ?? ''
+  const canInherit = mode === 'create' || mode === 'draft'
+  useEffect(() => {
+    if (!canInherit || cRef === null) {
+      appliedContractRef.current = cRef === null ? null : appliedContractRef.current
+      return
+    }
+    if (appliedContractRef.current === cRef) return
+    appliedContractRef.current = cRef
+    inheritCategorization({
+      programRef: cProgram,
+      planoOrcamentario: cPlan,
+      costCenterRef: cCost,
+      categoryRef: cCat,
+      subcategoryRef: cSub,
+    })
+  }, [canInherit, cRef, cProgram, cPlan, cCost, cCat, cSub, inheritCategorization])
+
   const goToGrid = (): void => {
     void navigate({ to: '/financeiro/contas-a-pagar' })
   }
