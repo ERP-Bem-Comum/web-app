@@ -78,3 +78,38 @@ export type PaymentPosition = Readonly<{
   paidCents: number
   overdueCents: number
 }>
+
+/**
+ * Realizado × Planejado (`GET /reports/realized`) — filtros de consulta. `year` obrigatório; os demais
+ * recortam a árvore (programa, plano orçamentário, UF/município do parceiro). Refs são string opaca.
+ */
+export type RealizedReportQuery = Readonly<{
+  year: number
+  programId?: string
+  budgetPlanId?: string
+  partnerStateId?: string
+  partnerMunicipalityId?: string
+}>
+
+/**
+ * Célula mensal do Realizado × Planejado. `month` já vem CONVERTIDO para 0..11 (janeiro=0) — o backend
+ * entrega 1..12 e o mapper subtrai 1. Todos os valores são centavos inteiros (number).
+ */
+export type RealizedMonthCell = Readonly<{
+  month: number
+  planejadoCents: number
+  realizadoCents: number
+  provisionadoCents: number
+}>
+
+/**
+ * Linha ACHATADA do Realizado × Planejado — uma por subcategoria folha (ou, quando a categoria não tem
+ * subcategorias, uma linha com `subcategoria: ''`). O BFF achata a árvore centro→categoria→subcategoria;
+ * o client re-agrega. `months` traz sempre as 12 células (janeiro..dezembro).
+ */
+export type RealizedBudgetRow = Readonly<{
+  centroCusto: string
+  categoria: string
+  subcategoria: string
+  months: readonly RealizedMonthCell[]
+}>

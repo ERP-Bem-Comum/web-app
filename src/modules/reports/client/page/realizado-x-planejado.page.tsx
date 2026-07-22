@@ -16,7 +16,6 @@ import { screen } from '#shared/ui/brand/brand-page.css.ts'
 import { ChevronLeftIcon, ChevronDownIcon, FilterIcon } from '#shared/ui/index.ts'
 
 import {
-  loadBudgetTree,
   grandTotal,
   topCentroCustoByPlanejado,
   planejadoByMonth,
@@ -26,8 +25,10 @@ import {
   formatPercent,
   computeAvPct,
   sharePercent,
-  REALIZADO_X_PLANEJADO_RAW,
+  type BudgetTreeRow,
 } from '../realizado-x-planejado.view-model.ts'
+import { useRealizadoReport } from '../realizado-x-planejado.binding.ts'
+import { ReportStatePanel } from '../components/report-state-panel.component.tsx'
 import { ReportExportDropdown } from '../components/report-export-dropdown.component.tsx'
 import { exportTrigger } from '../components/report-filters.css.ts'
 import { RealizadoKpis } from '../components/realizado-kpis.component.tsx'
@@ -58,7 +59,6 @@ import {
   chartPad,
   cardHeader,
   cardTitle,
-  cardHint,
 } from './realizado-x-planejado.page.css.ts'
 
 const t = createTranslator(ptBR)
@@ -78,10 +78,9 @@ function downloadCsv(filename: string, csv: string): void {
 
 const YEAR = 2026
 
-// Valores DEMO ILUSTRATIVOS do donut "Realizado vs previsto" (o realizado/provisionado reais são 0). Em
-// centavos, coerentes com o mock (~24% de execução). Rotulados "exemplo" no header do card.
-const DEMO_REALIZADO_CENTS = 1_850_000_000
-const DEMO_PROVISIONADO_CENTS = 620_000_000
+// Empties estáveis p/ os hooks rodarem SEM dado (loading/error) sem recriar array/objeto a cada render.
+const EMPTY_ROWS: readonly BudgetTreeRow[] = []
+const EMPTY_TOTAL = grandTotal(EMPTY_ROWS)
 
 // Iniciais dos 12 meses (jan→dez) para o eixo X do gráfico de linha.
 const MONTH_INITIALS: readonly string[] = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D']
@@ -93,8 +92,12 @@ export function RealizadoXPlanejadoPage(): ReactNode {
   // ÚNICO UI-state da page: filtros abertos/fechados.
   const [filtersOpen, setFiltersOpen] = useState(false)
 
-  const rows = useMemo(() => loadBudgetTree(), [])
-  const total = useMemo(() => grandTotal(rows), [rows])
+  // Server-state REAL do core-api (S6 · GET /reports/realized): loading | error | ready. O binding já
+  // re-agrega as linhas achatadas na árvore. Ano fixo em YEAR por ora (filtros seguem chrome — follow-up).
+  const report = useRealizadoReport({ year: YEAR })
+  const ready = report.status === 'ready'
+  const rows = ready ? report.rows : EMPTY_ROWS
+  const total = ready ? report.total : EMPTY_TOTAL
 
   // KPIs.
   const execPct = computeAvPct(total)
@@ -123,20 +126,20 @@ export function RealizadoXPlanejadoPage(): ReactNode {
     [total],
   )
 
-  // Donut "Realizado vs previsto" (DEMO): execução = realizado demo ÷ planejado real.
-  const donutExecPct = sharePercent(DEMO_REALIZADO_CENTS, total.planejadoCents)
+  // Donut "Realizado vs previsto" — agora com dado REAL do endpoint (execução = realizado ÷ planejado).
+  const donutExecPct = sharePercent(total.realizadoCents, total.planejadoCents)
   const donutSlices: readonly DonutSlice[] = useMemo(
     () => [
       {
         id: 'realizado',
         label: t('reports.realizadoXPlanejado.legend.realizado'),
-        valueCents: DEMO_REALIZADO_CENTS,
+        valueCents: total.realizadoCents,
         measureKey: 'realizado',
       },
       {
         id: 'provisionado',
         label: t('reports.realizadoXPlanejado.legend.provisionado'),
-        valueCents: DEMO_PROVISIONADO_CENTS,
+        valueCents: total.provisionadoCents,
         measureKey: 'provisionado',
       },
       {
@@ -146,8 +149,22 @@ export function RealizadoXPlanejadoPage(): ReactNode {
         measureKey: 'previsto',
       },
     ],
-    [total.planejadoCents],
+    [total.planejadoCents, total.realizadoCents, total.provisionadoCents],
   )
+
+  // Estados honestos (todos os hooks acima já rodaram — os early-returns abaixo não violam a regra dos hooks).
+  if (report.status === 'loading') {
+    return <ReportStatePanel title={t('reports.realizadoXPlanejado.loading')} />
+  }
+  if (report.status === 'error') {
+    return (
+      <ReportStatePanel
+        role="alert"
+        title={t('reports.realizadoXPlanejado.errorTitle')}
+        hint={t(report.errorTag)}
+      />
+    )
+  }
 
   return (
     <div className={screen}>
@@ -182,7 +199,7 @@ export function RealizadoXPlanejadoPage(): ReactNode {
             csvLabel={t('reports.realizadoXPlanejado.export.csv')}
             pdfLabel={t('reports.realizadoXPlanejado.export.pdf')}
             onExportCsv={() => {
-              downloadCsv('realizado-x-planejado.csv', buildCsv(REALIZADO_X_PLANEJADO_RAW))
+              downloadCsv('realizado-x-planejado.csv', buildCsv(report.rawRows))
             }}
           />
         </div>
@@ -273,7 +290,6 @@ export function RealizadoXPlanejadoPage(): ReactNode {
             <div className={chartCard}>
               <div className={cardHeader}>
                 <h2 className={cardTitle}>{t('reports.realizadoXPlanejado.charts.realizedVsForecast')}</h2>
-                <span className={cardHint}>{t('reports.realizadoXPlanejado.charts.exampleHint')}</span>
               </div>
               <div className={chartPad}>
                 <RealizadoDonut

@@ -64,3 +64,45 @@ const CoreApiPaymentPositionRowSchema = z.object({
 export const CoreApiPaymentPositionSchema = z.object({
   positions: z.array(CoreApiPaymentPositionRowSchema),
 })
+
+// GET /reports/realized → árvore centro→categoria→subcategoria. TODOS os valores em CENTAVOS inteiros;
+// `month` 1..12 (o mapper converte p/ 0..11). Drift-tolerante: números faltantes → 0, nomes → ''.
+const CoreApiRealizedMonthSchema = z.object({
+  month: z.number().catch(0),
+  expected: z.number().catch(0),
+  realized: z.number().catch(0),
+  provisioned: z.number().catch(0),
+})
+const CoreApiRealizedSubCategorySchema = z.object({
+  id: z.string().trim().catch(''),
+  name: z.string().trim().catch(''),
+  totalExpected: z.number().catch(0),
+  totalRealized: z.number().catch(0),
+  totalProvisioned: z.number().catch(0),
+  months: z.array(CoreApiRealizedMonthSchema),
+})
+const CoreApiRealizedCategorySchema = z.object({
+  id: z.string().trim().catch(''),
+  name: z.string().trim().catch(''),
+  totalExpected: z.number().catch(0),
+  totalRealized: z.number().catch(0),
+  totalProvisioned: z.number().catch(0),
+  months: z.array(CoreApiRealizedMonthSchema),
+  subCategories: z.array(CoreApiRealizedSubCategorySchema),
+})
+const CoreApiRealizedCostCenterSchema = z.object({
+  id: z.string().trim().catch(''),
+  name: z.string().trim().catch(''),
+  budgetPlanId: z.string().trim().catch(''),
+  totalExpected: z.number().catch(0),
+  totalRealized: z.number().catch(0),
+  totalProvisioned: z.number().catch(0),
+  categories: z.array(CoreApiRealizedCategorySchema),
+})
+export const CoreApiRealizedReportSchema = z.object({
+  totalExpected: z.number().catch(0),
+  totalRealized: z.number().catch(0),
+  totalProvisioned: z.number().catch(0),
+  costCenters: z.array(CoreApiRealizedCostCenterSchema),
+})
+export type CoreApiRealizedReport = z.infer<typeof CoreApiRealizedReportSchema>

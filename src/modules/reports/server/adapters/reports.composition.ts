@@ -11,6 +11,7 @@ import {
   createGetTeamDemographics,
   createGetSuppliersWithoutContract,
   createGetPaymentPosition,
+  createGetRealizedReport,
 } from '#modules/reports/server/application/reports.use-cases.ts'
 
 type ReportsServer = ReturnType<typeof build>
@@ -23,6 +24,7 @@ const build = () => {
     getTeamDemographics: createGetTeamDemographics({ client }),
     getSuppliersWithoutContract: createGetSuppliersWithoutContract({ client }),
     getPaymentPosition: createGetPaymentPosition({ client }),
+    getRealizedReport: createGetRealizedReport({ client }),
   }
 }
 
