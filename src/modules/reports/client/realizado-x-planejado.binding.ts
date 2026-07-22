@@ -21,6 +21,9 @@ import { reportsErrorTag } from './data/helpers/reports-error-tag.ts'
 import type { ReportsError } from './data/repository/reports-error.ts'
 import type { RealizedBudgetRow, RealizedReportQuery } from './data/model/realized-report.model.ts'
 
+// Re-export p/ a page tipar o estado de filtros sem importar de `data/model` (boundary client-ui ↛ client-data).
+export type RealizedReportFilters = RealizedReportQuery
+
 export type RealizadoBindingState =
   | Readonly<{ status: 'loading' }>
   | Readonly<{ status: 'error'; error: ReportsError; errorTag: string }>

@@ -1,12 +1,12 @@
 /**
  * RealizadoXPlanejadoPage — tela do relatório "Realizado × Planejado" (reprodução do mock
- * `realizado-planejado-v2`, identidade "brand", full-bleed 28px). Front-first: os dados vêm de constantes
- * placeholder REAIS do CSV legado (core-api#114 ainda não existe). A ViewModel PURA faz toda a agregação/
- * derivação; a page só compõe as views burras e guarda o ÚNICO UI-state local: o toggle dos filtros. Os
- * gráficos ficam SEMPRE no topo (sem toggle Gráfico/Tabela). CSV pela ViewModel (Blob); PDF via window.print().
+ * `realizado-planejado-v2`, identidade "brand", full-bleed 28px). Dado REAL do core-api (S6 · GET
+ * /reports/realized): o binding busca as linhas achatadas e a ViewModel PURA re-agrega na árvore + deriva
+ * KPIs/gráficos/CSV. A page compõe as views burras e guarda o UI-state: toggle dos filtros + draft/aplicado.
+ * Os gráficos ficam SEMPRE no topo. CSV pela ViewModel (Blob); PDF via window.print().
  *
- * Realizado/Provisionado são 0 no dado real → KPIs e colunas mostram "R$ 0,00". O donut "Realizado vs
- * previsto" usa valores DEMO ILUSTRATIVOS (rotulados "exemplo") só para o gráfico ter sinal.
+ * Filtros (specs/084) alimentam a query: Programa/Plano/Estado/Município/Ano. "Filtrar" aplica draft→aplicado.
+ * KPIs, colunas e o donut "Realizado vs previsto" refletem os valores reais do endpoint.
  */
 import { useMemo, useState, type ReactNode } from 'react'
 
@@ -27,7 +27,15 @@ import {
   sharePercent,
   type BudgetTreeRow,
 } from '../realizado-x-planejado.view-model.ts'
-import { useRealizadoReport } from '../realizado-x-planejado.binding.ts'
+import { useRealizadoReport, type RealizedReportFilters } from '../realizado-x-planejado.binding.ts'
+import {
+  useProgramaOptions,
+  usePlanoOptions,
+  useEstadoOptions,
+  useMunicipioOptions,
+  useAnoOptions,
+  type FilterOption,
+} from '../realizado-filters.binding.ts'
 import { ReportStatePanel } from '../components/report-state-panel.component.tsx'
 import { ReportExportDropdown } from '../components/report-export-dropdown.component.tsx'
 import { exportTrigger } from '../components/report-filters.css.ts'
@@ -89,12 +97,31 @@ const MONTH_INITIALS: readonly string[] = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A
 const CONCENTRATION_THRESHOLD = 25
 
 export function RealizadoXPlanejadoPage(): ReactNode {
-  // ÚNICO UI-state da page: filtros abertos/fechados.
+  // UI-state da page: toggle dos filtros + o DRAFT (seleção em edição) e o APLICADO (o que consulta). "Filtrar"
+  // commita draft→aplicado; assim o relatório só re-busca ao clicar, não a cada mexida no select.
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [draft, setDraft] = useState<RealizedReportFilters>({ year: YEAR })
+  const [applied, setApplied] = useState<RealizedReportFilters>({ year: YEAR })
 
-  // Server-state REAL do core-api (S6 · GET /reports/realized): loading | error | ready. O binding já
-  // re-agrega as linhas achatadas na árvore. Ano fixo em YEAR por ora (filtros seguem chrome — follow-up).
-  const report = useRealizadoReport({ year: YEAR })
+  // Opções REAIS dos filtros (cross-módulo via public-api). Município cascateia pela UF escolhida no draft.
+  const programaOptions = useProgramaOptions()
+  const planoOptions = usePlanoOptions()
+  const estadoOptions = useEstadoOptions()
+  const municipioOptions = useMunicipioOptions(draft.partnerStateId ?? '')
+  const anoOptions = useAnoOptions()
+  const allOption = t('reports.realizadoXPlanejado.filters.allOption')
+  // Ano é OBRIGATÓRIO (sem "Todos"); sem planos → cai no YEAR default. Números → opções de select.
+  const anoFilterOptions: readonly FilterOption[] = (anoOptions.length > 0 ? anoOptions : [YEAR]).map(
+    (y) => ({
+      value: String(y),
+      label: String(y),
+    }),
+  )
+
+  // Server-state REAL do core-api (S6 · GET /reports/realized): loading | error | ready. Usa os filtros
+  // APLICADOS. O binding já re-agrega as linhas achatadas na árvore. (Refetch por filtro mantém o dado
+  // anterior visível — o painel de loading só aparece na 1ª carga.)
+  const report = useRealizadoReport(applied)
   const ready = report.status === 'ready'
   const rows = ready ? report.rows : EMPTY_ROWS
   const total = ready ? report.total : EMPTY_TOTAL
@@ -205,27 +232,67 @@ export function RealizadoXPlanejadoPage(): ReactNode {
         </div>
       </div>
 
-      {/* Filtros recolhíveis (placeholders visuais front-first) */}
+      {/* Filtros REAIS (query params do /reports/realized). Draft nos selects; "Filtrar" aplica. */}
       <div className={filtersOpen ? filters.open : filters.closed}>
         <div className={filtersInner}>
           <FilterField
             label={t('reports.realizadoXPlanejado.filters.programa')}
-            options={['PARC', 'ETI', 'EPV']}
+            placeholder={allOption}
+            value={draft.programId ?? ''}
+            options={programaOptions}
+            onChange={(v) => {
+              setDraft((d) => ({ ...d, programId: v === '' ? undefined : v }))
+            }}
           />
           <FilterField
             label={t('reports.realizadoXPlanejado.filters.plano')}
-            options={[t('reports.realizadoXPlanejado.filters.allOption')]}
+            placeholder={allOption}
+            value={draft.budgetPlanId ?? ''}
+            options={planoOptions}
+            onChange={(v) => {
+              setDraft((d) => ({ ...d, budgetPlanId: v === '' ? undefined : v }))
+            }}
           />
           <FilterField
             label={t('reports.realizadoXPlanejado.filters.estado')}
-            options={[t('reports.realizadoXPlanejado.filters.allOption')]}
+            placeholder={allOption}
+            value={draft.partnerStateId ?? ''}
+            options={estadoOptions}
+            onChange={(v) => {
+              // Trocar a UF zera o município (a lista dele cascateia pela UF).
+              setDraft((d) => ({
+                ...d,
+                partnerStateId: v === '' ? undefined : v,
+                partnerMunicipalityId: undefined,
+              }))
+            }}
           />
           <FilterField
             label={t('reports.realizadoXPlanejado.filters.municipio')}
-            options={[t('reports.realizadoXPlanejado.filters.allOption')]}
+            placeholder={allOption}
+            value={draft.partnerMunicipalityId ?? ''}
+            options={municipioOptions}
+            disabled={(draft.partnerStateId ?? '') === ''}
+            onChange={(v) => {
+              setDraft((d) => ({ ...d, partnerMunicipalityId: v === '' ? undefined : v }))
+            }}
           />
-          <FilterField label={t('reports.realizadoXPlanejado.filters.ano')} options={[String(YEAR)]} />
-          <button type="button" className={applyButton}>
+          <FilterField
+            label={t('reports.realizadoXPlanejado.filters.ano')}
+            value={String(draft.year)}
+            options={anoFilterOptions}
+            onChange={(v) => {
+              const y = Number(v)
+              setDraft((d) => ({ ...d, year: Number.isFinite(y) && y > 0 ? y : YEAR }))
+            }}
+          />
+          <button
+            type="button"
+            className={applyButton}
+            onClick={() => {
+              setApplied(draft)
+            }}
+          >
             {t('reports.realizadoXPlanejado.filters.filtrar')}
           </button>
         </div>
@@ -335,15 +402,40 @@ export function RealizadoXPlanejadoPage(): ReactNode {
   )
 }
 
-/** Campo de filtro (select nativo placeholder — só a forma/estilo brand). */
-function FilterField({ label, options }: { label: string; options: readonly string[] }): ReactNode {
+/** Campo de filtro (select nativo CONTROLADO, estilo brand). `placeholder` → opção vazia "Todos" (value ''). */
+function FilterField({
+  label,
+  value,
+  options,
+  onChange,
+  placeholder,
+  disabled,
+}: {
+  label: string
+  value: string
+  options: readonly FilterOption[]
+  onChange: (v: string) => void
+  placeholder?: string
+  disabled?: boolean
+}): ReactNode {
   return (
     <div className={fld}>
       <label className={fldLabel}>{label}</label>
       <div className={fldCtrl}>
-        <select className={fldSelect} aria-label={label}>
+        <select
+          className={fldSelect}
+          aria-label={label}
+          value={value}
+          disabled={disabled}
+          onChange={(e) => {
+            onChange(e.target.value)
+          }}
+        >
+          {placeholder !== undefined ? <option value="">{placeholder}</option> : null}
           {options.map((o) => (
-            <option key={o}>{o}</option>
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
           ))}
         </select>
         <span className={fldChev}>
