@@ -14,7 +14,11 @@ import { useAmendmentCreateBinding } from '../../amendment-create/amendment-crea
 import { useEndContractBinding } from '../../contract-terminate/end-contract.binding.ts'
 import { useAttachAmendmentDocumentBinding } from '../../amendment-create/attach-amendment-document.binding.ts'
 import { useDocumentContentBinding } from '../document-content.binding.ts'
-import { AmendmentModal, type AmendmentForAttach, type AmendmentViewData } from '../../amendment-create/components/amendment-modal.component.tsx'
+import {
+  AmendmentModal,
+  type AmendmentForAttach,
+  type AmendmentViewData,
+} from '../../amendment-create/components/amendment-modal.component.tsx'
 import type { Amendment } from '#modules/contracts/public-api/index.ts'
 import { ContractInfo } from '../components/contract-info.component.tsx'
 import { ContractDocuments, type DocRef } from '../components/contract-documents.component.tsx'
@@ -47,17 +51,24 @@ import {
 
 const t = createTranslator(ptBR)
 
-const fmtCurrencyCents = (cents: number): string => (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-const fmtDateUTC = (d: Date | null | undefined): string => (d ? d.toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '')
+const fmtCurrencyCents = (cents: number): string =>
+  (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+const fmtDateUTC = (d: Date | null | undefined): string =>
+  d ? d.toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : ''
 
 // Monta os dados (já formatados) p/ o modo leitura do modal de aditivo. Derivação pura.
-function buildAmendmentView(a: Amendment, doc?: Readonly<{ name: string; documentId: string | undefined }>): AmendmentViewData {
+function buildAmendmentView(
+  a: Amendment,
+  doc?: Readonly<{ name: string; documentId: string | undefined }>,
+): AmendmentViewData {
   const v = a.impactValueCents ?? 0
   const impactLabel =
     a.type === 'distrato'
       ? 'Distrato'
       : a.type === 'valor' && v !== 0
-        ? v < 0 ? `− ${fmtCurrencyCents(Math.abs(v))}` : `+ ${fmtCurrencyCents(v)}`
+        ? v < 0
+          ? `− ${fmtCurrencyCents(Math.abs(v))}`
+          : `+ ${fmtCurrencyCents(v)}`
         : a.type === 'prazo' && a.newEndDate
           ? `Nova vigência: ${fmtDateUTC(a.newEndDate)}`
           : 'Sem impacto financeiro'
@@ -81,7 +92,7 @@ const STATUS_BADGE_CLASS: Record<string, string> = {
 
 export function ContractDetailPage({ contractId }: { contractId: string }): ReactNode {
   const navigate = useNavigate()
-  const { data, isLoading, vigencia } = useContractDetailBinding(contractId)
+  const { data, isLoading, vigencia, planLabel, subcategoria } = useContractDetailBinding(contractId)
   const { attachCommand } = useAttachSignedDocumentBinding()
   const { createCommand: amendmentCommand } = useAmendmentCreateBinding()
   const { attachCommand: amendmentAttachCommand } = useAttachAmendmentDocumentBinding()
@@ -94,7 +105,13 @@ export function ContractDetailPage({ contractId }: { contractId: string }): Reac
   const [previewDoc, setPreviewDoc] = useState<DocRef | null>(null)
   // Fluxo unificado de aditivo: se o create vier com documento+assinatura, guardamos o anexo e
   // homologamos logo após a criação (encadeado no efeito abaixo).
-  const [pendingAmendmentAttach, setPendingAmendmentAttach] = useState<Readonly<{ file: File; signedAt: string; isDistrato: boolean; terminatedAt: string; reason: string }> | null>(null)
+  const [pendingAmendmentAttach, setPendingAmendmentAttach] = useState<Readonly<{
+    file: File
+    signedAt: string
+    isDistrato: boolean
+    terminatedAt: string
+    reason: string
+  }> | null>(null)
 
   // Edição inline da seção Contato (PATCH email/telefone/observações).
   const queryClient = useQueryClient()
@@ -121,13 +138,18 @@ export function ContractDetailPage({ contractId }: { contractId: string }): Reac
   const homologateChained = useRef(false)
   useEffect(() => {
     const created = amendmentCommand.result
-    if (created === null) { homologateChained.current = false; return }
+    if (created === null) {
+      homologateChained.current = false
+      return
+    }
     if (pendingAmendmentAttach === null || homologateChained.current) return
     homologateChained.current = true
     const { file, signedAt, isDistrato, terminatedAt, reason } = pendingAmendmentAttach
     void amendmentAttachCommand
       .execute({ contractId, amendmentId: created.id, file, signedAt })
-      .then((ok) => { if (ok && isDistrato) endCommand.execute({ contractId, file, terminatedAt, reason }) })
+      .then((ok) => {
+        if (ok && isDistrato) endCommand.execute({ contractId, file, terminatedAt, reason })
+      })
   }, [amendmentCommand.result, pendingAmendmentAttach, amendmentAttachCommand, endCommand, contractId])
 
   if (isLoading) {
@@ -176,7 +198,11 @@ export function ContractDetailPage({ contractId }: { contractId: string }): Reac
         <button
           type="button"
           className={backButton}
-          onClick={() => { navigate({ to: '/contratos' }).catch(() => { /* noop */ }) }}
+          onClick={() => {
+            navigate({ to: '/contratos' }).catch(() => {
+              /* noop */
+            })
+          }}
           aria-label="Voltar"
         >
           ←
@@ -185,7 +211,9 @@ export function ContractDetailPage({ contractId }: { contractId: string }): Reac
           {contract.classification === 'Contract'
             ? t('contracts.create.field.classification.ct')
             : t('contracts.create.field.classification.os')}
-          <span className={topbarMeta}>{formatContractNumber(contract.sequentialNumber, contract.classification)}</span>
+          <span className={topbarMeta}>
+            {formatContractNumber(contract.sequentialNumber, contract.classification)}
+          </span>
         </h1>
         <span className={`${statusBadge} ${STATUS_BADGE_CLASS[contract.status] ?? ''}`}>
           <span style={{ fontSize: '0.5rem', lineHeight: 1 }}>●</span>
@@ -198,31 +226,42 @@ export function ContractDetailPage({ contractId }: { contractId: string }): Reac
       {/* Layout 2 colunas */}
       <div className={mainLayout}>
         <div className={mainCol}>
-          <ContractInfo contract={contract} />
+          <ContractInfo contract={contract} planLabel={planLabel} subcategoria={subcategoria} />
           <ContractDocuments
             contract={contract}
-            onOpenBase={() => { attachCommand.reset(); setAttachOpen(true) }}
+            onOpenBase={() => {
+              attachCommand.reset()
+              setAttachOpen(true)
+            }}
             onNewAmendment={() => {
               // reset() limpa o resultado da criação anterior → permite criar VÁRIOS aditivos sem recarregar.
-              if (contract.status !== 'Pendente') { amendmentCommand.reset(); endCommand.reset(); setAmendmentOpen(true) }
+              if (contract.status !== 'Pendente') {
+                amendmentCommand.reset()
+                endCommand.reset()
+                setAmendmentOpen(true)
+              }
             }}
             onOpenAmendment={(id) => {
               const a = contract.children.find((c) => c.id === id)
               if (!a) return
               if (a.status === 'Pendente') {
                 // Aditivo pendente → anexar documento + homologar (modo attach).
-                amendmentAttachCommand.reset(); endCommand.reset()
+                amendmentAttachCommand.reset()
+                endCommand.reset()
                 setSelectedAmendment({ id: a.id, type: a.type, description: a.description ?? '' })
               } else {
                 // Aditivo já existente (Homologado/etc.) → abre em modo leitura com as infos preenchidas
                 // + a caixa do documento anexado (quando houver).
                 const adoc = contract.files.find((f) => f.parentType === 'Amendment' && f.parentId === a.id)
-                setViewAmendment(buildAmendmentView(a, adoc ? { name: adoc.name, documentId: adoc.id } : undefined))
+                setViewAmendment(
+                  buildAmendmentView(a, adoc ? { name: adoc.name, documentId: adoc.id } : undefined),
+                )
               }
             }}
             onPreview={(doc) => {
               setPreviewDoc(doc)
-              if (doc.documentId !== undefined) documentCommand.open({ contractId, documentId: doc.documentId })
+              if (doc.documentId !== undefined)
+                documentCommand.open({ contractId, documentId: doc.documentId })
             }}
             onDownload={(doc) => {
               if (doc.documentId !== undefined) {
@@ -244,7 +283,9 @@ export function ContractDetailPage({ contractId }: { contractId: string }): Reac
             }}
             onEdit={startEditContato}
             onSave={saveContato}
-            onCancel={() => { setEditingContato(false) }}
+            onCancel={() => {
+              setEditingContato(false)
+            }}
             saving={editCommand.running}
             errorText={editCommand.errorTag === null ? null : t(editCommand.errorTag)}
           />
@@ -269,7 +310,11 @@ export function ContractDetailPage({ contractId }: { contractId: string }): Reac
           <button
             type="button"
             className={buttonPrimary}
-            onClick={() => { navigate({ to: '/contratos/criar' }).catch(() => { /* noop */ }) }}
+            onClick={() => {
+              navigate({ to: '/contratos/criar' }).catch(() => {
+                /* noop */
+              })
+            }}
           >
             Novo contrato
           </button>
@@ -279,7 +324,9 @@ export function ContractDetailPage({ contractId }: { contractId: string }): Reac
       <AttachDocumentModal
         open={modalOpen}
         contract={contract}
-        onClose={() => { setAttachOpen(false) }}
+        onClose={() => {
+          setAttachOpen(false)
+        }}
         submitting={attachCommand.running}
         errorTag={attachCommand.errorTag}
         onSubmit={({ file, signedAt }) => {
@@ -292,7 +339,9 @@ export function ContractDetailPage({ contractId }: { contractId: string }): Reac
         mode="create"
         contractNumber={formatContractNumber(contract.sequentialNumber, contract.classification)}
         amendment={undefined}
-        onClose={() => { setAmendmentOpen(false) }}
+        onClose={() => {
+          setAmendmentOpen(false)
+        }}
         submitting={amendmentCommand.running || endCommand.running}
         errorTag={amendmentCommand.errorTag ?? endCommand.errorTag}
         onCreate={(input, attach) => {
@@ -312,7 +361,9 @@ export function ContractDetailPage({ contractId }: { contractId: string }): Reac
           )
           amendmentCommand.execute(contractId, input)
         }}
-        onAttach={() => { /* não usado no modo create */ }}
+        onAttach={() => {
+          /* não usado no modo create */
+        }}
       />
 
       <AmendmentModal
@@ -320,17 +371,24 @@ export function ContractDetailPage({ contractId }: { contractId: string }): Reac
         mode="attach"
         contractNumber={formatContractNumber(contract.sequentialNumber, contract.classification)}
         amendment={selectedAmendment ?? undefined}
-        onClose={() => { setSelectedAmendment(null) }}
+        onClose={() => {
+          setSelectedAmendment(null)
+        }}
         submitting={amendmentAttachCommand.running}
         errorTag={amendmentAttachCommand.errorTag}
-        onCreate={() => { /* não usado no modo attach */ }}
+        onCreate={() => {
+          /* não usado no modo attach */
+        }}
         onAttach={({ amendmentId, file, signedAt }) => {
           // Homologa o aditivo; se for DISTRATO, encadeia o encerramento do contrato (POST /:id/end).
           // Distrato no attach-pending: data efetiva degrada p/ a data de assinatura; motivo = descrição.
           const reason = selectedAmendment?.description ?? ''
           void amendmentAttachCommand
             .execute({ contractId, amendmentId, file, signedAt })
-            .then((okHomolog) => { if (okHomolog && selectedAmendment?.type === 'distrato') endCommand.execute({ contractId, file, terminatedAt: signedAt, reason }) })
+            .then((okHomolog) => {
+              if (okHomolog && selectedAmendment?.type === 'distrato')
+                endCommand.execute({ contractId, file, terminatedAt: signedAt, reason })
+            })
         }}
       />
 
@@ -340,7 +398,10 @@ export function ContractDetailPage({ contractId }: { contractId: string }): Reac
         blobUrl={documentCommand.blobUrl}
         loading={documentCommand.running}
         errorTag={documentCommand.errorTag}
-        onClose={() => { setPreviewDoc(null); documentCommand.reset() }}
+        onClose={() => {
+          setPreviewDoc(null)
+          documentCommand.reset()
+        }}
       />
 
       <AmendmentModal
@@ -348,9 +409,15 @@ export function ContractDetailPage({ contractId }: { contractId: string }): Reac
         mode="view"
         contractNumber={formatContractNumber(contract.sequentialNumber, contract.classification)}
         viewData={viewAmendment ?? undefined}
-        onClose={() => { setViewAmendment(null) }}
-        onCreate={() => { /* não usado no modo view */ }}
-        onAttach={() => { /* não usado no modo view */ }}
+        onClose={() => {
+          setViewAmendment(null)
+        }}
+        onCreate={() => {
+          /* não usado no modo view */
+        }}
+        onAttach={() => {
+          /* não usado no modo view */
+        }}
         onPreviewDoc={(doc) => {
           // Fecha a leitura do aditivo e abre o preview do documento (um modal por vez).
           setViewAmendment(null)
