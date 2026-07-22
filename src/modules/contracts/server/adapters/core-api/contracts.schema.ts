@@ -38,6 +38,10 @@ const ContractMetaShape = {
   budgetPlanId: z.uuid().nullable().optional(),
   categorizacao: z.string().trim().nullable().optional(),
   centroDeCusto: z.string().trim().nullable().optional(),
+  // #502/S3: refs da árvore do plano ecoados crus (opacos; drift/backend antigo → null).
+  costCenterRef: z.string().trim().nullable().optional(),
+  categoryRef: z.string().trim().nullable().optional(),
+  subcategoryRef: z.string().trim().nullable().optional(),
   program: ProgramDtoSchema,
 }
 

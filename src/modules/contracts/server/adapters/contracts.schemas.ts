@@ -106,6 +106,10 @@ export const ContractSchema = z.object({
     .optional(),
   categorizacao: z.string().trim().optional(),
   centroDeCusto: z.string().trim().optional(),
+  // #502/S3: refs da árvore do plano (opacos) — nome exibível em categorizacao/centroDeCusto.
+  costCenterRef: z.uuid().optional(),
+  categoryRef: z.uuid().optional(),
+  subcategoryRef: z.uuid().optional(),
   observations: z.string().trim().optional(),
   email: z.email().optional(),
   telephone: z.string().trim().optional(),
@@ -151,6 +155,10 @@ export const CreateContractInputSchema = z.object({
   budgetPlanId: z.uuid().optional(),
   categorizacao: z.string().trim().optional(),
   centroDeCusto: z.string().trim().optional(),
+  // #502/S3: refs da árvore do plano (opacos) — nome exibível em categorizacao/centroDeCusto.
+  costCenterRef: z.uuid().optional(),
+  categoryRef: z.uuid().optional(),
+  subcategoryRef: z.uuid().optional(),
   observations: z.string().trim().optional(),
   email: z.email().optional(),
   telephone: z.string().trim().optional(),
