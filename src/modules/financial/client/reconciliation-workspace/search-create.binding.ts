@@ -63,6 +63,7 @@ export type SearchCreateBinding = Readonly<{
   periodField: PeriodField // aplicado
   periodFrom: string // aplicado (YYYY-MM-DD)
   periodTo: string // aplicado (YYYY-MM-DD)
+  typeActive: boolean // filtro de Tipo aplicado (≠ 'all')
   periodActive: boolean // há intervalo aplicado
   periodFieldDraft: PeriodField
   periodFromDraft: string
@@ -132,6 +133,7 @@ export function useSearchCreate(
 
   const periodActive = periodFrom !== '' || periodTo !== ''
   const valueActive = valueMinCents !== null || valueMaxCents !== null
+  const typeActive = documentType !== 'all' // filtro de Tipo aplicado → chip azul (paridade com Período/Valor)
   const filter: MultiFilter = {
     search,
     documentType,
@@ -204,6 +206,7 @@ export function useSearchCreate(
       setSearch(v)
     },
     documentType,
+    typeActive,
     typeOptions: RECON_DOCUMENT_TYPE_OPTIONS,
     setDocumentType: (v) => {
       setDocumentType(v)

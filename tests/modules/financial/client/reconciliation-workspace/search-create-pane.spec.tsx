@@ -80,6 +80,7 @@ const baseBinding = (over: Partial<SearchCreateBinding> = {}): SearchCreateBindi
   periodField: 'due',
   periodFrom: '',
   periodTo: '',
+  typeActive: false,
   periodActive: false,
   periodFieldDraft: 'due',
   periodFromDraft: '',
@@ -121,6 +122,29 @@ describe('SearchCreatePane', () => {
     expect(screen.getByText('001')).toBeTruthy()
     fireEvent.click(screen.getByText('001'))
     expect(toggle).toHaveBeenCalledWith('p1')
+  })
+
+  it('#192: título de imposto retido mostra o ÓRGÃO (SEFIN/Receita Federal), não o fornecedor-pai', () => {
+    const taxBase = {
+      documentId: 'd9',
+      valueCents: '10000',
+      dueDate: '2026-06-10',
+      issueDate: null,
+      paidAt: null,
+      paymentMethod: 'PIX',
+      supplierName: 'Fornecedor Pai',
+      category: 'Imposto',
+      documentType: null,
+    } as const
+    const tax: readonly PaidPayable[] = [
+      { ...taxBase, id: 'iss', retentionType: 'ISS', documentNumber: 'i1' },
+      { ...taxBase, id: 'irrf', retentionType: 'IRRF', documentNumber: 'i2' },
+    ]
+    render(<SearchCreatePane binding={baseBinding({ filtered: tax })} payables={tax} extratoValueCents="0" />)
+    // ISS → SEFIN; IRRF → Receita Federal (o helper #192). O fornecedor-pai NÃO vira o nome do título.
+    expect(screen.getByText(tr('financial.recon.pending.agency.iss'))).toBeTruthy()
+    expect(screen.getByText(tr('financial.recon.pending.agency.federal'))).toBeTruthy()
+    expect(screen.queryByText('Fornecedor Pai')).toBeNull()
   })
 
   it('#9.4.6: com diferença mas SEM revelar, o painel de tratamento NÃO aparece', () => {
