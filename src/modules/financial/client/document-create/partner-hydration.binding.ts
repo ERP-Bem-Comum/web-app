@@ -41,6 +41,10 @@ function toContract(c: Contract): ContractCategoView {
     planoOrcamentario: c.budgetPlan?.scenarioName ?? '',
     programRef: c.programId ?? null,
     budgetPlanRef: c.budgetPlanId ?? null,
+    // #502/S3: refs da árvore do plano — herdados pela cascata do documento.
+    costCenterRef: c.costCenterRef ?? null,
+    categoryRef: c.categoryRef ?? null,
+    subcategoryRef: c.subcategoryRef ?? null,
   }
 }
 

@@ -66,12 +66,17 @@ export type ContractCategoView = Readonly<{
   ref: string // contractRef (uuid) — enviado no create; backend deriva a categorização (#48)
   number: string // sequentialNumber (ex.: 0001/2026)
   isServiceOrder: boolean // classificação: true = Ordem de Serviço (OS), false = Contrato (CT) — rótulo do chip
-  centroCusto: string
-  categoria: string
+  centroCusto: string // nome exibível (chip)
+  categoria: string // nome exibível (chip)
   programa: string
   planoOrcamentario: string
   programRef: string | null
   budgetPlanRef: string | null
+  // #502/S3: refs da árvore do plano gravados no contrato — HERDADOS pela cascata do documento (pré-preenche
+  // Plano → Centro → Categoria → Subcategoria quando o fornecedor tem contrato ativo vinculado).
+  costCenterRef: string | null
+  categoryRef: string | null
+  subcategoryRef: string | null
 }>
 export type PartnerHydration = Readonly<{
   bank: SupplierBankView | null
