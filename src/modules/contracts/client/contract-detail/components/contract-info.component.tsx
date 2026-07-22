@@ -18,6 +18,7 @@ import {
   fieldRow,
   frCols4,
   frCols2,
+  frCols3,
   frWide,
   frVigentes,
   frContratoBase,
@@ -32,6 +33,10 @@ import {
 
 interface Props {
   readonly contract: Contract
+  // #502: resolvidos pela ÁRVORE do plano no binding (o contrato guarda `budgetPlanId`/`subcategoryRef` como
+  // refs; o backend não devolve o bloco `budgetPlan` nem o nome da subcategoria). `null` = sem plano/sem folha.
+  readonly planLabel?: string | null
+  readonly subcategoria?: string | null
 }
 
 function formatCurrency(money: { cents: number }): string {
@@ -63,7 +68,7 @@ function typeLabel(t: Contract['contractType']): string {
   }
 }
 
-export function ContractInfo({ contract }: Props): ReactNode {
+export function ContractInfo({ contract, planLabel, subcategoria }: Props): ReactNode {
   const partner = contract.supplier ?? contract.financier ?? contract.collaborator ?? contract.act
   const partnerName = partner?.name ?? '—'
   const doc = maskDocument(partner?.document)
@@ -123,7 +128,7 @@ export function ContractInfo({ contract }: Props): ReactNode {
           <h3 className={sectionH3}>Dados do Contrato</h3>
         </div>
 
-        {/* Linha 1: Classificação, Modelo, Tipo, Categoria (Categoria trocou de lugar com Origem) */}
+        {/* Linha 1: Classificação, Modelo, Tipo, Origem (Origem trocou de lugar com Categoria) */}
         <div className={`${fieldRow} ${frCols4}`}>
           <div className={fld}>
             <label className={fldLabel}>Classificação</label>
@@ -146,9 +151,9 @@ export function ContractInfo({ contract }: Props): ReactNode {
             </div>
           </div>
           <div className={fld}>
-            <label className={fldLabel}>Categoria</label>
+            <label className={fldLabel}>Origem</label>
             <div className={`${fldBox} ${fldBoxSelect}`}>
-              <span className={fldValue}>{contract.categorizacao ?? '—'}</span>
+              <span className={fldValue}>{contract.origin ?? 'Manual'}</span>
             </div>
           </div>
         </div>
@@ -201,23 +206,30 @@ export function ContractInfo({ contract }: Props): ReactNode {
           <div className={fld}>
             <label className={fldLabel}>Plano Orçamentário</label>
             <div className={`${fldBox} ${fldBoxSelect}`}>
-              <span className={fldValue}>{contract.budgetPlan?.scenarioName ?? '—'}</span>
+              {/* #502: resolvido pela árvore do plano (`budgetPlanId`); `budgetPlan.scenarioName` = fallback. */}
+              <span className={fldValue}>{planLabel ?? contract.budgetPlan?.scenarioName ?? '—'}</span>
             </div>
           </div>
         </div>
 
-        {/* Origem + Centro de Custo (Origem trocou de lugar com Categoria) */}
-        <div className={`${fieldRow} ${frCols2}`}>
-          <div className={fld}>
-            <label className={fldLabel}>Origem</label>
-            <div className={`${fldBox} ${fldBoxSelect}`}>
-              <span className={fldValue}>{contract.origin ?? 'Manual'}</span>
-            </div>
-          </div>
+        {/* Cascata da categorização em ORDEM: Centro de Custo → Categoria → Subcategoria (folha, #502) */}
+        <div className={`${fieldRow} ${frCols3}`}>
           <div className={fld}>
             <label className={fldLabel}>Centro de Custo</label>
             <div className={`${fldBox} ${fldBoxSelect}`}>
               <span className={fldValue}>{contract.centroDeCusto ?? '—'}</span>
+            </div>
+          </div>
+          <div className={fld}>
+            <label className={fldLabel}>Categoria</label>
+            <div className={`${fldBox} ${fldBoxSelect}`}>
+              <span className={fldValue}>{contract.categorizacao ?? '—'}</span>
+            </div>
+          </div>
+          <div className={fld}>
+            <label className={fldLabel}>Subcategoria</label>
+            <div className={`${fldBox} ${fldBoxSelect}`}>
+              <span className={fldValue}>{subcategoria ?? '—'}</span>
             </div>
           </div>
         </div>
