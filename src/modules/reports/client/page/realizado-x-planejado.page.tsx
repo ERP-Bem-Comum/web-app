@@ -31,8 +31,7 @@ import { useRealizadoReport, type RealizedReportFilters } from '../realizado-x-p
 import {
   useProgramaOptions,
   usePlanoOptions,
-  useEstadoOptions,
-  useMunicipioOptions,
+  useNetworkOptions,
   useAnoOptions,
   type FilterOption,
 } from '../realizado-filters.binding.ts'
@@ -103,12 +102,16 @@ export function RealizadoXPlanejadoPage(): ReactNode {
   const [draft, setDraft] = useState<RealizedReportFilters>({ year: YEAR })
   const [applied, setApplied] = useState<RealizedReportFilters>({ year: YEAR })
 
-  // Opções REAIS dos filtros (cross-módulo via public-api). Município cascateia pela UF escolhida no draft.
+  // Opções REAIS dos filtros (cross-módulo via public-api). Estado/Município vêm da REDE dos planos do PROGRAMA
+  // selecionado (não da geografia de parceiros): resolvemos a sigla do programa e agregamos os `networks`.
   const programaOptions = useProgramaOptions()
   const planoOptions = usePlanoOptions()
-  const estadoOptions = useEstadoOptions()
-  const municipioOptions = useMunicipioOptions(draft.partnerStateId ?? '')
   const anoOptions = useAnoOptions()
+  const programaSigla = programaOptions.find((o) => o.value === draft.programId)?.label ?? ''
+  const network = useNetworkOptions(programaSigla)
+  const estadoOptions = network.estados
+  const municipioOptions =
+    draft.partnerStateId != null ? (network.municipiosByUf[draft.partnerStateId] ?? []) : []
   const allOption = t('reports.realizadoXPlanejado.filters.allOption')
   // Ano é OBRIGATÓRIO (sem "Todos"); sem planos → cai no YEAR default. Números → opções de select.
   const anoFilterOptions: readonly FilterOption[] = (anoOptions.length > 0 ? anoOptions : [YEAR]).map(
@@ -241,7 +244,13 @@ export function RealizadoXPlanejadoPage(): ReactNode {
             value={draft.programId ?? ''}
             options={programaOptions}
             onChange={(v) => {
-              setDraft((d) => ({ ...d, programId: v === '' ? undefined : v }))
+              // Trocar o Programa troca a REDE → zera Estado/Município (as opções deles vêm da rede do programa).
+              setDraft((d) => ({
+                ...d,
+                programId: v === '' ? undefined : v,
+                partnerStateId: undefined,
+                partnerMunicipalityId: undefined,
+              }))
             }}
           />
           <FilterField
