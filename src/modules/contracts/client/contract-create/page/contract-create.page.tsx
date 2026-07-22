@@ -18,7 +18,7 @@ import {
   useContractCreateBinding,
   usePartnerSearchBinding,
   useContractProgramOptionsBinding,
-  useContractReferenceOptionsBinding,
+  useContractTaxonomyOptionsBinding,
   useContractBudgetPlanOptionsBinding,
 } from '../contract-create.binding.ts'
 import { useContractFormController } from '../components/contract-form.controller.ts'
@@ -78,12 +78,17 @@ export function ContractCreatePage(): ReactNode {
   const navigate = useNavigate()
   const { createCommand } = useContractCreateBinding()
   const programOptions = useContractProgramOptionsBinding()
-  const { costCenterOptions, categoryOptions } = useContractReferenceOptionsBinding()
   const budgetPlanOptions = useContractBudgetPlanOptionsBinding()
   const { attachCommand } = useAttachSignedDocumentBinding()
   // Workaround: o backend não aceita contato no create → PATCH logo após criar (se preenchido).
   const { editCommand: contatoEditCommand } = useContractEditBinding()
   const form = useContractFormController()
+  // #502/S3: a cascata da categorização vem da ÁRVORE do plano selecionado (depende do form.state).
+  const { costCenterOptions, categoryOptions, subcategoryOptions } = useContractTaxonomyOptionsBinding(
+    form.state.budgetPlanId ?? '',
+    form.state.costCenterRef ?? '',
+    form.state.categoryRef ?? '',
+  )
 
   /* Busca de parceiros via binding */
   const [partnerQuery, setPartnerQuery] = useState('')
@@ -325,7 +330,12 @@ export function ContractCreatePage(): ReactNode {
         programOptions={programOptions}
         costCenterOptions={costCenterOptions}
         categoryOptions={categoryOptions}
+        subcategoryOptions={subcategoryOptions}
         budgetPlanOptions={budgetPlanOptions}
+        onSelectPlan={form.selectPlan}
+        onSelectCostCenter={form.selectCostCenter}
+        onSelectCategory={form.selectCategory}
+        onSelectSubcategory={form.selectSubcategory}
       />
 
       {/* Modal de finalização */}

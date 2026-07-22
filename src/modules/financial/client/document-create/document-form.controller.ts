@@ -3,7 +3,7 @@
  * Guarda os campos crus (reais/strings); a derivação pura (preview/CSRF/canSubmit) vive em
  * `document-form.view.ts`. Trocar para um tipo sem retenção limpa o bloco de retenções (gating).
  */
-import { useEffect, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 
 import type { DocumentType, PaymentMethod } from '#modules/financial/client/data/model/document.model.ts'
 import {
@@ -66,6 +66,16 @@ type TextKey =
   | 'categoria'
   | 'planoOrcamentario'
 
+// #502/S3: herança da categorização do contrato — pré-preenche a cascata do documento (Programa → Plano →
+// Centro → Categoria → Subcategoria) a partir do contrato ativo vinculado ao fornecedor.
+export type CategorizationPatch = Readonly<{
+  programRef: string
+  planoOrcamentario: string
+  costCenterRef: string
+  categoryRef: string
+  subcategoryRef: string
+}>
+
 type FormAction =
   | Readonly<{ kind: 'setType'; value: DocumentType | '' }>
   | Readonly<{ kind: 'setPaymentMethod'; value: PaymentMethod | '' }>
@@ -82,6 +92,7 @@ type FormAction =
   | Readonly<{ kind: 'setReformaTributaria'; key: keyof ReformaTributariaFieldsReais; value: string }>
   | Readonly<{ kind: 'applyReading'; patch: DocumentReadingPatch }>
   | Readonly<{ kind: 'hydrate'; fields: DocumentFormFields }>
+  | Readonly<{ kind: 'hydrateCategorization'; patch: CategorizationPatch }>
   | Readonly<{ kind: 'reset' }>
 
 const reducer = (state: DocumentFormFields, action: FormAction): DocumentFormFields => {
@@ -164,6 +175,18 @@ const reducer = (state: DocumentFormFields, action: FormAction): DocumentFormFie
       return applyReadingPatch(state, action.patch)
     case 'hydrate':
       return action.fields
+    case 'hydrateCategorization':
+      // Herança do contrato (§XI): sobrepõe SÓ a categorização (Programa/Plano/Centro/Categoria/Subcategoria);
+      // o resto do form fica intacto. A page dispara uma vez por contrato (guard por ref), então edições do
+      // operador depois disso não são clobradas.
+      return {
+        ...state,
+        programRef: action.patch.programRef,
+        planoOrcamentario: action.patch.planoOrcamentario,
+        costCenterRef: action.patch.costCenterRef,
+        categoryRef: action.patch.categoryRef,
+        subcategoryRef: action.patch.subcategoryRef,
+      }
     case 'reset':
       return EMPTY_FIELDS
     default: {
@@ -188,6 +211,9 @@ export type DocumentFormController = Readonly<{
   setText: (key: TextKey, value: string) => void
   setRetention: (key: keyof RetentionFieldsReais, value: string) => void
   setReformaTributaria: (key: keyof ReformaTributariaFieldsReais, value: string) => void
+  // #502/S3: herança da categorização do contrato (sobrepõe só a cascata). Identidade ESTÁVEL (a page a usa
+  // num efeito). Ver `hydrateCategorization` no reducer.
+  hydrateCategorization: (patch: CategorizationPatch) => void
   reset: () => void
   // Modal "Tipo de Documento" (UI-state).
   typeModalOpen: boolean
@@ -230,8 +256,13 @@ export function useDocumentFormController(
       dispatch({ kind: 'applyReading', patch: current })
     }
   }, [initial, reading])
+  // Identidade ESTÁVEL (dispatch é estável) → a page pode depender dela no efeito de herança sem re-disparar.
+  const hydrateCategorization = useCallback((patch: CategorizationPatch) => {
+    dispatch({ kind: 'hydrateCategorization', patch })
+  }, [])
   return {
     fields,
+    hydrateCategorization,
     setType: (value) => {
       dispatch({ kind: 'setType', value })
     },

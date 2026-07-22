@@ -254,6 +254,9 @@ const apiContractToDomain = (c: {
   budgetPlanId?: string | null
   categorizacao?: string | null
   centroDeCusto?: string | null
+  costCenterRef?: string | null
+  categoryRef?: string | null
+  subcategoryRef?: string | null
   program?: { id: string; snapshot: { name: string; sigla: string; programNumber: number } | null } | null
 }): Contract => ({
   id: c.id,
@@ -288,6 +291,10 @@ const apiContractToDomain = (c: {
   budgetPlan: undefined,
   categorizacao: blankToUndefined(c.categorizacao),
   centroDeCusto: blankToUndefined(c.centroDeCusto),
+  // #502/S3: refs da árvore do plano (opacos) — habilitam a herança contrato→documento por ref.
+  costCenterRef: blankToUndefined(c.costCenterRef),
+  categoryRef: blankToUndefined(c.categoryRef),
+  subcategoryRef: blankToUndefined(c.subcategoryRef),
   observations: undefined,
   email: undefined,
   telephone: undefined,
@@ -609,6 +616,10 @@ export const createCoreApiContractsClient = (baseUrl: string): CoreApiContractsC
         budgetPlanId: input.budgetPlanId,
         categorizacao: input.categorizacao,
         centroDeCusto: input.centroDeCusto,
+        // #502/S3: refs da árvore do plano (opacos) — nome exibível vai em categorizacao/centroDeCusto.
+        costCenterRef: input.costCenterRef,
+        categoryRef: input.categoryRef,
+        subcategoryRef: input.subcategoryRef,
         observations: input.observations,
         email: input.email,
         telephone: input.telephone,

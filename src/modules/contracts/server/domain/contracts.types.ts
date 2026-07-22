@@ -135,6 +135,10 @@ export interface Contract {
   budgetPlan?: { id: string; scenarioName: string; year: number; version: number }
   categorizacao?: string
   centroDeCusto?: string
+  // #502/S3: refs da árvore do plano (opacos) — nome exibível em categorizacao/centroDeCusto.
+  costCenterRef?: string
+  categoryRef?: string
+  subcategoryRef?: string
   observations?: string
   email?: string
   telephone?: string
@@ -180,6 +184,10 @@ export interface CreateContractInput {
   budgetPlanId?: string
   categorizacao?: string
   centroDeCusto?: string
+  // #502/S3: refs da árvore do plano (opacos) — nome exibível em categorizacao/centroDeCusto.
+  costCenterRef?: string
+  categoryRef?: string
+  subcategoryRef?: string
   observations?: string
   email?: string
   telephone?: string
