@@ -511,19 +511,25 @@ export const deriveDetailStatus = (
 
 /**
  * #95/#147 — Resolve as refs de categorização do documento p/ NOMES (Plano Orçamentário do drawer). PURA.
- * `categoryRef` é a FOLHA da taxonomia: com `parentId` → Categoria = nome do PAI e Subcategoria = nome da
- * folha; sem `parentId` → Categoria = nome da folha e Subcategoria = "—" (espelha a cascata do Lançar
- * Documento). Cada linha degrada para "—" quando a ref é `null` OU não resolve (front-first tolerante).
- * `budgetPlan` fica "—" enquanto não há fonte de planos no front (budget-plans pende de core-api#113).
+ * A FOLHA é `subcategoryRef ?? categoryRef` (#502 S1: docs novos carimbam a subcategoria em campo próprio;
+ * docs antigos dobravam a folha em `categoryRef`) — a MESMA decodificação por `parentId` cobre os dois:
+ * folha com `parentId` → Categoria = nome do PAI e Subcategoria = nome da folha; folha sem `parentId` →
+ * Categoria = nome da folha e Subcategoria = "—" (espelha a cascata do Lançar Documento). Cada linha degrada
+ * para "—" quando a ref é `null` OU não resolve (front-first tolerante). `budgetPlan` fica "—" enquanto não
+ * há fonte de planos no front (budget-plans pende de core-api#113).
  */
 export const resolveCategorization = (
-  d: Pick<DocumentDetail, 'costCenterRef' | 'categoryRef' | 'programRef' | 'budgetPlanRef'>,
+  d: Pick<
+    DocumentDetail,
+    'costCenterRef' | 'categoryRef' | 'subcategoryRef' | 'programRef' | 'budgetPlanRef'
+  >,
   r?: CategorizationResolvers,
 ): CategorizationView => {
   const costCenter = d.costCenterRef !== null ? (r?.costCenter(d.costCenterRef) ?? null) : null
   const program = d.programRef !== null ? (r?.program(d.programRef) ?? null) : null
   const budgetPlan = d.budgetPlanRef !== null ? (r?.budgetPlan(d.budgetPlanRef) ?? null) : null
-  const leaf = d.categoryRef !== null ? (r?.categoryNode(d.categoryRef) ?? null) : null
+  const leafRef = d.subcategoryRef ?? d.categoryRef
+  const leaf = leafRef !== null ? (r?.categoryNode(leafRef) ?? null) : null
   let category: string | null = null
   let subcategory: string | null = null
   if (leaf !== null) {

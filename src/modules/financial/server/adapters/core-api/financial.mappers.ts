@@ -154,6 +154,7 @@ export const detailToModel = (raw: unknown): Result<DocumentDetail, FinancialErr
     // #95/#147 — refs de categorização (resolvidas p/ nome no client; drift → null).
     budgetPlanRef: d.budgetPlanRef,
     categoryRef: d.categoryRef,
+    subcategoryRef: d.subcategoryRef, // #502 (S1): folha da árvore do plano (drift → null)
     costCenterRef: d.costCenterRef,
     programRef: d.programRef,
     payables: d.payables.map(payableToModel),

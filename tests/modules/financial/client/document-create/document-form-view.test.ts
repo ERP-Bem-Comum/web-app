@@ -265,24 +265,35 @@ describe('buildCreateInput — Categorização (categoryRef/costCenterRef · 020
     assert.equal(empty?.categoryRef, undefined)
     assert.equal(empty?.costCenterRef, undefined)
   })
-  // FOLHA da cascata (#341): o backend recebe UM campo (`categoryRef`) — a categoria mais específica.
-  it('subcategoria escolhida → é ELA que vai em categoryRef (a folha vence a categoria)', () => {
+  // #502 (S1): categoria e subcategoria vão em campos SEPARADOS — não se dobra mais a folha em categoryRef.
+  it('subcategoria escolhida → categoryRef = a categoria, subcategoryRef = a subcategoria (campos próprios)', () => {
     const cat = '7c9e6679-7425-40de-944b-e07fc1f90ae7'
     const sub = '7c9e6679-7425-40de-944b-e07fc1f90ff1'
-    assert.equal(buildCreateInput({ ...base, categoryRef: cat, subcategoryRef: sub })?.categoryRef, sub)
+    const out = buildCreateInput({ ...base, categoryRef: cat, subcategoryRef: sub })
+    assert.equal(out?.categoryRef, cat)
+    assert.equal(out?.subcategoryRef, sub)
   })
-  it('sem subcategoria → vai a categoria; sem nenhuma das duas → omite', () => {
+  it('sem subcategoria → categoryRef só; sem nenhuma das duas → ambos omitidos', () => {
     const cat = '7c9e6679-7425-40de-944b-e07fc1f90ae7'
-    assert.equal(buildCreateInput({ ...base, categoryRef: cat, subcategoryRef: '' })?.categoryRef, cat)
-    assert.equal(buildCreateInput({ ...base, categoryRef: '', subcategoryRef: '' })?.categoryRef, undefined)
+    const onlyCat = buildCreateInput({ ...base, categoryRef: cat, subcategoryRef: '' })
+    assert.equal(onlyCat?.categoryRef, cat)
+    assert.equal(onlyCat?.subcategoryRef, undefined)
+    const none = buildCreateInput({ ...base, categoryRef: '', subcategoryRef: '' })
+    assert.equal(none?.categoryRef, undefined)
+    assert.equal(none?.subcategoryRef, undefined)
   })
   // O RASCUNHO usa a mesma regra (é o outro build que carrega categorização). O AJUSTE não entra aqui:
   // `AdjustDocumentInput` não tem `categoryRef` — o core-api não aceita recategorizar no ajuste.
-  it('a folha vale também no RASCUNHO (mesma regra do create)', () => {
+  it('campos separados valem também no RASCUNHO (mesma regra do create)', () => {
     const cat = '7c9e6679-7425-40de-944b-e07fc1f90ae7'
     const sub = '7c9e6679-7425-40de-944b-e07fc1f90ff1'
-    assert.equal(buildDraftInput({ ...base, categoryRef: cat, subcategoryRef: sub })?.categoryRef, sub)
-    assert.equal(buildDraftInput({ ...base, categoryRef: cat, subcategoryRef: '' })?.categoryRef, cat)
+    const draft = buildDraftInput({ ...base, categoryRef: cat, subcategoryRef: sub })
+    assert.equal(draft?.categoryRef, cat)
+    assert.equal(draft?.subcategoryRef, sub)
+    assert.equal(
+      buildDraftInput({ ...base, categoryRef: cat, subcategoryRef: '' })?.subcategoryRef,
+      undefined,
+    )
   })
   it('envia approverRef quando escolhido; omite quando vazio (#148)', () => {
     const ap = 'a1b2c3d4-0000-4000-8000-000000000148'
@@ -540,6 +551,7 @@ const detail: DocumentDetail = {
   description: 'Consultoria',
   budgetPlanRef: null,
   categoryRef: null,
+  subcategoryRef: null,
   costCenterRef: null,
   programRef: null,
   version: 3,

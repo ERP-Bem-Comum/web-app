@@ -53,6 +53,7 @@ export type CreateDocumentInput = Readonly<{
   contractRef?: string
   budgetPlanRef?: string
   categoryRef?: string
+  subcategoryRef?: string // #502 (S1): folha da árvore do plano — carimbada em campo próprio (não mais dobrada em categoryRef)
   costCenterRef?: string // centro de custo (#147) — backend aceita no documento (corrige drift do schema)
   programRef?: string
   contaDebitoRef?: string // #197: conta-débito (conta-cedente da conciliação) — a baixa vai p/ ela
@@ -165,7 +166,8 @@ export type DocumentDetail = Readonly<{
   description: string | null
   // #95/#147 — categorização (refs do GET /:id; resolvidas p/ nome no drawer). null = não informado.
   budgetPlanRef: string | null
-  categoryRef: string | null // FOLHA da cascata (subcategoria); com parentId → pai = categoria
+  categoryRef: string | null // categoria escolhida; #502(S1): docs novos = a CATEGORIA (não mais a folha)
+  subcategoryRef: string | null // #502 (S1): folha da árvore do plano; null em docs antigos (folha vinha em categoryRef)
   costCenterRef: string | null
   programRef: string | null
   payables: readonly Payable[]
