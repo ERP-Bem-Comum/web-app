@@ -104,7 +104,10 @@ export const UndoReconciliationInputSchema = z.object({
 const ManualEntryTemplateSchema = z.object({
   type: z.enum(MANUAL_ENTRY_TYPES),
   supplierRef: z.uuid().optional(),
+  // #502/S2: plano + subcategoria (folha) no título manual — aditivos, coerentes com o documento (S1).
+  budgetPlanRef: z.uuid().optional(),
   categoryRef: z.uuid().optional(),
+  subcategoryRef: z.uuid().optional(),
   costCenterRef: z.uuid().optional(),
   programRef: z.uuid().optional(),
   description: z.string().trim().max(500).optional(),

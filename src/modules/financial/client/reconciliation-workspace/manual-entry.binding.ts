@@ -4,9 +4,10 @@
  * Aplicação/Resgate exigem conta de destino + confirmação consciente (gating pela regra PURA
  * `requiresDestination`). Submete via `createManualEntry` e invalida as queries. Erros → tag i18n.
  *
- * Campos REAIS ligados (o manual-entry aceita): Fornecedor (`supplierRef`, via `listAllPartnersFn`) e
- * Programa (`programRef`, via `listProgramsFn`) — cross-módulo só via public-api (§I). Categoria/Centro de
- * custo seguem chrome (sem fonte: core-api#200/#147); Destino segue chrome (transferência: core-api#143).
+ * Campos REAIS ligados (o manual-entry aceita): Fornecedor (`supplierRef`), Programa (`programRef`), Plano
+ * Orçamentário + a cascata Centro → Categoria → Subcategoria. #502/S2: o título manual carrega a taxonomia
+ * PLANEJÁVEL — com um Plano selecionado, os 3 níveis vêm da ÁRVORE daquele plano (ADR-0051, espelho da
+ * Fatia 1 do Lançar Documento); sem plano, do catálogo operacional. Cross-módulo só via public-api (§I).
  */
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -15,6 +16,16 @@ import { reconciliationRepository } from '#modules/financial/client/data/reposit
 import { reconciliationErrorTag } from '#modules/financial/client/data/helpers/reconciliation-error-tag.ts'
 import { listAllPartnersFn } from '#modules/partners/public-api/index.ts'
 import { listProgramsFn } from '#modules/programs/public-api/index.ts'
+import {
+  listBudgetPlansFn,
+  getBudgetPlanDetailFn,
+  type PlanDetail,
+} from '#modules/budget-plans/public-api/index.ts'
+import {
+  planCostCenterOptions,
+  planCategoryOptions,
+  planSubcategoryOptions,
+} from '#modules/financial/client/data/helpers/plan-taxonomy-cascade.ts'
 import { referencesQueryOptions } from './reconciliation-workspace.query.ts'
 import {
   relabelReconCategory,
@@ -27,7 +38,7 @@ import {
 } from './reconciliation-workspace.view-model.ts'
 import type { ManualEntryTemplate } from '#modules/financial/client/data/model/reconciliation.model.ts'
 
-// Opção de dropdown real (Fornecedor/Programa) — `value` = ref (UUID) enviado ao manual-entry.
+// Opção de dropdown real (Fornecedor/Programa/Plano) — `value` = ref (UUID) enviado ao manual-entry.
 export type ManualEntryOption = Readonly<{ value: string; label: string }>
 
 export type ManualEntryBinding = Readonly<{
@@ -46,12 +57,14 @@ export type ManualEntryBinding = Readonly<{
   submitting: boolean
   errorTag: string | null
   supplierRef: string
+  budgetPlanRef: string
   programRef: string
   categoryRef: string
   subcategoryRef: string
   costCenterRef: string
   partnerOptions: readonly ManualEntryOption[]
   programOptions: readonly ManualEntryOption[]
+  planoOptions: readonly ManualEntryOption[]
   categoryOptions: readonly ManualEntryOption[]
   subcategoryOptions: readonly ManualEntryOption[]
   costCenterOptions: readonly ManualEntryOption[]
@@ -61,6 +74,7 @@ export type ManualEntryBinding = Readonly<{
   setDescription: (v: string) => void
   setDestinationAccount: (v: string) => void
   setSupplierRef: (v: string) => void
+  setBudgetPlanRef: (v: string) => void
   setProgramRef: (v: string) => void
   setCategoryRef: (v: string) => void
   setSubcategoryRef: (v: string) => void
@@ -104,6 +118,41 @@ const programOptionsQuery = {
   staleTime: 60_000,
 }
 
+// #502/S2: planos APROVADOS p/ o dropdown (mesma regra do Lançar Documento — só aprovados + cenário no
+// rótulo, p/ não pegar um rascunho homônimo por engano). Cross-módulo via public-api. Erro/sem permissão → [].
+const planoOptionsQuery = {
+  queryKey: ['budget-plans', 'options', 'recon-manual'] as const,
+  queryFn: async (): Promise<readonly ManualEntryOption[]> => {
+    const r = await listBudgetPlansFn({ data: { page: 1, limit: 100 } })
+    if (!r.ok) return []
+    return r.data.items
+      .filter((p) => p.status === 'APROVADO')
+      .map((p) => ({
+        value: p.id,
+        label:
+          `${String(p.year)} ${p.programAbbreviation ?? p.programName} ${p.version.toFixed(1)}` +
+          (p.scenarioName !== null ? ` · ${p.scenarioName}` : ''),
+      }))
+  },
+  staleTime: 60_000,
+}
+
+// O `budgetPlanRef` só vira fonte da cascata quando é um UUID de verdade (dropdown escolhido); vazio → cai no
+// operacional (nunca esvazia). Mesma blindagem do Lançar Documento (Fatia 1).
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const isPlanId = (v: string): boolean => UUID_RE.test(v)
+
+/** Árvore do plano — só habilita com UUID válido (sem plano → não busca, cai no operacional). */
+const planDetailQuery = (planoRef: string) => ({
+  queryKey: ['budget-plans', 'detail', 'categorization', planoRef] as const,
+  queryFn: async (): Promise<PlanDetail | null> => {
+    const r = await getBudgetPlanDetailFn({ data: { id: planoRef } })
+    return r.ok ? r.data : null
+  },
+  enabled: isPlanId(planoRef),
+  staleTime: 300_000,
+})
+
 export function useManualEntry(
   accountRef: string,
   selectedTx: StatementTransaction | null,
@@ -120,6 +169,7 @@ export function useManualEntry(
   const [description, setDescription] = useState('')
   const [destinationAccount, setDestinationAccount] = useState('')
   const [supplierRef, setSupplierRef] = useState('')
+  const [budgetPlanRef, setBudgetPlanRef] = useState('')
   const [programRef, setProgramRef] = useState('')
   const [categoryRef, setCategoryRef] = useState('')
   const [subcategoryRef, setSubcategoryRef] = useState('')
@@ -128,22 +178,36 @@ export function useManualEntry(
 
   const partnerOptions = useQuery(partnerOptionsQuery).data ?? []
   const programOptions = useQuery(programOptionsQuery).data ?? []
+  const planoOptions = useQuery(planoOptionsQuery).data ?? []
   // Referências da categorização (020 · #200): a query devolve um Result → desembrulha p/ as opções.
   const referencesResult = useQuery(referencesQueryOptions()).data
   const references = referencesResult?.ok === true ? referencesResult.value : null
-  // Cascata Centro → Categoria → Subcategoria (EPIC #150). Categoria filtra pelo centro (placeholder
-  // #341 até o backend ligar categoria→centro); Subcategoria filtra pela categoria via `parentId` (real).
-  const costCenterOptions: readonly ManualEntryOption[] =
-    references?.costCenters.map((c) => ({ value: c.id, label: `${c.code} — ${c.name}` })) ?? []
-  const categoryOptions: readonly ManualEntryOption[] =
-    references !== null
+  // Árvore do plano selecionado (Fatia 1): com plano válido, a cascata vem DELA; senão, do operacional.
+  const usePlan = isPlanId(budgetPlanRef)
+  const planDetail = useQuery(planDetailQuery(budgetPlanRef)).data ?? null
+  // Cascata Centro → Categoria → Subcategoria. Com plano (ADR-0051): árvore do plano (só nós ativos, value =
+  // ref). Sem plano: catálogo operacional — Categoria filtra pelo centro (#341), Subcategoria pela categoria
+  // via `parentId`, com o relabel de conciliação. Enquanto a árvore do plano carrega → [] (não vaza o operacional).
+  const costCenterOptions: readonly ManualEntryOption[] = usePlan
+    ? planDetail === null
+      ? []
+      : planCostCenterOptions(planDetail)
+    : (references?.costCenters.map((c) => ({ value: c.id, label: `${c.code} — ${c.name}` })) ?? [])
+  const categoryOptions: readonly ManualEntryOption[] = usePlan
+    ? planDetail === null
+      ? []
+      : planCategoryOptions(planDetail, costCenterRef)
+    : references !== null
       ? categoriesForCostCenter(references, costCenterRef).map((c) => ({
           value: c.id,
           label: relabelReconCategory(c.name),
         }))
       : []
-  const subcategoryOptions: readonly ManualEntryOption[] =
-    references !== null
+  const subcategoryOptions: readonly ManualEntryOption[] = usePlan
+    ? planDetail === null
+      ? []
+      : planSubcategoryOptions(planDetail, categoryRef)
+    : references !== null
       ? subcategoriesOf(references, categoryRef).map((c) => ({
           value: c.id,
           label: relabelReconCategory(c.name),
@@ -187,8 +251,10 @@ export function useManualEntry(
       destinationAccount?: string
       productLabel?: string
       supplierRef?: string
+      budgetPlanRef?: string
       programRef?: string
       categoryRef?: string
+      subcategoryRef?: string
       costCenterRef?: string
     }) => reconciliationRepository.createManualEntry(v),
     onSuccess: (res, v) => {
@@ -198,6 +264,7 @@ export function useManualEntry(
         setDescription('')
         setDestinationAccount('')
         setSupplierRef('')
+        setBudgetPlanRef('')
         setProgramRef('')
         setCategoryRef('')
         setSubcategoryRef('')
@@ -215,7 +282,9 @@ export function useManualEntry(
         const template: ManualEntryTemplate = {
           type: v.type,
           ...(v.supplierRef !== undefined ? { supplierRef: v.supplierRef } : {}),
+          ...(v.budgetPlanRef !== undefined ? { budgetPlanRef: v.budgetPlanRef } : {}),
           ...(v.categoryRef !== undefined ? { categoryRef: v.categoryRef } : {}),
+          ...(v.subcategoryRef !== undefined ? { subcategoryRef: v.subcategoryRef } : {}),
           ...(v.costCenterRef !== undefined ? { costCenterRef: v.costCenterRef } : {}),
           ...(v.programRef !== undefined ? { programRef: v.programRef } : {}),
           ...(v.description !== undefined ? { description: v.description } : {}),
@@ -239,12 +308,14 @@ export function useManualEntry(
     submitting: mut.isPending,
     errorTag,
     supplierRef,
+    budgetPlanRef,
     programRef,
     categoryRef,
     subcategoryRef,
     costCenterRef,
     partnerOptions,
     programOptions,
+    planoOptions,
     categoryOptions,
     subcategoryOptions,
     costCenterOptions,
@@ -260,6 +331,14 @@ export function useManualEntry(
     },
     setSupplierRef: (v) => {
       setSupplierRef(v)
+    },
+    setBudgetPlanRef: (v) => {
+      setBudgetPlanRef(v)
+      // Trocar o plano troca a ÁRVORE da cascata (ADR-0051) → zera centro/categoria/subcategoria, senão a
+      // folha gravada seria órfã (§IV). Mesma regra do Lançar Documento.
+      setCostCenterRef('')
+      setCategoryRef('')
+      setSubcategoryRef('')
     },
     setProgramRef: (v) => {
       setProgramRef(v)
@@ -281,6 +360,7 @@ export function useManualEntry(
       setDescription('')
       setDestinationAccount('')
       setSupplierRef('')
+      setBudgetPlanRef('')
       setProgramRef('')
       setCategoryRef('')
       setSubcategoryRef('')
@@ -293,11 +373,12 @@ export function useManualEntry(
       // nome da conta de destino como `productLabel` (satisfaz a regra) + o `destinationAccount` real.
       const isProductRealloc = type === 'Investment' || type === 'Redemption'
       const destLabel = accountOptions.find((o) => o.value === destinationAccount.trim())?.label
-      // Envia a FOLHA da cascata como categoryRef: subcategoria (se escolhida) senão a categoria. Ambas são
-      // categorias válidas p/ o backend (subcategoria = categoria com parentId). TODO #341: enviar refs separadas.
-      // Categorização não se aplica aos 3 tipos entre contas próprias → não envia categoria/centro.
-      const leafCategory = showCategorization ? (subcategoryRef !== '' ? subcategoryRef : categoryRef) : ''
-      const costCenter = showCategorization ? costCenterRef : ''
+      // #502/S2: categoria e subcategoria SEPARADAS (não dobra mais a folha em categoryRef) — coerente com o
+      // documento (S1). Categorização não se aplica aos 3 tipos entre contas próprias → não envia nada.
+      const plan = showCategorization && isPlanId(budgetPlanRef) ? budgetPlanRef : undefined
+      const cat = showCategorization && categoryRef !== '' ? categoryRef : undefined
+      const sub = showCategorization && subcategoryRef !== '' ? subcategoryRef : undefined
+      const costCenter = showCategorization && costCenterRef !== '' ? costCenterRef : undefined
       mut.mutate({
         transactionId: selectedTx.id,
         type,
@@ -306,9 +387,11 @@ export function useManualEntry(
           needsDestination && destinationAccount.trim() !== '' ? destinationAccount.trim() : undefined,
         productLabel: isProductRealloc && destLabel !== undefined ? destLabel.slice(0, 120) : undefined,
         supplierRef: supplierRef === '' ? undefined : supplierRef,
+        budgetPlanRef: plan,
         programRef: programRef === '' ? undefined : programRef,
-        categoryRef: leafCategory === '' ? undefined : leafCategory,
-        costCenterRef: costCenter === '' ? undefined : costCenter,
+        categoryRef: cat,
+        subcategoryRef: sub,
+        costCenterRef: costCenter,
       })
     },
   }
