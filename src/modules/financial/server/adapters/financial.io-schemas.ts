@@ -50,10 +50,12 @@ const RegisteredTaxItemSchema = z.object({
 
 // Lançar Documento (POST /documents).
 export const CreateDocumentInputSchema = z.object({
-  type: z.enum(DOCUMENT_TYPES),
-  documentNumber: z.string().trim().min(1).max(60),
+  // #534: RASCUNHO (asDraft) aceita estes 5 opcionais — o core-api reexige só p/ asDraft:false (superRefine).
+  // O gating do lançamento Open é na UI (`canSubmit`); a borda espelha o contrato do backend.
+  type: z.enum(DOCUMENT_TYPES).optional(),
+  documentNumber: z.string().trim().min(1).max(60).optional(),
   series: z.string().trim().max(20).optional(),
-  supplierRef: z.uuid(),
+  supplierRef: z.uuid().optional(),
   payeeKind: z.enum(['supplier', 'financier', 'act', 'collaborator']).optional(),
   approverRef: z.uuid().optional(),
   contractRef: z.uuid().optional(),
@@ -70,8 +72,8 @@ export const CreateDocumentInputSchema = z.object({
     .trim()
     .regex(/^\d{4}-(0[1-9]|1[0-2])$/)
     .optional(), // #197: competência YYYY-MM (VO no domínio do backend)
-  paymentMethod: z.enum(PAYMENT_METHODS),
-  grossValueCents: CentsSchema,
+  paymentMethod: z.enum(PAYMENT_METHODS).optional(),
+  grossValueCents: CentsSchema.optional(),
   sourceDiscountsCents: CentsSchema.optional(),
   discountsCents: CentsSchema.optional(),
   penaltyCents: CentsSchema.optional(),
@@ -140,6 +142,14 @@ export const ListDocumentsInputSchema = z.object({
 })
 
 // #201: listagem por título (sem emissão; o endpoint filtra por status/tipo/fornecedor/vencimento).
+// #536: input da contagem agregada (chips) — mesmos filtros da lista, sem status/paginação.
+export const PayableCountsInputSchema = z.object({
+  supplierRef: z.uuid().optional(),
+  dueFrom: DateSchema.optional(),
+  dueTo: DateSchema.optional(),
+  type: z.string().trim().optional(), // documentType — o core-api valida o enum
+})
+
 export const ListPayableTitlesInputSchema = z.object({
   status: z.enum(DOCUMENT_STATUSES).optional(),
   type: z.string().trim().optional(),

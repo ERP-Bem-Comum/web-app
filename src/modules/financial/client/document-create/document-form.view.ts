@@ -523,32 +523,29 @@ export const buildCreateInput = (fields: DocumentFormFields): CreateDocumentInpu
 }
 
 /**
- * Pode salvar RASCUNHO? Mínimo que o core-api exige p/ asDraft:true (sem dueDate nem checagem de líquido):
- * tipo, número, fornecedor, forma e bruto > 0.
+ * Pode salvar RASCUNHO? SEMPRE (#534): o core-api aceita rascunho parcial (todos os campos opcionais em
+ * asDraft; superRefine reexige só p/ asDraft:false). Rascunho é "salvar e concluir depois" — o botão nunca trava.
  */
-export const canSaveDraft = (fields: DocumentFormFields): boolean =>
-  fields.type !== '' &&
-  fields.documentNumber.trim() !== '' &&
-  fields.supplierRef.trim() !== '' &&
-  fields.paymentMethod !== '' &&
-  grossCents(fields) > 0
+export const canSaveDraft = (_fields: DocumentFormFields): boolean => true
 
-/** Monta o input de RASCUNHO (asDraft:true) — dueDate é opcional; ou `null` se nem o mínimo está pronto. */
-export const buildDraftInput = (fields: DocumentFormFields): CreateDocumentInput | null => {
-  if (!canSaveDraft(fields) || fields.type === '' || fields.paymentMethod === '') return null
+/** Monta o input de RASCUNHO (asDraft:true) — parcial: envia `undefined` para os campos ainda vazios. */
+export const buildDraftInput = (fields: DocumentFormFields): CreateDocumentInput => {
   const gross = grossCents(fields)
+  // Retenções só fazem sentido com bruto > 0 (o percentual deriva do bruto) — sem bruto, sem retenção.
   const t = retentionTotals(fields)
   const retentions: RetentionInput[] = []
-  if (t.iss > 0) retentions.push(retentionInput('ISS', t.iss, gross))
-  if (t.irrf > 0) retentions.push(retentionInput('IRRF', t.irrf, gross))
-  if (t.inss > 0) retentions.push(retentionInput('INSS', t.inss, gross))
-  if (t.csrf > 0) retentions.push(retentionInput('CSRF', t.csrf, gross))
+  if (gross > 0) {
+    if (t.iss > 0) retentions.push(retentionInput('ISS', t.iss, gross))
+    if (t.irrf > 0) retentions.push(retentionInput('IRRF', t.irrf, gross))
+    if (t.inss > 0) retentions.push(retentionInput('INSS', t.inss, gross))
+    if (t.csrf > 0) retentions.push(retentionInput('CSRF', t.csrf, gross))
+  }
   return {
-    type: fields.type,
-    documentNumber: fields.documentNumber.trim(),
+    type: fields.type === '' ? undefined : fields.type,
+    documentNumber: trimToUndefined(fields.documentNumber),
     series: trimToUndefined(fields.series),
-    supplierRef: fields.supplierRef,
-    paymentMethod: fields.paymentMethod,
+    supplierRef: trimToUndefined(fields.supplierRef),
+    paymentMethod: fields.paymentMethod === '' ? undefined : fields.paymentMethod,
     // Rascunho não exige a chave, mas se já houver 44 dígitos, persiste junto (#115).
     accessKey:
       accessKeyDigits(fields.accessKey).length === ACCESS_KEY_LEN
@@ -558,7 +555,7 @@ export const buildDraftInput = (fields: DocumentFormFields): CreateDocumentInput
     paymentDetail: trimToUndefined(fields.paymentComplement),
     // #197: competência (MM/AAAA → YYYY-MM); undefined se incompleta/inválida.
     competencia: competenciaToIso(fields.competencia) ?? undefined,
-    grossValueCents: String(gross),
+    grossValueCents: gross > 0 ? String(gross) : undefined,
     discountsCents: discountsCents(fields) > 0 ? String(discountsCents(fields)) : undefined,
     interestCents: jurosMultaCents(fields) > 0 ? String(jurosMultaCents(fields)) : undefined,
     programRef: trimToUndefined(fields.programRef),
