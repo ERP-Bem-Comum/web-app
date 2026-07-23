@@ -1,6 +1,7 @@
 /**
- * Binding de EXCLUIR (hard-delete) em massa — ADAPTER React. Cancela cada documento selecionado em
- * **Aberto** (o core-api só exclui Aberto; Rascunho dá 409 — core-api#166), levando só o `id`. Erros são
+ * Binding de EXCLUIR em massa — ADAPTER React. Cancela cada documento selecionado: **Aberto** (hard-delete
+ * dos títulos-filho) ou **Rascunho** (descarte — sem filhos). O core-api trata os dois no mesmo DELETE
+ * /documents/:id (cancelDocument → cancelDraft, #166), levando `id`+`version`. Erros são
  * VALORES (sem throw): roda `Promise.all`, conta falhas e, no fim, invalida a lista + o detalhe. Se tudo
  * passou, chama `onCompleted` (a page limpa a seleção e fecha o modal). ⚠️ Hard-delete: apaga pai + filhos.
  */

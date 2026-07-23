@@ -47,7 +47,9 @@ import {
   chip,
   chipActive,
   chipDisabled,
+  chipCount,
   chipCountOnActive,
+  chipDot,
   fbarRight,
   gridWrap,
   errorBanner,
@@ -80,6 +82,7 @@ export function ContasAPagarPage(): ReactNode {
     titleState,
     pageSize,
     selectedStatus,
+    statusCounts,
     onStatusFilter,
     activeDims,
     filters,
@@ -227,6 +230,8 @@ export function ContasAPagarPage(): ReactNode {
             const active = c.status === selectedStatus
             // Estados que o backend ainda não produz ficam desabilitados (chrome honesto).
             const cls = !c.filterable ? chipDisabled : active ? chipActive : chip
+            // Contagem por status (paridade Conciliação). null = carregando/erro → oculta o badge.
+            const count = statusCounts[c.key]
             return (
               <button
                 key={c.key}
@@ -238,10 +243,11 @@ export function ContasAPagarPage(): ReactNode {
                   if (c.filterable) onStatusFilter(c.status)
                 }}
               >
+                {/* Bolinha com a cor do status (Todos = sem bolinha). */}
+                {c.status !== null ? <span className={chipDot[c.status]} aria-hidden="true" /> : null}
                 {t(c.labelTag)}
-                {/* Contador real só no chip ATIVO (= total da consulta filtrada; lista paginada no servidor). */}
-                {active && page !== null ? (
-                  <span className={chipCountOnActive}>{String(page.total)}</span>
+                {count != null ? (
+                  <span className={active ? chipCountOnActive : chipCount}>{String(count)}</span>
                 ) : null}
               </button>
             )

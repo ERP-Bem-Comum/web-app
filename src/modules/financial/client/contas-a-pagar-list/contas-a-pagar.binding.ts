@@ -4,7 +4,9 @@
  * e entrega o `ListState` derivado pela view-model PURA. A page é burra (só consome este hook).
  */
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueries } from '@tanstack/react-query'
+
+import { financialRepository } from '#modules/financial/client/data/repository/financial.repository.instance.ts'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
@@ -15,7 +17,10 @@ import { contractsMapQueryOptions } from './contracts-map.binding.ts'
 import {
   deriveListState,
   deriveTitleListState,
+  mergeDraftsIntoGrid,
   isRetentionTipo,
+  STATUS_CHIPS,
+  type DraftMergeMode,
   type ListState,
   type TipoFilter,
   type ResolveSupplier,
@@ -49,6 +54,8 @@ export type ContasAPagarBinding = Readonly<{
   // Filtro de status (chips): null = "Todos". Trocar o filtro reseta a página.
   selectedStatus: DocumentStatus | null
   onStatusFilter: (status: DocumentStatus | null) => void
+  // Contagem por chip (key → total; null = carregando/erro). Alimenta o badge de contagem de cada chip.
+  statusCounts: Readonly<Record<string, number | null>>
   // Filtros avançados ("Adicionar filtro"): dimensões ativas + valores (server-side).
   activeDims: ReadonlySet<FilterDimId>
   filters: AdvancedFilters
@@ -114,6 +121,58 @@ export function useContasAPagar(): ContasAPagarBinding {
     ),
   )
 
+  // #201-fix: rascunho (Draft) não gera títulos → invisível no grid title-centric. Buscamos os documentos
+  // Draft à parte e trocamos a fonte SÓ no chip "Rascunho" (fora do Todos: são muitos/parciais e
+  // soterrariam os títulos reais). Paginação normal do /documents?status=Draft.
+  const draftMode: DraftMergeMode =
+    viewMode === 'title' && selectedStatus === 'Rascunho' ? 'rascunho' : 'none'
+  const drafts = useQuery(
+    contasAPagarQueryOptions(
+      { page, pageSize, status: 'Rascunho', supplierRef: filters.fornecedor },
+      draftMode === 'rascunho',
+    ),
+  )
+
+  // Contagem por status p/ TODAS as chips (paridade com a Conciliação). Sem endpoint agregado no core-api
+  // → 1 query leve (pageSize 1, só o `total`) por status filtrável, com os MESMOS filtros da lista. Rascunho
+  // conta pelo /documents?status=Draft; os demais pelo /payable-titles (o Todos = total de títulos).
+  const countFilters = {
+    supplierRef: filters.fornecedor,
+    dueFrom: filters.vencimento?.from,
+    dueTo: filters.vencimento?.to,
+    type: isRetentionTipo(filters.tipo) ? undefined : filters.tipo,
+  } as const
+  const countChips = STATUS_CHIPS.filter((c) => c.filterable)
+  const countResults = useQueries({
+    queries: countChips.map((c) => {
+      const isDraft = c.status === 'Rascunho'
+      // Aninha a key sob o prefixo QUE AS MUTATIONS JÁ INVALIDAM (rascunho → documents/list; títulos →
+      // payable-titles). Assim excluir/criar/baixar atualiza o contador do chip JUNTO com o grid (senão o
+      // chip fica com o total velho em cache enquanto o grid já mostra o novo).
+      return {
+        queryKey: isDraft
+          ? (['financial', 'documents', 'list', 'chip-count', countFilters] as const)
+          : (['financial', 'payable-titles', 'chip-count', c.key, countFilters] as const),
+        queryFn: () =>
+          isDraft
+            ? financialRepository.list({ page: 1, pageSize: 1, status: 'Rascunho', ...countFilters })
+            : financialRepository.listPayableTitles({
+                page: 1,
+                pageSize: 1,
+                status: c.status ?? undefined,
+                ...countFilters,
+              }),
+        staleTime: 30_000,
+        enabled: viewMode === 'title',
+      }
+    }),
+  })
+  const statusCounts: Record<string, number | null> = {}
+  countChips.forEach((c, i) => {
+    const r = countResults[i]?.data
+    statusCounts[c.key] = r?.ok ? r.value.total : null
+  })
+
   const resolveSupplier: ResolveSupplier = (ref) =>
     ref === null ? '—' : (partners.data?.get(ref)?.name ?? ref)
   const resolveKind: ResolveSupplierKind = (ref) =>
@@ -131,7 +190,7 @@ export function useContasAPagar(): ContasAPagarBinding {
     resolveContract,
   })
 
-  const titleState = deriveTitleListState({
+  const titleStateRaw = deriveTitleListState({
     isLoading: viewMode === 'title' && titles.isLoading,
     data: titles.data,
     resolveSupplier,
@@ -140,6 +199,17 @@ export function useContasAPagar(): ContasAPagarBinding {
     resolveDoc,
     resolveContract,
   })
+
+  // Rascunhos (documentos Draft) → linhas do grid, mescladas conforme o chip (Rascunho | Todos).
+  const draftState = deriveListState({
+    isLoading: draftMode !== 'none' && drafts.isLoading,
+    data: drafts.data,
+    resolveSupplier,
+    resolveKind,
+    resolveDoc,
+    resolveContract,
+  })
+  const titleState = mergeDraftsIntoGrid(draftState, titleStateRaw, draftMode)
 
   // Opções do filtro "Fornecedor" — todos os parceiros já carregados (id → nome), ordenados por nome.
   const supplierOptions: readonly SupplierOption[] = Array.from(partners.data?.entries() ?? [])
@@ -176,6 +246,7 @@ export function useContasAPagar(): ContasAPagarBinding {
     },
     pageSize,
     selectedStatus,
+    statusCounts,
     onStatusFilter: (status) => {
       setSelectedStatus(status)
       setPage(1)
