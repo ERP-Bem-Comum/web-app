@@ -15,7 +15,9 @@ import { contractsMapQueryOptions } from './contracts-map.binding.ts'
 import {
   deriveListState,
   deriveTitleListState,
+  mergeDraftsIntoGrid,
   isRetentionTipo,
+  type DraftMergeMode,
   type ListState,
   type TipoFilter,
   type ResolveSupplier,
@@ -114,6 +116,29 @@ export function useContasAPagar(): ContasAPagarBinding {
     ),
   )
 
+  // #201-fix: rascunho (Draft) não gera títulos → invisível no grid title-centric. Buscamos os documentos
+  // Draft à parte e os mesclamos (chip Rascunho mostra só eles; Todos os prepende na 1ª página). Poucos
+  // rascunhos → 1 página ampla no modo Todos (sem merge de paginação server-side).
+  const draftMode: DraftMergeMode =
+    viewMode !== 'title'
+      ? 'none'
+      : selectedStatus === 'Rascunho'
+        ? 'rascunho'
+        : selectedStatus === null && page === 1
+          ? 'todos'
+          : 'none'
+  const drafts = useQuery(
+    contasAPagarQueryOptions(
+      {
+        page: draftMode === 'rascunho' ? page : 1,
+        pageSize: draftMode === 'rascunho' ? pageSize : 50,
+        status: 'Rascunho',
+        supplierRef: filters.fornecedor,
+      },
+      draftMode !== 'none',
+    ),
+  )
+
   const resolveSupplier: ResolveSupplier = (ref) =>
     ref === null ? '—' : (partners.data?.get(ref)?.name ?? ref)
   const resolveKind: ResolveSupplierKind = (ref) =>
@@ -131,7 +156,7 @@ export function useContasAPagar(): ContasAPagarBinding {
     resolveContract,
   })
 
-  const titleState = deriveTitleListState({
+  const titleStateRaw = deriveTitleListState({
     isLoading: viewMode === 'title' && titles.isLoading,
     data: titles.data,
     resolveSupplier,
@@ -140,6 +165,17 @@ export function useContasAPagar(): ContasAPagarBinding {
     resolveDoc,
     resolveContract,
   })
+
+  // Rascunhos (documentos Draft) → linhas do grid, mescladas conforme o chip (Rascunho | Todos).
+  const draftState = deriveListState({
+    isLoading: draftMode !== 'none' && drafts.isLoading,
+    data: drafts.data,
+    resolveSupplier,
+    resolveKind,
+    resolveDoc,
+    resolveContract,
+  })
+  const titleState = mergeDraftsIntoGrid(draftState, titleStateRaw, draftMode)
 
   // Opções do filtro "Fornecedor" — todos os parceiros já carregados (id → nome), ordenados por nome.
   const supplierOptions: readonly SupplierOption[] = Array.from(partners.data?.entries() ?? [])
