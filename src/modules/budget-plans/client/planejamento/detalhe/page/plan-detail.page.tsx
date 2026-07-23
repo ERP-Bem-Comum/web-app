@@ -350,7 +350,9 @@ export function PlanDetailPage(): ReactNode {
       <AddBudgetModal
         open={addBudget.open}
         estado={addBudget.form.estado}
-        options={addBudget.options}
+        municipio={addBudget.form.municipio}
+        estadoOptions={addBudget.estadoOptions}
+        municipioOptions={addBudget.municipioOptions}
         submitting={addBudget.submitting}
         errorTag={addBudget.errorTag}
         labels={{
@@ -358,12 +360,15 @@ export function PlanDetailPage(): ReactNode {
           close: t('budget-plans.addBudget.close'),
           estado: t('budget-plans.addBudget.estado'),
           estadoPlaceholder: t('budget-plans.addBudget.estadoPlaceholder'),
+          municipio: t('budget-plans.addBudget.municipio'),
+          municipioPlaceholder: t('budget-plans.addBudget.municipioPlaceholder'),
           add: t('budget-plans.addBudget.add'),
           cancel: t('budget-plans.addBudget.cancel'),
         }}
         translateError={(tag: AddBudgetError) => t(`budget-plans.addBudget.error.${tag}`)}
         onClose={addBudget.close}
         onEstado={addBudget.setEstado}
+        onMunicipio={addBudget.setMunicipio}
         onSubmit={addBudget.submit}
       />
 

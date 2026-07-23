@@ -30,6 +30,8 @@ export type AddBudgetModalLabels = Readonly<{
   close: string
   estado: string
   estadoPlaceholder: string
+  municipio: string
+  municipioPlaceholder: string
   add: string
   cancel: string
 }>
@@ -37,13 +39,16 @@ export type AddBudgetModalLabels = Readonly<{
 export type AddBudgetModalProps = Readonly<{
   open: boolean
   estado: string
-  options: readonly RegionOption[]
+  municipio: string
+  estadoOptions: readonly RegionOption[]
+  municipioOptions: readonly RegionOption[]
   submitting: boolean
   errorTag: AddBudgetError | null
   labels: AddBudgetModalLabels
   translateError: (tag: AddBudgetError) => string
   onClose: () => void
   onEstado: (v: string) => void
+  onMunicipio: (v: string) => void
   onSubmit: () => void
 }>
 
@@ -72,13 +77,35 @@ export function AddBudgetModal(props: AddBudgetModalProps): ReactNode {
               <option value="" disabled>
                 {props.labels.estadoPlaceholder}
               </option>
-              {props.options.map((o) => (
+              {props.estadoOptions.map((o) => (
                 <option key={o.value} value={o.value}>
                   {o.label}
                 </option>
               ))}
             </select>
           </label>
+
+          {/* Município — do estado escolhido (legado V1: orçamento é do estado OU de um município dele).
+              Só aparece quando o estado escolhido tem municípios no catálogo; vazio = orçamento do estado. */}
+          {props.municipioOptions.length > 0 ? (
+            <label className={field}>
+              <span className={label}>{props.labels.municipio}</span>
+              <select
+                className={select}
+                value={props.municipio}
+                onChange={(e) => {
+                  props.onMunicipio(e.target.value)
+                }}
+              >
+                <option value="">{props.labels.municipioPlaceholder}</option>
+                {props.municipioOptions.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
 
           {props.errorTag !== null ? (
             <p className={errorText} role="alert">

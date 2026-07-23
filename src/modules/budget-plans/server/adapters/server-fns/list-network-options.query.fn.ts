@@ -9,7 +9,13 @@ import { getCurrentUserFn, resolveAccessTokenFn } from '#modules/auth/public-api
 import { budgetPlansServer } from '#modules/budget-plans/server/adapters/budget-plans-list.composition.ts'
 import type { NetworkOption } from '#modules/budget-plans/server/domain/plan-detail.io.ts'
 
-export type NetworkOptionView = Readonly<{ ref: string; name: string; kind: 'state' | 'municipality' }>
+// `uf` viaja junto (o município pertence a um estado): o modal filtra os municípios pela UF do estado.
+export type NetworkOptionView = Readonly<{
+  ref: string
+  name: string
+  kind: 'state' | 'municipality'
+  uf: string
+}>
 
 export const listNetworkOptionsFn = createServerFn({ method: 'GET' }).handler(
   async (): Promise<readonly NetworkOptionView[]> => {
@@ -20,6 +26,6 @@ export const listNetworkOptionsFn = createServerFn({ method: 'GET' }).handler(
 
     const r = await budgetPlansServer().listNetworkOptions(accessToken)
     if (isErr(r)) return []
-    return r.value.map((n: NetworkOption) => ({ ref: n.ref, name: n.name, kind: n.kind }))
+    return r.value.map((n: NetworkOption) => ({ ref: n.ref, name: n.name, kind: n.kind, uf: n.uf }))
   },
 )

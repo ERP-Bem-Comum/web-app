@@ -71,7 +71,13 @@ type AddSubcategoryFn = (opts: {
 type PatchCostNodeFn = (opts: { data: PatchCostNodeInput }) => Promise<BudgetPlansFnResult<CostStructureTree>>
 // #394 (Grupo C): orçamento por rede. `NetworkKind` = state|municipality; ref = UF/IBGE.
 export type BudgetNetworkKind = 'state' | 'municipality'
-export type BudgetNetworkOption = Readonly<{ ref: string; name: string; kind: BudgetNetworkKind }>
+// `uf` = estado do parceiro (no estado, = ref); agrupa os municípios por estado no modal "Adicionar Orçamento".
+export type BudgetNetworkOption = Readonly<{
+  ref: string
+  name: string
+  kind: BudgetNetworkKind
+  uf: string
+}>
 type WriteVoidResult = Readonly<{ ok: true }> | Readonly<{ ok: false; error: BudgetPlansError }>
 type AddBudgetFn = (opts: {
   data: { planId: string; partnerKind: BudgetNetworkKind; partnerRef: string; valueInCents: number }
