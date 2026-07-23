@@ -144,20 +144,28 @@ export function useContasAPagar(): ContasAPagarBinding {
   } as const
   const countChips = STATUS_CHIPS.filter((c) => c.filterable)
   const countResults = useQueries({
-    queries: countChips.map((c) => ({
-      queryKey: ['financial', 'chip-count', c.key, countFilters] as const,
-      queryFn: () =>
-        c.status === 'Rascunho'
-          ? financialRepository.list({ page: 1, pageSize: 1, status: 'Rascunho', ...countFilters })
-          : financialRepository.listPayableTitles({
-              page: 1,
-              pageSize: 1,
-              status: c.status ?? undefined,
-              ...countFilters,
-            }),
-      staleTime: 30_000,
-      enabled: viewMode === 'title',
-    })),
+    queries: countChips.map((c) => {
+      const isDraft = c.status === 'Rascunho'
+      // Aninha a key sob o prefixo QUE AS MUTATIONS JÁ INVALIDAM (rascunho → documents/list; títulos →
+      // payable-titles). Assim excluir/criar/baixar atualiza o contador do chip JUNTO com o grid (senão o
+      // chip fica com o total velho em cache enquanto o grid já mostra o novo).
+      return {
+        queryKey: isDraft
+          ? (['financial', 'documents', 'list', 'chip-count', countFilters] as const)
+          : (['financial', 'payable-titles', 'chip-count', c.key, countFilters] as const),
+        queryFn: () =>
+          isDraft
+            ? financialRepository.list({ page: 1, pageSize: 1, status: 'Rascunho', ...countFilters })
+            : financialRepository.listPayableTitles({
+                page: 1,
+                pageSize: 1,
+                status: c.status ?? undefined,
+                ...countFilters,
+              }),
+        staleTime: 30_000,
+        enabled: viewMode === 'title',
+      }
+    }),
   })
   const statusCounts: Record<string, number | null> = {}
   countChips.forEach((c, i) => {
