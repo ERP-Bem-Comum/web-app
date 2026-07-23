@@ -1477,6 +1477,8 @@ export const fltDot = style({
   background: c.teal.normal,
 })
 export const pmMiniSelWrap = style(pmMiniBase)
+// Estado ATIVO do filtro de Tipo (paridade com Período/Valor): borda + fundo teal quando há tipo selecionado.
+export const pmMiniSelWrapOn = style([pmMiniSelWrap, { background: c.teal.bg, borderColor: c.teal.normal }])
 export const pmMiniLbl = style({
   fontFamily: recon.font.sans,
   fontSize: fs['3xs'],

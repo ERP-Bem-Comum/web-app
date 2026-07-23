@@ -740,11 +740,32 @@ describe('Buscar/Criar vários — filtros RICOS (056: filterPayables por objeto
     ...INITIAL_MULTI_FILTER,
     ...over,
   })
+  // Impostos retidos: em PRODUÇÃO o tipo vem em `retentionType` (enriquecido no BFF), com `documentType` null
+  // (core-api#172) — NÃO em `documentType`. Os fixtures refletem isso.
   const list = [
     pay({ id: 'a' }),
-    pay({ id: 'b', documentNumber: 'ISS retido', category: 'Imposto / ISS', documentType: 'ISS' }),
-    pay({ id: 'c', documentNumber: 'IRRF retido', category: 'Imposto / IRRF', documentType: 'IRRF' }),
+    pay({
+      id: 'b',
+      documentNumber: 'ISS retido',
+      category: 'Imposto / ISS',
+      documentType: null,
+      retentionType: 'ISS',
+    }),
+    pay({
+      id: 'c',
+      documentNumber: 'IRRF retido',
+      category: 'Imposto / IRRF',
+      documentType: null,
+      retentionType: 'IRRF',
+    }),
     pay({ id: 'd', documentType: null }),
+    pay({
+      id: 'e',
+      documentNumber: 'INSS retido',
+      category: 'Imposto / INSS',
+      documentType: null,
+      retentionType: 'INSS',
+    }),
   ]
 
   it('RECON_DOCUMENT_TYPE_OPTIONS = lista canônica de documento + impostos retidos (inclui IRRF/CSRF)', () => {
@@ -754,7 +775,7 @@ describe('Buscar/Criar vários — filtros RICOS (056: filterPayables por objeto
     assert.ok(RECON_DOCUMENT_TYPE_OPTIONS.includes('ISS'))
   })
 
-  it('filtra por Tipo (documento/imposto, igualdade) e por busca textual', () => {
+  it('filtra imposto retido por retentionType (IRRF/ISS/INSS) e por busca textual', () => {
     assert.deepEqual(
       filterPayables(list, mkFilter({ documentType: 'IRRF' })).map((p) => p.id),
       ['c'],
@@ -763,13 +784,26 @@ describe('Buscar/Criar vários — filtros RICOS (056: filterPayables por objeto
       filterPayables(list, mkFilter({ documentType: 'ISS' })).map((p) => p.id),
       ['b'],
     )
+    // O caso do usuário: filtrar por INSS acha o imposto (casa por retentionType, não documentType).
+    assert.deepEqual(
+      filterPayables(list, mkFilter({ documentType: 'INSS' })).map((p) => p.id),
+      ['e'],
+    )
     assert.deepEqual(
       filterPayables(list, mkFilter({ search: 'iss' })).map((p) => p.id),
       ['b'],
     )
     assert.deepEqual(
       filterPayables(list, mkFilter()).map((p) => p.id),
-      ['a', 'b', 'c', 'd'],
+      ['a', 'b', 'c', 'd', 'e'],
+    )
+  })
+
+  it('tipo de DOCUMENTO (NFS-e) casa por documentType (segue null até core-api#172)', () => {
+    // Fixture 'a' tem documentType 'NFS-e' → casa; um imposto (retentionType, documentType null) NÃO casa 'NFS-e'.
+    assert.deepEqual(
+      filterPayables(list, mkFilter({ documentType: 'NFS-e' })).map((p) => p.id),
+      ['a'],
     )
   })
 

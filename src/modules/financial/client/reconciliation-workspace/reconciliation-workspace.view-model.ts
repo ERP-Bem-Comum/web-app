@@ -433,7 +433,14 @@ export const filterPayables = (
   const periodActive = period.from !== '' || period.to !== ''
   return payables.filter((p) => {
     if (!payableMatchesSearch(p, search)) return false
-    if (documentType !== 'all' && p.documentType !== documentType) return false
+    // Tipo: imposto retido (IRRF/ISS/INSS/CSRF) casa por `retentionType` (o `documentType` do título-filho vem
+    // null enquanto o core-api#172 não o expõe; o órgão/tipo do imposto vive em `retentionType`, enriquecido no
+    // BFF). Tipos de documento (NFS-e/DANFE/…) seguem casando por `documentType` (null → não casa até #172).
+    if (documentType !== 'all') {
+      const isRetention = RETENTION_TYPE_OPTIONS.some((rt) => rt === documentType)
+      const field = isRetention ? p.retentionType : p.documentType
+      if (field !== documentType) return false
+    }
     if (periodActive) {
       const d = period.field === 'due' ? p.dueDate : p.issueDate
       if (d === null || d === '') return false // Emissão ausente → fora do filtro (honesto)
