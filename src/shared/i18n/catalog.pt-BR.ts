@@ -1896,7 +1896,7 @@ export const ptBR: Catalog = {
     'Alguns títulos não tiveram o vencimento alterado (versão desatualizada ou status incompatível). Atualize a lista e tente de novo.',
   'financial.list.delete.action': 'Excluir',
   'financial.list.delete.actionHint': 'apaga o documento definitivamente',
-  'financial.list.delete.needOpen': 'Só documentos em Aberto podem ser excluídos (Rascunho em breve).',
+  'financial.list.delete.needOpen': 'Só documentos em Rascunho ou Aberto podem ser excluídos.',
   'financial.list.delete.title': 'Excluir documento(s)?',
   'financial.list.delete.bodyOne': 'Esta ação é definitiva e não pode ser desfeita.',
   'financial.list.delete.bodyManyPrefix': 'Esta ação é definitiva e vai excluir',

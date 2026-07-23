@@ -209,4 +209,13 @@ describe('deriveTitleActionTargets (#229 — ações por linha, dedup por docume
     assert.equal(tg.dueEditable.length, 1) // só p2
     assert.equal(tg.dueBlockedCount, 1) // p1
   })
+
+  it('#166: rascunho (Draft) é excluível (descarte) — entra em deletable, sem "ignorado"', () => {
+    const first = titleRows[0]
+    if (first === undefined) throw new Error('sem linha base')
+    const draftRow = { ...first, id: 'pd', documentId: 'dd', status: 'Rascunho' as const, version: 2 }
+    const tg = deriveTitleActionTargets([draftRow], new Set(['pd']))
+    assert.deepEqual(tg.deletable, [{ id: 'dd', version: 2 }]) // id = documentId, version da linha
+    assert.equal(tg.draftCount, 0) // rascunho NÃO é mais "ignorado"
+  })
 })

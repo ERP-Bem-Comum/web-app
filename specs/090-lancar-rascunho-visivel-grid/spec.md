@@ -40,6 +40,22 @@ Exibir os documentos `Draft` no grid title-centric, via o chip **Rascunho**:
 `pnpm verify` (1592 pass) + `pnpm test:dom` (579 pass). Novo teste puro
 `tests/.../merge-drafts-view-model.test.ts` cobre os 3 modos + bordas (vazio/erro).
 
+## Adendos (mesma leva — grid de Contas a Pagar)
+
+### Excluir habilitado para Rascunho (front-only)
+
+O core-api **já descarta** Draft no mesmo `DELETE /documents/:id` (`cancelDocument → cancelDraft`, #166).
+O front bloqueava por comentário desatualizado ("Rascunho dá 409"). Corrigido: `deriveTitleActionTargets.
+deletable` = **Rascunho (descarte) + Aberto (hard-delete)**; `draftCount` → 0 (sem "ignorado"). Comentários/
+i18n (`delete.needOpen`) atualizados. Descarte usa `id`+`version` da linha; a invalidação já cobre o grid.
+
+### Chips de status com contagem + bolinha (paridade com a Conciliação)
+
+Cada chip mostra a **contagem por status** + uma **bolinha na cor do status** (tom do badge da coluna STATUS).
+Sem endpoint agregado no core-api → o binding faz **1 query leve por status filtrável** (`pageSize:1`, só o
+`total`, com os mesmos filtros) via `useQueries`; `statusCounts[key]`. CSS: `chipDot` (por status) + `chipCount`
+exportado. **Handoff de eficiência:** um endpoint de contagem agregada trocaria as N queries (issue no core-api).
+
 ## Handoff backend
 
 core-api: afrouxar `createDocumentBodySchema` para `asDraft:true` (campos mínimos opcionais) → habilita

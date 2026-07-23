@@ -135,7 +135,7 @@ export const chipDisabled = style([
     opacity: 0.5,
   },
 ])
-const chipCount = style({
+export const chipCount = style({
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -154,6 +154,23 @@ export const chipCountOnActive = style([
   chipCount,
   { color: vars.color.institutional.ink2, background: vars.color.institutional.paperBeige },
 ])
+
+// Bolinha de status na chip (paridade com as chips da Conciliação) — cor = tom do badge de status.
+const chipDotBase = {
+  inlineSize: '0.4375rem',
+  blockSize: '0.4375rem',
+  borderRadius: '50%',
+  flexShrink: 0,
+} as const
+export const chipDot = styleVariants({
+  Rascunho: { ...chipDotBase, background: vars.color.status.cancelledText },
+  Aberto: { ...chipDotBase, background: vars.color.status.pendingText },
+  Aprovado: { ...chipDotBase, background: vars.color.status.approvedText },
+  Transmitido: { ...chipDotBase, background: vars.color.status.finishedText },
+  Recusado: { ...chipDotBase, background: vars.color.status.terminatedText },
+  Pago: { ...chipDotBase, background: vars.color.status.activeText },
+  Conciliado: { ...chipDotBase, background: vars.color.status.reconciledText },
+})
 
 // ── Filtros avançados ("Adicionar filtro", estilo do mock) ────────────────────
 // Empurra o bloco de filtros para a direita da filter-bar (igual ao fbar-right do mock).

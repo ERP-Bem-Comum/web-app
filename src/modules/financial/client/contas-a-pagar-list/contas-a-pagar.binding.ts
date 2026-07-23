@@ -4,7 +4,9 @@
  * e entrega o `ListState` derivado pela view-model PURA. A page é burra (só consome este hook).
  */
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueries } from '@tanstack/react-query'
+
+import { financialRepository } from '#modules/financial/client/data/repository/financial.repository.instance.ts'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
@@ -17,6 +19,7 @@ import {
   deriveTitleListState,
   mergeDraftsIntoGrid,
   isRetentionTipo,
+  STATUS_CHIPS,
   type DraftMergeMode,
   type ListState,
   type TipoFilter,
@@ -51,6 +54,8 @@ export type ContasAPagarBinding = Readonly<{
   // Filtro de status (chips): null = "Todos". Trocar o filtro reseta a página.
   selectedStatus: DocumentStatus | null
   onStatusFilter: (status: DocumentStatus | null) => void
+  // Contagem por chip (key → total; null = carregando/erro). Alimenta o badge de contagem de cada chip.
+  statusCounts: Readonly<Record<string, number | null>>
   // Filtros avançados ("Adicionar filtro"): dimensões ativas + valores (server-side).
   activeDims: ReadonlySet<FilterDimId>
   filters: AdvancedFilters
@@ -128,6 +133,38 @@ export function useContasAPagar(): ContasAPagarBinding {
     ),
   )
 
+  // Contagem por status p/ TODAS as chips (paridade com a Conciliação). Sem endpoint agregado no core-api
+  // → 1 query leve (pageSize 1, só o `total`) por status filtrável, com os MESMOS filtros da lista. Rascunho
+  // conta pelo /documents?status=Draft; os demais pelo /payable-titles (o Todos = total de títulos).
+  const countFilters = {
+    supplierRef: filters.fornecedor,
+    dueFrom: filters.vencimento?.from,
+    dueTo: filters.vencimento?.to,
+    type: isRetentionTipo(filters.tipo) ? undefined : filters.tipo,
+  } as const
+  const countChips = STATUS_CHIPS.filter((c) => c.filterable)
+  const countResults = useQueries({
+    queries: countChips.map((c) => ({
+      queryKey: ['financial', 'chip-count', c.key, countFilters] as const,
+      queryFn: () =>
+        c.status === 'Rascunho'
+          ? financialRepository.list({ page: 1, pageSize: 1, status: 'Rascunho', ...countFilters })
+          : financialRepository.listPayableTitles({
+              page: 1,
+              pageSize: 1,
+              status: c.status ?? undefined,
+              ...countFilters,
+            }),
+      staleTime: 30_000,
+      enabled: viewMode === 'title',
+    })),
+  })
+  const statusCounts: Record<string, number | null> = {}
+  countChips.forEach((c, i) => {
+    const r = countResults[i]?.data
+    statusCounts[c.key] = r?.ok ? r.value.total : null
+  })
+
   const resolveSupplier: ResolveSupplier = (ref) =>
     ref === null ? '—' : (partners.data?.get(ref)?.name ?? ref)
   const resolveKind: ResolveSupplierKind = (ref) =>
@@ -201,6 +238,7 @@ export function useContasAPagar(): ContasAPagarBinding {
     },
     pageSize,
     selectedStatus,
+    statusCounts,
     onStatusFilter: (status) => {
       setSelectedStatus(status)
       setPage(1)
