@@ -16,6 +16,8 @@ import type {
   ManualPaymentInput,
   ListPayableTitlesInput,
   PayableTitleListResponse,
+  PayableCountsInput,
+  PayableCounts,
   DocumentTimelineEntry,
 } from '#modules/financial/client/data/model/document.model.ts'
 import type { RecentPayment } from '#modules/financial/client/data/model/recent-payment.model.ts'
@@ -24,6 +26,7 @@ import type { FinancialError, FnResult } from '#modules/financial/client/data/re
 
 type ListFn = (opts: { data: ListDocumentsInput }) => Promise<FnResult<DocumentListResponse>>
 type ListTitlesFn = (opts: { data: ListPayableTitlesInput }) => Promise<FnResult<PayableTitleListResponse>>
+type PayableCountsFn = (opts: { data: PayableCountsInput }) => Promise<FnResult<PayableCounts>>
 type GetFn = (opts: { data: { id: string } }) => Promise<FnResult<DocumentDetail>>
 type TimelineFn = (opts: { data: { id: string } }) => Promise<FnResult<readonly DocumentTimelineEntry[]>>
 type CreateFn = (opts: { data: CreateDocumentInput }) => Promise<FnResult<DocumentDetail>>
@@ -45,6 +48,8 @@ export type FinancialRepository = Readonly<{
   listPayableTitles: (
     input: ListPayableTitlesInput,
   ) => Promise<Result<PayableTitleListResponse, FinancialError>>
+  // #536: contagem agregada por status (chips do grid).
+  getPayableCounts: (input: PayableCountsInput) => Promise<Result<PayableCounts, FinancialError>>
   getById: (id: string) => Promise<Result<DocumentDetail, FinancialError>>
   // Trilha de auditoria (entradas enriquecidas com o nome do autor).
   getTimeline: (id: string) => Promise<Result<readonly DocumentTimelineEntry[], FinancialError>>
@@ -67,6 +72,7 @@ export const createFinancialRepository = (
   deps: Readonly<{
     listDocumentsFn: ListFn
     listPayableTitlesFn: ListTitlesFn
+    payableCountsFn: PayableCountsFn
     getDocumentFn: GetFn
     getDocumentTimelineFn: TimelineFn
     createDocumentFn: CreateFn
@@ -86,6 +92,10 @@ export const createFinancialRepository = (
   },
   listPayableTitles: async (input) => {
     const res = await deps.listPayableTitlesFn({ data: input })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  getPayableCounts: async (input) => {
+    const res = await deps.payableCountsFn({ data: input })
     return res.ok ? ok(res.data) : err(res.error)
   },
   getById: async (id) => {

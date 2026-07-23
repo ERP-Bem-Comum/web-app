@@ -10,6 +10,7 @@ import { getDashboardAggregationsPlaceholder } from './dashboard-statistics.plac
 import {
   createListDocuments,
   createListPayableTitles,
+  createGetPayableCounts,
   createGetDocument,
   createGetDocumentTimeline,
   createCreateDocument,
@@ -31,6 +32,7 @@ const build = () => {
   return {
     listDocuments: createListDocuments({ client }),
     listPayableTitles: createListPayableTitles({ client }),
+    getPayableCounts: createGetPayableCounts({ client }),
     getDocument: createGetDocument({ client }),
     getDocumentTimeline: createGetDocumentTimeline({ client }),
     createDocument: createCreateDocument({ client }),

@@ -4,14 +4,16 @@
  * e entrega o `ListState` derivado pela view-model PURA. A page é burra (só consome este hook).
  */
 import { useState } from 'react'
-import { useQuery, useQueries } from '@tanstack/react-query'
-
-import { financialRepository } from '#modules/financial/client/data/repository/financial.repository.instance.ts'
+import { useQuery } from '@tanstack/react-query'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 
-import { contasAPagarQueryOptions, payableTitlesQueryOptions } from './contas-a-pagar.query.ts'
+import {
+  contasAPagarQueryOptions,
+  payableTitlesQueryOptions,
+  payableCountsQueryOptions,
+} from './contas-a-pagar.query.ts'
 import { partnersMapQueryOptions } from './partners-map.binding.ts'
 import { contractsMapQueryOptions } from './contracts-map.binding.ts'
 import {
@@ -19,7 +21,6 @@ import {
   deriveTitleListState,
   mergeDraftsIntoGrid,
   isRetentionTipo,
-  STATUS_CHIPS,
   type DraftMergeMode,
   type ListState,
   type TipoFilter,
@@ -133,45 +134,24 @@ export function useContasAPagar(): ContasAPagarBinding {
     ),
   )
 
-  // Contagem por status p/ TODAS as chips (paridade com a Conciliação). Sem endpoint agregado no core-api
-  // → 1 query leve (pageSize 1, só o `total`) por status filtrável, com os MESMOS filtros da lista. Rascunho
-  // conta pelo /documents?status=Draft; os demais pelo /payable-titles (o Todos = total de títulos).
+  // #536: contagem por status p/ as chips em 1 request (GET /payable-titles/counts) — antes eram ~6 queries.
+  // `byStatus` = breakdown dos títulos (chaves do backend: Open/Approved/Paid/Reconciled); `draft` = Rascunho.
   const countFilters = {
     supplierRef: filters.fornecedor,
     dueFrom: filters.vencimento?.from,
     dueTo: filters.vencimento?.to,
     type: isRetentionTipo(filters.tipo) ? undefined : filters.tipo,
-  } as const
-  const countChips = STATUS_CHIPS.filter((c) => c.filterable)
-  const countResults = useQueries({
-    queries: countChips.map((c) => {
-      const isDraft = c.status === 'Rascunho'
-      // Aninha a key sob o prefixo QUE AS MUTATIONS JÁ INVALIDAM (rascunho → documents/list; títulos →
-      // payable-titles). Assim excluir/criar/baixar atualiza o contador do chip JUNTO com o grid (senão o
-      // chip fica com o total velho em cache enquanto o grid já mostra o novo).
-      return {
-        queryKey: isDraft
-          ? (['financial', 'documents', 'list', 'chip-count', countFilters] as const)
-          : (['financial', 'payable-titles', 'chip-count', c.key, countFilters] as const),
-        queryFn: () =>
-          isDraft
-            ? financialRepository.list({ page: 1, pageSize: 1, status: 'Rascunho', ...countFilters })
-            : financialRepository.listPayableTitles({
-                page: 1,
-                pageSize: 1,
-                status: c.status ?? undefined,
-                ...countFilters,
-              }),
-        staleTime: 30_000,
-        enabled: viewMode === 'title',
-      }
-    }),
-  })
-  const statusCounts: Record<string, number | null> = {}
-  countChips.forEach((c, i) => {
-    const r = countResults[i]?.data
-    statusCounts[c.key] = r?.ok ? r.value.total : null
-  })
+  }
+  const counts = useQuery(payableCountsQueryOptions(countFilters, viewMode === 'title'))
+  const c = counts.data?.ok ? counts.data.value : null
+  const statusCounts: Readonly<Record<string, number | null>> = {
+    todos: c === null ? null : c.total,
+    rascunho: c === null ? null : c.draft,
+    aberto: c === null ? null : (c.byStatus.Open ?? 0),
+    aprovado: c === null ? null : (c.byStatus.Approved ?? 0),
+    pago: c === null ? null : (c.byStatus.Paid ?? 0),
+    conciliado: c === null ? null : (c.byStatus.Reconciled ?? 0),
+  }
 
   const resolveSupplier: ResolveSupplier = (ref) =>
     ref === null ? '—' : (partners.data?.get(ref)?.name ?? ref)

@@ -17,6 +17,8 @@ import type {
   ManualPaymentInput,
   ListPayableTitlesInput,
   PayableTitleListResponse,
+  PayableCountsInput,
+  PayableCounts,
   RecentPayment,
   DocumentTimelineEvent,
 } from '#modules/financial/server/domain/document.io.ts'
@@ -48,6 +50,11 @@ export type FinancialClient = Readonly<{
     token: string,
   ) => Promise<Result<DocumentDetail, FinancialError>>
   getRecentPayments: (token: string) => Promise<Result<readonly RecentPayment[], FinancialError>>
+  // #536: contagem agregada por status (chips do grid).
+  getPayableCounts: (
+    input: PayableCountsInput,
+    token: string,
+  ) => Promise<Result<PayableCounts, FinancialError>>
 }>
 
 type Deps = Readonly<{ client: FinancialClient }>
@@ -61,6 +68,11 @@ export const createListPayableTitles =
   (deps: Deps) =>
   (input: ListPayableTitlesInput, token: string): Promise<Result<PayableTitleListResponse, FinancialError>> =>
     deps.client.listPayableTitles(input, token)
+
+export const createGetPayableCounts =
+  (deps: Deps) =>
+  (input: PayableCountsInput, token: string): Promise<Result<PayableCounts, FinancialError>> =>
+    deps.client.getPayableCounts(input, token)
 
 export const createGetDocument =
   (deps: Deps) =>

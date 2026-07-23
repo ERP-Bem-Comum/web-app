@@ -51,10 +51,11 @@ export interface RegisteredTaxInput {
 // ── Inputs (validados na server fn pelos schemas em adapters) ───────────────────
 // Lançar Documento (POST /documents, asDraft:false → estado Aberto).
 export interface CreateDocumentInput {
-  type: DocumentType
-  documentNumber: string
+  // #534: RASCUNHO (asDraft) aceita estes 5 opcionais — o core-api reexige só p/ asDraft:false (superRefine).
+  type?: DocumentType
+  documentNumber?: string
   series?: string
-  supplierRef: string
+  supplierRef?: string
   contractRef?: string
   budgetPlanRef?: string
   categoryRef?: string
@@ -64,8 +65,8 @@ export interface CreateDocumentInput {
   accessKey?: string // #115: chave de acesso (44 dígitos) — obrigatória p/ DANFE no lançamento
   paymentDetail?: string // #273: complemento da forma de pagamento (linha digitável, id de cartão, ref de câmbio)
   competencia?: string // #197: competência (YYYY-MM) — opcional; validada por VO no domínio do backend
-  paymentMethod: PaymentMethod
-  grossValueCents: string
+  paymentMethod?: PaymentMethod
+  grossValueCents?: string
   sourceDiscountsCents?: string
   discountsCents?: string
   penaltyCents?: string
@@ -266,6 +267,20 @@ export type PayableTitleListResponse = Readonly<{
   page: number
   pageSize: number
   total: number
+}>
+
+// #536: contagem agregada por status (chips do grid) — 1 request no lugar de ~6. `byStatus` é o breakdown
+// dos TÍTULOS (chave = status do backend: Open/Approved/Paid/Reconciled…); `draft` = documentos Rascunho.
+export type PayableCountsInput = Readonly<{
+  supplierRef?: string
+  dueFrom?: string
+  dueTo?: string
+  type?: string
+}>
+export type PayableCounts = Readonly<{
+  total: number
+  draft: number
+  byStatus: Readonly<Record<string, number>>
 }>
 
 // ── Widget "Últimos pagamentos" (042 — GET /financial/dashboard/recent-payments): Top-5 pagos ──

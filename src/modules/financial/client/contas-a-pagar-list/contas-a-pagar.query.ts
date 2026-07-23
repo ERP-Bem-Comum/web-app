@@ -6,6 +6,7 @@ import { financialRepository } from '#modules/financial/client/data/repository/f
 import type {
   ListDocumentsInput,
   ListPayableTitlesInput,
+  PayableCountsInput,
 } from '#modules/financial/client/data/model/document.model.ts'
 
 export const contasAPagarQueryKey = (input: ListDocumentsInput) =>
@@ -22,6 +23,15 @@ export const contasAPagarQueryOptions = (input: ListDocumentsInput, enabled = tr
 export const payableTitlesQueryOptions = (input: ListPayableTitlesInput, enabled: boolean) => ({
   queryKey: ['financial', 'payable-titles', 'list', input] as const,
   queryFn: () => financialRepository.listPayableTitles(input),
+  enabled,
+  staleTime: 30_000,
+})
+
+// #536: contagem agregada por status (chips). Key aninhada sob `documents/list` — prefixo que TODAS as
+// mutations (criar/excluir/aprovar/baixar) invalidam → os contadores atualizam junto com o grid.
+export const payableCountsQueryOptions = (input: PayableCountsInput, enabled: boolean) => ({
+  queryKey: ['financial', 'documents', 'list', 'counts', input] as const,
+  queryFn: () => financialRepository.getPayableCounts(input),
   enabled,
   staleTime: 30_000,
 })
