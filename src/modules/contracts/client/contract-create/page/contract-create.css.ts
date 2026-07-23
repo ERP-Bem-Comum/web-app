@@ -1021,6 +1021,16 @@ export const fieldHintError = style({
   gap: vars.space.xs,
 })
 
+// #530: contador de caracteres do Objeto (abaixo do campo, à direita). Vira vermelho ao atingir o limite.
+export const charCounter = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: '0.71875rem',
+  color: vars.color.institutional.ink5,
+  marginTop: vars.space.xs,
+  textAlign: 'right',
+})
+export const charCounterMax = style({ color: vars.color.feedback.errorText })
+
 export const uploadZone = style({
   display: 'flex',
   alignItems: 'center',
