@@ -305,7 +305,8 @@ export const bulkStatusTargets = (
   }
 }
 
-// Excluir (hard-delete) — o core-api só cancela documentos em **Aberto** (Rascunho dá 409, core-api#166).
+// LEGADO (modo documento, #201 desligou): variante simples do delete. O grid title-centric usa
+// `deriveTitleActionTargets` (autoritativo), que JÁ permite excluir Rascunho (descarte, #166).
 // `deletable` = alvos Aberto (id + version, p/ o optimistic lock do DELETE); `draftCount` = Rascunho fora.
 export type BulkDeleteTargets = Readonly<{ deletable: readonly StatusTarget[]; draftCount: number }>
 export const bulkDeleteTargets = (
@@ -330,8 +331,8 @@ export type IsolatedDueDateTarget = Readonly<{ documentId: string; payableId: st
 export type TitleActionTargets = Readonly<{
   approve: readonly StatusTarget[] // documentos distintos com título Aberto (Aprovar cascateia)
   reopen: readonly StatusTarget[] // documentos com título Aprovado
-  deletable: readonly StatusTarget[] // = Aberto (hard-delete só em Aberto, core-api#166)
-  draftCount: number // documentos Rascunho na seleção (aviso no modal)
+  deletable: readonly StatusTarget[] // Rascunho (descarte) + Aberto (hard-delete) — ambos canceláveis (#166)
+  draftCount: number // rascunhos "ignorados" — 0 desde #166 (rascunho agora É excluível)
   // #270: vencimento por TÍTULO (Aberto), isolado — não propaga pai↔filhos. Por payable (sem dedup por doc).
   dueEditable: readonly IsolatedDueDateTarget[]
   dueBlockedCount: number // títulos selecionados não-editáveis (não-Aberto) — aviso no modal
@@ -353,13 +354,16 @@ export const deriveTitleActionTargets = (
     return out
   }
   const aberto = dedupByDoc(sel.filter((r) => r.status === 'Aberto'))
+  // #166: rascunho (Draft) também é excluível (descarte — não tem títulos-filho). O core-api trata Draft
+  // no MESMO DELETE /documents/:id (cancelDocument → cancelDraft). Antes o front bloqueava por engano.
+  const rascunho = dedupByDoc(sel.filter((r) => r.status === 'Rascunho'))
   // #270: vencimento é por TÍTULO isolado — NÃO dedup por documento; um alvo por payable Aberto selecionado.
   const selAbertoRows = sel.filter((r) => r.status === 'Aberto')
   return {
     approve: aberto,
     reopen: dedupByDoc(sel.filter((r) => r.status === 'Aprovado')),
-    deletable: aberto,
-    draftCount: dedupByDoc(sel.filter((r) => r.status === 'Rascunho')).length,
+    deletable: [...rascunho, ...aberto],
+    draftCount: 0, // #166: rascunho agora É excluível → nada "ignorado" no modal
     dueEditable: selAbertoRows.map((r) => ({
       documentId: r.documentId,
       payableId: r.id,
@@ -648,6 +652,18 @@ export const deriveListState = (args: {
     page: pageInfo(data.value.page, data.value.pageSize, data.value.total),
   }
 }
+
+// ── #201-fix: rascunho (Draft) no grid title-centric ─────────────────────────────────────────────────
+// Rascunho NÃO gera títulos-filho (core-api) → nunca vem do /payable-titles → some do grid. Para exibi-lo
+// buscamos os documentos Draft à parte (deriveListState) e trocamos a fonte SÓ no chip "Rascunho":
+//   - 'rascunho' (chip Rascunho): a fonte é os rascunhos (paginada pelo /documents?status=Draft).
+//   - 'none' (Todos / demais chips): devolve `titles` intacto.
+// Rascunho fica FORA do "Todos" de propósito: são muitos e parciais (OCR ingest) e soterrariam os títulos
+// reais; o operador acha os inacabados pelo chip Rascunho (mesmo paradigma dos outros status).
+export type DraftMergeMode = 'rascunho' | 'none'
+
+export const mergeDraftsIntoGrid = (drafts: ListState, titles: ListState, mode: DraftMergeMode): ListState =>
+  mode === 'rascunho' ? drafts : titles
 
 // ── #201: listagem por TÍTULO (grid payable-centric: pai + filhos) — REUSA o mesmo GridRow/ListState ──
 // Um título vira uma linha do grid existente. `id` = payableId (checkbox/seleção por título). Lacunas
