@@ -235,6 +235,32 @@ export const nextPendingWithMatch = (
   return scan(true) ?? scan(false)
 }
 
+/**
+ * Motor de palpite — alvo da seleção na aba Conciliação (P.O.: "como um motor", sempre landar numa transação
+ * COM palpite). Retorna o txId a selecionar, ou `null` (não mexe na seleção). PURA. Regras:
+ *  - fora da aba, palpites não assentados, ou sem nenhum match → não mexe;
+ *  - nada selecionado (load inicial / novo extrato) → `fallbackId` (1º match, ou topo se não há match);
+ *  - acabou de ENTRAR na aba e a tx atual NÃO tem palpite → o próximo COM palpite (`firstMatchId`), só se existir;
+ *  - já dentro da aba e escolhendo à mão → respeita a escolha (retorna null).
+ * O auto-avanço ao conciliar é tratado à parte (`nextPendingWithMatch` a partir da tx conciliada).
+ */
+export const engineTarget = (
+  p: Readonly<{
+    onConciliacao: boolean
+    justEntered: boolean
+    guessesSettled: boolean
+    selectedId: string | null
+    selectedIsMatch: boolean
+    firstMatchId: string | null
+    fallbackId: string | null
+  }>,
+): string | null => {
+  if (!p.onConciliacao || !p.guessesSettled) return null
+  if (p.selectedId === null) return p.fallbackId
+  if (p.justEntered && !p.selectedIsMatch && p.firstMatchId !== null) return p.firstMatchId
+  return null
+}
+
 // ── Relabel TEMPORÁRIO de categorias (só no front) ──────────────────────────────
 // Pedido P.O.: a Nova transação da conciliação precisa das categorias "Transferência entre contas",
 // "Resgate" e "Aplicação", mas SEM mexer no backend por ora. Reaproveitamos 3 categorias de referência
@@ -433,7 +459,14 @@ export const filterPayables = (
   const periodActive = period.from !== '' || period.to !== ''
   return payables.filter((p) => {
     if (!payableMatchesSearch(p, search)) return false
-    if (documentType !== 'all' && p.documentType !== documentType) return false
+    // Tipo: imposto retido (IRRF/ISS/INSS/CSRF) casa por `retentionType` (o `documentType` do título-filho vem
+    // null enquanto o core-api#172 não o expõe; o órgão/tipo do imposto vive em `retentionType`, enriquecido no
+    // BFF). Tipos de documento (NFS-e/DANFE/…) seguem casando por `documentType` (null → não casa até #172).
+    if (documentType !== 'all') {
+      const isRetention = RETENTION_TYPE_OPTIONS.some((rt) => rt === documentType)
+      const field = isRetention ? p.retentionType : p.documentType
+      if (field !== documentType) return false
+    }
     if (periodActive) {
       const d = period.field === 'due' ? p.dueDate : p.issueDate
       if (d === null || d === '') return false // Emissão ausente → fora do filtro (honesto)

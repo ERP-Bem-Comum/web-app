@@ -26,6 +26,7 @@ import {
 import * as s from '../page/reconciliation-workspace.css.ts'
 import {
   centsToBRL,
+  retentionAgencyTag,
   type DifferenceTreatment,
   type PaidPayable,
 } from '../reconciliation-workspace.view-model.ts'
@@ -71,7 +72,14 @@ function PayRow({
       <span className={s.pmDt}>{p.dueDate}</span>
       <span className={s.pmStatus}>{t('financial.recon.multi.status.paid')}</span>
       <span className={s.pmNmCell}>
-        <span className={s.pmNm}>{p.supplierName ?? p.documentNumber ?? p.documentId}</span>
+        {/* Imposto retido → ÓRGÃO arrecadador (ISS→SEFIN, federais→Receita Federal), não o fornecedor do
+            documento-pai (#192, mesmo helper do modal de detalhe). Não-imposto → segue o fornecedor. */}
+        <span className={s.pmNm}>
+          {(() => {
+            const agencyTag = retentionAgencyTag(p.retentionType)
+            return agencyTag !== null ? t(agencyTag) : (p.supplierName ?? p.documentNumber ?? p.documentId)
+          })()}
+        </span>
         <span className={s.pmDocRef}>{p.documentNumber ?? p.documentId}</span>
       </span>
       <span className={s.pmCat}>{p.category ?? DASH}</span>
@@ -299,9 +307,10 @@ export function SearchCreatePane({ binding, extratoValueCents }: SearchCreatePan
         </div>
         {/* Período: popover com toggle Vencimento/Emissão + calendário De/Até (056) */}
         <PeriodFilter binding={binding} />
-        {/* Tipo: lista CANÔNICA de documento + impostos retidos (056) */}
-        <span className={s.pmMiniSelWrap}>
+        {/* Tipo: lista CANÔNICA de documento + impostos retidos (056). Ativo → chip azul (paridade Período/Valor). */}
+        <span className={binding.typeActive ? s.pmMiniSelWrapOn : s.pmMiniSelWrap}>
           <span className={s.pmMiniLbl}>{t('financial.recon.multi.flt.type')}</span>
+          {binding.typeActive ? <span className={s.fltDot} aria-hidden /> : null}
           <select
             className={s.pmMiniSelect}
             aria-label={t('financial.recon.multi.flt.type')}
