@@ -17,19 +17,25 @@
  * remover o campo, o `0` sai junto.
  */
 
-export type AddBudgetForm = Readonly<{ estado: string }>
+// Estado + Município (legado V1): orçamento é de um estado OU de um município (o município pertence a um
+// estado). `estado` = UF; `municipio` = ref do município (vazio → orçamento do estado). Ver
+// `addBudgetEstadoOptions`/`addBudgetMunicipioOptions`/`addBudgetRefFor` em `plan-detail.view-model.ts`.
+export type AddBudgetForm = Readonly<{ estado: string; municipio: string }>
 
-export const emptyAddBudgetForm = (): AddBudgetForm => ({ estado: '' })
+export const emptyAddBudgetForm = (): AddBudgetForm => ({ estado: '', municipio: '' })
 
-/** `estado-required` = nenhuma rede escolhida; `estado-duplicate` = a rede já tem orçamento no plano. */
+/** `estado-required` = nenhuma rede resolvida; `estado-duplicate` = a rede já tem orçamento no plano. */
 export type AddBudgetError = 'estado-required' | 'estado-duplicate' | 'save-failed'
 
-/** Valida a escolha da rede (por REF/chave natural) contra as que JÁ têm orçamento no plano. */
+/**
+ * Valida a REDE efetiva (a `ref` já resolvida pelo binding via `addBudgetRefFor` — município ou estado)
+ * contra as que JÁ têm orçamento no plano. `null` = nada válido escolhido.
+ */
 export const validateAddBudget = (
-  form: AddBudgetForm,
+  ref: string | null,
   existingRefs: readonly string[],
 ): AddBudgetError | null => {
-  if (form.estado === '') return 'estado-required'
-  if (existingRefs.some((r) => r === form.estado)) return 'estado-duplicate'
+  if (ref === null) return 'estado-required'
+  if (existingRefs.some((r) => r === ref)) return 'estado-duplicate'
   return null
 }

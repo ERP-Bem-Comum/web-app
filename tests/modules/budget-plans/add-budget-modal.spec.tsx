@@ -12,18 +12,19 @@ afterEach(() => {
   cleanup()
 })
 
-const options: readonly RegionOption[] = [
+const estadoOptions: readonly RegionOption[] = [
   { value: 'CE', label: 'Ceará' },
   { value: 'AC', label: 'Acre' },
 ]
+const municipioOptions: readonly RegionOption[] = [{ value: '2304400', label: 'Caucaia' }]
 
 const labels = {
   title: 'Adicionar Orçamento',
   close: 'Fechar',
   estado: 'Estado',
   estadoPlaceholder: 'Selecione o estado',
-  valor: 'Valor do orçamento',
-  valorPlaceholder: 'Ex.: 5.000,00',
+  municipio: 'Município',
+  municipioPlaceholder: 'Todo o estado (sem município)',
   add: 'Adicionar',
   cancel: 'Cancelar',
 } as const
@@ -31,15 +32,16 @@ const labels = {
 const baseProps = (over: Record<string, unknown> = {}) => ({
   open: true,
   estado: '',
-  valor: '',
-  options,
+  municipio: '',
+  estadoOptions,
+  municipioOptions: [] as readonly RegionOption[],
   submitting: false,
   errorTag: null,
   labels,
   translateError: (tag: string) => `erro:${tag}`,
   onClose: vi.fn(),
   onEstado: vi.fn(),
-  onValor: vi.fn(),
+  onMunicipio: vi.fn(),
   onSubmit: vi.fn(),
   ...over,
 })
@@ -70,5 +72,20 @@ describe('AddBudgetModal', () => {
     expect(onEstado).toHaveBeenCalledWith('CE')
     fireEvent.click(screen.getByText('Adicionar'))
     expect(onSubmit).toHaveBeenCalled()
+  })
+
+  it('sem municípios → o select de Município não aparece', () => {
+    render(<AddBudgetModal {...baseProps({ municipioOptions: [] })} />)
+    expect(screen.queryByText('Município')).toBeNull()
+  })
+
+  it('com municípios do estado → mostra o select de Município e encaminha onMunicipio', () => {
+    const onMunicipio = vi.fn()
+    render(<AddBudgetModal {...baseProps({ estado: 'CE', municipioOptions, onMunicipio })} />)
+    expect(screen.getByRole('option', { name: 'Caucaia' })).toBeTruthy()
+    fireEvent.change(screen.getByLabelText('Município', { selector: 'select' }), {
+      target: { value: '2304400' },
+    })
+    expect(onMunicipio).toHaveBeenCalledWith('2304400')
   })
 })

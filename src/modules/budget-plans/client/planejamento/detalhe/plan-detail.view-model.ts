@@ -83,6 +83,48 @@ export const municipioOptionsFor = (detail: PlanDetail, uf: string): readonly Re
   return distinct(detail.networks.filter((n) => n.uf === uf).map((n) => ({ value: n.ref, label: n.name })))
 }
 
+// ── Modal "Adicionar Orçamento" — opções vêm do CATÁLOGO (/budget-plans/options: estados + municípios
+// ATIVOS em "Estados e Municípios"), NÃO das redes do plano. Legado (V1): um orçamento é de um estado OU de
+// um município, e o município pertence a um estado (via `uf`). Por isso o modal tem Estado + Município: o
+// município aparece filtrado pelo estado escolhido; sem município, o orçamento é do estado.
+export type CatalogNetwork = Readonly<{ ref: string; name: string; kind: NetworkKind; uf: string }>
+
+/** Estados p/ o modal: uma opção por UF distinta (nome do estado quando há estado-rede; senão a sigla). */
+export const addBudgetEstadoOptions = (redes: readonly CatalogNetwork[]): readonly RegionOption[] => {
+  const byUf = new Map<string, string>()
+  for (const r of redes) {
+    const uf = r.uf !== '' ? r.uf : r.ref
+    if (r.kind === 'state') byUf.set(uf, r.name)
+    else if (!byUf.has(uf)) byUf.set(uf, uf) // município sem estado-rede ativo → rótulo = sigla
+  }
+  return distinct(Array.from(byUf, ([uf, label]) => ({ value: uf, label })))
+}
+
+/** Municípios (do catálogo) da UF escolhida — vazio se nenhuma UF escolhida. */
+export const addBudgetMunicipioOptions = (
+  redes: readonly CatalogNetwork[],
+  estadoUf: string,
+): readonly RegionOption[] => {
+  if (estadoUf === '') return []
+  return distinct(
+    redes
+      .filter((r) => r.kind === 'municipality' && r.uf === estadoUf)
+      .map((r) => ({ value: r.ref, label: r.name })),
+  )
+}
+
+/** Rede efetiva (chave natural p/ o create): município escolhido vence; senão a estado-rede da UF (ou null). */
+export const addBudgetRefFor = (
+  redes: readonly CatalogNetwork[],
+  estadoUf: string,
+  municipio: string,
+): string | null => {
+  if (municipio !== '') return municipio
+  if (estadoUf === '') return null
+  const state = redes.find((r) => r.kind === 'state' && (r.uf === estadoUf || r.ref === estadoUf))
+  return state?.ref ?? null
+}
+
 /**
  * A REDE escolhida (o que a Edição precisa) — `null` enquanto a escolha não fecha uma rede real. É o `ref`
  * que endereça a tela: UF no plano de estado, código IBGE no de município.
