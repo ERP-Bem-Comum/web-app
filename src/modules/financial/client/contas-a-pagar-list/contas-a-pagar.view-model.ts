@@ -651,29 +651,15 @@ export const deriveListState = (args: {
 
 // ── #201-fix: rascunho (Draft) no grid title-centric ─────────────────────────────────────────────────
 // Rascunho NÃO gera títulos-filho (core-api) → nunca vem do /payable-titles → some do grid. Para exibi-lo
-// ("Chip Rascunho + Todos"), buscamos os documentos Draft à parte (deriveListState) e os mesclamos aqui:
-//   - 'rascunho' (chip Rascunho): a fonte é SÓ os rascunhos (paginada pelo /documents).
-//   - 'todos' (chip Todos, 1ª página): prepende os rascunhos às linhas de título (poucos; só na 1ª página,
-//      para não repeti-los entre páginas do grid paginado no servidor).
-//   - 'none' (chip específico, ou Todos em página > 1): ignora os rascunhos → devolve `titles` intacto.
-export type DraftMergeMode = 'rascunho' | 'todos' | 'none'
+// buscamos os documentos Draft à parte (deriveListState) e trocamos a fonte SÓ no chip "Rascunho":
+//   - 'rascunho' (chip Rascunho): a fonte é os rascunhos (paginada pelo /documents?status=Draft).
+//   - 'none' (Todos / demais chips): devolve `titles` intacto.
+// Rascunho fica FORA do "Todos" de propósito: são muitos e parciais (OCR ingest) e soterrariam os títulos
+// reais; o operador acha os inacabados pelo chip Rascunho (mesmo paradigma dos outros status).
+export type DraftMergeMode = 'rascunho' | 'none'
 
-export const mergeDraftsIntoGrid = (
-  drafts: ListState,
-  titles: ListState,
-  mode: DraftMergeMode,
-): ListState => {
-  if (mode === 'none') return titles
-  if (mode === 'rascunho') return drafts // fonte é só rascunho
-  // mode === 'todos': rascunhos no topo dos títulos.
-  const draftRows = drafts.tag === 'ready' ? drafts.rows : []
-  if (draftRows.length === 0) return titles
-  if (titles.tag === 'ready') {
-    return { tag: 'ready', rows: [...draftRows, ...titles.rows], page: titles.page }
-  }
-  // Títulos vazio/erro/carregando, mas há rascunhos prontos → mostra os rascunhos.
-  return drafts
-}
+export const mergeDraftsIntoGrid = (drafts: ListState, titles: ListState, mode: DraftMergeMode): ListState =>
+  mode === 'rascunho' ? drafts : titles
 
 // ── #201: listagem por TÍTULO (grid payable-centric: pai + filhos) — REUSA o mesmo GridRow/ListState ──
 // Um título vira uma linha do grid existente. `id` = payableId (checkbox/seleção por título). Lacunas

@@ -1,8 +1,8 @@
 /**
  * mergeDraftsIntoGrid (#201-fix) — rascunho (Draft) não gera títulos → invisível no grid title-centric.
- * A função mescla os documentos Draft (deriveListState) no ListState de títulos conforme o chip:
- * 'rascunho' (só rascunhos), 'todos' (rascunhos no topo, 1ª página), 'none' (títulos intactos).
- * PURO (node:test, imports relativos).
+ * A função troca a fonte do grid conforme o chip: 'rascunho' (só rascunhos, chip Rascunho) ou 'none'
+ * (títulos intactos, Todos/demais). Rascunho fica FORA do Todos (são muitos/parciais → soterrariam os
+ * títulos). PURO (node:test, imports relativos).
  */
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
@@ -40,31 +40,16 @@ const drafts: ListState = { tag: 'ready', rows: [row('draft-1', 'Rascunho')], pa
 const titles: ListState = { tag: 'ready', rows: [row('title-1', 'Aberto')], page }
 
 describe('mergeDraftsIntoGrid', () => {
-  it("'none' → devolve os títulos intactos (ignora rascunhos)", () => {
+  it("'none' (Todos/demais chips) → devolve os títulos intactos, SEM rascunhos", () => {
     assert.deepEqual(mergeDraftsIntoGrid(drafts, titles, 'none'), titles)
   })
 
-  it("'rascunho' → a fonte é SÓ os rascunhos", () => {
+  it("'rascunho' (chip Rascunho) → a fonte é os rascunhos", () => {
     assert.deepEqual(mergeDraftsIntoGrid(drafts, titles, 'rascunho'), drafts)
   })
 
-  it("'todos' → prepende os rascunhos ao topo dos títulos", () => {
-    const merged = mergeDraftsIntoGrid(drafts, titles, 'todos')
-    assert.equal(merged.tag, 'ready')
-    if (merged.tag !== 'ready') return
-    assert.deepEqual(
-      merged.rows.map((r) => r.id),
-      ['draft-1', 'title-1'],
-    )
-  })
-
-  it("'todos' sem rascunhos → títulos intactos", () => {
-    const noDrafts: ListState = { tag: 'empty' }
-    assert.deepEqual(mergeDraftsIntoGrid(noDrafts, titles, 'todos'), titles)
-  })
-
-  it("'todos' com rascunhos mas títulos vazios → mostra os rascunhos", () => {
+  it("'none' com títulos vazios → segue vazio (rascunho NÃO vaza pro Todos)", () => {
     const emptyTitles: ListState = { tag: 'empty' }
-    assert.deepEqual(mergeDraftsIntoGrid(drafts, emptyTitles, 'todos'), drafts)
+    assert.deepEqual(mergeDraftsIntoGrid(drafts, emptyTitles, 'none'), emptyTitles)
   })
 })

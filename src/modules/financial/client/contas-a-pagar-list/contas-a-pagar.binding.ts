@@ -117,25 +117,14 @@ export function useContasAPagar(): ContasAPagarBinding {
   )
 
   // #201-fix: rascunho (Draft) não gera títulos → invisível no grid title-centric. Buscamos os documentos
-  // Draft à parte e os mesclamos (chip Rascunho mostra só eles; Todos os prepende na 1ª página). Poucos
-  // rascunhos → 1 página ampla no modo Todos (sem merge de paginação server-side).
+  // Draft à parte e trocamos a fonte SÓ no chip "Rascunho" (fora do Todos: são muitos/parciais e
+  // soterrariam os títulos reais). Paginação normal do /documents?status=Draft.
   const draftMode: DraftMergeMode =
-    viewMode !== 'title'
-      ? 'none'
-      : selectedStatus === 'Rascunho'
-        ? 'rascunho'
-        : selectedStatus === null && page === 1
-          ? 'todos'
-          : 'none'
+    viewMode === 'title' && selectedStatus === 'Rascunho' ? 'rascunho' : 'none'
   const drafts = useQuery(
     contasAPagarQueryOptions(
-      {
-        page: draftMode === 'rascunho' ? page : 1,
-        pageSize: draftMode === 'rascunho' ? pageSize : 50,
-        status: 'Rascunho',
-        supplierRef: filters.fornecedor,
-      },
-      draftMode !== 'none',
+      { page, pageSize, status: 'Rascunho', supplierRef: filters.fornecedor },
+      draftMode === 'rascunho',
     ),
   )
 

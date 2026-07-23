@@ -10,12 +10,15 @@ concluía "não salvou".
 
 ## Escopo (front-only)
 
-Exibir os documentos `Draft` no grid title-centric, decisão da P.O. = **"Chip Rascunho + Todos"**:
+Exibir os documentos `Draft` no grid title-centric, via o chip **Rascunho**:
 
-- **Chip Rascunho**: o grid mostra SÓ os rascunhos (paginados pelo `/documents?status=Draft`).
-- **Chip Todos (1ª página)**: os rascunhos aparecem no TOPO das linhas de título.
-- **Demais chips / Todos página > 1**: sem rascunhos (grid de título intacto).
+- **Chip Rascunho**: o grid troca a fonte e mostra os rascunhos (paginados pelo `/documents?status=Draft`).
+- **Todos / demais chips**: grid de título intacto, **sem** rascunhos.
 - **Clicar** um rascunho → reabre o Lançar Documento (`?id=`) para finalizar (já existia, page:128).
+
+> **Nota (correção pós-validação):** a 1ª tentativa colocava rascunho também no "Todos"; com dado real
+> (78 rascunhos, muitos parciais do OCR ingest) isso **soterrava** os 62 títulos reais. Rascunho ficou
+> FORA do Todos — só no chip Rascunho, como os demais status. Acha-se o inacabado pelo chip.
 
 ## Fora de escopo
 
