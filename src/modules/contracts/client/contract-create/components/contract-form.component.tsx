@@ -31,6 +31,8 @@ import {
   fieldError,
   select,
   textarea,
+  charCounter,
+  charCounterMax,
   footer,
   buttonPrimary,
   buttonSecondary,
@@ -84,6 +86,10 @@ import {
 } from '../page/contract-create.css.ts'
 
 const t = createTranslator(ptBR)
+
+// #530: limite do Objeto (coluna `text` no core-api; cap generoso p/ objeto de contrato longo). O contador
+// abaixo do campo mostra o quanto foi digitado; o `maxLength` no textarea impede ultrapassar (inclusive colar).
+const OBJETO_MAX_CHARS = 5000
 
 function formatCurrencyCents(cents: number): string {
   if (!cents || cents <= 0) return 'R$ 00.000,00'
@@ -409,12 +415,19 @@ export function ContractForm({
               <textarea
                 className={`${textarea} ${validationAttempted && !state.objective ? inputError : ''}`}
                 value={state.objective}
+                maxLength={OBJETO_MAX_CHARS}
                 onChange={(e) => {
                   onUpdate('objective', e.target.value)
                 }}
                 onInput={handleAutoExpand}
                 rows={2}
               />
+              <div
+                className={`${charCounter} ${state.objective.length >= OBJETO_MAX_CHARS ? charCounterMax : ''}`}
+                aria-live="polite"
+              >
+                {`${String(state.objective.length)} / ${String(OBJETO_MAX_CHARS)}`}
+              </div>
             </div>
 
             <div className={grid2ValuePeriod}>

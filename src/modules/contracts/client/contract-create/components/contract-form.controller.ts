@@ -197,7 +197,19 @@ export const useContractFormController = (): ContractFormController => {
   }, [state, selectedPartner])
 
   const submit = useCallback((): CreateContractInput => {
-    const title = state.title.trim() || state.objective.trim() || 'Contrato sem título'
+    // O `title` é `varchar(255)` no core-api; o `objective` é `text` (longo). Quando o usuário não informa
+    // um título, derivamos um CURTO a partir do objeto (1ª parte, ≤120 + reticências) — antes copiávamos o
+    // objeto inteiro e um objeto longo estourava os 255 e derrubava o salvamento (#530).
+    const explicit = state.title.trim()
+    const derived = state.objective.trim().replace(/\s+/g, ' ')
+    const title =
+      explicit !== ''
+        ? explicit.slice(0, 255)
+        : derived === ''
+          ? 'Contrato sem título'
+          : derived.length > 120
+            ? `${derived.slice(0, 120).trimEnd()}…`
+            : derived
     return {
       title,
       objective: state.objective,
