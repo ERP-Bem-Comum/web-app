@@ -48,6 +48,7 @@ import {
   normalizeDesc,
   relabelReconCategory,
   nextPendingWithMatch,
+  engineTarget,
   tituloLabel,
   formatDateDash,
   formatDayHeader,
@@ -1296,5 +1297,43 @@ describe('extratoTypeTag (TIPO do extrato)', () => {
       extratoTypeTag(tx({ id: '4', entryType: 'Other', movement: 'Debit' })),
       'financial.recon.ext.type.saida',
     )
+  })
+})
+
+describe('engineTarget — motor de palpite (auto-navegar na aba Conciliação)', () => {
+  const base = {
+    onConciliacao: true,
+    justEntered: false,
+    guessesSettled: true,
+    selectedId: 't1' as string | null,
+    selectedIsMatch: true,
+    firstMatchId: 'm1' as string | null,
+    fallbackId: 'm1' as string | null,
+  }
+  it('fora da aba ou palpites não assentados → não mexe (null)', () => {
+    assert.equal(engineTarget({ ...base, onConciliacao: false }), null)
+    assert.equal(engineTarget({ ...base, guessesSettled: false }), null)
+  })
+  it('nada selecionado (load/novo extrato) → fallback (1º match ou topo)', () => {
+    assert.equal(engineTarget({ ...base, selectedId: null, fallbackId: 'm1' }), 'm1')
+    assert.equal(engineTarget({ ...base, selectedId: null, firstMatchId: null, fallbackId: 'topo' }), 'topo')
+  })
+  it('ENTROU na aba fora de um match → vai pro próximo COM palpite', () => {
+    assert.equal(
+      engineTarget({ ...base, justEntered: true, selectedIsMatch: false, firstMatchId: 'm2' }),
+      'm2',
+    )
+  })
+  it('ENTROU na aba já num match → respeita (null)', () => {
+    assert.equal(engineTarget({ ...base, justEntered: true, selectedIsMatch: true }), null)
+  })
+  it('ENTROU na aba fora de match mas NÃO há match → não mexe (null)', () => {
+    assert.equal(
+      engineTarget({ ...base, justEntered: true, selectedIsMatch: false, firstMatchId: null }),
+      null,
+    )
+  })
+  it('DENTRO da aba (navegando à mão) fora de um match → respeita a escolha (null)', () => {
+    assert.equal(engineTarget({ ...base, justEntered: false, selectedIsMatch: false }), null)
   })
 })
