@@ -499,17 +499,32 @@ describe('canSaveDraft / buildDraftInput', () => {
     assert.equal(canSubmit(semVenc), false)
     assert.equal(canSaveDraft(semVenc), true)
   })
-  it('rascunho exige o mínimo: tipo, número, fornecedor, forma, bruto', () => {
-    assert.equal(canSaveDraft({ ...base, supplierRef: '' }), false)
-    assert.equal(canSaveDraft({ ...base, grossValue: '' }), false)
+  it('#534: rascunho salva SEMPRE (parcial) — canSaveDraft nunca trava', () => {
+    assert.equal(canSaveDraft({ ...base, supplierRef: '' }), true)
+    assert.equal(canSaveDraft({ ...base, grossValue: '' }), true)
+    assert.equal(
+      canSaveDraft({
+        ...base,
+        type: '',
+        documentNumber: '',
+        supplierRef: '',
+        paymentMethod: '',
+        grossValue: '',
+      }),
+      true,
+    )
+  })
+  it('#534: buildDraftInput monta parcial — campos vazios viram undefined (sem null)', () => {
+    const input = buildDraftInput({ ...base, type: '', supplierRef: '', grossValue: '' })
+    assert.equal(input.asDraft, true)
+    assert.equal(input.type, undefined)
+    assert.equal(input.supplierRef, undefined)
+    assert.equal(input.grossValueCents, undefined)
   })
   it('buildDraftInput marca asDraft e omite dueDate vazio', () => {
     const input = buildDraftInput({ ...base, dueDate: '' })
-    assert.notEqual(input, null)
-    if (input !== null) {
-      assert.equal(input.asDraft, true)
-      assert.equal(input.dueDate, undefined)
-    }
+    assert.equal(input.asDraft, true)
+    assert.equal(input.dueDate, undefined)
   })
 })
 

@@ -12,12 +12,15 @@ import type {
   ListDocumentsInput,
   ListPayableTitlesInput,
   PayableTitleListResponse,
+  PayableCountsInput,
+  PayableCounts,
   RecentPayment,
 } from '#modules/financial/server/domain/document.io.ts'
 import {
   detailToModel,
   listToModel,
   payableTitlesToModel,
+  payableCountsToModel,
   recentPaymentsToModel,
   timelineToModel,
   mapHttpError,
@@ -32,6 +35,16 @@ const STATUS_TO_BACKEND_FULL: Partial<Record<string, string>> = {
   Recusado: 'Refused',
   Pago: 'Paid',
   Conciliado: 'Reconciled',
+}
+
+// #536: filtros da contagem agregada (sem status/paginação — o backend devolve o breakdown completo).
+const buildCountsQuery = (input: PayableCountsInput): string => {
+  const p = new URLSearchParams()
+  if (input.type !== undefined) p.set('documentType', input.type)
+  if (input.supplierRef !== undefined) p.set('supplierRef', input.supplierRef)
+  if (input.dueFrom !== undefined) p.set('dueFrom', input.dueFrom)
+  if (input.dueTo !== undefined) p.set('dueTo', input.dueTo)
+  return p.toString()
 }
 
 const buildTitlesQuery = (input: ListPayableTitlesInput): string => {
@@ -81,6 +94,14 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
       const r = await resultFetch<unknown>(`${baseUrl}/payable-titles?${buildTitlesQuery(input)}`, { token })
       if (isErr(r)) return err(mapHttpError(r.error))
       return payableTitlesToModel(r.value)
+    },
+    // #536: contagem agregada por status (chips) — 1 request.
+    getPayableCounts: async (input, token): Promise<Result<PayableCounts, FinancialError>> => {
+      const r = await resultFetch<unknown>(`${baseUrl}/payable-titles/counts?${buildCountsQuery(input)}`, {
+        token,
+      })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      return payableCountsToModel(r.value)
     },
     getRecentPayments: async (token): Promise<Result<readonly RecentPayment[], FinancialError>> => {
       const r = await resultFetch<unknown>(`${baseUrl}/dashboard/recent-payments`, { token })

@@ -4,6 +4,7 @@
  */
 import { listDocumentsFn } from '#modules/financial/server/adapters/server-fns/list-documents.query.fn.ts'
 import { listPayableTitlesFn } from '#modules/financial/server/adapters/server-fns/list-payable-titles.query.fn.ts'
+import { listPayableCountsFn } from '#modules/financial/server/adapters/server-fns/list-payable-counts.query.fn.ts'
 import { getDocumentFn } from '#modules/financial/server/adapters/server-fns/get-document.query.fn.ts'
 import { getDocumentTimelineFn } from '#modules/financial/server/adapters/server-fns/get-document-timeline.query.fn.ts'
 import { createDocumentFn } from '#modules/financial/server/adapters/server-fns/create-document.service.fn.ts'
@@ -21,6 +22,7 @@ import { createFinancialRepository } from './financial.repository.ts'
 export const financialRepository = createFinancialRepository({
   listDocumentsFn: (opts) => listDocumentsFn(opts),
   listPayableTitlesFn: (opts) => listPayableTitlesFn(opts),
+  payableCountsFn: (opts) => listPayableCountsFn(opts),
   getDocumentFn: (opts) => getDocumentFn(opts),
   getDocumentTimelineFn: (opts) => getDocumentTimelineFn(opts),
   createDocumentFn: (opts) => createDocumentFn(opts),

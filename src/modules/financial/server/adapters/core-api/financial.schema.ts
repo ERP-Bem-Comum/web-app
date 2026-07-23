@@ -101,6 +101,14 @@ export const CoreApiPayableTitleListSchema = z.object({
 })
 export type CoreApiPayableTitleList = z.infer<typeof CoreApiPayableTitleListSchema>
 
+// #536: resposta da contagem agregada (GET /payable-titles/counts).
+export const CoreApiPayableCountsSchema = z.object({
+  total: z.int(),
+  draft: z.int(),
+  byStatus: z.record(z.string(), z.int()),
+})
+export type CoreApiPayableCounts = z.infer<typeof CoreApiPayableCountsSchema>
+
 // 042: widget "Últimos pagamentos" (GET /financial/dashboard/recent-payments) — Top-5 pagos.
 export const CoreApiRecentPaymentSchema = z.object({
   payableId: z.string().trim(),

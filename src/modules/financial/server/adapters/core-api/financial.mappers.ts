@@ -19,6 +19,7 @@ import type {
   DocumentListResponse,
   PayableTitleListResponse,
   PayableTitleItem,
+  PayableCounts,
   RecentPayment,
   DocumentTimelineEvent,
   TimelineEventType,
@@ -27,6 +28,7 @@ import {
   CoreApiDocumentSchema,
   CoreApiDocumentListSchema,
   CoreApiPayableTitleListSchema,
+  CoreApiPayableCountsSchema,
   CoreApiRecentPaymentListSchema,
   CoreApiTimelineResponseSchema,
   type CoreApiPayable,
@@ -246,4 +248,11 @@ export const payableTitlesToModel = (raw: unknown): Result<PayableTitleListRespo
     netValueCents: p.netValueCents ?? null,
   }))
   return ok({ items, page: l.page, pageSize: l.pageSize, total: l.total })
+}
+
+// #536: contagem agregada — passthrough validado (byStatus é o breakdown cru dos títulos por status).
+export const payableCountsToModel = (raw: unknown): Result<PayableCounts, FinancialError> => {
+  const parsed = CoreApiPayableCountsSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  return ok({ total: parsed.data.total, draft: parsed.data.draft, byStatus: parsed.data.byStatus })
 }

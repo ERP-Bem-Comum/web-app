@@ -44,10 +44,12 @@ export type RegisteredTaxInput = Readonly<{
 export type PayeeKind = 'supplier' | 'financier' | 'act' | 'collaborator'
 
 export type CreateDocumentInput = Readonly<{
-  type: DocumentType
-  documentNumber: string
+  // #534: no RASCUNHO (asDraft) o core-api aceita estes 5 opcionais (superRefine reexige só p/ asDraft:false).
+  // O gating do lançamento (Open) vive na UI (`canSubmit`); o rascunho salva parcial.
+  type?: DocumentType
+  documentNumber?: string
   series?: string
-  supplierRef: string
+  supplierRef?: string
   payeeKind?: PayeeKind // tipo do favorecido (#90) — derivado do parceiro; backend default 'supplier'
   approverRef?: string // aprovador escolhido (#148) — UUID de usuário com payable:approve
   contractRef?: string
@@ -60,8 +62,8 @@ export type CreateDocumentInput = Readonly<{
   accessKey?: string // #115: chave de acesso (44 dígitos) — obrigatória p/ DANFE no lançamento
   paymentDetail?: string // #273: complemento da forma de pagamento (linha digitável, id de cartão, ref de câmbio)
   competencia?: string // #197: competência (YYYY-MM) — opcional; validada por VO no domínio do backend
-  paymentMethod: PaymentMethod
-  grossValueCents: string
+  paymentMethod?: PaymentMethod
+  grossValueCents?: string
   sourceDiscountsCents?: string
   discountsCents?: string
   penaltyCents?: string
@@ -234,4 +236,18 @@ export type PayableTitleListResponse = Readonly<{
   page: number
   pageSize: number
   total: number
+}>
+
+// #536: contagem agregada por status (chips) — 1 request. `byStatus` = breakdown dos títulos (Open/Approved/
+// Paid/Reconciled…); `draft` = documentos Rascunho; `total` = total de títulos.
+export type PayableCountsInput = Readonly<{
+  supplierRef?: string
+  dueFrom?: string
+  dueTo?: string
+  type?: string
+}>
+export type PayableCounts = Readonly<{
+  total: number
+  draft: number
+  byStatus: Readonly<Record<string, number>>
 }>
