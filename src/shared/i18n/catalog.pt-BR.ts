@@ -2108,6 +2108,8 @@ export const ptBR: Catalog = {
   'budget-plans.addBudget.close': 'Fechar',
   'budget-plans.addBudget.estado': 'Estado',
   'budget-plans.addBudget.estadoPlaceholder': 'Selecione o estado',
+  'budget-plans.addBudget.municipio': 'Município',
+  'budget-plans.addBudget.municipioPlaceholder': 'Todo o estado (sem município)',
   'budget-plans.addBudget.add': 'Adicionar',
   'budget-plans.addBudget.cancel': 'Cancelar',
   'budget-plans.addBudget.error.estado-required': 'Selecione um estado.',

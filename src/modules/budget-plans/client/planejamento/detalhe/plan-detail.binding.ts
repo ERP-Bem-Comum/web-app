@@ -20,6 +20,9 @@ import {
   municipioOptionsFor,
   planNetworkKind,
   selectedNetworkRef,
+  addBudgetEstadoOptions,
+  addBudgetMunicipioOptions,
+  addBudgetRefFor,
   type RegionOption,
   type MatrixView,
   type PlanDetailHeader,
@@ -76,13 +79,15 @@ export type PlanDetailFilter = Readonly<{
 export type AddBudgetBinding = Readonly<{
   open: boolean
   form: AddBudgetForm
-  options: readonly RegionOption[]
+  // Estado (UF) + Município (do estado escolhido). Município vazio → orçamento do estado (legado V1).
+  estadoOptions: readonly RegionOption[]
+  municipioOptions: readonly RegionOption[]
   submitting: boolean
   errorTag: AddBudgetError | null
   openModal: () => void
   close: () => void
   setEstado: (v: string) => void
-  setValor: (v: string) => void
+  setMunicipio: (v: string) => void
   submit: () => void
 }>
 
@@ -195,10 +200,13 @@ export function usePlanDetail(id: string): PlanDetailBinding {
     editMode: applied && networkRef !== null,
   }
 
+  // Rede efetiva do modal (município escolhido vence; senão a estado-rede da UF). `null` = nada válido ainda.
+  const addBudgetRef = addBudgetRefFor(redeOptions, addForm.estado, addForm.municipio)
   const addBudget: AddBudgetBinding = {
     open: addOpen,
     form: addForm,
-    options: redeOptions.map((n) => ({ value: n.ref, label: n.name })),
+    estadoOptions: addBudgetEstadoOptions(redeOptions),
+    municipioOptions: addBudgetMunicipioOptions(redeOptions, addForm.estado),
     submitting: addBudgetMutation.isPending,
     errorTag: addError,
     openModal: () => {
@@ -211,20 +219,21 @@ export function usePlanDetail(id: string): PlanDetailBinding {
       setAddOpen(false)
     },
     setEstado: (v) => {
-      setAddForm((f) => ({ ...f, estado: v }))
+      // Trocar o estado zera o município (os municípios são do estado escolhido).
+      setAddForm((f) => ({ ...f, estado: v, municipio: '' }))
       setAddError(null)
     },
-    setValor: (v) => {
-      setAddForm((f) => ({ ...f, valor: v }))
+    setMunicipio: (v) => {
+      setAddForm((f) => ({ ...f, municipio: v }))
       setAddError(null)
     },
     submit: () => {
-      const err = validateAddBudget(addForm, existingRefs)
+      const err = validateAddBudget(addBudgetRef, existingRefs)
       if (err !== null) {
         setAddError(err)
         return
       }
-      const rede = redeOptions.find((n) => n.ref === addForm.estado)
+      const rede = redeOptions.find((n) => n.ref === addBudgetRef)
       if (rede === undefined) {
         setAddError('estado-required')
         return
