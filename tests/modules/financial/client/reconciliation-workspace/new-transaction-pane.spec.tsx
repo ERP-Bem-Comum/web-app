@@ -28,6 +28,10 @@ const baseBinding = (over: Partial<ManualEntryBinding> = {}): ManualEntryBinding
   categoryRef: '',
   subcategoryRef: '',
   costCenterRef: '',
+  documentNumber: '',
+  documentType: '',
+  issueDate: '',
+  documentValue: '',
   partnerOptions: [],
   programOptions: [],
   planoOptions: [],
@@ -35,6 +39,7 @@ const baseBinding = (over: Partial<ManualEntryBinding> = {}): ManualEntryBinding
   subcategoryOptions: [],
   costCenterOptions: [],
   accountOptions: [],
+  documentTypeOptions: [],
   setType: vi.fn(),
   setDescription: vi.fn(),
   setDestinationAccount: vi.fn(),
@@ -44,6 +49,10 @@ const baseBinding = (over: Partial<ManualEntryBinding> = {}): ManualEntryBinding
   setCategoryRef: vi.fn(),
   setSubcategoryRef: vi.fn(),
   setCostCenterRef: vi.fn(),
+  setDocumentNumber: vi.fn(),
+  setDocumentType: vi.fn(),
+  setIssueDate: vi.fn(),
+  setDocumentValue: vi.fn(),
   reset: vi.fn(),
   submit: vi.fn(),
   ...over,
@@ -61,13 +70,37 @@ describe('NewTransactionPane', () => {
     expect(setType).toHaveBeenCalledWith('Transfer')
   })
 
-  it('Tarifa/Juros: mostra a classificação (Tarifa/Multa/Juros) ao lado da subcategoria — honesta (disabled)', () => {
-    render(<NewTransactionPane binding={baseBinding({ type: 'FeePenaltyInterest' })} />)
-    expect(screen.getByText(tr('financial.recon.manual.f.feeKind'))).toBeTruthy()
-    // As 3 opções (Tarifa/Multa/Juros) aparecem; o campo é honesto/desligado até o backend expor.
-    expect(screen.getByRole('option', { name: tr('financial.recon.treatment.Fee') })).toBeTruthy()
-    expect(screen.getByRole('option', { name: tr('financial.recon.treatment.Penalty') })).toBeTruthy()
-    expect(screen.getByRole('option', { name: tr('financial.recon.treatment.Interest') })).toBeTruthy()
+  it('Tarifa/Juros: mostra Programa (NÃO a classificação, removida — core-api#371 não vem)', () => {
+    render(
+      <NewTransactionPane
+        binding={baseBinding({
+          type: 'FeePenaltyInterest',
+          programOptions: [{ value: 'pr1', label: 'EDU — Educação' }],
+        })}
+      />,
+    )
+    // Programa entra no bloco Tarifa/Juros (alinha a taxonomia); a classificação Tarifa/Multa/Juros saiu.
+    expect(screen.getByText(tr('financial.recon.manual.f.program'))).toBeTruthy()
+    expect(screen.getByRole('option', { name: 'EDU — Educação' })).toBeTruthy()
+    expect(screen.queryByText(tr('financial.recon.manual.f.feeKind'))).toBeNull()
+    expect(screen.queryByRole('option', { name: tr('financial.recon.treatment.Fee') })).toBeNull()
+  })
+
+  it('Tarifa/Juros: setar o Programa dispara setProgramRef (enviado no template p/ FeePenaltyInterest)', () => {
+    const setProgramRef = vi.fn()
+    render(
+      <NewTransactionPane
+        binding={baseBinding({
+          type: 'FeePenaltyInterest',
+          programOptions: [{ value: 'pr1', label: 'EDU — Educação' }],
+          setProgramRef,
+        })}
+      />,
+    )
+    fireEvent.change(screen.getByLabelText(tr('financial.recon.manual.f.program')), {
+      target: { value: 'pr1' },
+    })
+    expect(setProgramRef).toHaveBeenCalledWith('pr1')
   })
 
   it('#502/S2: mostra o Plano Orçamentário na categorização (dirige a cascata)', () => {
@@ -185,5 +218,49 @@ describe('NewTransactionPane', () => {
   it('Pagamento: mantém a Categorização', () => {
     render(<NewTransactionPane binding={baseBinding({ type: 'Payment', showPayeeBlock: true })} />)
     expect(screen.getByText(tr('financial.recon.manual.categorize'))).toBeTruthy()
+  })
+
+  it('#370: os campos de documento são REAIS (número/tipo/emissão/valor disparam os setters)', () => {
+    const setDocumentNumber = vi.fn()
+    const setDocumentType = vi.fn()
+    const setIssueDate = vi.fn()
+    const setDocumentValue = vi.fn()
+    render(
+      <NewTransactionPane
+        binding={baseBinding({
+          type: 'Payment',
+          showPayeeBlock: true,
+          documentTypeOptions: [{ value: 'NFS-e', label: 'NFS-e' }],
+          setDocumentNumber,
+          setDocumentType,
+          setIssueDate,
+          setDocumentValue,
+        })}
+      />,
+    )
+    const num = screen.getByLabelText(tr('financial.recon.manual.f.docNumber'))
+    expect(num.hasAttribute('disabled')).toBe(false)
+    fireEvent.change(num, { target: { value: 'NF 001' } })
+    expect(setDocumentNumber).toHaveBeenCalledWith('NF 001')
+
+    const type = screen.getByLabelText(tr('financial.recon.manual.f.docType'))
+    fireEvent.change(type, { target: { value: 'NFS-e' } })
+    expect(setDocumentType).toHaveBeenCalledWith('NFS-e')
+
+    fireEvent.change(screen.getByLabelText(tr('financial.recon.manual.f.emission')), {
+      target: { value: '2026-06-18' },
+    })
+    expect(setIssueDate).toHaveBeenCalledWith('2026-06-18')
+
+    fireEvent.change(screen.getByLabelText(tr('financial.recon.manual.f.docValue')), {
+      target: { value: '1.234,56' },
+    })
+    expect(setDocumentValue).toHaveBeenCalledWith('1.234,56')
+  })
+
+  it('#370: os campos de documento NÃO aparecem fora do bloco Pagamento/Recebimento (ex.: Tarifa)', () => {
+    render(<NewTransactionPane binding={baseBinding({ type: 'FeePenaltyInterest' })} />)
+    expect(screen.queryByText(tr('financial.recon.manual.f.docNumber'))).toBeNull()
+    expect(screen.queryByText(tr('financial.recon.manual.f.docType'))).toBeNull()
   })
 })

@@ -421,6 +421,30 @@ describe('modal Detalhes da conciliação — matchDetailsView', () => {
     assert.equal(v.multi?.count, 3)
     assert.equal(v.multi?.totalBRL, 'R$ 742,00')
   })
+
+  it('#554/#555: categoria do lookup acende a linha "Categoria" (lançamento manual)', () => {
+    const v = matchDetailsView(base, null, null, null, true, null, null, null, 'Serviços / Consultoria')
+    assert.equal(v.doc.categoria, 'Serviços / Consultoria')
+  })
+
+  it('#554/#555: categoria do lookup sobrepõe o "—" do doc (título 1:1)', () => {
+    const doc = {
+      name: 'NF 0847',
+      nameTag: null,
+      documento: '0847',
+      vencimento: '10/06/2026',
+      categoria: '—',
+      valueBRL: 'R$ 950,00',
+    }
+    const v = matchDetailsView(base, doc, null, null, false, null, null, null, 'Imposto / ISS')
+    assert.equal(v.doc.categoria, 'Imposto / ISS')
+    assert.equal(v.doc.documento, '0847') // demais campos do doc preservados
+  })
+
+  it('#554/#555: categoria null/vazia mantém "—"', () => {
+    assert.equal(matchDetailsView(base, null, null, null, true, null, null, null, null).doc.categoria, '—')
+    assert.equal(matchDetailsView(base, null, null, null, true, null, null, null, '').doc.categoria, '—')
+  })
 })
 
 describe('matchAuditFromLookup (#207 — "Por" mostra nome, não UUID)', () => {
@@ -432,6 +456,7 @@ describe('matchAuditFromLookup (#207 — "Por" mostra nome, não UUID)', () => {
     reconciledBy: 'c562bc57-0000-0000-0000-000000000000',
     reconciledAt: '2026-06-21T13:45:00.000Z',
     differenceCents: null,
+    category: null,
     items: [],
   }
 
