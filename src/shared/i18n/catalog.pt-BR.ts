@@ -1590,15 +1590,11 @@ export const ptBR: Catalog = {
   'financial.recon.add.cancel': 'Cancelar',
   'financial.recon.add.save': 'Adicionar conta',
   'financial.recon.add.close': 'Fechar',
-  // Importar (US2)
-  'financial.recon.import.pdfChip': 'PDF (OCR)',
-  'financial.recon.import.pdfUnavailable': 'Importar PDF via OCR — em breve (#145)',
-  // Dropdown de formato do Importar (OFX/CSV reais; PDF chrome até OCR #145).
+  // Dropdown de formato do Importar (OFX/CSV/PDF — todos reais; PDF via OCR, core-api#557).
   'financial.recon.import.group': 'Formato do extrato',
   'financial.recon.import.ofxLabel': 'OFX',
   'financial.recon.import.csvLabel': 'CSV',
   'financial.recon.import.pdfLabel': 'PDF',
-  'financial.recon.import.pdfHint': 'Em breve',
   'financial.recon.import.summary': '{imported} importadas · {dups} duplicadas · {start}–{end}',
   // Validação de conta no upload de OFX (conta do arquivo ≠ conta da tela) — bloqueio com confirmação.
   'financial.recon.import.mismatch.title': 'Conta diferente',
