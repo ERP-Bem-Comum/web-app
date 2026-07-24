@@ -178,6 +178,7 @@ export const EMPTY_RETENTIONS: RetentionFieldsReais = {
  */
 export type OcrFieldKey =
   | 'type'
+  | 'supplier' // fornecedor auto-identificado pelo OCR (CNPJ do emitente → parceiro; core-api#560)
   | 'documentNumber'
   | 'series'
   | 'issueDate'
@@ -210,6 +211,8 @@ export const ocrReadFields = (
   const s = new Set<OcrFieldKey>()
   if (!isOcrSession || fields === null) return s
   if (fields.type !== '') s.add('type')
+  // Fornecedor lido/auto-identificado pelo OCR (supplierRef resolvido pelo backend #560 → hidratado).
+  if (fields.supplierRef.trim() !== '') s.add('supplier')
   if (fields.documentNumber.trim() !== '') s.add('documentNumber')
   if (fields.series.trim() !== '') s.add('series')
   if (fields.issueDate !== '') s.add('issueDate')
