@@ -22,7 +22,7 @@ export type ManualEntryType =
   | 'Investment'
   | 'Redemption'
 export type SuggestionBand = 'alta' | 'media'
-export type StatementFormat = 'OFX' | 'CSV'
+export type StatementFormat = 'OFX' | 'CSV' | 'PDF' // PDF: OCR (core-api#557); content = base64
 
 // Conta-cedente (depende de core-api#168; sem endpoint hoje). `status` Closed não abre workspace.
 export type AccountType = 'Corrente' | 'Poupanca' | 'Investimento' | 'Cartao' | 'Outro'

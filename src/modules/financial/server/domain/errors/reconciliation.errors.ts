@@ -18,6 +18,8 @@ export type ReconciliationError =
   | 'import-empty-content' // 400 empty-content
   | 'import-malformed' // 400 malformed-statement
   | 'import-empty-statement' // 422 empty-statement
+  // exclusão do extrato (DELETE /bank-statements/:id — core-api#558)
+  | 'statement-has-reconciled-transactions' // 409: há transações Reconciled/ManualEntry → desfaça antes
   // período
   | 'period-closed' // 409 period-closed
   | 'period-has-pending' // 422 period-has-pending-transactions

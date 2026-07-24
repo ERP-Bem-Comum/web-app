@@ -24,6 +24,7 @@ import {
   createGetSuggestions,
   createGetTransactionReconciliation,
   createImportStatement,
+  createDeleteBankStatement,
   createListCedenteAccounts,
   createListPaidPayables,
   createGetAccountStatementPeriod,
@@ -46,6 +47,7 @@ const build = () => {
   return {
     importStatement: createImportStatement({ client }),
     listTransactions: createListTransactions({ client }),
+    deleteBankStatement: createDeleteBankStatement({ client }),
     listPaidPayables: createListPaidPayables({ client }),
     listReferences: createListReferences({ client }),
     listCedenteAccounts: createListCedenteAccounts({ client }),

@@ -43,6 +43,12 @@ describe('mapHttpError (conciliação)', () => {
     assert.equal(mapHttpError(http(409, 'transaction-already-reconciled')), 'transaction-already-reconciled')
     assert.equal(mapHttpError(http(400, 'unsupported-format')), 'import-unsupported-format')
     assert.equal(mapHttpError(http(422, 'period-has-pending-transactions')), 'period-has-pending')
+    // Exclusão do extrato (core-api#558): guarda de conciliadas (409) + not-found do slug próprio.
+    assert.equal(
+      mapHttpError(http(409, 'statement-has-reconciled-transactions')),
+      'statement-has-reconciled-transactions',
+    )
+    assert.equal(mapHttpError(http(404, 'bank-statement-not-found')), 'not-found')
   })
 
   it('cai no status quando não há slug', () => {

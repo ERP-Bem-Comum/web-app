@@ -1,7 +1,8 @@
 /**
- * Binding de importação de extrato (US2) — ADAPTER React. Lê o arquivo OFX/CSV como texto (`File.text()`,
- * nativo §VIII), chama a porta `importStatement` e, no sucesso, registra o `statementId` (via callback) e
- * invalida a lista de transações. PDF/OCR fica de fora (#145). Erros → tag i18n (a UI nunca olha status).
+ * Binding de importação de extrato (US2) — ADAPTER React. OFX/CSV = texto cru (`File.text()`, nativo §VIII);
+ * PDF = OCR (core-api#557), lido como BASE64 (`fileToBase64`, o MESMO helper da ingestão do "Lançar
+ * Documento") — o backend faz `Buffer.from(content,'base64')`, então NÃO é `file.text()`. Chama a porta
+ * `importStatement` e, no sucesso, registra o `statementId` (via callback) e invalida a lista. Erros → tag i18n.
  *
  * VALIDAÇÃO DE CONTA (front puro): antes de importar um OFX, compara o `<BANKACCTFROM>` do arquivo com a
  * conta da tela. Se for de OUTRA conta, NÃO importa direto — devolve um `mismatch` e a UI pede confirmação
@@ -12,6 +13,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { reconciliationRepository } from '#modules/financial/client/data/repository/reconciliation.repository.instance.ts'
 import { reconciliationErrorTag } from '#modules/financial/client/data/helpers/reconciliation-error-tag.ts'
+import { fileToBase64 } from '#modules/financial/client/data/file-base64.ts'
 import type {
   BankStatementImport,
   StatementFormat,
@@ -24,8 +26,12 @@ import {
   type AccountIdentity,
 } from './reconciliation-workspace.view-model.ts'
 
-const formatFromName = (name: string): StatementFormat =>
-  name.toLowerCase().endsWith('.csv') ? 'CSV' : 'OFX'
+const formatFromName = (name: string): StatementFormat => {
+  const lower = name.toLowerCase()
+  if (lower.endsWith('.pdf')) return 'PDF'
+  if (lower.endsWith('.csv')) return 'CSV'
+  return 'OFX'
+}
 
 export type ImportMismatch = Readonly<{ fileAccountLabel: string }>
 
@@ -52,10 +58,12 @@ export function useImport(
 
   const mutation = useMutation({
     mutationFn: async (file: File) => {
-      const content = await file.text()
+      const format = formatFromName(file.name)
+      // PDF: o backend decodifica base64 → bytes → OCR; OFX/CSV seguem como texto cru.
+      const content = format === 'PDF' ? await fileToBase64(file) : await file.text()
       return reconciliationRepository.importStatement({
         debitAccountRef: accountRef,
-        format: formatFromName(file.name),
+        format,
         content,
         fileName: file.name,
       })

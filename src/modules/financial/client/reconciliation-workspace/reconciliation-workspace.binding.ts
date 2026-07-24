@@ -45,6 +45,7 @@ import { useChangeAccount, type ChangeAccountBinding } from './change-account.bi
 import { useMatchDetails, type MatchDetailsBinding } from './match-details.binding.ts'
 import { useHeaderMenus, resolvePeriodRange, type HeaderMenusBinding } from './header-menus.binding.ts'
 import { useImport, type ImportBinding } from './import.binding.ts'
+import { useDeleteStatement, type DeleteStatementBinding } from './delete-statement.binding.ts'
 import { useReconcile, type ReconcileBinding } from './reconcile.binding.ts'
 import { useCounterpart, type CounterpartBinding } from './counterpart.binding.ts'
 import { useSearchCreate, type SearchCreateBinding } from './search-create.binding.ts'
@@ -141,6 +142,8 @@ export type WorkspaceBinding = Readonly<{
   matchDetails: MatchDetailsBinding
   headerMenus: HeaderMenusBinding
   import: ImportBinding
+  // Excluir extrato importado (core-api#558) — botão na bottombar + modal de confirmação destrutivo.
+  deleteStatement: DeleteStatementBinding & Readonly<{ accountLabel: string; periodLabel: string }>
   reconcile: ReconcileBinding
   // US2 (#269): contrapartida esperada da transação selecionada (transferência entre contas). O painel só
   // aparece quando há candidatas (state.tag === 'ready') → invisível p/ transações comuns de título.
@@ -357,6 +360,26 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
       void statementId
     }
   })
+
+  // Excluir extrato (core-api#558): no sucesso, some o statement da sessão + o localStorage (extrato E período)
+  // desta conta — senão a restauração pós-reload traria de volta um extrato que não existe mais.
+  const deleteStatementBinding = useDeleteStatement(ui.statementId, () => {
+    dispatch({ type: 'clear-statement' })
+    try {
+      window.localStorage.removeItem(lastStatementKey(accountRef))
+      window.localStorage.removeItem(lastPeriodKey(accountRef))
+    } catch {
+      // localStorage indisponível → nada a limpar (o statement já saiu da memória).
+      void accountRef
+    }
+  })
+  // Rótulos p/ a confirmação de exclusão NOMEAR o extrato (conta + período), não as transações.
+  const deleteStatementAccountLabel =
+    account !== null
+      ? `${account.alias} · ${account.bankCode} ${account.bankName} · Ag ${account.branch} · CC ${account.accountNumber}-${account.accountDv}`
+      : ''
+  const deleteStatementPeriodLabel =
+    periodRange !== null ? `${formatDateBR(periodRange.from)} – ${formatDateBR(periodRange.to)}` : ''
 
   // Restaura o extrato + período persistidos ao montar/trocar de conta (efêmeros no reducer; o real fica no
   // localStorage). Só restaura se ainda não há extrato em tela. Cobre o "apaga no reload" (extrato E período).
@@ -682,6 +705,11 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     matchDetails: matchDetailsBinding,
     headerMenus: headerMenusBinding,
     import: importBinding,
+    deleteStatement: {
+      ...deleteStatementBinding,
+      accountLabel: deleteStatementAccountLabel,
+      periodLabel: deleteStatementPeriodLabel,
+    },
     reconcile: reconcileBinding,
     counterpart: counterpartBinding,
     searchCreate: searchCreateBinding,

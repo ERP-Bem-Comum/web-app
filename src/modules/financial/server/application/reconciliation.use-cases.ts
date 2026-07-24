@@ -56,6 +56,8 @@ export type ReconciliationClient = Readonly<{
     i: ListTransactionsInput,
     token: string,
   ) => Promise<Result<readonly StatementTransaction[], ReconciliationError>>
+  // Excluir extrato (DELETE /bank-statements/:id — core-api#558). Hard-delete (transações por cascade).
+  deleteBankStatement: (statementId: string, token: string) => Promise<Result<void, ReconciliationError>>
   listPaidPayables: (token: string) => Promise<Result<readonly PaidPayable[], ReconciliationError>>
   listReferences: (token: string) => Promise<Result<FinancialReferences, ReconciliationError>>
   listCedenteAccounts: (token: string) => Promise<Result<readonly CedenteAccount[], ReconciliationError>>
@@ -138,6 +140,11 @@ export const createListTransactions =
     token: string,
   ): Promise<Result<readonly StatementTransaction[], ReconciliationError>> =>
     deps.client.listTransactions(i, token)
+
+export const createDeleteBankStatement =
+  (deps: Deps) =>
+  (statementId: string, token: string): Promise<Result<void, ReconciliationError>> =>
+    deps.client.deleteBankStatement(statementId, token)
 
 export const createListPaidPayables =
   (deps: Deps) =>

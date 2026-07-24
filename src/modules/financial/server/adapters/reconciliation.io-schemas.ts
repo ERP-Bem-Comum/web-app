@@ -8,7 +8,7 @@ import * as z from 'zod'
 
 import type * as R from '#modules/financial/server/domain/reconciliation.io.ts'
 
-const STATEMENT_FORMATS = ['OFX', 'CSV'] as const
+const STATEMENT_FORMATS = ['OFX', 'CSV', 'PDF'] as const // PDF: OCR (core-api#557); content = base64
 const DIFFERENCE_TREATMENTS = ['Interest', 'Penalty', 'Discount', 'Fee', 'Partial'] as const
 const MANUAL_ENTRY_TYPES = [
   'Payment',
@@ -27,11 +27,16 @@ const DateSchema = z.iso.date() // YYYY-MM-DD
 export const ImportStatementInputSchema = z.object({
   debitAccountRef: z.uuid(),
   format: z.enum(STATEMENT_FORMATS),
-  content: z.string().trim().min(1),
+  // Texto cru (OFX/CSV) ou base64 (PDF). Teto espelha o core-api (5_000_000 chars) — base64 infla ~33%,
+  // então um PDF de ~3.7MB cabe. Rejeita cedo, com erro amigável, antes de subir.
+  content: z.string().trim().min(1).max(5_000_000),
   fileName: z.string().trim().min(1).max(255).optional(),
 })
 
 export const ListTransactionsInputSchema = z.object({ statementId: z.uuid() })
+
+// Excluir extrato (DELETE /bank-statements/:id — core-api#558). Só o id; sem body.
+export const DeleteStatementInputSchema = z.object({ statementId: z.uuid() })
 
 export const GetCedenteAccountInputSchema = z.object({ id: z.uuid() })
 // Encerrar conta-cedente (POST /cedente-accounts/:id/close) — só o id; sem body.

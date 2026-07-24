@@ -2545,6 +2545,29 @@ export const modalBtnPrimary = style({
   transition: `opacity ${recon.tFast}`,
   selectors: { '&:hover': { opacity: 0.92 } },
 })
+// Confirmação DESTRUTIVA do modal (Excluir extrato) — vermelho sólido; mesma altura do primário.
+export const modalBtnDanger = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: sp.xs,
+  boxSizing: 'border-box',
+  blockSize: '2.375rem',
+  paddingInline: sp.xl,
+  borderRadius: r.md,
+  border: 'none',
+  background: c.red.deep,
+  color: c.paper.default,
+  fontFamily: recon.font.sans,
+  fontSize: fs.sm,
+  fontWeight: recon.weight.semibold,
+  cursor: 'pointer',
+  transition: `opacity ${recon.tFast}`,
+  selectors: {
+    '&:hover:not(:disabled)': { opacity: 0.92 },
+    '&:disabled': { opacity: 0.5, cursor: 'not-allowed' },
+  },
+})
 
 export const accGroup = style({
   display: 'flex',
@@ -3104,6 +3127,17 @@ export const footBtnPrimary = style({
   border: `${bw.hairline} solid transparent`,
   fontWeight: recon.weight.semibold,
   selectors: { '&:hover': { background: c.teal.deep } },
+})
+// Ação DESTRUTIVA na bottombar (Excluir extrato) — vermelho contido; disabled esmaece (sem extrato).
+export const footBtnDanger = style({
+  ...footBtnBase,
+  background: c.paper.default,
+  color: c.red.deep,
+  border: `${bw.hairline} solid ${c.red.line}`,
+  selectors: {
+    '&:hover:not(:disabled)': { background: c.red.bg },
+    '&:disabled': { color: c.ink[6], borderColor: c.paper.rule, cursor: 'not-allowed' },
+  },
 })
 
 // #205: faixa de SALDO DO PERÍODO (topo da aba Extrato) — saldo inicial acumulado → final + entradas/saídas.
