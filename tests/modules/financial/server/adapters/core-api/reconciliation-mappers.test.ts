@@ -381,6 +381,33 @@ describe('transactionReconciliationToModel (#175)', () => {
     if (isOk(manual)) assert.equal(manual.value.type, 'ManualEntry')
   })
 
+  it('#554/#555: categoria presente atravessa; ausente/inválida → null (tolerante)', () => {
+    const withCat = transactionReconciliationToModel({
+      id: 'r',
+      transactionId: 't',
+      type: 'ManualEntry',
+      status: 'Active',
+      reconciledBy: 'u',
+      reconciledAt: '2026-06-18T00:00:00.000Z',
+      category: 'Serviços / Consultoria',
+      items: [],
+    })
+    assert.ok(isOk(withCat))
+    if (isOk(withCat)) assert.equal(withCat.value.category, 'Serviços / Consultoria')
+
+    const noCat = transactionReconciliationToModel({
+      id: 'r',
+      transactionId: 't',
+      type: 'Individual',
+      status: 'Active',
+      reconciledBy: 'u',
+      reconciledAt: '2026-06-18T00:00:00.000Z',
+      items: [],
+    })
+    assert.ok(isOk(noCat))
+    if (isOk(noCat)) assert.equal(noCat.value.category, null)
+  })
+
   it('shape inválido → err(server)', () => {
     assert.ok(isErr(transactionReconciliationToModel({ nope: true })))
   })

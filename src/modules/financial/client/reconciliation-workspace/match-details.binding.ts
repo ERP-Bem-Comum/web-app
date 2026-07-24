@@ -78,6 +78,7 @@ export function useMatchDetails(
           manualType,
           counterparty,
           singleMatchValueCents,
+          lookup?.category ?? null,
         )
   const reconciliationId = tx === null ? null : (sessionIdFor(tx.id) ?? lookup?.reconciliationId ?? null)
 

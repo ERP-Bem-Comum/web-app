@@ -23,6 +23,8 @@ export type ManualEntryType =
   | 'Redemption'
 export type SuggestionBand = 'alta' | 'media' // 'baixa' (<50) é filtrada pelo backend, nunca chega
 export type StatementFormat = 'OFX' | 'CSV'
+// #370: DocumentType do sistema (espelha o enum do core-api) — campos de documento do lançamento manual.
+export type DocumentType = 'NFS-e' | 'DANFE' | 'RPA' | 'Fatura' | 'Boleto' | 'Recibo' | 'Imposto'
 
 // ── Inputs (validados na server fn pelos schemas em adapters) ────────────────────
 // Importar extrato (POST /bank-statements). `content` = arquivo OFX/CSV como texto.
@@ -106,6 +108,12 @@ export interface ManualEntryTemplate {
   description?: string
   destinationAccount?: string
   productLabel?: string // #143: "produto" exigido p/ Aplicação/Resgate (mandamos o nome da conta destino)
+  // #370: campos de documento (só Pagamento/Recebimento). `documentValueCents` omitido → o backend usa o
+  // valor da transação conciliada. `issueDate` em YYYY-MM-DD; `documentValueCents` = string de centavos.
+  documentNumber?: string
+  documentType?: DocumentType
+  issueDate?: string
+  documentValueCents?: string
 }
 
 // Lançamento manual (POST /statement-transactions/:id/manual-entry).
@@ -344,6 +352,9 @@ export type TransactionReconciliation = Readonly<{
   reconciledByName: string | null // #207: nome de quem conciliou (resolvido pelo core-api); null = não-resolvido
   reconciledAt: string // ISO datetime
   differenceCents: string | null // centavos; pode ser negativo (Discount); null se não houver diferença
+  // #554/#555: categoria resolvida server-side (ref → nome) — do lançamento manual (fatia 1) ou do título
+  // (fatia 2). null = sem categoria ou conciliação sem lançamento manual.
+  category: string | null
   items: readonly TransactionReconciliationItem[]
 }>
 

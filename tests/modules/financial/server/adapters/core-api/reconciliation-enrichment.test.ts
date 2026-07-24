@@ -111,6 +111,7 @@ const txRecon = (items: readonly TransactionReconciliationItem[]): TransactionRe
   reconciledByName: null,
   reconciledAt: '2026-01-10T12:00:00Z',
   differenceCents: null,
+  category: null,
   items,
 })
 

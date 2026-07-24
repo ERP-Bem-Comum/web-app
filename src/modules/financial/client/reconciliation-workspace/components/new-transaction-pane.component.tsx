@@ -4,11 +4,11 @@
  * (fornecedor/tipo/data/valor/programa); Transferência/Aplicação/Resgate mostram aviso + confirmação
  * consciente + destino/produto; todos têm Categorização (categoria/centro/descrição).
  *
- * Honestidade: o manual-entry (#152) aceita `type` + refs (`supplierRef`/`programRef`/…) + `description`.
- * LIGADOS (reais): Tipo, Fornecedor (parceiros), Programa (programas ativos), Categoria + Centro de custo
- * (referências 020 · #200), Descrição, Destino/produto (core-api#143). CHROME (desabilitados até o backend
- * ativar): campos de documento — Número/Tipo/Emissão/Valor (core-api#370) e classificação Tarifa/Multa/Juros
- * (core-api#371). Acendem quando o contrato do manual-entry aceitar + retornar esses campos.
+ * Honestidade: o manual-entry (#152) aceita `type` + refs (`supplierRef`/`programRef`/…) + `description` +
+ * os campos de documento (#370). LIGADOS (reais): Tipo, Fornecedor (parceiros), Programa (programas ativos —
+ * também no bloco Tarifa/Juros), Categoria + Centro de custo (referências 020 · #200), Descrição, Destino/
+ * produto (core-api#143) e os campos de documento — Número/Tipo/Emissão/Valor (core-api#370). Todos os campos
+ * são reais; a classificação Tarifa/Multa/Juros foi removida (core-api#371 não vem; a taxonomia cobre).
  */
 import type { ComponentType } from 'react'
 
@@ -52,17 +52,6 @@ const isSpecial = (tp: ManualEntryType): tp is 'Transfer' | 'Investment' | 'Rede
 
 export type NewTransactionPaneProps = Readonly<{ binding: ManualEntryBinding }>
 
-// Campo "chrome": label + controle desabilitado em estado de placeholder (depende do backend).
-function ChromeSelect({ label, placeholder }: Readonly<{ label: string; placeholder: string }>) {
-  return (
-    <label className={s.ntField}>
-      <span className={s.ntLabel}>{label}</span>
-      <select className={s.ntSelect} disabled aria-disabled="true" defaultValue="">
-        <option value="">{placeholder}</option>
-      </select>
-    </label>
-  )
-}
 // `value` presente = mostra o dado (read-only, não editável); ausente = placeholder cinza (chrome puro).
 function ChromeInput({
   label,
@@ -82,6 +71,39 @@ function ChromeInput({
         readOnly
         disabled={!filled}
         aria-disabled={!filled}
+      />
+    </label>
+  )
+}
+
+// Input REAL (ligado): texto/data (#370 — campos de documento do lançamento manual). `type="date"` produz
+// e consome YYYY-MM-DD nativamente (sem conversão de fuso), no padrão dos demais campos de data do módulo.
+function RealInput({
+  label,
+  placeholder,
+  value,
+  onChange,
+  type = 'text',
+  mono,
+}: Readonly<{
+  label: string
+  placeholder?: string
+  value: string
+  onChange: (v: string) => void
+  type?: 'text' | 'date'
+  mono?: boolean
+}>) {
+  return (
+    <label className={s.ntField}>
+      <span className={s.ntLabel}>{label}</span>
+      <input
+        type={type}
+        className={mono === true ? s.ntInputMono : s.ntInput}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value)
+        }}
       />
     </label>
   )
@@ -176,21 +198,6 @@ export function NewTransactionPane({ binding }: NewTransactionPaneProps) {
     />
   )
 
-  // Classificação Tarifa/Multa/Juros — só faz sentido p/ o tipo Tarifa/Juros (FeePenaltyInterest). Campo
-  // HONESTO/desligado (as opções aparecem, mas o input do manual-entry no core-api ainda não tem campo
-  // estruturado p/ o subtipo): acende quando o backend expor. Reusa os rótulos de tratamento (Fee/Penalty/Interest).
-  const feeKindSelect = (
-    <label className={s.ntField}>
-      <span className={s.ntLabel}>{t('financial.recon.manual.f.feeKind')}</span>
-      <select className={s.ntSelect} disabled aria-disabled="true" defaultValue="">
-        <option value="">{t('financial.recon.manual.f.feeKindPlaceholder')}</option>
-        <option value="Fee">{t('financial.recon.treatment.Fee')}</option>
-        <option value="Penalty">{t('financial.recon.treatment.Penalty')}</option>
-        <option value="Interest">{t('financial.recon.treatment.Interest')}</option>
-      </select>
-    </label>
-  )
-
   return (
     <div className={s.assocCol}>
       <div className={s.ntForm}>
@@ -270,25 +277,39 @@ export function NewTransactionPane({ binding }: NewTransactionPaneProps) {
                       options={binding.partnerOptions}
                       onChange={binding.setSupplierRef}
                     />
-                    {/* Número do documento — chrome até o contrato do manual-entry aceitar (core-api#370). */}
-                    <ChromeInput
+                    {/* Número do documento — REAL (#370): ligado ao form; enviado no lançamento manual. */}
+                    <RealInput
                       label={t('financial.recon.manual.f.docNumber')}
                       placeholder={t('financial.recon.manual.f.docNumberPlaceholder')}
+                      value={binding.documentNumber}
+                      onChange={binding.setDocumentNumber}
                       mono
                     />
                   </div>
-                  {/* Tipo de doc + Emissão + Valor — chrome até core-api#370, lado a lado (3 colunas). */}
+                  {/* Tipo de doc + Emissão + Valor — REAIS (#370), lado a lado (3 colunas). Valor vazio →
+                      omitido no envio (o backend usa o valor da transação conciliada). */}
                   <div className={`${s.ntRow} ${s.ntRowCols3}`}>
-                    <ChromeSelect
+                    <RealSelect
                       label={t('financial.recon.manual.f.docType')}
                       placeholder={t('financial.recon.manual.f.docTypePlaceholder')}
+                      value={binding.documentType}
+                      options={binding.documentTypeOptions}
+                      onChange={binding.setDocumentType}
                     />
-                    <ChromeInput
+                    <RealInput
                       label={t('financial.recon.manual.f.emission')}
-                      placeholder="DD/MM/AAAA"
+                      type="date"
+                      value={binding.issueDate}
+                      onChange={binding.setIssueDate}
                       mono
                     />
-                    <ChromeInput label={t('financial.recon.manual.f.docValue')} placeholder="R$ 0,00" mono />
+                    <RealInput
+                      label={t('financial.recon.manual.f.docValue')}
+                      placeholder="R$ 0,00"
+                      value={binding.documentValue}
+                      onChange={binding.setDocumentValue}
+                      mono
+                    />
                   </div>
                 </>
               ) : null}
@@ -311,12 +332,12 @@ export function NewTransactionPane({ binding }: NewTransactionPaneProps) {
                 </>
               ) : (
                 <>
-                  {/* Tarifa/Juros (único tipo não-payee que categoriza): Plano + a classificação lado a lado
-                  (o Plano dirige a cascata); Centro/Categoria/Subcategoria em 3 colunas. A classificação é
-                  gated por tipo (só FeePenaltyInterest a tem). */}
+                  {/* Tarifa/Juros (único tipo não-payee que categoriza): Programa + Plano lado a lado (o Plano
+                  dirige a cascata, igual ao bloco Pagamento/Recebimento); Centro/Categoria/Subcategoria em 3
+                  colunas. A classificação Tarifa/Multa/Juros saiu (core-api#371 não vem; a taxonomia cobre). */}
                   <div className={`${s.ntRow} ${s.ntRowCols2}`}>
+                    {programaSelect}
                     {planoSelect}
-                    {type === 'FeePenaltyInterest' ? feeKindSelect : null}
                   </div>
                   <div className={`${s.ntRow} ${s.ntRowCols3}`}>
                     {centroSelect}
