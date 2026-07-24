@@ -27,10 +27,14 @@ import {
   paymentCard,
   paymentMethodName,
   dwFileCard,
+  dwFileCardAttached,
   dwFileIcon,
+  dwFileIconAttached,
   dwFileInfo,
   dwFileName,
+  dwFileNameAttached,
   dwFileMeta,
+  dwFileMetaAttached,
   drawerOverlay,
   drawerPanel,
   drawerHeader,
@@ -74,6 +78,14 @@ const destino = (rt: RetentionType): string =>
 
 // Rótulo do tipo de chave PIX (reusa o catálogo do módulo Partners — mesmos literais nos 4 tipos).
 const pixTypeLabel = (type: PixKeyType): string => t(`partners.suppliers.pix.${type}`)
+
+// #568: glyph do ícone do card = extensão do arquivo em maiúsculas (ex.: "PDF", "XML"), teto de 4 chars;
+// sem extensão reconhecível cai no genérico "DOC".
+const fileBadge = (fileName: string): string => {
+  const dot = fileName.lastIndexOf('.')
+  const ext = dot >= 0 ? fileName.slice(dot + 1).toUpperCase() : ''
+  return ext !== '' && ext.length <= 4 ? ext : 'DOC'
+}
 
 function SectionLabel({ label, count }: Readonly<{ label: string; count?: number }>): ReactNode {
   return (
@@ -221,15 +233,18 @@ export function DocumentDetailDrawer({
               <SectionLabel label={t('financial.detail.label.documento')} />
               {/* FileCard — comprovante-fonte (OCR, #568): com anexo mostra o nome do arquivo; sem anexo,
                   o estado honesto "nenhum arquivo anexado". */}
-              <div className={dwFileCard}>
-                <span className={dwFileIcon} aria-hidden="true">
-                  {view.attachment !== null ? 'DOC' : 'PDF'}
+              <div className={`${dwFileCard} ${view.attachment !== null ? dwFileCardAttached : ''}`}>
+                <span
+                  className={`${dwFileIcon} ${view.attachment !== null ? dwFileIconAttached : ''}`}
+                  aria-hidden="true"
+                >
+                  {view.attachment !== null ? fileBadge(view.attachment.fileName) : 'PDF'}
                 </span>
                 <span className={dwFileInfo}>
-                  <span className={dwFileName}>
+                  <span className={`${dwFileName} ${view.attachment !== null ? dwFileNameAttached : ''}`}>
                     {view.attachment !== null ? view.attachment.fileName : t('financial.detail.file.empty')}
                   </span>
-                  <span className={dwFileMeta}>
+                  <span className={`${dwFileMeta} ${view.attachment !== null ? dwFileMetaAttached : ''}`}>
                     {view.attachment !== null
                       ? t('financial.detail.file.attached')
                       : t('financial.detail.file.soon')}
