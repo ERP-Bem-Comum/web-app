@@ -273,6 +273,7 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
           <SupplierPicker
             selected={selectedPartner}
             options={partners}
+            ocrRead={ocrFields.has('supplier')}
             open={picker.open}
             query={picker.query}
             disabled={mode === 'edit' || mode === 'view'}

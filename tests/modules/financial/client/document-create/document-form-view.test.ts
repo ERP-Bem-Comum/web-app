@@ -17,6 +17,7 @@ import {
   titulosPrevistos,
   canSubmit,
   canSaveDraft,
+  ocrReadFields,
   buildCreateInput,
   buildDraftInput,
   buildRegisteredTaxInputs,
@@ -677,5 +678,17 @@ describe('ocrErrorTag (ingestão por OCR → tag i18n)', () => {
     assert.equal(ocrErrorTag('invalid-file'), 'financial.create.ocr.error.invalidFile')
     assert.equal(ocrErrorTag('unauthorized'), 'financial.create.ocr.error.unauthorized')
     assert.equal(ocrErrorTag('server'), 'financial.create.ocr.error.server')
+  })
+})
+
+describe('ocrReadFields — fornecedor auto-identificado (core-api#560)', () => {
+  it('sessão OCR + supplierRef preenchido → acende "supplier"', () => {
+    assert.equal(ocrReadFields(base, true).has('supplier'), true)
+  })
+  it('fora de sessão OCR → não acende', () => {
+    assert.equal(ocrReadFields(base, false).has('supplier'), false)
+  })
+  it('supplierRef vazio → não acende', () => {
+    assert.equal(ocrReadFields({ ...base, supplierRef: '' }, true).has('supplier'), false)
   })
 })
