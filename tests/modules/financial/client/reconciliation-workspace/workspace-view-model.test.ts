@@ -54,6 +54,7 @@ import {
   formatDayHeader,
   deriveManualKindFromTx,
   matchAuditFromLookup,
+  deleteStatementErrorTag,
 } from '../../../../../src/modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
 import type {
   Movement,
@@ -117,10 +118,42 @@ describe('workspaceReducer', () => {
     assert.equal(next.assocTab, 'multi')
   })
 
+  it('clear-statement zera o statement e a seleção (extrato excluído, core-api#558)', () => {
+    const withStatement = workspaceReducer(
+      workspaceReducer(initialWorkspaceUiState, { type: 'set-statement', statementId: 'st-1' }),
+      { type: 'select-transaction', id: 't1' },
+    )
+    assert.equal(withStatement.statementId, 'st-1')
+    const cleared = workspaceReducer(withStatement, { type: 'clear-statement' })
+    assert.equal(cleared.statementId, null)
+    assert.equal(cleared.selectedTransactionId, null)
+  })
+
   it('não muta o estado anterior (imutável)', () => {
     const next = workspaceReducer(initialWorkspaceUiState, { type: 'set-tab', tab: 'extrato' })
     assert.notEqual(next, initialWorkspaceUiState)
     assert.equal(initialWorkspaceUiState.activeTab, 'conciliacao')
+  })
+})
+
+describe('deleteStatementErrorTag (exclusão do extrato, core-api#558)', () => {
+  it('period-closed vira mensagem ACIONÁVEL de exclusão (reabra o período)', () => {
+    assert.equal(
+      deleteStatementErrorTag('period-closed'),
+      'financial.recon.deleteStatement.error.periodClosed',
+    )
+  })
+
+  it('conciliadas usa a tag própria (já acionável)', () => {
+    assert.equal(
+      deleteStatementErrorTag('statement-has-reconciled-transactions'),
+      'financial.recon.error.statement-has-reconciled-transactions',
+    )
+  })
+
+  it('demais erros caem no reconciliationErrorTag comum', () => {
+    assert.equal(deleteStatementErrorTag('server'), 'financial.recon.error.server')
+    assert.equal(deleteStatementErrorTag('forbidden'), 'financial.recon.error.forbidden')
   })
 })
 

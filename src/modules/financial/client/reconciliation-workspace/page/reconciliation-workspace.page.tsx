@@ -32,10 +32,12 @@ import { ChangeAccountModal } from '../components/change-account-modal.component
 import { MatchDetailsModal } from '../components/match-details-modal.component.tsx'
 import { ImportMismatchDialog } from '../components/import-mismatch-dialog.component.tsx'
 import { PeriodConfirmModal } from '../components/period-confirm-modal.component.tsx'
+import { DeleteStatementModal } from '../components/delete-statement-modal.component.tsx'
 import { PatternBatchModal } from '../components/pattern-batch-modal.component.tsx'
 import { PeriodMenu } from '../components/period-menu.component.tsx'
 import { ExportMenu } from '../components/export-menu.component.tsx'
 import { PeriodActionsMenu } from '../components/period-actions-menu.component.tsx'
+import { TrashIcon } from '#shared/ui/icons/index.ts'
 import * as s from './reconciliation-workspace.css.ts'
 import * as print from './reconciliation-report.css.ts'
 
@@ -360,6 +362,20 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
               {vm.reopenPeriod.errorTag !== null ? (
                 <span className={s.errorText}>{t(vm.reopenPeriod.errorTag)}</span>
               ) : null}
+              {/* Excluir extrato (core-api#558): só habilitado com extrato importado; abre o modal destrutivo. */}
+              <button
+                type="button"
+                className={s.footBtnDanger}
+                disabled={!vm.deleteStatement.canDelete}
+                aria-disabled={!vm.deleteStatement.canDelete}
+                title={
+                  vm.deleteStatement.canDelete ? undefined : t('financial.recon.deleteStatement.disabledHint')
+                }
+                onClick={vm.deleteStatement.requestDelete}
+              >
+                <TrashIcon />
+                {t('financial.recon.deleteStatement.button')}
+              </button>
               {/* Exportar OFX/CSV reais (#173); PDF (#144) imprime o relatório do período (window.print, sem aba) */}
               <ExportMenu
                 menus={vm.headerMenus}
@@ -431,6 +447,16 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
             busy={vm.periodActions.busy}
             onConfirm={vm.periodActions.onConfirm}
             onCancel={vm.periodActions.onCancel}
+          />
+
+          <DeleteStatementModal
+            open={vm.deleteStatement.confirmOpen}
+            deleting={vm.deleteStatement.deleting}
+            accountLabel={vm.deleteStatement.accountLabel}
+            periodLabel={vm.deleteStatement.periodLabel}
+            errorTag={vm.deleteStatement.errorTag}
+            onConfirm={vm.deleteStatement.confirmDelete}
+            onCancel={vm.deleteStatement.cancelDelete}
           />
 
           <PatternBatchModal binding={vm.patternBatch} />

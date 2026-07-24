@@ -1315,6 +1315,8 @@ export const ptBR: Catalog = {
   'financial.recon.error.import-empty-content': 'O arquivo está vazio.',
   'financial.recon.error.import-malformed': 'Não foi possível ler o extrato.',
   'financial.recon.error.import-empty-statement': 'O extrato não tem movimentações.',
+  'financial.recon.error.statement-has-reconciled-transactions':
+    'Há transações conciliadas neste extrato. Desfaça as conciliações antes de excluí-lo.',
   'financial.recon.error.period-closed': 'Este período está fechado.',
   'financial.recon.error.period-has-pending': 'Há movimentações pendentes no período.',
   'financial.recon.error.invalid-period-range': 'Período inválido.',
@@ -1596,6 +1598,20 @@ export const ptBR: Catalog = {
   'financial.recon.import.csvLabel': 'CSV',
   'financial.recon.import.pdfLabel': 'PDF',
   'financial.recon.import.summary': '{imported} importadas · {dups} duplicadas · {start}–{end}',
+  // Excluir extrato importado (core-api#558) — botão na bottombar + modal de confirmação destrutivo.
+  'financial.recon.deleteStatement.button': 'Excluir extrato',
+  'financial.recon.deleteStatement.disabledHint': 'Importe um extrato para poder excluí-lo.',
+  'financial.recon.deleteStatement.title': 'Excluir extrato?',
+  // Pergunta focada no EXTRATO (conta + período), não nas transações — composta no componente com os dados
+  // (t() não interpola): "{qLead} {conta} {qPeriod} {período}?".
+  'financial.recon.deleteStatement.qLead': 'Deseja excluir o extrato de',
+  'financial.recon.deleteStatement.qPeriod': 'do período',
+  'financial.recon.deleteStatement.qFallback': 'Deseja excluir o extrato importado?',
+  'financial.recon.deleteStatement.message': 'Esta ação não pode ser desfeita.',
+  'financial.recon.deleteStatement.confirm': 'Excluir extrato',
+  'financial.recon.deleteStatement.cancel': 'Cancelar',
+  // Guarda 409 (período fechado) no contexto de EXCLUSÃO — mensagem acionável (a genérica só diz "fechado").
+  'financial.recon.deleteStatement.error.periodClosed': 'Reabra o período antes de excluir o extrato.',
   // Validação de conta no upload de OFX (conta do arquivo ≠ conta da tela) — bloqueio com confirmação.
   'financial.recon.import.mismatch.title': 'Conta diferente',
   'financial.recon.import.mismatch.intro': 'Este extrato parece ser de outra conta:',

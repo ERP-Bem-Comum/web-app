@@ -123,6 +123,16 @@ export const createCoreApiReconciliationClient = (
     if (isErr(r)) return err(mapHttpError(r.error))
     return transactionsToModel(r.value)
   },
+  deleteBankStatement: async (statementId, token) => {
+    // core-api#558: hard-delete do extrato (204, sem corpo). Transações somem por FK cascade. Guardas
+    // 409 (statement-has-reconciled-transactions / period-closed) e 404 mapeados por `mapHttpError`.
+    const r = await resultFetch<unknown>(`${baseUrl}/bank-statements/${statementId}`, {
+      method: 'DELETE',
+      token,
+    })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return ok(undefined)
+  },
   listPaidPayables: async (token) => {
     const r = await resultFetch<unknown>(`${baseUrl}/payables?status=Paid`, { token })
     if (isErr(r)) return err(mapHttpError(r.error))

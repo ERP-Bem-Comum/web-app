@@ -28,6 +28,8 @@ export const reconciliationErrorTag = (e: ReconciliationError): string => {
       return 'financial.recon.error.import-malformed'
     case 'import-empty-statement':
       return 'financial.recon.error.import-empty-statement'
+    case 'statement-has-reconciled-transactions':
+      return 'financial.recon.error.statement-has-reconciled-transactions'
     case 'period-closed':
       return 'financial.recon.error.period-closed'
     case 'period-has-pending':

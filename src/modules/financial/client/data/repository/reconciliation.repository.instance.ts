@@ -4,6 +4,7 @@
  * a porta devolve 'unavailable'). Espelha `financial.repository.instance.ts`.
  */
 import { importBankStatementFn } from '#modules/financial/server/adapters/server-fns/import-bank-statement.service.fn.ts'
+import { deleteBankStatementFn } from '#modules/financial/server/adapters/server-fns/delete-bank-statement.service.fn.ts'
 import { listStatementTransactionsFn } from '#modules/financial/server/adapters/server-fns/list-statement-transactions.query.fn.ts'
 import { listPaidPayablesFn } from '#modules/financial/server/adapters/server-fns/list-paid-payables.query.fn.ts'
 import { listFinancialReferencesFn } from '#modules/financial/server/adapters/server-fns/list-financial-references.query.fn.ts'
@@ -32,6 +33,7 @@ import { createReconciliationRepository } from './reconciliation.repository.ts'
 
 export const reconciliationRepository = createReconciliationRepository({
   importStatementFn: (opts) => importBankStatementFn(opts),
+  deleteBankStatementFn: (opts) => deleteBankStatementFn(opts),
   listTransactionsFn: (opts) => listStatementTransactionsFn(opts),
   listPaidPayablesFn: () => listPaidPayablesFn(),
   listReferencesFn: () => listFinancialReferencesFn(),

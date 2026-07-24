@@ -18,6 +18,8 @@ import type {
   TransactionReconciliationItem,
 } from '#modules/financial/client/data/model/reconciliation.model.ts'
 import { centsToBRL, centsToReais } from '#modules/financial/client/data/money.ts'
+import { reconciliationErrorTag } from '#modules/financial/client/data/helpers/reconciliation-error-tag.ts'
+import type { ReconciliationError } from '#modules/financial/client/data/repository/reconciliation-error.ts'
 // Lista CANÔNICA de tipos de documento + impostos retidos (mesma fonte do Contas a Pagar). Reuso dentro da
 // MESMA feature (financial), view-model → view-model (boundary permite `sameFeature('client-view-model')`) —
 // não duplica a fonte da verdade (056). Ambos são núcleo puro (ADR-0009), então node:test resolve os #alias.
@@ -77,6 +79,7 @@ export type WorkspaceAction =
   | Readonly<{ type: 'set-assoc-tab'; tab: AssocTab }>
   | Readonly<{ type: 'set-extrato-filter'; filter: ExtratoFilter }>
   | Readonly<{ type: 'set-statement'; statementId: string }>
+  | Readonly<{ type: 'clear-statement' }>
 
 export const workspaceReducer = (state: WorkspaceUiState, action: WorkspaceAction): WorkspaceUiState => {
   switch (action.type) {
@@ -96,12 +99,24 @@ export const workspaceReducer = (state: WorkspaceUiState, action: WorkspaceActio
     case 'set-statement':
       // Novo extrato importado: zera a seleção (as transações mudam).
       return { ...state, statementId: action.statementId, selectedTransactionId: null }
+    case 'clear-statement':
+      // Extrato excluído (core-api#558): some o statement + a seleção (as transações foram removidas).
+      return { ...state, statementId: null, selectedTransactionId: null }
     default: {
       const _exhaustive: never = action
       return _exhaustive
     }
   }
 }
+
+/**
+ * Tag i18n do erro ao EXCLUIR o extrato (core-api#558). PURA. Traduz os 2 erros de guarda para uma
+ * mensagem ACIONÁVEL no contexto de exclusão: `period-closed` → "reabra o período" (a mensagem genérica só
+ * diz "período fechado", que não orienta aqui). Os demais erros caem no `reconciliationErrorTag` comum —
+ * inclusive `statement-has-reconciled-transactions`, cuja mensagem própria já é acionável.
+ */
+export const deleteStatementErrorTag = (e: ReconciliationError): string =>
+  e === 'period-closed' ? 'financial.recon.deleteStatement.error.periodClosed' : reconciliationErrorTag(e)
 
 // ── Derivações puras ────────────────────────────────────────────────────────────
 /** Rótulo do progresso "conciliado X/N". */
