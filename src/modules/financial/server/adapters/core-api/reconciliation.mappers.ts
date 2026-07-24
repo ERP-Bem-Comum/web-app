@@ -403,6 +403,7 @@ export const transactionReconciliationToModel = (
     reconciledByName: d.reconciledByName,
     reconciledAt: d.reconciledAt,
     differenceCents: d.differenceCents,
+    category: d.category, // #554/#555: categoria do lançamento manual/título (null = sem categoria)
     // documentNumber/supplierName/dueDate saem null aqui — o passo de enriquecimento (INTERINO #172)
     // preenche via join por payableId no cliente (core-api-reconciliation.ts).
     items: d.items.map((i) => ({

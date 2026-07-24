@@ -5,6 +5,10 @@
  * `supplierName`/`documentNumber` = mínimo até core-api#172. `ReconciliationAccount` depende de #168.
  */
 
+import type { DocumentType } from '#modules/financial/client/data/model/document.model.ts'
+
+export type { DocumentType }
+
 // ── Enums fechados ──
 export type Movement = 'Debit' | 'Credit'
 export type ReconciliationStatus = 'Pending' | 'Reconciled' | 'ManualEntry'
@@ -132,6 +136,12 @@ export type ManualEntryTemplate = Readonly<{
   // #143: Aplicação/Resgate o backend exige um "produto" (texto). Como o cliente modela entre contas,
   // mandamos o nome da conta de destino aqui (satisfaz a regra) + `destinationAccount` (o vínculo real).
   productLabel?: string
+  // #370: campos de documento (só Pagamento/Recebimento). `documentValueCents` omitido → o backend usa o
+  // valor da transação conciliada. `issueDate` YYYY-MM-DD; `documentValueCents` = string de centavos.
+  documentNumber?: string
+  documentType?: DocumentType
+  issueDate?: string
+  documentValueCents?: string
 }>
 export type ManualEntryInput = ManualEntryTemplate & Readonly<{ transactionId: string }>
 export type BatchReconcileInput = Readonly<{
@@ -256,6 +266,9 @@ export type TransactionReconciliation = Readonly<{
   reconciledByName: string | null // #207: nome de quem conciliou (preferido sobre o id cru no modal)
   reconciledAt: string // ISO datetime
   differenceCents: string | null
+  // #554/#555: categoria do lançamento manual (fatia 1) / do título (fatia 2), resolvida server-side. null
+  // = sem categoria. Alimenta a linha "Categoria" no modal de detalhe.
+  category: string | null
   items: readonly TransactionReconciliationItem[]
 }>
 export type ReconciliationCreated = Readonly<{

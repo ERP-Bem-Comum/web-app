@@ -190,6 +190,9 @@ export const CoreApiTransactionReconciliationSchema = z.object({
   reconciledByName: z.string().trim().nullable().catch(null), // #207: nome resolvido server-side; null = não-resolvido
   reconciledAt: z.string().trim(), // ISO datetime
   differenceCents: z.string().trim().nullable().catch(null),
+  // #554/#555: categoria do lançamento manual (fatia 1) / do título (fatia 2), resolvida server-side.
+  // TOLERANTE: ausente/inválida → null (o modal cai em "—" gracioso).
+  category: z.string().trim().nullable().catch(null),
   items: z
     .array(z.object({ payableId: z.string().trim(), reconciledValueCents: z.string().trim() }))
     .catch([]),

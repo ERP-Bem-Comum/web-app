@@ -31,12 +31,25 @@ import {
   relabelReconCategory,
   requiresDestination,
   formatDateBR,
+  parseBRLToCents,
   categoriesForCostCenter,
   subcategoriesOf,
   type ManualEntryType,
   type StatementTransaction,
 } from './reconciliation-workspace.view-model.ts'
-import type { ManualEntryTemplate } from '#modules/financial/client/data/model/reconciliation.model.ts'
+import type {
+  DocumentType,
+  ManualEntryTemplate,
+} from '#modules/financial/client/data/model/reconciliation.model.ts'
+
+// #370: DocumentType do sistema p/ o dropdown "Tipo de doc" (só Pagamento/Recebimento). Espelha o enum do
+// core-api; o rótulo é o próprio literal (já legível: "NFS-e", "DANFE"…).
+const DOCUMENT_TYPES = ['NFS-e', 'DANFE', 'RPA', 'Fatura', 'Boleto', 'Recibo', 'Imposto'] as const
+const isDocumentType = (v: string): v is DocumentType => (DOCUMENT_TYPES as readonly string[]).includes(v)
+const DOCUMENT_TYPE_OPTIONS: readonly ManualEntryOption[] = DOCUMENT_TYPES.map((t) => ({
+  value: t,
+  label: t,
+}))
 
 // Opção de dropdown real (Fornecedor/Programa/Plano) — `value` = ref (UUID) enviado ao manual-entry.
 export type ManualEntryOption = Readonly<{ value: string; label: string }>
@@ -62,6 +75,12 @@ export type ManualEntryBinding = Readonly<{
   categoryRef: string
   subcategoryRef: string
   costCenterRef: string
+  // #370: campos de documento (só no bloco Pagamento/Recebimento). `documentType` '' = sem seleção;
+  // `issueDate` em YYYY-MM-DD (input nativo de data); `documentValue` = texto R$ digitado (parse na submit).
+  documentNumber: string
+  documentType: DocumentType | ''
+  issueDate: string
+  documentValue: string
   partnerOptions: readonly ManualEntryOption[]
   programOptions: readonly ManualEntryOption[]
   planoOptions: readonly ManualEntryOption[]
@@ -70,6 +89,8 @@ export type ManualEntryBinding = Readonly<{
   costCenterOptions: readonly ManualEntryOption[]
   // #143: contas-cedente ATIVAS (exceto a própria origem) p/ Transferência/Aplicação/Resgate entre contas.
   accountOptions: readonly ManualEntryOption[]
+  // #370: opções do "Tipo de doc" (DocumentType do sistema).
+  documentTypeOptions: readonly ManualEntryOption[]
   setType: (type: ManualEntryType) => void
   setDescription: (v: string) => void
   setDestinationAccount: (v: string) => void
@@ -79,6 +100,10 @@ export type ManualEntryBinding = Readonly<{
   setCategoryRef: (v: string) => void
   setSubcategoryRef: (v: string) => void
   setCostCenterRef: (v: string) => void
+  setDocumentNumber: (v: string) => void
+  setDocumentType: (v: string) => void
+  setIssueDate: (v: string) => void
+  setDocumentValue: (v: string) => void
   reset: () => void
   submit: () => void
 }>
@@ -174,6 +199,11 @@ export function useManualEntry(
   const [categoryRef, setCategoryRef] = useState('')
   const [subcategoryRef, setSubcategoryRef] = useState('')
   const [costCenterRef, setCostCenterRef] = useState('')
+  // #370: campos de documento (Pagamento/Recebimento). `documentType` '' = sem seleção.
+  const [documentNumber, setDocumentNumber] = useState('')
+  const [documentType, setDocumentType] = useState<DocumentType | ''>('')
+  const [issueDate, setIssueDate] = useState('')
+  const [documentValue, setDocumentValue] = useState('')
   const [errorTag, setErrorTag] = useState<string | null>(null)
 
   const partnerOptions = useQuery(partnerOptionsQuery).data ?? []
@@ -256,6 +286,10 @@ export function useManualEntry(
       categoryRef?: string
       subcategoryRef?: string
       costCenterRef?: string
+      documentNumber?: string
+      documentType?: DocumentType
+      issueDate?: string
+      documentValueCents?: string
     }) => reconciliationRepository.createManualEntry(v),
     onSuccess: (res, v) => {
       if (res.ok) {
@@ -269,6 +303,10 @@ export function useManualEntry(
         setCategoryRef('')
         setSubcategoryRef('')
         setCostCenterRef('')
+        setDocumentNumber('')
+        setDocumentType('')
+        setIssueDate('')
+        setDocumentValue('')
         // Baixa manual concilia a transação → invalida o namespace (lista do período + contadores).
         void qc.invalidateQueries({ queryKey: ['financial', 'reconciliation'] })
         // Contraparte p/ o detalhe (sessão): conta de destino (realocação) ou fornecedor (pagamento/recebimento).
@@ -288,6 +326,11 @@ export function useManualEntry(
           ...(v.costCenterRef !== undefined ? { costCenterRef: v.costCenterRef } : {}),
           ...(v.programRef !== undefined ? { programRef: v.programRef } : {}),
           ...(v.description !== undefined ? { description: v.description } : {}),
+          // #370: os campos de documento entram no template p/ o reuso na sugestão em lote (só payee block).
+          ...(v.documentNumber !== undefined ? { documentNumber: v.documentNumber } : {}),
+          ...(v.documentType !== undefined ? { documentType: v.documentType } : {}),
+          ...(v.issueDate !== undefined ? { issueDate: v.issueDate } : {}),
+          ...(v.documentValueCents !== undefined ? { documentValueCents: v.documentValueCents } : {}),
         }
         onReconciled(v.transactionId, res.value.reconciliationId, v.type, counterparty, template)
       } else {
@@ -313,6 +356,10 @@ export function useManualEntry(
     categoryRef,
     subcategoryRef,
     costCenterRef,
+    documentNumber,
+    documentType,
+    issueDate,
+    documentValue,
     partnerOptions,
     programOptions,
     planoOptions,
@@ -320,6 +367,7 @@ export function useManualEntry(
     subcategoryOptions,
     costCenterOptions,
     accountOptions,
+    documentTypeOptions: DOCUMENT_TYPE_OPTIONS,
     setType: (tp) => {
       setType(tp)
     },
@@ -355,6 +403,19 @@ export function useManualEntry(
       setCategoryRef('') // trocar o centro zera categoria + subcategoria (cascata)
       setSubcategoryRef('')
     },
+    setDocumentNumber: (v) => {
+      setDocumentNumber(v)
+    },
+    setDocumentType: (v) => {
+      // O select só oferece valores da lista canônica; '' = placeholder. Guarda evita valor fora do enum.
+      setDocumentType(isDocumentType(v) ? v : '')
+    },
+    setIssueDate: (v) => {
+      setIssueDate(v)
+    },
+    setDocumentValue: (v) => {
+      setDocumentValue(v)
+    },
     reset: () => {
       setType(null)
       setDescription('')
@@ -365,6 +426,10 @@ export function useManualEntry(
       setCategoryRef('')
       setSubcategoryRef('')
       setCostCenterRef('')
+      setDocumentNumber('')
+      setDocumentType('')
+      setIssueDate('')
+      setDocumentValue('')
       setErrorTag(null)
     },
     submit: () => {
@@ -379,6 +444,13 @@ export function useManualEntry(
       const cat = showCategorization && categoryRef !== '' ? categoryRef : undefined
       const sub = showCategorization && subcategoryRef !== '' ? subcategoryRef : undefined
       const costCenter = showCategorization && costCenterRef !== '' ? costCenterRef : undefined
+      // #370: campos de documento SÓ no bloco Pagamento/Recebimento (showPayeeBlock). `documentValueCents`
+      // omitido quando vazio/ilegível → o backend usa o valor da transação conciliada. `issueDate` já vem
+      // YYYY-MM-DD (input nativo de data); `documentValue` é texto R$ → centavos via parseBRLToCents.
+      const docNumber = showPayeeBlock && documentNumber.trim() !== '' ? documentNumber.trim() : undefined
+      const docType = showPayeeBlock && documentType !== '' ? documentType : undefined
+      const docIssueDate = showPayeeBlock && issueDate !== '' ? issueDate : undefined
+      const docValueCents = showPayeeBlock ? parseBRLToCents(documentValue) : null
       mut.mutate({
         transactionId: selectedTx.id,
         type,
@@ -392,6 +464,10 @@ export function useManualEntry(
         categoryRef: cat,
         subcategoryRef: sub,
         costCenterRef: costCenter,
+        documentNumber: docNumber,
+        documentType: docType,
+        issueDate: docIssueDate,
+        documentValueCents: docValueCents !== null ? String(docValueCents) : undefined,
       })
     },
   }

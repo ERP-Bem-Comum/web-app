@@ -18,6 +18,9 @@ const MANUAL_ENTRY_TYPES = [
   'Investment',
   'Redemption',
 ] as const
+// #370: mesmos DocumentType do sistema (espelha `documentTypeSchema` do core-api). Só p/ os campos de
+// documento do lançamento manual (Pagamento/Recebimento).
+const DOCUMENT_TYPES = ['NFS-e', 'DANFE', 'RPA', 'Fatura', 'Boleto', 'Recibo', 'Imposto'] as const
 
 const DateSchema = z.iso.date() // YYYY-MM-DD
 
@@ -113,6 +116,12 @@ const ManualEntryTemplateSchema = z.object({
   description: z.string().trim().max(500).optional(),
   destinationAccount: z.uuid().optional(),
   productLabel: z.string().trim().min(1).max(120).optional(), // #143: produto da Aplicação/Resgate
+  // #370: campos de documento (opcionais; aplicabilidade por tipo é do front — só Pagamento/Recebimento).
+  // `documentValueCents` omitido → o backend usa o valor da transação conciliada.
+  documentNumber: z.string().trim().min(1).max(60).optional(),
+  documentType: z.enum(DOCUMENT_TYPES).optional(),
+  issueDate: DateSchema.optional(), // YYYY-MM-DD
+  documentValueCents: z.string().trim().regex(/^\d+$/).optional(),
 })
 
 export const ManualEntryInputSchema = ManualEntryTemplateSchema.extend({ transactionId: z.uuid() })

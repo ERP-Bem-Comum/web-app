@@ -919,6 +919,9 @@ export const matchDetailsView = (
   // Valor conciliado de um match 1:1 (1 título): vem do PRÓPRIO lookup (#175 items[0].reconciledValueCents).
   // Acende o "Valor conciliado" do lado Título sem depender do enriquecimento do documento (#172). null → "—".
   singleMatchValueCents: string | null = null,
+  // #554/#555: categoria da conciliação (lançamento manual — fatia 1; ou título — fatia 2), resolvida
+  // server-side no lookup (#175). Preenche a linha "Categoria" do modal; null/'' → "—".
+  category: string | null = null,
 ): MatchDetailsView => {
   // Tipo efetivo: o da sessão (preciso) ou, na falta, o derivado do texto da transação (#268).
   const effectiveManualType = manualType ?? (isManualEntry ? deriveManualKindFromTx(tx) : null)
@@ -930,6 +933,16 @@ export const matchDetailsView = (
   // Só mostra a linha de contraparte quando há valor real (conta de destino/fornecedor da sessão); sem
   // valor não renderiza "Conta destino: —" (o hint já diz que é entre contas próprias).
   const hasCounterparty = counterparty !== null && counterparty !== ''
+  // #554/#555: categoria real do lookup sobrepõe o "—" do doc (aplica ao lançamento manual e ao título 1:1).
+  const hasCategory = category !== null && category !== ''
+  // Base do lado "Título": manual usa o valor da própria transação; senão o doc enriquecido (ou o valor 1:1).
+  const baseDoc: MatchDetailsDoc = isManualEntry
+    ? { ...(doc ?? DASH_DOC), valueBRL: centsToBRL(tx.valueCents) }
+    : (doc ??
+      (singleMatchValueCents !== null
+        ? { ...DASH_DOC, valueBRL: centsToBRL(singleMatchValueCents) }
+        : DASH_DOC))
+  const resolvedDoc: MatchDetailsDoc = hasCategory ? { ...baseDoc, categoria: category } : baseDoc
   return {
     isManualEntry,
     manualKindTag:
@@ -958,13 +971,9 @@ export const matchDetailsView = (
       valueBRL: centsToBRL(tx.valueCents),
     },
     // Nova transação (lançamento manual) não tem título: o "valor conciliado" é o valor da própria
-    // transação (a saída inteira foi lançada). Tipo/categoria/descrição dependem do backend (core-api#268).
-    doc: isManualEntry
-      ? { ...(doc ?? DASH_DOC), valueBRL: centsToBRL(tx.valueCents) }
-      : (doc ??
-        (singleMatchValueCents !== null
-          ? { ...DASH_DOC, valueBRL: centsToBRL(singleMatchValueCents) }
-          : DASH_DOC)),
+    // transação (a saída inteira foi lançada). A categoria vem do lookup (#554/#555); tipo/descrição
+    // ainda dependem do backend (core-api#268).
+    doc: resolvedDoc,
     audit: audit ?? DASH_AUDIT,
     multi,
   }
