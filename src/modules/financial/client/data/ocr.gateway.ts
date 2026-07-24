@@ -7,6 +7,7 @@
 import { ok, err, type Result } from '#shared/primitives/result.ts'
 import { ingestDocumentFn } from '#modules/financial/server/adapters/server-fns/ingest-document.service.fn.ts'
 
+import { fileToBase64 } from './file-base64.ts'
 import type { OcrIngestResult, OcrError } from './model/ocr.model.ts'
 
 // Allowlist do endpoint (#62): PDF + XML. Union literal p/ casar com o enum Zod da server-fn (o server revalida).
@@ -23,14 +24,6 @@ const inferIngestMime = (file: File): IngestMime | null => {
   if (name.endsWith('.pdf')) return 'application/pdf'
   if (name.endsWith('.xml')) return 'application/xml'
   return null
-}
-
-// File → base64 (nativo btoa). Confina a leitura do File no gateway (browser); a server-fn recebe só strings.
-const fileToBase64 = async (file: File): Promise<string> => {
-  const bytes = new Uint8Array(await file.arrayBuffer())
-  let bin = ''
-  for (const byte of bytes) bin += String.fromCharCode(byte)
-  return btoa(bin)
 }
 
 export const extractDocumentOcr = async (file: File): Promise<Result<OcrIngestResult, OcrError>> => {

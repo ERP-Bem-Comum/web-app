@@ -70,6 +70,10 @@ const SLUG_TO_ERROR: Partial<Record<string, ReconciliationError>> = {
   'empty-content': 'import-empty-content',
   'malformed-statement': 'import-malformed',
   'empty-statement': 'import-empty-statement',
+  // Exclusão do extrato (core-api#558): guarda de conciliadas (409). `bank-statement-not-found` cai no 404
+  // genérico (not-found); `period-closed` reusa o slug já mapeado abaixo.
+  'statement-has-reconciled-transactions': 'statement-has-reconciled-transactions',
+  'bank-statement-not-found': 'not-found',
   'period-closed': 'period-closed',
   'period-has-pending-transactions': 'period-has-pending',
   'invalid-period-range': 'invalid-period-range',

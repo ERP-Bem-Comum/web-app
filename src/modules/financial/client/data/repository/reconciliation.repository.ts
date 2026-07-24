@@ -54,6 +54,11 @@ type ImportFn = (opts: { data: ImportStatementInput }) => Promise<ReconFnResult<
 type ListTxFn = (opts: {
   data: ListTransactionsInput
 }) => Promise<ReconFnResult<readonly StatementTransaction[]>>
+// Excluir extrato (core-api#558) — 204 sem corpo; o resultado de sucesso não carrega dados.
+type DeleteStatementFn = (opts: {
+  data: { statementId: string }
+}) => Promise<Readonly<{ ok: true }> | Readonly<{ ok: false; error: ReconciliationError }>>
+
 type ListPayablesFn = () => Promise<ReconFnResult<readonly PaidPayable[]>>
 type ListReferencesFn = () => Promise<ReconFnResult<FinancialReferences>>
 type GetStatementPeriodFn = (opts: {
@@ -104,6 +109,8 @@ export type ReconciliationRepository = Readonly<{
   listTransactions: (
     i: ListTransactionsInput,
   ) => Promise<Result<readonly StatementTransaction[], ReconciliationError>>
+  // Excluir extrato importado (core-api#558). Hard-delete; sucesso = void. A UI limpa o statement + invalida.
+  deleteBankStatement: (statementId: string) => Promise<Result<void, ReconciliationError>>
   listPaidPayables: () => Promise<Result<readonly PaidPayable[], ReconciliationError>>
   // Referências da categorização (020 · #200/#147) — categorias + centros de custo.
   getReferences: () => Promise<Result<FinancialReferences, ReconciliationError>>
@@ -159,6 +166,7 @@ export const createReconciliationRepository = (
   deps: Readonly<{
     importStatementFn: ImportFn
     listTransactionsFn: ListTxFn
+    deleteBankStatementFn: DeleteStatementFn
     listPaidPayablesFn: ListPayablesFn
     listReferencesFn: ListReferencesFn
     getAccountStatementPeriodFn: GetStatementPeriodFn
@@ -190,6 +198,10 @@ export const createReconciliationRepository = (
   listTransactions: async (i) => {
     const res = await deps.listTransactionsFn({ data: i })
     return res.ok ? ok(res.data) : err(res.error)
+  },
+  deleteBankStatement: async (statementId) => {
+    const res = await deps.deleteBankStatementFn({ data: { statementId } })
+    return res.ok ? ok(undefined) : err(res.error)
   },
   listPaidPayables: async () => {
     const res = await deps.listPaidPayablesFn()

@@ -15,6 +15,7 @@ export type ReconciliationError =
   | 'import-empty-content'
   | 'import-malformed'
   | 'import-empty-statement'
+  | 'statement-has-reconciled-transactions'
   | 'period-closed'
   | 'period-has-pending'
   | 'invalid-period-range'

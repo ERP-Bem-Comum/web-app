@@ -1,6 +1,6 @@
 /**
- * Import-menu (US2) — view burra. Botão "Importar" abre um DROPDOWN de formato (OFX/CSV reais; PDF/OCR
- * desabilitado/anunciado, #145). A escolha define o `accept` do seletor de arquivo e dispara o picker; o
+ * Import-menu (US2) — view burra. Botão "Importar" abre um DROPDOWN de formato (OFX/CSV/PDF, todos reais —
+ * PDF via OCR, core-api#557). A escolha define o `accept` do seletor de arquivo e dispara o picker; o
  * formato enviado é derivado do nome do arquivo no binding. Mostra o resumo pós-import e o erro (tag i18n).
  * Estado de abertura é UI-local (sem data-hooks); recebe a ação de import por props.
  */
@@ -25,6 +25,7 @@ export type ImportMenuProps = Readonly<{
 const FORMATS: readonly { ic: string; lblTag: string; accept: string }[] = [
   { ic: 'OFX', lblTag: 'financial.recon.import.ofxLabel', accept: '.ofx' },
   { ic: 'CSV', lblTag: 'financial.recon.import.csvLabel', accept: '.csv' },
+  { ic: 'PDF', lblTag: 'financial.recon.import.pdfLabel', accept: '.pdf' }, // OCR (core-api#557)
 ]
 
 export function ImportMenu({ importing, summary, errorTag, onPickFile }: ImportMenuProps) {
@@ -87,21 +88,6 @@ export function ImportMenu({ importing, summary, errorTag, onPickFile }: ImportM
                 <span className={s.ddItemLbl}>{t(f.lblTag)}</span>
               </button>
             ))}
-            {/* PDF/OCR — chrome honesto até o backend (#145). */}
-            <button
-              type="button"
-              role="menuitem"
-              className={s.ddItem.off}
-              disabled
-              aria-disabled="true"
-              title={t('financial.recon.import.pdfUnavailable')}
-            >
-              <span className={s.ddItemIc} aria-hidden>
-                PDF
-              </span>
-              <span className={s.ddItemLbl}>{t('financial.recon.import.pdfLabel')}</span>
-              <span className={s.ddItemHint}>{t('financial.recon.import.pdfHint')}</span>
-            </button>
           </div>
         </>
       ) : null}
@@ -109,7 +95,7 @@ export function ImportMenu({ importing, summary, errorTag, onPickFile }: ImportM
       <input
         ref={inputRef}
         type="file"
-        accept=".ofx,.csv"
+        accept=".ofx,.csv,.pdf"
         hidden
         aria-label={t('financial.recon.import')}
         onChange={(e) => {

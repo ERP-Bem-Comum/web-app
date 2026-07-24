@@ -1,6 +1,6 @@
 /**
- * ImportMenu (Vitest/jsdom) — view burra (US2): botão Importar (OFX/CSV), PDF anunciado (#145), resumo
- * pós-import e erro (tag i18n). Recebe tudo por props.
+ * ImportMenu (Vitest/jsdom) — view burra (US2): botão Importar (OFX/CSV/PDF, todos reais — PDF via OCR,
+ * core-api#557), resumo pós-import e erro (tag i18n). Recebe tudo por props.
  */
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, screen, cleanup, fireEvent } from '@testing-library/react'
@@ -23,7 +23,7 @@ afterEach(() => {
 })
 
 describe('ImportMenu', () => {
-  it('clicar em Importar abre o dropdown com OFX/CSV (reais) e PDF desabilitado (#145)', () => {
+  it('clicar em Importar abre o dropdown com OFX/CSV/PDF, todos reais e habilitados (core-api#557)', () => {
     render(<ImportMenu importing={false} summary={null} errorTag={null} onPickFile={vi.fn()} />)
     // Fechado: as opções não aparecem.
     expect(screen.queryByRole('menuitem', { name: (n) => n.includes('OFX') })).toBeNull()
@@ -31,7 +31,17 @@ describe('ImportMenu', () => {
     expect(screen.getByRole('menuitem', { name: (n) => n.includes('OFX') })).toBeTruthy()
     expect(screen.getByRole('menuitem', { name: (n) => n.includes('CSV') })).toBeTruthy()
     const pdf = screen.getByRole('menuitem', { name: (n) => n.includes('PDF') }) as HTMLButtonElement
-    expect(pdf.disabled).toBe(true)
+    // PDF agora é clicável (OCR real), não mais desabilitado.
+    expect(pdf.disabled).toBe(false)
+  })
+
+  it('escolher PDF define o accept do seletor de arquivo (.pdf)', () => {
+    render(<ImportMenu importing={false} summary={null} errorTag={null} onPickFile={vi.fn()} />)
+    fireEvent.click(screen.getByRole('button', { name: (n) => n.includes(tr('financial.recon.import')) }))
+    fireEvent.click(screen.getByRole('menuitem', { name: (n) => n.includes('PDF') }))
+    const input = document.querySelector('input[type="file"]')
+    expect(input).toBeInstanceOf(HTMLInputElement)
+    if (input instanceof HTMLInputElement) expect(input.accept).toBe('.pdf')
   })
 
   it('exibe o resumo pós-import (importadas/duplicadas/período)', () => {

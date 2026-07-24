@@ -22,7 +22,7 @@ export type ManualEntryType =
   | 'Investment'
   | 'Redemption'
 export type SuggestionBand = 'alta' | 'media' // 'baixa' (<50) é filtrada pelo backend, nunca chega
-export type StatementFormat = 'OFX' | 'CSV'
+export type StatementFormat = 'OFX' | 'CSV' | 'PDF' // PDF: OCR (core-api#557); content = base64 do arquivo
 // #370: DocumentType do sistema (espelha o enum do core-api) — campos de documento do lançamento manual.
 export type DocumentType = 'NFS-e' | 'DANFE' | 'RPA' | 'Fatura' | 'Boleto' | 'Recibo' | 'Imposto'
 
