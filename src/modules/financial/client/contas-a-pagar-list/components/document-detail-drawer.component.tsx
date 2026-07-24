@@ -219,14 +219,21 @@ export function DocumentDetailDrawer({
             {/* Documento */}
             <section className={dwSection}>
               <SectionLabel label={t('financial.detail.label.documento')} />
-              {/* FileCard (PDF) — placeholder até o backend expor o arquivo do documento (core-api#95). */}
+              {/* FileCard — comprovante-fonte (OCR, #568): com anexo mostra o nome do arquivo; sem anexo,
+                  o estado honesto "nenhum arquivo anexado". */}
               <div className={dwFileCard}>
                 <span className={dwFileIcon} aria-hidden="true">
-                  PDF
+                  {view.attachment !== null ? 'DOC' : 'PDF'}
                 </span>
                 <span className={dwFileInfo}>
-                  <span className={dwFileName}>{t('financial.detail.file.empty')}</span>
-                  <span className={dwFileMeta}>{t('financial.detail.file.soon')}</span>
+                  <span className={dwFileName}>
+                    {view.attachment !== null ? view.attachment.fileName : t('financial.detail.file.empty')}
+                  </span>
+                  <span className={dwFileMeta}>
+                    {view.attachment !== null
+                      ? t('financial.detail.file.attached')
+                      : t('financial.detail.file.soon')}
+                  </span>
                 </span>
               </div>
               <div className={detailGrid}>

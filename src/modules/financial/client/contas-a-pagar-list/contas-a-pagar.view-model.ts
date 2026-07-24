@@ -15,6 +15,7 @@ import type {
   DocumentType,
   DocumentSummary,
   DocumentDetail,
+  DocumentAttachment,
   RetentionType,
   PaymentMethod,
   PayableKind,
@@ -26,6 +27,7 @@ import type {
 export type {
   DocumentStatus,
   DocumentType,
+  DocumentAttachment,
   RetentionType,
 } from '#modules/financial/client/data/model/document.model.ts'
 
@@ -468,6 +470,8 @@ export type DocumentDetailView = Readonly<{
   // No drawer aparece numa linha única destacada em vermelho (mock): "− Retenções (IRRF, INSS, ISS)".
   retentionsTotal: string | null
   payables: readonly DetailPayableView[]
+  // #568: comprovante-fonte (OCR); null = documento sem anexo. O drawer mostra um chip com o `fileName`.
+  attachment: DocumentAttachment | null
 }>
 
 // Rótulo i18n do complemento da forma (espelha o create). null = forma sem complemento tipado.
@@ -590,6 +594,7 @@ export const mapDocumentDetail = (
     value: centsToBRL(p.valueCents),
     status: p.status,
   })),
+  attachment: d.attachment, // #568: passthrough (null = sem anexo)
 })
 
 // ── Exportar (client-side, padrão Contratos) ──────────────────────────────────

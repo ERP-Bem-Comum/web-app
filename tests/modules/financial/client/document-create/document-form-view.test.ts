@@ -577,6 +577,7 @@ const detail: DocumentDetail = {
     { id: 'p2', kind: 'Child', retentionType: 'IRRF', valueCents: '15000', status: 'Aberto' },
     { id: 'p3', kind: 'Child', retentionType: 'CSRF', valueCents: '25500', status: 'Aberto' },
   ],
+  attachment: null,
 }
 
 describe('editLocksFor / isEditableStatus', () => {

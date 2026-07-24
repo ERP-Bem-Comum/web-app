@@ -407,6 +407,7 @@ describe('mapDocumentDetail — Categorização (#95/#147: refs → nomes, casca
     programRef: null,
     payables: [],
     version: 0,
+    attachment: null,
     ...over,
   })
   const resolveSupplier = (ref: string | null): string => ref ?? '—'
@@ -443,6 +444,20 @@ describe('mapDocumentDetail — Categorização (#95/#147: refs → nomes, casca
     const v = mapDocumentDetail(detailBase({ categoryRef: 'cat-imp' }), resolveSupplier, undefined, resolvers)
     assert.equal(v.categorization.category, 'Impostos')
     assert.equal(v.categorization.subcategory, '—')
+  })
+
+  it('#568: attachment atravessa p/ a view (null quando sem anexo)', () => {
+    const sem = mapDocumentDetail(detailBase(), resolveSupplier, undefined, resolvers)
+    assert.equal(sem.attachment, null)
+    const com = mapDocumentDetail(
+      detailBase({
+        attachment: { fileName: 'nota.xml', mimeType: 'text/xml', sizeBytes: 21, url: '/x/source-file' },
+      }),
+      resolveSupplier,
+      undefined,
+      resolvers,
+    )
+    assert.equal(com.attachment?.fileName, 'nota.xml')
   })
 
   // #502 (S1): docs NOVOS carimbam a subcategoria em `subcategoryRef` (categoryRef = a Categoria).

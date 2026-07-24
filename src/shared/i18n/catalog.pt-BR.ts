@@ -1127,6 +1127,7 @@ export const ptBR: Catalog = {
   'financial.detail.label.descricao': 'Descrição',
   'financial.detail.file.empty': 'Nenhum arquivo anexado',
   'financial.detail.file.soon': 'Disponível ao anexar o documento',
+  'financial.detail.file.attached': 'Arquivo anexado', // #568: comprovante-fonte presente (OCR)
   'financial.detail.edit': 'Editar pagamento',
   'financial.detail.editSoon': 'Edição do documento — em breve',
   'financial.create.hero.placeholder': 'Selecione o fornecedor',

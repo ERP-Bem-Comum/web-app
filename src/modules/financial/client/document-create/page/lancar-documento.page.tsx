@@ -15,6 +15,7 @@ import { useDocumentReader } from '../reader/document-reader.binding.ts'
 import { mapReadingToPatch, matchPartnerByTaxId } from '../document-reading.view.ts'
 import { useOcrExtraction } from '../ocr.binding.ts'
 import { useDocumentPreview } from '../document-preview.binding.ts'
+import { useAttachmentFile } from '../attachment-preview.binding.ts'
 import { useOcrPanelResize } from '../ocr-panel-resize.binding.ts'
 import { useSupplierPickerController } from '../supplier-picker.controller.ts'
 import { useLancarDocumentoBinding } from '../create-document.binding.ts'
@@ -92,7 +93,10 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
   // Ingestão por OCR (core-api#62): no sucesso CRIA UM RASCUNHO e navega p/ o modo edição dele (revisão do
   // operador). O binding só ingere+navega — nunca cria um 2º documento. PRESERVADO (aditivo ao leitor client).
   const ocr = useOcrExtraction()
-  const preview = useDocumentPreview(ocrFile)
+  // CA2/CA3 (#568): na edição de um documento lido por OCR, o comprovante-fonte vem do backend (via server-fn
+  // → base64 → File). Precede-se o arquivo LOCAL recém-subido (create). Sem anexo → null (não busca; CA3).
+  const attachmentFile = useAttachmentFile(documentId, edit.detail?.attachment ?? null, edit.isEdit)
+  const preview = useDocumentPreview(ocrFile ?? attachmentFile)
   const handleSelectFile = (file: File): void => {
     setOcrFile(file)
     ocr.extract(file)

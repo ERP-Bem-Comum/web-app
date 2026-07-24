@@ -161,6 +161,8 @@ export const detailToModel = (raw: unknown): Result<DocumentDetail, FinancialErr
     programRef: d.programRef,
     payables: d.payables.map(payableToModel),
     version: d.version,
+    // #568: comprovante-fonte (OCR); null = documento sem anexo. Passthrough do objeto validado.
+    attachment: d.attachment,
   })
 }
 
