@@ -5,10 +5,10 @@
  * consciente + destino/produto; todos têm Categorização (categoria/centro/descrição).
  *
  * Honestidade: o manual-entry (#152) aceita `type` + refs (`supplierRef`/`programRef`/…) + `description` +
- * os campos de documento (#370). LIGADOS (reais): Tipo, Fornecedor (parceiros), Programa (programas ativos),
- * Categoria + Centro de custo (referências 020 · #200), Descrição, Destino/produto (core-api#143) e os
- * campos de documento — Número/Tipo/Emissão/Valor (core-api#370). CHROME (desabilitado até o backend ativar):
- * classificação Tarifa/Multa/Juros (core-api#371). Acende quando o contrato do manual-entry a aceitar.
+ * os campos de documento (#370). LIGADOS (reais): Tipo, Fornecedor (parceiros), Programa (programas ativos —
+ * também no bloco Tarifa/Juros), Categoria + Centro de custo (referências 020 · #200), Descrição, Destino/
+ * produto (core-api#143) e os campos de documento — Número/Tipo/Emissão/Valor (core-api#370). Todos os campos
+ * são reais; a classificação Tarifa/Multa/Juros foi removida (core-api#371 não vem; a taxonomia cobre).
  */
 import type { ComponentType } from 'react'
 
@@ -198,21 +198,6 @@ export function NewTransactionPane({ binding }: NewTransactionPaneProps) {
     />
   )
 
-  // Classificação Tarifa/Multa/Juros — só faz sentido p/ o tipo Tarifa/Juros (FeePenaltyInterest). Campo
-  // HONESTO/desligado (as opções aparecem, mas o input do manual-entry no core-api ainda não tem campo
-  // estruturado p/ o subtipo): acende quando o backend expor. Reusa os rótulos de tratamento (Fee/Penalty/Interest).
-  const feeKindSelect = (
-    <label className={s.ntField}>
-      <span className={s.ntLabel}>{t('financial.recon.manual.f.feeKind')}</span>
-      <select className={s.ntSelect} disabled aria-disabled="true" defaultValue="">
-        <option value="">{t('financial.recon.manual.f.feeKindPlaceholder')}</option>
-        <option value="Fee">{t('financial.recon.treatment.Fee')}</option>
-        <option value="Penalty">{t('financial.recon.treatment.Penalty')}</option>
-        <option value="Interest">{t('financial.recon.treatment.Interest')}</option>
-      </select>
-    </label>
-  )
-
   return (
     <div className={s.assocCol}>
       <div className={s.ntForm}>
@@ -347,12 +332,12 @@ export function NewTransactionPane({ binding }: NewTransactionPaneProps) {
                 </>
               ) : (
                 <>
-                  {/* Tarifa/Juros (único tipo não-payee que categoriza): Plano + a classificação lado a lado
-                  (o Plano dirige a cascata); Centro/Categoria/Subcategoria em 3 colunas. A classificação é
-                  gated por tipo (só FeePenaltyInterest a tem). */}
+                  {/* Tarifa/Juros (único tipo não-payee que categoriza): Programa + Plano lado a lado (o Plano
+                  dirige a cascata, igual ao bloco Pagamento/Recebimento); Centro/Categoria/Subcategoria em 3
+                  colunas. A classificação Tarifa/Multa/Juros saiu (core-api#371 não vem; a taxonomia cobre). */}
                   <div className={`${s.ntRow} ${s.ntRowCols2}`}>
+                    {programaSelect}
                     {planoSelect}
-                    {type === 'FeePenaltyInterest' ? feeKindSelect : null}
                   </div>
                   <div className={`${s.ntRow} ${s.ntRowCols3}`}>
                     {centroSelect}

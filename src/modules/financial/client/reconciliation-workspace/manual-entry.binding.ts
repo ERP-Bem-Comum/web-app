@@ -14,6 +14,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { reconciliationRepository } from '#modules/financial/client/data/repository/reconciliation.repository.instance.ts'
 import { reconciliationErrorTag } from '#modules/financial/client/data/helpers/reconciliation-error-tag.ts'
+import { maskMoneyBRL } from '#modules/financial/client/data/money.ts'
 import { listAllPartnersFn } from '#modules/partners/public-api/index.ts'
 import { listProgramsFn } from '#modules/programs/public-api/index.ts'
 import {
@@ -114,10 +115,14 @@ const partnerOptionsQuery = {
   queryFn: async (): Promise<readonly ManualEntryOption[]> => {
     const r = await listAllPartnersFn()
     if (!r.ok) return []
-    return r.data
-      .filter((p) => p.active)
-      .map((p) => ({ value: p.id, label: p.document === '' ? p.name : `${p.name} · ${p.document}` }))
-      .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'))
+    return (
+      r.data
+        .filter((p) => p.active)
+        // Só o NOME na Conciliação (pedido da P.O.) — o "nome · documento" do #190 é do dropdown compartilhado
+        // do Lançar Documento/Novo Contrato; aqui a lista é montada localmente, então não afeta aquele.
+        .map((p) => ({ value: p.id, label: p.name }))
+        .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'))
+    )
   },
   staleTime: 60_000,
 }
@@ -414,7 +419,9 @@ export function useManualEntry(
       setIssueDate(v)
     },
     setDocumentValue: (v) => {
-      setDocumentValue(v)
+      // Máscara de moeda BRL "as-you-type" (o MESMO helper do "Lançar Documento"/grossValue): mostra
+      // "133.830,10"; a submit converte p/ centavos via parseBRLToCents. Vazio → '' (omite no envio).
+      setDocumentValue(maskMoneyBRL(v))
     },
     reset: () => {
       setType(null)

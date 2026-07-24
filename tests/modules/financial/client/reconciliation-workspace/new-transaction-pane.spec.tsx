@@ -70,13 +70,37 @@ describe('NewTransactionPane', () => {
     expect(setType).toHaveBeenCalledWith('Transfer')
   })
 
-  it('Tarifa/Juros: mostra a classificação (Tarifa/Multa/Juros) ao lado da subcategoria — honesta (disabled)', () => {
-    render(<NewTransactionPane binding={baseBinding({ type: 'FeePenaltyInterest' })} />)
-    expect(screen.getByText(tr('financial.recon.manual.f.feeKind'))).toBeTruthy()
-    // As 3 opções (Tarifa/Multa/Juros) aparecem; o campo é honesto/desligado até o backend expor.
-    expect(screen.getByRole('option', { name: tr('financial.recon.treatment.Fee') })).toBeTruthy()
-    expect(screen.getByRole('option', { name: tr('financial.recon.treatment.Penalty') })).toBeTruthy()
-    expect(screen.getByRole('option', { name: tr('financial.recon.treatment.Interest') })).toBeTruthy()
+  it('Tarifa/Juros: mostra Programa (NÃO a classificação, removida — core-api#371 não vem)', () => {
+    render(
+      <NewTransactionPane
+        binding={baseBinding({
+          type: 'FeePenaltyInterest',
+          programOptions: [{ value: 'pr1', label: 'EDU — Educação' }],
+        })}
+      />,
+    )
+    // Programa entra no bloco Tarifa/Juros (alinha a taxonomia); a classificação Tarifa/Multa/Juros saiu.
+    expect(screen.getByText(tr('financial.recon.manual.f.program'))).toBeTruthy()
+    expect(screen.getByRole('option', { name: 'EDU — Educação' })).toBeTruthy()
+    expect(screen.queryByText(tr('financial.recon.manual.f.feeKind'))).toBeNull()
+    expect(screen.queryByRole('option', { name: tr('financial.recon.treatment.Fee') })).toBeNull()
+  })
+
+  it('Tarifa/Juros: setar o Programa dispara setProgramRef (enviado no template p/ FeePenaltyInterest)', () => {
+    const setProgramRef = vi.fn()
+    render(
+      <NewTransactionPane
+        binding={baseBinding({
+          type: 'FeePenaltyInterest',
+          programOptions: [{ value: 'pr1', label: 'EDU — Educação' }],
+          setProgramRef,
+        })}
+      />,
+    )
+    fireEvent.change(screen.getByLabelText(tr('financial.recon.manual.f.program')), {
+      target: { value: 'pr1' },
+    })
+    expect(setProgramRef).toHaveBeenCalledWith('pr1')
   })
 
   it('#502/S2: mostra o Plano Orçamentário na categorização (dirige a cascata)', () => {

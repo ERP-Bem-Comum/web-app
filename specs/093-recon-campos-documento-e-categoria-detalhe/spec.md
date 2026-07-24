@@ -36,6 +36,17 @@ nível-conciliação → acende no lançamento manual (fatia 1) e no match 1:1 (
 `pnpm verify` (1604) + `pnpm test:dom` (583). Testes: componente (4 campos reais), view-model (categoria no
 detalhe), mappers (parse de `category`).
 
+## Ajustes de validação (P.O.)
+
+- **Valor do documento com máscara BRL** (`maskMoneyBRL`, o mesmo do Lançar Documento) — as-you-type "133.830,10"; submit → `documentValueCents` via `parseBRLToCents`; vazio → omitido.
+- **Fornecedor só o NOME na Conciliação** (sem "· CPF/CNPJ") — label montado localmente no `manual-entry.binding.ts`; o dropdown compartilhado do Lançar Documento/Contrato (#190) fica intocado.
+- **Tarifa/Juros: removido o campo CLASSIFICAÇÃO** (`feeKind`, chrome) **e adicionado Programa** — alinha a taxonomia. O #371 fica **descartado do front**.
+
+## Handoff backend
+
+- **core-api#556** — o detalhe da conciliação NÃO retorna os campos de documento (só `category`). Enquanto não voltar, o **Número do documento não aparece no modal de detalhe** (a escrita do #370 funciona; falta a leitura).
+- Categoria vazia no detalhe: plumbing do front verificado OK ponta a ponta → provável `category=null` do backend p/ aquela conciliação.
+
 ## Fora de escopo
 
-- **core-api#371** (`feePenaltyKind` — Tarifa/Multa/Juros): ainda aberto → classificação segue chrome.
+- **core-api#371** (`feePenaltyKind`): descartado do front (campo CLASSIFICAÇÃO removido a pedido da P.O.).
