@@ -46,6 +46,15 @@ export const gabaritoDanfseV2: Gabarito = {
         padrao: /EMITENTE[\s\S]*?(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}|\d{3}\.\d{3}\.\d{3}-\d{2})/i,
       },
     },
+    // Descrição do Serviço: bloco de texto livre da nota (entre o rótulo e a seção "Tributação").
+    {
+      nome: 'descricao',
+      tipo: 'texto',
+      estrategia: {
+        mode: 'regex',
+        padrao: /Descri[çc][ãa]o\s*do\s*Servi[çc]o\s*\n([\s\S]*?)(?=\n[^\n]*Tributa[çc][ãa]o)/i,
+      },
+    },
 
     {
       nome: 'valorBruto',

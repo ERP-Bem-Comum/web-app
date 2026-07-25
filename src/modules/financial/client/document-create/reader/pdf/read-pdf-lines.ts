@@ -23,6 +23,16 @@ const strOf = (campos: Readonly<Record<string, FieldValue>>, key: string): strin
   return null
 }
 
+// Descrição do Serviço (texto livre multi-linha) → uma linha: colapsa quebras/espaços e limita a 500 (teto do
+// backend, evita reprovar o save). null quando o gabarito não a extrai.
+const DESCRIPTION_MAX = 500
+const descriptionOf = (campos: Readonly<Record<string, FieldValue>>): string | null => {
+  const raw = strOf(campos, 'descricao')
+  if (raw === null) return null
+  const clean = raw.replace(/\s+/g, ' ').trim()
+  return clean === '' ? null : clean.slice(0, DESCRIPTION_MAX)
+}
+
 export const readPdfLines = (lines: readonly Line[]): DocumentReading | null => {
   const { gabarito, campos } = extractWithGabarito(lines, GABARITOS)
   if (gabarito === null) return null
@@ -37,7 +47,7 @@ export const readPdfLines = (lines: readonly Line[]): DocumentReading | null => 
     competence: strOf(campos, 'competencia'),
     issueDate: strOf(campos, 'emissao'),
     grossValue: numOf(campos, 'valorBruto'),
-    description: null,
+    description: descriptionOf(campos),
     accessKey: strOf(campos, 'chaveAcesso'),
     // CNPJ/CPF do emitente quando o gabarito o extrai (DANFSe v1/v2) → habilita a auto-seleção do fornecedor
     // (matchPartnerByTaxId normaliza a pontuação). Gabaritos sem o campo → null (comportamento anterior).
