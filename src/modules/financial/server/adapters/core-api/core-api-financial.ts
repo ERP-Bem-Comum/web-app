@@ -4,7 +4,7 @@
  * tradução aos mappers PUROS (`financial.mappers.ts`) e o erro a `mapHttpError`. Espelha `core-api-users.ts`.
  */
 import { ok, err, isErr, type Result } from '#shared/primitives/result.ts'
-import { resultFetch } from '#external/core-api/result-fetch.ts'
+import { resultFetch, resultFetchBytes } from '#external/core-api/result-fetch.ts'
 import type { FinancialClient } from '#modules/financial/server/application/financial.use-cases.ts'
 import type { FinancialError } from '#modules/financial/server/domain/errors/financial.errors.ts'
 import type {
@@ -117,6 +117,13 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
       const r = await resultFetch<unknown>(`${docs}/${id}/timeline`, { token })
       if (isErr(r)) return err(mapHttpError(r.error))
       return timelineToModel(r.value)
+    },
+    getSourceFile: async (id, token) => {
+      // #568: comprovante-fonte INLINE (bytes) COM o token — nunca alcançável pelo browser (CA4). O client
+      // recebe base64 + mimeType e monta o blob/File. Erro (404 sem anexo, 403 RBAC) → FinancialError.
+      const r = await resultFetchBytes(`${docs}/${id}/source-file`, { token })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      return ok({ base64: r.value.base64, mimeType: r.value.contentType })
     },
     create: async (input, token) => {
       const r = await resultFetch<unknown>(docs, {

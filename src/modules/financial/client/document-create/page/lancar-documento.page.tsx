@@ -13,8 +13,8 @@ import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { useDocumentFormController } from '../document-form.controller.ts'
 import { useDocumentReader } from '../reader/document-reader.binding.ts'
 import { mapReadingToPatch, matchPartnerByTaxId } from '../document-reading.view.ts'
-import { useOcrExtraction } from '../ocr.binding.ts'
 import { useDocumentPreview } from '../document-preview.binding.ts'
+import { useAttachmentFile } from '../attachment-preview.binding.ts'
 import { useOcrPanelResize } from '../ocr-panel-resize.binding.ts'
 import { useSupplierPickerController } from '../supplier-picker.controller.ts'
 import { useLancarDocumentoBinding } from '../create-document.binding.ts'
@@ -40,6 +40,7 @@ import {
   ocrReadFields,
   type DocumentReadingPatch,
   type OcrFieldKey,
+  type OcrStatus,
 } from '../document-form.view.ts'
 import { DocumentForm } from '../components/document-form.component.tsx'
 import { SupplierPicker } from '../components/supplier-picker.component.tsx'
@@ -89,14 +90,19 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
     return supplierRef !== null ? { ...readingMap.patch, supplierRef } : readingMap.patch
   }, [readingMap, partners, clientReader.reading])
   const controller = useDocumentFormController(edit.initialFields, readingPatch)
-  // Ingestão por OCR (core-api#62): no sucesso CRIA UM RASCUNHO e navega p/ o modo edição dele (revisão do
-  // operador). O binding só ingere+navega — nunca cria um 2º documento. PRESERVADO (aditivo ao leitor client).
-  const ocr = useOcrExtraction()
-  const preview = useDocumentPreview(ocrFile)
+  // CA2/CA3 (#568): na edição de um documento salvo por OCR, o comprovante-fonte vem do backend (via server-fn
+  // → base64 → File). Precede-se o arquivo LOCAL recém-subido (create). Sem anexo → null (não busca; CA3).
+  const attachmentFile = useAttachmentFile(documentId, edit.detail?.attachment ?? null, edit.isEdit)
+  const preview = useDocumentPreview(ocrFile ?? attachmentFile)
+  // Upload = LEITURA LOCAL apenas (ADR-0021): guarda o File no estado (dirige o leitor client-side p/ os campos
+  // + o web view), SEM criar nada no servidor. O rascunho/documento só nasce quando o usuário clica em "Salvar
+  // rascunho"/"Salvar Documento" — o comprovante vai JUNTO nessa ação (não mais por ingestão automática, que
+  // criava rascunho-fantasma e prendia o anexo fora do documento salvo).
   const handleSelectFile = (file: File): void => {
     setOcrFile(file)
-    ocr.extract(file)
   }
+  // Status do web view local (sem ingestão): 'reading' do leitor client-side → "lendo"; demais → idle.
+  const previewStatus: OcrStatus = clientReader.status === 'reading' ? 'running' : 'idle'
   // Destaque âmbar + tag "OCR": une o que o LEITOR client preencheu (precedência) ao derivado do rascunho
   // backend (fallback quando o leitor não reconhece o documento). Baseado na extração, não nos edits.
   const backendOcrFields = ocrReadFields(edit.initialFields ?? null, ocrFile !== null)
@@ -246,9 +252,9 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
         style={{ ['--ocr-col-width']: `${String(ocrResize.widthPx)}px` } as CSSProperties}
       >
         <DocumentPreview
-          status={ocr.status}
-          fileName={ocr.fileName}
-          errorTag={ocr.errorTag}
+          status={previewStatus}
+          fileName={ocrFile?.name ?? null}
+          errorTag={null}
           preview={preview}
           allowReplace={mode === 'create'}
           onSelectFile={handleSelectFile}

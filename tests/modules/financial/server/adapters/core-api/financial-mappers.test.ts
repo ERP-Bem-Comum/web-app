@@ -122,6 +122,31 @@ describe('detailToModel', () => {
       assert.equal(r.value.programRef, null)
     }
   })
+  it('#568: mapeia attachment quando presente', () => {
+    const r = detailToModel({
+      ...validDoc,
+      attachment: {
+        fileName: 'nota.xml',
+        mimeType: 'text/xml',
+        sizeBytes: 21,
+        url: '/api/v2/financial/documents/d1/source-file',
+      },
+    })
+    assert.equal(isOk(r), true)
+    if (isOk(r)) {
+      assert.equal(r.value.attachment?.fileName, 'nota.xml')
+      assert.equal(r.value.attachment?.mimeType, 'text/xml')
+      assert.equal(r.value.attachment?.sizeBytes, 21)
+      assert.equal(r.value.attachment?.url, '/api/v2/financial/documents/d1/source-file')
+    }
+  })
+  it('#568: attachment ausente (backend antigo) ou null → null (drift-tolerante)', () => {
+    const r = detailToModel(validDoc) // sem a chave
+    if (isOk(r)) assert.equal(r.value.attachment, null)
+    const r2 = detailToModel({ ...validDoc, attachment: null })
+    if (isOk(r2)) assert.equal(r2.value.attachment, null)
+  })
+
   it('drift de contrato → err(server)', () => {
     assert.equal(isErr(detailToModel({ id: 1 })), true)
   })

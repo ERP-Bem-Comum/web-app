@@ -152,6 +152,19 @@ export type Payable = Readonly<{
   status: DocumentStatus
 }>
 
+// #62/Feature 2 (core-api#568): comprovante-fonte do documento. `url` é o endpoint proxy que serve os
+// bytes INLINE (nunca acessado direto pelo browser — o fetch passa pela server-fn, §III/§IX). null = sem anexo.
+export type DocumentAttachment = Readonly<{
+  fileName: string
+  mimeType: string
+  sizeBytes: number
+  url: string
+}>
+
+// Bytes do comprovante-fonte trazidos pela server-fn (base64) + o mimeType — o client monta um blob/File
+// e renderiza na área de OCR (reusa o web view do "Lançar Documento"). O browser NUNCA fala com o core-api.
+export type DocumentSourceFile = Readonly<{ base64: string; mimeType: string }>
+
 export type DocumentDetail = Readonly<{
   id: string
   status: DocumentStatus
@@ -174,6 +187,8 @@ export type DocumentDetail = Readonly<{
   programRef: string | null
   payables: readonly Payable[]
   version: number // optimistic lock — reenviado no PATCH (ajuste)
+  // #568: comprovante-fonte (OCR); null = documento sem anexo (lançamento manual).
+  attachment: DocumentAttachment | null
 }>
 
 export type DocumentSummary = Readonly<{
