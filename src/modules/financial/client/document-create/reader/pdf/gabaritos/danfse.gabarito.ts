@@ -47,6 +47,16 @@ export const gabaritoDanfse: Gabarito = {
         padrao: /EMITENTE[\s\S]*?(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}|\d{3}\.\d{3}\.\d{3}-\d{2})/i,
       },
     },
+    // Descrição do Serviço: o bloco de texto livre da nota (entre o rótulo e a seção "Tributação").
+    // read-pdf-lines colapsa as quebras e limita ao teto do backend. Preenche o campo Descrição do form.
+    {
+      nome: 'descricao',
+      tipo: 'texto',
+      estrategia: {
+        mode: 'regex',
+        padrao: /Descri[çc][ãa]o\s*do\s*Servi[çc]o\s*\n([\s\S]*?)(?=\n[^\n]*Tributa[çc][ãa]o)/i,
+      },
+    },
 
     // VALOR TOTAL: "Valor do Serviço  Desconto Condicionado  Desconto Incondicionado  ISSQN Retido"
     {

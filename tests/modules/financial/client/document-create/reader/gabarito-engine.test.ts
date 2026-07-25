@@ -50,6 +50,11 @@ const danfseRows: readonly (readonly { str: string; x: number }[])[] = [
     { str: 'CNPJ / CPF / NIF', x: 200 },
   ],
   [{ str: '30.275.386/0001-05', x: 200 }],
+  // Descrição do Serviço: rótulo, texto (multi-linha) e a seção seguinte "Tributação" como fronteira.
+  [{ str: 'Descrição do Serviço', x: 0 }],
+  [{ str: 'Serviços prestados conforme', x: 0 }],
+  [{ str: 'Contrato de Prestação 035/2026.', x: 0 }],
+  [{ str: 'Tributação Municipal', x: 0 }],
   [
     { str: 'Valor do Serviço', x: 0 },
     { str: 'Desconto Condicionado', x: 150 },
@@ -119,6 +124,8 @@ describe('readPdfLines — DANFSe v1.0 por gabarito', () => {
     assert.equal(r.retentions.csll, 465)
     // CNPJ do EMITENTE (não o do tomador) → habilita a auto-seleção do fornecedor.
     assert.equal(r.supplier.taxId, '64.894.238/0001-90')
+    // Descrição do Serviço: bloco multi-linha colapsado numa linha (até a fronteira "Tributação").
+    assert.equal(r.description, 'Serviços prestados conforme Contrato de Prestação 035/2026.')
   })
 
   it('sem gabarito reconhecido → null (degradação graciosa)', () => {
