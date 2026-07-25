@@ -39,6 +39,17 @@ const danfseRows: readonly (readonly { str: string; x: number }[])[] = [
     { str: '1', x: 200 },
   ],
   [{ str: '12345678901234567890123456789012345678901234567890', x: 0 }],
+  // EMITENTE (prestador) antes do TOMADOR — o gabarito deve pegar o CNPJ do EMITENTE, não o do tomador.
+  [
+    { str: 'EMITENTE DA NFS-e', x: 0 },
+    { str: 'CNPJ / CPF / NIF', x: 200 },
+  ],
+  [{ str: '64.894.238/0001-90', x: 200 }],
+  [
+    { str: 'TOMADOR DO SERVIÇO', x: 0 },
+    { str: 'CNPJ / CPF / NIF', x: 200 },
+  ],
+  [{ str: '30.275.386/0001-05', x: 200 }],
   [
     { str: 'Valor do Serviço', x: 0 },
     { str: 'Desconto Condicionado', x: 150 },
@@ -106,6 +117,8 @@ describe('readPdfLines — DANFSe v1.0 por gabarito', () => {
     assert.equal(r.retentions.inss, 0)
     // v1 agrega PIS+COFINS+CSLL em "Contribuições Sociais - Retidas" → mapeado para csll.
     assert.equal(r.retentions.csll, 465)
+    // CNPJ do EMITENTE (não o do tomador) → habilita a auto-seleção do fornecedor.
+    assert.equal(r.supplier.taxId, '64.894.238/0001-90')
   })
 
   it('sem gabarito reconhecido → null (degradação graciosa)', () => {

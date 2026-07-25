@@ -210,7 +210,9 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
             budgetPlanRef: c.budgetPlanRef ?? undefined,
           }
         : withPayee,
-      ocrFile,
+      // Arquivo local (upload novo) tem precedência; ao FINALIZAR um rascunho reaberto (sem upload local),
+      // reusa o comprovante já anexado (attachmentFile, vindo do servidor) p/ ele viajar ao documento salvo.
+      ocrFile ?? attachmentFile,
     )
   }
 
