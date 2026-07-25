@@ -49,6 +49,14 @@ export interface RegisteredTaxInput {
 }
 
 // ── Inputs (validados na server fn pelos schemas em adapters) ───────────────────
+// #577: comprovante-fonte enviado JUNTO no create atômico (POST /documents/with-source-file). base64 dos
+// bytes + mimeType na allowlist (pdf/xml). Ausente → create normal (POST /documents), sem anexo.
+export interface SourceFileInput {
+  fileName: string
+  mimeType: 'application/pdf' | 'text/xml' | 'application/xml'
+  base64: string
+}
+
 // Lançar Documento (POST /documents, asDraft:false → estado Aberto).
 export interface CreateDocumentInput {
   // #534: RASCUNHO (asDraft) aceita estes 5 opcionais — o core-api reexige só p/ asDraft:false (superRefine).
@@ -77,6 +85,7 @@ export interface CreateDocumentInput {
   dueDate?: string // opcional p/ rascunho (asDraft); obrigatório no lançamento (gating na UI)
   description?: string
   asDraft?: boolean // true → Rascunho; default false → Aberto
+  sourceFile?: SourceFileInput // #577: comprovante anexado no create atômico; ausente → sem anexo
 }
 
 // Ajuste (PATCH /documents/:id) — só em Aberto; ≥1 campo além de version; regenera filhos.

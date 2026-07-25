@@ -37,6 +37,16 @@ export const gabaritoDanfse: Gabarito = {
       estrategia: { mode: 'regex', padrao: /S[ée]rie da DPS[^\n]*\n\s*\d+\s+(\d+)/i },
     },
     { nome: 'chaveAcesso', tipo: 'texto', estrategia: { mode: 'regex', padrao: /(\d{50})/ } },
+    // CNPJ/CPF do EMITENTE (prestador) — ancora em "EMITENTE" e pega o 1º documento DEPOIS dele (antes do
+    // TOMADOR). Habilita a auto-seleção do fornecedor pelo leitor client-side (matchPartnerByTaxId).
+    {
+      nome: 'supplierCnpj',
+      tipo: 'texto',
+      estrategia: {
+        mode: 'regex',
+        padrao: /EMITENTE[\s\S]*?(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}|\d{3}\.\d{3}\.\d{3}-\d{2})/i,
+      },
+    },
 
     // VALOR TOTAL: "Valor do Serviço  Desconto Condicionado  Desconto Incondicionado  ISSQN Retido"
     {

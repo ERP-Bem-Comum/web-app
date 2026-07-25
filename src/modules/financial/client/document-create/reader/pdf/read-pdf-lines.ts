@@ -2,8 +2,9 @@
  * read-pdf-lines — PURO: `Line[]` (já extraídas da camada de texto do PDF) → `DocumentReading`. Detecta o
  * gabarito e traduz o `campos` cru (chaves do gabarito) para o modelo unificado.
  *
- * Limites conhecidos do PDF (vs XML): não há CNPJ/nome do emitente confiável nos gabaritos → `supplier` fica
- * vazio (o casamento por CNPJ só ocorre pelo XML). A DANFSe v1 agrega PIS+COFINS+CSLL em
+ * Emitente: os gabaritos DANFSe (v1/v2) extraem o CNPJ/CPF do prestador (`supplierCnpj`) → `supplier.taxId`
+ * habilita o casamento por CNPJ (auto-seleção do fornecedor). Gabaritos sem o campo → `supplier` vazio (o
+ * casamento fica só no XML). A DANFSe v1 agrega PIS+COFINS+CSLL em
  * "Contribuições Sociais - Retidas" → mapeado para `csll` (o mapa do form soma pis+cofins+csll em CSRF).
  */
 import type { DocumentReading, ReadingCategory } from '../document-reading.model.ts'
@@ -38,7 +39,9 @@ export const readPdfLines = (lines: readonly Line[]): DocumentReading | null => 
     grossValue: numOf(campos, 'valorBruto'),
     description: null,
     accessKey: strOf(campos, 'chaveAcesso'),
-    supplier: { taxId: null, name: null },
+    // CNPJ/CPF do emitente quando o gabarito o extrai (DANFSe v1/v2) → habilita a auto-seleção do fornecedor
+    // (matchPartnerByTaxId normaliza a pontuação). Gabaritos sem o campo → null (comportamento anterior).
+    supplier: { taxId: strOf(campos, 'supplierCnpj'), name: null },
     retentions: {
       iss: numOf(campos, 'iss'),
       irrf: numOf(campos, 'irrf'),
