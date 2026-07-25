@@ -84,6 +84,15 @@ export const CreateDocumentInputSchema = z.object({
   dueDate: DateSchema.optional(), // opcional p/ rascunho; o lançamento exige (gating na UI)
   description: z.string().trim().max(500).optional(),
   asDraft: z.boolean().optional(), // true → Rascunho; default false → Aberto (core-api)
+  // #577: comprovante anexado no create atômico (POST /documents/with-source-file). base64 dos bytes +
+  // mimeType na allowlist (pdf/xml). Ausente → create normal. O tamanho/magic-bytes é validado no core-api.
+  sourceFile: z
+    .object({
+      fileName: z.string().trim().min(1).max(255),
+      mimeType: z.enum(['application/pdf', 'text/xml', 'application/xml']),
+      base64: z.string().trim().min(1),
+    })
+    .optional(),
 })
 
 // Ajuste (PATCH /documents/:id).

@@ -192,7 +192,9 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
     void navigate({ to: '/financeiro/contas-a-pagar' })
   }
 
-  // Anexa os refs do contrato "Em Andamento" e dispara o create (backend deriva a categorização — #48).
+  // Anexa os refs do contrato "Em Andamento" e dispara o create (backend deriva a categorização — #48). O
+  // arquivo LOCAL recém-subido (#577) vai JUNTO: o binding base64-encoda e anexa ao create atômico → o
+  // comprovante nasce no documento salvo (rascunho OU Aberto), não mais num rascunho-fantasma.
   const submit = (base: ReturnType<typeof buildCreateInput>): void => {
     if (base === null) return
     // payeeKind (#90) derivado do parceiro selecionado (mesmos valores do enum do backend); default server 'supplier'.
@@ -208,6 +210,7 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
             budgetPlanRef: c.budgetPlanRef ?? undefined,
           }
         : withPayee,
+      ocrFile,
     )
   }
 
