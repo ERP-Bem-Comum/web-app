@@ -43,6 +43,13 @@ export type RegisteredTaxInput = Readonly<{
 // Tipo do favorecido (#90) — espelha o enum do core-api; mesmos valores do PartnerKind do front.
 export type PayeeKind = 'supplier' | 'financier' | 'act' | 'collaborator'
 
+// #577: comprovante anexado no create atômico. base64 dos bytes + mimeType na allowlist (pdf/xml).
+export type SourceFileInput = Readonly<{
+  fileName: string
+  mimeType: 'application/pdf' | 'text/xml' | 'application/xml'
+  base64: string
+}>
+
 export type CreateDocumentInput = Readonly<{
   // #534: no RASCUNHO (asDraft) o core-api aceita estes 5 opcionais (superRefine reexige só p/ asDraft:false).
   // O gating do lançamento (Open) vive na UI (`canSubmit`); o rascunho salva parcial.
@@ -74,6 +81,8 @@ export type CreateDocumentInput = Readonly<{
   dueDate?: string // opcional p/ rascunho (asDraft); obrigatório no lançamento (gating na UI)
   description?: string
   asDraft?: boolean // true → Rascunho (campos opcionais, sem títulos); default false → Aberto
+  // #577: comprovante enviado JUNTO no create atômico (rota /with-source-file). base64 + mimeType (pdf/xml).
+  sourceFile?: SourceFileInput
 }>
 
 export type AdjustDocumentInput = Readonly<{

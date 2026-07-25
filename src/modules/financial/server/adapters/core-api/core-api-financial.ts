@@ -126,7 +126,10 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
       return ok({ base64: r.value.base64, mimeType: r.value.contentType })
     },
     create: async (input, token) => {
-      const r = await resultFetch<unknown>(docs, {
+      // #577: com comprovante → rota atômica dedicada (`/with-source-file` cria o doc JÁ com o anexo, Draft
+      // OU Open); sem comprovante → create normal. O corpo é o mesmo (o `sourceFile` viaja no spread).
+      const url = input.sourceFile !== undefined ? `${docs}/with-source-file` : docs
+      const r = await resultFetch<unknown>(url, {
         method: 'POST',
         body: { asDraft: false, ...input }, // input.asDraft (rascunho) tem precedência
         token,

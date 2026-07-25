@@ -8,6 +8,7 @@ import { useNavigate } from '@tanstack/react-router'
 
 import { isOk } from '#shared/primitives/result.ts'
 import { financialErrorTag } from '#modules/financial/client/data/helpers/financial-error-tag.ts'
+import { fileToSourceFileInput } from '#modules/financial/client/data/file-base64.ts'
 import type {
   CreateDocumentInput,
   DocumentDetail,
@@ -19,7 +20,9 @@ export type LancarDocumentoCommand = Readonly<{
   running: boolean
   errorTag: string | null
   created: DocumentDetail | null
-  execute: (input: CreateDocumentInput) => void
+  // #577: `file` opcional = comprovante local recém-subido → base64-encodado e anexado ao create atômico
+  // (rota /with-source-file). Ausente/nulo/fora da allowlist → create normal (documento sem anexo).
+  execute: (input: CreateDocumentInput, file?: File | null) => void
   reset: () => void
 }>
 
@@ -49,8 +52,16 @@ export function useLancarDocumentoBinding(): LancarDocumentoCommand {
     running: mutation.isPending,
     errorTag,
     created,
-    execute: (input) => {
-      mutation.mutate(input)
+    execute: (input, file) => {
+      // Sem arquivo local → create normal. Com arquivo → resolve o comprovante (base64 + mimeType) e anexa;
+      // fora da allowlist (fileToSourceFileInput → null) cai no create normal (documento sem anexo).
+      if (file === undefined || file === null) {
+        mutation.mutate(input)
+        return
+      }
+      void fileToSourceFileInput(file).then((sourceFile) => {
+        mutation.mutate(sourceFile !== null ? { ...input, sourceFile } : input)
+      })
     },
     reset: () => {
       mutation.reset()
