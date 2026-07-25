@@ -1439,6 +1439,22 @@ export const dwFileMeta = style({
   fontSize: vars.font.size['2xs'],
   color: vars.color.institutional.ink5,
 })
+// #568: quando HÁ comprovante anexado, o card ganha tinta azul (sinaliza "tem arquivo"); sem anexo
+// permanece bege (paperWarm), o estado neutro. Overrides aditivos, compostos por className na view.
+export const dwFileCardAttached = style({
+  background: vars.color.institutional.blueBg,
+  borderColor: vars.color.institutional.blueLine,
+})
+export const dwFileIconAttached = style({
+  background: vars.color.institutional.blue,
+  color: vars.color.brand.onBrand,
+})
+export const dwFileNameAttached = style({
+  color: vars.color.institutional.blueDeep,
+})
+export const dwFileMetaAttached = style({
+  color: vars.color.institutional.blue,
+})
 // ── Impressão (PDF via window.print): esconde o cromo, imprime só o grid ──
 globalStyle(`${filterBar}, ${bottombar}`, { '@media': { print: { display: 'none !important' } } })
 globalStyle(screen, { '@media': { print: { paddingBlockEnd: '0 !important' } } })

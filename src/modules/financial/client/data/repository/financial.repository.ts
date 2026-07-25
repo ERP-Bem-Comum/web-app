@@ -19,6 +19,7 @@ import type {
   PayableCountsInput,
   PayableCounts,
   DocumentTimelineEntry,
+  DocumentSourceFile,
 } from '#modules/financial/client/data/model/document.model.ts'
 import type { RecentPayment } from '#modules/financial/client/data/model/recent-payment.model.ts'
 import type { DashboardStatistics } from '#modules/financial/client/data/model/dashboard-statistics.model.ts'
@@ -28,6 +29,7 @@ type ListFn = (opts: { data: ListDocumentsInput }) => Promise<FnResult<DocumentL
 type ListTitlesFn = (opts: { data: ListPayableTitlesInput }) => Promise<FnResult<PayableTitleListResponse>>
 type PayableCountsFn = (opts: { data: PayableCountsInput }) => Promise<FnResult<PayableCounts>>
 type GetFn = (opts: { data: { id: string } }) => Promise<FnResult<DocumentDetail>>
+type SourceFileFn = (opts: { data: { id: string } }) => Promise<FnResult<DocumentSourceFile>>
 type TimelineFn = (opts: { data: { id: string } }) => Promise<FnResult<readonly DocumentTimelineEntry[]>>
 type CreateFn = (opts: { data: CreateDocumentInput }) => Promise<FnResult<DocumentDetail>>
 type AdjustFn = (opts: { data: AdjustDocumentInput }) => Promise<FnResult<DocumentDetail>>
@@ -51,6 +53,8 @@ export type FinancialRepository = Readonly<{
   // #536: contagem agregada por status (chips do grid).
   getPayableCounts: (input: PayableCountsInput) => Promise<Result<PayableCounts, FinancialError>>
   getById: (id: string) => Promise<Result<DocumentDetail, FinancialError>>
+  // #568: comprovante-fonte (bytes base64 + mimeType). Busca lazy (só quando há anexo). CA4: via server-fn.
+  getSourceFile: (id: string) => Promise<Result<DocumentSourceFile, FinancialError>>
   // Trilha de auditoria (entradas enriquecidas com o nome do autor).
   getTimeline: (id: string) => Promise<Result<readonly DocumentTimelineEntry[], FinancialError>>
   create: (input: CreateDocumentInput) => Promise<Result<DocumentDetail, FinancialError>>
@@ -74,6 +78,7 @@ export const createFinancialRepository = (
     listPayableTitlesFn: ListTitlesFn
     payableCountsFn: PayableCountsFn
     getDocumentFn: GetFn
+    getDocumentSourceFileFn: SourceFileFn
     getDocumentTimelineFn: TimelineFn
     createDocumentFn: CreateFn
     adjustDocumentFn: AdjustFn
@@ -100,6 +105,10 @@ export const createFinancialRepository = (
   },
   getById: async (id) => {
     const res = await deps.getDocumentFn({ data: { id } })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  getSourceFile: async (id) => {
+    const res = await deps.getDocumentSourceFileFn({ data: { id } })
     return res.ok ? ok(res.data) : err(res.error)
   },
   getTimeline: async (id) => {

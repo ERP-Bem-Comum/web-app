@@ -21,6 +21,7 @@ import type {
   PayableCounts,
   RecentPayment,
   DocumentTimelineEvent,
+  DocumentSourceFile,
 } from '#modules/financial/server/domain/document.io.ts'
 
 export type FinancialClient = Readonly<{
@@ -30,6 +31,8 @@ export type FinancialClient = Readonly<{
     token: string,
   ) => Promise<Result<PayableTitleListResponse, FinancialError>>
   getById: (id: string, token: string) => Promise<Result<DocumentDetail, FinancialError>>
+  // #568: comprovante-fonte (bytes base64 + mimeType) — o BFF busca COM o token; o browser nunca acessa.
+  getSourceFile: (id: string, token: string) => Promise<Result<DocumentSourceFile, FinancialError>>
   // Trilha de auditoria (GET /documents/:id/timeline). Eventos CRUS (actor = UUID; o nome é resolvido na fn).
   getTimeline: (
     id: string,
@@ -78,6 +81,11 @@ export const createGetDocument =
   (deps: Deps) =>
   (id: string, token: string): Promise<Result<DocumentDetail, FinancialError>> =>
     deps.client.getById(id, token)
+
+export const createGetDocumentSourceFile =
+  (deps: Deps) =>
+  (id: string, token: string): Promise<Result<DocumentSourceFile, FinancialError>> =>
+    deps.client.getSourceFile(id, token)
 
 export const createGetDocumentTimeline =
   (deps: Deps) =>

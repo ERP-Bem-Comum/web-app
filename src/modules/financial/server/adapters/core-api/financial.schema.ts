@@ -39,6 +39,16 @@ export const CoreApiDocumentSchema = z.object({
   payables: z.array(CoreApiPayableSchema),
   // Optimistic lock — necessário p/ o PATCH (ajuste). Tolerante a drift (Fatia 1 pode não enviar) → 0.
   version: z.int().min(0).catch(0),
+  // #568: comprovante-fonte (OCR). Objeto ou null. Tolerante a drift (backend antigo → sem campo → null).
+  attachment: z
+    .object({
+      fileName: z.string().trim(),
+      mimeType: z.string().trim(),
+      sizeBytes: z.int().min(0).catch(0),
+      url: z.string().trim(),
+    })
+    .nullable()
+    .catch(null),
 })
 export type CoreApiDocument = z.infer<typeof CoreApiDocumentSchema>
 

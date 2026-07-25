@@ -10,6 +10,7 @@ vi.mock('@tanstack/react-router', () => ({
 import { DocumentDetailDrawer } from '#modules/financial/client/contas-a-pagar-list/components/document-detail-drawer.component.tsx'
 import type { PayeeBankView } from '#modules/financial/client/contas-a-pagar-list/payee-bank.binding.ts'
 import type { DocumentDetailView } from '#modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts'
+import { dwFileCardAttached } from '#modules/financial/client/contas-a-pagar-list/page/contas-a-pagar.css.ts'
 
 afterEach(() => {
   cleanup()
@@ -39,6 +40,7 @@ const baseView: DocumentDetailView = {
   retentions: [],
   retentionsTotal: null,
   payables: [],
+  attachment: null,
 }
 
 describe('DocumentDetailDrawer', () => {
@@ -55,6 +57,46 @@ describe('DocumentDetailDrawer', () => {
     )
     expect(screen.getByText('Descrição')).toBeTruthy()
     expect(screen.getByText('teste rpa')).toBeTruthy()
+  })
+
+  it('#568/CA1: com attachment, mostra o nome do arquivo + "Arquivo anexado"', () => {
+    render(
+      <DocumentDetailDrawer
+        view={{
+          ...baseView,
+          attachment: { fileName: 'nota-fiscal.xml', mimeType: 'text/xml', sizeBytes: 21, url: '/x' },
+        }}
+        payeeBank={null}
+        onClose={() => undefined}
+        activeTab="detalhes"
+        onTab={() => undefined}
+        timeline={{ status: 'empty' }}
+      />,
+    )
+    expect(screen.getByText('nota-fiscal.xml')).toBeTruthy()
+    expect(screen.getByText('Arquivo anexado')).toBeTruthy()
+    expect(screen.queryByText('Nenhum arquivo anexado')).toBeNull()
+    // Glyph do ícone = extensão do arquivo (fileBadge).
+    expect(screen.getByText('XML')).toBeTruthy()
+    // Sinal de cor: o card ganha a variante "com anexo" (azul).
+    expect(document.querySelector(`.${dwFileCardAttached}`)).not.toBeNull()
+  })
+
+  it('#568/CA1: sem attachment, mantém o estado vazio (sem chip de arquivo)', () => {
+    render(
+      <DocumentDetailDrawer
+        view={baseView}
+        payeeBank={null}
+        onClose={() => undefined}
+        activeTab="detalhes"
+        onTab={() => undefined}
+        timeline={{ status: 'empty' }}
+      />,
+    )
+    expect(screen.getByText('Nenhum arquivo anexado')).toBeTruthy()
+    expect(screen.queryByText('Arquivo anexado')).toBeNull()
+    // Sem anexo: card permanece bege (sem a variante azul).
+    expect(document.querySelector(`.${dwFileCardAttached}`)).toBeNull()
   })
 
   it('omite a seção de descrição quando vazia', () => {
