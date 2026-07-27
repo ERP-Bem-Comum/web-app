@@ -13,6 +13,7 @@ import type {
   TeamDemographics,
   SupplierWithoutContract,
   PaymentPosition,
+  PaymentAnalysis,
   RealizedBudgetRow,
 } from '#modules/reports/server/domain/reports.io.ts'
 import {
@@ -20,6 +21,7 @@ import {
   teamDemographicsToModel,
   suppliersWithoutContractToModel,
   paymentPositionToModel,
+  paymentAnalysisToModel,
   realizedReportToModel,
   mapHttpError,
 } from './reports.mappers.ts'
@@ -47,6 +49,14 @@ export const createCoreApiReportsClient = (baseUrl: string): ReportsClient => ({
     const r = await resultFetch<unknown>(`${baseUrl}/payment-position`, { token })
     if (isErr(r)) return err(mapHttpError(r.error))
     return paymentPositionToModel(r.value)
+  },
+  getPaymentAnalysis: async (query, token): Promise<Result<PaymentAnalysis, ReportsError>> => {
+    // Janela [dueStart, dueEnd) obrigatória; status opcional. #446.
+    const qs = new URLSearchParams({ dueStart: query.dueStart, dueEnd: query.dueEnd })
+    if (query.status !== undefined) qs.set('status', query.status)
+    const r = await resultFetch<unknown>(`${baseUrl}/analysis/payables?${qs.toString()}`, { token })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return paymentAnalysisToModel(r.value)
   },
   getRealizedReport: async (query, token): Promise<Result<readonly RealizedBudgetRow[], ReportsError>> => {
     const qs = new URLSearchParams({ year: String(query.year) })

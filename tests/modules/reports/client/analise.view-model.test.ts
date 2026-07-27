@@ -19,6 +19,9 @@ import {
   formatPercent,
   sharePercent,
   loadAnalise,
+  analiseReportFromAnalysis,
+  ANALISE_SEM_PLANO,
+  ANALISE_SEM_CENTRO,
   MONTH_ABBR_PT,
   CSV_HEADER_BASE,
 } from '../../../../src/modules/reports/client/analise.view-model.ts'
@@ -28,6 +31,7 @@ import {
   type RawAnaliseRow,
 } from '../../../../src/modules/reports/client/data/analise-pagamentos.placeholder.ts'
 import { ANALISE_RECEBIMENTOS_RAW } from '../../../../src/modules/reports/client/data/analise-recebimentos.placeholder.ts'
+import type { PaymentAnalysis } from '../../../../src/modules/reports/client/data/model/payment-analysis.model.ts'
 
 // Fixture pequena e determinística: 2 planos, 3 centros de custo, período de 3 meses (jan–mar/2026).
 const MONTHS = ['2026-01', '2026-02', '2026-03']
@@ -283,5 +287,99 @@ describe('placeholder real (loadAnalise)', () => {
     assert.strictEqual(empty.totalPeriodo, 0)
     // Mesmo vazio, os meses do período continuam definidos (a matriz teria colunas).
     assert.strictEqual(empty.months.length, 6)
+  })
+})
+
+describe('analiseReportFromAnalysis (DTO #446 → AnaliseReport)', () => {
+  // Plano/centro SEM nome (id/name null) + série esparsa: jan e mar presentes, fev AUSENTE (deve virar 0).
+  const ANALYSIS: PaymentAnalysis = {
+    totalValueOfPeriod: 60000,
+    data: [
+      {
+        id: null,
+        name: null,
+        total: 60000,
+        itens: [
+          { monthYear: '2026-01', total: 10000 },
+          { monthYear: '2026-03', total: 50000 },
+        ],
+        costCenters: [
+          {
+            id: null,
+            name: null,
+            total: 60000,
+            itens: [
+              { monthYear: '2026-01', total: 10000 },
+              { monthYear: '2026-03', total: 50000 },
+            ],
+          },
+        ],
+      },
+    ],
+  }
+
+  it('name null → "Sem plano" / "Sem centro de custo"', () => {
+    const report = analiseReportFromAnalysis(ANALYSIS)
+    assert.strictEqual(report.planos.length, 1)
+    assert.strictEqual(report.planos[0]?.name, ANALISE_SEM_PLANO)
+    assert.strictEqual(report.planos[0]?.name, 'Sem plano')
+    assert.strictEqual(report.planos[0]?.children[0]?.name, ANALISE_SEM_CENTRO)
+    assert.strictEqual(report.planos[0]?.children[0]?.name, 'Sem centro de custo')
+  })
+
+  it('deriva os meses do MIN..MAX do DADO (contíguo), NÃO de ano fixo', () => {
+    const report = analiseReportFromAnalysis(ANALYSIS)
+    // min=2026-01, max=2026-03 → range contíguo inclui fev (que não veio no dado).
+    assert.deepStrictEqual(report.months, ['2026-01', '2026-02', '2026-03'])
+  })
+
+  it('completa a célula do mês AUSENTE com 0 (fev) e preserva os presentes', () => {
+    const report = analiseReportFromAnalysis(ANALYSIS)
+    const cc = report.planos[0]?.children[0]
+    assert.strictEqual(cc?.monthCells['2026-01'], 10000)
+    assert.strictEqual(cc?.monthCells['2026-02'], 0)
+    assert.strictEqual(cc?.monthCells['2026-03'], 50000)
+  })
+
+  it('totalPeriodo = totalValueOfPeriod (contrato do backend, não a soma recomputada)', () => {
+    const report = analiseReportFromAnalysis({ ...ANALYSIS, totalValueOfPeriod: 99999 })
+    assert.strictEqual(report.totalPeriodo, 99999)
+  })
+
+  it('resposta VAZIA (data: []) → months [] e planos [] (empty-state honesto)', () => {
+    const report = analiseReportFromAnalysis({ totalValueOfPeriod: 0, data: [] })
+    assert.strictEqual(report.months.length, 0)
+    assert.strictEqual(report.planos.length, 0)
+    assert.strictEqual(report.totalPeriodo, 0)
+  })
+
+  it('nome real preservado; monthYear malformado é IGNORADO na derivação de meses', () => {
+    const report = analiseReportFromAnalysis({
+      totalValueOfPeriod: 5000,
+      data: [
+        {
+          id: 'p1',
+          name: 'Plano Real',
+          total: 5000,
+          itens: [],
+          costCenters: [
+            {
+              id: 'c1',
+              name: 'Centro Real',
+              total: 5000,
+              itens: [
+                { monthYear: 'lixo', total: 999 }, // malformado → ignorado
+                { monthYear: '2026-05', total: 5000 },
+              ],
+            },
+          ],
+        },
+      ],
+    })
+    assert.strictEqual(report.planos[0]?.name, 'Plano Real')
+    assert.strictEqual(report.planos[0]?.children[0]?.name, 'Centro Real')
+    // Só o mês válido entra; 'lixo' não gera coluna.
+    assert.deepStrictEqual(report.months, ['2026-05'])
+    assert.strictEqual(report.planos[0]?.children[0]?.monthCells['2026-05'], 5000)
   })
 })

@@ -11,6 +11,7 @@ import {
   createGetTeamDemographics,
   createGetSuppliersWithoutContract,
   createGetPaymentPosition,
+  createGetPaymentAnalysis,
   createGetRealizedReport,
 } from '#modules/reports/server/application/reports.use-cases.ts'
 
@@ -24,6 +25,7 @@ const build = () => {
     getTeamDemographics: createGetTeamDemographics({ client }),
     getSuppliersWithoutContract: createGetSuppliersWithoutContract({ client }),
     getPaymentPosition: createGetPaymentPosition({ client }),
+    getPaymentAnalysis: createGetPaymentAnalysis({ client }),
     getRealizedReport: createGetRealizedReport({ client }),
   }
 }
