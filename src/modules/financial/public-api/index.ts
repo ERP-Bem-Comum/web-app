@@ -64,6 +64,10 @@ export {
 export { listFinancialReferencesFn } from '#modules/financial/server/adapters/server-fns/list-financial-references.query.fn.ts'
 export type { FinancialReferences } from '#modules/financial/client/data/model/reconciliation.model.ts'
 
+// ── Contas-cedente (contas bancárias da org, #138) — lista consumida cross-módulo (ex.: filtro dos Relatórios §I) ──
+export { listCedenteAccountsFn } from '#modules/financial/server/adapters/server-fns/list-cedente-accounts.query.fn.ts'
+export type { CedenteAccount } from '#modules/financial/server/domain/reconciliation.io.ts'
+
 // ── Cascata PURA da árvore do plano (#502/ADR-0051) — Centro→Categoria→Subcategoria a partir do PlanDetail.
 // Compartilhada cross-módulo (Contratos §I) para a categorização planejável ficar idêntica em toda tela.
 export {

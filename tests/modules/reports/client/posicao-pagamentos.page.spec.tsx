@@ -12,7 +12,7 @@
  * Fixtures SINTÉTICAS (LGPD).
  */
 import type { ReactNode } from 'react'
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import { render, screen, cleanup, fireEvent, within, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
@@ -22,6 +22,10 @@ import { reportsRepository } from '#modules/reports/client/data/repository/repor
 import { PosicaoPagamentosPage } from '#modules/reports/client/page/posicao-pagamentos.page.tsx'
 import { aggregatePosicao, toRawPosicaoRows } from '#modules/reports/client/posicao.view-model.ts'
 
+import { listBudgetPlansFn } from '#modules/budget-plans/public-api/index.ts'
+import { listSuppliersFn } from '#modules/partners/public-api/index.ts'
+import { listCedenteAccountsFn, listFinancialReferencesFn } from '#modules/financial/public-api/index.ts'
+
 vi.mock('#modules/reports/client/data/repository/reports.repository.instance.ts', () => ({
   reportsRepository: {
     getTeam: vi.fn(),
@@ -30,7 +34,31 @@ vi.mock('#modules/reports/client/data/repository/reports.repository.instance.ts'
   },
 }))
 
+// Fontes cross-módulo dos dropdowns de filtro (populam agora; APLICAR depende do core-api#588).
+vi.mock('#modules/budget-plans/public-api/index.ts', () => ({ listBudgetPlansFn: vi.fn() }))
+vi.mock('#modules/partners/public-api/index.ts', () => ({ listSuppliersFn: vi.fn() }))
+vi.mock('#modules/financial/public-api/index.ts', () => ({
+  listCedenteAccountsFn: vi.fn(),
+  listFinancialReferencesFn: vi.fn(),
+}))
+
 const mockedGetPaymentPosition = vi.mocked(reportsRepository.getPaymentPosition)
+const mPlans = vi.mocked(listBudgetPlansFn)
+const mSuppliers = vi.mocked(listSuppliersFn)
+const mAccounts = vi.mocked(listCedenteAccountsFn)
+const mRefs = vi.mocked(listFinancialReferencesFn)
+
+/** Fontes de filtro com defaults vazios; Fornecedor traz uma opção REAL distinta da árvore. */
+function stubFilterSources(): void {
+  mPlans.mockResolvedValue({ ok: true, data: { items: [] } } as never)
+
+  mSuppliers.mockResolvedValue({
+    ok: true,
+    data: { items: [{ name: 'Fornecedor Filtro' }], meta: {} },
+  } as never)
+  mAccounts.mockResolvedValue({ ok: true, data: [] } as never)
+  mRefs.mockResolvedValue({ ok: true, data: { costCenters: [], categories: [] } } as never)
+}
 
 // Fixture sintética: 2 fornecedores × centros × categorias, com os 3 buckets já derivados (number/centavos).
 const POSITIONS: readonly PaymentPosition[] = [
@@ -85,9 +113,15 @@ function renderPage(): void {
 /** Renderiza e aguarda a árvore real aparecer (query resolveu). */
 async function renderReady(): Promise<void> {
   mockedGetPaymentPosition.mockResolvedValue(ok(POSITIONS))
+  stubFilterSources()
   renderPage()
   await screen.findByText('Total Geral')
 }
+
+beforeEach(() => {
+  // Defaults seguros p/ as fontes de filtro (as queries rodam antes dos early-returns). Testes específicos sobrescrevem.
+  stubFilterSources()
+})
 
 afterEach(() => {
   cleanup()
@@ -118,6 +152,22 @@ describe('PosicaoPagamentosPage — filtros recolhíveis', () => {
     expect(screen.getByLabelText('Status')).toBeTruthy()
     fireEvent.click(toggle)
     expect(toggle.getAttribute('aria-pressed')).toBe('false')
+  })
+
+  it('popula os dropdowns com opções REAIS (não só "Todos")', async () => {
+    await renderReady()
+    fireEvent.click(screen.getByRole('button', { name: 'Filtros' }))
+
+    // Status é estático (chips do CAP): "Aprovado" aparece além do "Todos".
+    const statusSelect = screen.getByLabelText('Status')
+    expect(within(statusSelect).getByRole('option', { name: 'Aprovado' })).toBeTruthy()
+    // Fornecedor vem da fonte real (listSuppliersFn) — opção distinta da árvore.
+    const partnerSelect = screen.getByLabelText('Fornecedor')
+    await waitFor(() => {
+      expect(within(partnerSelect).getByRole('option', { name: 'Fornecedor Filtro' })).toBeTruthy()
+    })
+    // O "Todos" segue como 1ª opção (prepend).
+    expect(within(partnerSelect).getAllByRole('option')[0]?.textContent).toBe('Todos')
   })
 })
 

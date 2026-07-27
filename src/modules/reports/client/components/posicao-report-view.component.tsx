@@ -106,6 +106,19 @@ export type PosicaoReportViewProps = Readonly<{
   csvHeader: string
   /** Cor dos gráficos (donut + barras): `'pag'` (padrão) ou `'rec'` (paleta distinta da Posição de Recebimentos). */
   chartTone?: 'pag' | 'rec'
+  /**
+   * Opções REAIS por dropdown de filtro (rótulos, sem o "Todos" — a view faz o prepend). Ausente (Recebimentos)
+   * → cada select fica só com "Todos" (comportamento atual). Período de vencimento é intervalo, fica fora.
+   */
+  filterOptions?: Readonly<{
+    plano: readonly string[]
+    conta: readonly string[]
+    status: readonly string[]
+    centro: readonly string[]
+    categoria: readonly string[]
+    subcategoria: readonly string[]
+    partner: readonly string[]
+  }>
 }>
 
 /** Baixa o CSV via Blob + anchor (client-side; o backend entregará JSON depois). */
@@ -124,6 +137,12 @@ function downloadCsv(filename: string, csv: string): void {
 export function PosicaoReportView(props: PosicaoReportViewProps): ReactNode {
   const { report, labels: L, csvFilename, csvHeader } = props
   const isRec = props.chartTone === 'rec'
+  // Prepend do "Todos" nas opções REAIS (ou só "Todos" quando a page não passa filterOptions).
+  const opt = (list: readonly string[] | undefined): readonly string[] => [
+    L.filters.allOption,
+    ...(list ?? []),
+  ]
+  const fo = props.filterOptions
   // ÚNICO UI-state local: filtros abertos/fechados.
   const [filtersOpen, setFiltersOpen] = useState(false)
 
@@ -236,14 +255,14 @@ export function PosicaoReportView(props: PosicaoReportViewProps): ReactNode {
           {/* Filtros recolhíveis (placeholders visuais front-first) */}
           <div className={filtersOpen ? filters.open : filters.closed}>
             <div className={filtersInner}>
-              <FilterField label={L.filters.plano} options={[L.filters.allOption]} />
+              <FilterField label={L.filters.plano} options={opt(fo?.plano)} />
               <FilterField label={L.filters.periodo} options={[L.filters.allOption]} />
-              <FilterField label={L.filters.conta} options={[L.filters.allOption]} />
-              <FilterField label={L.filters.status} options={[L.filters.allOption]} />
-              <FilterField label={L.filters.centro} options={[L.filters.allOption]} />
-              <FilterField label={L.filters.categoria} options={[L.filters.allOption]} />
-              <FilterField label={L.filters.subcategoria} options={[L.filters.allOption]} />
-              <FilterField label={L.filters.partner} options={[L.filters.allOption]} />
+              <FilterField label={L.filters.conta} options={opt(fo?.conta)} />
+              <FilterField label={L.filters.status} options={opt(fo?.status)} />
+              <FilterField label={L.filters.centro} options={opt(fo?.centro)} />
+              <FilterField label={L.filters.categoria} options={opt(fo?.categoria)} />
+              <FilterField label={L.filters.subcategoria} options={opt(fo?.subcategoria)} />
+              <FilterField label={L.filters.partner} options={opt(fo?.partner)} />
               <button type="button" className={applyButton}>
                 {L.filters.filtrar}
               </button>

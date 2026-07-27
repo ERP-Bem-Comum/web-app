@@ -15,6 +15,7 @@ import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 
 import { CSV_HEADER } from '../posicao.view-model.ts'
 import { usePosicaoPagamentos } from '../posicao.binding.ts'
+import { usePosicaoFilterOptions } from '../posicao-filters.binding.ts'
 import {
   PosicaoReportView,
   type PosicaoReportViewLabels,
@@ -28,6 +29,16 @@ export function PosicaoPagamentosPage(): ReactNode {
   // resolvido DENTRO da PosicaoReportView a partir do `report` (0 nós / total 0) — a Posição de Recebimentos
   // (placeholder → `[]`) continua caindo lá também.
   const state = usePosicaoPagamentos()
+  // Opções REAIS dos dropdowns de filtro (front-first: populam agora, só APLICAM quando o core-api#588 subir).
+  // Status é ESTÁTICO — reusa os rótulos dos chips do Contas a Pagar (como a Análise). Degradação → [].
+  const filterOpts = usePosicaoFilterOptions()
+  const statusOptions = [
+    t('financial.list.chip.rascunho'),
+    t('financial.list.chip.aberto'),
+    t('financial.list.chip.aprovado'),
+    t('financial.list.chip.pago'),
+    t('financial.list.chip.conciliado'),
+  ]
 
   if (state.status === 'loading') {
     return <ReportStatePanel title={t('reports.posicao.loading')} />
@@ -95,6 +106,15 @@ export function PosicaoPagamentosPage(): ReactNode {
       labels={labels}
       csvFilename="posicao-pagamentos.csv"
       csvHeader={CSV_HEADER}
+      filterOptions={{
+        plano: filterOpts.plano,
+        conta: filterOpts.conta,
+        status: statusOptions,
+        centro: filterOpts.centro,
+        categoria: filterOpts.categoria,
+        subcategoria: filterOpts.subcategoria,
+        partner: filterOpts.partner,
+      }}
     />
   )
 }
