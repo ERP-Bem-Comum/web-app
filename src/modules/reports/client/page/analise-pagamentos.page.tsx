@@ -15,6 +15,7 @@ import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 
 import { useAnalisePagamentos } from '../analise.binding.ts'
+import { useAnaliseFilterOptions } from '../analise-filters.binding.ts'
 import {
   AnaliseReportView,
   type AnaliseReportViewLabels,
@@ -27,6 +28,9 @@ export function AnalisePagamentosPage(): ReactNode {
   // Server-state REAL do core-api (#446): loading | error | ready. O empty-state honesto (resposta vazia) é
   // resolvido DENTRO da AnaliseReportView a partir do `report` (0 planos / months []).
   const state = useAnalisePagamentos()
+  // Opções REAIS dos dropdowns de filtro (cross-módulo via public-api). Populate-only: o #446 só aplica
+  // período/status; estes populam pra não ficarem só "Todos". Degradação → []. (Antes dos early returns: hooks.)
+  const filterOpts = useAnaliseFilterOptions()
 
   if (state.status === 'loading') {
     return <ReportStatePanel title={t('reports.analise.loading')} />
@@ -83,5 +87,19 @@ export function AnalisePagamentosPage(): ReactNode {
     emptyHint: t('reports.analise.emptyHint'),
   }
 
-  return <AnaliseReportView report={state.report} labels={labels} csvFilename="analise-pagamentos.csv" />
+  return (
+    <AnaliseReportView
+      report={state.report}
+      labels={labels}
+      csvFilename="analise-pagamentos.csv"
+      filterOptions={{
+        programa: filterOpts.programa,
+        plano: filterOpts.plano,
+        conta: filterOpts.conta,
+        centro: filterOpts.centro,
+        categoria: filterOpts.categoria,
+        subcategoria: filterOpts.subcategoria,
+      }}
+    />
+  )
 }

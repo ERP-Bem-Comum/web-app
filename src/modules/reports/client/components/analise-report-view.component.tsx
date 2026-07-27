@@ -108,6 +108,18 @@ export type AnaliseReportViewProps = Readonly<{
   csvFilename: string
   /** Cor dos 2 gráficos: `'pag'` (padrão) ou `'rec'` (paleta distinta da Análise de Recebimentos). */
   chartTone?: 'pag' | 'rec'
+  /**
+   * Opções REAIS por dropdown de filtro (rótulos, sem o "Todos" — a view faz o prepend). Ausente (Recebimentos)
+   * → cada select fica só com "Todos". Populate-only: o endpoint #446 só aplica período/status. Período fora.
+   */
+  filterOptions?: Readonly<{
+    programa: readonly string[]
+    plano: readonly string[]
+    conta: readonly string[]
+    centro: readonly string[]
+    categoria: readonly string[]
+    subcategoria: readonly string[]
+  }>
 }>
 
 /** Baixa o CSV via Blob + anchor (client-side; o backend entregará JSON depois). */
@@ -126,6 +138,12 @@ function downloadCsv(filename: string, csv: string): void {
 export function AnaliseReportView(props: AnaliseReportViewProps): ReactNode {
   const { report, labels: L, csvFilename } = props
   const isRec = props.chartTone === 'rec'
+  // Prepend do "Todos" nas opções REAIS (ou só "Todos" quando a page não passa filterOptions — Recebimentos).
+  const fo = props.filterOptions
+  const opt = (list: readonly string[] | undefined): readonly string[] => [
+    L.filters.allOption,
+    ...(list ?? []),
+  ]
   // ÚNICO UI-state da view: filtros abertos/fechados.
   const [filtersOpen, setFiltersOpen] = useState(false)
 
@@ -211,21 +229,21 @@ export function AnaliseReportView(props: AnaliseReportViewProps): ReactNode {
         </div>
       ) : (
         <>
-          {/* Filtros recolhíveis (placeholders visuais front-first) */}
+          {/* Filtros recolhíveis. Opções REAIS via `filterOptions` (populate-only; o #446 só aplica período/status). */}
           <div className={filtersOpen ? filters.open : filters.closed}>
             <div className={filtersInner}>
-              <FilterField label={L.filters.programa} options={['PARC', 'ETI', 'EPV']} />
-              <FilterField label={L.filters.plano} options={[L.filters.allOption]} />
+              <FilterField label={L.filters.programa} options={opt(fo?.programa)} />
+              <FilterField label={L.filters.plano} options={opt(fo?.plano)} />
               <FilterField label={L.filters.periodo} options={[L.filters.allOption]} />
-              <FilterField label={L.filters.conta} options={[L.filters.allOption]} />
+              <FilterField label={L.filters.conta} options={opt(fo?.conta)} />
               {/* Status alinhados ao Contas a Pagar (os que o backend produz): reusa os rótulos dos chips do CAP. */}
               <FilterField
                 label={L.filters.status}
                 options={[L.filters.allOption, ...L.filters.statusChips]}
               />
-              <FilterField label={L.filters.centro} options={[L.filters.allOption]} />
-              <FilterField label={L.filters.categoria} options={[L.filters.allOption]} />
-              <FilterField label={L.filters.subcategoria} options={[L.filters.allOption]} />
+              <FilterField label={L.filters.centro} options={opt(fo?.centro)} />
+              <FilterField label={L.filters.categoria} options={opt(fo?.categoria)} />
+              <FilterField label={L.filters.subcategoria} options={opt(fo?.subcategoria)} />
               <button type="button" className={applyButton}>
                 {L.filters.filtrar}
               </button>
