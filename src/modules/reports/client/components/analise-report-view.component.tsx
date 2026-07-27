@@ -101,6 +101,27 @@ export type AnaliseReportViewLabels = Readonly<{
   emptyHint: string
 }>
 
+/** Opção de dropdown controlado (o `value` é o ref que dirige a cascata; `label` é o texto exibido). */
+export type FilterOption = Readonly<{ value: string; label: string }>
+
+/** Um campo CONTROLADO da cascata (Plano/Centro/Categoria/Subcategoria): opções + valor + onChange. */
+export type AnaliseCascadeField = Readonly<{
+  options: readonly FilterOption[]
+  value: string
+  onChange: (v: string) => void
+}>
+
+/**
+ * Cascata de categorização dirigida pelo PLANO (ADR-0051). Plano → Centro → Categoria → Subcategoria: as
+ * opções (e seus `value`) vêm da ÁRVORE do plano selecionado, não do catálogo operacional flat.
+ */
+export type AnaliseCascadeModel = Readonly<{
+  plano: AnaliseCascadeField
+  centro: AnaliseCascadeField
+  categoria: AnaliseCascadeField
+  subcategoria: AnaliseCascadeField
+}>
+
 export type AnaliseReportViewProps = Readonly<{
   report: AnaliseReport
   labels: AnaliseReportViewLabels
@@ -109,17 +130,18 @@ export type AnaliseReportViewProps = Readonly<{
   /** Cor dos 2 gráficos: `'pag'` (padrão) ou `'rec'` (paleta distinta da Análise de Recebimentos). */
   chartTone?: 'pag' | 'rec'
   /**
-   * Opções REAIS por dropdown de filtro (rótulos, sem o "Todos" — a view faz o prepend). Ausente (Recebimentos)
-   * → cada select fica só com "Todos". Populate-only: o endpoint #446 só aplica período/status. Período fora.
+   * Opções populate-only (Programa/Conta) — rótulos sem "Todos" (a view faz o prepend). Ausente (Recebimentos)
+   * → só "Todos". Populate-only: o endpoint #446 só aplica período/status.
    */
   filterOptions?: Readonly<{
     programa: readonly string[]
-    plano: readonly string[]
     conta: readonly string[]
-    centro: readonly string[]
-    categoria: readonly string[]
-    subcategoria: readonly string[]
   }>
+  /**
+   * Cascata CONTROLADA de Plano/Centro/Categoria/Subcategoria (Análise de Pagamentos). Presente → esses 4
+   * campos viram selects controlados dirigidos pelo plano. Ausente (Recebimentos) → caem no modo "Todos".
+   */
+  cascade?: AnaliseCascadeModel
 }>
 
 /** Baixa o CSV via Blob + anchor (client-side; o backend entregará JSON depois). */
@@ -140,6 +162,8 @@ export function AnaliseReportView(props: AnaliseReportViewProps): ReactNode {
   const isRec = props.chartTone === 'rec'
   // Prepend do "Todos" nas opções REAIS (ou só "Todos" quando a page não passa filterOptions — Recebimentos).
   const fo = props.filterOptions
+  // Cascata controlada (Análise de Pagamentos); ausente em Recebimentos → os 4 campos caem no modo "Todos".
+  const cx = props.cascade
   const opt = (list: readonly string[] | undefined): readonly string[] => [
     L.filters.allOption,
     ...(list ?? []),
@@ -233,7 +257,17 @@ export function AnaliseReportView(props: AnaliseReportViewProps): ReactNode {
           <div className={filtersOpen ? filters.open : filters.closed}>
             <div className={filtersInner}>
               <FilterField label={L.filters.programa} options={opt(fo?.programa)} />
-              <FilterField label={L.filters.plano} options={opt(fo?.plano)} />
+              {/* Plano/Centro/Categoria/Subcategoria: CONTROLADOS pela cascata do plano (Pagamentos); sem cascata
+                  (Recebimentos) caem em "Todos". A regra da cascata vem do financial (ADR-0051). */}
+              {cx ? (
+                <ControlledFilterField
+                  label={L.filters.plano}
+                  placeholder={L.filters.allOption}
+                  field={cx.plano}
+                />
+              ) : (
+                <FilterField label={L.filters.plano} options={[L.filters.allOption]} />
+              )}
               <FilterField label={L.filters.periodo} options={[L.filters.allOption]} />
               <FilterField label={L.filters.conta} options={opt(fo?.conta)} />
               {/* Status alinhados ao Contas a Pagar (os que o backend produz): reusa os rótulos dos chips do CAP. */}
@@ -241,9 +275,33 @@ export function AnaliseReportView(props: AnaliseReportViewProps): ReactNode {
                 label={L.filters.status}
                 options={[L.filters.allOption, ...L.filters.statusChips]}
               />
-              <FilterField label={L.filters.centro} options={opt(fo?.centro)} />
-              <FilterField label={L.filters.categoria} options={opt(fo?.categoria)} />
-              <FilterField label={L.filters.subcategoria} options={opt(fo?.subcategoria)} />
+              {cx ? (
+                <ControlledFilterField
+                  label={L.filters.centro}
+                  placeholder={L.filters.allOption}
+                  field={cx.centro}
+                />
+              ) : (
+                <FilterField label={L.filters.centro} options={[L.filters.allOption]} />
+              )}
+              {cx ? (
+                <ControlledFilterField
+                  label={L.filters.categoria}
+                  placeholder={L.filters.allOption}
+                  field={cx.categoria}
+                />
+              ) : (
+                <FilterField label={L.filters.categoria} options={[L.filters.allOption]} />
+              )}
+              {cx ? (
+                <ControlledFilterField
+                  label={L.filters.subcategoria}
+                  placeholder={L.filters.allOption}
+                  field={cx.subcategoria}
+                />
+              ) : (
+                <FilterField label={L.filters.subcategoria} options={[L.filters.allOption]} />
+              )}
               <button type="button" className={applyButton}>
                 {L.filters.filtrar}
               </button>
@@ -309,7 +367,7 @@ export function AnaliseReportView(props: AnaliseReportViewProps): ReactNode {
   )
 }
 
-/** Campo de filtro (select nativo placeholder — só a forma/estilo brand). */
+/** Campo de filtro (select nativo placeholder — só a forma/estilo brand). Uncontrolled (populate-only). */
 function FilterField({ label, options }: { label: string; options: readonly string[] }): ReactNode {
   return (
     <div className={fld}>
@@ -318,6 +376,46 @@ function FilterField({ label, options }: { label: string; options: readonly stri
         <select className={fldSelect} aria-label={label}>
           {options.map((o) => (
             <option key={o}>{o}</option>
+          ))}
+        </select>
+        <span className={fldChev}>
+          <ChevronDownIcon size={16} />
+        </span>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Campo de filtro CONTROLADO (cascata do plano): {value,label} + value + onChange. `placeholder` → opção vazia
+ * (value '') = "Todos" = sem seleção. Espelha o FilterField controlado da Posição.
+ */
+function ControlledFilterField({
+  label,
+  placeholder,
+  field,
+}: {
+  label: string
+  placeholder: string
+  field: AnaliseCascadeField
+}): ReactNode {
+  return (
+    <div className={fld}>
+      <label className={fldLabel}>{label}</label>
+      <div className={fldCtrl}>
+        <select
+          className={fldSelect}
+          aria-label={label}
+          value={field.value}
+          onChange={(e) => {
+            field.onChange(e.target.value)
+          }}
+        >
+          <option value="">{placeholder}</option>
+          {field.options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
           ))}
         </select>
         <span className={fldChev}>

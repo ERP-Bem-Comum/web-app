@@ -80,8 +80,10 @@ export function PosicaoPagamentosPage(): ReactNode {
   // Server-state REAL do core-api (#114/#588) com os filtros APLICADOS: loading | error | ready. O empty-state
   // honesto (dado real vazio) é resolvido DENTRO da PosicaoReportView a partir do `report` (0 nós / total 0).
   const state = usePosicaoPagamentos(applied)
-  // Opções REAIS dos dropdowns (cross-módulo via public-api). Status é estático (enum #588 → i18n). Degradação → [].
-  const filterOpts = usePosicaoFilterOptions()
+  // Opções REAIS dos dropdowns (cross-módulo via public-api). Centro/Categoria/Subcategoria vêm da CASCATA da
+  // árvore do PLANO selecionado (dirigida pelo draft) — não do catálogo flat. Status é estático (enum #588 →
+  // i18n). Degradação → []. Os hooks rodam SEMPRE, antes dos early-returns (Rules of Hooks).
+  const filterOpts = usePosicaoFilterOptions(draft.budgetPlanRef, draft.costCenterRef, draft.categoryRef)
   const statusOptions: readonly FilterOption[] = [
     { value: 'Open', label: t('reports.posicao.filters.statusOpt.open') },
     { value: 'Approved', label: t('reports.posicao.filters.statusOpt.approved') },
@@ -165,7 +167,25 @@ export function PosicaoPagamentosPage(): ReactNode {
     },
     values: draft,
     onChange: (patch) => {
-      setDraft((d) => ({ ...d, ...patch }))
+      // Cascata: trocar um nível ZERA os dependentes (evita mandar ref órfão no apply — um centro/categoria
+      // do plano anterior não existe no novo). Plano → limpa centro/categoria/subcategoria; centro → categoria/
+      // subcategoria; categoria → subcategoria.
+      setDraft((d) => {
+        const next = { ...d, ...patch }
+        if ('budgetPlanRef' in patch) {
+          next.costCenterRef = ''
+          next.categoryRef = ''
+          next.subcategoryRef = ''
+        }
+        if ('costCenterRef' in patch) {
+          next.categoryRef = ''
+          next.subcategoryRef = ''
+        }
+        if ('categoryRef' in patch) {
+          next.subcategoryRef = ''
+        }
+        return next
+      })
     },
     onFiltrar: () => {
       setApplied(toFilter(draft))

@@ -26,6 +26,15 @@ vi.mock('#modules/reports/client/data/repository/reports.repository.instance.ts'
   reportsRepository: { getPaymentAnalysis: vi.fn() },
 }))
 
+// Fontes de filtro cross-módulo: a cascata de Centro/Categoria/Subcategoria vem de HOOKS do financial
+// (mockados como [] — sem plano selecionado). `listCedenteAccountsFn` popula a Conta (aqui vazio).
+vi.mock('#modules/financial/public-api/index.ts', () => ({
+  listCedenteAccountsFn: vi.fn(() => Promise.resolve({ ok: false, error: 'forbidden' })),
+  useCostCenterOptionsFromPlan: vi.fn(() => []),
+  useCategoryOptionsFromPlan: vi.fn(() => []),
+  useSubcategoryOptionsFromPlan: vi.fn(() => []),
+}))
+
 const mAnalysis = vi.mocked(reportsRepository.getPaymentAnalysis)
 
 // Fixture: 2 planos × 1 centro de custo cada, série de 3 meses (jan–mar/2026).

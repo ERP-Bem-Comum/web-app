@@ -9,28 +9,43 @@
  * meses visíveis vêm do MIN..MAX real da resposta; os rótulos de mês (eixo/tabela/CSV) vêm PRONTOS e VÁLIDOS da
  * ViewModel (`formatMonthLabel`, por ÍNDICE) — NUNCA "Invalid Date" (bug do relatório legado que não reproduzimos).
  */
-import { type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
+import {
+  useCostCenterOptionsFromPlan,
+  useCategoryOptionsFromPlan,
+  useSubcategoryOptionsFromPlan,
+} from '#modules/financial/public-api/index.ts'
 
 import { useAnalisePagamentos } from '../analise.binding.ts'
 import { useAnaliseFilterOptions } from '../analise-filters.binding.ts'
 import {
   AnaliseReportView,
   type AnaliseReportViewLabels,
+  type AnaliseCascadeModel,
 } from '../components/analise-report-view.component.tsx'
 import { ReportStatePanel } from '../components/report-state-panel.component.tsx'
 
 const t = createTranslator(ptBR)
 
+// Seleção da cascata de categorização (só p/ dirigir os dropdowns; o #446 não aplica esses filtros).
+type CascadeSel = Readonly<{ plano: string; centro: string; categoria: string; subcategoria: string }>
+const EMPTY_SEL: CascadeSel = { plano: '', centro: '', categoria: '', subcategoria: '' }
+
 export function AnalisePagamentosPage(): ReactNode {
   // Server-state REAL do core-api (#446): loading | error | ready. O empty-state honesto (resposta vazia) é
   // resolvido DENTRO da AnaliseReportView a partir do `report` (0 planos / months []).
   const state = useAnalisePagamentos()
-  // Opções REAIS dos dropdowns de filtro (cross-módulo via public-api). Populate-only: o #446 só aplica
-  // período/status; estes populam pra não ficarem só "Todos". Degradação → []. (Antes dos early returns: hooks.)
+  // Opções populate-only (Programa/Plano/Conta). Plano carrega `value=id` — DIRIGE a cascata abaixo.
   const filterOpts = useAnaliseFilterOptions()
+  // Cascata de categorização (ADR-0051): Centro/Categoria/Subcategoria vêm da ÁRVORE do plano selecionado, não
+  // do catálogo flat. Só reflete o plano (o #446 não aplica). Hooks SEMPRE antes dos early-returns (Rules of Hooks).
+  const [sel, setSel] = useState<CascadeSel>(EMPTY_SEL)
+  const centroOptions = useCostCenterOptionsFromPlan(sel.plano)
+  const categoriaOptions = useCategoryOptionsFromPlan(sel.plano, sel.centro)
+  const subcategoriaOptions = useSubcategoryOptionsFromPlan(sel.plano, sel.categoria)
 
   if (state.status === 'loading') {
     return <ReportStatePanel title={t('reports.analise.loading')} />
@@ -87,19 +102,45 @@ export function AnalisePagamentosPage(): ReactNode {
     emptyHint: t('reports.analise.emptyHint'),
   }
 
+  // Cascata controlada: trocar um nível ZERA os dependentes (evita seleção órfã do plano anterior).
+  const cascade: AnaliseCascadeModel = {
+    plano: {
+      options: filterOpts.plano,
+      value: sel.plano,
+      onChange: (v) => {
+        setSel({ plano: v, centro: '', categoria: '', subcategoria: '' })
+      },
+    },
+    centro: {
+      options: centroOptions,
+      value: sel.centro,
+      onChange: (v) => {
+        setSel((s) => ({ ...s, centro: v, categoria: '', subcategoria: '' }))
+      },
+    },
+    categoria: {
+      options: categoriaOptions,
+      value: sel.categoria,
+      onChange: (v) => {
+        setSel((s) => ({ ...s, categoria: v, subcategoria: '' }))
+      },
+    },
+    subcategoria: {
+      options: subcategoriaOptions,
+      value: sel.subcategoria,
+      onChange: (v) => {
+        setSel((s) => ({ ...s, subcategoria: v }))
+      },
+    },
+  }
+
   return (
     <AnaliseReportView
       report={state.report}
       labels={labels}
       csvFilename="analise-pagamentos.csv"
-      filterOptions={{
-        programa: filterOpts.programa,
-        plano: filterOpts.plano,
-        conta: filterOpts.conta,
-        centro: filterOpts.centro,
-        categoria: filterOpts.categoria,
-        subcategoria: filterOpts.subcategoria,
-      }}
+      filterOptions={{ programa: filterOpts.programa, conta: filterOpts.conta }}
+      cascade={cascade}
     />
   )
 }

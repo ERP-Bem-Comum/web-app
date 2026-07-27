@@ -25,7 +25,7 @@ import { paymentPositionQueryKey } from '#modules/reports/client/posicao.query.t
 
 import { listBudgetPlansFn } from '#modules/budget-plans/public-api/index.ts'
 import { listSuppliersFn } from '#modules/partners/public-api/index.ts'
-import { listCedenteAccountsFn, listFinancialReferencesFn } from '#modules/financial/public-api/index.ts'
+import { listCedenteAccountsFn } from '#modules/financial/public-api/index.ts'
 
 vi.mock('#modules/reports/client/data/repository/reports.repository.instance.ts', () => ({
   reportsRepository: {
@@ -38,16 +38,18 @@ vi.mock('#modules/reports/client/data/repository/reports.repository.instance.ts'
 // Fontes cross-módulo dos dropdowns de filtro (populam agora; APLICAR depende do core-api#588).
 vi.mock('#modules/budget-plans/public-api/index.ts', () => ({ listBudgetPlansFn: vi.fn() }))
 vi.mock('#modules/partners/public-api/index.ts', () => ({ listSuppliersFn: vi.fn() }))
+// Centro/Categoria/Subcategoria vêm da CASCATA do plano (hooks do financial) — mockados como [] (sem plano).
 vi.mock('#modules/financial/public-api/index.ts', () => ({
   listCedenteAccountsFn: vi.fn(),
-  listFinancialReferencesFn: vi.fn(),
+  useCostCenterOptionsFromPlan: vi.fn(() => []),
+  useCategoryOptionsFromPlan: vi.fn(() => []),
+  useSubcategoryOptionsFromPlan: vi.fn(() => []),
 }))
 
 const mockedGetPaymentPosition = vi.mocked(reportsRepository.getPaymentPosition)
 const mPlans = vi.mocked(listBudgetPlansFn)
 const mSuppliers = vi.mocked(listSuppliersFn)
 const mAccounts = vi.mocked(listCedenteAccountsFn)
-const mRefs = vi.mocked(listFinancialReferencesFn)
 
 /** Fontes de filtro com defaults vazios; Fornecedor traz uma opção REAL distinta da árvore. */
 function stubFilterSources(): void {
@@ -58,7 +60,6 @@ function stubFilterSources(): void {
     data: { items: [{ id: 'sup-9', name: 'Fornecedor Filtro' }], meta: {} },
   } as never)
   mAccounts.mockResolvedValue({ ok: true, data: [] } as never)
-  mRefs.mockResolvedValue({ ok: true, data: { costCenters: [], categories: [] } } as never)
 }
 
 // Fixture sintética: 2 fornecedores × centros × categorias, com os 3 buckets já derivados (number/centavos).

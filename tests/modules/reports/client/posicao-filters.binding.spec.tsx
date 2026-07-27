@@ -1,11 +1,12 @@
 /**
  * usePosicaoFilterOptions (Vitest/jsdom) — ADAPTER dos dropdowns de filtro da "Posição de Pagamentos".
- * Cada lista vem de uma server fn cross-módulo MOCKADA (public-api), sem RPC real:
+ * Cada lista vem de uma fonte cross-módulo MOCKADA (public-api), sem RPC real:
  *   • Plano  → só planos APROVADOS, rótulo "ano sigla versão · cenário".
  *   • Fornecedor → nome do fornecedor ativo.
  *   • Conta bancária → apelido; sem apelido cai no texto-livre; sem ambos, banco+conta-DV.
- *   • Centro/Categoria/Subcategoria → catálogo FLAT (categoria = topo, subcategoria = filha).
- *   • Degradação: qualquer fonte com { ok:false } → aquela lista vira [] (o dropdown nunca quebra).
+ *   • Centro/Categoria/Subcategoria → CASCATA da árvore do plano (`use*OptionsFromPlan`, ADR-0051): a regra
+ *     é do financial (aqui só a WIRING). Assertamos que os hooks recebem os refs certos (plano→centro→categoria).
+ *   • Degradação: fonte com { ok:false } / hook [] → a lista vira [] (o dropdown nunca quebra).
  * Fixtures SINTÉTICAS.
  */
 import type { ReactNode } from 'react'
@@ -15,20 +16,30 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import { listBudgetPlansFn } from '#modules/budget-plans/public-api/index.ts'
 import { listSuppliersFn } from '#modules/partners/public-api/index.ts'
-import { listCedenteAccountsFn, listFinancialReferencesFn } from '#modules/financial/public-api/index.ts'
+import {
+  listCedenteAccountsFn,
+  useCostCenterOptionsFromPlan,
+  useCategoryOptionsFromPlan,
+  useSubcategoryOptionsFromPlan,
+} from '#modules/financial/public-api/index.ts'
 import { usePosicaoFilterOptions } from '#modules/reports/client/posicao-filters.binding.ts'
 
 vi.mock('#modules/budget-plans/public-api/index.ts', () => ({ listBudgetPlansFn: vi.fn() }))
 vi.mock('#modules/partners/public-api/index.ts', () => ({ listSuppliersFn: vi.fn() }))
 vi.mock('#modules/financial/public-api/index.ts', () => ({
   listCedenteAccountsFn: vi.fn(),
-  listFinancialReferencesFn: vi.fn(),
+  // Cascata dirigida pelo plano — mockada como hooks síncronos (a regra vive/é testada no financial).
+  useCostCenterOptionsFromPlan: vi.fn(() => []),
+  useCategoryOptionsFromPlan: vi.fn(() => []),
+  useSubcategoryOptionsFromPlan: vi.fn(() => []),
 }))
 
 const mPlans = vi.mocked(listBudgetPlansFn)
 const mSuppliers = vi.mocked(listSuppliersFn)
 const mAccounts = vi.mocked(listCedenteAccountsFn)
-const mRefs = vi.mocked(listFinancialReferencesFn)
+const mCentro = vi.mocked(useCostCenterOptionsFromPlan)
+const mCategoria = vi.mocked(useCategoryOptionsFromPlan)
+const mSubcategoria = vi.mocked(useSubcategoryOptionsFromPlan)
 
 function planNode(over: Record<string, unknown>): unknown {
   return {
@@ -62,7 +73,7 @@ afterEach(() => {
 })
 
 describe('usePosicaoFilterOptions — fontes reais', () => {
-  it('popula as 6 listas a partir das fontes cross-módulo', async () => {
+  it('popula plano/fornecedor/conta e cascateia centro/categoria/subcategoria pelo plano', async () => {
     mPlans.mockResolvedValue({
       ok: true,
       data: {
@@ -107,23 +118,18 @@ describe('usePosicaoFilterOptions — fontes reais', () => {
       ],
     } as never)
 
-    mRefs.mockResolvedValue({
-      ok: true,
-      data: {
-        costCenters: [{ id: 'c1', code: '01', name: 'Diretoria' }],
-        categories: [
-          { id: 'k1', name: 'Consultoria', group: 'despesa', parentId: null, costCenterId: null },
-          { id: 'k2', name: 'Consultoria Jurídica', group: 'despesa', parentId: 'k1', costCenterId: null },
-        ],
-      },
-    } as never)
+    // Cascata: com plano selecionado, os 3 vêm da árvore do plano.
+    mCentro.mockReturnValue([{ value: 'cc-plan', label: 'Centro do Plano' }])
+    mCategoria.mockReturnValue([{ value: 'cat-plan', label: 'Categoria do Plano' }])
+    mSubcategoria.mockReturnValue([{ value: 'sub-plan', label: 'Subcategoria do Plano' }])
 
-    const { result } = renderHook(() => usePosicaoFilterOptions(), { wrapper: wrapper() })
+    const { result } = renderHook(() => usePosicaoFilterOptions('plan-uuid', 'cc-plan', 'cat-plan'), {
+      wrapper: wrapper(),
+    })
 
     await waitFor(() => {
       expect(result.current.plano.length).toBeGreaterThan(0)
       expect(result.current.conta.length).toBe(3)
-      expect(result.current.centro.length).toBe(1)
     })
 
     // Plano: só o APROVADO, value=id + rótulo com cenário.
@@ -139,24 +145,30 @@ describe('usePosicaoFilterOptions — fontes reais', () => {
       { value: 'acc-2', label: 'Cartão corporativo' },
       { value: 'acc-3', label: 'Itaú 555-1' },
     ])
-    // Catálogo flat: categoria = topo; subcategoria = filha; value=id.
-    expect(result.current.centro).toEqual([{ value: 'c1', label: 'Diretoria' }])
-    expect(result.current.categoria).toEqual([{ value: 'k1', label: 'Consultoria' }])
-    expect(result.current.subcategoria).toEqual([{ value: 'k2', label: 'Consultoria Jurídica' }])
+    // Cascata: as 3 listas vêm dos hooks do plano...
+    expect(result.current.centro).toEqual([{ value: 'cc-plan', label: 'Centro do Plano' }])
+    expect(result.current.categoria).toEqual([{ value: 'cat-plan', label: 'Categoria do Plano' }])
+    expect(result.current.subcategoria).toEqual([{ value: 'sub-plan', label: 'Subcategoria do Plano' }])
+    // ...e os hooks recebem os refs certos (plano → centro → categoria).
+    expect(mCentro).toHaveBeenCalledWith('plan-uuid')
+    expect(mCategoria).toHaveBeenCalledWith('plan-uuid', 'cc-plan')
+    expect(mSubcategoria).toHaveBeenCalledWith('plan-uuid', 'cat-plan')
   })
 
-  it('degrada a [] quando as fontes falham (erro/permissão)', async () => {
+  it('degrada a [] quando as fontes falham (erro/permissão) e a cascata vazia', async () => {
     mPlans.mockResolvedValue({ ok: false, error: 'forbidden' } as never)
     mSuppliers.mockResolvedValue({ ok: false, error: 'forbidden' } as never)
     mAccounts.mockResolvedValue({ ok: false, error: 'forbidden' } as never)
-    mRefs.mockResolvedValue({ ok: false, error: 'forbidden' } as never)
+    // Cascata vazia (sem plano). Setado explícito: clearAllMocks limpa histórico mas mantém implementação.
+    mCentro.mockReturnValue([])
+    mCategoria.mockReturnValue([])
+    mSubcategoria.mockReturnValue([])
 
-    const { result } = renderHook(() => usePosicaoFilterOptions(), { wrapper: wrapper() })
+    const { result } = renderHook(() => usePosicaoFilterOptions('', '', ''), { wrapper: wrapper() })
 
-    // Aguarda as queries resolverem (todas → []).
     await waitFor(() => {
       expect(mPlans).toHaveBeenCalled()
-      expect(mRefs).toHaveBeenCalled()
+      expect(mAccounts).toHaveBeenCalled()
     })
 
     expect(result.current.plano).toEqual([])

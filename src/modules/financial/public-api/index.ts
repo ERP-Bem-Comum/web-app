@@ -76,3 +76,13 @@ export {
   planSubcategoryOptions,
   type TaxonomyOption,
 } from '#modules/financial/client/data/helpers/plan-taxonomy-cascade.ts'
+
+// ── Cascata de categorização dirigida pelo PLANO (ADR-0051) — HOOKS React consumidos cross-módulo (Relatórios §I).
+// Centro/Categoria/Subcategoria vêm da ÁRVORE do plano selecionado (UUID); sem plano caem no catálogo operacional.
+// Regra ÚNICA (a mesma do "Lançar Documento") — zero duplicação; já tratam loading/erro → [].
+export {
+  useCostCenterOptionsFromPlan,
+  useCategoryOptionsFromPlan,
+  useSubcategoryOptionsFromPlan,
+  type CategoryOption,
+} from '#modules/financial/client/document-create/category-options.binding.ts'
