@@ -4,26 +4,36 @@
  * PAGAR; toda a composição (cabeçalho → filtros → 2 gráficos → tabela-matriz + empty state) vive no
  * `AnaliseReportView` COMPARTILHADO (ZERO duplicação — só a fonte, os rótulos e o tom mudam). ADR-0009/0012,§XI.
  *
- * Matriz TEMPO-orçamentária: árvore Plano Orçamentário → Centro de Custo × série MENSAL de valores. Front-first:
- * os dados vêm de constantes placeholder SINTÉTICAS (core-api#114/consolidated ainda não existe). Os rótulos de
- * mês (eixo/tabela/CSV) vêm PRONTOS e VÁLIDOS da ViewModel (`formatMonthLabel`, por ÍNDICE) — NUNCA "Invalid
- * Date" (bug do relatório legado que não reproduzimos).
+ * Matriz TEMPO-orçamentária: árvore Plano Orçamentário → Centro de Custo × série MENSAL de valores. Dado REAL
+ * do core-api (#446 · GET /reports/analysis/payables) via `useAnalisePagamentos`: loading | error | ready. Os
+ * meses visíveis vêm do MIN..MAX real da resposta; os rótulos de mês (eixo/tabela/CSV) vêm PRONTOS e VÁLIDOS da
+ * ViewModel (`formatMonthLabel`, por ÍNDICE) — NUNCA "Invalid Date" (bug do relatório legado que não reproduzimos).
  */
-import { useMemo, type ReactNode } from 'react'
+import { type ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 
-import { loadAnalise } from '../analise.view-model.ts'
+import { useAnalisePagamentos } from '../analise.binding.ts'
 import {
   AnaliseReportView,
   type AnaliseReportViewLabels,
 } from '../components/analise-report-view.component.tsx'
+import { ReportStatePanel } from '../components/report-state-panel.component.tsx'
 
 const t = createTranslator(ptBR)
 
 export function AnalisePagamentosPage(): ReactNode {
-  const report = useMemo(() => loadAnalise('p'), [])
+  // Server-state REAL do core-api (#446): loading | error | ready. O empty-state honesto (resposta vazia) é
+  // resolvido DENTRO da AnaliseReportView a partir do `report` (0 planos / months []).
+  const state = useAnalisePagamentos()
+
+  if (state.status === 'loading') {
+    return <ReportStatePanel title={t('reports.analise.loading')} />
+  }
+  if (state.status === 'error') {
+    return <ReportStatePanel role="alert" title={t('reports.analise.errorTitle')} hint={t(state.errorTag)} />
+  }
 
   const labels: AnaliseReportViewLabels = {
     back: t('reports.analise.back'),
@@ -73,5 +83,5 @@ export function AnalisePagamentosPage(): ReactNode {
     emptyHint: t('reports.analise.emptyHint'),
   }
 
-  return <AnaliseReportView report={report} labels={labels} csvFilename="analise-pagamentos.csv" />
+  return <AnaliseReportView report={state.report} labels={labels} csvFilename="analise-pagamentos.csv" />
 }

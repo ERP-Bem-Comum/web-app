@@ -106,3 +106,28 @@ export const CoreApiRealizedReportSchema = z.object({
   costCenters: z.array(CoreApiRealizedCostCenterSchema),
 })
 export type CoreApiRealizedReport = z.infer<typeof CoreApiRealizedReportSchema>
+
+// GET /reports/analysis/payables (#446) → matriz Plano Orçamentário → Centro de Custo, cada nó com série
+// mensal PRÓPRIA (`itens`). Money em CENTAVOS. Drift-tolerante: números faltantes → 0; id/name nullable
+// (null = "Sem plano"/"Sem centro de custo" na UI); listas ausentes → [].
+const CoreApiAnalysisMonthSchema = z.object({
+  monthYear: z.string().trim().catch(''),
+  total: z.number().catch(0),
+})
+const CoreApiAnalysisCostCenterSchema = z.object({
+  id: z.string().trim().nullable().catch(null),
+  name: z.string().trim().nullable().catch(null),
+  total: z.number().catch(0),
+  itens: z.array(CoreApiAnalysisMonthSchema).catch([]),
+})
+const CoreApiAnalysisPlanSchema = z.object({
+  id: z.string().trim().nullable().catch(null),
+  name: z.string().trim().nullable().catch(null),
+  total: z.number().catch(0),
+  itens: z.array(CoreApiAnalysisMonthSchema).catch([]),
+  costCenters: z.array(CoreApiAnalysisCostCenterSchema).catch([]),
+})
+export const CoreApiPaymentAnalysisSchema = z.object({
+  totalValueOfPeriod: z.number().catch(0),
+  data: z.array(CoreApiAnalysisPlanSchema).catch([]),
+})

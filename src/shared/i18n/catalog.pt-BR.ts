@@ -2675,6 +2675,9 @@ export const ptBR: Catalog = {
   'reports.analise.title': 'Análise de Pagamentos',
   'reports.analise.back': 'Voltar',
   'reports.analise.empty': 'Nenhum dado para exibir.',
+  // Estados de carregamento/erro (dado REAL do core-api #446). O `hint` do erro reusa `reports.error.*`.
+  'reports.analise.loading': 'Carregando a análise…',
+  'reports.analise.errorTitle': 'Não foi possível carregar o relatório.',
   // Export (dropdown CSV + PDF).
   'reports.analise.export.label': 'Exportar',
   'reports.analise.export.csv': 'CSV',

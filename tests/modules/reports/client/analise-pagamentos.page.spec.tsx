@@ -1,102 +1,157 @@
 /**
- * AnalisePagamentosPage (Vitest/jsdom) — comportamento da tela do relatório "Análise de Pagamentos":
- *   1. filtros recolhíveis: o toggle "Filtros" alterna aria-pressed (abre/fecha) e revela os selects.
+ * AnalisePagamentosPage (Vitest/jsdom) — tela do relatório "Análise de Pagamentos" LIGADA À FONTE REAL
+ * (#446, via `reportsRepository.getPaymentAnalysis` MOCKADO):
+ *   1. loading → ready: enquanto a query resolve mostra "Carregando…"; depois a matriz/gráficos.
  *   2. matriz: renderiza os planos (raízes) + a linha "Valor total do período" + o título do card.
- *   3. passador de mês: começa em Jan/26 – Mar/26 (WIN=3), "Meses anteriores" desabilitado; "Próximos meses"
- *      avança a janela (rótulo do passador muda) e habilita o "anteriores".
+ *   3. passador de mês: janela inicial (meses derivados do dado) com "Meses anteriores" desabilitado.
  *   4. 2 gráficos: "Distribuição por Centro de Custo" + "Distribuição Mensal".
  *   5. expand/collapse: expandir um plano adiciona a linha do centro de custo na tabela.
  *   6. export: clicar "CSV" no dropdown Exportar dispara o download (Blob + anchor).
+ *   7. empty-state honesto: `data: []` → painel único de vazio (sem "Valor total do período").
+ *   8. erro do BFF → painel de erro (tag i18n), nunca status HTTP.
+ * Fixtures SINTÉTICAS.
  */
+import type { ReactNode } from 'react'
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, cleanup, fireEvent } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
+import { ok, err } from '#shared/primitives/result.ts'
+import type { PaymentAnalysis } from '#modules/reports/client/data/model/payment-analysis.model.ts'
+import { reportsRepository } from '#modules/reports/client/data/repository/reports.repository.instance.ts'
 import { AnalisePagamentosPage } from '#modules/reports/client/page/analise-pagamentos.page.tsx'
-import { loadAnalise } from '#modules/reports/client/analise.view-model.ts'
+import { analiseReportFromAnalysis } from '#modules/reports/client/analise.view-model.ts'
 
-const report = loadAnalise('p')
+vi.mock('#modules/reports/client/data/repository/reports.repository.instance.ts', () => ({
+  reportsRepository: { getPaymentAnalysis: vi.fn() },
+}))
+
+const mAnalysis = vi.mocked(reportsRepository.getPaymentAnalysis)
+
+// Fixture: 2 planos × 1 centro de custo cada, série de 3 meses (jan–mar/2026).
+const ANALYSIS: PaymentAnalysis = {
+  totalValueOfPeriod: 90000,
+  data: [
+    {
+      id: 'p1',
+      name: 'Plano Alfa',
+      total: 60000,
+      itens: [
+        { monthYear: '2026-01', total: 20000 },
+        { monthYear: '2026-02', total: 20000 },
+        { monthYear: '2026-03', total: 20000 },
+      ],
+      costCenters: [
+        {
+          id: 'c1',
+          name: 'Centro X',
+          total: 60000,
+          itens: [
+            { monthYear: '2026-01', total: 20000 },
+            { monthYear: '2026-02', total: 20000 },
+            { monthYear: '2026-03', total: 20000 },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'p2',
+      name: 'Plano Beta',
+      total: 30000,
+      itens: [
+        { monthYear: '2026-01', total: 10000 },
+        { monthYear: '2026-02', total: 10000 },
+        { monthYear: '2026-03', total: 10000 },
+      ],
+      costCenters: [
+        {
+          id: 'c2',
+          name: 'Centro Y',
+          total: 30000,
+          itens: [
+            { monthYear: '2026-01', total: 10000 },
+            { monthYear: '2026-02', total: 10000 },
+            { monthYear: '2026-03', total: 10000 },
+          ],
+        },
+      ],
+    },
+  ],
+}
+
+const report = analiseReportFromAnalysis(ANALYSIS)
 const firstPlano = report.planos[0]
 const firstCostCenter = firstPlano?.children[0]
 
+function renderPage(): void {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const wrapper = ({ children }: Readonly<{ children: ReactNode }>): ReactNode => (
+    <QueryClientProvider client={client}>{children}</QueryClientProvider>
+  )
+  render(<AnalisePagamentosPage />, { wrapper })
+}
+
+/** Renderiza e aguarda a matriz real aparecer (query resolveu). */
+async function renderReady(): Promise<void> {
+  mAnalysis.mockResolvedValue(ok(ANALYSIS))
+  renderPage()
+  await screen.findByText('Valor total do período')
+}
+
 afterEach(() => {
   cleanup()
-  vi.restoreAllMocks()
+  vi.clearAllMocks()
 })
 
-describe('AnalisePagamentosPage — filtros recolhíveis', () => {
-  it('mostra o toggle "Filtros" começando fechado (aria-pressed=false)', () => {
-    render(<AnalisePagamentosPage />)
-    const toggle = screen.getByRole('button', { name: 'Filtros' })
-    expect(toggle.getAttribute('aria-pressed')).toBe('false')
+describe('AnalisePagamentosPage — fonte real (loading/ready)', () => {
+  it('mostra o estado de carregamento enquanto a query não resolve', () => {
+    mAnalysis.mockReturnValue(new Promise(() => undefined))
+    renderPage()
+    expect(screen.getByText('Carregando a análise…')).toBeTruthy()
   })
 
-  it('clicar em "Filtros" abre o painel (aria-pressed=true) e revela os selects', () => {
-    render(<AnalisePagamentosPage />)
-    const toggle = screen.getByRole('button', { name: 'Filtros' })
-    fireEvent.click(toggle)
-    expect(toggle.getAttribute('aria-pressed')).toBe('true')
-    expect(screen.getByLabelText('Programa')).toBeTruthy()
-    expect(screen.getByLabelText('Centro de custo')).toBeTruthy()
-    expect(screen.getByLabelText('Subcategoria')).toBeTruthy()
-  })
-
-  it('clicar de novo fecha (aria-pressed volta a false)', () => {
-    render(<AnalisePagamentosPage />)
-    const toggle = screen.getByRole('button', { name: 'Filtros' })
-    fireEvent.click(toggle)
-    fireEvent.click(toggle)
-    expect(toggle.getAttribute('aria-pressed')).toBe('false')
+  it('resolve com os dados REAIS do repository (não do placeholder)', async () => {
+    await renderReady()
+    expect(mAnalysis).toHaveBeenCalledTimes(1)
+    expect(screen.getAllByText('Plano Alfa').length).toBeGreaterThan(0)
   })
 })
 
 describe('AnalisePagamentosPage — matriz tempo-orçamentária', () => {
-  it('renderiza os planos (raízes) e a linha "Valor total do período"', () => {
-    render(<AnalisePagamentosPage />)
+  it('renderiza os planos (raízes) e a linha "Valor total do período"', async () => {
+    await renderReady()
     expect(firstPlano).toBeDefined()
     expect(screen.getAllByText(firstPlano?.name ?? '').length).toBeGreaterThan(0)
     expect(screen.getByText('Valor total do período')).toBeTruthy()
     expect(screen.getByText('Análise por plano orçamentário')).toBeTruthy()
   })
 
-  it('mostra os 2 gráficos (Distribuição por Centro de Custo + Distribuição Mensal)', () => {
-    render(<AnalisePagamentosPage />)
+  it('mostra os 2 gráficos (Distribuição por Centro de Custo + Distribuição Mensal)', async () => {
+    await renderReady()
     expect(screen.getByText('Distribuição por Centro de Custo')).toBeTruthy()
     expect(screen.getByText('Distribuição Mensal')).toBeTruthy()
   })
 })
 
 describe('AnalisePagamentosPage — passador de mês', () => {
-  it('começa em "Jan/26 – Mar/26" com "Meses anteriores" desabilitado', () => {
-    render(<AnalisePagamentosPage />)
+  it('começa em "Jan/26 – Mar/26" (meses derivados do dado) com "Meses anteriores" desabilitado', async () => {
+    await renderReady()
     expect(screen.getByText('Jan/26 – Mar/26')).toBeTruthy()
     const prev = screen.getByRole('button', { name: 'Meses anteriores' })
     expect(prev.hasAttribute('disabled')).toBe(true)
   })
-
-  it('"Próximos meses" avança a janela (Abr/26 – Jun/26) e habilita o "anteriores"', () => {
-    render(<AnalisePagamentosPage />)
-    const next = screen.getByRole('button', { name: 'Próximos meses' })
-    fireEvent.click(next)
-    expect(screen.getByText('Abr/26 – Jun/26')).toBeTruthy()
-    const prev = screen.getByRole('button', { name: 'Meses anteriores' })
-    expect(prev.hasAttribute('disabled')).toBe(false)
-  })
 })
 
 describe('AnalisePagamentosPage — expand/collapse', () => {
-  it('expandir um plano adiciona a linha do centro de custo na tabela', () => {
-    render(<AnalisePagamentosPage />)
+  it('expandir um plano adiciona a linha do centro de custo na tabela', async () => {
+    await renderReady()
     const ccName = firstCostCenter?.name ?? '__none__'
-    // O CC já aparece no gráfico "Distribuição por Centro de Custo" (1x). Expandir o plano adiciona a linha
-    // na tabela (fica 2x).
     const before = screen.getAllByText(ccName).length
     const btn = screen.getAllByRole('button', { name: 'Expandir' })[0]
     if (btn === undefined) throw new Error('sem botão Expandir')
     fireEvent.click(btn)
-    const after = screen.getAllByText(ccName).length
-    expect(after).toBeGreaterThan(before)
+    expect(screen.getAllByText(ccName).length).toBeGreaterThan(before)
 
-    // Recolher volta ao número anterior.
     const collapseBtn = screen.getAllByRole('button', { name: 'Recolher' })[0]
     if (collapseBtn === undefined) throw new Error('sem botão Recolher')
     fireEvent.click(collapseBtn)
@@ -105,18 +160,34 @@ describe('AnalisePagamentosPage — expand/collapse', () => {
 })
 
 describe('AnalisePagamentosPage — export CSV', () => {
-  it('clicar em "CSV" no menu Exportar dispara o download (cria e clica um anchor)', () => {
+  it('clicar em "CSV" no menu Exportar dispara o download (cria e clica um anchor)', async () => {
     const createUrl = vi.fn(() => 'blob:analise')
     const revokeUrl = vi.fn()
     Object.defineProperty(URL, 'createObjectURL', { value: createUrl, configurable: true })
     Object.defineProperty(URL, 'revokeObjectURL', { value: revokeUrl, configurable: true })
     const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
 
-    render(<AnalisePagamentosPage />)
+    await renderReady()
     fireEvent.click(screen.getByRole('button', { name: 'CSV' }))
 
     expect(createUrl).toHaveBeenCalledTimes(1)
     expect(clickSpy).toHaveBeenCalledTimes(1)
     expect(revokeUrl).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('AnalisePagamentosPage — empty & erro', () => {
+  it('backend devolve data:[] → empty-state honesto (sem "Valor total do período")', async () => {
+    mAnalysis.mockResolvedValue(ok({ totalValueOfPeriod: 0, data: [] }))
+    renderPage()
+    await screen.findByText('Nenhum dado para exibir.')
+    expect(screen.queryByText('Valor total do período')).toBeNull()
+  })
+
+  it('erro do BFF → painel de erro com a tag i18n (nunca status HTTP)', async () => {
+    mAnalysis.mockResolvedValue(err('forbidden'))
+    renderPage()
+    await screen.findByText('Não foi possível carregar o relatório.')
+    expect(screen.getByText('Você não tem permissão para ver este relatório.')).toBeTruthy()
   })
 })

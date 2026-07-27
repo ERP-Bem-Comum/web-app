@@ -11,6 +11,8 @@ import type {
   SupplierWithoutContract,
   PaymentPosition,
   PaymentPositionFilter,
+  PaymentAnalysis,
+  PaymentAnalysisQuery,
   RealizedReportQuery,
   RealizedBudgetRow,
 } from '#modules/reports/server/domain/reports.io.ts'
@@ -26,6 +28,11 @@ export type ReportsClient = Readonly<{
     filter: PaymentPositionFilter,
     token: string,
   ) => Promise<Result<readonly PaymentPosition[], ReportsError>>
+  /** Análise de Pagamentos (#446) — matriz Plano → Centro de Custo × série mensal; janela [dueStart,dueEnd). */
+  getPaymentAnalysis: (
+    query: PaymentAnalysisQuery,
+    token: string,
+  ) => Promise<Result<PaymentAnalysis, ReportsError>>
   /** Realizado × Planejado — árvore achatada em linhas folha; `year` obrigatório + filtros opcionais. */
   getRealizedReport: (
     query: RealizedReportQuery,
@@ -54,6 +61,11 @@ export const createGetPaymentPosition =
   (deps: Deps) =>
   (filter: PaymentPositionFilter, token: string): Promise<Result<readonly PaymentPosition[], ReportsError>> =>
     deps.client.getPaymentPosition(filter, token)
+
+export const createGetPaymentAnalysis =
+  (deps: Deps) =>
+  (query: PaymentAnalysisQuery, token: string): Promise<Result<PaymentAnalysis, ReportsError>> =>
+    deps.client.getPaymentAnalysis(query, token)
 
 export const createGetRealizedReport =
   (deps: Deps) =>

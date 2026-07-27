@@ -109,6 +109,41 @@ export type PaymentPosition = Readonly<{
 }>
 
 /**
+ * Análise de Pagamentos (#446 · GET /reports/analysis/payables) — matriz TEMPO-orçamentária: árvore Plano
+ * Orçamentário → Centro de Custo, cada nó com uma SÉRIE MENSAL PRÓPRIA (`itens`: `monthYear` → `total`). Os
+ * `total` estão em CENTAVOS inteiros (number). `id`/`name` são nullable: `name` null → "Sem plano" / "Sem
+ * centro de custo" na UI (o mapeamento p/ rótulo é do client). O client re-agrega no shape da tela (AnaliseReport).
+ */
+export type PaymentAnalysisMonthCell = Readonly<{ monthYear: string; total: number }>
+export type PaymentAnalysisCostCenter = Readonly<{
+  id: string | null
+  name: string | null
+  total: number
+  itens: readonly PaymentAnalysisMonthCell[]
+}>
+export type PaymentAnalysisPlan = Readonly<{
+  id: string | null
+  name: string | null
+  total: number
+  itens: readonly PaymentAnalysisMonthCell[]
+  costCenters: readonly PaymentAnalysisCostCenter[]
+}>
+export type PaymentAnalysis = Readonly<{
+  totalValueOfPeriod: number
+  data: readonly PaymentAnalysisPlan[]
+}>
+
+/**
+ * Filtros de consulta da Análise de Pagamentos (#446). Janela de vencimento HALF-OPEN [dueStart, dueEnd)
+ * (`dueEnd` EXCLUSIVO) em `YYYY-MM-DD`; `status` opcional (string livre no backend).
+ */
+export type PaymentAnalysisQuery = Readonly<{
+  dueStart: string
+  dueEnd: string
+  status?: string
+}>
+
+/**
  * Realizado × Planejado (`GET /reports/realized`) — filtros de consulta. `year` obrigatório; os demais
  * recortam a árvore (programa, plano orçamentário, UF/município do parceiro). Refs são string opaca.
  */
