@@ -13,7 +13,7 @@
  */
 import type { ReactNode } from 'react'
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { render, screen, cleanup, fireEvent } from '@testing-library/react'
+import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import { ok, err } from '#shared/primitives/result.ts'
@@ -123,6 +123,46 @@ describe('AnalisePagamentosPage — fonte real (loading/ready)', () => {
     await renderReady()
     expect(mAnalysis).toHaveBeenCalledTimes(1)
     expect(screen.getAllByText('Plano Alfa').length).toBeGreaterThan(0)
+  })
+})
+
+describe('AnalisePagamentosPage — aplicar período (De/Até + Filtrar)', () => {
+  it('1ª carga usa a janela default; mudar as datas NÃO refetch; "Filtrar" aplica o período', async () => {
+    await renderReady()
+    // 1ª carga: consulta com a janela ampla default (não o período do usuário).
+    expect(mAnalysis).toHaveBeenCalledTimes(1)
+    const year = new Date().getFullYear()
+    expect(mAnalysis).toHaveBeenLastCalledWith({
+      dueStart: `${String(year - 2)}-01-01`,
+      dueEnd: `${String(year + 2)}-01-01`,
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filtros' }))
+    // Editar as datas NÃO deve refetch (só draft).
+    fireEvent.change(screen.getByLabelText('De'), { target: { value: '2026-07-01' } })
+    fireEvent.change(screen.getByLabelText('Até'), { target: { value: '2026-09-01' } })
+    expect(mAnalysis).toHaveBeenCalledTimes(1)
+
+    // "Filtrar" aplica → re-busca com o período informado.
+    fireEvent.click(screen.getByRole('button', { name: 'Filtrar' }))
+    await waitFor(() => {
+      expect(mAnalysis).toHaveBeenCalledTimes(2)
+    })
+    expect(mAnalysis).toHaveBeenLastCalledWith({ dueStart: '2026-07-01', dueEnd: '2026-09-01' })
+  })
+
+  it('período incompleto (só uma data) → cai no default (não aplica recorte)', async () => {
+    await renderReady()
+    fireEvent.click(screen.getByRole('button', { name: 'Filtros' }))
+    fireEvent.change(screen.getByLabelText('De'), { target: { value: '2026-07-01' } })
+    // Até vazio → toQuery devolve undefined → binding usa a janela default.
+    fireEvent.click(screen.getByRole('button', { name: 'Filtrar' }))
+    const year = new Date().getFullYear()
+    // Continua no default (não houve recorte parcial inválido).
+    expect(mAnalysis).toHaveBeenLastCalledWith({
+      dueStart: `${String(year - 2)}-01-01`,
+      dueEnd: `${String(year + 2)}-01-01`,
+    })
   })
 })
 

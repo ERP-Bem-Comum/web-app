@@ -2688,6 +2688,8 @@ export const ptBR: Catalog = {
   'reports.analise.filters.programa': 'Programa',
   'reports.analise.filters.plano': 'Plano Orçamentário',
   'reports.analise.filters.periodo': 'Período de vencimento',
+  'reports.analise.filters.periodoDe': 'De',
+  'reports.analise.filters.periodoAte': 'Até',
   'reports.analise.filters.conta': 'Conta bancária',
   'reports.analise.filters.status': 'Status',
   'reports.analise.filters.centro': 'Centro de custo',

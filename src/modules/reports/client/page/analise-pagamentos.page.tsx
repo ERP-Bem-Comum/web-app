@@ -19,12 +19,13 @@ import {
   useSubcategoryOptionsFromPlan,
 } from '#modules/financial/public-api/index.ts'
 
-import { useAnalisePagamentos } from '../analise.binding.ts'
+import { useAnalisePagamentos, type AnalisePagamentosQuery } from '../analise.binding.ts'
 import { useAnaliseFilterOptions } from '../analise-filters.binding.ts'
 import {
   AnaliseReportView,
   type AnaliseReportViewLabels,
   type AnaliseCascadeModel,
+  type AnalisePeriodModel,
 } from '../components/analise-report-view.component.tsx'
 import { ReportStatePanel } from '../components/report-state-panel.component.tsx'
 
@@ -34,10 +35,24 @@ const t = createTranslator(ptBR)
 type CascadeSel = Readonly<{ plano: string; centro: string; categoria: string; subcategoria: string }>
 const EMPTY_SEL: CascadeSel = { plano: '', centro: '', categoria: '', subcategoria: '' }
 
+// Draft do Período (De/Até em `YYYY-MM-DD`; `dueTo` EXCLUSIVO no backend). Vazio → sem recorte (defaultRange).
+type PeriodDraft = Readonly<{ dueFrom: string; dueTo: string }>
+const EMPTY_PERIOD: PeriodDraft = { dueFrom: '', dueTo: '' }
+
+/** Converte o draft de período no query do #446: só aplica com AMBAS as datas; senão `undefined` (defaultRange). */
+function toQuery(d: PeriodDraft): AnalisePagamentosQuery | undefined {
+  if (d.dueFrom === '' || d.dueTo === '') return undefined
+  return { dueStart: d.dueFrom, dueEnd: d.dueTo }
+}
+
 export function AnalisePagamentosPage(): ReactNode {
-  // Server-state REAL do core-api (#446): loading | error | ready. O empty-state honesto (resposta vazia) é
-  // resolvido DENTRO da AnaliseReportView a partir do `report` (0 planos / months []).
-  const state = useAnalisePagamentos()
+  // UI-state do Período: DRAFT (edição nos inputs) + APLICADO (o que a query consulta). "Filtrar" commita.
+  const [periodDraft, setPeriodDraft] = useState<PeriodDraft>(EMPTY_PERIOD)
+  const [applied, setApplied] = useState<AnalisePagamentosQuery | undefined>(undefined)
+
+  // Server-state REAL do core-api (#446) com o período APLICADO: loading | error | ready. Sem período aplicado
+  // → o binding usa a janela ampla default. O empty-state honesto (resposta vazia) é resolvido na View.
+  const state = useAnalisePagamentos(applied)
   // Opções populate-only (Programa/Plano/Conta). Plano carrega `value=id` — DIRIGE a cascata abaixo.
   const filterOpts = useAnaliseFilterOptions()
   // Cascata de categorização (ADR-0051): Centro/Categoria/Subcategoria vêm da ÁRVORE do plano selecionado, não
@@ -63,6 +78,8 @@ export function AnalisePagamentosPage(): ReactNode {
       programa: t('reports.analise.filters.programa'),
       plano: t('reports.analise.filters.plano'),
       periodo: t('reports.analise.filters.periodo'),
+      periodoDe: t('reports.analise.filters.periodoDe'),
+      periodoAte: t('reports.analise.filters.periodoAte'),
       conta: t('reports.analise.filters.conta'),
       status: t('reports.analise.filters.status'),
       centro: t('reports.analise.filters.centro'),
@@ -134,6 +151,18 @@ export function AnalisePagamentosPage(): ReactNode {
     },
   }
 
+  // Período controlado: mudar as datas só edita o draft; "Filtrar" commita → re-busca (§XI: view burra).
+  const period: AnalisePeriodModel = {
+    dueFrom: periodDraft.dueFrom,
+    dueTo: periodDraft.dueTo,
+    onChange: (patch) => {
+      setPeriodDraft((d) => ({ ...d, ...patch }))
+    },
+    onFiltrar: () => {
+      setApplied(toQuery(periodDraft))
+    },
+  }
+
   return (
     <AnaliseReportView
       report={state.report}
@@ -141,6 +170,7 @@ export function AnalisePagamentosPage(): ReactNode {
       csvFilename="analise-pagamentos.csv"
       filterOptions={{ programa: filterOpts.programa, conta: filterOpts.conta }}
       cascade={cascade}
+      period={period}
     />
   )
 }

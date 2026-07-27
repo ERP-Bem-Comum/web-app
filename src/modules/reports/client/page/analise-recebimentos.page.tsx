@@ -37,6 +37,8 @@ export function AnaliseRecebimentosPage(): ReactNode {
       plano: t('reports.analise.filters.plano'),
       // Do lado de receber, o período é de PREVISÃO de recebimento.
       periodo: t('reports.analise.rec.filters.periodo'),
+      periodoDe: t('reports.analise.filters.periodoDe'),
+      periodoAte: t('reports.analise.filters.periodoAte'),
       conta: t('reports.analise.filters.conta'),
       status: t('reports.analise.filters.status'),
       centro: t('reports.analise.filters.centro'),

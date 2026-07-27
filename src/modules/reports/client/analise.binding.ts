@@ -14,6 +14,9 @@ import { reportsErrorTag } from './data/helpers/reports-error-tag.ts'
 import type { ReportsError } from './data/repository/reports-error.ts'
 import type { PaymentAnalysisQuery } from './data/model/payment-analysis.model.ts'
 
+// Re-export p/ a page tipar o período aplicado sem importar de `data/model` (boundary client-ui ↛ client-data).
+export type AnalisePagamentosQuery = PaymentAnalysisQuery
+
 export type AnaliseBindingState =
   | Readonly<{ status: 'loading' }>
   | Readonly<{ status: 'error'; error: ReportsError; errorTag: string }>
@@ -29,18 +32,24 @@ function wideDueWindow(): PaymentAnalysisQuery {
   return { dueStart: `${String(year - 2)}-01-01`, dueEnd: `${String(year + 2)}-01-01` }
 }
 
-export function useAnalisePagamentos(): AnaliseBindingState {
-  // Estável por mount (queryKey não muda a cada render → sem refetch em loop).
-  const range = useMemo(() => wideDueWindow(), [])
-  const query = useQuery(paymentAnalysisQueryOptions(range))
+/**
+ * `query` opcional: quando ausente/vazio, cai no `wideDueWindow` (a tela abre mostrando o dado). Quando a page
+ * aplica um período (via "Filtrar"), passa `{ dueStart, dueEnd, status? }` → a queryKey muda → refetch.
+ */
+export function useAnalisePagamentos(query?: PaymentAnalysisQuery): AnaliseBindingState {
+  // Janela default estável por mount (queryKey não muda a cada render → sem refetch em loop). Quando a page
+  // passa um `query` aplicado, ele vence; sem query, usa a janela ampla.
+  const fallback = useMemo(() => wideDueWindow(), [])
+  const range = query ?? fallback
+  const q = useQuery(paymentAnalysisQueryOptions(range))
 
-  const analysis = query.data?.data ?? null
-  const error: ReportsError | null = query.data?.error ?? null
+  const analysis = q.data?.data ?? null
+  const error: ReportsError | null = q.data?.error ?? null
 
   return useMemo<AnaliseBindingState>(() => {
-    if (query.isLoading) return { status: 'loading' }
+    if (q.isLoading) return { status: 'loading' }
     if (error !== null) return { status: 'error', error, errorTag: reportsErrorTag(error) }
     if (analysis !== null) return { status: 'ready', report: analiseReportFromAnalysis(analysis) }
     return { status: 'loading' }
-  }, [query.isLoading, error, analysis])
+  }, [q.isLoading, error, analysis])
 }

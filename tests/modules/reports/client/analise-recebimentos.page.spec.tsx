@@ -101,6 +101,8 @@ const RECEBIMENTOS_LABELS: AnaliseReportViewLabels = {
     programa: 'Programa',
     plano: 'Plano Orçamentário',
     periodo: 'Período de recebimento',
+    periodoDe: 'De',
+    periodoAte: 'Até',
     conta: 'Conta bancária',
     status: 'Status',
     centro: 'Centro de custo',

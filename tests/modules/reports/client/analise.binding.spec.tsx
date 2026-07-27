@@ -100,4 +100,26 @@ describe('useAnalisePagamentos', () => {
       expect(result.current.errorTag).toBe('reports.error.forbidden')
     }
   })
+
+  it('sem query → usa a janela ampla default (dueStart/dueEnd ±2 anos do "agora")', async () => {
+    mAnalysis.mockResolvedValue(ok({ totalValueOfPeriod: 0, data: [] }))
+    renderHook(() => useAnalisePagamentos(), { wrapper: wrapper() })
+    await waitFor(() => {
+      expect(mAnalysis).toHaveBeenCalled()
+    })
+    const arg = mAnalysis.mock.calls[0]?.[0]
+    const year = new Date().getFullYear()
+    expect(arg).toEqual({ dueStart: `${String(year - 2)}-01-01`, dueEnd: `${String(year + 2)}-01-01` })
+  })
+
+  it('com query aplicado → busca com o período informado (não o default)', async () => {
+    mAnalysis.mockResolvedValue(ok(ANALYSIS))
+    renderHook(() => useAnalisePagamentos({ dueStart: '2026-07-01', dueEnd: '2026-09-01' }), {
+      wrapper: wrapper(),
+    })
+    await waitFor(() => {
+      expect(mAnalysis).toHaveBeenCalled()
+    })
+    expect(mAnalysis).toHaveBeenLastCalledWith({ dueStart: '2026-07-01', dueEnd: '2026-09-01' })
+  })
 })
