@@ -17,7 +17,7 @@
  */
 import { useMemo, useState, type ReactNode } from 'react'
 
-import { screen } from '#shared/ui/brand/brand-page.css.ts'
+import { screen, headSubtitle } from '#shared/ui/brand/brand-page.css.ts'
 import { ChevronLeftIcon, ChevronDownIcon, FilterIcon } from '#shared/ui/index.ts'
 
 import {
@@ -41,6 +41,7 @@ import {
   head,
   backButton,
   headTitle,
+  headTitleBlock,
   tools,
   filterToggle,
   filters,
@@ -154,6 +155,11 @@ export type AnaliseReportViewProps = Readonly<{
    * (Recebimentos) → o Período vira dropdown "Todos" e o "Filtrar" fica inerte. A view segue burra (§XI).
    */
   period?: AnalisePeriodModel
+  /**
+   * Resumo dos filtros APLICADOS (partes já formatadas "Rótulo: valor"), abaixo do título. Só o que de fato
+   * filtra o resultado (na Análise, só o período aplica). Vazio/ausente → não renderiza a linha.
+   */
+  subtitleParts?: readonly string[]
 }>
 
 /** Contrato do Período de vencimento controlado (Análise de Pagamentos). Datas em `YYYY-MM-DD`. */
@@ -238,7 +244,12 @@ export function AnaliseReportView(props: AnaliseReportViewProps): ReactNode {
         >
           <ChevronLeftIcon size={18} />
         </button>
-        <h1 className={headTitle}>{L.title}</h1>
+        <div className={headTitleBlock}>
+          <h1 className={headTitle}>{L.title}</h1>
+          {props.subtitleParts !== undefined && props.subtitleParts.length > 0 && (
+            <p className={headSubtitle}>{props.subtitleParts.join(' · ')}</p>
+          )}
+        </div>
         {!isEmpty && (
           <div className={tools}>
             <button

@@ -21,6 +21,7 @@ import {
 
 import { useAnalisePagamentos, type AnalisePagamentosQuery } from '../analise.binding.ts'
 import { useAnaliseFilterOptions } from '../analise-filters.binding.ts'
+import { buildFilterSummaryParts, formatDueRange } from '../filters-summary.view-model.ts'
 import {
   AnaliseReportView,
   type AnaliseReportViewLabels,
@@ -151,6 +152,21 @@ export function AnalisePagamentosPage(): ReactNode {
     },
   }
 
+  // Resumo dos filtros APLICADOS (subtítulo). Na Análise só o PERÍODO aplica no #446 → só ele entra (a cascata
+  // e o status não filtram o resultado, então não enganam o usuário). Sem período aplicado → sem linha.
+  const subtitleParts =
+    applied === undefined
+      ? []
+      : buildFilterSummaryParts([
+          {
+            label: labels.filters.periodo,
+            value: formatDueRange(applied.dueStart, applied.dueEnd, {
+              fromPrefix: t('reports.filters.summary.fromPrefix'),
+              toPrefix: t('reports.filters.summary.toPrefix'),
+            }),
+          },
+        ])
+
   // Período controlado: mudar as datas só edita o draft; "Filtrar" commita → re-busca (§XI: view burra).
   const period: AnalisePeriodModel = {
     dueFrom: periodDraft.dueFrom,
@@ -171,6 +187,7 @@ export function AnalisePagamentosPage(): ReactNode {
       filterOptions={{ programa: filterOpts.programa, conta: filterOpts.conta }}
       cascade={cascade}
       period={period}
+      subtitleParts={subtitleParts}
     />
   )
 }

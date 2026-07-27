@@ -21,6 +21,7 @@ import {
   type PosicaoReportStatus,
 } from '../posicao.binding.ts'
 import { usePosicaoFilterOptions } from '../posicao-filters.binding.ts'
+import { buildFilterSummaryParts, formatDueRange } from '../filters-summary.view-model.ts'
 import {
   PosicaoReportView,
   type PosicaoReportViewLabels,
@@ -155,6 +156,27 @@ export function PosicaoPagamentosPage(): ReactNode {
     chartEmptyLabel: t('reports.posicao.empty'),
   }
 
+  // Resumo dos filtros APLICADOS (reflete `applied`, não o draft) — mostrado abaixo do título quando recolhidos.
+  // Só as dimensões que de fato filtram; UUID → rótulo via as options carregadas (ausente → cai no value cru).
+  const appliedDueRange = formatDueRange(applied.dueFrom ?? '', applied.dueTo ?? '', {
+    fromPrefix: t('reports.filters.summary.fromPrefix'),
+    toPrefix: t('reports.filters.summary.toPrefix'),
+  })
+  const subtitleParts = buildFilterSummaryParts([
+    { label: labels.filters.plano, value: applied.budgetPlanRef ?? '', options: filterOpts.plano },
+    { label: labels.filters.periodo, value: appliedDueRange },
+    { label: labels.filters.status, value: applied.status ?? '', options: statusOptions },
+    { label: labels.filters.conta, value: applied.cedenteAccountRef ?? '', options: filterOpts.conta },
+    { label: labels.filters.partner, value: applied.supplierRef ?? '', options: filterOpts.partner },
+    { label: labels.filters.centro, value: applied.costCenterRef ?? '', options: filterOpts.centro },
+    { label: labels.filters.categoria, value: applied.categoryRef ?? '', options: filterOpts.categoria },
+    {
+      label: labels.filters.subcategoria,
+      value: applied.subcategoryRef ?? '',
+      options: filterOpts.subcategoria,
+    },
+  ])
+
   const filtersModel: PosicaoFiltersModel = {
     options: {
       plano: filterOpts.plano,
@@ -199,6 +221,7 @@ export function PosicaoPagamentosPage(): ReactNode {
       csvFilename="posicao-pagamentos.csv"
       csvHeader={CSV_HEADER}
       filters={filtersModel}
+      subtitleParts={subtitleParts}
     />
   )
 }

@@ -89,6 +89,14 @@ export const emptyHint = style({
   maxInlineSize: '32rem',
 })
 
+// Título + subtítulo (resumo dos filtros aplicados) empilhados no lugar do `<h1>` solto na barra do cabeçalho.
+export const headTitleBlock = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: brand.space.xs,
+  minInlineSize: 0,
+})
+
 // ── Período de vencimento: DOIS inputs de data (De / Até) lado a lado, no lugar de um dropdown (#588). ──
 export const periodRow = style({ display: 'flex', gap: brand.space.sm, alignItems: 'flex-end' })
 

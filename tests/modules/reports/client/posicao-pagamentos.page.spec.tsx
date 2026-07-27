@@ -199,6 +199,9 @@ describe('PosicaoPagamentosPage — aplicar filtro (Filtrar)', () => {
     expect(mockedGetPaymentPosition).toHaveBeenLastCalledWith(
       expect.objectContaining({ supplierRef: 'sup-9', status: 'Approved' }),
     )
+    // Resumo dos filtros aplicados abaixo do título (UUID→rótulo; reflete o aplicado). findByText: aguarda o
+    // re-render "ready" após o refetch da nova queryKey.
+    await screen.findByText('Status: Aprovado · Fornecedor: Fornecedor Filtro')
   })
 
   it('o input de data De/Até entra no filtro aplicado', async () => {

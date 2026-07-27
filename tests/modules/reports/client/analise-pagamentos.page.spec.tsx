@@ -149,6 +149,9 @@ describe('AnalisePagamentosPage — aplicar período (De/Até + Filtrar)', () =>
       expect(mAnalysis).toHaveBeenCalledTimes(2)
     })
     expect(mAnalysis).toHaveBeenLastCalledWith({ dueStart: '2026-07-01', dueEnd: '2026-09-01' })
+    // Resumo do período aplicado abaixo do título (só o período aplica no #446). findByText: aguarda o re-render
+    // "ready" após o refetch da nova queryKey.
+    await screen.findByText('Período de vencimento: 01/07/2026 – 01/09/2026')
   })
 
   it('período incompleto (só uma data) → cai no default (não aplica recorte)', async () => {

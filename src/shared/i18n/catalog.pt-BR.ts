@@ -2691,6 +2691,9 @@ export const ptBR: Catalog = {
   'reports.analise.filters.periodoDe': 'De',
   'reports.analise.filters.periodoAte': 'Até',
   'reports.analise.filters.conta': 'Conta bancária',
+  // Resumo dos filtros aplicados (subtítulo) — conectores do intervalo de datas quando só uma extremidade é setada.
+  'reports.filters.summary.fromPrefix': 'a partir de',
+  'reports.filters.summary.toPrefix': 'até',
   'reports.analise.filters.status': 'Status',
   'reports.analise.filters.centro': 'Centro de custo',
   'reports.analise.filters.categoria': 'Categoria',
