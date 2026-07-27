@@ -1,15 +1,13 @@
 /**
- * Opções dos filtros do "Posição de Pagamentos" — ADAPTER React (§XI). Cada dropdown vira REAL (só a LISTA;
- * APLICAR o filtro depende do core-api#588, ainda não exposto). Cross-módulo SÓ via public-api (§I):
- *   • Plano Orçamentário  → `listBudgetPlansFn`   (#modules/budget-plans, planos APROVADOS)
- *   • Fornecedor          → `listSuppliersFn`     (#modules/partners, ativos)
- *   • Conta bancária      → `listCedenteAccountsFn`(#modules/financial, contas-cedente)
- *   • Centro/Categoria/Subcategoria → `listFinancialReferencesFn` (#modules/financial, catálogo FLAT)
- * Status é ESTÁTICO (i18n dos chips do CAP) e é montado na page. Período de vencimento é intervalo de datas
+ * Opções dos filtros do "Posição de Pagamentos" — ADAPTER React (§XI). Cada dropdown vira REAL e agora com
+ * VALUE (o UUID/ref que o core-api#588 aplica), não só rótulo. Cross-módulo SÓ via public-api (§I):
+ *   • Plano Orçamentário  → `listBudgetPlansFn`   (value = id do plano; planos APROVADOS)
+ *   • Fornecedor          → `listSuppliersFn`     (value = id; ativos)
+ *   • Conta bancária      → `listCedenteAccountsFn`(value = id; rótulo apelido/texto-livre/banco+conta)
+ *   • Centro/Categoria/Subcategoria → `listFinancialReferencesFn` (value = id; catálogo FLAT)
+ * Status é ESTÁTICO (enum #588 → i18n) e é montado na page. Período de vencimento são DOIS inputs de data
  * (não-lista) — fica fora. Todas as listas degradam a `[]` (loading/erro/permissão) — o dropdown nunca quebra.
- *
- * As opções aqui são RÓTULOS (string) porque o select ainda não APLICA — quando o #588 subir, cada opção
- * ganha `value` (UUID/uf/etc.). Espelha o estilo de `realizado-filters.binding.ts`.
+ * Espelha o estilo de `realizado-filters.binding.ts` (FilterOption = { value, label }).
  */
 import { useQuery } from '@tanstack/react-query'
 
@@ -21,62 +19,69 @@ import {
   type FinancialReferences,
 } from '#modules/financial/public-api/index.ts'
 
-/** Listas de opções (rótulos) por dropdown do relatório de Posição. Status/período não entram aqui. */
+export type FilterOption = Readonly<{ value: string; label: string }>
+
+/** Listas de opções (value+label) por dropdown do relatório de Posição. Status/período não entram aqui. */
 export type PosicaoFilterOptions = Readonly<{
-  plano: readonly string[]
-  partner: readonly string[]
-  conta: readonly string[]
-  centro: readonly string[]
-  categoria: readonly string[]
-  subcategoria: readonly string[]
+  plano: readonly FilterOption[]
+  partner: readonly FilterOption[]
+  conta: readonly FilterOption[]
+  centro: readonly FilterOption[]
+  categoria: readonly FilterOption[]
+  subcategoria: readonly FilterOption[]
 }>
 
-const EMPTY: readonly string[] = []
+const EMPTY: readonly FilterOption[] = []
 
-/** Planos APROVADOS → "ano sigla versão · cenário" (mesma regra dos outros dropdowns; evita rascunho homônimo). */
-function usePlanoOptions(): readonly string[] {
+/** Planos APROVADOS → value=id, label "ano sigla versão · cenário" (evita rascunho homônimo). */
+function usePlanoOptions(): readonly FilterOption[] {
   const q = useQuery({
     queryKey: ['reports', 'posicao', 'filter', 'planos'] as const,
-    queryFn: async (): Promise<readonly string[]> => {
+    queryFn: async (): Promise<readonly FilterOption[]> => {
       const r = await listBudgetPlansFn({ data: { page: 1, limit: 100 } })
       if (!r.ok) return EMPTY
       return r.data.items
         .filter((p) => p.status === 'APROVADO')
-        .map(
-          (p) =>
+        .map((p) => ({
+          value: p.id,
+          label:
             `${String(p.year)} ${p.programAbbreviation ?? p.programName} ${p.version.toFixed(1)}` +
             (p.scenarioName !== null ? ` · ${p.scenarioName}` : ''),
-        )
+        }))
     },
     staleTime: 60_000,
   })
   return q.data ?? EMPTY
 }
 
-/** Fornecedores ATIVOS → nome. Uma página basta p/ o seletor (limite máx do endpoint). Erro → []. */
-function usePartnerOptions(): readonly string[] {
+/** Fornecedores ATIVOS → value=id, label=nome. Uma página basta p/ o seletor. Erro → []. */
+function usePartnerOptions(): readonly FilterOption[] {
   const q = useQuery({
     queryKey: ['reports', 'posicao', 'filter', 'fornecedores'] as const,
-    queryFn: async (): Promise<readonly string[]> => {
+    queryFn: async (): Promise<readonly FilterOption[]> => {
       const r = await listSuppliersFn({ data: { active: true, order: 'ASC', page: 1, limit: 100 } })
-      return r.ok ? r.data.items.map((s) => s.name) : EMPTY
+      return r.ok ? r.data.items.map((s) => ({ value: s.id, label: s.name })) : EMPTY
     },
     staleTime: 60_000,
   })
   return q.data ?? EMPTY
 }
 
-/** Contas-cedente → apelido; sem apelido, cai no texto-livre (#206) ou banco+conta-DV. Erro/permissão → []. */
-function useContaOptions(): readonly string[] {
+/** Contas-cedente → value=id; label apelido → texto-livre (#206) → banco+conta-DV. Erro/permissão → []. */
+function useContaOptions(): readonly FilterOption[] {
   const q = useQuery({
     queryKey: ['reports', 'posicao', 'filter', 'contas'] as const,
-    queryFn: async (): Promise<readonly string[]> => {
+    queryFn: async (): Promise<readonly FilterOption[]> => {
       const r = await listCedenteAccountsFn()
       if (!r.ok) return EMPTY
       return r.data.map((a) => {
-        if (a.alias !== '') return a.alias
-        if (a.typeLabel !== null && a.typeLabel !== '') return a.typeLabel
-        return `${a.bankName} ${a.accountNumber}-${a.accountDv}`
+        const label =
+          a.alias !== ''
+            ? a.alias
+            : a.typeLabel !== null && a.typeLabel !== ''
+              ? a.typeLabel
+              : `${a.bankName} ${a.accountNumber}-${a.accountDv}`
+        return { value: a.id, label }
       })
     },
     staleTime: 60_000,
@@ -87,7 +92,7 @@ function useContaOptions(): readonly string[] {
 /**
  * Catálogo de referências (Centro/Categoria/Subcategoria) — FLAT, sem cascata por plano nesta fase. Uma única
  * query cacheada serve os 3 selects (`select` por concern). Categoria = nível de topo (`parentId === null`);
- * Subcategoria = filhas (`parentId !== null`). Erro/permissão → todas as listas caem a [].
+ * Subcategoria = filhas (`parentId !== null`). value=id. Erro/permissão → todas as listas caem a [].
  */
 const referencesQuery = {
   queryKey: ['reports', 'posicao', 'filter', 'references'] as const,
@@ -98,28 +103,28 @@ const referencesQuery = {
   staleTime: 60_000,
 }
 
-function useCentroOptions(): readonly string[] {
+function useCentroOptions(): readonly FilterOption[] {
   const q = useQuery({
     ...referencesQuery,
-    select: (refs): readonly string[] => refs.costCenters.map((c) => c.name),
+    select: (refs): readonly FilterOption[] => refs.costCenters.map((c) => ({ value: c.id, label: c.name })),
   })
   return q.data ?? EMPTY
 }
 
-function useCategoriaOptions(): readonly string[] {
+function useCategoriaOptions(): readonly FilterOption[] {
   const q = useQuery({
     ...referencesQuery,
-    select: (refs): readonly string[] =>
-      refs.categories.filter((c) => c.parentId === null).map((c) => c.name),
+    select: (refs): readonly FilterOption[] =>
+      refs.categories.filter((c) => c.parentId === null).map((c) => ({ value: c.id, label: c.name })),
   })
   return q.data ?? EMPTY
 }
 
-function useSubcategoriaOptions(): readonly string[] {
+function useSubcategoriaOptions(): readonly FilterOption[] {
   const q = useQuery({
     ...referencesQuery,
-    select: (refs): readonly string[] =>
-      refs.categories.filter((c) => c.parentId !== null).map((c) => c.name),
+    select: (refs): readonly FilterOption[] =>
+      refs.categories.filter((c) => c.parentId !== null).map((c) => ({ value: c.id, label: c.name })),
   })
   return q.data ?? EMPTY
 }

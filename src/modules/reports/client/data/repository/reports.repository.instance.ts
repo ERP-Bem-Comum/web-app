@@ -15,6 +15,6 @@ export const reportsRepository = createReportsRepository({
   teamReportFn: () => getTeamReportFn(),
   teamDemographicsFn: () => getTeamDemographicsFn(),
   suppliersWithoutContractFn: () => getSuppliersWithoutContractFn(),
-  paymentPositionFn: () => getPaymentPositionFn(),
+  paymentPositionFn: (filter) => getPaymentPositionFn({ data: filter }),
   realizedReportFn: (query) => getRealizedReportFn({ data: query }),
 })

@@ -75,15 +75,35 @@ describe('usePosicaoFilterOptions — fontes reais', () => {
 
     mSuppliers.mockResolvedValue({
       ok: true,
-      data: { items: [{ name: 'Fornecedor Alfa' }, { name: 'Fornecedor Beta' }], meta: {} },
+      data: {
+        items: [
+          { id: 'sup-1', name: 'Fornecedor Alfa' },
+          { id: 'sup-2', name: 'Fornecedor Beta' },
+        ],
+        meta: {},
+      },
     } as never)
 
     mAccounts.mockResolvedValue({
       ok: true,
       data: [
-        { alias: 'Conta Movimento', typeLabel: null, bankName: 'BB', accountNumber: '123', accountDv: '4' },
-        { alias: '', typeLabel: 'Cartão corporativo', bankName: 'BB', accountNumber: '999', accountDv: '0' },
-        { alias: '', typeLabel: null, bankName: 'Itaú', accountNumber: '555', accountDv: '1' },
+        {
+          id: 'acc-1',
+          alias: 'Conta Movimento',
+          typeLabel: null,
+          bankName: 'BB',
+          accountNumber: '123',
+          accountDv: '4',
+        },
+        {
+          id: 'acc-2',
+          alias: '',
+          typeLabel: 'Cartão corporativo',
+          bankName: 'BB',
+          accountNumber: '999',
+          accountDv: '0',
+        },
+        { id: 'acc-3', alias: '', typeLabel: null, bankName: 'Itaú', accountNumber: '555', accountDv: '1' },
       ],
     } as never)
 
@@ -106,16 +126,23 @@ describe('usePosicaoFilterOptions — fontes reais', () => {
       expect(result.current.centro.length).toBe(1)
     })
 
-    // Plano: só o APROVADO, rótulo com cenário.
-    expect(result.current.plano).toEqual(['2026 ALFA 1.0 · Base'])
-    // Fornecedor: nomes.
-    expect(result.current.partner).toEqual(['Fornecedor Alfa', 'Fornecedor Beta'])
-    // Conta: apelido → texto-livre → banco+conta-DV.
-    expect(result.current.conta).toEqual(['Conta Movimento', 'Cartão corporativo', 'Itaú 555-1'])
-    // Catálogo flat: categoria = topo; subcategoria = filha.
-    expect(result.current.centro).toEqual(['Diretoria'])
-    expect(result.current.categoria).toEqual(['Consultoria'])
-    expect(result.current.subcategoria).toEqual(['Consultoria Jurídica'])
+    // Plano: só o APROVADO, value=id + rótulo com cenário.
+    expect(result.current.plano).toEqual([{ value: 'a1', label: '2026 ALFA 1.0 · Base' }])
+    // Fornecedor: value=id, label=nome.
+    expect(result.current.partner).toEqual([
+      { value: 'sup-1', label: 'Fornecedor Alfa' },
+      { value: 'sup-2', label: 'Fornecedor Beta' },
+    ])
+    // Conta: value=id; label apelido → texto-livre → banco+conta-DV.
+    expect(result.current.conta).toEqual([
+      { value: 'acc-1', label: 'Conta Movimento' },
+      { value: 'acc-2', label: 'Cartão corporativo' },
+      { value: 'acc-3', label: 'Itaú 555-1' },
+    ])
+    // Catálogo flat: categoria = topo; subcategoria = filha; value=id.
+    expect(result.current.centro).toEqual([{ value: 'c1', label: 'Diretoria' }])
+    expect(result.current.categoria).toEqual([{ value: 'k1', label: 'Consultoria' }])
+    expect(result.current.subcategoria).toEqual([{ value: 'k2', label: 'Consultoria Jurídica' }])
   })
 
   it('degrada a [] quando as fontes falham (erro/permissão)', async () => {

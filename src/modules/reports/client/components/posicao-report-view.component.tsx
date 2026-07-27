@@ -46,6 +46,8 @@ import {
   fldSelect,
   fldChev,
   applyButton,
+  periodRow,
+  dateInput,
   chartCard,
   chartPad,
   cardHeader,
@@ -66,6 +68,10 @@ export type PosicaoReportViewLabels = Readonly<{
     allOption: string
     plano: string
     periodo: string
+    /** Rótulo do input de data inicial (janela de vencimento). */
+    periodoDe: string
+    /** Rótulo do input de data final (EXCLUSIVO no backend). */
+    periodoAte: string
     conta: string
     status: string
     centro: string
@@ -107,18 +113,46 @@ export type PosicaoReportViewProps = Readonly<{
   /** Cor dos gráficos (donut + barras): `'pag'` (padrão) ou `'rec'` (paleta distinta da Posição de Recebimentos). */
   chartTone?: 'pag' | 'rec'
   /**
-   * Opções REAIS por dropdown de filtro (rótulos, sem o "Todos" — a view faz o prepend). Ausente (Recebimentos)
-   * → cada select fica só com "Todos" (comportamento atual). Período de vencimento é intervalo, fica fora.
+   * Filtros CONTROLADOS (Pagamentos, #588): opções REAIS + valores DRAFT + callbacks. A view segue burra (§XI)
+   * — recebe `values`/`onChange`/`onFiltrar` por prop e não guarda estado de filtro (só o toggle abrir/fechar).
+   * Ausente (Recebimentos, sem endpoint) → filtros INERTES (só "Todos"/datas vazias, "Filtrar" sem efeito).
    */
-  filterOptions?: Readonly<{
-    plano: readonly string[]
-    conta: readonly string[]
-    status: readonly string[]
-    centro: readonly string[]
-    categoria: readonly string[]
-    subcategoria: readonly string[]
-    partner: readonly string[]
-  }>
+  filters?: PosicaoFiltersModel
+}>
+
+/** Opção de dropdown (o `value` é o ref/enum que o backend aplica; `label` é o texto exibido). */
+export type FilterOption = Readonly<{ value: string; label: string }>
+
+/** Opções REAIS por dropdown de filtro (sem o "Todos" — a view injeta o placeholder value=''). */
+export type PosicaoFilterFieldOptions = Readonly<{
+  plano: readonly FilterOption[]
+  conta: readonly FilterOption[]
+  status: readonly FilterOption[]
+  centro: readonly FilterOption[]
+  categoria: readonly FilterOption[]
+  subcategoria: readonly FilterOption[]
+  partner: readonly FilterOption[]
+}>
+
+/** Valores DRAFT dos filtros (string vazia = sem recorte / "Todos"; datas em `YYYY-MM-DD`). */
+export type PosicaoFilterValues = Readonly<{
+  budgetPlanRef: string
+  cedenteAccountRef: string
+  status: string
+  costCenterRef: string
+  categoryRef: string
+  subcategoryRef: string
+  supplierRef: string
+  dueFrom: string
+  dueTo: string
+}>
+
+/** Contrato de filtros controlados que a page passa à view. */
+export type PosicaoFiltersModel = Readonly<{
+  options: PosicaoFilterFieldOptions
+  values: PosicaoFilterValues
+  onChange: (patch: Partial<PosicaoFilterValues>) => void
+  onFiltrar: () => void
 }>
 
 /** Baixa o CSV via Blob + anchor (client-side; o backend entregará JSON depois). */
@@ -137,12 +171,15 @@ function downloadCsv(filename: string, csv: string): void {
 export function PosicaoReportView(props: PosicaoReportViewProps): ReactNode {
   const { report, labels: L, csvFilename, csvHeader } = props
   const isRec = props.chartTone === 'rec'
-  // Prepend do "Todos" nas opções REAIS (ou só "Todos" quando a page não passa filterOptions).
-  const opt = (list: readonly string[] | undefined): readonly string[] => [
-    L.filters.allOption,
-    ...(list ?? []),
-  ]
-  const fo = props.filterOptions
+  // Filtros controlados (Pagamentos) — ausentes em Recebimentos (inertes). `v(...)` lê o valor draft; `opt(...)`
+  // pega as opções reais. Sem `filters`, valores caem em '' e as opções em [] (só o placeholder "Todos").
+  const fx = props.filters
+  const v = (key: keyof PosicaoFilterValues): string => fx?.values[key] ?? ''
+  const opt = (key: keyof PosicaoFilterFieldOptions): readonly FilterOption[] => fx?.options[key] ?? []
+  const setF =
+    (key: keyof PosicaoFilterValues) =>
+    (value: string): void =>
+      fx?.onChange({ [key]: value })
   // ÚNICO UI-state local: filtros abertos/fechados.
   const [filtersOpen, setFiltersOpen] = useState(false)
 
@@ -252,18 +289,89 @@ export function PosicaoReportView(props: PosicaoReportViewProps): ReactNode {
         </div>
       ) : (
         <>
-          {/* Filtros recolhíveis (placeholders visuais front-first) */}
+          {/* Filtros CONTROLADOS (#588): draft nos campos; "Filtrar" aplica (a page commita draft→aplicado). */}
           <div className={filtersOpen ? filters.open : filters.closed}>
             <div className={filtersInner}>
-              <FilterField label={L.filters.plano} options={opt(fo?.plano)} />
-              <FilterField label={L.filters.periodo} options={[L.filters.allOption]} />
-              <FilterField label={L.filters.conta} options={opt(fo?.conta)} />
-              <FilterField label={L.filters.status} options={opt(fo?.status)} />
-              <FilterField label={L.filters.centro} options={opt(fo?.centro)} />
-              <FilterField label={L.filters.categoria} options={opt(fo?.categoria)} />
-              <FilterField label={L.filters.subcategoria} options={opt(fo?.subcategoria)} />
-              <FilterField label={L.filters.partner} options={opt(fo?.partner)} />
-              <button type="button" className={applyButton}>
+              <FilterField
+                label={L.filters.plano}
+                placeholder={L.filters.allOption}
+                options={opt('plano')}
+                value={v('budgetPlanRef')}
+                onChange={setF('budgetPlanRef')}
+              />
+              {/* Período = DOIS inputs de data (De / Até); `Até` é EXCLUSIVO no backend. */}
+              <div className={fld}>
+                <label className={fldLabel}>{L.filters.periodo}</label>
+                <div className={periodRow}>
+                  <input
+                    type="date"
+                    className={dateInput}
+                    aria-label={L.filters.periodoDe}
+                    value={v('dueFrom')}
+                    onChange={(e) => {
+                      setF('dueFrom')(e.target.value)
+                    }}
+                  />
+                  <input
+                    type="date"
+                    className={dateInput}
+                    aria-label={L.filters.periodoAte}
+                    value={v('dueTo')}
+                    onChange={(e) => {
+                      setF('dueTo')(e.target.value)
+                    }}
+                  />
+                </div>
+              </div>
+              <FilterField
+                label={L.filters.conta}
+                placeholder={L.filters.allOption}
+                options={opt('conta')}
+                value={v('cedenteAccountRef')}
+                onChange={setF('cedenteAccountRef')}
+              />
+              <FilterField
+                label={L.filters.status}
+                placeholder={L.filters.allOption}
+                options={opt('status')}
+                value={v('status')}
+                onChange={setF('status')}
+              />
+              <FilterField
+                label={L.filters.centro}
+                placeholder={L.filters.allOption}
+                options={opt('centro')}
+                value={v('costCenterRef')}
+                onChange={setF('costCenterRef')}
+              />
+              <FilterField
+                label={L.filters.categoria}
+                placeholder={L.filters.allOption}
+                options={opt('categoria')}
+                value={v('categoryRef')}
+                onChange={setF('categoryRef')}
+              />
+              <FilterField
+                label={L.filters.subcategoria}
+                placeholder={L.filters.allOption}
+                options={opt('subcategoria')}
+                value={v('subcategoryRef')}
+                onChange={setF('subcategoryRef')}
+              />
+              <FilterField
+                label={L.filters.partner}
+                placeholder={L.filters.allOption}
+                options={opt('partner')}
+                value={v('supplierRef')}
+                onChange={setF('supplierRef')}
+              />
+              <button
+                type="button"
+                className={applyButton}
+                onClick={() => {
+                  fx?.onFiltrar()
+                }}
+              >
                 {L.filters.filtrar}
               </button>
             </div>
@@ -347,15 +455,40 @@ export function PosicaoReportView(props: PosicaoReportViewProps): ReactNode {
   )
 }
 
-/** Campo de filtro (select nativo placeholder — só a forma/estilo brand). */
-function FilterField({ label, options }: { label: string; options: readonly string[] }): ReactNode {
+/**
+ * Campo de filtro (select nativo CONTROLADO, estilo brand). `placeholder` → opção vazia (value '') = "Todos"
+ * = sem recorte. Espelha o FilterField do "Realizado × Planejado".
+ */
+function FilterField({
+  label,
+  placeholder,
+  options,
+  value,
+  onChange,
+}: {
+  label: string
+  placeholder: string
+  options: readonly FilterOption[]
+  value: string
+  onChange: (v: string) => void
+}): ReactNode {
   return (
     <div className={fld}>
       <label className={fldLabel}>{label}</label>
       <div className={fldCtrl}>
-        <select className={fldSelect} aria-label={label}>
+        <select
+          className={fldSelect}
+          aria-label={label}
+          value={value}
+          onChange={(e) => {
+            onChange(e.target.value)
+          }}
+        >
+          <option value="">{placeholder}</option>
           {options.map((o) => (
-            <option key={o}>{o}</option>
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
           ))}
         </select>
         <span className={fldChev}>

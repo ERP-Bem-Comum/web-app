@@ -10,6 +10,8 @@ import { style, styleVariants } from '@vanilla-extract/css'
 import { brand } from '#shared/ui/brand/grid-brand.values.ts'
 import { vars } from '#shared/ui/tokens/index.ts'
 
+import { fldSelect } from './realizado-x-planejado.page.css.ts'
+
 // Pele compartilhada do RxP (cabeçalho + filtros + cartões + KPIs) — re-export para a page importar tudo daqui.
 export {
   head,
@@ -86,3 +88,12 @@ export const emptyHint = style({
   color: brand.color.ink500,
   maxInlineSize: '32rem',
 })
+
+// ── Período de vencimento: DOIS inputs de data (De / Até) lado a lado, no lugar de um dropdown (#588). ──
+export const periodRow = style({ display: 'flex', gap: brand.space.sm, alignItems: 'flex-end' })
+
+// Input de data com a MESMA pele do select (fldSelect), sem o chevron (é campo de texto, não dropdown).
+export const dateInput = style([
+  fldSelect,
+  { minInlineSize: '8.5rem', paddingInlineEnd: brand.space.md, cursor: 'text' },
+])

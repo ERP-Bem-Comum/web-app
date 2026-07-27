@@ -2605,6 +2605,8 @@ export const ptBR: Catalog = {
   'reports.posicao.filters.allOption': 'Todos',
   'reports.posicao.filters.plano': 'Plano Orçamentário',
   'reports.posicao.filters.periodo': 'Período de vencimento',
+  'reports.posicao.filters.periodoDe': 'De',
+  'reports.posicao.filters.periodoAte': 'Até',
   'reports.posicao.filters.conta': 'Conta bancária',
   'reports.posicao.filters.status': 'Status',
   'reports.posicao.filters.centro': 'Centro de custo',
@@ -2612,6 +2614,13 @@ export const ptBR: Catalog = {
   'reports.posicao.filters.subcategoria': 'Subcategoria',
   'reports.posicao.filters.fornecedor': 'Fornecedor',
   'reports.posicao.filters.filtrar': 'Filtrar',
+  // Status filtrável (#588) — enum FECHADO de 6 (sem Rascunho/Recusado, decisão P.O.).
+  'reports.posicao.filters.statusOpt.open': 'Aberto',
+  'reports.posicao.filters.statusOpt.approved': 'Aprovado',
+  'reports.posicao.filters.statusOpt.transmitted': 'Transmitido',
+  'reports.posicao.filters.statusOpt.paid': 'Pago',
+  'reports.posicao.filters.statusOpt.partiallyReconciled': 'Parcialmente conciliado',
+  'reports.posicao.filters.statusOpt.reconciled': 'Conciliado',
   // 3 MEDIDAS DERIVADAS (Em atraso = não pago e vencido; Pago = liquidado; A pagar = não pago e a vencer).
   'reports.posicao.measure.emAtraso': 'Em atraso',
   'reports.posicao.measure.pago': 'Pago',

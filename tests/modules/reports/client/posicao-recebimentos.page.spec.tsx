@@ -104,6 +104,8 @@ const RECEBIMENTOS_LABELS: PosicaoReportViewLabels = {
     allOption: 'Todos',
     plano: 'Plano Orçamentário',
     periodo: 'Período de vencimento',
+    periodoDe: 'De',
+    periodoAte: 'Até',
     conta: 'Conta bancária',
     status: 'Status',
     centro: 'Centro de custo',

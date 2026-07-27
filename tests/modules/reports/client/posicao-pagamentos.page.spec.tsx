@@ -21,6 +21,7 @@ import type { PaymentPosition } from '#modules/reports/client/data/model/payment
 import { reportsRepository } from '#modules/reports/client/data/repository/reports.repository.instance.ts'
 import { PosicaoPagamentosPage } from '#modules/reports/client/page/posicao-pagamentos.page.tsx'
 import { aggregatePosicao, toRawPosicaoRows } from '#modules/reports/client/posicao.view-model.ts'
+import { paymentPositionQueryKey } from '#modules/reports/client/posicao.query.ts'
 
 import { listBudgetPlansFn } from '#modules/budget-plans/public-api/index.ts'
 import { listSuppliersFn } from '#modules/partners/public-api/index.ts'
@@ -54,7 +55,7 @@ function stubFilterSources(): void {
 
   mSuppliers.mockResolvedValue({
     ok: true,
-    data: { items: [{ name: 'Fornecedor Filtro' }], meta: {} },
+    data: { items: [{ id: 'sup-9', name: 'Fornecedor Filtro' }], meta: {} },
   } as never)
   mAccounts.mockResolvedValue({ ok: true, data: [] } as never)
   mRefs.mockResolvedValue({ ok: true, data: { costCenters: [], categories: [] } } as never)
@@ -168,6 +169,72 @@ describe('PosicaoPagamentosPage — filtros recolhíveis', () => {
     })
     // O "Todos" segue como 1ª opção (prepend).
     expect(within(partnerSelect).getAllByRole('option')[0]?.textContent).toBe('Todos')
+  })
+})
+
+describe('PosicaoPagamentosPage — aplicar filtro (Filtrar)', () => {
+  it('mudar um select NÃO re-busca; só o clique em "Filtrar" dispara a query com os params', async () => {
+    await renderReady()
+    // 1ª carga: consulta SEM filtro (aplicado = {}).
+    expect(mockedGetPaymentPosition).toHaveBeenCalledTimes(1)
+    expect(mockedGetPaymentPosition).toHaveBeenLastCalledWith({})
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filtros' }))
+    const partnerSelect = screen.getByLabelText('Fornecedor')
+    await waitFor(() => {
+      expect(within(partnerSelect).getByRole('option', { name: 'Fornecedor Filtro' })).toBeTruthy()
+    })
+
+    // Selecionar o fornecedor + o status NÃO deve refetch (só draft).
+    fireEvent.change(partnerSelect, { target: { value: 'sup-9' } })
+    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'Approved' } })
+    expect(mockedGetPaymentPosition).toHaveBeenCalledTimes(1)
+
+    // "Filtrar" aplica → re-busca com os params (vazios viram undefined).
+    fireEvent.click(screen.getByRole('button', { name: 'Filtrar' }))
+    await waitFor(() => {
+      expect(mockedGetPaymentPosition).toHaveBeenCalledTimes(2)
+    })
+    expect(mockedGetPaymentPosition).toHaveBeenLastCalledWith(
+      expect.objectContaining({ supplierRef: 'sup-9', status: 'Approved' }),
+    )
+  })
+
+  it('o input de data De/Até entra no filtro aplicado', async () => {
+    await renderReady()
+    fireEvent.click(screen.getByRole('button', { name: 'Filtros' }))
+    fireEvent.change(screen.getByLabelText('De'), { target: { value: '2026-01-01' } })
+    fireEvent.change(screen.getByLabelText('Até'), { target: { value: '2026-02-01' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Filtrar' }))
+    await waitFor(() => {
+      expect(mockedGetPaymentPosition).toHaveBeenLastCalledWith(
+        expect.objectContaining({ dueFrom: '2026-01-01', dueTo: '2026-02-01' }),
+      )
+    })
+  })
+})
+
+describe('paymentPositionQueryKey — o filtro entra na cache identity', () => {
+  it('filtros diferentes → chaves diferentes; ausente → null (troca de filtro re-busca)', () => {
+    const empty = paymentPositionQueryKey({})
+    const withSupplier = paymentPositionQueryKey({ supplierRef: 'sup-9', status: 'Approved' })
+    expect(empty).not.toEqual(withSupplier)
+    expect(withSupplier).toContain('sup-9')
+    expect(withSupplier).toContain('Approved')
+    // Campos ausentes viram null (chave estável, ordem fixa).
+    expect(empty).toEqual([
+      'reports',
+      'payment-position',
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ])
   })
 })
 

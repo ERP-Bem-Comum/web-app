@@ -35,6 +35,8 @@ export function PosicaoRecebimentosPage(): ReactNode {
       allOption: t('reports.posicao.filters.allOption'),
       plano: t('reports.posicao.filters.plano'),
       periodo: t('reports.posicao.filters.periodo'),
+      periodoDe: t('reports.posicao.filters.periodoDe'),
+      periodoAte: t('reports.posicao.filters.periodoAte'),
       conta: t('reports.posicao.filters.conta'),
       status: t('reports.posicao.filters.status'),
       centro: t('reports.posicao.filters.centro'),

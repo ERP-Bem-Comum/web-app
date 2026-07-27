@@ -1,43 +1,94 @@
 /**
  * PosicaoPagamentosPage — tela do relatório "Posição de Pagamentos" (identidade "brand", full-bleed 28px).
- * Wrapper FINO: escolhe a fonte 'p' (Pagamentos → Fornecedor) via `loadPosicao('p')` e resolve os rótulos
- * i18n; toda a composição (cabeçalho → filtros → 4 KPIs → 2 gráficos → tabela) vive no `PosicaoReportView`
- * COMPARTILHADO com a "Posição de Recebimentos" (ZERO duplicação — só a fonte + os rótulos mudam).
+ * Wrapper FINO: escolhe a fonte 'p' (Pagamentos → Fornecedor) e resolve os rótulos i18n; toda a composição
+ * (cabeçalho → filtros → 4 KPIs → 2 gráficos → tabela) vive no `PosicaoReportView` COMPARTILHADO com a
+ * "Posição de Recebimentos" (ZERO duplicação — só a fonte + os rótulos mudam).
  *
- * As 3 medidas são DERIVADAS do estado real do Contas a Pagar (Em atraso = não pago e vencido; Pago =
- * liquidado; A pagar = não pago e a vencer); o Total é a soma. Front-first: dados placeholder SINTÉTICOS
- * (ver `posicao-pagamentos.placeholder.ts`) até o endpoint do core-api (#114) existir.
+ * FILTROS (#588): a page guarda o UI-state de filtro (draft nos campos + aplicado que consulta). "Filtrar"
+ * commita draft→aplicado → a query re-busca com os params (o BFF filtra no servidor). Mudar um campo NÃO
+ * re-busca. A View é burra: recebe `options`/`values`/`onChange`/`onFiltrar` por prop (§XI). As opções reais
+ * vêm de `usePosicaoFilterOptions` (cross-módulo via public-api, §I); Status é estático (enum #588 → i18n).
  */
-import { type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 
 import { CSV_HEADER } from '../posicao.view-model.ts'
-import { usePosicaoPagamentos } from '../posicao.binding.ts'
+import {
+  usePosicaoPagamentos,
+  type PosicaoReportFilters,
+  type PosicaoReportStatus,
+} from '../posicao.binding.ts'
 import { usePosicaoFilterOptions } from '../posicao-filters.binding.ts'
 import {
   PosicaoReportView,
   type PosicaoReportViewLabels,
+  type PosicaoFiltersModel,
+  type PosicaoFilterValues,
+  type FilterOption,
 } from '../components/posicao-report-view.component.tsx'
 import { ReportStatePanel } from '../components/report-state-panel.component.tsx'
 
 const t = createTranslator(ptBR)
 
+// Draft vazio — todos os campos "" (= "Todos" / sem recorte); datas vazias.
+const EMPTY_DRAFT: PosicaoFilterValues = {
+  budgetPlanRef: '',
+  cedenteAccountRef: '',
+  status: '',
+  costCenterRef: '',
+  categoryRef: '',
+  subcategoryRef: '',
+  supplierRef: '',
+  dueFrom: '',
+  dueTo: '',
+}
+
+// Enum FECHADO de status filtrável (#588; sem Draft/Refused). `.find` narra p/ o literal sem cast.
+const STATUS_VALUES: readonly PosicaoReportStatus[] = [
+  'Open',
+  'Approved',
+  'Transmitted',
+  'Paid',
+  'PartiallyReconciled',
+  'Reconciled',
+]
+const asStatus = (s: string): PosicaoReportStatus | undefined => STATUS_VALUES.find((x) => x === s)
+
+/** Converte o draft (strings da UI) no filtro do endpoint: "" → undefined (sem recorte). */
+function toFilter(d: PosicaoFilterValues): PosicaoReportFilters {
+  const s = (x: string): string | undefined => (x === '' ? undefined : x)
+  return {
+    budgetPlanRef: s(d.budgetPlanRef),
+    cedenteAccountRef: s(d.cedenteAccountRef),
+    costCenterRef: s(d.costCenterRef),
+    categoryRef: s(d.categoryRef),
+    subcategoryRef: s(d.subcategoryRef),
+    supplierRef: s(d.supplierRef),
+    dueFrom: s(d.dueFrom),
+    dueTo: s(d.dueTo),
+    status: asStatus(d.status),
+  }
+}
+
 export function PosicaoPagamentosPage(): ReactNode {
-  // Server-state REAL do core-api (#114): loading | error | ready. O empty-state honesto (dado real vazio) é
-  // resolvido DENTRO da PosicaoReportView a partir do `report` (0 nós / total 0) — a Posição de Recebimentos
-  // (placeholder → `[]`) continua caindo lá também.
-  const state = usePosicaoPagamentos()
-  // Opções REAIS dos dropdowns de filtro (front-first: populam agora, só APLICAM quando o core-api#588 subir).
-  // Status é ESTÁTICO — reusa os rótulos dos chips do Contas a Pagar (como a Análise). Degradação → [].
+  // UI-state de filtro: DRAFT (edição nos campos) + APLICADO (o que a query consulta). "Filtrar" commita.
+  const [draft, setDraft] = useState<PosicaoFilterValues>(EMPTY_DRAFT)
+  const [applied, setApplied] = useState<PosicaoReportFilters>({})
+
+  // Server-state REAL do core-api (#114/#588) com os filtros APLICADOS: loading | error | ready. O empty-state
+  // honesto (dado real vazio) é resolvido DENTRO da PosicaoReportView a partir do `report` (0 nós / total 0).
+  const state = usePosicaoPagamentos(applied)
+  // Opções REAIS dos dropdowns (cross-módulo via public-api). Status é estático (enum #588 → i18n). Degradação → [].
   const filterOpts = usePosicaoFilterOptions()
-  const statusOptions = [
-    t('financial.list.chip.rascunho'),
-    t('financial.list.chip.aberto'),
-    t('financial.list.chip.aprovado'),
-    t('financial.list.chip.pago'),
-    t('financial.list.chip.conciliado'),
+  const statusOptions: readonly FilterOption[] = [
+    { value: 'Open', label: t('reports.posicao.filters.statusOpt.open') },
+    { value: 'Approved', label: t('reports.posicao.filters.statusOpt.approved') },
+    { value: 'Transmitted', label: t('reports.posicao.filters.statusOpt.transmitted') },
+    { value: 'Paid', label: t('reports.posicao.filters.statusOpt.paid') },
+    { value: 'PartiallyReconciled', label: t('reports.posicao.filters.statusOpt.partiallyReconciled') },
+    { value: 'Reconciled', label: t('reports.posicao.filters.statusOpt.reconciled') },
   ]
 
   if (state.status === 'loading') {
@@ -55,6 +106,8 @@ export function PosicaoPagamentosPage(): ReactNode {
       allOption: t('reports.posicao.filters.allOption'),
       plano: t('reports.posicao.filters.plano'),
       periodo: t('reports.posicao.filters.periodo'),
+      periodoDe: t('reports.posicao.filters.periodoDe'),
+      periodoAte: t('reports.posicao.filters.periodoAte'),
       conta: t('reports.posicao.filters.conta'),
       status: t('reports.posicao.filters.status'),
       centro: t('reports.posicao.filters.centro'),
@@ -100,21 +153,32 @@ export function PosicaoPagamentosPage(): ReactNode {
     chartEmptyLabel: t('reports.posicao.empty'),
   }
 
+  const filtersModel: PosicaoFiltersModel = {
+    options: {
+      plano: filterOpts.plano,
+      conta: filterOpts.conta,
+      status: statusOptions,
+      centro: filterOpts.centro,
+      categoria: filterOpts.categoria,
+      subcategoria: filterOpts.subcategoria,
+      partner: filterOpts.partner,
+    },
+    values: draft,
+    onChange: (patch) => {
+      setDraft((d) => ({ ...d, ...patch }))
+    },
+    onFiltrar: () => {
+      setApplied(toFilter(draft))
+    },
+  }
+
   return (
     <PosicaoReportView
       report={state.report}
       labels={labels}
       csvFilename="posicao-pagamentos.csv"
       csvHeader={CSV_HEADER}
-      filterOptions={{
-        plano: filterOpts.plano,
-        conta: filterOpts.conta,
-        status: statusOptions,
-        centro: filterOpts.centro,
-        categoria: filterOpts.categoria,
-        subcategoria: filterOpts.subcategoria,
-        partner: filterOpts.partner,
-      }}
+      filters={filtersModel}
     />
   )
 }

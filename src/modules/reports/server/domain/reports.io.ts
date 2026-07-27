@@ -64,6 +64,35 @@ export type SupplierWithoutContract = Readonly<{
 }>
 
 /**
+ * Status filtrável da Posição de Pagamentos (core-api#588) — enum FECHADO de 6 valores. NÃO inclui
+ * `Draft`/`Refused` (decisão da P.O.: o relatório não recorta por rascunho/recusado).
+ */
+export type PaymentPositionStatus =
+  | 'Open'
+  | 'Approved'
+  | 'Transmitted'
+  | 'Paid'
+  | 'PartiallyReconciled'
+  | 'Reconciled'
+
+/**
+ * Filtros de consulta da Posição de Pagamentos (core-api#588 · GET /reports/payment-position). TODOS
+ * opcionais e combinados por AND no servidor; refs são UUID opaco. `dueFrom`/`dueTo` = janela HALF-OPEN
+ * [dueFrom, dueTo) em `YYYY-MM-DD` (o `dueTo` é EXCLUSIVO no backend). Ausente = sem recorte por aquele campo.
+ */
+export type PaymentPositionFilter = Readonly<{
+  budgetPlanRef?: string
+  cedenteAccountRef?: string
+  costCenterRef?: string
+  categoryRef?: string
+  subcategoryRef?: string
+  supplierRef?: string
+  dueFrom?: string
+  dueTo?: string
+  status?: PaymentPositionStatus
+}>
+
+/**
  * Posição de pagamentos: uma linha da matriz fornecedor × centro de custo × categoria com os 3 buckets
  * (pendente/pago/atrasado). Todas as dimensões (refs e nomes) são nullable; os `*Cents` são number.
  */

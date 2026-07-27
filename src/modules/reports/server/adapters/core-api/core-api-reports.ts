@@ -43,8 +43,21 @@ export const createCoreApiReportsClient = (baseUrl: string): ReportsClient => ({
     if (isErr(r)) return err(mapHttpError(r.error))
     return suppliersWithoutContractToModel(r.value)
   },
-  getPaymentPosition: async (token): Promise<Result<readonly PaymentPosition[], ReportsError>> => {
-    const r = await resultFetch<unknown>(`${baseUrl}/payment-position`, { token })
+  getPaymentPosition: async (filter, token): Promise<Result<readonly PaymentPosition[], ReportsError>> => {
+    // Só os campos DEFINIDOS entram na querystring (AND no servidor; ausente = sem recorte). #588.
+    const qs = new URLSearchParams()
+    if (filter.budgetPlanRef !== undefined) qs.set('budgetPlanRef', filter.budgetPlanRef)
+    if (filter.cedenteAccountRef !== undefined) qs.set('cedenteAccountRef', filter.cedenteAccountRef)
+    if (filter.costCenterRef !== undefined) qs.set('costCenterRef', filter.costCenterRef)
+    if (filter.categoryRef !== undefined) qs.set('categoryRef', filter.categoryRef)
+    if (filter.subcategoryRef !== undefined) qs.set('subcategoryRef', filter.subcategoryRef)
+    if (filter.supplierRef !== undefined) qs.set('supplierRef', filter.supplierRef)
+    if (filter.dueFrom !== undefined) qs.set('dueFrom', filter.dueFrom)
+    if (filter.dueTo !== undefined) qs.set('dueTo', filter.dueTo)
+    if (filter.status !== undefined) qs.set('status', filter.status)
+    const query = qs.toString()
+    const url = query === '' ? `${baseUrl}/payment-position` : `${baseUrl}/payment-position?${query}`
+    const r = await resultFetch<unknown>(url, { token })
     if (isErr(r)) return err(mapHttpError(r.error))
     return paymentPositionToModel(r.value)
   },
