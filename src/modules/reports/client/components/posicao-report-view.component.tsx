@@ -193,6 +193,11 @@ export function PosicaoReportView(props: PosicaoReportViewProps): ReactNode {
   const grandTotal = measureTotal(totals)
   // Empty state honesto: sem raízes OU total zero → nada a exibir (a fonte veio vazia/zerada).
   const isEmpty = report.suppliers.length === 0 || grandTotal === 0
+  // FILTRÁVEL = recebe os controles de filtro (Pagamentos). Quando filtrável, o botão "Filtros" + a barra
+  // seguem ACESSÍVEIS mesmo no vazio, p/ o usuário afrouxar/limpar o filtro e sair do empty-state (não fica
+  // preso). Recebimentos (sem `filters`) mantém o empty-state bare. Não-vazio mantém os controles como hoje.
+  const filterable = fx !== undefined
+  const showFilterControls = !isEmpty || filterable
 
   // Donut "Resumo total" — 3 fatias na ordem A pagar/receber → Pago/Recebido → Em atraso.
   const donutSlices: readonly DonutSlice[] = useMemo(
@@ -264,7 +269,8 @@ export function PosicaoReportView(props: PosicaoReportViewProps): ReactNode {
             <p className={headSubtitle}>{props.subtitleParts.join(' · ')}</p>
           )}
         </div>
-        {!isEmpty && (
+        {/* Filtros: toggle sempre que houver controles (mesmo vazio → não prende o usuário). Exportar só com dados. */}
+        {showFilterControls && (
           <div className={tools}>
             <button
               type="button"
@@ -277,21 +283,114 @@ export function PosicaoReportView(props: PosicaoReportViewProps): ReactNode {
               <FilterIcon size={16} />
               {L.filters.title}
             </button>
-            <ReportExportDropdown
-              triggerClassName={exportTrigger}
-              exportLabel={L.export.label}
-              csvLabel={L.export.csv}
-              pdfLabel={L.export.pdf}
-              onExportCsv={() => {
-                downloadCsv(csvFilename, buildCsv(report, csvHeader))
-              }}
-            />
+            {!isEmpty && (
+              <ReportExportDropdown
+                triggerClassName={exportTrigger}
+                exportLabel={L.export.label}
+                csvLabel={L.export.csv}
+                pdfLabel={L.export.pdf}
+                onExportCsv={() => {
+                  downloadCsv(csvFilename, buildCsv(report, csvHeader))
+                }}
+              />
+            )}
           </div>
         )}
       </div>
 
+      {/* Barra de filtros recolhível — ACESSÍVEL mesmo no vazio quando filtrável (o usuário reabre e afrouxa). */}
+      {showFilterControls && (
+        <div className={filtersOpen ? filters.open : filters.closed}>
+          {/* Filtros CONTROLADOS (#588): draft nos campos; "Filtrar" aplica (a page commita draft→aplicado). */}
+          <div className={filtersInner}>
+            <FilterField
+              label={L.filters.plano}
+              placeholder={L.filters.allOption}
+              options={opt('plano')}
+              value={v('budgetPlanRef')}
+              onChange={setF('budgetPlanRef')}
+            />
+            {/* Período = DOIS inputs de data (De / Até); `Até` é EXCLUSIVO no backend. */}
+            <div className={fld}>
+              <label className={fldLabel}>{L.filters.periodo}</label>
+              <div className={periodRow}>
+                <input
+                  type="date"
+                  className={dateInput}
+                  aria-label={L.filters.periodoDe}
+                  value={v('dueFrom')}
+                  onChange={(e) => {
+                    setF('dueFrom')(e.target.value)
+                  }}
+                />
+                <input
+                  type="date"
+                  className={dateInput}
+                  aria-label={L.filters.periodoAte}
+                  value={v('dueTo')}
+                  onChange={(e) => {
+                    setF('dueTo')(e.target.value)
+                  }}
+                />
+              </div>
+            </div>
+            <FilterField
+              label={L.filters.conta}
+              placeholder={L.filters.allOption}
+              options={opt('conta')}
+              value={v('cedenteAccountRef')}
+              onChange={setF('cedenteAccountRef')}
+            />
+            <FilterField
+              label={L.filters.status}
+              placeholder={L.filters.allOption}
+              options={opt('status')}
+              value={v('status')}
+              onChange={setF('status')}
+            />
+            <FilterField
+              label={L.filters.centro}
+              placeholder={L.filters.allOption}
+              options={opt('centro')}
+              value={v('costCenterRef')}
+              onChange={setF('costCenterRef')}
+            />
+            <FilterField
+              label={L.filters.categoria}
+              placeholder={L.filters.allOption}
+              options={opt('categoria')}
+              value={v('categoryRef')}
+              onChange={setF('categoryRef')}
+            />
+            <FilterField
+              label={L.filters.subcategoria}
+              placeholder={L.filters.allOption}
+              options={opt('subcategoria')}
+              value={v('subcategoryRef')}
+              onChange={setF('subcategoryRef')}
+            />
+            <FilterField
+              label={L.filters.partner}
+              placeholder={L.filters.allOption}
+              options={opt('partner')}
+              value={v('supplierRef')}
+              onChange={setF('supplierRef')}
+            />
+            <button
+              type="button"
+              className={applyButton}
+              onClick={() => {
+                fx?.onFiltrar()
+              }}
+            >
+              {L.filters.filtrar}
+            </button>
+          </div>
+        </div>
+      )}
+
       {isEmpty ? (
-        // Empty state HONESTO: um cartão único, sem KPIs/gráficos/tabela.
+        // Empty state HONESTO: um cartão único, sem KPIs/gráficos/tabela (mas os filtros acima seguem acessíveis).
         <div className={card}>
           <div className={emptyPanel}>
             <p className={emptyTitle}>{L.empty}</p>
@@ -300,94 +399,6 @@ export function PosicaoReportView(props: PosicaoReportViewProps): ReactNode {
         </div>
       ) : (
         <>
-          {/* Filtros CONTROLADOS (#588): draft nos campos; "Filtrar" aplica (a page commita draft→aplicado). */}
-          <div className={filtersOpen ? filters.open : filters.closed}>
-            <div className={filtersInner}>
-              <FilterField
-                label={L.filters.plano}
-                placeholder={L.filters.allOption}
-                options={opt('plano')}
-                value={v('budgetPlanRef')}
-                onChange={setF('budgetPlanRef')}
-              />
-              {/* Período = DOIS inputs de data (De / Até); `Até` é EXCLUSIVO no backend. */}
-              <div className={fld}>
-                <label className={fldLabel}>{L.filters.periodo}</label>
-                <div className={periodRow}>
-                  <input
-                    type="date"
-                    className={dateInput}
-                    aria-label={L.filters.periodoDe}
-                    value={v('dueFrom')}
-                    onChange={(e) => {
-                      setF('dueFrom')(e.target.value)
-                    }}
-                  />
-                  <input
-                    type="date"
-                    className={dateInput}
-                    aria-label={L.filters.periodoAte}
-                    value={v('dueTo')}
-                    onChange={(e) => {
-                      setF('dueTo')(e.target.value)
-                    }}
-                  />
-                </div>
-              </div>
-              <FilterField
-                label={L.filters.conta}
-                placeholder={L.filters.allOption}
-                options={opt('conta')}
-                value={v('cedenteAccountRef')}
-                onChange={setF('cedenteAccountRef')}
-              />
-              <FilterField
-                label={L.filters.status}
-                placeholder={L.filters.allOption}
-                options={opt('status')}
-                value={v('status')}
-                onChange={setF('status')}
-              />
-              <FilterField
-                label={L.filters.centro}
-                placeholder={L.filters.allOption}
-                options={opt('centro')}
-                value={v('costCenterRef')}
-                onChange={setF('costCenterRef')}
-              />
-              <FilterField
-                label={L.filters.categoria}
-                placeholder={L.filters.allOption}
-                options={opt('categoria')}
-                value={v('categoryRef')}
-                onChange={setF('categoryRef')}
-              />
-              <FilterField
-                label={L.filters.subcategoria}
-                placeholder={L.filters.allOption}
-                options={opt('subcategoria')}
-                value={v('subcategoryRef')}
-                onChange={setF('subcategoryRef')}
-              />
-              <FilterField
-                label={L.filters.partner}
-                placeholder={L.filters.allOption}
-                options={opt('partner')}
-                value={v('supplierRef')}
-                onChange={setF('supplierRef')}
-              />
-              <button
-                type="button"
-                className={applyButton}
-                onClick={() => {
-                  fx?.onFiltrar()
-                }}
-              >
-                {L.filters.filtrar}
-              </button>
-            </div>
-          </div>
-
           {/* 4 KPIs (Atrasado / Pago-Recebido / A pagar-A receber / Total) */}
           <PosicaoKpis
             atrasadoValue={formatBRL(totals.emAtrasoCents)}

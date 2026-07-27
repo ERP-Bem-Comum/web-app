@@ -236,6 +236,19 @@ describe('AnalisePagamentosPage — empty & erro', () => {
     expect(screen.queryByText('Valor total do período')).toBeNull()
   })
 
+  it('vazio COM filtros → "Filtros" e a barra (De/Até + Filtrar) seguem acessíveis (não prende)', async () => {
+    // Repro do bug: período que retorna vazio não pode esconder os filtros.
+    mAnalysis.mockResolvedValue(ok({ totalValueOfPeriod: 0, data: [] }))
+    renderPage()
+    await screen.findByText('Nenhum dado para exibir.')
+    const toggle = screen.getByRole('button', { name: 'Filtros' })
+    expect(toggle).toBeTruthy()
+    fireEvent.click(toggle)
+    expect(screen.getByLabelText('De')).toBeTruthy()
+    expect(screen.getByLabelText('Até')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Filtrar' })).toBeTruthy()
+  })
+
   it('erro do BFF → painel de erro com a tag i18n (nunca status HTTP)', async () => {
     mAnalysis.mockResolvedValue(err('forbidden'))
     renderPage()

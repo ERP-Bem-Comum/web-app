@@ -201,6 +201,12 @@ export function AnaliseReportView(props: AnaliseReportViewProps): ReactNode {
 
   // Empty state honesto: sem planos OU Total do Período zero → nada a exibir (a fonte veio vazia/zerada).
   const isEmpty = report.planos.length === 0 || report.totalPeriodo === 0
+  // FILTRÁVEL = recebe algum controle de filtro (Pagamentos: period/cascade/filterOptions). Quando filtrável, o
+  // botão "Filtros" + a barra seguem ACESSÍVEIS mesmo no vazio, p/ o usuário afrouxar/limpar o filtro e sair do
+  // empty-state (não fica preso). Recebimentos (sem controles) mantém o empty-state bare.
+  const filterable =
+    props.period !== undefined || props.cascade !== undefined || props.filterOptions !== undefined
+  const showFilterControls = !isEmpty || filterable
 
   const monthTotals = useMemo(() => totalByMonth(report), [report])
 
@@ -250,7 +256,8 @@ export function AnaliseReportView(props: AnaliseReportViewProps): ReactNode {
             <p className={headSubtitle}>{props.subtitleParts.join(' · ')}</p>
           )}
         </div>
-        {!isEmpty && (
+        {/* Filtros: toggle sempre que houver controles (mesmo vazio → não prende o usuário). Exportar só com dados. */}
+        {showFilterControls && (
           <div className={tools}>
             <button
               type="button"
@@ -263,21 +270,112 @@ export function AnaliseReportView(props: AnaliseReportViewProps): ReactNode {
               <FilterIcon size={16} />
               {L.filters.title}
             </button>
-            <ReportExportDropdown
-              triggerClassName={exportTrigger}
-              exportLabel={L.export.label}
-              csvLabel={L.export.csv}
-              pdfLabel={L.export.pdf}
-              onExportCsv={() => {
-                downloadCsv(csvFilename, buildCsv(report))
-              }}
-            />
+            {!isEmpty && (
+              <ReportExportDropdown
+                triggerClassName={exportTrigger}
+                exportLabel={L.export.label}
+                csvLabel={L.export.csv}
+                pdfLabel={L.export.pdf}
+                onExportCsv={() => {
+                  downloadCsv(csvFilename, buildCsv(report))
+                }}
+              />
+            )}
           </div>
         )}
       </div>
 
+      {/* Barra de filtros recolhível — ACESSÍVEL mesmo no vazio quando filtrável (o usuário reabre e afrouxa). */}
+      {showFilterControls && (
+        <div className={filtersOpen ? filters.open : filters.closed}>
+          {/* Opções REAIS via `filterOptions`/cascata/período; o #446 só APLICA período (e status, visual). */}
+          <div className={filtersInner}>
+            <FilterField label={L.filters.programa} options={opt(fo?.programa)} />
+            {/* Plano/Centro/Categoria/Subcategoria: CONTROLADOS pela cascata do plano (Pagamentos); sem cascata
+                  (Recebimentos) caem em "Todos". A regra da cascata vem do financial (ADR-0051). */}
+            {cx ? (
+              <ControlledFilterField
+                label={L.filters.plano}
+                placeholder={L.filters.allOption}
+                field={cx.plano}
+              />
+            ) : (
+              <FilterField label={L.filters.plano} options={[L.filters.allOption]} />
+            )}
+            {/* Período de vencimento: DOIS inputs de data (De / Até) quando aplicável; senão dropdown "Todos". */}
+            {pd ? (
+              <div className={fld}>
+                <label className={fldLabel}>{L.filters.periodo}</label>
+                <div className={periodRow}>
+                  <input
+                    type="date"
+                    className={dateInput}
+                    aria-label={L.filters.periodoDe}
+                    value={pd.dueFrom}
+                    onChange={(e) => {
+                      pd.onChange({ dueFrom: e.target.value })
+                    }}
+                  />
+                  <input
+                    type="date"
+                    className={dateInput}
+                    aria-label={L.filters.periodoAte}
+                    value={pd.dueTo}
+                    onChange={(e) => {
+                      pd.onChange({ dueTo: e.target.value })
+                    }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <FilterField label={L.filters.periodo} options={[L.filters.allOption]} />
+            )}
+            <FilterField label={L.filters.conta} options={opt(fo?.conta)} />
+            {/* Status alinhados ao Contas a Pagar (os que o backend produz): reusa os rótulos dos chips do CAP. */}
+            <FilterField label={L.filters.status} options={[L.filters.allOption, ...L.filters.statusChips]} />
+            {cx ? (
+              <ControlledFilterField
+                label={L.filters.centro}
+                placeholder={L.filters.allOption}
+                field={cx.centro}
+              />
+            ) : (
+              <FilterField label={L.filters.centro} options={[L.filters.allOption]} />
+            )}
+            {cx ? (
+              <ControlledFilterField
+                label={L.filters.categoria}
+                placeholder={L.filters.allOption}
+                field={cx.categoria}
+              />
+            ) : (
+              <FilterField label={L.filters.categoria} options={[L.filters.allOption]} />
+            )}
+            {cx ? (
+              <ControlledFilterField
+                label={L.filters.subcategoria}
+                placeholder={L.filters.allOption}
+                field={cx.subcategoria}
+              />
+            ) : (
+              <FilterField label={L.filters.subcategoria} options={[L.filters.allOption]} />
+            )}
+            {/* "Filtrar" aplica período (Pagamentos, via onFiltrar); inerte em Recebimentos (sem `period`). */}
+            <button
+              type="button"
+              className={applyButton}
+              onClick={() => {
+                pd?.onFiltrar()
+              }}
+            >
+              {L.filters.filtrar}
+            </button>
+          </div>
+        </div>
+      )}
+
       {isEmpty ? (
-        // Empty state HONESTO: um cartão único, sem filtros/gráficos/tabela.
+        // Empty state HONESTO: um cartão único, sem gráficos/tabela (mas os filtros acima seguem acessíveis).
         <div className={card}>
           <div className={emptyPanel}>
             <p className={emptyTitle}>{L.empty}</p>
@@ -286,95 +384,6 @@ export function AnaliseReportView(props: AnaliseReportViewProps): ReactNode {
         </div>
       ) : (
         <>
-          {/* Filtros recolhíveis. Opções REAIS via `filterOptions` (populate-only; o #446 só aplica período/status). */}
-          <div className={filtersOpen ? filters.open : filters.closed}>
-            <div className={filtersInner}>
-              <FilterField label={L.filters.programa} options={opt(fo?.programa)} />
-              {/* Plano/Centro/Categoria/Subcategoria: CONTROLADOS pela cascata do plano (Pagamentos); sem cascata
-                  (Recebimentos) caem em "Todos". A regra da cascata vem do financial (ADR-0051). */}
-              {cx ? (
-                <ControlledFilterField
-                  label={L.filters.plano}
-                  placeholder={L.filters.allOption}
-                  field={cx.plano}
-                />
-              ) : (
-                <FilterField label={L.filters.plano} options={[L.filters.allOption]} />
-              )}
-              {/* Período de vencimento: DOIS inputs de data (De / Até) quando aplicável; senão dropdown "Todos". */}
-              {pd ? (
-                <div className={fld}>
-                  <label className={fldLabel}>{L.filters.periodo}</label>
-                  <div className={periodRow}>
-                    <input
-                      type="date"
-                      className={dateInput}
-                      aria-label={L.filters.periodoDe}
-                      value={pd.dueFrom}
-                      onChange={(e) => {
-                        pd.onChange({ dueFrom: e.target.value })
-                      }}
-                    />
-                    <input
-                      type="date"
-                      className={dateInput}
-                      aria-label={L.filters.periodoAte}
-                      value={pd.dueTo}
-                      onChange={(e) => {
-                        pd.onChange({ dueTo: e.target.value })
-                      }}
-                    />
-                  </div>
-                </div>
-              ) : (
-                <FilterField label={L.filters.periodo} options={[L.filters.allOption]} />
-              )}
-              <FilterField label={L.filters.conta} options={opt(fo?.conta)} />
-              {/* Status alinhados ao Contas a Pagar (os que o backend produz): reusa os rótulos dos chips do CAP. */}
-              <FilterField
-                label={L.filters.status}
-                options={[L.filters.allOption, ...L.filters.statusChips]}
-              />
-              {cx ? (
-                <ControlledFilterField
-                  label={L.filters.centro}
-                  placeholder={L.filters.allOption}
-                  field={cx.centro}
-                />
-              ) : (
-                <FilterField label={L.filters.centro} options={[L.filters.allOption]} />
-              )}
-              {cx ? (
-                <ControlledFilterField
-                  label={L.filters.categoria}
-                  placeholder={L.filters.allOption}
-                  field={cx.categoria}
-                />
-              ) : (
-                <FilterField label={L.filters.categoria} options={[L.filters.allOption]} />
-              )}
-              {cx ? (
-                <ControlledFilterField
-                  label={L.filters.subcategoria}
-                  placeholder={L.filters.allOption}
-                  field={cx.subcategoria}
-                />
-              ) : (
-                <FilterField label={L.filters.subcategoria} options={[L.filters.allOption]} />
-              )}
-              {/* "Filtrar" aplica período (Pagamentos, via onFiltrar); inerte em Recebimentos (sem `period`). */}
-              <button
-                type="button"
-                className={applyButton}
-                onClick={() => {
-                  pd?.onFiltrar()
-                }}
-              >
-                {L.filters.filtrar}
-              </button>
-            </div>
-          </div>
-
           {/* 2 gráficos (animação de entrada gerida pelo mount wrapper) */}
           <RealizadoChartsMount>
             {(animate) => (

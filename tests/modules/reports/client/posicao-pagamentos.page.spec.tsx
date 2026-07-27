@@ -314,6 +314,20 @@ describe('PosicaoPagamentosPage — empty & erro', () => {
     expect(screen.queryByText('Total Geral')).toBeNull()
   })
 
+  it('vazio COM filtros → o botão "Filtros" e a barra continuam acessíveis (não prende o usuário)', async () => {
+    mockedGetPaymentPosition.mockResolvedValue(ok([]))
+    renderPage()
+    await screen.findAllByText('Nenhum dado para exibir.')
+    // Botão "Filtros" segue no DOM mesmo no vazio (é filtrável) — o usuário reabre e afrouxa.
+    const toggle = screen.getByRole('button', { name: 'Filtros' })
+    expect(toggle).toBeTruthy()
+    // A barra é acessível: abre e revela os campos + o "Filtrar" p/ mudar o recorte.
+    fireEvent.click(toggle)
+    expect(screen.getByLabelText('Status')).toBeTruthy()
+    expect(screen.getByLabelText('De')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Filtrar' })).toBeTruthy()
+  })
+
   it('erro do BFF → painel de erro com a tag i18n (nunca status HTTP)', async () => {
     mockedGetPaymentPosition.mockResolvedValue(err('forbidden'))
     renderPage()
