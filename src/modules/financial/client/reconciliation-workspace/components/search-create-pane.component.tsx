@@ -50,6 +50,8 @@ export type SearchCreatePaneProps = Readonly<{
   binding: SearchCreateBinding
   payables: readonly PaidPayable[]
   extratoValueCents: string
+  /** Abre a aba "Nova transação" (lançamento manual) — acionada pelo botão no rodapé. */
+  onManualEntry?: () => void
 }>
 
 function PayRow({
@@ -263,7 +265,7 @@ function ValueFilter({ binding }: Readonly<{ binding: SearchCreateBinding }>) {
   )
 }
 
-export function SearchCreatePane({ binding, extratoValueCents }: SearchCreatePaneProps) {
+export function SearchCreatePane({ binding, extratoValueCents, onManualEntry }: SearchCreatePaneProps) {
   const hasDiff = binding.residualCents !== 0
   const selectedCount = binding.selectedIds.size
 
@@ -345,20 +347,47 @@ export function SearchCreatePane({ binding, extratoValueCents }: SearchCreatePan
             <span className={s.pmRight}>{t('financial.recon.multi.col.value')}</span>
           </div>
           <div className={s.pmRows}>
-            {binding.filtered.length === 0 ? (
+            {binding.filteredCount === 0 ? (
               <p className={s.emptyState}>{t('financial.recon.multi.noResults')}</p>
             ) : (
-              binding.filtered.map((p) => (
+              binding.pageRows.map((p) => (
                 <PayRow key={p.id} p={p} checked={binding.selectedIds.has(p.id)} onToggle={binding.toggle} />
               ))
             )}
           </div>
+          {/* Rodapé único: "N selecionados de M" à esquerda; passador à direita (só com >1 página).
+              Sem total aqui — ele já vive no resumo do topo; sem "títulos exibidos" (era duplicado). */}
           <div className={s.pmFoot}>
             <span>
               <span className={s.pmFootCount}>{selectedCount}</span> {t('financial.recon.multi.footSelected')}{' '}
               {binding.totalCount}
             </span>
-            <span className={s.pmFootTotal}>{centsToBRL(binding.selectedSumCents)}</span>
+            {binding.pageCount > 1 ? (
+              <span className={s.pmPagerNav}>
+                <button
+                  type="button"
+                  className={s.pmPagerBtn}
+                  disabled={binding.page <= 1}
+                  aria-label={t('financial.recon.multi.pagerPrev')}
+                  onClick={binding.prevPage}
+                >
+                  {t('financial.recon.multi.pagerPrev')}
+                </button>
+                <span className={s.pmPagerPos}>
+                  {t('financial.recon.multi.pagerPage')} {binding.page} {t('financial.recon.multi.pagerOf')}{' '}
+                  {binding.pageCount}
+                </span>
+                <button
+                  type="button"
+                  className={s.pmPagerBtn}
+                  disabled={binding.page >= binding.pageCount}
+                  aria-label={t('financial.recon.multi.pagerNext')}
+                  onClick={binding.nextPage}
+                >
+                  {t('financial.recon.multi.pagerNext')}
+                </button>
+              </span>
+            ) : null}
           </div>
         </div>
       )}
@@ -439,12 +468,6 @@ export function SearchCreatePane({ binding, extratoValueCents }: SearchCreatePan
         </div>
       ) : null}
 
-      {/* Atalho: criar novo pagamento (chrome até #172/cadastro) */}
-      <button type="button" className={s.pmCreateNew} disabled aria-disabled="true">
-        <span aria-hidden>{PLUS}</span>
-        {t('financial.recon.multi.createNew')}
-      </button>
-
       {binding.errorTag !== null ? <p className={s.errorText}>{t(binding.errorTag)}</p> : null}
 
       <div className={s.ntActions}>
@@ -458,6 +481,12 @@ export function SearchCreatePane({ binding, extratoValueCents }: SearchCreatePan
           {t('financial.recon.multi.clear')}
         </button>
         <span className={s.spacer} />
+        {/* "Lançamento Manual" — antes era o band azul "Não encontrei"; agora botão ao lado de Conciliar
+            (mais espaço p/ a lista). Leva à aba "Nova transação". */}
+        <button type="button" className={s.btnManual} onClick={onManualEntry}>
+          <span aria-hidden>{PLUS}</span>
+          {t('financial.recon.multi.manualEntry')}
+        </button>
         <button
           type="button"
           className={s.btnConfirm}

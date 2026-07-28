@@ -801,6 +801,54 @@ export const btnConfirm = style({
   selectors: { '&:disabled': { opacity: 0.5, cursor: 'not-allowed' } },
 })
 
+// Botão "Lançamento Manual" no rodapé (ao lado de Conciliar) — MESMA cor do antigo band azul (teal), agora
+// compacto p/ ganhar espaço vertical na lista de títulos. Leva à aba "Nova transação".
+export const btnManual = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: sp.xs,
+  paddingInline: sp.lg,
+  paddingBlock: sp.sm,
+  borderRadius: r.sm,
+  background: c.teal.bg,
+  border: `${bw.hairline} solid ${c.teal.line}`,
+  color: c.teal.deep,
+  fontFamily: recon.font.sans,
+  fontSize: fs.md,
+  fontWeight: recon.weight.semibold,
+  cursor: 'pointer',
+  selectors: { '&:hover': { background: c.teal.line } },
+})
+
+// Passador de página do buscar-vários (‹ Página X de Y ›) — barra discreta acima do rodapé.
+export const pmPagerNav = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: sp.sm,
+})
+export const pmPagerBtn = style({
+  paddingInline: sp.md,
+  paddingBlock: sp.xs,
+  borderRadius: r.sm,
+  border: `${bw.hairline} solid ${c.paper.rule}`,
+  background: c.paper.default,
+  color: c.ink[3],
+  fontFamily: recon.font.sans,
+  fontSize: fs.sm,
+  fontWeight: recon.weight.semibold,
+  cursor: 'pointer',
+  selectors: {
+    '&:hover:not(:disabled)': { background: c.paper.warm },
+    '&:disabled': { color: c.ink[5], cursor: 'not-allowed' },
+  },
+})
+export const pmPagerPos = style({
+  fontFamily: recon.font.sans,
+  fontSize: fs.sm,
+  color: c.ink[4],
+  fontVariantNumeric: 'tabular-nums',
+})
+
 // ── Outras possibilidades (alt-cards) — fiel ao mock ────────────────────────────
 export const altList = style({
   display: 'flex',
@@ -1504,6 +1552,9 @@ export const pmGrid = style({
   border: `${bw.hairline} solid ${c.paper.rule}`,
   borderRadius: r.lg,
   overflow: 'hidden',
+  // Não deixe o flexbox do assocCol ENCOLHER o grid: a rolagem interna é a do pmRows.
+  // Sem isto, o rodapé (pager + contagem) era cortado por baixo quando o pane crescia.
+  flexShrink: 0,
 })
 const pmGridCols = {
   display: 'grid',
@@ -1613,6 +1664,7 @@ export const pmAmt = style({
 export const pmFoot = style({
   display: 'flex',
   alignItems: 'center',
+  justifyContent: 'space-between',
   gap: sp.xl,
   paddingBlock: '0.5625rem',
   paddingInline: '0.875rem',
