@@ -131,3 +131,26 @@ export const CoreApiPaymentAnalysisSchema = z.object({
   totalValueOfPeriod: z.number().catch(0),
   data: z.array(CoreApiAnalysisPlanSchema).catch([]),
 })
+
+// GET /reports/cashflow (#590 Slice A) → envelope LEGADO `{ Receivables, Payables }` (openapi `CashflowRow`).
+// `Category_id`/`SubCategory_id` = refs UUID (nullable); `REALIZED`/`EXPECTED` em CENTAVOS. Drift-tolerante:
+// números faltantes → 0; ids/nomes nullable. `Receivables` sempre `[]` no Slice A.
+const CoreApiCashflowRowSchema = z.object({
+  Category_id: z.string().trim().nullable().catch(null),
+  Category_name: z.string().trim().nullable().catch(null),
+  SubCategory_id: z.string().trim().nullable().catch(null),
+  SubCategory_name: z.string().trim().nullable().catch(null),
+  REALIZED: z.number().catch(0),
+  EXPECTED: z.number().catch(0),
+})
+export const CoreApiCashflowSchema = z.object({
+  Receivables: z.array(CoreApiCashflowRowSchema).catch([]),
+  Payables: z.array(CoreApiCashflowRowSchema).catch([]),
+})
+
+// GET /reports/cashflow/chart (#590 Slice B) → ARRAY plano das mesmas linhas + `Installments_dueDate`
+// ('YYYY-MM-01', primeiro dia do mês). Sem envelope. O mapper reduz a data para 'YYYY-MM' (só o mês).
+const CoreApiCashflowChartRowSchema = CoreApiCashflowRowSchema.extend({
+  Installments_dueDate: z.string().trim().catch(''),
+})
+export const CoreApiCashflowChartSchema = z.array(CoreApiCashflowChartRowSchema).catch([])

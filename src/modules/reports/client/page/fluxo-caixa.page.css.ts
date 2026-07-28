@@ -69,17 +69,17 @@ export const kpiTintNeg = style({
   borderInlineStart: `${vars.borderWidth.thin} solid ${brand.color.fluxo.saldoNegTintLine}`,
 })
 
-// Grade dos QUATRO gráficos numa linha só (compactos e ALINHADOS): Linha do tempo · Centro de Custo · Entradas
-// · Saídas. Cards de altura igual (`stretch`). Colapsa 4→2 (≤75rem) e 2→1 (≤48rem) para não espremer.
-export const charts4 = style({
+// Grade dos TRÊS gráficos numa linha só (compactos e ALINHADOS): Linha do tempo · Entradas · Saídas. Cards de
+// altura igual (`stretch`). Colapsa 3→1 (≤75rem) para não espremer. (O eixo de Centro de Custo não é exposto
+// pelo core-api — #590 CA6.)
+export const charts3 = style({
   display: 'grid',
-  gridTemplateColumns: 'repeat(4, 1fr)',
+  gridTemplateColumns: 'repeat(3, 1fr)',
   gap: brand.space.gridRow,
   marginBlockEnd: brand.space.gridRow,
   alignItems: 'stretch',
   '@media': {
-    'screen and (max-width: 75rem)': { gridTemplateColumns: '1fr 1fr' },
-    'screen and (max-width: 48rem)': { gridTemplateColumns: '1fr' },
+    'screen and (max-width: 75rem)': { gridTemplateColumns: '1fr' },
   },
 })
 

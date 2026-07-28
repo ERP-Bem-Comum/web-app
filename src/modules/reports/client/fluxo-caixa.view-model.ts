@@ -14,13 +14,28 @@
  * ("Nenhuma entrada registrada") SEM quebrar Saídas; o Saldo passa a ser `0 − Saídas`. Dinheiro em CENTAVOS
  * inteiros (§IV). A árvore preserva a ORDEM DE INSERÇÃO. Sem `throw` nas derivações (§II).
  */
-import {
-  FLUXO_SAIDAS_RAW,
-  FLUXO_ENTRADAS_RAW,
-  FLUXO_PERIOD,
-  type RawFluxoLeaf,
-  type MonthRange,
-} from './data/fluxo-caixa.placeholder.ts'
+import type { CashflowRow, CashflowChartRow } from './data/model/cashflow.model.ts'
+
+/** Intervalo do período (mês-01), formato `YYYY-MM`. A geração de meses deriva as chaves daqui. */
+export type MonthRange = Readonly<{ start: string; end: string }>
+
+/**
+ * Uma linha CRUA = uma FOLHA da árvore de uma seção (Categoria → Subcategoria) + o mês de vencimento + as 2
+ * medidas em CENTAVOS. Várias folhas podem compartilhar Categoria/Subcategoria em meses diferentes — a árvore
+ * soma; o gráfico "linha do tempo" agrupa por `month`. A árvore (Slice A) ignora `month`; a série (Slice B) usa.
+ */
+export type RawFluxoLeaf = Readonly<{
+  category: string
+  subcategory: string
+  /** Mês de vencimento (`YYYY-MM`) — fonte da série "linha do tempo". `''` quando a folha não é datada (árvore). */
+  month: string
+  realizedCents: number
+  expectedCents: number
+}>
+
+/** Rótulos de fallback quando o core-api devolve categoria/subcategoria sem nome (ref/nome null). */
+const SEM_CATEGORIA = 'Sem categoria'
+const SEM_SUBCATEGORIA = 'Sem subcategoria'
 
 /** Nível do nó na árvore de uma seção: categoria (0) → subcategoria (folha, 1). */
 export type FluxoLevel = 'category' | 'subcategory'
@@ -73,20 +88,13 @@ export type TimelinePoint = Readonly<{
   saldoCents: number
 }>
 
-/** Barra do gráfico "Agrupado por Centro de Custo": o CC + as 2 medidas (Previsto × Realizado) agregadas. */
-export type CostCenterMeasure = Readonly<{
-  label: string
-  previstoCents: number
-  realizadoCents: number
-}>
-
 /** Fatia do donut Previsto × Realizado de uma seção (chave da medida + valor em centavos). */
 export type SectionDonumSlice = Readonly<{ key: 'previsto' | 'realizado'; valueCents: number }>
 
 /**
  * Relatório completo: as 2 seções + o Saldo (Entradas − Saídas por medida) + os meses + as séries derivadas:
- * `monthly` (barras por vencimento, retrocompatível), `timeline` (Previsto/Realizado/Saldo no tempo) e
- * `byCostCenter` (Previsto × Realizado por Centro de Custo, das Saídas).
+ * `monthly` (barras por vencimento) e `timeline` (Previsto/Realizado/Saldo no tempo). SEM eixo de Centro de
+ * Custo — o core-api não o expõe como dimensão de saída (#590 CA6: CC é filtro, não eixo).
  */
 export type FluxoReport = Readonly<{
   saidas: FluxoSection
@@ -95,7 +103,6 @@ export type FluxoReport = Readonly<{
   months: readonly string[]
   monthly: readonly MonthlyFlow[]
   timeline: readonly TimelinePoint[]
-  byCostCenter: readonly CostCenterMeasure[]
 }>
 
 /** Seção do relatório: 'saidas' (payables/cartão) ou 'entradas' (receivables). */
@@ -346,32 +353,6 @@ export function buildTimeline(
 }
 
 /**
- * Agrega as folhas por CENTRO DE CUSTO (Previsto × Realizado), em ordem DECRESCENTE pelo Realizado (estável).
- * Usado no gráfico "Agrupado por Centro de Custo" — aplicado às SAÍDAS (o Centro de Custo é dimensão de
- * despesa). Preserva a ordem de inserção como desempate. Fonte vazia → `[]` (o gráfico cai no empty-state).
- */
-export function aggregateByCostCenter(raw: readonly RawFluxoLeaf[]): readonly CostCenterMeasure[] {
-  const order: string[] = []
-  const acc = new Map<string, { previstoCents: number; realizadoCents: number }>()
-  for (const row of raw) {
-    const current = acc.get(row.costCenter)
-    if (current) {
-      current.previstoCents += row.expectedCents
-      current.realizadoCents += row.realizedCents
-    } else {
-      order.push(row.costCenter)
-      acc.set(row.costCenter, { previstoCents: row.expectedCents, realizadoCents: row.realizedCents })
-    }
-  }
-  return order
-    .map((label): CostCenterMeasure => {
-      const m = acc.get(label) ?? { previstoCents: 0, realizadoCents: 0 }
-      return { label, previstoCents: m.previstoCents, realizadoCents: m.realizadoCents }
-    })
-    .sort((a, b) => b.realizadoCents - a.realizadoCents)
-}
-
-/**
  * Dados das 2 fatias do donut Previsto × Realizado de uma seção (a partir dos `totals` já agregados). Quando a
  * seção vem vazia, ambos os valores são 0 → o donut cai no empty-state honesto (total ≤ 0). Ordem: Previsto,
  * Realizado.
@@ -383,22 +364,13 @@ export function sectionDonutData(section: FluxoSection): readonly SectionDonumSl
   ]
 }
 
-/**
- * Fonte da tela (front-first): agrega os placeholders nas 2 seções + Saldo + série mensal. Ponto ÚNICO pelo
- * qual a View obtém o relatório — mantém a View sem tocar a `data/` (boundary client-ui ↛ client-data). Quando
- * o core-api#114 subir, esta função passa a montar as folhas do DTO real (mesmo shape `RawFluxoLeaf`), e para
- * Entradas basta a fonte de receivables entrar no lugar de `FLUXO_ENTRADAS_RAW`. Sem `throw` (§II).
- */
-export function loadFluxoCaixa(): FluxoReport {
-  return buildReport(FLUXO_SAIDAS_RAW, FLUXO_ENTRADAS_RAW)
-}
-
-/** Monta o relatório a partir das duas fontes cruas (testável com Entradas = [] → empty-state / Saldo). */
+/** Monta o relatório a partir das duas fontes cruas + o intervalo de meses (testável, Entradas = [] → Saldo). */
 export function buildReport(
   saidasRaw: readonly RawFluxoLeaf[],
   entradasRaw: readonly RawFluxoLeaf[],
+  range: MonthRange,
 ): FluxoReport {
-  const months = monthsInRange(FLUXO_PERIOD)
+  const months = monthsInRange(range)
   const saidas = aggregateSection(saidasRaw)
   const entradas = aggregateSection(entradasRaw)
   return {
@@ -408,8 +380,70 @@ export function buildReport(
     months,
     monthly: monthlyFlow(saidasRaw, entradasRaw, months),
     timeline: buildTimeline(saidasRaw, entradasRaw, months),
-    // Centro de Custo = dimensão de DESPESA → o gráfico agrega as SAÍDAS.
-    byCostCenter: aggregateByCostCenter(saidasRaw),
+  }
+}
+
+// ── Fonte REAL (#590) ────────────────────────────────────────────────────────────
+
+/** CashflowRow (Slice A) → folha da ÁRVORE (sem mês; a árvore ignora `month`). Nome null → sentinela honesta. */
+function payableToLeaf(r: CashflowRow): RawFluxoLeaf {
+  return {
+    category: r.categoryName ?? SEM_CATEGORIA,
+    subcategory: r.subcategoryName ?? SEM_SUBCATEGORIA,
+    month: '',
+    realizedCents: r.realizedCents,
+    expectedCents: r.expectedCents,
+  }
+}
+
+/** CashflowChartRow (Slice B) → folha DATADA (mês do vencimento) para a série temporal. */
+function chartRowToLeaf(r: CashflowChartRow): RawFluxoLeaf {
+  return {
+    category: r.categoryName ?? SEM_CATEGORIA,
+    subcategory: r.subcategoryName ?? SEM_SUBCATEGORIA,
+    month: r.dueMonth,
+    realizedCents: r.realizedCents,
+    expectedCents: r.expectedCents,
+  }
+}
+
+/**
+ * Intervalo [min, max] dos meses PRESENTES na série (chaves `YYYY-MM` bem-formadas ordenam lexicograficamente).
+ * Sem mês válido → `null` (a série cai vazia). NUNCA usa `Date` (mesmo blindado da geração de meses).
+ */
+function rangeFromChart(chart: readonly CashflowChartRow[]): MonthRange | null {
+  let min: string | null = null
+  let max: string | null = null
+  for (const r of chart) {
+    if (!/^\d{4}-\d{2}$/.test(r.dueMonth)) continue
+    if (min === null || r.dueMonth < min) min = r.dueMonth
+    if (max === null || r.dueMonth > max) max = r.dueMonth
+  }
+  return min !== null && max !== null ? { start: min, end: max } : null
+}
+
+/**
+ * Fonte REAL da tela (#590): a árvore Saídas vem do Slice A (payables, agregado por Categoria × Subcategoria,
+ * sem mês); a série temporal (`monthly`/`timeline`) vem do Slice B (chart, com mês). Entradas = SEMPRE vazia
+ * (receivables `[]`, financial é payables-centric) → cai no empty-state honesto; o Saldo passa a ser `0 −
+ * Saídas`. Os meses saem do MIN..MAX presente na série (sem `Date`). Sem `throw` (§II).
+ */
+export function buildReportFromCashflow(
+  payables: readonly CashflowRow[],
+  chart: readonly CashflowChartRow[],
+): FluxoReport {
+  const saidas = aggregateSection(payables.map(payableToLeaf))
+  const entradas = aggregateSection([])
+  const chartLeaves = chart.map(chartRowToLeaf)
+  const range = rangeFromChart(chart)
+  const months = range === null ? [] : monthsInRange(range)
+  return {
+    saidas,
+    entradas,
+    saldo: computeSaldo(entradas, saidas),
+    months,
+    monthly: monthlyFlow(chartLeaves, [], months),
+    timeline: buildTimeline(chartLeaves, [], months),
   }
 }
 
@@ -487,17 +521,9 @@ function sectionCsvLines(sectionLabel: string, section: FluxoSection): readonly 
  * medidas em BRL (Realizado · Previsto). Saídas primeiro, depois Entradas. Delimitado por ';'. Os rótulos das
  * seções são parametrizáveis (i18n na page); o CORPO é idêntico. `\r\n` como no legado.
  */
-export function buildCsv(
-  report: FluxoReport = loadFluxoCaixa(),
-  saidasLabel = 'Saídas',
-  entradasLabel = 'Entradas',
-): string {
+export function buildCsv(report: FluxoReport, saidasLabel = 'Saídas', entradasLabel = 'Entradas'): string {
   const lines: string[] = [CSV_HEADER]
   lines.push(...sectionCsvLines(saidasLabel, report.saidas))
   lines.push(...sectionCsvLines(entradasLabel, report.entradas))
   return lines.join('\r\n')
 }
-
-/** Reexporta o shape do período p/ a page/testes sem tocar a `data/` diretamente. */
-export { FLUXO_PERIOD }
-export type { MonthRange, RawFluxoLeaf }

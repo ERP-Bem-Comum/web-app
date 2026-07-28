@@ -9,6 +9,7 @@ import { getSuppliersWithoutContractFn } from '#modules/reports/server/adapters/
 import { getPaymentPositionFn } from '#modules/reports/server/adapters/server-fns/get-payment-position.query.fn.ts'
 import { getPaymentAnalysisFn } from '#modules/reports/server/adapters/server-fns/get-payment-analysis.query.fn.ts'
 import { getRealizedReportFn } from '#modules/reports/server/adapters/server-fns/get-realized-report.query.fn.ts'
+import { getCashflowReportFn } from '#modules/reports/server/adapters/server-fns/get-cashflow-report.query.fn.ts'
 
 import { createReportsRepository } from './reports.repository.ts'
 
@@ -19,4 +20,5 @@ export const reportsRepository = createReportsRepository({
   paymentPositionFn: (filter) => getPaymentPositionFn({ data: filter }),
   paymentAnalysisFn: (query) => getPaymentAnalysisFn({ data: query }),
   realizedReportFn: (query) => getRealizedReportFn({ data: query }),
+  cashflowReportFn: (filter) => getCashflowReportFn({ data: filter }),
 })

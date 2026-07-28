@@ -3,7 +3,7 @@
  * Result em tudo (§II). `ReportsClient` é a porta — implementada em adapters (`core-api-reports.ts`).
  * Espelha `financial.use-cases.ts`. Os 3 casos de uso são de LEITURA (sem input; só o token).
  */
-import type { Result } from '#shared/primitives/result.ts'
+import { ok, isErr, type Result } from '#shared/primitives/result.ts'
 import type { ReportsError } from '#modules/reports/server/domain/errors/reports.errors.ts'
 import type {
   TeamMember,
@@ -15,6 +15,10 @@ import type {
   PaymentAnalysisQuery,
   RealizedReportQuery,
   RealizedBudgetRow,
+  CashflowRow,
+  CashflowChartRow,
+  CashflowReport,
+  CashflowFilter,
 } from '#modules/reports/server/domain/reports.io.ts'
 
 export type ReportsClient = Readonly<{
@@ -38,6 +42,18 @@ export type ReportsClient = Readonly<{
     query: RealizedReportQuery,
     token: string,
   ) => Promise<Result<readonly RealizedBudgetRow[], ReportsError>>
+  /** Fluxo de Caixa Slice A (#590) — árvore Saídas por Categoria × Subcategoria (`{ payables, receivables }`). */
+  getCashflow: (
+    filter: CashflowFilter,
+    token: string,
+  ) => Promise<
+    Result<{ payables: readonly CashflowRow[]; receivables: readonly CashflowRow[] }, ReportsError>
+  >
+  /** Fluxo de Caixa Slice B (#590) — série temporal (mesma agregação com eixo de mês). */
+  getCashflowChart: (
+    filter: CashflowFilter,
+    token: string,
+  ) => Promise<Result<readonly CashflowChartRow[], ReportsError>>
 }>
 
 type Deps = Readonly<{ client: ReportsClient }>
@@ -71,3 +87,20 @@ export const createGetRealizedReport =
   (deps: Deps) =>
   (query: RealizedReportQuery, token: string): Promise<Result<readonly RealizedBudgetRow[], ReportsError>> =>
     deps.client.getRealizedReport(query, token)
+
+/**
+ * Fluxo de Caixa (#590) — o BFF COMPÕE a resposta completa do caso de uso (§III): busca a árvore (Slice A) e
+ * a série temporal (Slice B) em paralelo e entrega `{ payables, receivables, chart }`. Falha em qualquer uma
+ * → propaga o erro (§II, sem `throw`). O client recebe o payload pronto e só apresenta.
+ */
+export const createGetCashflowReport =
+  (deps: Deps) =>
+  async (filter: CashflowFilter, token: string): Promise<Result<CashflowReport, ReportsError>> => {
+    const [tree, chart] = await Promise.all([
+      deps.client.getCashflow(filter, token),
+      deps.client.getCashflowChart(filter, token),
+    ])
+    if (isErr(tree)) return tree
+    if (isErr(chart)) return chart
+    return ok({ payables: tree.value.payables, receivables: tree.value.receivables, chart: chart.value })
+  }

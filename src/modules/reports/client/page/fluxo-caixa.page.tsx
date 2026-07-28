@@ -1,17 +1,18 @@
 /**
  * FluxoCaixaPage — tela do relatório "Fluxo de Caixa" (identidade "brand", full-bleed 28px), no MOLDE dos
  * demais relatórios: cabeçalho (voltar + título + Filtros + Exportar) → filtros recolhíveis → KPIs → gráfico
- * "por vencimento" → as 2 seções (Saídas / Entradas). Front-first: os dados vêm de constantes placeholder
- * SINTÉTICAS (ver `fluxo-caixa.placeholder.ts`); o endpoint do core-api (#114) ainda não existe.
+ * "por vencimento" → as 2 seções (Saídas / Entradas). Dados REAIS do core-api (#590): o binding `useFluxoCaixa`
+ * lê a resposta composta (árvore Saídas do `/cashflow` + série temporal do `/cashflow/chart`).
  *
- * A ViewModel PURA (`loadFluxoCaixa`) faz TODA a agregação (2 seções × 2 medidas, Saldo = Entradas − Saídas,
- * série mensal por vencimento); a page só compõe as views burras e guarda o ÚNICO UI-state local: o toggle dos
- * filtros. Export = CSV (Blob, seções fiéis) + PDF (window.print, via `report-export-dropdown`). ADR-0009/0012,§XI.
+ * A ViewModel PURA (`buildReportFromCashflow`) faz TODA a agregação (2 seções × 2 medidas, Saldo = Entradas −
+ * Saídas, série temporal por vencimento); a page só compõe as views burras e guarda o ÚNICO UI-state local: o
+ * toggle dos filtros. Export = CSV (Blob, seções fiéis) + PDF (window.print, via `report-export-dropdown`).
+ * ADR-0009/0012, §XI. SEM gráfico de Centro de Custo (o core-api não expõe CC como eixo — #590 CA6).
  *
- * ⚠️ ENTRADAS = receivables (core-api#114): hoje placeholder mínimo só p/ validar; quando o A-Receber subir e a
- * fonte de Entradas virar `[]`, a seção Entradas cai no empty state honesto SEM quebrar Saídas nem o Saldo.
+ * ⚠️ ENTRADAS = receivables: SEMPRE `[]` (financial é payables-centric) → a seção Entradas cai no empty state
+ * honesto SEM quebrar Saídas nem o Saldo. Quando o Contas a Receber subir, é só a fonte de Entradas entrar.
  */
-import { useMemo, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
@@ -19,7 +20,6 @@ import { screen } from '#shared/ui/brand/brand-page.css.ts'
 import { ChevronLeftIcon, ChevronDownIcon, FilterIcon } from '#shared/ui/index.ts'
 
 import {
-  loadFluxoCaixa,
   buildCsv,
   formatBRL,
   formatBRLShort,
@@ -29,12 +29,13 @@ import {
   type FluxoMeasures,
   type FluxoSection,
 } from '../fluxo-caixa.view-model.ts'
+import { useFluxoCaixa } from '../fluxo-caixa.binding.ts'
 import { RealizadoChartsMount } from '../components/realizado-charts-mount.component.tsx'
 import { FluxoCaixaTimeline } from '../components/fluxo-caixa-timeline.component.tsx'
-import { FluxoCaixaCostCenterBars } from '../components/fluxo-caixa-cost-center-bars.component.tsx'
 import { RealizadoDonut, type DonutSlice } from '../components/realizado-donut.component.tsx'
 import { FluxoCaixaSectionTable } from '../components/fluxo-caixa-section-table.component.tsx'
 import { ReportExportDropdown } from '../components/report-export-dropdown.component.tsx'
+import { ReportStatePanel } from '../components/report-state-panel.component.tsx'
 import {
   head,
   backButton,
@@ -63,7 +64,7 @@ import {
   kpiValueToneFluxo,
   saldoValueTone,
   kpiTintNeg,
-  charts4,
+  charts3,
   sections,
   exportTrigger,
 } from './fluxo-caixa.page.css.ts'
@@ -84,8 +85,19 @@ function downloadCsv(filename: string, csv: string): void {
 }
 
 export function FluxoCaixaPage(): ReactNode {
+  // UI-state local (§XI) + server-state REAL do core-api (#590). Hooks SEMPRE antes dos early-returns.
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const report = useMemo(() => loadFluxoCaixa(), [])
+  const state = useFluxoCaixa()
+
+  if (state.status === 'loading') {
+    return <ReportStatePanel title={t('reports.fluxoCaixa.loading')} />
+  }
+  if (state.status === 'error') {
+    return (
+      <ReportStatePanel role="alert" title={t('reports.fluxoCaixa.errorTitle')} hint={t(state.errorTag)} />
+    )
+  }
+  const report = state.report
 
   const saidasTitle = t('reports.fluxoCaixa.section.saidas.title')
   const entradasTitle = t('reports.fluxoCaixa.section.entradas.title')
@@ -222,12 +234,12 @@ export function FluxoCaixaPage(): ReactNode {
         />
       </div>
 
-      {/* Os 4 gráficos "Previsto × Realizado": linha do tempo → barras por Centro de Custo → 2 donuts */}
+      {/* Os 3 gráficos "Previsto × Realizado": linha do tempo → 2 donuts (Entradas/Saídas) */}
       <RealizadoChartsMount>
         {(animate) => (
           <>
-            {/* Os 4 gráficos numa linha só (compactos e alinhados): Linha do tempo · Centro de Custo · Entradas · Saídas */}
-            <div className={charts4}>
+            {/* Os 3 gráficos numa linha só (compactos e alinhados): Linha do tempo · Entradas · Saídas */}
+            <div className={charts3}>
               <div className={chartCard}>
                 <div className={cardHeader}>
                   <h2 className={cardTitle}>{t('reports.fluxoCaixa.chart.timeline')}</h2>
@@ -245,21 +257,6 @@ export function FluxoCaixaPage(): ReactNode {
                     }}
                     formatValue={formatBRL}
                     formatAxis={formatBRLShort}
-                  />
-                </div>
-              </div>
-
-              <div className={chartCard}>
-                <div className={cardHeader}>
-                  <h2 className={cardTitle}>{t('reports.fluxoCaixa.chart.byCostCenter')}</h2>
-                </div>
-                <div className={chartPad}>
-                  <FluxoCaixaCostCenterBars
-                    bars={report.byCostCenter}
-                    emptyLabel={t('reports.fluxoCaixa.chartEmptyLabel')}
-                    animate={animate}
-                    labels={{ previsto: previstoLabel, realizado: realizadoLabel }}
-                    formatValue={formatBRLShort}
                   />
                 </div>
               </div>
