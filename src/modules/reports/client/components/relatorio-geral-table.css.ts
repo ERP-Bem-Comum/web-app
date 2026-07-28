@@ -15,7 +15,7 @@ import { brand } from '#shared/ui/brand/grid-brand.values.ts'
 export const COLUMN_WIDTH: Record<string, string> = {
   data: '6.5rem',
   vencimento: '7rem',
-  tipo: '7rem',
+  tipo: '9rem',
   numeroContrato: '8rem',
   codigo: '7rem',
   parcela: '5rem',
