@@ -801,6 +801,35 @@ export const btnConfirm = style({
   selectors: { '&:disabled': { opacity: 0.5, cursor: 'not-allowed' } },
 })
 
+// Botão "Lançamento Manual" no rodapé (ao lado de Conciliar) — MESMA cor do antigo band azul (teal), agora
+// compacto p/ ganhar espaço vertical na lista de títulos. Leva à aba "Nova transação".
+export const btnManual = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: sp.xs,
+  paddingInline: sp.lg,
+  paddingBlock: sp.sm,
+  borderRadius: r.sm,
+  background: c.teal.bg,
+  border: `${bw.hairline} solid ${c.teal.line}`,
+  color: c.teal.deep,
+  fontFamily: recon.font.sans,
+  fontSize: fs.md,
+  fontWeight: recon.weight.semibold,
+  cursor: 'pointer',
+  selectors: { '&:hover': { background: c.teal.line } },
+})
+
+// Contador de títulos EXIBIDOS — letra pequena, discreta, abaixo da tabela.
+export const pmShownCount = style({
+  marginBlockStart: sp.xs,
+  paddingInline: '0.125rem',
+  fontFamily: recon.font.sans,
+  fontSize: fs.sm,
+  color: c.ink[4],
+  fontVariantNumeric: 'tabular-nums',
+})
+
 // ── Outras possibilidades (alt-cards) — fiel ao mock ────────────────────────────
 export const altList = style({
   display: 'flex',

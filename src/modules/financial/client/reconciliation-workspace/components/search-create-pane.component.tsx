@@ -50,6 +50,8 @@ export type SearchCreatePaneProps = Readonly<{
   binding: SearchCreateBinding
   payables: readonly PaidPayable[]
   extratoValueCents: string
+  /** Abre a aba "Nova transação" (lançamento manual) — acionada pelo botão no rodapé. */
+  onManualEntry?: () => void
 }>
 
 function PayRow({
@@ -263,7 +265,7 @@ function ValueFilter({ binding }: Readonly<{ binding: SearchCreateBinding }>) {
   )
 }
 
-export function SearchCreatePane({ binding, extratoValueCents }: SearchCreatePaneProps) {
+export function SearchCreatePane({ binding, extratoValueCents, onManualEntry }: SearchCreatePaneProps) {
   const hasDiff = binding.residualCents !== 0
   const selectedCount = binding.selectedIds.size
 
@@ -363,6 +365,13 @@ export function SearchCreatePane({ binding, extratoValueCents }: SearchCreatePan
         </div>
       )}
 
+      {/* Quantidade de títulos EXIBIDOS (após filtros) — letra pequena, abaixo da tabela. */}
+      {binding.totalCount > 0 ? (
+        <p className={s.pmShownCount}>
+          {binding.filtered.length} {t('financial.recon.multi.shownCount')}
+        </p>
+      ) : null}
+
       {/* Tratamento da diferença — só após clicar Conciliar com diferença (§9.4.6) */}
       {binding.showTreatment ? (
         <div className={s.diffTreat}>
@@ -439,12 +448,6 @@ export function SearchCreatePane({ binding, extratoValueCents }: SearchCreatePan
         </div>
       ) : null}
 
-      {/* Atalho: criar novo pagamento (chrome até #172/cadastro) */}
-      <button type="button" className={s.pmCreateNew} disabled aria-disabled="true">
-        <span aria-hidden>{PLUS}</span>
-        {t('financial.recon.multi.createNew')}
-      </button>
-
       {binding.errorTag !== null ? <p className={s.errorText}>{t(binding.errorTag)}</p> : null}
 
       <div className={s.ntActions}>
@@ -458,6 +461,12 @@ export function SearchCreatePane({ binding, extratoValueCents }: SearchCreatePan
           {t('financial.recon.multi.clear')}
         </button>
         <span className={s.spacer} />
+        {/* "Lançamento Manual" — antes era o band azul "Não encontrei"; agora botão ao lado de Conciliar
+            (mais espaço p/ a lista). Leva à aba "Nova transação". */}
+        <button type="button" className={s.btnManual} onClick={onManualEntry}>
+          <span aria-hidden>{PLUS}</span>
+          {t('financial.recon.multi.manualEntry')}
+        </button>
         <button
           type="button"
           className={s.btnConfirm}

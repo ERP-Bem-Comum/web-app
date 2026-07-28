@@ -1706,6 +1706,8 @@ export const ptBR: Catalog = {
   'financial.recon.multi.status.paid': 'Pago',
   'financial.recon.multi.footSelected': 'selecionados de',
   'financial.recon.multi.createNew': 'Não encontrei · criar novo pagamento manualmente',
+  'financial.recon.multi.manualEntry': 'Lançamento Manual',
+  'financial.recon.multi.shownCount': 'títulos exibidos',
   'financial.recon.multi.confirmFull': 'Conciliar 1 extrato com os títulos',
   // Tratamento da diferença (conciliação parcial)
   'financial.recon.multi.diffTreat': 'Tratamento da diferença',
