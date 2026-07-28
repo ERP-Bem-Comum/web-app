@@ -161,13 +161,17 @@ export type GeneralColumnKind = 'plain' | 'optional' | 'strong' | 'value'
 
 export type GeneralColumnDef = Readonly<{ id: GeneralColumnId; kind: GeneralColumnKind }>
 
-/** As 15 colunas na ORDEM do legado. Fonte única consumida pela tabela, pelo CSV e pelo seletor de colunas. */
+/**
+ * As 15 colunas na ORDEM EXATA do legado (ERP-BACKEND `GeneralReportReturn`): Contrato → Tipo → Código →
+ * Vencimento → Parcela → Apontamento → Fornecedor → Financiador → Colaborador → Centro de Custo → Categoria →
+ * Subcategoria → PIX/Bancário → Data → Valor (o legado tinha `bancary`+`pix` separados → aqui unificados em
+ * `pixBancario`; `valor` fecha a linha). Fonte única consumida pela tabela, pelo CSV e pelo seletor de colunas.
+ */
 export const GENERAL_COLUMNS: readonly GeneralColumnDef[] = [
-  { id: 'data', kind: 'plain' },
-  { id: 'vencimento', kind: 'optional' },
-  { id: 'tipo', kind: 'strong' },
   { id: 'numeroContrato', kind: 'optional' },
+  { id: 'tipo', kind: 'strong' },
   { id: 'codigo', kind: 'optional' },
+  { id: 'vencimento', kind: 'optional' },
   { id: 'parcela', kind: 'optional' },
   { id: 'apontamento', kind: 'optional' },
   { id: 'fornecedor', kind: 'optional' },
@@ -177,6 +181,7 @@ export const GENERAL_COLUMNS: readonly GeneralColumnDef[] = [
   { id: 'categoria', kind: 'optional' },
   { id: 'subcategoria', kind: 'optional' },
   { id: 'pixBancario', kind: 'optional' },
+  { id: 'data', kind: 'plain' },
   { id: 'valor', kind: 'value' },
 ]
 

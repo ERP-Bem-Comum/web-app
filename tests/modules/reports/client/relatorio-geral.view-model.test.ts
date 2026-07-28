@@ -158,10 +158,10 @@ const FIX: readonly LedgerRow[] = [
 describe('buildCsv — 15 colunas, nullable → campo VAZIO', () => {
   const lines = buildCsv(FIX).split('\r\n')
 
-  it('cabeçalho exato das 15 colunas do legado', () => {
+  it('cabeçalho exato das 15 colunas na ORDEM do legado (Contrato → … → Data → Valor)', () => {
     assert.equal(
       lines[0],
-      'Data;Vencimento;Tipo;Nº Contrato;Código;Parcela;Apontamento;Fornecedor;Financiador;Colaborador;Centro de Custo;Categoria;Subcategoria;PIX/Bancário;Valor',
+      'Nº Contrato;Tipo;Código;Vencimento;Parcela;Apontamento;Fornecedor;Financiador;Colaborador;Centro de Custo;Categoria;Subcategoria;PIX/Bancário;Data;Valor',
     )
   })
 
@@ -169,10 +169,10 @@ describe('buildCsv — 15 colunas, nullable → campo VAZIO', () => {
     assert.equal(lines.length, 1 + FIX.length)
   })
 
-  it('nullable vira campo VAZIO no CSV (não "—") — linha 2', () => {
+  it('nullable vira campo VAZIO no CSV (não "—") — linha 2 (na ordem do legado)', () => {
     assert.equal(
       lines[2],
-      `"08/01/2026";"";"A pagar";"";"CTX-1";"";"";"";"";"Colab X";"CC2";"Cat2";"Sub2";"";"${formatBRL(4500)}"`,
+      `"";"A pagar";"CTX-1";"";"";"";"";"";"Colab X";"CC2";"Cat2";"Sub2";"";"08/01/2026";"${formatBRL(4500)}"`,
     )
     assert.ok(!(lines[2]?.includes('—') ?? false), 'o traço "—" é só de EXIBIÇÃO; não vai ao CSV')
   })
