@@ -15,6 +15,9 @@ import type {
   PaymentPosition,
   PaymentAnalysis,
   RealizedBudgetRow,
+  CashflowRow,
+  CashflowChartRow,
+  CashflowFilter,
 } from '#modules/reports/server/domain/reports.io.ts'
 import {
   teamReportToModel,
@@ -23,10 +26,34 @@ import {
   paymentPositionToModel,
   paymentAnalysisToModel,
   realizedReportToModel,
+  cashflowToModel,
+  cashflowChartToModel,
+  costCenterListToModel,
   mapHttpError,
 } from './reports.mappers.ts'
 
-export const createCoreApiReportsClient = (baseUrl: string): ReportsClient => ({
+/** Querystring do Fluxo de Caixa (#590) — só os campos DEFINIDOS entram (AND no servidor; ausente = sem recorte). */
+const cashflowQuery = (filter: CashflowFilter): string => {
+  const qs = new URLSearchParams()
+  if (filter.programId !== undefined) qs.set('programId', filter.programId)
+  if (filter.budgetPlanId !== undefined) qs.set('budgetPlanId', filter.budgetPlanId)
+  if (filter.dueFrom !== undefined) qs.set('dueFrom', filter.dueFrom)
+  if (filter.dueTo !== undefined) qs.set('dueTo', filter.dueTo)
+  if (filter.accountId !== undefined) qs.set('accountId', filter.accountId)
+  if (filter.costCenterId !== undefined) qs.set('costCenterId', filter.costCenterId)
+  if (filter.categoryId !== undefined) qs.set('categoryId', filter.categoryId)
+  if (filter.subCategoryId !== undefined) qs.set('subCategoryId', filter.subCategoryId)
+  if (filter.entityId !== undefined) qs.set('entityId', filter.entityId)
+  if (filter.status !== undefined) qs.set('status', filter.status)
+  return qs.toString()
+}
+
+/**
+ * @param baseUrl base de `/reports` (ex.: `${coreApiBase}/reports`).
+ * @param financialBaseUrl base de `/financial` (ex.: `${coreApiBase}/financial`) — só p/ o catálogo de
+ *   Centros de Custo usado no fan-out do Fluxo (#590 não expõe CC como eixo).
+ */
+export const createCoreApiReportsClient = (baseUrl: string, financialBaseUrl: string): ReportsClient => ({
   getTeam: async (token): Promise<Result<readonly TeamMember[], ReportsError>> => {
     const r = await resultFetch<unknown>(`${baseUrl}/team`, { token })
     if (isErr(r)) return err(mapHttpError(r.error))
@@ -81,5 +108,29 @@ export const createCoreApiReportsClient = (baseUrl: string): ReportsClient => ({
     const r = await resultFetch<unknown>(`${baseUrl}/realized?${qs.toString()}`, { token })
     if (isErr(r)) return err(mapHttpError(r.error))
     return realizedReportToModel(r.value)
+  },
+  getCashflow: async (
+    filter,
+    token,
+  ): Promise<
+    Result<{ payables: readonly CashflowRow[]; receivables: readonly CashflowRow[] }, ReportsError>
+  > => {
+    const query = cashflowQuery(filter)
+    const url = query === '' ? `${baseUrl}/cashflow` : `${baseUrl}/cashflow?${query}`
+    const r = await resultFetch<unknown>(url, { token })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return cashflowToModel(r.value)
+  },
+  getCashflowChart: async (filter, token): Promise<Result<readonly CashflowChartRow[], ReportsError>> => {
+    const query = cashflowQuery(filter)
+    const url = query === '' ? `${baseUrl}/cashflow/chart` : `${baseUrl}/cashflow/chart?${query}`
+    const r = await resultFetch<unknown>(url, { token })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return cashflowChartToModel(r.value)
+  },
+  listCostCenters: async (token): Promise<Result<readonly { id: string; name: string }[], ReportsError>> => {
+    const r = await resultFetch<unknown>(`${financialBaseUrl}/cost-centers`, { token })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return costCenterListToModel(r.value)
   },
 })

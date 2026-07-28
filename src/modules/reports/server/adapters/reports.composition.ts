@@ -13,13 +13,16 @@ import {
   createGetPaymentPosition,
   createGetPaymentAnalysis,
   createGetRealizedReport,
+  createGetCashflowReport,
 } from '#modules/reports/server/application/reports.use-cases.ts'
 
 type ReportsServer = ReturnType<typeof build>
 
 const build = () => {
   const env = loadEnvOrThrow()
-  const client = createCoreApiReportsClient(`${coreApiBase(env.CORE_API_URL, 'v2')}/reports`)
+  const base = coreApiBase(env.CORE_API_URL, 'v2')
+  // Segunda base (`/financial`) só p/ o catálogo de Centros de Custo do fan-out do Fluxo (#590 não expõe CC como eixo).
+  const client = createCoreApiReportsClient(`${base}/reports`, `${base}/financial`)
   return {
     getTeamReport: createGetTeamReport({ client }),
     getTeamDemographics: createGetTeamDemographics({ client }),
@@ -27,6 +30,7 @@ const build = () => {
     getPaymentPosition: createGetPaymentPosition({ client }),
     getPaymentAnalysis: createGetPaymentAnalysis({ client }),
     getRealizedReport: createGetRealizedReport({ client }),
+    getCashflowReport: createGetCashflowReport({ client }),
   }
 }
 

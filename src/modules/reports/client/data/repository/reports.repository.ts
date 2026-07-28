@@ -19,6 +19,7 @@ import type {
   RealizedReportQuery,
   RealizedBudgetRow,
 } from '#modules/reports/client/data/model/realized-report.model.ts'
+import type { CashflowReport, CashflowFilter } from '#modules/reports/client/data/model/cashflow.model.ts'
 import type { ReportsError, FnResult } from '#modules/reports/client/data/repository/reports-error.ts'
 
 type TeamFn = () => Promise<FnResult<readonly TeamMember[]>>
@@ -27,6 +28,7 @@ type SuppliersFn = () => Promise<FnResult<readonly SupplierWithoutContract[]>>
 type PaymentPositionFn = (filter: PaymentPositionFilter) => Promise<FnResult<readonly PaymentPosition[]>>
 type PaymentAnalysisFn = (query: PaymentAnalysisQuery) => Promise<FnResult<PaymentAnalysis>>
 type RealizedReportFn = (query: RealizedReportQuery) => Promise<FnResult<readonly RealizedBudgetRow[]>>
+type CashflowReportFn = (filter: CashflowFilter) => Promise<FnResult<CashflowReport>>
 
 export type ReportsRepository = Readonly<{
   getTeam: () => Promise<Result<readonly TeamMember[], ReportsError>>
@@ -40,6 +42,7 @@ export type ReportsRepository = Readonly<{
   getRealizedReport: (
     query: RealizedReportQuery,
   ) => Promise<Result<readonly RealizedBudgetRow[], ReportsError>>
+  getCashflowReport: (filter: CashflowFilter) => Promise<Result<CashflowReport, ReportsError>>
 }>
 
 export const createReportsRepository = (
@@ -50,6 +53,7 @@ export const createReportsRepository = (
     paymentPositionFn: PaymentPositionFn
     paymentAnalysisFn: PaymentAnalysisFn
     realizedReportFn: RealizedReportFn
+    cashflowReportFn: CashflowReportFn
   }>,
 ): ReportsRepository => ({
   getTeam: async () => {
@@ -74,6 +78,10 @@ export const createReportsRepository = (
   },
   getRealizedReport: async (query) => {
     const res = await deps.realizedReportFn(query)
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  getCashflowReport: async (filter) => {
+    const res = await deps.cashflowReportFn(filter)
     return res.ok ? ok(res.data) : err(res.error)
   },
 })

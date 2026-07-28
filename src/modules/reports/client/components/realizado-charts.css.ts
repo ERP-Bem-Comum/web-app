@@ -218,9 +218,9 @@ export const measureStroke = styleVariants({
   emAtrasoRec: { stroke: brand.color.posicaoRec.emAtraso },
   recebido: { stroke: brand.color.posicaoRec.recebido },
   aReceber: { stroke: brand.color.posicaoRec.aReceber },
-  // Donuts "Previsto × Realizado" do Fluxo de Caixa — ciano/verde (espelho do legado).
-  fluxoPrevisto: { stroke: brand.color.fluxo.previstoChart },
-  fluxoRealizado: { stroke: brand.color.fluxo.realizadoChart },
+  // Donuts "Previsto × Realizado" do Fluxo de Caixa — paleta FRIA + leve transparência (a P.O. pediu suavizar).
+  fluxoPrevisto: { stroke: brand.color.fluxo.previstoChart, strokeOpacity: brand.color.fluxo.fillOpacity },
+  fluxoRealizado: { stroke: brand.color.fluxo.realizadoChart, strokeOpacity: brand.color.fluxo.fillOpacity },
 })
 export const measureDot = styleVariants({
   realizado: { background: brand.color.rxp.realizado },

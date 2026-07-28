@@ -15,45 +15,36 @@ import {
   aggregateSection,
   computeSaldo,
   buildReport,
+  buildReportFromCashflow,
   monthlyFlow,
   buildTimeline,
-  aggregateByCostCenter,
   sectionDonutData,
   executionPercent,
   formatPercent,
   monthsInRange,
   formatMonthLabel,
-  loadFluxoCaixa,
   buildCsv,
+  buildStatement,
+  buildStatementSection,
+  sliceStatement,
   formatBRL,
+  formatAmount,
   CSV_HEADER,
   type RawFluxoLeaf,
 } from '#modules/reports/client/fluxo-caixa.view-model.ts'
+import type { CashflowRow, CashflowChartRow } from '#modules/reports/client/data/model/cashflow.model.ts'
+
+// Intervalo do período de teste (jan–jun/2026) — buildReport recebe o range explícito (não há mais placeholder).
+const RANGE = { start: '2026-01', end: '2026-06' }
 
 // Fixture determinística: Saídas com 2 categorias (Pessoal com 2 subcats, Operacional com 1); Entradas com 1.
-// Centros de Custo: Pessoal → 'Equipe' (2 folhas), Operacional → 'Infra' (1 folha), Convênio → 'Captação'.
 const SAIDAS: readonly RawFluxoLeaf[] = [
-  {
-    category: 'Pessoal',
-    subcategory: 'Salários',
-    month: '2026-01',
-    costCenter: 'Equipe',
-    realizedCents: 800,
-    expectedCents: 900,
-  },
-  {
-    category: 'Pessoal',
-    subcategory: 'Encargos',
-    month: '2026-01',
-    costCenter: 'Equipe',
-    realizedCents: 200,
-    expectedCents: 250,
-  },
+  { category: 'Pessoal', subcategory: 'Salários', month: '2026-01', realizedCents: 800, expectedCents: 900 },
+  { category: 'Pessoal', subcategory: 'Encargos', month: '2026-01', realizedCents: 200, expectedCents: 250 },
   {
     category: 'Operacional',
     subcategory: 'Aluguel',
     month: '2026-02',
-    costCenter: 'Infra',
     realizedCents: 500,
     expectedCents: 500,
   },
@@ -63,7 +54,6 @@ const ENTRADAS: readonly RawFluxoLeaf[] = [
     category: 'Doações',
     subcategory: 'Convênio',
     month: '2026-02',
-    costCenter: 'Captação',
     realizedCents: 3000,
     expectedCents: 3200,
   },
@@ -125,7 +115,7 @@ describe('computeSaldo — Entradas − Saídas (por medida)', () => {
 })
 
 describe('buildReport — Entradas = [] cai no vazio SEM quebrar Saídas/Saldo', () => {
-  const report = buildReport(SAIDAS, [])
+  const report = buildReport(SAIDAS, [], RANGE)
 
   it('a seção Saídas continua íntegra', () => {
     assert.equal(report.saidas.categories.length, 2)
@@ -222,33 +212,121 @@ describe('buildTimeline — Esperado × Realizado × Saldo por período (mês po
   })
 })
 
-describe('aggregateByCostCenter — Previsto × Realizado por Centro de Custo', () => {
-  it('agrega as folhas por Centro de Custo, em ordem DECRESCENTE pelo Realizado', () => {
-    const cc = aggregateByCostCenter(SAIDAS)
+describe('buildReportFromCashflow — fonte REAL (#590): árvore do Slice A + série do Slice B', () => {
+  // Slice A (payables) — árvore Categoria × Subcategoria, sem mês. Nome null → sentinela honesta.
+  const PAYABLES: readonly CashflowRow[] = [
+    {
+      categoryRef: 'c1',
+      categoryName: 'Pessoal',
+      subcategoryRef: 's1',
+      subcategoryName: 'Salários',
+      realizedCents: 800,
+      expectedCents: 900,
+    },
+    {
+      categoryRef: 'c1',
+      categoryName: 'Pessoal',
+      subcategoryRef: 's2',
+      subcategoryName: 'Encargos',
+      realizedCents: 200,
+      expectedCents: 250,
+    },
+    {
+      categoryRef: null,
+      categoryName: null,
+      subcategoryRef: null,
+      subcategoryName: null,
+      realizedCents: 500,
+      expectedCents: 500,
+    },
+  ]
+  // Slice B (chart) — mesmas linhas com o eixo de mês (`dueMonth`).
+  const CHART: readonly CashflowChartRow[] = [
+    {
+      categoryRef: 'c1',
+      categoryName: 'Pessoal',
+      subcategoryRef: 's1',
+      subcategoryName: 'Salários',
+      realizedCents: 800,
+      expectedCents: 900,
+      dueMonth: '2026-01',
+    },
+    {
+      categoryRef: 'c1',
+      categoryName: 'Pessoal',
+      subcategoryRef: 's2',
+      subcategoryName: 'Encargos',
+      realizedCents: 200,
+      expectedCents: 250,
+      dueMonth: '2026-01',
+    },
+    {
+      categoryRef: null,
+      categoryName: null,
+      subcategoryRef: null,
+      subcategoryName: null,
+      realizedCents: 500,
+      expectedCents: 500,
+      dueMonth: '2026-03',
+    },
+  ]
+
+  it('a árvore Saídas vem do Slice A (payables), somando as subcategorias na categoria', () => {
+    const r = buildReportFromCashflow(PAYABLES, CHART, [])
     assert.deepEqual(
-      cc.map((c) => c.label),
-      ['Equipe', 'Infra'],
+      r.saidas.categories.map((c) => c.name),
+      ['Pessoal', 'Sem categoria'],
     )
-    // Equipe = Salários + Encargos: previsto 900+250=1150, realizado 800+200=1000.
-    assert.equal(cc[0]?.previstoCents, 1150)
-    assert.equal(cc[0]?.realizadoCents, 1000)
-    // Infra = Aluguel: 500/500.
-    assert.equal(cc[1]?.previstoCents, 500)
-    assert.equal(cc[1]?.realizadoCents, 500)
+    assert.equal(r.saidas.totals.realizedCents, 1500)
+    assert.equal(r.saidas.totals.expectedCents, 1650)
   })
 
-  it('fonte vazia → [] (o gráfico cai no empty-state)', () => {
-    assert.deepEqual(aggregateByCostCenter([]), [])
+  it('nome null vira sentinela "Sem categoria"/"Sem subcategoria"', () => {
+    const r = buildReportFromCashflow(PAYABLES, CHART, [])
+    const semCat = r.saidas.categories.find((c) => c.name === 'Sem categoria')
+    assert.equal(semCat?.children[0]?.name, 'Sem subcategoria')
   })
 
-  it('no relatório completo, byCostCenter agrega as SAÍDAS (não as Entradas)', () => {
-    const r = buildReport(SAIDAS, ENTRADAS)
-    // Nenhum Centro de Custo de Entradas (Captação) aparece.
-    assert.ok(!r.byCostCenter.some((c) => c.label === 'Captação'))
+  it('Entradas SEMPRE vazia (receivables []); Saldo = 0 − Saídas (negativo)', () => {
+    const r = buildReportFromCashflow(PAYABLES, CHART, [])
+    assert.equal(r.entradas.categories.length, 0)
+    assert.equal(r.saldo.realizedCents, -1500)
+    assert.equal(r.saldo.expectedCents, -1650)
+  })
+
+  it('os meses saem do MIN..MAX presente na série (jan..mar), sem "Invalid Date"', () => {
+    const r = buildReportFromCashflow(PAYABLES, CHART, [])
+    assert.deepEqual(r.months, ['2026-01', '2026-02', '2026-03'])
+    const jan = r.timeline.find((p) => p.key === '2026-01')
+    assert.equal(jan?.realizadoCents, 1000) // Salários + Encargos
+    assert.equal(jan?.saldoCents, -1000) // 0 − 1000 (só saídas)
+    for (const p of r.timeline) assert.ok(!p.label.includes('Invalid'))
+  })
+
+  it('série/chart vazios → months [] e seções vazias (empty-state honesto)', () => {
+    const r = buildReportFromCashflow([], [], [])
+    assert.deepEqual(r.months, [])
+    assert.equal(r.saidas.categories.length, 0)
+    assert.equal(r.timeline.length, 0)
+  })
+
+  it('byCostCenter (fan-out do BFF) → barras Previsto × Realizado, preservando a ordem do BFF', () => {
+    const r = buildReportFromCashflow(PAYABLES, CHART, [
+      { ref: 'cc1', name: 'Passagens', realizedCents: 100, expectedCents: 220 },
+      { ref: 'cc2', name: 'Gestor', realizedCents: 50, expectedCents: 60 },
+    ])
     assert.deepEqual(
       r.byCostCenter.map((c) => c.label),
-      ['Equipe', 'Infra'],
+      ['Passagens', 'Gestor'],
     )
+    // expectedCents → previstoCents; realizedCents → realizadoCents.
+    assert.equal(r.byCostCenter[0]?.previstoCents, 220)
+    assert.equal(r.byCostCenter[0]?.realizadoCents, 100)
+  })
+
+  it('sem Centro de Custo (fan-out vazio) → byCostCenter [] (gráfico cai no empty-state)', () => {
+    const r = buildReportFromCashflow(PAYABLES, CHART, [])
+    assert.deepEqual(r.byCostCenter, [])
   })
 })
 
@@ -295,21 +373,75 @@ describe('monthsInRange / formatMonthLabel — blindados contra "Invalid Date"',
   })
 })
 
-describe('loadFluxoCaixa — fonte da tela (front-first)', () => {
-  it('Saídas não vazias; Entradas placeholder presente hoje', () => {
-    const r = loadFluxoCaixa()
-    assert.ok(r.saidas.categories.length > 0)
-    assert.ok(r.saidas.totals.realizedCents > 0)
-    assert.ok(r.entradas.categories.length > 0)
+describe('buildStatement — demonstrativo por mês (Real + Prev, Fluxo líquido, Saldo acumulado)', () => {
+  const months = ['2026-01', '2026-02', '2026-03']
+
+  it('buildStatementSection agrega por CATEGORIA e alinha as células aos meses', () => {
+    const sec = buildStatementSection(SAIDAS, months)
+    // 2 categorias (Pessoal, Operacional), na ordem de inserção.
+    assert.deepEqual(
+      sec.items.map((i) => i.name),
+      ['Pessoal', 'Operacional'],
+    )
+    // Pessoal: jan = Salários(800/900) + Encargos(200/250) = 1000/1150; fev/mar = 0.
+    const pessoal = sec.items[0]
+    assert.deepEqual(pessoal?.byMonth[0], { realizedCents: 1000, expectedCents: 1150 })
+    assert.deepEqual(pessoal?.byMonth[1], { realizedCents: 0, expectedCents: 0 })
+    assert.deepEqual(pessoal?.total, { realizedCents: 1000, expectedCents: 1150 })
+    // Total da seção por mês: jan = 1000/1150 (Pessoal); fev = 500/500 (Operacional/Aluguel).
+    assert.deepEqual(sec.totalByMonth[0], { realizedCents: 1000, expectedCents: 1150 })
+    assert.deepEqual(sec.totalByMonth[1], { realizedCents: 500, expectedCents: 500 })
+    assert.deepEqual(sec.total, { realizedCents: 1500, expectedCents: 1650 })
   })
-  it('a série mensal cobre o período completo', () => {
-    const r = loadFluxoCaixa()
-    assert.equal(r.monthly.length, r.months.length)
+
+  it('Entradas = [] → Fluxo líquido = −Saídas e Saldo acumulado corre negativo', () => {
+    const st = buildStatement([], SAIDAS, months)
+    assert.equal(st.entradas.items.length, 0)
+    // líquido jan = 0 − 1000 = −1000 (realizado); fev = 0 − 500 = −500.
+    assert.equal(st.liquido[0]?.realizedCents, -1000)
+    assert.equal(st.liquido[1]?.realizedCents, -500)
+    // saldo inicial começa em 0; acumulado corre: jan −1000, fev −1500, mar −1500.
+    assert.deepEqual(st.saldoInicial[0], { realizedCents: 0, expectedCents: 0 })
+    assert.equal(st.saldoAcumulado[0]?.realizedCents, -1000)
+    assert.equal(st.saldoAcumulado[1]?.realizedCents, -1500)
+    assert.equal(st.saldoAcumulado[2]?.realizedCents, -1500)
+    // saldo inicial de fev = acumulado de jan.
+    assert.deepEqual(st.saldoInicial[1], st.saldoAcumulado[0])
+    assert.equal(st.liquidoTotal.realizedCents, -1500)
+  })
+
+  it('sliceStatement recorta a janela e RECOMPUTA totais, preservando o Saldo inicial da janela', () => {
+    const st = buildStatement([], SAIDAS, months)
+    // Recorta fev..mar (idx 1..2).
+    const sl = sliceStatement(st, 1, 2)
+    assert.deepEqual(sl.months, ['2026-02', '2026-03'])
+    // Saldo inicial do 1º mês visível (fev) = acumulado de jan do statement COMPLETO (−1000) → continuidade.
+    assert.equal(sl.saldoInicial[0]?.realizedCents, -1000)
+    // Total de saídas recomputado só sobre fev..mar (Aluguel fev = 500; mar = 0).
+    assert.equal(sl.saidas.total.realizedCents, 500)
+    assert.equal(sl.liquidoTotal.realizedCents, -500)
+    // Saldo acumulado final da janela = final do período completo (−1500).
+    assert.equal(sl.saldoAcumulado[sl.months.length - 1]?.realizedCents, -1500)
+  })
+
+  it('sliceStatement clampa índices fora do intervalo (janela inválida não quebra)', () => {
+    const st = buildStatement([], SAIDAS, months)
+    const sl = sliceStatement(st, 5, 9) // fora do range → clampa p/ o último mês
+    assert.equal(sl.months.length, 1)
+    assert.deepEqual(sl.months, ['2026-03'])
+  })
+})
+
+describe('formatAmount — valor SEM "R$" (colunas densas do demonstrativo)', () => {
+  it('formata centavos em pt-BR sem o símbolo, com sinal', () => {
+    assert.equal(formatAmount(1530555), '15.305,55')
+    assert.equal(formatAmount(-591000), '-5.910,00')
+    assert.equal(formatAmount(0), '0,00')
   })
 })
 
 describe('buildCsv — CSV client-side fiel (header pt-BR, seções, valores BRL)', () => {
-  const report = buildReport(SAIDAS, ENTRADAS)
+  const report = buildReport(SAIDAS, ENTRADAS, RANGE)
 
   it('a 1ª linha é o header pt-BR esperado', () => {
     const lines = buildCsv(report, 'Saídas', 'Entradas').split('\r\n')
@@ -330,7 +462,7 @@ describe('buildCsv — CSV client-side fiel (header pt-BR, seções, valores BRL
   })
 
   it('Entradas = [] → só as linhas de Saídas (empty-state no CSV também)', () => {
-    const lines = buildCsv(buildReport(SAIDAS, []), 'Saídas', 'Entradas').split('\r\n')
+    const lines = buildCsv(buildReport(SAIDAS, [], RANGE), 'Saídas', 'Entradas').split('\r\n')
     assert.equal(lines.length, 1 + 3)
     assert.ok(!lines.some((l) => l.startsWith('"Entradas"')))
   })

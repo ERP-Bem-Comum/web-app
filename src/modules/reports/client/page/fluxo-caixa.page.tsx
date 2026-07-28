@@ -1,17 +1,19 @@
 /**
  * FluxoCaixaPage — tela do relatório "Fluxo de Caixa" (identidade "brand", full-bleed 28px), no MOLDE dos
  * demais relatórios: cabeçalho (voltar + título + Filtros + Exportar) → filtros recolhíveis → KPIs → gráfico
- * "por vencimento" → as 2 seções (Saídas / Entradas). Front-first: os dados vêm de constantes placeholder
- * SINTÉTICAS (ver `fluxo-caixa.placeholder.ts`); o endpoint do core-api (#114) ainda não existe.
+ * "por vencimento" → as 2 seções (Saídas / Entradas). Dados REAIS do core-api (#590): o binding `useFluxoCaixa`
+ * lê a resposta composta (árvore Saídas do `/cashflow` + série temporal do `/cashflow/chart`).
  *
- * A ViewModel PURA (`loadFluxoCaixa`) faz TODA a agregação (2 seções × 2 medidas, Saldo = Entradas − Saídas,
- * série mensal por vencimento); a page só compõe as views burras e guarda o ÚNICO UI-state local: o toggle dos
- * filtros. Export = CSV (Blob, seções fiéis) + PDF (window.print, via `report-export-dropdown`). ADR-0009/0012,§XI.
+ * A ViewModel PURA (`buildReportFromCashflow`) faz TODA a agregação (2 seções × 2 medidas, Saldo = Entradas −
+ * Saídas, série temporal por vencimento); a page só compõe as views burras e guarda o ÚNICO UI-state local: o
+ * toggle dos filtros. Export = CSV (Blob, seções fiéis) + PDF (window.print, via `report-export-dropdown`).
+ * ADR-0009/0012, §XI. O gráfico de Centro de Custo é RECONSTRUÍDO pelo BFF via fan-out (o #590 não expõe CC
+ * como eixo — #590 CA6): uma chamada `/cashflow?costCenterId` por CC do catálogo, somada.
  *
- * ⚠️ ENTRADAS = receivables (core-api#114): hoje placeholder mínimo só p/ validar; quando o A-Receber subir e a
- * fonte de Entradas virar `[]`, a seção Entradas cai no empty state honesto SEM quebrar Saídas nem o Saldo.
+ * ⚠️ ENTRADAS = receivables: SEMPRE `[]` (financial é payables-centric) → a seção Entradas cai no empty state
+ * honesto SEM quebrar Saídas nem o Saldo. Quando o Contas a Receber subir, é só a fonte de Entradas entrar.
  */
-import { useMemo, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
@@ -19,22 +21,24 @@ import { screen } from '#shared/ui/brand/brand-page.css.ts'
 import { ChevronLeftIcon, ChevronDownIcon, FilterIcon } from '#shared/ui/index.ts'
 
 import {
-  loadFluxoCaixa,
   buildCsv,
   formatBRL,
+  formatAmount,
   formatBRLShort,
   formatPercent,
   sectionDonutData,
   executionPercent,
-  type FluxoMeasures,
   type FluxoSection,
 } from '../fluxo-caixa.view-model.ts'
+import { useFluxoCaixa, type FluxoCaixaFilter } from '../fluxo-caixa.binding.ts'
+import { useFluxoFilterOptions, type FilterOption } from '../fluxo-filters.binding.ts'
 import { RealizadoChartsMount } from '../components/realizado-charts-mount.component.tsx'
 import { FluxoCaixaTimeline } from '../components/fluxo-caixa-timeline.component.tsx'
 import { FluxoCaixaCostCenterBars } from '../components/fluxo-caixa-cost-center-bars.component.tsx'
 import { RealizadoDonut, type DonutSlice } from '../components/realizado-donut.component.tsx'
-import { FluxoCaixaSectionTable } from '../components/fluxo-caixa-section-table.component.tsx'
+import { FluxoCaixaStatement } from '../components/fluxo-caixa-statement.component.tsx'
 import { ReportExportDropdown } from '../components/report-export-dropdown.component.tsx'
+import { ReportStatePanel } from '../components/report-state-panel.component.tsx'
 import {
   head,
   backButton,
@@ -64,11 +68,63 @@ import {
   saldoValueTone,
   kpiTintNeg,
   charts4,
-  sections,
   exportTrigger,
+  periodRow,
+  dateInput,
 } from './fluxo-caixa.page.css.ts'
 
 const t = createTranslator(ptBR)
+
+/** DRAFT dos filtros do Fluxo (strings da UI; "" = "Todos" / sem recorte). Datas em `YYYY-MM-DD`. */
+type FluxoDraft = Readonly<{
+  programa: string
+  plano: string
+  conta: string
+  centro: string
+  categoria: string
+  subcategoria: string
+  status: string
+  dueFrom: string
+  dueTo: string
+}>
+const EMPTY_DRAFT: FluxoDraft = {
+  programa: '',
+  plano: '',
+  conta: '',
+  centro: '',
+  categoria: '',
+  subcategoria: '',
+  status: '',
+  dueFrom: '',
+  dueTo: '',
+}
+
+// Enum FECHADO de status filtrável do cashflow (#590 = os 6 do #588/#442, sem Draft/Refused).
+const STATUS_VALUES = [
+  'Open',
+  'Approved',
+  'Transmitted',
+  'Paid',
+  'PartiallyReconciled',
+  'Reconciled',
+] as const
+const asStatus = (s: string): string | undefined => STATUS_VALUES.find((x) => x === s)
+
+/** Converte o draft (strings da UI) no filtro do endpoint: "" → undefined (sem recorte). Nomes id-suffixed (#590). */
+function toCashflowFilter(d: FluxoDraft): FluxoCaixaFilter {
+  const v = (x: string): string | undefined => (x === '' ? undefined : x)
+  return {
+    programId: v(d.programa),
+    budgetPlanId: v(d.plano),
+    accountId: v(d.conta),
+    costCenterId: v(d.centro),
+    categoryId: v(d.categoria),
+    subCategoryId: v(d.subcategoria),
+    dueFrom: v(d.dueFrom),
+    dueTo: v(d.dueTo),
+    status: asStatus(d.status),
+  }
+}
 
 /** Baixa o CSV via Blob + anchor (client-side; o backend entregará JSON depois). */
 function downloadCsv(filename: string, csv: string): void {
@@ -84,16 +140,30 @@ function downloadCsv(filename: string, csv: string): void {
 }
 
 export function FluxoCaixaPage(): ReactNode {
+  // UI-state local (§XI): filtros abertos + DRAFT (edição) e APLICADO (o que a query consulta). "Filtrar" commita.
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const report = useMemo(() => loadFluxoCaixa(), [])
+  const [draft, setDraft] = useState<FluxoDraft>(EMPTY_DRAFT)
+  const [applied, setApplied] = useState<FluxoCaixaFilter>({})
+
+  // Server-state REAL do core-api (#590) com os filtros APLICADOS. Opções dos dropdowns cross-módulo (public-api,
+  // §I); Centro/Categoria/Subcategoria em CASCATA da árvore do plano do DRAFT (ADR-0051). Hooks SEMPRE antes dos
+  // early-returns (Rules of Hooks).
+  const state = useFluxoCaixa(applied)
+  const filterOpts = useFluxoFilterOptions(draft.plano, draft.centro, draft.categoria)
+
+  if (state.status === 'loading') {
+    return <ReportStatePanel title={t('reports.fluxoCaixa.loading')} />
+  }
+  if (state.status === 'error') {
+    return (
+      <ReportStatePanel role="alert" title={t('reports.fluxoCaixa.errorTitle')} hint={t(state.errorTag)} />
+    )
+  }
+  const report = state.report
 
   const saidasTitle = t('reports.fluxoCaixa.section.saidas.title')
   const entradasTitle = t('reports.fluxoCaixa.section.entradas.title')
 
-  const measureLabels: Readonly<Record<keyof FluxoMeasures, string>> = {
-    realizedCents: t('reports.fluxoCaixa.measure.realizado'),
-    expectedCents: t('reports.fluxoCaixa.measure.previsto'),
-  }
   const previstoLabel = t('reports.fluxoCaixa.chart.previsto')
   const realizadoLabel = t('reports.fluxoCaixa.chart.realizado')
 
@@ -101,15 +171,34 @@ export function FluxoCaixaPage(): ReactNode {
   const entradasDonut = buildDonutSlices(report.entradas, entradasTitle, previstoLabel, realizadoLabel)
   const saidasDonut = buildDonutSlices(report.saidas, saidasTitle, previstoLabel, realizadoLabel)
 
-  // Rótulos de Status alinhados ao Contas a Pagar (reusa os chips do CAP), como na Análise de Pagamentos.
-  const statusOptions = [
-    t('reports.fluxoCaixa.filters.allOption'),
-    t('financial.list.chip.rascunho'),
-    t('financial.list.chip.aberto'),
-    t('financial.list.chip.aprovado'),
-    t('financial.list.chip.pago'),
-    t('financial.list.chip.conciliado'),
+  const allOption = t('reports.fluxoCaixa.filters.allOption')
+  // Status filtrável (enum #590 → rótulos i18n do Contas a Pagar). value = enum; label = chip do CAP.
+  const statusOptions: readonly FilterOption[] = [
+    { value: 'Open', label: t('financial.list.chip.aberto') },
+    { value: 'Approved', label: t('financial.list.chip.aprovado') },
+    { value: 'Transmitted', label: t('financial.list.chip.transmitido') },
+    { value: 'Paid', label: t('financial.list.chip.pago') },
+    { value: 'PartiallyReconciled', label: t('reports.posicao.filters.statusOpt.partiallyReconciled') },
+    { value: 'Reconciled', label: t('financial.list.chip.conciliado') },
   ]
+
+  // Patch do draft com CASCATA: trocar um nível ZERA os dependentes (não manda ref órfão do plano anterior).
+  const onField = (patch: Partial<FluxoDraft>): void => {
+    setDraft((d) => {
+      const next = { ...d, ...patch }
+      if ('plano' in patch) {
+        next.centro = ''
+        next.categoria = ''
+        next.subcategoria = ''
+      }
+      if ('centro' in patch) {
+        next.categoria = ''
+        next.subcategoria = ''
+      }
+      if ('categoria' in patch) next.subcategoria = ''
+      return next
+    })
+  }
 
   return (
     <div className={screen}>
@@ -150,39 +239,103 @@ export function FluxoCaixaPage(): ReactNode {
         </div>
       </div>
 
-      {/* Filtros recolhíveis (placeholders visuais front-first) */}
+      {/* Filtros recolhíveis — POPULADOS e APLICÁVEIS (#590). "Filtrar" commita draft→aplicado → re-busca. */}
       <div className={filtersOpen ? filters.open : filters.closed}>
         <div className={filtersInner}>
           <FilterField
             label={t('reports.fluxoCaixa.filters.programa')}
-            options={[t('reports.fluxoCaixa.filters.allOption')]}
+            allOption={allOption}
+            value={draft.programa}
+            options={filterOpts.programa}
+            onChange={(v) => {
+              onField({ programa: v })
+            }}
           />
           <FilterField
             label={t('reports.fluxoCaixa.filters.plano')}
-            options={[t('reports.fluxoCaixa.filters.allOption')]}
+            allOption={allOption}
+            value={draft.plano}
+            options={filterOpts.plano}
+            onChange={(v) => {
+              onField({ plano: v })
+            }}
           />
-          <FilterField
-            label={t('reports.fluxoCaixa.filters.periodo')}
-            options={[t('reports.fluxoCaixa.filters.allOption')]}
-          />
+          {/* Período de vencimento: DOIS inputs de data (De / Até) — janela [dueFrom, dueTo). */}
+          <div className={fld}>
+            <label className={fldLabel}>{t('reports.fluxoCaixa.filters.periodo')}</label>
+            <div className={periodRow}>
+              <input
+                type="date"
+                className={dateInput}
+                aria-label={t('reports.fluxoCaixa.filters.periodoDe')}
+                value={draft.dueFrom}
+                onChange={(e) => {
+                  onField({ dueFrom: e.target.value })
+                }}
+              />
+              <input
+                type="date"
+                className={dateInput}
+                aria-label={t('reports.fluxoCaixa.filters.periodoAte')}
+                value={draft.dueTo}
+                onChange={(e) => {
+                  onField({ dueTo: e.target.value })
+                }}
+              />
+            </div>
+          </div>
           <FilterField
             label={t('reports.fluxoCaixa.filters.conta')}
-            options={[t('reports.fluxoCaixa.filters.allOption')]}
+            allOption={allOption}
+            value={draft.conta}
+            options={filterOpts.conta}
+            onChange={(v) => {
+              onField({ conta: v })
+            }}
           />
           <FilterField
             label={t('reports.fluxoCaixa.filters.centro')}
-            options={[t('reports.fluxoCaixa.filters.allOption')]}
+            allOption={allOption}
+            value={draft.centro}
+            options={filterOpts.centro}
+            onChange={(v) => {
+              onField({ centro: v })
+            }}
           />
           <FilterField
             label={t('reports.fluxoCaixa.filters.categoria')}
-            options={[t('reports.fluxoCaixa.filters.allOption')]}
+            allOption={allOption}
+            value={draft.categoria}
+            options={filterOpts.categoria}
+            onChange={(v) => {
+              onField({ categoria: v })
+            }}
           />
           <FilterField
             label={t('reports.fluxoCaixa.filters.subcategoria')}
-            options={[t('reports.fluxoCaixa.filters.allOption')]}
+            allOption={allOption}
+            value={draft.subcategoria}
+            options={filterOpts.subcategoria}
+            onChange={(v) => {
+              onField({ subcategoria: v })
+            }}
           />
-          <FilterField label={t('reports.fluxoCaixa.filters.status')} options={statusOptions} />
-          <button type="button" className={applyButton}>
+          <FilterField
+            label={t('reports.fluxoCaixa.filters.status')}
+            allOption={allOption}
+            value={draft.status}
+            options={statusOptions}
+            onChange={(v) => {
+              onField({ status: v })
+            }}
+          />
+          <button
+            type="button"
+            className={applyButton}
+            onClick={() => {
+              setApplied(toCashflowFilter(draft))
+            }}
+          >
             {t('reports.fluxoCaixa.filters.filtrar')}
           </button>
         </div>
@@ -303,35 +456,31 @@ export function FluxoCaixaPage(): ReactNode {
         )}
       </RealizadoChartsMount>
 
-      {/* As 2 seções (Saídas / Entradas) */}
-      <div className={sections}>
-        <FluxoCaixaSectionTable
-          section={report.saidas}
-          labels={{
-            cardTitle: saidasTitle,
-            nameCol: t('reports.fluxoCaixa.section.nameCol'),
-            measureLabels,
-            totalRow: t('reports.fluxoCaixa.section.saidas.totalRow'),
-            expand: t('reports.fluxoCaixa.tree.expand'),
-            collapse: t('reports.fluxoCaixa.tree.collapse'),
-            empty: t('reports.fluxoCaixa.section.saidas.empty'),
-            emptyHint: t('reports.fluxoCaixa.section.saidas.emptyHint'),
-          }}
-        />
-        <FluxoCaixaSectionTable
-          section={report.entradas}
-          labels={{
-            cardTitle: entradasTitle,
-            nameCol: t('reports.fluxoCaixa.section.nameCol'),
-            measureLabels,
-            totalRow: t('reports.fluxoCaixa.section.entradas.totalRow'),
-            expand: t('reports.fluxoCaixa.tree.expand'),
-            collapse: t('reports.fluxoCaixa.tree.collapse'),
-            empty: t('reports.fluxoCaixa.section.entradas.empty'),
-            emptyHint: t('reports.fluxoCaixa.section.entradas.emptyHint'),
-          }}
-        />
-      </div>
+      {/* Demonstrativo de fluxo de caixa (statement por mês — Real | Prev por mês, seções +Entradas/−Saídas) */}
+      <FluxoCaixaStatement
+        statement={report.statement}
+        formatValue={formatAmount}
+        labels={{
+          cardTitle: t('reports.fluxoCaixa.stmt.title'),
+          hint: t('reports.fluxoCaixa.stmt.hint'),
+          descCol: t('reports.fluxoCaixa.stmt.descCol'),
+          totalCol: t('reports.fluxoCaixa.stmt.totalCol'),
+          realShort: t('reports.fluxoCaixa.stmt.real'),
+          prevShort: t('reports.fluxoCaixa.stmt.prev'),
+          saldoInicial: t('reports.fluxoCaixa.stmt.saldoInicial'),
+          entradas: t('reports.fluxoCaixa.stmt.entradas'),
+          totalEntradas: t('reports.fluxoCaixa.stmt.totalEntradas'),
+          saidas: t('reports.fluxoCaixa.stmt.saidas'),
+          totalSaidas: t('reports.fluxoCaixa.stmt.totalSaidas'),
+          liquido: t('reports.fluxoCaixa.stmt.liquido'),
+          saldoAcumulado: t('reports.fluxoCaixa.stmt.saldoAcumulado'),
+          emptyEntradas: t('reports.fluxoCaixa.stmt.emptyEntradas'),
+          monthsFrom: t('reports.fluxoCaixa.stmt.monthsFrom'),
+          monthsTo: t('reports.fluxoCaixa.stmt.monthsTo'),
+          prevMonth: t('reports.fluxoCaixa.stmt.prevMonth'),
+          nextMonth: t('reports.fluxoCaixa.stmt.nextMonth'),
+        }}
+      />
     </div>
   )
 }
@@ -380,15 +529,37 @@ function SaldoKpi({ label, sub, cents }: { label: string; sub: string; cents: nu
   )
 }
 
-/** Campo de filtro (select nativo placeholder — só a forma/estilo brand). */
-function FilterField({ label, options }: { label: string; options: readonly string[] }): ReactNode {
+/** Campo de filtro CONTROLADO (select brand): opção "Todos" (value "") + as opções reais (value+label). */
+function FilterField({
+  label,
+  allOption,
+  value,
+  options,
+  onChange,
+}: {
+  label: string
+  allOption: string
+  value: string
+  options: readonly FilterOption[]
+  onChange: (value: string) => void
+}): ReactNode {
   return (
     <div className={fld}>
       <label className={fldLabel}>{label}</label>
       <div className={fldCtrl}>
-        <select className={fldSelect} aria-label={label}>
+        <select
+          className={fldSelect}
+          aria-label={label}
+          value={value}
+          onChange={(e) => {
+            onChange(e.target.value)
+          }}
+        >
+          <option value="">{allOption}</option>
           {options.map((o) => (
-            <option key={o}>{o}</option>
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
           ))}
         </select>
         <span className={fldChev}>

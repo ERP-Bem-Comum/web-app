@@ -19,7 +19,7 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
-const client = createCoreApiReportsClient('http://api/reports')
+const client = createCoreApiReportsClient('http://api/reports', 'http://api/financial')
 
 function calledUrl(): string {
   const first = mFetch.mock.calls[0]
