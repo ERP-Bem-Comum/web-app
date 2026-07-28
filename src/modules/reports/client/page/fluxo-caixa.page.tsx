@@ -17,7 +17,7 @@ import { useState, type ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { screen } from '#shared/ui/brand/brand-page.css.ts'
+import { screen, headSubtitle } from '#shared/ui/brand/brand-page.css.ts'
 import { ChevronLeftIcon, ChevronDownIcon, FilterIcon } from '#shared/ui/index.ts'
 
 import {
@@ -32,6 +32,8 @@ import {
 } from '../fluxo-caixa.view-model.ts'
 import { useFluxoCaixa, type FluxoCaixaFilter } from '../fluxo-caixa.binding.ts'
 import { useFluxoFilterOptions, type FilterOption } from '../fluxo-filters.binding.ts'
+import { buildFilterSummaryParts, formatDueRange } from '../filters-summary.view-model.ts'
+import { headTitleBlock } from './posicao-pagamentos.page.css.ts'
 import { RealizadoChartsMount } from '../components/realizado-charts-mount.component.tsx'
 import { FluxoCaixaTimeline } from '../components/fluxo-caixa-timeline.component.tsx'
 import { FluxoCaixaCostCenterBars } from '../components/fluxo-caixa-cost-center-bars.component.tsx'
@@ -200,6 +202,47 @@ export function FluxoCaixaPage(): ReactNode {
     })
   }
 
+  // Resumo dos filtros APLICADOS (reflete `applied`, não o draft) — abaixo do título quando recolhidos. UUID →
+  // rótulo via as options carregadas; período em DD/MM/AAAA. Só as dimensões setadas entram (helper puro §XI).
+  const appliedDueRange = formatDueRange(applied.dueFrom ?? '', applied.dueTo ?? '', {
+    fromPrefix: t('reports.filters.summary.fromPrefix'),
+    toPrefix: t('reports.filters.summary.toPrefix'),
+  })
+  const subtitleParts = buildFilterSummaryParts([
+    {
+      label: t('reports.fluxoCaixa.filters.programa'),
+      value: applied.programId ?? '',
+      options: filterOpts.programa,
+    },
+    {
+      label: t('reports.fluxoCaixa.filters.plano'),
+      value: applied.budgetPlanId ?? '',
+      options: filterOpts.plano,
+    },
+    { label: t('reports.fluxoCaixa.filters.periodo'), value: appliedDueRange },
+    {
+      label: t('reports.fluxoCaixa.filters.conta'),
+      value: applied.accountId ?? '',
+      options: filterOpts.conta,
+    },
+    {
+      label: t('reports.fluxoCaixa.filters.centro'),
+      value: applied.costCenterId ?? '',
+      options: filterOpts.centro,
+    },
+    {
+      label: t('reports.fluxoCaixa.filters.categoria'),
+      value: applied.categoryId ?? '',
+      options: filterOpts.categoria,
+    },
+    {
+      label: t('reports.fluxoCaixa.filters.subcategoria'),
+      value: applied.subCategoryId ?? '',
+      options: filterOpts.subcategoria,
+    },
+    { label: t('reports.fluxoCaixa.filters.status'), value: applied.status ?? '', options: statusOptions },
+  ])
+
   return (
     <div className={screen}>
       {/* Cabeçalho: voltar + título + Filtros/Exportar */}
@@ -214,7 +257,10 @@ export function FluxoCaixaPage(): ReactNode {
         >
           <ChevronLeftIcon size={18} />
         </button>
-        <h1 className={headTitle}>{t('reports.fluxoCaixa.title')}</h1>
+        <div className={headTitleBlock}>
+          <h1 className={headTitle}>{t('reports.fluxoCaixa.title')}</h1>
+          {subtitleParts.length > 0 && <p className={headSubtitle}>{subtitleParts.join(' · ')}</p>}
+        </div>
         <div className={tools}>
           <button
             type="button"
