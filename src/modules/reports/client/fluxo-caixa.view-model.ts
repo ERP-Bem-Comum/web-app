@@ -584,6 +584,17 @@ function rangeFromChart(chart: readonly CashflowChartRow[]): MonthRange | null {
   return min !== null && max !== null ? { start: min, end: max } : null
 }
 
+/**
+ * Intervalo de ANO CHEIO cobrindo a série: Janeiro do 1º ano .. Dezembro do último ano presentes. Usado pelo
+ * DEMONSTRATIVO — ele exibe TODOS os meses do(s) ano(s), inclusive os zerados (o filtro De/Até lista todos).
+ * `null` quando não há mês válido. Não usa `Date`.
+ */
+function fullYearRange(chart: readonly CashflowChartRow[]): MonthRange | null {
+  const r = rangeFromChart(chart)
+  if (r === null) return null
+  return { start: `${r.start.slice(0, 4)}-01`, end: `${r.end.slice(0, 4)}-12` }
+}
+
 /** Corte por CC do BFF (fan-out) → barra do gráfico (`CostCenterMeasure`). O BFF já entrega ordenado. */
 function costCenterToMeasure(cc: CashflowCostCenter): CostCenterMeasure {
   return { label: cc.name, previstoCents: cc.expectedCents, realizadoCents: cc.realizedCents }
@@ -605,7 +616,10 @@ export function buildReportFromCashflow(
   const entradas = aggregateSection([])
   const chartLeaves = chart.map(chartRowToLeaf)
   const range = rangeFromChart(chart)
-  const months = range === null ? [] : monthsInRange(range)
+  const months = range === null ? [] : monthsInRange(range) // tight (MIN..MAX) — linha do tempo/gráficos
+  // Demonstrativo cobre o ANO CHEIO (Jan..Dez): mostra TODOS os meses, inclusive os zerados (filtro lista todos).
+  const stmtRange = fullYearRange(chart)
+  const stmtMonths = stmtRange === null ? [] : monthsInRange(stmtRange)
   return {
     saidas,
     entradas,
@@ -615,7 +629,7 @@ export function buildReportFromCashflow(
     timeline: buildTimeline(chartLeaves, [], months),
     byCostCenter: byCostCenter.map(costCenterToMeasure),
     // Demonstrativo: Saídas com o eixo de mês (chart); Entradas vazio (receivables []) até o A-Receber subir.
-    statement: buildStatement([], chartLeaves, months),
+    statement: buildStatement([], chartLeaves, stmtMonths),
   }
 }
 

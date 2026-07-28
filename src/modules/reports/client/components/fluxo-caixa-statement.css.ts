@@ -50,6 +50,22 @@ export const pickerSelect = style({
   paddingInline: brand.space.sm,
   cursor: 'pointer',
 })
+// Passador de mês (setas ‹ ›) — desloca a janela De/Até em 1 mês.
+export const pickerNav = style({
+  display: 'grid',
+  placeItems: 'center',
+  inlineSize: '1.75rem',
+  blockSize: '1.75rem',
+  color: brand.color.ink700,
+  background: brand.color.surface,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  borderRadius: brand.radius.xs,
+  cursor: 'pointer',
+  selectors: {
+    '&:hover:not(:disabled)': { background: brand.color.surfaceAlt },
+    '&:disabled': { color: brand.color.ink400, cursor: 'not-allowed', opacity: '0.6' },
+  },
+})
 
 // Container do demonstrativo (largura mínima garante o scroll horizontal quando há muitos meses).
 export const stmt = style({ display: 'inline-block', minInlineSize: '100%' })

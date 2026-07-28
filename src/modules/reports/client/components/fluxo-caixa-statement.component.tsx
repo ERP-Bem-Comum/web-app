@@ -11,6 +11,8 @@
  */
 import { Fragment, useMemo, useState, type ReactNode } from 'react'
 
+import { ChevronLeftIcon, ChevronRightIcon } from '#shared/ui/index.ts'
+
 import type { FluxoStatement, StatementCell, StatementItem } from '../fluxo-caixa.view-model.ts'
 import { formatMonthLabel, sliceStatement } from '../fluxo-caixa.view-model.ts'
 import {
@@ -22,6 +24,7 @@ import {
   picker,
   pickerLabel,
   pickerSelect,
+  pickerNav,
   stmt,
   srow,
   cell,
@@ -65,6 +68,8 @@ export type FluxoStatementLabels = Readonly<{
   /** Rótulos do filtro de meses. */
   monthsFrom: string
   monthsTo: string
+  prevMonth: string
+  nextMonth: string
 }>
 
 export type FluxoCaixaStatementProps = Readonly<{
@@ -87,10 +92,18 @@ export function FluxoCaixaStatement(props: FluxoCaixaStatementProps): ReactNode 
   const [toMonth, setToMonth] = useState<string | null>(null)
   const fromIdx = fromMonth !== null ? allMonths.indexOf(fromMonth) : 0
   const toIdxRaw = toMonth !== null ? allMonths.indexOf(toMonth) : allMonths.length - 1
-  const s = useMemo(
-    () => sliceStatement(full, fromIdx < 0 ? 0 : fromIdx, toIdxRaw < 0 ? allMonths.length - 1 : toIdxRaw),
-    [full, fromIdx, toIdxRaw, allMonths.length],
-  )
+  const loIdx = fromIdx < 0 ? 0 : fromIdx
+  const hiIdx = toIdxRaw < 0 ? allMonths.length - 1 : toIdxRaw
+  const s = useMemo(() => sliceStatement(full, loIdx, hiIdx), [full, loIdx, hiIdx])
+
+  // Passador de mês: desloca a janela [De, Até] em `delta` meses (clampado aos extremos).
+  const shiftWindow = (delta: number): void => {
+    const nf = loIdx + delta
+    const nt = hiIdx + delta
+    if (nf < 0 || nt > allMonths.length - 1) return
+    setFromMonth(allMonths[nf] ?? null)
+    setToMonth(allMonths[nt] ?? null)
+  }
 
   const monthCount = s.months.length
   // Template das linhas de dados (Descrição + [Real Prev] por mês + [Real Prev] do Total).
@@ -139,11 +152,22 @@ export function FluxoCaixaStatement(props: FluxoCaixaStatementProps): ReactNode 
         <div className={picker}>
           {allMonths.length >= 2 && (
             <>
+              <button
+                type="button"
+                className={pickerNav}
+                aria-label={L.prevMonth}
+                disabled={loIdx <= 0}
+                onClick={() => {
+                  shiftWindow(-1)
+                }}
+              >
+                <ChevronLeftIcon size={16} />
+              </button>
               <label className={pickerLabel}>
                 {L.monthsFrom}
                 <select
                   className={pickerSelect}
-                  value={fromMonth ?? allMonths[0]}
+                  value={allMonths[loIdx] ?? allMonths[0]}
                   aria-label={L.monthsFrom}
                   onChange={(e) => {
                     setFromMonth(e.target.value)
@@ -160,7 +184,7 @@ export function FluxoCaixaStatement(props: FluxoCaixaStatementProps): ReactNode 
                 {L.monthsTo}
                 <select
                   className={pickerSelect}
-                  value={toMonth ?? allMonths[allMonths.length - 1]}
+                  value={allMonths[hiIdx] ?? allMonths[allMonths.length - 1]}
                   aria-label={L.monthsTo}
                   onChange={(e) => {
                     setToMonth(e.target.value)
@@ -173,6 +197,17 @@ export function FluxoCaixaStatement(props: FluxoCaixaStatementProps): ReactNode 
                   ))}
                 </select>
               </label>
+              <button
+                type="button"
+                className={pickerNav}
+                aria-label={L.nextMonth}
+                disabled={hiIdx >= allMonths.length - 1}
+                onClick={() => {
+                  shiftWindow(1)
+                }}
+              >
+                <ChevronRightIcon size={16} />
+              </button>
             </>
           )}
           <span className={hint}>{L.hint}</span>

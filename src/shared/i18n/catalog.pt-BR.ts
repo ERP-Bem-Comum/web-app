@@ -2747,6 +2747,8 @@ export const ptBR: Catalog = {
   'reports.fluxoCaixa.filters.programa': 'Programa',
   'reports.fluxoCaixa.filters.plano': 'Plano Orçamentário',
   'reports.fluxoCaixa.filters.periodo': 'Período de vencimento',
+  'reports.fluxoCaixa.filters.periodoDe': 'De',
+  'reports.fluxoCaixa.filters.periodoAte': 'Até',
   'reports.fluxoCaixa.filters.conta': 'Conta bancária',
   'reports.fluxoCaixa.filters.centro': 'Centro de custo',
   'reports.fluxoCaixa.filters.categoria': 'Categoria',
@@ -2810,6 +2812,8 @@ export const ptBR: Catalog = {
   'reports.fluxoCaixa.stmt.emptyEntradas': 'Nenhuma entrada registrada — o Contas a Receber ainda não subiu.',
   'reports.fluxoCaixa.stmt.monthsFrom': 'De',
   'reports.fluxoCaixa.stmt.monthsTo': 'Até',
+  'reports.fluxoCaixa.stmt.prevMonth': 'Mês anterior',
+  'reports.fluxoCaixa.stmt.nextMonth': 'Próximo mês',
 
   // ── "Relatório Geral" (front-first; core-api#114) — ledger unificado achatado e paginado ──
   'reports.geral.title': 'Relatório Geral',

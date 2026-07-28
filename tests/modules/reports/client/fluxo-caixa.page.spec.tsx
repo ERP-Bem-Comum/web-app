@@ -9,7 +9,7 @@
  */
 import type { ReactNode } from 'react'
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { render, screen, cleanup } from '@testing-library/react'
+import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import { ok } from '#shared/primitives/result.ts'
@@ -21,6 +21,18 @@ import { sectionDonutData, aggregateSection } from '#modules/reports/client/flux
 
 vi.mock('#modules/reports/client/data/repository/reports.repository.instance.ts', () => ({
   reportsRepository: { getCashflowReport: vi.fn() },
+}))
+
+// Opções dos filtros mockadas (evita as server-fns reais de plano/programa/conta/cascata no jsdom).
+vi.mock('#modules/reports/client/fluxo-filters.binding.ts', () => ({
+  useFluxoFilterOptions: () => ({
+    programa: [{ value: 'prog-1', label: 'GOD' }],
+    plano: [{ value: 'plan-1', label: '2026 GOD 1.0' }],
+    conta: [],
+    centro: [],
+    categoria: [],
+    subcategoria: [],
+  }),
 }))
 
 const mCashflow = vi.mocked(reportsRepository.getCashflowReport)
@@ -134,6 +146,17 @@ describe('FluxoCaixaPage — composição', () => {
     expect(screen.getAllByText('Total de Entradas').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('Saldo (realizado)')).toBeTruthy()
     expect(screen.getByText('Saldo (previsto)')).toBeTruthy()
+  })
+
+  it('filtros aplicam: "Filtrar" re-busca com o filtro mapeado (Plano → budgetPlanId)', async () => {
+    mCashflow.mockResolvedValue(ok(REPORT))
+    renderPage()
+    await screen.findByText('Exportar')
+    fireEvent.change(screen.getByLabelText('Plano Orçamentário'), { target: { value: 'plan-1' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Filtrar' }))
+    await waitFor(() => {
+      expect(mCashflow).toHaveBeenCalledWith(expect.objectContaining({ budgetPlanId: 'plan-1' }))
+    })
   })
 
   it('empty-state honesto: resposta vazia (0 payables, 0 chart) monta a tela sem quebrar', async () => {
