@@ -13,7 +13,7 @@
  */
 import type { ReactNode } from 'react'
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, cleanup, fireEvent, waitFor, within } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import { ok, err } from '#shared/primitives/result.ts'
@@ -166,6 +166,41 @@ describe('AnalisePagamentosPage — aplicar período (De/Até + Filtrar)', () =>
       dueStart: `${String(year - 2)}-01-01`,
       dueEnd: `${String(year + 2)}-01-01`,
     })
+  })
+})
+
+describe('AnalisePagamentosPage — aplicar Status (#446)', () => {
+  it('Status=Pago manda o ENUM (Paid), muda a queryKey/refetch e entra no resumo; sem Filtrar não refetch', async () => {
+    await renderReady()
+    expect(mAnalysis).toHaveBeenCalledTimes(1)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filtros' }))
+    // Selecionar o status NÃO deve refetch (só draft).
+    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'Paid' } })
+    expect(mAnalysis).toHaveBeenCalledTimes(1)
+
+    // "Filtrar" aplica → re-busca. Sem datas → janela default + o status.
+    fireEvent.click(screen.getByRole('button', { name: 'Filtrar' }))
+    await waitFor(() => {
+      expect(mAnalysis).toHaveBeenCalledTimes(2)
+    })
+    // Confirma que o valor enviado é o ENUM (Paid), não o rótulo ("Pago").
+    expect(mAnalysis).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'Paid' }))
+    // Resumo mostra o rótulo PT (value→label), sem exibir a janela default como período escolhido.
+    await screen.findByText('Status: Pago')
+    expect(screen.queryByText(/Período de vencimento:/)).toBeNull()
+  })
+
+  it('oferece só o enum reduzido (Aberto/Aprovado/Pago) — sem Rascunho/Transmitido/Conciliado', async () => {
+    await renderReady()
+    fireEvent.click(screen.getByRole('button', { name: 'Filtros' }))
+    const statusSelect = screen.getByLabelText('Status')
+    expect(within(statusSelect).getByRole('option', { name: 'Aberto' })).toBeTruthy()
+    expect(within(statusSelect).getByRole('option', { name: 'Aprovado' })).toBeTruthy()
+    expect(within(statusSelect).getByRole('option', { name: 'Pago' })).toBeTruthy()
+    expect(within(statusSelect).queryByRole('option', { name: 'Rascunho' })).toBeNull()
+    expect(within(statusSelect).queryByRole('option', { name: 'Transmitido' })).toBeNull()
+    expect(within(statusSelect).queryByRole('option', { name: 'Conciliado' })).toBeNull()
   })
 })
 

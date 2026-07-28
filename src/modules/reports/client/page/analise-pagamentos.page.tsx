@@ -19,9 +19,9 @@ import {
   useSubcategoryOptionsFromPlan,
 } from '#modules/financial/public-api/index.ts'
 
-import { useAnalisePagamentos, type AnalisePagamentosQuery } from '../analise.binding.ts'
+import { useAnalisePagamentos, wideDueWindow, type AnalisePagamentosQuery } from '../analise.binding.ts'
 import { useAnaliseFilterOptions } from '../analise-filters.binding.ts'
-import { buildFilterSummaryParts, formatDueRange } from '../filters-summary.view-model.ts'
+import { buildFilterSummaryParts, formatDueRange, type FilterOption } from '../filters-summary.view-model.ts'
 import {
   AnaliseReportView,
   type AnaliseReportViewLabels,
@@ -40,16 +40,35 @@ const EMPTY_SEL: CascadeSel = { plano: '', centro: '', categoria: '', subcategor
 type PeriodDraft = Readonly<{ dueFrom: string; dueTo: string }>
 const EMPTY_PERIOD: PeriodDraft = { dueFrom: '', dueTo: '' }
 
-/** Converte o draft de período no query do #446: só aplica com AMBAS as datas; senão `undefined` (defaultRange). */
-function toQuery(d: PeriodDraft): AnalisePagamentosQuery | undefined {
-  if (d.dueFrom === '' || d.dueTo === '') return undefined
-  return { dueStart: d.dueFrom, dueEnd: d.dueTo }
+// Status APLICÁVEL do #446 = `fin_payable_view.status` (enum REDUZIDO: Open/Approved/Paid). ⚠️ NÃO usar os chips
+// do CAP: Rascunho/Transmitido/Conciliado são status do DOCUMENTO (não da payable-view) → filtrar por eles =
+// vazio silencioso. Cancelled fica fora do relatório. O `value` enviado ao backend é o ENUM, não o rótulo.
+
+/**
+ * Converte o draft (período + status) no query do #446. Período com AMBAS as datas → recorta; senão usa a janela
+ * ampla default (o #446 exige dueStart/dueEnd). Status '' → undefined. Nada aplicado (sem datas e sem status) →
+ * `undefined` (o binding cai na default sem status). Assim o STATUS pode aplicar mesmo sem o usuário escolher datas.
+ */
+function toQuery(period: PeriodDraft, status: string): AnalisePagamentosQuery | undefined {
+  const s = status === '' ? undefined : status
+  const hasPeriod = period.dueFrom !== '' && period.dueTo !== ''
+  if (!hasPeriod && s === undefined) return undefined
+  const base = hasPeriod ? { dueStart: period.dueFrom, dueEnd: period.dueTo } : wideDueWindow()
+  return { ...base, status: s }
 }
 
 export function AnalisePagamentosPage(): ReactNode {
-  // UI-state do Período: DRAFT (edição nos inputs) + APLICADO (o que a query consulta). "Filtrar" commita.
+  // UI-state dos filtros aplicáveis: DRAFT (edição) + APLICADO. `applied` = o query (com a janela default quando
+  // o usuário não escolhe datas). `appliedView` = o que o usuário DE FATO aplicou (p/ o subtítulo — não mostra a
+  // janela default como se fosse um período escolhido). "Filtrar" commita ambos.
   const [periodDraft, setPeriodDraft] = useState<PeriodDraft>(EMPTY_PERIOD)
+  const [statusDraft, setStatusDraft] = useState<string>('')
   const [applied, setApplied] = useState<AnalisePagamentosQuery | undefined>(undefined)
+  const [appliedView, setAppliedView] = useState<PeriodDraft & { status: string }>({
+    dueFrom: '',
+    dueTo: '',
+    status: '',
+  })
 
   // Server-state REAL do core-api (#446) com o período APLICADO: loading | error | ready. Sem período aplicado
   // → o binding usa a janela ampla default. O empty-state honesto (resposta vazia) é resolvido na View.
@@ -152,30 +171,46 @@ export function AnalisePagamentosPage(): ReactNode {
     },
   }
 
-  // Resumo dos filtros APLICADOS (subtítulo). Na Análise só o PERÍODO aplica no #446 → só ele entra (a cascata
-  // e o status não filtram o resultado, então não enganam o usuário). Sem período aplicado → sem linha.
-  const subtitleParts =
-    applied === undefined
-      ? []
-      : buildFilterSummaryParts([
-          {
-            label: labels.filters.periodo,
-            value: formatDueRange(applied.dueStart, applied.dueEnd, {
-              fromPrefix: t('reports.filters.summary.fromPrefix'),
-              toPrefix: t('reports.filters.summary.toPrefix'),
-            }),
-          },
-        ])
+  // Opções de Status (enum REDUZIDO do #446). value = ENUM (o que vai pro backend); label = rótulo PT (reusa os
+  // chips do CAP p/ o texto). A opção "Todos" (value '') é o placeholder do ControlledFilterField.
+  const statusOptions: readonly FilterOption[] = [
+    { value: 'Open', label: t('financial.list.chip.aberto') },
+    { value: 'Approved', label: t('financial.list.chip.aprovado') },
+    { value: 'Paid', label: t('financial.list.chip.pago') },
+  ]
 
-  // Período controlado: mudar as datas só edita o draft; "Filtrar" commita → re-busca (§XI: view burra).
+  // Resumo dos filtros APLICADOS (subtítulo) — do `appliedView` (o que o usuário aplicou), não do query interno.
+  // Na Análise, os que de fato filtram o #446: PERÍODO + STATUS (a cascata não aplica → não entra). Status
+  // resolve value→label (Open→Aberto); período/status vazios são pulados; nada aplicado → sem linha.
+  const subtitleParts = buildFilterSummaryParts([
+    {
+      label: labels.filters.periodo,
+      value: formatDueRange(appliedView.dueFrom, appliedView.dueTo, {
+        fromPrefix: t('reports.filters.summary.fromPrefix'),
+        toPrefix: t('reports.filters.summary.toPrefix'),
+      }),
+    },
+    { label: labels.filters.status, value: appliedView.status, options: statusOptions },
+  ])
+
+  // Período + Status controlados: mudar um campo só edita o draft; "Filtrar" commita AMBOS → re-busca (§XI).
+  const aplicar = (): void => {
+    setApplied(toQuery(periodDraft, statusDraft))
+    setAppliedView({ dueFrom: periodDraft.dueFrom, dueTo: periodDraft.dueTo, status: statusDraft })
+  }
   const period: AnalisePeriodModel = {
     dueFrom: periodDraft.dueFrom,
     dueTo: periodDraft.dueTo,
     onChange: (patch) => {
       setPeriodDraft((d) => ({ ...d, ...patch }))
     },
-    onFiltrar: () => {
-      setApplied(toQuery(periodDraft))
+    onFiltrar: aplicar,
+  }
+  const statusFilter = {
+    options: statusOptions,
+    value: statusDraft,
+    onChange: (v: string) => {
+      setStatusDraft(v)
     },
   }
 
@@ -187,6 +222,7 @@ export function AnalisePagamentosPage(): ReactNode {
       filterOptions={{ programa: filterOpts.programa, conta: filterOpts.conta }}
       cascade={cascade}
       period={period}
+      statusFilter={statusFilter}
       subtitleParts={subtitleParts}
     />
   )
