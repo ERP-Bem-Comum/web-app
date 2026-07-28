@@ -355,34 +355,38 @@ export function SearchCreatePane({ binding, extratoValueCents, onManualEntry }: 
               ))
             )}
           </div>
-          {/* Passador de página — só quando há mais de uma página (o footer já mostra "de N"). */}
-          {binding.pageCount > 1 ? (
-            <div className={s.pmPager}>
-              <span className={s.spacer} />
-              <button
-                type="button"
-                className={s.pmPagerBtn}
-                disabled={binding.page <= 1}
-                aria-label={t('financial.recon.multi.pagerPrev')}
-                onClick={binding.prevPage}
-              >
-                {t('financial.recon.multi.pagerPrev')}
-              </button>
-              <span className={s.pmPagerPos}>
-                {t('financial.recon.multi.pagerPage')} {binding.page} {t('financial.recon.multi.pagerOf')}{' '}
-                {binding.pageCount}
+          {/* Rodapé da lista: contagem SEMPRE visível; navegação só quando há mais de uma página. */}
+          <div className={s.pmPager}>
+            <span className={s.pmPagerCount}>
+              {binding.filteredCount} {t('financial.recon.multi.shownCount')}
+            </span>
+            {binding.pageCount > 1 ? (
+              <span className={s.pmPagerNav}>
+                <button
+                  type="button"
+                  className={s.pmPagerBtn}
+                  disabled={binding.page <= 1}
+                  aria-label={t('financial.recon.multi.pagerPrev')}
+                  onClick={binding.prevPage}
+                >
+                  {t('financial.recon.multi.pagerPrev')}
+                </button>
+                <span className={s.pmPagerPos}>
+                  {t('financial.recon.multi.pagerPage')} {binding.page} {t('financial.recon.multi.pagerOf')}{' '}
+                  {binding.pageCount}
+                </span>
+                <button
+                  type="button"
+                  className={s.pmPagerBtn}
+                  disabled={binding.page >= binding.pageCount}
+                  aria-label={t('financial.recon.multi.pagerNext')}
+                  onClick={binding.nextPage}
+                >
+                  {t('financial.recon.multi.pagerNext')}
+                </button>
               </span>
-              <button
-                type="button"
-                className={s.pmPagerBtn}
-                disabled={binding.page >= binding.pageCount}
-                aria-label={t('financial.recon.multi.pagerNext')}
-                onClick={binding.nextPage}
-              >
-                {t('financial.recon.multi.pagerNext')}
-              </button>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
           <div className={s.pmFoot}>
             <span>
               <span className={s.pmFootCount}>{selectedCount}</span> {t('financial.recon.multi.footSelected')}{' '}

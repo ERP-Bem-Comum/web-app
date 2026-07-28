@@ -824,10 +824,22 @@ export const btnManual = style({
 export const pmPager = style({
   display: 'flex',
   alignItems: 'center',
+  justifyContent: 'space-between',
   gap: sp.sm,
   paddingBlock: sp.sm,
   paddingInline: '0.875rem',
   borderBlockStart: `${bw.hairline} solid ${c.paper.rule}`,
+})
+export const pmPagerCount = style({
+  fontFamily: recon.font.sans,
+  fontSize: fs.sm,
+  color: c.ink[4],
+  fontVariantNumeric: 'tabular-nums',
+})
+export const pmPagerNav = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: sp.sm,
 })
 export const pmPagerBtn = style({
   paddingInline: sp.md,
