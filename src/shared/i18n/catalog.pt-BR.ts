@@ -2824,15 +2824,26 @@ export const ptBR: Catalog = {
   'reports.geral.export.label': 'Exportar',
   'reports.geral.export.csv': 'CSV',
   'reports.geral.export.pdf': 'PDF',
-  // Filtros recolhíveis (placeholders visuais front-first).
+  // Filtros recolhíveis — POPULADOS e APLICÁVEIS (#442).
   'reports.geral.filters.title': 'Filtros',
   'reports.geral.filters.allOption': 'Todos',
-  'reports.geral.filters.periodo': 'Período',
+  'reports.geral.filters.busca': 'Buscar',
+  'reports.geral.filters.buscaPlaceholder': 'Nº do documento ou fornecedor',
+  'reports.geral.filters.plano': 'Plano Orçamentário',
+  'reports.geral.filters.periodo': 'Período de vencimento',
+  'reports.geral.filters.periodoDe': 'De',
+  'reports.geral.filters.periodoAte': 'Até',
   'reports.geral.filters.tipo': 'Tipo',
   'reports.geral.filters.fornecedor': 'Fornecedor',
+  'reports.geral.filters.conta': 'Conta bancária',
   'reports.geral.filters.centro': 'Centro de custo',
   'reports.geral.filters.categoria': 'Categoria',
+  'reports.geral.filters.subcategoria': 'Subcategoria',
+  'reports.geral.filters.status': 'Status',
   'reports.geral.filters.filtrar': 'Filtrar',
+  // Estados de carregamento/erro.
+  'reports.geral.loading': 'Carregando o relatório geral…',
+  'reports.geral.errorTitle': 'Não foi possível carregar o relatório geral',
   // Cabeçalho da tabela.
   'reports.geral.table.title': 'Lançamentos',
   'reports.geral.table.count': '{{count}} lançamentos',

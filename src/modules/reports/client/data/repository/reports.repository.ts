@@ -20,6 +20,10 @@ import type {
   RealizedBudgetRow,
 } from '#modules/reports/client/data/model/realized-report.model.ts'
 import type { CashflowReport, CashflowFilter } from '#modules/reports/client/data/model/cashflow.model.ts'
+import type {
+  GeneralReportPage,
+  GeneralReportQuery,
+} from '#modules/reports/client/data/model/general-report.model.ts'
 import type { ReportsError, FnResult } from '#modules/reports/client/data/repository/reports-error.ts'
 
 type TeamFn = () => Promise<FnResult<readonly TeamMember[]>>
@@ -29,6 +33,7 @@ type PaymentPositionFn = (filter: PaymentPositionFilter) => Promise<FnResult<rea
 type PaymentAnalysisFn = (query: PaymentAnalysisQuery) => Promise<FnResult<PaymentAnalysis>>
 type RealizedReportFn = (query: RealizedReportQuery) => Promise<FnResult<readonly RealizedBudgetRow[]>>
 type CashflowReportFn = (filter: CashflowFilter) => Promise<FnResult<CashflowReport>>
+type GeneralReportFn = (query: GeneralReportQuery) => Promise<FnResult<GeneralReportPage>>
 
 export type ReportsRepository = Readonly<{
   getTeam: () => Promise<Result<readonly TeamMember[], ReportsError>>
@@ -43,6 +48,7 @@ export type ReportsRepository = Readonly<{
     query: RealizedReportQuery,
   ) => Promise<Result<readonly RealizedBudgetRow[], ReportsError>>
   getCashflowReport: (filter: CashflowFilter) => Promise<Result<CashflowReport, ReportsError>>
+  getGeneralReport: (query: GeneralReportQuery) => Promise<Result<GeneralReportPage, ReportsError>>
 }>
 
 export const createReportsRepository = (
@@ -54,6 +60,7 @@ export const createReportsRepository = (
     paymentAnalysisFn: PaymentAnalysisFn
     realizedReportFn: RealizedReportFn
     cashflowReportFn: CashflowReportFn
+    generalReportFn: GeneralReportFn
   }>,
 ): ReportsRepository => ({
   getTeam: async () => {
@@ -82,6 +89,10 @@ export const createReportsRepository = (
   },
   getCashflowReport: async (filter) => {
     const res = await deps.cashflowReportFn(filter)
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  getGeneralReport: async (query) => {
+    const res = await deps.generalReportFn(query)
     return res.ok ? ok(res.data) : err(res.error)
   },
 })

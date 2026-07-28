@@ -1,36 +1,36 @@
 /**
  * RelatorioGeralPage — tela do "Relatório Geral" (identidade "brand", full-bleed 28px), no MOLDE dos demais
- * relatórios: cabeçalho (voltar + título + Filtros + Exportar) → filtros recolhíveis → tabela paginada (15
- * colunas, scroll horizontal) → paginação (`BrandPaginator`). Front-first: os dados vêm de constantes
- * placeholder SINTÉTICAS (ver `relatorio-geral.placeholder.ts`); o endpoint do core-api (#114) ainda não existe.
+ * relatórios: cabeçalho (voltar + título + Filtros + Exportar + Colunas) → filtros recolhíveis → tabela PAGINADA
+ * (15 colunas, scroll horizontal) → paginação (`BrandPaginator`). Dados REAIS do core-api (#442): o binding
+ * `useRelatorioGeral` lê a PÁGINA plana do `GET /reports/generalReport` (paginação SERVER-SIDE; total do servidor).
  *
- * A ViewModel PURA faz a paginação (fatia) e o CSV; a page só compõe as views burras e guarda o UI-state local
- * (filtros + página + itens por página). Export = CSV (Blob) + PDF (window.print). ADR-0009/0012, §XI.
- *
- * ⚠️ As linhas de `tipo: 'Recebimento'` e a coluna Financiador são PLACEHOLDER até o Contas a Receber subir
- * (core-api#114/receivables); quando ele nascer, virão do DTO real (mesmo shape `LedgerRow`).
+ * A ViewModel PURA mapeia a linha real → linha de exibição e monta o CSV; a page compõe as views burras e guarda
+ * o UI-state (filtros DRAFT/APLICADO, página, itens por página, colunas visíveis). Export CSV segue O QUE ESTÁ NA
+ * TELA (WYSIWYG) da página corrente. ADR-0009/0012, §XI. PIX/bancário só vêm sob `bank-account:read` (Slice C).
  */
-import { useMemo, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { screen } from '#shared/ui/brand/brand-page.css.ts'
+import { screen, headSubtitle } from '#shared/ui/brand/brand-page.css.ts'
 import { BrandPaginator } from '#shared/ui/brand/brand-paginator.component.tsx'
 import { ChevronLeftIcon, ChevronDownIcon, FilterIcon } from '#shared/ui/index.ts'
 
 import {
-  loadRelatorioGeral,
-  total as computeTotal,
   buildCsv,
   totalPages,
-  pageSlice,
   PER_PAGE_DEFAULT,
   GENERAL_COLUMNS,
   ALL_GENERAL_COLUMN_IDS,
   type GeneralColumnId,
 } from '../relatorio-geral.view-model.ts'
+import { useRelatorioGeral, type RelatorioGeralQuery } from '../relatorio-geral.binding.ts'
+import { usePosicaoFilterOptions } from '../posicao-filters.binding.ts'
+import { buildFilterSummaryParts, formatDueRange, type FilterOption } from '../filters-summary.view-model.ts'
 import { RelatorioGeralTable, type VisibleColumn } from '../components/relatorio-geral-table.component.tsx'
 import { ReportExportDropdown } from '../components/report-export-dropdown.component.tsx'
+import { ReportStatePanel } from '../components/report-state-panel.component.tsx'
+import { headTitleBlock } from './posicao-pagamentos.page.css.ts'
 import {
   head,
   backButton,
@@ -51,6 +51,9 @@ import {
   columnsMenu,
   columnsItem,
   columnsCheck,
+  searchInput,
+  periodRow,
+  dateInput,
 } from './relatorio-geral.page.css.ts'
 
 const t = createTranslator(ptBR)
@@ -74,7 +77,64 @@ const COLUMN_LABEL: Record<GeneralColumnId, string> = {
   valor: t('reports.geral.columns.valor'),
 }
 
-/** Baixa o CSV via Blob + anchor (client-side; o backend entregará JSON depois). */
+/** DRAFT dos filtros (strings da UI; "" = "Todos" / sem recorte). Datas em `YYYY-MM-DD`. */
+type GeralDraft = Readonly<{
+  search: string
+  plano: string
+  fornecedor: string
+  conta: string
+  centro: string
+  categoria: string
+  subcategoria: string
+  status: string
+  dueFrom: string
+  dueTo: string
+}>
+const EMPTY_DRAFT: GeralDraft = {
+  search: '',
+  plano: '',
+  fornecedor: '',
+  conta: '',
+  centro: '',
+  categoria: '',
+  subcategoria: '',
+  status: '',
+  dueFrom: '',
+  dueTo: '',
+}
+
+/** Campos de filtro APLICADOS (sem page/limit — o BFF pagina). */
+type GeralFilters = Omit<RelatorioGeralQuery, 'page' | 'limit'>
+
+// Status filtrável (enum #442 = os 6 do #588, sem Draft/Refused).
+const STATUS_VALUES = [
+  'Open',
+  'Approved',
+  'Transmitted',
+  'Paid',
+  'PartiallyReconciled',
+  'Reconciled',
+] as const
+const asStatus = (s: string): string | undefined => STATUS_VALUES.find((x) => x === s)
+
+/** Converte o draft nas dimensões do endpoint: "" → undefined. Fornecedor → entityId; Plano → budgetPlanId. */
+function toGeralFilters(d: GeralDraft): GeralFilters {
+  const v = (x: string): string | undefined => (x === '' ? undefined : x)
+  return {
+    search: v(d.search),
+    budgetPlanId: v(d.plano),
+    entityId: v(d.fornecedor),
+    accountId: v(d.conta),
+    costCenterId: v(d.centro),
+    categoryId: v(d.categoria),
+    subCategoryId: v(d.subcategoria),
+    dueFrom: v(d.dueFrom),
+    dueTo: v(d.dueTo),
+    status: asStatus(d.status),
+  }
+}
+
+/** Baixa o CSV via Blob + anchor (client-side). */
 function downloadCsv(filename: string, csv: string): void {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
@@ -90,30 +150,44 @@ function downloadCsv(filename: string, csv: string): void {
 export function RelatorioGeralPage(): ReactNode {
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [columnsOpen, setColumnsOpen] = useState(false)
-  // UI-state (§XI): quais colunas ficam visíveis. Padrão = todas. É estado de UI, não server-state.
   const [visibleIds, setVisibleIds] = useState<ReadonlySet<GeneralColumnId>>(
     () => new Set(ALL_GENERAL_COLUMN_IDS),
   )
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(PER_PAGE_DEFAULT)
+  const [draft, setDraft] = useState<GeralDraft>(EMPTY_DRAFT)
+  const [applied, setApplied] = useState<GeralFilters>({})
 
-  const rows = useMemo(() => loadRelatorioGeral(), [])
-  const totalCount = useMemo(() => computeTotal(rows), [rows])
+  // Server-state REAL (#442) — página + filtros APLICADOS. Opções cross-módulo (public-api §I); Centro/Categoria/
+  // Subcategoria em CASCATA da árvore do plano do DRAFT (ADR-0051). Hooks SEMPRE antes dos early-returns.
+  const state = useRelatorioGeral({ page, limit: perPage, ...applied })
+  const filterOpts = usePosicaoFilterOptions(draft.plano, draft.centro, draft.categoria)
+
+  if (state.status === 'loading') {
+    return <ReportStatePanel title={t('reports.geral.loading')} />
+  }
+  if (state.status === 'error') {
+    return <ReportStatePanel role="alert" title={t('reports.geral.errorTitle')} hint={t(state.errorTag)} />
+  }
+
+  const { rows: pageRows, total: totalCount } = state.data
   const pages = totalPages(totalCount, perPage)
-  const pageRows = useMemo(() => pageSlice(rows, page, perPage), [rows, page, perPage])
+  const allOption = t('reports.geral.filters.allOption')
+
+  const statusOptions: readonly FilterOption[] = [
+    { value: 'Open', label: t('financial.list.chip.aberto') },
+    { value: 'Approved', label: t('financial.list.chip.aprovado') },
+    { value: 'Transmitted', label: t('financial.list.chip.transmitido') },
+    { value: 'Paid', label: t('financial.list.chip.pago') },
+    { value: 'PartiallyReconciled', label: t('reports.posicao.filters.statusOpt.partiallyReconciled') },
+    { value: 'Reconciled', label: t('financial.list.chip.conciliado') },
+  ]
 
   // Colunas visíveis na ORDEM do legado (fonte única filtrada pela seleção) — dirige tabela + export.
-  const visibleColumns = useMemo<readonly VisibleColumn[]>(
-    () =>
-      GENERAL_COLUMNS.filter((c) => visibleIds.has(c.id)).map((c) => ({
-        id: c.id,
-        kind: c.kind,
-        label: COLUMN_LABEL[c.id],
-      })),
-    [visibleIds],
+  const visibleColumns: readonly VisibleColumn[] = GENERAL_COLUMNS.filter((c) => visibleIds.has(c.id)).map(
+    (c) => ({ id: c.id, kind: c.kind, label: COLUMN_LABEL[c.id] }),
   )
 
-  /** Marca/desmarca uma coluna (imutável, §VII). */
   const toggleColumn = (id: GeneralColumnId): void => {
     setVisibleIds((prev) => {
       const next = new Set(prev)
@@ -123,9 +197,66 @@ export function RelatorioGeralPage(): ReactNode {
     })
   }
 
+  // Patch do draft com CASCATA (plano → zera centro/categoria/subcategoria; etc.).
+  const onField = (patch: Partial<GeralDraft>): void => {
+    setDraft((d) => {
+      const next = { ...d, ...patch }
+      if ('plano' in patch) {
+        next.centro = ''
+        next.categoria = ''
+        next.subcategoria = ''
+      }
+      if ('centro' in patch) {
+        next.categoria = ''
+        next.subcategoria = ''
+      }
+      if ('categoria' in patch) next.subcategoria = ''
+      return next
+    })
+  }
+
+  // "Filtrar" commita o draft → aplicado e volta p/ a 1ª página (o total muda).
+  const applyFilters = (): void => {
+    setApplied(toGeralFilters(draft))
+    setPage(1)
+  }
+
+  // Resumo dos filtros APLICADOS (reflete `applied`, não o draft) — abaixo do título.
+  const appliedDueRange = formatDueRange(applied.dueFrom ?? '', applied.dueTo ?? '', {
+    fromPrefix: t('reports.filters.summary.fromPrefix'),
+    toPrefix: t('reports.filters.summary.toPrefix'),
+  })
+  const subtitleParts = buildFilterSummaryParts([
+    { label: t('reports.geral.filters.busca'), value: applied.search ?? '' },
+    { label: t('reports.geral.filters.plano'), value: applied.budgetPlanId ?? '', options: filterOpts.plano },
+    {
+      label: t('reports.geral.filters.fornecedor'),
+      value: applied.entityId ?? '',
+      options: filterOpts.partner,
+    },
+    { label: t('reports.geral.filters.periodo'), value: appliedDueRange },
+    { label: t('reports.geral.filters.conta'), value: applied.accountId ?? '', options: filterOpts.conta },
+    {
+      label: t('reports.geral.filters.centro'),
+      value: applied.costCenterId ?? '',
+      options: filterOpts.centro,
+    },
+    {
+      label: t('reports.geral.filters.categoria'),
+      value: applied.categoryId ?? '',
+      options: filterOpts.categoria,
+    },
+    {
+      label: t('reports.geral.filters.subcategoria'),
+      value: applied.subCategoryId ?? '',
+      options: filterOpts.subcategoria,
+    },
+    { label: t('reports.geral.filters.status'), value: applied.status ?? '', options: statusOptions },
+  ])
+
   return (
     <div className={screen}>
-      {/* Cabeçalho: voltar + título + Filtros/Exportar */}
+      {/* Cabeçalho: voltar + título + subtítulo + Filtros/Exportar/Colunas */}
       <div className={head}>
         <button
           type="button"
@@ -137,7 +268,10 @@ export function RelatorioGeralPage(): ReactNode {
         >
           <ChevronLeftIcon size={18} />
         </button>
-        <h1 className={headTitle}>{t('reports.geral.title')}</h1>
+        <div className={headTitleBlock}>
+          <h1 className={headTitle}>{t('reports.geral.title')}</h1>
+          {subtitleParts.length > 0 && <p className={headSubtitle}>{subtitleParts.join(' · ')}</p>}
+        </div>
         <div className={tools}>
           <button
             type="button"
@@ -156,11 +290,10 @@ export function RelatorioGeralPage(): ReactNode {
             csvLabel={t('reports.geral.export.csv')}
             pdfLabel={t('reports.geral.export.pdf')}
             onExportCsv={() => {
-              // Export segue O QUE ESTÁ NA TELA (só as colunas visíveis, na ordem).
               downloadCsv(
                 'relatorio-geral.csv',
                 buildCsv(
-                  rows,
+                  pageRows,
                   visibleColumns.map((c) => c.id),
                 ),
               )
@@ -210,36 +343,114 @@ export function RelatorioGeralPage(): ReactNode {
         </div>
       </div>
 
-      {/* Filtros recolhíveis (placeholders visuais front-first) */}
+      {/* Filtros recolhíveis — POPULADOS e APLICÁVEIS (#442). "Filtrar" commita → re-busca. */}
       <div className={filtersOpen ? filters.open : filters.closed}>
         <div className={filtersInner}>
+          <div className={fld}>
+            <label className={fldLabel}>{t('reports.geral.filters.busca')}</label>
+            <input
+              type="search"
+              className={searchInput}
+              placeholder={t('reports.geral.filters.buscaPlaceholder')}
+              value={draft.search}
+              onChange={(e) => {
+                onField({ search: e.target.value })
+              }}
+            />
+          </div>
           <FilterField
-            label={t('reports.geral.filters.periodo')}
-            options={[t('reports.geral.filters.allOption')]}
-          />
-          <FilterField
-            label={t('reports.geral.filters.tipo')}
-            options={[t('reports.geral.filters.allOption')]}
+            label={t('reports.geral.filters.plano')}
+            allOption={allOption}
+            value={draft.plano}
+            options={filterOpts.plano}
+            onChange={(v) => {
+              onField({ plano: v })
+            }}
           />
           <FilterField
             label={t('reports.geral.filters.fornecedor')}
-            options={[t('reports.geral.filters.allOption')]}
+            allOption={allOption}
+            value={draft.fornecedor}
+            options={filterOpts.partner}
+            onChange={(v) => {
+              onField({ fornecedor: v })
+            }}
+          />
+          <div className={fld}>
+            <label className={fldLabel}>{t('reports.geral.filters.periodo')}</label>
+            <div className={periodRow}>
+              <input
+                type="date"
+                className={dateInput}
+                aria-label={t('reports.geral.filters.periodoDe')}
+                value={draft.dueFrom}
+                onChange={(e) => {
+                  onField({ dueFrom: e.target.value })
+                }}
+              />
+              <input
+                type="date"
+                className={dateInput}
+                aria-label={t('reports.geral.filters.periodoAte')}
+                value={draft.dueTo}
+                onChange={(e) => {
+                  onField({ dueTo: e.target.value })
+                }}
+              />
+            </div>
+          </div>
+          <FilterField
+            label={t('reports.geral.filters.conta')}
+            allOption={allOption}
+            value={draft.conta}
+            options={filterOpts.conta}
+            onChange={(v) => {
+              onField({ conta: v })
+            }}
           />
           <FilterField
             label={t('reports.geral.filters.centro')}
-            options={[t('reports.geral.filters.allOption')]}
+            allOption={allOption}
+            value={draft.centro}
+            options={filterOpts.centro}
+            onChange={(v) => {
+              onField({ centro: v })
+            }}
           />
           <FilterField
             label={t('reports.geral.filters.categoria')}
-            options={[t('reports.geral.filters.allOption')]}
+            allOption={allOption}
+            value={draft.categoria}
+            options={filterOpts.categoria}
+            onChange={(v) => {
+              onField({ categoria: v })
+            }}
           />
-          <button type="button" className={applyButton}>
+          <FilterField
+            label={t('reports.geral.filters.subcategoria')}
+            allOption={allOption}
+            value={draft.subcategoria}
+            options={filterOpts.subcategoria}
+            onChange={(v) => {
+              onField({ subcategoria: v })
+            }}
+          />
+          <FilterField
+            label={t('reports.geral.filters.status')}
+            allOption={allOption}
+            value={draft.status}
+            options={statusOptions}
+            onChange={(v) => {
+              onField({ status: v })
+            }}
+          />
+          <button type="button" className={applyButton} onClick={applyFilters}>
             {t('reports.geral.filters.filtrar')}
           </button>
         </div>
       </div>
 
-      {/* Tabela paginada (colunas visíveis, scroll horizontal) */}
+      {/* Tabela paginada (colunas visíveis, scroll horizontal). Total = contagem GLOBAL do servidor. */}
       <RelatorioGeralTable
         rows={pageRows}
         columns={visibleColumns}
@@ -272,22 +483,44 @@ export function RelatorioGeralPage(): ReactNode {
         }}
         onPerPage={(next) => {
           setPerPage(next)
-          setPage(1) // troca de "itens por página" volta para a 1ª página
+          setPage(1)
         }}
       />
     </div>
   )
 }
 
-/** Campo de filtro (select nativo placeholder — só a forma/estilo brand). */
-function FilterField({ label, options }: { label: string; options: readonly string[] }): ReactNode {
+/** Campo de filtro CONTROLADO (select brand): opção "Todos" (value "") + as opções reais (value+label). */
+function FilterField({
+  label,
+  allOption,
+  value,
+  options,
+  onChange,
+}: {
+  label: string
+  allOption: string
+  value: string
+  options: readonly FilterOption[]
+  onChange: (value: string) => void
+}): ReactNode {
   return (
     <div className={fld}>
       <label className={fldLabel}>{label}</label>
       <div className={fldCtrl}>
-        <select className={fldSelect} aria-label={label}>
+        <select
+          className={fldSelect}
+          aria-label={label}
+          value={value}
+          onChange={(e) => {
+            onChange(e.target.value)
+          }}
+        >
+          <option value="">{allOption}</option>
           {options.map((o) => (
-            <option key={o}>{o}</option>
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
           ))}
         </select>
         <span className={fldChev}>

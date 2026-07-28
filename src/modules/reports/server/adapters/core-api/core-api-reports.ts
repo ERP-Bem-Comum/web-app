@@ -18,6 +18,7 @@ import type {
   CashflowRow,
   CashflowChartRow,
   CashflowFilter,
+  GeneralReportPage,
 } from '#modules/reports/server/domain/reports.io.ts'
 import {
   teamReportToModel,
@@ -29,6 +30,7 @@ import {
   cashflowToModel,
   cashflowChartToModel,
   costCenterListToModel,
+  generalReportToModel,
   mapHttpError,
 } from './reports.mappers.ts'
 
@@ -132,5 +134,23 @@ export const createCoreApiReportsClient = (baseUrl: string, financialBaseUrl: st
     const r = await resultFetch<unknown>(`${financialBaseUrl}/cost-centers`, { token })
     if (isErr(r)) return err(mapHttpError(r.error))
     return costCenterListToModel(r.value)
+  },
+  getGeneralReport: async (query, token): Promise<Result<GeneralReportPage, ReportsError>> => {
+    // Paginação obrigatória + filtros opcionais (só os DEFINIDOS entram; AND no servidor). #442.
+    const qs = new URLSearchParams({ page: String(query.page), limit: String(query.limit) })
+    if (query.search !== undefined) qs.set('search', query.search)
+    if (query.programId !== undefined) qs.set('programId', query.programId)
+    if (query.budgetPlanId !== undefined) qs.set('budgetPlanId', query.budgetPlanId)
+    if (query.dueFrom !== undefined) qs.set('dueFrom', query.dueFrom)
+    if (query.dueTo !== undefined) qs.set('dueTo', query.dueTo)
+    if (query.accountId !== undefined) qs.set('accountId', query.accountId)
+    if (query.costCenterId !== undefined) qs.set('costCenterId', query.costCenterId)
+    if (query.categoryId !== undefined) qs.set('categoryId', query.categoryId)
+    if (query.subCategoryId !== undefined) qs.set('subCategoryId', query.subCategoryId)
+    if (query.entityId !== undefined) qs.set('entityId', query.entityId)
+    if (query.status !== undefined) qs.set('status', query.status)
+    const r = await resultFetch<unknown>(`${baseUrl}/generalReport?${qs.toString()}`, { token })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return generalReportToModel(r.value)
   },
 })
