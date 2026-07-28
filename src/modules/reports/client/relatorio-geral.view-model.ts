@@ -1,31 +1,117 @@
 /**
- * ViewModel PURA do "Relatório Geral" (ADR-0009, §XI): um LEDGER unificado ACHATADO e PAGINADO — uma linha por
- * movimento (payable / receivable / cartão / contrato / apontamento). Expõe a fonte (front-first), a paginação
- * PURA (totalPages/pageSlice) e o build do CSV fiel (uma linha por movimento, nullable → campo vazio). ZERO
- * React/TanStack (o lint barra `react`/`@tanstack/react-*` em `*.view-model.ts`). Testável em node:test.
+ * ViewModel PURA do "Relatório Geral" (ADR-0009, §XI): um LEDGER unificado ACHATADO e PAGINADO (server-side,
+ * #442) — uma linha por título a-pagar. Mapeia o DTO real (`GeneralReportRow`) para a linha de exibição
+ * (`LedgerRow`, colunas fiéis ao legado), formata data (DD/MM/AAAA, SEM `Date`) e PIX/bancário, e monta o CSV
+ * WYSIWYG. ZERO React/TanStack (o lint barra `react`/`@tanstack/react-*` em `*.view-model.ts`). node:test-ável.
  *
- * O UI-state page/perPage mora na View (§XI) — aqui só as DERIVAÇÕES puras. Sem `throw` (§II). Dinheiro em
- * CENTAVOS inteiros (§IV). As datas vêm PRONTAS ("DD/MM/AAAA") do placeholder — a VM nunca faz `new Date`.
+ * Paginação é SERVER-SIDE (o `total` vem da resposta; `totalPages` é só derivação p/ o paginador). Dinheiro em
+ * CENTAVOS inteiros (§IV). Sem `throw` (§II). Colunas sem fonte no #442 (Data≡Vencimento, Parcela, Apontamento)
+ * degradam honesto (data = vencimento; parcela/apontamento = null → "—").
  */
-import { RELATORIO_GERAL_PLACEHOLDER, type LedgerRow } from './data/relatorio-geral.placeholder.ts'
-
-export type { LedgerRow } from './data/relatorio-geral.placeholder.ts'
+import type { GeneralReportRow } from './data/model/general-report.model.ts'
 
 /**
- * Fonte da tela (front-first): as linhas placeholder. Ponto ÚNICO pelo qual a View obtém os dados — mantém a
- * View sem tocar a `data/` (boundary client-ui ↛ client-data). Quando o core-api#114 nascer, esta função passa
- * a receber o DTO real (mesmo shape `LedgerRow`).
+ * Uma linha do ledger achatado (exibição). Colunas fiéis ao legado (PT). Campos opcionais nullable → a View
+ * mostra "—" e o CSV deixa vazio. `valorCents` sempre presente (centavos).
  */
-export function loadRelatorioGeral(): readonly LedgerRow[] {
-  return RELATORIO_GERAL_PLACEHOLDER
+export type LedgerRow = Readonly<{
+  data: string
+  vencimento: string | null
+  tipo: string
+  numeroContrato: string | null
+  codigo: string | null
+  parcela: string | null
+  apontamento: string | null
+  fornecedor: string | null
+  financiador: string | null
+  colaborador: string | null
+  centroCusto: string | null
+  categoria: string | null
+  subcategoria: string | null
+  /** Forma de liquidação — "PIX · <chave>" ou "<banco> · Ag <ag> · Cc <conta>-<dv>" ou null. */
+  pixBancario: string | null
+  valorCents: number
+}>
+
+/** Rótulo do tipo do movimento — o #442 é payables-only (`a-pagar`). */
+const TIPO_A_PAGAR = 'A pagar'
+
+/** `YYYY-MM-DD` (aceita sufixo de hora) → `DD/MM/AAAA`. Malformado → a própria string (sem `Date`). */
+export function formatIsoDateBR(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso)
+  if (m === null) return iso
+  const [, year, month, day] = m
+  if (year === undefined || month === undefined || day === undefined) return iso
+  return `${day}/${month}/${year}`
 }
 
-/** Total de lançamentos (contador do cabeçalho da tabela). */
-export function total(rows: readonly LedgerRow[] = RELATORIO_GERAL_PLACEHOLDER): number {
-  return rows.length
+/** Nomes dos 12 meses (1=Janeiro … 12=Dezembro) — o separador de mês do ledger sai daqui POR ÍNDICE. */
+const MONTH_NAMES_PT: readonly string[] = [
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
+]
+
+/** Chave de MÊS de uma data "DD/MM/AAAA" → "MM/AAAA" (agrupa o ledger por mês). Malformada → a própria string. */
+export function monthGroupKey(dataBR: string): string {
+  const m = /^\d{2}\/(\d{2})\/(\d{4})/.exec(dataBR)
+  return m === null ? dataBR : `${m[1] ?? ''}/${m[2] ?? ''}`
 }
 
-// ── Paginação (derivação PURA — o UI-state page/perPage mora na View, §XI) ──
+/** Rótulo do separador de mês: "DD/MM/AAAA" → "Janeiro / 2026". Nome por ÍNDICE (nunca `Date`). Malformada → a string. */
+export function monthGroupLabel(dataBR: string): string {
+  const m = /^\d{2}\/(\d{2})\/(\d{4})/.exec(dataBR)
+  if (m === null) return dataBR
+  const idx = Number(m[1]) - 1
+  const name = MONTH_NAMES_PT[idx] ?? m[1] ?? ''
+  return `${name} / ${m[2] ?? ''}`
+}
+
+/** PIX (chave) tem precedência sobre bancário; ambos null → null. */
+export function formatPixBancario(row: GeneralReportRow): string | null {
+  if (row.pixKey !== null) return `PIX · ${row.pixKey.key}`
+  if (row.bankAccount !== null) {
+    const b = row.bankAccount
+    return `${b.bank} · Ag ${b.agency} · Cc ${b.accountNumber}-${b.checkDigit}`
+  }
+  return null
+}
+
+/**
+ * Mapeia a linha REAL do #442 (`GeneralReportRow`) para a linha de exibição (`LedgerRow`). `data` = `vencimento`
+ * (o #442 só devolve `dueDate`); `parcela`/`apontamento` = null (sem fonte no #442). Nomes preservam null → "—".
+ */
+export function ledgerRowFromGeneral(r: GeneralReportRow): LedgerRow {
+  const venc = formatIsoDateBR(r.dueDate)
+  return {
+    data: venc,
+    vencimento: venc,
+    tipo: TIPO_A_PAGAR,
+    numeroContrato: r.contractNumber,
+    codigo: r.code,
+    parcela: null,
+    apontamento: null,
+    fornecedor: r.supplierName,
+    financiador: r.financierName,
+    colaborador: r.collaboratorName,
+    centroCusto: r.costCenterName,
+    categoria: r.categoryName,
+    subcategoria: r.subcategoryName,
+    pixBancario: formatPixBancario(r),
+    valorCents: r.valueCents,
+  }
+}
+
+// ── Paginação (derivação PURA; a paginação real é do servidor — `total` vem da resposta) ──
 
 /** Itens por página padrão (espelha uma das opções do BrandPaginator: 5/10/25). */
 export const PER_PAGE_DEFAULT = 10
@@ -36,19 +122,7 @@ export function totalPages(totalItems: number, perPage: number): number {
   return Math.max(1, Math.ceil(totalItems / perPage))
 }
 
-/**
- * Fatia da página corrente (1-based). Clampa a página ao intervalo válido para nunca estourar os limites do
- * array (defensivo — a View já reseta a página ao trocar perPage). Sem `throw` (§II).
- */
-export function pageSlice(rows: readonly LedgerRow[], page: number, perPage: number): readonly LedgerRow[] {
-  if (perPage <= 0) return rows
-  const pages = totalPages(rows.length, perPage)
-  const clamped = Math.min(Math.max(1, page), pages)
-  const start = (clamped - 1) * perPage
-  return rows.slice(start, start + perPage)
-}
-
-// ── Formatação ──
+// ── Formatação de valor ──
 
 const brlFmt = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
@@ -87,13 +161,17 @@ export type GeneralColumnKind = 'plain' | 'optional' | 'strong' | 'value'
 
 export type GeneralColumnDef = Readonly<{ id: GeneralColumnId; kind: GeneralColumnKind }>
 
-/** As 15 colunas na ORDEM do legado. Fonte única consumida pela tabela, pelo CSV e pelo seletor de colunas. */
+/**
+ * As 15 colunas na ORDEM EXATA do legado (ERP-BACKEND `GeneralReportReturn`): Contrato → Tipo → Código →
+ * Vencimento → Parcela → Apontamento → Fornecedor → Financiador → Colaborador → Centro de Custo → Categoria →
+ * Subcategoria → PIX/Bancário → Data → Valor (o legado tinha `bancary`+`pix` separados → aqui unificados em
+ * `pixBancario`; `valor` fecha a linha). Fonte única consumida pela tabela, pelo CSV e pelo seletor de colunas.
+ */
 export const GENERAL_COLUMNS: readonly GeneralColumnDef[] = [
-  { id: 'data', kind: 'plain' },
-  { id: 'vencimento', kind: 'optional' },
-  { id: 'tipo', kind: 'strong' },
   { id: 'numeroContrato', kind: 'optional' },
+  { id: 'tipo', kind: 'strong' },
   { id: 'codigo', kind: 'optional' },
+  { id: 'vencimento', kind: 'optional' },
   { id: 'parcela', kind: 'optional' },
   { id: 'apontamento', kind: 'optional' },
   { id: 'fornecedor', kind: 'optional' },
@@ -103,6 +181,7 @@ export const GENERAL_COLUMNS: readonly GeneralColumnDef[] = [
   { id: 'categoria', kind: 'optional' },
   { id: 'subcategoria', kind: 'optional' },
   { id: 'pixBancario', kind: 'optional' },
+  { id: 'data', kind: 'plain' },
   { id: 'valor', kind: 'value' },
 ]
 
@@ -173,12 +252,12 @@ export const CSV_HEADER_BY_ID: Record<GeneralColumnId, string> = {
 export const CSV_HEADER = ALL_GENERAL_COLUMN_IDS.map((id) => CSV_HEADER_BY_ID[id]).join(';')
 
 /**
- * Monta o CSV: cabeçalho + uma linha por movimento. Por padrão exporta as 15 colunas; passando `visibleIds`
- * (o seletor de colunas), o export segue O QUE ESTÁ NA TELA (WYSIWYG), na mesma ordem. Campos nullable ficam
- * VAZIOS (o "—" é só de exibição). Valor em BRL. Delimitado por ';', campos entre aspas. `\r\n`.
+ * Monta o CSV: cabeçalho + uma linha por movimento (as linhas CARREGADAS — a página corrente, já que a
+ * paginação é server-side). `visibleIds` (o seletor de colunas) faz o export seguir O QUE ESTÁ NA TELA
+ * (WYSIWYG). Campos nullable ficam VAZIOS (o "—" é só de exibição). Valor em BRL. Delimitado por ';', aspas.
  */
 export function buildCsv(
-  rows: readonly LedgerRow[] = RELATORIO_GERAL_PLACEHOLDER,
+  rows: readonly LedgerRow[],
   visibleIds: readonly GeneralColumnId[] = ALL_GENERAL_COLUMN_IDS,
 ): string {
   const ids = visibleIds.length > 0 ? visibleIds : ALL_GENERAL_COLUMN_IDS

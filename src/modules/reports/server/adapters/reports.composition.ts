@@ -14,6 +14,7 @@ import {
   createGetPaymentAnalysis,
   createGetRealizedReport,
   createGetCashflowReport,
+  createGetGeneralReport,
 } from '#modules/reports/server/application/reports.use-cases.ts'
 
 type ReportsServer = ReturnType<typeof build>
@@ -31,6 +32,7 @@ const build = () => {
     getPaymentAnalysis: createGetPaymentAnalysis({ client }),
     getRealizedReport: createGetRealizedReport({ client }),
     getCashflowReport: createGetCashflowReport({ client }),
+    getGeneralReport: createGetGeneralReport({ client }),
   }
 }
 

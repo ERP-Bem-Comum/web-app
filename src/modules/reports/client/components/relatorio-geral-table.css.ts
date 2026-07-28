@@ -15,7 +15,7 @@ import { brand } from '#shared/ui/brand/grid-brand.values.ts'
 export const COLUMN_WIDTH: Record<string, string> = {
   data: '6.5rem',
   vencimento: '7rem',
-  tipo: '7rem',
+  tipo: '9rem',
   numeroContrato: '8rem',
   codigo: '7rem',
   parcela: '5rem',
@@ -82,7 +82,7 @@ export const scroller = style({
 const gridRow = style({
   display: 'grid',
   alignItems: 'center',
-  gap: brand.space.md,
+  // SEM gap: as células colam (padding interno) → as colunas fixas (Data/Valor) não deixam vazar no scroll.
   // Soma das colunas — força a largura mínima do grid (o `.scroller` rola quando estreito).
   minInlineSize: 'max-content',
 })
@@ -96,7 +96,6 @@ export const thead = style([
     background: brand.color.surfaceAlt,
     borderBlockEnd: `${vars.borderWidth.thin} solid ${brand.color.line}`,
     paddingBlock: brand.size.theadPadBlock,
-    paddingInline: brand.size.rowPadInline,
     fontSize: brand.text.thead,
     fontWeight: brand.weight.semibold,
     letterSpacing: '.03em',
@@ -110,7 +109,6 @@ export const row = style([
   gridRow,
   {
     paddingBlock: brand.size.rowPadBlock,
-    paddingInline: brand.size.rowPadInline,
     borderBlockEnd: `${vars.borderWidth.thin} solid ${brand.color.line2}`,
     selectors: {
       '&:last-child': { borderBlockEnd: 'none' },
@@ -119,7 +117,13 @@ export const row = style([
   },
 ])
 
+// Padding INLINE por célula (antes vinha do gap + padding da linha). Aplicado a todas as células (thead + corpo).
+const cellPad = { paddingInline: brand.size.rowPadInline }
+
+export const headCell = style(cellPad)
+
 export const cell = style({
+  ...cellPad,
   color: brand.color.ink700,
   whiteSpace: 'nowrap',
   overflow: 'hidden',
@@ -129,6 +133,7 @@ export const cell = style({
 export const cellStrong = style([cell, { fontWeight: brand.weight.semibold, color: brand.color.ink900 }])
 // Valor — alinhado à direita, tabular, forte.
 export const cellValue = style({
+  ...cellPad,
   textAlign: 'end',
   fontVariantNumeric: 'tabular-nums',
   fontWeight: brand.weight.semibold,
@@ -138,6 +143,67 @@ export const cellValue = style({
 export const theadValue = style({ textAlign: 'end' })
 // Campo ausente ("—") — tinta suave.
 export const cellMuted = style([cell, { color: brand.color.ink400 }])
+
+// ── Colunas FIXAS: Data (à esquerda) e Valor (à direita) grudam ao rolar na horizontal (espelho do legado). ──
+export const stickyLeft = style({
+  position: 'sticky',
+  insetInlineStart: 0,
+  zIndex: 2,
+  background: brand.color.surface,
+  borderInlineEnd: `${vars.borderWidth.thin} solid ${brand.color.line2}`,
+  selectors: { [`${row}:hover &`]: { background: brand.color.rowHover } },
+})
+export const stickyRight = style({
+  position: 'sticky',
+  insetInlineEnd: 0,
+  zIndex: 2,
+  background: brand.color.surface,
+  borderInlineStart: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  selectors: { [`${row}:hover &`]: { background: brand.color.rowHover } },
+})
+// No thead as fixas ficam sobre o fundo do cabeçalho (surfaceAlt) e acima das do corpo.
+export const stickyLeftHead = style([stickyLeft, { background: brand.color.surfaceAlt, zIndex: 3 }])
+export const stickyRightHead = style([stickyRight, { background: brand.color.surfaceAlt, zIndex: 3 }])
+
+// ── Separador de MÊS (linha-faixa que agrupa o ledger por mês de vencimento). Grid-row → cobre a largura total. ──
+export const monthSep = style([
+  gridRow,
+  {
+    background: brand.color.surfaceAlt,
+    borderBlockEnd: `${vars.borderWidth.thin} solid ${brand.color.line2}`,
+    paddingBlock: brand.space.sm,
+  },
+])
+export const monthSepLabel = style({
+  position: 'sticky',
+  insetInlineStart: 0,
+  paddingInline: brand.size.rowPadInline,
+  fontSize: brand.text.thead,
+  fontWeight: brand.weight.bold,
+  letterSpacing: '.04em',
+  textTransform: 'uppercase',
+  color: brand.color.fluxo.previsto,
+})
+
+// ── Chip do TIPO (pílula com bolinha). O #442 é payables-only → um único tipo "A pagar" (tom de saída). ──
+export const tipoChip = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: brand.space.xs,
+  paddingBlock: '0.125rem',
+  paddingInline: brand.space.sm,
+  borderRadius: brand.radius.pill,
+  fontSize: brand.text.chip,
+  fontWeight: brand.weight.bold,
+  background: brand.color.fluxo.saldoNegTintBg,
+  color: brand.color.fluxo.saldoNeg,
+})
+export const tipoDot = style({
+  inlineSize: '0.375rem',
+  blockSize: '0.375rem',
+  borderRadius: brand.radius.pill,
+  background: brand.color.fluxo.saldoNeg,
+})
 
 export const empty = style({
   paddingBlock: brand.space.xxl,
