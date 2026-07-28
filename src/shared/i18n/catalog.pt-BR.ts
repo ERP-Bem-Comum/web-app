@@ -2808,6 +2808,8 @@ export const ptBR: Catalog = {
   'reports.fluxoCaixa.stmt.liquido': '= Fluxo líquido do período',
   'reports.fluxoCaixa.stmt.saldoAcumulado': '= Saldo acumulado',
   'reports.fluxoCaixa.stmt.emptyEntradas': 'Nenhuma entrada registrada — o Contas a Receber ainda não subiu.',
+  'reports.fluxoCaixa.stmt.monthsFrom': 'De',
+  'reports.fluxoCaixa.stmt.monthsTo': 'Até',
 
   // ── "Relatório Geral" (front-first; core-api#114) — ledger unificado achatado e paginado ──
   'reports.geral.title': 'Relatório Geral',

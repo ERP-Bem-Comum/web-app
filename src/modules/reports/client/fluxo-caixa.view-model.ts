@@ -491,6 +491,36 @@ export function buildStatement(
 }
 
 /**
+ * Recorta o demonstrativo à janela de meses [fromIdx, toIdx] (inclusive), RECOMPUTANDO os totais (item/seção/
+ * líquido) sobre os meses visíveis. O Saldo inicial do 1º mês visível JÁ é a corrida ANTES dele (preserva a
+ * continuidade do saldo mesmo escondendo meses anteriores). Índices são clampados; janela inválida → vazia.
+ */
+export function sliceStatement(s: FluxoStatement, fromIdx: number, toIdx: number): FluxoStatement {
+  const last = s.months.length - 1
+  const lo = Math.max(0, Math.min(fromIdx, last < 0 ? 0 : last))
+  const hi = Math.max(lo, Math.min(toIdx, last < 0 ? 0 : last))
+  const pick = <T>(arr: readonly T[]): T[] => arr.slice(lo, hi + 1)
+  const sliceSection = (sec: StatementSection): StatementSection => {
+    const items = sec.items.map((it): StatementItem => {
+      const byMonth = pick(it.byMonth)
+      return { name: it.name, byMonth, total: byMonth.reduce(addCell, zeroCell()) }
+    })
+    const totalByMonth = pick(sec.totalByMonth)
+    return { items, totalByMonth, total: totalByMonth.reduce(addCell, zeroCell()) }
+  }
+  const liquido = pick(s.liquido)
+  return {
+    months: pick(s.months),
+    entradas: sliceSection(s.entradas),
+    saidas: sliceSection(s.saidas),
+    saldoInicial: pick(s.saldoInicial),
+    liquido,
+    liquidoTotal: liquido.reduce(addCell, zeroCell()),
+    saldoAcumulado: pick(s.saldoAcumulado),
+  }
+}
+
+/**
  * Monta o relatório a partir das duas fontes cruas + o intervalo de meses (engine puro, testável — Entradas =
  * [] → Saldo). `byCostCenter` = [] aqui: o eixo de CC vem do fan-out do BFF (`buildReportFromCashflow`), não
  * das folhas (que não carregam CC).
@@ -601,6 +631,13 @@ const brlFmt = new Intl.NumberFormat('pt-BR', {
 /** Centavos → "R$ 1.234,56" (aceita negativo: "-R$ 1.234,56"). */
 export function formatBRL(cents: number): string {
   return brlFmt.format(cents / 100)
+}
+
+const amountFmt = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+/** Centavos → "1.234,56" SEM o símbolo "R$" (colunas densas do demonstrativo; o cabeçalho já diz "valores em R$"). */
+export function formatAmount(cents: number): string {
+  return amountFmt.format(cents / 100)
 }
 
 /**

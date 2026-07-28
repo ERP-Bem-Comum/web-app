@@ -22,9 +22,33 @@ const totBg = createVar()
 
 // Dica do cabeçalho do card ("valores em R$ · role para os demais meses ›").
 export const hint = style({
-  marginInlineStart: 'auto',
   fontSize: brand.text.label,
   color: brand.color.ink400,
+})
+
+// ── Filtro de meses (De / Até) no cabeçalho do card ──
+export const picker = style({
+  marginInlineStart: 'auto',
+  display: 'flex',
+  alignItems: 'center',
+  gap: brand.space.sm,
+})
+export const pickerLabel = style({
+  fontSize: brand.text.label,
+  fontWeight: brand.weight.medium,
+  color: brand.color.ink500,
+})
+export const pickerSelect = style({
+  appearance: 'none',
+  fontFamily: 'inherit',
+  fontSize: brand.text.label,
+  color: brand.color.ink900,
+  background: brand.color.surface,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  borderRadius: brand.radius.xs,
+  paddingBlock: brand.space.xs,
+  paddingInline: brand.space.sm,
+  cursor: 'pointer',
 })
 
 // Container do demonstrativo (largura mínima garante o scroll horizontal quando há muitos meses).
@@ -39,10 +63,10 @@ export const srow = style({
   borderBlockEnd: `${vars.borderWidth.thin} solid ${brand.color.line2}`,
 })
 
-// Célula de valor: à direita, tabular, sem quebra.
+// Célula de valor: à direita, tabular, sem quebra. Padding inline enxuto p/ caber sem sobrepor.
 export const cell = style({
   paddingBlock: brand.space.sm,
-  paddingInline: brand.space.md,
+  paddingInline: brand.space.sm,
   textAlign: 'right',
   fontVariantNumeric: 'tabular-nums',
   whiteSpace: 'nowrap',

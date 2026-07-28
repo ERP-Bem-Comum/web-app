@@ -26,7 +26,9 @@ import {
   buildCsv,
   buildStatement,
   buildStatementSection,
+  sliceStatement,
   formatBRL,
+  formatAmount,
   CSV_HEADER,
   type RawFluxoLeaf,
 } from '#modules/reports/client/fluxo-caixa.view-model.ts'
@@ -406,6 +408,35 @@ describe('buildStatement — demonstrativo por mês (Real + Prev, Fluxo líquido
     // saldo inicial de fev = acumulado de jan.
     assert.deepEqual(st.saldoInicial[1], st.saldoAcumulado[0])
     assert.equal(st.liquidoTotal.realizedCents, -1500)
+  })
+
+  it('sliceStatement recorta a janela e RECOMPUTA totais, preservando o Saldo inicial da janela', () => {
+    const st = buildStatement([], SAIDAS, months)
+    // Recorta fev..mar (idx 1..2).
+    const sl = sliceStatement(st, 1, 2)
+    assert.deepEqual(sl.months, ['2026-02', '2026-03'])
+    // Saldo inicial do 1º mês visível (fev) = acumulado de jan do statement COMPLETO (−1000) → continuidade.
+    assert.equal(sl.saldoInicial[0]?.realizedCents, -1000)
+    // Total de saídas recomputado só sobre fev..mar (Aluguel fev = 500; mar = 0).
+    assert.equal(sl.saidas.total.realizedCents, 500)
+    assert.equal(sl.liquidoTotal.realizedCents, -500)
+    // Saldo acumulado final da janela = final do período completo (−1500).
+    assert.equal(sl.saldoAcumulado[sl.months.length - 1]?.realizedCents, -1500)
+  })
+
+  it('sliceStatement clampa índices fora do intervalo (janela inválida não quebra)', () => {
+    const st = buildStatement([], SAIDAS, months)
+    const sl = sliceStatement(st, 5, 9) // fora do range → clampa p/ o último mês
+    assert.equal(sl.months.length, 1)
+    assert.deepEqual(sl.months, ['2026-03'])
+  })
+})
+
+describe('formatAmount — valor SEM "R$" (colunas densas do demonstrativo)', () => {
+  it('formata centavos em pt-BR sem o símbolo, com sinal', () => {
+    assert.equal(formatAmount(1530555), '15.305,55')
+    assert.equal(formatAmount(-591000), '-5.910,00')
+    assert.equal(formatAmount(0), '0,00')
   })
 })
 

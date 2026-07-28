@@ -1,23 +1,27 @@
 /**
- * FluxoCaixaStatement — view BURRA do "Demonstrativo de fluxo de caixa" (statement por mês). Recebe o
- * `FluxoStatement` JÁ derivado (ViewModel pura) + rótulos i18n + o formatador de moeda, e apresenta a tabela
- * contábil: cabeçalho de 2 faixas (meses × subcolunas Real/Prev) + Saldo inicial → + Entradas (itens +
- * subtotal) → − Saídas (itens + subtotal) → = Fluxo líquido → = Saldo acumulado. Coluna Total à direita.
+ * FluxoCaixaStatement — view do "Demonstrativo de fluxo de caixa" (statement por mês). Recebe o `FluxoStatement`
+ * JÁ derivado (ViewModel pura) + rótulos i18n + o formatador de valor, e apresenta a tabela contábil: cabeçalho
+ * de 2 faixas (meses × subcolunas Real/Prev) + Saldo inicial → + Entradas (itens + subtotal) → − Saídas (itens +
+ * subtotal) → = Fluxo líquido → = Saldo acumulado. Coluna Total à direita.
  *
- * CSS GRID por LINHA (cada `.srow` é um grid com o MESMO template, montado por inline-style por causa do nº
- * dinâmico de meses — rem cru em inline-style é permitido; hex/px ficam fora daqui). 1ª coluna sticky. Sem
- * cálculo de domínio (ADR-0009, §XI). Entradas vazia (receivables []) → nota discreta, sem quebrar o statement.
+ * FILTRO DE MESES (De / Até): UI-state LOCAL da view (como o `expanded` da antiga tree — §XI permite UI-state na
+ * view). Recorta as colunas via `sliceStatement` (puro) preservando a continuidade do Saldo acumulado. CSS GRID
+ * por LINHA (mesmo template por inline-style, nº dinâmico de meses — rem cru em inline-style é permitido; hex/px
+ * ficam fora daqui). 1ª coluna sticky. Entradas vazia (receivables []) → nota discreta, sem quebrar o statement.
  */
-import { Fragment, type ReactNode } from 'react'
+import { Fragment, useMemo, useState, type ReactNode } from 'react'
 
 import type { FluxoStatement, StatementCell, StatementItem } from '../fluxo-caixa.view-model.ts'
-import { formatMonthLabel } from '../fluxo-caixa.view-model.ts'
+import { formatMonthLabel, sliceStatement } from '../fluxo-caixa.view-model.ts'
 import {
   card,
   cardHeadRow,
   cardTitle,
   scroll,
   hint,
+  picker,
+  pickerLabel,
+  pickerSelect,
   stmt,
   srow,
   cell,
@@ -58,6 +62,9 @@ export type FluxoStatementLabels = Readonly<{
   liquido: string
   saldoAcumulado: string
   emptyEntradas: string
+  /** Rótulos do filtro de meses. */
+  monthsFrom: string
+  monthsTo: string
 }>
 
 export type FluxoCaixaStatementProps = Readonly<{
@@ -67,12 +74,24 @@ export type FluxoCaixaStatementProps = Readonly<{
 }>
 
 // Larguras das colunas (rem cru em inline-style é permitido — §X só barra hex/px em `.css.ts`/componentes de estilo).
-const DESC_COL = '15rem'
-const SUBCOL = '5.75rem'
-const GROUP = '11.5rem' // 2 × SUBCOL (grupo de mês no cabeçalho de nomes)
+const DESC_COL = '14rem'
+const SUBCOL = '6.75rem'
+const GROUP = '13.5rem' // 2 × SUBCOL (grupo de mês no cabeçalho de nomes)
 
 export function FluxoCaixaStatement(props: FluxoCaixaStatementProps): ReactNode {
-  const { statement: s, labels: L, formatValue: fmt } = props
+  const { statement: full, labels: L, formatValue: fmt } = props
+  const allMonths = full.months
+
+  // UI-state local: janela de meses (De/Até) — `null` = extremo do período. Índices clampados no slice.
+  const [fromMonth, setFromMonth] = useState<string | null>(null)
+  const [toMonth, setToMonth] = useState<string | null>(null)
+  const fromIdx = fromMonth !== null ? allMonths.indexOf(fromMonth) : 0
+  const toIdxRaw = toMonth !== null ? allMonths.indexOf(toMonth) : allMonths.length - 1
+  const s = useMemo(
+    () => sliceStatement(full, fromIdx < 0 ? 0 : fromIdx, toIdxRaw < 0 ? allMonths.length - 1 : toIdxRaw),
+    [full, fromIdx, toIdxRaw, allMonths.length],
+  )
+
   const monthCount = s.months.length
   // Template das linhas de dados (Descrição + [Real Prev] por mês + [Real Prev] do Total).
   const gridData = { gridTemplateColumns: `${DESC_COL} repeat(${String((monthCount + 1) * 2)}, ${SUBCOL})` }
@@ -117,7 +136,47 @@ export function FluxoCaixaStatement(props: FluxoCaixaStatementProps): ReactNode 
     <div className={card}>
       <div className={cardHeadRow}>
         <h2 className={cardTitle}>{L.cardTitle}</h2>
-        <span className={hint}>{L.hint}</span>
+        <div className={picker}>
+          {allMonths.length >= 2 && (
+            <>
+              <label className={pickerLabel}>
+                {L.monthsFrom}
+                <select
+                  className={pickerSelect}
+                  value={fromMonth ?? allMonths[0]}
+                  aria-label={L.monthsFrom}
+                  onChange={(e) => {
+                    setFromMonth(e.target.value)
+                  }}
+                >
+                  {allMonths.map((m) => (
+                    <option key={m} value={m}>
+                      {formatMonthLabel(m)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className={pickerLabel}>
+                {L.monthsTo}
+                <select
+                  className={pickerSelect}
+                  value={toMonth ?? allMonths[allMonths.length - 1]}
+                  aria-label={L.monthsTo}
+                  onChange={(e) => {
+                    setToMonth(e.target.value)
+                  }}
+                >
+                  {allMonths.map((m) => (
+                    <option key={m} value={m}>
+                      {formatMonthLabel(m)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </>
+          )}
+          <span className={hint}>{L.hint}</span>
+        </div>
       </div>
 
       <div className={scroll}>
@@ -145,7 +204,7 @@ export function FluxoCaixaStatement(props: FluxoCaixaStatementProps): ReactNode 
             <div className={headCell}>{L.prevShort}</div>
           </div>
 
-          {/* Saldo inicial (corrida ANTES) — Total = valor inicial (1º mês). */}
+          {/* Saldo inicial (corrida ANTES) — Total = valor inicial (1º mês visível). */}
           <div className={`${srow} ${rowKind.saldo}`} style={gridData}>
             <div className={`${desc} ${descStrong}`}>{L.saldoInicial}</div>
             {valueCells(s.saldoInicial, s.saldoInicial[0] ?? { realizedCents: 0, expectedCents: 0 })}
@@ -192,7 +251,7 @@ export function FluxoCaixaStatement(props: FluxoCaixaStatementProps): ReactNode 
             })}
           </div>
 
-          {/* = Saldo acumulado (corrida DEPOIS) — Total = saldo final (último mês) */}
+          {/* = Saldo acumulado (corrida DEPOIS) — Total = saldo final (último mês visível) */}
           <div className={`${srow} ${rowKind.saldo}`} style={gridData}>
             <div className={`${desc} ${descStrong}`}>{L.saldoAcumulado}</div>
             {valueCells(

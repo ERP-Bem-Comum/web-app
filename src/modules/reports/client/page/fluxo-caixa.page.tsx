@@ -23,6 +23,7 @@ import { ChevronLeftIcon, ChevronDownIcon, FilterIcon } from '#shared/ui/index.t
 import {
   buildCsv,
   formatBRL,
+  formatAmount,
   formatBRLShort,
   formatPercent,
   sectionDonutData,
@@ -314,7 +315,7 @@ export function FluxoCaixaPage(): ReactNode {
       {/* Demonstrativo de fluxo de caixa (statement por mês — Real | Prev por mês, seções +Entradas/−Saídas) */}
       <FluxoCaixaStatement
         statement={report.statement}
-        formatValue={formatBRL}
+        formatValue={formatAmount}
         labels={{
           cardTitle: t('reports.fluxoCaixa.stmt.title'),
           hint: t('reports.fluxoCaixa.stmt.hint'),
@@ -330,6 +331,8 @@ export function FluxoCaixaPage(): ReactNode {
           liquido: t('reports.fluxoCaixa.stmt.liquido'),
           saldoAcumulado: t('reports.fluxoCaixa.stmt.saldoAcumulado'),
           emptyEntradas: t('reports.fluxoCaixa.stmt.emptyEntradas'),
+          monthsFrom: t('reports.fluxoCaixa.stmt.monthsFrom'),
+          monthsTo: t('reports.fluxoCaixa.stmt.monthsTo'),
         }}
       />
     </div>
