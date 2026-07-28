@@ -85,6 +85,8 @@ export const barFill = style({
   borderStartEndRadius: brand.radius.xs,
   transition: 'block-size .5s ease',
   minBlockSize: '0.125rem',
+  // Leve transparência p/ suavizar as barras (a P.O. pediu; combina com a paleta fria).
+  opacity: brand.color.fluxo.fillOpacity,
 })
 // Cor por série — aplicada por CLASSE junto de `barFill`. O gráfico "por vencimento" usa Entradas verde /
 // Saídas âmbar; o gráfico "Agrupado por Centro de Custo" usa Previsto ciano / Realizado verde (espelho legado).

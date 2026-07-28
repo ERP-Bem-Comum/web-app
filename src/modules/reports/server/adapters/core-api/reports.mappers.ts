@@ -16,6 +16,8 @@ import type {
   PaymentAnalysisPlan,
   RealizedBudgetRow,
   RealizedMonthCell,
+  CashflowRow,
+  CashflowChartRow,
 } from '#modules/reports/server/domain/reports.io.ts'
 import {
   CoreApiTeamReportSchema,
@@ -24,6 +26,9 @@ import {
   CoreApiPaymentPositionSchema,
   CoreApiPaymentAnalysisSchema,
   CoreApiRealizedReportSchema,
+  CoreApiCashflowSchema,
+  CoreApiCashflowChartSchema,
+  CoreApiCostCenterListSchema,
 } from './reports.schema.ts'
 
 // ── Erro: status/slug do core-api → ReportsError (read-only) ─────────────────────
@@ -167,6 +172,59 @@ const monthCellsToModel = (months: readonly RawRealizedMonth[]): readonly Realiz
     realizadoCents: m.realized,
     provisionadoCents: m.provisioned,
   }))
+
+// ── Fluxo de Caixa (#590) ──────────────────────────────────────────────────────
+// A linha crua (shape LEGADO Category_id/…/REALIZED/EXPECTED) → CashflowRow do Model. Money já em centavos.
+const cashflowRowToModel = (r: {
+  Category_id: string | null
+  Category_name: string | null
+  SubCategory_id: string | null
+  SubCategory_name: string | null
+  REALIZED: number
+  EXPECTED: number
+}): CashflowRow => ({
+  categoryRef: r.Category_id,
+  categoryName: r.Category_name,
+  subcategoryRef: r.SubCategory_id,
+  subcategoryName: r.SubCategory_name,
+  realizedCents: r.REALIZED,
+  expectedCents: r.EXPECTED,
+})
+
+/** Slice A: envelope `{ Receivables, Payables }` → o par de árvores. Drift → err('server'). */
+export const cashflowToModel = (
+  raw: unknown,
+): Result<{ payables: readonly CashflowRow[]; receivables: readonly CashflowRow[] }, ReportsError> => {
+  const parsed = CoreApiCashflowSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  return ok({
+    payables: parsed.data.Payables.map(cashflowRowToModel),
+    receivables: parsed.data.Receivables.map(cashflowRowToModel),
+  })
+}
+
+/**
+ * Slice B: array plano de linhas datadas → CashflowChartRow[]. Reduz `Installments_dueDate` ('YYYY-MM-01')
+ * ao mês `YYYY-MM` (só os 7 primeiros chars — o front monta a linha do tempo por índice, sem `Date`).
+ */
+export const cashflowChartToModel = (raw: unknown): Result<readonly CashflowChartRow[], ReportsError> => {
+  const parsed = CoreApiCashflowChartSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  const rows: readonly CashflowChartRow[] = parsed.data.map((r) => ({
+    ...cashflowRowToModel(r),
+    dueMonth: r.Installments_dueDate.slice(0, 7),
+  }))
+  return ok(rows)
+}
+
+/** Catálogo de Centros de Custo (`GET /financial/cost-centers`) → `{ id, name }[]` p/ o fan-out. Drift → err. */
+export const costCenterListToModel = (
+  raw: unknown,
+): Result<readonly { id: string; name: string }[], ReportsError> => {
+  const parsed = CoreApiCostCenterListSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  return ok(parsed.data.map((c) => ({ id: c.id, name: c.name })))
+}
 
 export const realizedReportToModel = (raw: unknown): Result<readonly RealizedBudgetRow[], ReportsError> => {
   const parsed = CoreApiRealizedReportSchema.safeParse(raw)

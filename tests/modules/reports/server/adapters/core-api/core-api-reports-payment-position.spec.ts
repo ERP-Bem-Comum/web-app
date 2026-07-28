@@ -19,7 +19,7 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
-const client = createCoreApiReportsClient('http://api/reports')
+const client = createCoreApiReportsClient('http://api/reports', 'http://api/financial')
 
 /** URL da 1ª (única) chamada ao resultFetch. */
 function calledUrl(): string {

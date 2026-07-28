@@ -2734,6 +2734,8 @@ export const ptBR: Catalog = {
   // × 2 medidas (Realizado × Previsto); Saldo = Entradas − Saídas; gráfico "por vencimento" (Entradas × Saídas).
   'reports.fluxoCaixa.title': 'Fluxo de Caixa',
   'reports.fluxoCaixa.back': 'Voltar',
+  'reports.fluxoCaixa.loading': 'Carregando o fluxo de caixa…',
+  'reports.fluxoCaixa.errorTitle': 'Não foi possível carregar o fluxo de caixa',
   'reports.fluxoCaixa.chartEmptyLabel': 'Sem movimentações no período.',
   // Export (dropdown CSV + PDF).
   'reports.fluxoCaixa.export.label': 'Exportar',
@@ -2745,6 +2747,8 @@ export const ptBR: Catalog = {
   'reports.fluxoCaixa.filters.programa': 'Programa',
   'reports.fluxoCaixa.filters.plano': 'Plano Orçamentário',
   'reports.fluxoCaixa.filters.periodo': 'Período de vencimento',
+  'reports.fluxoCaixa.filters.periodoDe': 'De',
+  'reports.fluxoCaixa.filters.periodoAte': 'Até',
   'reports.fluxoCaixa.filters.conta': 'Conta bancária',
   'reports.fluxoCaixa.filters.centro': 'Centro de custo',
   'reports.fluxoCaixa.filters.categoria': 'Categoria',
@@ -2767,7 +2771,8 @@ export const ptBR: Catalog = {
   'reports.fluxoCaixa.chart.monthly': 'Fluxo por vencimento',
   'reports.fluxoCaixa.chart.entradas': 'Entradas',
   'reports.fluxoCaixa.chart.saidas': 'Saídas',
-  // Os 4 gráficos "Previsto × Realizado": linha do tempo (3 séries), barras por Centro de Custo, 2 donuts.
+  // Os 4 gráficos "Previsto × Realizado": linha do tempo (3 séries), barras por Centro de Custo, 2 donuts. O
+  // eixo de CC é reconstruído pelo BFF via fan-out (o #590 não o expõe nativamente — CA6).
   'reports.fluxoCaixa.chart.timeline': 'Linha do tempo',
   'reports.fluxoCaixa.chart.byCostCenter': 'Agrupado por Centro de Custo',
   'reports.fluxoCaixa.chart.esperado': 'Esperado',
@@ -2790,6 +2795,25 @@ export const ptBR: Catalog = {
   // Árvore.
   'reports.fluxoCaixa.tree.expand': 'Expandir',
   'reports.fluxoCaixa.tree.collapse': 'Recolher',
+  // ── Demonstrativo de fluxo de caixa (statement por mês; 2 subcolunas Real | Prev por mês) ──
+  'reports.fluxoCaixa.stmt.title': 'Demonstrativo de fluxo de caixa',
+  'reports.fluxoCaixa.stmt.hint': 'valores em R$ · role para os demais meses ›',
+  'reports.fluxoCaixa.stmt.descCol': 'Descrição',
+  'reports.fluxoCaixa.stmt.totalCol': 'Total',
+  'reports.fluxoCaixa.stmt.real': 'Real.',
+  'reports.fluxoCaixa.stmt.prev': 'Prev.',
+  'reports.fluxoCaixa.stmt.saldoInicial': 'Saldo inicial',
+  'reports.fluxoCaixa.stmt.entradas': 'Entradas',
+  'reports.fluxoCaixa.stmt.totalEntradas': '= Total de entradas',
+  'reports.fluxoCaixa.stmt.saidas': 'Saídas',
+  'reports.fluxoCaixa.stmt.totalSaidas': '= Total de saídas',
+  'reports.fluxoCaixa.stmt.liquido': '= Fluxo líquido do período',
+  'reports.fluxoCaixa.stmt.saldoAcumulado': '= Saldo acumulado',
+  'reports.fluxoCaixa.stmt.emptyEntradas': 'Nenhuma entrada registrada — o Contas a Receber ainda não subiu.',
+  'reports.fluxoCaixa.stmt.monthsFrom': 'De',
+  'reports.fluxoCaixa.stmt.monthsTo': 'Até',
+  'reports.fluxoCaixa.stmt.prevMonth': 'Mês anterior',
+  'reports.fluxoCaixa.stmt.nextMonth': 'Próximo mês',
 
   // ── "Relatório Geral" (front-first; core-api#114) — ledger unificado achatado e paginado ──
   'reports.geral.title': 'Relatório Geral',

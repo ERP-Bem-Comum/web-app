@@ -10,6 +10,8 @@ import { style, styleVariants } from '@vanilla-extract/css'
 import { brand } from '#shared/ui/brand/grid-brand.values.ts'
 import { vars } from '#shared/ui/tokens/index.ts'
 
+import { fldSelect as fldSelectStyle } from './realizado-x-planejado.page.css.ts'
+
 // Pele compartilhada do RxP (cabeçalho + filtros + cartões + KPIs) — re-export para a page importar tudo daqui.
 export {
   head,
@@ -70,7 +72,8 @@ export const kpiTintNeg = style({
 })
 
 // Grade dos QUATRO gráficos numa linha só (compactos e ALINHADOS): Linha do tempo · Centro de Custo · Entradas
-// · Saídas. Cards de altura igual (`stretch`). Colapsa 4→2 (≤75rem) e 2→1 (≤48rem) para não espremer.
+// · Saídas. Cards de altura igual (`stretch`). Colapsa 4→2 (≤75rem) e 2→1 (≤48rem) para não espremer. O eixo de
+// Centro de Custo é RECONSTRUÍDO pelo BFF via fan-out (o #590 não o expõe nativamente — CA6).
 export const charts4 = style({
   display: 'grid',
   gridTemplateColumns: 'repeat(4, 1fr)',
@@ -83,9 +86,11 @@ export const charts4 = style({
   },
 })
 
-// Empilhamento das 2 seções (Saídas / Entradas) com o mesmo respiro do grid.
-export const sections = style({
-  display: 'grid',
-  gridTemplateColumns: '1fr',
-  gap: brand.space.gridRow,
-})
+// Período de vencimento: DOIS inputs de data (De / Até) lado a lado (no lugar de um dropdown).
+export const periodRow = style({ display: 'flex', gap: brand.space.sm, alignItems: 'flex-end' })
+
+// Input de data com a MESMA pele do select (fldSelect), sem o chevron (é campo de texto, não dropdown).
+export const dateInput = style([
+  fldSelectStyle,
+  { minInlineSize: '8rem', paddingInlineEnd: brand.space.md, cursor: 'text' },
+])
