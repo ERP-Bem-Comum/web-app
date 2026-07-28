@@ -77,9 +77,10 @@ const t = createTranslator(ptBR)
 const EMPTY_ROWS: readonly TeamMemberRow[] = []
 
 /**
- * Dataset VAZIO dos 3 gráficos demográficos (Gênero/Idade/Raça-cor): o endpoint LGPD-safe não os fornece →
- * empty-state honesto, sem inventar distribuição (D3 do plano). Reabilita quando o backend expuser agregação
- * demográfica.
+ * Os 3 gráficos demográficos (Gênero/Idade/Raça-cor) consomem a AGREGAÇÃO do endpoint dedicado
+ * (`useEquipeDemographics` → `demographics.{gender,ageRange,race}`) — NUNCA linha-por-pessoa (Opção A / LGPD,
+ * decisão da P.O. 2026-07-20: só estatística agregada cruza a fronteira). Vazios só quando não há colaborador
+ * com esses campos preenchidos (data, não wiring). As colunas/filtros por-pessoa seguem "—"/"Todos" de propósito.
  */
 
 /** Baixa o CSV via Blob + anchor (client-side; o backend entregará JSON depois). */
@@ -98,10 +99,10 @@ function downloadCsv(filename: string, csv: string): void {
 export function EquipePage(): ReactNode {
   const navigate = useNavigate()
 
-  // Server-state REAL do core-api (#114, endpoint LGPD-safe): loading | error | ready. Sem idade/gênero/
-  // raça-cor → os 3 gráficos demográficos recebem dataset VAZIO (empty-state honesto); só Ano + Função têm fonte.
+  // Server-state REAL do core-api (#114, endpoint LGPD-safe): loading | error | ready. A TABELA não traz idade/
+  // gênero/raça-cor por pessoa (Opção A); esses 3 gráficos vêm da AGREGAÇÃO na query separada abaixo.
   const state = useEquipe()
-  // Query SEPARADA (core-api#477): se a demografia falhar/403, os gráficos ficam vazios e a TABELA segue.
+  // Query SEPARADA (agregação demográfica): se falhar/403, os 3 gráficos ficam vazios e a TABELA segue.
   const demographics = useEquipeDemographics()
 
   // UI-state local da page (§XI): filtros abertos, DRAFT/APLICADO dos filtros, paginação e o colaborador do modal.
@@ -118,8 +119,8 @@ export function EquipePage(): ReactNode {
   const filteredRows = useMemo(() => applyTeamFilters(rows, applied), [rows, applied])
   const totalCount = useMemo(() => computeTotal(filteredRows), [filteredRows])
 
-  // Só os 2 gráficos com FONTE REAL: Ano de contrato (de `startOfContract`) e Função (de `role`). Os 3
-  // demográficos (Gênero/Idade/Raça-cor) recebem `[]` na View (empty-state honesto — o endpoint não os traz).
+  // Gráficos derivados da TABELA: Ano de contrato (de `startOfContract`) e Função (de `role`). Os 3
+  // demográficos (Gênero/Idade/Raça-cor) NÃO derivam daqui — vêm da agregação (`demographics.*`, Opção A).
   const anoCounts = useMemo(() => byAnoContrato(filteredRows), [filteredRows])
   const funcaoBars = useMemo(() => byFuncao(filteredRows), [filteredRows])
 
