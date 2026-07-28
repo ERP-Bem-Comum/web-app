@@ -15,6 +15,8 @@ import {
   total,
   loadTeam,
   teamFilterOptions,
+  applyTeamFilters,
+  EMPTY_TEAM_FILTERS,
   totalPages,
   pageSlice,
   PER_PAGE_DEFAULT,
@@ -321,5 +323,76 @@ describe('teamFilterOptions', () => {
       programa: [],
       funcao: [],
     })
+  })
+})
+
+describe('applyTeamFilters (client-side)', () => {
+  const mk = (over: Partial<TeamMemberRow>): TeamMemberRow => ({
+    nome: 'x',
+    idade: null,
+    programa: 'Alfa',
+    funcao: 'Analista',
+    vinculo: 'CLT',
+    genero: '—',
+    racaCor: '—',
+    escolaridade: 'Superior',
+    anoContrato: 2021,
+    ...over,
+  })
+  const ROWS: readonly TeamMemberRow[] = [
+    mk({
+      nome: 'Ana Souza',
+      escolaridade: 'Superior',
+      programa: 'Alfa',
+      anoContrato: 2021,
+      funcao: 'Coordenador',
+    }),
+    mk({ nome: 'Bruno Lima', escolaridade: 'Médio', programa: 'Beta', anoContrato: 2023, vinculo: 'PJ' }),
+    mk({ nome: 'Cecília Ávila', escolaridade: 'Superior', programa: 'Alfa', anoContrato: 2023 }),
+  ]
+
+  it('sem filtro (EMPTY) → não recorta', () => {
+    assert.strictEqual(applyTeamFilters(ROWS, EMPTY_TEAM_FILTERS).length, 3)
+  })
+
+  it('por escolaridade', () => {
+    const r = applyTeamFilters(ROWS, { ...EMPTY_TEAM_FILTERS, escolaridade: 'Superior' })
+    assert.deepStrictEqual(
+      r.map((x) => x.nome),
+      ['Ana Souza', 'Cecília Ávila'],
+    )
+  })
+
+  it('por ano de contrato (compara como número)', () => {
+    const r = applyTeamFilters(ROWS, { ...EMPTY_TEAM_FILTERS, anoContrato: '2023' })
+    assert.deepStrictEqual(
+      r.map((x) => x.nome),
+      ['Bruno Lima', 'Cecília Ávila'],
+    )
+  })
+
+  it('por programa', () => {
+    assert.strictEqual(applyTeamFilters(ROWS, { ...EMPTY_TEAM_FILTERS, programa: 'Beta' }).length, 1)
+  })
+
+  it('busca por nome é insensível a caixa e acento', () => {
+    // "cecilia" (sem acento, minúsculo) casa "Cecília Ávila".
+    const r = applyTeamFilters(ROWS, { ...EMPTY_TEAM_FILTERS, search: 'cecilia' })
+    assert.deepStrictEqual(
+      r.map((x) => x.nome),
+      ['Cecília Ávila'],
+    )
+  })
+
+  it('combinação AND (escolaridade + ano)', () => {
+    const r = applyTeamFilters(ROWS, { ...EMPTY_TEAM_FILTERS, escolaridade: 'Superior', anoContrato: '2023' })
+    assert.deepStrictEqual(
+      r.map((x) => x.nome),
+      ['Cecília Ávila'],
+    )
+  })
+
+  it('sem match → vazio (não quebra)', () => {
+    assert.strictEqual(applyTeamFilters(ROWS, { ...EMPTY_TEAM_FILTERS, programa: 'Inexistente' }).length, 0)
   })
 })

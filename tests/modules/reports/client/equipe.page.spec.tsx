@@ -194,6 +194,39 @@ describe('EquipePage — modal de detalhe (linha clicável)', () => {
   })
 })
 
+describe('EquipePage — aplicar filtros (client-side) + resumo', () => {
+  it('mudar a busca NÃO filtra; "Filtrar" aplica (tabela encolhe) e o resumo aparece sob o título', async () => {
+    await renderReady()
+    // Início: 10 linhas (1ª de 4 páginas), sem subtítulo de filtro.
+    expect(screen.getAllByRole('button', { name: /Ver detalhes de/ }).length).toBe(10)
+    expect(screen.queryByText(/Busca:/)).toBeNull()
+
+    // Abre os filtros e digita a busca (DRAFT — ainda não filtra).
+    fireEvent.click(screen.getByRole('button', { name: 'Filtros' }))
+    fireEvent.change(screen.getByLabelText('Pesquise'), { target: { value: 'Sintético 05' } })
+    expect(screen.getAllByRole('button', { name: /Ver detalhes de/ }).length).toBe(10)
+
+    // "Filtrar" aplica → só o colaborador 05 casa; subtítulo reflete o aplicado.
+    fireEvent.click(screen.getByRole('button', { name: 'Filtrar' }))
+    const rows = screen.getAllByRole('button', { name: /Ver detalhes de/ })
+    expect(rows.length).toBe(1)
+    expect(screen.getByText('Colaborador Sintético 05')).toBeTruthy()
+    expect(screen.getByText('Busca: Sintético 05')).toBeTruthy()
+  })
+
+  it('filtro por Vínculo recorta a tabela e volta para a 1ª página', async () => {
+    await renderReady()
+    fireEvent.click(screen.getByText('Próxima')) // vai p/ a página 2
+    fireEvent.click(screen.getByRole('button', { name: 'Filtros' }))
+    // Vínculo tem 2 valores (CLT/PJ); aplicar PJ recorta o dataset.
+    fireEvent.change(screen.getByLabelText('Vínculo Empregatício'), { target: { value: 'PJ' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Filtrar' }))
+    // Volta p/ a 1ª página (Anterior desabilitado) e o subtítulo mostra o vínculo aplicado.
+    expect(screen.getByText('Anterior').hasAttribute('disabled')).toBe(true)
+    expect(screen.getByText('Vínculo Empregatício: PJ')).toBeTruthy()
+  })
+})
+
 describe('EquipePage — empty & erro', () => {
   it('backend devolve [] → tabela vazia (empty-state)', async () => {
     mockedGetTeam.mockResolvedValue(ok([]))

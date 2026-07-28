@@ -12,7 +12,7 @@ import { useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { screen } from '#shared/ui/brand/brand-page.css.ts'
+import { screen, headSubtitle } from '#shared/ui/brand/brand-page.css.ts'
 import { BrandPaginator } from '#shared/ui/brand/brand-paginator.component.tsx'
 import { ChevronLeftIcon, ChevronDownIcon, FilterIcon, DownloadIcon } from '#shared/ui/index.ts'
 
@@ -21,6 +21,8 @@ import {
   byAnoContrato,
   byFuncao,
   teamFilterOptions,
+  applyTeamFilters,
+  EMPTY_TEAM_FILTERS,
   buildCsv,
   formatSharePercent,
   totalPages,
@@ -28,7 +30,9 @@ import {
   PER_PAGE_DEFAULT,
   ANOS,
   type TeamMemberRow,
+  type TeamFilters,
 } from '../equipe.view-model.ts'
+import { buildFilterSummaryParts } from '../filters-summary.view-model.ts'
 import { useEquipe, useEquipeDemographics } from '../equipe.binding.ts'
 import { ReportStatePanel } from '../components/report-state-panel.component.tsx'
 import { RealizadoChartsMount } from '../components/realizado-charts-mount.component.tsx'
@@ -64,6 +68,8 @@ import {
   charts2,
   charts3,
 } from './equipe.page.css.ts'
+// Pele do bloco título+subtítulo (resumo dos filtros aplicados) — compartilhada com as outras telas.
+import { headTitleBlock } from './posicao-pagamentos.page.css.ts'
 
 const t = createTranslator(ptBR)
 
@@ -98,29 +104,50 @@ export function EquipePage(): ReactNode {
   // Query SEPARADA (core-api#477): se a demografia falhar/403, os gráficos ficam vazios e a TABELA segue.
   const demographics = useEquipeDemographics()
 
-  // UI-state local da page (§XI): filtros abertos, paginação e o colaborador selecionado no modal.
+  // UI-state local da page (§XI): filtros abertos, DRAFT/APLICADO dos filtros, paginação e o colaborador do modal.
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [draft, setDraft] = useState<TeamFilters>(EMPTY_TEAM_FILTERS)
+  const [applied, setApplied] = useState<TeamFilters>(EMPTY_TEAM_FILTERS)
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(PER_PAGE_DEFAULT)
   const [selected, setSelected] = useState<TeamMemberRow | null>(null)
 
   // Todos os hooks rodam ANTES de qualquer return (regras de hooks): sem dado ainda → linhas vazias.
   const rows = state.status === 'ready' ? state.rows : EMPTY_ROWS
-  const totalCount = useMemo(() => computeTotal(rows), [rows])
+  // Filtragem CLIENT-SIDE pelos filtros APLICADOS (todos os colaboradores já estão no front). TUDO deriva daqui.
+  const filteredRows = useMemo(() => applyTeamFilters(rows, applied), [rows, applied])
+  const totalCount = useMemo(() => computeTotal(filteredRows), [filteredRows])
 
   // Só os 2 gráficos com FONTE REAL: Ano de contrato (de `startOfContract`) e Função (de `role`). Os 3
   // demográficos (Gênero/Idade/Raça-cor) recebem `[]` na View (empty-state honesto — o endpoint não os traz).
-  const anoCounts = useMemo(() => byAnoContrato(rows), [rows])
-  const funcaoBars = useMemo(() => byFuncao(rows), [rows])
+  const anoCounts = useMemo(() => byAnoContrato(filteredRows), [filteredRows])
+  const funcaoBars = useMemo(() => byFuncao(filteredRows), [filteredRows])
 
-  // Opções dos filtros POPULÁVEIS (valores distintos dos próprios dados). Raça/Idade/Gênero + os sem campo no
-  // TeamMemberRow ficam só "Todos" (LGPD #477 / sem fonte). Populate-only (os filtros do Equipe são placeholder).
+  // Opções dos filtros POPULÁVEIS derivadas dos dados COMPLETOS (não do filtrado — senão as opções encolheriam
+  // ao aplicar). Raça/Idade/Gênero + os sem campo no TeamMemberRow ficam só "Todos" (LGPD #477 / sem fonte).
   const filterOpts = useMemo(() => teamFilterOptions(rows), [rows])
   const allOption = t('reports.equipe.filters.allOption')
 
-  // Paginação da tabela (fatia PURA da ViewModel; o UI-state page/perPage mora aqui).
+  // Paginação da tabela sobre o FILTRADO (fatia PURA da ViewModel; o UI-state page/perPage mora aqui).
   const pages = totalPages(totalCount, perPage)
-  const pageRows = useMemo(() => pageSlice(rows, page, perPage), [rows, page, perPage])
+  const pageRows = useMemo(() => pageSlice(filteredRows, page, perPage), [filteredRows, page, perPage])
+
+  // Resumo dos filtros APLICADOS (subtítulo) — do `applied`, não do draft. Valores já são os próprios rótulos
+  // (sem UUID) → value=label. Reusa o helper puro (§XI). Nenhum aplicado → [] (sem linha).
+  const subtitleParts = buildFilterSummaryParts([
+    { label: t('reports.equipe.filters.escolaridade'), value: applied.escolaridade },
+    { label: t('reports.equipe.filters.vinculo'), value: applied.vinculo },
+    { label: t('reports.equipe.filters.anoContrato'), value: applied.anoContrato },
+    { label: t('reports.equipe.filters.programa'), value: applied.programa },
+    { label: t('reports.equipe.filters.funcao'), value: applied.funcao },
+    { label: t('reports.equipe.filters.busca'), value: applied.search },
+  ])
+
+  // "Filtrar" commita o draft → aplica + volta p/ a 1ª página.
+  const aplicar = (): void => {
+    setApplied(draft)
+    setPage(1)
+  }
 
   if (state.status === 'loading') {
     return <ReportStatePanel title={t('reports.equipe.loading')} />
@@ -143,7 +170,10 @@ export function EquipePage(): ReactNode {
         >
           <ChevronLeftIcon size={18} />
         </button>
-        <h1 className={headTitle}>{t('reports.equipe.title')}</h1>
+        <div className={headTitleBlock}>
+          <h1 className={headTitle}>{t('reports.equipe.title')}</h1>
+          {subtitleParts.length > 0 && <p className={headSubtitle}>{subtitleParts.join(' · ')}</p>}
+        </div>
         <div className={tools}>
           <button
             type="button"
@@ -160,7 +190,7 @@ export function EquipePage(): ReactNode {
             type="button"
             className={exportButton}
             onClick={() => {
-              downloadCsv('equipe-abc.csv', buildCsv(rows))
+              downloadCsv('equipe-abc.csv', buildCsv(filteredRows))
             }}
           >
             <DownloadIcon size={16} />
@@ -178,44 +208,74 @@ export function EquipePage(): ReactNode {
               type="search"
               placeholder={t('reports.equipe.filters.searchPlaceholder')}
               aria-label={t('reports.equipe.filters.searchPlaceholder')}
+              value={draft.search}
+              onChange={(e) => {
+                setDraft((d) => ({ ...d, search: e.target.value }))
+              }}
             />
           </div>
           <div className={fieldsGrid}>
+            {/* Filtros APLICÁVEIS (client-side): controlados → draft; "Filtrar" commita. */}
             <FilterField
               label={t('reports.equipe.filters.escolaridade')}
-              options={[allOption, ...filterOpts.escolaridade]}
+              placeholder={allOption}
+              options={filterOpts.escolaridade}
+              value={draft.escolaridade}
+              onChange={(v) => {
+                setDraft((d) => ({ ...d, escolaridade: v }))
+              }}
             />
-            {/* Raça: LGPD-safe (#477) → sem dado real, fica "Todos". */}
-            <FilterField label={t('reports.equipe.filters.raca')} options={[allOption]} />
+            {/* Raça: LGPD-safe (#477) → sem dado real, inerte "Todos". */}
+            <FilterField label={t('reports.equipe.filters.raca')} placeholder={allOption} />
             <FilterField
               label={t('reports.equipe.filters.anoContrato')}
-              options={[allOption, ...filterOpts.anoContrato]}
+              placeholder={allOption}
+              options={filterOpts.anoContrato}
+              value={draft.anoContrato}
+              onChange={(v) => {
+                setDraft((d) => ({ ...d, anoContrato: v }))
+              }}
             />
-            {/* Desativado por: sem campo no TeamMemberRow → "Todos". */}
-            <FilterField label={t('reports.equipe.filters.desativadoPor')} options={[allOption]} />
+            {/* Desativado por: sem campo no TeamMemberRow → inerte "Todos". */}
+            <FilterField label={t('reports.equipe.filters.desativadoPor')} placeholder={allOption} />
             <FilterField
               label={t('reports.equipe.filters.programa')}
-              options={[allOption, ...filterOpts.programa]}
+              placeholder={allOption}
+              options={filterOpts.programa}
+              value={draft.programa}
+              onChange={(v) => {
+                setDraft((d) => ({ ...d, programa: v }))
+              }}
             />
             <FilterField
               label={t('reports.equipe.filters.funcao')}
-              options={[allOption, ...filterOpts.funcao]}
+              placeholder={allOption}
+              options={filterOpts.funcao}
+              value={draft.funcao}
+              onChange={(v) => {
+                setDraft((d) => ({ ...d, funcao: v }))
+              }}
             />
-            {/* Gênero: LGPD-safe (#477) → "Todos". */}
-            <FilterField label={t('reports.equipe.filters.genero')} options={[allOption]} />
-            {/* Status: sem campo no TeamMemberRow → "Todos". */}
-            <FilterField label={t('reports.equipe.filters.status')} options={[allOption]} />
-            {/* Situação cadastral: sem campo → "Todos". */}
-            <FilterField label={t('reports.equipe.filters.situacaoCadastral')} options={[allOption]} />
-            {/* Idade: LGPD-safe (#477) → "Todos". */}
-            <FilterField label={t('reports.equipe.filters.idade')} options={[allOption]} />
+            {/* Gênero: LGPD-safe (#477) → inerte "Todos". */}
+            <FilterField label={t('reports.equipe.filters.genero')} placeholder={allOption} />
+            {/* Status: sem campo no TeamMemberRow → inerte "Todos". */}
+            <FilterField label={t('reports.equipe.filters.status')} placeholder={allOption} />
+            {/* Situação cadastral: sem campo → inerte "Todos". */}
+            <FilterField label={t('reports.equipe.filters.situacaoCadastral')} placeholder={allOption} />
+            {/* Idade: LGPD-safe (#477) → inerte "Todos". */}
+            <FilterField label={t('reports.equipe.filters.idade')} placeholder={allOption} />
             <FilterField
               label={t('reports.equipe.filters.vinculo')}
-              options={[allOption, ...filterOpts.vinculo]}
+              placeholder={allOption}
+              options={filterOpts.vinculo}
+              value={draft.vinculo}
+              onChange={(v) => {
+                setDraft((d) => ({ ...d, vinculo: v }))
+              }}
             />
           </div>
           <div className={filtersActions}>
-            <button type="button" className={applyButton}>
+            <button type="button" className={applyButton} onClick={aplicar}>
               {t('reports.equipe.filters.filtrar')}
             </button>
           </div>
@@ -391,14 +451,41 @@ export function EquipePage(): ReactNode {
 }
 
 /** Campo de filtro (select nativo placeholder — só a forma/estilo brand). */
-function FilterField({ label, options }: { label: string; options: readonly string[] }): ReactNode {
+/**
+ * Campo de filtro (select nativo CONTROLADO). `placeholder` = opção vazia (value '') = "Todos" (sem recorte).
+ * `options` são os valores REAIS (label==value). Sem `value`/`onChange` → inerte (só "Todos"; filtros sem dado
+ * real, ex.: Raça/Idade/Gênero — LGPD).
+ */
+function FilterField({
+  label,
+  placeholder,
+  options,
+  value,
+  onChange,
+}: {
+  label: string
+  placeholder: string
+  options?: readonly string[]
+  value?: string
+  onChange?: (v: string) => void
+}): ReactNode {
   return (
     <div className={fld}>
       <label className={fldLabel}>{label}</label>
       <div className={fldCtrl}>
-        <select className={fldSelect} aria-label={label}>
-          {options.map((o) => (
-            <option key={o}>{o}</option>
+        <select
+          className={fldSelect}
+          aria-label={label}
+          value={value ?? ''}
+          onChange={(e) => {
+            onChange?.(e.target.value)
+          }}
+        >
+          <option value="">{placeholder}</option>
+          {(options ?? []).map((o) => (
+            <option key={o} value={o}>
+              {o}
+            </option>
           ))}
         </select>
         <span className={fldChev}>
