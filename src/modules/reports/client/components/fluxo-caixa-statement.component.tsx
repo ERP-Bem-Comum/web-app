@@ -87,11 +87,35 @@ export function FluxoCaixaStatement(props: FluxoCaixaStatementProps): ReactNode 
   const { statement: full, labels: L, formatValue: fmt } = props
   const allMonths = full.months
 
-  // UI-state local: janela de meses (De/Até) — `null` = extremo do período. Índices clampados no slice.
+  // Faixa com MOVIMENTO (1º..último mês com valor ≠ 0) — a tela ABRE nela (não no início do ano vazio, que
+  // deixaria os meses com dado cortados na borda). Tudo zerado → o ano cheio. O filtro/passador acessam todos.
+  const activeRange = useMemo(() => {
+    const nonZero = (i: number): boolean => {
+      const sa = full.saidas.totalByMonth[i]
+      const en = full.entradas.totalByMonth[i]
+      return (
+        (sa?.realizedCents ?? 0) !== 0 ||
+        (sa?.expectedCents ?? 0) !== 0 ||
+        (en?.realizedCents ?? 0) !== 0 ||
+        (en?.expectedCents ?? 0) !== 0
+      )
+    }
+    let lo = -1
+    let hi = -1
+    full.months.forEach((_m, i) => {
+      if (nonZero(i)) {
+        if (lo < 0) lo = i
+        hi = i
+      }
+    })
+    return lo < 0 ? { lo: 0, hi: Math.max(0, full.months.length - 1) } : { lo, hi }
+  }, [full])
+
+  // UI-state local: janela de meses (De/Até) — `null` = default (a faixa com movimento). Índices clampados no slice.
   const [fromMonth, setFromMonth] = useState<string | null>(null)
   const [toMonth, setToMonth] = useState<string | null>(null)
-  const fromIdx = fromMonth !== null ? allMonths.indexOf(fromMonth) : 0
-  const toIdxRaw = toMonth !== null ? allMonths.indexOf(toMonth) : allMonths.length - 1
+  const fromIdx = fromMonth !== null ? allMonths.indexOf(fromMonth) : activeRange.lo
+  const toIdxRaw = toMonth !== null ? allMonths.indexOf(toMonth) : activeRange.hi
   const loIdx = fromIdx < 0 ? 0 : fromIdx
   const hiIdx = toIdxRaw < 0 ? allMonths.length - 1 : toIdxRaw
   const s = useMemo(() => sliceStatement(full, loIdx, hiIdx), [full, loIdx, hiIdx])
