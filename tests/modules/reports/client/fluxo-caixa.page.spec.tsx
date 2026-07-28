@@ -153,10 +153,14 @@ describe('FluxoCaixaPage — composição', () => {
     renderPage()
     await screen.findByText('Exportar')
     fireEvent.change(screen.getByLabelText('Plano Orçamentário'), { target: { value: 'plan-1' } })
+    // Antes de "Filtrar", o subtítulo NÃO reflete o draft.
+    expect(screen.queryByText(/Plano Orçamentário: 2026 GOD 1\.0/)).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Filtrar' }))
     await waitFor(() => {
       expect(mCashflow).toHaveBeenCalledWith(expect.objectContaining({ budgetPlanId: 'plan-1' }))
     })
+    // Aplicado → o resumo dos filtros aparece abaixo do título (UUID→rótulo).
+    await screen.findByText(/Plano Orçamentário: 2026 GOD 1\.0/)
   })
 
   it('empty-state honesto: resposta vazia (0 payables, 0 chart) monta a tela sem quebrar', async () => {
