@@ -820,10 +820,32 @@ export const btnManual = style({
   selectors: { '&:hover': { background: c.teal.line } },
 })
 
-// Contador de títulos EXIBIDOS — letra pequena, discreta, abaixo da tabela.
-export const pmShownCount = style({
-  marginBlockStart: sp.xs,
-  paddingInline: '0.125rem',
+// Passador de página do buscar-vários (‹ Página X de Y ›) — barra discreta acima do rodapé.
+export const pmPager = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: sp.sm,
+  paddingBlock: sp.sm,
+  paddingInline: '0.875rem',
+  borderBlockStart: `${bw.hairline} solid ${c.paper.rule}`,
+})
+export const pmPagerBtn = style({
+  paddingInline: sp.md,
+  paddingBlock: sp.xs,
+  borderRadius: r.sm,
+  border: `${bw.hairline} solid ${c.paper.rule}`,
+  background: c.paper.default,
+  color: c.ink[3],
+  fontFamily: recon.font.sans,
+  fontSize: fs.sm,
+  fontWeight: recon.weight.semibold,
+  cursor: 'pointer',
+  selectors: {
+    '&:hover:not(:disabled)': { background: c.paper.warm },
+    '&:disabled': { color: c.ink[5], cursor: 'not-allowed' },
+  },
+})
+export const pmPagerPos = style({
   fontFamily: recon.font.sans,
   fontSize: fs.sm,
   color: c.ink[4],

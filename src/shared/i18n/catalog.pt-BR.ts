@@ -1708,6 +1708,10 @@ export const ptBR: Catalog = {
   'financial.recon.multi.createNew': 'Não encontrei · criar novo pagamento manualmente',
   'financial.recon.multi.manualEntry': 'Lançamento Manual',
   'financial.recon.multi.shownCount': 'títulos exibidos',
+  'financial.recon.multi.pagerPrev': 'Anterior',
+  'financial.recon.multi.pagerNext': 'Próxima',
+  'financial.recon.multi.pagerPage': 'Página',
+  'financial.recon.multi.pagerOf': 'de',
   'financial.recon.multi.confirmFull': 'Conciliar 1 extrato com os títulos',
   // Tratamento da diferença (conciliação parcial)
   'financial.recon.multi.diffTreat': 'Tratamento da diferença',

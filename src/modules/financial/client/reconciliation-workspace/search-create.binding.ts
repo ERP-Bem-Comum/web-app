@@ -29,6 +29,9 @@ import {
   type StatementTransaction,
 } from './reconciliation-workspace.view-model.ts'
 
+/** Títulos por página no buscar-vários (≈ o que cabe na altura da lista, ~8 linhas de 2.75rem em 24rem). */
+export const SEARCH_PER_PAGE = 8
+
 export type SearchCreateBinding = Readonly<{
   selectedIds: ReadonlySet<string>
   treatment: DifferenceTreatment | null
@@ -84,8 +87,16 @@ export type SearchCreateBinding = Readonly<{
   setValueMaxDraft: (v: string) => void
   applyValue: () => void
   clearValue: () => void
-  // Resultado.
+  // Resultado (paginado client-side).
   filtered: readonly PaidPayable[]
+  /** Fatia da página corrente (PER_PAGE por página). */
+  pageRows: readonly PaidPayable[]
+  /** Total de títulos APÓS filtros (denominador do passador). */
+  filteredCount: number
+  page: number
+  pageCount: number
+  prevPage: () => void
+  nextPage: () => void
   totalCount: number
   toggle: (payableId: string) => void
   setTreatment: (treatment: DifferenceTreatment) => void
@@ -141,6 +152,20 @@ export function useSearchCreate(
     value: { minCents: valueMinCents, maxCents: valueMaxCents },
   }
   const filtered = filterPayables(payables, filter)
+
+  // Paginação client-side (evita scroll infinito com muitos títulos). PER_PAGE ≈ o que cabe na altura da lista.
+  const [page, setPage] = useState(1)
+  // Trocar QUALQUER filtro volta p/ a 1ª página (senão a página corrente pode ficar fora do novo intervalo).
+  // Reset em render guardado por mudança de chave (padrão React oficial — sem efeito/setState-in-effect).
+  const filterKey = `${search}|${documentType}|${periodField}|${periodFrom}|${periodTo}|${String(valueMinCents ?? '')}|${String(valueMaxCents ?? '')}`
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey)
+  if (prevFilterKey !== filterKey) {
+    setPrevFilterKey(filterKey)
+    setPage(1)
+  }
+  const pageCount = Math.max(1, Math.ceil(filtered.length / SEARCH_PER_PAGE))
+  const pageClamped = Math.min(Math.max(1, page), pageCount)
+  const pageRows = filtered.slice((pageClamped - 1) * SEARCH_PER_PAGE, pageClamped * SEARCH_PER_PAGE)
 
   const selected = payables.filter((p) => selectedIds.has(p.id))
   const selectedSumCents = sumCentsOf(selected)
@@ -292,6 +317,16 @@ export function useSearchCreate(
       setValueMaxDraft('')
     },
     filtered,
+    pageRows,
+    filteredCount: filtered.length,
+    page: pageClamped,
+    pageCount,
+    prevPage: () => {
+      setPage((p) => Math.max(1, p - 1))
+    },
+    nextPage: () => {
+      setPage((p) => Math.min(pageCount, p + 1))
+    },
     totalCount: payables.length,
     toggle: (payableId) => {
       // Mudar a seleção re-fecha o painel de tratamento: ele só reabre via clique em Conciliar.

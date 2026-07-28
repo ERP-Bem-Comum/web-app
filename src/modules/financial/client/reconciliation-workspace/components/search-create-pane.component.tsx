@@ -347,14 +347,42 @@ export function SearchCreatePane({ binding, extratoValueCents, onManualEntry }: 
             <span className={s.pmRight}>{t('financial.recon.multi.col.value')}</span>
           </div>
           <div className={s.pmRows}>
-            {binding.filtered.length === 0 ? (
+            {binding.filteredCount === 0 ? (
               <p className={s.emptyState}>{t('financial.recon.multi.noResults')}</p>
             ) : (
-              binding.filtered.map((p) => (
+              binding.pageRows.map((p) => (
                 <PayRow key={p.id} p={p} checked={binding.selectedIds.has(p.id)} onToggle={binding.toggle} />
               ))
             )}
           </div>
+          {/* Passador de página — só quando há mais de uma página (o footer já mostra "de N"). */}
+          {binding.pageCount > 1 ? (
+            <div className={s.pmPager}>
+              <span className={s.spacer} />
+              <button
+                type="button"
+                className={s.pmPagerBtn}
+                disabled={binding.page <= 1}
+                aria-label={t('financial.recon.multi.pagerPrev')}
+                onClick={binding.prevPage}
+              >
+                {t('financial.recon.multi.pagerPrev')}
+              </button>
+              <span className={s.pmPagerPos}>
+                {t('financial.recon.multi.pagerPage')} {binding.page} {t('financial.recon.multi.pagerOf')}{' '}
+                {binding.pageCount}
+              </span>
+              <button
+                type="button"
+                className={s.pmPagerBtn}
+                disabled={binding.page >= binding.pageCount}
+                aria-label={t('financial.recon.multi.pagerNext')}
+                onClick={binding.nextPage}
+              >
+                {t('financial.recon.multi.pagerNext')}
+              </button>
+            </div>
+          ) : null}
           <div className={s.pmFoot}>
             <span>
               <span className={s.pmFootCount}>{selectedCount}</span> {t('financial.recon.multi.footSelected')}{' '}
@@ -364,13 +392,6 @@ export function SearchCreatePane({ binding, extratoValueCents, onManualEntry }: 
           </div>
         </div>
       )}
-
-      {/* Quantidade de títulos EXIBIDOS (após filtros) — letra pequena, abaixo da tabela. */}
-      {binding.totalCount > 0 ? (
-        <p className={s.pmShownCount}>
-          {binding.filtered.length} {t('financial.recon.multi.shownCount')}
-        </p>
-      ) : null}
 
       {/* Tratamento da diferença — só após clicar Conciliar com diferença (§9.4.6) */}
       {binding.showTreatment ? (
