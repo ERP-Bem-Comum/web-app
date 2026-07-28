@@ -34,20 +34,29 @@ export {
   chartPad,
   kpis,
   kpi,
+  kpiDot,
   kpiLabel,
   kpiValue,
   kpiSub,
 } from './realizado-x-planejado.page.css.ts'
 
-import { kpi } from './realizado-x-planejado.page.css.ts'
-
-// Barra de cor à esquerda de cada KPI da Posição (paleta das 3 medidas + Total). Aplicada por CLASSE.
+// Cor da BOLINHA de cada KPI da Posição (paleta das 3 medidas + Total). Aplicada ao `kpiDot`. A pagar → neutro
+// (não é atenção como o atrasado nem "ok" como o pago); Pago verde; Atrasado vermelho; Total azul institucional.
 export const kpiAccentPosicao = styleVariants({
-  atrasado: { selectors: { [`${kpi}&::before`]: { background: brand.color.posicao.emAtraso } } },
-  pago: { selectors: { [`${kpi}&::before`]: { background: brand.color.posicao.pago } } },
-  aPagar: { selectors: { [`${kpi}&::before`]: { background: brand.color.posicao.aPagar } } },
-  total: { selectors: { [`${kpi}&::before`]: { background: brand.color.posicao.total } } },
+  atrasado: { background: brand.color.posicao.emAtraso },
+  pago: { background: brand.color.posicao.pago },
+  aPagar: { background: brand.color.ink400 },
+  total: { background: brand.color.posicao.total },
 })
+
+// Valor colorido por semântica: Pago (liquidado) verde · Atrasado (vencido) vermelho. A pagar/Total = neutro.
+export const kpiValueTonePosicao = styleVariants({
+  pago: { color: brand.color.posicao.pago },
+  atrasado: { color: brand.color.posicao.emAtraso },
+})
+
+// Card "Total" TINTADO (destaque suave do branco) — fundo claro do azul institucional.
+export const kpiTintTotal = style({ background: brand.color.posicao.totalTintBg })
 
 // Grade de DOIS gráficos: "Resumo total" (donut, mais estreito) + "Distribuição por Fornecedor" (barras, mais
 // largo p/ os nomes longos). Colapsa em 1 coluna em telas estreitas.

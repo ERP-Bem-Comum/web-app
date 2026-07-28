@@ -229,26 +229,25 @@ export const kpi = style([
   card,
   {
     padding: `${brand.space.gridRow} ${brand.space.gridCol}`,
-    position: 'relative',
-    overflow: 'hidden',
-    selectors: {
-      '&::before': {
-        content: '""',
-        position: 'absolute',
-        insetInlineStart: 0,
-        insetBlockStart: 0,
-        insetBlockEnd: 0,
-        inlineSize: brand.rxp.kpiAccentWidth,
-      },
-    },
   },
 ])
-// Barra de cor à esquerda por tipo de KPI.
+// Bolinha (dot) inline ANTES do rótulo — marcador colorido no lugar da barra full-height. Decorativa
+// (`aria-hidden` na view). A cor vem por classe (`kpiAccent`/`kpiAccentPosicao`/`kpiAccentFluxo`).
+export const kpiDot = style({
+  display: 'inline-block',
+  inlineSize: '0.5rem',
+  blockSize: '0.5rem',
+  borderRadius: '50%',
+  marginInlineEnd: brand.space.xs,
+  verticalAlign: 'middle',
+  flexShrink: 0,
+})
+// Cor da bolinha por tipo de KPI (aplicada ao `kpiDot`).
 export const kpiAccent = styleVariants({
-  plan: { selectors: { [`${kpi}&::before`]: { background: brand.color.rxp.previsto } } },
-  real: { selectors: { [`${kpi}&::before`]: { background: brand.color.rxp.realizado } } },
-  prov: { selectors: { [`${kpi}&::before`]: { background: brand.color.rxp.provisionado } } },
-  exec: { selectors: { [`${kpi}&::before`]: { background: brand.color.ink400 } } },
+  plan: { background: brand.color.rxp.previsto },
+  real: { background: brand.color.rxp.realizado },
+  prov: { background: brand.color.rxp.provisionado },
+  exec: { background: brand.color.ink400 },
 })
 export const kpiLabel = style({
   fontSize: brand.text.hint,
