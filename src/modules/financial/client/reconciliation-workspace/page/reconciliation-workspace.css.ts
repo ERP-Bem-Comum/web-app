@@ -821,21 +821,6 @@ export const btnManual = style({
 })
 
 // Passador de página do buscar-vários (‹ Página X de Y ›) — barra discreta acima do rodapé.
-export const pmPager = style({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: sp.sm,
-  paddingBlock: sp.sm,
-  paddingInline: '0.875rem',
-  borderBlockStart: `${bw.hairline} solid ${c.paper.rule}`,
-})
-export const pmPagerCount = style({
-  fontFamily: recon.font.sans,
-  fontSize: fs.sm,
-  color: c.ink[4],
-  fontVariantNumeric: 'tabular-nums',
-})
 export const pmPagerNav = style({
   display: 'flex',
   alignItems: 'center',
@@ -1679,6 +1664,7 @@ export const pmAmt = style({
 export const pmFoot = style({
   display: 'flex',
   alignItems: 'center',
+  justifyContent: 'space-between',
   gap: sp.xl,
   paddingBlock: '0.5625rem',
   paddingInline: '0.875rem',

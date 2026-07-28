@@ -355,10 +355,12 @@ export function SearchCreatePane({ binding, extratoValueCents, onManualEntry }: 
               ))
             )}
           </div>
-          {/* Rodapé da lista: contagem SEMPRE visível; navegação só quando há mais de uma página. */}
-          <div className={s.pmPager}>
-            <span className={s.pmPagerCount}>
-              {binding.filteredCount} {t('financial.recon.multi.shownCount')}
+          {/* Rodapé único: "N selecionados de M" à esquerda; passador à direita (só com >1 página).
+              Sem total aqui — ele já vive no resumo do topo; sem "títulos exibidos" (era duplicado). */}
+          <div className={s.pmFoot}>
+            <span>
+              <span className={s.pmFootCount}>{selectedCount}</span> {t('financial.recon.multi.footSelected')}{' '}
+              {binding.totalCount}
             </span>
             {binding.pageCount > 1 ? (
               <span className={s.pmPagerNav}>
@@ -386,13 +388,6 @@ export function SearchCreatePane({ binding, extratoValueCents, onManualEntry }: 
                 </button>
               </span>
             ) : null}
-          </div>
-          <div className={s.pmFoot}>
-            <span>
-              <span className={s.pmFootCount}>{selectedCount}</span> {t('financial.recon.multi.footSelected')}{' '}
-              {binding.totalCount}
-            </span>
-            <span className={s.pmFootTotal}>{centsToBRL(binding.selectedSumCents)}</span>
           </div>
         </div>
       )}

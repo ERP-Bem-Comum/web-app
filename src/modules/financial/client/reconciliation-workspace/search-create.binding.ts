@@ -30,7 +30,7 @@ import {
 } from './reconciliation-workspace.view-model.ts'
 
 /** Títulos por página no buscar-vários (≈ o que cabe na altura da lista, ~8 linhas de 2.75rem em 24rem). */
-export const SEARCH_PER_PAGE = 8
+export const SEARCH_PER_PAGE = 7
 
 export type SearchCreateBinding = Readonly<{
   selectedIds: ReadonlySet<string>
