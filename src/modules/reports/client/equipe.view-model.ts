@@ -99,6 +99,97 @@ export function byFuncao(rows: readonly TeamMemberRow[] = EQUIPE_PLACEHOLDER): r
     .sort((a, b) => b.count - a.count)
 }
 
+// ── Opções dos filtros (derivadas dos VALORES DISTINTOS dos próprios dados — não há endpoint de opções) ──
+
+/**
+ * Opções dos 5 filtros POPULÁVEIS do Equipe ABC (têm dado real no `TeamMemberRow`). Raça/Idade/Gênero ficam
+ * FORA: o endpoint `/reports/team` é LGPD-safe → vêm como sentinela (`—`/null), então a page os deixa "Todos".
+ */
+export type TeamFilterOptions = Readonly<{
+  escolaridade: readonly string[]
+  vinculo: readonly string[]
+  anoContrato: readonly string[]
+  programa: readonly string[]
+  funcao: readonly string[]
+}>
+
+/** Pula vazio e as sentinelas honestas dos campos não fornecidos (`—` demografia · `N/A` idade). */
+const isMeaningful = (v: string): boolean => v !== '' && v !== NA_SENTINEL && v !== 'N/A'
+
+/** Distintos + alfabético pt-BR, pulando vazio/sentinela. */
+const distinctSorted = (values: readonly string[]): readonly string[] =>
+  [...new Set(values.filter(isMeaningful))].sort((a, b) => a.localeCompare(b, 'pt-BR'))
+
+/**
+ * Deriva as opções dos filtros a partir das linhas carregadas: distintas, ordenadas (ano DESC; os demais
+ * alfabético pt-BR), únicas, sem vazio/sentinela. `anoContrato` = anos válidos (>0; o `0` é o não-parseável).
+ * PURA (§XI) — testável em node:test; sem `throw`.
+ */
+export function teamFilterOptions(rows: readonly TeamMemberRow[] = EQUIPE_PLACEHOLDER): TeamFilterOptions {
+  const anoContrato = [...new Set(rows.map((r) => r.anoContrato))]
+    .filter((y) => Number.isFinite(y) && y > 0)
+    .sort((a, b) => b - a)
+    .map((y) => String(y))
+  return {
+    escolaridade: distinctSorted(rows.map((r) => r.escolaridade)),
+    vinculo: distinctSorted(rows.map((r) => r.vinculo)),
+    anoContrato,
+    programa: distinctSorted(rows.map((r) => r.programa)),
+    funcao: distinctSorted(rows.map((r) => r.funcao)),
+  }
+}
+
+// ── Aplicação dos filtros (CLIENT-SIDE — todos os colaboradores já estão no front; sem backend) ──
+
+/**
+ * Filtros APLICÁVEIS do Equipe ABC (client-side). Cada campo `''` = "Todos" (sem recorte). `anoContrato` é o
+ * ANO como string (o value do select); `search` casa por `nome` (case/acento-insensível). Raça/Idade/Gênero
+ * NÃO entram (LGPD-safe → sem dado real; filtrar por eles zeraria tudo).
+ */
+export type TeamFilters = Readonly<{
+  escolaridade: string
+  vinculo: string
+  anoContrato: string
+  programa: string
+  funcao: string
+  search: string
+}>
+
+export const EMPTY_TEAM_FILTERS: TeamFilters = {
+  escolaridade: '',
+  vinculo: '',
+  anoContrato: '',
+  programa: '',
+  funcao: '',
+  search: '',
+}
+
+/** Normaliza p/ busca insensível a caixa e acento (NFD + remove diacríticos + lower + trim). Sem `throw`. */
+function normalizeText(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+}
+
+/**
+ * Aplica os filtros às linhas (CLIENT-SIDE) — AND entre os campos setados; campo `''` não recorta. `anoContrato`
+ * compara como número; `search` casa por substring do `nome` normalizado. PURA (§XI), testável; sem `throw`.
+ */
+export function applyTeamFilters(rows: readonly TeamMemberRow[], f: TeamFilters): readonly TeamMemberRow[] {
+  const q = normalizeText(f.search)
+  return rows.filter(
+    (r) =>
+      (f.escolaridade === '' || r.escolaridade === f.escolaridade) &&
+      (f.vinculo === '' || r.vinculo === f.vinculo) &&
+      (f.anoContrato === '' || r.anoContrato === Number(f.anoContrato)) &&
+      (f.programa === '' || r.programa === f.programa) &&
+      (f.funcao === '' || r.funcao === f.funcao) &&
+      (q === '' || normalizeText(r.nome).includes(q)),
+  )
+}
+
 // ── Paginação (derivação PURA — o UI-state page/perPage mora na View, §XI) ──
 
 /** Opções de "itens por página" (espelha o BrandPaginator). */

@@ -2536,6 +2536,8 @@ export const ptBR: Catalog = {
   'reports.equipe.filters.title': 'Filtros',
   'reports.equipe.filters.searchPlaceholder': 'Pesquise',
   'reports.equipe.filters.allOption': 'Todos',
+  // Rótulo da busca no resumo dos filtros aplicados (subtítulo).
+  'reports.equipe.filters.busca': 'Busca',
   'reports.equipe.filters.escolaridade': 'Escolaridade',
   'reports.equipe.filters.raca': 'Raça',
   'reports.equipe.filters.anoContrato': 'Ano de Contrato',
