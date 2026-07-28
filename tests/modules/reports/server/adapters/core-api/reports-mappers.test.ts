@@ -12,6 +12,7 @@ import {
   teamDemographicsToModel,
   suppliersWithoutContractToModel,
   paymentPositionToModel,
+  paymentAnalysisToModel,
   realizedReportToModel,
   mapHttpError,
 } from '../../../../../../src/modules/reports/server/adapters/core-api/reports.mappers.ts'
@@ -348,5 +349,67 @@ describe('realizedReportToModel (S6 · #502) — achata a árvore, converte mês
   it('drift de shape → err("server") (não inventa dado)', () => {
     assert.ok(isErr(realizedReportToModel(null)))
     assert.ok(isErr(realizedReportToModel(42)))
+  })
+})
+
+describe('paymentAnalysisToModel (#446) — matriz Plano→CentroCusto; nullable e série mensal preservados', () => {
+  const raw = {
+    totalValueOfPeriod: 60000,
+    data: [
+      {
+        id: null,
+        name: null,
+        total: 60000,
+        itens: [{ monthYear: '2026-01', total: 60000 }],
+        costCenters: [
+          {
+            id: null,
+            name: null,
+            total: 60000,
+            itens: [{ monthYear: '2026-01', total: 60000 }],
+          },
+        ],
+      },
+    ],
+  }
+
+  it('mapeia DTO válido → Model preservando id/name null e a série mensal PRÓPRIA da folha', () => {
+    const r = paymentAnalysisToModel(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.strictEqual(r.value.totalValueOfPeriod, 60000)
+      assert.strictEqual(r.value.data.length, 1)
+      assert.strictEqual(r.value.data[0]?.id, null)
+      assert.strictEqual(r.value.data[0]?.name, null)
+      const cc = r.value.data[0]?.costCenters[0]
+      assert.strictEqual(cc?.name, null)
+      assert.strictEqual(cc?.itens[0]?.monthYear, '2026-01')
+      assert.strictEqual(cc?.itens[0]?.total, 60000)
+    }
+  })
+
+  it('drift-tolerante: números/listas faltantes → 0 / [] (não quebra)', () => {
+    const r = paymentAnalysisToModel({ data: [{ id: 'p', name: 'P' }] })
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.strictEqual(r.value.totalValueOfPeriod, 0)
+      assert.strictEqual(r.value.data[0]?.total, 0)
+      assert.deepStrictEqual(r.value.data[0]?.itens, [])
+      assert.deepStrictEqual(r.value.data[0]?.costCenters, [])
+    }
+  })
+
+  it('resposta vazia (data ausente) → totalValueOfPeriod 0 e data []', () => {
+    const r = paymentAnalysisToModel({})
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.strictEqual(r.value.totalValueOfPeriod, 0)
+      assert.deepStrictEqual(r.value.data, [])
+    }
+  })
+
+  it('drift GROSSEIRO (não-objeto) → err("server")', () => {
+    assert.ok(isErr(paymentAnalysisToModel(null)))
+    assert.ok(isErr(paymentAnalysisToModel(42)))
   })
 })

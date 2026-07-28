@@ -218,37 +218,44 @@ export const cardHint = style({
 })
 
 // ── KPIs (4 colunas, barra colorida à esquerda) ──
+// Cards de valores em FAIXA ÚNICA (conforme o print): um container arredondado, segmentos COLADOS com
+// divisórias finas — truque gap=1px + fundo da linha aparecendo entre os segmentos. Sem gaps/cards soltos.
+// A moldura (borda + radius + sombra) fica só no container; `overflow:hidden` recorta os cantos dos segmentos.
 export const kpis = style({
   display: 'grid',
   gridTemplateColumns: 'repeat(4, 1fr)',
-  gap: brand.space.gridRow,
+  gap: vars.borderWidth.thin,
+  background: brand.color.line,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  borderRadius: brand.radius.lg,
+  boxShadow: brand.shadow.card,
+  overflow: 'hidden',
   marginBlockEnd: brand.space.gridRow,
   '@media': { 'screen and (max-width: 60rem)': { gridTemplateColumns: 'repeat(2, 1fr)' } },
 })
-export const kpi = style([
-  card,
-  {
-    padding: `${brand.space.gridRow} ${brand.space.gridCol}`,
-    position: 'relative',
-    overflow: 'hidden',
-    selectors: {
-      '&::before': {
-        content: '""',
-        position: 'absolute',
-        insetInlineStart: 0,
-        insetBlockStart: 0,
-        insetBlockEnd: 0,
-        inlineSize: brand.rxp.kpiAccentWidth,
-      },
-    },
-  },
-])
-// Barra de cor à esquerda por tipo de KPI.
+// Cada KPI é um SEGMENTO da faixa (sem borda/radius/sombra próprios — o container é a moldura). Fundo branco;
+// as variantes tintadas (kpiTintNeg/kpiTintTotal) sobrescrevem o fundo (segmento destacado dentro da faixa).
+export const kpi = style({
+  background: brand.color.surface,
+  padding: `${brand.space.gridRow} ${brand.space.gridCol}`,
+})
+// Bolinha (dot) inline ANTES do rótulo — marcador colorido no lugar da barra full-height. Decorativa
+// (`aria-hidden` na view). A cor vem por classe (`kpiAccent`/`kpiAccentPosicao`/`kpiAccentFluxo`).
+export const kpiDot = style({
+  display: 'inline-block',
+  inlineSize: '0.5rem',
+  blockSize: '0.5rem',
+  borderRadius: '50%',
+  marginInlineEnd: brand.space.xs,
+  verticalAlign: 'middle',
+  flexShrink: 0,
+})
+// Cor da bolinha por tipo de KPI (aplicada ao `kpiDot`).
 export const kpiAccent = styleVariants({
-  plan: { selectors: { [`${kpi}&::before`]: { background: brand.color.rxp.previsto } } },
-  real: { selectors: { [`${kpi}&::before`]: { background: brand.color.rxp.realizado } } },
-  prov: { selectors: { [`${kpi}&::before`]: { background: brand.color.rxp.provisionado } } },
-  exec: { selectors: { [`${kpi}&::before`]: { background: brand.color.ink400 } } },
+  plan: { background: brand.color.rxp.previsto },
+  real: { background: brand.color.rxp.realizado },
+  prov: { background: brand.color.rxp.provisionado },
+  exec: { background: brand.color.ink400 },
 })
 export const kpiLabel = style({
   fontSize: brand.text.hint,

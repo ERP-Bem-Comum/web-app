@@ -55,11 +55,14 @@ import {
   cardTitle,
   kpis,
   kpi,
+  kpiDot,
   kpiLabel,
   kpiValue,
   kpiSub,
   kpiAccentFluxo,
+  kpiValueToneFluxo,
   saldoValueTone,
+  kpiTintNeg,
   charts4,
   sections,
   exportTrigger,
@@ -187,14 +190,24 @@ export function FluxoCaixaPage(): ReactNode {
 
       {/* KPIs: Saídas · Entradas · Saldo (realizado) · Saldo (previsto) */}
       <div className={kpis}>
-        <div className={`${kpi} ${kpiAccentFluxo.saidas}`}>
-          <div className={kpiLabel}>{t('reports.fluxoCaixa.kpi.saidas')}</div>
-          <div className={kpiValue}>{formatBRL(report.saidas.totals.realizedCents)}</div>
+        <div className={kpi}>
+          <div className={kpiLabel}>
+            <span className={`${kpiDot} ${kpiAccentFluxo.saidas}`} aria-hidden="true" />
+            {t('reports.fluxoCaixa.kpi.saidas')}
+          </div>
+          <div className={`${kpiValue} ${kpiValueToneFluxo.saidas}`}>
+            {formatBRL(report.saidas.totals.realizedCents)}
+          </div>
           <div className={kpiSub}>{t('reports.fluxoCaixa.kpi.saidasSub')}</div>
         </div>
-        <div className={`${kpi} ${kpiAccentFluxo.entradas}`}>
-          <div className={kpiLabel}>{t('reports.fluxoCaixa.kpi.entradas')}</div>
-          <div className={kpiValue}>{formatBRL(report.entradas.totals.realizedCents)}</div>
+        <div className={kpi}>
+          <div className={kpiLabel}>
+            <span className={`${kpiDot} ${kpiAccentFluxo.entradas}`} aria-hidden="true" />
+            {t('reports.fluxoCaixa.kpi.entradas')}
+          </div>
+          <div className={`${kpiValue} ${kpiValueToneFluxo.entradas}`}>
+            {formatBRL(report.entradas.totals.realizedCents)}
+          </div>
           <div className={kpiSub}>{t('reports.fluxoCaixa.kpi.entradasSub')}</div>
         </div>
         <SaldoKpi
@@ -344,12 +357,21 @@ function buildDonutSlices(
   )
 }
 
-/** KPI de Saldo — valor colorido por sinal (positivo verde / negativo vermelho), acento idem. */
+/**
+ * KPI de Saldo — bolinha + valor coloridos por sinal (positivo verde / negativo vermelho). Quando NEGATIVO, o
+ * card ganha fundo vermelho suave (resultado do período no vermelho), destacando dos brancos.
+ */
 function SaldoKpi({ label, sub, cents }: { label: string; sub: string; cents: number }): ReactNode {
   const positive = cents >= 0
   return (
-    <div className={`${kpi} ${positive ? kpiAccentFluxo.saldoPos : kpiAccentFluxo.saldoNeg}`}>
-      <div className={kpiLabel}>{label}</div>
+    <div className={`${kpi} ${positive ? '' : kpiTintNeg}`}>
+      <div className={kpiLabel}>
+        <span
+          className={`${kpiDot} ${positive ? kpiAccentFluxo.saldoPos : kpiAccentFluxo.saldoNeg}`}
+          aria-hidden="true"
+        />
+        {label}
+      </div>
       <div className={`${kpiValue} ${positive ? saldoValueTone.pos : saldoValueTone.neg}`}>
         {formatBRL(cents)}
       </div>

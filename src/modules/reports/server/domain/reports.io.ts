@@ -64,6 +64,35 @@ export type SupplierWithoutContract = Readonly<{
 }>
 
 /**
+ * Status filtrável da Posição de Pagamentos (core-api#588) — enum FECHADO de 6 valores. NÃO inclui
+ * `Draft`/`Refused` (decisão da P.O.: o relatório não recorta por rascunho/recusado).
+ */
+export type PaymentPositionStatus =
+  | 'Open'
+  | 'Approved'
+  | 'Transmitted'
+  | 'Paid'
+  | 'PartiallyReconciled'
+  | 'Reconciled'
+
+/**
+ * Filtros de consulta da Posição de Pagamentos (core-api#588 · GET /reports/payment-position). TODOS
+ * opcionais e combinados por AND no servidor; refs são UUID opaco. `dueFrom`/`dueTo` = janela HALF-OPEN
+ * [dueFrom, dueTo) em `YYYY-MM-DD` (o `dueTo` é EXCLUSIVO no backend). Ausente = sem recorte por aquele campo.
+ */
+export type PaymentPositionFilter = Readonly<{
+  budgetPlanRef?: string
+  cedenteAccountRef?: string
+  costCenterRef?: string
+  categoryRef?: string
+  subcategoryRef?: string
+  supplierRef?: string
+  dueFrom?: string
+  dueTo?: string
+  status?: PaymentPositionStatus
+}>
+
+/**
  * Posição de pagamentos: uma linha da matriz fornecedor × centro de custo × categoria com os 3 buckets
  * (pendente/pago/atrasado). Todas as dimensões (refs e nomes) são nullable; os `*Cents` são number.
  */
@@ -77,6 +106,41 @@ export type PaymentPosition = Readonly<{
   pendingCents: number
   paidCents: number
   overdueCents: number
+}>
+
+/**
+ * Análise de Pagamentos (#446 · GET /reports/analysis/payables) — matriz TEMPO-orçamentária: árvore Plano
+ * Orçamentário → Centro de Custo, cada nó com uma SÉRIE MENSAL PRÓPRIA (`itens`: `monthYear` → `total`). Os
+ * `total` estão em CENTAVOS inteiros (number). `id`/`name` são nullable: `name` null → "Sem plano" / "Sem
+ * centro de custo" na UI (o mapeamento p/ rótulo é do client). O client re-agrega no shape da tela (AnaliseReport).
+ */
+export type PaymentAnalysisMonthCell = Readonly<{ monthYear: string; total: number }>
+export type PaymentAnalysisCostCenter = Readonly<{
+  id: string | null
+  name: string | null
+  total: number
+  itens: readonly PaymentAnalysisMonthCell[]
+}>
+export type PaymentAnalysisPlan = Readonly<{
+  id: string | null
+  name: string | null
+  total: number
+  itens: readonly PaymentAnalysisMonthCell[]
+  costCenters: readonly PaymentAnalysisCostCenter[]
+}>
+export type PaymentAnalysis = Readonly<{
+  totalValueOfPeriod: number
+  data: readonly PaymentAnalysisPlan[]
+}>
+
+/**
+ * Filtros de consulta da Análise de Pagamentos (#446). Janela de vencimento HALF-OPEN [dueStart, dueEnd)
+ * (`dueEnd` EXCLUSIVO) em `YYYY-MM-DD`; `status` opcional (string livre no backend).
+ */
+export type PaymentAnalysisQuery = Readonly<{
+  dueStart: string
+  dueEnd: string
+  status?: string
 }>
 
 /**

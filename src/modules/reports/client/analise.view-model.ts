@@ -23,6 +23,7 @@ import {
   type MonthRange,
 } from './data/analise-pagamentos.placeholder.ts'
 import { ANALISE_RECEBIMENTOS_RAW } from './data/analise-recebimentos.placeholder.ts'
+import type { PaymentAnalysis } from './data/model/payment-analysis.model.ts'
 
 /** Nível do nó na árvore: plano orçamentário (0) → centro de custo (folha, 1). */
 export type AnaliseLevel = 'plano' | 'costCenter'
@@ -272,6 +273,56 @@ export function loadAnalise(type: AnaliseType = 'p'): AnaliseReport {
   const months = monthsInRange(ANALISE_PERIOD)
   const raw = type === 'r' ? ANALISE_RECEBIMENTOS_RAW : ANALISE_PAGAMENTOS_RAW
   return aggregateAnalise(raw, months)
+}
+
+// Rótulos de fallback quando o backend não traz o nome (id/name nullable no #446). PT-BR (como MONTH_ABBR_PT).
+export const ANALISE_SEM_PLANO = 'Sem plano'
+export const ANALISE_SEM_CENTRO = 'Sem centro de custo'
+
+/** Aceita só chaves `YYYY-MM` bem-formadas (protege a derivação de meses de lixo do backend). */
+const MONTH_KEY_RE = /^\d{4}-\d{2}$/
+
+/**
+ * Model do #446 (matriz Plano → Centro de Custo × série mensal) → `AnaliseReport` que a tela consome. Reusa
+ * TODO o engine já testado (`monthsInRange` + `aggregateAnalise`), então gráficos/CSV/tabela ficam idênticos.
+ *
+ * ── MESES DERIVADOS DO DADO ── Os meses visíveis vêm do MIN..MAX `monthYear` PRESENTE na resposta (não de
+ * "ano atual": o env pode estar num ano diferente do dado — um default fixo mostraria VAZIO). Como `YYYY-MM`
+ * ordena lexicograficamente = cronologicamente, o min/max sai de comparação de string; `monthsInRange` gera o
+ * range CONTÍGUO e `aggregateAnalise` completa as células ausentes com 0. Resposta vazia → months [] e
+ * planos [] → a `AnaliseReportView` cai no empty-state honesto. `totalPeriodo` = `totalValueOfPeriod` (contrato).
+ * `name` null → "Sem plano" / "Sem centro de custo". Sem `throw` (§II), sem `Date` (à prova de "Invalid Date").
+ */
+export function analiseReportFromAnalysis(analysis: PaymentAnalysis): AnaliseReport {
+  const monthKeys: string[] = []
+  for (const plano of analysis.data) {
+    for (const it of plano.itens) if (MONTH_KEY_RE.test(it.monthYear)) monthKeys.push(it.monthYear)
+    for (const cc of plano.costCenters) {
+      for (const it of cc.itens) if (MONTH_KEY_RE.test(it.monthYear)) monthKeys.push(it.monthYear)
+    }
+  }
+  const months =
+    monthKeys.length === 0
+      ? []
+      : monthsInRange({
+          start: monthKeys.reduce((a, b) => (b < a ? b : a)),
+          end: monthKeys.reduce((a, b) => (b > a ? b : a)),
+        })
+
+  const rows: RawAnaliseRow[] = []
+  for (const plano of analysis.data) {
+    const planoName = plano.name ?? ANALISE_SEM_PLANO
+    for (const cc of plano.costCenters) {
+      const monthValues: Record<string, number> = {}
+      for (const it of cc.itens) {
+        if (MONTH_KEY_RE.test(it.monthYear)) monthValues[it.monthYear] = it.total
+      }
+      rows.push({ plano: planoName, costCenter: cc.name ?? ANALISE_SEM_CENTRO, monthValues })
+    }
+  }
+
+  const aggregated = aggregateAnalise(rows, months)
+  return { ...aggregated, totalPeriodo: analysis.totalValueOfPeriod }
 }
 
 // ── Formatação ──
