@@ -300,6 +300,9 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
                           binding={vm.searchCreate}
                           payables={vm.payables}
                           extratoValueCents={vm.selectedTx.valueCents}
+                          onManualEntry={() => {
+                            vm.setAssocTab('nova')
+                          }}
                         />
                       )}
                     </div>
