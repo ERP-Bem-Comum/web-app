@@ -8,7 +8,7 @@
 import { Fragment, type ReactNode } from 'react'
 
 import type { GeneralColumnId, GeneralColumnKind, LedgerRow } from '../relatorio-geral.view-model.ts'
-import { cellText } from '../relatorio-geral.view-model.ts'
+import { cellText, monthGroupKey, monthGroupLabel } from '../relatorio-geral.view-model.ts'
 import {
   COLUMN_WIDTH,
   card,
@@ -18,11 +18,20 @@ import {
   scroller,
   thead,
   theadValue,
+  headCell,
   row,
   cell,
   cellStrong,
   cellValue,
   cellMuted,
+  stickyLeft,
+  stickyRight,
+  stickyLeftHead,
+  stickyRightHead,
+  monthSep,
+  monthSepLabel,
+  tipoChip,
+  tipoDot,
   empty,
 } from './relatorio-geral-table.css.ts'
 
@@ -56,25 +65,73 @@ export function RelatorioGeralTable(props: RelatorioGeralTableProps): ReactNode 
 
   // Grid só com as colunas visíveis, na ordem (larguras endereçadas por id — do *.css.ts).
   const gridTemplateColumns = columns.map((c) => COLUMN_WIDTH[c.id] ?? '8rem').join(' ')
+  const lastIdx = columns.length - 1
+  // Classe da coluna FIXA: a 1ª visível gruda à esquerda; a última, à direita (espelho do legado).
+  const stickyOf = (i: number, head: boolean): string => {
+    if (i === 0) return head ? stickyLeftHead : stickyLeft
+    if (i === lastIdx) return head ? stickyRightHead : stickyRight
+    return ''
+  }
 
-  /** Célula de uma coluna: texto (ou "—" quando ausente) + classe conforme o papel. */
-  const renderCell = (r: LedgerRow, c: VisibleColumn): ReactNode => {
+  /** Célula de uma coluna: texto (ou "—" quando ausente) + classe conforme o papel + fixação por posição. */
+  const renderCell = (r: LedgerRow, c: VisibleColumn, i: number): ReactNode => {
+    const sticky = stickyOf(i, false)
     const text = cellText(r, c.id)
-    if (text === null) return <span className={cellMuted}>{L.naLabel}</span>
+    // Tipo → CHIP (pílula com bolinha). O #442 é payables-only → um único tom "A pagar".
+    if (c.id === 'tipo' && text !== null) {
+      return (
+        <span className={`${cell} ${sticky}`.trim()}>
+          <span className={tipoChip}>
+            <span className={tipoDot} aria-hidden="true" />
+            {text}
+          </span>
+        </span>
+      )
+    }
+    if (text === null) return <span className={`${cellMuted} ${sticky}`.trim()}>{L.naLabel}</span>
     switch (c.kind) {
       case 'strong':
-        return <span className={cellStrong}>{text}</span>
+        return <span className={`${cellStrong} ${sticky}`.trim()}>{text}</span>
       case 'value':
-        return <span className={cellValue}>{text}</span>
+        return <span className={`${cellValue} ${sticky}`.trim()}>{text}</span>
       case 'plain':
       case 'optional':
         return (
-          <span className={cell} title={text}>
+          <span className={`${cell} ${sticky}`.trim()} title={text}>
             {text}
           </span>
         )
     }
   }
+
+  // Corpo com SEPARADORES de mês: uma faixa "Mês / Ano" antes da 1ª linha de cada mês (agrupa por vencimento).
+  const body: ReactNode[] = []
+  let lastMonthKey = ''
+  props.rows.forEach((r, i) => {
+    const key = monthGroupKey(r.data)
+    if (key !== lastMonthKey) {
+      lastMonthKey = key
+      body.push(
+        <div key={`sep-${key}`} className={monthSep} style={{ gridTemplateColumns }}>
+          <span className={monthSepLabel} style={{ gridColumn: '1 / -1' }}>
+            {monthGroupLabel(r.data)}
+          </span>
+        </div>,
+      )
+    }
+    body.push(
+      <div
+        className={row}
+        role="row"
+        key={`${r.codigo ?? r.data}-${String(i)}`}
+        style={{ gridTemplateColumns }}
+      >
+        {columns.map((c, ci) => (
+          <Fragment key={c.id}>{renderCell(r, c, ci)}</Fragment>
+        ))}
+      </div>,
+    )
+  })
 
   return (
     <div className={card}>
@@ -90,25 +147,16 @@ export function RelatorioGeralTable(props: RelatorioGeralTableProps): ReactNode 
       ) : (
         <div className={scroller}>
           <div className={thead} role="row" style={{ gridTemplateColumns }}>
-            {columns.map((c) => (
-              <span key={c.id} className={c.kind === 'value' ? theadValue : undefined}>
+            {columns.map((c, i) => (
+              <span
+                key={c.id}
+                className={`${headCell} ${c.kind === 'value' ? theadValue : ''} ${stickyOf(i, true)}`.trim()}
+              >
                 {c.label}
               </span>
             ))}
           </div>
-
-          {props.rows.map((r, i) => (
-            <div
-              className={row}
-              role="row"
-              key={`${r.codigo ?? r.data}-${String(i)}`}
-              style={{ gridTemplateColumns }}
-            >
-              {columns.map((c) => (
-                <Fragment key={c.id}>{renderCell(r, c)}</Fragment>
-              ))}
-            </div>
-          ))}
+          {body}
         </div>
       )}
     </div>

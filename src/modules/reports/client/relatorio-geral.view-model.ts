@@ -45,6 +45,37 @@ export function formatIsoDateBR(iso: string): string {
   return `${day}/${month}/${year}`
 }
 
+/** Nomes dos 12 meses (1=Janeiro … 12=Dezembro) — o separador de mês do ledger sai daqui POR ÍNDICE. */
+const MONTH_NAMES_PT: readonly string[] = [
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
+]
+
+/** Chave de MÊS de uma data "DD/MM/AAAA" → "MM/AAAA" (agrupa o ledger por mês). Malformada → a própria string. */
+export function monthGroupKey(dataBR: string): string {
+  const m = /^\d{2}\/(\d{2})\/(\d{4})/.exec(dataBR)
+  return m === null ? dataBR : `${m[1] ?? ''}/${m[2] ?? ''}`
+}
+
+/** Rótulo do separador de mês: "DD/MM/AAAA" → "Janeiro / 2026". Nome por ÍNDICE (nunca `Date`). Malformada → a string. */
+export function monthGroupLabel(dataBR: string): string {
+  const m = /^\d{2}\/(\d{2})\/(\d{4})/.exec(dataBR)
+  if (m === null) return dataBR
+  const idx = Number(m[1]) - 1
+  const name = MONTH_NAMES_PT[idx] ?? m[1] ?? ''
+  return `${name} / ${m[2] ?? ''}`
+}
+
 /** PIX (chave) tem precedência sobre bancário; ambos null → null. */
 export function formatPixBancario(row: GeneralReportRow): string | null {
   if (row.pixKey !== null) return `PIX · ${row.pixKey.key}`

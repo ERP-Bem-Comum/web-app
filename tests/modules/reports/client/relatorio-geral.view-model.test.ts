@@ -17,6 +17,8 @@ import {
   CSV_HEADER,
   totalPages,
   formatBRL,
+  monthGroupKey,
+  monthGroupLabel,
   PER_PAGE_DEFAULT,
   cellText,
   type LedgerRow,
@@ -83,6 +85,15 @@ describe('formatIsoDateBR — YYYY-MM-DD → DD/MM/AAAA (sem Date)', () => {
     assert.equal(formatIsoDateBR('2026-01-10'), '10/01/2026')
     assert.equal(formatIsoDateBR('2026-12-31T00:00:00Z'), '31/12/2026')
     assert.equal(formatIsoDateBR('lixo'), 'lixo')
+  })
+})
+
+describe('monthGroupKey / monthGroupLabel — separador de mês (sem Date)', () => {
+  it('chave "MM/AAAA" e rótulo "Mês / Ano" por índice; malformado → a própria string', () => {
+    assert.equal(monthGroupKey('10/01/2026'), '01/2026')
+    assert.equal(monthGroupLabel('10/01/2026'), 'Janeiro / 2026')
+    assert.equal(monthGroupLabel('05/12/2026'), 'Dezembro / 2026')
+    assert.equal(monthGroupLabel('lixo'), 'lixo')
   })
 })
 
