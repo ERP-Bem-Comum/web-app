@@ -12,7 +12,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { screen } from '#shared/ui/brand/brand-page.css.ts'
+import { screen, headSubtitle } from '#shared/ui/brand/brand-page.css.ts'
 import { ChevronLeftIcon, ChevronDownIcon, FilterIcon } from '#shared/ui/index.ts'
 
 import {
@@ -35,6 +35,7 @@ import {
   useAnoOptions,
   type FilterOption,
 } from '../realizado-filters.binding.ts'
+import { buildFilterSummaryParts } from '../filters-summary.view-model.ts'
 import { ReportStatePanel } from '../components/report-state-panel.component.tsx'
 import { ReportExportDropdown } from '../components/report-export-dropdown.component.tsx'
 import { exportTrigger } from '../components/report-filters.css.ts'
@@ -67,6 +68,8 @@ import {
   cardHeader,
   cardTitle,
 } from './realizado-x-planejado.page.css.ts'
+// Pele do bloco título+subtítulo (resumo dos filtros aplicados) — compartilhada com Posição/Análise.
+import { headTitleBlock } from './posicao-pagamentos.page.css.ts'
 
 const t = createTranslator(ptBR)
 
@@ -196,9 +199,36 @@ export function RealizadoXPlanejadoPage(): ReactNode {
     )
   }
 
+  // Resumo dos filtros APLICADOS (reflete `applied`, não o draft) — abaixo do título, p/ o recorte vigente ficar
+  // visível com os filtros recolhidos. Resolve UUID→rótulo pelas options carregadas; Ano é valor direto (sempre
+  // aplicado — o endpoint exige `year`). Pula "Todos"/vazio. Reusa o helper puro (§XI).
+  const subtitleParts = buildFilterSummaryParts([
+    {
+      label: t('reports.realizadoXPlanejado.filters.programa'),
+      value: applied.programId ?? '',
+      options: programaOptions,
+    },
+    {
+      label: t('reports.realizadoXPlanejado.filters.plano'),
+      value: applied.budgetPlanId ?? '',
+      options: planoOptions,
+    },
+    {
+      label: t('reports.realizadoXPlanejado.filters.estado'),
+      value: applied.partnerStateId ?? '',
+      options: estadoOptions,
+    },
+    {
+      label: t('reports.realizadoXPlanejado.filters.municipio'),
+      value: applied.partnerMunicipalityId ?? '',
+      options: municipioOptions,
+    },
+    { label: t('reports.realizadoXPlanejado.filters.ano'), value: String(applied.year) },
+  ])
+
   return (
     <div className={screen}>
-      {/* Cabeçalho: voltar + título + Filtros/Exportar */}
+      {/* Cabeçalho: voltar + título (+ resumo dos filtros aplicados) + Filtros/Exportar */}
       <div className={head}>
         <button
           type="button"
@@ -210,7 +240,10 @@ export function RealizadoXPlanejadoPage(): ReactNode {
         >
           <ChevronLeftIcon size={18} />
         </button>
-        <h1 className={headTitle}>{t('reports.realizadoXPlanejado.title')}</h1>
+        <div className={headTitleBlock}>
+          <h1 className={headTitle}>{t('reports.realizadoXPlanejado.title')}</h1>
+          {subtitleParts.length > 0 && <p className={headSubtitle}>{subtitleParts.join(' · ')}</p>}
+        </div>
         <div className={tools}>
           <button
             type="button"
