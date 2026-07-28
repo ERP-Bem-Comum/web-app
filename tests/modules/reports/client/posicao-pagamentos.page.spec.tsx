@@ -12,7 +12,7 @@
  * Fixtures SINTÉTICAS (LGPD).
  */
 import type { ReactNode } from 'react'
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import { render, screen, cleanup, fireEvent, within, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
@@ -21,6 +21,11 @@ import type { PaymentPosition } from '#modules/reports/client/data/model/payment
 import { reportsRepository } from '#modules/reports/client/data/repository/reports.repository.instance.ts'
 import { PosicaoPagamentosPage } from '#modules/reports/client/page/posicao-pagamentos.page.tsx'
 import { aggregatePosicao, toRawPosicaoRows } from '#modules/reports/client/posicao.view-model.ts'
+import { paymentPositionQueryKey } from '#modules/reports/client/posicao.query.ts'
+
+import { listBudgetPlansFn } from '#modules/budget-plans/public-api/index.ts'
+import { listSuppliersFn } from '#modules/partners/public-api/index.ts'
+import { listCedenteAccountsFn } from '#modules/financial/public-api/index.ts'
 
 vi.mock('#modules/reports/client/data/repository/reports.repository.instance.ts', () => ({
   reportsRepository: {
@@ -30,7 +35,32 @@ vi.mock('#modules/reports/client/data/repository/reports.repository.instance.ts'
   },
 }))
 
+// Fontes cross-módulo dos dropdowns de filtro (populam agora; APLICAR depende do core-api#588).
+vi.mock('#modules/budget-plans/public-api/index.ts', () => ({ listBudgetPlansFn: vi.fn() }))
+vi.mock('#modules/partners/public-api/index.ts', () => ({ listSuppliersFn: vi.fn() }))
+// Centro/Categoria/Subcategoria vêm da CASCATA do plano (hooks do financial) — mockados como [] (sem plano).
+vi.mock('#modules/financial/public-api/index.ts', () => ({
+  listCedenteAccountsFn: vi.fn(),
+  useCostCenterOptionsFromPlan: vi.fn(() => []),
+  useCategoryOptionsFromPlan: vi.fn(() => []),
+  useSubcategoryOptionsFromPlan: vi.fn(() => []),
+}))
+
 const mockedGetPaymentPosition = vi.mocked(reportsRepository.getPaymentPosition)
+const mPlans = vi.mocked(listBudgetPlansFn)
+const mSuppliers = vi.mocked(listSuppliersFn)
+const mAccounts = vi.mocked(listCedenteAccountsFn)
+
+/** Fontes de filtro com defaults vazios; Fornecedor traz uma opção REAL distinta da árvore. */
+function stubFilterSources(): void {
+  mPlans.mockResolvedValue({ ok: true, data: { items: [] } } as never)
+
+  mSuppliers.mockResolvedValue({
+    ok: true,
+    data: { items: [{ id: 'sup-9', name: 'Fornecedor Filtro' }], meta: {} },
+  } as never)
+  mAccounts.mockResolvedValue({ ok: true, data: [] } as never)
+}
 
 // Fixture sintética: 2 fornecedores × centros × categorias, com os 3 buckets já derivados (number/centavos).
 const POSITIONS: readonly PaymentPosition[] = [
@@ -85,9 +115,15 @@ function renderPage(): void {
 /** Renderiza e aguarda a árvore real aparecer (query resolveu). */
 async function renderReady(): Promise<void> {
   mockedGetPaymentPosition.mockResolvedValue(ok(POSITIONS))
+  stubFilterSources()
   renderPage()
   await screen.findByText('Total Geral')
 }
+
+beforeEach(() => {
+  // Defaults seguros p/ as fontes de filtro (as queries rodam antes dos early-returns). Testes específicos sobrescrevem.
+  stubFilterSources()
+})
 
 afterEach(() => {
   cleanup()
@@ -118,6 +154,91 @@ describe('PosicaoPagamentosPage — filtros recolhíveis', () => {
     expect(screen.getByLabelText('Status')).toBeTruthy()
     fireEvent.click(toggle)
     expect(toggle.getAttribute('aria-pressed')).toBe('false')
+  })
+
+  it('popula os dropdowns com opções REAIS (não só "Todos")', async () => {
+    await renderReady()
+    fireEvent.click(screen.getByRole('button', { name: 'Filtros' }))
+
+    // Status é estático (chips do CAP): "Aprovado" aparece além do "Todos".
+    const statusSelect = screen.getByLabelText('Status')
+    expect(within(statusSelect).getByRole('option', { name: 'Aprovado' })).toBeTruthy()
+    // Fornecedor vem da fonte real (listSuppliersFn) — opção distinta da árvore.
+    const partnerSelect = screen.getByLabelText('Fornecedor')
+    await waitFor(() => {
+      expect(within(partnerSelect).getByRole('option', { name: 'Fornecedor Filtro' })).toBeTruthy()
+    })
+    // O "Todos" segue como 1ª opção (prepend).
+    expect(within(partnerSelect).getAllByRole('option')[0]?.textContent).toBe('Todos')
+  })
+})
+
+describe('PosicaoPagamentosPage — aplicar filtro (Filtrar)', () => {
+  it('mudar um select NÃO re-busca; só o clique em "Filtrar" dispara a query com os params', async () => {
+    await renderReady()
+    // 1ª carga: consulta SEM filtro (aplicado = {}).
+    expect(mockedGetPaymentPosition).toHaveBeenCalledTimes(1)
+    expect(mockedGetPaymentPosition).toHaveBeenLastCalledWith({})
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filtros' }))
+    const partnerSelect = screen.getByLabelText('Fornecedor')
+    await waitFor(() => {
+      expect(within(partnerSelect).getByRole('option', { name: 'Fornecedor Filtro' })).toBeTruthy()
+    })
+
+    // Selecionar o fornecedor + o status NÃO deve refetch (só draft).
+    fireEvent.change(partnerSelect, { target: { value: 'sup-9' } })
+    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'Approved' } })
+    expect(mockedGetPaymentPosition).toHaveBeenCalledTimes(1)
+
+    // "Filtrar" aplica → re-busca com os params (vazios viram undefined).
+    fireEvent.click(screen.getByRole('button', { name: 'Filtrar' }))
+    await waitFor(() => {
+      expect(mockedGetPaymentPosition).toHaveBeenCalledTimes(2)
+    })
+    expect(mockedGetPaymentPosition).toHaveBeenLastCalledWith(
+      expect.objectContaining({ supplierRef: 'sup-9', status: 'Approved' }),
+    )
+    // Resumo dos filtros aplicados abaixo do título (UUID→rótulo; reflete o aplicado). findByText: aguarda o
+    // re-render "ready" após o refetch da nova queryKey.
+    await screen.findByText('Status: Aprovado · Fornecedor: Fornecedor Filtro')
+  })
+
+  it('o input de data De/Até entra no filtro aplicado', async () => {
+    await renderReady()
+    fireEvent.click(screen.getByRole('button', { name: 'Filtros' }))
+    fireEvent.change(screen.getByLabelText('De'), { target: { value: '2026-01-01' } })
+    fireEvent.change(screen.getByLabelText('Até'), { target: { value: '2026-02-01' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Filtrar' }))
+    await waitFor(() => {
+      expect(mockedGetPaymentPosition).toHaveBeenLastCalledWith(
+        expect.objectContaining({ dueFrom: '2026-01-01', dueTo: '2026-02-01' }),
+      )
+    })
+  })
+})
+
+describe('paymentPositionQueryKey — o filtro entra na cache identity', () => {
+  it('filtros diferentes → chaves diferentes; ausente → null (troca de filtro re-busca)', () => {
+    const empty = paymentPositionQueryKey({})
+    const withSupplier = paymentPositionQueryKey({ supplierRef: 'sup-9', status: 'Approved' })
+    expect(empty).not.toEqual(withSupplier)
+    expect(withSupplier).toContain('sup-9')
+    expect(withSupplier).toContain('Approved')
+    // Campos ausentes viram null (chave estável, ordem fixa).
+    expect(empty).toEqual([
+      'reports',
+      'payment-position',
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ])
   })
 })
 
@@ -191,6 +312,20 @@ describe('PosicaoPagamentosPage — empty & erro', () => {
     const empties = await screen.findAllByText('Nenhum dado para exibir.')
     expect(empties.length).toBeGreaterThan(0)
     expect(screen.queryByText('Total Geral')).toBeNull()
+  })
+
+  it('vazio COM filtros → o botão "Filtros" e a barra continuam acessíveis (não prende o usuário)', async () => {
+    mockedGetPaymentPosition.mockResolvedValue(ok([]))
+    renderPage()
+    await screen.findAllByText('Nenhum dado para exibir.')
+    // Botão "Filtros" segue no DOM mesmo no vazio (é filtrável) — o usuário reabre e afrouxa.
+    const toggle = screen.getByRole('button', { name: 'Filtros' })
+    expect(toggle).toBeTruthy()
+    // A barra é acessível: abre e revela os campos + o "Filtrar" p/ mudar o recorte.
+    fireEvent.click(toggle)
+    expect(screen.getByLabelText('Status')).toBeTruthy()
+    expect(screen.getByLabelText('De')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Filtrar' })).toBeTruthy()
   })
 
   it('erro do BFF → painel de erro com a tag i18n (nunca status HTTP)', async () => {

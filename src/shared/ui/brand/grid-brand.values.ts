@@ -156,6 +156,10 @@ export const brand = {
       pago: '#1f7d55', // verde — liquidado
       aPagar: '#f8b221', // âmbar — a vencer
       total: '#396496', // azul institucional — soma das 3
+      // Fundo SUAVE tintado do card "Total" (destaque do branco) — tom claro do azul institucional.
+      totalTintBg: '#eef3fa',
+      // Divisória do card tintado (Total) — tom + forte do tint p/ a linha aparecer entre segmentos tintados.
+      totalTintLine: '#caddf2',
     },
     // Paleta dos GRÁFICOS da "Posição de RECEBIMENTOS" — família DISTINTA da de Pagamentos (a P.O. pede
     // diferenciar as duas telas pela cor dos gráficos). Tons mais frios/violeta ("dinheiro que entra"):
@@ -188,6 +192,10 @@ export const brand = {
       barTrack: '#eef1f5', // trilho neutro das barras
       saldoPos: '#1f7d55', // verde — Saldo positivo (entradas ≥ saídas)
       saldoNeg: '#c0453c', // vermelho — Saldo negativo (saídas > entradas)
+      // Fundo SUAVE tintado do card de Saldo quando NEGATIVO (resultado do período no vermelho) — tom claro do vermelho.
+      saldoNegTintBg: '#f8e6e4',
+      // Divisória do card de Saldo negativo — tom + forte do tint p/ a linha aparecer entre dois cards tintados.
+      saldoNegTintLine: '#ecc4bf',
       // Cores dos 4 gráficos "Previsto × Realizado" (espelho do legado): Previsto ciano, Realizado verde,
       // Saldo verde-claro. Distintas dos tokens dos KPIs/tabelas acima (não os alteram).
       previstoChart: '#32a2c6', // ciano — série "Previsto/Esperado" (timeline, barras CC, donuts)

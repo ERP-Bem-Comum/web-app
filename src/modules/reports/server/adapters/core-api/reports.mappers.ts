@@ -12,6 +12,8 @@ import type {
   TeamDemographics,
   SupplierWithoutContract,
   PaymentPosition,
+  PaymentAnalysis,
+  PaymentAnalysisPlan,
   RealizedBudgetRow,
   RealizedMonthCell,
 } from '#modules/reports/server/domain/reports.io.ts'
@@ -20,6 +22,7 @@ import {
   CoreApiTeamDemographicsSchema,
   CoreApiSuppliersWithoutContractSchema,
   CoreApiPaymentPositionSchema,
+  CoreApiPaymentAnalysisSchema,
   CoreApiRealizedReportSchema,
 } from './reports.schema.ts'
 
@@ -120,6 +123,29 @@ export const paymentPositionToModel = (raw: unknown): Result<readonly PaymentPos
     overdueCents: p.overdueCents,
   }))
   return ok(positions)
+}
+
+/**
+ * Análise de Pagamentos (#446) — passa a matriz Plano → Centro de Custo DIRETO ao Model (mesmo shape),
+ * preservando `id`/`name` nullable e a série mensal PRÓPRIA de cada nó. Drift → err('server'). O client
+ * re-agrega no shape da tela (deriva os meses do MIN..MAX presente e reusa `aggregateAnalise`).
+ */
+export const paymentAnalysisToModel = (raw: unknown): Result<PaymentAnalysis, ReportsError> => {
+  const parsed = CoreApiPaymentAnalysisSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  const data: readonly PaymentAnalysisPlan[] = parsed.data.data.map((p) => ({
+    id: p.id,
+    name: p.name,
+    total: p.total,
+    itens: p.itens.map((i) => ({ monthYear: i.monthYear, total: i.total })),
+    costCenters: p.costCenters.map((cc) => ({
+      id: cc.id,
+      name: cc.name,
+      total: cc.total,
+      itens: cc.itens.map((i) => ({ monthYear: i.monthYear, total: i.total })),
+    })),
+  }))
+  return ok({ totalValueOfPeriod: parsed.data.totalValueOfPeriod, data })
 }
 
 /**

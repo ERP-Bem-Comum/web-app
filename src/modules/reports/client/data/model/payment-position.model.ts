@@ -15,3 +15,31 @@ export type PaymentPosition = Readonly<{
   paidCents: number
   overdueCents: number
 }>
+
+/**
+ * Status filtrável (core-api#588) — enum FECHADO de 6 valores (sem Draft/Refused, decisão P.O.). Espelha o
+ * `PaymentPositionStatus` do server (`reports.io.ts`); LOCAL da camada client/data (boundary §I).
+ */
+export type PaymentPositionStatus =
+  | 'Open'
+  | 'Approved'
+  | 'Transmitted'
+  | 'Paid'
+  | 'PartiallyReconciled'
+  | 'Reconciled'
+
+/**
+ * Filtros da Posição de Pagamentos (#588). TODOS opcionais (AND no servidor); `dueFrom`/`dueTo` = janela
+ * HALF-OPEN [dueFrom, dueTo) em `YYYY-MM-DD` (`dueTo` exclusivo). Espelha o `PaymentPositionFilter` do server.
+ */
+export type PaymentPositionFilter = Readonly<{
+  budgetPlanRef?: string
+  cedenteAccountRef?: string
+  costCenterRef?: string
+  categoryRef?: string
+  subcategoryRef?: string
+  supplierRef?: string
+  dueFrom?: string
+  dueTo?: string
+  status?: PaymentPositionStatus
+}>

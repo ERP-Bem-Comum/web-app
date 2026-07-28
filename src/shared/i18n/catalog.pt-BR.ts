@@ -2605,6 +2605,8 @@ export const ptBR: Catalog = {
   'reports.posicao.filters.allOption': 'Todos',
   'reports.posicao.filters.plano': 'Plano Orçamentário',
   'reports.posicao.filters.periodo': 'Período de vencimento',
+  'reports.posicao.filters.periodoDe': 'De',
+  'reports.posicao.filters.periodoAte': 'Até',
   'reports.posicao.filters.conta': 'Conta bancária',
   'reports.posicao.filters.status': 'Status',
   'reports.posicao.filters.centro': 'Centro de custo',
@@ -2612,6 +2614,13 @@ export const ptBR: Catalog = {
   'reports.posicao.filters.subcategoria': 'Subcategoria',
   'reports.posicao.filters.fornecedor': 'Fornecedor',
   'reports.posicao.filters.filtrar': 'Filtrar',
+  // Status filtrável (#588) — enum FECHADO de 6 (sem Rascunho/Recusado, decisão P.O.).
+  'reports.posicao.filters.statusOpt.open': 'Aberto',
+  'reports.posicao.filters.statusOpt.approved': 'Aprovado',
+  'reports.posicao.filters.statusOpt.transmitted': 'Transmitido',
+  'reports.posicao.filters.statusOpt.paid': 'Pago',
+  'reports.posicao.filters.statusOpt.partiallyReconciled': 'Parcialmente conciliado',
+  'reports.posicao.filters.statusOpt.reconciled': 'Conciliado',
   // 3 MEDIDAS DERIVADAS (Em atraso = não pago e vencido; Pago = liquidado; A pagar = não pago e a vencer).
   'reports.posicao.measure.emAtraso': 'Em atraso',
   'reports.posicao.measure.pago': 'Pago',
@@ -2666,6 +2675,9 @@ export const ptBR: Catalog = {
   'reports.analise.title': 'Análise de Pagamentos',
   'reports.analise.back': 'Voltar',
   'reports.analise.empty': 'Nenhum dado para exibir.',
+  // Estados de carregamento/erro (dado REAL do core-api #446). O `hint` do erro reusa `reports.error.*`.
+  'reports.analise.loading': 'Carregando a análise…',
+  'reports.analise.errorTitle': 'Não foi possível carregar o relatório.',
   // Export (dropdown CSV + PDF).
   'reports.analise.export.label': 'Exportar',
   'reports.analise.export.csv': 'CSV',
@@ -2676,7 +2688,12 @@ export const ptBR: Catalog = {
   'reports.analise.filters.programa': 'Programa',
   'reports.analise.filters.plano': 'Plano Orçamentário',
   'reports.analise.filters.periodo': 'Período de vencimento',
+  'reports.analise.filters.periodoDe': 'De',
+  'reports.analise.filters.periodoAte': 'Até',
   'reports.analise.filters.conta': 'Conta bancária',
+  // Resumo dos filtros aplicados (subtítulo) — conectores do intervalo de datas quando só uma extremidade é setada.
+  'reports.filters.summary.fromPrefix': 'a partir de',
+  'reports.filters.summary.toPrefix': 'até',
   'reports.analise.filters.status': 'Status',
   'reports.analise.filters.centro': 'Centro de custo',
   'reports.analise.filters.categoria': 'Categoria',

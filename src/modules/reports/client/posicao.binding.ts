@@ -13,14 +13,21 @@ import { aggregatePosicao, toRawPosicaoRows, type PosicaoReport } from './posica
 import { reportsPartnersMapQueryOptions, EMPTY_PARTNERS_MAP } from './reports-partners-map.binding.ts'
 import { reportsErrorTag } from './data/helpers/reports-error-tag.ts'
 import type { ReportsError } from './data/repository/reports-error.ts'
+import type { PaymentPositionFilter, PaymentPositionStatus } from './data/model/payment-position.model.ts'
+
+// Re-export p/ a page tipar o estado de filtros sem importar de `data/model` (boundary client-ui ↛ client-data).
+export type PosicaoReportFilters = PaymentPositionFilter
+export type PosicaoReportStatus = PaymentPositionStatus
 
 export type PosicaoBindingState =
   | Readonly<{ status: 'loading' }>
   | Readonly<{ status: 'error'; error: ReportsError; errorTag: string }>
   | Readonly<{ status: 'ready'; report: PosicaoReport }>
 
-export function usePosicaoPagamentos(): PosicaoBindingState {
-  const query = useQuery(paymentPositionQueryOptions())
+const NO_FILTER: PaymentPositionFilter = {}
+
+export function usePosicaoPagamentos(filter: PaymentPositionFilter = NO_FILTER): PosicaoBindingState {
+  const query = useQuery(paymentPositionQueryOptions(filter))
   // Mapa de parceiros p/ resolver o favorecido não-fornecedor client-side (best-effort; não bloqueia o
   // relatório — sem ele, o favorecido cai no nome do backend / "—").
   const partnersQuery = useQuery(reportsPartnersMapQueryOptions())

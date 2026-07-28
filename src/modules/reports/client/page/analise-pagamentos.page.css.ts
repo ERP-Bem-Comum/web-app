@@ -34,6 +34,13 @@ export {
 // quando o placeholder for removido (fonte `[]`).
 export { emptyPanel, emptyTitle, emptyHint } from './posicao-pagamentos.page.css.ts'
 
+// Período de vencimento: DOIS inputs de data (De / Até) lado a lado — reusa a pele da "Posição" (#588),
+// zero duplicação. `dueTo` é EXCLUSIVO no backend (#446).
+export { periodRow, dateInput } from './posicao-pagamentos.page.css.ts'
+
+// Título + subtítulo (resumo dos filtros aplicados) empilhados — reusa a pele da "Posição".
+export { headTitleBlock } from './posicao-pagamentos.page.css.ts'
+
 // ── Grade de 2 gráficos (Distribuição por Centro de Custo + Distribuição Mensal) ──
 export const charts2 = style({
   display: 'grid',

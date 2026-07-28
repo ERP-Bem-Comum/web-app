@@ -7,7 +7,14 @@
 import { ok, err, type Result } from '#shared/primitives/result.ts'
 import type { TeamMember, TeamDemographics } from '#modules/reports/client/data/model/team-report.model.ts'
 import type { SupplierWithoutContract } from '#modules/reports/client/data/model/supplier-without-contract.model.ts'
-import type { PaymentPosition } from '#modules/reports/client/data/model/payment-position.model.ts'
+import type {
+  PaymentPosition,
+  PaymentPositionFilter,
+} from '#modules/reports/client/data/model/payment-position.model.ts'
+import type {
+  PaymentAnalysis,
+  PaymentAnalysisQuery,
+} from '#modules/reports/client/data/model/payment-analysis.model.ts'
 import type {
   RealizedReportQuery,
   RealizedBudgetRow,
@@ -17,7 +24,8 @@ import type { ReportsError, FnResult } from '#modules/reports/client/data/reposi
 type TeamFn = () => Promise<FnResult<readonly TeamMember[]>>
 type TeamDemographicsFn = () => Promise<FnResult<TeamDemographics>>
 type SuppliersFn = () => Promise<FnResult<readonly SupplierWithoutContract[]>>
-type PaymentPositionFn = () => Promise<FnResult<readonly PaymentPosition[]>>
+type PaymentPositionFn = (filter: PaymentPositionFilter) => Promise<FnResult<readonly PaymentPosition[]>>
+type PaymentAnalysisFn = (query: PaymentAnalysisQuery) => Promise<FnResult<PaymentAnalysis>>
 type RealizedReportFn = (query: RealizedReportQuery) => Promise<FnResult<readonly RealizedBudgetRow[]>>
 
 export type ReportsRepository = Readonly<{
@@ -25,7 +33,10 @@ export type ReportsRepository = Readonly<{
   /** Demografia AGREGADA (core-api#477) — só estatística; nunca linha por pessoa. */
   getTeamDemographics: () => Promise<Result<TeamDemographics, ReportsError>>
   getSuppliersWithoutContract: () => Promise<Result<readonly SupplierWithoutContract[], ReportsError>>
-  getPaymentPosition: () => Promise<Result<readonly PaymentPosition[], ReportsError>>
+  getPaymentPosition: (
+    filter: PaymentPositionFilter,
+  ) => Promise<Result<readonly PaymentPosition[], ReportsError>>
+  getPaymentAnalysis: (query: PaymentAnalysisQuery) => Promise<Result<PaymentAnalysis, ReportsError>>
   getRealizedReport: (
     query: RealizedReportQuery,
   ) => Promise<Result<readonly RealizedBudgetRow[], ReportsError>>
@@ -37,6 +48,7 @@ export const createReportsRepository = (
     teamDemographicsFn: TeamDemographicsFn
     suppliersWithoutContractFn: SuppliersFn
     paymentPositionFn: PaymentPositionFn
+    paymentAnalysisFn: PaymentAnalysisFn
     realizedReportFn: RealizedReportFn
   }>,
 ): ReportsRepository => ({
@@ -52,8 +64,12 @@ export const createReportsRepository = (
     const res = await deps.suppliersWithoutContractFn()
     return res.ok ? ok(res.data) : err(res.error)
   },
-  getPaymentPosition: async () => {
-    const res = await deps.paymentPositionFn()
+  getPaymentPosition: async (filter) => {
+    const res = await deps.paymentPositionFn(filter)
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  getPaymentAnalysis: async (query) => {
+    const res = await deps.paymentAnalysisFn(query)
     return res.ok ? ok(res.data) : err(res.error)
   },
   getRealizedReport: async (query) => {
