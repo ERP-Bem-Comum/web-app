@@ -56,7 +56,10 @@ export const kpiValueTonePosicao = styleVariants({
 })
 
 // Card "Total" TINTADO (destaque suave do branco) — fundo claro do azul institucional.
-export const kpiTintTotal = style({ background: brand.color.posicao.totalTintBg })
+export const kpiTintTotal = style({
+  background: brand.color.posicao.totalTintBg,
+  borderInlineStart: `${vars.borderWidth.thin} solid ${brand.color.posicao.totalTintLine}`,
+})
 
 // Grade de DOIS gráficos: "Resumo total" (donut, mais estreito) + "Distribuição por Fornecedor" (barras, mais
 // largo p/ os nomes longos). Colapsa em 1 coluna em telas estreitas.

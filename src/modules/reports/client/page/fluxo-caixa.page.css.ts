@@ -8,6 +8,7 @@
 import { style, styleVariants } from '@vanilla-extract/css'
 
 import { brand } from '#shared/ui/brand/grid-brand.values.ts'
+import { vars } from '#shared/ui/tokens/index.ts'
 
 // Pele compartilhada do RxP (cabeçalho + filtros + cartões + KPIs) — re-export para a page importar tudo daqui.
 export {
@@ -61,8 +62,12 @@ export const saldoValueTone = styleVariants({
   neg: { color: brand.color.fluxo.saldoNeg },
 })
 
-// Card de Saldo TINTADO quando NEGATIVO (resultado do período no vermelho) — fundo vermelho suave.
-export const kpiTintNeg = style({ background: brand.color.fluxo.saldoNegTintBg })
+// Card de Saldo TINTADO quando NEGATIVO (resultado do período no vermelho) — fundo vermelho suave + divisória
+// própria (tom + forte do tint) p/ a linha aparecer entre dois cards tintados adjacentes (some contra o cinza).
+export const kpiTintNeg = style({
+  background: brand.color.fluxo.saldoNegTintBg,
+  borderInlineStart: `${vars.borderWidth.thin} solid ${brand.color.fluxo.saldoNegTintLine}`,
+})
 
 // Grade dos QUATRO gráficos numa linha só (compactos e ALINHADOS): Linha do tempo · Centro de Custo · Entradas
 // · Saídas. Cards de altura igual (`stretch`). Colapsa 4→2 (≤75rem) e 2→1 (≤48rem) para não espremer.
