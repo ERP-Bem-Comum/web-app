@@ -156,8 +156,14 @@ export type AnaliseReportViewProps = Readonly<{
    */
   period?: AnalisePeriodModel
   /**
+   * Status APLICÁVEL (#446 filtra `fin_payable_view.status`): select CONTROLADO com o enum REDUZIDO
+   * (Open/Approved/Paid) — o `value` é o enum, o `label` é o rótulo PT. Presente (Pagamentos) → o "Filtrar"
+   * aplica junto com o período. Ausente (Recebimentos) → cai no dropdown visual dos chips do CAP (inerte).
+   */
+  statusFilter?: AnaliseCascadeField
+  /**
    * Resumo dos filtros APLICADOS (partes já formatadas "Rótulo: valor"), abaixo do título. Só o que de fato
-   * filtra o resultado (na Análise, só o período aplica). Vazio/ausente → não renderiza a linha.
+   * filtra o resultado (na Análise: período + status). Vazio/ausente → não renderiza a linha.
    */
   subtitleParts?: readonly string[]
 }>
@@ -192,6 +198,8 @@ export function AnaliseReportView(props: AnaliseReportViewProps): ReactNode {
   const cx = props.cascade
   // Período aplicável (Análise de Pagamentos); ausente em Recebimentos → dropdown "Todos" + "Filtrar" inerte.
   const pd = props.period
+  // Status aplicável (Análise de Pagamentos, enum reduzido); ausente em Recebimentos → dropdown visual dos chips.
+  const sf = props.statusFilter
   const opt = (list: readonly string[] | undefined): readonly string[] => [
     L.filters.allOption,
     ...(list ?? []),
@@ -331,8 +339,16 @@ export function AnaliseReportView(props: AnaliseReportViewProps): ReactNode {
               <FilterField label={L.filters.periodo} options={[L.filters.allOption]} />
             )}
             <FilterField label={L.filters.conta} options={opt(fo?.conta)} />
-            {/* Status alinhados ao Contas a Pagar (os que o backend produz): reusa os rótulos dos chips do CAP. */}
-            <FilterField label={L.filters.status} options={[L.filters.allOption, ...L.filters.statusChips]} />
+            {/* Status: CONTROLADO e aplicável (enum reduzido Open/Approved/Paid do #446) quando `statusFilter`;
+                sem ele (Recebimentos) cai no dropdown visual dos chips do CAP (inerte). */}
+            {sf ? (
+              <ControlledFilterField label={L.filters.status} placeholder={L.filters.allOption} field={sf} />
+            ) : (
+              <FilterField
+                label={L.filters.status}
+                options={[L.filters.allOption, ...L.filters.statusChips]}
+              />
+            )}
             {cx ? (
               <ControlledFilterField
                 label={L.filters.centro}

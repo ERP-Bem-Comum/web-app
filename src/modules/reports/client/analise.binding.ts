@@ -27,7 +27,7 @@ export type AnaliseBindingState =
  * o dado é ~2026). O backend devolve tudo dentro da janela; os meses VISÍVEIS vêm do MIN..MAX real da resposta
  * (derivado no view-model), não desta janela. `Date` é permitido no binding (React) — nunca no view-model.
  */
-function wideDueWindow(): PaymentAnalysisQuery {
+export function wideDueWindow(): PaymentAnalysisQuery {
   const year = new Date().getFullYear()
   return { dueStart: `${String(year - 2)}-01-01`, dueEnd: `${String(year + 2)}-01-01` }
 }
