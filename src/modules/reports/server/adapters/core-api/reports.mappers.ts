@@ -18,6 +18,8 @@ import type {
   RealizedMonthCell,
   CashflowRow,
   CashflowChartRow,
+  GeneralReportPage,
+  GeneralReportRow,
 } from '#modules/reports/server/domain/reports.io.ts'
 import {
   CoreApiTeamReportSchema,
@@ -29,6 +31,7 @@ import {
   CoreApiCashflowSchema,
   CoreApiCashflowChartSchema,
   CoreApiCostCenterListSchema,
+  CoreApiGeneralReportSchema,
 } from './reports.schema.ts'
 
 // ── Erro: status/slug do core-api → ReportsError (read-only) ─────────────────────
@@ -224,6 +227,38 @@ export const costCenterListToModel = (
   const parsed = CoreApiCostCenterListSchema.safeParse(raw)
   if (!parsed.success) return err('server')
   return ok(parsed.data.map((c) => ({ id: c.id, name: c.name })))
+}
+
+/** Relatório Geral (#442) — página plana → Model. Drift → err('server'). Passa os campos DIRETO (nullable preservado). */
+export const generalReportToModel = (raw: unknown): Result<GeneralReportPage, ReportsError> => {
+  const parsed = CoreApiGeneralReportSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  const items: readonly GeneralReportRow[] = parsed.data.items.map((r) => ({
+    payableId: r.payableId,
+    documentId: r.documentId,
+    code: r.code,
+    dueDate: r.dueDate,
+    payeeKind: r.payeeKind,
+    supplierName: r.supplierName,
+    financierName: r.financierName,
+    collaboratorName: r.collaboratorName,
+    costCenterName: r.costCenterName,
+    categoryName: r.categoryName,
+    subcategoryName: r.subcategoryName,
+    valueCents: r.valueCents,
+    contractNumber: r.contractNumber,
+    pixKey: r.pixKey === null ? null : { keyType: r.pixKey.keyType, key: r.pixKey.key },
+    bankAccount:
+      r.bankAccount === null
+        ? null
+        : {
+            bank: r.bankAccount.bank,
+            agency: r.bankAccount.agency,
+            accountNumber: r.bankAccount.accountNumber,
+            checkDigit: r.bankAccount.checkDigit,
+          },
+  }))
+  return ok({ items, page: parsed.data.page, pageSize: parsed.data.pageSize, total: parsed.data.total })
 }
 
 export const realizedReportToModel = (raw: unknown): Result<readonly RealizedBudgetRow[], ReportsError> => {

@@ -153,17 +153,17 @@ export type {
 } from '#modules/reports/client/fluxo-caixa.view-model.ts'
 
 // ── "Relatório Geral" (front-first; core-api#114). Ledger unificado ACHATADO e PAGINADO — uma linha por
-//    movimento (payable/receivable/cartão/contrato/apontamento), 15 colunas, nullable → "—". As linhas de
-//    receivable/financiador são PLACEHOLDER até o Contas a Receber subir. Dados SINTÉTICOS. ──
+//    movimento (a-pagar), 15 colunas, nullable → "—". Dados REAIS do core-api (#442, GET /reports/generalReport),
+//    paginados server-side; PIX/bancário sob RBAC (`bank-account:read`). ──
 export { RelatorioGeralPage } from '#modules/reports/client/page/relatorio-geral.page.tsx'
 
 export {
-  loadRelatorioGeral,
-  total as relatorioGeralTotal,
+  ledgerRowFromGeneral,
   buildCsv as buildRelatorioGeralCsv,
   totalPages as relatorioGeralTotalPages,
-  pageSlice as relatorioGeralPageSlice,
   formatBRL as formatRelatorioGeralBRL,
+  formatIsoDateBR as relatorioGeralFormatIsoDateBR,
+  formatPixBancario as relatorioGeralFormatPixBancario,
   PER_PAGE_DEFAULT as RELATORIO_GERAL_PER_PAGE_DEFAULT,
   CSV_HEADER as RELATORIO_GERAL_CSV_HEADER,
 } from '#modules/reports/client/relatorio-geral.view-model.ts'

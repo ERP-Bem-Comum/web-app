@@ -1,24 +1,72 @@
 /**
- * RelatorioGeralPage + RelatorioGeralTable (Vitest/jsdom) — comportamento da tela do "Relatório Geral":
- *   1. renderiza a tabela (15 colunas) + Exportar + a paginação (BrandPaginator);
- *   2. paginação: perPage=10 → mostra só a fatia da página; "Anterior" começa desabilitado; "Próxima" avança;
- *      trocar "itens por página" volta para a 1ª página;
- *   3. lista VAZIA → empty state honesto ("Nenhum lançamento no período").
- * A page não usa router (sem mock necessário).
+ * RelatorioGeralPage + RelatorioGeralTable (Vitest/jsdom) — comportamento com DADOS REAIS (#442, repositório
+ * mockado, paginação SERVER-SIDE):
+ *   1. renderiza as 15 colunas + Exportar (estado ready);
+ *   2. seletor de colunas oculta uma coluna;
+ *   3. paginação server-side: "Página 1 de N" (N = ceil(total/perPage)); "Anterior" desabilitado na 1ª página;
+ *      "Próxima" re-busca a página seguinte;
+ *   4. filtros aplicam: "Filtrar" re-busca com o filtro mapeado + resumo abaixo do título;
+ *   5. RelatorioGeralTable: empty-state (lista vazia / sem colunas) — render direto do componente.
  */
-import { describe, it, expect, afterEach } from 'vitest'
-import { render, screen, cleanup, fireEvent, within } from '@testing-library/react'
+import type { ReactNode } from 'react'
+import { describe, it, expect, vi, afterEach } from 'vitest'
+import { render, screen, cleanup, fireEvent, within, waitFor } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
+import { ok } from '#shared/primitives/result.ts'
+import type { GeneralReportPage } from '#modules/reports/client/data/model/general-report.model.ts'
+import { reportsRepository } from '#modules/reports/client/data/repository/reports.repository.instance.ts'
 import { RelatorioGeralPage } from '#modules/reports/client/page/relatorio-geral.page.tsx'
 import { RelatorioGeralTable } from '#modules/reports/client/components/relatorio-geral-table.component.tsx'
-import {
-  loadRelatorioGeral,
-  PER_PAGE_DEFAULT,
-  totalPages,
-} from '#modules/reports/client/relatorio-geral.view-model.ts'
 
-const TOTAL = loadRelatorioGeral().length
-const PAGES = totalPages(TOTAL, PER_PAGE_DEFAULT)
+vi.mock('#modules/reports/client/data/repository/reports.repository.instance.ts', () => ({
+  reportsRepository: { getGeneralReport: vi.fn() },
+}))
+vi.mock('#modules/reports/client/posicao-filters.binding.ts', () => ({
+  usePosicaoFilterOptions: () => ({
+    plano: [{ value: 'plan-1', label: '2026 GOD 1.0' }],
+    partner: [{ value: 'sup-1', label: 'Fornecedor X' }],
+    conta: [],
+    centro: [],
+    categoria: [],
+    subcategoria: [],
+  }),
+}))
+
+const mGeneral = vi.mocked(reportsRepository.getGeneralReport)
+const TOTAL = 23
+
+/** Gera uma página do #442 (items com `code` dependente da página, p/ detectar a troca de página). */
+function makePage(page: number, pageSize: number): GeneralReportPage {
+  const remaining = Math.max(0, TOTAL - (page - 1) * pageSize)
+  const count = Math.min(pageSize, remaining)
+  const items = Array.from({ length: count }, (_unused, i) => ({
+    payableId: `p${String(page)}-${String(i)}`,
+    documentId: `d${String(page)}-${String(i)}`,
+    code: `PAG-${String(page)}-${String(i)}`,
+    dueDate: '2026-01-10',
+    payeeKind: 'supplier' as const,
+    supplierName: `Fornecedor ${String(page)}-${String(i)}`,
+    financierName: null,
+    collaboratorName: null,
+    costCenterName: 'CC',
+    categoryName: 'Cat',
+    subcategoryName: 'Sub',
+    valueCents: 1000,
+    contractNumber: null,
+    pixKey: null,
+    bankAccount: null,
+  }))
+  return { items, page, pageSize, total: TOTAL }
+}
+
+function renderPage(): void {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const wrapper = ({ children }: Readonly<{ children: ReactNode }>): ReactNode => (
+    <QueryClientProvider client={client}>{children}</QueryClientProvider>
+  )
+  render(<RelatorioGeralPage />, { wrapper })
+}
 
 /** Nº de linhas de DADOS (role="row") — desconta a linha de cabeçalho (também role="row"). */
 function dataRowCount(): number {
@@ -27,13 +75,14 @@ function dataRowCount(): number {
 
 afterEach(() => {
   cleanup()
+  vi.clearAllMocks()
 })
 
-describe('RelatorioGeralPage — tabela + colunas', () => {
-  it('renderiza as 15 colunas do legado + Exportar', () => {
-    render(<RelatorioGeralPage />)
-    // Alguns rótulos de coluna coincidem com labels de filtro (Tipo/Fornecedor/Categoria) — escopo no
-    // cabeçalho da tabela (1ª linha role="row") para evitar colisão.
+describe('RelatorioGeralPage — tabela + colunas (dados reais mockados)', () => {
+  it('renderiza as 15 colunas do legado + Exportar', async () => {
+    mGeneral.mockImplementation((q) => Promise.resolve(ok(makePage(q.page, q.limit))))
+    renderPage()
+    await screen.findByText('Exportar')
     const header = screen.getAllByRole('row')[0]
     if (header === undefined) throw new Error('cabeçalho da tabela ausente')
     const scope = within(header)
@@ -56,55 +105,59 @@ describe('RelatorioGeralPage — tabela + colunas', () => {
     ]) {
       expect(scope.getByText(col)).toBeTruthy()
     }
-    expect(screen.getByText('Exportar')).toBeTruthy()
   })
-})
 
-describe('RelatorioGeralPage — seletor de colunas', () => {
-  it('botão "Colunas" abre o menu; desmarcar "Fornecedor" oculta a coluna do cabeçalho', () => {
-    render(<RelatorioGeralPage />)
-    // Fornecedor visível por padrão (escopo no cabeçalho da tabela p/ não colidir com o filtro).
+  it('seletor de colunas: desmarcar "Fornecedor" oculta a coluna do cabeçalho', async () => {
+    mGeneral.mockImplementation((q) => Promise.resolve(ok(makePage(q.page, q.limit))))
+    renderPage()
+    await screen.findByText('Exportar')
     const before = screen.getAllByRole('row')[0]
-    if (before === undefined) throw new Error('cabeçalho da tabela ausente')
+    if (before === undefined) throw new Error('cabeçalho ausente')
     expect(within(before).getByText('Fornecedor')).toBeTruthy()
-
-    // Abre o menu e desmarca a coluna Fornecedor.
     fireEvent.click(screen.getByText('Colunas'))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Fornecedor' }))
-
     const after = screen.getAllByRole('row')[0]
-    if (after === undefined) throw new Error('cabeçalho da tabela ausente')
+    if (after === undefined) throw new Error('cabeçalho ausente')
     expect(within(after).queryByText('Fornecedor')).toBeNull()
   })
 })
 
-describe('RelatorioGeralPage — paginação', () => {
-  it(`mostra só a fatia da página (${String(PER_PAGE_DEFAULT)} linhas na 1ª página)`, () => {
-    render(<RelatorioGeralPage />)
-    expect(dataRowCount()).toBe(PER_PAGE_DEFAULT)
-    // "Página 1 de N" (o BrandPaginator normaliza os nós de texto com espaço simples).
-    expect(screen.getByText(`Página 1 de ${String(PAGES)}`)).toBeTruthy()
+describe('RelatorioGeralPage — paginação SERVER-SIDE', () => {
+  it('mostra a 1ª página (10 linhas) e "Página 1 de 3" (ceil(23/10)); "Anterior" desabilitado', async () => {
+    mGeneral.mockImplementation((q) => Promise.resolve(ok(makePage(q.page, q.limit))))
+    renderPage()
+    await screen.findByText('Exportar')
+    expect(dataRowCount()).toBe(10)
+    expect(screen.getByText('Página 1 de 3')).toBeTruthy()
+    expect(screen.getByText('Anterior').hasAttribute('disabled')).toBe(true)
   })
 
-  it('"Anterior" começa desabilitado; "Próxima" avança a fatia (1ª linha muda)', () => {
-    render(<RelatorioGeralPage />)
-    const prev = screen.getByText('Anterior')
-    expect(prev.hasAttribute('disabled')).toBe(true)
-
+  it('"Próxima" re-busca a página 2 (a 1ª linha muda)', async () => {
+    mGeneral.mockImplementation((q) => Promise.resolve(ok(makePage(q.page, q.limit))))
+    renderPage()
+    await screen.findByText('Exportar')
     const firstBefore = screen.getAllByRole('row')[1]?.textContent
     fireEvent.click(screen.getByText('Próxima'))
-    const firstAfter = screen.getAllByRole('row')[1]?.textContent
-    expect(firstAfter).not.toBe(firstBefore)
+    await waitFor(() => {
+      expect(mGeneral).toHaveBeenCalledWith(expect.objectContaining({ page: 2 }))
+    })
+    await waitFor(() => {
+      expect(screen.getAllByRole('row')[1]?.textContent).not.toBe(firstBefore)
+    })
   })
+})
 
-  it('trocar "itens por página" para 25 volta para a 1ª página e mostra tudo (< 25)', () => {
-    render(<RelatorioGeralPage />)
-    fireEvent.click(screen.getByText('Próxima')) // vai p/ página 2
-    const select = screen.getByLabelText('Itens por página')
-    fireEvent.change(select, { target: { value: '25' } })
-    // 25 por página cobre todo o placeholder (< 25) → todas as linhas na 1ª página.
-    expect(dataRowCount()).toBe(TOTAL)
-    expect(screen.getByText('Anterior').hasAttribute('disabled')).toBe(true)
+describe('RelatorioGeralPage — filtros aplicam', () => {
+  it('"Filtrar" re-busca com o filtro (Plano → budgetPlanId) + resumo abaixo do título', async () => {
+    mGeneral.mockImplementation((q) => Promise.resolve(ok(makePage(q.page, q.limit))))
+    renderPage()
+    await screen.findByText('Exportar')
+    fireEvent.change(screen.getByLabelText('Plano Orçamentário'), { target: { value: 'plan-1' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Filtrar' }))
+    await waitFor(() => {
+      expect(mGeneral).toHaveBeenCalledWith(expect.objectContaining({ budgetPlanId: 'plan-1', page: 1 }))
+    })
+    await screen.findByText(/Plano Orçamentário: 2026 GOD 1\.0/)
   })
 })
 
@@ -128,7 +181,6 @@ describe('RelatorioGeralTable — empty state', () => {
       />,
     )
     expect(screen.getByText('Nenhum lançamento no período')).toBeTruthy()
-    // No caminho vazio, o cabeçalho de colunas (thead) não é renderizado.
     const cardEl = screen.getByText('Lançamentos').closest('div')
     if (cardEl === null) throw new Error('cartão da tabela ausente')
     expect(within(cardEl).queryByText('Data')).toBeNull()

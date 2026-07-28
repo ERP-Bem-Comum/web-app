@@ -162,3 +162,39 @@ const CoreApiCostCenterSchema = z.object({
   name: z.string().trim().catch(''),
 })
 export const CoreApiCostCenterListSchema = z.array(CoreApiCostCenterSchema).catch([])
+
+// GET /reports/generalReport (#442) — LEDGER plano paginado. Drift-tolerante nos nomes/refs (nullable);
+// `valueCents` number; PIX/bancário nullable (redação Slice C). Envelope `Page<T>` { items, page, pageSize, total }.
+const CoreApiGeneralPixKeySchema = z.object({
+  keyType: z.string().trim().catch(''),
+  key: z.string().trim().catch(''),
+})
+const CoreApiGeneralBankAccountSchema = z.object({
+  bank: z.string().trim().catch(''),
+  agency: z.string().trim().catch(''),
+  accountNumber: z.string().trim().catch(''),
+  checkDigit: z.string().trim().catch(''),
+})
+const CoreApiGeneralReportRowSchema = z.object({
+  payableId: z.string().trim().catch(''),
+  documentId: z.string().trim().catch(''),
+  code: z.string().trim().nullable().catch(null),
+  dueDate: z.string().trim().catch(''),
+  payeeKind: z.enum(['supplier', 'financier', 'act', 'collaborator']).catch('supplier'),
+  supplierName: z.string().trim().nullable().catch(null),
+  financierName: z.string().trim().nullable().catch(null),
+  collaboratorName: z.string().trim().nullable().catch(null),
+  costCenterName: z.string().trim().nullable().catch(null),
+  categoryName: z.string().trim().nullable().catch(null),
+  subcategoryName: z.string().trim().nullable().catch(null),
+  valueCents: z.number().catch(0),
+  contractNumber: z.string().trim().nullable().catch(null),
+  pixKey: CoreApiGeneralPixKeySchema.nullable().catch(null),
+  bankAccount: CoreApiGeneralBankAccountSchema.nullable().catch(null),
+})
+export const CoreApiGeneralReportSchema = z.object({
+  items: z.array(CoreApiGeneralReportRowSchema).catch([]),
+  page: z.number().catch(1),
+  pageSize: z.number().catch(0),
+  total: z.number().catch(0),
+})

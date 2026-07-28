@@ -20,6 +20,8 @@ import type {
   CashflowReport,
   CashflowCostCenter,
   CashflowFilter,
+  GeneralReportPage,
+  GeneralReportQuery,
 } from '#modules/reports/server/domain/reports.io.ts'
 
 export type ReportsClient = Readonly<{
@@ -57,6 +59,11 @@ export type ReportsClient = Readonly<{
   ) => Promise<Result<readonly CashflowChartRow[], ReportsError>>
   /** Catálogo de Centros de Custo (`/financial/cost-centers`) — fonte do fan-out do eixo de CC do Fluxo. */
   listCostCenters: (token: string) => Promise<Result<readonly { id: string; name: string }[], ReportsError>>
+  /** Relatório Geral (#442) — ledger plano PAGINADO (page/limit + filtros). */
+  getGeneralReport: (
+    query: GeneralReportQuery,
+    token: string,
+  ) => Promise<Result<GeneralReportPage, ReportsError>>
 }>
 
 type Deps = Readonly<{ client: ReportsClient }>
@@ -90,6 +97,12 @@ export const createGetRealizedReport =
   (deps: Deps) =>
   (query: RealizedReportQuery, token: string): Promise<Result<readonly RealizedBudgetRow[], ReportsError>> =>
     deps.client.getRealizedReport(query, token)
+
+/** Relatório Geral (#442) — thin: repassa a query paginada ao client (o BFF entrega a página pronta, §III). */
+export const createGetGeneralReport =
+  (deps: Deps) =>
+  (query: GeneralReportQuery, token: string): Promise<Result<GeneralReportPage, ReportsError>> =>
+    deps.client.getGeneralReport(query, token)
 
 /** Soma os 2 totais (realizado/previsto) de um conjunto de linhas do cashflow. */
 const sumCashflowTotals = (rows: readonly CashflowRow[]): { realizedCents: number; expectedCents: number } =>

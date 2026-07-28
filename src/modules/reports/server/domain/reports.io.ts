@@ -238,3 +238,63 @@ export type CashflowFilter = Readonly<{
   entityId?: string
   status?: string
 }>
+
+/**
+ * Relatório Geral (#442 · GET /reports/generalReport) — LEDGER plano e PAGINADO de títulos a-pagar (Slice
+ * A+B+C+D). `payeeKind` distingue o favorecido (fornecedor/financiador/ato/colaborador); só o NOME relevante
+ * vem preenchido. `pixKey`/`bankAccount` só chegam para fornecedor COM `bank-account:read` (senão null —
+ * redação campo-a-campo, Slice C). `contractNumber` = nº sequencial do contrato (Slice D). `valueCents` em
+ * centavos (§IV). Datas cruas (`dueDate` ISO) — o client formata (nunca `Date` no domínio).
+ */
+export type GeneralReportPixKey = Readonly<{ keyType: string; key: string }>
+export type GeneralReportBankAccount = Readonly<{
+  bank: string
+  agency: string
+  accountNumber: string
+  checkDigit: string
+}>
+export type GeneralReportRow = Readonly<{
+  payableId: string
+  documentId: string
+  code: string | null
+  dueDate: string
+  payeeKind: 'supplier' | 'financier' | 'act' | 'collaborator'
+  supplierName: string | null
+  financierName: string | null
+  collaboratorName: string | null
+  costCenterName: string | null
+  categoryName: string | null
+  subcategoryName: string | null
+  valueCents: number
+  contractNumber: string | null
+  pixKey: GeneralReportPixKey | null
+  bankAccount: GeneralReportBankAccount | null
+}>
+
+/** Página do Relatório Geral (molde `Page<T>` do core-api). `total` é a contagem GLOBAL (todas as páginas). */
+export type GeneralReportPage = Readonly<{
+  items: readonly GeneralReportRow[]
+  page: number
+  pageSize: number
+  total: number
+}>
+
+/**
+ * Consulta do Relatório Geral (#442). Paginação obrigatória (o BFF passa page/limit); os demais filtros são
+ * opcionais (AND no servidor). `search` = LIKE em nº do documento + fornecedor. `dueFrom`/`dueTo` em `YYYY-MM-DD`.
+ */
+export type GeneralReportQuery = Readonly<{
+  page: number
+  limit: number
+  search?: string
+  programId?: string
+  budgetPlanId?: string
+  dueFrom?: string
+  dueTo?: string
+  accountId?: string
+  costCenterId?: string
+  categoryId?: string
+  subCategoryId?: string
+  entityId?: string
+  status?: string
+}>

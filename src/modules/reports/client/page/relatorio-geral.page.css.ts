@@ -9,6 +9,8 @@ import { style } from '@vanilla-extract/css'
 import { vars } from '#shared/ui/tokens/index.ts'
 import { brand } from '#shared/ui/brand/grid-brand.values.ts'
 
+import { fldSelect as fldSelectStyle } from './realizado-x-planejado.page.css.ts'
+
 export {
   head,
   backButton,
@@ -84,3 +86,13 @@ export const columnsCheck = style({
   accentColor: brand.color.primary,
   cursor: 'pointer',
 })
+
+// Input de BUSCA (search) — texto largo, pele brand.
+export const searchInput = style([fldSelectStyle, { minInlineSize: '14rem', cursor: 'text' }])
+
+// Período de vencimento: DOIS inputs de data (De / Até) lado a lado.
+export const periodRow = style({ display: 'flex', gap: brand.space.sm, alignItems: 'flex-end' })
+export const dateInput = style([
+  fldSelectStyle,
+  { minInlineSize: '8rem', paddingInlineEnd: brand.space.md, cursor: 'text' },
+])
