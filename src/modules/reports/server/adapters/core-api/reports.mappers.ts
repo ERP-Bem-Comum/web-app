@@ -28,6 +28,7 @@ import {
   CoreApiRealizedReportSchema,
   CoreApiCashflowSchema,
   CoreApiCashflowChartSchema,
+  CoreApiCostCenterListSchema,
 } from './reports.schema.ts'
 
 // ── Erro: status/slug do core-api → ReportsError (read-only) ─────────────────────
@@ -214,6 +215,15 @@ export const cashflowChartToModel = (raw: unknown): Result<readonly CashflowChar
     dueMonth: r.Installments_dueDate.slice(0, 7),
   }))
   return ok(rows)
+}
+
+/** Catálogo de Centros de Custo (`GET /financial/cost-centers`) → `{ id, name }[]` p/ o fan-out. Drift → err. */
+export const costCenterListToModel = (
+  raw: unknown,
+): Result<readonly { id: string; name: string }[], ReportsError> => {
+  const parsed = CoreApiCostCenterListSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  return ok(parsed.data.map((c) => ({ id: c.id, name: c.name })))
 }
 
 export const realizedReportToModel = (raw: unknown): Result<readonly RealizedBudgetRow[], ReportsError> => {

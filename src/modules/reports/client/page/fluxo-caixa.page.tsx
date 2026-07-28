@@ -7,7 +7,8 @@
  * A ViewModel PURA (`buildReportFromCashflow`) faz TODA a agregação (2 seções × 2 medidas, Saldo = Entradas −
  * Saídas, série temporal por vencimento); a page só compõe as views burras e guarda o ÚNICO UI-state local: o
  * toggle dos filtros. Export = CSV (Blob, seções fiéis) + PDF (window.print, via `report-export-dropdown`).
- * ADR-0009/0012, §XI. SEM gráfico de Centro de Custo (o core-api não expõe CC como eixo — #590 CA6).
+ * ADR-0009/0012, §XI. O gráfico de Centro de Custo é RECONSTRUÍDO pelo BFF via fan-out (o #590 não expõe CC
+ * como eixo — #590 CA6): uma chamada `/cashflow?costCenterId` por CC do catálogo, somada.
  *
  * ⚠️ ENTRADAS = receivables: SEMPRE `[]` (financial é payables-centric) → a seção Entradas cai no empty state
  * honesto SEM quebrar Saídas nem o Saldo. Quando o Contas a Receber subir, é só a fonte de Entradas entrar.
@@ -32,6 +33,7 @@ import {
 import { useFluxoCaixa } from '../fluxo-caixa.binding.ts'
 import { RealizadoChartsMount } from '../components/realizado-charts-mount.component.tsx'
 import { FluxoCaixaTimeline } from '../components/fluxo-caixa-timeline.component.tsx'
+import { FluxoCaixaCostCenterBars } from '../components/fluxo-caixa-cost-center-bars.component.tsx'
 import { RealizadoDonut, type DonutSlice } from '../components/realizado-donut.component.tsx'
 import { FluxoCaixaSectionTable } from '../components/fluxo-caixa-section-table.component.tsx'
 import { ReportExportDropdown } from '../components/report-export-dropdown.component.tsx'
@@ -64,7 +66,7 @@ import {
   kpiValueToneFluxo,
   saldoValueTone,
   kpiTintNeg,
-  charts3,
+  charts4,
   sections,
   exportTrigger,
 } from './fluxo-caixa.page.css.ts'
@@ -234,12 +236,12 @@ export function FluxoCaixaPage(): ReactNode {
         />
       </div>
 
-      {/* Os 3 gráficos "Previsto × Realizado": linha do tempo → 2 donuts (Entradas/Saídas) */}
+      {/* Os 4 gráficos "Previsto × Realizado": linha do tempo → barras por Centro de Custo → 2 donuts */}
       <RealizadoChartsMount>
         {(animate) => (
           <>
-            {/* Os 3 gráficos numa linha só (compactos e alinhados): Linha do tempo · Entradas · Saídas */}
-            <div className={charts3}>
+            {/* Os 4 gráficos numa linha só (compactos e alinhados): Linha do tempo · Centro de Custo · Entradas · Saídas */}
+            <div className={charts4}>
               <div className={chartCard}>
                 <div className={cardHeader}>
                   <h2 className={cardTitle}>{t('reports.fluxoCaixa.chart.timeline')}</h2>
@@ -257,6 +259,21 @@ export function FluxoCaixaPage(): ReactNode {
                     }}
                     formatValue={formatBRL}
                     formatAxis={formatBRLShort}
+                  />
+                </div>
+              </div>
+
+              <div className={chartCard}>
+                <div className={cardHeader}>
+                  <h2 className={cardTitle}>{t('reports.fluxoCaixa.chart.byCostCenter')}</h2>
+                </div>
+                <div className={chartPad}>
+                  <FluxoCaixaCostCenterBars
+                    bars={report.byCostCenter}
+                    emptyLabel={t('reports.fluxoCaixa.chartEmptyLabel')}
+                    animate={animate}
+                    labels={{ previsto: previstoLabel, realizado: realizadoLabel }}
+                    formatValue={formatBRLShort}
                   />
                 </div>
               </div>

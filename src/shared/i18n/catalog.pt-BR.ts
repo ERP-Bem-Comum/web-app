@@ -2769,9 +2769,10 @@ export const ptBR: Catalog = {
   'reports.fluxoCaixa.chart.monthly': 'Fluxo por vencimento',
   'reports.fluxoCaixa.chart.entradas': 'Entradas',
   'reports.fluxoCaixa.chart.saidas': 'Saídas',
-  // Os 3 gráficos "Previsto × Realizado": linha do tempo (3 séries) + 2 donuts (Entradas/Saídas). O eixo de
-  // Centro de Custo NÃO é exposto pelo core-api (#590 CA6: CC é filtro, não dimensão de saída).
+  // Os 4 gráficos "Previsto × Realizado": linha do tempo (3 séries), barras por Centro de Custo, 2 donuts. O
+  // eixo de CC é reconstruído pelo BFF via fan-out (o #590 não o expõe nativamente — CA6).
   'reports.fluxoCaixa.chart.timeline': 'Linha do tempo',
+  'reports.fluxoCaixa.chart.byCostCenter': 'Agrupado por Centro de Custo',
   'reports.fluxoCaixa.chart.esperado': 'Esperado',
   'reports.fluxoCaixa.chart.realizado': 'Realizado',
   'reports.fluxoCaixa.chart.previsto': 'Previsto',

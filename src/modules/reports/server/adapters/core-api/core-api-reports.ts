@@ -28,6 +28,7 @@ import {
   realizedReportToModel,
   cashflowToModel,
   cashflowChartToModel,
+  costCenterListToModel,
   mapHttpError,
 } from './reports.mappers.ts'
 
@@ -47,7 +48,12 @@ const cashflowQuery = (filter: CashflowFilter): string => {
   return qs.toString()
 }
 
-export const createCoreApiReportsClient = (baseUrl: string): ReportsClient => ({
+/**
+ * @param baseUrl base de `/reports` (ex.: `${coreApiBase}/reports`).
+ * @param financialBaseUrl base de `/financial` (ex.: `${coreApiBase}/financial`) — só p/ o catálogo de
+ *   Centros de Custo usado no fan-out do Fluxo (#590 não expõe CC como eixo).
+ */
+export const createCoreApiReportsClient = (baseUrl: string, financialBaseUrl: string): ReportsClient => ({
   getTeam: async (token): Promise<Result<readonly TeamMember[], ReportsError>> => {
     const r = await resultFetch<unknown>(`${baseUrl}/team`, { token })
     if (isErr(r)) return err(mapHttpError(r.error))
@@ -121,5 +127,10 @@ export const createCoreApiReportsClient = (baseUrl: string): ReportsClient => ({
     const r = await resultFetch<unknown>(url, { token })
     if (isErr(r)) return err(mapHttpError(r.error))
     return cashflowChartToModel(r.value)
+  },
+  listCostCenters: async (token): Promise<Result<readonly { id: string; name: string }[], ReportsError>> => {
+    const r = await resultFetch<unknown>(`${financialBaseUrl}/cost-centers`, { token })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return costCenterListToModel(r.value)
   },
 })

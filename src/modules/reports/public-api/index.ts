@@ -123,8 +123,8 @@ export type {
 
 // ── Relatório "Fluxo de Caixa" (core-api#590 REAL). Duas SEÇÕES (Saídas = payables; Entradas = receivables,
 //    SEMPRE vazia até o Contas a Receber subir) em árvore Categoria → Subcategoria × 2 medidas (Realizado ×
-//    Previsto) + Saldo (Entradas − Saídas) + série temporal por vencimento (Slice B). SEM eixo de Centro de
-//    Custo (CC é filtro, não dimensão de saída — #590 CA6). Entradas cai LIMPA no empty-state. ──
+//    Previsto) + Saldo (Entradas − Saídas) + série temporal por vencimento (Slice B) + eixo de Centro de Custo
+//    RECONSTRUÍDO pelo BFF via fan-out (o #590 não o expõe nativamente — CA6). Entradas cai LIMPA no empty-state. ──
 export { FluxoCaixaPage } from '#modules/reports/client/page/fluxo-caixa.page.tsx'
 
 export {

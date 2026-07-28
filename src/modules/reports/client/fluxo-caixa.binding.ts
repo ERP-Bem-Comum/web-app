@@ -39,7 +39,10 @@ export function useFluxoCaixa(filter: CashflowFilter = EMPTY_FILTER): FluxoBindi
     if (q.isLoading) return { status: 'loading' }
     if (error !== null) return { status: 'error', error, errorTag: reportsErrorTag(error) }
     if (data !== null) {
-      return { status: 'ready', report: buildReportFromCashflow(data.payables, data.chart) }
+      return {
+        status: 'ready',
+        report: buildReportFromCashflow(data.payables, data.chart, data.byCostCenter),
+      }
     }
     return { status: 'loading' }
   }, [q.isLoading, error, data])

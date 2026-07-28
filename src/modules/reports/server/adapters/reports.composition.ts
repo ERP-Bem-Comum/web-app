@@ -20,7 +20,9 @@ type ReportsServer = ReturnType<typeof build>
 
 const build = () => {
   const env = loadEnvOrThrow()
-  const client = createCoreApiReportsClient(`${coreApiBase(env.CORE_API_URL, 'v2')}/reports`)
+  const base = coreApiBase(env.CORE_API_URL, 'v2')
+  // Segunda base (`/financial`) só p/ o catálogo de Centros de Custo do fan-out do Fluxo (#590 não expõe CC como eixo).
+  const client = createCoreApiReportsClient(`${base}/reports`, `${base}/financial`)
   return {
     getTeamReport: createGetTeamReport({ client }),
     getTeamDemographics: createGetTeamDemographics({ client }),

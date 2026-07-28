@@ -154,3 +154,11 @@ const CoreApiCashflowChartRowSchema = CoreApiCashflowRowSchema.extend({
   Installments_dueDate: z.string().trim().catch(''),
 })
 export const CoreApiCashflowChartSchema = z.array(CoreApiCashflowChartRowSchema).catch([])
+
+// GET /financial/cost-centers → `[{ id, code, name }]` (dados de referência de rateio, reference:read).
+// Fonte da lista de Centros de Custo p/ o fan-out do Fluxo (#590 não expõe CC como eixo). `code` é ignorado.
+const CoreApiCostCenterSchema = z.object({
+  id: z.string().trim(),
+  name: z.string().trim().catch(''),
+})
+export const CoreApiCostCenterListSchema = z.array(CoreApiCostCenterSchema).catch([])

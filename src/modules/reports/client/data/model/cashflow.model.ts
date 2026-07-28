@@ -16,10 +16,22 @@ export type CashflowRow = Readonly<{
 
 export type CashflowChartRow = CashflowRow & Readonly<{ dueMonth: string }>
 
+/**
+ * Corte por Centro de Custo (4º gráfico). O #590 não expõe CC como eixo → o BFF reconstrói via fan-out
+ * (`/cashflow?costCenterId` por CC). `realizedCents`/`expectedCents` em centavos. Espelha o server.
+ */
+export type CashflowCostCenter = Readonly<{
+  ref: string
+  name: string
+  realizedCents: number
+  expectedCents: number
+}>
+
 export type CashflowReport = Readonly<{
   payables: readonly CashflowRow[]
   receivables: readonly CashflowRow[]
   chart: readonly CashflowChartRow[]
+  byCostCenter: readonly CashflowCostCenter[]
 }>
 
 /**

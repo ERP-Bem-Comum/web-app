@@ -71,6 +71,11 @@ const REPORT: CashflowReport = {
       dueMonth: '2026-06',
     },
   ],
+  // Eixo de CC reconstruído pelo BFF via fan-out (o #590 não o expõe).
+  byCostCenter: [
+    { ref: 'cc1', name: 'Administrativo', realizedCents: 800, expectedCents: 900 },
+    { ref: 'cc2', name: 'Programa Saúde', realizedCents: 500, expectedCents: 500 },
+  ],
 }
 
 function renderPage(): void {
@@ -95,12 +100,12 @@ describe('FluxoCaixaPage — composição', () => {
     expect(screen.getAllByRole('heading', { name: 'Entradas' }).length).toBeGreaterThanOrEqual(1)
   })
 
-  it('renderiza os 3 gráficos "Previsto × Realizado" (SEM Centro de Custo)', async () => {
+  it('renderiza os 4 gráficos "Previsto × Realizado" (incl. Centro de Custo do fan-out)', async () => {
     mCashflow.mockResolvedValue(ok(REPORT))
     renderPage()
     expect(await screen.findByRole('heading', { name: 'Linha do tempo' })).toBeTruthy()
-    // O eixo de Centro de Custo NÃO é exposto pelo core-api (#590 CA6) → o gráfico não existe mais.
-    expect(screen.queryByRole('heading', { name: 'Agrupado por Centro de Custo' })).toBeNull()
+    // O eixo de Centro de Custo é RECONSTRUÍDO pelo BFF via fan-out (o #590 não o expõe nativamente).
+    expect(screen.getByRole('heading', { name: 'Agrupado por Centro de Custo' })).toBeTruthy()
     // Os 2 donuts (Entradas / Saídas) — títulos dos cartões.
     expect(screen.getAllByRole('heading', { name: 'Entradas' }).length).toBeGreaterThanOrEqual(1)
     expect(screen.getAllByRole('heading', { name: 'Saídas' }).length).toBeGreaterThanOrEqual(1)
@@ -136,7 +141,7 @@ describe('FluxoCaixaPage — composição', () => {
   })
 
   it('empty-state honesto: resposta vazia (0 payables, 0 chart) monta a tela sem quebrar', async () => {
-    mCashflow.mockResolvedValue(ok({ receivables: [], payables: [], chart: [] }))
+    mCashflow.mockResolvedValue(ok({ receivables: [], payables: [], chart: [], byCostCenter: [] }))
     renderPage()
     // A tela monta (Exportar presente) e as seções caem no empty-state — sem "Invalid Date".
     expect(await screen.findByText('Exportar')).toBeTruthy()

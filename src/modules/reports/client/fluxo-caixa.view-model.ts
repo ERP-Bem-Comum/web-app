@@ -9,12 +9,12 @@
  * `{start,end}` (`YYYY-MM`) iterando ano/mês inteiros — NUNCA `new Date(stringInvalida)`. Os rótulos (`Jan/26`)
  * saem de um array de abreviações POR ÍNDICE (0..11). É o mesmo blindado da "Análise" (bug legado NÃO reproduzido).
  *
- * ── EMPTY-STATE PLUGÁVEL ── a seção Entradas é independente: quando o Contas a Receber (core-api#114) subir e
- * `FLUXO_ENTRADAS_RAW` virar `[]`, a seção vem vazia (0 categorias, total 0) → a View cai no empty state
- * ("Nenhuma entrada registrada") SEM quebrar Saídas; o Saldo passa a ser `0 − Saídas`. Dinheiro em CENTAVOS
- * inteiros (§IV). A árvore preserva a ORDEM DE INSERÇÃO. Sem `throw` nas derivações (§II).
+ * ── EMPTY-STATE PLUGÁVEL ── a seção Entradas é independente: hoje `receivables` é SEMPRE `[]` (financial é
+ * payables-centric), então a seção vem vazia (0 categorias, total 0) → a View cai no empty state ("Nenhuma
+ * entrada registrada") SEM quebrar Saídas; o Saldo passa a ser `0 − Saídas`. Quando o Contas a Receber subir,
+ * é só a fonte entrar. Dinheiro em CENTAVOS inteiros (§IV). Árvore preserva a ORDEM DE INSERÇÃO. Sem `throw` (§II).
  */
-import type { CashflowRow, CashflowChartRow } from './data/model/cashflow.model.ts'
+import type { CashflowRow, CashflowChartRow, CashflowCostCenter } from './data/model/cashflow.model.ts'
 
 /** Intervalo do período (mês-01), formato `YYYY-MM`. A geração de meses deriva as chaves daqui. */
 export type MonthRange = Readonly<{ start: string; end: string }>
@@ -88,13 +88,20 @@ export type TimelinePoint = Readonly<{
   saldoCents: number
 }>
 
+/** Barra do gráfico "Agrupado por Centro de Custo": o CC + as 2 medidas (Previsto × Realizado) agregadas. */
+export type CostCenterMeasure = Readonly<{
+  label: string
+  previstoCents: number
+  realizadoCents: number
+}>
+
 /** Fatia do donut Previsto × Realizado de uma seção (chave da medida + valor em centavos). */
 export type SectionDonumSlice = Readonly<{ key: 'previsto' | 'realizado'; valueCents: number }>
 
 /**
  * Relatório completo: as 2 seções + o Saldo (Entradas − Saídas por medida) + os meses + as séries derivadas:
- * `monthly` (barras por vencimento) e `timeline` (Previsto/Realizado/Saldo no tempo). SEM eixo de Centro de
- * Custo — o core-api não o expõe como dimensão de saída (#590 CA6: CC é filtro, não eixo).
+ * `monthly` (barras por vencimento), `timeline` (Previsto/Realizado/Saldo no tempo) e `byCostCenter` (Previsto ×
+ * Realizado por Centro de Custo — RECONSTRUÍDO pelo BFF via fan-out, já que o #590 não expõe CC como eixo).
  */
 export type FluxoReport = Readonly<{
   saidas: FluxoSection
@@ -103,6 +110,7 @@ export type FluxoReport = Readonly<{
   months: readonly string[]
   monthly: readonly MonthlyFlow[]
   timeline: readonly TimelinePoint[]
+  byCostCenter: readonly CostCenterMeasure[]
 }>
 
 /** Seção do relatório: 'saidas' (payables/cartão) ou 'entradas' (receivables). */
@@ -364,7 +372,11 @@ export function sectionDonutData(section: FluxoSection): readonly SectionDonumSl
   ]
 }
 
-/** Monta o relatório a partir das duas fontes cruas + o intervalo de meses (testável, Entradas = [] → Saldo). */
+/**
+ * Monta o relatório a partir das duas fontes cruas + o intervalo de meses (engine puro, testável — Entradas =
+ * [] → Saldo). `byCostCenter` = [] aqui: o eixo de CC vem do fan-out do BFF (`buildReportFromCashflow`), não
+ * das folhas (que não carregam CC).
+ */
 export function buildReport(
   saidasRaw: readonly RawFluxoLeaf[],
   entradasRaw: readonly RawFluxoLeaf[],
@@ -380,6 +392,7 @@ export function buildReport(
     months,
     monthly: monthlyFlow(saidasRaw, entradasRaw, months),
     timeline: buildTimeline(saidasRaw, entradasRaw, months),
+    byCostCenter: [],
   }
 }
 
@@ -422,15 +435,22 @@ function rangeFromChart(chart: readonly CashflowChartRow[]): MonthRange | null {
   return min !== null && max !== null ? { start: min, end: max } : null
 }
 
+/** Corte por CC do BFF (fan-out) → barra do gráfico (`CostCenterMeasure`). O BFF já entrega ordenado. */
+function costCenterToMeasure(cc: CashflowCostCenter): CostCenterMeasure {
+  return { label: cc.name, previstoCents: cc.expectedCents, realizadoCents: cc.realizedCents }
+}
+
 /**
  * Fonte REAL da tela (#590): a árvore Saídas vem do Slice A (payables, agregado por Categoria × Subcategoria,
- * sem mês); a série temporal (`monthly`/`timeline`) vem do Slice B (chart, com mês). Entradas = SEMPRE vazia
- * (receivables `[]`, financial é payables-centric) → cai no empty-state honesto; o Saldo passa a ser `0 −
- * Saídas`. Os meses saem do MIN..MAX presente na série (sem `Date`). Sem `throw` (§II).
+ * sem mês); a série temporal (`monthly`/`timeline`) vem do Slice B (chart, com mês); o eixo de Centro de Custo
+ * (`byCostCenter`) vem do fan-out do BFF (o #590 não o expõe). Entradas = SEMPRE vazia (receivables `[]`,
+ * financial é payables-centric) → cai no empty-state honesto; o Saldo passa a ser `0 − Saídas`. Os meses saem
+ * do MIN..MAX presente na série (sem `Date`). Sem `throw` (§II).
  */
 export function buildReportFromCashflow(
   payables: readonly CashflowRow[],
   chart: readonly CashflowChartRow[],
+  byCostCenter: readonly CashflowCostCenter[],
 ): FluxoReport {
   const saidas = aggregateSection(payables.map(payableToLeaf))
   const entradas = aggregateSection([])
@@ -444,6 +464,7 @@ export function buildReportFromCashflow(
     months,
     monthly: monthlyFlow(chartLeaves, [], months),
     timeline: buildTimeline(chartLeaves, [], months),
+    byCostCenter: byCostCenter.map(costCenterToMeasure),
   }
 }
 

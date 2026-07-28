@@ -268,7 +268,7 @@ describe('buildReportFromCashflow — fonte REAL (#590): árvore do Slice A + s�
   ]
 
   it('a árvore Saídas vem do Slice A (payables), somando as subcategorias na categoria', () => {
-    const r = buildReportFromCashflow(PAYABLES, CHART)
+    const r = buildReportFromCashflow(PAYABLES, CHART, [])
     assert.deepEqual(
       r.saidas.categories.map((c) => c.name),
       ['Pessoal', 'Sem categoria'],
@@ -278,20 +278,20 @@ describe('buildReportFromCashflow — fonte REAL (#590): árvore do Slice A + s�
   })
 
   it('nome null vira sentinela "Sem categoria"/"Sem subcategoria"', () => {
-    const r = buildReportFromCashflow(PAYABLES, CHART)
+    const r = buildReportFromCashflow(PAYABLES, CHART, [])
     const semCat = r.saidas.categories.find((c) => c.name === 'Sem categoria')
     assert.equal(semCat?.children[0]?.name, 'Sem subcategoria')
   })
 
   it('Entradas SEMPRE vazia (receivables []); Saldo = 0 − Saídas (negativo)', () => {
-    const r = buildReportFromCashflow(PAYABLES, CHART)
+    const r = buildReportFromCashflow(PAYABLES, CHART, [])
     assert.equal(r.entradas.categories.length, 0)
     assert.equal(r.saldo.realizedCents, -1500)
     assert.equal(r.saldo.expectedCents, -1650)
   })
 
   it('os meses saem do MIN..MAX presente na série (jan..mar), sem "Invalid Date"', () => {
-    const r = buildReportFromCashflow(PAYABLES, CHART)
+    const r = buildReportFromCashflow(PAYABLES, CHART, [])
     assert.deepEqual(r.months, ['2026-01', '2026-02', '2026-03'])
     const jan = r.timeline.find((p) => p.key === '2026-01')
     assert.equal(jan?.realizadoCents, 1000) // Salários + Encargos
@@ -300,10 +300,29 @@ describe('buildReportFromCashflow — fonte REAL (#590): árvore do Slice A + s�
   })
 
   it('série/chart vazios → months [] e seções vazias (empty-state honesto)', () => {
-    const r = buildReportFromCashflow([], [])
+    const r = buildReportFromCashflow([], [], [])
     assert.deepEqual(r.months, [])
     assert.equal(r.saidas.categories.length, 0)
     assert.equal(r.timeline.length, 0)
+  })
+
+  it('byCostCenter (fan-out do BFF) → barras Previsto × Realizado, preservando a ordem do BFF', () => {
+    const r = buildReportFromCashflow(PAYABLES, CHART, [
+      { ref: 'cc1', name: 'Passagens', realizedCents: 100, expectedCents: 220 },
+      { ref: 'cc2', name: 'Gestor', realizedCents: 50, expectedCents: 60 },
+    ])
+    assert.deepEqual(
+      r.byCostCenter.map((c) => c.label),
+      ['Passagens', 'Gestor'],
+    )
+    // expectedCents → previstoCents; realizedCents → realizadoCents.
+    assert.equal(r.byCostCenter[0]?.previstoCents, 220)
+    assert.equal(r.byCostCenter[0]?.realizadoCents, 100)
+  })
+
+  it('sem Centro de Custo (fan-out vazio) → byCostCenter [] (gráfico cai no empty-state)', () => {
+    const r = buildReportFromCashflow(PAYABLES, CHART, [])
+    assert.deepEqual(r.byCostCenter, [])
   })
 })
 

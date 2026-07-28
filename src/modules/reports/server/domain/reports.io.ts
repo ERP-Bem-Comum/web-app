@@ -197,14 +197,28 @@ export type CashflowRow = Readonly<{
 export type CashflowChartRow = CashflowRow & Readonly<{ dueMonth: string }>
 
 /**
- * Resposta COMPLETA do caso de uso "Fluxo de Caixa" (§III, ADR-0010): o BFF compõe as 2 chamadas do core-api.
+ * Corte por Centro de Custo (eixo do 4º gráfico do legado). O #590 NÃO devolve CC como eixo (CA6: é filtro),
+ * então o BFF RECONSTRÓI via fan-out: uma chamada `/cashflow?costCenterId=<ref>` por CC do catálogo, somando
+ * os totais. `realizedCents`/`expectedCents` em centavos. Ver core-api#<fan-out issue> p/ o eixo nativo.
+ */
+export type CashflowCostCenter = Readonly<{
+  ref: string
+  name: string
+  realizedCents: number
+  expectedCents: number
+}>
+
+/**
+ * Resposta COMPLETA do caso de uso "Fluxo de Caixa" (§III, ADR-0010): o BFF compõe as chamadas do core-api.
  * `payables` = árvore Categoria × Subcategoria (Slice A); `receivables` = SEMPRE `[]` (financial é
- * payables-centric, #179 — A-Receber não existe); `chart` = mesma agregação com eixo de mês (Slice B).
+ * payables-centric, #179 — A-Receber não existe); `chart` = mesma agregação com eixo de mês (Slice B);
+ * `byCostCenter` = corte por Centro de Custo RECONSTRUÍDO via fan-out (o #590 não o expõe como eixo).
  */
 export type CashflowReport = Readonly<{
   payables: readonly CashflowRow[]
   receivables: readonly CashflowRow[]
   chart: readonly CashflowChartRow[]
+  byCostCenter: readonly CashflowCostCenter[]
 }>
 
 /**
