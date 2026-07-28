@@ -14,6 +14,7 @@ import {
   formatSharePercent,
   total,
   loadTeam,
+  teamFilterOptions,
   totalPages,
   pageSlice,
   PER_PAGE_DEFAULT,
@@ -269,5 +270,56 @@ describe('placeholder sintético (LGPD)', () => {
       byAnoContrato(rows).reduce((s, x) => s + x.count, 0),
       n,
     )
+  })
+})
+
+describe('teamFilterOptions', () => {
+  // Fixture com duplicatas, sentinelas ("—"/"N/A"/""), ano 0 (não-parseável) e fora de ordem.
+  const mk = (over: Partial<TeamMemberRow>): TeamMemberRow => ({
+    nome: 'x',
+    idade: null,
+    programa: '—',
+    funcao: '—',
+    vinculo: '—',
+    genero: '—',
+    racaCor: '—',
+    escolaridade: '—',
+    anoContrato: 0,
+    ...over,
+  })
+  const ROWS: readonly TeamMemberRow[] = [
+    mk({
+      escolaridade: 'Superior',
+      vinculo: 'CLT',
+      programa: 'Beta',
+      funcao: 'Coordenador',
+      anoContrato: 2021,
+    }),
+    mk({ escolaridade: 'Médio', vinculo: 'PJ', programa: 'Alfa', funcao: 'Analista', anoContrato: 2023 }),
+    mk({ escolaridade: 'Superior', vinculo: 'CLT', programa: 'Alfa', funcao: 'Analista', anoContrato: 2021 }),
+    mk({ escolaridade: '—', vinculo: '', programa: 'N/A', funcao: '—', anoContrato: 0 }), // tudo sentinela → pulado
+  ]
+
+  it('distintos, sem sentinela/vazio, alfabético pt-BR', () => {
+    const o = teamFilterOptions(ROWS)
+    assert.deepStrictEqual(o.escolaridade, ['Médio', 'Superior'])
+    assert.deepStrictEqual(o.vinculo, ['CLT', 'PJ'])
+    assert.deepStrictEqual(o.programa, ['Alfa', 'Beta'])
+    assert.deepStrictEqual(o.funcao, ['Analista', 'Coordenador'])
+  })
+
+  it('anoContrato: anos válidos únicos em DESC (pula 0)', () => {
+    assert.deepStrictEqual(teamFilterOptions(ROWS).anoContrato, ['2023', '2021'])
+  })
+
+  it('linha toda-sentinela não contribui com nenhuma opção', () => {
+    const o = teamFilterOptions([mk({})])
+    assert.deepStrictEqual(o, {
+      escolaridade: [],
+      vinculo: [],
+      anoContrato: [],
+      programa: [],
+      funcao: [],
+    })
   })
 })

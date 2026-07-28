@@ -99,6 +99,46 @@ export function byFuncao(rows: readonly TeamMemberRow[] = EQUIPE_PLACEHOLDER): r
     .sort((a, b) => b.count - a.count)
 }
 
+// ── Opções dos filtros (derivadas dos VALORES DISTINTOS dos próprios dados — não há endpoint de opções) ──
+
+/**
+ * Opções dos 5 filtros POPULÁVEIS do Equipe ABC (têm dado real no `TeamMemberRow`). Raça/Idade/Gênero ficam
+ * FORA: o endpoint `/reports/team` é LGPD-safe → vêm como sentinela (`—`/null), então a page os deixa "Todos".
+ */
+export type TeamFilterOptions = Readonly<{
+  escolaridade: readonly string[]
+  vinculo: readonly string[]
+  anoContrato: readonly string[]
+  programa: readonly string[]
+  funcao: readonly string[]
+}>
+
+/** Pula vazio e as sentinelas honestas dos campos não fornecidos (`—` demografia · `N/A` idade). */
+const isMeaningful = (v: string): boolean => v !== '' && v !== NA_SENTINEL && v !== 'N/A'
+
+/** Distintos + alfabético pt-BR, pulando vazio/sentinela. */
+const distinctSorted = (values: readonly string[]): readonly string[] =>
+  [...new Set(values.filter(isMeaningful))].sort((a, b) => a.localeCompare(b, 'pt-BR'))
+
+/**
+ * Deriva as opções dos filtros a partir das linhas carregadas: distintas, ordenadas (ano DESC; os demais
+ * alfabético pt-BR), únicas, sem vazio/sentinela. `anoContrato` = anos válidos (>0; o `0` é o não-parseável).
+ * PURA (§XI) — testável em node:test; sem `throw`.
+ */
+export function teamFilterOptions(rows: readonly TeamMemberRow[] = EQUIPE_PLACEHOLDER): TeamFilterOptions {
+  const anoContrato = [...new Set(rows.map((r) => r.anoContrato))]
+    .filter((y) => Number.isFinite(y) && y > 0)
+    .sort((a, b) => b - a)
+    .map((y) => String(y))
+  return {
+    escolaridade: distinctSorted(rows.map((r) => r.escolaridade)),
+    vinculo: distinctSorted(rows.map((r) => r.vinculo)),
+    anoContrato,
+    programa: distinctSorted(rows.map((r) => r.programa)),
+    funcao: distinctSorted(rows.map((r) => r.funcao)),
+  }
+}
+
 // ── Paginação (derivação PURA — o UI-state page/perPage mora na View, §XI) ──
 
 /** Opções de "itens por página" (espelha o BrandPaginator). */

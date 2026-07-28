@@ -20,6 +20,7 @@ import {
   total as computeTotal,
   byAnoContrato,
   byFuncao,
+  teamFilterOptions,
   buildCsv,
   formatSharePercent,
   totalPages,
@@ -112,6 +113,11 @@ export function EquipePage(): ReactNode {
   const anoCounts = useMemo(() => byAnoContrato(rows), [rows])
   const funcaoBars = useMemo(() => byFuncao(rows), [rows])
 
+  // Opções dos filtros POPULÁVEIS (valores distintos dos próprios dados). Raça/Idade/Gênero + os sem campo no
+  // TeamMemberRow ficam só "Todos" (LGPD #477 / sem fonte). Populate-only (os filtros do Equipe são placeholder).
+  const filterOpts = useMemo(() => teamFilterOptions(rows), [rows])
+  const allOption = t('reports.equipe.filters.allOption')
+
   // Paginação da tabela (fatia PURA da ViewModel; o UI-state page/perPage mora aqui).
   const pages = totalPages(totalCount, perPage)
   const pageRows = useMemo(() => pageSlice(rows, page, perPage), [rows, page, perPage])
@@ -177,47 +183,35 @@ export function EquipePage(): ReactNode {
           <div className={fieldsGrid}>
             <FilterField
               label={t('reports.equipe.filters.escolaridade')}
-              options={[t('reports.equipe.filters.allOption')]}
+              options={[allOption, ...filterOpts.escolaridade]}
             />
-            <FilterField
-              label={t('reports.equipe.filters.raca')}
-              options={[t('reports.equipe.filters.allOption')]}
-            />
+            {/* Raça: LGPD-safe (#477) → sem dado real, fica "Todos". */}
+            <FilterField label={t('reports.equipe.filters.raca')} options={[allOption]} />
             <FilterField
               label={t('reports.equipe.filters.anoContrato')}
-              options={[t('reports.equipe.filters.allOption')]}
+              options={[allOption, ...filterOpts.anoContrato]}
             />
-            <FilterField
-              label={t('reports.equipe.filters.desativadoPor')}
-              options={[t('reports.equipe.filters.allOption')]}
-            />
+            {/* Desativado por: sem campo no TeamMemberRow → "Todos". */}
+            <FilterField label={t('reports.equipe.filters.desativadoPor')} options={[allOption]} />
             <FilterField
               label={t('reports.equipe.filters.programa')}
-              options={[t('reports.equipe.filters.allOption')]}
+              options={[allOption, ...filterOpts.programa]}
             />
             <FilterField
               label={t('reports.equipe.filters.funcao')}
-              options={[t('reports.equipe.filters.allOption')]}
+              options={[allOption, ...filterOpts.funcao]}
             />
-            <FilterField
-              label={t('reports.equipe.filters.genero')}
-              options={[t('reports.equipe.filters.allOption')]}
-            />
-            <FilterField
-              label={t('reports.equipe.filters.status')}
-              options={[t('reports.equipe.filters.allOption')]}
-            />
-            <FilterField
-              label={t('reports.equipe.filters.situacaoCadastral')}
-              options={[t('reports.equipe.filters.allOption')]}
-            />
-            <FilterField
-              label={t('reports.equipe.filters.idade')}
-              options={[t('reports.equipe.filters.allOption')]}
-            />
+            {/* Gênero: LGPD-safe (#477) → "Todos". */}
+            <FilterField label={t('reports.equipe.filters.genero')} options={[allOption]} />
+            {/* Status: sem campo no TeamMemberRow → "Todos". */}
+            <FilterField label={t('reports.equipe.filters.status')} options={[allOption]} />
+            {/* Situação cadastral: sem campo → "Todos". */}
+            <FilterField label={t('reports.equipe.filters.situacaoCadastral')} options={[allOption]} />
+            {/* Idade: LGPD-safe (#477) → "Todos". */}
+            <FilterField label={t('reports.equipe.filters.idade')} options={[allOption]} />
             <FilterField
               label={t('reports.equipe.filters.vinculo')}
-              options={[t('reports.equipe.filters.allOption')]}
+              options={[allOption, ...filterOpts.vinculo]}
             />
           </div>
           <div className={filtersActions}>
