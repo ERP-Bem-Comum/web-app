@@ -27,7 +27,6 @@ import {
   formatPercent,
   sectionDonutData,
   executionPercent,
-  type FluxoMeasures,
   type FluxoSection,
 } from '../fluxo-caixa.view-model.ts'
 import { useFluxoCaixa } from '../fluxo-caixa.binding.ts'
@@ -35,7 +34,7 @@ import { RealizadoChartsMount } from '../components/realizado-charts-mount.compo
 import { FluxoCaixaTimeline } from '../components/fluxo-caixa-timeline.component.tsx'
 import { FluxoCaixaCostCenterBars } from '../components/fluxo-caixa-cost-center-bars.component.tsx'
 import { RealizadoDonut, type DonutSlice } from '../components/realizado-donut.component.tsx'
-import { FluxoCaixaSectionTable } from '../components/fluxo-caixa-section-table.component.tsx'
+import { FluxoCaixaStatement } from '../components/fluxo-caixa-statement.component.tsx'
 import { ReportExportDropdown } from '../components/report-export-dropdown.component.tsx'
 import { ReportStatePanel } from '../components/report-state-panel.component.tsx'
 import {
@@ -67,7 +66,6 @@ import {
   saldoValueTone,
   kpiTintNeg,
   charts4,
-  sections,
   exportTrigger,
 } from './fluxo-caixa.page.css.ts'
 
@@ -104,10 +102,6 @@ export function FluxoCaixaPage(): ReactNode {
   const saidasTitle = t('reports.fluxoCaixa.section.saidas.title')
   const entradasTitle = t('reports.fluxoCaixa.section.entradas.title')
 
-  const measureLabels: Readonly<Record<keyof FluxoMeasures, string>> = {
-    realizedCents: t('reports.fluxoCaixa.measure.realizado'),
-    expectedCents: t('reports.fluxoCaixa.measure.previsto'),
-  }
   const previstoLabel = t('reports.fluxoCaixa.chart.previsto')
   const realizadoLabel = t('reports.fluxoCaixa.chart.realizado')
 
@@ -317,35 +311,27 @@ export function FluxoCaixaPage(): ReactNode {
         )}
       </RealizadoChartsMount>
 
-      {/* As 2 seções (Saídas / Entradas) */}
-      <div className={sections}>
-        <FluxoCaixaSectionTable
-          section={report.saidas}
-          labels={{
-            cardTitle: saidasTitle,
-            nameCol: t('reports.fluxoCaixa.section.nameCol'),
-            measureLabels,
-            totalRow: t('reports.fluxoCaixa.section.saidas.totalRow'),
-            expand: t('reports.fluxoCaixa.tree.expand'),
-            collapse: t('reports.fluxoCaixa.tree.collapse'),
-            empty: t('reports.fluxoCaixa.section.saidas.empty'),
-            emptyHint: t('reports.fluxoCaixa.section.saidas.emptyHint'),
-          }}
-        />
-        <FluxoCaixaSectionTable
-          section={report.entradas}
-          labels={{
-            cardTitle: entradasTitle,
-            nameCol: t('reports.fluxoCaixa.section.nameCol'),
-            measureLabels,
-            totalRow: t('reports.fluxoCaixa.section.entradas.totalRow'),
-            expand: t('reports.fluxoCaixa.tree.expand'),
-            collapse: t('reports.fluxoCaixa.tree.collapse'),
-            empty: t('reports.fluxoCaixa.section.entradas.empty'),
-            emptyHint: t('reports.fluxoCaixa.section.entradas.emptyHint'),
-          }}
-        />
-      </div>
+      {/* Demonstrativo de fluxo de caixa (statement por mês — Real | Prev por mês, seções +Entradas/−Saídas) */}
+      <FluxoCaixaStatement
+        statement={report.statement}
+        formatValue={formatBRL}
+        labels={{
+          cardTitle: t('reports.fluxoCaixa.stmt.title'),
+          hint: t('reports.fluxoCaixa.stmt.hint'),
+          descCol: t('reports.fluxoCaixa.stmt.descCol'),
+          totalCol: t('reports.fluxoCaixa.stmt.totalCol'),
+          realShort: t('reports.fluxoCaixa.stmt.real'),
+          prevShort: t('reports.fluxoCaixa.stmt.prev'),
+          saldoInicial: t('reports.fluxoCaixa.stmt.saldoInicial'),
+          entradas: t('reports.fluxoCaixa.stmt.entradas'),
+          totalEntradas: t('reports.fluxoCaixa.stmt.totalEntradas'),
+          saidas: t('reports.fluxoCaixa.stmt.saidas'),
+          totalSaidas: t('reports.fluxoCaixa.stmt.totalSaidas'),
+          liquido: t('reports.fluxoCaixa.stmt.liquido'),
+          saldoAcumulado: t('reports.fluxoCaixa.stmt.saldoAcumulado'),
+          emptyEntradas: t('reports.fluxoCaixa.stmt.emptyEntradas'),
+        }}
+      />
     </div>
   )
 }

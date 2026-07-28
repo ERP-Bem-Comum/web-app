@@ -185,22 +185,33 @@ export const brand = {
     // vermelho. Hex cru permitido aqui (é um `*.values.ts`, isento do lint só-tokens); a UI aplica por classe
     // (styleVariants no `.css.ts`) — as views não importam tokens (§boundaries client-ui ↛ ds-tokens).
     fluxo: {
-      realizado: '#1f7d55', // verde — valor realizado (efetivado)
-      previsto: '#396496', // azul institucional — valor previsto
-      entrada: '#1f7d55', // verde — Entradas (inflow) no gráfico mensal por vencimento
-      saida: '#c67c1e', // âmbar — Saídas (outflow) no gráfico mensal por vencimento
+      realizado: '#33876a', // verde suave — valor realizado (efetivado)
+      previsto: '#4e769f', // azul frio dessaturado — valor previsto
+      entrada: '#33876a', // verde suave — Entradas (inflow) no gráfico mensal por vencimento
+      saida: '#c99a58', // âmbar suave — Saídas (outflow) no gráfico mensal por vencimento
       barTrack: '#eef1f5', // trilho neutro das barras
-      saldoPos: '#1f7d55', // verde — Saldo positivo (entradas ≥ saídas)
-      saldoNeg: '#c0453c', // vermelho — Saldo negativo (saídas > entradas)
-      // Fundo SUAVE tintado do card de Saldo quando NEGATIVO (resultado do período no vermelho) — tom claro do vermelho.
-      saldoNegTintBg: '#f8e6e4',
-      // Divisória do card de Saldo negativo — tom + forte do tint p/ a linha aparecer entre dois cards tintados.
-      saldoNegTintLine: '#ecc4bf',
-      // Cores dos 4 gráficos "Previsto × Realizado" (espelho do legado): Previsto ciano, Realizado verde,
-      // Saldo verde-claro. Distintas dos tokens dos KPIs/tabelas acima (não os alteram).
-      previstoChart: '#32a2c6', // ciano — série "Previsto/Esperado" (timeline, barras CC, donuts)
-      realizadoChart: '#2f8f6a', // verde — série "Realizado"
-      saldoLine: '#7bc9a4', // verde-claro — série "Saldo" na linha do tempo
+      saldoPos: '#33876a', // verde suave — Saldo positivo (entradas ≥ saídas)
+      saldoNeg: '#c07a72', // vermelho DESSATURADO (rosa-tijolo) — Saldo negativo, tom mais frio/suave
+      // Fundo tintado do card de Saldo NEGATIVO — MUITO suave e neutro (a P.O. achou o vermelho forte demais).
+      saldoNegTintBg: '#f6eeee',
+      // Divisória do card de Saldo negativo — tom + forte do tint (aparece entre dois cards tintados).
+      saldoNegTintLine: '#e7d6d4',
+      // Cores dos 4 gráficos "Previsto × Realizado" — paleta FRIA e SUAVE (dessaturada): Previsto azul-aço,
+      // Realizado verde-frio, Saldo verde-pálido. Distintas dos tokens dos KPIs/tabelas acima (não os alteram).
+      previstoChart: '#7ba0c4', // azul-aço suave — série "Previsto/Esperado" (timeline, barras CC, donuts)
+      realizadoChart: '#5aa78f', // verde-frio suave — série "Realizado"
+      saldoLine: '#a9cdbc', // verde-pálido — série "Saldo" na linha do tempo
+      // Opacidade dos preenchimentos (barras/donut) — leve transparência p/ suavizar (a P.O. pediu).
+      fillOpacity: '0.82',
+      // ── Demonstrativo de fluxo de caixa (statement por mês) — cores das faixas de seção + linhas totais. ──
+      stmtInInk: '#33876a', // texto/ícone da seção Entradas (verde)
+      stmtInBand: '#e9f3ee', // faixa de fundo da seção "+ Entradas"
+      stmtOutInk: '#c07a72', // texto/ícone da seção Saídas (rosa-tijolo suave)
+      stmtOutBand: '#f7ebea', // faixa de fundo da seção "− Saídas"
+      stmtTotBg: '#eef2f8', // fundo da coluna/linha "Total"
+      stmtSaldoBg: '#f7f8fa', // fundo das linhas Saldo inicial/acumulado
+      stmtNetNegBg: '#f6eeee', // fundo da linha "Fluxo líquido" quando negativo
+      stmtNetPosBg: '#e9f3ee', // fundo da linha "Fluxo líquido" quando positivo
     },
   },
   // Medidas específicas do relatório redesenhado (px cru permitido no `*.values.ts`).

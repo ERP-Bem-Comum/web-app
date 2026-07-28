@@ -98,6 +98,42 @@ export type CostCenterMeasure = Readonly<{
 /** Fatia do donut Previsto × Realizado de uma seção (chave da medida + valor em centavos). */
 export type SectionDonumSlice = Readonly<{ key: 'previsto' | 'realizado'; valueCents: number }>
 
+// ── Demonstrativo de fluxo de caixa (statement por mês) ──────────────────────────
+// Célula = as 2 medidas (Realizado × Previsto) de uma (linha, mês). Item = uma categoria com uma célula por
+// mês + total. Seção = itens + totais por mês + total geral. O statement acrescenta Fluxo líquido (Entradas −
+// Saídas por mês) e Saldo inicial/acumulado (corrida). Tudo em CENTAVOS inteiros (§IV).
+
+/** As 2 medidas de uma célula do demonstrativo (um mês de uma linha). */
+export type StatementCell = Readonly<{ realizedCents: number; expectedCents: number }>
+
+/** Uma linha-item do demonstrativo (categoria): células por mês (alinhadas a `months`) + total. */
+export type StatementItem = Readonly<{
+  name: string
+  byMonth: readonly StatementCell[]
+  total: StatementCell
+}>
+
+/** Uma seção do demonstrativo (Entradas ou Saídas): itens + totais por mês + total geral. */
+export type StatementSection = Readonly<{
+  items: readonly StatementItem[]
+  totalByMonth: readonly StatementCell[]
+  total: StatementCell
+}>
+
+/**
+ * Demonstrativo completo: as 2 seções + Fluxo líquido (Entradas − Saídas por mês) + Saldo inicial (corrida
+ * ANTES do mês) e Saldo acumulado (corrida DEPOIS). Cada linha carrega as 2 medidas por mês (2 subcolunas na UI).
+ */
+export type FluxoStatement = Readonly<{
+  months: readonly string[]
+  entradas: StatementSection
+  saidas: StatementSection
+  saldoInicial: readonly StatementCell[]
+  liquido: readonly StatementCell[]
+  liquidoTotal: StatementCell
+  saldoAcumulado: readonly StatementCell[]
+}>
+
 /**
  * Relatório completo: as 2 seções + o Saldo (Entradas − Saídas por medida) + os meses + as séries derivadas:
  * `monthly` (barras por vencimento), `timeline` (Previsto/Realizado/Saldo no tempo) e `byCostCenter` (Previsto ×
@@ -111,6 +147,8 @@ export type FluxoReport = Readonly<{
   monthly: readonly MonthlyFlow[]
   timeline: readonly TimelinePoint[]
   byCostCenter: readonly CostCenterMeasure[]
+  /** Demonstrativo de fluxo de caixa (statement por mês) — a tabela principal da tela. */
+  statement: FluxoStatement
 }>
 
 /** Seção do relatório: 'saidas' (payables/cartão) ou 'entradas' (receivables). */
@@ -372,6 +410,86 @@ export function sectionDonutData(section: FluxoSection): readonly SectionDonumSl
   ]
 }
 
+// ── Demonstrativo (statement) — derivação PURA a partir das folhas datadas por mês ──
+
+const zeroCell = (): StatementCell => ({ realizedCents: 0, expectedCents: 0 })
+const addCell = (a: StatementCell, b: StatementCell): StatementCell => ({
+  realizedCents: a.realizedCents + b.realizedCents,
+  expectedCents: a.expectedCents + b.expectedCents,
+})
+const subCell = (a: StatementCell, b: StatementCell): StatementCell => ({
+  realizedCents: a.realizedCents - b.realizedCents,
+  expectedCents: a.expectedCents - b.expectedCents,
+})
+
+/**
+ * Agrega folhas datadas (categoria × mês) numa SEÇÃO do demonstrativo: uma linha-item por CATEGORIA (ordem de
+ * inserção), com uma célula por mês (alinhada a `months`) + totais. Folha de mês fora de `months` é ignorada.
+ */
+export function buildStatementSection(
+  leaves: readonly RawFluxoLeaf[],
+  months: readonly string[],
+): StatementSection {
+  const idxOf = new Map(months.map((m, i) => [m, i]))
+  const order: string[] = []
+  const byCat = new Map<string, StatementCell[]>()
+  for (const l of leaves) {
+    const mi = idxOf.get(l.month)
+    if (mi === undefined) continue
+    let arr = byCat.get(l.category)
+    if (arr === undefined) {
+      arr = months.map(() => zeroCell())
+      byCat.set(l.category, arr)
+      order.push(l.category)
+    }
+    arr[mi] = addCell(arr[mi] ?? zeroCell(), {
+      realizedCents: l.realizedCents,
+      expectedCents: l.expectedCents,
+    })
+  }
+  const items: readonly StatementItem[] = order.map((name) => {
+    const arr = byCat.get(name) ?? months.map(() => zeroCell())
+    return { name, byMonth: arr, total: arr.reduce(addCell, zeroCell()) }
+  })
+  const totalByMonth = months.map((_m, mi) =>
+    items.reduce((acc, it) => addCell(acc, it.byMonth[mi] ?? zeroCell()), zeroCell()),
+  )
+  return { items, totalByMonth, total: totalByMonth.reduce(addCell, zeroCell()) }
+}
+
+/**
+ * Monta o demonstrativo: as 2 seções + Fluxo líquido (Entradas − Saídas por mês, nas 2 medidas) + Saldo inicial
+ * (corrida ANTES do mês, começando em 0) e Saldo acumulado (corrida DEPOIS). Sem `throw` (§II).
+ */
+export function buildStatement(
+  entradasLeaves: readonly RawFluxoLeaf[],
+  saidasLeaves: readonly RawFluxoLeaf[],
+  months: readonly string[],
+): FluxoStatement {
+  const entradas = buildStatementSection(entradasLeaves, months)
+  const saidas = buildStatementSection(saidasLeaves, months)
+  const liquido = months.map((_m, mi) =>
+    subCell(entradas.totalByMonth[mi] ?? zeroCell(), saidas.totalByMonth[mi] ?? zeroCell()),
+  )
+  const saldoInicial: StatementCell[] = []
+  const saldoAcumulado: StatementCell[] = []
+  let acc = zeroCell()
+  for (const l of liquido) {
+    saldoInicial.push(acc)
+    acc = addCell(acc, l)
+    saldoAcumulado.push(acc)
+  }
+  return {
+    months,
+    entradas,
+    saidas,
+    saldoInicial,
+    liquido,
+    liquidoTotal: liquido.reduce(addCell, zeroCell()),
+    saldoAcumulado,
+  }
+}
+
 /**
  * Monta o relatório a partir das duas fontes cruas + o intervalo de meses (engine puro, testável — Entradas =
  * [] → Saldo). `byCostCenter` = [] aqui: o eixo de CC vem do fan-out do BFF (`buildReportFromCashflow`), não
@@ -393,6 +511,7 @@ export function buildReport(
     monthly: monthlyFlow(saidasRaw, entradasRaw, months),
     timeline: buildTimeline(saidasRaw, entradasRaw, months),
     byCostCenter: [],
+    statement: buildStatement(entradasRaw, saidasRaw, months),
   }
 }
 
@@ -465,6 +584,8 @@ export function buildReportFromCashflow(
     monthly: monthlyFlow(chartLeaves, [], months),
     timeline: buildTimeline(chartLeaves, [], months),
     byCostCenter: byCostCenter.map(costCenterToMeasure),
+    // Demonstrativo: Saídas com o eixo de mês (chart); Entradas vazio (receivables []) até o A-Receber subir.
+    statement: buildStatement([], chartLeaves, months),
   }
 }
 

@@ -83,10 +83,3 @@ export const charts4 = style({
     'screen and (max-width: 48rem)': { gridTemplateColumns: '1fr' },
   },
 })
-
-// Empilhamento das 2 seções (Saídas / Entradas) com o mesmo respiro do grid.
-export const sections = style({
-  display: 'grid',
-  gridTemplateColumns: '1fr',
-  gap: brand.space.gridRow,
-})

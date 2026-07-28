@@ -2793,6 +2793,21 @@ export const ptBR: Catalog = {
   // Árvore.
   'reports.fluxoCaixa.tree.expand': 'Expandir',
   'reports.fluxoCaixa.tree.collapse': 'Recolher',
+  // ── Demonstrativo de fluxo de caixa (statement por mês; 2 subcolunas Real | Prev por mês) ──
+  'reports.fluxoCaixa.stmt.title': 'Demonstrativo de fluxo de caixa',
+  'reports.fluxoCaixa.stmt.hint': 'valores em R$ · role para os demais meses ›',
+  'reports.fluxoCaixa.stmt.descCol': 'Descrição',
+  'reports.fluxoCaixa.stmt.totalCol': 'Total',
+  'reports.fluxoCaixa.stmt.real': 'Real.',
+  'reports.fluxoCaixa.stmt.prev': 'Prev.',
+  'reports.fluxoCaixa.stmt.saldoInicial': 'Saldo inicial',
+  'reports.fluxoCaixa.stmt.entradas': 'Entradas',
+  'reports.fluxoCaixa.stmt.totalEntradas': '= Total de entradas',
+  'reports.fluxoCaixa.stmt.saidas': 'Saídas',
+  'reports.fluxoCaixa.stmt.totalSaidas': '= Total de saídas',
+  'reports.fluxoCaixa.stmt.liquido': '= Fluxo líquido do período',
+  'reports.fluxoCaixa.stmt.saldoAcumulado': '= Saldo acumulado',
+  'reports.fluxoCaixa.stmt.emptyEntradas': 'Nenhuma entrada registrada — o Contas a Receber ainda não subiu.',
 
   // ── "Relatório Geral" (front-first; core-api#114) — ledger unificado achatado e paginado ──
   'reports.geral.title': 'Relatório Geral',

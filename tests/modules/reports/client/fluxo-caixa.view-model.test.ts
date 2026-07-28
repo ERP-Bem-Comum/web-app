@@ -24,6 +24,8 @@ import {
   monthsInRange,
   formatMonthLabel,
   buildCsv,
+  buildStatement,
+  buildStatementSection,
   formatBRL,
   CSV_HEADER,
   type RawFluxoLeaf,
@@ -366,6 +368,44 @@ describe('monthsInRange / formatMonthLabel — blindados contra "Invalid Date"',
     assert.equal(formatMonthLabel('2026-01'), 'Jan/26')
     assert.equal(formatMonthLabel('2026-12'), 'Dez/26')
     assert.equal(formatMonthLabel('lixo'), 'lixo')
+  })
+})
+
+describe('buildStatement — demonstrativo por mês (Real + Prev, Fluxo líquido, Saldo acumulado)', () => {
+  const months = ['2026-01', '2026-02', '2026-03']
+
+  it('buildStatementSection agrega por CATEGORIA e alinha as células aos meses', () => {
+    const sec = buildStatementSection(SAIDAS, months)
+    // 2 categorias (Pessoal, Operacional), na ordem de inserção.
+    assert.deepEqual(
+      sec.items.map((i) => i.name),
+      ['Pessoal', 'Operacional'],
+    )
+    // Pessoal: jan = Salários(800/900) + Encargos(200/250) = 1000/1150; fev/mar = 0.
+    const pessoal = sec.items[0]
+    assert.deepEqual(pessoal?.byMonth[0], { realizedCents: 1000, expectedCents: 1150 })
+    assert.deepEqual(pessoal?.byMonth[1], { realizedCents: 0, expectedCents: 0 })
+    assert.deepEqual(pessoal?.total, { realizedCents: 1000, expectedCents: 1150 })
+    // Total da seção por mês: jan = 1000/1150 (Pessoal); fev = 500/500 (Operacional/Aluguel).
+    assert.deepEqual(sec.totalByMonth[0], { realizedCents: 1000, expectedCents: 1150 })
+    assert.deepEqual(sec.totalByMonth[1], { realizedCents: 500, expectedCents: 500 })
+    assert.deepEqual(sec.total, { realizedCents: 1500, expectedCents: 1650 })
+  })
+
+  it('Entradas = [] → Fluxo líquido = −Saídas e Saldo acumulado corre negativo', () => {
+    const st = buildStatement([], SAIDAS, months)
+    assert.equal(st.entradas.items.length, 0)
+    // líquido jan = 0 − 1000 = −1000 (realizado); fev = 0 − 500 = −500.
+    assert.equal(st.liquido[0]?.realizedCents, -1000)
+    assert.equal(st.liquido[1]?.realizedCents, -500)
+    // saldo inicial começa em 0; acumulado corre: jan −1000, fev −1500, mar −1500.
+    assert.deepEqual(st.saldoInicial[0], { realizedCents: 0, expectedCents: 0 })
+    assert.equal(st.saldoAcumulado[0]?.realizedCents, -1000)
+    assert.equal(st.saldoAcumulado[1]?.realizedCents, -1500)
+    assert.equal(st.saldoAcumulado[2]?.realizedCents, -1500)
+    // saldo inicial de fev = acumulado de jan.
+    assert.deepEqual(st.saldoInicial[1], st.saldoAcumulado[0])
+    assert.equal(st.liquidoTotal.realizedCents, -1500)
   })
 })
 

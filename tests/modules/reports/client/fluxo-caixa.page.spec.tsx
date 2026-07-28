@@ -16,13 +16,8 @@ import { ok } from '#shared/primitives/result.ts'
 import type { CashflowReport } from '#modules/reports/client/data/model/cashflow.model.ts'
 import { reportsRepository } from '#modules/reports/client/data/repository/reports.repository.instance.ts'
 import { FluxoCaixaPage } from '#modules/reports/client/page/fluxo-caixa.page.tsx'
-import { FluxoCaixaSectionTable } from '#modules/reports/client/components/fluxo-caixa-section-table.component.tsx'
 import { RealizadoDonut } from '#modules/reports/client/components/realizado-donut.component.tsx'
-import {
-  sectionDonutData,
-  aggregateSection,
-  type FluxoSection,
-} from '#modules/reports/client/fluxo-caixa.view-model.ts'
+import { sectionDonutData, aggregateSection } from '#modules/reports/client/fluxo-caixa.view-model.ts'
 
 vi.mock('#modules/reports/client/data/repository/reports.repository.instance.ts', () => ({
   reportsRepository: { getCashflowReport: vi.fn() },
@@ -114,8 +109,9 @@ describe('FluxoCaixaPage — composição', () => {
   it('a linha do tempo usa rótulos de período por índice (nunca "Invalid Date")', async () => {
     mCashflow.mockResolvedValue(ok(REPORT))
     renderPage()
-    expect(await screen.findByText('Jan/26')).toBeTruthy()
-    expect(screen.getByText('Jun/26')).toBeTruthy()
+    // "Jan/26" aparece na linha do tempo E no cabeçalho do demonstrativo — ao menos uma ocorrência.
+    expect((await screen.findAllByText('Jan/26')).length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('Jun/26').length).toBeGreaterThanOrEqual(1)
     expect(screen.queryByText(/Invalid Date/)).toBeNull()
   })
 
@@ -149,28 +145,18 @@ describe('FluxoCaixaPage — composição', () => {
   })
 })
 
-describe('FluxoCaixaSectionTable — empty state (Entradas vazias)', () => {
-  const emptySection: FluxoSection = { categories: [], totals: { realizedCents: 0, expectedCents: 0 } }
-
-  it('seção sem categorias mostra o empty state honesto', () => {
-    render(
-      <FluxoCaixaSectionTable
-        section={emptySection}
-        labels={{
-          cardTitle: 'Entradas',
-          nameCol: 'Categoria / Subcategoria',
-          measureLabels: { realizedCents: 'Realizado', expectedCents: 'Previsto' },
-          totalRow: 'Total de Entradas',
-          expand: 'Expandir',
-          collapse: 'Recolher',
-          empty: 'Nenhuma entrada registrada',
-          emptyHint: 'Ainda não há entradas lançadas.',
-        }}
-      />,
-    )
-    expect(screen.getByText('Nenhuma entrada registrada')).toBeTruthy()
-    // Sem tabela quebrada: o rodapé "Total de Entradas" NÃO aparece no caminho vazio.
-    expect(screen.queryByText('Total de Entradas')).toBeNull()
+describe('FluxoCaixaPage — demonstrativo (statement por mês)', () => {
+  it('renderiza o demonstrativo com itens de Saída, Fluxo líquido e Saldo acumulado', async () => {
+    mCashflow.mockResolvedValue(ok(REPORT))
+    renderPage()
+    // Título do card do demonstrativo + as linhas-chave do statement.
+    expect(await screen.findByRole('heading', { name: 'Demonstrativo de fluxo de caixa' })).toBeTruthy()
+    expect(screen.getByText('= Fluxo líquido do período')).toBeTruthy()
+    expect(screen.getByText('= Saldo acumulado')).toBeTruthy()
+    // Item de Saída (categoria do fixture) presente como linha do demonstrativo.
+    expect(screen.getByText('Pessoal')).toBeTruthy()
+    // Entradas vazio (receivables []) → nota honesta.
+    expect(screen.getByText(/Nenhuma entrada registrada/)).toBeTruthy()
   })
 })
 
