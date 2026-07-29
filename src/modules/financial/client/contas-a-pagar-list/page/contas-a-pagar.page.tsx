@@ -72,7 +72,7 @@ import {
 } from './contas-a-pagar.css.ts'
 
 const t = createTranslator(ptBR)
-const PAGE_SIZE_OPTIONS = [5, 10, 12, 25, 50] as const
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const
 
 export function ContasAPagarPage(): ReactNode {
   const navigate = useNavigate()

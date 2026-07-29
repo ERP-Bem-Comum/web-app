@@ -414,7 +414,7 @@ export const pageInfo = (page: number, pageSize: number, total: number): PageInf
     page,
     pageSize,
     total,
-    rangeLabel: `${String(from)}–${String(to)} de ${String(total)}`,
+    rangeLabel: `${String(from)}–${String(to)} de ${String(total)} títulos`,
     hasPrev: page > 1,
     hasNext: to < total,
   }
