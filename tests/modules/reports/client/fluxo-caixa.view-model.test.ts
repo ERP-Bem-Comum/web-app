@@ -23,6 +23,8 @@ import {
   formatPercent,
   monthsInRange,
   formatMonthLabel,
+  formatMonthShort,
+  timelineYearLabel,
   buildCsv,
   buildStatement,
   buildStatementSection,
@@ -31,6 +33,7 @@ import {
   formatAmount,
   CSV_HEADER,
   type RawFluxoLeaf,
+  type TimelinePoint,
 } from '#modules/reports/client/fluxo-caixa.view-model.ts'
 import type { CashflowRow, CashflowChartRow } from '#modules/reports/client/data/model/cashflow.model.ts'
 
@@ -370,6 +373,26 @@ describe('monthsInRange / formatMonthLabel — blindados contra "Invalid Date"',
     assert.equal(formatMonthLabel('2026-01'), 'Jan/26')
     assert.equal(formatMonthLabel('2026-12'), 'Dez/26')
     assert.equal(formatMonthLabel('lixo'), 'lixo')
+  })
+
+  it('formatMonthShort: só o mês (sem ano) para o eixo X; malformada → a própria chave', () => {
+    assert.equal(formatMonthShort('2026-01'), 'Jan')
+    assert.equal(formatMonthShort('2026-12'), 'Dez')
+    assert.equal(formatMonthShort('lixo'), 'lixo')
+  })
+
+  it('timelineYearLabel: um ano → "2026"; atravessa o ano → "2025–2026"; vazio → ""', () => {
+    const pt = (key: string): TimelinePoint => ({
+      key,
+      label: formatMonthLabel(key),
+      monthShort: formatMonthShort(key),
+      previstoCents: 0,
+      realizadoCents: 0,
+      saldoCents: 0,
+    })
+    assert.equal(timelineYearLabel([pt('2026-01'), pt('2026-07')]), '2026')
+    assert.equal(timelineYearLabel([pt('2025-11'), pt('2026-02')]), '2025–2026')
+    assert.equal(timelineYearLabel([]), '')
   })
 })
 
