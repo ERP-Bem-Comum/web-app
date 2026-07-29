@@ -110,7 +110,8 @@ describe('FluxoCaixaPage — composição', () => {
   it('renderiza os 4 gráficos "Previsto × Realizado" (incl. Centro de Custo do fan-out)', async () => {
     mCashflow.mockResolvedValue(ok(REPORT))
     renderPage()
-    expect(await screen.findByRole('heading', { name: 'Linha do tempo' })).toBeTruthy()
+    // O título agora traz o ano como sufixo ("Linha do tempo · 2026") — casa pelo prefixo.
+    expect(await screen.findByRole('heading', { name: /Linha do tempo/ })).toBeTruthy()
     // O eixo de Centro de Custo é RECONSTRUÍDO pelo BFF via fan-out (o #590 não o expõe nativamente).
     expect(screen.getByRole('heading', { name: 'Agrupado por Centro de Custo' })).toBeTruthy()
     // Os 2 donuts (Entradas / Saídas) — títulos dos cartões.
