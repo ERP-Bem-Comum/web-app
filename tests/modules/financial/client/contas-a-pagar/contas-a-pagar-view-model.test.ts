@@ -141,21 +141,21 @@ describe('buildRows', () => {
 describe('pageInfo', () => {
   it('primeira página de 47 (12/pág): range "1–12 de 47", sem prev, com next', () => {
     const p = pageInfo(1, 12, 47)
-    assert.equal(p.rangeLabel, '1–12 de 47')
+    assert.equal(p.rangeLabel, '1–12 de 47 títulos')
     assert.equal(p.hasPrev, false)
     assert.equal(p.hasNext, true)
   })
 
   it('última página parcial: range "37–47 de 47", com prev, sem next', () => {
     const p = pageInfo(4, 12, 47)
-    assert.equal(p.rangeLabel, '37–47 de 47')
+    assert.equal(p.rangeLabel, '37–47 de 47 títulos')
     assert.equal(p.hasPrev, true)
     assert.equal(p.hasNext, false)
   })
 
   it('lista vazia: range "0–0 de 0"', () => {
     const p = pageInfo(1, 12, 0)
-    assert.equal(p.rangeLabel, '0–0 de 0')
+    assert.equal(p.rangeLabel, '0–0 de 0 títulos')
     assert.equal(p.hasNext, false)
   })
 })
