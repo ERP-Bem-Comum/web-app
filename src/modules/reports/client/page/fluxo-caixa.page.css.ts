@@ -76,7 +76,9 @@ export const kpiTintNeg = style({
 // Centro de Custo é RECONSTRUÍDO pelo BFF via fan-out (o #590 não o expõe nativamente — CA6).
 export const charts4 = style({
   display: 'grid',
-  gridTemplateColumns: 'repeat(4, 1fr)',
+  // A "Linha do tempo" (eixo X com muitos meses) ganha mais largura; os donuts Entradas/Saídas
+  // (compactos) cedem espaço — evita a sobreposição dos rótulos de mês sem espremer nada.
+  gridTemplateColumns: '1.7fr 1.3fr 1fr 1fr',
   gap: brand.space.gridRow,
   marginBlockEnd: brand.space.gridRow,
   alignItems: 'stretch',

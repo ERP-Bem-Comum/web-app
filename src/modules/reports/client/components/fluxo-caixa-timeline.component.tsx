@@ -96,6 +96,10 @@ export function FluxoCaixaTimeline(props: FluxoCaixaTimelineProps): ReactNode {
 
   const n = Math.max(1, props.points.length)
   const xAt = (i: number): number => (n === 1 ? (X0 + X1) / 2 : X0 + i * ((X1 - X0) / (n - 1)))
+  // Rótulos do eixo X: mostra no máx. ~8 (1 a cada `labelStride`) + SEMPRE o último — evita sobreposição
+  // quando há muitos meses. A linha/dots/hover seguem em TODOS os pontos; só o texto do eixo é raleado.
+  const labelStride = Math.max(1, Math.ceil(n / 8))
+  const showMonthLabel = (i: number): boolean => i % labelStride === 0 || i === n - 1
 
   // Chave estável do conteúdo (o memo depende dos valores, não da identidade do array).
   const seriesKey = props.points
@@ -189,11 +193,13 @@ export function FluxoCaixaTimeline(props: FluxoCaixaTimelineProps): ReactNode {
         {geom.showZero && <line className={zeroLine} x1={X0} y1={geom.zeroY} x2={X1} y2={geom.zeroY} />}
 
         <g>
-          {props.points.map((p, i) => (
-            <text key={p.key} className={monthText} x={xAt(i)} y={Y1 + 18} textAnchor="middle">
-              {p.label}
-            </text>
-          ))}
+          {props.points.map((p, i) =>
+            showMonthLabel(i) ? (
+              <text key={p.key} className={monthText} x={xAt(i)} y={Y1 + 18} textAnchor="middle">
+                {p.label}
+              </text>
+            ) : null,
+          )}
         </g>
 
         {geom.paths.map((path) => (
