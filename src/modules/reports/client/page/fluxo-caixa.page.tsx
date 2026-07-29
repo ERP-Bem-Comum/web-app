@@ -25,9 +25,11 @@ import {
   formatBRL,
   formatAmount,
   formatBRLShort,
+  formatBRLAxis,
   formatPercent,
   sectionDonutData,
   executionPercent,
+  timelineYearLabel,
   type FluxoSection,
 } from '../fluxo-caixa.view-model.ts'
 import { useFluxoCaixa, type FluxoCaixaFilter } from '../fluxo-caixa.binding.ts'
@@ -59,6 +61,7 @@ import {
   chartPad,
   cardHeader,
   cardTitle,
+  cardTitleYear,
   kpis,
   kpi,
   kpiDot,
@@ -429,7 +432,12 @@ export function FluxoCaixaPage(): ReactNode {
             <div className={charts4}>
               <div className={chartCard}>
                 <div className={cardHeader}>
-                  <h2 className={cardTitle}>{t('reports.fluxoCaixa.chart.timeline')}</h2>
+                  <h2 className={cardTitle}>
+                    {t('reports.fluxoCaixa.chart.timeline')}
+                    {timelineYearLabel(report.timeline) !== '' ? (
+                      <span className={cardTitleYear}> · {timelineYearLabel(report.timeline)}</span>
+                    ) : null}
+                  </h2>
                 </div>
                 <div className={chartPad}>
                   <FluxoCaixaTimeline
@@ -443,7 +451,7 @@ export function FluxoCaixaPage(): ReactNode {
                       saldo: t('reports.fluxoCaixa.chart.saldo'),
                     }}
                     formatValue={formatBRL}
-                    formatAxis={formatBRLShort}
+                    formatAxis={formatBRLAxis}
                   />
                 </div>
               </div>

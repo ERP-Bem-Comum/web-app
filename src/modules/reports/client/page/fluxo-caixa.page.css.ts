@@ -74,6 +74,12 @@ export const kpiTintNeg = style({
 // Grade dos QUATRO gráficos numa linha só (compactos e ALINHADOS): Linha do tempo · Centro de Custo · Entradas
 // · Saídas. Cards de altura igual (`stretch`). Colapsa 4→2 (≤75rem) e 2→1 (≤48rem) para não espremer. O eixo de
 // Centro de Custo é RECONSTRUÍDO pelo BFF via fan-out (o #590 não o expõe nativamente — CA6).
+// Sufixo de ANO no título "Linha do tempo" (o eixo X mostra só o mês) — tom mais leve que o título.
+export const cardTitleYear = style({
+  fontWeight: brand.weight.medium,
+  color: brand.color.ink400,
+})
+
 export const charts4 = style({
   display: 'grid',
   // A "Linha do tempo" (eixo X com muitos meses) ganha mais largura; os donuts Entradas/Saídas

@@ -59,7 +59,8 @@ export type FluxoCaixaTimelineProps = Readonly<{
 // Geometria (viewBox 460×260), igual aos demais gráficos de linha.
 const VB_W = 460
 const VB_H = 260
-const X0 = 34
+// X0 com folga à esquerda para o rótulo do eixo Y (ex.: "16 mil") não ser cortado na borda.
+const X0 = 48
 const X1 = 446
 const Y0 = 16
 const Y1 = 216
@@ -196,7 +197,7 @@ export function FluxoCaixaTimeline(props: FluxoCaixaTimelineProps): ReactNode {
           {props.points.map((p, i) =>
             showMonthLabel(i) ? (
               <text key={p.key} className={monthText} x={xAt(i)} y={Y1 + 18} textAnchor="middle">
-                {p.label}
+                {p.monthShort}
               </text>
             ) : null,
           )}

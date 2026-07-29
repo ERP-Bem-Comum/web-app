@@ -82,7 +82,10 @@ export type MonthlyFlow = Readonly<{
  */
 export type TimelinePoint = Readonly<{
   key: string
+  /** Rótulo completo `Mmm/AA` (tooltip). */
   label: string
+  /** Só o mês `Mmm` (eixo X — o ano vive no título do card). */
+  monthShort: string
   previstoCents: number
   realizadoCents: number
   saldoCents: number
@@ -225,6 +228,29 @@ export function formatMonthLabel(key: string): string {
   const abbr = MONTH_ABBR_PT[parsed.monthIndex] ?? key
   const yearSuffix = String(parsed.year).slice(-2)
   return `${abbr}/${yearSuffix}`
+}
+
+/** Só o nome curto do mês (`Jan`..`Dez`) a partir de `YYYY-MM` — eixo X (o ano vai pro título). */
+export function formatMonthShort(key: string): string {
+  const parsed = parseMonthKey(key)
+  if (parsed === null) return key
+  return MONTH_ABBR_PT[parsed.monthIndex] ?? key
+}
+
+/**
+ * Ano(s) cobertos pela linha do tempo, para o título do card: um único ano (`2026`) ou o intervalo
+ * (`2025–2026`). Vazio → string vazia (o título fica sem sufixo).
+ */
+export function timelineYearLabel(timeline: readonly TimelinePoint[]): string {
+  const years: number[] = []
+  for (const p of timeline) {
+    const parsed = parseMonthKey(p.key)
+    if (parsed !== null && !years.includes(parsed.year)) years.push(parsed.year)
+  }
+  if (years.length === 0) return ''
+  const min = Math.min(...years)
+  const max = Math.max(...years)
+  return min === max ? String(min) : `${String(min)}–${String(max)}`
 }
 
 // ── Agregação ──
@@ -391,6 +417,7 @@ export function buildTimeline(
     return {
       key,
       label: formatMonthLabel(key),
+      monthShort: formatMonthShort(key),
       previstoCents: a.entradasExp + a.saidasExp,
       realizadoCents: a.entradasReal + a.saidasReal,
       saldoCents: a.entradasReal - a.saidasReal,
@@ -683,6 +710,11 @@ export function formatBRLShort(cents: number): string {
     return `${sign}R$ ${(abs / 1_000).toLocaleString('pt-BR', { maximumFractionDigits: 0 })} mil`
   }
   return `${sign}R$ ${abs.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`
+}
+
+/** Igual ao `formatBRLShort`, mas SEM o prefixo `R$` — rótulos do eixo Y (evita corte na borda esquerda). */
+export function formatBRLAxis(cents: number): string {
+  return formatBRLShort(cents).replace('R$ ', '')
 }
 
 // ── Export CSV (client-side; header pt-BR fiel às 2 medidas por seção) ──
