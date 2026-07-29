@@ -37,7 +37,7 @@ import { useSavedViews, type SavedViewsBinding } from './contas-a-pagar-saved-vi
 export type ViewMode = 'document' | 'title'
 import type { DocumentStatus, RetentionType } from '#modules/financial/client/data/model/document.model.ts'
 
-const DEFAULT_PAGE_SIZE = 12
+const DEFAULT_PAGE_SIZE = 100
 const t = createTranslator(ptBR)
 // #201: órgão arrecadador por retenção (igual ao drawer): ISS → SEFIN (Sec. Mun. Finanças Fortaleza); demais → Receita Federal.
 const retentionDestino = (rt: RetentionType): string =>
