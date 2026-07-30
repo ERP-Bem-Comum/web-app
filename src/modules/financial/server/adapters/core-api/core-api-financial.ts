@@ -23,6 +23,7 @@ import {
   payableCountsToModel,
   recentPaymentsToModel,
   dashboardCostCentersToModel,
+  dashboardNoContractSuppliersToModel,
   timelineToModel,
   mapHttpError,
 } from './financial.mappers.ts'
@@ -114,6 +115,12 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
       const r = await resultFetch<unknown>(`${baseUrl}/dashboard/cost-centers`, { token })
       if (isErr(r)) return err(mapHttpError(r.error))
       return dashboardCostCentersToModel(r.value)
+    },
+    // #242: widget "Fornecedores sem Contrato" (top-5 por total pago). Gate reference:read.
+    getDashboardNoContractSuppliers: async (token) => {
+      const r = await resultFetch<unknown>(`${baseUrl}/dashboard/no-contract-suppliers`, { token })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      return dashboardNoContractSuppliersToModel(r.value)
     },
     getById: async (id, token) => {
       const r = await resultFetch<unknown>(`${docs}/${id}`, { token })

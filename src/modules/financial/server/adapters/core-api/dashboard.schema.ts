@@ -71,3 +71,17 @@ export const DashboardCostCentersResponseSchema = z.object({
 })
 
 export type CoreApiDashboardCostCenters = z.infer<typeof DashboardCostCentersResponseSchema>
+
+// ── Resposta REAL de /financial/dashboard/no-contract-suppliers (#242) ──────────────────────────
+// Top-5 fornecedores sem contrato por total pago (rank do backend). Boundary tolerante (sem .strict).
+export const DashboardNoContractSuppliersResponseSchema = z.object({
+  suppliers: z.array(
+    z.object({
+      supplierRef: z.string().trim(),
+      name: z.string().trim().nullable(),
+      totalCents: z.number(),
+    }),
+  ),
+})
+
+export type CoreApiDashboardNoContractSuppliers = z.infer<typeof DashboardNoContractSuppliersResponseSchema>

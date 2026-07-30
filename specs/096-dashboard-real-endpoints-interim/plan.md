@@ -110,8 +110,12 @@ não bug de front (ver nota de projeto). Validar em tela só com o read-model po
   no total (`totalCents/totalExpenses`). `null`/sem-nome → `—` e `0%`. ⚠️ Confirmar leitura com a P.O. em tela.
 - **Donut**: `labelKey` recebe o **nome real** do CC (passa verbatim por `t()`, que devolve a chave ausente);
   CC nulo → key i18n `dashboard.cost-center.slice.none` ("Sem centro de custo"). `id` = `ref` ou `cc-null-<i>`.
-- **Degradação**: erro do client (rede/500/403) → a fonte devolve o **interino completo** (Dashboard não cai);
-  o widget "Últimos pagamentos" surfa o próprio erro por ter query separada.
+- **Degradação POR-WIDGET** (refinado na P2): a fonte busca cost-centers (P1) e fornecedores (P2) em
+  **paralelo** (`Promise.all`); um `err` degrada **só a sua parte** para o interino, o outro widget segue
+  com dado real. O "Últimos pagamentos" surfa o próprio erro por ter query separada.
+- **Fornecedores sem contrato (P2)**: `id` = `supplierRef`, `name` = nome (nulo → `—`), `valorTotalCents`
+  = `totalCents`. A composição (`buildSuppliers`) rankeia/corta (top-6). ⚠️ Se aparecer `name` nulo real,
+  resolver nome do fornecedor (como no "Últimos pagamentos") vira follow-up.
 - **⚠️ Limitação de View (follow-up)**: o `MetricCard` tem a seta `↑` fixa. Com variação real negativa
   ("−8,3%") a seta fica incoerente. Não corrigido na P1 (só camada de dados) — candidato a follow-up.
 - `revenue`/`topFinancier` seguem o placeholder (handoff). Gráfico (P3) e fornecedores (P2) idem, por ora.

@@ -138,3 +138,11 @@ export type DashboardCostCenters = Readonly<{
   topCostCenter: Readonly<{ ref: string | null; name: string | null; totalCents: number }> | null
   distribution: readonly DashboardCostCenterSlice[]
 }>
+
+// ── Read-model CRU de /financial/dashboard/no-contract-suppliers (#242) ──────────────────────────
+/** Fornecedor sem contrato (top-N cru do backend): ref + nome (nullable) + total pago em centavos. */
+export type DashboardNoContractSupplier = Readonly<{
+  supplierRef: string
+  name: string | null
+  totalCents: number
+}>

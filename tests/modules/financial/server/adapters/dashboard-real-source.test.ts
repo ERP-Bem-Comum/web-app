@@ -10,12 +10,16 @@ import {
   formatBRLFromCents,
   formatVariationPercent,
   formatSharePercent,
-  assembleAggregationsFromCostCenters,
+  buildSuppliers,
+  assembleAggregations,
   createGetDashboardAggregationsReal,
 } from '../../../../../src/modules/financial/server/adapters/dashboard-statistics.real-source.ts'
 import { PLACEHOLDER_AGGREGATIONS } from '../../../../../src/modules/financial/server/adapters/dashboard-statistics.placeholder-source.ts'
 import { ok, err, isOk } from '../../../../../src/shared/primitives/result.ts'
-import type { DashboardCostCenters } from '../../../../../src/modules/financial/server/domain/dashboard.io.ts'
+import type {
+  DashboardCostCenters,
+  DashboardNoContractSupplier,
+} from '../../../../../src/modules/financial/server/domain/dashboard.io.ts'
 import type { FinancialClient } from '../../../../../src/modules/financial/server/application/financial.use-cases.ts'
 
 const cc: DashboardCostCenters = {
@@ -27,6 +31,11 @@ const cc: DashboardCostCenters = {
     { ref: null, name: null, totalCents: 500_000, percentage: 11.1 },
   ],
 }
+
+const suppliers: readonly DashboardNoContractSupplier[] = [
+  { supplierRef: 'sup-1', name: 'WEE TRAVEL', totalCents: 1_298_185 },
+  { supplierRef: 'sup-2', name: null, totalCents: 435_000 },
+]
 
 describe('formatBRLFromCents', () => {
   it('centavos → real com milhar e centavos', () => {
@@ -57,9 +66,19 @@ describe('formatSharePercent', () => {
   })
 })
 
-describe('assembleAggregationsFromCostCenters', () => {
-  it('liga Despesas + Top Centro + donut; mantém interinos no resto', () => {
-    const agg = assembleAggregationsFromCostCenters(cc)
+describe('buildSuppliers', () => {
+  it('mapeia ref/nome/total; nome nulo → símbolo neutro', () => {
+    const out = buildSuppliers(suppliers)
+    assert.equal(out[0]?.id, 'sup-1')
+    assert.equal(out[0]?.name, 'WEE TRAVEL')
+    assert.equal(out[0]?.valorTotalCents, 1_298_185)
+    assert.equal(out[1]?.name, '—')
+  })
+})
+
+describe('assembleAggregations', () => {
+  it('cost-centers + suppliers reais; Despesas/Top Centro/donut/fornecedores ligados', () => {
+    const agg = assembleAggregations({ costCenters: cc, suppliers })
     // Despesas: valor formatado + variação real.
     assert.match(agg.metrics.expenses.value, /45.000,00/)
     assert.equal(agg.metrics.expenses.trendPercent, '+12,5%')
@@ -71,36 +90,82 @@ describe('assembleAggregationsFromCostCenters', () => {
     assert.equal(agg.costCenters[0]?.id, 'cc-1')
     assert.equal(agg.costCenters[1]?.labelKey, 'dashboard.cost-center.slice.none')
     assert.equal(agg.costCenters[1]?.id, 'cc-null-1') // ref nulo → id sintético
-    // Interinos: Receita/Maior-Financiador/séries/fornecedores = placeholder.
+    // Fornecedores (P2): reais, não mais o placeholder.
+    assert.equal(agg.suppliersWithoutContract[0]?.id, 'sup-1')
+    assert.equal(agg.suppliersWithoutContract.length, 2)
+    // Interinos que seguem: Receita/Maior-Financiador/séries.
     assert.deepEqual(agg.metrics.revenue, PLACEHOLDER_AGGREGATIONS.metrics.revenue)
     assert.deepEqual(agg.metrics.topFinancier, PLACEHOLDER_AGGREGATIONS.metrics.topFinancier)
     assert.deepEqual(agg.monthlyForecast, PLACEHOLDER_AGGREGATIONS.monthlyForecast)
-    assert.deepEqual(agg.suppliersWithoutContract, PLACEHOLDER_AGGREGATIONS.suppliersWithoutContract)
   })
 
   it('topCostCenter nulo → valor neutro e 0%', () => {
-    const agg = assembleAggregationsFromCostCenters({ ...cc, topCostCenter: null })
+    const agg = assembleAggregations({ costCenters: { ...cc, topCostCenter: null }, suppliers })
     assert.equal(agg.metrics.topCostCenter.value, '—')
     assert.equal(agg.metrics.topCostCenter.trendPercent, '0%')
   })
+
+  it('DEGRADAÇÃO por-widget: cost-centers nulo → SÓ essa parte cai no interino, suppliers segue real', () => {
+    const agg = assembleAggregations({ costCenters: null, suppliers })
+    assert.deepEqual(agg.metrics.expenses, PLACEHOLDER_AGGREGATIONS.metrics.expenses)
+    assert.deepEqual(agg.costCenters, PLACEHOLDER_AGGREGATIONS.costCenters)
+    assert.equal(agg.suppliersWithoutContract[0]?.id, 'sup-1') // real, não interino
+  })
+
+  it('DEGRADAÇÃO por-widget: suppliers nulo → SÓ fornecedores no interino, cost-centers segue real', () => {
+    const agg = assembleAggregations({ costCenters: cc, suppliers: null })
+    assert.match(agg.metrics.expenses.value, /45.000,00/) // real
+    assert.deepEqual(agg.suppliersWithoutContract, PLACEHOLDER_AGGREGATIONS.suppliersWithoutContract)
+  })
+
+  it('ambos nulos → interino completo', () => {
+    const agg = assembleAggregations({ costCenters: null, suppliers: null })
+    assert.deepEqual(agg, PLACEHOLDER_AGGREGATIONS)
+  })
 })
 
-// Client fake mínimo — só o método que a fonte real usa.
-const fakeClient = (impl: FinancialClient['getDashboardCostCenters']): FinancialClient =>
-  ({ getDashboardCostCenters: impl }) as unknown as FinancialClient
+// Client fake mínimo — só os métodos que a fonte real usa (cost-centers + suppliers).
+const fakeClient = (
+  cost: FinancialClient['getDashboardCostCenters'],
+  sup: FinancialClient['getDashboardNoContractSuppliers'],
+): FinancialClient =>
+  ({ getDashboardCostCenters: cost, getDashboardNoContractSuppliers: sup }) as unknown as FinancialClient
 
 describe('createGetDashboardAggregationsReal', () => {
-  it('client ok → agregações reais', async () => {
-    const source = createGetDashboardAggregationsReal({ client: fakeClient(() => Promise.resolve(ok(cc))) })
+  it('ambos ok → agregações reais (cost-centers + suppliers)', async () => {
+    const source = createGetDashboardAggregationsReal({
+      client: fakeClient(
+        () => Promise.resolve(ok(cc)),
+        () => Promise.resolve(ok(suppliers)),
+      ),
+    })
     const r = await source('token')
     assert.ok(isOk(r))
     if (!isOk(r)) return
     assert.match(r.value.metrics.expenses.value, /45.000,00/)
+    assert.equal(r.value.suppliersWithoutContract[0]?.id, 'sup-1')
   })
 
-  it('client err → DEGRADA para o interino (Dashboard não cai)', async () => {
+  it('cost-centers err + suppliers ok → só cost-centers degrada (por-widget)', async () => {
     const source = createGetDashboardAggregationsReal({
-      client: fakeClient(() => Promise.resolve(err('forbidden'))),
+      client: fakeClient(
+        () => Promise.resolve(err('forbidden')),
+        () => Promise.resolve(ok(suppliers)),
+      ),
+    })
+    const r = await source('token')
+    assert.ok(isOk(r))
+    if (!isOk(r)) return
+    assert.deepEqual(r.value.metrics.expenses, PLACEHOLDER_AGGREGATIONS.metrics.expenses)
+    assert.equal(r.value.suppliersWithoutContract[0]?.id, 'sup-1')
+  })
+
+  it('ambos err → interino completo (Dashboard não cai)', async () => {
+    const source = createGetDashboardAggregationsReal({
+      client: fakeClient(
+        () => Promise.resolve(err('connectivity')),
+        () => Promise.resolve(err('forbidden')),
+      ),
     })
     const r = await source('token')
     assert.ok(isOk(r))

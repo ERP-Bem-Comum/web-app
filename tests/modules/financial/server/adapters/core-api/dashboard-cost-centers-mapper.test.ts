@@ -6,7 +6,10 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
-import { dashboardCostCentersToModel } from '../../../../../../src/modules/financial/server/adapters/core-api/financial.mappers.ts'
+import {
+  dashboardCostCentersToModel,
+  dashboardNoContractSuppliersToModel,
+} from '../../../../../../src/modules/financial/server/adapters/core-api/financial.mappers.ts'
 import { isOk, isErr } from '../../../../../../src/shared/primitives/result.ts'
 
 const validRaw = {
@@ -55,6 +58,38 @@ describe('dashboardCostCentersToModel', () => {
 
   it('drift estrutural → err(server)', () => {
     const r = dashboardCostCentersToModel({ totalExpenses: 'muito' })
+    assert.ok(isErr(r))
+    if (!isErr(r)) return
+    assert.equal(r.error, 'server')
+  })
+})
+
+describe('dashboardNoContractSuppliersToModel', () => {
+  const validRaw = {
+    suppliers: [
+      { supplierRef: 'sup-1', name: 'WEE TRAVEL', totalCents: 1_298_185 },
+      { supplierRef: 'sup-2', name: null, totalCents: 435_000 },
+    ],
+  }
+
+  it('desembrulha .suppliers preservando a ordem/rank', () => {
+    const r = dashboardNoContractSuppliersToModel(validRaw)
+    assert.ok(isOk(r))
+    if (!isOk(r)) return
+    assert.equal(r.value.length, 2)
+    assert.equal(r.value[0]?.supplierRef, 'sup-1')
+    assert.equal(r.value[1]?.name, null)
+  })
+
+  it('lista vazia é válida', () => {
+    const r = dashboardNoContractSuppliersToModel({ suppliers: [] })
+    assert.ok(isOk(r))
+    if (!isOk(r)) return
+    assert.equal(r.value.length, 0)
+  })
+
+  it('drift (sem suppliers) → err(server)', () => {
+    const r = dashboardNoContractSuppliersToModel({})
     assert.ok(isErr(r))
     if (!isErr(r)) return
     assert.equal(r.error, 'server')

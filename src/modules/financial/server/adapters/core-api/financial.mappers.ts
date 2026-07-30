@@ -33,8 +33,14 @@ import {
   CoreApiTimelineResponseSchema,
   type CoreApiPayable,
 } from './financial.schema.ts'
-import { DashboardCostCentersResponseSchema } from './dashboard.schema.ts'
-import type { DashboardCostCenters } from '#modules/financial/server/domain/dashboard.io.ts'
+import {
+  DashboardCostCentersResponseSchema,
+  DashboardNoContractSuppliersResponseSchema,
+} from './dashboard.schema.ts'
+import type {
+  DashboardCostCenters,
+  DashboardNoContractSupplier,
+} from '#modules/financial/server/domain/dashboard.io.ts'
 
 const TIMELINE_EVENT_TYPES: ReadonlySet<string> = new Set<TimelineEventType>([
   'DocumentDraftSaved',
@@ -211,6 +217,15 @@ export const dashboardCostCentersToModel = (raw: unknown): Result<DashboardCostC
   const parsed = DashboardCostCentersResponseSchema.safeParse(raw)
   if (!parsed.success) return err('server')
   return ok(parsed.data)
+}
+
+// #242: widget "Fornecedores sem Contrato" (top-5). Desembrulha `.suppliers`; drift → err('server').
+export const dashboardNoContractSuppliersToModel = (
+  raw: unknown,
+): Result<readonly DashboardNoContractSupplier[], FinancialError> => {
+  const parsed = DashboardNoContractSuppliersResponseSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  return ok(parsed.data.suppliers)
 }
 
 // Timeline → eventos CRUS (actor = UUID). Descarta entradas com eventType desconhecido (drift seguro). O
