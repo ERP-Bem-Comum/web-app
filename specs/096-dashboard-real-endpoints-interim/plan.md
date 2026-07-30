@@ -146,6 +146,21 @@ não bug de front (ver nota de projeto). Validar em tela só com o read-model po
 - **Client (MVVM)**: `model` + `repository`(→fn) + `*.query.ts` (keyed) + `*.view-model.ts` (opções/estado
   de seleção, puro) + `*.binding.ts` + componente `plan-selector` (View burra) no `dashboard-content`.
 
+### P3 — implementado (decisões efetivas)
+
+- **Padrão = "Todos os planos (somados)"** (decisão da P.O.). Dropdown no cabeçalho da "Visão geral":
+  "Todos somados" + cada plano aprovado (`programa · vX`). Trocar refetcha SÓ o gráfico (query keyed +
+  `placeholderData` p/ não piscar). Cenários (`parentId != null`) excluídos da soma.
+- **Cross-endpoint no BFF do financial** (sem acoplamento cross-módulo no front): `/reports/dashboard/realized`
+  - `/budget-plans?status=APROVADO&year=`. Fan-out **fail-closed** (plano faltante → chart indisponível).
+- **Ano corrente** via `useState(() => new Date().getFullYear())` no binding (lazy-init; relógio no render é
+  proibido §XI/SSR).
+- **Eixo Y dinâmico** (nice 1/2/5×10^n) na composição pura do gráfico.
+- **Summary `chart` SUPERSEDED**: a View passou a consumir a query própria; o `chart` do summary DTO ainda é
+  produzido (interino) mas não é mais renderizado — mantido p/ não quebrar composição/DTO/testes. O gráfico
+  vive dentro do `DashboardContent` (renderiza quando o summary está `ready`); tem estados próprios
+  (loading/empty/error/forbidden) internos.
+
 ## Plano de Testes (TDD)
 
 - **Puro (`node:test`)**:

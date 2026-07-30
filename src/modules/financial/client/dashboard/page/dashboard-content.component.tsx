@@ -12,9 +12,11 @@ import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 
 import type { RecentPaymentsView } from '../recent-payments.binding.ts'
+import type { DashboardRealizedView, RealizedStatus } from '../dashboard-realized.binding.ts'
 import { RecentPaymentsWidget } from '../components/recent-payments-widget.component.tsx'
 import { MetricCard } from '../components/metric-card.component.tsx'
 import { LineChart } from '../components/line-chart.component.tsx'
+import { PlanSelector } from '../components/plan-selector.component.tsx'
 import { DonutChart } from '../components/donut-chart.component.tsx'
 import {
   SuppliersWithoutContractCard,
@@ -22,7 +24,6 @@ import {
 } from '../components/suppliers-without-contract-card.component.tsx'
 import {
   toMetricCards,
-  toChartSeries,
   toDonutSlices,
   deriveSupplierComplianceBars,
   formatSupplierBRL,
@@ -34,6 +35,7 @@ import {
   contentRow,
   overviewCard,
   overviewHeader,
+  overviewActions,
   overviewTitles,
   overviewTitle,
   overviewLegend,
@@ -41,11 +43,22 @@ import {
   legendRealized,
   legendSep,
   seeAllLink,
+  stateMessage,
   costCenterCard,
   costCenterTitle,
   leftColumn,
   rightColumn,
 } from './dashboard.css.ts'
+
+// Estado do gráfico Realizado × Previsto (P3) → chave i18n da mensagem (loading reusa a do Dashboard).
+// `ready` nunca renderiza mensagem (mostra o gráfico); entra só p/ o índice ser total (type-safe).
+const REALIZED_STATE_KEY: Readonly<Record<RealizedStatus, string>> = {
+  loading: 'dashboard.state.loading',
+  empty: 'dashboard.realized.empty',
+  error: 'dashboard.realized.error',
+  forbidden: 'dashboard.realized.forbidden',
+  ready: 'dashboard.state.loading',
+}
 
 const t = createTranslator(ptBR)
 
@@ -68,6 +81,8 @@ const MONTH_LABELS = [
 export type DashboardContentProps = Readonly<{
   data: DashboardStatistics
   recent: RecentPaymentsView
+  /** Gráfico Realizado × Previsto (P3): série + seletor de plano (query própria). */
+  realized: DashboardRealizedView
   /** Anima a entrada das barras de compliance (largura cresce quando true). */
   animate: boolean
   /** "Ver tudo" da "Visão geral" (Previsto × Realizado) → relatório Realizado × Planejado. */
@@ -77,11 +92,16 @@ export type DashboardContentProps = Readonly<{
 }>
 
 export function DashboardContent(props: DashboardContentProps): ReactNode {
-  const { data, recent } = props
+  const { data, recent, realized } = props
 
   const metricCards = toMetricCards(data)
-  const chartSeries = toChartSeries(data)
   const donutSlices = toDonutSlices(data)
+
+  // Opções do <select> com o rótulo já resolvido (o "Todos somados" é chave i18n; planos vêm prontos).
+  const selectorOptions = realized.options.map((o) => ({
+    value: o.value,
+    label: o.translate ? t(o.label) : o.label,
+  }))
 
   // Barras de compliance: derivadas (puro) do DTO e mapeadas p/ a view burra (textos formatados). Preview: até 6.
   const supplierBars: readonly SupplierBar[] = deriveSupplierComplianceBars(
@@ -129,18 +149,31 @@ export function DashboardContent(props: DashboardContentProps): ReactNode {
                   <span className={legendRealized}>{t('dashboard.chart.series.realized')}</span>
                 </p>
               </div>
-              <button type="button" className={seeAllLink} onClick={props.onSeeAllOverview}>
-                {t('dashboard.overview.see-all')}
-              </button>
+              <div className={overviewActions}>
+                {/* Seletor de plano (P3): "Todos somados" (padrão) + cada plano aprovado vigente. */}
+                <PlanSelector
+                  ariaLabel={t('dashboard.realized.selector-label')}
+                  value={realized.selectedValue}
+                  options={selectorOptions}
+                  onChange={realized.onSelect}
+                />
+                <button type="button" className={seeAllLink} onClick={props.onSeeAllOverview}>
+                  {t('dashboard.overview.see-all')}
+                </button>
+              </div>
             </div>
-            <LineChart
-              series={chartSeries}
-              yMax={data.chart.yMax}
-              yTicks={data.chart.yTicks}
-              months={data.chart.months}
-              monthLabels={MONTH_LABELS}
-              seriesLabel={(s) => t(s.labelKey)}
-            />
+            {realized.status === 'ready' && realized.chart !== null ? (
+              <LineChart
+                series={realized.chart.series}
+                yMax={realized.chart.yMax}
+                yTicks={realized.chart.yTicks}
+                months={realized.chart.months}
+                monthLabels={MONTH_LABELS}
+                seriesLabel={(s) => t(s.labelKey)}
+              />
+            ) : (
+              <p className={stateMessage}>{t(REALIZED_STATE_KEY[realized.status])}</p>
+            )}
           </section>
 
           {/* "Últimos pagamentos realizados" (dados REAIS, 042) — embaixo do gráfico, como no legado */}
