@@ -6,7 +6,9 @@
 import { loadEnvOrThrow } from '#external/config/env.config.ts'
 import { coreApiBase } from '#external/core-api/api-base.ts'
 import { createCoreApiFinancialClient } from './core-api/core-api-financial.ts'
+import { createDashboardRealizedClient } from './core-api/core-api-dashboard-realized.ts'
 import { createGetDashboardAggregationsReal } from './dashboard-statistics.real-source.ts'
+import { createGetDashboardRealized } from '#modules/financial/server/application/dashboard-realized.use-cases.ts'
 import {
   createListDocuments,
   createListPayableTitles,
@@ -29,7 +31,10 @@ type FinancialServer = ReturnType<typeof build>
 
 const build = () => {
   const env = loadEnvOrThrow()
-  const client = createCoreApiFinancialClient(`${coreApiBase(env.CORE_API_URL, 'v2')}/financial`)
+  const base = coreApiBase(env.CORE_API_URL, 'v2')
+  const client = createCoreApiFinancialClient(`${base}/financial`)
+  // P3: gráfico Realizado × Previsto orquestra /reports/dashboard/realized + /budget-plans (base raiz).
+  const realizedClient = createDashboardRealizedClient(base)
   return {
     listDocuments: createListDocuments({ client }),
     listPayableTitles: createListPayableTitles({ client }),
@@ -50,6 +55,8 @@ const build = () => {
     getDashboardStatistics: createGetDashboardStatistics({
       source: { getAggregations: createGetDashboardAggregationsReal({ client }) },
     }),
+    // P3 (specs/096): gráfico Realizado × Previsto — planos aprovados vigentes (todos somados | 1 plano).
+    getDashboardRealized: createGetDashboardRealized({ client: realizedClient }),
   }
 }
 

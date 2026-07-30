@@ -120,6 +120,32 @@ não bug de front (ver nota de projeto). Validar em tela só com o read-model po
   ("−8,3%") a seta fica incoerente. Não corrigido na P1 (só camada de dados) — candidato a follow-up.
 - `revenue`/`topFinancier` seguem o placeholder (handoff). Gráfico (P3) e fornecedores (P2) idem, por ora.
 
+## P3 — arquitetura (gráfico Realizado × Previsto com seletor)
+
+**Tamanho**: L (cross-endpoint no BFF + fan-out + query própria + seletor na View + eixo Y dinâmico).
+
+- **Fonte de dados (2 endpoints core-api, orquestrados pelo BFF do dashboard/financial)**:
+  - `GET /reports/dashboard/realized?budgetPlanId&year` → `chart[12]` (`expectedCents`/`realizedCents`).
+  - `GET /budget-plans?status=APROVADO&year=<ano>` → lista de planos aprovados vigentes (id + rótulo).
+  - Sem acoplamento cross-módulo no FRONT: o BFF do dashboard fala direto com esses endpoints core-api
+    (papel da server fn, §III). Bases distintas (`/reports`, `/budget-plans`) → client dedicado do gráfico.
+- **Seleção**: `{ kind: 'all' }` (padrão) | `{ kind: 'plan'; budgetPlanId }`.
+  - `all`: lista aprovados do ano → **fan-out** (1 realized por plano) → **soma** as 12 posições. **Fail-closed**:
+    se algum plano falhar, o gráfico fica indisponível (NÃO soma faltante como zero — FR/cenário 4).
+  - `plan`: 1 chamada realized.
+- **Ano**: corrente (2026) — o "Resumo Mensal" compara o ano atual. Vigente = `status APROVADO` + `year` = ano.
+- **Server fn dedicada** `dashboardRealizedFn({ year, selection })` → `{ options: PlanOption[]; chart }`.
+  `options` = "Todos (somados)" implícito no client + cada plano (rótulo = programa · v{versão}). Query do
+  client **keyed pela seleção** → trocar plano refetcha SÓ o gráfico (server-state ≠ UI-state, §V).
+- **Eixo Y dinâmico**: o `yMax`/`yTicks` fixos (18M) da composição do summary NÃO servem p/ dado real
+  (clipa/encolhe). O chart real deriva `yMax` do máximo das séries (arredondado) + 4 ticks. Vive numa
+  composição PURA do gráfico (testável), separada do summary.
+- **View**: some do `data.chart` do summary; o gráfico passa a consumir a query própria + ganha o **dropdown**
+  no cabeçalho "Visão geral". O `chart` do summary DTO fica **superseded** (mantido p/ não quebrar
+  composição/testes; documentado). i18n nova p/ o seletor.
+- **Client (MVVM)**: `model` + `repository`(→fn) + `*.query.ts` (keyed) + `*.view-model.ts` (opções/estado
+  de seleção, puro) + `*.binding.ts` + componente `plan-selector` (View burra) no `dashboard-content`.
+
 ## Plano de Testes (TDD)
 
 - **Puro (`node:test`)**:

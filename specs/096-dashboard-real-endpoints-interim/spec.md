@@ -78,26 +78,32 @@ lista mostra nome + total reais, ordenados por total desc, e as barras coloridas
 
 ---
 
-### User Story 3 - Gráfico Realizado × Previsto real (Priority: P3)
+### User Story 3 - Gráfico Realizado × Previsto real, com seletor de plano (Priority: P3)
 
-Como gestor, quero o gráfico mensal **Previsto × Realizado** do Dashboard alimentado pelo endpoint real
-(`/reports/dashboard/realized`), refletindo um plano orçamentário e ano concretos.
+Como gestor, quero o gráfico mensal **Previsto × Realizado** do Dashboard alimentado pelos planos
+**aprovados e vigentes** (mesmo ano do realizado comparado), podendo **escolher um plano** por um
+dropdown OU ver **todos os aprovados vigentes somados** (padrão).
 
-**Why this priority**: É o único que **exige input** (`budgetPlanId` + `year`) — o Dashboard precisa
-decidir qual plano/ano exibir. Maior superfície de decisão de produto → fica por último.
+**Why this priority**: É o único que **exige input** (`budgetPlanId` + `year`) e envolve mais decisão de
+produto (qual plano, agregação de vários). O endpoint `/reports/dashboard/realized` é **por 1 plano** →
+o "todos somados" é fan-out no BFF (uma chamada por plano aprovado vigente, somando as 12 posições).
 
-**Independent Test**: Com um plano orçamentário do ano corrente populado, abrir o Dashboard e verificar
-que as séries Previsto/Realizado do gráfico batem com o `chart[12]` do endpoint (convertendo centavos →
-a escala de REAIS que o eixo Y usa).
+**Independent Test**: Com ≥2 planos aprovados do ano corrente populados, abrir o Dashboard e verificar
+que o gráfico mostra por padrão a **soma** das séries dos planos aprovados; trocar no dropdown para um
+plano específico e ver as séries daquele plano; conferir a conversão centavos → REAIS.
 
 **Acceptance Scenarios**:
 
-1. **Given** existe um plano orçamentário do ano corrente, **When** a tela carrega, **Then** as séries
-   `forecast`/`realized` usam `expectedCents`/`realizedCents` dos 12 pontos, convertidos para a escala
-   de REAIS do eixo.
-2. **Given** nenhum plano do ano casa (ou o read está indisponível → 503), **When** a tela carrega,
-   **Then** o gráfico mostra o estado vazio/indisponível previsto, sem derrubar os demais widgets do
-   Dashboard.
+1. **Given** existem N planos APROVADOS vigentes no ano, **When** a tela carrega, **Then** o gráfico
+   mostra a **soma** mês a mês (12 posições) de `expectedCents`/`realizedCents` dos N planos (padrão
+   "Todos (somados)"), convertida para REAIS.
+2. **Given** o dropdown lista "Todos (somados)" + cada plano aprovado vigente, **When** a pessoa escolhe
+   um plano específico, **Then** o gráfico re-consulta e passa a mostrar só as séries daquele plano —
+   **sem** refetchar os demais widgets (query própria do gráfico).
+3. **Given** nenhum plano aprovado vigente no ano (ou o read indisponível → 503), **When** a tela
+   carrega, **Then** o gráfico mostra o estado vazio/indisponível, sem derrubar os demais widgets.
+4. **Given** um dos N planos falha no fan-out do "todos somados", **When** a soma é montada, **Then** o
+   comportamento é honesto (não somar um plano faltante como zero silencioso — ver Assumptions).
 
 ---
 
