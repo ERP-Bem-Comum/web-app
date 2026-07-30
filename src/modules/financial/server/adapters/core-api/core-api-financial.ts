@@ -22,6 +22,7 @@ import {
   payableTitlesToModel,
   payableCountsToModel,
   recentPaymentsToModel,
+  dashboardCostCentersToModel,
   timelineToModel,
   mapHttpError,
 } from './financial.mappers.ts'
@@ -107,6 +108,12 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
       const r = await resultFetch<unknown>(`${baseUrl}/dashboard/recent-payments`, { token })
       if (isErr(r)) return err(mapHttpError(r.error))
       return recentPaymentsToModel(r.value)
+    },
+    // #241/#237: KPI "Despesas por Centro de Custo" (cost-centers + variação M-1 vs M-2). Gate reference:read.
+    getDashboardCostCenters: async (token) => {
+      const r = await resultFetch<unknown>(`${baseUrl}/dashboard/cost-centers`, { token })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      return dashboardCostCentersToModel(r.value)
     },
     getById: async (id, token) => {
       const r = await resultFetch<unknown>(`${docs}/${id}`, { token })

@@ -33,6 +33,8 @@ import {
   CoreApiTimelineResponseSchema,
   type CoreApiPayable,
 } from './financial.schema.ts'
+import { DashboardCostCentersResponseSchema } from './dashboard.schema.ts'
+import type { DashboardCostCenters } from '#modules/financial/server/domain/dashboard.io.ts'
 
 const TIMELINE_EVENT_TYPES: ReadonlySet<string> = new Set<TimelineEventType>([
   'DocumentDraftSaved',
@@ -201,6 +203,14 @@ export const recentPaymentsToModel = (raw: unknown): Result<readonly RecentPayme
     paidAt: p.paidAt,
   }))
   return ok(items)
+}
+
+// #241/#237: KPI "Despesas por Centro de Custo" (cost-centers). Parse tolerante; drift → err('server').
+// O output do schema é estruturalmente o `DashboardCostCenters` do domínio (a fonte real formata/compõe).
+export const dashboardCostCentersToModel = (raw: unknown): Result<DashboardCostCenters, FinancialError> => {
+  const parsed = DashboardCostCentersResponseSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  return ok(parsed.data)
 }
 
 // Timeline → eventos CRUS (actor = UUID). Descarta entradas com eventType desconhecido (drift seguro). O

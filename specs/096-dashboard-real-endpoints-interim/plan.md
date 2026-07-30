@@ -99,6 +99,23 @@ não bug de front (ver nota de projeto). Validar em tela só com o read-model po
 - **`dashboard.schema.ts`**: passa a validar a resposta real de cada endpoint (ou um schema por endpoint +
   o assembler produz `DashboardAggregations`). Zod na borda, nunca no domínio.
 
+## Decisões tomadas na P1 (implementado)
+
+- **Formatação na FONTE, não refatorar a métrica p/ numérica**: a composição hoje só REPASSA as strings
+  (nunca formatou). Para não tocar DTO/View/composição/testes existentes E não fabricar zeros numéricos
+  para `revenue`/`topFinancier` (sem endpoint), a fonte real (`dashboard-statistics.real-source.ts`)
+  formata `expenses`/`topCostCenter` e mantém a forma string de `RawMetricAggregation`. Helpers puros
+  (`formatBRLFromCents`/`formatVariationPercent`/`formatSharePercent`) exportados e testados.
+- **Card "Top Centro de Custo"**: `value` = **nome** do CC (qual é o maior) e `trendPercent` = **participação**
+  no total (`totalCents/totalExpenses`). `null`/sem-nome → `—` e `0%`. ⚠️ Confirmar leitura com a P.O. em tela.
+- **Donut**: `labelKey` recebe o **nome real** do CC (passa verbatim por `t()`, que devolve a chave ausente);
+  CC nulo → key i18n `dashboard.cost-center.slice.none` ("Sem centro de custo"). `id` = `ref` ou `cc-null-<i>`.
+- **Degradação**: erro do client (rede/500/403) → a fonte devolve o **interino completo** (Dashboard não cai);
+  o widget "Últimos pagamentos" surfa o próprio erro por ter query separada.
+- **⚠️ Limitação de View (follow-up)**: o `MetricCard` tem a seta `↑` fixa. Com variação real negativa
+  ("−8,3%") a seta fica incoerente. Não corrigido na P1 (só camada de dados) — candidato a follow-up.
+- `revenue`/`topFinancier` seguem o placeholder (handoff). Gráfico (P3) e fornecedores (P2) idem, por ora.
+
 ## Plano de Testes (TDD)
 
 - **Puro (`node:test`)**:

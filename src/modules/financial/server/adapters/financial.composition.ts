@@ -6,7 +6,7 @@
 import { loadEnvOrThrow } from '#external/config/env.config.ts'
 import { coreApiBase } from '#external/core-api/api-base.ts'
 import { createCoreApiFinancialClient } from './core-api/core-api-financial.ts'
-import { getDashboardAggregationsPlaceholder } from './dashboard-statistics.placeholder-source.ts'
+import { createGetDashboardAggregationsReal } from './dashboard-statistics.real-source.ts'
 import {
   createListDocuments,
   createListPayableTitles,
@@ -45,9 +45,10 @@ const build = () => {
     cancelDocument: createCancelDocument({ client }),
     registerManualPayment: createRegisterManualPayment({ client }),
     getRecentPayments: createGetRecentPayments({ client }),
-    // Dashboard (052/#352): fonte de agregações INTERINA (placeholder até core-api#112) + composição pura.
+    // Dashboard (specs/096): de-interim FASEADO. P1 = cost-centers real (#241/#237); P2/P3 e as métricas
+    // Receita/Maior-Financiador (sem endpoint) seguem interinas dentro da fonte real. Composição pura intacta.
     getDashboardStatistics: createGetDashboardStatistics({
-      source: { getAggregations: getDashboardAggregationsPlaceholder },
+      source: { getAggregations: createGetDashboardAggregationsReal({ client }) },
     }),
   }
 }

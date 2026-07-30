@@ -2395,6 +2395,8 @@ export const ptBR: Catalog = {
   'dashboard.cost-center.slice.logistics': 'Logística',
   'dashboard.cost-center.slice.admin': 'Administração',
   'dashboard.cost-center.slice.events': 'Eventos',
+  // specs/096 — fatia do donut quando o título não tem centro de custo (name nulo no cost-centers real).
+  'dashboard.cost-center.slice.none': 'Sem centro de custo',
 
   // Linha 2 — direita-baixo: card "Fornecedores sem Contrato"
   'dashboard.suppliers-no-contract.title': 'Fornecedores sem Contrato',
