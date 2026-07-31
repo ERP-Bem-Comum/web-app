@@ -2386,6 +2386,12 @@ export const ptBR: Catalog = {
   'dashboard.overview.see-all': 'Ver tudo',
   'dashboard.chart.series.forecast': 'Previsto',
   'dashboard.chart.series.realized': 'Realizado',
+  // specs/096 P3 — seletor de plano do gráfico Realizado × Previsto.
+  'dashboard.realized.all': 'Todos os planos (somados)',
+  'dashboard.realized.selector-label': 'Plano orçamentário do gráfico',
+  'dashboard.realized.empty': 'Nenhum plano aprovado vigente neste ano.',
+  'dashboard.realized.error': 'Não foi possível carregar o gráfico.',
+  'dashboard.realized.forbidden': 'Sem permissão para ver o gráfico.',
 
   // Linha 2 — direita-topo: donut "Pagamentos por Centro de Custo em %"
   'dashboard.cost-center.title': 'Pagamentos por Centro de Custo em %',
@@ -2395,6 +2401,8 @@ export const ptBR: Catalog = {
   'dashboard.cost-center.slice.logistics': 'Logística',
   'dashboard.cost-center.slice.admin': 'Administração',
   'dashboard.cost-center.slice.events': 'Eventos',
+  // specs/096 — fatia do donut quando o título não tem centro de custo (name nulo no cost-centers real).
+  'dashboard.cost-center.slice.none': 'Sem centro de custo',
 
   // Linha 2 — direita-baixo: card "Fornecedores sem Contrato"
   'dashboard.suppliers-no-contract.title': 'Fornecedores sem Contrato',

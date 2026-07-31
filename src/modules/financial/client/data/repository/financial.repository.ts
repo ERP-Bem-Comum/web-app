@@ -23,6 +23,10 @@ import type {
 } from '#modules/financial/client/data/model/document.model.ts'
 import type { RecentPayment } from '#modules/financial/client/data/model/recent-payment.model.ts'
 import type { DashboardStatistics } from '#modules/financial/client/data/model/dashboard-statistics.model.ts'
+import type {
+  DashboardRealizedInput,
+  DashboardRealizedResult,
+} from '#modules/financial/client/data/model/dashboard-realized.model.ts'
 import type { FinancialError, FnResult } from '#modules/financial/client/data/repository/financial-error.ts'
 
 type ListFn = (opts: { data: ListDocumentsInput }) => Promise<FnResult<DocumentListResponse>>
@@ -43,6 +47,10 @@ type PayFn = (opts: { data: ManualPaymentInput }) => Promise<FnResult<DocumentDe
 type RecentPaymentsFn = () => Promise<FnResult<readonly RecentPayment[]>>
 // 052: estatísticas do Dashboard — sem input (o BFF compõe o DTO completo).
 type DashboardStatisticsFn = () => Promise<FnResult<DashboardStatistics>>
+// specs/096 P3: gráfico Realizado × Previsto — input (ano + seleção); o BFF lista aprovados + fan-out.
+type DashboardRealizedFn = (opts: {
+  data: DashboardRealizedInput
+}) => Promise<FnResult<DashboardRealizedResult>>
 
 export type FinancialRepository = Readonly<{
   list: (input: ListDocumentsInput) => Promise<Result<DocumentListResponse, FinancialError>>
@@ -70,6 +78,10 @@ export type FinancialRepository = Readonly<{
   getRecentPayments: () => Promise<Result<readonly RecentPayment[], FinancialError>>
   // 052: estatísticas do Dashboard (DTO completo composto no BFF). Sem input.
   getDashboardStatistics: () => Promise<Result<DashboardStatistics, FinancialError>>
+  // specs/096 P3: gráfico Realizado × Previsto (planos aprovados vigentes; todos somados | 1 plano).
+  getDashboardRealized: (
+    input: DashboardRealizedInput,
+  ) => Promise<Result<DashboardRealizedResult, FinancialError>>
 }>
 
 export const createFinancialRepository = (
@@ -89,6 +101,7 @@ export const createFinancialRepository = (
     registerManualPaymentFn: PayFn
     recentPaymentsFn: RecentPaymentsFn
     dashboardStatisticsFn: DashboardStatisticsFn
+    dashboardRealizedFn: DashboardRealizedFn
   }>,
 ): FinancialRepository => ({
   list: async (input) => {
@@ -149,6 +162,10 @@ export const createFinancialRepository = (
   },
   getDashboardStatistics: async () => {
     const res = await deps.dashboardStatisticsFn()
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  getDashboardRealized: async (input) => {
+    const res = await deps.dashboardRealizedFn({ data: input })
     return res.ok ? ok(res.data) : err(res.error)
   },
 })

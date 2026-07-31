@@ -10,6 +10,7 @@ import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 import { DashboardContent } from '#modules/financial/client/dashboard/page/dashboard-content.component.tsx'
 import type { DashboardStatistics } from '#modules/financial/client/data/model/dashboard-statistics.model.ts'
 import type { RecentPaymentsView } from '#modules/financial/client/dashboard/recent-payments.binding.ts'
+import type { DashboardRealizedView } from '#modules/financial/client/dashboard/dashboard-realized.binding.ts'
 
 afterEach(() => {
   cleanup()
@@ -84,12 +85,22 @@ const STATS: DashboardStatistics = {
 
 const RECENT: RecentPaymentsView = { status: 'empty', rows: [] }
 
+// P3: gráfico Realizado × Previsto pronto (reusa a série do STATS só p/ ter um chart válido).
+const REALIZED: DashboardRealizedView = {
+  status: 'ready',
+  chart: STATS.chart,
+  options: [{ value: 'all', label: 'dashboard.realized.all', translate: true }],
+  selectedValue: 'all',
+  onSelect: () => undefined,
+}
+
 describe('DashboardContent', () => {
   it('renderiza os 4 cards de métrica (rótulos i18n) a partir do DTO', () => {
     render(
       <DashboardContent
         data={STATS}
         recent={RECENT}
+        realized={REALIZED}
         animate={false}
         onSeeAllOverview={() => undefined}
         onSeeAllSuppliers={() => undefined}
@@ -108,6 +119,7 @@ describe('DashboardContent', () => {
       <DashboardContent
         data={STATS}
         recent={RECENT}
+        realized={REALIZED}
         animate={false}
         onSeeAllOverview={() => undefined}
         onSeeAllSuppliers={() => undefined}
@@ -125,6 +137,7 @@ describe('DashboardContent', () => {
       <DashboardContent
         data={STATS}
         recent={RECENT}
+        realized={REALIZED}
         animate={false}
         onSeeAllOverview={() => undefined}
         onSeeAllSuppliers={() => undefined}
@@ -143,6 +156,7 @@ describe('DashboardContent', () => {
       <DashboardContent
         data={STATS}
         recent={RECENT}
+        realized={REALIZED}
         animate={false}
         onSeeAllOverview={onSeeAllOverview}
         onSeeAllSuppliers={onSeeAllSuppliers}

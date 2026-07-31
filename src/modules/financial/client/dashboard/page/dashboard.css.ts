@@ -109,6 +109,15 @@ export const overviewHeader = style({
   gap: vars.space.md,
 })
 
+// specs/096 P3 — agrupa o seletor de plano + o "Ver tudo" no canto direito do cabeçalho da "Visão geral".
+export const overviewActions = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  flexWrap: 'wrap',
+  justifyContent: 'flex-end',
+})
+
 export const overviewTitles = style({
   display: 'flex',
   flexDirection: 'column',
