@@ -16,6 +16,7 @@ import { header, headText, headTitle, headSubtitle } from '#shared/ui/brand/bran
 
 import { useDashboardStatistics } from '../dashboard-statistics.binding.ts'
 import { useRecentPayments } from '../recent-payments.binding.ts'
+import { useDashboardRealized } from '../dashboard-realized.binding.ts'
 import { DashboardContent } from './dashboard-content.component.tsx'
 import { page, stateMessage } from './dashboard.css.ts'
 
@@ -24,6 +25,8 @@ const t = createTranslator(ptBR)
 export function DashboardPage() {
   const stats = useDashboardStatistics()
   const recent = useRecentPayments()
+  // P3: gráfico Realizado × Previsto do ANO CORRENTE (planos aprovados vigentes; padrão "todos somados").
+  const realized = useDashboardRealized()
   const navigate = useNavigate()
 
   // "Ver tudo" dos cards → módulo de Relatórios (rota específica de cada relatório).
@@ -62,6 +65,7 @@ export function DashboardPage() {
         <DashboardContent
           data={stats.data}
           recent={recent}
+          realized={realized}
           animate={animateBars}
           onSeeAllOverview={onSeeAllOverview}
           onSeeAllSuppliers={onSeeAllSuppliers}

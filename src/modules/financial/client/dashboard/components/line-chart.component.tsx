@@ -42,9 +42,16 @@ const PAD_BOTTOM = 32
 const PLOT_W = VB_W - PAD_LEFT - PAD_RIGHT
 const PLOT_H = VB_H - PAD_TOP - PAD_BOTTOM
 
-// Rótulo do eixo Y — escala em MILHÕES (R$Xm), fiel ao legado (R$0/R$4.5M/…/R$18M).
-const formatAxis = (value: number): string =>
-  value === 0 ? 'R$0' : `R$${(value / 1_000_000).toLocaleString('pt-BR')}M`
+// Rótulo do eixo Y — escala ADAPTATIVA pela grandeza do eixo (`yMax`): milhões (R$XM), milhares (R$Xk)
+// ou reais (R$X). O legado era FIXO em R$M e zerava dado pequeno (P3 alimenta séries reais de qualquer
+// magnitude — ex.: yMax R$50 virava "R$0M" em todos os ticks). yMax≥18M continua "R$…M" (retrocompatível).
+const formatAxis = (value: number, yMax: number): string => {
+  if (value === 0) return 'R$0'
+  const nf = (n: number): string => n.toLocaleString('pt-BR', { maximumFractionDigits: 1 })
+  if (yMax >= 1_000_000) return `R$${nf(value / 1_000_000)}M`
+  if (yMax >= 1_000) return `R$${nf(value / 1_000)}k`
+  return `R$${nf(value)}`
+}
 
 // Valor no tooltip — BRL completo com centavos (ex.: "R$ 8.900.000,00").
 const formatBRL = (value: number): string =>
@@ -160,7 +167,7 @@ export function LineChart(props: LineChartProps): ReactNode {
                   strokeDasharray="4 4"
                 />
                 <text className={yLabel} x={PAD_LEFT - 8} y={y} textAnchor="end" dominantBaseline="middle">
-                  {formatAxis(tick)}
+                  {formatAxis(tick, yMax)}
                 </text>
               </g>
             )

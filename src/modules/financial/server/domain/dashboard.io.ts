@@ -105,3 +105,44 @@ export type DashboardAggregations = Readonly<{
   /** fornecedores sem contrato (top-N cru): id/nome/total pago em centavos */
   suppliersWithoutContract: readonly Readonly<{ id: string; name: string; valorTotalCents: number }>[]
 }>
+
+// ── Read-model CRU do endpoint /financial/dashboard/cost-centers (#241 + motor #237) ────────────
+// KPI "Despesas por Centro de Custo": base = títulos Pagos no mês de referência (M-1); a variação é
+// M-1 vs M-2. O core devolve NÚMEROS prontos (centavos); a formatação humana é do BFF (a fonte real
+// formata ao montar `DashboardAggregations`). `ref`/`name` nullable (CC nulo = título sem centro).
+
+/**
+ * Variação percentual do motor #237 — UNIÃO DISCRIMINADA (§IV): a borda formata, o domínio não.
+ * `value` = percentual finito assinado (ex.: 12.5 = +12,5%); `no-change` = ambos zero → "0%";
+ * `new` = base zero e atual > 0 (crescimento infinito) → "+".
+ */
+export type DashboardVariationPercent =
+  | Readonly<{ kind: 'value'; percent: number }>
+  | Readonly<{ kind: 'no-change' }>
+  | Readonly<{ kind: 'new' }>
+
+/** Fatia da distribuição por centro de custo (só total M-1 > 0, já rankeada desc por `totalCents`). */
+export type DashboardCostCenterSlice = Readonly<{
+  ref: string | null
+  name: string | null
+  totalCents: number
+  percentage: number
+}>
+
+/** Resposta CRUA de `/financial/dashboard/cost-centers` (o front formata/compõe a partir daqui). */
+export type DashboardCostCenters = Readonly<{
+  /** Σ dos totais M-1 de todos os CCs (centavos). */
+  totalExpenses: number
+  variation: Readonly<{ absoluteCents: number; percentage: DashboardVariationPercent }>
+  /** CC com maior total M-1; `null` quando não houve despesa paga em M-1. */
+  topCostCenter: Readonly<{ ref: string | null; name: string | null; totalCents: number }> | null
+  distribution: readonly DashboardCostCenterSlice[]
+}>
+
+// ── Read-model CRU de /financial/dashboard/no-contract-suppliers (#242) ──────────────────────────
+/** Fornecedor sem contrato (top-N cru do backend): ref + nome (nullable) + total pago em centavos. */
+export type DashboardNoContractSupplier = Readonly<{
+  supplierRef: string
+  name: string | null
+  totalCents: number
+}>

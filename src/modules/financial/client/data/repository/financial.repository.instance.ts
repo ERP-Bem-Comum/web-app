@@ -17,6 +17,7 @@ import { cancelDocumentFn } from '#modules/financial/server/adapters/server-fns/
 import { registerManualPaymentFn } from '#modules/financial/server/adapters/server-fns/register-manual-payment.service.fn.ts'
 import { recentPaymentsFn } from '#modules/financial/server/adapters/server-fns/recent-payments.query.fn.ts'
 import { getDashboardStatisticsFn } from '#modules/financial/server/adapters/server-fns/get-dashboard-statistics.query.fn.ts'
+import { dashboardRealizedFn } from '#modules/financial/server/adapters/server-fns/dashboard-realized.query.fn.ts'
 
 import { createFinancialRepository } from './financial.repository.ts'
 
@@ -36,4 +37,5 @@ export const financialRepository = createFinancialRepository({
   registerManualPaymentFn: (opts) => registerManualPaymentFn(opts),
   recentPaymentsFn: () => recentPaymentsFn(),
   dashboardStatisticsFn: () => getDashboardStatisticsFn(),
+  dashboardRealizedFn: (opts) => dashboardRealizedFn(opts),
 })

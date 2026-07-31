@@ -23,6 +23,10 @@ import type {
   DocumentTimelineEvent,
   DocumentSourceFile,
 } from '#modules/financial/server/domain/document.io.ts'
+import type {
+  DashboardCostCenters,
+  DashboardNoContractSupplier,
+} from '#modules/financial/server/domain/dashboard.io.ts'
 
 export type FinancialClient = Readonly<{
   list: (input: ListDocumentsInput, token: string) => Promise<Result<DocumentListResponse, FinancialError>>
@@ -53,6 +57,12 @@ export type FinancialClient = Readonly<{
     token: string,
   ) => Promise<Result<DocumentDetail, FinancialError>>
   getRecentPayments: (token: string) => Promise<Result<readonly RecentPayment[], FinancialError>>
+  // #241/#237: KPI "Despesas por Centro de Custo" do Dashboard (cost-centers + variação M-1 vs M-2).
+  getDashboardCostCenters: (token: string) => Promise<Result<DashboardCostCenters, FinancialError>>
+  // #242: widget "Fornecedores sem Contrato" do Dashboard (top-5 por total pago).
+  getDashboardNoContractSuppliers: (
+    token: string,
+  ) => Promise<Result<readonly DashboardNoContractSupplier[], FinancialError>>
   // #536: contagem agregada por status (chips do grid).
   getPayableCounts: (
     input: PayableCountsInput,

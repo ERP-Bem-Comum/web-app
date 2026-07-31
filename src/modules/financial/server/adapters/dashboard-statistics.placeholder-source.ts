@@ -14,7 +14,9 @@ import type { FinancialError } from '#modules/financial/server/domain/errors/fin
 import { DashboardAggregationsSchema } from './core-api/dashboard.schema.ts'
 
 // Agregação crua INTERINA (o formato do #112). Valores idênticos aos que o client montava — a UI não muda.
-const PLACEHOLDER_AGGREGATIONS = {
+// Exportado: a FONTE REAL (de-interim faseado) reusa as partes ainda não ligadas (séries do gráfico = P3,
+// fornecedores = P2, métricas Receita/Maior-Financiador = sem endpoint) enquanto liga o cost-centers (P1).
+export const PLACEHOLDER_AGGREGATIONS = {
   metrics: {
     // INTERINO: enquanto zerado, o valor já vem formatado; com o #112 virão cents/percent e a composição formata.
     expenses: { value: 'R$ 0,00', trendPercent: '0%' },
