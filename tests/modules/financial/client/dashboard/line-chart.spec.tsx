@@ -83,4 +83,40 @@ describe('LineChart', () => {
     expect(screen.getByText('Fev')).toBeTruthy()
     expect(screen.getByText('Dez')).toBeTruthy()
   })
+
+  // Regressão (specs/096 P3): o eixo Y ADAPTA à magnitude. Antes era fixo em R$M e zerava dado pequeno.
+  it('eixo em MILHÕES p/ escala grande (retrocompat do summary)', () => {
+    render(
+      <LineChart
+        series={CHART_SERIES}
+        yMax={CHART_Y_MAX}
+        yTicks={CHART_Y_TICKS}
+        months={CHART_MONTHS}
+        monthLabels={MONTH_LABELS}
+        seriesLabel={seriesLabel}
+      />,
+    )
+    expect(screen.getByText('R$18M')).toBeTruthy()
+    expect(screen.getByText('R$4,5M')).toBeTruthy()
+  })
+
+  it('eixo em REAIS p/ escala pequena — NÃO zera (bug do R$/1M fixo)', () => {
+    render(
+      <LineChart
+        series={[
+          { id: 'forecast', labelKey: 'f', points: [{ month: 0, value: 0 }] },
+          { id: 'realized', labelKey: 'r', points: [{ month: 0, value: 35 }] },
+        ]}
+        yMax={50}
+        yTicks={[12.5, 25, 37.5, 50]}
+        months={CHART_MONTHS}
+        monthLabels={MONTH_LABELS}
+        seriesLabel={seriesLabel}
+      />,
+    )
+    // Antes: todos os ticks viravam "R$0M". Agora: reais legíveis.
+    expect(screen.getByText('R$50')).toBeTruthy()
+    expect(screen.getByText('R$12,5')).toBeTruthy()
+    expect(screen.queryByText('R$0M')).toBeNull()
+  })
 })
