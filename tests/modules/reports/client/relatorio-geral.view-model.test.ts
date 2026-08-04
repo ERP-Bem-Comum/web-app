@@ -21,6 +21,7 @@ import {
   monthGroupLabel,
   PER_PAGE_DEFAULT,
   cellText,
+  contentCharsByColumn,
   type LedgerRow,
 } from '#modules/reports/client/relatorio-geral.view-model.ts'
 import type { GeneralReportRow } from '#modules/reports/client/data/model/general-report.model.ts'
@@ -196,5 +197,20 @@ describe('cellText — acessor de célula por coluna', () => {
     assert.equal(cellText(row, 'valor'), formatBRL(row.valorCents))
     assert.equal(cellText(row, 'vencimento'), null)
     assert.equal(cellText(row, 'tipo'), 'A pagar')
+  })
+})
+
+describe('contentCharsByColumn — maior conteúdo por coluna (dimensiona a track)', () => {
+  it('conta o maior texto; célula nula conta como o traço (naLen)', () => {
+    const rowA = ledgerRowFromGeneral({ ...baseRow, supplierName: 'Curto' })
+    const rowB = ledgerRowFromGeneral({ ...baseRow, supplierName: 'Fornecedor Bem Mais Longo LTDA' })
+    const lenB = (cellText(rowB, 'fornecedor') ?? '').length
+    const counts = contentCharsByColumn([rowA, rowB], ['fornecedor', 'financiador'], 1)
+    assert.equal(counts.fornecedor, lenB) // o MAIOR entre as linhas
+    assert.ok(lenB > 20)
+    assert.equal(counts.financiador, 1) // null nas duas → naLen ("—")
+  })
+  it('sem linhas → 0', () => {
+    assert.equal(contentCharsByColumn([], ['fornecedor'], 1).fornecedor, 0)
   })
 })
