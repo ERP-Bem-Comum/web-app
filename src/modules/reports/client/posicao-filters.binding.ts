@@ -97,17 +97,28 @@ function useContaOptions(): readonly FilterOption[] {
  * trocar o plano recarrega os 3; trocar o centro recarrega a categoria; etc. Sem plano (UUID) caem no
  * catálogo operacional (os hooks já fazem). `CategoryOption` é estruturalmente igual a `FilterOption`.
  */
+const PLAN_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export function usePosicaoFilterOptions(
   planoRef: string,
   costCenterRef: string,
   categoryRef: string,
+  // `planScopedOnly` (Relatório Geral): SEM plano selecionado, Centro/Categoria/Subcategoria ficam VAZIOS
+  // em vez de cair no catálogo operacional flat (que não faz parte da cascata da taxonomia — ADR-0051).
+  // Default `false` preserva a Posição de Pagamentos (mantém o fallback operacional).
+  planScopedOnly = false,
 ): PosicaoFilterOptions {
+  const centro = useCostCenterOptionsFromPlan(planoRef)
+  const categoria = useCategoryOptionsFromPlan(planoRef, costCenterRef)
+  const subcategoria = useSubcategoryOptionsFromPlan(planoRef, categoryRef)
+  // Gate só quando pedido E sem plano válido (hooks chamados sempre — ordem estável, §XI).
+  const gate = planScopedOnly && !PLAN_UUID_RE.test(planoRef)
   return {
     plano: usePlanoOptions(),
     partner: usePartnerOptions(),
     conta: useContaOptions(),
-    centro: useCostCenterOptionsFromPlan(planoRef),
-    categoria: useCategoryOptionsFromPlan(planoRef, costCenterRef),
-    subcategoria: useSubcategoryOptionsFromPlan(planoRef, categoryRef),
+    centro: gate ? EMPTY : centro,
+    categoria: gate ? EMPTY : categoria,
+    subcategoria: gate ? EMPTY : subcategoria,
   }
 }

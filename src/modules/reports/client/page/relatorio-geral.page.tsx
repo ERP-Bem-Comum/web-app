@@ -161,7 +161,9 @@ export function RelatorioGeralPage(): ReactNode {
   // Server-state REAL (#442) — página + filtros APLICADOS. Opções cross-módulo (public-api §I); Centro/Categoria/
   // Subcategoria em CASCATA da árvore do plano do DRAFT (ADR-0051). Hooks SEMPRE antes dos early-returns.
   const state = useRelatorioGeral({ page, limit: perPage, ...applied })
-  const filterOpts = usePosicaoFilterOptions(draft.plano, draft.centro, draft.categoria)
+  // `planScopedOnly=true`: sem Plano selecionado, Centro/Categoria/Subcategoria ficam VAZIOS (não caem no
+  // catálogo operacional — só cascateiam da árvore do plano, ADR-0051).
+  const filterOpts = usePosicaoFilterOptions(draft.plano, draft.centro, draft.categoria, true)
 
   if (state.status === 'loading') {
     return <ReportStatePanel title={t('reports.geral.loading')} />
