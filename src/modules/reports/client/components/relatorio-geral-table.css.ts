@@ -8,32 +8,30 @@ import { style } from '@vanilla-extract/css'
 import { vars } from '#shared/ui/tokens/index.ts'
 import { brand } from '#shared/ui/brand/grid-brand.values.ts'
 
-// Largura POR coluna (id → track). O seletor de colunas monta o `grid-template-columns` só com as colunas
-// VISÍVEIS (na ordem do legado), então a largura precisa ser endereçável por id — não posicional. As
-// dimensões cruas ficam AQUI (camada *.css.ts), fora do componente (§X). O grid transborda → `.scroller`
+// Largura MÍNIMA (piso) POR coluna (id → rem). O seletor de colunas monta o `grid-template-columns` só com
+// as colunas VISÍVEIS (na ordem do legado), então a largura precisa ser endereçável por id — não posicional.
+// As dimensões cruas ficam AQUI (camada *.css.ts), fora do componente (§X). O grid transborda → `.scroller`
 // rola na horizontal.
 //
-// `minmax(<mín>, max-content)`: a coluna usa o MÍNIMO quando o conteúdo é curto e CRESCE até caber quando é
-// longo — nunca corta (o `overflow/ellipsis` da célula vira salvaguarda, não recorte). Sem espaço interno na
-// função (o componente faz `.join(' ')` das tracks).
-const fit = (min: string): string => `minmax(${min},max-content)`
-
+// Estas são só os PISOS: o componente compõe `max(<piso>, <chars>ch)` por coluna a partir do maior conteúdo
+// (+ header) da página, IGUAL em todas as linhas (thead/rows/separador) — as tracks precisam ser idênticas
+// entre as linhas (cada linha é um grid próprio), senão as colunas desalinham. Assim: alinhado E sem cortar.
 export const COLUMN_WIDTH: Record<string, string> = {
-  data: fit('6.5rem'),
-  vencimento: fit('7rem'),
-  tipo: fit('9rem'),
-  numeroContrato: fit('8rem'),
-  codigo: fit('7rem'),
-  parcela: fit('5rem'),
-  apontamento: fit('14rem'),
-  fornecedor: fit('15rem'),
-  financiador: fit('13rem'),
-  colaborador: fit('11rem'),
-  centroCusto: fit('12rem'),
-  categoria: fit('11rem'),
-  subcategoria: fit('12rem'),
-  pixBancario: fit('7rem'),
-  valor: fit('9rem'),
+  data: '6.5rem',
+  vencimento: '7rem',
+  tipo: '9rem',
+  numeroContrato: '8rem',
+  codigo: '7rem',
+  parcela: '5rem',
+  apontamento: '14rem',
+  fornecedor: '15rem',
+  financiador: '13rem',
+  colaborador: '11rem',
+  centroCusto: '12rem',
+  categoria: '11rem',
+  subcategoria: '12rem',
+  pixBancario: '7rem',
+  valor: '9rem',
 }
 
 export const card = style({

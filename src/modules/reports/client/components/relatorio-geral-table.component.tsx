@@ -8,7 +8,12 @@
 import { Fragment, type ReactNode } from 'react'
 
 import type { GeneralColumnId, GeneralColumnKind, LedgerRow } from '../relatorio-geral.view-model.ts'
-import { cellText, monthGroupKey, monthGroupLabel } from '../relatorio-geral.view-model.ts'
+import {
+  cellText,
+  contentCharsByColumn,
+  monthGroupKey,
+  monthGroupLabel,
+} from '../relatorio-geral.view-model.ts'
 import {
   COLUMN_WIDTH,
   card,
@@ -63,8 +68,20 @@ export type RelatorioGeralTableProps = Readonly<{
 export function RelatorioGeralTable(props: RelatorioGeralTableProps): ReactNode {
   const { labels: L, columns } = props
 
-  // Grid só com as colunas visíveis, na ordem (larguras endereçadas por id — do *.css.ts).
-  const gridTemplateColumns = columns.map((c) => COLUMN_WIDTH[c.id] ?? '8rem').join(' ')
+  // Grid só com as colunas visíveis, na ordem. Largura UNIFORME por coluna (igual em thead/rows/separador,
+  // senão desalinha): `max(<piso rem>, <maiorConteúdo|header + folga>ch)` — dimensiona pra caber, não corta.
+  // `+ CELL_PAD_CH` cobre o padding inline da célula (2×) + uma folga (fonte proporcional / header uppercase).
+  const CELL_PAD_CH = 4
+  const contentChars = contentCharsByColumn(
+    props.rows,
+    columns.map((c) => c.id),
+    props.labels.naLabel.length,
+  )
+  const trackFor = (c: VisibleColumn): string => {
+    const chars = Math.max(contentChars[c.id] ?? 0, c.label.length) + CELL_PAD_CH
+    return `max(${COLUMN_WIDTH[c.id] ?? '8rem'}, ${String(chars)}ch)`
+  }
+  const gridTemplateColumns = columns.map(trackFor).join(' ')
   const lastIdx = columns.length - 1
   // Classe da coluna FIXA: a 1ª visível gruda à esquerda; a última, à direita (espelho do legado).
   const stickyOf = (i: number, head: boolean): string => {
