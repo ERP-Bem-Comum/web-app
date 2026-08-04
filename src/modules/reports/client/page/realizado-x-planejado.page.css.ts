@@ -115,6 +115,10 @@ export const filters = styleVariants({
   },
 })
 
+// Quebra de linha forçada num container flex-wrap: ocupa 100% da linha (altura 0) → o próximo item começa
+// numa nova linha. Usado no Relatório Geral p/ separar a linha de busca/status da linha de taxonomia.
+export const filterRowBreak = style({ flexBasis: '100%', blockSize: 0 })
+
 export const filtersInner = style({
   display: 'flex',
   alignItems: 'flex-end',

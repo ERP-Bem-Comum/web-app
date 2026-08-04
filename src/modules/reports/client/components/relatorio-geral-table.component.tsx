@@ -8,7 +8,12 @@
 import { Fragment, type ReactNode } from 'react'
 
 import type { GeneralColumnId, GeneralColumnKind, LedgerRow } from '../relatorio-geral.view-model.ts'
-import { cellText, monthGroupKey, monthGroupLabel } from '../relatorio-geral.view-model.ts'
+import {
+  cellText,
+  contentCharsByColumn,
+  monthGroupKey,
+  monthGroupLabel,
+} from '../relatorio-geral.view-model.ts'
 import {
   COLUMN_WIDTH,
   card,
@@ -63,8 +68,23 @@ export type RelatorioGeralTableProps = Readonly<{
 export function RelatorioGeralTable(props: RelatorioGeralTableProps): ReactNode {
   const { labels: L, columns } = props
 
-  // Grid só com as colunas visíveis, na ordem (larguras endereçadas por id — do *.css.ts).
-  const gridTemplateColumns = columns.map((c) => COLUMN_WIDTH[c.id] ?? '8rem').join(' ')
+  // Grid só com as colunas visíveis, na ordem. Largura UNIFORME por coluna (igual em thead/rows/separador,
+  // senão desalinha): `max(<piso rem>, <maiorConteúdo|header + folga> em rem)`. Dimensiona pra caber, não corta.
+  // ⚠️ Em REM (absoluto), NÃO em `ch`: `ch` é relativo à fonte, e o thead tem fonte menor que o corpo — o
+  // mesmo Nch resolveria em px diferentes entre cabeçalho e linhas → desalinhamento. `CHAR_REM` = largura de
+  // um dígito no corpo (14px → ~0.55rem, medido); `+ PAD_CHARS` cobre padding da célula + folga.
+  const CHAR_REM = 0.56
+  const PAD_CHARS = 4
+  const contentChars = contentCharsByColumn(
+    props.rows,
+    columns.map((c) => c.id),
+    props.labels.naLabel.length,
+  )
+  const trackFor = (c: VisibleColumn): string => {
+    const chars = Math.max(contentChars[c.id] ?? 0, c.label.length) + PAD_CHARS
+    return `max(${COLUMN_WIDTH[c.id] ?? '8rem'}, ${(chars * CHAR_REM).toFixed(2)}rem)`
+  }
+  const gridTemplateColumns = columns.map(trackFor).join(' ')
   const lastIdx = columns.length - 1
   // Classe da coluna FIXA: a 1ª visível gruda à esquerda; a última, à direita (espelho do legado).
   const stickyOf = (i: number, head: boolean): string => {

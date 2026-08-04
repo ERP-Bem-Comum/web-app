@@ -2844,6 +2844,7 @@ export const ptBR: Catalog = {
   'reports.geral.filters.busca': 'Buscar',
   'reports.geral.filters.buscaPlaceholder': 'Nº do documento ou fornecedor',
   'reports.geral.filters.plano': 'Plano Orçamentário',
+  'reports.geral.filters.programa': 'Programa',
   'reports.geral.filters.periodo': 'Período de vencimento',
   'reports.geral.filters.periodoDe': 'De',
   'reports.geral.filters.periodoAte': 'Até',

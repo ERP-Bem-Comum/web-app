@@ -227,6 +227,29 @@ export function cellText(row: LedgerRow, id: GeneralColumnId): string | null {
   }
 }
 
+/**
+ * Nº de caracteres do CONTEÚDO mais longo por coluna (sobre as linhas da página). PURO — a tabela usa isso
+ * pra dimensionar cada coluna em `ch` (larguras UNIFORMES entre as linhas → alinhado, sem cortar). Célula
+ * nula conta como o traço "—" (`naLen`). O rótulo do header (i18n) é dobrado no componente (não vive aqui).
+ */
+export function contentCharsByColumn(
+  rows: readonly LedgerRow[],
+  ids: readonly GeneralColumnId[],
+  naLen: number,
+): Record<string, number> {
+  const out: Record<string, number> = {}
+  for (const id of ids) {
+    let max = 0
+    for (const r of rows) {
+      const t = cellText(r, id)
+      const len = t === null ? naLen : t.length
+      if (len > max) max = len
+    }
+    out[id] = max
+  }
+  return out
+}
+
 // ── Export CSV (client-side; header pt-BR fiel às colunas do legado) ──
 
 /** Rótulo pt-BR de cada coluna no CSV (fiel ao legado). */

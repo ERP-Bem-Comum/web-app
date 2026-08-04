@@ -25,6 +25,7 @@ vi.mock('#modules/reports/client/data/repository/reports.repository.instance.ts'
 vi.mock('#modules/reports/client/posicao-filters.binding.ts', () => ({
   usePosicaoFilterOptions: () => ({
     plano: [{ value: 'plan-1', label: '2026 GOD 1.0' }],
+    programa: [{ value: 'prog-1', label: 'GOD' }],
     partner: [{ value: 'sup-1', label: 'Fornecedor X' }],
     conta: [],
     centro: [],
