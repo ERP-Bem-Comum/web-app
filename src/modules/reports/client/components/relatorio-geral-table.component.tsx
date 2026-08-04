@@ -69,17 +69,20 @@ export function RelatorioGeralTable(props: RelatorioGeralTableProps): ReactNode 
   const { labels: L, columns } = props
 
   // Grid só com as colunas visíveis, na ordem. Largura UNIFORME por coluna (igual em thead/rows/separador,
-  // senão desalinha): `max(<piso rem>, <maiorConteúdo|header + folga>ch)` — dimensiona pra caber, não corta.
-  // `+ CELL_PAD_CH` cobre o padding inline da célula (2×) + uma folga (fonte proporcional / header uppercase).
-  const CELL_PAD_CH = 4
+  // senão desalinha): `max(<piso rem>, <maiorConteúdo|header + folga> em rem)`. Dimensiona pra caber, não corta.
+  // ⚠️ Em REM (absoluto), NÃO em `ch`: `ch` é relativo à fonte, e o thead tem fonte menor que o corpo — o
+  // mesmo Nch resolveria em px diferentes entre cabeçalho e linhas → desalinhamento. `CHAR_REM` = largura de
+  // um dígito no corpo (14px → ~0.55rem, medido); `+ PAD_CHARS` cobre padding da célula + folga.
+  const CHAR_REM = 0.56
+  const PAD_CHARS = 4
   const contentChars = contentCharsByColumn(
     props.rows,
     columns.map((c) => c.id),
     props.labels.naLabel.length,
   )
   const trackFor = (c: VisibleColumn): string => {
-    const chars = Math.max(contentChars[c.id] ?? 0, c.label.length) + CELL_PAD_CH
-    return `max(${COLUMN_WIDTH[c.id] ?? '8rem'}, ${String(chars)}ch)`
+    const chars = Math.max(contentChars[c.id] ?? 0, c.label.length) + PAD_CHARS
+    return `max(${COLUMN_WIDTH[c.id] ?? '8rem'}, ${(chars * CHAR_REM).toFixed(2)}rem)`
   }
   const gridTemplateColumns = columns.map(trackFor).join(' ')
   const lastIdx = columns.length - 1
