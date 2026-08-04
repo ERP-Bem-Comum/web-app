@@ -45,6 +45,7 @@ import {
   fldSelect,
   fldChev,
   applyButton,
+  filterRowBreak,
   exportTrigger,
   columnsWrap,
   columnsBackdrop,
@@ -81,6 +82,7 @@ const COLUMN_LABEL: Record<GeneralColumnId, string> = {
 type GeralDraft = Readonly<{
   search: string
   plano: string
+  programa: string
   fornecedor: string
   conta: string
   centro: string
@@ -93,6 +95,7 @@ type GeralDraft = Readonly<{
 const EMPTY_DRAFT: GeralDraft = {
   search: '',
   plano: '',
+  programa: '',
   fornecedor: '',
   conta: '',
   centro: '',
@@ -123,6 +126,7 @@ function toGeralFilters(d: GeralDraft): GeralFilters {
   return {
     search: v(d.search),
     budgetPlanId: v(d.plano),
+    programId: v(d.programa),
     entityId: v(d.fornecedor),
     accountId: v(d.conta),
     costCenterId: v(d.centro),
@@ -361,15 +365,6 @@ export function RelatorioGeralPage(): ReactNode {
             />
           </div>
           <FilterField
-            label={t('reports.geral.filters.plano')}
-            allOption={allOption}
-            value={draft.plano}
-            options={filterOpts.plano}
-            onChange={(v) => {
-              onField({ plano: v })
-            }}
-          />
-          <FilterField
             label={t('reports.geral.filters.fornecedor')}
             allOption={allOption}
             value={draft.fornecedor}
@@ -411,6 +406,35 @@ export function RelatorioGeralPage(): ReactNode {
             }}
           />
           <FilterField
+            label={t('reports.geral.filters.status')}
+            allOption={allOption}
+            value={draft.status}
+            options={statusOptions}
+            onChange={(v) => {
+              onField({ status: v })
+            }}
+          />
+          {/* Quebra forçada: a linha 2 (taxonomia) começa aqui. */}
+          <div className={filterRowBreak} aria-hidden="true" />
+          <FilterField
+            label={t('reports.geral.filters.plano')}
+            allOption={allOption}
+            value={draft.plano}
+            options={filterOpts.plano}
+            onChange={(v) => {
+              onField({ plano: v })
+            }}
+          />
+          <FilterField
+            label={t('reports.geral.filters.programa')}
+            allOption={allOption}
+            value={draft.programa}
+            options={filterOpts.programa}
+            onChange={(v) => {
+              onField({ programa: v })
+            }}
+          />
+          <FilterField
             label={t('reports.geral.filters.centro')}
             allOption={allOption}
             value={draft.centro}
@@ -435,15 +459,6 @@ export function RelatorioGeralPage(): ReactNode {
             options={filterOpts.subcategoria}
             onChange={(v) => {
               onField({ subcategoria: v })
-            }}
-          />
-          <FilterField
-            label={t('reports.geral.filters.status')}
-            allOption={allOption}
-            value={draft.status}
-            options={statusOptions}
-            onChange={(v) => {
-              onField({ status: v })
             }}
           />
           <button type="button" className={applyButton} onClick={applyFilters}>
