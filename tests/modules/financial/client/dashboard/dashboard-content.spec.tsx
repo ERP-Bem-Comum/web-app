@@ -85,6 +85,9 @@ const STATS: DashboardStatistics = {
 
 const RECENT: RecentPaymentsView = { status: 'empty', rows: [] }
 
+// Mapa de nomes vazio (padrão): o widget cai no `name` do DTO — preserva o comportamento dos testes.
+const NO_SUPPLIER_NAMES: ReadonlyMap<string, string> = new Map()
+
 // P3: gráfico Realizado × Previsto pronto (reusa a série do STATS só p/ ter um chart válido).
 const REALIZED: DashboardRealizedView = {
   status: 'ready',
@@ -101,6 +104,7 @@ describe('DashboardContent', () => {
         data={STATS}
         recent={RECENT}
         realized={REALIZED}
+        supplierNames={NO_SUPPLIER_NAMES}
         animate={false}
         onSeeAllOverview={() => undefined}
         onSeeAllSuppliers={() => undefined}
@@ -120,6 +124,7 @@ describe('DashboardContent', () => {
         data={STATS}
         recent={RECENT}
         realized={REALIZED}
+        supplierNames={NO_SUPPLIER_NAMES}
         animate={false}
         onSeeAllOverview={() => undefined}
         onSeeAllSuppliers={() => undefined}
@@ -138,6 +143,7 @@ describe('DashboardContent', () => {
         data={STATS}
         recent={RECENT}
         realized={REALIZED}
+        supplierNames={NO_SUPPLIER_NAMES}
         animate={false}
         onSeeAllOverview={() => undefined}
         onSeeAllSuppliers={() => undefined}
@@ -149,6 +155,27 @@ describe('DashboardContent', () => {
     expect(screen.getByText('129,82%')).toBeTruthy()
   })
 
+  it('resolve o NOME do fornecedor pelo mapa de parceiros quando o DTO traz "—" (#612)', () => {
+    const statsHyphen: DashboardStatistics = {
+      ...STATS,
+      suppliersWithoutContract: [{ id: 'catswork-id', name: '—', valorTotalCents: 2_004_000 }],
+    }
+    const names = new Map<string, string>([['catswork-id', 'CATSWORK']])
+    render(
+      <DashboardContent
+        data={statsHyphen}
+        recent={RECENT}
+        realized={REALIZED}
+        supplierNames={names}
+        animate={false}
+        onSeeAllOverview={() => undefined}
+        onSeeAllSuppliers={() => undefined}
+      />,
+    )
+    expect(screen.getByText('CATSWORK')).toBeTruthy()
+    expect(screen.queryByText('—')).toBeNull()
+  })
+
   it('"Ver tudo" da Visão geral e "Ver todas" dos Fornecedores acionam os callbacks certos', () => {
     const onSeeAllOverview = vi.fn()
     const onSeeAllSuppliers = vi.fn()
@@ -157,6 +184,7 @@ describe('DashboardContent', () => {
         data={STATS}
         recent={RECENT}
         realized={REALIZED}
+        supplierNames={NO_SUPPLIER_NAMES}
         animate={false}
         onSeeAllOverview={onSeeAllOverview}
         onSeeAllSuppliers={onSeeAllSuppliers}
