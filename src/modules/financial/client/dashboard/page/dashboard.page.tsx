@@ -17,6 +17,7 @@ import { header, headText, headTitle, headSubtitle } from '#shared/ui/brand/bran
 import { useDashboardStatistics } from '../dashboard-statistics.binding.ts'
 import { useRecentPayments } from '../recent-payments.binding.ts'
 import { useDashboardRealized } from '../dashboard-realized.binding.ts'
+import { useDashboardPartnerNames } from '../partners-name-map.binding.ts'
 import { DashboardContent } from './dashboard-content.component.tsx'
 import { page, stateMessage } from './dashboard.css.ts'
 
@@ -27,6 +28,8 @@ export function DashboardPage() {
   const recent = useRecentPayments()
   // P3: gráfico Realizado × Previsto do ANO CORRENTE (planos aprovados vigentes; padrão "todos somados").
   const realized = useDashboardRealized()
+  // Nome do fornecedor resolvido client-side (o DTO pode trazer "—" quando o read-model não nomeou; #612).
+  const supplierNames = useDashboardPartnerNames()
   const navigate = useNavigate()
 
   // "Ver tudo" dos cards → módulo de Relatórios (rota específica de cada relatório).
@@ -66,6 +69,7 @@ export function DashboardPage() {
           data={stats.data}
           recent={recent}
           realized={realized}
+          supplierNames={supplierNames}
           animate={animateBars}
           onSeeAllOverview={onSeeAllOverview}
           onSeeAllSuppliers={onSeeAllSuppliers}

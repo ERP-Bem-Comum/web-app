@@ -83,6 +83,8 @@ export type DashboardContentProps = Readonly<{
   recent: RecentPaymentsView
   /** Gráfico Realizado × Previsto (P3): série + seletor de plano (query própria). */
   realized: DashboardRealizedView
+  /** Mapa `supplierRef → nome` (agregador de parceiros) — resolve o nome do fornecedor quando o DTO traz "—". */
+  supplierNames: ReadonlyMap<string, string>
   /** Anima a entrada das barras de compliance (largura cresce quando true). */
   animate: boolean
   /** "Ver tudo" da "Visão geral" (Previsto × Realizado) → relatório Realizado × Planejado. */
@@ -110,7 +112,8 @@ export function DashboardContent(props: DashboardContentProps): ReactNode {
   ).map(
     (b): SupplierBar => ({
       id: b.id,
-      name: b.name,
+      // Prefere o nome do agregador (resolve o "—" do DTO quando o read-model não nomeou — #612); cai no do BFF.
+      name: props.supplierNames.get(b.id) ?? b.name,
       utilizadoPct: b.utilizadoPct,
       status: b.status,
       percentLabel: formatSupplierPercent(b.utilizadoPct),
