@@ -67,11 +67,12 @@ describe('ReconciliationWorkspacePage (shell)', () => {
     // Exportar é um dropdown: o gatilho abre o menu.
     const exportBtn = screen.getByRole('button', { name: has('financial.recon.bottombar.export') })
     fireEvent.click(exportBtn)
-    // Sem período PERSISTIDO (sem backend no teste), OFX/CSV ficam desabilitados com o motivo honesto. Já o
-    // PDF (#144) reflete o período VISUALIZADO (default last7, resolvido) → fica HABILITADO, sem tooltip de bloqueio.
-    const ofx = screen.getByRole('menuitem', { name: has('financial.recon.export.ofx') })
-    expect(ofx.hasAttribute('disabled')).toBe(true)
-    expect(ofx.getAttribute('title')).toBe(tr('financial.recon.export.noPeriod'))
+    // Sem período PERSISTIDO (sem backend no teste), o CSV do Nibo fica desabilitado com o motivo acionável
+    // (depende do `:id`, que só nasce ao fechar o período). Já o PDF (#144) reflete o período VISUALIZADO
+    // (default last7, resolvido) → fica HABILITADO, sem tooltip de bloqueio.
+    const csv = screen.getByRole('menuitem', { name: has('financial.recon.export.csv') })
+    expect(csv.hasAttribute('disabled')).toBe(true)
+    expect(csv.getAttribute('title')).toBe(tr('financial.recon.export.csvNeedsPeriod'))
     const pdf = screen.getByRole('menuitem', { name: has('financial.recon.export.pdf') })
     expect(pdf.hasAttribute('disabled')).toBe(false)
     expect(pdf.getAttribute('title')).toBeNull()

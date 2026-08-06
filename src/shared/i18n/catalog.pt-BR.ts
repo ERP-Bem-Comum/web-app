@@ -1440,15 +1440,16 @@ export const ptBR: Catalog = {
   'financial.recon.period.hint': 'Filtrar por período depende do backend (#173) — por ora ajusta só a visão.',
   // Menu Exportar conciliação (espelha o Importar) — chrome até #173
   'financial.recon.export.group': 'Exportar conciliação',
-  'financial.recon.export.ofx': 'Arquivo OFX',
-  'financial.recon.export.ofxHint': 'retorno bancário',
   'financial.recon.export.csv': 'Planilha CSV (Nibo)',
   'financial.recon.export.csvHint': 'layout Importação em Lotes',
   'financial.recon.export.pdf': 'Relatório em PDF',
   'financial.recon.export.pdfHint': 'com totalizações',
   'financial.recon.export.periodLabel': 'Período a exportar',
-  'financial.recon.export.noPeriod': 'Nenhum período de conciliação nesta conta ainda',
-  'financial.recon.export.pdfUnavailable': 'Exportação em PDF disponível em breve (#145)',
+  // Motivos de desabilitado — um por item, ACIONÁVEIS. O CSV depende do `:id` do período (só existe depois
+  // de fechar uma vez); o PDF só precisa de um intervalo em tela. Não existe mais um "sem período" global.
+  'financial.recon.export.csvNeedsPeriod':
+    'A planilha do Nibo exporta um período já fechado — feche o período uma vez para habilitar',
+  'financial.recon.export.pdfNoRange': 'Selecione um período para imprimir o relatório',
   'financial.recon.export.exporting': 'Exportando…',
   // Relatório da Conciliação em PDF (#144) — tela print-friendly (window.print → "Salvar PDF")
   'financial.recon.report.title': 'Relatório da Conciliação',
