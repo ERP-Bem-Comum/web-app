@@ -77,4 +77,7 @@ Isto segue a lição de [[disabled-precisa-parecer-disabled]]: quem está barrad
 ## Fica pendente (backend)
 
 `GET /financial/reconciliation-periods/:id/export` precisa de uma forma de exportar **por conta + intervalo**,
-sem `periodId`. É o que falta para o CSV do Nibo cumprir "exportar a qualquer momento". Issue no core-api.
+sem `periodId`. É o que falta para o CSV do Nibo cumprir "exportar a qualquer momento".
+
+→ **core-api#649** (aberta em 06/08, com o diagnóstico e a proposta de assinatura). Quando subir, o front
+troca o alvo do CSV do "período fechado mais recente" para o **intervalo visualizado**, e o gate D3 cai.

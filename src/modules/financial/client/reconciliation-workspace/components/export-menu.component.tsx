@@ -11,8 +11,8 @@
  * Sobre o gate (P.O., 06/08): o PDF não tem impedimento algum — imprime o que está em tela. O CSV do Nibo
  * NÃO pode ser liberado só aqui: a rota é `GET /reconciliation-periods/:id/export` e o registro de período
  * só nasce em `POST /reconciliation-periods/close`, então sem período fechado não existe `:id` para chamar.
- * Enquanto o core-api não aceitar conta+intervalo, o item fica desabilitado com o motivo ACIONÁVEL (dizer
- * "nenhum período" não orienta; dizer "feche o período uma vez" orienta).
+ * Enquanto o core-api não aceitar conta+intervalo (**core-api#649**), o item fica desabilitado com o motivo
+ * ACIONÁVEL (dizer "nenhum período" não orienta; dizer "feche o período uma vez" orienta).
  */
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
