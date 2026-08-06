@@ -63,7 +63,7 @@ Isto segue a lição de [[disabled-precisa-parecer-disabled]]: quem está barrad
 - [x] Sem período fechado, o **PDF exporta normalmente** (não há mais impedimento aparente).
 - [x] Sem período fechado, o CSV fica desabilitado com o motivo acionável.
 - [x] Nenhuma linha global de bloqueio no topo do menu.
-- [ ] Validar em tela (P.O.).
+- [x] Validado em tela pela P.O. em 2026-08-06 (build local a partir de `feat/recon-export-sem-gate`).
 
 ## Rastro
 
