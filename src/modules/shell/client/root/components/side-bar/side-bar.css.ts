@@ -41,6 +41,12 @@ export const menuList = style({
   flexDirection: 'column',
   gap: vars.space.xs,
   flex: 1,
+  // Rola internamente quando os módulos estouram a altura (ex.: com zoom na página) — sem o scroll,
+  // o `overflow: hidden` do `nav` cortava os últimos módulos, deixando-os inacessíveis.
+  // `minBlockSize: 0` permite o item flex encolher abaixo do conteúdo e ativar a rolagem.
+  minBlockSize: 0,
+  overflowY: 'auto',
+  overscrollBehavior: 'contain',
 })
 
 export const itemContent = style({
