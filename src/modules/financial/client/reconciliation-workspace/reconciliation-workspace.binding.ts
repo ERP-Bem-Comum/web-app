@@ -448,8 +448,11 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     pendentesCount > 0,
     selectedAlreadyClosed,
   )
+  // #649: o export segue o intervalo VISUALIZADO (mesmo `periodRange` do PDF e do saldo #205) — não mais o
+  // último período FECHADO. Exporta a qualquer momento, sem gate de conciliação concluída.
   const exportBinding = useExportConciliacao(
     accountRef === '' ? null : accountRef,
+    periodRange,
     headerMenusBinding.closeAll,
   )
   // #203: reabrir período (Closed → Open). Fecha o dropdown de ações ao concluir.

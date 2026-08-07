@@ -63,7 +63,7 @@ describe('ExportMenu — PDF wiring (#144)', () => {
     expect(print).toHaveBeenCalledTimes(1)
   })
 
-  it('sem intervalo em tela (reportPdf.enabled false), o PDF desabilita com o motivo DELE', () => {
+  it('sem intervalo resolvido, os DOIS desabilitam — não há o que exportar em nenhum', () => {
     const print = vi.fn()
     render(
       <ExportMenu
@@ -72,10 +72,12 @@ describe('ExportMenu — PDF wiring (#144)', () => {
         reportPdf={{ enabled: false, print }}
       />,
     )
-    const pdf = screen.getByRole('menuitem', { name: has('financial.recon.export.pdf') })
-    expect(pdf.hasAttribute('disabled')).toBe(true)
-    expect(pdf.getAttribute('title')).toBe(tr('financial.recon.export.pdfNoRange'))
-    fireEvent.click(pdf)
+    for (const tag of ['financial.recon.export.pdf', 'financial.recon.export.csv']) {
+      const item = screen.getByRole('menuitem', { name: has(tag) })
+      expect(item.hasAttribute('disabled')).toBe(true)
+      expect(item.getAttribute('title')).toBe(tr('financial.recon.export.noRange'))
+    }
+    fireEvent.click(screen.getByRole('menuitem', { name: has('financial.recon.export.pdf') }))
     expect(print).not.toHaveBeenCalled()
   })
 
@@ -109,24 +111,42 @@ describe('ExportMenu — PDF wiring (#144)', () => {
     expect(labels).toHaveLength(2)
   })
 
-  // O ponto da mudança (P.O., 06/08): sem período fechado o CSV cai (depende do `:id`), mas o PDF continua
-  // exportável — antes o menu inteiro parecia bloqueado, com um "nenhum período" global no topo.
-  it('sem período fechado, o CSV desabilita com motivo acionável e o PDF SEGUE habilitado', () => {
+  // O ponto da mudança (core-api#649): com um intervalo em tela os DOIS exportam, sem exigir conciliação
+  // concluída nem período fechado. Antes o CSV dependia do `:id`, que só nascia ao fechar o período.
+  it('com intervalo em tela, CSV e PDF exportam — sem gate de conciliação/fechamento', () => {
     const print = vi.fn()
+    const calls: ExportFormat[] = []
     render(
       <ExportMenu
         menus={menus()}
-        exportBinding={exportBinding({ canExport: false, periodLabel: null })}
+        exportBinding={exportBinding({
+          exportAs: (f: ExportFormat) => {
+            calls.push(f)
+          },
+        })}
         reportPdf={{ enabled: true, print }}
       />,
     )
     const csv = screen.getByRole('menuitem', { name: has('financial.recon.export.csv') })
-    expect(csv.hasAttribute('disabled')).toBe(true)
-    expect(csv.getAttribute('title')).toBe(tr('financial.recon.export.csvNeedsPeriod'))
+    expect(csv.hasAttribute('disabled')).toBe(false)
+    expect(csv.getAttribute('title')).toBeNull()
+    fireEvent.click(csv)
+    expect(calls).toEqual(['csv-nibo'])
 
     const pdf = screen.getByRole('menuitem', { name: has('financial.recon.export.pdf') })
     expect(pdf.hasAttribute('disabled')).toBe(false)
     fireEvent.click(pdf)
     expect(print).toHaveBeenCalledTimes(1)
+  })
+
+  it('o range no topo descreve o alvo dos dois itens (intervalo visualizado)', () => {
+    render(
+      <ExportMenu
+        menus={menus()}
+        exportBinding={exportBinding({ periodLabel: '18 mai 2026 – 17 jun 2026' })}
+        reportPdf={{ enabled: true, print: vi.fn() }}
+      />,
+    )
+    expect(screen.getByText(/18 mai 2026 – 17 jun 2026/)).toBeTruthy()
   })
 })
