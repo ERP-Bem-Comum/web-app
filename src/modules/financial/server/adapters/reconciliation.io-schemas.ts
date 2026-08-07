@@ -146,8 +146,11 @@ export const ReopenPeriodInputSchema = z.object({ periodId: z.uuid() }) // #203
 
 export const ListReconciliationPeriodsInputSchema = z.object({ debitAccountRef: z.uuid() })
 
+// #649: conta + intervalo (sem periodId). O core-api valida `z.iso.date()` no mesmo formato.
 export const ExportReconciliationInputSchema = z.object({
-  periodId: z.uuid(),
+  debitAccountRef: z.uuid(),
+  periodStart: z.iso.date(),
+  periodEnd: z.iso.date(),
   format: z.enum(['ofx', 'csv', 'csv-nibo']),
 })
 
