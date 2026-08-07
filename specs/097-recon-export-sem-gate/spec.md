@@ -117,4 +117,13 @@ resolvido — e aí não há o que exportar em formato algum.
 - [x] CSV do Nibo exporta com o período **aberto** e conciliação pela metade.
 - [x] O arquivo baixado cobre o **intervalo visualizado** (nome: `conciliacao_<de>_a_<até>.csv`).
 - [x] Nenhum item do menu depende mais de fechar período.
-- [ ] Validar em tela (P.O.) — exige rebuild do **core-api** local (a rota é nova; sem ela, 404).
+- [x] Validado em tela pela P.O. em 2026-08-07 (stack local com core-api + web rebuildados).
+
+## Sequela: o conteúdo do arquivo
+
+Exportar a qualquer momento expôs a pergunta seguinte — **o que vem dentro** do CSV. Várias colunas saem
+vazias, e parte delas por hardcode no `export-reconciliation-nibo.ts` **mesmo com o dado disponível** no
+`ManualEntry` (categoria, centro de custo, contato, `documentNumber` do #370). Outras (Anotação, Data de
+previsão) não têm fonte alguma no fluxo e dependem de decisão de produto.
+
+→ **core-api#664**. Front não tem o que fazer: só dispara o download do texto cru que o BFF repassa.
