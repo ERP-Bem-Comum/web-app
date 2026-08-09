@@ -53,7 +53,7 @@ segundo obstáculo só na segunda tentativa.
 - [x] Realocação (Transferência/Aplicação/Resgate) segue **isenta** de classificação.
 - [x] Realocação sem destino cobra o **destino**, não a classificação.
 - [x] Todo motivo é uma tag existente no catálogo (senão a UI mostraria a chave crua).
-- [ ] Validar em tela (P.O.).
+- [x] Validado em tela pela P.O. em 2026-08-09 — campos obrigatórios confirmados.
 
 ## Rastro
 
