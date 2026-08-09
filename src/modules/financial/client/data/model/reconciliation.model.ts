@@ -304,7 +304,14 @@ export type ReconciliationPeriod = Readonly<{
 // "Importação em Lotes" (#146: separador `;`, data dd/MM/yyyy). PDF fica fora (#145).
 export type ExportFormat = 'ofx' | 'csv' | 'csv-nibo'
 export type ListReconciliationPeriodsInput = Readonly<{ debitAccountRef: string }>
-export type ExportReconciliationInput = Readonly<{ periodId: string; format: ExportFormat }>
+// #649: conta + intervalo (`YYYY-MM-DD`), não mais `periodId` — exporta o que está em tela, a qualquer
+// momento. Espelha `server/domain/reconciliation.io.ts`.
+export type ExportReconciliationInput = Readonly<{
+  debitAccountRef: string
+  periodStart: string
+  periodEnd: string
+  format: ExportFormat
+}>
 export type ReconciliationExport = Readonly<{ content: string; format: ExportFormat }>
 
 // Dados de referência da categorização (020 · #200/#147/#341). Hierarquia canônica de 3 níveis:

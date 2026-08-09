@@ -1,18 +1,15 @@
 /**
  * ExportMenu — view burra: botão "Exportar conciliação" + dropdown (CSV Nibo/PDF), fiel ao mock (espelha o
- * Importar, abre p/ cima no footer). CSV ligado ao #173 (exporta o período mais recente da conta, com
- * o range no topo do menu); PDF (#144) imprime o relatório do período visualizado DIRETO (`window.print()`,
- * sem nova aba/navegação). Recebe o estado de abrir/fechar (`menus`), a ação de export de texto
+ * Importar, abre p/ cima no footer). Recebe o estado de abrir/fechar (`menus`), a ação de export de texto
  * (`exportBinding`) e a de imprimir o relatório (`reportPdf`).
  *
  * O item OFX saiu da TELA (decisão da P.O.: "nunca será ativado"). O formato segue existindo no BFF e no
  * core-api (`format=ofx`) — foi removida a porta de entrada, não o transporte.
  *
- * Sobre o gate (P.O., 06/08): o PDF não tem impedimento algum — imprime o que está em tela. O CSV do Nibo
- * NÃO pode ser liberado só aqui: a rota é `GET /reconciliation-periods/:id/export` e o registro de período
- * só nasce em `POST /reconciliation-periods/close`, então sem período fechado não existe `:id` para chamar.
- * Enquanto o core-api não aceitar conta+intervalo (**core-api#649**), o item fica desabilitado com o motivo
- * ACIONÁVEL (dizer "nenhum período" não orienta; dizer "feche o período uma vez" orienta).
+ * **Sem gate de conciliação/fechamento (core-api#649).** Os DOIS itens exportam o intervalo VISUALIZADO, a
+ * qualquer momento: o CSV pela rota nova por conta+intervalo, o PDF por `window.print()` num bloco oculto.
+ * Como o critério virou o mesmo, o único "desabilitado" possível é não haver intervalo resolvido (período
+ * personalizado pela metade) — e aí não há o que exportar em nenhum dos dois.
  */
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
@@ -76,24 +73,16 @@ export function ExportMenu({ menus, exportBinding, reportPdf }: ExportMenuProps)
           />
           <div className={s.exportMenu} role="menu">
             <div className={s.ddGroup}>{t('financial.recon.export.group')}</div>
-            {/* O range só aparece quando HÁ período fechado — ele descreve o alvo do CSV, não o do PDF (que
-                imprime o intervalo em tela). Sem período, nenhuma linha global: o PDF continua livre, e
-                anunciar "nenhum período" no topo faria o menu inteiro parecer bloqueado. */}
-            {canExport && periodLabel !== null ? (
+            {/* Agora o range descreve o alvo dos DOIS itens (#649) — é o intervalo visualizado. */}
+            {periodLabel !== null ? (
               <div className={s.ddGroup}>{`${t('financial.recon.export.periodLabel')}: ${periodLabel}`}</div>
             ) : null}
             {ITEMS.map((it) => {
-              // PDF (#144): habilita por `reportPdf.enabled` (conta + intervalo em tela) — sem gate de
-              // conciliação concluída nem de período fechado. O CSV segue preso ao `:id` do período.
+              // Mesmo critério para os dois: intervalo resolvido em tela. O CSV soma o `exporting` porque é
+              // o único que faz rede (o PDF é `window.print()`, síncrono).
               const isPdf = it.format === null
               const disabled = isPdf ? !reportPdf.enabled : !canExport || exporting
-              const title = isPdf
-                ? reportPdf.enabled
-                  ? undefined
-                  : t('financial.recon.export.pdfNoRange')
-                : !canExport
-                  ? t('financial.recon.export.csvNeedsPeriod')
-                  : undefined
+              const title = disabled && !exporting ? t('financial.recon.export.noRange') : undefined
               return (
                 <button
                   key={it.ic}

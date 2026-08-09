@@ -403,10 +403,15 @@ export const createCoreApiReconciliationClient = (
   },
   exportReconciliation: async (i, token) => {
     // Export é TEXTO cru (application/x-ofx | text/csv), não JSON → resultFetchText.
-    const r = await resultFetchText(
-      `${baseUrl}/reconciliation-periods/${i.periodId}/export?format=${i.format}`,
-      { token },
-    )
+    // #649: rota por CONTA + INTERVALO. A antiga (`/reconciliation-periods/:id/export`) segue existindo no
+    // core-api, mas o front não a usa mais — ela obrigava a fechar o período antes de exportar.
+    const q = new URLSearchParams({
+      debitAccountRef: i.debitAccountRef,
+      periodStart: i.periodStart,
+      periodEnd: i.periodEnd,
+      format: i.format,
+    })
+    const r = await resultFetchText(`${baseUrl}/reconciliation/export?${q.toString()}`, { token })
     if (isErr(r)) return err(mapHttpError(r.error))
     return ok({ content: r.value, format: i.format })
   },

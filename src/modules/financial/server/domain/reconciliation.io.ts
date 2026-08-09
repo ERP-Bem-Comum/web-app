@@ -148,8 +148,16 @@ export interface ListReconciliationPeriodsInput {
 // minúsculo no core-api. `csv-nibo` = layout Nibo "Importação em Lotes" (#146). Exporta período Open ou
 // Closed (sem guard de status). PDF fica fora (#145).
 export type ExportFormat = 'ofx' | 'csv' | 'csv-nibo'
+/**
+ * Export por CONTA + INTERVALO (core-api#649). Antes era `periodId`, e como o registro de período só nasce
+ * ao FECHAR, exportar exigia conciliação concluída + período fechado. O core-api passou a aceitar a tripla
+ * direto (o período sempre foi só carona dela) → o alvo agora é o intervalo VISUALIZADO, igual ao do PDF.
+ * Datas em `YYYY-MM-DD`.
+ */
 export interface ExportReconciliationInput {
-  periodId: string
+  debitAccountRef: string
+  periodStart: string
+  periodEnd: string
   format: ExportFormat
 }
 

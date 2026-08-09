@@ -1445,11 +1445,9 @@ export const ptBR: Catalog = {
   'financial.recon.export.pdf': 'Relatório em PDF',
   'financial.recon.export.pdfHint': 'com totalizações',
   'financial.recon.export.periodLabel': 'Período a exportar',
-  // Motivos de desabilitado — um por item, ACIONÁVEIS. O CSV depende do `:id` do período (só existe depois
-  // de fechar uma vez); o PDF só precisa de um intervalo em tela. Não existe mais um "sem período" global.
-  'financial.recon.export.csvNeedsPeriod':
-    'A planilha do Nibo exporta um período já fechado — feche o período uma vez para habilitar',
-  'financial.recon.export.pdfNoRange': 'Selecione um período para imprimir o relatório',
+  // Único motivo de desabilitado que sobrou (core-api#649 tirou o gate de período fechado): sem intervalo
+  // resolvido não há o que exportar — vale igual para o CSV e para o PDF.
+  'financial.recon.export.noRange': 'Selecione um período para exportar',
   'financial.recon.export.exporting': 'Exportando…',
   // Relatório da Conciliação em PDF (#144) — tela print-friendly (window.print → "Salvar PDF")
   'financial.recon.report.title': 'Relatório da Conciliação',

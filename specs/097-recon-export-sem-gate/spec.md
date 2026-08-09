@@ -74,10 +74,56 @@ Isto segue a lição de [[disabled-precisa-parecer-disabled]]: quem está barrad
   desabilitado **e PDF habilitado**.
 - `tests/…/reconciliation-workspace.page.spec.tsx` — asserção do OFX migrada para o CSV.
 
-## Fica pendente (backend)
+## Fatia 2 — o gate do CSV cai (2026-08-07) ✅
 
-`GET /financial/reconciliation-periods/:id/export` precisa de uma forma de exportar **por conta + intervalo**,
-sem `periodId`. É o que falta para o CSV do Nibo cumprir "exportar a qualquer momento".
+**core-api#649 entregue** (PR core-api#653, commit `9398085a`), com a assinatura que a issue propôs:
 
-→ **core-api#649** (aberta em 06/08, com o diagnóstico e a proposta de assinatura). Quando subir, o front
-troca o alvo do CSV do "período fechado mais recente" para o **intervalo visualizado**, e o gate D3 cai.
+```
+GET /financial/reconciliation/export
+    ?debitAccountRef=<uuid>&periodStart=YYYY-MM-DD&periodEnd=YYYY-MM-DD&format=ofx|csv|csv-nibo
+```
+
+A rota antiga por `:id` foi mantida (as use-cases ganharam um discriminador `by: 'period' | 'range'`) — sem
+breaking change. O parse de data foi alinhado ao do `close`, então o arquivo sai **idêntico** ao de um
+período com essas mesmas datas.
+
+Com isso, **D3 cai**: o CSV do Nibo passa a exportar o **intervalo visualizado**, o mesmo alvo do PDF. Os dois
+itens do menu ficam sem gate de conciliação concluída ou de período fechado — o pedido original da P.O.
+cumprido por inteiro.
+
+### O que mudou na cadeia
+
+`ExportReconciliationInput` deixa de ser `{ periodId, format }` e passa a `{ debitAccountRef, periodStart,
+periodEnd, format }` — em **três** lugares que precisam concordar (o guard `AssertEqual` do
+`io-schemas.ts` cobra isso em compile time):
+
+- `server/domain/reconciliation.io.ts` (domínio do BFF)
+- `server/adapters/reconciliation.io-schemas.ts` (Zod na borda — `z.iso.date()`, igual ao core-api)
+- `client/data/model/reconciliation.model.ts` (espelho no client)
+
+E mais: `core-api-reconciliation.ts` monta a URL nova via `URLSearchParams`; a server fn virou pass-through
+(`exportReconciliation(data, …)`); `useExportConciliacao` recebe o `range` e **perde a query de períodos**
+(não precisa mais saber quais períodos existem).
+
+### Simplificação que veio junto
+
+Com os dois itens sob o mesmo critério, os dois motivos de desabilitado viram **um**:
+`export.csvNeedsPeriod` + `export.pdfNoRange` → **`export.noRange`** ("Selecione um período para exportar").
+Só sobra um caso de bloqueio real: período personalizado pela metade, quando não há intervalo nenhum
+resolvido — e aí não há o que exportar em formato algum.
+
+### Aceite da fatia 2
+
+- [x] CSV do Nibo exporta com o período **aberto** e conciliação pela metade.
+- [x] O arquivo baixado cobre o **intervalo visualizado** (nome: `conciliacao_<de>_a_<até>.csv`).
+- [x] Nenhum item do menu depende mais de fechar período.
+- [x] Validado em tela pela P.O. em 2026-08-07 (stack local com core-api + web rebuildados).
+
+## Sequela: o conteúdo do arquivo
+
+Exportar a qualquer momento expôs a pergunta seguinte — **o que vem dentro** do CSV. Várias colunas saem
+vazias, e parte delas por hardcode no `export-reconciliation-nibo.ts` **mesmo com o dado disponível** no
+`ManualEntry` (categoria, centro de custo, contato, `documentNumber` do #370). Outras (Anotação, Data de
+previsão) não têm fonte alguma no fluxo e dependem de decisão de produto.
+
+→ **core-api#664**. Front não tem o que fazer: só dispara o download do texto cru que o BFF repassa.
