@@ -133,3 +133,243 @@ describe('readPdfLines — DANFSe v1.0 por gabarito', () => {
     assert.equal(r, null)
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Cobertura dos demais gabaritos. Até aqui só a DANFSe v1 era exercida — e foi por isso que a ausência da
+// Descrição no FILU-SP passou despercebida: não havia teste para falhar. Fixtures SINTÉTICAS, montadas a
+// partir das âncoras declaradas em cada gabarito (não são PDFs reais).
+
+// DANFSe v2.0 (Fortaleza) — rótulos em MAIÚSCULAS, valores na linha de baixo tokenizados por "R$".
+const danfseV2Rows: readonly (readonly { str: string; x: number }[])[] = [
+  [{ str: 'DANFSe v2.0', x: 0 }],
+  [
+    { str: 'NÚMERO DA NFS-e', x: 0 },
+    { str: 'COMPETÊNCIA', x: 200 },
+    { str: 'DATA DE EMISSÃO', x: 400 },
+  ],
+  [
+    { str: '123', x: 0 },
+    { str: '01/08/2026', x: 200 },
+    { str: '05/08/2026', x: 400 },
+  ],
+  [
+    { str: 'NÚMERO DA DPS', x: 0 },
+    { str: 'SÉRIE DA DPS', x: 200 },
+  ],
+  [
+    { str: '9', x: 0 },
+    { str: '2', x: 200 },
+  ],
+  [{ str: '98765432109876543210987654321098765432109876543210', x: 0 }],
+  [
+    { str: 'EMITENTE DA NFS-e', x: 0 },
+    { str: 'CNPJ / CPF / NIF', x: 200 },
+  ],
+  [{ str: '11.222.333/0001-44', x: 200 }],
+  [
+    { str: 'TOMADOR DO SERVIÇO', x: 0 },
+    { str: 'CNPJ / CPF / NIF', x: 200 },
+  ],
+  [{ str: '30.275.386/0001-05', x: 200 }],
+  [{ str: 'Descrição do Serviço', x: 0 }],
+  [{ str: 'Consultoria técnica referente ao mês', x: 0 }],
+  [{ str: 'de julho de 2026.', x: 0 }],
+  [{ str: 'Tributação Municipal', x: 0 }],
+  [{ str: 'VALOR DA OPERAÇÃO', x: 0 }],
+  [{ str: 'R$ 10.000,00', x: 0 }],
+  [
+    { str: 'BC ISSQN', x: 0 },
+    { str: 'Alíquota Aplicada', x: 150 },
+    { str: 'Retenção do ISSQN', x: 300 },
+    { str: 'ISSQN Apurado', x: 450 },
+  ],
+  [
+    { str: 'R$ 10.000,00', x: 0 },
+    { str: '2,00%', x: 150 },
+    { str: 'Não Retido', x: 300 },
+    { str: 'R$ 200,00', x: 450 },
+  ],
+  [
+    { str: 'IRPF', x: 0 },
+    { str: 'Contribuição Previdenciária - Retida', x: 150 },
+    { str: 'Contribuições Sociais - Retidas', x: 400 },
+  ],
+  [
+    { str: 'R$ 150,00', x: 0 },
+    { str: '-', x: 150 },
+    { str: 'R$ 465,00', x: 400 },
+  ],
+]
+
+describe('readPdfLines — DANFSe v2.0 (Fortaleza) por gabarito', () => {
+  it('detecta o v2 e lê identificação, valor e retenções', () => {
+    const r = readPdfLines(groupLines(itemsFromRows(danfseV2Rows)))
+    assert.ok(r !== null)
+    assert.equal(r.kind, 'NFS-e')
+    assert.equal(r.category, 'service')
+    assert.equal(r.number, '123')
+    assert.equal(r.series, '2')
+    assert.equal(r.competence, '08/2026')
+    assert.equal(r.issueDate, '2026-08-05')
+    assert.equal(r.grossValue, 10000)
+    assert.equal(r.supplier.taxId, '11.222.333/0001-44')
+    assert.equal(r.retentions.irrf, 150)
+    assert.equal(r.retentions.inss, 0)
+    assert.equal(r.retentions.csll, 465)
+  })
+
+  it('ISSQN "Não Retido" → iss ZERO, mesmo com ISSQN Apurado preenchido', () => {
+    // O apurado (R$ 200,00) é quanto o prestador deve, não quanto foi retido de nós. Confundir os dois
+    // inventaria uma retenção que não existe.
+    const r = readPdfLines(groupLines(itemsFromRows(danfseV2Rows)))
+    assert.ok(r !== null)
+    assert.equal(r.retentions.iss, 0)
+  })
+
+  it('lê a Descrição do Serviço e a colapsa numa linha só', () => {
+    const r = readPdfLines(groupLines(itemsFromRows(danfseV2Rows)))
+    assert.ok(r !== null)
+    assert.equal(r.description, 'Consultoria técnica referente ao mês de julho de 2026.')
+  })
+
+  it('sem o bloco da Reforma Tributária, IBS/CBS ficam zerados (não quebram)', () => {
+    const r = readPdfLines(groupLines(itemsFromRows(danfseV2Rows)))
+    assert.ok(r !== null)
+    assert.equal(r.reformaTributaria.cbs, 0)
+    assert.equal(r.reformaTributaria.ibsMunicipal, 0)
+    assert.equal(r.reformaTributaria.ibsEstadual, 0)
+  })
+})
+
+// FILU — DANFSe da Prefeitura de São Paulo. Valores SEM "R$" → o gabarito usa regex posicional.
+const filuSpRows: readonly (readonly { str: string; x: number }[])[] = [
+  [{ str: 'PREFEITURA DO MUNICÍPIO DE SÃO PAULO', x: 0 }],
+  [{ str: 'NFS-e', x: 0 }],
+  [
+    { str: 'Número da Nota', x: 0 },
+    { str: 'Data e Hora de Emissão', x: 200 },
+    { str: 'Código de Verificação', x: 400 },
+  ],
+  [
+    { str: '00123456', x: 0 },
+    { str: '12/07/2026', x: 200 },
+    { str: 'ABCD-1234', x: 400 },
+  ],
+  [{ str: 'Discriminação dos Serviços', x: 0 }],
+  [{ str: 'Prestação de serviços de manutenção predial', x: 0 }],
+  [{ str: 'referente ao mês de julho/2026.', x: 0 }],
+  [{ str: 'VALOR TOTAL DO SERVIÇO = R$ 8.000,00', x: 0 }],
+  [
+    { str: 'INSS (R$)', x: 0 },
+    { str: 'IRRF (R$)', x: 100 },
+    { str: 'CSLL (R$)', x: 200 },
+    { str: 'COFINS (R$)', x: 300 },
+    { str: 'PIS/PASEP (R$)', x: 400 },
+    { str: 'IPI (R$)', x: 500 },
+  ],
+  [
+    { str: '0,00', x: 0 },
+    { str: '120,00', x: 100 },
+    { str: '72,00', x: 200 },
+    { str: '240,00', x: 300 },
+    { str: '52,00', x: 400 },
+    { str: '0,00', x: 500 },
+  ],
+  [
+    { str: 'Base de Cálculo (R$)', x: 0 },
+    { str: 'Alíquota (%)', x: 200 },
+    { str: 'Valor do ISS (R$)', x: 350 },
+  ],
+  [
+    { str: '8.000,00', x: 0 },
+    { str: '2,00', x: 200 },
+    { str: '160,00', x: 350 },
+    { str: '160,00', x: 450 },
+  ],
+]
+
+describe('readPdfLines — FILU / NFS-e São Paulo por gabarito', () => {
+  it('detecta o FILU e lê identificação, valor e retenções federais (valores SEM "R$")', () => {
+    const r = readPdfLines(groupLines(itemsFromRows(filuSpRows)))
+    assert.ok(r !== null)
+    assert.equal(r.kind, 'NFS-e')
+    assert.equal(r.category, 'service')
+    assert.equal(r.number, '123456')
+    assert.equal(r.issueDate, '2026-07-12')
+    assert.equal(r.competence, '07/2026')
+    assert.equal(r.grossValue, 8000)
+    assert.equal(r.retentions.inss, 0)
+    assert.equal(r.retentions.irrf, 120)
+    assert.equal(r.retentions.csll, 72)
+    assert.equal(r.retentions.cofins, 240)
+    assert.equal(r.retentions.pis, 52)
+  })
+
+  it('ISS do modelo SP é zerado por posProcessar (só confiável via XML)', () => {
+    const r = readPdfLines(groupLines(itemsFromRows(filuSpRows)))
+    assert.ok(r !== null)
+    assert.equal(r.retentions.iss, 0)
+  })
+
+  it('não extrai o CNPJ do emitente → sem auto-seleção de fornecedor por este gabarito', () => {
+    const r = readPdfLines(groupLines(itemsFromRows(filuSpRows)))
+    assert.ok(r !== null)
+    assert.equal(r.supplier.taxId, null)
+  })
+
+  // O FILU não declara o campo `descricao` (o rótulo aqui é "Discriminação dos Serviços", e o layout é
+  // outro: valores sem "R$", tabelas posicionais). Fora de escopo por decisão da P.O. em 09/08/2026 — novos
+  // modelos de gabarito entram em breve e o de São Paulo será revisto nessa leva.
+  // Teste de CARACTERIZAÇÃO: fixa o estado atual e falha de propósito quando o campo for adicionado,
+  // para quem mexer trocar o `null` pelo texto lido em vez de descobrir a mudança por acaso.
+  it('não lê a descrição hoje (fora de escopo — ver leva de novos gabaritos)', () => {
+    const r = readPdfLines(groupLines(itemsFromRows(filuSpRows)))
+    assert.ok(r !== null)
+    assert.equal(r.description, null)
+  })
+})
+
+// DANFE (NF-e de produto). Fixture mínima de propósito: o layout numérico do bloco "Cálculo do Imposto"
+// tem posições que eu não consigo confirmar sem um PDF real, e fixar um palpite aqui viraria uma verdade
+// falsa. O que este teste garante é o roteamento — que a NF-e de produto NÃO cai num gabarito de serviço.
+const danfeRows: readonly (readonly { str: string; x: number }[])[] = [
+  [{ str: 'DANFE', x: 0 }],
+  [{ str: 'DOCUMENTO AUXILIAR DA NOTA FISCAL ELETRÔNICA', x: 0 }],
+  [
+    { str: 'Nº 000123456', x: 0 },
+    { str: 'Série: 1', x: 200 },
+  ],
+  [
+    { str: 'Data emissão', x: 0 },
+    { str: '20/07/2026', x: 200 },
+  ],
+]
+
+describe('readPdfLines — DANFE (NF-e de produto) por gabarito', () => {
+  it('classifica como PRODUTO e não como serviço', () => {
+    const r = readPdfLines(groupLines(itemsFromRows(danfeRows)))
+    assert.ok(r !== null)
+    assert.equal(r.kind, 'NF-e')
+    assert.equal(r.category, 'product')
+    assert.equal(r.number, '123456')
+    assert.equal(r.series, '1')
+    assert.equal(r.issueDate, '2026-07-20')
+  })
+
+  it('produto tem bloco de impostos próprio (ICMS/IPI), serviço não', () => {
+    const r = readPdfLines(groupLines(itemsFromRows(danfeRows)))
+    assert.ok(r !== null)
+    assert.ok(r.productTaxes !== null)
+    const servico = readPdfLines(groupLines(itemsFromRows(danfseV2Rows)))
+    assert.ok(servico !== null)
+    assert.equal(servico.productTaxes, null)
+  })
+
+  // Diferente do FILU, aqui a ausência é CORRETA: nota de produto não tem "descrição do serviço" — o
+  // equivalente seria a lista de itens, que é outra decisão de produto.
+  it('sem descrição de serviço — esperado numa nota de produto', () => {
+    const r = readPdfLines(groupLines(itemsFromRows(danfeRows)))
+    assert.ok(r !== null)
+    assert.equal(r.description, null)
+  })
+})
