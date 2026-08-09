@@ -1395,3 +1395,96 @@ describe('engineTarget — motor de palpite (auto-navegar na aba Conciliação)'
     assert.equal(engineTarget({ ...base, justEntered: false, selectedIsMatch: false }), null)
   })
 })
+
+import { manualEntryBlockedTag } from '../../../../../src/modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
+import { ptBR } from '../../../../../src/shared/i18n/catalog.pt-BR.ts'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Classificação obrigatória ao conciliar lançamento manual (#331 + core-api#671).
+// O `canSubmit` da view é `manualEntryBlockedTag(...) === null`, então estes casos fixam AS DUAS coisas:
+// quando trava e o que a pessoa lê. A isenção é a parte frágil — se `requiresDestination` mudar, a
+// divergência com o backend (`isCapitalReallocation`) passaria calada sem estes testes.
+describe('manualEntryBlockedTag — classificação obrigatória', () => {
+  const ok = {
+    hasType: true,
+    needsDestination: false,
+    destinationFilled: false,
+    needsClassification: true,
+    categoryFilled: true,
+    costCenterFilled: true,
+  }
+
+  it('tudo preenchido → libera (null)', () => {
+    assert.equal(manualEntryBlockedTag(ok), null)
+  })
+
+  it('sem tipo → cobra o tipo antes de qualquer campo', () => {
+    assert.equal(
+      manualEntryBlockedTag({ ...ok, hasType: false, categoryFilled: false, costCenterFilled: false }),
+      'financial.recon.manual.blocked.type',
+    )
+  })
+
+  it('realocação (Transferência/Aplicação/Resgate) é ISENTA de classificação', () => {
+    // Espelha `isCapitalReallocation` do core-api: circula entre contas próprias, não classifica.
+    assert.equal(
+      manualEntryBlockedTag({
+        ...ok,
+        needsDestination: true,
+        destinationFilled: true,
+        needsClassification: false,
+        categoryFilled: false,
+        costCenterFilled: false,
+      }),
+      null,
+    )
+  })
+
+  it('realocação sem conta de destino → cobra o destino, não a classificação', () => {
+    assert.equal(
+      manualEntryBlockedTag({
+        ...ok,
+        needsDestination: true,
+        destinationFilled: false,
+        needsClassification: false,
+      }),
+      'financial.recon.manual.blocked.destination',
+    )
+  })
+
+  it('classificável sem NENHUM dos dois → mensagem única (não faz a pessoa resolver em duas rodadas)', () => {
+    assert.equal(
+      manualEntryBlockedTag({ ...ok, categoryFilled: false, costCenterFilled: false }),
+      'financial.recon.manual.blocked.classification',
+    )
+  })
+
+  it('classificável só sem categoria → nomeia a categoria', () => {
+    assert.equal(
+      manualEntryBlockedTag({ ...ok, categoryFilled: false }),
+      'financial.recon.manual.blocked.category',
+    )
+  })
+
+  it('classificável só sem centro de custo → nomeia o centro de custo', () => {
+    assert.equal(
+      manualEntryBlockedTag({ ...ok, costCenterFilled: false }),
+      'financial.recon.manual.blocked.costCenter',
+    )
+  })
+
+  it('todo motivo é uma tag EXISTENTE no catálogo (senão a UI mostra a chave crua)', () => {
+    const casos = [
+      { ...ok, hasType: false },
+      { ...ok, needsDestination: true, destinationFilled: false },
+      { ...ok, categoryFilled: false, costCenterFilled: false },
+      { ...ok, categoryFilled: false },
+      { ...ok, costCenterFilled: false },
+    ]
+    for (const c of casos) {
+      const tag = manualEntryBlockedTag(c)
+      assert.ok(tag !== null)
+      assert.ok(tag in ptBR, `tag ausente no catálogo: ${tag}`)
+    }
+  })
+})

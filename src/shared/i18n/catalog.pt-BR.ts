@@ -1742,6 +1742,13 @@ export const ptBR: Catalog = {
   'financial.recon.manual.categorize': 'Categorização',
   'financial.recon.manual.cancel': 'Cancelar',
   'financial.recon.manual.submitFull': 'Criar lançamento e conciliar',
+  // Motivos do "Conciliar" travado (#331 + core-api#671). Dizem o que FALTA, não que está inválido —
+  // nomeando o campo, para a pessoa saber onde mexer sem caçar.
+  'financial.recon.manual.blocked.type': 'Escolha o tipo do lançamento',
+  'financial.recon.manual.blocked.destination': 'Selecione a conta de destino',
+  'financial.recon.manual.blocked.classification': 'Informe o centro de custo e a categoria',
+  'financial.recon.manual.blocked.category': 'Informe a categoria',
+  'financial.recon.manual.blocked.costCenter': 'Informe o centro de custo',
   'financial.recon.manual.optional': 'opcional',
   'financial.recon.manual.descPlaceholder':
     'Descrição operacional do lançamento (aparece no relatório de conciliação)…',

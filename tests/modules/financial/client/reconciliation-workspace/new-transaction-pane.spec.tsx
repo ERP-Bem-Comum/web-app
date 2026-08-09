@@ -20,6 +20,7 @@ const baseBinding = (over: Partial<ManualEntryBinding> = {}): ManualEntryBinding
   effectiveDate: '',
   showCategorization: true,
   canSubmit: false,
+  submitBlockedTag: null,
   submitting: false,
   errorTag: null,
   supplierRef: '',
@@ -262,5 +263,54 @@ describe('NewTransactionPane', () => {
     render(<NewTransactionPane binding={baseBinding({ type: 'FeePenaltyInterest' })} />)
     expect(screen.queryByText(tr('financial.recon.manual.f.docNumber'))).toBeNull()
     expect(screen.queryByText(tr('financial.recon.manual.f.docType'))).toBeNull()
+  })
+})
+
+// Motivo do bloqueio VISÍVEL (#331 + core-api#671): a classificação virou obrigatória e o botão passou a
+// travar calado. Aqui a view precisa mostrar o porquê — tooltip sozinho não resolve (não existe no toque).
+describe('NewTransactionPane — por que o Conciliar está travado', () => {
+  const submitName = (n: string) => n.includes(tr('financial.recon.manual.submitFull'))
+
+  it('bloqueado por classificação: o motivo aparece em TEXTO e no title do botão', () => {
+    render(
+      <NewTransactionPane
+        binding={baseBinding({
+          type: 'Payment',
+          canSubmit: false,
+          submitBlockedTag: 'financial.recon.manual.blocked.classification',
+        })}
+      />,
+    )
+    const btn = screen.getByRole('button', { name: submitName })
+    expect(btn.hasAttribute('disabled')).toBe(true)
+    expect(btn.getAttribute('title')).toBe(tr('financial.recon.manual.blocked.classification'))
+    // O texto ao lado do botão é o que garante a leitura sem hover.
+    expect(screen.getByText(tr('financial.recon.manual.blocked.classification'))).toBeTruthy()
+  })
+
+  it('liberado: sem motivo em tela, sem title e botão ativo', () => {
+    render(
+      <NewTransactionPane
+        binding={baseBinding({ type: 'Payment', canSubmit: true, submitBlockedTag: null })}
+      />,
+    )
+    const btn = screen.getByRole('button', { name: submitName })
+    expect(btn.hasAttribute('disabled')).toBe(false)
+    expect(btn.getAttribute('title')).toBeNull()
+    expect(screen.queryByText(tr('financial.recon.manual.blocked.classification'))).toBeNull()
+  })
+
+  it('enviando: não repete o motivo (o botão já está ocupado, não barrado)', () => {
+    render(
+      <NewTransactionPane
+        binding={baseBinding({
+          type: 'Payment',
+          canSubmit: true,
+          submitting: true,
+          submitBlockedTag: null,
+        })}
+      />,
+    )
+    expect(screen.getByRole('button', { name: submitName }).hasAttribute('disabled')).toBe(true)
   })
 })
