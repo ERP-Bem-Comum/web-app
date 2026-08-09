@@ -276,7 +276,11 @@ export function useManualEntry(
   // Transferência/Aplicação/Resgate exigem a conta de destino selecionada (regra do backend). A confirmação
   // consciente foi removida a pedido da P.O. — só atrapalhava; engano é reversível pelo "desfazer".
   const destinationOk = !needsDestination || destinationAccount.trim() !== ''
-  const canSubmit = type !== null && destinationOk
+  // Regra da P.O. (Opção 1): tipo classificável (não-realocação → showCategorization) exige categoria +
+  // centro de custo ao conciliar. O backend é a autoridade (422 manual-entry-classification-required);
+  // aqui é a UX que trava o envio antes de bater na borda. Isentos: Transfer/Investment/Redemption.
+  const classificationOk = !showCategorization || (categoryRef.trim() !== '' && costCenterRef.trim() !== '')
+  const canSubmit = type !== null && destinationOk && classificationOk
 
   const mut = useMutation({
     mutationFn: (v: {
