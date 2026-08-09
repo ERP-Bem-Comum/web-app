@@ -1379,6 +1379,15 @@ export const ntHint = style({
   marginBlockEnd: sp.lg,
 })
 
+/** Motivo do "Conciliar" travado, ao lado do botão. Tom de dica (não de erro): nada falhou ainda. */
+export const ntBlocked = style({
+  fontFamily: recon.font.sans,
+  fontSize: fs['2xs'],
+  color: c.ink[5],
+  marginInlineEnd: sp.sm,
+  textAlign: 'end',
+})
+
 // ── Buscar / Criar vários (US3) — fiel ao mock (resumo, busca, grid, diferença) ──
 export const pmSummary = style({
   display: 'grid',
