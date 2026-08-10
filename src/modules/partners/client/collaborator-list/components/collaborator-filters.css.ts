@@ -1,10 +1,5 @@
 /**
- * Estilos do filtro de Colaboradores = modelo compartilhado (`shared/filters.css.ts`) + chip aplicado
- * na cor de Colaborador (âmbar). Fonte de verdade do visual: `partners/client/shared/filters.css.ts`.
+ * Estilos do filtro de Colaboradores = kit "brand" compartilhada (`#shared/ui/brand/brand-filters.css.ts`).
+ * O componente importa daqui os mesmos nomes; a identidade vem toda da kit (zero override local).
  */
-import { appliedChipVariant, appliedChipRemoveVariant } from '#modules/partners/client/shared/filters.css.ts'
-
-export * from '#modules/partners/client/shared/filters.css.ts'
-
-export const appliedChip = appliedChipVariant.collaborator
-export const appliedChipRemove = appliedChipRemoveVariant.collaborator
+export * from '#shared/ui/brand/brand-filters.css.ts'

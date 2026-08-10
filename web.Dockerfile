@@ -48,7 +48,7 @@ COPY . .
 CMD ["pnpm", "dev", "--host", "0.0.0.0", "--port", "3000"]
 
 # ── Stage 5 — runtime (produção, distroless) ─────────────────────────────────
-FROM cgr.dev/chainguard/node:latest@sha256:955b52dd59f8a73419fe1931e13a9b9eb822e7e5fda21ca754688b55753ea6ca AS runtime
+FROM cgr.dev/chainguard/node:latest@sha256:8e1189525a80564e0df5cec59bc4aa5d859869e6e7c05b0a4290682fbd53563e AS runtime
 LABEL org.opencontainers.image.title="bemcomum-web" \
       org.opencontainers.image.description="ERP Bem Comum — Front + BFF (TanStack Start)." \
       org.opencontainers.image.vendor="Envolve / Bem Comum" \
@@ -65,6 +65,12 @@ ENV NODE_ENV=production \
 WORKDIR /app
 # Nitro empacota tudo em .output (self-contained, sem node_modules). Owner = nonroot (uid 65532).
 COPY --from=build --chown=65532:65532 /app/.output ./.output
+
+# Revisão embutida no BUILD (`/version` — FR-002). Tem que ser build-arg: o label OCI não é legível de
+# DENTRO do container, e a env do compose diria só o que o deploy achou que subiu, não o que subiu.
+# Declarado DEPOIS do COPY de propósito: um SHA novo a cada build não invalida a layer do `.output`.
+ARG GIT_SHA=dev
+ENV APP_REVISION=$GIT_SHA
 
 # Non-root explícito (a tag :nonroot já usa 65532; reforço p/ CIS/Docker-Bench — ADR-0015).
 USER 65532:65532

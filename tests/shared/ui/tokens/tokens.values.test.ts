@@ -46,7 +46,9 @@ describe('design tokens — valores (fidelidade v1)', () => {
   })
 
   it('cores institucionais ficam confinadas ao papel `institutional` (não vazam p/ outros papéis)', () => {
-    const { institutional: _institutional, ...otherRoles } = tokenValues.color
+    // `chart` também é excluído: o papel de série de gráfico REUSA o verde institucional #1f7d55
+    // deliberadamente (série "Realizado"), reaproveitamento explícito da identidade — não vazamento.
+    const { institutional: _institutional, chart: _chart, ...otherRoles } = tokenValues.color
     const leaves = collectLeaves(otherRoles).map((s) => s.toLowerCase())
     for (const c of INSTITUTIONAL_COLORS) {
       assert.equal(
@@ -79,20 +81,28 @@ describe('design tokens — valores (fidelidade v1)', () => {
   // QUALQUER outro papel (nova paleta concorrente) falha o deepEqual. Trava contra papel com nome de cor cru.
   it('governança: papéis de cor = conjunto canônico fechado, sem nova paleta concorrente', () => {
     const colorRoles = Object.keys(tokenValues.color)
-    const allowedRoles = ['brand', 'surface', 'text', 'border', 'feedback', 'nav', 'status', 'partnerType', 'institutional']
+    const allowedRoles = [
+      'brand',
+      'surface',
+      'text',
+      'border',
+      'feedback',
+      'nav',
+      'status',
+      'partnerType',
+      'chart',
+      'institutional',
+    ]
     assert.deepEqual(
       [...colorRoles].sort(),
       [...allowedRoles].sort(),
-      'color tem papéis fora do conjunto canônico (possível nova paleta). Permitido: ' + allowedRoles.join(', '),
+      'color tem papéis fora do conjunto canônico (possível nova paleta). Permitido: ' +
+        allowedRoles.join(', '),
     )
     // nenhum papel NOVO nomeado por cor crua (ex.: "blue", "green", "cyan")
     const FORBIDDEN_ROLE_NAMES = /blue|green|cyan|legacy/i
     for (const role of colorRoles) {
-      assert.equal(
-        FORBIDDEN_ROLE_NAMES.test(role),
-        false,
-        `papel de cor nomeado por cor crua: "${role}"`,
-      )
+      assert.equal(FORBIDDEN_ROLE_NAMES.test(role), false, `papel de cor nomeado por cor crua: "${role}"`)
     }
   })
 })

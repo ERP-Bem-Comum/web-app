@@ -33,6 +33,46 @@ describe('rootViewModel.resolvePageTitle', () => {
     assert.strictEqual(rootViewModel.resolvePageTitle('/programas'), 'Programas')
     assert.strictEqual(rootViewModel.resolvePageTitle('/programas/criar'), 'Programas')
     assert.strictEqual(rootViewModel.resolvePageTitle('/financeiro/contas-a-pagar'), 'Contas a Pagar')
+    // Plano Orçamentário: Planejamento (lista + detalhe) e Consolidado ABC
+    assert.strictEqual(rootViewModel.resolvePageTitle('/planejamento'), 'Planejamento')
+    assert.strictEqual(rootViewModel.resolvePageTitle('/planejamento/detalhes/3'), 'Planejamento')
+    assert.strictEqual(rootViewModel.resolvePageTitle('/consolidado'), 'Consolidado ABC')
+    // Relatórios → Fornecedores sem Contrato (alimenta o document.title; a page tem PageHeader próprio)
+    assert.strictEqual(
+      rootViewModel.resolvePageTitle('/relatorios/fornecedores-sem-contrato'),
+      'Fornecedores sem Contrato',
+    )
+    // Relatórios → Realizado × Planejado (feature 045)
+    assert.strictEqual(
+      rootViewModel.resolvePageTitle('/relatorios/realizado-x-planejado'),
+      'Realizado × Planejado',
+    )
+    // Relatórios → Equipe ABC (feature 046)
+    assert.strictEqual(rootViewModel.resolvePageTitle('/relatorios/equipe'), 'Equipe ABC')
+    // Relatórios → Posição de Pagamentos (feature 048)
+    assert.strictEqual(
+      rootViewModel.resolvePageTitle('/relatorios/posicao-pagamentos'),
+      'Posição de Pagamentos',
+    )
+    // Relatórios → Posição de Recebimentos (feature 048 — espelho da de Pagamentos)
+    assert.strictEqual(
+      rootViewModel.resolvePageTitle('/relatorios/posicao-recebimentos'),
+      'Posição de Recebimentos',
+    )
+    // Relatórios → Análise de Pagamentos (feature 051 — matriz tempo-orçamentária)
+    assert.strictEqual(
+      rootViewModel.resolvePageTitle('/relatorios/analise-pagamentos'),
+      'Análise de Pagamentos',
+    )
+    // Relatórios → Análise de Recebimentos (feature 051 — espelho da de Pagamentos)
+    assert.strictEqual(
+      rootViewModel.resolvePageTitle('/relatorios/analise-recebimentos'),
+      'Análise de Recebimentos',
+    )
+    // Relatórios → Fluxo de Caixa (feature 053 — Saídas × Entradas × Saldo)
+    assert.strictEqual(rootViewModel.resolvePageTitle('/relatorios/fluxo-caixa'), 'Fluxo de Caixa')
+    // Relatórios → Relatório Geral (feature 053 — ledger achatado/paginado)
+    assert.strictEqual(rootViewModel.resolvePageTitle('/relatorios/geral'), 'Relatório Geral')
   })
   it('cai no fallback para rota desconhecida e não casa substring solta', () => {
     assert.strictEqual(rootViewModel.resolvePageTitle('/desconhecida'), 'ERP Bem Comum')
@@ -56,7 +96,8 @@ describe('rootViewModel.sidebarWidth / showPageHeader', () => {
   })
   it('esconde o header do shell em /contratos/criar e em /parceiros/* (que têm header próprio)', () => {
     assert.strictEqual(rootViewModel.showPageHeader('/contratos/criar'), false)
-    assert.strictEqual(rootViewModel.showPageHeader('/contratos'), true)
+    // A lista /contratos agora desenha o próprio cabeçalho (legenda bege) — shell não renderiza o h1.
+    assert.strictEqual(rootViewModel.showPageHeader('/contratos'), false)
     assert.strictEqual(rootViewModel.showPageHeader('/parceiros/fornecedores'), false)
     assert.strictEqual(rootViewModel.showPageHeader('/parceiros/colaboradores'), false)
     // Usuários (lista + sub-rotas) têm PageHeader próprio → shell não renderiza h1 (igual a parceiros)
@@ -65,19 +106,81 @@ describe('rootViewModel.sidebarWidth / showPageHeader', () => {
     assert.strictEqual(rootViewModel.showPageHeader('/minha-conta'), false)
     assert.strictEqual(rootViewModel.showPageHeader('/programas'), false)
     assert.strictEqual(rootViewModel.showPageHeader('/programas/criar'), false)
-    assert.strictEqual(rootViewModel.showPageHeader('/dashboard'), true)
+    // Plano Orçamentário: cada page tem PageHeader próprio → shell não renderiza h1.
+    assert.strictEqual(rootViewModel.showPageHeader('/planejamento'), false)
+    assert.strictEqual(rootViewModel.showPageHeader('/planejamento/detalhes/3'), false)
+    assert.strictEqual(rootViewModel.showPageHeader('/consolidado'), false)
+    // Dashboard (043): full-bleed com canvas próprio e SEM título (pedido da P.O.) → shell não renderiza h1.
+    assert.strictEqual(rootViewModel.showPageHeader('/dashboard'), false)
     // Financeiro: o grid mantém o h1 do shell; o Lançar Documento tem topbar própria.
     assert.strictEqual(rootViewModel.showPageHeader('/financeiro/contas-a-pagar'), true)
     assert.strictEqual(rootViewModel.showPageHeader('/financeiro/contas-a-pagar/lancar'), false)
     // Conciliação: o grid (Contas Bancárias) mantém o h1; o workspace de uma conta usa o hero próprio.
     assert.strictEqual(rootViewModel.showPageHeader('/financeiro/conciliacao'), true)
     assert.strictEqual(rootViewModel.showPageHeader('/financeiro/conciliacao/acc-123'), false)
+    // Relatórios: a page desenha o próprio PageHeader "brand" → shell não renderiza h1.
+    assert.strictEqual(rootViewModel.showPageHeader('/relatorios/fornecedores-sem-contrato'), false)
   })
 
-  it('fullBleedContent: só o workspace de conciliação é full-bleed (o grid mantém o padding)', () => {
+  it('resolvePageSubtitle: legenda no header do shell só p/ Contas a Pagar e Contas Bancárias', () => {
+    // /contratos desenha o próprio cabeçalho (legenda bege na página) → sem legenda do shell.
+    assert.strictEqual(rootViewModel.resolvePageSubtitle('/contratos'), undefined)
+    assert.strictEqual(
+      rootViewModel.resolvePageSubtitle('/financeiro/contas-a-pagar'),
+      'Gestão de documentos e pagamentos do programa',
+    )
+    assert.strictEqual(
+      rootViewModel.resolvePageSubtitle('/financeiro/conciliacao'),
+      'Contas cedentes e conciliação bancária',
+    )
+    // Telas com legenda própria na page (ou sem header do shell) não recebem legenda do shell.
+    assert.strictEqual(rootViewModel.resolvePageSubtitle('/dashboard'), undefined)
+    assert.strictEqual(rootViewModel.resolvePageSubtitle('/parceiros/colaboradores'), undefined)
+  })
+
+  it('fullBleedContent: workspace de conciliação e Dashboard são full-bleed', () => {
     assert.strictEqual(rootViewModel.fullBleedContent('/financeiro/conciliacao/acc-123'), true)
-    assert.strictEqual(rootViewModel.fullBleedContent('/financeiro/conciliacao'), false)
-    assert.strictEqual(rootViewModel.fullBleedContent('/dashboard'), false)
+    // Grids financeiros + Contratos (LISTA) agora são full-bleed (recuo da marca, 28px, igual aos demais);
+    // as sub-rotas (criar/detalhe/lançar) mantêm o layout próprio (não full-bleed).
+    assert.strictEqual(rootViewModel.fullBleedContent('/financeiro/conciliacao'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/financeiro/contas-a-pagar'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/financeiro/contas-a-pagar/lancar'), false)
+    assert.strictEqual(rootViewModel.fullBleedContent('/contratos'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/contratos/criar'), false)
+    assert.strictEqual(rootViewModel.fullBleedContent('/contratos/abc-1'), false)
+    // Dashboard (043): canvas bege preenche toda a área de conteúdo (sem a margem branca do shell).
+    assert.strictEqual(rootViewModel.fullBleedContent('/dashboard'), true)
+    // Colaboradores: a identidade "brand" cobre TODA a subárvore (lista + criar + detalhe) → full-bleed.
+    assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/colaboradores'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/colaboradores/criar'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/colaboradores/abc-1'), true)
+    // Fornecedores/Financiadores/ATOS: subárvore "brand" completa (lista + criar + detalhe) → full-bleed.
+    assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/fornecedores'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/fornecedores/criar'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/fornecedores/abc-1'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/financiadores'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/financiadores/criar'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/atos'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/atos/abc-1'), true)
+    // Estados e Municípios: cards "brand" full-bleed (canvas azul-claro ocupando a largura).
+    assert.strictEqual(rootViewModel.fullBleedContent('/parceiros/territorios'), true)
+    // Planejamento: toda a subárvore é full-bleed (lista + detalhe + orçamento).
+    assert.strictEqual(rootViewModel.fullBleedContent('/planejamento'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/planejamento/detalhes/abc'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/planejamento/detalhes/abc/orcamento'), true)
+    // Consolidado ABC: full-bleed.
+    assert.strictEqual(rootViewModel.fullBleedContent('/consolidado'), true)
+    // Programas/Usuários: subárvore "brand" completa (lista + criar + detalhe) → full-bleed.
+    assert.strictEqual(rootViewModel.fullBleedContent('/programas'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/programas/criar'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/programas/abc-1'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/usuarios'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/usuarios/criar'), true)
+    assert.strictEqual(rootViewModel.fullBleedContent('/usuarios/abc-1'), true)
+    // Minha Conta: cartão de perfil no shell "brand" → full-bleed.
+    assert.strictEqual(rootViewModel.fullBleedContent('/minha-conta'), true)
+    // Relatórios: toda a subárvore "brand" full-bleed.
+    assert.strictEqual(rootViewModel.fullBleedContent('/relatorios/fornecedores-sem-contrato'), true)
   })
 })
 
@@ -271,5 +374,89 @@ describe('rootViewModel.visibleMenu (MENU real — geografia)', () => {
       'ACTs',
       'Estados e Municípios',
     ])
+  })
+})
+
+// Regressão de CONFIGURAÇÃO do "Plano Orçamentário" (feature 041 — Consolidado ABC). Deixou de ser link
+// direto e virou accordion com 2 subitens (Planejamento + Consolidado ABC), ambos SEM requiredPermission
+// (o backend cobra o acesso quando #113 nascer). A seção sobrevive com permissions vazias.
+describe('rootViewModel.visibleMenu (MENU real — Plano Orçamentário)', () => {
+  const findPlano = (menu: readonly MenuSection[]): MenuSection | undefined =>
+    menu.find((s) => s.label === 'Plano Orçamentário')
+
+  it('é accordion (sem `to` direto) com Planejamento e Consolidado ABC', () => {
+    const plano = findPlano(MENU)
+    assert.ok(plano, 'a seção "Plano Orçamentário" deve existir')
+    assert.strictEqual(plano?.to, undefined, 'não é mais link direto')
+    assert.deepStrictEqual(
+      plano?.subItems?.map((s) => s.label),
+      ['Planejamento', 'Consolidado ABC'],
+    )
+    assert.deepStrictEqual(
+      plano?.subItems?.map((s) => s.to),
+      ['/planejamento', '/consolidado'],
+    )
+  })
+
+  it('sobrevive com permissions vazias (subitens públicos)', () => {
+    const v = rootViewModel.visibleMenu(MENU, [])
+    const plano = findPlano(v)
+    assert.ok(plano, 'a seção deve aparecer sem RBAC')
+    assert.deepStrictEqual(
+      plano?.subItems?.map((s) => s.label),
+      ['Planejamento', 'Consolidado ABC'],
+    )
+  })
+})
+
+// Regressão de CONFIGURAÇÃO do "Relatórios" (features 044/045). Accordion com os subitens "Fornecedores sem
+// Contrato" e "Realizado × Planejado" (ambos sem requiredPermission — os relatórios não têm RBAC).
+// Sobrevive com permissions vazias.
+describe('rootViewModel.visibleMenu (MENU real — Relatórios)', () => {
+  const findRelatorios = (menu: readonly MenuSection[]): MenuSection | undefined =>
+    menu.find((s) => s.label === 'Relatórios')
+
+  it('é accordion (sem `to` direto) com os 7 relatórios (Fornecedores sem Contrato + Realizado × Planejado + Equipe ABC + Posição de Pagamentos + Posição de Recebimentos + Análise de Pagamentos + Análise de Recebimentos)', () => {
+    const rel = findRelatorios(MENU)
+    assert.ok(rel, 'a seção "Relatórios" deve existir')
+    assert.strictEqual(rel?.to, undefined, 'não é link direto')
+    assert.deepStrictEqual(
+      rel?.subItems?.map((s) => s.label),
+      [
+        'Fornecedores sem Contrato',
+        'Realizado × Planejado',
+        'Equipe ABC',
+        'Posição de Pagamentos',
+        'Posição de Recebimentos',
+        'Análise de Pagamentos',
+        'Análise de Recebimentos',
+        'Fluxo de Caixa',
+        'Relatório Geral',
+      ],
+    )
+    assert.strictEqual(rel?.subItems?.[0]?.to, '/relatorios/fornecedores-sem-contrato')
+    assert.strictEqual(rel?.subItems?.[1]?.to, '/relatorios/realizado-x-planejado')
+    assert.strictEqual(rel?.subItems?.[2]?.to, '/relatorios/equipe')
+    assert.strictEqual(rel?.subItems?.[3]?.to, '/relatorios/posicao-pagamentos')
+    assert.strictEqual(rel?.subItems?.[4]?.to, '/relatorios/posicao-recebimentos')
+    assert.strictEqual(rel?.subItems?.[5]?.to, '/relatorios/analise-pagamentos')
+    assert.strictEqual(rel?.subItems?.[6]?.to, '/relatorios/analise-recebimentos')
+    // Os 2 novos relatórios (feature 053) — Fluxo de Caixa + Relatório Geral.
+    assert.strictEqual(rel?.subItems?.[7]?.to, '/relatorios/fluxo-caixa')
+    assert.strictEqual(rel?.subItems?.[8]?.to, '/relatorios/geral')
+    // Equipe ABC + Posição (Pag/Rec) + Análise (Pag/Rec) + Fluxo + Geral sem requiredPermission (RBAC pós-entrega).
+    assert.strictEqual(rel?.subItems?.[2]?.requiredPermission, undefined)
+    assert.strictEqual(rel?.subItems?.[3]?.requiredPermission, undefined)
+    assert.strictEqual(rel?.subItems?.[4]?.requiredPermission, undefined)
+    assert.strictEqual(rel?.subItems?.[5]?.requiredPermission, undefined)
+    assert.strictEqual(rel?.subItems?.[6]?.requiredPermission, undefined)
+    assert.strictEqual(rel?.subItems?.[7]?.requiredPermission, undefined)
+    assert.strictEqual(rel?.subItems?.[8]?.requiredPermission, undefined)
+  })
+
+  it('sobrevive com permissions vazias (subitens públicos, sem RBAC)', () => {
+    const rel = findRelatorios(rootViewModel.visibleMenu(MENU, []))
+    assert.ok(rel, 'a seção deve aparecer sem RBAC')
+    assert.strictEqual(rel?.subItems?.length, 9)
   })
 })

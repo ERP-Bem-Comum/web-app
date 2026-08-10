@@ -4,21 +4,30 @@
  * ações. No sucesso, mostra os **títulos gerados** (FR-007). Não usa data-hooks/useReducer direto — só os
  * hooks de binding/controller.
  */
-import type { ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 
 import { useDocumentFormController } from '../document-form.controller.ts'
-import { useOcrExtraction } from '../ocr.binding.ts'
+import { useDocumentReader } from '../reader/document-reader.binding.ts'
+import { mapReadingToPatch, matchPartnerByTaxId } from '../document-reading.view.ts'
+import { useDocumentPreview } from '../document-preview.binding.ts'
+import { useAttachmentFile } from '../attachment-preview.binding.ts'
+import { useOcrPanelResize } from '../ocr-panel-resize.binding.ts'
 import { useSupplierPickerController } from '../supplier-picker.controller.ts'
 import { useLancarDocumentoBinding } from '../create-document.binding.ts'
 import { useDocumentEditing } from '../edit-document.binding.ts'
 import { usePartnersOptions } from '../partners-options.binding.ts'
 import { usePartnerHydration } from '../partner-hydration.binding.ts'
 import { useProgramOptions } from '../program-options.binding.ts'
-import { useCategoryOptions, useCostCenterOptions } from '../category-options.binding.ts'
+import {
+  useCategoryOptionsFromPlan,
+  useCostCenterOptionsFromPlan,
+  useSubcategoryOptionsFromPlan,
+} from '../category-options.binding.ts'
+import { usePlanoOrcamentarioOptions } from '../plano-options.binding.ts'
 import { useApproverOptions } from '../approver-options.binding.ts'
 import { useAccountOptions } from '../account-options.binding.ts'
 import {
@@ -28,6 +37,10 @@ import {
   canSubmit,
   canSaveDraft,
   canSaveEdit,
+  ocrReadFields,
+  type DocumentReadingPatch,
+  type OcrFieldKey,
+  type OcrStatus,
 } from '../document-form.view.ts'
 import { DocumentForm } from '../components/document-form.component.tsx'
 import { SupplierPicker } from '../components/supplier-picker.component.tsx'
@@ -39,6 +52,8 @@ import {
   crumb,
   errorBanner,
   formCol,
+  resizeHandle,
+  resizeHandleActive,
   scrollArea,
   screen,
   sidebarCol,
@@ -55,12 +70,48 @@ export type LancarDocumentoPageProps = Readonly<{ documentId?: string }>
 export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {}): ReactNode {
   const navigate = useNavigate()
   const edit = useDocumentEditing(documentId)
-  const controller = useDocumentFormController(edit.initialFields)
-  // OCR (costura p/ core-api#62): no sucesso, aplica o patch extraído no form. Hoje devolve "indisponível".
-  const ocr = useOcrExtraction(controller.applyPatch)
+  // Largura redimensionável da coluna OCR (arraste/teclado, persistida) — UI-state via binding.
+  const ocrResize = useOcrPanelResize()
+  // Arquivo subido mantido no estado da page (a navegação create→edit é MESMA rota → o componente não
+  // desmonta → o File sobrevive p/ o web view). Um reload direto do `?id` perde o arquivo → sem preview.
+  const [ocrFile, setOcrFile] = useState<File | null>(null)
+  const partners = usePartnersOptions()
+  // LEITOR CLIENT-SIDE por gabarito (ADR-0021): lê o arquivo LOCAL (XML por leiaute / PDF por camada de texto)
+  // e mapeia p/ o patch dos campos. Aditivo à ingestão do backend; onde ambos têm o campo, o cliente vence.
+  const clientReader = useDocumentReader(ocrFile)
+  const readingMap = useMemo(
+    () => (clientReader.reading !== null ? mapReadingToPatch(clientReader.reading) : null),
+    [clientReader.reading],
+  )
+  // Patch final = campos mapeados + fornecedor casado por CNPJ contra os parceiros já carregados no client.
+  const readingPatch = useMemo<DocumentReadingPatch | null>(() => {
+    if (readingMap === null || clientReader.reading === null) return null
+    const supplierRef = matchPartnerByTaxId(partners, clientReader.reading.supplier.taxId)
+    return supplierRef !== null ? { ...readingMap.patch, supplierRef } : readingMap.patch
+  }, [readingMap, partners, clientReader.reading])
+  const controller = useDocumentFormController(edit.initialFields, readingPatch)
+  // CA2/CA3 (#568): na edição de um documento salvo por OCR, o comprovante-fonte vem do backend (via server-fn
+  // → base64 → File). Precede-se o arquivo LOCAL recém-subido (create). Sem anexo → null (não busca; CA3).
+  const attachmentFile = useAttachmentFile(documentId, edit.detail?.attachment ?? null, edit.isEdit)
+  const preview = useDocumentPreview(ocrFile ?? attachmentFile)
+  // Upload = LEITURA LOCAL apenas (ADR-0021): guarda o File no estado (dirige o leitor client-side p/ os campos
+  // + o web view), SEM criar nada no servidor. O rascunho/documento só nasce quando o usuário clica em "Salvar
+  // rascunho"/"Salvar Documento" — o comprovante vai JUNTO nessa ação (não mais por ingestão automática, que
+  // criava rascunho-fantasma e prendia o anexo fora do documento salvo).
+  const handleSelectFile = (file: File): void => {
+    setOcrFile(file)
+  }
+  // Status do web view local (sem ingestão): 'reading' do leitor client-side → "lendo"; demais → idle.
+  const previewStatus: OcrStatus = clientReader.status === 'reading' ? 'running' : 'idle'
+  // Destaque âmbar + tag "OCR": une o que o LEITOR client preencheu (precedência) ao derivado do rascunho
+  // backend (fallback quando o leitor não reconhece o documento). Baseado na extração, não nos edits.
+  const backendOcrFields = ocrReadFields(edit.initialFields ?? null, ocrFile !== null)
+  const ocrFields = useMemo<ReadonlySet<OcrFieldKey>>(
+    () => new Set<OcrFieldKey>([...backendOcrFields, ...(readingMap?.ocrKeys ?? [])]),
+    [backendOcrFields, readingMap],
+  )
   const picker = useSupplierPickerController()
   const command = useLancarDocumentoBinding()
-  const partners = usePartnersOptions()
 
   // Sucesso → o binding invalida a lista e redireciona pro grid (sem card de sucesso inline).
   const selectedPartner = partners.find((p) => p.id === controller.fields.supplierRef) ?? null
@@ -73,8 +124,16 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
   // Programa (Categorização) — opções reais + valor efetivo: o escolhido pelo usuário tem prioridade;
   // senão herda o programa do contrato selecionado (quando houver).
   const programOptions = useProgramOptions()
-  const categoryOptions = useCategoryOptions()
-  const costCenterOptions = useCostCenterOptions()
+  // Cascata Centro → Categoria → Subcategoria (#341): cada nível filtra pelo escolhido no de cima. Os 3
+  // hooks compartilham o MESMO fetch cacheado de referências (`referenceOptionsQuery`).
+  // Cascata da CATEGORIZAÇÃO (Fatia 1 · ADR-0051): com um Plano Orçamentário selecionado, os 3 níveis vêm da
+  // ÁRVORE cadastrada no Orçamento para aquele plano; sem plano, do catálogo operacional. A troca de fonte é
+  // no binding — a page só passa o `planoOrcamentario`.
+  const planoRef = controller.fields.planoOrcamentario
+  const categoryOptions = useCategoryOptionsFromPlan(planoRef, controller.fields.costCenterRef)
+  const subcategoryOptions = useSubcategoryOptionsFromPlan(planoRef, controller.fields.categoryRef)
+  const costCenterOptions = useCostCenterOptionsFromPlan(planoRef)
+  const planoOptions = usePlanoOrcamentarioOptions()
   const approverOptions = useApproverOptions()
   const accountOptions = useAccountOptions()
   const programValue =
@@ -99,11 +158,43 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
   const formLocks = mode === 'edit' || mode === 'view' ? (edit.locks ?? undefined) : undefined
   // Bottombar: rascunho reaproveita as ações de criação (Salvar Documento / Salvar rascunho).
   const bottombarMode = mode === 'draft' ? 'create' : mode
+
+  // #502/S3 — HERANÇA da categorização do contrato: quando o fornecedor tem contrato ATIVO vinculado, a cascata
+  // (Programa → Plano → Centro → Categoria → Subcategoria) é PRÉ-PREENCHIDA a partir dos refs do contrato — igual
+  // aos dados bancários. Só em create/draft (edição/consulta hidratam do próprio documento). Aplica UMA vez por
+  // contrato (guard por ref) → o operador pode editar depois sem ser sobrescrito; trocar de contrato re-herda.
+  const inheritCategorization = controller.hydrateCategorization
+  const appliedContractRef = useRef<string | null>(null)
+  const cRef = selectedContract?.ref ?? null
+  const cProgram = selectedContract?.programRef ?? ''
+  const cPlan = selectedContract?.budgetPlanRef ?? ''
+  const cCost = selectedContract?.costCenterRef ?? ''
+  const cCat = selectedContract?.categoryRef ?? ''
+  const cSub = selectedContract?.subcategoryRef ?? ''
+  const canInherit = mode === 'create' || mode === 'draft'
+  useEffect(() => {
+    if (!canInherit || cRef === null) {
+      appliedContractRef.current = cRef === null ? null : appliedContractRef.current
+      return
+    }
+    if (appliedContractRef.current === cRef) return
+    appliedContractRef.current = cRef
+    inheritCategorization({
+      programRef: cProgram,
+      planoOrcamentario: cPlan,
+      costCenterRef: cCost,
+      categoryRef: cCat,
+      subcategoryRef: cSub,
+    })
+  }, [canInherit, cRef, cProgram, cPlan, cCost, cCat, cSub, inheritCategorization])
+
   const goToGrid = (): void => {
     void navigate({ to: '/financeiro/contas-a-pagar' })
   }
 
-  // Anexa os refs do contrato "Em Andamento" e dispara o create (backend deriva a categorização — #48).
+  // Anexa os refs do contrato "Em Andamento" e dispara o create (backend deriva a categorização — #48). O
+  // arquivo LOCAL recém-subido (#577) vai JUNTO: o binding base64-encoda e anexa ao create atômico → o
+  // comprovante nasce no documento salvo (rascunho OU Aberto), não mais num rascunho-fantasma.
   const submit = (base: ReturnType<typeof buildCreateInput>): void => {
     if (base === null) return
     // payeeKind (#90) derivado do parceiro selecionado (mesmos valores do enum do backend); default server 'supplier'.
@@ -119,6 +210,9 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
             budgetPlanRef: c.budgetPlanRef ?? undefined,
           }
         : withPayee,
+      // Arquivo local (upload novo) tem precedência; ao FINALIZAR um rascunho reaberto (sem upload local),
+      // reusa o comprovante já anexado (attachmentFile, vindo do servidor) p/ ele viajar ao documento salvo.
+      ocrFile ?? attachmentFile,
     )
   }
 
@@ -158,14 +252,39 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
         </div>
       ) : null}
 
-      <div className={body}>
-        <DocumentPreview status={ocr.status} fileName={ocr.fileName} onSelectFile={ocr.extract} />
+      <div
+        className={body}
+        style={{ ['--ocr-col-width']: `${String(ocrResize.widthPx)}px` } as CSSProperties}
+      >
+        <DocumentPreview
+          status={previewStatus}
+          fileName={ocrFile?.name ?? null}
+          errorTag={null}
+          preview={preview}
+          allowReplace={mode === 'create'}
+          onSelectFile={handleSelectFile}
+        />
+
+        {/* Alça de redimensionamento da coluna OCR (arraste horizontal + setas do teclado). */}
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label={t('financial.create.ocrResizeLabel')}
+          aria-valuenow={ocrResize.widthPx}
+          aria-valuemin={ocrResize.minPx}
+          aria-valuemax={ocrResize.maxPx}
+          tabIndex={0}
+          className={`${resizeHandle} ${ocrResize.resizing ? resizeHandleActive : ''}`}
+          onPointerDown={ocrResize.onHandlePointerDown}
+          onKeyDown={ocrResize.onHandleKeyDown}
+        />
 
         <div className={`${formCol} ${scrollArea}`}>
           {/* Hero do fornecedor com picker buscável (todos os parceiros) — via MANUAL do fornecedor. */}
           <SupplierPicker
             selected={selectedPartner}
             options={partners}
+            ocrRead={ocrFields.has('supplier')}
             open={picker.open}
             query={picker.query}
             disabled={mode === 'edit' || mode === 'view'}
@@ -181,6 +300,7 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
           <DocumentForm
             fields={controller.fields}
             hydration={hydration}
+            ocrFields={ocrFields}
             locks={formLocks}
             onType={controller.setType}
             onPaymentMethod={controller.setPaymentMethod}
@@ -192,6 +312,8 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
             onProgram={controller.setProgramRef}
             categoryValue={controller.fields.categoryRef}
             onCategory={controller.setCategoryRef}
+            subcategoryValue={controller.fields.subcategoryRef}
+            onSubcategory={controller.setSubcategoryRef}
             costCenterValue={controller.fields.costCenterRef}
             onCostCenter={controller.setCostCenterRef}
             approverValue={controller.fields.approverRef}
@@ -202,8 +324,8 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
             contaDebitoOptions={accountOptions}
             centroCustoOptions={costCenterOptions}
             categoriaOptions={categoryOptions}
-            subcategoriaOptions={[]}
-            planoOptions={[]}
+            subcategoriaOptions={subcategoryOptions}
+            planoOptions={planoOptions}
             contract={selectedContract}
             contracts={hydration.contracts}
             contractPickerOpen={controller.contractPickerOpen}

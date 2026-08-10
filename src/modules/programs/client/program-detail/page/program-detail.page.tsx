@@ -3,7 +3,26 @@ import { useNavigate } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { Button } from '#shared/ui/index.ts'
+import { ChevronLeftIcon, FileTextIcon } from '#shared/ui/icons/index.ts'
+import {
+  page,
+  scrollArea,
+  content,
+  head,
+  backBtn,
+  headText,
+  headTitle,
+  headSubtitle,
+  sectionCard,
+  sectionHeader,
+  sectionIcon,
+  sectionH2,
+  sectionBody,
+  actionbar,
+  actionbarInner,
+  btnGhost,
+  btnPrimary,
+} from '#shared/ui/brand/brand-form.css.ts'
 
 import { useProgramFormController } from '#modules/programs/client/program-create/components/program-form.controller.ts'
 import { ProgramForm } from '#modules/programs/client/program-create/components/program-form.component.tsx'
@@ -16,34 +35,22 @@ import type {
   ProgramLogoUploadCommand,
 } from '#modules/programs/client/program-logo/program-logo.binding.ts'
 import { detailToFormValues, type ProgramDetail } from '../program-detail.view-model.ts'
-import {
-  backButton,
-  errorBanner,
-  footer,
-  headerRow,
-  headerTitle,
-  outlineButton,
-  saveWrap,
-  screen,
-} from './program-detail.css.ts'
+import { errorBanner, screen } from './program-detail.css.ts'
 
 const t = createTranslator(ptBR)
 
-function BackIcon(): ReactNode {
+// Cabeçalho "brand": voltar + título/subtítulo (nome do programa).
+function DetailHead({ subtitle, onBack }: { subtitle?: string; onBack: () => void }): ReactNode {
   return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <polyline points="15 18 9 12 15 6" />
-    </svg>
+    <div className={head}>
+      <button type="button" className={backBtn} onClick={onBack} aria-label={t('common.back')}>
+        <ChevronLeftIcon size={18} />
+      </button>
+      <div className={headText}>
+        <h1 className={headTitle}>{t('programs.detail.title')}</h1>
+        {subtitle !== undefined ? <p className={headSubtitle}>{subtitle}</p> : null}
+      </div>
+    </div>
   )
 }
 
@@ -54,38 +61,37 @@ export function ProgramDetailPage({ programId }: { programId: string }): ReactNo
     setEditing(false)
   })
 
-  const header = (subtitle?: string): ReactNode => (
-    <div className={headerRow}>
-      <button
-        type="button"
-        className={backButton}
-        onClick={() => {
-          void navigate({ to: '/programas' })
-        }}
-        aria-label={t('common.back')}
-      >
-        <BackIcon />
-      </button>
-      <h1 className={headerTitle}>
-        {t('programs.detail.title')}
-        {subtitle !== undefined ? ` — ${subtitle}` : ''}
-      </h1>
-    </div>
-  )
+  const goBack = (): void => {
+    void navigate({ to: '/programas' })
+  }
 
   if (state.status === 'loading') {
     return (
       <div className={screen}>
-        {header()}
-        <p>{t('programs.list.loading')}</p>
+        <div className={page}>
+          <div className={scrollArea}>
+            <div className={content}>
+              <DetailHead onBack={goBack} />
+              <p>{t('programs.list.loading')}</p>
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
   if (state.status === 'error') {
     return (
       <div className={screen}>
-        {header()}
-        <p>{t(state.errorTag)}</p>
+        <div className={page}>
+          <div className={scrollArea}>
+            <div className={content}>
+              <DetailHead onBack={goBack} />
+              <div className={errorBanner} role="alert">
+                {t(state.errorTag)}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
@@ -105,10 +111,7 @@ export function ProgramDetailPage({ programId }: { programId: string }): ReactNo
       onExitEdit={() => {
         setEditing(false)
       }}
-      onBack={() => {
-        void navigate({ to: '/programas' })
-      }}
-      header={header}
+      onBack={goBack}
     />
   )
 }
@@ -123,7 +126,6 @@ type DetailReadyProps = Readonly<{
   onEnterEdit: () => void
   onExitEdit: () => void
   onBack: () => void
-  header: (subtitle?: string) => ReactNode
 }>
 
 function DetailReady(props: DetailReadyProps): ReactNode {
@@ -146,59 +148,77 @@ function DetailReady(props: DetailReadyProps): ReactNode {
 
   return (
     <div className={screen}>
-      {props.header()}
+      <div className={page}>
+        <div className={scrollArea}>
+          <div className={content}>
+            <DetailHead subtitle={program.name} onBack={props.onBack} />
 
-      <ProgramLogoUploader
-        url={props.logo.url}
-        name={program.name}
-        canEdit={props.canEdit}
-        running={props.logoUpload.running}
-        errorTag={props.logoUpload.errorTag}
-        onUpload={props.logoUpload.execute}
-      />
-
-      <ProgramForm
-        controller={c}
-        editing={editing}
-        errorBanner={
-          props.saveCommand.errorTag !== null ? (
-            <div className={errorBanner} role="alert">
-              {t(props.saveCommand.errorTag)}
-            </div>
-          ) : undefined
-        }
-      />
-
-      <div className={footer}>
-        {editing ? (
-          <>
-            <button type="button" className={outlineButton} onClick={cancelEdit}>
-              {t('programs.form.cancel')}
-            </button>
-            <div className={saveWrap}>
-              <Button
-                onClick={() => {
-                  c.submit()
-                }}
-                loading={props.saveCommand.running}
-                loadingLabel={t('programs.detail.saving')}
-              >
-                {t('programs.detail.save')}
-              </Button>
-            </div>
-          </>
-        ) : (
-          <>
-            <button type="button" className={outlineButton} onClick={props.onBack}>
-              {t('programs.detail.back')}
-            </button>
-            {props.canEdit ? (
-              <div className={saveWrap}>
-                <Button onClick={props.onEnterEdit}>{t('programs.detail.edit')}</Button>
+            {/* Logo do Programa — card "brand" envolvendo o uploader (componente inalterado). */}
+            <section className={sectionCard}>
+              <div className={sectionHeader}>
+                <span className={sectionIcon}>
+                  <FileTextIcon size={17} />
+                </span>
+                <h2 className={sectionH2}>{t('programs.form.logo')}</h2>
               </div>
-            ) : null}
-          </>
-        )}
+              <div className={sectionBody}>
+                <ProgramLogoUploader
+                  url={props.logo.url}
+                  name={program.name}
+                  canEdit={props.canEdit}
+                  running={props.logoUpload.running}
+                  errorTag={props.logoUpload.errorTag}
+                  onUpload={props.logoUpload.execute}
+                />
+              </div>
+            </section>
+
+            <ProgramForm
+              controller={c}
+              editing={editing}
+              errorBanner={
+                props.saveCommand.errorTag !== null ? (
+                  <div className={errorBanner} role="alert">
+                    {t(props.saveCommand.errorTag)}
+                  </div>
+                ) : undefined
+              }
+            />
+          </div>
+        </div>
+
+        <div className={actionbar}>
+          <div className={actionbarInner}>
+            {editing ? (
+              <>
+                <button type="button" className={btnGhost} onClick={cancelEdit}>
+                  {t('programs.form.cancel')}
+                </button>
+                <button
+                  type="button"
+                  className={btnPrimary}
+                  disabled={props.saveCommand.running}
+                  onClick={() => {
+                    c.submit()
+                  }}
+                >
+                  {props.saveCommand.running ? t('programs.detail.saving') : t('programs.detail.save')}
+                </button>
+              </>
+            ) : (
+              <>
+                <button type="button" className={btnGhost} onClick={props.onBack}>
+                  {t('programs.detail.back')}
+                </button>
+                {props.canEdit ? (
+                  <button type="button" className={btnPrimary} onClick={props.onEnterEdit}>
+                    {t('programs.detail.edit')}
+                  </button>
+                ) : null}
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
       <DiscardChangesModal

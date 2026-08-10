@@ -13,12 +13,17 @@ import type {
   BatchResult,
   ClosePeriodInput,
   ReopenPeriodInput,
+  ConfirmCounterpartInput,
+  ConfirmCounterpartResult,
+  CounterpartSuggestion,
   CreateCedenteAccountInput,
+  EditCedenteAccountInput,
   CreateReconciliationInput,
   AccountStatementPeriod,
   ExportReconciliationInput,
   FinancialReferences,
   GetAccountStatementInput,
+  GetCounterpartSuggestionsInput,
   GetStatementSuggestionsInput,
   GetSuggestionsInput,
   ImportStatementInput,
@@ -49,6 +54,11 @@ type ImportFn = (opts: { data: ImportStatementInput }) => Promise<ReconFnResult<
 type ListTxFn = (opts: {
   data: ListTransactionsInput
 }) => Promise<ReconFnResult<readonly StatementTransaction[]>>
+// Excluir extrato (core-api#558) — 204 sem corpo; o resultado de sucesso não carrega dados.
+type DeleteStatementFn = (opts: {
+  data: { statementId: string }
+}) => Promise<Readonly<{ ok: true }> | Readonly<{ ok: false; error: ReconciliationError }>>
+
 type ListPayablesFn = () => Promise<ReconFnResult<readonly PaidPayable[]>>
 type ListReferencesFn = () => Promise<ReconFnResult<FinancialReferences>>
 type GetStatementPeriodFn = (opts: {
@@ -60,6 +70,12 @@ type SuggestionsFn = (opts: {
 type StatementSuggestionsFn = (opts: {
   data: GetStatementSuggestionsInput
 }) => Promise<ReconFnResult<readonly StatementSuggestion[]>>
+type CounterpartSuggestionsFn = (opts: {
+  data: GetCounterpartSuggestionsInput
+}) => Promise<ReconFnResult<readonly CounterpartSuggestion[]>>
+type ConfirmCounterpartFn = (opts: {
+  data: ConfirmCounterpartInput
+}) => Promise<ReconFnResult<ConfirmCounterpartResult>>
 type GetTxReconFn = (opts: {
   data: { transactionId: string }
 }) => Promise<ReconFnResult<TransactionReconciliation | null>>
@@ -83,12 +99,18 @@ type GetAccountFn = (opts: { data: { id: string } }) => Promise<ReconFnResult<Re
 type CreateAccountFn = (opts: {
   data: CreateCedenteAccountInput
 }) => Promise<ReconFnResult<ReconciliationAccount>>
+type CloseAccountFn = (opts: { data: { id: string } }) => Promise<ReconFnResult<ReconciliationAccount>>
+type EditAccountFn = (opts: {
+  data: EditCedenteAccountInput
+}) => Promise<ReconFnResult<ReconciliationAccount>>
 
 export type ReconciliationRepository = Readonly<{
   importStatement: (i: ImportStatementInput) => Promise<Result<BankStatementImport, ReconciliationError>>
   listTransactions: (
     i: ListTransactionsInput,
   ) => Promise<Result<readonly StatementTransaction[], ReconciliationError>>
+  // Excluir extrato importado (core-api#558). Hard-delete; sucesso = void. A UI limpa o statement + invalida.
+  deleteBankStatement: (statementId: string) => Promise<Result<void, ReconciliationError>>
   listPaidPayables: () => Promise<Result<readonly PaidPayable[], ReconciliationError>>
   // Referências da categorização (020 · #200/#147) — categorias + centros de custo.
   getReferences: () => Promise<Result<FinancialReferences, ReconciliationError>>
@@ -100,6 +122,13 @@ export type ReconciliationRepository = Readonly<{
   getStatementSuggestions: (
     i: GetStatementSuggestionsInput,
   ) => Promise<Result<readonly StatementSuggestion[], ReconciliationError>>
+  // Contrapartidas esperadas candidatas (US2 do #269) — transferência entre contas.
+  getCounterpartSuggestions: (
+    i: GetCounterpartSuggestionsInput,
+  ) => Promise<Result<readonly CounterpartSuggestion[], ReconciliationError>>
+  confirmCounterpart: (
+    i: ConfirmCounterpartInput,
+  ) => Promise<Result<ConfirmCounterpartResult, ReconciliationError>>
   getTransactionReconciliation: (
     transactionId: string,
   ) => Promise<Result<TransactionReconciliation | null, ReconciliationError>>
@@ -125,6 +154,10 @@ export type ReconciliationRepository = Readonly<{
   listAccounts: () => Promise<Result<readonly ReconciliationAccount[], ReconciliationError>>
   getAccount: (id: string) => Promise<Result<ReconciliationAccount, ReconciliationError>>
   createAccount: (i: CreateCedenteAccountInput) => Promise<Result<ReconciliationAccount, ReconciliationError>>
+  // Encerrar conta (Open → Closed). Devolve a conta atualizada; a UI invalida e refaz o grid.
+  closeAccount: (id: string) => Promise<Result<ReconciliationAccount, ReconciliationError>>
+  // Editar conta (PATCH parcial). Devolve a conta atualizada; a UI invalida e refaz o grid.
+  editAccount: (i: EditCedenteAccountInput) => Promise<Result<ReconciliationAccount, ReconciliationError>>
 }>
 
 type UndoReconciliationInput = Readonly<{ reconciliationId: string; reason?: string }>
@@ -133,11 +166,14 @@ export const createReconciliationRepository = (
   deps: Readonly<{
     importStatementFn: ImportFn
     listTransactionsFn: ListTxFn
+    deleteBankStatementFn: DeleteStatementFn
     listPaidPayablesFn: ListPayablesFn
     listReferencesFn: ListReferencesFn
     getAccountStatementPeriodFn: GetStatementPeriodFn
     getSuggestionsFn: SuggestionsFn
     getStatementSuggestionsFn: StatementSuggestionsFn
+    getCounterpartSuggestionsFn: CounterpartSuggestionsFn
+    confirmCounterpartFn: ConfirmCounterpartFn
     getTransactionReconciliationFn: GetTxReconFn
     rejectSuggestionFn: RejectFn
     createReconciliationFn: ReconcileFn
@@ -151,6 +187,8 @@ export const createReconciliationRepository = (
     listAccountsFn: ListAccountsFn
     getAccountFn: GetAccountFn
     createAccountFn: CreateAccountFn
+    closeAccountFn: CloseAccountFn
+    editAccountFn: EditAccountFn
   }>,
 ): ReconciliationRepository => ({
   importStatement: async (i) => {
@@ -160,6 +198,10 @@ export const createReconciliationRepository = (
   listTransactions: async (i) => {
     const res = await deps.listTransactionsFn({ data: i })
     return res.ok ? ok(res.data) : err(res.error)
+  },
+  deleteBankStatement: async (statementId) => {
+    const res = await deps.deleteBankStatementFn({ data: { statementId } })
+    return res.ok ? ok(undefined) : err(res.error)
   },
   listPaidPayables: async () => {
     const res = await deps.listPaidPayablesFn()
@@ -179,6 +221,14 @@ export const createReconciliationRepository = (
   },
   getStatementSuggestions: async (i) => {
     const res = await deps.getStatementSuggestionsFn({ data: i })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  getCounterpartSuggestions: async (i) => {
+    const res = await deps.getCounterpartSuggestionsFn({ data: i })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  confirmCounterpart: async (i) => {
+    const res = await deps.confirmCounterpartFn({ data: i })
     return res.ok ? ok(res.data) : err(res.error)
   },
   getTransactionReconciliation: async (transactionId) => {
@@ -232,6 +282,14 @@ export const createReconciliationRepository = (
   },
   createAccount: async (i) => {
     const res = await deps.createAccountFn({ data: i })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  closeAccount: async (id) => {
+    const res = await deps.closeAccountFn({ data: { id } })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  editAccount: async (i) => {
+    const res = await deps.editAccountFn({ data: i })
     return res.ok ? ok(res.data) : err(res.error)
   },
 })

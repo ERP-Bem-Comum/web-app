@@ -35,6 +35,7 @@ import {
   pickerSearch,
   pickerItem,
   pickerEmpty,
+  ocrTag,
 } from '../page/lancar-documento.css.ts'
 
 const t = createTranslator(ptBR)
@@ -50,6 +51,8 @@ export type SupplierPickerProps = Readonly<{
   onClose: () => void
   onQueryChange: (value: string) => void
   onSelect: (id: string) => void
+  /** Fornecedor auto-identificado pelo OCR (core-api#560) — acende a tag "OCR" discreta ao lado do rótulo. */
+  ocrRead?: boolean
 }>
 
 export function SupplierPicker(props: SupplierPickerProps): ReactNode {
@@ -61,6 +64,10 @@ export function SupplierPicker(props: SupplierPickerProps): ReactNode {
       <div className={heroInfo}>
         <div className={heroBadgeRow}>
           <span className={heroOverline}>{t('financial.create.hero.overline')}</span>
+          {/* Tag "OCR" discreta: sinaliza que o fornecedor foi lido/auto-selecionado pela automação (#560). */}
+          {props.ocrRead === true && selected !== null ? (
+            <span className={ocrTag}>{t('financial.create.preview.ocrBadge')}</span>
+          ) : null}
           {selected !== null ? (
             <span className={partnerBadge[selected.kind]}>
               {isPartnerPF(selected.kind)
@@ -128,7 +135,7 @@ export function SupplierPicker(props: SupplierPickerProps): ReactNode {
                     <AvatarLabel
                       initials={initialsFrom(p.name)}
                       variant={p.kind}
-                      text={`${p.name} · ${t(partnerKindTag(p.kind))}`}
+                      text={p.subtitle !== '' ? `${p.name} · ${maskDocument(p.subtitle)}` : p.name}
                     />
                   </button>
                 ))

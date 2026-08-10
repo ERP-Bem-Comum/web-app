@@ -1,7 +1,8 @@
 /**
- * Server function: exportar a conciliação de um período (GET /api/v2/financial/reconciliation-periods/:id/
- * export?format=ofx|csv, #173). Fronteira RPC (§III). RBAC `reconciliation:read` no core-api. Devolve o
- * TEXTO cru (OFX/CSV) p/ o client disparar o download (Blob + anchor). PDF fica fora (#145).
+ * Server function: exportar a conciliação de um INTERVALO (GET /api/v2/financial/reconciliation/export
+ * ?debitAccountRef&periodStart&periodEnd&format=ofx|csv|csv-nibo — #173, core-api#649). Fronteira RPC (§III).
+ * RBAC `reconciliation:read` no core-api. Devolve o TEXTO cru p/ o client disparar o download (Blob+anchor).
+ * O PDF não passa por aqui: é impresso no client (#144).
  */
 import { createServerFn } from '@tanstack/react-start'
 
@@ -24,10 +25,7 @@ export const exportReconciliationFn = createServerFn({ method: 'GET' })
     const accessToken = await resolveAccessTokenFn()
     if (accessToken === null) return { ok: false, error: 'unauthorized' }
 
-    const r = await reconciliationServer().exportReconciliation(
-      { periodId: data.periodId, format: data.format },
-      accessToken,
-    )
+    const r = await reconciliationServer().exportReconciliation(data, accessToken)
     if (isErr(r)) return { ok: false, error: r.error }
     return { ok: true, data: r.value }
   })

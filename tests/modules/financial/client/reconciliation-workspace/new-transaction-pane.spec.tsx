@@ -17,25 +17,43 @@ const baseBinding = (over: Partial<ManualEntryBinding> = {}): ManualEntryBinding
   destinationAccount: '',
   needsDestination: false,
   showPayeeBlock: false,
+  effectiveDate: '',
+  showCategorization: true,
   canSubmit: false,
+  submitBlockedTag: null,
   submitting: false,
   errorTag: null,
   supplierRef: '',
+  budgetPlanRef: '',
   programRef: '',
   categoryRef: '',
+  subcategoryRef: '',
   costCenterRef: '',
+  documentNumber: '',
+  documentType: '',
+  issueDate: '',
+  documentValue: '',
   partnerOptions: [],
   programOptions: [],
+  planoOptions: [],
   categoryOptions: [],
+  subcategoryOptions: [],
   costCenterOptions: [],
   accountOptions: [],
+  documentTypeOptions: [],
   setType: vi.fn(),
   setDescription: vi.fn(),
   setDestinationAccount: vi.fn(),
   setSupplierRef: vi.fn(),
+  setBudgetPlanRef: vi.fn(),
   setProgramRef: vi.fn(),
   setCategoryRef: vi.fn(),
+  setSubcategoryRef: vi.fn(),
   setCostCenterRef: vi.fn(),
+  setDocumentNumber: vi.fn(),
+  setDocumentType: vi.fn(),
+  setIssueDate: vi.fn(),
+  setDocumentValue: vi.fn(),
   reset: vi.fn(),
   submit: vi.fn(),
   ...over,
@@ -51,6 +69,76 @@ describe('NewTransactionPane', () => {
     render(<NewTransactionPane binding={baseBinding({ setType })} />)
     fireEvent.click(screen.getByRole('button', { name: tr('financial.recon.manualType.Transfer') }))
     expect(setType).toHaveBeenCalledWith('Transfer')
+  })
+
+  it('Tarifa/Juros: mostra Programa (NÃO a classificação, removida — core-api#371 não vem)', () => {
+    render(
+      <NewTransactionPane
+        binding={baseBinding({
+          type: 'FeePenaltyInterest',
+          programOptions: [{ value: 'pr1', label: 'EDU — Educação' }],
+        })}
+      />,
+    )
+    // Programa entra no bloco Tarifa/Juros (alinha a taxonomia); a classificação Tarifa/Multa/Juros saiu.
+    expect(screen.getByText(tr('financial.recon.manual.f.program'))).toBeTruthy()
+    expect(screen.getByRole('option', { name: 'EDU — Educação' })).toBeTruthy()
+    expect(screen.queryByText(tr('financial.recon.manual.f.feeKind'))).toBeNull()
+    expect(screen.queryByRole('option', { name: tr('financial.recon.treatment.Fee') })).toBeNull()
+  })
+
+  it('Tarifa/Juros: setar o Programa dispara setProgramRef (enviado no template p/ FeePenaltyInterest)', () => {
+    const setProgramRef = vi.fn()
+    render(
+      <NewTransactionPane
+        binding={baseBinding({
+          type: 'FeePenaltyInterest',
+          programOptions: [{ value: 'pr1', label: 'EDU — Educação' }],
+          setProgramRef,
+        })}
+      />,
+    )
+    fireEvent.change(screen.getByLabelText(tr('financial.recon.manual.f.program')), {
+      target: { value: 'pr1' },
+    })
+    expect(setProgramRef).toHaveBeenCalledWith('pr1')
+  })
+
+  it('#502/S2: mostra o Plano Orçamentário na categorização (dirige a cascata)', () => {
+    render(
+      <NewTransactionPane
+        binding={baseBinding({
+          type: 'Payment',
+          showPayeeBlock: true,
+          planoOptions: [{ value: 'p-1', label: '2026 ABC 1.0' }],
+        })}
+      />,
+    )
+    expect(screen.getByText(tr('financial.recon.manual.f.plano'))).toBeTruthy()
+    expect(screen.getByRole('option', { name: '2026 ABC 1.0' })).toBeTruthy()
+  })
+
+  it('trocar o Plano dispara setBudgetPlanRef', () => {
+    const setBudgetPlanRef = vi.fn()
+    render(
+      <NewTransactionPane
+        binding={baseBinding({
+          type: 'Payment',
+          showPayeeBlock: true,
+          planoOptions: [{ value: 'p-1', label: '2026 ABC 1.0' }],
+          setBudgetPlanRef,
+        })}
+      />,
+    )
+    fireEvent.change(screen.getByDisplayValue(tr('financial.recon.manual.f.planoPlaceholder')), {
+      target: { value: 'p-1' },
+    })
+    expect(setBudgetPlanRef).toHaveBeenCalledWith('p-1')
+  })
+
+  it('a classificação Tarifa/Multa/Juros NÃO aparece em outros tipos (ex.: Transferência)', () => {
+    render(<NewTransactionPane binding={baseBinding({ type: 'Transfer', needsDestination: true })} />)
+    expect(screen.queryByText(tr('financial.recon.manual.f.feeKind'))).toBeNull()
   })
 
   it('Transferência mostra o destino, SEM aviso/confirmação consciente (removidos a pedido da P.O.)', () => {
@@ -109,5 +197,120 @@ describe('NewTransactionPane', () => {
       screen.getByRole('button', { name: (n) => n.includes(tr('financial.recon.manual.submitFull')) }),
     )
     expect(submit).toHaveBeenCalled()
+  })
+
+  it('Transferência: oculta a Categorização (movimentação entre contas próprias) e reflete a data da transação', () => {
+    render(
+      <NewTransactionPane
+        binding={baseBinding({
+          type: 'Transfer',
+          needsDestination: true,
+          showCategorization: false,
+          effectiveDate: '17/06/2026',
+        })}
+      />,
+    )
+    // Categorização some para transferência/aplicação/resgate...
+    expect(screen.queryByText(tr('financial.recon.manual.categorize'))).toBeNull()
+    // ...mas a Data de efetivação reflete (read-only) a data da transação selecionada.
+    expect(screen.getByDisplayValue('17/06/2026')).toBeTruthy()
+  })
+
+  it('Pagamento: mantém a Categorização', () => {
+    render(<NewTransactionPane binding={baseBinding({ type: 'Payment', showPayeeBlock: true })} />)
+    expect(screen.getByText(tr('financial.recon.manual.categorize'))).toBeTruthy()
+  })
+
+  it('#370: os campos de documento são REAIS (número/tipo/emissão/valor disparam os setters)', () => {
+    const setDocumentNumber = vi.fn()
+    const setDocumentType = vi.fn()
+    const setIssueDate = vi.fn()
+    const setDocumentValue = vi.fn()
+    render(
+      <NewTransactionPane
+        binding={baseBinding({
+          type: 'Payment',
+          showPayeeBlock: true,
+          documentTypeOptions: [{ value: 'NFS-e', label: 'NFS-e' }],
+          setDocumentNumber,
+          setDocumentType,
+          setIssueDate,
+          setDocumentValue,
+        })}
+      />,
+    )
+    const num = screen.getByLabelText(tr('financial.recon.manual.f.docNumber'))
+    expect(num.hasAttribute('disabled')).toBe(false)
+    fireEvent.change(num, { target: { value: 'NF 001' } })
+    expect(setDocumentNumber).toHaveBeenCalledWith('NF 001')
+
+    const type = screen.getByLabelText(tr('financial.recon.manual.f.docType'))
+    fireEvent.change(type, { target: { value: 'NFS-e' } })
+    expect(setDocumentType).toHaveBeenCalledWith('NFS-e')
+
+    fireEvent.change(screen.getByLabelText(tr('financial.recon.manual.f.emission')), {
+      target: { value: '2026-06-18' },
+    })
+    expect(setIssueDate).toHaveBeenCalledWith('2026-06-18')
+
+    fireEvent.change(screen.getByLabelText(tr('financial.recon.manual.f.docValue')), {
+      target: { value: '1.234,56' },
+    })
+    expect(setDocumentValue).toHaveBeenCalledWith('1.234,56')
+  })
+
+  it('#370: os campos de documento NÃO aparecem fora do bloco Pagamento/Recebimento (ex.: Tarifa)', () => {
+    render(<NewTransactionPane binding={baseBinding({ type: 'FeePenaltyInterest' })} />)
+    expect(screen.queryByText(tr('financial.recon.manual.f.docNumber'))).toBeNull()
+    expect(screen.queryByText(tr('financial.recon.manual.f.docType'))).toBeNull()
+  })
+})
+
+// Motivo do bloqueio VISÍVEL (#331 + core-api#671): a classificação virou obrigatória e o botão passou a
+// travar calado. Aqui a view precisa mostrar o porquê — tooltip sozinho não resolve (não existe no toque).
+describe('NewTransactionPane — por que o Conciliar está travado', () => {
+  const submitName = (n: string) => n.includes(tr('financial.recon.manual.submitFull'))
+
+  it('bloqueado por classificação: o motivo aparece em TEXTO e no title do botão', () => {
+    render(
+      <NewTransactionPane
+        binding={baseBinding({
+          type: 'Payment',
+          canSubmit: false,
+          submitBlockedTag: 'financial.recon.manual.blocked.classification',
+        })}
+      />,
+    )
+    const btn = screen.getByRole('button', { name: submitName })
+    expect(btn.hasAttribute('disabled')).toBe(true)
+    expect(btn.getAttribute('title')).toBe(tr('financial.recon.manual.blocked.classification'))
+    // O texto ao lado do botão é o que garante a leitura sem hover.
+    expect(screen.getByText(tr('financial.recon.manual.blocked.classification'))).toBeTruthy()
+  })
+
+  it('liberado: sem motivo em tela, sem title e botão ativo', () => {
+    render(
+      <NewTransactionPane
+        binding={baseBinding({ type: 'Payment', canSubmit: true, submitBlockedTag: null })}
+      />,
+    )
+    const btn = screen.getByRole('button', { name: submitName })
+    expect(btn.hasAttribute('disabled')).toBe(false)
+    expect(btn.getAttribute('title')).toBeNull()
+    expect(screen.queryByText(tr('financial.recon.manual.blocked.classification'))).toBeNull()
+  })
+
+  it('enviando: não repete o motivo (o botão já está ocupado, não barrado)', () => {
+    render(
+      <NewTransactionPane
+        binding={baseBinding({
+          type: 'Payment',
+          canSubmit: true,
+          submitting: true,
+          submitBlockedTag: null,
+        })}
+      />,
+    )
+    expect(screen.getByRole('button', { name: submitName }).hasAttribute('disabled')).toBe(true)
   })
 })

@@ -15,6 +15,7 @@ import type {
   DocumentType,
   DocumentSummary,
   DocumentDetail,
+  DocumentAttachment,
   RetentionType,
   PaymentMethod,
   PayableKind,
@@ -26,6 +27,7 @@ import type {
 export type {
   DocumentStatus,
   DocumentType,
+  DocumentAttachment,
   RetentionType,
 } from '#modules/financial/client/data/model/document.model.ts'
 
@@ -305,7 +307,8 @@ export const bulkStatusTargets = (
   }
 }
 
-// Excluir (hard-delete) — o core-api só cancela documentos em **Aberto** (Rascunho dá 409, core-api#166).
+// LEGADO (modo documento, #201 desligou): variante simples do delete. O grid title-centric usa
+// `deriveTitleActionTargets` (autoritativo), que JÁ permite excluir Rascunho (descarte, #166).
 // `deletable` = alvos Aberto (id + version, p/ o optimistic lock do DELETE); `draftCount` = Rascunho fora.
 export type BulkDeleteTargets = Readonly<{ deletable: readonly StatusTarget[]; draftCount: number }>
 export const bulkDeleteTargets = (
@@ -319,33 +322,22 @@ export const bulkDeleteTargets = (
   }
 }
 
-// Alterar vencimento (1+) — o core-api só ajusta documentos em **Aberto**. `editable` = alvos Aberto
-// (id+version, p/ o PATCH); `blockedCount` = selecionados em outro status (não alteráveis). O "lote" é
-// feito como N PATCHes individuais (core-api#162 = otimização futura p/ 1 chamada só).
-export type BulkDueDateTargets = Readonly<{ editable: readonly StatusTarget[]; blockedCount: number }>
-export const bulkDueDateTargets = (
-  rows: readonly GridRow[],
-  selected: ReadonlySet<string>,
-): BulkDueDateTargets => {
-  const sel = rows.filter((r) => selected.has(r.id))
-  return {
-    editable: sel.filter((r) => r.status === 'Aberto').map((r) => ({ id: r.id, version: r.version })),
-    blockedCount: sel.filter((r) => r.status !== 'Aberto').length,
-  }
-}
-
 // #201/#229: ações em massa no grid por TÍTULO. O ciclo de status é do TÍTULO; Aprovar é a regra que
 // cascateia pai→filhos (transição do documento), assim como Reabrir/Excluir/Vencimento. Aqui derivamos os
 // alvos por DOCUMENTO (dedup por documentId) a partir do `status`+`version` DA PRÓPRIA LINHA — o #229 trouxe
 // o version do documento na linha, então NÃO há busca extra (sem GET /documents/:id). O backend valida
 // transição inválida (ex.: filho cujo status divergiu do documento) → falha segura, sem corromper estado.
+// #270: alvo do vencimento ISOLADO por título (payable). NÃO dedup por documento — cada título é independente.
+export type IsolatedDueDateTarget = Readonly<{ documentId: string; payableId: string; version: number }>
+
 export type TitleActionTargets = Readonly<{
   approve: readonly StatusTarget[] // documentos distintos com título Aberto (Aprovar cascateia)
   reopen: readonly StatusTarget[] // documentos com título Aprovado
-  deletable: readonly StatusTarget[] // = Aberto (hard-delete só em Aberto, core-api#166)
-  draftCount: number // documentos Rascunho na seleção (aviso no modal)
-  dueEditable: readonly StatusTarget[] // = Aberto (PATCH de vencimento só em Aberto)
-  dueBlockedCount: number // documentos selecionados não-editáveis (aviso no modal)
+  deletable: readonly StatusTarget[] // Rascunho (descarte) + Aberto (hard-delete) — ambos canceláveis (#166)
+  draftCount: number // rascunhos "ignorados" — 0 desde #166 (rascunho agora É excluível)
+  // #270: vencimento por TÍTULO (Aberto), isolado — não propaga pai↔filhos. Por payable (sem dedup por doc).
+  dueEditable: readonly IsolatedDueDateTarget[]
+  dueBlockedCount: number // títulos selecionados não-editáveis (não-Aberto) — aviso no modal
 }>
 export const deriveTitleActionTargets = (
   rows: readonly GridRow[],
@@ -364,14 +356,22 @@ export const deriveTitleActionTargets = (
     return out
   }
   const aberto = dedupByDoc(sel.filter((r) => r.status === 'Aberto'))
-  const allDocs = dedupByDoc(sel)
+  // #166: rascunho (Draft) também é excluível (descarte — não tem títulos-filho). O core-api trata Draft
+  // no MESMO DELETE /documents/:id (cancelDocument → cancelDraft). Antes o front bloqueava por engano.
+  const rascunho = dedupByDoc(sel.filter((r) => r.status === 'Rascunho'))
+  // #270: vencimento é por TÍTULO isolado — NÃO dedup por documento; um alvo por payable Aberto selecionado.
+  const selAbertoRows = sel.filter((r) => r.status === 'Aberto')
   return {
     approve: aberto,
     reopen: dedupByDoc(sel.filter((r) => r.status === 'Aprovado')),
-    deletable: aberto,
-    draftCount: dedupByDoc(sel.filter((r) => r.status === 'Rascunho')).length,
-    dueEditable: aberto,
-    dueBlockedCount: allDocs.length - aberto.length,
+    deletable: [...rascunho, ...aberto],
+    draftCount: 0, // #166: rascunho agora É excluível → nada "ignorado" no modal
+    dueEditable: selAbertoRows.map((r) => ({
+      documentId: r.documentId,
+      payableId: r.id,
+      version: r.version,
+    })),
+    dueBlockedCount: sel.length - selAbertoRows.length,
   }
 }
 
@@ -414,7 +414,7 @@ export const pageInfo = (page: number, pageSize: number, total: number): PageInf
     page,
     pageSize,
     total,
-    rangeLabel: `${String(from)}–${String(to)} de ${String(total)}`,
+    rangeLabel: `${String(from)}–${String(to)} de ${String(total)} títulos`,
     hasPrev: page > 1,
     hasNext: to < total,
   }
@@ -429,6 +429,27 @@ export type DetailPayableView = Readonly<{
   value: string
   status: DocumentStatus
 }>
+// #95/#147 — Categorização do drawer (Plano Orçamentário). Cada campo já resolvido p/ NOME (ou "—").
+export type CategorizationView = Readonly<{
+  costCenter: string
+  category: string
+  subcategory: string
+  program: string
+  budgetPlan: string
+}>
+
+// Nó de categoria da taxonomia (#200). `parentId !== null` = subcategoria (folha de uma categoria-pai).
+export type CategoryNode = Readonly<{ name: string; parentId: string | null }>
+
+// Resolvers de ref→nome injetados pelo binding (mantêm a view-model PURA/testável). Cada um devolve
+// `null` quando não encontra a ref. `categoryNode` é lookup por id (usado 2x: folha e pai na cascata).
+export type CategorizationResolvers = Readonly<{
+  costCenter: (ref: string) => string | null
+  categoryNode: (ref: string) => CategoryNode | null
+  program: (ref: string) => string | null
+  budgetPlan: (ref: string) => string | null
+}>
+
 export type DocumentDetailView = Readonly<{
   id: string
   type: string
@@ -443,11 +464,14 @@ export type DocumentDetailView = Readonly<{
   paymentMethod: PaymentMethod | null
   paymentDetail: string | null // #273: complemento da forma (linha digitável / id de cartão / ref de câmbio); null quando não há
   description: string
+  categorization: CategorizationView // #95/#147: Centro de Custo / Categoria / Subcategoria / Programa / Plano
   retentions: readonly RetentionLine[]
   // Total das retenções (soma dos filhos), formatado em BRL. `null` quando não há retenção.
   // No drawer aparece numa linha única destacada em vermelho (mock): "− Retenções (IRRF, INSS, ISS)".
   retentionsTotal: string | null
   payables: readonly DetailPayableView[]
+  // #568: comprovante-fonte (OCR); null = documento sem anexo. O drawer mostra um chip com o `fileName`.
+  attachment: DocumentAttachment | null
 }>
 
 // Rótulo i18n do complemento da forma (espelha o create). null = forma sem complemento tipado.
@@ -493,11 +517,54 @@ export const deriveDetailStatus = (
   payables: readonly { status: DocumentStatus; kind: PayableKind }[],
 ): DocumentStatus => payables.find((p) => p.kind === 'Parent')?.status ?? docStatus
 
+/**
+ * #95/#147 — Resolve as refs de categorização do documento p/ NOMES (Plano Orçamentário do drawer). PURA.
+ * A FOLHA é `subcategoryRef ?? categoryRef` (#502 S1: docs novos carimbam a subcategoria em campo próprio;
+ * docs antigos dobravam a folha em `categoryRef`) — a MESMA decodificação por `parentId` cobre os dois:
+ * folha com `parentId` → Categoria = nome do PAI e Subcategoria = nome da folha; folha sem `parentId` →
+ * Categoria = nome da folha e Subcategoria = "—" (espelha a cascata do Lançar Documento). Cada linha degrada
+ * para "—" quando a ref é `null` OU não resolve (front-first tolerante). `budgetPlan` fica "—" enquanto não
+ * há fonte de planos no front (budget-plans pende de core-api#113).
+ */
+export const resolveCategorization = (
+  d: Pick<
+    DocumentDetail,
+    'costCenterRef' | 'categoryRef' | 'subcategoryRef' | 'programRef' | 'budgetPlanRef'
+  >,
+  r?: CategorizationResolvers,
+): CategorizationView => {
+  const costCenter = d.costCenterRef !== null ? (r?.costCenter(d.costCenterRef) ?? null) : null
+  const program = d.programRef !== null ? (r?.program(d.programRef) ?? null) : null
+  const budgetPlan = d.budgetPlanRef !== null ? (r?.budgetPlan(d.budgetPlanRef) ?? null) : null
+  const leafRef = d.subcategoryRef ?? d.categoryRef
+  const leaf = leafRef !== null ? (r?.categoryNode(leafRef) ?? null) : null
+  let category: string | null = null
+  let subcategory: string | null = null
+  if (leaf !== null) {
+    if (leaf.parentId !== null) {
+      // Folha COM pai → é subcategoria; a categoria é o nome do pai (resolvido por outro lookup).
+      category = r?.categoryNode(leaf.parentId)?.name ?? null
+      subcategory = leaf.name
+    } else {
+      // Folha SEM pai → é a própria categoria (top-level); não há subcategoria.
+      category = leaf.name
+    }
+  }
+  return {
+    costCenter: costCenter ?? DASH,
+    category: category ?? DASH,
+    subcategory: subcategory ?? DASH,
+    program: program ?? DASH,
+    budgetPlan: budgetPlan ?? DASH,
+  }
+}
+
 /** DocumentDetail (GET /:id) → view do drawer. PURA. Resolve nome + CNPJ do fornecedor pelos resolvers. */
 export const mapDocumentDetail = (
   d: DocumentDetail,
   resolveSupplier: ResolveSupplier,
   resolveDoc?: ResolveSupplierDoc,
+  catResolvers?: CategorizationResolvers,
 ): DocumentDetailView => ({
   id: d.id,
   type: d.type ?? DASH,
@@ -513,6 +580,7 @@ export const mapDocumentDetail = (
   paymentMethod: d.paymentMethod,
   paymentDetail: d.paymentDetail, // #273: complemento da forma (espelha o create)
   description: d.description ?? '',
+  categorization: resolveCategorization(d, catResolvers), // #95/#147: refs → nomes (Plano Orçamentário)
   retentions: d.payables.flatMap((p) =>
     p.kind === 'Child' && p.retentionType !== null
       ? [{ type: p.retentionType, value: centsToBRL(p.valueCents) }]
@@ -526,6 +594,7 @@ export const mapDocumentDetail = (
     value: centsToBRL(p.valueCents),
     status: p.status,
   })),
+  attachment: d.attachment, // #568: passthrough (null = sem anexo)
 })
 
 // ── Exportar (client-side, padrão Contratos) ──────────────────────────────────
@@ -588,6 +657,18 @@ export const deriveListState = (args: {
     page: pageInfo(data.value.page, data.value.pageSize, data.value.total),
   }
 }
+
+// ── #201-fix: rascunho (Draft) no grid title-centric ─────────────────────────────────────────────────
+// Rascunho NÃO gera títulos-filho (core-api) → nunca vem do /payable-titles → some do grid. Para exibi-lo
+// buscamos os documentos Draft à parte (deriveListState) e trocamos a fonte SÓ no chip "Rascunho":
+//   - 'rascunho' (chip Rascunho): a fonte é os rascunhos (paginada pelo /documents?status=Draft).
+//   - 'none' (Todos / demais chips): devolve `titles` intacto.
+// Rascunho fica FORA do "Todos" de propósito: são muitos e parciais (OCR ingest) e soterrariam os títulos
+// reais; o operador acha os inacabados pelo chip Rascunho (mesmo paradigma dos outros status).
+export type DraftMergeMode = 'rascunho' | 'none'
+
+export const mergeDraftsIntoGrid = (drafts: ListState, titles: ListState, mode: DraftMergeMode): ListState =>
+  mode === 'rascunho' ? drafts : titles
 
 // ── #201: listagem por TÍTULO (grid payable-centric: pai + filhos) — REUSA o mesmo GridRow/ListState ──
 // Um título vira uma linha do grid existente. `id` = payableId (checkbox/seleção por título). Lacunas

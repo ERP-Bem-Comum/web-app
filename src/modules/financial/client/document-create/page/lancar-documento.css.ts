@@ -239,23 +239,63 @@ export const pickerItem = style({
 export const pickerItemSelected = style({ background: vars.color.institutional.blueBg })
 export const pickerEmpty = style({
   padding: vars.space.sm,
+  fontFamily: vars.font.family.body, // senão vaza a serifa (Times) default do body
   fontSize: vars.font.size.xs,
   color: vars.color.text.muted,
 })
 
-// Layout 3-col do Figma 626-2: preview/OCR (480) · form (FILL) · sidebar (340). Colapsa por etapas:
-// abaixo de 75rem some o preview (form+sidebar); abaixo de 60rem vira coluna única.
+// Layout 4-col do Figma 626-2: preview/OCR (redimensionável) · alça · form (FILL) · sidebar (340). A
+// largura do OCR é UI-state (var `--ocr-col-width`, px do arraste) com clamp de segurança [16rem, 48rem].
+// Colapsa por etapas: abaixo de 75rem some o preview E a alça (form+sidebar); abaixo de 60rem, coluna única.
 export const body = style({
   flex: 1,
   minBlockSize: 0,
   display: 'grid',
-  gridTemplateColumns: 'minmax(16rem, 28rem) minmax(0, 1fr) 21.25rem',
+  gridTemplateColumns: 'clamp(16rem, var(--ocr-col-width, 28rem), 48rem) auto minmax(0, 1fr) 21.25rem',
   // A linha precisa ter a altura do container (senão vira auto = altura do conteúdo e nada rola).
   gridTemplateRows: 'minmax(0, 1fr)',
   overflow: 'hidden', // cada coluna rola sozinha (independent scroll, igual ao mock)
   '@media': {
     'screen and (max-width: 75rem)': { gridTemplateColumns: 'minmax(0, 1fr) 21.25rem' },
     'screen and (max-width: 60rem)': { gridTemplateColumns: '1fr' },
+  },
+})
+
+// Alça de redimensionamento entre a coluna OCR e o formulário (arraste horizontal · window-splitter).
+// Área de clique fina (6px) com uma linha central discreta que realça no hover/foco/arraste. Some junto
+// com o OCR abaixo de 75rem (onde não há preview a redimensionar).
+export const resizeHandle = style({
+  position: 'relative',
+  inlineSize: '0.375rem', // 6px de área de arraste
+  blockSize: '100%',
+  padding: 0,
+  border: 'none',
+  background: 'transparent',
+  cursor: 'col-resize',
+  touchAction: 'none', // o pointermove controla o arraste (sem scroll/gesto do browser)
+  '::after': {
+    content: '""',
+    position: 'absolute',
+    insetBlock: 0,
+    insetInlineStart: '50%',
+    transform: 'translateX(-50%)',
+    inlineSize: vars.borderWidth.thin,
+    background: vars.color.institutional.paperRule,
+    transition: 'inline-size 120ms, background 120ms',
+  },
+  selectors: {
+    '&:hover::after, &:focus-visible::after': {
+      inlineSize: '0.1875rem', // 3px — engrossa e fica azul no hover/foco
+      background: vars.color.institutional.blueLine,
+    },
+    '&:focus-visible': { outline: 'none' },
+  },
+  '@media': { 'screen and (max-width: 75rem)': { display: 'none' } },
+})
+// Enquanto arrasta: mantém a linha grossa/azul (o pointer sai da alça fina durante o arraste).
+export const resizeHandleActive = style({
+  selectors: {
+    '&::after': { inlineSize: '0.1875rem', background: vars.color.institutional.blue },
   },
 })
 
@@ -346,9 +386,42 @@ export const scrollArea = style({
 
 export const control = style(controlBase)
 export const controlMono = style([controlBase, { fontFamily: vars.font.family.mono, textAlign: 'end' }])
+
+// ── Destaque OCR: campo LIDO do documento ganha barra âmbar à esquerda + tag "OCR" (mock Lançar Documento).
+// Barra via box-shadow inset (compõe por cima de qualquer control/button, sem guerra de borda; some só no
+// anel de foco, o que é aceitável).
+export const ocrAccent = style({
+  boxShadow: `inset 0.1875rem 0 0 0 ${vars.color.institutional.orange}`,
+})
+// Rótulo do campo em LINHA (texto + tag) — quando o campo é destacado.
+export const fieldLabelRow = style([
+  fieldLabel,
+  { display: 'inline-flex', alignItems: 'center', gap: vars.space.xs },
+])
+// Tag "OCR" âmbar, pequena — ao lado do rótulo do campo lido.
+export const ocrTag = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  paddingInline: '0.25rem',
+  borderRadius: vars.radius.sm,
+  background: vars.color.institutional.orangeLight,
+  color: vars.color.status.pendingText,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.bold,
+  letterSpacing: '0.06em',
+  lineHeight: 1.3,
+})
 export const controlDisabled = style([
   controlBase,
   { background: vars.color.institutional.paperBeige, color: vars.color.text.muted, cursor: 'not-allowed' },
+])
+
+// Campo AUTO/somente-leitura (ex.: Competência derivada da Emissão) — azul claro da marca em vez do bege
+// (que dá "cara de bloqueado"). Sem `not-allowed`: é preenchido pelo sistema, não desabilitado.
+export const controlReadonly = style([
+  controlBase,
+  { background: vars.color.institutional.blueBg, cursor: 'default' },
 ])
 
 // Select com aparência custom (Figma/mock): some o caret nativo; o wrapper desenha o ▾ azul.
@@ -534,6 +607,7 @@ export const errorBanner = style({
   borderRadius: vars.radius.md,
   background: vars.color.feedback.errorBg,
   color: vars.color.feedback.errorText,
+  fontFamily: vars.font.family.body, // senão vaza a serifa (Times) default do body
   fontSize: vars.font.size.sm,
 })
 export const bottombar = style({
@@ -583,7 +657,7 @@ export const previewCol = style({
   minBlockSize: 0,
   blockSize: '100%',
   overflowY: 'auto',
-  padding: '1.25rem', // 20 (mock)
+  padding: vars.space.sm, // margem azul enxuta (era 20px) → mais largura útil p/ o documento
   background: vars.color.institutional.blueBg, // parte de FORA azul claro (a coluna do OCR)
   borderInlineEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   '@media': { 'screen and (max-width: 75rem)': { display: 'none' } },
@@ -622,6 +696,11 @@ export const dropzone = style({
   border: `${vars.borderWidth.thin} dashed ${vars.color.institutional.paperRule}`,
   background: vars.color.institutional.paperWarm,
 })
+// Estado "arrastando um arquivo por cima" (drag-over): borda SÓLIDA + fundo mais claro (feedback de que solta aqui).
+export const dropzoneActive = style([
+  dropzone,
+  { borderStyle: 'solid', background: vars.color.surface.default },
+])
 export const dropzoneIcon = style({
   display: 'inline-flex',
   alignItems: 'center',
@@ -664,6 +743,77 @@ export const dropzoneNote = style({
   fontSize: vars.font.size['2xs'],
   color: vars.color.institutional.blueDeep,
   textAlign: 'center',
+})
+
+// ── Web view do documento ingerido (PDF em iframe / XML em texto) ──────────────────
+// Painel que ocupa o lugar da drop-zone quando há um arquivo para pré-visualizar.
+export const previewPane = style({
+  flex: 1,
+  display: 'flex',
+  flexDirection: 'column',
+  minBlockSize: 0,
+  gap: vars.space.sm,
+  borderRadius: vars.radius.lg,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  background: vars.color.surface.default,
+  overflow: 'hidden',
+})
+// (O PDF passou a ser rasterizado em canvas pelo organism `PdfCanvasPreview` — specs/071 — que traz o
+// próprio viewport. O antigo `previewFrame` do <iframe> nativo foi removido com a troca.)
+// Texto do XML — mono, rolável, quebra preservada.
+export const previewXml = style({
+  flex: 1,
+  margin: 0,
+  overflow: 'auto',
+  padding: vars.space.sm,
+  fontFamily: vars.font.family.mono,
+  // Zoom do web view: escala a partir do token base por `--ocr-zoom` (1 = 100%).
+  fontSize: `calc(${vars.font.size['2xs']} * var(--ocr-zoom, 1))`,
+  lineHeight: 1.5,
+  color: vars.color.text.secondary,
+  whiteSpace: 'pre-wrap',
+  wordBreak: 'break-word',
+})
+export const zoomControls = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: vars.space.xs,
+  marginInlineStart: 'auto', // empurra os controles para o fim do header (ao lado do título)
+})
+export const zoomBtn = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  inlineSize: '1.25rem',
+  blockSize: '1.25rem',
+  padding: 0,
+  borderRadius: vars.radius.sm,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  background: vars.color.surface.default,
+  color: vars.color.institutional.blueDeep,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  lineHeight: 1,
+  cursor: 'pointer',
+  ':disabled': { opacity: 0.4, cursor: 'not-allowed' },
+})
+// Percentual do zoom — largura fixa p/ não "pular" ao mudar (2/3 dígitos).
+export const zoomPct = style({
+  minInlineSize: '2.5rem',
+  textAlign: 'center',
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size['2xs'],
+  fontVariantNumeric: 'tabular-nums',
+  color: vars.color.text.secondary,
+})
+// Rodapé do painel: link discreto para trocar o arquivo (só no modo criação).
+export const previewReplace = style({
+  alignSelf: 'flex-start',
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size['2xs'],
+  color: vars.color.institutional.blueDeep,
+  textDecoration: 'underline',
+  cursor: 'pointer',
 })
 
 // ── Sidebar: painéis FLAT (Figma 670:* — sem card; só título + conteúdo) ─────────
@@ -868,7 +1018,7 @@ export const entityCard = style({
   paddingInline: '0.875rem', // 14px
   borderRadius: vars.radius.lg,
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
-  background: vars.color.institutional.paperWarm,
+  background: vars.color.surface.default,
   minInlineSize: 0,
   transition: 'background 120ms, border-color 120ms',
   // Hover (mock): realce azul claro da marca — mesmo tom da seleção.
@@ -937,7 +1087,7 @@ export const contratoPill = style({
   paddingInline: '0.75rem', // 12px (Figma)
   borderRadius: '1.5rem', // pill (sem token de pill no DS)
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
-  background: vars.color.institutional.paperWarm,
+  background: vars.color.surface.default,
   fontFamily: vars.font.family.body, // Nunito (brand) — texto do pill (ex.: "Sem contrato vinculado")
   fontSize: vars.font.size.xs,
   color: vars.color.text.muted,

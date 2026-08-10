@@ -35,11 +35,18 @@ const build = () => {
     login: createLogin({ client, store, now, decodeExp: decodeAccessExp, genId }),
     getMe: createGetMe({ client }),
     logout: createLogout({ client, store }),
+    // Encerrar todas as sessões (BE-REC-004) — passthrough autenticado do client. O cleanup local da
+    // sessão atual (store.delete + limpar cookie) é feito na server-fn, espelhando o logout.
+    revokeAllSessions: (accessToken: string) => client.revokeAllSessions(accessToken),
     resolveSession: createResolveSession({ store, refreshSession, now }),
     // Leitura pública da política de senha (#32) — passthrough do client (sem use-case próprio).
     getPasswordPolicy: () => client.getPasswordPolicy(),
     // Aprovadores elegíveis (#148) — passthrough do client (RBAC user:list no core-api).
     listApprovers: (accessToken: string) => client.listApprovers(accessToken),
+    // Recuperação de senha (#037) — passthrough público (sem sessão). Anti-enumeração: sempre 202.
+    forgotPassword: (input: Readonly<{ email: string }>) => client.forgotPassword(input),
+    // Redefinição de senha (#038) — passthrough público (sem sessão). 400 → 'reset-token-invalid'.
+    resetPassword: (input: Readonly<{ token: string; newPassword: string }>) => client.resetPassword(input),
   }
 }
 

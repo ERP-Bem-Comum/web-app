@@ -15,6 +15,51 @@ export const ptBR: Catalog = {
   'auth.login.remember-device': 'Lembrar este dispositivo',
   'auth.login.submit': 'Entrar',
   'auth.login.forgot-password': 'Esqueci Minha Senha',
+  // Recuperar Senha (Esqueci Minha Senha)
+  'auth.forgot.title': 'Recuperar Senha',
+  'auth.forgot.subtitle': 'Informe seu e-mail para receber o link de redefinição.',
+  'auth.forgot.email-label': 'E-mail',
+  'auth.forgot.email-placeholder': 'seu@email.com',
+  'auth.forgot.submit': 'Enviar link para meu e-mail',
+  'auth.forgot.cancel': 'Cancelar',
+  'auth.forgot.success-title': 'Verifique seu e-mail',
+  'auth.forgot.success-body':
+    'Se esse email estiver cadastrado no sistema, enviaremos um link para a redefinição de senha.',
+  'auth.forgot.understood': 'Entendi',
+  // Redefinir Senha (link do e-mail → /reset-password?token=...) — #038
+  'auth.reset.title': 'Redefinir Senha',
+  'auth.reset.subtitle': 'Escolha uma nova senha para a sua conta.',
+  'auth.reset.new-label': 'Nova senha',
+  'auth.reset.confirm-label': 'Confirmar nova senha',
+  'auth.reset.submit': 'Redefinir senha',
+  'auth.reset.back-to-login': 'Voltar ao login',
+  'auth.reset.requirements': 'Sua senha precisa de:',
+  'auth.reset.rule.length': 'No mínimo {{min}} e no máximo {{max}} caracteres',
+  'auth.reset.rule.upper': 'Uma letra maiúscula',
+  'auth.reset.rule.lower': 'Uma letra minúscula',
+  'auth.reset.rule.number': 'Um número',
+  'auth.reset.rule.special': 'Um símbolo especial como @ ^ ~ #',
+  'auth.reset.mismatch': 'As senhas não coincidem.',
+  'auth.reset.toggle-visibility': 'Mostrar ou ocultar a senha',
+  'auth.reset.success-title': 'Senha redefinida com sucesso!',
+  'auth.reset.success-body': 'Sua senha foi redefinida. Você já pode entrar com a nova senha.',
+  'auth.reset.success-cta': 'Ir para o login',
+  'auth.reset.invalid-link-title': 'Link inválido',
+  'auth.reset.invalid-link-body': 'Este link é inválido ou expirou. Solicite um novo.',
+  'auth.reset.invalid-link-cta': 'Solicitar novo link',
+  'auth.reset.error.link-invalid': 'Este link é inválido ou expirou. Solicite um novo.',
+  // Ativação de Conta (#039) — mesma tela do reset (variant='activate'); só o texto muda. Checklist
+  // da policy e labels de campo reusam `auth.reset.*`.
+  'auth.activate.title': 'Criar Senha',
+  'auth.activate.subtitle': 'Boas-vindas! Defina uma senha para acessar o sistema.',
+  'auth.activate.submit': 'Criar senha',
+  'auth.activate.success-title': 'Conta ativada!',
+  'auth.activate.success-body': 'Sua senha foi criada. Você já pode entrar no sistema.',
+  'auth.activate.success-cta': 'Ir para o login',
+  'auth.activate.invalid-link-title': 'Convite inválido',
+  'auth.activate.invalid-link-body': 'Este convite é inválido ou expirou. Peça um novo ao administrador.',
+  'auth.activate.invalid-link-cta': 'Ir para o login',
+  'auth.activate.error.link-invalid': 'Este convite é inválido ou expirou.',
   // Comum (reutilizável)
   'common.loading': 'Carregando…',
   'common.back': 'Voltar',
@@ -72,6 +117,7 @@ export const ptBR: Catalog = {
   'contracts.distrato.error.invalid-date': 'Data efetiva do distrato inválida (não pode ser futura).',
   // Contracts — Listagem
   'contracts.list.title': 'Contratos',
+  'contracts.list.subtitle': 'Gestão de contratos e ordens de serviço',
   'contracts.list.new': 'Novo Contrato',
   'contracts.list.export': 'Exportar',
   'contracts.list.exporting': 'Exportando…',
@@ -207,7 +253,7 @@ export const ptBR: Catalog = {
   'contracts.create.field.periodEnd': 'Fim',
   'contracts.create.field.program': 'Programa',
   'contracts.create.field.budgetPlan': 'Plano Orçamentário',
-  'contracts.create.field.categorizacao': 'Categorização',
+  'contracts.create.field.categorizacao': 'Categoria',
   'contracts.create.field.categorizacao.evaluation': 'Avaliação',
   'contracts.create.field.categorizacao.operational': 'Operacional',
   'contracts.create.field.categorizacao.process': 'Processo',
@@ -215,6 +261,9 @@ export const ptBR: Catalog = {
   'contracts.create.field.centroDeCusto.rh': 'RH',
   'contracts.create.field.centroDeCusto.services': 'Serviços Gerais',
   'contracts.create.field.centroDeCusto.events': 'Eventos',
+  // Subcategoria — placeholder visual (front-first); persistência aguarda campo no contrato + core-api#341.
+  'contracts.create.field.subcategoria': 'Subcategoria',
+  'contracts.create.field.subcategoria.placeholder': 'Selecione…',
   'contracts.create.field.supplier': 'Fornecedor',
   'contracts.create.field.financier': 'Financiador',
   'contracts.create.field.collaborator': 'Colaborador',
@@ -342,8 +391,28 @@ export const ptBR: Catalog = {
   'partners.error.collaborator-import-malformed': 'Arquivo de importação malformado.',
   'partners.error.invalid-registration-transition': 'Transição de situação cadastral inválida.',
   'partners.error.deactivation-reason-required': 'Informe o motivo da desativação.',
+  'partners.error.autocadastro-invalid': 'Este convite é inválido ou expirou.',
+  'partners.error.autocadastro-cpf-mismatch': 'O CPF informado não confere. Verifique e tente novamente.',
   'partners.error.invalid-state': 'UF inválida.',
   'partners.error.invalid-ibge-code': 'Município inválido.',
+
+  // ── Partners › Autocadastro do Colaborador (spec 040, rota pública /autocadastro) ──
+  'partners.autocadastro.greeting': 'Olá, {{name}}!',
+  'partners.autocadastro.subtitle': 'Complete seu cadastro para finalizar seu registro. Seu CPF:',
+  'partners.autocadastro.loading': 'Carregando seu convite…',
+  'partners.autocadastro.section.identity': 'Confirmação de identidade',
+  'partners.autocadastro.field.cpfPrefix': 'Confirme os primeiros dígitos do seu CPF',
+  'partners.autocadastro.field.cpfPrefixPlaceholder': 'Ex: 123',
+  'partners.autocadastro.form.select': 'Selecione…',
+  'partners.autocadastro.yes': 'Sim',
+  'partners.autocadastro.no': 'Não',
+  'partners.autocadastro.submit': 'Concluir cadastro',
+  'partners.autocadastro.invalid.title': 'Convite inválido ou expirou',
+  'partners.autocadastro.invalid.body':
+    'Este convite é inválido ou expirou. Entre em contato com a ABC para receber um novo link.',
+  'partners.autocadastro.success.title': 'Cadastro concluído com sucesso!',
+  'partners.autocadastro.success.body': 'Seus dados foram enviados. Obrigado por completar seu cadastro.',
+  'partners.autocadastro.success.confirm': 'Entendi',
 
   // ── Partners › Fornecedores (spec 010) ──
   'partners.export.label': 'Exportar',
@@ -399,6 +468,7 @@ export const ptBR: Catalog = {
   'partners.suppliers.paginator.previous': 'Anterior',
   'partners.suppliers.paginator.next': 'Próxima',
   'partners.suppliers.paginator.page': 'Página',
+  'partners.suppliers.paginator.of': 'de',
   'partners.suppliers.paginator.perPage': 'Itens por página:',
   'partners.suppliers.coming-soon': 'Tela em construção.',
   'partners.suppliers.create.title': 'Novo Fornecedor',
@@ -480,6 +550,7 @@ export const ptBR: Catalog = {
   'partners.financiers.paginator.previous': 'Anterior',
   'partners.financiers.paginator.next': 'Próxima',
   'partners.financiers.paginator.page': 'Página',
+  'partners.financiers.paginator.of': 'de',
   'partners.financiers.paginator.perPage': 'Itens por página:',
   'partners.financiers.create.title': 'Novo Financiador',
   'partners.financiers.edit.title': 'Editar financiador',
@@ -553,6 +624,7 @@ export const ptBR: Catalog = {
   'partners.acts.paginator.previous': 'Anterior',
   'partners.acts.paginator.next': 'Próxima',
   'partners.acts.paginator.page': 'Página',
+  'partners.acts.paginator.of': 'de',
   'partners.acts.paginator.perPage': 'Itens por página:',
   'partners.acts.create.title': 'Novo Acordo',
   'partners.acts.edit.title': 'Editar Acordo',
@@ -722,15 +794,22 @@ export const ptBR: Catalog = {
   'partners.collaborators.detail.field.leaveRenewalDuration': 'Por quanto tempo pode ser renovado?',
   'partners.collaborators.detail.gatedHint': 'Disponível quando o backend suportar este campo',
   // Enums canônicos do cadastro completo (códigos do core-api → rótulos PT-BR)
+  //
+  // Identidade de gênero: a redação é a que o CLIENTE pediu ("Mulher cisgênero", e não "Mulher cis";
+  // "Pessoa não binária"; "Outra identidade de gênero"). São os rótulos que a pessoa lê — o código do
+  // enum não muda. Duas coisas da lista do cliente NÃO estão aqui porque não são decisão de front:
+  //   - a lista pedida não traz TRAVESTI, que existe no domínio do core-api; tirar a opção apagaria
+  //     quem já estiver registrado assim, então ela fica até haver decisão explícita;
+  //   - "Outra identidade de gênero: ____" pressupõe um campo de texto livre que o backend não tem.
   // eslint-disable-next-line no-secrets/no-secrets -- chave i18n (código de enum), não é segredo
   'partners.collaborators.gender.PREFIRO_NAO_RESPONDER': 'Prefiro não responder',
-  'partners.collaborators.gender.HOMEM_CIS': 'Homem cis',
-  'partners.collaborators.gender.HOMEM_TRANS': 'Homem trans',
-  'partners.collaborators.gender.MULHER_CIS': 'Mulher cis',
-  'partners.collaborators.gender.MULHER_TRANS': 'Mulher trans',
+  'partners.collaborators.gender.HOMEM_CIS': 'Homem cisgênero',
+  'partners.collaborators.gender.HOMEM_TRANS': 'Homem transgênero',
+  'partners.collaborators.gender.MULHER_CIS': 'Mulher cisgênero',
+  'partners.collaborators.gender.MULHER_TRANS': 'Mulher transgênero',
   'partners.collaborators.gender.TRAVESTI': 'Travesti',
-  'partners.collaborators.gender.NAO_BINARIO': 'Não binário',
-  'partners.collaborators.gender.OUTRO': 'Outro',
+  'partners.collaborators.gender.NAO_BINARIO': 'Pessoa não binária',
+  'partners.collaborators.gender.OUTRO': 'Outra identidade de gênero',
   'partners.collaborators.race.AMARELO': 'Amarela',
   'partners.collaborators.race.BRANCO': 'Branca',
   'partners.collaborators.race.PARDO': 'Parda',
@@ -759,6 +838,7 @@ export const ptBR: Catalog = {
   'partners.collaborators.paginator.previous': 'Anterior',
   'partners.collaborators.paginator.next': 'Próxima',
   'partners.collaborators.paginator.page': 'Página',
+  'partners.collaborators.paginator.of': 'de',
   'partners.collaborators.area.PARC': 'Parcerias',
   'partners.collaborators.area.DDI': 'DDI',
   'partners.collaborators.area.DCE': 'DCE',
@@ -852,6 +932,7 @@ export const ptBR: Catalog = {
   'users.paginator.previous': 'Anterior',
   'users.paginator.next': 'Próximo',
   'users.paginator.page': 'Página',
+  'users.paginator.of': 'de',
   'users.paginator.perPage': 'Itens por página:',
   // Slices criar/detalhe (telas a seguir; stubs por enquanto)
   'users.create.title': 'Adicionar Usuário',
@@ -930,6 +1011,7 @@ export const ptBR: Catalog = {
 
   // ─── Gestão de Programas — slice Programas ───────────────────────────────────
   'programs.list.title': 'Programas',
+  'programs.list.subtitle': 'Gestão de programas da organização',
   'programs.list.search': 'Pesquise',
   'programs.list.new': 'Adicionar Programa',
   'programs.list.empty': 'Nenhum programa cadastrado.',
@@ -945,6 +1027,7 @@ export const ptBR: Catalog = {
   'programs.paginator.previous': 'Anterior',
   'programs.paginator.next': 'Próximo',
   'programs.paginator.page': 'Página',
+  'programs.paginator.of': 'de',
   'programs.paginator.perPage': 'Itens por página:',
   // Inclusão / detalhe
   'programs.create.title': 'Novo Programa',
@@ -991,6 +1074,7 @@ export const ptBR: Catalog = {
   'financial.create.backLabel': 'Voltar',
   'financial.create.close': '✕',
   'financial.create.closeLabel': 'Fechar',
+  'financial.create.ocrResizeLabel': 'Redimensionar a coluna de pré-visualização (arraste ou use as setas)',
   'financial.create.hero.overline': 'Fornecedor',
   'financial.create.partner.kind.supplier': 'Fornecedor',
   'financial.create.partner.kind.financier': 'Financiador',
@@ -1005,6 +1089,24 @@ export const ptBR: Catalog = {
   'financial.create.partner.cpfLabel': 'CPF',
   'financial.detail.title': 'Detalhes do Pagamento',
   'financial.detail.close': 'Fechar',
+  'financial.detail.tab.detalhes': 'Detalhes',
+  'financial.detail.tab.historico': 'Histórico',
+  'financial.timeline.loading': 'Carregando histórico…',
+  'financial.timeline.error': 'Não foi possível carregar o histórico.',
+  'financial.timeline.empty': 'Sem eventos registrados para este documento.',
+  'financial.timeline.system': 'Sistema',
+  'financial.timeline.event.paid': 'Pago',
+  'financial.timeline.event.approved': 'Aprovado',
+  'financial.timeline.event.undone': 'Aprovação desfeita',
+  'financial.timeline.event.saved': 'Documento lançado',
+  'financial.timeline.event.draft': 'Rascunho criado',
+  'financial.timeline.event.reconciled': 'Conciliado',
+  'financial.timeline.event.reconciliationUndone': 'Conciliação desfeita',
+  'financial.timeline.field.dueDate': 'Vencimento',
+  'financial.timeline.field.grossValue': 'Valor',
+  'financial.timeline.field.description': 'Descrição',
+  'financial.timeline.field.paymentMethod': 'Forma de pagamento',
+  'financial.timeline.field.status': 'Status',
   'financial.detail.loading': 'Carregando…',
   'financial.detail.section.composicao': 'Composição Financeira',
   'financial.detail.section.titulos': 'Títulos Gerados',
@@ -1032,6 +1134,7 @@ export const ptBR: Catalog = {
   'financial.detail.label.descricao': 'Descrição',
   'financial.detail.file.empty': 'Nenhum arquivo anexado',
   'financial.detail.file.soon': 'Disponível ao anexar o documento',
+  'financial.detail.file.attached': 'Arquivo anexado', // #568: comprovante-fonte presente (OCR)
   'financial.detail.edit': 'Editar pagamento',
   'financial.detail.editSoon': 'Edição do documento — em breve',
   'financial.create.hero.placeholder': 'Selecione o fornecedor',
@@ -1055,6 +1158,7 @@ export const ptBR: Catalog = {
   'financial.create.field.supplier': 'Fornecedor',
   'financial.create.field.numberSeries': 'Nº / Série',
   'financial.create.field.competencia': 'Competência',
+  'financial.create.field.competenciaHint': 'Preenchida automaticamente com o mês/ano da Emissão.',
   'financial.create.field.emissao': 'Emissão',
   'financial.create.field.payFromAccount': 'Pagar da Conta',
   'financial.create.field.centroCusto': 'Centro de Custo',
@@ -1101,17 +1205,16 @@ export const ptBR: Catalog = {
   'financial.create.payMethod.desc.Cambio': 'Operação de câmbio / moeda estrangeira.',
   'financial.create.payMethod.desc.GuiaRecolhimento': 'Guia de recolhimento (DARF / GPS).',
   'financial.create.payMethod.desc.Outro': 'Cheque, dinheiro, compensação.',
-  // Campos complementares por método (chrome até o backend aceitar — core-api#89).
+  // Campos complementares por método — o complemento é persistido (#273/#284: create + edit). OCR ainda pendente (#62/#145).
   'financial.create.payMethod.boletoLabel': 'Linha digitável (47-48 dígitos)',
   'financial.create.payMethod.boletoHint':
-    'Será preenchida via OCR ou manual — aguardando backend (core-api#89).',
+    'Linha digitável do boleto — preenchimento manual (o OCR automático será integrado depois).',
   'financial.create.payMethod.cardLabel': 'Cartão corporativo',
-  'financial.create.payMethod.cardHint': 'Cartão da empresa — aguardando backend (core-api#89).',
+  'financial.create.payMethod.cardHint': 'Identificação do cartão da empresa usado no pagamento.',
   'financial.create.payMethod.freeLabel': 'Especifique a forma de pagamento',
-  'financial.create.payMethod.freeHint': 'Cheque, dinheiro, compensação… — aguardando backend (core-api#89).',
+  'financial.create.payMethod.freeHint': 'Cheque, dinheiro, compensação…',
   'financial.create.payMethod.currencyLabel': 'Moeda / detalhes do câmbio',
-  'financial.create.payMethod.currencyHint':
-    'Moeda estrangeira e cotação da conversão — aguardando backend (core-api#89).',
+  'financial.create.payMethod.currencyHint': 'Moeda estrangeira e cotação da conversão.',
   'financial.create.pagamento.contaFornecedor': 'Conta do favorecido',
   'financial.create.pagamento.contaFornecedorHint': 'Conforme dados bancários do favorecido',
   'financial.create.pagamento.aprovador': 'Aprovador',
@@ -1152,22 +1255,39 @@ export const ptBR: Catalog = {
   'financial.create.sidebar.semTitulos': 'Preencha o valor para ver os títulos.',
   'financial.create.titulos.dest.iss': 'SEFIN - Secretaria Municipal das Finanças de Fortaleza',
   'financial.create.titulos.dest.federal': 'Receita Federal',
+  'financial.create.validation.type': 'Tipo de documento selecionado',
+  'financial.create.validation.documentNumber': 'Número do documento informado',
   'financial.create.validation.supplier': 'Fornecedor identificado',
+  'financial.create.validation.paymentMethod': 'Forma de pagamento selecionada',
   'financial.create.validation.calc': 'Cálculo bruto → líquido íntegro',
+  'financial.create.validation.dueDate': 'Data de vencimento informada',
+  'financial.create.validation.accessKey': 'Chave de acesso da DANFE (44 dígitos)',
   'financial.create.validation.bank': 'Dados bancários válidos',
   'financial.create.validation.issDivergent': 'Alíquota ISS divergente do padrão SEFIN',
   'financial.create.validation.approval': 'Aguarda aprovação do gestor',
   'financial.create.preview.ocrBadge': 'OCR',
   'financial.create.preview.title': 'Pré-visualização do documento',
   'financial.create.preview.hint':
-    'Arraste o PDF da nota aqui ou selecione um arquivo. O OCR vai ler os dados e preencher o formulário.',
+    'Arraste o PDF ou XML da nota aqui ou selecione um arquivo. A leitura automática cria um rascunho pré-preenchido.',
   'financial.create.preview.select': 'Selecionar arquivo',
-  'financial.create.preview.formats': 'PDF, PNG ou JPG · até 10 MB',
+  'financial.create.preview.formats': 'PDF ou XML · até 20 MB',
   'financial.create.preview.reading': 'Lendo o documento…',
-  'financial.create.preview.unavailable':
-    'A leitura automática (OCR) ainda não está disponível — em breve. Preencha o formulário manualmente.',
-  'financial.create.preview.error':
-    'Não foi possível ler o documento. Tente novamente ou preencha manualmente.',
+  'financial.create.preview.done': 'Rascunho criado a partir do documento — revise os dados e confirme.',
+  'financial.create.preview.frameLabel': 'Documento enviado (pré-visualização)',
+  'financial.create.preview.replace': 'Trocar arquivo',
+  'financial.create.preview.unsupported': 'Sem pré-visualização para este formato.',
+  'financial.create.preview.rendering': 'Carregando o documento…',
+  'financial.create.preview.renderError': 'Não foi possível exibir este PDF.',
+  'financial.create.preview.download': 'Baixar arquivo',
+  'financial.create.preview.zoomIn': 'Aumentar zoom',
+  'financial.create.preview.zoomOut': 'Diminuir zoom',
+  'financial.create.ocr.error.invalidMime': 'Formato não suportado. Envie um arquivo PDF ou XML.',
+  'financial.create.ocr.error.tooLarge': 'Arquivo muito grande. O limite é 20 MB.',
+  'financial.create.ocr.error.invalidFile':
+    'Não foi possível ler o arquivo. Verifique se é um PDF ou XML válido.',
+  'financial.create.ocr.error.unauthorized': 'Sua sessão expirou. Entre novamente para continuar.',
+  'financial.create.ocr.error.server':
+    'Não foi possível processar o documento agora. Tente novamente ou preencha manualmente.',
   'financial.create.success.title': 'Documento lançado',
   'financial.create.success.subtitle': 'Títulos gerados',
   'financial.create.success.novo': 'Lançar outro',
@@ -1203,6 +1323,8 @@ export const ptBR: Catalog = {
   'financial.recon.error.import-empty-content': 'O arquivo está vazio.',
   'financial.recon.error.import-malformed': 'Não foi possível ler o extrato.',
   'financial.recon.error.import-empty-statement': 'O extrato não tem movimentações.',
+  'financial.recon.error.statement-has-reconciled-transactions':
+    'Há transações conciliadas neste extrato. Desfaça as conciliações antes de excluí-lo.',
   'financial.recon.error.period-closed': 'Este período está fechado.',
   'financial.recon.error.period-has-pending': 'Há movimentações pendentes no período.',
   'financial.recon.error.invalid-period-range': 'Período inválido.',
@@ -1214,6 +1336,12 @@ export const ptBR: Catalog = {
   'financial.recon.error.title-not-paid': 'Só títulos pagos podem ser conciliados.',
   'financial.recon.error.empty-reconciliation': 'Selecione ao menos um título.',
   'financial.recon.error.reconciliation-already-undone': 'Esta conciliação já foi desfeita.',
+  'financial.recon.error.counterpart-not-found': 'Contrapartida não encontrada.',
+  'financial.recon.error.counterpart-not-pending': 'Esta contrapartida já foi conciliada ou descartada.',
+  'financial.recon.error.counterpart-account-mismatch':
+    'A contrapartida é de outra conta. Verifique a transferência.',
+  'financial.recon.error.counterpart-value-mismatch':
+    'O valor da contrapartida não confere com o da transação.',
   'financial.recon.error.export-unsupported-format': 'Formato de exportação não suportado.',
   'financial.recon.error.unavailable': 'Recurso indisponível até a próxima entrega do backend.',
 
@@ -1253,6 +1381,8 @@ export const ptBR: Catalog = {
   'financial.recon.match.rowDestAccount': 'Conta destino',
   'financial.recon.match.manualHint':
     'Conciliado por nova transação — sem título a pagar (ex.: tarifa, despesa).',
+  'financial.recon.match.manualHintTransfer':
+    'Contrapartida — movimentação entre contas próprias, sem título a pagar.',
   'financial.recon.match.badge': 'Conciliado',
   'financial.recon.match.badgeManual': 'Lançamento',
   'financial.recon.match.rowDate': 'Data',
@@ -1271,7 +1401,7 @@ export const ptBR: Catalog = {
   'financial.recon.match.diffSurplus': 'Diferença (multa/juros)',
   'financial.recon.match.diffDiscount': 'Diferença (desconto)',
   'financial.recon.match.titlesHint':
-    'Esta saída foi conciliada com vários títulos. Nº e detalhes de cada título disponíveis em breve.',
+    'Esta saída foi conciliada com vários títulos. Favorecido e nº do documento por título; a categoria depende do backend.',
   // Confirmação do Desfazer (US5) — consequência por tipo.
   'financial.recon.match.undoConfirmQ': 'Desfazer esta conciliação?',
   'financial.recon.match.undoConsequenceTitles':
@@ -1317,16 +1447,34 @@ export const ptBR: Catalog = {
   'financial.recon.period.hint': 'Filtrar por período depende do backend (#173) — por ora ajusta só a visão.',
   // Menu Exportar conciliação (espelha o Importar) — chrome até #173
   'financial.recon.export.group': 'Exportar conciliação',
-  'financial.recon.export.ofx': 'Arquivo OFX',
-  'financial.recon.export.ofxHint': 'retorno bancário',
   'financial.recon.export.csv': 'Planilha CSV (Nibo)',
   'financial.recon.export.csvHint': 'layout Importação em Lotes',
   'financial.recon.export.pdf': 'Relatório em PDF',
   'financial.recon.export.pdfHint': 'com totalizações',
   'financial.recon.export.periodLabel': 'Período a exportar',
-  'financial.recon.export.noPeriod': 'Nenhum período de conciliação nesta conta ainda',
-  'financial.recon.export.pdfUnavailable': 'Exportação em PDF disponível em breve (#145)',
+  // Único motivo de desabilitado que sobrou (core-api#649 tirou o gate de período fechado): sem intervalo
+  // resolvido não há o que exportar — vale igual para o CSV e para o PDF.
+  'financial.recon.export.noRange': 'Selecione um período para exportar',
   'financial.recon.export.exporting': 'Exportando…',
+  // Relatório da Conciliação em PDF (#144) — tela print-friendly (window.print → "Salvar PDF")
+  'financial.recon.report.title': 'Relatório da Conciliação',
+  'financial.recon.report.print': 'Imprimir / Salvar PDF',
+  'financial.recon.report.loading': 'Carregando…',
+  'financial.recon.report.noPeriod': 'Período não informado',
+  'financial.recon.report.emptyMovements': 'Sem movimentos no período',
+  'financial.recon.report.opening': 'Saldo de abertura',
+  'financial.recon.report.closing': 'Saldo de fechamento',
+  'financial.recon.report.totalIn': 'Total de entradas',
+  'financial.recon.report.totalOut': 'Total de saídas',
+  'financial.recon.report.reconciled': 'Conciliadas',
+  'financial.recon.report.pending': 'Pendentes',
+  'financial.recon.report.colDate': 'Data',
+  'financial.recon.report.colDescription': 'Descrição',
+  'financial.recon.report.colValue': 'Valor',
+  'financial.recon.report.colBalance': 'Saldo',
+  'financial.recon.report.colStatus': 'Status',
+  'financial.recon.report.statusReconciled': 'Conciliado',
+  'financial.recon.report.statusPending': 'Pendente',
   'financial.recon.import': 'Importar',
   'financial.recon.guessesHint': '§9.4.7',
   'financial.recon.tab.extrato': 'Extrato',
@@ -1390,6 +1538,20 @@ export const ptBR: Catalog = {
   'financial.recon.accounts.expand.saldoInicial': 'Saldo inicial do cadastro',
   'financial.recon.accounts.expand.dataCadastro': 'Data do cadastro',
   'financial.recon.accounts.status.closed': 'Encerrada',
+  'financial.recon.accounts.close.action': 'Encerrar conta',
+  'financial.recon.accounts.close.title': 'Encerrar conta bancária',
+  'financial.recon.accounts.close.sub': 'A conta deixa de aparecer para novas conciliações.',
+  'financial.recon.accounts.close.body': 'Tem certeza que deseja encerrar a conta',
+  'financial.recon.accounts.close.warn':
+    'Esta ação é irreversível: a conta não poderá ser reaberta. O histórico e as conciliações já feitas são preservados.',
+  'financial.recon.accounts.close.cancel': 'Cancelar',
+  'financial.recon.accounts.close.confirm': 'Encerrar conta',
+  'financial.recon.accounts.close.closing': 'Encerrando…',
+  'financial.recon.accounts.edit.action': 'Editar',
+  'financial.recon.edit.title': 'Editar conta bancária',
+  'financial.recon.edit.sub': 'Ajuste os dados do cadastro da conta.',
+  'financial.recon.edit.immutableNote': 'CNPJ e saldo de abertura não podem ser alterados após o cadastro.',
+  'financial.recon.edit.save': 'Salvar alterações',
   'financial.recon.accounts.foot.pending': 'Movimentações pendentes',
   'financial.recon.accounts.foot.count': '{n} contas',
   'financial.recon.accounts.loading': 'Carregando contas…',
@@ -1437,16 +1599,26 @@ export const ptBR: Catalog = {
   'financial.recon.add.cancel': 'Cancelar',
   'financial.recon.add.save': 'Adicionar conta',
   'financial.recon.add.close': 'Fechar',
-  // Importar (US2)
-  'financial.recon.import.pdfChip': 'PDF (OCR)',
-  'financial.recon.import.pdfUnavailable': 'Importar PDF via OCR — em breve (#145)',
-  // Dropdown de formato do Importar (OFX/CSV reais; PDF chrome até OCR #145).
+  // Dropdown de formato do Importar (OFX/CSV/PDF — todos reais; PDF via OCR, core-api#557).
   'financial.recon.import.group': 'Formato do extrato',
-  'financial.recon.import.ofxLabel': 'OFX — extrato bancário',
-  'financial.recon.import.csvLabel': 'CSV — planilha de lançamentos',
-  'financial.recon.import.pdfLabel': 'PDF — leitura por OCR',
-  'financial.recon.import.pdfHint': 'Em breve',
+  'financial.recon.import.ofxLabel': 'OFX',
+  'financial.recon.import.csvLabel': 'CSV',
+  'financial.recon.import.pdfLabel': 'PDF',
   'financial.recon.import.summary': '{imported} importadas · {dups} duplicadas · {start}–{end}',
+  // Excluir extrato importado (core-api#558) — botão na bottombar + modal de confirmação destrutivo.
+  'financial.recon.deleteStatement.button': 'Excluir extrato',
+  'financial.recon.deleteStatement.disabledHint': 'Importe um extrato para poder excluí-lo.',
+  'financial.recon.deleteStatement.title': 'Excluir extrato?',
+  // Pergunta focada no EXTRATO (conta + período), não nas transações — composta no componente com os dados
+  // (t() não interpola): "{qLead} {conta} {qPeriod} {período}?".
+  'financial.recon.deleteStatement.qLead': 'Deseja excluir o extrato de',
+  'financial.recon.deleteStatement.qPeriod': 'do período',
+  'financial.recon.deleteStatement.qFallback': 'Deseja excluir o extrato importado?',
+  'financial.recon.deleteStatement.message': 'Esta ação não pode ser desfeita.',
+  'financial.recon.deleteStatement.confirm': 'Excluir extrato',
+  'financial.recon.deleteStatement.cancel': 'Cancelar',
+  // Guarda 409 (período fechado) no contexto de EXCLUSÃO — mensagem acionável (a genérica só diz "fechado").
+  'financial.recon.deleteStatement.error.periodClosed': 'Reabra o período antes de excluir o extrato.',
   // Validação de conta no upload de OFX (conta do arquivo ≠ conta da tela) — bloqueio com confirmação.
   'financial.recon.import.mismatch.title': 'Conta diferente',
   'financial.recon.import.mismatch.intro': 'Este extrato parece ser de outra conta:',
@@ -1468,6 +1640,8 @@ export const ptBR: Catalog = {
   'financial.recon.pending.hint': 'Importe um extrato para conciliar estes títulos.',
   'financial.recon.pending.empty': 'Nenhum título pendente de conciliação.',
   'financial.recon.pending.untitled': 'Título pago',
+  'financial.recon.pending.agency.iss': 'SEFIN (ISS retido)',
+  'financial.recon.pending.agency.federal': 'Receita Federal (imposto retido)',
   'financial.recon.pending.paidWord': 'pago em',
   'financial.recon.sugg.high': 'Sugestão de alta confiança',
   'financial.recon.sugg.mid': 'Sugestão de confiança média',
@@ -1476,8 +1650,11 @@ export const ptBR: Catalog = {
   'financial.recon.sugg.doc': 'Documento',
   'financial.recon.sugg.value': 'Valor',
   'financial.recon.sugg.due': 'Vencimento',
+  // Extrato: data da movimentação bancária. Título: data de pagamento (baixa) = saída bancária (#265).
+  'financial.recon.sugg.txDate': 'Transação',
+  'financial.recon.sugg.paidAt': 'Pagamento',
   'financial.recon.sugg.method': 'Forma',
-  'financial.recon.sugg.supplierPending': 'Fornecedor (chega com #172)',
+  'financial.recon.sugg.supplierPending': 'Fornecedor',
   'financial.recon.sugg.confirm': 'Conciliar',
   'financial.recon.sugg.reject': 'Rejeitar',
   'financial.recon.sugg.alternatives': 'Outras possibilidades',
@@ -1485,6 +1662,12 @@ export const ptBR: Catalog = {
   'financial.recon.sugg.matchWord': 'match',
   'financial.recon.sugg.vencWord': 'venc',
   'financial.recon.sugg.viewTitle': 'Ver título',
+  // US2 (#269) — contrapartida esperada (transferência entre contas): seção de palpites da MESMA transação.
+  'financial.recon.counterpart.title': 'Contrapartida esperada',
+  'financial.recon.counterpart.transfer': 'Transferência entre contas',
+  'financial.recon.counterpart.expected': 'Prevista em',
+  'financial.recon.counterpart.matchWord': 'de aderência',
+  'financial.recon.counterpart.confirm': 'Confirmar contrapartida',
   'financial.recon.crit.payeeMatch': 'Favorecido',
   'financial.recon.crit.exactValue': 'Valor exato',
   'financial.recon.crit.dateD0': 'Mesma data',
@@ -1507,13 +1690,20 @@ export const ptBR: Catalog = {
   // Buscar / Criar vários — busca, filtros, grid (fiel ao mock §9.4.6)
   'financial.recon.multi.searchPlaceholder': 'Buscar por fornecedor, número, descrição…',
   'financial.recon.multi.flt.period': 'Período',
-  'financial.recon.multi.flt.periodValue': 'Todos',
+  'financial.recon.multi.flt.periodBy': 'Filtrar por data de',
+  'financial.recon.multi.flt.periodField.due': 'Vencimento',
+  'financial.recon.multi.flt.periodField.issue': 'Emissão',
+  'financial.recon.multi.flt.from': 'De',
+  'financial.recon.multi.flt.to': 'Até',
   'financial.recon.multi.flt.type': 'Tipo',
   'financial.recon.multi.flt.typeAll': 'Todos',
   'financial.recon.multi.flt.value': 'Valor',
-  'financial.recon.multi.flt.valueValue': 'Todos',
-  'financial.recon.multi.flt.periodHint': 'Filtro por período chega com o backend (#173).',
-  'financial.recon.multi.flt.valueHint': 'Filtro por faixa de valor chega com o backend.',
+  'financial.recon.multi.flt.valuePrefix': 'R$',
+  'financial.recon.multi.flt.min': 'Mínimo',
+  'financial.recon.multi.flt.max': 'Máximo',
+  'financial.recon.multi.flt.apply': 'Aplicar',
+  'financial.recon.multi.flt.clear': 'Limpar',
+  'financial.recon.multi.flt.close': 'Fechar',
   'financial.recon.multi.col.date': 'Data',
   'financial.recon.multi.col.status': 'Status',
   'financial.recon.multi.col.name': 'Nome · Ref',
@@ -1522,6 +1712,12 @@ export const ptBR: Catalog = {
   'financial.recon.multi.status.paid': 'Pago',
   'financial.recon.multi.footSelected': 'selecionados de',
   'financial.recon.multi.createNew': 'Não encontrei · criar novo pagamento manualmente',
+  'financial.recon.multi.manualEntry': 'Lançamento Manual',
+  'financial.recon.multi.shownCount': 'títulos exibidos',
+  'financial.recon.multi.pagerPrev': 'Anterior',
+  'financial.recon.multi.pagerNext': 'Próxima',
+  'financial.recon.multi.pagerPage': 'Página',
+  'financial.recon.multi.pagerOf': 'de',
   'financial.recon.multi.confirmFull': 'Conciliar 1 extrato com os títulos',
   // Tratamento da diferença (conciliação parcial)
   'financial.recon.multi.diffTreat': 'Tratamento da diferença',
@@ -1546,13 +1742,20 @@ export const ptBR: Catalog = {
   'financial.recon.manualType.Payment': 'Pagamento',
   'financial.recon.manualType.Receipt': 'Recebimento',
   'financial.recon.manualType.Transfer': 'Transferência',
-  'financial.recon.manualType.FeePenaltyInterest': 'Tarifa/Multa/Juros',
+  'financial.recon.manualType.FeePenaltyInterest': 'Tarifa/Juros',
   'financial.recon.manualType.Investment': 'Aplicação',
   'financial.recon.manualType.Redemption': 'Resgate',
   // Nova transação — campos por tipo (fiel ao mock §9.4.8)
   'financial.recon.manual.categorize': 'Categorização',
   'financial.recon.manual.cancel': 'Cancelar',
   'financial.recon.manual.submitFull': 'Criar lançamento e conciliar',
+  // Motivos do "Conciliar" travado (#331 + core-api#671). Dizem o que FALTA, não que está inválido —
+  // nomeando o campo, para a pessoa saber onde mexer sem caçar.
+  'financial.recon.manual.blocked.type': 'Escolha o tipo do lançamento',
+  'financial.recon.manual.blocked.destination': 'Selecione a conta de destino',
+  'financial.recon.manual.blocked.classification': 'Informe o centro de custo e a categoria',
+  'financial.recon.manual.blocked.category': 'Informe a categoria',
+  'financial.recon.manual.blocked.costCenter': 'Informe o centro de custo',
   'financial.recon.manual.optional': 'opcional',
   'financial.recon.manual.descPlaceholder':
     'Descrição operacional do lançamento (aparece no relatório de conciliação)…',
@@ -1561,14 +1764,20 @@ export const ptBR: Catalog = {
   // labels dos campos
   'financial.recon.manual.f.supplier': 'Fornecedor',
   'financial.recon.manual.f.supplierPlaceholder': 'Buscar por nome ou CNPJ…',
-  'financial.recon.manual.f.docType': 'Tipo de documento',
+  'financial.recon.manual.f.docNumber': 'Número do documento',
+  'financial.recon.manual.f.docNumberPlaceholder': 'Ex.: NF 001',
+  'financial.recon.manual.f.docType': 'Tipo de doc',
   'financial.recon.manual.f.docTypePlaceholder': 'Selecionar tipo…',
-  'financial.recon.manual.f.emission': 'Data de emissão',
-  'financial.recon.manual.f.docValue': 'Valor do documento',
+  'financial.recon.manual.f.emission': 'Emissão',
+  'financial.recon.manual.f.docValue': 'Valor',
   'financial.recon.manual.f.program': 'Programa',
   'financial.recon.manual.f.programPlaceholder': 'Selecionar programa…',
+  'financial.recon.manual.f.plano': 'Plano Orçamentário',
+  'financial.recon.manual.f.planoPlaceholder': 'Selecionar plano…',
   'financial.recon.manual.f.category': 'Categoria',
   'financial.recon.manual.f.categoryPlaceholder': 'Selecionar categoria…',
+  'financial.recon.manual.f.subcategory': 'Subcategoria',
+  'financial.recon.manual.f.subcategoryPlaceholder': 'Selecionar subcategoria…',
   'financial.recon.manual.f.costCenter': 'Centro de custo',
   'financial.recon.manual.f.costCenterPlaceholder': 'Selecionar centro de custo…',
   'financial.recon.manual.f.effective': 'Data de efetivação',
@@ -1611,6 +1820,8 @@ export const ptBR: Catalog = {
   'financial.recon.ext.filter.pendentes': 'Pendentes',
   'financial.recon.ext.col.date': 'Data',
   'financial.recon.ext.col.tipo': 'Tipo',
+  'financial.recon.ext.type.entrada': 'Entrada',
+  'financial.recon.ext.type.saida': 'Saída',
   'financial.recon.ext.col.name': 'Nome',
   'financial.recon.ext.col.desc': 'Descrição',
   'financial.recon.ext.col.ref': 'Ref · Identif',
@@ -1709,9 +1920,11 @@ export const ptBR: Catalog = {
   'financial.list.filter.dim.contrato': 'Contrato',
   'financial.list.filter.dim.programa': 'Programa',
   'financial.list.dueDate.error': 'Não foi possível alterar o vencimento. Tente novamente.',
+  'financial.list.dueDate.errorPartial':
+    'Alguns títulos não tiveram o vencimento alterado (versão desatualizada ou status incompatível). Atualize a lista e tente de novo.',
   'financial.list.delete.action': 'Excluir',
   'financial.list.delete.actionHint': 'apaga o documento definitivamente',
-  'financial.list.delete.needOpen': 'Só documentos em Aberto podem ser excluídos (Rascunho em breve).',
+  'financial.list.delete.needOpen': 'Só documentos em Rascunho ou Aberto podem ser excluídos.',
   'financial.list.delete.title': 'Excluir documento(s)?',
   'financial.list.delete.bodyOne': 'Esta ação é definitiva e não pode ser desfeita.',
   'financial.list.delete.bodyManyPrefix': 'Esta ação é definitiva e vai excluir',
@@ -1735,8 +1948,8 @@ export const ptBR: Catalog = {
     'Atenção: o novo vencimento é aplicado a TODOS os títulos do documento (principal e filhos de retenção), não apenas ao selecionado.',
   'financial.list.dueDate.modalCancel': 'Cancelar',
   'financial.list.dueDate.modalApply': 'Aplicar',
-  // Marcar como pago (baixa manual #224/#232) — modal de data de pagamento.
-  'financial.list.pay.modalTitle': 'Marcar como pago',
+  // Baixa de Pagamento (baixa manual #224/#232) — modal de data de pagamento (a ação na linha é "Marcar como pago").
+  'financial.list.pay.modalTitle': 'Baixa de Pagamento',
   'financial.list.pay.dateLabel': 'Data de pagamento',
   'financial.list.pay.modalBodyOne': 'Informe a data de pagamento (saída bancária) do título selecionado.',
   'financial.list.pay.modalBodyManyPrefix': 'Informe a data de pagamento (saída bancária) dos',
@@ -1770,8 +1983,934 @@ export const ptBR: Catalog = {
   'financial.list.chip.pago': 'Pago',
   'financial.list.chip.conciliado': 'Conciliado',
 
+  // ── Visões salvas (saved views, #351) — snapshot nomeado de filtros (preferência de UI) ──
+  'financial.list.savedViews.button': 'Visões',
+  'financial.list.savedViews.nameLabel': 'Nome da visão',
+  'financial.list.savedViews.namePlaceholder': 'Nome da visão…',
+  'financial.list.savedViews.save': 'Salvar',
+  'financial.list.savedViews.empty': 'Nenhuma visão salva. Salve a combinação de filtros atual.',
+  'financial.list.savedViews.delete': 'Excluir visão',
+
+  // ── Plano Orçamentário → Planejamento (lista, feature 041) ──
+  'budget-plans.list.title': 'Planejamento',
+  'budget-plans.list.subtitle': 'Planos orçamentários por ano e programa.',
+  'budget-plans.list.create': 'Criar Plano',
+  'budget-plans.list.empty': 'Nenhum plano orçamentário cadastrado.',
+  'budget-plans.list.noResults': 'Nenhum plano encontrado para o filtro.',
+  'budget-plans.list.rowActions': 'Ações do plano',
+  'budget-plans.list.expand': 'Expandir versões',
+  'budget-plans.list.collapse': 'Recolher versões',
+  'budget-plans.list.totalRow': 'TOTAL',
+  'budget-plans.columns.plan': 'Plano Orçamentário',
+  'budget-plans.columns.total': 'Total',
+  'budget-plans.columns.partners': 'Parceiros',
+  'budget-plans.columns.status': 'Status',
+  'budget-plans.columns.audit': 'Última alteração',
+  'budget-plans.columns.actions': 'Ações',
+  'budget-plans.filters.toggle': 'Filtros',
+  'budget-plans.filters.search': 'Pesquise',
+  'budget-plans.filters.year': 'Ano',
+  'budget-plans.filters.program': 'Programa',
+  'budget-plans.filters.status': 'Status',
+  'budget-plans.filters.all': 'Todos',
+  'budget-plans.filters.apply': 'Filtrar',
+  'budget-plans.filters.clear': 'Limpar',
+  'budget-plans.status.rascunho': 'Rascunho',
+  'budget-plans.status.emCalibracao': 'Em Calibração',
+  'budget-plans.status.aprovado': 'Aprovado',
+  'budget-plans.action.share': 'Compartilhar plano',
+  'budget-plans.action.plannedVsActual': 'Planejado x Realizado',
+  'budget-plans.action.startCalibration': 'Iniciar Calibração',
+  'budget-plans.action.approve': 'Aprovar Plano',
+  'budget-plans.action.createScenery': 'Criar cenário desse plano',
+  'budget-plans.action.exportCsv': 'Exportar CSV',
+  'budget-plans.action.delete': 'Excluir Plano',
+  // Ações sem endpoint no backend (feature 060) — item visível porém desabilitado, com tooltip.
+  'budget-plans.action.noEndpoint': 'Indisponível no momento (depende do backend).',
+  // Ações desabilitadas por STATUS do plano (fix 062) — tooltip específico do motivo.
+  'budget-plans.action.disabled.sceneryNeedsDraft': 'Cenários só em planos não aprovados',
+  // Os 2 motivos abaixo espelham as outras recusas do domínio (core-api budget-plan.ts:145-148). Sem eles o
+  // menu oferecia a ação e a P.O. levava um erro genérico e ERRADO no lugar do motivo real.
+  'budget-plans.action.disabled.sceneryFromScenery': 'Um cenário não pode ter cenários',
+  'budget-plans.action.disabled.sceneryLimit': 'Este plano já tem o máximo de 2 cenários',
+  'budget-plans.action.disabled.calibrationNeedsApproved': 'Calibração só em planos aprovados',
+  // Excluir (feature 076) — espelha as 2 recusas do `DELETE /:id` (core-api #453). Aqui o tooltip PODE ser
+  // específico (o front sabe o status e a contagem de cenários da linha); é a mensagem de erro que não pode.
+  'budget-plans.action.disabled.deleteApproved': 'Planos aprovados não podem ser excluídos',
+  'budget-plans.action.disabled.deleteHasChildren': 'Exclua os cenários deste plano antes de excluí-lo',
+  'budget-plans.action.exportCsv.success': 'CSV exportado com sucesso!',
+  // Feedback de erro das ações (§V) — a tag chega mapeada por contexto do endpoint pelo BFF.
+  'budget-plans.action.error.unauthorized': 'Sua sessão expirou. Entre novamente para continuar.',
+  // 403 (RBAC) — a sessão é VÁLIDA; falta a permissão. NÃO dizer "tente novamente": tentar não resolve, e o
+  // usuário repetiria para sempre. Espelha `reports.error.forbidden`. Causa provável hoje: ambiente semeado
+  // antes do #315 tem 42 permissões em vez de 44 (faltam `budget-plan:read`/`budget-plan:write`) — core-api#374.
+  'budget-plans.action.error.forbidden':
+    'Você não tem permissão para esta ação no Plano Orçamentário. Fale com um administrador.',
+  'budget-plans.action.error.notFound': 'Plano orçamentário não encontrado.',
+  'budget-plans.action.error.alreadyApproved': 'Este plano já está aprovado.',
+  'budget-plans.action.error.notApproved': 'Só planos aprovados podem iniciar calibração.',
+  // O core-api esconde o slug (OWASP), então o 409 do `scenery` chega SEM motivo — e ele tem 3 causas
+  // possíveis (aprovado · é cenário · teto de 2). Antes esta mensagem CHUTAVA "não aprovados" e mentia: a
+  // P.O. bateu no teto e leu "não aprovado". O menu já previne os 3 casos na lista; esta mensagem é a rede de
+  // segurança (ex.: detalhe, onde o GET não expõe `scenarioName`, ou lista desatualizada) — então ela ENUMERA
+  // as regras em vez de adivinhar qual delas caiu.
+  'budget-plans.action.error.sceneryNeedsDraft':
+    'Não foi possível criar o cenário. Ele só pode ser criado em um plano não aprovado, que não seja um cenário e que tenha menos de 2 cenários.',
+  'budget-plans.action.error.invalidTransition':
+    'Não é possível executar esta ação no estado atual do plano.',
+  // Mesma lição do `sceneryNeedsDraft` acima: o 409 do DELETE tem 2 causas (aprovado · tem cenário) e chega SEM
+  // motivo, então a mensagem ENUMERA em vez de chutar qual caiu. O menu já previne as duas na lista — isto só
+  // aparece em CORRIDA (aprovaram ou criaram um cenário depois que a tela carregou), daí o "Recarregue".
+  'budget-plans.action.error.notDeletable':
+    'Não foi possível excluir o plano. Ele não pode estar aprovado nem ter cenários. Recarregue a lista para ver o estado atual.',
+  'budget-plans.action.error.invalidInput':
+    'Não foi possível concluir a ação. Verifique os dados e tente novamente.',
+  'budget-plans.action.error.unexpected': 'Não foi possível concluir a ação. Tente novamente.',
+
+  // ── Confirmações do menu "…" (§2.5) — {nome} é interpolado na view ──
+  'budget-plans.confirm.cancel': 'Cancelar',
+  'budget-plans.confirm.approve.title': 'Aprovar Plano Orçamentário',
+  'budget-plans.confirm.approve.body': "Tem certeza que quer aprovar o Plano Orçamentário '{nome}'?",
+  'budget-plans.confirm.approve.confirm': 'Aprovar',
+  'budget-plans.confirm.approve.success': 'Plano Orçamentário aprovado com sucesso!',
+  'budget-plans.confirm.delete.title': 'Excluir Plano Orçamentário',
+  // Dizia "e seus itens filhos" — era FALSO (feature 076): o core recusa apagar plano COM filho (409), então
+  // cascata de planos não existe. O que some junto são os ORÇAMENTOS e LANÇAMENTOS do próprio plano, na mesma
+  // transação. É isso que a usuária precisa saber antes de confirmar algo irreversível.
+  'budget-plans.confirm.delete.body':
+    "Atenção, você está prestes a excluir o plano '{nome}', com todos os seus orçamentos e lançamentos. Isso não pode ser desfeito. Tem certeza?",
+  'budget-plans.confirm.delete.confirm': 'Excluir',
+  'budget-plans.confirm.delete.success': 'Plano excluído com sucesso!',
+  'budget-plans.confirm.start-calibration.title': 'Iniciar Calibração',
+  'budget-plans.confirm.start-calibration.body':
+    "Iniciar a calibração do plano '{nome}'? Isso gera uma nova versão editável (Em Calibração).",
+  'budget-plans.confirm.start-calibration.confirm': 'Iniciar Calibração',
+  'budget-plans.confirm.start-calibration.success': 'Calibração iniciada com sucesso!',
+  'budget-plans.confirm.create-scenery.title': 'Criar Cenário',
+  'budget-plans.confirm.create-scenery.body': "Crie um cenário a partir do plano '{nome}'.",
+  'budget-plans.confirm.create-scenery.confirm': 'Criar Cenário',
+  'budget-plans.confirm.create-scenery.success': 'Cenário criado com sucesso!',
+  'budget-plans.confirm.create-scenery.nameLabel': 'Nome do cenário',
+  'budget-plans.confirm.denied': 'Você não possui permissão para executar esta ação.',
+
+  'budget-plans.paginator.perPage': 'Itens por página:',
+  'budget-plans.paginator.previous': 'Página anterior',
+  'budget-plans.paginator.next': 'Próxima página',
+  'budget-plans.paginator.range': '{from}-{to} de {total}',
+  'budget-plans.detail.breadcrumb': 'Planejamento > Detalhes',
+  'budget-plans.detail.pageTitle': 'Detalhes do Plano',
+  'budget-plans.detail.back': 'Voltar',
+  'budget-plans.detail.totalPlan': 'Total Plano:',
+  'budget-plans.detail.notFound': 'Plano orçamentário não encontrado.',
+  'budget-plans.detail.loading': 'Carregando o plano orçamentário…',
+  'budget-plans.detail.error': 'Não foi possível carregar o plano orçamentário. Tente novamente.',
+  'budget-plans.detail.empty': 'Este plano ainda não possui estrutura de custos.',
+  'budget-plans.detail.stateFilter': 'Estado',
+  'budget-plans.detail.municipioFilter': 'Município',
+  'budget-plans.detail.filter': 'Filtrar',
+  'budget-plans.detail.insights': 'Insights',
+  'budget-plans.detail.addBudget': 'Adicionar Orçamento',
+  'budget-plans.detail.moreActions': 'Mais ações',
+  'budget-plans.detail.edit': 'Editar',
+
+  // ── Modal de Insights (feature 060 + core-api#416) — HANDBOOK §1.6: Histórico + card do ano ──
+  'budget-plans.insights.title': 'Plano Insight',
+  'budget-plans.insights.subtitle': 'Use esses insights para planejar seu plano orçamentário.',
+  'budget-plans.insights.close': 'Fechar',
+  'budget-plans.insights.currentTotal': 'Total do plano em',
+  'budget-plans.insights.loading': 'Carregando os insights…',
+  'budget-plans.insights.error': 'Não foi possível carregar os insights. Tente novamente.',
+  'budget-plans.insights.empty': 'Sem anos anteriores para comparar.',
+  // Histórico (§1.6): média do Planejado nos últimos 5 anos anteriores.
+  'budget-plans.insights.history': 'Média de orçamento nos últimos 5 anos',
+  'budget-plans.insights.historyChart': 'Evolução do orçamento planejado por ano',
+  // Card do ano (§1.6): Planejado · Realizado · Média por rede.
+  'budget-plans.insights.planned': 'Planejado',
+  'budget-plans.insights.realized': 'Realizado',
+  'budget-plans.insights.networksAvg': 'Média de',
+  // Rodapé do card: origem do "Realizado" (definida pela P.O., §1.6) — a tela não deve deixar dúvida.
+  'budget-plans.insights.realizedSource': 'Realizado = soma dos lançamentos conciliados.',
+
+  // ── Modal "Adicionar Orçamento" (§1.6) ──
+  'budget-plans.addBudget.title': 'Adicionar Orçamento',
+  'budget-plans.addBudget.close': 'Fechar',
+  'budget-plans.addBudget.estado': 'Estado',
+  'budget-plans.addBudget.estadoPlaceholder': 'Selecione o estado',
+  'budget-plans.addBudget.municipio': 'Município',
+  'budget-plans.addBudget.municipioPlaceholder': 'Todo o estado (sem município)',
+  'budget-plans.addBudget.add': 'Adicionar',
+  'budget-plans.addBudget.cancel': 'Cancelar',
+  'budget-plans.addBudget.error.estado-required': 'Selecione um estado.',
+  'budget-plans.addBudget.error.estado-duplicate': 'Atenção! Já existe um orçamento com essas informações.',
+  'budget-plans.addBudget.error.save-failed': 'Não foi possível salvar o orçamento. Tente novamente.',
+
+  // ── Modal "Centros de Custo - {Programa}" (§1.5) ──
+  'budget-plans.centrosCusto.titlePrefix': 'Centros de Custo -',
+  'budget-plans.centrosCusto.subtitle': 'Gerenciar os centros de custos, categorias e produtos/serviços',
+  'budget-plans.centrosCusto.close': 'Fechar',
+  'budget-plans.centrosCusto.centro': 'Centro de Custo',
+  'budget-plans.centrosCusto.addCentro': 'Adicionar centro de custo',
+  'budget-plans.centrosCusto.addCategoria': '+ Categoria',
+  'budget-plans.centrosCusto.addSub': '+ Sub-categoria',
+  'budget-plans.centrosCusto.edit': 'Editar',
+  'budget-plans.centrosCusto.deactivate': 'Desativar',
+  'budget-plans.centrosCusto.activate': 'Ativar',
+  'budget-plans.centrosCusto.inherited': 'Inativo por herança',
+  'budget-plans.centrosCusto.lockedByAncestor':
+    'Inativo porque "{{ancestor}}" está desativado. Reative "{{ancestor}}" para editar este item.',
+  'budget-plans.centrosCusto.expand': 'Expandir',
+  'budget-plans.centrosCusto.collapse': 'Recolher',
+  'budget-plans.centrosCusto.nome': 'Nome',
+  'budget-plans.centrosCusto.centroTipo': 'Tipo do centro de custo',
+  'budget-plans.centrosCusto.subTipo': 'Tipo',
+  'budget-plans.centrosCusto.releaseType': 'Tipo de lançamento',
+  'budget-plans.centrosCusto.cancel': 'Cancelar',
+  'budget-plans.centrosCusto.save': 'Salvar',
+  'budget-plans.centrosCusto.add': 'Adicionar',
+  'budget-plans.centrosCusto.form.add-centro': 'Adicionar Centro de custo',
+  'budget-plans.centrosCusto.form.edit-centro': 'Editar Centro de custo',
+  'budget-plans.centrosCusto.form.add-categoria': 'Adicionar Categoria',
+  'budget-plans.centrosCusto.form.edit-categoria': 'Editar Categoria',
+  'budget-plans.centrosCusto.form.add-sub': 'Adicionar Sub categoria',
+  'budget-plans.centrosCusto.form.edit-sub': 'Editar Sub categoria',
+  // Erros da escrita da estrutura (feature 061 — validação client-side + eco do backend §V)
+  'budget-plans.centrosCusto.error.name-required': 'Informe o nome.',
+  'budget-plans.centrosCusto.error.missing-parent': 'Selecione o item ao qual este pertence.',
+  'budget-plans.centrosCusto.error.unauthorized': 'Sua sessão expirou. Entre novamente para continuar.',
+  'budget-plans.centrosCusto.error.forbidden':
+    'Você não tem permissão para editar a estrutura de custos. Fale com um administrador.',
+  'budget-plans.centrosCusto.error.invalid-input': 'Dados inválidos. Revise e tente novamente.',
+  'budget-plans.centrosCusto.error.not-found': 'Plano orçamentário não encontrado.',
+  'budget-plans.centrosCusto.error.not-editable': 'Este plano não permite mais alterações na estrutura.',
+  // "Tente novamente" seria conselho errado: o item sumiu, repetir não traz de volta. O que resolve é reler.
+  'budget-plans.centrosCusto.error.node-not-found':
+    'Este item não existe mais. Feche e abra o plano para ver a estrutura atualizada.',
+  'budget-plans.centrosCusto.error.unexpected': 'Não foi possível salvar. Tente novamente.',
+  // Rótulos dos enums (centro/sub/lançamento)
+  'budget-plans.centroTipo.a-pagar': 'A PAGAR',
+  'budget-plans.centroTipo.a-receber': 'A RECEBER',
+  'budget-plans.subTipo.institucional': 'Institucional',
+  'budget-plans.subTipo.rede': 'Rede',
+  'budget-plans.releaseType.pessoal': 'Despesas de Pessoal',
+  'budget-plans.releaseType.ipca': 'IPCA',
+  'budget-plans.releaseType.caed': 'CAED',
+  'budget-plans.releaseType.logistica': 'Despesas de Logística',
+  'budget-plans.matrix.byMonth': 'Consolidado por Mês',
+  'budget-plans.matrix.byNetwork': 'Consolidado dos parceiros',
+  'budget-plans.matrix.centroCusto': 'Centro de Custo',
+  'budget-plans.matrix.porMes': 'Por Mês',
+  'budget-plans.matrix.porRede': 'Por Rede',
+  'budget-plans.matrix.prev': 'Semestre anterior',
+  'budget-plans.matrix.next': 'Próximo semestre',
+  'budget-plans.matrix.centrosHeader': 'Centros de Custo',
+  'budget-plans.matrix.total': 'TOTAL',
+  'budget-plans.matrix.expand': 'Expandir',
+  'budget-plans.matrix.collapse': 'Recolher',
+
+  // ── Edição de Orçamento (/…/orcamento — US2.4) ──
+  'budget-plans.orcamento.breadcrumb': 'Planejamento > Detalhes > Orçamento',
+  'budget-plans.orcamento.pageTitle': 'Edição de Orçamento',
+  'budget-plans.orcamento.back': 'Voltar',
+  'budget-plans.orcamento.totalBudget': 'Total Orçamento:',
+  'budget-plans.orcamento.centroCusto': 'Centro de Custo',
+  'budget-plans.orcamento.filter': 'Filtrar',
+  'budget-plans.orcamento.discard': 'Descartar Alterações',
+  'budget-plans.orcamento.discard.title': 'Descartar alterações?',
+  'budget-plans.orcamento.discard.body':
+    'Ao confirmar essa opção todas as suas alterações não salvas serão perdidas. O que já foi salvo pelo cálculo é mantido.',
+  'budget-plans.orcamento.discard.confirm': 'Sim, descartar alterações',
+  'budget-plans.orcamento.discard.keep': 'Não descartar alterações',
+  'budget-plans.orcamento.discard.nothing': 'Não há alterações não salvas para descartar.',
+  // O Salvar da página é herança do legado, onde também não processa nada (a P.O. verificou em tela): quem
+  // grava é o Salvar do formulário de cálculo, que é a ÚNICA escrita que o core-api aceita. O botão fica —
+  // decisão da P.O. — mas dizendo onde se salva, em vez de fingir que salva.
+  'budget-plans.orcamento.save.hint': 'As alterações são salvas ao confirmar o cálculo, em "Calcular Gasto".',
+  'budget-plans.orcamento.save': 'Salvar',
+  'budget-plans.orcamento.moreActions': 'Mais ações',
+  'budget-plans.orcamento.calcGasto': 'Calcular Gasto',
+  'budget-plans.orcamento.categoriesHeader': 'Categorias',
+  'budget-plans.orcamento.calcRow': 'Calcular gasto desta linha',
+  'budget-plans.orcamento.notFound': 'Orçamento não encontrado.',
+  'budget-plans.orcamento.loading': 'Carregando o orçamento…',
+  // O orçamento EXISTE — falta a estrutura. Diz ONDE resolver: a estrutura se cadastra no Detalhe do plano.
+  'budget-plans.orcamento.empty':
+    'Este plano ainda não possui estrutura de custos. Volte ao Detalhe do plano e cadastre os centros de custo para começar a orçar.',
+  'budget-plans.orcamento.error': 'Não foi possível carregar o orçamento. Tente novamente.',
+  // 403 tem mensagem PRÓPRIA: "tente novamente" é conselho ERRADO p/ permissão — tentar de novo dá 403 de
+  // novo. Cenário real e recorrente: ambiente semeado sem as 2 permissões de budget-plan (core-api#374).
+  'budget-plans.orcamento.forbidden': 'Você não tem permissão para ver este orçamento.',
+
+  // ── Calculando Gastos (modal — US2.4b) ──
+  'budget-plans.calcGastos.titlePrefix': 'Calculando Gastos -',
+  'budget-plans.calcGastos.close': 'Fechar',
+  'budget-plans.calcGastos.prevCentro': 'Centro anterior',
+  'budget-plans.calcGastos.nextCentro': 'Próximo centro',
+  'budget-plans.calcGastos.categoria': 'Categoria',
+  'budget-plans.calcGastos.subcategoria': 'Subcategoria',
+  'budget-plans.calcGastos.despesas': 'Despesas',
+  'budget-plans.calcGastos.calcular': 'Calcular',
+  'budget-plans.calcGastos.editValue': 'Editar valor',
+  'budget-plans.calcGastos.clearValue': 'Limpar valor',
+  'budget-plans.calcGastos.empty': 'Sem despesas para exibir.',
+  // Form "Configuração" (tipo geral/Rede) que abre no lápis
+  'budget-plans.calcGastos.info': 'Configuração da despesa',
+  'budget-plans.calcGastos.config': 'Configuração',
+  'budget-plans.calcGastos.usePreviousYear': 'Utilizar ano anterior',
+  'budget-plans.calcGastos.totalReajustado': 'Total reajustado',
+  'budget-plans.calcGastos.justificativa': 'Justificativa',
+  'budget-plans.calcGastos.ipca': 'IPCA (%)',
+  'budget-plans.calcGastos.custoTotal': 'Custo Total',
+  'budget-plans.calcGastos.aplicarMeses': 'Aplicar aos meses',
+  'budget-plans.calcGastos.todos': 'Todos',
+  'budget-plans.calcGastos.aplicar': 'Aplicar',
+  'budget-plans.calcGastos.cancelar': 'Cancelar',
+
+  // ── Form de Pessoal (US2.4c — frame 4: custo detalhado de pessoal) ──
+  'budget-plans.calcGastos.pessoal.tipo': 'Tipo',
+  'budget-plans.calcGastos.pessoal.nivel': 'Nível',
+  'budget-plans.calcGastos.pessoal.vinculo': 'Vínculo',
+  'budget-plans.calcGastos.pessoal.remuneracao': 'Remuneração Bruta Mensal',
+  // core-api#460 (decisão da P.O., 2026-07-15): a Qtd é METADADO — o legado não multiplica por ela (o
+  // core-api reproduz). O rótulo diz isso, senão a tela sugere que o número entra na conta e engana o
+  // planejador — foi o que motivou a issue.
+  'budget-plans.calcGastos.pessoal.qtd': 'Qtd. (informativo)',
+  'budget-plans.calcGastos.pessoal.qtdHint':
+    'Quantidade é apenas informativa: não multiplica o custo. O valor calculado é o do salário informado.',
+  'budget-plans.calcGastos.pessoal.meses': 'Meses aplicados',
+  'budget-plans.calcGastos.pessoal.salario': 'Salário (R$)',
+  'budget-plans.calcGastos.pessoal.reajuste': 'Reajuste (%)',
+  'budget-plans.calcGastos.pessoal.salarioTotal': 'Salário Total',
+  'budget-plans.calcGastos.pessoal.encargos': 'Encargos Mensais (%)',
+  'budget-plans.calcGastos.pessoal.inssPatronal': 'INSS Patronal',
+  'budget-plans.calcGastos.pessoal.inss': 'INSS',
+  'budget-plans.calcGastos.pessoal.fgts': 'FGTS',
+  'budget-plans.calcGastos.pessoal.pis': 'PIS',
+  'budget-plans.calcGastos.pessoal.totalEncargos': 'Total Encargos',
+  'budget-plans.calcGastos.pessoal.beneficios': 'Benefícios Mensais (R$)',
+  'budget-plans.calcGastos.pessoal.valeTransporte': 'Vale-Transporte',
+  'budget-plans.calcGastos.pessoal.alimentacao': 'Alimentação',
+  'budget-plans.calcGastos.pessoal.planoSaude': 'Plano de Saúde',
+  'budget-plans.calcGastos.pessoal.seguroVida': 'Seguro de Vida',
+  'budget-plans.calcGastos.pessoal.totalBeneficios': 'Total Benefícios',
+  'budget-plans.calcGastos.pessoal.provisoes': 'Provisões Mensais (R$)',
+  'budget-plans.calcGastos.pessoal.feriasEncargos': 'Férias + Encargos',
+  'budget-plans.calcGastos.pessoal.abono': 'Abono',
+  'budget-plans.calcGastos.pessoal.decimoEncargos': '13º + Encargos',
+  'budget-plans.calcGastos.pessoal.fgtsMultaAdicional': 'FGTS Multa + Adicional',
+  'budget-plans.calcGastos.pessoal.totalProvisoes': 'Total Provisões',
+  'budget-plans.calcGastos.pessoal.mensal': 'Custo Mensal',
+  'budget-plans.calcGastos.pessoal.anual': 'Custo Anual',
+  'budget-plans.calcGastos.pessoal.descartar': 'Descartar',
+  'budget-plans.calcGastos.pessoal.salvar': 'Salvar',
+
+  // ── Form CAED (Tipo C — matrículas × custo unitário) ──
+  'budget-plans.calcGastos.caed.title': 'CAED',
+  'budget-plans.calcGastos.caed.matriculas': 'Qtd. matrículas',
+  'budget-plans.calcGastos.caed.custoUnitario': 'Custo unitário (R$)',
+  'budget-plans.calcGastos.caed.meses': 'Meses aplicados',
+  'budget-plans.calcGastos.caed.mensal': 'Custo Mensal',
+  'budget-plans.calcGastos.caed.anual': 'Custo Anual',
+  'budget-plans.calcGastos.caed.descartar': 'Descartar',
+  'budget-plans.calcGastos.caed.salvar': 'Salvar',
+
+  // ── Form Logística (Tipo D — viagem) ──
+  'budget-plans.calcGastos.logistica.viagem': 'Viagem',
+  'budget-plans.calcGastos.logistica.pessoas': 'Qtd. pessoas',
+  'budget-plans.calcGastos.logistica.viagens': 'Qtd. viagens',
+  'budget-plans.calcGastos.logistica.custos': 'Custos por viagem',
+  'budget-plans.calcGastos.logistica.passagem': 'Passagem aérea (R$)',
+  'budget-plans.calcGastos.logistica.hospedagem': 'Hospedagem (R$)',
+  'budget-plans.calcGastos.logistica.alimentacao': 'Alimentação (R$)',
+  'budget-plans.calcGastos.logistica.transporte': 'Transporte (R$)',
+  'budget-plans.calcGastos.logistica.carroCombustivel': 'Aluguel carro + combustível (R$)',
+  'budget-plans.calcGastos.logistica.diarias': 'Diárias',
+  'budget-plans.calcGastos.logistica.resumo': 'Resumo',
+  'budget-plans.calcGastos.logistica.resumoPassagens': 'Passagens Aéreas',
+  'budget-plans.calcGastos.logistica.resumoHospedagem': 'Hospedagem',
+  'budget-plans.calcGastos.logistica.resumoDespesas': 'Despesas',
+  'budget-plans.calcGastos.logistica.meses': 'Meses aplicados',
+  'budget-plans.calcGastos.logistica.mensal': 'Custo Mensal',
+  'budget-plans.calcGastos.logistica.anual': 'Custo Anual',
+  'budget-plans.calcGastos.logistica.descartar': 'Descartar',
+  'budget-plans.calcGastos.logistica.salvar': 'Salvar',
+
+  // ── Confirmação de descarte (Cancelar/Descartar no form) ──
+  'budget-plans.calcGastos.discard.title': 'Descartar alterações?',
+  'budget-plans.calcGastos.discard.body':
+    'As informações preenchidas não foram salvas e serão perdidas. Deseja continuar?',
+  'budget-plans.calcGastos.discard.keep': 'Continuar editando',
+  'budget-plans.calcGastos.discard.confirm': 'Descartar',
+
+  // ── Consolidado ABC (/consolidado — HANDBOOK §2) ──
+  'budget-plans.consolidado.title': 'Consolidado ABC',
+  'budget-plans.consolidado.subtitle': 'Consolidação dos planos aprovados por ano e programa.',
+  'budget-plans.consolidado.yearBase': 'Ano Base',
+  'budget-plans.consolidado.programs': 'Programas',
+  'budget-plans.consolidado.programsAll': 'Todos os programas',
+  'budget-plans.consolidado.apply': 'Filtrar',
+  'budget-plans.consolidado.exportCsv': 'Exportar CSV',
+  'budget-plans.consolidado.exportError': 'Não foi possível exportar o CSV. Tente novamente.',
+  'budget-plans.consolidado.total': 'Total',
+  'budget-plans.consolidado.noResults': 'Nenhum resultado encontrado',
+  'budget-plans.consolidado.loading': 'Carregando o consolidado…',
+  'budget-plans.consolidado.error': 'Não foi possível carregar o consolidado. Tente novamente.',
+  // Curva ABC (tabela por programa) — feature 062.
+  'budget-plans.consolidado.matrixTitle': 'Consolidado dos programas',
+  'budget-plans.consolidado.matrixCentros': 'CENTROS DE CUSTO',
+  'budget-plans.consolidado.curveTitle': 'Curva ABC por programa',
+  'budget-plans.consolidado.colProgram': 'Programa',
+  'budget-plans.consolidado.colTotal': 'Total',
+  'budget-plans.consolidado.colShare': 'Participação',
+
+  // ── Criar Plano (modal "Adicionar Plano Orçamentário" — HANDBOOK §1.2) ──
+  'budget-plans.create.title': 'Adicionar Plano Orçamentário',
+  'budget-plans.create.close': 'Fechar',
+  'budget-plans.create.year': 'Ano',
+  'budget-plans.create.program': 'Programa',
+  'budget-plans.create.programPlaceholder': 'Selecione o programa',
+  'budget-plans.create.importData': 'Importar dados',
+  'budget-plans.create.importFromYear': 'Criar a partir do ano de',
+  'budget-plans.create.add': 'Adicionar',
+  'budget-plans.create.cancel': 'Cancelar',
+  'budget-plans.create.requiredYear': 'Informe o ano do plano.',
+  'budget-plans.create.requiredProgram': 'Selecione o programa.',
+  'budget-plans.create.conflict': 'Já existe um plano para esse ano e programa.',
+  'budget-plans.create.unexpected': 'Não foi possível criar o plano. Tente novamente.',
+  'budget-plans.create.forbidden':
+    'Você não tem permissão para criar planos orçamentários. Fale com um administrador.',
+
+  // ── Dashboard "Resumo Mensal" (043 — reprodução fiel do legado) ──
+  'dashboard.title': 'Dashboard - Resumo Mensal',
+  'dashboard.subtitle': 'Visão geral financeira do programa',
+
+  // Linha 1 — 4 cards de métrica (placeholder; ligar em core-api#112)
+  'dashboard.metric.expenses.label': 'Gastos',
+  'dashboard.metric.expenses.trend': 'Último mês',
+  'dashboard.metric.revenue.label': 'Arrecadação',
+  'dashboard.metric.revenue.trend': 'Último mês',
+  'dashboard.metric.top-financier.label': 'Top Financiador',
+  'dashboard.metric.top-financier.trend': 'Financiador',
+  'dashboard.metric.top-cost-center.label': 'Top Centro de Custo',
+  'dashboard.metric.top-cost-center.trend': 'Centro de Custo',
+
+  // Linha 2 — esquerda: card "Visão geral" + gráfico de linha (Previsto x Realizado)
+  'dashboard.overview.title': 'Visão geral',
+  'dashboard.overview.subtitle': 'Previsto x Realizado',
+  'dashboard.overview.see-all': 'Ver tudo',
+  'dashboard.chart.series.forecast': 'Previsto',
+  'dashboard.chart.series.realized': 'Realizado',
+  // specs/096 P3 — seletor de plano do gráfico Realizado × Previsto.
+  'dashboard.realized.all': 'Todos os planos (somados)',
+  'dashboard.realized.selector-label': 'Plano orçamentário do gráfico',
+  'dashboard.realized.empty': 'Nenhum plano aprovado vigente neste ano.',
+  'dashboard.realized.error': 'Não foi possível carregar o gráfico.',
+  'dashboard.realized.forbidden': 'Sem permissão para ver o gráfico.',
+
+  // Linha 2 — direita-topo: donut "Pagamentos por Centro de Custo em %"
+  'dashboard.cost-center.title': 'Pagamentos por Centro de Custo em %',
+  'dashboard.cost-center.empty': 'Sem gastos no mês anterior',
+  // Rótulos placeholder dos centros de custo do donut (dado virá do core-api#112).
+  'dashboard.cost-center.slice.strategic': 'Consultoria Estratégica',
+  'dashboard.cost-center.slice.logistics': 'Logística',
+  'dashboard.cost-center.slice.admin': 'Administração',
+  'dashboard.cost-center.slice.events': 'Eventos',
+  // specs/096 — fatia do donut quando o título não tem centro de custo (name nulo no cost-centers real).
+  'dashboard.cost-center.slice.none': 'Sem centro de custo',
+
+  // Linha 2 — direita-baixo: card "Fornecedores sem Contrato"
+  'dashboard.suppliers-no-contract.title': 'Fornecedores sem Contrato',
+  'dashboard.suppliers-no-contract.see-all': 'Ver todas',
+  'dashboard.suppliers-no-contract.empty': 'Nenhum fornecedor sem contrato.',
+
+  // Linha 3 — widget "Últimos pagamentos" (042, dados REAIS). Headers alinhados ao legado.
+  'dashboard.recent-payments.title': 'Últimos Pagamentos Realizados',
+  'dashboard.recent-payments.col.supplier': 'Nome',
+  'dashboard.recent-payments.col.debit-account': 'Conta',
+  'dashboard.recent-payments.col.value': 'Valor',
+  'dashboard.recent-payments.col.paid-at': 'Vencimento',
+  'dashboard.recent-payments.empty': 'Nenhum pagamento recente.',
+  'dashboard.recent-payments.error': 'Não foi possível carregar os pagamentos.',
+  'dashboard.recent-payments.forbidden': 'Você não tem permissão para ver os pagamentos.',
+  'dashboard.recent-payments.loading': 'Carregando…',
+
+  // Estados da page (052 — o DTO das estatísticas vem do BFF via server fn).
+  'dashboard.state.loading': 'Carregando o resumo…',
+  'dashboard.state.error': 'Não foi possível carregar o resumo do dashboard.',
+
+  // ── Relatórios → Fornecedores sem Contrato (044) ──
+  'reports.suppliersWithoutContract.title': 'Fornecedores sem Contrato',
+  'reports.suppliersWithoutContract.subtitle':
+    'Pagáveis sem contrato vinculado por fornecedor e plano orçamentário',
+  'reports.suppliersWithoutContract.columns.supplier': 'Fornecedor',
+  'reports.suppliersWithoutContract.columns.valorTotal': 'Valor Total',
+  'reports.suppliersWithoutContract.columns.utilizado': 'Total Utilizado (%)',
+  'reports.suppliersWithoutContract.columns.restante': 'Total Restante',
+  'reports.suppliersWithoutContract.tree.expand': 'Expandir',
+  'reports.suppliersWithoutContract.tree.collapse': 'Recolher',
+  'reports.suppliersWithoutContract.empty': 'Nenhum fornecedor sem contrato.',
+  // Estados da fonte real (#114): carregando + erro (a tag do erro vem por baixo, via reportsErrorTag).
+  'reports.suppliersWithoutContract.loading': 'Carregando fornecedores…',
+  'reports.suppliersWithoutContract.errorTitle': 'Não foi possível carregar o relatório.',
+  'reports.suppliersWithoutContract.filters.title': 'Filtros',
+  'reports.suppliersWithoutContract.filters.subtitle':
+    'Refine o relatório por programa, plano orçamentário, período e limite.',
+  'reports.suppliersWithoutContract.filters.programa': 'Programa',
+  'reports.suppliersWithoutContract.filters.plano': 'Plano Orçamentário',
+  'reports.suppliersWithoutContract.filters.periodo': 'Período',
+  'reports.suppliersWithoutContract.filters.limite': 'Limite',
+  'reports.suppliersWithoutContract.filters.centro': 'Centro de custo',
+  'reports.suppliersWithoutContract.filters.categoria': 'Categoria de custo',
+  'reports.suppliersWithoutContract.filters.subcategoria': 'Subcategoria de custo',
+  'reports.suppliersWithoutContract.filters.allOption': 'Todos',
+  'reports.suppliersWithoutContract.filters.filtrar': 'Filtrar',
+  'reports.suppliersWithoutContract.export.label': 'Exportar',
+  'reports.suppliersWithoutContract.export.csv': 'CSV',
+  'reports.suppliersWithoutContract.export.pdf': 'PDF',
+  'reports.suppliersWithoutContract.chart.title': 'Utilização do limite por fornecedor',
+  'reports.suppliersWithoutContract.chart.summary': '{{total}} fornecedores · {{over}} acima do limite',
+  'reports.suppliersWithoutContract.chart.legend.within': 'Dentro do limite',
+  'reports.suppliersWithoutContract.chart.legend.atLimit': 'No limite',
+  'reports.suppliersWithoutContract.chart.legend.over': 'Acima do limite',
+
+  // ── Relatório "Realizado × Planejado" ──
+  'reports.realizadoXPlanejado.title': 'Realizado × Planejado',
+  'reports.realizadoXPlanejado.subtitle':
+    'Execução orçamentária por centro de custo, categoria e subcategoria, mês a mês.',
+  'reports.realizadoXPlanejado.back': 'Voltar',
+  'reports.realizadoXPlanejado.empty': 'Nenhum dado para exibir.',
+  'reports.realizadoXPlanejado.loading': 'Carregando o relatório…',
+  'reports.realizadoXPlanejado.errorTitle': 'Não foi possível carregar o relatório.',
+  // Colunas da tabela.
+  'reports.realizadoXPlanejado.columns.centroCusto': 'Centro de custo',
+  'reports.realizadoXPlanejado.columns.provisionado': 'Provisionado',
+  'reports.realizadoXPlanejado.columns.realizado': 'Realizado',
+  'reports.realizadoXPlanejado.columns.planejado': 'Planejado',
+  'reports.realizadoXPlanejado.columns.av': 'AV (%) do planejado',
+  'reports.realizadoXPlanejado.columns.avShort': 'AV %',
+  // Sub-colunas por mês (abreviadas).
+  'reports.realizadoXPlanejado.columns.provisAbbrev': 'Provis.',
+  'reports.realizadoXPlanejado.columns.realizAbbrev': 'Realiz.',
+  'reports.realizadoXPlanejado.columns.planejAbbrev': 'Planej.',
+  // KPIs.
+  'reports.realizadoXPlanejado.kpi.planned': 'Total planejado',
+  'reports.realizadoXPlanejado.kpi.realized': 'Total realizado',
+  'reports.realizadoXPlanejado.kpi.provisioned': 'Total provisionado',
+  'reports.realizadoXPlanejado.kpi.execution': 'Execução',
+  'reports.realizadoXPlanejado.kpi.plannedSub': 'Orçamento do período',
+  'reports.realizadoXPlanejado.kpi.realizedSub': '{{pct}} do planejado',
+  'reports.realizadoXPlanejado.kpi.provisionedSub': 'Comprometido a pagar',
+  'reports.realizadoXPlanejado.kpi.executionSub': 'Realizado ÷ planejado',
+  // Faixa de totais (legado — mantida por compat).
+  'reports.realizadoXPlanejado.totals.provisionado': 'Valor total provisionado',
+  'reports.realizadoXPlanejado.totals.realizado': 'Valor total realizado',
+  'reports.realizadoXPlanejado.totals.planejado': 'Valor total planejado',
+  'reports.realizadoXPlanejado.totals.row': 'Total',
+  // Tabela.
+  'reports.realizadoXPlanejado.table.title': 'Detalhamento por mês',
+  'reports.realizadoXPlanejado.table.consolidatedGroup': 'Consolidado do ano',
+  // Passador de meses.
+  'reports.realizadoXPlanejado.pager.prev': 'Meses anteriores',
+  'reports.realizadoXPlanejado.pager.next': 'Próximos meses',
+  // Árvore.
+  'reports.realizadoXPlanejado.tree.expand': 'Expandir',
+  'reports.realizadoXPlanejado.tree.collapse': 'Recolher',
+  // Filtros (placeholders visuais).
+  'reports.realizadoXPlanejado.filters.title': 'Filtros',
+  'reports.realizadoXPlanejado.filters.programa': 'Programa',
+  'reports.realizadoXPlanejado.filters.plano': 'Plano orçamentário',
+  'reports.realizadoXPlanejado.filters.estado': 'Estado',
+  'reports.realizadoXPlanejado.filters.municipio': 'Município',
+  'reports.realizadoXPlanejado.filters.ano': 'Ano',
+  'reports.realizadoXPlanejado.filters.allOption': 'Todos',
+  'reports.realizadoXPlanejado.filters.filtrar': 'Aplicar filtros',
+  // Gráficos.
+  'reports.realizadoXPlanejado.charts.byCostCenter': 'Por centro de custo',
+  'reports.realizadoXPlanejado.charts.monthly': 'Distribuição mensal',
+  'reports.realizadoXPlanejado.charts.realizedVsForecast': 'Realizado vs previsto',
+  'reports.realizadoXPlanejado.charts.exampleHint': 'exemplo',
+  'reports.realizadoXPlanejado.charts.execCaption': 'execução',
+  'reports.realizadoXPlanejado.legend.realizado': 'Realizado',
+  'reports.realizadoXPlanejado.legend.previsto': 'Previsto',
+  'reports.realizadoXPlanejado.legend.provisionado': 'Provisionado',
+  // Export.
+  'reports.realizadoXPlanejado.export.label': 'Exportar',
+  'reports.realizadoXPlanejado.export.csv': 'CSV',
+  'reports.realizadoXPlanejado.export.pdf': 'PDF',
+  // Abreviações Title-case dos meses (grupos de mês da tabela: "Dez/26").
+  'reports.realizadoXPlanejado.monthTitle.jan': 'Jan',
+  'reports.realizadoXPlanejado.monthTitle.feb': 'Fev',
+  'reports.realizadoXPlanejado.monthTitle.mar': 'Mar',
+  'reports.realizadoXPlanejado.monthTitle.apr': 'Abr',
+  'reports.realizadoXPlanejado.monthTitle.may': 'Mai',
+  'reports.realizadoXPlanejado.monthTitle.jun': 'Jun',
+  'reports.realizadoXPlanejado.monthTitle.jul': 'Jul',
+  'reports.realizadoXPlanejado.monthTitle.aug': 'Ago',
+  'reports.realizadoXPlanejado.monthTitle.sep': 'Set',
+  'reports.realizadoXPlanejado.monthTitle.oct': 'Out',
+  'reports.realizadoXPlanejado.monthTitle.nov': 'Nov',
+  'reports.realizadoXPlanejado.monthTitle.dec': 'Dez',
+
+  // ── Relatório "Equipe ABC" (front-first; dados sintéticos/anonimizados — LGPD) ──
+  'reports.equipe.title': 'Relatório Equipe ABC',
+  'reports.equipe.back': 'Voltar',
+  'reports.equipe.empty': 'Nenhum colaborador para exibir.',
+  // Estados da fonte real (#114, endpoint LGPD-safe): carregando + erro + gráficos demográficos indisponíveis.
+  'reports.equipe.loading': 'Carregando a equipe…',
+  'reports.equipe.errorTitle': 'Não foi possível carregar o relatório.',
+  'reports.equipe.chartUnavailable': 'Dado não disponível',
+  'reports.equipe.naLabel': 'N/A',
+
+  'reports.equipe.filters.title': 'Filtros',
+  'reports.equipe.filters.searchPlaceholder': 'Pesquise',
+  'reports.equipe.filters.allOption': 'Todos',
+  // Rótulo da busca no resumo dos filtros aplicados (subtítulo).
+  'reports.equipe.filters.busca': 'Busca',
+  'reports.equipe.filters.escolaridade': 'Escolaridade',
+  'reports.equipe.filters.raca': 'Raça',
+  'reports.equipe.filters.anoContrato': 'Ano de Contrato',
+  'reports.equipe.filters.desativadoPor': 'Desativado por',
+  'reports.equipe.filters.programa': 'Programa',
+  // O campo do relatório SEMPRE foi a área de atuação (o placeholder já usava DDI/EPV/PARC como valores) —
+  // só o rótulo dizia "Programa", que é outra coisa e não existe no cadastro do colaborador. Nomear certo
+  // alinha com o módulo de Colaboradores, onde este é um filtro real e "Programa" é o que está gated.
+  'reports.equipe.filters.area': 'Área de atuação',
+  'reports.equipe.filters.funcao': 'Função',
+  'reports.equipe.filters.genero': 'Identidade de Gênero',
+  'reports.equipe.filters.status': 'Status',
+  'reports.equipe.filters.situacaoCadastral': 'Situação Cadastral',
+  'reports.equipe.filters.idade': 'Idade',
+  'reports.equipe.filters.vinculo': 'Vínculo Empregatício',
+  'reports.equipe.filters.filtrar': 'Filtrar',
+
+  'reports.equipe.export.label': 'Exportar',
+
+  'reports.equipe.charts.genero': 'Distribuição por Gênero',
+  'reports.equipe.charts.racaCor': 'Distribuição por Raça/Cor',
+  'reports.equipe.charts.idade': 'Distribuição por Idade',
+  'reports.equipe.charts.ano': 'Quantitativo de Funcionários por Ano',
+  'reports.equipe.charts.funcao': 'Distribuição por Função',
+  'reports.equipe.charts.centerCaption': 'colaboradores',
+
+  'reports.equipe.table.title': 'Colaboradores',
+  'reports.equipe.table.count': '{{count}} colaboradores',
+  'reports.equipe.columns.nome': 'Nome',
+  'reports.equipe.columns.idade': 'Idade',
+  'reports.equipe.columns.area': 'Área de atuação',
+  'reports.equipe.columns.funcao': 'Função',
+  'reports.equipe.columns.vinculo': 'Vínculo',
+  'reports.equipe.columns.genero': 'Identidade de gênero',
+  'reports.equipe.columns.racaCor': 'Raça/cor',
+  'reports.equipe.columns.escolaridade': 'Escolaridade',
+  'reports.equipe.table.rowAction': 'Ver detalhes de {{nome}}',
+
+  // Paginação da tabela.
+  'reports.equipe.paginator.previous': 'Anterior',
+  'reports.equipe.paginator.next': 'Próxima',
+  'reports.equipe.paginator.page': 'Página',
+  'reports.equipe.paginator.of': 'de',
+  'reports.equipe.paginator.perPage': 'Itens por página',
+
+  // Modal de detalhe do colaborador (só os 9 campos enxutos — LGPD).
+  'reports.equipe.detail.title': 'Detalhes do colaborador',
+  'reports.equipe.detail.anoContrato': 'Ano de contrato',
+  'reports.equipe.detail.close': 'Fechar',
+  'reports.equipe.detail.edit': 'Editar',
+
+  // ── Relatório "Posição de Pagamentos" (front-first; core-api#114) ──
+  'reports.posicao.title': 'Posição de Pagamentos',
+  'reports.posicao.back': 'Voltar',
+  'reports.posicao.empty': 'Nenhum dado para exibir.',
+  // Estados da fonte real (#114): carregando + erro (a tag do erro vem por baixo, via reportsErrorTag).
+  'reports.posicao.loading': 'Carregando a posição…',
+  'reports.posicao.errorTitle': 'Não foi possível carregar o relatório.',
+  // Tags de erro dos Relatórios (§V: a UI trata só a tag i18n; nunca status HTTP).
+  'reports.error.unauthorized': 'Sua sessão expirou. Entre novamente para ver o relatório.',
+  'reports.error.forbidden': 'Você não tem permissão para ver este relatório.',
+  'reports.error.validation': 'Não foi possível interpretar os dados do relatório.',
+  'reports.error.connectivity': 'Falha de conexão ao carregar o relatório. Tente novamente.',
+  'reports.error.server': 'Erro ao carregar o relatório. Tente novamente em instantes.',
+  // Export (dropdown CSV + PDF).
+  'reports.posicao.export.label': 'Exportar',
+  'reports.posicao.export.csv': 'CSV',
+  'reports.posicao.export.pdf': 'PDF',
+  // Filtros recolhíveis (placeholders visuais front-first).
+  'reports.posicao.filters.title': 'Filtros',
+  'reports.posicao.filters.allOption': 'Todos',
+  'reports.posicao.filters.plano': 'Plano Orçamentário',
+  'reports.posicao.filters.periodo': 'Período de vencimento',
+  'reports.posicao.filters.periodoDe': 'De',
+  'reports.posicao.filters.periodoAte': 'Até',
+  'reports.posicao.filters.conta': 'Conta bancária',
+  'reports.posicao.filters.status': 'Status',
+  'reports.posicao.filters.centro': 'Centro de custo',
+  'reports.posicao.filters.categoria': 'Categoria',
+  'reports.posicao.filters.subcategoria': 'Subcategoria',
+  'reports.posicao.filters.fornecedor': 'Fornecedor',
+  'reports.posicao.filters.filtrar': 'Filtrar',
+  // Status filtrável (#588) — enum FECHADO de 6 (sem Rascunho/Recusado, decisão P.O.).
+  'reports.posicao.filters.statusOpt.open': 'Aberto',
+  'reports.posicao.filters.statusOpt.approved': 'Aprovado',
+  'reports.posicao.filters.statusOpt.transmitted': 'Transmitido',
+  'reports.posicao.filters.statusOpt.paid': 'Pago',
+  'reports.posicao.filters.statusOpt.partiallyReconciled': 'Parcialmente conciliado',
+  'reports.posicao.filters.statusOpt.reconciled': 'Conciliado',
+  // 3 MEDIDAS DERIVADAS (Em atraso = não pago e vencido; Pago = liquidado; A pagar = não pago e a vencer).
+  'reports.posicao.measure.emAtraso': 'Em atraso',
+  'reports.posicao.measure.pago': 'Pago',
+  'reports.posicao.measure.aPagar': 'A pagar',
+  'reports.posicao.measure.total': 'Total',
+  // KPIs (4 cards).
+  'reports.posicao.kpi.atrasado': 'Atrasado',
+  'reports.posicao.kpi.pago': 'Pago',
+  'reports.posicao.kpi.aPagar': 'A pagar',
+  'reports.posicao.kpi.total': 'Total',
+  'reports.posicao.kpi.atrasadoSub': 'Vencido e não pago',
+  'reports.posicao.kpi.pagoSub': 'Títulos liquidados',
+  'reports.posicao.kpi.aPagarSub': 'A vencer',
+  'reports.posicao.kpi.totalSub': 'Obrigações no período',
+  // Gráficos.
+  'reports.posicao.chart.resumoTotal': 'Resumo total',
+  'reports.posicao.chart.distribuicaoFornecedor': 'Distribuição por Fornecedor',
+  'reports.posicao.chart.centerCaption': 'total',
+  // Tabela hierárquica.
+  'reports.posicao.table.title': 'Posição por fornecedor',
+  'reports.posicao.columns.name': 'Fornecedor / Centro de custo / Categoria',
+  'reports.posicao.totals.row': 'Total Geral',
+  'reports.posicao.tree.expand': 'Expandir',
+  'reports.posicao.tree.collapse': 'Recolher',
+
+  // ── Relatório "Posição de Recebimentos" (front-first; core-api#114). Espelha "Posição de Pagamentos"
+  //    reusando o MESMO engine/tela — só as chaves ABAIXO mudam (rótulos do lado de RECEBER); as demais
+  //    (back/filtros/export/emAtraso/kpi.atrasado/kpi.total/chart.resumoTotal/totals.row/tree.*) são
+  //    COMPARTILHADAS com Pagamentos (não duplicadas). PLACEHOLDER sintético só p/ validar a UI; quando o
+  //    Contas a Receber subir, a fonte vem vazia e a tela cai no empty state (`reports.posicao.rec.empty`). ──
+  'reports.posicao.rec.title': 'Posição de Recebimentos',
+  'reports.posicao.rec.financiador': 'Financiador',
+  // Medidas (rótulos do lado de receber): Em atraso (compartilhado) · Recebido · A receber.
+  'reports.posicao.rec.recebido': 'Recebido',
+  'reports.posicao.rec.aReceber': 'A receber',
+  // KPIs — legendas (subtítulos) honestas de recebíveis.
+  'reports.posicao.rec.kpi.atrasadoSub': 'Vencido e não recebido',
+  'reports.posicao.rec.kpi.recebidoSub': 'Valores recebidos',
+  'reports.posicao.rec.kpi.aReceberSub': 'A vencer',
+  'reports.posicao.rec.kpi.totalSub': 'Recebíveis no período',
+  // Gráfico de barras + tabela.
+  'reports.posicao.rec.chart.distribuicao': 'Distribuição por Financiador',
+  'reports.posicao.rec.table.title': 'Posição por financiador',
+  'reports.posicao.rec.columns.name': 'Financiador / Centro de custo / Categoria',
+  // Empty state honesto (nenhum recebível registrado).
+  'reports.posicao.rec.empty': 'Nenhum recebimento registrado',
+  'reports.posicao.rec.emptyHint':
+    'Ainda não há recebíveis lançados. Assim que o Contas a Receber registrar movimentações, elas aparecerão aqui.',
+
+  // ── Relatório "Análise de Pagamentos" (front-first; core-api#114/consolidated) ──
+  // Matriz TEMPO-orçamentária: árvore Plano Orçamentário → Centro de Custo × série MENSAL de valores.
+  'reports.analise.title': 'Análise de Pagamentos',
+  'reports.analise.back': 'Voltar',
+  'reports.analise.empty': 'Nenhum dado para exibir.',
+  // Estados de carregamento/erro (dado REAL do core-api #446). O `hint` do erro reusa `reports.error.*`.
+  'reports.analise.loading': 'Carregando a análise…',
+  'reports.analise.errorTitle': 'Não foi possível carregar o relatório.',
+  // Export (dropdown CSV + PDF).
+  'reports.analise.export.label': 'Exportar',
+  'reports.analise.export.csv': 'CSV',
+  'reports.analise.export.pdf': 'PDF',
+  // Filtros recolhíveis (placeholders visuais front-first).
+  'reports.analise.filters.title': 'Filtros',
+  'reports.analise.filters.allOption': 'Todos',
+  'reports.analise.filters.programa': 'Programa',
+  'reports.analise.filters.plano': 'Plano Orçamentário',
+  'reports.analise.filters.periodo': 'Período de vencimento',
+  'reports.analise.filters.periodoDe': 'De',
+  'reports.analise.filters.periodoAte': 'Até',
+  'reports.analise.filters.conta': 'Conta bancária',
+  // Resumo dos filtros aplicados (subtítulo) — conectores do intervalo de datas quando só uma extremidade é setada.
+  'reports.filters.summary.fromPrefix': 'a partir de',
+  'reports.filters.summary.toPrefix': 'até',
+  'reports.analise.filters.status': 'Status',
+  'reports.analise.filters.centro': 'Centro de custo',
+  'reports.analise.filters.categoria': 'Categoria',
+  'reports.analise.filters.subcategoria': 'Subcategoria',
+  'reports.analise.filters.filtrar': 'Filtrar',
+  // Gráficos.
+  'reports.analise.charts.byCostCenter': 'Distribuição por Centro de Custo',
+  'reports.analise.charts.monthly': 'Distribuição Mensal',
+  // Tabela-matriz (árvore × meses).
+  'reports.analise.table.title': 'Análise por plano orçamentário',
+  'reports.analise.columns.name': 'Plano Orçamentário / Centro de custo',
+  'reports.analise.columns.total': 'Valor total',
+  'reports.analise.totals.row': 'Valor total do período',
+  'reports.analise.tree.expand': 'Expandir',
+  'reports.analise.tree.collapse': 'Recolher',
+  // Passador de meses.
+  'reports.analise.pager.prev': 'Meses anteriores',
+  'reports.analise.pager.next': 'Próximos meses',
+  // Empty state honesto — usado pela Análise de Recebimentos quando não há dado; a de Pagamentos não o exibe.
+  'reports.analise.emptyHint':
+    'Ainda não há lançamentos no período. Assim que houver movimentações, elas aparecerão aqui.',
+
+  // ── Relatório "Análise de Recebimentos" (front-first; core-api#114/consolidated) — ESPELHO da de Pagamentos.
+  //    Mesma matriz TEMPO-orçamentária; só o título/rótulos de RECEBER e a paleta dos gráficos mudam. Quando o
+  //    Contas a Receber subir, a fonte vem vazia e a tela cai no empty state (`reports.analise.rec.empty`). ──
+  'reports.analise.rec.title': 'Análise de Recebimentos',
+  // Período de PREVISÃO de recebimento (vs. "de vencimento" no lado de pagar).
+  'reports.analise.rec.filters.periodo': 'Período de recebimento',
+  // Empty state honesto (nenhum recebimento registrado).
+  'reports.analise.rec.empty': 'Nenhum recebimento registrado',
+  'reports.analise.rec.emptyHint':
+    'Ainda não há recebíveis lançados. Assim que o Contas a Receber registrar movimentações, elas aparecerão aqui.',
+
+  // ── Relatório "Fluxo de Caixa" (front-first; core-api#114) ──
+  // Duas seções (Saídas = payables + cartão; Entradas = receivables), cada uma árvore Categoria → Subcategoria
+  // × 2 medidas (Realizado × Previsto); Saldo = Entradas − Saídas; gráfico "por vencimento" (Entradas × Saídas).
+  'reports.fluxoCaixa.title': 'Fluxo de Caixa',
+  'reports.fluxoCaixa.back': 'Voltar',
+  'reports.fluxoCaixa.loading': 'Carregando o fluxo de caixa…',
+  'reports.fluxoCaixa.errorTitle': 'Não foi possível carregar o fluxo de caixa',
+  'reports.fluxoCaixa.chartEmptyLabel': 'Sem movimentações no período.',
+  // Export (dropdown CSV + PDF).
+  'reports.fluxoCaixa.export.label': 'Exportar',
+  'reports.fluxoCaixa.export.csv': 'CSV',
+  'reports.fluxoCaixa.export.pdf': 'PDF',
+  // Filtros recolhíveis (placeholders visuais front-first).
+  'reports.fluxoCaixa.filters.title': 'Filtros',
+  'reports.fluxoCaixa.filters.allOption': 'Todos',
+  'reports.fluxoCaixa.filters.programa': 'Programa',
+  'reports.fluxoCaixa.filters.plano': 'Plano Orçamentário',
+  'reports.fluxoCaixa.filters.periodo': 'Período de vencimento',
+  'reports.fluxoCaixa.filters.periodoDe': 'De',
+  'reports.fluxoCaixa.filters.periodoAte': 'Até',
+  'reports.fluxoCaixa.filters.conta': 'Conta bancária',
+  'reports.fluxoCaixa.filters.centro': 'Centro de custo',
+  'reports.fluxoCaixa.filters.categoria': 'Categoria',
+  'reports.fluxoCaixa.filters.subcategoria': 'Subcategoria',
+  'reports.fluxoCaixa.filters.status': 'Status',
+  'reports.fluxoCaixa.filters.filtrar': 'Filtrar',
+  // As 2 medidas (colunas das tabelas de seção).
+  'reports.fluxoCaixa.measure.realizado': 'Realizado',
+  'reports.fluxoCaixa.measure.previsto': 'Previsto',
+  // KPIs (Saídas · Entradas · Saldo realizado · Saldo previsto).
+  'reports.fluxoCaixa.kpi.saidas': 'Total de Saídas',
+  'reports.fluxoCaixa.kpi.saidasSub': 'Pagamentos + cartão (realizado)',
+  'reports.fluxoCaixa.kpi.entradas': 'Total de Entradas',
+  'reports.fluxoCaixa.kpi.entradasSub': 'Recebimentos (realizado)',
+  'reports.fluxoCaixa.kpi.saldoRealizado': 'Saldo (realizado)',
+  'reports.fluxoCaixa.kpi.saldoRealizadoSub': 'Entradas − Saídas',
+  'reports.fluxoCaixa.kpi.saldoPrevisto': 'Saldo (previsto)',
+  'reports.fluxoCaixa.kpi.saldoPrevistoSub': 'Entradas − Saídas (previsto)',
+  // Gráfico "Fluxo por vencimento" (Entradas × Saídas por mês) — mantido para retrocompatibilidade.
+  'reports.fluxoCaixa.chart.monthly': 'Fluxo por vencimento',
+  'reports.fluxoCaixa.chart.entradas': 'Entradas',
+  'reports.fluxoCaixa.chart.saidas': 'Saídas',
+  // Os 4 gráficos "Previsto × Realizado": linha do tempo (3 séries), barras por Centro de Custo, 2 donuts. O
+  // eixo de CC é reconstruído pelo BFF via fan-out (o #590 não o expõe nativamente — CA6).
+  'reports.fluxoCaixa.chart.timeline': 'Linha do tempo',
+  'reports.fluxoCaixa.chart.byCostCenter': 'Agrupado por Centro de Custo',
+  'reports.fluxoCaixa.chart.esperado': 'Esperado',
+  'reports.fluxoCaixa.chart.realizado': 'Realizado',
+  'reports.fluxoCaixa.chart.previsto': 'Previsto',
+  'reports.fluxoCaixa.chart.saldo': 'Saldo',
+  'reports.fluxoCaixa.chart.execucao': 'execução',
+  // Seções (Saídas / Entradas) — coluna de nome comum + títulos/totais/empty por seção.
+  'reports.fluxoCaixa.section.nameCol': 'Categoria / Subcategoria',
+  'reports.fluxoCaixa.section.saidas.title': 'Saídas',
+  'reports.fluxoCaixa.section.saidas.totalRow': 'Total de Saídas',
+  'reports.fluxoCaixa.section.saidas.empty': 'Nenhuma saída registrada',
+  'reports.fluxoCaixa.section.saidas.emptyHint':
+    'Ainda não há saídas lançadas no período. Assim que houver pagamentos, eles aparecerão aqui.',
+  'reports.fluxoCaixa.section.entradas.title': 'Entradas',
+  'reports.fluxoCaixa.section.entradas.totalRow': 'Total de Entradas',
+  'reports.fluxoCaixa.section.entradas.empty': 'Nenhuma entrada registrada',
+  'reports.fluxoCaixa.section.entradas.emptyHint':
+    'Ainda não há entradas lançadas. Assim que o Contas a Receber registrar recebimentos, eles aparecerão aqui.',
+  // Árvore.
+  'reports.fluxoCaixa.tree.expand': 'Expandir',
+  'reports.fluxoCaixa.tree.collapse': 'Recolher',
+  // ── Demonstrativo de fluxo de caixa (statement por mês; 2 subcolunas Real | Prev por mês) ──
+  'reports.fluxoCaixa.stmt.title': 'Demonstrativo de fluxo de caixa',
+  'reports.fluxoCaixa.stmt.hint': 'valores em R$ · role para os demais meses ›',
+  'reports.fluxoCaixa.stmt.descCol': 'Descrição',
+  'reports.fluxoCaixa.stmt.totalCol': 'Total',
+  'reports.fluxoCaixa.stmt.real': 'Real.',
+  'reports.fluxoCaixa.stmt.prev': 'Prev.',
+  'reports.fluxoCaixa.stmt.saldoInicial': 'Saldo inicial',
+  'reports.fluxoCaixa.stmt.entradas': 'Entradas',
+  'reports.fluxoCaixa.stmt.totalEntradas': '= Total de entradas',
+  'reports.fluxoCaixa.stmt.saidas': 'Saídas',
+  'reports.fluxoCaixa.stmt.totalSaidas': '= Total de saídas',
+  'reports.fluxoCaixa.stmt.liquido': '= Fluxo líquido do período',
+  'reports.fluxoCaixa.stmt.saldoAcumulado': '= Saldo acumulado',
+  'reports.fluxoCaixa.stmt.emptyEntradas': 'Nenhuma entrada registrada — o Contas a Receber ainda não subiu.',
+  'reports.fluxoCaixa.stmt.monthsFrom': 'De',
+  'reports.fluxoCaixa.stmt.monthsTo': 'Até',
+  'reports.fluxoCaixa.stmt.prevMonth': 'Mês anterior',
+  'reports.fluxoCaixa.stmt.nextMonth': 'Próximo mês',
+
+  // ── "Relatório Geral" (front-first; core-api#114) — ledger unificado achatado e paginado ──
+  'reports.geral.title': 'Relatório Geral',
+  'reports.geral.back': 'Voltar',
+  'reports.geral.naLabel': '—',
+  'reports.geral.empty': 'Nenhum lançamento no período',
+  // Export (dropdown CSV + PDF).
+  'reports.geral.export.label': 'Exportar',
+  'reports.geral.export.csv': 'CSV',
+  'reports.geral.export.pdf': 'PDF',
+  // Filtros recolhíveis — POPULADOS e APLICÁVEIS (#442).
+  'reports.geral.filters.title': 'Filtros',
+  'reports.geral.filters.allOption': 'Todos',
+  'reports.geral.filters.busca': 'Buscar',
+  'reports.geral.filters.buscaPlaceholder': 'Nº do documento ou fornecedor',
+  'reports.geral.filters.plano': 'Plano Orçamentário',
+  'reports.geral.filters.programa': 'Programa',
+  'reports.geral.filters.periodo': 'Período de vencimento',
+  'reports.geral.filters.periodoDe': 'De',
+  'reports.geral.filters.periodoAte': 'Até',
+  'reports.geral.filters.tipo': 'Tipo',
+  'reports.geral.filters.fornecedor': 'Fornecedor',
+  'reports.geral.filters.conta': 'Conta bancária',
+  'reports.geral.filters.centro': 'Centro de custo',
+  'reports.geral.filters.categoria': 'Categoria',
+  'reports.geral.filters.subcategoria': 'Subcategoria',
+  'reports.geral.filters.status': 'Status',
+  'reports.geral.filters.filtrar': 'Filtrar',
+  // Estados de carregamento/erro.
+  'reports.geral.loading': 'Carregando o relatório geral…',
+  'reports.geral.errorTitle': 'Não foi possível carregar o relatório geral',
+  // Cabeçalho da tabela.
+  'reports.geral.table.title': 'Lançamentos',
+  'reports.geral.table.count': '{{count}} lançamentos',
+  // 15 colunas (ordem do legado).
+  'reports.geral.columns.data': 'Data',
+  'reports.geral.columns.vencimento': 'Vencimento',
+  'reports.geral.columns.tipo': 'Tipo',
+  'reports.geral.columns.numeroContrato': 'Nº Contrato',
+  'reports.geral.columns.codigo': 'Código',
+  'reports.geral.columns.parcela': 'Parcela',
+  'reports.geral.columns.apontamento': 'Apontamento',
+  'reports.geral.columns.fornecedor': 'Fornecedor',
+  'reports.geral.columns.financiador': 'Financiador',
+  'reports.geral.columns.colaborador': 'Colaborador',
+  'reports.geral.columns.centroCusto': 'Centro de Custo',
+  'reports.geral.columns.categoria': 'Categoria',
+  'reports.geral.columns.subcategoria': 'Subcategoria',
+  'reports.geral.columns.pixBancario': 'PIX/Bancário',
+  'reports.geral.columns.valor': 'Valor',
+  // Seletor de colunas (botão "Colunas" → menu de checkboxes).
+  'reports.geral.columns.button': 'Colunas',
+  'reports.geral.columns.close': 'Fechar seleção de colunas',
+  'reports.geral.columns.none': 'Selecione ao menos uma coluna para exibir',
+  // Paginação da tabela.
+  'reports.geral.paginator.previous': 'Anterior',
+  'reports.geral.paginator.next': 'Próxima',
+  'reports.geral.paginator.page': 'Página',
+  'reports.geral.paginator.of': 'de',
+  'reports.geral.paginator.perPage': 'Itens por página',
+
   // ── Shell (top bar) ──
   'shell.topbar.brand': 'Bem Comum',
   'shell.topbar.greeting': 'Olá, {{name}}',
   'shell.topbar.logout': 'Sair',
+  'shell.topbar.revokeAllSessions': 'Encerrar todas as sessões',
+  'shell.topbar.revokeAllSessions.confirm':
+    'Isso vai encerrar todas as suas sessões em todos os dispositivos, incluindo este. Você precisará entrar novamente. Deseja continuar?',
 }

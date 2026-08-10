@@ -16,10 +16,13 @@ import {
   cedenteAccountToModel,
   cedenteAccountsToModel,
   costCentersToModel,
+  counterpartConfirmedToModel,
+  counterpartSuggestionsToModel,
   importToModel,
   manualEntryToModel,
   mapHttpError,
   paidPayablesToModel,
+  payablesBatchToModel,
   periodClosedToModel,
   periodReopenedToModel,
   reconciliationCreatedToModel,
@@ -31,6 +34,17 @@ import {
   transactionsToModel,
   undoToModel,
 } from './reconciliation.mappers.ts'
+import {
+  buildEnrichmentMaps,
+  buildRetentionMap,
+  emptyEnrichmentMaps,
+  enrichPaidPayables,
+  enrichReconciliationItemsFromBatch,
+  enrichSuggestions,
+  needsRetentionMap,
+  type EnrichmentSource,
+  type PayableBatchEnrichment,
+} from './reconciliation-enrichment.ts'
 
 // Janela ampla FIXA (determinística, sem relógio): o read-model soma TODOS os movimentos da conta →
 // closingBalanceCents = saldo corrente real e counters.pending = total de pendentes. `from`/`to` são
@@ -58,7 +72,36 @@ const enrichAccountWithStatement = async (
   }
 }
 
-export const createCoreApiReconciliationClient = (baseUrl: string): ReconciliationClient => ({
+// #357 (ADR-0049): resolve títulos por id em 1 hop (POST /payables:batch). Best-effort → mapa VAZIO em
+// qualquer falha (degrada p/ null no merge; NUNCA vira erro que derruba o modal). O contrato aceita 1..200
+// refs; o lookup de um match tem poucos itens, mas capamos em 200 por segurança. `refs` vazio → sem hop.
+const EMPTY_BATCH: ReadonlyMap<string, PayableBatchEnrichment> = new Map()
+const resolvePayablesBatch = async (
+  baseUrl: string,
+  refs: readonly string[],
+  token: string,
+): Promise<ReadonlyMap<string, PayableBatchEnrichment>> => {
+  if (refs.length === 0) return EMPTY_BATCH
+  const r = await resultFetch<unknown>(`${baseUrl}/payables:batch`, {
+    method: 'POST',
+    body: { refs: refs.slice(0, 200) },
+    token,
+  })
+  if (isErr(r)) return EMPTY_BATCH
+  const model = payablesBatchToModel(r.value)
+  if (isErr(model)) return EMPTY_BATCH
+  return model.value
+}
+
+// INTERINO BFF composite p/ core-api#172/#265: fábrica opcional da fonte de enriquecimento (por token).
+// Quando ausente, o cliente NÃO enriquece (mapas vazios) — mantém compat p/ chamadas sem a costura.
+// REMOVER quando o core-api enriquecer os contratos nativos e o join deixar de ser necessário.
+export type ReconciliationEnrichmentFactory = (token: string) => EnrichmentSource
+
+export const createCoreApiReconciliationClient = (
+  baseUrl: string,
+  enrichmentFor?: ReconciliationEnrichmentFactory,
+): ReconciliationClient => ({
   importStatement: async (i, token) => {
     const r = await resultFetch<unknown>(`${baseUrl}/bank-statements`, {
       method: 'POST',
@@ -80,10 +123,28 @@ export const createCoreApiReconciliationClient = (baseUrl: string): Reconciliati
     if (isErr(r)) return err(mapHttpError(r.error))
     return transactionsToModel(r.value)
   },
+  deleteBankStatement: async (statementId, token) => {
+    // core-api#558: hard-delete do extrato (204, sem corpo). Transações somem por FK cascade. Guardas
+    // 409 (statement-has-reconciled-transactions / period-closed) e 404 mapeados por `mapHttpError`.
+    const r = await resultFetch<unknown>(`${baseUrl}/bank-statements/${statementId}`, {
+      method: 'DELETE',
+      token,
+    })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return ok(undefined)
+  },
   listPaidPayables: async (token) => {
     const r = await resultFetch<unknown>(`${baseUrl}/payables?status=Paid`, { token })
     if (isErr(r)) return err(mapHttpError(r.error))
-    return paidPayablesToModel(r.value)
+    const base = paidPayablesToModel(r.value)
+    if (isErr(base)) return base
+    // INTERINO BFF composite p/ core-api#172/#265 — enquanto /payables?status=Paid NÃO devolve os campos
+    // nativos (paidAt, supplierName, documentNumber), montamos os 2 mapas UMA vez (títulos + fornecedores)
+    // e enriquecemos. REMOVER estes round-trips extras quando o backend expor os campos nativos.
+    // JOIN: paid-payable `.id` ↔ payable-title `.payableId`; payable-title `.supplierRef` ↔ supplier `.id`.
+    const maps =
+      enrichmentFor === undefined ? emptyEnrichmentMaps() : await buildEnrichmentMaps(enrichmentFor(token))
+    return ok(enrichPaidPayables(maps, base.value))
   },
   listReferences: async (token) => {
     // Referências da categorização (020 · #200): categorias + centros de custo (RBAC reference:read).
@@ -142,6 +203,42 @@ export const createCoreApiReconciliationClient = (baseUrl: string): Reconciliati
     if (isErr(r)) return err(mapHttpError(r.error))
     return cedenteAccountToModel(r.value)
   },
+  closeCedenteAccount: async (id, token) => {
+    // Encerra a conta (Open → Closed). Sem body; o ator vem do servidor. Devolve a conta atualizada.
+    const r = await resultFetch<unknown>(`${baseUrl}/cedente-accounts/${id}/close`, {
+      method: 'POST',
+      token,
+    })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return cedenteAccountToModel(r.value)
+  },
+  editCedenteAccount: async (i, token) => {
+    // PATCH parcial: só as chaves presentes (todas opcionais). `type` mapeado p/ o enum minúsculo do backend.
+    const typeMap = {
+      Corrente: 'corrente',
+      Poupanca: 'poupanca',
+      Investimento: 'investimento',
+      Cartao: 'cartao',
+      Outro: 'outro',
+    } as const
+    const body = {
+      ...(i.bankCode !== undefined ? { bankCode: i.bankCode } : {}),
+      ...(i.bankName !== undefined ? { bankName: i.bankName } : {}),
+      ...(i.type !== undefined ? { type: typeMap[i.type] } : {}),
+      ...(i.typeLabel !== undefined ? { typeLabel: i.typeLabel } : {}),
+      ...(i.agency !== undefined ? { agency: i.agency } : {}),
+      ...(i.accountNumber !== undefined ? { accountNumber: i.accountNumber } : {}),
+      ...(i.accountDigit !== undefined ? { accountDigit: i.accountDigit } : {}),
+      ...(i.nickname !== undefined ? { nickname: i.nickname } : {}),
+    }
+    const r = await resultFetch<unknown>(`${baseUrl}/cedente-accounts/${i.id}`, {
+      method: 'PATCH',
+      token,
+      body,
+    })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return cedenteAccountToModel(r.value)
+  },
   getAccountStatementPeriod: async (i, token) => {
     // #205: extrato por período (from/to date-only). filter opcional. Mapeia p/ o saldo do período.
     const qs = new URLSearchParams({ from: i.from, to: i.to })
@@ -158,7 +255,15 @@ export const createCoreApiReconciliationClient = (baseUrl: string): Reconciliati
       token,
     })
     if (isErr(r)) return err(mapHttpError(r.error))
-    return suggestionsToModel(r.value)
+    const base = suggestionsToModel(r.value)
+    if (isErr(base)) return base
+    // INTERINO BFF composite p/ core-api#172/#265 — o card de match resolve supplierName/documentNumber
+    // por `payableId` usando os MESMOS 2 mapas (títulos + fornecedores). REMOVER estes round-trips extras
+    // quando as suggestions do core-api já vierem enriquecidas.
+    // JOIN: suggestion `.payableId` ↔ payable-title `.payableId` → `.supplierRef` ↔ supplier `.id`.
+    const maps =
+      enrichmentFor === undefined ? emptyEnrichmentMaps() : await buildEnrichmentMaps(enrichmentFor(token))
+    return ok(enrichSuggestions(maps, base.value))
   },
   getStatementSuggestions: async (i, token) => {
     // #174: palpites de topo em lote por extrato (uma chamada pinta a banda de todas as transações).
@@ -179,7 +284,45 @@ export const createCoreApiReconciliationClient = (baseUrl: string): Reconciliati
       if (mapped === 'not-found') return ok(null)
       return err(mapped)
     }
-    return transactionReconciliationToModel(r.value)
+    const base = transactionReconciliationToModel(r.value)
+    if (isErr(base)) return base
+    // #357 (ADR-0049): de-interina o LOOKUP do match card. Resolve documentNumber/supplierName/dueDate por
+    // `payableId` em 1 hop TARGETED (`payables:batch`), no lugar de varrer todas as páginas de títulos + o
+    // agregador de parceiros (INTERINO #172). Best-effort: batch falha → mapa vazio → campos null (nunca
+    // quebra o modal). ManualEntry tem `items` vazio → sem hop.
+    const payableIds = base.value.items.map((i) => i.payableId)
+    const batch = await resolvePayablesBatch(baseUrl, payableIds, token)
+    // O batch NÃO devolve `retentionType` — o ÓRGÃO do imposto retido (ISS→SEFIN, federais→Receita) precisa
+    // dele. Buscamos um mapa MÍNIMO de retentionType (só do /payable-titles, SEM parceiros) apenas quando
+    // pode haver imposto retido (gate por documentType do batch + ids ausentes). Caminho comum = 1 hop.
+    // Follow-up: incluir `retentionType` no PayableBatchItem → o mapa mínimo some (1 hop sempre).
+    const retention =
+      enrichmentFor !== undefined && needsRetentionMap(payableIds, batch)
+        ? await buildRetentionMap(enrichmentFor(token).fetchTitles)
+        : new Map<string, string | null>()
+    return ok({
+      ...base.value,
+      items: enrichReconciliationItemsFromBatch(batch, retention, base.value.items),
+    })
+  },
+  getCounterpartSuggestions: async (i, token) => {
+    // US2 (#269): contrapartidas esperadas que casam com a transação (transferência entre contas).
+    const r = await resultFetch<unknown>(
+      `${baseUrl}/statement-transactions/${i.transactionId}/counterpart-suggestions`,
+      { token },
+    )
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return counterpartSuggestionsToModel(r.value)
+  },
+  confirmCounterpart: async (i, token) => {
+    // US2 (#269): concilia a transação contra a contrapartida escolhida (POST /reconciliations/counterpart).
+    const r = await resultFetch<unknown>(`${baseUrl}/reconciliations/counterpart`, {
+      method: 'POST',
+      body: { transactionId: i.transactionId, counterpartId: i.counterpartId },
+      token,
+    })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return counterpartConfirmedToModel(r.value)
   },
   rejectSuggestion: async (i, token) => {
     const r = await resultFetch<unknown>(
@@ -260,10 +403,15 @@ export const createCoreApiReconciliationClient = (baseUrl: string): Reconciliati
   },
   exportReconciliation: async (i, token) => {
     // Export é TEXTO cru (application/x-ofx | text/csv), não JSON → resultFetchText.
-    const r = await resultFetchText(
-      `${baseUrl}/reconciliation-periods/${i.periodId}/export?format=${i.format}`,
-      { token },
-    )
+    // #649: rota por CONTA + INTERVALO. A antiga (`/reconciliation-periods/:id/export`) segue existindo no
+    // core-api, mas o front não a usa mais — ela obrigava a fechar o período antes de exportar.
+    const q = new URLSearchParams({
+      debitAccountRef: i.debitAccountRef,
+      periodStart: i.periodStart,
+      periodEnd: i.periodEnd,
+      format: i.format,
+    })
+    const r = await resultFetchText(`${baseUrl}/reconciliation/export?${q.toString()}`, { token })
     if (isErr(r)) return err(mapHttpError(r.error))
     return ok({ content: r.value, format: i.format })
   },

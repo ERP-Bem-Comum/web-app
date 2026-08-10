@@ -8,7 +8,7 @@ import * as z from 'zod'
 
 import type * as R from '#modules/financial/server/domain/reconciliation.io.ts'
 
-const STATEMENT_FORMATS = ['OFX', 'CSV'] as const
+const STATEMENT_FORMATS = ['OFX', 'CSV', 'PDF'] as const // PDF: OCR (core-api#557); content = base64
 const DIFFERENCE_TREATMENTS = ['Interest', 'Penalty', 'Discount', 'Fee', 'Partial'] as const
 const MANUAL_ENTRY_TYPES = [
   'Payment',
@@ -18,19 +18,41 @@ const MANUAL_ENTRY_TYPES = [
   'Investment',
   'Redemption',
 ] as const
+// #370: mesmos DocumentType do sistema (espelha `documentTypeSchema` do core-api). Só p/ os campos de
+// documento do lançamento manual (Pagamento/Recebimento).
+const DOCUMENT_TYPES = ['NFS-e', 'DANFE', 'RPA', 'Fatura', 'Boleto', 'Recibo', 'Imposto'] as const
 
 const DateSchema = z.iso.date() // YYYY-MM-DD
 
 export const ImportStatementInputSchema = z.object({
   debitAccountRef: z.uuid(),
   format: z.enum(STATEMENT_FORMATS),
-  content: z.string().trim().min(1),
+  // Texto cru (OFX/CSV) ou base64 (PDF). Teto espelha o core-api (5_000_000 chars) — base64 infla ~33%,
+  // então um PDF de ~3.7MB cabe. Rejeita cedo, com erro amigável, antes de subir.
+  content: z.string().trim().min(1).max(5_000_000),
   fileName: z.string().trim().min(1).max(255).optional(),
 })
 
 export const ListTransactionsInputSchema = z.object({ statementId: z.uuid() })
 
+// Excluir extrato (DELETE /bank-statements/:id — core-api#558). Só o id; sem body.
+export const DeleteStatementInputSchema = z.object({ statementId: z.uuid() })
+
 export const GetCedenteAccountInputSchema = z.object({ id: z.uuid() })
+// Encerrar conta-cedente (POST /cedente-accounts/:id/close) — só o id; sem body.
+export const CloseCedenteAccountInputSchema = z.object({ id: z.uuid() })
+// Editar conta-cedente (PATCH /cedente-accounts/:id) — campos editáveis opcionais (CNPJ/saldo são imutáveis).
+export const EditCedenteAccountInputSchema = z.object({
+  id: z.uuid(),
+  bankCode: z.string().trim().min(1).max(10).optional(),
+  bankName: z.string().trim().min(1).max(120).optional(),
+  type: z.enum(['Corrente', 'Poupanca', 'Investimento', 'Cartao', 'Outro']).optional(),
+  typeLabel: z.string().trim().min(1).max(120).optional(),
+  agency: z.string().trim().min(1).max(10).optional(),
+  accountNumber: z.string().trim().min(1).max(20).optional(),
+  accountDigit: z.string().trim().max(2).optional(),
+  nickname: z.string().trim().min(1).max(120).optional(),
+})
 
 // #205: extrato por período. `from`/`to` date-only (YYYY-MM-DD); filter opcional.
 export const GetAccountStatementInputSchema = z.object({
@@ -62,6 +84,13 @@ export const GetTransactionReconciliationInputSchema = z.object({ transactionId:
 
 export const RejectSuggestionInputSchema = z.object({ transactionId: z.uuid(), payableId: z.uuid() })
 
+// US2 (#269): contrapartidas de transferência entre contas.
+export const GetCounterpartSuggestionsInputSchema = z.object({ transactionId: z.uuid() })
+export const ConfirmCounterpartInputSchema = z.object({
+  transactionId: z.uuid(),
+  counterpartId: z.uuid(),
+})
+
 const DifferenceInputSchema = z.object({
   valueCents: z.int(), // pode ser negativo (ex.: Discount)
   treatment: z.enum(DIFFERENCE_TREATMENTS),
@@ -83,12 +112,21 @@ export const UndoReconciliationInputSchema = z.object({
 const ManualEntryTemplateSchema = z.object({
   type: z.enum(MANUAL_ENTRY_TYPES),
   supplierRef: z.uuid().optional(),
+  // #502/S2: plano + subcategoria (folha) no título manual — aditivos, coerentes com o documento (S1).
+  budgetPlanRef: z.uuid().optional(),
   categoryRef: z.uuid().optional(),
+  subcategoryRef: z.uuid().optional(),
   costCenterRef: z.uuid().optional(),
   programRef: z.uuid().optional(),
   description: z.string().trim().max(500).optional(),
   destinationAccount: z.uuid().optional(),
   productLabel: z.string().trim().min(1).max(120).optional(), // #143: produto da Aplicação/Resgate
+  // #370: campos de documento (opcionais; aplicabilidade por tipo é do front — só Pagamento/Recebimento).
+  // `documentValueCents` omitido → o backend usa o valor da transação conciliada.
+  documentNumber: z.string().trim().min(1).max(60).optional(),
+  documentType: z.enum(DOCUMENT_TYPES).optional(),
+  issueDate: DateSchema.optional(), // YYYY-MM-DD
+  documentValueCents: z.string().trim().regex(/^\d+$/).optional(),
 })
 
 export const ManualEntryInputSchema = ManualEntryTemplateSchema.extend({ transactionId: z.uuid() })
@@ -108,8 +146,11 @@ export const ReopenPeriodInputSchema = z.object({ periodId: z.uuid() }) // #203
 
 export const ListReconciliationPeriodsInputSchema = z.object({ debitAccountRef: z.uuid() })
 
+// #649: conta + intervalo (sem periodId). O core-api valida `z.iso.date()` no mesmo formato.
 export const ExportReconciliationInputSchema = z.object({
-  periodId: z.uuid(),
+  debitAccountRef: z.uuid(),
+  periodStart: z.iso.date(),
+  periodEnd: z.iso.date(),
   format: z.enum(['ofx', 'csv', 'csv-nibo']),
 })
 
@@ -127,6 +168,14 @@ const _g_getTxRecon: AssertEqual<
   R.GetTransactionReconciliationInput
 > = true
 const _g_reject: AssertEqual<z.infer<typeof RejectSuggestionInputSchema>, R.RejectSuggestionInput> = true
+const _g_counterpartSugg: AssertEqual<
+  z.infer<typeof GetCounterpartSuggestionsInputSchema>,
+  R.GetCounterpartSuggestionsInput
+> = true
+const _g_confirmCounterpart: AssertEqual<
+  z.infer<typeof ConfirmCounterpartInputSchema>,
+  R.ConfirmCounterpartInput
+> = true
 const _g_recon: AssertEqual<
   z.infer<typeof CreateReconciliationInputSchema>,
   R.CreateReconciliationInput
@@ -159,6 +208,8 @@ void _g_sugg
 void _g_stmtSugg
 void _g_getTxRecon
 void _g_reject
+void _g_counterpartSugg
+void _g_confirmCounterpart
 void _g_recon
 void _g_undo
 void _g_manual

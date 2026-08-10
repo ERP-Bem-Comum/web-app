@@ -3,7 +3,7 @@
  * destaque de campos obrigatórios e checklist do aside.
  */
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { render, screen, cleanup } from '@testing-library/react'
+import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 
 import { ContractForm } from '#modules/contracts/client/contract-create/components/contract-form.component.tsx'
 import type { ContractFormState } from '#modules/contracts/client/contract-create/components/contract-form.controller.ts'
@@ -30,6 +30,9 @@ const baseState = (): ContractFormState => ({
   budgetPlanId: null,
   categorizacao: null,
   centroDeCusto: null,
+  costCenterRef: null,
+  categoryRef: null,
+  subcategoryRef: null,
   email: '',
   telephone: '',
   observations: '',
@@ -74,6 +77,14 @@ const baseProps = (over: Record<string, unknown> = {}) => ({
   documentUploaded: false,
   currentYear: 2026,
   programOptions: [],
+  costCenterOptions: [],
+  categoryOptions: [],
+  subcategoryOptions: [],
+  budgetPlanOptions: [],
+  onSelectPlan: vi.fn(),
+  onSelectCostCenter: vi.fn(),
+  onSelectCategory: vi.fn(),
+  onSelectSubcategory: vi.fn(),
   ...over,
 })
 
@@ -108,7 +119,7 @@ describe('ContractForm', () => {
     expect(screen.getByText('Valor original informado')).toBeTruthy()
     expect(screen.getByText('Início e fim da vigência')).toBeTruthy()
     expect(screen.getByText('Programa e plano orçamentário')).toBeTruthy()
-    expect(screen.getByText('Categorização preenchida')).toBeTruthy()
+    expect(screen.getByText('Categoria preenchida')).toBeTruthy()
     expect(screen.getByText('Centro de custo selecionado')).toBeTruthy()
     expect(screen.getByText('Documento principal anexado')).toBeTruthy()
   })
@@ -124,5 +135,48 @@ describe('ContractForm', () => {
     const btn = screen.getByRole('button', { name: /salvar/i })
     btn.click()
     expect(onOpenModal).toHaveBeenCalled()
+  })
+
+  // #502/S3: cascata da árvore do plano no contrato.
+  it('Centro de custo fica DESABILITADO enquanto não há plano selecionado', () => {
+    render(<ContractForm {...baseProps()} />)
+    const centro = screen.getByDisplayValue('Escolha o plano primeiro') as HTMLSelectElement
+    expect(centro.hasAttribute('disabled')).toBe(true)
+  })
+
+  it('com plano + opções da árvore, o Centro habilita e selecionar dispara onSelectCostCenter(ref, nome)', () => {
+    const onSelectCostCenter = vi.fn()
+    const state = { ...baseState(), budgetPlanId: 'p-1' }
+    render(
+      <ContractForm
+        {...baseProps({
+          state,
+          costCenterOptions: [{ value: 'cc-luz', label: 'Luz' }],
+          onSelectCostCenter,
+        })}
+      />,
+    )
+    const centro = screen.getByRole('option', { name: 'Luz' }).parentElement as HTMLSelectElement
+    expect(centro.hasAttribute('disabled')).toBe(false)
+    fireEvent.change(centro, { target: { value: 'cc-luz' } })
+    expect(onSelectCostCenter).toHaveBeenCalledWith('cc-luz', 'Luz')
+  })
+
+  it('Subcategoria REAL (não mais placeholder morto): habilita com categoria e dispara onSelectSubcategory', () => {
+    const onSelectSubcategory = vi.fn()
+    const state = { ...baseState(), budgetPlanId: 'p-1', costCenterRef: 'cc-luz', categoryRef: 'cat-noite' }
+    render(
+      <ContractForm
+        {...baseProps({
+          state,
+          subcategoryOptions: [{ value: 'sub-dia', label: 'Dia' }],
+          onSelectSubcategory,
+        })}
+      />,
+    )
+    const sub = screen.getByRole('option', { name: 'Dia' }).parentElement as HTMLSelectElement
+    expect(sub.hasAttribute('disabled')).toBe(false)
+    fireEvent.change(sub, { target: { value: 'sub-dia' } })
+    expect(onSelectSubcategory).toHaveBeenCalledWith('sub-dia')
   })
 })

@@ -1,10 +1,14 @@
 import type { ReactNode } from 'react'
 
+import { createTranslator } from '#shared/i18n/index.ts'
+import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import {
   useActFormController,
   type ActFormValues,
 } from '#modules/partners/client/act-create/components/act-form.controller.ts'
 import { ActForm } from '#modules/partners/client/act-create/components/act-form.component.tsx'
+
+const t = createTranslator(ptBR)
 
 export type ActEditFormProps = Readonly<{
   initial: ActFormValues
@@ -12,6 +16,7 @@ export type ActEditFormProps = Readonly<{
   errorTag: string | null
   onSubmit: (values: ActFormValues) => void
   onCancel: () => void
+  onBack: () => void
 }>
 
 /**
@@ -26,6 +31,8 @@ export function ActEditForm(props: ActEditFormProps): ReactNode {
       running={props.running}
       errorTag={props.errorTag}
       onCancel={props.onCancel}
+      onBack={props.onBack}
+      title={t('partners.acts.edit.title')}
     />
   )
 }

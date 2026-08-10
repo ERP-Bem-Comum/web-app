@@ -8,11 +8,14 @@ import { ok, err, type Result } from '#shared/primitives/result.ts'
 import type { HttpError } from '#shared/http/http-error.types.ts'
 import { parseErrorEnvelope } from '#shared/http/error-envelope.ts'
 import type { ReconciliationError } from '#modules/financial/server/domain/errors/reconciliation.errors.ts'
+import type { PayableBatchEnrichment } from './reconciliation-enrichment.ts'
 import type {
   AccountStatementPeriod,
   BankStatementImport,
   BatchResult,
   CedenteAccount,
+  ConfirmCounterpartResult,
+  CounterpartSuggestion,
   CriterionKey,
   CriterionOutcome,
   CriterionResult,
@@ -43,9 +46,12 @@ import {
   CoreApiCedenteAccountSchema,
   CoreApiCedenteAccountsSchema,
   type CoreApiCedenteAccount,
+  CoreApiCounterpartConfirmedSchema,
+  CoreApiCounterpartSuggestionsSchema,
   CoreApiImportSchema,
   CoreApiManualEntrySchema,
   CoreApiPaidPayablesSchema,
+  CoreApiPayablesBatchSchema,
   CoreApiPeriodClosedSchema,
   CoreApiPeriodReopenedSchema,
   CoreApiReconciliationCreatedSchema,
@@ -64,6 +70,10 @@ const SLUG_TO_ERROR: Partial<Record<string, ReconciliationError>> = {
   'empty-content': 'import-empty-content',
   'malformed-statement': 'import-malformed',
   'empty-statement': 'import-empty-statement',
+  // Exclusão do extrato (core-api#558): guarda de conciliadas (409). `bank-statement-not-found` cai no 404
+  // genérico (not-found); `period-closed` reusa o slug já mapeado abaixo.
+  'statement-has-reconciled-transactions': 'statement-has-reconciled-transactions',
+  'bank-statement-not-found': 'not-found',
   'period-closed': 'period-closed',
   'period-has-pending-transactions': 'period-has-pending',
   'invalid-period-range': 'invalid-period-range',
@@ -75,6 +85,11 @@ const SLUG_TO_ERROR: Partial<Record<string, ReconciliationError>> = {
   'title-not-paid': 'title-not-paid',
   'empty-reconciliation': 'empty-reconciliation',
   'reconciliation-already-undone': 'reconciliation-already-undone',
+  // Contrapartida (US2 do #269) — o core-api esconde o slug; listados p/ forward-compat (status fallback cobre).
+  'counterpart-not-found': 'counterpart-not-found',
+  'counterpart-not-pending': 'counterpart-not-pending',
+  'counterpart-account-mismatch': 'counterpart-account-mismatch',
+  'counterpart-value-mismatch': 'counterpart-value-mismatch',
   'unsupported-export-format': 'export-unsupported-format',
   unauthorized: 'unauthorized',
   forbidden: 'forbidden',
@@ -197,6 +212,7 @@ export const paidPayablesToModel = (raw: unknown): Result<readonly PaidPayable[]
     documentId: p.documentId,
     valueCents: p.valueCents,
     dueDate: p.dueDate,
+    issueDate: p.issueDate ?? null, // core go-live já devolve; ausente → null (filtro Período por Emissão, 056)
     paidAt: p.paidAt ?? null, // ausente na rota hoje → null; acende quando o backend expor (core-api#265)
     paymentMethod: p.paymentMethod,
     supplierName: p.supplierName,
@@ -292,7 +308,7 @@ export const accountStatementPeriodToModel = (
   const movements: readonly StatementTransaction[] = d.days.flatMap((day) =>
     day.lines.map((ln) => ({
       id: ln.id,
-      fitid: '',
+      fitid: ln.fitid, // '' até o read-model do período projetar o fitid (core-api) — ver issue
       date: ln.date.slice(0, 10),
       movement: mapMovement(ln.movement),
       entryType: ln.entryType,
@@ -331,6 +347,9 @@ export const suggestionsToModel = (raw: unknown): Result<readonly MatchSuggestio
     band: mapBand(s.band),
     criteria: { ...s.criteria },
     criteriaBreakdown: toBreakdown(s.criteriaBreakdown),
+    // core-api#172: nativamente ausentes → null aqui; o cliente enriquece via join (payableId→título→fornecedor).
+    supplierName: s.supplierName ?? null,
+    documentNumber: s.documentNumber ?? null,
   }))
   return ok(items)
 }
@@ -348,6 +367,31 @@ export const statementSuggestionsToModel = (
   return ok(items)
 }
 
+// US2 (#269): contrapartidas candidatas. `expectedDate` repassado cru (ISO); a view-model formata (a UI é
+// que decide date-only). Sem enums a traduzir — só o passthrough tipado.
+export const counterpartSuggestionsToModel = (
+  raw: unknown,
+): Result<readonly CounterpartSuggestion[], ReconciliationError> => {
+  const parsed = CoreApiCounterpartSuggestionsSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  const items: readonly CounterpartSuggestion[] = parsed.data.suggestions.map((s) => ({
+    counterpartId: s.counterpartId,
+    originAccountRef: s.originAccountRef,
+    valueCents: s.valueCents,
+    expectedDate: s.expectedDate,
+    score: s.score,
+  }))
+  return ok(items)
+}
+
+export const counterpartConfirmedToModel = (
+  raw: unknown,
+): Result<ConfirmCounterpartResult, ReconciliationError> => {
+  const parsed = CoreApiCounterpartConfirmedSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  return ok({ reconciliationId: parsed.data.reconciliationId, counterpartId: parsed.data.counterpartId })
+}
+
 export const transactionReconciliationToModel = (
   raw: unknown,
 ): Result<TransactionReconciliation, ReconciliationError> => {
@@ -360,10 +404,41 @@ export const transactionReconciliationToModel = (
     type: mapTxReconType(d.type),
     status: d.status === 'Undone' ? 'Undone' : 'Active',
     reconciledBy: d.reconciledBy,
+    reconciledByName: d.reconciledByName,
     reconciledAt: d.reconciledAt,
     differenceCents: d.differenceCents,
-    items: d.items.map((i) => ({ payableId: i.payableId, reconciledValueCents: i.reconciledValueCents })),
+    category: d.category, // #554/#555: categoria do lançamento manual/título (null = sem categoria)
+    // documentNumber/supplierName/dueDate saem null aqui — o passo de enriquecimento (INTERINO #172)
+    // preenche via join por payableId no cliente (core-api-reconciliation.ts).
+    items: d.items.map((i) => ({
+      payableId: i.payableId,
+      reconciledValueCents: i.reconciledValueCents,
+      documentNumber: null,
+      supplierName: null,
+      dueDate: null,
+      retentionType: null, // enriquecido via maps.titles (#172)
+    })),
   })
+}
+
+// #357 (ADR-0049): POST /payables:batch → mapa payableId(ref) → enriquecimento. PURO (testável em
+// node:test). `dueDate` normalizado p/ date-only (o core envia ISO; a view formata date-only). drift no
+// envelope → err('server') (best-effort no chamador, que degrada p/ mapa vazio → campos null no modal).
+export const payablesBatchToModel = (
+  raw: unknown,
+): Result<ReadonlyMap<string, PayableBatchEnrichment>, ReconciliationError> => {
+  const parsed = CoreApiPayablesBatchSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  const map = new Map<string, PayableBatchEnrichment>()
+  for (const it of parsed.data.items) {
+    map.set(it.ref, {
+      documentNumber: it.documentNumber,
+      supplierName: it.supplierName,
+      dueDate: it.dueDate.slice(0, 10),
+      documentType: it.documentType,
+    })
+  }
+  return ok(map)
 }
 
 export const reconciliationCreatedToModel = (
@@ -453,6 +528,7 @@ export const categoriesToModel = (
       name: c.name,
       group: mapCategoryGroup(c.group),
       parentId: c.parentId,
+      costCenterId: c.costCenterId,
     })),
   )
 }

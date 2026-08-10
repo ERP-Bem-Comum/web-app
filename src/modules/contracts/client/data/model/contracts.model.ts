@@ -13,7 +13,13 @@ export type ContractModel = z.infer<typeof ContractModelSchema>
 export const ContractTypeSchema = z.enum(['Supplier', 'Financier', 'Collaborator', 'ACT'])
 export type ContractType = z.infer<typeof ContractTypeSchema>
 
-export const ContractStatusSchema = z.enum(['Pendente', 'Em Andamento', 'Finalizado', 'Distrato', 'Cancelado'])
+export const ContractStatusSchema = z.enum([
+  'Pendente',
+  'Em Andamento',
+  'Finalizado',
+  'Distrato',
+  'Cancelado',
+])
 export type ContractStatus = z.infer<typeof ContractStatusSchema>
 
 // Gating do cancelamento (§1.7, helper puro): só contratos Pendente podem ser cancelados (soft → Cancelado).
@@ -120,10 +126,17 @@ export const ContractSchema = z.object({
   budgetPlanId: z.uuid().optional(),
   // budgetPlan (bloco) ainda não é retornado pelo #32 (só `budgetPlanId`) → fica opcional/undefined
   // até o backend compor o bloco (follow-up). Mantido para não quebrar consumidores do detalhe.
-  budgetPlan: z.object({ id: z.uuid(), scenarioName: z.string().trim(), year: z.number(), version: z.number() }).optional(),
-  // categorizacao/centroDeCusto = string livre (o backend persiste texto — ADR-0013).
+  budgetPlan: z
+    .object({ id: z.uuid(), scenarioName: z.string().trim(), year: z.number(), version: z.number() })
+    .optional(),
+  // categorizacao/centroDeCusto = string livre (nome exibível — o backend persiste texto, ADR-0013).
   categorizacao: z.string().trim().optional(),
   centroDeCusto: z.string().trim().optional(),
+  // #502/S3: refs da árvore do plano (Centro → Categoria → Subcategoria) — UUIDs opacos que LINKAM a
+  // taxonomia planejável (o texto acima é só o rótulo exibível). Habilita a herança contrato→documento por ref.
+  costCenterRef: z.uuid().optional(),
+  categoryRef: z.uuid().optional(),
+  subcategoryRef: z.uuid().optional(),
   observations: z.string().trim().optional(),
   email: z.email().optional(),
   telephone: z.string().trim().optional(),
@@ -169,6 +182,10 @@ export const CreateContractInputSchema = z.object({
   budgetPlanId: z.uuid().optional(),
   categorizacao: z.string().trim().optional(),
   centroDeCusto: z.string().trim().optional(),
+  // #502/S3: refs da árvore do plano (opacos) — nome exibível vai em categorizacao/centroDeCusto.
+  costCenterRef: z.uuid().optional(),
+  categoryRef: z.uuid().optional(),
+  subcategoryRef: z.uuid().optional(),
   observations: z.string().trim().optional(),
   email: z.email().optional(),
   telephone: z.string().trim().optional(),

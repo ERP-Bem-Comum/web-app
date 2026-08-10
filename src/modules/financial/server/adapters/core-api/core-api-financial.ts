@@ -4,7 +4,7 @@
  * tradução aos mappers PUROS (`financial.mappers.ts`) e o erro a `mapHttpError`. Espelha `core-api-users.ts`.
  */
 import { ok, err, isErr, type Result } from '#shared/primitives/result.ts'
-import { resultFetch } from '#external/core-api/result-fetch.ts'
+import { resultFetch, resultFetchBytes } from '#external/core-api/result-fetch.ts'
 import type { FinancialClient } from '#modules/financial/server/application/financial.use-cases.ts'
 import type { FinancialError } from '#modules/financial/server/domain/errors/financial.errors.ts'
 import type {
@@ -12,8 +12,21 @@ import type {
   ListDocumentsInput,
   ListPayableTitlesInput,
   PayableTitleListResponse,
+  PayableCountsInput,
+  PayableCounts,
+  RecentPayment,
 } from '#modules/financial/server/domain/document.io.ts'
-import { detailToModel, listToModel, payableTitlesToModel, mapHttpError } from './financial.mappers.ts'
+import {
+  detailToModel,
+  listToModel,
+  payableTitlesToModel,
+  payableCountsToModel,
+  recentPaymentsToModel,
+  dashboardCostCentersToModel,
+  dashboardNoContractSuppliersToModel,
+  timelineToModel,
+  mapHttpError,
+} from './financial.mappers.ts'
 
 // #201: status PT→EN completo (a listagem por título cobre os 7 status, não só os da Fatia 1).
 const STATUS_TO_BACKEND_FULL: Partial<Record<string, string>> = {
@@ -24,6 +37,16 @@ const STATUS_TO_BACKEND_FULL: Partial<Record<string, string>> = {
   Recusado: 'Refused',
   Pago: 'Paid',
   Conciliado: 'Reconciled',
+}
+
+// #536: filtros da contagem agregada (sem status/paginação — o backend devolve o breakdown completo).
+const buildCountsQuery = (input: PayableCountsInput): string => {
+  const p = new URLSearchParams()
+  if (input.type !== undefined) p.set('documentType', input.type)
+  if (input.supplierRef !== undefined) p.set('supplierRef', input.supplierRef)
+  if (input.dueFrom !== undefined) p.set('dueFrom', input.dueFrom)
+  if (input.dueTo !== undefined) p.set('dueTo', input.dueTo)
+  return p.toString()
 }
 
 const buildTitlesQuery = (input: ListPayableTitlesInput): string => {
@@ -74,13 +97,53 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
       if (isErr(r)) return err(mapHttpError(r.error))
       return payableTitlesToModel(r.value)
     },
+    // #536: contagem agregada por status (chips) — 1 request.
+    getPayableCounts: async (input, token): Promise<Result<PayableCounts, FinancialError>> => {
+      const r = await resultFetch<unknown>(`${baseUrl}/payable-titles/counts?${buildCountsQuery(input)}`, {
+        token,
+      })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      return payableCountsToModel(r.value)
+    },
+    getRecentPayments: async (token): Promise<Result<readonly RecentPayment[], FinancialError>> => {
+      const r = await resultFetch<unknown>(`${baseUrl}/dashboard/recent-payments`, { token })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      return recentPaymentsToModel(r.value)
+    },
+    // #241/#237: KPI "Despesas por Centro de Custo" (cost-centers + variação M-1 vs M-2). Gate reference:read.
+    getDashboardCostCenters: async (token) => {
+      const r = await resultFetch<unknown>(`${baseUrl}/dashboard/cost-centers`, { token })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      return dashboardCostCentersToModel(r.value)
+    },
+    // #242: widget "Fornecedores sem Contrato" (top-5 por total pago). Gate reference:read.
+    getDashboardNoContractSuppliers: async (token) => {
+      const r = await resultFetch<unknown>(`${baseUrl}/dashboard/no-contract-suppliers`, { token })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      return dashboardNoContractSuppliersToModel(r.value)
+    },
     getById: async (id, token) => {
       const r = await resultFetch<unknown>(`${docs}/${id}`, { token })
       if (isErr(r)) return err(mapHttpError(r.error))
       return detailToModel(r.value)
     },
+    getTimeline: async (id, token) => {
+      const r = await resultFetch<unknown>(`${docs}/${id}/timeline`, { token })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      return timelineToModel(r.value)
+    },
+    getSourceFile: async (id, token) => {
+      // #568: comprovante-fonte INLINE (bytes) COM o token — nunca alcançável pelo browser (CA4). O client
+      // recebe base64 + mimeType e monta o blob/File. Erro (404 sem anexo, 403 RBAC) → FinancialError.
+      const r = await resultFetchBytes(`${docs}/${id}/source-file`, { token })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      return ok({ base64: r.value.base64, mimeType: r.value.contentType })
+    },
     create: async (input, token) => {
-      const r = await resultFetch<unknown>(docs, {
+      // #577: com comprovante → rota atômica dedicada (`/with-source-file` cria o doc JÁ com o anexo, Draft
+      // OU Open); sem comprovante → create normal. O corpo é o mesmo (o `sourceFile` viaja no spread).
+      const url = input.sourceFile !== undefined ? `${docs}/with-source-file` : docs
+      const r = await resultFetch<unknown>(url, {
         method: 'POST',
         body: { asDraft: false, ...input }, // input.asDraft (rascunho) tem precedência
         token,
@@ -98,6 +161,16 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
       const r = await resultFetch<unknown>(`${docs}/${input.id}/approve`, {
         method: 'POST',
         body: { version: input.version },
+        token,
+      })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      return detailToModel(r.value)
+    },
+    // #270: vencimento de UM título isolado (não propaga pai↔filhos). Devolve o documento atualizado.
+    updatePayableDueDate: async (input, token) => {
+      const r = await resultFetch<unknown>(`${docs}/${input.documentId}/payables/${input.payableId}`, {
+        method: 'PATCH',
+        body: { version: input.version, dueDate: input.dueDate },
         token,
       })
       if (isErr(r)) return err(mapHttpError(r.error))

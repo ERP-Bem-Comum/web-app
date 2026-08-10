@@ -1,0 +1,133 @@
+/**
+ * Public API do módulo Plano Orçamentário — ÚNICO ponto pelo qual rotas/outros módulos consomem (ADR-0004).
+ * Fatia atual (feature 041, fundação pura): enums, tipos de lançamento e o preview de cálculo + derivações.
+ * Server functions/pages entram conforme os endpoints do core-api (#113) forem criados.
+ */
+export {
+  BUDGET_PLAN_STATUS,
+  RELEASE_TYPE,
+  SUB_CATEGORY_TYPE,
+  COST_CENTER_TYPE,
+  EDUCATION,
+  EMPLOYMENT_RELATIONSHIP,
+  BudgetPlanStatusSchema,
+  ReleaseTypeSchema,
+  SubCategoryTypeSchema,
+  CostCenterTypeSchema,
+} from '#modules/budget-plans/client/data/model/enums.ts'
+export type {
+  BudgetPlanStatus,
+  ReleaseType,
+  SubCategoryType,
+  CostCenterType,
+  Education,
+  EmploymentRelationship,
+} from '#modules/budget-plans/client/data/model/enums.ts'
+
+export type {
+  BudgetResultInput,
+  PersonalExpensesInput,
+  IpcaInput,
+  CaedInput,
+  LogisticsExpensesInput,
+} from '#modules/budget-plans/client/domain/calc/types.ts'
+
+export {
+  previewBudgetResult,
+  previewPersonalExpenses,
+  previewIpca,
+  previewCaed,
+  previewLogisticsExpenses,
+} from '#modules/budget-plans/client/domain/calc/preview.ts'
+
+export {
+  deriveEditable,
+  sumMonths,
+  formatCentsBRL,
+  EDITABLE_STATUSES,
+} from '#modules/budget-plans/client/domain/calc/derive.ts'
+
+export {
+  BudgetPlanNodeSchema,
+  BudgetPlanListSchema,
+  BudgetPlanListParamsSchema,
+  CreateBudgetPlanInputSchema,
+  NetworkKindSchema,
+} from '#modules/budget-plans/client/data/model/budget-plan.model.ts'
+export type {
+  BudgetPlanNode,
+  BudgetPlanList,
+  BudgetPlanListParams,
+  CreateBudgetPlanInput,
+  NetworkKind,
+} from '#modules/budget-plans/client/data/model/budget-plan.model.ts'
+
+export {
+  toPlanRow,
+  deriveStatusView,
+  derivePlanActions,
+  derivePartnersLabel,
+  derivePlanDisplayName,
+  deriveVersionLabel,
+  PLAN_ACTIONS,
+} from '#modules/budget-plans/client/planejamento/planejamento-list.view-model.ts'
+export type {
+  PlanRow,
+  PlanAction,
+  StatusView,
+  StatusTone,
+} from '#modules/budget-plans/client/planejamento/planejamento-list.view-model.ts'
+
+export {
+  PlanDetailSchema,
+  CostCenterConsolidatedSchema,
+  MonthlyCentsSchema,
+} from '#modules/budget-plans/client/data/model/plan-detail.model.ts'
+export type {
+  PlanDetail,
+  CostCenterConsolidated,
+  CategoryConsolidated,
+  SubCategoryConsolidated,
+} from '#modules/budget-plans/client/data/model/plan-detail.model.ts'
+
+export {
+  buildMonthlyMatrix,
+  buildMonthlyMatrixFrom,
+  buildNetworkMatrix,
+  derivePlanDetailHeader,
+  MONTH_HEADERS,
+} from '#modules/budget-plans/client/planejamento/detalhe/plan-detail.view-model.ts'
+export type {
+  MatrixView,
+  MatrixRow,
+  Semester,
+  PlanDetailHeader,
+} from '#modules/budget-plans/client/planejamento/detalhe/plan-detail.view-model.ts'
+
+export { ConsolidatedAbcSchema } from '#modules/budget-plans/client/data/model/consolidado-abc.model.ts'
+export type { ConsolidatedAbc } from '#modules/budget-plans/client/data/model/consolidado-abc.model.ts'
+
+export {
+  deriveConsolidadoHeader,
+  hasConsolidadoResult,
+} from '#modules/budget-plans/client/planejamento/consolidado/consolidado-abc.view-model.ts'
+export type { ConsolidadoAbcHeader } from '#modules/budget-plans/client/planejamento/consolidado/consolidado-abc.view-model.ts'
+
+export {
+  validateCreatePlan,
+  createErrorTag,
+  createPlanInitialForm,
+  IMPORT_YEARS,
+} from '#modules/budget-plans/client/planejamento/create-plan.view-model.ts'
+export type {
+  CreatePlanForm,
+  CreatePlanError,
+} from '#modules/budget-plans/client/planejamento/create-plan.view-model.ts'
+
+// ── Lista de planos orçamentários (server fn) — consumida cross-módulo p/ o dropdown "Plano Orçamentário"
+// (Financeiro/Lançar Documento e Contratos/Novo Contrato). Acende com core-api#374 (driver + dado). ──
+export { listBudgetPlansFn } from '#modules/budget-plans/server/adapters/server-fns/list-budget-plans.query.fn.ts'
+// Detalhe do plano COM a árvore de custos (Centro → Categoria → Subcategoria). Consumido cross-módulo pela
+// categorização do financeiro (ADR-0051: a árvore do PLANO é a taxonomia planejável). Só via public-api (§I).
+export { getBudgetPlanDetailFn } from '#modules/budget-plans/server/adapters/server-fns/get-budget-plan-detail.query.fn.ts'
+export type { GetBudgetPlanDetailFnResult } from '#modules/budget-plans/server/adapters/server-fns/get-budget-plan-detail.query.fn.ts'

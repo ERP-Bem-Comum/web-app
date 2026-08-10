@@ -20,11 +20,15 @@ export interface SideBarProps {
 }
 
 export function SideBar({ collapsed, onToggle, menuItems, isItemActive }: SideBarProps): ReactNode {
-  const accordion = useSideBarAccordionController({ 'Gestão de Contratos': true })
+  // Nenhuma seção começa aberta (o acordeão inicia recolhido; o usuário abre ao clicar).
+  const accordion = useSideBarAccordionController()
   const submenuIdBase = useId()
 
   return (
-    <nav aria-label="Navegação principal" className={`${s.nav} ${collapsed ? s.navWidth.collapsed : s.navWidth.expanded}`}>
+    <nav
+      aria-label="Navegação principal"
+      className={`${s.nav} ${collapsed ? s.navWidth.collapsed : s.navWidth.expanded}`}
+    >
       <button
         type="button"
         className={s.toggle}
@@ -41,7 +45,9 @@ export function SideBar({ collapsed, onToggle, menuItems, isItemActive }: SideBa
           const subItems = section.subItems ?? []
           const hasSub = subItems.length > 0
           const active =
-            section.to !== undefined ? isItemActive(section.to) : hasSub && subItems.some((sub) => isItemActive(sub.to))
+            section.to !== undefined
+              ? isItemActive(section.to)
+              : hasSub && subItems.some((sub) => isItemActive(sub.to))
           const submenuId = `${submenuIdBase}-${String(index)}`
 
           const content = (
@@ -100,7 +106,7 @@ export function SideBar({ collapsed, onToggle, menuItems, isItemActive }: SideBa
                         data-active={subActive ? true : undefined}
                         aria-current={subActive ? 'page' : undefined}
                       >
-                        {sub.label}
+                        <span className={s.subItemLabel}>{sub.label}</span>
                       </Link>
                     )
                   })}

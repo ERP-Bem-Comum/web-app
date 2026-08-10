@@ -1,0 +1,208 @@
+/**
+ * DashboardContent — view BURRA (§XI) do corpo do Dashboard "Resumo Mensal". Recebe o `DashboardStatistics`
+ * (server-state composto pelo BFF — 052) + o `RecentPaymentsView` (042) por PROPS e só apresenta as 2 linhas:
+ *  - linha 1: 4 MetricCard (do DTO);
+ *  - linha 2 (2 colunas): ESQUERDA "Visão geral" (LineChart do DTO) + RecentPaymentsWidget; DIREITA donut
+ *    por centro de custo (do DTO) + fornecedores sem contrato (barras derivadas puras do DTO).
+ * Deriva as props via funções PURAS do view-model (nada de fetch aqui). i18n PT via `createTranslator`.
+ */
+import type { ReactNode } from 'react'
+
+import { createTranslator } from '#shared/i18n/index.ts'
+import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
+
+import type { RecentPaymentsView } from '../recent-payments.binding.ts'
+import type { DashboardRealizedView, RealizedStatus } from '../dashboard-realized.binding.ts'
+import { RecentPaymentsWidget } from '../components/recent-payments-widget.component.tsx'
+import { MetricCard } from '../components/metric-card.component.tsx'
+import { LineChart } from '../components/line-chart.component.tsx'
+import { PlanSelector } from '../components/plan-selector.component.tsx'
+import { DonutChart } from '../components/donut-chart.component.tsx'
+import {
+  SuppliersWithoutContractCard,
+  type SupplierBar,
+} from '../components/suppliers-without-contract-card.component.tsx'
+import {
+  toMetricCards,
+  toDonutSlices,
+  deriveSupplierComplianceBars,
+  formatSupplierBRL,
+  formatSupplierPercent,
+  type DashboardStatistics,
+} from '../dashboard-summary.view-model.ts'
+import {
+  metricsRow,
+  contentRow,
+  overviewCard,
+  overviewHeader,
+  overviewActions,
+  overviewTitles,
+  overviewTitle,
+  overviewLegend,
+  legendForecast,
+  legendRealized,
+  legendSep,
+  seeAllLink,
+  stateMessage,
+  costCenterCard,
+  costCenterTitle,
+  leftColumn,
+  rightColumn,
+} from './dashboard.css.ts'
+
+// Estado do gráfico Realizado × Previsto (P3) → chave i18n da mensagem (loading reusa a do Dashboard).
+// `ready` nunca renderiza mensagem (mostra o gráfico); entra só p/ o índice ser total (type-safe).
+const REALIZED_STATE_KEY: Readonly<Record<RealizedStatus, string>> = {
+  loading: 'dashboard.state.loading',
+  empty: 'dashboard.realized.empty',
+  error: 'dashboard.realized.error',
+  forbidden: 'dashboard.realized.forbidden',
+  ready: 'dashboard.state.loading',
+}
+
+const t = createTranslator(ptBR)
+
+// Rótulos dos meses (Jan..Dez) — eixo X do gráfico.
+const MONTH_LABELS = [
+  'Jan',
+  'Fev',
+  'Mar',
+  'Abr',
+  'Mai',
+  'Jun',
+  'Jul',
+  'Ago',
+  'Set',
+  'Out',
+  'Nov',
+  'Dez',
+] as const
+
+export type DashboardContentProps = Readonly<{
+  data: DashboardStatistics
+  recent: RecentPaymentsView
+  /** Gráfico Realizado × Previsto (P3): série + seletor de plano (query própria). */
+  realized: DashboardRealizedView
+  /** Mapa `supplierRef → nome` (agregador de parceiros) — resolve o nome do fornecedor quando o DTO traz "—". */
+  supplierNames: ReadonlyMap<string, string>
+  /** Anima a entrada das barras de compliance (largura cresce quando true). */
+  animate: boolean
+  /** "Ver tudo" da "Visão geral" (Previsto × Realizado) → relatório Realizado × Planejado. */
+  onSeeAllOverview: () => void
+  /** "Ver tudo" de "Fornecedores sem contrato" → relatório Fornecedores sem Contrato. */
+  onSeeAllSuppliers: () => void
+}>
+
+export function DashboardContent(props: DashboardContentProps): ReactNode {
+  const { data, recent, realized } = props
+
+  const metricCards = toMetricCards(data)
+  const donutSlices = toDonutSlices(data)
+
+  // Opções do <select> com o rótulo já resolvido (o "Todos somados" é chave i18n; planos vêm prontos).
+  const selectorOptions = realized.options.map((o) => ({
+    value: o.value,
+    label: o.translate ? t(o.label) : o.label,
+  }))
+
+  // Barras de compliance: derivadas (puro) do DTO e mapeadas p/ a view burra (textos formatados). Preview: até 6.
+  const supplierBars: readonly SupplierBar[] = deriveSupplierComplianceBars(
+    data.suppliersWithoutContract,
+    data.dispenseLimitCents,
+  ).map(
+    (b): SupplierBar => ({
+      id: b.id,
+      // Prefere o nome do agregador (resolve o "—" do DTO quando o read-model não nomeou — #612); cai no do BFF.
+      name: props.supplierNames.get(b.id) ?? b.name,
+      utilizadoPct: b.utilizadoPct,
+      status: b.status,
+      percentLabel: formatSupplierPercent(b.utilizadoPct),
+      valueLabel: formatSupplierBRL(b.valorTotalCents),
+    }),
+  )
+
+  return (
+    <>
+      {/* Linha 1 — 4 cards de métrica */}
+      <div className={metricsRow}>
+        {metricCards.map((m) => (
+          <MetricCard
+            key={m.id}
+            label={t(m.labelKey)}
+            value={m.value}
+            trendPercent={m.trendPercent}
+            trendLabel={t(m.trendLabelKey)}
+            accent={m.accent}
+            icon={m.icon}
+          />
+        ))}
+      </div>
+
+      {/* Linha 2 — esquerda (2/3): "Visão geral" + "Últimos pagamentos"; direita (1/3): donut + fornecedores */}
+      <div className={contentRow}>
+        <div className={leftColumn}>
+          <section className={overviewCard} aria-label={t('dashboard.overview.title')}>
+            <div className={overviewHeader}>
+              <div className={overviewTitles}>
+                <h2 className={overviewTitle}>{t('dashboard.overview.title')}</h2>
+                {/* Legenda única (no topo): Previsto ciano × Realizado verde */}
+                <p className={overviewLegend}>
+                  <span className={legendForecast}>{t('dashboard.chart.series.forecast')}</span>
+                  <span className={legendSep}>×</span>
+                  <span className={legendRealized}>{t('dashboard.chart.series.realized')}</span>
+                </p>
+              </div>
+              <div className={overviewActions}>
+                {/* Seletor de plano (P3): "Todos somados" (padrão) + cada plano aprovado vigente. */}
+                <PlanSelector
+                  ariaLabel={t('dashboard.realized.selector-label')}
+                  value={realized.selectedValue}
+                  options={selectorOptions}
+                  onChange={realized.onSelect}
+                />
+                <button type="button" className={seeAllLink} onClick={props.onSeeAllOverview}>
+                  {t('dashboard.overview.see-all')}
+                </button>
+              </div>
+            </div>
+            {realized.status === 'ready' && realized.chart !== null ? (
+              <LineChart
+                series={realized.chart.series}
+                yMax={realized.chart.yMax}
+                yTicks={realized.chart.yTicks}
+                months={realized.chart.months}
+                monthLabels={MONTH_LABELS}
+                seriesLabel={(s) => t(s.labelKey)}
+              />
+            ) : (
+              <p className={stateMessage}>{t(REALIZED_STATE_KEY[realized.status])}</p>
+            )}
+          </section>
+
+          {/* "Últimos pagamentos realizados" (dados REAIS, 042) — embaixo do gráfico, como no legado */}
+          <RecentPaymentsWidget status={recent.status} rows={recent.rows} t={t} />
+        </div>
+
+        <div className={rightColumn}>
+          <section className={costCenterCard} aria-label={t('dashboard.cost-center.title')}>
+            <h2 className={costCenterTitle}>{t('dashboard.cost-center.title')}</h2>
+            <DonutChart
+              slices={donutSlices}
+              emptyLabel={t('dashboard.cost-center.empty')}
+              sliceLabel={(sl) => t(sl.labelKey)}
+            />
+          </section>
+
+          <SuppliersWithoutContractCard
+            title={t('dashboard.suppliers-no-contract.title')}
+            seeAllLabel={t('dashboard.suppliers-no-contract.see-all')}
+            emptyLabel={t('dashboard.suppliers-no-contract.empty')}
+            bars={supplierBars}
+            animate={props.animate}
+            onSeeAll={props.onSeeAllSuppliers}
+          />
+        </div>
+      </div>
+    </>
+  )
+}

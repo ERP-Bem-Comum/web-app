@@ -15,6 +15,9 @@ export const authErrorTag = (e: AuthError): string => {
       return 'auth.error.connectivity'
     case 'rate-limited':
       return 'auth.error.rate-limited'
+    case 'reset-token-invalid':
+      // #038: link de redefinição inválido/expirado/usado (400). Mensagem única (não vaza o subcaso).
+      return 'auth.reset.error.link-invalid'
     // Erros que não fazem sentido no login (sessão/refresh/server) → mensagem genérica.
     // Switch exaustivo (sem default): AuthError ganhar variante quebra a compilação aqui.
     case 'refresh-not-found':

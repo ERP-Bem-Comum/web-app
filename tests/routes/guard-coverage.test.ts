@@ -16,7 +16,27 @@ const here = dirname(fileURLToPath(import.meta.url))
 const routesDir = join(here, '..', '..', 'src', 'routes')
 
 /** Rotas públicas permitidas FORA de `_authenticated/`. Mudou? Edite aqui conscientemente. */
-const PUBLIC_ROUTES: readonly string[] = ['index.tsx', 'login.tsx', 'health.tsx']
+const PUBLIC_ROUTES: readonly string[] = [
+  'index.tsx',
+  'login.tsx',
+  'health.tsx',
+  // Fluxo "Esqueci Minha Senha" (#037): rota pública por construção (usuário deslogado). Sem sessão;
+  // beforeLoad redireciona ao dashboard se já autenticado. Anti-enumeração garantida no BFF.
+  'recuperar-senha.tsx',
+  // Fluxo "Redefinir Senha" (#038): rota pública por construção — o usuário chega deslogado pelo link
+  // do e-mail (?token=...). Sem sessão; beforeLoad redireciona ao dashboard se já autenticado. O token
+  // só cruza a fronteira via a server fn (Zod + CSRF-origin); nada de sessão no browser.
+  'reset-password.tsx',
+  // Fluxo "Ativação de Conta" (#039): rota pública por construção — o convidado chega deslogado pelo
+  // link do e-mail de convite (?token=...). Mesma tela do reset (variant='activate'), mesmo server fn.
+  // Sem sessão; beforeLoad redireciona ao dashboard se já autenticado.
+  'activate.tsx',
+  // Fluxo "Autocadastro de Colaborador" (#040): rota pública por construção — o colaborador convidado
+  // chega deslogado pelo link do e-mail (?token=...) para preencher a 2ª fase (dados pessoais). Pode NÃO
+  // ter conta no sistema, então NÃO há redirect de sessão. O token só cruza a fronteira via a server fn
+  // (Zod + CSRF-origin); anti-enumeração (404) garantida no BFF; nada de sessão no browser.
+  'autocadastro.tsx',
+]
 
 /** Infra do router (não são rotas de conteúdo). */
 const ROUTER_INFRA: readonly string[] = ['__root.tsx']

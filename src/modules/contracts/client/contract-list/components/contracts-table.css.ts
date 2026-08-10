@@ -1,6 +1,7 @@
 import { style } from '@vanilla-extract/css'
 
 import { vars } from '#shared/ui/tokens/index.ts'
+import { brand } from '#shared/ui/brand/grid-brand.values.ts'
 
 export const container = style({
   flex: '0 0 auto',
@@ -8,10 +9,15 @@ export const container = style({
   minWidth: 0,
   overflow: 'auto',
   height: 'auto',
-  maxHeight: 'calc(100dvh - 15rem)',
-  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  // 19rem reserva o cabeçalho PRÓPRIO da página (pageHead ~4rem) + a barra de topo + a bottombar fixa,
+  // para o scroll (vertical e horizontal) ficar DENTRO da tabela e não escapar para a janela.
+  maxHeight: 'calc(100dvh - 19rem)',
+  // Borda um pouco mais clara que paperRule (clareada em direção ao paperWarm) — pedido da P.O.
+  border: `${vars.borderWidth.thin} solid color-mix(in srgb, ${vars.color.institutional.paperRule} 55%, ${vars.color.institutional.paperWarm})`,
   borderRadius: vars.radius.lg,
   background: vars.color.surface.default,
+  // Profundidade suave (sombra em camadas do kit de grid) — pedido da P.O. para a borda da tabela.
+  boxShadow: brand.shadow.cardDepth,
   selectors: {
     '&::-webkit-scrollbar': {
       width: '0.625rem',

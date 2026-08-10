@@ -6,33 +6,57 @@
 import { loadEnvOrThrow } from '#external/config/env.config.ts'
 import { coreApiBase } from '#external/core-api/api-base.ts'
 import { createCoreApiFinancialClient } from './core-api/core-api-financial.ts'
+import { createDashboardRealizedClient } from './core-api/core-api-dashboard-realized.ts'
+import { createGetDashboardAggregationsReal } from './dashboard-statistics.real-source.ts'
+import { createGetDashboardRealized } from '#modules/financial/server/application/dashboard-realized.use-cases.ts'
 import {
   createListDocuments,
   createListPayableTitles,
+  createGetPayableCounts,
   createGetDocument,
+  createGetDocumentSourceFile,
+  createGetDocumentTimeline,
   createCreateDocument,
   createAdjustDocument,
   createApproveDocument,
+  createUpdatePayableDueDate,
   createUndoApproval,
   createCancelDocument,
   createRegisterManualPayment,
+  createGetRecentPayments,
 } from '#modules/financial/server/application/financial.use-cases.ts'
+import { createGetDashboardStatistics } from '#modules/financial/server/application/dashboard.use-cases.ts'
 
 type FinancialServer = ReturnType<typeof build>
 
 const build = () => {
   const env = loadEnvOrThrow()
-  const client = createCoreApiFinancialClient(`${coreApiBase(env.CORE_API_URL, 'v2')}/financial`)
+  const base = coreApiBase(env.CORE_API_URL, 'v2')
+  const client = createCoreApiFinancialClient(`${base}/financial`)
+  // P3: gráfico Realizado × Previsto orquestra /reports/dashboard/realized + /budget-plans (base raiz).
+  const realizedClient = createDashboardRealizedClient(base)
   return {
     listDocuments: createListDocuments({ client }),
     listPayableTitles: createListPayableTitles({ client }),
+    getPayableCounts: createGetPayableCounts({ client }),
     getDocument: createGetDocument({ client }),
+    getDocumentSourceFile: createGetDocumentSourceFile({ client }),
+    getDocumentTimeline: createGetDocumentTimeline({ client }),
     createDocument: createCreateDocument({ client }),
     adjustDocument: createAdjustDocument({ client }),
     approveDocument: createApproveDocument({ client }),
+    updatePayableDueDate: createUpdatePayableDueDate({ client }),
     undoApproval: createUndoApproval({ client }),
     cancelDocument: createCancelDocument({ client }),
     registerManualPayment: createRegisterManualPayment({ client }),
+    getRecentPayments: createGetRecentPayments({ client }),
+    // Dashboard (specs/096): de-interim FASEADO. P1 = cost-centers real (#241/#237); P2/P3 e as métricas
+    // Receita/Maior-Financiador (sem endpoint) seguem interinas dentro da fonte real. Composição pura intacta.
+    getDashboardStatistics: createGetDashboardStatistics({
+      source: { getAggregations: createGetDashboardAggregationsReal({ client }) },
+    }),
+    // P3 (specs/096): gráfico Realizado × Previsto — planos aprovados vigentes (todos somados | 1 plano).
+    getDashboardRealized: createGetDashboardRealized({ client: realizedClient }),
   }
 }
 

@@ -6,10 +6,10 @@
  * Reforma Tributária (CBS/IBS): campos VIVOS de registro de valor (OCR/manual) — enviados em
  * registeredTaxes[] do core-api; não geram filho nem abatem o líquido (regra FIN-DOCUMENTO-INGESTAO).
  *
- * Chrome (sem backend no v1, decisão #7): Competência/Emissão, "Pagar da Conta" e o card Conta do
- * favorecido seguem DESABILITADOS (sem dado fabricado) até os DTOs do core-api (#47/#48) e o
- * cadastro de contas/categorias existirem. A faixa âmbar de OCR do Figma é omitida de propósito —
- * sinalizaria preenchimento automático que não acontece sem o OCR.
+ * Chrome (sem backend no v1, decisão #7): o card Conta do favorecido segue DESABILITADO (sem dado
+ * fabricado) até os DTOs do core-api (#47/#48) e o cadastro de contas/categorias existirem.
+ * (Competência #197 e Emissão #163 já são reais.) O destaque âmbar de OCR (borda + tag "OCR") é REAL agora:
+ * acende só os campos de `ocrFields` (numa sessão de OCR) — sinaliza o que a ingestão de fato preencheu.
  */
 import type { ReactNode } from 'react'
 
@@ -33,6 +33,7 @@ import {
   type PartnerHydration,
   type ContractCategoView,
   type FieldLocks,
+  type OcrFieldKey,
 } from '../document-form.view.ts'
 import { DocumentTypeModal } from './document-type-modal.component.tsx'
 import { PaymentMethodModal } from './payment-method-modal.component.tsx'
@@ -40,12 +41,16 @@ import {
   control,
   controlMono,
   controlDisabled,
+  controlReadonly,
   selectWrap,
   selectControl,
   selectControlDisabled,
   field,
   fieldGrid,
   fieldLabel,
+  fieldLabelRow,
+  ocrAccent,
+  ocrTag,
   numberSeriesRow,
   retentionsHint,
   reformaHead,
@@ -184,6 +189,8 @@ function CategoSelect(
 export type DocumentFormProps = Readonly<{
   fields: DocumentFormFields
   hydration: PartnerHydration
+  /** Campos sinalizados como LIDOS pelo OCR (borda âmbar + tag). Vazio fora de sessão de OCR. */
+  ocrFields: ReadonlySet<OcrFieldKey>
   /** Travas por campo (modo edição). Ausente/criação = nada travado. */
   locks?: FieldLocks
   onType: (value: DocumentType | '') => void
@@ -194,13 +201,13 @@ export type DocumentFormProps = Readonly<{
       | 'series'
       | 'grossValue'
       | 'issueDate'
+      | 'competencia'
       | 'dueDate'
       | 'description'
       | 'accessKey'
       | 'paymentComplement'
       | 'centroCusto'
       | 'categoria'
-      | 'subcategoria'
       | 'planoOrcamentario',
     value: string,
   ) => void
@@ -210,9 +217,13 @@ export type DocumentFormProps = Readonly<{
   programOptions: readonly Readonly<{ id: string; name: string; sigla: string }>[]
   programValue: string
   onProgram: (value: string) => void
-  // Categoria (Categorização) — dropdown editável REAL (taxonomia #200). Envia `categoryRef` no create.
+  // Categoria (Categorização) — dropdown editável REAL (taxonomia #200), filtrado pelo Centro (#341).
   categoryValue: string
   onCategory: (value: string) => void
+  // Subcategoria (Categorização) — dropdown REAL (#147/#341), filtrado pela Categoria. É a FOLHA da
+  // cascata: quando preenchida, é ELA que o create/ajuste envia em `categoryRef`.
+  subcategoryValue: string
+  onSubcategory: (value: string) => void
   // Centro de custo (Categorização) — dropdown editável REAL (#147). Envia `costCenterRef` no create.
   costCenterValue: string
   onCostCenter: (value: string) => void
@@ -225,8 +236,8 @@ export type DocumentFormProps = Readonly<{
   contaDebitoValue: string
   onContaDebito: (value: string) => void
   contaDebitoOptions: readonly Readonly<{ value: string; label: string }>[]
-  // Opções dos dropdowns da Categorização (Centro de Custo/Categoria/Subcategoria/Plano). Vazias até o
-  // backend expor as listas (core-api#147); o select já fica pronto.
+  // Opções dos dropdowns da Categorização. Centro/Categoria/Subcategoria são REAIS e CASCATEIAM
+  // (#147/#341 — a page já entrega cada nível filtrado pelo de cima). Plano segue vazio (core-api#113).
   centroCustoOptions: readonly Readonly<{ value: string; label: string }>[]
   categoriaOptions: readonly Readonly<{ value: string; label: string }>[]
   subcategoriaOptions: readonly Readonly<{ value: string; label: string }>[]
@@ -250,9 +261,23 @@ export type DocumentFormProps = Readonly<{
   onClosePayModal: () => void
 }>
 
+// Rótulo do campo (+ tag "OCR" quando lido do documento). `htmlFor` opcional (células combinadas usam label
+// sem `for`). O acento âmbar do input vem à parte (helper `accent`).
+function FieldLabel(props: Readonly<{ text: string; htmlFor?: string; ocr: boolean }>): ReactNode {
+  return (
+    <label className={props.ocr ? fieldLabelRow : fieldLabel} htmlFor={props.htmlFor}>
+      {props.text}
+      {props.ocr ? <span className={ocrTag}>{t('financial.create.preview.ocrBadge')}</span> : null}
+    </label>
+  )
+}
+
 export function DocumentForm(props: DocumentFormProps): ReactNode {
   const { fields, hydration } = props
   const locks = props.locks ?? NO_LOCKS
+  // Destaque OCR: `isOcr` decide a tag no rótulo; `accent` acrescenta a barra âmbar ao input lido.
+  const isOcr = (key: OcrFieldKey): boolean => props.ocrFields.has(key)
+  const accent = (key: OcrFieldKey): string => (isOcr(key) ? ` ${ocrAccent}` : '')
   const retEnabled = retentionsEnabledFor(fields.type)
   const bank = hydration.bank
   const contract = props.contract
@@ -268,14 +293,12 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
         <h3 className={sectionTitle}>{t('financial.create.section.identificacao')}</h3>
         <div className={fieldGrid.six}>
           <div className={field}>
-            <label className={fieldLabel} htmlFor="fin-type">
-              {t('financial.create.field.type')}
-            </label>
+            <FieldLabel text={t('financial.create.field.type')} htmlFor="fin-type" ocr={isOcr('type')} />
             {/* Tipo abre o modal de seleção (cards com classe fiscal). Travado (edição) → caixa inerte. */}
             {locks.type ? (
               <input
                 id="fin-type"
-                className={controlDisabled}
+                className={`${controlDisabled}${accent('type')}`}
                 disabled
                 value={fields.type === '' ? '—' : fields.type}
                 aria-label={t('financial.create.field.type')}
@@ -284,7 +307,7 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
               <button
                 id="fin-type"
                 type="button"
-                className={typeTrigger}
+                className={`${typeTrigger}${accent('type')}`}
                 aria-label={t('financial.create.field.type')}
                 onClick={props.onOpenTypeModal}
               >
@@ -299,10 +322,13 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
 
           {/* Nº / Série — célula combinada (Figma), dois inputs sob um rótulo. */}
           <div className={field}>
-            <span className={fieldLabel}>{t('financial.create.field.numberSeries')}</span>
+            <FieldLabel
+              text={t('financial.create.field.numberSeries')}
+              ocr={isOcr('documentNumber') || isOcr('series')}
+            />
             <div className={numberSeriesRow}>
               <input
-                className={locks.numberSeries ? controlDisabled : control}
+                className={`${locks.numberSeries ? controlDisabled : control}${accent('documentNumber')}`}
                 disabled={locks.numberSeries}
                 aria-label={t('financial.create.field.documentNumber')}
                 value={fields.documentNumber}
@@ -311,7 +337,7 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
                 }}
               />
               <input
-                className={locks.numberSeries ? controlDisabled : control}
+                className={`${locks.numberSeries ? controlDisabled : control}${accent('series')}`}
                 disabled={locks.numberSeries}
                 aria-label={t('financial.create.field.series')}
                 value={fields.series}
@@ -322,24 +348,28 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             </div>
           </div>
 
-          {/* Competência / Emissão — chrome (sem campo no DTO de criação). */}
+          {/* Competência (#197) — AUTOMÁTICA: reflete o mês/ano da Emissão (read-only, não digitável). */}
           <div className={field}>
             <span className={fieldLabel}>{t('financial.create.field.competencia')}</span>
             <input
-              className={controlDisabled}
-              disabled
+              className={controlReadonly}
+              readOnly
               placeholder="MM/AAAA"
+              value={fields.competencia}
               aria-label={t('financial.create.field.competencia')}
+              title={t('financial.create.field.competenciaHint')}
             />
           </div>
           <div className={field}>
-            <label className={fieldLabel} htmlFor="fin-emissao">
-              {t('financial.create.field.emissao')}
-            </label>
+            <FieldLabel
+              text={t('financial.create.field.emissao')}
+              htmlFor="fin-emissao"
+              ocr={isOcr('issueDate')}
+            />
             <input
               id="fin-emissao"
               type="date"
-              className={locks.issueDate ? controlDisabled : control}
+              className={`${locks.issueDate ? controlDisabled : control}${accent('issueDate')}`}
               disabled={locks.issueDate}
               value={fields.issueDate}
               aria-label={t('financial.create.field.emissao')}
@@ -350,13 +380,15 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
           </div>
 
           <div className={field}>
-            <label className={fieldLabel} htmlFor="fin-venc">
-              {t('financial.create.field.dueDate')}
-            </label>
+            <FieldLabel
+              text={t('financial.create.field.dueDate')}
+              htmlFor="fin-venc"
+              ocr={isOcr('dueDate')}
+            />
             <input
               id="fin-venc"
               type="date"
-              className={locks.dueDate ? controlDisabled : control}
+              className={`${locks.dueDate ? controlDisabled : control}${accent('dueDate')}`}
               disabled={locks.dueDate}
               value={fields.dueDate}
               onChange={(e) => {
@@ -365,12 +397,14 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
             />
           </div>
           <div className={field}>
-            <label className={fieldLabel} htmlFor="fin-bruto">
-              {t('financial.create.field.grossValue')}
-            </label>
+            <FieldLabel
+              text={t('financial.create.field.grossValue')}
+              htmlFor="fin-bruto"
+              ocr={isOcr('grossValue')}
+            />
             <input
               id="fin-bruto"
-              className={locks.grossValue ? controlDisabled : controlMono}
+              className={`${locks.grossValue ? controlDisabled : controlMono}${accent('grossValue')}`}
               disabled={locks.grossValue}
               inputMode="decimal"
               placeholder="0,00"
@@ -386,12 +420,14 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
         {fields.type === 'DANFE' ? (
           <div className={fieldGrid.wide}>
             <div className={field}>
-              <label className={fieldLabel} htmlFor="fin-chave">
-                {t('financial.create.field.accessKey')}
-              </label>
+              <FieldLabel
+                text={t('financial.create.field.accessKey')}
+                htmlFor="fin-chave"
+                ocr={isOcr('accessKey')}
+              />
               <input
                 id="fin-chave"
-                className={control}
+                className={`${control}${accent('accessKey')}`}
                 inputMode="numeric"
                 value={fields.accessKey}
                 onChange={(e) => {
@@ -406,12 +442,14 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
         ) : null}
         <div className={fieldGrid.wide}>
           <div className={field}>
-            <label className={fieldLabel} htmlFor="fin-desc">
-              {t('financial.create.field.description')}
-            </label>
+            <FieldLabel
+              text={t('financial.create.field.description')}
+              htmlFor="fin-desc"
+              ocr={isOcr('description')}
+            />
             <input
               id="fin-desc"
-              className={locks.description ? controlDisabled : control}
+              className={`${locks.description ? controlDisabled : control}${accent('description')}`}
               disabled={locks.description}
               value={fields.description}
               onChange={(e) => {
@@ -431,12 +469,14 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
           <div className={fieldGrid.six}>
             {allowedRetentionKeysFor(fields.type).map((key) => (
               <div className={field} key={key}>
-                <label className={fieldLabel} htmlFor={`fin-ret-${key}`}>
-                  {t(`financial.create.retention.${key}`)}
-                </label>
+                <FieldLabel
+                  text={t(`financial.create.retention.${key}`)}
+                  htmlFor={`fin-ret-${key}`}
+                  ocr={isOcr(key)}
+                />
                 <input
                   id={`fin-ret-${key}`}
-                  className={locks.retentions ? controlDisabled : controlMono}
+                  className={`${locks.retentions ? controlDisabled : controlMono}${accent(key)}`}
                   disabled={locks.retentions}
                   inputMode="decimal"
                   placeholder="0,00"
@@ -542,7 +582,7 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
           />
         </div>
         {/* Campo complementar controlado pela forma (boleto → linha digitável; cartão; câmbio; outro).
-            Editável (OCR/manual). ⚠️ Persistência pendente no core-api#89 — não é enviado no create ainda. */}
+            Editável manualmente e PERSISTIDO (#273/#284: enviado no create e no ajuste/PATCH). OCR ainda pendente (#62/#145). */}
         {paymentComplementaryOf(fields.paymentMethod) === 'boleto' ? (
           <div className={fieldGrid.wide}>
             <div className={field}>
@@ -706,8 +746,29 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
         </div>
         {/* Categorização EDITÁVEL: herda do contrato selecionado (quando houver), mas o usuário pode
             sobrescrever. Em edição/consulta fica somente-leitura. Persistência REAL: Programa (programRef),
-            Categoria (categoryRef) e Centro de custo (costCenterRef) — taxonomia #200/#147. Subcategoria e
-            Plano Orçamentário (budget-plans, core-api#113) seguem chrome. */}
+            Centro de custo (costCenterRef) e a CASCATA de 3 níveis Centro → Categoria → Subcategoria
+            (#200/#147/#341) — o create/ajuste envia a FOLHA (subcategoria ?? categoria) em `categoryRef`.
+            Só o Plano Orçamentário segue chrome (budget-plans, core-api#113). */}
+        {/* Programa + Plano Orçamentário em CIMA (pedido da P.O.): o Plano é o que ancora a árvore da cascata
+            (ADR-0051) — natural escolhê-lo ANTES do Centro/Categoria/Subcategoria que dependem dele. */}
+        <div className={fieldGrid.two}>
+          <ProgramSelect
+            label={t('financial.create.field.programa')}
+            value={props.programValue}
+            disabled={catDisabled}
+            options={props.programOptions}
+            onChange={props.onProgram}
+          />
+          <CategoSelect
+            label={t('financial.create.field.planoOrcamentario')}
+            disabled={catDisabled}
+            value={fields.planoOrcamentario}
+            options={props.planoOptions}
+            onChange={(v) => {
+              props.onText('planoOrcamentario', v)
+            }}
+          />
+        </div>
         <div className={fieldGrid.three}>
           <CategoSelect
             label={t('financial.create.field.centroCusto')}
@@ -726,29 +787,9 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
           <CategoSelect
             label={t('financial.create.field.subcategoria')}
             disabled={catDisabled}
-            value={fields.subcategoria}
+            value={props.subcategoryValue}
             options={props.subcategoriaOptions}
-            onChange={(v) => {
-              props.onText('subcategoria', v)
-            }}
-          />
-        </div>
-        <div className={fieldGrid.two}>
-          <ProgramSelect
-            label={t('financial.create.field.programa')}
-            value={props.programValue}
-            disabled={catDisabled}
-            options={props.programOptions}
-            onChange={props.onProgram}
-          />
-          <CategoSelect
-            label={t('financial.create.field.planoOrcamentario')}
-            disabled={catDisabled}
-            value={fields.planoOrcamentario}
-            options={props.planoOptions}
-            onChange={(v) => {
-              props.onText('planoOrcamentario', v)
-            }}
+            onChange={props.onSubcategory}
           />
         </div>
       </section>

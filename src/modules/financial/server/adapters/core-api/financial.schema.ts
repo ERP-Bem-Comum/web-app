@@ -24,14 +24,31 @@ export const CoreApiDocumentSchema = z.object({
   supplierRef: z.string().trim().nullable(),
   paymentMethod: z.string().trim().nullable(),
   paymentDetail: z.string().trim().nullable().catch(null), // #273 — drift-tolerante (backend antigo → null)
+  competencia: z.string().trim().nullable().catch(null), // #197 — drift-tolerante (backend antigo → null)
   grossValueCents: z.string().trim().nullable(),
   netValueCents: z.string().trim().nullable(),
   issueDate: z.string().trim().nullable().catch(null), // #163 — drift-tolerante (backend antigo → null)
   dueDate: z.string().trim().nullable(),
   description: z.string().trim().nullable(),
+  // #95/#147 — categorização: refs que o core JÁ devolve no GET /:id. Drift-tolerante (backend antigo → null).
+  budgetPlanRef: z.string().trim().nullable().catch(null),
+  categoryRef: z.string().trim().nullable().catch(null),
+  subcategoryRef: z.string().trim().nullable().catch(null), // #502 (S1): folha da árvore do plano (backend antigo → null)
+  costCenterRef: z.string().trim().nullable().catch(null),
+  programRef: z.string().trim().nullable().catch(null),
   payables: z.array(CoreApiPayableSchema),
   // Optimistic lock — necessário p/ o PATCH (ajuste). Tolerante a drift (Fatia 1 pode não enviar) → 0.
   version: z.int().min(0).catch(0),
+  // #568: comprovante-fonte (OCR). Objeto ou null. Tolerante a drift (backend antigo → sem campo → null).
+  attachment: z
+    .object({
+      fileName: z.string().trim(),
+      mimeType: z.string().trim(),
+      sizeBytes: z.int().min(0).catch(0),
+      url: z.string().trim(),
+    })
+    .nullable()
+    .catch(null),
 })
 export type CoreApiDocument = z.infer<typeof CoreApiDocumentSchema>
 
@@ -93,3 +110,46 @@ export const CoreApiPayableTitleListSchema = z.object({
   total: z.int(),
 })
 export type CoreApiPayableTitleList = z.infer<typeof CoreApiPayableTitleListSchema>
+
+// #536: resposta da contagem agregada (GET /payable-titles/counts).
+export const CoreApiPayableCountsSchema = z.object({
+  total: z.int(),
+  draft: z.int(),
+  byStatus: z.record(z.string(), z.int()),
+})
+export type CoreApiPayableCounts = z.infer<typeof CoreApiPayableCountsSchema>
+
+// 042: widget "Últimos pagamentos" (GET /financial/dashboard/recent-payments) — Top-5 pagos.
+export const CoreApiRecentPaymentSchema = z.object({
+  payableId: z.string().trim(),
+  documentId: z.string().trim(),
+  supplierRef: z.string().trim().nullable().catch(null),
+  debitAccountRef: z.string().trim().nullable().catch(null),
+  valueCents: z.string().trim().catch('0'),
+  paidAt: z.string().trim().nullable().catch(null),
+})
+export type CoreApiRecentPayment = z.infer<typeof CoreApiRecentPaymentSchema>
+
+export const CoreApiRecentPaymentListSchema = z.array(CoreApiRecentPaymentSchema)
+export type CoreApiRecentPaymentList = z.infer<typeof CoreApiRecentPaymentListSchema>
+
+// Timeline (GET /documents/:id/timeline). Enum de evento tolerante — drift → descartado no mapper (filtro).
+export const CoreApiTimelineEntrySchema = z.object({
+  eventType: z.string().trim(),
+  target: z.object({ kind: z.string().trim(), id: z.string().trim() }),
+  occurredAt: z.string().trim(),
+  actor: z.string().trim().nullable().catch(null),
+  changes: z
+    .array(
+      z.object({
+        field: z.string().trim().catch(''),
+        before: z.string().trim().nullable().catch(null),
+        after: z.string().trim().nullable().catch(null),
+      }),
+    )
+    .catch([]),
+})
+export const CoreApiTimelineResponseSchema = z.object({
+  entries: z.array(CoreApiTimelineEntrySchema),
+})
+export type CoreApiTimelineResponse = z.infer<typeof CoreApiTimelineResponseSchema>

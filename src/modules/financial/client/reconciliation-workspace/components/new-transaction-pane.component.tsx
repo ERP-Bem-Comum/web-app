@@ -4,10 +4,11 @@
  * (fornecedor/tipo/data/valor/programa); Transferência/Aplicação/Resgate mostram aviso + confirmação
  * consciente + destino/produto; todos têm Categorização (categoria/centro/descrição).
  *
- * Honestidade: o manual-entry (#152) aceita `type` + refs (`supplierRef`/`programRef`/…) + `description`.
- * LIGADOS (reais): Tipo, Fornecedor (parceiros), Programa (programas ativos), Categoria + Centro de custo
- * (referências 020 · #200), Descrição e a confirmação consciente. CHROME: campos de documento (tipo/emissão/
- * valor — fora do contrato do manual-entry) e Destino/produto da transferência (core-api#143).
+ * Honestidade: o manual-entry (#152) aceita `type` + refs (`supplierRef`/`programRef`/…) + `description` +
+ * os campos de documento (#370). LIGADOS (reais): Tipo, Fornecedor (parceiros), Programa (programas ativos —
+ * também no bloco Tarifa/Juros), Categoria + Centro de custo (referências 020 · #200), Descrição, Destino/
+ * produto (core-api#143) e os campos de documento — Número/Tipo/Emissão/Valor (core-api#370). Todos os campos
+ * são reais; a classificação Tarifa/Multa/Juros foi removida (core-api#371 não vem; a taxonomia cobre).
  */
 import type { ComponentType } from 'react'
 
@@ -51,22 +52,14 @@ const isSpecial = (tp: ManualEntryType): tp is 'Transfer' | 'Investment' | 'Rede
 
 export type NewTransactionPaneProps = Readonly<{ binding: ManualEntryBinding }>
 
-// Campo "chrome": label + controle desabilitado em estado de placeholder (depende do backend).
-function ChromeSelect({ label, placeholder }: Readonly<{ label: string; placeholder: string }>) {
-  return (
-    <label className={s.ntField}>
-      <span className={s.ntLabel}>{label}</span>
-      <select className={s.ntSelect} disabled aria-disabled="true" defaultValue="">
-        <option value="">{placeholder}</option>
-      </select>
-    </label>
-  )
-}
+// `value` presente = mostra o dado (read-only, não editável); ausente = placeholder cinza (chrome puro).
 function ChromeInput({
   label,
   placeholder,
   mono,
-}: Readonly<{ label: string; placeholder: string; mono?: boolean }>) {
+  value,
+}: Readonly<{ label: string; placeholder: string; mono?: boolean; value?: string }>) {
+  const filled = value !== undefined && value !== ''
   return (
     <label className={s.ntField}>
       <span className={s.ntLabel}>{label}</span>
@@ -74,8 +67,43 @@ function ChromeInput({
         type="text"
         className={mono === true ? s.ntInputMono : s.ntInput}
         placeholder={placeholder}
-        disabled
-        aria-disabled="true"
+        value={value ?? ''}
+        readOnly
+        disabled={!filled}
+        aria-disabled={!filled}
+      />
+    </label>
+  )
+}
+
+// Input REAL (ligado): texto/data (#370 — campos de documento do lançamento manual). `type="date"` produz
+// e consome YYYY-MM-DD nativamente (sem conversão de fuso), no padrão dos demais campos de data do módulo.
+function RealInput({
+  label,
+  placeholder,
+  value,
+  onChange,
+  type = 'text',
+  mono,
+}: Readonly<{
+  label: string
+  placeholder?: string
+  value: string
+  onChange: (v: string) => void
+  type?: 'text' | 'date'
+  mono?: boolean
+}>) {
+  return (
+    <label className={s.ntField}>
+      <span className={s.ntLabel}>{label}</span>
+      <input
+        type={type}
+        className={mono === true ? s.ntInputMono : s.ntInput}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value)
+        }}
       />
     </label>
   )
@@ -120,6 +148,55 @@ export function NewTransactionPane({ binding }: NewTransactionPaneProps) {
   const { type } = binding
   const special = type !== null && isSpecial(type)
   const destKeyBase = special ? `financial.recon.manual.dest.${type}` : ''
+
+  // Selects da categorização definidos uma vez p/ arranjar em 2 colunas (sem campos full-width → sem rolagem):
+  // com bloco de documento → [Programa | Centro] + [Categoria | Subcategoria]; senão → [Centro | Categoria] + [Subcategoria].
+  const programaSelect = (
+    <RealSelect
+      label={t('financial.recon.manual.f.program')}
+      placeholder={t('financial.recon.manual.f.programPlaceholder')}
+      value={binding.programRef}
+      options={binding.programOptions}
+      onChange={binding.setProgramRef}
+    />
+  )
+  // #502/S2: Plano Orçamentário — dirige a fonte da cascata (árvore do plano vs operacional), como no documento.
+  const planoSelect = (
+    <RealSelect
+      label={t('financial.recon.manual.f.plano')}
+      placeholder={t('financial.recon.manual.f.planoPlaceholder')}
+      value={binding.budgetPlanRef}
+      options={binding.planoOptions}
+      onChange={binding.setBudgetPlanRef}
+    />
+  )
+  const centroSelect = (
+    <RealSelect
+      label={t('financial.recon.manual.f.costCenter')}
+      placeholder={t('financial.recon.manual.f.costCenterPlaceholder')}
+      value={binding.costCenterRef}
+      options={binding.costCenterOptions}
+      onChange={binding.setCostCenterRef}
+    />
+  )
+  const categoriaSelect = (
+    <RealSelect
+      label={t('financial.recon.manual.f.category')}
+      placeholder={t('financial.recon.manual.f.categoryPlaceholder')}
+      value={binding.categoryRef}
+      options={binding.categoryOptions}
+      onChange={binding.setCategoryRef}
+    />
+  )
+  const subcategoriaSelect = (
+    <RealSelect
+      label={t('financial.recon.manual.f.subcategory')}
+      placeholder={t('financial.recon.manual.f.subcategoryPlaceholder')}
+      value={binding.subcategoryRef}
+      options={binding.subcategoryOptions}
+      onChange={binding.setSubcategoryRef}
+    />
+  )
 
   return (
     <div className={s.assocCol}>
@@ -171,67 +248,106 @@ export function NewTransactionPane({ binding }: NewTransactionPaneProps) {
                 options={binding.accountOptions}
                 onChange={binding.setDestinationAccount}
               />
-              <ChromeInput label={t('financial.recon.manual.f.effective')} placeholder="DD/MM/AAAA" mono />
+              {/* Reflete a data da transação bancária selecionada (read-only — o backend usa a data da transação). */}
+              <ChromeInput
+                label={t('financial.recon.manual.f.effective')}
+                placeholder="DD/MM/AAAA"
+                mono
+                value={binding.effectiveDate}
+              />
             </div>
           </div>
         ) : null}
 
-        {/* Categorização */}
+        {/* Categorização — oculta p/ Transferência/Aplicação/Resgate (movimentação entre contas próprias). */}
         <div className={s.ntSection}>
-          <div className={s.ntSectionLbl}>{t('financial.recon.manual.categorize')}</div>
-          <p className={s.ntHint}>{t('financial.recon.manual.backendHint')}</p>
-
-          {binding.showPayeeBlock ? (
+          {binding.showCategorization ? (
             <>
-              <div className={`${s.ntRow} ${s.ntRowCols2}`}>
-                {/* Fornecedor — REAL: opções de parceiros ativos (envia supplierRef). */}
-                <RealSelect
-                  label={t('financial.recon.manual.f.supplier')}
-                  placeholder={t('financial.recon.manual.f.supplierPlaceholder')}
-                  value={binding.supplierRef}
-                  options={binding.partnerOptions}
-                  onChange={binding.setSupplierRef}
-                />
-                {/* Tipo de documento — chrome: não faz parte do contrato do manual-entry (#172). */}
-                <ChromeSelect
-                  label={t('financial.recon.manual.f.docType')}
-                  placeholder={t('financial.recon.manual.f.docTypePlaceholder')}
-                />
-              </div>
-              <div className={`${s.ntRow} ${s.ntRowCols2}`}>
-                <ChromeInput label={t('financial.recon.manual.f.emission')} placeholder="DD/MM/AAAA" mono />
-                <ChromeInput label={t('financial.recon.manual.f.docValue')} placeholder="R$ 0,00" mono />
-              </div>
-              <div className={s.ntRow}>
-                {/* Programa — REAL: programas ativos (envia programRef). */}
-                <RealSelect
-                  label={t('financial.recon.manual.f.program')}
-                  placeholder={t('financial.recon.manual.f.programPlaceholder')}
-                  value={binding.programRef}
-                  options={binding.programOptions}
-                  onChange={binding.setProgramRef}
-                />
-              </div>
+              <div className={s.ntSectionLbl}>{t('financial.recon.manual.categorize')}</div>
+              <p className={s.ntHint}>{t('financial.recon.manual.backendHint')}</p>
+
+              {binding.showPayeeBlock ? (
+                <>
+                  <div className={`${s.ntRow} ${s.ntRowCols2}`}>
+                    {/* Fornecedor — REAL: opções de parceiros ativos (envia supplierRef). */}
+                    <RealSelect
+                      label={t('financial.recon.manual.f.supplier')}
+                      placeholder={t('financial.recon.manual.f.supplierPlaceholder')}
+                      value={binding.supplierRef}
+                      options={binding.partnerOptions}
+                      onChange={binding.setSupplierRef}
+                    />
+                    {/* Número do documento — REAL (#370): ligado ao form; enviado no lançamento manual. */}
+                    <RealInput
+                      label={t('financial.recon.manual.f.docNumber')}
+                      placeholder={t('financial.recon.manual.f.docNumberPlaceholder')}
+                      value={binding.documentNumber}
+                      onChange={binding.setDocumentNumber}
+                      mono
+                    />
+                  </div>
+                  {/* Tipo de doc + Emissão + Valor — REAIS (#370), lado a lado (3 colunas). Valor vazio →
+                      omitido no envio (o backend usa o valor da transação conciliada). */}
+                  <div className={`${s.ntRow} ${s.ntRowCols3}`}>
+                    <RealSelect
+                      label={t('financial.recon.manual.f.docType')}
+                      placeholder={t('financial.recon.manual.f.docTypePlaceholder')}
+                      value={binding.documentType}
+                      options={binding.documentTypeOptions}
+                      onChange={binding.setDocumentType}
+                    />
+                    <RealInput
+                      label={t('financial.recon.manual.f.emission')}
+                      type="date"
+                      value={binding.issueDate}
+                      onChange={binding.setIssueDate}
+                      mono
+                    />
+                    <RealInput
+                      label={t('financial.recon.manual.f.docValue')}
+                      placeholder="R$ 0,00"
+                      value={binding.documentValue}
+                      onChange={binding.setDocumentValue}
+                      mono
+                    />
+                  </div>
+                </>
+              ) : null}
+
+              {/* Cascata co-dependente Centro de Custo → Categoria → Subcategoria (EPIC #150), em 2 linhas 2-col
+              (sem campos full-width). Escolher o centro filtra as categorias (placeholder #341); a categoria
+              filtra as subcategorias (real, via parentId). Envia a folha (subcategoria|categoria) como categoryRef. */}
+              {binding.showPayeeBlock ? (
+                <>
+                  {/* Programa + Plano lado a lado (o Plano dirige a cascata); Centro/Categoria/Subcategoria em 3 colunas. */}
+                  <div className={`${s.ntRow} ${s.ntRowCols2}`}>
+                    {programaSelect}
+                    {planoSelect}
+                  </div>
+                  <div className={`${s.ntRow} ${s.ntRowCols3}`}>
+                    {centroSelect}
+                    {categoriaSelect}
+                    {subcategoriaSelect}
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Tarifa/Juros (único tipo não-payee que categoriza): Programa + Plano lado a lado (o Plano
+                  dirige a cascata, igual ao bloco Pagamento/Recebimento); Centro/Categoria/Subcategoria em 3
+                  colunas. A classificação Tarifa/Multa/Juros saiu (core-api#371 não vem; a taxonomia cobre). */}
+                  <div className={`${s.ntRow} ${s.ntRowCols2}`}>
+                    {programaSelect}
+                    {planoSelect}
+                  </div>
+                  <div className={`${s.ntRow} ${s.ntRowCols3}`}>
+                    {centroSelect}
+                    {categoriaSelect}
+                    {subcategoriaSelect}
+                  </div>
+                </>
+              )}
             </>
           ) : null}
-
-          <div className={`${s.ntRow} ${s.ntRowCols2}`}>
-            {/* Categoria + Centro de custo — REAIS: dados de referência (020 · #200), envia category/costCenterRef. */}
-            <RealSelect
-              label={t('financial.recon.manual.f.category')}
-              placeholder={t('financial.recon.manual.f.categoryPlaceholder')}
-              value={binding.categoryRef}
-              options={binding.categoryOptions}
-              onChange={binding.setCategoryRef}
-            />
-            <RealSelect
-              label={t('financial.recon.manual.f.costCenter')}
-              placeholder={t('financial.recon.manual.f.costCenterPlaceholder')}
-              value={binding.costCenterRef}
-              options={binding.costCenterOptions}
-              onChange={binding.setCostCenterRef}
-            />
-          </div>
           <div className={s.ntRow}>
             <label className={s.ntField}>
               <span className={s.ntLabel}>
@@ -263,10 +379,16 @@ export function NewTransactionPane({ binding }: NewTransactionPaneProps) {
             {t('financial.recon.manual.cancel')}
           </button>
           <span className={s.spacer} />
+          {/* O motivo do bloqueio fica VISÍVEL ao lado do botão — tooltip sozinho não serve (não existe no
+              toque, e exige adivinhar que há algo a descobrir). O `title` fica como reforço. */}
+          {binding.submitBlockedTag !== null && !binding.submitting ? (
+            <span className={s.ntBlocked}>{t(binding.submitBlockedTag)}</span>
+          ) : null}
           <button
             type="button"
             className={s.btnConfirm}
             disabled={!binding.canSubmit || binding.submitting}
+            title={binding.submitBlockedTag !== null ? t(binding.submitBlockedTag) : undefined}
             onClick={() => {
               binding.submit()
             }}

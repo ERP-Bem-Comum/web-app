@@ -13,9 +13,10 @@ import { SearchIcon } from '#shared/ui/icons/index.ts'
 
 import { useContasAPagar } from '../contas-a-pagar.binding.ts'
 import { useDocumentDetail } from '../document-detail.binding.ts'
+import { useDocumentTimeline } from '../document-timeline.binding.ts'
 import { useBulkStatus } from '../bulk-status.binding.ts'
 import { useBulkDelete } from '../bulk-delete.binding.ts'
-import { useBulkDueDate } from '../bulk-due-date.binding.ts'
+import { useIsolatedDueDate } from '../isolated-due-date.binding.ts'
 import { useBulkPay, type PayTarget } from '../bulk-pay.binding.ts'
 import {
   STATUS_CHIPS,
@@ -29,7 +30,8 @@ import {
 } from '../contas-a-pagar.view-model.ts'
 import { DocumentGrid } from '../components/document-grid.component.tsx'
 import { AddFilterButton, ActiveFiltersRow } from '../components/document-filters.component.tsx'
-import { DocumentDetailDrawer } from '../components/document-detail-drawer.component.tsx'
+import { SavedViewsMenu } from '../components/saved-views-menu.component.tsx'
+import { DocumentDetailDrawer, type DrawerTab } from '../components/document-detail-drawer.component.tsx'
 import { DeleteConfirmModal } from '../components/delete-confirm.component.tsx'
 import { DueDateModal } from '../components/due-date-modal.component.tsx'
 import { PaymentDateModal } from '../components/payment-date-modal.component.tsx'
@@ -45,7 +47,9 @@ import {
   chip,
   chipActive,
   chipDisabled,
+  chipCount,
   chipCountOnActive,
+  chipDot,
   fbarRight,
   gridWrap,
   errorBanner,
@@ -68,7 +72,7 @@ import {
 } from './contas-a-pagar.css.ts'
 
 const t = createTranslator(ptBR)
-const PAGE_SIZE_OPTIONS = [5, 10, 12, 25, 50] as const
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const
 
 export function ContasAPagarPage(): ReactNode {
   const navigate = useNavigate()
@@ -78,6 +82,7 @@ export function ContasAPagarPage(): ReactNode {
     titleState,
     pageSize,
     selectedStatus,
+    statusCounts,
     onStatusFilter,
     activeDims,
     filters,
@@ -89,6 +94,10 @@ export function ContasAPagarPage(): ReactNode {
     onSetTipo,
     onSetFornecedor,
     onClearFilters,
+    savedViews,
+    onSaveView,
+    onApplyView,
+    onDeleteView,
     onPrev,
     onNext,
     onPageSize,
@@ -112,6 +121,8 @@ export function ContasAPagarPage(): ReactNode {
 
   // UI-state local (toggles), no padrão dos demais (selectedId/selected): menu "Adicionar filtro".
   const [filterMenuOpen, setFilterMenuOpen] = useState(false)
+  // Menu "Visões salvas" (#351) — toggle local, mesmo padrão do menu de filtros.
+  const [savedViewsMenuOpen, setSavedViewsMenuOpen] = useState(false)
   // Busca/autocomplete do filtro Fornecedor (texto digitado + dropdown de resultados).
   const [fornecedorQuery, setFornecedorQuery] = useState('')
   const [fornecedorOpen, setFornecedorOpen] = useState(false)
@@ -120,6 +131,13 @@ export function ContasAPagarPage(): ReactNode {
   // Linha clicável: Rascunho → tela de Lançar (finalizar inclusão); demais status → drawer de detalhe.
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const detail = useDocumentDetail(selectedId)
+  // Aba do drawer (Detalhes | Histórico). O Histórico busca a trilha só quando a aba está ativa.
+  const [drawerTab, setDrawerTab] = useState<DrawerTab>('detalhes')
+  const timeline = useDocumentTimeline(selectedId, drawerTab === 'historico')
+  const openDrawer = (documentId: string): void => {
+    setDrawerTab('detalhes') // sempre abre em Detalhes
+    setSelectedId(documentId)
+  }
 
   // ── Seleção em massa (mock): checkbox por linha + "selecionar todos" + somatório do líquido ──
   const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set())
@@ -155,7 +173,7 @@ export function ContasAPagarPage(): ReactNode {
   // ── Alterar vencimento (1+) — modal com seletor de data; aplica a cada Aberto via PATCH. ──
   const [dueOpen, setDueOpen] = useState(false)
   const [dueValue, setDueValue] = useState('')
-  const dueEdit = useBulkDueDate(() => {
+  const dueEdit = useIsolatedDueDate(() => {
     clearSelection()
     setDueOpen(false)
     setDueValue('')
@@ -212,6 +230,8 @@ export function ContasAPagarPage(): ReactNode {
             const active = c.status === selectedStatus
             // Estados que o backend ainda não produz ficam desabilitados (chrome honesto).
             const cls = !c.filterable ? chipDisabled : active ? chipActive : chip
+            // Contagem por status (paridade Conciliação). null = carregando/erro → oculta o badge.
+            const count = statusCounts[c.key]
             return (
               <button
                 key={c.key}
@@ -223,10 +243,11 @@ export function ContasAPagarPage(): ReactNode {
                   if (c.filterable) onStatusFilter(c.status)
                 }}
               >
+                {/* Bolinha com a cor do status (Todos = sem bolinha). */}
+                {c.status !== null ? <span className={chipDot[c.status]} aria-hidden="true" /> : null}
                 {t(c.labelTag)}
-                {/* Contador real só no chip ATIVO (= total da consulta filtrada; lista paginada no servidor). */}
-                {active && page !== null ? (
-                  <span className={chipCountOnActive}>{String(page.total)}</span>
+                {count != null ? (
+                  <span className={active ? chipCountOnActive : chipCount}>{String(count)}</span>
                 ) : null}
               </button>
             )
@@ -234,6 +255,25 @@ export function ContasAPagarPage(): ReactNode {
         </div>
 
         <div className={fbarRight}>
+          <SavedViewsMenu
+            menuOpen={savedViewsMenuOpen}
+            onToggleMenu={() => {
+              setSavedViewsMenuOpen((v) => !v)
+            }}
+            onCloseMenu={() => {
+              setSavedViewsMenuOpen(false)
+            }}
+            savedViews={savedViews}
+            onSaveView={onSaveView}
+            onApplyView={(id) => {
+              // Aplicar uma visão pode restaurar o filtro Fornecedor → limpa a busca/autocomplete local
+              // (o rótulo do combo não faz parte da visão; o valor sim, via onApplyView → filters).
+              setFornecedorQuery('')
+              setFornecedorOpen(false)
+              onApplyView(id)
+            }}
+            onDeleteView={onDeleteView}
+          />
           <AddFilterButton
             menuOpen={filterMenuOpen}
             onToggleMenu={() => {
@@ -295,7 +335,7 @@ export function ContasAPagarPage(): ReactNode {
             if (status === 'Rascunho') {
               void navigate({ to: '/financeiro/contas-a-pagar/lancar', search: { id } })
             } else {
-              setSelectedId(documentId)
+              openDrawer(documentId)
             }
           }}
           activeId={selectedId}
@@ -310,6 +350,9 @@ export function ContasAPagarPage(): ReactNode {
         <DocumentDetailDrawer
           view={detail.view}
           payeeBank={detail.payeeBank}
+          activeTab={drawerTab}
+          onTab={setDrawerTab}
+          timeline={timeline.state}
           onClose={() => {
             setSelectedId(null)
           }}

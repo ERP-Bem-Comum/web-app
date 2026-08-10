@@ -12,6 +12,8 @@ import {
   RACES,
   EDUCATION_LEVELS,
   FOOD_CATEGORIES,
+  SEXES,
+  MARITAL_STATUSES,
   PIX_KEY_TYPES,
   isPixKeyType,
   type CollaboratorDetail,
@@ -22,6 +24,16 @@ import {
   type PixKeyType,
 } from '#modules/partners/client/data/model/collaborator.model.ts'
 
+// Núcleo PURO dos campos da 2ª etapa — extraído p/ reuso pelo Autocadastro (#040) sem mudar comportamento.
+import {
+  parseChildrenAges,
+  formatChildrenAges,
+  boolToTri,
+  buildCompleteFields,
+  computeHasCompleteData as computeHasCompleteFields,
+  type CollaboratorCompleteFieldsState,
+} from './collaborator-complete-fields.ts'
+
 // Re-export p/ a view burra (component) consumir os enums sem importar `data/` direto (boundary §XI).
 export {
   OCCUPATION_AREAS,
@@ -30,45 +42,39 @@ export {
   RACES,
   EDUCATION_LEVELS,
   FOOD_CATEGORIES,
+  SEXES,
+  MARITAL_STATUSES,
   PIX_KEY_TYPES,
   isPixKeyType,
 }
 
-export type CollaboratorDetailFormState = Readonly<{
-  // pré-cadastro
-  name: string
-  email: string
-  cpf: string
-  occupationArea: string
-  role: string
-  startOfContract: string
-  employmentRelationship: string
-  // cadastro completo (2ª etapa)
-  rg: string
-  dateOfBirth: string
-  completeAddress: string
-  telephone: string
-  emergencyContactName: string
-  emergencyContactTelephone: string
-  genderIdentity: string
-  race: string
-  allergies: string
-  foodCategory: string
-  foodCategoryDescription: string
-  education: string
-  biography: string
-  experienceInThePublicSector: '' | 'sim' | 'nao'
-  // Território (#42) — somente leitura no detalhe (o PUT omite território).
-  uf: string
-  municipality: string
-  // Banco/PIX (#40) — create-only; somente leitura no detalhe (o PUT omite).
-  bank: string
-  agency: string
-  accountNumber: string
-  checkDigit: string
-  pixKeyType: PixKeyType
-  pixKey: string
-}>
+// Re-export dos helpers puros de "Idade dos filhos" (agora em `children-ages.ts`) — API estável p/ quem
+// já importava daqui (detail component + testes). Comportamento idêntico.
+export { parseChildrenAges, formatChildrenAges }
+
+// O estado do form do detalhe = os campos da 2ª etapa (núcleo puro reusável) + pré-cadastro + território
+// + banco/PIX (estes últimos read-only no detalhe). `CollaboratorCompleteFieldsState` vem do módulo puro.
+export type CollaboratorDetailFormState = CollaboratorCompleteFieldsState &
+  Readonly<{
+    // pré-cadastro
+    name: string
+    email: string
+    cpf: string
+    occupationArea: string
+    role: string
+    startOfContract: string
+    employmentRelationship: string
+    // Território (#42) — somente leitura no detalhe (o PUT omite território).
+    uf: string
+    municipality: string
+    // Banco/PIX (#40) — create-only; somente leitura no detalhe (o PUT omite).
+    bank: string
+    agency: string
+    accountNumber: string
+    checkDigit: string
+    pixKeyType: PixKeyType
+    pixKey: string
+  }>
 
 const fromDetail = (c: CollaboratorDetail): CollaboratorDetailFormState => ({
   name: c.name,
@@ -92,8 +98,20 @@ const fromDetail = (c: CollaboratorDetail): CollaboratorDetailFormState => ({
   foodCategoryDescription: c.foodCategoryDescription ?? '',
   education: c.education ?? '',
   biography: c.biography ?? '',
-  experienceInThePublicSector:
-    c.experienceInThePublicSector === undefined ? '' : c.experienceInThePublicSector ? 'sim' : 'nao',
+  experienceInThePublicSector: boolToTri(c.experienceInThePublicSector),
+  // Perfil completo (US2).
+  sex: c.sex ?? '',
+  maritalStatus: c.maritalStatus ?? '',
+  publicSectorExperienceDuration: c.publicSectorExperienceDuration ?? '',
+  hasChildren: boolToTri(c.hasChildren),
+  childrenCount: c.childrenCount === undefined ? '' : String(c.childrenCount),
+  childrenAges: formatChildrenAges(c.childrenAges),
+  isPwd: boolToTri(c.isPwd),
+  pwdDescription: c.pwdDescription ?? '',
+  isOnLeave: boolToTri(c.isOnLeave),
+  leaveDuration: c.leaveDuration ?? '',
+  leaveRenewable: boolToTri(c.leaveRenewable),
+  leaveRenewalDuration: c.leaveRenewalDuration ?? '',
   uf: c.territory?.uf ?? '',
   municipality: c.territory?.municipality ?? '',
   bank: c.bankAccount?.bank ?? '',
@@ -104,7 +122,21 @@ const fromDetail = (c: CollaboratorDetail): CollaboratorDetailFormState => ({
   pixKey: c.pixKey?.key ?? '',
 })
 
-const blank = (s: string): string | undefined => (s.trim() === '' ? undefined : s.trim())
+/**
+ * Monta o input do PATCH complete-registration a partir do estado do form (PURO — testável sem React).
+ * Delega a montagem dos campos ao núcleo puro (`buildCompleteFields`) e anexa o `id` do colaborador.
+ * Campos vazios → `undefined`; booleans via tri-state; idades via parser (comportamento inalterado).
+ */
+export const buildCompleteInput = (
+  state: CollaboratorDetailFormState,
+  id: string,
+): CollaboratorCompleteInput => ({ id, ...buildCompleteFields(state) })
+
+/** Há algum dado de perfil (2ª etapa) preenchido? (PURO — testável sem React). Delega ao núcleo puro. */
+export const computeHasCompleteData = (f: CollaboratorDetailFormState): boolean => computeHasCompleteFields(f)
+
+/** Hidratação PURA do estado do form a partir do detalhe carregado (testável sem React). */
+export const stateFromDetail = (detail: CollaboratorDetail): CollaboratorDetailFormState => fromDetail(detail)
 
 export interface CollaboratorDetailFormController {
   readonly state: CollaboratorDetailFormState
@@ -150,47 +182,11 @@ export function useCollaboratorDetailFormController(
   )
 
   const buildComplete = useCallback(
-    (id: string): CollaboratorCompleteInput => ({
-      id,
-      rg: blank(state.rg),
-      dateOfBirth: blank(state.dateOfBirth),
-      genderIdentity: blank(state.genderIdentity),
-      race: blank(state.race),
-      education: blank(state.education),
-      foodCategory: blank(state.foodCategory),
-      foodCategoryDescription: blank(state.foodCategoryDescription),
-      completeAddress: blank(state.completeAddress),
-      telephone: blank(state.telephone),
-      emergencyContactName: blank(state.emergencyContactName),
-      emergencyContactTelephone: blank(state.emergencyContactTelephone),
-      allergies: blank(state.allergies),
-      biography: blank(state.biography),
-      experienceInThePublicSector:
-        state.experienceInThePublicSector === '' ? undefined : state.experienceInThePublicSector === 'sim',
-    }),
+    (id: string): CollaboratorCompleteInput => buildCompleteInput(state, id),
     [state],
   )
 
-  const hasCompleteData = useCallback((): boolean => {
-    const f = state
-    return (
-      [
-        f.rg,
-        f.dateOfBirth,
-        f.completeAddress,
-        f.telephone,
-        f.emergencyContactName,
-        f.emergencyContactTelephone,
-        f.genderIdentity,
-        f.race,
-        f.allergies,
-        f.foodCategory,
-        f.foodCategoryDescription,
-        f.education,
-        f.biography,
-      ].some((v) => v.trim() !== '') || f.experienceInThePublicSector !== ''
-    )
-  }, [state])
+  const hasCompleteData = useCallback((): boolean => computeHasCompleteData(state), [state])
 
   return { state, setField, reset, buildPre, buildComplete, hasCompleteData }
 }

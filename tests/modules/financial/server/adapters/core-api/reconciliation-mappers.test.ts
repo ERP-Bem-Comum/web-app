@@ -24,6 +24,7 @@ import {
   undoToModel,
   categoriesToModel,
   costCentersToModel,
+  payablesBatchToModel,
 } from '../../../../../../src/modules/financial/server/adapters/core-api/reconciliation.mappers.ts'
 import { isOk, isErr } from '../../../../../../src/shared/primitives/result.ts'
 import type { HttpError } from '../../../../../../src/shared/http/http-error.types.ts'
@@ -42,6 +43,12 @@ describe('mapHttpError (conciliação)', () => {
     assert.equal(mapHttpError(http(409, 'transaction-already-reconciled')), 'transaction-already-reconciled')
     assert.equal(mapHttpError(http(400, 'unsupported-format')), 'import-unsupported-format')
     assert.equal(mapHttpError(http(422, 'period-has-pending-transactions')), 'period-has-pending')
+    // Exclusão do extrato (core-api#558): guarda de conciliadas (409) + not-found do slug próprio.
+    assert.equal(
+      mapHttpError(http(409, 'statement-has-reconciled-transactions')),
+      'statement-has-reconciled-transactions',
+    )
+    assert.equal(mapHttpError(http(404, 'bank-statement-not-found')), 'not-found')
   })
 
   it('cai no status quando não há slug', () => {
@@ -128,7 +135,7 @@ describe('transactionsToModel', () => {
 })
 
 describe('paidPayablesToModel', () => {
-  it('mapeia mínimo; supplier/docNumber ausentes → null (#172)', () => {
+  it('mapeia mínimo; supplier/docNumber/issueDate ausentes → null (#172/056)', () => {
     const raw = {
       items: [
         { id: 'p1', documentId: 'd1', valueCents: '15000', dueDate: '2026-06-10', paymentMethod: 'PIX' },
@@ -140,6 +147,27 @@ describe('paidPayablesToModel', () => {
       assert.equal(r.value[0]?.supplierName, null)
       assert.equal(r.value[0]?.documentNumber, null)
       assert.equal(r.value[0]?.dueDate, '2026-06-10')
+      assert.equal(r.value[0]?.issueDate, null) // 056: ausente → null (tolerante)
+    }
+  })
+
+  it('056: issueDate do core go-live flui p/ o model (date-only, sem conversão)', () => {
+    const raw = {
+      items: [
+        {
+          id: 'p2',
+          documentId: 'd2',
+          valueCents: '15000',
+          dueDate: '2026-06-10',
+          issueDate: '2026-06-01',
+          paymentMethod: 'PIX',
+        },
+      ],
+    }
+    const r = paidPayablesToModel(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value[0]?.issueDate, '2026-06-01')
     }
   })
 })
@@ -294,6 +322,7 @@ describe('transactionReconciliationToModel (#175)', () => {
       type: 'Multiple',
       status: 'Active',
       reconciledBy: 'user-42',
+      reconciledByName: 'Alessandra Castro',
       reconciledAt: '2026-06-18T13:45:00.000Z',
       differenceCents: '-250',
       items: [
@@ -308,10 +337,25 @@ describe('transactionReconciliationToModel (#175)', () => {
       assert.equal(r.value.type, 'Multiple')
       assert.equal(r.value.status, 'Active')
       assert.equal(r.value.reconciledBy, 'user-42')
+      assert.equal(r.value.reconciledByName, 'Alessandra Castro') // #207: nome resolvido atravessa
       assert.equal(r.value.differenceCents, '-250')
       assert.equal(r.value.items.length, 2)
       assert.equal(r.value.items[0]?.payableId, 'p1')
     }
+  })
+
+  it('#207: reconciledByName ausente no core-api → null (tolerante, catch)', () => {
+    const r = transactionReconciliationToModel({
+      id: 'r',
+      transactionId: 't',
+      type: 'Individual',
+      status: 'Active',
+      reconciledBy: 'u',
+      reconciledAt: '2026-06-18T00:00:00.000Z',
+      items: [],
+    })
+    assert.ok(isOk(r))
+    if (isOk(r)) assert.equal(r.value.reconciledByName, null)
   })
 
   it('type drift → Individual; differenceCents ausente → null; ManualEntry preservado', () => {
@@ -341,6 +385,33 @@ describe('transactionReconciliationToModel (#175)', () => {
     })
     assert.ok(isOk(manual))
     if (isOk(manual)) assert.equal(manual.value.type, 'ManualEntry')
+  })
+
+  it('#554/#555: categoria presente atravessa; ausente/inválida → null (tolerante)', () => {
+    const withCat = transactionReconciliationToModel({
+      id: 'r',
+      transactionId: 't',
+      type: 'ManualEntry',
+      status: 'Active',
+      reconciledBy: 'u',
+      reconciledAt: '2026-06-18T00:00:00.000Z',
+      category: 'Serviços / Consultoria',
+      items: [],
+    })
+    assert.ok(isOk(withCat))
+    if (isOk(withCat)) assert.equal(withCat.value.category, 'Serviços / Consultoria')
+
+    const noCat = transactionReconciliationToModel({
+      id: 'r',
+      transactionId: 't',
+      type: 'Individual',
+      status: 'Active',
+      reconciledBy: 'u',
+      reconciledAt: '2026-06-18T00:00:00.000Z',
+      items: [],
+    })
+    assert.ok(isOk(noCat))
+    if (isOk(noCat)) assert.equal(noCat.value.category, null)
   })
 
   it('shape inválido → err(server)', () => {
@@ -544,6 +615,58 @@ describe('suggestionsToModel', () => {
       assert.deepEqual(bd[0], { criterion: 'dateD0', weight: 20, result: 'falha', detail: '' })
     }
   })
+
+  it('#172: supplierName/documentNumber ausentes no contrato → null (o BFF enriquece depois)', () => {
+    const raw = {
+      suggestions: [
+        {
+          payableId: 'p1',
+          score: 88,
+          band: 'alta',
+          criteria: {
+            payeeMatch: true,
+            exactValue: true,
+            dateD0: true,
+            memoRef: false,
+            supplierOpenCount: 1,
+          },
+        },
+      ],
+    }
+    const r = suggestionsToModel(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value[0]?.supplierName, null)
+      assert.equal(r.value[0]?.documentNumber, null)
+    }
+  })
+
+  it('#172: quando o core-api já enviar supplierName/documentNumber, o mapper os propaga', () => {
+    const raw = {
+      suggestions: [
+        {
+          payableId: 'p1',
+          score: 88,
+          band: 'alta',
+          criteria: {
+            payeeMatch: true,
+            exactValue: true,
+            dateD0: true,
+            memoRef: false,
+            supplierOpenCount: 1,
+          },
+          supplierName: 'ACME LTDA',
+          documentNumber: 'NF-123',
+        },
+      ],
+    }
+    const r = suggestionsToModel(raw)
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value[0]?.supplierName, 'ACME LTDA')
+      assert.equal(r.value[0]?.documentNumber, 'NF-123')
+    }
+  })
 })
 
 describe('importToModel / reconciliationCreatedToModel / undoToModel', () => {
@@ -574,21 +697,38 @@ describe('importToModel / reconciliationCreatedToModel / undoToModel', () => {
   })
 })
 
-describe('referências da categorização (020 · #200) — array nu', () => {
-  it('categoriesToModel: parseia array, normaliza group (fallback despesa), parentId nullable', () => {
+describe('referências da categorização (020 · #200/#341) — array nu', () => {
+  it('categoriesToModel: parseia array, normaliza group (fallback despesa), parentId/costCenterId nullable', () => {
     const r = categoriesToModel([
-      { id: 'c1', name: 'Serviços', group: 'despesa', parentId: null },
-      { id: 'c2', name: 'ISS', group: 'ajuste', parentId: 'c1' },
-      { id: 'c3', name: 'Estranho', group: 'xyz' }, // group desconhecido → despesa; parentId ausente → null
+      { id: 'c1', name: 'Serviços', group: 'despesa', parentId: null, costCenterId: 'cc1' },
+      { id: 'c2', name: 'ISS', group: 'ajuste', parentId: 'c1', costCenterId: null },
+      // group desconhecido → despesa; parentId/costCenterId ausentes → null (o seed real é assim hoje)
+      { id: 'c3', name: 'Estranho', group: 'xyz' },
     ])
     assert.ok(isOk(r))
     if (isOk(r)) {
       assert.equal(r.value.length, 3)
-      assert.deepEqual(r.value[0], { id: 'c1', name: 'Serviços', group: 'despesa', parentId: null })
+      assert.deepEqual(r.value[0], {
+        id: 'c1',
+        name: 'Serviços',
+        group: 'despesa',
+        parentId: null,
+        costCenterId: 'cc1',
+      })
       assert.equal(r.value[1]?.group, 'ajuste')
+      assert.equal(r.value[1]?.costCenterId, null)
       assert.equal(r.value[2]?.group, 'despesa')
       assert.equal(r.value[2]?.parentId, null)
+      assert.equal(r.value[2]?.costCenterId, null)
     }
+  })
+
+  // #341: o campo é novo no core-api. Se ele vier com lixo (ou sumir num rollback), a categoria degrada
+  // p/ "sem centro" (= global) em vez de derrubar a lista INTEIRA de referências.
+  it('categoriesToModel: costCenterId inválido → null (tolerante a drift), não err', () => {
+    const r = categoriesToModel([{ id: 'c1', name: 'X', group: 'despesa', parentId: null, costCenterId: 42 }])
+    assert.ok(isOk(r))
+    if (isOk(r)) assert.equal(r.value[0]?.costCenterId, null)
   })
 
   it('costCentersToModel: parseia array {id,code,name}', () => {
@@ -600,5 +740,58 @@ describe('referências da categorização (020 · #200) — array nu', () => {
   it('shape inválido → err(server)', () => {
     assert.ok(isErr(categoriesToModel([{ id: 'x' }])))
     assert.ok(isErr(costCentersToModel('nope')))
+  })
+})
+
+describe('payablesBatchToModel (#357 — POST /payables:batch → mapa por ref)', () => {
+  const item = (over: Record<string, unknown> = {}) => ({
+    ref: 'p1',
+    documentId: 'd1',
+    documentNumber: 'NFS-e 2024-0537',
+    documentType: 'NFS-e',
+    valueCents: '150000',
+    dueDate: '2026-06-10T00:00:00.000Z',
+    status: 'Reconciled',
+    paymentMethod: 'Boleto',
+    supplierRef: 's1',
+    supplierName: 'TS Da Silva Serviços Ltda',
+    supplierDocument: '12345678000190',
+    ...over,
+  })
+
+  it('mapeia items → Map por ref; dueDate normalizado p/ date-only', () => {
+    const r = payablesBatchToModel({ items: [item()], missing: [] })
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      const e = r.value.get('p1')
+      assert.equal(e?.documentNumber, 'NFS-e 2024-0537')
+      assert.equal(e?.supplierName, 'TS Da Silva Serviços Ltda')
+      assert.equal(e?.dueDate, '2026-06-10') // ISO → date-only
+      assert.equal(e?.documentType, 'NFS-e')
+    }
+  })
+
+  it('missing e campos nulos: parseia sem quebrar; ref ausente não entra no mapa', () => {
+    const r = payablesBatchToModel({
+      items: [item({ ref: 'p2', documentNumber: null, supplierName: null })],
+      missing: ['p9'],
+    })
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value.has('p9'), false)
+      const e = r.value.get('p2')
+      assert.equal(e?.documentNumber, null)
+      assert.equal(e?.supplierName, null)
+    }
+  })
+
+  it('tolerante a drift: items/missing ausentes → mapa vazio (não err)', () => {
+    const r = payablesBatchToModel({})
+    assert.ok(isOk(r))
+    if (isOk(r)) assert.equal(r.value.size, 0)
+  })
+
+  it('envelope inválido (não-objeto) → err(server)', () => {
+    assert.ok(isErr(payablesBatchToModel('nope')))
   })
 })

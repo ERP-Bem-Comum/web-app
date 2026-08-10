@@ -10,6 +10,7 @@ vi.mock('@tanstack/react-router', () => ({
 import { DocumentDetailDrawer } from '#modules/financial/client/contas-a-pagar-list/components/document-detail-drawer.component.tsx'
 import type { PayeeBankView } from '#modules/financial/client/contas-a-pagar-list/payee-bank.binding.ts'
 import type { DocumentDetailView } from '#modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts'
+import { dwFileCardAttached } from '#modules/financial/client/contas-a-pagar-list/page/contas-a-pagar.css.ts'
 
 afterEach(() => {
   cleanup()
@@ -29,16 +30,73 @@ const baseView: DocumentDetailView = {
   paymentMethod: 'PIX',
   paymentDetail: null,
   description: 'teste rpa',
+  categorization: {
+    costCenter: '—',
+    category: '—',
+    subcategory: '—',
+    program: '—',
+    budgetPlan: '—',
+  },
   retentions: [],
   retentionsTotal: null,
   payables: [],
+  attachment: null,
 }
 
 describe('DocumentDetailDrawer', () => {
   it('renderiza a descrição do documento quando há texto', () => {
-    render(<DocumentDetailDrawer view={baseView} payeeBank={null} onClose={() => undefined} />)
+    render(
+      <DocumentDetailDrawer
+        view={baseView}
+        payeeBank={null}
+        onClose={() => undefined}
+        activeTab="detalhes"
+        onTab={() => undefined}
+        timeline={{ status: 'empty' }}
+      />,
+    )
     expect(screen.getByText('Descrição')).toBeTruthy()
     expect(screen.getByText('teste rpa')).toBeTruthy()
+  })
+
+  it('#568/CA1: com attachment, mostra o nome do arquivo + "Arquivo anexado"', () => {
+    render(
+      <DocumentDetailDrawer
+        view={{
+          ...baseView,
+          attachment: { fileName: 'nota-fiscal.xml', mimeType: 'text/xml', sizeBytes: 21, url: '/x' },
+        }}
+        payeeBank={null}
+        onClose={() => undefined}
+        activeTab="detalhes"
+        onTab={() => undefined}
+        timeline={{ status: 'empty' }}
+      />,
+    )
+    expect(screen.getByText('nota-fiscal.xml')).toBeTruthy()
+    expect(screen.getByText('Arquivo anexado')).toBeTruthy()
+    expect(screen.queryByText('Nenhum arquivo anexado')).toBeNull()
+    // Glyph do ícone = extensão do arquivo (fileBadge).
+    expect(screen.getByText('XML')).toBeTruthy()
+    // Sinal de cor: o card ganha a variante "com anexo" (azul).
+    expect(document.querySelector(`.${dwFileCardAttached}`)).not.toBeNull()
+  })
+
+  it('#568/CA1: sem attachment, mantém o estado vazio (sem chip de arquivo)', () => {
+    render(
+      <DocumentDetailDrawer
+        view={baseView}
+        payeeBank={null}
+        onClose={() => undefined}
+        activeTab="detalhes"
+        onTab={() => undefined}
+        timeline={{ status: 'empty' }}
+      />,
+    )
+    expect(screen.getByText('Nenhum arquivo anexado')).toBeTruthy()
+    expect(screen.queryByText('Arquivo anexado')).toBeNull()
+    // Sem anexo: card permanece bege (sem a variante azul).
+    expect(document.querySelector(`.${dwFileCardAttached}`)).toBeNull()
   })
 
   it('omite a seção de descrição quando vazia', () => {
@@ -47,13 +105,25 @@ describe('DocumentDetailDrawer', () => {
         view={{ ...baseView, description: '' }}
         payeeBank={null}
         onClose={() => undefined}
+        activeTab="detalhes"
+        onTab={() => undefined}
+        timeline={{ status: 'empty' }}
       />,
     )
     expect(screen.queryByText('Descrição')).toBeNull()
   })
 
   it('exibe o favorecido (real) na Forma de Pagamento', () => {
-    render(<DocumentDetailDrawer view={baseView} payeeBank={null} onClose={() => undefined} />)
+    render(
+      <DocumentDetailDrawer
+        view={baseView}
+        payeeBank={null}
+        onClose={() => undefined}
+        activeTab="detalhes"
+        onTab={() => undefined}
+        timeline={{ status: 'empty' }}
+      />,
+    )
     // "Alexandre Novaes" aparece no cabeçalho do fornecedor e como Favorecido no pagamento.
     expect(screen.getAllByText(/Alexandre Novaes/).length).toBeGreaterThanOrEqual(2)
   })
@@ -71,6 +141,9 @@ describe('DocumentDetailDrawer', () => {
         }}
         payeeBank={null}
         onClose={() => undefined}
+        activeTab="detalhes"
+        onTab={() => undefined}
+        timeline={{ status: 'empty' }}
       />,
     )
     expect(screen.getByText('− Retenções (IRRF, INSS)')).toBeTruthy()
@@ -78,7 +151,16 @@ describe('DocumentDetailDrawer', () => {
   })
 
   it('Composição: sem retenções, a linha de Retenções não aparece', () => {
-    render(<DocumentDetailDrawer view={baseView} payeeBank={null} onClose={() => undefined} />)
+    render(
+      <DocumentDetailDrawer
+        view={baseView}
+        payeeBank={null}
+        onClose={() => undefined}
+        activeTab="detalhes"
+        onTab={() => undefined}
+        timeline={{ status: 'empty' }}
+      />,
+    )
     expect(screen.queryByText(/− Retenções/)).toBeNull()
   })
 
@@ -88,6 +170,9 @@ describe('DocumentDetailDrawer', () => {
         view={{ ...baseView, paymentMethod: 'Boleto', paymentDetail: '12345.67890 12345.678901' }}
         payeeBank={null}
         onClose={() => undefined}
+        activeTab="detalhes"
+        onTab={() => undefined}
+        timeline={{ status: 'empty' }}
       />,
     )
     expect(screen.getByText('Linha digitável (47-48 dígitos)')).toBeTruthy()
@@ -96,9 +181,85 @@ describe('DocumentDetailDrawer', () => {
     expect(screen.queryByText('Tipo de Chave')).toBeNull()
   })
 
+  it('#273: Boleto SEM paymentDetail mostra "—" no complemento — NUNCA os dados bancários do favorecido', () => {
+    const payeeBank: PayeeBankView = {
+      bankLine: 'Itaú · Ag 1234 · CC 56789-0',
+      pixType: 'email',
+      pixKey: 'pagamentos@exemplo.com',
+    }
+    render(
+      <DocumentDetailDrawer
+        view={{ ...baseView, paymentMethod: 'Boleto', paymentDetail: null }}
+        payeeBank={payeeBank}
+        onClose={() => undefined}
+        activeTab="detalhes"
+        onTab={() => undefined}
+        timeline={{ status: 'empty' }}
+      />,
+    )
+    // O Boleto mostra SEMPRE o rótulo do código de barras (vazio → "—"), nunca cai nos dados bancários.
+    expect(screen.getByText('Linha digitável (47-48 dígitos)')).toBeTruthy()
+    expect(screen.queryByText('Tipo de Chave')).toBeNull()
+    expect(screen.queryByText('pagamentos@exemplo.com')).toBeNull()
+    expect(screen.queryByText('Itaú · Ag 1234 · CC 56789-0')).toBeNull()
+  })
+
   it('#273: PIX (sem complemento tipado) mantém os dados bancários gated', () => {
-    render(<DocumentDetailDrawer view={baseView} payeeBank={null} onClose={() => undefined} />)
+    render(
+      <DocumentDetailDrawer
+        view={baseView}
+        payeeBank={null}
+        onClose={() => undefined}
+        activeTab="detalhes"
+        onTab={() => undefined}
+        timeline={{ status: 'empty' }}
+      />,
+    )
     expect(screen.getByText('Tipo de Chave')).toBeTruthy()
+  })
+
+  it('#95/#147: Plano Orçamentário mostra os nomes de categorização resolvidos', () => {
+    render(
+      <DocumentDetailDrawer
+        view={{
+          ...baseView,
+          categorization: {
+            costCenter: 'Administrativo',
+            category: 'Serviços',
+            subcategory: 'Consultoria',
+            program: 'Educação Integral',
+            budgetPlan: '—',
+          },
+        }}
+        payeeBank={null}
+        onClose={() => undefined}
+        activeTab="detalhes"
+        onTab={() => undefined}
+        timeline={{ status: 'empty' }}
+      />,
+    )
+    expect(screen.getByText('Administrativo')).toBeTruthy()
+    expect(screen.getByText('Serviços')).toBeTruthy()
+    expect(screen.getByText('Consultoria')).toBeTruthy()
+    expect(screen.getByText('Educação Integral')).toBeTruthy()
+  })
+
+  it('#95/#147: categorização não resolvida (ou ausente) degrada cada linha para "—"', () => {
+    render(
+      <DocumentDetailDrawer
+        view={baseView}
+        payeeBank={null}
+        onClose={() => undefined}
+        activeTab="detalhes"
+        onTab={() => undefined}
+        timeline={{ status: 'empty' }}
+      />,
+    )
+    // A seção Plano Orçamentário existe; os 5 campos caem p/ "—" (nada resolvido no baseView).
+    // "Plano Orçamentário" aparece 2x (rótulo da seção + rótulo do campo do plano).
+    expect(screen.getAllByText('Plano Orçamentário').length).toBeGreaterThanOrEqual(2)
+    expect(screen.getByText('Centro de Custo')).toBeTruthy()
+    // Plano Orçamentário segue "—" (budget-plans, core-api#113) mesmo com o resto resolvido.
   })
 
   it('resolve banco/chave reais do favorecido (client-side) quando há payeeBank — não "—"', () => {
@@ -107,7 +268,16 @@ describe('DocumentDetailDrawer', () => {
       pixType: 'email',
       pixKey: 'pagamentos@exemplo.com',
     }
-    render(<DocumentDetailDrawer view={baseView} payeeBank={payeeBank} onClose={() => undefined} />)
+    render(
+      <DocumentDetailDrawer
+        view={baseView}
+        payeeBank={payeeBank}
+        onClose={() => undefined}
+        activeTab="detalhes"
+        onTab={() => undefined}
+        timeline={{ status: 'empty' }}
+      />,
+    )
     // Tipo de chave = rótulo do catálogo Partners (email → "E-mail"); chave e banco reais.
     expect(screen.getByText('E-mail')).toBeTruthy()
     expect(screen.getByText('pagamentos@exemplo.com')).toBeTruthy()

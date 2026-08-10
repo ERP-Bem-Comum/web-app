@@ -19,6 +19,11 @@ export type {
   SupplierListResponse,
 } from '#modules/partners/server/domain/supplier/supplier.io.ts'
 
+// Agregador server-only `id → name` de TODOS os parceiros (4 tipos) — exposto p/ o enriquecimento INTERINO
+// da Conciliação (#172), resolvendo o favorecido de qualquer tipo (não só suppliers). Mesma fonte do
+// financeiro (picker/grid). Remover quando o core-api enriquecer /payables?status=Paid + suggestions nativo.
+export { listAllPartners } from '#modules/partners/server/adapters/core-api/core-api-partners-aggregate.ts'
+
 // ── Financiadores (US3) ─────────────────────────────────────────────────────
 export { listFinanciersFn } from '#modules/partners/server/adapters/server-fns/financier/list-financiers.query.fn.ts'
 export { getFinancierFn } from '#modules/partners/server/adapters/server-fns/financier/get-financier.query.fn.ts'
@@ -40,6 +45,27 @@ export type {
   CollaboratorDetail,
   CollaboratorListResponse,
 } from '#modules/partners/server/domain/collaborator/collaborator.io.ts'
+
+// Enums CANÔNICOS do colaborador — a lista de verdade, reexportada para quem exibe esses campos fora
+// do módulo (hoje: o relatório "Equipe ABC", cujos dados saem daqui). Atravessa por aqui de propósito:
+// duplicar a lista foi o que fez os gráficos do Equipe apagarem em silêncio pessoas trans e indígenas.
+// Rótulos PT-BR: `partners.collaborators.{gender,race,education,employment,area}.<CODIGO>` no catálogo.
+export {
+  GENDER_IDENTITIES,
+  RACES,
+  EDUCATION_LEVELS,
+  EMPLOYMENT_RELATIONSHIPS,
+  OCCUPATION_AREAS,
+} from '#modules/partners/client/data/model/collaborator.model.ts'
+export type { EmploymentRelationship } from '#modules/partners/client/data/model/collaborator.model.ts'
+
+// Autocadastro (#040) — rota PÚBLICA token-based da 2ª fase do cadastro (sem sessão).
+export { autocadastroPreviewFn } from '#modules/partners/server/adapters/server-fns/collaborator/autocadastro-preview.query.fn.ts'
+export { autocadastroSubmitFn } from '#modules/partners/server/adapters/server-fns/collaborator/autocadastro-submit.service.fn.ts'
+export type {
+  AutocadastroPreview,
+  AutocadastroSubmitInput,
+} from '#modules/partners/server/domain/collaborator/collaborator-autocadastro.io.ts'
 
 // ── Geografia: Estados (US4) + Municípios (US5) ─────────────────────────────
 export { listPartnerStatesFn } from '#modules/partners/server/adapters/server-fns/geography/list-partner-states.query.fn.ts'

@@ -2,13 +2,29 @@
  * CollaboratorDetailPage — detalhe do colaborador (clique na linha da grid). Exibe o pré-cadastro e,
  * se o cadastro estiver completo, também a 2ª etapa. `Editar` habilita todos os campos na própria tela;
  * `Salvar` persiste (pré via update + completo via complete-registration). `Voltar` retorna.
+ * Visual: identidade "brand" de formulário (`brand-form.css.ts`) — mesma da tela Novo Colaborador.
  */
 import { useState, type ReactNode } from 'react'
 import { getRouteApi, useRouter } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { Button, PageHeader } from '#shared/ui/index.ts'
+import { ChevronLeftIcon } from '#shared/ui/icons/index.ts'
+import {
+  page,
+  scrollArea,
+  content,
+  head,
+  backBtn,
+  headText,
+  headTitle,
+  headSubtitle,
+  headActions,
+  actionbar,
+  actionbarInner,
+  btnGhost,
+  btnPrimary,
+} from '#shared/ui/brand/brand-form.css.ts'
 
 import {
   useCollaboratorDetailBinding,
@@ -20,7 +36,7 @@ import { useCollaboratorDetailFormController } from '../components/collaborator-
 import { CollaboratorDetailContent } from '../components/collaborator-detail-content.component.tsx'
 import { PartnersConfirmDialog } from '#modules/partners/client/shared/partners-confirm-dialog.component.tsx'
 import { downloadCsvFile } from '#modules/partners/client/shared/download-file.ts'
-import { errorBanner, footer, saveWrap, screen, secondaryButton } from './collaborator-detail.css.ts'
+import { errorBanner, screen } from './collaborator-detail.css.ts'
 
 const t = createTranslator(ptBR)
 const routeApi = getRouteApi('/_authenticated/parceiros/colaboradores/$id')
@@ -45,12 +61,17 @@ export function CollaboratorDetailPage(): ReactNode {
   if (state.status === 'loading') {
     return (
       <div className={screen}>
-        <PageHeader
-          title={t('partners.collaborators.detail.title')}
-          subtitle={t('partners.collaborators.list.loading')}
-          onBack={goBack}
-          backLabel={t('common.back')}
-        />
+        <div className={page}>
+          <div className={scrollArea}>
+            <div className={content}>
+              <DetailHead
+                title={t('partners.collaborators.detail.title')}
+                subtitle={t('partners.collaborators.list.loading')}
+                onBack={goBack}
+              />
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
@@ -58,13 +79,15 @@ export function CollaboratorDetailPage(): ReactNode {
   if (state.status === 'error') {
     return (
       <div className={screen}>
-        <PageHeader
-          title={t('partners.collaborators.detail.title')}
-          onBack={goBack}
-          backLabel={t('common.back')}
-        />
-        <div className={errorBanner} role="alert">
-          {t(state.errorTag)}
+        <div className={page}>
+          <div className={scrollArea}>
+            <div className={content}>
+              <DetailHead title={t('partners.collaborators.detail.title')} onBack={goBack} />
+              <div className={errorBanner} role="alert">
+                {t(state.errorTag)}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -86,6 +109,32 @@ export function CollaboratorDetailPage(): ReactNode {
       }}
       onBack={goBack}
     />
+  )
+}
+
+// Cabeçalho "brand": voltar + título/subtítulo + ações opcionais (ex.: Exportar histórico).
+function DetailHead({
+  title,
+  subtitle,
+  onBack,
+  actions,
+}: {
+  title: string
+  subtitle?: string
+  onBack: () => void
+  actions?: ReactNode
+}): ReactNode {
+  return (
+    <div className={head}>
+      <button type="button" className={backBtn} onClick={onBack} aria-label={t('common.back')}>
+        <ChevronLeftIcon size={18} />
+      </button>
+      <div className={headText}>
+        <h1 className={headTitle}>{title}</h1>
+        {subtitle !== undefined ? <p className={headSubtitle}>{subtitle}</p> : null}
+      </div>
+      {actions !== undefined ? <div className={headActions}>{actions}</div> : null}
+    </div>
   )
 }
 
@@ -120,84 +169,92 @@ function DetailReady({
 
   return (
     <div className={screen}>
-      <PageHeader
-        title={collaborator.name}
-        subtitle={t(`partners.collaborators.registration.${collaborator.registration}`)}
-        onBack={onBack}
-        backLabel={t('common.back')}
-        actions={
-          <button
-            type="button"
-            className={secondaryButton}
-            onClick={() => {
-              exportHistoryCommand.execute()
-            }}
-            disabled={exportHistoryCommand.running}
-            aria-busy={exportHistoryCommand.running || undefined}
-          >
-            {exportHistoryCommand.running
-              ? t('partners.collaborators.detail.exportHistory.loading')
-              : t('partners.collaborators.detail.exportHistory')}
-          </button>
-        }
-      />
+      <div className={page}>
+        <div className={scrollArea}>
+          <div className={content}>
+            <DetailHead
+              title={collaborator.name}
+              subtitle={t(`partners.collaborators.registration.${collaborator.registration}`)}
+              onBack={onBack}
+              actions={
+                <button
+                  type="button"
+                  className={btnGhost}
+                  onClick={() => {
+                    exportHistoryCommand.execute()
+                  }}
+                  disabled={exportHistoryCommand.running}
+                  aria-busy={exportHistoryCommand.running || undefined}
+                >
+                  {exportHistoryCommand.running
+                    ? t('partners.collaborators.detail.exportHistory.loading')
+                    : t('partners.collaborators.detail.exportHistory')}
+                </button>
+              }
+            />
 
-      {exportHistoryCommand.errorTag !== null ? (
-        <div className={errorBanner} role="alert">
-          {t(exportHistoryCommand.errorTag)}
-        </div>
-      ) : null}
-
-      {saveCommand.errorTag !== null ? (
-        <div className={errorBanner} role="alert">
-          {t(saveCommand.errorTag)}
-        </div>
-      ) : null}
-
-      <CollaboratorDetailContent
-        controller={c}
-        editing={editing}
-        showComplete={showComplete}
-        preTitle={preTitle}
-      />
-
-      <div className={footer}>
-        {editing ? (
-          <>
-            <button
-              type="button"
-              className={secondaryButton}
-              onClick={() => {
-                c.reset(collaborator)
-                onCancel()
-              }}
-            >
-              {t('partners.collaborators.detail.cancel')}
-            </button>
-            <div className={saveWrap}>
-              <Button
-                onClick={() => {
-                  setConfirmingEdit(true)
-                }}
-                loading={saveCommand.running}
-                loadingLabel={t('partners.collaborators.detail.saving')}
-              >
-                {t('partners.collaborators.detail.save')}
-              </Button>
-            </div>
-          </>
-        ) : (
-          <>
-            <button type="button" className={secondaryButton} onClick={onBack}>
-              {t('common.back')}
-            </button>
-            {canWrite ? (
-              <div className={saveWrap}>
-                <Button onClick={onEdit}>{t('partners.collaborators.actions.edit')}</Button>
+            {exportHistoryCommand.errorTag !== null ? (
+              <div className={errorBanner} role="alert">
+                {t(exportHistoryCommand.errorTag)}
               </div>
             ) : null}
-          </>
-        )}
+
+            {saveCommand.errorTag !== null ? (
+              <div className={errorBanner} role="alert">
+                {t(saveCommand.errorTag)}
+              </div>
+            ) : null}
+
+            <CollaboratorDetailContent
+              controller={c}
+              editing={editing}
+              showComplete={showComplete}
+              preTitle={preTitle}
+            />
+          </div>
+        </div>
+
+        <div className={actionbar}>
+          <div className={actionbarInner}>
+            {editing ? (
+              <>
+                <button
+                  type="button"
+                  className={btnGhost}
+                  onClick={() => {
+                    c.reset(collaborator)
+                    onCancel()
+                  }}
+                >
+                  {t('partners.collaborators.detail.cancel')}
+                </button>
+                <button
+                  type="button"
+                  className={btnPrimary}
+                  disabled={saveCommand.running}
+                  onClick={() => {
+                    setConfirmingEdit(true)
+                  }}
+                >
+                  {saveCommand.running
+                    ? t('partners.collaborators.detail.saving')
+                    : t('partners.collaborators.detail.save')}
+                </button>
+              </>
+            ) : (
+              <>
+                <button type="button" className={btnGhost} onClick={onBack}>
+                  {t('common.back')}
+                </button>
+                {canWrite ? (
+                  <button type="button" className={btnPrimary} onClick={onEdit}>
+                    {t('partners.collaborators.actions.edit')}
+                  </button>
+                ) : null}
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
       <PartnersConfirmDialog
@@ -212,7 +269,10 @@ function DetailReady({
             id: collaborator.id,
             pre: c.buildPre(),
             complete: c.buildComplete(collaborator.id),
-            includeComplete: c.hasCompleteData(),
+            // `completeRegistration` é 1x só (o domínio rejeita já-completo → 'collaborator-already-complete'
+            // → conflito "Já existe um registro"). Num colaborador JÁ cadastrado, só o `update` (cadastrais)
+            // roda; os pessoais (data de nascimento etc.) dependem de o backend expor edição pós-cadastro.
+            includeComplete: c.hasCompleteData() && collaborator.registration !== 'complete',
           })
           setConfirmingEdit(false)
         }}

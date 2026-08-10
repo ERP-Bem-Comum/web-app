@@ -1,6 +1,7 @@
 import { style, globalStyle } from '@vanilla-extract/css'
 
 import { vars } from '#shared/ui/tokens/index.ts'
+import { brand } from '#shared/ui/brand/grid-brand.values.ts'
 
 /* ─── Estilos de impressão (PDF via window.print) ─── */
 
@@ -17,23 +18,41 @@ export const screen = style({
   flexDirection: 'column',
   height: '100%',
   minHeight: '100vh',
+  // Full-bleed (o shell não aplica padding): o próprio screen provê o recuo da MARCA (28px) no topo e nas
+  // laterais — título e tabela a 28px da barra de menu, igual aos demais grids. As seções internas não
+  // repetem paddingInline (herdam este recuo); a bottombar é fixa e ignora o padding.
+  paddingTop: brand.space.xxl,
+  paddingInline: brand.space.xxl,
 })
 
 // Wrapper transparente do conteúdo da lista (display:contents → não altera o layout flex do `screen`).
 // Quando um documento imprimível está ativo, ganha a variante que o oculta SÓ na impressão, para o
 // PDF conter apenas o documento (e não a grade).
 export const contentWrap = style({ display: 'contents' })
-export const contentWrapPrintHidden = style([
-  contentWrap,
-  { '@media': { print: { display: 'none' } } },
-])
+export const contentWrapPrintHidden = style([contentWrap, { '@media': { print: { display: 'none' } } }])
+
+// Cabeçalho PRÓPRIO da lista de Contratos (o shell não desenha header aqui — showPageHeader false):
+// título institucional + legenda BEGE (ink5), identidade de "papel" específica deste grid.
+// Título: recuo lateral herdado do `screen` (28px). marginBlockEnd espelha o gap do header do shell (lg).
+export const pageHead = style({
+  marginBlockEnd: vars.space.lg,
+})
+
+export const pageSubtitle = style({
+  margin: 0,
+  marginTop: '0.125rem',
+  color: vars.color.institutional.ink5,
+  fontSize: '0.84375rem',
+  fontFamily: vars.font.family.heading,
+  lineHeight: 1.4,
+})
 
 export const header = style({
   display: 'flex',
   alignItems: 'center',
   gap: vars.space.md,
   minHeight: '3.5rem',
-  paddingInline: vars.space.md,
+  // paddingInline herdado do `screen` (28px).
   paddingBlock: '0.625rem',
 })
 
@@ -41,16 +60,19 @@ export const filterToggle = style({
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  width: '2.25rem',
-  height: '2.25rem',
+  // Mesma "espessura" (44px) do funil do grid de Colaboradores.
+  width: '2.75rem',
+  height: '2.75rem',
   borderRadius: vars.radius.md,
-  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  border: `${vars.borderWidth.thin} solid color-mix(in srgb, ${vars.color.institutional.paperRule} 55%, ${vars.color.institutional.paperWarm})`,
   background: vars.color.surface.default,
   color: vars.color.institutional.ink3,
   cursor: 'pointer',
   fontSize: vars.font.size.sm,
   lineHeight: 1,
   flexShrink: 0,
+  // Profundidade suave (sombra em camadas do kit de grid) — pedido da P.O. para os filtros.
+  boxShadow: brand.shadow.cardDepth,
   ':hover': {
     background: vars.color.institutional.paperWarm,
   },
@@ -60,8 +82,8 @@ export const filterToggleActive = style({
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  width: '2.25rem',
-  height: '2.25rem',
+  width: '2.75rem',
+  height: '2.75rem',
   borderRadius: vars.radius.md,
   border: `${vars.borderWidth.thin} solid ${vars.color.institutional.blueLine}`,
   background: vars.color.institutional.blueBg,
@@ -70,6 +92,7 @@ export const filterToggleActive = style({
   fontSize: vars.font.size.sm,
   lineHeight: 1,
   flexShrink: 0,
+  boxShadow: brand.shadow.cardDepth,
   ':hover': {
     background: vars.color.institutional.blueBg,
   },
@@ -77,8 +100,9 @@ export const filterToggleActive = style({
 
 export const searchWrap = style({
   position: 'relative',
+  // Ocupa TODO o espaço disponível até os chips de status (sem cap de largura) — padrão Colaboradores.
   flex: 1,
-  maxWidth: '26.875rem',
+  minWidth: '12rem',
 })
 
 export const searchIcon = style({
@@ -94,15 +118,16 @@ export const searchIcon = style({
 
 export const searchInput = style({
   width: '100%',
-  height: '2.25rem',
+  height: '2.75rem',
   paddingInlineStart: '2.25rem',
   paddingInlineEnd: vars.space.md,
   borderRadius: vars.radius.md,
-  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  border: `${vars.borderWidth.thin} solid color-mix(in srgb, ${vars.color.institutional.paperRule} 55%, ${vars.color.institutional.paperWarm})`,
   background: vars.color.surface.default,
   color: vars.color.institutional.ink3,
   fontSize: vars.font.size.sm,
   fontFamily: vars.font.family.body,
+  boxShadow: brand.shadow.cardDepth,
   ':focus': {
     outline: 'none',
     borderColor: vars.color.institutional.blueLine,
@@ -112,17 +137,18 @@ export const searchInput = style({
   },
 })
 
+// Sem `marginInlineStart: auto`: uma margem auto absorveria TODO o espaço livre antes do flex-grow,
+// impedindo o campo de busca (flex:1) de crescer. Sem ela, a busca cresce até encostar nos chips.
 export const chipsWrap = style({
-  marginInlineStart: 'auto',
+  flexShrink: 0,
 })
 
-export const filtersArea = style({
-  borderBottom: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
-})
+// Sem borderBottom: a régua abaixo do painel de filtros expandido foi removida (pedido P.O.).
+export const filtersArea = style({})
 
 export const tableWrap = style({
   flex: '0 0 auto',
-  paddingInline: vars.space.md,
+  // paddingInline herdado do `screen` (28px).
   paddingTop: vars.space.md,
   paddingBottom: '5rem',
   overflow: 'visible',
@@ -153,7 +179,7 @@ export const exportButton = style({
   paddingInline: vars.space.md,
   paddingBlock: vars.space.sm,
   borderRadius: vars.radius.md,
-  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  border: `${vars.borderWidth.thin} solid color-mix(in srgb, ${vars.color.institutional.paperRule} 55%, ${vars.color.institutional.paperWarm})`,
   background: vars.color.surface.default,
   color: vars.color.institutional.ink3,
   fontSize: vars.font.size.sm,

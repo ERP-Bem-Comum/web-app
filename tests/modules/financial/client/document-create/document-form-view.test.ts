@@ -17,6 +17,7 @@ import {
   titulosPrevistos,
   canSubmit,
   canSaveDraft,
+  ocrReadFields,
   buildCreateInput,
   buildDraftInput,
   buildRegisteredTaxInputs,
@@ -35,7 +36,10 @@ import {
   hydrateFieldsFromDetail,
   canSaveEdit,
   buildAdjustInput,
-  ocrToFormPatch,
+  ocrErrorTag,
+  maskCompetencia,
+  competenciaToIso,
+  competenciaFromIso,
   EMPTY_REFORMA_TRIBUTARIA,
   type DocumentFormFields,
   type PartnerOption,
@@ -57,6 +61,7 @@ const base: DocumentFormFields = {
   paymentMethod: 'PIX',
   grossValue: 'R$ 10.000,00',
   issueDate: '',
+  competencia: '',
   dueDate: '2026-06-10',
   description: 'Consultoria',
   discounts: '',
@@ -66,12 +71,12 @@ const base: DocumentFormFields = {
   contractRef: '',
   programRef: '',
   categoryRef: '',
+  subcategoryRef: '',
   costCenterRef: '',
   approverRef: '',
   contaDebitoRef: '',
   centroCusto: '',
   categoria: '',
-  subcategoria: '',
   planoOrcamentario: '',
   retentions: { iss: '350', irrf: '150', inss: '1100', pis: '65', cofins: '300', csll: '100' },
   reformaTributaria: EMPTY_REFORMA_TRIBUTARIA,
@@ -154,6 +159,50 @@ describe('paymentDetail (complemento da forma de pagamento) — #273', () => {
   })
 })
 
+describe('competência (#197) — helpers MM/AAAA ↔ YYYY-MM', () => {
+  it('maskCompetencia: dígitos → MM/AAAA (máx 6); idempotente', () => {
+    assert.equal(maskCompetencia(''), '')
+    assert.equal(maskCompetencia('1'), '1')
+    assert.equal(maskCompetencia('12'), '12')
+    assert.equal(maskCompetencia('122'), '12/2')
+    assert.equal(maskCompetencia('122026'), '12/2026')
+    // ignora não-dígitos e excesso
+    assert.equal(maskCompetencia('06/2026'), '06/2026')
+    assert.equal(maskCompetencia('1220261'), '12/2026')
+    // idempotência: aplicar de novo no resultado não muda
+    assert.equal(maskCompetencia(maskCompetencia('122026')), '12/2026')
+    assert.equal(maskCompetencia(maskCompetencia('06/2026')), '06/2026')
+  })
+  it('competenciaToIso: MM/AAAA → YYYY-MM; null se incompleto/inválido', () => {
+    assert.equal(competenciaToIso('06/2026'), '2026-06')
+    assert.equal(competenciaToIso('12/2026'), '2026-12')
+    // incompleto
+    assert.equal(competenciaToIso(''), null)
+    assert.equal(competenciaToIso('06/202'), null)
+    assert.equal(competenciaToIso('6/2026'), null)
+    // mês inválido
+    assert.equal(competenciaToIso('00/2026'), null)
+    assert.equal(competenciaToIso('13/2026'), null)
+  })
+  it('competenciaFromIso: YYYY-MM → MM/AAAA', () => {
+    assert.equal(competenciaFromIso('2026-06'), '06/2026')
+    assert.equal(competenciaFromIso('2026-12'), '12/2026')
+  })
+})
+
+describe('buildCreateInput / buildDraftInput — competência (#197)', () => {
+  it('buildCreateInput: MM/AAAA → YYYY-MM; vazio/incompleto → undefined', () => {
+    assert.equal(buildCreateInput({ ...base, competencia: '06/2026' })?.competencia, '2026-06')
+    assert.equal(buildCreateInput({ ...base, competencia: '' })?.competencia, undefined)
+    assert.equal(buildCreateInput({ ...base, competencia: '06/202' })?.competencia, undefined)
+    assert.equal(buildCreateInput({ ...base, competencia: '13/2026' })?.competencia, undefined)
+  })
+  it('buildDraftInput: mesmo comportamento no rascunho', () => {
+    assert.equal(buildDraftInput({ ...base, competencia: '06/2026' })?.competencia, '2026-06')
+    assert.equal(buildDraftInput({ ...base, competencia: '' })?.competencia, undefined)
+  })
+})
+
 describe('issAllowedFor / allowedRetentionKeysFor (ISS em NFS-e e RPA)', () => {
   it('ISS em NFS-e e RPA (a UI exibe; o backend ainda gateia RPA — ver issue)', () => {
     assert.equal(issAllowedFor('NFS-e'), true)
@@ -216,6 +265,36 @@ describe('buildCreateInput — Categorização (categoryRef/costCenterRef · 020
     const empty = buildCreateInput(base)
     assert.equal(empty?.categoryRef, undefined)
     assert.equal(empty?.costCenterRef, undefined)
+  })
+  // #502 (S1): categoria e subcategoria vão em campos SEPARADOS — não se dobra mais a folha em categoryRef.
+  it('subcategoria escolhida → categoryRef = a categoria, subcategoryRef = a subcategoria (campos próprios)', () => {
+    const cat = '7c9e6679-7425-40de-944b-e07fc1f90ae7'
+    const sub = '7c9e6679-7425-40de-944b-e07fc1f90ff1'
+    const out = buildCreateInput({ ...base, categoryRef: cat, subcategoryRef: sub })
+    assert.equal(out?.categoryRef, cat)
+    assert.equal(out?.subcategoryRef, sub)
+  })
+  it('sem subcategoria → categoryRef só; sem nenhuma das duas → ambos omitidos', () => {
+    const cat = '7c9e6679-7425-40de-944b-e07fc1f90ae7'
+    const onlyCat = buildCreateInput({ ...base, categoryRef: cat, subcategoryRef: '' })
+    assert.equal(onlyCat?.categoryRef, cat)
+    assert.equal(onlyCat?.subcategoryRef, undefined)
+    const none = buildCreateInput({ ...base, categoryRef: '', subcategoryRef: '' })
+    assert.equal(none?.categoryRef, undefined)
+    assert.equal(none?.subcategoryRef, undefined)
+  })
+  // O RASCUNHO usa a mesma regra (é o outro build que carrega categorização). O AJUSTE não entra aqui:
+  // `AdjustDocumentInput` não tem `categoryRef` — o core-api não aceita recategorizar no ajuste.
+  it('campos separados valem também no RASCUNHO (mesma regra do create)', () => {
+    const cat = '7c9e6679-7425-40de-944b-e07fc1f90ae7'
+    const sub = '7c9e6679-7425-40de-944b-e07fc1f90ff1'
+    const draft = buildDraftInput({ ...base, categoryRef: cat, subcategoryRef: sub })
+    assert.equal(draft?.categoryRef, cat)
+    assert.equal(draft?.subcategoryRef, sub)
+    assert.equal(
+      buildDraftInput({ ...base, categoryRef: cat, subcategoryRef: '' })?.subcategoryRef,
+      undefined,
+    )
   })
   it('envia approverRef quando escolhido; omite quando vazio (#148)', () => {
     const ap = 'a1b2c3d4-0000-4000-8000-000000000148'
@@ -421,17 +500,32 @@ describe('canSaveDraft / buildDraftInput', () => {
     assert.equal(canSubmit(semVenc), false)
     assert.equal(canSaveDraft(semVenc), true)
   })
-  it('rascunho exige o mínimo: tipo, número, fornecedor, forma, bruto', () => {
-    assert.equal(canSaveDraft({ ...base, supplierRef: '' }), false)
-    assert.equal(canSaveDraft({ ...base, grossValue: '' }), false)
+  it('#534: rascunho salva SEMPRE (parcial) — canSaveDraft nunca trava', () => {
+    assert.equal(canSaveDraft({ ...base, supplierRef: '' }), true)
+    assert.equal(canSaveDraft({ ...base, grossValue: '' }), true)
+    assert.equal(
+      canSaveDraft({
+        ...base,
+        type: '',
+        documentNumber: '',
+        supplierRef: '',
+        paymentMethod: '',
+        grossValue: '',
+      }),
+      true,
+    )
+  })
+  it('#534: buildDraftInput monta parcial — campos vazios viram undefined (sem null)', () => {
+    const input = buildDraftInput({ ...base, type: '', supplierRef: '', grossValue: '' })
+    assert.equal(input.asDraft, true)
+    assert.equal(input.type, undefined)
+    assert.equal(input.supplierRef, undefined)
+    assert.equal(input.grossValueCents, undefined)
   })
   it('buildDraftInput marca asDraft e omite dueDate vazio', () => {
     const input = buildDraftInput({ ...base, dueDate: '' })
-    assert.notEqual(input, null)
-    if (input !== null) {
-      assert.equal(input.asDraft, true)
-      assert.equal(input.dueDate, undefined)
-    }
+    assert.equal(input.asDraft, true)
+    assert.equal(input.dueDate, undefined)
   })
 })
 
@@ -465,11 +559,17 @@ const detail: DocumentDetail = {
   supplierRef: 's-1',
   paymentMethod: 'PIX',
   paymentDetail: '34191.79001 01043.510047 91020.150008 5 95860000010000',
+  competencia: '2026-06',
   grossValueCents: '1000000',
   netValueCents: '793500',
   issueDate: '2026-06-01',
   dueDate: '2026-06-10',
   description: 'Consultoria',
+  budgetPlanRef: null,
+  categoryRef: null,
+  subcategoryRef: null,
+  costCenterRef: null,
+  programRef: null,
   version: 3,
   payables: [
     { id: 'p0', kind: 'Parent', retentionType: null, valueCents: '793500', status: 'Aberto' },
@@ -477,6 +577,7 @@ const detail: DocumentDetail = {
     { id: 'p2', kind: 'Child', retentionType: 'IRRF', valueCents: '15000', status: 'Aberto' },
     { id: 'p3', kind: 'Child', retentionType: 'CSRF', valueCents: '25500', status: 'Aberto' },
   ],
+  attachment: null,
 }
 
 describe('editLocksFor / isEditableStatus', () => {
@@ -529,6 +630,10 @@ describe('hydrateFieldsFromDetail', () => {
     )
     assert.equal(hydrateFieldsFromDetail({ ...detail, paymentDetail: null }).paymentComplement, '')
   })
+  it('#197: hidrata a competência (YYYY-MM → MM/AAAA); null → ""', () => {
+    assert.equal(hydrateFieldsFromDetail(detail).competencia, '06/2026')
+    assert.equal(hydrateFieldsFromDetail({ ...detail, competencia: null }).competencia, '')
+  })
 })
 
 describe('canSaveEdit / buildAdjustInput', () => {
@@ -553,47 +658,38 @@ describe('canSaveEdit / buildAdjustInput', () => {
     assert.equal('retentions' in (input ?? {}), false)
   })
 
+  it('buildAdjustInput: envia paymentDetail (complemento); vazio → null p/ limpar (#284)', () => {
+    assert.equal(
+      buildAdjustInput({ ...fields, paymentComplement: '12345.67890' }, detail)?.paymentDetail,
+      '12345.67890',
+    )
+    assert.equal(buildAdjustInput({ ...fields, paymentComplement: '' }, detail)?.paymentDetail, null)
+    assert.equal(buildAdjustInput({ ...fields, paymentComplement: '   ' }, detail)?.paymentDetail, null)
+  })
+
   it('buildAdjustInput: null quando não pode salvar', () => {
     assert.equal(buildAdjustInput({ ...fields, dueDate: '' }, detail), null)
   })
 })
 
-describe('ocrToFormPatch (costura OCR → form)', () => {
-  it('mapeia só os campos extraídos (cents→reais, dueDate ISO); patch parcial', () => {
-    const patch = ocrToFormPatch({
-      type: 'NFS-e',
-      documentNumber: '0847',
-      grossValueCents: '160000',
-      dueDate: '2026-07-10',
-    })
-    assert.equal(patch.type, 'NFS-e')
-    assert.equal(patch.documentNumber, '0847')
-    assert.equal(patch.grossValue, '1.600,00')
-    assert.equal(patch.dueDate, '2026-07-10')
-    // #163 — não veio issueDate → não entra no patch
-    assert.equal('issueDate' in patch, false)
-    // não veio série/descrição/retenção → não entram no patch
-    assert.equal('series' in patch, false)
-    assert.equal('retentions' in patch, false)
+describe('ocrErrorTag (ingestão por OCR → tag i18n)', () => {
+  it('mapeia cada variante de OcrError p/ a chave i18n correspondente', () => {
+    assert.equal(ocrErrorTag('invalid-mime'), 'financial.create.ocr.error.invalidMime')
+    assert.equal(ocrErrorTag('file-too-large'), 'financial.create.ocr.error.tooLarge')
+    assert.equal(ocrErrorTag('invalid-file'), 'financial.create.ocr.error.invalidFile')
+    assert.equal(ocrErrorTag('unauthorized'), 'financial.create.ocr.error.unauthorized')
+    assert.equal(ocrErrorTag('server'), 'financial.create.ocr.error.server')
   })
+})
 
-  it('retenções: CSRF agrega em pis (mesma convenção da hidratação)', () => {
-    const patch = ocrToFormPatch({
-      retentions: [
-        { type: 'IRRF', valueCents: '15000' },
-        { type: 'CSRF', valueCents: '4650' },
-      ],
-    })
-    assert.equal(patch.retentions?.irrf, '150,00')
-    assert.equal(patch.retentions?.pis, '46,50')
-    assert.equal(patch.retentions?.iss, '')
+describe('ocrReadFields — fornecedor auto-identificado (core-api#560)', () => {
+  it('sessão OCR + supplierRef preenchido → acende "supplier"', () => {
+    assert.equal(ocrReadFields(base, true).has('supplier'), true)
   })
-
-  it('#163: mapeia issueDate quando o OCR a extrai', () => {
-    assert.equal(ocrToFormPatch({ issueDate: '2026-06-01' }).issueDate, '2026-06-01')
+  it('fora de sessão OCR → não acende', () => {
+    assert.equal(ocrReadFields(base, false).has('supplier'), false)
   })
-
-  it('vazio → patch vazio', () => {
-    assert.deepEqual(ocrToFormPatch({}), {})
+  it('supplierRef vazio → não acende', () => {
+    assert.equal(ocrReadFields({ ...base, supplierRef: '' }, true).has('supplier'), false)
   })
 })

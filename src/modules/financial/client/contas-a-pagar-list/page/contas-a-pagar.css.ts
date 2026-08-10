@@ -6,6 +6,7 @@
 import { style, styleVariants, globalStyle } from '@vanilla-extract/css'
 
 import { vars } from '#shared/ui/tokens/index.ts'
+import { brand } from '#shared/ui/brand/grid-brand.values.ts'
 
 export const screen = style({
   display: 'flex',
@@ -19,7 +20,9 @@ export const filterBar = style({
   display: 'flex',
   alignItems: 'center',
   gap: '0.875rem', // Figma: 14px
-  paddingInline: vars.space.lg, // 24px
+  // paddingInline = 28px (brand.space.xxl): recuo da MARCA, igual ao título (header do shell) e aos demais
+  // grids full-bleed (Usuários etc.) → título e tabela a 28px da barra de menu, alinhados.
+  paddingInline: brand.space.xxl,
   paddingBlock: vars.space.sm,
   background: vars.color.surface.default,
   // Sem régua entre a busca e a tabela (pedido P.O.) — a separação fica no header sticky do grid.
@@ -29,14 +32,18 @@ export const searchWrap = style({
   position: 'relative',
   display: 'flex',
   alignItems: 'center',
+  boxSizing: 'border-box',
+  blockSize: '2.75rem', // 44px — mesma altura dos demais controles (padrão Contratos/Colaboradores)
   background: vars.color.surface.default,
-  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  // Borda clareada (color-mix paperRule→paperWarm) + profundidade sobre fundo branco (kit de grid).
+  border: `${vars.borderWidth.thin} solid color-mix(in srgb, ${vars.color.institutional.paperRule} 55%, ${vars.color.institutional.paperWarm})`,
   borderRadius: vars.radius.md,
-  paddingBlock: '0.5rem', // 8px — campo um pouco mais alto/confortável
+  boxShadow: brand.shadow.cardDepth,
   paddingInlineStart: '2.25rem', // 36px (espaço do ícone)
   paddingInlineEnd: '0.875rem', // 14px (sem atalho ⌘K dentro do campo)
-  inlineSize: '24rem', // largura fixa, mais larga (sem o chip de atalho)
-  maxInlineSize: '100%',
+  // Ocupa TODO o espaço disponível até os chips de status (sem largura fixa) — padrão Contratos.
+  flex: 1,
+  minInlineSize: '14rem',
 })
 export const searchIcon = style({
   position: 'absolute',
@@ -79,12 +86,15 @@ export const statusChips = style({
   borderRadius: vars.radius.md,
   minInlineSize: 0,
   overflowX: 'auto',
+  // Borda clareada + profundidade (kit de grid) — mesmo tratamento do grid de Contratos.
+  border: `${vars.borderWidth.thin} solid color-mix(in srgb, ${vars.color.institutional.paperRule} 55%, ${vars.color.institutional.paperWarm})`,
+  boxShadow: brand.shadow.cardDepth,
 })
 const chipBase = style({
   display: 'inline-flex',
   alignItems: 'center',
   gap: vars.space.xs,
-  blockSize: '1.875rem', // 30px (Contratos)
+  blockSize: '2.5rem', // 40px + 2×2px do trilho = 44px (casando com busca/filtro/Contratos)
   paddingInline: '0.625rem', // 10px
   borderRadius: vars.radius.sm,
   fontFamily: vars.font.family.body, // Nunito (Contratos)
@@ -125,7 +135,7 @@ export const chipDisabled = style([
     opacity: 0.5,
   },
 ])
-const chipCount = style({
+export const chipCount = style({
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -145,19 +155,39 @@ export const chipCountOnActive = style([
   { color: vars.color.institutional.ink2, background: vars.color.institutional.paperBeige },
 ])
 
+// Bolinha de status na chip (paridade com as chips da Conciliação) — cor = tom do badge de status.
+const chipDotBase = {
+  inlineSize: '0.4375rem',
+  blockSize: '0.4375rem',
+  borderRadius: '50%',
+  flexShrink: 0,
+} as const
+export const chipDot = styleVariants({
+  Rascunho: { ...chipDotBase, background: vars.color.status.cancelledText },
+  Aberto: { ...chipDotBase, background: vars.color.status.pendingText },
+  Aprovado: { ...chipDotBase, background: vars.color.status.approvedText },
+  Transmitido: { ...chipDotBase, background: vars.color.status.finishedText },
+  Recusado: { ...chipDotBase, background: vars.color.status.terminatedText },
+  Pago: { ...chipDotBase, background: vars.color.status.activeText },
+  Conciliado: { ...chipDotBase, background: vars.color.status.reconciledText },
+})
+
 // ── Filtros avançados ("Adicionar filtro", estilo do mock) ────────────────────
 // Empurra o bloco de filtros para a direita da filter-bar (igual ao fbar-right do mock).
-export const fbarRight = style({ marginInlineStart: 'auto', display: 'inline-flex', gap: vars.space.sm })
+// Sem `marginInlineStart: auto`: a margem auto absorveria o espaço livre antes do flex-grow e travaria o
+// crescimento da busca. Sem ela, a busca (flex:1) cresce até os chips e o bloco de filtro fica à direita.
+export const fbarRight = style({ display: 'inline-flex', gap: vars.space.sm, flexShrink: 0 })
 export const fltWrap = style({ position: 'relative', display: 'inline-flex' })
 export const addFilterBtn = style({
   display: 'inline-flex',
   alignItems: 'center',
   gap: vars.space.xs,
-  blockSize: '2rem',
-  paddingInline: '0.625rem',
-  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  blockSize: '2.75rem', // 44px — alinhado à busca/chips/Exportar
+  paddingInline: '0.875rem',
+  border: `${vars.borderWidth.thin} solid color-mix(in srgb, ${vars.color.institutional.paperRule} 55%, ${vars.color.institutional.paperWarm})`,
   borderRadius: vars.radius.md,
   background: vars.color.surface.default,
+  boxShadow: brand.shadow.cardDepth,
   fontFamily: vars.font.family.body,
   fontSize: '0.6875rem',
   fontWeight: vars.font.weight.semibold,
@@ -244,7 +274,8 @@ export const activeFilters = style({
   flexWrap: 'wrap',
   alignItems: 'center',
   gap: vars.space.sm,
-  paddingInline: vars.space.lg,
+  // Alinhado ao título/tabela (recuo da marca, 28px).
+  paddingInline: brand.space.xxl,
   paddingBlockEnd: vars.space.sm,
   background: vars.color.surface.default,
 })
@@ -357,6 +388,74 @@ export const clearAllFilters = style({
   cursor: 'pointer',
   ':hover': { color: vars.color.institutional.ink2, textDecoration: 'underline' },
 })
+
+// ── Visões salvas (saved views, #351) — botão + menu na filter-bar (pele igual ao "Adicionar filtro") ──
+export const savedViewsWrap = style({ position: 'relative', display: 'inline-flex' })
+export const savedViewsBtn = style([addFilterBtn]) // mesma pele do botão de filtro (44px, marca)
+export const savedViewsMenu = style([addFilterMenu, { minInlineSize: '19rem', paddingBlock: vars.space.sm }])
+// Bloco "Salvar visão atual" (input + confirmar) no topo do menu.
+export const savedViewsSaveRow = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.xs,
+  paddingInline: vars.space.md,
+  paddingBlockEnd: vars.space.sm,
+})
+export const savedViewsNameInput = style([chipControlBase, { flex: 1, minInlineSize: 0, blockSize: '2rem' }])
+export const savedViewsSaveBtn = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  blockSize: '2rem',
+  paddingInline: '0.75rem',
+  border: 'none',
+  borderRadius: vars.radius.sm,
+  background: vars.color.institutional.blueDeep,
+  color: vars.color.surface.default,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  fontWeight: vars.font.weight.semibold,
+  cursor: 'pointer',
+  ':disabled': { opacity: 0.5, cursor: 'not-allowed' },
+})
+export const savedViewsDivider = style({
+  blockSize: vars.borderWidth.thin,
+  background: vars.color.institutional.paperRule,
+  marginBlock: vars.space.xs,
+})
+export const savedViewsEmpty = style({
+  paddingInline: vars.space.md,
+  paddingBlock: vars.space.sm,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink5,
+})
+// Uma visão salva na lista: nome (aplica ao clicar) + botão excluir.
+export const savedViewsItem = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.xs,
+  paddingInline: vars.space.sm,
+  paddingInlineStart: vars.space.md,
+})
+export const savedViewsApply = style({
+  flex: 1,
+  minInlineSize: 0,
+  display: 'block',
+  paddingBlock: '0.4375rem',
+  border: 'none',
+  background: 'transparent',
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink2,
+  textAlign: 'start',
+  cursor: 'pointer',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+  borderRadius: vars.radius.sm,
+  ':hover': { background: vars.color.institutional.blueBg },
+})
+export const savedViewsDelete = style([filterChipRemove]) // reusa o × dos chips de filtro
 
 // ── Modal de confirmação de EXCLUSÃO (hard-delete) ────────────────────────────
 export const confirmOverlay = style({
@@ -471,7 +570,8 @@ const GRID_COLS =
 
 // Wrapper rola na horizontal (como o grid largo do Figma) quando a viewport é estreita.
 export const gridWrap = style({
-  paddingInline: vars.space.lg,
+  // paddingInline = 28px (brand.space.xxl): recuo da marca — alinha a tabela ao título e dá folga p/ a sombra.
+  paddingInline: brand.space.xxl,
   paddingBlock: vars.space.md,
   minBlockSize: 0, // permite o scroller interno encolher dentro do flex da tela
 })
@@ -483,9 +583,11 @@ export const grid = style({
   // linha nunca ficar coberta pelo bottombar (antes 15rem deixava a borda inferior sob o rodapé).
   maxBlockSize: 'calc(100dvh - 18rem)',
   overflow: 'auto',
-  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  // Borda clareada + profundidade (kit de grid) — mesmo tratamento do grid de Contratos.
+  border: `${vars.borderWidth.thin} solid color-mix(in srgb, ${vars.color.institutional.paperRule} 55%, ${vars.color.institutional.paperWarm})`,
   borderRadius: vars.radius.lg,
   background: vars.color.surface.default,
+  boxShadow: brand.shadow.cardDepth,
   selectors: {
     '&::-webkit-scrollbar': { width: '0.625rem', height: '0.625rem' },
     '&::-webkit-scrollbar-track': {
@@ -534,7 +636,7 @@ export const row = style({
   minBlockSize: '3.5rem', // 56px
   paddingInline: vars.space.lg,
   borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
-  fontFamily: vars.font.family.body, // marca: Nunito no corpo da tabela (padroniza com o grid de Contratos)
+  fontFamily: vars.font.family.heading, // Inter no corpo da tabela (só a família; padroniza com o grid de Contratos)
   fontSize: `calc(${vars.font.size.xs} + 0.0625rem)`, // +1px sobre o xs (12px → 13px) nos campos
   color: vars.color.institutional.ink2,
   transition: 'background 120ms ease',
@@ -877,6 +979,136 @@ export const drawerBody = style({
   gap: vars.space.lg,
   padding: vars.space.lg,
 })
+
+// ── Abas do drawer (Detalhes | Histórico) ───────────────────────────────────────
+export const dwTabs = style({
+  display: 'flex',
+  gap: vars.space.lg,
+  paddingInline: vars.space.lg,
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+})
+const dwTabBase = {
+  appearance: 'none',
+  border: 'none',
+  background: 'transparent',
+  cursor: 'pointer',
+  paddingBlock: vars.space.sm,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.sm,
+  marginBlockEnd: `-${vars.borderWidth.thin}`,
+} as const
+export const dwTab = styleVariants({
+  active: {
+    ...dwTabBase,
+    color: vars.color.institutional.ink2,
+    fontWeight: vars.font.weight.semibold,
+    borderBlockEnd: `${vars.borderWidth.thick} solid ${vars.color.institutional.blueDeep}`,
+  },
+  inactive: { ...dwTabBase, color: vars.color.institutional.ink5 },
+})
+
+// ── Timeline (Histórico) ─────────────────────────────────────────────────────────
+export const timelineWrap = style({
+  position: 'relative',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: vars.space.lg,
+})
+// Régua contínua no CENTRO dos dots (dot Ø 0.75rem → centro em 0.375rem a partir da borda esquerda do item).
+export const timelineLine = style({
+  position: 'absolute',
+  insetBlockStart: '0.4rem',
+  insetBlockEnd: '0.4rem',
+  insetInlineStart: '0.375rem',
+  inlineSize: vars.borderWidth.thick,
+  background: vars.color.institutional.paperRule,
+})
+// O conteúdo recua 1.5rem (a calha do dot); o dot fica em insetInlineStart:0 → NUNCA sobre o texto.
+export const timelineItem = style({ position: 'relative', paddingInlineStart: '1.5rem' })
+const timelineDotBase = {
+  position: 'absolute',
+  insetInlineStart: 0,
+  insetBlockStart: '0.3rem',
+  inlineSize: '0.75rem',
+  blockSize: '0.75rem',
+  borderRadius: '50%',
+  boxShadow: `0 0 0 0.1875rem ${vars.color.surface.default}`, // "corta" a régua atrás do dot
+} as const
+// Cor do nó = cor do STATUS que o evento representa (paridade com os pills do grid).
+export const timelineDot = styleVariants({
+  paid: { ...timelineDotBase, background: vars.color.status.activeText }, // verde
+  approved: { ...timelineDotBase, background: vars.color.status.approvedText }, // azul
+  reconciled: { ...timelineDotBase, background: vars.color.status.reconciledText }, // roxo
+  open: { ...timelineDotBase, background: vars.color.status.pendingText }, // âmbar
+  draft: { ...timelineDotBase, background: vars.color.status.cancelledText }, // cinza
+})
+export const timelineHead = style({
+  display: 'flex',
+  justifyContent: 'space-between',
+  gap: vars.space.sm,
+  alignItems: 'baseline',
+})
+export const timelineLabelGroup = style({
+  display: 'inline-flex',
+  alignItems: 'baseline',
+  flexWrap: 'wrap',
+  gap: vars.space.xs,
+  minInlineSize: 0,
+})
+export const timelineLabel = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.ink2,
+})
+// Tag do ALVO (Documento / Título principal / Imposto X) — distingue o que ocorreu com cada título.
+export const timelineTargetTag = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.semibold,
+  color: vars.color.institutional.blueDeep,
+  background: vars.color.institutional.blueBg,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.blueLine}`,
+  borderRadius: vars.radius.sm,
+  paddingBlock: '0.0625rem',
+  paddingInline: vars.space.xs,
+  whiteSpace: 'nowrap',
+})
+export const timelineDate = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink5,
+  whiteSpace: 'nowrap',
+})
+export const timelineActor = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink5,
+  marginBlockStart: '0.125rem',
+})
+export const timelineChanges = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: vars.space.xs,
+  marginBlockStart: vars.space.xs,
+})
+export const timelineChangePill = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.xs,
+  background: vars.color.surface.default,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.sm,
+  paddingBlock: '0.125rem',
+  paddingInline: vars.space.sm,
+  color: vars.color.institutional.ink5,
+})
+export const timelineStateBox = style({
+  padding: vars.space.xl,
+  textAlign: 'center',
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.sm,
+  color: vars.color.institutional.ink5,
+})
 export const drawerSectionTitle = style({
   margin: `0 0 ${vars.space.sm}`,
   fontFamily: vars.font.family.heading,
@@ -1206,6 +1438,22 @@ export const dwFileMeta = style({
   fontFamily: vars.font.family.mono,
   fontSize: vars.font.size['2xs'],
   color: vars.color.institutional.ink5,
+})
+// #568: quando HÁ comprovante anexado, o card ganha tinta azul (sinaliza "tem arquivo"); sem anexo
+// permanece bege (paperWarm), o estado neutro. Overrides aditivos, compostos por className na view.
+export const dwFileCardAttached = style({
+  background: vars.color.institutional.blueBg,
+  borderColor: vars.color.institutional.blueLine,
+})
+export const dwFileIconAttached = style({
+  background: vars.color.institutional.blue,
+  color: vars.color.brand.onBrand,
+})
+export const dwFileNameAttached = style({
+  color: vars.color.institutional.blueDeep,
+})
+export const dwFileMetaAttached = style({
+  color: vars.color.institutional.blue,
 })
 // ── Impressão (PDF via window.print): esconde o cromo, imprime só o grid ──
 globalStyle(`${filterBar}, ${bottombar}`, { '@media': { print: { display: 'none !important' } } })

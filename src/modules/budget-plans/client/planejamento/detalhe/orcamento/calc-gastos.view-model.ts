@@ -1,0 +1,58 @@
+/**
+ * ViewModel PURO (§XI) da tela "Calculando Gastos" (US2.4b) — deriva, do detalhe do plano, a estrutura
+ * navegável Centro → Categoria → Subcategoria com os 12 valores mensais (Despesas). Sem React/TanStack.
+ * O "Calcular" front-first soma os meses (a lógica sofisticada — ex.: Pessoal — vem na 2.4c/#113).
+ */
+import type { PlanDetail } from '#modules/budget-plans/client/data/model/plan-detail.model.ts'
+import type { ReleaseType } from '#modules/budget-plans/client/data/model/enums.ts'
+import { formatCentsBRL, sumMonths } from '#modules/budget-plans/client/domain/calc/derive.ts'
+
+/** Re-export p/ a view burra rotear o form pelo Tipo de lançamento SEM furar o boundary client-ui ↛ data. */
+export type { ReleaseType } from '#modules/budget-plans/client/data/model/enums.ts'
+
+/** Meses em Title Case (coluna Despesas do modal), Janeiro…Dezembro. */
+export const MONTH_NAMES = [
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
+] as const
+
+export type CalcSub = Readonly<{
+  id: number
+  /** UUID da subcategoria no core-api — é o ALVO do POST de cálculo. O `id` acima é sintético (render). */
+  ref: string
+  name: string
+  monthsInCents: readonly number[]
+  releaseType?: ReleaseType
+}>
+export type CalcCategory = Readonly<{ id: number; name: string; subCategories: readonly CalcSub[] }>
+export type CalcCentro = Readonly<{ id: number; name: string; categories: readonly CalcCategory[] }>
+
+/** Espelha a árvore consolidada do plano, expondo os 12 meses de cada subcategoria (Despesas). */
+export const buildCalcGastosCentros = (detail: PlanDetail): readonly CalcCentro[] =>
+  detail.costCenters.map((cc) => ({
+    id: cc.id,
+    name: cc.name,
+    categories: cc.categories.map((cat) => ({
+      id: cat.id,
+      name: cat.name,
+      subCategories: cat.subCategories.map((sub) => ({
+        id: sub.id,
+        ref: sub.ref,
+        name: sub.name,
+        monthsInCents: sub.monthlyInCents,
+        releaseType: sub.releaseType,
+      })),
+    })),
+  }))
+
+export { formatCentsBRL, sumMonths }

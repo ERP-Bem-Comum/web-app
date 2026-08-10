@@ -43,14 +43,18 @@ export const form = style({
   gap: vars.space.lg,
 })
 
-// Link "Esqueci Minha Senha" — posicionado acima do botão, estilo bold.
+// Botão-link "Esqueci Minha Senha" — posicionado acima do botão, estilo bold. É um <button> (navega
+// via callback do binding, mantendo a view burra) com aparência de link.
 export const forgotLink = style({
   display: 'block',
+  inlineSize: '100%',
   textAlign: 'center',
   fontFamily: vars.font.family.body,
   fontSize: vars.font.size.sm,
   fontWeight: vars.font.weight.semibold,
   color: vars.color.institutional.blueDeep,
+  background: 'transparent',
+  border: 'none',
   textDecoration: 'none',
   cursor: 'pointer',
   transition: 'color 150ms',

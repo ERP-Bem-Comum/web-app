@@ -20,7 +20,7 @@ export function RootPage({ user, children }: RootPageProps): ReactNode {
   const v = useRootBinding(user)
   return (
     <div className={s.shell}>
-      <TopBar user={v.user} onLogout={v.logout} />
+      <TopBar user={v.user} onLogout={v.logout} onRevokeAllSessions={v.revokeAllSessions} />
 
       <div className={s.body}>
         <div className={s.sidebarSticky}>
@@ -34,6 +34,7 @@ export function RootPage({ user, children }: RootPageProps): ReactNode {
 
         <DynamicContainer
           pageTitle={v.pageTitle}
+          pageSubtitle={v.pageSubtitle}
           showPageHeader={v.showPageHeader}
           fullBleed={v.fullBleed}
           sidebarWidth={v.sidebarWidth}

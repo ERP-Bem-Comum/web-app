@@ -58,8 +58,50 @@ export const MENU: readonly MenuSection[] = [
     iconId: 'calendar-check',
     subItems: [{ label: 'Contratos', to: '/contratos' }],
   },
-  { label: 'Plano Orçamentário', iconId: 'calendar-days' },
-  { label: 'Relatórios', iconId: 'trending-up' },
+  {
+    label: 'Plano Orçamentário',
+    iconId: 'calendar-days',
+    // Accordion com 2 subitens (HANDBOOK §2): Planejamento (/planejamento) e Consolidado ABC (/consolidado).
+    // Sem `requiredPermission` (mesmo critério de Contratos/Programas): o módulo `budget-plans` ainda não
+    // existe no core-api (#113); o acesso será cobrado pelo backend quando os endpoints nascerem.
+    // `shell` não importa `budget-plans` (boundaries) — os `to` são literais.
+    subItems: [
+      { label: 'Planejamento', to: '/planejamento' },
+      { label: 'Consolidado ABC', to: '/consolidado' },
+    ],
+  },
+  {
+    label: 'Relatórios',
+    iconId: 'trending-up',
+    // Accordion de Relatórios (mesmo padrão de Plano Orçamentário). Front-first: "Fornecedores sem Contrato"
+    // usa dados placeholder até o endpoint do core-api (#114) nascer. Sem `requiredPermission` (o relatório
+    // não tem RBAC) — o acesso será cobrado pelo backend quando os endpoints existirem.
+    subItems: [
+      { label: 'Fornecedores sem Contrato', to: '/relatorios/fornecedores-sem-contrato' },
+      { label: 'Realizado × Planejado', to: '/relatorios/realizado-x-planejado' },
+      // Equipe ABC: front-first, dados sintéticos/anonimizados (LGPD). SEM `requiredPermission` — o RBAC é
+      // modelado pelo cliente PÓS-entrega (não gateia este relatório agora).
+      { label: 'Equipe ABC', to: '/relatorios/equipe' },
+      // Posição de Pagamentos: front-first, dados sintéticos. Snapshot Fornecedor→CC→Categoria (Pendente/
+      // Pago/Atrasado). SEM `requiredPermission` (RBAC pós-entrega). Engine reusável p/ Recebíveis depois.
+      { label: 'Posição de Pagamentos', to: '/relatorios/posicao-pagamentos' },
+      // Posição de Recebimentos: ESPELHO da de Pagamentos (Financiador→CC→Categoria; Em atraso/Recebido/A
+      // receber). Front-first, dados sintéticos (empty-state-ready). SEM `requiredPermission` (RBAC pós-entrega).
+      { label: 'Posição de Recebimentos', to: '/relatorios/posicao-recebimentos' },
+      // Análise de Pagamentos: matriz TEMPO-orçamentária (Plano Orçamentário → Centro de Custo × série mensal
+      // de valores). Front-first, dados sintéticos. SEM `requiredPermission` (RBAC pós-entrega).
+      { label: 'Análise de Pagamentos', to: '/relatorios/analise-pagamentos' },
+      // Análise de Recebimentos: ESPELHO da de Pagamentos (mesma matriz tempo-orçamentária, fonte de recebíveis;
+      // paleta distinta dos gráficos). Front-first, dados sintéticos (empty-state-ready). SEM `requiredPermission`.
+      { label: 'Análise de Recebimentos', to: '/relatorios/analise-recebimentos' },
+      // Fluxo de Caixa: duas seções (Saídas = payables + cartão; Entradas = receivables) × 2 medidas (Realizado
+      // × Previsto) + Saldo + gráfico por vencimento. Entradas empty-state-ready (A-Receber pós). SEM RBAC.
+      { label: 'Fluxo de Caixa', to: '/relatorios/fluxo-caixa' },
+      // Relatório Geral: ledger unificado achatado e paginado (15 colunas). Front-first, dados sintéticos
+      // (receivable/financiador placeholder até o A-Receber). SEM `requiredPermission` (RBAC pós-entrega).
+      { label: 'Relatório Geral', to: '/relatorios/geral' },
+    ],
+  },
   {
     label: 'Financeiro',
     iconId: 'wallet',

@@ -2,24 +2,36 @@ import type { ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { Button, Field, Input } from '#shared/ui/index.ts'
-import { UsersIcon } from '#shared/ui/icons/index.ts'
+import { formatMask, unmask } from '#shared/ui/index.ts'
+import { ChevronLeftIcon, UsersIcon } from '#shared/ui/icons/index.ts'
+import {
+  page,
+  scrollArea,
+  content,
+  head,
+  backBtn,
+  headTitle,
+  sectionCard,
+  sectionHeader,
+  sectionIcon,
+  sectionH2,
+  sectionBody,
+  grid,
+  colSpan2,
+  field,
+  fieldLabel,
+  input,
+  controlError,
+  fieldError,
+  hint,
+  actionbar,
+  actionbarInner,
+  btnPrimary,
+  btnGhost,
+} from '#shared/ui/brand/brand-form.css.ts'
 
 import type { UserFormController } from './user-form.controller.ts'
-import {
-  cancelButton,
-  checkboxRow,
-  errorBanner,
-  footer,
-  form,
-  gatedField,
-  gatedHint,
-  grid,
-  photoZone,
-  saveWrap,
-  section,
-  sectionTitle,
-} from './user-form.css.ts'
+import { errorBanner, photoZone, checkboxRow } from './user-form.css.ts'
 
 const t = createTranslator(ptBR)
 
@@ -28,115 +40,181 @@ export type UserFormProps = Readonly<{
   running: boolean
   errorTag: string | null
   onCancel: () => void
+  onBack: () => void
 }>
 
 /**
- * Formulário de inclusão de Usuário (estilo espelhado do ACT). Campos funcionais: Nome, CPF, E-mail,
- * Telefone (→ POST /users). "Foto de Perfil" segue gated (upload é PUT pós-criação). "Aprovador em Massa"
- * é SETTÁVEL (o core-api aceita `massApprovalPermission`) — concede o role etl:mass-approver; enviado só
- * quando marcado. Setar exige `user:assign-role` no ator (senão o backend recusa com 403).
+ * Formulário de inclusão de Usuário — SHELL "brand" (`brand-form.css.ts`), espelhando o Novo Colaborador.
+ * Campos funcionais: Nome, CPF, E-mail, Telefone (→ POST /users). "Foto de Perfil" segue gated (upload é
+ * PUT pós-criação). "Aprovador em Massa" é SETTÁVEL (o core-api aceita `massApprovalPermission`) — concede
+ * o role etl:mass-approver; enviado só quando marcado. Setar exige `user:assign-role` no ator (senão 403).
  */
 export function UserForm(props: UserFormProps): ReactNode {
   const { controller: c } = props
-  const invalid = (key: string): string | undefined =>
-    c.errors[key] === true ? t('users.form.invalid') : undefined
+  const isInvalid = (key: string): boolean => c.errors[key] === true
+  const invalidMsg = (key: string): string | null => (c.errors[key] === true ? t('users.form.invalid') : null)
 
   return (
     <form
-      className={form}
+      className={page}
       onSubmit={(e) => {
         e.preventDefault()
         c.submit()
       }}
     >
-      {props.errorTag !== null ? (
-        <div className={errorBanner} role="alert">
-          {t(props.errorTag)}
-        </div>
-      ) : null}
+      <div className={scrollArea}>
+        <div className={content}>
+          {/* Cabeçalho: voltar + título */}
+          <div className={head}>
+            <button type="button" className={backBtn} onClick={props.onBack} aria-label={t('common.back')}>
+              <ChevronLeftIcon size={18} />
+            </button>
+            <h1 className={headTitle}>{t('users.create.title')}</h1>
+          </div>
 
-      <section className={section}>
-        <h2 className={sectionTitle}>
-          <UsersIcon size={18} />
-          {t('users.form.section.data')}
-        </h2>
-        <div className={grid}>
-          <Field htmlFor="user-name" label={t('users.form.name')} error={invalid('name')}>
-            <Input
-              id="user-name"
-              value={c.state.name}
-              onChange={(v) => {
-                c.setField('name', v)
-              }}
-            />
-          </Field>
-          <Field htmlFor="user-cpf" label={t('users.form.cpf')} error={invalid('cpf')}>
-            <Input
-              id="user-cpf"
-              mask="cpf"
-              value={c.state.cpf}
-              onChange={(v) => {
-                c.setField('cpf', v)
-              }}
-            />
-          </Field>
-          <Field htmlFor="user-email" label={t('users.form.email')} error={invalid('email')}>
-            <Input
-              id="user-email"
-              type="email"
-              value={c.state.email}
-              onChange={(v) => {
-                c.setField('email', v)
-              }}
-            />
-          </Field>
-          <Field htmlFor="user-telephone" label={t('users.form.telephone')} error={invalid('telephone')}>
-            <Input
-              id="user-telephone"
-              mask="phone"
-              value={c.state.telephone}
-              onChange={(v) => {
-                c.setField('telephone', v)
-              }}
-            />
-          </Field>
-        </div>
-
-        {/* Foto de Perfil — gated (upload é PUT pós-criação; follow-up). */}
-        <div className={gatedField}>
-          <Field htmlFor="user-photo" label={t('users.form.photo')}>
-            <div className={photoZone} aria-disabled="true">
-              <span>{t('users.form.photo.hint')}</span>
+          {props.errorTag !== null ? (
+            <div className={errorBanner} role="alert">
+              {t(props.errorTag)}
             </div>
-          </Field>
-          <p className={gatedHint}>{t('users.form.photo.gated')}</p>
-        </div>
+          ) : null}
 
-        {/* Aprovador em Massa — settável (core-api aceita massApprovalPermission); concede etl:mass-approver. */}
-        <div className={gatedField}>
-          <label className={checkboxRow}>
-            <input
-              type="checkbox"
-              checked={c.state.massApprovalPermission}
-              aria-label={t('users.form.massApproval')}
-              onChange={(e) => {
-                c.setField('massApprovalPermission', e.target.checked)
-              }}
-            />
-            <span>{t('users.form.massApproval')}</span>
-          </label>
-          <p className={gatedHint}>{t('users.form.massApproval.note')}</p>
-        </div>
-      </section>
+          {/* Seção 1 — Dados */}
+          <section className={sectionCard}>
+            <div className={sectionHeader}>
+              <span className={sectionIcon}>
+                <UsersIcon size={17} />
+              </span>
+              <h2 className={sectionH2}>{t('users.form.section.data')}</h2>
+            </div>
+            <div className={sectionBody}>
+              <div className={grid}>
+                <div className={`${field} ${colSpan2}`}>
+                  <label htmlFor="user-name" className={fieldLabel}>
+                    {t('users.form.name')}
+                  </label>
+                  <input
+                    id="user-name"
+                    className={`${input} ${isInvalid('name') ? controlError : ''}`}
+                    value={c.state.name}
+                    onChange={(e) => {
+                      c.setField('name', e.target.value)
+                    }}
+                  />
+                  {invalidMsg('name') !== null ? (
+                    <span className={fieldError}>{invalidMsg('name')}</span>
+                  ) : null}
+                </div>
 
-      <div className={footer}>
-        <button type="button" className={cancelButton} onClick={props.onCancel}>
-          {t('users.form.cancel')}
-        </button>
-        <div className={saveWrap}>
-          <Button type="submit" loading={props.running} loadingLabel={t('users.form.saving')}>
-            {t('users.form.save')}
-          </Button>
+                <div className={`${field} ${colSpan2}`}>
+                  <label htmlFor="user-cpf" className={fieldLabel}>
+                    {t('users.form.cpf')}
+                  </label>
+                  <input
+                    id="user-cpf"
+                    inputMode="numeric"
+                    className={`${input} ${isInvalid('cpf') ? controlError : ''}`}
+                    value={formatMask('cpf', c.state.cpf)}
+                    onChange={(e) => {
+                      c.setField('cpf', unmask(e.target.value, 'cpf'))
+                    }}
+                  />
+                  {invalidMsg('cpf') !== null ? (
+                    <span className={fieldError}>{invalidMsg('cpf')}</span>
+                  ) : null}
+                </div>
+
+                <div className={`${field} ${colSpan2}`}>
+                  <label htmlFor="user-email" className={fieldLabel}>
+                    {t('users.form.email')}
+                  </label>
+                  <input
+                    id="user-email"
+                    type="email"
+                    className={`${input} ${isInvalid('email') ? controlError : ''}`}
+                    value={c.state.email}
+                    onChange={(e) => {
+                      c.setField('email', e.target.value)
+                    }}
+                  />
+                  {invalidMsg('email') !== null ? (
+                    <span className={fieldError}>{invalidMsg('email')}</span>
+                  ) : null}
+                </div>
+
+                <div className={`${field} ${colSpan2}`}>
+                  <label htmlFor="user-telephone" className={fieldLabel}>
+                    {t('users.form.telephone')}
+                  </label>
+                  <input
+                    id="user-telephone"
+                    inputMode="numeric"
+                    className={`${input} ${isInvalid('telephone') ? controlError : ''}`}
+                    value={formatMask('phone', c.state.telephone)}
+                    onChange={(e) => {
+                      c.setField('telephone', unmask(e.target.value, 'phone'))
+                    }}
+                  />
+                  {invalidMsg('telephone') !== null ? (
+                    <span className={fieldError}>{invalidMsg('telephone')}</span>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Seção 2 — Foto de Perfil (gated: upload é PUT pós-criação; follow-up). */}
+          <section className={sectionCard}>
+            <div className={sectionHeader}>
+              <span className={sectionIcon}>
+                <UsersIcon size={17} />
+              </span>
+              <h2 className={sectionH2}>{t('users.form.photo')}</h2>
+            </div>
+            <div className={sectionBody}>
+              <div className={photoZone} aria-disabled="true">
+                <span>{t('users.form.photo.hint')}</span>
+              </div>
+              <p className={hint}>{t('users.form.photo.gated')}</p>
+            </div>
+          </section>
+
+          {/* Seção 3 — Aprovador em Massa (settável; concede etl:mass-approver). */}
+          <section className={sectionCard}>
+            <div className={sectionHeader}>
+              <span className={sectionIcon}>
+                <UsersIcon size={17} />
+              </span>
+              <h2 className={sectionH2}>{t('users.form.massApproval')}</h2>
+            </div>
+            <div className={sectionBody}>
+              <div className={checkboxRow}>
+                <input
+                  id="user-mass-approval"
+                  type="checkbox"
+                  checked={c.state.massApprovalPermission}
+                  onChange={(e) => {
+                    c.setField('massApprovalPermission', e.target.checked)
+                  }}
+                />
+                <label htmlFor="user-mass-approval" className={fieldLabel}>
+                  {t('users.form.massApproval')}
+                </label>
+              </div>
+              <p className={hint}>{t('users.form.massApproval.note')}</p>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      {/* Barra de ações fixa */}
+      <div className={actionbar}>
+        <div className={actionbarInner}>
+          <button type="button" className={btnGhost} onClick={props.onCancel}>
+            {t('users.form.cancel')}
+          </button>
+          <button type="submit" className={btnPrimary} disabled={props.running}>
+            {props.running ? t('users.form.saving') : t('users.form.save')}
+          </button>
         </div>
       </div>
     </form>

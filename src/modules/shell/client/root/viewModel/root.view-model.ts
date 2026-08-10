@@ -52,11 +52,47 @@ const PAGE_TITLES: Readonly<Record<string, string>> = {
   '/usuarios': 'Usuários',
   '/minha-conta': 'Minha Conta',
   '/programas': 'Programas',
+  // Plano Orçamentário → Planejamento — a page tem seu próprio PageHeader (padrão Colaboradores); isto
+  // só alimenta o document.title (senão cairia no fallback "ERP Bem Comum").
+  '/planejamento': 'Planejamento',
+  // Plano Orçamentário → Consolidado ABC — mesma lógica (PageHeader próprio; alimenta o document.title).
+  '/consolidado': 'Consolidado ABC',
   // Financeiro — o título é desenhado pelo PageHeader do shell (padrão Contratos, Nunito); sem isto
   // cairia no fallback "ERP Bem Comum".
   '/financeiro/contas-a-pagar': 'Contas a Pagar',
   '/financeiro/conciliacao': 'Contas Bancárias',
+  // Relatórios → Fornecedores sem Contrato — a page desenha o próprio PageHeader (padrão Colaboradores);
+  // isto só alimenta o document.title (senão cairia no fallback "ERP Bem Comum").
+  '/relatorios/fornecedores-sem-contrato': 'Fornecedores sem Contrato',
+  '/relatorios/realizado-x-planejado': 'Realizado × Planejado',
+  // Relatórios → Equipe ABC — a page desenha o próprio PageHeader (padrão dos demais relatórios);
+  // isto só alimenta o document.title (senão cairia no fallback "ERP Bem Comum").
+  '/relatorios/equipe': 'Equipe ABC',
+  // Relatórios → Posição de Pagamentos — a page desenha o próprio header "brand"; isto só alimenta o
+  // document.title (senão cairia no fallback "ERP Bem Comum").
+  '/relatorios/posicao-pagamentos': 'Posição de Pagamentos',
+  // Relatórios → Posição de Recebimentos — espelho da de Pagamentos (header "brand" próprio); só alimenta
+  // o document.title.
+  '/relatorios/posicao-recebimentos': 'Posição de Recebimentos',
+  // Relatórios → Análise de Pagamentos — matriz tempo-orçamentária (header "brand" próprio); só alimenta o
+  // document.title.
+  '/relatorios/analise-pagamentos': 'Análise de Pagamentos',
+  // Relatórios → Análise de Recebimentos — espelho da de Pagamentos (header "brand" próprio); só o document.title.
+  '/relatorios/analise-recebimentos': 'Análise de Recebimentos',
+  // Relatórios → Fluxo de Caixa — a page desenha o próprio header "brand"; isto só alimenta o document.title.
+  '/relatorios/fluxo-caixa': 'Fluxo de Caixa',
+  // Relatórios → Relatório Geral — ledger achatado/paginado (header "brand" próprio); só o document.title.
+  '/relatorios/geral': 'Relatório Geral',
   '/login': 'Login',
+}
+
+// Legendas (subtítulo) das telas cujo TÍTULO é desenhado pelo shell (padrão Colaboradores: título + legenda).
+// Só as telas com header do shell (showPageHeader) precisam — as demais têm legenda própria na page.
+const PAGE_SUBTITLES: Readonly<Record<string, string>> = {
+  // /contratos NÃO entra aqui: a lista de Contratos desenha o PRÓPRIO cabeçalho (título + legenda BEGE,
+  // identidade institucional do grid) — o shell não renderiza header para /contratos (showPageHeader false).
+  '/financeiro/contas-a-pagar': 'Gestão de documentos e pagamentos do programa',
+  '/financeiro/conciliacao': 'Contas cedentes e conciliação bancária',
 }
 
 // match por SEGMENTO (igual, ou prefixo seguido de '/') — nunca substring solta.
@@ -72,30 +108,74 @@ export const rootViewModel = {
     return 'ERP Bem Comum'
   },
 
+  // Legenda do header do shell (undefined = sem legenda). Espelha o padrão do grid de Colaboradores.
+  resolvePageSubtitle: (path: string): string | undefined => {
+    for (const [route, subtitle] of Object.entries(PAGE_SUBTITLES)) {
+      if (isPrefixPath(path, route)) return subtitle
+    }
+    return undefined
+  },
+
   isItemActive: (activePath: string, to: string): boolean => isPrefixPath(activePath, to),
 
   sidebarWidth: (collapsed: boolean): number =>
     collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED,
 
-  // Não renderiza o h1 do shell em /parceiros/* e /usuarios/* (cada tela já tem seu PageHeader) nem em
-  // qualquer sub-rota de /contratos/ (criar, detalhe, editar, aditivo — cada tela tem seu próprio header).
-  // A lista /contratos mantém o h1. Evita o título duplicado e libera o espaço vertical da tela.
+  // Não renderiza o h1 do shell em /parceiros/*, /usuarios/* etc. (cada tela tem seu próprio header) nem em
+  // /contratos (a LISTA agora desenha o próprio cabeçalho com legenda BEGE — identidade do grid) nem nas
+  // sub-rotas /contratos/* (criar/detalhe/editar/aditivo). Evita título duplicado.
   showPageHeader: (path: string): boolean =>
-    !path.startsWith('/contratos/') &&
+    !isPrefixPath(path, '/contratos') &&
     !isPrefixPath(path, '/parceiros') &&
     !isPrefixPath(path, '/usuarios') &&
     !isPrefixPath(path, '/minha-conta') &&
     !isPrefixPath(path, '/programas') &&
+    // /planejamento tem PageHeader próprio (padrão Colaboradores) — evita título duplicado.
+    !isPrefixPath(path, '/planejamento') &&
+    // /consolidado (Consolidado ABC) tem PageHeader próprio — mesma lógica de /planejamento.
+    !isPrefixPath(path, '/consolidado') &&
+    // Dashboard (043): tela full-bleed com fundo de canvas próprio e sem título (pedido da P.O.) —
+    // o h1 do shell criaria título + margem branca. O document.title continua vindo de PAGE_TITLES.
+    !isPrefixPath(path, '/dashboard') &&
     // Workspace de conciliação (uma conta) já tem o hero da conta como header — sem h1 do shell.
     // O grid /financeiro/conciliacao (sem barra final) mantém o h1 "Contas Bancárias".
     !path.startsWith('/financeiro/conciliacao/') &&
     // Lançar Documento tem topbar própria (modal-like, ←/✕) — o grid mantém o h1 do shell.
-    !isPrefixPath(path, '/financeiro/contas-a-pagar/lancar'),
+    !isPrefixPath(path, '/financeiro/contas-a-pagar/lancar') &&
+    // Relatórios: cada tela desenha o próprio PageHeader "brand" (padrão Colaboradores) → sem h1 do shell.
+    !isPrefixPath(path, '/relatorios'),
 
   // Conteúdo "full-bleed" (sem o padding do shell): o workspace de conciliação espelha o mock — hero, abas,
-  // corpo e footer encostam nas bordas da área de conteúdo (igual incluir contrato). Só o workspace
-  // (sub-rota), não o grid /financeiro/conciliacao, que mantém o layout padrão com h1.
-  fullBleedContent: (path: string): boolean => path.startsWith('/financeiro/conciliacao/'),
+  // corpo e footer encostam nas bordas da área de conteúdo (igual incluir contrato). O Dashboard (043)
+  // também é full-bleed: o canvas bege preenche toda a área de conteúdo (sem a margem branca do shell).
+  fullBleedContent: (path: string): boolean =>
+    path.startsWith('/financeiro/conciliacao/') ||
+    isPrefixPath(path, '/dashboard') ||
+    // Parceiros com a identidade "brand" cobrindo TODA a subárvore — lista (grid) + criar + detalhe
+    // (formulário "brand" full-bleed com página cinza + barra de ações fixa).
+    isPrefixPath(path, '/parceiros/colaboradores') ||
+    isPrefixPath(path, '/parceiros/fornecedores') ||
+    isPrefixPath(path, '/parceiros/financiadores') ||
+    isPrefixPath(path, '/parceiros/atos') ||
+    // Estados e Municípios: cards "brand" sobre canvas azul-claro, ocupando toda a largura (mock).
+    isPrefixPath(path, '/parceiros/territorios') ||
+    // Programas e Usuários: identidade "brand" cobrindo TODA a subárvore (lista + criar + detalhe).
+    isPrefixPath(path, '/programas') ||
+    isPrefixPath(path, '/usuarios') ||
+    // Planejamento: toda a subárvore "brand" full-bleed (lista + detalhe + orçamento).
+    isPrefixPath(path, '/planejamento') ||
+    // Consolidado ABC: tela "brand" full-bleed (canvas cinza ocupando a largura).
+    isPrefixPath(path, '/consolidado') ||
+    // Minha Conta: cartão de perfil no shell "brand" (página cinza + barra de ações fixa).
+    isPrefixPath(path, '/minha-conta') ||
+    // Relatórios: toda a subárvore "brand" full-bleed (a page desenha header + filtros + tree-table).
+    isPrefixPath(path, '/relatorios') ||
+    // Grids de Contratos, Contas a Pagar e Contas Bancárias (LISTA): full-bleed no padrão da marca (recuo
+    // de 28px, igual aos demais grids). Só a rota EXATA da lista — as sub-rotas (criar/detalhe/lançar e o
+    // workspace de conciliação, já coberto acima) mantêm o próprio layout.
+    path === '/contratos' ||
+    path === '/financeiro/contas-a-pagar' ||
+    path === '/financeiro/conciliacao',
 
   /**
    * RBAC: remove seções/subitens cujo `requiredPermission` não está em `permissions`. Uma seção de

@@ -3,7 +3,6 @@ import { useNavigate, useRouter } from '@tanstack/react-router'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { PageHeader } from '#shared/ui/index.ts'
 
 import { useUsersCreateBinding } from '../users-create.binding.ts'
 import { useUserFormController, type UserFormValues } from '../components/user-form.controller.ts'
@@ -27,19 +26,14 @@ export function UsersCreatePage(): ReactNode {
 
   return (
     <div className={screen}>
-      <PageHeader
-        title={t('users.create.title')}
-        subtitle={t('users.create.subtitle')}
-        onBack={() => {
-          router.history.back()
-        }}
-        backLabel={t('common.back')}
-      />
       <UserForm
         controller={controller}
         running={createCommand.running}
         errorTag={createCommand.errorTag}
         onCancel={() => void navigate({ to: '/usuarios' })}
+        onBack={() => {
+          router.history.back()
+        }}
       />
 
       <ConfirmDialog

@@ -10,13 +10,18 @@ import type {
   BatchReconcileInput,
   BatchResult,
   CedenteAccount,
+  ConfirmCounterpartInput,
+  ConfirmCounterpartResult,
+  CounterpartSuggestion,
   CreateCedenteAccountInput,
+  EditCedenteAccountInput,
   ClosePeriodInput,
   AccountStatementPeriod,
   CreateReconciliationInput,
   ExportReconciliationInput,
   FinancialReferences,
   GetAccountStatementInput,
+  GetCounterpartSuggestionsInput,
   GetStatementSuggestionsInput,
   GetSuggestionsInput,
   GetTransactionReconciliationInput,
@@ -51,6 +56,8 @@ export type ReconciliationClient = Readonly<{
     i: ListTransactionsInput,
     token: string,
   ) => Promise<Result<readonly StatementTransaction[], ReconciliationError>>
+  // Excluir extrato (DELETE /bank-statements/:id — core-api#558). Hard-delete (transações por cascade).
+  deleteBankStatement: (statementId: string, token: string) => Promise<Result<void, ReconciliationError>>
   listPaidPayables: (token: string) => Promise<Result<readonly PaidPayable[], ReconciliationError>>
   listReferences: (token: string) => Promise<Result<FinancialReferences, ReconciliationError>>
   listCedenteAccounts: (token: string) => Promise<Result<readonly CedenteAccount[], ReconciliationError>>
@@ -61,6 +68,13 @@ export type ReconciliationClient = Readonly<{
   ) => Promise<Result<AccountStatementPeriod, ReconciliationError>>
   createCedenteAccount: (
     i: CreateCedenteAccountInput,
+    token: string,
+  ) => Promise<Result<CedenteAccount, ReconciliationError>>
+  // Encerrar conta-cedente (POST /cedente-accounts/:id/close) — sem body; Open → Closed. Irreversível na UI.
+  closeCedenteAccount: (id: string, token: string) => Promise<Result<CedenteAccount, ReconciliationError>>
+  // Editar conta-cedente (PATCH /cedente-accounts/:id) — subconjunto editável; devolve a conta atualizada.
+  editCedenteAccount: (
+    i: EditCedenteAccountInput,
     token: string,
   ) => Promise<Result<CedenteAccount, ReconciliationError>>
   getSuggestions: (
@@ -75,6 +89,14 @@ export type ReconciliationClient = Readonly<{
     i: GetTransactionReconciliationInput,
     token: string,
   ) => Promise<Result<TransactionReconciliation | null, ReconciliationError>>
+  getCounterpartSuggestions: (
+    i: GetCounterpartSuggestionsInput,
+    token: string,
+  ) => Promise<Result<readonly CounterpartSuggestion[], ReconciliationError>>
+  confirmCounterpart: (
+    i: ConfirmCounterpartInput,
+    token: string,
+  ) => Promise<Result<ConfirmCounterpartResult, ReconciliationError>>
   rejectSuggestion: (
     i: RejectSuggestionInput,
     token: string,
@@ -119,6 +141,11 @@ export const createListTransactions =
   ): Promise<Result<readonly StatementTransaction[], ReconciliationError>> =>
     deps.client.listTransactions(i, token)
 
+export const createDeleteBankStatement =
+  (deps: Deps) =>
+  (statementId: string, token: string): Promise<Result<void, ReconciliationError>> =>
+    deps.client.deleteBankStatement(statementId, token)
+
 export const createListPaidPayables =
   (deps: Deps) =>
   (token: string): Promise<Result<readonly PaidPayable[], ReconciliationError>> =>
@@ -143,6 +170,16 @@ export const createCreateCedenteAccount =
   (deps: Deps) =>
   (i: CreateCedenteAccountInput, token: string): Promise<Result<CedenteAccount, ReconciliationError>> =>
     deps.client.createCedenteAccount(i, token)
+
+export const createCloseCedenteAccount =
+  (deps: Deps) =>
+  (id: string, token: string): Promise<Result<CedenteAccount, ReconciliationError>> =>
+    deps.client.closeCedenteAccount(id, token)
+
+export const createEditCedenteAccount =
+  (deps: Deps) =>
+  (i: EditCedenteAccountInput, token: string): Promise<Result<CedenteAccount, ReconciliationError>> =>
+    deps.client.editCedenteAccount(i, token)
 
 export const createGetAccountStatementPeriod =
   (deps: Deps) =>
@@ -172,6 +209,22 @@ export const createGetTransactionReconciliation =
     token: string,
   ): Promise<Result<TransactionReconciliation | null, ReconciliationError>> =>
     deps.client.getTransactionReconciliation(i, token)
+
+export const createGetCounterpartSuggestions =
+  (deps: Deps) =>
+  (
+    i: GetCounterpartSuggestionsInput,
+    token: string,
+  ): Promise<Result<readonly CounterpartSuggestion[], ReconciliationError>> =>
+    deps.client.getCounterpartSuggestions(i, token)
+
+export const createConfirmCounterpart =
+  (deps: Deps) =>
+  (
+    i: ConfirmCounterpartInput,
+    token: string,
+  ): Promise<Result<ConfirmCounterpartResult, ReconciliationError>> =>
+    deps.client.confirmCounterpart(i, token)
 
 export const createRejectSuggestion =
   (deps: Deps) =>

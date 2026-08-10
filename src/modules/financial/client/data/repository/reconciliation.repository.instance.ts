@@ -4,12 +4,15 @@
  * a porta devolve 'unavailable'). Espelha `financial.repository.instance.ts`.
  */
 import { importBankStatementFn } from '#modules/financial/server/adapters/server-fns/import-bank-statement.service.fn.ts'
+import { deleteBankStatementFn } from '#modules/financial/server/adapters/server-fns/delete-bank-statement.service.fn.ts'
 import { listStatementTransactionsFn } from '#modules/financial/server/adapters/server-fns/list-statement-transactions.query.fn.ts'
 import { listPaidPayablesFn } from '#modules/financial/server/adapters/server-fns/list-paid-payables.query.fn.ts'
 import { listFinancialReferencesFn } from '#modules/financial/server/adapters/server-fns/list-financial-references.query.fn.ts'
 import { getAccountStatementPeriodFn } from '#modules/financial/server/adapters/server-fns/get-account-statement-period.query.fn.ts'
 import { getTransactionSuggestionsFn } from '#modules/financial/server/adapters/server-fns/get-transaction-suggestions.query.fn.ts'
 import { getStatementSuggestionsFn } from '#modules/financial/server/adapters/server-fns/get-statement-suggestions.query.fn.ts'
+import { getCounterpartSuggestionsFn } from '#modules/financial/server/adapters/server-fns/get-counterpart-suggestions.query.fn.ts'
+import { confirmCounterpartFn } from '#modules/financial/server/adapters/server-fns/confirm-counterpart.service.fn.ts'
 import { getTransactionReconciliationFn } from '#modules/financial/server/adapters/server-fns/get-transaction-reconciliation.query.fn.ts'
 import { rejectSuggestionFn } from '#modules/financial/server/adapters/server-fns/reject-suggestion.service.fn.ts'
 import { createReconciliationFn } from '#modules/financial/server/adapters/server-fns/create-reconciliation.service.fn.ts'
@@ -23,17 +26,22 @@ import { exportReconciliationFn } from '#modules/financial/server/adapters/serve
 import { listCedenteAccountsFn } from '#modules/financial/server/adapters/server-fns/list-cedente-accounts.query.fn.ts'
 import { getCedenteAccountFn } from '#modules/financial/server/adapters/server-fns/get-cedente-account.query.fn.ts'
 import { createCedenteAccountFn } from '#modules/financial/server/adapters/server-fns/create-cedente-account.service.fn.ts'
+import { closeCedenteAccountFn } from '#modules/financial/server/adapters/server-fns/close-cedente-account.service.fn.ts'
+import { editCedenteAccountFn } from '#modules/financial/server/adapters/server-fns/edit-cedente-account.service.fn.ts'
 
 import { createReconciliationRepository } from './reconciliation.repository.ts'
 
 export const reconciliationRepository = createReconciliationRepository({
   importStatementFn: (opts) => importBankStatementFn(opts),
+  deleteBankStatementFn: (opts) => deleteBankStatementFn(opts),
   listTransactionsFn: (opts) => listStatementTransactionsFn(opts),
   listPaidPayablesFn: () => listPaidPayablesFn(),
   listReferencesFn: () => listFinancialReferencesFn(),
   getAccountStatementPeriodFn: (opts) => getAccountStatementPeriodFn(opts),
   getSuggestionsFn: (opts) => getTransactionSuggestionsFn(opts),
   getStatementSuggestionsFn: (opts) => getStatementSuggestionsFn(opts),
+  getCounterpartSuggestionsFn: (opts) => getCounterpartSuggestionsFn(opts),
+  confirmCounterpartFn: (opts) => confirmCounterpartFn(opts),
   getTransactionReconciliationFn: (opts) => getTransactionReconciliationFn(opts),
   rejectSuggestionFn: (opts) => rejectSuggestionFn(opts),
   createReconciliationFn: (opts) => createReconciliationFn(opts),
@@ -47,4 +55,6 @@ export const reconciliationRepository = createReconciliationRepository({
   listAccountsFn: () => listCedenteAccountsFn(),
   getAccountFn: (opts) => getCedenteAccountFn(opts),
   createAccountFn: (opts) => createCedenteAccountFn(opts),
+  closeAccountFn: (opts) => closeCedenteAccountFn(opts),
+  editAccountFn: (opts) => editCedenteAccountFn(opts),
 })

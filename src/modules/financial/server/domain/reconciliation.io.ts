@@ -22,7 +22,9 @@ export type ManualEntryType =
   | 'Investment'
   | 'Redemption'
 export type SuggestionBand = 'alta' | 'media' // 'baixa' (<50) é filtrada pelo backend, nunca chega
-export type StatementFormat = 'OFX' | 'CSV'
+export type StatementFormat = 'OFX' | 'CSV' | 'PDF' // PDF: OCR (core-api#557); content = base64 do arquivo
+// #370: DocumentType do sistema (espelha o enum do core-api) — campos de documento do lançamento manual.
+export type DocumentType = 'NFS-e' | 'DANFE' | 'RPA' | 'Fatura' | 'Boleto' | 'Recibo' | 'Imposto'
 
 // ── Inputs (validados na server fn pelos schemas em adapters) ────────────────────
 // Importar extrato (POST /bank-statements). `content` = arquivo OFX/CSV como texto.
@@ -51,6 +53,20 @@ export interface GetStatementSuggestionsInput {
 // Conciliação ativa de uma transação (GET /statement-transactions/:id/reconciliation, #175).
 export interface GetTransactionReconciliationInput {
   transactionId: string
+}
+
+// Contrapartidas esperadas que casam com uma transação (US2 do #269 — GET /statement-transactions/:id/
+// counterpart-suggestions). Transferência entre contas: a perna de origem cria a contrapartida Pending na
+// conta de destino; aqui listamos as candidatas p/ a transação real de crédito.
+export interface GetCounterpartSuggestionsInput {
+  transactionId: string
+}
+
+// Confirmar contrapartida (US2 do #269 — POST /reconciliations/counterpart). Concilia a transação contra a
+// contrapartida esperada escolhida.
+export interface ConfirmCounterpartInput {
+  transactionId: string
+  counterpartId: string
 }
 
 // Rejeitar uma sugestão (POST /statement-transactions/:id/reject-suggestion).
@@ -92,6 +108,12 @@ export interface ManualEntryTemplate {
   description?: string
   destinationAccount?: string
   productLabel?: string // #143: "produto" exigido p/ Aplicação/Resgate (mandamos o nome da conta destino)
+  // #370: campos de documento (só Pagamento/Recebimento). `documentValueCents` omitido → o backend usa o
+  // valor da transação conciliada. `issueDate` em YYYY-MM-DD; `documentValueCents` = string de centavos.
+  documentNumber?: string
+  documentType?: DocumentType
+  issueDate?: string
+  documentValueCents?: string
 }
 
 // Lançamento manual (POST /statement-transactions/:id/manual-entry).
@@ -126,8 +148,16 @@ export interface ListReconciliationPeriodsInput {
 // minúsculo no core-api. `csv-nibo` = layout Nibo "Importação em Lotes" (#146). Exporta período Open ou
 // Closed (sem guard de status). PDF fica fora (#145).
 export type ExportFormat = 'ofx' | 'csv' | 'csv-nibo'
+/**
+ * Export por CONTA + INTERVALO (core-api#649). Antes era `periodId`, e como o registro de período só nasce
+ * ao FECHAR, exportar exigia conciliação concluída + período fechado. O core-api passou a aceitar a tripla
+ * direto (o período sempre foi só carona dela) → o alvo agora é o intervalo VISUALIZADO, igual ao do PDF.
+ * Datas em `YYYY-MM-DD`.
+ */
 export interface ExportReconciliationInput {
-  periodId: string
+  debitAccountRef: string
+  periodStart: string
+  periodEnd: string
   format: ExportFormat
 }
 
@@ -191,6 +221,20 @@ export type CreateCedenteAccountInput = Readonly<{
   openingBalanceDate?: string
 }>
 
+// Editar conta-cedente (PATCH /cedente-accounts/:id). Campos editáveis (todos opcionais); CNPJ e o saldo de
+// abertura são IMUTÁVEIS (não expostos aqui). `id` obrigatório; ao menos 1 campo além do id (gating na UI).
+export type EditCedenteAccountInput = Readonly<{
+  id: string
+  bankCode?: string
+  bankName?: string
+  type?: 'Corrente' | 'Poupanca' | 'Investimento' | 'Cartao' | 'Outro'
+  typeLabel?: string
+  agency?: string
+  accountNumber?: string
+  accountDigit?: string
+  nickname?: string
+}>
+
 // Extrato por PERÍODO (#205 — GET /cedente-accounts/:id/statement?from&to). Input do read-model.
 export type StatementFilter = 'all' | 'in' | 'out' | 'reconciled' | 'pending'
 export interface GetAccountStatementInput {
@@ -225,12 +269,14 @@ export type PaidPayable = Readonly<{
   documentId: string
   valueCents: string
   dueDate: string // date-only YYYY-MM-DD
+  issueDate: string | null // data de emissão (date-only YYYY-MM-DD) — filtro de Período por Emissão (056); null se ausente
   paidAt: string | null // data de pagamento (baixa) — relevante p/ conciliação; null até o backend expor
   paymentMethod: string
   supplierName: string | null
   documentNumber: string | null
   category: string | null // core-api#172: categoria do título (coluna Categoria)
   documentType: string | null // core-api#172: tipo de documento (NFS-e/DANFE/IRRF/CSRF/INSS…) p/ filtro Tipo
+  retentionType?: string | null // imposto retido (ISS/IRRF/INSS/CSRF) do título-filho → favorecido = órgão
 }>
 
 export type SuggestionCriteria = Readonly<{
@@ -258,6 +304,10 @@ export type MatchSuggestion = Readonly<{
   band: SuggestionBand
   criteria: SuggestionCriteria
   criteriaBreakdown: readonly CriterionResult[] // #140; vazio se o backend não enviar (drift)
+  // core-api#172: enriquecidos NO BFF (interino) via join payableId→título→fornecedor. `null` quando
+  // não resolvidos. REMOVER o join quando as suggestions nativas trouxerem esses campos.
+  supplierName: string | null
+  documentNumber: string | null
 }>
 
 // Palpite de topo por transação (#174). `topBand`/`topScore` = null quando a transação não é Pending ou
@@ -270,12 +320,36 @@ export type StatementSuggestion = Readonly<{
 
 export type RejectedSuggestion = Readonly<{ transactionId: string; payableId: string }>
 
+// Contrapartida esperada candidata (US2 do #269). `originAccountRef` = conta de origem da transferência
+// (uuid; o contrato não enriquece o nome). `valueCents` = string de centavos (convenção do módulo).
+// `expectedDate` = ISO. `score` 0..100 (match por valor exato + mesmo movimento + janela ~5 dias).
+export type CounterpartSuggestion = Readonly<{
+  counterpartId: string
+  originAccountRef: string
+  valueCents: string
+  expectedDate: string // ISO
+  score: number // 0..100
+}>
+
+// Resultado da confirmação da contrapartida (POST /reconciliations/counterpart → 201).
+export type ConfirmCounterpartResult = Readonly<{
+  reconciliationId: string
+  counterpartId: string
+}>
+
 // Lookup da conciliação ativa por transação (#175 — GET /statement-transactions/:id/reconciliation).
 // 404 no core-api = transação sem conciliação ativa → a borda devolve `null` (não é erro). `type` inclui
-// 'ManualEntry'. Os itens trazem só `payableId`+valor conciliado (sem fornecedor/nº doc até #172).
+// 'ManualEntry'. O core-api cru traz só `payableId`+valor conciliado; documentNumber/supplierName/dueDate
+// são enriquecidos no BFF (INTERINO #172, join por payableId) e ficam `null` quando não resolvidos.
 export type TransactionReconciliationItem = Readonly<{
   payableId: string
   reconciledValueCents: string
+  documentNumber: string | null
+  supplierName: string | null
+  dueDate: string | null
+  // Imposto retido do título-filho (ISS/IRRF/INSS/CSRF); null = título-pai. Resolvido no enriquecimento
+  // (#172) via `maps.titles` — a coluna "Título no sistema" mostra o ÓRGÃO, não o fornecedor do pai.
+  retentionType: string | null
 }>
 export type TransactionReconciliation = Readonly<{
   reconciliationId: string
@@ -283,8 +357,12 @@ export type TransactionReconciliation = Readonly<{
   type: 'Individual' | 'Multiple' | 'Partial' | 'ManualEntry'
   status: 'Active' | 'Undone'
   reconciledBy: string
+  reconciledByName: string | null // #207: nome de quem conciliou (resolvido pelo core-api); null = não-resolvido
   reconciledAt: string // ISO datetime
   differenceCents: string | null // centavos; pode ser negativo (Discount); null se não houver diferença
+  // #554/#555: categoria resolvida server-side (ref → nome) — do lançamento manual (fatia 1) ou do título
+  // (fatia 2). null = sem categoria ou conciliação sem lançamento manual.
+  category: string | null
   items: readonly TransactionReconciliationItem[]
 }>
 
@@ -327,12 +405,15 @@ export type ReconciliationPeriod = Readonly<{
 // Conteúdo exportado (texto cru OFX/CSV) + o formato pedido (p/ a UI nomear o arquivo / content-type).
 export type ReconciliationExport = Readonly<{ content: string; format: ExportFormat }>
 
-// Dados de referência da categorização (020 · #200/#147). `parentId` = subcategoria (null = top-level).
+// Dados de referência da categorização (020 · #200/#147/#341). Hierarquia canônica de 3 níveis:
+// Centro de Custo → Categoria → Subcategoria. `parentId` = subcategoria (null = top-level);
+// `costCenterId` (#341) = o centro da categoria (null = categoria GLOBAL, vale p/ qualquer centro).
 export type FinancialCategory = Readonly<{
   id: string
   name: string
   group: 'despesa' | 'receita' | 'ajuste'
   parentId: string | null
+  costCenterId: string | null
 }>
 export type FinancialCostCenter = Readonly<{ id: string; code: string; name: string }>
 export type FinancialReferences = Readonly<{

@@ -28,6 +28,8 @@ export const reconciliationErrorTag = (e: ReconciliationError): string => {
       return 'financial.recon.error.import-malformed'
     case 'import-empty-statement':
       return 'financial.recon.error.import-empty-statement'
+    case 'statement-has-reconciled-transactions':
+      return 'financial.recon.error.statement-has-reconciled-transactions'
     case 'period-closed':
       return 'financial.recon.error.period-closed'
     case 'period-has-pending':
@@ -50,6 +52,14 @@ export const reconciliationErrorTag = (e: ReconciliationError): string => {
       return 'financial.recon.error.empty-reconciliation'
     case 'reconciliation-already-undone':
       return 'financial.recon.error.reconciliation-already-undone'
+    case 'counterpart-not-found':
+      return 'financial.recon.error.counterpart-not-found'
+    case 'counterpart-not-pending':
+      return 'financial.recon.error.counterpart-not-pending'
+    case 'counterpart-account-mismatch':
+      return 'financial.recon.error.counterpart-account-mismatch'
+    case 'counterpart-value-mismatch':
+      return 'financial.recon.error.counterpart-value-mismatch'
     case 'export-unsupported-format':
       return 'financial.recon.error.export-unsupported-format'
     case 'unavailable':

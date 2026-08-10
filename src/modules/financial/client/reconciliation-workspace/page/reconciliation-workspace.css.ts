@@ -432,6 +432,10 @@ export const importsCol = style({
   background: c.paper.default,
   borderInlineEnd: `${bw.thin} solid ${c.paper.rule}`,
 })
+// Canvas BEGE só na coluna de conteúdo da association (Sugestão/Nova transação/Buscar vários — mock).
+// A barra de abas (`assocTabs`) tem fundo branco próprio → continua branca; os cards internos (form,
+// sugestão) também. Aplicado como modificador p/ NÃO afetar a lista de importações do extrato.
+export const importsColBeige = style({ background: c.paper.warm })
 
 // Coluna 2 (associação) — empilha a barra de confirmação transiente acima do conteúdo (abas/sugestão).
 // Fundo branco: senão o bege do workspace vaza nas margens da barra (acima/abaixo/laterais).
@@ -440,16 +444,18 @@ export const assocColumn = style({
   display: 'flex',
   flexDirection: 'column',
   overflow: 'hidden',
-  background: c.paper.default,
+  // Canvas BEGE claro em TODOS os estados da association (idle "selecione…", abas, banner). As barras de
+  // abas têm bg branco próprio → seguem brancas. O extrato (importsCol) é outra coluna, não é afetado.
+  background: c.paper.warm,
 })
 
 export const importsHead = style({
   flexShrink: 0,
+  blockSize: '3rem', // mesma altura da barra de abas (assocTabs) da coluna ao lado → barras alinhadas
   display: 'flex',
   alignItems: 'center',
   gap: sp.sm,
-  paddingInline: sp.xl,
-  paddingBlock: sp.lg,
+  paddingInline: sp['3xl'], // mesmo recuo lateral da assocTabs (era xl) p/ alinhar horizontalmente também
   borderBlockEnd: `${bw.thin} solid ${c.paper.rule}`,
 })
 
@@ -628,7 +634,9 @@ export const assocHint = style({
 
 export const assocTabs = style({
   flexShrink: 0,
+  blockSize: '3rem', // mesma altura da extHead (coluna do extrato) p/ as duas barras alinharem
   display: 'flex',
+  alignItems: 'stretch', // abas preenchem a altura → underline no rodapé, alinhado à borda da barra
   gap: sp.sm,
   paddingInline: sp['3xl'],
   borderBlockEnd: `${bw.thin} solid ${c.paper.rule}`,
@@ -638,8 +646,10 @@ export const assocTabs = style({
 const assocTabBase = {
   border: 'none',
   background: 'transparent',
+  display: 'inline-flex',
+  alignItems: 'center', // texto centralizado verticalmente na barra de 3rem
   paddingInline: sp.sm,
-  paddingBlock: sp.lg,
+  paddingBlock: 0,
   fontFamily: recon.font.sans,
   fontSize: fs.md,
   cursor: 'pointer',
@@ -684,7 +694,9 @@ export const matchSides = style({
   display: 'grid',
   gridTemplateColumns: '1fr 1.75rem 1fr',
   gap: sp.sm,
-  alignItems: 'center',
+  // `stretch` iguala a altura dos dois cards (extrato × título) — o com mais linhas (nº doc + forma) define
+  // a altura; o outro estica p/ acompanhar. O ícone de link no meio continua centrado (matchArrow).
+  alignItems: 'stretch',
   padding: sp.xl,
 })
 
@@ -787,6 +799,54 @@ export const btnConfirm = style({
   fontWeight: recon.weight.semibold,
   cursor: 'pointer',
   selectors: { '&:disabled': { opacity: 0.5, cursor: 'not-allowed' } },
+})
+
+// Botão "Lançamento Manual" no rodapé (ao lado de Conciliar) — MESMA cor do antigo band azul (teal), agora
+// compacto p/ ganhar espaço vertical na lista de títulos. Leva à aba "Nova transação".
+export const btnManual = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: sp.xs,
+  paddingInline: sp.lg,
+  paddingBlock: sp.sm,
+  borderRadius: r.sm,
+  background: c.teal.bg,
+  border: `${bw.hairline} solid ${c.teal.line}`,
+  color: c.teal.deep,
+  fontFamily: recon.font.sans,
+  fontSize: fs.md,
+  fontWeight: recon.weight.semibold,
+  cursor: 'pointer',
+  selectors: { '&:hover': { background: c.teal.line } },
+})
+
+// Passador de página do buscar-vários (‹ Página X de Y ›) — barra discreta acima do rodapé.
+export const pmPagerNav = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: sp.sm,
+})
+export const pmPagerBtn = style({
+  paddingInline: sp.md,
+  paddingBlock: sp.xs,
+  borderRadius: r.sm,
+  border: `${bw.hairline} solid ${c.paper.rule}`,
+  background: c.paper.default,
+  color: c.ink[3],
+  fontFamily: recon.font.sans,
+  fontSize: fs.sm,
+  fontWeight: recon.weight.semibold,
+  cursor: 'pointer',
+  selectors: {
+    '&:hover:not(:disabled)': { background: c.paper.warm },
+    '&:disabled': { color: c.ink[5], cursor: 'not-allowed' },
+  },
+})
+export const pmPagerPos = style({
+  fontFamily: recon.font.sans,
+  fontSize: fs.sm,
+  color: c.ink[4],
+  fontVariantNumeric: 'tabular-nums',
 })
 
 // ── Outras possibilidades (alt-cards) — fiel ao mock ────────────────────────────
@@ -894,6 +954,24 @@ export const altBtn = style({
     '&:hover:not(:disabled)': { background: c.paper.warm, borderColor: c.ink[6] },
     '&:disabled': { color: c.ink[6], cursor: 'not-allowed' },
   },
+})
+
+// Seção de CONTRAPARTIDA ESPERADA (#269) no TOPO da aba Sugestão: mesmo layout dos cards de alternativa,
+// mas com respiro próprio de topo-de-seção — pouco espaço acima (encosta na barra de abas com folga) e um
+// separador embaixo p/ dividir dos palpites de título (SuggestionPane) que vêm a seguir.
+// A contrapartida é IRMÃ do SuggestionPane (não filha): fica FORA do `assocCol`, que é quem rola. Por isso
+// ela precisa repetir o recuo horizontal do `assocCol` (`padding: sp['3xl']`) — senão o card vaza até a borda
+// da coluna enquanto os palpites logo abaixo ficam recuados, e as duas seções desalinham. O `borderBlockEnd`
+// fica full-bleed de propósito (a régua atravessa a coluna e separa as duas seções); só o CONTEÚDO recua.
+// O respiro inferior sai do `padding` do próprio `assocCol` → aqui não há `marginBlockEnd` (senão soma dobrado).
+export const counterpartSection = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: sp.xs,
+  paddingInline: sp['3xl'],
+  paddingBlockStart: sp['3xl'],
+  paddingBlockEnd: sp.lg,
+  borderBlockEnd: `${bw.hairline} solid ${c.paper.rule}`,
 })
 
 export const errorText = style({ color: c.red.deep, fontFamily: recon.font.sans, fontSize: fs.sm })
@@ -1136,7 +1214,7 @@ export const ntForm = style({
   paddingInline: '1.25rem',
 })
 export const ntSection = style({
-  marginBlockEnd: sp['2xl'],
+  marginBlockEnd: sp.lg,
   selectors: { '&:last-child': { marginBlockEnd: 0 } },
 })
 export const ntSectionLbl = style({
@@ -1152,15 +1230,18 @@ export const ntSectionLbl = style({
   color: c.ink[5],
   selectors: { '&::after': { content: '""', flex: 1, blockSize: bw.hairline, background: c.paper.rule } },
 })
-export const ntTypeGrid = style({ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: sp.sm })
+// 6 tipos numa ÚNICA fila — libera altura p/ o botão "Conciliar" não ficar escondido abaixo da dobra.
+export const ntTypeGrid = style({ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: sp.xs })
+// Card COMPACTO vertical (ícone em cima, rótulo embaixo) — encaixa em coluna estreita (6 por linha).
 const ntCardBase = {
   position: 'relative',
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
+  justifyContent: 'center',
   gap: sp.xs,
-  paddingBlock: sp.lg,
-  paddingInline: sp.sm,
+  paddingBlock: sp.sm,
+  paddingInline: sp.xs,
   background: c.paper.default,
   border: `${bw.hairline} solid ${c.paper.rule}`,
   borderRadius: r.md,
@@ -1187,7 +1268,15 @@ const ntCardIcBase = {
   flexShrink: 0,
 } as const
 export const ntCardIc = styleVariants({
-  off: { ...ntCardIcBase, background: c.paper.warm, color: c.ink[4] },
+  off: {
+    ...ntCardIcBase,
+    background: c.paper.warm,
+    color: c.ink[4],
+    // No hover do card, o ícone também vira teal (mesmo tom do estado ativo).
+    selectors: {
+      [`${ntCard.off}:hover &`]: { background: c.paper.default, color: c.teal.deep },
+    },
+  },
   on: { ...ntCardIcBase, background: c.paper.default, color: c.teal.deep },
 })
 export const ntCardName = styleVariants({
@@ -1224,6 +1313,7 @@ export const ntCardBadge = style({
 })
 export const ntRow = style({ display: 'grid', gap: sp.lg, marginBlockEnd: sp.lg })
 export const ntRowCols2 = style({ gridTemplateColumns: '1fr 1fr' })
+export const ntRowCols3 = style({ gridTemplateColumns: '1fr 1fr 1fr' })
 export const ntField = style({ display: 'flex', flexDirection: 'column', gap: '0.3125rem', minInlineSize: 0 })
 export const ntLabel = style({
   fontFamily: recon.font.sans,
@@ -1287,6 +1377,15 @@ export const ntHint = style({
   fontSize: fs['2xs'],
   color: c.ink[5],
   marginBlockEnd: sp.lg,
+})
+
+/** Motivo do "Conciliar" travado, ao lado do botão. Tom de dica (não de erro): nada falhou ainda. */
+export const ntBlocked = style({
+  fontFamily: recon.font.sans,
+  fontSize: fs['2xs'],
+  color: c.ink[5],
+  marginInlineEnd: sp.sm,
+  textAlign: 'end',
 })
 
 // ── Buscar / Criar vários (US3) — fiel ao mock (resumo, busca, grid, diferença) ──
@@ -1418,7 +1517,25 @@ export const pmMiniFlt = style({
     '&:disabled': { cursor: 'not-allowed', opacity: 0.7 },
   },
 })
+// Chip de filtro ATIVO (intervalo aplicado): realce teal p/ sinalizar que há filtro em vigor.
+export const pmMiniFltOn = style({
+  ...pmMiniBase,
+  cursor: 'pointer',
+  background: c.teal.bg,
+  borderColor: c.teal.normal,
+  color: c.teal.deep,
+  selectors: { '&:hover': { background: c.teal.bg2 } },
+})
+// Ponto indicador de filtro ativo (ao lado do rótulo do chip).
+export const fltDot = style({
+  inlineSize: '0.375rem',
+  blockSize: '0.375rem',
+  borderRadius: r.pill,
+  background: c.teal.normal,
+})
 export const pmMiniSelWrap = style(pmMiniBase)
+// Estado ATIVO do filtro de Tipo (paridade com Período/Valor): borda + fundo teal quando há tipo selecionado.
+export const pmMiniSelWrapOn = style([pmMiniSelWrap, { background: c.teal.bg, borderColor: c.teal.normal }])
 export const pmMiniLbl = style({
   fontFamily: recon.font.sans,
   fontSize: fs['3xs'],
@@ -1444,6 +1561,9 @@ export const pmGrid = style({
   border: `${bw.hairline} solid ${c.paper.rule}`,
   borderRadius: r.lg,
   overflow: 'hidden',
+  // Não deixe o flexbox do assocCol ENCOLHER o grid: a rolagem interna é a do pmRows.
+  // Sem isto, o rodapé (pager + contagem) era cortado por baixo quando o pane crescia.
+  flexShrink: 0,
 })
 const pmGridCols = {
   display: 'grid',
@@ -1553,6 +1673,7 @@ export const pmAmt = style({
 export const pmFoot = style({
   display: 'flex',
   alignItems: 'center',
+  justifyContent: 'space-between',
   gap: sp.xl,
   paddingBlock: '0.5625rem',
   paddingInline: '0.875rem',
@@ -1808,6 +1929,114 @@ export const periodCustomInput = style({
   paddingInline: sp.sm,
   paddingBlock: '0.3125rem',
   selectors: { '&:focus': { outline: 'none', borderColor: c.teal.normal } },
+})
+
+// ── Popovers dos filtros ricos (Período / Valor) — 056 ──────────────────────────
+// Painel absoluto abaixo do chip (mesmo chrome dos dropdowns: ddMenuBase). Abre p/ baixo, alinhado à esquerda.
+export const filterPopover = style({
+  ...ddMenuBase,
+  insetBlockStart: 'calc(100% + 0.375rem)',
+  insetInlineStart: 0,
+  inlineSize: '18rem',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: sp.sm,
+  padding: '0.625rem',
+})
+// Variante ancorada à DIREITA (abre p/ a esquerda) — p/ o chip mais à direita (Valor), evita estourar/clipar
+// a borda direita do painel/drawer.
+export const filterPopoverEnd = style([filterPopover, { insetInlineStart: 'auto', insetInlineEnd: 0 }])
+// Segmented toggle (Vencimento | Emissão).
+export const fltSeg = style({
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr',
+  gap: '0.1875rem',
+  padding: '0.1875rem',
+  background: c.paper.warm,
+  border: `${bw.hairline} solid ${c.paper.rule}`,
+  borderRadius: r.md,
+})
+const fltSegBtnBase = {
+  border: 'none',
+  borderRadius: r.sm,
+  paddingBlock: '0.375rem',
+  fontFamily: recon.font.sans,
+  fontSize: fs.xs,
+  fontWeight: recon.weight.semibold,
+  cursor: 'pointer',
+  transition: `background ${recon.tFast}`,
+} as const
+export const fltSegBtn = styleVariants({
+  off: {
+    ...fltSegBtnBase,
+    background: 'transparent',
+    color: c.ink[4],
+    selectors: { '&:hover': { background: c.paper.default, color: c.ink[2] } },
+  },
+  on: { ...fltSegBtnBase, background: c.teal.normal, color: c.paper.default },
+})
+// Campo monetário: prefixo R$ + input de texto (sem spinner). Reusa periodCustomField/Lbl no layout.
+export const fltMoneyWrap = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: sp.xs,
+  background: c.paper.default,
+  border: `${bw.thin} solid ${c.paper.rule}`,
+  borderRadius: r.sm,
+  paddingInline: sp.sm,
+  paddingBlock: '0.3125rem',
+  selectors: { '&:focus-within': { borderColor: c.teal.normal } },
+})
+export const fltMoneyPrefix = style({
+  fontFamily: recon.font.sans,
+  fontSize: fs.xs,
+  fontWeight: recon.weight.medium,
+  color: c.ink[5],
+})
+export const fltMoneyInput = style({
+  inlineSize: '100%',
+  minInlineSize: 0,
+  border: 'none',
+  background: 'transparent',
+  fontFamily: recon.font.mono,
+  fontSize: fs.xs,
+  color: c.ink[2],
+  outline: 'none',
+  selectors: { '&::placeholder': { color: c.ink[6] } },
+})
+// Rodapé Aplicar/Limpar dos popovers.
+export const fltActions = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: sp.sm,
+  marginBlockStart: '0.125rem',
+})
+export const fltClear = style({
+  border: 'none',
+  background: 'transparent',
+  fontFamily: recon.font.sans,
+  fontSize: fs.xs,
+  fontWeight: recon.weight.medium,
+  color: c.ink[4],
+  cursor: 'pointer',
+  paddingBlock: sp.xs,
+  paddingInline: sp.sm,
+  borderRadius: r.sm,
+  selectors: { '&:hover': { background: c.paper.warm, color: c.ink[2] } },
+})
+export const fltApply = style({
+  border: 'none',
+  background: c.teal.normal,
+  fontFamily: recon.font.sans,
+  fontSize: fs.xs,
+  fontWeight: recon.weight.semibold,
+  color: c.paper.default,
+  cursor: 'pointer',
+  paddingBlock: sp.xs,
+  paddingInline: sp.lg,
+  borderRadius: r.sm,
+  selectors: { '&:hover': { background: c.teal.deep } },
 })
 
 // menu de itens (Exportar / Importar) — grupo + item com ícone
@@ -2067,6 +2296,9 @@ export const extKind = styleVariants({
   doc: { ...extKindBase, background: c.amber.bg, color: c.amber.deep },
   tar: { ...extKindBase, background: c.paper.beige, color: c.ink[3] },
   apl: { ...extKindBase, background: c.purple.bg, color: c.purple.deep },
+  // Genérico por natureza (Entrada/Saída): verde p/ crédito, vermelho p/ débito.
+  entrada: { ...extKindBase, background: c.green.bg, color: c.green.deep },
+  saida: { ...extKindBase, background: c.red.bg, color: c.red.deep },
   default: { ...extKindBase, background: c.paper.beige, color: c.ink[3] },
 })
 
@@ -2373,6 +2605,29 @@ export const modalBtnPrimary = style({
   cursor: 'pointer',
   transition: `opacity ${recon.tFast}`,
   selectors: { '&:hover': { opacity: 0.92 } },
+})
+// Confirmação DESTRUTIVA do modal (Excluir extrato) — vermelho sólido; mesma altura do primário.
+export const modalBtnDanger = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: sp.xs,
+  boxSizing: 'border-box',
+  blockSize: '2.375rem',
+  paddingInline: sp.xl,
+  borderRadius: r.md,
+  border: 'none',
+  background: c.red.deep,
+  color: c.paper.default,
+  fontFamily: recon.font.sans,
+  fontSize: fs.sm,
+  fontWeight: recon.weight.semibold,
+  cursor: 'pointer',
+  transition: `opacity ${recon.tFast}`,
+  selectors: {
+    '&:hover:not(:disabled)': { opacity: 0.92 },
+    '&:disabled': { opacity: 0.5, cursor: 'not-allowed' },
+  },
 })
 
 export const accGroup = style({
@@ -2727,7 +2982,23 @@ export const mmTotalRow = style({
   marginBlockStart: sp.xs,
   borderBlockStart: `${recon.border.thin} solid ${c.paper.rule}`,
 })
-// Dica do lado multi-título (nome/nº de cada título dependem do enriquecimento do backend).
+// #357: agrupa a linha de UM título no lado N:1 (favorecido/órgão + valor + nº do documento). Separador
+// sutil entre títulos; o primeiro não repete a régua.
+export const mmMultiLine = style({
+  display: 'flex',
+  flexDirection: 'column',
+  paddingBlock: sp.xs,
+  borderBlockStart: `${bw.hairline} solid ${c.paper.rule}`,
+  selectors: { '&:first-of-type': { borderBlockStart: 'none' } },
+})
+// #357: nº do documento do título (secundário, alinhado à direita abaixo do favorecido).
+export const mmMultiDoc = style({
+  fontFamily: recon.font.mono,
+  fontSize: fs.xs,
+  color: c.ink[5],
+  textAlign: 'end',
+})
+// Dica do lado multi-título (agora com favorecido/nº por título; a Categoria segue dependente do backend).
 export const mmMultiHint = style({
   display: 'block',
   marginBlockStart: sp.sm,
@@ -2917,6 +3188,17 @@ export const footBtnPrimary = style({
   border: `${bw.hairline} solid transparent`,
   fontWeight: recon.weight.semibold,
   selectors: { '&:hover': { background: c.teal.deep } },
+})
+// Ação DESTRUTIVA na bottombar (Excluir extrato) — vermelho contido; disabled esmaece (sem extrato).
+export const footBtnDanger = style({
+  ...footBtnBase,
+  background: c.paper.default,
+  color: c.red.deep,
+  border: `${bw.hairline} solid ${c.red.line}`,
+  selectors: {
+    '&:hover:not(:disabled)': { background: c.red.bg },
+    '&:disabled': { color: c.ink[6], borderColor: c.paper.rule, cursor: 'not-allowed' },
+  },
 })
 
 // #205: faixa de SALDO DO PERÍODO (topo da aba Extrato) — saldo inicial acumulado → final + entradas/saídas.

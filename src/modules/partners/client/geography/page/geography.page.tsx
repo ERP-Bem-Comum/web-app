@@ -2,11 +2,20 @@ import type { ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import { PageHeader } from '#shared/ui/index.ts'
+import { ChevronDownIcon } from '#shared/ui/icons/index.ts'
+import { header, headText, headTitle, headSubtitle } from '#shared/ui/brand/brand-page.css.ts'
 
 import { useGeographyBinding, type GeoPanel } from '../geography.binding.ts'
 import { TerritoryColumn, type ColumnState } from '../components/territory-column.component.tsx'
-import { columns, errorBanner, screen, section, ufSelect } from './geography.css.ts'
+import {
+  columns,
+  errorBanner,
+  screen,
+  section,
+  ufSelect,
+  selectWrap,
+  selectChevron,
+} from './geography.css.ts'
 
 const t = createTranslator(ptBR)
 
@@ -34,7 +43,12 @@ export function GeographyPage(): ReactNode {
 
   return (
     <div className={screen}>
-      <PageHeader title={t('partners.geography.title')} subtitle={t('partners.geography.subtitle')} />
+      <div className={header}>
+        <div className={headText}>
+          <h1 className={headTitle}>{t('partners.geography.title')}</h1>
+          <p className={headSubtitle}>{t('partners.geography.subtitle')}</p>
+        </div>
+      </div>
 
       {g.toggleErrorTag !== null ? (
         <div className={errorBanner} role="alert">
@@ -91,17 +105,26 @@ export function GeographyPage(): ReactNode {
           <TerritoryColumn
             title={t('partners.geography.municipalities.general')}
             beforeSearch={
-              <select
-                className={ufSelect}
-                aria-label={t('partners.geography.municipalities.select-state')}
-                value={g.selectedUf ?? ''}
-                onChange={(e) => { g.selectUf(e.target.value); }}
-              >
-                <option value="">{t('partners.geography.municipalities.select-state')}</option>
-                {g.ufOptions.map((o) => (
-                  <option key={o.uf} value={o.uf}>{o.name}</option>
-                ))}
-              </select>
+              <div className={selectWrap}>
+                <select
+                  className={ufSelect}
+                  aria-label={t('partners.geography.municipalities.select-state')}
+                  value={g.selectedUf ?? ''}
+                  onChange={(e) => {
+                    g.selectUf(e.target.value)
+                  }}
+                >
+                  <option value="">{t('partners.geography.municipalities.select-state')}</option>
+                  {g.ufOptions.map((o) => (
+                    <option key={o.uf} value={o.uf}>
+                      {o.name}
+                    </option>
+                  ))}
+                </select>
+                <span className={selectChevron}>
+                  <ChevronDownIcon size={16} />
+                </span>
+              </div>
             }
             searchId="geo-muni-general-search"
             searchValue={g.municipalitiesGeneralSearch}
@@ -120,7 +143,13 @@ export function GeographyPage(): ReactNode {
             addAria={t('partners.geography.add-aria')}
             removeAria={t('partners.geography.remove-aria')}
             disabled={disabled}
-            onAction={(key, added) => { if (added) { g.removeMunicipality(key) } else { g.addMunicipality(key) } }}
+            onAction={(key, added) => {
+              if (added) {
+                g.removeMunicipality(key)
+              } else {
+                g.addMunicipality(key)
+              }
+            }}
             loadingLabel={t('partners.geography.loading')}
           />
           <TerritoryColumn

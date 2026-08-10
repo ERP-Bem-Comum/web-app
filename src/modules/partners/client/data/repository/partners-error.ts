@@ -15,6 +15,8 @@ export type PartnersError =
   | 'collaborator-import-malformed'
   | 'invalid-registration-transition'
   | 'deactivation-reason-required'
+  | 'autocadastro-invalid' // #040 — token do link inválido/expirado/usado (404)
+  | 'autocadastro-cpf-mismatch' // #040 — CPF não confere (400) — form preservado
   | 'invalid-service-category'
   | 'act-number-duplicate'
   | 'invalid-cnpj'
@@ -24,6 +26,4 @@ export type PartnersError =
   | 'invalid-ibge-code'
 
 /** Forma do retorno RPC das server fns do módulo (`{ ok, data } | { ok, error }`). */
-export type FnResult<T> =
-  | Readonly<{ ok: true; data: T }>
-  | Readonly<{ ok: false; error: PartnersError }>
+export type FnResult<T> = Readonly<{ ok: true; data: T }> | Readonly<{ ok: false; error: PartnersError }>

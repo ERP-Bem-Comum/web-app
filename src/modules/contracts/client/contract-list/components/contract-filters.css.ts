@@ -1,5 +1,6 @@
 import { style, globalStyle } from '@vanilla-extract/css'
 import { vars } from '#shared/ui/tokens/index.ts'
+import { brand } from '#shared/ui/brand/grid-brand.values.ts'
 
 export const container = style({
   display: 'flex',
@@ -7,7 +8,7 @@ export const container = style({
   alignItems: 'flex-end',
   gap: vars.space.md,
   padding: `${vars.space.md} ${vars.space.lg}`,
-  borderBottom: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  // Sem borderBottom: régua abaixo do painel de filtros removida (pedido P.O.).
 })
 
 // força picker de data no tema claro (evita dark-mode no calendário nativo)
@@ -32,11 +33,13 @@ export const input = style({
   paddingInline: vars.space.sm,
   fontSize: '0.78125rem',
   borderRadius: vars.radius.md,
-  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  border: `${vars.borderWidth.thin} solid color-mix(in srgb, ${vars.color.institutional.paperRule} 55%, ${vars.color.institutional.paperWarm})`,
   background: vars.color.surface.default,
   color: vars.color.institutional.ink3,
   fontFamily: vars.font.family.body,
   outline: 'none',
+  // Profundidade suave (kit de grid) — pedido da P.O. para os campos de filtro (tipo/status/etc.).
+  boxShadow: brand.shadow.cardDepth,
   transition: 'border-color 150ms ease',
   ':focus': {
     borderColor: vars.color.institutional.blueLine,

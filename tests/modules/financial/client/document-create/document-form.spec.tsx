@@ -6,7 +6,11 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, fireEvent, cleanup } from '@testing-library/react'
 
 import { DocumentForm } from '#modules/financial/client/document-create/components/document-form.component.tsx'
-import type { DocumentFormFields } from '#modules/financial/client/document-create/document-form.view.ts'
+import {
+  ocrReadFields,
+  type DocumentFormFields,
+  type OcrFieldKey,
+} from '#modules/financial/client/document-create/document-form.view.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 
 const tr = (k: string): string => ptBR[k] ?? k
@@ -23,6 +27,7 @@ const fields = (over: Partial<DocumentFormFields> = {}): DocumentFormFields => (
   paymentMethod: '',
   grossValue: '',
   issueDate: '',
+  competencia: '',
   dueDate: '',
   description: '',
   discounts: '',
@@ -35,9 +40,9 @@ const fields = (over: Partial<DocumentFormFields> = {}): DocumentFormFields => (
   costCenterRef: '',
   approverRef: '',
   contaDebitoRef: '',
+  subcategoryRef: '',
   centroCusto: '',
   categoria: '',
-  subcategoria: '',
   planoOrcamentario: '',
   retentions: { iss: '', irrf: '', inss: '', pis: '', cofins: '', csll: '' },
   reformaTributaria: { cbs: '', ibsMunicipal: '', ibsEstadual: '' },
@@ -47,6 +52,7 @@ const fields = (over: Partial<DocumentFormFields> = {}): DocumentFormFields => (
 const baseProps = (over: Record<string, unknown> = {}) => ({
   fields: fields(),
   hydration: { bank: null, contracts: [] },
+  ocrFields: new Set<OcrFieldKey>(),
   onType: vi.fn(),
   onPaymentMethod: vi.fn(),
   onText: vi.fn(),
@@ -57,6 +63,8 @@ const baseProps = (over: Record<string, unknown> = {}) => ({
   onProgram: vi.fn(),
   categoryValue: '',
   onCategory: vi.fn(),
+  subcategoryValue: '',
+  onSubcategory: vi.fn(),
   costCenterValue: '',
   onCostCenter: vi.fn(),
   approverValue: '',
@@ -323,5 +331,47 @@ describe('DocumentForm', () => {
     expect(screen.getAllByText('Boleto').length).toBeGreaterThanOrEqual(2)
     fireEvent.click(screen.getByText('RPA'))
     expect(onSelectType).toHaveBeenCalledWith('RPA')
+  })
+})
+
+describe('destaque OCR — ocrReadFields (derivação pura)', () => {
+  it('fora de sessão de OCR devolve vazio', () => {
+    expect(ocrReadFields(fields({ documentNumber: '123' }), false).size).toBe(0)
+  })
+
+  it('marca só os campos preenchidos; EXCLUI competência (derivada) e retenção 0,00', () => {
+    const set = ocrReadFields(
+      fields({
+        type: 'NFS-e',
+        documentNumber: '8',
+        issueDate: '2026-05-13',
+        competencia: '05/2026',
+        grossValue: '4.000,00',
+        dueDate: '',
+        retentions: { iss: '350,00', irrf: '', inss: '0,00', pis: '', cofins: '', csll: '' },
+      }),
+      true,
+    )
+    expect(set.has('type')).toBe(true)
+    expect(set.has('documentNumber')).toBe(true)
+    expect(set.has('issueDate')).toBe(true)
+    expect(set.has('grossValue')).toBe(true)
+    expect(set.has('iss')).toBe(true)
+    // competência é auto-derivada → nunca marcada; vencimento vazio e INSS 0,00 → não marcados
+    expect(set.has('dueDate')).toBe(false)
+    expect(set.has('inss')).toBe(false)
+  })
+})
+
+describe('destaque OCR — tag na view', () => {
+  it('renderiza a tag "OCR" nos campos lidos e não nos demais', () => {
+    render(<DocumentForm {...baseProps({ ocrFields: new Set<OcrFieldKey>(['grossValue']) })} />)
+    // a tag usa o mesmo rótulo do badge de preview ("OCR")
+    expect(screen.getAllByText(tr('financial.create.preview.ocrBadge')).length).toBe(1)
+  })
+
+  it('sem campos de OCR não renderiza nenhuma tag', () => {
+    render(<DocumentForm {...baseProps()} />)
+    expect(screen.queryByText(tr('financial.create.preview.ocrBadge'))).toBeNull()
   })
 })

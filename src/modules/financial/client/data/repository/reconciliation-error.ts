@@ -15,6 +15,7 @@ export type ReconciliationError =
   | 'import-empty-content'
   | 'import-malformed'
   | 'import-empty-statement'
+  | 'statement-has-reconciled-transactions'
   | 'period-closed'
   | 'period-has-pending'
   | 'invalid-period-range'
@@ -26,6 +27,10 @@ export type ReconciliationError =
   | 'title-not-paid'
   | 'empty-reconciliation'
   | 'reconciliation-already-undone'
+  | 'counterpart-not-found'
+  | 'counterpart-not-pending'
+  | 'counterpart-account-mismatch'
+  | 'counterpart-value-mismatch'
   | 'export-unsupported-format'
   | 'unavailable'
 

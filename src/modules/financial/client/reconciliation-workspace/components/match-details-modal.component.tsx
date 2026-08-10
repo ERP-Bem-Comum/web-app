@@ -1,8 +1,9 @@
 /**
  * MatchDetailsModal — view burra: modal "Detalhes da conciliação" (modal-match). Estrutura fiel ao mock:
  * cabeçalho verde de sucesso, comparação lado-a-lado (Extrato ↔ Título) com a ponte "Conciliado", seção
- * de Auditoria e rodapé (Desfazer · Ver título · Fechar). O lado extrato é real; título/auditoria vêm "—"
- * até o backend (#175). Só props.
+ * de Auditoria e rodapé (Desfazer · Ver título · Fechar). O lado extrato é real; o título vem enriquecido
+ * (favorecido/documento/vencimento) tanto no 1:1 quanto por linha no N:1 — via `payables:batch` (#357),
+ * com o ÓRGÃO preservado no imposto retido; a Categoria segue "—" (category_ref write-only no core-api). Só props.
  */
 import { useState } from 'react'
 
@@ -134,11 +135,13 @@ export function MatchDetailsModal({
                     {`${String(view.multi.count)} ${t('financial.recon.match.titlesWord')}`}
                   </div>
                   {view.multi.lines.map((ln, i) => (
-                    <div className={s.mmSideRow} key={`${String(i)}-${ln.valueBRL}`}>
-                      <span
-                        className={s.mmSideK}
-                      >{`${t('financial.recon.match.titleN')} ${String(i + 1)}`}</span>
-                      <span className={s.mmSideV}>{ln.valueBRL}</span>
+                    <div className={s.mmMultiLine} key={`${String(i)}-${ln.documento}-${ln.valueBRL}`}>
+                      {/* Headline = favorecido ou ÓRGÃO traduzido (imposto retido), coerente com o 1:1. */}
+                      <div className={s.mmSideRow}>
+                        <span className={s.mmSideK}>{ln.nameTag !== null ? t(ln.nameTag) : ln.name}</span>
+                        <span className={s.mmSideV}>{ln.valueBRL}</span>
+                      </div>
+                      {ln.documento !== '—' ? <span className={s.mmMultiDoc}>{ln.documento}</span> : null}
                     </div>
                   ))}
                   {/* Diferença (acréscimo multa/juros ou desconto) — fecha o total com o valor do extrato. */}
@@ -175,12 +178,14 @@ export function MatchDetailsModal({
                     <span className={s.mmSideK}>{t('financial.recon.match.rowValueDoc')}</span>
                     <span className={s.mmSideVAmt.doc}>{view.doc.valueBRL}</span>
                   </div>
-                  <span className={s.mmMultiHint}>{t('financial.recon.match.manualHint')}</span>
+                  <span className={s.mmMultiHint}>{t(view.manualHintTag)}</span>
                 </>
               ) : (
                 <>
                   <div className={s.mmSideLbl.doc}>{t('financial.recon.match.docLbl')}</div>
-                  <div className={s.mmSideTitle}>{view.doc.name}</div>
+                  <div className={s.mmSideTitle}>
+                    {view.doc.nameTag !== null ? t(view.doc.nameTag) : view.doc.name}
+                  </div>
                   <div className={s.mmSideRow}>
                     <span className={s.mmSideK}>{t('financial.recon.match.rowDoc')}</span>
                     <span className={s.mmSideV}>{view.doc.documento}</span>
@@ -189,6 +194,7 @@ export function MatchDetailsModal({
                     <span className={s.mmSideK}>{t('financial.recon.match.rowDue')}</span>
                     <span className={s.mmSideV}>{view.doc.vencimento}</span>
                   </div>
+                  {/* Categoria não vem do core-api em nenhuma leitura (category_ref write-only); depende de backend — análogo a #268. */}
                   <div className={s.mmSideRow}>
                     <span className={s.mmSideK}>{t('financial.recon.match.rowCat')}</span>
                     <span className={s.mmSideV}>{view.doc.categoria}</span>

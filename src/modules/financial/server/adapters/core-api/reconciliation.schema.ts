@@ -36,6 +36,9 @@ export const CoreApiPaidPayableSchema = z.object({
   documentId: z.string().trim(),
   valueCents: z.string().trim(),
   dueDate: z.string().trim(), // date-only YYYY-MM-DD
+  // Data de EMISSÃO (date-only YYYY-MM-DD). TOLERANTE: o core go-live já a devolve; ausente → null. Alimenta
+  // o filtro de Período por Emissão na aba Buscar/Criar vários (056). Comparação por STRING (nunca new Date).
+  issueDate: z.string().trim().nullable().optional().catch(null),
   // Data de pagamento (baixa). TOLERANTE: a rota /financial/payables ainda NÃO a monta (só /payable-titles
   // tem, via #231); ausente → undefined → null no mapper. Acende quando o backend expor (core-api#265).
   paidAt: z.string().trim().nullable().optional().catch(null),
@@ -92,6 +95,9 @@ export const CoreApiAccountStatementSchema = z.object({
           .array(
             z.object({
               id: z.string().trim(),
+              // fitid (REF · IDENTIF do extrato): o read-model do período ainda NÃO projeta (core-api).
+              // `.catch('')` mantém compatível; quando o backend enviar, o REF aparece sem mexer no front.
+              fitid: z.string().trim().catch(''),
               date: z.string().trim(),
               movement: z.string().trim(), // 'Debit' | 'Credit' (tolerante → mapMovement)
               entryType: z.string().trim().catch(''),
@@ -133,6 +139,10 @@ export const CoreApiSuggestionSchema = z.object({
   }),
   // #140 — vazio quando o backend não envia (drift); o mapper filtra critérios desconhecidos.
   criteriaBreakdown: z.array(CoreApiCriterionResultSchema).catch([]),
+  // core-api#172: nativamente AUSENTES hoje (o BFF enriquece via join); tolerantes p/ quando o backend
+  // enviar. `.catch(null)` mantém o parse verde mesmo sem os campos.
+  supplierName: z.string().trim().nullable().optional().catch(null),
+  documentNumber: z.string().trim().nullable().optional().catch(null),
 })
 export type CoreApiSuggestion = z.infer<typeof CoreApiSuggestionSchema>
 export const CoreApiSuggestionsSchema = z.object({ suggestions: z.array(CoreApiSuggestionSchema) })
@@ -149,6 +159,26 @@ export const CoreApiStatementSuggestionsSchema = z.object({
   items: z.array(CoreApiStatementSuggestionSchema),
 })
 
+// Contrapartida esperada candidata (US2 do #269 — GET /statement-transactions/:id/counterpart-suggestions
+// → { suggestions }). Money = string de centavos; `expectedDate` ISO; `score` int 0..100.
+export const CoreApiCounterpartSuggestionSchema = z.object({
+  counterpartId: z.string().trim(),
+  originAccountRef: z.string().trim(),
+  valueCents: z.string().trim(),
+  expectedDate: z.string().trim(),
+  score: z.int(),
+})
+export type CoreApiCounterpartSuggestion = z.infer<typeof CoreApiCounterpartSuggestionSchema>
+export const CoreApiCounterpartSuggestionsSchema = z.object({
+  suggestions: z.array(CoreApiCounterpartSuggestionSchema),
+})
+
+// Confirmar contrapartida (US2 do #269 — POST /reconciliations/counterpart → 201).
+export const CoreApiCounterpartConfirmedSchema = z.object({
+  reconciliationId: z.string().trim(),
+  counterpartId: z.string().trim(),
+})
+
 // Conciliação ativa de uma transação (#175 — GET /statement-transactions/:id/reconciliation). `id` é o
 // reconciliationId. `treatment` da diferença NÃO é serializado pelo core-api hoje (só differenceCents).
 export const CoreApiTransactionReconciliationSchema = z.object({
@@ -157,13 +187,42 @@ export const CoreApiTransactionReconciliationSchema = z.object({
   type: z.string().trim(), // 'Individual' | 'Multiple' | 'Partial' | 'ManualEntry'
   status: z.string().trim(), // 'Active' | 'Undone' (lookup só devolve Active)
   reconciledBy: z.string().trim(),
+  reconciledByName: z.string().trim().nullable().catch(null), // #207: nome resolvido server-side; null = não-resolvido
   reconciledAt: z.string().trim(), // ISO datetime
   differenceCents: z.string().trim().nullable().catch(null),
+  // #554/#555: categoria do lançamento manual (fatia 1) / do título (fatia 2), resolvida server-side.
+  // TOLERANTE: ausente/inválida → null (o modal cai em "—" gracioso).
+  category: z.string().trim().nullable().catch(null),
   items: z
     .array(z.object({ payableId: z.string().trim(), reconciledValueCents: z.string().trim() }))
     .catch([]),
 })
 export type CoreApiTransactionReconciliation = z.infer<typeof CoreApiTransactionReconciliationSchema>
+
+// #357 (ADR-0049 core-api): resolução em LOTE de títulos por id (POST /payables:batch). De-interina o
+// LOOKUP do match card (#172) — resolve documentNumber/supplierName/dueDate em 1 hop, sem varrer todas as
+// páginas de /payable-titles nem o agregador de parceiros. Schema TOLERANTE (anti-corrupção §IX): o backend
+// devolve `.strict()`, mas do NOSSO lado aceitamos drift (`.catch`). NÃO traz `retentionType` (o ÓRGÃO do
+// imposto retido é preservado à parte — ver reconciliation-enrichment.ts). `supplierName` vem do fin_supplier_view.
+export const CoreApiPayableBatchItemSchema = z.object({
+  ref: z.string().trim(),
+  documentId: z.string().trim(),
+  documentNumber: z.string().trim().nullable().catch(null),
+  documentType: z.string().trim().nullable().catch(null),
+  valueCents: z.string().trim(),
+  dueDate: z.string().trim(),
+  status: z.string().trim(),
+  paymentMethod: z.string().trim().nullable().catch(null),
+  supplierRef: z.string().trim().nullable().catch(null),
+  supplierName: z.string().trim().nullable().catch(null),
+  supplierDocument: z.string().trim().nullable().catch(null),
+})
+export type CoreApiPayableBatchItem = z.infer<typeof CoreApiPayableBatchItemSchema>
+// `missing` = uuids sem registro (degradação graciosa, não aborta). `.catch([])` em ambos p/ nunca quebrar.
+export const CoreApiPayablesBatchSchema = z.object({
+  items: z.array(CoreApiPayableBatchItemSchema).catch([]),
+  missing: z.array(z.string().trim()).catch([]),
+})
 
 // Conciliar (POST /reconciliations).
 export const CoreApiReconciliationCreatedSchema = z.object({
@@ -225,11 +284,15 @@ export const CoreApiRejectSchema = z.object({
 
 // Referências da categorização (020 · #200/#147) — respostas são ARRAY NU (não {items}).
 // `group` tolerante (string) p/ drift; o mapper normaliza. `parentId` nullable (subcategoria).
+// `costCenterId` (#341) = nível Centro de Custo → Categoria; null = categoria GLOBAL (sem centro).
+// Ambos `.catch(null)`: campo ausente/inválido degrada p/ "sem pai"/"sem centro" em vez de derrubar a
+// lista inteira de referências (o core-api só entregou a CAPACIDADE; o dado do legado é follow-up).
 export const CoreApiCategorySchema = z.object({
   id: z.string().trim(),
   name: z.string().trim(),
   group: z.string().trim(),
   parentId: z.string().trim().nullable().catch(null),
+  costCenterId: z.string().trim().nullable().catch(null),
 })
 export const CoreApiCategoriesSchema = z.array(CoreApiCategorySchema)
 export const CoreApiCostCenterSchema = z.object({

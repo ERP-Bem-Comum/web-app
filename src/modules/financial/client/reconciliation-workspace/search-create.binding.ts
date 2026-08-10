@@ -12,17 +12,25 @@ import { reconciliationErrorTag } from '#modules/financial/client/data/helpers/r
 import { referencesQueryOptions } from './reconciliation-workspace.query.ts'
 import {
   canReconcileMulti,
+  centsToAmountInput,
   deriveReconType,
   filterPayables,
+  INITIAL_MULTI_FILTER,
+  parseBRLToCents,
   parseCents,
-  payableTypeOptions,
+  RECON_DOCUMENT_TYPE_OPTIONS,
   residualCents,
   sumCentsOf,
   type DifferenceTreatment,
+  type MultiFilter,
   type PaidPayable,
+  type PeriodField,
   type ReconType,
   type StatementTransaction,
 } from './reconciliation-workspace.view-model.ts'
+
+/** Títulos por página no buscar-vários (≈ o que cabe na altura da lista, ~8 linhas de 2.75rem em 24rem). */
+export const SEARCH_PER_PAGE = 7
 
 export type SearchCreateBinding = Readonly<{
   selectedIds: ReadonlySet<string>
@@ -43,14 +51,53 @@ export type SearchCreateBinding = Readonly<{
   costCenterOptions: readonly { value: string; label: string }[]
   setCostCenterRef: (v: string) => void
   setObservation: (v: string) => void
-  // filtros (busca textual + Tipo/categoria — viabiliza achar/selecionar impostos retidos)
+  // ── Filtros RICOS (056) — client-side sobre a lista carregada ──
+  // Busca textual.
   search: string
-  typeBucket: string // 'all' | <bucket de categoria>
-  typeOptions: readonly string[]
-  filtered: readonly PaidPayable[]
-  totalCount: number
   setSearch: (v: string) => void
-  setTypeBucket: (v: string) => void
+  // Tipo (documento/imposto retido) — lista CANÔNICA; 'all' = todos.
+  documentType: string
+  typeOptions: readonly string[]
+  setDocumentType: (v: string) => void
+  // Período (popover): toggle Vencimento/Emissão + intervalo De/Até (calendário nativo). Draft → Aplicar.
+  periodOpen: boolean
+  togglePeriod: () => void
+  closePeriod: () => void
+  periodField: PeriodField // aplicado
+  periodFrom: string // aplicado (YYYY-MM-DD)
+  periodTo: string // aplicado (YYYY-MM-DD)
+  typeActive: boolean // filtro de Tipo aplicado (≠ 'all')
+  periodActive: boolean // há intervalo aplicado
+  periodFieldDraft: PeriodField
+  periodFromDraft: string
+  periodToDraft: string
+  setPeriodFieldDraft: (f: PeriodField) => void
+  setPeriodFromDraft: (v: string) => void
+  setPeriodToDraft: (v: string) => void
+  applyPeriod: () => void
+  clearPeriod: () => void
+  // Valor (popover): intervalo Mínimo/Máximo em R$ (texto PT). Draft → Aplicar.
+  valueOpen: boolean
+  toggleValue: () => void
+  closeValue: () => void
+  valueActive: boolean // há mínimo ou máximo aplicado
+  valueMinDraft: string
+  valueMaxDraft: string
+  setValueMinDraft: (v: string) => void
+  setValueMaxDraft: (v: string) => void
+  applyValue: () => void
+  clearValue: () => void
+  // Resultado (paginado client-side).
+  filtered: readonly PaidPayable[]
+  /** Fatia da página corrente (PER_PAGE por página). */
+  pageRows: readonly PaidPayable[]
+  /** Total de títulos APÓS filtros (denominador do passador). */
+  filteredCount: number
+  page: number
+  pageCount: number
+  prevPage: () => void
+  nextPage: () => void
+  totalCount: number
   toggle: (payableId: string) => void
   setTreatment: (treatment: DifferenceTreatment) => void
   clear: () => void
@@ -68,7 +115,21 @@ export function useSearchCreate(
   const [treatment, setTreatment] = useState<DifferenceTreatment | null>(null)
   const [errorTag, setErrorTag] = useState<string | null>(null)
   const [search, setSearch] = useState('')
-  const [typeBucket, setTypeBucket] = useState('all')
+  const [documentType, setDocumentType] = useState(INITIAL_MULTI_FILTER.documentType)
+  // Período (aplicado) + rascunho do popover (só vira aplicado no "Aplicar").
+  const [periodOpen, setPeriodOpen] = useState(false)
+  const [periodField, setPeriodField] = useState<PeriodField>(INITIAL_MULTI_FILTER.period.field)
+  const [periodFrom, setPeriodFrom] = useState('')
+  const [periodTo, setPeriodTo] = useState('')
+  const [periodFieldDraft, setPeriodFieldDraft] = useState<PeriodField>(INITIAL_MULTI_FILTER.period.field)
+  const [periodFromDraft, setPeriodFromDraft] = useState('')
+  const [periodToDraft, setPeriodToDraft] = useState('')
+  // Valor (aplicado, em centavos) + rascunho do popover (texto R$ PT).
+  const [valueOpen, setValueOpen] = useState(false)
+  const [valueMinCents, setValueMinCents] = useState<number | null>(null)
+  const [valueMaxCents, setValueMaxCents] = useState<number | null>(null)
+  const [valueMinDraft, setValueMinDraft] = useState('')
+  const [valueMaxDraft, setValueMaxDraft] = useState('')
   // #9.4.6: o tratamento da diferença só aparece DEPOIS de clicar Conciliar com diferença (não na hora
   // que a soma diverge). Reposto a cada mudança de seleção / clear / sucesso.
   const [revealTreatment, setRevealTreatment] = useState(false)
@@ -81,8 +142,30 @@ export function useSearchCreate(
   const costCenterOptions: readonly { value: string; label: string }[] =
     references?.costCenters.map((c) => ({ value: c.id, label: `${c.code} — ${c.name}` })) ?? []
 
-  const typeOptions = payableTypeOptions(payables)
-  const filtered = filterPayables(payables, search, typeBucket)
+  const periodActive = periodFrom !== '' || periodTo !== ''
+  const valueActive = valueMinCents !== null || valueMaxCents !== null
+  const typeActive = documentType !== 'all' // filtro de Tipo aplicado → chip azul (paridade com Período/Valor)
+  const filter: MultiFilter = {
+    search,
+    documentType,
+    period: { field: periodField, from: periodFrom, to: periodTo },
+    value: { minCents: valueMinCents, maxCents: valueMaxCents },
+  }
+  const filtered = filterPayables(payables, filter)
+
+  // Paginação client-side (evita scroll infinito com muitos títulos). PER_PAGE ≈ o que cabe na altura da lista.
+  const [page, setPage] = useState(1)
+  // Trocar QUALQUER filtro volta p/ a 1ª página (senão a página corrente pode ficar fora do novo intervalo).
+  // Reset em render guardado por mudança de chave (padrão React oficial — sem efeito/setState-in-effect).
+  const filterKey = `${search}|${documentType}|${periodField}|${periodFrom}|${periodTo}|${String(valueMinCents ?? '')}|${String(valueMaxCents ?? '')}`
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey)
+  if (prevFilterKey !== filterKey) {
+    setPrevFilterKey(filterKey)
+    setPage(1)
+  }
+  const pageCount = Math.max(1, Math.ceil(filtered.length / SEARCH_PER_PAGE))
+  const pageClamped = Math.min(Math.max(1, page), pageCount)
+  const pageRows = filtered.slice((pageClamped - 1) * SEARCH_PER_PAGE, pageClamped * SEARCH_PER_PAGE)
 
   const selected = payables.filter((p) => selectedIds.has(p.id))
   const selectedSumCents = sumCentsOf(selected)
@@ -144,16 +227,107 @@ export function useSearchCreate(
       setObservation(v)
     },
     search,
-    typeBucket,
-    typeOptions,
-    filtered,
-    totalCount: payables.length,
     setSearch: (v) => {
       setSearch(v)
     },
-    setTypeBucket: (v) => {
-      setTypeBucket(v)
+    documentType,
+    typeActive,
+    typeOptions: RECON_DOCUMENT_TYPE_OPTIONS,
+    setDocumentType: (v) => {
+      setDocumentType(v)
     },
+    periodOpen,
+    togglePeriod: () => {
+      // Abrir sincroniza o rascunho com o aplicado (edita a partir do estado atual); fechar Valor.
+      setPeriodOpen((o) => {
+        if (!o) {
+          setPeriodFieldDraft(periodField)
+          setPeriodFromDraft(periodFrom)
+          setPeriodToDraft(periodTo)
+          setValueOpen(false)
+        }
+        return !o
+      })
+    },
+    closePeriod: () => {
+      setPeriodOpen(false)
+    },
+    periodField,
+    periodFrom,
+    periodTo,
+    periodActive,
+    periodFieldDraft,
+    periodFromDraft,
+    periodToDraft,
+    setPeriodFieldDraft: (f) => {
+      setPeriodFieldDraft(f)
+    },
+    setPeriodFromDraft: (v) => {
+      setPeriodFromDraft(v)
+    },
+    setPeriodToDraft: (v) => {
+      setPeriodToDraft(v)
+    },
+    applyPeriod: () => {
+      setPeriodField(periodFieldDraft)
+      setPeriodFrom(periodFromDraft)
+      setPeriodTo(periodToDraft)
+      setPeriodOpen(false)
+    },
+    clearPeriod: () => {
+      setPeriodField(INITIAL_MULTI_FILTER.period.field)
+      setPeriodFrom('')
+      setPeriodTo('')
+      setPeriodFieldDraft(INITIAL_MULTI_FILTER.period.field)
+      setPeriodFromDraft('')
+      setPeriodToDraft('')
+    },
+    valueOpen,
+    toggleValue: () => {
+      setValueOpen((o) => {
+        if (!o) {
+          setValueMinDraft(valueMinCents === null ? '' : centsToAmountInput(valueMinCents))
+          setValueMaxDraft(valueMaxCents === null ? '' : centsToAmountInput(valueMaxCents))
+          setPeriodOpen(false)
+        }
+        return !o
+      })
+    },
+    closeValue: () => {
+      setValueOpen(false)
+    },
+    valueActive,
+    valueMinDraft,
+    valueMaxDraft,
+    setValueMinDraft: (v) => {
+      setValueMinDraft(v)
+    },
+    setValueMaxDraft: (v) => {
+      setValueMaxDraft(v)
+    },
+    applyValue: () => {
+      setValueMinCents(parseBRLToCents(valueMinDraft))
+      setValueMaxCents(parseBRLToCents(valueMaxDraft))
+      setValueOpen(false)
+    },
+    clearValue: () => {
+      setValueMinCents(null)
+      setValueMaxCents(null)
+      setValueMinDraft('')
+      setValueMaxDraft('')
+    },
+    filtered,
+    pageRows,
+    filteredCount: filtered.length,
+    page: pageClamped,
+    pageCount,
+    prevPage: () => {
+      setPage((p) => Math.max(1, p - 1))
+    },
+    nextPage: () => {
+      setPage((p) => Math.min(pageCount, p + 1))
+    },
+    totalCount: payables.length,
     toggle: (payableId) => {
       // Mudar a seleção re-fecha o painel de tratamento: ele só reabre via clique em Conciliar.
       setRevealTreatment(false)

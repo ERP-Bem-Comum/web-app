@@ -42,6 +42,7 @@ describe('FinancierForm', () => {
         running={false}
         errorTag={null}
         onCancel={() => undefined}
+        onBack={() => undefined}
       />,
     )
     const pixType = screen.getByLabelText('Tipo de chave PIX')

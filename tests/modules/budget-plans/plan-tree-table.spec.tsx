@@ -1,0 +1,208 @@
+/**
+ * Testes DOM (Vitest + jsdom) da tabela em árvore de Planejamento (view burra §1.1): chevron que expande
+ * versões-filhas, badge de status + trilha de auditoria, e menu "…" por linha. Espelha o comportamento;
+ * os dados chegam como `PlanRow` já derivado pelo ViewModel puro.
+ */
+import { describe, it, expect, afterEach, vi } from 'vitest'
+import { render, screen, cleanup, fireEvent, within } from '@testing-library/react'
+
+import { PlanTreeTable } from '#modules/budget-plans/client/planejamento/components/plan-tree-table.component.tsx'
+import { toPlanRow } from '#modules/budget-plans/client/planejamento/planejamento-list.view-model.ts'
+import {
+  isActionEnabled,
+  actionDisabledTitleKey,
+} from '#modules/budget-plans/client/planejamento/plan-actions.view-model.ts'
+import type { BudgetPlanNode } from '#modules/budget-plans/client/data/model/budget-plan.model.ts'
+
+afterEach(() => {
+  cleanup()
+})
+
+const node = (over: Partial<BudgetPlanNode>): BudgetPlanNode => ({
+  id: 'p-1',
+  year: 2026,
+  programName: 'Ensino de Tempo Integral',
+  programAbbreviation: 'ETI',
+  version: 1.0,
+  scenarioName: null,
+  status: 'APROVADO',
+  totalInCents: 0,
+  updatedByName: 'Administrador',
+  updatedAt: '2026-06-30T22:06:00Z',
+  networkKind: 'ESTADO',
+  partnersCount: 0,
+  children: [],
+  ...over,
+})
+
+const labels = {
+  plan: 'Plano Orçamentário',
+  total: 'Total',
+  partners: 'Parceiros',
+  status: 'Status',
+  audit: 'Última alteração',
+  actionsHeader: 'Ações',
+  actionsTrigger: 'Ações do plano',
+  expand: 'Expandir versões',
+  collapse: 'Recolher versões',
+  totalRow: 'TOTAL',
+} as const
+
+const actionLabelFor = (a: string): string => `ação:${a}`
+
+function renderTable(
+  rows: ReturnType<typeof toPlanRow>[],
+  overrides?: Partial<Parameters<typeof PlanTreeTable>[0]>,
+) {
+  return render(
+    <PlanTreeTable
+      rows={rows}
+      labels={labels}
+      emptyLabel="Nenhum plano"
+      grandTotalLabel="R$ 0,00"
+      actionLabelFor={actionLabelFor}
+      onOpenPlan={() => undefined}
+      onAction={() => undefined}
+      {...overrides}
+    />,
+  )
+}
+
+describe('PlanTreeTable', () => {
+  it('empty: mostra o emptyLabel', () => {
+    renderTable([])
+    expect(screen.getByText('Nenhum plano')).toBeTruthy()
+  })
+
+  it('renderiza nome, total BRL, parceiros, badge de status e auditoria (2 linhas)', () => {
+    renderTable([toPlanRow(node({ totalInCents: 3_243_872, partnersCount: 1 }))])
+    expect(screen.getByRole('button', { name: '2026 ETI 1.0' })).toBeTruthy()
+    expect(screen.getByText(/R\$\s?32\.438,72/)).toBeTruthy()
+    expect(screen.getByText('1 estados')).toBeTruthy()
+    expect(screen.getByText('Aprovado')).toBeTruthy()
+    // Coluna "Última alteração" em 2 partes: "{usuário} alteração" + "dd/mm/aaaa hh:mm".
+    expect(screen.getByText('Administrador alteração')).toBeTruthy()
+    expect(screen.getByText('30/06/2026 22:06')).toBeTruthy()
+  })
+
+  it('chevron: versões-filhas ficam ocultas até expandir', () => {
+    const tree = node({
+      status: 'APROVADO',
+      children: [node({ id: 'p-2', version: 1.2, status: 'RASCUNHO', totalInCents: 100 })],
+    })
+    renderTable([toPlanRow(tree)])
+
+    // filho oculto inicialmente
+    expect(screen.queryByRole('button', { name: '2026 ETI 1.2' })).toBeNull()
+
+    const chevron = screen.getByRole('button', { name: 'Expandir versões' })
+    fireEvent.click(chevron)
+
+    // agora aparece + badge Rascunho da filha
+    expect(screen.getByRole('button', { name: '2026 ETI 1.2' })).toBeTruthy()
+    expect(screen.getByText('Rascunho')).toBeTruthy()
+  })
+
+  it('menu "…": abre e lista as ações; onAction recebe id + ação', () => {
+    const onAction = vi.fn()
+    renderTable([toPlanRow(node({ id: 'p-7' }))], { onAction })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ações do plano' }))
+    const menu = screen.getByRole('menu')
+    // raiz aprovada tem "Aprovar Plano" (approve) entre as ações
+    fireEvent.click(within(menu).getByText('ação:approve'))
+    expect(onAction).toHaveBeenCalledWith('p-7', 'approve')
+  })
+
+  it('clique no nome chama onOpenPlan com o id', () => {
+    const onOpenPlan = vi.fn()
+    renderTable([toPlanRow(node({ id: 'p-42' }))], { onOpenPlan })
+    fireEvent.click(screen.getByRole('button', { name: '2026 ETI 1.0' }))
+    expect(onOpenPlan).toHaveBeenCalledWith('p-42')
+  })
+
+  // Espelha o que a page faz: o gate recebe a LINHA inteira (status + isScenario + sceneryCount), porque o
+  // core-api recusa `create-scenery` em 3 casos e o status cobre só um deles.
+  const statusGating = {
+    actionIsDisabled: (a: Parameters<typeof isActionEnabled>[0], r: ReturnType<typeof toPlanRow>) =>
+      !isActionEnabled(a, r.rawStatus, { isScenario: r.isScenario, sceneryCount: r.sceneryCount }),
+    actionDisabledTitleFor: (
+      a: Parameters<typeof actionDisabledTitleKey>[0],
+      r: ReturnType<typeof toPlanRow>,
+    ) => actionDisabledTitleKey(a, r.rawStatus, { isScenario: r.isScenario, sceneryCount: r.sceneryCount }),
+  }
+
+  it('raiz APROVADA: "criar cenário" desabilitado (tooltip), "calibração" habilitada', () => {
+    renderTable([toPlanRow(node({ id: 'p-ap', status: 'APROVADO' }))], statusGating)
+    fireEvent.click(screen.getByRole('button', { name: 'Ações do plano' }))
+    const menu = screen.getByRole('menu')
+    const scenery = within(menu).getByText('ação:create-scenery')
+    expect(scenery.hasAttribute('disabled')).toBe(true)
+    expect(scenery.getAttribute('title')).toBe('budget-plans.action.disabled.sceneryNeedsDraft')
+    expect(within(menu).getByText('ação:start-calibration').hasAttribute('disabled')).toBe(false)
+  })
+
+  it('raiz RASCUNHO: "calibração" desabilitada (tooltip), "criar cenário" habilitado', () => {
+    renderTable([toPlanRow(node({ id: 'p-dr', status: 'RASCUNHO' }))], statusGating)
+    fireEvent.click(screen.getByRole('button', { name: 'Ações do plano' }))
+    const menu = screen.getByRole('menu')
+    const calib = within(menu).getByText('ação:start-calibration')
+    expect(calib.hasAttribute('disabled')).toBe(true)
+    expect(calib.getAttribute('title')).toBe('budget-plans.action.disabled.calibrationNeedsApproved')
+    expect(within(menu).getByText('ação:create-scenery').hasAttribute('disabled')).toBe(false)
+  })
+
+  it('guarda no clique: ação desabilitada por status não dispara onAction', () => {
+    const onAction = vi.fn()
+    renderTable([toPlanRow(node({ id: 'p-ap2', status: 'APROVADO' }))], { ...statusGating, onAction })
+    fireEvent.click(screen.getByRole('button', { name: 'Ações do plano' }))
+    // botão desabilitado não navega/dispara; a guarda no onAction é defesa extra
+    fireEvent.click(within(screen.getByRole('menu')).getByText('ação:create-scenery'))
+    expect(onAction).not.toHaveBeenCalledWith('p-ap2', 'create-scenery')
+  })
+})
+
+// #423: após criar um cenário, a página manda o id do PAI em `expandId` — o chevron dele abre sozinho,
+// senão o cenário nasce escondido e o usuário lê como "não deu certo" (relato da P.O. em tela).
+describe('PlanTreeTable — expandId (#423)', () => {
+  const pai = toPlanRow(
+    node({
+      id: 'pai',
+      children: [node({ id: 'cen', version: 1.1, scenarioName: 'North', children: [] })],
+    }),
+  )
+
+  it('sem expandId → o filho começa ESCONDIDO (chevron fechado é o padrão)', () => {
+    renderTable([pai])
+    expect(screen.queryByText('North')).toBeNull()
+  })
+
+  it('com expandId = id do pai → o filho aparece sem clique nenhum', () => {
+    renderTable([pai], { expandId: 'pai' })
+    expect(screen.getByText('North')).toBeTruthy()
+  })
+
+  it('expandId de outra linha não abre este pai', () => {
+    renderTable([pai], { expandId: 'outro-plano' })
+    expect(screen.queryByText('North')).toBeNull()
+  })
+
+  it('expandId NÃO fecha o que o usuário abriu na mão', () => {
+    const { rerender } = renderTable([pai], { expandId: 'pai' })
+    expect(screen.getByText('North')).toBeTruthy()
+    // A página zera o expandId (ex.: outro toast) — o chevron deve continuar aberto.
+    rerender(
+      <PlanTreeTable
+        rows={[pai]}
+        labels={labels}
+        emptyLabel="vazio"
+        grandTotalLabel="R$ 0,00"
+        actionLabelFor={actionLabelFor}
+        onOpenPlan={() => undefined}
+        onAction={() => undefined}
+        expandId={null}
+      />,
+    )
+    expect(screen.getByText('North')).toBeTruthy()
+  })
+})

@@ -87,6 +87,12 @@ export const vars = createThemeContract({
       financier: { text: null, background: null, border: null },
       act: { text: null, background: null, border: null },
     },
+    chart: {
+      forecast: null,
+      realized: null,
+      grid: null,
+      axis: null,
+    },
     institutional: {
       blue: null,
       blueDeep: null,

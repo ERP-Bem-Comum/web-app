@@ -25,6 +25,7 @@ export type LoginFormProps = Readonly<{
   emailPlaceholder: string
   passwordPlaceholder: string
   submitLabel: string
+  forgotLabel: string
   loadingLabel: string
   email: string
   password: string
@@ -34,6 +35,7 @@ export type LoginFormProps = Readonly<{
   onEmailChange: (value: string) => void
   onPasswordChange: (value: string) => void
   onSubmit: () => void
+  onForgotPassword: () => void
 }>
 
 export function LoginForm(props: LoginFormProps): ReactNode {
@@ -82,9 +84,9 @@ export function LoginForm(props: LoginFormProps): ReactNode {
           />
         </Field>
 
-        <a className={forgotLink} href="#">
-          Esqueci Minha Senha
-        </a>
+        <button type="button" className={forgotLink} onClick={props.onForgotPassword}>
+          {props.forgotLabel}
+        </button>
 
         {props.errorText !== null ? (
           <p role="alert" className={errorText}>
@@ -99,11 +101,7 @@ export function LoginForm(props: LoginFormProps): ReactNode {
         ) : null}
 
         <div className={buttonWrap}>
-          <Button
-            type="submit"
-            loading={props.submitting}
-            loadingLabel={props.loadingLabel}
-          >
+          <Button type="submit" loading={props.submitting} loadingLabel={props.loadingLabel}>
             {props.submitLabel}
           </Button>
         </div>

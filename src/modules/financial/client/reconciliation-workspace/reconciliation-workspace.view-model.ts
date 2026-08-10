@@ -15,8 +15,18 @@ import type {
   StatementTransaction,
   SuggestionBand,
   TransactionReconciliation,
+  TransactionReconciliationItem,
 } from '#modules/financial/client/data/model/reconciliation.model.ts'
 import { centsToBRL, centsToReais } from '#modules/financial/client/data/money.ts'
+import { reconciliationErrorTag } from '#modules/financial/client/data/helpers/reconciliation-error-tag.ts'
+import type { ReconciliationError } from '#modules/financial/client/data/repository/reconciliation-error.ts'
+// Lista CANÔNICA de tipos de documento + impostos retidos (mesma fonte do Contas a Pagar). Reuso dentro da
+// MESMA feature (financial), view-model → view-model (boundary permite `sameFeature('client-view-model')`) —
+// não duplica a fonte da verdade (056). Ambos são núcleo puro (ADR-0009), então node:test resolve os #alias.
+import {
+  DOCUMENT_TYPE_OPTIONS,
+  RETENTION_TYPE_OPTIONS,
+} from '#modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts'
 
 // Re-export p/ as views (ui) formatarem dinheiro sem importar de client/data (boundary §I).
 export { centsToBRL, centsToReais }
@@ -69,6 +79,7 @@ export type WorkspaceAction =
   | Readonly<{ type: 'set-assoc-tab'; tab: AssocTab }>
   | Readonly<{ type: 'set-extrato-filter'; filter: ExtratoFilter }>
   | Readonly<{ type: 'set-statement'; statementId: string }>
+  | Readonly<{ type: 'clear-statement' }>
 
 export const workspaceReducer = (state: WorkspaceUiState, action: WorkspaceAction): WorkspaceUiState => {
   switch (action.type) {
@@ -88,12 +99,24 @@ export const workspaceReducer = (state: WorkspaceUiState, action: WorkspaceActio
     case 'set-statement':
       // Novo extrato importado: zera a seleção (as transações mudam).
       return { ...state, statementId: action.statementId, selectedTransactionId: null }
+    case 'clear-statement':
+      // Extrato excluído (core-api#558): some o statement + a seleção (as transações foram removidas).
+      return { ...state, statementId: null, selectedTransactionId: null }
     default: {
       const _exhaustive: never = action
       return _exhaustive
     }
   }
 }
+
+/**
+ * Tag i18n do erro ao EXCLUIR o extrato (core-api#558). PURA. Traduz os 2 erros de guarda para uma
+ * mensagem ACIONÁVEL no contexto de exclusão: `period-closed` → "reabra o período" (a mensagem genérica só
+ * diz "período fechado", que não orienta aqui). Os demais erros caem no `reconciliationErrorTag` comum —
+ * inclusive `statement-has-reconciled-transactions`, cuja mensagem própria já é acionável.
+ */
+export const deleteStatementErrorTag = (e: ReconciliationError): string =>
+  e === 'period-closed' ? 'financial.recon.deleteStatement.error.periodClosed' : reconciliationErrorTag(e)
 
 // ── Derivações puras ────────────────────────────────────────────────────────────
 /** Rótulo do progresso "conciliado X/N". */
@@ -191,6 +214,18 @@ export const tituloLabel = (p: PaidPayable | null): string => {
 }
 
 /**
+ * Favorecido de um TÍTULO DE IMPOSTO RETIDO = o ÓRGÃO arrecadador, não o fornecedor do documento-pai.
+ * Genérico por tipo (`documentType`): ISS → SEFIN (município); federais (IRRF/INSS/CSRF/PIS/COFINS/CSLL) →
+ * Receita Federal. Retorna a TAG i18n do órgão, ou `null` quando não é imposto retido (segue o fornecedor).
+ */
+export const retentionAgencyTag = (retentionType: string | null | undefined): string | null => {
+  if (retentionType === null || retentionType === undefined) return null
+  const rt = retentionType.trim().toUpperCase()
+  if (rt === 'ISS') return 'financial.recon.pending.agency.iss'
+  return rt === 'IRRF' || rt === 'INSS' || rt === 'CSRF' ? 'financial.recon.pending.agency.federal' : null
+}
+
+/**
  * Próxima transação PENDENTE com match (palpite no `guesses`) a partir de `afterId` — busca CÍCLICA na
  * ordem da lista, preferindo banda 'alta' (alta confiança); senão qualquer match. Pula as sem palpite e a
  * própria `afterId`. `null` quando não há nenhuma pendente com match. PURA. (P.O.: manter sempre um match ativo.)
@@ -215,6 +250,32 @@ export const nextPendingWithMatch = (
   return scan(true) ?? scan(false)
 }
 
+/**
+ * Motor de palpite — alvo da seleção na aba Conciliação (P.O.: "como um motor", sempre landar numa transação
+ * COM palpite). Retorna o txId a selecionar, ou `null` (não mexe na seleção). PURA. Regras:
+ *  - fora da aba, palpites não assentados, ou sem nenhum match → não mexe;
+ *  - nada selecionado (load inicial / novo extrato) → `fallbackId` (1º match, ou topo se não há match);
+ *  - acabou de ENTRAR na aba e a tx atual NÃO tem palpite → o próximo COM palpite (`firstMatchId`), só se existir;
+ *  - já dentro da aba e escolhendo à mão → respeita a escolha (retorna null).
+ * O auto-avanço ao conciliar é tratado à parte (`nextPendingWithMatch` a partir da tx conciliada).
+ */
+export const engineTarget = (
+  p: Readonly<{
+    onConciliacao: boolean
+    justEntered: boolean
+    guessesSettled: boolean
+    selectedId: string | null
+    selectedIsMatch: boolean
+    firstMatchId: string | null
+    fallbackId: string | null
+  }>,
+): string | null => {
+  if (!p.onConciliacao || !p.guessesSettled) return null
+  if (p.selectedId === null) return p.fallbackId
+  if (p.justEntered && !p.selectedIsMatch && p.firstMatchId !== null) return p.firstMatchId
+  return null
+}
+
 // ── Relabel TEMPORÁRIO de categorias (só no front) ──────────────────────────────
 // Pedido P.O.: a Nova transação da conciliação precisa das categorias "Transferência entre contas",
 // "Resgate" e "Aplicação", mas SEM mexer no backend por ora. Reaproveitamos 3 categorias de referência
@@ -227,6 +288,16 @@ const RECON_CATEGORY_RELABEL: Readonly<Record<string, string>> = {
   Aluguel: 'Aplicação',
 }
 export const relabelReconCategory = (name: string): string => RECON_CATEGORY_RELABEL[name] ?? name
+
+// ── Cascata Centro de Custo → Categoria → Subcategoria (EPIC web-app#150 · core-api#341) ────────────
+// As derivações são PURAS e compartilhadas com o Lançar Documento → `data/helpers/categorization-cascade.ts`
+// (spec 074). O placeholder round-robin que fingia a relação centro→categoria MORREU: o #341 entregou o
+// `costCenterId` real na categoria. Re-exportado aqui p/ os call sites (e o teste) desta feature.
+export {
+  topLevelCategories,
+  subcategoriesOf,
+  categoriesForCostCenter,
+} from '#modules/financial/client/data/helpers/categorization-cascade.ts'
 
 // ── Sugestão de conciliação em LOTE por padrão (front) ──────────────────────────
 /** Normaliza a descrição (payeeName) p/ comparar transações "do mesmo tipo": case/espaço-insensível. */
@@ -298,6 +369,35 @@ export type ReconType = 'Individual' | 'Multiple' | 'Partial'
 export const deriveReconType = (selectedCount: number, hasDifference: boolean): ReconType =>
   hasDifference ? 'Partial' : selectedCount > 1 ? 'Multiple' : 'Individual'
 
+/**
+ * Por que o "Conciliar" do lançamento manual está travado — `null` = liberado. PURA.
+ *
+ * O `canSubmit` da view deriva DESTE resultado (`=== null`), e não de um booleano paralelo: assim é
+ * impossível o botão ficar desabilitado sem motivo exibível, ou habilitado com um motivo pendente. Foi
+ * o que faltou quando a classificação virou obrigatória (#331 + core-api#671) — a pessoa via o botão
+ * morto sem saber que faltava categoria ou centro de custo (mesma lição do PR #252).
+ *
+ * A ordem importa: reporta o PRIMEIRO obstáculo, do mais estrutural (tipo) ao mais específico (campo).
+ */
+export type ManualEntryGate = Readonly<{
+  hasType: boolean
+  needsDestination: boolean
+  destinationFilled: boolean
+  needsClassification: boolean
+  categoryFilled: boolean
+  costCenterFilled: boolean
+}>
+
+export const manualEntryBlockedTag = (g: ManualEntryGate): string | null => {
+  if (!g.hasType) return 'financial.recon.manual.blocked.type'
+  if (g.needsDestination && !g.destinationFilled) return 'financial.recon.manual.blocked.destination'
+  if (!g.needsClassification) return null
+  if (!g.categoryFilled && !g.costCenterFilled) return 'financial.recon.manual.blocked.classification'
+  if (!g.categoryFilled) return 'financial.recon.manual.blocked.category'
+  if (!g.costCenterFilled) return 'financial.recon.manual.blocked.costCenter'
+  return null
+}
+
 /** Tipos de lançamento manual que exigem conta de destino + confirmação consciente (US4). */
 export const requiresDestination = (type: string): boolean =>
   type === 'Transfer' || type === 'Investment' || type === 'Redemption'
@@ -312,14 +412,38 @@ export const sortPendingByPayment = (payables: readonly PaidPayable[]): readonly
     return a.paidAt.localeCompare(b.paidAt)
   })
 
-// ── Buscar / Criar vários (US3) — filtros de títulos Pago (puro) ────────────────
-/** Opções do filtro Tipo = tipos de DOCUMENTO distintos presentes (NFS-e, DANFE, IRRF, CSRF, INSS, ISS…). */
-export const payableTypeOptions = (payables: readonly PaidPayable[]): readonly string[] => {
-  const seen: string[] = []
-  for (const p of payables) {
-    if (p.documentType !== null && !seen.includes(p.documentType)) seen.push(p.documentType)
-  }
-  return seen
+// ── Buscar / Criar vários (US3/056) — filtros RICOS de títulos Pago (puro) ───────
+/**
+ * Lista CANÔNICA de tipos p/ o filtro Tipo = tipos de documento (NFS-e/DANFE/RPA/Fatura/Boleto/Recibo/
+ * Imposto) + impostos retidos (IRRF/ISS/INSS/CSRF), na mesma ordem do Contas a Pagar. É a lista COMPLETA
+ * (não só os presentes nos dados) — a View mostra tudo; o `documentType` do título casa por igualdade.
+ */
+export const RECON_DOCUMENT_TYPE_OPTIONS: readonly string[] = [
+  ...DOCUMENT_TYPE_OPTIONS,
+  ...RETENTION_TYPE_OPTIONS,
+]
+
+/** Campo de data do filtro de Período: por Vencimento (`due`) ou por Emissão (`issue`). */
+export type PeriodField = 'due' | 'issue'
+
+/**
+ * Critérios do filtro rico (056). `documentType` = 'all' → não filtra. `period.from`/`period.to` vazios =
+ * lado aberto; `field` escolhe dueDate (sempre presente) ou issueDate (pode ser null → excluído quando o
+ * filtro de Emissão está ativo). `value.min/maxCents` = null → lado aberto.
+ */
+export type MultiFilter = Readonly<{
+  search: string
+  documentType: string
+  period: Readonly<{ field: PeriodField; from: string; to: string }>
+  value: Readonly<{ minCents: number | null; maxCents: number | null }>
+}>
+
+/** Filtro neutro (nada filtrando) — default do binding e ponto de partida dos popovers. */
+export const INITIAL_MULTI_FILTER: MultiFilter = {
+  search: '',
+  documentType: 'all',
+  period: { field: 'due', from: '', to: '' },
+  value: { minCents: null, maxCents: null },
 }
 
 const payableMatchesSearch = (p: PaidPayable, q: string): boolean => {
@@ -332,15 +456,69 @@ const payableMatchesSearch = (p: PaidPayable, q: string): boolean => {
     .includes(needle)
 }
 
-/** Filtra os títulos Pago por busca textual + Tipo de documento ('all' = todos os tipos). */
+/**
+ * Converte um valor R$ digitado (PT: milhar com ponto, decimal com vírgula — ex.: "1.234,56") em CENTAVOS.
+ * Parse DEFENSIVO: vazio/inválido → null (= sem limite). Aceita também ponto decimal simples ("1234.56").
+ * Nunca lança; ignora símbolos (R$, espaços). PURO.
+ */
+export const parseBRLToCents = (raw: string): number | null => {
+  const cleaned = raw.trim().replace(/[^\d.,]/g, '')
+  if (cleaned === '') return null
+  // PT: pontos = separador de milhar (removidos); vírgula = separador decimal (vira ponto).
+  const hasComma = cleaned.includes(',')
+  const normalized = hasComma ? cleaned.replace(/\./g, '').replace(',', '.') : cleaned
+  const n = Number.parseFloat(normalized)
+  if (!Number.isFinite(n) || n < 0) return null
+  return Math.round(n * 100)
+}
+
+/**
+ * Inverso de `parseBRLToCents` p/ reidratar o campo de texto ao reabrir o popover: centavos → "1234,56" (PT,
+ * vírgula decimal, sem símbolo/milhar). PURO. Usado só p/ preencher o rascunho editável (não é formatação BRL).
+ */
+export const centsToAmountInput = (cents: number): string => (cents / 100).toFixed(2).replace('.', ',')
+
+/**
+ * Data date-only "YYYY-MM-DD" dentro do intervalo [from, to] por comparação de STRING (lexical, sem fuso —
+ * NUNCA `new Date`). Bordas inclusivas; lado vazio = aberto. PURO.
+ */
+export const dateInRange = (date: string, from: string, to: string): boolean =>
+  (from === '' || date >= from) && (to === '' || date <= to)
+
+/** Valor (centavos) dentro de [minCents, maxCents]. Bordas inclusivas; lado null = aberto. PURO. */
+export const valueInRange = (cents: number, minCents: number | null, maxCents: number | null): boolean =>
+  (minCents === null || cents >= minCents) && (maxCents === null || cents <= maxCents)
+
+/**
+ * Filtra os títulos Pago pelo objeto de critérios rico (056): busca textual + Tipo (documento/imposto, igualdade)
+ * + Período (Vencimento OU Emissão, intervalo de datas por string) + Valor (intervalo min–max em centavos).
+ * Tudo client-side sobre a lista já carregada (puro). No modo Emissão, título sem `issueDate` (null) fica FORA
+ * quando há intervalo — de forma honesta (não inventa data).
+ */
 export const filterPayables = (
   payables: readonly PaidPayable[],
-  search: string,
-  documentType: string,
-): readonly PaidPayable[] =>
-  payables.filter(
-    (p) => payableMatchesSearch(p, search) && (documentType === 'all' || p.documentType === documentType),
-  )
+  filter: MultiFilter,
+): readonly PaidPayable[] => {
+  const { search, documentType, period, value } = filter
+  const periodActive = period.from !== '' || period.to !== ''
+  return payables.filter((p) => {
+    if (!payableMatchesSearch(p, search)) return false
+    // Tipo: imposto retido (IRRF/ISS/INSS/CSRF) casa por `retentionType` (o `documentType` do título-filho vem
+    // null enquanto o core-api#172 não o expõe; o órgão/tipo do imposto vive em `retentionType`, enriquecido no
+    // BFF). Tipos de documento (NFS-e/DANFE/…) seguem casando por `documentType` (null → não casa até #172).
+    if (documentType !== 'all') {
+      const isRetention = RETENTION_TYPE_OPTIONS.some((rt) => rt === documentType)
+      const field = isRetention ? p.retentionType : p.documentType
+      if (field !== documentType) return false
+    }
+    if (periodActive) {
+      const d = period.field === 'due' ? p.dueDate : p.issueDate
+      if (d === null || d === '') return false // Emissão ausente → fora do filtro (honesto)
+      if (!dateInRange(d, period.from, period.to)) return false
+    }
+    return valueInRange(parseCents(p.valueCents), value.minCents, value.maxCents)
+  })
+}
 
 // ── Aba Extrato (puro — US8) ────────────────────────────────────────────────────
 
@@ -513,7 +691,7 @@ export const ofxAccountLabel = (ofx: OfxAccount): string => {
 }
 
 /** Classe do badge de tipo (cor) a partir do `entryType` livre. */
-export type ExtratoKind = 'pix' | 'ted' | 'doc' | 'tar' | 'apl' | 'default'
+export type ExtratoKind = 'pix' | 'ted' | 'doc' | 'tar' | 'apl' | 'entrada' | 'saida' | 'default'
 export const extratoKindClass = (entryType: string): ExtratoKind => {
   const e = entryType.toUpperCase()
   if (e.includes('PIX')) return 'pix'
@@ -522,6 +700,26 @@ export const extratoKindClass = (entryType: string): ExtratoKind => {
   if (e.includes('TAR') || e.includes('FEE')) return 'tar'
   if (e.includes('APL') || e.includes('INVEST') || e.includes('RESG') || e.includes('REDEM')) return 'apl'
   return 'default'
+}
+
+/**
+ * Rótulo do TIPO no extrato. Tipo específico reconhecido (PIX/TED/DOC/Tarifa/Aplicação) → mostra o próprio
+ * `entryType`. Genérico ("Other"/vazio — comum no seed e quando o OFX não traz TRNTYPE) → cai na DIREÇÃO do
+ * movimento (Entrada/Saída). Devolve TAG i18n OU `null` (null = a view mostra o `entryType` cru).
+ * 🔁 O tipo "de verdade" (PIX/TED/Boleto…) depende do parser do OFX expor o TRNTYPE (backend).
+ */
+export const extratoTypeTag = (tx: StatementTransaction): string | null =>
+  extratoKindClass(tx.entryType) === 'default'
+    ? tx.movement === 'Credit'
+      ? 'financial.recon.ext.type.entrada'
+      : 'financial.recon.ext.type.saida'
+    : null
+
+/** Cor do badge de TIPO: tipo específico mantém sua cor; genérico usa a NATUREZA (Entrada=verde/Saída=vermelho). */
+export const extratoBadgeKind = (tx: StatementTransaction): ExtratoKind => {
+  const kind = extratoKindClass(tx.entryType)
+  if (kind !== 'default') return kind
+  return tx.movement === 'Credit' ? 'entrada' : 'saida'
 }
 
 /** Grupo de dia no extrato: cabeçalho formatado, totais do dia e saldo de fechamento (1ª linha). */
@@ -595,15 +793,27 @@ const matchesAccountSearch = (a: ReconciliationAccount, q: string): boolean => {
 const MATCH_DASH = '—'
 export type MatchDetailsDoc = Readonly<{
   name: string
+  // Tag i18n do favorecido quando o título é imposto retido (ISS→SEFIN, federais→Receita Federal). A view
+  // traduz e prefere sobre `name` — o favorecido do imposto é o ÓRGÃO, não o fornecedor do documento-pai.
+  nameTag: string | null
   documento: string
   vencimento: string
   categoria: string
   valueBRL: string
 }>
 export type MatchDetailsAudit = Readonly<{ when: string; who: string }>
-// Lado "Título" quando a saída foi conciliada com VÁRIOS títulos (#175 com >1 item): valor conciliado por
-// título + total. Nome/nº de cada título depende do enriquecimento (#172).
-export type MatchTitleLine = Readonly<{ valueBRL: string }>
+// Lado "Título" quando a saída foi conciliada com VÁRIOS títulos (#175 com >1 item): por título, favorecido
+// (ou ÓRGÃO no imposto retido) + nº do documento + valor conciliado. Favorecido/documento vêm do item
+// enriquecido no BFF via `payables:batch` (#357); antes só o valor era exibido.
+export type MatchTitleLine = Readonly<{
+  valueBRL: string
+  // Favorecido: fornecedor (fallback nº doc, fallback payableId). A view prefere `nameTag` quando presente.
+  name: string
+  // Tag i18n do ÓRGÃO arrecadador quando imposto retido (ISS→SEFIN, federais→Receita); null → usa `name`.
+  nameTag: string | null
+  // Nº do documento (ou "—" quando ausente). A view esconde a linha do documento quando "—".
+  documento: string
+}>
 export type MatchTitlesView = Readonly<{
   count: number
   lines: readonly MatchTitleLine[]
@@ -620,6 +830,9 @@ export type MatchDetailsView = Readonly<{
   // CONTRAPARTE do lançamento: conta de destino (transferência/aplicação/resgate) ou fornecedor
   // (pagamento/recebimento). `labelTag` vazio → não há linha (ex.: tarifa). `value` "—" até saber (sessão/#268).
   manualCounterparty: Readonly<{ labelTag: string; value: string }>
+  // Hint honesto embaixo do lado manual: transferência/aplicação/resgate = movimentação entre contas
+  // próprias (contrapartida), NÃO tarifa/despesa. Demais tipos mantêm o exemplo tarifa/despesa.
+  manualHintTag: string
   ext: Readonly<{ name: string; date: string; kind: string; id: string; valueBRL: string }>
   // doc/audit dependem do backend expor os detalhes da conciliação (sem GET de detalhes hoje, #175) →
   // sem dados, preenche com "—" (estado honesto, igual ao default do mock). Em preview vêm preenchidos.
@@ -631,6 +844,7 @@ export type MatchDetailsView = Readonly<{
 
 const DASH_DOC: MatchDetailsDoc = {
   name: MATCH_DASH,
+  nameTag: null,
   documento: MATCH_DASH,
   vencimento: MATCH_DASH,
   categoria: MATCH_DASH,
@@ -640,13 +854,37 @@ const DASH_AUDIT: MatchDetailsAudit = { when: MATCH_DASH, who: MATCH_DASH }
 
 /**
  * Auditoria do modal a partir do lookup da conciliação ativa (#175). `when` = data da conciliação
- * (date-only, p/ evitar fuso); `who` = identificador de quem conciliou (id cru do core-api até o backend
- * resolver nome amigável). O lado Título segue "—" (depende do #172).
+ * (date-only, p/ evitar fuso); `who` = nome de quem conciliou, resolvido server-side pelo core-api
+ * (#207); fallback pro id cru enquanto `reconciledByName` vier null (não-resolvido). O lado Título
+ * segue "—" (depende do #172).
  */
 export const matchAuditFromLookup = (r: TransactionReconciliation): MatchDetailsAudit => ({
   when: formatDayHeader(r.reconciledAt.slice(0, 10)),
-  who: r.reconciledBy,
+  who: r.reconciledByName ?? r.reconciledBy,
 })
+
+/**
+ * Lado "Título" de um match INDIVIDUAL (1 item) a partir do item enriquecido no BFF (interim #172):
+ * favorecido (fallback nº doc, fallback payableId), documento, vencimento e valor conciliado. Derivação
+ * PURA (sem React, ADR-0009). `item === null` → null (a view cai no default "—"). O `valueCents` é o valor
+ * conciliado do próprio item (items[0].reconciledValueCents), mantendo o "Valor conciliado" já exibido hoje.
+ */
+export const matchDocFromItem = (
+  item: TransactionReconciliationItem | null,
+  valueCents: string | null,
+): MatchDetailsDoc | null => {
+  if (item === null) return null
+  return {
+    name: item.supplierName ?? item.documentNumber ?? item.payableId,
+    // Imposto retido → favorecido é o órgão arrecadador (tag i18n); título-pai → null (usa `name`).
+    nameTag: retentionAgencyTag(item.retentionType),
+    documento: item.documentNumber ?? MATCH_DASH,
+    vencimento: item.dueDate !== null ? formatDayHeader(item.dueDate) : MATCH_DASH,
+    // Categoria NÃO vem do core-api em nenhuma leitura (category_ref write-only); depende de backend expor — issue análoga a #268.
+    categoria: MATCH_DASH,
+    valueBRL: valueCents !== null ? centsToBRL(valueCents) : MATCH_DASH,
+  }
+}
 
 /**
  * Lado "Título" do modal quando UMA saída foi conciliada com VÁRIOS títulos (#175 com >1 item): contagem +
@@ -666,7 +904,14 @@ export const buildMatchTitles = (
   const hasDiff = diffCents !== 0
   return {
     count: r.items.length,
-    lines: r.items.map((it) => ({ valueBRL: centsToBRL(it.reconciledValueCents) })),
+    // Cada linha surfa favorecido/órgão + nº do documento do item enriquecido no BFF (#357); mesma regra do
+    // 1:1 (`matchDocFromItem`): imposto retido → headline é o ÓRGÃO (nameTag), não o fornecedor do pai.
+    lines: r.items.map((it) => ({
+      valueBRL: centsToBRL(it.reconciledValueCents),
+      name: it.supplierName ?? it.documentNumber ?? it.payableId,
+      nameTag: retentionAgencyTag(it.retentionType),
+      documento: it.documentNumber ?? MATCH_DASH,
+    })),
     differenceBRL: hasDiff ? centsToBRL(String(Math.abs(diffCents))) : null,
     differenceTag: hasDiff
       ? diffCents > 0
@@ -718,9 +963,30 @@ export const matchDetailsView = (
   // Valor conciliado de um match 1:1 (1 título): vem do PRÓPRIO lookup (#175 items[0].reconciledValueCents).
   // Acende o "Valor conciliado" do lado Título sem depender do enriquecimento do documento (#172). null → "—".
   singleMatchValueCents: string | null = null,
+  // #554/#555: categoria da conciliação (lançamento manual — fatia 1; ou título — fatia 2), resolvida
+  // server-side no lookup (#175). Preenche a linha "Categoria" do modal; null/'' → "—".
+  category: string | null = null,
 ): MatchDetailsView => {
   // Tipo efetivo: o da sessão (preciso) ou, na falta, o derivado do texto da transação (#268).
   const effectiveManualType = manualType ?? (isManualEntry ? deriveManualKindFromTx(tx) : null)
+  // Movimentação entre contas próprias (transferência/aplicação/resgate): contrapartida, não tarifa/despesa.
+  const isSelfMove =
+    effectiveManualType === 'Transfer' ||
+    effectiveManualType === 'Investment' ||
+    effectiveManualType === 'Redemption'
+  // Só mostra a linha de contraparte quando há valor real (conta de destino/fornecedor da sessão); sem
+  // valor não renderiza "Conta destino: —" (o hint já diz que é entre contas próprias).
+  const hasCounterparty = counterparty !== null && counterparty !== ''
+  // #554/#555: categoria real do lookup sobrepõe o "—" do doc (aplica ao lançamento manual e ao título 1:1).
+  const hasCategory = category !== null && category !== ''
+  // Base do lado "Título": manual usa o valor da própria transação; senão o doc enriquecido (ou o valor 1:1).
+  const baseDoc: MatchDetailsDoc = isManualEntry
+    ? { ...(doc ?? DASH_DOC), valueBRL: centsToBRL(tx.valueCents) }
+    : (doc ??
+      (singleMatchValueCents !== null
+        ? { ...DASH_DOC, valueBRL: centsToBRL(singleMatchValueCents) }
+        : DASH_DOC))
+  const resolvedDoc: MatchDetailsDoc = hasCategory ? { ...baseDoc, categoria: category } : baseDoc
   return {
     isManualEntry,
     manualKindTag:
@@ -729,14 +995,18 @@ export const matchDetailsView = (
         : 'financial.recon.match.manualKind',
     manualCounterparty: {
       // Transferência/Aplicação/Resgate → conta de destino; Pagamento/Recebimento → fornecedor; senão, sem linha.
-      labelTag:
-        manualType === 'Transfer' || manualType === 'Investment' || manualType === 'Redemption'
+      labelTag: !hasCounterparty
+        ? ''
+        : manualType === 'Transfer' || manualType === 'Investment' || manualType === 'Redemption'
           ? 'financial.recon.match.rowDestAccount'
           : manualType === 'Payment' || manualType === 'Receipt'
             ? 'financial.recon.manual.f.supplier'
             : '',
       value: counterparty ?? MATCH_DASH,
     },
+    manualHintTag: isSelfMove
+      ? 'financial.recon.match.manualHintTransfer'
+      : 'financial.recon.match.manualHint',
     ext: {
       name: tx.payeeName,
       date: formatDayHeader(tx.date),
@@ -745,13 +1015,9 @@ export const matchDetailsView = (
       valueBRL: centsToBRL(tx.valueCents),
     },
     // Nova transação (lançamento manual) não tem título: o "valor conciliado" é o valor da própria
-    // transação (a saída inteira foi lançada). Tipo/categoria/descrição dependem do backend (core-api#268).
-    doc: isManualEntry
-      ? { ...(doc ?? DASH_DOC), valueBRL: centsToBRL(tx.valueCents) }
-      : (doc ??
-        (singleMatchValueCents !== null
-          ? { ...DASH_DOC, valueBRL: centsToBRL(singleMatchValueCents) }
-          : DASH_DOC)),
+    // transação (a saída inteira foi lançada). A categoria vem do lookup (#554/#555); tipo/descrição
+    // ainda dependem do backend (core-api#268).
+    doc: resolvedDoc,
     audit: audit ?? DASH_AUDIT,
     multi,
   }

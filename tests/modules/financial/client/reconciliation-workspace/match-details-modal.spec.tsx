@@ -6,7 +6,10 @@ import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, screen, cleanup, fireEvent } from '@testing-library/react'
 
 import { MatchDetailsModal } from '#modules/financial/client/reconciliation-workspace/components/match-details-modal.component.tsx'
-import type { MatchDetailsView } from '#modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
+import type {
+  MatchDetailsView,
+  MatchTitleLine,
+} from '#modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 
 const tr = (k: string): string => ptBR[k] ?? k
@@ -15,6 +18,7 @@ const view = (over: Partial<MatchDetailsView> = {}): MatchDetailsView => ({
   isManualEntry: false,
   manualKindTag: 'financial.recon.match.manualKind',
   manualCounterparty: { labelTag: '', value: '—' },
+  manualHintTag: 'financial.recon.match.manualHint',
   ext: {
     name: 'Fornecedor Persist A',
     date: '5 out 2026',
@@ -22,7 +26,7 @@ const view = (over: Partial<MatchDetailsView> = {}): MatchDetailsView => ({
     id: 'PERSIST-001',
     valueBRL: 'R$ 742,00',
   },
-  doc: { name: '—', documento: '—', vencimento: '—', categoria: '—', valueBRL: '—' },
+  doc: { name: '—', nameTag: null, documento: '—', vencimento: '—', categoria: '—', valueBRL: '—' },
   audit: { when: '21 jun 2026', who: 'c562bc57' },
   multi: null,
   ...over,
@@ -30,6 +34,14 @@ const view = (over: Partial<MatchDetailsView> = {}): MatchDetailsView => ({
 
 afterEach(() => {
   cleanup()
+})
+
+const titleLine = (over: Partial<MatchTitleLine> = {}): MatchTitleLine => ({
+  valueBRL: 'R$ 0,00',
+  name: '—',
+  nameTag: null,
+  documento: '—',
+  ...over,
 })
 
 describe('MatchDetailsModal — 1 saída → N títulos', () => {
@@ -40,7 +52,11 @@ describe('MatchDetailsModal — 1 saída → N títulos', () => {
         view={view({
           multi: {
             count: 3,
-            lines: [{ valueBRL: 'R$ 300,00' }, { valueBRL: 'R$ 200,00' }, { valueBRL: 'R$ 242,00' }],
+            lines: [
+              titleLine({ valueBRL: 'R$ 300,00' }),
+              titleLine({ valueBRL: 'R$ 200,00' }),
+              titleLine({ valueBRL: 'R$ 242,00' }),
+            ],
             differenceBRL: 'R$ 190,00',
             differenceTag: 'financial.recon.match.diffSurplus',
             totalBRL: 'R$ 932,00',
@@ -63,6 +79,75 @@ describe('MatchDetailsModal — 1 saída → N títulos', () => {
     expect(screen.getByText('R$ 300,00')).toBeTruthy()
   })
 
+  it('N:1 enriquecido (#357): mostra favorecido + nº do documento por linha', () => {
+    render(
+      <MatchDetailsModal
+        open
+        view={view({
+          multi: {
+            count: 2,
+            lines: [
+              titleLine({
+                valueBRL: 'R$ 300,00',
+                name: 'TS Da Silva Serviços Ltda',
+                documento: 'NFS-e 2024-0537',
+              }),
+              titleLine({ valueBRL: 'R$ 200,00', name: 'Padaria Central ME', documento: 'DANFE 88' }),
+            ],
+            differenceBRL: null,
+            differenceTag: '',
+            totalBRL: 'R$ 500,00',
+          },
+        })}
+        canUndo
+        undoing={false}
+        undoErrorTag={null}
+        onUndo={vi.fn()}
+        onViewTitle={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    expect(screen.getByText('TS Da Silva Serviços Ltda')).toBeTruthy()
+    expect(screen.getByText('NFS-e 2024-0537')).toBeTruthy()
+    expect(screen.getByText('Padaria Central ME')).toBeTruthy()
+    expect(screen.getByText('DANFE 88')).toBeTruthy()
+  })
+
+  it('N:1 imposto retido (#357): a linha mostra o ÓRGÃO, não o fornecedor do pai', () => {
+    render(
+      <MatchDetailsModal
+        open
+        view={view({
+          multi: {
+            count: 2,
+            lines: [
+              titleLine({ valueBRL: 'R$ 300,00', name: 'Serraria Bom Jesus LTDA', documento: 'DANFE 3500' }),
+              // imposto retido ISS → headline é o ÓRGÃO (SEFIN), não o fornecedor do documento-pai.
+              titleLine({
+                valueBRL: 'R$ 23,00',
+                name: 'Serraria Bom Jesus LTDA',
+                nameTag: 'financial.recon.pending.agency.iss',
+                documento: '3500',
+              }),
+            ],
+            differenceBRL: null,
+            differenceTag: '',
+            totalBRL: 'R$ 323,00',
+          },
+        })}
+        canUndo
+        undoing={false}
+        undoErrorTag={null}
+        onUndo={vi.fn()}
+        onViewTitle={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    // O órgão traduzido aparece; o nome do fornecedor aparece só na 1ª linha (não como headline do retido).
+    expect(screen.getByText(tr('financial.recon.pending.agency.iss'))).toBeTruthy()
+    expect(screen.getAllByText('Serraria Bom Jesus LTDA').length).toBe(1)
+  })
+
   it('sem multi (individual): mantém o bloco único "Título no sistema"', () => {
     render(
       <MatchDetailsModal
@@ -78,6 +163,126 @@ describe('MatchDetailsModal — 1 saída → N títulos', () => {
     )
     expect(screen.getByText(tr('financial.recon.match.docLbl'))).toBeTruthy()
     expect(screen.queryByText(tr('financial.recon.match.totalConciliado'))).toBeNull()
+  })
+})
+
+describe('MatchDetailsModal — título individual enriquecido (interim #172)', () => {
+  it('surfa favorecido, documento e vencimento; categoria segue "—"', () => {
+    render(
+      <MatchDetailsModal
+        open
+        view={view({
+          doc: {
+            name: 'TS Da Silva Serviços Ltda',
+            nameTag: null,
+            documento: 'NFS-e 2024-0537',
+            vencimento: '10/06/2026',
+            categoria: '—',
+            valueBRL: 'R$ 1.500,00',
+          },
+        })}
+        canUndo
+        undoing={false}
+        undoErrorTag={null}
+        onUndo={vi.fn()}
+        onViewTitle={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    // Favorecido (headline), documento e vencimento vêm do item enriquecido no BFF.
+    expect(screen.getByText('TS Da Silva Serviços Ltda')).toBeTruthy()
+    expect(screen.getByText('NFS-e 2024-0537')).toBeTruthy()
+    expect(screen.getByText('10/06/2026')).toBeTruthy()
+    expect(screen.getByText('R$ 1.500,00')).toBeTruthy()
+    // Categoria segue "—" (category_ref write-only no core-api — gap de backend).
+    const catLabel = screen.getByText(tr('financial.recon.match.rowCat'))
+    expect(catLabel.nextElementSibling?.textContent).toBe('—')
+  })
+
+  it('imposto retido: headline é o ÓRGÃO (nameTag traduzido), não o fornecedor do pai', () => {
+    render(
+      <MatchDetailsModal
+        open
+        view={view({
+          doc: {
+            name: 'Serraria Bom Jesus LTDA', // fornecedor do PAI — não deve aparecer como headline
+            nameTag: 'financial.recon.pending.agency.iss',
+            documento: '3500',
+            vencimento: '30/06/2026',
+            categoria: '—',
+            valueBRL: 'R$ 23,00',
+          },
+        })}
+        canUndo
+        undoing={false}
+        undoErrorTag={null}
+        onUndo={vi.fn()}
+        onViewTitle={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    // O headline mostra o órgão arrecadador (ISS → SEFIN), NÃO o fornecedor do documento-pai.
+    expect(screen.getByText(tr('financial.recon.pending.agency.iss'))).toBeTruthy()
+    expect(screen.queryByText('Serraria Bom Jesus LTDA')).toBeNull()
+  })
+
+  it('item não resolvido pelo BFF (tudo null → "—"): renderiza traços graciosamente', () => {
+    render(
+      <MatchDetailsModal
+        open
+        view={view()}
+        canUndo
+        undoing={false}
+        undoErrorTag={null}
+        onUndo={vi.fn()}
+        onViewTitle={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    // doc all-dashes: documento e vencimento mostram "—".
+    const docLabel = screen.getByText(tr('financial.recon.match.rowDoc'))
+    expect(docLabel.nextElementSibling?.textContent).toBe('—')
+    const dueLabel = screen.getByText(tr('financial.recon.match.rowDue'))
+    expect(dueLabel.nextElementSibling?.textContent).toBe('—')
+  })
+})
+
+describe('MatchDetailsModal — lado manual: hint ciente do tipo (contrapartida #269)', () => {
+  it('transferência entre contas próprias: hint de contrapartida, NÃO "tarifa/despesa"', () => {
+    render(
+      <MatchDetailsModal
+        open
+        view={view({
+          isManualEntry: true,
+          manualKindTag: 'financial.recon.manualType.Transfer',
+          manualHintTag: 'financial.recon.match.manualHintTransfer',
+        })}
+        canUndo
+        undoing={false}
+        undoErrorTag={null}
+        onUndo={vi.fn()}
+        onViewTitle={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    expect(screen.getByText(tr('financial.recon.match.manualHintTransfer'))).toBeTruthy()
+    expect(screen.queryByText(tr('financial.recon.match.manualHint'))).toBeNull()
+  })
+
+  it('tarifa/despesa: mantém o hint genérico (ex.: tarifa, despesa)', () => {
+    render(
+      <MatchDetailsModal
+        open
+        view={view({ isManualEntry: true, manualHintTag: 'financial.recon.match.manualHint' })}
+        canUndo
+        undoing={false}
+        undoErrorTag={null}
+        onUndo={vi.fn()}
+        onViewTitle={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    expect(screen.getByText(tr('financial.recon.match.manualHint'))).toBeTruthy()
   })
 })
 

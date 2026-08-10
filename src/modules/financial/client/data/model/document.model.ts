@@ -43,23 +43,34 @@ export type RegisteredTaxInput = Readonly<{
 // Tipo do favorecido (#90) — espelha o enum do core-api; mesmos valores do PartnerKind do front.
 export type PayeeKind = 'supplier' | 'financier' | 'act' | 'collaborator'
 
+// #577: comprovante anexado no create atômico. base64 dos bytes + mimeType na allowlist (pdf/xml).
+export type SourceFileInput = Readonly<{
+  fileName: string
+  mimeType: 'application/pdf' | 'text/xml' | 'application/xml'
+  base64: string
+}>
+
 export type CreateDocumentInput = Readonly<{
-  type: DocumentType
-  documentNumber: string
+  // #534: no RASCUNHO (asDraft) o core-api aceita estes 5 opcionais (superRefine reexige só p/ asDraft:false).
+  // O gating do lançamento (Open) vive na UI (`canSubmit`); o rascunho salva parcial.
+  type?: DocumentType
+  documentNumber?: string
   series?: string
-  supplierRef: string
+  supplierRef?: string
   payeeKind?: PayeeKind // tipo do favorecido (#90) — derivado do parceiro; backend default 'supplier'
   approverRef?: string // aprovador escolhido (#148) — UUID de usuário com payable:approve
   contractRef?: string
   budgetPlanRef?: string
   categoryRef?: string
+  subcategoryRef?: string // #502 (S1): folha da árvore do plano — carimbada em campo próprio (não mais dobrada em categoryRef)
   costCenterRef?: string // centro de custo (#147) — backend aceita no documento (corrige drift do schema)
   programRef?: string
   contaDebitoRef?: string // #197: conta-débito (conta-cedente da conciliação) — a baixa vai p/ ela
   accessKey?: string // #115: chave de acesso (44 dígitos) — obrigatória p/ DANFE no lançamento
   paymentDetail?: string // #273: complemento da forma de pagamento (linha digitável, id de cartão, ref de câmbio)
-  paymentMethod: PaymentMethod
-  grossValueCents: string
+  competencia?: string // #197: competência (YYYY-MM) — opcional; validada por VO no domínio do backend
+  paymentMethod?: PaymentMethod
+  grossValueCents?: string
   sourceDiscountsCents?: string
   discountsCents?: string
   penaltyCents?: string
@@ -70,6 +81,8 @@ export type CreateDocumentInput = Readonly<{
   dueDate?: string // opcional p/ rascunho (asDraft); obrigatório no lançamento (gating na UI)
   description?: string
   asDraft?: boolean // true → Rascunho (campos opcionais, sem títulos); default false → Aberto
+  // #577: comprovante enviado JUNTO no create atômico (rota /with-source-file). base64 + mimeType (pdf/xml).
+  sourceFile?: SourceFileInput
 }>
 
 export type AdjustDocumentInput = Readonly<{
@@ -83,10 +96,40 @@ export type AdjustDocumentInput = Readonly<{
   retentions?: readonly RetentionInput[]
   dueDate?: string
   description?: string | null
+  paymentDetail?: string | null // #273/#284: complemento da forma — editável no ajuste; null = limpar
 }>
 
 export type ApproveInput = Readonly<{ id: string; version: number }>
+
+// #270: vencimento de UM título isolado (não propaga pai↔filhos). `dueDate` date-only YYYY-MM-DD.
+export type UpdatePayableDueDateInput = Readonly<{
+  documentId: string
+  payableId: string
+  version: number
+  dueDate: string
+}>
 export type CancelInput = Readonly<{ id: string; version: number }>
+
+// Trilha de auditoria (GET /documents/:id/timeline) — entrada ENRIQUECIDA (nome do autor resolvido no BFF).
+export type TimelineEventType =
+  | 'DocumentDraftSaved'
+  | 'DocumentSaved'
+  | 'PayableApproved'
+  | 'ApprovalUndone'
+  | 'PayableManuallyPaid'
+  | 'PayableReconciled' // conciliação (agregado separado) — entra na trilha via core-api#406
+  | 'ReconciliationUndone'
+export type TimelineChange = Readonly<{ field: string; before: string | null; after: string | null }>
+export type DocumentTimelineEntry = Readonly<{
+  eventType: TimelineEventType
+  targetKind: 'Document' | 'Payable'
+  targetId: string
+  occurredAt: string
+  isSystem: boolean // ação automática (actor null); a View mostra "Sistema"
+  actorName: string | null // null com isSystem=false = humano não-resolvido → a View mostra "—"
+  changes: readonly TimelineChange[]
+}>
+
 // #224: baixa manual de um título (Aprovado→Pago). version = do documento (optimistic lock).
 // paidAt (#232) = data de pagamento (saída bancária, retroativa); ausente → backend usa now.
 export type ManualPaymentInput = Readonly<{
@@ -118,6 +161,19 @@ export type Payable = Readonly<{
   status: DocumentStatus
 }>
 
+// #62/Feature 2 (core-api#568): comprovante-fonte do documento. `url` é o endpoint proxy que serve os
+// bytes INLINE (nunca acessado direto pelo browser — o fetch passa pela server-fn, §III/§IX). null = sem anexo.
+export type DocumentAttachment = Readonly<{
+  fileName: string
+  mimeType: string
+  sizeBytes: number
+  url: string
+}>
+
+// Bytes do comprovante-fonte trazidos pela server-fn (base64) + o mimeType — o client monta um blob/File
+// e renderiza na área de OCR (reusa o web view do "Lançar Documento"). O browser NUNCA fala com o core-api.
+export type DocumentSourceFile = Readonly<{ base64: string; mimeType: string }>
+
 export type DocumentDetail = Readonly<{
   id: string
   status: DocumentStatus
@@ -126,13 +182,22 @@ export type DocumentDetail = Readonly<{
   supplierRef: string | null
   paymentMethod: PaymentMethod | null
   paymentDetail: string | null // #273: complemento da forma de pagamento; null quando não informado
+  competencia: string | null // #197: competência (YYYY-MM); null quando não informada
   grossValueCents: string | null
   netValueCents: string | null
   issueDate: string | null // YYYY-MM-DD (#163); null quando não informado
   dueDate: string | null
   description: string | null
+  // #95/#147 — categorização (refs do GET /:id; resolvidas p/ nome no drawer). null = não informado.
+  budgetPlanRef: string | null
+  categoryRef: string | null // categoria escolhida; #502(S1): docs novos = a CATEGORIA (não mais a folha)
+  subcategoryRef: string | null // #502 (S1): folha da árvore do plano; null em docs antigos (folha vinha em categoryRef)
+  costCenterRef: string | null
+  programRef: string | null
   payables: readonly Payable[]
   version: number // optimistic lock — reenviado no PATCH (ajuste)
+  // #568: comprovante-fonte (OCR); null = documento sem anexo (lançamento manual).
+  attachment: DocumentAttachment | null
 }>
 
 export type DocumentSummary = Readonly<{
@@ -195,4 +260,18 @@ export type PayableTitleListResponse = Readonly<{
   page: number
   pageSize: number
   total: number
+}>
+
+// #536: contagem agregada por status (chips) — 1 request. `byStatus` = breakdown dos títulos (Open/Approved/
+// Paid/Reconciled…); `draft` = documentos Rascunho; `total` = total de títulos.
+export type PayableCountsInput = Readonly<{
+  supplierRef?: string
+  dueFrom?: string
+  dueTo?: string
+  type?: string
+}>
+export type PayableCounts = Readonly<{
+  total: number
+  draft: number
+  byStatus: Readonly<Record<string, number>>
 }>

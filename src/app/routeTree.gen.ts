@@ -9,19 +9,35 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './../routes/__root'
+import { Route as VersionRouteImport } from './../routes/version'
+import { Route as ResetPasswordRouteImport } from './../routes/reset-password'
+import { Route as RecuperarSenhaRouteImport } from './../routes/recuperar-senha'
 import { Route as ReadyRouteImport } from './../routes/ready'
 import { Route as LoginRouteImport } from './../routes/login'
 import { Route as HealthRouteImport } from './../routes/health'
+import { Route as AutocadastroRouteImport } from './../routes/autocadastro'
+import { Route as ActivateRouteImport } from './../routes/activate'
 import { Route as AuthenticatedRouteRouteImport } from './../routes/_authenticated/route'
 import { Route as IndexRouteImport } from './../routes/index'
 import { Route as ShowcaseOrganismsRouteImport } from './../routes/showcase/organisms'
+import { Route as AuthenticatedPlanejamentoRouteImport } from './../routes/_authenticated/planejamento'
 import { Route as AuthenticatedDashboardRouteImport } from './../routes/_authenticated/dashboard'
+import { Route as AuthenticatedConsolidadoRouteImport } from './../routes/_authenticated/consolidado'
 import { Route as AuthenticatedUsuariosIndexRouteImport } from './../routes/_authenticated/usuarios/index'
 import { Route as AuthenticatedProgramasIndexRouteImport } from './../routes/_authenticated/programas/index'
 import { Route as AuthenticatedMinhaContaIndexRouteImport } from './../routes/_authenticated/minha-conta/index'
 import { Route as AuthenticatedContratosIndexRouteImport } from './../routes/_authenticated/contratos/index'
 import { Route as AuthenticatedUsuariosCriarRouteImport } from './../routes/_authenticated/usuarios/criar'
 import { Route as AuthenticatedUsuariosIdRouteImport } from './../routes/_authenticated/usuarios/$id'
+import { Route as AuthenticatedRelatoriosRealizadoXPlanejadoRouteImport } from './../routes/_authenticated/relatorios/realizado-x-planejado'
+import { Route as AuthenticatedRelatoriosPosicaoRecebimentosRouteImport } from './../routes/_authenticated/relatorios/posicao-recebimentos'
+import { Route as AuthenticatedRelatoriosPosicaoPagamentosRouteImport } from './../routes/_authenticated/relatorios/posicao-pagamentos'
+import { Route as AuthenticatedRelatoriosGeralRouteImport } from './../routes/_authenticated/relatorios/geral'
+import { Route as AuthenticatedRelatoriosFornecedoresSemContratoRouteImport } from './../routes/_authenticated/relatorios/fornecedores-sem-contrato'
+import { Route as AuthenticatedRelatoriosFluxoCaixaRouteImport } from './../routes/_authenticated/relatorios/fluxo-caixa'
+import { Route as AuthenticatedRelatoriosEquipeRouteImport } from './../routes/_authenticated/relatorios/equipe'
+import { Route as AuthenticatedRelatoriosAnaliseRecebimentosRouteImport } from './../routes/_authenticated/relatorios/analise-recebimentos'
+import { Route as AuthenticatedRelatoriosAnalisePagamentosRouteImport } from './../routes/_authenticated/relatorios/analise-pagamentos'
 import { Route as AuthenticatedProgramasCriarRouteImport } from './../routes/_authenticated/programas/criar'
 import { Route as AuthenticatedProgramasIdRouteImport } from './../routes/_authenticated/programas/$id'
 import { Route as AuthenticatedContratosCriarRouteImport } from './../routes/_authenticated/contratos/criar'
@@ -33,6 +49,7 @@ import { Route as AuthenticatedParceirosColaboradoresIndexRouteImport } from './
 import { Route as AuthenticatedParceirosAtosIndexRouteImport } from './../routes/_authenticated/parceiros/atos/index'
 import { Route as AuthenticatedFinanceiroContasAPagarIndexRouteImport } from './../routes/_authenticated/financeiro/contas-a-pagar/index'
 import { Route as AuthenticatedFinanceiroConciliacaoIndexRouteImport } from './../routes/_authenticated/financeiro/conciliacao/index'
+import { Route as AuthenticatedPlanejamentoDetalhesIdRouteImport } from './../routes/_authenticated/planejamento_.detalhes.$id'
 import { Route as AuthenticatedParceirosFornecedoresCriarRouteImport } from './../routes/_authenticated/parceiros/fornecedores/criar'
 import { Route as AuthenticatedParceirosFornecedoresIdRouteImport } from './../routes/_authenticated/parceiros/fornecedores/$id'
 import { Route as AuthenticatedParceirosFinanciadoresCriarRouteImport } from './../routes/_authenticated/parceiros/financiadores/criar'
@@ -45,10 +62,26 @@ import { Route as AuthenticatedFinanceiroContasAPagarLancarRouteImport } from '.
 import { Route as AuthenticatedFinanceiroConciliacaoAccountIdRouteImport } from './../routes/_authenticated/financeiro/conciliacao/$accountId'
 import { Route as AuthenticatedContratosAditivoIdRouteImport } from './../routes/_authenticated/contratos/aditivo.$id'
 import { Route as AuthenticatedContratosIdEditarRouteImport } from './../routes/_authenticated/contratos/$id.editar'
+import { Route as AuthenticatedPlanejamentoDetalhesIdOrcamentoRouteImport } from './../routes/_authenticated/planejamento_.detalhes.$id_.orcamento'
 import { Route as AuthenticatedParceirosFornecedoresIdEditarRouteImport } from './../routes/_authenticated/parceiros/fornecedores/$id.editar'
 import { Route as AuthenticatedParceirosFinanciadoresIdEditarRouteImport } from './../routes/_authenticated/parceiros/financiadores/$id.editar'
 import { Route as AuthenticatedParceirosAtosIdEditarRouteImport } from './../routes/_authenticated/parceiros/atos/$id.editar'
 
+const VersionRoute = VersionRouteImport.update({
+  id: '/version',
+  path: '/version',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecuperarSenhaRoute = RecuperarSenhaRouteImport.update({
+  id: '/recuperar-senha',
+  path: '/recuperar-senha',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReadyRoute = ReadyRouteImport.update({
   id: '/ready',
   path: '/ready',
@@ -62,6 +95,16 @@ const LoginRoute = LoginRouteImport.update({
 const HealthRoute = HealthRouteImport.update({
   id: '/health',
   path: '/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AutocadastroRoute = AutocadastroRouteImport.update({
+  id: '/autocadastro',
+  path: '/autocadastro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ActivateRoute = ActivateRouteImport.update({
+  id: '/activate',
+  path: '/activate',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -78,11 +121,23 @@ const ShowcaseOrganismsRoute = ShowcaseOrganismsRouteImport.update({
   path: '/showcase/organisms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedPlanejamentoRoute =
+  AuthenticatedPlanejamentoRouteImport.update({
+    id: '/planejamento',
+    path: '/planejamento',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedConsolidadoRoute =
+  AuthenticatedConsolidadoRouteImport.update({
+    id: '/consolidado',
+    path: '/consolidado',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedUsuariosIndexRoute =
   AuthenticatedUsuariosIndexRouteImport.update({
     id: '/usuarios/',
@@ -118,6 +173,60 @@ const AuthenticatedUsuariosIdRoute = AuthenticatedUsuariosIdRouteImport.update({
   path: '/usuarios/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRelatoriosRealizadoXPlanejadoRoute =
+  AuthenticatedRelatoriosRealizadoXPlanejadoRouteImport.update({
+    id: '/relatorios/realizado-x-planejado',
+    path: '/relatorios/realizado-x-planejado',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRelatoriosPosicaoRecebimentosRoute =
+  AuthenticatedRelatoriosPosicaoRecebimentosRouteImport.update({
+    id: '/relatorios/posicao-recebimentos',
+    path: '/relatorios/posicao-recebimentos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRelatoriosPosicaoPagamentosRoute =
+  AuthenticatedRelatoriosPosicaoPagamentosRouteImport.update({
+    id: '/relatorios/posicao-pagamentos',
+    path: '/relatorios/posicao-pagamentos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRelatoriosGeralRoute =
+  AuthenticatedRelatoriosGeralRouteImport.update({
+    id: '/relatorios/geral',
+    path: '/relatorios/geral',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRelatoriosFornecedoresSemContratoRoute =
+  AuthenticatedRelatoriosFornecedoresSemContratoRouteImport.update({
+    id: '/relatorios/fornecedores-sem-contrato',
+    path: '/relatorios/fornecedores-sem-contrato',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRelatoriosFluxoCaixaRoute =
+  AuthenticatedRelatoriosFluxoCaixaRouteImport.update({
+    id: '/relatorios/fluxo-caixa',
+    path: '/relatorios/fluxo-caixa',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRelatoriosEquipeRoute =
+  AuthenticatedRelatoriosEquipeRouteImport.update({
+    id: '/relatorios/equipe',
+    path: '/relatorios/equipe',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRelatoriosAnaliseRecebimentosRoute =
+  AuthenticatedRelatoriosAnaliseRecebimentosRouteImport.update({
+    id: '/relatorios/analise-recebimentos',
+    path: '/relatorios/analise-recebimentos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRelatoriosAnalisePagamentosRoute =
+  AuthenticatedRelatoriosAnalisePagamentosRouteImport.update({
+    id: '/relatorios/analise-pagamentos',
+    path: '/relatorios/analise-pagamentos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedProgramasCriarRoute =
   AuthenticatedProgramasCriarRouteImport.update({
     id: '/programas/criar',
@@ -182,6 +291,12 @@ const AuthenticatedFinanceiroConciliacaoIndexRoute =
   AuthenticatedFinanceiroConciliacaoIndexRouteImport.update({
     id: '/financeiro/conciliacao/',
     path: '/financeiro/conciliacao/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPlanejamentoDetalhesIdRoute =
+  AuthenticatedPlanejamentoDetalhesIdRouteImport.update({
+    id: '/planejamento_/detalhes/$id',
+    path: '/planejamento/detalhes/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedParceirosFornecedoresCriarRoute =
@@ -256,6 +371,12 @@ const AuthenticatedContratosIdEditarRoute =
     path: '/editar',
     getParentRoute: () => AuthenticatedContratosIdRoute,
   } as any)
+const AuthenticatedPlanejamentoDetalhesIdOrcamentoRoute =
+  AuthenticatedPlanejamentoDetalhesIdOrcamentoRouteImport.update({
+    id: '/planejamento_/detalhes/$id_/orcamento',
+    path: '/planejamento/detalhes/$id/orcamento',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedParceirosFornecedoresIdEditarRoute =
   AuthenticatedParceirosFornecedoresIdEditarRouteImport.update({
     id: '/editar',
@@ -277,15 +398,31 @@ const AuthenticatedParceirosAtosIdEditarRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/activate': typeof ActivateRoute
+  '/autocadastro': typeof AutocadastroRoute
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/ready': typeof ReadyRoute
+  '/recuperar-senha': typeof RecuperarSenhaRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/version': typeof VersionRoute
+  '/consolidado': typeof AuthenticatedConsolidadoRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/planejamento': typeof AuthenticatedPlanejamentoRoute
   '/showcase/organisms': typeof ShowcaseOrganismsRoute
   '/contratos/$id': typeof AuthenticatedContratosIdRouteWithChildren
   '/contratos/criar': typeof AuthenticatedContratosCriarRoute
   '/programas/$id': typeof AuthenticatedProgramasIdRoute
   '/programas/criar': typeof AuthenticatedProgramasCriarRoute
+  '/relatorios/analise-pagamentos': typeof AuthenticatedRelatoriosAnalisePagamentosRoute
+  '/relatorios/analise-recebimentos': typeof AuthenticatedRelatoriosAnaliseRecebimentosRoute
+  '/relatorios/equipe': typeof AuthenticatedRelatoriosEquipeRoute
+  '/relatorios/fluxo-caixa': typeof AuthenticatedRelatoriosFluxoCaixaRoute
+  '/relatorios/fornecedores-sem-contrato': typeof AuthenticatedRelatoriosFornecedoresSemContratoRoute
+  '/relatorios/geral': typeof AuthenticatedRelatoriosGeralRoute
+  '/relatorios/posicao-pagamentos': typeof AuthenticatedRelatoriosPosicaoPagamentosRoute
+  '/relatorios/posicao-recebimentos': typeof AuthenticatedRelatoriosPosicaoRecebimentosRoute
+  '/relatorios/realizado-x-planejado': typeof AuthenticatedRelatoriosRealizadoXPlanejadoRoute
   '/usuarios/$id': typeof AuthenticatedUsuariosIdRoute
   '/usuarios/criar': typeof AuthenticatedUsuariosCriarRoute
   '/contratos/': typeof AuthenticatedContratosIndexRoute
@@ -304,6 +441,7 @@ export interface FileRoutesByFullPath {
   '/parceiros/financiadores/criar': typeof AuthenticatedParceirosFinanciadoresCriarRoute
   '/parceiros/fornecedores/$id': typeof AuthenticatedParceirosFornecedoresIdRouteWithChildren
   '/parceiros/fornecedores/criar': typeof AuthenticatedParceirosFornecedoresCriarRoute
+  '/planejamento/detalhes/$id': typeof AuthenticatedPlanejamentoDetalhesIdRoute
   '/financeiro/conciliacao/': typeof AuthenticatedFinanceiroConciliacaoIndexRoute
   '/financeiro/contas-a-pagar/': typeof AuthenticatedFinanceiroContasAPagarIndexRoute
   '/parceiros/atos/': typeof AuthenticatedParceirosAtosIndexRoute
@@ -314,18 +452,35 @@ export interface FileRoutesByFullPath {
   '/parceiros/atos/$id/editar': typeof AuthenticatedParceirosAtosIdEditarRoute
   '/parceiros/financiadores/$id/editar': typeof AuthenticatedParceirosFinanciadoresIdEditarRoute
   '/parceiros/fornecedores/$id/editar': typeof AuthenticatedParceirosFornecedoresIdEditarRoute
+  '/planejamento/detalhes/$id/orcamento': typeof AuthenticatedPlanejamentoDetalhesIdOrcamentoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/activate': typeof ActivateRoute
+  '/autocadastro': typeof AutocadastroRoute
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/ready': typeof ReadyRoute
+  '/recuperar-senha': typeof RecuperarSenhaRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/version': typeof VersionRoute
+  '/consolidado': typeof AuthenticatedConsolidadoRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/planejamento': typeof AuthenticatedPlanejamentoRoute
   '/showcase/organisms': typeof ShowcaseOrganismsRoute
   '/contratos/$id': typeof AuthenticatedContratosIdRouteWithChildren
   '/contratos/criar': typeof AuthenticatedContratosCriarRoute
   '/programas/$id': typeof AuthenticatedProgramasIdRoute
   '/programas/criar': typeof AuthenticatedProgramasCriarRoute
+  '/relatorios/analise-pagamentos': typeof AuthenticatedRelatoriosAnalisePagamentosRoute
+  '/relatorios/analise-recebimentos': typeof AuthenticatedRelatoriosAnaliseRecebimentosRoute
+  '/relatorios/equipe': typeof AuthenticatedRelatoriosEquipeRoute
+  '/relatorios/fluxo-caixa': typeof AuthenticatedRelatoriosFluxoCaixaRoute
+  '/relatorios/fornecedores-sem-contrato': typeof AuthenticatedRelatoriosFornecedoresSemContratoRoute
+  '/relatorios/geral': typeof AuthenticatedRelatoriosGeralRoute
+  '/relatorios/posicao-pagamentos': typeof AuthenticatedRelatoriosPosicaoPagamentosRoute
+  '/relatorios/posicao-recebimentos': typeof AuthenticatedRelatoriosPosicaoRecebimentosRoute
+  '/relatorios/realizado-x-planejado': typeof AuthenticatedRelatoriosRealizadoXPlanejadoRoute
   '/usuarios/$id': typeof AuthenticatedUsuariosIdRoute
   '/usuarios/criar': typeof AuthenticatedUsuariosCriarRoute
   '/contratos': typeof AuthenticatedContratosIndexRoute
@@ -344,6 +499,7 @@ export interface FileRoutesByTo {
   '/parceiros/financiadores/criar': typeof AuthenticatedParceirosFinanciadoresCriarRoute
   '/parceiros/fornecedores/$id': typeof AuthenticatedParceirosFornecedoresIdRouteWithChildren
   '/parceiros/fornecedores/criar': typeof AuthenticatedParceirosFornecedoresCriarRoute
+  '/planejamento/detalhes/$id': typeof AuthenticatedPlanejamentoDetalhesIdRoute
   '/financeiro/conciliacao': typeof AuthenticatedFinanceiroConciliacaoIndexRoute
   '/financeiro/contas-a-pagar': typeof AuthenticatedFinanceiroContasAPagarIndexRoute
   '/parceiros/atos': typeof AuthenticatedParceirosAtosIndexRoute
@@ -354,20 +510,37 @@ export interface FileRoutesByTo {
   '/parceiros/atos/$id/editar': typeof AuthenticatedParceirosAtosIdEditarRoute
   '/parceiros/financiadores/$id/editar': typeof AuthenticatedParceirosFinanciadoresIdEditarRoute
   '/parceiros/fornecedores/$id/editar': typeof AuthenticatedParceirosFornecedoresIdEditarRoute
+  '/planejamento/detalhes/$id/orcamento': typeof AuthenticatedPlanejamentoDetalhesIdOrcamentoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/activate': typeof ActivateRoute
+  '/autocadastro': typeof AutocadastroRoute
   '/health': typeof HealthRoute
   '/login': typeof LoginRoute
   '/ready': typeof ReadyRoute
+  '/recuperar-senha': typeof RecuperarSenhaRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/version': typeof VersionRoute
+  '/_authenticated/consolidado': typeof AuthenticatedConsolidadoRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/planejamento': typeof AuthenticatedPlanejamentoRoute
   '/showcase/organisms': typeof ShowcaseOrganismsRoute
   '/_authenticated/contratos/$id': typeof AuthenticatedContratosIdRouteWithChildren
   '/_authenticated/contratos/criar': typeof AuthenticatedContratosCriarRoute
   '/_authenticated/programas/$id': typeof AuthenticatedProgramasIdRoute
   '/_authenticated/programas/criar': typeof AuthenticatedProgramasCriarRoute
+  '/_authenticated/relatorios/analise-pagamentos': typeof AuthenticatedRelatoriosAnalisePagamentosRoute
+  '/_authenticated/relatorios/analise-recebimentos': typeof AuthenticatedRelatoriosAnaliseRecebimentosRoute
+  '/_authenticated/relatorios/equipe': typeof AuthenticatedRelatoriosEquipeRoute
+  '/_authenticated/relatorios/fluxo-caixa': typeof AuthenticatedRelatoriosFluxoCaixaRoute
+  '/_authenticated/relatorios/fornecedores-sem-contrato': typeof AuthenticatedRelatoriosFornecedoresSemContratoRoute
+  '/_authenticated/relatorios/geral': typeof AuthenticatedRelatoriosGeralRoute
+  '/_authenticated/relatorios/posicao-pagamentos': typeof AuthenticatedRelatoriosPosicaoPagamentosRoute
+  '/_authenticated/relatorios/posicao-recebimentos': typeof AuthenticatedRelatoriosPosicaoRecebimentosRoute
+  '/_authenticated/relatorios/realizado-x-planejado': typeof AuthenticatedRelatoriosRealizadoXPlanejadoRoute
   '/_authenticated/usuarios/$id': typeof AuthenticatedUsuariosIdRoute
   '/_authenticated/usuarios/criar': typeof AuthenticatedUsuariosCriarRoute
   '/_authenticated/contratos/': typeof AuthenticatedContratosIndexRoute
@@ -386,6 +559,7 @@ export interface FileRoutesById {
   '/_authenticated/parceiros/financiadores/criar': typeof AuthenticatedParceirosFinanciadoresCriarRoute
   '/_authenticated/parceiros/fornecedores/$id': typeof AuthenticatedParceirosFornecedoresIdRouteWithChildren
   '/_authenticated/parceiros/fornecedores/criar': typeof AuthenticatedParceirosFornecedoresCriarRoute
+  '/_authenticated/planejamento_/detalhes/$id': typeof AuthenticatedPlanejamentoDetalhesIdRoute
   '/_authenticated/financeiro/conciliacao/': typeof AuthenticatedFinanceiroConciliacaoIndexRoute
   '/_authenticated/financeiro/contas-a-pagar/': typeof AuthenticatedFinanceiroContasAPagarIndexRoute
   '/_authenticated/parceiros/atos/': typeof AuthenticatedParceirosAtosIndexRoute
@@ -396,20 +570,37 @@ export interface FileRoutesById {
   '/_authenticated/parceiros/atos/$id/editar': typeof AuthenticatedParceirosAtosIdEditarRoute
   '/_authenticated/parceiros/financiadores/$id/editar': typeof AuthenticatedParceirosFinanciadoresIdEditarRoute
   '/_authenticated/parceiros/fornecedores/$id/editar': typeof AuthenticatedParceirosFornecedoresIdEditarRoute
+  '/_authenticated/planejamento_/detalhes/$id_/orcamento': typeof AuthenticatedPlanejamentoDetalhesIdOrcamentoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/activate'
+    | '/autocadastro'
     | '/health'
     | '/login'
     | '/ready'
+    | '/recuperar-senha'
+    | '/reset-password'
+    | '/version'
+    | '/consolidado'
     | '/dashboard'
+    | '/planejamento'
     | '/showcase/organisms'
     | '/contratos/$id'
     | '/contratos/criar'
     | '/programas/$id'
     | '/programas/criar'
+    | '/relatorios/analise-pagamentos'
+    | '/relatorios/analise-recebimentos'
+    | '/relatorios/equipe'
+    | '/relatorios/fluxo-caixa'
+    | '/relatorios/fornecedores-sem-contrato'
+    | '/relatorios/geral'
+    | '/relatorios/posicao-pagamentos'
+    | '/relatorios/posicao-recebimentos'
+    | '/relatorios/realizado-x-planejado'
     | '/usuarios/$id'
     | '/usuarios/criar'
     | '/contratos/'
@@ -428,6 +619,7 @@ export interface FileRouteTypes {
     | '/parceiros/financiadores/criar'
     | '/parceiros/fornecedores/$id'
     | '/parceiros/fornecedores/criar'
+    | '/planejamento/detalhes/$id'
     | '/financeiro/conciliacao/'
     | '/financeiro/contas-a-pagar/'
     | '/parceiros/atos/'
@@ -438,18 +630,35 @@ export interface FileRouteTypes {
     | '/parceiros/atos/$id/editar'
     | '/parceiros/financiadores/$id/editar'
     | '/parceiros/fornecedores/$id/editar'
+    | '/planejamento/detalhes/$id/orcamento'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/activate'
+    | '/autocadastro'
     | '/health'
     | '/login'
     | '/ready'
+    | '/recuperar-senha'
+    | '/reset-password'
+    | '/version'
+    | '/consolidado'
     | '/dashboard'
+    | '/planejamento'
     | '/showcase/organisms'
     | '/contratos/$id'
     | '/contratos/criar'
     | '/programas/$id'
     | '/programas/criar'
+    | '/relatorios/analise-pagamentos'
+    | '/relatorios/analise-recebimentos'
+    | '/relatorios/equipe'
+    | '/relatorios/fluxo-caixa'
+    | '/relatorios/fornecedores-sem-contrato'
+    | '/relatorios/geral'
+    | '/relatorios/posicao-pagamentos'
+    | '/relatorios/posicao-recebimentos'
+    | '/relatorios/realizado-x-planejado'
     | '/usuarios/$id'
     | '/usuarios/criar'
     | '/contratos'
@@ -468,6 +677,7 @@ export interface FileRouteTypes {
     | '/parceiros/financiadores/criar'
     | '/parceiros/fornecedores/$id'
     | '/parceiros/fornecedores/criar'
+    | '/planejamento/detalhes/$id'
     | '/financeiro/conciliacao'
     | '/financeiro/contas-a-pagar'
     | '/parceiros/atos'
@@ -478,19 +688,36 @@ export interface FileRouteTypes {
     | '/parceiros/atos/$id/editar'
     | '/parceiros/financiadores/$id/editar'
     | '/parceiros/fornecedores/$id/editar'
+    | '/planejamento/detalhes/$id/orcamento'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/activate'
+    | '/autocadastro'
     | '/health'
     | '/login'
     | '/ready'
+    | '/recuperar-senha'
+    | '/reset-password'
+    | '/version'
+    | '/_authenticated/consolidado'
     | '/_authenticated/dashboard'
+    | '/_authenticated/planejamento'
     | '/showcase/organisms'
     | '/_authenticated/contratos/$id'
     | '/_authenticated/contratos/criar'
     | '/_authenticated/programas/$id'
     | '/_authenticated/programas/criar'
+    | '/_authenticated/relatorios/analise-pagamentos'
+    | '/_authenticated/relatorios/analise-recebimentos'
+    | '/_authenticated/relatorios/equipe'
+    | '/_authenticated/relatorios/fluxo-caixa'
+    | '/_authenticated/relatorios/fornecedores-sem-contrato'
+    | '/_authenticated/relatorios/geral'
+    | '/_authenticated/relatorios/posicao-pagamentos'
+    | '/_authenticated/relatorios/posicao-recebimentos'
+    | '/_authenticated/relatorios/realizado-x-planejado'
     | '/_authenticated/usuarios/$id'
     | '/_authenticated/usuarios/criar'
     | '/_authenticated/contratos/'
@@ -509,6 +736,7 @@ export interface FileRouteTypes {
     | '/_authenticated/parceiros/financiadores/criar'
     | '/_authenticated/parceiros/fornecedores/$id'
     | '/_authenticated/parceiros/fornecedores/criar'
+    | '/_authenticated/planejamento_/detalhes/$id'
     | '/_authenticated/financeiro/conciliacao/'
     | '/_authenticated/financeiro/contas-a-pagar/'
     | '/_authenticated/parceiros/atos/'
@@ -519,19 +747,46 @@ export interface FileRouteTypes {
     | '/_authenticated/parceiros/atos/$id/editar'
     | '/_authenticated/parceiros/financiadores/$id/editar'
     | '/_authenticated/parceiros/fornecedores/$id/editar'
+    | '/_authenticated/planejamento_/detalhes/$id_/orcamento'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  ActivateRoute: typeof ActivateRoute
+  AutocadastroRoute: typeof AutocadastroRoute
   HealthRoute: typeof HealthRoute
   LoginRoute: typeof LoginRoute
   ReadyRoute: typeof ReadyRoute
+  RecuperarSenhaRoute: typeof RecuperarSenhaRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
+  VersionRoute: typeof VersionRoute
   ShowcaseOrganismsRoute: typeof ShowcaseOrganismsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/version': {
+      id: '/version'
+      path: '/version'
+      fullPath: '/version'
+      preLoaderRoute: typeof VersionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recuperar-senha': {
+      id: '/recuperar-senha'
+      path: '/recuperar-senha'
+      fullPath: '/recuperar-senha'
+      preLoaderRoute: typeof RecuperarSenhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ready': {
       id: '/ready'
       path: '/ready'
@@ -551,6 +806,20 @@ declare module '@tanstack/react-router' {
       path: '/health'
       fullPath: '/health'
       preLoaderRoute: typeof HealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/autocadastro': {
+      id: '/autocadastro'
+      path: '/autocadastro'
+      fullPath: '/autocadastro'
+      preLoaderRoute: typeof AutocadastroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/activate': {
+      id: '/activate'
+      path: '/activate'
+      fullPath: '/activate'
+      preLoaderRoute: typeof ActivateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -574,11 +843,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShowcaseOrganismsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/planejamento': {
+      id: '/_authenticated/planejamento'
+      path: '/planejamento'
+      fullPath: '/planejamento'
+      preLoaderRoute: typeof AuthenticatedPlanejamentoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/consolidado': {
+      id: '/_authenticated/consolidado'
+      path: '/consolidado'
+      fullPath: '/consolidado'
+      preLoaderRoute: typeof AuthenticatedConsolidadoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/usuarios/': {
@@ -621,6 +904,69 @@ declare module '@tanstack/react-router' {
       path: '/usuarios/$id'
       fullPath: '/usuarios/$id'
       preLoaderRoute: typeof AuthenticatedUsuariosIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/relatorios/realizado-x-planejado': {
+      id: '/_authenticated/relatorios/realizado-x-planejado'
+      path: '/relatorios/realizado-x-planejado'
+      fullPath: '/relatorios/realizado-x-planejado'
+      preLoaderRoute: typeof AuthenticatedRelatoriosRealizadoXPlanejadoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/relatorios/posicao-recebimentos': {
+      id: '/_authenticated/relatorios/posicao-recebimentos'
+      path: '/relatorios/posicao-recebimentos'
+      fullPath: '/relatorios/posicao-recebimentos'
+      preLoaderRoute: typeof AuthenticatedRelatoriosPosicaoRecebimentosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/relatorios/posicao-pagamentos': {
+      id: '/_authenticated/relatorios/posicao-pagamentos'
+      path: '/relatorios/posicao-pagamentos'
+      fullPath: '/relatorios/posicao-pagamentos'
+      preLoaderRoute: typeof AuthenticatedRelatoriosPosicaoPagamentosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/relatorios/geral': {
+      id: '/_authenticated/relatorios/geral'
+      path: '/relatorios/geral'
+      fullPath: '/relatorios/geral'
+      preLoaderRoute: typeof AuthenticatedRelatoriosGeralRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/relatorios/fornecedores-sem-contrato': {
+      id: '/_authenticated/relatorios/fornecedores-sem-contrato'
+      path: '/relatorios/fornecedores-sem-contrato'
+      fullPath: '/relatorios/fornecedores-sem-contrato'
+      preLoaderRoute: typeof AuthenticatedRelatoriosFornecedoresSemContratoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/relatorios/fluxo-caixa': {
+      id: '/_authenticated/relatorios/fluxo-caixa'
+      path: '/relatorios/fluxo-caixa'
+      fullPath: '/relatorios/fluxo-caixa'
+      preLoaderRoute: typeof AuthenticatedRelatoriosFluxoCaixaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/relatorios/equipe': {
+      id: '/_authenticated/relatorios/equipe'
+      path: '/relatorios/equipe'
+      fullPath: '/relatorios/equipe'
+      preLoaderRoute: typeof AuthenticatedRelatoriosEquipeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/relatorios/analise-recebimentos': {
+      id: '/_authenticated/relatorios/analise-recebimentos'
+      path: '/relatorios/analise-recebimentos'
+      fullPath: '/relatorios/analise-recebimentos'
+      preLoaderRoute: typeof AuthenticatedRelatoriosAnaliseRecebimentosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/relatorios/analise-pagamentos': {
+      id: '/_authenticated/relatorios/analise-pagamentos'
+      path: '/relatorios/analise-pagamentos'
+      fullPath: '/relatorios/analise-pagamentos'
+      preLoaderRoute: typeof AuthenticatedRelatoriosAnalisePagamentosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/programas/criar': {
@@ -698,6 +1044,13 @@ declare module '@tanstack/react-router' {
       path: '/financeiro/conciliacao'
       fullPath: '/financeiro/conciliacao/'
       preLoaderRoute: typeof AuthenticatedFinanceiroConciliacaoIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/planejamento_/detalhes/$id': {
+      id: '/_authenticated/planejamento_/detalhes/$id'
+      path: '/planejamento/detalhes/$id'
+      fullPath: '/planejamento/detalhes/$id'
+      preLoaderRoute: typeof AuthenticatedPlanejamentoDetalhesIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/parceiros/fornecedores/criar': {
@@ -784,6 +1137,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedContratosIdEditarRouteImport
       parentRoute: typeof AuthenticatedContratosIdRoute
     }
+    '/_authenticated/planejamento_/detalhes/$id_/orcamento': {
+      id: '/_authenticated/planejamento_/detalhes/$id_/orcamento'
+      path: '/planejamento/detalhes/$id/orcamento'
+      fullPath: '/planejamento/detalhes/$id/orcamento'
+      preLoaderRoute: typeof AuthenticatedPlanejamentoDetalhesIdOrcamentoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/parceiros/fornecedores/$id/editar': {
       id: '/_authenticated/parceiros/fornecedores/$id/editar'
       path: '/editar'
@@ -868,11 +1228,22 @@ const AuthenticatedParceirosFornecedoresIdRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedConsolidadoRoute: typeof AuthenticatedConsolidadoRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedPlanejamentoRoute: typeof AuthenticatedPlanejamentoRoute
   AuthenticatedContratosIdRoute: typeof AuthenticatedContratosIdRouteWithChildren
   AuthenticatedContratosCriarRoute: typeof AuthenticatedContratosCriarRoute
   AuthenticatedProgramasIdRoute: typeof AuthenticatedProgramasIdRoute
   AuthenticatedProgramasCriarRoute: typeof AuthenticatedProgramasCriarRoute
+  AuthenticatedRelatoriosAnalisePagamentosRoute: typeof AuthenticatedRelatoriosAnalisePagamentosRoute
+  AuthenticatedRelatoriosAnaliseRecebimentosRoute: typeof AuthenticatedRelatoriosAnaliseRecebimentosRoute
+  AuthenticatedRelatoriosEquipeRoute: typeof AuthenticatedRelatoriosEquipeRoute
+  AuthenticatedRelatoriosFluxoCaixaRoute: typeof AuthenticatedRelatoriosFluxoCaixaRoute
+  AuthenticatedRelatoriosFornecedoresSemContratoRoute: typeof AuthenticatedRelatoriosFornecedoresSemContratoRoute
+  AuthenticatedRelatoriosGeralRoute: typeof AuthenticatedRelatoriosGeralRoute
+  AuthenticatedRelatoriosPosicaoPagamentosRoute: typeof AuthenticatedRelatoriosPosicaoPagamentosRoute
+  AuthenticatedRelatoriosPosicaoRecebimentosRoute: typeof AuthenticatedRelatoriosPosicaoRecebimentosRoute
+  AuthenticatedRelatoriosRealizadoXPlanejadoRoute: typeof AuthenticatedRelatoriosRealizadoXPlanejadoRoute
   AuthenticatedUsuariosIdRoute: typeof AuthenticatedUsuariosIdRoute
   AuthenticatedUsuariosCriarRoute: typeof AuthenticatedUsuariosCriarRoute
   AuthenticatedContratosIndexRoute: typeof AuthenticatedContratosIndexRoute
@@ -890,6 +1261,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedParceirosFinanciadoresCriarRoute: typeof AuthenticatedParceirosFinanciadoresCriarRoute
   AuthenticatedParceirosFornecedoresIdRoute: typeof AuthenticatedParceirosFornecedoresIdRouteWithChildren
   AuthenticatedParceirosFornecedoresCriarRoute: typeof AuthenticatedParceirosFornecedoresCriarRoute
+  AuthenticatedPlanejamentoDetalhesIdRoute: typeof AuthenticatedPlanejamentoDetalhesIdRoute
   AuthenticatedFinanceiroConciliacaoIndexRoute: typeof AuthenticatedFinanceiroConciliacaoIndexRoute
   AuthenticatedFinanceiroContasAPagarIndexRoute: typeof AuthenticatedFinanceiroContasAPagarIndexRoute
   AuthenticatedParceirosAtosIndexRoute: typeof AuthenticatedParceirosAtosIndexRoute
@@ -897,14 +1269,33 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedParceirosFinanciadoresIndexRoute: typeof AuthenticatedParceirosFinanciadoresIndexRoute
   AuthenticatedParceirosFornecedoresIndexRoute: typeof AuthenticatedParceirosFornecedoresIndexRoute
   AuthenticatedParceirosTerritoriosIndexRoute: typeof AuthenticatedParceirosTerritoriosIndexRoute
+  AuthenticatedPlanejamentoDetalhesIdOrcamentoRoute: typeof AuthenticatedPlanejamentoDetalhesIdOrcamentoRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedConsolidadoRoute: AuthenticatedConsolidadoRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedPlanejamentoRoute: AuthenticatedPlanejamentoRoute,
   AuthenticatedContratosIdRoute: AuthenticatedContratosIdRouteWithChildren,
   AuthenticatedContratosCriarRoute: AuthenticatedContratosCriarRoute,
   AuthenticatedProgramasIdRoute: AuthenticatedProgramasIdRoute,
   AuthenticatedProgramasCriarRoute: AuthenticatedProgramasCriarRoute,
+  AuthenticatedRelatoriosAnalisePagamentosRoute:
+    AuthenticatedRelatoriosAnalisePagamentosRoute,
+  AuthenticatedRelatoriosAnaliseRecebimentosRoute:
+    AuthenticatedRelatoriosAnaliseRecebimentosRoute,
+  AuthenticatedRelatoriosEquipeRoute: AuthenticatedRelatoriosEquipeRoute,
+  AuthenticatedRelatoriosFluxoCaixaRoute:
+    AuthenticatedRelatoriosFluxoCaixaRoute,
+  AuthenticatedRelatoriosFornecedoresSemContratoRoute:
+    AuthenticatedRelatoriosFornecedoresSemContratoRoute,
+  AuthenticatedRelatoriosGeralRoute: AuthenticatedRelatoriosGeralRoute,
+  AuthenticatedRelatoriosPosicaoPagamentosRoute:
+    AuthenticatedRelatoriosPosicaoPagamentosRoute,
+  AuthenticatedRelatoriosPosicaoRecebimentosRoute:
+    AuthenticatedRelatoriosPosicaoRecebimentosRoute,
+  AuthenticatedRelatoriosRealizadoXPlanejadoRoute:
+    AuthenticatedRelatoriosRealizadoXPlanejadoRoute,
   AuthenticatedUsuariosIdRoute: AuthenticatedUsuariosIdRoute,
   AuthenticatedUsuariosCriarRoute: AuthenticatedUsuariosCriarRoute,
   AuthenticatedContratosIndexRoute: AuthenticatedContratosIndexRoute,
@@ -931,6 +1322,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedParceirosFornecedoresIdRouteWithChildren,
   AuthenticatedParceirosFornecedoresCriarRoute:
     AuthenticatedParceirosFornecedoresCriarRoute,
+  AuthenticatedPlanejamentoDetalhesIdRoute:
+    AuthenticatedPlanejamentoDetalhesIdRoute,
   AuthenticatedFinanceiroConciliacaoIndexRoute:
     AuthenticatedFinanceiroConciliacaoIndexRoute,
   AuthenticatedFinanceiroContasAPagarIndexRoute:
@@ -944,6 +1337,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedParceirosFornecedoresIndexRoute,
   AuthenticatedParceirosTerritoriosIndexRoute:
     AuthenticatedParceirosTerritoriosIndexRoute,
+  AuthenticatedPlanejamentoDetalhesIdOrcamentoRoute:
+    AuthenticatedPlanejamentoDetalhesIdOrcamentoRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -952,9 +1347,14 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  ActivateRoute: ActivateRoute,
+  AutocadastroRoute: AutocadastroRoute,
   HealthRoute: HealthRoute,
   LoginRoute: LoginRoute,
   ReadyRoute: ReadyRoute,
+  RecuperarSenhaRoute: RecuperarSenhaRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
+  VersionRoute: VersionRoute,
   ShowcaseOrganismsRoute: ShowcaseOrganismsRoute,
 }
 export const routeTree = rootRouteImport

@@ -11,6 +11,7 @@ import {
   progressLabel,
   progressPercent,
   entryTypeIcon,
+  extratoTypeTag,
   isPending,
   transactionTag,
   filterTransactions,
@@ -28,9 +29,15 @@ import {
   groupAccountsForSwitch,
   matchDetailsView,
   buildMatchTitles,
+  matchDocFromItem,
   centsToBRL,
   filterPayables,
-  payableTypeOptions,
+  parseBRLToCents,
+  centsToAmountInput,
+  dateInRange,
+  valueInRange,
+  RECON_DOCUMENT_TYPE_OPTIONS,
+  INITIAL_MULTI_FILTER,
   sortPendingByPayment,
   parseOfxAccount,
   ofxMatchesAccount,
@@ -41,9 +48,13 @@ import {
   normalizeDesc,
   relabelReconCategory,
   nextPendingWithMatch,
+  engineTarget,
   tituloLabel,
   formatDateDash,
+  formatDayHeader,
   deriveManualKindFromTx,
+  matchAuditFromLookup,
+  deleteStatementErrorTag,
 } from '../../../../../src/modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
 import type {
   Movement,
@@ -107,10 +118,42 @@ describe('workspaceReducer', () => {
     assert.equal(next.assocTab, 'multi')
   })
 
+  it('clear-statement zera o statement e a seleção (extrato excluído, core-api#558)', () => {
+    const withStatement = workspaceReducer(
+      workspaceReducer(initialWorkspaceUiState, { type: 'set-statement', statementId: 'st-1' }),
+      { type: 'select-transaction', id: 't1' },
+    )
+    assert.equal(withStatement.statementId, 'st-1')
+    const cleared = workspaceReducer(withStatement, { type: 'clear-statement' })
+    assert.equal(cleared.statementId, null)
+    assert.equal(cleared.selectedTransactionId, null)
+  })
+
   it('não muta o estado anterior (imutável)', () => {
     const next = workspaceReducer(initialWorkspaceUiState, { type: 'set-tab', tab: 'extrato' })
     assert.notEqual(next, initialWorkspaceUiState)
     assert.equal(initialWorkspaceUiState.activeTab, 'conciliacao')
+  })
+})
+
+describe('deleteStatementErrorTag (exclusão do extrato, core-api#558)', () => {
+  it('period-closed vira mensagem ACIONÁVEL de exclusão (reabra o período)', () => {
+    assert.equal(
+      deleteStatementErrorTag('period-closed'),
+      'financial.recon.deleteStatement.error.periodClosed',
+    )
+  })
+
+  it('conciliadas usa a tag própria (já acionável)', () => {
+    assert.equal(
+      deleteStatementErrorTag('statement-has-reconciled-transactions'),
+      'financial.recon.error.statement-has-reconciled-transactions',
+    )
+  })
+
+  it('demais erros caem no reconciliationErrorTag comum', () => {
+    assert.equal(deleteStatementErrorTag('server'), 'financial.recon.error.server')
+    assert.equal(deleteStatementErrorTag('forbidden'), 'financial.recon.error.forbidden')
   })
 })
 
@@ -360,6 +403,7 @@ describe('modal Detalhes da conciliação — matchDetailsView', () => {
   it('com detalhes, repassa título/auditoria; isManualEntry vem do parâmetro (type do lookup)', () => {
     const doc = {
       name: 'NF 0847',
+      nameTag: null,
       documento: '0847',
       vencimento: '10/06/2026',
       categoria: 'Serviços',
@@ -401,7 +445,7 @@ describe('modal Detalhes da conciliação — matchDetailsView', () => {
   it('multi preenchido quando passado (1 saída → N títulos)', () => {
     const multi = {
       count: 3,
-      lines: [{ valueBRL: 'R$ 300,00' }],
+      lines: [{ valueBRL: 'R$ 300,00', name: 'Fornecedor A', nameTag: null, documento: 'NF-1' }],
       differenceBRL: null,
       differenceTag: '',
       totalBRL: 'R$ 742,00',
@@ -409,6 +453,55 @@ describe('modal Detalhes da conciliação — matchDetailsView', () => {
     const v = matchDetailsView(base, null, null, multi)
     assert.equal(v.multi?.count, 3)
     assert.equal(v.multi?.totalBRL, 'R$ 742,00')
+  })
+
+  it('#554/#555: categoria do lookup acende a linha "Categoria" (lançamento manual)', () => {
+    const v = matchDetailsView(base, null, null, null, true, null, null, null, 'Serviços / Consultoria')
+    assert.equal(v.doc.categoria, 'Serviços / Consultoria')
+  })
+
+  it('#554/#555: categoria do lookup sobrepõe o "—" do doc (título 1:1)', () => {
+    const doc = {
+      name: 'NF 0847',
+      nameTag: null,
+      documento: '0847',
+      vencimento: '10/06/2026',
+      categoria: '—',
+      valueBRL: 'R$ 950,00',
+    }
+    const v = matchDetailsView(base, doc, null, null, false, null, null, null, 'Imposto / ISS')
+    assert.equal(v.doc.categoria, 'Imposto / ISS')
+    assert.equal(v.doc.documento, '0847') // demais campos do doc preservados
+  })
+
+  it('#554/#555: categoria null/vazia mantém "—"', () => {
+    assert.equal(matchDetailsView(base, null, null, null, true, null, null, null, null).doc.categoria, '—')
+    assert.equal(matchDetailsView(base, null, null, null, true, null, null, null, '').doc.categoria, '—')
+  })
+})
+
+describe('matchAuditFromLookup (#207 — "Por" mostra nome, não UUID)', () => {
+  const base = {
+    reconciliationId: 'rec1',
+    transactionId: 't1',
+    type: 'Individual' as const,
+    status: 'Active' as const,
+    reconciledBy: 'c562bc57-0000-0000-0000-000000000000',
+    reconciledAt: '2026-06-21T13:45:00.000Z',
+    differenceCents: null,
+    category: null,
+    items: [],
+  }
+
+  it('usa reconciledByName quando resolvido pelo core-api (preferido sobre o id cru)', () => {
+    const audit = matchAuditFromLookup({ ...base, reconciledByName: 'Alessandra Castro' })
+    assert.equal(audit.who, 'Alessandra Castro')
+    assert.equal(audit.when, formatDayHeader('2026-06-21'))
+  })
+
+  it('cai no id cru (fallback) enquanto reconciledByName vier null (não-resolvido)', () => {
+    const audit = matchAuditFromLookup({ ...base, reconciledByName: null })
+    assert.equal(audit.who, 'c562bc57-0000-0000-0000-000000000000')
   })
 })
 
@@ -420,6 +513,7 @@ describe('buildMatchTitles (1 saída → N títulos, #175 items)', () => {
       type: 'Multiple' as const,
       status: 'Active' as const,
       reconciledBy: 'u1',
+      reconciledByName: null,
       reconciledAt: '2026-06-21T00:00:00.000Z',
       differenceCents: null,
       items,
@@ -474,6 +568,188 @@ describe('buildMatchTitles (1 saída → N títulos, #175 items)', () => {
     assert.equal(r?.differenceTag, 'financial.recon.match.diffDiscount')
     assert.equal(r?.totalBRL, centsToBRL('4500'))
   })
+
+  it('#357: linhas surfam favorecido + nº do documento do item enriquecido', () => {
+    const enriched = (items: readonly unknown[]) =>
+      ({
+        reconciliationId: 'rec1',
+        transactionId: 't1',
+        type: 'Multiple' as const,
+        status: 'Active' as const,
+        reconciledBy: 'u1',
+        reconciledByName: null,
+        reconciledAt: '2026-06-21T00:00:00.000Z',
+        differenceCents: null,
+        items,
+      }) as Parameters<typeof buildMatchTitles>[0]
+    const r = buildMatchTitles(
+      enriched([
+        {
+          payableId: 'p1',
+          reconciledValueCents: '30000',
+          documentNumber: 'NFS-e 2024-0537',
+          supplierName: 'TS Da Silva Serviços Ltda',
+          dueDate: '2026-06-10',
+          retentionType: null,
+        },
+        // sem favorecido → cai no nº do documento; sem doc → cai no payableId
+        {
+          payableId: 'p2',
+          reconciledValueCents: '20000',
+          documentNumber: 'DOC-9',
+          supplierName: null,
+          dueDate: null,
+          retentionType: null,
+        },
+      ]),
+      '50000',
+    )
+    assert.equal(r?.lines[0]?.name, 'TS Da Silva Serviços Ltda')
+    assert.equal(r?.lines[0]?.nameTag, null)
+    assert.equal(r?.lines[0]?.documento, 'NFS-e 2024-0537')
+    assert.equal(r?.lines[1]?.name, 'DOC-9')
+    assert.equal(r?.lines[1]?.documento, 'DOC-9')
+  })
+
+  it('#357: imposto retido → headline da linha é o ÓRGÃO (nameTag), não o fornecedor do pai', () => {
+    const enriched = (items: readonly unknown[]) =>
+      ({
+        reconciliationId: 'rec1',
+        transactionId: 't1',
+        type: 'Multiple' as const,
+        status: 'Active' as const,
+        reconciledBy: 'u1',
+        reconciledByName: null,
+        reconciledAt: '2026-06-21T00:00:00.000Z',
+        differenceCents: null,
+        items,
+      }) as Parameters<typeof buildMatchTitles>[0]
+    const r = buildMatchTitles(
+      enriched([
+        {
+          payableId: 'p1',
+          reconciledValueCents: '30000',
+          documentNumber: '3500',
+          supplierName: 'Serraria Bom Jesus LTDA',
+          dueDate: '2026-06-30',
+          retentionType: 'ISS',
+        },
+        {
+          payableId: 'p2',
+          reconciledValueCents: '1000',
+          documentNumber: '3500',
+          supplierName: 'Serraria Bom Jesus LTDA',
+          dueDate: '2026-06-30',
+          retentionType: 'IRRF',
+        },
+      ]),
+      '31000',
+    )
+    assert.equal(r?.lines[0]?.nameTag, 'financial.recon.pending.agency.iss') // ISS → SEFIN
+    assert.equal(r?.lines[1]?.nameTag, 'financial.recon.pending.agency.federal') // federais → Receita
+  })
+})
+
+describe('matchDocFromItem (título individual enriquecido no BFF — interim #172)', () => {
+  it('null quando item é null (cai no default "—" da view)', () => {
+    assert.equal(matchDocFromItem(null, '150000'), null)
+  })
+
+  it('item resolvido: favorecido + documento + vencimento formatado + valor conciliado; categoria "—"', () => {
+    const doc = matchDocFromItem(
+      {
+        payableId: 'pay-1',
+        reconciledValueCents: '150000',
+        documentNumber: 'NFS-e 2024-0537',
+        supplierName: 'TS Da Silva Serviços Ltda',
+        dueDate: '2026-06-10',
+        retentionType: null,
+      },
+      '150000',
+    )
+    assert.equal(doc?.name, 'TS Da Silva Serviços Ltda')
+    assert.equal(doc?.nameTag, null) // título-pai → sem tag de órgão
+    assert.equal(doc?.documento, 'NFS-e 2024-0537')
+    // dueDate ISO é formatado com o mesmo formatDayHeader do resto do arquivo.
+    assert.equal(doc?.vencimento, formatDayHeader('2026-06-10'))
+    assert.equal(doc?.valueBRL, centsToBRL('150000'))
+    // Categoria NÃO vem do core-api (category_ref write-only) — sempre "—".
+    assert.equal(doc?.categoria, '—')
+  })
+
+  it('sem favorecido: headline cai no nº do documento; sem doc: cai no payableId', () => {
+    const byDoc = matchDocFromItem(
+      {
+        payableId: 'pay-2',
+        reconciledValueCents: '5000',
+        documentNumber: 'DOC-9',
+        supplierName: null,
+        dueDate: null,
+        retentionType: null,
+      },
+      '5000',
+    )
+    assert.equal(byDoc?.name, 'DOC-9')
+
+    const byId = matchDocFromItem(
+      {
+        payableId: 'pay-3',
+        reconciledValueCents: '5000',
+        documentNumber: null,
+        supplierName: null,
+        dueDate: null,
+        retentionType: null,
+      },
+      '5000',
+    )
+    assert.equal(byId?.name, 'pay-3')
+  })
+
+  it('imposto retido: favorecido é o ÓRGÃO (nameTag), não o fornecedor do documento-pai', () => {
+    const iss = matchDocFromItem(
+      {
+        payableId: 'pay-iss',
+        reconciledValueCents: '2300',
+        documentNumber: '3500',
+        supplierName: 'Serraria Bom Jesus LTDA', // fornecedor do PAI — NÃO deve virar o headline
+        dueDate: '2026-06-30',
+        retentionType: 'ISS',
+      },
+      '2300',
+    )
+    // A tag do órgão dirige o headline; ISS → SEFIN (município).
+    assert.equal(iss?.nameTag, 'financial.recon.pending.agency.iss')
+
+    const irrf = matchDocFromItem(
+      {
+        payableId: 'pay-irrf',
+        reconciledValueCents: '1000',
+        documentNumber: '3500',
+        supplierName: 'Serraria Bom Jesus LTDA',
+        dueDate: '2026-06-30',
+        retentionType: 'IRRF',
+      },
+      '1000',
+    )
+    assert.equal(irrf?.nameTag, 'financial.recon.pending.agency.federal') // federais → Receita Federal
+  })
+
+  it('campos null → documento/vencimento "—"; valueCents null → valor "—"', () => {
+    const doc = matchDocFromItem(
+      {
+        payableId: 'pay-4',
+        reconciledValueCents: '0',
+        documentNumber: null,
+        supplierName: 'Fornecedor X',
+        dueDate: null,
+        retentionType: null,
+      },
+      null,
+    )
+    assert.equal(doc?.documento, '—')
+    assert.equal(doc?.vencimento, '—')
+    assert.equal(doc?.valueBRL, '—')
+  })
 })
 
 describe('deriveManualKindFromTx (tipo do lançamento manual pelo texto — #268)', () => {
@@ -504,11 +780,12 @@ describe('deriveManualKindFromTx (tipo do lançamento manual pelo texto — #268
   })
 })
 
-describe('Buscar/Criar vários — filtros de títulos (filterPayables por tipo de documento)', () => {
+describe('Buscar/Criar vários — filtros RICOS (056: filterPayables por objeto de critérios)', () => {
   const pay = (over: Partial<PaidPayable> & Pick<PaidPayable, 'id'>): PaidPayable => ({
     documentId: 'd',
     valueCents: '1000',
     dueDate: '2026-05-10',
+    issueDate: '2026-05-01',
     paidAt: null,
     paymentMethod: 'PIX',
     supplierName: 'TS Da Silva',
@@ -517,34 +794,213 @@ describe('Buscar/Criar vários — filtros de títulos (filterPayables por tipo 
     documentType: 'NFS-e',
     ...over,
   })
+  // Constrói um MultiFilter completo a partir de overrides (defaults = neutro).
+  const mkFilter = (over: Partial<typeof INITIAL_MULTI_FILTER> = {}) => ({
+    ...INITIAL_MULTI_FILTER,
+    ...over,
+  })
+  // Impostos retidos: em PRODUÇÃO o tipo vem em `retentionType` (enriquecido no BFF), com `documentType` null
+  // (core-api#172) — NÃO em `documentType`. Os fixtures refletem isso.
   const list = [
     pay({ id: 'a' }),
-    pay({ id: 'b', documentNumber: 'ISS retido', category: 'Imposto / ISS', documentType: 'ISS' }),
-    pay({ id: 'c', documentNumber: 'IRRF retido', category: 'Imposto / IRRF', documentType: 'IRRF' }),
+    pay({
+      id: 'b',
+      documentNumber: 'ISS retido',
+      category: 'Imposto / ISS',
+      documentType: null,
+      retentionType: 'ISS',
+    }),
+    pay({
+      id: 'c',
+      documentNumber: 'IRRF retido',
+      category: 'Imposto / IRRF',
+      documentType: null,
+      retentionType: 'IRRF',
+    }),
     pay({ id: 'd', documentType: null }),
+    pay({
+      id: 'e',
+      documentNumber: 'INSS retido',
+      category: 'Imposto / INSS',
+      documentType: null,
+      retentionType: 'INSS',
+    }),
   ]
 
-  it('payableTypeOptions traz os tipos de documento distintos presentes', () => {
-    assert.deepEqual(payableTypeOptions(list), ['NFS-e', 'ISS', 'IRRF'])
+  it('RECON_DOCUMENT_TYPE_OPTIONS = lista canônica de documento + impostos retidos (inclui IRRF/CSRF)', () => {
+    assert.ok(RECON_DOCUMENT_TYPE_OPTIONS.includes('NFS-e'))
+    assert.ok(RECON_DOCUMENT_TYPE_OPTIONS.includes('IRRF'))
+    assert.ok(RECON_DOCUMENT_TYPE_OPTIONS.includes('CSRF'))
+    assert.ok(RECON_DOCUMENT_TYPE_OPTIONS.includes('ISS'))
   })
 
-  it('filtra por Tipo de documento (ex.: IRRF) e por busca textual', () => {
+  it('filtra imposto retido por retentionType (IRRF/ISS/INSS) e por busca textual', () => {
     assert.deepEqual(
-      filterPayables(list, '', 'IRRF').map((p) => p.id),
+      filterPayables(list, mkFilter({ documentType: 'IRRF' })).map((p) => p.id),
       ['c'],
     )
     assert.deepEqual(
-      filterPayables(list, '', 'ISS').map((p) => p.id),
+      filterPayables(list, mkFilter({ documentType: 'ISS' })).map((p) => p.id),
+      ['b'],
+    )
+    // O caso do usuário: filtrar por INSS acha o imposto (casa por retentionType, não documentType).
+    assert.deepEqual(
+      filterPayables(list, mkFilter({ documentType: 'INSS' })).map((p) => p.id),
+      ['e'],
+    )
+    assert.deepEqual(
+      filterPayables(list, mkFilter({ search: 'iss' })).map((p) => p.id),
       ['b'],
     )
     assert.deepEqual(
-      filterPayables(list, 'iss', 'all').map((p) => p.id),
-      ['b'],
+      filterPayables(list, mkFilter()).map((p) => p.id),
+      ['a', 'b', 'c', 'd', 'e'],
     )
+  })
+
+  it('tipo de DOCUMENTO (NFS-e) casa por documentType (segue null até core-api#172)', () => {
+    // Fixture 'a' tem documentType 'NFS-e' → casa; um imposto (retentionType, documentType null) NÃO casa 'NFS-e'.
     assert.deepEqual(
-      filterPayables(list, '', 'all').map((p) => p.id),
-      ['a', 'b', 'c', 'd'],
+      filterPayables(list, mkFilter({ documentType: 'NFS-e' })).map((p) => p.id),
+      ['a'],
     )
+  })
+
+  it('dateInRange: comparação por string, bordas inclusivas, lado vazio = aberto', () => {
+    assert.equal(dateInRange('2026-06-10', '2026-06-01', '2026-06-30'), true)
+    assert.equal(dateInRange('2026-06-01', '2026-06-01', '2026-06-30'), true) // borda inferior
+    assert.equal(dateInRange('2026-06-30', '2026-06-01', '2026-06-30'), true) // borda superior
+    assert.equal(dateInRange('2026-07-01', '2026-06-01', '2026-06-30'), false)
+    assert.equal(dateInRange('2026-06-10', '', '2026-06-30'), true) // sem inferior
+    assert.equal(dateInRange('2026-06-10', '2026-06-01', ''), true) // sem superior
+  })
+
+  it('filtra por Período — por VENCIMENTO (due) — client-side', () => {
+    const byDue = [
+      pay({ id: 'mai', dueDate: '2026-05-20', issueDate: '2026-04-01' }),
+      pay({ id: 'jun', dueDate: '2026-06-10', issueDate: '2026-05-01' }),
+    ]
+    assert.deepEqual(
+      filterPayables(byDue, mkFilter({ period: { field: 'due', from: '2026-06-01', to: '2026-06-30' } })).map(
+        (p) => p.id,
+      ),
+      ['jun'],
+    )
+    // Lado aberto (só "de"): pega jun em diante.
+    assert.deepEqual(
+      filterPayables(byDue, mkFilter({ period: { field: 'due', from: '2026-06-01', to: '' } })).map(
+        (p) => p.id,
+      ),
+      ['jun'],
+    )
+  })
+
+  it('filtra por Período — por EMISSÃO (issue); issueDate null fica FORA quando há intervalo', () => {
+    const byIssue = [
+      pay({ id: 'i-abr', dueDate: '2026-06-10', issueDate: '2026-04-15' }),
+      pay({ id: 'i-mai', dueDate: '2026-06-11', issueDate: '2026-05-15' }),
+      pay({ id: 'i-null', dueDate: '2026-06-12', issueDate: null }),
+    ]
+    assert.deepEqual(
+      filterPayables(
+        byIssue,
+        mkFilter({ period: { field: 'issue', from: '2026-05-01', to: '2026-05-31' } }),
+      ).map((p) => p.id),
+      ['i-mai'],
+    )
+    // Sem intervalo (from/to vazios) → o null NÃO é excluído (filtro de emissão inativo).
+    assert.deepEqual(
+      filterPayables(byIssue, mkFilter({ period: { field: 'issue', from: '', to: '' } })).map((p) => p.id),
+      ['i-abr', 'i-mai', 'i-null'],
+    )
+  })
+
+  it('valueInRange + filtra por Valor (min/max em centavos) — bordas inclusivas', () => {
+    assert.equal(valueInRange(10000, 10000, 100000), true) // borda inferior
+    assert.equal(valueInRange(100000, 10000, 100000), true) // borda superior
+    assert.equal(valueInRange(9999, 10000, null), false)
+    assert.equal(valueInRange(5000, null, null), true) // sem limites
+    const byValue = [
+      pay({ id: 'baixo', valueCents: '9999' }),
+      pay({ id: 'cem', valueCents: '10000' }),
+      pay({ id: 'medio', valueCents: '250000' }),
+      pay({ id: 'alto', valueCents: '1500000' }),
+    ]
+    // [R$ 100, R$ 10.000] = [10000, 1000000] centavos → cem + medio.
+    assert.deepEqual(
+      filterPayables(byValue, mkFilter({ value: { minCents: 10000, maxCents: 1000000 } })).map((p) => p.id),
+      ['cem', 'medio'],
+    )
+    // Só mínimo (R$ 1.000 = 100000): medio (R$ 2.500) + alto (R$ 15.000).
+    assert.deepEqual(
+      filterPayables(byValue, mkFilter({ value: { minCents: 100000, maxCents: null } })).map((p) => p.id),
+      ['medio', 'alto'],
+    )
+  })
+
+  it('composição dos 4 critérios (busca + tipo + período + valor)', () => {
+    const composed = [
+      pay({
+        id: 'hit',
+        documentType: 'NFS-e',
+        dueDate: '2026-06-10',
+        valueCents: '50000',
+        supplierName: 'Alpha',
+      }),
+      pay({
+        id: 'wrongType',
+        documentType: 'ISS',
+        dueDate: '2026-06-10',
+        valueCents: '50000',
+        supplierName: 'Alpha',
+      }),
+      pay({
+        id: 'wrongDate',
+        documentType: 'NFS-e',
+        dueDate: '2026-07-10',
+        valueCents: '50000',
+        supplierName: 'Alpha',
+      }),
+      pay({
+        id: 'wrongValue',
+        documentType: 'NFS-e',
+        dueDate: '2026-06-10',
+        valueCents: '5000',
+        supplierName: 'Alpha',
+      }),
+      pay({
+        id: 'wrongSearch',
+        documentType: 'NFS-e',
+        dueDate: '2026-06-10',
+        valueCents: '50000',
+        supplierName: 'Beta',
+      }),
+    ]
+    assert.deepEqual(
+      filterPayables(
+        composed,
+        mkFilter({
+          search: 'alpha',
+          documentType: 'NFS-e',
+          period: { field: 'due', from: '2026-06-01', to: '2026-06-30' },
+          value: { minCents: 10000, maxCents: 1000000 },
+        }),
+      ).map((p) => p.id),
+      ['hit'],
+    )
+  })
+
+  it('parseBRLToCents: PT (milhar/decimal), defensivo (vazio/inválido → null), inverso centsToAmountInput', () => {
+    assert.equal(parseBRLToCents('1.234,56'), 123456)
+    assert.equal(parseBRLToCents('100'), 10000)
+    assert.equal(parseBRLToCents('100,5'), 10050)
+    assert.equal(parseBRLToCents('R$ 2.000,00'), 200000)
+    assert.equal(parseBRLToCents('1234.56'), 123456) // ponto decimal simples
+    assert.equal(parseBRLToCents(''), null)
+    assert.equal(parseBRLToCents('   '), null)
+    assert.equal(parseBRLToCents('abc'), null)
+    assert.equal(centsToAmountInput(123456), '1234,56')
+    assert.equal(centsToAmountInput(10000), '100,00')
   })
 
   it('sortPendingByPayment: mais antigo por data de PAGAMENTO no topo; sem paidAt vão ao fim; não muta', () => {
@@ -786,6 +1242,11 @@ describe('fluxo contínuo: nextPendingWithMatch + tituloLabel', () => {
     assert.equal(nextPendingWithMatch(txs, new Map([['b', { band: 'media' as const }]]), 'a'), 'b') // sem alta → media
     assert.equal(nextPendingWithMatch(txs, new Map(), 'a'), null) // ninguém com palpite
     assert.equal(nextPendingWithMatch(txs, new Map([['a', { band: 'alta' as const }]]), 'a'), null) // só a própria
+    // afterId inexistente ('') → varre do topo: 1ª pendente COM palpite (usado na auto-seleção ao entrar
+    // em Conciliação — a aba Sugestão nunca abre vazia quando existe match).
+    assert.equal(nextPendingWithMatch(txs, guesses, ''), 'c') // 'c' (alta) antes de 'b' (media)
+    assert.equal(nextPendingWithMatch(txs, new Map([['b', { band: 'media' as const }]]), ''), 'b')
+    assert.equal(nextPendingWithMatch(txs, new Map(), ''), null) // sem palpite → cai no topo (na binding)
   })
   it('tituloLabel: "Tipo Número"; vazio quando null/sem dados', () => {
     const mkPayable = (over: Partial<PaidPayable>): PaidPayable => ({
@@ -793,6 +1254,7 @@ describe('fluxo contínuo: nextPendingWithMatch + tituloLabel', () => {
       documentId: 'd',
       valueCents: '0',
       dueDate: '2026-06-01',
+      issueDate: null,
       paidAt: null,
       paymentMethod: '',
       supplierName: null,
@@ -824,5 +1286,205 @@ describe('formatDateDash', () => {
   })
   it('vazio → travessão', () => {
     assert.equal(formatDateDash(''), '—')
+  })
+})
+
+// ── Cascata Centro → Categoria → Subcategoria (EPIC #150) ──
+import {
+  topLevelCategories,
+  subcategoriesOf,
+  categoriesForCostCenter,
+} from '../../../../../src/modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
+import type { FinancialReferences } from '../../../../../src/modules/financial/client/data/model/reconciliation.model.ts'
+
+// A regra da cascata é PURA e mora no helper compartilhado (`data/helpers/categorization-cascade.ts`),
+// onde vive a matriz completa de casos (`tests/.../data/categorization-cascade.test.ts`). Aqui só
+// guardamos o RE-EXPORT que os call sites desta feature (`manual-entry.binding.ts`) usam — e que o
+// placeholder round-robin (TODO core-api#341) NÃO voltou.
+const REFS: FinancialReferences = {
+  costCenters: [
+    { id: 'cc-A', code: '01', name: 'Centro A' },
+    { id: 'cc-B', code: '02', name: 'Centro B' },
+  ],
+  categories: [
+    { id: 'cat-1', name: 'Cat 1', group: 'despesa', parentId: null, costCenterId: 'cc-A' },
+    { id: 'cat-2', name: 'Cat 2', group: 'despesa', parentId: null, costCenterId: 'cc-B' },
+    { id: 'sub-1a', name: 'Sub 1a', group: 'despesa', parentId: 'cat-1', costCenterId: 'cc-A' },
+    { id: 'sub-1b', name: 'Sub 1b', group: 'despesa', parentId: 'cat-1', costCenterId: 'cc-A' },
+  ],
+}
+
+describe('cascata categorização (re-export do helper compartilhado)', () => {
+  it('topLevelCategories: só as sem parentId', () => {
+    assert.deepEqual(
+      topLevelCategories(REFS).map((c) => c.id),
+      ['cat-1', 'cat-2'],
+    )
+  })
+  it('subcategoriesOf: filhas por parentId; vazio se nenhuma categoria', () => {
+    assert.deepEqual(
+      subcategoriesOf(REFS, 'cat-1').map((c) => c.id),
+      ['sub-1a', 'sub-1b'],
+    )
+    assert.deepEqual(subcategoriesOf(REFS, 'cat-2'), [])
+    assert.deepEqual(subcategoriesOf(REFS, ''), [])
+  })
+  it('categoriesForCostCenter: filtra pelo costCenterId REAL (#341), não por partição de índice', () => {
+    assert.deepEqual(
+      categoriesForCostCenter(REFS, 'cc-A').map((c) => c.id),
+      ['cat-1'],
+    )
+    assert.deepEqual(
+      categoriesForCostCenter(REFS, 'cc-B').map((c) => c.id),
+      ['cat-2'],
+    )
+  })
+})
+
+describe('extratoTypeTag (TIPO do extrato)', () => {
+  it('tipo específico (PIX/TED/…) → null (a view mostra o entryType cru)', () => {
+    assert.equal(extratoTypeTag(tx({ id: '1', entryType: 'TED', movement: 'Debit' })), null)
+    assert.equal(extratoTypeTag(tx({ id: '2', entryType: 'PIX RECEBIDO', movement: 'Credit' })), null)
+  })
+  it('genérico ("Other") → direção do movimento (Entrada/Saída)', () => {
+    assert.equal(
+      extratoTypeTag(tx({ id: '3', entryType: 'Other', movement: 'Credit' })),
+      'financial.recon.ext.type.entrada',
+    )
+    assert.equal(
+      extratoTypeTag(tx({ id: '4', entryType: 'Other', movement: 'Debit' })),
+      'financial.recon.ext.type.saida',
+    )
+  })
+})
+
+describe('engineTarget — motor de palpite (auto-navegar na aba Conciliação)', () => {
+  const base = {
+    onConciliacao: true,
+    justEntered: false,
+    guessesSettled: true,
+    selectedId: 't1' as string | null,
+    selectedIsMatch: true,
+    firstMatchId: 'm1' as string | null,
+    fallbackId: 'm1' as string | null,
+  }
+  it('fora da aba ou palpites não assentados → não mexe (null)', () => {
+    assert.equal(engineTarget({ ...base, onConciliacao: false }), null)
+    assert.equal(engineTarget({ ...base, guessesSettled: false }), null)
+  })
+  it('nada selecionado (load/novo extrato) → fallback (1º match ou topo)', () => {
+    assert.equal(engineTarget({ ...base, selectedId: null, fallbackId: 'm1' }), 'm1')
+    assert.equal(engineTarget({ ...base, selectedId: null, firstMatchId: null, fallbackId: 'topo' }), 'topo')
+  })
+  it('ENTROU na aba fora de um match → vai pro próximo COM palpite', () => {
+    assert.equal(
+      engineTarget({ ...base, justEntered: true, selectedIsMatch: false, firstMatchId: 'm2' }),
+      'm2',
+    )
+  })
+  it('ENTROU na aba já num match → respeita (null)', () => {
+    assert.equal(engineTarget({ ...base, justEntered: true, selectedIsMatch: true }), null)
+  })
+  it('ENTROU na aba fora de match mas NÃO há match → não mexe (null)', () => {
+    assert.equal(
+      engineTarget({ ...base, justEntered: true, selectedIsMatch: false, firstMatchId: null }),
+      null,
+    )
+  })
+  it('DENTRO da aba (navegando à mão) fora de um match → respeita a escolha (null)', () => {
+    assert.equal(engineTarget({ ...base, justEntered: false, selectedIsMatch: false }), null)
+  })
+})
+
+import { manualEntryBlockedTag } from '../../../../../src/modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
+import { ptBR } from '../../../../../src/shared/i18n/catalog.pt-BR.ts'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Classificação obrigatória ao conciliar lançamento manual (#331 + core-api#671).
+// O `canSubmit` da view é `manualEntryBlockedTag(...) === null`, então estes casos fixam AS DUAS coisas:
+// quando trava e o que a pessoa lê. A isenção é a parte frágil — se `requiresDestination` mudar, a
+// divergência com o backend (`isCapitalReallocation`) passaria calada sem estes testes.
+describe('manualEntryBlockedTag — classificação obrigatória', () => {
+  const ok = {
+    hasType: true,
+    needsDestination: false,
+    destinationFilled: false,
+    needsClassification: true,
+    categoryFilled: true,
+    costCenterFilled: true,
+  }
+
+  it('tudo preenchido → libera (null)', () => {
+    assert.equal(manualEntryBlockedTag(ok), null)
+  })
+
+  it('sem tipo → cobra o tipo antes de qualquer campo', () => {
+    assert.equal(
+      manualEntryBlockedTag({ ...ok, hasType: false, categoryFilled: false, costCenterFilled: false }),
+      'financial.recon.manual.blocked.type',
+    )
+  })
+
+  it('realocação (Transferência/Aplicação/Resgate) é ISENTA de classificação', () => {
+    // Espelha `isCapitalReallocation` do core-api: circula entre contas próprias, não classifica.
+    assert.equal(
+      manualEntryBlockedTag({
+        ...ok,
+        needsDestination: true,
+        destinationFilled: true,
+        needsClassification: false,
+        categoryFilled: false,
+        costCenterFilled: false,
+      }),
+      null,
+    )
+  })
+
+  it('realocação sem conta de destino → cobra o destino, não a classificação', () => {
+    assert.equal(
+      manualEntryBlockedTag({
+        ...ok,
+        needsDestination: true,
+        destinationFilled: false,
+        needsClassification: false,
+      }),
+      'financial.recon.manual.blocked.destination',
+    )
+  })
+
+  it('classificável sem NENHUM dos dois → mensagem única (não faz a pessoa resolver em duas rodadas)', () => {
+    assert.equal(
+      manualEntryBlockedTag({ ...ok, categoryFilled: false, costCenterFilled: false }),
+      'financial.recon.manual.blocked.classification',
+    )
+  })
+
+  it('classificável só sem categoria → nomeia a categoria', () => {
+    assert.equal(
+      manualEntryBlockedTag({ ...ok, categoryFilled: false }),
+      'financial.recon.manual.blocked.category',
+    )
+  })
+
+  it('classificável só sem centro de custo → nomeia o centro de custo', () => {
+    assert.equal(
+      manualEntryBlockedTag({ ...ok, costCenterFilled: false }),
+      'financial.recon.manual.blocked.costCenter',
+    )
+  })
+
+  it('todo motivo é uma tag EXISTENTE no catálogo (senão a UI mostra a chave crua)', () => {
+    const casos = [
+      { ...ok, hasType: false },
+      { ...ok, needsDestination: true, destinationFilled: false },
+      { ...ok, categoryFilled: false, costCenterFilled: false },
+      { ...ok, categoryFilled: false },
+      { ...ok, costCenterFilled: false },
+    ]
+    for (const c of casos) {
+      const tag = manualEntryBlockedTag(c)
+      assert.ok(tag !== null)
+      assert.ok(tag in ptBR, `tag ausente no catálogo: ${tag}`)
+    }
   })
 })

@@ -60,6 +60,19 @@ export interface CompleteCollaboratorRegistrationInput {
   allergies?: string
   biography?: string
   experienceInThePublicSector?: boolean
+  // Perfil completo (US2) — valores das enums (sex/maritalStatus) validados no core-api.
+  sex?: string
+  maritalStatus?: string
+  hasChildren?: boolean
+  childrenCount?: number
+  childrenAges?: number[]
+  isPwd?: boolean
+  pwdDescription?: string
+  isOnLeave?: boolean
+  leaveDuration?: string
+  leaveRenewable?: boolean
+  leaveRenewalDuration?: string
+  publicSectorExperienceDuration?: string
 }
 
 // PUT omite território (#42) e banco/PIX (#40) — não enviar na edição.
@@ -105,6 +118,34 @@ export type CollaboratorDetail = CollaboratorListItem &
     cpf: string
     startOfContract: string
     employmentRelationship: EmploymentRelationship
+    // Dados do cadastro completo (2ª etapa) — opcionais: ausentes enquanto só pré-cadastrado.
+    rg?: string
+    dateOfBirth?: string
+    completeAddress?: string
+    telephone?: string
+    emergencyContactName?: string
+    emergencyContactTelephone?: string
+    genderIdentity?: string
+    race?: string
+    allergies?: string
+    foodCategory?: string
+    foodCategoryDescription?: string
+    education?: string
+    biography?: string
+    experienceInThePublicSector?: boolean
+    // Perfil completo (US2).
+    sex?: string
+    maritalStatus?: string
+    hasChildren?: boolean
+    childrenCount?: number
+    childrenAges?: number[]
+    isPwd?: boolean
+    pwdDescription?: string
+    isOnLeave?: boolean
+    leaveDuration?: string
+    leaveRenewable?: boolean
+    leaveRenewalDuration?: string
+    publicSectorExperienceDuration?: string
     territory: Territory | null
     bankAccount: BankAccount | null // #40 — create-only; exibido read-only no detalhe
     pixKey: CollaboratorPixKey | null // #40 — create-only; exibido read-only no detalhe

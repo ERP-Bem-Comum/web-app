@@ -19,6 +19,9 @@ describe('authErrorTag', () => {
   it('rate-limited (429) → tag de muitas tentativas', () => {
     assert.equal(authErrorTag('rate-limited'), 'auth.error.rate-limited')
   })
+  it('reset-token-invalid (400) → tag de link inválido (#038)', () => {
+    assert.equal(authErrorTag('reset-token-invalid'), 'auth.reset.error.link-invalid')
+  })
   it('erro inesperado (ex.: refresh-rotated no login) → tag genérica', () => {
     assert.equal(authErrorTag('refresh-rotated'), 'auth.error.unexpected')
   })

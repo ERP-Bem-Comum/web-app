@@ -23,6 +23,7 @@ import {
   isBatchableManualType,
   isPending,
   nextPendingWithMatch,
+  engineTarget,
   normalizeDesc,
   pickLatestPeriod,
   progressLabel,
@@ -44,7 +45,9 @@ import { useChangeAccount, type ChangeAccountBinding } from './change-account.bi
 import { useMatchDetails, type MatchDetailsBinding } from './match-details.binding.ts'
 import { useHeaderMenus, resolvePeriodRange, type HeaderMenusBinding } from './header-menus.binding.ts'
 import { useImport, type ImportBinding } from './import.binding.ts'
+import { useDeleteStatement, type DeleteStatementBinding } from './delete-statement.binding.ts'
 import { useReconcile, type ReconcileBinding } from './reconcile.binding.ts'
+import { useCounterpart, type CounterpartBinding } from './counterpart.binding.ts'
 import { useSearchCreate, type SearchCreateBinding } from './search-create.binding.ts'
 import { useManualEntry, type ManualEntryBinding } from './manual-entry.binding.ts'
 import { useUndo, type UndoBinding } from './undo.binding.ts'
@@ -139,7 +142,12 @@ export type WorkspaceBinding = Readonly<{
   matchDetails: MatchDetailsBinding
   headerMenus: HeaderMenusBinding
   import: ImportBinding
+  // Excluir extrato importado (core-api#558) — botão na bottombar + modal de confirmação destrutivo.
+  deleteStatement: DeleteStatementBinding & Readonly<{ accountLabel: string; periodLabel: string }>
   reconcile: ReconcileBinding
+  // US2 (#269): contrapartida esperada da transação selecionada (transferência entre contas). O painel só
+  // aparece quando há candidatas (state.tag === 'ready') → invisível p/ transações comuns de título.
+  counterpart: CounterpartBinding
   searchCreate: SearchCreateBinding
   manualEntry: ManualEntryBinding
   undo: UndoBinding
@@ -175,6 +183,10 @@ export type WorkspaceBinding = Readonly<{
     onCancel: () => void
   }>
   exportConciliacao: ExportBinding
+  // Relatório da Conciliação em PDF (#144) — caminho SEPARADO do export de texto (OFX/CSV): imprime DIRETO
+  // (`window.print()`) o bloco de relatório OCULTO do workspace, alimentado pelo período ATUALMENTE
+  // selecionado (`from`/`to`). `enabled` = há conta + período resolvido. Sem rota/nova aba.
+  reportPdf: Readonly<{ enabled: boolean; print: () => void; from: string; to: string }>
   /** Barra de confirmação transiente (fluxo contínuo): dados do último match conciliado; null = oculta. */
   flash: Readonly<{
     transactionId: string
@@ -349,6 +361,26 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     }
   })
 
+  // Excluir extrato (core-api#558): no sucesso, some o statement da sessão + o localStorage (extrato E período)
+  // desta conta — senão a restauração pós-reload traria de volta um extrato que não existe mais.
+  const deleteStatementBinding = useDeleteStatement(ui.statementId, () => {
+    dispatch({ type: 'clear-statement' })
+    try {
+      window.localStorage.removeItem(lastStatementKey(accountRef))
+      window.localStorage.removeItem(lastPeriodKey(accountRef))
+    } catch {
+      // localStorage indisponível → nada a limpar (o statement já saiu da memória).
+      void accountRef
+    }
+  })
+  // Rótulos p/ a confirmação de exclusão NOMEAR o extrato (conta + período), não as transações.
+  const deleteStatementAccountLabel =
+    account !== null
+      ? `${account.alias} · ${account.bankCode} ${account.bankName} · Ag ${account.branch} · CC ${account.accountNumber}-${account.accountDv}`
+      : ''
+  const deleteStatementPeriodLabel =
+    periodRange !== null ? `${formatDateBR(periodRange.from)} – ${formatDateBR(periodRange.to)}` : ''
+
   // Restaura o extrato + período persistidos ao montar/trocar de conta (efêmeros no reducer; o real fica no
   // localStorage). Só restaura se ainda não há extrato em tela. Cobre o "apaga no reload" (extrato E período).
   useEffect(() => {
@@ -381,17 +413,13 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
 
   const pendentesCount = allTx.filter(isPending).length
 
-  // Aba Conciliação: o motor de sugestão já aparece para a transação do TOPO da lista (sem exigir clique).
-  // Auto-seleciona a 1ª transação do filtro atual enquanto nada estiver selecionado; depois respeita a
-  // escolha do usuário. Cobre o load inicial (aba padrão) e a volta do Extrato sem seleção.
-  const topTransactionId = filterTransactions(allTx, ui.listFilter)[0]?.id ?? null
-  useEffect(() => {
-    if (ui.activeTab === 'conciliacao' && ui.selectedTransactionId === null && topTransactionId !== null) {
-      dispatch({ type: 'select-transaction', id: topTransactionId })
-    }
-  }, [ui.activeTab, ui.selectedTransactionId, topTransactionId])
-
   const reconcileBinding = useReconcile(recordReconciliation)
+  // US2 (#269): contrapartidas da transação selecionada — só busca p/ transação PENDENTE (confirmar só faz
+  // sentido antes de conciliar). Ao confirmar, o namespace é invalidado (dentro do binding) → a tx vira
+  // conciliada e o Desfazer sai do lookup #175, sem gravação de sessão nova.
+  const counterpartBinding = useCounterpart(
+    selectedTx !== null && isPending(selectedTx) ? selectedTx.id : null,
+  )
   const searchCreateBinding = useSearchCreate(selectedTx, payables, recordReconciliation)
   const manualEntryBinding = useManualEntry(accountRef, selectedTx, recordReconciliation)
   // No sucesso do Desfazer: esquece o id de sessão E fecha o modal de detalhes. Em falha (ex.: período
@@ -420,8 +448,11 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     pendentesCount > 0,
     selectedAlreadyClosed,
   )
+  // #649: o export segue o intervalo VISUALIZADO (mesmo `periodRange` do PDF e do saldo #205) — não mais o
+  // último período FECHADO. Exporta a qualquer momento, sem gate de conciliação concluída.
   const exportBinding = useExportConciliacao(
     accountRef === '' ? null : accountRef,
+    periodRange,
     headerMenusBinding.closeAll,
   )
   // #203: reabrir período (Closed → Open). Fecha o dropdown de ações ao concluir.
@@ -588,6 +619,37 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     ),
   )
 
+  // Aba Conciliação: a sugestão aparece sem exigir clique. Auto-seleciona — enquanto nada estiver
+  // selecionado — a 1ª transação PENDENTE COM palpite (banda alta primeiro; #174), pra a aba Sugestão nunca
+  // abrir "vazia" quando existe match (pedido recorrente da P.O.). Sem nenhum palpite, cai na transação do
+  // topo do filtro (Sugestão selecionada, porém vazia). Só dispara depois que o batch de palpites assentou
+  // (`guessesSettled`) — senão selecionaria o topo antes dos palpites carregarem e não corrigiria (a seleção
+  // deixaria de ser null). Depois disso, respeita a escolha do usuário. Cobre load inicial e volta do Extrato.
+  const filteredTx = filterTransactions(allTx, ui.listFilter)
+  const guessesSettled = !ui.showGuesses || statementSuggestionsQuery.isFetched
+  // 1º match (null = nenhum) e o fallback (match ou topo do filtro) p/ o motor de palpite.
+  const firstMatchId = nextPendingWithMatch(filteredTx, guesses, '')
+  const autoSelectId = firstMatchId ?? filteredTx[0]?.id ?? null
+  const selectedIsMatch = ui.selectedTransactionId !== null && guesses.has(ui.selectedTransactionId)
+  // Motor de palpite (P.O.): landa numa transação COM palpite ao ENTRAR na aba (mesmo se já houver uma tx
+  // SEM palpite selecionada) e no load inicial/novo extrato. Dentro da aba, respeita a navegação do usuário.
+  // O auto-avanço ao conciliar é o efeito de `pendingAdvance` abaixo. `prevTab` detecta a entrada na aba.
+  const prevTabRef = useRef(ui.activeTab)
+  useEffect(() => {
+    const justEntered = ui.activeTab === 'conciliacao' && prevTabRef.current !== 'conciliacao'
+    prevTabRef.current = ui.activeTab
+    const target = engineTarget({
+      onConciliacao: ui.activeTab === 'conciliacao',
+      justEntered,
+      guessesSettled,
+      selectedId: ui.selectedTransactionId,
+      selectedIsMatch,
+      firstMatchId,
+      fallbackId: autoSelectId,
+    })
+    if (target !== null) dispatch({ type: 'select-transaction', id: target })
+  }, [ui.activeTab, ui.selectedTransactionId, guessesSettled, firstMatchId, autoSelectId, selectedIsMatch])
+
   // Fluxo contínuo: quando a tx recém-conciliada some das pendentes (refetch concluído), seleciona a
   // PRÓXIMA pendente COM match → a sugestão nunca fica vazia. setState DIFERIDO (sem render em cascata).
   useEffect(() => {
@@ -646,7 +708,13 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     matchDetails: matchDetailsBinding,
     headerMenus: headerMenusBinding,
     import: importBinding,
+    deleteStatement: {
+      ...deleteStatementBinding,
+      accountLabel: deleteStatementAccountLabel,
+      periodLabel: deleteStatementPeriodLabel,
+    },
     reconcile: reconcileBinding,
+    counterpart: counterpartBinding,
     searchCreate: searchCreateBinding,
     manualEntry: manualEntryBinding,
     undo: undoBinding,
@@ -655,6 +723,18 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     periodActions,
     patternBatch,
     exportConciliacao: exportBinding,
+    reportPdf: {
+      // Habilita com conta + período resolvido (mesmo período do saldo/extrato em tela).
+      enabled: accountRef !== '' && periodRange !== null,
+      // `from`/`to` do período visualizado → a page alimenta o bloco de impressão OCULTO (reusa a query #205).
+      from: periodRange?.from ?? '',
+      to: periodRange?.to ?? '',
+      // Impressão DIRETA: o bloco oculto (só-print) já está montado; `window.print()` gera o PDF só do relatório.
+      print: () => {
+        if (accountRef === '' || periodRange === null) return
+        window.print()
+      },
+    },
     flash,
     armFlash,
     dismissFlash: () => {

@@ -97,6 +97,12 @@ describe('contract — extensibilidade (tema alternativo)', () => {
           financier: { text: '#ffd54f', background: '#3a341f', border: 'rgba(255,213,79,0.25)' },
           act: { text: '#ffb74d', background: 'rgba(255,183,77,0.08)', border: 'rgba(255,183,77,0.20)' },
         },
+        chart: {
+          forecast: '#4dd0e1',
+          realized: '#4caf80',
+          grid: '#2a3a40',
+          axis: '#8e8e93',
+        },
         institutional: {
           blue: '#5a8cc8',
           blueDeep: '#3a5f8a',

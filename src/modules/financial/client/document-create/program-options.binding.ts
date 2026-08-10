@@ -9,7 +9,8 @@ import { listProgramsFn } from '#modules/programs/public-api/index.ts'
 
 export type ProgramOption = Readonly<{ id: string; name: string; sigla: string }>
 
-const programOptionsQueryOptions = {
+// Exportada p/ reuso do MESMO cache no drawer de Detalhe (resolver `programRef` → nome), sem novo fetch.
+export const programOptionsQueryOptions = {
   queryKey: ['financial', 'program-options'] as const,
   queryFn: async (): Promise<readonly ProgramOption[]> => {
     const out: ProgramOption[] = []

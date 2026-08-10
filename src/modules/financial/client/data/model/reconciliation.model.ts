@@ -5,6 +5,10 @@
  * `supplierName`/`documentNumber` = mínimo até core-api#172. `ReconciliationAccount` depende de #168.
  */
 
+import type { DocumentType } from '#modules/financial/client/data/model/document.model.ts'
+
+export type { DocumentType }
+
 // ── Enums fechados ──
 export type Movement = 'Debit' | 'Credit'
 export type ReconciliationStatus = 'Pending' | 'Reconciled' | 'ManualEntry'
@@ -18,7 +22,7 @@ export type ManualEntryType =
   | 'Investment'
   | 'Redemption'
 export type SuggestionBand = 'alta' | 'media'
-export type StatementFormat = 'OFX' | 'CSV'
+export type StatementFormat = 'OFX' | 'CSV' | 'PDF' // PDF: OCR (core-api#557); content = base64
 
 // Conta-cedente (depende de core-api#168; sem endpoint hoje). `status` Closed não abre workspace.
 export type AccountType = 'Corrente' | 'Poupanca' | 'Investimento' | 'Cartao' | 'Outro'
@@ -93,6 +97,18 @@ export type CreateCedenteAccountInput = Readonly<{
   openingBalanceCents?: string
   openingBalanceDate?: string
 }>
+// Editar conta-cedente (PATCH) — campos editáveis opcionais; CNPJ e saldo de abertura são imutáveis.
+export type EditCedenteAccountInput = Readonly<{
+  id: string
+  bankCode?: string
+  bankName?: string
+  type?: AccountType
+  typeLabel?: string
+  agency?: string
+  accountNumber?: string
+  accountDigit?: string
+  nickname?: string
+}>
 export type RejectSuggestionInput = Readonly<{ transactionId: string; payableId: string }>
 export type DifferenceInput = Readonly<{
   valueCents: number
@@ -109,7 +125,10 @@ export type UndoReconciliationInput = Readonly<{ reconciliationId: string; reaso
 export type ManualEntryTemplate = Readonly<{
   type: ManualEntryType
   supplierRef?: string
+  // #502/S2: taxonomia planejável no título manual — plano + subcategoria (folha), coerente com o documento.
+  budgetPlanRef?: string
   categoryRef?: string
+  subcategoryRef?: string
   costCenterRef?: string
   programRef?: string
   description?: string
@@ -117,6 +136,12 @@ export type ManualEntryTemplate = Readonly<{
   // #143: Aplicação/Resgate o backend exige um "produto" (texto). Como o cliente modela entre contas,
   // mandamos o nome da conta de destino aqui (satisfaz a regra) + `destinationAccount` (o vínculo real).
   productLabel?: string
+  // #370: campos de documento (só Pagamento/Recebimento). `documentValueCents` omitido → o backend usa o
+  // valor da transação conciliada. `issueDate` YYYY-MM-DD; `documentValueCents` = string de centavos.
+  documentNumber?: string
+  documentType?: DocumentType
+  issueDate?: string
+  documentValueCents?: string
 }>
 export type ManualEntryInput = ManualEntryTemplate & Readonly<{ transactionId: string }>
 export type BatchReconcileInput = Readonly<{
@@ -155,6 +180,10 @@ export type PaidPayable = Readonly<{
   documentId: string
   valueCents: string
   dueDate: string // date-only YYYY-MM-DD
+  // Data de EMISSÃO (date-only YYYY-MM-DD) — alimenta o filtro de Período por Emissão na aba Buscar/Criar
+  // vários (056). O core go-live já a devolve; ausente → null (títulos sem emissão ficam de fora do filtro
+  // de Emissão, de forma honesta). Comparação por STRING (lexical) — nunca `new Date`.
+  issueDate: string | null
   // Data de PAGAMENTO (baixa) — a data relevante p/ a conciliação (≈ saída bancária). null enquanto o
   // backend não a expõe nesta rota (core-api: /financial/payables não monta paidAt — core-api#265).
   paidAt: string | null
@@ -166,6 +195,9 @@ export type PaidPayable = Readonly<{
   // Tipo de DOCUMENTO (ex.: "NFS-e", "DANFE", "IRRF", "CSRF", "INSS", "ISS") = mínimo até core-api#172;
   // alimenta o filtro Tipo na aba Buscar/Criar vários (achar impostos retidos: IRRF/CSRF/INSS…).
   documentType: string | null
+  // Imposto retido (ISS/IRRF/INSS/CSRF) — preenchido nos títulos-FILHO; o favorecido é o ÓRGÃO, não o
+  // fornecedor do documento-pai. `null`/ausente = título comum (segue o fornecedor).
+  retentionType?: string | null
 }>
 export type SuggestionCriteria = Readonly<{
   payeeMatch: boolean
@@ -199,11 +231,31 @@ export type StatementSuggestion = Readonly<{
   topScore: number | null
 }>
 export type RejectedSuggestion = Readonly<{ transactionId: string; payableId: string }>
+// Contrapartida esperada candidata (US2 do #269) — transferência entre contas. `originAccountRef` uuid (o
+// contrato não enriquece o nome). Money = string de centavos; `expectedDate` ISO; `score` 0..100.
+export type CounterpartSuggestion = Readonly<{
+  counterpartId: string
+  originAccountRef: string
+  valueCents: string
+  expectedDate: string
+  score: number
+}>
+export type GetCounterpartSuggestionsInput = Readonly<{ transactionId: string }>
+export type ConfirmCounterpartInput = Readonly<{ transactionId: string; counterpartId: string }>
+export type ConfirmCounterpartResult = Readonly<{ reconciliationId: string; counterpartId: string }>
 // Conciliação ativa de uma transação (#175). `null` no repository = sem conciliação ativa. Itens trazem
-// só payableId+valor conciliado (sem fornecedor/nº doc até #172).
+// payableId+valor conciliado e os detalhes do título enriquecidos no BFF (interim #172): nº do documento,
+// fornecedor e vencimento — `null` quando o BFF não conseguiu resolver o título. Espelho estrutural do
+// domínio server (o repository repassa `res.data` direto, então esta forma precisa bater com a do server).
 export type TransactionReconciliationItem = Readonly<{
   payableId: string
   reconciledValueCents: string
+  documentNumber: string | null
+  supplierName: string | null
+  dueDate: string | null
+  // Imposto retido do título-filho (ISS/IRRF/INSS/CSRF); null = título-pai. O modal de detalhe mostra o
+  // ÓRGÃO arrecadador (retentionAgencyTag) no lugar do fornecedor do documento-pai.
+  retentionType: string | null
 }>
 export type TransactionReconciliation = Readonly<{
   reconciliationId: string
@@ -211,8 +263,12 @@ export type TransactionReconciliation = Readonly<{
   type: 'Individual' | 'Multiple' | 'Partial' | 'ManualEntry'
   status: 'Active' | 'Undone'
   reconciledBy: string
+  reconciledByName: string | null // #207: nome de quem conciliou (preferido sobre o id cru no modal)
   reconciledAt: string // ISO datetime
   differenceCents: string | null
+  // #554/#555: categoria do lançamento manual (fatia 1) / do título (fatia 2), resolvida server-side. null
+  // = sem categoria. Alimenta a linha "Categoria" no modal de detalhe.
+  category: string | null
   items: readonly TransactionReconciliationItem[]
 }>
 export type ReconciliationCreated = Readonly<{
@@ -248,15 +304,26 @@ export type ReconciliationPeriod = Readonly<{
 // "Importação em Lotes" (#146: separador `;`, data dd/MM/yyyy). PDF fica fora (#145).
 export type ExportFormat = 'ofx' | 'csv' | 'csv-nibo'
 export type ListReconciliationPeriodsInput = Readonly<{ debitAccountRef: string }>
-export type ExportReconciliationInput = Readonly<{ periodId: string; format: ExportFormat }>
+// #649: conta + intervalo (`YYYY-MM-DD`), não mais `periodId` — exporta o que está em tela, a qualquer
+// momento. Espelha `server/domain/reconciliation.io.ts`.
+export type ExportReconciliationInput = Readonly<{
+  debitAccountRef: string
+  periodStart: string
+  periodEnd: string
+  format: ExportFormat
+}>
 export type ReconciliationExport = Readonly<{ content: string; format: ExportFormat }>
 
-// Dados de referência da categorização (020 · #200/#147). `parentId` = subcategoria (null = top-level).
+// Dados de referência da categorização (020 · #200/#147/#341). Hierarquia canônica de 3 níveis:
+// Centro de Custo → Categoria → Subcategoria. `parentId` = subcategoria (null = top-level);
+// `costCenterId` (#341) = o centro da categoria (null = categoria GLOBAL, vale p/ qualquer centro).
+// Espelha `server/domain/reconciliation.io.ts`. Cascata → `data/helpers/categorization-cascade.ts`.
 export type FinancialCategory = Readonly<{
   id: string
   name: string
   group: 'despesa' | 'receita' | 'ajuste'
   parentId: string | null
+  costCenterId: string | null
 }>
 export type FinancialCostCenter = Readonly<{ id: string; code: string; name: string }>
 export type FinancialReferences = Readonly<{

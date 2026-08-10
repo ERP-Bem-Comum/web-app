@@ -3,7 +3,7 @@
  * Guarda os campos crus (reais/strings); a derivação pura (preview/CSRF/canSubmit) vive em
  * `document-form.view.ts`. Trocar para um tipo sem retenção limpa o bloco de retenções (gating).
  */
-import { useEffect, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 
 import type { DocumentType, PaymentMethod } from '#modules/financial/client/data/model/document.model.ts'
 import {
@@ -13,7 +13,10 @@ import {
   reformaTributariaEnabledFor,
   issAllowedFor,
   defaultPaymentMethodFor,
+  competenciaFromIssueDate,
+  applyReadingPatch,
   type DocumentFormFields,
+  type DocumentReadingPatch,
   type RetentionFieldsReais,
   type ReformaTributariaFieldsReais,
 } from './document-form.view.ts'
@@ -26,6 +29,7 @@ const EMPTY_FIELDS: DocumentFormFields = {
   paymentMethod: '',
   grossValue: '',
   issueDate: '',
+  competencia: '',
   dueDate: '',
   description: '',
   discounts: '',
@@ -35,12 +39,12 @@ const EMPTY_FIELDS: DocumentFormFields = {
   contractRef: '',
   programRef: '',
   categoryRef: '',
+  subcategoryRef: '',
   costCenterRef: '',
   approverRef: '',
   contaDebitoRef: '',
   centroCusto: '',
   categoria: '',
-  subcategoria: '',
   planoOrcamentario: '',
   retentions: EMPTY_RETENTIONS,
   reformaTributaria: EMPTY_REFORMA_TRIBUTARIA,
@@ -51,6 +55,7 @@ type TextKey =
   | 'series'
   | 'grossValue'
   | 'issueDate'
+  | 'competencia'
   | 'dueDate'
   | 'description'
   | 'discounts'
@@ -59,8 +64,17 @@ type TextKey =
   | 'paymentComplement'
   | 'centroCusto'
   | 'categoria'
-  | 'subcategoria'
   | 'planoOrcamentario'
+
+// #502/S3: herança da categorização do contrato — pré-preenche a cascata do documento (Programa → Plano →
+// Centro → Categoria → Subcategoria) a partir do contrato ativo vinculado ao fornecedor.
+export type CategorizationPatch = Readonly<{
+  programRef: string
+  planoOrcamentario: string
+  costCenterRef: string
+  categoryRef: string
+  subcategoryRef: string
+}>
 
 type FormAction =
   | Readonly<{ kind: 'setType'; value: DocumentType | '' }>
@@ -69,14 +83,16 @@ type FormAction =
   | Readonly<{ kind: 'setContractRef'; value: string }>
   | Readonly<{ kind: 'setProgramRef'; value: string }>
   | Readonly<{ kind: 'setCategoryRef'; value: string }>
+  | Readonly<{ kind: 'setSubcategoryRef'; value: string }>
   | Readonly<{ kind: 'setCostCenterRef'; value: string }>
   | Readonly<{ kind: 'setApproverRef'; value: string }>
   | Readonly<{ kind: 'setContaDebitoRef'; value: string }>
   | Readonly<{ kind: 'setText'; key: TextKey; value: string }>
   | Readonly<{ kind: 'setRetention'; key: keyof RetentionFieldsReais; value: string }>
   | Readonly<{ kind: 'setReformaTributaria'; key: keyof ReformaTributariaFieldsReais; value: string }>
-  | Readonly<{ kind: 'patch'; patch: Partial<DocumentFormFields> }>
+  | Readonly<{ kind: 'applyReading'; patch: DocumentReadingPatch }>
   | Readonly<{ kind: 'hydrate'; fields: DocumentFormFields }>
+  | Readonly<{ kind: 'hydrateCategorization'; patch: CategorizationPatch }>
   | Readonly<{ kind: 'reset' }>
 
 const reducer = (state: DocumentFormFields, action: FormAction): DocumentFormFields => {
@@ -112,15 +128,40 @@ const reducer = (state: DocumentFormFields, action: FormAction): DocumentFormFie
       return { ...state, contractRef: action.value, programRef: '' }
     case 'setProgramRef':
       return { ...state, programRef: action.value }
+    // Cascata Centro → Categoria → Subcategoria (#341): trocar um nível zera os de BAIXO, senão a folha
+    // ficaria órfã (uma subcategoria que não pertence mais à categoria/centro escolhidos) — §IV.
     case 'setCategoryRef':
-      return { ...state, categoryRef: action.value }
+      return { ...state, categoryRef: action.value, subcategoryRef: '' }
+    case 'setSubcategoryRef':
+      return { ...state, subcategoryRef: action.value }
     case 'setCostCenterRef':
-      return { ...state, costCenterRef: action.value }
+      return { ...state, costCenterRef: action.value, categoryRef: '', subcategoryRef: '' }
     case 'setApproverRef':
       return { ...state, approverRef: action.value }
     case 'setContaDebitoRef':
       return { ...state, contaDebitoRef: action.value }
     case 'setText':
+      // Competência reflete AUTOMATICAMENTE a Emissão (mês/ano) — não é mais digitável. Editar a Emissão
+      // re-deriva a Competência; qualquer outro texto segue o set genérico.
+      if (action.key === 'issueDate') {
+        return {
+          ...state,
+          issueDate: action.value,
+          competencia: competenciaFromIssueDate(action.value),
+        }
+      }
+      // Trocar o Plano Orçamentário troca a FONTE da cascata (ADR-0051: cada plano tem sua árvore
+      // Centro→Categoria→Subcategoria). Um centro/categoria/sub do plano anterior não existe no novo →
+      // zeramos os 3, senão a categorização gravada seria uma folha órfã (§IV). Mesma regra do `setCostCenterRef`.
+      if (action.key === 'planoOrcamentario') {
+        return {
+          ...state,
+          planoOrcamentario: action.value,
+          costCenterRef: '',
+          categoryRef: '',
+          subcategoryRef: '',
+        }
+      }
       return { ...state, [action.key]: action.value }
     case 'setRetention':
       return { ...state, retentions: { ...state.retentions, [action.key]: action.value } }
@@ -129,11 +170,23 @@ const reducer = (state: DocumentFormFields, action: FormAction): DocumentFormFie
         ...state,
         reformaTributaria: { ...state.reformaTributaria, [action.key]: action.value },
       }
-    case 'patch':
-      // Preenchimento por OCR (parcial) — só sobrescreve os campos extraídos; o operador confirma.
-      return { ...state, ...action.patch }
+    case 'applyReading':
+      // Overlay atômico do leitor client (ADR-0021) — sem gating por tipo (o patch já vem coerente do mapa).
+      return applyReadingPatch(state, action.patch)
     case 'hydrate':
       return action.fields
+    case 'hydrateCategorization':
+      // Herança do contrato (§XI): sobrepõe SÓ a categorização (Programa/Plano/Centro/Categoria/Subcategoria);
+      // o resto do form fica intacto. A page dispara uma vez por contrato (guard por ref), então edições do
+      // operador depois disso não são clobradas.
+      return {
+        ...state,
+        programRef: action.patch.programRef,
+        planoOrcamentario: action.patch.planoOrcamentario,
+        costCenterRef: action.patch.costCenterRef,
+        categoryRef: action.patch.categoryRef,
+        subcategoryRef: action.patch.subcategoryRef,
+      }
     case 'reset':
       return EMPTY_FIELDS
     default: {
@@ -151,13 +204,16 @@ export type DocumentFormController = Readonly<{
   setContractRef: (value: string) => void
   setProgramRef: (value: string) => void
   setCategoryRef: (value: string) => void
+  setSubcategoryRef: (value: string) => void
   setCostCenterRef: (value: string) => void
   setApproverRef: (value: string) => void
   setContaDebitoRef: (value: string) => void
   setText: (key: TextKey, value: string) => void
   setRetention: (key: keyof RetentionFieldsReais, value: string) => void
   setReformaTributaria: (key: keyof ReformaTributariaFieldsReais, value: string) => void
-  applyPatch: (patch: Partial<DocumentFormFields>) => void
+  // #502/S3: herança da categorização do contrato (sobrepõe só a cascata). Identidade ESTÁVEL (a page a usa
+  // num efeito). Ver `hydrateCategorization` no reducer.
+  hydrateCategorization: (patch: CategorizationPatch) => void
   reset: () => void
   // Modal "Tipo de Documento" (UI-state).
   typeModalOpen: boolean
@@ -173,22 +229,40 @@ export type DocumentFormController = Readonly<{
   closeContractPicker: () => void
 }>
 
-export function useDocumentFormController(initial?: DocumentFormFields | null): DocumentFormController {
+export function useDocumentFormController(
+  initial?: DocumentFormFields | null,
+  reading?: DocumentReadingPatch | null,
+): DocumentFormController {
   const [fields, dispatch] = useReducer(reducer, EMPTY_FIELDS)
   const [typeModalOpen, setTypeModalOpen] = useState(false)
   const [payModalOpen, setPayModalOpen] = useState(false)
   const [contractPickerOpen, setContractPickerOpen] = useState(false)
-  // Hidrata UMA vez quando os dados de edição chegam (async). `useRef` evita re-hidratar a cada render,
-  // preservando o que o usuário já editou.
+  // Hidrata UMA vez quando o rascunho do backend chega (async); `hydrated` evita re-hidratar (preserva os edits
+  // do operador). A leitura client-side (ADR-0021) VENCE: na hidratação ela é sobreposta ao rascunho; fora dela,
+  // é aplicada quando surge/troca. `appliedReading` garante um único apply por leitura (sem re-clobber). Um único
+  // efeito depende de [initial, reading] p/ resolver qualquer ordem de chegada com o cliente sempre vencendo.
   const hydrated = useRef(false)
+  const appliedReading = useRef<DocumentReadingPatch | null>(null)
   useEffect(() => {
+    const current = reading ?? null
     if (initial != null && !hydrated.current) {
       hydrated.current = true
-      dispatch({ kind: 'hydrate', fields: initial })
+      appliedReading.current = current
+      dispatch({ kind: 'hydrate', fields: current !== null ? applyReadingPatch(initial, current) : initial })
+      return
     }
-  }, [initial])
+    if (current !== null && appliedReading.current !== current) {
+      appliedReading.current = current
+      dispatch({ kind: 'applyReading', patch: current })
+    }
+  }, [initial, reading])
+  // Identidade ESTÁVEL (dispatch é estável) → a page pode depender dela no efeito de herança sem re-disparar.
+  const hydrateCategorization = useCallback((patch: CategorizationPatch) => {
+    dispatch({ kind: 'hydrateCategorization', patch })
+  }, [])
   return {
     fields,
+    hydrateCategorization,
     setType: (value) => {
       dispatch({ kind: 'setType', value })
     },
@@ -207,6 +281,9 @@ export function useDocumentFormController(initial?: DocumentFormFields | null): 
     setCategoryRef: (value) => {
       dispatch({ kind: 'setCategoryRef', value })
     },
+    setSubcategoryRef: (value) => {
+      dispatch({ kind: 'setSubcategoryRef', value })
+    },
     setCostCenterRef: (value) => {
       dispatch({ kind: 'setCostCenterRef', value })
     },
@@ -224,9 +301,6 @@ export function useDocumentFormController(initial?: DocumentFormFields | null): 
     },
     setReformaTributaria: (key, value) => {
       dispatch({ kind: 'setReformaTributaria', key, value })
-    },
-    applyPatch: (patch) => {
-      dispatch({ kind: 'patch', patch })
     },
     reset: () => {
       dispatch({ kind: 'reset' })

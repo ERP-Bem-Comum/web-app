@@ -9,13 +9,19 @@ import { useQuery } from '@tanstack/react-query'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 
-import { contasAPagarQueryOptions, payableTitlesQueryOptions } from './contas-a-pagar.query.ts'
+import {
+  contasAPagarQueryOptions,
+  payableTitlesQueryOptions,
+  payableCountsQueryOptions,
+} from './contas-a-pagar.query.ts'
 import { partnersMapQueryOptions } from './partners-map.binding.ts'
 import { contractsMapQueryOptions } from './contracts-map.binding.ts'
 import {
   deriveListState,
   deriveTitleListState,
+  mergeDraftsIntoGrid,
   isRetentionTipo,
+  type DraftMergeMode,
   type ListState,
   type TipoFilter,
   type ResolveSupplier,
@@ -25,12 +31,13 @@ import {
   type AdvancedFilters,
   type FilterDimId,
 } from './contas-a-pagar.view-model.ts'
+import { useSavedViews, type SavedViewsBinding } from './contas-a-pagar-saved-views.binding.ts'
 
 // #201: modo de visualização do grid — por documento (atual) ou por título (pai+filhos).
 export type ViewMode = 'document' | 'title'
 import type { DocumentStatus, RetentionType } from '#modules/financial/client/data/model/document.model.ts'
 
-const DEFAULT_PAGE_SIZE = 12
+const DEFAULT_PAGE_SIZE = 100
 const t = createTranslator(ptBR)
 // #201: órgão arrecadador por retenção (igual ao drawer): ISS → SEFIN (Sec. Mun. Finanças Fortaleza); demais → Receita Federal.
 const retentionDestino = (rt: RetentionType): string =>
@@ -48,6 +55,8 @@ export type ContasAPagarBinding = Readonly<{
   // Filtro de status (chips): null = "Todos". Trocar o filtro reseta a página.
   selectedStatus: DocumentStatus | null
   onStatusFilter: (status: DocumentStatus | null) => void
+  // Contagem por chip (key → total; null = carregando/erro). Alimenta o badge de contagem de cada chip.
+  statusCounts: Readonly<Record<string, number | null>>
   // Filtros avançados ("Adicionar filtro"): dimensões ativas + valores (server-side).
   activeDims: ReadonlySet<FilterDimId>
   filters: AdvancedFilters
@@ -59,6 +68,11 @@ export type ContasAPagarBinding = Readonly<{
   onSetTipo: (tipo: TipoFilter | undefined) => void
   onSetFornecedor: (ref: string | undefined) => void
   onClearFilters: () => void
+  // Visões salvas (saved views): snapshot nomeado de { status, dims, filters } — preferência de UI (#351).
+  savedViews: SavedViewsBinding['savedViews']
+  onSaveView: SavedViewsBinding['onSaveView']
+  onApplyView: SavedViewsBinding['onApplyView']
+  onDeleteView: SavedViewsBinding['onDeleteView']
   onPrev: () => void
   onNext: () => void
   onPageSize: (size: number) => void
@@ -108,6 +122,37 @@ export function useContasAPagar(): ContasAPagarBinding {
     ),
   )
 
+  // #201-fix: rascunho (Draft) não gera títulos → invisível no grid title-centric. Buscamos os documentos
+  // Draft à parte e trocamos a fonte SÓ no chip "Rascunho" (fora do Todos: são muitos/parciais e
+  // soterrariam os títulos reais). Paginação normal do /documents?status=Draft.
+  const draftMode: DraftMergeMode =
+    viewMode === 'title' && selectedStatus === 'Rascunho' ? 'rascunho' : 'none'
+  const drafts = useQuery(
+    contasAPagarQueryOptions(
+      { page, pageSize, status: 'Rascunho', supplierRef: filters.fornecedor },
+      draftMode === 'rascunho',
+    ),
+  )
+
+  // #536: contagem por status p/ as chips em 1 request (GET /payable-titles/counts) — antes eram ~6 queries.
+  // `byStatus` = breakdown dos títulos (chaves do backend: Open/Approved/Paid/Reconciled); `draft` = Rascunho.
+  const countFilters = {
+    supplierRef: filters.fornecedor,
+    dueFrom: filters.vencimento?.from,
+    dueTo: filters.vencimento?.to,
+    type: isRetentionTipo(filters.tipo) ? undefined : filters.tipo,
+  }
+  const counts = useQuery(payableCountsQueryOptions(countFilters, viewMode === 'title'))
+  const c = counts.data?.ok ? counts.data.value : null
+  const statusCounts: Readonly<Record<string, number | null>> = {
+    todos: c === null ? null : c.total,
+    rascunho: c === null ? null : c.draft,
+    aberto: c === null ? null : (c.byStatus.Open ?? 0),
+    aprovado: c === null ? null : (c.byStatus.Approved ?? 0),
+    pago: c === null ? null : (c.byStatus.Paid ?? 0),
+    conciliado: c === null ? null : (c.byStatus.Reconciled ?? 0),
+  }
+
   const resolveSupplier: ResolveSupplier = (ref) =>
     ref === null ? '—' : (partners.data?.get(ref)?.name ?? ref)
   const resolveKind: ResolveSupplierKind = (ref) =>
@@ -125,7 +170,7 @@ export function useContasAPagar(): ContasAPagarBinding {
     resolveContract,
   })
 
-  const titleState = deriveTitleListState({
+  const titleStateRaw = deriveTitleListState({
     isLoading: viewMode === 'title' && titles.isLoading,
     data: titles.data,
     resolveSupplier,
@@ -134,6 +179,17 @@ export function useContasAPagar(): ContasAPagarBinding {
     resolveDoc,
     resolveContract,
   })
+
+  // Rascunhos (documentos Draft) → linhas do grid, mescladas conforme o chip (Rascunho | Todos).
+  const draftState = deriveListState({
+    isLoading: draftMode !== 'none' && drafts.isLoading,
+    data: drafts.data,
+    resolveSupplier,
+    resolveKind,
+    resolveDoc,
+    resolveContract,
+  })
+  const titleState = mergeDraftsIntoGrid(draftState, titleStateRaw, draftMode)
 
   // Opções do filtro "Fornecedor" — todos os parceiros já carregados (id → nome), ordenados por nome.
   const supplierOptions: readonly SupplierOption[] = Array.from(partners.data?.entries() ?? [])
@@ -148,6 +204,18 @@ export function useContasAPagar(): ContasAPagarBinding {
     else setFilters((f) => ({ ...f, fornecedor: undefined }))
   }
 
+  // Visões salvas (#351): captura o snapshot atual; aplica reconstruindo o estado num ÚNICO update (status +
+  // dims + filters de uma vez — React auto-batcha os setState do mesmo handler → 1 render, não N encadeados).
+  const savedViews = useSavedViews(
+    { status: selectedStatus, dims: Array.from(activeDims), filters },
+    (view) => {
+      setSelectedStatus(view.status)
+      setActiveDims(new Set(view.dims)) // reconstrói o Set de dimensões ativas a partir do array salvo
+      setFilters(view.filters)
+      setPage(1)
+    },
+  )
+
   return {
     state,
     viewMode,
@@ -158,6 +226,7 @@ export function useContasAPagar(): ContasAPagarBinding {
     },
     pageSize,
     selectedStatus,
+    statusCounts,
     onStatusFilter: (status) => {
       setSelectedStatus(status)
       setPage(1)
@@ -198,6 +267,10 @@ export function useContasAPagar(): ContasAPagarBinding {
       setFilters({})
       setPage(1)
     },
+    savedViews: savedViews.savedViews,
+    onSaveView: savedViews.onSaveView,
+    onApplyView: savedViews.onApplyView,
+    onDeleteView: savedViews.onDeleteView,
     onPrev: () => {
       setPage((p) => Math.max(1, p - 1))
     },

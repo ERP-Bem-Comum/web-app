@@ -19,13 +19,38 @@ import type {
   DocumentListResponse,
   PayableTitleListResponse,
   PayableTitleItem,
+  PayableCounts,
+  RecentPayment,
+  DocumentTimelineEvent,
+  TimelineEventType,
 } from '#modules/financial/server/domain/document.io.ts'
 import {
   CoreApiDocumentSchema,
   CoreApiDocumentListSchema,
   CoreApiPayableTitleListSchema,
+  CoreApiPayableCountsSchema,
+  CoreApiRecentPaymentListSchema,
+  CoreApiTimelineResponseSchema,
   type CoreApiPayable,
 } from './financial.schema.ts'
+import {
+  DashboardCostCentersResponseSchema,
+  DashboardNoContractSuppliersResponseSchema,
+} from './dashboard.schema.ts'
+import type {
+  DashboardCostCenters,
+  DashboardNoContractSupplier,
+} from '#modules/financial/server/domain/dashboard.io.ts'
+
+const TIMELINE_EVENT_TYPES: ReadonlySet<string> = new Set<TimelineEventType>([
+  'DocumentDraftSaved',
+  'DocumentSaved',
+  'PayableApproved',
+  'ApprovalUndone',
+  'PayableManuallyPaid',
+  'PayableReconciled',
+  'ReconciliationUndone',
+])
 
 // ── Erro: slug do core-api → FinancialError ─────────────────────────────────────
 const SLUG_TO_ERROR: Partial<Record<string, FinancialError>> = {
@@ -130,13 +155,22 @@ export const detailToModel = (raw: unknown): Result<DocumentDetail, FinancialErr
     supplierRef: d.supplierRef,
     paymentMethod: mapPaymentMethod(d.paymentMethod),
     paymentDetail: d.paymentDetail ?? null, // #273 — complemento da forma de pagamento
+    competencia: d.competencia ?? null, // #197 — competência (YYYY-MM)
     grossValueCents: d.grossValueCents,
     netValueCents: d.netValueCents,
     issueDate: d.issueDate, // #163 — date-only (YYYY-MM-DD), igual ao dueDate
     dueDate: d.dueDate,
     description: d.description,
+    // #95/#147 — refs de categorização (resolvidas p/ nome no client; drift → null).
+    budgetPlanRef: d.budgetPlanRef,
+    categoryRef: d.categoryRef,
+    subcategoryRef: d.subcategoryRef, // #502 (S1): folha da árvore do plano (drift → null)
+    costCenterRef: d.costCenterRef,
+    programRef: d.programRef,
     payables: d.payables.map(payableToModel),
     version: d.version,
+    // #568: comprovante-fonte (OCR); null = documento sem anexo. Passthrough do objeto validado.
+    attachment: d.attachment,
   })
 }
 
@@ -160,6 +194,58 @@ export const listToModel = (raw: unknown): Result<DocumentListResponse, Financia
     version: s.version,
   }))
   return ok({ items, page: l.page, pageSize: l.pageSize, total: l.total })
+}
+
+// 042: widget "Últimos pagamentos" (Top-5 pagos). Array parse tolerante; drift → err('server').
+export const recentPaymentsToModel = (raw: unknown): Result<readonly RecentPayment[], FinancialError> => {
+  const parsed = CoreApiRecentPaymentListSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  const items: readonly RecentPayment[] = parsed.data.map((p) => ({
+    payableId: p.payableId,
+    documentId: p.documentId,
+    supplierRef: p.supplierRef,
+    debitAccountRef: p.debitAccountRef,
+    valueCents: p.valueCents,
+    paidAt: p.paidAt,
+  }))
+  return ok(items)
+}
+
+// #241/#237: KPI "Despesas por Centro de Custo" (cost-centers). Parse tolerante; drift → err('server').
+// O output do schema é estruturalmente o `DashboardCostCenters` do domínio (a fonte real formata/compõe).
+export const dashboardCostCentersToModel = (raw: unknown): Result<DashboardCostCenters, FinancialError> => {
+  const parsed = DashboardCostCentersResponseSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  return ok(parsed.data)
+}
+
+// #242: widget "Fornecedores sem Contrato" (top-5). Desembrulha `.suppliers`; drift → err('server').
+export const dashboardNoContractSuppliersToModel = (
+  raw: unknown,
+): Result<readonly DashboardNoContractSupplier[], FinancialError> => {
+  const parsed = DashboardNoContractSuppliersResponseSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  return ok(parsed.data.suppliers)
+}
+
+// Timeline → eventos CRUS (actor = UUID). Descarta entradas com eventType desconhecido (drift seguro). O
+// enriquecimento do nome do autor acontece na server-fn (BFF).
+export const timelineToModel = (raw: unknown): Result<readonly DocumentTimelineEvent[], FinancialError> => {
+  const parsed = CoreApiTimelineResponseSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  const events: DocumentTimelineEvent[] = []
+  for (const e of parsed.data.entries) {
+    if (!TIMELINE_EVENT_TYPES.has(e.eventType)) continue
+    events.push({
+      eventType: e.eventType as TimelineEventType,
+      targetKind: e.target.kind === 'Payable' ? 'Payable' : 'Document',
+      targetId: e.target.id,
+      occurredAt: e.occurredAt,
+      actor: e.actor,
+      changes: e.changes.map((c) => ({ field: c.field, before: c.before, after: c.after })),
+    })
+  }
+  return ok(events)
 }
 
 // #201: listagem por TÍTULO (pai + filhos). Reusa os mesmos enums tolerantes (status EN→PT, kind, etc).
@@ -189,4 +275,11 @@ export const payableTitlesToModel = (raw: unknown): Result<PayableTitleListRespo
     netValueCents: p.netValueCents ?? null,
   }))
   return ok({ items, page: l.page, pageSize: l.pageSize, total: l.total })
+}
+
+// #536: contagem agregada — passthrough validado (byStatus é o breakdown cru dos títulos por status).
+export const payableCountsToModel = (raw: unknown): Result<PayableCounts, FinancialError> => {
+  const parsed = CoreApiPayableCountsSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  return ok({ total: parsed.data.total, draft: parsed.data.draft, byStatus: parsed.data.byStatus })
 }

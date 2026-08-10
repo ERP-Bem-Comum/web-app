@@ -1,0 +1,27 @@
+/**
+ * BudgetPlansError — erro do Plano Orçamentário propagado pelo BFF (string union; ESPELHA o
+ * `BudgetPlansError` do server). Arquivo NEUTRO da camada `client/data` (§I: não importa `server/`). A UI
+ * nunca olha status HTTP — trata só a tag i18n (§V).
+ */
+export type BudgetPlansError =
+  | 'unauthorized' // 401 — sessão ausente/expirada
+  | 'forbidden' // 403 (RBAC) — sessão válida, falta `budget-plan:read`/`budget-plan:write` (core-api#374)
+  | 'budget-plan-already-exists' // 409 — já existe plano p/ esse ano+programa (unicidade server-side)
+  | 'budget-plan-not-found' // 404 — plano inexistente (GET /budget-plans/:id — leitura do detalhe, feature 059)
+  | 'invalid-input' // 400/422 — payload rejeitado pelo core-api
+  // ── Ciclo de vida (feature 060 — ações do menu). 409 mapeado por CONTEXTO do endpoint (o core esconde o slug).
+  | 'budget-plan-already-approved' // approve — plano já aprovado
+  | 'budget-plan-not-approved' // start-calibration — calibração só em plano APROVADO
+  | 'budget-plan-scenery-needs-draft' // scenery — cenário só em plano NÃO aprovado (rascunho/calibração)
+  | 'budget-plan-invalid-transition' // transição de estado inválida (genérico; reservado)
+  // DELETE /:id (feature 076) — 409 por plano APROVADO OU por ter cenário; os dois são indistinguíveis na
+  // resposta, então UMA tag cobre ambos. Só chega em corrida: o menu já desabilita nos 2 casos.
+  | 'budget-plan-not-deletable'
+  | 'budget-plan-not-editable' // escrita de estrutura (feature 061) — plano não aceita mais escrita (ex.: aprovado)
+  | 'cost-node-not-found' // 404 no PATCH de nó (feature 075) — nó (ou plano) sumiu: a árvore em mãos está velha
+  | 'unexpected' // parse/inesperado
+
+/** Forma do retorno RPC das server fns do Plano Orçamentário (`{ ok, data } | { ok, error }`). */
+export type BudgetPlansFnResult<T> =
+  | Readonly<{ ok: true; data: T }>
+  | Readonly<{ ok: false; error: BudgetPlansError }>

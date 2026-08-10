@@ -23,3 +23,16 @@ export type { ChangePasswordFnResult } from '#modules/users/server/adapters/serv
 // ['users','me']). Consumida pelo slice "Minha Conta" e também pelo shell (o topbar exibe o nome).
 // Como a mutation de Minha Conta invalida ['users'], o topbar reflete a alteração automaticamente.
 export { myAccountQueryOptions } from '#modules/users/client/my-account/my-account.query.ts'
+
+// Política de senha PURA (checklist: length/upper/lower/number/special) — domínio client reusável por
+// qualquer fluxo que peça senha nova fora do módulo users (ex.: auth "Redefinir Senha" #038). Exposto
+// pela public-api para respeitar o boundary §I (cross-feature só por aqui).
+export {
+  evaluatePassword,
+  passwordMeetsPolicy,
+  PASSWORD_RULE_KEYS,
+  DEFAULT_PASSWORD_LIMITS,
+  type PasswordChecks,
+  type PasswordLimits,
+  type PasswordRuleKey,
+} from '#modules/users/client/domain/password-policy.ts'

@@ -6,19 +6,25 @@
 import { loadEnvOrThrow } from '#external/config/env.config.ts'
 import { coreApiBase } from '#external/core-api/api-base.ts'
 import { createCoreApiReconciliationClient } from './core-api/core-api-reconciliation.ts'
+import { createReconciliationEnrichmentSource } from './core-api/reconciliation-enrichment.source.ts'
 import {
   createBatchReconcile,
   createClosePeriod,
   createReopenPeriod,
+  createConfirmCounterpart,
   createCreateManualEntry,
   createCreateCedenteAccount,
+  createCloseCedenteAccount,
+  createEditCedenteAccount,
   createCreateReconciliation,
   createExportReconciliation,
   createGetCedenteAccount,
+  createGetCounterpartSuggestions,
   createGetStatementSuggestions,
   createGetSuggestions,
   createGetTransactionReconciliation,
   createImportStatement,
+  createDeleteBankStatement,
   createListCedenteAccounts,
   createListPaidPayables,
   createGetAccountStatementPeriod,
@@ -33,19 +39,28 @@ type ReconciliationServer = ReturnType<typeof build>
 
 const build = () => {
   const env = loadEnvOrThrow()
-  const client = createCoreApiReconciliationClient(`${coreApiBase(env.CORE_API_URL, 'v2')}/financial`)
+  const financialBase = `${coreApiBase(env.CORE_API_URL, 'v2')}/financial`
+  // INTERINO BFF composite p/ core-api#172/#265: a fonte de enriquecimento costura títulos (v2/financial)
+  // + parceiros (agregador dos 4 tipos, lê a base v1 internamente). REMOVER quando o core-api enriquecer.
+  const enrichmentFor = createReconciliationEnrichmentSource(financialBase)
+  const client = createCoreApiReconciliationClient(financialBase, enrichmentFor)
   return {
     importStatement: createImportStatement({ client }),
     listTransactions: createListTransactions({ client }),
+    deleteBankStatement: createDeleteBankStatement({ client }),
     listPaidPayables: createListPaidPayables({ client }),
     listReferences: createListReferences({ client }),
     listCedenteAccounts: createListCedenteAccounts({ client }),
     getCedenteAccount: createGetCedenteAccount({ client }),
     getAccountStatementPeriod: createGetAccountStatementPeriod({ client }),
     createCedenteAccount: createCreateCedenteAccount({ client }),
+    closeCedenteAccount: createCloseCedenteAccount({ client }),
+    editCedenteAccount: createEditCedenteAccount({ client }),
     getSuggestions: createGetSuggestions({ client }),
     getStatementSuggestions: createGetStatementSuggestions({ client }),
     getTransactionReconciliation: createGetTransactionReconciliation({ client }),
+    getCounterpartSuggestions: createGetCounterpartSuggestions({ client }),
+    confirmCounterpart: createConfirmCounterpart({ client }),
     rejectSuggestion: createRejectSuggestion({ client }),
     createReconciliation: createCreateReconciliation({ client }),
     undoReconciliation: createUndoReconciliation({ client }),

@@ -2,8 +2,10 @@
  * useMatchDetails — controller do modal "Detalhes da conciliação" (clique numa linha conciliada do
  * Extrato). UI-state (qual transação está aberta) + lookup da conciliação ativa (#175) p/ AUDITORIA real
  * (quando/quem) e o `reconciliationId` do Desfazer (mesmo após reload). O lado EXTRATO é real; o lado
- * TÍTULO segue "—" até o backend enriquecer (#172). O `reconciliationId` prefere o mapa de sessão
- * (conciliações feitas agora) e cai no lookup; assim o Desfazer funciona em ambos os casos.
+ * TÍTULO agora surfa favorecido/nº do documento/vencimento p/ matches INDIVIDUAIS (item enriquecido no BFF,
+ * interim #172); a Categoria segue "—" (category_ref é write-only no core-api — gap de backend). O
+ * `reconciliationId` prefere o mapa de sessão (conciliações feitas agora) e cai no lookup; assim o Desfazer
+ * funciona em ambos os casos.
  */
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
@@ -13,6 +15,7 @@ import {
   buildMatchTitles,
   matchAuditFromLookup,
   matchDetailsView,
+  matchDocFromItem,
   type MatchDetailsView,
 } from './reconciliation-workspace.view-model.ts'
 import type {
@@ -51,23 +54,31 @@ export function useMatchDetails(
   const manualType = tx !== null ? sessionManualTypeFor(tx.id) : null
   const counterparty = tx !== null ? sessionCounterpartyFor(tx.id) : null
   // Match 1:1 (1 título): o valor conciliado já vem no lookup (items[0]); acende o "Valor conciliado" do
-  // lado Título sem depender do enriquecimento do documento (#172). N:1 usa `multi`; manual usa o tx.
+  // lado Título. N:1 usa `multi`; manual usa o tx.
   const singleMatchValueCents =
     !isManualEntry && lookup !== null && lookup.items.length === 1
       ? (lookup.items[0]?.reconciledValueCents ?? null)
+      : null
+  // Match INDIVIDUAL (não-manual, 1 item): monta o lado Título com o item enriquecido no BFF (favorecido,
+  // nº doc, vencimento — interim #172). Valor conciliado = reconciledValueCents do item (preferido ao valor
+  // do extrato). Multiple/Partial e ManualEntry continuam com doc=null (renderizam como hoje).
+  const singleDoc =
+    !isManualEntry && lookup !== null && lookup.items.length === 1
+      ? matchDocFromItem(lookup.items[0] ?? null, lookup.items[0]?.reconciledValueCents ?? null)
       : null
   const view =
     tx === null
       ? null
       : matchDetailsView(
           tx,
-          null,
+          singleDoc,
           audit,
           multi,
           isManualEntry,
           manualType,
           counterparty,
           singleMatchValueCents,
+          lookup?.category ?? null,
         )
   const reconciliationId = tx === null ? null : (sessionIdFor(tx.id) ?? lookup?.reconciliationId ?? null)
 

@@ -35,7 +35,8 @@ export type StatusActionsProps = Readonly<{
   // Aprovar (Aberto→Aprovado) e Voltar p/ edição (Aprovado→Aberto) — habilitados conforme a seleção.
   canApprove: boolean
   canReopen: boolean
-  // Excluir (hard-delete) — só Aberto (Rascunho dá 409, core-api#166). Abre o modal de confirmação.
+  // Excluir — Aberto (hard-delete) OU Rascunho (descarte). O core-api trata os dois no mesmo DELETE
+  // /documents/:id (cancelDocument → cancelDraft, #166). Abre o modal de confirmação.
   canDelete: boolean
   // Marcar como pago (baixa manual, #224) — só títulos Aprovados (Aprovado→Pago).
   canPay: boolean
@@ -114,7 +115,7 @@ export function StatusActions(props: StatusActionsProps): ReactNode {
           </span>
         </button>
 
-        {/* Excluir — hard-delete; só Aberto (Rascunho dá 409, core-api#166). Abre modal de confirmação. */}
+        {/* Excluir — Aberto (hard-delete) ou Rascunho (descarte), core-api#166. Abre modal de confirmação. */}
         <button
           type="button"
           className={`${menuItem} ${menuItemBorder}${canDelete && !running ? '' : ` ${menuItemDisabled}`}`}

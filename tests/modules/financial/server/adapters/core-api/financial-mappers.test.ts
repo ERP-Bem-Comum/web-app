@@ -12,6 +12,7 @@ import {
   detailToModel,
   listToModel,
   payableTitlesToModel,
+  timelineToModel,
 } from '../../../../../../src/modules/financial/server/adapters/core-api/financial.mappers.ts'
 import { isOk, isErr } from '../../../../../../src/shared/primitives/result.ts'
 import type { HttpError } from '../../../../../../src/shared/http/http-error.types.ts'
@@ -90,6 +91,62 @@ describe('detailToModel', () => {
     const r2 = detailToModel(semEmissao)
     if (isOk(r2)) assert.equal(r2.value.issueDate, null)
   })
+  it('#197: mapeia competencia; ausente (backend antigo) → null', () => {
+    const r = detailToModel({ ...validDoc, competencia: '2026-06' })
+    if (isOk(r)) assert.equal(r.value.competencia, '2026-06')
+    const r2 = detailToModel(validDoc) // sem a chave → drift-tolerante → null
+    if (isOk(r2)) assert.equal(r2.value.competencia, null)
+  })
+  it('#95/#147: lê as refs de categorização quando presentes', () => {
+    const r = detailToModel({
+      ...validDoc,
+      budgetPlanRef: 'bp-1',
+      categoryRef: 'cat-1',
+      costCenterRef: 'cc-1',
+      programRef: 'prog-1',
+    })
+    assert.equal(isOk(r), true)
+    if (isOk(r)) {
+      assert.equal(r.value.budgetPlanRef, 'bp-1')
+      assert.equal(r.value.categoryRef, 'cat-1')
+      assert.equal(r.value.costCenterRef, 'cc-1')
+      assert.equal(r.value.programRef, 'prog-1')
+    }
+  })
+  it('#95/#147: refs ausentes (backend antigo) → null (drift-tolerante)', () => {
+    const r = detailToModel(validDoc)
+    if (isOk(r)) {
+      assert.equal(r.value.budgetPlanRef, null)
+      assert.equal(r.value.categoryRef, null)
+      assert.equal(r.value.costCenterRef, null)
+      assert.equal(r.value.programRef, null)
+    }
+  })
+  it('#568: mapeia attachment quando presente', () => {
+    const r = detailToModel({
+      ...validDoc,
+      attachment: {
+        fileName: 'nota.xml',
+        mimeType: 'text/xml',
+        sizeBytes: 21,
+        url: '/api/v2/financial/documents/d1/source-file',
+      },
+    })
+    assert.equal(isOk(r), true)
+    if (isOk(r)) {
+      assert.equal(r.value.attachment?.fileName, 'nota.xml')
+      assert.equal(r.value.attachment?.mimeType, 'text/xml')
+      assert.equal(r.value.attachment?.sizeBytes, 21)
+      assert.equal(r.value.attachment?.url, '/api/v2/financial/documents/d1/source-file')
+    }
+  })
+  it('#568: attachment ausente (backend antigo) ou null → null (drift-tolerante)', () => {
+    const r = detailToModel(validDoc) // sem a chave
+    if (isOk(r)) assert.equal(r.value.attachment, null)
+    const r2 = detailToModel({ ...validDoc, attachment: null })
+    if (isOk(r2)) assert.equal(r2.value.attachment, null)
+  })
+
   it('drift de contrato → err(server)', () => {
     assert.equal(isErr(detailToModel({ id: 1 })), true)
   })
@@ -147,5 +204,37 @@ describe('payableTitlesToModel (#201)', () => {
   })
   it('drift → err(server)', () => {
     assert.equal(isErr(payableTitlesToModel({ items: 'x' })), true)
+  })
+})
+
+describe('timelineToModel', () => {
+  const entry = (over: Record<string, unknown> = {}) => ({
+    eventType: 'DocumentSaved',
+    target: { kind: 'Document', id: 'd1' },
+    occurredAt: '2026-07-10T19:40:00.000Z',
+    actor: 'u1',
+    changes: [{ field: 'dueDate', before: '2026-07-10', after: '2026-08-15' }],
+    ...over,
+  })
+  it('mapeia eventos conhecidos preservando actor (uuid) e changes', () => {
+    const r = timelineToModel({
+      entries: [entry(), entry({ eventType: 'PayableManuallyPaid', actor: null })],
+    })
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value.length, 2)
+      assert.equal(r.value[0]?.eventType, 'DocumentSaved')
+      assert.equal(r.value[0]?.actor, 'u1')
+      assert.equal(r.value[0]?.changes[0]?.after, '2026-08-15')
+      assert.equal(r.value[1]?.actor, null)
+    }
+  })
+  it('descarta eventType desconhecido (drift seguro)', () => {
+    const r = timelineToModel({ entries: [entry(), entry({ eventType: 'GremlinEvent' })] })
+    assert.ok(isOk(r))
+    if (isOk(r)) assert.equal(r.value.length, 1) // só o conhecido sobrou
+  })
+  it('payload fora de forma → err(server)', () => {
+    assert.equal(isErr(timelineToModel({ entries: 'x' })), true)
   })
 })

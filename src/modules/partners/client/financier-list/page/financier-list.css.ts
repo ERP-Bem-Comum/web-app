@@ -1,14 +1,6 @@
+/**
+ * Estilo específico do grid de Financiadores (o restante vem da kit "brand"). Só a célula de CNPJ.
+ */
 import { style } from '@vanilla-extract/css'
 
-import { vars } from '#shared/ui/tokens/index.ts'
-
-export const screen = style({
-  padding: vars.space.xl,
-  display: 'flex',
-  flexDirection: 'column',
-})
-
-// CNPJ formatado (18 chars) não pode quebrar no '-' / '/': cabe inteiro na coluna.
-export const cnpjCell = style({
-  whiteSpace: 'nowrap',
-})
+export const cnpjCell = style({ whiteSpace: 'nowrap' })

@@ -67,6 +67,19 @@ export const CoreApiCollaboratorDetailSchema = CoreApiCollaboratorItemSchema.ext
   education: z.string().trim().nullish(),
   biography: z.string().trim().nullish(),
   experienceInThePublicSector: z.boolean().nullish(),
+  // Perfil completo (US2). Todos nullish (pré-cadastro/legado pode trazê-los null/ausentes).
+  sex: z.string().trim().nullish(),
+  maritalStatus: z.string().trim().nullish(),
+  hasChildren: z.boolean().nullish(),
+  childrenCount: z.int().nullish(),
+  childrenAges: z.array(z.int()).nullish(),
+  isPwd: z.boolean().nullish(),
+  pwdDescription: z.string().trim().nullish(),
+  isOnLeave: z.boolean().nullish(),
+  leaveDuration: z.string().trim().nullish(),
+  leaveRenewable: z.boolean().nullish(),
+  leaveRenewalDuration: z.string().trim().nullish(),
+  publicSectorExperienceDuration: z.string().trim().nullish(),
   // Território (#42) — UF + município (texto livre). `.catch(null)` tolera ausência/legado.
   territory: z
     .object({ uf: z.string().trim().nullable(), municipality: z.string().trim().nullable() })

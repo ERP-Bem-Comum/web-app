@@ -64,7 +64,9 @@ export const filterBar = style({
   display: 'flex',
   alignItems: 'center',
   gap: sp.lg,
-  paddingInline: sp['3xl'],
+  // paddingInline 1.75rem (=28px = brand.space.xxl): recuo da MARCA, igual ao título (header do shell) e aos
+  // demais grids full-bleed → barra e tabela a 28px da barra de menu, alinhadas ao título.
+  paddingInline: '1.75rem',
   paddingBlock: sp.lg,
   background: c.paper.default,
 })
@@ -72,12 +74,16 @@ export const search = style({
   display: 'flex',
   alignItems: 'center',
   gap: sp.sm,
-  inlineSize: '20rem',
-  maxInlineSize: '40%',
+  boxSizing: 'border-box',
+  blockSize: '2.75rem', // 44px — mesma altura dos demais controles (padrão Contratos)
+  // Ocupa TODO o espaço disponível até os chips de status (sem largura fixa) — padrão Contratos.
+  flex: 1,
+  minInlineSize: '14rem',
   paddingInline: sp.lg,
-  paddingBlock: sp.sm,
   borderRadius: r.md,
-  border: `${bw.thin} solid ${c.paper.rule}`,
+  // Borda clareada (color-mix rule→warm) + profundidade (paridade com o grid de Contratos).
+  border: `${bw.thin} solid color-mix(in srgb, ${c.paper.rule} 55%, ${c.paper.warm})`,
+  boxShadow: recon.shadow.cardDepth,
   background: c.paper.warm,
   color: c.ink[4],
 })
@@ -99,12 +105,15 @@ export const statusChips = style({
   background: c.paper.warm,
   borderRadius: r.md,
   overflowX: 'auto',
+  // Borda clareada + profundidade (paridade com o grid de Contratos).
+  border: `${bw.thin} solid color-mix(in srgb, ${c.paper.rule} 55%, ${c.paper.warm})`,
+  boxShadow: recon.shadow.cardDepth,
 })
 const chipBase = {
   display: 'inline-flex',
   alignItems: 'center',
   gap: sp.xs,
-  blockSize: '1.875rem',
+  blockSize: '2.5rem', // 40px + 2×2px do trilho = 44px (casando com busca/ordenar/Contratos)
   paddingInline: sp.md,
   border: 'none',
   borderRadius: r.sm,
@@ -156,16 +165,20 @@ export const chipDot = styleVariants({
   },
   closed: { inlineSize: '0.4375rem', blockSize: '0.4375rem', borderRadius: r.pill, background: c.ink[5] },
 })
-export const sortWrap = style({ marginInlineStart: 'auto' })
+// Sem `marginInlineStart: auto`: a margem auto engoliria o espaço livre antes do flex-grow e travaria o
+// crescimento da busca. Sem ela, a busca (flex:1) cresce até os chips e o "Ordenar" fica à direita.
+export const sortWrap = style({ flexShrink: 0 })
 export const sortBtn = style({
   display: 'inline-flex',
   alignItems: 'center',
   gap: sp.xs,
-  border: `${bw.thin} solid ${c.paper.rule}`,
+  boxSizing: 'border-box',
+  blockSize: '2.75rem', // 44px — alinhado à busca/chips
+  border: `${bw.thin} solid color-mix(in srgb, ${c.paper.rule} 55%, ${c.paper.warm})`,
   background: c.paper.default,
   borderRadius: r.md,
+  boxShadow: recon.shadow.cardDepth,
   paddingInline: sp.lg,
-  paddingBlock: sp.sm,
   fontFamily: recon.font.sans,
   fontSize: fs.sm,
   color: c.ink[2],
@@ -175,12 +188,19 @@ export const sortBtn = style({
 // ── grid ──────────────────────────────────────────────────────────────────────
 // Padrão do grid de Contas a Pagar: card com borda + raio, header sticky, linhas com hairline (última
 // sem borda), scroller interno discreto.
-export const gridWrap = style({ flex: 1, minBlockSize: 0, paddingInline: sp['3xl'], paddingBlock: sp.lg })
+// paddingInline 1.75rem (28px = brand.space.xxl): recuo da marca — alinha a tabela ao título, com folga p/ a sombra.
+export const gridWrap = style({ flex: 1, minBlockSize: 0, paddingInline: '1.75rem', paddingBlock: sp.lg })
 export const grid = style({
   overflow: 'auto',
-  border: `${bw.thin} solid ${c.paper.rule}`,
+  // Cap de altura (paridade com Contratos/Contas a Pagar): o scroll fica DENTRO da tabela. Sem isto, se a
+  // lista de contas — ou vários painéis expandidos — passar da viewport, o shell (overflow:hidden) cortaria
+  // as linhas de baixo sem barra para alcançá-las (a janela nunca rola: shell travado em 100dvh).
+  maxBlockSize: 'calc(100dvh - 18rem)',
+  // Borda clareada + profundidade (paridade com o grid de Contratos).
+  border: `${bw.thin} solid color-mix(in srgb, ${c.paper.rule} 55%, ${c.paper.warm})`,
   borderRadius: r.lg,
   background: c.paper.default,
+  boxShadow: recon.shadow.cardDepth,
 })
 const gridCols = {
   display: 'grid',
@@ -594,6 +614,60 @@ export const modalFoot = style({
   borderBlockStart: `${bw.thin} solid ${c.paper.rule}`,
 })
 export const spacer = style({ flex: 1 })
+
+// ── Ações no expand da linha (editar + encerrar) ────────────────────────────────────────────────────────
+export const expandAction = style({
+  marginInlineStart: 'auto',
+  display: 'flex',
+  alignItems: 'center',
+  gap: sp.sm,
+})
+export const editAccountBtn = style({
+  ...btnBase,
+  paddingBlock: sp.xs,
+  fontWeight: recon.weight.medium,
+  border: `${bw.thin} solid ${c.paper.rule}`,
+  background: c.paper.default,
+  color: c.ink[2],
+  selectors: {
+    '&:hover:not(:disabled)': { background: c.paper.warm },
+    '&:disabled': { opacity: 0.5, cursor: 'not-allowed' },
+  },
+})
+export const closeAccountBtn = style({
+  ...btnBase,
+  paddingBlock: sp.xs,
+  fontWeight: recon.weight.medium,
+  border: `${bw.thin} solid ${c.red.line}`,
+  background: c.paper.default,
+  color: c.red.deep,
+  selectors: {
+    '&:hover:not(:disabled)': { background: c.red.bg },
+    '&:disabled': { opacity: 0.5, cursor: 'not-allowed' },
+  },
+})
+export const confirmText = style({
+  fontFamily: recon.font.sans,
+  fontSize: fs.md,
+  lineHeight: 1.5,
+  color: c.ink[2],
+})
+export const confirmStrong = style({ fontWeight: recon.weight.semibold, color: c.ink[1] })
+export const confirmError = style({
+  fontFamily: recon.font.sans,
+  fontSize: fs.sm,
+  color: c.red.deep,
+})
+export const btnDanger = style({
+  ...btnBase,
+  border: 'none',
+  background: c.red.normal,
+  color: c.paper.default,
+  selectors: {
+    '&:hover:not(:disabled)': { background: c.red.deep },
+    '&:disabled': { opacity: 0.6, cursor: 'not-allowed' },
+  },
+})
 
 // ── refinamentos do modal "Nova Conta Bancária" (fiel ao mock) ───────────────────
 export const mhIc = style({

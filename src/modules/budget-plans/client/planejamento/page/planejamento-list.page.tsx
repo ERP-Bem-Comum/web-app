@@ -1,0 +1,349 @@
+import { useNavigate, getRouteApi } from '@tanstack/react-router'
+import { useState, useEffect, type ReactNode } from 'react'
+
+import { createTranslator } from '#shared/i18n/index.ts'
+import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
+import { headText, headTitle, headSubtitle } from '#shared/ui/brand/brand-page.css.ts'
+import { BarChartIcon } from '#shared/ui/index.ts'
+
+import {
+  usePlanejamentoList,
+  FILTER_YEARS,
+} from '#modules/budget-plans/client/planejamento/planejamento-list.binding.ts'
+import type {
+  PlanRow,
+  PlanAction,
+} from '#modules/budget-plans/client/planejamento/planejamento-list.view-model.ts'
+import {
+  useCreatePlan,
+  useCreateProgramOptions,
+  IMPORT_YEARS,
+} from '#modules/budget-plans/client/planejamento/create-plan.binding.ts'
+import type { CreatePlanError } from '#modules/budget-plans/client/planejamento/create-plan.view-model.ts'
+import {
+  confirmSpecFor,
+  isActionEnabled,
+  actionDisabledTitleKey,
+  type ConfirmableAction,
+} from '#modules/budget-plans/client/planejamento/plan-actions.view-model.ts'
+import { usePlanActions } from '#modules/budget-plans/client/planejamento/plan-actions.binding.ts'
+
+import { PlanFilters } from '../components/plan-filters.component.tsx'
+import { PlanTreeTable } from '../components/plan-tree-table.component.tsx'
+import { PlanPaginator } from '../components/plan-paginator.component.tsx'
+import { CreatePlanModal } from '../components/create-plan-modal.component.tsx'
+import { ConfirmActionModal, PlanFeedbackToast } from '../components/confirm-action-modal.component.tsx'
+import { screen, card, pageHead, pageIcon } from './planejamento-list.css.ts'
+
+const t = createTranslator(ptBR)
+const routeApi = getRouteApi('/_authenticated/planejamento')
+
+const actionKey = (action: PlanAction): string => {
+  switch (action) {
+    case 'share':
+      return 'budget-plans.action.share'
+    case 'planned-vs-actual':
+      return 'budget-plans.action.plannedVsActual'
+    case 'start-calibration':
+      return 'budget-plans.action.startCalibration'
+    case 'approve':
+      return 'budget-plans.action.approve'
+    case 'create-scenery':
+      return 'budget-plans.action.createScenery'
+    case 'export-csv':
+      return 'budget-plans.action.exportCsv'
+    case 'delete':
+      return 'budget-plans.action.delete'
+    default: {
+      const _exhaustive: never = action
+      return _exhaustive
+    }
+  }
+}
+
+/** Nome de exibição de uma linha (busca recursiva na árvore de planos/versões). */
+/** Acha a linha na ÁRVORE (cenários são `children` da raiz). `null` = não está na página carregada. */
+const findRow = (rows: readonly PlanRow[], id: string): PlanRow | null => {
+  for (const r of rows) {
+    if (r.id === id) return r
+    const inChild = findRow(r.children, id)
+    if (inChild !== null) return inChild
+  }
+  return null
+}
+
+const findRowName = (rows: readonly PlanRow[], id: string): string | null =>
+  findRow(rows, id)?.displayName ?? null
+
+type PendingConfirm = Readonly<{ action: ConfirmableAction; id: string; name: string }>
+
+const TOAST_MS = 3500
+
+export function PlanejamentoListPage(): ReactNode {
+  const search = routeApi.useSearch()
+  const navigate = useNavigate()
+  const { state, programOptions, grandTotalLabel } = usePlanejamentoList(search)
+  // Programas do modal "Criar Plano": o CATÁLOGO real do budget-plans ({ ref, abbreviation }) — fonte do
+  // `programRef` que o POST envia (não a lista de planos, que fica vazia até o dado subir).
+  const createProgramOptions = useCreateProgramOptions()
+  const [createOpen, setCreateOpen] = useState(false)
+  const createPlan = useCreatePlan(() => {
+    setCreateOpen(false)
+  })
+
+  const closeCreate = (): void => {
+    createPlan.reset()
+    setCreateOpen(false)
+  }
+
+  // Confirmações do menu "…" + toast (§2.5). Agora com as MUTATIONS REAIS (feature 060): o binding invalida a
+  // lista/detalhe no sucesso e devolve o resultado por callback; o toast reflete sucesso OU erro do backend (§V).
+  const [confirm, setConfirm] = useState<PendingConfirm | null>(null)
+  const [scenaryName, setScenaryName] = useState('')
+  const [toastMsg, setToastMsg] = useState<string | null>(null)
+  /** Plano-pai a abrir na árvore após criar um cenário (#423) — a tabela expande quando este id muda. */
+  const [expandId, setExpandId] = useState<string | null>(null)
+
+  const planActions = usePlanActions((outcome) => {
+    if (outcome.ok) {
+      const key =
+        outcome.action === 'export-csv'
+          ? 'budget-plans.action.exportCsv.success'
+          : `budget-plans.confirm.${outcome.action}.success`
+      setToastMsg(t(key))
+      // Cenário criado aparece como FILHO do pai (#423). Abrimos o chevron do pai para ele ficar visível na
+      // hora — o chevron nasce fechado, então sem isto o cenário existe mas some da tela (a P.O. leu como
+      // "não deu certo"). Antes daqui o front NAVEGAVA pro detalhe do cenário: era o único feedback possível
+      // enquanto a lista não tinha a árvore de filhos; com o #423 essa razão deixou de existir.
+      if (outcome.action === 'create-scenery') setExpandId(outcome.id)
+    } else {
+      setToastMsg(t(outcome.errorTag))
+    }
+  })
+
+  useEffect(() => {
+    if (toastMsg === null) return
+    const handle = setTimeout(() => {
+      setToastMsg(null)
+    }, TOAST_MS)
+    return () => {
+      clearTimeout(handle)
+    }
+  }, [toastMsg])
+
+  const onAction = (id: string, action: PlanAction): void => {
+    // Revalida com o CONTEXTO REAL da linha — o mesmo que desabilita o item no menu (§V). Antes bastava
+    // `isActionEnabled(action)` porque as ações barradas aqui não tinham endpoint e o Set as pegava sem
+    // precisar de status. O `delete` (feature 076) saiu do Set: sem a linha, o gate deixaria passar. E ele é
+    // IRREVERSÍVEL — depender só do `disabled` no DOM é fino demais para uma exclusão.
+    const row = findRow(state.rows, id)
+    const enabled = isActionEnabled(
+      action,
+      row?.rawStatus,
+      row === null ? undefined : { isScenario: row.isScenario, sceneryCount: row.sceneryCount },
+    )
+    if (!enabled) return
+    if (action === 'export-csv') {
+      planActions.runAction('export-csv', id) // sem confirmação — dispara o download direto
+      return
+    }
+    const spec = confirmSpecFor(action)
+    if (spec === null) return
+    if (spec.needsName) setScenaryName('')
+    setConfirm({ action: spec.action, id, name: findRowName(state.rows, id) ?? '' })
+  }
+
+  const confirmSpec = confirm !== null ? confirmSpecFor(confirm.action) : null
+
+  const runConfirm = (): void => {
+    if (confirm === null) return
+    planActions.runAction(confirm.action, confirm.id, scenaryName)
+    setConfirm(null)
+  }
+
+  const emptyLabel = state.filtered ? t('budget-plans.list.noResults') : t('budget-plans.list.empty')
+
+  return (
+    <div className={screen}>
+      <div className={pageHead}>
+        <span className={pageIcon} aria-hidden="true">
+          <BarChartIcon size={24} />
+        </span>
+        <div className={headText}>
+          <h1 className={headTitle}>{t('budget-plans.list.title')}</h1>
+          <p className={headSubtitle}>{t('budget-plans.list.subtitle')}</p>
+        </div>
+      </div>
+
+      <div className={card}>
+        <PlanFilters
+          value={{
+            search: search.search ?? '',
+            year: search.year !== undefined ? String(search.year) : '',
+            program: search.program ?? '',
+            status: search.status ?? '',
+          }}
+          years={FILTER_YEARS}
+          programs={programOptions}
+          labels={{
+            filterToggle: t('budget-plans.filters.toggle'),
+            searchPlaceholder: t('budget-plans.filters.search'),
+            create: t('budget-plans.list.create'),
+            year: t('budget-plans.filters.year'),
+            program: t('budget-plans.filters.program'),
+            status: t('budget-plans.filters.status'),
+            all: t('budget-plans.filters.all'),
+            apply: t('budget-plans.filters.apply'),
+            clear: t('budget-plans.filters.clear'),
+            statusRascunho: t('budget-plans.status.rascunho'),
+            statusEmCalibracao: t('budget-plans.status.emCalibracao'),
+            statusAprovado: t('budget-plans.status.aprovado'),
+          }}
+          onSearch={(value) =>
+            void navigate({
+              to: '.',
+              replace: true,
+              search: (p) => ({ ...p, search: value === '' ? undefined : value, page: 1 }),
+            })
+          }
+          onApply={(v) =>
+            void navigate({
+              to: '.',
+              replace: true,
+              search: (p) => ({
+                ...p,
+                year: v.year === '' ? undefined : Number(v.year),
+                program: v.program === '' ? undefined : v.program,
+                status: v.status === '' ? undefined : v.status,
+                page: 1,
+              }),
+            })
+          }
+          onClear={() =>
+            void navigate({
+              to: '.',
+              replace: true,
+              search: (p) => ({ ...p, year: undefined, program: undefined, status: undefined, page: 1 }),
+            })
+          }
+          onCreate={() => {
+            setCreateOpen(true)
+          }}
+        />
+
+        <PlanTreeTable
+          rows={state.rows}
+          expandId={expandId}
+          emptyLabel={emptyLabel}
+          grandTotalLabel={grandTotalLabel}
+          labels={{
+            plan: t('budget-plans.columns.plan'),
+            total: t('budget-plans.columns.total'),
+            partners: t('budget-plans.columns.partners'),
+            status: t('budget-plans.columns.status'),
+            audit: t('budget-plans.columns.audit'),
+            actionsHeader: t('budget-plans.columns.actions'),
+            actionsTrigger: t('budget-plans.list.rowActions'),
+            expand: t('budget-plans.list.expand'),
+            collapse: t('budget-plans.list.collapse'),
+            totalRow: t('budget-plans.list.totalRow'),
+          }}
+          actionLabelFor={(action) => t(actionKey(action))}
+          actionIsDisabled={(action, r) =>
+            !isActionEnabled(action, r.rawStatus, { isScenario: r.isScenario, sceneryCount: r.sceneryCount })
+          }
+          actionDisabledTitleFor={(action, r) =>
+            t(
+              actionDisabledTitleKey(action, r.rawStatus, {
+                isScenario: r.isScenario,
+                sceneryCount: r.sceneryCount,
+              }),
+            )
+          }
+          onOpenPlan={(id) => {
+            void navigate({
+              to: '/planejamento/detalhes/$id',
+              params: { id },
+            })
+          }}
+          onAction={onAction}
+        />
+
+        <PlanPaginator
+          page={state.page}
+          totalPages={state.totalPages}
+          perPage={search.limit}
+          total={state.total}
+          labels={{
+            perPage: t('budget-plans.paginator.perPage'),
+            previous: t('budget-plans.paginator.previous'),
+            next: t('budget-plans.paginator.next'),
+            rangeTemplate: t('budget-plans.paginator.range'),
+          }}
+          onPrev={() =>
+            void navigate({ to: '.', search: (p) => ({ ...p, page: Math.max(1, state.page - 1) }) })
+          }
+          onNext={() => void navigate({ to: '.', search: (p) => ({ ...p, page: state.page + 1 }) })}
+          onPerPage={(perPage) =>
+            void navigate({ to: '.', search: (p) => ({ ...p, limit: perPage, page: 1 }) })
+          }
+        />
+      </div>
+
+      <CreatePlanModal
+        open={createOpen}
+        form={createPlan.form}
+        errorTag={createPlan.errorTag}
+        submitting={createPlan.submitting}
+        programOptions={createProgramOptions}
+        importYears={IMPORT_YEARS}
+        labels={{
+          title: t('budget-plans.create.title'),
+          close: t('budget-plans.create.close'),
+          year: t('budget-plans.create.year'),
+          program: t('budget-plans.create.program'),
+          programPlaceholder: t('budget-plans.create.programPlaceholder'),
+          importData: t('budget-plans.create.importData'),
+          importFromYear: t('budget-plans.create.importFromYear'),
+          add: t('budget-plans.create.add'),
+          cancel: t('budget-plans.create.cancel'),
+        }}
+        translateError={(tag: CreatePlanError) => t(tag)}
+        onClose={closeCreate}
+        onYear={createPlan.setYear}
+        onProgram={createPlan.setProgram}
+        onToggleImport={createPlan.toggleImport}
+        onImportFromYear={createPlan.setImportFromYear}
+        onSubmit={createPlan.submit}
+      />
+
+      <ConfirmActionModal
+        open={confirm !== null}
+        title={confirm !== null ? t(`budget-plans.confirm.${confirm.action}.title`) : ''}
+        message={
+          confirm !== null
+            ? t(`budget-plans.confirm.${confirm.action}.body`).replace('{nome}', confirm.name)
+            : ''
+        }
+        confirmLabel={confirm !== null ? t(`budget-plans.confirm.${confirm.action}.confirm`) : ''}
+        cancelLabel={t('budget-plans.confirm.cancel')}
+        danger={confirmSpec?.danger ?? false}
+        nameField={
+          confirmSpec?.needsName === true
+            ? {
+                label: t('budget-plans.confirm.create-scenery.nameLabel'),
+                value: scenaryName,
+                onChange: setScenaryName,
+              }
+            : undefined
+        }
+        onConfirm={runConfirm}
+        onClose={() => {
+          setConfirm(null)
+        }}
+      />
+
+      <PlanFeedbackToast message={toastMsg} />
+    </div>
+  )
+}

@@ -2,9 +2,13 @@ name: CI
 
 # Gate de qualidade em Pull Request (TICKET-002 / G3): roda os mesmos checks do `pnpm verify`
 # (typecheck + lint + testes) mais os testes de DOM, antes de permitir o merge em develop/main.
+#
+# `go-live-front` está na lista porque é para LÁ que vai todo PR do front — `develop` só recebe a
+# promoção já mesclada. Sem ela, nenhum PR do front era verificado por CI e a primeira checagem real
+# acontecia depois do merge, na promoção (descoberto em 10/08, no PR #335).
 on:
   pull_request:
-    branches: [develop, main]
+    branches: [go-live-front, develop, main]
   push:
     branches: [develop, main]
 

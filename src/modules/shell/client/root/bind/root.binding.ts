@@ -11,8 +11,10 @@ import { useNavigate, useRouterState } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 
 import { isOk } from '#shared/primitives/result.ts'
-import { logoutUseCase } from '#modules/auth/public-api/index.ts'
+import { logoutUseCase, revokeAllSessionsUseCase } from '#modules/auth/public-api/index.ts'
 import { myAccountQueryOptions } from '#modules/users/public-api/index.ts'
+import { createTranslator } from '#shared/i18n/index.ts'
+import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { MENU, type MenuSection } from '#modules/shell/client/data/menu/shell-menu.config.ts'
 import {
   rootInitialUiState,
@@ -27,13 +29,17 @@ export type RootView = Readonly<{
   collapsed: boolean
   sidebarWidth: number
   pageTitle: string
+  pageSubtitle: string | undefined
   showPageHeader: boolean
   fullBleed: boolean
   visibleMenu: readonly MenuSection[]
   isItemActive: (to: string) => boolean
   toggleSidebar: () => void
   logout: () => void
+  revokeAllSessions: () => void
 }>
+
+const t = createTranslator(ptBR)
 
 export function useRootBinding(user: RootUser): RootView {
   const [state, dispatch] = useReducer(rootUiReducer, rootInitialUiState)
@@ -73,11 +79,23 @@ export function useRootBinding(user: RootUser): RootView {
     })()
   }, [navigate])
 
+  // Encerrar TODAS as sessões: destrutivo (desloga de todos os dispositivos, inclusive este) → confirma
+  // antes. A confirmação nativa mora no adapter React (a View segue burra). Efeito idêntico ao logout:
+  // o backend revoga a sessão atual → limpamos o cookie e redirecionamos ao login.
+  const revokeAllSessions = useCallback((): void => {
+    if (!globalThis.confirm(t('shell.topbar.revokeAllSessions.confirm'))) return
+    void (async () => {
+      await revokeAllSessionsUseCase()
+      await navigate({ to: '/login' })
+    })()
+  }, [navigate])
+
   return {
     user: resolvedUser,
     collapsed: state.collapsed,
     sidebarWidth,
     pageTitle,
+    pageSubtitle: rootViewModel.resolvePageSubtitle(path),
     showPageHeader: rootViewModel.showPageHeader(path),
     fullBleed: rootViewModel.fullBleedContent(path),
     visibleMenu: rootViewModel.visibleMenu(MENU, user.permissions),
@@ -86,5 +104,6 @@ export function useRootBinding(user: RootUser): RootView {
       dispatch({ type: 'toggleSidebar' })
     },
     logout,
+    revokeAllSessions,
   }
 }

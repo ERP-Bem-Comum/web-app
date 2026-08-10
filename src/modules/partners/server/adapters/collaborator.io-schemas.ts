@@ -79,6 +79,19 @@ export const CompleteCollaboratorRegistrationInputSchema = z.object({
   allergies: z.string().trim().max(300).optional(),
   biography: z.string().trim().max(500).optional(),
   experienceInThePublicSector: z.boolean().optional(),
+  // Perfil completo (US2). sex/maritalStatus como string (enum validado no core-api/domínio).
+  sex: z.string().trim().max(20).optional(),
+  maritalStatus: z.string().trim().max(40).optional(),
+  hasChildren: z.boolean().optional(),
+  childrenCount: z.int().nonnegative().optional(),
+  childrenAges: z.array(z.int().nonnegative()).optional(),
+  isPwd: z.boolean().optional(),
+  pwdDescription: z.string().trim().max(300).optional(),
+  isOnLeave: z.boolean().optional(),
+  leaveDuration: z.string().trim().max(120).optional(),
+  leaveRenewable: z.boolean().optional(),
+  leaveRenewalDuration: z.string().trim().max(120).optional(),
+  publicSectorExperienceDuration: z.string().trim().max(120).optional(),
 })
 
 // Edição dos dados cadastrais. PUT /collaborators/:id — OMITE território (#42) e banco/PIX (#40).

@@ -5,7 +5,10 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, screen, fireEvent, cleanup } from '@testing-library/react'
 
-import { LoginForm, type LoginFormProps } from '#modules/auth/client/login/components/forms/login-form.component.tsx'
+import {
+  LoginForm,
+  type LoginFormProps,
+} from '#modules/auth/client/login/components/forms/login-form.component.tsx'
 
 afterEach(() => {
   cleanup()
@@ -18,6 +21,7 @@ const baseProps = (over: Partial<LoginFormProps> = {}): LoginFormProps => ({
   emailPlaceholder: 'seu@email.com',
   passwordPlaceholder: '••••••••',
   submitLabel: 'Entrar',
+  forgotLabel: 'Esqueci Minha Senha',
   loadingLabel: 'Carregando…',
   email: '',
   password: '',
@@ -27,6 +31,7 @@ const baseProps = (over: Partial<LoginFormProps> = {}): LoginFormProps => ({
   onEmailChange: vi.fn(),
   onPasswordChange: vi.fn(),
   onSubmit: vi.fn(),
+  onForgotPassword: vi.fn(),
   ...over,
 })
 
@@ -54,6 +59,13 @@ describe('LoginForm (vestida)', () => {
     expect(onEmailChange).toHaveBeenCalledWith('a@b.com')
     fireEvent.click(screen.getByRole('button', { name: /entrar|carregando/i }))
     expect(onSubmit).toHaveBeenCalled()
+  })
+
+  it('link "Esqueci Minha Senha" dispara onForgotPassword', () => {
+    const onForgotPassword = vi.fn()
+    render(<LoginForm {...baseProps({ onForgotPassword })} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Esqueci Minha Senha' }))
+    expect(onForgotPassword).toHaveBeenCalled()
   })
 
   it('mostra o erro com role="alert"', () => {

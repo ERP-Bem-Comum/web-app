@@ -17,7 +17,7 @@ import type {
   RegisteredTaxInput,
   RegisteredTaxType,
 } from '#modules/financial/client/data/model/document.model.ts'
-import type { OcrExtractedFields } from '#modules/financial/client/data/model/ocr.model.ts'
+import type { OcrError } from '#modules/financial/client/data/model/ocr.model.ts'
 
 // Re-export dos tipos que a UI precisa — as views importam SÓ do view-model (§XI), nunca de client-data.
 export type {
@@ -26,7 +26,7 @@ export type {
   RetentionType,
   RegisteredTaxType,
 } from '#modules/financial/client/data/model/document.model.ts'
-export type { OcrExtractedFields } from '#modules/financial/client/data/model/ocr.model.ts'
+export type { OcrError } from '#modules/financial/client/data/model/ocr.model.ts'
 export type SupplierOption = Readonly<{ id: string; name: string }>
 
 // Parceiro selecionável no picker do hero (Fornecedor/Financiador/Ato/Colaborador). `supplierRef` do
@@ -36,6 +36,16 @@ export type SupplierOption = Readonly<{ id: string; name: string }>
 export type PartnerKind = 'supplier' | 'financier' | 'act' | 'collaborator'
 // `subtitle` = linha secundária no picker: CNPJ (PJ: fornecedor/financiador/ato) ou e-mail (colaborador, PF).
 export type PartnerOption = Readonly<{ id: string; name: string; subtitle: string; kind: PartnerKind }>
+
+/**
+ * Fonte do WEB VIEW do documento ingerido (derivada do `File` no binding). PDF vira `blob:` (iframe);
+ * XML vira texto puro; formato fora da allowlist vira `unsupported`. Shape pura (a view a apresenta).
+ */
+export type DocumentPreviewData =
+  // `file` = fonte do render (pdf.js lê os bytes → sem blob/fetch/CSP); `url` = blob só p/ o link de download.
+  | Readonly<{ kind: 'pdf'; file: File; url: string; fileName: string }>
+  | Readonly<{ kind: 'xml'; text: string; fileName: string }>
+  | Readonly<{ kind: 'unsupported'; fileName: string }>
 
 /** Rótulo i18n do tipo de parceiro. */
 export const partnerKindTag = (kind: PartnerKind): string => `financial.create.partner.kind.${kind}`
@@ -56,12 +66,17 @@ export type ContractCategoView = Readonly<{
   ref: string // contractRef (uuid) — enviado no create; backend deriva a categorização (#48)
   number: string // sequentialNumber (ex.: 0001/2026)
   isServiceOrder: boolean // classificação: true = Ordem de Serviço (OS), false = Contrato (CT) — rótulo do chip
-  centroCusto: string
-  categoria: string
+  centroCusto: string // nome exibível (chip)
+  categoria: string // nome exibível (chip)
   programa: string
   planoOrcamentario: string
   programRef: string | null
   budgetPlanRef: string | null
+  // #502/S3: refs da árvore do plano gravados no contrato — HERDADOS pela cascata do documento (pré-preenche
+  // Plano → Centro → Categoria → Subcategoria quando o fornecedor tem contrato ativo vinculado).
+  costCenterRef: string | null
+  categoryRef: string | null
+  subcategoryRef: string | null
 }>
 export type PartnerHydration = Readonly<{
   bank: SupplierBankView | null
@@ -114,6 +129,7 @@ export type DocumentFormFields = Readonly<{
   paymentMethod: PaymentMethod | ''
   grossValue: string
   issueDate: string // data de emissão (#163) — opcional; ISO YYYY-MM-DD vindo do <input type=date>
+  competencia: string // competência (#197) — opcional; mascarada MM/AAAA (backend recebe YYYY-MM)
   dueDate: string
   description: string
   // Composição: Descontos (discountsCents) e Juros/Multa (interestCents). Editáveis (OCR ou manual).
@@ -128,6 +144,10 @@ export type DocumentFormFields = Readonly<{
   contractRef: string // Categorização: contrato escolhido (UUID) via "Alterar". Vazio = o 1º "Em Andamento".
   programRef: string // Categorização: Programa escolhido (UUID). Vazio = herda o do contrato (se houver).
   categoryRef: string // Categorização: Categoria escolhida (UUID, taxonomia #200). Vazio = não enviada.
+  // Categorização: Subcategoria escolhida (UUID). Cascata: filtrada pela Categoria; zerada ao trocar
+  // Categoria/Centro. #502 (S1): vai ao backend em CAMPO PRÓPRIO `subcategoryRef` (não mais dobrada em
+  // `categoryRef`) — carimbo fiel à árvore + grão fino p/ o relatório Realizado × Planejado. Vazio = não enviada.
+  subcategoryRef: string
   costCenterRef: string // Categorização: Centro de custo escolhido (UUID, #147). Vazio = não enviado.
   approverRef: string // Aprovador escolhido (UUID de usuário, #148). Vazio = não enviado.
   contaDebitoRef: string // "Pagar da conta" — conta-cedente escolhida (UUID, #197). Vazio = não enviada.
@@ -135,7 +155,6 @@ export type DocumentFormFields = Readonly<{
   // (core-api#147 — listas/refs). Vazio = herda o valor do contrato selecionado.
   centroCusto: string
   categoria: string
-  subcategoria: string
   planoOrcamentario: string
   retentions: RetentionFieldsReais
   reformaTributaria: ReformaTributariaFieldsReais
@@ -152,10 +171,109 @@ export const EMPTY_RETENTIONS: RetentionFieldsReais = {
   csll: '',
 }
 
+/**
+ * Chaves de campo que o OCR PODE ter lido do documento (identificação + valores). Exclui os DERIVADOS
+ * (competência = auto da emissão) e os que o operador preenche à mão (pagamento, categorização, aprovador);
+ * a Reforma Tributária (CBS/IBS) também fica de fora do destaque.
+ */
+export type OcrFieldKey =
+  | 'type'
+  | 'supplier' // fornecedor auto-identificado pelo OCR (CNPJ do emitente → parceiro; core-api#560)
+  | 'documentNumber'
+  | 'series'
+  | 'issueDate'
+  | 'dueDate'
+  | 'grossValue'
+  | 'description'
+  | 'accessKey'
+  | 'iss'
+  | 'irrf'
+  | 'inss'
+  | 'pis'
+  | 'cofins'
+  | 'csll'
+
+// Valor em reais (mascarado) só conta como "lido" se > 0 — "0,00"/vazio não sinaliza.
+const isMoneyFilled = (v: string): boolean => {
+  const digits = v.replace(/\D/g, '')
+  return digits !== '' && Number(digits) > 0
+}
+
+/**
+ * Deriva o conjunto de campos a SINALIZAR como lidos pelo OCR (borda âmbar + tag "OCR"). Só numa sessão de
+ * OCR (`isOcrSession`) e só os campos que o documento de fato preencheu (não-vazios / retenção > 0). Fora do
+ * OCR (edição/consulta normal) devolve vazio — nada é destacado. Função PURA (§XI).
+ */
+export const ocrReadFields = (
+  fields: DocumentFormFields | null,
+  isOcrSession: boolean,
+): ReadonlySet<OcrFieldKey> => {
+  const s = new Set<OcrFieldKey>()
+  if (!isOcrSession || fields === null) return s
+  if (fields.type !== '') s.add('type')
+  // Fornecedor lido/auto-identificado pelo OCR (supplierRef resolvido pelo backend #560 → hidratado).
+  if (fields.supplierRef.trim() !== '') s.add('supplier')
+  if (fields.documentNumber.trim() !== '') s.add('documentNumber')
+  if (fields.series.trim() !== '') s.add('series')
+  if (fields.issueDate !== '') s.add('issueDate')
+  if (fields.dueDate !== '') s.add('dueDate')
+  if (isMoneyFilled(fields.grossValue)) s.add('grossValue')
+  if (fields.description.trim() !== '') s.add('description')
+  if (fields.accessKey.trim() !== '') s.add('accessKey')
+  const r = fields.retentions
+  if (isMoneyFilled(r.iss)) s.add('iss')
+  if (isMoneyFilled(r.irrf)) s.add('irrf')
+  if (isMoneyFilled(r.inss)) s.add('inss')
+  if (isMoneyFilled(r.pis)) s.add('pis')
+  if (isMoneyFilled(r.cofins)) s.add('cofins')
+  if (isMoneyFilled(r.csll)) s.add('csll')
+  return s
+}
+
 export const EMPTY_REFORMA_TRIBUTARIA: ReformaTributariaFieldsReais = {
   cbs: '',
   ibsMunicipal: '',
   ibsEstadual: '',
+}
+
+/**
+ * Patch do LEITOR client-side (ADR-0021) → campos do form. Já em REAIS mascarados (a conversão reais→máscara
+ * mora no mapa `document-reading.view.ts`). Só carrega os campos que o leitor de fato preencheu (parcial).
+ */
+export type DocumentReadingPatch = Readonly<{
+  type?: DocumentType
+  documentNumber?: string
+  series?: string
+  issueDate?: string
+  competencia?: string
+  grossValue?: string
+  description?: string
+  accessKey?: string
+  supplierRef?: string
+  retentions?: Partial<RetentionFieldsReais>
+  reformaTributaria?: Partial<ReformaTributariaFieldsReais>
+}>
+
+/**
+ * Aplica o patch do leitor SOBRE os campos atuais (overlay ATÔMICO, PURO §XI). Diferente dos setters do
+ * controller, NÃO dispara o gating por tipo (o patch já vem coerente do mapa) — assim a ordem dos campos no
+ * patch é irrelevante e o cliente vence o rascunho do backend na hidratação (ADR-0021). Blocos aninhados
+ * (retenções/reforma) são mesclados campo-a-campo.
+ */
+export const applyReadingPatch = (
+  fields: DocumentFormFields,
+  patch: DocumentReadingPatch,
+): DocumentFormFields => {
+  const { retentions, reformaTributaria, ...flat } = patch
+  return {
+    ...fields,
+    ...flat,
+    retentions: retentions !== undefined ? { ...fields.retentions, ...retentions } : fields.retentions,
+    reformaTributaria:
+      reformaTributaria !== undefined
+        ? { ...fields.reformaTributaria, ...reformaTributaria }
+        : fields.reformaTributaria,
+  }
 }
 
 const toCents = (reais: string): number => {
@@ -263,9 +381,11 @@ export type ValidationState = 'ok' | 'aviso' | 'pendente'
 export type ValidationItem = Readonly<{ key: string; tag: string; state: ValidationState }>
 
 /**
- * Checklist de Validação (sidebar, Figma). Os dois primeiros itens são DERIVADOS do form (fornecedor
- * identificado, cálculo bruto→líquido íntegro) e o aviso de ISS divergente só aparece quando há ISS;
- * "dados bancários" e "aguarda aprovação" são CHROME (sem backend de validação/aprovação no v1).
+ * Checklist de Validação (sidebar, Figma). Reflete 1:1 os campos OBRIGATÓRIOS do lançamento (o mesmo
+ * conjunto que o `canSubmit` exige / HANDBOOK-financeiro-incluir-documento.md §obrigatórios) para que o
+ * usuário veja CLARAMENTE o que ainda falta preencher: tipo, número, fornecedor, forma de pagamento, valor
+ * (bruto→líquido), vencimento e — só p/ DANFE — chave de acesso. Ao final, os itens informativos (CHROME):
+ * dados bancários, ISS divergente (só quando há ISS) e "aguarda aprovação".
  */
 export const validationChecklist = (
   fields: DocumentFormFields,
@@ -273,17 +393,33 @@ export const validationChecklist = (
 ): readonly ValidationItem[] => {
   const hasSupplier = supplierName.trim() !== '' && fields.supplierRef.trim() !== ''
   const t = retentionTotals(fields)
-  const net = netCents(fields)
-  const calcOk = grossCents(fields) > 0 && net > 0
+  const calcOk = grossCents(fields) > 0 && netCents(fields) > 0
+  const st = (ok: boolean): ValidationState => (ok ? 'ok' : 'pendente')
   const items: ValidationItem[] = [
+    { key: 'type', tag: 'financial.create.validation.type', state: st(fields.type !== '') },
     {
-      key: 'supplier',
-      tag: 'financial.create.validation.supplier',
-      state: hasSupplier ? 'ok' : 'pendente',
+      key: 'documentNumber',
+      tag: 'financial.create.validation.documentNumber',
+      state: st(fields.documentNumber.trim() !== ''),
     },
-    { key: 'calc', tag: 'financial.create.validation.calc', state: calcOk ? 'ok' : 'pendente' },
-    { key: 'bank', tag: 'financial.create.validation.bank', state: 'ok' }, // chrome
+    { key: 'supplier', tag: 'financial.create.validation.supplier', state: st(hasSupplier) },
+    {
+      key: 'paymentMethod',
+      tag: 'financial.create.validation.paymentMethod',
+      state: st(fields.paymentMethod !== ''),
+    },
+    { key: 'calc', tag: 'financial.create.validation.calc', state: st(calcOk) },
+    { key: 'dueDate', tag: 'financial.create.validation.dueDate', state: st(fields.dueDate.trim() !== '') },
   ]
+  // Chave de acesso: obrigatória SÓ p/ DANFE (44 dígitos, #115) — item aparece apenas nesse tipo.
+  if (fields.type === 'DANFE') {
+    items.push({
+      key: 'accessKey',
+      tag: 'financial.create.validation.accessKey',
+      state: st(accessKeyValidFor(fields.type, fields.accessKey)),
+    })
+  }
+  items.push({ key: 'bank', tag: 'financial.create.validation.bank', state: 'ok' }) // chrome
   if (t.iss > 0) {
     items.push({ key: 'iss', tag: 'financial.create.validation.issDivergent', state: 'aviso' }) // chrome
   }
@@ -367,12 +503,17 @@ export const buildCreateInput = (fields: DocumentFormFields): CreateDocumentInpu
         : undefined,
     // #273: complemento da forma de pagamento (linha digitável/cartão/câmbio/livre) — persiste se preenchido.
     paymentDetail: trimToUndefined(fields.paymentComplement),
+    // #197: competência (MM/AAAA → YYYY-MM); undefined se incompleta/inválida.
+    competencia: competenciaToIso(fields.competencia) ?? undefined,
     grossValueCents: String(gross),
     discountsCents: discountsCents(fields) > 0 ? String(discountsCents(fields)) : undefined,
     // "Juros / Multa" (campo único) → interestCents; ambos somam ao líquido, então o total fica correto.
     interestCents: jurosMultaCents(fields) > 0 ? String(jurosMultaCents(fields)) : undefined,
     programRef: trimToUndefined(fields.programRef),
+    // #502 (S1): categoria e subcategoria em campos SEPARADOS — `categoryRef` = a Categoria, `subcategoryRef`
+    // = a FOLHA (subcategoria). O relatório Realizado × Planejado casa pela folha; não dobramos mais em um só.
     categoryRef: trimToUndefined(fields.categoryRef),
+    subcategoryRef: trimToUndefined(fields.subcategoryRef),
     costCenterRef: trimToUndefined(fields.costCenterRef),
     approverRef: trimToUndefined(fields.approverRef),
     contaDebitoRef: trimToUndefined(fields.contaDebitoRef),
@@ -385,32 +526,29 @@ export const buildCreateInput = (fields: DocumentFormFields): CreateDocumentInpu
 }
 
 /**
- * Pode salvar RASCUNHO? Mínimo que o core-api exige p/ asDraft:true (sem dueDate nem checagem de líquido):
- * tipo, número, fornecedor, forma e bruto > 0.
+ * Pode salvar RASCUNHO? SEMPRE (#534): o core-api aceita rascunho parcial (todos os campos opcionais em
+ * asDraft; superRefine reexige só p/ asDraft:false). Rascunho é "salvar e concluir depois" — o botão nunca trava.
  */
-export const canSaveDraft = (fields: DocumentFormFields): boolean =>
-  fields.type !== '' &&
-  fields.documentNumber.trim() !== '' &&
-  fields.supplierRef.trim() !== '' &&
-  fields.paymentMethod !== '' &&
-  grossCents(fields) > 0
+export const canSaveDraft = (_fields: DocumentFormFields): boolean => true
 
-/** Monta o input de RASCUNHO (asDraft:true) — dueDate é opcional; ou `null` se nem o mínimo está pronto. */
-export const buildDraftInput = (fields: DocumentFormFields): CreateDocumentInput | null => {
-  if (!canSaveDraft(fields) || fields.type === '' || fields.paymentMethod === '') return null
+/** Monta o input de RASCUNHO (asDraft:true) — parcial: envia `undefined` para os campos ainda vazios. */
+export const buildDraftInput = (fields: DocumentFormFields): CreateDocumentInput => {
   const gross = grossCents(fields)
+  // Retenções só fazem sentido com bruto > 0 (o percentual deriva do bruto) — sem bruto, sem retenção.
   const t = retentionTotals(fields)
   const retentions: RetentionInput[] = []
-  if (t.iss > 0) retentions.push(retentionInput('ISS', t.iss, gross))
-  if (t.irrf > 0) retentions.push(retentionInput('IRRF', t.irrf, gross))
-  if (t.inss > 0) retentions.push(retentionInput('INSS', t.inss, gross))
-  if (t.csrf > 0) retentions.push(retentionInput('CSRF', t.csrf, gross))
+  if (gross > 0) {
+    if (t.iss > 0) retentions.push(retentionInput('ISS', t.iss, gross))
+    if (t.irrf > 0) retentions.push(retentionInput('IRRF', t.irrf, gross))
+    if (t.inss > 0) retentions.push(retentionInput('INSS', t.inss, gross))
+    if (t.csrf > 0) retentions.push(retentionInput('CSRF', t.csrf, gross))
+  }
   return {
-    type: fields.type,
-    documentNumber: fields.documentNumber.trim(),
+    type: fields.type === '' ? undefined : fields.type,
+    documentNumber: trimToUndefined(fields.documentNumber),
     series: trimToUndefined(fields.series),
-    supplierRef: fields.supplierRef,
-    paymentMethod: fields.paymentMethod,
+    supplierRef: trimToUndefined(fields.supplierRef),
+    paymentMethod: fields.paymentMethod === '' ? undefined : fields.paymentMethod,
     // Rascunho não exige a chave, mas se já houver 44 dígitos, persiste junto (#115).
     accessKey:
       accessKeyDigits(fields.accessKey).length === ACCESS_KEY_LEN
@@ -418,11 +556,15 @@ export const buildDraftInput = (fields: DocumentFormFields): CreateDocumentInput
         : undefined,
     // #273: complemento da forma de pagamento — persiste no rascunho se já preenchido.
     paymentDetail: trimToUndefined(fields.paymentComplement),
-    grossValueCents: String(gross),
+    // #197: competência (MM/AAAA → YYYY-MM); undefined se incompleta/inválida.
+    competencia: competenciaToIso(fields.competencia) ?? undefined,
+    grossValueCents: gross > 0 ? String(gross) : undefined,
     discountsCents: discountsCents(fields) > 0 ? String(discountsCents(fields)) : undefined,
     interestCents: jurosMultaCents(fields) > 0 ? String(jurosMultaCents(fields)) : undefined,
     programRef: trimToUndefined(fields.programRef),
+    // #502 (S1): categoria e subcategoria em campos SEPARADOS (mesma regra do create) — persiste no rascunho.
     categoryRef: trimToUndefined(fields.categoryRef),
+    subcategoryRef: trimToUndefined(fields.subcategoryRef),
     costCenterRef: trimToUndefined(fields.costCenterRef),
     approverRef: trimToUndefined(fields.approverRef),
     contaDebitoRef: trimToUndefined(fields.contaDebitoRef),
@@ -449,6 +591,7 @@ export type FieldLocks = Readonly<{
   paymentMethod: boolean
   grossValue: boolean
   issueDate: boolean // #163 — imutável após criação (o PATCH não aceita issueDate)
+  competencia: boolean // #197 — imutável após criação (mesma regra do issueDate)
   dueDate: boolean
   description: boolean
   retentions: boolean
@@ -462,6 +605,7 @@ export const NO_LOCKS: FieldLocks = {
   paymentMethod: false,
   grossValue: false,
   issueDate: false,
+  competencia: false,
   dueDate: false,
   description: false,
   retentions: false,
@@ -478,6 +622,7 @@ export const editLocksFor = (status: DocumentStatus): FieldLocks => {
     paymentMethod: true,
     retentions: true,
     issueDate: true, // #163 — emissão não é ajustável (o PATCH não a aceita)
+    competencia: true, // #197 — competência não é ajustável (mesma regra do issueDate)
     // Ajustáveis — liberados apenas em "Aberto".
     grossValue: !open,
     dueDate: !open,
@@ -521,6 +666,7 @@ export const hydrateFieldsFromDetail = (d: DocumentDetail): DocumentFormFields =
     paymentMethod: d.paymentMethod ?? '',
     grossValue: d.grossValueCents !== null ? centsToReais(d.grossValueCents) : '',
     issueDate: d.issueDate ?? '', // #163 — hidrata a emissão no modo edição/consulta
+    competencia: d.competencia !== null ? competenciaFromIso(d.competencia) : '', // #197 — YYYY-MM → MM/AAAA
     dueDate: d.dueDate ?? '',
     description: d.description ?? '',
     discounts: '', // composição não exposta no detalhe hoje (core-api#95) → edição via composição fica no create
@@ -530,12 +676,12 @@ export const hydrateFieldsFromDetail = (d: DocumentDetail): DocumentFormFields =
     contractRef: '', // o GET /:id não expõe o contrato vinculado (core-api#95) → vazio na hidratação
     programRef: '', // o GET /:id não expõe a categorização (core-api#95) → vazio na hidratação
     categoryRef: '',
+    subcategoryRef: '',
     costCenterRef: '',
     approverRef: '',
     contaDebitoRef: '', // o GET /:id não expõe a conta-débito (core-api#95) → vazio na hidratação
     centroCusto: '',
     categoria: '',
-    subcategoria: '',
     planoOrcamentario: '',
     retentions,
     // Reforma Tributária não vem no GET de detalhe hoje (enriquecimento = core-api#95) e é imutável no
@@ -544,40 +690,27 @@ export const hydrateFieldsFromDetail = (d: DocumentDetail): DocumentFormFields =
   }
 }
 
-// ── OCR → form (costura p/ core-api#62) ───────────────────────────────────────
-// Converte os campos extraídos pelo OCR (cents/ISO) no shape do form (reais mascarado/ISO). PURA. O
-// resultado é um PATCH parcial: só os campos que o OCR trouxe (o operador confirma; OCR nunca confirma).
-// CSRF agrega em `pis` (mesma convenção da hidratação do detalhe). `supplierTaxId` exige resolver o
-// parceiro (passo futuro) → não entra no patch aqui.
-const ocrRetentionsToFields = (
-  rets: readonly Readonly<{ type: RetentionType; valueCents: string }>[],
-): RetentionFieldsReais => {
-  const out: { -readonly [K in keyof RetentionFieldsReais]: string } = { ...EMPTY_RETENTIONS }
-  for (const r of rets) {
-    const reais = centsToReais(r.valueCents)
-    if (r.type === 'ISS') out.iss = reais
-    else if (r.type === 'IRRF') out.irrf = reais
-    else if (r.type === 'INSS') out.inss = reais
-    else out.pis = reais // CSRF → pis (agregado, igual à hidratação do detalhe)
+// ── Ingestão por OCR (costura core-api#62) ────────────────────────────────────
+// Estado do fluxo de ingestão (a UI exibe a mensagem conforme). `done` = rascunho criado (transitório, antes
+// de navegar p/ o modo edição). Não há mais `unavailable` (o backend existe) nem patch-in-place (o backend
+// persiste os campos extraídos num rascunho; o operador os revisa na tela de edição, não inline).
+export type OcrStatus = 'idle' | 'running' | 'done' | 'error'
+
+/** Tag i18n da mensagem de erro real da ingestão (mime/tamanho/arquivo/auth/servidor). PURA, exaustiva. */
+export const ocrErrorTag = (error: OcrError): string => {
+  switch (error) {
+    case 'invalid-mime':
+      return 'financial.create.ocr.error.invalidMime'
+    case 'file-too-large':
+      return 'financial.create.ocr.error.tooLarge'
+    case 'invalid-file':
+      return 'financial.create.ocr.error.invalidFile'
+    case 'unauthorized':
+      return 'financial.create.ocr.error.unauthorized'
+    case 'server':
+      return 'financial.create.ocr.error.server'
   }
-  return out
 }
-
-// Estado do fluxo de OCR (a UI exibe a mensagem conforme). `unavailable` = backend ausente (core-api#62).
-export type OcrStatus = 'idle' | 'running' | 'unavailable' | 'error' | 'done'
-
-export const ocrToFormPatch = (f: OcrExtractedFields): Partial<DocumentFormFields> => ({
-  ...(f.type !== undefined ? { type: f.type } : {}),
-  ...(f.documentNumber !== undefined ? { documentNumber: f.documentNumber } : {}),
-  ...(f.series !== undefined ? { series: f.series } : {}),
-  ...(f.grossValueCents !== undefined ? { grossValue: centsToReais(f.grossValueCents) } : {}),
-  ...(f.issueDate !== undefined ? { issueDate: f.issueDate } : {}), // #163 — OCR extrai a emissão
-  ...(f.dueDate !== undefined ? { dueDate: f.dueDate } : {}),
-  ...(f.description !== undefined ? { description: f.description } : {}),
-  ...(f.retentions !== undefined && f.retentions.length > 0
-    ? { retentions: ocrRetentionsToFields(f.retentions) }
-    : {}),
-})
 
 /** Pode salvar o AJUSTE? Bruto > 0, vencimento preenchido e líquido (bruto − retenções atuais) > 0. */
 export const canSaveEdit = (fields: DocumentFormFields, detail: DocumentDetail): boolean => {
@@ -600,6 +733,8 @@ export const buildAdjustInput = (
     grossValueCents: String(grossCents(fields)),
     dueDate: fields.dueDate,
     description: trimToUndefined(fields.description) ?? null,
+    // #284: complemento da forma editável no ajuste — vazio vira null (limpa no backend).
+    paymentDetail: trimToUndefined(fields.paymentComplement) ?? null,
   }
 }
 
@@ -747,4 +882,39 @@ export const formatReaisBRL = (reais: string): string => {
 export const formatDue = (iso: string): string => {
   const p = iso.split('-')
   return p.length === 3 ? `${p[2] ?? ''}/${p[1] ?? ''}/${p[0] ?? ''}` : iso
+}
+
+// ── Competência (#197) — UI usa MM/AAAA; backend quer YYYY-MM. Helpers de conversão nas duas pontas. ──
+/** Máscara as-you-type p/ Competência: dígitos → "MM/AAAA" (2 do mês + 4 do ano). Idempotente. */
+export const maskCompetencia = (v: string): string => {
+  const digits = v.replace(/\D/g, '').slice(0, 6)
+  if (digits.length <= 2) return digits
+  return `${digits.slice(0, 2)}/${digits.slice(2)}`
+}
+
+/** "MM/AAAA" → "YYYY-MM"; null se incompleto/inválido (mês 1–12, ano 4 dígitos). */
+export const competenciaToIso = (masked: string): string | null => {
+  const digits = masked.replace(/\D/g, '')
+  if (digits.length !== 6) return null
+  const month = Number.parseInt(digits.slice(0, 2), 10)
+  if (month < 1 || month > 12) return null
+  return `${digits.slice(2)}-${digits.slice(0, 2)}`
+}
+
+/** "YYYY-MM" → "MM/AAAA". */
+export const competenciaFromIso = (iso: string): string => {
+  const p = iso.split('-')
+  return p.length === 2 ? `${p[1] ?? ''}/${p[0] ?? ''}` : iso
+}
+
+/**
+ * Emissão (ISO "YYYY-MM-DD" do `<input type=date>`) → Competência "MM/AAAA" (mês/ano da emissão).
+ * Competência deixou de ser digitável: reflete AUTOMATICAMENTE o mês/ano da Emissão. "" quando a emissão
+ * está vazia/incompleta (mantém a competência opcional — #197).
+ */
+export const competenciaFromIssueDate = (issueDate: string): string => {
+  const p = issueDate.split('-') // [YYYY, MM, DD]
+  const year = p[0] ?? ''
+  const month = p[1] ?? ''
+  return year.length === 4 && month.length === 2 ? `${month}/${year}` : ''
 }
