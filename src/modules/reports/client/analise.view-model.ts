@@ -23,7 +23,7 @@ import {
   type MonthRange,
 } from './data/analise-pagamentos.placeholder.ts'
 import { ANALISE_RECEBIMENTOS_RAW } from './data/analise-recebimentos.placeholder.ts'
-import type { PaymentAnalysis } from './data/model/payment-analysis.model.ts'
+import type { PaymentAnalysis, PaymentAnalysisPlan } from './data/model/payment-analysis.model.ts'
 
 /** Nível do nó na árvore: plano orçamentário (0) → centro de custo (folha, 1). */
 export type AnaliseLevel = 'plano' | 'costCenter'
@@ -293,6 +293,62 @@ const MONTH_KEY_RE = /^\d{4}-\d{2}$/
  * planos [] → a `AnaliseReportView` cai no empty-state honesto. `totalPeriodo` = `totalValueOfPeriod` (contrato).
  * `name` null → "Sem plano" / "Sem centro de custo". Sem `throw` (§II), sem `Date` (à prova de "Invalid Date").
  */
+/**
+ * Recorte CLIENT-SIDE da matriz do #446. Existe porque o endpoint é `.strict()` e só aceita `dueStart`/
+ * `dueEnd`/`status` — mas o grão que ele DEVOLVE (Plano × Centro de Custo × mês) já carrega o que estes três
+ * filtros precisam. Então Programa/Plano/Centro aplicam AQUI, sobre a resposta, sem ida ao servidor.
+ * (Categoria/Subcategoria/Conta NÃO cabem: saíram do grão na spec 051 e não vêm na resposta.)
+ *
+ * `planIds` traduz o **Programa**: a page resolve quais planos pertencem ao programa escolhido e passa a lista.
+ * Plano sem id (bucket "Sem plano") não pertence a programa nenhum → sai quando há recorte por programa.
+ *
+ * Recomputa `total`/`itens` do plano SÓ quando o recorte de Centro está ativo — sem isso o total do plano
+ * continuaria somando centros que a tela deixou de mostrar. Sem recorte, devolve a MESMA referência (o
+ * `useMemo` do binding não invalida à toa). Puro, sem `throw` (§II).
+ */
+export type AnaliseSelection = Readonly<{
+  planIds?: readonly string[]
+  planId?: string
+  costCenterId?: string
+}>
+
+export function filterPaymentAnalysis(analysis: PaymentAnalysis, sel: AnaliseSelection): PaymentAnalysis {
+  const byProgram = sel.planIds !== undefined ? new Set(sel.planIds) : null
+  const byPlan = sel.planId
+  const byCostCenter = sel.costCenterId
+  if (byProgram === null && byPlan === undefined && byCostCenter === undefined) return analysis
+
+  const data: PaymentAnalysisPlan[] = []
+  for (const plano of analysis.data) {
+    if (byPlan !== undefined && plano.id !== byPlan) continue
+    if (byProgram !== null && (plano.id === null || !byProgram.has(plano.id))) continue
+
+    if (byCostCenter === undefined) {
+      data.push(plano)
+      continue
+    }
+    const costCenters = plano.costCenters.filter((cc) => cc.id === byCostCenter)
+    // Plano que não tem o centro escolhido sai inteiro (linha vazia seria pior que ausência).
+    if (costCenters.length === 0) continue
+
+    const monthTotals = new Map<string, number>()
+    let total = 0
+    for (const cc of costCenters) {
+      total += cc.total
+      for (const it of cc.itens)
+        monthTotals.set(it.monthYear, (monthTotals.get(it.monthYear) ?? 0) + it.total)
+    }
+    data.push({
+      ...plano,
+      total,
+      itens: [...monthTotals].map(([monthYear, t]) => ({ monthYear, total: t })),
+      costCenters,
+    })
+  }
+
+  return { totalValueOfPeriod: data.reduce((acc, p) => acc + p.total, 0), data }
+}
+
 export function analiseReportFromAnalysis(analysis: PaymentAnalysis): AnaliseReport {
   const monthKeys: string[] = []
   for (const plano of analysis.data) {

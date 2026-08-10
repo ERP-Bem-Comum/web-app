@@ -9,7 +9,7 @@
  * meses visíveis vêm do MIN..MAX real da resposta; os rótulos de mês (eixo/tabela/CSV) vêm PRONTOS e VÁLIDOS da
  * ViewModel (`formatMonthLabel`, por ÍNDICE) — NUNCA "Invalid Date" (bug do relatório legado que não reproduzimos).
  */
-import { useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
@@ -21,6 +21,7 @@ import {
 
 import { useAnalisePagamentos, wideDueWindow, type AnalisePagamentosQuery } from '../analise.binding.ts'
 import { useAnaliseFilterOptions } from '../analise-filters.binding.ts'
+import type { AnaliseSelection } from '../analise.view-model.ts'
 import { buildFilterSummaryParts, formatDueRange, type FilterOption } from '../filters-summary.view-model.ts'
 import {
   AnaliseReportView,
@@ -33,8 +34,39 @@ import { ReportStatePanel } from '../components/report-state-panel.component.tsx
 const t = createTranslator(ptBR)
 
 // Seleção da cascata de categorização (só p/ dirigir os dropdowns; o #446 não aplica esses filtros).
-type CascadeSel = Readonly<{ plano: string; centro: string; categoria: string; subcategoria: string }>
-const EMPTY_SEL: CascadeSel = { plano: '', centro: '', categoria: '', subcategoria: '' }
+type CascadeSel = Readonly<{
+  programa: string
+  plano: string
+  centro: string
+  categoria: string
+  subcategoria: string
+}>
+const EMPTY_SEL: CascadeSel = { programa: '', plano: '', centro: '', categoria: '', subcategoria: '' }
+
+/**
+ * Recorte APLICADO que não vai ao servidor (o #446 é `.strict()`): Programa/Plano/Centro de Custo. O grão da
+ * resposta (Plano × CC × mês) já os carrega, então "Filtrar" commita isto e o binding recorta o dado baixado.
+ * Categoria/Subcategoria/Conta ficam de fora — não existem na resposta (spec 051 tirou a categoria do grão).
+ */
+type ClientSel = Readonly<{ programa: string; plano: string; centro: string }>
+const EMPTY_CLIENT_SEL: ClientSel = { programa: '', plano: '', centro: '' }
+
+/**
+ * Traduz o recorte da tela no `AnaliseSelection` do view-model. O **Programa** vira a lista de planos daquele
+ * programa (`planoPrograma`); programa sem nenhum plano conhecido → lista VAZIA, que recorta tudo — é o
+ * resultado honesto ("nada deste programa nesta janela"), não um filtro ignorado.
+ */
+function toSelection(sel: ClientSel, programByPlan: ReadonlyMap<string, string>): AnaliseSelection {
+  const planIds =
+    sel.programa === ''
+      ? undefined
+      : [...programByPlan].filter(([, prog]) => prog === sel.programa).map(([id]) => id)
+  return {
+    planIds,
+    planId: sel.plano === '' ? undefined : sel.plano,
+    costCenterId: sel.centro === '' ? undefined : sel.centro,
+  }
+}
 
 // Draft do Período (De/Até em `YYYY-MM-DD`; `dueTo` EXCLUSIVO no backend). Vazio → sem recorte (defaultRange).
 type PeriodDraft = Readonly<{ dueFrom: string; dueTo: string }>
@@ -70,13 +102,21 @@ export function AnalisePagamentosPage(): ReactNode {
     status: '',
   })
 
+  // Opções dos dropdowns. Plano carrega `value=id` — dirige a cascata E o recorte; `planoPrograma` traduz o
+  // Programa em planos.
+  const filterOpts = useAnaliseFilterOptions()
+  // Recorte client-side APLICADO (Programa/Plano/Centro). Memoizado: referência estável → o binding não
+  // recomputa a matriz a cada render.
+  const [appliedSel, setAppliedSel] = useState<ClientSel>(EMPTY_CLIENT_SEL)
+  const selection = useMemo(
+    () => toSelection(appliedSel, filterOpts.planoPrograma),
+    [appliedSel, filterOpts.planoPrograma],
+  )
   // Server-state REAL do core-api (#446) com o período APLICADO: loading | error | ready. Sem período aplicado
   // → o binding usa a janela ampla default. O empty-state honesto (resposta vazia) é resolvido na View.
-  const state = useAnalisePagamentos(applied)
-  // Opções populate-only (Programa/Plano/Conta). Plano carrega `value=id` — DIRIGE a cascata abaixo.
-  const filterOpts = useAnaliseFilterOptions()
+  const state = useAnalisePagamentos(applied, selection)
   // Cascata de categorização (ADR-0051): Centro/Categoria/Subcategoria vêm da ÁRVORE do plano selecionado, não
-  // do catálogo flat. Só reflete o plano (o #446 não aplica). Hooks SEMPRE antes dos early-returns (Rules of Hooks).
+  // do catálogo flat. Hooks SEMPRE antes dos early-returns (Rules of Hooks).
   const [sel, setSel] = useState<CascadeSel>(EMPTY_SEL)
   const centroOptions = useCostCenterOptionsFromPlan(sel.plano)
   const categoriaOptions = useCategoryOptionsFromPlan(sel.plano, sel.centro)
@@ -139,13 +179,31 @@ export function AnalisePagamentosPage(): ReactNode {
     emptyHint: t('reports.analise.emptyHint'),
   }
 
+  // Programa: CONTROLADO e aplicável. Opções do endpoint de Programas (rótulo = sigla/nome), que é a MESMA
+  // derivação do `planoPrograma` — por isso o value pode ser o próprio rótulo.
+  const programaOptions: readonly FilterOption[] = filterOpts.programa.map((p) => ({ value: p, label: p }))
+  const programaFilter = {
+    options: programaOptions,
+    value: sel.programa,
+    onChange: (v: string): void => {
+      // Trocar o Programa zera a cascata inteira (o plano anterior pode não ser deste programa).
+      setSel({ programa: v, plano: '', centro: '', categoria: '', subcategoria: '' })
+    },
+  }
+
+  // Programa escolhido ESTREITA a lista de Planos (só os daquele programa) — o mesmo mapa que recorta o dado.
+  const planoOptions =
+    sel.programa === ''
+      ? filterOpts.plano
+      : filterOpts.plano.filter((o) => filterOpts.planoPrograma.get(o.value) === sel.programa)
+
   // Cascata controlada: trocar um nível ZERA os dependentes (evita seleção órfã do plano anterior).
   const cascade: AnaliseCascadeModel = {
     plano: {
-      options: filterOpts.plano,
+      options: planoOptions,
       value: sel.plano,
       onChange: (v) => {
-        setSel({ plano: v, centro: '', categoria: '', subcategoria: '' })
+        setSel((s) => ({ ...s, plano: v, centro: '', categoria: '', subcategoria: '' }))
       },
     },
     centro: {
@@ -179,9 +237,9 @@ export function AnalisePagamentosPage(): ReactNode {
     { value: 'Paid', label: t('financial.list.chip.pago') },
   ]
 
-  // Resumo dos filtros APLICADOS (subtítulo) — do `appliedView` (o que o usuário aplicou), não do query interno.
-  // Na Análise, os que de fato filtram o #446: PERÍODO + STATUS (a cascata não aplica → não entra). Status
-  // resolve value→label (Open→Aberto); período/status vazios são pulados; nada aplicado → sem linha.
+  // Resumo dos filtros APLICADOS (subtítulo) — do que o usuário DE FATO aplicou, não do query interno. Cobre os
+  // 5 que filtram o resultado: Período e Status no servidor (#446), Programa/Plano/Centro no cliente. Vazios são
+  // pulados; nada aplicado → sem linha. Status e Plano resolvem value→label (Open→Aberto; id→"2026 ABC 1.0").
   const subtitleParts = buildFilterSummaryParts([
     {
       label: labels.filters.periodo,
@@ -191,12 +249,17 @@ export function AnalisePagamentosPage(): ReactNode {
       }),
     },
     { label: labels.filters.status, value: appliedView.status, options: statusOptions },
+    { label: labels.filters.programa, value: appliedSel.programa, options: programaOptions },
+    { label: labels.filters.plano, value: appliedSel.plano, options: filterOpts.plano },
+    { label: labels.filters.centro, value: appliedSel.centro, options: centroOptions },
   ])
 
-  // Período + Status controlados: mudar um campo só edita o draft; "Filtrar" commita AMBOS → re-busca (§XI).
+  // "Filtrar" commita TUDO de uma vez: Período/Status viram query (refetch) e Programa/Plano/Centro viram o
+  // recorte client-side. Mudar um campo só edita o draft — a tela não se mexe antes do clique (§XI).
   const aplicar = (): void => {
     setApplied(toQuery(periodDraft, statusDraft))
     setAppliedView({ dueFrom: periodDraft.dueFrom, dueTo: periodDraft.dueTo, status: statusDraft })
+    setAppliedSel({ programa: sel.programa, plano: sel.plano, centro: sel.centro })
   }
   const period: AnalisePeriodModel = {
     dueFrom: periodDraft.dueFrom,
@@ -223,6 +286,7 @@ export function AnalisePagamentosPage(): ReactNode {
       cascade={cascade}
       period={period}
       statusFilter={statusFilter}
+      programaFilter={programaFilter}
       subtitleParts={subtitleParts}
     />
   )
