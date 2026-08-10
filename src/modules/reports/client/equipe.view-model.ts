@@ -173,6 +173,41 @@ export const TEAM_REGISTRATION_STATUSES = ['Complete', 'PreRegistration'] as con
  */
 export const AGE_RANGE_NA = 'NA'
 
+/**
+ * Distribuição de `rows` sobre um TEMPLATE de categorias (id + rótulo já resolvidos pela View).
+ *
+ * Existe porque os 3 gráficos demográficos (Gênero / Idade / Raça-cor) liam a AGREGAÇÃO do backend, que não
+ * conhece os filtros da tela: filtrar "Situação Cadastral = Cadastrado" recortava a tabela e deixava o
+ * gráfico intacto — a pessoa em pré-cadastro continuava contada (P.O., 09/08). Pior, a % usava o total
+ * FILTRADO como denominador com contagens NÃO filtradas. Agora a contagem sai das mesmas linhas da tabela.
+ *
+ * O template continua vindo do backend (ordem e vocabulário canônicos). Categoria do dado que não esteja
+ * nele é ACRESCENTADA no fim, com o próprio código de rótulo: a soma é sempre igual ao total de linhas —
+ * nada de gente evaporando na passagem, que é como este relatório já apagou identidades antes.
+ */
+export function countByTemplate(
+  rows: readonly TeamMemberRow[],
+  templateIds: readonly string[],
+  keyOf: (row: TeamMemberRow) => string,
+): readonly Readonly<{ id: string; count: number }>[] {
+  const counts = new Map<string, number>(templateIds.map((id) => [id, 0]))
+  const extras: string[] = []
+  for (const row of rows) {
+    const key = keyOf(row)
+    if (!counts.has(key)) extras.push(key)
+    counts.set(key, (counts.get(key) ?? 0) + 1)
+  }
+  return [...templateIds, ...new Set(extras)].map((id) => ({ id, count: counts.get(id) ?? 0 }))
+}
+
+/** Esconde categoria zerada — o gráfico desenha quem tem gente (paridade com o legado). */
+export function withoutEmptyCategories(cats: readonly CategoryCount[]): readonly CategoryCount[] {
+  return cats.filter((c) => c.count > 0)
+}
+
+/** Chave de gênero/raça de uma linha: a sentinela honesta de "não informado" vira o `NA` do backend. */
+export const categoryKeyOf = (value: string): string => (value === NA_SENTINEL ? 'NA' : value)
+
 /** Faixa etária de uma idade, no vocabulário do gráfico. `null` (sem nascimento) → `NA`. Sem `throw` (§II). */
 export function faixaEtariaIdOf(idade: number | null): string {
   if (idade === null) return AGE_RANGE_NA

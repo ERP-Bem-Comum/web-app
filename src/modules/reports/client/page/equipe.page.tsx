@@ -32,8 +32,13 @@ import {
   pageSlice,
   PER_PAGE_DEFAULT,
   ANOS,
+  countByTemplate,
+  withoutEmptyCategories,
+  categoryKeyOf,
+  faixaEtariaIdOf,
   type TeamMemberRow,
   type TeamFilters,
+  type CategoryCount,
 } from '../equipe.view-model.ts'
 import { buildFilterSummaryParts } from '../filters-summary.view-model.ts'
 import { useEquipe, useEquipeDemographics } from '../equipe.binding.ts'
@@ -133,13 +138,43 @@ const labelOrEmpty = (
 const EMPTY_ROWS: readonly TeamMemberRow[] = []
 
 /**
- * Os 3 gráficos demográficos (Gênero/Idade/Raça-cor) consomem a AGREGAÇÃO do endpoint dedicado
- * (`useEquipeDemographics` → `demographics.{gender,ageRange,race}`) — NUNCA linha-por-pessoa (Opção A / LGPD,
- * decisão da P.O. 2026-07-20: só estatística agregada cruza a fronteira). Vazios só quando não há colaborador
- * com esses campos preenchidos (data, não wiring).
+ * Distribuição de um gráfico demográfico: conta as LINHAS sobre o catálogo de categorias da API e resolve o
+ * rótulo. Prioridade do rótulo: catálogo do FRONT (mesmo texto dos filtros e da tabela) → rótulo da API
+ * (categoria nova aparece sem release) → código cru (não deveria acontecer, mas nome feio é melhor que
+ * categoria invisível). `grupo` ausente = sem tradução no front (faixa etária).
+ */
+function distribuicao(
+  rows: readonly TeamMemberRow[],
+  catalogo: readonly CategoryCount[],
+  keyOf: (r: TeamMemberRow) => string,
+  grupo?: 'gender' | 'race',
+): readonly CategoryCount[] {
+  const daApi = new Map(catalogo.map((c) => [c.id, c.label]))
+  return withoutEmptyCategories(
+    countByTemplate(
+      rows,
+      catalogo.map((c) => c.id),
+      keyOf,
+    ).map(({ id, count }) => {
+      const doCatalogo = grupo === undefined ? id : labeled(grupo)(id).label
+      return { id, label: doCatalogo === id ? (daApi.get(id) ?? id) : doCatalogo, count }
+    }),
+  )
+}
+
+/**
+ * Os 3 gráficos demográficos (Gênero/Idade/Raça-cor) contam as LINHAS FILTRADAS. A agregação do backend
+ * (`useEquipeDemographics`) entra só como CATÁLOGO: quais categorias existem, em que ordem, com que rótulo —
+ * inclusive as que ninguém preencheu, que o filtro precisa listar e o front não pode inventar.
  *
- * As COLUNAS por-pessoa (idade/gênero/raça-cor) já mostram o valor real: o `/reports/team` sempre mandou os
- * códigos, era o schema de borda do BFF que os descartava calado. Agregado e por-pessoa saem da mesma fonte.
+ * Era o contrário: os gráficos liam os números agregados, que não conhecem os filtros da tela. Filtrar
+ * "Situação Cadastral = Cadastrado" recortava a tabela e deixava o gráfico intacto — quem estava em
+ * pré-cadastro seguia contado (P.O., 09/08). E a % usava o total FILTRADO como denominador com contagens
+ * NÃO filtradas, então os percentuais nem fechavam.
+ *
+ * A premissa "só estatística agregada cruza a fronteira" (Opção A, 2026-07-20) deixou de valer quando o
+ * `/reports/team` passou a entregar idade/gênero/raça POR PESSOA — sempre entregou, na verdade; era o schema
+ * de borda do BFF que descartava as chaves calado. Contar aqui não expõe nada que a tabela já não mostre.
  */
 
 /** Baixa o CSV via Blob + anchor (client-side; o backend entregará JSON depois). */
@@ -207,14 +242,39 @@ export function EquipePage(): ReactNode {
     [filterOpts],
   )
 
-  // Faixa etária: id e rótulo das MESMAS categorias que a API usa no gráfico "Idade" — sem dicionário local,
-  // então filtro e gráfico não divergem. Vem de `ageRangeAll` (com as vazias): o gráfico não desenha barra de
-  // ninguém, mas o filtro é lista fechada e mostra as 6 faixas sempre. O corte por pessoa é local
-  // (`faixaEtariaIdOf`) porque o backend só publica a faixa AGREGADA. Demografia carregando/falhou → lista
-  // vazia (só "Todos"): nada de faixa inventada pelo front.
+  // Faixa etária: as MESMAS categorias que a API publica no gráfico "Idade" — sem dicionário local, então
+  // filtro e gráfico não divergem. Todas as faixas aparecem, inclusive as sem ninguém (é lista fechada; faixa
+  // sumindo do select lê como filtro quebrado). O corte por pessoa é local (`faixaEtariaIdOf`) porque o
+  // backend só publica a faixa AGREGADA. Demografia carregando/falhou → só "Todos": nada inventado no front.
   const faixaEtariaOptions = useMemo<readonly SelectOption[]>(
-    () => demographics.ageRangeAll.map((c) => ({ value: c.id, label: c.label })),
-    [demographics.ageRangeAll],
+    () => demographics.ageRange.map((c) => ({ value: c.id, label: c.label })),
+    [demographics.ageRange],
+  )
+
+  /**
+   * Os 3 gráficos demográficos contam as LINHAS FILTRADAS, não a agregação do backend — que não conhece os
+   * filtros da tela e por isso ficava parada enquanto a tabela recortava.
+   *
+   * O rótulo sai primeiro do catálogo do front (o mesmo dos filtros e da tabela, no vocabulário que o cliente
+   * pediu) e só cai no rótulo da API quando o front não conhece o código — assim uma categoria nova continua
+   * aparecendo sozinha, sem release, e nenhuma categoria fica com dois nomes diferentes na mesma tela.
+   */
+  const generoSlices = useMemo(
+    () => distribuicao(filteredRows, demographics.gender, (r) => categoryKeyOf(r.genero), 'gender'),
+    [filteredRows, demographics.gender],
+  )
+  const racaBars = useMemo(
+    () => distribuicao(filteredRows, demographics.race, (r) => categoryKeyOf(r.racaCor), 'race'),
+    [filteredRows, demographics.race],
+  )
+  // Idade é o único dos três sem rótulo no catálogo do front: "30 a 39" só existe na resposta da API. Sem
+  // catálogo (query falhou/403) o gráfico fica no empty-state — melhor do que desenhar `DE_30_A_39` na tela.
+  const idadeBars = useMemo(
+    () =>
+      demographics.ageRange.length === 0
+        ? []
+        : distribuicao(filteredRows, demographics.ageRange, (r) => faixaEtariaIdOf(r.idade)),
+    [filteredRows, demographics.ageRange],
   )
 
   // Paginação da tabela sobre o FILTRADO (fatia PURA da ViewModel; o UI-state page/perPage mora aqui).
@@ -456,7 +516,7 @@ export function EquipePage(): ReactNode {
                 </div>
                 <div className={chartPad}>
                   <EquipeGeneroDonut
-                    slices={demographics.gender}
+                    slices={generoSlices}
                     centerValue={String(totalCount)}
                     centerCaption={t('reports.equipe.charts.centerCaption')}
                     emptyLabel={t('reports.equipe.chartUnavailable')}
@@ -472,7 +532,7 @@ export function EquipePage(): ReactNode {
                 </div>
                 <div className={chartPad}>
                   <EquipeHorizontalBars
-                    bars={demographics.ageRange}
+                    bars={idadeBars}
                     total={totalCount}
                     emptyLabel={t('reports.equipe.chartUnavailable')}
                     animate={animate}
@@ -487,7 +547,7 @@ export function EquipePage(): ReactNode {
                 </div>
                 <div className={chartPad}>
                   <EquipeVerticalBars
-                    bars={demographics.race}
+                    bars={racaBars}
                     total={totalCount}
                     emptyLabel={t('reports.equipe.chartUnavailable')}
                     animate={animate}

@@ -133,11 +133,20 @@ describe('EquipePage — paginação', () => {
   })
 })
 
-describe('EquipePage — gráficos demográficos em empty-state honesto', () => {
-  it('Gênero/Idade/Raça-cor exibem "Dado não disponível" (endpoint LGPD-safe)', async () => {
-    await renderReady()
-    // Os 3 gráficos demográficos recebem dataset vazio → 3 rótulos de indisponível.
-    expect(screen.getAllByText('Dado não disponível').length).toBeGreaterThanOrEqual(3)
+describe('EquipePage — demografia sem o endpoint agregado', () => {
+  /**
+   * Sem o `/reports/team/demographics` (falha/403) a tela NÃO fica cega: Gênero e Raça/cor continuam sendo
+   * contados das linhas, com os rótulos do catálogo do front. Não é dado novo cruzando fronteira — é a
+   * mesma coluna que a tabela ao lado já mostra.
+   *
+   * Idade é a exceção: "30 a 39" é rótulo que só a API tem, então sem catálogo o card fica no empty-state
+   * em vez de escrever `DE_30_A_39` na tela.
+   */
+  it('Gênero e Raça/cor ainda contam das linhas; Idade cai no empty-state', async () => {
+    await renderReady() // `getTeamDemographics` sem mock → query falha → catálogo vazio
+    const chips = Array.from(document.querySelectorAll('li')).map((n) => n.textContent ?? '')
+    expect(chips.some((c) => c.startsWith('Mulher cisgênero'))).toBe(true)
+    expect(screen.getAllByText('Dado não disponível').length).toBeGreaterThanOrEqual(1)
   })
 })
 
@@ -208,36 +217,103 @@ describe('EquipePage — filtros Status / Situação Cadastral / Idade', () => {
  * card. O que o teste protege é o que a P.O. viu quebrado: nome de categoria desenhado dentro do SVG.
  */
 describe('EquipePage — legenda do gráfico de Gênero', () => {
+  // Catálogo de categorias; as contagens da tela vêm das LINHAS (fixture: 12 MULHER_CIS, 24 HOMEM_CIS).
   const GENDER = [
-    { id: 'MULHER_CIS', label: 'Mulher cis', count: 5 },
-    { id: 'HOMEM_TRANS', label: 'Homem trans', count: 1 },
-    { id: 'TRAVESTI', label: 'Travesti', count: 1 },
+    { id: 'MULHER_CIS', label: 'Mulher cis', count: 0 },
+    { id: 'HOMEM_CIS', label: 'Homem cis', count: 0 },
+    { id: 'TRAVESTI', label: 'Travesti', count: 0 },
   ] as const
 
   async function renderComGenero(): Promise<void> {
     mockedGetTeam.mockResolvedValue(ok(TEAM))
     vi.mocked(reportsRepository.getTeamDemographics).mockResolvedValue(
-      ok({ totalActive: 7, gender: GENDER, ageRange: [], race: [] }),
+      ok({ totalActive: 36, gender: GENDER, ageRange: [], race: [] }),
     )
     renderPage()
     await screen.findByText('Anterior')
   }
 
-  it('mostra nome e contagem de cada identidade na legenda', async () => {
+  it('mostra nome e contagem de cada identidade presente na legenda', async () => {
     await renderComGenero()
     // Busca nos <li> da legenda: o nome da identidade também existe como <option> do filtro de Gênero.
     const chips = Array.from(document.querySelectorAll('li')).map((n) => n.textContent ?? '')
-    for (const g of GENDER) {
-      expect(chips).toContain(`${g.label}${String(g.count)}`)
-    }
+    expect(chips).toContain('Mulher cisgênero12')
+    expect(chips).toContain('Homem cisgênero24')
+    // Identidade sem ninguém não vira chip (o gráfico desenha quem tem gente).
+    expect(chips.some((c) => c.startsWith('Travesti'))).toBe(false)
   })
 
   it('nenhum nome de categoria é desenhado DENTRO do SVG (era o que se sobrepunha)', async () => {
     await renderComGenero()
     const textosNoSvg = Array.from(document.querySelectorAll('svg text')).map((n) => n.textContent ?? '')
-    for (const g of GENDER) {
-      expect(textosNoSvg).not.toContain(g.label)
+    for (const nome of ['Mulher cisgênero', 'Homem cisgênero']) {
+      expect(textosNoSvg).not.toContain(nome)
     }
+  })
+
+  it('usa o rótulo do catálogo do front, não o da API, quando conhece o código', async () => {
+    mockedGetTeam.mockResolvedValue(ok(TEAM))
+    vi.mocked(reportsRepository.getTeamDemographics).mockResolvedValue(
+      // A API ainda manda a redação antiga; a tela tem que mostrar a que o cliente pediu.
+      ok({
+        totalActive: 1,
+        gender: [{ id: 'MULHER_CIS', label: 'Mulher cis', count: 1 }],
+        ageRange: [],
+        race: [],
+      }),
+    )
+    renderPage()
+    await screen.findByText('Anterior')
+    const chips = Array.from(document.querySelectorAll('li')).map((n) => n.textContent ?? '')
+    expect(chips.some((c) => c.startsWith('Mulher cisgênero'))).toBe(true)
+    expect(chips.some((c) => c.startsWith('Mulher cis') && !c.startsWith('Mulher cisgênero'))).toBe(false)
+  })
+})
+
+/**
+ * O bug que a P.O. achou em tela (09/08): os 3 gráficos demográficos liam a AGREGAÇÃO do backend, que não
+ * conhece os filtros — filtrar "Situação Cadastral = Cadastrado" recortava a tabela e o gráfico continuava
+ * contando quem estava em pré-cadastro.
+ */
+describe('EquipePage — os gráficos demográficos respeitam os filtros aplicados', () => {
+  async function renderComCatalogo(): Promise<void> {
+    mockedGetTeam.mockResolvedValue(ok(TEAM))
+    vi.mocked(reportsRepository.getTeamDemographics).mockResolvedValue(
+      ok({
+        totalActive: 36,
+        // Catálogo (ordem/rótulo canônicos). As CONTAGENS daqui são de propósito absurdas: se a tela ainda
+        // as estivesse usando em vez de contar as linhas, o teste quebra.
+        gender: [
+          { id: 'MULHER_CIS', label: 'Mulher cis', count: 999 },
+          { id: 'HOMEM_CIS', label: 'Homem cis', count: 999 },
+        ],
+        ageRange: [],
+        race: [],
+      }),
+    )
+    renderPage()
+    await screen.findByText('Anterior')
+  }
+
+  const chipDe = (nome: string): string =>
+    Array.from(document.querySelectorAll('li'))
+      .map((n) => n.textContent ?? '')
+      .find((c) => c.startsWith(nome)) ?? ''
+
+  it('sem filtro: conta as linhas, não os números da agregação', async () => {
+    await renderComCatalogo()
+    // Fixture: `genderIdentity` = MULHER_CIS quando i % 3 === 0 → 12 de 36; os outros 24 são HOMEM_CIS.
+    expect(chipDe('Mulher cisgênero')).toBe('Mulher cisgênero12')
+    expect(chipDe('Homem cisgênero')).toBe('Homem cisgênero24')
+  })
+
+  it('com filtro aplicado: o gráfico recorta junto com a tabela', async () => {
+    await renderComCatalogo()
+    fireEvent.change(screen.getByLabelText('Identidade de Gênero'), { target: { value: 'MULHER_CIS' } })
+    fireEvent.click(screen.getByText('Filtrar'))
+    expect(chipDe('Mulher cisgênero')).toBe('Mulher cisgênero12')
+    // Quem foi filtrado fora some do gráfico — antes continuava lá, com a contagem da agregação.
+    expect(chipDe('Homem cisgênero')).toBe('')
   })
 })
 

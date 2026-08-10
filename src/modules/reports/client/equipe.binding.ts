@@ -42,11 +42,9 @@ export type EquipeDemographics = Readonly<{
   gender: readonly CategoryCount[]
   ageRange: readonly CategoryCount[]
   race: readonly CategoryCount[]
-  /** Faixas etárias SEM o corte de vazios — fonte das opções do filtro Idade (ver `useEquipeDemographics`). */
-  ageRangeAll: readonly CategoryCount[]
 }>
 
-const NO_DEMOGRAPHICS: EquipeDemographics = { gender: [], ageRange: [], race: [], ageRangeAll: [] }
+const NO_DEMOGRAPHICS: EquipeDemographics = { gender: [], ageRange: [], race: [] }
 
 /** Identidade estável p/ o `useMemo` não reagir a um Map novo a cada render enquanto a query não resolve. */
 const EMPTY_AREAS: ReadonlyMap<string, string> = new Map()
@@ -95,22 +93,6 @@ const teamAreasQueryOptions = () => ({
   retry: 1,
 })
 
-/**
- * Esconde categorias com contagem 0 — paridade com o LEGADO, que só desenha fatia/barra de quem tem gente.
- *
- * O backend manda TODAS as categorias (inclusive zeradas) de propósito, para o gráfico não mudar de forma
- * conforme a amostra. Para as barras isso é bom; para a legenda do donut, não: com 9 identidades de gênero
- * e dado real quase sempre concentrado em 2 ou 3, a legenda virava uma lista de 9 linhas com 8 zeros, que
- * empurrava a altura dos 3 cards da linha (a grade é `stretch`) e criava o vazio que a P.O. viu na tela.
- *
- * Se TUDO for zero devolvemos a lista inteira: melhor mostrar as categorias zeradas do que um card vazio
- * sem explicação (o empty-state do componente cobre o caso de lista vazia de verdade).
- */
-const withoutEmpty = (cats: readonly CategoryCount[]): readonly CategoryCount[] => {
-  const nonEmpty = cats.filter((c) => c.count > 0)
-  return nonEmpty.length > 0 ? nonEmpty : cats
-}
-
 export function useEquipe(): EquipeBindingState {
   const query = useQuery(teamReportQueryOptions())
   // Área de atuação: query SEPARADA, sobre a listagem de Colaboradores (o `/reports/team` não a traz).
@@ -131,12 +113,14 @@ export function useEquipe(): EquipeBindingState {
 }
 
 /**
- * Demografia agregada dos 3 gráficos. Falha/403 → datasets vazios (a tabela não é afetada).
+ * CATÁLOGO de categorias demográficas (`/reports/team/demographics`), NÃO os números dos gráficos.
  *
- * `ageRangeAll` é a MESMA resposta SEM o corte de vazios: os gráficos escondem categoria com 0 (paridade
- * com o legado — não se desenha barra de ninguém), mas o FILTRO de idade mostra as 6 faixas sempre, como
- * todo filtro de lista fechada da tela. Faixa sumir do select é indistinguível de filtro quebrado para
- * quem está usando — foi exatamente essa a leitura da P.O. sobre os filtros inertes.
+ * As contagens que a tela desenha saem das linhas FILTRADAS (`countByTemplate` na page): a agregação do
+ * backend não conhece os filtros, então o gráfico ficava parado enquanto a tabela recortava. O que ainda
+ * vem daqui é o que só o backend sabe: quais categorias existem, em que ordem e com que rótulo — inclusive
+ * as que ninguém preencheu, que o filtro precisa listar e o front não pode inventar.
+ *
+ * Falha/403 → catálogo vazio: os 3 gráficos caem no empty-state e a tabela segue intacta.
  */
 export function useEquipeDemographics(): EquipeDemographics {
   const query = useQuery(teamDemographicsQueryOptions())
@@ -144,14 +128,7 @@ export function useEquipeDemographics(): EquipeDemographics {
 
   return useMemo<EquipeDemographics>(
     () =>
-      data === null
-        ? NO_DEMOGRAPHICS
-        : {
-            gender: withoutEmpty(data.gender),
-            ageRange: withoutEmpty(data.ageRange),
-            race: withoutEmpty(data.race),
-            ageRangeAll: data.ageRange,
-          },
+      data === null ? NO_DEMOGRAPHICS : { gender: data.gender, ageRange: data.ageRange, race: data.race },
     [data],
   )
 }

@@ -22,6 +22,8 @@ import {
   PER_PAGE_DEFAULT,
   ANOS,
   faixaEtariaIdOf,
+  countByTemplate,
+  categoryKeyOf,
 } from '../../../../src/modules/reports/client/equipe.view-model.ts'
 // Os enums canônicos: o teste compara contra a MESMA fonte que a tela usa (se a lista mudar no domínio de
 // Colaboradores, o filtro acompanha sozinho — é justamente o que estas asserções garantem).
@@ -361,6 +363,52 @@ describe('teamFilterOptions', () => {
     const o = teamFilterOptions([mk({})])
     assert.deepStrictEqual(o.funcao, [])
     assert.deepStrictEqual(o.anoContrato, [])
+  })
+})
+
+describe('countByTemplate (contagem dos gráficos a partir das linhas)', () => {
+  const mk = (genero: string): TeamMemberRow => ({
+    nome: 'x',
+    idade: null,
+    programa: '—',
+    funcao: '—',
+    vinculo: '',
+    genero,
+    racaCor: '—',
+    escolaridade: '—',
+    anoContrato: 0,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
+  })
+
+  it('conta sobre o template e mantém a ordem dele, inclusive as categorias zeradas', () => {
+    const r = countByTemplate(
+      [mk('MULHER_CIS'), mk('MULHER_CIS')],
+      ['HOMEM_CIS', 'MULHER_CIS'],
+      (x) => x.genero,
+    )
+    assert.deepStrictEqual(r, [
+      { id: 'HOMEM_CIS', count: 0 },
+      { id: 'MULHER_CIS', count: 2 },
+    ])
+  })
+
+  it('categoria fora do template é ACRESCENTADA — a soma sempre fecha com o total de linhas', () => {
+    const rows = [mk('MULHER_CIS'), mk('TRAVESTI'), mk('TRAVESTI')]
+    const r = countByTemplate(rows, ['MULHER_CIS'], (x) => x.genero)
+    assert.deepStrictEqual(r, [
+      { id: 'MULHER_CIS', count: 1 },
+      { id: 'TRAVESTI', count: 2 },
+    ])
+    assert.strictEqual(
+      r.reduce((s, c) => s + c.count, 0),
+      rows.length,
+    )
+  })
+
+  it('a sentinela de "não informado" vira a categoria NA do backend', () => {
+    const r = countByTemplate([mk('—')], ['NA'], (x) => categoryKeyOf(x.genero))
+    assert.deepStrictEqual(r, [{ id: 'NA', count: 1 }])
   })
 })
 
