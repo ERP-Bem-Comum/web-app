@@ -9,7 +9,12 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
 import { paymentAnalysisQueryOptions } from './analise.query.ts'
-import { analiseReportFromAnalysis, type AnaliseReport } from './analise.view-model.ts'
+import {
+  analiseReportFromAnalysis,
+  filterPaymentAnalysis,
+  type AnaliseReport,
+  type AnaliseSelection,
+} from './analise.view-model.ts'
 import { reportsErrorTag } from './data/helpers/reports-error-tag.ts'
 import type { ReportsError } from './data/repository/reports-error.ts'
 import type { PaymentAnalysisQuery } from './data/model/payment-analysis.model.ts'
@@ -32,11 +37,21 @@ export function wideDueWindow(): PaymentAnalysisQuery {
   return { dueStart: `${String(year - 2)}-01-01`, dueEnd: `${String(year + 2)}-01-01` }
 }
 
+/** Sem recorte client-side (referência estável — não invalida o `useMemo` a cada render). */
+const NO_SELECTION: AnaliseSelection = {}
+
 /**
  * `query` opcional: quando ausente/vazio, cai no `wideDueWindow` (a tela abre mostrando o dado). Quando a page
  * aplica um período (via "Filtrar"), passa `{ dueStart, dueEnd, status? }` → a queryKey muda → refetch.
+ *
+ * `selection` é o recorte que o #446 NÃO aceita mas o grão da resposta permite (Programa/Plano/Centro de
+ * Custo): aplica sobre o dado já baixado, sem refetch — logo não entra na queryKey. Ver
+ * `filterPaymentAnalysis`.
  */
-export function useAnalisePagamentos(query?: PaymentAnalysisQuery): AnaliseBindingState {
+export function useAnalisePagamentos(
+  query?: PaymentAnalysisQuery,
+  selection: AnaliseSelection = NO_SELECTION,
+): AnaliseBindingState {
   // Janela default estável por mount (queryKey não muda a cada render → sem refetch em loop). Quando a page
   // passa um `query` aplicado, ele vence; sem query, usa a janela ampla.
   const fallback = useMemo(() => wideDueWindow(), [])
@@ -49,7 +64,12 @@ export function useAnalisePagamentos(query?: PaymentAnalysisQuery): AnaliseBindi
   return useMemo<AnaliseBindingState>(() => {
     if (q.isLoading) return { status: 'loading' }
     if (error !== null) return { status: 'error', error, errorTag: reportsErrorTag(error) }
-    if (analysis !== null) return { status: 'ready', report: analiseReportFromAnalysis(analysis) }
+    if (analysis !== null) {
+      return {
+        status: 'ready',
+        report: analiseReportFromAnalysis(filterPaymentAnalysis(analysis, selection)),
+      }
+    }
     return { status: 'loading' }
-  }, [q.isLoading, error, analysis])
+  }, [q.isLoading, error, analysis, selection])
 }

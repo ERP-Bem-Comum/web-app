@@ -180,7 +180,7 @@ describe('buildCsv — colunas enxutas (LGPD)', () => {
   it('cabeçalho exato das 8 colunas de exibição', () => {
     assert.strictEqual(
       lines[0],
-      'Nome;Idade;Área de atuação;Função;Vínculo;Identidade de gênero;Raça/cor;Escolaridade',
+      '"Nome";"Idade";"Área de atuação";"Função";"Vínculo";"Identidade de gênero";"Raça/cor";"Escolaridade"',
     )
   })
 

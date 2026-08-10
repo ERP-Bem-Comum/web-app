@@ -77,6 +77,7 @@ import {
   periodRow,
   dateInput,
 } from './fluxo-caixa.page.css.ts'
+import { downloadCsv } from '../components/download-csv.ts'
 
 const t = createTranslator(ptBR)
 
@@ -129,19 +130,6 @@ function toCashflowFilter(d: FluxoDraft): FluxoCaixaFilter {
     dueTo: v(d.dueTo),
     status: asStatus(d.status),
   }
-}
-
-/** Baixa o CSV via Blob + anchor (client-side; o backend entregará JSON depois). */
-function downloadCsv(filename: string, csv: string): void {
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
 }
 
 export function FluxoCaixaPage(): ReactNode {

@@ -20,10 +20,11 @@ import {
   sharePercent,
   loadAnalise,
   analiseReportFromAnalysis,
+  filterPaymentAnalysis,
   ANALISE_SEM_PLANO,
   ANALISE_SEM_CENTRO,
   MONTH_ABBR_PT,
-  CSV_HEADER_BASE,
+  CSV_HEADER_LABELS,
 } from '../../../../src/modules/reports/client/analise.view-model.ts'
 import {
   ANALISE_PAGAMENTOS_RAW,
@@ -203,20 +204,23 @@ describe('buildCsv — header base + colunas de mês, uma linha por folha', () =
   const csv = buildCsv(report)
   const lines = csv.split('\r\n')
 
-  it('buildCsvHeader = base + rótulo de cada mês', () => {
-    assert.strictEqual(buildCsvHeader(MONTHS), `${CSV_HEADER_BASE};Jan/26;Fev/26;Mar/26`)
+  it('buildCsvHeader = base + rótulo de cada mês, com a moeda no CABEÇALHO', () => {
+    assert.strictEqual(CSV_HEADER_LABELS[2], 'Total (R$)')
+    assert.strictEqual(
+      buildCsvHeader(MONTHS),
+      '"Plano Orçamentário";"Centro de custo";"Total (R$)";"Jan/26 (R$)";"Fev/26 (R$)";"Mar/26 (R$)"',
+    )
   })
 
-  it('cabeçalho base fiel', () => {
-    assert.ok(lines[0]?.startsWith('Plano Orçamentário;Centro de custo;Total'))
-    assert.strictEqual(lines[0], 'Plano Orçamentário;Centro de custo;Total;Jan/26;Fev/26;Mar/26')
+  it('cabeçalho é escapado como os dados (era o único sem aspas)', () => {
+    assert.strictEqual(lines[0], buildCsvHeader(MONTHS))
   })
 
   it('uma linha por folha (3 CCs) + header = 4 linhas', () => {
     assert.strictEqual(lines.length, 1 + 3)
   })
 
-  it('primeira linha de dados = Plano A / CC-A1 com Total e 3 meses BRL', () => {
+  it('primeira linha de dados = Plano A / CC-A1 com Total e 3 meses', () => {
     assert.ok(lines[1]?.startsWith('"Plano A";"CC-A1";'))
     // 3 colunas base (plano/cc/total) + 3 meses = 6 campos.
     assert.strictEqual(lines[1]?.split(';').length, 6)
@@ -381,5 +385,110 @@ describe('analiseReportFromAnalysis (DTO #446 → AnaliseReport)', () => {
     // Só o mês válido entra; 'lixo' não gera coluna.
     assert.deepStrictEqual(report.months, ['2026-05'])
     assert.strictEqual(report.planos[0]?.children[0]?.monthCells['2026-05'], 5000)
+  })
+})
+
+/**
+ * `filterPaymentAnalysis` — o recorte CLIENT-SIDE que o #446 não aceita (é `.strict()`: só período+status) mas
+ * o grão da resposta permite. É o que faz Programa/Plano/Centro de Custo filtrarem de verdade na tela.
+ */
+describe('filterPaymentAnalysis', () => {
+  const analysis = {
+    totalValueOfPeriod: 900,
+    data: [
+      {
+        id: 'plano-a',
+        name: 'Plano A',
+        total: 600,
+        itens: [
+          { monthYear: '2026-01', total: 400 },
+          { monthYear: '2026-02', total: 200 },
+        ],
+        costCenters: [
+          { id: 'cc-1', name: 'CC Um', total: 400, itens: [{ monthYear: '2026-01', total: 400 }] },
+          { id: 'cc-2', name: 'CC Dois', total: 200, itens: [{ monthYear: '2026-02', total: 200 }] },
+        ],
+      },
+      {
+        id: 'plano-b',
+        name: 'Plano B',
+        total: 300,
+        itens: [{ monthYear: '2026-01', total: 300 }],
+        costCenters: [
+          { id: 'cc-1', name: 'CC Um', total: 300, itens: [{ monthYear: '2026-01', total: 300 }] },
+        ],
+      },
+    ],
+  } as const
+
+  it('sem recorte devolve a MESMA referência (não invalida o memo do binding à toa)', () => {
+    assert.strictEqual(filterPaymentAnalysis(analysis, {}), analysis)
+  })
+
+  it('recorta por Plano e recalcula o Total do Período', () => {
+    const r = filterPaymentAnalysis(analysis, { planId: 'plano-b' })
+    assert.deepStrictEqual(
+      r.data.map((p) => p.id),
+      ['plano-b'],
+    )
+    assert.strictEqual(r.totalValueOfPeriod, 300)
+  })
+
+  it('recorta por Programa (lista de planos) mantendo os dois quando ambos pertencem a ele', () => {
+    const r = filterPaymentAnalysis(analysis, { planIds: ['plano-a', 'plano-b'] })
+    assert.strictEqual(r.data.length, 2)
+    assert.strictEqual(r.totalValueOfPeriod, 900)
+  })
+
+  it('Programa sem plano conhecido esvazia — resultado honesto, não filtro ignorado', () => {
+    const r = filterPaymentAnalysis(analysis, { planIds: [] })
+    assert.deepStrictEqual(r.data, [])
+    assert.strictEqual(r.totalValueOfPeriod, 0)
+  })
+
+  it('bucket "Sem plano" (id null) sai quando há recorte por Programa', () => {
+    const semPlano = {
+      totalValueOfPeriod: 100,
+      data: [
+        {
+          id: null,
+          name: null,
+          total: 100,
+          itens: [{ monthYear: '2026-01', total: 100 }],
+          costCenters: [
+            { id: 'cc-1', name: 'CC Um', total: 100, itens: [{ monthYear: '2026-01', total: 100 }] },
+          ],
+        },
+      ],
+    } as const
+    assert.deepStrictEqual(filterPaymentAnalysis(semPlano, { planIds: ['plano-a'] }).data, [])
+  })
+
+  it('recorta por Centro de Custo e RECALCULA total e série mensal do plano', () => {
+    const r = filterPaymentAnalysis(analysis, { costCenterId: 'cc-2' })
+    // Só o Plano A tem o cc-2; o Plano B sai inteiro (linha vazia seria pior que ausência).
+    assert.deepStrictEqual(
+      r.data.map((p) => p.id),
+      ['plano-a'],
+    )
+    // O total do plano deixa de somar o cc-1 — sem recalcular, a tela mostraria 600 exibindo só 200.
+    assert.strictEqual(r.data[0]?.total, 200)
+    assert.deepStrictEqual(r.data[0]?.itens, [{ monthYear: '2026-02', total: 200 }])
+    assert.strictEqual(r.totalValueOfPeriod, 200)
+  })
+
+  it('combina Plano + Centro de Custo', () => {
+    const r = filterPaymentAnalysis(analysis, { planId: 'plano-a', costCenterId: 'cc-1' })
+    assert.strictEqual(r.data.length, 1)
+    assert.strictEqual(r.totalValueOfPeriod, 400)
+  })
+
+  it('o recorte chega na matriz que a tela consome (Total do Período e árvore)', () => {
+    const report = analiseReportFromAnalysis(filterPaymentAnalysis(analysis, { planId: 'plano-b' }))
+    assert.strictEqual(report.totalPeriodo, 300)
+    assert.deepStrictEqual(
+      report.planos.map((p) => p.name),
+      ['Plano B'],
+    )
   })
 })

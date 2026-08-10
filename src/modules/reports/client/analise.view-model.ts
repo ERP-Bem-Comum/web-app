@@ -23,7 +23,8 @@ import {
   type MonthRange,
 } from './data/analise-pagamentos.placeholder.ts'
 import { ANALISE_RECEBIMENTOS_RAW } from './data/analise-recebimentos.placeholder.ts'
-import type { PaymentAnalysis } from './data/model/payment-analysis.model.ts'
+import type { PaymentAnalysis, PaymentAnalysisPlan } from './data/model/payment-analysis.model.ts'
+import { csvContent, csvHeaderLine, csvLine, csvNumber } from './csv.view-model.ts'
 
 /** Nível do nó na árvore: plano orçamentário (0) → centro de custo (folha, 1). */
 export type AnaliseLevel = 'plano' | 'costCenter'
@@ -293,6 +294,62 @@ const MONTH_KEY_RE = /^\d{4}-\d{2}$/
  * planos [] → a `AnaliseReportView` cai no empty-state honesto. `totalPeriodo` = `totalValueOfPeriod` (contrato).
  * `name` null → "Sem plano" / "Sem centro de custo". Sem `throw` (§II), sem `Date` (à prova de "Invalid Date").
  */
+/**
+ * Recorte CLIENT-SIDE da matriz do #446. Existe porque o endpoint é `.strict()` e só aceita `dueStart`/
+ * `dueEnd`/`status` — mas o grão que ele DEVOLVE (Plano × Centro de Custo × mês) já carrega o que estes três
+ * filtros precisam. Então Programa/Plano/Centro aplicam AQUI, sobre a resposta, sem ida ao servidor.
+ * (Categoria/Subcategoria/Conta NÃO cabem: saíram do grão na spec 051 e não vêm na resposta.)
+ *
+ * `planIds` traduz o **Programa**: a page resolve quais planos pertencem ao programa escolhido e passa a lista.
+ * Plano sem id (bucket "Sem plano") não pertence a programa nenhum → sai quando há recorte por programa.
+ *
+ * Recomputa `total`/`itens` do plano SÓ quando o recorte de Centro está ativo — sem isso o total do plano
+ * continuaria somando centros que a tela deixou de mostrar. Sem recorte, devolve a MESMA referência (o
+ * `useMemo` do binding não invalida à toa). Puro, sem `throw` (§II).
+ */
+export type AnaliseSelection = Readonly<{
+  planIds?: readonly string[]
+  planId?: string
+  costCenterId?: string
+}>
+
+export function filterPaymentAnalysis(analysis: PaymentAnalysis, sel: AnaliseSelection): PaymentAnalysis {
+  const byProgram = sel.planIds !== undefined ? new Set(sel.planIds) : null
+  const byPlan = sel.planId
+  const byCostCenter = sel.costCenterId
+  if (byProgram === null && byPlan === undefined && byCostCenter === undefined) return analysis
+
+  const data: PaymentAnalysisPlan[] = []
+  for (const plano of analysis.data) {
+    if (byPlan !== undefined && plano.id !== byPlan) continue
+    if (byProgram !== null && (plano.id === null || !byProgram.has(plano.id))) continue
+
+    if (byCostCenter === undefined) {
+      data.push(plano)
+      continue
+    }
+    const costCenters = plano.costCenters.filter((cc) => cc.id === byCostCenter)
+    // Plano que não tem o centro escolhido sai inteiro (linha vazia seria pior que ausência).
+    if (costCenters.length === 0) continue
+
+    const monthTotals = new Map<string, number>()
+    let total = 0
+    for (const cc of costCenters) {
+      total += cc.total
+      for (const it of cc.itens)
+        monthTotals.set(it.monthYear, (monthTotals.get(it.monthYear) ?? 0) + it.total)
+    }
+    data.push({
+      ...plano,
+      total,
+      itens: [...monthTotals].map(([monthYear, t]) => ({ monthYear, total: t })),
+      costCenters,
+    })
+  }
+
+  return { totalValueOfPeriod: data.reduce((acc, p) => acc + p.total, 0), data }
+}
+
 export function analiseReportFromAnalysis(analysis: PaymentAnalysis): AnaliseReport {
   const monthKeys: string[] = []
   for (const plano of analysis.data) {
@@ -366,32 +423,32 @@ export function sharePercent(valueCents: number, totalCents: number): number {
 
 // ── Export CSV (client-side; header pt-BR + uma coluna por mês) ──
 
-/** Header base do CSV (fixo). As colunas de mês são acrescentadas por `buildCsvHeader`. */
-export const CSV_HEADER_BASE = 'Plano Orçamentário;Centro de custo;Total'
-
 /**
- * Header completo do CSV: base + uma coluna por mês (rótulo `Jan/26` …), na ordem do período. Delimitado por
- * ';'. Os rótulos de mês vêm de `formatMonthLabel` (sempre válidos — nunca "Invalid Date").
+ * Rótulos base do CSV. As colunas de valor levam `(R$)` no CABEÇALHO porque a célula é NÚMERO (`1234,56`) —
+ * a moeda não some, muda de lugar. Ver `csv.view-model.ts`.
  */
+export const CSV_HEADER_LABELS: readonly string[] = ['Plano Orçamentário', 'Centro de custo', 'Total (R$)']
+
+/** Header completo: base + uma coluna por mês na ordem do período (`Jan/26 (R$)` …), já escapado. */
 export function buildCsvHeader(months: readonly string[]): string {
-  const monthCols = months.map((m) => formatMonthLabel(m))
-  return [CSV_HEADER_BASE, ...monthCols].join(';')
+  const monthCols = months.map((m) => `${formatMonthLabel(m)} (R$)`)
+  return csvHeaderLine([...CSV_HEADER_LABELS, ...monthCols])
 }
 
 /**
- * Monta o CSV: uma linha por FOLHA (Plano → Centro de Custo), com o Total e um valor por mês (na ordem do
- * período), todos em BRL. Delimitado por ';'. Percorre a árvore agregada até a folha (Centro de Custo).
+ * Monta o CSV: uma linha por FOLHA (Plano → Centro de Custo), com o Total e um valor por mês. Valores como
+ * NÚMERO (somável na planilha); nomes escapados por RFC 4180.
  */
 export function buildCsv(report: AnaliseReport = loadAnalise('p')): string {
-  const lines: string[] = [buildCsvHeader(report.months)]
+  const rows: string[] = []
   for (const plano of report.planos) {
     for (const cc of plano.children) {
       const monthCells = cc.monthCells
-      const cols = report.months.map((m) => `"${formatBRL(monthCells[m] ?? 0)}"`)
-      lines.push([`"${plano.name}"`, `"${cc.name}"`, `"${formatBRL(cc.total)}"`, ...cols].join(';'))
+      const cols = report.months.map((m) => csvNumber(monthCells[m] ?? 0))
+      rows.push(csvLine([plano.name, cc.name, csvNumber(cc.total), ...cols]))
     }
   }
-  return lines.join('\r\n')
+  return csvContent(buildCsvHeader(report.months), rows)
 }
 
 /** Reexporta o shape do período p/ a page/testes sem tocar a `data/` diretamente. */

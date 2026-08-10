@@ -13,6 +13,7 @@ import {
   type RawBudgetRow,
   type MonthCell,
 } from './data/realizado-x-planejado.placeholder.ts'
+import { csvContent, csvHeaderLine, csvLine, csvNumber } from './csv.view-model.ts'
 
 /** As 3 medidas de uma célula/linha, em centavos. */
 export type Measures = Readonly<{
@@ -279,37 +280,40 @@ export function sharePercent(valueCents: number, totalCents: number): number {
 
 // ── Export CSV (client-side; fiel ao CSV legado) ──
 
-const CSV_HEADER =
-  'Centro de Custo;Categoria;Subcategoria;Nome do Mês;Valor Esperado;Valor Realizado;Valor Provisionado'
-
-/** Centavos → "R$ 1.234,56" para o campo do CSV (mesmo formato do legado). */
-function csvMoney(cents: number): string {
-  return brlFmt.format(cents / 100)
-}
+/** Valores levam `(R$)` no cabeçalho porque a célula é NÚMERO (`1234,56`) — ver `csv.view-model.ts`. */
+const CSV_HEADER = csvHeaderLine([
+  'Centro de Custo',
+  'Categoria',
+  'Subcategoria',
+  'Nome do Mês',
+  'Valor Esperado (R$)',
+  'Valor Realizado (R$)',
+  'Valor Provisionado (R$)',
+])
 
 /**
  * Monta o CSV: uma linha por Centro de Custo → Categoria → Subcategoria × MÊS (jan→dez), com as 3 medidas
  * formatadas em BRL. Delimitado por ';'. Percorre a árvore até a folha (subcategoria).
  */
 export function buildCsv(rows: readonly RawBudgetRow[] = REALIZADO_X_PLANEJADO_RAW): string {
-  const lines: string[] = [CSV_HEADER]
+  const out: string[] = []
   for (const r of rows) {
     for (const m of [...r.months].sort((a, b) => a.month - b.month)) {
       const mes = MONTH_NAMES_PT[m.month] ?? ''
-      lines.push(
-        [
-          `"${r.centroCusto}"`,
-          `"${r.categoria}"`,
-          `"${r.subcategoria}"`,
-          `"${mes}"`,
-          `"${csvMoney(m.planejadoCents)}"`,
-          `"${csvMoney(m.realizadoCents)}"`,
-          `"${csvMoney(m.provisionadoCents)}"`,
-        ].join(';'),
+      out.push(
+        csvLine([
+          r.centroCusto,
+          r.categoria,
+          r.subcategoria,
+          mes,
+          csvNumber(m.planejadoCents),
+          csvNumber(m.realizadoCents),
+          csvNumber(m.provisionadoCents),
+        ]),
       )
     }
   }
-  return lines.join('\r\n')
+  return csvContent(CSV_HEADER, out)
 }
 
 /** Reexporta o shape cru p/ a page passar ao `buildCsv` sem tocar a `data/` diretamente. */

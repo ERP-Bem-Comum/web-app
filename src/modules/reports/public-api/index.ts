@@ -109,7 +109,7 @@ export {
   formatBRLShort as formatAnaliseBRLShort,
   formatPercent as formatAnalisePercent,
   sharePercent as analiseSharePercent,
-  CSV_HEADER_BASE as ANALISE_CSV_HEADER_BASE,
+  CSV_HEADER_LABELS as ANALISE_CSV_HEADER_LABELS,
   MONTH_ABBR_PT,
 } from '#modules/reports/client/analise.view-model.ts'
 export type {

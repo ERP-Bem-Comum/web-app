@@ -64,6 +64,7 @@ import {
   emptyTitle,
   emptyHint,
 } from '../page/analise-pagamentos.page.css.ts'
+import { downloadCsv } from './download-csv.ts'
 
 /** Todos os rótulos i18n do relatório, resolvidos na page (Pagamentos vs Recebimentos). */
 export type AnaliseReportViewLabels = Readonly<{
@@ -162,8 +163,13 @@ export type AnaliseReportViewProps = Readonly<{
    */
   statusFilter?: AnaliseCascadeField
   /**
+   * Programa APLICÁVEL: select CONTROLADO cujo valor recorta os planos do programa escolhido (client-side,
+   * sobre a resposta do #446). Ausente (Recebimentos) → cai no dropdown populate-only de `filterOptions`.
+   */
+  programaFilter?: AnaliseCascadeField
+  /**
    * Resumo dos filtros APLICADOS (partes já formatadas "Rótulo: valor"), abaixo do título. Só o que de fato
-   * filtra o resultado (na Análise: período + status). Vazio/ausente → não renderiza a linha.
+   * filtra o resultado. Vazio/ausente → não renderiza a linha.
    */
   subtitleParts?: readonly string[]
 }>
@@ -176,19 +182,6 @@ export type AnalisePeriodModel = Readonly<{
   onFiltrar: () => void
 }>
 
-/** Baixa o CSV via Blob + anchor (client-side; o backend entregará JSON depois). */
-function downloadCsv(filename: string, csv: string): void {
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
-}
-
 export function AnaliseReportView(props: AnaliseReportViewProps): ReactNode {
   const { report, labels: L, csvFilename } = props
   const isRec = props.chartTone === 'rec'
@@ -200,6 +193,8 @@ export function AnaliseReportView(props: AnaliseReportViewProps): ReactNode {
   const pd = props.period
   // Status aplicável (Análise de Pagamentos, enum reduzido); ausente em Recebimentos → dropdown visual dos chips.
   const sf = props.statusFilter
+  // Programa aplicável (Análise de Pagamentos); ausente em Recebimentos → dropdown populate-only.
+  const pf = props.programaFilter
   const opt = (list: readonly string[] | undefined): readonly string[] => [
     L.filters.allOption,
     ...(list ?? []),
@@ -296,9 +291,20 @@ export function AnaliseReportView(props: AnaliseReportViewProps): ReactNode {
       {/* Barra de filtros recolhível — ACESSÍVEL mesmo no vazio quando filtrável (o usuário reabre e afrouxa). */}
       {showFilterControls && (
         <div className={filtersOpen ? filters.open : filters.closed}>
-          {/* Opções REAIS via `filterOptions`/cascata/período; o #446 só APLICA período (e status, visual). */}
+          {/* Opções REAIS via `filterOptions`/cascata/período. O #446 aplica período+status no SERVIDOR;
+              Programa/Plano/Centro aplicam no CLIENTE sobre o grão da resposta (ver `filterPaymentAnalysis`). */}
           <div className={filtersInner}>
-            <FilterField label={L.filters.programa} options={opt(fo?.programa)} />
+            {/* Programa: CONTROLADO e aplicável (recorta os planos do programa). Sem `programaFilter`
+                (Recebimentos) cai no dropdown populate-only. */}
+            {pf ? (
+              <ControlledFilterField
+                label={L.filters.programa}
+                placeholder={L.filters.allOption}
+                field={pf}
+              />
+            ) : (
+              <FilterField label={L.filters.programa} options={opt(fo?.programa)} />
+            )}
             {/* Plano/Centro/Categoria/Subcategoria: CONTROLADOS pela cascata do plano (Pagamentos); sem cascata
                   (Recebimentos) caem em "Todos". A regra da cascata vem do financial (ADR-0051). */}
             {cx ? (

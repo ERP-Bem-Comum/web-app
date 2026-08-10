@@ -15,6 +15,7 @@
  * é só a fonte entrar. Dinheiro em CENTAVOS inteiros (§IV). Árvore preserva a ORDEM DE INSERÇÃO. Sem `throw` (§II).
  */
 import type { CashflowRow, CashflowChartRow, CashflowCostCenter } from './data/model/cashflow.model.ts'
+import { csvContent, csvHeaderLine, csvLine, csvNumber } from './csv.view-model.ts'
 
 /** Intervalo do período (mês-01), formato `YYYY-MM`. A geração de meses deriva as chaves daqui. */
 export type MonthRange = Readonly<{ start: string; end: string }>
@@ -720,7 +721,14 @@ export function formatBRLAxis(cents: number): string {
 // ── Export CSV (client-side; header pt-BR fiel às 2 medidas por seção) ──
 
 /** Header pt-BR do CSV (uma coluna de Seção para diferenciar Saídas × Entradas). */
-export const CSV_HEADER = 'Seção;Categoria;Subcategoria;Realizado;Previsto'
+/** Valores levam `(R$)` no cabeçalho porque a célula é NÚMERO (`1234,56`) — ver `csv.view-model.ts`. */
+export const CSV_HEADER = csvHeaderLine([
+  'Seção',
+  'Categoria',
+  'Subcategoria',
+  'Realizado (R$)',
+  'Previsto (R$)',
+])
 
 /** Percorre as folhas de uma seção emitindo as linhas do CSV (rótulo da seção + Cat/Sub + 2 medidas em BRL). */
 function sectionCsvLines(sectionLabel: string, section: FluxoSection): readonly string[] {
@@ -728,13 +736,13 @@ function sectionCsvLines(sectionLabel: string, section: FluxoSection): readonly 
   for (const category of section.categories) {
     for (const subcategory of category.children) {
       lines.push(
-        [
-          `"${sectionLabel}"`,
-          `"${category.name}"`,
-          `"${subcategory.name}"`,
-          `"${formatBRL(subcategory.measures.realizedCents)}"`,
-          `"${formatBRL(subcategory.measures.expectedCents)}"`,
-        ].join(';'),
+        csvLine([
+          sectionLabel,
+          category.name,
+          subcategory.name,
+          csvNumber(subcategory.measures.realizedCents),
+          csvNumber(subcategory.measures.expectedCents),
+        ]),
       )
     }
   }
@@ -747,8 +755,8 @@ function sectionCsvLines(sectionLabel: string, section: FluxoSection): readonly 
  * seções são parametrizáveis (i18n na page); o CORPO é idêntico. `\r\n` como no legado.
  */
 export function buildCsv(report: FluxoReport, saidasLabel = 'Saídas', entradasLabel = 'Entradas'): string {
-  const lines: string[] = [CSV_HEADER]
-  lines.push(...sectionCsvLines(saidasLabel, report.saidas))
-  lines.push(...sectionCsvLines(entradasLabel, report.entradas))
-  return lines.join('\r\n')
+  return csvContent(CSV_HEADER, [
+    ...sectionCsvLines(saidasLabel, report.saidas),
+    ...sectionCsvLines(entradasLabel, report.entradas),
+  ])
 }
