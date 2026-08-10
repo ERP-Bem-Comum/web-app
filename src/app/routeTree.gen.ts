@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './../routes/__root'
+import { Route as VersionRouteImport } from './../routes/version'
 import { Route as ResetPasswordRouteImport } from './../routes/reset-password'
 import { Route as RecuperarSenhaRouteImport } from './../routes/recuperar-senha'
 import { Route as ReadyRouteImport } from './../routes/ready'
@@ -66,6 +67,11 @@ import { Route as AuthenticatedParceirosFornecedoresIdEditarRouteImport } from '
 import { Route as AuthenticatedParceirosFinanciadoresIdEditarRouteImport } from './../routes/_authenticated/parceiros/financiadores/$id.editar'
 import { Route as AuthenticatedParceirosAtosIdEditarRouteImport } from './../routes/_authenticated/parceiros/atos/$id.editar'
 
+const VersionRoute = VersionRouteImport.update({
+  id: '/version',
+  path: '/version',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -399,6 +405,7 @@ export interface FileRoutesByFullPath {
   '/ready': typeof ReadyRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/version': typeof VersionRoute
   '/consolidado': typeof AuthenticatedConsolidadoRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/planejamento': typeof AuthenticatedPlanejamentoRoute
@@ -456,6 +463,7 @@ export interface FileRoutesByTo {
   '/ready': typeof ReadyRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/version': typeof VersionRoute
   '/consolidado': typeof AuthenticatedConsolidadoRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/planejamento': typeof AuthenticatedPlanejamentoRoute
@@ -515,6 +523,7 @@ export interface FileRoutesById {
   '/ready': typeof ReadyRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/version': typeof VersionRoute
   '/_authenticated/consolidado': typeof AuthenticatedConsolidadoRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/planejamento': typeof AuthenticatedPlanejamentoRoute
@@ -574,6 +583,7 @@ export interface FileRouteTypes {
     | '/ready'
     | '/recuperar-senha'
     | '/reset-password'
+    | '/version'
     | '/consolidado'
     | '/dashboard'
     | '/planejamento'
@@ -631,6 +641,7 @@ export interface FileRouteTypes {
     | '/ready'
     | '/recuperar-senha'
     | '/reset-password'
+    | '/version'
     | '/consolidado'
     | '/dashboard'
     | '/planejamento'
@@ -689,6 +700,7 @@ export interface FileRouteTypes {
     | '/ready'
     | '/recuperar-senha'
     | '/reset-password'
+    | '/version'
     | '/_authenticated/consolidado'
     | '/_authenticated/dashboard'
     | '/_authenticated/planejamento'
@@ -748,11 +760,19 @@ export interface RootRouteChildren {
   ReadyRoute: typeof ReadyRoute
   RecuperarSenhaRoute: typeof RecuperarSenhaRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  VersionRoute: typeof VersionRoute
   ShowcaseOrganismsRoute: typeof ShowcaseOrganismsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/version': {
+      id: '/version'
+      path: '/version'
+      fullPath: '/version'
+      preLoaderRoute: typeof VersionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -1334,6 +1354,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReadyRoute: ReadyRoute,
   RecuperarSenhaRoute: RecuperarSenhaRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  VersionRoute: VersionRoute,
   ShowcaseOrganismsRoute: ShowcaseOrganismsRoute,
 }
 export const routeTree = rootRouteImport

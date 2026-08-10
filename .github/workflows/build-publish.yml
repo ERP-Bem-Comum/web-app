@@ -17,10 +17,10 @@ on:
   push:
     branches: [develop]
     paths-ignore:
-      - "**/*.md"
-      - "handbook/**"
-      - "specs/**"
-      - "e2e/**"
+      - '**/*.md'
+      - 'handbook/**'
+      - 'specs/**'
+      - 'e2e/**'
   workflow_dispatch:
 
 concurrency:
@@ -41,6 +41,14 @@ env:
 jobs:
   build-push:
     runs-on: ubuntu-latest
+    # Job-level SUBSTITUI o bloco do workflow, então repete o que já era herdado + `issues: write`, que o
+    # aviso de falha precisa. Least privilege continua: nada aqui além do que os steps usam de fato.
+    permissions:
+      contents: read
+      packages: write # push no GHCR + retag da :qa
+      id-token: write # OIDC keyless p/ as attestations
+      attestations: write
+      issues: write # p/ o aviso de falha abrir/comentar issue
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -60,8 +68,11 @@ jobs:
         uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6.1.0
         with:
           images: ${{ env.IMAGE }}
+          # SÓ a tag imutável por SHA. A `:qa` (flutuante, a que o /opt/erp-qa/.env consome) é promovida
+          # num step DEPOIS do Trivy — ver "Promove a tag :qa". Publicá-la aqui faria a imagem reprovada
+          # virar `:qa` antes do scan rodar, e o `deploy.sh` da VPS (chamado também pelo pipeline do
+          # core-api) a puxaria de carona, sem passar por gate nenhum. Foi o que houve entre 28/07 e 10/08.
           tags: |
-            type=raw,value=qa
             type=sha,prefix=sha-,format=short
 
       - name: Build + push (linux/amd64, target runtime, provenance + SBOM)
@@ -75,6 +86,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            GIT_SHA=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: true # SLSA build provenance attestation (D3/ADR-0016) — keyless via OIDC
@@ -85,8 +98,34 @@ jobs:
         with:
           image-ref: ${{ env.IMAGE }}@${{ steps.build.outputs.digest }}
           severity: CRITICAL,HIGH
-          exit-code: "1"
+          exit-code: '1'
           ignore-unfixed: true # não bloqueia em CVE sem fix upstream (base distroless); revisar periodicamente
+
+      # A `:qa` só anda com o gate VERDE. `imagetools create` é retag no REGISTRY: não rebuilda, não perde
+      # cache e aponta para o MESMO digest do índice, então provenance e SBOM seguem válidos. Se o Trivy
+      # reprovar, este step não roda e a `:qa` continua na última build verde — o `deploy.sh` da VPS passa
+      # a puxar código bom mesmo quando quem dispara o deploy é o pipeline do core-api.
+      - name: Promove a tag :qa (só depois do gate verde)
+        run: |
+          docker buildx imagetools create \
+            --tag ${{ env.IMAGE }}:qa \
+            ${{ env.IMAGE }}@${{ steps.build.outputs.digest }}
+
+      # Sem isso, o efeito do step acima é SILENCIOSO: gate vermelho segura QA na build anterior e ninguém
+      # fica sabendo. Foi assim que 12 promoções passaram despercebidas (o `CI` fica verde no mesmo commit,
+      # só este workflow quebra). Mesmo molde do aviso de expiração da TS_AUTHKEY, no job de deploy.
+      - name: Abre/comenta issue se o build ou o gate falhar
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="🚨 build-publish falhou na develop — QA congelado na build anterior"
+          msg="O run [\`${GITHUB_RUN_ID}\`](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}) falhou no commit \`${GITHUB_SHA}\`.
+          A tag \`:qa\` NÃO foi promovida — QA segue na última build verde e este commit não chega lá (nem de carona pelo deploy do core-api).
+          Se for o gate Trivy com CVE da base: avançar o digest-pin do \`web.Dockerfile\` (runbook do re-pin), **nunca** \`.trivyignore\`.
+          _(aviso automático do build-publish)_"
+          num=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "build-publish falhou in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$num" ]; then gh issue comment "$num" --repo "$GITHUB_REPOSITORY" --body "$msg"; else gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body "$msg"; fi
 
   # ── Deploy QA ────────────────────────────────────────────────────────────────
   # Roda APÓS o build-push (mesmo run → sem o `workflow_run`, que exigiria o arquivo na branch default).
@@ -109,7 +148,7 @@ jobs:
       - name: Aviso de expiração da TS_AUTHKEY (<14d, NÃO bloqueia)
         env:
           GH_TOKEN: ${{ github.token }}
-          KEY_EXPIRY: "2026-09-23" # ⚠️ ATUALIZAR na rotação (runbook RB-008)
+          KEY_EXPIRY: '2026-09-23' # ⚠️ ATUALIZAR na rotação (runbook RB-008)
         run: |
           days=$(( ( $(date -u -d "$KEY_EXPIRY" +%s) - $(date -u +%s) ) / 86400 ))
           echo "TS_AUTHKEY expira em $days dia(s) ($KEY_EXPIRY)."
