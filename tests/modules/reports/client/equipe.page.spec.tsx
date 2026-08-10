@@ -203,6 +203,44 @@ describe('EquipePage — filtros Status / Situação Cadastral / Idade', () => {
   })
 })
 
+/**
+ * Gênero: os nomes saíram de CIMA das fatias (se sobrepunham com muitas identidades) e viraram legenda no
+ * card. O que o teste protege é o que a P.O. viu quebrado: nome de categoria desenhado dentro do SVG.
+ */
+describe('EquipePage — legenda do gráfico de Gênero', () => {
+  const GENDER = [
+    { id: 'MULHER_CIS', label: 'Mulher cis', count: 5 },
+    { id: 'HOMEM_TRANS', label: 'Homem trans', count: 1 },
+    { id: 'TRAVESTI', label: 'Travesti', count: 1 },
+  ] as const
+
+  async function renderComGenero(): Promise<void> {
+    mockedGetTeam.mockResolvedValue(ok(TEAM))
+    vi.mocked(reportsRepository.getTeamDemographics).mockResolvedValue(
+      ok({ totalActive: 7, gender: GENDER, ageRange: [], race: [] }),
+    )
+    renderPage()
+    await screen.findByText('Anterior')
+  }
+
+  it('mostra nome e contagem de cada identidade na legenda', async () => {
+    await renderComGenero()
+    // Busca nos <li> da legenda: o nome da identidade também existe como <option> do filtro de Gênero.
+    const chips = Array.from(document.querySelectorAll('li')).map((n) => n.textContent ?? '')
+    for (const g of GENDER) {
+      expect(chips).toContain(`${g.label}${String(g.count)}`)
+    }
+  })
+
+  it('nenhum nome de categoria é desenhado DENTRO do SVG (era o que se sobrepunha)', async () => {
+    await renderComGenero()
+    const textosNoSvg = Array.from(document.querySelectorAll('svg text')).map((n) => n.textContent ?? '')
+    for (const g of GENDER) {
+      expect(textosNoSvg).not.toContain(g.label)
+    }
+  })
+})
+
 describe('EquipePage — modal de detalhe (linha clicável)', () => {
   it('clicar numa linha abre o modal com os 9 rótulos enxutos', async () => {
     await renderReady()
