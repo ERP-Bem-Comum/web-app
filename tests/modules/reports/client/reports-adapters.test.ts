@@ -84,7 +84,7 @@ describe('toRawSupplierRows (D2 — sem quebra por plano)', () => {
   })
 })
 
-describe('toTeamRows (D3 — LGPD-safe, sentinelas honestos)', () => {
+describe('toTeamRows — dado real do colaborador + área cruzada de Colaboradores', () => {
   const members: readonly TeamMember[] = [
     {
       id: 'tm-1',
@@ -95,8 +95,11 @@ describe('toTeamRows (D3 — LGPD-safe, sentinelas honestos)', () => {
       startOfContract: '2025-03-01',
       registrationStatus: 'Ativo',
       active: true,
-      education: 'Ensino Superior',
+      education: 'ENSINO_SUPERIOR',
       experienceInPublicSector: true,
+      genderIdentity: 'MULHER_CIS',
+      race: 'PARDO',
+      age: 34,
     },
     {
       id: 'tm-2',
@@ -109,23 +112,46 @@ describe('toTeamRows (D3 — LGPD-safe, sentinelas honestos)', () => {
       active: false,
       education: null,
       experienceInPublicSector: null,
+      genderIdentity: null,
+      race: null,
+      age: null,
     },
   ]
 
-  it('mapeia os campos reais (nome/programa/função/vínculo/escolaridade) sem forçar enum', () => {
+  it('mapeia os campos reais (nome/função/vínculo/escolaridade) sem forçar enum', () => {
     const rows = toTeamRows(members)
     assert.equal(rows[0]?.nome, 'Aurora Ferreira')
-    assert.equal(rows[0]?.programa, 'Programa Semente')
     assert.equal(rows[0]?.funcao, 'Coordenadora')
     assert.equal(rows[0]?.vinculo, 'CLT')
-    assert.equal(rows[0]?.escolaridade, 'Ensino Superior')
+    assert.equal(rows[0]?.escolaridade, 'ENSINO_SUPERIOR')
   })
 
-  it('idade/gênero/raça-cor → sentinelas honestos (endpoint LGPD-safe não os traz)', () => {
+  // Estes três vinham cravados em sentinela porque o schema de borda não declarava as chaves — o core-api
+  // mandava e o Zod descartava calado. O valor é o CÓDIGO canônico; quem traduz é a View.
+  it('idade/gênero/raça-cor levam o valor REAL do colaborador (código, não rótulo)', () => {
     const rows = toTeamRows(members)
-    assert.equal(rows[0]?.idade, null)
-    assert.equal(rows[0]?.genero, '—')
-    assert.equal(rows[0]?.racaCor, '—')
+    assert.equal(rows[0]?.idade, 34)
+    assert.equal(rows[0]?.genero, 'MULHER_CIS')
+    assert.equal(rows[0]?.racaCor, 'PARDO')
+  })
+
+  it('gênero/raça/idade ausentes → sentinela, nunca linha descartada', () => {
+    const rows = toTeamRows(members)
+    assert.equal(rows[1]?.genero, '—')
+    assert.equal(rows[1]?.racaCor, '—')
+    assert.equal(rows[1]?.idade, null)
+  })
+
+  // A área NÃO vem do /reports/team (a projeção grava `program: null`): é cruzada por id com a listagem
+  // de Colaboradores. Sem o mapa, a linha aparece com "—" — enriquecimento não pode sumir com ninguém.
+  it('área vem do mapa por id; sem mapa → sentinela e a linha permanece', () => {
+    const comArea = toTeamRows(members, new Map([['tm-1', 'PARC']]))
+    assert.equal(comArea[0]?.programa, 'PARC')
+    assert.equal(comArea[1]?.programa, '—')
+
+    const semMapa = toTeamRows(members)
+    assert.equal(semMapa.length, 2)
+    assert.equal(semMapa[0]?.programa, '—')
   })
 
   it('anoContrato = ano de startOfContract; não-parseável → 0', () => {
@@ -134,9 +160,8 @@ describe('toTeamRows (D3 — LGPD-safe, sentinelas honestos)', () => {
     assert.equal(rows[1]?.anoContrato, 0)
   })
 
-  it('program/education null → sentinela "—"', () => {
+  it('education null → sentinela "—"', () => {
     const rows = toTeamRows(members)
-    assert.equal(rows[1]?.programa, '—')
     assert.equal(rows[1]?.escolaridade, '—')
   })
 })

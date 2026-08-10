@@ -25,6 +25,7 @@ vi.mock('@tanstack/react-router', () => ({
 vi.mock('#modules/reports/client/data/repository/reports.repository.instance.ts', () => ({
   reportsRepository: {
     getTeam: vi.fn(),
+    getTeamDemographics: vi.fn(),
     getSuppliersWithoutContract: vi.fn(),
     getPaymentPosition: vi.fn(),
   },
@@ -44,10 +45,14 @@ const TEAM: readonly TeamMember[] = Array.from({ length: 36 }, (_v, i) => ({
   role: ROLES[i % ROLES.length] ?? 'Analista',
   employmentRelationship: i % 2 === 0 ? 'CLT' : 'PJ',
   startOfContract: `${String(2019 + (i % 7))}-01-15`,
-  registrationStatus: 'Ativo',
+  // Códigos REAIS do core-api (`RegistrationStatus`) — a tela traduz para "Cadastrado"/"Pré-cadastro".
+  registrationStatus: i % 3 === 0 ? 'PreRegistration' : 'Complete',
   active: i % 5 !== 0,
-  education: i % 4 === 0 ? null : 'Ensino Superior',
+  education: i % 4 === 0 ? null : 'ENSINO_SUPERIOR',
   experienceInPublicSector: i % 2 === 0 ? true : null,
+  genderIdentity: i % 3 === 0 ? 'MULHER_CIS' : 'HOMEM_CIS',
+  race: i % 4 === 0 ? 'INDIGENA' : 'PARDO',
+  age: 25 + (i % 30),
 }))
 
 function renderPage(): void {
@@ -133,6 +138,68 @@ describe('EquipePage — gráficos demográficos em empty-state honesto', () => 
     await renderReady()
     // Os 3 gráficos demográficos recebem dataset vazio → 3 rótulos de indisponível.
     expect(screen.getAllByText('Dado não disponível').length).toBeGreaterThanOrEqual(3)
+  })
+})
+
+/**
+ * Os 3 filtros que ficaram inertes até a P.O. apontar em tela (09/08): Status, Situação Cadastral e Idade.
+ * Os dois primeiros são lista FECHADA (existem mesmo sem ninguém no recorte); Idade é por FAIXA, com as
+ * categorias vindo da MESMA resposta que desenha o gráfico — é isso que impede filtro e gráfico de divergir.
+ */
+describe('EquipePage — filtros Status / Situação Cadastral / Idade', () => {
+  const AGE_RANGES = [
+    { id: 'ATE_29', label: 'Até 29', count: 4 },
+    { id: 'DE_30_A_39', label: '30 a 39', count: 10 },
+    { id: 'DE_40_A_49', label: '40 a 49', count: 12 },
+    { id: 'DE_50_A_59', label: '50 a 59', count: 10 },
+    { id: 'MAIS_60', label: '60+', count: 0 },
+    { id: 'NA', label: 'N/A', count: 0 },
+  ] as const
+
+  async function renderComDemografia(): Promise<void> {
+    mockedGetTeam.mockResolvedValue(ok(TEAM))
+    vi.mocked(reportsRepository.getTeamDemographics).mockResolvedValue(
+      ok({ totalActive: 36, gender: [], ageRange: AGE_RANGES, race: [] }),
+    )
+    renderPage()
+    await screen.findByText('Anterior')
+  }
+
+  const optionsOf = (label: string): readonly string[] =>
+    Array.from(screen.getByLabelText(label).querySelectorAll('option')).map((o) => o.textContent ?? '')
+
+  it('Status oferece Ativo/Inativo com os rótulos do módulo Colaboradores', async () => {
+    await renderComDemografia()
+    expect(optionsOf('Status')).toEqual(['Todos', 'Ativo', 'Inativo'])
+  })
+
+  it('Situação Cadastral oferece Cadastrado/Pré-cadastro', async () => {
+    await renderComDemografia()
+    expect(optionsOf('Situação Cadastral')).toEqual(['Todos', 'Cadastrado', 'Pré-cadastro'])
+  })
+
+  it('Idade oferece as MESMAS faixas do gráfico (rótulos vindos da API)', async () => {
+    await renderComDemografia()
+    expect(optionsOf('Idade')).toEqual(['Todos', 'Até 29', '30 a 39', '40 a 49', '50 a 59', '60+', 'N/A'])
+  })
+
+  it('filtrar por Status=Inativo recorta a tabela (fixture: 1 em cada 5 inativo)', async () => {
+    await renderComDemografia()
+    const antes = screen.getAllByRole('button', { name: /Ver detalhes de/ }).length
+    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'INATIVO' } })
+    fireEvent.click(screen.getByText('Filtrar'))
+    const depois = screen.getAllByRole('button', { name: /Ver detalhes de/ })
+    // 36 membros, `active: i % 5 !== 0` → 8 inativos; todos cabem na 1ª página de 10.
+    expect(depois.length).toBe(8)
+    expect(depois.length).toBeLessThan(antes)
+  })
+
+  it('filtrar por faixa etária usa o corte por pessoa (idade 25..54 na fixture)', async () => {
+    await renderComDemografia()
+    fireEvent.change(screen.getByLabelText('Idade'), { target: { value: 'MAIS_60' } })
+    fireEvent.click(screen.getByText('Filtrar'))
+    // Ninguém com 60+ na fixture → tabela vazia, sem quebrar a tela.
+    expect(screen.queryAllByRole('button', { name: /Ver detalhes de/ }).length).toBe(0)
   })
 })
 

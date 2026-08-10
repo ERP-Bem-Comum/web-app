@@ -14,6 +14,13 @@
  * ZERO React/TanStack (o lint barra `react`/`@tanstack/react-*` em `*.view-model.ts`). Testável em
  * node:test. Sem `throw` nas derivações (§II). Nada de dinheiro aqui.
  */
+import {
+  GENDER_IDENTITIES,
+  RACES,
+  EDUCATION_LEVELS,
+  EMPLOYMENT_RELATIONSHIPS,
+  OCCUPATION_AREAS,
+} from '#modules/partners/public-api/index.ts'
 import { EQUIPE_PLACEHOLDER, type TeamMemberRow } from './data/equipe.placeholder.ts'
 import type { TeamMember } from './data/model/team-report.model.ts'
 
@@ -49,17 +56,32 @@ const NA_SENTINEL = '—'
  * valor real aparece no detalhe). Os 3 gráficos demográficos NÃO derivam daqui — a page passa dataset vazio
  * (empty-state honesto). Sem `throw` (§II).
  */
-export function toTeamRows(members: readonly TeamMember[]): readonly TeamMemberRow[] {
+export function toTeamRows(
+  members: readonly TeamMember[],
+  /**
+   * `id do colaborador → área de atuação` (PARC/DDI/DCE/EPV), vindo da LISTAGEM de Colaboradores. O
+   * `/reports/team` não carrega a área: a projeção do core-api grava `program: null` de propósito
+   * ("`program` não existe no modelo Collaborator"). Como todo dado do Equipe ABC sai de Colaboradores,
+   * o front cruza pelo `id`. Sem o mapa (ainda carregando / falhou) → sentinela, nunca linha perdida.
+   */
+  areaById: ReadonlyMap<string, string> = new Map(),
+): readonly TeamMemberRow[] {
   return members.map((m) => ({
     nome: m.name,
-    idade: null,
-    programa: m.program ?? NA_SENTINEL,
+    // Os 3 campos abaixo vinham cravados em sentinela porque o schema de borda não declarava as chaves —
+    // o core-api mandava e o Zod descartava calado. Agora são o CÓDIGO canônico; a View traduz.
+    idade: m.age,
+    programa: areaById.get(m.id) ?? NA_SENTINEL,
     funcao: m.role,
     vinculo: m.employmentRelationship,
-    genero: NA_SENTINEL,
-    racaCor: NA_SENTINEL,
+    genero: m.genderIdentity ?? NA_SENTINEL,
+    racaCor: m.race ?? NA_SENTINEL,
     escolaridade: m.education ?? NA_SENTINEL,
     anoContrato: parseContractYear(m.startOfContract),
+    // `active` e `registrationStatus` SEMPRE vieram no DTO (`reports.io.ts`) — só não chegavam à linha, então
+    // os filtros Status e Situação Cadastral ficavam inertes em "Todos" sem ter por quê.
+    status: m.active ? 'ATIVO' : 'INATIVO',
+    situacaoCadastral: m.registrationStatus,
   }))
 }
 
@@ -102,8 +124,19 @@ export function byFuncao(rows: readonly TeamMemberRow[] = EQUIPE_PLACEHOLDER): r
 // ── Opções dos filtros (derivadas dos VALORES DISTINTOS dos próprios dados — não há endpoint de opções) ──
 
 /**
- * Opções dos 5 filtros POPULÁVEIS do Equipe ABC (têm dado real no `TeamMemberRow`). Raça/Idade/Gênero ficam
- * FORA: o endpoint `/reports/team` é LGPD-safe → vêm como sentinela (`—`/null), então a page os deixa "Todos".
+ * Opções dos filtros do Equipe ABC. Os valores são sempre **CÓDIGOS**; a View traduz (i18n).
+ *
+ * Duas naturezas, e a distinção é o ponto desta função:
+ *
+ * - **Lista fechada do domínio** (`programa`/área, `vinculo`, `escolaridade`, `genero`, `racaCor`): vêm dos
+ *   enums canônicos de Colaboradores, via `partners/public-api`. Aparecem SEMPRE, mesmo que ninguém no
+ *   recorte atual tenha aquele valor — é como o módulo de Colaboradores se comporta, e é o que evita a
+ *   pessoa concluir que "PJ não existe" só porque hoje não há nenhum PJ contratado.
+ * - **Derivada do dado** (`funcao`, `anoContrato`): texto livre / número, sem enum no domínio — aqui os
+ *   distintos das linhas são a única fonte possível.
+ *
+ * Reusar os enums (em vez de copiá-los) é deliberado: foi a cópia local desatualizada que fez os gráficos
+ * deste mesmo relatório apagarem em silêncio pessoas trans e indígenas.
  */
 export type TeamFilterOptions = Readonly<{
   escolaridade: readonly string[]
@@ -111,7 +144,44 @@ export type TeamFilterOptions = Readonly<{
   anoContrato: readonly string[]
   programa: readonly string[]
   funcao: readonly string[]
+  genero: readonly string[]
+  racaCor: readonly string[]
+  status: readonly string[]
+  situacaoCadastral: readonly string[]
 }>
+
+/**
+ * Status do vínculo. Lista fechada de DOIS valores — código nosso (o DTO traz `active: boolean`), traduzido
+ * na View com as MESMAS chaves de Colaboradores (`partners.collaborators.status.*`).
+ */
+export const TEAM_STATUSES = ['ATIVO', 'INATIVO'] as const
+
+/**
+ * Situação cadastral. Os códigos são os do core-api (`RegistrationStatus`), em PascalCase — por isso não
+ * passam pelo helper genérico de rótulo: a chave do catálogo é kebab
+ * (`partners.collaborators.registration.complete` / `.pre-registration`).
+ */
+export const TEAM_REGISTRATION_STATUSES = ['Complete', 'PreRegistration'] as const
+
+/**
+ * Faixas etárias — os MESMOS 5 cortes do gráfico "Idade" (`AGE_RANGE_CATEGORIES` do core-api) mais o `NA`
+ * de quem não tem nascimento cadastrado. O backend só publica a faixa AGREGADA (contagem por categoria),
+ * nunca a faixa de cada pessoa, então o corte por linha tem que ser feito aqui — mas os RÓTULOS continuam
+ * vindo da API (a page passa `demographics.ageRange`), para não nascer um segundo dicionário.
+ *
+ * Se o core-api mudar os cortes, gráfico e filtro divergem — é o que o teste `faixaEtariaIdOf` protege.
+ */
+export const AGE_RANGE_NA = 'NA'
+
+/** Faixa etária de uma idade, no vocabulário do gráfico. `null` (sem nascimento) → `NA`. Sem `throw` (§II). */
+export function faixaEtariaIdOf(idade: number | null): string {
+  if (idade === null) return AGE_RANGE_NA
+  if (idade <= 29) return 'ATE_29'
+  if (idade <= 39) return 'DE_30_A_39'
+  if (idade <= 49) return 'DE_40_A_49'
+  if (idade <= 59) return 'DE_50_A_59'
+  return 'MAIS_60'
+}
 
 /** Pula vazio e as sentinelas honestas dos campos não fornecidos (`—` demografia · `N/A` idade). */
 const isMeaningful = (v: string): boolean => v !== '' && v !== NA_SENTINEL && v !== 'N/A'
@@ -131,10 +201,16 @@ export function teamFilterOptions(rows: readonly TeamMemberRow[] = EQUIPE_PLACEH
     .sort((a, b) => b - a)
     .map((y) => String(y))
   return {
-    escolaridade: distinctSorted(rows.map((r) => r.escolaridade)),
-    vinculo: distinctSorted(rows.map((r) => r.vinculo)),
+    // Fechadas: o domínio manda, não o recorte carregado.
+    escolaridade: EDUCATION_LEVELS,
+    vinculo: EMPLOYMENT_RELATIONSHIPS,
+    programa: OCCUPATION_AREAS,
+    genero: GENDER_IDENTITIES,
+    racaCor: RACES,
+    status: TEAM_STATUSES,
+    situacaoCadastral: TEAM_REGISTRATION_STATUSES,
+    // Derivadas: sem enum no domínio.
     anoContrato,
-    programa: distinctSorted(rows.map((r) => r.programa)),
     funcao: distinctSorted(rows.map((r) => r.funcao)),
   }
 }
@@ -152,6 +228,12 @@ export type TeamFilters = Readonly<{
   anoContrato: string
   programa: string
   funcao: string
+  genero: string
+  racaCor: string
+  status: string
+  situacaoCadastral: string
+  /** Id da faixa etária do gráfico ('ATE_29', 'MAIS_60', 'NA'); '' = todas. */
+  faixaEtaria: string
   search: string
 }>
 
@@ -161,6 +243,11 @@ export const EMPTY_TEAM_FILTERS: TeamFilters = {
   anoContrato: '',
   programa: '',
   funcao: '',
+  genero: '',
+  racaCor: '',
+  status: '',
+  situacaoCadastral: '',
+  faixaEtaria: '',
   search: '',
 }
 
@@ -186,6 +273,11 @@ export function applyTeamFilters(rows: readonly TeamMemberRow[], f: TeamFilters)
       (f.anoContrato === '' || r.anoContrato === Number(f.anoContrato)) &&
       (f.programa === '' || r.programa === f.programa) &&
       (f.funcao === '' || r.funcao === f.funcao) &&
+      (f.genero === '' || r.genero === f.genero) &&
+      (f.racaCor === '' || r.racaCor === f.racaCor) &&
+      (f.status === '' || r.status === f.status) &&
+      (f.situacaoCadastral === '' || r.situacaoCadastral === f.situacaoCadastral) &&
+      (f.faixaEtaria === '' || faixaEtariaIdOf(r.idade) === f.faixaEtaria) &&
       (q === '' || normalizeText(r.nome).includes(q)),
   )
 }

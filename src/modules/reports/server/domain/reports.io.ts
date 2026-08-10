@@ -23,6 +23,11 @@ export type TeamMember = Readonly<{
   active: boolean
   education: string | null
   experienceInPublicSector: boolean | null
+  /** Códigos canônicos do domínio de Colaboradores ('MULHER_CIS', 'INDIGENA'); rótulo PT-BR é do front. */
+  genderIdentity: string | null
+  race: string | null
+  /** Anos completos, já derivados pelo core-api — `dateOfBirth` nunca cruza a borda. */
+  age: number | null
 }>
 
 /**

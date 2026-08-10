@@ -46,6 +46,19 @@ export type {
   CollaboratorListResponse,
 } from '#modules/partners/server/domain/collaborator/collaborator.io.ts'
 
+// Enums CANÔNICOS do colaborador — a lista de verdade, reexportada para quem exibe esses campos fora
+// do módulo (hoje: o relatório "Equipe ABC", cujos dados saem daqui). Atravessa por aqui de propósito:
+// duplicar a lista foi o que fez os gráficos do Equipe apagarem em silêncio pessoas trans e indígenas.
+// Rótulos PT-BR: `partners.collaborators.{gender,race,education,employment,area}.<CODIGO>` no catálogo.
+export {
+  GENDER_IDENTITIES,
+  RACES,
+  EDUCATION_LEVELS,
+  EMPLOYMENT_RELATIONSHIPS,
+  OCCUPATION_AREAS,
+} from '#modules/partners/client/data/model/collaborator.model.ts'
+export type { EmploymentRelationship } from '#modules/partners/client/data/model/collaborator.model.ts'
+
 // Autocadastro (#040) — rota PÚBLICA token-based da 2ª fase do cadastro (sem sessão).
 export { autocadastroPreviewFn } from '#modules/partners/server/adapters/server-fns/collaborator/autocadastro-preview.query.fn.ts'
 export { autocadastroSubmitFn } from '#modules/partners/server/adapters/server-fns/collaborator/autocadastro-submit.service.fn.ts'

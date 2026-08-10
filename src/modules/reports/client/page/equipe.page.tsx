@@ -1,11 +1,14 @@
 /**
  * EquipePage — tela do relatório "Equipe ABC" (identidade "brand", full-bleed 28px), no MESMO padrão do
- * relatório "Realizado × Planejado" (filtros recolhíveis → gráficos → tabela). Front-first: os dados vêm de
- * constantes placeholder SINTÉTICAS (LGPD — ver `equipe.placeholder.ts`); o endpoint do core-api (#114/#112)
- * ainda não existe. A ViewModel PURA faz TODA a agregação dos 5 gráficos; a page só compõe as views burras e
- * guarda o ÚNICO UI-state local: o toggle dos filtros. Export = CSV enxuto (Blob), sem PDF.
+ * relatório "Realizado × Planejado" (filtros recolhíveis → gráficos → tabela). Os dados são REAIS
+ * (`/reports/team` + `/reports/team/demographics`); `equipe.placeholder.ts` sobrou só como fixture do
+ * núcleo puro. A ViewModel PURA faz TODA a agregação; a page compõe as views burras e guarda o UI-state
+ * local (toggle dos filtros, draft × aplicado, paginação). Export = CSV enxuto (Blob), sem PDF.
  *
- * Os filtros (busca + selects) são PLACEHOLDERS visuais (front-first) — não filtram nada ainda.
+ * Os filtros FILTRAM (client-side, sobre o conjunto já carregado). Duas naturezas: lista FECHADA do domínio
+ * de Colaboradores (área, vínculo, escolaridade, gênero, raça/cor, status, situação cadastral) e derivada do
+ * dado (função, ano de contrato). Idade é por FAIXA, nas categorias da própria API. Segue inerte apenas
+ * "Desativado por" — o motivo não vem na projeção do core-api.
  */
 import { useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from '@tanstack/react-router'
@@ -73,6 +76,59 @@ import { headTitleBlock } from './posicao-pagamentos.page.css.ts'
 
 const t = createTranslator(ptBR)
 
+/** Par {value,label} do select: `value` é sempre o CÓDIGO (é o que os filtros comparam). */
+export type SelectOption = Readonly<{ value: string; label: string }>
+
+/**
+ * Tradutor de código do domínio de Colaboradores. Reusa as chaves de LÁ (`partners.collaborators.<grupo>.*`)
+ * em vez de criar um dicionário próprio no relatório — dois dicionários divergem, e foi assim que este mesmo
+ * relatório passou a apagar identidades que a cópia local não conhecia.
+ * Sem tradução → devolve o código cru: fica feio, mas aparece. Nunca some.
+ */
+const labeled =
+  (grupo: 'education' | 'employment' | 'area' | 'gender' | 'race') =>
+  (codigo: string): SelectOption => {
+    const tag = `partners.collaborators.${grupo}.${codigo}`
+    const label = t(tag)
+    return { value: codigo, label: label === tag ? codigo : label }
+  }
+
+/** Valor livre (função, ano): não há código; o próprio texto é o rótulo. */
+const asIs = (v: string): SelectOption => ({ value: v, label: v })
+
+/**
+ * Status e Situação Cadastral não passam pelo `labeled()`: a chave do catálogo não é o código.
+ * Status é código nosso ('ATIVO'), situação é PascalCase do core-api ('PreRegistration') e as chaves de
+ * Colaboradores são kebab. O mapa explícito reusa o rótulo de LÁ — as duas telas dizem a mesma palavra.
+ */
+const STATUS_LABEL_KEYS: Readonly<Record<string, string>> = {
+  ATIVO: 'partners.collaborators.status.active',
+  INATIVO: 'partners.collaborators.status.inactive',
+}
+const REGISTRATION_LABEL_KEYS: Readonly<Record<string, string>> = {
+  Complete: 'partners.collaborators.registration.complete',
+  PreRegistration: 'partners.collaborators.registration.pre-registration',
+}
+
+/** Traduz por mapa explícito; código fora do mapa cai nele mesmo (fica feio, mas aparece — nunca some). */
+const byKeyMap =
+  (keys: Readonly<Record<string, string>>) =>
+  (codigo: string): SelectOption => {
+    const tag = keys[codigo]
+    if (tag === undefined) return { value: codigo, label: codigo }
+    const label = t(tag)
+    return { value: codigo, label: label === tag ? codigo : label }
+  }
+
+const statusOption = byKeyMap(STATUS_LABEL_KEYS)
+const registrationOption = byKeyMap(REGISTRATION_LABEL_KEYS)
+
+/** Rótulo p/ o resumo dos filtros aplicados; '' (nada aplicado) continua '' — o resumo omite a linha. */
+const labelOrEmpty = (
+  grupo: 'education' | 'employment' | 'area' | 'gender' | 'race',
+  codigo: string,
+): string => (codigo === '' ? '' : labeled(grupo)(codigo).label)
+
 /** Linhas vazias enquanto a query carrega/falha (mantém a ordem dos hooks estável — §XI). */
 const EMPTY_ROWS: readonly TeamMemberRow[] = []
 
@@ -80,7 +136,10 @@ const EMPTY_ROWS: readonly TeamMemberRow[] = []
  * Os 3 gráficos demográficos (Gênero/Idade/Raça-cor) consomem a AGREGAÇÃO do endpoint dedicado
  * (`useEquipeDemographics` → `demographics.{gender,ageRange,race}`) — NUNCA linha-por-pessoa (Opção A / LGPD,
  * decisão da P.O. 2026-07-20: só estatística agregada cruza a fronteira). Vazios só quando não há colaborador
- * com esses campos preenchidos (data, não wiring). As colunas/filtros por-pessoa seguem "—"/"Todos" de propósito.
+ * com esses campos preenchidos (data, não wiring).
+ *
+ * As COLUNAS por-pessoa (idade/gênero/raça-cor) já mostram o valor real: o `/reports/team` sempre mandou os
+ * códigos, era o schema de borda do BFF que os descartava calado. Agregado e por-pessoa saem da mesma fonte.
  */
 
 /** Baixa o CSV via Blob + anchor (client-side; o backend entregará JSON depois). */
@@ -129,18 +188,80 @@ export function EquipePage(): ReactNode {
   const filterOpts = useMemo(() => teamFilterOptions(rows), [rows])
   const allOption = t('reports.equipe.filters.allOption')
 
+  // CÓDIGO → rótulo PT-BR. As chaves são as MESMAS do módulo de Colaboradores (`partners.collaborators.*`),
+  // de propósito: o filtro daqui tem que ler igual ao de lá, senão a mesma pessoa aparece como "Parcerias"
+  // numa tela e "PARC" na outra. Código sem tradução cai nele mesmo — some nada.
+  const opts = useMemo(
+    () => ({
+      escolaridade: filterOpts.escolaridade.map(labeled('education')),
+      vinculo: filterOpts.vinculo.map(labeled('employment')),
+      programa: filterOpts.programa.map(labeled('area')),
+      genero: filterOpts.genero.map(labeled('gender')),
+      racaCor: filterOpts.racaCor.map(labeled('race')),
+      status: filterOpts.status.map(statusOption),
+      situacaoCadastral: filterOpts.situacaoCadastral.map(registrationOption),
+      // Livres: o valor É o rótulo.
+      anoContrato: filterOpts.anoContrato.map(asIs),
+      funcao: filterOpts.funcao.map(asIs),
+    }),
+    [filterOpts],
+  )
+
+  // Faixa etária: id e rótulo das MESMAS categorias que a API usa no gráfico "Idade" — sem dicionário local,
+  // então filtro e gráfico não divergem. Vem de `ageRangeAll` (com as vazias): o gráfico não desenha barra de
+  // ninguém, mas o filtro é lista fechada e mostra as 6 faixas sempre. O corte por pessoa é local
+  // (`faixaEtariaIdOf`) porque o backend só publica a faixa AGREGADA. Demografia carregando/falhou → lista
+  // vazia (só "Todos"): nada de faixa inventada pelo front.
+  const faixaEtariaOptions = useMemo<readonly SelectOption[]>(
+    () => demographics.ageRangeAll.map((c) => ({ value: c.id, label: c.label })),
+    [demographics.ageRangeAll],
+  )
+
   // Paginação da tabela sobre o FILTRADO (fatia PURA da ViewModel; o UI-state page/perPage mora aqui).
   const pages = totalPages(totalCount, perPage)
   const pageRows = useMemo(() => pageSlice(filteredRows, page, perPage), [filteredRows, page, perPage])
 
+  // A tabela é view BURRA: recebe texto pronto. Os filtros comparam CÓDIGO, a tabela mostra RÓTULO — por isso
+  // a tradução acontece só aqui, na fronteira da exibição, e não dentro da linha (que precisa do código).
+  const displayRows = useMemo(
+    () =>
+      pageRows.map((r) => ({
+        ...r,
+        programa: labeled('area')(r.programa).label,
+        vinculo: labeled('employment')(r.vinculo).label,
+        genero: labeled('gender')(r.genero).label,
+        racaCor: labeled('race')(r.racaCor).label,
+        escolaridade: labeled('education')(r.escolaridade).label,
+      })),
+    [pageRows],
+  )
+
   // Resumo dos filtros APLICADOS (subtítulo) — do `applied`, não do draft. Valores já são os próprios rótulos
   // (sem UUID) → value=label. Reusa o helper puro (§XI). Nenhum aplicado → [] (sem linha).
   const subtitleParts = buildFilterSummaryParts([
-    { label: t('reports.equipe.filters.escolaridade'), value: applied.escolaridade },
-    { label: t('reports.equipe.filters.vinculo'), value: applied.vinculo },
+    {
+      label: t('reports.equipe.filters.escolaridade'),
+      value: labelOrEmpty('education', applied.escolaridade),
+    },
+    { label: t('reports.equipe.filters.vinculo'), value: labelOrEmpty('employment', applied.vinculo) },
     { label: t('reports.equipe.filters.anoContrato'), value: applied.anoContrato },
-    { label: t('reports.equipe.filters.programa'), value: applied.programa },
+    { label: t('reports.equipe.filters.area'), value: labelOrEmpty('area', applied.programa) },
     { label: t('reports.equipe.filters.funcao'), value: applied.funcao },
+    { label: t('reports.equipe.filters.genero'), value: labelOrEmpty('gender', applied.genero) },
+    { label: t('reports.equipe.filters.raca'), value: labelOrEmpty('race', applied.racaCor) },
+    {
+      label: t('reports.equipe.filters.status'),
+      value: applied.status === '' ? '' : statusOption(applied.status).label,
+    },
+    {
+      label: t('reports.equipe.filters.situacaoCadastral'),
+      value: applied.situacaoCadastral === '' ? '' : registrationOption(applied.situacaoCadastral).label,
+    },
+    {
+      // Rótulo da faixa vem da MESMA lista do select (API), não de um mapa local.
+      label: t('reports.equipe.filters.idade'),
+      value: faixaEtariaOptions.find((o) => o.value === applied.faixaEtaria)?.label ?? '',
+    },
     { label: t('reports.equipe.filters.busca'), value: applied.search },
   ])
 
@@ -220,18 +341,26 @@ export function EquipePage(): ReactNode {
             <FilterField
               label={t('reports.equipe.filters.escolaridade')}
               placeholder={allOption}
-              options={filterOpts.escolaridade}
+              options={opts.escolaridade}
               value={draft.escolaridade}
               onChange={(v) => {
                 setDraft((d) => ({ ...d, escolaridade: v }))
               }}
             />
-            {/* Raça: LGPD-safe (#477) → sem dado real, inerte "Todos". */}
-            <FilterField label={t('reports.equipe.filters.raca')} placeholder={allOption} />
+            {/* Raça/cor: o core-api JÁ manda o código por pessoa (era o schema de borda que descartava). */}
+            <FilterField
+              label={t('reports.equipe.filters.raca')}
+              placeholder={allOption}
+              options={opts.racaCor}
+              value={draft.racaCor}
+              onChange={(v) => {
+                setDraft((d) => ({ ...d, racaCor: v }))
+              }}
+            />
             <FilterField
               label={t('reports.equipe.filters.anoContrato')}
               placeholder={allOption}
-              options={filterOpts.anoContrato}
+              options={opts.anoContrato}
               value={draft.anoContrato}
               onChange={(v) => {
                 setDraft((d) => ({ ...d, anoContrato: v }))
@@ -240,9 +369,9 @@ export function EquipePage(): ReactNode {
             {/* Desativado por: sem campo no TeamMemberRow → inerte "Todos". */}
             <FilterField label={t('reports.equipe.filters.desativadoPor')} placeholder={allOption} />
             <FilterField
-              label={t('reports.equipe.filters.programa')}
+              label={t('reports.equipe.filters.area')}
               placeholder={allOption}
-              options={filterOpts.programa}
+              options={opts.programa}
               value={draft.programa}
               onChange={(v) => {
                 setDraft((d) => ({ ...d, programa: v }))
@@ -251,24 +380,56 @@ export function EquipePage(): ReactNode {
             <FilterField
               label={t('reports.equipe.filters.funcao')}
               placeholder={allOption}
-              options={filterOpts.funcao}
+              options={opts.funcao}
               value={draft.funcao}
               onChange={(v) => {
                 setDraft((d) => ({ ...d, funcao: v }))
               }}
             />
-            {/* Gênero: LGPD-safe (#477) → inerte "Todos". */}
-            <FilterField label={t('reports.equipe.filters.genero')} placeholder={allOption} />
-            {/* Status: sem campo no TeamMemberRow → inerte "Todos". */}
-            <FilterField label={t('reports.equipe.filters.status')} placeholder={allOption} />
-            {/* Situação cadastral: sem campo → inerte "Todos". */}
-            <FilterField label={t('reports.equipe.filters.situacaoCadastral')} placeholder={allOption} />
-            {/* Idade: LGPD-safe (#477) → inerte "Todos". */}
-            <FilterField label={t('reports.equipe.filters.idade')} placeholder={allOption} />
+            {/* Identidade de gênero: idem — dado real por pessoa, lista fechada com as 8 identidades. */}
+            <FilterField
+              label={t('reports.equipe.filters.genero')}
+              placeholder={allOption}
+              options={opts.genero}
+              value={draft.genero}
+              onChange={(v) => {
+                setDraft((d) => ({ ...d, genero: v }))
+              }}
+            />
+            {/* Status: `active` do DTO, virado em código ATIVO/INATIVO na linha. */}
+            <FilterField
+              label={t('reports.equipe.filters.status')}
+              placeholder={allOption}
+              options={opts.status}
+              value={draft.status}
+              onChange={(v) => {
+                setDraft((d) => ({ ...d, status: v }))
+              }}
+            />
+            {/* Situação cadastral: `registrationStatus` do DTO (Cadastrado / Pré-cadastro). */}
+            <FilterField
+              label={t('reports.equipe.filters.situacaoCadastral')}
+              placeholder={allOption}
+              options={opts.situacaoCadastral}
+              value={draft.situacaoCadastral}
+              onChange={(v) => {
+                setDraft((d) => ({ ...d, situacaoCadastral: v }))
+              }}
+            />
+            {/* Idade: por FAIXA, nas mesmas categorias do gráfico logo acima (não por idade exata). */}
+            <FilterField
+              label={t('reports.equipe.filters.idade')}
+              placeholder={allOption}
+              options={faixaEtariaOptions}
+              value={draft.faixaEtaria}
+              onChange={(v) => {
+                setDraft((d) => ({ ...d, faixaEtaria: v }))
+              }}
+            />
             <FilterField
               label={t('reports.equipe.filters.vinculo')}
               placeholder={allOption}
-              options={filterOpts.vinculo}
+              options={opts.vinculo}
               value={draft.vinculo}
               onChange={(v) => {
                 setDraft((d) => ({ ...d, vinculo: v }))
@@ -376,7 +537,7 @@ export function EquipePage(): ReactNode {
 
       {/* Tabela (8 colunas de exibição) — linhas clicáveis abrem o modal de detalhe */}
       <EquipeTable
-        rows={pageRows}
+        rows={displayRows}
         totalCount={totalCount}
         labels={{
           cardTitle: t('reports.equipe.table.title'),
@@ -454,8 +615,10 @@ export function EquipePage(): ReactNode {
 /** Campo de filtro (select nativo placeholder — só a forma/estilo brand). */
 /**
  * Campo de filtro (select nativo CONTROLADO). `placeholder` = opção vazia (value '') = "Todos" (sem recorte).
- * `options` são os valores REAIS (label==value). Sem `value`/`onChange` → inerte (só "Todos"; filtros sem dado
- * real, ex.: Raça/Idade/Gênero — LGPD).
+ * `options` são pares {value: CÓDIGO, label: PT-BR} — o filtro compara código, a pessoa lê o rótulo.
+ *
+ * Sem `value`/`onChange` → inerte (só "Todos"). Hoje sobra UM inerte: "Desativado por", porque o motivo da
+ * desativação (`disable_by`) não entra na projeção do `/reports/team` — depende do core-api, não daqui.
  */
 function FilterField({
   label,
@@ -466,7 +629,7 @@ function FilterField({
 }: {
   label: string
   placeholder: string
-  options?: readonly string[]
+  options?: readonly SelectOption[]
   value?: string
   onChange?: (v: string) => void
 }): ReactNode {
@@ -484,8 +647,8 @@ function FilterField({
         >
           <option value="">{placeholder}</option>
           {(options ?? []).map((o) => (
-            <option key={o} value={o}>
-              {o}
+            <option key={o.value} value={o.value}>
+              {o.label}
             </option>
           ))}
         </select>

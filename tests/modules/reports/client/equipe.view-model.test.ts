@@ -21,7 +21,17 @@ import {
   pageSlice,
   PER_PAGE_DEFAULT,
   ANOS,
+  faixaEtariaIdOf,
 } from '../../../../src/modules/reports/client/equipe.view-model.ts'
+// Os enums canônicos: o teste compara contra a MESMA fonte que a tela usa (se a lista mudar no domínio de
+// Colaboradores, o filtro acompanha sozinho — é justamente o que estas asserções garantem).
+import {
+  GENDER_IDENTITIES,
+  RACES,
+  EDUCATION_LEVELS,
+  EMPLOYMENT_RELATIONSHIPS,
+  OCCUPATION_AREAS,
+} from '../../../../src/modules/partners/client/data/model/collaborator.model.ts'
 import {
   EQUIPE_PLACEHOLDER,
   type TeamMemberRow,
@@ -39,6 +49,8 @@ const FIX: readonly TeamMemberRow[] = [
     racaCor: 'Branco',
     escolaridade: 'Superior Completo',
     anoContrato: 2019,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'B',
@@ -50,6 +62,8 @@ const FIX: readonly TeamMemberRow[] = [
     racaCor: 'Pardo',
     escolaridade: 'Mestrado',
     anoContrato: 2020,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'C',
@@ -61,6 +75,8 @@ const FIX: readonly TeamMemberRow[] = [
     racaCor: 'Preto',
     escolaridade: 'Pós-graduação',
     anoContrato: 2020,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'D',
@@ -72,6 +88,8 @@ const FIX: readonly TeamMemberRow[] = [
     racaCor: 'Branco',
     escolaridade: 'N/A',
     anoContrato: 2021,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'E',
@@ -83,6 +101,8 @@ const FIX: readonly TeamMemberRow[] = [
     racaCor: 'Amarelo',
     escolaridade: 'Superior Completo',
     anoContrato: 2025,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'F',
@@ -94,6 +114,8 @@ const FIX: readonly TeamMemberRow[] = [
     racaCor: 'N/A',
     escolaridade: 'N/A',
     anoContrato: 2018,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
 ]
 
@@ -231,7 +253,11 @@ describe('placeholder sintético (LGPD)', () => {
     assert.strictEqual(loadTeam().length, 36)
   })
 
-  it('cada linha carrega SOMENTE as 9 chaves de exibição — nenhum campo sensível', () => {
+  // Guard de LGPD: a allowlist é o CONTRATO da linha — só o recorte de exibição/filtro entra. Ampliar esta
+  // lista é uma decisão consciente, não um ajuste mecânico: nada de cpf/email/telefone/endereço/
+  // remuneração/alergias/biografia, que é o que este teste existe para barrar. `status` e
+  // `situacaoCadastral` são estado operacional do vínculo (não PII) e alimentam 2 dos filtros da tela.
+  it('cada linha carrega SOMENTE as 11 chaves de exibição/filtro — nenhum campo sensível', () => {
     const allowed = new Set([
       'nome',
       'idade',
@@ -242,6 +268,8 @@ describe('placeholder sintético (LGPD)', () => {
       'racaCor',
       'escolaridade',
       'anoContrato',
+      'status',
+      'situacaoCadastral',
     ])
     for (const row of EQUIPE_PLACEHOLDER) {
       for (const key of Object.keys(row)) {
@@ -287,6 +315,8 @@ describe('teamFilterOptions', () => {
     racaCor: '—',
     escolaridade: '—',
     anoContrato: 0,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
     ...over,
   })
   const ROWS: readonly TeamMemberRow[] = [
@@ -296,33 +326,57 @@ describe('teamFilterOptions', () => {
       programa: 'Beta',
       funcao: 'Coordenador',
       anoContrato: 2021,
+      status: 'ATIVO',
+      situacaoCadastral: 'Complete',
     }),
     mk({ escolaridade: 'Médio', vinculo: 'PJ', programa: 'Alfa', funcao: 'Analista', anoContrato: 2023 }),
     mk({ escolaridade: 'Superior', vinculo: 'CLT', programa: 'Alfa', funcao: 'Analista', anoContrato: 2021 }),
     mk({ escolaridade: '—', vinculo: '', programa: 'N/A', funcao: '—', anoContrato: 0 }), // tudo sentinela → pulado
   ]
 
-  it('distintos, sem sentinela/vazio, alfabético pt-BR', () => {
-    const o = teamFilterOptions(ROWS)
-    assert.deepStrictEqual(o.escolaridade, ['Médio', 'Superior'])
-    assert.deepStrictEqual(o.vinculo, ['CLT', 'PJ'])
-    assert.deepStrictEqual(o.programa, ['Alfa', 'Beta'])
-    assert.deepStrictEqual(o.funcao, ['Analista', 'Coordenador'])
+  it('derivadas do dado (funcao): distintas, sem sentinela/vazio, alfabético pt-BR', () => {
+    assert.deepStrictEqual(teamFilterOptions(ROWS).funcao, ['Analista', 'Coordenador'])
   })
 
   it('anoContrato: anos válidos únicos em DESC (pula 0)', () => {
     assert.deepStrictEqual(teamFilterOptions(ROWS).anoContrato, ['2023', '2021'])
   })
 
-  it('linha toda-sentinela não contribui com nenhuma opção', () => {
+  // As listas FECHADAS vêm do domínio de Colaboradores, não do recorte carregado: um valor sem ninguém hoje
+  // ainda aparece (senão a pessoa conclui que "PJ não existe" por não haver PJ contratado). É o oposto das
+  // derivadas acima — e foi a cópia local desatualizada que fez este relatório apagar identidades.
+  it('fechadas: vêm dos enums canônicos, mesmo sem nenhuma linha correspondente', () => {
     const o = teamFilterOptions([mk({})])
-    assert.deepStrictEqual(o, {
-      escolaridade: [],
-      vinculo: [],
-      anoContrato: [],
-      programa: [],
-      funcao: [],
-    })
+    assert.deepStrictEqual(o.vinculo, EMPLOYMENT_RELATIONSHIPS)
+    assert.deepStrictEqual(o.escolaridade, EDUCATION_LEVELS)
+    assert.deepStrictEqual(o.programa, OCCUPATION_AREAS)
+    assert.deepStrictEqual(o.genero, GENDER_IDENTITIES)
+    assert.deepStrictEqual(o.racaCor, RACES)
+    assert.ok(o.racaCor.includes('INDIGENA'), 'INDIGENA nunca pode sumir da lista')
+    assert.deepStrictEqual(o.status, ['ATIVO', 'INATIVO'])
+    assert.deepStrictEqual(o.situacaoCadastral, ['Complete', 'PreRegistration'])
+  })
+
+  it('linha toda-sentinela não contribui com nenhuma opção DERIVADA', () => {
+    const o = teamFilterOptions([mk({})])
+    assert.deepStrictEqual(o.funcao, [])
+    assert.deepStrictEqual(o.anoContrato, [])
+  })
+})
+
+describe('faixaEtariaIdOf (mesmos cortes do gráfico Idade do core-api)', () => {
+  it('mapeia as 5 faixas + NA nas bordas', () => {
+    assert.strictEqual(faixaEtariaIdOf(null), 'NA')
+    assert.strictEqual(faixaEtariaIdOf(0), 'ATE_29')
+    assert.strictEqual(faixaEtariaIdOf(29), 'ATE_29')
+    assert.strictEqual(faixaEtariaIdOf(30), 'DE_30_A_39')
+    assert.strictEqual(faixaEtariaIdOf(39), 'DE_30_A_39')
+    assert.strictEqual(faixaEtariaIdOf(40), 'DE_40_A_49')
+    assert.strictEqual(faixaEtariaIdOf(49), 'DE_40_A_49')
+    assert.strictEqual(faixaEtariaIdOf(50), 'DE_50_A_59')
+    assert.strictEqual(faixaEtariaIdOf(59), 'DE_50_A_59')
+    assert.strictEqual(faixaEtariaIdOf(60), 'MAIS_60')
+    assert.strictEqual(faixaEtariaIdOf(103), 'MAIS_60')
   })
 })
 
@@ -337,6 +391,8 @@ describe('applyTeamFilters (client-side)', () => {
     racaCor: '—',
     escolaridade: 'Superior',
     anoContrato: 2021,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
     ...over,
   })
   const ROWS: readonly TeamMemberRow[] = [
@@ -345,6 +401,8 @@ describe('applyTeamFilters (client-side)', () => {
       escolaridade: 'Superior',
       programa: 'Alfa',
       anoContrato: 2021,
+      status: 'ATIVO',
+      situacaoCadastral: 'Complete',
       funcao: 'Coordenador',
     }),
     mk({ nome: 'Bruno Lima', escolaridade: 'Médio', programa: 'Beta', anoContrato: 2023, vinculo: 'PJ' }),

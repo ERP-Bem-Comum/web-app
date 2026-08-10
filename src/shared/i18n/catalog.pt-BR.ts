@@ -2563,6 +2563,10 @@ export const ptBR: Catalog = {
   'reports.equipe.filters.anoContrato': 'Ano de Contrato',
   'reports.equipe.filters.desativadoPor': 'Desativado por',
   'reports.equipe.filters.programa': 'Programa',
+  // O campo do relatório SEMPRE foi a área de atuação (o placeholder já usava DDI/EPV/PARC como valores) —
+  // só o rótulo dizia "Programa", que é outra coisa e não existe no cadastro do colaborador. Nomear certo
+  // alinha com o módulo de Colaboradores, onde este é um filtro real e "Programa" é o que está gated.
+  'reports.equipe.filters.area': 'Área de atuação',
   'reports.equipe.filters.funcao': 'Função',
   'reports.equipe.filters.genero': 'Identidade de Gênero',
   'reports.equipe.filters.status': 'Status',

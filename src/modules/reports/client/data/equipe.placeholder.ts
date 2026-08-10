@@ -50,6 +50,10 @@ export type TeamMemberRow = Readonly<{
   escolaridade: string
   /** Ano de início do contrato (2019..2025 dirige o gráfico; anos fora do range são ignorados nele). */
   anoContrato: number
+  /** Status do vínculo — CÓDIGO ('ATIVO'/'INATIVO'), derivado de `TeamMember.active`. A View traduz. */
+  status: string
+  /** Situação cadastral — CÓDIGO do core-api ('Complete'/'PreRegistration'). A View traduz. */
+  situacaoCadastral: string
 }>
 
 /**
@@ -67,6 +71,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Branco',
     escolaridade: 'Pós-graduação',
     anoContrato: 2019,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Carlos Eduardo Farias',
@@ -78,6 +84,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Pardo',
     escolaridade: 'Superior Completo',
     anoContrato: 2020,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Mariana Lopes Cardoso',
@@ -89,6 +97,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Preto',
     escolaridade: 'Superior Incompleto',
     anoContrato: 2021,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Rafael Nunes Teixeira',
@@ -100,6 +110,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Branco',
     escolaridade: 'Mestrado',
     anoContrato: 2019,
+    status: 'ATIVO',
+    situacaoCadastral: 'PreRegistration',
   },
   {
     nome: 'Juliana Ribeiro Alves',
@@ -111,6 +123,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Pardo',
     escolaridade: 'Pós-graduação',
     anoContrato: 2022,
+    status: 'INATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Felipe Santana Braga',
@@ -122,6 +136,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Branco',
     escolaridade: 'Pós-graduação',
     anoContrato: 2020,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Camila Duarte Pires',
@@ -133,6 +149,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Amarelo',
     escolaridade: 'Superior Completo',
     anoContrato: 2021,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Bruno Almeida Rocha',
@@ -144,6 +162,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Preto',
     escolaridade: 'Superior Completo',
     anoContrato: 2023,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Larissa Fonseca Melo',
@@ -155,6 +175,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Pardo',
     escolaridade: 'Superior Incompleto',
     anoContrato: 2024,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Gustavo Henrique Dias',
@@ -166,6 +188,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Branco',
     escolaridade: 'Mestrado',
     anoContrato: 2019,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Patrícia Gomes Vasconcelos',
@@ -177,6 +201,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Prefiro não revelar',
     escolaridade: 'Pós-graduação',
     anoContrato: 2020,
+    status: 'ATIVO',
+    situacaoCadastral: 'PreRegistration',
   },
   {
     nome: 'Thiago Correia Bastos',
@@ -188,6 +214,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Pardo',
     escolaridade: 'Superior Completo',
     anoContrato: 2021,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Fernanda Azevedo Cunha',
@@ -199,6 +227,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'N/A',
     escolaridade: 'N/A',
     anoContrato: 2023,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Leonardo Martins Prado',
@@ -210,6 +240,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Branco',
     escolaridade: 'Superior Completo',
     anoContrato: 2019,
+    status: 'INATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Beatriz Carvalho Nogueira',
@@ -221,6 +253,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Preto',
     escolaridade: 'Pós-graduação',
     anoContrato: 2022,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Diego Ramos Siqueira',
@@ -232,6 +266,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Pardo',
     escolaridade: 'Mestrado',
     anoContrato: 2020,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Renata Barros Figueiredo',
@@ -243,6 +279,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Branco',
     escolaridade: 'Superior Completo',
     anoContrato: 2021,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Vinícius Tavares Monteiro',
@@ -254,6 +292,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Amarelo',
     escolaridade: 'Superior Incompleto',
     anoContrato: 2024,
+    status: 'ATIVO',
+    situacaoCadastral: 'PreRegistration',
   },
   {
     nome: 'Aline Souza Batista',
@@ -265,6 +305,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Pardo',
     escolaridade: 'Pós-graduação',
     anoContrato: 2019,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Marcelo Pinto Guimarães',
@@ -276,6 +318,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Branco',
     escolaridade: 'Mestrado',
     anoContrato: 2019,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Tatiane Mendes Lima',
@@ -287,6 +331,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Preto',
     escolaridade: 'Superior Completo',
     anoContrato: 2022,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'André Luiz Castro',
@@ -298,6 +344,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Prefiro não revelar',
     escolaridade: 'Pós-graduação',
     anoContrato: 2020,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Priscila Andrade Reis',
@@ -309,6 +357,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Pardo',
     escolaridade: 'Superior Completo',
     anoContrato: 2023,
+    status: 'INATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Rodrigo Freitas Campos',
@@ -320,6 +370,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Branco',
     escolaridade: 'Superior Completo',
     anoContrato: 2021,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Sabrina Costa Machado',
@@ -331,6 +383,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Amarelo',
     escolaridade: 'Superior Incompleto',
     anoContrato: 2024,
+    status: 'ATIVO',
+    situacaoCadastral: 'PreRegistration',
   },
   {
     nome: 'Eduardo Vieira Sampaio',
@@ -342,6 +396,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Pardo',
     escolaridade: 'Mestrado',
     anoContrato: 2019,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Natália Ferreira Coelho',
@@ -353,6 +409,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Branco',
     escolaridade: 'Pós-graduação',
     anoContrato: 2020,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Alexandre Ribeiro Pacheco',
@@ -364,6 +422,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Preto',
     escolaridade: 'Mestrado',
     anoContrato: 2019,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Vanessa Lima Antunes',
@@ -375,6 +435,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Pardo',
     escolaridade: 'Superior Completo',
     anoContrato: 2022,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Fábio Nascimento Rios',
@@ -386,6 +448,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Branco',
     escolaridade: 'Superior Completo',
     anoContrato: 2021,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Isabela Moreira Pontes',
@@ -397,6 +461,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'N/A',
     escolaridade: 'Superior Incompleto',
     anoContrato: 2024,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Ricardo Barbosa Leal',
@@ -408,6 +474,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Pardo',
     escolaridade: 'Pós-graduação',
     anoContrato: 2020,
+    status: 'INATIVO',
+    situacaoCadastral: 'PreRegistration',
   },
   {
     nome: 'Débora Santos Xavier',
@@ -419,6 +487,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Prefiro não revelar',
     escolaridade: 'Mestrado',
     anoContrato: 2019,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Paulo César Aragão',
@@ -430,6 +500,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Branco',
     escolaridade: 'Pós-graduação',
     anoContrato: 2019,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Letícia Cavalcanti Rezende',
@@ -441,6 +513,8 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Pardo',
     escolaridade: 'Superior Completo',
     anoContrato: 2023,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
   {
     nome: 'Marcos Vinícius Oliveira',
@@ -452,5 +526,7 @@ export const EQUIPE_PLACEHOLDER: readonly TeamMemberRow[] = [
     racaCor: 'Preto',
     escolaridade: 'Superior Completo',
     anoContrato: 2022,
+    status: 'ATIVO',
+    situacaoCadastral: 'Complete',
   },
 ]
