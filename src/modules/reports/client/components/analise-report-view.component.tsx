@@ -64,6 +64,7 @@ import {
   emptyTitle,
   emptyHint,
 } from '../page/analise-pagamentos.page.css.ts'
+import { downloadCsv } from './download-csv.ts'
 
 /** Todos os rótulos i18n do relatório, resolvidos na page (Pagamentos vs Recebimentos). */
 export type AnaliseReportViewLabels = Readonly<{
@@ -180,18 +181,6 @@ export type AnalisePeriodModel = Readonly<{
   onChange: (patch: Readonly<{ dueFrom?: string; dueTo?: string }>) => void
   onFiltrar: () => void
 }>
-
-function downloadCsv(filename: string, csv: string): void {
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
-}
 
 export function AnaliseReportView(props: AnaliseReportViewProps): ReactNode {
   const { report, labels: L, csvFilename } = props

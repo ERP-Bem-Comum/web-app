@@ -183,7 +183,7 @@ describe('buildCsv — fiel ao cabeçalho legado', () => {
   it('cabeçalho exato do legado', () => {
     assert.strictEqual(
       lines[0],
-      'Centro de Custo;Categoria;Subcategoria;Nome do Mês;Valor Esperado;Valor Realizado;Valor Provisionado',
+      '"Centro de Custo";"Categoria";"Subcategoria";"Nome do Mês";"Valor Esperado (R$)";"Valor Realizado (R$)";"Valor Provisionado (R$)"',
     )
   })
 

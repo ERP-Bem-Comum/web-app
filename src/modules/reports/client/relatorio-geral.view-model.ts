@@ -9,6 +9,7 @@
  * degradam honesto (data = vencimento; parcela/apontamento = null → "—").
  */
 import type { GeneralReportRow } from './data/model/general-report.model.ts'
+import { csvContent, csvHeaderLine, csvLine, csvNumber } from './csv.view-model.ts'
 
 /**
  * Uma linha do ledger achatado (exibição). Colunas fiéis ao legado (PT). Campos opcionais nullable → a View
@@ -228,6 +229,15 @@ export function cellText(row: LedgerRow, id: GeneralColumnId): string | null {
 }
 
 /**
+ * Texto da célula PARA O ARQUIVO. Igual ao da tela (`cellText`), exceto **Valor**: na tela mostra
+ * "R$ 1.234,56"; no CSV sai `1234,56` (NÚMERO), senão a planilha trata a coluna como texto e ela não soma.
+ * É a única coluna em que arquivo e tela divergem de propósito.
+ */
+export function csvCellText(row: LedgerRow, id: GeneralColumnId): string {
+  return id === 'valor' ? csvNumber(row.valorCents) : (cellText(row, id) ?? '')
+}
+
+/**
  * Nº de caracteres do CONTEÚDO mais longo por coluna (sobre as linhas da página). PURO — a tabela usa isso
  * pra dimensionar cada coluna em `ch` (larguras UNIFORMES entre as linhas → alinhado, sem cortar). Célula
  * nula conta como o traço "—" (`naLen`). O rótulo do header (i18n) é dobrado no componente (não vive aqui).
@@ -268,11 +278,12 @@ export const CSV_HEADER_BY_ID: Record<GeneralColumnId, string> = {
   categoria: 'Categoria',
   subcategoria: 'Subcategoria',
   pixBancario: 'PIX/Bancário',
-  valor: 'Valor',
+  // A célula é NÚMERO no CSV (`1234,56`) — a moeda vive aqui. Ver `csv.view-model.ts`.
+  valor: 'Valor (R$)',
 }
 
 /** Cabeçalho pt-BR das 15 colunas (delimitado por ';'), na ordem do legado — usado quando o export é completo. */
-export const CSV_HEADER = ALL_GENERAL_COLUMN_IDS.map((id) => CSV_HEADER_BY_ID[id]).join(';')
+export const CSV_HEADER = csvHeaderLine(ALL_GENERAL_COLUMN_IDS.map((id) => CSV_HEADER_BY_ID[id]))
 
 /**
  * Monta o CSV: cabeçalho + uma linha por movimento (as linhas CARREGADAS — a página corrente, já que a
@@ -284,9 +295,7 @@ export function buildCsv(
   visibleIds: readonly GeneralColumnId[] = ALL_GENERAL_COLUMN_IDS,
 ): string {
   const ids = visibleIds.length > 0 ? visibleIds : ALL_GENERAL_COLUMN_IDS
-  const lines: string[] = [ids.map((id) => CSV_HEADER_BY_ID[id]).join(';')]
-  for (const r of rows) {
-    lines.push(ids.map((id) => `"${cellText(r, id) ?? ''}"`).join(';'))
-  }
-  return lines.join('\r\n')
+  const header = csvHeaderLine(ids.map((id) => CSV_HEADER_BY_ID[id]))
+  const out = rows.map((r) => csvLine(ids.map((id) => csvCellText(r, id))))
+  return csvContent(header, out)
 }
