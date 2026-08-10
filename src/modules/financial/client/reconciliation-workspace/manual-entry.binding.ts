@@ -31,6 +31,7 @@ import { referencesQueryOptions } from './reconciliation-workspace.query.ts'
 import {
   relabelReconCategory,
   requiresDestination,
+  manualEntryBlockedTag,
   formatDateBR,
   parseBRLToCents,
   categoriesForCostCenter,
@@ -68,6 +69,8 @@ export type ManualEntryBinding = Readonly<{
   // categoria/subcategoria não se aplicam). `false` p/ esses 3; `true` p/ Pagamento/Recebimento/Tarifa-Juros.
   showCategorization: boolean
   canSubmit: boolean
+  /** Tag i18n do motivo do bloqueio; `null` quando `canSubmit` — os dois saem da MESMA derivação. */
+  submitBlockedTag: string | null
   submitting: boolean
   errorTag: string | null
   supplierRef: string
@@ -275,8 +278,21 @@ export function useManualEntry(
   const showCategorization = type !== null && !requiresDestination(type)
   // Transferência/Aplicação/Resgate exigem a conta de destino selecionada (regra do backend). A confirmação
   // consciente foi removida a pedido da P.O. — só atrapalhava; engano é reversível pelo "desfazer".
-  const destinationOk = !needsDestination || destinationAccount.trim() !== ''
-  const canSubmit = type !== null && destinationOk
+  // Regra da P.O. (Opção 1): tipo classificável (não-realocação → showCategorization) exige categoria +
+  // centro de custo ao conciliar. O backend é a autoridade (422 manual-entry-classification-required);
+  // aqui é a UX que trava o envio antes de bater na borda. Isentos: Transfer/Investment/Redemption.
+  //
+  // O motivo vem da derivação PURA e o `canSubmit` é consequência dele — nunca o contrário. Ver
+  // `manualEntryBlockedTag`: o botão não pode travar sem ter o que dizer.
+  const submitBlockedTag = manualEntryBlockedTag({
+    hasType: type !== null,
+    needsDestination,
+    destinationFilled: destinationAccount.trim() !== '',
+    needsClassification: showCategorization,
+    categoryFilled: categoryRef.trim() !== '',
+    costCenterFilled: costCenterRef.trim() !== '',
+  })
+  const canSubmit = submitBlockedTag === null
 
   const mut = useMutation({
     mutationFn: (v: {
@@ -353,6 +369,7 @@ export function useManualEntry(
     effectiveDate,
     showCategorization,
     canSubmit,
+    submitBlockedTag,
     submitting: mut.isPending,
     errorTag,
     supplierRef,

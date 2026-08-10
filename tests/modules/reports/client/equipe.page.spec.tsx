@@ -25,6 +25,7 @@ vi.mock('@tanstack/react-router', () => ({
 vi.mock('#modules/reports/client/data/repository/reports.repository.instance.ts', () => ({
   reportsRepository: {
     getTeam: vi.fn(),
+    getTeamDemographics: vi.fn(),
     getSuppliersWithoutContract: vi.fn(),
     getPaymentPosition: vi.fn(),
   },
@@ -44,10 +45,14 @@ const TEAM: readonly TeamMember[] = Array.from({ length: 36 }, (_v, i) => ({
   role: ROLES[i % ROLES.length] ?? 'Analista',
   employmentRelationship: i % 2 === 0 ? 'CLT' : 'PJ',
   startOfContract: `${String(2019 + (i % 7))}-01-15`,
-  registrationStatus: 'Ativo',
+  // Códigos REAIS do core-api (`RegistrationStatus`) — a tela traduz para "Cadastrado"/"Pré-cadastro".
+  registrationStatus: i % 3 === 0 ? 'PreRegistration' : 'Complete',
   active: i % 5 !== 0,
-  education: i % 4 === 0 ? null : 'Ensino Superior',
+  education: i % 4 === 0 ? null : 'ENSINO_SUPERIOR',
   experienceInPublicSector: i % 2 === 0 ? true : null,
+  genderIdentity: i % 3 === 0 ? 'MULHER_CIS' : 'HOMEM_CIS',
+  race: i % 4 === 0 ? 'INDIGENA' : 'PARDO',
+  age: 25 + (i % 30),
 }))
 
 function renderPage(): void {
@@ -128,11 +133,187 @@ describe('EquipePage — paginação', () => {
   })
 })
 
-describe('EquipePage — gráficos demográficos em empty-state honesto', () => {
-  it('Gênero/Idade/Raça-cor exibem "Dado não disponível" (endpoint LGPD-safe)', async () => {
-    await renderReady()
-    // Os 3 gráficos demográficos recebem dataset vazio → 3 rótulos de indisponível.
-    expect(screen.getAllByText('Dado não disponível').length).toBeGreaterThanOrEqual(3)
+describe('EquipePage — demografia sem o endpoint agregado', () => {
+  /**
+   * Sem o `/reports/team/demographics` (falha/403) a tela NÃO fica cega: Gênero e Raça/cor continuam sendo
+   * contados das linhas, com os rótulos do catálogo do front. Não é dado novo cruzando fronteira — é a
+   * mesma coluna que a tabela ao lado já mostra.
+   *
+   * Idade é a exceção: "30 a 39" é rótulo que só a API tem, então sem catálogo o card fica no empty-state
+   * em vez de escrever `DE_30_A_39` na tela.
+   */
+  it('Gênero e Raça/cor ainda contam das linhas; Idade cai no empty-state', async () => {
+    await renderReady() // `getTeamDemographics` sem mock → query falha → catálogo vazio
+    const chips = Array.from(document.querySelectorAll('li')).map((n) => n.textContent ?? '')
+    expect(chips.some((c) => c.startsWith('Mulher cisgênero'))).toBe(true)
+    expect(screen.getAllByText('Dado não disponível').length).toBeGreaterThanOrEqual(1)
+  })
+})
+
+/**
+ * Os 3 filtros que ficaram inertes até a P.O. apontar em tela (09/08): Status, Situação Cadastral e Idade.
+ * Os dois primeiros são lista FECHADA (existem mesmo sem ninguém no recorte); Idade é por FAIXA, com as
+ * categorias vindo da MESMA resposta que desenha o gráfico — é isso que impede filtro e gráfico de divergir.
+ */
+describe('EquipePage — filtros Status / Situação Cadastral / Idade', () => {
+  const AGE_RANGES = [
+    { id: 'ATE_29', label: 'Até 29', count: 4 },
+    { id: 'DE_30_A_39', label: '30 a 39', count: 10 },
+    { id: 'DE_40_A_49', label: '40 a 49', count: 12 },
+    { id: 'DE_50_A_59', label: '50 a 59', count: 10 },
+    { id: 'MAIS_60', label: '60+', count: 0 },
+    { id: 'NA', label: 'N/A', count: 0 },
+  ] as const
+
+  async function renderComDemografia(): Promise<void> {
+    mockedGetTeam.mockResolvedValue(ok(TEAM))
+    vi.mocked(reportsRepository.getTeamDemographics).mockResolvedValue(
+      ok({ totalActive: 36, gender: [], ageRange: AGE_RANGES, race: [] }),
+    )
+    renderPage()
+    await screen.findByText('Anterior')
+  }
+
+  const optionsOf = (label: string): readonly string[] =>
+    Array.from(screen.getByLabelText(label).querySelectorAll('option')).map((o) => o.textContent ?? '')
+
+  it('Status oferece Ativo/Inativo com os rótulos do módulo Colaboradores', async () => {
+    await renderComDemografia()
+    expect(optionsOf('Status')).toEqual(['Todos', 'Ativo', 'Inativo'])
+  })
+
+  it('Situação Cadastral oferece Cadastrado/Pré-cadastro', async () => {
+    await renderComDemografia()
+    expect(optionsOf('Situação Cadastral')).toEqual(['Todos', 'Cadastrado', 'Pré-cadastro'])
+  })
+
+  it('Idade oferece as MESMAS faixas do gráfico (rótulos vindos da API)', async () => {
+    await renderComDemografia()
+    expect(optionsOf('Idade')).toEqual(['Todos', 'Até 29', '30 a 39', '40 a 49', '50 a 59', '60+', 'N/A'])
+  })
+
+  it('filtrar por Status=Inativo recorta a tabela (fixture: 1 em cada 5 inativo)', async () => {
+    await renderComDemografia()
+    const antes = screen.getAllByRole('button', { name: /Ver detalhes de/ }).length
+    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'INATIVO' } })
+    fireEvent.click(screen.getByText('Filtrar'))
+    const depois = screen.getAllByRole('button', { name: /Ver detalhes de/ })
+    // 36 membros, `active: i % 5 !== 0` → 8 inativos; todos cabem na 1ª página de 10.
+    expect(depois.length).toBe(8)
+    expect(depois.length).toBeLessThan(antes)
+  })
+
+  it('filtrar por faixa etária usa o corte por pessoa (idade 25..54 na fixture)', async () => {
+    await renderComDemografia()
+    fireEvent.change(screen.getByLabelText('Idade'), { target: { value: 'MAIS_60' } })
+    fireEvent.click(screen.getByText('Filtrar'))
+    // Ninguém com 60+ na fixture → tabela vazia, sem quebrar a tela.
+    expect(screen.queryAllByRole('button', { name: /Ver detalhes de/ }).length).toBe(0)
+  })
+})
+
+/**
+ * Gênero: os nomes saíram de CIMA das fatias (se sobrepunham com muitas identidades) e viraram legenda no
+ * card. O que o teste protege é o que a P.O. viu quebrado: nome de categoria desenhado dentro do SVG.
+ */
+describe('EquipePage — legenda do gráfico de Gênero', () => {
+  // Catálogo de categorias; as contagens da tela vêm das LINHAS (fixture: 12 MULHER_CIS, 24 HOMEM_CIS).
+  const GENDER = [
+    { id: 'MULHER_CIS', label: 'Mulher cis', count: 0 },
+    { id: 'HOMEM_CIS', label: 'Homem cis', count: 0 },
+    { id: 'TRAVESTI', label: 'Travesti', count: 0 },
+  ] as const
+
+  async function renderComGenero(): Promise<void> {
+    mockedGetTeam.mockResolvedValue(ok(TEAM))
+    vi.mocked(reportsRepository.getTeamDemographics).mockResolvedValue(
+      ok({ totalActive: 36, gender: GENDER, ageRange: [], race: [] }),
+    )
+    renderPage()
+    await screen.findByText('Anterior')
+  }
+
+  it('mostra nome e contagem de cada identidade presente na legenda', async () => {
+    await renderComGenero()
+    // Busca nos <li> da legenda: o nome da identidade também existe como <option> do filtro de Gênero.
+    const chips = Array.from(document.querySelectorAll('li')).map((n) => n.textContent ?? '')
+    expect(chips).toContain('Mulher cisgênero12')
+    expect(chips).toContain('Homem cisgênero24')
+    // Identidade sem ninguém não vira chip (o gráfico desenha quem tem gente).
+    expect(chips.some((c) => c.startsWith('Travesti'))).toBe(false)
+  })
+
+  it('nenhum nome de categoria é desenhado DENTRO do SVG (era o que se sobrepunha)', async () => {
+    await renderComGenero()
+    const textosNoSvg = Array.from(document.querySelectorAll('svg text')).map((n) => n.textContent ?? '')
+    for (const nome of ['Mulher cisgênero', 'Homem cisgênero']) {
+      expect(textosNoSvg).not.toContain(nome)
+    }
+  })
+
+  it('usa o rótulo do catálogo do front, não o da API, quando conhece o código', async () => {
+    mockedGetTeam.mockResolvedValue(ok(TEAM))
+    vi.mocked(reportsRepository.getTeamDemographics).mockResolvedValue(
+      // A API ainda manda a redação antiga; a tela tem que mostrar a que o cliente pediu.
+      ok({
+        totalActive: 1,
+        gender: [{ id: 'MULHER_CIS', label: 'Mulher cis', count: 1 }],
+        ageRange: [],
+        race: [],
+      }),
+    )
+    renderPage()
+    await screen.findByText('Anterior')
+    const chips = Array.from(document.querySelectorAll('li')).map((n) => n.textContent ?? '')
+    expect(chips.some((c) => c.startsWith('Mulher cisgênero'))).toBe(true)
+    expect(chips.some((c) => c.startsWith('Mulher cis') && !c.startsWith('Mulher cisgênero'))).toBe(false)
+  })
+})
+
+/**
+ * O bug que a P.O. achou em tela (09/08): os 3 gráficos demográficos liam a AGREGAÇÃO do backend, que não
+ * conhece os filtros — filtrar "Situação Cadastral = Cadastrado" recortava a tabela e o gráfico continuava
+ * contando quem estava em pré-cadastro.
+ */
+describe('EquipePage — os gráficos demográficos respeitam os filtros aplicados', () => {
+  async function renderComCatalogo(): Promise<void> {
+    mockedGetTeam.mockResolvedValue(ok(TEAM))
+    vi.mocked(reportsRepository.getTeamDemographics).mockResolvedValue(
+      ok({
+        totalActive: 36,
+        // Catálogo (ordem/rótulo canônicos). As CONTAGENS daqui são de propósito absurdas: se a tela ainda
+        // as estivesse usando em vez de contar as linhas, o teste quebra.
+        gender: [
+          { id: 'MULHER_CIS', label: 'Mulher cis', count: 999 },
+          { id: 'HOMEM_CIS', label: 'Homem cis', count: 999 },
+        ],
+        ageRange: [],
+        race: [],
+      }),
+    )
+    renderPage()
+    await screen.findByText('Anterior')
+  }
+
+  const chipDe = (nome: string): string =>
+    Array.from(document.querySelectorAll('li'))
+      .map((n) => n.textContent ?? '')
+      .find((c) => c.startsWith(nome)) ?? ''
+
+  it('sem filtro: conta as linhas, não os números da agregação', async () => {
+    await renderComCatalogo()
+    // Fixture: `genderIdentity` = MULHER_CIS quando i % 3 === 0 → 12 de 36; os outros 24 são HOMEM_CIS.
+    expect(chipDe('Mulher cisgênero')).toBe('Mulher cisgênero12')
+    expect(chipDe('Homem cisgênero')).toBe('Homem cisgênero24')
+  })
+
+  it('com filtro aplicado: o gráfico recorta junto com a tabela', async () => {
+    await renderComCatalogo()
+    fireEvent.change(screen.getByLabelText('Identidade de Gênero'), { target: { value: 'MULHER_CIS' } })
+    fireEvent.click(screen.getByText('Filtrar'))
+    expect(chipDe('Mulher cisgênero')).toBe('Mulher cisgênero12')
+    // Quem foi filtrado fora some do gráfico — antes continuava lá, com a contagem da agregação.
+    expect(chipDe('Homem cisgênero')).toBe('')
   })
 })
 

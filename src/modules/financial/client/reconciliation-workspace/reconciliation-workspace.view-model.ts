@@ -369,6 +369,35 @@ export type ReconType = 'Individual' | 'Multiple' | 'Partial'
 export const deriveReconType = (selectedCount: number, hasDifference: boolean): ReconType =>
   hasDifference ? 'Partial' : selectedCount > 1 ? 'Multiple' : 'Individual'
 
+/**
+ * Por que o "Conciliar" do lançamento manual está travado — `null` = liberado. PURA.
+ *
+ * O `canSubmit` da view deriva DESTE resultado (`=== null`), e não de um booleano paralelo: assim é
+ * impossível o botão ficar desabilitado sem motivo exibível, ou habilitado com um motivo pendente. Foi
+ * o que faltou quando a classificação virou obrigatória (#331 + core-api#671) — a pessoa via o botão
+ * morto sem saber que faltava categoria ou centro de custo (mesma lição do PR #252).
+ *
+ * A ordem importa: reporta o PRIMEIRO obstáculo, do mais estrutural (tipo) ao mais específico (campo).
+ */
+export type ManualEntryGate = Readonly<{
+  hasType: boolean
+  needsDestination: boolean
+  destinationFilled: boolean
+  needsClassification: boolean
+  categoryFilled: boolean
+  costCenterFilled: boolean
+}>
+
+export const manualEntryBlockedTag = (g: ManualEntryGate): string | null => {
+  if (!g.hasType) return 'financial.recon.manual.blocked.type'
+  if (g.needsDestination && !g.destinationFilled) return 'financial.recon.manual.blocked.destination'
+  if (!g.needsClassification) return null
+  if (!g.categoryFilled && !g.costCenterFilled) return 'financial.recon.manual.blocked.classification'
+  if (!g.categoryFilled) return 'financial.recon.manual.blocked.category'
+  if (!g.costCenterFilled) return 'financial.recon.manual.blocked.costCenter'
+  return null
+}
+
 /** Tipos de lançamento manual que exigem conta de destino + confirmação consciente (US4). */
 export const requiresDestination = (type: string): boolean =>
   type === 'Transfer' || type === 'Investment' || type === 'Redemption'

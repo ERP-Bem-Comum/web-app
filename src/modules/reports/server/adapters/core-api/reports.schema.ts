@@ -18,6 +18,13 @@ const CoreApiTeamMemberSchema = z.object({
   active: z.boolean(),
   education: z.string().trim().nullable(),
   experienceInPublicSector: z.boolean().nullable(),
+  // O core-api JÁ enviava estes três (`collaborator-projection.ts`) e o schema não os declarava — o Zod
+  // descarta chave desconhecida em silêncio, então a tabela mostrava "—" com o dado chegando na borda.
+  // Valor = CÓDIGO do enum ('PARDO', 'MULHER_CIS'); o rótulo PT-BR é do front. `age` já vem derivada
+  // (anos completos): `dateOfBirth` morre no mapper do backend e nunca cruza a borda.
+  genderIdentity: z.string().trim().nullable().catch(null),
+  race: z.string().trim().nullable().catch(null),
+  age: z.int().nonnegative().nullable().catch(null),
 })
 export const CoreApiTeamReportSchema = z.object({
   team: z.array(CoreApiTeamMemberSchema),

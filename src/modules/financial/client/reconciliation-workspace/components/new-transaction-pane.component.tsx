@@ -379,10 +379,16 @@ export function NewTransactionPane({ binding }: NewTransactionPaneProps) {
             {t('financial.recon.manual.cancel')}
           </button>
           <span className={s.spacer} />
+          {/* O motivo do bloqueio fica VISÍVEL ao lado do botão — tooltip sozinho não serve (não existe no
+              toque, e exige adivinhar que há algo a descobrir). O `title` fica como reforço. */}
+          {binding.submitBlockedTag !== null && !binding.submitting ? (
+            <span className={s.ntBlocked}>{t(binding.submitBlockedTag)}</span>
+          ) : null}
           <button
             type="button"
             className={s.btnConfirm}
             disabled={!binding.canSubmit || binding.submitting}
+            title={binding.submitBlockedTag !== null ? t(binding.submitBlockedTag) : undefined}
             onClick={() => {
               binding.submit()
             }}
