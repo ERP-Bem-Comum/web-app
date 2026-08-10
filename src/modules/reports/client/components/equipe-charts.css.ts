@@ -163,21 +163,44 @@ export const vbarLabel = style({
  * card, não uma miniatura acima de uma lista. Definido aqui e não na base para não afetar o relatório
  * Realizado × Planejado, que compartilha os mesmos átomos.
  */
+export const donutLg = style({ inlineSize: '11rem', blockSize: '11rem' })
+
 /**
- * Rótulo escrito DENTRO da fatia da pizza (legado). Branco com leve sombra: as fatias têm cores de
- * luminância bem diferente (do dourado ao marrom escuro), e só branco puro sumiria nas claras.
+ * Legenda da pizza de Gênero — chips que QUEBRAM LINHA, não a lista vertical do donut do Realizado.
+ *
+ * O nome de cada identidade era escrito dentro da própria fatia; com 8 identidades possíveis as fatias
+ * ficam finas e os textos se sobrepõem (P.O., validação de 09/08). Tirar o texto de cima do desenho não
+ * perde informação: o hover já mostra nome, contagem e %.
+ *
+ * Chips em vez de lista: este card divide a linha com Idade e Raça/cor, e a grade estica todos à altura do
+ * mais alto — uma lista de 9 linhas esticaria a faixa inteira dos gráficos só por causa deste.
  */
-export const pieLabel = style({
-  fill: brand.color.surface,
-  fontSize: '0.5rem',
-  fontWeight: brand.weight.semibold,
-  paintOrder: 'stroke',
-  stroke: brand.color.equipe.pieLabelOutline,
-  strokeWidth: '0.06rem',
-  pointerEvents: 'none',
+export const generoLegend = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  justifyContent: 'center',
+  gap: brand.space.xs,
+  inlineSize: '100%',
+  listStyle: 'none',
+  margin: 0,
+  padding: 0,
 })
 
-export const donutLg = style({ inlineSize: '11rem', blockSize: '11rem' })
+export const generoLegendItem = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: brand.space.xs,
+  fontSize: brand.text.chip,
+  color: brand.color.ink700,
+  whiteSpace: 'nowrap',
+})
+
+/** Contagem ao lado do nome — tabular-nums para os números não dançarem entre os chips. */
+export const generoLegendCount = style({
+  fontWeight: brand.weight.semibold,
+  color: brand.color.ink900,
+  fontVariantNumeric: 'tabular-nums',
+})
 
 // Cor POR CATEGORIA, chaveada pelo `id` canônico do backend (core-api#477) — NÃO pelo índice.
 // O índice quebrou quando o endpoint agregado passou a mandar 9 gêneros e 7 raças em outra ordem: cada

@@ -128,6 +128,9 @@ const TEAM: readonly TeamMember[] = [
     active: true,
     education: 'Ensino Superior',
     experienceInPublicSector: true,
+    genderIdentity: null,
+    race: null,
+    age: null,
   },
 ]
 

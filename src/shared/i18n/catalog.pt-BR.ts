@@ -794,15 +794,22 @@ export const ptBR: Catalog = {
   'partners.collaborators.detail.field.leaveRenewalDuration': 'Por quanto tempo pode ser renovado?',
   'partners.collaborators.detail.gatedHint': 'Disponível quando o backend suportar este campo',
   // Enums canônicos do cadastro completo (códigos do core-api → rótulos PT-BR)
+  //
+  // Identidade de gênero: a redação é a que o CLIENTE pediu ("Mulher cisgênero", e não "Mulher cis";
+  // "Pessoa não binária"; "Outra identidade de gênero"). São os rótulos que a pessoa lê — o código do
+  // enum não muda. Duas coisas da lista do cliente NÃO estão aqui porque não são decisão de front:
+  //   - a lista pedida não traz TRAVESTI, que existe no domínio do core-api; tirar a opção apagaria
+  //     quem já estiver registrado assim, então ela fica até haver decisão explícita;
+  //   - "Outra identidade de gênero: ____" pressupõe um campo de texto livre que o backend não tem.
   // eslint-disable-next-line no-secrets/no-secrets -- chave i18n (código de enum), não é segredo
   'partners.collaborators.gender.PREFIRO_NAO_RESPONDER': 'Prefiro não responder',
-  'partners.collaborators.gender.HOMEM_CIS': 'Homem cis',
-  'partners.collaborators.gender.HOMEM_TRANS': 'Homem trans',
-  'partners.collaborators.gender.MULHER_CIS': 'Mulher cis',
-  'partners.collaborators.gender.MULHER_TRANS': 'Mulher trans',
+  'partners.collaborators.gender.HOMEM_CIS': 'Homem cisgênero',
+  'partners.collaborators.gender.HOMEM_TRANS': 'Homem transgênero',
+  'partners.collaborators.gender.MULHER_CIS': 'Mulher cisgênero',
+  'partners.collaborators.gender.MULHER_TRANS': 'Mulher transgênero',
   'partners.collaborators.gender.TRAVESTI': 'Travesti',
-  'partners.collaborators.gender.NAO_BINARIO': 'Não binário',
-  'partners.collaborators.gender.OUTRO': 'Outro',
+  'partners.collaborators.gender.NAO_BINARIO': 'Pessoa não binária',
+  'partners.collaborators.gender.OUTRO': 'Outra identidade de gênero',
   'partners.collaborators.race.AMARELO': 'Amarela',
   'partners.collaborators.race.BRANCO': 'Branca',
   'partners.collaborators.race.PARDO': 'Parda',
@@ -2563,6 +2570,10 @@ export const ptBR: Catalog = {
   'reports.equipe.filters.anoContrato': 'Ano de Contrato',
   'reports.equipe.filters.desativadoPor': 'Desativado por',
   'reports.equipe.filters.programa': 'Programa',
+  // O campo do relatório SEMPRE foi a área de atuação (o placeholder já usava DDI/EPV/PARC como valores) —
+  // só o rótulo dizia "Programa", que é outra coisa e não existe no cadastro do colaborador. Nomear certo
+  // alinha com o módulo de Colaboradores, onde este é um filtro real e "Programa" é o que está gated.
+  'reports.equipe.filters.area': 'Área de atuação',
   'reports.equipe.filters.funcao': 'Função',
   'reports.equipe.filters.genero': 'Identidade de Gênero',
   'reports.equipe.filters.status': 'Status',

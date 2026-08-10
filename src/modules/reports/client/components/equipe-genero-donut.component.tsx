@@ -1,9 +1,11 @@
 /**
- * EquipeGeneroDonut — donut "Distribuição por Gênero" (identidade EXATA do donut do Realizado × Planejado),
- * SVG NATIVO (§VIII: sem lib). View BURRA: recebe as fatias já derivadas (label/count) + o total e apresenta os
- * arcos (um <circle> por fatia, rotacionados -90°), o rótulo central (total de colaboradores), a legenda
- * (ponto + nome + contagem) e o TOOLTIP flutuante (hover) com swatch + nome + contagem + %. Cores por CLASSE
- * (índice da fatia → token). UI-state LOCAL (índice da fatia + posição do mouse) — só apresentação.
+ * EquipeGeneroDonut — pizza "Distribuição por Gênero", SVG NATIVO (§VIII: sem lib). View BURRA: recebe as
+ * fatias já derivadas (id/label/count) e apresenta os arcos (um <circle> por fatia, rotacionados -90°), a
+ * LEGENDA em chips e o TOOLTIP flutuante (hover) com swatch + nome + contagem + %. Cor por CHAVE CANÔNICA
+ * da categoria. UI-state LOCAL (fatia sob o mouse + posição) — só apresentação.
+ *
+ * Os nomes NÃO são escritos sobre as fatias: com 8 identidades possíveis as fatias finas empilhavam textos
+ * uns sobre os outros (P.O., 09/08). A legenda dá o nome e a contagem; o hover (na fatia OU no chip) dá a %.
  */
 import { useState, type ReactNode } from 'react'
 
@@ -18,11 +20,14 @@ import {
   donutWrap,
   donut,
   donutLg,
-  pieLabel,
   donutSvg,
   arcAnimated,
   generoStroke,
   generoSwatch,
+  generoLegend,
+  generoLegendItem,
+  generoLegendCount,
+  legendDot,
   emptyState,
 } from './equipe-charts.css.ts'
 
@@ -51,16 +56,6 @@ const STROKE = 60
 const CENTER = 60
 const CIRC = 2 * Math.PI * R
 
-/** Raio onde o rótulo da fatia é escrito (dentro da pizza, entre o centro e a borda). */
-const LABEL_R = 34
-
-/**
- * Fatia pequena não recebe rótulo escrito: abaixo disso o texto sai maior que a fatia e vira sujeira por
- * cima das vizinhas (no legado o rótulo de uma fatia de 1 pessoa vazava para fora do gráfico). Quem ficar
- * sem rótulo continua identificável pelo tooltip.
- */
-const MIN_SHARE_FOR_LABEL = 0.08
-
 /** Chave de cor (índice da fatia como string) — casa com os styleVariants por índice do .css.ts. */
 /**
  * Cor pela CHAVE CANÔNICA da categoria (`MULHER_CIS`, `NA`…), não pelo índice. O índice quebrou quando o
@@ -84,30 +79,11 @@ export function EquipeGeneroDonut(props: EquipeGeneroDonutProps): ReactNode {
       dash: number
       gap: number
       offset: number
-      share: number
-      labelX: number
-      labelY: number
     }>[]
   >((acc, s, i) => {
     const consumed = acc.reduce((sum, a) => sum + a.dash, 0)
-    const share = s.count / total
-    const dash = share * CIRC
-    // Ângulo do MEIO da fatia, a partir do topo e no sentido horário (o `<g>` já rotaciona -90°).
-    const midTurn = consumed / CIRC + share / 2
-    const angle = midTurn * 2 * Math.PI
-    return [
-      ...acc,
-      {
-        id: s.id,
-        index: i,
-        dash,
-        gap: CIRC - dash,
-        offset: -consumed,
-        share,
-        labelX: CENTER + LABEL_R * Math.sin(angle),
-        labelY: CENTER - LABEL_R * Math.cos(angle),
-      },
-    ]
+    const dash = (s.count / total) * CIRC
+    return [...acc, { id: s.id, index: i, dash, gap: CIRC - dash, offset: -consumed }]
   }, [])
 
   const active = hover !== null ? props.slices[hover.index] : undefined
@@ -148,25 +124,20 @@ export function EquipeGeneroDonut(props: EquipeGeneroDonutProps): ReactNode {
               />
             ))}
           </g>
-          {/* Rótulo DENTRO da fatia (legado). Fora do `<g>` rotacionado: o texto fica na horizontal,
-              legível, enquanto as coordenadas já vêm calculadas no ângulo certo. */}
-          {arcs.map((a) =>
-            a.share < MIN_SHARE_FOR_LABEL ? null : (
-              <text
-                key={`lbl-${a.id}`}
-                className={pieLabel}
-                x={a.labelX}
-                y={a.labelY}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                aria-hidden="true"
-              >
-                {props.slices[a.index]?.label ?? ''}
-              </text>
-            ),
-          )}
         </svg>
       </div>
+
+      {/* Legenda no card, no lugar dos nomes escritos sobre as fatias (que se sobrepunham). Passar o mouse
+          no chip acende o MESMO tooltip da fatia — quem lê o nome aqui alcança a % sem caçar a fatia certa. */}
+      <ul className={generoLegend}>
+        {props.slices.map((s, i) => (
+          <li key={s.id} className={generoLegendItem} onMouseMove={track(i)}>
+            <span className={`${legendDot} ${generoSwatch[colorKey(s.id)] ?? ''}`} aria-hidden="true" />
+            {s.label}
+            <span className={generoLegendCount}>{s.count}</span>
+          </li>
+        ))}
+      </ul>
 
       {hover !== null && active !== undefined && (
         <div
