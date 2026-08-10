@@ -35,6 +35,42 @@ vi.mock('#modules/financial/public-api/index.ts', () => ({
   useSubcategoryOptionsFromPlan: vi.fn(() => []),
 }))
 
+// Planos/Programas populam Plano e Programa — e são o que torna esses dois filtros APLICÁVEIS (o recorte é
+// client-side: o #446 é `.strict()` e não os aceita). Os ids casam com os do `ANALYSIS`.
+const planNode = (id: string, abbr: string): Readonly<Record<string, unknown>> => ({
+  id,
+  year: 2026,
+  programName: `Programa ${abbr}`,
+  programAbbreviation: abbr,
+  version: 1,
+  scenarioName: null,
+  status: 'APROVADO',
+  totalInCents: 0,
+  updatedByName: null,
+  updatedAt: '2026-01-01',
+  networkKind: 'ESTADO',
+  partnersCount: 0,
+  children: [],
+})
+vi.mock('#modules/budget-plans/public-api/index.ts', () => ({
+  listBudgetPlansFn: vi.fn(() =>
+    Promise.resolve({ ok: true, data: { items: [planNode('p1', 'ABC'), planNode('p2', 'XYZ')] } }),
+  ),
+}))
+vi.mock('#modules/programs/public-api/index.ts', () => ({
+  listProgramsFn: vi.fn(() =>
+    Promise.resolve({
+      ok: true,
+      data: {
+        items: [
+          { sigla: 'ABC', name: 'Programa ABC' },
+          { sigla: 'XYZ', name: 'Programa XYZ' },
+        ],
+      },
+    }),
+  ),
+}))
+
 const mAnalysis = vi.mocked(reportsRepository.getPaymentAnalysis)
 
 // Fixture: 2 planos × 1 centro de custo cada, série de 3 meses (jan–mar/2026).
@@ -289,5 +325,59 @@ describe('AnalisePagamentosPage — empty & erro', () => {
     renderPage()
     await screen.findByText('Não foi possível carregar o relatório.')
     expect(screen.getByText('Você não tem permissão para ver este relatório.')).toBeTruthy()
+  })
+})
+
+/**
+ * Recorte CLIENT-SIDE (#446 é `.strict()`: só aceita período+status). Programa/Plano/Centro de Custo
+ * aplicam sobre o grão que a resposta JÁ traz (Plano × CC × mês) — sem ida ao servidor, sem refetch.
+ */
+describe('AnalisePagamentosPage — recorte client-side (Programa/Plano)', () => {
+  it('Plano Orçamentário RECORTA a matriz ao clicar Filtrar (client-side; o #446 não aceita o filtro)', async () => {
+    mAnalysis.mockResolvedValue(ok(ANALYSIS))
+    await renderReady()
+    expect(screen.getByText('Plano Beta')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filtros' }))
+    const plano = await screen.findByLabelText('Plano Orçamentário')
+    await waitFor(() => {
+      expect(within(plano as HTMLSelectElement).getByText('2026 XYZ 1.0')).toBeTruthy()
+    })
+    // Antes de "Filtrar" a tela NÃO se mexe (draft) — o Beta continua lá.
+    fireEvent.change(plano, { target: { value: 'p2' } })
+    expect(screen.getByText('Plano Alfa')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filtrar' }))
+    await waitFor(() => {
+      expect(screen.queryByText('Plano Alfa')).toBeNull()
+    })
+    expect(screen.getByText('Plano Beta')).toBeTruthy()
+    // O resumo abaixo do título passa a declarar o que foi aplicado.
+    expect(screen.getByText(/Plano Orçamentário: 2026 XYZ 1\.0/)).toBeTruthy()
+  })
+
+  it('Programa recorta pelos planos do programa E estreita a lista de Planos', async () => {
+    mAnalysis.mockResolvedValue(ok(ANALYSIS))
+    await renderReady()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filtros' }))
+    const programa = await screen.findByLabelText('Programa')
+    await waitFor(() => {
+      expect(within(programa as HTMLSelectElement).getByText('ABC')).toBeTruthy()
+    })
+    fireEvent.change(programa, { target: { value: 'ABC' } })
+
+    // A lista de Planos passa a mostrar só os do programa escolhido.
+    const plano = screen.getByLabelText('Plano Orçamentário') as HTMLSelectElement
+    await waitFor(() => {
+      expect(within(plano).queryByText('2026 XYZ 1.0')).toBeNull()
+    })
+    expect(within(plano).getByText('2026 ABC 1.0')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filtrar' }))
+    await waitFor(() => {
+      expect(screen.queryByText('Plano Beta')).toBeNull()
+    })
+    expect(screen.getByText('Plano Alfa')).toBeTruthy()
   })
 })
