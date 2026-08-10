@@ -66,6 +66,12 @@ WORKDIR /app
 # Nitro empacota tudo em .output (self-contained, sem node_modules). Owner = nonroot (uid 65532).
 COPY --from=build --chown=65532:65532 /app/.output ./.output
 
+# Revisão embutida no BUILD (`/version` — FR-002). Tem que ser build-arg: o label OCI não é legível de
+# DENTRO do container, e a env do compose diria só o que o deploy achou que subiu, não o que subiu.
+# Declarado DEPOIS do COPY de propósito: um SHA novo a cada build não invalida a layer do `.output`.
+ARG GIT_SHA=dev
+ENV APP_REVISION=$GIT_SHA
+
 # Non-root explícito (a tag :nonroot já usa 65532; reforço p/ CIS/Docker-Bench — ADR-0015).
 USER 65532:65532
 EXPOSE 3000
