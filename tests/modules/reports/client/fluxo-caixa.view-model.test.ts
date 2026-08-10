@@ -29,7 +29,6 @@ import {
   buildStatement,
   buildStatementSection,
   sliceStatement,
-  formatBRL,
   formatAmount,
   CSV_HEADER,
   type RawFluxoLeaf,
@@ -469,7 +468,7 @@ describe('buildCsv — CSV client-side fiel (header pt-BR, seções, valores BRL
   it('a 1ª linha é o header pt-BR esperado', () => {
     const lines = buildCsv(report, 'Saídas', 'Entradas').split('\r\n')
     assert.equal(lines[0], CSV_HEADER)
-    assert.equal(lines[0], 'Seção;Categoria;Subcategoria;Realizado;Previsto')
+    assert.equal(lines[0], '"Seção";"Categoria";"Subcategoria";"Realizado (R$)";"Previsto (R$)"')
   })
 
   it('uma linha por FOLHA de cada seção (3 saídas + 1 entrada = 4) + header', () => {
@@ -479,9 +478,9 @@ describe('buildCsv — CSV client-side fiel (header pt-BR, seções, valores BRL
 
   it('cada linha traz seção + Cat/Sub + as 2 medidas em BRL', () => {
     const lines = buildCsv(report, 'Saídas', 'Entradas').split('\r\n')
-    assert.equal(lines[1], `"Saídas";"Pessoal";"Salários";"${formatBRL(800)}";"${formatBRL(900)}"`)
+    assert.equal(lines[1], '"Saídas";"Pessoal";"Salários";"8,00";"9,00"')
     // Última folha = Entradas / Doações / Convênio.
-    assert.equal(lines[4], `"Entradas";"Doações";"Convênio";"${formatBRL(3000)}";"${formatBRL(3200)}"`)
+    assert.equal(lines[4], '"Entradas";"Doações";"Convênio";"30,00";"32,00"')
   })
 
   it('Entradas = [] → só as linhas de Saídas (empty-state no CSV também)', () => {

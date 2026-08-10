@@ -24,6 +24,7 @@ import {
 } from './data/analise-pagamentos.placeholder.ts'
 import { ANALISE_RECEBIMENTOS_RAW } from './data/analise-recebimentos.placeholder.ts'
 import type { PaymentAnalysis, PaymentAnalysisPlan } from './data/model/payment-analysis.model.ts'
+import { csvContent, csvHeaderLine, csvLine, csvNumber } from './csv.view-model.ts'
 
 /** Nível do nó na árvore: plano orçamentário (0) → centro de custo (folha, 1). */
 export type AnaliseLevel = 'plano' | 'costCenter'
@@ -422,32 +423,32 @@ export function sharePercent(valueCents: number, totalCents: number): number {
 
 // ── Export CSV (client-side; header pt-BR + uma coluna por mês) ──
 
-/** Header base do CSV (fixo). As colunas de mês são acrescentadas por `buildCsvHeader`. */
-export const CSV_HEADER_BASE = 'Plano Orçamentário;Centro de custo;Total'
-
 /**
- * Header completo do CSV: base + uma coluna por mês (rótulo `Jan/26` …), na ordem do período. Delimitado por
- * ';'. Os rótulos de mês vêm de `formatMonthLabel` (sempre válidos — nunca "Invalid Date").
+ * Rótulos base do CSV. As colunas de valor levam `(R$)` no CABEÇALHO porque a célula é NÚMERO (`1234,56`) —
+ * a moeda não some, muda de lugar. Ver `csv.view-model.ts`.
  */
+export const CSV_HEADER_LABELS: readonly string[] = ['Plano Orçamentário', 'Centro de custo', 'Total (R$)']
+
+/** Header completo: base + uma coluna por mês na ordem do período (`Jan/26 (R$)` …), já escapado. */
 export function buildCsvHeader(months: readonly string[]): string {
-  const monthCols = months.map((m) => formatMonthLabel(m))
-  return [CSV_HEADER_BASE, ...monthCols].join(';')
+  const monthCols = months.map((m) => `${formatMonthLabel(m)} (R$)`)
+  return csvHeaderLine([...CSV_HEADER_LABELS, ...monthCols])
 }
 
 /**
- * Monta o CSV: uma linha por FOLHA (Plano → Centro de Custo), com o Total e um valor por mês (na ordem do
- * período), todos em BRL. Delimitado por ';'. Percorre a árvore agregada até a folha (Centro de Custo).
+ * Monta o CSV: uma linha por FOLHA (Plano → Centro de Custo), com o Total e um valor por mês. Valores como
+ * NÚMERO (somável na planilha); nomes escapados por RFC 4180.
  */
 export function buildCsv(report: AnaliseReport = loadAnalise('p')): string {
-  const lines: string[] = [buildCsvHeader(report.months)]
+  const rows: string[] = []
   for (const plano of report.planos) {
     for (const cc of plano.children) {
       const monthCells = cc.monthCells
-      const cols = report.months.map((m) => `"${formatBRL(monthCells[m] ?? 0)}"`)
-      lines.push([`"${plano.name}"`, `"${cc.name}"`, `"${formatBRL(cc.total)}"`, ...cols].join(';'))
+      const cols = report.months.map((m) => csvNumber(monthCells[m] ?? 0))
+      rows.push(csvLine([plano.name, cc.name, csvNumber(cc.total), ...cols]))
     }
   }
-  return lines.join('\r\n')
+  return csvContent(buildCsvHeader(report.months), rows)
 }
 
 /** Reexporta o shape do período p/ a page/testes sem tocar a `data/` diretamente. */

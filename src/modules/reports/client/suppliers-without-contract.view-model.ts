@@ -12,6 +12,7 @@ import {
   type RawSupplierRow,
 } from './data/suppliers-without-contract.placeholder.ts'
 import type { SupplierWithoutContract } from './data/model/supplier-without-contract.model.ts'
+import { csvContent, csvHeaderLine, csvLine, csvNumber } from './csv.view-model.ts'
 
 // Re-export do shape cru p/ a page tipar sem importar `client-data` direto (boundary ui ↛ data — §XI).
 export type { RawSupplierRow } from './data/suppliers-without-contract.placeholder.ts'
@@ -203,23 +204,24 @@ export function parseLimiteToCents(text: string): number {
 
 // ── Export CSV (client-side; delimitado por ';', fiel ao CSV legado) ──
 
-const CSV_HEADER = '"Fornecedor";"BudgetPlan";"Total"'
+/**
+ * Header pt-BR. `BudgetPlan` era identificador EN vazando num arquivo que o usuário abre — o resto do módulo
+ * chama de "Plano Orçamentário" (idioma: código EN, texto ao humano PT).
+ */
+const CSV_HEADER = csvHeaderLine(['Fornecedor', 'Plano Orçamentário', 'Total (R$)'])
 
 /** Total (centavos) → número BRL legível para o CSV: "7137,13". */
-function csvTotal(cents: number): string {
-  return (cents / 100).toFixed(2).replace('.', ',')
-}
 
 /**
- * Monta o CSV: uma linha por par fornecedor → plano orçamentário com o total agregado. Delimitado por ';',
- * cada campo entre aspas (espelha o cabeçalho `"Fornecedor";"BudgetPlan";"Total"`).
+ * Monta o CSV: uma linha por par fornecedor → plano orçamentário com o total agregado. Escape e formato de
+ * número vêm do `csv.view-model.ts` (regra única do módulo).
  */
 export function buildCsv(rows: readonly SupplierRow[]): string {
-  const lines: string[] = [CSV_HEADER]
+  const lines: string[] = []
   for (const r of rows) {
     for (const p of r.plans) {
-      lines.push(`"${r.supplier}";"${p.budgetPlan}";"${csvTotal(p.totalCents)}"`)
+      lines.push(csvLine([r.supplier, p.budgetPlan, csvNumber(p.totalCents)]))
     }
   }
-  return lines.join('\r\n')
+  return csvContent(CSV_HEADER, lines)
 }

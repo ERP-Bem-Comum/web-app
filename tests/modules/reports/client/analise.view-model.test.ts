@@ -24,7 +24,7 @@ import {
   ANALISE_SEM_PLANO,
   ANALISE_SEM_CENTRO,
   MONTH_ABBR_PT,
-  CSV_HEADER_BASE,
+  CSV_HEADER_LABELS,
 } from '../../../../src/modules/reports/client/analise.view-model.ts'
 import {
   ANALISE_PAGAMENTOS_RAW,
@@ -204,20 +204,23 @@ describe('buildCsv — header base + colunas de mês, uma linha por folha', () =
   const csv = buildCsv(report)
   const lines = csv.split('\r\n')
 
-  it('buildCsvHeader = base + rótulo de cada mês', () => {
-    assert.strictEqual(buildCsvHeader(MONTHS), `${CSV_HEADER_BASE};Jan/26;Fev/26;Mar/26`)
+  it('buildCsvHeader = base + rótulo de cada mês, com a moeda no CABEÇALHO', () => {
+    assert.strictEqual(CSV_HEADER_LABELS[2], 'Total (R$)')
+    assert.strictEqual(
+      buildCsvHeader(MONTHS),
+      '"Plano Orçamentário";"Centro de custo";"Total (R$)";"Jan/26 (R$)";"Fev/26 (R$)";"Mar/26 (R$)"',
+    )
   })
 
-  it('cabeçalho base fiel', () => {
-    assert.ok(lines[0]?.startsWith('Plano Orçamentário;Centro de custo;Total'))
-    assert.strictEqual(lines[0], 'Plano Orçamentário;Centro de custo;Total;Jan/26;Fev/26;Mar/26')
+  it('cabeçalho é escapado como os dados (era o único sem aspas)', () => {
+    assert.strictEqual(lines[0], buildCsvHeader(MONTHS))
   })
 
   it('uma linha por folha (3 CCs) + header = 4 linhas', () => {
     assert.strictEqual(lines.length, 1 + 3)
   })
 
-  it('primeira linha de dados = Plano A / CC-A1 com Total e 3 meses BRL', () => {
+  it('primeira linha de dados = Plano A / CC-A1 com Total e 3 meses', () => {
     assert.ok(lines[1]?.startsWith('"Plano A";"CC-A1";'))
     // 3 colunas base (plano/cc/total) + 3 meses = 6 campos.
     assert.strictEqual(lines[1]?.split(';').length, 6)

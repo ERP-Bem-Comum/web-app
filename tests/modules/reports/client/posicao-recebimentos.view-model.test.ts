@@ -17,10 +17,10 @@ import {
   loadPosicao,
   measureTotal,
   buildCsv,
-  formatBRL,
   CSV_HEADER_RECEBIMENTOS,
 } from '#modules/reports/client/posicao.view-model.ts'
 import { POSICAO_RECEBIMENTOS_RAW } from '#modules/reports/client/data/posicao-recebimentos.placeholder.ts'
+import { csvNumber } from '#modules/reports/client/csv.view-model.ts'
 
 describe("loadPosicao('r') — fonte de RECEBIMENTOS (front-first)", () => {
   it('agrega o placeholder de recebimentos (vários financiadores, total > 0)', () => {
@@ -61,7 +61,10 @@ describe('buildCsv — CSV de recebimentos (header pt-BR do lado de receber)', (
   it('a 1ª linha é o header de recebimentos (Financiador · Recebido · A receber)', () => {
     const lines = buildCsv(loadPosicao('r'), CSV_HEADER_RECEBIMENTOS).split('\r\n')
     assert.equal(lines[0], CSV_HEADER_RECEBIMENTOS)
-    assert.equal(lines[0], 'Financiador;Centro de custo;Categoria;Em atraso;Recebido;A receber')
+    assert.equal(
+      lines[0],
+      '"Financiador";"Centro de custo";"Categoria";"Em atraso (R$)";"Recebido (R$)";"A receber (R$)"',
+    )
   })
 
   it('emite uma linha por FOLHA (categoria) + o header', () => {
@@ -69,13 +72,13 @@ describe('buildCsv — CSV de recebimentos (header pt-BR do lado de receber)', (
     assert.equal(lines.length, 1 + POSICAO_RECEBIMENTOS_RAW.length)
   })
 
-  it('a 1ª folha traz financiador/CC/categoria + as 3 medidas em BRL', () => {
+  it('a 1ª folha traz financiador/CC/categoria + as 3 medidas como NÚMERO', () => {
     const first = POSICAO_RECEBIMENTOS_RAW[0]
     assert.ok(first, 'placeholder não vazio')
     const lines = buildCsv(loadPosicao('r'), CSV_HEADER_RECEBIMENTOS).split('\r\n')
     assert.equal(
       lines[1],
-      `"${first.supplier}";"${first.costCenter}";"${first.category}";"${formatBRL(first.emAtrasoCents)}";"${formatBRL(first.pagoCents)}";"${formatBRL(first.aPagarCents)}"`,
+      `"${first.supplier}";"${first.costCenter}";"${first.category}";"${csvNumber(first.emAtrasoCents)}";"${csvNumber(first.pagoCents)}";"${csvNumber(first.aPagarCents)}"`,
     )
   })
 })

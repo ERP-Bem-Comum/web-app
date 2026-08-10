@@ -162,7 +162,7 @@ describe('buildCsv — 15 colunas, nullable → campo VAZIO', () => {
   it('cabeçalho exato das 15 colunas na ORDEM do legado (Contrato → … → Data → Valor)', () => {
     assert.equal(
       lines[0],
-      'Nº Contrato;Tipo;Código;Vencimento;Parcela;Apontamento;Fornecedor;Financiador;Colaborador;Centro de Custo;Categoria;Subcategoria;PIX/Bancário;Data;Valor',
+      '"Nº Contrato";"Tipo";"Código";"Vencimento";"Parcela";"Apontamento";"Fornecedor";"Financiador";"Colaborador";"Centro de Custo";"Categoria";"Subcategoria";"PIX/Bancário";"Data";"Valor (R$)"',
     )
   })
 
@@ -173,7 +173,7 @@ describe('buildCsv — 15 colunas, nullable → campo VAZIO', () => {
   it('nullable vira campo VAZIO no CSV (não "—") — linha 2 (na ordem do legado)', () => {
     assert.equal(
       lines[2],
-      `"";"A pagar";"CTX-1";"";"";"";"";"";"Colab X";"CC2";"Cat2";"Sub2";"";"08/01/2026";"${formatBRL(4500)}"`,
+      '"";"A pagar";"CTX-1";"";"";"";"";"";"Colab X";"CC2";"Cat2";"Sub2";"";"08/01/2026";"45,00"',
     )
     assert.ok(!(lines[2]?.includes('—') ?? false), 'o traço "—" é só de EXIBIÇÃO; não vai ao CSV')
   })
@@ -182,8 +182,8 @@ describe('buildCsv — 15 colunas, nullable → campo VAZIO', () => {
 describe('buildCsv — export segue as colunas VISÍVEIS (WYSIWYG)', () => {
   it('só as colunas passadas, na ordem, com o cabeçalho correspondente', () => {
     const lines = buildCsv(FIX, ['data', 'tipo', 'valor']).split('\r\n')
-    assert.equal(lines[0], 'Data;Tipo;Valor')
-    assert.equal(lines[1], `"02/01/2026";"A pagar";"${formatBRL(120000)}"`)
+    assert.equal(lines[0], '"Data";"Tipo";"Valor (R$)"')
+    assert.equal(lines[1], '"02/01/2026";"A pagar";"1200,00"')
   })
   it('lista de colunas VAZIA → volta às 15 (guarda defensiva)', () => {
     assert.equal(buildCsv(FIX, []).split('\r\n')[0], CSV_HEADER)
