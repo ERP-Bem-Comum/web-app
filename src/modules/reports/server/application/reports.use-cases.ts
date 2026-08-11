@@ -9,6 +9,7 @@ import type {
   TeamMember,
   TeamDemographics,
   SupplierWithoutContract,
+  SuppliersWithoutContractFilter,
   PaymentPosition,
   PaymentPositionFilter,
   PaymentAnalysis,
@@ -29,6 +30,7 @@ export type ReportsClient = Readonly<{
   /** Demografia AGREGADA (core-api#477) — só estatística cruza a fronteira, nunca linha por pessoa. */
   getTeamDemographics: (token: string) => Promise<Result<TeamDemographics, ReportsError>>
   getSuppliersWithoutContract: (
+    filter: SuppliersWithoutContractFilter,
     token: string,
   ) => Promise<Result<readonly SupplierWithoutContract[], ReportsError>>
   getPaymentPosition: (
@@ -80,8 +82,11 @@ export const createGetTeamDemographics =
 
 export const createGetSuppliersWithoutContract =
   (deps: Deps) =>
-  (token: string): Promise<Result<readonly SupplierWithoutContract[], ReportsError>> =>
-    deps.client.getSuppliersWithoutContract(token)
+  (
+    filter: SuppliersWithoutContractFilter,
+    token: string,
+  ): Promise<Result<readonly SupplierWithoutContract[], ReportsError>> =>
+    deps.client.getSuppliersWithoutContract(filter, token)
 
 export const createGetPaymentPosition =
   (deps: Deps) =>

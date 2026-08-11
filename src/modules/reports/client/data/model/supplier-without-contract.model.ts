@@ -9,4 +9,22 @@ export type SupplierWithoutContract = Readonly<{
   name: string | null
   totalCents: number
   payableCount: number
+  /** Quebra por Plano Orçamentário (#694): UMA linha por fornecedor×plano, `supplierRef` repetido. */
+  budgetPlanRef: string | null
+  /** Rótulo do plano; `null` sem plano ou quando a costura do backend não resolve → a UI cai no traço. */
+  budgetPlanName: string | null
+}>
+
+/**
+ * Filtros da consulta (#694). Todos opcionais: ausente = sem recorte, AND no servidor. `dueTo` EXCLUSIVO.
+ * Espelha o `SuppliersWithoutContractFilter` do server.
+ */
+export type SuppliersWithoutContractFilter = Readonly<{
+  programId?: string
+  budgetPlanId?: string
+  costCenterId?: string
+  categoryId?: string
+  subCategoryId?: string
+  dueFrom?: string
+  dueTo?: string
 }>

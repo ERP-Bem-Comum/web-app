@@ -17,7 +17,7 @@ import { createReportsRepository } from './reports.repository.ts'
 export const reportsRepository = createReportsRepository({
   teamReportFn: () => getTeamReportFn(),
   teamDemographicsFn: () => getTeamDemographicsFn(),
-  suppliersWithoutContractFn: () => getSuppliersWithoutContractFn(),
+  suppliersWithoutContractFn: (filter) => getSuppliersWithoutContractFn({ data: filter }),
   paymentPositionFn: (filter) => getPaymentPositionFn({ data: filter }),
   paymentAnalysisFn: (query) => getPaymentAnalysisFn({ data: query }),
   realizedReportFn: (query) => getRealizedReportFn({ data: query }),

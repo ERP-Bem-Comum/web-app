@@ -89,12 +89,16 @@ export function loadSupplierRows(limiteCents: number): readonly SupplierRow[] {
   return aggregateSuppliers(SUPPLIERS_WITHOUT_CONTRACT_RAW, limiteCents)
 }
 
+/** Rótulo quando o título não tem plano orçamentário (ou a costura do backend não resolveu o nome). */
+export const SEM_PLANO = 'Sem plano'
+
 /**
- * ADAPTER (puro) DTO real (`SupplierWithoutContract[]`) → linhas cruas (`RawSupplierRow[]`). O endpoint entrega
- * o total AGREGADO por fornecedor, SEM a quebra por plano orçamentário (D2 do plano) → cada fornecedor vira UMA
- * linha com `budgetPlan: '—'` (a árvore mostra o fornecedor com um único filho "—"); a matemática do limite
- * (por fornecedor) fica intacta. `name` nullable/vazio → cai no `supplierRef` como rótulo. O binding aplica o
- * limite via `aggregateSuppliers(toRawSupplierRows(suppliers), limiteCents)`. Sem `throw` (§II).
+ * ADAPTER (puro) DTO real (`SupplierWithoutContract[]`) → linhas cruas (`RawSupplierRow[]`). Desde o #694 o
+ * endpoint entrega UMA linha por fornecedor×Plano Orçamentário (`supplierRef` repetido), então a árvore ganha
+ * o segundo nível de verdade — antes o front escrevia `budgetPlan: '—'` em código porque o total vinha
+ * agregado só por fornecedor. Plano ausente (ou rótulo que a costura do backend não resolveu) cai no traço.
+ * A matemática do limite segue por FORNECEDOR: `aggregateSuppliers` soma as linhas do mesmo fornecedor.
+ * `name` nullable/vazio → cai no `supplierRef` como rótulo. Sem `throw` (§II).
  *
  * `partnersMap` (id → nome) resolve o favorecido NÃO-fornecedor (financiador/ato/colaborador) client-side —
  * o read-model do backend só nomeia fornecedor, então o front resolve os demais pelo MESMO mapa do Contas a
@@ -106,9 +110,10 @@ export function toRawSupplierRows(
 ): readonly RawSupplierRow[] {
   return suppliers.map((s) => {
     const backendName = s.name !== null && s.name.trim() !== '' ? s.name : null
+    const planName = s.budgetPlanName !== null && s.budgetPlanName.trim() !== '' ? s.budgetPlanName : null
     return {
       supplier: backendName ?? partnersMap.get(s.supplierRef) ?? s.supplierRef,
-      budgetPlan: '—',
+      budgetPlan: planName ?? SEM_PLANO,
       totalCents: s.totalCents,
     }
   })

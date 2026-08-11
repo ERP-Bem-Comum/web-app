@@ -51,6 +51,10 @@ const CoreApiSupplierWithoutContractSchema = z.object({
   name: z.string().trim().nullable(),
   totalCents: z.number(),
   payableCount: z.number(),
+  // #694: quebra por Plano Orçamentário. Declarar é obrigatório — chave não declarada o Zod DESCARTA em
+  // silêncio (foi o que segurou a demografia do Equipe).
+  budgetPlanRef: z.string().trim().nullable(),
+  budgetPlanName: z.string().trim().nullable(),
 })
 export const CoreApiSuppliersWithoutContractSchema = z.object({
   suppliers: z.array(CoreApiSupplierWithoutContractSchema),

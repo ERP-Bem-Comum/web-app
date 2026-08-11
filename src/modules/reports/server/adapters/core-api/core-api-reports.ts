@@ -68,9 +68,24 @@ export const createCoreApiReportsClient = (baseUrl: string, financialBaseUrl: st
     return teamDemographicsToModel(r.value)
   },
   getSuppliersWithoutContract: async (
+    filter,
     token,
   ): Promise<Result<readonly SupplierWithoutContract[], ReportsError>> => {
-    const r = await resultFetch<unknown>(`${baseUrl}/suppliers-without-contract`, { token })
+    // Só os campos DEFINIDOS entram na querystring (AND no servidor; ausente = sem recorte). #694.
+    const qs = new URLSearchParams()
+    if (filter.programId !== undefined) qs.set('programId', filter.programId)
+    if (filter.budgetPlanId !== undefined) qs.set('budgetPlanId', filter.budgetPlanId)
+    if (filter.costCenterId !== undefined) qs.set('costCenterId', filter.costCenterId)
+    if (filter.categoryId !== undefined) qs.set('categoryId', filter.categoryId)
+    if (filter.subCategoryId !== undefined) qs.set('subCategoryId', filter.subCategoryId)
+    if (filter.dueFrom !== undefined) qs.set('dueFrom', filter.dueFrom)
+    if (filter.dueTo !== undefined) qs.set('dueTo', filter.dueTo)
+    const query = qs.toString()
+    const url =
+      query === ''
+        ? `${baseUrl}/suppliers-without-contract`
+        : `${baseUrl}/suppliers-without-contract?${query}`
+    const r = await resultFetch<unknown>(url, { token })
     if (isErr(r)) return err(mapHttpError(r.error))
     return suppliersWithoutContractToModel(r.value)
   },

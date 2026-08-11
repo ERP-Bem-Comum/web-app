@@ -1,10 +1,16 @@
 /**
- * ReportFilters — barra de filtros (identidade "brand") do relatório "Fornecedores sem Contrato". View
- * BURRA: recebe labels + o valor/handler do **Limite** (único campo ligado à tela — dirige a matemática) e
- * um slot de exportação. Os demais campos (Programa, Plano Orçamentário, Período, Centro/Categoria/
- * Subcategoria de custo) são PLACEHOLDERS visuais (selects/date nativos sem fonte de dados — core-api#114
- * ainda não existe). O botão Filtrar é visual (front-first). Espelha o painel avançado do filtro de
- * Colaboradores.
+ * ReportFilters — barra de filtros do relatório "Fornecedores sem Contrato". View BURRA (§XI): recebe
+ * opções/valores/handlers por prop e não guarda estado.
+ *
+ * Até o #694 este painel era 100% PLACEHOLDER: 5 selects sem fonte de dados (só "Todos"), um campo de data
+ * solto e um botão "Filtrar" SEM `onClick` — só o Limite funcionava. O endpoint não aceitava querystring e a
+ * resposta não trazia dimensão nenhuma, então não havia o que recortar nem no servidor nem no cliente. Com o
+ * #694 os 6 passam a aplicar no SERVIDOR (o `value` é o UUID que vai na query).
+ *
+ * Divisão de trabalho dos dois tipos de filtro aqui:
+ *   • Programa/Plano/Período/Centro/Categoria/Subcategoria → recorte no SERVIDOR, commitado no "Filtrar".
+ *   • Limite → matemática CLIENT-SIDE sobre o total do fornecedor; aplica ao digitar (não espera o botão),
+ *     porque não custa ida ao servidor e é o campo que a pessoa ajusta procurando o corte certo.
  */
 import type { ReactNode } from 'react'
 
@@ -23,10 +29,14 @@ import {
   field,
   fieldLabel,
   select,
+  periodRow,
+  dateInput,
   panelFooter,
   footerRight,
   applyButton,
 } from './report-filters.css.ts'
+
+export type FilterOption = Readonly<{ value: string; label: string }>
 
 export type ReportFiltersLabels = Readonly<{
   advancedTitle: string
@@ -34,6 +44,8 @@ export type ReportFiltersLabels = Readonly<{
   programa: string
   plano: string
   periodo: string
+  periodoDe: string
+  periodoAte: string
   limite: string
   centro: string
   categoria: string
@@ -42,22 +54,59 @@ export type ReportFiltersLabels = Readonly<{
   filtrar: string
 }>
 
+/** Um campo controlado: opções + valor + onChange. `value` vazio = "Todos" (sem recorte). */
+export type ReportFilterField = Readonly<{
+  options: readonly FilterOption[]
+  value: string
+  onChange: (v: string) => void
+}>
+
 export type ReportFiltersProps = Readonly<{
-  /** Valor do Limite como texto BRL (ex.: "10.000,00"). */
+  labels: ReportFiltersLabels
+  /** Valor do Limite como texto BRL (ex.: "10.000,00") — client-side, aplica ao digitar. */
   limiteValue: string
   onLimiteChange: (value: string) => void
-  labels: ReportFiltersLabels
+  programa: ReportFilterField
+  plano: ReportFilterField
+  centro: ReportFilterField
+  categoria: ReportFilterField
+  subcategoria: ReportFilterField
+  /** Janela de vencimento em `YYYY-MM-DD`; `dueTo` é EXCLUSIVO no backend. */
+  dueFrom: string
+  dueTo: string
+  onPeriodChange: (patch: Readonly<{ dueFrom?: string; dueTo?: string }>) => void
+  /** Commita os filtros de SERVIDOR (o Limite já está aplicado). */
+  onFiltrar: () => void
   /** Slot de exportação (a page injeta o dropdown CSV/PDF). */
   exportSlot?: ReactNode
 }>
 
-/** Campo placeholder (select nativo sem fonte de dados ainda — só a forma/estilo brand). */
-function PlaceholderSelect({ label, allOption }: { label: string; allOption: string }): ReactNode {
+function Field({
+  label,
+  placeholder,
+  field: f,
+}: {
+  label: string
+  placeholder: string
+  field: ReportFilterField
+}): ReactNode {
   return (
     <div className={field}>
       <span className={fieldLabel}>{label}</span>
-      <select className={select} aria-label={label} defaultValue="">
-        <option value="">{allOption}</option>
+      <select
+        className={select}
+        aria-label={label}
+        value={f.value}
+        onChange={(e) => {
+          f.onChange(e.target.value)
+        }}
+      >
+        <option value="">{placeholder}</option>
+        {f.options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
       </select>
     </div>
   )
@@ -84,14 +133,33 @@ export function ReportFilters(props: ReportFiltersProps): ReactNode {
           {L.advancedTitle}
         </span>
         <div className={groupGrid}>
-          <PlaceholderSelect label={L.programa} allOption={L.allOption} />
-          <PlaceholderSelect label={L.plano} allOption={L.allOption} />
-          {/* Período (date range) — placeholder visual (dois campos de data nativos). */}
+          <Field label={L.programa} placeholder={L.allOption} field={props.programa} />
+          <Field label={L.plano} placeholder={L.allOption} field={props.plano} />
+          {/* Período = DOIS inputs de data (De / Até), como nos demais relatórios; `Até` é EXCLUSIVO. */}
           <div className={field}>
             <span className={fieldLabel}>{L.periodo}</span>
-            <input className={select} type="date" aria-label={L.periodo} />
+            <div className={periodRow}>
+              <input
+                className={dateInput}
+                type="date"
+                aria-label={L.periodoDe}
+                value={props.dueFrom}
+                onChange={(e) => {
+                  props.onPeriodChange({ dueFrom: e.target.value })
+                }}
+              />
+              <input
+                className={dateInput}
+                type="date"
+                aria-label={L.periodoAte}
+                value={props.dueTo}
+                onChange={(e) => {
+                  props.onPeriodChange({ dueTo: e.target.value })
+                }}
+              />
+            </div>
           </div>
-          {/* Limite — ÚNICO campo ligado à tela (dirige a matemática). Currency como texto. */}
+          {/* Limite — client-side (dirige a matemática do gráfico de compliance). Currency como texto. */}
           <div className={field}>
             <label className={fieldLabel} htmlFor="report-limite">
               {L.limite}
@@ -107,16 +175,16 @@ export function ReportFilters(props: ReportFiltersProps): ReactNode {
               }}
             />
           </div>
-          <PlaceholderSelect label={L.centro} allOption={L.allOption} />
-          <PlaceholderSelect label={L.categoria} allOption={L.allOption} />
-          <PlaceholderSelect label={L.subcategoria} allOption={L.allOption} />
+          <Field label={L.centro} placeholder={L.allOption} field={props.centro} />
+          <Field label={L.categoria} placeholder={L.allOption} field={props.categoria} />
+          <Field label={L.subcategoria} placeholder={L.allOption} field={props.subcategoria} />
         </div>
       </div>
 
       <div className={panelFooter}>
         <span />
         <div className={footerRight}>
-          <button type="button" className={applyButton}>
+          <button type="button" className={applyButton} onClick={props.onFiltrar}>
             {L.filtrar}
           </button>
           {props.exportSlot}

@@ -14,14 +14,27 @@ import { reportsPartnersMapQueryOptions, EMPTY_PARTNERS_MAP } from './reports-pa
 import type { RawSupplierRow } from './data/suppliers-without-contract.placeholder.ts'
 import { reportsErrorTag } from './data/helpers/reports-error-tag.ts'
 import type { ReportsError } from './data/repository/reports-error.ts'
+import type { SuppliersWithoutContractFilter } from './data/model/supplier-without-contract.model.ts'
 
 export type SuppliersWithoutContractState =
   | Readonly<{ status: 'loading' }>
   | Readonly<{ status: 'error'; error: ReportsError; errorTag: string }>
   | Readonly<{ status: 'ready'; rawRows: readonly RawSupplierRow[] }>
 
-export function useSuppliersWithoutContract(): SuppliersWithoutContractState {
-  const query = useQuery(suppliersWithoutContractQueryOptions())
+// Re-export p/ a page tipar o filtro aplicado sem importar de `data/model` (boundary client-ui ↛ client-data).
+export type SuppliersFilter = SuppliersWithoutContractFilter
+
+/** Sem recorte (referência estável — não troca a queryKey a cada render). */
+const NO_FILTER: SuppliersWithoutContractFilter = {}
+
+/**
+ * `filter` aplicado (#694): entra na queryKey → "Filtrar" re-busca no SERVIDOR. Ausente = sem recorte, e a
+ * tela abre mostrando TUDO (o filtro é recorte, não pré-requisito).
+ */
+export function useSuppliersWithoutContract(
+  filter: SuppliersWithoutContractFilter = NO_FILTER,
+): SuppliersWithoutContractState {
+  const query = useQuery(suppliersWithoutContractQueryOptions(filter))
   // Mapa de parceiros p/ resolver o favorecido não-fornecedor client-side (best-effort; não bloqueia).
   const partnersQuery = useQuery(reportsPartnersMapQueryOptions())
 
