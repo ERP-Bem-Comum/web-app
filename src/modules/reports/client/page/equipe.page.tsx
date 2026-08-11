@@ -69,6 +69,7 @@ import {
   fldChev,
   filtersActions,
   applyButton,
+  clearButton,
   chartCard,
   chartPad,
   cardHeader,
@@ -485,6 +486,18 @@ export function EquipePage(): ReactNode {
             />
           </div>
           <div className={filtersActions}>
+            <button
+              type="button"
+              className={clearButton}
+              onClick={() => {
+                setDraft(EMPTY_TEAM_FILTERS)
+                setApplied(EMPTY_TEAM_FILTERS)
+                // Volta à 1ª página: limpar devolve a tela ao estado de recém-aberta.
+                setPage(1)
+              }}
+            >
+              {t('reports.filters.clear')}
+            </button>
             <button type="button" className={applyButton} onClick={aplicar}>
               {t('reports.equipe.filters.filtrar')}
             </button>

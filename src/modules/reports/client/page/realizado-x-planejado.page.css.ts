@@ -192,6 +192,32 @@ export const applyButton = style({
   },
 })
 
+/**
+ * "Limpar filtros" — botão SECUNDÁRIO ao lado do "Filtrar" (mesma família do `clearButton` da kit brand:
+ * fundo de superfície + borda, contra o primário sólido do aplicar). Sem `marginInlineStart:'auto'`: quem
+ * empurra para a direita é o aplicar; este fica colado nele.
+ */
+export const clearButton = style({
+  blockSize: brand.size.field,
+  paddingInline: brand.space.gridCol,
+  border: `${vars.borderWidth.thin} solid ${brand.color.line}`,
+  borderRadius: brand.radius.sm,
+  background: brand.color.surface,
+  color: brand.color.ink700,
+  fontFamily: vars.font.family.heading,
+  fontSize: brand.text.body,
+  fontWeight: brand.weight.semibold,
+  cursor: 'pointer',
+  transition: `all ${brand.ease}`,
+  selectors: {
+    '&:hover': { background: brand.color.surfaceAlt, borderColor: brand.color.ink400 },
+    '&:focus-visible': {
+      outline: `${vars.focusRing.width} solid ${brand.color.primary}`,
+      outlineOffset: vars.focusRing.offset,
+    },
+  },
+})
+
 // ── Cartão genérico (KPI + gráfico + tabela) ──
 export const card = style({
   background: brand.color.surface,

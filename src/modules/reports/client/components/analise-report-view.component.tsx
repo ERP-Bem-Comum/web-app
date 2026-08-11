@@ -52,6 +52,7 @@ import {
   fldSelect,
   fldChev,
   applyButton,
+  clearButton,
   periodRow,
   dateInput,
   card,
@@ -86,6 +87,7 @@ export type AnaliseReportViewLabels = Readonly<{
     categoria: string
     subcategoria: string
     filtrar: string
+    limpar: string
     /** Rótulos dos chips de Status alinhados ao CAP (financial.list.chip.*), acrescidos após "Todos". */
     statusChips: readonly string[]
   }>
@@ -180,6 +182,8 @@ export type AnalisePeriodModel = Readonly<{
   dueTo: string
   onChange: (patch: Readonly<{ dueFrom?: string; dueTo?: string }>) => void
   onFiltrar: () => void
+  /** Zera todos os campos e aplica na hora. Ausente (Recebimentos) → sem botão. */
+  onLimpar?: () => void
 }>
 
 export function AnaliseReportView(props: AnaliseReportViewProps): ReactNode {
@@ -383,6 +387,13 @@ export function AnaliseReportView(props: AnaliseReportViewProps): ReactNode {
               <FilterField label={L.filters.subcategoria} options={[L.filters.allOption]} />
             )}
             {/* "Filtrar" aplica período (Pagamentos, via onFiltrar); inerte em Recebimentos (sem `period`). */}
+            {/* "Limpar filtros": zera todos de uma vez e aplica na hora — limpar É voltar a ver tudo.
+                Só quando o painel é filtrável (Recebimentos não passa `period`). */}
+            {pd?.onLimpar !== undefined && (
+              <button type="button" className={clearButton} onClick={pd.onLimpar}>
+                {L.filters.limpar}
+              </button>
+            )}
             <button
               type="button"
               className={applyButton}

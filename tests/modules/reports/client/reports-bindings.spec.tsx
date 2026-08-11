@@ -86,12 +86,26 @@ describe('usePosicaoPagamentos', () => {
 })
 
 const SUPPLIERS: readonly SupplierWithoutContract[] = [
-  { supplierRef: 'sup-1', name: 'Comercial Andorinha Ltda', totalCents: 1520000, payableCount: 4 },
-  { supplierRef: 'sup-2', name: null, totalCents: 5000, payableCount: 1 },
+  {
+    supplierRef: 'sup-1',
+    name: 'Comercial Andorinha Ltda',
+    totalCents: 1520000,
+    payableCount: 4,
+    budgetPlanRef: 'plan-1',
+    budgetPlanName: '2026 ABC 1.0',
+  },
+  {
+    supplierRef: 'sup-2',
+    name: null,
+    totalCents: 5000,
+    payableCount: 1,
+    budgetPlanRef: null,
+    budgetPlanName: null,
+  },
 ]
 
 describe('useSuppliersWithoutContract', () => {
-  it('ready → rawRows adaptadas (name null → supplierRef; budgetPlan "—")', async () => {
+  it('ready → rawRows adaptadas (name null → supplierRef; plano real ou "Sem plano")', async () => {
     mSuppliers.mockResolvedValue(ok(SUPPLIERS))
     const { result } = renderHook(() => useSuppliersWithoutContract(), { wrapper: wrapper() })
     await waitFor(() => {
@@ -99,7 +113,9 @@ describe('useSuppliersWithoutContract', () => {
     })
     if (result.current.status === 'ready') {
       expect(result.current.rawRows.length).toBe(2)
-      expect(result.current.rawRows[0]?.budgetPlan).toBe('—')
+      // #694: o 2º nível da árvore é o plano REAL; sem plano cai em "Sem plano" (nunca em branco).
+      expect(result.current.rawRows[0]?.budgetPlan).toBe('2026 ABC 1.0')
+      expect(result.current.rawRows[1]?.budgetPlan).toBe('Sem plano')
       expect(result.current.rawRows[1]?.supplier).toBe('sup-2')
     }
   })

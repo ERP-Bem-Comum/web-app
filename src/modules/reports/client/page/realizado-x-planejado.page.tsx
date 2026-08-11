@@ -62,6 +62,7 @@ import {
   fldSelect,
   fldChev,
   applyButton,
+  clearButton,
   charts3,
   chartCard,
   chartPad,
@@ -316,6 +317,17 @@ export function RealizadoXPlanejadoPage(): ReactNode {
               setDraft((d) => ({ ...d, year: Number.isFinite(y) && y > 0 ? y : YEAR }))
             }}
           />
+          <button
+            type="button"
+            className={clearButton}
+            onClick={() => {
+              // O ano é obrigatório no endpoint — "limpar" volta ao ano corrente, não a "sem ano".
+              setDraft({ year: YEAR })
+              setApplied({ year: YEAR })
+            }}
+          >
+            {t('reports.filters.clear')}
+          </button>
           <button
             type="button"
             className={applyButton}

@@ -47,6 +47,7 @@ import {
   fldSelect,
   fldChev,
   applyButton,
+  clearButton,
   periodRow,
   dateInput,
   chartCard,
@@ -82,6 +83,7 @@ export type PosicaoReportViewLabels = Readonly<{
     /** Fornecedor (Pagamentos) | Financiador (Recebimentos). */
     partner: string
     filtrar: string
+    limpar: string
   }>
   export: Readonly<{ label: string; csv: string; pdf: string }>
   kpi: Readonly<{
@@ -160,6 +162,8 @@ export type PosicaoFiltersModel = Readonly<{
   values: PosicaoFilterValues
   onChange: (patch: Partial<PosicaoFilterValues>) => void
   onFiltrar: () => void
+  /** Zera todos os campos e aplica na hora. Ausente (Recebimentos) → sem botão. */
+  onLimpar?: () => void
 }>
 
 export function PosicaoReportView(props: PosicaoReportViewProps): ReactNode {
@@ -364,6 +368,13 @@ export function PosicaoReportView(props: PosicaoReportViewProps): ReactNode {
               value={v('supplierRef')}
               onChange={setF('supplierRef')}
             />
+            {/* "Limpar filtros": zera todos de uma vez e aplica na hora — limpar É voltar a ver tudo.
+                Só quando o painel é filtrável (Recebimentos não passa `filters`). */}
+            {fx?.onLimpar !== undefined && (
+              <button type="button" className={clearButton} onClick={fx.onLimpar}>
+                {L.filters.limpar}
+              </button>
+            )}
             <button
               type="button"
               className={applyButton}
@@ -377,90 +388,92 @@ export function PosicaoReportView(props: PosicaoReportViewProps): ReactNode {
         </div>
       )}
 
-      {isEmpty ? (
-        // Empty state HONESTO: um cartão único, sem KPIs/gráficos/tabela (mas os filtros acima seguem acessíveis).
+      {/* Vazio: o AVISO entra, mas a ESTRUTURA fica. Antes o cartão de vazio SUBSTITUÍA KPIs/gráficos/
+          tabela, e o relatório inteiro sumia quando um filtro não achava nada — enquanto os demais
+          relatórios mantêm os elementos zerados. Sumir a tela faz parecer que ela quebrou, não que o
+          recorte não teve resultado. */}
+      {isEmpty && (
         <div className={card}>
           <div className={emptyPanel}>
             <p className={emptyTitle}>{L.empty}</p>
             <p className={emptyHint}>{L.emptyHint}</p>
           </div>
         </div>
-      ) : (
-        <>
-          {/* 4 KPIs (Atrasado / Pago-Recebido / A pagar-A receber / Total) */}
-          <PosicaoKpis
-            atrasadoValue={formatBRL(totals.emAtrasoCents)}
-            pagoValue={formatBRL(totals.pagoCents)}
-            aPagarValue={formatBRL(totals.aPagarCents)}
-            totalValue={formatBRL(grandTotal)}
-            labels={{
-              atrasado: L.kpi.atrasado,
-              pago: L.kpi.pago,
-              aPagar: L.kpi.aPagar,
-              total: L.kpi.total,
-              atrasadoSub: L.kpi.atrasadoSub,
-              pagoSub: L.kpi.pagoSub,
-              aPagarSub: L.kpi.aPagarSub,
-              totalSub: L.kpi.totalSub,
-            }}
-          />
+      )}
+      <>
+        {/* 4 KPIs (Atrasado / Pago-Recebido / A pagar-A receber / Total) */}
+        <PosicaoKpis
+          atrasadoValue={formatBRL(totals.emAtrasoCents)}
+          pagoValue={formatBRL(totals.pagoCents)}
+          aPagarValue={formatBRL(totals.aPagarCents)}
+          totalValue={formatBRL(grandTotal)}
+          labels={{
+            atrasado: L.kpi.atrasado,
+            pago: L.kpi.pago,
+            aPagar: L.kpi.aPagar,
+            total: L.kpi.total,
+            atrasadoSub: L.kpi.atrasadoSub,
+            pagoSub: L.kpi.pagoSub,
+            aPagarSub: L.kpi.aPagarSub,
+            totalSub: L.kpi.totalSub,
+          }}
+        />
 
-          {/* 2 gráficos (animação de entrada gerida pelo mount wrapper) */}
-          <RealizadoChartsMount>
-            {(animate) => (
-              <div className={charts2}>
-                <div className={chartCard}>
-                  <div className={cardHeader}>
-                    <h2 className={cardTitle}>{L.chart.resumoTotal}</h2>
-                  </div>
-                  <div className={chartPad}>
-                    <RealizadoDonut
-                      slices={donutSlices}
-                      centerValue={formatBRLShort(grandTotal)}
-                      centerCaption={L.chart.centerCaption}
-                      emptyLabel={L.chartEmptyLabel}
-                      animate={animate}
-                      formatValue={formatBRLShort}
-                      formatPercent={formatPercent}
-                    />
-                  </div>
+        {/* 2 gráficos (animação de entrada gerida pelo mount wrapper) */}
+        <RealizadoChartsMount>
+          {(animate) => (
+            <div className={charts2}>
+              <div className={chartCard}>
+                <div className={cardHeader}>
+                  <h2 className={cardTitle}>{L.chart.resumoTotal}</h2>
                 </div>
-
-                <div className={chartCard}>
-                  <div className={cardHeader}>
-                    <h2 className={cardTitle}>{L.chart.distribuicao}</h2>
-                  </div>
-                  <div className={chartPad}>
-                    <RealizadoCostCenterBars
-                      bars={partnerBars}
-                      emptyLabel={L.chartEmptyLabel}
-                      animate={animate}
-                      fillTone={isRec ? 'rec' : undefined}
-                    />
-                  </div>
+                <div className={chartPad}>
+                  <RealizadoDonut
+                    slices={donutSlices}
+                    centerValue={formatBRLShort(grandTotal)}
+                    centerCaption={L.chart.centerCaption}
+                    emptyLabel={L.chartEmptyLabel}
+                    animate={animate}
+                    formatValue={formatBRLShort}
+                    formatPercent={formatPercent}
+                  />
                 </div>
               </div>
-            )}
-          </RealizadoChartsMount>
 
-          {/* Tabela hierárquica (raiz → CC → Categoria) + Total Geral */}
-          <PosicaoTreeTable
-            report={report}
-            labels={{
-              cardTitle: L.table.title,
-              nameCol: L.table.nameCol,
-              measureLabels: {
-                emAtrasoCents: L.measure.emAtraso,
-                pagoCents: L.measure.pago,
-                aPagarCents: L.measure.aPagar,
-              },
-              totalRow: L.table.totalRow,
-              expand: L.table.expand,
-              collapse: L.table.collapse,
-            }}
-          />
-        </>
-      )}
+              <div className={chartCard}>
+                <div className={cardHeader}>
+                  <h2 className={cardTitle}>{L.chart.distribuicao}</h2>
+                </div>
+                <div className={chartPad}>
+                  <RealizadoCostCenterBars
+                    bars={partnerBars}
+                    emptyLabel={L.chartEmptyLabel}
+                    animate={animate}
+                    fillTone={isRec ? 'rec' : undefined}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </RealizadoChartsMount>
+
+        {/* Tabela hierárquica (raiz → CC → Categoria) + Total Geral */}
+        <PosicaoTreeTable
+          report={report}
+          labels={{
+            cardTitle: L.table.title,
+            nameCol: L.table.nameCol,
+            measureLabels: {
+              emAtrasoCents: L.measure.emAtraso,
+              pagoCents: L.measure.pago,
+              aPagarCents: L.measure.aPagar,
+            },
+            totalRow: L.table.totalRow,
+            expand: L.table.expand,
+            collapse: L.table.collapse,
+          }}
+        />
+      </>
     </div>
   )
 }

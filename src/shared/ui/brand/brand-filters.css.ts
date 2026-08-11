@@ -346,3 +346,15 @@ export const exportTrigger = style([
     selectors: { '&:hover': { background: brand.color.surfaceAlt, borderColor: brand.color.ink400 } },
   },
 ])
+
+/**
+ * Linha do filtro de PERÍODO: dois campos de data lado a lado (De / Até). Vive na kit porque o período por
+ * intervalo é padrão dos relatórios — antes cada page redeclarava o seu (`periodRow` em posicao/fluxo/geral).
+ */
+export const periodRow = style({ display: 'flex', gap: brand.space.sm, alignItems: 'flex-end' })
+
+/** Campo de data com a MESMA pele do `select`, sem o chevron (é campo de texto, não dropdown). */
+export const dateInput = style([
+  select,
+  { minInlineSize: '8.5rem', paddingInlineEnd: brand.space.md, cursor: 'text' },
+])

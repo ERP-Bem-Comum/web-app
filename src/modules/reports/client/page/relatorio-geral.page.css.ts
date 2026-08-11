@@ -25,6 +25,7 @@ export {
   fldSelect,
   fldChev,
   applyButton,
+  clearButton,
   filterRowBreak,
 } from './realizado-x-planejado.page.css.ts'
 // Trigger do dropdown Exportar (kit brand compartilhado dos relatórios) — reusado no botão "Colunas".
