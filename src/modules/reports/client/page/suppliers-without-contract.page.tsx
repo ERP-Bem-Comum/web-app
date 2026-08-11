@@ -25,7 +25,8 @@ import {
   LIMITE_DEFAULT_CENTS,
   type RawSupplierRow,
 } from '../suppliers-without-contract.view-model.ts'
-import { useSuppliersWithoutContract } from '../suppliers-without-contract.binding.ts'
+import { useSuppliersWithoutContract, type SuppliersFilter } from '../suppliers-without-contract.binding.ts'
+import { useSuppliersFilterOptions } from '../suppliers-filters.binding.ts'
 import { ReportStatePanel } from '../components/report-state-panel.component.tsx'
 import { ReportFilters } from '../components/report-filters.component.tsx'
 import { exportTrigger } from '../components/report-filters.css.ts'
@@ -68,10 +69,53 @@ function statusOf(row: { overLimit: boolean; atLimit: boolean }): ComplianceStat
 /** Linhas cruas vazias enquanto a query carrega/falha (mantém a ordem dos hooks estável — §XI). */
 const EMPTY_RAW: readonly RawSupplierRow[] = []
 
+/** Draft dos filtros de SERVIDOR (#694). Vazio = sem recorte: a tela abre mostrando TUDO. */
+type FilterDraft = Readonly<{
+  programa: string
+  plano: string
+  centro: string
+  categoria: string
+  subcategoria: string
+  dueFrom: string
+  dueTo: string
+}>
+const EMPTY_DRAFT: FilterDraft = {
+  programa: '',
+  plano: '',
+  centro: '',
+  categoria: '',
+  subcategoria: '',
+  dueFrom: '',
+  dueTo: '',
+}
+
+/** Draft → query do #694. Campo vazio some (ausente = sem recorte, AND no servidor). */
+function toFilter(d: FilterDraft): SuppliersFilter {
+  const v = (x: string): string | undefined => (x === '' ? undefined : x)
+  return {
+    programId: v(d.programa),
+    budgetPlanId: v(d.plano),
+    costCenterId: v(d.centro),
+    categoryId: v(d.categoria),
+    subCategoryId: v(d.subcategoria),
+    dueFrom: v(d.dueFrom),
+    dueTo: v(d.dueTo),
+  }
+}
+
 export function SuppliersWithoutContractPage(): ReactNode {
-  // Server-state REAL do core-api (#114): fornecedores agregados (sem quebra por plano — D2). O LIMITE é
+  // UI-state de filtro: DRAFT (edição) + APLICADO (o que a query consulta). "Filtrar" commita — mudar um
+  // campo não mexe na tela antes do clique (§XI). Vazio = sem recorte: abre mostrando tudo.
+  const [draft, setDraft] = useState<FilterDraft>(EMPTY_DRAFT)
+  const [applied, setApplied] = useState<SuppliersFilter>({})
+
+  // Server-state REAL do core-api (#114/#694): UMA linha por fornecedor×Plano Orçamentário. O LIMITE é
   // UI-state reativo → a agregação por limite acontece AQUI (não no binding), preservando a matemática ao vivo.
-  const state = useSuppliersWithoutContract()
+  const state = useSuppliersWithoutContract(applied)
+
+  // Opções dos dropdowns: Programa + Plano, e a CASCATA Centro/Categoria/Subcategoria da árvore do plano
+  // (ADR-0051). Hooks SEMPRE antes dos early-returns (Rules of Hooks).
+  const opts = useSuppliersFilterOptions(draft.plano, draft.centro, draft.categoria)
 
   // UI-state: painel de filtros aberto/fechado.
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -150,18 +194,70 @@ export function SuppliersWithoutContractPage(): ReactNode {
         <ReportFilters
           limiteValue={limiteText}
           onLimiteChange={setLimiteText}
+          programa={{
+            options: opts.programa,
+            value: draft.programa,
+            onChange: (v) => {
+              setDraft((d) => ({ ...d, programa: v }))
+            },
+          }}
+          plano={{
+            options: opts.plano,
+            value: draft.plano,
+            // Trocar o plano ZERA a cascata (o centro anterior pode não existir no plano novo).
+            onChange: (v) => {
+              setDraft((d) => ({ ...d, plano: v, centro: '', categoria: '', subcategoria: '' }))
+            },
+          }}
+          centro={{
+            options: opts.centro,
+            value: draft.centro,
+            onChange: (v) => {
+              setDraft((d) => ({ ...d, centro: v, categoria: '', subcategoria: '' }))
+            },
+          }}
+          categoria={{
+            options: opts.categoria,
+            value: draft.categoria,
+            onChange: (v) => {
+              setDraft((d) => ({ ...d, categoria: v, subcategoria: '' }))
+            },
+          }}
+          subcategoria={{
+            options: opts.subcategoria,
+            value: draft.subcategoria,
+            onChange: (v) => {
+              setDraft((d) => ({ ...d, subcategoria: v }))
+            },
+          }}
+          dueFrom={draft.dueFrom}
+          dueTo={draft.dueTo}
+          onPeriodChange={(patch) => {
+            setDraft((d) => ({ ...d, ...patch }))
+          }}
+          onFiltrar={() => {
+            setApplied(toFilter(draft))
+          }}
+          onLimpar={() => {
+            setDraft(EMPTY_DRAFT)
+            setApplied({})
+            setLimiteText(formatLimiteInput(LIMITE_DEFAULT_CENTS))
+          }}
           labels={{
             advancedTitle: t('reports.suppliersWithoutContract.filters.title'),
             advancedSubtitle: t('reports.suppliersWithoutContract.filters.subtitle'),
             programa: t('reports.suppliersWithoutContract.filters.programa'),
             plano: t('reports.suppliersWithoutContract.filters.plano'),
             periodo: t('reports.suppliersWithoutContract.filters.periodo'),
+            periodoDe: t('reports.suppliersWithoutContract.filters.periodoDe'),
+            periodoAte: t('reports.suppliersWithoutContract.filters.periodoAte'),
             limite: t('reports.suppliersWithoutContract.filters.limite'),
             centro: t('reports.suppliersWithoutContract.filters.centro'),
             categoria: t('reports.suppliersWithoutContract.filters.categoria'),
             subcategoria: t('reports.suppliersWithoutContract.filters.subcategoria'),
             allOption: t('reports.suppliersWithoutContract.filters.allOption'),
             filtrar: t('reports.suppliersWithoutContract.filters.filtrar'),
+            limpar: t('reports.filters.clear'),
           }}
         />
       </div>

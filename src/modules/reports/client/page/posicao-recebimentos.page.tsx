@@ -45,6 +45,7 @@ export function PosicaoRecebimentosPage(): ReactNode {
       // Rótulo do lado de receber: Financiador (em vez de Fornecedor).
       partner: t('reports.posicao.rec.financiador'),
       filtrar: t('reports.posicao.filters.filtrar'),
+      limpar: t('reports.filters.clear'),
     },
     export: {
       label: t('reports.posicao.export.label'),

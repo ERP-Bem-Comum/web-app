@@ -146,6 +146,7 @@ export function AnalisePagamentosPage(): ReactNode {
       categoria: t('reports.analise.filters.categoria'),
       subcategoria: t('reports.analise.filters.subcategoria'),
       filtrar: t('reports.analise.filters.filtrar'),
+      limpar: t('reports.filters.clear'),
       // Status alinhados ao Contas a Pagar (reusa os rótulos dos chips do CAP).
       statusChips: [
         t('financial.list.chip.rascunho'),
@@ -261,6 +262,16 @@ export function AnalisePagamentosPage(): ReactNode {
     setAppliedView({ dueFrom: periodDraft.dueFrom, dueTo: periodDraft.dueTo, status: statusDraft })
     setAppliedSel({ programa: sel.programa, plano: sel.plano, centro: sel.centro })
   }
+  // "Limpar filtros": zera TODOS (draft e aplicado) de uma vez e volta a mostrar tudo — sem exigir o
+  // "Filtrar" depois. Remover um a um era o único caminho.
+  const limpar = (): void => {
+    setPeriodDraft(EMPTY_PERIOD)
+    setStatusDraft('')
+    setSel(EMPTY_SEL)
+    setApplied(undefined)
+    setAppliedView({ dueFrom: '', dueTo: '', status: '' })
+    setAppliedSel(EMPTY_CLIENT_SEL)
+  }
   const period: AnalisePeriodModel = {
     dueFrom: periodDraft.dueFrom,
     dueTo: periodDraft.dueTo,
@@ -268,6 +279,7 @@ export function AnalisePagamentosPage(): ReactNode {
       setPeriodDraft((d) => ({ ...d, ...patch }))
     },
     onFiltrar: aplicar,
+    onLimpar: limpar,
   }
   const statusFilter = {
     options: statusOptions,

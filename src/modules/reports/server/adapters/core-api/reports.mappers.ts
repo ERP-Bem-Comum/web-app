@@ -115,6 +115,8 @@ export const suppliersWithoutContractToModel = (
     name: s.name,
     totalCents: s.totalCents,
     payableCount: s.payableCount,
+    budgetPlanRef: s.budgetPlanRef,
+    budgetPlanName: s.budgetPlanName,
   }))
   return ok(suppliers)
 }

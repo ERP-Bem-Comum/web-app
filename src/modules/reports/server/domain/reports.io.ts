@@ -66,6 +66,24 @@ export type SupplierWithoutContract = Readonly<{
   name: string | null
   totalCents: number
   payableCount: number
+  /** Quebra por Plano Orçamentário (#694): UMA linha por fornecedor×plano, `supplierRef` repetido. */
+  budgetPlanRef: string | null
+  /** Rótulo costurado na borda do core-api; `null` sem plano ou quando a costura não resolve. */
+  budgetPlanName: string | null
+}>
+
+/**
+ * Filtros de "Fornecedores sem Contrato" (core-api#694 — paridade de nomes com #588/#682). Todos opcionais:
+ * ausente = sem recorte. `dueTo` é EXCLUSIVO (janela half-open), como nos irmãos.
+ */
+export type SuppliersWithoutContractFilter = Readonly<{
+  programId?: string
+  budgetPlanId?: string
+  costCenterId?: string
+  categoryId?: string
+  subCategoryId?: string
+  dueFrom?: string
+  dueTo?: string
 }>
 
 /**

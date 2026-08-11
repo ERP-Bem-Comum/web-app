@@ -6,7 +6,10 @@
  */
 import { ok, err, type Result } from '#shared/primitives/result.ts'
 import type { TeamMember, TeamDemographics } from '#modules/reports/client/data/model/team-report.model.ts'
-import type { SupplierWithoutContract } from '#modules/reports/client/data/model/supplier-without-contract.model.ts'
+import type {
+  SupplierWithoutContract,
+  SuppliersWithoutContractFilter,
+} from '#modules/reports/client/data/model/supplier-without-contract.model.ts'
 import type {
   PaymentPosition,
   PaymentPositionFilter,
@@ -28,7 +31,9 @@ import type { ReportsError, FnResult } from '#modules/reports/client/data/reposi
 
 type TeamFn = () => Promise<FnResult<readonly TeamMember[]>>
 type TeamDemographicsFn = () => Promise<FnResult<TeamDemographics>>
-type SuppliersFn = () => Promise<FnResult<readonly SupplierWithoutContract[]>>
+type SuppliersFn = (
+  filter: SuppliersWithoutContractFilter,
+) => Promise<FnResult<readonly SupplierWithoutContract[]>>
 type PaymentPositionFn = (filter: PaymentPositionFilter) => Promise<FnResult<readonly PaymentPosition[]>>
 type PaymentAnalysisFn = (query: PaymentAnalysisQuery) => Promise<FnResult<PaymentAnalysis>>
 type RealizedReportFn = (query: RealizedReportQuery) => Promise<FnResult<readonly RealizedBudgetRow[]>>
@@ -39,7 +44,9 @@ export type ReportsRepository = Readonly<{
   getTeam: () => Promise<Result<readonly TeamMember[], ReportsError>>
   /** Demografia AGREGADA (core-api#477) — só estatística; nunca linha por pessoa. */
   getTeamDemographics: () => Promise<Result<TeamDemographics, ReportsError>>
-  getSuppliersWithoutContract: () => Promise<Result<readonly SupplierWithoutContract[], ReportsError>>
+  getSuppliersWithoutContract: (
+    filter: SuppliersWithoutContractFilter,
+  ) => Promise<Result<readonly SupplierWithoutContract[], ReportsError>>
   getPaymentPosition: (
     filter: PaymentPositionFilter,
   ) => Promise<Result<readonly PaymentPosition[], ReportsError>>
@@ -71,8 +78,8 @@ export const createReportsRepository = (
     const res = await deps.teamDemographicsFn()
     return res.ok ? ok(res.data) : err(res.error)
   },
-  getSuppliersWithoutContract: async () => {
-    const res = await deps.suppliersWithoutContractFn()
+  getSuppliersWithoutContract: async (filter) => {
+    const res = await deps.suppliersWithoutContractFn(filter)
     return res.ok ? ok(res.data) : err(res.error)
   },
   getPaymentPosition: async (filter) => {
