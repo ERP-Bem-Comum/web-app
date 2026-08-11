@@ -5,7 +5,7 @@
  *      de recebimentos; as 3 medidas do lado de receber aparecem.
  *   2. export: clicar "CSV" no dropdown dispara o download (Blob + anchor).
  *   3. EMPTY STATE (crítico): com um relatório VAZIO (0 nós, total 0), a tela mostra o empty state honesto
- *      "Nenhum recebimento registrado" — SEM KPIs/gráficos/tabela quebrados (validando a remoção futura do
+ *      "Nenhum recebimento registrado" — MANTENDO os elementos zerados (validando a remoção futura do
  *      placeholder). Testado renderizando o `PosicaoReportView` compartilhado com um relatório vazio injetado.
  *
  * Sem non-null assertion `!` (guardas explícitas). O engine/derivações são cobertos por node:test.
@@ -145,7 +145,7 @@ const RECEBIMENTOS_LABELS: PosicaoReportViewLabels = {
 }
 
 describe('Posição de Recebimentos — EMPTY STATE honesto (relatório vazio)', () => {
-  it('mostra "Nenhum recebimento registrado" e o título, SEM KPIs/gráficos/tabela', () => {
+  it('mostra "Nenhum recebimento registrado" MANTENDO os elementos da tela (zerados)', () => {
     render(
       <PosicaoReportView
         report={EMPTY_REPORT}
@@ -158,10 +158,12 @@ describe('Posição de Recebimentos — EMPTY STATE honesto (relatório vazio)',
     expect(screen.getByText('Nenhum recebimento registrado')).toBeTruthy()
     // Cabeçalho (título) permanece.
     expect(screen.getByText('Posição de Recebimentos')).toBeTruthy()
-    // NADA quebrado: sem KPIs (Atrasado), sem gráficos (Resumo total), sem tabela (Total Geral), sem Filtros.
-    expect(screen.queryByText('Atrasado')).toBeNull()
-    expect(screen.queryByText('Resumo total')).toBeNull()
-    expect(screen.queryByText('Total Geral')).toBeNull()
+    // A ESTRUTURA fica: KPIs, gráficos e tabela seguem na tela, zerados. Sumir tudo fazia parecer que a
+    // tela quebrou, e destoava dos demais relatórios (achado da P.O., 11/08).
+    expect(screen.getByText('Atrasado')).toBeTruthy()
+    expect(screen.getByText('Resumo total')).toBeTruthy()
+    expect(screen.getByText('Total Geral')).toBeTruthy()
+    // Sem `filters`, o painel de filtro segue ausente aqui (Recebimentos é inerte).
     expect(screen.queryByRole('button', { name: 'Filtros' })).toBeNull()
   })
 })
