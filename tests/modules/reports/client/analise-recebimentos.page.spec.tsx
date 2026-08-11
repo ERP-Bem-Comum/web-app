@@ -109,6 +109,7 @@ const RECEBIMENTOS_LABELS: AnaliseReportViewLabels = {
     categoria: 'Categoria',
     subcategoria: 'Subcategoria',
     filtrar: 'Filtrar',
+    limpar: 'Limpar filtros',
     statusChips: ['Rascunho', 'Aberto', 'Aprovado', 'Pago', 'Conciliado'],
   },
   export: { label: 'Exportar', csv: 'CSV', pdf: 'PDF' },

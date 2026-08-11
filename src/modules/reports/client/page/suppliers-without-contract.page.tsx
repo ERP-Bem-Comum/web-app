@@ -238,6 +238,11 @@ export function SuppliersWithoutContractPage(): ReactNode {
           onFiltrar={() => {
             setApplied(toFilter(draft))
           }}
+          onLimpar={() => {
+            setDraft(EMPTY_DRAFT)
+            setApplied({})
+            setLimiteText(formatLimiteInput(LIMITE_DEFAULT_CENTS))
+          }}
           labels={{
             advancedTitle: t('reports.suppliersWithoutContract.filters.title'),
             advancedSubtitle: t('reports.suppliersWithoutContract.filters.subtitle'),
@@ -252,6 +257,7 @@ export function SuppliersWithoutContractPage(): ReactNode {
             subcategoria: t('reports.suppliersWithoutContract.filters.subcategoria'),
             allOption: t('reports.suppliersWithoutContract.filters.allOption'),
             filtrar: t('reports.suppliersWithoutContract.filters.filtrar'),
+            limpar: t('reports.filters.clear'),
           }}
         />
       </div>

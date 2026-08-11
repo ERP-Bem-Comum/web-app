@@ -34,6 +34,7 @@ import {
   panelFooter,
   footerRight,
   applyButton,
+  clearButton,
 } from './report-filters.css.ts'
 
 export type FilterOption = Readonly<{ value: string; label: string }>
@@ -52,6 +53,7 @@ export type ReportFiltersLabels = Readonly<{
   subcategoria: string
   allOption: string
   filtrar: string
+  limpar: string
 }>
 
 /** Um campo controlado: opções + valor + onChange. `value` vazio = "Todos" (sem recorte). */
@@ -77,6 +79,8 @@ export type ReportFiltersProps = Readonly<{
   onPeriodChange: (patch: Readonly<{ dueFrom?: string; dueTo?: string }>) => void
   /** Commita os filtros de SERVIDOR (o Limite já está aplicado). */
   onFiltrar: () => void
+  /** Zera TODOS os campos e aplica na hora — volta a mostrar tudo, sem precisar do "Filtrar". */
+  onLimpar: () => void
   /** Slot de exportação (a page injeta o dropdown CSV/PDF). */
   exportSlot?: ReactNode
 }>
@@ -182,7 +186,11 @@ export function ReportFilters(props: ReportFiltersProps): ReactNode {
       </div>
 
       <div className={panelFooter}>
-        <span />
+        {/* "Limpar filtros" zera os 7 de uma vez — removê-los um a um era o único caminho. Aplica na
+            hora (não espera o "Filtrar"): limpar É voltar a ver tudo. */}
+        <button type="button" className={clearButton} onClick={props.onLimpar}>
+          {L.limpar}
+        </button>
         <div className={footerRight}>
           <button type="button" className={applyButton} onClick={props.onFiltrar}>
             {L.filtrar}

@@ -57,6 +57,7 @@ import {
   fldSelect,
   fldChev,
   applyButton,
+  clearButton,
   chartCard,
   chartPad,
   cardHeader,
@@ -366,6 +367,16 @@ export function FluxoCaixaPage(): ReactNode {
               onField({ status: v })
             }}
           />
+          <button
+            type="button"
+            className={clearButton}
+            onClick={() => {
+              setDraft(EMPTY_DRAFT)
+              setApplied({})
+            }}
+          >
+            {t('reports.filters.clear')}
+          </button>
           <button
             type="button"
             className={applyButton}

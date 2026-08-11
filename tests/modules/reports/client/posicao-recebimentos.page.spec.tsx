@@ -113,6 +113,7 @@ const RECEBIMENTOS_LABELS: PosicaoReportViewLabels = {
     subcategoria: 'Subcategoria',
     partner: 'Financiador',
     filtrar: 'Filtrar',
+    limpar: 'Limpar filtros',
   },
   export: { label: 'Exportar', csv: 'CSV', pdf: 'PDF' },
   kpi: {

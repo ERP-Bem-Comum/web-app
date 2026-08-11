@@ -145,6 +145,40 @@ describe('SuppliersWithoutContractPage — filtros ligados ao servidor (#694)', 
     })
   })
 
+  it('"Limpar filtros" zera TODOS de uma vez e volta a mostrar tudo (sem exigir o "Filtrar")', async () => {
+    mSuppliers.mockResolvedValue(ok(SUPPLIERS))
+    renderPage()
+    await screen.findAllByText('Comercial Andorinha Ltda')
+    fireEvent.click(screen.getByRole('button', { name: 'Filtros' }))
+
+    const programa = await screen.findByLabelText('Programa')
+    await waitFor(() => {
+      expect(programa.querySelectorAll('option').length).toBeGreaterThan(1)
+    })
+    fireEvent.change(programa, { target: { value: 'prog-1' } })
+    fireEvent.change(screen.getByLabelText('De'), { target: { value: '2026-01-01' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Filtrar' }))
+    await waitFor(() => {
+      expect(mSuppliers).toHaveBeenCalledWith({ programId: 'prog-1', dueFrom: '2026-01-01' })
+    })
+
+    // O refetch troca a tela por "Carregando…" (o painel some junto) — espera o dado voltar.
+    await screen.findAllByText('Comercial Andorinha Ltda')
+    fireEvent.click(screen.getByRole('button', { name: 'Filtros' }))
+    mSuppliers.mockClear()
+    fireEvent.click(screen.getByRole('button', { name: 'Limpar filtros' }))
+
+    // Volta ao estado SEM recorte na hora — limpar É voltar a ver tudo, sem exigir o "Filtrar".
+    // A queryKey volta para a de "sem filtro", que já está em cache: pode não haver nova ida ao
+    // servidor — o que NÃO pode é sobrar recorte. Nenhuma chamada depois do limpar leva filtro.
+    await waitFor(() => {
+      expect((screen.getByLabelText('Programa') as HTMLSelectElement).value).toBe('')
+    })
+    expect((screen.getByLabelText('De') as HTMLInputElement).value).toBe('')
+    for (const [arg] of mSuppliers.mock.calls) expect(arg).toEqual({})
+    await screen.findAllByText('Comercial Andorinha Ltda')
+  })
+
   it('SEM plano escolhido, Centro/Categoria/Subcategoria ficam só com "Todos" — nada do catálogo operacional', async () => {
     mSuppliers.mockResolvedValue(ok(SUPPLIERS))
     renderPage()

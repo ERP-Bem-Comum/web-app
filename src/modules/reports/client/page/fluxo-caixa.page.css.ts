@@ -27,6 +27,7 @@ export {
   fldSelect,
   fldChev,
   applyButton,
+  clearButton,
   card,
   cardHeader,
   cardTitle,

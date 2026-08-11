@@ -47,6 +47,7 @@ import {
   fldSelect,
   fldChev,
   applyButton,
+  clearButton,
   periodRow,
   dateInput,
   chartCard,
@@ -82,6 +83,7 @@ export type PosicaoReportViewLabels = Readonly<{
     /** Fornecedor (Pagamentos) | Financiador (Recebimentos). */
     partner: string
     filtrar: string
+    limpar: string
   }>
   export: Readonly<{ label: string; csv: string; pdf: string }>
   kpi: Readonly<{
@@ -160,6 +162,8 @@ export type PosicaoFiltersModel = Readonly<{
   values: PosicaoFilterValues
   onChange: (patch: Partial<PosicaoFilterValues>) => void
   onFiltrar: () => void
+  /** Zera todos os campos e aplica na hora. Ausente (Recebimentos) → sem botão. */
+  onLimpar?: () => void
 }>
 
 export function PosicaoReportView(props: PosicaoReportViewProps): ReactNode {
@@ -364,6 +368,13 @@ export function PosicaoReportView(props: PosicaoReportViewProps): ReactNode {
               value={v('supplierRef')}
               onChange={setF('supplierRef')}
             />
+            {/* "Limpar filtros": zera todos de uma vez e aplica na hora — limpar É voltar a ver tudo.
+                Só quando o painel é filtrável (Recebimentos não passa `filters`). */}
+            {fx?.onLimpar !== undefined && (
+              <button type="button" className={clearButton} onClick={fx.onLimpar}>
+                {L.filters.limpar}
+              </button>
+            )}
             <button
               type="button"
               className={applyButton}

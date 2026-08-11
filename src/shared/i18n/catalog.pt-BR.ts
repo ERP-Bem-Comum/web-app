@@ -2727,6 +2727,8 @@ export const ptBR: Catalog = {
   'reports.analise.filters.periodoAte': 'Até',
   'reports.analise.filters.conta': 'Conta bancária',
   // Resumo dos filtros aplicados (subtítulo) — conectores do intervalo de datas quando só uma extremidade é setada.
+  // Rótulo ÚNICO do "limpar" em todos os painéis de filtro dos Relatórios (mesmo texto do Colaboradores).
+  'reports.filters.clear': 'Limpar filtros',
   'reports.filters.summary.fromPrefix': 'a partir de',
   'reports.filters.summary.toPrefix': 'até',
   'reports.analise.filters.status': 'Status',

@@ -45,6 +45,7 @@ import {
   fldSelect,
   fldChev,
   applyButton,
+  clearButton,
   filterRowBreak,
   exportTrigger,
   columnsWrap,
@@ -449,6 +450,18 @@ export function RelatorioGeralPage(): ReactNode {
               onField({ subcategoria: v })
             }}
           />
+          <button
+            type="button"
+            className={clearButton}
+            onClick={() => {
+              setDraft(EMPTY_DRAFT)
+              setApplied({})
+              // Volta à 1ª página: limpar devolve a tela ao estado de recém-aberta.
+              setPage(1)
+            }}
+          >
+            {t('reports.filters.clear')}
+          </button>
           <button type="button" className={applyButton} onClick={applyFilters}>
             {t('reports.geral.filters.filtrar')}
           </button>
