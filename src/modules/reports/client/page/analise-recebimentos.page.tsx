@@ -45,6 +45,7 @@ export function AnaliseRecebimentosPage(): ReactNode {
       categoria: t('reports.analise.filters.categoria'),
       subcategoria: t('reports.analise.filters.subcategoria'),
       filtrar: t('reports.analise.filters.filtrar'),
+      limpar: t('reports.filters.clear'),
       // Status alinhados ao Contas a Pagar (reusa os mesmos rótulos de chip, como na Análise de Pagamentos).
       statusChips: [
         t('financial.list.chip.rascunho'),

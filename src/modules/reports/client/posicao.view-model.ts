@@ -27,6 +27,7 @@
 import { POSICAO_PAGAMENTOS_RAW, type RawPosicaoRow } from './data/posicao-pagamentos.placeholder.ts'
 import { POSICAO_RECEBIMENTOS_RAW } from './data/posicao-recebimentos.placeholder.ts'
 import type { PaymentPosition } from './data/model/payment-position.model.ts'
+import { csvContent, csvHeaderLine, csvLine, csvNumber } from './csv.view-model.ts'
 
 /** Nível do nó na árvore: fornecedor (0) → centro de custo (1) → categoria (folha, 2). */
 export type PosicaoLevel = 'supplier' | 'costCenter' | 'category'
@@ -254,11 +255,28 @@ export function sharePercent(valueCents: number, totalCents: number): number {
 
 // ── Export CSV (client-side; header pt-BR fiel às 3 medidas derivadas) ──
 
-/** Header pt-BR do CSV de PAGAMENTOS (fiel às 3 medidas derivadas na ordem canônica). */
-export const CSV_HEADER = 'Fornecedor;Centro de custo;Categoria;Em atraso;Pago;A pagar'
+/**
+ * Header pt-BR do CSV de PAGAMENTOS (fiel às 3 medidas derivadas na ordem canônica). As colunas de valor
+ * levam `(R$)` porque a célula é NÚMERO (`1234,56`) — ver `csv.view-model.ts`.
+ */
+export const CSV_HEADER = csvHeaderLine([
+  'Fornecedor',
+  'Centro de custo',
+  'Categoria',
+  'Em atraso (R$)',
+  'Pago (R$)',
+  'A pagar (R$)',
+])
 
 /** Header pt-BR do CSV de RECEBIMENTOS — rótulos do lado de receber (Financiador · Recebido · A receber). */
-export const CSV_HEADER_RECEBIMENTOS = 'Financiador;Centro de custo;Categoria;Em atraso;Recebido;A receber'
+export const CSV_HEADER_RECEBIMENTOS = csvHeaderLine([
+  'Financiador',
+  'Centro de custo',
+  'Categoria',
+  'Em atraso (R$)',
+  'Recebido (R$)',
+  'A receber (R$)',
+])
 
 /**
  * Monta o CSV: uma linha por FOLHA (raiz → Centro de Custo → Categoria), com as 3 medidas derivadas em BRL,
@@ -267,22 +285,22 @@ export const CSV_HEADER_RECEBIMENTOS = 'Financiador;Centro de custo;Categoria;Em
  * linhas cruas). O `header` é parametrizável (Pagamentos vs Recebimentos) — o CORPO é idêntico (só valores).
  */
 export function buildCsv(report: PosicaoReport = loadPosicao('p'), header: string = CSV_HEADER): string {
-  const lines: string[] = [header]
+  const rows: string[] = []
   for (const supplier of report.suppliers) {
     for (const costCenter of supplier.children) {
       for (const category of costCenter.children) {
-        lines.push(
-          [
-            `"${supplier.name}"`,
-            `"${costCenter.name}"`,
-            `"${category.name}"`,
-            `"${formatBRL(category.measures.emAtrasoCents)}"`,
-            `"${formatBRL(category.measures.pagoCents)}"`,
-            `"${formatBRL(category.measures.aPagarCents)}"`,
-          ].join(';'),
+        rows.push(
+          csvLine([
+            supplier.name,
+            costCenter.name,
+            category.name,
+            csvNumber(category.measures.emAtrasoCents),
+            csvNumber(category.measures.pagoCents),
+            csvNumber(category.measures.aPagarCents),
+          ]),
         )
       }
     }
   }
-  return lines.join('\r\n')
+  return csvContent(header, rows)
 }

@@ -62,6 +62,7 @@ import {
   fldSelect,
   fldChev,
   applyButton,
+  clearButton,
   charts3,
   chartCard,
   chartPad,
@@ -70,21 +71,9 @@ import {
 } from './realizado-x-planejado.page.css.ts'
 // Pele do bloco título+subtítulo (resumo dos filtros aplicados) — compartilhada com Posição/Análise.
 import { headTitleBlock } from './posicao-pagamentos.page.css.ts'
+import { downloadCsv } from '../components/download-csv.ts'
 
 const t = createTranslator(ptBR)
-
-/** Baixa o CSV via Blob + anchor (client-side; o backend entregará JSON depois). */
-function downloadCsv(filename: string, csv: string): void {
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
-}
 
 const YEAR = 2026
 
@@ -328,6 +317,17 @@ export function RealizadoXPlanejadoPage(): ReactNode {
               setDraft((d) => ({ ...d, year: Number.isFinite(y) && y > 0 ? y : YEAR }))
             }}
           />
+          <button
+            type="button"
+            className={clearButton}
+            onClick={() => {
+              // O ano é obrigatório no endpoint — "limpar" volta ao ano corrente, não a "sem ano".
+              setDraft({ year: YEAR })
+              setApplied({ year: YEAR })
+            }}
+          >
+            {t('reports.filters.clear')}
+          </button>
           <button
             type="button"
             className={applyButton}

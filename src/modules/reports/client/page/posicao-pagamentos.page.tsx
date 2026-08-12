@@ -118,6 +118,7 @@ export function PosicaoPagamentosPage(): ReactNode {
       subcategoria: t('reports.posicao.filters.subcategoria'),
       partner: t('reports.posicao.filters.fornecedor'),
       filtrar: t('reports.posicao.filters.filtrar'),
+      limpar: t('reports.filters.clear'),
     },
     export: {
       label: t('reports.posicao.export.label'),
@@ -211,6 +212,12 @@ export function PosicaoPagamentosPage(): ReactNode {
     },
     onFiltrar: () => {
       setApplied(toFilter(draft))
+    },
+    // "Limpar filtros": zera TODOS de uma vez (draft e aplicado) e volta a mostrar tudo — sem exigir o
+    // "Filtrar" depois. Remover um a um era o único caminho.
+    onLimpar: () => {
+      setDraft(EMPTY_DRAFT)
+      setApplied({})
     },
   }
 

@@ -102,8 +102,22 @@ describe('teamReportToModel', () => {
 
 const validSuppliers = {
   suppliers: [
-    { supplierRef: 'sup-1', name: 'Comercial Andorinha Ltda', totalCents: 1520000, payableCount: 4 },
-    { supplierRef: 'sup-2', name: null, totalCents: 0, payableCount: 0 },
+    {
+      supplierRef: 'sup-1',
+      name: 'Comercial Andorinha Ltda',
+      totalCents: 1520000,
+      payableCount: 4,
+      budgetPlanRef: 'plan-1',
+      budgetPlanName: '2026 ABC 1.0',
+    },
+    {
+      supplierRef: 'sup-2',
+      name: null,
+      totalCents: 0,
+      payableCount: 0,
+      budgetPlanRef: null,
+      budgetPlanName: null,
+    },
   ],
 }
 
@@ -121,6 +135,14 @@ describe('suppliersWithoutContractToModel', () => {
   it('preserva name nullable', () => {
     const r = suppliersWithoutContractToModel(validSuppliers)
     if (isOk(r)) assert.equal(r.value[1]?.name, null)
+  })
+  it('propaga a quebra por plano (#694) — chave não declarada o Zod descartaria em silêncio', () => {
+    const r = suppliersWithoutContractToModel(validSuppliers)
+    if (isOk(r)) {
+      assert.equal(r.value[0]?.budgetPlanRef, 'plan-1')
+      assert.equal(r.value[0]?.budgetPlanName, '2026 ABC 1.0')
+      assert.equal(r.value[1]?.budgetPlanRef, null)
+    }
   })
   it('drift (shape inválido) → err(server)', () => {
     assert.equal(isErr(suppliersWithoutContractToModel({ suppliers: [{ supplierRef: 'x' }] })), true)

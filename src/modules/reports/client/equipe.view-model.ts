@@ -23,6 +23,7 @@ import {
 } from '#modules/partners/public-api/index.ts'
 import { EQUIPE_PLACEHOLDER, type TeamMemberRow } from './data/equipe.placeholder.ts'
 import type { TeamMember } from './data/model/team-report.model.ts'
+import { csvContent, csvHeaderLine, csvInteger, csvLine } from './csv.view-model.ts'
 
 export type { TeamMemberRow } from './data/equipe.placeholder.ts'
 
@@ -360,34 +361,39 @@ export function formatSharePercent(count: number, totalCount: number): string {
 
 // ── Export CSV (client-side; colunas ENXUTAS de exibição — SEM PII sensível) ──
 
-/** Cabeçalho pt-BR das 8 colunas enxutas (delimitado por ';'). */
-export const CSV_HEADER =
-  'Nome;Idade;Área de atuação;Função;Vínculo;Identidade de gênero;Raça/cor;Escolaridade'
-
-/** Idade para o CSV: número ou "N/A" (idade null). */
-function csvIdade(idade: number | null): string {
-  return idade === null ? 'N/A' : String(idade)
-}
+/** Cabeçalho pt-BR das 8 colunas enxutas. */
+export const CSV_HEADER = csvHeaderLine([
+  'Nome',
+  'Idade',
+  'Área de atuação',
+  'Função',
+  'Vínculo',
+  'Identidade de gênero',
+  'Raça/cor',
+  'Escolaridade',
+])
 
 /**
  * Monta o CSV: uma linha por colaborador, só as 8 colunas de exibição (LGPD — sem cpf/email/telefone/
- * endereço/remuneração/alergias/biografia). Delimitado por ';', campos entre aspas. `\r\n` como no legado.
+ * endereço/remuneração/alergias/biografia). Escape e convenções vêm do `csv.view-model.ts`.
  */
 export function buildCsv(rows: readonly TeamMemberRow[] = EQUIPE_PLACEHOLDER): string {
-  const lines: string[] = [CSV_HEADER]
+  const lines: string[] = []
   for (const r of rows) {
     lines.push(
-      [
-        `"${r.nome}"`,
-        `"${csvIdade(r.idade)}"`,
-        `"${r.programa}"`,
-        `"${r.funcao}"`,
-        `"${r.vinculo}"`,
-        `"${r.genero}"`,
-        `"${r.racaCor}"`,
-        `"${r.escolaridade}"`,
-      ].join(';'),
+      csvLine([
+        r.nome,
+        // Idade é coluna NUMÉRICA: sem idade → VAZIO. O antigo 'N/A' punha letra na coluna e forçava a
+        // coluna inteira a texto na planilha (convenção única do módulo — ver `csv.view-model.ts`).
+        csvInteger(r.idade),
+        r.programa,
+        r.funcao,
+        r.vinculo,
+        r.genero,
+        r.racaCor,
+        r.escolaridade,
+      ]),
     )
   }
-  return lines.join('\r\n')
+  return csvContent(CSV_HEADER, lines)
 }

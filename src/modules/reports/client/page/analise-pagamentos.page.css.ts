@@ -22,6 +22,7 @@ export {
   fldSelect,
   fldChev,
   applyButton,
+  clearButton,
   card,
   chartCard,
   chartPad,

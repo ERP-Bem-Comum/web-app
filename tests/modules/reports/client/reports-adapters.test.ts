@@ -7,7 +7,10 @@ import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
 import { toRawPosicaoRows } from '../../../../src/modules/reports/client/posicao.view-model.ts'
-import { toRawSupplierRows } from '../../../../src/modules/reports/client/suppliers-without-contract.view-model.ts'
+import {
+  toRawSupplierRows,
+  aggregateSuppliers,
+} from '../../../../src/modules/reports/client/suppliers-without-contract.view-model.ts'
 import { toTeamRows } from '../../../../src/modules/reports/client/equipe.view-model.ts'
 import type { PaymentPosition } from '../../../../src/modules/reports/client/data/model/payment-position.model.ts'
 import type { SupplierWithoutContract } from '../../../../src/modules/reports/client/data/model/supplier-without-contract.model.ts'
@@ -62,25 +65,79 @@ describe('toRawPosicaoRows (D1 — mapeamento das 3 medidas)', () => {
   })
 })
 
-describe('toRawSupplierRows (D2 — sem quebra por plano)', () => {
+describe('toRawSupplierRows (#694 — quebra por Plano Orçamentário)', () => {
   const suppliers: readonly SupplierWithoutContract[] = [
-    { supplierRef: 'sup-1', name: 'Comercial Andorinha Ltda', totalCents: 1520000, payableCount: 4 },
-    { supplierRef: 'sup-2', name: null, totalCents: 5000, payableCount: 1 },
-    { supplierRef: 'sup-3', name: '   ', totalCents: 700, payableCount: 2 },
+    {
+      supplierRef: 'sup-1',
+      name: 'Comercial Andorinha Ltda',
+      totalCents: 1520000,
+      payableCount: 4,
+      budgetPlanRef: 'plan-1',
+      budgetPlanName: '2026 ABC 1.0',
+    },
+    {
+      supplierRef: 'sup-2',
+      name: null,
+      totalCents: 5000,
+      payableCount: 1,
+      budgetPlanRef: null,
+      budgetPlanName: null,
+    },
+    {
+      supplierRef: 'sup-3',
+      name: '   ',
+      totalCents: 700,
+      payableCount: 2,
+      budgetPlanRef: 'plan-2',
+      budgetPlanName: '   ',
+    },
   ]
 
-  it('cada fornecedor vira UMA linha com budgetPlan "—"', () => {
+  it('o plano REAL vira o 2º nível da árvore (antes era um traço escrito em código)', () => {
     const rows = toRawSupplierRows(suppliers)
     assert.equal(rows.length, 3)
-    assert.equal(rows[0]?.budgetPlan, '—')
+    assert.equal(rows[0]?.budgetPlan, '2026 ABC 1.0')
     assert.equal(rows[0]?.supplier, 'Comercial Andorinha Ltda')
     assert.equal(rows[0]?.totalCents, 1520000)
+  })
+
+  it('sem plano (ou rótulo vazio) cai em "Sem plano" — nunca em branco', () => {
+    const rows = toRawSupplierRows(suppliers)
+    assert.equal(rows[1]?.budgetPlan, 'Sem plano')
+    assert.equal(rows[2]?.budgetPlan, 'Sem plano')
   })
 
   it('name null/vazio → cai no supplierRef como rótulo', () => {
     const rows = toRawSupplierRows(suppliers)
     assert.equal(rows[1]?.supplier, 'sup-2')
     assert.equal(rows[2]?.supplier, 'sup-3')
+  })
+
+  it('o MESMO fornecedor em 2 planos vira 2 linhas — e o Limite continua somando o fornecedor', () => {
+    const doisPlanos: readonly SupplierWithoutContract[] = [
+      {
+        supplierRef: 'sup-1',
+        name: 'Andorinha',
+        totalCents: 300000,
+        payableCount: 2,
+        budgetPlanRef: 'plan-1',
+        budgetPlanName: 'Plano A',
+      },
+      {
+        supplierRef: 'sup-1',
+        name: 'Andorinha',
+        totalCents: 200000,
+        payableCount: 1,
+        budgetPlanRef: 'plan-2',
+        budgetPlanName: 'Plano B',
+      },
+    ]
+    const rows = toRawSupplierRows(doisPlanos)
+    assert.equal(rows.length, 2)
+    const agregado = aggregateSuppliers(rows, 1_000_000)
+    assert.equal(agregado.length, 1)
+    assert.equal(agregado[0]?.valorTotalCents, 500000)
+    assert.equal(agregado[0]?.plans.length, 2)
   })
 })
 

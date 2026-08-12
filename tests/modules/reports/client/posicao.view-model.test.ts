@@ -241,7 +241,10 @@ describe('buildCsv — CSV client-side fiel (header pt-BR, valores BRL)', () => 
   it('a 1ª linha é o header pt-BR esperado (3 medidas)', () => {
     const lines = buildCsv(report).split('\r\n')
     assert.equal(lines[0], CSV_HEADER)
-    assert.equal(lines[0], 'Fornecedor;Centro de custo;Categoria;Em atraso;Pago;A pagar')
+    assert.equal(
+      lines[0],
+      '"Fornecedor";"Centro de custo";"Categoria";"Em atraso (R$)";"Pago (R$)";"A pagar (R$)"',
+    )
   })
 
   it('emite uma linha por FOLHA (categoria) — 4 folhas na fixture', () => {
@@ -251,9 +254,9 @@ describe('buildCsv — CSV client-side fiel (header pt-BR, valores BRL)', () => 
 
   it('cada linha traz fornecedor/CC/categoria + as 3 medidas em BRL (Em atraso · Pago · A pagar)', () => {
     const lines = buildCsv(report).split('\r\n')
-    assert.equal(lines[1], `"Alfa";"CC1";"Cat A";"${formatBRL(100)}";"${formatBRL(300)}";"${formatBRL(50)}"`)
+    assert.equal(lines[1], '"Alfa";"CC1";"Cat A";"1,00";"3,00";"0,50"')
     // Última folha (Beta / CC9 / Cat Z).
-    assert.equal(lines[4], `"Beta";"CC9";"Cat Z";"${formatBRL(1000)}";"${formatBRL(0)}";"${formatBRL(700)}"`)
+    assert.equal(lines[4], '"Beta";"CC9";"Cat Z";"10,00";"0,00";"7,00"')
   })
 
   it('formatBRL formata centavos em BRL pt-BR', () => {

@@ -69,6 +69,7 @@ import {
   fldChev,
   filtersActions,
   applyButton,
+  clearButton,
   chartCard,
   chartPad,
   cardHeader,
@@ -78,6 +79,7 @@ import {
 } from './equipe.page.css.ts'
 // Pele do bloco título+subtítulo (resumo dos filtros aplicados) — compartilhada com as outras telas.
 import { headTitleBlock } from './posicao-pagamentos.page.css.ts'
+import { downloadCsv } from '../components/download-csv.ts'
 
 const t = createTranslator(ptBR)
 
@@ -176,19 +178,6 @@ function distribuicao(
  * `/reports/team` passou a entregar idade/gênero/raça POR PESSOA — sempre entregou, na verdade; era o schema
  * de borda do BFF que descartava as chaves calado. Contar aqui não expõe nada que a tabela já não mostre.
  */
-
-/** Baixa o CSV via Blob + anchor (client-side; o backend entregará JSON depois). */
-function downloadCsv(filename: string, csv: string): void {
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
-}
 
 export function EquipePage(): ReactNode {
   const navigate = useNavigate()
@@ -497,6 +486,18 @@ export function EquipePage(): ReactNode {
             />
           </div>
           <div className={filtersActions}>
+            <button
+              type="button"
+              className={clearButton}
+              onClick={() => {
+                setDraft(EMPTY_TEAM_FILTERS)
+                setApplied(EMPTY_TEAM_FILTERS)
+                // Volta à 1ª página: limpar devolve a tela ao estado de recém-aberta.
+                setPage(1)
+              }}
+            >
+              {t('reports.filters.clear')}
+            </button>
             <button type="button" className={applyButton} onClick={aplicar}>
               {t('reports.equipe.filters.filtrar')}
             </button>

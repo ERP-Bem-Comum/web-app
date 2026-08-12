@@ -18,12 +18,16 @@ import { listCedenteAccountsFn } from '#modules/financial/public-api/index.ts'
 export type FilterOption = Readonly<{ value: string; label: string }>
 
 /**
- * Listas populate-only da Análise: Programa/Conta são rótulos; Plano carrega `value=id` (dirige a cascata).
+ * Listas da Análise. Plano carrega `value=id` (dirige a cascata E o recorte client-side); `planoPrograma`
+ * mapeia id-do-plano → rótulo do programa, que é o que torna o filtro de **Programa** aplicável sem backend:
+ * a page traduz "Programa X" na lista de planos daquele programa e recorta a resposta do #446 por ela.
  * Centro/Categoria/Subcategoria NÃO estão aqui — vêm da CASCATA da árvore do plano (hooks do financial na page).
  */
 export type AnaliseFilterOptions = Readonly<{
   programa: readonly string[]
   plano: readonly FilterOption[]
+  /** id do plano → rótulo do programa (mesma derivação `sigla ?? nome` das opções de Programa). */
+  planoPrograma: ReadonlyMap<string, string>
   conta: readonly string[]
 }>
 
@@ -43,25 +47,56 @@ function useProgramaOptions(): readonly string[] {
   return q.data ?? EMPTY
 }
 
-/** Planos APROVADOS → value=id, label "ano sigla versão · cenário". O `value` dirige a cascata do plano. */
-function usePlanoOptions(): readonly FilterOption[] {
+/** Rótulo do programa de um plano — MESMA derivação das opções de Programa (`sigla` vazia/ausente → nome). */
+function programaLabelOf(
+  plan: Readonly<{ programAbbreviation: string | null; programName: string }>,
+): string {
+  const abbr = plan.programAbbreviation
+  return abbr === null || abbr === '' ? plan.programName : abbr
+}
+
+type PlanoLists = Readonly<{
+  options: readonly FilterOption[]
+  programByPlan: ReadonlyMap<string, string>
+}>
+const EMPTY_PLANOS: PlanoLists = { options: EMPTY_OPT, programByPlan: new Map() }
+
+/**
+ * Planos APROVADOS → value=id, label "ano sigla versão · cenário" (dirige a cascata e o recorte por Plano).
+ *
+ * O MAPA programa-por-plano percorre também os `children` (cenários/versões-filhas), que NÃO entram nas opções:
+ * um título pode estar carimbado com o ref de um plano-filho, e se ele ficasse fora do mapa o filtro de Programa
+ * o descartaria como "plano de programa desconhecido" — sumindo dinheiro da tela em vez de filtrá-lo.
+ */
+function usePlanoLists(): PlanoLists {
   const q = useQuery({
     queryKey: ['reports', 'analise', 'filter', 'planos'] as const,
-    queryFn: async (): Promise<readonly FilterOption[]> => {
+    queryFn: async (): Promise<PlanoLists> => {
       const r = await listBudgetPlansFn({ data: { page: 1, limit: 100 } })
-      if (!r.ok) return EMPTY_OPT
-      return r.data.items
+      if (!r.ok) return EMPTY_PLANOS
+
+      const programByPlan = new Map<string, string>()
+      const walk = (nodes: readonly (typeof r.data.items)[number][]): void => {
+        for (const n of nodes) {
+          programByPlan.set(n.id, programaLabelOf(n))
+          walk(n.children)
+        }
+      }
+      walk(r.data.items)
+
+      const options = r.data.items
         .filter((p) => p.status === 'APROVADO')
         .map((p) => ({
           value: p.id,
           label:
-            `${String(p.year)} ${p.programAbbreviation ?? p.programName} ${p.version.toFixed(1)}` +
+            `${String(p.year)} ${programaLabelOf(p)} ${p.version.toFixed(1)}` +
             (p.scenarioName !== null ? ` · ${p.scenarioName}` : ''),
         }))
+      return { options, programByPlan }
     },
     staleTime: 60_000,
   })
-  return q.data ?? EMPTY_OPT
+  return q.data ?? EMPTY_PLANOS
 }
 
 /** Contas-cedente → apelido; sem apelido, texto-livre (#206) ou banco+conta-DV. Erro/permissão → []. */
@@ -87,9 +122,11 @@ function useContaOptions(): readonly string[] {
  * — são a CASCATA da árvore do plano (hooks do financial dirigidos na page). Status/período resolvem na page.
  */
 export function useAnaliseFilterOptions(): AnaliseFilterOptions {
+  const planos = usePlanoLists()
   return {
     programa: useProgramaOptions(),
-    plano: usePlanoOptions(),
+    plano: planos.options,
+    planoPrograma: planos.programByPlan,
     conta: useContaOptions(),
   }
 }

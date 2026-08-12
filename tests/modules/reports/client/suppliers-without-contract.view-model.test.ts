@@ -219,7 +219,7 @@ describe('buildCsv — delimitado por ; com header legado', () => {
     const rows = aggregateSuppliers(SUPPLIERS_WITHOUT_CONTRACT_RAW, LIMITE_DEFAULT_CENTS)
     const csv = buildCsv(rows)
     const lines = csv.split('\r\n')
-    assert.strictEqual(lines[0], '"Fornecedor";"BudgetPlan";"Total"')
+    assert.strictEqual(lines[0], '"Fornecedor";"Plano Orçamentário";"Total (R$)"')
     assert.strictEqual(lines[1], '"WEE TRAVEL";"2025 PARC 1.0";"7137,13"')
     assert.strictEqual(lines[2], '"WEE TRAVEL";"2025 EPV 1.0";"5844,72"')
     // 17 linhas de dados (pares fornecedor→plano) + 1 header.

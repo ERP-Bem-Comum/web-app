@@ -306,12 +306,15 @@ describe('PosicaoPagamentosPage — export CSV', () => {
 })
 
 describe('PosicaoPagamentosPage — empty & erro', () => {
-  it('backend devolve [] → empty-state honesto (sem "Total Geral")', async () => {
+  it('backend devolve [] → aviso de vazio, mas os elementos da tela PERMANECEM (zerados)', async () => {
     mockedGetPaymentPosition.mockResolvedValue(ok([]))
     renderPage()
     const empties = await screen.findAllByText('Nenhum dado para exibir.')
     expect(empties.length).toBeGreaterThan(0)
-    expect(screen.queryByText('Total Geral')).toBeNull()
+    // Filtro que não acha nada não pode fazer o relatório sumir — os demais relatórios mantêm a
+    // estrutura zerada, e esta destoava (achado da P.O., 11/08).
+    expect(screen.getByText('Total Geral')).toBeTruthy()
+    expect(screen.getByText('Atrasado')).toBeTruthy()
   })
 
   it('vazio COM filtros → o botão "Filtros" e a barra continuam acessíveis (não prende o usuário)', async () => {
