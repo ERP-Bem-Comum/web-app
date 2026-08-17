@@ -1,16 +1,19 @@
 /**
- * RemittancePreviewModal — view BURRA (§XI): conferência do lote ANTES de gerar a remessa (VAN,
- * core-api#728). Não decide nada; recebe a `PreviewView` já derivada e desenha.
+ * RemittancePreviewModal — view BURRA (§XI): "Conferir Remessa" (VAN, core-api#728). Não decide nada;
+ * recebe a `PreviewView` já derivada e desenha.
  *
- * O pré-voo é LEITURA PURA — abrir este modal não consome NSA, não prende título e não grava no bucket da
- * VAN. Por isso ele não tem botão que dispare pagamento: "Gerar remessa" chega na fatia seguinte, e até lá
- * o rodapé oferece só o fechamento. O que a tela promete é o que o backend faz.
+ * Leitura pura: abrir este modal não consome NSA, não prende título e não grava no bucket da VAN. Por
+ * isso não há aqui botão que dispare pagamento — "Gerar remessa" é a fatia seguinte.
+ *
+ * A tabela espelha o grid de Contas a Pagar (mesmas colunas, mesmo cabeçalho, mesma altura de linha).
+ * Não há coluna de situação: a linha que NÃO entra na remessa sai destacada em vermelho, e o detalhe da
+ * pendência fica no `title` — ao alcance de quem vai corrigir, fora do caminho de quem só confere.
  */
 import type { ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
-import type { PreviewView } from '../remittance-preview.view-model.ts'
+import type { PreviewLineView, PreviewView } from '../remittance-preview.view-model.ts'
 
 import {
   confirmOverlay,
@@ -25,15 +28,17 @@ import {
   summaryItem,
   summaryLabel,
   summaryValue,
-  scrollArea,
-  table,
-  th,
-  td,
-  tdRight,
-  statusPill,
-  gapList,
-  gapField,
-  routeLabel,
+  summaryValueStrong,
+  summaryValueWarn,
+  gridBox,
+  head,
+  headCell,
+  headCellRight,
+  row,
+  rowPending,
+  cell,
+  cellDoc,
+  cellNet,
   notice,
   errorBox,
   emptyState,
@@ -41,12 +46,21 @@ import {
 
 const t = createTranslator(ptBR)
 
+const DASH = '—'
+
+/** Detalhe da pendência no tooltip: "Agência do favorecido — não preenchido". */
+const pendencyHint = (line: PreviewLineView): string | undefined => {
+  if (!line.hasPendency) return undefined
+  if (line.gaps.length === 0) return t('financial.remittance.preview.pendencyGeneric')
+  return line.gaps.map((g) => `${t(g.fieldTag)} — ${t(g.reasonTag)}`).join(' · ')
+}
+
 export type RemittancePreviewModalProps = Readonly<{
   open: boolean
   running: boolean
   view: PreviewView | null
   errorTag: string | null
-  /** Títulos selecionados que não estão Aprovados — barrados no front, nunca chegam ao core-api. */
+  /** Títulos que não estão Aprovados — barrados no front, nunca chegam ao core-api (core-api#736). */
   notApprovedCount: number
   onClose: () => void
 }>
@@ -80,74 +94,64 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
           <>
             <div className={summary}>
               <span className={summaryItem}>
-                <span className={summaryLabel}>{t('financial.remittance.preview.summary.ready')}</span>
-                <span className={summaryValue}>{`${String(view.readyCount)} · ${view.readyTotal}`}</span>
+                <span className={summaryLabel}>{t('financial.remittance.preview.summary.count')}</span>
+                <span className={summaryValue}>{String(view.summary.titleCount)}</span>
               </span>
               <span className={summaryItem}>
-                <span className={summaryLabel}>{t('financial.remittance.preview.summary.blocked')}</span>
-                <span className={summaryValue}>{`${String(view.blockedCount)} · ${view.blockedTotal}`}</span>
+                <span className={summaryLabel}>{t('financial.remittance.preview.summary.gross')}</span>
+                <span className={summaryValue}>{view.summary.grossTotal}</span>
               </span>
               <span className={summaryItem}>
-                <span className={summaryLabel}>{t('financial.remittance.preview.summary.outOfVan')}</span>
-                <span className={summaryValue}>{String(view.outOfVanCount)}</span>
+                <span className={summaryLabel}>{t('financial.remittance.preview.summary.net')}</span>
+                <span className={summaryValue}>{view.summary.netTotal}</span>
               </span>
-              {view.notFoundCount > 0 ? (
-                <span className={summaryItem}>
-                  <span className={summaryLabel}>{t('financial.remittance.preview.summary.notFound')}</span>
-                  <span className={summaryValue}>{String(view.notFoundCount)}</span>
+              <span className={summaryItem}>
+                <span className={summaryLabel}>{t('financial.remittance.preview.summary.paymentDate')}</span>
+                <span className={view.summary.paymentDateMixed ? summaryValueWarn : summaryValue}>
+                  {view.summary.paymentDateMixed
+                    ? t('financial.remittance.preview.summary.mixedDates')
+                    : view.summary.paymentDate}
                 </span>
-              ) : null}
+              </span>
+              <span className={summaryItem}>
+                <span className={summaryLabel}>{t('financial.remittance.preview.summary.total')}</span>
+                <span className={summaryValueStrong}>{view.summary.remittanceTotal}</span>
+              </span>
             </div>
 
-            <div className={scrollArea}>
-              {view.lines.length === 0 ? (
-                <p className={emptyState}>{t('financial.remittance.preview.empty')}</p>
-              ) : (
-                <table className={table}>
-                  <thead>
-                    <tr>
-                      <th className={th}>{t('financial.remittance.preview.col.status')}</th>
-                      <th className={th}>{t('financial.remittance.preview.col.supplier')}</th>
-                      <th className={th}>{t('financial.remittance.preview.col.document')}</th>
-                      <th className={th}>{t('financial.remittance.preview.col.reason')}</th>
-                      <th className={th}>{t('financial.remittance.preview.col.net')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {view.lines.map((l) => (
-                      <tr key={l.documentId}>
-                        <td className={td}>
-                          <span className={statusPill[l.status]}>{t(l.statusTag)}</span>
-                          {l.routeTag !== null ? (
-                            <>
-                              <br />
-                              <span className={routeLabel}>{t(l.routeTag)}</span>
-                            </>
-                          ) : null}
-                        </td>
-                        <td className={td}>{l.supplier}</td>
-                        <td className={td}>{l.documentNumber}</td>
-                        <td className={td}>
-                          {l.gaps.length === 0 ? (
-                            '—'
-                          ) : (
-                            <ul className={gapList}>
-                              {l.gaps.map((g) => (
-                                <li key={`${g.fieldTag}:${g.reasonTag}`}>
-                                  <span className={gapField}>{t(g.fieldTag)}</span>
-                                  {` — ${t(g.reasonTag)}`}
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </td>
-                        <td className={tdRight}>{l.net}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
+            {view.summary.pendingCount > 0 ? (
+              <p className={notice}>
+                {`${String(view.summary.pendingCount)} ${t('financial.remittance.preview.pendingWarn')}`}
+              </p>
+            ) : null}
+
+            {view.lines.length === 0 ? (
+              <p className={emptyState}>{t('financial.remittance.preview.empty')}</p>
+            ) : (
+              <div className={gridBox}>
+                <div className={head} role="row">
+                  <span className={headCell}>{t('financial.remittance.preview.col.method')}</span>
+                  <span className={headCell}>{t('financial.remittance.preview.col.document')}</span>
+                  <span className={headCell}>{t('financial.remittance.preview.col.supplier')}</span>
+                  <span className={headCell}>{t('financial.remittance.preview.col.due')}</span>
+                  <span className={headCellRight}>{t('financial.remittance.preview.col.net')}</span>
+                </div>
+                {view.lines.map((l) => (
+                  <div
+                    key={l.documentId}
+                    role="row"
+                    className={l.hasPendency ? rowPending : row}
+                    title={pendencyHint(l)}
+                  >
+                    <span className={cell}>{l.paymentMethodTag === null ? DASH : t(l.paymentMethodTag)}</span>
+                    <span className={cellDoc}>{l.documentNumber}</span>
+                    <span className={cell}>{l.supplier}</span>
+                    <span className={cell}>{l.due}</span>
+                    <span className={cellNet}>{l.net}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         )}
 

@@ -1,15 +1,21 @@
 /**
- * Estilos do modal de PRÉ-VOO da remessa (VAN, core-api#728). Só-tokens, zero-runtime (§X, ADR-0007/0008):
- * nenhum hex ou px cru — tudo vem de `vars`. O overlay/diálogo base é reaproveitado da página
- * (`contas-a-pagar.css.ts`); aqui ficam o cabeçalho de contadores e a tabela de linhas.
+ * Estilos do modal "Conferir Remessa" (VAN, core-api#728). Só-tokens, zero-runtime (§X, ADR-0007/0008):
+ * nenhum hex ou px cru.
+ *
+ * A tabela REPLICA o grid de Contas a Pagar de propósito — mesmo layout em CSS Grid, mesmo cabeçalho
+ * denso (caixa-alta, 10px, ink-5, fundo paperWarm), mesma altura de linha, mono nos números. É a mesma
+ * leitura que o operador acabou de fazer no grid; mudar a estética aqui o faria reconferir do zero.
  */
-import { style, styleVariants } from '@vanilla-extract/css'
+import { style, globalStyle } from '@vanilla-extract/css'
 
 import { vars } from '#shared/ui/tokens/index.ts'
+import { brand } from '#shared/ui/brand/grid-brand.values.ts'
 
-/** O diálogo do pré-voo é mais largo que o de confirmação: mostra uma TABELA, não uma frase. */
+/** Tipo de pagamento · Documento · Fornecedor · Vencimento · Líquido. */
+const GRID_COLS = '9rem 10rem minmax(12rem, 1fr) 8rem 9rem'
+
 export const previewDialog = style({
-  inlineSize: '52rem',
+  inlineSize: '62rem',
   maxInlineSize: '100%',
   maxBlockSize: '85vh',
   display: 'flex',
@@ -21,124 +27,139 @@ export const previewDialog = style({
   boxShadow: vars.shadow.card,
 })
 
-/** Faixa de contadores: é o resumo que decide se vale seguir. Fica fixa; a lista abaixo é que rola. */
+// ── Resumo do lote ──────────────────────────────────────────────────────────────
+// Fica FIXO acima da tabela: é o que decide se o lote está pronto. A tabela abaixo é que rola.
+
 export const summary = style({
   display: 'flex',
   flexWrap: 'wrap',
-  gap: vars.space.md,
+  gap: vars.space.lg,
   marginBlock: vars.space.md,
-  paddingBlockEnd: vars.space.md,
-  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  padding: vars.space.md,
+  background: vars.color.institutional.paperWarm,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.md,
 })
 
 export const summaryItem = style({
   display: 'flex',
   flexDirection: 'column',
   gap: vars.space.xs,
-  minInlineSize: '9rem',
+  minInlineSize: '8rem',
 })
 
 export const summaryLabel = style({
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size.xs,
-  color: vars.color.institutional.ink3,
+  fontFamily: vars.font.family.heading,
+  fontSize: `calc(${vars.font.size['2xs']} + 0.0625rem)`,
+  fontWeight: vars.font.weight.bold,
+  textTransform: 'uppercase',
+  letterSpacing: '0.06em',
+  color: vars.color.institutional.ink5,
 })
 
 export const summaryValue = style({
-  fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.md,
-  fontWeight: vars.font.weight.bold,
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size.sm,
   color: vars.color.institutional.ink2,
 })
 
-export const scrollArea = style({
+/** O valor que de fato deixa a conta — destacado como o número mais importante do modal. */
+export const summaryValueStrong = style([
+  summaryValue,
+  {
+    fontFamily: vars.font.family.heading,
+    fontSize: vars.font.size.md,
+    fontWeight: vars.font.weight.bold,
+    color: vars.color.institutional.blueDeep,
+  },
+])
+
+/** Vencimentos diferentes = o backend recusa gerar. A conferência avisa antes de o operador tentar. */
+export const summaryValueWarn = style([
+  summaryValue,
+  { color: vars.color.status.terminatedText, fontWeight: vars.font.weight.bold },
+])
+
+// ── Tabela (espelha o grid de Contas a Pagar) ───────────────────────────────────
+
+export const gridBox = style({
   flex: 1,
-  overflowY: 'auto',
-  overflowX: 'auto',
+  overflow: 'auto',
+  border: `${vars.borderWidth.thin} solid color-mix(in srgb, ${vars.color.institutional.paperRule} 55%, ${vars.color.institutional.paperWarm})`,
+  borderRadius: vars.radius.lg,
+  background: vars.color.surface.default,
+  boxShadow: brand.shadow.cardDepth,
 })
 
-export const table = style({
-  inlineSize: '100%',
-  borderCollapse: 'collapse',
-  fontFamily: vars.font.family.body,
-  fontSize: vars.font.size.sm,
-})
-
-export const th = style({
+export const head = style({
+  display: 'grid',
+  gridTemplateColumns: GRID_COLS,
+  gap: vars.space.md,
+  alignItems: 'center',
+  minBlockSize: '2.25rem',
+  paddingInline: vars.space.md,
+  background: vars.color.institutional.paperWarm,
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
   position: 'sticky',
   insetBlockStart: 0,
   zIndex: 1,
-  paddingBlock: vars.space.sm,
-  paddingInline: vars.space.sm,
-  textAlign: 'left',
-  fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.xs,
-  fontWeight: vars.font.weight.bold,
-  color: vars.color.institutional.ink3,
-  background: vars.color.surface.default,
-  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
 })
 
-export const td = style({
-  paddingBlock: vars.space.sm,
-  paddingInline: vars.space.sm,
+export const headCell = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: `calc(${vars.font.size['2xs']} + 0.0625rem)`,
+  fontWeight: vars.font.weight.bold,
+  textTransform: 'uppercase',
+  letterSpacing: '0.06em',
+  color: vars.color.institutional.ink5,
+})
+
+export const headCellRight = style([headCell, { textAlign: 'right' }])
+
+export const row = style({
+  display: 'grid',
+  gridTemplateColumns: GRID_COLS,
+  gap: vars.space.md,
+  alignItems: 'center',
+  minBlockSize: '3rem',
+  paddingInline: vars.space.md,
+  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  fontFamily: vars.font.family.heading,
+  fontSize: `calc(${vars.font.size.xs} + 0.0625rem)`,
   color: vars.color.institutional.ink2,
-  borderBlockEnd: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
-  verticalAlign: 'top',
+  transition: 'background 120ms ease',
+  ':hover': { background: vars.color.institutional.paperWarm },
+  ':last-child': { borderBlockEnd: 'none' },
 })
-
-export const tdRight = style([td, { textAlign: 'right', whiteSpace: 'nowrap' }])
-
-const pillBase = {
-  display: 'inline-block',
-  paddingBlock: vars.space.xs,
-  paddingInline: vars.space.sm,
-  borderRadius: vars.radius.sm,
-  fontFamily: vars.font.family.heading,
-  fontSize: vars.font.size.xs,
-  fontWeight: vars.font.weight.bold,
-  whiteSpace: 'nowrap',
-} as const
 
 /**
- * A cor separa AÇÃO, não gravidade: verde sai; vermelho o operador conserta; neutro nenhum cadastro
- * resolve (câmbio/cartão não passam pela VAN); âmbar é o id que sumiu entre selecionar e conferir.
+ * Linha com pendência: NÃO entra no arquivo. O vermelho é o único sinal — não há coluna de situação, e
+ * a barra à esquerda garante que o estado sobreviva a quem enxerga cor de forma diferente da média.
  */
-export const statusPill = styleVariants({
-  ready: [pillBase, { background: vars.color.status.activeBg, color: vars.color.status.activeText }],
-  blocked: [
-    pillBase,
-    { background: vars.color.status.terminatedBg, color: vars.color.status.terminatedText },
-  ],
-  'out-of-van': [
-    pillBase,
-    { background: vars.color.status.cancelledBg, color: vars.color.status.cancelledText },
-  ],
-  'not-found': [pillBase, { background: vars.color.status.pendingBg, color: vars.color.status.pendingText }],
-})
+export const rowPending = style([
+  row,
+  {
+    background: vars.color.status.terminatedBg,
+    color: vars.color.status.terminatedText,
+    boxShadow: `inset 0.1875rem 0 0 0 ${vars.color.status.terminatedText}`,
+    ':hover': { background: vars.color.status.terminatedBg },
+  },
+])
 
-/** Lacunas: uma por linha, campo + motivo. Nunca vira frase — a tela aponta o campo. */
-export const gapList = style({
-  margin: 0,
-  paddingInlineStart: vars.space.md,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: vars.space.xs,
-  fontSize: vars.font.size.xs,
-  color: vars.color.institutional.ink3,
-})
+export const cell = style({ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })
 
-export const gapField = style({
-  fontWeight: vars.font.weight.bold,
-  color: vars.color.institutional.ink2,
-})
+export const cellDoc = style([
+  cell,
+  { fontFamily: vars.font.family.mono, color: vars.color.institutional.ink2 },
+])
 
-export const routeLabel = style({
-  fontSize: vars.font.size.xs,
-  color: vars.color.institutional.ink3,
-})
+export const cellNet = style([cell, { textAlign: 'right', fontFamily: vars.font.family.mono }])
 
-/** Aviso dos títulos não-Aprovados (barrados no front, não chegam ao core-api). */
+// A linha vermelha herda a cor no hover e no mono; o seletor global evita repetir a variante por célula.
+globalStyle(`${rowPending} > *`, { color: 'inherit' })
+
+// ── Avisos e estados ────────────────────────────────────────────────────────────
+
 export const notice = style({
   marginBlockStart: vars.space.sm,
   padding: vars.space.sm,

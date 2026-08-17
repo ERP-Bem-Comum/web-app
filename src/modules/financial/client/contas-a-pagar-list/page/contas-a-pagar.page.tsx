@@ -170,10 +170,12 @@ export function ContasAPagarPage(): ReactNode {
   //    (dedup). A baixa (Marcar como pago) é por título, independente. Backend valida transição inválida. ──
   const titleTargets = deriveTitleActionTargets(rows, selected)
 
-  // VAN (core-api#728): PRÉ-VOO do lote. `deriveRemittanceSelection` dedup por documento e barra o que
-  // não está Aprovado ANTES da chamada — o core-api lê os documentos por id, sem exigir aprovação, e um
-  // Rascunho voltaria de lá como `ready`. Leitura pura: abrir a conferência não gera arquivo.
-  const remittanceSelection = deriveRemittanceSelection(rows, selected)
+  // VAN (core-api#728): PRÉ-VOO do lote, disparado pelo item CNAB do "Exportar". A origem é a MESMA do
+  // CSV/PDF (`exportRows`: a seleção, ou o que está na tela quando não há seleção) — o operador não
+  // deveria descobrir que "Exportar" recorta diferente conforme o formato.
+  // `deriveRemittanceSelection` dedup por documento e barra o que não está Aprovado ANTES da chamada: o
+  // core-api lê os documentos por id, sem exigir aprovação (core-api#736), e um Rascunho voltaria apto.
+  const remittanceSelection = deriveRemittanceSelection(exportRows)
   const remittance = useRemittancePreview()
   const remittanceView = remittance.preview === null ? null : toPreviewView(remittance.preview, rows)
 
@@ -446,23 +448,6 @@ export function ContasAPagarPage(): ReactNode {
             >
               {t('financial.list.dueDate.bulk')}
             </button>
-            {/* VAN (core-api#728): conferir o lote antes de gerar. Só Aprovado é candidato; sem nenhum,
-                o botão fica desabilitado E diz por quê (um `disabled` mudo esconde o caminho da correção). */}
-            <button
-              type="button"
-              className={selClear}
-              disabled={remittanceSelection.documentIds.length === 0 || remittance.running}
-              title={
-                remittanceSelection.documentIds.length === 0
-                  ? t('financial.list.remittance.needApproved')
-                  : undefined
-              }
-              onClick={() => {
-                remittance.start(remittanceSelection.documentIds)
-              }}
-            >
-              {t('financial.list.remittance.check')}
-            </button>
             <StatusActions
               canApprove={titleTargets.approve.length > 0}
               canReopen={titleTargets.reopen.length > 0}
@@ -531,7 +516,15 @@ export function ContasAPagarPage(): ReactNode {
         ) : null}
 
         <div className={footerActions}>
-          {page !== null ? <ExportDropdown rows={exportRows} /> : null}
+          {page !== null ? (
+            <ExportDropdown
+              rows={exportRows}
+              remittanceDisabled={remittanceSelection.documentIds.length === 0 || remittance.running}
+              onCheckRemittance={() => {
+                remittance.start(remittanceSelection.documentIds)
+              }}
+            />
+          ) : null}
           <Link to="/financeiro/contas-a-pagar/lancar" className={newButton}>
             {t('financial.list.new')}
           </Link>

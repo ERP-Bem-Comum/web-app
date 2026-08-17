@@ -1,11 +1,12 @@
 /**
- * ViewModel do pré-voo da remessa (VAN, core-api#728) — PURO (node:test, imports relativos).
+ * ViewModel do "Conferir Remessa" (VAN, core-api#728) — PURO (node:test, imports relativos).
  *
  * O que estes testes travam, em ordem de importância:
- *  1. só Aprovado vira candidato (o core-api NÃO filtra por status — um Rascunho voltaria como `ready`);
+ *  1. só Aprovado vira candidato — premissa de negócio, e o core-api NÃO a cobra (core-api#736);
  *  2. dedup por documento (o grid é por título: pai + impostos filhos = 1 linha na remessa);
- *  3. os impedidos aparecem ANTES dos prontos (quem confere quer ver o que precisa de ação);
- *  4. `blockedTotal` NÃO absorve o fora-da-VAN (decisão do core-api, e o front não pode "corrigir").
+ *  3. `hasPendency` é o único bit da conferência: `ready` entra, todo o resto não;
+ *  4. o TOTAL DA REMESSA vem do backend — o front não recalcula o que vai sair;
+ *  5. vencimentos diferentes são sinalizados (o backend recusaria gerar).
  */
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
@@ -17,13 +18,13 @@ import {
 import type { GridRow } from '../../../../../src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts'
 import type { RemittancePreview } from '../../../../../src/modules/financial/client/data/model/remittance.model.ts'
 
-const row = (id: string, status: GridRow['status'], documentId = id, supplier = 'Fornecedor X'): GridRow => ({
+const row = (id: string, status: GridRow['status'], over: Partial<GridRow> = {}): GridRow => ({
   id,
-  documentId,
+  documentId: id,
   type: 'NFS-e',
-  documentNumber: `NF-${documentId}`,
+  documentNumber: `NF-${id}`,
   series: null,
-  supplier,
+  supplier: 'Fornecedor X',
   supplierKind: null,
   supplierDoc: null,
   contract: '—',
@@ -37,9 +38,8 @@ const row = (id: string, status: GridRow['status'], documentId = id, supplier = 
   netCents: '1000',
   version: 0,
   status,
+  ...over,
 })
-
-const selectionOf = (...ids: readonly string[]): ReadonlySet<string> => new Set(ids)
 
 /** `Intl` separa "R$" do número com espaço NÃO-QUEBRÁVEL (U+00A0). Normaliza p/ comparar com literal. */
 const nbsp = (s: string): string => s.replace(/\u00A0/g, ' ')
@@ -47,25 +47,23 @@ const nbsp = (s: string): string => s.replace(/\u00A0/g, ' ')
 describe('deriveRemittanceSelection', () => {
   it('só Aprovado é candidato — Rascunho/Aberto/Pago ficam de fora e são contados', () => {
     const rows = [row('a', 'Aprovado'), row('b', 'Rascunho'), row('c', 'Aberto'), row('d', 'Pago')]
-    const out = deriveRemittanceSelection(rows, selectionOf('a', 'b', 'c', 'd'))
+    const out = deriveRemittanceSelection(rows)
     assert.deepEqual(out.documentIds, ['a'])
     assert.equal(out.notApprovedCount, 3)
   })
 
   it('dedup por documento: pai + filho do MESMO documento viram 1 id', () => {
-    const rows = [row('pai', 'Aprovado', 'doc-1'), row('filho-iss', 'Aprovado', 'doc-1')]
-    const out = deriveRemittanceSelection(rows, selectionOf('pai', 'filho-iss'))
+    const rows = [
+      row('pai', 'Aprovado', { documentId: 'doc-1' }),
+      row('filho-iss', 'Aprovado', { documentId: 'doc-1' }),
+    ]
+    const out = deriveRemittanceSelection(rows)
     assert.deepEqual(out.documentIds, ['doc-1'])
     assert.equal(out.notApprovedCount, 0)
   })
 
-  it('ignora linha não selecionada', () => {
-    const rows = [row('a', 'Aprovado'), row('b', 'Aprovado')]
-    assert.deepEqual(deriveRemittanceSelection(rows, selectionOf('b')).documentIds, ['b'])
-  })
-
-  it('seleção vazia → nada a conferir (a tela desabilita o botão a partir daqui)', () => {
-    const out = deriveRemittanceSelection([row('a', 'Aprovado')], selectionOf())
+  it('lista vazia → nada a conferir (a tela desabilita o item CNAB a partir daqui)', () => {
+    const out = deriveRemittanceSelection([])
     assert.deepEqual(out.documentIds, [])
     assert.equal(out.notApprovedCount, 0)
   })
@@ -85,59 +83,73 @@ const preview = (
   ...over,
 })
 
-describe('toPreviewView', () => {
-  it('enriquece a linha com fornecedor/número vindos do GRID (o pré-voo devolve só o id)', () => {
-    const rows = [row('t1', 'Aprovado', 'doc-1', 'Padaria Real')]
+describe('toPreviewView — colunas espelhando o grid', () => {
+  it('monta a linha com forma, documento, fornecedor e vencimento vindos do GRID', () => {
+    const rows = [
+      row('doc-1', 'Aprovado', { supplier: 'Padaria Real', paymentMethod: 'TED', due: '15/08/2026' }),
+    ]
     const view = toPreviewView(
-      preview([{ documentId: 'doc-1', status: 'ready', route: 'pix', gaps: [], netValueCents: '25000' }], {
-        readyCount: 1,
-        readyTotalCents: '25000',
-      }),
+      preview(
+        [{ documentId: 'doc-1', status: 'ready', route: 'transfer', gaps: [], netValueCents: '25000' }],
+        { readyCount: 1, readyTotalCents: '25000' },
+      ),
       rows,
     )
     const line = view.lines[0]
-    assert.equal(line?.supplier, 'Padaria Real')
+    assert.equal(line?.paymentMethodTag, 'financial.paymentMethod.TED')
     assert.equal(line?.documentNumber, 'NF-doc-1')
+    assert.equal(line?.supplier, 'Padaria Real')
+    assert.equal(line?.due, '15/08/2026')
     assert.equal(nbsp(line?.net ?? ''), 'R$ 250,00')
-    assert.equal(line?.routeTag, 'financial.remittance.preview.route.pix')
+    assert.equal(line?.hasPendency, false)
   })
 
-  it('documento que sumiu do grid não quebra a linha — cai em "—"', () => {
+  it('documento que sumiu do grid não quebra a linha — cai em "—" e sem forma', () => {
     const view = toPreviewView(
-      preview([{ documentId: 'fantasma', status: 'not-found', route: null, gaps: [], netValueCents: '0' }], {
-        notFoundCount: 1,
-      }),
+      preview([{ documentId: 'fantasma', status: 'not-found', route: null, gaps: [], netValueCents: '0' }]),
       [],
     )
     assert.equal(view.lines[0]?.supplier, '—')
-    assert.equal(view.lines[0]?.routeTag, null)
+    assert.equal(view.lines[0]?.paymentMethodTag, null)
+    assert.equal(view.lines[0]?.hasPendency, true)
   })
+})
 
-  it('ordena impedidos primeiro, prontos por último', () => {
+describe('toPreviewView — pendência', () => {
+  it('`ready` é o único que entra: blocked, out-of-van e not-found são todos pendência', () => {
     const lines: RemittancePreview['lines'] = [
       { documentId: 'r', status: 'ready', route: 'pix', gaps: [], netValueCents: '100' },
-      { documentId: 'n', status: 'not-found', route: null, gaps: [], netValueCents: '0' },
-      { documentId: 'o', status: 'out-of-van', route: null, gaps: [], netValueCents: '100' },
       { documentId: 'b', status: 'blocked', route: 'transfer', gaps: [], netValueCents: '100' },
+      { documentId: 'o', status: 'out-of-van', route: null, gaps: [], netValueCents: '100' },
+      { documentId: 'n', status: 'not-found', route: null, gaps: [], netValueCents: '0' },
     ]
     const view = toPreviewView(preview(lines), [])
-    assert.deepEqual(
-      view.lines.map((l) => l.documentId),
-      ['b', 'o', 'n', 'r'],
-    )
+    const byId = new Map(view.lines.map((l) => [l.documentId, l.hasPendency]))
+    assert.equal(byId.get('r'), false)
+    assert.equal(byId.get('b'), true)
+    assert.equal(byId.get('o'), true)
+    assert.equal(byId.get('n'), true)
+    assert.equal(view.summary.pendingCount, 3)
   })
 
-  it('cada lacuna vira campo + motivo (tags distintas) — a tela aponta o input, não uma frase', () => {
+  it('as linhas com pendência vêm primeiro', () => {
+    const lines: RemittancePreview['lines'] = [
+      { documentId: 'r1', status: 'ready', route: 'pix', gaps: [], netValueCents: '100' },
+      { documentId: 'b1', status: 'blocked', route: null, gaps: [], netValueCents: '100' },
+      { documentId: 'r2', status: 'ready', route: 'pix', gaps: [], netValueCents: '100' },
+    ]
+    const view = toPreviewView(preview(lines), [])
+    assert.equal(view.lines[0]?.documentId, 'b1')
+  })
+
+  it('a lacuna guarda campo + motivo (vira tooltip; não há coluna de situação)', () => {
     const view = toPreviewView(
       preview([
         {
           documentId: 'doc-1',
           status: 'blocked',
           route: 'transfer',
-          gaps: [
-            { field: 'payee-agency', reason: 'missing' },
-            { field: 'payee-account-digit', reason: 'malformed' },
-          ],
+          gaps: [{ field: 'payee-agency', reason: 'missing' }],
           netValueCents: '100',
         },
       ]),
@@ -148,32 +160,41 @@ describe('toPreviewView', () => {
         fieldTag: 'financial.remittance.preview.field.agency',
         reasonTag: 'financial.remittance.preview.reason.missing',
       },
-      {
-        fieldTag: 'financial.remittance.preview.field.accountDigit',
-        reasonTag: 'financial.remittance.preview.reason.malformed',
-      },
     ])
   })
+})
 
-  it('os totais vêm do BACKEND — o front não recalcula, e o impedido não absorve o fora-da-VAN', () => {
-    const view = toPreviewView(
-      preview(
-        [
-          { documentId: 'b', status: 'blocked', route: null, gaps: [], netValueCents: '640000' },
-          { documentId: 'o', status: 'out-of-van', route: null, gaps: [], netValueCents: '999999' },
-        ],
-        { blockedCount: 1, outOfVanCount: 1, blockedTotalCents: '640000' },
-      ),
-      [],
-    )
-    assert.equal(nbsp(view.blockedTotal), 'R$ 6.400,00') // sem o out-of-van somado
-    assert.equal(view.outOfVanCount, 1)
+describe('toPreviewView — resumo do lote', () => {
+  const lines: RemittancePreview['lines'] = [
+    { documentId: 'd1', status: 'ready', route: 'pix', gaps: [], netValueCents: '10000' },
+    { documentId: 'd2', status: 'blocked', route: null, gaps: [], netValueCents: '5000' },
+  ]
+  const rows = [
+    row('d1', 'Aprovado', { grossCents: '12000', due: '20/08/2026' }),
+    row('d2', 'Aprovado', { grossCents: '6000', due: '20/08/2026' }),
+  ]
+
+  it('conta títulos e soma bruto (do grid) e líquido (do pré-voo)', () => {
+    const view = toPreviewView(preview(lines, { readyTotalCents: '10000' }), rows)
+    assert.equal(view.summary.titleCount, 2)
+    assert.equal(nbsp(view.summary.grossTotal), 'R$ 180,00')
+    assert.equal(nbsp(view.summary.netTotal), 'R$ 150,00')
   })
 
-  it('canGenerate exige ao menos um pronto (sem apto, não há remessa a gerar)', () => {
-    const nada = toPreviewView(preview([], { blockedCount: 2 }), [])
-    assert.equal(nada.canGenerate, false)
-    const algum = toPreviewView(preview([], { readyCount: 1 }), [])
-    assert.equal(algum.canGenerate, true)
+  it('o TOTAL DA REMESSA vem do backend e conta só o que sai — não é a soma da tela', () => {
+    const view = toPreviewView(preview(lines, { readyTotalCents: '10000' }), rows)
+    assert.equal(nbsp(view.summary.remittanceTotal), 'R$ 100,00')
+  })
+
+  it('data de pagamento = o vencimento comum do lote', () => {
+    const view = toPreviewView(preview(lines), rows)
+    assert.equal(view.summary.paymentDate, '20/08/2026')
+    assert.equal(view.summary.paymentDateMixed, false)
+  })
+
+  it('vencimentos diferentes são sinalizados (o backend recusaria gerar)', () => {
+    const mixed = [row('d1', 'Aprovado', { due: '20/08/2026' }), row('d2', 'Aprovado', { due: '21/08/2026' })]
+    const view = toPreviewView(preview(lines), mixed)
+    assert.equal(view.summary.paymentDateMixed, true)
   })
 })
