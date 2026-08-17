@@ -1938,13 +1938,12 @@ export const ptBR: Catalog = {
   'financial.list.delete.confirm': 'Excluir definitivamente',
   'financial.list.delete.error': 'Não foi possível excluir. Tente novamente.',
   'financial.list.dueDate.bulk': 'Alterar vencimento',
-  'financial.list.dueDate.needOpen': 'Selecione documentos em Aberto para alterar o vencimento.',
+  'financial.list.dueDate.needOpen': 'Selecione títulos em Aberto ou Aprovado para alterar o vencimento.',
   'financial.list.dueDate.modalTitle': 'Alterar vencimento',
   'financial.list.dueDate.modalBodyOne': 'Defina o novo vencimento para o título selecionado.',
   'financial.list.dueDate.modalBodyManyPrefix': 'Defina o novo vencimento para os',
   'financial.list.dueDate.modalBodyManySuffix': 'títulos selecionados.',
-  'financial.list.dueDate.modalBlocked':
-    'Documentos selecionados que não estão em Aberto não serão alterados.',
+  'financial.list.dueDate.modalBlocked': 'Títulos selecionados fora de Aberto/Aprovado não serão alterados.',
   'financial.list.dueDate.modalAffectsAll':
     'Atenção: o novo vencimento é aplicado a TODOS os títulos do documento (principal e filhos de retenção), não apenas ao selecionado.',
   'financial.list.dueDate.modalCancel': 'Cancelar',

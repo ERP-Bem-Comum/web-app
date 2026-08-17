@@ -335,9 +335,9 @@ export type TitleActionTargets = Readonly<{
   reopen: readonly StatusTarget[] // documentos com título Aprovado
   deletable: readonly StatusTarget[] // Rascunho (descarte) + Aberto (hard-delete) — ambos canceláveis (#166)
   draftCount: number // rascunhos "ignorados" — 0 desde #166 (rascunho agora É excluível)
-  // #270: vencimento por TÍTULO (Aberto), isolado — não propaga pai↔filhos. Por payable (sem dedup por doc).
+  // #270: vencimento por TÍTULO (Aberto ou Aprovado), isolado — por payable (sem dedup por documento).
   dueEditable: readonly IsolatedDueDateTarget[]
-  dueBlockedCount: number // títulos selecionados não-editáveis (não-Aberto) — aviso no modal
+  dueBlockedCount: number // selecionados fora de Aberto/Aprovado (ex.: Pago, Rascunho) — aviso no modal
 }>
 export const deriveTitleActionTargets = (
   rows: readonly GridRow[],
@@ -359,19 +359,25 @@ export const deriveTitleActionTargets = (
   // #166: rascunho (Draft) também é excluível (descarte — não tem títulos-filho). O core-api trata Draft
   // no MESMO DELETE /documents/:id (cancelDocument → cancelDraft). Antes o front bloqueava por engano.
   const rascunho = dedupByDoc(sel.filter((r) => r.status === 'Rascunho'))
-  // #270: vencimento é por TÍTULO isolado — NÃO dedup por documento; um alvo por payable Aberto selecionado.
-  const selAbertoRows = sel.filter((r) => r.status === 'Aberto')
+  // #270: vencimento é por TÍTULO isolado — NÃO dedup por documento; um alvo por payable selecionado.
+  //
+  // Aberto E APROVADO (VAN/specs/101): o backend sempre permitiu os dois
+  // (`update-payable-due-date.ts` — "vale em Open E Approved", mesma latitude do editMetadata #165) e
+  // era só o front que barrava. A restrição virou impeditivo real com a remessa: uma remessa é de UM
+  // dia só (`remittance-mixed-payment-dates`), então alinhar os vencimentos é pré-requisito para gerar
+  // — e é justamente em Aprovado que o título está pronto para entrar no lote.
+  const selDueEditableRows = sel.filter((r) => r.status === 'Aberto' || r.status === 'Aprovado')
   return {
     approve: aberto,
     reopen: dedupByDoc(sel.filter((r) => r.status === 'Aprovado')),
     deletable: [...rascunho, ...aberto],
     draftCount: 0, // #166: rascunho agora É excluível → nada "ignorado" no modal
-    dueEditable: selAbertoRows.map((r) => ({
+    dueEditable: selDueEditableRows.map((r) => ({
       documentId: r.documentId,
       payableId: r.id,
       version: r.version,
     })),
-    dueBlockedCount: sel.length - selAbertoRows.length,
+    dueBlockedCount: sel.length - selDueEditableRows.length,
   }
 }
 
