@@ -38,7 +38,11 @@ import {
   rowPending,
   cell,
   cellDoc,
+  cellDocStack,
   cellNet,
+  checkbox,
+  checkboxDisabled,
+  pendencyLabel,
   notice,
   errorBox,
   emptyState,
@@ -48,12 +52,11 @@ const t = createTranslator(ptBR)
 
 const DASH = '—'
 
-/** Detalhe da pendência no tooltip: "Agência do favorecido — não preenchido". */
-const pendencyHint = (line: PreviewLineView): string | undefined => {
-  if (!line.hasPendency) return undefined
-  if (line.gaps.length === 0) return t('financial.remittance.preview.pendencyGeneric')
-  return line.gaps.map((g) => `${t(g.fieldTag)} — ${t(g.reasonTag)}`).join(' · ')
-}
+/** Detalhe campo+motivo no tooltip: "Agência do favorecido — não preenchido". */
+const pendencyHint = (line: PreviewLineView): string | undefined =>
+  line.gaps.length === 0
+    ? undefined
+    : line.gaps.map((g) => `${t(g.fieldTag)} — ${t(g.reasonTag)}`).join(' · ')
 
 export type RemittancePreviewModalProps = Readonly<{
   open: boolean
@@ -62,6 +65,7 @@ export type RemittancePreviewModalProps = Readonly<{
   errorTag: string | null
   /** Títulos que não estão Aprovados — barrados no front, nunca chegam ao core-api (core-api#736). */
   notApprovedCount: number
+  onToggle: (payableId: string) => void
   onClose: () => void
 }>
 
@@ -95,7 +99,10 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
             <div className={summary}>
               <span className={summaryItem}>
                 <span className={summaryLabel}>{t('financial.remittance.preview.summary.count')}</span>
-                <span className={summaryValue}>{String(view.summary.titleCount)}</span>
+                {/* marcados de exibidos: o totalizador acompanha o que o operador desmarcou */}
+                <span className={summaryValue}>
+                  {`${String(view.summary.checkedCount)} / ${String(view.summary.titleCount)}`}
+                </span>
               </span>
               <span className={summaryItem}>
                 <span className={summaryLabel}>{t('financial.remittance.preview.summary.gross')}</span>
@@ -130,6 +137,7 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
             ) : (
               <div className={gridBox}>
                 <div className={head} role="row">
+                  <span className={headCell} aria-hidden="true" />
                   <span className={headCell}>{t('financial.remittance.preview.col.method')}</span>
                   <span className={headCell}>{t('financial.remittance.preview.col.document')}</span>
                   <span className={headCell}>{t('financial.remittance.preview.col.supplier')}</span>
@@ -138,13 +146,28 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
                 </div>
                 {view.lines.map((l) => (
                   <div
-                    key={l.documentId}
+                    key={l.payableId}
                     role="row"
-                    className={l.hasPendency ? rowPending : row}
+                    className={l.remittable ? row : rowPending}
                     title={pendencyHint(l)}
                   >
+                    <input
+                      type="checkbox"
+                      className={l.remittable ? checkbox : checkboxDisabled}
+                      checked={l.checked}
+                      disabled={!l.remittable}
+                      aria-label={`${t('financial.remittance.preview.includeLabel')} ${l.documentNumber}`}
+                      onChange={() => {
+                        props.onToggle(l.payableId)
+                      }}
+                    />
                     <span className={cell}>{l.paymentMethodTag === null ? DASH : t(l.paymentMethodTag)}</span>
-                    <span className={cellDoc}>{l.documentNumber}</span>
+                    <span className={cellDocStack}>
+                      <span className={cellDoc}>{l.documentNumber}</span>
+                      {l.pendencyTag !== null ? (
+                        <span className={pendencyLabel}>{t(l.pendencyTag)}</span>
+                      ) : null}
+                    </span>
                     <span className={cell}>{l.supplier}</span>
                     <span className={cell}>{l.due}</span>
                     <span className={cellNet}>{l.net}</span>

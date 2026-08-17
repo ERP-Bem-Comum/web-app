@@ -1964,8 +1964,15 @@ export const ptBR: Catalog = {
   'financial.remittance.preview.notApproved':
     'título(s) não estão Aprovados e ficaram de fora — só título aprovado entra em remessa.',
   'financial.remittance.preview.pendingWarn':
-    'título(s) com pendência de cadastro (em vermelho) não entram na remessa. Passe o mouse na linha para ver o que falta.',
-  'financial.remittance.preview.pendencyGeneric': 'Este título não entra na remessa.',
+    'título(s) em vermelho não entram na remessa. Os demais seguem normalmente.',
+  'financial.remittance.preview.includeLabel': 'Incluir na remessa —',
+  // Motivos de a linha não entrar. Cada um leva o operador a um lugar diferente: guia/câmbio não têm
+  // conserto por cadastro; falta de dado, sim.
+  'financial.remittance.preview.pendency.taxGuide': 'Sem linha digitável — guia não entra na remessa',
+  'financial.remittance.preview.pendency.missingData': 'Sem dados bancários — verifique o cadastro',
+  'financial.remittance.preview.pendency.outOfVan': 'Forma de pagamento fora da VAN',
+  'financial.remittance.preview.pendency.notFound': 'Título não encontrado',
+  'financial.remittance.preview.pendency.notChecked': 'Não conferido',
   'financial.remittance.preview.empty': 'Nenhum título para conferir.',
   'financial.remittance.preview.close': 'Fechar',
   'financial.remittance.preview.summary.count': 'Títulos',

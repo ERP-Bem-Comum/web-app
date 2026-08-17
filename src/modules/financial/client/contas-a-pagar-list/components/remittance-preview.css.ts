@@ -11,8 +11,8 @@ import { style, globalStyle } from '@vanilla-extract/css'
 import { vars } from '#shared/ui/tokens/index.ts'
 import { brand } from '#shared/ui/brand/grid-brand.values.ts'
 
-/** Tipo de pagamento · Documento · Fornecedor · Vencimento · Líquido. */
-const GRID_COLS = '9rem 10rem minmax(12rem, 1fr) 8rem 9rem'
+/** Checkbox · Tipo de pagamento · Documento · Fornecedor · Vencimento · Líquido. */
+const GRID_COLS = '2rem 9rem 11rem minmax(12rem, 1fr) 7.5rem 9rem'
 
 export const previewDialog = style({
   inlineSize: '62rem',
@@ -154,6 +154,29 @@ export const cellDoc = style([
 ])
 
 export const cellNet = style([cell, { textAlign: 'right', fontFamily: vars.font.family.mono }])
+
+export const checkbox = style({ inlineSize: '0.9375rem', blockSize: '0.9375rem', cursor: 'pointer' })
+
+/** Checkbox de linha impedida: presente (a coluna não "buraca"), mas inoperável — não há o que marcar. */
+export const checkboxDisabled = style([checkbox, { cursor: 'not-allowed', opacity: 0.45 }])
+
+/**
+ * Motivo do impedimento, embaixo do número do documento. Fica NA LINHA (não só no tooltip) porque é o
+ * que o operador precisa ler para decidir — a guia de retenção, por exemplo, sequer tem linha digitável.
+ */
+export const pendencyLabel = style({
+  display: 'block',
+  marginBlockStart: '0.0625rem',
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size['2xs'],
+  fontWeight: vars.font.weight.bold,
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+})
+
+/** Célula Documento: número + motivo empilhados (o grid de Contas a Pagar faz o mesmo com a série). */
+export const cellDocStack = style({ minInlineSize: 0, overflow: 'hidden' })
 
 // A linha vermelha herda a cor no hover e no mono; o seletor global evita repetir a variante por célula.
 globalStyle(`${rowPending} > *`, { color: 'inherit' })

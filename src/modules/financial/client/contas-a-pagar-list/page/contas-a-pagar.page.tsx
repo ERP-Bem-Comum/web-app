@@ -177,7 +177,10 @@ export function ContasAPagarPage(): ReactNode {
   // core-api lê os documentos por id, sem exigir aprovação (core-api#736), e um Rascunho voltaria apto.
   const remittanceSelection = deriveRemittanceSelection(exportRows)
   const remittance = useRemittancePreview()
-  const remittanceView = remittance.preview === null ? null : toPreviewView(remittance.preview, rows)
+  // A conferência lista UM POR TÍTULO selecionado (não por documento): um documento com retenção rende o
+  // título do fornecedor e o do imposto, com favorecidos e valores diferentes.
+  const remittanceView =
+    remittance.preview === null ? null : toPreviewView(remittance.preview, exportRows, remittance.unchecked)
 
   // ── Mudar Status em massa: Aprovar (Aberto→Aprovado) · Voltar p/ edição (Aprovado→Aberto) ──
   const bulk = useBulkStatus(clearSelection)
@@ -417,6 +420,7 @@ export function ContasAPagarPage(): ReactNode {
         view={remittanceView}
         errorTag={remittance.errorTag}
         notApprovedCount={remittanceSelection.notApprovedCount}
+        onToggle={remittance.toggle}
         onClose={remittance.close}
       />
 

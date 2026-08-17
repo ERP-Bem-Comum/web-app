@@ -64,6 +64,10 @@ export type GridRow = Readonly<{
   netCents: string | null // líquido em centavos p/ o somatório da seleção (formatação fica fora)
   version: number // optimistic lock — p/ ações inline (Mudar Status em massa)
   status: DocumentStatus
+  // #201/#229: a linha é um título-FILHO de retenção (imposto). Distinto de "forma = Guia de Recolhimento",
+  // que um documento comum também pode ter. A remessa (specs/101) precisa da diferença: o filho de retenção
+  // não é pagável pela VAN — o pré-voo do core-api é por DOCUMENTO e emite o pagamento ao FORNECEDOR.
+  isRetentionChild: boolean
 }>
 
 /** Mascara CNPJ (14 alfanum. Serpro/2026) / CPF (11) p/ exibição; null se vazio, ou o original se tamanho ≠. */
@@ -282,6 +286,7 @@ const toRow = (
   due: it.dueDate !== null && it.dueDate !== '' ? formatDue(it.dueDate) : DASH,
   net: it.netValueCents !== null && it.netValueCents !== '' ? centsToBRL(it.netValueCents) : DASH,
   netCents: it.netValueCents,
+  isRetentionChild: false, // modo documento: a linha é o documento inteiro, nunca um filho de retenção
   version: it.version,
   status: it.status,
 })
@@ -722,6 +727,7 @@ const toTitleRow = (
     netCents,
     version: it.version, // #229: version do DOCUMENTO (optimistic lock) agora vem na linha
     status: it.status,
+    isRetentionChild: childRetention !== null,
   }
 }
 

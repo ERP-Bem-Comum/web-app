@@ -60,9 +60,8 @@ export const deriveRemittanceSelection = (rows: readonly GridRow[]): RemittanceS
 
 // ── Tags i18n das lacunas ───────────────────────────────────────────────────────
 //
-// O motivo viaja junto do campo porque a AÇÃO difere: `missing` pede preencher; `unmappable`/`malformed`
-// pedem corrigir o que já está lá. Não vira coluna — a tela só destaca a linha, e o detalhe fica no
-// title (tooltip), ao alcance de quem for corrigir sem poluir a leitura de quem só quer conferir.
+// O motivo viaja junto do campo porque a AÇÃO difere: `missing` pede preencher;
+// `unmappable`/`malformed` pedem corrigir o que já está lá.
 
 const FIELD_TAG: Record<PayoutField, string> = {
   'pix-key': 'financial.remittance.preview.field.pixKey',
@@ -82,30 +81,33 @@ const REASON_TAG: Record<PayoutGapReason, string> = {
 export type PreviewGapView = Readonly<{ fieldTag: string; reasonTag: string }>
 
 export type PreviewLineView = Readonly<{
+  /** Chave da linha E do checkbox: é o TÍTULO (payable), não o documento. */
+  payableId: string
   documentId: string
-  /** Tag i18n da forma de pagamento (mesma do grid). `null` → o documento não tem forma definida. */
   paymentMethodTag: string | null
   documentNumber: string
   supplier: string
-  /** Vencimento = a data em que o banco processa o pagamento (o core-api usa `dueDate` como `paymentDate`). */
   due: string
   net: string
-  /** Único bit que o pré-voo acrescenta à leitura do grid: esta linha sai ou não sai. */
-  hasPendency: boolean
-  /** Vazio quando a pendência não tem campo (ex.: forma fora da VAN) — a linha destaca do mesmo jeito. */
+  /** Pode entrar no arquivo (⇒ o checkbox é operável). */
+  remittable: boolean
+  /** Está marcado para ir. Sempre `false` quando não é remittable. */
+  checked: boolean
+  /** Rótulo curto do impedimento, exibido na linha. `null` quando a linha entra. */
+  pendencyTag: string | null
+  /** Detalhe campo+motivo (tooltip). Vazio quando o impedimento não tem campo. */
   gaps: readonly PreviewGapView[]
 }>
 
 export type PreviewSummary = Readonly<{
+  /** Marcados × exibidos: o totalizador acompanha o que o operador desmarcou. */
+  checkedCount: number
   titleCount: number
-  /** Bruto somado dos títulos conferidos (vem do grid — o pré-voo devolve só o líquido). */
   grossTotal: string
-  /** Líquido somado de TODOS os conferidos, saiam ou não. */
   netTotal: string
-  /** Vencimento comum do lote. Uma remessa é de um dia só — datas diferentes o backend recusa. */
   paymentDate: string
   paymentDateMixed: boolean
-  /** O que de fato sai no arquivo: só as linhas sem pendência. É o valor que deixa a conta. */
+  /** O que sai no arquivo: soma dos MARCADOS, com o valor que o backend apurou por documento. */
   remittanceTotal: string
   pendingCount: number
 }>
@@ -113,58 +115,108 @@ export type PreviewSummary = Readonly<{
 export type PreviewView = Readonly<{
   lines: readonly PreviewLineView[]
   summary: PreviewSummary
+  /** Documentos que irão na geração (fatia seguinte) — dedup, só os marcados. */
+  checkedDocumentIds: readonly string[]
 }>
 
 /**
- * Junta o pré-voo (que fala em `documentId`) com o grid (que tem fornecedor, número, forma e vencimento).
- * Ordena as linhas COM pendência primeiro: quem abre a conferência quer ver o que trava o lote.
+ * UMA LINHA POR TÍTULO SELECIONADO — nunca por documento.
+ *
+ * O grid é title-centric: um documento com retenção rende o título do FORNECEDOR (líquido) e um título
+ * FILHO por imposto, com outro favorecido (o órgão arrecadador) e outro valor. Colapsá-los numa linha só
+ * misturava o nome de um com o valor do outro, e escondia metade do que o operador tinha selecionado.
+ *
+ * O veredito do core-api, porém, é por DOCUMENTO: o pré-voo lê `fin_documents` e responde sobre o
+ * pagamento ao FORNECEDOR. Então cada linha recebe o que de fato se sabe sobre ela:
+ *  - título do fornecedor → o veredito real do documento;
+ *  - título de retenção   → não é pagável pela VAN hoje (o emissor não produz guia a partir do filho).
+ *    Não é uma régua nossa sobre dados do favorecido: é a ausência de um caminho no backend, e dizê-lo
+ *    é mais honesto que exibir a linha como apta e deixar o arquivo decidir.
  */
-export const toPreviewView = (preview: RemittancePreview, rows: readonly GridRow[]): PreviewView => {
-  const byDoc = new Map<string, GridRow>()
-  for (const r of rows) if (!byDoc.has(r.documentId)) byDoc.set(r.documentId, r)
+export const toPreviewView = (
+  preview: RemittancePreview,
+  rows: readonly GridRow[],
+  unchecked: ReadonlySet<string>,
+): PreviewView => {
+  const lineByDoc = new Map(preview.lines.map((l) => [l.documentId, l]))
 
-  const lines: readonly PreviewLineView[] = preview.lines.map((l) => {
-    const row = byDoc.get(l.documentId)
+  const lines: readonly PreviewLineView[] = rows.map((r) => {
+    const line = lineByDoc.get(r.documentId)
+
+    const { remittable, pendencyTag, gaps } = ((): Readonly<{
+      remittable: boolean
+      pendencyTag: string | null
+      gaps: readonly PreviewGapView[]
+    }> => {
+      if (r.isRetentionChild) {
+        return { remittable: false, pendencyTag: 'financial.remittance.preview.pendency.taxGuide', gaps: [] }
+      }
+      if (line === undefined) {
+        return {
+          remittable: false,
+          pendencyTag: 'financial.remittance.preview.pendency.notChecked',
+          gaps: [],
+        }
+      }
+      if (line.status === 'ready') return { remittable: true, pendencyTag: null, gaps: [] }
+      return {
+        remittable: false,
+        pendencyTag:
+          line.status === 'out-of-van'
+            ? 'financial.remittance.preview.pendency.outOfVan'
+            : line.status === 'not-found'
+              ? 'financial.remittance.preview.pendency.notFound'
+              : 'financial.remittance.preview.pendency.missingData',
+        gaps: line.gaps.map((g) => ({ fieldTag: FIELD_TAG[g.field], reasonTag: REASON_TAG[g.reason] })),
+      }
+    })()
+
     return {
-      documentId: l.documentId,
-      paymentMethodTag:
-        row?.paymentMethod === undefined || row.paymentMethod === null
-          ? null
-          : `financial.paymentMethod.${row.paymentMethod}`,
-      documentNumber: row?.documentNumber ?? DASH,
-      supplier: row?.supplier ?? DASH,
-      due: row?.due ?? DASH,
-      net: l.netValueCents === '' ? DASH : centsToBRL(l.netValueCents),
-      // `ready` é o ÚNICO estado que entra no arquivo. Tudo o mais — falta de cadastro, forma fora da
-      // VAN, id que sumiu — é pendência para quem confere: a linha não sai, e a razão de não sair não
-      // muda o que ele vê aqui (muda o que ele faz depois, e para isso existe o detalhe da lacuna).
-      hasPendency: l.status !== 'ready',
-      gaps: l.gaps.map((g) => ({ fieldTag: FIELD_TAG[g.field], reasonTag: REASON_TAG[g.reason] })),
+      payableId: r.id,
+      documentId: r.documentId,
+      paymentMethodTag: r.paymentMethod === null ? null : `financial.paymentMethod.${r.paymentMethod}`,
+      documentNumber: r.documentNumber,
+      supplier: r.supplier,
+      due: r.due,
+      // Valor DO TÍTULO (o filho tem o seu), não o líquido do documento — era essa a troca que fazia a
+      // linha do imposto exibir o valor do fornecedor.
+      net: r.netCents === null || r.netCents === '' ? DASH : centsToBRL(r.netCents),
+      remittable,
+      // Impedido nunca vai marcado: já nasce fora, e o operador não precisa desmarcar o que não pode ir.
+      checked: remittable && !unchecked.has(r.id),
+      pendencyTag,
+      gaps,
     }
   })
 
-  const sorted = [...lines].sort((a, b) => Number(b.hasPendency) - Number(a.hasPendency))
+  // Impedidos primeiro: é o que trava o lote.
+  const sorted = [...lines].sort((a, b) => Number(a.remittable) - Number(b.remittable))
+  const checkedLines = lines.filter((l) => l.checked)
 
-  // Vencimentos distintos entre os conferidos. Mais de um = o backend recusaria gerar
-  // (`remittance-mixed-payment-dates`), então a conferência precisa dizer isso antes.
-  const dueDates = new Set(lines.map((l) => l.due).filter((d) => d !== DASH))
+  const dueDates = new Set(checkedLines.map((l) => l.due).filter((d) => d !== DASH))
   const [firstDue] = [...dueDates]
 
-  const grossTotal = sumCents(...preview.lines.map((l) => byDoc.get(l.documentId)?.grossCents ?? undefined))
-  const netTotal = sumCents(...preview.lines.map((l) => l.netValueCents))
+  const rowById = new Map(rows.map((r) => [r.id, r]))
+  const grossTotal = sumCents(...checkedLines.map((l) => rowById.get(l.payableId)?.grossCents ?? undefined))
+  const netTotal = sumCents(...checkedLines.map((l) => rowById.get(l.payableId)?.netCents ?? undefined))
+
+  // Total da remessa: o valor que o BACKEND apurou para cada documento marcado (dedup — um documento
+  // entra uma vez no arquivo, ainda que o operador tenha marcado mais de um título dele).
+  const checkedDocs = [...new Set(checkedLines.map((l) => l.documentId))]
+  const remittanceTotal = sumCents(...checkedDocs.map((d) => lineByDoc.get(d)?.netValueCents))
 
   return {
     lines: sorted,
+    checkedDocumentIds: checkedDocs,
     summary: {
+      checkedCount: checkedLines.length,
       titleCount: lines.length,
       grossTotal: centsToBRL(grossTotal),
       netTotal: centsToBRL(netTotal),
       paymentDate: dueDates.size === 1 && firstDue !== undefined ? firstDue : DASH,
       paymentDateMixed: dueDates.size > 1,
-      // Vem do BACKEND, não de soma nossa: é ele quem decide o que é apto, e recalcular aqui abriria
-      // espaço para a tela prometer um valor que o arquivo não confirma.
-      remittanceTotal: centsToBRL(preview.readyTotalCents),
-      pendingCount: lines.filter((l) => l.hasPendency).length,
+      remittanceTotal: centsToBRL(remittanceTotal),
+      pendingCount: lines.filter((l) => !l.remittable).length,
     },
   }
 }

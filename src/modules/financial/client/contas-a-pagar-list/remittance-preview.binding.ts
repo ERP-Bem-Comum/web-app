@@ -20,6 +20,12 @@ export type RemittancePreviewBinding = Readonly<{
   running: boolean
   preview: RemittancePreview | null
   errorTag: string | null
+  /**
+   * Títulos que o operador DESMARCOU. Guardamos a exceção, não a seleção: o padrão é "vai tudo o que
+   * pode ir", e um conjunto de exceções não precisa ser re-semeado quando o pré-voo volta.
+   */
+  unchecked: ReadonlySet<string>
+  toggle: (payableId: string) => void
   /** Abre a conferência e dispara o pré-voo dos documentos informados. */
   start: (documentIds: readonly string[]) => void
   close: () => void
@@ -27,6 +33,7 @@ export type RemittancePreviewBinding = Readonly<{
 
 export function useRemittancePreview(): RemittancePreviewBinding {
   const [open, setOpen] = useState(false)
+  const [unchecked, setUnchecked] = useState<ReadonlySet<string>>(() => new Set())
 
   const previewMut = useMutation({
     mutationKey: ['financial', 'remittances', 'preview'] as const,
@@ -39,10 +46,20 @@ export function useRemittancePreview(): RemittancePreviewBinding {
     (documentIds: readonly string[]): void => {
       if (documentIds.length === 0) return
       setOpen(true)
+      setUnchecked(new Set()) // nova conferência começa com tudo o que pode ir, marcado
       mutate(documentIds)
     },
     [mutate],
   )
+
+  const toggle = useCallback((payableId: string): void => {
+    setUnchecked((prev) => {
+      const next = new Set(prev)
+      if (next.has(payableId)) next.delete(payableId)
+      else next.add(payableId)
+      return next
+    })
+  }, [])
 
   const close = useCallback((): void => {
     setOpen(false)
@@ -53,5 +70,5 @@ export function useRemittancePreview(): RemittancePreviewBinding {
   const preview = result !== undefined && isOk(result) ? result.value : null
   const errorTag = result !== undefined && !isOk(result) ? financialErrorTag(result.error) : null
 
-  return { open, running: previewMut.isPending, preview, errorTag, start, close }
+  return { open, running: previewMut.isPending, preview, errorTag, unchecked, toggle, start, close }
 }
