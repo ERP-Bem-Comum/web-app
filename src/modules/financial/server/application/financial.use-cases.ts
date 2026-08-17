@@ -27,6 +27,10 @@ import type {
   DashboardCostCenters,
   DashboardNoContractSupplier,
 } from '#modules/financial/server/domain/dashboard.io.ts'
+import type {
+  PreviewRemittanceInput,
+  RemittancePreview,
+} from '#modules/financial/server/domain/remittance.io.ts'
 
 export type FinancialClient = Readonly<{
   list: (input: ListDocumentsInput, token: string) => Promise<Result<DocumentListResponse, FinancialError>>
@@ -68,6 +72,11 @@ export type FinancialClient = Readonly<{
     input: PayableCountsInput,
     token: string,
   ) => Promise<Result<PayableCounts, FinancialError>>
+  // VAN (core-api#728): pré-voo do lote — o que sai e o que não sai, ANTES de gerar. Leitura pura.
+  previewRemittance: (
+    input: PreviewRemittanceInput,
+    token: string,
+  ) => Promise<Result<RemittancePreview, FinancialError>>
 }>
 
 type Deps = Readonly<{ client: FinancialClient }>
@@ -86,6 +95,14 @@ export const createGetPayableCounts =
   (deps: Deps) =>
   (input: PayableCountsInput, token: string): Promise<Result<PayableCounts, FinancialError>> =>
     deps.client.getPayableCounts(input, token)
+
+// VAN (core-api#728): pré-voo do lote. Thin — a régua de aptidão é do core-api (`checkPayoutReadiness`),
+// a MESMA que a geração usa. Uma segunda régua "de tela" divergiria, e a divergência apareceria como
+// título que o pré-voo aprova e o arquivo recusa.
+export const createPreviewRemittance =
+  (deps: Deps) =>
+  (input: PreviewRemittanceInput, token: string): Promise<Result<RemittancePreview, FinancialError>> =>
+    deps.client.previewRemittance(input, token)
 
 export const createGetDocument =
   (deps: Deps) =>

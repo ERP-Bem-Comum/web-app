@@ -22,6 +22,10 @@ import type {
   DocumentSourceFile,
 } from '#modules/financial/client/data/model/document.model.ts'
 import type { RecentPayment } from '#modules/financial/client/data/model/recent-payment.model.ts'
+import type {
+  PreviewRemittanceInput,
+  RemittancePreview,
+} from '#modules/financial/client/data/model/remittance.model.ts'
 import type { DashboardStatistics } from '#modules/financial/client/data/model/dashboard-statistics.model.ts'
 import type {
   DashboardRealizedInput,
@@ -32,6 +36,8 @@ import type { FinancialError, FnResult } from '#modules/financial/client/data/re
 type ListFn = (opts: { data: ListDocumentsInput }) => Promise<FnResult<DocumentListResponse>>
 type ListTitlesFn = (opts: { data: ListPayableTitlesInput }) => Promise<FnResult<PayableTitleListResponse>>
 type PayableCountsFn = (opts: { data: PayableCountsInput }) => Promise<FnResult<PayableCounts>>
+// VAN (core-api#728): pré-voo do lote. POST porque a seleção vai no corpo — não porque escreva algo.
+type PreviewRemittanceFn = (opts: { data: PreviewRemittanceInput }) => Promise<FnResult<RemittancePreview>>
 type GetFn = (opts: { data: { id: string } }) => Promise<FnResult<DocumentDetail>>
 type SourceFileFn = (opts: { data: { id: string } }) => Promise<FnResult<DocumentSourceFile>>
 type TimelineFn = (opts: { data: { id: string } }) => Promise<FnResult<readonly DocumentTimelineEntry[]>>
@@ -60,6 +66,8 @@ export type FinancialRepository = Readonly<{
   ) => Promise<Result<PayableTitleListResponse, FinancialError>>
   // #536: contagem agregada por status (chips do grid).
   getPayableCounts: (input: PayableCountsInput) => Promise<Result<PayableCounts, FinancialError>>
+  // VAN (core-api#728): pré-voo do lote — o que sai e o que não sai, ANTES de gerar. Leitura pura.
+  previewRemittance: (input: PreviewRemittanceInput) => Promise<Result<RemittancePreview, FinancialError>>
   getById: (id: string) => Promise<Result<DocumentDetail, FinancialError>>
   // #568: comprovante-fonte (bytes base64 + mimeType). Busca lazy (só quando há anexo). CA4: via server-fn.
   getSourceFile: (id: string) => Promise<Result<DocumentSourceFile, FinancialError>>
@@ -89,6 +97,7 @@ export const createFinancialRepository = (
     listDocumentsFn: ListFn
     listPayableTitlesFn: ListTitlesFn
     payableCountsFn: PayableCountsFn
+    previewRemittanceFn: PreviewRemittanceFn
     getDocumentFn: GetFn
     getDocumentSourceFileFn: SourceFileFn
     getDocumentTimelineFn: TimelineFn
@@ -114,6 +123,10 @@ export const createFinancialRepository = (
   },
   getPayableCounts: async (input) => {
     const res = await deps.payableCountsFn({ data: input })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  previewRemittance: async (input) => {
+    const res = await deps.previewRemittanceFn({ data: input })
     return res.ok ? ok(res.data) : err(res.error)
   },
   getById: async (id) => {

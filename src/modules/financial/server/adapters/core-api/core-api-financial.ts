@@ -16,6 +16,11 @@ import type {
   PayableCounts,
   RecentPayment,
 } from '#modules/financial/server/domain/document.io.ts'
+import type {
+  PreviewRemittanceInput,
+  RemittancePreview,
+} from '#modules/financial/server/domain/remittance.io.ts'
+import { previewToModel } from './remittance.mappers.ts'
 import {
   detailToModel,
   listToModel,
@@ -121,6 +126,21 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
       const r = await resultFetch<unknown>(`${baseUrl}/dashboard/no-contract-suppliers`, { token })
       if (isErr(r)) return err(mapHttpError(r.error))
       return dashboardNoContractSuppliersToModel(r.value)
+    },
+    // VAN (core-api#728): PRÉ-VOO do lote. Custom method AIP-136 — o literal `:preview` faz parte do path
+    // (não é query param) e por isso NÃO é encodado. Leitura pura: apesar do POST, não consome NSA, não
+    // prende título e não toca no bucket da VAN. O POST existe porque a seleção (até 200 ids) vai no corpo.
+    previewRemittance: async (
+      input: PreviewRemittanceInput,
+      token,
+    ): Promise<Result<RemittancePreview, FinancialError>> => {
+      const r = await resultFetch<unknown>(`${baseUrl}/remittances:preview`, {
+        method: 'POST',
+        body: { documentIds: input.documentIds },
+        token,
+      })
+      if (isErr(r)) return err(mapHttpError(r.error))
+      return previewToModel(r.value)
     },
     getById: async (id, token) => {
       const r = await resultFetch<unknown>(`${docs}/${id}`, { token })

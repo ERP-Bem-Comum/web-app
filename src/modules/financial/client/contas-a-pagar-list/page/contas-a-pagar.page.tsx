@@ -18,6 +18,7 @@ import { useBulkStatus } from '../bulk-status.binding.ts'
 import { useBulkDelete } from '../bulk-delete.binding.ts'
 import { useIsolatedDueDate } from '../isolated-due-date.binding.ts'
 import { useBulkPay, type PayTarget } from '../bulk-pay.binding.ts'
+import { useRemittancePreview } from '../remittance-preview.binding.ts'
 import {
   STATUS_CHIPS,
   sumSelectedNetBRL,
@@ -28,6 +29,7 @@ import {
   deriveTitleActionTargets,
   type ListState,
 } from '../contas-a-pagar.view-model.ts'
+import { deriveRemittanceSelection, toPreviewView } from '../remittance-preview.view-model.ts'
 import { DocumentGrid } from '../components/document-grid.component.tsx'
 import { AddFilterButton, ActiveFiltersRow } from '../components/document-filters.component.tsx'
 import { SavedViewsMenu } from '../components/saved-views-menu.component.tsx'
@@ -37,6 +39,7 @@ import { DueDateModal } from '../components/due-date-modal.component.tsx'
 import { PaymentDateModal } from '../components/payment-date-modal.component.tsx'
 import { ExportDropdown } from '../components/export-dropdown.component.tsx'
 import { StatusActions } from '../components/status-actions.component.tsx'
+import { RemittancePreviewModal } from '../components/remittance-preview-modal.component.tsx'
 import {
   screen,
   filterBar,
@@ -166,6 +169,13 @@ export function ContasAPagarPage(): ReactNode {
   //    Excluir/Vencimento são transições do documento (Aprovar cascateia pai→filhos), agregadas por doc
   //    (dedup). A baixa (Marcar como pago) é por título, independente. Backend valida transição inválida. ──
   const titleTargets = deriveTitleActionTargets(rows, selected)
+
+  // VAN (core-api#728): PRÉ-VOO do lote. `deriveRemittanceSelection` dedup por documento e barra o que
+  // não está Aprovado ANTES da chamada — o core-api lê os documentos por id, sem exigir aprovação, e um
+  // Rascunho voltaria de lá como `ready`. Leitura pura: abrir a conferência não gera arquivo.
+  const remittanceSelection = deriveRemittanceSelection(rows, selected)
+  const remittance = useRemittancePreview()
+  const remittanceView = remittance.preview === null ? null : toPreviewView(remittance.preview, rows)
 
   // ── Mudar Status em massa: Aprovar (Aberto→Aprovado) · Voltar p/ edição (Aprovado→Aberto) ──
   const bulk = useBulkStatus(clearSelection)
@@ -399,6 +409,15 @@ export function ContasAPagarPage(): ReactNode {
         }}
       />
 
+      <RemittancePreviewModal
+        open={remittance.open}
+        running={remittance.running}
+        view={remittanceView}
+        errorTag={remittance.errorTag}
+        notApprovedCount={remittanceSelection.notApprovedCount}
+        onClose={remittance.close}
+      />
+
       <footer className={bottombar}>
         {selectedCount > 0 ? (
           <div className={selBar}>
@@ -426,6 +445,23 @@ export function ContasAPagarPage(): ReactNode {
               }}
             >
               {t('financial.list.dueDate.bulk')}
+            </button>
+            {/* VAN (core-api#728): conferir o lote antes de gerar. Só Aprovado é candidato; sem nenhum,
+                o botão fica desabilitado E diz por quê (um `disabled` mudo esconde o caminho da correção). */}
+            <button
+              type="button"
+              className={selClear}
+              disabled={remittanceSelection.documentIds.length === 0 || remittance.running}
+              title={
+                remittanceSelection.documentIds.length === 0
+                  ? t('financial.list.remittance.needApproved')
+                  : undefined
+              }
+              onClick={() => {
+                remittance.start(remittanceSelection.documentIds)
+              }}
+            >
+              {t('financial.list.remittance.check')}
             </button>
             <StatusActions
               canApprove={titleTargets.approve.length > 0}

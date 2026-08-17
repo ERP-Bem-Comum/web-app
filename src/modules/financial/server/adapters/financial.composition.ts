@@ -24,6 +24,7 @@ import {
   createCancelDocument,
   createRegisterManualPayment,
   createGetRecentPayments,
+  createPreviewRemittance,
 } from '#modules/financial/server/application/financial.use-cases.ts'
 import { createGetDashboardStatistics } from '#modules/financial/server/application/dashboard.use-cases.ts'
 
@@ -50,6 +51,8 @@ const build = () => {
     cancelDocument: createCancelDocument({ client }),
     registerManualPayment: createRegisterManualPayment({ client }),
     getRecentPayments: createGetRecentPayments({ client }),
+    // VAN (core-api#728): pré-voo do lote da remessa CNAB 240. Leitura pura — não gera arquivo.
+    previewRemittance: createPreviewRemittance({ client }),
     // Dashboard (specs/096): de-interim FASEADO. P1 = cost-centers real (#241/#237); P2/P3 e as métricas
     // Receita/Maior-Financiador (sem endpoint) seguem interinas dentro da fonte real. Composição pura intacta.
     getDashboardStatistics: createGetDashboardStatistics({
