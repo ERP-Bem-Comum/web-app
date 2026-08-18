@@ -173,6 +173,22 @@ describe('toPreviewView — desmarcar atualiza o totalizador', () => {
   })
 })
 
+describe('toPreviewView — não-aprovado nem aparece', () => {
+  it('título fora de Aprovado é OMITIDO da conferência (não vira linha impedida)', () => {
+    const aprovado = row('p-ok', 'Aprovado', { documentId: 'd-ok' })
+    const aberto = row('p-aberto', 'Aberto', { documentId: 'd-aberto' })
+    const pago = row('p-pago', 'Pago', { documentId: 'd-pago' })
+    const view = toPreviewView(
+      preview([{ documentId: 'd-ok', status: 'ready', route: 'pix', gaps: [], netValueCents: '100' }]),
+      [aprovado, aberto, pago],
+      NONE,
+    )
+    assert.equal(view.lines.length, 1)
+    assert.equal(view.lines[0]?.payableId, 'p-ok')
+    assert.equal(view.summary.titleCount, 1)
+  })
+})
+
 describe('toPreviewView — impedimentos do backend', () => {
   it('cada status vira um motivo distinto na linha', () => {
     const rows = [

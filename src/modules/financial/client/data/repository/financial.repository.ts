@@ -36,6 +36,8 @@ import type { FinancialError, FnResult } from '#modules/financial/client/data/re
 type ListFn = (opts: { data: ListDocumentsInput }) => Promise<FnResult<DocumentListResponse>>
 type ListTitlesFn = (opts: { data: ListPayableTitlesInput }) => Promise<FnResult<PayableTitleListResponse>>
 type PayableCountsFn = (opts: { data: PayableCountsInput }) => Promise<FnResult<PayableCounts>>
+// specs/101: conjunto COMPLETO do filtro (o BFF varre as páginas). Mesmo input da listagem paginada.
+type ListAllTitlesFn = (opts: { data: ListPayableTitlesInput }) => Promise<FnResult<PayableTitleListResponse>>
 // VAN (core-api#728): pré-voo do lote. POST porque a seleção vai no corpo — não porque escreva algo.
 type PreviewRemittanceFn = (opts: { data: PreviewRemittanceInput }) => Promise<FnResult<RemittancePreview>>
 type GetFn = (opts: { data: { id: string } }) => Promise<FnResult<DocumentDetail>>
@@ -62,6 +64,10 @@ export type FinancialRepository = Readonly<{
   list: (input: ListDocumentsInput) => Promise<Result<DocumentListResponse, FinancialError>>
   // #201: listagem por título (pai + filhos).
   listPayableTitles: (
+    input: ListPayableTitlesInput,
+  ) => Promise<Result<PayableTitleListResponse, FinancialError>>
+  // specs/101: TODOS os títulos do filtro — busca, seleção e remessa não podem enxergar só a página.
+  listAllPayableTitles: (
     input: ListPayableTitlesInput,
   ) => Promise<Result<PayableTitleListResponse, FinancialError>>
   // #536: contagem agregada por status (chips do grid).
@@ -97,6 +103,7 @@ export const createFinancialRepository = (
     listDocumentsFn: ListFn
     listPayableTitlesFn: ListTitlesFn
     payableCountsFn: PayableCountsFn
+    listAllPayableTitlesFn: ListAllTitlesFn
     previewRemittanceFn: PreviewRemittanceFn
     getDocumentFn: GetFn
     getDocumentSourceFileFn: SourceFileFn
@@ -119,6 +126,10 @@ export const createFinancialRepository = (
   },
   listPayableTitles: async (input) => {
     const res = await deps.listPayableTitlesFn({ data: input })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  listAllPayableTitles: async (input) => {
+    const res = await deps.listAllPayableTitlesFn({ data: input })
     return res.ok ? ok(res.data) : err(res.error)
   },
   getPayableCounts: async (input) => {

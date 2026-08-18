@@ -135,10 +135,15 @@ export type PreviewView = Readonly<{
  */
 export const toPreviewView = (
   preview: RemittancePreview,
-  rows: readonly GridRow[],
+  selectedRows: readonly GridRow[],
   unchecked: ReadonlySet<string>,
 ): PreviewView => {
   const lineByDoc = new Map(preview.lines.map((l) => [l.documentId, l]))
+
+  // Não-aprovado NÃO APARECE. Ele não é candidato à remessa (premissa de negócio), e mostrá-lo como
+  // linha impedida misturaria duas coisas que pedem ações opostas: "corrija o cadastro" e "este título
+  // nem está no páreo". Quem informa que ficaram títulos de fora é o aviso do topo, com a contagem.
+  const rows = selectedRows.filter((r) => r.status === REMITTANCE_ELIGIBLE_STATUS)
 
   const lines: readonly PreviewLineView[] = rows.map((r) => {
     const line = lineByDoc.get(r.documentId)

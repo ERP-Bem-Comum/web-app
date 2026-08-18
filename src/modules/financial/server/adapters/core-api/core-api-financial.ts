@@ -89,6 +89,11 @@ const buildListQuery = (input: ListDocumentsInput): string => {
   return p.toString()
 }
 
+/** Teto do `pageSize` do core-api (`listPayablesQuerySchema`) — buscar tudo em menos idas. */
+const MAX_CORE_API_PAGE_SIZE = 100
+/** Teto de segurança do "carregar tudo" (specs/101): 20 páginas. Acima disso, resposta parcial. */
+const MAX_ALL_TITLES = 2000
+
 export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient => {
   const docs = `${baseUrl}/documents`
   return {
@@ -101,6 +106,46 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
       const r = await resultFetch<unknown>(`${baseUrl}/payable-titles?${buildTitlesQuery(input)}`, { token })
       if (isErr(r)) return err(mapHttpError(r.error))
       return payableTitlesToModel(r.value)
+    },
+    // specs/101: TODOS os títulos do filtro, sem paginação de tela — o BFF pagina o core-api e devolve o
+    // conjunto completo (§III: a fn entrega o caso de uso pronto; o client não compõe).
+    //
+    // Existe porque o `/payable-titles` não aceita busca textual (o `q` do #167 ficou no `/documents`, que
+    // o grid abandonou no #201) e porque a REMESSA não pode enxergar só a página: título que ficou na
+    // página 2 não pode sumir do lote em silêncio.
+    //
+    // Sequencial de propósito depois da 1ª página: em paralelo, N páginas viram N conexões simultâneas ao
+    // core-api por operador. O ganho não compensa o pico — o caminho definitivo é o filtro no backend.
+    listAllPayableTitles: async (input, token): Promise<Result<PayableTitleListResponse, FinancialError>> => {
+      const first = await resultFetch<unknown>(
+        `${baseUrl}/payable-titles?${buildTitlesQuery({ ...input, page: 1, pageSize: MAX_CORE_API_PAGE_SIZE })}`,
+        { token },
+      )
+      if (isErr(first)) return err(mapHttpError(first.error))
+      const head = payableTitlesToModel(first.value)
+      if (isErr(head)) return head
+
+      const { total } = head.value
+      const items = [...head.value.items]
+      // Teto duro: acima disto a tela deixaria de ser utilizável muito antes de o servidor reclamar, e a
+      // resposta parcial é preferível a uma requisição que não termina. O `total` real segue na resposta,
+      // então o client sabe que houve corte.
+      const pages = Math.min(
+        Math.ceil(total / MAX_CORE_API_PAGE_SIZE),
+        Math.ceil(MAX_ALL_TITLES / MAX_CORE_API_PAGE_SIZE),
+      )
+      for (let page = 2; page <= pages; page++) {
+        const r = await resultFetch<unknown>(
+          `${baseUrl}/payable-titles?${buildTitlesQuery({ ...input, page, pageSize: MAX_CORE_API_PAGE_SIZE })}`,
+          { token },
+        )
+        if (isErr(r)) return err(mapHttpError(r.error))
+        const next = payableTitlesToModel(r.value)
+        if (isErr(next)) return next
+        items.push(...next.value.items)
+      }
+
+      return ok({ items, page: 1, pageSize: items.length, total })
     },
     // #536: contagem agregada por status (chips) — 1 request.
     getPayableCounts: async (input, token): Promise<Result<PayableCounts, FinancialError>> => {

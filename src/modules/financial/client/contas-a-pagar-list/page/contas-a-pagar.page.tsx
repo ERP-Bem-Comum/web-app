@@ -27,6 +27,7 @@ import {
   filterRowsBySearch,
   filterRowsByTipo,
   deriveTitleActionTargets,
+  pageInfo,
   type ListState,
 } from '../contas-a-pagar.view-model.ts'
 import { deriveRemittanceSelection, toPreviewView } from '../remittance-preview.view-model.ts'
@@ -104,22 +105,31 @@ export function ContasAPagarPage(): ReactNode {
     onPrev,
     onNext,
     onPageSize,
+    page: currentPage,
+    onResetPage,
   } = useContasAPagar()
-  // Busca rápida do topo — filtra CLIENT-SIDE as linhas da página carregada (core-api#167 = server-side).
+  // Busca rápida do topo — client-side, mas agora sobre o conjunto COMPLETO do filtro (specs/101): no modo
+  // título o BFF traz todas as páginas. Volta a ser server-side quando o /payable-titles aceitar `q`.
   const [search, setSearch] = useState('')
   // #201: o grid (e toda a seleção) opera sobre o modo ativo — documento (atual) ou título (pai+filhos).
   // Em modo documento, `baseState === state` → comportamento idêntico (sem regressão).
   const baseState = viewMode === 'title' ? titleState : state
-  const page = baseState.tag === 'ready' ? baseState.page : null
   const allRows = baseState.tag === 'ready' ? baseState.rows : []
-  // Busca rápida + #201: filtro de Tipo por imposto (filho) — ambos CLIENT-SIDE na página carregada.
+  // specs/101: `rows` é o conjunto COMPLETO do filtro, já refinado pela busca e pelo Tipo=imposto (ambos
+  // client-side). No modo título o BFF traz todas as páginas, então a busca cruza tudo o que o filtro
+  // alcança — e a REMESSA enxerga o mesmo conjunto, em vez de só a página visível.
   const rows = filterRowsByTipo(filterRowsBySearch(allRows, search), filters.tipo)
+  // A paginação passou a ser recorte de EXIBIÇÃO sobre esse conjunto. Uma fonte só para grid, seleção,
+  // somatórios e Exportar — duas fontes foi o que fez a seleção de outra página sumir do lote.
+  const slicePage = pageInfo(currentPage, pageSize, rows.length)
+  const page = baseState.tag === 'ready' ? slicePage : null
+  const visibleRows = rows.slice((currentPage - 1) * pageSize, currentPage * pageSize)
   // Estado passado ao grid: linhas filtradas; se o filtro zerar os resultados, mostra o vazio.
   const gridState: ListState =
     baseState.tag === 'ready'
       ? rows.length === 0
         ? { tag: 'empty' }
-        : { tag: 'ready', rows, page: baseState.page }
+        : { tag: 'ready', rows: visibleRows, page: slicePage }
       : baseState
 
   // UI-state local (toggles), no padrão dos demais (selectedId/selected): menu "Adicionar filtro".
@@ -145,7 +155,7 @@ export function ContasAPagarPage(): ReactNode {
   // ── Seleção em massa (mock): checkbox por linha + "selecionar todos" + somatório do líquido ──
   const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set())
   const selectedCount = selected.size
-  const allSelected = rows.length > 0 && rows.every((r) => selected.has(r.id))
+  const allSelected = visibleRows.length > 0 && visibleRows.every((r) => selected.has(r.id))
   const selectedGross = sumSelectedGrossBRL(rows, selected)
   const selectedSum = sumSelectedNetBRL(rows, selected)
   const exportRows = selectedCount > 0 ? rows.filter((r) => selected.has(r.id)) : rows
@@ -158,7 +168,9 @@ export function ContasAPagarPage(): ReactNode {
     })
   }
   const toggleAll = (): void => {
-    setSelected((prev) => (rows.every((r) => prev.has(r.id)) ? new Set() : new Set(rows.map((r) => r.id))))
+    setSelected((prev) =>
+      visibleRows.every((r) => prev.has(r.id)) ? new Set() : new Set(visibleRows.map((r) => r.id)),
+    )
   }
   const clearSelection = (): void => {
     setSelected(new Set())
@@ -176,6 +188,7 @@ export function ContasAPagarPage(): ReactNode {
   // `deriveRemittanceSelection` dedup por documento e barra o que não está Aprovado ANTES da chamada: o
   // core-api lê os documentos por id, sem exigir aprovação (core-api#736), e um Rascunho voltaria apto.
   const remittanceSelection = deriveRemittanceSelection(exportRows)
+
   const remittance = useRemittancePreview()
   // A conferência lista UM POR TÍTULO selecionado (não por documento): um documento com retenção rende o
   // título do fornecedor e o do imposto, com favorecidos e valores diferentes.
@@ -234,6 +247,7 @@ export function ContasAPagarPage(): ReactNode {
             value={search}
             onChange={(e) => {
               setSearch(e.target.value)
+              onResetPage() // a busca recorta o conjunto: ficar na página 5 de 1 resultado mostraria vazio
             }}
             placeholder={t('financial.list.search')}
             aria-label={t('financial.list.search')}

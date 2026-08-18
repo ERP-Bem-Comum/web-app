@@ -38,6 +38,12 @@ export type FinancialClient = Readonly<{
     input: ListPayableTitlesInput,
     token: string,
   ) => Promise<Result<PayableTitleListResponse, FinancialError>>
+  // specs/101: TODOS os títulos do filtro (o BFF pagina o core-api). Sem `page`/`pageSize` de tela: a
+  // paginação passa a ser recorte de exibição, e busca/seleção/remessa enxergam o conjunto inteiro.
+  listAllPayableTitles: (
+    input: ListPayableTitlesInput,
+    token: string,
+  ) => Promise<Result<PayableTitleListResponse, FinancialError>>
   getById: (id: string, token: string) => Promise<Result<DocumentDetail, FinancialError>>
   // #568: comprovante-fonte (bytes base64 + mimeType) — o BFF busca COM o token; o browser nunca acessa.
   getSourceFile: (id: string, token: string) => Promise<Result<DocumentSourceFile, FinancialError>>
@@ -90,6 +96,11 @@ export const createListPayableTitles =
   (deps: Deps) =>
   (input: ListPayableTitlesInput, token: string): Promise<Result<PayableTitleListResponse, FinancialError>> =>
     deps.client.listPayableTitles(input, token)
+
+export const createListAllPayableTitles =
+  (deps: Deps) =>
+  (input: ListPayableTitlesInput, token: string): Promise<Result<PayableTitleListResponse, FinancialError>> =>
+    deps.client.listAllPayableTitles(input, token)
 
 export const createGetPayableCounts =
   (deps: Deps) =>

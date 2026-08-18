@@ -12,6 +12,7 @@ import { createGetDashboardRealized } from '#modules/financial/server/applicatio
 import {
   createListDocuments,
   createListPayableTitles,
+  createListAllPayableTitles,
   createGetPayableCounts,
   createGetDocument,
   createGetDocumentSourceFile,
@@ -39,6 +40,8 @@ const build = () => {
   return {
     listDocuments: createListDocuments({ client }),
     listPayableTitles: createListPayableTitles({ client }),
+    // specs/101: conjunto completo do filtro (busca/seleção/remessa não podem enxergar só a página).
+    listAllPayableTitles: createListAllPayableTitles({ client }),
     getPayableCounts: createGetPayableCounts({ client }),
     getDocument: createGetDocument({ client }),
     getDocumentSourceFile: createGetDocumentSourceFile({ client }),
