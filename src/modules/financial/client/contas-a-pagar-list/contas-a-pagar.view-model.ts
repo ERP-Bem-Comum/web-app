@@ -115,28 +115,37 @@ export const COLUMNS = [
 // `status: null` = "Todos" (sem filtro). `filterable: false` = estado que o backend ainda NÃO produz
 // (Transmitido/Recusado/Pago/Conciliado, Fatia 1 só tem 3) → chip desabilitado (chrome honesto).
 // Contador real só aparece no chip ATIVO (= total da consulta filtrada); a lista é paginada no servidor.
-export const STATUS_CHIPS = [
-  { key: 'todos', labelTag: 'financial.list.chip.todos', status: null, filterable: true },
-  { key: 'rascunho', labelTag: 'financial.list.chip.rascunho', status: 'Rascunho', filterable: true },
-  { key: 'aberto', labelTag: 'financial.list.chip.aberto', status: 'Aberto', filterable: true },
-  { key: 'aprovado', labelTag: 'financial.list.chip.aprovado', status: 'Aprovado', filterable: true },
-  {
-    key: 'transmitido',
-    labelTag: 'financial.list.chip.transmitido',
-    status: 'Transmitido',
-    filterable: false,
-  },
-  { key: 'recusado', labelTag: 'financial.list.chip.recusado', status: 'Recusado', filterable: false },
-  // Pago/Conciliado já operam nos títulos (baixa #224, conciliação) e o /payable-titles filtra por
-  // Paid/Reconciled → chips ativos. (Transmitido/Recusado seguem fora do enum do backend → desabilitados.)
-  { key: 'pago', labelTag: 'financial.list.chip.pago', status: 'Pago', filterable: true },
-  { key: 'conciliado', labelTag: 'financial.list.chip.conciliado', status: 'Conciliado', filterable: true },
-] as const satisfies readonly {
+/**
+ * `filterable` continua no tipo mesmo com todos os chips habilitados hoje (specs/101 S3 destravou os dois
+ * que faltavam): é o mecanismo de "chrome honesto" do grid — um status novo que o backend ainda não filtre
+ * nasce desabilitado em vez de mentir. Tipado como `boolean`, não como literal, para o guard sobreviver.
+ */
+export type StatusChip = Readonly<{
   key: string
   labelTag: string
   status: DocumentStatus | null
   filterable: boolean
-}[]
+}>
+
+export const STATUS_CHIPS: readonly StatusChip[] = [
+  { key: 'todos', labelTag: 'financial.list.chip.todos', status: null, filterable: true },
+  { key: 'rascunho', labelTag: 'financial.list.chip.rascunho', status: 'Rascunho', filterable: true },
+  { key: 'aberto', labelTag: 'financial.list.chip.aberto', status: 'Aberto', filterable: true },
+  { key: 'aprovado', labelTag: 'financial.list.chip.aprovado', status: 'Aprovado', filterable: true },
+  // specs/101 S3: DESTRAVADOS. A geração da remessa produz Transmitido de verdade, e o `/payable-titles`
+  // sempre aceitou `Transmitted`/`Refused` no filtro. Deixá-los desabilitados agora seria pior que antes:
+  // o operador teria títulos JÁ ENVIADOS ao banco sem conseguir enxergá-los — e retransmitir é pagar duas
+  // vezes (armadilha 4 do levantamento do CNAB).
+  {
+    key: 'transmitido',
+    labelTag: 'financial.list.chip.transmitido',
+    status: 'Transmitido',
+    filterable: true,
+  },
+  { key: 'recusado', labelTag: 'financial.list.chip.recusado', status: 'Recusado', filterable: true },
+  { key: 'pago', labelTag: 'financial.list.chip.pago', status: 'Pago', filterable: true },
+  { key: 'conciliado', labelTag: 'financial.list.chip.conciliado', status: 'Conciliado', filterable: true },
+]
 
 // ── Filtros avançados ("Adicionar filtro", estilo do mock) ────────────────────
 // Só as dimensões com filtro REAL no backend (server-side, combinam com os status chips): Vencimento

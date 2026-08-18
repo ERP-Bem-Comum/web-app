@@ -30,7 +30,20 @@ import type {
 import type {
   PreviewRemittanceInput,
   RemittancePreview,
+  GenerateRemittanceInput,
+  GeneratedRemittance,
 } from '#modules/financial/server/domain/remittance.io.ts'
+
+/**
+ * Falha da GERAÇÃO — tag + a mensagem PT-BR do core-api. Exceção deliberada ao `FinancialError` puro do
+ * resto do módulo: quatro recusas distintas da remessa chegam como o mesmo 422 (`sendDomainError` colapsa
+ * o slug, OWASP API8), e só o texto distingue "conta sem convênio" de "vencimentos misturados". A tag
+ * segue mandando no COMPORTAMENTO (§V); a mensagem só preenche o TEXTO. `null` quando não houver.
+ */
+export type GenerateRemittanceFailure = Readonly<{
+  error: FinancialError
+  message: string | null
+}>
 
 export type FinancialClient = Readonly<{
   list: (input: ListDocumentsInput, token: string) => Promise<Result<DocumentListResponse, FinancialError>>
@@ -83,6 +96,11 @@ export type FinancialClient = Readonly<{
     input: PreviewRemittanceInput,
     token: string,
   ) => Promise<Result<RemittancePreview, FinancialError>>
+  // ⚠️ VAN (core-api#728): GERA — grava em `saida/` e ENFILEIRA PAGAMENTO no banco. Consome NSA.
+  generateRemittance: (
+    input: GenerateRemittanceInput,
+    token: string,
+  ) => Promise<Result<GeneratedRemittance, GenerateRemittanceFailure>>
 }>
 
 type Deps = Readonly<{ client: FinancialClient }>
@@ -114,6 +132,17 @@ export const createPreviewRemittance =
   (deps: Deps) =>
   (input: PreviewRemittanceInput, token: string): Promise<Result<RemittancePreview, FinancialError>> =>
     deps.client.previewRemittance(input, token)
+
+// ⚠️ Gerar remessa MOVE DINHEIRO. Thin de propósito: nenhuma regra nossa se interpõe entre o comando do
+// operador e o core-api — quem decide o que entra no arquivo é o domínio de lá, e uma checagem a mais
+// aqui só criaria uma segunda verdade sobre um pagamento já enfileirado.
+export const createGenerateRemittance =
+  (deps: Deps) =>
+  (
+    input: GenerateRemittanceInput,
+    token: string,
+  ): Promise<Result<GeneratedRemittance, GenerateRemittanceFailure>> =>
+    deps.client.generateRemittance(input, token)
 
 export const createGetDocument =
   (deps: Deps) =>

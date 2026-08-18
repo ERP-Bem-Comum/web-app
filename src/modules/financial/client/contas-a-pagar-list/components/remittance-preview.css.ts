@@ -211,3 +211,94 @@ export const emptyState = style({
   fontSize: vars.font.size.sm,
   color: vars.color.institutional.ink3,
 })
+
+// ── Geração (S3) — ⚠️ move dinheiro ─────────────────────────────────────────────
+
+/** Barra de disparo: conta que paga + o botão. Separada do rodapé de "Fechar" por peso visual. */
+export const launchBar = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  marginBlockStart: vars.space.md,
+  paddingBlockStart: vars.space.md,
+  borderBlockStart: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+})
+
+export const launchLabel = style({
+  fontFamily: vars.font.family.heading,
+  fontSize: `calc(${vars.font.size['2xs']} + 0.0625rem)`,
+  fontWeight: vars.font.weight.bold,
+  textTransform: 'uppercase',
+  letterSpacing: '0.06em',
+  color: vars.color.institutional.ink5,
+})
+
+export const accountSelect = style({
+  minInlineSize: '18rem',
+  blockSize: '2.25rem',
+  paddingInline: vars.space.sm,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.md,
+  background: vars.color.surface.default,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+  color: vars.color.institutional.ink2,
+})
+
+/**
+ * O botão que MOVE DINHEIRO. Verde de confirmação — deliberadamente distinto do azul das ações neutras
+ * do módulo: o operador não deve confundi-lo com "salvar" nem com "exportar".
+ */
+export const launchBtn = style({
+  blockSize: '2.5rem',
+  paddingInline: vars.space.lg,
+  border: 'none',
+  borderRadius: vars.radius.md,
+  background: vars.color.status.activeText,
+  color: vars.color.surface.default,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.bold,
+  cursor: 'pointer',
+  ':hover': { filter: 'brightness(0.95)' },
+  ':disabled': { opacity: 0.5, cursor: 'not-allowed' },
+})
+
+/** Segundo passo: o texto muda de "gerar" para "confirmar", e o vermelho marca a irreversibilidade. */
+export const confirmLaunchBtn = style([launchBtn, { background: vars.color.status.terminatedText }])
+
+/** Aviso do armado: diz o que vai acontecer, em dinheiro, antes do clique que não volta. */
+export const launchWarn = style({
+  inlineSize: '100%',
+  padding: vars.space.sm,
+  borderRadius: vars.radius.sm,
+  background: vars.color.status.terminatedBg,
+  color: vars.color.status.terminatedText,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+  lineHeight: 1.5,
+})
+
+/** Comprovante: substitui a conferência depois de gerada. É o único registro que o operador tem. */
+export const receipt = style({
+  padding: vars.space.lg,
+  borderRadius: vars.radius.md,
+  background: vars.color.status.activeBg,
+  border: `${vars.borderWidth.thin} solid ${vars.color.status.activeText}`,
+})
+
+export const receiptTitle = style({
+  margin: 0,
+  marginBlockEnd: vars.space.md,
+  fontFamily: vars.font.family.heading,
+  fontSize: vars.font.size.md,
+  fontWeight: vars.font.weight.bold,
+  color: vars.color.status.activeText,
+})
+
+export const receiptGrid = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: vars.space.lg,
+})

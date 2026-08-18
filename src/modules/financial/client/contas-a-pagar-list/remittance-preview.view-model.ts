@@ -20,7 +20,10 @@ import type {
   PayoutField,
   PayoutGapReason,
   RemittancePreview,
+  GeneratedRemittance,
 } from '#modules/financial/client/data/model/remittance.model.ts'
+
+import type { ReconciliationAccount } from '#modules/financial/client/data/model/reconciliation.model.ts'
 
 import type { GridRow } from './contas-a-pagar.view-model.ts'
 
@@ -225,3 +228,38 @@ export const toPreviewView = (
     },
   }
 }
+
+// ── Geração (S3) ────────────────────────────────────────────────────────────────
+
+/**
+ * Comprovante PRONTO para a view: a formatação do dinheiro fica aqui, não no componente (boundary §I —
+ * `ui` não importa `data`, e `centsToBRL` mora lá).
+ */
+export type GeneratedRemittanceView = Readonly<{
+  nsa: string
+  fileName: string
+  lineCount: string
+  total: string
+}>
+
+export const toReceiptView = (g: GeneratedRemittance): GeneratedRemittanceView => ({
+  nsa: String(g.nsa),
+  fileName: g.fileName,
+  lineCount: String(g.lineCount),
+  total: centsToBRL(g.totalCents),
+})
+
+/** Conta-cedente como o seletor precisa: id + rótulo pronto. A view não formata dado de domínio. */
+export type ReconciliationAccountOption = Readonly<{ id: string; label: string }>
+
+/**
+ * Rótulo da conta que PAGA. Apelido primeiro (é como o operador a chama), banco/agência/conta em seguida
+ * para desempatar contas do mesmo apelido — errar a conta aqui é pagar pela conta errada.
+ */
+export const toAccountOptions = (
+  accounts: readonly ReconciliationAccount[],
+): readonly ReconciliationAccountOption[] =>
+  accounts.map((a) => ({
+    id: a.id,
+    label: `${a.alias !== '' ? a.alias : a.bankName} · ${a.bankCode} · Ag. ${a.branch} · C/C ${a.accountNumber}-${a.accountDv}`,
+  }))

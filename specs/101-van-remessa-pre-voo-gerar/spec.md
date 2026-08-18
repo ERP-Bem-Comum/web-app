@@ -1,6 +1,6 @@
 # 101 — VAN bancária no front: convênio, pré-voo e geração de remessa
 
-**Tamanho:** L (4 fatias) · **Status:** **S2 implementada**; S1/S3/S4 não iniciadas · **Data:** 2026-08-17
+**Tamanho:** L (4 fatias) · **Status:** **S2 e S3 implementadas**; S1 e S4 não iniciadas · **Data:** 2026-08-17
 **Backend:** core-api#728 (handoff, aberto 17/08) · entregue nos PRs #698–#724 na `dev`
 **ADRs do backend:** 0060 (transporte por bucket S3) · 0061 (contrato do bucket, 5 prefixos)
 
@@ -54,7 +54,7 @@ já o lê (`reconciliation.schema.ts:63`), mas **os formulários não o têm**.
 do dropdown de Exportar **não foi tocado** (segue desabilitado — a decisão do ponto de entrada da ação que
 move dinheiro fica com a S3). Testes: 12 puros (`node:test`) + 4 de DOM (Vitest).
 
-### S3 — Gerar remessa _(move dinheiro)_
+### S3 — Gerar remessa _(move dinheiro)_ ✅ IMPLEMENTADA
 
 `POST /api/v2/financial/remittances` · `remittance:generate` · body `{cedenteAccountId, documentIds}`.
 
@@ -66,6 +66,23 @@ move dinheiro fica com a S3). Testes: 12 puros (`node:test`) + 4 de DOM (Vitest)
 | 3.4 | Sucesso mostra `fileName`, `nsa`, `lineCount`, `totalCents` — é o comprovante que o operador tem   |
 | 3.5 | Invalida a listagem: os títulos viram **Transmitido**                                              |
 | 3.6 | **Destravar os chips `Transmitido` e `Recusado`** (`contas-a-pagar.view-model.ts:114-127`)         |
+
+**Entregue em:** `generate-remittance.service.fn.ts` (comando, não query) · `generateRemittance` no client
+do core-api, use-case e composição · barra de disparo no modal de conferência, com **seletor da conta que
+paga** e **confirmação em dois passos** nomeando quantidade e valor · comprovante com NSA/arquivo/títulos/
+total substituindo a conferência · chips `Transmitido`/`Recusado` destravados.
+
+**Decisões da S3:**
+
+- **A recusa carrega a mensagem PT-BR do core-api**, exceção deliberada ao `FinancialError` puro do módulo.
+  Quatro recusas distintas chegam como o mesmo 422 (o `sendDomainError` colapsa o slug — ver o achado
+  abaixo) e só o texto separa "conta sem convênio" de "vencimentos misturados". A **tag** segue mandando no
+  comportamento (§V); a **mensagem** só preenche o texto, e a UI não a interpreta.
+- **Sem retry automático** na mutation: repetir sozinha uma requisição que pode ter enfileirado o pagamento
+  é a receita para pagar duas vezes.
+- **Botão bloqueado com vencimentos divergentes** — o backend recusaria (`remittance-mixed-payment-dates`),
+  e descobrir isso depois do clique é tarde. Desmarcar o divergente destrava.
+- Sucesso **invalida a listagem**: os títulos viram Transmitido na hora, ou o operador reenvia o que já foi.
 
 **3.6 não é enfeite.** Os dois chips estão `filterable: false` com o comentário "o backend ainda não
 produz" — e o `/payable-titles` **já aceita** `Transmitted`/`Refused` no filtro (`schemas.ts:1133`).

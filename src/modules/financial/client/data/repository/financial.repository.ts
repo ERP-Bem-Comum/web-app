@@ -25,6 +25,9 @@ import type { RecentPayment } from '#modules/financial/client/data/model/recent-
 import type {
   PreviewRemittanceInput,
   RemittancePreview,
+  GenerateRemittanceInput,
+  GeneratedRemittance,
+  GenerateRemittanceFailure,
 } from '#modules/financial/client/data/model/remittance.model.ts'
 import type { DashboardStatistics } from '#modules/financial/client/data/model/dashboard-statistics.model.ts'
 import type {
@@ -40,6 +43,13 @@ type PayableCountsFn = (opts: { data: PayableCountsInput }) => Promise<FnResult<
 type ListAllTitlesFn = (opts: { data: ListPayableTitlesInput }) => Promise<FnResult<PayableTitleListResponse>>
 // VAN (core-api#728): pré-voo do lote. POST porque a seleção vai no corpo — não porque escreva algo.
 type PreviewRemittanceFn = (opts: { data: PreviewRemittanceInput }) => Promise<FnResult<RemittancePreview>>
+// ⚠️ Geração: o retorno do erro NÃO é o `FnResult` comum — traz a mensagem do core-api junto da tag.
+type GenerateRemittanceFn = (opts: {
+  data: GenerateRemittanceInput
+}) => Promise<
+  | Readonly<{ ok: true; data: GeneratedRemittance }>
+  | Readonly<{ ok: false; error: FinancialError; message: string | null }>
+>
 type GetFn = (opts: { data: { id: string } }) => Promise<FnResult<DocumentDetail>>
 type SourceFileFn = (opts: { data: { id: string } }) => Promise<FnResult<DocumentSourceFile>>
 type TimelineFn = (opts: { data: { id: string } }) => Promise<FnResult<readonly DocumentTimelineEntry[]>>
@@ -74,6 +84,10 @@ export type FinancialRepository = Readonly<{
   getPayableCounts: (input: PayableCountsInput) => Promise<Result<PayableCounts, FinancialError>>
   // VAN (core-api#728): pré-voo do lote — o que sai e o que não sai, ANTES de gerar. Leitura pura.
   previewRemittance: (input: PreviewRemittanceInput) => Promise<Result<RemittancePreview, FinancialError>>
+  // ⚠️ VAN: GERA — enfileira pagamento no banco. Erro traz a mensagem PT-BR do core-api.
+  generateRemittance: (
+    input: GenerateRemittanceInput,
+  ) => Promise<Result<GeneratedRemittance, GenerateRemittanceFailure>>
   getById: (id: string) => Promise<Result<DocumentDetail, FinancialError>>
   // #568: comprovante-fonte (bytes base64 + mimeType). Busca lazy (só quando há anexo). CA4: via server-fn.
   getSourceFile: (id: string) => Promise<Result<DocumentSourceFile, FinancialError>>
@@ -105,6 +119,7 @@ export const createFinancialRepository = (
     payableCountsFn: PayableCountsFn
     listAllPayableTitlesFn: ListAllTitlesFn
     previewRemittanceFn: PreviewRemittanceFn
+    generateRemittanceFn: GenerateRemittanceFn
     getDocumentFn: GetFn
     getDocumentSourceFileFn: SourceFileFn
     getDocumentTimelineFn: TimelineFn
@@ -139,6 +154,10 @@ export const createFinancialRepository = (
   previewRemittance: async (input) => {
     const res = await deps.previewRemittanceFn({ data: input })
     return res.ok ? ok(res.data) : err(res.error)
+  },
+  generateRemittance: async (input) => {
+    const res = await deps.generateRemittanceFn({ data: input })
+    return res.ok ? ok(res.data) : err({ error: res.error, message: res.message })
   },
   getById: async (id) => {
     const res = await deps.getDocumentFn({ data: { id } })

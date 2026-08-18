@@ -30,7 +30,12 @@ import {
   pageInfo,
   type ListState,
 } from '../contas-a-pagar.view-model.ts'
-import { deriveRemittanceSelection, toPreviewView } from '../remittance-preview.view-model.ts'
+import {
+  deriveRemittanceSelection,
+  toPreviewView,
+  toAccountOptions,
+  toReceiptView,
+} from '../remittance-preview.view-model.ts'
 import { DocumentGrid } from '../components/document-grid.component.tsx'
 import { AddFilterButton, ActiveFiltersRow } from '../components/document-filters.component.tsx'
 import { SavedViewsMenu } from '../components/saved-views-menu.component.tsx'
@@ -436,6 +441,20 @@ export function ContasAPagarPage(): ReactNode {
         notApprovedCount={remittanceSelection.notApprovedCount}
         onToggle={remittance.toggle}
         onClose={remittance.close}
+        accounts={toAccountOptions(remittance.accounts)}
+        cedenteAccountId={remittance.cedenteAccountId}
+        onCedenteAccount={remittance.setCedenteAccountId}
+        confirming={remittance.confirming}
+        onArm={remittance.arm}
+        onDisarm={remittance.disarm}
+        generating={remittance.generating}
+        generated={remittance.generated === null ? null : toReceiptView(remittance.generated)}
+        generateErrorTag={remittance.generateErrorTag}
+        generateErrorMessage={remittance.generateErrorMessage}
+        onGenerate={() => {
+          // Vai só o que está MARCADO — dedup por documento, direto do ViewModel.
+          remittance.generate(remittanceView?.checkedDocumentIds ?? [])
+        }}
       />
 
       <footer className={bottombar}>

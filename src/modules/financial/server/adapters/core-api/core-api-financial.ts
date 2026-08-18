@@ -19,8 +19,12 @@ import type {
 import type {
   PreviewRemittanceInput,
   RemittancePreview,
+  GenerateRemittanceInput,
+  GeneratedRemittance,
 } from '#modules/financial/server/domain/remittance.io.ts'
-import { previewToModel } from './remittance.mappers.ts'
+import type { GenerateRemittanceFailure } from '#modules/financial/server/application/financial.use-cases.ts'
+import { previewToModel, generatedToModel } from './remittance.mappers.ts'
+import { parseErrorEnvelope } from '#shared/http/error-envelope.ts'
 import {
   detailToModel,
   listToModel,
@@ -186,6 +190,31 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
       })
       if (isErr(r)) return err(mapHttpError(r.error))
       return previewToModel(r.value)
+    },
+    // VAN (core-api#728): GERA a remessa. ⚠️ ÚNICA chamada do módulo que MOVE DINHEIRO — grava em `saida/`,
+    // e gravar ali é enfileirar pagamento no banco (ADR-0060). Consome NSA e prende os documentos.
+    //
+    // Diferente de todo o resto do módulo, o erro carrega a MENSAGEM do core-api junto da tag.
+    // O `sendDomainError` de lá (OWASP API8) colapsa o slug interno num `code` público de 5 valores: quatro
+    // recusas distintas — sem dados, forma não emitida, vencimentos misturados, conta sem convênio — chegam
+    // todas como 422. A tag genérica ("não foi possível processar") não diz ao operador o que fazer, e o
+    // texto PT-BR que o backend escreve diz. Ele é exibido como veio; a UI não o interpreta.
+    generateRemittance: async (
+      input: GenerateRemittanceInput,
+      token,
+    ): Promise<Result<GeneratedRemittance, GenerateRemittanceFailure>> => {
+      const r = await resultFetch<unknown>(`${baseUrl}/remittances`, {
+        method: 'POST',
+        body: { cedenteAccountId: input.cedenteAccountId, documentIds: input.documentIds },
+        token,
+      })
+      if (isErr(r)) {
+        const detail = r.error.kind === 'http' ? parseErrorEnvelope(r.error.body) : null
+        return err({ error: mapHttpError(r.error), message: detail?.error.message ?? null })
+      }
+      const model = generatedToModel(r.value)
+      if (isErr(model)) return err({ error: model.error, message: null })
+      return model
     },
     getById: async (id, token) => {
       const r = await resultFetch<unknown>(`${docs}/${id}`, { token })

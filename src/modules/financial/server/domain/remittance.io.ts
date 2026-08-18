@@ -73,3 +73,28 @@ export interface PreviewRemittanceInput {
 
 /** Teto de ids por chamada, imposto pelo core-api (`remittancePreviewBodySchema`). */
 export const REMITTANCE_PREVIEW_MAX_IDS = 200
+
+// ── Geração (specs/101 S3) ──────────────────────────────────────────────────────
+//
+// ⚠️ A única operação do módulo que MOVE DINHEIRO. Gerar grava em `saida/` no bucket da VAN, e gravar ali
+// É enfileirar pagamento no banco (ADR-0060 do core-api). Não existe "gerar para conferir" — quem confere
+// é o pré-voo. Consome NSA (número que não volta) e PRENDE os documentos.
+
+export interface GenerateRemittanceInput {
+  /** Conta-cedente que PAGA. Precisa ter convênio; sem ele o core-api recusa. */
+  cedenteAccountId: string
+  documentIds: readonly string[]
+}
+
+/**
+ * O comprovante do operador. Enquanto não houver tela de acompanhamento, `nsa` + `fileName` são o único
+ * registro de que a remessa saiu — por isso viajam inteiros até a UI.
+ */
+export interface GeneratedRemittance {
+  remittanceId: string
+  fileName: string
+  objectKey: string
+  nsa: number
+  totalCents: string
+  lineCount: number
+}

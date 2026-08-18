@@ -14,6 +14,10 @@ import type { ReactNode } from 'react'
 import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import type { PreviewLineView, PreviewView } from '../remittance-preview.view-model.ts'
+import type {
+  GeneratedRemittanceView,
+  ReconciliationAccountOption,
+} from '../remittance-preview.view-model.ts'
 
 import {
   confirmOverlay,
@@ -46,6 +50,15 @@ import {
   notice,
   errorBox,
   emptyState,
+  launchBar,
+  launchLabel,
+  accountSelect,
+  launchBtn,
+  confirmLaunchBtn,
+  launchWarn,
+  receipt,
+  receiptTitle,
+  receiptGrid,
 } from './remittance-preview.css.ts'
 
 const t = createTranslator(ptBR)
@@ -67,6 +80,19 @@ export type RemittancePreviewModalProps = Readonly<{
   notApprovedCount: number
   onToggle: (payableId: string) => void
   onClose: () => void
+
+  // ── Geração (S3) — ⚠️ enfileira pagamento no banco ────────────────────────────
+  accounts: readonly ReconciliationAccountOption[]
+  cedenteAccountId: string
+  onCedenteAccount: (id: string) => void
+  confirming: boolean
+  onArm: () => void
+  onDisarm: () => void
+  generating: boolean
+  generated: GeneratedRemittanceView | null
+  generateErrorTag: string | null
+  generateErrorMessage: string | null
+  onGenerate: () => void
 }>
 
 export function RemittancePreviewModal(props: RemittancePreviewModalProps): ReactNode {
@@ -92,7 +118,30 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
 
         {props.errorTag !== null ? <p className={errorBox}>{t(props.errorTag)}</p> : null}
 
-        {props.running ? (
+        {props.generated !== null ? (
+          <div className={receipt}>
+            <h3 className={receiptTitle}>{t('financial.remittance.generate.doneTitle')}</h3>
+            <p className={confirmText}>{t('financial.remittance.generate.doneBody')}</p>
+            <div className={receiptGrid}>
+              <span className={summaryItem}>
+                <span className={summaryLabel}>{t('financial.remittance.generate.nsa')}</span>
+                <span className={summaryValueStrong}>{props.generated.nsa}</span>
+              </span>
+              <span className={summaryItem}>
+                <span className={summaryLabel}>{t('financial.remittance.generate.fileName')}</span>
+                <span className={summaryValue}>{props.generated.fileName}</span>
+              </span>
+              <span className={summaryItem}>
+                <span className={summaryLabel}>{t('financial.remittance.generate.lineCount')}</span>
+                <span className={summaryValue}>{props.generated.lineCount}</span>
+              </span>
+              <span className={summaryItem}>
+                <span className={summaryLabel}>{t('financial.remittance.generate.total')}</span>
+                <span className={summaryValueStrong}>{props.generated.total}</span>
+              </span>
+            </div>
+          </div>
+        ) : props.running ? (
           <p className={emptyState}>{t('common.loading')}</p>
         ) : view === null ? null : (
           <>
@@ -177,6 +226,83 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
             )}
           </>
         )}
+
+        {props.generated === null && view !== null && !props.running ? (
+          <div className={launchBar}>
+            {props.generateErrorTag !== null ? (
+              // A MENSAGEM do core-api quando existe (é ela que distingue as recusas); a tag como reserva.
+              <p className={errorBox}>{props.generateErrorMessage ?? t(props.generateErrorTag)}</p>
+            ) : null}
+
+            {props.confirming ? (
+              <p className={launchWarn}>
+                {`${t('financial.remittance.generate.confirmPrefix')} ${String(view.summary.checkedCount)} ${t('financial.remittance.generate.confirmMiddle')} ${view.summary.remittanceTotal}. ${t('financial.remittance.generate.confirmSuffix')}`}
+              </p>
+            ) : null}
+
+            <span className={launchLabel}>{t('financial.remittance.generate.account')}</span>
+            <select
+              className={accountSelect}
+              value={props.cedenteAccountId}
+              disabled={props.generating || props.confirming}
+              aria-label={t('financial.remittance.generate.account')}
+              onChange={(e) => {
+                props.onCedenteAccount(e.target.value)
+              }}
+            >
+              <option value="">{t('financial.remittance.generate.accountPlaceholder')}</option>
+              {props.accounts.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.label}
+                </option>
+              ))}
+            </select>
+
+            {props.confirming ? (
+              <>
+                <button
+                  type="button"
+                  className={confirmCancelBtn}
+                  disabled={props.generating}
+                  onClick={props.onDisarm}
+                >
+                  {t('financial.remittance.generate.cancel')}
+                </button>
+                <button
+                  type="button"
+                  className={confirmLaunchBtn}
+                  disabled={props.generating}
+                  onClick={props.onGenerate}
+                >
+                  {props.generating ? t('common.loading') : t('financial.remittance.generate.confirmAction')}
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                className={launchBtn}
+                disabled={
+                  props.generating ||
+                  view.summary.checkedCount === 0 ||
+                  props.cedenteAccountId === '' ||
+                  view.summary.paymentDateMixed
+                }
+                title={
+                  view.summary.checkedCount === 0
+                    ? t('financial.remittance.generate.needChecked')
+                    : props.cedenteAccountId === ''
+                      ? t('financial.remittance.generate.needAccount')
+                      : view.summary.paymentDateMixed
+                        ? t('financial.remittance.generate.needSameDate')
+                        : undefined
+                }
+                onClick={props.onArm}
+              >
+                {t('financial.remittance.generate.action')}
+              </button>
+            )}
+          </div>
+        ) : null}
 
         <div className={confirmActions}>
           <button type="button" className={confirmCancelBtn} onClick={props.onClose}>

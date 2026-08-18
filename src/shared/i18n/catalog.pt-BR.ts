@@ -1986,6 +1986,29 @@ export const ptBR: Catalog = {
   'financial.remittance.preview.col.supplier': 'Fornecedor',
   'financial.remittance.preview.col.due': 'Vencimento',
   'financial.remittance.preview.col.net': 'Valor líquido',
+  // ── Geração da remessa (S3) — ⚠️ ENFILEIRA PAGAMENTO no banco ────────────────
+  // O texto do armado nomeia quantidade e valor de propósito: é a última tela antes de um passo que não
+  // volta, e "tem certeza?" não dá ao operador nada com que conferir.
+  'financial.remittance.generate.account': 'Conta que paga',
+  'financial.remittance.generate.accountPlaceholder': 'Selecione a conta bancária…',
+  'financial.remittance.generate.action': 'Gerar remessa',
+  'financial.remittance.generate.needChecked': 'Marque ao menos um título para gerar a remessa',
+  'financial.remittance.generate.needAccount': 'Selecione a conta bancária que vai pagar',
+  'financial.remittance.generate.needSameDate':
+    'A remessa é de um único dia — alinhe os vencimentos ou desmarque os divergentes',
+  'financial.remittance.generate.confirmPrefix': 'Você vai enviar ao banco',
+  'financial.remittance.generate.confirmMiddle': 'título(s), no total de',
+  'financial.remittance.generate.confirmSuffix':
+    'Ao confirmar, o arquivo entra na fila de pagamento do banco — esta ação não pode ser desfeita pelo sistema.',
+  'financial.remittance.generate.confirmAction': 'Confirmar e enviar ao banco',
+  'financial.remittance.generate.cancel': 'Cancelar',
+  'financial.remittance.generate.doneTitle': 'Remessa gerada',
+  'financial.remittance.generate.doneBody':
+    'O arquivo entrou na fila de pagamento do banco. Anote o número da remessa (NSA) — é por ele que o banco a identifica.',
+  'financial.remittance.generate.nsa': 'Nº da remessa (NSA)',
+  'financial.remittance.generate.fileName': 'Arquivo',
+  'financial.remittance.generate.lineCount': 'Títulos enviados',
+  'financial.remittance.generate.total': 'Total enviado',
   'financial.remittance.preview.field.pixKey': 'Chave PIX',
   'financial.remittance.preview.field.bankCode': 'Banco do favorecido',
   'financial.remittance.preview.field.agency': 'Agência do favorecido',

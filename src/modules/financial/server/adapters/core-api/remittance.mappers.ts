@@ -16,9 +16,10 @@ import type {
   RemittancePreview,
   RemittancePreviewLine,
   VanRoute,
+  GeneratedRemittance,
 } from '#modules/financial/server/domain/remittance.io.ts'
 
-import { CoreApiRemittancePreviewSchema } from './remittance.schema.ts'
+import { CoreApiRemittancePreviewSchema, CoreApiGeneratedRemittanceSchema } from './remittance.schema.ts'
 
 const LINE_STATUSES: ReadonlySet<string> = new Set<PreviewLineStatus>([
   'ready',
@@ -80,4 +81,10 @@ export const previewToModel = (raw: unknown): Result<RemittancePreview, Financia
     readyTotalCents: p.readyTotalCents,
     blockedTotalCents: p.blockedTotalCents,
   })
+}
+
+export const generatedToModel = (raw: unknown): Result<GeneratedRemittance, FinancialError> => {
+  const parsed = CoreApiGeneratedRemittanceSchema.safeParse(raw)
+  if (!parsed.success) return err('server')
+  return ok(parsed.data)
 }
