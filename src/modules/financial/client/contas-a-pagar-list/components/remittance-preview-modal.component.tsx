@@ -51,6 +51,8 @@ import {
   errorBox,
   emptyState,
   launchBar,
+  launchAlert,
+  launchError,
   launchLabel,
   accountSelect,
   launchBtn,
@@ -231,7 +233,13 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
           <div className={launchBar}>
             {props.generateErrorTag !== null ? (
               // A MENSAGEM do core-api quando existe (é ela que distingue as recusas); a tag como reserva.
-              <p className={errorBox}>{props.generateErrorMessage ?? t(props.generateErrorTag)}</p>
+              <p className={launchError}>{props.generateErrorMessage ?? t(props.generateErrorTag)}</p>
+            ) : null}
+
+            {/* Vencimentos diferentes BLOQUEIA a geração (a remessa é de um único dia): banner claro de
+                largura total, não só o valor âmbar no resumo — deixa explícito por que o "Gerar" está travado. */}
+            {view.summary.paymentDateMixed ? (
+              <p className={launchAlert}>{t('financial.remittance.generate.needSameDate')}</p>
             ) : null}
 
             {props.confirming ? (

@@ -212,6 +212,12 @@ export const emptyState = style({
   color: vars.color.institutional.ink3,
 })
 
+// Banners de bloqueio do rodapé — largura TOTAL (linha própria no flex do `launchBar`), pra não ficarem
+// espremidos ao lado da conta/botão (o que fazia a mensagem passar despercebida). `launchAlert` = âmbar
+// (validação a corrigir: vencimentos diferentes); `launchError` = vermelho (recusa do core-api).
+export const launchAlert = style([notice, { inlineSize: '100%', marginBlockStart: 0 }])
+export const launchError = style([errorBox, { inlineSize: '100%', marginBlockStart: 0 }])
+
 // ── Geração (S3) — ⚠️ move dinheiro ─────────────────────────────────────────────
 
 /** Barra de disparo: conta que paga + o botão. Separada do rodapé de "Fechar" por peso visual. */

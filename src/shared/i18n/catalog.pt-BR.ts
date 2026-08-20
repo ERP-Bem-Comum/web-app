@@ -1863,7 +1863,7 @@ export const ptBR: Catalog = {
   'financial.list.export.cnab': 'CNAB',
   'financial.list.export.cnabHint': 'Conferir remessa',
   'financial.list.export.cnabNeedApproved':
-    'Nenhum título Aprovado na seleção — só título aprovado entra em remessa',
+    'Selecione os títulos Aprovados que deseja pagar — só título aprovado entra em remessa',
   'financial.list.kbd': '⌘K',
   'financial.list.perPage': 'por página',
   // Seleção em massa (mock)
@@ -1995,7 +1995,7 @@ export const ptBR: Catalog = {
   'financial.remittance.generate.needChecked': 'Marque ao menos um título para gerar a remessa',
   'financial.remittance.generate.needAccount': 'Selecione a conta bancária que vai pagar',
   'financial.remittance.generate.needSameDate':
-    'A remessa é de um único dia — alinhe os vencimentos ou desmarque os divergentes',
+    'A seleção tem vencimentos diferentes. Uma remessa é de um único dia — filtre/gere por vencimento ou desmarque os divergentes.',
   'financial.remittance.generate.confirmPrefix': 'Você vai enviar ao banco',
   'financial.remittance.generate.confirmMiddle': 'título(s), no total de',
   'financial.remittance.generate.confirmSuffix':
