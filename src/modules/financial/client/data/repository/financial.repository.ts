@@ -28,6 +28,7 @@ import type {
   GenerateRemittanceInput,
   GeneratedRemittance,
   GenerateRemittanceFailure,
+  RemittanceFile,
 } from '#modules/financial/client/data/model/remittance.model.ts'
 import type { DashboardStatistics } from '#modules/financial/client/data/model/dashboard-statistics.model.ts'
 import type {
@@ -48,6 +49,14 @@ type GenerateRemittanceFn = (opts: {
   data: GenerateRemittanceInput
 }) => Promise<
   | Readonly<{ ok: true; data: GeneratedRemittance }>
+  | Readonly<{ ok: false; error: FinancialError; message: string | null }>
+>
+// specs/103: download do arquivo da remessa. Mesmo formato de erro da geração (tag + mensagem): os dois
+// motivos novos chegam colapsados do core-api, e só o texto PT-BR os distingue.
+type DownloadRemittanceFileFn = (opts: {
+  data: { remittanceId: string }
+}) => Promise<
+  | Readonly<{ ok: true; data: RemittanceFile }>
   | Readonly<{ ok: false; error: FinancialError; message: string | null }>
 >
 type GetFn = (opts: { data: { id: string } }) => Promise<FnResult<DocumentDetail>>
@@ -88,6 +97,8 @@ export type FinancialRepository = Readonly<{
   generateRemittance: (
     input: GenerateRemittanceInput,
   ) => Promise<Result<GeneratedRemittance, GenerateRemittanceFailure>>
+  // specs/103: cópia do arquivo para conferência. **Homologação apenas** — em produção a rota não existe.
+  downloadRemittanceFile: (remittanceId: string) => Promise<Result<RemittanceFile, GenerateRemittanceFailure>>
   getById: (id: string) => Promise<Result<DocumentDetail, FinancialError>>
   // #568: comprovante-fonte (bytes base64 + mimeType). Busca lazy (só quando há anexo). CA4: via server-fn.
   getSourceFile: (id: string) => Promise<Result<DocumentSourceFile, FinancialError>>
@@ -120,6 +131,7 @@ export const createFinancialRepository = (
     listAllPayableTitlesFn: ListAllTitlesFn
     previewRemittanceFn: PreviewRemittanceFn
     generateRemittanceFn: GenerateRemittanceFn
+    downloadRemittanceFileFn: DownloadRemittanceFileFn
     getDocumentFn: GetFn
     getDocumentSourceFileFn: SourceFileFn
     getDocumentTimelineFn: TimelineFn
@@ -157,6 +169,10 @@ export const createFinancialRepository = (
   },
   generateRemittance: async (input) => {
     const res = await deps.generateRemittanceFn({ data: input })
+    return res.ok ? ok(res.data) : err({ error: res.error, message: res.message })
+  },
+  downloadRemittanceFile: async (remittanceId) => {
+    const res = await deps.downloadRemittanceFileFn({ data: { remittanceId } })
     return res.ok ? ok(res.data) : err({ error: res.error, message: res.message })
   },
   getById: async (id) => {

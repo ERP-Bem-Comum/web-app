@@ -308,3 +308,37 @@ export const receiptGrid = style({
   flexWrap: 'wrap',
   gap: vars.space.lg,
 })
+
+// ── Download do arquivo (specs/103) — cópia de conferência, homologação apenas ──────────────────────
+//
+// Ação SECUNDÁRIA de propósito: o comprovante existe para informar que o pagamento saiu, e baixar o
+// arquivo é conferência de layout com o banco — não pode competir visualmente com o que já aconteceu.
+// Por isso contorno em vez de preenchimento, ao contrário do `launchBtn`, que dispara pagamento.
+export const receiptActions = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  gap: vars.space.md,
+  marginBlockStart: vars.space.lg,
+})
+
+export const downloadBtn = style({
+  padding: `${vars.space.sm} ${vars.space.lg}`,
+  borderRadius: vars.radius.md,
+  border: `${vars.borderWidth.thin} solid ${vars.color.status.activeText}`,
+  background: 'transparent',
+  color: vars.color.status.activeText,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+  fontWeight: vars.font.weight.bold,
+  cursor: 'pointer',
+  selectors: {
+    '&:disabled': { cursor: 'not-allowed', opacity: 0.55 },
+  },
+})
+
+/** Aviso de `falhas/`: o arquivo baixou, mas o envio ao banco NÃO completou. Âmbar, largura total. */
+export const downloadWarn = style([notice, { inlineSize: '100%', marginBlockStart: vars.space.md }])
+
+/** Recusa do download. Vermelho e de largura total — hash divergente não é detalhe de rodapé. */
+export const downloadError = style([errorBox, { inlineSize: '100%', marginBlockStart: vars.space.md }])

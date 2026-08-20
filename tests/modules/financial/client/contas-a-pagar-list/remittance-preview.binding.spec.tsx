@@ -18,7 +18,11 @@ import { financialRepository } from '#modules/financial/client/data/repository/f
 import { useRemittancePreview } from '#modules/financial/client/contas-a-pagar-list/remittance-preview.binding.ts'
 
 vi.mock('#modules/financial/client/data/repository/financial.repository.instance.ts', () => ({
-  financialRepository: { previewRemittance: vi.fn(), generateRemittance: vi.fn() },
+  financialRepository: {
+    previewRemittance: vi.fn(),
+    generateRemittance: vi.fn(),
+    downloadRemittanceFile: vi.fn(),
+  },
 }))
 vi.mock('#modules/financial/client/data/repository/reconciliation.repository.instance.ts', () => ({
   reconciliationRepository: { listAccounts: vi.fn().mockResolvedValue({ ok: false, error: 'server' }) },
@@ -26,6 +30,7 @@ vi.mock('#modules/financial/client/data/repository/reconciliation.repository.ins
 
 const mocked = vi.mocked(financialRepository.previewRemittance)
 const mockedGenerate = vi.mocked(financialRepository.generateRemittance)
+const mockedDownload = vi.mocked(financialRepository.downloadRemittanceFile)
 
 const PREVIEW = {
   lines: [{ documentId: 'doc-1', status: 'ready', route: 'pix', gaps: [], netValueCents: '25000' }],
@@ -43,6 +48,38 @@ const setup = () => {
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
   )
   return renderHook(() => useRemittancePreview(), { wrapper })
+}
+
+const RECEIPT = {
+  remittanceId: 'r1',
+  fileName: 'CB000123.REM',
+  objectKey: 'saida/CB000123.REM',
+  nsa: 123,
+  totalCents: '140775',
+  lineCount: 1,
+}
+
+/** Leva o binding até o estado "comprovante na tela" — é o único de onde se pode baixar. */
+const setupGenerated = async () => {
+  mocked.mockResolvedValue(ok(PREVIEW))
+  mockedGenerate.mockResolvedValue(ok(RECEIPT) as never)
+  const { result } = setup()
+  act(() => {
+    result.current.start(['doc-1'])
+  })
+  await waitFor(() => {
+    expect(result.current.preview).not.toBeNull()
+  })
+  act(() => {
+    result.current.setCedenteAccountId('acc-1')
+  })
+  act(() => {
+    result.current.generate(['doc-1'])
+  })
+  await waitFor(() => {
+    expect(result.current.generated).not.toBeNull()
+  })
+  return result
 }
 
 afterEach(() => {
@@ -202,5 +239,93 @@ describe('useRemittancePreview', () => {
     })
     expect(result.current.confirming).toBe(false)
     expect(mockedGenerate).not.toHaveBeenCalled()
+  })
+  // ── Download do arquivo (specs/103) — cópia de conferência, homologação apenas ──
+
+  it('sem comprovante na tela, baixar é no-op — não há remessa a que o arquivo pertença', () => {
+    const { result } = setup()
+    act(() => {
+      result.current.downloadFile()
+    })
+    expect(mockedDownload).not.toHaveBeenCalled()
+  })
+
+  it('baixa pelo id da remessa gerada e salva com o nome que o backend mandou', async () => {
+    const result = await setupGenerated()
+    mockedDownload.mockResolvedValue(
+      ok({ base64: btoa('CNAB'), fileName: 'CB000123.REM', objectKey: 'saida/CB000123.REM' }) as never,
+    )
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
+    // jsdom não implementa object URLs — sem isto o `createObjectURL` explode antes do que se testa.
+    const createUrl = vi.fn().mockReturnValue('blob:stub')
+    Object.defineProperty(URL, 'createObjectURL', { value: createUrl, configurable: true })
+    Object.defineProperty(URL, 'revokeObjectURL', { value: vi.fn(), configurable: true })
+
+    act(() => {
+      result.current.downloadFile()
+    })
+
+    await waitFor(() => {
+      expect(click).toHaveBeenCalledTimes(1)
+    })
+    expect(mockedDownload).toHaveBeenCalledWith('r1')
+    // O nome vem do core-api: é o que o banco espera, não um rótulo nosso.
+    expect(click.mock.instances[0]).toHaveProperty('download', 'CB000123.REM')
+    expect(result.current.downloadedFromFailures).toBe(false)
+    click.mockRestore()
+  })
+
+  it('⚠️ objeto vindo de `falhas/` avisa que o envio NÃO completou', async () => {
+    const result = await setupGenerated()
+    mockedDownload.mockResolvedValue(
+      ok({ base64: btoa('CNAB'), fileName: 'CB000123.REM', objectKey: 'falhas/CB000123.REM' }) as never,
+    )
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
+    Object.defineProperty(URL, 'createObjectURL', { value: vi.fn(() => 'blob:stub'), configurable: true })
+    Object.defineProperty(URL, 'revokeObjectURL', { value: vi.fn(), configurable: true })
+
+    act(() => {
+      result.current.downloadFile()
+    })
+
+    await waitFor(() => {
+      expect(result.current.downloadedFromFailures).toBe(true)
+    })
+  })
+
+  it('hash divergente chega com a MENSAGEM do core-api e nada é salvo', async () => {
+    const result = await setupGenerated()
+    mockedDownload.mockResolvedValue(
+      err({
+        error: 'server',
+        message: 'O arquivo encontrado não confere com a remessa emitida (hash divergente).',
+      }) as never,
+    )
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
+
+    act(() => {
+      result.current.downloadFile()
+    })
+
+    await waitFor(() => {
+      expect(result.current.downloadErrorMessage).toContain('hash divergente')
+    })
+    expect(result.current.downloadErrorTag).toBe('financial.error.server')
+    expect(click).not.toHaveBeenCalled()
+    click.mockRestore()
+  })
+
+  it('produção: 404 sem mensagem — a tag sozinha, para a UI dizer "só em homologação"', async () => {
+    const result = await setupGenerated()
+    mockedDownload.mockResolvedValue(err({ error: 'not-found', message: null }) as never)
+
+    act(() => {
+      result.current.downloadFile()
+    })
+
+    await waitFor(() => {
+      expect(result.current.downloadErrorTag).toBe('financial.error.not-found')
+    })
+    expect(result.current.downloadErrorMessage).toBeNull()
   })
 })

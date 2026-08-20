@@ -52,7 +52,40 @@ export type RemittancePreviewBinding = Readonly<{
   /** Mensagem PT-BR do core-api (texto). É ela que distingue as quatro recusas que chegam como 422. */
   generateErrorMessage: string | null
   generate: (documentIds: readonly string[]) => void
+
+  // ── Download do arquivo (specs/103) — HOMOLOGAÇÃO apenas ──────────────────────
+  downloading: boolean
+  /** Tag i18n da falha (comportamento) — §V. */
+  downloadErrorTag: string | null
+  /** Mensagem PT-BR do core-api. `null` em produção, onde a rota nem existe (404 do Fastify). */
+  downloadErrorMessage: string | null
+  /** O objeto veio de `falhas/` — **o envio ao banco NÃO completou**. */
+  downloadedFromFailures: boolean
+  /** Baixa o arquivo da remessa que acabou de ser gerada. No-op sem comprovante na tela. */
+  downloadFile: () => void
 }>
+
+// base64 (RPC) → Blob (browser). O tipo é `application/octet-stream` de propósito, o mesmo que o core-api
+// serve: com `text/plain` o navegador poderia normalizar a quebra de linha ao salvar, e **CNAB com
+// terminador trocado é arquivo recusado pelo banco**.
+const CNAB_MIME = 'application/octet-stream'
+const saveAs = (base64: string, fileName: string): void => {
+  const binary = atob(base64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i)
+  const url = URL.createObjectURL(new Blob([bytes], { type: CNAB_MIME }))
+  const a = document.createElement('a')
+  a.href = url
+  a.download = fileName
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+}
+
+// `falhas/` é o prefixo do agente para envio que NÃO completou (ADR-0060/0061 do core-api). Quem vai
+// comparar bytes com o banco precisa saber disso ANTES de tratar o arquivo como o que foi pago.
+const FAILURES_PREFIX = 'falhas/'
 
 export function useRemittancePreview(): RemittancePreviewBinding {
   const queryClient = useQueryClient()
@@ -97,6 +130,20 @@ export function useRemittancePreview(): RemittancePreviewBinding {
 
   const { mutate: mutateGenerate, reset: resetGenerate } = generateMut
 
+  // Download (specs/103) — LEITURA pura: serve o objeto que já está no bucket, não regera nada. Por isso,
+  // ao contrário da geração, repetir é inofensivo e não há razão para `retry: false`. Ainda assim não é
+  // `useQuery`: baixar é ato do operador, não efeito de montar a tela.
+  const downloadMut = useMutation({
+    mutationKey: ['financial', 'remittances', 'file'] as const,
+    mutationFn: (remittanceId: string) => financialRepository.downloadRemittanceFile(remittanceId),
+    onSuccess: (res) => {
+      if (!isOk(res)) return
+      saveAs(res.value.base64, res.value.fileName)
+    },
+  })
+
+  const { mutate: mutateDownload, reset: resetDownload } = downloadMut
+
   const start = useCallback(
     (documentIds: readonly string[]): void => {
       if (documentIds.length === 0) return
@@ -104,9 +151,10 @@ export function useRemittancePreview(): RemittancePreviewBinding {
       setUnchecked(new Set()) // nova conferência começa com tudo o que pode ir, marcado
       setConfirming(false)
       resetGenerate()
+      resetDownload()
       mutate(documentIds)
     },
-    [mutate, resetGenerate],
+    [mutate, resetGenerate, resetDownload],
   )
 
   const toggle = useCallback((payableId: string): void => {
@@ -123,11 +171,16 @@ export function useRemittancePreview(): RemittancePreviewBinding {
     setConfirming(false)
     reset() // não guarda pré-voo velho: reabrir com outra seleção não pode mostrar o resultado da anterior
     resetGenerate() // nem comprovante velho: ele é de um pagamento que já aconteceu
-  }, [reset, resetGenerate])
+    resetDownload() // nem erro de download da remessa anterior
+  }, [reset, resetGenerate, resetDownload])
 
   const result = previewMut.data
   const preview = result !== undefined && isOk(result) ? result.value : null
   const errorTag = result !== undefined && !isOk(result) ? financialErrorTag(result.error) : null
+
+  const dlResult = downloadMut.data
+  const dlFailure = dlResult !== undefined && !isOk(dlResult) ? dlResult.error : null
+  const dlObjectKey = dlResult !== undefined && isOk(dlResult) ? dlResult.value.objectKey : null
 
   const genResult = generateMut.data
   const generated = genResult !== undefined && isOk(genResult) ? genResult.value : null
@@ -160,6 +213,14 @@ export function useRemittancePreview(): RemittancePreviewBinding {
       if (documentIds.length === 0 || cedenteAccountId === '') return
       setConfirming(false)
       mutateGenerate(documentIds)
+    },
+    downloading: downloadMut.isPending,
+    downloadErrorTag: dlFailure === null ? null : financialErrorTag(dlFailure.error),
+    downloadErrorMessage: dlFailure?.message ?? null,
+    downloadedFromFailures: dlObjectKey?.startsWith(FAILURES_PREFIX) === true,
+    downloadFile: () => {
+      if (generated === null) return
+      mutateDownload(generated.remittanceId)
     },
   }
 }

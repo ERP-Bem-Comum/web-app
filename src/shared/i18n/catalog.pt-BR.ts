@@ -2009,6 +2009,16 @@ export const ptBR: Catalog = {
   'financial.remittance.generate.fileName': 'Arquivo',
   'financial.remittance.generate.lineCount': 'Títulos enviados',
   'financial.remittance.generate.total': 'Total enviado',
+  // Download do arquivo (specs/103) — cópia de conferência, homologação apenas.
+  'financial.remittance.download.action': 'Baixar arquivo',
+  'financial.remittance.download.running': 'Baixando…',
+  'financial.remittance.download.hint': 'Cópia do arquivo enviado, para conferir o layout com o banco',
+  // `falhas/`: o arquivo existe, mas o envio não completou. Dito ANTES de virar evidência.
+  'financial.remittance.download.fromFailures':
+    'Atenção: este arquivo está na pasta de falhas da VAN — o envio ao banco não foi concluído. Não o trate como o que o banco recebeu.',
+  // Produção: a rota não é registrada lá, e o 404 chega sem mensagem do core-api.
+  'financial.remittance.download.unavailable':
+    'O download do arquivo existe apenas em homologação. Em produção o arquivo é acessível só pela VAN.',
   'financial.remittance.preview.field.pixKey': 'Chave PIX',
   'financial.remittance.preview.field.bankCode': 'Banco do favorecido',
   'financial.remittance.preview.field.agency': 'Agência do favorecido',

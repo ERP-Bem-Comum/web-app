@@ -21,6 +21,7 @@ import type {
   RemittancePreview,
   GenerateRemittanceInput,
   GeneratedRemittance,
+  RemittanceFile,
 } from '#modules/financial/server/domain/remittance.io.ts'
 import type { GenerateRemittanceFailure } from '#modules/financial/server/application/financial.use-cases.ts'
 import { previewToModel, generatedToModel } from './remittance.mappers.ts'
@@ -215,6 +216,36 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
       const model = generatedToModel(r.value)
       if (isErr(model)) return err({ error: model.error, message: null })
       return model
+    },
+    // VAN (specs/103): baixa o arquivo QUE FOI AO BANCO. **Homologação apenas** — em produção o core-api
+    // nem registra a rota (404 por ausência, não 403), porque o arquivo carrega o cadastro bancário de
+    // todos os favorecidos do lote. Serve o objeto do bucket, nunca uma regeração.
+    //
+    // `x-van-object-key` vem pedido explicitamente: o PREFIXO é diagnóstico, não decoração — `falhas/`
+    // significa que o envio não completou, e quem for comparar bytes com o banco precisa saber disso antes.
+    //
+    // Erro com mensagem, como na geração: `remittance-file-not-found` (404) e `remittance-file-corrupted`
+    // (503) chegam colapsados pelo `sendDomainError`, e só o texto PT-BR distingue "não está no bucket" de
+    // "achei, mas não é o arquivo emitido" — que num arquivo de pagamento é a diferença que importa.
+    downloadRemittanceFile: async (
+      remittanceId,
+      token,
+    ): Promise<Result<RemittanceFile, GenerateRemittanceFailure>> => {
+      const r = await resultFetchBytes(`${baseUrl}/remittances/${remittanceId}/file`, {
+        token,
+        readHeaders: ['x-van-object-key'],
+      })
+      if (isErr(r)) {
+        const detail = r.error.kind === 'http' ? parseErrorEnvelope(r.error.body) : null
+        return err({ error: mapHttpError(r.error), message: detail?.error.message ?? null })
+      }
+      return ok({
+        base64: r.value.base64,
+        // Nome de reserva só se o core-api omitir o `content-disposition`: o arquivo precisa chegar ao
+        // disco com algum nome, e o do backend é o que o banco espera.
+        fileName: r.value.fileName ?? `remessa-${remittanceId}.rem`,
+        objectKey: r.value.headers['x-van-object-key'] ?? null,
+      })
     },
     getById: async (id, token) => {
       const r = await resultFetch<unknown>(`${docs}/${id}`, { token })

@@ -58,6 +58,10 @@ import {
   launchBtn,
   confirmLaunchBtn,
   launchWarn,
+  receiptActions,
+  downloadBtn,
+  downloadWarn,
+  downloadError,
   receipt,
   receiptTitle,
   receiptGrid,
@@ -95,6 +99,15 @@ export type RemittancePreviewModalProps = Readonly<{
   generateErrorTag: string | null
   generateErrorMessage: string | null
   onGenerate: () => void
+
+  // ── Download do arquivo (specs/103) — cópia de conferência, HOMOLOGAÇÃO apenas ──
+  downloading: boolean
+  downloadErrorTag: string | null
+  /** Mensagem PT-BR do core-api. `null` em produção, onde a rota nem existe. */
+  downloadErrorMessage: string | null
+  /** O objeto veio de `falhas/`: o envio ao banco NÃO completou. */
+  downloadedFromFailures: boolean
+  onDownload: () => void
 }>
 
 export function RemittancePreviewModal(props: RemittancePreviewModalProps): ReactNode {
@@ -142,6 +155,37 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
                 <span className={summaryValueStrong}>{props.generated.total}</span>
               </span>
             </div>
+
+            {/* Baixar o arquivo QUE FOI ao banco — para conferir layout. Nunca uma regeração: outro NSA e
+                outro carimbo de tempo não servem de evidência. Só existe em homologação; em produção a
+                rota não é registrada e o clique volta o recado de indisponível. */}
+            <div className={receiptActions}>
+              <button
+                type="button"
+                className={downloadBtn}
+                onClick={props.onDownload}
+                disabled={props.downloading}
+              >
+                {props.downloading
+                  ? t('financial.remittance.download.running')
+                  : t('financial.remittance.download.action')}
+              </button>
+              <span className={summaryLabel}>{t('financial.remittance.download.hint')}</span>
+            </div>
+
+            {/* `falhas/` — o arquivo veio, mas o envio NÃO completou. Precisa ser dito ANTES de alguém
+                comparar esses bytes com o que o banco recebeu. */}
+            {props.downloadedFromFailures ? (
+              <p className={downloadWarn}>{t('financial.remittance.download.fromFailures')}</p>
+            ) : null}
+
+            {props.downloadErrorTag !== null ? (
+              // A MENSAGEM do core-api quando existe (distingue "não está no bucket" de "hash divergente").
+              // Sem ela — o caso de produção, onde a rota nem é registrada — o recado é o de homologação.
+              <p className={downloadError}>
+                {props.downloadErrorMessage ?? t('financial.remittance.download.unavailable')}
+              </p>
+            ) : null}
           </div>
         ) : props.running ? (
           <p className={emptyState}>{t('common.loading')}</p>

@@ -98,3 +98,24 @@ export interface GeneratedRemittance {
   totalCents: string
   lineCount: number
 }
+
+// ── Download do arquivo (specs/103) — HOMOLOGAÇÃO apenas ────────────────────────
+//
+// O core-api serve o OBJETO DO BUCKET, nunca uma regeração: regerar consumiria outro NSA e mudaria o
+// carimbo de tempo, e arquivo parecido não é evidência de nada numa conferência de layout com o banco.
+// A rota NÃO é registrada em produção (404 por ausência) — o arquivo carrega o cadastro bancário de
+// todos os favorecidos do lote, e servir isso por HTTP em produção é exportação de dado de pagamento.
+
+/**
+ * O arquivo como cópia de conferência. `base64` porque a fronteira RPC é JSON (§III) — os bytes viram
+ * Blob no browser, e o token nunca sai do server (§IX).
+ */
+export interface RemittanceFile {
+  base64: string
+  fileName: string
+  /**
+   * Prefixo de onde o objeto veio (`x-van-object-key`), quando o core-api informa. **`falhas/` significa
+   * que o envio ao banco NÃO completou** — quem confere precisa saber disso antes de comparar bytes.
+   */
+  objectKey: string | null
+}

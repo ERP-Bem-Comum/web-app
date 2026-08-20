@@ -461,6 +461,11 @@ export function ContasAPagarPage(): ReactNode {
           // Vai só o que está MARCADO — dedup por documento, direto do ViewModel.
           remittance.generate(remittanceView?.checkedDocumentIds ?? [])
         }}
+        downloading={remittance.downloading}
+        downloadErrorTag={remittance.downloadErrorTag}
+        downloadErrorMessage={remittance.downloadErrorMessage}
+        downloadedFromFailures={remittance.downloadedFromFailures}
+        onDownload={remittance.downloadFile}
       />
 
       <footer className={bottombar}>
