@@ -46,13 +46,17 @@ export const gabaritoDanfseV2: Gabarito = {
         padrao: /EMITENTE[\s\S]*?(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}|\d{3}\.\d{3}\.\d{3}-\d{2})/i,
       },
     },
-    // Descrição do Serviço: bloco de texto livre da nota (entre o rótulo e a seção "Tributação").
+    // Descrição do Serviço: no modelo NOVO de Fortaleza, a linearização do pdf.js coloca o VALOR da
+    // descrição (ex.: "CONSULTORIA FINANCEIRA A EMPRESAS/…") na linha IMEDIATAMENTE ACIMA do rótulo
+    // "Descrição do Serviço" — e logo abaixo do rótulo vem a seção "TRIBUTAÇÃO MUNICIPAL (ISSQN)".
+    // A âncora antiga (rótulo → linha de baixo) capturava o bloco de tributação. Agora captura a linha
+    // que precede o rótulo.
     {
       nome: 'descricao',
       tipo: 'texto',
       estrategia: {
         mode: 'regex',
-        padrao: /Descri[çc][ãa]o\s*do\s*Servi[çc]o\s*\n([\s\S]*?)(?=\n[^\n]*Tributa[çc][ãa]o)/i,
+        padrao: /\n([^\n]+)\n\s*Descri[çc][ãa]o\s*do\s*Servi[çc]o/i,
       },
     },
 
