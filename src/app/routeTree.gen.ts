@@ -20,6 +20,7 @@ import { Route as ActivateRouteImport } from './../routes/activate'
 import { Route as AuthenticatedRouteRouteImport } from './../routes/_authenticated/route'
 import { Route as IndexRouteImport } from './../routes/index'
 import { Route as ShowcaseOrganismsRouteImport } from './../routes/showcase/organisms'
+import { Route as AuthForgotPasswordRouteImport } from './../routes/auth/forgot-password'
 import { Route as AuthenticatedPlanejamentoRouteImport } from './../routes/_authenticated/planejamento'
 import { Route as AuthenticatedDashboardRouteImport } from './../routes/_authenticated/dashboard'
 import { Route as AuthenticatedConsolidadoRouteImport } from './../routes/_authenticated/consolidado'
@@ -119,6 +120,11 @@ const IndexRoute = IndexRouteImport.update({
 const ShowcaseOrganismsRoute = ShowcaseOrganismsRouteImport.update({
   id: '/showcase/organisms',
   path: '/showcase/organisms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
+  id: '/auth/forgot-password',
+  path: '/auth/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedPlanejamentoRoute =
@@ -409,6 +415,7 @@ export interface FileRoutesByFullPath {
   '/consolidado': typeof AuthenticatedConsolidadoRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/planejamento': typeof AuthenticatedPlanejamentoRoute
+  '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/showcase/organisms': typeof ShowcaseOrganismsRoute
   '/contratos/$id': typeof AuthenticatedContratosIdRouteWithChildren
   '/contratos/criar': typeof AuthenticatedContratosCriarRoute
@@ -467,6 +474,7 @@ export interface FileRoutesByTo {
   '/consolidado': typeof AuthenticatedConsolidadoRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/planejamento': typeof AuthenticatedPlanejamentoRoute
+  '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/showcase/organisms': typeof ShowcaseOrganismsRoute
   '/contratos/$id': typeof AuthenticatedContratosIdRouteWithChildren
   '/contratos/criar': typeof AuthenticatedContratosCriarRoute
@@ -527,6 +535,7 @@ export interface FileRoutesById {
   '/_authenticated/consolidado': typeof AuthenticatedConsolidadoRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/planejamento': typeof AuthenticatedPlanejamentoRoute
+  '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/showcase/organisms': typeof ShowcaseOrganismsRoute
   '/_authenticated/contratos/$id': typeof AuthenticatedContratosIdRouteWithChildren
   '/_authenticated/contratos/criar': typeof AuthenticatedContratosCriarRoute
@@ -587,6 +596,7 @@ export interface FileRouteTypes {
     | '/consolidado'
     | '/dashboard'
     | '/planejamento'
+    | '/auth/forgot-password'
     | '/showcase/organisms'
     | '/contratos/$id'
     | '/contratos/criar'
@@ -645,6 +655,7 @@ export interface FileRouteTypes {
     | '/consolidado'
     | '/dashboard'
     | '/planejamento'
+    | '/auth/forgot-password'
     | '/showcase/organisms'
     | '/contratos/$id'
     | '/contratos/criar'
@@ -704,6 +715,7 @@ export interface FileRouteTypes {
     | '/_authenticated/consolidado'
     | '/_authenticated/dashboard'
     | '/_authenticated/planejamento'
+    | '/auth/forgot-password'
     | '/showcase/organisms'
     | '/_authenticated/contratos/$id'
     | '/_authenticated/contratos/criar'
@@ -761,6 +773,7 @@ export interface RootRouteChildren {
   RecuperarSenhaRoute: typeof RecuperarSenhaRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   VersionRoute: typeof VersionRoute
+  AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   ShowcaseOrganismsRoute: typeof ShowcaseOrganismsRoute
 }
 
@@ -841,6 +854,13 @@ declare module '@tanstack/react-router' {
       path: '/showcase/organisms'
       fullPath: '/showcase/organisms'
       preLoaderRoute: typeof ShowcaseOrganismsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/forgot-password': {
+      id: '/auth/forgot-password'
+      path: '/auth/forgot-password'
+      fullPath: '/auth/forgot-password'
+      preLoaderRoute: typeof AuthForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/planejamento': {
@@ -1355,6 +1375,7 @@ const rootRouteChildren: RootRouteChildren = {
   RecuperarSenhaRoute: RecuperarSenhaRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   VersionRoute: VersionRoute,
+  AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   ShowcaseOrganismsRoute: ShowcaseOrganismsRoute,
 }
 export const routeTree = rootRouteImport

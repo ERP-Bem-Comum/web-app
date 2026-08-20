@@ -18,10 +18,10 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import * as z from 'zod'
 
-const ForgotPasswordCompatSearch = z.object({ token: z.string().trim().optional() })
+const ForgotPasswordCompatSearchSchema = z.object({ token: z.string().trim().optional() })
 
 export const Route = createFileRoute('/auth/forgot-password')({
-  validateSearch: ForgotPasswordCompatSearch,
+  validateSearch: ForgotPasswordCompatSearchSchema,
   beforeLoad: ({ search }) => {
     const token = search.token?.trim()
     if (token !== undefined && token !== '') {
