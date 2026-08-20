@@ -22,7 +22,13 @@ import {
 
 const t = createTranslator(ptBR)
 
-export type ExportDropdownProps = Readonly<{ rows: readonly GridRow[] }>
+export type ExportDropdownProps = Readonly<{
+  rows: readonly GridRow[]
+  /** VAN (core-api#728): abre a conferência da remessa. Leitura pura — não gera arquivo nem paga nada. */
+  onCheckRemittance: () => void
+  /** Sem título APROVADO entre as linhas, não há remessa a conferir (premissa: só aprovado entra). */
+  remittanceDisabled: boolean
+}>
 
 const downloadCsv = (rows: readonly GridRow[]): void => {
   const blob = new Blob([buildDocumentsCsv(rows)], { type: 'text/csv;charset=utf-8;' })
@@ -41,7 +47,11 @@ const closeDetails = (e: MouseEvent<HTMLButtonElement>): void => {
   if (details) details.open = false
 }
 
-export function ExportDropdown({ rows }: ExportDropdownProps): ReactNode {
+export function ExportDropdown({
+  rows,
+  onCheckRemittance,
+  remittanceDisabled,
+}: ExportDropdownProps): ReactNode {
   return (
     <details className={wrapper}>
       <summary style={{ listStyle: 'none', cursor: 'pointer' }} aria-label={t('financial.list.export')}>
@@ -74,12 +84,18 @@ export function ExportDropdown({ rows }: ExportDropdownProps): ReactNode {
           <FileChartIcon />
           PDF
         </button>
-        {/* CNAB (remessa bancária) = gap de backend (transmissão CNAB 240) — core-api#58 (Fatia 3). */}
+        {/* CNAB → conferência da remessa da VAN (core-api#728). Diferente do CSV/PDF acima, que baixam
+            arquivo na hora: aqui NADA é baixado nem enviado — abre o pré-voo (leitura pura). A geração,
+            que enfileira pagamento no banco, é outra fatia e terá cerimônia própria. */}
         <button
           type="button"
-          className={`${menuItem} ${menuItemBorder} ${menuItemDisabled}`}
-          disabled
-          title={t('financial.list.export.cnabSoon')}
+          className={`${menuItem} ${menuItemBorder}${remittanceDisabled ? ` ${menuItemDisabled}` : ''}`}
+          disabled={remittanceDisabled}
+          title={remittanceDisabled ? t('financial.list.export.cnabNeedApproved') : undefined}
+          onClick={(e) => {
+            onCheckRemittance()
+            closeDetails(e)
+          }}
         >
           <FileChartIcon />
           <span className={itemCol}>

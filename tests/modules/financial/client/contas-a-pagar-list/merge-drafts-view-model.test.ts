@@ -33,6 +33,7 @@ const row = (id: string, status: GridRow['status']): GridRow => ({
   netCents: '1000',
   version: 0,
   status,
+  isRetentionChild: false,
 })
 
 const page = { page: 1, pageSize: 12, total: 1, rangeLabel: '1–1 de 1', hasPrev: false, hasNext: false }
