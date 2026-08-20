@@ -133,3 +133,29 @@ describe('readPdfLines — DANFSe v1.0 por gabarito', () => {
     assert.equal(r, null)
   })
 })
+
+// DANFSe v2.0 (Fortaleza, modelo NOVO): a linearização do pdf.js põe o VALOR da descrição na linha
+// IMEDIATAMENTE ACIMA do rótulo "Descrição do Serviço", e a seção "TRIBUTAÇÃO MUNICIPAL (ISSQN)" logo
+// ABAIXO do rótulo. A âncora antiga (rótulo → linha de baixo) capturava o bloco de tributação.
+const danfseV2Rows: readonly (readonly { str: string; x: number }[])[] = [
+  [{ str: 'DANFSe v2.0', x: 0 }],
+  [{ str: 'NÚMERO DA NFS-E', x: 0 }],
+  [{ str: '331 01/07/2026 01/07/2026', x: 0 }],
+  [
+    {
+      str: 'SERVIÇO PRESTADO Código de Tributação Código da NBS Local da Prestação/Sigla UF/País',
+      x: 0,
+    },
+  ],
+  [{ str: 'CONSULTORIA FINANCEIRA A EMPRESAS/CONSULTORIA FINANCEIRA A EMPRESAS', x: 0 }],
+  [{ str: 'Descrição do Serviço', x: 0 }],
+  [{ str: 'TRIBUTAÇÃO MUNICIPAL (ISSQN) Tipo de Tributação do ISSQN', x: 0 }],
+]
+
+describe('readPdfLines — DANFSe v2.0 (Fortaleza, modelo novo): descrição vem ACIMA do rótulo', () => {
+  it('captura a descrição real (a linha antes de "Descrição do Serviço"), não o bloco de tributação', () => {
+    const r = readPdfLines(groupLines(itemsFromRows(danfseV2Rows)))
+    assert.equal(r?.kind, 'NFS-e')
+    assert.equal(r?.description, 'CONSULTORIA FINANCEIRA A EMPRESAS/CONSULTORIA FINANCEIRA A EMPRESAS')
+  })
+})
