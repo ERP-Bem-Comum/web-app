@@ -38,6 +38,7 @@ const readyState: ListState = {
       netCents: '150000',
       version: 0,
       status: 'Aberto',
+      isRetentionChild: false,
     },
   ],
   page: { page: 1, pageSize: 12, total: 1, rangeLabel: '1–1 de 1', hasPrev: false, hasNext: false },
