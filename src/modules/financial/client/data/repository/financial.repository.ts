@@ -22,6 +22,13 @@ import type {
   DocumentSourceFile,
 } from '#modules/financial/client/data/model/document.model.ts'
 import type { RecentPayment } from '#modules/financial/client/data/model/recent-payment.model.ts'
+import type {
+  PreviewRemittanceInput,
+  RemittancePreview,
+  GenerateRemittanceInput,
+  GeneratedRemittance,
+  GenerateRemittanceFailure,
+} from '#modules/financial/client/data/model/remittance.model.ts'
 import type { DashboardStatistics } from '#modules/financial/client/data/model/dashboard-statistics.model.ts'
 import type {
   DashboardRealizedInput,
@@ -32,6 +39,17 @@ import type { FinancialError, FnResult } from '#modules/financial/client/data/re
 type ListFn = (opts: { data: ListDocumentsInput }) => Promise<FnResult<DocumentListResponse>>
 type ListTitlesFn = (opts: { data: ListPayableTitlesInput }) => Promise<FnResult<PayableTitleListResponse>>
 type PayableCountsFn = (opts: { data: PayableCountsInput }) => Promise<FnResult<PayableCounts>>
+// specs/101: conjunto COMPLETO do filtro (o BFF varre as páginas). Mesmo input da listagem paginada.
+type ListAllTitlesFn = (opts: { data: ListPayableTitlesInput }) => Promise<FnResult<PayableTitleListResponse>>
+// VAN (core-api#728): pré-voo do lote. POST porque a seleção vai no corpo — não porque escreva algo.
+type PreviewRemittanceFn = (opts: { data: PreviewRemittanceInput }) => Promise<FnResult<RemittancePreview>>
+// ⚠️ Geração: o retorno do erro NÃO é o `FnResult` comum — traz a mensagem do core-api junto da tag.
+type GenerateRemittanceFn = (opts: {
+  data: GenerateRemittanceInput
+}) => Promise<
+  | Readonly<{ ok: true; data: GeneratedRemittance }>
+  | Readonly<{ ok: false; error: FinancialError; message: string | null }>
+>
 type GetFn = (opts: { data: { id: string } }) => Promise<FnResult<DocumentDetail>>
 type SourceFileFn = (opts: { data: { id: string } }) => Promise<FnResult<DocumentSourceFile>>
 type TimelineFn = (opts: { data: { id: string } }) => Promise<FnResult<readonly DocumentTimelineEntry[]>>
@@ -58,8 +76,18 @@ export type FinancialRepository = Readonly<{
   listPayableTitles: (
     input: ListPayableTitlesInput,
   ) => Promise<Result<PayableTitleListResponse, FinancialError>>
+  // specs/101: TODOS os títulos do filtro — busca, seleção e remessa não podem enxergar só a página.
+  listAllPayableTitles: (
+    input: ListPayableTitlesInput,
+  ) => Promise<Result<PayableTitleListResponse, FinancialError>>
   // #536: contagem agregada por status (chips do grid).
   getPayableCounts: (input: PayableCountsInput) => Promise<Result<PayableCounts, FinancialError>>
+  // VAN (core-api#728): pré-voo do lote — o que sai e o que não sai, ANTES de gerar. Leitura pura.
+  previewRemittance: (input: PreviewRemittanceInput) => Promise<Result<RemittancePreview, FinancialError>>
+  // ⚠️ VAN: GERA — enfileira pagamento no banco. Erro traz a mensagem PT-BR do core-api.
+  generateRemittance: (
+    input: GenerateRemittanceInput,
+  ) => Promise<Result<GeneratedRemittance, GenerateRemittanceFailure>>
   getById: (id: string) => Promise<Result<DocumentDetail, FinancialError>>
   // #568: comprovante-fonte (bytes base64 + mimeType). Busca lazy (só quando há anexo). CA4: via server-fn.
   getSourceFile: (id: string) => Promise<Result<DocumentSourceFile, FinancialError>>
@@ -89,6 +117,9 @@ export const createFinancialRepository = (
     listDocumentsFn: ListFn
     listPayableTitlesFn: ListTitlesFn
     payableCountsFn: PayableCountsFn
+    listAllPayableTitlesFn: ListAllTitlesFn
+    previewRemittanceFn: PreviewRemittanceFn
+    generateRemittanceFn: GenerateRemittanceFn
     getDocumentFn: GetFn
     getDocumentSourceFileFn: SourceFileFn
     getDocumentTimelineFn: TimelineFn
@@ -112,9 +143,21 @@ export const createFinancialRepository = (
     const res = await deps.listPayableTitlesFn({ data: input })
     return res.ok ? ok(res.data) : err(res.error)
   },
+  listAllPayableTitles: async (input) => {
+    const res = await deps.listAllPayableTitlesFn({ data: input })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
   getPayableCounts: async (input) => {
     const res = await deps.payableCountsFn({ data: input })
     return res.ok ? ok(res.data) : err(res.error)
+  },
+  previewRemittance: async (input) => {
+    const res = await deps.previewRemittanceFn({ data: input })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  generateRemittance: async (input) => {
+    const res = await deps.generateRemittanceFn({ data: input })
+    return res.ok ? ok(res.data) : err({ error: res.error, message: res.message })
   },
   getById: async (id) => {
     const res = await deps.getDocumentFn({ data: { id } })

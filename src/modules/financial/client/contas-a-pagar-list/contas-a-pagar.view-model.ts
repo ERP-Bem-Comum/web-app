@@ -64,6 +64,10 @@ export type GridRow = Readonly<{
   netCents: string | null // líquido em centavos p/ o somatório da seleção (formatação fica fora)
   version: number // optimistic lock — p/ ações inline (Mudar Status em massa)
   status: DocumentStatus
+  // #201/#229: a linha é um título-FILHO de retenção (imposto). Distinto de "forma = Guia de Recolhimento",
+  // que um documento comum também pode ter. A remessa (specs/101) precisa da diferença: o filho de retenção
+  // não é pagável pela VAN — o pré-voo do core-api é por DOCUMENTO e emite o pagamento ao FORNECEDOR.
+  isRetentionChild: boolean
 }>
 
 /** Mascara CNPJ (14 alfanum. Serpro/2026) / CPF (11) p/ exibição; null se vazio, ou o original se tamanho ≠. */
@@ -111,28 +115,37 @@ export const COLUMNS = [
 // `status: null` = "Todos" (sem filtro). `filterable: false` = estado que o backend ainda NÃO produz
 // (Transmitido/Recusado/Pago/Conciliado, Fatia 1 só tem 3) → chip desabilitado (chrome honesto).
 // Contador real só aparece no chip ATIVO (= total da consulta filtrada); a lista é paginada no servidor.
-export const STATUS_CHIPS = [
-  { key: 'todos', labelTag: 'financial.list.chip.todos', status: null, filterable: true },
-  { key: 'rascunho', labelTag: 'financial.list.chip.rascunho', status: 'Rascunho', filterable: true },
-  { key: 'aberto', labelTag: 'financial.list.chip.aberto', status: 'Aberto', filterable: true },
-  { key: 'aprovado', labelTag: 'financial.list.chip.aprovado', status: 'Aprovado', filterable: true },
-  {
-    key: 'transmitido',
-    labelTag: 'financial.list.chip.transmitido',
-    status: 'Transmitido',
-    filterable: false,
-  },
-  { key: 'recusado', labelTag: 'financial.list.chip.recusado', status: 'Recusado', filterable: false },
-  // Pago/Conciliado já operam nos títulos (baixa #224, conciliação) e o /payable-titles filtra por
-  // Paid/Reconciled → chips ativos. (Transmitido/Recusado seguem fora do enum do backend → desabilitados.)
-  { key: 'pago', labelTag: 'financial.list.chip.pago', status: 'Pago', filterable: true },
-  { key: 'conciliado', labelTag: 'financial.list.chip.conciliado', status: 'Conciliado', filterable: true },
-] as const satisfies readonly {
+/**
+ * `filterable` continua no tipo mesmo com todos os chips habilitados hoje (specs/101 S3 destravou os dois
+ * que faltavam): é o mecanismo de "chrome honesto" do grid — um status novo que o backend ainda não filtre
+ * nasce desabilitado em vez de mentir. Tipado como `boolean`, não como literal, para o guard sobreviver.
+ */
+export type StatusChip = Readonly<{
   key: string
   labelTag: string
   status: DocumentStatus | null
   filterable: boolean
-}[]
+}>
+
+export const STATUS_CHIPS: readonly StatusChip[] = [
+  { key: 'todos', labelTag: 'financial.list.chip.todos', status: null, filterable: true },
+  { key: 'rascunho', labelTag: 'financial.list.chip.rascunho', status: 'Rascunho', filterable: true },
+  { key: 'aberto', labelTag: 'financial.list.chip.aberto', status: 'Aberto', filterable: true },
+  { key: 'aprovado', labelTag: 'financial.list.chip.aprovado', status: 'Aprovado', filterable: true },
+  // specs/101 S3: DESTRAVADOS. A geração da remessa produz Transmitido de verdade, e o `/payable-titles`
+  // sempre aceitou `Transmitted`/`Refused` no filtro. Deixá-los desabilitados agora seria pior que antes:
+  // o operador teria títulos JÁ ENVIADOS ao banco sem conseguir enxergá-los — e retransmitir é pagar duas
+  // vezes (armadilha 4 do levantamento do CNAB).
+  {
+    key: 'transmitido',
+    labelTag: 'financial.list.chip.transmitido',
+    status: 'Transmitido',
+    filterable: true,
+  },
+  { key: 'recusado', labelTag: 'financial.list.chip.recusado', status: 'Recusado', filterable: true },
+  { key: 'pago', labelTag: 'financial.list.chip.pago', status: 'Pago', filterable: true },
+  { key: 'conciliado', labelTag: 'financial.list.chip.conciliado', status: 'Conciliado', filterable: true },
+]
 
 // ── Filtros avançados ("Adicionar filtro", estilo do mock) ────────────────────
 // Só as dimensões com filtro REAL no backend (server-side, combinam com os status chips): Vencimento
@@ -282,6 +295,7 @@ const toRow = (
   due: it.dueDate !== null && it.dueDate !== '' ? formatDue(it.dueDate) : DASH,
   net: it.netValueCents !== null && it.netValueCents !== '' ? centsToBRL(it.netValueCents) : DASH,
   netCents: it.netValueCents,
+  isRetentionChild: false, // modo documento: a linha é o documento inteiro, nunca um filho de retenção
   version: it.version,
   status: it.status,
 })
@@ -335,9 +349,9 @@ export type TitleActionTargets = Readonly<{
   reopen: readonly StatusTarget[] // documentos com título Aprovado
   deletable: readonly StatusTarget[] // Rascunho (descarte) + Aberto (hard-delete) — ambos canceláveis (#166)
   draftCount: number // rascunhos "ignorados" — 0 desde #166 (rascunho agora É excluível)
-  // #270: vencimento por TÍTULO (Aberto), isolado — não propaga pai↔filhos. Por payable (sem dedup por doc).
+  // #270: vencimento por TÍTULO (Aberto ou Aprovado), isolado — por payable (sem dedup por documento).
   dueEditable: readonly IsolatedDueDateTarget[]
-  dueBlockedCount: number // títulos selecionados não-editáveis (não-Aberto) — aviso no modal
+  dueBlockedCount: number // selecionados fora de Aberto/Aprovado (ex.: Pago, Rascunho) — aviso no modal
 }>
 export const deriveTitleActionTargets = (
   rows: readonly GridRow[],
@@ -359,19 +373,25 @@ export const deriveTitleActionTargets = (
   // #166: rascunho (Draft) também é excluível (descarte — não tem títulos-filho). O core-api trata Draft
   // no MESMO DELETE /documents/:id (cancelDocument → cancelDraft). Antes o front bloqueava por engano.
   const rascunho = dedupByDoc(sel.filter((r) => r.status === 'Rascunho'))
-  // #270: vencimento é por TÍTULO isolado — NÃO dedup por documento; um alvo por payable Aberto selecionado.
-  const selAbertoRows = sel.filter((r) => r.status === 'Aberto')
+  // #270: vencimento é por TÍTULO isolado — NÃO dedup por documento; um alvo por payable selecionado.
+  //
+  // Aberto E APROVADO (VAN/specs/101): o backend sempre permitiu os dois
+  // (`update-payable-due-date.ts` — "vale em Open E Approved", mesma latitude do editMetadata #165) e
+  // era só o front que barrava. A restrição virou impeditivo real com a remessa: uma remessa é de UM
+  // dia só (`remittance-mixed-payment-dates`), então alinhar os vencimentos é pré-requisito para gerar
+  // — e é justamente em Aprovado que o título está pronto para entrar no lote.
+  const selDueEditableRows = sel.filter((r) => r.status === 'Aberto' || r.status === 'Aprovado')
   return {
     approve: aberto,
     reopen: dedupByDoc(sel.filter((r) => r.status === 'Aprovado')),
     deletable: [...rascunho, ...aberto],
     draftCount: 0, // #166: rascunho agora É excluível → nada "ignorado" no modal
-    dueEditable: selAbertoRows.map((r) => ({
+    dueEditable: selDueEditableRows.map((r) => ({
       documentId: r.documentId,
       payableId: r.id,
       version: r.version,
     })),
-    dueBlockedCount: sel.length - selAbertoRows.length,
+    dueBlockedCount: sel.length - selDueEditableRows.length,
   }
 }
 
@@ -716,6 +736,7 @@ const toTitleRow = (
     netCents,
     version: it.version, // #229: version do DOCUMENTO (optimistic lock) agora vem na linha
     status: it.status,
+    isRetentionChild: childRetention !== null,
   }
 }
 
