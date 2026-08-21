@@ -1941,8 +1941,12 @@ export const ptBR: Catalog = {
   'financial.list.filter.dim.contrato': 'Contrato',
   'financial.list.filter.dim.programa': 'Programa',
   'financial.list.dueDate.error': 'Não foi possível alterar o vencimento. Tente novamente.',
+  // Dois motivos, duas ações. Antes havia UM texto para qualquer falha — e ele mandava "atualizar a
+  // lista" mesmo quando o erro era do servidor, que é justamente o caso em que atualizar não resolve.
   'financial.list.dueDate.errorPartial':
-    'Alguns títulos não tiveram o vencimento alterado (versão desatualizada ou status incompatível). Atualize a lista e tente de novo.',
+    '{n} título(s) não tiveram o vencimento alterado: a lista está desatualizada. Atualize a página e refaça a seleção.',
+  'financial.list.dueDate.errorPartialServer':
+    '{n} título(s) não tiveram o vencimento alterado por falha temporária do servidor. Os demais foram alterados — clique em Aplicar de novo só para os que faltaram.',
   'financial.list.delete.action': 'Excluir',
   'financial.list.delete.actionHint': 'apaga o documento definitivamente',
   'financial.list.delete.needOpen': 'Só documentos em Rascunho ou Aberto podem ser excluídos.',
