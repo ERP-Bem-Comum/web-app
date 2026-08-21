@@ -457,7 +457,13 @@ export function ContasAPagarPage(): ReactNode {
         onArm={remittance.arm}
         onDisarm={remittance.disarm}
         generating={remittance.generating}
-        generated={remittance.generated === null ? null : toReceiptView(remittance.generated)}
+        generated={
+          remittance.generated === null
+            ? null
+            : // A data vem do PRÉ-VOO, não da resposta da geração: a remessa é de um único dia (vencimentos
+              // misturados travam o envio), então é o vencimento dos títulos que efetivamente foram.
+              toReceiptView(remittance.generated, remittanceView?.summary.paymentDate ?? '—')
+        }
         generateErrorTag={remittance.generateErrorTag}
         generateErrorMessage={remittance.generateErrorMessage}
         onGenerate={() => {

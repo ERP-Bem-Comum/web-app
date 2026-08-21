@@ -1,16 +1,17 @@
 /**
  * Borda do PRÉ-VOO da remessa (puro, node:test) — core-api#794/#804.
  *
- * O que se prova aqui são as DUAS POLÍTICAS de tolerância do schema, que são deliberadamente opostas:
+ * O que se prova aqui é a política de INTOLERÂNCIA do schema, que é deliberada e contrária ao resto do
+ * módulo (onde enums e campos derivados são drift-tolerantes):
  *
- *  - **`batches` ausente é tolerado** (`.catch([])`). O backend passou a repartir a seleção em lotes na
- *    #804; um ambiente ainda sem isso não pode derrubar a conferência inteira, e um painel omitido não
- *    afirma nada de errado sobre o arquivo.
  *  - **contador ausente NÃO é tolerado.** Um `readyCount` aceito como zero diria "nada a enviar" a quem
  *    tem título para pagar — o silêncio aqui é pior que a falha, e por isso vira `err('server')`.
+ *  - **`valueCents` (o valor DO TÍTULO, renomeado de `netValueCents`) não tem default.** Se o backend
+ *    regredir o nome, a tela precisa falhar alto em vez de exibir R$ 0,00 num comprovante de pagamento.
  *
- * E também que `valueCents` (o valor DO TÍTULO, renomeado de `netValueCents`) não tem default: se o
- * backend regredir o nome, a tela precisa falhar alto em vez de exibir R$ 0,00.
+ * E que campo DESCONHECIDO do backend passa sem ruído: o core-api#804 devolve `batches[]` (a composição
+ * dos lotes), que não lemos — a P.O. avaliou o painel em tela e concluiu que não acrescenta à
+ * conferência. Ignorar não pode custar a conferência inteira.
  */
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
@@ -29,15 +30,6 @@ const line = {
 
 const raw = (over: Record<string, unknown> = {}): unknown => ({
   lines: [line],
-  batches: [
-    {
-      launchForm: '41',
-      launchFormLabel: 'TED outra titularidade',
-      payeeBankCode: '341',
-      count: 1,
-      totalCents: '25000',
-    },
-  ],
   readyCount: 1,
   blockedCount: 0,
   outOfVanCount: 0,
@@ -48,45 +40,22 @@ const raw = (over: Record<string, unknown> = {}): unknown => ({
   ...over,
 })
 
-describe('previewToModel — composição dos lotes (#804)', () => {
-  it('passa os lotes RETO: o rótulo já vem em PT-BR do emissor, e o front não reagrupa', () => {
-    const r = previewToModel(raw())
-    assert.ok(isOk(r))
-    assert.deepEqual(r.value.batches, [
-      {
-        launchForm: '41',
-        launchFormLabel: 'TED outra titularidade',
-        payeeBankCode: '341',
-        count: 1,
-        totalCents: '25000',
-      },
-    ])
-  })
-
-  it('boleto sem banco de destino (Segmento J) chega como null, não como erro', () => {
+describe('previewToModel — o que se tolera', () => {
+  it('campo que não lemos (`batches` do #804) passa sem derrubar a conferência', () => {
     const r = previewToModel(
       raw({
         batches: [
           {
-            launchForm: '30',
-            launchFormLabel: 'Boleto do próprio banco',
-            payeeBankCode: null,
-            count: 2,
-            totalCents: '50000',
+            launchForm: '41',
+            launchFormLabel: 'TED outra titularidade',
+            payeeBankCode: '341',
+            count: 1,
+            totalCents: '25000',
           },
         ],
       }),
     )
     assert.ok(isOk(r))
-    assert.equal(r.value.batches[0]?.payeeBankCode, null)
-  })
-
-  it('backend SEM lotes não derruba a conferência — só não há painel a desenhar', () => {
-    const { batches: _omit, ...semLotes } = raw() as Record<string, unknown>
-    const r = previewToModel(semLotes)
-    assert.ok(isOk(r))
-    assert.deepEqual(r.value.batches, [])
-    // O resto da conferência continua inteiro: é isso que a tolerância protege.
     assert.equal(r.value.lines.length, 1)
     assert.equal(r.value.readyCount, 1)
   })

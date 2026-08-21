@@ -61,7 +61,6 @@ const preview = (
   notApprovedCount: 0,
   readyTotalCents: '0',
   blockedTotalCents: '0',
-  batches: [],
   ...over,
 })
 
