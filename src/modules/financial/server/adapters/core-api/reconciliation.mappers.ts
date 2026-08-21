@@ -258,6 +258,7 @@ const toCedenteAccount = (a: CoreApiCedenteAccount): CedenteAccount => ({
   // #722: o schema de borda já lia o campo; ele se perdia aqui, e por isso a tela nunca soube quais
   // contas geram remessa. `''` = não informado (o core-api sempre devolve string).
   convenio: a.convenio,
+  document: a.document,
 })
 
 export const cedenteAccountsToModel = (

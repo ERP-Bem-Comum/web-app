@@ -57,12 +57,17 @@ export function useReconciliationAccounts(): AccountsBinding {
   const [sort, setSort] = useState<SortKey>('pendencias')
   const [addOpen, setAddOpen] = useState(false)
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set())
-  const add = useAddAccount(bankNameByCode, () => {
+  const q = useQuery(accountsQueryOptions())
+  // O CNPJ da conta-cedente é o do CEDENTE — a organização dona da conta —, e é sempre o mesmo.
+  // Não existe entidade "organização" no core-api de onde puxá-lo, então a fonte honesta é o que já
+  // está cadastrado: qualquer conta existente carrega esse CNPJ. Sem contas (a primeira), fica vazio
+  // e o operador digita — não há o que inventar.
+  const orgDocument = q.data?.ok === true ? (q.data.value[0]?.document ?? '') : ''
+  const add = useAddAccount(bankNameByCode, orgDocument, () => {
     setAddOpen(false)
   })
   const close = useCloseAccount()
   const edit = useEditAccount(bankNameByCode, () => undefined)
-  const q = useQuery(accountsQueryOptions())
 
   const state: AccountsState = (() => {
     if (q.isLoading) return { tag: 'loading' }

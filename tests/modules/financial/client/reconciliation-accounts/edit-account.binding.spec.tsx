@@ -175,7 +175,10 @@ describe('useEditAccount — convênio preenchível uma vez', () => {
     expect(mockedEdit.mock.calls[0]?.[0]?.convenio).toBeUndefined()
   })
 
-  it('só dígitos e teto de 20 — é o contrato do core-api', () => {
+  // ⚠️ 6, não 20: o campo do header CNAB tem 6 posições (033-038) e o banco TRUNCA o excedente em
+  // silêncio — medido num arquivo real, `99999999` virou `Contrato: 999999` no laudo do validador.
+  // Como o convênio é preenchível uma vez, salvar com 8 travaria a conta para sempre.
+  it('só dígitos e teto de 6 — o campo do header CNAB tem 6 posições', () => {
     const { result } = setup()
     act(() => {
       result.current.open(ACCOUNT)
@@ -188,6 +191,6 @@ describe('useEditAccount — convênio preenchível uma vez', () => {
     act(() => {
       result.current.setConvenio('1'.repeat(30))
     })
-    expect(result.current.convenio).toHaveLength(20)
+    expect(result.current.convenio).toHaveLength(6)
   })
 })

@@ -1599,9 +1599,9 @@ export const ptBR: Catalog = {
   // #722: convênio junto ao banco. Opcional no cadastro (a conta concilia sem ele) e OBRIGATÓRIO para
   // gerar remessa — o hint diz isso para o campo em branco ser escolha, não esquecimento.
   'financial.recon.add.field.convenio': 'Convênio',
-  'financial.recon.add.placeholder.convenio': 'Somente números',
+  'financial.recon.add.placeholder.convenio': 'Até 6 dígitos',
   'financial.recon.add.hint.convenio':
-    'Opcional. Sem convênio a conta concilia normalmente, mas não gera remessa para o banco.',
+    'Opcional, até 6 dígitos. Sem convênio a conta concilia normalmente, mas não gera remessa para o banco.',
   'financial.recon.add.placeholder.document': '00.000.000/0000-00',
   'financial.recon.add.invalidBalance': 'Saldo de abertura inválido.',
   'financial.recon.add.invalidDate': 'Data do saldo inválida (use DD/MM/AAAA).',
@@ -2051,7 +2051,7 @@ export const ptBR: Catalog = {
   // Confirmação da geração — ⚠️ o passo que MOVE DINHEIRO. Uma frase só, com {total} e {n}
   // interpolados: montá-la por concatenação de pedaços deixava a ordem das palavras presa ao código.
   'financial.remittance.generate.confirm':
-    'Sua remessa tem o valor total de {total} e {n} título(s) selecionado(s). Após a confirmação o arquivo será transmitido ao banco. Essa ação não poderá ser desfeita.',
+    'Sua remessa tem o valor total de {total} e {n} título(s) selecionado(s), com pagamento em {data}. Após a confirmação o arquivo será transmitido ao banco. Essa ação não poderá ser desfeita.',
   'financial.remittance.generate.confirmAction': 'Confirmar e enviar ao banco',
   'financial.remittance.generate.cancel': 'Cancelar',
   'financial.remittance.generate.doneTitle': 'Remessa gerada',

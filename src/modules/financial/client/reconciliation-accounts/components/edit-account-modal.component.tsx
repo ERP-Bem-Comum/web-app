@@ -8,6 +8,7 @@ import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { WalletIcon } from '#shared/ui/icons/index.ts'
 
+import { CONVENIO_MAX_DIGITS } from '../reconciliation-accounts.view-model.ts'
 import * as s from '../page/reconciliation-accounts.css.ts'
 import { BANKS, OTHER_BANK_CODE, type AccountType } from '../reconciliation-accounts.view-model.ts'
 import type { EditAccountBinding } from '../edit-account.binding.ts'
@@ -170,6 +171,9 @@ export function EditAccountModal({ binding }: EditAccountModalProps) {
                 id="edit-convenio"
                 className={`${binding.convenioLocked ? s.inputReadOnly : s.input} ${s.inputMono}`}
                 inputMode="numeric"
+                // Trava também no DOM, não só no setter: colar 12 dígitos não deve encher o campo
+                // para depois "sumir" caracteres — o campo do header CNAB tem 6 posições.
+                maxLength={CONVENIO_MAX_DIGITS}
                 readOnly={binding.convenioLocked}
                 placeholder={t('financial.recon.add.placeholder.convenio')}
                 value={binding.convenio}
