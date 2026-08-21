@@ -266,7 +266,7 @@ describe('toPreviewView — a pendência nomeia o dado DAQUELA forma de pagament
     )
   })
 
-  it('Boleto aponta a linha digitável — fornecedor sem conta paga boleto normalmente', () => {
+  it('Boleto aponta o código de barras — fornecedor sem conta paga boleto normalmente', () => {
     assert.equal(
       blocked('billet', 'payment-detail')?.pendencyTag,
       'financial.remittance.preview.pendency.missingBarcode',
@@ -278,6 +278,27 @@ describe('toPreviewView — a pendência nomeia o dado DAQUELA forma de pagament
       blocked('tax-guide', 'payment-detail')?.pendencyTag,
       'financial.remittance.preview.pendency.missingBarcode',
     )
+  })
+
+  // ⚠️ O core-api recusa a LINHA DIGITÁVEL (47 dígitos) como `unmappable` — só o código de barras (44)
+  // entra no arquivo. Verificado contra a rota real: 47 → blocked/unmappable, 44 → ready.
+  it('boleto COM linha digitável não diz "sem linha digitável" — o operador preencheu', () => {
+    const tag = blocked('billet', 'payment-detail', 'unmappable')?.pendencyTag
+    assert.equal(tag, 'financial.remittance.preview.pendency.barcodeIsDigitableLine')
+    assert.notEqual(tag, 'financial.remittance.preview.pendency.missingBarcode')
+  })
+
+  it('código de barras em formato inválido é distinto de ausente', () => {
+    assert.equal(
+      blocked('billet', 'payment-detail', 'malformed')?.pendencyTag,
+      'financial.remittance.preview.pendency.barcodeMalformed',
+    )
+  })
+
+  it('⚠️ dígito divergente NÃO é cadastro incompleto — o rótulo não pede "completar"', () => {
+    const tag = blocked('transfer', 'payee-account-digit', 'check-digit-mismatch')?.pendencyTag
+    assert.equal(tag, 'financial.remittance.preview.pendency.checkDigit')
+    assert.notEqual(tag, 'financial.remittance.preview.pendency.missingBankData')
   })
 
   it('rota desconhecida cai no genérico — sem chutar onde o operador deve mexer', () => {

@@ -1977,7 +1977,17 @@ export const ptBR: Catalog = {
     'Dados bancários do favorecido incompletos — banco, agência e conta',
   'financial.remittance.preview.pendency.missingPixKey': 'Sem chave PIX no cadastro do favorecido',
   'financial.remittance.preview.pendency.missingBarcode':
-    'Sem linha digitável — informe o código de barras do documento',
+    'Sem código de barras — o campo do documento está vazio',
+  // ⚠️ O operador PREENCHEU. A linha digitável tem 47 dígitos e o arquivo grava o código de barras, de
+  // 44 — outros campos, noutra ordem. Dizer "sem linha digitável" a quem acabou de digitá-la é o pior
+  // recado possível; o que falta é a conversão, e ela ainda não existe no backend.
+  'financial.remittance.preview.pendency.barcodeIsDigitableLine':
+    'Foi informada a linha digitável (47 dígitos) — o arquivo exige o código de barras (44)',
+  'financial.remittance.preview.pendency.barcodeMalformed':
+    'Código de barras inválido — confira os 44 dígitos do documento',
+  // Cadastro COMPLETO; o que não fecha é o dígito. Não pede "completar" — pede conferir.
+  'financial.remittance.preview.pendency.checkDigit':
+    'Dígito da conta não confere — revise o dígito no cadastro do favorecido',
   'financial.remittance.preview.pendency.outOfVan': 'Forma de pagamento fora da VAN',
   'financial.remittance.preview.pendency.notFound': 'Título não encontrado',
   'financial.remittance.preview.pendency.notChecked': 'Não conferido',
