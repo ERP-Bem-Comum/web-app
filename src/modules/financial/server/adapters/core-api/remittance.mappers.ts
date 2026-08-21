@@ -26,6 +26,7 @@ const LINE_STATUSES: ReadonlySet<string> = new Set<PreviewLineStatus>([
   'blocked',
   'out-of-van',
   'not-found',
+  'not-approved',
 ])
 
 const VAN_ROUTES: ReadonlySet<string> = new Set<VanRoute>(['pix', 'transfer', 'billet', 'tax-guide'])
@@ -74,11 +75,12 @@ export const previewToModel = (raw: unknown): Result<RemittancePreview, Financia
   const p = parsed.data
 
   const lines: readonly RemittancePreviewLine[] = p.lines.map((l) => ({
+    payableId: l.payableId,
     documentId: l.documentId,
     status: mapStatus(l.status),
     route: mapRoute(l.route),
     gaps: mapGaps(l.gaps),
-    netValueCents: l.netValueCents,
+    valueCents: l.valueCents,
   }))
 
   return ok({
@@ -87,6 +89,7 @@ export const previewToModel = (raw: unknown): Result<RemittancePreview, Financia
     blockedCount: p.blockedCount,
     outOfVanCount: p.outOfVanCount,
     notFoundCount: p.notFoundCount,
+    notApprovedCount: p.notApprovedCount,
     readyTotalCents: p.readyTotalCents,
     blockedTotalCents: p.blockedTotalCents,
   })

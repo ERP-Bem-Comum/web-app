@@ -44,14 +44,22 @@ export interface PayoutGap {
  * - `out-of-van` — a forma de pagamento não é coberta pela VAN; **nenhum cadastro resolve**;
  * - `not-found` — o id selecionado não existe mais (excluído entre a seleção e a conferência).
  */
-export type PreviewLineStatus = 'ready' | 'blocked' | 'out-of-van' | 'not-found'
+export type PreviewLineStatus = 'ready' | 'blocked' | 'out-of-van' | 'not-found' | 'not-approved' // #736: falta APROVAR — distinto de `blocked`, que é falta de dado do cadastro
 
+/**
+ * UMA LINHA POR TÍTULO (core-api#794). A nota dá origem aos títulos, mas o ciclo de vida inteiro é do
+ * TÍTULO: forma, vencimento e status são dele — inclusive nas retenções, que são títulos a pagar como
+ * qualquer outro e podem ficar em aberto com o pai já pago.
+ */
 export interface RemittancePreviewLine {
-  documentId: string
+  payableId: string
+  /** A nota de origem. `null` em `not-found`: sem o título lido não há vínculo a declarar. */
+  documentId: string | null
   status: PreviewLineStatus
   route: VanRoute | null
   gaps: readonly PayoutGap[]
-  netValueCents: string
+  /** Valor DO TÍTULO — no filho de retenção não é o líquido da nota. */
+  valueCents: string
 }
 
 /**
@@ -64,13 +72,14 @@ export interface RemittancePreview {
   blockedCount: number
   outOfVanCount: number
   notFoundCount: number
+  notApprovedCount: number
   readyTotalCents: string
   blockedTotalCents: string
 }
 
-/** Entrada do pré-voo. O core-api aceita de 1 a 200 ids por chamada. */
+/** Entrada do pré-voo: TÍTULOS. O core-api aceita de 1 a 200 ids por chamada. */
 export interface PreviewRemittanceInput {
-  documentIds: readonly string[]
+  payableIds: readonly string[]
 }
 
 /** Teto de ids por chamada, imposto pelo core-api (`remittancePreviewBodySchema`). */
@@ -85,7 +94,8 @@ export const REMITTANCE_PREVIEW_MAX_IDS = 200
 export interface GenerateRemittanceInput {
   /** Conta-cedente que PAGA. Precisa ter convênio; sem ele o core-api recusa. */
   cedenteAccountId: string
-  documentIds: readonly string[]
+  /** TÍTULOS — mesma unidade do pré-voo e do grid: confere e gera sobre a mesma lista. */
+  payableIds: readonly string[]
 }
 
 /**

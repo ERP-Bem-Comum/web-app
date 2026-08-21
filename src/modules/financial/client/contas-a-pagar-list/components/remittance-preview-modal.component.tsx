@@ -47,6 +47,7 @@ import {
   checkbox,
   checkboxDisabled,
   pendencyLabel,
+  retentionBadge,
   notice,
   errorBox,
   emptyState,
@@ -132,6 +133,17 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
         ) : null}
 
         {props.errorTag !== null ? <p className={errorBox}>{t(props.errorTag)}</p> : null}
+
+        {/* Retenções marcadas: o pré-voo não as acusa (herdam forma e favorecido da nota), então o
+            aviso no topo é o que garante que o operador saiba ANTES de gerar. */}
+        {view !== null && view.summary.retentionCheckedCount > 0 ? (
+          <p className={notice}>
+            {t('financial.remittance.preview.retentionNotice').replace(
+              '{n}',
+              String(view.summary.retentionCheckedCount),
+            )}
+          </p>
+        ) : null}
 
         {props.generated !== null ? (
           <div className={receipt}>
@@ -259,6 +271,14 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
                     <span className={cell}>{l.paymentMethodTag === null ? DASH : t(l.paymentMethodTag)}</span>
                     <span className={cellDocStack}>
                       <span className={cellDoc}>{l.documentNumber}</span>
+                      {/* ⚠️ Selo de retenção. O imposto herda a forma e o favorecido da NOTA, então
+                          passa pela régua como apto e sairia por TED para o FORNECEDOR em vez de
+                          guia ao órgão arrecadador. Não bloqueamos — a modelagem da retenção será
+                          revista com a reforma tributária —, mas sem este selo o operador não tem
+                          como distinguir a linha do imposto para desmarcá-la. */}
+                      {l.isRetention ? (
+                        <span className={retentionBadge}>{t('financial.remittance.preview.retention')}</span>
+                      ) : null}
                       {l.pendencyTag !== null ? (
                         <span className={pendencyLabel}>{t(l.pendencyTag)}</span>
                       ) : null}
@@ -288,7 +308,9 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
 
             {props.confirming ? (
               <p className={launchWarn}>
-                {`${t('financial.remittance.generate.confirmPrefix')} ${String(view.summary.checkedCount)} ${t('financial.remittance.generate.confirmMiddle')} ${view.summary.remittanceTotal}. ${t('financial.remittance.generate.confirmSuffix')}`}
+                {t('financial.remittance.generate.confirm')
+                  .replace('{total}', view.summary.remittanceTotal)
+                  .replace('{n}', String(view.summary.checkedCount))}
               </p>
             ) : null}
 

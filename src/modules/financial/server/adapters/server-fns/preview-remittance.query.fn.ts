@@ -32,7 +32,7 @@ export const previewRemittanceFn = createServerFn({ method: 'POST' })
       // e o `min(1)` impede a chamada vazia que o operador dispararia sem querer.
       // `.readonly()` mantém a imutabilidade por padrão (§VII) atravessando a fronteira RPC: sem ele o
       // tipo inferido é `string[]` mutável e o repository (que fala em `readonly string[]`) não encaixa.
-      documentIds: z.array(z.uuid()).min(1).max(REMITTANCE_PREVIEW_MAX_IDS).readonly(),
+      payableIds: z.array(z.uuid()).min(1).max(REMITTANCE_PREVIEW_MAX_IDS).readonly(),
     }),
   )
   .handler(async ({ data }): Promise<PreviewRemittanceFnResult> => {
@@ -41,7 +41,7 @@ export const previewRemittanceFn = createServerFn({ method: 'POST' })
     const accessToken = await resolveAccessTokenFn()
     if (accessToken === null) return { ok: false, error: 'unauthorized' }
 
-    const r = await financialServer().previewRemittance({ documentIds: data.documentIds }, accessToken)
+    const r = await financialServer().previewRemittance({ payableIds: data.payableIds }, accessToken)
     if (isErr(r)) return { ok: false, error: r.error }
     return { ok: true, data: r.value }
   })

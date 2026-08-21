@@ -31,8 +31,8 @@ export type RemittancePreviewBinding = Readonly<{
    */
   unchecked: ReadonlySet<string>
   toggle: (payableId: string) => void
-  /** Abre a conferência e dispara o pré-voo dos documentos informados. */
-  start: (documentIds: readonly string[]) => void
+  /** Abre a conferência e dispara o pré-voo dos TÍTULOS informados. */
+  start: (payableIds: readonly string[]) => void
   close: () => void
 
   // ── Geração (S3) — ⚠️ enfileira pagamento no banco ────────────────────────────
@@ -51,7 +51,7 @@ export type RemittancePreviewBinding = Readonly<{
   generateErrorTag: string | null
   /** Mensagem PT-BR do core-api (texto). É ela que distingue as quatro recusas que chegam como 422. */
   generateErrorMessage: string | null
-  generate: (documentIds: readonly string[]) => void
+  generate: (payableIds: readonly string[]) => void
 
   // ── Download do arquivo (specs/103) — HOMOLOGAÇÃO apenas ──────────────────────
   downloading: boolean
@@ -106,7 +106,7 @@ export function useRemittancePreview(): RemittancePreviewBinding {
 
   const previewMut = useMutation({
     mutationKey: ['financial', 'remittances', 'preview'] as const,
-    mutationFn: (documentIds: readonly string[]) => financialRepository.previewRemittance({ documentIds }),
+    mutationFn: (payableIds: readonly string[]) => financialRepository.previewRemittance({ payableIds }),
   })
 
   const { mutate, reset } = previewMut
@@ -117,8 +117,8 @@ export function useRemittancePreview(): RemittancePreviewBinding {
   const generateMut = useMutation({
     mutationKey: ['financial', 'remittances', 'generate'] as const,
     retry: false,
-    mutationFn: (documentIds: readonly string[]) =>
-      financialRepository.generateRemittance({ cedenteAccountId, documentIds }),
+    mutationFn: (payableIds: readonly string[]) =>
+      financialRepository.generateRemittance({ cedenteAccountId, payableIds }),
     onSuccess: (res) => {
       if (!isOk(res)) return
       // Os títulos viraram Transmitido: a listagem e as contagens precisam refletir isso na hora, ou o
@@ -145,14 +145,14 @@ export function useRemittancePreview(): RemittancePreviewBinding {
   const { mutate: mutateDownload, reset: resetDownload } = downloadMut
 
   const start = useCallback(
-    (documentIds: readonly string[]): void => {
-      if (documentIds.length === 0) return
+    (payableIds: readonly string[]): void => {
+      if (payableIds.length === 0) return
       setOpen(true)
       setUnchecked(new Set()) // nova conferência começa com tudo o que pode ir, marcado
       setConfirming(false)
       resetGenerate()
       resetDownload()
-      mutate(documentIds)
+      mutate(payableIds)
     },
     [mutate, resetGenerate, resetDownload],
   )
@@ -209,10 +209,10 @@ export function useRemittancePreview(): RemittancePreviewBinding {
     generated,
     generateErrorTag: genFailure === null ? null : financialErrorTag(genFailure.error),
     generateErrorMessage: genFailure?.message ?? null,
-    generate: (documentIds) => {
-      if (documentIds.length === 0 || cedenteAccountId === '') return
+    generate: (payableIds) => {
+      if (payableIds.length === 0 || cedenteAccountId === '') return
       setConfirming(false)
-      mutateGenerate(documentIds)
+      mutateGenerate(payableIds)
     },
     downloading: downloadMut.isPending,
     downloadErrorTag: dlFailure === null ? null : financialErrorTag(dlFailure.error),

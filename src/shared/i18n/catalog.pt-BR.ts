@@ -2015,6 +2015,16 @@ export const ptBR: Catalog = {
   'financial.remittance.preview.pendency.outOfVan': 'Forma de pagamento fora da VAN',
   'financial.remittance.preview.pendency.notFound': 'Título não encontrado',
   'financial.remittance.preview.pendency.notChecked': 'Não conferido',
+  // Selo na linha do título de retenção. ⚠️ Hoje o imposto herda a forma e o favorecido da NOTA — sai
+  // por TED ao fornecedor, não por guia ao órgão arrecadador —, e por isso o pré-voo não acusa nada.
+  // Não travamos (a modelagem muda com a reforma tributária); o selo dá ao operador como identificar.
+  'financial.remittance.preview.retention': 'Retenção',
+  'financial.remittance.preview.retentionNotice':
+    '{n} título(s) de retenção estão marcados e vão entrar na remessa. O imposto herda a forma de pagamento e o favorecido da nota — confira se é isso que você quer antes de gerar.',
+  // #736 virou status de linha no core-api. Só aparece se um não-aprovado escapar do filtro do front —
+  // e aí o recado é "falta aprovar", não "falta cadastro", que mandaria ao lugar errado.
+  'financial.remittance.preview.pendency.notApprovedLine':
+    'Falta aprovar — só título aprovado entra em remessa',
   'financial.remittance.preview.empty': 'Nenhum título para conferir.',
   'financial.remittance.preview.close': 'Fechar',
   'financial.remittance.preview.summary.count': 'Títulos',
@@ -2038,10 +2048,10 @@ export const ptBR: Catalog = {
   'financial.remittance.generate.needAccount': 'Selecione a conta bancária que vai pagar',
   'financial.remittance.generate.needSameDate':
     'A seleção tem vencimentos diferentes. Uma remessa é de um único dia — filtre/gere por vencimento ou desmarque os divergentes.',
-  'financial.remittance.generate.confirmPrefix': 'Você vai enviar ao banco',
-  'financial.remittance.generate.confirmMiddle': 'título(s), no total de',
-  'financial.remittance.generate.confirmSuffix':
-    'Ao confirmar, o arquivo entra na fila de pagamento do banco — esta ação não pode ser desfeita pelo sistema.',
+  // Confirmação da geração — ⚠️ o passo que MOVE DINHEIRO. Uma frase só, com {total} e {n}
+  // interpolados: montá-la por concatenação de pedaços deixava a ordem das palavras presa ao código.
+  'financial.remittance.generate.confirm':
+    'Sua remessa tem o valor total de {total} e {n} título(s) selecionado(s). Após a confirmação o arquivo será transmitido ao banco. Essa ação não poderá ser desfeita.',
   'financial.remittance.generate.confirmAction': 'Confirmar e enviar ao banco',
   'financial.remittance.generate.cancel': 'Cancelar',
   'financial.remittance.generate.doneTitle': 'Remessa gerada',

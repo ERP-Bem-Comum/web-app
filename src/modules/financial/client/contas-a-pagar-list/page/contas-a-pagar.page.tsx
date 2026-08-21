@@ -461,7 +461,7 @@ export function ContasAPagarPage(): ReactNode {
         generateErrorMessage={remittance.generateErrorMessage}
         onGenerate={() => {
           // Vai só o que está MARCADO — dedup por documento, direto do ViewModel.
-          remittance.generate(remittanceView?.checkedDocumentIds ?? [])
+          remittance.generate(remittanceView?.checkedPayableIds ?? [])
         }}
         downloading={remittance.downloading}
         downloadErrorTag={remittance.downloadErrorTag}
@@ -569,9 +569,9 @@ export function ContasAPagarPage(): ReactNode {
           {page !== null ? (
             <ExportDropdown
               rows={exportRows}
-              remittanceDisabled={remittanceSelection.documentIds.length === 0 || remittance.running}
+              remittanceDisabled={remittanceSelection.payableIds.length === 0 || remittance.running}
               onCheckRemittance={() => {
-                remittance.start(remittanceSelection.documentIds)
+                remittance.start(remittanceSelection.payableIds)
               }}
             />
           ) : null}

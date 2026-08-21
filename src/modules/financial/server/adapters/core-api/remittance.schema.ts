@@ -16,14 +16,23 @@ const CoreApiPayoutGapSchema = z.object({
   reason: z.string().trim(),
 })
 
+// TÍTULO, não nota (core-api#794): a nota dá origem aos títulos, mas o ciclo de vida inteiro é do
+// título — forma, vencimento e status são dele, inclusive nas retenções, que são títulos a pagar como
+// qualquer outro e podem ficar em aberto com o pai já pago.
 const CoreApiPreviewLineSchema = z.object({
-  documentId: z.string().trim(),
+  payableId: z.string().trim(),
+  // A nota de origem, p/ o front agrupar no grid. `null` em `not-found`: sem o título lido não há
+  // vínculo a declarar.
+  documentId: z.string().trim().nullable().catch(null),
   status: z.string().trim(),
   route: z.string().trim().nullable().catch(null),
   // `missing` existe no DTO, mas é subconjunto de `gaps` (mesmo campo, sem o motivo) — não o lemos para
   // não manter duas representações do mesmo fato no front.
   gaps: z.array(CoreApiPayoutGapSchema).catch([]),
-  netValueCents: z.string().trim().catch('0'),
+  // ⚠️ Era `netValueCents` e virou `valueCents`: é o valor DO TÍTULO, e no filho de retenção NÃO é o
+  // líquido da nota. SEM `.catch()` de propósito — com um default, a renomeação do campo teria passado
+  // silenciosa e a tela mostraria R$ 0,00 em vez de falhar.
+  valueCents: z.string().trim(),
 })
 
 export const CoreApiRemittancePreviewSchema = z.object({
@@ -32,6 +41,8 @@ export const CoreApiRemittancePreviewSchema = z.object({
   blockedCount: z.int().nonnegative(),
   outOfVanCount: z.int().nonnegative(),
   notFoundCount: z.int().nonnegative(),
+  // #736 virou status de linha: o backend agora informa quantos não estão aprovados.
+  notApprovedCount: z.int().nonnegative().catch(0),
   readyTotalCents: z.string().trim(),
   blockedTotalCents: z.string().trim(),
 })
