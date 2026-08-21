@@ -1969,7 +1969,15 @@ export const ptBR: Catalog = {
   // Motivos de a linha não entrar. Cada um leva o operador a um lugar diferente: guia/câmbio não têm
   // conserto por cadastro; falta de dado, sim.
   'financial.remittance.preview.pendency.taxGuide': 'Sem linha digitável — guia não entra na remessa',
-  'financial.remittance.preview.pendency.missingData': 'Sem dados bancários — verifique o cadastro',
+  // Genérico — só quando o trilho é desconhecido. Nomear um campo sem saber a forma de pagamento
+  // mandaria o operador procurar no lugar errado.
+  'financial.remittance.preview.pendency.missingData': 'Falta dado para o pagamento — verifique o cadastro',
+  // A regra por forma de pagamento: TED/Transferência → conta; Boleto/Guia → linha digitável; PIX → chave.
+  'financial.remittance.preview.pendency.missingBankData':
+    'Dados bancários do favorecido incompletos — banco, agência e conta',
+  'financial.remittance.preview.pendency.missingPixKey': 'Sem chave PIX no cadastro do favorecido',
+  'financial.remittance.preview.pendency.missingBarcode':
+    'Sem linha digitável — informe o código de barras do documento',
   'financial.remittance.preview.pendency.outOfVan': 'Forma de pagamento fora da VAN',
   'financial.remittance.preview.pendency.notFound': 'Título não encontrado',
   'financial.remittance.preview.pendency.notChecked': 'Não conferido',
@@ -2028,6 +2036,8 @@ export const ptBR: Catalog = {
   'financial.remittance.preview.reason.missing': 'não preenchido',
   'financial.remittance.preview.reason.unmappable': 'não reconhecido no layout do banco',
   'financial.remittance.preview.reason.malformed': 'preenchido em formato inválido',
+  // O cadastro está completo: o que não fecha é o dígito. Por isso NÃO diz "corrija o formato".
+  'financial.remittance.preview.reason.checkDigitMismatch': 'dígito não confere com a conta',
   'financial.list.pagination': 'Paginação',
   'financial.list.prev': 'Página anterior',
   'financial.list.next': 'Próxima página',

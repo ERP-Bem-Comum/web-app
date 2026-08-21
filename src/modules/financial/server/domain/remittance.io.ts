@@ -26,9 +26,11 @@ export type PayoutField =
 
 /**
  * O motivo viaja junto do campo porque a AÇÃO do operador difere: `missing` pede preenchimento;
- * `unmappable`/`malformed` pedem correção do que já está lá.
+ * `unmappable`/`malformed` pedem correção do que já está lá; `check-digit-mismatch` é outra coisa —
+ * o cadastro está COMPLETO e bem formado, mas o dígito não corresponde à conta. Dizer "corrija o
+ * formato" aí manda o operador consertar o que já está certo.
  */
-export type PayoutGapReason = 'missing' | 'unmappable' | 'malformed'
+export type PayoutGapReason = 'missing' | 'unmappable' | 'malformed' | 'check-digit-mismatch'
 
 export interface PayoutGap {
   field: PayoutField

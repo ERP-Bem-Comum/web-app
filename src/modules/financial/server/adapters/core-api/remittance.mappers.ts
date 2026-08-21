@@ -39,7 +39,16 @@ const PAYOUT_FIELDS: ReadonlySet<string> = new Set<PayoutField>([
   'payment-detail',
 ])
 
-const GAP_REASONS: ReadonlySet<string> = new Set<PayoutGapReason>(['missing', 'unmappable', 'malformed'])
+// ⚠️ `check-digit-mismatch` faltava aqui, e a falta era invisível: a lacuna era DESCARTADA em silêncio
+// pelo `mapGaps`, e a linha chegava à tela bloqueada e sem motivo. O operador lia "sem dados bancários"
+// olhando para um cadastro completo — que é exatamente o mal-entendido que o core-api criou este motivo
+// para desfazer (`payout/types.ts:37-39`).
+const GAP_REASONS: ReadonlySet<string> = new Set<PayoutGapReason>([
+  'missing',
+  'unmappable',
+  'malformed',
+  'check-digit-mismatch',
+])
 
 // Drift → `blocked` (o default seguro: aparece na tela como "não sai", nunca como apto).
 const mapStatus = (raw: string): PreviewLineStatus =>
