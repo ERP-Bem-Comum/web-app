@@ -1209,6 +1209,11 @@ export const ptBR: Catalog = {
   'financial.create.payMethod.boletoLabel': 'Linha digitável (47-48 dígitos)',
   'financial.create.payMethod.boletoHint':
     'Linha digitável do boleto — preenchimento manual (o OCR automático será integrado depois).',
+  // Guia de recolhimento: nem toda guia traz código de barras, então o campo é OPCIONAL no
+  // lançamento — mas sem ele a guia não entra em remessa (o Segmento J grava esse número).
+  'financial.create.payMethod.taxGuideLabel': 'Código de barras da guia',
+  'financial.create.payMethod.taxGuideHint':
+    'Opcional no lançamento. Obrigatório para a guia entrar em remessa — informe os 44 dígitos do código de barras.',
   'financial.create.payMethod.cardLabel': 'Cartão corporativo',
   'financial.create.payMethod.cardHint': 'Identificação do cartão da empresa usado no pagamento.',
   'financial.create.payMethod.freeLabel': 'Especifique a forma de pagamento',
@@ -1217,6 +1222,8 @@ export const ptBR: Catalog = {
   'financial.create.payMethod.currencyHint': 'Moeda estrangeira e cotação da conversão.',
   'financial.create.pagamento.contaFornecedor': 'Conta do favorecido',
   'financial.create.pagamento.contaFornecedorHint': 'Conforme dados bancários do favorecido',
+  // PIX paga pela CHAVE — o arquivo não olha agência nem conta. O hint diz qual dado está na tela.
+  'financial.create.pagamento.contaFornecedorHintPix': 'Chave PIX cadastrada no favorecido',
   'financial.create.pagamento.aprovador': 'Aprovador',
   'financial.create.pagamento.aprovadorHint': 'Definido no fluxo de aprovação',
   'financial.create.categorizacao.semContrato': 'Sem contrato',

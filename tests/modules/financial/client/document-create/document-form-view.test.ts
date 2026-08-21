@@ -8,6 +8,8 @@ import assert from 'node:assert/strict'
 
 import {
   retentionsEnabledFor,
+  showsPayeeAccount,
+  payeeAccountLine,
   reformaTributariaEnabledFor,
   defaultPaymentMethodFor,
   accessKeyValidFor,
@@ -451,7 +453,8 @@ describe('PAYMENT_METHOD_META / paymentComplementaryOf', () => {
     assert.equal(paymentComplementaryOf('CartaoCorporativo'), 'card')
     assert.equal(paymentComplementaryOf('TED'), 'bank')
     assert.equal(paymentComplementaryOf('TransferenciaBancaria'), 'bank')
-    assert.equal(paymentComplementaryOf('GuiaRecolhimento'), 'none')
+    // A guia paga pelo código de barras, como o boleto — era `'none'`, sem campo algum na tela.
+    assert.equal(paymentComplementaryOf('GuiaRecolhimento'), 'taxGuide')
     assert.equal(paymentComplementaryOf('Cambio'), 'currency')
     assert.equal(paymentComplementaryOf('Outro'), 'free')
     assert.equal(paymentComplementaryOf(''), 'none')
@@ -691,5 +694,59 @@ describe('ocrReadFields — fornecedor auto-identificado (core-api#560)', () => 
   })
   it('supplierRef vazio → não acende', () => {
     assert.equal(ocrReadFields({ ...base, supplierRef: '' }, true).has('supplier'), false)
+  })
+})
+
+// A conta do favorecido acompanha a FORMA de pagamento — mesma régua do pré-voo da remessa
+// (`checkPayoutReadiness`). Mostrá-la num boleto sugere que banco/agência/conta participam do
+// pagamento, e não participam: quem paga boleto paga pelo código de barras.
+describe('document-form.view — conta do favorecido só nas formas que a usam', () => {
+  const BANK = { line: '260 · Ag 77777 · CC 807987-7', pix: '09168150000183' }
+
+  it('TED e Transferência mostram a CONTA', () => {
+    assert.equal(showsPayeeAccount('TED'), true)
+    assert.equal(showsPayeeAccount('TransferenciaBancaria'), true)
+    assert.equal(payeeAccountLine(BANK, 'TED'), BANK.line)
+  })
+
+  it('PIX mostra a CHAVE, não a conta', () => {
+    assert.equal(showsPayeeAccount('PIX'), true)
+    assert.equal(payeeAccountLine(BANK, 'PIX'), BANK.pix)
+    assert.notEqual(payeeAccountLine(BANK, 'PIX'), BANK.line)
+  })
+
+  it('boleto, guia, cartão, câmbio e outro NÃO mostram dado bancário', () => {
+    for (const m of ['Boleto', 'GuiaRecolhimento', 'CartaoCorporativo', 'Cambio', 'Outro'] as const) {
+      assert.equal(showsPayeeAccount(m), false, m)
+      assert.equal(payeeAccountLine(BANK, m), '', m)
+    }
+  })
+
+  it('sem forma escolhida não mostra — sem forma não há resposta', () => {
+    assert.equal(showsPayeeAccount(''), false)
+    assert.equal(payeeAccountLine(BANK, ''), '')
+  })
+
+  it('fornecedor sem cadastro bancário devolve vazio mesmo na rota que usaria', () => {
+    assert.equal(payeeAccountLine(null, 'TED'), '')
+    assert.equal(payeeAccountLine({ line: 'x', pix: null }, 'PIX'), '')
+  })
+})
+
+// A guia paga pelo CÓDIGO DE BARRAS, igual ao boleto. Era `'none'`: o formulário não oferecia campo
+// algum, e sem ele a guia nunca podia entrar em remessa — o backend exige o número para `tax-guide`.
+describe('document-form.view — complemento por forma de pagamento', () => {
+  it('guia de recolhimento tem campo próprio de código de barras', () => {
+    assert.equal(paymentComplementaryOf('GuiaRecolhimento'), 'taxGuide')
+    assert.notEqual(paymentComplementaryOf('GuiaRecolhimento'), 'none')
+  })
+
+  it('boleto e guia são campos DISTINTOS — o rótulo de cada um fala da sua própria via', () => {
+    assert.notEqual(paymentComplementaryOf('Boleto'), paymentComplementaryOf('GuiaRecolhimento'))
+  })
+
+  it('as formas que não pedem complemento seguem sem campo', () => {
+    assert.equal(paymentComplementaryOf('TED'), 'bank')
+    assert.equal(paymentComplementaryOf(''), 'none')
   })
 })
