@@ -819,7 +819,15 @@ export const docTypeDescriptionTag = (type: DocumentType): string => `financial.
 // ── Metadata da Forma de Pagamento (modal + campos complementares) ───────────────
 // A forma escolhida controla o CAMPO COMPLEMENTAR exibido (mock): pix/bank usam a conta herdada do
 // fornecedor (card já existente); boleto pede linha digitável; cartão mostra o cartão corporativo.
-export type PaymentComplementary = 'pix' | 'boleto' | 'card' | 'bank' | 'currency' | 'free' | 'none'
+export type PaymentComplementary =
+  | 'pix'
+  | 'boleto'
+  | 'taxGuide'
+  | 'card'
+  | 'bank'
+  | 'currency'
+  | 'free'
+  | 'none'
 
 const PAYMENT_COMPLEMENTARY: Record<PaymentMethod, PaymentComplementary> = {
   PIX: 'pix',
@@ -828,7 +836,10 @@ const PAYMENT_COMPLEMENTARY: Record<PaymentMethod, PaymentComplementary> = {
   TransferenciaBancaria: 'bank',
   CartaoCorporativo: 'card',
   Cambio: 'currency', // câmbio → moeda/detalhe da conversão
-  GuiaRecolhimento: 'none',
+  // A guia paga pelo CÓDIGO DE BARRAS, igual ao boleto — o favorecido pode não ter conta nenhuma.
+  // Era `'none'`: nenhum campo aparecia, e sem ele a guia não tinha como entrar em remessa. É
+  // OPCIONAL no lançamento (nem toda guia vem com código de barras), mas indispensável para remeter.
+  GuiaRecolhimento: 'taxGuide',
   Outro: 'free', // outro → texto livre (especificar)
 }
 // Ícones (glifos unicode, como no mock) — o modal de pagamento usa ícones, não iniciais.
@@ -862,6 +873,34 @@ export const paymentMethodDescTag = (m: PaymentMethod): string => `financial.cre
 /** Campo complementar controlado pela forma escolhida ('none' quando vazio). */
 export const paymentComplementaryOf = (m: PaymentMethod | ''): PaymentComplementary =>
   m === '' ? 'none' : PAYMENT_COMPLEMENTARY[m]
+
+/**
+ * A conta do favorecido só aparece nas formas que a USAM — a mesma régua do pré-voo da remessa
+ * (`checkPayoutReadiness` no core-api):
+ *
+ *  - **PIX** paga pela CHAVE; o arquivo não olha agência nem conta;
+ *  - **TED / Transferência** é a única rota que usa a conta estruturada;
+ *  - **Boleto / Guia** pagam pelo código de barras — o favorecido pode não ter conta nenhuma;
+ *  - **Cartão / Câmbio / Outro** não tocam o cadastro bancário.
+ *
+ * Exibir o cartão fora dessas duas rotas é ruído que SUGERE influência inexistente: quem lança um
+ * boleto vendo banco/agência/conta na tela conclui que aquele dado participa do pagamento, e não
+ * participa. Vazio (nenhuma forma escolhida) também não mostra — sem forma não há resposta.
+ */
+export const showsPayeeAccount = (m: PaymentMethod | ''): boolean => {
+  const complementary = paymentComplementaryOf(m)
+  return complementary === 'bank' || complementary === 'pix'
+}
+
+/**
+ * O QUE se mostra no cartão, quando ele aparece: a chave no PIX, a conta na transferência. Juntar os
+ * dois numa linha só (como antes) mostrava a chave a quem paga por TED e a conta a quem paga por PIX
+ * — cada forma lendo metade de dado que não usa.
+ */
+export const payeeAccountLine = (bank: SupplierBankView | null, m: PaymentMethod | ''): string => {
+  if (bank === null || !showsPayeeAccount(m)) return ''
+  return paymentComplementaryOf(m) === 'pix' ? (bank.pix ?? '') : bank.line
+}
 
 export const isDocumentType = (v: string): v is DocumentType =>
   (DOCUMENT_TYPES as readonly string[]).includes(v)

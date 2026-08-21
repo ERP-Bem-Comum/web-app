@@ -52,6 +52,12 @@ export const EditCedenteAccountInputSchema = z.object({
   accountNumber: z.string().trim().min(1).max(20).optional(),
   accountDigit: z.string().trim().max(2).optional(),
   nickname: z.string().trim().min(1).max(120).optional(),
+  // #722: preenchível quando AUSENTE — a conta cadastrada sem convênio passa a gerar remessa. Trocar
+  // um já preenchido é recusado no core-api (`cedente-convenio-already-set`); o front não envia.
+  // `min(1)` espelha o contrato de lá: string vazia não é "limpar", é campo inválido.
+  // 6, não 20: o campo do header CNAB tem 6 posições (033-038) e o banco trunca o excedente em
+  // silêncio. Ver CONVENIO_MAX_DIGITS e core-api#804.
+  convenio: z.string().trim().min(1).max(6).optional(),
 })
 
 // #205: extrato por período. `from`/`to` date-only (YYYY-MM-DD); filter opcional.
@@ -74,6 +80,9 @@ export const CreateCedenteAccountInputSchema = z.object({
   nickname: z.string().trim().min(1).max(120).optional(),
   openingBalanceCents: z.string().trim().optional(),
   openingBalanceDate: z.string().trim().optional(),
+  // #722: OPCIONAL no cadastro — a conta serve à conciliação sem convênio. Só a remessa o exige.
+  // 6, não 20 — ver o comentário no schema de edição.
+  convenio: z.string().trim().max(6).optional(),
 })
 
 export const GetSuggestionsInputSchema = z.object({ transactionId: z.uuid() })

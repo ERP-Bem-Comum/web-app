@@ -12,6 +12,7 @@ import { createGetDashboardRealized } from '#modules/financial/server/applicatio
 import {
   createListDocuments,
   createListPayableTitles,
+  createListAllPayableTitles,
   createGetPayableCounts,
   createGetDocument,
   createGetDocumentSourceFile,
@@ -24,6 +25,9 @@ import {
   createCancelDocument,
   createRegisterManualPayment,
   createGetRecentPayments,
+  createPreviewRemittance,
+  createGenerateRemittance,
+  createDownloadRemittanceFile,
 } from '#modules/financial/server/application/financial.use-cases.ts'
 import { createGetDashboardStatistics } from '#modules/financial/server/application/dashboard.use-cases.ts'
 
@@ -38,6 +42,8 @@ const build = () => {
   return {
     listDocuments: createListDocuments({ client }),
     listPayableTitles: createListPayableTitles({ client }),
+    // specs/101: conjunto completo do filtro (busca/seleção/remessa não podem enxergar só a página).
+    listAllPayableTitles: createListAllPayableTitles({ client }),
     getPayableCounts: createGetPayableCounts({ client }),
     getDocument: createGetDocument({ client }),
     getDocumentSourceFile: createGetDocumentSourceFile({ client }),
@@ -50,6 +56,13 @@ const build = () => {
     cancelDocument: createCancelDocument({ client }),
     registerManualPayment: createRegisterManualPayment({ client }),
     getRecentPayments: createGetRecentPayments({ client }),
+    // VAN (core-api#728): pré-voo do lote da remessa CNAB 240. Leitura pura — não gera arquivo.
+    previewRemittance: createPreviewRemittance({ client }),
+    // ⚠️ specs/101 S3: gerar ENFILEIRA PAGAMENTO no banco (ADR-0060 do core-api).
+    generateRemittance: createGenerateRemittance({ client }),
+    // specs/103: cópia do arquivo para conferir layout com o banco. **Homologação apenas** — em produção
+    // o core-api não registra a rota. Leitura pura: não regera, não consome NSA, não toca no bucket.
+    downloadRemittanceFile: createDownloadRemittanceFile({ client }),
     // Dashboard (specs/096): de-interim FASEADO. P1 = cost-centers real (#241/#237); P2/P3 e as métricas
     // Receita/Maior-Financiador (sem endpoint) seguem interinas dentro da fonte real. Composição pura intacta.
     getDashboardStatistics: createGetDashboardStatistics({

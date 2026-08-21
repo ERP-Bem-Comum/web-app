@@ -330,6 +330,8 @@ describe('modal Alterar conta — groupAccountsForSwitch', () => {
     pendingCount: 0,
     openingBalanceCents: '100000',
     openingBalanceDate: '2026-06-01',
+    convenio: '',
+    document: '48517263000190',
     ...over,
   })
   const accounts = [

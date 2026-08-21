@@ -18,6 +18,7 @@ import { useBulkStatus } from '../bulk-status.binding.ts'
 import { useBulkDelete } from '../bulk-delete.binding.ts'
 import { useIsolatedDueDate } from '../isolated-due-date.binding.ts'
 import { useBulkPay, type PayTarget } from '../bulk-pay.binding.ts'
+import { useRemittancePreview } from '../remittance-preview.binding.ts'
 import {
   STATUS_CHIPS,
   sumSelectedNetBRL,
@@ -26,8 +27,15 @@ import {
   filterRowsBySearch,
   filterRowsByTipo,
   deriveTitleActionTargets,
+  pageInfo,
   type ListState,
 } from '../contas-a-pagar.view-model.ts'
+import {
+  deriveRemittanceSelection,
+  toPreviewView,
+  toAccountOptions,
+  toReceiptView,
+} from '../remittance-preview.view-model.ts'
 import { DocumentGrid } from '../components/document-grid.component.tsx'
 import { AddFilterButton, ActiveFiltersRow } from '../components/document-filters.component.tsx'
 import { SavedViewsMenu } from '../components/saved-views-menu.component.tsx'
@@ -37,6 +45,7 @@ import { DueDateModal } from '../components/due-date-modal.component.tsx'
 import { PaymentDateModal } from '../components/payment-date-modal.component.tsx'
 import { ExportDropdown } from '../components/export-dropdown.component.tsx'
 import { StatusActions } from '../components/status-actions.component.tsx'
+import { RemittancePreviewModal } from '../components/remittance-preview-modal.component.tsx'
 import {
   screen,
   filterBar,
@@ -101,22 +110,31 @@ export function ContasAPagarPage(): ReactNode {
     onPrev,
     onNext,
     onPageSize,
+    page: currentPage,
+    onResetPage,
   } = useContasAPagar()
-  // Busca rápida do topo — filtra CLIENT-SIDE as linhas da página carregada (core-api#167 = server-side).
+  // Busca rápida do topo — client-side, mas agora sobre o conjunto COMPLETO do filtro (specs/101): no modo
+  // título o BFF traz todas as páginas. Volta a ser server-side quando o /payable-titles aceitar `q`.
   const [search, setSearch] = useState('')
   // #201: o grid (e toda a seleção) opera sobre o modo ativo — documento (atual) ou título (pai+filhos).
   // Em modo documento, `baseState === state` → comportamento idêntico (sem regressão).
   const baseState = viewMode === 'title' ? titleState : state
-  const page = baseState.tag === 'ready' ? baseState.page : null
   const allRows = baseState.tag === 'ready' ? baseState.rows : []
-  // Busca rápida + #201: filtro de Tipo por imposto (filho) — ambos CLIENT-SIDE na página carregada.
+  // specs/101: `rows` é o conjunto COMPLETO do filtro, já refinado pela busca e pelo Tipo=imposto (ambos
+  // client-side). No modo título o BFF traz todas as páginas, então a busca cruza tudo o que o filtro
+  // alcança — e a REMESSA enxerga o mesmo conjunto, em vez de só a página visível.
   const rows = filterRowsByTipo(filterRowsBySearch(allRows, search), filters.tipo)
+  // A paginação passou a ser recorte de EXIBIÇÃO sobre esse conjunto. Uma fonte só para grid, seleção,
+  // somatórios e Exportar — duas fontes foi o que fez a seleção de outra página sumir do lote.
+  const slicePage = pageInfo(currentPage, pageSize, rows.length)
+  const page = baseState.tag === 'ready' ? slicePage : null
+  const visibleRows = rows.slice((currentPage - 1) * pageSize, currentPage * pageSize)
   // Estado passado ao grid: linhas filtradas; se o filtro zerar os resultados, mostra o vazio.
   const gridState: ListState =
     baseState.tag === 'ready'
       ? rows.length === 0
         ? { tag: 'empty' }
-        : { tag: 'ready', rows, page: baseState.page }
+        : { tag: 'ready', rows: visibleRows, page: slicePage }
       : baseState
 
   // UI-state local (toggles), no padrão dos demais (selectedId/selected): menu "Adicionar filtro".
@@ -142,10 +160,14 @@ export function ContasAPagarPage(): ReactNode {
   // ── Seleção em massa (mock): checkbox por linha + "selecionar todos" + somatório do líquido ──
   const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set())
   const selectedCount = selected.size
-  const allSelected = rows.length > 0 && rows.every((r) => selected.has(r.id))
+  const allSelected = visibleRows.length > 0 && visibleRows.every((r) => selected.has(r.id))
   const selectedGross = sumSelectedGrossBRL(rows, selected)
   const selectedSum = sumSelectedNetBRL(rows, selected)
   const exportRows = selectedCount > 0 ? rows.filter((r) => selected.has(r.id)) : rows
+  // A REMESSA opera SÓ sobre a seleção do operador — nunca o "todos" do `exportRows` (que o CSV/PDF usam
+  // quando não há seleção). O usuário escolhe o que pagar, e todos precisam vencer no MESMO dia; por isso,
+  // sem seleção, nada é remessável (CNAB desabilitado) e o modal não pode abrir com "todos os aprovados".
+  const remittanceRows = rows.filter((r) => selected.has(r.id))
   const toggle = (id: string): void => {
     setSelected((prev) => {
       const next = new Set(prev)
@@ -155,7 +177,9 @@ export function ContasAPagarPage(): ReactNode {
     })
   }
   const toggleAll = (): void => {
-    setSelected((prev) => (rows.every((r) => prev.has(r.id)) ? new Set() : new Set(rows.map((r) => r.id))))
+    setSelected((prev) =>
+      visibleRows.every((r) => prev.has(r.id)) ? new Set() : new Set(visibleRows.map((r) => r.id)),
+    )
   }
   const clearSelection = (): void => {
     setSelected(new Set())
@@ -166,6 +190,21 @@ export function ContasAPagarPage(): ReactNode {
   //    Excluir/Vencimento são transições do documento (Aprovar cascateia pai→filhos), agregadas por doc
   //    (dedup). A baixa (Marcar como pago) é por título, independente. Backend valida transição inválida. ──
   const titleTargets = deriveTitleActionTargets(rows, selected)
+
+  // VAN (core-api#728): PRÉ-VOO do lote, disparado pelo item CNAB do "Exportar". A origem é a MESMA do
+  // CSV/PDF (`exportRows`: a seleção, ou o que está na tela quando não há seleção) — o operador não
+  // deveria descobrir que "Exportar" recorta diferente conforme o formato.
+  // `deriveRemittanceSelection` dedup por documento e barra o que não está Aprovado ANTES da chamada: o
+  // core-api lê os documentos por id, sem exigir aprovação (core-api#736), e um Rascunho voltaria apto.
+  const remittanceSelection = deriveRemittanceSelection(remittanceRows)
+
+  const remittance = useRemittancePreview()
+  // A conferência lista UM POR TÍTULO selecionado (não por documento): um documento com retenção rende o
+  // título do fornecedor e o do imposto, com favorecidos e valores diferentes.
+  const remittanceView =
+    remittance.preview === null
+      ? null
+      : toPreviewView(remittance.preview, remittanceRows, remittance.unchecked)
 
   // ── Mudar Status em massa: Aprovar (Aberto→Aprovado) · Voltar p/ edição (Aprovado→Aberto) ──
   const bulk = useBulkStatus(clearSelection)
@@ -219,6 +258,7 @@ export function ContasAPagarPage(): ReactNode {
             value={search}
             onChange={(e) => {
               setSearch(e.target.value)
+              onResetPage() // a busca recorta o conjunto: ficar na página 5 de 1 resultado mostraria vazio
             }}
             placeholder={t('financial.list.search')}
             aria-label={t('financial.list.search')}
@@ -322,7 +362,9 @@ export function ContasAPagarPage(): ReactNode {
 
       {dueEdit.errorTag !== null ? (
         <div className={errorBanner} role="alert">
-          {t(dueEdit.errorTag)}
+          {/* O NÚMERO de títulos que ficaram para trás entra no texto: "alguns" não diz se foi 1 de 10
+              ou 9 de 10, e a decisão do operador muda bastante entre os dois. */}
+          {t(dueEdit.errorTag).replace('{n}', String(dueEdit.failedCount))}
         </div>
       ) : null}
 
@@ -397,6 +439,35 @@ export function ContasAPagarPage(): ReactNode {
         onCancel={() => {
           setPayOpen(false)
         }}
+      />
+
+      <RemittancePreviewModal
+        open={remittance.open}
+        running={remittance.running}
+        view={remittanceView}
+        errorTag={remittance.errorTag}
+        notApprovedCount={remittanceSelection.notApprovedCount}
+        onToggle={remittance.toggle}
+        onClose={remittance.close}
+        accounts={toAccountOptions(remittance.accounts)}
+        cedenteAccountId={remittance.cedenteAccountId}
+        onCedenteAccount={remittance.setCedenteAccountId}
+        confirming={remittance.confirming}
+        onArm={remittance.arm}
+        onDisarm={remittance.disarm}
+        generating={remittance.generating}
+        generated={remittance.generated === null ? null : toReceiptView(remittance.generated)}
+        generateErrorTag={remittance.generateErrorTag}
+        generateErrorMessage={remittance.generateErrorMessage}
+        onGenerate={() => {
+          // Vai só o que está MARCADO — dedup por documento, direto do ViewModel.
+          remittance.generate(remittanceView?.checkedPayableIds ?? [])
+        }}
+        downloading={remittance.downloading}
+        downloadErrorTag={remittance.downloadErrorTag}
+        downloadErrorMessage={remittance.downloadErrorMessage}
+        downloadedFromFailures={remittance.downloadedFromFailures}
+        onDownload={remittance.downloadFile}
       />
 
       <footer className={bottombar}>
@@ -495,7 +566,15 @@ export function ContasAPagarPage(): ReactNode {
         ) : null}
 
         <div className={footerActions}>
-          {page !== null ? <ExportDropdown rows={exportRows} /> : null}
+          {page !== null ? (
+            <ExportDropdown
+              rows={exportRows}
+              remittanceDisabled={remittanceSelection.payableIds.length === 0 || remittance.running}
+              onCheckRemittance={() => {
+                remittance.start(remittanceSelection.payableIds)
+              }}
+            />
+          ) : null}
           <Link to="/financeiro/contas-a-pagar/lancar" className={newButton}>
             {t('financial.list.new')}
           </Link>

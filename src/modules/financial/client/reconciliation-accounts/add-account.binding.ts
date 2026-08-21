@@ -14,7 +14,12 @@ import type {
   AccountType,
   CreateCedenteAccountInput,
 } from '#modules/financial/client/data/model/reconciliation.model.ts'
-import { OTHER_BANK_CODE, maskDateInput, dateInputToIso } from './reconciliation-accounts.view-model.ts'
+import {
+  CONVENIO_MAX_DIGITS,
+  OTHER_BANK_CODE,
+  maskDateInput,
+  dateInputToIso,
+} from './reconciliation-accounts.view-model.ts'
 
 export type AddAccountBinding = Readonly<{
   bankCode: string
@@ -29,6 +34,8 @@ export type AddAccountBinding = Readonly<{
   nickname: string
   openingBalance: string
   openingBalanceDate: string
+  /** #722: convênio junto ao banco. OPCIONAL aqui — sem ele a conta concilia, mas não gera remessa. */
+  convenio: string
   canSubmit: boolean
   submitting: boolean
   errorTag: string | null
@@ -42,12 +49,22 @@ export type AddAccountBinding = Readonly<{
   setNickname: (v: string) => void
   setOpeningBalance: (v: string) => void
   setOpeningBalanceDate: (v: string) => void
+  setConvenio: (v: string) => void
   reset: () => void
   submit: () => void
 }>
 
 export function useAddAccount(
   bankNameOf: (code: string) => string | undefined,
+  /**
+   * CNPJ do CEDENTE já cadastrado nas outras contas. É sempre o mesmo — a conta pertence à
+   * organização, não à instituição financeira —, então repetir a digitação a cada conta nova só cria
+   * oportunidade de errar um dígito que vai parar no header do arquivo CNAB (019-032).
+   *
+   * Vem de conta existente porque não há entidade "organização" no core-api de onde puxá-lo. Vazio na
+   * PRIMEIRA conta: aí não há o que herdar, e o operador digita.
+   */
+  defaultDocument: string,
   onCreated: () => void,
 ): AddAccountBinding {
   const qc = useQueryClient()
@@ -58,9 +75,13 @@ export function useAddAccount(
   const [agency, setAgency] = useState('')
   const [account, setAccount] = useState('')
   const [document, setDocument] = useState('')
+  // Enquanto o operador não tocar no campo, vale o CNPJ herdado. Depois de tocado vale o que ele
+  // digitou — inclusive vazio: um pré-preenchido que se recusa a sair vira armadilha, não ajuda.
+  const [documentTouched, setDocumentTouched] = useState(false)
   const [nickname, setNickname] = useState('')
   const [openingBalance, setOpeningBalance] = useState('')
   const [openingBalanceDate, setOpeningBalanceDate] = useState('')
+  const [convenio, setConvenio] = useState('')
   const [errorTag, setErrorTag] = useState<string | null>(null)
 
   const reset = () => {
@@ -71,9 +92,11 @@ export function useAddAccount(
     setAgency('')
     setAccount('')
     setDocument('')
+    setDocumentTouched(false)
     setNickname('')
     setOpeningBalance('')
     setOpeningBalanceDate('')
+    setConvenio('')
     setErrorTag(null)
   }
 
@@ -92,13 +115,15 @@ export function useAddAccount(
   })
 
   // #206: banco "Outro" pede o nome da instituição; tipo Cartão corporativo/Outro pede a identificação da conta.
+  const effectiveDocument = documentTouched ? document : maskCnpj(defaultDocument)
+
   const needsBankName = bankCode === OTHER_BANK_CODE
   const needsTypeLabel = type === 'Cartao' || type === 'Outro'
   const canSubmit =
     bankCode.trim() !== '' &&
     agency.trim() !== '' &&
     account.trim() !== '' &&
-    document.trim() !== '' &&
+    effectiveDocument.trim() !== '' &&
     (!needsBankName || customBankName.trim() !== '') &&
     (!needsTypeLabel || typeLabel.trim() !== '')
 
@@ -111,10 +136,11 @@ export function useAddAccount(
     needsTypeLabel,
     agency,
     account,
-    document,
+    document: effectiveDocument,
     nickname,
     openingBalance,
     openingBalanceDate,
+    convenio,
     canSubmit,
     submitting: mut.isPending,
     errorTag,
@@ -137,6 +163,7 @@ export function useAddAccount(
       setAccount(v)
     },
     setDocument: (v) => {
+      setDocumentTouched(true)
       setDocument(maskCnpj(v)) // máscara CNPJ ao digitar (cru vai ao backend no submit via unmaskCnpj)
     },
     setNickname: (v) => {
@@ -147,6 +174,10 @@ export function useAddAccount(
     },
     setOpeningBalanceDate: (v) => {
       setOpeningBalanceDate(maskDateInput(v)) // máscara DD/MM/AAAA (convertida p/ ISO no submit)
+    },
+    // Só dígitos e teto de 6 — ver CONVENIO_MAX_DIGITS.
+    setConvenio: (v) => {
+      setConvenio(v.replace(/\D/g, '').slice(0, CONVENIO_MAX_DIGITS))
     },
     reset,
     submit: () => {
@@ -194,7 +225,10 @@ export function useAddAccount(
         agency: agency.trim(),
         accountNumber,
         accountDigit,
-        document: unmaskCnpj(document.trim()), // CNPJ cru (só alfanum.) — a UI guarda mascarado
+        // #722: só viaja se preenchido. Vazio NÃO é enviado — a conta nasce sem convênio e pode
+        // ganhá-lo depois pela edição; mandar `''` seria afirmar um valor que o operador não deu.
+        ...(convenio.trim() !== '' ? { convenio: convenio.trim() } : {}),
+        document: unmaskCnpj(effectiveDocument.trim()), // CNPJ cru — a UI guarda mascarado
         nickname: nickname.trim() === '' ? undefined : nickname.trim(),
         openingBalanceCents,
         openingBalanceDate: isoDate,

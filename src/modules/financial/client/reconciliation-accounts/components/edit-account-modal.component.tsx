@@ -8,6 +8,7 @@ import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { WalletIcon } from '#shared/ui/icons/index.ts'
 
+import { CONVENIO_MAX_DIGITS } from '../reconciliation-accounts.view-model.ts'
 import * as s from '../page/reconciliation-accounts.css.ts'
 import { BANKS, OTHER_BANK_CODE, type AccountType } from '../reconciliation-accounts.view-model.ts'
 import type { EditAccountBinding } from '../edit-account.binding.ts'
@@ -156,6 +157,37 @@ export function EditAccountModal({ binding }: EditAccountModalProps) {
                   }}
                 />
               </div>
+            </div>
+            {/* #722: convênio. Preenchível UMA vez — já preenchido, o campo fica somente-leitura e diz
+                por quê. O core-api recusa a troca (`cedente-convenio-already-set`) porque o convênio
+                viaja no nome de toda remessa já transmitida; deixar o input editável convidaria a um
+                409 que chegaria como "falha ao salvar a conta", escondendo que nada estava errado.
+                Barrado PARECE barrado: readOnly + hint com o motivo. */}
+            <div className={s.formField}>
+              <label className={s.fieldLabel} htmlFor="edit-convenio">
+                {t('financial.recon.add.field.convenio')}
+              </label>
+              <input
+                id="edit-convenio"
+                className={`${binding.convenioLocked ? s.inputReadOnly : s.input} ${s.inputMono}`}
+                inputMode="numeric"
+                // Trava também no DOM, não só no setter: colar 12 dígitos não deve encher o campo
+                // para depois "sumir" caracteres — o campo do header CNAB tem 6 posições.
+                maxLength={CONVENIO_MAX_DIGITS}
+                readOnly={binding.convenioLocked}
+                placeholder={t('financial.recon.add.placeholder.convenio')}
+                value={binding.convenio}
+                onChange={(e) => {
+                  binding.setConvenio(e.target.value)
+                }}
+              />
+              <span className={s.fieldHint}>
+                {t(
+                  binding.convenioLocked
+                    ? 'financial.recon.edit.hint.convenioLocked'
+                    : 'financial.recon.add.hint.convenio',
+                )}
+              </span>
             </div>
             <div className={s.formField}>
               <label className={s.fieldLabel} htmlFor="edit-alias">

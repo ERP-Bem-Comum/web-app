@@ -852,12 +852,36 @@ export const rowClickable = style({
 })
 
 // Célula da checkbox (1ª coluna) — centraliza e não dispara o clique da linha (stopPropagation no JSX).
-export const cellCheckbox = style({ display: 'flex', alignItems: 'center', justifyContent: 'center' })
+export const cellCheckbox = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  // Estica na altura da linha e avança sobre a folga da coluna seguinte: a mira de marcar precisa de
+  // margem, senão errar por poucos pixels abre o drawer no meio de uma seleção em massa.
+  alignSelf: 'stretch',
+  paddingInlineEnd: vars.space.sm,
+})
 // Linha selecionada — realce sutil (mock: bg azul claro), prevalece sobre o hover.
 export const rowSelected = style({
   background: vars.color.institutional.blueBg,
   ':hover': { background: vars.color.institutional.blueBg },
 })
+
+/**
+ * Linha cujo título está ABERTO no drawer. Mantém o realce de hover e acrescenta uma barra à
+ * esquerda — com o backdrop escuro por cima da grade, o azul sozinho ficaria lavado, e a barra
+ * sobrevive porque é forma, não só cor.
+ *
+ * Distinta de `rowSelected` de propósito: marcada (vai na remessa) e aberta (estou lendo) são
+ * estados diferentes, e podem coexistir na mesma linha.
+ */
+export const rowActive = style([
+  rowSelected,
+  {
+    position: 'relative',
+    boxShadow: `inset 0.1875rem 0 0 0 ${vars.color.institutional.blueDeep}`,
+  },
+])
 
 // ── Barra de seleção (mock: substitui a paginação quando há linhas marcadas) ───
 export const selBar = style({
@@ -907,8 +931,10 @@ export const selError = style({
 })
 
 // ── Drawer de Detalhe do Documento (onda 2) ───────────────────────────────────
-// Painel lateral NÃO-modal (mock): a grade atrás permanece clara (sem escurecer). O backdrop é
-// transparente e serve só para fechar ao clicar fora; a linha clicada fica realçada (selecionada).
+// Painel lateral com backdrop ESCURECIDO (decisão da P.O., 21/08 — reverte o "sem escurecer" do
+// mock). O drawer carrega o detalhe de UM título; sem o escurecimento a grade atrás competia com ele
+// e não ficava claro que a tela tinha um foco. O backdrop segue fechando ao clicar fora, e a linha de
+// origem fica realçada (`rowActive`) para não se perder de vista qual título está aberto.
 export const drawerOverlay = style({
   position: 'fixed',
   // Começa ABAIXO do topbar do sistema p/ o header do drawer ficar visível (não some atrás do topbar).
@@ -917,7 +943,7 @@ export const drawerOverlay = style({
   insetInlineStart: 0,
   insetInlineEnd: 0,
   zIndex: 300,
-  background: 'transparent',
+  background: vars.color.institutional.overlay,
   display: 'flex',
   justifyContent: 'flex-end',
 })

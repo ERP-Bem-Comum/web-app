@@ -11,7 +11,7 @@ import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 
 import {
   contasAPagarQueryOptions,
-  payableTitlesQueryOptions,
+  allPayableTitlesQueryOptions,
   payableCountsQueryOptions,
 } from './contas-a-pagar.query.ts'
 import { partnersMapQueryOptions } from './partners-map.binding.ts'
@@ -76,6 +76,9 @@ export type ContasAPagarBinding = Readonly<{
   onPrev: () => void
   onNext: () => void
   onPageSize: (size: number) => void
+  /** specs/101: a paginação virou recorte de EXIBIÇÃO — a page fatia o conjunto completo. */
+  page: number
+  onResetPage: () => void
 }>
 
 export function useContasAPagar(): ContasAPagarBinding {
@@ -105,12 +108,15 @@ export function useContasAPagar(): ContasAPagarBinding {
       viewMode === 'document',
     ), // desligada: grid é só por título
   )
-  // #201: listagem por título — mesmos filtros (sem emissão, que o endpoint não aceita). Só busca no modo 'title'.
+  // #201: listagem por título — mesmos filtros (sem emissão, que o endpoint não aceita).
+  //
+  // specs/101: busca o conjunto COMPLETO do filtro, não a página. A paginação virou recorte de EXIBIÇÃO
+  // (client-side, na page): a busca textual e o filtro de imposto são client-side e antes só enxergavam a
+  // página carregada — e, pior, a seleção de outra página sumia do Exportar/remessa sem aviso. Título que
+  // ficou na página 2 não pode ficar fora do lote em silêncio.
   const titles = useQuery(
-    payableTitlesQueryOptions(
+    allPayableTitlesQueryOptions(
       {
-        page,
-        pageSize,
         status: selectedStatus ?? undefined,
         type: isRetentionTipo(filters.tipo) ? undefined : filters.tipo, // imposto filtra client-side
 
@@ -279,6 +285,10 @@ export function useContasAPagar(): ContasAPagarBinding {
     },
     onPageSize: (size) => {
       setPageSize(size)
+      setPage(1)
+    },
+    page,
+    onResetPage: () => {
       setPage(1)
     },
   }

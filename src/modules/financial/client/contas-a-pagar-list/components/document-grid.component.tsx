@@ -23,6 +23,7 @@ import {
   row,
   rowClickable,
   rowSelected,
+  rowActive,
   cellCheckbox,
   cell,
   cellMutedDoc,
@@ -100,11 +101,22 @@ export function DocumentGrid(props: DocumentGridProps): ReactNode {
           const isActive = props.activeId === r.id // linha com o drawer aberto
           return (
             <div
-              className={`${row} ${rowClickable}${isChecked || isActive ? ` ${rowSelected}` : ''}`}
+              // Aberta no drawer vence marcada na aparência: `rowActive` já herda `rowSelected`, e as
+              // duas coisas podem valer ao mesmo tempo na mesma linha.
+              className={`${row} ${rowClickable}${isActive ? ` ${rowActive}` : isChecked ? ` ${rowSelected}` : ''}`}
               role="button"
               tabIndex={0}
               key={r.id}
-              onClick={() => {
+              onClick={(e) => {
+                // Abrir o drawer exige clicar numa CÉLULA — não em qualquer pixel da linha.
+                //
+                // O vão entre colunas pertence à `div` da linha, não às células: clicar ali batia no
+                // `currentTarget` e abria o drawer. Somado à coluna da checkbox, isso fazia a mira de
+                // marcar virar abrir — o erro que mais atrapalha quem monta uma remessa, porque
+                // acontece justamente na hora de selecionar vários títulos.
+                const target = e.target as HTMLElement
+                if (target === e.currentTarget) return
+                if (target.closest('[data-drawer-ignore]') !== null) return
                 props.onRowClick?.(r.id, r.status, r.documentId)
               }}
               onKeyDown={(e) => {
@@ -116,6 +128,9 @@ export function DocumentGrid(props: DocumentGridProps): ReactNode {
             >
               <span
                 className={cellCheckbox}
+                // Zona morta declarada: cobre a checkbox E a folga em volta dela. O
+                // `stopPropagation` sozinho não bastava — ele protege o alvo, não a vizinhança.
+                data-drawer-ignore=""
                 onClick={(e) => {
                   e.stopPropagation() // marcar não abre o drawer
                 }}

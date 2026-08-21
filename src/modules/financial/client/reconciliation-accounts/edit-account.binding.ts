@@ -14,7 +14,7 @@ import type {
   EditCedenteAccountInput,
   ReconciliationAccount,
 } from '#modules/financial/client/data/model/reconciliation.model.ts'
-import { OTHER_BANK_CODE } from './reconciliation-accounts.view-model.ts'
+import { CONVENIO_MAX_DIGITS, OTHER_BANK_CODE } from './reconciliation-accounts.view-model.ts'
 
 export type EditAccountBinding = Readonly<{
   /** Conta em edição (modal aberto) — null quando fechado. */
@@ -28,6 +28,14 @@ export type EditAccountBinding = Readonly<{
   agency: string
   account: string // "número-DV" combinado
   nickname: string
+  /** #722: convênio em edição. Vazio quando a conta ainda não tem. */
+  convenio: string
+  /**
+   * A conta JÁ tem convênio → o campo é somente-leitura. Trocar é recusado pelo core-api
+   * (`cedente-convenio-already-set`), porque o convênio viaja no nome de toda remessa transmitida —
+   * então o front nem tenta, e mostra o motivo em vez de deixar o operador descobrir pelo erro.
+   */
+  convenioLocked: boolean
   canSubmit: boolean
   saving: boolean
   errorTag: string | null
@@ -38,6 +46,7 @@ export type EditAccountBinding = Readonly<{
   setAgency: (v: string) => void
   setAccount: (v: string) => void
   setNickname: (v: string) => void
+  setConvenio: (v: string) => void
   open: (account: ReconciliationAccount) => void
   cancel: () => void
   submit: () => void
@@ -56,6 +65,7 @@ export function useEditAccount(
   const [agency, setAgency] = useState('')
   const [account, setAccount] = useState('')
   const [nickname, setNickname] = useState('')
+  const [convenio, setConvenio] = useState('')
   const [errorTag, setErrorTag] = useState<string | null>(null)
 
   const mut = useMutation({
@@ -74,6 +84,9 @@ export function useEditAccount(
 
   const needsBankName = bankCode === OTHER_BANK_CODE
   const needsTypeLabel = type === 'Cartao' || type === 'Outro'
+  // Travado pelo que veio do BACKEND, não pelo estado do input: o que decide é a conta já ter
+  // convênio, e não o operador ter digitado algo nesta sessão.
+  const convenioLocked = (target?.convenio ?? '') !== ''
   const canSubmit =
     bankCode.trim() !== '' &&
     agency.trim() !== '' &&
@@ -92,6 +105,8 @@ export function useEditAccount(
     agency,
     account,
     nickname,
+    convenio,
+    convenioLocked,
     canSubmit,
     saving: mut.isPending,
     errorTag,
@@ -116,6 +131,12 @@ export function useEditAccount(
     setNickname: (v) => {
       setNickname(v)
     },
+    // Só dígitos e teto de 6 (ver CONVENIO_MAX_DIGITS). Ignora a digitação quando travado — o input
+    // já sai `readOnly`, isto é a segunda barreira, para o caso de a trava visual falhar.
+    setConvenio: (v) => {
+      if (convenioLocked) return
+      setConvenio(v.replace(/\D/g, '').slice(0, CONVENIO_MAX_DIGITS))
+    },
     open: (a) => {
       setTarget(a)
       setBankCode(a.bankCode)
@@ -125,6 +146,7 @@ export function useEditAccount(
       setAgency(a.branch)
       setAccount(a.accountDv !== '' ? `${a.accountNumber}-${a.accountDv}` : a.accountNumber)
       setNickname(a.alias)
+      setConvenio(a.convenio)
       setErrorTag(null)
     },
     cancel: () => {
@@ -150,6 +172,10 @@ export function useEditAccount(
         accountNumber,
         accountDigit,
         ...(nickname.trim() !== '' ? { nickname: nickname.trim() } : {}),
+        // #722: só viaja quando a conta AINDA não tinha convênio e o operador preencheu agora.
+        // Reenviar o valor existente seria pedir a troca que o core-api recusa — e um 409 aqui
+        // apareceria como falha de "salvar a conta", escondendo que nada estava errado.
+        ...(!convenioLocked && convenio.trim() !== '' ? { convenio: convenio.trim() } : {}),
       })
     },
   }

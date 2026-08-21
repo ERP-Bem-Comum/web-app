@@ -39,6 +39,8 @@ const ACCOUNT: ReconciliationAccount = {
   pendingCount: 0,
   openingBalanceCents: null,
   openingBalanceDate: null,
+  // #722: conta AINDA sem convênio — é o caso em que o campo é preenchível.
+  convenio: '',
 } as unknown as ReconciliationAccount
 
 const setup = () => {
@@ -117,5 +119,78 @@ describe('useEditAccount', () => {
       expect(result.current.errorTag).toBe('financial.recon.error.forbidden')
     })
     expect(result.current.target).not.toBeNull()
+  })
+})
+
+// #722: o convênio é preenchível UMA vez. Trocar um já definido é recusado pelo core-api
+// (`cedente-convenio-already-set`) porque ele viaja no nome de toda remessa já transmitida — então o
+// front nem tenta, e o 409 nunca chega ao operador como "falha ao salvar a conta".
+describe('useEditAccount — convênio preenchível uma vez', () => {
+  const withConvenio = { ...ACCOUNT, convenio: '1234567' } as unknown as ReconciliationAccount
+
+  it('conta SEM convênio: campo livre, e o valor preenchido viaja no PATCH', async () => {
+    mockedEdit.mockResolvedValue(ok({ id: ID } as never))
+    const { result } = setup()
+    act(() => {
+      result.current.open(ACCOUNT)
+    })
+    expect(result.current.convenioLocked).toBe(false)
+
+    act(() => {
+      result.current.setConvenio('98765')
+    })
+    expect(result.current.convenio).toBe('98765')
+
+    act(() => {
+      result.current.submit()
+    })
+    await waitFor(() => {
+      expect(result.current.target).toBeNull()
+    })
+    expect(mockedEdit.mock.calls[0]?.[0]?.convenio).toBe('98765')
+  })
+
+  it('⚠️ conta COM convênio: travado, e o PATCH NÃO carrega o campo', async () => {
+    mockedEdit.mockResolvedValue(ok({ id: ID } as never))
+    const { result } = setup()
+    act(() => {
+      result.current.open(withConvenio)
+    })
+    expect(result.current.convenioLocked).toBe(true)
+    expect(result.current.convenio).toBe('1234567')
+
+    // Segunda barreira: mesmo forçando o setter, o valor não muda.
+    act(() => {
+      result.current.setConvenio('99999')
+    })
+    expect(result.current.convenio).toBe('1234567')
+
+    act(() => {
+      result.current.submit()
+    })
+    await waitFor(() => {
+      expect(result.current.target).toBeNull()
+    })
+    // Nem o valor novo, nem o antigo: reenviar o existente também seria pedir troca.
+    expect(mockedEdit.mock.calls[0]?.[0]?.convenio).toBeUndefined()
+  })
+
+  // ⚠️ 6, não 20: o campo do header CNAB tem 6 posições (033-038) e o banco TRUNCA o excedente em
+  // silêncio — medido num arquivo real, `99999999` virou `Contrato: 999999` no laudo do validador.
+  // Como o convênio é preenchível uma vez, salvar com 8 travaria a conta para sempre.
+  it('só dígitos e teto de 6 — o campo do header CNAB tem 6 posições', () => {
+    const { result } = setup()
+    act(() => {
+      result.current.open(ACCOUNT)
+    })
+    act(() => {
+      result.current.setConvenio('12ab-34 56')
+    })
+    expect(result.current.convenio).toBe('123456')
+
+    act(() => {
+      result.current.setConvenio('1'.repeat(30))
+    })
+    expect(result.current.convenio).toHaveLength(6)
   })
 })

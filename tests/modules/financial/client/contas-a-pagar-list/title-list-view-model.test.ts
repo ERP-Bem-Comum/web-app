@@ -204,10 +204,22 @@ describe('deriveTitleActionTargets (#229 — ações por linha, dedup por docume
     assert.deepEqual(tg.dueEditable, [{ documentId: 'd2', payableId: 'p2', version: 1 }])
   })
 
-  it('dueBlockedCount: títulos selecionados não-Aberto entram como bloqueados', () => {
-    const tg = deriveTitleActionTargets(titleRows, new Set(['p1', 'p2'])) // p1 Aprovado (bloqueado) + p2 Aberto
+  // VAN/specs/101: Aprovado passou a ser editável. Uma remessa é de UM dia só, então alinhar os
+  // vencimentos é pré-requisito para gerar — e é em Aprovado que o título está pronto para o lote.
+  // O backend sempre permitiu Open E Approved; era o front que barrava.
+  it('vencimento em lote: Aberto E Aprovado são editáveis', () => {
+    const tg = deriveTitleActionTargets(titleRows, new Set(['p1', 'p2'])) // p1 Aprovado + p2 Aberto
+    assert.equal(tg.dueEditable.length, 2)
+    assert.equal(tg.dueBlockedCount, 0)
+  })
+
+  it('dueBlockedCount: selecionado FORA de Aberto/Aprovado (ex.: Pago) segue bloqueado', () => {
+    const base = titleRows[0]
+    if (base === undefined) throw new Error('sem linha base')
+    const rows = [...titleRows, { ...base, id: 'p-pago', documentId: 'd-pago', status: 'Pago' as const }]
+    const tg = deriveTitleActionTargets(rows, new Set(['p2', 'p-pago']))
     assert.equal(tg.dueEditable.length, 1) // só p2
-    assert.equal(tg.dueBlockedCount, 1) // p1
+    assert.equal(tg.dueBlockedCount, 1) // o Pago
   })
 
   it('#166: rascunho (Draft) é excluível (descarte) — entra em deletable, sem "ignorado"', () => {

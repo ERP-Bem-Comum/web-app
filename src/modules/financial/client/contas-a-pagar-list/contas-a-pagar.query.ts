@@ -27,6 +27,18 @@ export const payableTitlesQueryOptions = (input: ListPayableTitlesInput, enabled
   staleTime: 30_000,
 })
 
+// specs/101: conjunto COMPLETO do filtro (sem paginação de tela). A key NÃO carrega page/pageSize — o
+// recorte de exibição é client-side, e incluí-los faria o cache refazer a varredura a cada troca de página.
+export const allPayableTitlesQueryOptions = (
+  input: Omit<ListPayableTitlesInput, 'page' | 'pageSize'>,
+  enabled: boolean,
+) => ({
+  queryKey: ['financial', 'payable-titles', 'all', input] as const,
+  queryFn: () => financialRepository.listAllPayableTitles({ ...input, page: 1, pageSize: 100 }),
+  enabled,
+  staleTime: 30_000,
+})
+
 // #536: contagem agregada por status (chips). Key aninhada sob `documents/list` — prefixo que TODAS as
 // mutations (criar/excluir/aprovar/baixar) invalidam → os contadores atualizam junto com o grid.
 export const payableCountsQueryOptions = (input: PayableCountsInput, enabled: boolean) => ({

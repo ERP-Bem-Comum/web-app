@@ -135,6 +135,8 @@ describe('formatAccountNumber', () => {
     pendingCount: 0,
     openingBalanceCents: null,
     openingBalanceDate: null,
+    convenio: '',
+    document: '48517263000190',
   }
 
   it('deriva a identificação COM NÚMERO: banco · Ag · C/C (número-dígito)', () => {

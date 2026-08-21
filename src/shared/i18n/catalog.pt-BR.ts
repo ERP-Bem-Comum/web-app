@@ -1209,6 +1209,11 @@ export const ptBR: Catalog = {
   'financial.create.payMethod.boletoLabel': 'Linha digitável (47-48 dígitos)',
   'financial.create.payMethod.boletoHint':
     'Linha digitável do boleto — preenchimento manual (o OCR automático será integrado depois).',
+  // Guia de recolhimento: nem toda guia traz código de barras, então o campo é OPCIONAL no
+  // lançamento — mas sem ele a guia não entra em remessa (o Segmento J grava esse número).
+  'financial.create.payMethod.taxGuideLabel': 'Código de barras da guia',
+  'financial.create.payMethod.taxGuideHint':
+    'Opcional no lançamento. Obrigatório para a guia entrar em remessa — informe os 44 dígitos do código de barras.',
   'financial.create.payMethod.cardLabel': 'Cartão corporativo',
   'financial.create.payMethod.cardHint': 'Identificação do cartão da empresa usado no pagamento.',
   'financial.create.payMethod.freeLabel': 'Especifique a forma de pagamento',
@@ -1217,6 +1222,8 @@ export const ptBR: Catalog = {
   'financial.create.payMethod.currencyHint': 'Moeda estrangeira e cotação da conversão.',
   'financial.create.pagamento.contaFornecedor': 'Conta do favorecido',
   'financial.create.pagamento.contaFornecedorHint': 'Conforme dados bancários do favorecido',
+  // PIX paga pela CHAVE — o arquivo não olha agência nem conta. O hint diz qual dado está na tela.
+  'financial.create.pagamento.contaFornecedorHintPix': 'Chave PIX cadastrada no favorecido',
   'financial.create.pagamento.aprovador': 'Aprovador',
   'financial.create.pagamento.aprovadorHint': 'Definido no fluxo de aprovação',
   'financial.create.categorizacao.semContrato': 'Sem contrato',
@@ -1537,6 +1544,9 @@ export const ptBR: Catalog = {
   'financial.recon.accounts.expand.tipo': 'Tipo da conta',
   'financial.recon.accounts.expand.saldoInicial': 'Saldo inicial do cadastro',
   'financial.recon.accounts.expand.dataCadastro': 'Data do cadastro',
+  // #722: o convênio aparece no expand da conta — é onde se resolve. Sem ele a geração recusa sempre.
+  'financial.recon.accounts.expand.convenio': 'Convênio',
+  'financial.recon.accounts.expand.semConvenio': 'Sem convênio — não gera remessa',
   'financial.recon.accounts.status.closed': 'Encerrada',
   'financial.recon.accounts.close.action': 'Encerrar conta',
   'financial.recon.accounts.close.title': 'Encerrar conta bancária',
@@ -1551,6 +1561,10 @@ export const ptBR: Catalog = {
   'financial.recon.edit.title': 'Editar conta bancária',
   'financial.recon.edit.sub': 'Ajuste os dados do cadastro da conta.',
   'financial.recon.edit.immutableNote': 'CNPJ e saldo de abertura não podem ser alterados após o cadastro.',
+  // #722: o convênio é preenchível UMA vez. O texto diz o MOTIVO, não só que está travado — sem isso
+  // a trava parece defeito da tela.
+  'financial.recon.edit.hint.convenioLocked':
+    'O convênio já está definido e não pode ser alterado — ele identifica as remessas já enviadas ao banco.',
   'financial.recon.edit.save': 'Salvar alterações',
   'financial.recon.accounts.foot.pending': 'Movimentações pendentes',
   'financial.recon.accounts.foot.count': '{n} contas',
@@ -1582,6 +1596,12 @@ export const ptBR: Catalog = {
   'financial.recon.add.field.account': 'Conta-DV',
   'financial.recon.add.placeholder.account': '00000000-0',
   'financial.recon.add.field.document': 'CNPJ da organização',
+  // #722: convênio junto ao banco. Opcional no cadastro (a conta concilia sem ele) e OBRIGATÓRIO para
+  // gerar remessa — o hint diz isso para o campo em branco ser escolha, não esquecimento.
+  'financial.recon.add.field.convenio': 'Convênio',
+  'financial.recon.add.placeholder.convenio': 'Até 6 dígitos',
+  'financial.recon.add.hint.convenio':
+    'Opcional, até 6 dígitos. Sem convênio a conta concilia normalmente, mas não gera remessa para o banco.',
   'financial.recon.add.placeholder.document': '00.000.000/0000-00',
   'financial.recon.add.invalidBalance': 'Saldo de abertura inválido.',
   'financial.recon.add.invalidDate': 'Data do saldo inválida (use DD/MM/AAAA).',
@@ -1861,8 +1881,9 @@ export const ptBR: Catalog = {
   'financial.list.new': 'Novo Documento',
   'financial.list.export': 'Exportar',
   'financial.list.export.cnab': 'CNAB',
-  'financial.list.export.cnabHint': 'remessa bancária',
-  'financial.list.export.cnabSoon': 'Indisponível — depende de baixa e conta bancária (backend)',
+  'financial.list.export.cnabHint': 'Conferir remessa',
+  'financial.list.export.cnabNeedApproved':
+    'Selecione os títulos Aprovados que deseja pagar — só título aprovado entra em remessa',
   'financial.list.kbd': '⌘K',
   'financial.list.perPage': 'por página',
   // Seleção em massa (mock)
@@ -1920,8 +1941,12 @@ export const ptBR: Catalog = {
   'financial.list.filter.dim.contrato': 'Contrato',
   'financial.list.filter.dim.programa': 'Programa',
   'financial.list.dueDate.error': 'Não foi possível alterar o vencimento. Tente novamente.',
+  // Dois motivos, duas ações. Antes havia UM texto para qualquer falha — e ele mandava "atualizar a
+  // lista" mesmo quando o erro era do servidor, que é justamente o caso em que atualizar não resolve.
   'financial.list.dueDate.errorPartial':
-    'Alguns títulos não tiveram o vencimento alterado (versão desatualizada ou status incompatível). Atualize a lista e tente de novo.',
+    '{n} título(s) não tiveram o vencimento alterado: a lista está desatualizada. Atualize a página e refaça a seleção.',
+  'financial.list.dueDate.errorPartialServer':
+    '{n} título(s) não tiveram o vencimento alterado por falha temporária do servidor. Os demais foram alterados — clique em Aplicar de novo só para os que faltaram.',
   'financial.list.delete.action': 'Excluir',
   'financial.list.delete.actionHint': 'apaga o documento definitivamente',
   'financial.list.delete.needOpen': 'Só documentos em Rascunho ou Aberto podem ser excluídos.',
@@ -1937,13 +1962,12 @@ export const ptBR: Catalog = {
   'financial.list.delete.confirm': 'Excluir definitivamente',
   'financial.list.delete.error': 'Não foi possível excluir. Tente novamente.',
   'financial.list.dueDate.bulk': 'Alterar vencimento',
-  'financial.list.dueDate.needOpen': 'Selecione documentos em Aberto para alterar o vencimento.',
+  'financial.list.dueDate.needOpen': 'Selecione títulos em Aberto ou Aprovado para alterar o vencimento.',
   'financial.list.dueDate.modalTitle': 'Alterar vencimento',
   'financial.list.dueDate.modalBodyOne': 'Defina o novo vencimento para o título selecionado.',
   'financial.list.dueDate.modalBodyManyPrefix': 'Defina o novo vencimento para os',
   'financial.list.dueDate.modalBodyManySuffix': 'títulos selecionados.',
-  'financial.list.dueDate.modalBlocked':
-    'Documentos selecionados que não estão em Aberto não serão alterados.',
+  'financial.list.dueDate.modalBlocked': 'Títulos selecionados fora de Aberto/Aprovado não serão alterados.',
   'financial.list.dueDate.modalAffectsAll':
     'Atenção: o novo vencimento é aplicado a TODOS os títulos do documento (principal e filhos de retenção), não apenas ao selecionado.',
   'financial.list.dueDate.modalCancel': 'Cancelar',
@@ -1956,6 +1980,108 @@ export const ptBR: Catalog = {
   'financial.list.pay.modalBodyManySuffix': 'títulos selecionados.',
   'financial.list.pay.modalCancel': 'Cancelar',
   'financial.list.pay.modalApply': 'Confirmar baixa',
+  // ── VAN bancária: pré-voo da remessa CNAB 240 (core-api#728) ──────────────────
+  // Conferência do lote ANTES de gerar. Leitura pura: nada aqui move dinheiro — por isso o texto fala em
+  // "conferir", nunca em "enviar". A geração (que enfileira pagamento no banco) é outra fatia.
+  'financial.remittance.preview.title': 'Conferir Remessa',
+  'financial.remittance.preview.subtitle': 'Confira os títulos a pagar incluídos na remessa:',
+  'financial.remittance.preview.notApproved':
+    'título(s) não estão Aprovados e ficaram de fora — só título aprovado entra em remessa.',
+  'financial.remittance.preview.pendingWarn':
+    'título(s) em vermelho não entram na remessa. Os demais seguem normalmente.',
+  'financial.remittance.preview.includeLabel': 'Incluir na remessa —',
+  // Motivos de a linha não entrar. Cada um leva o operador a um lugar diferente: guia/câmbio não têm
+  // conserto por cadastro; falta de dado, sim.
+  'financial.remittance.preview.pendency.taxGuide': 'Sem linha digitável — guia não entra na remessa',
+  // Genérico — só quando o trilho é desconhecido. Nomear um campo sem saber a forma de pagamento
+  // mandaria o operador procurar no lugar errado.
+  'financial.remittance.preview.pendency.missingData': 'Falta dado para o pagamento — verifique o cadastro',
+  // A regra por forma de pagamento: TED/Transferência → conta; Boleto/Guia → linha digitável; PIX → chave.
+  'financial.remittance.preview.pendency.missingBankData':
+    'Dados bancários do favorecido incompletos — banco, agência e conta',
+  'financial.remittance.preview.pendency.missingPixKey': 'Sem chave PIX no cadastro do favorecido',
+  'financial.remittance.preview.pendency.missingBarcode':
+    'Sem código de barras — o campo do documento está vazio',
+  // ⚠️ O operador PREENCHEU. A linha digitável tem 47 dígitos e o arquivo grava o código de barras, de
+  // 44 — outros campos, noutra ordem. Dizer "sem linha digitável" a quem acabou de digitá-la é o pior
+  // recado possível; o que falta é a conversão, e ela ainda não existe no backend.
+  'financial.remittance.preview.pendency.barcodeIsDigitableLine':
+    'Foi informada a linha digitável (47 dígitos) — o arquivo exige o código de barras (44)',
+  'financial.remittance.preview.pendency.barcodeMalformed':
+    'Código de barras inválido — confira os 44 dígitos do documento',
+  // Cadastro COMPLETO; o que não fecha é o dígito. Não pede "completar" — pede conferir.
+  'financial.remittance.preview.pendency.checkDigit':
+    'Dígito da conta não confere — revise o dígito no cadastro do favorecido',
+  'financial.remittance.preview.pendency.outOfVan': 'Forma de pagamento fora da VAN',
+  'financial.remittance.preview.pendency.notFound': 'Título não encontrado',
+  'financial.remittance.preview.pendency.notChecked': 'Não conferido',
+  // Selo na linha do título de retenção. ⚠️ Hoje o imposto herda a forma e o favorecido da NOTA — sai
+  // por TED ao fornecedor, não por guia ao órgão arrecadador —, e por isso o pré-voo não acusa nada.
+  // Não travamos (a modelagem muda com a reforma tributária); o selo dá ao operador como identificar.
+  'financial.remittance.preview.retention': 'Retenção',
+  'financial.remittance.preview.retentionNotice':
+    '{n} título(s) de retenção estão marcados e vão entrar na remessa. O imposto herda a forma de pagamento e o favorecido da nota — confira se é isso que você quer antes de gerar.',
+  // #736 virou status de linha no core-api. Só aparece se um não-aprovado escapar do filtro do front —
+  // e aí o recado é "falta aprovar", não "falta cadastro", que mandaria ao lugar errado.
+  'financial.remittance.preview.pendency.notApprovedLine':
+    'Falta aprovar — só título aprovado entra em remessa',
+  'financial.remittance.preview.empty': 'Nenhum título para conferir.',
+  'financial.remittance.preview.close': 'Fechar',
+  'financial.remittance.preview.summary.count': 'Títulos',
+  'financial.remittance.preview.summary.gross': 'Valor total',
+  'financial.remittance.preview.summary.net': 'Líquido',
+  'financial.remittance.preview.summary.paymentDate': 'Data de pagamento',
+  'financial.remittance.preview.summary.mixedDates': 'Vencimentos diferentes',
+  'financial.remittance.preview.summary.total': 'Total da remessa',
+  'financial.remittance.preview.col.method': 'Tipo de pagamento',
+  'financial.remittance.preview.col.document': 'Documento',
+  'financial.remittance.preview.col.supplier': 'Fornecedor',
+  'financial.remittance.preview.col.due': 'Vencimento',
+  'financial.remittance.preview.col.net': 'Valor líquido',
+  // ── Geração da remessa (S3) — ⚠️ ENFILEIRA PAGAMENTO no banco ────────────────
+  // O texto do armado nomeia quantidade e valor de propósito: é a última tela antes de um passo que não
+  // volta, e "tem certeza?" não dá ao operador nada com que conferir.
+  'financial.remittance.generate.account': 'Conta que paga',
+  'financial.remittance.generate.accountPlaceholder': 'Selecione a conta bancária…',
+  'financial.remittance.generate.action': 'Gerar remessa',
+  'financial.remittance.generate.needChecked': 'Marque ao menos um título para gerar a remessa',
+  'financial.remittance.generate.needAccount': 'Selecione a conta bancária que vai pagar',
+  'financial.remittance.generate.needSameDate':
+    'A seleção tem vencimentos diferentes. Uma remessa é de um único dia — filtre/gere por vencimento ou desmarque os divergentes.',
+  // Confirmação da geração — ⚠️ o passo que MOVE DINHEIRO. Uma frase só, com {total} e {n}
+  // interpolados: montá-la por concatenação de pedaços deixava a ordem das palavras presa ao código.
+  'financial.remittance.generate.confirm':
+    'Sua remessa tem o valor total de {total} e {n} título(s) selecionado(s), com pagamento em {data}. Após a confirmação o arquivo será transmitido ao banco. Essa ação não poderá ser desfeita.',
+  'financial.remittance.generate.confirmAction': 'Confirmar e enviar ao banco',
+  'financial.remittance.generate.cancel': 'Cancelar',
+  'financial.remittance.generate.doneTitle': 'Remessa gerada',
+  'financial.remittance.generate.doneBody':
+    'O arquivo entrou na fila de pagamento do banco. Anote o número da remessa (NSA) — é por ele que o banco a identifica.',
+  'financial.remittance.generate.nsa': 'Nº da remessa (NSA)',
+  'financial.remittance.generate.fileName': 'Arquivo',
+  'financial.remittance.generate.lineCount': 'Títulos enviados',
+  'financial.remittance.generate.total': 'Total enviado',
+  // Download do arquivo (specs/103) — cópia de conferência, homologação apenas.
+  'financial.remittance.download.action': 'Baixar arquivo',
+  'financial.remittance.download.running': 'Baixando…',
+  'financial.remittance.download.hint': 'Cópia do arquivo enviado, para conferir o layout com o banco',
+  // `falhas/`: o arquivo existe, mas o envio não completou. Dito ANTES de virar evidência.
+  'financial.remittance.download.fromFailures':
+    'Atenção: este arquivo está na pasta de falhas da VAN — o envio ao banco não foi concluído. Não o trate como o que o banco recebeu.',
+  // Produção: a rota não é registrada lá, e o 404 chega sem mensagem do core-api.
+  'financial.remittance.download.unavailable':
+    'O download do arquivo existe apenas em homologação. Em produção o arquivo é acessível só pela VAN.',
+  'financial.remittance.preview.field.pixKey': 'Chave PIX',
+  'financial.remittance.preview.field.bankCode': 'Banco do favorecido',
+  'financial.remittance.preview.field.agency': 'Agência do favorecido',
+  'financial.remittance.preview.field.accountNumber': 'Conta do favorecido',
+  'financial.remittance.preview.field.accountDigit': 'Dígito da conta',
+  'financial.remittance.preview.field.paymentDetail': 'Linha digitável / complemento',
+  'financial.remittance.preview.reason.missing': 'não preenchido',
+  'financial.remittance.preview.reason.unmappable': 'não reconhecido no layout do banco',
+  'financial.remittance.preview.reason.malformed': 'preenchido em formato inválido',
+  // O cadastro está completo: o que não fecha é o dígito. Por isso NÃO diz "corrija o formato".
+  'financial.remittance.preview.reason.checkDigitMismatch': 'dígito não confere com a conta',
   'financial.list.pagination': 'Paginação',
   'financial.list.prev': 'Página anterior',
   'financial.list.next': 'Próxima página',

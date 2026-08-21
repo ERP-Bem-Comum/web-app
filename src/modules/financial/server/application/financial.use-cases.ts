@@ -27,10 +27,34 @@ import type {
   DashboardCostCenters,
   DashboardNoContractSupplier,
 } from '#modules/financial/server/domain/dashboard.io.ts'
+import type {
+  PreviewRemittanceInput,
+  RemittancePreview,
+  GenerateRemittanceInput,
+  GeneratedRemittance,
+  RemittanceFile,
+} from '#modules/financial/server/domain/remittance.io.ts'
+
+/**
+ * Falha da GERAÇÃO — tag + a mensagem PT-BR do core-api. Exceção deliberada ao `FinancialError` puro do
+ * resto do módulo: quatro recusas distintas da remessa chegam como o mesmo 422 (`sendDomainError` colapsa
+ * o slug, OWASP API8), e só o texto distingue "conta sem convênio" de "vencimentos misturados". A tag
+ * segue mandando no COMPORTAMENTO (§V); a mensagem só preenche o TEXTO. `null` quando não houver.
+ */
+export type GenerateRemittanceFailure = Readonly<{
+  error: FinancialError
+  message: string | null
+}>
 
 export type FinancialClient = Readonly<{
   list: (input: ListDocumentsInput, token: string) => Promise<Result<DocumentListResponse, FinancialError>>
   listPayableTitles: (
+    input: ListPayableTitlesInput,
+    token: string,
+  ) => Promise<Result<PayableTitleListResponse, FinancialError>>
+  // specs/101: TODOS os títulos do filtro (o BFF pagina o core-api). Sem `page`/`pageSize` de tela: a
+  // paginação passa a ser recorte de exibição, e busca/seleção/remessa enxergam o conjunto inteiro.
+  listAllPayableTitles: (
     input: ListPayableTitlesInput,
     token: string,
   ) => Promise<Result<PayableTitleListResponse, FinancialError>>
@@ -68,6 +92,23 @@ export type FinancialClient = Readonly<{
     input: PayableCountsInput,
     token: string,
   ) => Promise<Result<PayableCounts, FinancialError>>
+  // VAN (core-api#728): pré-voo do lote — o que sai e o que não sai, ANTES de gerar. Leitura pura.
+  previewRemittance: (
+    input: PreviewRemittanceInput,
+    token: string,
+  ) => Promise<Result<RemittancePreview, FinancialError>>
+  // ⚠️ VAN (core-api#728): GERA — grava em `saida/` e ENFILEIRA PAGAMENTO no banco. Consome NSA.
+  generateRemittance: (
+    input: GenerateRemittanceInput,
+    token: string,
+  ) => Promise<Result<GeneratedRemittance, GenerateRemittanceFailure>>
+  // VAN (specs/103): baixa o arquivo QUE FOI ao banco — cópia de conferência, **homologação apenas**.
+  // Reusa a falha-com-mensagem da geração: os dois motivos novos (`remittance-file-not-found` 404,
+  // `remittance-file-corrupted` 503) também chegam colapsados, e só o texto do core-api os separa.
+  downloadRemittanceFile: (
+    remittanceId: string,
+    token: string,
+  ) => Promise<Result<RemittanceFile, GenerateRemittanceFailure>>
 }>
 
 type Deps = Readonly<{ client: FinancialClient }>
@@ -82,10 +123,42 @@ export const createListPayableTitles =
   (input: ListPayableTitlesInput, token: string): Promise<Result<PayableTitleListResponse, FinancialError>> =>
     deps.client.listPayableTitles(input, token)
 
+export const createListAllPayableTitles =
+  (deps: Deps) =>
+  (input: ListPayableTitlesInput, token: string): Promise<Result<PayableTitleListResponse, FinancialError>> =>
+    deps.client.listAllPayableTitles(input, token)
+
 export const createGetPayableCounts =
   (deps: Deps) =>
   (input: PayableCountsInput, token: string): Promise<Result<PayableCounts, FinancialError>> =>
     deps.client.getPayableCounts(input, token)
+
+// VAN (core-api#728): pré-voo do lote. Thin — a régua de aptidão é do core-api (`checkPayoutReadiness`),
+// a MESMA que a geração usa. Uma segunda régua "de tela" divergiria, e a divergência apareceria como
+// título que o pré-voo aprova e o arquivo recusa.
+export const createPreviewRemittance =
+  (deps: Deps) =>
+  (input: PreviewRemittanceInput, token: string): Promise<Result<RemittancePreview, FinancialError>> =>
+    deps.client.previewRemittance(input, token)
+
+// ⚠️ Gerar remessa MOVE DINHEIRO. Thin de propósito: nenhuma regra nossa se interpõe entre o comando do
+// operador e o core-api — quem decide o que entra no arquivo é o domínio de lá, e uma checagem a mais
+// aqui só criaria uma segunda verdade sobre um pagamento já enfileirado.
+export const createGenerateRemittance =
+  (deps: Deps) =>
+  (
+    input: GenerateRemittanceInput,
+    token: string,
+  ): Promise<Result<GeneratedRemittance, GenerateRemittanceFailure>> =>
+    deps.client.generateRemittance(input, token)
+
+// Download do arquivo (specs/103). Thin pelo mesmo motivo da geração: quem decide se aquele objeto É a
+// remessa emitida é o core-api, que confere o `contentHash`. Uma segunda opinião nossa sobre identidade
+// de arquivo de pagamento seria uma verdade concorrente sobre dinheiro que já saiu.
+export const createDownloadRemittanceFile =
+  (deps: Deps) =>
+  (remittanceId: string, token: string): Promise<Result<RemittanceFile, GenerateRemittanceFailure>> =>
+    deps.client.downloadRemittanceFile(remittanceId, token)
 
 export const createGetDocument =
   (deps: Deps) =>
