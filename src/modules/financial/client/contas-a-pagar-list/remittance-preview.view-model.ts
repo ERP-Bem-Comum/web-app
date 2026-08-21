@@ -21,6 +21,7 @@ import type {
   PayoutGap,
   PayoutGapReason,
   VanRoute,
+  RemittanceBatch,
   RemittancePreview,
   GeneratedRemittance,
 } from '#modules/financial/client/data/model/remittance.model.ts'
@@ -186,9 +187,46 @@ export type PreviewSummary = Readonly<{
   retentionCheckedCount: number
 }>
 
+/**
+ * Um lote do arquivo, pronto para desenhar (core-api#804).
+ *
+ * ⚠️ Nada aqui é recalculado: `formLabel` vem traduzido do backend e o agrupamento é o do EMISSOR. A
+ * régua depende de comparar o banco do favorecido com o do cedente, e uma segunda régua nossa diria ao
+ * operador uma coisa enquanto o banco recebe outra. O código CNAB anda junto do rótulo porque é por ele
+ * que se confere o arquivo transmitido.
+ */
+export type PreviewBatchView = Readonly<{
+  /** Chave de lista: forma + banco identificam o lote. */
+  key: string
+  formLabel: string
+  /** Código CNAB cru (G029), exibido ao lado do rótulo. */
+  formCode: string
+  /** Banco do favorecido; `—` no boleto, onde o Segmento J não carrega banco de destino. */
+  bank: string
+  count: string
+  total: string
+}>
+
+/**
+ * ⚠️ Os lotes descrevem a SELEÇÃO QUE O BACKEND RECEBEU, não o que está marcado agora: desmarcar uma
+ * linha não repõe a repartição (só um novo pré-voo faria isso). Por isso a tela os apresenta como
+ * "composição conferida", e não como o total do que vai sair — quem responde por esse total é o resumo.
+ */
+export const toBatchesView = (batches: readonly RemittanceBatch[]): readonly PreviewBatchView[] =>
+  batches.map((b) => ({
+    key: `${b.launchForm}|${b.payeeBankCode ?? ''}`,
+    formLabel: b.launchFormLabel,
+    formCode: b.launchForm,
+    bank: b.payeeBankCode ?? DASH,
+    count: String(b.count),
+    total: centsToBRL(b.totalCents),
+  }))
+
 export type PreviewView = Readonly<{
   lines: readonly PreviewLineView[]
   summary: PreviewSummary
+  /** Como a seleção se reparte no arquivo. Vazio quando o backend não informou — a tela omite o painel. */
+  batches: readonly PreviewBatchView[]
   /** TÍTULOS que irão na geração — só os marcados. */
   checkedPayableIds: readonly string[]
 }>
@@ -289,6 +327,7 @@ export const toPreviewView = (
 
   return {
     lines: sorted,
+    batches: toBatchesView(preview.batches),
     checkedPayableIds,
     summary: {
       checkedCount: checkedLines.length,

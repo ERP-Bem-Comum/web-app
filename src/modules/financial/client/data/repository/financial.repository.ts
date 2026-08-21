@@ -97,7 +97,8 @@ export type FinancialRepository = Readonly<{
   generateRemittance: (
     input: GenerateRemittanceInput,
   ) => Promise<Result<GeneratedRemittance, GenerateRemittanceFailure>>
-  // specs/103: cópia do arquivo para conferência. **Homologação apenas** — em produção a rota não existe.
+  // specs/103: cópia do arquivo para conferência. Oferecida em TODO ambiente (decisão da P.O., 21/08) —
+  // onde o core-api ainda não registra a rota, o erro traz o recado, e a tela não esconde o botão.
   downloadRemittanceFile: (remittanceId: string) => Promise<Result<RemittanceFile, GenerateRemittanceFailure>>
   getById: (id: string) => Promise<Result<DocumentDetail, FinancialError>>
   // #568: comprovante-fonte (bytes base64 + mimeType). Busca lazy (só quando há anexo). CA4: via server-fn.

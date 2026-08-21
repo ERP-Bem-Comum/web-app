@@ -66,6 +66,12 @@ import {
   receipt,
   receiptTitle,
   receiptGrid,
+  accountBar,
+  batchBox,
+  batchTitle,
+  batchRow,
+  batchCode,
+  batchNum,
 } from './remittance-preview.css.ts'
 
 const t = createTranslator(ptBR)
@@ -87,6 +93,8 @@ export type RemittancePreviewModalProps = Readonly<{
   notApprovedCount: number
   onToggle: (payableId: string) => void
   onClose: () => void
+  /** Esperando a conta-cedente para poder conferir (core-api#804). Não é erro: é o passo anterior. */
+  awaitingAccount: boolean
 
   // ── Geração (S3) — ⚠️ enfileira pagamento no banco ────────────────────────────
   accounts: readonly ReconciliationAccountOption[]
@@ -101,10 +109,10 @@ export type RemittancePreviewModalProps = Readonly<{
   generateErrorMessage: string | null
   onGenerate: () => void
 
-  // ── Download do arquivo (specs/103) — cópia de conferência, HOMOLOGAÇÃO apenas ──
+  // ── Download do arquivo (specs/103) — cópia de conferência, em TODO ambiente ────
   downloading: boolean
   downloadErrorTag: string | null
-  /** Mensagem PT-BR do core-api. `null` em produção, onde a rota nem existe. */
+  /** Mensagem PT-BR do core-api. `null` onde a rota nem é registrada (404 seco do Fastify). */
   downloadErrorMessage: string | null
   /** O objeto veio de `falhas/`: o envio ao banco NÃO completou. */
   downloadedFromFailures: boolean
@@ -133,6 +141,37 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
         ) : null}
 
         {props.errorTag !== null ? <p className={errorBox}>{t(props.errorTag)}</p> : null}
+
+        {/* A conta que PAGA, no topo (core-api#804): a conferência é resposta a ela — a repartição em
+            lotes se decide comparando o banco do favorecido com o do cedente. Some quando o comprovante
+            está na tela: ali a remessa já saiu, e trocar a conta não muda mais nada. */}
+        {props.generated === null ? (
+          <div className={accountBar}>
+            <span className={launchLabel}>{t('financial.remittance.generate.account')}</span>
+            <select
+              className={accountSelect}
+              value={props.cedenteAccountId}
+              disabled={props.generating || props.confirming}
+              aria-label={t('financial.remittance.generate.account')}
+              onChange={(e) => {
+                props.onCedenteAccount(e.target.value)
+              }}
+            >
+              <option value="">{t('financial.remittance.generate.accountPlaceholder')}</option>
+              {props.accounts.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
+
+        {/* Espera, não erro: sem conta não há o que conferir. Dizer isso é melhor que uma tabela vazia
+            (que pareceria "nada a enviar") ou um "carregando" que nunca termina. */}
+        {props.awaitingAccount ? (
+          <p className={emptyState}>{t('financial.remittance.preview.needAccount')}</p>
+        ) : null}
 
         {/* Retenções marcadas: o pré-voo não as acusa (herdam forma e favorecido da nota), então o
             aviso no topo é o que garante que o operador saiba ANTES de gerar. */}
@@ -169,8 +208,11 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
             </div>
 
             {/* Baixar o arquivo QUE FOI ao banco — para conferir layout. Nunca uma regeração: outro NSA e
-                outro carimbo de tempo não servem de evidência. Só existe em homologação; em produção a
-                rota não é registrada e o clique volta o recado de indisponível. */}
+                outro carimbo de tempo não servem de evidência.
+
+                Oferecido em TODO ambiente (decisão da P.O., 21/08). ⚠️ Enquanto o core-api registrar a
+                rota só fora de produção, lá o clique volta 404 e a mensagem abaixo explica — a tela NÃO
+                esconde o botão por conta própria. */}
             <div className={receiptActions}>
               <button
                 type="button"
@@ -237,6 +279,26 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
               <p className={notice}>
                 {`${String(view.summary.pendingCount)} ${t('financial.remittance.preview.pendingWarn')}`}
               </p>
+            ) : null}
+
+            {/* Como a seleção se REPARTE no arquivo (core-api#804). Vem pronto do emissor — o front não
+                reagrupa. ⚠️ Descreve a seleção que FOI CONFERIDA: desmarcar uma linha depois não repõe
+                a repartição, e por isso o título diz "conferida", não "a enviar". */}
+            {view.batches.length > 0 ? (
+              <div className={batchBox}>
+                <p className={batchTitle}>{t('financial.remittance.preview.batches.title')}</p>
+                {view.batches.map((b) => (
+                  <div key={b.key} className={batchRow} role="row">
+                    <span>
+                      {b.formLabel}
+                      <span className={batchCode}>{b.formCode}</span>
+                    </span>
+                    <span>{`${t('financial.remittance.preview.batches.bank')} ${b.bank}`}</span>
+                    <span className={batchNum}>{b.count}</span>
+                    <span className={batchNum}>{b.total}</span>
+                  </div>
+                ))}
+              </div>
             ) : null}
 
             {view.lines.length === 0 ? (
@@ -319,24 +381,9 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
               </p>
             ) : null}
 
-            <span className={launchLabel}>{t('financial.remittance.generate.account')}</span>
-            <select
-              className={accountSelect}
-              value={props.cedenteAccountId}
-              disabled={props.generating || props.confirming}
-              aria-label={t('financial.remittance.generate.account')}
-              onChange={(e) => {
-                props.onCedenteAccount(e.target.value)
-              }}
-            >
-              <option value="">{t('financial.remittance.generate.accountPlaceholder')}</option>
-              {props.accounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.label}
-                </option>
-              ))}
-            </select>
-
+            {/* O seletor de conta NÃO se repete aqui: ele subiu para o topo, porque a conferência que
+                está acima é resposta a ele. Duas cópias do mesmo controle na mesma tela é convite a
+                trocar a conta depois de ler o pré-voo — e gerar um arquivo que não é o conferido. */}
             {props.confirming ? (
               <>
                 <button

@@ -28,6 +28,9 @@ export type PreviewRemittanceFnResult =
 export const previewRemittanceFn = createServerFn({ method: 'POST' })
   .inputValidator(
     z.object({
+      // A conta que PAGA. Obrigatória desde o core-api#804: a repartição dos lotes se decide comparando
+      // o banco do favorecido com o do cedente, e sem ela o pré-voo não confere o arquivo que vai sair.
+      cedenteAccountId: z.uuid(),
       // O teto de 200 espelha o do core-api. Validar aqui evita a ida ao backend só para levar um 400 —
       // e o `min(1)` impede a chamada vazia que o operador dispararia sem querer.
       // `.readonly()` mantém a imutabilidade por padrão (§VII) atravessando a fronteira RPC: sem ele o
@@ -41,7 +44,10 @@ export const previewRemittanceFn = createServerFn({ method: 'POST' })
     const accessToken = await resolveAccessTokenFn()
     if (accessToken === null) return { ok: false, error: 'unauthorized' }
 
-    const r = await financialServer().previewRemittance({ payableIds: data.payableIds }, accessToken)
+    const r = await financialServer().previewRemittance(
+      { cedenteAccountId: data.cedenteAccountId, payableIds: data.payableIds },
+      accessToken,
+    )
     if (isErr(r)) return { ok: false, error: r.error }
     return { ok: true, data: r.value }
   })

@@ -2026,6 +2026,14 @@ export const ptBR: Catalog = {
   'financial.remittance.preview.pendency.notApprovedLine':
     'Falta aprovar — só título aprovado entra em remessa',
   'financial.remittance.preview.empty': 'Nenhum título para conferir.',
+  // core-api#804: o pré-voo só existe depois da conta. O texto diz o PORQUÊ, e não só "escolha a conta":
+  // sem ele o operador lê como burocracia e não entende por que a conferência não apareceu.
+  'financial.remittance.preview.needAccount':
+    'Escolha a conta que vai pagar para conferir a remessa — é ela que define como os títulos se repartem no arquivo.',
+  // Composição dos lotes (core-api#804). "Conferida", não "a enviar": descreve a seleção que foi ao
+  // pré-voo, e desmarcar uma linha depois não repõe a repartição.
+  'financial.remittance.preview.batches.title': 'Composição conferida do arquivo',
+  'financial.remittance.preview.batches.bank': 'Banco',
   'financial.remittance.preview.close': 'Fechar',
   'financial.remittance.preview.summary.count': 'Títulos',
   'financial.remittance.preview.summary.gross': 'Valor total',
@@ -2068,9 +2076,12 @@ export const ptBR: Catalog = {
   // `falhas/`: o arquivo existe, mas o envio não completou. Dito ANTES de virar evidência.
   'financial.remittance.download.fromFailures':
     'Atenção: este arquivo está na pasta de falhas da VAN — o envio ao banco não foi concluído. Não o trate como o que o banco recebeu.',
-  // Produção: a rota não é registrada lá, e o 404 chega sem mensagem do core-api.
+  // 404 SEM mensagem do core-api = a rota não está registrada neste ambiente (hoje, produção). O texto
+  // descreve o ESTADO do ambiente, não uma política: a P.O. decidiu (21/08) que produção também baixa,
+  // e prometer "só em homologação" contradiria o que está sendo liberado. Enquanto o core-api não
+  // registrar a rota lá, o operador precisa saber que não é falha dele nem do arquivo.
   'financial.remittance.download.unavailable':
-    'O download do arquivo existe apenas em homologação. Em produção o arquivo é acessível só pela VAN.',
+    'Este ambiente ainda não disponibiliza o download do arquivo. O arquivo enviado continua acessível pela VAN.',
   'financial.remittance.preview.field.pixKey': 'Chave PIX',
   'financial.remittance.preview.field.bankCode': 'Banco do favorecido',
   'financial.remittance.preview.field.agency': 'Agência do favorecido',

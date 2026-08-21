@@ -48,6 +48,21 @@ export interface RemittancePreviewLine {
   valueCents: string
 }
 
+/**
+ * Como a seleção se REPARTE no arquivo (core-api#804): um lote por forma de lançamento e banco do
+ * favorecido. A régua é do EMISSOR e o front NÃO a replica — recalcular criaria uma segunda verdade
+ * sobre o arquivo, e a que o banco recebe é a do backend. Por isso o código CNAB cru e o rótulo PT-BR
+ * vêm os dois prontos: o código sozinho não diz nada na tela, o rótulo sozinho impede a conferência.
+ */
+export interface RemittanceBatch {
+  launchForm: string
+  launchFormLabel: string
+  /** `null` no boleto: o Segmento J não carrega banco de destino. */
+  payeeBankCode: string | null
+  count: number
+  totalCents: string
+}
+
 export interface RemittancePreview {
   lines: readonly RemittancePreviewLine[]
   readyCount: number
@@ -57,9 +72,16 @@ export interface RemittancePreview {
   notApprovedCount: number
   readyTotalCents: string
   blockedTotalCents: string
+  /** Vazio quando o backend ainda não repartia — a tela só omite o painel. */
+  batches: readonly RemittanceBatch[]
 }
 
 export interface PreviewRemittanceInput {
+  /**
+   * ⚠️ A conta que PAGA — obrigatória desde o core-api#794/#804, e a MESMA da geração: a repartição dos
+   * lotes se decide comparando o banco do favorecido com o do cedente. Sem ela o pré-voo volta 400.
+   */
+  cedenteAccountId: string
   payableIds: readonly string[]
 }
 

@@ -6,8 +6,14 @@
  * (abrir a conferência), não quando a tela monta. Um `useQuery` re-buscaria sozinho a cada foco/reconexão
  * com a seleção de antes — e conferência que muda sozinha debaixo do olho de quem confere é pior que
  * nenhuma. Nada é invalidado no cache: leitura pura não mexe em título nem em remessa.
+ *
+ * ⚠️ ORDEM (core-api#804): o pré-voo passou a exigir a CONTA-CEDENTE. Antes ele disparava no `start`, com
+ * a conta ainda por escolher — agora `start` só guarda a seleção e abre o modal, e a conferência roda
+ * quando a conta é conhecida. Não é capricho de contrato: a repartição em lotes se decide comparando o
+ * banco do favorecido com o do cedente, então "o que vai sair" só tem resposta depois de saber quem paga.
+ * Trocar a conta RE-roda o pré-voo, porque a resposta muda com ela.
  */
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { isOk } from '#shared/primitives/result.ts'
@@ -31,9 +37,17 @@ export type RemittancePreviewBinding = Readonly<{
    */
   unchecked: ReadonlySet<string>
   toggle: (payableId: string) => void
-  /** Abre a conferência e dispara o pré-voo dos TÍTULOS informados. */
+  /**
+   * Abre a conferência com os TÍTULOS informados. NÃO dispara o pré-voo: ele roda quando a conta-cedente
+   * for conhecida (escolhida ou auto-selecionada) — ver o cabeçalho.
+   */
   start: (payableIds: readonly string[]) => void
   close: () => void
+  /**
+   * O modal está aberto esperando a conta para poder conferir. É estado de ESPERA, não de erro: a tela
+   * pede a conta em vez de mostrar uma conferência vazia ou um "carregando" que nunca termina.
+   */
+  awaitingAccount: boolean
 
   // ── Geração (S3) — ⚠️ enfileira pagamento no banco ────────────────────────────
   /** Contas-cedente elegíveis a pagar. Vazio enquanto carrega ou se a listagem falhar. */
@@ -53,7 +67,12 @@ export type RemittancePreviewBinding = Readonly<{
   generateErrorMessage: string | null
   generate: (payableIds: readonly string[]) => void
 
-  // ── Download do arquivo (specs/103) — HOMOLOGAÇÃO apenas ──────────────────────
+  // ── Download do arquivo (specs/103) ───────────────────────────────────────────
+  //
+  // Oferecido em TODO ambiente (decisão da P.O., 21/08 — produção também vai baixar). ⚠️ Enquanto o
+  // core-api registrar a rota só fora de produção, lá o clique volta 404 sem mensagem, e é a UI que diz
+  // que o ambiente ainda não serve o arquivo. Não escondemos o botão: esconder por conta própria seria
+  // impor uma política que a P.O. já decidiu não ter.
   downloading: boolean
   /** Tag i18n da falha (comportamento) — §V. */
   downloadErrorTag: string | null
@@ -91,8 +110,10 @@ export function useRemittancePreview(): RemittancePreviewBinding {
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const [unchecked, setUnchecked] = useState<ReadonlySet<string>>(() => new Set())
-  const [cedenteAccountId, setCedenteAccountId] = useState('')
+  const [chosenAccountId, setChosenAccountId] = useState('')
   const [confirming, setConfirming] = useState(false)
+  // A seleção que veio do grid, guardada até haver conta com que conferi-la.
+  const [pendingIds, setPendingIds] = useState<readonly string[]>([])
 
   // Contas-cedente: só busca com o modal aberto. Compartilha a queryKey do grid de contas (#168).
   const accountsQuery = useQuery({
@@ -104,12 +125,44 @@ export function useRemittancePreview(): RemittancePreviewBinding {
   const accounts =
     accountsQuery.data?.ok === true ? accountsQuery.data.value.filter((a) => a.status !== 'Closed') : []
 
+  /**
+   * Conta efetiva: a escolhida ou, quando só UMA das contas pode gerar remessa, ela — sem convênio a
+   * conta nem gera (#722), então oferecer uma escolha de um item só faria o operador clicar para
+   * confirmar o óbvio antes de ver a conferência. Com duas ou mais, ninguém escolhe por ele: errar a
+   * conta aqui é pagar pela conta errada.
+   */
+  const eligible = accounts.filter((a) => a.convenio !== '')
+  const [soleEligible] = eligible
+  const cedenteAccountId =
+    chosenAccountId !== ''
+      ? chosenAccountId
+      : eligible.length === 1 && soleEligible !== undefined
+        ? soleEligible.id
+        : ''
+
   const previewMut = useMutation({
     mutationKey: ['financial', 'remittances', 'preview'] as const,
-    mutationFn: (payableIds: readonly string[]) => financialRepository.previewRemittance({ payableIds }),
+    mutationFn: (input: Readonly<{ cedenteAccountId: string; payableIds: readonly string[] }>) =>
+      financialRepository.previewRemittance(input),
   })
 
   const { mutate, reset } = previewMut
+
+  /**
+   * Dispara a conferência quando (e só quando) os dois insumos existem. Efeito, e não um clique, porque
+   * um dos insumos é ASSÍNCRONO: a auto-seleção da conta única só se resolve quando a listagem chega.
+   *
+   * A `ref` guarda o par já conferido. Sem ela, qualquer re-render repetiria a chamada — e em dev o
+   * StrictMode a repetiria sempre, fazendo duas conferências para cada abertura.
+   */
+  const lastRun = useRef<string | null>(null)
+  useEffect(() => {
+    if (!open || pendingIds.length === 0 || cedenteAccountId === '') return
+    const key = `${cedenteAccountId}|${pendingIds.join(',')}`
+    if (lastRun.current === key) return
+    lastRun.current = key
+    mutate({ cedenteAccountId, payableIds: pendingIds })
+  }, [open, pendingIds, cedenteAccountId, mutate])
 
   // ⚠️ GERAÇÃO — a única chamada da tela que move dinheiro. Sem retry automático: repetir sozinha uma
   // requisição que pode ter enfileirado o pagamento é a receita para pagar duas vezes. Se o resultado for
@@ -118,6 +171,8 @@ export function useRemittancePreview(): RemittancePreviewBinding {
     mutationKey: ['financial', 'remittances', 'generate'] as const,
     retry: false,
     mutationFn: (payableIds: readonly string[]) =>
+      // A MESMA conta com que o pré-voo foi feito: gerar com outra tornaria a conferência que o operador
+      // acabou de ler uma descrição de um arquivo que não é este.
       financialRepository.generateRemittance({ cedenteAccountId, payableIds }),
     onSuccess: (res) => {
       if (!isOk(res)) return
@@ -152,9 +207,10 @@ export function useRemittancePreview(): RemittancePreviewBinding {
       setConfirming(false)
       resetGenerate()
       resetDownload()
-      mutate(payableIds)
+      // Guarda a seleção; quem dispara a conferência é o efeito, quando houver conta.
+      setPendingIds(payableIds)
     },
-    [mutate, resetGenerate, resetDownload],
+    [resetGenerate, resetDownload],
   )
 
   const toggle = useCallback((payableId: string): void => {
@@ -169,6 +225,10 @@ export function useRemittancePreview(): RemittancePreviewBinding {
   const close = useCallback((): void => {
     setOpen(false)
     setConfirming(false)
+    setPendingIds([])
+    // Esquece o par já conferido: reabrir com a MESMA seleção e a mesma conta tem de conferir de novo —
+    // entre uma abertura e outra o operador pode ter corrigido justamente o cadastro que estava impedindo.
+    lastRun.current = null
     reset() // não guarda pré-voo velho: reabrir com outra seleção não pode mostrar o resultado da anterior
     resetGenerate() // nem comprovante velho: ele é de um pagamento que já aconteceu
     resetDownload() // nem erro de download da remessa anterior
@@ -195,9 +255,11 @@ export function useRemittancePreview(): RemittancePreviewBinding {
     toggle,
     start,
     close,
+    // Esperando a conta: há seleção, o modal está aberto e ninguém conseguiu (ou escolheu) uma conta ainda.
+    awaitingAccount: open && pendingIds.length > 0 && cedenteAccountId === '',
     accounts,
     cedenteAccountId,
-    setCedenteAccountId,
+    setCedenteAccountId: setChosenAccountId,
     confirming,
     arm: () => {
       setConfirming(true)

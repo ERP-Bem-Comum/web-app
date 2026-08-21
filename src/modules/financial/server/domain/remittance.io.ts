@@ -63,6 +63,27 @@ export interface RemittancePreviewLine {
 }
 
 /**
+ * Como a seleção se REPARTE no arquivo (core-api#804, CA7): um lote por forma de lançamento e banco do
+ * favorecido.
+ *
+ * ⚠️ Esta régua é do EMISSOR e o front NÃO a replica. A forma se decide comparando o banco do favorecido
+ * com o do CEDENTE — recalcular aqui criaria uma segunda verdade sobre como o arquivo vai sair, e a que
+ * o banco recebe é a do backend. Por isso `launchForm` (código CNAB cru, G029) e `launchFormLabel` (o
+ * rótulo PT-BR) vêm os DOIS prontos: o código sozinho não significa nada na tela, e o rótulo sozinho
+ * impede a conferência contra o arquivo transmitido.
+ */
+export interface RemittanceBatch {
+  /** Código CNAB cru (G029) — "01", "30", "31", "41". Forma desconhecida aparece como o próprio código. */
+  launchForm: string
+  /** Rótulo PT-BR já traduzido pelo backend. */
+  launchFormLabel: string
+  /** `null` no boleto: o Segmento J não carrega banco de destino (quem recebe está no código de barras). */
+  payeeBankCode: string | null
+  count: number
+  totalCents: string
+}
+
+/**
  * `blockedTotalCents` exclui o `out-of-van` de propósito (decisão do core-api): somá-los inflaria o número
  * que o operador usa para decidir se vale correr atrás do cadastro — e cadastro nenhum resolve câmbio.
  */
@@ -75,10 +96,18 @@ export interface RemittancePreview {
   notApprovedCount: number
   readyTotalCents: string
   blockedTotalCents: string
+  /** core-api#804. Vazio quando o backend ainda não repartia — a tela só omite o painel. */
+  batches: readonly RemittanceBatch[]
 }
 
 /** Entrada do pré-voo: TÍTULOS. O core-api aceita de 1 a 200 ids por chamada. */
 export interface PreviewRemittanceInput {
+  /**
+   * ⚠️ OBRIGATÓRIO desde o core-api#804 — e é a MESMA conta que a geração recebe, de propósito: a
+   * composição dos lotes depende de comparar o banco do favorecido com o do CEDENTE, então sem saber
+   * qual conta paga não há pré-voo que confira o arquivo. O corpo lá é `.strict()`: mandar sem isto é 400.
+   */
+  cedenteAccountId: string
   payableIds: readonly string[]
 }
 

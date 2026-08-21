@@ -186,7 +186,9 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
     ): Promise<Result<RemittancePreview, FinancialError>> => {
       const r = await resultFetch<unknown>(`${baseUrl}/remittances:preview`, {
         method: 'POST',
-        body: { payableIds: input.payableIds },
+        // ⚠️ `cedenteAccountId` é obrigatório desde o core-api#804 e o corpo lá é `.strict()`: sem ele o
+        // pré-voo volta 400. É a mesma conta da geração — conferir e gerar respondem à mesma pergunta.
+        body: { cedenteAccountId: input.cedenteAccountId, payableIds: input.payableIds },
         token,
       })
       if (isErr(r)) return err(mapHttpError(r.error))

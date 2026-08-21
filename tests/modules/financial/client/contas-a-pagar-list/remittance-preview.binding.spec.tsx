@@ -1,20 +1,24 @@
 /**
- * useRemittancePreview (Vitest/jsdom) — binding do PRÉ-VOO da remessa (VAN, core-api#728). Cobre:
- *   (a) `start` abre a conferência e chama o repository UMA vez, com os ids recebidos;
- *   (b) erro do BFF vira `errorTag` (§V: a UI trata a tag, nunca o status HTTP);
- *   (c) `start([])` não abre nem chama nada (seleção vazia não dispara ida ao backend);
- *   (d) `close` LIMPA o resultado — reabrir com outra seleção não pode mostrar o pré-voo anterior.
+ * useRemittancePreview (Vitest/jsdom) — binding do PRÉ-VOO da remessa (VAN, core-api#728/#804). Cobre:
+ *   (a) `start` abre a conferência mas NÃO chama o backend — o pré-voo espera a conta-cedente;
+ *   (b) com a conta, chama uma vez e com os DOIS insumos no corpo; trocar a conta re-roda;
+ *   (c) conta única com convênio é auto-selecionada (escolha de um item só não é escolha);
+ *   (d) erro do BFF vira `errorTag` (§V: a UI trata a tag, nunca o status HTTP);
+ *   (e) `start([])` não abre nem chama nada (seleção vazia não dispara ida ao backend);
+ *   (f) `close` LIMPA o resultado — reabrir com outra seleção não pode mostrar o pré-voo anterior.
  *
- * A (d) é a que importa: pré-voo velho exibido como se fosse o atual é o defeito que a conferência
- * existe para impedir.
+ * A (f) é a que importa: pré-voo velho exibido como se fosse o atual é o defeito que a conferência
+ * existe para impedir. A (b) é a que o core-api#804 tornou obrigatória — sem a conta o corpo `.strict()`
+ * do backend responde 400, e "o que vai sair" só tem resposta depois de saber quem paga.
  */
 import type { ReactNode } from 'react'
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import { renderHook, act, waitFor, cleanup } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import { ok, err } from '#shared/primitives/result.ts'
 import { financialRepository } from '#modules/financial/client/data/repository/financial.repository.instance.ts'
+import { reconciliationRepository } from '#modules/financial/client/data/repository/reconciliation.repository.instance.ts'
 import { useRemittancePreview } from '#modules/financial/client/contas-a-pagar-list/remittance-preview.binding.ts'
 
 vi.mock('#modules/financial/client/data/repository/financial.repository.instance.ts', () => ({
@@ -25,12 +29,13 @@ vi.mock('#modules/financial/client/data/repository/financial.repository.instance
   },
 }))
 vi.mock('#modules/financial/client/data/repository/reconciliation.repository.instance.ts', () => ({
-  reconciliationRepository: { listAccounts: vi.fn().mockResolvedValue({ ok: false, error: 'server' }) },
+  reconciliationRepository: { listAccounts: vi.fn() },
 }))
 
 const mocked = vi.mocked(financialRepository.previewRemittance)
 const mockedGenerate = vi.mocked(financialRepository.generateRemittance)
 const mockedDownload = vi.mocked(financialRepository.downloadRemittanceFile)
+const mockedAccounts = vi.mocked(reconciliationRepository.listAccounts)
 
 const PREVIEW = {
   lines: [
@@ -43,14 +48,33 @@ const PREVIEW = {
   notApprovedCount: 0,
   readyTotalCents: '25000',
   blockedTotalCents: '0',
+  batches: [],
 } as never
 
+/** Conta-cedente do jeito que o binding a lê: só `status`, `convenio` e `id` decidem alguma coisa aqui. */
+const account = (id: string, convenio: string, status = 'Active') => ({ id, convenio, status }) as never
+
 const setup = () => {
-  const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } })
+  const client = new QueryClient({
+    defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
+  })
   const wrapper = ({ children }: Readonly<{ children: ReactNode }>): ReactNode => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
   )
   return renderHook(() => useRemittancePreview(), { wrapper })
+}
+
+/** Abre a conferência e escolhe a conta — o caminho normal desde o core-api#804. */
+const startWithAccount = async (result: { current: ReturnType<typeof useRemittancePreview> }) => {
+  act(() => {
+    result.current.start(['doc-1'])
+  })
+  act(() => {
+    result.current.setCedenteAccountId('acc-1')
+  })
+  await waitFor(() => {
+    expect(result.current.preview).not.toBeNull()
+  })
 }
 
 const RECEIPT = {
@@ -67,15 +91,7 @@ const setupGenerated = async () => {
   mocked.mockResolvedValue(ok(PREVIEW))
   mockedGenerate.mockResolvedValue(ok(RECEIPT) as never)
   const { result } = setup()
-  act(() => {
-    result.current.start(['doc-1'])
-  })
-  await waitFor(() => {
-    expect(result.current.preview).not.toBeNull()
-  })
-  act(() => {
-    result.current.setCedenteAccountId('acc-1')
-  })
+  await startWithAccount(result)
   act(() => {
     result.current.generate(['doc-1'])
   })
@@ -90,8 +106,16 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
+// Default de cada teste: a listagem de contas falha. Assim NENHUMA conta é auto-selecionada e o que se
+// mede é o efeito da escolha explícita — os testes de auto-seleção sobrescrevem isto.
+beforeEach(() => {
+  mockedAccounts.mockResolvedValue(err('server') as never)
+})
+
 describe('useRemittancePreview', () => {
-  it('start abre a conferência e busca o pré-voo dos ids informados', async () => {
+  // ── A ordem que o core-api#804 impôs ──────────────────────────────────────────
+
+  it('⚠️ start abre a conferência mas NÃO chama o backend: o pré-voo espera a conta', async () => {
     mocked.mockResolvedValue(ok(PREVIEW))
     const { result } = setup()
 
@@ -101,12 +125,71 @@ describe('useRemittancePreview', () => {
     })
 
     expect(result.current.open).toBe(true)
+    // Sem a conta o corpo do core-api (`.strict()`) responde 400 — chamar seria pedir o erro.
+    await waitFor(() => {
+      expect(result.current.awaitingAccount).toBe(true)
+    })
+    expect(mocked).not.toHaveBeenCalled()
+    expect(result.current.preview).toBeNull()
+  })
+
+  it('com a conta escolhida, confere UMA vez e manda os dois insumos', async () => {
+    mocked.mockResolvedValue(ok(PREVIEW))
+    const { result } = setup()
+
+    await startWithAccount(result)
+
+    expect(mocked).toHaveBeenCalledTimes(1)
+    expect(mocked).toHaveBeenCalledWith({ cedenteAccountId: 'acc-1', payableIds: ['doc-1'] })
+    expect(result.current.awaitingAccount).toBe(false)
+    expect(result.current.errorTag).toBeNull()
+  })
+
+  it('⚠️ trocar a conta RE-confere: a repartição do arquivo muda com quem paga', async () => {
+    mocked.mockResolvedValue(ok(PREVIEW))
+    const { result } = setup()
+    await startWithAccount(result)
+
+    act(() => {
+      result.current.setCedenteAccountId('acc-2')
+    })
+
+    await waitFor(() => {
+      expect(mocked).toHaveBeenCalledTimes(2)
+    })
+    expect(mocked).toHaveBeenLastCalledWith({ cedenteAccountId: 'acc-2', payableIds: ['doc-1'] })
+  })
+
+  it('conta ÚNICA com convênio é auto-selecionada — escolha de um item só não é escolha', async () => {
+    mocked.mockResolvedValue(ok(PREVIEW))
+    // Duas contas, mas só uma gera remessa: sem convênio a conta nem chega ao arquivo (#722).
+    mockedAccounts.mockResolvedValue(ok([account('acc-1', '123456'), account('acc-2', '')]) as never)
+    const { result } = setup()
+
+    act(() => {
+      result.current.start(['doc-1'])
+    })
+
     await waitFor(() => {
       expect(result.current.preview).not.toBeNull()
     })
-    expect(mocked).toHaveBeenCalledTimes(1)
-    expect(mocked).toHaveBeenCalledWith({ payableIds: ['doc-1'] })
-    expect(result.current.errorTag).toBeNull()
+    expect(mocked).toHaveBeenCalledWith({ cedenteAccountId: 'acc-1', payableIds: ['doc-1'] })
+    expect(result.current.awaitingAccount).toBe(false)
+  })
+
+  it('⚠️ com DUAS contas aptas ninguém escolhe pelo operador — errar a conta é pagar pela errada', async () => {
+    mocked.mockResolvedValue(ok(PREVIEW))
+    mockedAccounts.mockResolvedValue(ok([account('acc-1', '123456'), account('acc-2', '654321')]) as never)
+    const { result } = setup()
+
+    act(() => {
+      result.current.start(['doc-1'])
+    })
+
+    await waitFor(() => {
+      expect(result.current.awaitingAccount).toBe(true)
+    })
+    expect(mocked).not.toHaveBeenCalled()
   })
 
   it('erro do BFF vira tag i18n, sem preview', async () => {
@@ -115,6 +198,9 @@ describe('useRemittancePreview', () => {
 
     act(() => {
       result.current.start(['doc-1'])
+    })
+    act(() => {
+      result.current.setCedenteAccountId('acc-1')
     })
 
     await waitFor(() => {
@@ -136,12 +222,7 @@ describe('useRemittancePreview', () => {
     mocked.mockResolvedValue(ok(PREVIEW))
     const { result } = setup()
 
-    act(() => {
-      result.current.start(['doc-1'])
-    })
-    await waitFor(() => {
-      expect(result.current.preview).not.toBeNull()
-    })
+    await startWithAccount(result)
 
     act(() => {
       result.current.close()
@@ -153,6 +234,19 @@ describe('useRemittancePreview', () => {
     })
   })
 
+  it('⚠️ reabrir com a MESMA seleção confere de novo — o cadastro pode ter sido corrigido no meio', async () => {
+    mocked.mockResolvedValue(ok(PREVIEW))
+    const { result } = setup()
+    await startWithAccount(result)
+
+    act(() => {
+      result.current.close()
+    })
+    await startWithAccount(result)
+
+    expect(mocked).toHaveBeenCalledTimes(2)
+  })
+
   it('⚠️ gerar exige conta: sem conta escolhida, nada é enviado ao banco', async () => {
     mocked.mockResolvedValue(ok(PREVIEW))
     const { result } = setup()
@@ -160,7 +254,7 @@ describe('useRemittancePreview', () => {
       result.current.start(['doc-1'])
     })
     await waitFor(() => {
-      expect(result.current.preview).not.toBeNull()
+      expect(result.current.awaitingAccount).toBe(true)
     })
 
     act(() => {
@@ -182,16 +276,8 @@ describe('useRemittancePreview', () => {
       }) as never,
     )
     const { result } = setup()
-    act(() => {
-      result.current.start(['doc-1'])
-    })
-    await waitFor(() => {
-      expect(result.current.preview).not.toBeNull()
-    })
+    await startWithAccount(result)
 
-    act(() => {
-      result.current.setCedenteAccountId('acc-1')
-    })
     act(() => {
       result.current.generate(['doc-1'])
     })
@@ -199,6 +285,7 @@ describe('useRemittancePreview', () => {
     await waitFor(() => {
       expect(result.current.generated?.nsa).toBe(123)
     })
+    // A MESMA conta com que se conferiu: gerar com outra faria o arquivo divergir do pré-voo lido.
     expect(mockedGenerate).toHaveBeenCalledWith({ cedenteAccountId: 'acc-1', payableIds: ['doc-1'] })
   })
 
@@ -211,15 +298,7 @@ describe('useRemittancePreview', () => {
       }) as never,
     )
     const { result } = setup()
-    act(() => {
-      result.current.start(['doc-1'])
-    })
-    await waitFor(() => {
-      expect(result.current.preview).not.toBeNull()
-    })
-    act(() => {
-      result.current.setCedenteAccountId('acc-1')
-    })
+    await startWithAccount(result)
     act(() => {
       result.current.generate(['doc-1'])
     })
@@ -318,7 +397,7 @@ describe('useRemittancePreview', () => {
     click.mockRestore()
   })
 
-  it('produção: 404 sem mensagem — a tag sozinha, para a UI dizer "só em homologação"', async () => {
+  it('404 sem mensagem — a tag sozinha, para a UI dizer que o ambiente ainda não serve o arquivo', async () => {
     const result = await setupGenerated()
     mockedDownload.mockResolvedValue(err({ error: 'not-found', message: null }) as never)
 
