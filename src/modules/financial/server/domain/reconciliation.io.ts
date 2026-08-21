@@ -209,6 +209,8 @@ export type CedenteAccount = Readonly<{
    * preenchido é recusado, porque o convênio viaja no nome de toda remessa já transmitida.
    */
   convenio: string
+  /** CNPJ do CEDENTE — a organização dona da conta. */
+  document: string
 }>
 
 // Criar conta-cedente (#138). `document` = CNPJ (obrigatório). type = AccountType do front (mapeado p/

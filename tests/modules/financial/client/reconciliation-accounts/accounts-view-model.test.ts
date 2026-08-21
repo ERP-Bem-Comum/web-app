@@ -8,6 +8,7 @@ import assert from 'node:assert/strict'
 import {
   accountStatus,
   deriveAccountRows,
+  CONVENIO_MAX_DIGITS,
   consolidate,
   maskDateInput,
   dateInputToIso,
@@ -33,6 +34,7 @@ const acc = (
   openingBalanceCents: '24539218',
   openingBalanceDate: '2026-06-01',
   convenio: '',
+  document: '48517263000190',
   ...over,
 })
 
@@ -177,5 +179,24 @@ describe('deriveAccountRows — sinal de conta que não gera remessa', () => {
 
   it('conta ENCERRADA não recebe o aviso — ela não vai pagar nada de qualquer forma', () => {
     assert.equal(rowOf({ convenio: '', status: 'Closed' })?.missingConvenio, false)
+  })
+})
+
+// core-api#804: o campo do header CNAB tem 6 posições (033-038, com 039-052 em branco). Acima disso o
+// Bradesco TRUNCA em silêncio — `99999999` apareceu no laudo do validador como `Contrato: 999999`.
+// Como o convênio é preenchível uma vez, salvar com 8 dígitos travaria a conta para sempre.
+describe('CONVENIO_MAX_DIGITS', () => {
+  it('é 6 — o campo do header, não o max(20) do schema do core-api', () => {
+    assert.equal(CONVENIO_MAX_DIGITS, 6)
+  })
+})
+
+// O CNPJ da conta-cedente é do CEDENTE — a organização dona da conta —, e é sempre o mesmo. Não há
+// entidade "organização" no core-api de onde puxá-lo, então a fonte é o que já está cadastrado: o
+// model precisa EXPOR o document para o formulário de nova conta poder herdá-lo.
+describe('ReconciliationAccount expõe o CNPJ do cedente', () => {
+  it('o document atravessa o model — sem ele não há como pré-preencher a conta nova', () => {
+    const a = acc({ id: 'a1', document: '30275386000105' })
+    assert.equal(a.document, '30275386000105')
   })
 })

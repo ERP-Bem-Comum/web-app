@@ -33,6 +33,22 @@ export type SortKey = 'pendencias' | 'saldo' | 'nome' | 'atualizacao'
 // (não dado de negócio); o core-api aceita bankCode livre — esta lista só guia o comum.
 export type BankOption = Readonly<{ code: string; name: string }>
 // Sentinela p/ instituição não listada (#206): seleciona "Outro" e digita o nome (vira `bankName`).
+/**
+ * Teto do convênio: **6 dígitos**.
+ *
+ * ⚠️ NÃO é o `max(20)` do schema do core-api. O campo do header CNAB tem 6 posições (033-038, com
+ * 039-052 em branco), e o Validador do Bradesco recusa o arquivo quando o convênio invade 039. Pior:
+ * o banco LÊ só as 6 primeiras e descarta o resto em silêncio — medido num arquivo real, um convênio
+ * `99999999` apareceu no laudo como `Contrato: 999999`.
+ *
+ * Barrar aqui importa porque o convênio é preenchível UMA VEZ: salvo com 8 dígitos, o campo trava e a
+ * conta fica permanentemente incapaz de gerar remessa, sem caminho na tela para corrigir. O erro
+ * apareceria só na hora de pagar, como `remittance-build-failed` — que não diz onde está o problema.
+ *
+ * Correção do emissor pedida em core-api#804 (CA2: recusar, nunca truncar).
+ */
+export const CONVENIO_MAX_DIGITS = 6
+
 export const OTHER_BANK_CODE = 'OUTRO'
 export const BANKS: readonly BankOption[] = [
   { code: '001', name: 'Banco do Brasil' },

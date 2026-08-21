@@ -54,6 +54,8 @@ export type ReconciliationAccount = Readonly<{
    * apontarem para um convênio que a conta não declara mais.
    */
   convenio: string
+  /** CNPJ do CEDENTE — a organização dona da conta. É sempre o mesmo em todas as contas. */
+  document: string
 }>
 
 // ── Inputs enviados pelo repository (a server fn valida no server) ──

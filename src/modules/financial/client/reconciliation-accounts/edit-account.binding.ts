@@ -14,7 +14,7 @@ import type {
   EditCedenteAccountInput,
   ReconciliationAccount,
 } from '#modules/financial/client/data/model/reconciliation.model.ts'
-import { OTHER_BANK_CODE } from './reconciliation-accounts.view-model.ts'
+import { CONVENIO_MAX_DIGITS, OTHER_BANK_CODE } from './reconciliation-accounts.view-model.ts'
 
 export type EditAccountBinding = Readonly<{
   /** Conta em edição (modal aberto) — null quando fechado. */
@@ -131,11 +131,11 @@ export function useEditAccount(
     setNickname: (v) => {
       setNickname(v)
     },
-    // Só dígitos, teto 20 (contrato do core-api). Ignora a digitação quando travado — o input já sai
-    // `readOnly`, isto é a segunda barreira, para o caso de a trava visual falhar.
+    // Só dígitos e teto de 6 (ver CONVENIO_MAX_DIGITS). Ignora a digitação quando travado — o input
+    // já sai `readOnly`, isto é a segunda barreira, para o caso de a trava visual falhar.
     setConvenio: (v) => {
       if (convenioLocked) return
-      setConvenio(v.replace(/\D/g, '').slice(0, 20))
+      setConvenio(v.replace(/\D/g, '').slice(0, CONVENIO_MAX_DIGITS))
     },
     open: (a) => {
       setTarget(a)

@@ -310,7 +310,12 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
               <p className={launchWarn}>
                 {t('financial.remittance.generate.confirm')
                   .replace('{total}', view.summary.remittanceTotal)
-                  .replace('{n}', String(view.summary.checkedCount))}
+                  .replace('{n}', String(view.summary.checkedCount))
+                  // A DATA DE PAGAMENTO é o que o banco vai executar (Segmento A, 094-101) e é o
+                  // único dado do arquivo que o operador não confere em outro lugar: o total ele vê
+                  // no resumo, os títulos ele acabou de marcar. Sem ela, confirma-se um pagamento
+                  // sem saber o dia.
+                  .replace('{data}', view.summary.paymentDate)}
               </p>
             ) : null}
 
