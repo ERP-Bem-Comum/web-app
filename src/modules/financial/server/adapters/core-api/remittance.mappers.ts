@@ -83,19 +83,8 @@ export const previewToModel = (raw: unknown): Result<RemittancePreview, Financia
     valueCents: l.valueCents,
   }))
 
-  // Passa RETO: o rótulo já vem em PT-BR do backend, e traduzir de novo aqui seria manter uma segunda
-  // tabela de formas de lançamento — a que decide o arquivo é a de lá.
-  const batches = p.batches.map((b) => ({
-    launchForm: b.launchForm,
-    launchFormLabel: b.launchFormLabel,
-    payeeBankCode: b.payeeBankCode,
-    count: b.count,
-    totalCents: b.totalCents,
-  }))
-
   return ok({
     lines,
-    batches,
     readyCount: p.readyCount,
     blockedCount: p.blockedCount,
     outOfVanCount: p.outOfVanCount,

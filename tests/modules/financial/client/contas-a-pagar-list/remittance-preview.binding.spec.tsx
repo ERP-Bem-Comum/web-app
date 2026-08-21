@@ -48,7 +48,6 @@ const PREVIEW = {
   notApprovedCount: 0,
   readyTotalCents: '25000',
   blockedTotalCents: '0',
-  batches: [],
 } as never
 
 /** Conta-cedente do jeito que o binding a lê: só `status`, `convenio` e `id` decidem alguma coisa aqui. */

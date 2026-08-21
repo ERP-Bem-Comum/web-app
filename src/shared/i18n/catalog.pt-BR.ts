@@ -2030,10 +2030,6 @@ export const ptBR: Catalog = {
   // sem ele o operador lê como burocracia e não entende por que a conferência não apareceu.
   'financial.remittance.preview.needAccount':
     'Escolha a conta que vai pagar para conferir a remessa — é ela que define como os títulos se repartem no arquivo.',
-  // Composição dos lotes (core-api#804). "Conferida", não "a enviar": descreve a seleção que foi ao
-  // pré-voo, e desmarcar uma linha depois não repõe a repartição.
-  'financial.remittance.preview.batches.title': 'Composição conferida do arquivo',
-  'financial.remittance.preview.batches.bank': 'Banco',
   'financial.remittance.preview.close': 'Fechar',
   'financial.remittance.preview.summary.count': 'Títulos',
   'financial.remittance.preview.summary.gross': 'Valor total',
@@ -2063,12 +2059,17 @@ export const ptBR: Catalog = {
   'financial.remittance.generate.confirmAction': 'Confirmar e enviar ao banco',
   'financial.remittance.generate.cancel': 'Cancelar',
   'financial.remittance.generate.doneTitle': 'Remessa gerada',
-  'financial.remittance.generate.doneBody':
-    'O arquivo entrou na fila de pagamento do banco. Anote o número da remessa (NSA) — é por ele que o banco a identifica.',
+  // Uma frase só: o que o operador precisa saber ao fechar é que o pagamento está EM FILA no banco.
+  // Saiu daqui o "anote o número da remessa (NSA)" — pedir que ele anote um dado a mão é transferir a
+  // trilha de auditoria para o caderno dele; o NSA passa a ser consultável no drawer do título.
+  'financial.remittance.generate.doneBody': 'O arquivo entrou na fila de pagamento do banco.',
   'financial.remittance.generate.nsa': 'Nº da remessa (NSA)',
   'financial.remittance.generate.fileName': 'Arquivo',
   'financial.remittance.generate.lineCount': 'Títulos enviados',
   'financial.remittance.generate.total': 'Total enviado',
+  // O dia em que o banco executa. É o "quando sai o dinheiro?" — a única informação do comprovante que
+  // o operador não reconfere em outro lugar depois de fechar o modal.
+  'financial.remittance.generate.paymentDate': 'Pagamento em',
   // Download do arquivo (specs/103) — cópia de conferência, homologação apenas.
   'financial.remittance.download.action': 'Baixar arquivo',
   'financial.remittance.download.running': 'Baixando…',

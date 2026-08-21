@@ -38,7 +38,7 @@ rotulada em PT-BR pelo emissor) e a confirmação de que a rota do arquivo **nã
 | E1  | `cedenteAccountId` atravessa a cadeia inteira até o corpo do `:preview`.                                                     |
 | E2  | O modal **espera a conta**: `start` guarda a seleção e abre; o pré-voo roda quando a conta é conhecida, e re-roda ao trocar. |
 | E3  | Conta **única com convênio** é auto-selecionada — escolha de um item só não é escolha.                                       |
-| E4  | Painel "Composição conferida do arquivo" a partir de `batches[]`, sem reagrupar nada no front.                               |
+| E4  | Comprovante da remessa ganha a **data de pagamento** e perde a instrução de anotar o NSA.                                    |
 | E5  | O download do arquivo é oferecido em **todo ambiente** — nenhum gate no front.                                               |
 
 ### Fora de escopo
@@ -48,6 +48,11 @@ rotulada em PT-BR pelo emissor) e a confirmação de que a rota do arquivo **nã
   faz o filho herdar da nota. **Decisão da P.O. (21/08): manter como está.** Os impostos do cliente são
   pagos em **guia unificada, manualmente, FORA da VAN** — o título de retenção nunca é o que vai ao
   arquivo, então pai e filho compartilharem o complemento no drawer não prejudica a operação.
+- **Painel de composição em lotes (`batches[]`).** Foi construído e **removido**: a P.O. avaliou em tela
+  e concluiu que não acrescenta à conferência — quem confere olha título a título, e como o arquivo se
+  reparte é assunto do emissor. O campo continua chegando do backend e é ignorado (o Zod descarta o que
+  não está no schema).
+- **NSA no drawer do título** (trilha de auditoria). **BLOQUEADO no core-api** — ver Riscos.
 - Renomeações de slug de erro. O front não casa por slug (o core-api já colapsa o slug num `code`
   genérico, OWASP API8): trata pelo status e exibe a mensagem PT-BR literal. `…documents-already-held`
   → `…payables-already-held` e o novo `remittance-file-prefix-drift` (409) passam sem tocar em código.
@@ -61,7 +66,7 @@ rotulada em PT-BR pelo emissor) e a confirmação de que a rota do arquivo **nã
 | CA3 | Trocar a conta **re-confere** — a repartição do arquivo muda com quem paga.                                         |
 | CA4 | Havendo uma única conta com convênio, ela é escolhida sozinha; havendo duas ou mais, ninguém escolhe pelo operador. |
 | CA5 | Fechar e reabrir com a MESMA seleção confere **de novo** (o cadastro pode ter sido corrigido no meio).              |
-| CA6 | Backend **sem** `batches[]` não derruba a conferência: o painel some, o resto fica inteiro.                         |
+| CA6 | Campo do backend que não lemos (`batches[]`) não derruba a conferência.                                             |
 | CA7 | Contador ausente e `valueCents` ausente **falham alto** (`err('server')`) — não viram zero em silêncio.             |
 | CA8 | O botão de baixar aparece em TODO ambiente; onde a rota não existe, a mensagem explica o ESTADO.                    |
 
@@ -82,6 +87,15 @@ rotulada em PT-BR pelo emissor) e a confirmação de que a rota do arquivo **nã
 - **A `develop` do front passa a EXIGIR core-api ≥ #804.** Com backend anterior, o `:preview` responde
   400 — pré-voo e alinhamento sobem juntos ou a remessa fica inoperante. Vale para o stack local e para
   homologação.
+- **⚠️ NSA no drawer do título: bloqueado no backend.** A P.O. pediu que o número da remessa fique
+  consultável no título, como trilha de auditoria — foi por isso que a instrução "anote o NSA" saiu do
+  comprovante. O core-api **não expõe esse vínculo**: `payableResponseSchema` tem só
+  `id/kind/retentionType/valueCents/status`, `documentResponseSchema` não cita remessa, e os
+  `TIMELINE_EVENT_TYPES` são cinco (`DocumentSaved`, `PayableApproved`, `ApprovalUndone`,
+  `DocumentDraftSaved`, `PayableManuallyPaid`) — a emissão da remessa nem entra na trilha. O dado
+  EXISTE (`fin_remittance_payables`, migration 0050, com `your_number`), mas nenhuma rota o serve por
+  título. **Handoff:** expor o NSA por título (e, de preferência, um evento de timeline na emissão).
+  Enquanto isso o NSA segue exibido no comprovante — tirá-lo agora o deixaria sem lugar nenhum.
 - **#804 não terminou.** Dos 6 defeitos do validador Bradesco, só convênio e terminador entraram — o
   contrato do `:preview`/geração ainda deve mudar.
 

@@ -67,11 +67,6 @@ import {
   receiptTitle,
   receiptGrid,
   accountBar,
-  batchBox,
-  batchTitle,
-  batchRow,
-  batchCode,
-  batchNum,
 } from './remittance-preview.css.ts'
 
 const t = createTranslator(ptBR)
@@ -201,6 +196,12 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
                 <span className={summaryLabel}>{t('financial.remittance.generate.lineCount')}</span>
                 <span className={summaryValue}>{props.generated.lineCount}</span>
               </span>
+              {/* Quando o banco executa. Fecha a pergunta que o comprovante deixava em aberto: o operador
+                  via quanto e quantos títulos, mas não em que dia o dinheiro sai. */}
+              <span className={summaryItem}>
+                <span className={summaryLabel}>{t('financial.remittance.generate.paymentDate')}</span>
+                <span className={summaryValueStrong}>{props.generated.paymentDate}</span>
+              </span>
               <span className={summaryItem}>
                 <span className={summaryLabel}>{t('financial.remittance.generate.total')}</span>
                 <span className={summaryValueStrong}>{props.generated.total}</span>
@@ -281,25 +282,9 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
               </p>
             ) : null}
 
-            {/* Como a seleção se REPARTE no arquivo (core-api#804). Vem pronto do emissor — o front não
-                reagrupa. ⚠️ Descreve a seleção que FOI CONFERIDA: desmarcar uma linha depois não repõe
-                a repartição, e por isso o título diz "conferida", não "a enviar". */}
-            {view.batches.length > 0 ? (
-              <div className={batchBox}>
-                <p className={batchTitle}>{t('financial.remittance.preview.batches.title')}</p>
-                {view.batches.map((b) => (
-                  <div key={b.key} className={batchRow} role="row">
-                    <span>
-                      {b.formLabel}
-                      <span className={batchCode}>{b.formCode}</span>
-                    </span>
-                    <span>{`${t('financial.remittance.preview.batches.bank')} ${b.bank}`}</span>
-                    <span className={batchNum}>{b.count}</span>
-                    <span className={batchNum}>{b.total}</span>
-                  </div>
-                ))}
-              </div>
-            ) : null}
+            {/* O core-api#804 devolve a composição em lotes do arquivo. NÃO a exibimos: avaliada em tela,
+                não acrescenta à conferência — quem confere olha título a título, e como o arquivo se
+                reparte é assunto do emissor. */}
 
             {view.lines.length === 0 ? (
               <p className={emptyState}>{t('financial.remittance.preview.empty')}</p>
