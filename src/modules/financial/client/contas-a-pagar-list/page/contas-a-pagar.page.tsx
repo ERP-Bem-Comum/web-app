@@ -449,6 +449,7 @@ export function ContasAPagarPage(): ReactNode {
         notApprovedCount={remittanceSelection.notApprovedCount}
         onToggle={remittance.toggle}
         onClose={remittance.close}
+        awaitingAccount={remittance.awaitingAccount}
         accounts={toAccountOptions(remittance.accounts)}
         cedenteAccountId={remittance.cedenteAccountId}
         onCedenteAccount={remittance.setCedenteAccountId}

@@ -35,8 +35,24 @@ const CoreApiPreviewLineSchema = z.object({
   valueCents: z.string().trim(),
 })
 
+/**
+ * Composição dos lotes (core-api#804, CA7) — como a seleção se reparte no arquivo.
+ *
+ * `.catch([])` no array inteiro, ao contrário dos contadores: um lote ausente faz a tela OMITIR o painel,
+ * e omitir não afirma nada de errado. Um contador ausente aceito como zero, sim, afirmaria — diria "nada
+ * a enviar" a quem tem títulos para pagar. São dois riscos diferentes e por isso duas políticas.
+ */
+const CoreApiPreviewBatchSchema = z.object({
+  launchForm: z.string().trim(),
+  launchFormLabel: z.string().trim(),
+  payeeBankCode: z.string().trim().nullable().catch(null),
+  count: z.int().positive(),
+  totalCents: z.string().trim(),
+})
+
 export const CoreApiRemittancePreviewSchema = z.object({
   lines: z.array(CoreApiPreviewLineSchema),
+  batches: z.array(CoreApiPreviewBatchSchema).catch([]),
   readyCount: z.int().nonnegative(),
   blockedCount: z.int().nonnegative(),
   outOfVanCount: z.int().nonnegative(),

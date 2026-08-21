@@ -359,3 +359,78 @@ export const downloadWarn = style([notice, { inlineSize: '100%', marginBlockStar
 
 /** Recusa do download. Vermelho e de largura total — hash divergente não é detalhe de rodapé. */
 export const downloadError = style([errorBox, { inlineSize: '100%', marginBlockStart: vars.space.md }])
+
+// ── Conta que paga (core-api#804) ───────────────────────────────────────────────
+//
+// Subiu do rodapé para o TOPO porque deixou de ser um detalhe da geração: o pré-voo só existe depois
+// dela. Quem escolhe a conta está escolhendo O QUE VAI SER CONFERIDO, e isso não pode ficar abaixo da
+// tabela que a resposta dela produz.
+
+/** Barra da conta-cedente, acima da conferência. */
+export const accountBar = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  gap: vars.space.sm,
+  marginBlockStart: vars.space.md,
+  paddingBlock: vars.space.sm,
+  paddingInline: vars.space.md,
+  background: vars.color.institutional.paperWarm,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.md,
+})
+
+// ── Composição dos lotes (core-api#804, CA7) ────────────────────────────────────
+//
+// Como a seleção se REPARTE no arquivo. Vem pronto do emissor — o front não reagrupa nada. Fica ao lado
+// do resumo, discreto: é conferência de layout ("vai sair em 2 lotes"), não o número que decide o envio.
+
+export const batchBox = style({
+  marginBlockStart: vars.space.md,
+  padding: vars.space.md,
+  border: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+  borderRadius: vars.radius.md,
+})
+
+export const batchTitle = style({
+  marginBlockEnd: vars.space.sm,
+  fontFamily: vars.font.family.heading,
+  fontSize: `calc(${vars.font.size['2xs']} + 0.0625rem)`,
+  fontWeight: vars.font.weight.bold,
+  textTransform: 'uppercase',
+  letterSpacing: '0.06em',
+  color: vars.color.institutional.ink5,
+})
+
+/** Forma (rótulo + código CNAB) · Banco · Títulos · Total. */
+const BATCH_COLS = 'minmax(12rem, 1fr) 7rem 6rem 9rem'
+
+export const batchRow = style({
+  display: 'grid',
+  gridTemplateColumns: BATCH_COLS,
+  alignItems: 'center',
+  gap: vars.space.sm,
+  paddingBlock: vars.space.xs,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.sm,
+  color: vars.color.institutional.ink2,
+  selectors: {
+    '& + &': {
+      borderBlockStart: `${vars.borderWidth.thin} solid ${vars.color.institutional.paperRule}`,
+    },
+  },
+})
+
+/** O código CNAB cru, ao lado do rótulo: é por ele que se confere o arquivo transmitido. */
+export const batchCode = style({
+  marginInlineStart: vars.space.xs,
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size.xs,
+  color: vars.color.institutional.ink4,
+})
+
+export const batchNum = style({
+  fontFamily: vars.font.family.mono,
+  fontSize: vars.font.size.sm,
+  textAlign: 'right',
+})
