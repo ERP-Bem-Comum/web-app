@@ -23,6 +23,8 @@ import {
   maskMoney,
   REFORMA_TRIBUTARIA_KEYS,
   paymentComplementaryOf,
+  showsPayeeAccount,
+  payeeAccountLine,
   paymentMethodNameTag,
   type DocumentType,
   type PaymentMethod,
@@ -283,8 +285,11 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
   const contract = props.contract
   // Categorização só-leitura em edição/consulta (mesma trava do fornecedor); editável em criação/rascunho.
   const catDisabled = locks.supplier
-  const bankLine =
-    bank !== null ? [bank.line, bank.pix].filter((s) => s !== null && s !== '').join(' · ') : ''
+  // A conta do favorecido acompanha a FORMA (regra pura no view-model): PIX mostra a chave,
+  // TED/Transferência mostram a conta, e as demais formas não mostram nada — boleto e guia pagam pelo
+  // código de barras, cartão/câmbio/outro não tocam o cadastro bancário.
+  const showsAccount = showsPayeeAccount(fields.paymentMethod)
+  const bankLine = payeeAccountLine(bank, fields.paymentMethod)
 
   return (
     <>
@@ -566,12 +571,18 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
           />
         </div>
         <div className={fieldGrid.two}>
-          <EntityCard
-            label={t('financial.create.pagamento.contaFornecedor')}
-            hint={t('financial.create.pagamento.contaFornecedorHint')}
-            value={bankLine}
-            icon={<WalletIcon size={16} />}
-          />
+          {showsAccount ? (
+            <EntityCard
+              label={t('financial.create.pagamento.contaFornecedor')}
+              hint={t(
+                paymentComplementaryOf(fields.paymentMethod) === 'pix'
+                  ? 'financial.create.pagamento.contaFornecedorHintPix'
+                  : 'financial.create.pagamento.contaFornecedorHint',
+              )}
+              value={bankLine}
+              icon={<WalletIcon size={16} />}
+            />
+          ) : null}
           {/* Aprovador REAL (#148): usuários com payable:approve (GET /api/v1/approvers). Envia approverRef. */}
           <CategoSelect
             label={t('financial.create.pagamento.aprovador')}
@@ -601,6 +612,27 @@ export function DocumentForm(props: DocumentFormProps): ReactNode {
                 aria-label={t('financial.create.payMethod.boletoLabel')}
               />
               <span className={retentionsHint}>{t('financial.create.payMethod.boletoHint')}</span>
+            </div>
+          </div>
+        ) : null}
+        {paymentComplementaryOf(fields.paymentMethod) === 'taxGuide' ? (
+          <div className={fieldGrid.wide}>
+            <div className={field}>
+              <label className={fieldLabel} htmlFor="fin-tax-guide">
+                {t('financial.create.payMethod.taxGuideLabel')}
+              </label>
+              <input
+                id="fin-tax-guide"
+                className={control}
+                inputMode="numeric"
+                placeholder="00000000000 0 00000000000 0 00000000000 0 00000000000 0"
+                value={fields.paymentComplement}
+                onChange={(e) => {
+                  props.onText('paymentComplement', e.target.value)
+                }}
+                aria-label={t('financial.create.payMethod.taxGuideLabel')}
+              />
+              <span className={retentionsHint}>{t('financial.create.payMethod.taxGuideHint')}</span>
             </div>
           </div>
         ) : null}
