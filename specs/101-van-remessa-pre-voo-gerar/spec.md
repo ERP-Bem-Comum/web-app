@@ -1,6 +1,6 @@
 # 101 — VAN bancária no front: convênio, pré-voo e geração de remessa
 
-**Tamanho:** L (4 fatias) · **Status:** **S2 e S3 implementadas**; S1 e S4 não iniciadas · **Data:** 2026-08-17
+**Tamanho:** L (4 fatias) · **Status:** **S1, S2 e S3 implementadas**; S4 não iniciada · **Data:** 2026-08-17 (S1 em 21/08)
 **Backend:** core-api#728 (handoff, aberto 17/08) · entregue nos PRs #698–#724 na `dev`
 **ADRs do backend:** 0060 (transporte por bucket S3) · 0061 (contrato do bucket, 5 prefixos)
 
@@ -24,7 +24,7 @@ de CSV/PDF sem cerimônia própria.
 
 ## Escopo — 4 fatias verticais, nesta ordem
 
-### S1 — Convênio no cadastro da conta bancária _(pré-requisito, pequeno)_
+### S1 — Convênio no cadastro da conta bancária _(pré-requisito, pequeno)_ ✅ IMPLEMENTADA
 
 Sem convênio a geração **recusa sempre**. O campo já existe no backend e o schema de borda do front
 já o lê (`reconciliation.schema.ts:63`), mas **os formulários não o têm**.
@@ -34,6 +34,18 @@ já o lê (`reconciliation.schema.ts:63`), mas **os formulários não o têm**.
 | 1.1 | Campo **Convênio** (≤20, numérico) no modal de criar conta e no de editar                      |
 | 1.2 | Uma vez preenchido, o campo fica **somente-leitura** — trocar dá 409 e o front não deve tentar |
 | 1.3 | Na lista de contas, sinalizar quem está **sem convênio** (não gera remessa)                    |
+
+> **Implementada em 21/08.** O `convenio` já era lido pelo schema de borda mas **se perdia no mapper** —
+> não era só "falta o campo na tela": o dado não existia no front. A cadeia foi ligada inteira
+> (schema → mapper → model client/server → server fns → adapter → formulários).
+>
+> A trava de 1.2 tem duas camadas — `readOnly` no input e o setter que ignora a digitação — e o
+> `submit` **não reenvia** nem o valor existente: reenviar já seria pedir a troca que o core-api
+> recusa, e o 409 chegaria ao operador como "falha ao salvar a conta", escondendo que nada estava
+> errado. O hint diz o MOTIVO da trava, não só que ela existe.
+>
+> Em 1.3, conta **encerrada** não recebe o aviso: ela não vai pagar nada, e alertar sobre remessa ali
+> seria ruído.
 
 ### S2 — Pré-voo do lote _(leitura pura, não move dinheiro)_ ✅ IMPLEMENTADA
 

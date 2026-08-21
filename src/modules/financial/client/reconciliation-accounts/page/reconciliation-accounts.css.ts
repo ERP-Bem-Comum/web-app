@@ -370,6 +370,16 @@ export const expandVal = style({
   color: c.ink[2],
 })
 
+// Valor do expand que carrega um AVISO (#722: conta sem convênio não gera remessa). Âmbar, e em
+// `sans` de propósito: não é um número a conferir, é uma frase a ler.
+export const expandValWarn = style([
+  expandVal,
+  {
+    fontFamily: recon.font.sans,
+    color: c.amber.deep,
+  },
+])
+
 // ── footer da grade ──────────────────────────────────────────────────────────
 export const gridFoot = style({
   ...gridCols,
@@ -577,6 +587,18 @@ export const input = style({
   fontSize: fs.md,
   color: c.ink[1],
 })
+
+// Campo travado (#722: convênio já preenchido). Barrado tem de PARECER barrado — fundo apagado,
+// texto secundário e cursor de "não editável" —, senão a pessoa tenta digitar e conclui que a tela
+// travou. O motivo vem no hint ao lado; a trava sozinha não explica nada.
+export const inputReadOnly = style([
+  input,
+  {
+    background: c.paper.rule,
+    color: c.ink[3],
+    cursor: 'not-allowed',
+  },
+])
 export const segmented = style({ display: 'flex', gap: sp.xs })
 const segBase = {
   flex: 1,
@@ -604,6 +626,14 @@ export const segHint = style({
   marginBlockStart: sp.xs,
   fontSize: fs.xs,
   color: c.ink[3],
+})
+// Hint abaixo de um campo do formulário. `fontFamily` EXPLÍCITA: o default do body é serifado, e
+// texto sem família declarada no container vaza para Times no meio de um form em sans.
+export const fieldHint = style({
+  marginBlockStart: sp.xs,
+  fontFamily: recon.font.sans,
+  fontSize: fs.xs,
+  color: c.ink[4],
 })
 export const modalFoot = style({
   display: 'flex',

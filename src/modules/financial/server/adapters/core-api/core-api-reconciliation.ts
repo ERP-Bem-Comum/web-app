@@ -198,6 +198,8 @@ export const createCoreApiReconciliationClient = (
       ...(i.nickname !== undefined ? { nickname: i.nickname } : {}),
       ...(i.openingBalanceCents !== undefined ? { openingBalanceCents: i.openingBalanceCents } : {}),
       ...(i.openingBalanceDate !== undefined ? { openingBalanceDate: i.openingBalanceDate } : {}),
+      // #722: opcional — a conta serve à conciliação sem convênio; só a remessa o exige.
+      ...(i.convenio !== undefined ? { convenio: i.convenio } : {}),
     }
     const r = await resultFetch<unknown>(`${baseUrl}/cedente-accounts`, { method: 'POST', token, body })
     if (isErr(r)) return err(mapHttpError(r.error))
@@ -230,6 +232,10 @@ export const createCoreApiReconciliationClient = (
       ...(i.accountNumber !== undefined ? { accountNumber: i.accountNumber } : {}),
       ...(i.accountDigit !== undefined ? { accountDigit: i.accountDigit } : {}),
       ...(i.nickname !== undefined ? { nickname: i.nickname } : {}),
+      // #722: só viaja quando a conta AINDA não tem convênio — a UI trava o campo depois de
+      // preenchido, porque trocar é recusado (`cedente-convenio-already-set`) e o convênio viaja no
+      // nome de toda remessa já transmitida.
+      ...(i.convenio !== undefined ? { convenio: i.convenio } : {}),
     }
     const r = await resultFetch<unknown>(`${baseUrl}/cedente-accounts/${i.id}`, {
       method: 'PATCH',

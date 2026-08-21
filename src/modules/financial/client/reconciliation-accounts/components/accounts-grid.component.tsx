@@ -68,6 +68,15 @@ function ExpandPanel({
         <span className={s.expandLbl}>{t('financial.recon.accounts.expand.dataCadastro')}</span>
         <span className={s.expandVal}>{row.openingDate}</span>
       </div>
+      {/* #722: sem convênio a conta concilia normalmente, mas a geração de remessa recusa SEMPRE.
+          Dizer isso aqui — no cadastro, onde se resolve — evita que o operador descubra só na hora
+          de pagar, com o lote montado e a recusa vindo do backend. */}
+      <div className={s.expandItem}>
+        <span className={s.expandLbl}>{t('financial.recon.accounts.expand.convenio')}</span>
+        <span className={row.missingConvenio ? s.expandValWarn : s.expandVal}>
+          {row.missingConvenio ? t('financial.recon.accounts.expand.semConvenio') : row.convenio}
+        </span>
+      </div>
       {/* Editar: disponível em qualquer conta. Encerrar: só em conta ativa (Open→Closed). */}
       <div className={s.expandAction}>
         <button

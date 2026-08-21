@@ -203,6 +203,12 @@ export type CedenteAccount = Readonly<{
   // Dados do cadastro (#138/#206): saldo inicial + data informados no cadastro (null se ausentes).
   openingBalanceCents: string | null
   openingBalanceDate: string | null
+  /**
+   * Convênio junto ao banco (#722). **Sem ele a conta NÃO gera remessa**, mas serve à conciliação —
+   * por isso é opcional no cadastro. `''` quando não informado. Preenchível UMA vez: trocar um já
+   * preenchido é recusado, porque o convênio viaja no nome de toda remessa já transmitida.
+   */
+  convenio: string
 }>
 
 // Criar conta-cedente (#138). `document` = CNPJ (obrigatório). type = AccountType do front (mapeado p/
@@ -219,6 +225,8 @@ export type CreateCedenteAccountInput = Readonly<{
   nickname?: string
   openingBalanceCents?: string
   openingBalanceDate?: string
+  /** #722: opcional no cadastro; exigido só na geração da remessa. */
+  convenio?: string
 }>
 
 // Editar conta-cedente (PATCH /cedente-accounts/:id). Campos editáveis (todos opcionais); CNPJ e o saldo de
@@ -233,6 +241,8 @@ export type EditCedenteAccountInput = Readonly<{
   accountNumber?: string
   accountDigit?: string
   nickname?: string
+  /** #722: preenchível quando AUSENTE; trocar um já preenchido é recusado pelo core-api. */
+  convenio?: string
 }>
 
 // Extrato por PERÍODO (#205 — GET /cedente-accounts/:id/statement?from&to). Input do read-model.
