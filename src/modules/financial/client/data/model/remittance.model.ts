@@ -74,3 +74,18 @@ export interface GenerateRemittanceFailure {
   error: FinancialError
   message: string | null
 }
+
+// ── Download do arquivo (specs/103) — HOMOLOGAÇÃO apenas ────────────────────────
+
+/**
+ * Cópia do arquivo para conferir layout com o banco. `base64` porque a fronteira RPC é JSON — o Blob é
+ * montado no browser (§IX: o token nunca sai do server).
+ *
+ * `objectKey` é o prefixo de onde o objeto veio: **`falhas/` significa que o envio NÃO completou**, e
+ * quem for comparar bytes com o banco precisa saber disso antes. `null` quando o backend não informa.
+ */
+export interface RemittanceFile {
+  base64: string
+  fileName: string
+  objectKey: string | null
+}

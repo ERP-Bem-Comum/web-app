@@ -32,6 +32,7 @@ import type {
   RemittancePreview,
   GenerateRemittanceInput,
   GeneratedRemittance,
+  RemittanceFile,
 } from '#modules/financial/server/domain/remittance.io.ts'
 
 /**
@@ -101,6 +102,13 @@ export type FinancialClient = Readonly<{
     input: GenerateRemittanceInput,
     token: string,
   ) => Promise<Result<GeneratedRemittance, GenerateRemittanceFailure>>
+  // VAN (specs/103): baixa o arquivo QUE FOI ao banco — cópia de conferência, **homologação apenas**.
+  // Reusa a falha-com-mensagem da geração: os dois motivos novos (`remittance-file-not-found` 404,
+  // `remittance-file-corrupted` 503) também chegam colapsados, e só o texto do core-api os separa.
+  downloadRemittanceFile: (
+    remittanceId: string,
+    token: string,
+  ) => Promise<Result<RemittanceFile, GenerateRemittanceFailure>>
 }>
 
 type Deps = Readonly<{ client: FinancialClient }>
@@ -143,6 +151,14 @@ export const createGenerateRemittance =
     token: string,
   ): Promise<Result<GeneratedRemittance, GenerateRemittanceFailure>> =>
     deps.client.generateRemittance(input, token)
+
+// Download do arquivo (specs/103). Thin pelo mesmo motivo da geração: quem decide se aquele objeto É a
+// remessa emitida é o core-api, que confere o `contentHash`. Uma segunda opinião nossa sobre identidade
+// de arquivo de pagamento seria uma verdade concorrente sobre dinheiro que já saiu.
+export const createDownloadRemittanceFile =
+  (deps: Deps) =>
+  (remittanceId: string, token: string): Promise<Result<RemittanceFile, GenerateRemittanceFailure>> =>
+    deps.client.downloadRemittanceFile(remittanceId, token)
 
 export const createGetDocument =
   (deps: Deps) =>

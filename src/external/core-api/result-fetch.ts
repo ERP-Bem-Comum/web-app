@@ -92,16 +92,45 @@ const bytesToBase64 = (bytes: Uint8Array): string => {
   return btoa(bin)
 }
 
+// Extrai o filename do `Content-Disposition` (`attachment; filename="PAG12345.REM"`). Quando o endpoint
+// não manda o header, devolve null — cabe a quem chama escolher um nome de reserva.
+const parseContentDispositionName = (disposition: string | null): string | null => {
+  if (disposition === null) return null
+  const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition)
+  const raw = match?.[1]
+  if (raw === undefined || raw === '') return null
+  try {
+    return decodeURIComponent(raw)
+  } catch {
+    return raw
+  }
+}
+
 /**
  * resultFetchBytes — variante p/ endpoints que respondem BINÁRIO (ex.: comprovante-fonte do documento,
  * core-api#568). Lê o body como `arrayBuffer` e devolve `{ base64, contentType }` (o server-fn repassa ao
  * client, que monta um blob/File). Mesmo contrato de erro/timeout do `resultFetch`. Server-only.
+ *
+ * `fileName` sai do `Content-Disposition` (null quando o endpoint não manda). `readHeaders` copia headers
+ * de resposta NOMEADOS para `headers` — só os pedidos, porque header de resposta é superfície do backend e
+ * repassar tudo às cegas vazaria mais do que o caso de uso precisa. Ex.: `x-van-object-key` na remessa
+ * (specs/103), onde o prefixo de origem é diagnóstico e não decoração.
  */
 export const resultFetchBytes = async (
   url: string,
-  options: ResultFetchOptions = {},
-): Promise<Result<{ base64: string; contentType: string }, HttpError>> => {
-  const { method = 'GET', token, headers = {}, signal, timeoutMs = 15_000 } = options
+  options: ResultFetchOptions & Readonly<{ readHeaders?: readonly string[] }> = {},
+): Promise<
+  Result<
+    {
+      base64: string
+      contentType: string
+      fileName: string | null
+      headers: Readonly<Record<string, string>>
+    },
+    HttpError
+  >
+> => {
+  const { method = 'GET', token, headers = {}, signal, timeoutMs = 15_000, readHeaders = [] } = options
 
   const controller = new AbortController()
   const timeoutId = setTimeout(() => {
@@ -143,8 +172,18 @@ export const resultFetchBytes = async (
     return err({ kind: 'http', status: response.status, body: await safeReadBody(response) })
   }
   const contentType = response.headers.get('content-type') ?? 'application/octet-stream'
+  const picked: Record<string, string> = {}
+  for (const name of readHeaders) {
+    const value = response.headers.get(name)
+    if (value !== null) picked[name.toLowerCase()] = value
+  }
   const bytes = new Uint8Array(await response.arrayBuffer())
-  return ok({ base64: bytesToBase64(bytes), contentType })
+  return ok({
+    base64: bytesToBase64(bytes),
+    contentType,
+    fileName: parseContentDispositionName(response.headers.get('content-disposition')),
+    headers: picked,
+  })
 }
 
 export const resultFetch = async <T>(

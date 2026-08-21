@@ -1863,7 +1863,7 @@ export const ptBR: Catalog = {
   'financial.list.export.cnab': 'CNAB',
   'financial.list.export.cnabHint': 'Conferir remessa',
   'financial.list.export.cnabNeedApproved':
-    'Nenhum título Aprovado na seleção — só título aprovado entra em remessa',
+    'Selecione os títulos Aprovados que deseja pagar — só título aprovado entra em remessa',
   'financial.list.kbd': '⌘K',
   'financial.list.perPage': 'por página',
   // Seleção em massa (mock)
@@ -1995,7 +1995,7 @@ export const ptBR: Catalog = {
   'financial.remittance.generate.needChecked': 'Marque ao menos um título para gerar a remessa',
   'financial.remittance.generate.needAccount': 'Selecione a conta bancária que vai pagar',
   'financial.remittance.generate.needSameDate':
-    'A remessa é de um único dia — alinhe os vencimentos ou desmarque os divergentes',
+    'A seleção tem vencimentos diferentes. Uma remessa é de um único dia — filtre/gere por vencimento ou desmarque os divergentes.',
   'financial.remittance.generate.confirmPrefix': 'Você vai enviar ao banco',
   'financial.remittance.generate.confirmMiddle': 'título(s), no total de',
   'financial.remittance.generate.confirmSuffix':
@@ -2009,6 +2009,16 @@ export const ptBR: Catalog = {
   'financial.remittance.generate.fileName': 'Arquivo',
   'financial.remittance.generate.lineCount': 'Títulos enviados',
   'financial.remittance.generate.total': 'Total enviado',
+  // Download do arquivo (specs/103) — cópia de conferência, homologação apenas.
+  'financial.remittance.download.action': 'Baixar arquivo',
+  'financial.remittance.download.running': 'Baixando…',
+  'financial.remittance.download.hint': 'Cópia do arquivo enviado, para conferir o layout com o banco',
+  // `falhas/`: o arquivo existe, mas o envio não completou. Dito ANTES de virar evidência.
+  'financial.remittance.download.fromFailures':
+    'Atenção: este arquivo está na pasta de falhas da VAN — o envio ao banco não foi concluído. Não o trate como o que o banco recebeu.',
+  // Produção: a rota não é registrada lá, e o 404 chega sem mensagem do core-api.
+  'financial.remittance.download.unavailable':
+    'O download do arquivo existe apenas em homologação. Em produção o arquivo é acessível só pela VAN.',
   'financial.remittance.preview.field.pixKey': 'Chave PIX',
   'financial.remittance.preview.field.bankCode': 'Banco do favorecido',
   'financial.remittance.preview.field.agency': 'Agência do favorecido',

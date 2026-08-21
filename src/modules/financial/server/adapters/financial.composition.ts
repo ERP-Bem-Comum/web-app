@@ -27,6 +27,7 @@ import {
   createGetRecentPayments,
   createPreviewRemittance,
   createGenerateRemittance,
+  createDownloadRemittanceFile,
 } from '#modules/financial/server/application/financial.use-cases.ts'
 import { createGetDashboardStatistics } from '#modules/financial/server/application/dashboard.use-cases.ts'
 
@@ -59,6 +60,9 @@ const build = () => {
     previewRemittance: createPreviewRemittance({ client }),
     // ⚠️ specs/101 S3: gerar ENFILEIRA PAGAMENTO no banco (ADR-0060 do core-api).
     generateRemittance: createGenerateRemittance({ client }),
+    // specs/103: cópia do arquivo para conferir layout com o banco. **Homologação apenas** — em produção
+    // o core-api não registra a rota. Leitura pura: não regera, não consome NSA, não toca no bucket.
+    downloadRemittanceFile: createDownloadRemittanceFile({ client }),
     // Dashboard (specs/096): de-interim FASEADO. P1 = cost-centers real (#241/#237); P2/P3 e as métricas
     // Receita/Maior-Financiador (sem endpoint) seguem interinas dentro da fonte real. Composição pura intacta.
     getDashboardStatistics: createGetDashboardStatistics({

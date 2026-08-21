@@ -164,6 +164,10 @@ export function ContasAPagarPage(): ReactNode {
   const selectedGross = sumSelectedGrossBRL(rows, selected)
   const selectedSum = sumSelectedNetBRL(rows, selected)
   const exportRows = selectedCount > 0 ? rows.filter((r) => selected.has(r.id)) : rows
+  // A REMESSA opera SÓ sobre a seleção do operador — nunca o "todos" do `exportRows` (que o CSV/PDF usam
+  // quando não há seleção). O usuário escolhe o que pagar, e todos precisam vencer no MESMO dia; por isso,
+  // sem seleção, nada é remessável (CNAB desabilitado) e o modal não pode abrir com "todos os aprovados".
+  const remittanceRows = rows.filter((r) => selected.has(r.id))
   const toggle = (id: string): void => {
     setSelected((prev) => {
       const next = new Set(prev)
@@ -192,13 +196,15 @@ export function ContasAPagarPage(): ReactNode {
   // deveria descobrir que "Exportar" recorta diferente conforme o formato.
   // `deriveRemittanceSelection` dedup por documento e barra o que não está Aprovado ANTES da chamada: o
   // core-api lê os documentos por id, sem exigir aprovação (core-api#736), e um Rascunho voltaria apto.
-  const remittanceSelection = deriveRemittanceSelection(exportRows)
+  const remittanceSelection = deriveRemittanceSelection(remittanceRows)
 
   const remittance = useRemittancePreview()
   // A conferência lista UM POR TÍTULO selecionado (não por documento): um documento com retenção rende o
   // título do fornecedor e o do imposto, com favorecidos e valores diferentes.
   const remittanceView =
-    remittance.preview === null ? null : toPreviewView(remittance.preview, exportRows, remittance.unchecked)
+    remittance.preview === null
+      ? null
+      : toPreviewView(remittance.preview, remittanceRows, remittance.unchecked)
 
   // ── Mudar Status em massa: Aprovar (Aberto→Aprovado) · Voltar p/ edição (Aprovado→Aberto) ──
   const bulk = useBulkStatus(clearSelection)
@@ -455,6 +461,11 @@ export function ContasAPagarPage(): ReactNode {
           // Vai só o que está MARCADO — dedup por documento, direto do ViewModel.
           remittance.generate(remittanceView?.checkedDocumentIds ?? [])
         }}
+        downloading={remittance.downloading}
+        downloadErrorTag={remittance.downloadErrorTag}
+        downloadErrorMessage={remittance.downloadErrorMessage}
+        downloadedFromFailures={remittance.downloadedFromFailures}
+        onDownload={remittance.downloadFile}
       />
 
       <footer className={bottombar}>
