@@ -212,7 +212,8 @@ describe('toPreviewView — impedimentos do backend', () => {
       NONE,
     )
     const byId = new Map(view.lines.map((l) => [l.payableId, l]))
-    assert.equal(byId.get('p1')?.pendencyTag, 'financial.remittance.preview.pendency.missingData')
+    // Rota `transfer`: o que falta é conta do favorecido, e o rótulo diz isso — não o genérico.
+    assert.equal(byId.get('p1')?.pendencyTag, 'financial.remittance.preview.pendency.missingBankData')
     assert.deepEqual(byId.get('p1')?.gaps, [
       {
         fieldTag: 'financial.remittance.preview.field.agency',
@@ -229,6 +230,73 @@ describe('toPreviewView — impedimentos do backend', () => {
     const view = toPreviewView(preview([]), [row('p1', 'Aprovado', { documentId: 'd1' })], NONE)
     assert.equal(view.lines[0]?.remittable, false)
     assert.equal(view.lines[0]?.pendencyTag, 'financial.remittance.preview.pendency.notChecked')
+  })
+})
+
+describe('toPreviewView — a pendência nomeia o dado DAQUELA forma de pagamento', () => {
+  // A regra da VAN: TED/Transferência paga por banco+agência+conta; Boleto/Guia pela linha digitável;
+  // PIX pela chave do título. Um rótulo único ("sem dados bancários") mandava o operador ao lugar
+  // errado em três dos quatro trilhos — um boleto sem código de barras virava problema de cadastro.
+  const blocked = (route: 'transfer' | 'pix' | 'billet' | 'tax-guide', field: string, reason = 'missing') =>
+    toPreviewView(
+      preview([
+        {
+          documentId: 'd1',
+          status: 'blocked',
+          route,
+          gaps: [{ field, reason }],
+          netValueCents: '100',
+        },
+      ] as never),
+      [row('p1', 'Aprovado', { documentId: 'd1' })],
+      NONE,
+    ).lines[0]
+
+  it('TED/Transferência aponta os dados bancários', () => {
+    assert.equal(
+      blocked('transfer', 'payee-account-number')?.pendencyTag,
+      'financial.remittance.preview.pendency.missingBankData',
+    )
+  })
+
+  it('PIX aponta a chave, não a conta', () => {
+    assert.equal(
+      blocked('pix', 'pix-key')?.pendencyTag,
+      'financial.remittance.preview.pendency.missingPixKey',
+    )
+  })
+
+  it('Boleto aponta a linha digitável — fornecedor sem conta paga boleto normalmente', () => {
+    assert.equal(
+      blocked('billet', 'payment-detail')?.pendencyTag,
+      'financial.remittance.preview.pendency.missingBarcode',
+    )
+  })
+
+  it('Guia de recolhimento segue o boleto: o dinheiro vai pelo código de barras', () => {
+    assert.equal(
+      blocked('tax-guide', 'payment-detail')?.pendencyTag,
+      'financial.remittance.preview.pendency.missingBarcode',
+    )
+  })
+
+  it('rota desconhecida cai no genérico — sem chutar onde o operador deve mexer', () => {
+    const view = toPreviewView(
+      preview([{ documentId: 'd1', status: 'blocked', route: null, gaps: [], netValueCents: '100' }]),
+      [row('p1', 'Aprovado', { documentId: 'd1' })],
+      NONE,
+    )
+    assert.equal(view.lines[0]?.pendencyTag, 'financial.remittance.preview.pendency.missingData')
+  })
+
+  it('⚠️ dígito divergente CHEGA à tela — o cadastro está completo, o dígito é que não fecha', () => {
+    const line = blocked('transfer', 'payee-account-digit', 'check-digit-mismatch')
+    assert.deepEqual(line?.gaps, [
+      {
+        fieldTag: 'financial.remittance.preview.field.accountDigit',
+        reasonTag: 'financial.remittance.preview.reason.checkDigitMismatch',
+      },
+    ])
   })
 })
 

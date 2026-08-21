@@ -19,6 +19,7 @@ import { centsToBRL, sumCents } from '#modules/financial/client/data/money.ts'
 import type {
   PayoutField,
   PayoutGapReason,
+  VanRoute,
   RemittancePreview,
   GeneratedRemittance,
 } from '#modules/financial/client/data/model/remittance.model.ts'
@@ -79,6 +80,27 @@ const REASON_TAG: Record<PayoutGapReason, string> = {
   missing: 'financial.remittance.preview.reason.missing',
   unmappable: 'financial.remittance.preview.reason.unmappable',
   malformed: 'financial.remittance.preview.reason.malformed',
+  // O dado ESTÁ lá e bem formado — o que não fecha é o dígito. Pedir "corrija o formato" aqui mandaria
+  // o operador consertar o que já está certo.
+  'check-digit-mismatch': 'financial.remittance.preview.reason.checkDigitMismatch',
+}
+
+/**
+ * O que falta DEPENDE DA FORMA DE PAGAMENTO, e é isso que a linha precisa dizer:
+ *  - TED / Transferência → banco, agência e conta do favorecido (a única rota que usa conta estruturada);
+ *  - Boleto / Guia       → a linha digitável do documento; o dinheiro segue o código de barras, e
+ *                          fornecedor sem nenhum dado bancário paga normalmente;
+ *  - PIX                 → a chave cadastrada no título; o arquivo não olha agência nem conta.
+ *
+ * Antes havia UM rótulo para todos ("Sem dados bancários"), e ele mentia em três dos quatro trilhos: um
+ * boleto sem código de barras aparecia como problema de cadastro bancário, mandando o operador procurar
+ * no lugar errado.
+ */
+const BLOCKED_PENDENCY_TAG: Record<VanRoute, string> = {
+  transfer: 'financial.remittance.preview.pendency.missingBankData',
+  pix: 'financial.remittance.preview.pendency.missingPixKey',
+  billet: 'financial.remittance.preview.pendency.missingBarcode',
+  'tax-guide': 'financial.remittance.preview.pendency.missingBarcode',
 }
 
 export type PreviewGapView = Readonly<{ fieldTag: string; reasonTag: string }>
@@ -174,7 +196,10 @@ export const toPreviewView = (
             ? 'financial.remittance.preview.pendency.outOfVan'
             : line.status === 'not-found'
               ? 'financial.remittance.preview.pendency.notFound'
-              : 'financial.remittance.preview.pendency.missingData',
+              : // Rota desconhecida cai no genérico: sem saber o trilho, nomear um campo específico
+                // seria chutar onde o operador deve mexer.
+                ((line.route === null ? null : BLOCKED_PENDENCY_TAG[line.route]) ??
+                'financial.remittance.preview.pendency.missingData'),
         gaps: line.gaps.map((g) => ({ fieldTag: FIELD_TAG[g.field], reasonTag: REASON_TAG[g.reason] })),
       }
     })()
