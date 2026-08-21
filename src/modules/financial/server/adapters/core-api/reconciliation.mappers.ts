@@ -255,6 +255,9 @@ const toCedenteAccount = (a: CoreApiCedenteAccount): CedenteAccount => ({
   // Dados do cadastro REAIS (distintos do "corrente" placeholder) — alimentam o expand do grid de contas.
   openingBalanceCents: a.openingBalanceCents,
   openingBalanceDate: a.openingBalanceDate,
+  // #722: o schema de borda já lia o campo; ele se perdia aqui, e por isso a tela nunca soube quais
+  // contas geram remessa. `''` = não informado (o core-api sempre devolve string).
+  convenio: a.convenio,
 })
 
 export const cedenteAccountsToModel = (

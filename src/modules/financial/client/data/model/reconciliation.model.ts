@@ -45,6 +45,15 @@ export type ReconciliationAccount = Readonly<{
   // saldo "corrente" (placeholder até #139). `null` quando não informados. Expostos no expand do grid.
   openingBalanceCents: string | null
   openingBalanceDate: string | null
+  /**
+   * Convênio de cobrança/pagamento junto ao banco (#722). **Sem ele a conta NÃO gera remessa** — mas
+   * ela serve à conciliação assim, e por isso é opcional no cadastro. `''` quando não informado.
+   *
+   * Preenchível UMA vez: já preenchido, trocar é recusado (`cedente-convenio-already-set`) — o
+   * convênio viaja no nome de toda remessa transmitida, e reescrevê-lo faria as remessas antigas
+   * apontarem para um convênio que a conta não declara mais.
+   */
+  convenio: string
 }>
 
 // ── Inputs enviados pelo repository (a server fn valida no server) ──
@@ -96,6 +105,8 @@ export type CreateCedenteAccountInput = Readonly<{
   nickname?: string
   openingBalanceCents?: string
   openingBalanceDate?: string
+  /** #722: opcional no cadastro (a conta serve à conciliação sem ele); exigido para gerar remessa. */
+  convenio?: string
 }>
 // Editar conta-cedente (PATCH) — campos editáveis opcionais; CNPJ e saldo de abertura são imutáveis.
 export type EditCedenteAccountInput = Readonly<{
@@ -108,6 +119,8 @@ export type EditCedenteAccountInput = Readonly<{
   accountNumber?: string
   accountDigit?: string
   nickname?: string
+  /** #722: preenchível quando AUSENTE. Trocar um já preenchido é recusado — o front não deve tentar. */
+  convenio?: string
 }>
 export type RejectSuggestionInput = Readonly<{ transactionId: string; payableId: string }>
 export type DifferenceInput = Readonly<{

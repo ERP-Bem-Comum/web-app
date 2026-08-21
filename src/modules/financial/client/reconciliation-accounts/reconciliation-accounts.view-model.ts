@@ -69,6 +69,14 @@ export type AccountRow = Readonly<{
   typeLabel: string | null // #206: texto livre identificando a conta (Cartão corporativo/Outro); null caso contrário
   openingBalanceBRL: string
   openingDate: string
+  /** #722: convênio; `''` quando ausente. */
+  convenio: string
+  /**
+   * A conta NÃO gera remessa (sem convênio). Derivado aqui e não na view: é regra de negócio, e a
+   * view só desenha. Conta encerrada não recebe o aviso — ela não vai pagar nada de qualquer forma,
+   * e alertar sobre remessa nela seria ruído.
+   */
+  missingConvenio: boolean
 }>
 
 /** Situação de conciliação da conta (encerrada > pendências > em dia). */
@@ -140,6 +148,8 @@ export const toAccountRow = (a: ReconciliationAccount, today = ''): AccountRow =
     typeLabel: a.typeLabel,
     openingBalanceBRL: a.openingBalanceCents !== null ? centsToBRL(a.openingBalanceCents) : DASH,
     openingDate: formatCadastroDate(a.openingBalanceDate),
+    convenio: a.convenio,
+    missingConvenio: a.convenio.trim() === '' && a.status !== 'Closed',
   }
 }
 

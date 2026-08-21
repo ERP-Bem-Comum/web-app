@@ -29,6 +29,8 @@ export type AddAccountBinding = Readonly<{
   nickname: string
   openingBalance: string
   openingBalanceDate: string
+  /** #722: convênio junto ao banco. OPCIONAL aqui — sem ele a conta concilia, mas não gera remessa. */
+  convenio: string
   canSubmit: boolean
   submitting: boolean
   errorTag: string | null
@@ -42,6 +44,7 @@ export type AddAccountBinding = Readonly<{
   setNickname: (v: string) => void
   setOpeningBalance: (v: string) => void
   setOpeningBalanceDate: (v: string) => void
+  setConvenio: (v: string) => void
   reset: () => void
   submit: () => void
 }>
@@ -61,6 +64,7 @@ export function useAddAccount(
   const [nickname, setNickname] = useState('')
   const [openingBalance, setOpeningBalance] = useState('')
   const [openingBalanceDate, setOpeningBalanceDate] = useState('')
+  const [convenio, setConvenio] = useState('')
   const [errorTag, setErrorTag] = useState<string | null>(null)
 
   const reset = () => {
@@ -74,6 +78,7 @@ export function useAddAccount(
     setNickname('')
     setOpeningBalance('')
     setOpeningBalanceDate('')
+    setConvenio('')
     setErrorTag(null)
   }
 
@@ -115,6 +120,7 @@ export function useAddAccount(
     nickname,
     openingBalance,
     openingBalanceDate,
+    convenio,
     canSubmit,
     submitting: mut.isPending,
     errorTag,
@@ -147,6 +153,11 @@ export function useAddAccount(
     },
     setOpeningBalanceDate: (v) => {
       setOpeningBalanceDate(maskDateInput(v)) // máscara DD/MM/AAAA (convertida p/ ISO no submit)
+    },
+    // Só dígitos e teto de 20: é o contrato do core-api (`convenio: z.string().max(20)`), e barrar na
+    // digitação evita a viagem que voltaria 400 sem dizer qual campo.
+    setConvenio: (v) => {
+      setConvenio(v.replace(/\D/g, '').slice(0, 20))
     },
     reset,
     submit: () => {
@@ -194,6 +205,9 @@ export function useAddAccount(
         agency: agency.trim(),
         accountNumber,
         accountDigit,
+        // #722: só viaja se preenchido. Vazio NÃO é enviado — a conta nasce sem convênio e pode
+        // ganhá-lo depois pela edição; mandar `''` seria afirmar um valor que o operador não deu.
+        ...(convenio.trim() !== '' ? { convenio: convenio.trim() } : {}),
         document: unmaskCnpj(document.trim()), // CNPJ cru (só alfanum.) — a UI guarda mascarado
         nickname: nickname.trim() === '' ? undefined : nickname.trim(),
         openingBalanceCents,

@@ -27,6 +27,10 @@ const row = (over: Partial<AccountRow> & Pick<AccountRow, 'id'>): AccountRow => 
   typeLabel: null,
   openingBalanceBRL: 'R$ 245.392,18',
   openingDate: '01/06/2026',
+
+  convenio: '',
+
+  missingConvenio: false,
   ...over,
 })
 

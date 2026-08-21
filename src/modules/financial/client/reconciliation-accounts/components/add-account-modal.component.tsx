@@ -165,6 +165,25 @@ export function AddAccountModal({ open, onClose, binding }: AddAccountModalProps
                 />
               </div>
             </div>
+            {/* #722: convênio — OPCIONAL no cadastro. A conta serve à conciliação sem ele; só a REMESSA
+                o exige, e sem ele a geração recusa sempre. O hint diz isso, para o campo em branco ser
+                uma escolha e não um esquecimento que só aparece na hora de pagar. */}
+            <div className={s.formField}>
+              <label className={s.fieldLabel} htmlFor="add-convenio">
+                {t('financial.recon.add.field.convenio')}
+              </label>
+              <input
+                id="add-convenio"
+                className={`${s.input} ${s.inputMono}`}
+                inputMode="numeric"
+                placeholder={t('financial.recon.add.placeholder.convenio')}
+                value={binding.convenio}
+                onChange={(e) => {
+                  binding.setConvenio(e.target.value)
+                }}
+              />
+              <span className={s.fieldHint}>{t('financial.recon.add.hint.convenio')}</span>
+            </div>
             <div className={s.formField}>
               <label className={s.fieldLabel} htmlFor="add-document">
                 {t('financial.recon.add.field.document')}

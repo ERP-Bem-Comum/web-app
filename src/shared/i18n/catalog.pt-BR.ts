@@ -1544,6 +1544,9 @@ export const ptBR: Catalog = {
   'financial.recon.accounts.expand.tipo': 'Tipo da conta',
   'financial.recon.accounts.expand.saldoInicial': 'Saldo inicial do cadastro',
   'financial.recon.accounts.expand.dataCadastro': 'Data do cadastro',
+  // #722: o convênio aparece no expand da conta — é onde se resolve. Sem ele a geração recusa sempre.
+  'financial.recon.accounts.expand.convenio': 'Convênio',
+  'financial.recon.accounts.expand.semConvenio': 'Sem convênio — não gera remessa',
   'financial.recon.accounts.status.closed': 'Encerrada',
   'financial.recon.accounts.close.action': 'Encerrar conta',
   'financial.recon.accounts.close.title': 'Encerrar conta bancária',
@@ -1558,6 +1561,10 @@ export const ptBR: Catalog = {
   'financial.recon.edit.title': 'Editar conta bancária',
   'financial.recon.edit.sub': 'Ajuste os dados do cadastro da conta.',
   'financial.recon.edit.immutableNote': 'CNPJ e saldo de abertura não podem ser alterados após o cadastro.',
+  // #722: o convênio é preenchível UMA vez. O texto diz o MOTIVO, não só que está travado — sem isso
+  // a trava parece defeito da tela.
+  'financial.recon.edit.hint.convenioLocked':
+    'O convênio já está definido e não pode ser alterado — ele identifica as remessas já enviadas ao banco.',
   'financial.recon.edit.save': 'Salvar alterações',
   'financial.recon.accounts.foot.pending': 'Movimentações pendentes',
   'financial.recon.accounts.foot.count': '{n} contas',
@@ -1589,6 +1596,12 @@ export const ptBR: Catalog = {
   'financial.recon.add.field.account': 'Conta-DV',
   'financial.recon.add.placeholder.account': '00000000-0',
   'financial.recon.add.field.document': 'CNPJ da organização',
+  // #722: convênio junto ao banco. Opcional no cadastro (a conta concilia sem ele) e OBRIGATÓRIO para
+  // gerar remessa — o hint diz isso para o campo em branco ser escolha, não esquecimento.
+  'financial.recon.add.field.convenio': 'Convênio',
+  'financial.recon.add.placeholder.convenio': 'Somente números',
+  'financial.recon.add.hint.convenio':
+    'Opcional. Sem convênio a conta concilia normalmente, mas não gera remessa para o banco.',
   'financial.recon.add.placeholder.document': '00.000.000/0000-00',
   'financial.recon.add.invalidBalance': 'Saldo de abertura inválido.',
   'financial.recon.add.invalidDate': 'Data do saldo inválida (use DD/MM/AAAA).',

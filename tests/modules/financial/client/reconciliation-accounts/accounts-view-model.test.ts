@@ -32,6 +32,7 @@ const acc = (
   pendingCount: 0,
   openingBalanceCents: '24539218',
   openingBalanceDate: '2026-06-01',
+  convenio: '',
   ...over,
 })
 
@@ -145,5 +146,36 @@ describe('máscara/parse da data do saldo (maskDateInput / dateInputToIso)', () 
     assert.equal(dateInputToIso('01/05'), null) // incompleto
     assert.equal(dateInputToIso('32/05/2026'), null) // dia inválido
     assert.equal(dateInputToIso('01/13/2026'), null) // mês inválido
+  })
+})
+
+// #722: sem convênio a conta CONCILIA normalmente, mas a geração de remessa recusa sempre. O aviso
+// mora no cadastro, que é onde se resolve — e não na hora de pagar, com o lote já montado.
+describe('deriveAccountRows — sinal de conta que não gera remessa', () => {
+  const rowOf = (over: Partial<ReconciliationAccount>) =>
+    deriveAccountRows([acc({ id: 'a1', ...over })], {
+      search: '',
+      status: 'todas',
+      sort: 'nome',
+    })[0]
+
+  it('conta ativa SEM convênio é sinalizada', () => {
+    const r = rowOf({ convenio: '' })
+    assert.equal(r?.missingConvenio, true)
+    assert.equal(r?.convenio, '')
+  })
+
+  it('conta com convênio não é sinalizada, e o valor viaja para a tela', () => {
+    const r = rowOf({ convenio: '1234567' })
+    assert.equal(r?.missingConvenio, false)
+    assert.equal(r?.convenio, '1234567')
+  })
+
+  it('convênio só com espaços conta como ausente', () => {
+    assert.equal(rowOf({ convenio: '   ' })?.missingConvenio, true)
+  })
+
+  it('conta ENCERRADA não recebe o aviso — ela não vai pagar nada de qualquer forma', () => {
+    assert.equal(rowOf({ convenio: '', status: 'Closed' })?.missingConvenio, false)
   })
 })
