@@ -362,7 +362,9 @@ export function ContasAPagarPage(): ReactNode {
 
       {dueEdit.errorTag !== null ? (
         <div className={errorBanner} role="alert">
-          {t(dueEdit.errorTag)}
+          {/* O NÚMERO de títulos que ficaram para trás entra no texto: "alguns" não diz se foi 1 de 10
+              ou 9 de 10, e a decisão do operador muda bastante entre os dois. */}
+          {t(dueEdit.errorTag).replace('{n}', String(dueEdit.failedCount))}
         </div>
       ) : null}
 

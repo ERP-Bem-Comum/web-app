@@ -96,3 +96,75 @@ describe('useIsolatedDueDate (#270 isolado)', () => {
     expect(onCompleted).not.toHaveBeenCalled()
   })
 })
+
+// core-api#794: salvar documento COM RETENÇÃO falha de forma INTERMITENTE sob chamadas concorrentes
+// (503 `document-repository-failure`). Antes, uma falha dessas era contada como "versão desatualizada"
+// e mandava o operador atualizar a lista — que é justamente o que não resolve.
+describe('useIsolatedDueDate — falha transitória é repetida, e a mensagem segue o motivo', () => {
+  const ONE = [{ documentId: 'd1', payableId: 'p1', version: 3 }] as const
+
+  it('503 do servidor é REPETIDO e passa na segunda tentativa — sem erro para o operador', async () => {
+    mocked.mockResolvedValueOnce(err('server')).mockResolvedValueOnce(ok(detail))
+    const onCompleted = vi.fn()
+    const { result } = setup(onCompleted)
+    act(() => {
+      result.current.apply(ONE, '2026-08-15')
+    })
+    await waitFor(() => {
+      expect(onCompleted).toHaveBeenCalledTimes(1)
+    })
+    expect(mocked).toHaveBeenCalledTimes(2) // 1 falha + 1 repetição
+    expect(result.current.errorTag).toBeNull()
+    expect(result.current.failedCount).toBe(0)
+  })
+
+  it('servidor falhando SEMPRE → esgota as repetições e usa a mensagem de servidor, não a de versão', async () => {
+    mocked.mockResolvedValue(err('server'))
+    const onCompleted = vi.fn()
+    const { result } = setup(onCompleted)
+    act(() => {
+      result.current.apply(ONE, '2026-08-15')
+    })
+    await waitFor(() => {
+      expect(result.current.errorTag).toBe('financial.list.dueDate.errorPartialServer')
+    })
+    expect(mocked).toHaveBeenCalledTimes(3) // 1 tentativa + 2 repetições
+    expect(result.current.failedCount).toBe(1)
+    expect(onCompleted).not.toHaveBeenCalled()
+  })
+
+  it('⚠️ conflito NÃO é repetido — a mesma version só produziria o mesmo 409', async () => {
+    mocked.mockResolvedValue(err('conflict'))
+    const { result } = setup(vi.fn())
+    act(() => {
+      result.current.apply(ONE, '2026-08-15')
+    })
+    await waitFor(() => {
+      expect(result.current.errorTag).toBe('financial.list.dueDate.errorPartial')
+    })
+    expect(mocked).toHaveBeenCalledTimes(1)
+  })
+
+  it('conflito e falha de servidor juntos → vence o conflito (exige releitura antes de tentar de novo)', async () => {
+    mocked.mockResolvedValueOnce(err('conflict')).mockResolvedValue(err('server'))
+    const { result } = setup(vi.fn())
+    act(() => {
+      result.current.apply(TARGETS, '2026-08-15')
+    })
+    await waitFor(() => {
+      expect(result.current.errorTag).toBe('financial.list.dueDate.errorPartial')
+    })
+    expect(result.current.failedCount).toBe(2)
+  })
+
+  it('o contador alimenta o texto — "alguns" não diz se foi 1 de 10 ou 9 de 10', async () => {
+    mocked.mockResolvedValue(err('conflict'))
+    const { result } = setup(vi.fn())
+    act(() => {
+      result.current.apply(TARGETS, '2026-08-15')
+    })
+    await waitFor(() => {
+      expect(result.current.failedCount).toBe(2)
+    })
+  })
+})

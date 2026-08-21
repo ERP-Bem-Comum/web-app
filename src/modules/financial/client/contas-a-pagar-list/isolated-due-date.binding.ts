@@ -12,12 +12,51 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { isOk } from '#shared/primitives/result.ts'
 import { financialRepository } from '#modules/financial/client/data/repository/financial.repository.instance.ts'
 
+import type { FinancialError } from '#modules/financial/client/data/repository/financial-error.ts'
+
 import type { IsolatedDueDateTarget } from './contas-a-pagar.view-model.ts'
 
 export type IsolatedDueDateBinding = Readonly<{
   apply: (targets: readonly IsolatedDueDateTarget[], dueIso: string) => void
   running: boolean
   errorTag: string | null
+  /** Quantos títulos NÃO foram alterados. 0 quando tudo passou — a UI usa no texto do erro. */
+  failedCount: number
+}>
+
+/**
+ * Falha TRANSITÓRIA: repetir costuma resolver, porque não há nada errado com o pedido.
+ *
+ * O caso medido é do backend: salvar documento COM RETENÇÃO re-insere as linhas de
+ * `fin_retentions`/`fin_registered_taxes`, e sob chamadas concorrentes isso quebra de forma
+ * intermitente (503 `document-repository-failure`, core-api#794). Como este binding dispara os
+ * documentos em PARALELO de propósito, quanto mais documentos com imposto na seleção, maior a chance.
+ *
+ * `conflict`/`invalid-transition` ficam de FORA: ali o pedido está mesmo desatualizado, e repetir com
+ * a mesma version só produziria o mesmo 409.
+ */
+const TRANSIENT: ReadonlySet<FinancialError> = new Set<FinancialError>(['server', 'connectivity'])
+
+// Duas repetições, com espera curta e crescente. Não é política de rede genérica: é o tempo de a
+// transação concorrente terminar. Mais que isso faria o operador esperar por um erro que não vai passar.
+const RETRY_DELAYS_MS = [150, 400] as const
+
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms)
+  })
+
+/**
+ * O desfecho do lote, CLASSIFICADO. Antes era só um contador, e a tela dizia "versão desatualizada ou
+ * status incompatível" para qualquer falha — inclusive para um 503 do servidor, que não é nem uma
+ * coisa nem outra, e cuja orientação ("atualize a lista") manda fazer o que não resolve.
+ */
+export type DueDateOutcome = Readonly<{
+  failed: number
+  /** Pedido realmente desatualizado (409 / transição inválida): atualizar a lista É a ação certa. */
+  stale: number
+  /** Falhou do lado do servidor mesmo depois das repetições: repetir é a ação certa. */
+  serverSide: number
 }>
 
 export function useIsolatedDueDate(onCompleted: () => void): IsolatedDueDateBinding {
@@ -27,7 +66,7 @@ export function useIsolatedDueDate(onCompleted: () => void): IsolatedDueDateBind
     mutationKey: ['financial', 'documents', 'isolated-due-date'] as const,
     mutationFn: async (
       args: Readonly<{ targets: readonly IsolatedDueDateTarget[]; dueIso: string }>,
-    ): Promise<number> => {
+    ): Promise<DueDateOutcome> => {
       // O `version` (optimistic lock) é do DOCUMENTO e CADA alteração isolada o incrementa. Então títulos do
       // MESMO documento têm de ir em SEQUÊNCIA, encadeando a version devolvida na resposta — senão o 2º título
       // bate com version velha (conflito). Documentos DISTINTOS rodam em paralelo. Retorna o total de falhas.
@@ -37,43 +76,72 @@ export function useIsolatedDueDate(onCompleted: () => void): IsolatedDueDateBind
         if (arr === undefined) byDoc.set(t.documentId, [t])
         else arr.push(t)
       }
-      const failuresPerDoc = await Promise.all(
-        [...byDoc.values()].map(async (group): Promise<number> => {
+      const perDoc = await Promise.all(
+        [...byDoc.values()].map(async (group): Promise<DueDateOutcome> => {
           let version = group[0]?.version ?? 0
-          let failed = 0
+          let stale = 0
+          let serverSide = 0
           for (const t of group) {
-            const res = await financialRepository.updatePayableDueDate({
-              documentId: t.documentId,
-              payableId: t.payableId,
-              version,
-              dueDate: args.dueIso,
-            })
-            if (isOk(res))
-              version = res.value.version // nova version do documento p/ o próximo título
-            else failed++
+            // Repete só o transitório. O PATCH é idempotente (a mesma data), e a falha medida
+            // acontece ANTES da gravação — a transação inteira reverte —, então repetir não corre o
+            // risco de aplicar duas vezes.
+            let lastError: FinancialError | null = null
+            for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt += 1) {
+              const res = await financialRepository.updatePayableDueDate({
+                documentId: t.documentId,
+                payableId: t.payableId,
+                version,
+                dueDate: args.dueIso,
+              })
+              if (isOk(res)) {
+                version = res.value.version // nova version do documento p/ o próximo título
+                lastError = null
+                break
+              }
+              lastError = res.error
+              if (!TRANSIENT.has(res.error) || attempt === RETRY_DELAYS_MS.length) break
+              await sleep(RETRY_DELAYS_MS[attempt] ?? 0)
+            }
+            if (lastError !== null) {
+              if (lastError === 'conflict' || lastError === 'invalid-transition') stale += 1
+              else serverSide += 1
+            }
           }
-          return failed
+          return { failed: stale + serverSide, stale, serverSide }
         }),
       )
-      return failuresPerDoc.reduce((acc, n) => acc + n, 0)
+      return perDoc.reduce<DueDateOutcome>(
+        (acc, o) => ({
+          failed: acc.failed + o.failed,
+          stale: acc.stale + o.stale,
+          serverSide: acc.serverSide + o.serverSide,
+        }),
+        { failed: 0, stale: 0, serverSide: 0 },
+      )
     },
-    onSuccess: (failed) => {
+    onSuccess: (outcome) => {
       // Mesmo com falha parcial, algo pode ter passado → invalida sempre.
       void queryClient.invalidateQueries({ queryKey: ['financial', 'documents', 'list'] })
       void queryClient.invalidateQueries({ queryKey: ['financial', 'documents', 'detail'] })
       void queryClient.invalidateQueries({ queryKey: ['financial', 'payable-titles'] })
-      if (failed === 0) onCompleted()
+      if (outcome.failed === 0) onCompleted()
     },
   })
 
-  const errorTag =
-    mut.isPending || mut.data === 0
-      ? null
-      : mut.isError
-        ? 'financial.list.dueDate.error' // erro global (transporte)
-        : mut.data !== undefined
-          ? 'financial.list.dueDate.errorPartial' // falha parcial (alguns títulos não passaram)
-          : null
+  // A mensagem segue o MOTIVO, porque a ação do operador difere: pedido desatualizado pede atualizar a
+  // lista; falha do servidor pede repetir. Um texto só para os dois mandava metade das pessoas fazer o
+  // que não resolve. Com os dois motivos juntos, vence o `stale` — é o que exige releitura antes de
+  // qualquer nova tentativa.
+  const outcome = mut.data
+  const errorTag = mut.isPending
+    ? null
+    : mut.isError
+      ? 'financial.list.dueDate.error' // erro global (transporte)
+      : outcome === undefined || outcome.failed === 0
+        ? null
+        : outcome.stale > 0
+          ? 'financial.list.dueDate.errorPartial'
+          : 'financial.list.dueDate.errorPartialServer'
 
   return {
     apply: (targets, dueIso) => {
@@ -81,5 +149,6 @@ export function useIsolatedDueDate(onCompleted: () => void): IsolatedDueDateBind
     },
     running: mut.isPending,
     errorTag,
+    failedCount: outcome?.failed ?? 0,
   }
 }
