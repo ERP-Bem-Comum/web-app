@@ -30,14 +30,22 @@ export interface PayoutGap {
   reason: PayoutGapReason
 }
 
-export type PreviewLineStatus = 'ready' | 'blocked' | 'out-of-van' | 'not-found'
+export type PreviewLineStatus = 'ready' | 'blocked' | 'out-of-van' | 'not-found' | 'not-approved' // #736: falta APROVAR — distinto de `blocked` (falta dado do cadastro)
 
+/**
+ * UMA LINHA POR TÍTULO (core-api#794). A nota dá origem aos títulos, mas o ciclo de vida inteiro é do
+ * TÍTULO — forma, vencimento e status são dele, inclusive nas retenções, que são títulos a pagar como
+ * qualquer outro e podem ficar em aberto com o pai já pago.
+ */
 export interface RemittancePreviewLine {
-  documentId: string
+  payableId: string
+  /** A nota de origem. `null` em `not-found`: sem o título lido não há vínculo a declarar. */
+  documentId: string | null
   status: PreviewLineStatus
   route: VanRoute | null
   gaps: readonly PayoutGap[]
-  netValueCents: string
+  /** Valor DO TÍTULO — no filho de retenção não é o líquido da nota. */
+  valueCents: string
 }
 
 export interface RemittancePreview {
@@ -46,12 +54,13 @@ export interface RemittancePreview {
   blockedCount: number
   outOfVanCount: number
   notFoundCount: number
+  notApprovedCount: number
   readyTotalCents: string
   blockedTotalCents: string
 }
 
 export interface PreviewRemittanceInput {
-  documentIds: readonly string[]
+  payableIds: readonly string[]
 }
 
 // ── Geração (specs/101 S3) ──────────────────────────────────────────────────────
@@ -59,7 +68,8 @@ export interface PreviewRemittanceInput {
 
 export interface GenerateRemittanceInput {
   cedenteAccountId: string
-  documentIds: readonly string[]
+  /** TÍTULOS — mesma unidade do pré-voo e do grid. */
+  payableIds: readonly string[]
 }
 
 /** Comprovante do operador. Sem tela de acompanhamento, `nsa` + `fileName` são o único registro. */

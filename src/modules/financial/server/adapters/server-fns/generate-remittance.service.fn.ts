@@ -36,7 +36,7 @@ export const generateRemittanceFn = createServerFn({ method: 'POST' })
       cedenteAccountId: z.uuid(),
       // Mesmo teto do pré-voo (200): o operador confere e gera a MESMA seleção, e um limite diferente
       // faria a conferência aprovar um lote que a geração recusa.
-      documentIds: z.array(z.uuid()).min(1).max(REMITTANCE_PREVIEW_MAX_IDS).readonly(),
+      payableIds: z.array(z.uuid()).min(1).max(REMITTANCE_PREVIEW_MAX_IDS).readonly(),
     }),
   )
   .handler(async ({ data }): Promise<GenerateRemittanceFnResult> => {
@@ -46,7 +46,7 @@ export const generateRemittanceFn = createServerFn({ method: 'POST' })
     if (accessToken === null) return { ok: false, error: 'unauthorized', message: null }
 
     const r = await financialServer().generateRemittance(
-      { cedenteAccountId: data.cedenteAccountId, documentIds: data.documentIds },
+      { cedenteAccountId: data.cedenteAccountId, payableIds: data.payableIds },
       accessToken,
     )
     if (isErr(r)) return { ok: false, error: r.error.error, message: r.error.message }

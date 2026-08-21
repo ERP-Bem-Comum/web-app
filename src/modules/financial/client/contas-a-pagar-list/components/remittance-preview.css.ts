@@ -160,9 +160,26 @@ export const checkbox = style({ inlineSize: '0.9375rem', blockSize: '0.9375rem',
 /** Checkbox de linha impedida: presente (a coluna não "buraca"), mas inoperável — não há o que marcar. */
 export const checkboxDisabled = style([checkbox, { cursor: 'not-allowed', opacity: 0.45 }])
 
+// Selo de RETENÇÃO na linha. Âmbar e legível — não é decoração: hoje o imposto herda a forma e o
+// favorecido da NOTA, então ele passa pela régua como apto e sairia por TED para o FORNECEDOR. O selo
+// é o único sinal que o operador tem para desmarcá-lo antes de gerar.
+export const retentionBadge = style({
+  display: 'inline-block',
+  marginInlineStart: vars.space.sm,
+  paddingInline: vars.space.sm,
+  paddingBlock: '0.0625rem',
+  borderRadius: vars.radius.sm,
+  background: vars.color.status.pendingBg,
+  color: vars.color.status.pendingText,
+  fontFamily: vars.font.family.body,
+  fontSize: vars.font.size.xs,
+  fontWeight: vars.font.weight.bold,
+  whiteSpace: 'nowrap',
+})
+
 /**
  * Motivo do impedimento, embaixo do número do documento. Fica NA LINHA (não só no tooltip) porque é o
- * que o operador precisa ler para decidir — a guia de retenção, por exemplo, sequer tem linha digitável.
+ * que o operador precisa ler para decidir.
  */
 export const pendencyLabel = style({
   display: 'block',

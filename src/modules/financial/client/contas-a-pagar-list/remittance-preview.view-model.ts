@@ -35,19 +35,26 @@ const REMITTANCE_ELIGIBLE_STATUS = 'Aprovado'
 const DASH = '—'
 
 export type RemittanceSelection = Readonly<{
-  /** Documentos distintos (dedup) elegíveis — é o que vai no corpo do pré-voo. */
-  documentIds: readonly string[]
+  /** TÍTULOS elegíveis — é o que vai no corpo do pré-voo. */
+  payableIds: readonly string[]
   /** Títulos que NÃO são Aprovado. Não viajam; a tela diz quantos ficaram de fora. */
   notApprovedCount: number
 }>
 
 /**
- * Deriva o alvo do pré-voo. Dedup por `documentId`: o grid é por TÍTULO (#201), e vários títulos do
- * mesmo documento (pai + impostos filhos) são UMA linha só na remessa.
+ * Deriva o alvo do pré-voo: um id por TÍTULO SELECIONADO, sem dedup.
+ *
+ * ⚠️ Antes isto deduplicava por `documentId`, porque o core-api respondia POR NOTA e vários títulos da
+ * mesma nota viravam uma linha só. Desde o core-api#794 a remessa fala TÍTULO de ponta a ponta — a
+ * nota dá origem aos títulos, mas o ciclo de vida é deles: forma, vencimento e status são do título,
+ * e a retenção é título a pagar como qualquer outro, podendo ficar em aberto com o pai já pago.
+ *
+ * O filtro de status continua aqui: só título APROVADO entra em remessa (premissa de negócio). O
+ * backend hoje também classifica o não-aprovado (`not-approved`), então isto deixou de ser a única
+ * barreira — mas segue evitando mandar ao pré-voo o que já se sabe que não vai.
  */
 export const deriveRemittanceSelection = (rows: readonly GridRow[]): RemittanceSelection => {
-  const seen = new Set<string>()
-  const documentIds: string[] = []
+  const payableIds: string[] = []
   let notApprovedCount = 0
 
   for (const r of rows) {
@@ -55,12 +62,10 @@ export const deriveRemittanceSelection = (rows: readonly GridRow[]): RemittanceS
       notApprovedCount += 1
       continue
     }
-    if (seen.has(r.documentId)) continue
-    seen.add(r.documentId)
-    documentIds.push(r.documentId)
+    payableIds.push(r.id)
   }
 
-  return { documentIds, notApprovedCount }
+  return { payableIds, notApprovedCount }
 }
 
 // ── Tags i18n das lacunas ───────────────────────────────────────────────────────
@@ -151,6 +156,16 @@ export type PreviewLineView = Readonly<{
   pendencyTag: string | null
   /** Detalhe campo+motivo (tooltip). Vazio quando o impedimento não tem campo. */
   gaps: readonly PreviewGapView[]
+  /**
+   * Título de RETENÇÃO (imposto). Sinalizado — não bloqueado — porque hoje ele herda a forma e o
+   * favorecido da NOTA: um IRRF numa nota paga por TED sai como transferência para o FORNECEDOR, em
+   * vez de guia ao órgão arrecadador. Pela régua do backend está apto, e nenhuma pendência aparece.
+   *
+   * A decisão da P.O. é destacar e deixar o operador desmarcar, não travar: as regras tributárias do
+   * país vão mudar em breve e a modelagem da retenção será revista de qualquer forma — uma trava
+   * nossa agora viraria dívida no meio do caminho.
+   */
+  isRetention: boolean
 }>
 
 export type PreviewSummary = Readonly<{
@@ -161,38 +176,40 @@ export type PreviewSummary = Readonly<{
   netTotal: string
   paymentDate: string
   paymentDateMixed: boolean
-  /** O que sai no arquivo: soma dos MARCADOS, com o valor que o backend apurou por documento. */
+  /** O que sai no arquivo: soma dos MARCADOS, com o valor que o backend apurou POR TÍTULO. */
   remittanceTotal: string
   pendingCount: number
+  /**
+   * Retenções MARCADAS — as que entrariam no arquivo. Só o selo na linha não basta: numa lista longa
+   * ele passa despercebido, e o imposto marcado sai por TED ao fornecedor sem nenhuma pendência.
+   */
+  retentionCheckedCount: number
 }>
 
 export type PreviewView = Readonly<{
   lines: readonly PreviewLineView[]
   summary: PreviewSummary
-  /** Documentos que irão na geração (fatia seguinte) — dedup, só os marcados. */
-  checkedDocumentIds: readonly string[]
+  /** TÍTULOS que irão na geração — só os marcados. */
+  checkedPayableIds: readonly string[]
 }>
 
 /**
- * UMA LINHA POR TÍTULO SELECIONADO — nunca por documento.
+ * UMA LINHA POR TÍTULO SELECIONADO — e agora o veredito também é por título.
  *
- * O grid é title-centric: um documento com retenção rende o título do FORNECEDOR (líquido) e um título
- * FILHO por imposto, com outro favorecido (o órgão arrecadador) e outro valor. Colapsá-los numa linha só
- * misturava o nome de um com o valor do outro, e escondia metade do que o operador tinha selecionado.
+ * O grid é title-centric (#201) e, desde o core-api#794, o pré-voo responde na MESMA unidade: a nota dá
+ * origem aos títulos, mas o ciclo de vida é deles — forma, vencimento e status são do título.
  *
- * O veredito do core-api, porém, é por DOCUMENTO: o pré-voo lê `fin_documents` e responde sobre o
- * pagamento ao FORNECEDOR. Então cada linha recebe o que de fato se sabe sobre ela:
- *  - título do fornecedor → o veredito real do documento;
- *  - título de retenção   → não é pagável pela VAN hoje (o emissor não produz guia a partir do filho).
- *    Não é uma régua nossa sobre dados do favorecido: é a ausência de um caminho no backend, e dizê-lo
- *    é mais honesto que exibir a linha como apta e deixar o arquivo decidir.
+ * ⚠️ Sumiu daqui a régua que marcava TODO filho de retenção como não-remessável. Ela existia porque o
+ * backend respondia por nota e não tinha caminho para pagar o imposto a partir do filho. Agora tem: a
+ * retenção é título a pagar como qualquer outro, com favorecido e valor próprios, e pode ficar em
+ * aberto com o pai já pago. Quem decide se ela entra é o veredito do backend, não uma suposição nossa.
  */
 export const toPreviewView = (
   preview: RemittancePreview,
   selectedRows: readonly GridRow[],
   unchecked: ReadonlySet<string>,
 ): PreviewView => {
-  const lineByDoc = new Map(preview.lines.map((l) => [l.documentId, l]))
+  const lineByPayable = new Map(preview.lines.map((l) => [l.payableId, l]))
 
   // Não-aprovado NÃO APARECE. Ele não é candidato à remessa (premissa de negócio), e mostrá-lo como
   // linha impedida misturaria duas coisas que pedem ações opostas: "corrija o cadastro" e "este título
@@ -200,16 +217,13 @@ export const toPreviewView = (
   const rows = selectedRows.filter((r) => r.status === REMITTANCE_ELIGIBLE_STATUS)
 
   const lines: readonly PreviewLineView[] = rows.map((r) => {
-    const line = lineByDoc.get(r.documentId)
+    const line = lineByPayable.get(r.id)
 
     const { remittable, pendencyTag, gaps } = ((): Readonly<{
       remittable: boolean
       pendencyTag: string | null
       gaps: readonly PreviewGapView[]
     }> => {
-      if (r.isRetentionChild) {
-        return { remittable: false, pendencyTag: 'financial.remittance.preview.pendency.taxGuide', gaps: [] }
-      }
       if (line === undefined) {
         return {
           remittable: false,
@@ -225,7 +239,12 @@ export const toPreviewView = (
             ? 'financial.remittance.preview.pendency.outOfVan'
             : line.status === 'not-found'
               ? 'financial.remittance.preview.pendency.notFound'
-              : blockedPendencyTag(line.route, line.gaps),
+              : // #736 virou status de linha no backend. O front já filtra o não-aprovado antes de
+                // chamar, então isto é a segunda barreira — e se um escapar, a linha diz o certo em
+                // vez de acusar falta de cadastro.
+                line.status === 'not-approved'
+                ? 'financial.remittance.preview.pendency.notApprovedLine'
+                : blockedPendencyTag(line.route, line.gaps),
         gaps: line.gaps.map((g) => ({ fieldTag: FIELD_TAG[g.field], reasonTag: REASON_TAG[g.reason] })),
       }
     })()
@@ -245,6 +264,7 @@ export const toPreviewView = (
       checked: remittable && !unchecked.has(r.id),
       pendencyTag,
       gaps,
+      isRetention: r.isRetentionChild,
     }
   })
 
@@ -261,12 +281,15 @@ export const toPreviewView = (
 
   // Total da remessa: o valor que o BACKEND apurou para cada documento marcado (dedup — um documento
   // entra uma vez no arquivo, ainda que o operador tenha marcado mais de um título dele).
-  const checkedDocs = [...new Set(checkedLines.map((l) => l.documentId))]
-  const remittanceTotal = sumCents(...checkedDocs.map((d) => lineByDoc.get(d)?.netValueCents))
+  // Soma o valor QUE O BACKEND apurou para cada TÍTULO marcado. Antes somava por documento (dedup),
+  // porque o veredito era por nota; agora cada título traz o seu — e no filho de retenção esse valor
+  // não é o líquido da nota.
+  const checkedPayableIds = checkedLines.map((l) => l.payableId)
+  const remittanceTotal = sumCents(...checkedPayableIds.map((id) => lineByPayable.get(id)?.valueCents))
 
   return {
     lines: sorted,
-    checkedDocumentIds: checkedDocs,
+    checkedPayableIds,
     summary: {
       checkedCount: checkedLines.length,
       titleCount: lines.length,
@@ -276,6 +299,7 @@ export const toPreviewView = (
       paymentDateMixed: dueDates.size > 1,
       remittanceTotal: centsToBRL(remittanceTotal),
       pendingCount: lines.filter((l) => !l.remittable).length,
+      retentionCheckedCount: checkedLines.filter((l) => l.isRetention).length,
     },
   }
 }

@@ -186,7 +186,7 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
     ): Promise<Result<RemittancePreview, FinancialError>> => {
       const r = await resultFetch<unknown>(`${baseUrl}/remittances:preview`, {
         method: 'POST',
-        body: { documentIds: input.documentIds },
+        body: { payableIds: input.payableIds },
         token,
       })
       if (isErr(r)) return err(mapHttpError(r.error))
@@ -206,7 +206,7 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
     ): Promise<Result<GeneratedRemittance, GenerateRemittanceFailure>> => {
       const r = await resultFetch<unknown>(`${baseUrl}/remittances`, {
         method: 'POST',
-        body: { cedenteAccountId: input.cedenteAccountId, documentIds: input.documentIds },
+        body: { cedenteAccountId: input.cedenteAccountId, payableIds: input.payableIds },
         token,
       })
       if (isErr(r)) {

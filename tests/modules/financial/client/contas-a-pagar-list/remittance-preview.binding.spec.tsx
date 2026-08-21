@@ -33,11 +33,14 @@ const mockedGenerate = vi.mocked(financialRepository.generateRemittance)
 const mockedDownload = vi.mocked(financialRepository.downloadRemittanceFile)
 
 const PREVIEW = {
-  lines: [{ documentId: 'doc-1', status: 'ready', route: 'pix', gaps: [], netValueCents: '25000' }],
+  lines: [
+    { payableId: 'doc-1', documentId: 'doc-1', status: 'ready', route: 'pix', gaps: [], valueCents: '25000' },
+  ],
   readyCount: 1,
   blockedCount: 0,
   outOfVanCount: 0,
   notFoundCount: 0,
+  notApprovedCount: 0,
   readyTotalCents: '25000',
   blockedTotalCents: '0',
 } as never
@@ -102,7 +105,7 @@ describe('useRemittancePreview', () => {
       expect(result.current.preview).not.toBeNull()
     })
     expect(mocked).toHaveBeenCalledTimes(1)
-    expect(mocked).toHaveBeenCalledWith({ documentIds: ['doc-1'] })
+    expect(mocked).toHaveBeenCalledWith({ payableIds: ['doc-1'] })
     expect(result.current.errorTag).toBeNull()
   })
 
@@ -196,7 +199,7 @@ describe('useRemittancePreview', () => {
     await waitFor(() => {
       expect(result.current.generated?.nsa).toBe(123)
     })
-    expect(mockedGenerate).toHaveBeenCalledWith({ cedenteAccountId: 'acc-1', documentIds: ['doc-1'] })
+    expect(mockedGenerate).toHaveBeenCalledWith({ cedenteAccountId: 'acc-1', payableIds: ['doc-1'] })
   })
 
   it('a recusa do backend chega com a MENSAGEM PT-BR, não só a tag genérica', async () => {

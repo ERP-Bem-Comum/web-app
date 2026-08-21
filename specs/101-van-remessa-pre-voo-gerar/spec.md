@@ -47,6 +47,16 @@ já o lê (`reconciliation.schema.ts:63`), mas **os formulários não o têm**.
 > Em 1.3, conta **encerrada** não recebe o aviso: ela não vai pagar nada, e alertar sobre remessa ali
 > seria ruído.
 
+> **[21/08] O contrato mudou: a remessa fala TÍTULO, não nota (core-api#794).** `payableIds` no corpo
+> do pré-voo e da geração; a linha da resposta traz `payableId` + `documentId` (nullable) + `valueCents`
+> (era `netValueCents`), e `not-approved` virou status de linha.
+>
+> Consequência de produto: **a retenção deixou de ser recusada por ser retenção**. Ela é título a pagar
+> como qualquer outro, com favorecido e valor próprios, e pode ficar em aberto com o pai já pago — o
+> front tinha uma régua que marcava todo filho como não-remessável, e ela saiu.
+>
+> Também caiu o dedup por documento: cada título pede o seu veredito.
+
 ### S2 — Pré-voo do lote _(leitura pura, não move dinheiro)_ ✅ IMPLEMENTADA
 
 `POST /api/v2/financial/remittances:preview` · `remittance:read` · 1..200 ids.

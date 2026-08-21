@@ -58,6 +58,7 @@ const preview = (
   blockedCount: 0,
   outOfVanCount: 0,
   notFoundCount: 0,
+  notApprovedCount: 0,
   readyTotalCents: '0',
   blockedTotalCents: '0',
   ...over,
@@ -82,18 +83,29 @@ const imposto = row('p-imposto', 'Aprovado', {
   grossCents: '6975',
   isRetentionChild: true,
 })
-const docLine = {
+// core-api#794: o pré-voo responde POR TÍTULO. A retenção deixou de ser recusada por suposição do
+// front e passa a ter veredito próprio — favorecido, valor e trilho são dela.
+const fornLine = {
+  payableId: 'p-forn',
   documentId: 'doc-1',
   status: 'ready' as const,
   route: 'transfer' as const,
   gaps: [],
-  netValueCents: '140775',
+  valueCents: '140775',
+}
+const impostoLine = {
+  payableId: 'p-imposto',
+  documentId: 'doc-1',
+  status: 'blocked' as const,
+  route: 'tax-guide' as const,
+  gaps: [{ field: 'payment-detail' as const, reason: 'missing' as const }],
+  valueCents: '6975',
 }
 
 describe('toPreviewView — documento com retenção', () => {
   it('exibe os DOIS títulos, cada um com o seu valor e o seu favorecido', () => {
     const view = toPreviewView(
-      preview([docLine], { readyCount: 1, readyTotalCents: '140775' }),
+      preview([fornLine, impostoLine], { readyCount: 1, readyTotalCents: '140775' }),
       [fornecedor, imposto],
       NONE,
     )
@@ -105,36 +117,65 @@ describe('toPreviewView — documento com retenção', () => {
     assert.equal(nbsp(byId.get('p-imposto')?.net ?? ''), 'R$ 69,75')
   })
 
-  it('o imposto não é remissível e diz por quê; o do fornecedor entra', () => {
+  it('⚠️ a retenção NÃO é mais recusada por ser retenção — vale o veredito do backend', () => {
     const view = toPreviewView(
-      preview([docLine], { readyCount: 1, readyTotalCents: '140775' }),
+      preview([fornLine, { ...impostoLine, status: 'ready' as const, gaps: [] }], { readyCount: 2 }),
+      [fornecedor, imposto],
+      NONE,
+    )
+    const byId = new Map(view.lines.map((l) => [l.payableId, l]))
+    // Antes qualquer filho de retenção nascia impedido com "guia não entra na remessa".
+    assert.equal(byId.get('p-imposto')?.remittable, true)
+    assert.equal(byId.get('p-imposto')?.pendencyTag, null)
+  })
+
+  it('retenção sem código de barras é recusada pelo MOTIVO dela, não por ser imposto', () => {
+    const view = toPreviewView(
+      preview([fornLine, impostoLine], { readyCount: 1 }),
       [fornecedor, imposto],
       NONE,
     )
     const byId = new Map(view.lines.map((l) => [l.payableId, l]))
     assert.equal(byId.get('p-imposto')?.remittable, false)
-    assert.equal(byId.get('p-imposto')?.pendencyTag, 'financial.remittance.preview.pendency.taxGuide')
+    assert.equal(byId.get('p-imposto')?.pendencyTag, 'financial.remittance.preview.pendency.missingBarcode')
     assert.equal(byId.get('p-forn')?.remittable, true)
-    assert.equal(byId.get('p-forn')?.pendencyTag, null)
   })
 
   it('o impedido nasce DESMARCADO — o operador não precisa desmarcar o que não pode ir', () => {
-    const view = toPreviewView(preview([docLine], { readyCount: 1 }), [fornecedor, imposto], NONE)
+    const view = toPreviewView(
+      preview([fornLine, impostoLine], { readyCount: 1 }),
+      [fornecedor, imposto],
+      NONE,
+    )
     const byId = new Map(view.lines.map((l) => [l.payableId, l]))
     assert.equal(byId.get('p-imposto')?.checked, false)
     assert.equal(byId.get('p-forn')?.checked, true)
   })
 
-  it('o total da remessa conta só o documento marcado — não soma o imposto', () => {
-    const view = toPreviewView(preview([docLine], { readyCount: 1 }), [fornecedor, imposto], NONE)
+  it('o total soma o valor DE CADA TÍTULO marcado — não mais um por documento', () => {
+    const view = toPreviewView(
+      preview([fornLine, impostoLine], { readyCount: 1 }),
+      [fornecedor, imposto],
+      NONE,
+    )
     assert.equal(nbsp(view.summary.remittanceTotal), 'R$ 1.407,75')
     assert.equal(view.summary.checkedCount, 1)
     assert.equal(view.summary.titleCount, 2)
-    assert.deepEqual(view.checkedDocumentIds, ['doc-1'])
+    assert.deepEqual(view.checkedPayableIds, ['p-forn'])
+  })
+
+  it('os DOIS títulos da mesma nota podem ir juntos — o total soma os dois', () => {
+    const view = toPreviewView(
+      preview([fornLine, { ...impostoLine, status: 'ready' as const, gaps: [] }], { readyCount: 2 }),
+      [fornecedor, imposto],
+      NONE,
+    )
+    assert.deepEqual([...view.checkedPayableIds].sort(), ['p-forn', 'p-imposto'])
+    assert.equal(nbsp(view.summary.remittanceTotal), 'R$ 1.477,50') // 140775 + 6975
   })
 
   it('impedidos aparecem primeiro', () => {
-    const view = toPreviewView(preview([docLine]), [fornecedor, imposto], NONE)
+    const view = toPreviewView(preview([fornLine, impostoLine]), [fornecedor, imposto], NONE)
     assert.equal(view.lines[0]?.payableId, 'p-imposto')
   })
 })
@@ -143,8 +184,8 @@ describe('toPreviewView — desmarcar atualiza o totalizador', () => {
   const a = row('pa', 'Aprovado', { documentId: 'da', netCents: '10000', grossCents: '12000' })
   const b = row('pb', 'Aprovado', { documentId: 'db', netCents: '5000', grossCents: '6000' })
   const lines: RemittancePreview['lines'] = [
-    { documentId: 'da', status: 'ready', route: 'pix', gaps: [], netValueCents: '10000' },
-    { documentId: 'db', status: 'ready', route: 'pix', gaps: [], netValueCents: '5000' },
+    { payableId: 'pa', documentId: 'da', status: 'ready', route: 'pix', gaps: [], valueCents: '10000' },
+    { payableId: 'pb', documentId: 'db', status: 'ready', route: 'pix', gaps: [], valueCents: '5000' },
   ]
 
   it('tudo marcado → soma os dois', () => {
@@ -159,7 +200,7 @@ describe('toPreviewView — desmarcar atualiza o totalizador', () => {
     assert.equal(nbsp(view.summary.remittanceTotal), 'R$ 100,00')
     assert.equal(nbsp(view.summary.grossTotal), 'R$ 120,00')
     assert.equal(view.summary.checkedCount, 1)
-    assert.deepEqual(view.checkedDocumentIds, ['da'])
+    assert.deepEqual(view.checkedPayableIds, ['pa'])
   })
 
   it('data de pagamento considera só os marcados', () => {
@@ -179,7 +220,9 @@ describe('toPreviewView — não-aprovado nem aparece', () => {
     const aberto = row('p-aberto', 'Aberto', { documentId: 'd-aberto' })
     const pago = row('p-pago', 'Pago', { documentId: 'd-pago' })
     const view = toPreviewView(
-      preview([{ documentId: 'd-ok', status: 'ready', route: 'pix', gaps: [], netValueCents: '100' }]),
+      preview([
+        { payableId: 'p-ok', documentId: 'd-ok', status: 'ready', route: 'pix', gaps: [], valueCents: '100' },
+      ]),
       [aprovado, aberto, pago],
       NONE,
     )
@@ -199,14 +242,15 @@ describe('toPreviewView — impedimentos do backend', () => {
     const view = toPreviewView(
       preview([
         {
+          payableId: 'p1',
           documentId: 'd1',
           status: 'blocked',
           route: 'transfer',
           gaps: [{ field: 'payee-agency', reason: 'missing' }],
-          netValueCents: '100',
+          valueCents: '100',
         },
-        { documentId: 'd2', status: 'out-of-van', route: null, gaps: [], netValueCents: '100' },
-        { documentId: 'd3', status: 'not-found', route: null, gaps: [], netValueCents: '0' },
+        { payableId: 'p2', documentId: 'd2', status: 'out-of-van', route: null, gaps: [], valueCents: '100' },
+        { payableId: 'p3', documentId: 'd3', status: 'not-found', route: null, gaps: [], valueCents: '0' },
       ]),
       rows,
       NONE,
@@ -241,11 +285,12 @@ describe('toPreviewView — a pendência nomeia o dado DAQUELA forma de pagament
     toPreviewView(
       preview([
         {
+          payableId: 'p1',
           documentId: 'd1',
           status: 'blocked',
           route,
           gaps: [{ field, reason }],
-          netValueCents: '100',
+          valueCents: '100',
         },
       ] as never),
       [row('p1', 'Aprovado', { documentId: 'd1' })],
@@ -303,7 +348,9 @@ describe('toPreviewView — a pendência nomeia o dado DAQUELA forma de pagament
 
   it('rota desconhecida cai no genérico — sem chutar onde o operador deve mexer', () => {
     const view = toPreviewView(
-      preview([{ documentId: 'd1', status: 'blocked', route: null, gaps: [], netValueCents: '100' }]),
+      preview([
+        { payableId: 'p1', documentId: 'd1', status: 'blocked', route: null, gaps: [], valueCents: '100' },
+      ]),
       [row('p1', 'Aprovado', { documentId: 'd1' })],
       NONE,
     )
@@ -325,18 +372,72 @@ describe('deriveRemittanceSelection', () => {
   it('só Aprovado é candidato — o resto fica de fora e é contado', () => {
     const rows = [row('a', 'Aprovado'), row('b', 'Rascunho'), row('c', 'Aberto'), row('d', 'Pago')]
     const out = deriveRemittanceSelection(rows)
-    assert.deepEqual(out.documentIds, ['a'])
+    assert.deepEqual(out.payableIds, ['a'])
     assert.equal(out.notApprovedCount, 3)
   })
 
-  it('dedup por documento: pai + filho do MESMO documento pedem UM veredito só', () => {
+  // core-api#794: NÃO há mais dedup. Cada título pede o seu veredito — inclusive a retenção, que é
+  // título a pagar como qualquer outro.
+  it('pai + filho da MESMA nota viajam como DOIS títulos', () => {
     const out = deriveRemittanceSelection([fornecedor, imposto])
-    assert.deepEqual(out.documentIds, ['doc-1'])
+    assert.deepEqual(out.payableIds, ['p-forn', 'p-imposto'])
   })
 
   it('lista vazia → nada a conferir (a tela desabilita o item CNAB a partir daqui)', () => {
     const out = deriveRemittanceSelection([])
-    assert.deepEqual(out.documentIds, [])
+    assert.deepEqual(out.payableIds, [])
     assert.equal(out.notApprovedCount, 0)
+  })
+})
+
+// A retenção NÃO é bloqueada (decisão da P.O.: a modelagem muda com a reforma tributária), mas precisa
+// ser IDENTIFICÁVEL — hoje ela herda forma e favorecido da nota, passa pela régua como apta, e sairia
+// por TED ao fornecedor sem nenhuma pendência a acusar.
+describe('toPreviewView — retenção é sinalizada, não bloqueada', () => {
+  const readyImposto = { ...impostoLine, status: 'ready' as const, gaps: [] }
+
+  it('a linha do imposto vem marcada como retenção; a do fornecedor não', () => {
+    const view = toPreviewView(
+      preview([fornLine, readyImposto], { readyCount: 2 }),
+      [fornecedor, imposto],
+      NONE,
+    )
+    const byId = new Map(view.lines.map((l) => [l.payableId, l]))
+    assert.equal(byId.get('p-imposto')?.isRetention, true)
+    assert.equal(byId.get('p-forn')?.isRetention, false)
+  })
+
+  it('sinalizar NÃO impede: a retenção apta segue remessável e marcada', () => {
+    const view = toPreviewView(
+      preview([fornLine, readyImposto], { readyCount: 2 }),
+      [fornecedor, imposto],
+      NONE,
+    )
+    const byId = new Map(view.lines.map((l) => [l.payableId, l]))
+    assert.equal(byId.get('p-imposto')?.remittable, true)
+    assert.equal(byId.get('p-imposto')?.checked, true)
+  })
+
+  it('o aviso do topo conta só as retenções MARCADAS', () => {
+    const todas = toPreviewView(
+      preview([fornLine, readyImposto], { readyCount: 2 }),
+      [fornecedor, imposto],
+      NONE,
+    )
+    assert.equal(todas.summary.retentionCheckedCount, 1)
+
+    // Desmarcada, some do aviso — é o caminho que a P.O. descreveu: o operador remove da remessa.
+    const semImposto = toPreviewView(
+      preview([fornLine, readyImposto], { readyCount: 2 }),
+      [fornecedor, imposto],
+      new Set(['p-imposto']),
+    )
+    assert.equal(semImposto.summary.retentionCheckedCount, 0)
+    assert.deepEqual(semImposto.checkedPayableIds, ['p-forn'])
+  })
+
+  it('lote sem retenção não dispara aviso', () => {
+    const view = toPreviewView(preview([fornLine], { readyCount: 1 }), [fornecedor], NONE)
+    assert.equal(view.summary.retentionCheckedCount, 0)
   })
 })
