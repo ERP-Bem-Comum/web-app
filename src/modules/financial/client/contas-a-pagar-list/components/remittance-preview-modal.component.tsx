@@ -361,12 +361,11 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
               <p className={launchAlert}>{t('financial.remittance.generate.needSameDate')}</p>
             ) : null}
 
-            {/* Pagamento no passado também BLOQUEIA: a data do Segmento A é o dia em que o banco executa,
-                e um dia que já foi não é instrução cumprível. Banner próprio, e não o de datas
-                misturadas, porque a correção é outra — aqui se reagenda o vencimento do título. */}
-            {view.summary.paymentDateInPast ? (
-              <p className={launchAlert}>{t('financial.remittance.generate.needFutureDate')}</p>
-            ) : null}
+            {/* Pagamento no passado BLOQUEIA, mas SEM banner — e a diferença para os vencimentos
+                misturados é deliberada: aquele se resolve DENTRO do modal (desmarcando os divergentes),
+                então o banner ensina uma ação daqui. Este só se resolve fora — fechar, corrigir o
+                vencimento, voltar. Um banner mandando o operador sair vale menos que o campo destacado
+                no resumo, e o resumo é onde ele lê a data. Ver `summaryValueWarn` acima. */}
 
             {props.confirming ? (
               <p className={launchWarn}>

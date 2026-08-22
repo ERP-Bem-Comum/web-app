@@ -128,7 +128,12 @@ export const row = style({
   fontSize: `calc(${vars.font.size.xs} + 0.0625rem)`,
   color: vars.color.institutional.ink2,
   transition: 'background 120ms ease',
-  ':hover': { background: vars.color.institutional.paperWarm },
+  // ⚠️ Única divergência deliberada em relação ao grid de Contas a Pagar, que faz hover em `paperWarm`.
+  // Lá o bege funciona porque o entorno é branco. AQUI o bege já é a cor da barra de resumo e da barra
+  // da conta — hover que repete a cor do que está em volta não sinaliza nada. `blueBg` é o mesmo azul de
+  // hover que a página já usa nos menus e nas ações, então não é cor nova: é a que já significa "isto
+  // responde ao mouse".
+  ':hover': { background: vars.color.institutional.blueBg },
   ':last-child': { borderBlockEnd: 'none' },
 })
 
