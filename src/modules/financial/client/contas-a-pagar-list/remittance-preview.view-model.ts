@@ -176,6 +176,14 @@ export type PreviewSummary = Readonly<{
   netTotal: string
   paymentDate: string
   paymentDateMixed: boolean
+  /**
+   * A data de pagamento já passou. **Impede gerar**, como os vencimentos misturados.
+   *
+   * A data do Segmento A é o dia em que o banco executa; um dia que já foi não é instrução que o banco
+   * possa cumprir. Só o vencimento do TÍTULO responde por ela (a remessa é de um dia só), então a
+   * correção é reagendar o vencimento — não há o que ajustar na remessa.
+   */
+  paymentDateInPast: boolean
   /** O que sai no arquivo: soma dos MARCADOS, com o valor que o backend apurou POR TÍTULO. */
   remittanceTotal: string
   pendingCount: number
@@ -208,6 +216,14 @@ export const toPreviewView = (
   preview: RemittancePreview,
   selectedRows: readonly GridRow[],
   unchecked: ReadonlySet<string>,
+  /**
+   * Hoje, em ISO LOCAL (YYYY-MM-DD). Entra por parâmetro para este ViewModel seguir puro e testável —
+   * o `new Date()` mora no binding, mesmo idioma de `reconciliation-accounts.view-model.ts`.
+   *
+   * ⚠️ Local, não UTC: `toISOString()` recua um dia à noite no fuso de Brasília, e isso reprovaria uma
+   * remessa de hoje como se fosse de ontem — justo o erro que esta regra existe para pegar.
+   */
+  today: string,
 ): PreviewView => {
   const lineByPayable = new Map(preview.lines.map((l) => [l.payableId, l]))
 
@@ -275,7 +291,16 @@ export const toPreviewView = (
   const dueDates = new Set(checkedLines.map((l) => l.due).filter((d) => d !== DASH))
   const [firstDue] = [...dueDates]
 
+  // Pagamento no passado: comparação sobre o ISO CRU do vencimento, nunca sobre o `due` de tela — string
+  // formatada re-parseada é onde se troca dia por mês. `YYYY-MM-DD` compara lexicograficamente igual a
+  // cronologicamente, então `<` basta e não há `Date` (nem fuso) no caminho.
+  // Título SEM vencimento não entra na conta: ausência não é passado, e ele já é impedido por outra via.
   const rowById = new Map(rows.map((r) => [r.id, r]))
+  const paymentDateInPast = checkedLines.some((l) => {
+    const iso = rowById.get(l.payableId)?.dueIso
+    return iso !== null && iso !== undefined && iso < today
+  })
+
   const grossTotal = sumCents(...checkedLines.map((l) => rowById.get(l.payableId)?.grossCents ?? undefined))
   const netTotal = sumCents(...checkedLines.map((l) => rowById.get(l.payableId)?.netCents ?? undefined))
 
@@ -297,6 +322,7 @@ export const toPreviewView = (
       netTotal: centsToBRL(netTotal),
       paymentDate: dueDates.size === 1 && firstDue !== undefined ? firstDue : DASH,
       paymentDateMixed: dueDates.size > 1,
+      paymentDateInPast,
       remittanceTotal: centsToBRL(remittanceTotal),
       pendingCount: lines.filter((l) => !l.remittable).length,
       retentionCheckedCount: checkedLines.filter((l) => l.isRetention).length,

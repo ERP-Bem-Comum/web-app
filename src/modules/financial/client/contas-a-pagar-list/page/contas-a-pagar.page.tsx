@@ -204,7 +204,7 @@ export function ContasAPagarPage(): ReactNode {
   const remittanceView =
     remittance.preview === null
       ? null
-      : toPreviewView(remittance.preview, remittanceRows, remittance.unchecked)
+      : toPreviewView(remittance.preview, remittanceRows, remittance.unchecked, remittance.today)
 
   // ── Mudar Status em massa: Aprovar (Aberto→Aprovado) · Voltar p/ edição (Aprovado→Aberto) ──
   const bulk = useBulkStatus(clearSelection)

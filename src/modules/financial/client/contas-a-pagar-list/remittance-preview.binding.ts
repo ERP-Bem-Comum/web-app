@@ -48,6 +48,14 @@ export type RemittancePreviewBinding = Readonly<{
    * pede a conta em vez de mostrar uma conferência vazia ou um "carregando" que nunca termina.
    */
   awaitingAccount: boolean
+  /**
+   * Hoje em ISO LOCAL (YYYY-MM-DD), para o ViewModel decidir se a data de pagamento já passou.
+   *
+   * Lido a cada render, de propósito, e não congelado em `useState`: numa aba aberta desde ontem um
+   * "hoje" congelado aprovaria uma remessa com data de ontem — que é exatamente o caso que a regra
+   * existe para barrar. O valor só muda uma vez por dia, então recalcular não custa nada.
+   */
+  today: string
 
   // ── Geração (S3) — ⚠️ enfileira pagamento no banco ────────────────────────────
   /** Contas-cedente elegíveis a pagar. Vazio enquanto carrega ou se a listagem falhar. */
@@ -257,6 +265,9 @@ export function useRemittancePreview(): RemittancePreviewBinding {
     close,
     // Esperando a conta: há seleção, o modal está aberto e ninguém conseguiu (ou escolheu) uma conta ainda.
     awaitingAccount: open && pendingIds.length > 0 && cedenteAccountId === '',
+    // `en-CA` dá YYYY-MM-DD no fuso LOCAL. `toISOString()` daria UTC e recuaria um dia à noite em
+    // Brasília — reprovando como "ontem" uma remessa que é de hoje.
+    today: new Date().toLocaleDateString('en-CA'),
     accounts,
     cedenteAccountId,
     setCedenteAccountId: setChosenAccountId,

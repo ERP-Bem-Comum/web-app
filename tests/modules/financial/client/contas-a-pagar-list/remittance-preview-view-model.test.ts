@@ -38,6 +38,7 @@ const row = (id: string, status: GridRow['status'], over: Partial<GridRow> = {})
   gross: 'R$ 10,00',
   grossCents: '1000',
   due: '10/07/2026',
+  dueIso: '2026-07-10',
   net: 'R$ 10,00',
   netCents: '1000',
   version: 0,
@@ -65,6 +66,13 @@ const preview = (
 })
 
 const NONE: ReadonlySet<string> = new Set()
+
+/**
+ * "Hoje" FIXO, anterior ao vencimento das fixtures (10/07/2026). Fixo porque data de teste que anda
+ * com o relógio quebra sozinha um dia — e este arquivo é `node:test` puro, sem acesso a `Date` de
+ * propósito. Os casos de data no passado usam um `today` POSTERIOR, explicitamente.
+ */
+const TODAY = '2026-07-01'
 
 // ── O caso da retenção (o bug reportado) ────────────────────────────────────────
 
@@ -108,6 +116,7 @@ describe('toPreviewView — documento com retenção', () => {
       preview([fornLine, impostoLine], { readyCount: 1, readyTotalCents: '140775' }),
       [fornecedor, imposto],
       NONE,
+      TODAY,
     )
     assert.equal(view.lines.length, 2)
     const byId = new Map(view.lines.map((l) => [l.payableId, l]))
@@ -122,6 +131,7 @@ describe('toPreviewView — documento com retenção', () => {
       preview([fornLine, { ...impostoLine, status: 'ready' as const, gaps: [] }], { readyCount: 2 }),
       [fornecedor, imposto],
       NONE,
+      TODAY,
     )
     const byId = new Map(view.lines.map((l) => [l.payableId, l]))
     // Antes qualquer filho de retenção nascia impedido com "guia não entra na remessa".
@@ -134,6 +144,7 @@ describe('toPreviewView — documento com retenção', () => {
       preview([fornLine, impostoLine], { readyCount: 1 }),
       [fornecedor, imposto],
       NONE,
+      TODAY,
     )
     const byId = new Map(view.lines.map((l) => [l.payableId, l]))
     assert.equal(byId.get('p-imposto')?.remittable, false)
@@ -146,6 +157,7 @@ describe('toPreviewView — documento com retenção', () => {
       preview([fornLine, impostoLine], { readyCount: 1 }),
       [fornecedor, imposto],
       NONE,
+      TODAY,
     )
     const byId = new Map(view.lines.map((l) => [l.payableId, l]))
     assert.equal(byId.get('p-imposto')?.checked, false)
@@ -157,6 +169,7 @@ describe('toPreviewView — documento com retenção', () => {
       preview([fornLine, impostoLine], { readyCount: 1 }),
       [fornecedor, imposto],
       NONE,
+      TODAY,
     )
     assert.equal(nbsp(view.summary.remittanceTotal), 'R$ 1.407,75')
     assert.equal(view.summary.checkedCount, 1)
@@ -169,13 +182,14 @@ describe('toPreviewView — documento com retenção', () => {
       preview([fornLine, { ...impostoLine, status: 'ready' as const, gaps: [] }], { readyCount: 2 }),
       [fornecedor, imposto],
       NONE,
+      TODAY,
     )
     assert.deepEqual([...view.checkedPayableIds].sort(), ['p-forn', 'p-imposto'])
     assert.equal(nbsp(view.summary.remittanceTotal), 'R$ 1.477,50') // 140775 + 6975
   })
 
   it('impedidos aparecem primeiro', () => {
-    const view = toPreviewView(preview([fornLine, impostoLine]), [fornecedor, imposto], NONE)
+    const view = toPreviewView(preview([fornLine, impostoLine]), [fornecedor, imposto], NONE, TODAY)
     assert.equal(view.lines[0]?.payableId, 'p-imposto')
   })
 })
@@ -189,14 +203,14 @@ describe('toPreviewView — desmarcar atualiza o totalizador', () => {
   ]
 
   it('tudo marcado → soma os dois', () => {
-    const view = toPreviewView(preview(lines, { readyCount: 2 }), [a, b], NONE)
+    const view = toPreviewView(preview(lines, { readyCount: 2 }), [a, b], NONE, TODAY)
     assert.equal(nbsp(view.summary.remittanceTotal), 'R$ 150,00')
     assert.equal(nbsp(view.summary.grossTotal), 'R$ 180,00')
     assert.equal(view.summary.checkedCount, 2)
   })
 
   it('desmarcando um, o total cai e ele sai dos documentos da remessa', () => {
-    const view = toPreviewView(preview(lines, { readyCount: 2 }), [a, b], new Set(['pb']))
+    const view = toPreviewView(preview(lines, { readyCount: 2 }), [a, b], new Set(['pb']), TODAY)
     assert.equal(nbsp(view.summary.remittanceTotal), 'R$ 100,00')
     assert.equal(nbsp(view.summary.grossTotal), 'R$ 120,00')
     assert.equal(view.summary.checkedCount, 1)
@@ -205,10 +219,10 @@ describe('toPreviewView — desmarcar atualiza o totalizador', () => {
 
   it('data de pagamento considera só os marcados', () => {
     const outro = row('pb', 'Aprovado', { documentId: 'db', due: '21/08/2026' })
-    const misto = toPreviewView(preview(lines), [a, outro], NONE)
+    const misto = toPreviewView(preview(lines), [a, outro], NONE, TODAY)
     assert.equal(misto.summary.paymentDateMixed, true)
     // desmarcado o divergente, o lote volta a ter um dia só
-    const alinhado = toPreviewView(preview(lines), [a, outro], new Set(['pb']))
+    const alinhado = toPreviewView(preview(lines), [a, outro], new Set(['pb']), TODAY)
     assert.equal(alinhado.summary.paymentDateMixed, false)
     assert.equal(alinhado.summary.paymentDate, '10/07/2026')
   })
@@ -225,6 +239,7 @@ describe('toPreviewView — não-aprovado nem aparece', () => {
       ]),
       [aprovado, aberto, pago],
       NONE,
+      TODAY,
     )
     assert.equal(view.lines.length, 1)
     assert.equal(view.lines[0]?.payableId, 'p-ok')
@@ -254,6 +269,7 @@ describe('toPreviewView — impedimentos do backend', () => {
       ]),
       rows,
       NONE,
+      TODAY,
     )
     const byId = new Map(view.lines.map((l) => [l.payableId, l]))
     // Rota `transfer`: o que falta é conta do favorecido, e o rótulo diz isso — não o genérico.
@@ -271,7 +287,7 @@ describe('toPreviewView — impedimentos do backend', () => {
   })
 
   it('título sem veredito do backend não é dado como apto', () => {
-    const view = toPreviewView(preview([]), [row('p1', 'Aprovado', { documentId: 'd1' })], NONE)
+    const view = toPreviewView(preview([]), [row('p1', 'Aprovado', { documentId: 'd1' })], NONE, TODAY)
     assert.equal(view.lines[0]?.remittable, false)
     assert.equal(view.lines[0]?.pendencyTag, 'financial.remittance.preview.pendency.notChecked')
   })
@@ -295,6 +311,7 @@ describe('toPreviewView — a pendência nomeia o dado DAQUELA forma de pagament
       ] as never),
       [row('p1', 'Aprovado', { documentId: 'd1' })],
       NONE,
+      TODAY,
     ).lines[0]
 
   it('TED/Transferência aponta os dados bancários', () => {
@@ -353,6 +370,7 @@ describe('toPreviewView — a pendência nomeia o dado DAQUELA forma de pagament
       ]),
       [row('p1', 'Aprovado', { documentId: 'd1' })],
       NONE,
+      TODAY,
     )
     assert.equal(view.lines[0]?.pendencyTag, 'financial.remittance.preview.pendency.missingData')
   })
@@ -401,6 +419,7 @@ describe('toPreviewView — retenção é sinalizada, não bloqueada', () => {
       preview([fornLine, readyImposto], { readyCount: 2 }),
       [fornecedor, imposto],
       NONE,
+      TODAY,
     )
     const byId = new Map(view.lines.map((l) => [l.payableId, l]))
     assert.equal(byId.get('p-imposto')?.isRetention, true)
@@ -412,6 +431,7 @@ describe('toPreviewView — retenção é sinalizada, não bloqueada', () => {
       preview([fornLine, readyImposto], { readyCount: 2 }),
       [fornecedor, imposto],
       NONE,
+      TODAY,
     )
     const byId = new Map(view.lines.map((l) => [l.payableId, l]))
     assert.equal(byId.get('p-imposto')?.remittable, true)
@@ -423,6 +443,7 @@ describe('toPreviewView — retenção é sinalizada, não bloqueada', () => {
       preview([fornLine, readyImposto], { readyCount: 2 }),
       [fornecedor, imposto],
       NONE,
+      TODAY,
     )
     assert.equal(todas.summary.retentionCheckedCount, 1)
 
@@ -431,13 +452,93 @@ describe('toPreviewView — retenção é sinalizada, não bloqueada', () => {
       preview([fornLine, readyImposto], { readyCount: 2 }),
       [fornecedor, imposto],
       new Set(['p-imposto']),
+      TODAY,
     )
     assert.equal(semImposto.summary.retentionCheckedCount, 0)
     assert.deepEqual(semImposto.checkedPayableIds, ['p-forn'])
   })
 
   it('lote sem retenção não dispara aviso', () => {
-    const view = toPreviewView(preview([fornLine], { readyCount: 1 }), [fornecedor], NONE)
+    const view = toPreviewView(preview([fornLine], { readyCount: 1 }), [fornecedor], NONE, TODAY)
     assert.equal(view.summary.retentionCheckedCount, 0)
+  })
+})
+
+// ── Data de pagamento no PASSADO (bloqueia gerar) ───────────────────────────────
+//
+// A data do Segmento A é o dia em que o banco EXECUTA. Um dia que já passou não é instrução que ele
+// possa cumprir — e o pré-voo é o último ponto em que dá para corrigir sem queimar NSA.
+//
+// A comparação é sobre o `dueIso` CRU. O `due` de tela é DD/MM/YYYY, e re-parsear string formatada é
+// onde se troca dia por mês; `YYYY-MM-DD` ordena lexicograficamente igual a cronologicamente.
+
+describe('toPreviewView — data de pagamento no passado', () => {
+  const linha = (id: string) => ({
+    payableId: id,
+    documentId: `d-${id}`,
+    status: 'ready' as const,
+    route: 'pix' as const,
+    gaps: [],
+    valueCents: '10000',
+  })
+
+  it('⚠️ vencimento ANTERIOR a hoje marca paymentDateInPast', () => {
+    const ontem = row('p1', 'Aprovado', { documentId: 'd-p1', due: '20/08/2026', dueIso: '2026-08-20' })
+    const view = toPreviewView(preview([linha('p1')], { readyCount: 1 }), [ontem], NONE, '2026-08-21')
+    assert.equal(view.summary.paymentDateInPast, true)
+  })
+
+  it('vencimento HOJE é válido — a regra é "de hoje em diante", não "depois de hoje"', () => {
+    const hoje = row('p1', 'Aprovado', { documentId: 'd-p1', due: '21/08/2026', dueIso: '2026-08-21' })
+    const view = toPreviewView(preview([linha('p1')], { readyCount: 1 }), [hoje], NONE, '2026-08-21')
+    assert.equal(view.summary.paymentDateInPast, false)
+  })
+
+  it('vencimento futuro é válido', () => {
+    const amanha = row('p1', 'Aprovado', { documentId: 'd-p1', due: '22/08/2026', dueIso: '2026-08-22' })
+    const view = toPreviewView(preview([linha('p1')], { readyCount: 1 }), [amanha], NONE, '2026-08-21')
+    assert.equal(view.summary.paymentDateInPast, false)
+  })
+
+  it('só os títulos MARCADOS contam — desmarcar o vencido libera a remessa', () => {
+    const ok = row('p1', 'Aprovado', { documentId: 'd-p1', due: '22/08/2026', dueIso: '2026-08-22' })
+    const vencido = row('p2', 'Aprovado', { documentId: 'd-p2', due: '20/08/2026', dueIso: '2026-08-20' })
+    const linhas = [linha('p1'), linha('p2')]
+
+    const comVencido = toPreviewView(preview(linhas, { readyCount: 2 }), [ok, vencido], NONE, '2026-08-21')
+    assert.equal(comVencido.summary.paymentDateInPast, true)
+
+    const semVencido = toPreviewView(
+      preview(linhas, { readyCount: 2 }),
+      [ok, vencido],
+      new Set(['p2']),
+      '2026-08-21',
+    )
+    assert.equal(semVencido.summary.paymentDateInPast, false)
+  })
+
+  it('título sem vencimento não é tratado como passado — ausência não é data vencida', () => {
+    const semData = row('p1', 'Aprovado', { documentId: 'd-p1', due: '—', dueIso: null })
+    const view = toPreviewView(preview([linha('p1')], { readyCount: 1 }), [semData], NONE, '2026-08-21')
+    assert.equal(view.summary.paymentDateInPast, false)
+  })
+
+  it('⚠️ vira do ANO: 31/12 é passado para 01/01 do ano seguinte', () => {
+    const reveillon = row('p1', 'Aprovado', { documentId: 'd-p1', due: '31/12/2026', dueIso: '2026-12-31' })
+    const view = toPreviewView(preview([linha('p1')], { readyCount: 1 }), [reveillon], NONE, '2027-01-01')
+    assert.equal(view.summary.paymentDateInPast, true)
+  })
+
+  it('passado e misturado são independentes — um não mascara o outro', () => {
+    const a1 = row('p1', 'Aprovado', { documentId: 'd-p1', due: '19/08/2026', dueIso: '2026-08-19' })
+    const a2 = row('p2', 'Aprovado', { documentId: 'd-p2', due: '20/08/2026', dueIso: '2026-08-20' })
+    const view = toPreviewView(
+      preview([linha('p1'), linha('p2')], { readyCount: 2 }),
+      [a1, a2],
+      NONE,
+      '2026-08-21',
+    )
+    assert.equal(view.summary.paymentDateMixed, true)
+    assert.equal(view.summary.paymentDateInPast, true)
   })
 })

@@ -60,6 +60,12 @@ export type GridRow = Readonly<{
   gross: string // valor bruto formatado (BRL) ou "—"
   grossCents: string | null // bruto em centavos p/ o somatório da seleção
   due: string
+  /**
+   * Vencimento CRU (YYYY-MM-DD), do jeito que o backend mandou. Existe porque `due` é texto de tela
+   * (DD/MM/YYYY, ou "—") e comparar datas re-parseando string formatada é como se erra fuso e ordem.
+   * A remessa precisa comparar de verdade: pagamento no passado não pode ser transmitido.
+   */
+  dueIso: string | null
   net: string
   netCents: string | null // líquido em centavos p/ o somatório da seleção (formatação fica fora)
   version: number // optimistic lock — p/ ações inline (Mudar Status em massa)
@@ -293,6 +299,7 @@ const toRow = (
   gross: it.grossValueCents !== null && it.grossValueCents !== '' ? centsToBRL(it.grossValueCents) : DASH,
   grossCents: it.grossValueCents,
   due: it.dueDate !== null && it.dueDate !== '' ? formatDue(it.dueDate) : DASH,
+  dueIso: it.dueDate !== null && it.dueDate !== '' ? it.dueDate : null,
   net: it.netValueCents !== null && it.netValueCents !== '' ? centsToBRL(it.netValueCents) : DASH,
   netCents: it.netValueCents,
   isRetentionChild: false, // modo documento: a linha é o documento inteiro, nunca um filho de retenção
@@ -732,6 +739,7 @@ const toTitleRow = (
     gross: grossCents !== null && grossCents !== '' ? centsToBRL(grossCents) : DASH,
     grossCents,
     due: it.dueDate !== '' ? formatDue(it.dueDate.slice(0, 10)) : DASH, // dueDate pode vir ISO datetime
+    dueIso: it.dueDate !== '' ? it.dueDate.slice(0, 10) : null,
     net: netCents !== null && netCents !== '' ? centsToBRL(netCents) : DASH,
     netCents,
     version: it.version, // #229: version do DOCUMENTO (optimistic lock) agora vem na linha

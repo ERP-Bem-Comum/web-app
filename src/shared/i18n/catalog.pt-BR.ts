@@ -2052,6 +2052,10 @@ export const ptBR: Catalog = {
   'financial.remittance.generate.needAccount': 'Selecione a conta bancária que vai pagar',
   'financial.remittance.generate.needSameDate':
     'A seleção tem vencimentos diferentes. Uma remessa é de um único dia — filtre/gere por vencimento ou desmarque os divergentes.',
+  // Data no passado. A frase diz onde se conserta (o vencimento do título), porque não há nada a ajustar
+  // na remessa: a data do arquivo É o vencimento, e o banco não executa um dia que já passou.
+  'financial.remittance.generate.needFutureDate':
+    'A data de pagamento já passou. O banco só executa de hoje em diante — reagende o vencimento dos títulos antes de gerar a remessa.',
   // Confirmação da geração — ⚠️ o passo que MOVE DINHEIRO. Uma frase só, com {total} e {n}
   // interpolados: montá-la por concatenação de pedaços deixava a ordem das palavras presa ao código.
   'financial.remittance.generate.confirm':
