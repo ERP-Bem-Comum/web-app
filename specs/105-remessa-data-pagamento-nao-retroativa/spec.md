@@ -25,8 +25,8 @@ Hoje **é válido** — a regra é "de hoje em diante", não "depois de hoje".
 | --- | ------------------------------------------------------------------------------------------------- |
 | E1  | `GridRow` passa a carregar `dueIso` — o vencimento **cru** (`YYYY-MM-DD`), além do `due` de tela. |
 | E2  | O ViewModel do pré-voo deriva `paymentDateInPast` dos títulos **marcados**.                       |
-| E3  | Data no passado **bloqueia** o "Gerar remessa", com banner próprio e `title` no botão.            |
-| E4  | O valor "Pagamento em" do resumo fica em âmbar, como já acontece com vencimentos misturados.      |
+| E3  | Data no passado **bloqueia** o "Gerar remessa" (motivo curto no `title`, sem banner).             |
+| E4  | O valor "Pagamento em" do resumo fica em **âmbar** — é ele que sinaliza. Ver a decisão abaixo.    |
 
 ### Fora de escopo — e é o mais importante desta spec
 
@@ -52,6 +52,12 @@ nomeado, **antes de `allocateNsa`** — para não queimar número de sequência 
   congelado aprovaria a data de ontem. O valor muda uma vez por dia; recalcular não custa nada.
 - **Título sem vencimento não conta como passado.** Ausência não é data vencida, e ele já é impedido
   por outra via.
+- **Sem banner — só o campo destacado** (decisão da P.O., 21/08). E a diferença para os vencimentos
+  misturados é deliberada, não inconsistência: aquele caso **se resolve dentro do modal** (desmarcando
+  os divergentes), então o banner ensina uma ação disponível ali. Este **só se resolve fora** — fechar
+  a conferência, corrigir o vencimento do título, voltar. Um banner mandando o operador sair vale menos
+  que o campo marcado no resumo, que é onde ele lê a data. O motivo curto fica no `title` do botão
+  travado, para quem for procurar.
 
 ## Critérios de aceite
 
