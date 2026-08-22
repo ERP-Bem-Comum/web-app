@@ -94,8 +94,17 @@ rotulada em PT-BR pelo emissor) e a confirmação de que a rota do arquivo **nã
   `TIMELINE_EVENT_TYPES` são cinco (`DocumentSaved`, `PayableApproved`, `ApprovalUndone`,
   `DocumentDraftSaved`, `PayableManuallyPaid`) — a emissão da remessa nem entra na trilha. O dado
   EXISTE (`fin_remittance_payables`, migration 0050, com `your_number`), mas nenhuma rota o serve por
-  título. **Handoff:** expor o NSA por título (e, de preferência, um evento de timeline na emissão).
+  título. **Handoff:** expor, por título, **o VÍNCULO com a(s) remessa(s) em que ele foi incluído** —
+  com o NSA de cada uma e o `your_number` (G064) daquele título naquela remessa.
+
+  ⚠️ Redação corrigida pela P.O.: **o NSA é atributo da REMESSA, não do título.** O que é por título é
+  o vínculo (`fin_remittance_payables`, PK `remittance_id`+`payable_id`). E o vínculo é **potencialmente
+  múltiplo**: `holdsPayables` libera o título só quando a remessa é `Discarded` (decisão humana) —
+  `Failed` continua prendendo. Logo um título pode ter estado em mais de uma remessa ao longo da vida,
+  o que faz disto uma **trilha**, não um campo. Destino natural: a aba **Histórico** do drawer, como
+  nó de evento — coerente com o resto do ciclo do título, que já é contado ali.
   Enquanto isso o NSA segue exibido no comprovante — tirá-lo agora o deixaria sem lugar nenhum.
+
 - **#804 não terminou.** Dos 6 defeitos do validador Bradesco, só convênio e terminador entraram — o
   contrato do `:preview`/geração ainda deve mudar.
 
