@@ -264,7 +264,15 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
               </span>
               <span className={summaryItem}>
                 <span className={summaryLabel}>{t('financial.remittance.preview.summary.paymentDate')}</span>
-                <span className={view.summary.paymentDateMixed ? summaryValueWarn : summaryValue}>
+                {/* Âmbar também quando a data já passou: o operador precisa ver o problema no RESUMO,
+                    onde ele lê a data, e não só no banner do rodapé. */}
+                <span
+                  className={
+                    view.summary.paymentDateMixed || view.summary.paymentDateInPast
+                      ? summaryValueWarn
+                      : summaryValue
+                  }
+                >
                   {view.summary.paymentDateMixed
                     ? t('financial.remittance.preview.summary.mixedDates')
                     : view.summary.paymentDate}
@@ -353,6 +361,13 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
               <p className={launchAlert}>{t('financial.remittance.generate.needSameDate')}</p>
             ) : null}
 
+            {/* Pagamento no passado também BLOQUEIA: a data do Segmento A é o dia em que o banco executa,
+                e um dia que já foi não é instrução cumprível. Banner próprio, e não o de datas
+                misturadas, porque a correção é outra — aqui se reagenda o vencimento do título. */}
+            {view.summary.paymentDateInPast ? (
+              <p className={launchAlert}>{t('financial.remittance.generate.needFutureDate')}</p>
+            ) : null}
+
             {props.confirming ? (
               <p className={launchWarn}>
                 {t('financial.remittance.generate.confirm')
@@ -396,7 +411,8 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
                   props.generating ||
                   view.summary.checkedCount === 0 ||
                   props.cedenteAccountId === '' ||
-                  view.summary.paymentDateMixed
+                  view.summary.paymentDateMixed ||
+                  view.summary.paymentDateInPast
                 }
                 title={
                   view.summary.checkedCount === 0
@@ -405,7 +421,9 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
                       ? t('financial.remittance.generate.needAccount')
                       : view.summary.paymentDateMixed
                         ? t('financial.remittance.generate.needSameDate')
-                        : undefined
+                        : view.summary.paymentDateInPast
+                          ? t('financial.remittance.generate.needFutureDate')
+                          : undefined
                 }
                 onClick={props.onArm}
               >
