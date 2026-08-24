@@ -349,7 +349,16 @@ export const bulkDeleteTargets = (
 // o version do documento na linha, então NÃO há busca extra (sem GET /documents/:id). O backend valida
 // transição inválida (ex.: filho cujo status divergiu do documento) → falha segura, sem corromper estado.
 // #270: alvo do vencimento ISOLADO por título (payable). NÃO dedup por documento — cada título é independente.
-export type IsolatedDueDateTarget = Readonly<{ documentId: string; payableId: string; version: number }>
+export type IsolatedDueDateTarget = Readonly<{
+  documentId: string
+  payableId: string
+  version: number
+  /**
+   * O vencimento que o operador tem na tela — pré-condição do CAS do core-api (ADR-0063 de lá). Sai do
+   * `dueIso` da linha, o valor CRU: comparar por texto formatado seria comparar tela com banco.
+   */
+  expectedDueDate: string
+}>
 
 export type TitleActionTargets = Readonly<{
   approve: readonly StatusTarget[] // documentos distintos com título Aberto (Aprovar cascateia)
@@ -387,7 +396,11 @@ export const deriveTitleActionTargets = (
   // era só o front que barrava. A restrição virou impeditivo real com a remessa: uma remessa é de UM
   // dia só (`remittance-mixed-payment-dates`), então alinhar os vencimentos é pré-requisito para gerar
   // — e é justamente em Aprovado que o título está pronto para entrar no lote.
-  const selDueEditableRows = sel.filter((r) => r.status === 'Aberto' || r.status === 'Aprovado')
+  // ⚠️ Exige `dueIso`: sem vencimento atual não há pré-condição a declarar, e o core-api recusaria o
+  // CAS. Título sem vencimento cai no `dueBlockedCount` e o modal avisa, em vez de falhar na chamada.
+  const selDueEditableRows = sel.filter(
+    (r) => (r.status === 'Aberto' || r.status === 'Aprovado') && r.dueIso !== null,
+  )
   return {
     approve: aberto,
     reopen: dedupByDoc(sel.filter((r) => r.status === 'Aprovado')),
@@ -397,6 +410,9 @@ export const deriveTitleActionTargets = (
       documentId: r.documentId,
       payableId: r.id,
       version: r.version,
+      // Não-nulo garantido pelo filtro acima; o `?? ''` existe só para o compilador, e um vazio aqui
+      // seria recusado na borda (`DateSchema`) antes de virar requisição.
+      expectedDueDate: r.dueIso ?? '',
     })),
     dueBlockedCount: sel.length - selDueEditableRows.length,
   }

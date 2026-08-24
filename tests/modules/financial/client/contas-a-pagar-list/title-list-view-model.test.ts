@@ -201,7 +201,10 @@ describe('deriveTitleActionTargets (#229 — ações por linha, dedup por docume
     assert.deepEqual(tg.approve, [{ id: 'd2', version: 1 }])
     assert.deepEqual(tg.deletable, [{ id: 'd2', version: 1 }])
     // #270: vencimento é por payable (documentId + payableId + version), NÃO deduplicado por documento.
-    assert.deepEqual(tg.dueEditable, [{ documentId: 'd2', payableId: 'p2', version: 1 }])
+    // `expectedDueDate` = o vencimento CRU da linha, pré-condição do CAS do core-api (ADR-0063 de lá).
+    assert.deepEqual(tg.dueEditable, [
+      { documentId: 'd2', payableId: 'p2', version: 1, expectedDueDate: '2026-07-10' },
+    ])
   })
 
   // VAN/specs/101: Aprovado passou a ser editável. Uma remessa é de UM dia só, então alinhar os
@@ -220,6 +223,33 @@ describe('deriveTitleActionTargets (#229 — ações por linha, dedup por docume
     const tg = deriveTitleActionTargets(rows, new Set(['p2', 'p-pago']))
     assert.equal(tg.dueEditable.length, 1) // só p2
     assert.equal(tg.dueBlockedCount, 1) // o Pago
+  })
+
+  // ── CAS por valor no reagendamento (core-api ADR-0063) ────────────────────────
+  //
+  // `expectedDueDate` é pré-condição, não enfeite: sem ele o core-api responde 400, e com o valor errado
+  // responde 409. Sai do `dueIso` CRU da linha — nunca do `due` de tela (DD/MM/YYYY), porque re-parsear
+  // string formatada é onde se troca dia por mês.
+
+  it('cada título declara o SEU vencimento, não o do vizinho', () => {
+    const base = titleRows[0]
+    if (base === undefined) throw new Error('sem linha base')
+    const outro = { ...base, id: 'p-outro', documentId: 'd-outro', dueIso: '2026-09-01', due: '01/09/2026' }
+    const tg = deriveTitleActionTargets([...titleRows, outro], new Set(['p2', 'p-outro']))
+    const byId = new Map(tg.dueEditable.map((t) => [t.payableId, t.expectedDueDate]))
+    assert.equal(byId.get('p2'), '2026-07-10')
+    assert.equal(byId.get('p-outro'), '2026-09-01')
+  })
+
+  it('⚠️ título SEM vencimento fica de fora — sem valor atual não há pré-condição a declarar', () => {
+    const base = titleRows[0]
+    if (base === undefined) throw new Error('sem linha base')
+    const semData = { ...base, id: 'p-sem', documentId: 'd-sem', dueIso: null, due: '—' }
+    const tg = deriveTitleActionTargets([...titleRows, semData], new Set(['p2', 'p-sem']))
+    // Vai para o bloqueado (o modal avisa) em vez de virar chamada que o backend recusaria.
+    assert.equal(tg.dueEditable.length, 1)
+    assert.equal(tg.dueEditable[0]?.payableId, 'p2')
+    assert.equal(tg.dueBlockedCount, 1)
   })
 
   it('#166: rascunho (Draft) é excluível (descarte) — entra em deletable, sem "ignorado"', () => {

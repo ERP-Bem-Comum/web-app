@@ -35,7 +35,24 @@ export type IsolatedDueDateBinding = Readonly<{
  * `conflict`/`invalid-transition` ficam de FORA: ali o pedido está mesmo desatualizado, e repetir com
  * a mesma version só produziria o mesmo 409.
  */
-const TRANSIENT: ReadonlySet<FinancialError> = new Set<FinancialError>(['server', 'connectivity'])
+/**
+ * ⚠️ `connectivity` SAIU daqui (core-api ADR-0063). Enquanto o lock era a version do documento, repetir
+ * era inofensivo: a mesma version ou gravava, ou dava 409 honesto. Com o CAS por VALOR
+ * (`expectedDueDate`), repetir deixou de ser idempotente —
+ *
+ *   tentativa 1 → grava 20/08 → 10/09, com SUCESSO no banco, e a resposta se perde
+ *   retry       → manda expectedDueDate=20/08, mas o título já está 10/09 → 409
+ *   nós         → contaríamos como `stale` e mandaríamos o operador "atualizar a lista"
+ *
+ * ou seja, reportaríamos falha numa operação que deu certo, e pediríamos para refazer o que já está
+ * feito. Resposta perdida é justamente o caso em que NÃO dá para saber se gravou; a resposta honesta é
+ * não repetir e deixar o operador reler.
+ *
+ * `server` fica: a falha medida (503 do `document-repository-failure` sob concorrência) acontece ANTES
+ * da gravação e a transação inteira reverte, então o título continua com o vencimento antigo e o mesmo
+ * `expectedDueDate` volta a valer.
+ */
+const TRANSIENT: ReadonlySet<FinancialError> = new Set<FinancialError>(['server'])
 
 // Duas repetições, com espera curta e crescente. Não é política de rede genérica: é o tempo de a
 // transação concorrente terminar. Mais que isso faria o operador esperar por um erro que não vai passar.
@@ -82,9 +99,9 @@ export function useIsolatedDueDate(onCompleted: () => void): IsolatedDueDateBind
           let stale = 0
           let serverSide = 0
           for (const t of group) {
-            // Repete só o transitório. O PATCH é idempotente (a mesma data), e a falha medida
-            // acontece ANTES da gravação — a transação inteira reverte —, então repetir não corre o
-            // risco de aplicar duas vezes.
+            // Repete só o transitório — e o conjunto encolheu: ver a nota do `TRANSIENT`. O PATCH
+            // deixou de ser idempotente com o CAS por valor, então repetir só é seguro quando se sabe
+            // que a gravação NÃO aconteceu.
             let lastError: FinancialError | null = null
             for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt += 1) {
               const res = await financialRepository.updatePayableDueDate({
@@ -92,6 +109,7 @@ export function useIsolatedDueDate(onCompleted: () => void): IsolatedDueDateBind
                 payableId: t.payableId,
                 version,
                 dueDate: args.dueIso,
+                expectedDueDate: t.expectedDueDate,
               })
               if (isOk(res)) {
                 version = res.value.version // nova version do documento p/ o próximo título

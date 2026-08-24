@@ -21,8 +21,8 @@ vi.mock('#modules/financial/client/data/repository/financial.repository.instance
 const mocked = vi.mocked(financialRepository.updatePayableDueDate)
 // 2 títulos do MESMO documento → sequencial, encadeando a version devolvida (a 1ª sobe 3→4).
 const TARGETS = [
-  { documentId: 'd1', payableId: 'p1', version: 3 },
-  { documentId: 'd1', payableId: 'p2', version: 3 },
+  { documentId: 'd1', payableId: 'p1', version: 3, expectedDueDate: '2026-07-10' },
+  { documentId: 'd1', payableId: 'p2', version: 3, expectedDueDate: '2026-07-20' },
 ] as const
 
 // A resposta é o documento atualizado com a NOVA version (o binding a usa p/ o próximo título do mesmo doc).
@@ -59,12 +59,15 @@ describe('useIsolatedDueDate (#270 isolado)', () => {
       payableId: 'p1',
       version: 3,
       dueDate: '2026-08-15',
+      // CAS por valor: cada título declara o SEU vencimento atual, não o do vizinho.
+      expectedDueDate: '2026-07-10',
     })
     expect(mocked).toHaveBeenNthCalledWith(2, {
       documentId: 'd1',
       payableId: 'p2',
       version: 4,
       dueDate: '2026-08-15',
+      expectedDueDate: '2026-07-20',
     })
     expect(result.current.errorTag).toBeNull()
     expect(onCompleted).toHaveBeenCalledTimes(1)
@@ -101,7 +104,7 @@ describe('useIsolatedDueDate (#270 isolado)', () => {
 // (503 `document-repository-failure`). Antes, uma falha dessas era contada como "versão desatualizada"
 // e mandava o operador atualizar a lista — que é justamente o que não resolve.
 describe('useIsolatedDueDate — falha transitória é repetida, e a mensagem segue o motivo', () => {
-  const ONE = [{ documentId: 'd1', payableId: 'p1', version: 3 }] as const
+  const ONE = [{ documentId: 'd1', payableId: 'p1', version: 3, expectedDueDate: '2026-07-10' }] as const
 
   it('503 do servidor é REPETIDO e passa na segunda tentativa — sem erro para o operador', async () => {
     mocked.mockResolvedValueOnce(err('server')).mockResolvedValueOnce(ok(detail))
@@ -133,7 +136,22 @@ describe('useIsolatedDueDate — falha transitória é repetida, e a mensagem se
     expect(onCompleted).not.toHaveBeenCalled()
   })
 
-  it('⚠️ conflito NÃO é repetido — a mesma version só produziria o mesmo 409', async () => {
+  it('⚠️ resposta perdida (connectivity) NÃO é repetida — com CAS por valor, repetir vira falso conflito', async () => {
+    // Antes do core-api ADR-0063 isto era repetido. Deixou de ser: se a gravação passou e só a resposta
+    // se perdeu, o retry mandaria o `expectedDueDate` antigo contra um título já alterado -> 409, e o
+    // operador leria "falhou" sobre algo que deu certo.
+    mocked.mockResolvedValue(err('connectivity'))
+    const { result } = setup(vi.fn())
+    act(() => {
+      result.current.apply(ONE, '2026-08-15')
+    })
+    await waitFor(() => {
+      expect(result.current.failedCount).toBe(1)
+    })
+    expect(mocked).toHaveBeenCalledTimes(1)
+  })
+
+  it('⚠️ conflito NÃO é repetido — a mesma pré-condição só produziria o mesmo 409', async () => {
     mocked.mockResolvedValue(err('conflict'))
     const { result } = setup(vi.fn())
     act(() => {
