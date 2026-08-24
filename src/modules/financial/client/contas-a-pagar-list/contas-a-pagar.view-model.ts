@@ -225,12 +225,19 @@ const RETENTION_TIPO_SET: ReadonlySet<string> = new Set(RETENTION_TYPE_OPTIONS)
 export const isRetentionTipo = (tipo: string | undefined): tipo is RetentionType =>
   tipo !== undefined && RETENTION_TIPO_SET.has(tipo)
 
-// Filtro de Tipo por imposto (filho) — CLIENT-SIDE (página carregada), como a busca rápida. Tipo de
-// documento passa direto (filtrado no servidor). PURA.
+// Filtro de Tipo — CLIENT-SIDE (página carregada), como a busca rápida. Vale para os DOIS lados, e a
+// simetria é o ponto: a linha só fica se o tipo DELA for o escolhido.
+//
+// ⚠️ Antes o tipo de documento passava direto, delegando ao servidor. Mas o `/payable-titles` filtra por
+// DOCUMENTO e devolve todos os títulos dele — inclusive os filhos de retenção, cuja linha exibe o tipo do
+// IMPOSTO (`type: childRetention ?? it.type`). Resultado: escolher "NFS-e" trazia IRRF/CSRF na tabela,
+// enquanto escolher "IRRF" acertava — porque só o lado do imposto filtrava aqui. O servidor continua
+// filtrando (o `documentType` ainda vai na query, e é ele que reduz a PÁGINA); esta passada só remove os
+// filhos que vieram de carona com o pai.
 export const filterRowsByTipo = (
   rows: readonly GridRow[],
   tipo: TipoFilter | undefined,
-): readonly GridRow[] => (isRetentionTipo(tipo) ? rows.filter((r) => r.type === tipo) : rows)
+): readonly GridRow[] => (tipo === undefined ? rows : rows.filter((r) => r.type === tipo))
 
 // Busca rápida (campo do topo) — filtra as linhas DA PÁGINA carregada por fornecedor / número / CNPJ.
 // ⚠️ É client-side: só enxerga a página atual (busca server-side cross-página = core-api#167). PURA.
