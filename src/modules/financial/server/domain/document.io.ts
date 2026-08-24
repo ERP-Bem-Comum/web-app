@@ -114,8 +114,22 @@ export interface ApproveInput {
 export interface UpdatePayableDueDateInput {
   documentId: string
   payableId: string
+  /**
+   * ⚠️ Continua no contrato do core-api, mas NÃO protege mais esta escrita: desde o ADR-0063 de lá, o
+   * reagendamento escreve pelo `PayableRepository` e não toca o documento — então a version do documento
+   * não se move, e um lock que não se move sempre bate. Quem protege é o `expectedDueDate`.
+   */
   version: number
   dueDate: string
+  /**
+   * Pré-condição do compare-and-swap: o vencimento que ESTAVA na tela quando o operador pediu a
+   * alteração. O core-api só grava se o título ainda estiver com ele; senão devolve 409
+   * (`payable-reschedule-conflict`).
+   *
+   * É obrigatório lá, de propósito — ausência cairia num CAS mais fraco sem nada dizer. Aqui sai do
+   * `dueIso` da linha do grid, que é o vencimento CRU que o operador leu.
+   */
+  expectedDueDate: string
 }
 
 // Trilha de auditoria (GET /documents/:id/timeline). 5 eventos de domínio; `actor` = UUID do usuário (null =

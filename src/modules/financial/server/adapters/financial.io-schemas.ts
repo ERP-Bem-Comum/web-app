@@ -126,6 +126,9 @@ export const UpdatePayableDueDateInputSchema = z.object({
   payableId: z.uuid(),
   version: z.int().min(0),
   dueDate: DateSchema,
+  // CAS por valor (core-api ADR-0063): o vencimento lido pelo operador. Obrigatório — sem ele o
+  // core-api responde 400, e aceitar a ausência aqui só adiaria a falha para a borda de lá.
+  expectedDueDate: DateSchema,
 })
 
 // #224: baixa manual de um título (POST /documents/:id/payables/:payableId/manual-payment).

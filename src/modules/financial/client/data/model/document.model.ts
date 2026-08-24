@@ -105,8 +105,14 @@ export type ApproveInput = Readonly<{ id: string; version: number }>
 export type UpdatePayableDueDateInput = Readonly<{
   documentId: string
   payableId: string
+  /** ⚠️ Já não protege esta escrita — ela não toca o documento (core-api ADR-0063). Ver abaixo. */
   version: number
   dueDate: string
+  /**
+   * Pré-condição do compare-and-swap: o vencimento que estava na tela. O core-api só grava se o título
+   * ainda estiver com ele; senão, 409. Sai do `dueIso` da linha — o valor CRU, nunca o texto formatado.
+   */
+  expectedDueDate: string
 }>
 export type CancelInput = Readonly<{ id: string; version: number }>
 

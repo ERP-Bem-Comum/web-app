@@ -297,7 +297,13 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
     updatePayableDueDate: async (input, token) => {
       const r = await resultFetch<unknown>(`${docs}/${input.documentId}/payables/${input.payableId}`, {
         method: 'PATCH',
-        body: { version: input.version, dueDate: input.dueDate },
+        body: {
+          version: input.version,
+          dueDate: input.dueDate,
+          // core-api ADR-0063: a escrita passou para o título, e o lock foi junto — a version do
+          // documento não protege mais. Este é o CAS de verdade.
+          expectedDueDate: input.expectedDueDate,
+        },
         token,
       })
       if (isErr(r)) return err(mapHttpError(r.error))
