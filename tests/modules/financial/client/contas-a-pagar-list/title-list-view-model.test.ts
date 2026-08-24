@@ -144,12 +144,21 @@ describe('filtro de Tipo no grid por título (#201)', () => {
     assert.equal(isRetentionTipo('NFS-e'), false)
     assert.equal(isRetentionTipo(undefined), false)
   })
-  it('filtra client-side por imposto (filho); tipo de documento passa direto (server-side)', () => {
+  it('filtra client-side pelo tipo DA LINHA — imposto (filho) e documento (pai)', () => {
     assert.equal(filterRowsByTipo(rows, 'IRRF').length, 1)
     assert.equal(filterRowsByTipo(rows, 'IRRF')[0]?.type, 'IRRF')
-    // tipo de documento → não filtra aqui (é server-side): devolve tudo
-    assert.equal(filterRowsByTipo(rows, 'NFS-e').length, 3)
     assert.equal(filterRowsByTipo(rows, undefined).length, 3)
+  })
+  // Regressão: o servidor filtra por DOCUMENTO e devolve os filhos de retenção junto do pai. Escolher
+  // "NFS-e" mostrava IRRF/ISS na tabela — os filhos vinham de carona porque o tipo de documento não
+  // filtrava aqui. A tabela deve apresentar APENAS o tipo escolhido.
+  it('tipo de documento não traz os filhos de retenção de carona', () => {
+    const filtered = filterRowsByTipo(rows, 'NFS-e')
+    assert.equal(filtered.length, 1)
+    assert.deepEqual(
+      [...filtered].map((r) => r.type),
+      ['NFS-e'],
+    )
   })
 })
 
