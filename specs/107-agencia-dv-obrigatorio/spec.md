@@ -40,6 +40,16 @@ Não é incoerência — é assimetria deliberada, e vale registrar porque as du
 | 2   | `canSubmit` exige os 5 dígitos — sem DV, o Salvar não libera                                                                                                                  |
 | 3   | Mensagem de pendência ("Falta o dígito verificador…") + `aria-invalid`, aparecendo **só depois** que o operador começa a digitar — campo em branco é estado inicial, não erro |
 | 4   | Rótulo passa a "Agência-DV", espelhando o "Conta-DV" ao lado                                                                                                                  |
+| 5   | **A mesma régua no modal de EDIÇÃO** (P.O., 25/08, logo após a 1ª entrega) — sem ela a edição seria a porta dos fundos por onde uma conta volta a ficar sem DV                |
+
+### Efeito na edição de conta ANTIGA
+
+Contas salvas antes desta regra têm só os 4 dígitos. Ao abri-las para edição, o modal **já nasce
+cobrando o DV** e com o Salvar bloqueado. É o comportamento pretendido: é assim que o cadastro velho se
+completa, em vez de continuar incompleto para sempre por nunca ter sido tocado.
+
+O custo, aceito: **qualquer** edição — trocar o apelido, informar o convênio — passa a exigir o DV
+junto. Enquanto ele não persistir (core-api#859), o dígito precisa ser redigitado a cada alteração.
 
 ## ⚠️ O que NÃO foi entregue, e por quê
 
@@ -70,9 +80,6 @@ justamente para impedir que a corrupção descrita acima volte por outro caminho
 
 ## Fora de escopo
 
-- **O modal de EDIÇÃO.** O pedido foi o de cadastro. Enquanto o DV não persistir, exigi-lo na edição
-  obrigaria a redigitar, a cada alteração, um dígito que some ao salvar — atrito sem contrapartida.
-  Entra junto com o campo do backend.
 - **Agência de 5 dígitos sem DV.** A máscara `agency` compartilhada assume 4+DV, e o CNAB reserva 5
   posições — uma agência de 5 dígitos seria lida como 4+DV. Nenhum banco do catálogo usa 5, e unificar a
   régua com os outros formulários vale mais que cobrir o caso hipotético.
@@ -83,3 +90,8 @@ justamente para impedir que a corrupção descrita acima volte por outro caminho
   **impede** alguém de "consertar" a perda do DV concatenando-o em `agency`.
 - `add-account-modal.spec.tsx` (+4) — exibição mascarada, hífen desenhado, cobrança do DV com
   `aria-invalid`, e campo em branco mostrando hint em vez de erro.
+
+- `edit-account.binding.spec.tsx` (+4) — conta antiga abrindo já incompleta, o DV liberando o Salvar,
+  o teto de 5 dígitos e o PATCH enviando só a base. Três testes existentes passaram a completar a
+  agência antes do `submit`: com o DV faltando, o `canSubmit` barra e o submit é no-op — o que é a
+  regra nova funcionando, não regressão.
