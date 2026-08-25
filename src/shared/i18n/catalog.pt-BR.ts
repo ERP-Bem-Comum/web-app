@@ -1591,8 +1591,14 @@ export const ptBR: Catalog = {
   // #206: banco "Outro" → instituição digitada manualmente (vira o bankName).
   'financial.recon.add.field.bankName': 'Instituição financeira',
   'financial.recon.add.placeholder.bankName': 'Ex.: Cooperativa de Crédito XYZ',
-  'financial.recon.add.field.branch': 'Agência',
-  'financial.recon.add.placeholder.branch': '0000',
+  // Agência COM DV, obrigatório (decisão da P.O., 25/08). O rótulo espelha o de "Conta-DV" logo abaixo:
+  // os dois campos passam a pedir a mesma coisa, e nomeá-los igual evita que um pareça mais completo
+  // que o outro. O hint diz por que o DV é exigido aqui, já que para o FAVORECIDO ele é opcional.
+  'financial.recon.add.field.branch': 'Agência-DV',
+  'financial.recon.add.placeholder.branch': '0000-0',
+  'financial.recon.add.hint.branch': 'Informe a agência com o dígito verificador.',
+  'financial.recon.add.error.branchDigit':
+    'Falta o dígito verificador da agência. Informe no formato 0000-0.',
   'financial.recon.add.field.account': 'Conta-DV',
   'financial.recon.add.placeholder.account': '00000000-0',
   'financial.recon.add.field.document': 'CNPJ da organização',

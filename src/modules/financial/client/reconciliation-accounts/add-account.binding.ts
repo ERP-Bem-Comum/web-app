@@ -17,6 +17,9 @@ import type {
 import {
   CONVENIO_MAX_DIGITS,
   OTHER_BANK_CODE,
+  AGENCY_TOTAL_DIGITS,
+  agencyBase,
+  agencyDigits,
   maskDateInput,
   dateInputToIso,
 } from './reconciliation-accounts.view-model.ts'
@@ -28,7 +31,21 @@ export type AddAccountBinding = Readonly<{
   type: AccountType
   typeLabel: string // #206: "Identificação da conta" exigida p/ Cartão corporativo/Outro
   needsTypeLabel: boolean // true quando type = Cartao/Outro (a UI mostra o campo)
+  /**
+   * Agência em DÍGITOS CRUS, `0000` + DV — 5 no total. A tela exibe mascarado (`0000-0`); aqui fica o cru,
+   * como nos demais formulários que usam a máscara `agency` (fornecedor, financiador, colaborador).
+   *
+   * ⚠️ O DV é OBRIGATÓRIO (decisão da P.O., 25/08): conta cadastrada sem ele é um cadastro incompleto que
+   * só aparece na hora de pagar. Ver `agencyIncomplete` e a ressalva do submit sobre onde o DV (não) é
+   * guardado.
+   */
   agency: string
+  /**
+   * Há agência digitada, mas ainda sem o DV. É estado de PENDÊNCIA, não de erro: enquanto o operador
+   * digita `1`, `14`, `148`… o campo está a caminho, e acusá-lo a cada tecla seria ruído. A tela usa isto
+   * para explicar por que o botão não libera.
+   */
+  agencyIncomplete: boolean
   account: string // "número-DV" combinado (ex.: 0012345-7); separado em accountNumber/accountDigit no submit
   document: string
   nickname: string
@@ -119,9 +136,14 @@ export function useAddAccount(
 
   const needsBankName = bankCode === OTHER_BANK_CODE
   const needsTypeLabel = type === 'Cartao' || type === 'Outro'
+  // Agência só está completa com o DV — 4 dígitos + 1. `agencyIncomplete` distingue "ainda digitando"
+  // de "vazio": campo em branco não é pendência, é o estado inicial.
+  const agencyComplete = agency.length === AGENCY_TOTAL_DIGITS
+  const agencyIncomplete = agency.length > 0 && !agencyComplete
+
   const canSubmit =
     bankCode.trim() !== '' &&
-    agency.trim() !== '' &&
+    agencyComplete &&
     account.trim() !== '' &&
     effectiveDocument.trim() !== '' &&
     (!needsBankName || customBankName.trim() !== '') &&
@@ -135,6 +157,7 @@ export function useAddAccount(
     typeLabel,
     needsTypeLabel,
     agency,
+    agencyIncomplete,
     account,
     document: effectiveDocument,
     nickname,
@@ -156,8 +179,10 @@ export function useAddAccount(
     setTypeLabel: (v) => {
       setTypeLabel(v)
     },
+    // Guarda o CRU (só dígitos, no máximo 5) — a máscara é apresentação e fica na view. A extração
+    // mora no view-model porque o binding não alcança o design system (`boundaries`).
     setAgency: (v) => {
-      setAgency(v)
+      setAgency(agencyDigits(v))
     },
     setAccount: (v) => {
       setAccount(v)
@@ -222,7 +247,17 @@ export function useAddAccount(
         bankName,
         type,
         ...(needsTypeLabel && typeLabel.trim() !== '' ? { typeLabel: typeLabel.trim() } : {}), // #206
-        agency: agency.trim(),
+        // ⚠️ Vai só a BASE (4 dígitos) — o DV é exigido na tela mas NÃO É GUARDADO, e isto é intencional
+        // até o core-api ter onde. Hoje não há: `fin_cedente_accounts` tem `account_digit` e nenhum
+        // `agency_digit`, e `createCedenteAccountBodySchema` só conhece `agency`.
+        //
+        // Concatenar (`1487-2`) seria pior que perder: o CNAB trata o campo como POSICIONAL —
+        // `digits(c.agency, 5)` remove o hífen e escreveria `14872` nas posições 053-057, onde o banco
+        // espera `01487`, enquanto a 058 (DV) segue em branco porque `generate-remittance.ts` fixa
+        // `agencyDigit: ''`. Todo arquivo daquela conta sairia com o header errado, em silêncio.
+        //
+        // Ligar o envio é UMA LINHA quando o campo existir. Ver a issue do core-api referida na spec.
+        agency: agencyBase(agency),
         accountNumber,
         accountDigit,
         // #722: só viaja se preenchido. Vazio NÃO é enviado — a conta nasce sem convênio e pode

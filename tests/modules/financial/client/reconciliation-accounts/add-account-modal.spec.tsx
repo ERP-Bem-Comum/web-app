@@ -19,6 +19,7 @@ const base = (over: Partial<AddAccountBinding> = {}): AddAccountBinding => ({
   typeLabel: '',
   needsTypeLabel: false,
   agency: '',
+  agencyIncomplete: false,
   account: '',
   document: '',
   nickname: '',
@@ -118,5 +119,41 @@ describe('AddAccountModal (#138)', () => {
     const field = screen.getByLabelText(tr('financial.recon.add.field.typeLabel'))
     fireEvent.change(field, { target: { value: 'Cartão Visa' } })
     expect(setTypeLabel).toHaveBeenCalledWith('Cartão Visa')
+  })
+
+  // ── Agência-DV (decisão da P.O., 25/08) ──────────────────────────────────────
+  //
+  // O DV da agência passou a ser OBRIGATÓRIO no cadastro da conta-cedente: sem ele o cadastro fica
+  // incompleto e o defeito só aparece na hora de pagar.
+
+  it('agência é exibida MASCARADA (0000-0) a partir dos dígitos crus do binding', () => {
+    render(<AddAccountModal open binding={base({ agency: '14872' })} onClose={vi.fn()} />)
+    const field = screen.getByLabelText(tr('financial.recon.add.field.branch'))
+    expect((field as HTMLInputElement).value).toBe('1487-2')
+  })
+
+  it('o hífen é DESENHADO, não digitado — o que sobe ao binding é o texto do campo', () => {
+    const setAgency = vi.fn()
+    render(<AddAccountModal open binding={base({ setAgency })} onClose={vi.fn()} />)
+    fireEvent.change(screen.getByLabelText(tr('financial.recon.add.field.branch')), {
+      target: { value: '14872' },
+    })
+    expect(setAgency).toHaveBeenCalledWith('14872')
+  })
+
+  it('⚠️ agência sem DV acusa a falta e marca o campo como inválido', () => {
+    render(
+      <AddAccountModal open binding={base({ agency: '1487', agencyIncomplete: true })} onClose={vi.fn()} />,
+    )
+    expect(screen.getByText(tr('financial.recon.add.error.branchDigit'))).toBeTruthy()
+    expect(screen.getByLabelText(tr('financial.recon.add.field.branch')).getAttribute('aria-invalid')).toBe(
+      'true',
+    )
+  })
+
+  it('campo em branco é estado inicial, não erro: mostra o hint, não a cobrança', () => {
+    render(<AddAccountModal open binding={base()} onClose={vi.fn()} />)
+    expect(screen.queryByText(tr('financial.recon.add.error.branchDigit'))).toBeNull()
+    expect(screen.getByText(tr('financial.recon.add.hint.branch'))).toBeTruthy()
   })
 })
