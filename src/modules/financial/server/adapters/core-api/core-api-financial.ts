@@ -26,6 +26,7 @@ import type {
 import type { FinancialFailure } from '#modules/financial/server/application/financial.use-cases.ts'
 import { previewToModel, generatedToModel } from './remittance.mappers.ts'
 import { parseErrorEnvelope } from '#shared/http/error-envelope.ts'
+import type { HttpError } from '#shared/http/http-error.types.ts'
 import {
   detailToModel,
   listToModel,
@@ -98,6 +99,35 @@ const buildListQuery = (input: ListDocumentsInput): string => {
 const MAX_CORE_API_PAGE_SIZE = 100
 /** Teto de segurança do "carregar tudo" (specs/101): 20 páginas. Acima disso, resposta parcial. */
 const MAX_ALL_TITLES = 2000
+
+// Texto FIXO do `setNotFoundHandler` do core-api (`shared/http/errors.ts:85`): rota inexistente responde
+// 404 com um envelope bem-formado e `message: 'Route not found'`.
+const ROUTER_NOT_FOUND_MESSAGE = 'Route not found'
+
+/**
+ * A mensagem do core-api quando ela FALA DO NEGÓCIO — `null` quando não fala.
+ *
+ * Existe porque a UI prioriza esta mensagem sobre o próprio texto PT (`msg ?? t(tag)`), e a prioridade só
+ * se justifica enquanto o que vem é recado ao operador: é o texto do backend que distingue as quatro
+ * recusas que chegam todas como 422, ou "não está no bucket" de "achei, mas não é o arquivo emitido".
+ *
+ * ⚠️ O 404 do ROTEADOR não é desses. Ele parseia como qualquer outro envelope, e por isso vencia o texto
+ * da tela — em homologação (25/08) o operador leu **"Route not found"** no lugar do recado pronto: a rota
+ * `GET /remittances/:id/file` era registrada só onde `NODE_ENV !== 'production'`, e a imagem do core-api
+ * fixa `production` em TODO ambiente, então ela não existia em lugar containerizado nenhum.
+ *
+ * O core-api#855 já ligou a rota em todo ambiente, e ISTO NÃO TORNA ESTA FUNÇÃO OBSOLETA: o alvo dela
+ * nunca foi aquela rota, e sim a POLÍTICA — rota inexistente é fato de infraestrutura (deploy velho,
+ * módulo não registrado, endpoint que ainda não subiu), nunca recado ao operador. Jargão de roteamento,
+ * em inglês, sobre algo que o front sabe explicar melhor que o backend: vira `null`, e a UI usa o texto
+ * dela.
+ */
+export const domainMessage = (error: HttpError): string | null => {
+  if (error.kind !== 'http') return null
+  const parsed = parseErrorEnvelope(error.body)
+  if (parsed === null) return null
+  return parsed.error.message === ROUTER_NOT_FOUND_MESSAGE ? null : parsed.error.message
+}
 
 export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient => {
   const docs = `${baseUrl}/documents`
@@ -212,8 +242,7 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
         token,
       })
       if (isErr(r)) {
-        const detail = r.error.kind === 'http' ? parseErrorEnvelope(r.error.body) : null
-        return err({ error: mapHttpError(r.error), message: detail?.error.message ?? null })
+        return err({ error: mapHttpError(r.error), message: domainMessage(r.error) })
       }
       const model = generatedToModel(r.value)
       if (isErr(model)) return err({ error: model.error, message: null })
@@ -238,8 +267,7 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
         readHeaders: ['x-van-object-key'],
       })
       if (isErr(r)) {
-        const detail = r.error.kind === 'http' ? parseErrorEnvelope(r.error.body) : null
-        return err({ error: mapHttpError(r.error), message: detail?.error.message ?? null })
+        return err({ error: mapHttpError(r.error), message: domainMessage(r.error) })
       }
       return ok({
         base64: r.value.base64,
@@ -295,8 +323,7 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
         token,
       })
       if (isErr(r)) {
-        const detail = r.error.kind === 'http' ? parseErrorEnvelope(r.error.body) : null
-        return err({ error: mapHttpError(r.error), message: detail?.error.message ?? null })
+        return err({ error: mapHttpError(r.error), message: domainMessage(r.error) })
       }
       const model = detailToModel(r.value)
       if (isErr(model)) return err({ error: model.error, message: null })
@@ -326,8 +353,7 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
         token,
       })
       if (isErr(r)) {
-        const detail = r.error.kind === 'http' ? parseErrorEnvelope(r.error.body) : null
-        return err({ error: mapHttpError(r.error), message: detail?.error.message ?? null })
+        return err({ error: mapHttpError(r.error), message: domainMessage(r.error) })
       }
       const model = detailToModel(r.value)
       if (isErr(model)) return err({ error: model.error, message: null })
