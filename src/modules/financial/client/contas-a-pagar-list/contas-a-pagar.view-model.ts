@@ -389,6 +389,13 @@ export type IsolatedDueDateTarget = Readonly<{
  * (core-api#792): o título saía na remessa, virava `Transmitido`, e "Marcar como pago" ficava
  * desabilitado — travando justamente a etapa seguinte do fluxo que a remessa acabou de iniciar. O
  * backend aceitava; era a tela que barrava.
+ *
+ * ⚠️⚠️ **NÃO REMOVER `Transmitido` DESTA LISTA.** A P.O. confirmou em 25/08, sabendo que a
+ * funcionalidade muda numa atualização futura: *"mantenha a baixa de forma manual autorizada para
+ * títulos TRANSMITIDOS também"*. Enquanto o retorno do banco não for processado, é o operador quem
+ * fecha o ciclo — e tirar isto o deixaria com o título parado, sem via de baixa, depois de o
+ * pagamento já ter ido ao banco. Quando o retorno entrar (#690), a mudança vem do backend
+ * (`MANUALLY_PAYABLE_STATUSES`) e esta lista a acompanha; até lá, o estado atual é o pretendido.
  */
 const MANUALLY_PAYABLE: readonly DocumentStatus[] = ['Aprovado', 'Transmitido']
 
