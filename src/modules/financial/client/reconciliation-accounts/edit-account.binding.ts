@@ -14,7 +14,13 @@ import type {
   EditCedenteAccountInput,
   ReconciliationAccount,
 } from '#modules/financial/client/data/model/reconciliation.model.ts'
-import { CONVENIO_MAX_DIGITS, OTHER_BANK_CODE } from './reconciliation-accounts.view-model.ts'
+import {
+  CONVENIO_MAX_DIGITS,
+  OTHER_BANK_CODE,
+  AGENCY_TOTAL_DIGITS,
+  agencyBase,
+  agencyDigits,
+} from './reconciliation-accounts.view-model.ts'
 
 export type EditAccountBinding = Readonly<{
   /** Conta em edição (modal aberto) — null quando fechado. */
@@ -25,7 +31,18 @@ export type EditAccountBinding = Readonly<{
   type: AccountType
   typeLabel: string
   needsTypeLabel: boolean
+  /**
+   * Agência em DÍGITOS CRUS, `0000` + DV — 5 no total, exibida mascarada (`0000-0`). Mesma régua do
+   * cadastro (specs/107): o DV é OBRIGATÓRIO também aqui, senão a edição vira a porta dos fundos por
+   * onde uma conta volta a ficar sem dígito.
+   */
   agency: string
+  /**
+   * Há agência digitada, ainda sem o DV. ⚠️ Nasce `true` ao abrir uma conta ANTIGA: elas foram salvas
+   * antes desta regra e têm só os 4 dígitos, então o modal já abre cobrando o que falta. É o efeito
+   * pretendido — é assim que o cadastro velho se completa.
+   */
+  agencyIncomplete: boolean
   account: string // "número-DV" combinado
   nickname: string
   /** #722: convênio em edição. Vazio quando a conta ainda não tem. */
@@ -87,15 +104,20 @@ export function useEditAccount(
   // Travado pelo que veio do BACKEND, não pelo estado do input: o que decide é a conta já ter
   // convênio, e não o operador ter digitado algo nesta sessão.
   const convenioLocked = (target?.convenio ?? '') !== ''
+  // Mesma régua do cadastro (specs/107): agência só está completa com o DV.
+  const agencyComplete = agency.length === AGENCY_TOTAL_DIGITS
+  const agencyIncomplete = agency.length > 0 && !agencyComplete
+
   const canSubmit =
     bankCode.trim() !== '' &&
-    agency.trim() !== '' &&
+    agencyComplete &&
     account.trim() !== '' &&
     (!needsBankName || customBankName.trim() !== '') &&
     (!needsTypeLabel || typeLabel.trim() !== '')
 
   return {
     target,
+    agencyIncomplete,
     bankCode,
     customBankName,
     needsBankName,
@@ -122,8 +144,9 @@ export function useEditAccount(
     setTypeLabel: (v) => {
       setTypeLabel(v)
     },
+    // Guarda o CRU (só dígitos, no máximo 5); a máscara é apresentação e fica na view.
     setAgency: (v) => {
-      setAgency(v)
+      setAgency(agencyDigits(v))
     },
     setAccount: (v) => {
       setAccount(v)
@@ -143,7 +166,9 @@ export function useEditAccount(
       setCustomBankName(a.bankName)
       setType(a.type)
       setTypeLabel(a.typeLabel ?? '')
-      setAgency(a.branch)
+      // Normaliza o que veio do backend: `branch` é texto e as contas antigas trazem só os 4 dígitos.
+      // Elas abrem incompletas de propósito — ver `agencyIncomplete`.
+      setAgency(agencyDigits(a.branch))
       setAccount(a.accountDv !== '' ? `${a.accountNumber}-${a.accountDv}` : a.accountNumber)
       setNickname(a.alias)
       setConvenio(a.convenio)
@@ -168,7 +193,10 @@ export function useEditAccount(
         ...(bankName !== undefined ? { bankName } : {}),
         type,
         ...(needsTypeLabel && typeLabel.trim() !== '' ? { typeLabel: typeLabel.trim() } : {}),
-        agency: agency.trim(),
+        // ⚠️ Só a BASE (4 dígitos) — o DV é exigido na tela e NÃO é guardado, porque o core-api não tem
+        // onde (core-api#859). Concatenar corromperia o header do CNAB: ver a ressalva em
+        // `add-account.binding.ts` e specs/107.
+        agency: agencyBase(agency),
         accountNumber,
         accountDigit,
         ...(nickname.trim() !== '' ? { nickname: nickname.trim() } : {}),
