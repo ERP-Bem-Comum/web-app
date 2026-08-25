@@ -8,7 +8,8 @@ import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { CheckCircleIcon, WalletIcon } from '#shared/ui/icons/index.ts'
 
-import { CONVENIO_MAX_DIGITS } from '../reconciliation-accounts.view-model.ts'
+import { formatMask } from '#shared/ui/index.ts'
+import { CONVENIO_MAX_DIGITS, AGENCY_TOTAL_DIGITS } from '../reconciliation-accounts.view-model.ts'
 import * as s from '../page/reconciliation-accounts.css.ts'
 import { BANKS, OTHER_BANK_CODE, type AccountType } from '../reconciliation-accounts.view-model.ts'
 import type { AddAccountBinding } from '../add-account.binding.ts'
@@ -141,15 +142,28 @@ export function AddAccountModal({ open, onClose, binding }: AddAccountModalProps
                 <label className={s.fieldLabel} htmlFor="add-branch">
                   {t('financial.recon.add.field.branch')}
                 </label>
+                {/* Agência COM DV, `0000-0` (decisão da P.O., 25/08). A máscara é a mesma de
+                    fornecedor/financiador/colaborador — o hífen é desenhado, não digitado, e o estado
+                    guarda só dígitos. `maxLength` conta o valor JÁ mascarado: 5 dígitos + o hífen. */}
                 <input
                   id="add-branch"
                   className={`${s.input} ${s.inputMono}`}
+                  inputMode="numeric"
+                  maxLength={AGENCY_TOTAL_DIGITS + 1}
                   placeholder={t('financial.recon.add.placeholder.branch')}
-                  value={binding.agency}
+                  value={formatMask('agency', binding.agency)}
+                  aria-invalid={binding.agencyIncomplete}
                   onChange={(e) => {
                     binding.setAgency(e.target.value)
                   }}
                 />
+                {/* Só aparece depois que o operador começou a digitar: em branco é o estado inicial, não
+                    um erro. Diz o que falta, não que está errado — o campo está a caminho. */}
+                {binding.agencyIncomplete ? (
+                  <span className={s.errorText}>{t('financial.recon.add.error.branchDigit')}</span>
+                ) : (
+                  <span className={s.fieldHint}>{t('financial.recon.add.hint.branch')}</span>
+                )}
               </div>
               <div className={s.formField}>
                 <label className={s.fieldLabel} htmlFor="add-account">
