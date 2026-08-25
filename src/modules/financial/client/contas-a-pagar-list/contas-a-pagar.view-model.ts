@@ -317,7 +317,9 @@ const toRow = (
 // ── Ações de status em massa (Mudar Status) — PURO ────────────────────────────
 // `approve`: só linhas em "Aberto" (Aberto→Aprovado). `reopen`: só "Aprovado" (Aprovado→Aberto, undo).
 // Cada alvo leva o `version` da linha (optimistic lock). As demais transições não têm rota (chrome).
-export type StatusTarget = Readonly<{ id: string; version: number }>
+// `documentNumber` viaja junto e NÃO é usado na requisição: é o que permite a falha dizer QUAL linha
+// falhou. Numa seleção de vinte, "algumas ações não foram concluídas" não diz ao operador onde mexer.
+export type StatusTarget = Readonly<{ id: string; version: number; documentNumber: string }>
 export type BulkStatusTargets = Readonly<{
   approve: readonly StatusTarget[]
   reopen: readonly StatusTarget[]
@@ -328,7 +330,11 @@ export const bulkStatusTargets = (
   selected: ReadonlySet<string>,
 ): BulkStatusTargets => {
   const sel = rows.filter((r) => selected.has(r.id))
-  const pick = (r: GridRow): StatusTarget => ({ id: r.id, version: r.version })
+  const pick = (r: GridRow): StatusTarget => ({
+    id: r.id,
+    version: r.version,
+    documentNumber: r.documentNumber,
+  })
   return {
     approve: sel.filter((r) => r.status === 'Aberto').map(pick),
     reopen: sel.filter((r) => r.status === 'Aprovado').map(pick),
@@ -345,7 +351,9 @@ export const bulkDeleteTargets = (
 ): BulkDeleteTargets => {
   const sel = rows.filter((r) => selected.has(r.id))
   return {
-    deletable: sel.filter((r) => r.status === 'Aberto').map((r) => ({ id: r.id, version: r.version })),
+    deletable: sel
+      .filter((r) => r.status === 'Aberto')
+      .map((r) => ({ id: r.id, version: r.version, documentNumber: r.documentNumber })),
     draftCount: sel.filter((r) => r.status === 'Rascunho').length,
   }
 }
@@ -388,7 +396,7 @@ export const deriveTitleActionTargets = (
     for (const r of subset) {
       if (seen.has(r.documentId)) continue
       seen.add(r.documentId)
-      out.push({ id: r.documentId, version: r.version })
+      out.push({ id: r.documentId, version: r.version, documentNumber: r.documentNumber })
     }
     return out
   }

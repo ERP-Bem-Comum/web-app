@@ -92,7 +92,7 @@ const setupGenerated = async () => {
   const { result } = setup()
   await startWithAccount(result)
   act(() => {
-    result.current.generate(['doc-1'])
+    result.current.generate(['doc-1'], '10/09/2026')
   })
   await waitFor(() => {
     expect(result.current.generated).not.toBeNull()
@@ -257,7 +257,7 @@ describe('useRemittancePreview', () => {
     })
 
     act(() => {
-      result.current.generate(['doc-1'])
+      result.current.generate(['doc-1'], '10/09/2026')
     })
     expect(mockedGenerate).not.toHaveBeenCalled()
   })
@@ -278,7 +278,7 @@ describe('useRemittancePreview', () => {
     await startWithAccount(result)
 
     act(() => {
-      result.current.generate(['doc-1'])
+      result.current.generate(['doc-1'], '10/09/2026')
     })
 
     await waitFor(() => {
@@ -286,6 +286,36 @@ describe('useRemittancePreview', () => {
     })
     // A MESMA conta com que se conferiu: gerar com outra faria o arquivo divergir do pré-voo lido.
     expect(mockedGenerate).toHaveBeenCalledWith({ cedenteAccountId: 'acc-1', payableIds: ['doc-1'] })
+  })
+
+  // ⚠️ O comprovante descreve o que JÁ aconteceu, e a tela muda embaixo dele: o `onSuccess` invalida as
+  // listas e os títulos viram `Transmitido` (core-api#792), saindo da seleção. Enquanto a quantidade e a
+  // data eram RELIDAS do pré-voo, o comprovante passava a descrever a tela nova — a data virava "—" e a
+  // contagem se perdia. Estes casos prendem o congelamento.
+  it('congela a data de pagamento no clique — o comprovante não relê a tela', async () => {
+    mocked.mockResolvedValue(ok(PREVIEW))
+    mockedGenerate.mockResolvedValue(ok(RECEIPT) as never)
+    const { result } = setup()
+    await startWithAccount(result)
+
+    act(() => {
+      result.current.generate(['doc-1', 'doc-2'], '10/09/2026')
+    })
+
+    await waitFor(() => {
+      expect(result.current.generated).not.toBeNull()
+    })
+    expect(result.current.sent).toEqual({ paymentDate: '10/09/2026' })
+  })
+
+  it('fechar esquece o que foi enviado — comprovante e o que ele descreve saem juntos', async () => {
+    const result = await setupGenerated()
+    expect(result.current.sent).not.toBeNull()
+
+    act(() => {
+      result.current.close()
+    })
+    expect(result.current.sent).toBeNull()
   })
 
   it('a recusa do backend chega com a MENSAGEM PT-BR, não só a tag genérica', async () => {
@@ -299,7 +329,7 @@ describe('useRemittancePreview', () => {
     const { result } = setup()
     await startWithAccount(result)
     act(() => {
-      result.current.generate(['doc-1'])
+      result.current.generate(['doc-1'], '10/09/2026')
     })
 
     await waitFor(() => {

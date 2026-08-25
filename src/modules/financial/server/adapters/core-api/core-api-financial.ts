@@ -23,7 +23,7 @@ import type {
   GeneratedRemittance,
   RemittanceFile,
 } from '#modules/financial/server/domain/remittance.io.ts'
-import type { GenerateRemittanceFailure } from '#modules/financial/server/application/financial.use-cases.ts'
+import type { FinancialFailure } from '#modules/financial/server/application/financial.use-cases.ts'
 import { previewToModel, generatedToModel } from './remittance.mappers.ts'
 import { parseErrorEnvelope } from '#shared/http/error-envelope.ts'
 import {
@@ -205,7 +205,7 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
     generateRemittance: async (
       input: GenerateRemittanceInput,
       token,
-    ): Promise<Result<GeneratedRemittance, GenerateRemittanceFailure>> => {
+    ): Promise<Result<GeneratedRemittance, FinancialFailure>> => {
       const r = await resultFetch<unknown>(`${baseUrl}/remittances`, {
         method: 'POST',
         body: { cedenteAccountId: input.cedenteAccountId, payableIds: input.payableIds },
@@ -232,7 +232,7 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
     downloadRemittanceFile: async (
       remittanceId,
       token,
-    ): Promise<Result<RemittanceFile, GenerateRemittanceFailure>> => {
+    ): Promise<Result<RemittanceFile, FinancialFailure>> => {
       const r = await resultFetchBytes(`${baseUrl}/remittances/${remittanceId}/file`, {
         token,
         readHeaders: ['x-van-object-key'],
@@ -284,14 +284,23 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
       if (isErr(r)) return err(mapHttpError(r.error))
       return detailToModel(r.value)
     },
+    // A MENSAGEM viaja junto (mesmo padrão do `generateRemittance` abaixo). Sem ela, as quatro recusas
+    // do aprovador — não cadastrado, sem permissão de aprovar, alçada insuficiente, leitura do auth
+    // indisponível — chegam TODAS como 422 → `validation`, e a tela manda o operador conferir os dados
+    // do documento. O documento está certo; o problema é o aprovador, e só o texto do core-api diz qual.
     approve: async (input, token) => {
       const r = await resultFetch<unknown>(`${docs}/${input.id}/approve`, {
         method: 'POST',
         body: { version: input.version },
         token,
       })
-      if (isErr(r)) return err(mapHttpError(r.error))
-      return detailToModel(r.value)
+      if (isErr(r)) {
+        const detail = r.error.kind === 'http' ? parseErrorEnvelope(r.error.body) : null
+        return err({ error: mapHttpError(r.error), message: detail?.error.message ?? null })
+      }
+      const model = detailToModel(r.value)
+      if (isErr(model)) return err({ error: model.error, message: null })
+      return model
     },
     // #270: vencimento de UM título isolado (não propaga pai↔filhos). Devolve o documento atualizado.
     updatePayableDueDate: async (input, token) => {
@@ -309,14 +318,20 @@ export const createCoreApiFinancialClient = (baseUrl: string): FinancialClient =
       if (isErr(r)) return err(mapHttpError(r.error))
       return detailToModel(r.value)
     },
+    // Simétrico ao `approve`: mesma rota-espelho, mesmo colapso de slug, mesma necessidade de texto.
     undoApproval: async (input, token) => {
       const r = await resultFetch<unknown>(`${docs}/${input.id}/undo-approval`, {
         method: 'POST',
         body: { version: input.version },
         token,
       })
-      if (isErr(r)) return err(mapHttpError(r.error))
-      return detailToModel(r.value)
+      if (isErr(r)) {
+        const detail = r.error.kind === 'http' ? parseErrorEnvelope(r.error.body) : null
+        return err({ error: mapHttpError(r.error), message: detail?.error.message ?? null })
+      }
+      const model = detailToModel(r.value)
+      if (isErr(model)) return err({ error: model.error, message: null })
+      return model
     },
     cancel: async (input, token) => {
       // O core-api exige `version` no corpo do DELETE (optimistic lock); versão defasada → 409.

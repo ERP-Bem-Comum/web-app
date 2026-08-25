@@ -61,6 +61,33 @@ describe('previewToModel — o que se tolera', () => {
   })
 })
 
+describe('previewToModel — status da linha', () => {
+  // core-api#792/ADR-0065 §5. Este caso existe porque o defeito que ele prende era INVISÍVEL: o
+  // fallback de drift manda status desconhecido para `blocked`, que é o default seguro para o
+  // dinheiro — a linha não entra na remessa. Mas para quem opera, `blocked` significa "corrija o
+  // cadastro", e não havia cadastro a corrigir: o título já tinha sido pago. O operador ficava
+  // olhando um cadastro completo sem entender a linha vermelha.
+  it('`transmitted` é status PRÓPRIO, não cai no fallback de `blocked`', () => {
+    const r = previewToModel(raw({ lines: [{ ...line, status: 'transmitted' }] }))
+    assert.ok(isOk(r))
+    assert.equal(r.value.lines[0]?.status, 'transmitted')
+  })
+
+  it('status realmente desconhecido continua caindo em `blocked` — o default seguro é "não sai"', () => {
+    const r = previewToModel(raw({ lines: [{ ...line, status: 'algo-que-nao-existe' }] }))
+    assert.ok(isOk(r))
+    assert.equal(r.value.lines[0]?.status, 'blocked')
+  })
+
+  // O contador novo do #792 é ignorado de propósito (o fato já vem por linha). Se um dia alguém
+  // decidir lê-lo, que seja por escolha — não porque o schema o deixou entrar sem querer.
+  it('`transmittedCount` do backend passa sem derrubar a conferência, e não é lido', () => {
+    const r = previewToModel(raw({ transmittedCount: 3 }))
+    assert.ok(isOk(r))
+    assert.ok(!('transmittedCount' in r.value))
+  })
+})
+
 describe('previewToModel — o que NÃO se tolera', () => {
   it('⚠️ contador ausente falha alto: um zero aceito diria "nada a enviar" a quem tem o que pagar', () => {
     const { readyCount: _omit, ...semContador } = raw() as Record<string, unknown>

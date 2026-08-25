@@ -27,7 +27,7 @@ import type {
   RemittancePreview,
   GenerateRemittanceInput,
   GeneratedRemittance,
-  GenerateRemittanceFailure,
+  FinancialFailure,
   RemittanceFile,
 } from '#modules/financial/client/data/model/remittance.model.ts'
 import type { DashboardStatistics } from '#modules/financial/client/data/model/dashboard-statistics.model.ts'
@@ -64,7 +64,14 @@ type SourceFileFn = (opts: { data: { id: string } }) => Promise<FnResult<Documen
 type TimelineFn = (opts: { data: { id: string } }) => Promise<FnResult<readonly DocumentTimelineEntry[]>>
 type CreateFn = (opts: { data: CreateDocumentInput }) => Promise<FnResult<DocumentDetail>>
 type AdjustFn = (opts: { data: AdjustDocumentInput }) => Promise<FnResult<DocumentDetail>>
-type ApproveFn = (opts: { data: ApproveInput }) => Promise<FnResult<DocumentDetail>>
+// Aprovar / desfazer: a fn devolve a MENSAGEM PT-BR junto da tag. As quatro recusas do aprovador
+// chegam colapsadas num 422 só, e só o texto do core-api as separa (ver `FinancialFailure`).
+type ApproveFn = (opts: {
+  data: ApproveInput
+}) => Promise<
+  | Readonly<{ ok: true; data: DocumentDetail }>
+  | Readonly<{ ok: false; error: FinancialError; message: string | null }>
+>
 type UpdatePayableDueDateFn = (opts: { data: UpdatePayableDueDateInput }) => Promise<FnResult<DocumentDetail>>
 type CancelFn = (opts: {
   data: CancelInput
@@ -96,10 +103,10 @@ export type FinancialRepository = Readonly<{
   // ⚠️ VAN: GERA — enfileira pagamento no banco. Erro traz a mensagem PT-BR do core-api.
   generateRemittance: (
     input: GenerateRemittanceInput,
-  ) => Promise<Result<GeneratedRemittance, GenerateRemittanceFailure>>
+  ) => Promise<Result<GeneratedRemittance, FinancialFailure>>
   // specs/103: cópia do arquivo para conferência. Oferecida em TODO ambiente (decisão da P.O., 21/08) —
   // onde o core-api ainda não registra a rota, o erro traz o recado, e a tela não esconde o botão.
-  downloadRemittanceFile: (remittanceId: string) => Promise<Result<RemittanceFile, GenerateRemittanceFailure>>
+  downloadRemittanceFile: (remittanceId: string) => Promise<Result<RemittanceFile, FinancialFailure>>
   getById: (id: string) => Promise<Result<DocumentDetail, FinancialError>>
   // #568: comprovante-fonte (bytes base64 + mimeType). Busca lazy (só quando há anexo). CA4: via server-fn.
   getSourceFile: (id: string) => Promise<Result<DocumentSourceFile, FinancialError>>
@@ -107,10 +114,10 @@ export type FinancialRepository = Readonly<{
   getTimeline: (id: string) => Promise<Result<readonly DocumentTimelineEntry[], FinancialError>>
   create: (input: CreateDocumentInput) => Promise<Result<DocumentDetail, FinancialError>>
   adjust: (input: AdjustDocumentInput) => Promise<Result<DocumentDetail, FinancialError>>
-  approve: (input: ApproveInput) => Promise<Result<DocumentDetail, FinancialError>>
+  approve: (input: ApproveInput) => Promise<Result<DocumentDetail, FinancialFailure>>
   // #270: vencimento de UM título isolado (não propaga pai↔filhos).
   updatePayableDueDate: (input: UpdatePayableDueDateInput) => Promise<Result<DocumentDetail, FinancialError>>
-  undoApproval: (input: ApproveInput) => Promise<Result<DocumentDetail, FinancialError>>
+  undoApproval: (input: ApproveInput) => Promise<Result<DocumentDetail, FinancialFailure>>
   cancel: (input: CancelInput) => Promise<Result<void, FinancialError>>
   // #224: baixa manual de um título (Aprovado→Pago).
   registerManualPayment: (input: ManualPaymentInput) => Promise<Result<DocumentDetail, FinancialError>>
@@ -198,7 +205,7 @@ export const createFinancialRepository = (
   },
   approve: async (input) => {
     const res = await deps.approveDocumentFn({ data: input })
-    return res.ok ? ok(res.data) : err(res.error)
+    return res.ok ? ok(res.data) : err({ error: res.error, message: res.message })
   },
   updatePayableDueDate: async (input) => {
     const res = await deps.updatePayableDueDateFn({ data: input })
@@ -206,7 +213,7 @@ export const createFinancialRepository = (
   },
   undoApproval: async (input) => {
     const res = await deps.undoApprovalFn({ data: input })
-    return res.ok ? ok(res.data) : err(res.error)
+    return res.ok ? ok(res.data) : err({ error: res.error, message: res.message })
   },
   cancel: async (input) => {
     const res = await deps.cancelDocumentFn({ data: input })

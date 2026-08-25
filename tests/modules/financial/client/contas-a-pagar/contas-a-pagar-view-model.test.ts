@@ -228,8 +228,9 @@ describe('bulkStatusTargets', () => {
 
   it('aprovar = só "Aberto" selecionados; reabrir = só "Aprovado"; com o version de cada', () => {
     const tg = bulkStatusTargets(rows, new Set(['a', 'b', 'd']))
-    assert.deepEqual(tg.approve, [{ id: 'a', version: 2 }])
-    assert.deepEqual(tg.reopen, [{ id: 'b', version: 5 }])
+    // `documentNumber` viaja no alvo p/ a falha em massa NOMEAR o documento na tela.
+    assert.deepEqual(tg.approve, [{ id: 'a', version: 2, documentNumber: '0847' }])
+    assert.deepEqual(tg.reopen, [{ id: 'b', version: 5, documentNumber: '0847' }])
     // 'd' (Pago) não entra em nenhum
   })
 
@@ -253,7 +254,7 @@ describe('bulkDeleteTargets', () => {
 
   it('deletable = só "Aberto" da seleção (id + version); conta rascunhos à parte; Aprovado fica de fora', () => {
     const tg = bulkDeleteTargets(rows, new Set(['a', 'b', 'd']))
-    assert.deepEqual(tg.deletable, [{ id: 'a', version: 2 }])
+    assert.deepEqual(tg.deletable, [{ id: 'a', version: 2, documentNumber: '0847' }])
     assert.equal(tg.draftCount, 1)
   })
 

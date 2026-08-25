@@ -13,17 +13,19 @@ import type { FinancialError } from '#modules/financial/server/domain/errors/fin
 
 export type UndoApprovalFnResult =
   | Readonly<{ ok: true; data: DocumentDetail }>
-  | Readonly<{ ok: false; error: FinancialError }>
+  // A MENSAGEM PT-BR do core-api viaja junto: as recusas do aprovador chegam todas como 422 →
+  // `validation`, e sem o texto a tela acusa os dados do documento por um problema do aprovador.
+  | Readonly<{ ok: false; error: FinancialError; message: string | null }>
 
 export const undoApprovalFn = createServerFn({ method: 'POST' })
   .inputValidator(ApproveInputSchema)
   .handler(async ({ data }): Promise<UndoApprovalFnResult> => {
     const user = await getCurrentUserFn()
-    if (user === null) return { ok: false, error: 'unauthorized' }
+    if (user === null) return { ok: false, error: 'unauthorized', message: null }
     const accessToken = await resolveAccessTokenFn()
-    if (accessToken === null) return { ok: false, error: 'unauthorized' }
+    if (accessToken === null) return { ok: false, error: 'unauthorized', message: null }
 
     const r = await financialServer().undoApproval(data, accessToken)
-    if (isErr(r)) return { ok: false, error: r.error }
+    if (isErr(r)) return { ok: false, error: r.error.error, message: r.error.message }
     return { ok: true, data: r.value }
   })

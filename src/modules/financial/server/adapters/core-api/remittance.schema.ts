@@ -47,6 +47,10 @@ export const CoreApiRemittancePreviewSchema = z.object({
   notFoundCount: z.int().nonnegative(),
   // #736 virou status de linha: o backend agora informa quantos não estão aprovados.
   notApprovedCount: z.int().nonnegative().catch(0),
+  // O core-api#792 acrescentou `transmittedCount`. NÃO o lemos, pela mesma razão do `batches[]` e do
+  // `missing` acima: o fato já chega por linha (`status: 'transmitted'`), e o resumo da tela conta as
+  // linhas impedidas. Ler o contador seria manter duas representações do mesmo fato — e a que ninguém
+  // olha é a que sai de sincronia primeiro.
   readyTotalCents: z.string().trim(),
   blockedTotalCents: z.string().trim(),
 })

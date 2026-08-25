@@ -925,9 +925,20 @@ export const selClear = style({
   textUnderlineOffset: '0.125rem',
 })
 // Erro de ação em massa (ex.: 409 de versão) — texto discreto na barra de seleção.
+// `flex` em coluna porque o bloco deixou de ser uma frase só: abaixo do cabeçalho vem UMA LINHA POR
+// DOCUMENTO que falhou, com o motivo que o core-api devolveu.
 export const selError = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: vars.space.xs,
   fontSize: vars.font.size.xs,
   color: vars.color.status.terminatedText,
+})
+
+// A linha do documento que falhou. Recuada para se ler como detalhe do cabeçalho acima, e não como
+// um segundo erro solto — numa seleção grande são várias, e sem o recuo viram um bloco indistinto.
+export const selErrorLine = style({
+  paddingInlineStart: vars.space.sm,
 })
 
 // ── Drawer de Detalhe do Documento (onda 2) ───────────────────────────────────
