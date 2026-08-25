@@ -112,14 +112,18 @@ const EMPTY_DRAFT: GeralDraft = {
 type GeralFilters = Omit<RelatorioGeralQuery, 'page' | 'limit'>
 
 // Status filtrável (enum #442 = os 6 do #588, sem Draft/Refused).
-const STATUS_VALUES = [
-  'Open',
-  'Approved',
-  'Transmitted',
-  'Paid',
-  'PartiallyReconciled',
-  'Reconciled',
-] as const
+// ⚠️ `Transmitted` fica DE FORA, por decisão da P.O. (25/08): é status **transitório** — o título passa
+// por ele a caminho de `Pago`, e "se ficar muito tempo nesse status, o operador deve tomar providências".
+// Recortar um relatório por um estado de passagem não responde pergunta de gestão nenhuma.
+//
+// Some junto um defeito: o filtro NUNCA casava. O backend compara contra `fin_documents.status`, e quem
+// transiciona é o TÍTULO (`fin_payables.status`) — o ADR-0065 §2 manteve o status do documento reservado
+// DE PROPÓSITO, então nunca vai receber o valor. Respondia 200 com lista vazia (core-api#845).
+//
+// Tirar a opção NÃO esconde o título: sem recorte de status o relatório mostra tudo, e o transmitido
+// conta como pendente/previsto até a baixa (decisão do backend na #792). `asStatus` usa `.find`, então
+// URL salva com `status=Transmitted` degrada para "sem recorte" em vez de quebrar.
+const STATUS_VALUES = ['Open', 'Approved', 'Paid', 'PartiallyReconciled', 'Reconciled'] as const
 const asStatus = (s: string): string | undefined => STATUS_VALUES.find((x) => x === s)
 
 /** Converte o draft nas dimensões do endpoint: "" → undefined. Fornecedor → entityId; Plano → budgetPlanId. */
@@ -172,7 +176,6 @@ export function RelatorioGeralPage(): ReactNode {
   const statusOptions: readonly FilterOption[] = [
     { value: 'Open', label: t('financial.list.chip.aberto') },
     { value: 'Approved', label: t('financial.list.chip.aprovado') },
-    { value: 'Transmitted', label: t('financial.list.chip.transmitido') },
     { value: 'Paid', label: t('financial.list.chip.pago') },
     { value: 'PartiallyReconciled', label: t('reports.posicao.filters.statusOpt.partiallyReconciled') },
     { value: 'Reconciled', label: t('financial.list.chip.conciliado') },

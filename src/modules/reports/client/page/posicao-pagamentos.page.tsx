@@ -47,10 +47,20 @@ const EMPTY_DRAFT: PosicaoFilterValues = {
 }
 
 // Enum FECHADO de status filtrável (#588; sem Draft/Refused). `.find` narra p/ o literal sem cast.
+// ⚠️ `Transmitted` fica DE FORA, por decisão da P.O. (25/08): é status **transitório** — o título passa
+// por ele a caminho de `Pago`, e "se ficar muito tempo nesse status, o operador deve tomar providências".
+// Recortar um relatório por um estado de passagem não responde pergunta de gestão nenhuma.
+//
+// Some junto um defeito: o filtro NUNCA casava. O backend compara contra `fin_documents.status`, e quem
+// transiciona é o TÍTULO (`fin_payables.status`) — o ADR-0065 §2 manteve o status do documento reservado
+// DE PROPÓSITO, então nunca vai receber o valor. Respondia 200 com lista vazia (core-api#845).
+//
+// Tirar a opção NÃO esconde o título: sem recorte de status o relatório mostra tudo, e o transmitido
+// conta como pendente/previsto até a baixa (decisão do backend na #792). `asStatus` usa `.find`, então
+// URL salva com `status=Transmitted` degrada para "sem recorte" em vez de quebrar.
 const STATUS_VALUES: readonly PosicaoReportStatus[] = [
   'Open',
   'Approved',
-  'Transmitted',
   'Paid',
   'PartiallyReconciled',
   'Reconciled',
@@ -88,7 +98,6 @@ export function PosicaoPagamentosPage(): ReactNode {
   const statusOptions: readonly FilterOption[] = [
     { value: 'Open', label: t('reports.posicao.filters.statusOpt.open') },
     { value: 'Approved', label: t('reports.posicao.filters.statusOpt.approved') },
-    { value: 'Transmitted', label: t('reports.posicao.filters.statusOpt.transmitted') },
     { value: 'Paid', label: t('reports.posicao.filters.statusOpt.paid') },
     { value: 'PartiallyReconciled', label: t('reports.posicao.filters.statusOpt.partiallyReconciled') },
     { value: 'Reconciled', label: t('reports.posicao.filters.statusOpt.reconciled') },
