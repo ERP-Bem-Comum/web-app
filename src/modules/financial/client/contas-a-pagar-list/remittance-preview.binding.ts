@@ -25,6 +25,7 @@ import type {
   GeneratedRemittance,
 } from '#modules/financial/client/data/model/remittance.model.ts'
 import type { ReconciliationAccount } from '#modules/financial/client/data/model/reconciliation.model.ts'
+import type { SentRemittance } from './remittance-preview.view-model.ts'
 
 export type RemittancePreviewBinding = Readonly<{
   open: boolean
@@ -69,11 +70,22 @@ export type RemittancePreviewBinding = Readonly<{
   generating: boolean
   /** Comprovante do que foi gerado. Enquanto existe, o modal mostra o resultado, não a conferência. */
   generated: GeneratedRemittance | null
+  /**
+   * O que foi ENVIADO, congelado no clique. Existe porque a tela muda embaixo do comprovante: o
+   * `onSuccess` invalida as listas, os títulos viram `Transmitido` (core-api#792) e saem da seleção —
+   * então qualquer número relido do pré-voo depois do envio descreve o estado NOVO, não o que foi
+   * enviado. `null` antes de gerar.
+   */
+  sent: SentRemittance | null
   /** Tag i18n da falha (comportamento) — §V. */
   generateErrorTag: string | null
   /** Mensagem PT-BR do core-api (texto). É ela que distingue as quatro recusas que chegam como 422. */
   generateErrorMessage: string | null
-  generate: (payableIds: readonly string[]) => void
+  /**
+   * `paymentDate` entra como ARGUMENTO, e não é redundância: é o valor lido do pré-voo no instante em
+   * que o operador confirma. Depois do envio esse valor já não existe na tela — ver `sent`.
+   */
+  generate: (payableIds: readonly string[], paymentDate: string) => void
 
   // ── Download do arquivo (specs/103) ───────────────────────────────────────────
   //
@@ -120,6 +132,8 @@ export function useRemittancePreview(): RemittancePreviewBinding {
   const [unchecked, setUnchecked] = useState<ReadonlySet<string>>(() => new Set())
   const [chosenAccountId, setChosenAccountId] = useState('')
   const [confirming, setConfirming] = useState(false)
+  // Congelado no clique de gerar; zerado ao abrir e ao fechar, junto do comprovante que ele descreve.
+  const [sent, setSent] = useState<SentRemittance | null>(null)
   // A seleção que veio do grid, guardada até haver conta com que conferi-la.
   const [pendingIds, setPendingIds] = useState<readonly string[]>([])
 
@@ -182,10 +196,19 @@ export function useRemittancePreview(): RemittancePreviewBinding {
       // A MESMA conta com que o pré-voo foi feito: gerar com outra tornaria a conferência que o operador
       // acabou de ler uma descrição de um arquivo que não é este.
       financialRepository.generateRemittance({ cedenteAccountId, payableIds }),
+    // Erros são valores: a `fn` resolve com `Result`, então esta callback roda nos DOIS desfechos.
     onSuccess: (res) => {
-      if (!isOk(res)) return
-      // Os títulos viraram Transmitido: a listagem e as contagens precisam refletir isso na hora, ou o
-      // operador reenvia o que já foi ao banco.
+      // O título saiu para o banco, e a listagem tem de deixar de oferecê-lo — senão o operador reenvia
+      // o que já foi. ⚠️ Hoje o refetch traz o MESMO estado: o core-api não move o título de `Aprovado`
+      // (`Transmitted` está no enum e nada o atribui — core-api#792). A invalidação fica porque é o que
+      // estará certo quando a transição existir, mas não conte com ela para esconder o que já saiu.
+      //
+      // O conflito entra aqui pelo mesmo motivo, e não por otimismo: `conflict` significa que ALGUÉM
+      // prendeu o título antes de nós (a reserva sob lock do core-api#814 fecha a corrida). Ou seja, a
+      // tela está comprovadamente desatualizada — é o caso em que revalidar é MAIS necessário, não
+      // menos, e a mensagem do backend manda o operador fazer exatamente isso ("Atualize a lista e
+      // refaça a seleção").
+      if (!isOk(res) && res.error.error !== 'conflict') return
       void queryClient.invalidateQueries({ queryKey: ['financial', 'payable-titles'] })
       void queryClient.invalidateQueries({ queryKey: ['financial', 'documents', 'list'] })
     },
@@ -215,6 +238,7 @@ export function useRemittancePreview(): RemittancePreviewBinding {
       setConfirming(false)
       resetGenerate()
       resetDownload()
+      setSent(null) // comprovante velho e o que ele descreve saem juntos
       // Guarda a seleção; quem dispara a conferência é o efeito, quando houver conta.
       setPendingIds(payableIds)
     },
@@ -239,6 +263,7 @@ export function useRemittancePreview(): RemittancePreviewBinding {
     lastRun.current = null
     reset() // não guarda pré-voo velho: reabrir com outra seleção não pode mostrar o resultado da anterior
     resetGenerate() // nem comprovante velho: ele é de um pagamento que já aconteceu
+    setSent(null) // e o que ele descreve some junto — os dois são o mesmo fato
     resetDownload() // nem erro de download da remessa anterior
   }, [reset, resetGenerate, resetDownload])
 
@@ -282,9 +307,13 @@ export function useRemittancePreview(): RemittancePreviewBinding {
     generated,
     generateErrorTag: genFailure === null ? null : financialErrorTag(genFailure.error),
     generateErrorMessage: genFailure?.message ?? null,
-    generate: (payableIds) => {
+    sent,
+    generate: (payableIds, paymentDate) => {
       if (payableIds.length === 0 || cedenteAccountId === '') return
       setConfirming(false)
+      // Congela ANTES de disparar: o `onSuccess` invalida as listas, e a partir dali a tela descreve o
+      // estado novo. Depois do envio não há mais de onde reler para que dia a remessa foi.
+      setSent({ paymentDate })
       mutateGenerate(payableIds)
     },
     downloading: downloadMut.isPending,

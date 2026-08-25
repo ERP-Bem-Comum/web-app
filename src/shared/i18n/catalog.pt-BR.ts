@@ -1896,7 +1896,10 @@ export const ptBR: Catalog = {
   'financial.list.status.soon': 'Indisponível no v1 — pendente no backend',
   'financial.list.status.needOpen': 'Selecione documentos em "Aberto" para aprovar',
   'financial.list.status.needApproved': 'Selecione documentos "Aprovado" para voltar à edição',
-  'financial.list.status.bulkError': 'Algumas ações não foram concluídas (atualize e tente de novo)',
+  // Só o CABEÇALHO do bloco: abaixo vem uma linha por documento, com o motivo real. Deixou de mandar
+  // "atualize e tente de novo" porque isso era falso no caso mais comum — as recusas do aprovador não
+  // se resolvem repetindo, e repetir é o que a frase mandava fazer.
+  'financial.list.status.bulkError': 'Nem todos os documentos foram alterados:',
   'financial.list.status.approve': 'Aprovar',
   'financial.list.status.approveHint': 'aprova o documento',
   'financial.list.status.reopen': 'Voltar para edição',
@@ -2025,6 +2028,11 @@ export const ptBR: Catalog = {
   // e aí o recado é "falta aprovar", não "falta cadastro", que mandaria ao lugar errado.
   'financial.remittance.preview.pendency.notApprovedLine':
     'Falta aprovar — só título aprovado entra em remessa',
+  // core-api#792/ADR-0065: o título já saiu numa remessa. A frase diz "já foi", e NÃO manda corrigir
+  // nada — é o oposto das pendências acima. Sem ela o operador leria "sem dados bancários" olhando
+  // para um cadastro completo, e a única saída errada possível seria reenviar o que já foi pago.
+  'financial.remittance.preview.pendency.alreadyTransmitted':
+    'Já enviado ao banco em outra remessa — não entra de novo',
   'financial.remittance.preview.empty': 'Nenhum título para conferir.',
   // core-api#804: o pré-voo só existe depois da conta. O texto diz o PORQUÊ, e não só "escolha a conta":
   // sem ele o operador lê como burocracia e não entende por que a conferência não apareceu.
@@ -2069,7 +2077,6 @@ export const ptBR: Catalog = {
   'financial.remittance.generate.doneBody': 'O arquivo entrou na fila de pagamento do banco.',
   'financial.remittance.generate.nsa': 'Nº da remessa (NSA)',
   'financial.remittance.generate.fileName': 'Arquivo',
-  'financial.remittance.generate.lineCount': 'Títulos enviados',
   'financial.remittance.generate.total': 'Total enviado',
   // O dia em que o banco executa. É o "quando sai o dinheiro?" — a única informação do comprovante que
   // o operador não reconfere em outro lugar depois de fechar o modal.

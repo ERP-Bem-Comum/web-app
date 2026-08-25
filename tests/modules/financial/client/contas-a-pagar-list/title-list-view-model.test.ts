@@ -201,14 +201,15 @@ describe('deriveTitleActionTargets (#229 — ações por linha, dedup por docume
 
   it('Reabrir: dedup por documento (vários títulos Aprovados do mesmo doc → 1 alvo com version do doc)', () => {
     const tg = deriveTitleActionTargets(titleRows, new Set(['p1', 'c1', 'c2']))
-    assert.deepEqual(tg.reopen, [{ id: 'd1', version: 5 }]) // 1 alvo, id=documentId
+    // `documentNumber` viaja no alvo p/ a falha em massa saber NOMEAR o documento na tela.
+    assert.deepEqual(tg.reopen, [{ id: 'd1', version: 5, documentNumber: 'NF-1' }]) // 1 alvo, id=documentId
     assert.equal(tg.approve.length, 0) // nenhum Aberto selecionado
   })
 
   it('Aprovar/Excluir: dedup por documento (id=documentId); Vencimento (#270): por TÍTULO isolado', () => {
     const tg = deriveTitleActionTargets(titleRows, new Set(['p2']))
-    assert.deepEqual(tg.approve, [{ id: 'd2', version: 1 }])
-    assert.deepEqual(tg.deletable, [{ id: 'd2', version: 1 }])
+    assert.deepEqual(tg.approve, [{ id: 'd2', version: 1, documentNumber: 'NF-1' }])
+    assert.deepEqual(tg.deletable, [{ id: 'd2', version: 1, documentNumber: 'NF-1' }])
     // #270: vencimento é por payable (documentId + payableId + version), NÃO deduplicado por documento.
     // `expectedDueDate` = o vencimento CRU da linha, pré-condição do CAS do core-api (ADR-0063 de lá).
     assert.deepEqual(tg.dueEditable, [
@@ -266,7 +267,7 @@ describe('deriveTitleActionTargets (#229 — ações por linha, dedup por docume
     if (first === undefined) throw new Error('sem linha base')
     const draftRow = { ...first, id: 'pd', documentId: 'dd', status: 'Rascunho' as const, version: 2 }
     const tg = deriveTitleActionTargets([draftRow], new Set(['pd']))
-    assert.deepEqual(tg.deletable, [{ id: 'dd', version: 2 }]) // id = documentId, version da linha
+    assert.deepEqual(tg.deletable, [{ id: 'dd', version: 2, documentNumber: 'NF-1' }]) // id = documentId, version da linha
     assert.equal(tg.draftCount, 0) // rascunho NÃO é mais "ignorado"
   })
 })

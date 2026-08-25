@@ -36,12 +36,19 @@ import type {
 } from '#modules/financial/server/domain/remittance.io.ts'
 
 /**
- * Falha da GERAÇÃO — tag + a mensagem PT-BR do core-api. Exceção deliberada ao `FinancialError` puro do
- * resto do módulo: quatro recusas distintas da remessa chegam como o mesmo 422 (`sendDomainError` colapsa
- * o slug, OWASP API8), e só o texto distingue "conta sem convênio" de "vencimentos misturados". A tag
- * segue mandando no COMPORTAMENTO (§V); a mensagem só preenche o TEXTO. `null` quando não houver.
+ * Falha com TEXTO — a tag do comportamento + a mensagem PT-BR que o core-api já mandou no corpo.
+ *
+ * Nasceu na geração da remessa e valia só para ela; o nome mentia. O colapso que a justifica é
+ * TRANSVERSAL: o `sendDomainError` do core-api reduz todo slug de 4xx a um balde público (OWASP API8),
+ * então causas distintas chegam com o MESMO status e a mesma tag. Na remessa são quatro recusas num
+ * 422 só; no approve são as quatro do aprovador (`approver-not-found`, `approver-missing-permission`,
+ * `approver-limit-exceeded`, `approver-authority-unavailable`), todas 422 → `validation`. Em ambos os
+ * casos **só o texto separa**, e sem ele a tela diz "Verifique os dados informados" para um problema
+ * que não está nos dados.
+ *
+ * A tag segue mandando no COMPORTAMENTO (§V); a mensagem só preenche o TEXTO. `null` quando não houver.
  */
-export type GenerateRemittanceFailure = Readonly<{
+export type FinancialFailure = Readonly<{
   error: FinancialError
   message: string | null
 }>
@@ -68,13 +75,15 @@ export type FinancialClient = Readonly<{
   ) => Promise<Result<readonly DocumentTimelineEvent[], FinancialError>>
   create: (input: CreateDocumentInput, token: string) => Promise<Result<DocumentDetail, FinancialError>>
   adjust: (input: AdjustDocumentInput, token: string) => Promise<Result<DocumentDetail, FinancialError>>
-  approve: (input: ApproveInput, token: string) => Promise<Result<DocumentDetail, FinancialError>>
+  // Falha COM TEXTO: as quatro recusas do aprovador chegam como o mesmo 422 → `validation`, e a tela
+  // dizia "Verifique os dados informados" para um problema que não está nos dados do documento.
+  approve: (input: ApproveInput, token: string) => Promise<Result<DocumentDetail, FinancialFailure>>
   // #270: vencimento de UM título isolado (não propaga pai↔filhos). Devolve o documento atualizado.
   updatePayableDueDate: (
     input: UpdatePayableDueDateInput,
     token: string,
   ) => Promise<Result<DocumentDetail, FinancialError>>
-  undoApproval: (input: ApproveInput, token: string) => Promise<Result<DocumentDetail, FinancialError>>
+  undoApproval: (input: ApproveInput, token: string) => Promise<Result<DocumentDetail, FinancialFailure>>
   cancel: (input: CancelInput, token: string) => Promise<Result<void, FinancialError>>
   registerManualPayment: (
     input: ManualPaymentInput,
@@ -101,14 +110,14 @@ export type FinancialClient = Readonly<{
   generateRemittance: (
     input: GenerateRemittanceInput,
     token: string,
-  ) => Promise<Result<GeneratedRemittance, GenerateRemittanceFailure>>
+  ) => Promise<Result<GeneratedRemittance, FinancialFailure>>
   // VAN (specs/103): baixa o arquivo QUE FOI ao banco — cópia de conferência, **homologação apenas**.
   // Reusa a falha-com-mensagem da geração: os dois motivos novos (`remittance-file-not-found` 404,
   // `remittance-file-corrupted` 503) também chegam colapsados, e só o texto do core-api os separa.
   downloadRemittanceFile: (
     remittanceId: string,
     token: string,
-  ) => Promise<Result<RemittanceFile, GenerateRemittanceFailure>>
+  ) => Promise<Result<RemittanceFile, FinancialFailure>>
 }>
 
 type Deps = Readonly<{ client: FinancialClient }>
@@ -146,10 +155,7 @@ export const createPreviewRemittance =
 // aqui só criaria uma segunda verdade sobre um pagamento já enfileirado.
 export const createGenerateRemittance =
   (deps: Deps) =>
-  (
-    input: GenerateRemittanceInput,
-    token: string,
-  ): Promise<Result<GeneratedRemittance, GenerateRemittanceFailure>> =>
+  (input: GenerateRemittanceInput, token: string): Promise<Result<GeneratedRemittance, FinancialFailure>> =>
     deps.client.generateRemittance(input, token)
 
 // Download do arquivo (specs/103). Thin pelo mesmo motivo da geração: quem decide se aquele objeto É a
@@ -157,7 +163,7 @@ export const createGenerateRemittance =
 // de arquivo de pagamento seria uma verdade concorrente sobre dinheiro que já saiu.
 export const createDownloadRemittanceFile =
   (deps: Deps) =>
-  (remittanceId: string, token: string): Promise<Result<RemittanceFile, GenerateRemittanceFailure>> =>
+  (remittanceId: string, token: string): Promise<Result<RemittanceFile, FinancialFailure>> =>
     deps.client.downloadRemittanceFile(remittanceId, token)
 
 export const createGetDocument =
@@ -187,7 +193,7 @@ export const createAdjustDocument =
 
 export const createApproveDocument =
   (deps: Deps) =>
-  (input: ApproveInput, token: string): Promise<Result<DocumentDetail, FinancialError>> =>
+  (input: ApproveInput, token: string): Promise<Result<DocumentDetail, FinancialFailure>> =>
     deps.client.approve(input, token)
 
 export const createUpdatePayableDueDate =
@@ -197,7 +203,7 @@ export const createUpdatePayableDueDate =
 
 export const createUndoApproval =
   (deps: Deps) =>
-  (input: ApproveInput, token: string): Promise<Result<DocumentDetail, FinancialError>> =>
+  (input: ApproveInput, token: string): Promise<Result<DocumentDetail, FinancialFailure>> =>
     deps.client.undoApproval(input, token)
 
 export const createCancelDocument =

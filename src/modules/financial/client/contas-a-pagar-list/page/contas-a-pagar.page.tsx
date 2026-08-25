@@ -78,6 +78,7 @@ import {
   selSumLabel,
   selClear,
   selError,
+  selErrorLine,
 } from './contas-a-pagar.css.ts'
 
 const t = createTranslator(ptBR)
@@ -458,17 +459,24 @@ export function ContasAPagarPage(): ReactNode {
         onDisarm={remittance.disarm}
         generating={remittance.generating}
         generated={
-          remittance.generated === null
+          remittance.generated === null || remittance.sent === null
             ? null
-            : // A data vem do PRÉ-VOO, não da resposta da geração: a remessa é de um único dia (vencimentos
-              // misturados travam o envio), então é o vencimento dos títulos que efetivamente foram.
-              toReceiptView(remittance.generated, remittanceView?.summary.paymentDate ?? '—')
+            : // ⚠️ Do que foi CONGELADO no envio (`remittance.sent`), nunca do pré-voo relido: depois de
+              // gerar, os títulos viram `Transmitido` e saem da seleção, e o resumo passa a descrever a
+              // tela nova em vez do que foi enviado. Era assim que a data de pagamento virava "—" e a
+              // contagem se perdia — no comprovante, justamente.
+              toReceiptView(remittance.generated, remittance.sent)
         }
         generateErrorTag={remittance.generateErrorTag}
         generateErrorMessage={remittance.generateErrorMessage}
         onGenerate={() => {
-          // Vai só o que está MARCADO — dedup por documento, direto do ViewModel.
-          remittance.generate(remittanceView?.checkedPayableIds ?? [])
+          // Vai só o que está MARCADO — dedup por documento, direto do ViewModel. A data de pagamento
+          // viaja JUNTO porque é agora que ela existe: é o vencimento dos títulos que estão indo, e a
+          // remessa é de um único dia (vencimentos misturados travam o envio).
+          remittance.generate(
+            remittanceView?.checkedPayableIds ?? [],
+            remittanceView?.summary.paymentDate ?? '—',
+          )
         }}
         downloading={remittance.downloading}
         downloadErrorTag={remittance.downloadErrorTag}
@@ -524,7 +532,20 @@ export function ContasAPagarPage(): ReactNode {
                 setPayOpen(true)
               }}
             />
-            {bulk.errorTag !== null ? <span className={selError}>{t(bulk.errorTag)}</span> : null}
+            {/* Uma linha POR DOCUMENTO que falhou, com a mensagem do core-api quando ela existe. A frase
+                genérica ("Algumas ações não foram concluídas") vira só o cabeçalho: ela não diz qual
+                documento nem o que fazer, e no approve o motivo mais comum — as recusas do aprovador —
+                não se resolve tentando de novo, que era exatamente o que ela mandava fazer. */}
+            {bulk.errorTag !== null ? (
+              <span className={selError}>
+                {t(bulk.errorTag)}
+                {bulk.failures.map((f) => (
+                  <span key={f.documentNumber} className={selErrorLine}>
+                    {`${f.documentNumber}: ${f.message ?? t(f.tag)}`}
+                  </span>
+                ))}
+              </span>
+            ) : null}
             {del.errorTag !== null ? <span className={selError}>{t(del.errorTag)}</span> : null}
             {pay.errorTag !== null ? <span className={selError}>{t(pay.errorTag)}</span> : null}
           </div>

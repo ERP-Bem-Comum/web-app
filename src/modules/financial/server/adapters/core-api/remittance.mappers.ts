@@ -27,6 +27,10 @@ const LINE_STATUSES: ReadonlySet<string> = new Set<PreviewLineStatus>([
   'out-of-van',
   'not-found',
   'not-approved',
+  // core-api#792/ADR-0065 §5. ⚠️ Sem esta entrada o status caía no fallback de drift e virava
+  // `blocked` — seguro para o dinheiro, mas ILEGÍVEL para quem opera: a linha aparecia vermelha e sem
+  // motivo, e o operador ia procurar defeito num cadastro que está completo. O certo já foi enviado.
+  'transmitted',
 ])
 
 const VAN_ROUTES: ReadonlySet<string> = new Set<VanRoute>(['pix', 'transfer', 'billet', 'tax-guide'])

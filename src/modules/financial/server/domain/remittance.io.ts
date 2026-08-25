@@ -43,8 +43,20 @@ export interface PayoutGap {
  * - `blocked` — falta/está errado um dado do cadastro (ver `gaps`) — o operador corrige;
  * - `out-of-van` — a forma de pagamento não é coberta pela VAN; **nenhum cadastro resolve**;
  * - `not-found` — o id selecionado não existe mais (excluído entre a seleção e a conferência).
+ * - `transmitted` — o título JÁ SAIU numa remessa anterior; nada a corrigir, e nada a reenviar.
  */
-export type PreviewLineStatus = 'ready' | 'blocked' | 'out-of-van' | 'not-found' | 'not-approved' // #736: falta APROVAR — distinto de `blocked`, que é falta de dado do cadastro
+export type PreviewLineStatus =
+  | 'ready'
+  | 'blocked'
+  | 'out-of-van'
+  | 'not-found'
+  | 'not-approved' // #736: falta APROVAR — distinto de `blocked`, que é falta de dado do cadastro
+  // core-api#792/ADR-0065 §5: com o título passando a `Transmitido` na geração, o pré-voo deixou de
+  // colapsar o estado e passou a nomeá-lo. É status PRÓPRIO, e não `blocked`, porque a ação do
+  // operador é OPOSTA: `blocked` pede correção de cadastro; aqui não há o que corrigir — o pagamento
+  // já foi ao banco. Enquanto caía no fallback de drift, a linha aparecia bloqueada e sem motivo, e o
+  // operador procurava defeito num cadastro completo.
+  | 'transmitted'
 
 /**
  * UMA LINHA POR TÍTULO (core-api#794). A nota dá origem aos títulos, mas o ciclo de vida inteiro é do

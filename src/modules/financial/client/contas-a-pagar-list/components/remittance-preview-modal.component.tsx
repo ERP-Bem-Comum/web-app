@@ -192,10 +192,11 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
                 <span className={summaryLabel}>{t('financial.remittance.generate.fileName')}</span>
                 <span className={summaryValue}>{props.generated.fileName}</span>
               </span>
-              <span className={summaryItem}>
-                <span className={summaryLabel}>{t('financial.remittance.generate.lineCount')}</span>
-                <span className={summaryValue}>{props.generated.lineCount}</span>
-              </span>
+              {/* A QUANTIDADE saiu daqui (decisão da P.O., 24/08): o operador acabou de lê-la na
+                  conferência, com os títulos nominados, e repeti-la no comprovante não acrescenta —
+                  ocupa a linha que os dados exclusivos do comprovante (NSA, arquivo, data) precisam.
+                  Antes de sair ela ainda estava ERRADA: exibia o `lineCount` do core-api, que conta
+                  registros do arquivo CNAB (6 para um único título). */}
               {/* Quando o banco executa. Fecha a pergunta que o comprovante deixava em aberto: o operador
                   via quanto e quantos títulos, mas não em que dia o dinheiro sai. */}
               <span className={summaryItem}>
