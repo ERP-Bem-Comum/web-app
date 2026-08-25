@@ -375,6 +375,32 @@ export type IsolatedDueDateTarget = Readonly<{
   expectedDueDate: string
 }>
 
+/**
+ * As DUAS origens de uma baixa manual — espelha `MANUALLY_PAYABLE_STATUSES` do core-api
+ * (`domain/document/document.ts:350`, ADR-0065 §6). É a mesma lista dos dois lados de propósito: o
+ * backend a exporta justamente porque duas listas divergiriam em silêncio.
+ *
+ * - `Aprovado` — pagamento feito FORA da VAN (cheque, caixa, boleto avulso). O caminho de sempre.
+ * - `Transmitido` — saiu pela VAN e o operador **conferiu no site do banco**. `Pago` continua manual
+ *   (#59) porque o retorno do banco ainda não é processado: quem afirma que o dinheiro saiu é a pessoa
+ *   que olhou o extrato.
+ *
+ * ⚠️ `Transmitido` faltava aqui, e a falta só apareceu quando o backend passou a PRODUZIR o status
+ * (core-api#792): o título saía na remessa, virava `Transmitido`, e "Marcar como pago" ficava
+ * desabilitado — travando justamente a etapa seguinte do fluxo que a remessa acabou de iniciar. O
+ * backend aceitava; era a tela que barrava.
+ *
+ * ⚠️⚠️ **NÃO REMOVER `Transmitido` DESTA LISTA.** A P.O. confirmou em 25/08, sabendo que a
+ * funcionalidade muda numa atualização futura: *"mantenha a baixa de forma manual autorizada para
+ * títulos TRANSMITIDOS também"*. Enquanto o retorno do banco não for processado, é o operador quem
+ * fecha o ciclo — e tirar isto o deixaria com o título parado, sem via de baixa, depois de o
+ * pagamento já ter ido ao banco. Quando o retorno entrar (#690), a mudança vem do backend
+ * (`MANUALLY_PAYABLE_STATUSES`) e esta lista a acompanha; até lá, o estado atual é o pretendido.
+ */
+const MANUALLY_PAYABLE: readonly DocumentStatus[] = ['Aprovado', 'Transmitido']
+
+export const isManuallyPayable = (status: DocumentStatus): boolean => MANUALLY_PAYABLE.includes(status)
+
 export type TitleActionTargets = Readonly<{
   approve: readonly StatusTarget[] // documentos distintos com título Aberto (Aprovar cascateia)
   reopen: readonly StatusTarget[] // documentos com título Aprovado
