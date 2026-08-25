@@ -9,6 +9,7 @@ import assert from 'node:assert/strict'
 import {
   deriveTitleListState,
   deriveTitleActionTargets,
+  isManuallyPayable,
   filterRowsByTipo,
   isRetentionTipo,
 } from '../../../../../src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts'
@@ -269,5 +270,28 @@ describe('deriveTitleActionTargets (#229 — ações por linha, dedup por docume
     const tg = deriveTitleActionTargets([draftRow], new Set(['pd']))
     assert.deepEqual(tg.deletable, [{ id: 'dd', version: 2, documentNumber: 'NF-1' }]) // id = documentId, version da linha
     assert.equal(tg.draftCount, 0) // rascunho NÃO é mais "ignorado"
+  })
+})
+
+/**
+ * ⚠️ Espelha `MANUALLY_PAYABLE_STATUSES` do core-api (`domain/document/document.ts:350`, ADR-0065 §6).
+ * O backend EXPORTA aquela lista justamente porque duas listas divergem em silêncio — e foi o que
+ * aconteceu: `Transmitido` faltava aqui, e a falta só apareceu quando o backend passou a produzir o
+ * status (core-api#792). O título saía na remessa, virava `Transmitido`, e "Marcar como pago" ficava
+ * desabilitado — travando a etapa seguinte do fluxo que a remessa acabou de iniciar.
+ *
+ * Se este teste falhar depois de uma mudança no backend, é a divergência voltando: confira a lista de
+ * lá antes de "consertar" a daqui.
+ */
+describe('isManuallyPayable — as duas origens da baixa manual', () => {
+  it('Aprovado paga (fora da VAN) e Transmitido paga (conferido no extrato)', () => {
+    assert.equal(isManuallyPayable('Aprovado'), true)
+    assert.equal(isManuallyPayable('Transmitido'), true)
+  })
+
+  it('o resto NÃO paga — inclusive Pago, que já está', () => {
+    for (const s of ['Rascunho', 'Aberto', 'Recusado', 'Pago', 'Conciliado'] as const) {
+      assert.equal(isManuallyPayable(s), false, s)
+    }
   })
 })

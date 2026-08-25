@@ -27,6 +27,7 @@ import {
   filterRowsBySearch,
   filterRowsByTipo,
   deriveTitleActionTargets,
+  isManuallyPayable,
   pageInfo,
   type ListState,
 } from '../contas-a-pagar.view-model.ts'
@@ -238,7 +239,7 @@ export function ContasAPagarPage(): ReactNode {
   })
   // Elegíveis (sem a data — ela vem do modal). paidAt é anexado no apply. Por TÍTULO (não dedupa por doc).
   const payEligible = rows
-    .filter((r) => selected.has(r.id) && r.status === 'Aprovado')
+    .filter((r) => selected.has(r.id) && isManuallyPayable(r.status))
     .map((r) => ({ documentId: r.documentId, payableId: r.id, version: r.version }))
   const applyPay = (): void => {
     const targets: readonly PayTarget[] = payEligible.map((t) => ({ ...t, paidAt: payValue }))

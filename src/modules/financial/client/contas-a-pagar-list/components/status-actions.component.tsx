@@ -38,7 +38,9 @@ export type StatusActionsProps = Readonly<{
   // Excluir — Aberto (hard-delete) OU Rascunho (descarte). O core-api trata os dois no mesmo DELETE
   // /documents/:id (cancelDocument → cancelDraft, #166). Abre o modal de confirmação.
   canDelete: boolean
-  // Marcar como pago (baixa manual, #224) — só títulos Aprovados (Aprovado→Pago).
+  // Marcar como pago (baixa manual, #224) — títulos APROVADOS ou TRANSMITIDOS (ADR-0065 §6 do
+  // core-api). Transmitido entra porque `Pago` continua manual: quem afirma que o dinheiro saiu é
+  // quem conferiu o extrato, e é justamente o título que já foi ao banco que espera essa conferência.
   canPay: boolean
   running: boolean
   onApprove: () => void
