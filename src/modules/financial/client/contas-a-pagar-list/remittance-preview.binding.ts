@@ -41,8 +41,21 @@ export type RemittancePreviewBinding = Readonly<{
   /**
    * Abre a conferência com os TÍTULOS informados. NÃO dispara o pré-voo: ele roda quando a conta-cedente
    * for conhecida (escolhida ou auto-selecionada) — ver o cabeçalho.
+   *
+   * `notApprovedCount` entra como ARGUMENTO pelo mesmo motivo que `paymentDate` entra no `generate`: é
+   * uma leitura do grid VÁLIDA NO INSTANTE DA ABERTURA, e o grid muda debaixo do modal. Ver o campo.
    */
-  start: (payableIds: readonly string[]) => void
+  start: (payableIds: readonly string[], notApprovedCount: number) => void
+  /**
+   * Quantos títulos SELECIONADOS ficaram de fora por não estarem Aprovados, **congelado na abertura**.
+   *
+   * ⚠️ Era derivado ao vivo das linhas do grid (`r.status !== 'Aprovado'`), e isso o tornava mentiroso
+   * exatamente quando ele era lido: gerada a remessa, o `onSuccess` invalida as listas, os títulos que
+   * ACABARAM de entrar viram `Transmitido` e passam a contar como "não aprovado" — a tela acusava de ter
+   * ficado de fora justamente o que entrou. O comprovante e este aviso descrevem o MESMO instante, então
+   * os dois se congelam juntos (ver `sent`).
+   */
+  notApprovedCount: number
   close: () => void
   /**
    * O modal está aberto esperando a conta para poder conferir. É estado de ESPERA, não de erro: a tela
@@ -136,6 +149,8 @@ export function useRemittancePreview(): RemittancePreviewBinding {
   const [sent, setSent] = useState<SentRemittance | null>(null)
   // A seleção que veio do grid, guardada até haver conta com que conferi-la.
   const [pendingIds, setPendingIds] = useState<readonly string[]>([])
+  // Congelado na abertura, pelo mesmo motivo que `sent`: o grid muda debaixo do modal. Ver o binding.
+  const [notApprovedCount, setNotApprovedCount] = useState(0)
 
   // Contas-cedente: só busca com o modal aberto. Compartilha a queryKey do grid de contas (#168).
   const accountsQuery = useQuery({
@@ -231,7 +246,7 @@ export function useRemittancePreview(): RemittancePreviewBinding {
   const { mutate: mutateDownload, reset: resetDownload } = downloadMut
 
   const start = useCallback(
-    (payableIds: readonly string[]): void => {
+    (payableIds: readonly string[], excluded: number): void => {
       if (payableIds.length === 0) return
       setOpen(true)
       setUnchecked(new Set()) // nova conferência começa com tudo o que pode ir, marcado
@@ -239,6 +254,8 @@ export function useRemittancePreview(): RemittancePreviewBinding {
       resetGenerate()
       resetDownload()
       setSent(null) // comprovante velho e o que ele descreve saem juntos
+      // Congela o que o grid dizia AGORA: daqui em diante ele muda (a geração transmite os títulos).
+      setNotApprovedCount(excluded)
       // Guarda a seleção; quem dispara a conferência é o efeito, quando houver conta.
       setPendingIds(payableIds)
     },
@@ -258,6 +275,7 @@ export function useRemittancePreview(): RemittancePreviewBinding {
     setOpen(false)
     setConfirming(false)
     setPendingIds([])
+    setNotApprovedCount(0)
     // Esquece o par já conferido: reabrir com a MESMA seleção e a mesma conta tem de conferir de novo —
     // entre uma abertura e outra o operador pode ter corrigido justamente o cadastro que estava impedindo.
     lastRun.current = null
@@ -287,6 +305,7 @@ export function useRemittancePreview(): RemittancePreviewBinding {
     unchecked,
     toggle,
     start,
+    notApprovedCount,
     close,
     // Esperando a conta: há seleção, o modal está aberto e ninguém conseguiu (ou escolheu) uma conta ainda.
     awaitingAccount: open && pendingIds.length > 0 && cedenteAccountId === '',

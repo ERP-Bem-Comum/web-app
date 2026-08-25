@@ -198,6 +198,10 @@ export function ContasAPagarPage(): ReactNode {
   // deveria descobrir que "Exportar" recorta diferente conforme o formato.
   // `deriveRemittanceSelection` dedup por documento e barra o que não está Aprovado ANTES da chamada: o
   // core-api lê os documentos por id, sem exigir aprovação (core-api#736), e um Rascunho voltaria apto.
+  //
+  // ⚠️ Derivação AO VIVO: vale para decidir o que ABRIR (e para habilitar o CNAB), nunca para descrever o
+  // que já foi. O `notApprovedCount` daqui é entregue ao `start`, que o congela — depois da geração estas
+  // linhas descrevem o estado NOVO, e o título recém-transmitido apareceria como "ficou de fora".
   const remittanceSelection = deriveRemittanceSelection(remittanceRows)
 
   const remittance = useRemittancePreview()
@@ -448,7 +452,7 @@ export function ContasAPagarPage(): ReactNode {
         running={remittance.running}
         view={remittanceView}
         errorTag={remittance.errorTag}
-        notApprovedCount={remittanceSelection.notApprovedCount}
+        notApprovedCount={remittance.notApprovedCount}
         onToggle={remittance.toggle}
         onClose={remittance.close}
         awaitingAccount={remittance.awaitingAccount}
@@ -600,7 +604,7 @@ export function ContasAPagarPage(): ReactNode {
               rows={exportRows}
               remittanceDisabled={remittanceSelection.payableIds.length === 0 || remittance.running}
               onCheckRemittance={() => {
-                remittance.start(remittanceSelection.payableIds)
+                remittance.start(remittanceSelection.payableIds, remittanceSelection.notApprovedCount)
               }}
             />
           ) : null}

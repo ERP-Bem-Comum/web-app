@@ -66,7 +66,7 @@ const setup = () => {
 /** Abre a conferência e escolhe a conta — o caminho normal desde o core-api#804. */
 const startWithAccount = async (result: { current: ReturnType<typeof useRemittancePreview> }) => {
   act(() => {
-    result.current.start(['doc-1'])
+    result.current.start(['doc-1'], 0)
   })
   act(() => {
     result.current.setCedenteAccountId('acc-1')
@@ -120,7 +120,7 @@ describe('useRemittancePreview', () => {
 
     expect(result.current.open).toBe(false)
     act(() => {
-      result.current.start(['doc-1'])
+      result.current.start(['doc-1'], 0)
     })
 
     expect(result.current.open).toBe(true)
@@ -166,7 +166,7 @@ describe('useRemittancePreview', () => {
     const { result } = setup()
 
     act(() => {
-      result.current.start(['doc-1'])
+      result.current.start(['doc-1'], 0)
     })
 
     await waitFor(() => {
@@ -182,7 +182,7 @@ describe('useRemittancePreview', () => {
     const { result } = setup()
 
     act(() => {
-      result.current.start(['doc-1'])
+      result.current.start(['doc-1'], 0)
     })
 
     await waitFor(() => {
@@ -196,7 +196,7 @@ describe('useRemittancePreview', () => {
     const { result } = setup()
 
     act(() => {
-      result.current.start(['doc-1'])
+      result.current.start(['doc-1'], 0)
     })
     act(() => {
       result.current.setCedenteAccountId('acc-1')
@@ -208,10 +208,56 @@ describe('useRemittancePreview', () => {
     expect(result.current.preview).toBeNull()
   })
 
+  it('⚠️ o contador de "não aprovados" é CONGELADO na abertura — gerar não o reescreve', async () => {
+    // Regressão medida em homologação (25/08): o contador era derivado ao vivo das linhas do grid. Gerada
+    // a remessa, o `onSuccess` invalida as listas, os títulos que ACABARAM de entrar viram `Transmitido`,
+    // e a tela passava a acusar de "ficou de fora" justamente o título que entrou. Aqui a abertura declara
+    // 2 excluídos e o valor tem de sobreviver à geração, que é quando o operador lê o aviso.
+    mocked.mockResolvedValue(ok(PREVIEW))
+    mockedGenerate.mockResolvedValue(ok(RECEIPT) as never)
+    const { result } = setup()
+
+    act(() => {
+      result.current.start(['doc-1'], 2)
+    })
+    act(() => {
+      result.current.setCedenteAccountId('acc-1')
+    })
+    await waitFor(() => {
+      expect(result.current.preview).not.toBeNull()
+    })
+    expect(result.current.notApprovedCount).toBe(2)
+
+    act(() => {
+      result.current.generate(['doc-1'], '10/09/2026')
+    })
+    await waitFor(() => {
+      expect(result.current.generated).not.toBeNull()
+    })
+
+    expect(result.current.notApprovedCount).toBe(2)
+  })
+
+  it('fechar zera o contador — a próxima conferência não herda o aviso da anterior', () => {
+    mocked.mockResolvedValue(ok(PREVIEW))
+    const { result } = setup()
+
+    act(() => {
+      result.current.start(['doc-1'], 3)
+    })
+    expect(result.current.notApprovedCount).toBe(3)
+
+    act(() => {
+      result.current.close()
+    })
+
+    expect(result.current.notApprovedCount).toBe(0)
+  })
+
   it('seleção vazia não abre nem chama o backend', () => {
     const { result } = setup()
     act(() => {
-      result.current.start([])
+      result.current.start([], 0)
     })
     expect(result.current.open).toBe(false)
     expect(mocked).not.toHaveBeenCalled()
@@ -250,7 +296,7 @@ describe('useRemittancePreview', () => {
     mocked.mockResolvedValue(ok(PREVIEW))
     const { result } = setup()
     act(() => {
-      result.current.start(['doc-1'])
+      result.current.start(['doc-1'], 0)
     })
     await waitFor(() => {
       expect(result.current.awaitingAccount).toBe(true)
