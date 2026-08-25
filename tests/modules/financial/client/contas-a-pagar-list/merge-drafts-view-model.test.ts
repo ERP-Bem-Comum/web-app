@@ -29,6 +29,7 @@ const row = (id: string, status: GridRow['status']): GridRow => ({
   gross: 'R$ 10,00',
   grossCents: '1000',
   due: '10/07/2026',
+  dueIso: null,
   net: 'R$ 10,00',
   netCents: '1000',
   version: 0,

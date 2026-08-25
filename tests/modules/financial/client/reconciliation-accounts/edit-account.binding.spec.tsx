@@ -70,7 +70,9 @@ describe('useEditAccount', () => {
     expect(result.current.target?.id).toBe(ID)
     expect(result.current.bankCode).toBe('237')
     expect(result.current.type).toBe('Corrente')
+    // A conta do fixture foi salva ANTES da regra do DV (specs/107): só os 4 dígitos.
     expect(result.current.agency).toBe('1462')
+    expect(result.current.agencyIncomplete).toBe(true)
     expect(result.current.account).toBe('0012345-7') // número-DV combinado
     expect(result.current.nickname).toBe('Conta Movimento')
   })
@@ -84,6 +86,8 @@ describe('useEditAccount', () => {
       result.current.open(ACCOUNT)
     })
     act(() => {
+      // Obrigatório desde specs/107: sem o DV o `canSubmit` barra e o submit é no-op.
+      result.current.setAgency('14628')
       result.current.setNickname('Conta Principal')
     })
     act(() => {
@@ -112,6 +116,10 @@ describe('useEditAccount', () => {
       result.current.open(ACCOUNT)
     })
     act(() => {
+      // specs/107: as contas do fixture são anteriores à regra do DV — completar para o submit valer.
+      result.current.setAgency('14628')
+    })
+    act(() => {
       result.current.submit()
     })
 
@@ -138,6 +146,8 @@ describe('useEditAccount — convênio preenchível uma vez', () => {
 
     act(() => {
       result.current.setConvenio('98765')
+      // specs/107: as contas do fixture são anteriores à regra do DV — completar para o submit valer.
+      result.current.setAgency('14628')
     })
     expect(result.current.convenio).toBe('98765')
 
@@ -162,6 +172,8 @@ describe('useEditAccount — convênio preenchível uma vez', () => {
     // Segunda barreira: mesmo forçando o setter, o valor não muda.
     act(() => {
       result.current.setConvenio('99999')
+      // specs/107: as contas do fixture são anteriores à regra do DV — completar para o submit valer.
+      result.current.setAgency('14628')
     })
     expect(result.current.convenio).toBe('1234567')
 
@@ -192,5 +204,64 @@ describe('useEditAccount — convênio preenchível uma vez', () => {
       result.current.setConvenio('1'.repeat(30))
     })
     expect(result.current.convenio).toHaveLength(6)
+  })
+
+  // ── Agência-DV na EDIÇÃO (specs/107) ─────────────────────────────────────────
+  //
+  // A edição carrega a mesma régua do cadastro: sem ela seria a porta dos fundos por onde uma conta
+  // volta a ficar sem dígito.
+
+  it('⚠️ conta ANTIGA abre já cobrando o DV — é assim que o cadastro velho se completa', () => {
+    const { result } = setup()
+    act(() => {
+      result.current.open(ACCOUNT) // branch '1462', salva antes da regra
+    })
+    expect(result.current.agencyIncomplete).toBe(true)
+    expect(result.current.canSubmit).toBe(false)
+  })
+
+  it('completar o DV libera o Salvar', () => {
+    const { result } = setup()
+    act(() => {
+      result.current.open(ACCOUNT)
+    })
+    act(() => {
+      result.current.setAgency('14628')
+    })
+    expect(result.current.agencyIncomplete).toBe(false)
+    expect(result.current.canSubmit).toBe(true)
+  })
+
+  it('guarda só dígitos, no máximo 5 — o hífen digitado não entra no estado', () => {
+    const { result } = setup()
+    act(() => {
+      result.current.open(ACCOUNT)
+    })
+    act(() => {
+      result.current.setAgency('1462-8999')
+    })
+    expect(result.current.agency).toBe('14628')
+  })
+
+  it('⚠️ o PATCH envia só a BASE (4 dígitos) — o DV NÃO vai concatenado, senão corrompe o CNAB', async () => {
+    mockedEdit.mockResolvedValue(ok({ id: ID } as never))
+    const { result } = setup()
+    act(() => {
+      result.current.open(ACCOUNT)
+    })
+    act(() => {
+      result.current.setAgency('14628')
+    })
+    act(() => {
+      result.current.submit()
+    })
+
+    await waitFor(() => {
+      expect(mockedEdit).toHaveBeenCalled()
+    })
+    const arg = mockedEdit.mock.calls[0]?.[0]
+    expect(arg?.agency).toBe('1462')
+    expect(arg?.agency).not.toContain('-')
+    expect(arg?.agency).not.toBe('14628')
   })
 })

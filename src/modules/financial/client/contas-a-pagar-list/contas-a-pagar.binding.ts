@@ -155,6 +155,13 @@ export function useContasAPagar(): ContasAPagarBinding {
     rascunho: c === null ? null : c.draft,
     aberto: c === null ? null : (c.byStatus.Open ?? 0),
     aprovado: c === null ? null : (c.byStatus.Approved ?? 0),
+    // ⚠️ Faltavam, e a falta só apareceu quando o backend passou a PRODUZIR estes status
+    // (core-api#792): o chip existe em `STATUS_CHIPS` e é filtrável desde a specs/101 S3, mas sem
+    // chave aqui ele renderizava sem número — o operador via "Transmitido" sem saber se havia 1 ou 40
+    // títulos já enviados ao banco. `?? 0` cobre o caso legítimo de o backend omitir o status quando
+    // a contagem é zero, que é o que ele faz.
+    transmitido: c === null ? null : (c.byStatus.Transmitted ?? 0),
+    recusado: c === null ? null : (c.byStatus.Refused ?? 0),
     pago: c === null ? null : (c.byStatus.Paid ?? 0),
     conciliado: c === null ? null : (c.byStatus.Reconciled ?? 0),
   }

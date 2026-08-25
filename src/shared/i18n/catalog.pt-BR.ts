@@ -1591,8 +1591,14 @@ export const ptBR: Catalog = {
   // #206: banco "Outro" → instituição digitada manualmente (vira o bankName).
   'financial.recon.add.field.bankName': 'Instituição financeira',
   'financial.recon.add.placeholder.bankName': 'Ex.: Cooperativa de Crédito XYZ',
-  'financial.recon.add.field.branch': 'Agência',
-  'financial.recon.add.placeholder.branch': '0000',
+  // Agência COM DV, obrigatório (decisão da P.O., 25/08). O rótulo espelha o de "Conta-DV" logo abaixo:
+  // os dois campos passam a pedir a mesma coisa, e nomeá-los igual evita que um pareça mais completo
+  // que o outro. O hint diz por que o DV é exigido aqui, já que para o FAVORECIDO ele é opcional.
+  'financial.recon.add.field.branch': 'Agência-DV',
+  'financial.recon.add.placeholder.branch': '0000-0',
+  'financial.recon.add.hint.branch': 'Informe a agência com o dígito verificador.',
+  'financial.recon.add.error.branchDigit':
+    'Falta o dígito verificador da agência. Informe no formato 0000-0.',
   'financial.recon.add.field.account': 'Conta-DV',
   'financial.recon.add.placeholder.account': '00000000-0',
   'financial.recon.add.field.document': 'CNPJ da organização',
@@ -1896,7 +1902,10 @@ export const ptBR: Catalog = {
   'financial.list.status.soon': 'Indisponível no v1 — pendente no backend',
   'financial.list.status.needOpen': 'Selecione documentos em "Aberto" para aprovar',
   'financial.list.status.needApproved': 'Selecione documentos "Aprovado" para voltar à edição',
-  'financial.list.status.bulkError': 'Algumas ações não foram concluídas (atualize e tente de novo)',
+  // Só o CABEÇALHO do bloco: abaixo vem uma linha por documento, com o motivo real. Deixou de mandar
+  // "atualize e tente de novo" porque isso era falso no caso mais comum — as recusas do aprovador não
+  // se resolvem repetindo, e repetir é o que a frase mandava fazer.
+  'financial.list.status.bulkError': 'Nem todos os documentos foram alterados:',
   'financial.list.status.approve': 'Aprovar',
   'financial.list.status.approveHint': 'aprova o documento',
   'financial.list.status.reopen': 'Voltar para edição',
@@ -2025,7 +2034,16 @@ export const ptBR: Catalog = {
   // e aí o recado é "falta aprovar", não "falta cadastro", que mandaria ao lugar errado.
   'financial.remittance.preview.pendency.notApprovedLine':
     'Falta aprovar — só título aprovado entra em remessa',
+  // core-api#792/ADR-0065: o título já saiu numa remessa. A frase diz "já foi", e NÃO manda corrigir
+  // nada — é o oposto das pendências acima. Sem ela o operador leria "sem dados bancários" olhando
+  // para um cadastro completo, e a única saída errada possível seria reenviar o que já foi pago.
+  'financial.remittance.preview.pendency.alreadyTransmitted':
+    'Já enviado ao banco em outra remessa — não entra de novo',
   'financial.remittance.preview.empty': 'Nenhum título para conferir.',
+  // core-api#804: o pré-voo só existe depois da conta. O texto diz o PORQUÊ, e não só "escolha a conta":
+  // sem ele o operador lê como burocracia e não entende por que a conferência não apareceu.
+  'financial.remittance.preview.needAccount':
+    'Escolha a conta que vai pagar para conferir a remessa — é ela que define como os títulos se repartem no arquivo.',
   'financial.remittance.preview.close': 'Fechar',
   'financial.remittance.preview.summary.count': 'Títulos',
   'financial.remittance.preview.summary.gross': 'Valor total',
@@ -2048,6 +2066,10 @@ export const ptBR: Catalog = {
   'financial.remittance.generate.needAccount': 'Selecione a conta bancária que vai pagar',
   'financial.remittance.generate.needSameDate':
     'A seleção tem vencimentos diferentes. Uma remessa é de um único dia — filtre/gere por vencimento ou desmarque os divergentes.',
+  // Data no passado. Curta de propósito: NÃO vai a banner, só ao `title` do botão travado — quem sinaliza
+  // é o campo "Pagamento em" destacado no resumo. Ainda assim nomeia o VENCIMENTO, porque é lá que se
+  // conserta, e o operador precisa sair do modal para fazê-lo.
+  'financial.remittance.generate.needFutureDate': 'Data de pagamento no passado — corrija o vencimento',
   // Confirmação da geração — ⚠️ o passo que MOVE DINHEIRO. Uma frase só, com {total} e {n}
   // interpolados: montá-la por concatenação de pedaços deixava a ordem das palavras presa ao código.
   'financial.remittance.generate.confirm':
@@ -2055,12 +2077,16 @@ export const ptBR: Catalog = {
   'financial.remittance.generate.confirmAction': 'Confirmar e enviar ao banco',
   'financial.remittance.generate.cancel': 'Cancelar',
   'financial.remittance.generate.doneTitle': 'Remessa gerada',
-  'financial.remittance.generate.doneBody':
-    'O arquivo entrou na fila de pagamento do banco. Anote o número da remessa (NSA) — é por ele que o banco a identifica.',
+  // Uma frase só: o que o operador precisa saber ao fechar é que o pagamento está EM FILA no banco.
+  // Saiu daqui o "anote o número da remessa (NSA)" — pedir que ele anote um dado a mão é transferir a
+  // trilha de auditoria para o caderno dele; o NSA passa a ser consultável no drawer do título.
+  'financial.remittance.generate.doneBody': 'O arquivo entrou na fila de pagamento do banco.',
   'financial.remittance.generate.nsa': 'Nº da remessa (NSA)',
   'financial.remittance.generate.fileName': 'Arquivo',
-  'financial.remittance.generate.lineCount': 'Títulos enviados',
   'financial.remittance.generate.total': 'Total enviado',
+  // O dia em que o banco executa. É o "quando sai o dinheiro?" — a única informação do comprovante que
+  // o operador não reconfere em outro lugar depois de fechar o modal.
+  'financial.remittance.generate.paymentDate': 'Pagamento em',
   // Download do arquivo (specs/103) — cópia de conferência, homologação apenas.
   'financial.remittance.download.action': 'Baixar arquivo',
   'financial.remittance.download.running': 'Baixando…',
@@ -2068,9 +2094,12 @@ export const ptBR: Catalog = {
   // `falhas/`: o arquivo existe, mas o envio não completou. Dito ANTES de virar evidência.
   'financial.remittance.download.fromFailures':
     'Atenção: este arquivo está na pasta de falhas da VAN — o envio ao banco não foi concluído. Não o trate como o que o banco recebeu.',
-  // Produção: a rota não é registrada lá, e o 404 chega sem mensagem do core-api.
+  // 404 SEM mensagem do core-api = a rota não está registrada neste ambiente (hoje, produção). O texto
+  // descreve o ESTADO do ambiente, não uma política: a P.O. decidiu (21/08) que produção também baixa,
+  // e prometer "só em homologação" contradiria o que está sendo liberado. Enquanto o core-api não
+  // registrar a rota lá, o operador precisa saber que não é falha dele nem do arquivo.
   'financial.remittance.download.unavailable':
-    'O download do arquivo existe apenas em homologação. Em produção o arquivo é acessível só pela VAN.',
+    'Este ambiente ainda não disponibiliza o download do arquivo. O arquivo enviado continua acessível pela VAN.',
   'financial.remittance.preview.field.pixKey': 'Chave PIX',
   'financial.remittance.preview.field.bankCode': 'Banco do favorecido',
   'financial.remittance.preview.field.agency': 'Agência do favorecido',

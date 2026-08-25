@@ -9,6 +9,7 @@ import assert from 'node:assert/strict'
 import {
   deriveTitleListState,
   deriveTitleActionTargets,
+  isManuallyPayable,
   filterRowsByTipo,
   isRetentionTipo,
 } from '../../../../../src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts'
@@ -144,12 +145,21 @@ describe('filtro de Tipo no grid por título (#201)', () => {
     assert.equal(isRetentionTipo('NFS-e'), false)
     assert.equal(isRetentionTipo(undefined), false)
   })
-  it('filtra client-side por imposto (filho); tipo de documento passa direto (server-side)', () => {
+  it('filtra client-side pelo tipo DA LINHA — imposto (filho) e documento (pai)', () => {
     assert.equal(filterRowsByTipo(rows, 'IRRF').length, 1)
     assert.equal(filterRowsByTipo(rows, 'IRRF')[0]?.type, 'IRRF')
-    // tipo de documento → não filtra aqui (é server-side): devolve tudo
-    assert.equal(filterRowsByTipo(rows, 'NFS-e').length, 3)
     assert.equal(filterRowsByTipo(rows, undefined).length, 3)
+  })
+  // Regressão: o servidor filtra por DOCUMENTO e devolve os filhos de retenção junto do pai. Escolher
+  // "NFS-e" mostrava IRRF/ISS na tabela — os filhos vinham de carona porque o tipo de documento não
+  // filtrava aqui. A tabela deve apresentar APENAS o tipo escolhido.
+  it('tipo de documento não traz os filhos de retenção de carona', () => {
+    const filtered = filterRowsByTipo(rows, 'NFS-e')
+    assert.equal(filtered.length, 1)
+    assert.deepEqual(
+      [...filtered].map((r) => r.type),
+      ['NFS-e'],
+    )
   })
 })
 
@@ -192,16 +202,20 @@ describe('deriveTitleActionTargets (#229 — ações por linha, dedup por docume
 
   it('Reabrir: dedup por documento (vários títulos Aprovados do mesmo doc → 1 alvo com version do doc)', () => {
     const tg = deriveTitleActionTargets(titleRows, new Set(['p1', 'c1', 'c2']))
-    assert.deepEqual(tg.reopen, [{ id: 'd1', version: 5 }]) // 1 alvo, id=documentId
+    // `documentNumber` viaja no alvo p/ a falha em massa saber NOMEAR o documento na tela.
+    assert.deepEqual(tg.reopen, [{ id: 'd1', version: 5, documentNumber: 'NF-1' }]) // 1 alvo, id=documentId
     assert.equal(tg.approve.length, 0) // nenhum Aberto selecionado
   })
 
   it('Aprovar/Excluir: dedup por documento (id=documentId); Vencimento (#270): por TÍTULO isolado', () => {
     const tg = deriveTitleActionTargets(titleRows, new Set(['p2']))
-    assert.deepEqual(tg.approve, [{ id: 'd2', version: 1 }])
-    assert.deepEqual(tg.deletable, [{ id: 'd2', version: 1 }])
+    assert.deepEqual(tg.approve, [{ id: 'd2', version: 1, documentNumber: 'NF-1' }])
+    assert.deepEqual(tg.deletable, [{ id: 'd2', version: 1, documentNumber: 'NF-1' }])
     // #270: vencimento é por payable (documentId + payableId + version), NÃO deduplicado por documento.
-    assert.deepEqual(tg.dueEditable, [{ documentId: 'd2', payableId: 'p2', version: 1 }])
+    // `expectedDueDate` = o vencimento CRU da linha, pré-condição do CAS do core-api (ADR-0063 de lá).
+    assert.deepEqual(tg.dueEditable, [
+      { documentId: 'd2', payableId: 'p2', version: 1, expectedDueDate: '2026-07-10' },
+    ])
   })
 
   // VAN/specs/101: Aprovado passou a ser editável. Uma remessa é de UM dia só, então alinhar os
@@ -222,12 +236,62 @@ describe('deriveTitleActionTargets (#229 — ações por linha, dedup por docume
     assert.equal(tg.dueBlockedCount, 1) // o Pago
   })
 
+  // ── CAS por valor no reagendamento (core-api ADR-0063) ────────────────────────
+  //
+  // `expectedDueDate` é pré-condição, não enfeite: sem ele o core-api responde 400, e com o valor errado
+  // responde 409. Sai do `dueIso` CRU da linha — nunca do `due` de tela (DD/MM/YYYY), porque re-parsear
+  // string formatada é onde se troca dia por mês.
+
+  it('cada título declara o SEU vencimento, não o do vizinho', () => {
+    const base = titleRows[0]
+    if (base === undefined) throw new Error('sem linha base')
+    const outro = { ...base, id: 'p-outro', documentId: 'd-outro', dueIso: '2026-09-01', due: '01/09/2026' }
+    const tg = deriveTitleActionTargets([...titleRows, outro], new Set(['p2', 'p-outro']))
+    const byId = new Map(tg.dueEditable.map((t) => [t.payableId, t.expectedDueDate]))
+    assert.equal(byId.get('p2'), '2026-07-10')
+    assert.equal(byId.get('p-outro'), '2026-09-01')
+  })
+
+  it('⚠️ título SEM vencimento fica de fora — sem valor atual não há pré-condição a declarar', () => {
+    const base = titleRows[0]
+    if (base === undefined) throw new Error('sem linha base')
+    const semData = { ...base, id: 'p-sem', documentId: 'd-sem', dueIso: null, due: '—' }
+    const tg = deriveTitleActionTargets([...titleRows, semData], new Set(['p2', 'p-sem']))
+    // Vai para o bloqueado (o modal avisa) em vez de virar chamada que o backend recusaria.
+    assert.equal(tg.dueEditable.length, 1)
+    assert.equal(tg.dueEditable[0]?.payableId, 'p2')
+    assert.equal(tg.dueBlockedCount, 1)
+  })
+
   it('#166: rascunho (Draft) é excluível (descarte) — entra em deletable, sem "ignorado"', () => {
     const first = titleRows[0]
     if (first === undefined) throw new Error('sem linha base')
     const draftRow = { ...first, id: 'pd', documentId: 'dd', status: 'Rascunho' as const, version: 2 }
     const tg = deriveTitleActionTargets([draftRow], new Set(['pd']))
-    assert.deepEqual(tg.deletable, [{ id: 'dd', version: 2 }]) // id = documentId, version da linha
+    assert.deepEqual(tg.deletable, [{ id: 'dd', version: 2, documentNumber: 'NF-1' }]) // id = documentId, version da linha
     assert.equal(tg.draftCount, 0) // rascunho NÃO é mais "ignorado"
+  })
+})
+
+/**
+ * ⚠️ Espelha `MANUALLY_PAYABLE_STATUSES` do core-api (`domain/document/document.ts:350`, ADR-0065 §6).
+ * O backend EXPORTA aquela lista justamente porque duas listas divergem em silêncio — e foi o que
+ * aconteceu: `Transmitido` faltava aqui, e a falta só apareceu quando o backend passou a produzir o
+ * status (core-api#792). O título saía na remessa, virava `Transmitido`, e "Marcar como pago" ficava
+ * desabilitado — travando a etapa seguinte do fluxo que a remessa acabou de iniciar.
+ *
+ * Se este teste falhar depois de uma mudança no backend, é a divergência voltando: confira a lista de
+ * lá antes de "consertar" a daqui.
+ */
+describe('isManuallyPayable — as duas origens da baixa manual', () => {
+  it('Aprovado paga (fora da VAN) e Transmitido paga (conferido no extrato)', () => {
+    assert.equal(isManuallyPayable('Aprovado'), true)
+    assert.equal(isManuallyPayable('Transmitido'), true)
+  })
+
+  it('o resto NÃO paga — inclusive Pago, que já está', () => {
+    for (const s of ['Rascunho', 'Aberto', 'Recusado', 'Pago', 'Conciliado'] as const) {
+      assert.equal(isManuallyPayable(s), false, s)
+    }
   })
 })

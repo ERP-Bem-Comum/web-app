@@ -49,6 +49,36 @@ export type BankOption = Readonly<{ code: string; name: string }>
  */
 export const CONVENIO_MAX_DIGITS = 6
 
+/**
+ * Agência da conta-cedente: 4 dígitos + DV, `0000-0` — 5 dígitos crus (decisão da P.O., 25/08).
+ *
+ * O DV é OBRIGATÓRIO no cadastro, e a razão é a assimetria com o FAVORECIDO: para o favorecido o DV da
+ * agência é opcional (o layout Multipag, campo G009, diz "Campo Não Obrigatório", e exigi-lo recusaria
+ * pagamento por algo que o banco dispensa — decisão (a) da P.O. na core-api#708). Esta conta, porém, é a
+ * NOSSA: o dado está à mão de quem cadastra, e é ele que vai ao header de todo arquivo. Deixar entrar sem
+ * DV é criar um cadastro incompleto cujo defeito só aparece na hora de pagar.
+ *
+ * ⚠️ Assume agência de 4 dígitos, que é o desenho da máscara `agency` compartilhada
+ * (`shared/ui/atoms/input/input.mask.ts`) e já vale para fornecedor/financiador/colaborador. O CNAB
+ * reserva 5 posições para a agência (053-057), então uma agência de 5 dígitos SEM DV seria lida aqui como
+ * 4+DV. Nenhum dos bancos do catálogo usa 5, e unificar a régua vale mais que cobrir o caso hipotético.
+ */
+export const AGENCY_TOTAL_DIGITS = 5
+const AGENCY_BASE_DIGITS = 4
+
+/**
+ * O que o campo de agência guarda: só dígitos, no máximo 5.
+ *
+ * Vive aqui e não no binding porque o binding é adapter do núcleo e **não pode importar o design
+ * system** (`boundaries`: `client-binding` alcança `shared`, nunca `shared-ui`) — então o `unmask` da
+ * máscara está fora do seu alcance, e com razão. A MÁSCARA (apresentação) continua sendo a do DS,
+ * aplicada na view; o que mora aqui é a regra do dado.
+ */
+export const agencyDigits = (value: string): string => value.replace(/\D/g, '').slice(0, AGENCY_TOTAL_DIGITS)
+
+/** Os 4 dígitos da agência, sem o DV — o que o core-api guarda hoje. Ver a ressalva no submit. */
+export const agencyBase = (rawDigits: string): string => rawDigits.slice(0, AGENCY_BASE_DIGITS)
+
 export const OTHER_BANK_CODE = 'OUTRO'
 export const BANKS: readonly BankOption[] = [
   { code: '001', name: 'Banco do Brasil' },

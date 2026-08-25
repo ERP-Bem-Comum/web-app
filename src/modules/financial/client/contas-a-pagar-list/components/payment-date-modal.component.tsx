@@ -1,5 +1,6 @@
 /**
- * PaymentDateModal — view BURRA (§XI): modal de "Marcar como pago" para 1+ títulos Aprovados. Coleta a
+ * PaymentDateModal — view BURRA (§XI): modal de "Marcar como pago" para 1+ títulos Aprovados ou
+ * Transmitidos (as duas origens da baixa manual — ADR-0065 §6 do core-api). Coleta a
  * DATA DE PAGAMENTO (= data da saída bancária, geralmente retroativa) que ancora o match da conciliação
  * (#224/#232). Estado mora na page; aplica via callback. Só aparece quando `open`.
  */
@@ -23,7 +24,7 @@ const t = createTranslator(ptBR)
 
 export type PaymentDateModalProps = Readonly<{
   open: boolean
-  count: number // títulos (Aprovado) que receberão a baixa
+  count: number // títulos elegíveis (Aprovado ou Transmitido) que receberão a baixa
   value: string // YYYY-MM-DD (data de pagamento)
   running: boolean
   onChange: (value: string) => void

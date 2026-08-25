@@ -35,6 +35,10 @@ const CoreApiPreviewLineSchema = z.object({
   valueCents: z.string().trim(),
 })
 
+// O core-api#804 passou a devolver `batches[]` (como a seleção se reparte no arquivo). NÃO o lemos: a
+// P.O. avaliou o painel na tela e concluiu que ele não acrescenta nada à conferência — quem confere olha
+// título a título, e a repartição em lotes é assunto do arquivo, não do operador. O Zod ignora campos
+// desconhecidos, então o campo extra do backend passa sem ruído.
 export const CoreApiRemittancePreviewSchema = z.object({
   lines: z.array(CoreApiPreviewLineSchema),
   readyCount: z.int().nonnegative(),
@@ -43,6 +47,10 @@ export const CoreApiRemittancePreviewSchema = z.object({
   notFoundCount: z.int().nonnegative(),
   // #736 virou status de linha: o backend agora informa quantos não estão aprovados.
   notApprovedCount: z.int().nonnegative().catch(0),
+  // O core-api#792 acrescentou `transmittedCount`. NÃO o lemos, pela mesma razão do `batches[]` e do
+  // `missing` acima: o fato já chega por linha (`status: 'transmitted'`), e o resumo da tela conta as
+  // linhas impedidas. Ler o contador seria manter duas representações do mesmo fato — e a que ninguém
+  // olha é a que sai de sincronia primeiro.
   readyTotalCents: z.string().trim(),
   blockedTotalCents: z.string().trim(),
 })

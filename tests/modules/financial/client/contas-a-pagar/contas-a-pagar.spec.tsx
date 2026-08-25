@@ -34,6 +34,7 @@ const readyState: ListState = {
       gross: 'R$ 1.600,00',
       grossCents: '160000',
       due: '10/07/2026',
+      dueIso: '2026-07-10',
       net: 'R$ 1.500,00',
       netCents: '150000',
       version: 0,

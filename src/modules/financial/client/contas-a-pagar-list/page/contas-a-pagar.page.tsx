@@ -27,6 +27,7 @@ import {
   filterRowsBySearch,
   filterRowsByTipo,
   deriveTitleActionTargets,
+  isManuallyPayable,
   pageInfo,
   type ListState,
 } from '../contas-a-pagar.view-model.ts'
@@ -78,6 +79,7 @@ import {
   selSumLabel,
   selClear,
   selError,
+  selErrorLine,
 } from './contas-a-pagar.css.ts'
 
 const t = createTranslator(ptBR)
@@ -196,6 +198,10 @@ export function ContasAPagarPage(): ReactNode {
   // deveria descobrir que "Exportar" recorta diferente conforme o formato.
   // `deriveRemittanceSelection` dedup por documento e barra o que não está Aprovado ANTES da chamada: o
   // core-api lê os documentos por id, sem exigir aprovação (core-api#736), e um Rascunho voltaria apto.
+  //
+  // ⚠️ Derivação AO VIVO: vale para decidir o que ABRIR (e para habilitar o CNAB), nunca para descrever o
+  // que já foi. O `notApprovedCount` daqui é entregue ao `start`, que o congela — depois da geração estas
+  // linhas descrevem o estado NOVO, e o título recém-transmitido apareceria como "ficou de fora".
   const remittanceSelection = deriveRemittanceSelection(remittanceRows)
 
   const remittance = useRemittancePreview()
@@ -204,7 +210,7 @@ export function ContasAPagarPage(): ReactNode {
   const remittanceView =
     remittance.preview === null
       ? null
-      : toPreviewView(remittance.preview, remittanceRows, remittance.unchecked)
+      : toPreviewView(remittance.preview, remittanceRows, remittance.unchecked, remittance.today)
 
   // ── Mudar Status em massa: Aprovar (Aberto→Aprovado) · Voltar p/ edição (Aprovado→Aberto) ──
   const bulk = useBulkStatus(clearSelection)
@@ -237,7 +243,7 @@ export function ContasAPagarPage(): ReactNode {
   })
   // Elegíveis (sem a data — ela vem do modal). paidAt é anexado no apply. Por TÍTULO (não dedupa por doc).
   const payEligible = rows
-    .filter((r) => selected.has(r.id) && r.status === 'Aprovado')
+    .filter((r) => selected.has(r.id) && isManuallyPayable(r.status))
     .map((r) => ({ documentId: r.documentId, payableId: r.id, version: r.version }))
   const applyPay = (): void => {
     const targets: readonly PayTarget[] = payEligible.map((t) => ({ ...t, paidAt: payValue }))
@@ -446,9 +452,10 @@ export function ContasAPagarPage(): ReactNode {
         running={remittance.running}
         view={remittanceView}
         errorTag={remittance.errorTag}
-        notApprovedCount={remittanceSelection.notApprovedCount}
+        notApprovedCount={remittance.notApprovedCount}
         onToggle={remittance.toggle}
         onClose={remittance.close}
+        awaitingAccount={remittance.awaitingAccount}
         accounts={toAccountOptions(remittance.accounts)}
         cedenteAccountId={remittance.cedenteAccountId}
         onCedenteAccount={remittance.setCedenteAccountId}
@@ -456,12 +463,25 @@ export function ContasAPagarPage(): ReactNode {
         onArm={remittance.arm}
         onDisarm={remittance.disarm}
         generating={remittance.generating}
-        generated={remittance.generated === null ? null : toReceiptView(remittance.generated)}
+        generated={
+          remittance.generated === null || remittance.sent === null
+            ? null
+            : // ⚠️ Do que foi CONGELADO no envio (`remittance.sent`), nunca do pré-voo relido: depois de
+              // gerar, os títulos viram `Transmitido` e saem da seleção, e o resumo passa a descrever a
+              // tela nova em vez do que foi enviado. Era assim que a data de pagamento virava "—" e a
+              // contagem se perdia — no comprovante, justamente.
+              toReceiptView(remittance.generated, remittance.sent)
+        }
         generateErrorTag={remittance.generateErrorTag}
         generateErrorMessage={remittance.generateErrorMessage}
         onGenerate={() => {
-          // Vai só o que está MARCADO — dedup por documento, direto do ViewModel.
-          remittance.generate(remittanceView?.checkedPayableIds ?? [])
+          // Vai só o que está MARCADO — dedup por documento, direto do ViewModel. A data de pagamento
+          // viaja JUNTO porque é agora que ela existe: é o vencimento dos títulos que estão indo, e a
+          // remessa é de um único dia (vencimentos misturados travam o envio).
+          remittance.generate(
+            remittanceView?.checkedPayableIds ?? [],
+            remittanceView?.summary.paymentDate ?? '—',
+          )
         }}
         downloading={remittance.downloading}
         downloadErrorTag={remittance.downloadErrorTag}
@@ -517,7 +537,20 @@ export function ContasAPagarPage(): ReactNode {
                 setPayOpen(true)
               }}
             />
-            {bulk.errorTag !== null ? <span className={selError}>{t(bulk.errorTag)}</span> : null}
+            {/* Uma linha POR DOCUMENTO que falhou, com a mensagem do core-api quando ela existe. A frase
+                genérica ("Algumas ações não foram concluídas") vira só o cabeçalho: ela não diz qual
+                documento nem o que fazer, e no approve o motivo mais comum — as recusas do aprovador —
+                não se resolve tentando de novo, que era exatamente o que ela mandava fazer. */}
+            {bulk.errorTag !== null ? (
+              <span className={selError}>
+                {t(bulk.errorTag)}
+                {bulk.failures.map((f) => (
+                  <span key={f.documentNumber} className={selErrorLine}>
+                    {`${f.documentNumber}: ${f.message ?? t(f.tag)}`}
+                  </span>
+                ))}
+              </span>
+            ) : null}
             {del.errorTag !== null ? <span className={selError}>{t(del.errorTag)}</span> : null}
             {pay.errorTag !== null ? <span className={selError}>{t(pay.errorTag)}</span> : null}
           </div>
@@ -571,7 +604,7 @@ export function ContasAPagarPage(): ReactNode {
               rows={exportRows}
               remittanceDisabled={remittanceSelection.payableIds.length === 0 || remittance.running}
               onCheckRemittance={() => {
-                remittance.start(remittanceSelection.payableIds)
+                remittance.start(remittanceSelection.payableIds, remittanceSelection.notApprovedCount)
               }}
             />
           ) : null}

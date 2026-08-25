@@ -176,6 +176,14 @@ export type PreviewSummary = Readonly<{
   netTotal: string
   paymentDate: string
   paymentDateMixed: boolean
+  /**
+   * A data de pagamento já passou. **Impede gerar**, como os vencimentos misturados.
+   *
+   * A data do Segmento A é o dia em que o banco executa; um dia que já foi não é instrução que o banco
+   * possa cumprir. Só o vencimento do TÍTULO responde por ela (a remessa é de um dia só), então a
+   * correção é reagendar o vencimento — não há o que ajustar na remessa.
+   */
+  paymentDateInPast: boolean
   /** O que sai no arquivo: soma dos MARCADOS, com o valor que o backend apurou POR TÍTULO. */
   remittanceTotal: string
   pendingCount: number
@@ -208,6 +216,14 @@ export const toPreviewView = (
   preview: RemittancePreview,
   selectedRows: readonly GridRow[],
   unchecked: ReadonlySet<string>,
+  /**
+   * Hoje, em ISO LOCAL (YYYY-MM-DD). Entra por parâmetro para este ViewModel seguir puro e testável —
+   * o `new Date()` mora no binding, mesmo idioma de `reconciliation-accounts.view-model.ts`.
+   *
+   * ⚠️ Local, não UTC: `toISOString()` recua um dia à noite no fuso de Brasília, e isso reprovaria uma
+   * remessa de hoje como se fosse de ontem — justo o erro que esta regra existe para pegar.
+   */
+  today: string,
 ): PreviewView => {
   const lineByPayable = new Map(preview.lines.map((l) => [l.payableId, l]))
 
@@ -244,7 +260,13 @@ export const toPreviewView = (
                 // vez de acusar falta de cadastro.
                 line.status === 'not-approved'
                 ? 'financial.remittance.preview.pendency.notApprovedLine'
-                : blockedPendencyTag(line.route, line.gaps),
+                : // core-api#792/ADR-0065 §5: já saiu numa remessa. Precisa de frase PRÓPRIA porque a
+                  // ação do operador é oposta à do `blocked` — não há cadastro a corrigir, e reenviar
+                  // seria pagar de novo. Antes desta linha o status caía no fallback de drift e a
+                  // tela acusava falta de dado bancário num cadastro completo.
+                  line.status === 'transmitted'
+                  ? 'financial.remittance.preview.pendency.alreadyTransmitted'
+                  : blockedPendencyTag(line.route, line.gaps),
         gaps: line.gaps.map((g) => ({ fieldTag: FIELD_TAG[g.field], reasonTag: REASON_TAG[g.reason] })),
       }
     })()
@@ -275,7 +297,16 @@ export const toPreviewView = (
   const dueDates = new Set(checkedLines.map((l) => l.due).filter((d) => d !== DASH))
   const [firstDue] = [...dueDates]
 
+  // Pagamento no passado: comparação sobre o ISO CRU do vencimento, nunca sobre o `due` de tela — string
+  // formatada re-parseada é onde se troca dia por mês. `YYYY-MM-DD` compara lexicograficamente igual a
+  // cronologicamente, então `<` basta e não há `Date` (nem fuso) no caminho.
+  // Título SEM vencimento não entra na conta: ausência não é passado, e ele já é impedido por outra via.
   const rowById = new Map(rows.map((r) => [r.id, r]))
+  const paymentDateInPast = checkedLines.some((l) => {
+    const iso = rowById.get(l.payableId)?.dueIso
+    return iso !== null && iso !== undefined && iso < today
+  })
+
   const grossTotal = sumCents(...checkedLines.map((l) => rowById.get(l.payableId)?.grossCents ?? undefined))
   const netTotal = sumCents(...checkedLines.map((l) => rowById.get(l.payableId)?.netCents ?? undefined))
 
@@ -297,6 +328,7 @@ export const toPreviewView = (
       netTotal: centsToBRL(netTotal),
       paymentDate: dueDates.size === 1 && firstDue !== undefined ? firstDue : DASH,
       paymentDateMixed: dueDates.size > 1,
+      paymentDateInPast,
       remittanceTotal: centsToBRL(remittanceTotal),
       pendingCount: lines.filter((l) => !l.remittable).length,
       retentionCheckedCount: checkedLines.filter((l) => l.isRetention).length,
@@ -313,15 +345,35 @@ export const toPreviewView = (
 export type GeneratedRemittanceView = Readonly<{
   nsa: string
   fileName: string
-  lineCount: string
   total: string
+  /**
+   * O dia em que o banco executa o pagamento (Segmento A). É o único dado do comprovante que o operador
+   * NÃO reconfere em outro lugar depois — o total ele vê no resumo, os títulos ele acabou de marcar —, e
+   * é ele que responde "quando sai o dinheiro?".
+   *
+   * ⚠️ CONGELADO no ato do envio, e não derivado do pré-voo depois. Enquanto era derivado, funcionava
+   * por acidente: o título continuava `Aprovado` após gerar, então seguia marcado e a data sobrevivia.
+   * Com o core-api#792 ele passa a `Transmitido`, sai de `remittable`, deixa de estar `checked` — e o
+   * resumo colapsava para "—" exatamente quando o comprovante precisava do valor. Comprovante descreve
+   * o que JÁ aconteceu; derivá-lo de estado que muda embaixo é o defeito, não o sintoma.
+   */
+  paymentDate: string
 }>
 
-export const toReceiptView = (g: GeneratedRemittance): GeneratedRemittanceView => ({
+/**
+ * O que foi ENVIADO, capturado no clique — nunca relido do estado da tela depois.
+ *
+ * Só a data: a quantidade saiu do comprovante (a P.O. a lê na conferência anterior). O tipo permanece
+ * porque o PROBLEMA que ele resolve não era da quantidade — é que o comprovante descreve um fato
+ * passado enquanto a tela por baixo já mudou de estado.
+ */
+export type SentRemittance = Readonly<{ paymentDate: string }>
+
+export const toReceiptView = (g: GeneratedRemittance, sent: SentRemittance): GeneratedRemittanceView => ({
   nsa: String(g.nsa),
   fileName: g.fileName,
-  lineCount: String(g.lineCount),
   total: centsToBRL(g.totalCents),
+  paymentDate: sent.paymentDate,
 })
 
 /** Conta-cedente como o seletor precisa: id + rótulo pronto. A view não formata dado de domínio. */

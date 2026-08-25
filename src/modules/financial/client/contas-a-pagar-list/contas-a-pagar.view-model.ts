@@ -60,6 +60,12 @@ export type GridRow = Readonly<{
   gross: string // valor bruto formatado (BRL) ou "—"
   grossCents: string | null // bruto em centavos p/ o somatório da seleção
   due: string
+  /**
+   * Vencimento CRU (YYYY-MM-DD), do jeito que o backend mandou. Existe porque `due` é texto de tela
+   * (DD/MM/YYYY, ou "—") e comparar datas re-parseando string formatada é como se erra fuso e ordem.
+   * A remessa precisa comparar de verdade: pagamento no passado não pode ser transmitido.
+   */
+  dueIso: string | null
   net: string
   netCents: string | null // líquido em centavos p/ o somatório da seleção (formatação fica fora)
   version: number // optimistic lock — p/ ações inline (Mudar Status em massa)
@@ -219,12 +225,19 @@ const RETENTION_TIPO_SET: ReadonlySet<string> = new Set(RETENTION_TYPE_OPTIONS)
 export const isRetentionTipo = (tipo: string | undefined): tipo is RetentionType =>
   tipo !== undefined && RETENTION_TIPO_SET.has(tipo)
 
-// Filtro de Tipo por imposto (filho) — CLIENT-SIDE (página carregada), como a busca rápida. Tipo de
-// documento passa direto (filtrado no servidor). PURA.
+// Filtro de Tipo — CLIENT-SIDE (página carregada), como a busca rápida. Vale para os DOIS lados, e a
+// simetria é o ponto: a linha só fica se o tipo DELA for o escolhido.
+//
+// ⚠️ Antes o tipo de documento passava direto, delegando ao servidor. Mas o `/payable-titles` filtra por
+// DOCUMENTO e devolve todos os títulos dele — inclusive os filhos de retenção, cuja linha exibe o tipo do
+// IMPOSTO (`type: childRetention ?? it.type`). Resultado: escolher "NFS-e" trazia IRRF/CSRF na tabela,
+// enquanto escolher "IRRF" acertava — porque só o lado do imposto filtrava aqui. O servidor continua
+// filtrando (o `documentType` ainda vai na query, e é ele que reduz a PÁGINA); esta passada só remove os
+// filhos que vieram de carona com o pai.
 export const filterRowsByTipo = (
   rows: readonly GridRow[],
   tipo: TipoFilter | undefined,
-): readonly GridRow[] => (isRetentionTipo(tipo) ? rows.filter((r) => r.type === tipo) : rows)
+): readonly GridRow[] => (tipo === undefined ? rows : rows.filter((r) => r.type === tipo))
 
 // Busca rápida (campo do topo) — filtra as linhas DA PÁGINA carregada por fornecedor / número / CNPJ.
 // ⚠️ É client-side: só enxerga a página atual (busca server-side cross-página = core-api#167). PURA.
@@ -293,6 +306,7 @@ const toRow = (
   gross: it.grossValueCents !== null && it.grossValueCents !== '' ? centsToBRL(it.grossValueCents) : DASH,
   grossCents: it.grossValueCents,
   due: it.dueDate !== null && it.dueDate !== '' ? formatDue(it.dueDate) : DASH,
+  dueIso: it.dueDate !== null && it.dueDate !== '' ? it.dueDate : null,
   net: it.netValueCents !== null && it.netValueCents !== '' ? centsToBRL(it.netValueCents) : DASH,
   netCents: it.netValueCents,
   isRetentionChild: false, // modo documento: a linha é o documento inteiro, nunca um filho de retenção
@@ -303,7 +317,9 @@ const toRow = (
 // ── Ações de status em massa (Mudar Status) — PURO ────────────────────────────
 // `approve`: só linhas em "Aberto" (Aberto→Aprovado). `reopen`: só "Aprovado" (Aprovado→Aberto, undo).
 // Cada alvo leva o `version` da linha (optimistic lock). As demais transições não têm rota (chrome).
-export type StatusTarget = Readonly<{ id: string; version: number }>
+// `documentNumber` viaja junto e NÃO é usado na requisição: é o que permite a falha dizer QUAL linha
+// falhou. Numa seleção de vinte, "algumas ações não foram concluídas" não diz ao operador onde mexer.
+export type StatusTarget = Readonly<{ id: string; version: number; documentNumber: string }>
 export type BulkStatusTargets = Readonly<{
   approve: readonly StatusTarget[]
   reopen: readonly StatusTarget[]
@@ -314,7 +330,11 @@ export const bulkStatusTargets = (
   selected: ReadonlySet<string>,
 ): BulkStatusTargets => {
   const sel = rows.filter((r) => selected.has(r.id))
-  const pick = (r: GridRow): StatusTarget => ({ id: r.id, version: r.version })
+  const pick = (r: GridRow): StatusTarget => ({
+    id: r.id,
+    version: r.version,
+    documentNumber: r.documentNumber,
+  })
   return {
     approve: sel.filter((r) => r.status === 'Aberto').map(pick),
     reopen: sel.filter((r) => r.status === 'Aprovado').map(pick),
@@ -331,7 +351,9 @@ export const bulkDeleteTargets = (
 ): BulkDeleteTargets => {
   const sel = rows.filter((r) => selected.has(r.id))
   return {
-    deletable: sel.filter((r) => r.status === 'Aberto').map((r) => ({ id: r.id, version: r.version })),
+    deletable: sel
+      .filter((r) => r.status === 'Aberto')
+      .map((r) => ({ id: r.id, version: r.version, documentNumber: r.documentNumber })),
     draftCount: sel.filter((r) => r.status === 'Rascunho').length,
   }
 }
@@ -342,7 +364,42 @@ export const bulkDeleteTargets = (
 // o version do documento na linha, então NÃO há busca extra (sem GET /documents/:id). O backend valida
 // transição inválida (ex.: filho cujo status divergiu do documento) → falha segura, sem corromper estado.
 // #270: alvo do vencimento ISOLADO por título (payable). NÃO dedup por documento — cada título é independente.
-export type IsolatedDueDateTarget = Readonly<{ documentId: string; payableId: string; version: number }>
+export type IsolatedDueDateTarget = Readonly<{
+  documentId: string
+  payableId: string
+  version: number
+  /**
+   * O vencimento que o operador tem na tela — pré-condição do CAS do core-api (ADR-0063 de lá). Sai do
+   * `dueIso` da linha, o valor CRU: comparar por texto formatado seria comparar tela com banco.
+   */
+  expectedDueDate: string
+}>
+
+/**
+ * As DUAS origens de uma baixa manual — espelha `MANUALLY_PAYABLE_STATUSES` do core-api
+ * (`domain/document/document.ts:350`, ADR-0065 §6). É a mesma lista dos dois lados de propósito: o
+ * backend a exporta justamente porque duas listas divergiriam em silêncio.
+ *
+ * - `Aprovado` — pagamento feito FORA da VAN (cheque, caixa, boleto avulso). O caminho de sempre.
+ * - `Transmitido` — saiu pela VAN e o operador **conferiu no site do banco**. `Pago` continua manual
+ *   (#59) porque o retorno do banco ainda não é processado: quem afirma que o dinheiro saiu é a pessoa
+ *   que olhou o extrato.
+ *
+ * ⚠️ `Transmitido` faltava aqui, e a falta só apareceu quando o backend passou a PRODUZIR o status
+ * (core-api#792): o título saía na remessa, virava `Transmitido`, e "Marcar como pago" ficava
+ * desabilitado — travando justamente a etapa seguinte do fluxo que a remessa acabou de iniciar. O
+ * backend aceitava; era a tela que barrava.
+ *
+ * ⚠️⚠️ **NÃO REMOVER `Transmitido` DESTA LISTA.** A P.O. confirmou em 25/08, sabendo que a
+ * funcionalidade muda numa atualização futura: *"mantenha a baixa de forma manual autorizada para
+ * títulos TRANSMITIDOS também"*. Enquanto o retorno do banco não for processado, é o operador quem
+ * fecha o ciclo — e tirar isto o deixaria com o título parado, sem via de baixa, depois de o
+ * pagamento já ter ido ao banco. Quando o retorno entrar (#690), a mudança vem do backend
+ * (`MANUALLY_PAYABLE_STATUSES`) e esta lista a acompanha; até lá, o estado atual é o pretendido.
+ */
+const MANUALLY_PAYABLE: readonly DocumentStatus[] = ['Aprovado', 'Transmitido']
+
+export const isManuallyPayable = (status: DocumentStatus): boolean => MANUALLY_PAYABLE.includes(status)
 
 export type TitleActionTargets = Readonly<{
   approve: readonly StatusTarget[] // documentos distintos com título Aberto (Aprovar cascateia)
@@ -365,7 +422,7 @@ export const deriveTitleActionTargets = (
     for (const r of subset) {
       if (seen.has(r.documentId)) continue
       seen.add(r.documentId)
-      out.push({ id: r.documentId, version: r.version })
+      out.push({ id: r.documentId, version: r.version, documentNumber: r.documentNumber })
     }
     return out
   }
@@ -380,7 +437,11 @@ export const deriveTitleActionTargets = (
   // era só o front que barrava. A restrição virou impeditivo real com a remessa: uma remessa é de UM
   // dia só (`remittance-mixed-payment-dates`), então alinhar os vencimentos é pré-requisito para gerar
   // — e é justamente em Aprovado que o título está pronto para entrar no lote.
-  const selDueEditableRows = sel.filter((r) => r.status === 'Aberto' || r.status === 'Aprovado')
+  // ⚠️ Exige `dueIso`: sem vencimento atual não há pré-condição a declarar, e o core-api recusaria o
+  // CAS. Título sem vencimento cai no `dueBlockedCount` e o modal avisa, em vez de falhar na chamada.
+  const selDueEditableRows = sel.filter(
+    (r) => (r.status === 'Aberto' || r.status === 'Aprovado') && r.dueIso !== null,
+  )
   return {
     approve: aberto,
     reopen: dedupByDoc(sel.filter((r) => r.status === 'Aprovado')),
@@ -390,6 +451,9 @@ export const deriveTitleActionTargets = (
       documentId: r.documentId,
       payableId: r.id,
       version: r.version,
+      // Não-nulo garantido pelo filtro acima; o `?? ''` existe só para o compilador, e um vazio aqui
+      // seria recusado na borda (`DateSchema`) antes de virar requisição.
+      expectedDueDate: r.dueIso ?? '',
     })),
     dueBlockedCount: sel.length - selDueEditableRows.length,
   }
@@ -732,6 +796,7 @@ const toTitleRow = (
     gross: grossCents !== null && grossCents !== '' ? centsToBRL(grossCents) : DASH,
     grossCents,
     due: it.dueDate !== '' ? formatDue(it.dueDate.slice(0, 10)) : DASH, // dueDate pode vir ISO datetime
+    dueIso: it.dueDate !== '' ? it.dueDate.slice(0, 10) : null,
     net: netCents !== null && netCents !== '' ? centsToBRL(netCents) : DASH,
     netCents,
     version: it.version, // #229: version do DOCUMENTO (optimistic lock) agora vem na linha

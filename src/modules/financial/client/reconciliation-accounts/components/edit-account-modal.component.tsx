@@ -8,7 +8,8 @@ import { createTranslator } from '#shared/i18n/index.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { WalletIcon } from '#shared/ui/icons/index.ts'
 
-import { CONVENIO_MAX_DIGITS } from '../reconciliation-accounts.view-model.ts'
+import { formatMask } from '#shared/ui/index.ts'
+import { CONVENIO_MAX_DIGITS, AGENCY_TOTAL_DIGITS } from '../reconciliation-accounts.view-model.ts'
 import * as s from '../page/reconciliation-accounts.css.ts'
 import { BANKS, OTHER_BANK_CODE, type AccountType } from '../reconciliation-accounts.view-model.ts'
 import type { EditAccountBinding } from '../edit-account.binding.ts'
@@ -133,15 +134,26 @@ export function EditAccountModal({ binding }: EditAccountModalProps) {
                 <label className={s.fieldLabel} htmlFor="edit-branch">
                   {t('financial.recon.add.field.branch')}
                 </label>
+                {/* Mesma régua do cadastro (specs/107) — sem ela a edição seria a porta dos fundos por
+                    onde uma conta volta a ficar sem DV. Conta ANTIGA abre já cobrando o dígito: é assim
+                    que o cadastro velho se completa. */}
                 <input
                   id="edit-branch"
                   className={`${s.input} ${s.inputMono}`}
+                  inputMode="numeric"
+                  maxLength={AGENCY_TOTAL_DIGITS + 1}
                   placeholder={t('financial.recon.add.placeholder.branch')}
-                  value={binding.agency}
+                  value={formatMask('agency', binding.agency)}
+                  aria-invalid={binding.agencyIncomplete}
                   onChange={(e) => {
                     binding.setAgency(e.target.value)
                   }}
                 />
+                {binding.agencyIncomplete ? (
+                  <span className={s.errorText}>{t('financial.recon.add.error.branchDigit')}</span>
+                ) : (
+                  <span className={s.fieldHint}>{t('financial.recon.add.hint.branch')}</span>
+                )}
               </div>
               <div className={s.formField}>
                 <label className={s.fieldLabel} htmlFor="edit-account">

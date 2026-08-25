@@ -66,6 +66,7 @@ import {
   receipt,
   receiptTitle,
   receiptGrid,
+  accountBar,
 } from './remittance-preview.css.ts'
 
 const t = createTranslator(ptBR)
@@ -87,6 +88,8 @@ export type RemittancePreviewModalProps = Readonly<{
   notApprovedCount: number
   onToggle: (payableId: string) => void
   onClose: () => void
+  /** Esperando a conta-cedente para poder conferir (core-api#804). Não é erro: é o passo anterior. */
+  awaitingAccount: boolean
 
   // ── Geração (S3) — ⚠️ enfileira pagamento no banco ────────────────────────────
   accounts: readonly ReconciliationAccountOption[]
@@ -101,10 +104,10 @@ export type RemittancePreviewModalProps = Readonly<{
   generateErrorMessage: string | null
   onGenerate: () => void
 
-  // ── Download do arquivo (specs/103) — cópia de conferência, HOMOLOGAÇÃO apenas ──
+  // ── Download do arquivo (specs/103) — cópia de conferência, em TODO ambiente ────
   downloading: boolean
   downloadErrorTag: string | null
-  /** Mensagem PT-BR do core-api. `null` em produção, onde a rota nem existe. */
+  /** Mensagem PT-BR do core-api. `null` onde a rota nem é registrada (404 seco do Fastify). */
   downloadErrorMessage: string | null
   /** O objeto veio de `falhas/`: o envio ao banco NÃO completou. */
   downloadedFromFailures: boolean
@@ -134,6 +137,37 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
 
         {props.errorTag !== null ? <p className={errorBox}>{t(props.errorTag)}</p> : null}
 
+        {/* A conta que PAGA, no topo (core-api#804): a conferência é resposta a ela — a repartição em
+            lotes se decide comparando o banco do favorecido com o do cedente. Some quando o comprovante
+            está na tela: ali a remessa já saiu, e trocar a conta não muda mais nada. */}
+        {props.generated === null ? (
+          <div className={accountBar}>
+            <span className={launchLabel}>{t('financial.remittance.generate.account')}</span>
+            <select
+              className={accountSelect}
+              value={props.cedenteAccountId}
+              disabled={props.generating || props.confirming}
+              aria-label={t('financial.remittance.generate.account')}
+              onChange={(e) => {
+                props.onCedenteAccount(e.target.value)
+              }}
+            >
+              <option value="">{t('financial.remittance.generate.accountPlaceholder')}</option>
+              {props.accounts.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
+
+        {/* Espera, não erro: sem conta não há o que conferir. Dizer isso é melhor que uma tabela vazia
+            (que pareceria "nada a enviar") ou um "carregando" que nunca termina. */}
+        {props.awaitingAccount ? (
+          <p className={emptyState}>{t('financial.remittance.preview.needAccount')}</p>
+        ) : null}
+
         {/* Retenções marcadas: o pré-voo não as acusa (herdam forma e favorecido da nota), então o
             aviso no topo é o que garante que o operador saiba ANTES de gerar. */}
         {view !== null && view.summary.retentionCheckedCount > 0 ? (
@@ -158,9 +192,16 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
                 <span className={summaryLabel}>{t('financial.remittance.generate.fileName')}</span>
                 <span className={summaryValue}>{props.generated.fileName}</span>
               </span>
+              {/* A QUANTIDADE saiu daqui (decisão da P.O., 24/08): o operador acabou de lê-la na
+                  conferência, com os títulos nominados, e repeti-la no comprovante não acrescenta —
+                  ocupa a linha que os dados exclusivos do comprovante (NSA, arquivo, data) precisam.
+                  Antes de sair ela ainda estava ERRADA: exibia o `lineCount` do core-api, que conta
+                  registros do arquivo CNAB (6 para um único título). */}
+              {/* Quando o banco executa. Fecha a pergunta que o comprovante deixava em aberto: o operador
+                  via quanto e quantos títulos, mas não em que dia o dinheiro sai. */}
               <span className={summaryItem}>
-                <span className={summaryLabel}>{t('financial.remittance.generate.lineCount')}</span>
-                <span className={summaryValue}>{props.generated.lineCount}</span>
+                <span className={summaryLabel}>{t('financial.remittance.generate.paymentDate')}</span>
+                <span className={summaryValueStrong}>{props.generated.paymentDate}</span>
               </span>
               <span className={summaryItem}>
                 <span className={summaryLabel}>{t('financial.remittance.generate.total')}</span>
@@ -169,8 +210,11 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
             </div>
 
             {/* Baixar o arquivo QUE FOI ao banco — para conferir layout. Nunca uma regeração: outro NSA e
-                outro carimbo de tempo não servem de evidência. Só existe em homologação; em produção a
-                rota não é registrada e o clique volta o recado de indisponível. */}
+                outro carimbo de tempo não servem de evidência.
+
+                Oferecido em TODO ambiente (decisão da P.O., 21/08). ⚠️ Enquanto o core-api registrar a
+                rota só fora de produção, lá o clique volta 404 e a mensagem abaixo explica — a tela NÃO
+                esconde o botão por conta própria. */}
             <div className={receiptActions}>
               <button
                 type="button"
@@ -221,7 +265,15 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
               </span>
               <span className={summaryItem}>
                 <span className={summaryLabel}>{t('financial.remittance.preview.summary.paymentDate')}</span>
-                <span className={view.summary.paymentDateMixed ? summaryValueWarn : summaryValue}>
+                {/* Âmbar também quando a data já passou: o operador precisa ver o problema no RESUMO,
+                    onde ele lê a data, e não só no banner do rodapé. */}
+                <span
+                  className={
+                    view.summary.paymentDateMixed || view.summary.paymentDateInPast
+                      ? summaryValueWarn
+                      : summaryValue
+                  }
+                >
                   {view.summary.paymentDateMixed
                     ? t('financial.remittance.preview.summary.mixedDates')
                     : view.summary.paymentDate}
@@ -238,6 +290,10 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
                 {`${String(view.summary.pendingCount)} ${t('financial.remittance.preview.pendingWarn')}`}
               </p>
             ) : null}
+
+            {/* O core-api#804 devolve a composição em lotes do arquivo. NÃO a exibimos: avaliada em tela,
+                não acrescenta à conferência — quem confere olha título a título, e como o arquivo se
+                reparte é assunto do emissor. */}
 
             {view.lines.length === 0 ? (
               <p className={emptyState}>{t('financial.remittance.preview.empty')}</p>
@@ -306,6 +362,12 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
               <p className={launchAlert}>{t('financial.remittance.generate.needSameDate')}</p>
             ) : null}
 
+            {/* Pagamento no passado BLOQUEIA, mas SEM banner — e a diferença para os vencimentos
+                misturados é deliberada: aquele se resolve DENTRO do modal (desmarcando os divergentes),
+                então o banner ensina uma ação daqui. Este só se resolve fora — fechar, corrigir o
+                vencimento, voltar. Um banner mandando o operador sair vale menos que o campo destacado
+                no resumo, e o resumo é onde ele lê a data. Ver `summaryValueWarn` acima. */}
+
             {props.confirming ? (
               <p className={launchWarn}>
                 {t('financial.remittance.generate.confirm')
@@ -319,24 +381,9 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
               </p>
             ) : null}
 
-            <span className={launchLabel}>{t('financial.remittance.generate.account')}</span>
-            <select
-              className={accountSelect}
-              value={props.cedenteAccountId}
-              disabled={props.generating || props.confirming}
-              aria-label={t('financial.remittance.generate.account')}
-              onChange={(e) => {
-                props.onCedenteAccount(e.target.value)
-              }}
-            >
-              <option value="">{t('financial.remittance.generate.accountPlaceholder')}</option>
-              {props.accounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.label}
-                </option>
-              ))}
-            </select>
-
+            {/* O seletor de conta NÃO se repete aqui: ele subiu para o topo, porque a conferência que
+                está acima é resposta a ele. Duas cópias do mesmo controle na mesma tela é convite a
+                trocar a conta depois de ler o pré-voo — e gerar um arquivo que não é o conferido. */}
             {props.confirming ? (
               <>
                 <button
@@ -364,7 +411,8 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
                   props.generating ||
                   view.summary.checkedCount === 0 ||
                   props.cedenteAccountId === '' ||
-                  view.summary.paymentDateMixed
+                  view.summary.paymentDateMixed ||
+                  view.summary.paymentDateInPast
                 }
                 title={
                   view.summary.checkedCount === 0
@@ -373,7 +421,9 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
                       ? t('financial.remittance.generate.needAccount')
                       : view.summary.paymentDateMixed
                         ? t('financial.remittance.generate.needSameDate')
-                        : undefined
+                        : view.summary.paymentDateInPast
+                          ? t('financial.remittance.generate.needFutureDate')
+                          : undefined
                 }
                 onClick={props.onArm}
               >

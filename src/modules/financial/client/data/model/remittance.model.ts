@@ -30,7 +30,15 @@ export interface PayoutGap {
   reason: PayoutGapReason
 }
 
-export type PreviewLineStatus = 'ready' | 'blocked' | 'out-of-van' | 'not-found' | 'not-approved' // #736: falta APROVAR — distinto de `blocked` (falta dado do cadastro)
+export type PreviewLineStatus =
+  | 'ready'
+  | 'blocked'
+  | 'out-of-van'
+  | 'not-found'
+  | 'not-approved' // #736: falta APROVAR — distinto de `blocked` (falta dado do cadastro)
+  // core-api#792/ADR-0065 §5: o título JÁ SAIU numa remessa. Status próprio, e não `blocked`, porque a
+  // ação é oposta — `blocked` pede correção de cadastro; aqui não há o que corrigir nem o que reenviar.
+  | 'transmitted'
 
 /**
  * UMA LINHA POR TÍTULO (core-api#794). A nota dá origem aos títulos, mas o ciclo de vida inteiro é do
@@ -60,6 +68,11 @@ export interface RemittancePreview {
 }
 
 export interface PreviewRemittanceInput {
+  /**
+   * ⚠️ A conta que PAGA — obrigatória desde o core-api#794/#804, e a MESMA da geração: a repartição dos
+   * lotes se decide comparando o banco do favorecido com o do cedente. Sem ela o pré-voo volta 400.
+   */
+  cedenteAccountId: string
   payableIds: readonly string[]
 }
 
@@ -86,7 +99,7 @@ export interface GeneratedRemittance {
  * Falha da geração: tag (§V — dirige o COMPORTAMENTO) + a mensagem PT-BR do core-api (dirige o TEXTO).
  * Quatro recusas distintas chegam como o mesmo 422; só o texto as separa.
  */
-export interface GenerateRemittanceFailure {
+export interface FinancialFailure {
   error: FinancialError
   message: string | null
 }
