@@ -12,6 +12,7 @@ import {
   type SupplierFormController,
   type SupplierFormState,
 } from '#modules/partners/client/supplier-create/components/supplier-form.controller.ts'
+import { BankSelect, isUnknownBank } from '#shared/ui/brand/bank-select.component.tsx'
 import type { ActivationStatus } from '#modules/partners/client/domain/supplier.types.ts'
 
 import {
@@ -32,6 +33,14 @@ import {
 } from '#shared/ui/brand/brand-form.css.ts'
 
 const t = createTranslator(ptBR)
+
+/** Mesmos rótulos do formulário de criar/editar — o seletor de banco é o mesmo componente. */
+const BANK_LABELS = {
+  placeholder: t('partners.suppliers.form.bankPlaceholder'),
+  frequentGroup: t('partners.suppliers.form.bankFrequent'),
+  allGroup: t('partners.suppliers.form.bankAll'),
+  unknownPrefix: t('partners.suppliers.form.bankUnknown'),
+} as const
 
 export type SupplierDetailContentProps = Readonly<{
   controller: SupplierFormController
@@ -201,7 +210,30 @@ export function SupplierDetailContent(props: SupplierDetailContentProps): ReactN
           </div>
           <div className={sectionBody}>
             <div className={grid}>
-              {txt('bank', t('partners.suppliers.form.bank'), 'bankAccount.bank')}
+              {/* Banco: seletor pelo código FEBRABAN, e não `txt`, porque o campo deixou de ser texto
+                  livre. Fora do modo de edição o seletor fica desabilitado, mas continua mostrando
+                  "237 · Bradesco" — o código sozinho não diz nada a quem está conferindo. */}
+              <div className={field}>
+                <label htmlFor="sd-bank" className={fieldLabel}>
+                  {t('partners.suppliers.form.bank')}
+                </label>
+                <BankSelect
+                  id="sd-bank"
+                  value={c.state.bank}
+                  labels={BANK_LABELS}
+                  invalid={isInvalid('bankAccount.bank')}
+                  disabled={!editing}
+                  ariaLabel={t('partners.suppliers.form.bank')}
+                  onChange={(code) => {
+                    c.setField('bank', code)
+                  }}
+                />
+                {invalidMsg('bankAccount.bank') !== null ? (
+                  <span className={fieldError}>{invalidMsg('bankAccount.bank')}</span>
+                ) : isUnknownBank(c.state.bank) ? (
+                  <span className={fieldError}>{t('partners.suppliers.form.bankUnknownHint')}</span>
+                ) : null}
+              </div>
               {txt('agency', t('partners.suppliers.form.agency'), 'bankAccount.agency', { mask: 'agency' })}
               {txt('accountNumber', t('partners.suppliers.form.accountNumber'), 'bankAccount.accountNumber')}
               {txt('checkDigit', t('partners.suppliers.form.checkDigit'), 'bankAccount.checkDigit')}

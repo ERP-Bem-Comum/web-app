@@ -1,7 +1,10 @@
 import { describe, it, expect, vi } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 
-import { useSupplierFormController } from '#modules/partners/client/supplier-create/components/supplier-form.controller.ts'
+import {
+  useSupplierFormController,
+  type SupplierFormValues,
+} from '#modules/partners/client/supplier-create/components/supplier-form.controller.ts'
 
 describe('useSupplierFormController', () => {
   it('bloqueia submit inválido: não chama onSubmit e marca erros', () => {
@@ -57,5 +60,41 @@ describe('useSupplierFormController', () => {
     })
 
     expect(onSubmit).not.toHaveBeenCalled()
+  })
+
+  // ── Banco: o campo virou CÓDIGO de compensação (era texto livre). Ao ABRIR um cadastro antigo, o
+  // controller converte o que dá para reconhecer sem ambiguidade e PRESERVA o resto — nunca apaga.
+  const withBank = (bank: string): SupplierFormValues => ({
+    name: 'Acme',
+    corporateName: 'Acme LTDA',
+    fantasyName: 'Acme',
+    email: 'c@acme.dev',
+    cnpj: '12345678000190',
+    serviceCategory: 'Limpeza',
+    bankAccount: { bank, agency: '12345', accountNumber: '9876', checkDigit: '1' },
+    pixKey: null,
+    serviceRating: null,
+    ratingComment: null,
+  })
+
+  it('cadastro legado: "0237" abre já normalizado para o código "237"', () => {
+    const { result } = renderHook(() =>
+      useSupplierFormController({ initial: withBank('0237'), onSubmit: vi.fn() }),
+    )
+    expect(result.current.state.bank).toBe('237')
+  })
+
+  it('cadastro legado: "341 - Itaú" abre já normalizado para "341"', () => {
+    const { result } = renderHook(() =>
+      useSupplierFormController({ initial: withBank('341 - Itaú'), onSubmit: vi.fn() }),
+    )
+    expect(result.current.state.bank).toBe('341')
+  })
+
+  it('cadastro legado irreconhecível é PRESERVADO, não apagado', () => {
+    const { result } = renderHook(() =>
+      useSupplierFormController({ initial: withBank('Bradesco'), onSubmit: vi.fn() }),
+    )
+    expect(result.current.state.bank).toBe('Bradesco')
   })
 })
