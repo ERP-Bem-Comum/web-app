@@ -5,13 +5,28 @@
  */
 import { useCallback, useState } from 'react'
 
-import { SupplierFormSchema, type SupplierFormValues, type PixKeyType, type ServiceRating } from '#modules/partners/client/data/model/supplier.model.ts'
+import { toBankCode } from '#shared/banking/febraban-banks.ts'
+import {
+  SupplierFormSchema,
+  type SupplierFormValues,
+  type PixKeyType,
+  type ServiceRating,
+} from '#modules/partners/client/data/model/supplier.model.ts'
 
 // Reexporta a partir da fonte única (`data/model`) — antes eram cópias da mesma união/lista. A view
 // (client-ui) consome PIX_KEY_TYPES/isPixKeyType e SERVICE_RATINGS/isServiceRating POR AQUI, pois o
 // boundary não a deixa tocar data/.
-export type { SupplierFormValues, PixKeyType, ServiceRating } from '#modules/partners/client/data/model/supplier.model.ts'
-export { PIX_KEY_TYPES, isPixKeyType, SERVICE_RATINGS, isServiceRating } from '#modules/partners/client/data/model/supplier.model.ts'
+export type {
+  SupplierFormValues,
+  PixKeyType,
+  ServiceRating,
+} from '#modules/partners/client/data/model/supplier.model.ts'
+export {
+  PIX_KEY_TYPES,
+  isPixKeyType,
+  SERVICE_RATINGS,
+  isServiceRating,
+} from '#modules/partners/client/data/model/supplier.model.ts'
 
 export type SupplierFormState = Readonly<{
   name: string
@@ -50,6 +65,16 @@ const EMPTY: SupplierFormState = {
   ratingComment: '',
 }
 
+/**
+ * O campo `bank` passou a guardar o CÓDIGO de compensação (3 dígitos), mas o cadastro antigo guardava
+ * TEXTO LIVRE. Convertemos ao ABRIR o formulário quando dá para reconhecer sem ambiguidade ('0237' e
+ * '237 - Bradesco' viram '237'); o que não dá, fica como está e o seletor mostra como não reconhecido.
+ *
+ * A conversão é silenciosa DE PROPÓSITO só no caso trivial: ela não muda o banco, só o formato de quem
+ * já estava certo. Adivinhar por NOME ficaria de fora — errar o banco aqui é pagamento recusado.
+ */
+const normalizeBankCode = (raw: string): string => toBankCode(raw) ?? raw
+
 function stateFromValues(v: SupplierFormValues | undefined): SupplierFormState {
   if (v === undefined) return EMPTY
   return {
@@ -59,7 +84,7 @@ function stateFromValues(v: SupplierFormValues | undefined): SupplierFormState {
     email: v.email,
     cnpj: v.cnpj,
     serviceCategory: v.serviceCategory,
-    bank: v.bankAccount?.bank ?? '',
+    bank: normalizeBankCode(v.bankAccount?.bank ?? ''),
     agency: v.bankAccount?.agency ?? '',
     accountNumber: v.bankAccount?.accountNumber ?? '',
     checkDigit: v.bankAccount?.checkDigit ?? '',
@@ -96,8 +121,9 @@ export function useSupplierFormController(
   const submit = useCallback(() => {
     // Sem checkbox de "habilitar": a presença de banco/PIX é inferida do que foi preenchido.
     // Banco parcialmente preenchido cai no schema (campos min(1)) e bloqueia o submit.
-    const hasBank =
-      [state.bank, state.agency, state.accountNumber, state.checkDigit].some((v) => v.trim() !== '')
+    const hasBank = [state.bank, state.agency, state.accountNumber, state.checkDigit].some(
+      (v) => v.trim() !== '',
+    )
     const hasPix = state.pixKey.trim() !== ''
     const candidate = {
       name: state.name,

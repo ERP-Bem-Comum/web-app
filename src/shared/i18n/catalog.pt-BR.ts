@@ -495,6 +495,14 @@ export const ptBR: Catalog = {
   'partners.suppliers.rating.BOM': 'Bom',
   'partners.suppliers.rating.OTIMO': 'Ótimo',
   'partners.suppliers.form.bank': 'Banco',
+  // Seletor de banco (código de compensação FEBRABAN). "Não reconhecido" é o cadastro ANTIGO, que
+  // guardava o banco como texto livre — a opção continua lá até alguém escolher o banco de verdade.
+  'partners.suppliers.form.bankPlaceholder': 'Selecione o banco…',
+  'partners.suppliers.form.bankFrequent': 'Mais usados',
+  'partners.suppliers.form.bankAll': 'Todos os bancos',
+  'partners.suppliers.form.bankUnknown': 'Não reconhecido:',
+  'partners.suppliers.form.bankUnknownHint':
+    'Cadastro antigo: este banco foi digitado à mão e não corresponde a um código FEBRABAN. Selecione o banco na lista — sem o código, o pagamento por TED/transferência é recusado.',
   'partners.suppliers.form.agency': 'Agência - DV',
   'partners.suppliers.form.accountNumber': 'Número da Conta',
   'partners.suppliers.form.checkDigit': 'DV',
@@ -1580,6 +1588,9 @@ export const ptBR: Catalog = {
   'financial.recon.add.optional': 'opcional',
   'financial.recon.add.field.bank': 'Banco',
   'financial.recon.add.placeholder.bank': 'Selecione um banco…',
+  // Grupos do seletor de banco — a lista passou dos 12 curados para a tabela FEBRABAN completa.
+  'financial.recon.add.bankFrequent': 'Mais usados',
+  'financial.recon.add.bankAll': 'Todos os bancos',
   'financial.recon.add.field.type': 'Tipo',
   'financial.recon.add.type.corrente': 'Corrente',
   'financial.recon.add.type.poupanca': 'Poupança',

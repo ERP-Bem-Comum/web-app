@@ -12,6 +12,7 @@ import {
   isServiceRating,
   type SupplierFormController,
 } from './supplier-form.controller.ts'
+import { BankSelect, isUnknownBank } from '#shared/ui/brand/bank-select.component.tsx'
 import { derivePixKey } from '#modules/partners/client/domain/derive-pix-key.ts'
 import {
   page,
@@ -42,6 +43,14 @@ import {
 import { errorBanner } from './supplier-form.css.ts'
 
 const t = createTranslator(ptBR)
+
+/** Rótulos do seletor de banco (o componente é burro e não fala i18n — como o BrandPaginator). */
+const BANK_LABELS = {
+  placeholder: t('partners.suppliers.form.bankPlaceholder'),
+  frequentGroup: t('partners.suppliers.form.bankFrequent'),
+  allGroup: t('partners.suppliers.form.bankAll'),
+  unknownPrefix: t('partners.suppliers.form.bankUnknown'),
+} as const
 
 export type SupplierFormProps = Readonly<{
   controller: SupplierFormController
@@ -299,16 +308,20 @@ export function SupplierForm(props: SupplierFormProps): ReactNode {
                     <label htmlFor="sup-bank" className={fieldLabel}>
                       {t('partners.suppliers.form.bank')}
                     </label>
-                    <input
+                    <BankSelect
                       id="sup-bank"
-                      className={`${input} ${isInvalid('bankAccount.bank') ? controlError : ''}`}
                       value={c.state.bank}
-                      onChange={(e) => {
-                        c.setField('bank', e.target.value)
+                      labels={BANK_LABELS}
+                      invalid={isInvalid('bankAccount.bank')}
+                      ariaLabel={t('partners.suppliers.form.bank')}
+                      onChange={(code) => {
+                        c.setField('bank', code)
                       }}
                     />
                     {invalidMsg('bankAccount.bank') !== null ? (
                       <span className={fieldError}>{invalidMsg('bankAccount.bank')}</span>
+                    ) : isUnknownBank(c.state.bank) ? (
+                      <span className={fieldError}>{t('partners.suppliers.form.bankUnknownHint')}</span>
                     ) : null}
                   </div>
 
