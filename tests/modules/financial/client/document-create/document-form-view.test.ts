@@ -773,3 +773,15 @@ describe('plano orçamentário carimbado no create (#502 — o PLANO é o dono d
     assert.equal(buildCreateInput(base)?.budgetPlanRef, undefined)
   })
 })
+
+describe('rascunho também carimba o plano (#502)', () => {
+  const PLAN = '7cc6aa9c-8e05-4cb7-bb8a-f755ace8d330'
+
+  it('buildDraftInput envia o plano escolhido — senão o rascunho reabre sem a árvore', () => {
+    assert.equal(buildDraftInput({ ...base, planoOrcamentario: PLAN }).budgetPlanRef, PLAN)
+  })
+
+  it('buildDraftInput não grava o nome do cenário como ref', () => {
+    assert.equal(buildDraftInput({ ...base, planoOrcamentario: 'Cenário base' }).budgetPlanRef, undefined)
+  })
+})

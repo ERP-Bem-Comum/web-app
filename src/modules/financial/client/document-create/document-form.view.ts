@@ -576,6 +576,9 @@ export const buildDraftInput = (fields: DocumentFormFields): CreateDocumentInput
     discountsCents: discountsCents(fields) > 0 ? String(discountsCents(fields)) : undefined,
     interestCents: jurosMultaCents(fields) > 0 ? String(jurosMultaCents(fields)) : undefined,
     programRef: trimToUndefined(fields.programRef),
+    // #502: o plano também persiste no RASCUNHO — sem ele o rascunho reabre com refs da árvore e sem dizer
+    // de qual árvore, e a cascata não tem como repopular. Mesmo guard de UUID do create.
+    budgetPlanRef: planRefToSubmit(fields.planoOrcamentario),
     // #502 (S1): categoria e subcategoria em campos SEPARADOS (mesma regra do create) — persiste no rascunho.
     categoryRef: trimToUndefined(fields.categoryRef),
     subcategoryRef: trimToUndefined(fields.subcategoryRef),

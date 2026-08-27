@@ -122,20 +122,32 @@ const reducer = (state: DocumentFormFields, action: FormAction): DocumentFormFie
       return { ...state, paymentMethod: action.value, paymentComplement: '' }
     case 'setSupplier':
       // Trocar de parceiro zera o contrato/programa escolhidos (a hidratação re-deriva pelo novo parceiro).
-      return { ...state, supplierRef: action.ref, contractRef: '', programRef: '' }
+      // ⚠️ Só quando MUDA de fato: re-selecionar o mesmo parceiro apagava o Programa já escolhido, em
+      // silêncio e longe da vista (o campo fica acima na tela) — a P.O. preencheu tudo e o create salvou vazio.
+      return action.ref === state.supplierRef
+        ? { ...state, supplierRef: action.ref }
+        : { ...state, supplierRef: action.ref, contractRef: '', programRef: '' }
     case 'setContractRef':
-      // Trocar o contrato re-deriva o Programa (volta a herdar do contrato escolhido).
-      return { ...state, contractRef: action.value, programRef: '' }
+      // Trocar o contrato re-deriva o Programa (volta a herdar do contrato escolhido). Idem: só na TROCA.
+      return action.value === state.contractRef
+        ? state
+        : { ...state, contractRef: action.value, programRef: '' }
     case 'setProgramRef':
       return { ...state, programRef: action.value }
     // Cascata Centro → Categoria → Subcategoria (#341): trocar um nível zera os de BAIXO, senão a folha
     // ficaria órfã (uma subcategoria que não pertence mais à categoria/centro escolhidos) — §IV.
+    // ⚠️ Zerar só na TROCA REAL: re-escolher o MESMO valor não torna nenhuma folha órfã, e apagar aí é só
+    // perda de trabalho (foi como a categorização inteira sumiu antes de salvar).
     case 'setCategoryRef':
-      return { ...state, categoryRef: action.value, subcategoryRef: '' }
+      return action.value === state.categoryRef
+        ? state
+        : { ...state, categoryRef: action.value, subcategoryRef: '' }
     case 'setSubcategoryRef':
       return { ...state, subcategoryRef: action.value }
     case 'setCostCenterRef':
-      return { ...state, costCenterRef: action.value, categoryRef: '', subcategoryRef: '' }
+      return action.value === state.costCenterRef
+        ? state
+        : { ...state, costCenterRef: action.value, categoryRef: '', subcategoryRef: '' }
     case 'setApproverRef':
       return { ...state, approverRef: action.value }
     case 'setContaDebitoRef':
@@ -153,14 +165,18 @@ const reducer = (state: DocumentFormFields, action: FormAction): DocumentFormFie
       // Trocar o Plano Orçamentário troca a FONTE da cascata (ADR-0051: cada plano tem sua árvore
       // Centro→Categoria→Subcategoria). Um centro/categoria/sub do plano anterior não existe no novo →
       // zeramos os 3, senão a categorização gravada seria uma folha órfã (§IV). Mesma regra do `setCostCenterRef`.
+      // ⚠️ Só na TROCA REAL de plano: re-selecionar o MESMO plano mantém a árvore, então nada fica órfão —
+      // apagar aí só destrói a categorização já preenchida (foi assim que ela sumiu antes de salvar).
       if (action.key === 'planoOrcamentario') {
-        return {
-          ...state,
-          planoOrcamentario: action.value,
-          costCenterRef: '',
-          categoryRef: '',
-          subcategoryRef: '',
-        }
+        return action.value === state.planoOrcamentario
+          ? state
+          : {
+              ...state,
+              planoOrcamentario: action.value,
+              costCenterRef: '',
+              categoryRef: '',
+              subcategoryRef: '',
+            }
       }
       return { ...state, [action.key]: action.value }
     case 'setRetention':
