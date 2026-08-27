@@ -303,6 +303,25 @@ export {
 /** Normaliza a descrição (payeeName) p/ comparar transações "do mesmo tipo": case/espaço-insensível. */
 export const normalizeDesc = (s: string): string => s.trim().toLowerCase().replace(/\s+/g, ' ')
 
+/**
+ * Favorecido/descrição da transação como o EXTRATO mostra. O OFX/CSV nem sempre traz `payeeName` (muitos
+ * bancos só preenchem o memo) — nesse caso o nome que o operador enxerga na lista é o `memo`. PURA.
+ * Devolve string vazia quando não há nem um nem outro (a view decide o traço).
+ */
+export const statementPartyLabel = (tx: Pick<StatementTransaction, 'payeeName' | 'memo'>): string =>
+  tx.payeeName.trim() !== '' ? tx.payeeName : tx.memo.trim()
+
+/**
+ * Complemento da transação (o memo) quando ele ACRESCENTA informação ao rótulo do favorecido — vazio
+ * quando o memo é o próprio rótulo (fallback) ou repete o payeeName. PURA.
+ */
+export const statementMemoDetail = (tx: Pick<StatementTransaction, 'payeeName' | 'memo'>): string => {
+  const memo = tx.memo.trim()
+  if (memo === '') return ''
+  const label = statementPartyLabel(tx)
+  return normalizeDesc(memo) === normalizeDesc(label) ? '' : memo
+}
+
 // Tipos de lançamento manual que o LOTE (confirmBatch) suporta hoje — NÃO precisam de conta de destino/
 // produto (o template do batch do backend não os carrega). Resgate/Aplicação/Transferência ficam de fora.
 export const BATCHABLE_MANUAL_TYPES: readonly ManualEntryType[] = ['Payment', 'Receipt', 'FeePenaltyInterest']

@@ -21,6 +21,7 @@ import {
   canSaveDraft,
   ocrReadFields,
   buildCreateInput,
+  planRefToSubmit,
   buildDraftInput,
   buildRegisteredTaxInputs,
   retentionRatePct,
@@ -748,5 +749,39 @@ describe('document-form.view — complemento por forma de pagamento', () => {
   it('as formas que não pedem complemento seguem sem campo', () => {
     assert.equal(paymentComplementaryOf('TED'), 'bank')
     assert.equal(paymentComplementaryOf(''), 'none')
+  })
+})
+
+describe('plano orçamentário carimbado no create (#502 — o PLANO é o dono da taxonomia)', () => {
+  const PLAN = '7cc6aa9c-8e05-4cb7-bb8a-f755ace8d330'
+
+  it('planRefToSubmit: UUID sobe; nome de cenário e vazio NÃO sobem', () => {
+    assert.equal(planRefToSubmit(PLAN), PLAN)
+    assert.equal(planRefToSubmit(` ${PLAN} `), PLAN)
+    // A hidratação por contrato enche o MESMO campo com o nome do cenário — não pode virar ref.
+    assert.equal(planRefToSubmit('Cenário base'), undefined)
+    assert.equal(planRefToSubmit(''), undefined)
+    assert.equal(planRefToSubmit('   '), undefined)
+  })
+
+  it('buildCreateInput envia o plano escolhido no dropdown (antes era descartado sem contrato)', () => {
+    assert.equal(buildCreateInput({ ...base, planoOrcamentario: PLAN })?.budgetPlanRef, PLAN)
+  })
+
+  it('buildCreateInput não envia o nome do cenário como ref (não grava lixo)', () => {
+    assert.equal(buildCreateInput({ ...base, planoOrcamentario: 'Cenário base' })?.budgetPlanRef, undefined)
+    assert.equal(buildCreateInput(base)?.budgetPlanRef, undefined)
+  })
+})
+
+describe('rascunho também carimba o plano (#502)', () => {
+  const PLAN = '7cc6aa9c-8e05-4cb7-bb8a-f755ace8d330'
+
+  it('buildDraftInput envia o plano escolhido — senão o rascunho reabre sem a árvore', () => {
+    assert.equal(buildDraftInput({ ...base, planoOrcamentario: PLAN }).budgetPlanRef, PLAN)
+  })
+
+  it('buildDraftInput não grava o nome do cenário como ref', () => {
+    assert.equal(buildDraftInput({ ...base, planoOrcamentario: 'Cenário base' }).budgetPlanRef, undefined)
   })
 })

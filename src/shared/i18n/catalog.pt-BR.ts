@@ -1692,6 +1692,7 @@ export const ptBR: Catalog = {
   'financial.recon.sugg.paidAt': 'Pagamento',
   'financial.recon.sugg.method': 'Forma',
   'financial.recon.sugg.supplierPending': 'Fornecedor',
+  'financial.recon.sugg.taxonomy': 'Categorização',
   'financial.recon.sugg.confirm': 'Conciliar',
   'financial.recon.sugg.reject': 'Rejeitar',
   'financial.recon.sugg.alternatives': 'Outras possibilidades',
