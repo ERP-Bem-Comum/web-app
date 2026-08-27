@@ -156,6 +156,30 @@ dado pela metade — rastreado em **core-api#888** (com o SQL, a guarda de ambig
 não existir lá). O achado também está comentado no épico **core-api#502**, cujo CA3 partia da premissa de
 que o histórico não era inferível.
 
-Segue em aberto um documento que nasceu com a categorização **inteira** vazia (nem centro de custo), sem
-que se saiba se os campos chegaram a ser preenchidos na tela. Não entrou no backfill (não há de onde
-derivar o plano) e não é explicado pelo bug corrigido aqui.
+Um documento nasceu com a categorização **inteira** vazia (nem centro de custo). Ele não entrou no backfill
+— não há de onde derivar o plano — e continua incompleto na base. A CAUSA, porém, foi encontrada (abaixo).
+
+## Segundo bug: os resets em cascata apagavam o que já estava preenchido
+
+A P.O. confirmou ter preenchido **todos** os campos na tela do documento que gravou os cinco vazios. A causa
+são os resets em cascata do reducer, que disparavam mesmo quando o valor **não mudava**:
+
+| ação                           | zerava                            |
+| ------------------------------ | --------------------------------- |
+| `setSupplier`                  | `programRef`                      |
+| `setContractRef`               | `programRef`                      |
+| `setCostCenterRef`             | `categoryRef` + `subcategoryRef`  |
+| `setCategoryRef`               | `subcategoryRef`                  |
+| `setText('planoOrcamentario')` | centro + categoria + subcategoria |
+
+A intenção é legítima (§IV — trocar de árvore não pode deixar folha órfã). O defeito era o **no-op**:
+re-selecionar o mesmo plano, ou reescolher o mesmo fornecedor, apagava tudo abaixo — em silêncio e **longe da
+vista**, porque os campos zerados ficam acima na rolagem. Quem preenche fora de ordem perde o trabalho sem
+ver. Explica os dois casos medidos: um documento perdeu só o programa (mexeu no fornecedor depois de escolhê-lo)
+e outro perdeu os cinco.
+
+Agora zeram **só na troca real**. A invariante segue intacta — trocar de verdade continua limpando os níveis
+de baixo — e o teste cobre os dois sentidos.
+
+⚠️ Fechado no mesmo passo: `buildDraftInput` também não enviava `budgetPlanRef`. O rascunho reabria com refs
+da árvore e sem dizer de qual árvore — o mesmo defeito do create, um builder adiante.
