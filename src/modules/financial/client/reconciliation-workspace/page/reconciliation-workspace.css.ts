@@ -683,7 +683,7 @@ export const matchHead = style({
   background: c.green.bg,
   color: c.green.deep,
   fontFamily: recon.font.mono,
-  fontSize: fs.sm,
+  fontSize: fs.md,
   fontWeight: recon.weight.bold,
   textTransform: 'uppercase',
   letterSpacing: '0.04em',
@@ -692,7 +692,8 @@ export const matchHead = style({
 
 export const matchSides = style({
   display: 'grid',
-  gridTemplateColumns: '1fr 1.75rem 1fr',
+  // O lado do TÍTULO carrega mais informação (dados do título + taxonomia) → um pouco mais largo (#382).
+  gridTemplateColumns: '1fr 1.75rem 1.2fr',
   gap: sp.sm,
   // `stretch` iguala a altura dos dois cards (extrato × título) — o com mais linhas (nº doc + forma) define
   // a altura; o outro estica p/ acompanhar. O ícone de link no meio continua centrado (matchArrow).
@@ -718,29 +719,83 @@ export const matchArrow = style({
   alignItems: 'center',
   justifyContent: 'center',
 })
+// Tipografia do card de match ampliada (#382): a P.O. lê os dois lados lado a lado o dia inteiro — o corpo
+// denso do mock (9–13px) era pequeno demais p/ conferência. Sobe um degrau em cada papel, sem quebrar a
+// hierarquia (overline < chave/valor < nome/valor forte).
 export const sideLbl = style({
   fontFamily: recon.font.mono,
-  fontSize: fs['3xs'],
+  fontSize: fs.xs,
   textTransform: 'uppercase',
   letterSpacing: '0.04em',
   color: c.ink[5],
 })
-export const sideTitle = style({ fontSize: fs.md, fontWeight: recon.weight.semibold, color: c.ink[1] })
+export const sideTitle = style({ fontSize: fs.xl, fontWeight: recon.weight.semibold, color: c.ink[1] })
+// Complemento do favorecido (o memo do extrato, quando acrescenta informação ao nome).
+export const sideSubtitle = style({ fontSize: fs.md, color: c.ink[4] })
 export const sideRow = style({
   display: 'flex',
   justifyContent: 'space-between',
+  // `baseline` mantém a chave alinhada ao valor mesmo quando ele é maior (o valor em destaque).
+  alignItems: 'baseline',
   gap: sp.sm,
-  fontSize: fs.sm,
+  fontSize: fs.lg,
 })
-export const sideKey = style({ color: c.ink[5] })
+export const sideKey = style({ color: c.ink[5], flexShrink: 0 })
 export const sideVal = style({ fontFamily: recon.font.mono, color: c.ink[3] })
 // Valor do card de match (extrato/título) em destaque: maior, negrito, tabular.
 export const sideValStrong = style({
   fontFamily: recon.font.mono,
-  fontSize: fs.lg,
+  fontSize: fs['2xl'],
   fontWeight: recon.weight.bold,
   color: c.ink[1],
   fontVariantNumeric: 'tabular-nums',
+})
+
+// #382 — Taxonomia do título (Programa/Plano/Centro/Categoria/Subcategoria) dentro do card do título.
+// Sempre visível (a P.O. não quer clicar p/ revelar); separada por um filete p/ não competir com o match.
+export const sideTaxonomy = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: sp.xs,
+  marginBlockStart: sp.xs,
+  paddingBlockStart: sp.md,
+  borderBlockStart: `${bw.thin} solid ${c.teal.line}`,
+})
+export const sideTaxonomyLbl = style({
+  fontFamily: recon.font.mono,
+  fontSize: fs.xs,
+  textTransform: 'uppercase',
+  letterSpacing: '0.04em',
+  color: c.ink[5],
+})
+export const sideTaxonomyEmpty = style({ fontSize: fs.md, color: c.ink[5] })
+// UMA grade de 3 colunas para os 5 campos (P.O.: "não parecer bagunçado"). Duas grades independentes (2 e 3
+// colunas) não compartilhavam trilhos, então as bordas não coincidiam entre as faixas. Com a MESMA grade,
+// o Plano ocupa 2 colunas e todo campo começa num trilho comum. Rótulo EM CIMA do valor — cinco linhas
+// "chave à esquerda / valor à direita" deixavam o card alto demais. `minmax(0,1fr)` + `minInlineSize: 0`
+// deixam a coluna encolher e o texto QUEBRAR, em vez de estourar a largura.
+export const sideTaxGrid = style({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+  columnGap: sp.sm,
+  rowGap: sp.md,
+  marginBlockStart: sp.xs,
+})
+export const sideTaxCell = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.0625rem',
+  minInlineSize: 0,
+})
+/** Plano Orçamentário: rótulo longo + valor longo → ocupa 2 das 3 colunas, fechando a 1ª faixa. */
+export const sideTaxCellWide = style({ gridColumn: 'span 2' })
+export const sideTaxKey = style({ fontSize: fs.xs, color: c.ink[5], lineHeight: 1.3 })
+export const sideTaxVal = style({
+  fontFamily: recon.font.sans,
+  fontSize: fs.lg,
+  color: c.ink[2],
+  lineHeight: 1.3,
+  overflowWrap: 'anywhere',
 })
 
 export const critList = style({
@@ -755,9 +810,9 @@ const critBase = {
   alignItems: 'center',
   gap: '0.25rem',
   fontFamily: recon.font.sans,
-  fontSize: fs['3xs'],
-  paddingInline: sp.xs,
-  paddingBlock: '0.0625rem',
+  fontSize: fs.sm,
+  paddingInline: sp.sm,
+  paddingBlock: '0.125rem',
   borderRadius: r.sm,
 } as const
 export const crit = styleVariants({

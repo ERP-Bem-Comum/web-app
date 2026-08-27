@@ -480,6 +480,16 @@ export const buildRegisteredTaxInputs = (fields: DocumentFormFields): readonly R
 
 const trimToUndefined = (s: string): string | undefined => (s.trim() === '' ? undefined : s.trim())
 
+// O campo `planoOrcamentario` é AMBÍGUO por herança: carrega o UUID quando escolhido no dropdown, mas a
+// hidratação por contrato o preenche com o NOME do cenário (ver `category-options.binding.ts`). Gravar o
+// valor cru viraria lixo em `budget_plan_ref` — só sobe quando é UUID de verdade. Mesmo guard da cascata.
+const PLAN_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+/** Plano escolhido pelo usuário, pronto p/ o create — `undefined` quando o campo não é um id de plano. */
+export const planRefToSubmit = (planoOrcamentario: string): string | undefined => {
+  const v = planoOrcamentario.trim()
+  return PLAN_UUID_RE.test(v) ? v : undefined
+}
+
 /** Monta o CreateDocumentInput (com agregação CSRF) ou `null` se o form ainda não pode submeter. */
 export const buildCreateInput = (fields: DocumentFormFields): CreateDocumentInput | null => {
   if (!canSubmit(fields) || fields.type === '' || fields.paymentMethod === '') return null
@@ -510,6 +520,10 @@ export const buildCreateInput = (fields: DocumentFormFields): CreateDocumentInpu
     // "Juros / Multa" (campo único) → interestCents; ambos somam ao líquido, então o total fica correto.
     interestCents: jurosMultaCents(fields) > 0 ? String(jurosMultaCents(fields)) : undefined,
     programRef: trimToUndefined(fields.programRef),
+    // #502: o PLANO é o dono da taxonomia (ADR-0051) — sem ele, os refs de centro/categoria/subcategoria
+    // (que são nós da ÁRVORE do plano) não resolvem para nome nenhum, e o drawer/conciliação mostram "—".
+    // Antes só subia quando vinha de CONTRATO; a escolha do dropdown era descartada em silêncio.
+    budgetPlanRef: planRefToSubmit(fields.planoOrcamentario),
     // #502 (S1): categoria e subcategoria em campos SEPARADOS — `categoryRef` = a Categoria, `subcategoryRef`
     // = a FOLHA (subcategoria). O relatório Realizado × Planejado casa pela folha; não dobramos mais em um só.
     categoryRef: trimToUndefined(fields.categoryRef),

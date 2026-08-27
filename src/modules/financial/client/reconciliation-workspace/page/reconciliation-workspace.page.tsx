@@ -277,6 +277,7 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
                           <SuggestionPane
                             state={ui.showGuesses ? vm.suggestions : { tag: 'idle' }}
                             selectedTx={vm.selectedTx}
+                            taxonomy={vm.suggestionTaxonomy}
                             reconciling={vm.reconcile.reconciling}
                             rejecting={vm.reconcile.rejecting}
                             errorTag={vm.reconcile.errorTag}

@@ -207,7 +207,8 @@ export function LancarDocumentoPage({ documentId }: LancarDocumentoPageProps = {
             contractRef: c.ref,
             // Programa escolhido pelo usuário tem prioridade; senão herda o do contrato.
             programRef: base.programRef ?? c.programRef ?? undefined,
-            budgetPlanRef: c.budgetPlanRef ?? undefined,
+            // Mesma precedência p/ o PLANO: o escolhido no dropdown manda; o do contrato é a herança.
+            budgetPlanRef: base.budgetPlanRef ?? c.budgetPlanRef ?? undefined,
           }
         : withPayee,
       // Arquivo local (upload novo) tem precedência; ao FINALIZAR um rascunho reaberto (sem upload local),

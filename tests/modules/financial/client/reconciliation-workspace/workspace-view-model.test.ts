@@ -1490,3 +1490,32 @@ describe('manualEntryBlockedTag — classificação obrigatória', () => {
     }
   })
 })
+
+import {
+  statementMemoDetail,
+  statementPartyLabel,
+} from '../../../../../src/modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
+
+describe('favorecido do extrato no card de match (statementPartyLabel / statementMemoDetail)', () => {
+  it('usa o payeeName quando o banco o preenche', () => {
+    const tx = { payeeName: 'RECEITA FEDERAL', memo: 'PAGTO GUIA' }
+    assert.equal(statementPartyLabel(tx), 'RECEITA FEDERAL')
+    assert.equal(statementMemoDetail(tx), 'PAGTO GUIA')
+  })
+
+  it('cai no memo quando o OFX/CSV não traz payeeName (card ficava sem identificação)', () => {
+    const tx = { payeeName: '   ', memo: 'PAGTO GUIA - RECEITA FEDERAL' }
+    assert.equal(statementPartyLabel(tx), 'PAGTO GUIA - RECEITA FEDERAL')
+    // O memo virou o rótulo → não se repete como complemento.
+    assert.equal(statementMemoDetail(tx), '')
+  })
+
+  it('sem payeeName nem memo → vazio (a view decide o traço)', () => {
+    assert.equal(statementPartyLabel({ payeeName: '', memo: '' }), '')
+    assert.equal(statementMemoDetail({ payeeName: '', memo: '' }), '')
+  })
+
+  it('memo que só repete o payeeName (case/espaço) não vira complemento', () => {
+    assert.equal(statementMemoDetail({ payeeName: 'Tarifa Bancária', memo: 'TARIFA  BANCÁRIA' }), '')
+  })
+})
