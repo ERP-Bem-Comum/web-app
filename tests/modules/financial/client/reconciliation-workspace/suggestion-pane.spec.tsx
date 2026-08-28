@@ -150,3 +150,112 @@ describe('SuggestionPane', () => {
     expect(onReject).toHaveBeenCalledWith('p1')
   })
 })
+
+// ── M2 (specs/110): "Editar" a taxonomia no bloco CATEGORIZAÇÃO ────────────────
+const cascadeStub = (
+  over: Partial<{
+    refs: Record<string, string>
+    isValid: boolean
+    hasSelection: boolean
+    setLevel: ReturnType<typeof vi.fn>
+  }> = {},
+) => ({
+  refs: {
+    programRef: '',
+    budgetPlanRef: '',
+    costCenterRef: '',
+    categoryRef: '',
+    subcategoryRef: '',
+    ...(over.refs ?? {}),
+  },
+  programOptions: [{ value: 'prog-1', label: 'GOD — Grande Obra' }],
+  planoOptions: [{ value: 'plan-1', label: '2026 GOD 1.0' }],
+  costCenterOptions: [],
+  categoryOptions: [],
+  subcategoryOptions: [],
+  setLevel: over.setLevel ?? vi.fn(),
+  reset: vi.fn(),
+  isValid: over.isValid ?? true,
+  hasSelection: over.hasSelection ?? false,
+})
+
+const reclassifyStub = (
+  over: Partial<{ canEdit: boolean; editing: boolean; start: ReturnType<typeof vi.fn> }> = {},
+  cascadeOver: Parameters<typeof cascadeStub>[0] = {},
+) =>
+  ({
+    canEdit: over.canEdit ?? true,
+    editing: over.editing ?? false,
+    cascade: cascadeStub(cascadeOver),
+    start: over.start ?? vi.fn(),
+    cancel: vi.fn(),
+  }) as never
+
+const renderPane = (reclassify: unknown, taxonomy?: unknown) =>
+  render(
+    <SuggestionPane
+      state={ready}
+      selectedTx={selectedTx}
+      reclassify={reclassify as never}
+      taxonomy={taxonomy as never}
+      reconciling={false}
+      rejecting={false}
+      errorTag={null}
+      onReconcile={vi.fn()}
+      onReject={vi.fn()}
+    />,
+  )
+
+describe('M2 · "Editar" a taxonomia na Sugestão', () => {
+  it('oferece "Editar" quando o título é NORMAL (RN-M2-11)', () => {
+    renderPane(reclassifyStub({ canEdit: true }))
+    expect(screen.getByRole('button', { name: tr('financial.recon.reclass.edit') })).toBeTruthy()
+  })
+
+  it('NÃO oferece "Editar" em título de retenção — imposto é alvo da cascata, não fonte', () => {
+    renderPane(reclassifyStub({ canEdit: false }))
+    expect(screen.queryByRole('button', { name: tr('financial.recon.reclass.edit') })).toBeNull()
+  })
+
+  it('clicar em "Editar" abre o editor', () => {
+    const start = vi.fn()
+    renderPane(reclassifyStub({ canEdit: true, start }))
+    fireEvent.click(screen.getByRole('button', { name: tr('financial.recon.reclass.edit') }))
+    expect(start).toHaveBeenCalled()
+  })
+
+  it('em edição mostra os 5 selects em cascata (Programa → Subcategoria)', () => {
+    renderPane(reclassifyStub({ editing: true }))
+    for (const label of [
+      'financial.detail.label.programa',
+      'financial.detail.label.planoOrcamentario',
+      'financial.detail.label.centroCusto',
+      'financial.detail.label.categoria',
+      'financial.detail.label.subcategoria',
+    ]) {
+      expect(screen.getByLabelText(tr(label))).toBeTruthy()
+    }
+  })
+
+  it('níveis sem ancestral escolhido ficam DESABILITADOS (não é lista vazia clicável)', () => {
+    renderPane(reclassifyStub({ editing: true }))
+    const centro = screen.getByLabelText(tr('financial.detail.label.centroCusto'))
+    expect((centro as HTMLSelectElement).disabled).toBe(true)
+    const programa = screen.getByLabelText(tr('financial.detail.label.programa'))
+    expect((programa as HTMLSelectElement).disabled).toBe(false)
+  })
+
+  it('caminho INVÁLIDO barra o Conciliar e explica o motivo (RN-M2-09)', () => {
+    renderPane(reclassifyStub({ editing: true }, { isValid: false }))
+    const confirmar = screen.getByRole('button', { name: tr('financial.recon.sugg.confirm') })
+    expect((confirmar as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByText(tr('financial.recon.reclass.invalidPath'))).toBeTruthy()
+  })
+
+  it('caminho válido libera o Conciliar e avisa da cascata aos impostos (RN-M2-04)', () => {
+    renderPane(reclassifyStub({ editing: true }, { isValid: true }))
+    const confirmar = screen.getByRole('button', { name: tr('financial.recon.sugg.confirm') })
+    expect((confirmar as HTMLButtonElement).disabled).toBe(false)
+    expect(screen.getByText(tr('financial.recon.reclass.cascadeHint'))).toBeTruthy()
+  })
+})

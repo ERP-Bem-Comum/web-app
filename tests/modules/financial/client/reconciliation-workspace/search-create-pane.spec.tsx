@@ -49,6 +49,29 @@ const baseBinding = (over: Partial<SearchCreateBinding> = {}): SearchCreateBindi
     residualCents: 0,
     canReconcile: false,
     canConfirm: false,
+    reclassify: {
+      canEdit: false,
+      editing: false,
+      cascade: {
+        refs: {
+          programRef: '',
+          budgetPlanRef: '',
+          costCenterRef: '',
+          categoryRef: '',
+          subcategoryRef: '',
+        },
+        programOptions: [],
+        planoOptions: [],
+        costCenterOptions: [],
+        categoryOptions: [],
+        subcategoryOptions: [],
+        setLevel: vi.fn(),
+        reset: vi.fn(),
+        isValid: true,
+        hasSelection: false,
+      },
+      toggle: vi.fn(),
+    },
     showTreatment: false,
     reconType: 'Individual',
     submitting: false,
@@ -286,5 +309,61 @@ describe('SearchCreatePane', () => {
     expect(screen.getByLabelText(tr('financial.recon.multi.flt.max'))).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: tr('financial.recon.multi.flt.apply') }))
     expect(applyValue).toHaveBeenCalled()
+  })
+})
+
+// ── M2 (specs/110): "Editar" ao lado de "+ Lançamento Manual" ──────────────────
+describe('M2 · "Editar" no Buscar/Criar vários', () => {
+  const withReclassify = (over: Partial<{ canEdit: boolean; editing: boolean; isValid: boolean }>) =>
+    baseBinding({
+      reclassify: {
+        canEdit: over.canEdit ?? false,
+        editing: over.editing ?? false,
+        cascade: {
+          refs: {
+            programRef: '',
+            budgetPlanRef: '',
+            costCenterRef: '',
+            categoryRef: '',
+            subcategoryRef: '',
+          },
+          programOptions: [],
+          planoOptions: [],
+          costCenterOptions: [],
+          categoryOptions: [],
+          subcategoryOptions: [],
+          setLevel: vi.fn(),
+          reset: vi.fn(),
+          isValid: over.isValid ?? true,
+          hasSelection: false,
+        },
+        toggle: vi.fn(),
+      },
+    } as never)
+
+  const renderPane = (binding: ReturnType<typeof baseBinding>) =>
+    render(<SearchCreatePane binding={binding} payables={payables} extratoValueCents="150000" />)
+
+  const editBtn = () => screen.getByRole('button', { name: tr('financial.recon.reclass.edit') })
+
+  it('seleção SÓ de impostos NÃO habilita o "Editar" (M2-7 / RN-M2-11)', () => {
+    renderPane(withReclassify({ canEdit: false }))
+    expect((editBtn() as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('seleção com título NORMAL habilita (M2-8)', () => {
+    renderPane(withReclassify({ canEdit: true }))
+    expect((editBtn() as HTMLButtonElement).disabled).toBe(false)
+  })
+
+  it('barrado explica o porquê (não fica só cinza sem motivo)', () => {
+    renderPane(withReclassify({ canEdit: false }))
+    expect(editBtn().getAttribute('title')).toBe(tr('financial.recon.reclass.onlyNormal'))
+  })
+
+  it('em edição mostra os 5 selects em cascata', () => {
+    renderPane(withReclassify({ canEdit: true, editing: true }))
+    expect(screen.getByLabelText(tr('financial.detail.label.programa'))).toBeTruthy()
+    expect(screen.getByLabelText(tr('financial.detail.label.subcategoria'))).toBeTruthy()
   })
 })

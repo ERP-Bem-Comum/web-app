@@ -616,8 +616,10 @@ export const assocCol = style({
   minBlockSize: 0,
   display: 'flex',
   flexDirection: 'column',
-  gap: sp.xl,
-  padding: sp['3xl'],
+  gap: sp.lg,
+  // 24 → 18: o card de match cresceu com a taxonomia (specs/110) e empurrava Rejeitar/Conciliar abaixo da
+  // dobra — o painel rola, mas ter de rolar p/ conciliar é atrito no gesto mais repetido da tela.
+  padding: sp['2xl'],
   overflowY: 'auto',
   color: c.ink[3],
   fontFamily: recon.font.sans,
@@ -668,7 +670,8 @@ export const assocTab = styleVariants({
 export const matchCard = style({
   border: `${bw.thin} solid ${c.green.line}`,
   borderRadius: r.xl,
-  overflow: 'hidden',
+  // ⚠️ SEM `overflow: hidden`: ele cria um scrollport e ANULA o `position: sticky` do rodapé de ações.
+  // Os cantos passam a ser arredondados nas pontas (matchHead em cima, matchActions embaixo).
   background: c.paper.default,
   boxShadow: `${recon.shadow.card}, 0 0 0 ${bw.ring} ${c.green.bg}`,
 })
@@ -683,11 +686,13 @@ export const matchHead = style({
   background: c.green.bg,
   color: c.green.deep,
   fontFamily: recon.font.mono,
-  fontSize: fs.md,
+  fontSize: fs.sm,
   fontWeight: recon.weight.bold,
   textTransform: 'uppercase',
   letterSpacing: '0.04em',
   borderBlockEnd: `${bw.thin} solid ${c.green.line}`,
+  borderStartStartRadius: r.xl,
+  borderStartEndRadius: r.xl,
 })
 
 export const matchSides = style({
@@ -698,14 +703,14 @@ export const matchSides = style({
   // `stretch` iguala a altura dos dois cards (extrato × título) — o com mais linhas (nº doc + forma) define
   // a altura; o outro estica p/ acompanhar. O ícone de link no meio continua centrado (matchArrow).
   alignItems: 'stretch',
-  padding: sp.xl,
+  padding: sp.lg,
 })
 
 const matchSideBase = {
   display: 'flex',
   flexDirection: 'column',
-  gap: sp.xs,
-  padding: sp.lg,
+  gap: '0.25rem',
+  padding: sp.md,
   borderRadius: r.md,
 } as const
 export const matchSide = styleVariants({
@@ -729,23 +734,23 @@ export const sideLbl = style({
   letterSpacing: '0.04em',
   color: c.ink[5],
 })
-export const sideTitle = style({ fontSize: fs.xl, fontWeight: recon.weight.semibold, color: c.ink[1] })
+export const sideTitle = style({ fontSize: fs.lg, fontWeight: recon.weight.semibold, color: c.ink[1] })
 // Complemento do favorecido (o memo do extrato, quando acrescenta informação ao nome).
-export const sideSubtitle = style({ fontSize: fs.md, color: c.ink[4] })
+export const sideSubtitle = style({ fontSize: fs.sm, color: c.ink[4] })
 export const sideRow = style({
   display: 'flex',
   justifyContent: 'space-between',
   // `baseline` mantém a chave alinhada ao valor mesmo quando ele é maior (o valor em destaque).
   alignItems: 'baseline',
   gap: sp.sm,
-  fontSize: fs.lg,
+  fontSize: fs.md,
 })
 export const sideKey = style({ color: c.ink[5], flexShrink: 0 })
 export const sideVal = style({ fontFamily: recon.font.mono, color: c.ink[3] })
 // Valor do card de match (extrato/título) em destaque: maior, negrito, tabular.
 export const sideValStrong = style({
   fontFamily: recon.font.mono,
-  fontSize: fs['2xl'],
+  fontSize: fs.xl,
   fontWeight: recon.weight.bold,
   color: c.ink[1],
   fontVariantNumeric: 'tabular-nums',
@@ -756,9 +761,9 @@ export const sideValStrong = style({
 export const sideTaxonomy = style({
   display: 'flex',
   flexDirection: 'column',
-  gap: sp.xs,
-  marginBlockStart: sp.xs,
-  paddingBlockStart: sp.md,
+  gap: '0.25rem',
+  marginBlockStart: '0.25rem',
+  paddingBlockStart: sp.sm,
   borderBlockStart: `${bw.thin} solid ${c.teal.line}`,
 })
 export const sideTaxonomyLbl = style({
@@ -768,6 +773,91 @@ export const sideTaxonomyLbl = style({
   letterSpacing: '0.04em',
   color: c.ink[5],
 })
+// Painel da reclassificação no Buscar/Criar vários — separado do rodapé por um filete, p/ não parecer
+// parte dos filtros. Mesmo desenho do bloco da Sugestão.
+export const reclassPanel = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: sp.xs,
+  paddingInline: sp.lg,
+  paddingBlock: sp.sm,
+  borderRadius: r.md,
+  background: c.paper.warm,
+})
+
+// Cabeçalho do bloco de categorização: overline à esquerda, "Editar" à direita (M2).
+export const sideTaxonomyHead = style({
+  display: 'flex',
+  alignItems: 'baseline',
+  justifyContent: 'space-between',
+  gap: sp.sm,
+})
+// "Editar": BOTÃO discreto (P.O.) — tem contorno e fundo, mas miúdo, p/ caber no cabeçalho do bloco.
+export const taxEditBtn = style({
+  fontFamily: recon.font.sans,
+  fontSize: fs.xs,
+  fontWeight: recon.weight.semibold,
+  color: c.teal.deep,
+  background: c.paper.default,
+  border: `${bw.hairline} solid ${c.teal.line}`,
+  borderRadius: r.sm,
+  paddingInline: sp.sm,
+  paddingBlock: '0.125rem',
+  cursor: 'pointer',
+  selectors: { '&:hover': { background: c.teal.bg } },
+})
+// "Cancelar edição": NÃO é botão (P.O.) — nome clicável, em tom avermelhado, porque descarta o que foi
+// digitado. A diferença de forma entre os dois estados é intencional: entrar na edição é uma ação neutra,
+// sair dela joga trabalho fora.
+export const taxCancelBtn = style({
+  fontFamily: recon.font.sans,
+  fontSize: fs.xs,
+  fontWeight: recon.weight.semibold,
+  color: c.red.deep,
+  background: 'transparent',
+  border: 'none',
+  padding: 0,
+  cursor: 'pointer',
+  textDecoration: 'underline',
+  selectors: { '&:hover': { color: c.red.normal } },
+})
+// Rodapé do editor: confirma a cascata aos impostos, ou explica por que Conciliar está barrado.
+export const taxHint = style({ fontSize: fs.xs, color: c.ink[5], marginBlockStart: sp.xs })
+
+// ── M2 (specs/110): os 5 selects do "Editar" a taxonomia ────────────────────────
+// Mesma grade do bloco read-only (3 colunas, Plano ocupando 2) → alternar Editar/ver não desloca nada na
+// tela: os campos ficam exatamente onde estavam.
+export const taxGrid = style({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+  columnGap: sp.sm,
+  rowGap: sp.sm,
+  marginBlockStart: '0.125rem',
+})
+export const taxField = style({ display: 'flex', flexDirection: 'column', gap: '0.125rem', minInlineSize: 0 })
+export const taxLabel = style({ fontSize: fs.xs, color: c.ink[5], lineHeight: 1.3 })
+const taxSelectBase = {
+  inlineSize: '100%',
+  minInlineSize: 0,
+  fontFamily: recon.font.sans,
+  fontSize: fs.sm,
+  color: c.ink[2],
+  background: c.paper.default,
+  border: `${bw.thin} solid ${c.paper.rule}`,
+  borderRadius: r.sm,
+  paddingInline: sp.xs,
+  paddingBlock: '0.25rem',
+} as const
+export const taxSelect = style(taxSelectBase)
+// Nível sem ancestral escolhido: PARECE barrado (não só `disabled` no DOM) — senão a lista vazia lê como
+// "acabaram as opções" em vez de "escolha o de cima primeiro".
+export const taxSelectDisabled = style({
+  ...taxSelectBase,
+  color: c.ink[5],
+  background: c.paper.beige,
+  cursor: 'not-allowed',
+})
+
 export const sideTaxonomyEmpty = style({ fontSize: fs.md, color: c.ink[5] })
 // UMA grade de 3 colunas para os 5 campos (P.O.: "não parecer bagunçado"). Duas grades independentes (2 e 3
 // colunas) não compartilhavam trilhos, então as bordas não coincidiam entre as faixas. Com a MESMA grade,
@@ -778,8 +868,8 @@ export const sideTaxGrid = style({
   display: 'grid',
   gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
   columnGap: sp.sm,
-  rowGap: sp.md,
-  marginBlockStart: sp.xs,
+  rowGap: sp.sm,
+  marginBlockStart: '0.125rem',
 })
 export const sideTaxCell = style({
   display: 'flex',
@@ -792,7 +882,7 @@ export const sideTaxCellWide = style({ gridColumn: 'span 2' })
 export const sideTaxKey = style({ fontSize: fs.xs, color: c.ink[5], lineHeight: 1.3 })
 export const sideTaxVal = style({
   fontFamily: recon.font.sans,
-  fontSize: fs.lg,
+  fontSize: fs.md,
   color: c.ink[2],
   lineHeight: 1.3,
   overflowWrap: 'anywhere',
@@ -802,17 +892,17 @@ export const critList = style({
   display: 'flex',
   flexWrap: 'wrap',
   gap: sp.xs,
-  paddingInline: sp.xl,
-  paddingBlockEnd: sp.lg,
+  paddingInline: sp.lg,
+  paddingBlockEnd: sp.md,
 })
 const critBase = {
   display: 'inline-flex',
   alignItems: 'center',
   gap: '0.25rem',
   fontFamily: recon.font.sans,
-  fontSize: fs.sm,
-  paddingInline: sp.sm,
-  paddingBlock: '0.125rem',
+  fontSize: fs.xs,
+  paddingInline: sp.xs,
+  paddingBlock: '0.0625rem',
   borderRadius: r.sm,
 } as const
 export const crit = styleVariants({
@@ -828,9 +918,17 @@ export const matchActions = style({
   display: 'flex',
   alignItems: 'center',
   gap: sp.sm,
-  padding: sp.xl,
+  padding: sp.md,
   background: c.paper.warm,
   borderBlockStart: `${bw.thin} solid ${c.paper.rule}`,
+  // Rejeitar/Conciliar SEMPRE à vista: com a taxonomia o card ficou alto e as ações caíam abaixo da dobra
+  // — ter de rolar p/ conciliar é atrito no gesto mais repetido da tela. Gruda no fim do painel enquanto
+  // o card rola por baixo; ao chegar no fim, assenta no lugar de sempre.
+  position: 'sticky',
+  insetBlockEnd: 0,
+  zIndex: 1,
+  borderEndStartRadius: r.xl,
+  borderEndEndRadius: r.xl,
 })
 export const spacer = style({ flex: 1 })
 
@@ -873,6 +971,40 @@ export const btnManual = style({
   fontWeight: recon.weight.semibold,
   cursor: 'pointer',
   selectors: { '&:hover': { background: c.teal.line } },
+})
+
+// "Editar" barrado (seleção sem título normal): PARECE barrado — apagado, sem hover e com cursor de
+// bloqueio. `disabled` só no DOM não comunica nada a quem está olhando a tela.
+export const btnManualCancel = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: sp.xs,
+  paddingInline: sp.lg,
+  paddingBlock: sp.sm,
+  borderRadius: r.sm,
+  background: c.red.bg,
+  border: `${bw.hairline} solid ${c.red.line}`,
+  color: c.red.deep,
+  fontFamily: recon.font.sans,
+  fontSize: fs.md,
+  fontWeight: recon.weight.semibold,
+  cursor: 'pointer',
+})
+
+export const btnManualDisabled = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: sp.xs,
+  paddingInline: sp.lg,
+  paddingBlock: sp.sm,
+  borderRadius: r.sm,
+  background: c.paper.beige,
+  border: `${bw.hairline} solid ${c.paper.rule}`,
+  color: c.ink[5],
+  fontFamily: recon.font.sans,
+  fontSize: fs.md,
+  fontWeight: recon.weight.semibold,
+  cursor: 'not-allowed',
 })
 
 // Passador de página do buscar-vários (‹ Página X de Y ›) — barra discreta acima do rodapé.
@@ -1411,9 +1543,9 @@ export const ntActions = style({
   display: 'flex',
   alignItems: 'center',
   gap: sp.sm,
-  marginBlockStart: sp['2xl'],
-  paddingBlockStart: sp.lg,
-  borderBlockStart: `${bw.hairline} solid ${c.paper.rule}`,
+  // Sem filete e com menos respiro (P.O.): a linha acima dos botões só consumia altura — os botões já se
+  // separam do conteúdo por si. Vale também com o editor aberto (o painel acima também perdeu a linha).
+  marginBlockStart: sp.lg,
 })
 export const ntCancel = style({
   border: 'none',

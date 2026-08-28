@@ -131,10 +131,26 @@ export type DifferenceInput = Readonly<{
   costCenterRef?: string
   note?: string
 }>
+/**
+ * M2 (specs/110) — os 5 refs da taxonomia enviados ao CONCILIAR, quando o operador usou o "Editar".
+ * Todos opcionais: sem edição, nenhum sobe e a classificação do lançamento permanece (RN-M2-03).
+ * O backend aplica no título líquido e CASCATEIA aos títulos de retenção do documento (RN-M2-04) — o
+ * front nunca toca no filho.
+ */
+export type ReclassificationInput = Readonly<{
+  programRef?: string
+  budgetPlanRef?: string
+  costCenterRef?: string
+  categoryRef?: string
+  subcategoryRef?: string
+}>
+
 export type CreateReconciliationInput = Readonly<{
   transactionId: string
   payableIds: readonly string[]
   difference?: DifferenceInput
+  /** M2 — reclassificação do título líquido no ato da conciliação. Ver `ReclassificationInput`. */
+  reclassification?: ReclassificationInput
 }>
 export type UndoReconciliationInput = Readonly<{ reconciliationId: string; reason?: string }>
 export type ManualEntryTemplate = Readonly<{

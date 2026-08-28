@@ -16,26 +16,12 @@ import { reconciliationRepository } from '#modules/financial/client/data/reposit
 import { reconciliationErrorTag } from '#modules/financial/client/data/helpers/reconciliation-error-tag.ts'
 import { maskMoneyBRL } from '#modules/financial/client/data/money.ts'
 import { listAllPartnersFn } from '#modules/partners/public-api/index.ts'
-import { listProgramsFn } from '#modules/programs/public-api/index.ts'
+import { useTaxonomyCascade } from './taxonomy-cascade.binding.ts'
 import {
-  listBudgetPlansFn,
-  getBudgetPlanDetailFn,
-  type PlanDetail,
-} from '#modules/budget-plans/public-api/index.ts'
-import {
-  planCostCenterOptions,
-  planCategoryOptions,
-  planSubcategoryOptions,
-} from '#modules/financial/client/data/helpers/plan-taxonomy-cascade.ts'
-import { referencesQueryOptions } from './reconciliation-workspace.query.ts'
-import {
-  relabelReconCategory,
   requiresDestination,
   manualEntryBlockedTag,
   formatDateBR,
   parseBRLToCents,
-  categoriesForCostCenter,
-  subcategoriesOf,
   type ManualEntryType,
   type StatementTransaction,
 } from './reconciliation-workspace.view-model.ts'
@@ -130,61 +116,8 @@ const partnerOptionsQuery = {
   staleTime: 60_000,
 }
 
-// Programas ATIVOS (cross-módulo via public-api) → opções "SIGLA — Nome". Pagina (25/página). Erro → [].
-const programOptionsQuery = {
-  queryKey: ['financial', 'recon', 'manual-program-options'] as const,
-  queryFn: async (): Promise<readonly ManualEntryOption[]> => {
-    const out: ManualEntryOption[] = []
-    let page = 1
-    for (;;) {
-      const r = await listProgramsFn({ data: { status: 'ATIVO', order: 'ASC', page, limit: 25 } })
-      if (!r.ok) break
-      for (const p of r.data.items) {
-        out.push({ value: p.id, label: p.sigla === '' ? p.name : `${p.sigla} — ${p.name}` })
-      }
-      const { total, limit } = r.data.meta
-      if (r.data.items.length === 0 || page * limit >= total) break
-      page += 1
-    }
-    return out
-  },
-  staleTime: 60_000,
-}
-
-// #502/S2: planos APROVADOS p/ o dropdown (mesma regra do Lançar Documento — só aprovados + cenário no
-// rótulo, p/ não pegar um rascunho homônimo por engano). Cross-módulo via public-api. Erro/sem permissão → [].
-const planoOptionsQuery = {
-  queryKey: ['budget-plans', 'options', 'recon-manual'] as const,
-  queryFn: async (): Promise<readonly ManualEntryOption[]> => {
-    const r = await listBudgetPlansFn({ data: { page: 1, limit: 100 } })
-    if (!r.ok) return []
-    return r.data.items
-      .filter((p) => p.status === 'APROVADO')
-      .map((p) => ({
-        value: p.id,
-        label:
-          `${String(p.year)} ${p.programAbbreviation ?? p.programName} ${p.version.toFixed(1)}` +
-          (p.scenarioName !== null ? ` · ${p.scenarioName}` : ''),
-      }))
-  },
-  staleTime: 60_000,
-}
-
-// O `budgetPlanRef` só vira fonte da cascata quando é um UUID de verdade (dropdown escolhido); vazio → cai no
-// operacional (nunca esvazia). Mesma blindagem do Lançar Documento (Fatia 1).
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const isPlanId = (v: string): boolean => UUID_RE.test(v)
-
-/** Árvore do plano — só habilita com UUID válido (sem plano → não busca, cai no operacional). */
-const planDetailQuery = (planoRef: string) => ({
-  queryKey: ['budget-plans', 'detail', 'categorization', planoRef] as const,
-  queryFn: async (): Promise<PlanDetail | null> => {
-    const r = await getBudgetPlanDetailFn({ data: { id: planoRef } })
-    return r.ok ? r.data : null
-  },
-  enabled: isPlanId(planoRef),
-  staleTime: 300_000,
-})
+// #502/S2: a cascata dos 5 níveis (queries + opções + resets) vive em `taxonomy-cascade.binding.ts`,
+// compartilhada com o "Editar" da M2 (specs/110). Aqui só ligamos o estado dela ao formulário.
 
 export function useManualEntry(
   accountRef: string,
@@ -202,11 +135,7 @@ export function useManualEntry(
   const [description, setDescription] = useState('')
   const [destinationAccount, setDestinationAccount] = useState('')
   const [supplierRef, setSupplierRef] = useState('')
-  const [budgetPlanRef, setBudgetPlanRef] = useState('')
-  const [programRef, setProgramRef] = useState('')
-  const [categoryRef, setCategoryRef] = useState('')
-  const [subcategoryRef, setSubcategoryRef] = useState('')
-  const [costCenterRef, setCostCenterRef] = useState('')
+  const cascade = useTaxonomyCascade()
   // #370: campos de documento (Pagamento/Recebimento). `documentType` '' = sem seleção.
   const [documentNumber, setDocumentNumber] = useState('')
   const [documentType, setDocumentType] = useState<DocumentType | ''>('')
@@ -215,42 +144,13 @@ export function useManualEntry(
   const [errorTag, setErrorTag] = useState<string | null>(null)
 
   const partnerOptions = useQuery(partnerOptionsQuery).data ?? []
-  const programOptions = useQuery(programOptionsQuery).data ?? []
-  const planoOptions = useQuery(planoOptionsQuery).data ?? []
-  // Referências da categorização (020 · #200): a query devolve um Result → desembrulha p/ as opções.
-  const referencesResult = useQuery(referencesQueryOptions()).data
-  const references = referencesResult?.ok === true ? referencesResult.value : null
-  // Árvore do plano selecionado (Fatia 1): com plano válido, a cascata vem DELA; senão, do operacional.
-  const usePlan = isPlanId(budgetPlanRef)
-  const planDetail = useQuery(planDetailQuery(budgetPlanRef)).data ?? null
-  // Cascata Centro → Categoria → Subcategoria. Com plano (ADR-0051): árvore do plano (só nós ativos, value =
-  // ref). Sem plano: catálogo operacional — Categoria filtra pelo centro (#341), Subcategoria pela categoria
-  // via `parentId`, com o relabel de conciliação. Enquanto a árvore do plano carrega → [] (não vaza o operacional).
-  const costCenterOptions: readonly ManualEntryOption[] = usePlan
-    ? planDetail === null
-      ? []
-      : planCostCenterOptions(planDetail)
-    : (references?.costCenters.map((c) => ({ value: c.id, label: `${c.code} — ${c.name}` })) ?? [])
-  const categoryOptions: readonly ManualEntryOption[] = usePlan
-    ? planDetail === null
-      ? []
-      : planCategoryOptions(planDetail, costCenterRef)
-    : references !== null
-      ? categoriesForCostCenter(references, costCenterRef).map((c) => ({
-          value: c.id,
-          label: relabelReconCategory(c.name),
-        }))
-      : []
-  const subcategoryOptions: readonly ManualEntryOption[] = usePlan
-    ? planDetail === null
-      ? []
-      : planSubcategoryOptions(planDetail, categoryRef)
-    : references !== null
-      ? subcategoriesOf(references, categoryRef).map((c) => ({
-          value: c.id,
-          label: relabelReconCategory(c.name),
-        }))
-      : []
+  const programOptions = cascade.programOptions
+  const planoOptions = cascade.planoOptions
+  // A cascata (opções + resets) vem do hook compartilhado; aqui só damos nomes locais aos 5 refs.
+  const { programRef, budgetPlanRef, costCenterRef, categoryRef, subcategoryRef } = cascade.refs
+  const costCenterOptions = cascade.costCenterOptions
+  const categoryOptions = cascade.categoryOptions
+  const subcategoryOptions = cascade.subcategoryOptions
   // #143: contas-cedente ATIVAS p/ destino da transferência/aplicação/resgate — exclui a própria origem
   // (o backend rejeita destino == origem). Reusa `listAccounts` (#138), as MESMAS contas do grid.
   const accountOptions =
@@ -319,11 +219,7 @@ export function useManualEntry(
         setDescription('')
         setDestinationAccount('')
         setSupplierRef('')
-        setBudgetPlanRef('')
-        setProgramRef('')
-        setCategoryRef('')
-        setSubcategoryRef('')
-        setCostCenterRef('')
+        cascade.reset()
         setDocumentNumber('')
         setDocumentType('')
         setIssueDate('')
@@ -402,28 +298,22 @@ export function useManualEntry(
     setSupplierRef: (v) => {
       setSupplierRef(v)
     },
+    // Cascata pelo hook compartilhado: trocar um nível zera os inferiores (RN-M2-08), e reescolher o MESMO
+    // valor NÃO zera nada — a guarda de no-op que faltava aqui (mesma classe do bug da specs/109).
     setBudgetPlanRef: (v) => {
-      setBudgetPlanRef(v)
-      // Trocar o plano troca a ÁRVORE da cascata (ADR-0051) → zera centro/categoria/subcategoria, senão a
-      // folha gravada seria órfã (§IV). Mesma regra do Lançar Documento.
-      setCostCenterRef('')
-      setCategoryRef('')
-      setSubcategoryRef('')
+      cascade.setLevel('budgetPlanRef', v)
     },
     setProgramRef: (v) => {
-      setProgramRef(v)
+      cascade.setLevel('programRef', v)
     },
     setCategoryRef: (v) => {
-      setCategoryRef(v)
-      setSubcategoryRef('') // trocar a categoria zera a subcategoria (cascata)
+      cascade.setLevel('categoryRef', v)
     },
     setSubcategoryRef: (v) => {
-      setSubcategoryRef(v)
+      cascade.setLevel('subcategoryRef', v)
     },
     setCostCenterRef: (v) => {
-      setCostCenterRef(v)
-      setCategoryRef('') // trocar o centro zera categoria + subcategoria (cascata)
-      setSubcategoryRef('')
+      cascade.setLevel('costCenterRef', v)
     },
     setDocumentNumber: (v) => {
       setDocumentNumber(v)
@@ -445,11 +335,7 @@ export function useManualEntry(
       setDescription('')
       setDestinationAccount('')
       setSupplierRef('')
-      setBudgetPlanRef('')
-      setProgramRef('')
-      setCategoryRef('')
-      setSubcategoryRef('')
-      setCostCenterRef('')
+      cascade.reset()
       setDocumentNumber('')
       setDocumentType('')
       setIssueDate('')
@@ -464,7 +350,7 @@ export function useManualEntry(
       const destLabel = accountOptions.find((o) => o.value === destinationAccount.trim())?.label
       // #502/S2: categoria e subcategoria SEPARADAS (não dobra mais a folha em categoryRef) — coerente com o
       // documento (S1). Categorização não se aplica aos 3 tipos entre contas próprias → não envia nada.
-      const plan = showCategorization && isPlanId(budgetPlanRef) ? budgetPlanRef : undefined
+      const plan = showCategorization && budgetPlanRef !== '' ? budgetPlanRef : undefined
       const cat = showCategorization && categoryRef !== '' ? categoryRef : undefined
       const sub = showCategorization && subcategoryRef !== '' ? subcategoryRef : undefined
       const costCenter = showCategorization && costCenterRef !== '' ? costCenterRef : undefined

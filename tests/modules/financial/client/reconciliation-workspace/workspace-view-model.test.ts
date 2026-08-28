@@ -1519,3 +1519,130 @@ describe('favorecido do extrato no card de match (statementPartyLabel / statemen
     assert.equal(statementMemoDetail({ payeeName: 'Tarifa Bancária', memo: 'TARIFA  BANCÁRIA' }), '')
   })
 })
+
+import {
+  EMPTY_TAXONOMY,
+  applyTaxonomyChange,
+  isTaxonomyPathValid,
+  hasTaxonomySelection,
+  isReclassifiableTitle,
+  hasReclassifiableSelection,
+  taxonomyToPayload,
+} from '../../../../../src/modules/financial/client/reconciliation-workspace/reconciliation-workspace.view-model.ts'
+
+describe('M2 · cascata da reclassificação (RN-M2-08)', () => {
+  const full = {
+    programRef: 'prog',
+    budgetPlanRef: 'plan',
+    costCenterRef: 'cc',
+    categoryRef: 'cat',
+    subcategoryRef: 'sub',
+  }
+
+  it('trocar o Plano reseta Centro/Categoria/Subcategoria e preserva Programa (M2-3)', () => {
+    const next = applyTaxonomyChange(full, 'budgetPlanRef', 'plan-2')
+    assert.equal(next.programRef, 'prog')
+    assert.equal(next.budgetPlanRef, 'plan-2')
+    assert.equal(next.costCenterRef, '')
+    assert.equal(next.categoryRef, '')
+    assert.equal(next.subcategoryRef, '')
+  })
+
+  it('trocar o Programa (topo) reseta os QUATRO abaixo', () => {
+    const next = applyTaxonomyChange(full, 'programRef', 'prog-2')
+    assert.deepEqual(next, { ...EMPTY_TAXONOMY, programRef: 'prog-2' })
+  })
+
+  it('trocar a Categoria reseta só a Subcategoria', () => {
+    const next = applyTaxonomyChange(full, 'categoryRef', 'cat-2')
+    assert.equal(next.costCenterRef, 'cc')
+    assert.equal(next.categoryRef, 'cat-2')
+    assert.equal(next.subcategoryRef, '')
+  })
+
+  it('re-selecionar o MESMO valor NÃO reseta nada (no-op não destrói trabalho — specs/109)', () => {
+    assert.equal(applyTaxonomyChange(full, 'budgetPlanRef', 'plan'), full)
+    assert.equal(applyTaxonomyChange(full, 'costCenterRef', 'cc'), full)
+  })
+
+  it('editar só a Subcategoria mantém os outros 4 (M2-2)', () => {
+    const next = applyTaxonomyChange(full, 'subcategoryRef', 'sub-2')
+    assert.deepEqual(next, { ...full, subcategoryRef: 'sub-2' })
+  })
+})
+
+describe('M2 · caminho válido e payload (RN-M2-09 / RN-M2-12)', () => {
+  it('caminho completo é válido; tudo vazio também (nada a gravar)', () => {
+    assert.equal(isTaxonomyPathValid(EMPTY_TAXONOMY), true)
+    assert.equal(
+      isTaxonomyPathValid({
+        programRef: 'p',
+        budgetPlanRef: 'b',
+        costCenterRef: 'c',
+        categoryRef: 'k',
+        subcategoryRef: 's',
+      }),
+      true,
+    )
+  })
+
+  it('subcategoria SEM categoria é caminho órfão → inválido (M2-9)', () => {
+    assert.equal(isTaxonomyPathValid({ ...EMPTY_TAXONOMY, programRef: 'p', subcategoryRef: 's' }), false)
+  })
+
+  it('folha opcional: parar na Categoria (sem subcategoria) é válido', () => {
+    assert.equal(
+      isTaxonomyPathValid({
+        programRef: 'p',
+        budgetPlanRef: 'b',
+        costCenterRef: 'c',
+        categoryRef: 'k',
+        subcategoryRef: '',
+      }),
+      true,
+    )
+  })
+
+  it('hasTaxonomySelection distingue "não classificou" de "classificou"', () => {
+    assert.equal(hasTaxonomySelection(EMPTY_TAXONOMY), false)
+    assert.equal(hasTaxonomySelection({ ...EMPTY_TAXONOMY, programRef: 'p' }), true)
+  })
+
+  it('taxonomyToPayload manda os 5 e omite o que não foi escolhido (RN-M2-12)', () => {
+    const p = taxonomyToPayload({
+      programRef: 'p',
+      budgetPlanRef: 'b',
+      costCenterRef: 'c',
+      categoryRef: 'k',
+      subcategoryRef: '',
+    })
+    assert.deepEqual(p, {
+      programRef: 'p',
+      budgetPlanRef: 'b',
+      costCenterRef: 'c',
+      categoryRef: 'k',
+      subcategoryRef: undefined,
+    })
+  })
+})
+
+describe('M2 · o "Editar" só vale p/ título NORMAL (RN-M2-11)', () => {
+  it('título líquido (sem retenção) é reclassificável; imposto retido NÃO', () => {
+    assert.equal(isReclassifiableTitle({ retentionType: null }), true)
+    assert.equal(isReclassifiableTitle({}), true) // campo ausente = líquido
+    assert.equal(isReclassifiableTitle({ retentionType: 'ISS' }), false)
+    assert.equal(isReclassifiableTitle({ retentionType: 'IRRF' }), false)
+    assert.equal(isReclassifiableTitle(null), false)
+  })
+
+  it('seleção SÓ de impostos não habilita (M2-7); seleção MISTA habilita (M2-8)', () => {
+    const rows = [
+      { id: 'a', retentionType: 'ISS' },
+      { id: 'b', retentionType: 'INSS' },
+      { id: 'c', retentionType: null },
+    ]
+    assert.equal(hasReclassifiableSelection(rows, new Set(['a', 'b'])), false)
+    assert.equal(hasReclassifiableSelection(rows, new Set(['a', 'c'])), true)
+    assert.equal(hasReclassifiableSelection(rows, new Set()), false)
+  })
+})
