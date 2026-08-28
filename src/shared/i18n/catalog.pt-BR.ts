@@ -1693,6 +1693,14 @@ export const ptBR: Catalog = {
   'financial.recon.sugg.method': 'Forma',
   'financial.recon.sugg.supplierPending': 'Fornecedor',
   'financial.recon.sugg.taxonomy': 'Categorização',
+  // M2 (specs/110) — reclassificar a taxonomia ao conciliar.
+  'financial.recon.reclass.edit': 'Editar',
+  'financial.recon.reclass.cancel': 'Cancelar edição',
+  'financial.recon.reclass.select': 'Selecione',
+  'financial.recon.reclass.invalidPath':
+    'Complete a classificação de cima para baixo — falta escolher um nível acima.',
+  'financial.recon.reclass.cascadeHint': 'Os impostos retidos deste documento recebem a mesma classificação.',
+  'financial.recon.reclass.onlyNormal': 'Só o título normal pode ser reclassificado.',
   'financial.recon.sugg.confirm': 'Conciliar',
   'financial.recon.sugg.reject': 'Rejeitar',
   'financial.recon.sugg.alternatives': 'Outras possibilidades',

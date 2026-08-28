@@ -1054,3 +1054,106 @@ export const groupAccountsForSwitch = (
     closed: filtered.filter((a) => a.status === 'Closed').map((a) => toChangeAccountItem(a, currentId)),
   }
 }
+
+// ── M2 · Reclassificar a taxonomia na conciliação (specs/110) ───────────────────
+// Núcleo PURO das regras RN-M2-08/09/11. A cascata de 5 níveis e o gating do "Editar" vivem aqui (§XI):
+// o binding só liga estado e queries, e a view só apresenta.
+
+/** Os 5 refs da taxonomia (ADR-0051). `''` = não escolhido — nunca `null`, p/ casar com o value dos selects. */
+export type TaxonomyRefs = Readonly<{
+  programRef: string
+  budgetPlanRef: string
+  costCenterRef: string
+  categoryRef: string
+  subcategoryRef: string
+}>
+
+export const EMPTY_TAXONOMY: TaxonomyRefs = {
+  programRef: '',
+  budgetPlanRef: '',
+  costCenterRef: '',
+  categoryRef: '',
+  subcategoryRef: '',
+}
+
+/** Níveis em ordem TOP-DOWN (§6 da spec) — a posição no array É a hierarquia. */
+export const TAXONOMY_LEVELS = [
+  'programRef',
+  'budgetPlanRef',
+  'costCenterRef',
+  'categoryRef',
+  'subcategoryRef',
+] as const
+export type TaxonomyLevel = (typeof TAXONOMY_LEVELS)[number]
+
+/**
+ * RN-M2-08 — trocar um nível RESETA os inferiores. PURA.
+ *
+ * Reseta só na TROCA REAL: reescolher o MESMO valor não torna nenhum nível inferior órfão, e limpar aí só
+ * destruiria trabalho já feito (foi exatamente esse no-op que apagou a categorização no Lançar Documento —
+ * ver specs/109). A invariante §IV continua: nenhum ref sobrevive à troca do seu ancestral.
+ */
+export const applyTaxonomyChange = (
+  refs: TaxonomyRefs,
+  level: TaxonomyLevel,
+  value: string,
+): TaxonomyRefs => {
+  if (refs[level] === value) return refs
+  const idx = TAXONOMY_LEVELS.indexOf(level)
+  const next = { ...refs, [level]: value }
+  for (const lower of TAXONOMY_LEVELS.slice(idx + 1)) next[lower] = ''
+  return next
+}
+
+/**
+ * RN-M2-09 — caminho coerente: um nível só pode estar preenchido se TODOS os seus ancestrais estiverem.
+ * Tudo vazio é válido (o operador abriu o "Editar" e não escolheu nada ainda → nada a gravar). PURA.
+ *
+ * A folha (subcategoria) é OPCIONAL: nem toda categoria tem subcategoria na árvore do plano — exigi-la
+ * travaria a conciliação num caminho que o Orçamento não oferece.
+ */
+export const isTaxonomyPathValid = (refs: TaxonomyRefs): boolean => {
+  let ancestorEmpty = false
+  for (const level of TAXONOMY_LEVELS) {
+    const filled = refs[level] !== ''
+    if (filled && ancestorEmpty) return false
+    if (!filled) ancestorEmpty = true
+  }
+  return true
+}
+
+/** Há algo a gravar? (tudo vazio = o operador não classificou nada — não envia refs). PURA. */
+export const hasTaxonomySelection = (refs: TaxonomyRefs): boolean =>
+  TAXONOMY_LEVELS.some((l) => refs[l] !== '')
+
+/**
+ * RN-M2-11 — o "Editar" só vale para o título LÍQUIDO (o "normal"/pai). Título de RETENÇÃO (ISS/IRRF/INSS/
+ * CSRF) é ALVO da cascata no backend, nunca fonte: editá-lo direto quebraria a invariante 2 da spec
+ * (coerência pai↔filhos). O discriminador no front é o `retentionType` (§2 da spec: título-imposto tem
+ * órgão; o líquido não) — o modelo do BFF não expõe `kind`. PURA.
+ */
+export const isReclassifiableTitle = (payable: Readonly<{ retentionType?: string | null }> | null): boolean =>
+  payable !== null && (payable.retentionType ?? null) === null
+
+/** M2-7/M2-8 — a seleção do Buscar/Criar vários habilita o "Editar" se contiver ao menos UM normal. PURA. */
+export const hasReclassifiableSelection = (
+  payables: readonly Readonly<{ id: string; retentionType?: string | null }>[],
+  selectedIds: ReadonlySet<string>,
+): boolean => payables.some((p) => selectedIds.has(p.id) && isReclassifiableTitle(p))
+
+/** Os 5 refs prontos p/ o payload: `undefined` no que não foi escolhido (o backend não sobrescreve com vazio). */
+export const taxonomyToPayload = (
+  refs: TaxonomyRefs,
+): Readonly<{
+  programRef?: string
+  budgetPlanRef?: string
+  costCenterRef?: string
+  categoryRef?: string
+  subcategoryRef?: string
+}> => ({
+  programRef: refs.programRef !== '' ? refs.programRef : undefined,
+  budgetPlanRef: refs.budgetPlanRef !== '' ? refs.budgetPlanRef : undefined,
+  costCenterRef: refs.costCenterRef !== '' ? refs.costCenterRef : undefined,
+  categoryRef: refs.categoryRef !== '' ? refs.categoryRef : undefined,
+  subcategoryRef: refs.subcategoryRef !== '' ? refs.subcategoryRef : undefined,
+})

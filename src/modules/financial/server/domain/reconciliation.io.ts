@@ -85,10 +85,21 @@ export interface DifferenceInput {
 
 // Conciliar (POST /reconciliations). 1 título sem diferença → Individual; ≥2 → Multiple; com
 // `difference` (qualquer treatment) → Partial (derivado pelo backend).
+// M2 (specs/110) — os 5 refs da taxonomia aplicados no ato da conciliação. Todos opcionais.
+export interface ReclassificationInput {
+  programRef?: string
+  budgetPlanRef?: string
+  costCenterRef?: string
+  categoryRef?: string
+  subcategoryRef?: string
+}
+
 export interface CreateReconciliationInput {
   transactionId: string
   payableIds: readonly string[]
   difference?: DifferenceInput
+  /** M2 — reclassificar o título líquido ao conciliar; o backend cascateia aos filhos de retenção. */
+  reclassification?: ReclassificationInput
 }
 
 // Desfazer (POST /reconciliations/:id/undo).

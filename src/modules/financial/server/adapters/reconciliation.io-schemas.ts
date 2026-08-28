@@ -107,10 +107,21 @@ const DifferenceInputSchema = z.object({
   note: z.string().trim().min(1).max(500).optional(),
 })
 
+// M2 (specs/110) — os 5 refs da reclassificação. UUID na borda (§IX): o front só oferece nós existentes
+// do plano, mas a server function é um endpoint POST chamável direto — nada confia no client.
+export const ReclassificationInputSchema = z.object({
+  programRef: z.uuid().optional(),
+  budgetPlanRef: z.uuid().optional(),
+  costCenterRef: z.uuid().optional(),
+  categoryRef: z.uuid().optional(),
+  subcategoryRef: z.uuid().optional(),
+})
+
 export const CreateReconciliationInputSchema = z.object({
   transactionId: z.uuid(),
   payableIds: z.array(z.uuid()).min(1).max(100).readonly(),
   difference: DifferenceInputSchema.optional(),
+  reclassification: ReclassificationInputSchema.optional(),
 })
 
 export const UndoReconciliationInputSchema = z.object({
