@@ -116,6 +116,35 @@ const BARCODE_PENDENCY: Record<PayoutGapReason, string> = {
   'check-digit-mismatch': 'financial.remittance.preview.pendency.missingBarcode',
 }
 
+/**
+ * ⚠️ MITIGAÇÃO DE TELA (temporária) — rotas SEM emissor no CNAB.
+ *
+ * O pré-voo do core-api devolve `ready` para PIX e guia de tributo quando o cadastro está completo, mas o
+ * emissor recusa as duas (`batchProfileFor` → `remittance-launch-form-unsupported`). Como o montador ABORTA
+ * o arquivo inteiro nesse caso, um único título PIX na seleção derruba a remessa dos outros — e o operador
+ * só descobre no clique de gerar, com erro genérico (o backend colapsa o slug).
+ *
+ * A resposta do pré-voo NÃO traz o "não planejado" que o planner calcula, então não há como avisar por dado
+ * do backend: a régua é aqui, pela ROTA que a própria resposta já informa.
+ *
+ * **Remover quando o emissor suportar a rota** — a régua verdadeira é do core-api, e manter duas é como
+ * este módulo já se machucou antes. Enquanto isso, é a diferença entre avisar e deixar a remessa quebrar.
+ */
+// ⚠️ ESCOPO: só `pix` — e `tax-guide` fica de fora POR DECISÃO, não por esquecimento.
+//
+// O emissor recusa `tax-guide` do mesmo jeito que o PIX, então uma retenção por guia numa seleção também
+// derruba o arquivo. Mas essa é a rota das RETENÇÕES, e a #794 decidiu que retenção apta segue remissível
+// ("destacar, não travar"). Levado à P.O. em 29/08 com o modo de falha explicado; decisão: **manter como
+// está**. Reportado no core-api#890 para entrar no escopo do emissor, não da tela.
+const ROUTES_WITHOUT_EMITTER: ReadonlySet<VanRoute> = new Set<VanRoute>(['pix'])
+
+/** A rota tem emissor no CNAB? `null` (rota desconhecida) não é barrada aqui — o backend é quem julga. */
+export const routeHasEmitter = (route: VanRoute | null): boolean =>
+  route === null || !ROUTES_WITHOUT_EMITTER.has(route)
+
+/** Pendência da rota sem emissor — nenhum cadastro resolve, então a frase não pede correção de dado. */
+const NO_EMITTER_PENDENCY = 'financial.remittance.preview.pendency.pixNoEmitter'
+
 const blockedPendencyTag = (route: VanRoute | null, gaps: readonly PayoutGap[]): string => {
   // Dígito divergente ganha do resto: é o único motivo em que o cadastro está COMPLETO, e confundi-lo
   // com falta de dado é exatamente o mal-entendido que o motivo foi criado para desfazer.
@@ -247,7 +276,13 @@ export const toPreviewView = (
           gaps: [],
         }
       }
-      if (line.status === 'ready') return { remittable: true, pendencyTag: null, gaps: [] }
+      if (line.status === 'ready') {
+        // Ver `ROUTES_WITHOUT_EMITTER`: o backend diz `ready`, o emissor recusa e o arquivo inteiro cai.
+        if (!routeHasEmitter(line.route)) {
+          return { remittable: false, pendencyTag: NO_EMITTER_PENDENCY, gaps: [] }
+        }
+        return { remittable: true, pendencyTag: null, gaps: [] }
+      }
       return {
         remittable: false,
         pendencyTag:

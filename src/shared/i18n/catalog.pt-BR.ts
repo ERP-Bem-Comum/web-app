@@ -2029,6 +2029,10 @@ export const ptBR: Catalog = {
   'financial.remittance.preview.pendency.missingBankData':
     'Dados bancários do favorecido incompletos — banco, agência e conta',
   'financial.remittance.preview.pendency.missingPixKey': 'Sem chave PIX no cadastro do favorecido',
+  // Rotas sem emissor no CNAB: nenhum cadastro resolve — a frase NÃO pede correção de dado, porque não há
+  // dado a corrigir. Sai quando o emissor do core-api passar a suportar a rota.
+  'financial.remittance.preview.pendency.pixNoEmitter':
+    'PIX ainda não sai na remessa — o emissor CNAB não tem esse trilho',
   'financial.remittance.preview.pendency.missingBarcode':
     'Sem código de barras — o campo do documento está vazio',
   // ⚠️ O operador PREENCHEU. A linha digitável tem 47 dígitos e o arquivo grava o código de barras, de
