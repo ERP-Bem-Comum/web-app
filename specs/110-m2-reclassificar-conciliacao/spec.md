@@ -74,24 +74,33 @@ digitado** — a forma sinaliza isso antes do clique.
 **Sem filetes no Buscar/Criar vários.** A linha acima dos botões e a do painel de edição saíram (só
 consumiam altura); o painel do editor separa-se do conteúdo pelo fundo e pelos cantos, não por uma régua.
 
-## O caminho válido (RN-M2-09)
+## O caminho válido (RN-M2-09) — ou NADA, ou os CINCO
 
-Um nível só pode estar preenchido se **todos os seus ancestrais** estiverem. Tudo vazio também é válido — o
-operador abriu o editor e não escolheu nada, então nada sobe e a classificação do lançamento permanece
-(RN-M2-03). Caminho incoerente **barra o Conciliar**, com o motivo escrito no rodapé do editor.
+Um caminho **parcial** é recusado: ele não identifica nó algum na árvore do plano e não é validável contra
+ela; gravá-lo seria o "caminho morto" que o M2-10 manda recusar. Nada escolhido também é válido — o
+operador abriu o editor e não classificou, então nada sobe e a classificação do lançamento permanece
+(RN-M2-03). Caminho incompleto **barra o Conciliar**, com o motivo em tela.
 
-⚠️ A **subcategoria é opcional**: nem toda categoria tem folha na árvore do plano, e exigi-la travaria a
-conciliação num caminho que o Orçamento não oferece.
+⚠️ **Isto mudou depois da primeira entrega.** A versão original deixava a **subcategoria opcional**, com o
+argumento de que nem toda categoria tem folha na árvore. O contrato do core-api (PR #889) exige os cinco
+dentro do bloco, e o argumento dele é mais forte — ele valida o caminho contra a árvore de verdade
+(port `taxonomy-path-read`). Mandar parcial viraria **400** no confirm.
+
+Fica um risco conhecido: **se o Orçamento permitir categoria sem subcategoria**, exigir os cinco impede
+reclassificar para esse nó. Não há evidência do caso (a base de teste tem uma categoria, e ela tem folha),
+e a pergunta é do dono do Orçamento. Se existir, a saída é do backend, não da tela.
 
 ## ⚠️ Ponto de ligação com o backend
 
-O `reclassification` viaja do modelo do client até o `POST /reconciliations`
-(`core-api-reconciliation.ts`), com Zod (UUID) na borda da server function — a `fn` é um endpoint POST
-chamável direto, então nada confia no client (§IX).
+O bloco viaja como **`taxonomy`** do modelo do client até o `POST /reconciliations`, com Zod/UUID na borda
+da server function (§IX). O nome e a obrigatoriedade dos 5 espelham o contrato do core-api (**PR #889**).
 
-**A passada de BACKEND da M2 ainda não está na `dev` do core-api.** Enquanto não estiver, o campo sobe e é
-ignorado: **conciliar segue funcionando normalmente; a reclassificação é que não tem efeito.** Nada é
-simulado no front (ADR-0011) — quando a rota aceitar, passa a valer sem mudança de código aqui.
+⚠️ **A primeira entrega mandava `reclassification` com refs parciais** — e o schema do backend é um
+`z.object` comum, que **descarta chave desconhecida em silêncio**. Ou seja: o operador editaria, conciliaria,
+nada daria erro e a classificação não mudaria. Corrigido antes de a #889 subir.
+
+**A #889 ainda não está na `dev`.** Até estar, o campo viaja e é ignorado: conciliar segue funcionando, a
+reclassificação é que não persiste. Nada é simulado no front (ADR-0011).
 
 Também depende do backend, e **não está neste PR**: a cascata pai→filhos (RN-M2-04), a reprojeção do
 `fin_payable_view` (RN-M2-05), a atomicidade (RN-M2-06), a trilha (RN-M2-07) e a leitura de volta da

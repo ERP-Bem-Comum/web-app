@@ -1524,6 +1524,7 @@ import {
   EMPTY_TAXONOMY,
   applyTaxonomyChange,
   isTaxonomyPathValid,
+  isTaxonomyComplete,
   hasTaxonomySelection,
   isReclassifiableTitle,
   hasReclassifiableSelection,
@@ -1590,7 +1591,7 @@ describe('M2 · caminho válido e payload (RN-M2-09 / RN-M2-12)', () => {
     assert.equal(isTaxonomyPathValid({ ...EMPTY_TAXONOMY, programRef: 'p', subcategoryRef: 's' }), false)
   })
 
-  it('folha opcional: parar na Categoria (sem subcategoria) é válido', () => {
+  it('caminho PARCIAL é inválido — parar na Categoria não basta (o backend recusa o bloco incompleto)', () => {
     assert.equal(
       isTaxonomyPathValid({
         programRef: 'p',
@@ -1598,6 +1599,20 @@ describe('M2 · caminho válido e payload (RN-M2-09 / RN-M2-12)', () => {
         costCenterRef: 'c',
         categoryRef: 'k',
         subcategoryRef: '',
+      }),
+      false,
+    )
+  })
+
+  it('isTaxonomyComplete: só os cinco preenchidos', () => {
+    assert.equal(isTaxonomyComplete(EMPTY_TAXONOMY), false)
+    assert.equal(
+      isTaxonomyComplete({
+        programRef: 'p',
+        budgetPlanRef: 'b',
+        costCenterRef: 'c',
+        categoryRef: 'k',
+        subcategoryRef: 's',
       }),
       true,
     )
@@ -1608,21 +1623,37 @@ describe('M2 · caminho válido e payload (RN-M2-09 / RN-M2-12)', () => {
     assert.equal(hasTaxonomySelection({ ...EMPTY_TAXONOMY, programRef: 'p' }), true)
   })
 
-  it('taxonomyToPayload manda os 5 e omite o que não foi escolhido (RN-M2-12)', () => {
-    const p = taxonomyToPayload({
-      programRef: 'p',
-      budgetPlanRef: 'b',
-      costCenterRef: 'c',
-      categoryRef: 'k',
-      subcategoryRef: '',
-    })
-    assert.deepEqual(p, {
-      programRef: 'p',
-      budgetPlanRef: 'b',
-      costCenterRef: 'c',
-      categoryRef: 'k',
-      subcategoryRef: undefined,
-    })
+  it('taxonomyToPayload manda os CINCO quando completo (RN-M2-12)', () => {
+    assert.deepEqual(
+      taxonomyToPayload({
+        programRef: 'p',
+        budgetPlanRef: 'b',
+        costCenterRef: 'c',
+        categoryRef: 'k',
+        subcategoryRef: 's',
+      }),
+      {
+        programRef: 'p',
+        budgetPlanRef: 'b',
+        costCenterRef: 'c',
+        categoryRef: 'k',
+        subcategoryRef: 's',
+      },
+    )
+  })
+
+  it('taxonomyToPayload devolve null em caminho incompleto — nada sobe, e o backend não recebe 400', () => {
+    assert.equal(taxonomyToPayload(EMPTY_TAXONOMY), null)
+    assert.equal(
+      taxonomyToPayload({
+        programRef: 'p',
+        budgetPlanRef: 'b',
+        costCenterRef: 'c',
+        categoryRef: 'k',
+        subcategoryRef: '',
+      }),
+      null,
+    )
   })
 })
 

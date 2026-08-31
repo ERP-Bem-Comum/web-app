@@ -31,7 +31,7 @@ import {
   taxonomyToPayload,
 } from './reconciliation-workspace.view-model.ts'
 import { useTaxonomyCascade, type TaxonomyCascadeBinding } from './taxonomy-cascade.binding.ts'
-import type { ReclassificationInput } from '#modules/financial/client/data/model/reconciliation.model.ts'
+import type { TaxonomyInput } from '#modules/financial/client/data/model/reconciliation.model.ts'
 
 /** Títulos por página no buscar-vários (≈ o que cabe na altura da lista, ~8 linhas de 2.75rem em 24rem). */
 export const SEARCH_PER_PAGE = 7
@@ -207,7 +207,7 @@ export function useSearchCreate(
         costCenterRef?: string
         note?: string
       }
-      reclassification?: ReclassificationInput
+      taxonomy?: TaxonomyInput
     }) => reconciliationRepository.createReconciliation(v),
     onSuccess: (res, v) => {
       if (res.ok) {
@@ -404,8 +404,8 @@ export function useSearchCreate(
                 ...(note !== '' ? { note } : {}),
               }
             : undefined,
-        // M2: só sobe se o operador editou E escolheu algo; senão a classificação do lançamento permanece.
-        reclassification: reclassifying && cascade.hasSelection ? taxonomyToPayload(cascade.refs) : undefined,
+        // M2: null (caminho incompleto) vira undefined — concilia sem mexer na classificação (RN-M2-03).
+        taxonomy: reclassifying ? (taxonomyToPayload(cascade.refs) ?? undefined) : undefined,
       })
     },
   }

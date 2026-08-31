@@ -8,7 +8,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { reconciliationRepository } from '#modules/financial/client/data/repository/reconciliation.repository.instance.ts'
 import { reconciliationErrorTag } from '#modules/financial/client/data/helpers/reconciliation-error-tag.ts'
-import type { ReclassificationInput } from '#modules/financial/client/data/model/reconciliation.model.ts'
+import type { TaxonomyInput } from '#modules/financial/client/data/model/reconciliation.model.ts'
 
 const key = (transactionId: string, payableId: string): string => `${transactionId}:${payableId}`
 
@@ -17,8 +17,8 @@ export type ReconcileBinding = Readonly<{
   rejecting: boolean
   errorTag: string | null
   isRejected: (transactionId: string, payableId: string) => boolean
-  /** M2: `reclassification` só vai quando o operador editou a taxonomia (specs/110). */
-  reconcileOne: (transactionId: string, payableId: string, reclassification?: ReclassificationInput) => void
+  /** M2: `taxonomy` só vai quando o operador editou a taxonomia (specs/110). */
+  reconcileOne: (transactionId: string, payableId: string, taxonomy?: TaxonomyInput) => void
   rejectOne: (transactionId: string, payableId: string) => void
 }>
 
@@ -36,12 +36,12 @@ export function useReconcile(
   }
 
   const reconcileMut = useMutation({
-    mutationFn: (v: { transactionId: string; payableId: string; reclassification?: ReclassificationInput }) =>
+    mutationFn: (v: { transactionId: string; payableId: string; taxonomy?: TaxonomyInput }) =>
       reconciliationRepository.createReconciliation({
         transactionId: v.transactionId,
         payableIds: [v.payableId],
         // M2: ausente = conciliar sem mexer na classificação (RN-M2-03 — vale a do lançamento).
-        reclassification: v.reclassification,
+        taxonomy: v.taxonomy,
       }),
     onSuccess: (res, v) => {
       if (res.ok) {
@@ -73,8 +73,8 @@ export function useReconcile(
     rejecting: rejectMut.isPending,
     errorTag,
     isRejected: (transactionId, payableId) => rejected.has(key(transactionId, payableId)),
-    reconcileOne: (transactionId, payableId, reclassification) => {
-      reconcileMut.mutate({ transactionId, payableId, reclassification })
+    reconcileOne: (transactionId, payableId, taxonomy) => {
+      reconcileMut.mutate({ transactionId, payableId, taxonomy })
     },
     rejectOne: (transactionId, payableId) => {
       rejectMut.mutate({ transactionId, payableId })
