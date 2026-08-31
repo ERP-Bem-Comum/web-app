@@ -47,7 +47,16 @@ export const CoreApiPaidPayableSchema = z.object({
   documentNumber: z.string().trim().nullable().catch(null),
 })
 export type CoreApiPaidPayable = z.infer<typeof CoreApiPaidPayableSchema>
-export const CoreApiPaidPayablesSchema = z.object({ items: z.array(CoreApiPaidPayableSchema) })
+// A rota é PAGINADA (`listPayablesQuerySchema`: `pageSize` default 20, máx 100). `total` é o que
+// permite ao BFF saber que ainda falta página — sem ele, a lista parecia completa e a tela decidia
+// com um recorte arbitrário dos primeiros títulos. `.catch()` mantém a leitura tolerante caso a rota
+// responda sem o envelope (é o que os fakes de teste faziam antes desta correção).
+export const CoreApiPaidPayablesSchema = z.object({
+  items: z.array(CoreApiPaidPayableSchema),
+  total: z.int().nonnegative().catch(0),
+  page: z.int().positive().catch(1),
+  pageSize: z.int().positive().catch(0),
+})
 
 // Conta-cedente (#138 — GET /cedente-accounts → array; GET /:id → objeto). Saldo corrente/pendências
 // dependem do read-model #139 (não vêm aqui).
