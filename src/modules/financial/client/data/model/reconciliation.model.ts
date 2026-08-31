@@ -137,20 +137,20 @@ export type DifferenceInput = Readonly<{
  * O backend aplica no título líquido e CASCATEIA aos títulos de retenção do documento (RN-M2-04) — o
  * front nunca toca no filho.
  */
-export type ReclassificationInput = Readonly<{
-  programRef?: string
-  budgetPlanRef?: string
-  costCenterRef?: string
-  categoryRef?: string
-  subcategoryRef?: string
+export type TaxonomyInput = Readonly<{
+  programRef: string
+  budgetPlanRef: string
+  costCenterRef: string
+  categoryRef: string
+  subcategoryRef: string
 }>
 
 export type CreateReconciliationInput = Readonly<{
   transactionId: string
   payableIds: readonly string[]
   difference?: DifferenceInput
-  /** M2 — reclassificação do título líquido no ato da conciliação. Ver `ReclassificationInput`. */
-  reclassification?: ReclassificationInput
+  /** M2 — reclassificação do título líquido no ato da conciliação. Ver `TaxonomyInput`. */
+  taxonomy?: TaxonomyInput
 }>
 export type UndoReconciliationInput = Readonly<{ reconciliationId: string; reason?: string }>
 export type ManualEntryTemplate = Readonly<{

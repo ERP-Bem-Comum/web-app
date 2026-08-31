@@ -1698,7 +1698,7 @@ export const ptBR: Catalog = {
   'financial.recon.reclass.cancel': 'Cancelar edição',
   'financial.recon.reclass.select': 'Selecione',
   'financial.recon.reclass.invalidPath':
-    'Complete a classificação de cima para baixo — falta escolher um nível acima.',
+    'Escolha os cinco níveis para reclassificar — classificação parcial não é aceita.',
   'financial.recon.reclass.cascadeHint': 'Os impostos retidos deste documento recebem a mesma classificação.',
   'financial.recon.reclass.onlyNormal': 'Só o título normal pode ser reclassificado.',
   'financial.recon.sugg.confirm': 'Conciliar',

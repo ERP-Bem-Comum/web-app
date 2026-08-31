@@ -339,7 +339,7 @@ export const createCoreApiReconciliationClient = (
     return rejectToModel(r.value)
   },
   createReconciliation: async (i, token) => {
-    // ⚠️ PONTO DE LIGAÇÃO DA M2 (specs/110) — `reclassification` (os 5 refs da taxonomia) só é anexado
+    // ⚠️ PONTO DE LIGAÇÃO DA M2 (specs/110) — `taxonomy` (os 5 refs da taxonomia) só é anexado
     // quando o operador usou o "Editar". A passada de BACKEND da M2 (use-case que grava no título líquido
     // e CASCATEIA aos títulos de retenção — RN-M2-04) ainda NÃO está na `dev` do core-api. Enquanto não
     // estiver, o campo viaja e o backend o IGNORA: conciliar segue funcionando, a reclassificação é que
@@ -351,7 +351,7 @@ export const createCoreApiReconciliationClient = (
         transactionId: i.transactionId,
         payableIds: i.payableIds,
         difference: i.difference,
-        ...(i.reclassification !== undefined ? { reclassification: i.reclassification } : {}),
+        ...(i.taxonomy !== undefined ? { taxonomy: i.taxonomy } : {}),
       },
       token,
     })

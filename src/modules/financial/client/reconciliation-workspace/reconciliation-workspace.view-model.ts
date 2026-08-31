@@ -1106,21 +1106,22 @@ export const applyTaxonomyChange = (
 }
 
 /**
- * RN-M2-09 — caminho coerente: um nível só pode estar preenchido se TODOS os seus ancestrais estiverem.
- * Tudo vazio é válido (o operador abriu o "Editar" e não escolheu nada ainda → nada a gravar). PURA.
+ * RN-M2-09 — caminho coerente. **Ou NADA, ou os CINCO.**
  *
- * A folha (subcategoria) é OPCIONAL: nem toda categoria tem subcategoria na árvore do plano — exigi-la
- * travaria a conciliação num caminho que o Orçamento não oferece.
+ * O meio-termo (uns preenchidos, outros não) é recusado porque um caminho parcial **não identifica nó
+ * algum** na árvore do plano e não é validável contra ela — gravá-lo seria o "caminho morto" que o M2-10
+ * manda recusar. É a mesma régua do core-api (PR #889): lá o BLOCO é opcional e os 5 refs dentro dele
+ * não são, então mandar parcial daqui viraria 400 no confirm.
+ *
+ * Editar só a subcategoria (M2-2) continua funcionando: a cascata tem os outros quatro em mãos e os
+ * reenvia inalterados.
  */
-export const isTaxonomyPathValid = (refs: TaxonomyRefs): boolean => {
-  let ancestorEmpty = false
-  for (const level of TAXONOMY_LEVELS) {
-    const filled = refs[level] !== ''
-    if (filled && ancestorEmpty) return false
-    if (!filled) ancestorEmpty = true
-  }
-  return true
-}
+export const isTaxonomyComplete = (refs: TaxonomyRefs): boolean =>
+  TAXONOMY_LEVELS.every((l) => refs[l] !== '')
+
+/** Válido = o operador não classificou nada, OU classificou os cinco níveis. */
+export const isTaxonomyPathValid = (refs: TaxonomyRefs): boolean =>
+  !TAXONOMY_LEVELS.some((l) => refs[l] !== '') || isTaxonomyComplete(refs)
 
 /** Há algo a gravar? (tudo vazio = o operador não classificou nada — não envia refs). PURA. */
 export const hasTaxonomySelection = (refs: TaxonomyRefs): boolean =>
@@ -1141,19 +1142,25 @@ export const hasReclassifiableSelection = (
   selectedIds: ReadonlySet<string>,
 ): boolean => payables.some((p) => selectedIds.has(p.id) && isReclassifiableTitle(p))
 
-/** Os 5 refs prontos p/ o payload: `undefined` no que não foi escolhido (o backend não sobrescreve com vazio). */
+/**
+ * Os 5 refs prontos p/ o payload — `null` quando o caminho não está completo (nada a enviar, ou parcial,
+ * que o backend recusaria). Quem chama envia `undefined` no lugar e concilia sem mexer na classificação.
+ */
 export const taxonomyToPayload = (
   refs: TaxonomyRefs,
 ): Readonly<{
-  programRef?: string
-  budgetPlanRef?: string
-  costCenterRef?: string
-  categoryRef?: string
-  subcategoryRef?: string
-}> => ({
-  programRef: refs.programRef !== '' ? refs.programRef : undefined,
-  budgetPlanRef: refs.budgetPlanRef !== '' ? refs.budgetPlanRef : undefined,
-  costCenterRef: refs.costCenterRef !== '' ? refs.costCenterRef : undefined,
-  categoryRef: refs.categoryRef !== '' ? refs.categoryRef : undefined,
-  subcategoryRef: refs.subcategoryRef !== '' ? refs.subcategoryRef : undefined,
-})
+  programRef: string
+  budgetPlanRef: string
+  costCenterRef: string
+  categoryRef: string
+  subcategoryRef: string
+}> | null =>
+  isTaxonomyComplete(refs)
+    ? {
+        programRef: refs.programRef,
+        budgetPlanRef: refs.budgetPlanRef,
+        costCenterRef: refs.costCenterRef,
+        categoryRef: refs.categoryRef,
+        subcategoryRef: refs.subcategoryRef,
+      }
+    : null

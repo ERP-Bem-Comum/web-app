@@ -288,10 +288,11 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
                                 vm.armFlash(payableId) // captura o título do match p/ a barra de confirmação
                                 // M2: os 5 refs só sobem se o operador editou E escolheu algo — senão a
                                 // classificação do lançamento permanece (RN-M2-03).
-                                const reclass =
-                                  vm.reclassify.editing && vm.reclassify.cascade.hasSelection
-                                    ? taxonomyToPayload(vm.reclassify.cascade.refs)
-                                    : undefined
+                                // `taxonomyToPayload` devolve null em caminho incompleto — vira
+                                // `undefined` e concilia sem mexer na classificação (RN-M2-03).
+                                const reclass = vm.reclassify.editing
+                                  ? (taxonomyToPayload(vm.reclassify.cascade.refs) ?? undefined)
+                                  : undefined
                                 vm.reconcile.reconcileOne(ui.selectedTransactionId, payableId, reclass)
                               }
                             }}
