@@ -11,6 +11,7 @@ import {
   mapHttpError,
   transactionsToModel,
   paidPayablesToModel,
+  paidPayablesPageToModel,
   cedenteAccountsToModel,
   cedenteAccountToModel,
   accountStatementSummary,
@@ -169,6 +170,38 @@ describe('paidPayablesToModel', () => {
     if (isOk(r)) {
       assert.equal(r.value[0]?.issueDate, '2026-06-01')
     }
+  })
+})
+
+describe('paidPayablesPageToModel — o `total` da paginação', () => {
+  const item = (id: string) => ({
+    id,
+    documentId: `d-${id}`,
+    valueCents: '15000',
+    dueDate: '2026-06-10',
+    paymentMethod: 'PIX',
+  })
+
+  it('lê o `total` do envelope — é ele que diz ao BFF que ainda falta página', () => {
+    const r = paidPayablesPageToModel({ items: [item('p1')], total: 137, page: 1, pageSize: 100 })
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value.total, 137)
+      assert.equal(r.value.items.length, 1)
+    }
+  })
+
+  it('resposta SEM envelope de paginação → total = itens recebidos (o laço para na 1ª página)', () => {
+    // Degradação deliberada: se a rota deixar de mandar `total`, o BFF não pode girar em falso nem
+    // presumir que há mais. Buscar uma página e parar é o comportamento seguro.
+    const r = paidPayablesPageToModel({ items: [item('p1'), item('p2')] })
+    assert.ok(isOk(r))
+    if (isOk(r)) assert.equal(r.value.total, 2)
+  })
+
+  it('payload inválido continua sendo erro de borda, não lista vazia', () => {
+    const r = paidPayablesPageToModel({ items: [{ id: 'p1' }] })
+    assert.equal(isOk(r), false)
   })
 })
 

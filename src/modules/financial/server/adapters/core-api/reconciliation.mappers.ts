@@ -204,6 +204,22 @@ export const transactionsToModel = (
   return ok(items)
 }
 
+/** Uma PÁGINA de títulos pagos: os itens mapeados + o `total` que diz se ainda falta buscar. */
+export type PaidPayablesPage = Readonly<{ items: readonly PaidPayable[]; total: number }>
+
+export const paidPayablesPageToModel = (raw: unknown): Result<PaidPayablesPage, ReconciliationError> => {
+  const page = paidPayablesToModel(raw)
+  if (!page.ok) return page
+  const parsed = CoreApiPaidPayablesSchema.safeParse(raw)
+  // O parse já passou dentro de `paidPayablesToModel`; o segundo só recupera o `total`.
+  //
+  // `total` ausente cai no `.catch(0)` do schema, e 0 com itens na mão significa "esta resposta não
+  // traz envelope de paginação" — não "não há títulos". Nesse caso o total é o que veio, e o laço do
+  // adapter para na 1ª página em vez de girar em falso ou presumir que há mais.
+  const declared = parsed.success ? parsed.data.total : 0
+  return ok({ items: page.value, total: declared > 0 ? declared : page.value.length })
+}
+
 export const paidPayablesToModel = (raw: unknown): Result<readonly PaidPayable[], ReconciliationError> => {
   const parsed = CoreApiPaidPayablesSchema.safeParse(raw)
   if (!parsed.success) return err('server')
