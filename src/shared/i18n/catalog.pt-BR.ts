@@ -2038,6 +2038,11 @@ export const ptBR: Catalog = {
   // dado a corrigir. Sai quando o emissor do core-api passar a suportar a rota.
   'financial.remittance.preview.pendency.pixNoEmitter':
     'PIX ainda não sai na remessa — o emissor CNAB não tem esse trilho',
+  // core-api#837: o BACKEND passou a nomear a rota sem emissor. Frase genérica na ROTA de propósito —
+  // vale para PIX, guia de tributo e o que mais entrar —, e como a `pixNoEmitter`, NÃO pede correção
+  // de cadastro: não há dado a corrigir. Some quando o emissor da rota entrar (PIX = core-api#838).
+  'financial.remittance.preview.pendency.noIssuer':
+    'Esta forma de pagamento ainda não sai na remessa — o emissor CNAB não tem esse trilho',
   'financial.remittance.preview.pendency.missingBarcode':
     'Sem código de barras — o campo do documento está vazio',
   // ⚠️ O operador PREENCHEU. A linha digitável tem 47 dígitos e o arquivo grava o código de barras, de

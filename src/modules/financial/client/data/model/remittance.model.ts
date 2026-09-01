@@ -39,6 +39,10 @@ export type PreviewLineStatus =
   // core-api#792/ADR-0065 §5: o título JÁ SAIU numa remessa. Status próprio, e não `blocked`, porque a
   // ação é oposta — `blocked` pede correção de cadastro; aqui não há o que corrigir nem o que reenviar.
   | 'transmitted'
+  // core-api#837 (PR #925, 01/09): régua única entre pré-voo e emissor. A rota não tem emissor no
+  // CNAB — o cadastro pode estar COMPLETO e ainda assim a linha não sai. Status próprio pela mesma
+  // razão do `transmitted`: `blocked` mandaria corrigir algo que não está errado.
+  | 'no-issuer'
 
 /**
  * UMA LINHA POR TÍTULO (core-api#794). A nota dá origem aos títulos, mas o ciclo de vida inteiro é do
@@ -86,13 +90,22 @@ export interface GenerateRemittanceInput {
 }
 
 /** Comprovante do operador. Sem tela de acompanhamento, `nsa` + `fileName` são o único registro. */
-export interface GeneratedRemittance {
+/** UM arquivo do lote. core-api#929: a geração reparte por MODALIDADE. */
+export interface GeneratedRemittanceFile {
   remittanceId: string
   fileName: string
   objectKey: string
   nsa: number
   totalCents: string
   lineCount: number
+}
+
+/**
+ * O LOTE. Espelha `server/domain/remittance.io.ts` — ver lá o porquê de a unidade ser o lote e não o
+ * arquivo, e o custo que a divergência de contrato cobrou em 01/09 (NSA queimado a cada clique).
+ */
+export interface GeneratedRemittance {
+  files: readonly GeneratedRemittanceFile[]
 }
 
 /**

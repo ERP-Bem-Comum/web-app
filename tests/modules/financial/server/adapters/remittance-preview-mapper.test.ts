@@ -16,8 +16,12 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
-import { previewToModel } from '../../../../../src/modules/financial/server/adapters/core-api/remittance.mappers.ts'
+import {
+  previewToModel,
+  generatedToModel,
+} from '../../../../../src/modules/financial/server/adapters/core-api/remittance.mappers.ts'
 import { isOk, isErr } from '../../../../../src/shared/primitives/result.ts'
+import type { PreviewLineStatus } from '../../../../../src/modules/financial/server/domain/remittance.io.ts'
 
 const line = {
   payableId: 'p-1',
@@ -73,6 +77,45 @@ describe('previewToModel — status da linha', () => {
     assert.equal(r.value.lines[0]?.status, 'transmitted')
   })
 
+  // core-api#837/PR #925. MESMO defeito do `transmitted` acima, e é a SEGUNDA vez: um status novo do
+  // backend nasce fora do `LINE_STATUSES` e a linha fica vermelha sem motivo. Aqui o cadastro pode
+  // estar completo — o que falta é o emissor da rota, e nenhuma correção do operador resolve.
+  //
+  // ⚠️ Só PIX e guia produzem este status. Boleto e transferência TÊM emissor (`ROUTES_WITH_ISSUER`),
+  // e é por isso que o boleto não regride com o #925.
+  it('`no-issuer` é status PRÓPRIO, não cai no fallback de `blocked`', () => {
+    const r = previewToModel(raw({ lines: [{ ...line, status: 'no-issuer' }] }))
+    assert.ok(isOk(r))
+    assert.equal(r.value.lines[0]?.status, 'no-issuer')
+  })
+
+  // A GUARDA QUE FECHA A PORTA, em vez de prender mais um caso: o conjunto do mapper e a união do
+  // domínio têm de ser o mesmo conjunto. Foi a divergência entre os dois que produziu o `transmitted`
+  // e o `no-issuer` — duas vezes o mesmo esquecimento, cada uma custando uma tela ilegível em
+  // produção. Um status novo no domínio agora reprova AQUI, antes de chegar ao operador.
+  it('governança: todo status do domínio é conhecido pelo mapper (sem drift silencioso)', () => {
+    const DOMAIN_STATUSES = [
+      'ready',
+      'blocked',
+      'out-of-van',
+      'not-found',
+      'not-approved',
+      'transmitted',
+      'no-issuer',
+    ] as const satisfies readonly PreviewLineStatus[]
+
+    for (const status of DOMAIN_STATUSES) {
+      const r = previewToModel(raw({ lines: [{ ...line, status }] }))
+      assert.ok(isOk(r))
+      assert.equal(
+        r.value.lines[0]?.status,
+        status,
+        `\`${status}\` caiu no fallback de drift — acrescente-o a LINE_STATUSES no mapper, e uma ` +
+          `frase própria em remittance-preview.view-model.ts. Ver o histórico de #792 e #837.`,
+      )
+    }
+  })
+
   it('status realmente desconhecido continua caindo em `blocked` — o default seguro é "não sai"', () => {
     const r = previewToModel(raw({ lines: [{ ...line, status: 'algo-que-nao-existe' }] }))
     assert.ok(isOk(r))
@@ -100,5 +143,67 @@ describe('previewToModel — o que NÃO se tolera', () => {
     const r = previewToModel(raw({ lines: [{ ...line, valueCents: undefined }] }))
     assert.ok(isErr(r))
     assert.equal(r.error, 'server')
+  })
+})
+
+/**
+ * GERAÇÃO — o contrato do LOTE (core-api#929).
+ *
+ * Estes casos existem porque a ausência deles custou caro em 01/09/2026: o core-api passou a devolver
+ * `{ files: [...] }` (a remessa é repartida por MODALIDADE) e o front seguia validando a forma antiga.
+ * O `safeParse` recusava, `generatedToModel` devolvia `err('server')` e a tela dizia "Algo deu errado"
+ * — DEPOIS de o backend ter alocado o NSA e transmitido o título. Três NSA queimados, um por clique,
+ * cada um irrecuperável.
+ *
+ * `generatedToModel` não tinha teste algum. Era a única função do caminho do dinheiro sem rede.
+ */
+const file = (over: Record<string, unknown> = {}) => ({
+  remittanceId: 'r1',
+  fileName: 'PAG_435366.01092026204605_000007.REM',
+  objectKey: 'saida/PAG_435366.01092026204605_000007.REM',
+  nsa: 7,
+  totalCents: '300',
+  lineCount: 6,
+  ...over,
+})
+
+describe('generatedToModel — contrato do lote', () => {
+  it('aceita `{ files: [...] }` e preserva o arquivo', () => {
+    const r = generatedToModel({ files: [file()] })
+    assert.ok(isOk(r))
+    assert.equal(r.value.files.length, 1)
+    assert.equal(r.value.files[0]?.nsa, 7)
+  })
+
+  it('⚠️ seleção MISTA: preserva TODOS os arquivos, não só o primeiro', () => {
+    // Boleto e transferência não cabem no mesmo lote. Ficar com o primeiro faria o comprovante
+    // descrever metade do que foi enfileirado no banco — e o operador confirmaria assim mesmo.
+    const r = generatedToModel({
+      files: [file(), file({ remittanceId: 'r2', nsa: 8, fileName: 'PAG_...008.REM' })],
+    })
+    assert.ok(isOk(r))
+    assert.equal(r.value.files.length, 2)
+    assert.deepEqual(
+      r.value.files.map((f) => f.nsa),
+      [7, 8],
+    )
+  })
+
+  it('a forma ANTIGA (arquivo cru, sem `files`) é recusada — foi ela que queimou NSA em 01/09', () => {
+    const r = generatedToModel(file())
+    assert.ok(isErr(r))
+    assert.equal(r.error, 'server')
+  })
+
+  it('lista VAZIA é recusada: geração sem arquivo não é sucesso', () => {
+    // Um comprovante em branco descreveria um pagamento que já foi enfileirado. Falhar alto é o certo.
+    const r = generatedToModel({ files: [] })
+    assert.ok(isErr(r))
+  })
+
+  it('`nsa` ausente falha alto — sem default, um comprovante não mente sobre o que já saiu', () => {
+    const { nsa: _omitted, ...semNsa } = file()
+    const r = generatedToModel({ files: [semNsa] })
+    assert.ok(isErr(r))
   })
 })

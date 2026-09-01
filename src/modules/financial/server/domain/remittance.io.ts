@@ -57,6 +57,15 @@ export type PreviewLineStatus =
   // já foi ao banco. Enquanto caía no fallback de drift, a linha aparecia bloqueada e sem motivo, e o
   // operador procurava defeito num cadastro completo.
   | 'transmitted'
+  // core-api#837 (PR #925, 01/09): o pré-voo e o emissor decidiam a aptidão por réguas diferentes —
+  // o pré-voo aprovava lendo o DADO presente, o emissor recusava por não existir emissor para a rota,
+  // e a divergência só aparecia no clique de gerar. Agora há régua única, e o backend NOMEIA o caso.
+  //
+  // Status PRÓPRIO, e não `blocked`, pela mesma razão do `transmitted` acima: a ação do operador é
+  // outra. `blocked` pede correção de cadastro; aqui NÃO HÁ o que corrigir — o cadastro pode estar
+  // completo e a rota simplesmente ainda não sai no arquivo. Sem esta entrada a linha cairia no
+  // fallback de drift e apareceria vermelha e sem motivo.
+  | 'no-issuer'
 
 /**
  * UMA LINHA POR TÍTULO (core-api#794). A nota dá origem aos títulos, mas o ciclo de vida inteiro é do
@@ -120,13 +129,32 @@ export interface GenerateRemittanceInput {
  * O comprovante do operador. Enquanto não houver tela de acompanhamento, `nsa` + `fileName` são o único
  * registro de que a remessa saiu — por isso viajam inteiros até a UI.
  */
-export interface GeneratedRemittance {
+/** UM arquivo do lote — cada modalidade gera o seu, com NSA e objeto próprios. */
+export interface GeneratedRemittanceFile {
   remittanceId: string
   fileName: string
   objectKey: string
   nsa: number
   totalCents: string
   lineCount: number
+}
+
+/**
+ * ⚠️ MUDANÇA DE CONTRATO (core-api#929, 01/09/2026): a geração REPARTE a remessa em um arquivo por
+ * MODALIDADE — boleto e transferência não cabem no mesmo lote —, e a resposta passou de um arquivo
+ * para `{ files: [...] }`. Uma seleção mista produz mais de um, cada um com NSA, nome e objeto
+ * próprios.
+ *
+ * O front ficou para trás e o preço foi alto: o `safeParse` recusava a forma nova e a tela dizia
+ * "Algo deu errado" DEPOIS de o backend ter alocado o NSA e transmitido o título. Cada clique
+ * queimava um número de sequência que não volta (NSA 5, 6 e 7 em 01/09).
+ *
+ * Pegar só o primeiro arquivo seria pior que o erro: o comprovante descreveria METADE do que foi
+ * enfileirado, e o operador confirmaria acreditando ter conferido — o defeito que o pré-voo existe
+ * para não cometer. Por isso o lote é a unidade, e a tela lista todos.
+ */
+export interface GeneratedRemittance {
+  files: readonly GeneratedRemittanceFile[]
 }
 
 // ── Download do arquivo (specs/103) — HOMOLOGAÇÃO apenas ────────────────────────

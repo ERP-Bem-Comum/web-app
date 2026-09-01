@@ -60,11 +60,18 @@ export const CoreApiRemittancePreviewSchema = z.object({
  * aceito como 0, ou um `fileName` vazio, produziria um comprovante que mente sobre um pagamento que já
  * foi enfileirado no banco. Se o backend regredir, é melhor a tela falhar alto.
  */
-export const CoreApiGeneratedRemittanceSchema = z.object({
+const CoreApiGeneratedRemittanceFileSchema = z.object({
   remittanceId: z.string().trim(),
   fileName: z.string().trim(),
   objectKey: z.string().trim(),
   nsa: z.int().positive(),
   totalCents: z.string().trim(),
   lineCount: z.int().nonnegative(),
+})
+
+// core-api#929: `{ files: [...] }`, um por modalidade. `.min(1)` porque geração que não produziu
+// arquivo algum não é sucesso — se o backend devolver lista vazia, a tela precisa falhar alto em vez
+// de exibir um comprovante em branco de um pagamento que já foi enfileirado.
+export const CoreApiGeneratedRemittanceSchema = z.object({
+  files: z.array(CoreApiGeneratedRemittanceFileSchema).min(1),
 })

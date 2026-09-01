@@ -114,7 +114,8 @@ export type RemittancePreviewBinding = Readonly<{
   /** O objeto veio de `falhas/` — **o envio ao banco NÃO completou**. */
   downloadedFromFailures: boolean
   /** Baixa o arquivo da remessa que acabou de ser gerada. No-op sem comprovante na tela. */
-  downloadFile: () => void
+  /** Baixa UM arquivo do lote (core-api#929) — o id identifica qual. */
+  downloadFile: (remittanceId: string) => void
 }>
 
 // base64 (RPC) → Blob (browser). O tipo é `application/octet-stream` de propósito, o mesmo que o core-api
@@ -339,9 +340,11 @@ export function useRemittancePreview(): RemittancePreviewBinding {
     downloadErrorTag: dlFailure === null ? null : financialErrorTag(dlFailure.error),
     downloadErrorMessage: dlFailure?.message ?? null,
     downloadedFromFailures: dlObjectKey?.startsWith(FAILURES_PREFIX) === true,
-    downloadFile: () => {
-      if (generated === null) return
-      mutateDownload(generated.remittanceId)
+    // POR ARQUIVO (core-api#929): o lote pode ter um por modalidade, e cada um é um objeto próprio no
+    // bucket. Um botão só, baixando o primeiro, entregaria metade da evidência a quem vai conferir
+    // bytes com o banco — e sem dizer que faltava metade.
+    downloadFile: (remittanceId: string) => {
+      mutateDownload(remittanceId)
     },
   }
 }
