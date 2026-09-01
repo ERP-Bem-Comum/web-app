@@ -13,6 +13,7 @@ import {
   type SupplierFormController,
 } from './supplier-form.controller.ts'
 import { BankSelect, isUnknownBank } from '#shared/ui/brand/bank-select.component.tsx'
+import { BANK_LABELS, BANK_UNKNOWN_HINT } from '#modules/partners/client/shared/bank-select-labels.ts'
 import { derivePixKey } from '#modules/partners/client/domain/derive-pix-key.ts'
 import {
   page,
@@ -43,14 +44,6 @@ import {
 import { errorBanner } from './supplier-form.css.ts'
 
 const t = createTranslator(ptBR)
-
-/** Rótulos do seletor de banco (o componente é burro e não fala i18n — como o BrandPaginator). */
-const BANK_LABELS = {
-  placeholder: t('partners.suppliers.form.bankPlaceholder'),
-  frequentGroup: t('partners.suppliers.form.bankFrequent'),
-  allGroup: t('partners.suppliers.form.bankAll'),
-  unknownPrefix: t('partners.suppliers.form.bankUnknown'),
-} as const
 
 export type SupplierFormProps = Readonly<{
   controller: SupplierFormController
@@ -321,7 +314,7 @@ export function SupplierForm(props: SupplierFormProps): ReactNode {
                     {invalidMsg('bankAccount.bank') !== null ? (
                       <span className={fieldError}>{invalidMsg('bankAccount.bank')}</span>
                     ) : isUnknownBank(c.state.bank) ? (
-                      <span className={fieldError}>{t('partners.suppliers.form.bankUnknownHint')}</span>
+                      <span className={fieldError}>{BANK_UNKNOWN_HINT}</span>
                     ) : null}
                   </div>
 

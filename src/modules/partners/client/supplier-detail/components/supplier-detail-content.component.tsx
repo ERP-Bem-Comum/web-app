@@ -13,6 +13,7 @@ import {
   type SupplierFormState,
 } from '#modules/partners/client/supplier-create/components/supplier-form.controller.ts'
 import { BankSelect, isUnknownBank } from '#shared/ui/brand/bank-select.component.tsx'
+import { BANK_LABELS, BANK_UNKNOWN_HINT } from '#modules/partners/client/shared/bank-select-labels.ts'
 import type { ActivationStatus } from '#modules/partners/client/domain/supplier.types.ts'
 
 import {
@@ -33,14 +34,6 @@ import {
 } from '#shared/ui/brand/brand-form.css.ts'
 
 const t = createTranslator(ptBR)
-
-/** Mesmos rótulos do formulário de criar/editar — o seletor de banco é o mesmo componente. */
-const BANK_LABELS = {
-  placeholder: t('partners.suppliers.form.bankPlaceholder'),
-  frequentGroup: t('partners.suppliers.form.bankFrequent'),
-  allGroup: t('partners.suppliers.form.bankAll'),
-  unknownPrefix: t('partners.suppliers.form.bankUnknown'),
-} as const
 
 export type SupplierDetailContentProps = Readonly<{
   controller: SupplierFormController
@@ -231,7 +224,7 @@ export function SupplierDetailContent(props: SupplierDetailContentProps): ReactN
                 {invalidMsg('bankAccount.bank') !== null ? (
                   <span className={fieldError}>{invalidMsg('bankAccount.bank')}</span>
                 ) : isUnknownBank(c.state.bank) ? (
-                  <span className={fieldError}>{t('partners.suppliers.form.bankUnknownHint')}</span>
+                  <span className={fieldError}>{BANK_UNKNOWN_HINT}</span>
                 ) : null}
               </div>
               {txt('agency', t('partners.suppliers.form.agency'), 'bankAccount.agency', { mask: 'agency' })}
