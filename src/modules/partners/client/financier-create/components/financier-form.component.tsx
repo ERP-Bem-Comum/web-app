@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
+import { BankSelect, isUnknownBank } from '#shared/ui/brand/bank-select.component.tsx'
+import { BANK_LABELS, BANK_UNKNOWN_HINT } from '#modules/partners/client/shared/bank-select-labels.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { formatMask, unmask } from '#shared/ui/index.ts'
 import { ChevronLeftIcon, ChevronDownIcon, FileTextIcon, WalletIcon } from '#shared/ui/icons/index.ts'
@@ -243,16 +245,20 @@ export function FinancierForm(props: FinancierFormProps): ReactNode {
                   <label htmlFor="fin-bank" className={fieldLabel}>
                     {t('partners.financiers.form.bank')}
                   </label>
-                  <input
+                  <BankSelect
                     id="fin-bank"
-                    className={`${input} ${isInvalid('bankAccount.bank') ? controlError : ''}`}
                     value={c.state.bank}
-                    onChange={(e) => {
-                      c.setField('bank', e.target.value)
+                    labels={BANK_LABELS}
+                    invalid={isInvalid('bankAccount.bank')}
+                    ariaLabel={t('partners.financiers.form.bank')}
+                    onChange={(code) => {
+                      c.setField('bank', code)
                     }}
                   />
                   {invalidMsg('bankAccount.bank') !== null ? (
                     <span className={fieldError}>{invalidMsg('bankAccount.bank')}</span>
+                  ) : isUnknownBank(c.state.bank) ? (
+                    <span className={fieldError}>{BANK_UNKNOWN_HINT}</span>
                   ) : null}
                 </div>
 

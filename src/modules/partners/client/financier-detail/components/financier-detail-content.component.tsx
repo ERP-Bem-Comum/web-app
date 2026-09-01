@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
+import { BankSelect, isUnknownBank } from '#shared/ui/brand/bank-select.component.tsx'
+import { BANK_LABELS, BANK_UNKNOWN_HINT } from '#modules/partners/client/shared/bank-select-labels.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Badge, formatMask, unmask, type InputMask } from '#shared/ui/index.ts'
 import { FileTextIcon, WalletIcon, ChevronDownIcon } from '#shared/ui/icons/index.ts'
@@ -135,7 +137,30 @@ export function FinancierDetailContent(props: FinancierDetailContentProps): Reac
         </div>
         <div className={sectionBody}>
           <div className={grid}>
-            {txt('bank', t('partners.financiers.form.bank'))}
+            {/* Banco: seletor pelo código FEBRABAN, e não `txt`, porque o campo deixou de ser texto
+                livre. Fora do modo de edição o seletor fica desabilitado, mas continua mostrando
+                "237 · Bradesco" — o código sozinho não diz nada a quem está conferindo. */}
+            <div className={field}>
+              <label htmlFor="fd-bank" className={fieldLabel}>
+                {t('partners.financiers.form.bank')}
+              </label>
+              <BankSelect
+                id="fd-bank"
+                value={c.state.bank}
+                labels={BANK_LABELS}
+                invalid={isInvalid('bank')}
+                disabled={!editing}
+                ariaLabel={t('partners.financiers.form.bank')}
+                onChange={(code) => {
+                  c.setField('bank', code)
+                }}
+              />
+              {invalidMsg('bank') !== null ? (
+                <span className={fieldError}>{invalidMsg('bank')}</span>
+              ) : isUnknownBank(c.state.bank) ? (
+                <span className={fieldError}>{BANK_UNKNOWN_HINT}</span>
+              ) : null}
+            </div>
             {txt('agency', t('partners.financiers.form.agency'), 'agency')}
             {txt('accountNumber', t('partners.financiers.form.accountNumber'))}
             {txt('checkDigit', t('partners.financiers.form.checkDigit'))}

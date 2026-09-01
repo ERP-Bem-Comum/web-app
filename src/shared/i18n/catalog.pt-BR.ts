@@ -497,11 +497,16 @@ export const ptBR: Catalog = {
   'partners.suppliers.form.bank': 'Banco',
   // Seletor de banco (código de compensação FEBRABAN). "Não reconhecido" é o cadastro ANTIGO, que
   // guardava o banco como texto livre — a opção continua lá até alguém escolher o banco de verdade.
-  'partners.suppliers.form.bankPlaceholder': 'Selecione o banco…',
-  'partners.suppliers.form.bankFrequent': 'Mais usados',
-  'partners.suppliers.form.bankAll': 'Todos os bancos',
-  'partners.suppliers.form.bankUnknown': 'Não reconhecido:',
-  'partners.suppliers.form.bankUnknownHint':
+  //
+  // Chaves SEM o tipo de parceiro no caminho, de propósito: as quatro telas (Fornecedor, Colaborador,
+  // Financiador, ACT) mostram exatamente a mesma frase, e o motivo do aviso é do arquivo CNAB, não do
+  // tipo de quem recebe. Quatro cópias seriam quatro lugares para a redação divergir. O RÓTULO do
+  // campo ("Banco") continua por tipo, porque acompanha a seção de cada formulário.
+  'partners.form.bankPlaceholder': 'Selecione o banco…',
+  'partners.form.bankFrequent': 'Mais usados',
+  'partners.form.bankAll': 'Todos os bancos',
+  'partners.form.bankUnknown': 'Não reconhecido:',
+  'partners.form.bankUnknownHint':
     'Cadastro antigo: este banco foi digitado à mão e não corresponde a um código FEBRABAN. Selecione o banco na lista — sem o código, o pagamento por TED/transferência é recusado.',
   'partners.suppliers.form.agency': 'Agência - DV',
   'partners.suppliers.form.accountNumber': 'Número da Conta',
