@@ -367,12 +367,17 @@ export const createCoreApiReconciliationClient = (
     return rejectToModel(r.value)
   },
   createReconciliation: async (i, token) => {
-    // ⚠️ PONTO DE LIGAÇÃO DA M2 (specs/110) — `taxonomy` (os 5 refs da taxonomia) só é anexado
-    // quando o operador usou o "Editar". A passada de BACKEND da M2 (use-case que grava no título líquido
-    // e CASCATEIA aos títulos de retenção — RN-M2-04) ainda NÃO está na `dev` do core-api. Enquanto não
-    // estiver, o campo viaja e o backend o IGNORA: conciliar segue funcionando, a reclassificação é que
-    // não tem efeito. Nada é simulado no front (ADR-0011) — quando a rota aceitar, isto passa a valer
-    // sem mudança de código aqui.
+    // PONTO DE LIGAÇÃO DA M2 (specs/110) — `taxonomy` (os 5 refs) só é anexado quando o operador
+    // usou o "Editar". A passada de BACKEND da M2 ESTÁ LIGADA desde o core-api#889 (31/08): o
+    // use-case `confirm-reconciliation` valida os 5 refs contra a árvore do plano (ADR-0051), grava
+    // no título LÍQUIDO e CASCATEIA aos títulos de retenção do mesmo documento (RN-M2-04). A trilha
+    // (quem, quando, de→para) é gravada NA MESMA TRANSAÇÃO, uma entry por título — pai e filhos —,
+    // e aparece na aba Histórico. Reclassificar para o MESMO valor não deixa rastro (invariante 6).
+    //
+    // O bloco é opcional; os 5 refs DENTRO dele não são — caminho parcial não identifica nó na
+    // árvore e a rota recusa. Duas recusas próprias chegam como erro de negócio, não de transporte:
+    // `taxonomy-path-invalid` (caminho inexistente ou inativo) e `reclassification-requires-parent-
+    // payable` (seleção sem título líquido — imposto é alvo da cascata, nunca fonte).
     const r = await resultFetch<unknown>(`${baseUrl}/reconciliations`, {
       method: 'POST',
       body: {
