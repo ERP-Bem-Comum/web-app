@@ -4,6 +4,12 @@
  * reais dependem de core-api#168; até lá o binding entrega `unavailable` (estado honesto, sem fabricar).
  * Espelha `contas-a-pagar.view-model.ts`.
  */
+import {
+  FEBRABAN_BANKS,
+  FREQUENT_BANKS,
+  bankNameByCode as sharedBankNameByCode,
+  type BankOption,
+} from '#shared/banking/febraban-banks.ts'
 import { centsToBRL } from '#modules/financial/client/data/money.ts'
 import type {
   AccountType,
@@ -29,9 +35,12 @@ export type AccountStatusKind = 'pending' | 'up-to-date' | 'closed'
 export type StatusFilter = 'todas' | 'pendentes' | 'em-dia' | 'encerradas'
 export type SortKey = 'pendencias' | 'saldo' | 'nome' | 'atualizacao'
 
-// Lista estática dos principais bancos (FEBRABAN) para o seletor do form Nova Conta. Vocabulário de UI
-// (não dado de negócio); o core-api aceita bankCode livre — esta lista só guia o comum.
-export type BankOption = Readonly<{ code: string; name: string }>
+// Lista de bancos do seletor do form Nova Conta. Passou a vir da tabela FEBRABAN COMPLETA
+// (`#shared/banking`, 471 instituições geradas da fonte do Bacen) — antes eram 12 bancos escolhidos à
+// mão, o que obrigava a cair em "Outro" para qualquer instituição fora do topo do mercado.
+// A sentinela `OUTRO` CONTINUA no fim da lista: conta de cartão corporativo / "Outro" pode simplesmente
+// não ter instituição com código de compensação, e é ela que libera o campo de nome manual (#206).
+export type { BankOption } from '#shared/banking/febraban-banks.ts'
 // Sentinela p/ instituição não listada (#206): seleciona "Outro" e digita o nome (vira `bankName`).
 /**
  * Teto do convênio: **6 dígitos**.
@@ -80,22 +89,26 @@ export const agencyDigits = (value: string): string => value.replace(/\D/g, '').
 export const agencyBase = (rawDigits: string): string => rawDigits.slice(0, AGENCY_BASE_DIGITS)
 
 export const OTHER_BANK_CODE = 'OUTRO'
+export const OTHER_BANK_NAME = 'Outro'
+
+/** Os 12 que já eram a lista curada — hoje o grupo "Mais usados" no topo do seletor. */
+export const FREQUENT_BANK_OPTIONS: readonly BankOption[] = FREQUENT_BANKS
+
+/** A tabela completa, sem a sentinela: é ela que a UI renderiza no grupo "Todos os bancos". */
+export const BANK_OPTIONS: readonly BankOption[] = FEBRABAN_BANKS
+
 export const BANKS: readonly BankOption[] = [
-  { code: '001', name: 'Banco do Brasil' },
-  { code: '033', name: 'Santander' },
-  { code: '104', name: 'Caixa Econômica Federal' },
-  { code: '237', name: 'Bradesco' },
-  { code: '341', name: 'Itaú Unibanco' },
-  { code: '260', name: 'Nubank' },
-  { code: '077', name: 'Banco Inter' },
-  { code: '336', name: 'C6 Bank' },
-  { code: '748', name: 'Sicredi' },
-  { code: '756', name: 'Sicoob' },
-  { code: '212', name: 'Banco Original' },
-  { code: '422', name: 'Banco Safra' },
-  { code: OTHER_BANK_CODE, name: 'Outro' }, // #206: instituição não listada → nome manual
+  ...FEBRABAN_BANKS,
+  { code: OTHER_BANK_CODE, name: OTHER_BANK_NAME }, // #206: instituição não listada → nome manual
 ]
-export const bankNameByCode = (code: string): string | undefined => BANKS.find((b) => b.code === code)?.name
+
+/**
+ * Nome pelo código. A sentinela `OUTRO` é tratada aqui e não pela tabela porque ela não é um banco —
+ * é a ausência de um. Contas já cadastradas com os 12 códigos antigos continuam resolvendo: todos os
+ * 12 existem na tabela completa (o gerador falha se algum sumir da fonte).
+ */
+export const bankNameByCode = (code: string): string | undefined =>
+  code === OTHER_BANK_CODE ? OTHER_BANK_NAME : sharedBankNameByCode(code)
 
 export type AccountRow = Readonly<{
   id: string

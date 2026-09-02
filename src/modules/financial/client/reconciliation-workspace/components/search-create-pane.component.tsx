@@ -24,6 +24,7 @@ import {
 } from '#shared/ui/icons/index.ts'
 
 import * as s from '../page/reconciliation-workspace.css.ts'
+import { TaxonomyCascadeFields } from './taxonomy-cascade-fields.component.tsx'
 import {
   centsToBRL,
   retentionAgencyTag,
@@ -468,6 +469,19 @@ export function SearchCreatePane({ binding, extratoValueCents, onManualEntry }: 
         </div>
       ) : null}
 
+      {/* M2: painel da reclassificação — os MESMOS selects em cascata da Sugestão e da Nova transação. */}
+      {binding.reclassify.editing ? (
+        <div className={s.reclassPanel}>
+          <span className={s.sideTaxonomyLbl}>{t('financial.recon.sugg.taxonomy')}</span>
+          <TaxonomyCascadeFields cascade={binding.reclassify.cascade} />
+          <span className={s.taxHint}>
+            {binding.reclassify.cascade.isValid
+              ? t('financial.recon.reclass.cascadeHint')
+              : t('financial.recon.reclass.invalidPath')}
+          </span>
+        </div>
+      ) : null}
+
       {binding.errorTag !== null ? <p className={s.errorText}>{t(binding.errorTag)}</p> : null}
 
       <div className={s.ntActions}>
@@ -483,6 +497,24 @@ export function SearchCreatePane({ binding, extratoValueCents, onManualEntry }: 
         <span className={s.spacer} />
         {/* "Lançamento Manual" — antes era o band azul "Não encontrei"; agora botão ao lado de Conciliar
             (mais espaço p/ a lista). Leva à aba "Nova transação". */}
+        {/* M2 (specs/110): "Editar" a taxonomia dos títulos selecionados, ao lado de "+ Lançamento Manual".
+            SÓ habilita com ao menos um título NORMAL na seleção — imposto retido é alvo da cascata do
+            backend, nunca fonte (RN-M2-11). Desabilitado PARECE desabilitado, com o motivo no title. */}
+        <button
+          type="button"
+          className={
+            !binding.reclassify.canEdit
+              ? s.btnManualDisabled
+              : binding.reclassify.editing
+                ? s.btnManualCancel
+                : s.btnManual
+          }
+          disabled={!binding.reclassify.canEdit}
+          title={binding.reclassify.canEdit ? undefined : t('financial.recon.reclass.onlyNormal')}
+          onClick={binding.reclassify.toggle}
+        >
+          {t(binding.reclassify.editing ? 'financial.recon.reclass.cancel' : 'financial.recon.reclass.edit')}
+        </button>
         <button type="button" className={s.btnManual} onClick={onManualEntry}>
           <span aria-hidden>{PLUS}</span>
           {t('financial.recon.multi.manualEntry')}
@@ -490,7 +522,11 @@ export function SearchCreatePane({ binding, extratoValueCents, onManualEntry }: 
         <button
           type="button"
           className={s.btnConfirm}
-          disabled={!binding.canConfirm || binding.submitting}
+          disabled={
+            !binding.canConfirm ||
+            binding.submitting ||
+            (binding.reclassify.editing && !binding.reclassify.cascade.isValid)
+          }
           onClick={() => {
             binding.confirm()
           }}

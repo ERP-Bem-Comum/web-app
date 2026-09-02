@@ -14,6 +14,7 @@ import { ReconciliationReportView } from './reconciliation-report.page.tsx'
 import {
   centsToBRL,
   isPending,
+  taxonomyToPayload,
   sortPendingByPayment,
   type AssocTab,
 } from '../reconciliation-workspace.view-model.ts'
@@ -277,13 +278,22 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
                           <SuggestionPane
                             state={ui.showGuesses ? vm.suggestions : { tag: 'idle' }}
                             selectedTx={vm.selectedTx}
+                            taxonomy={vm.suggestionTaxonomy}
+                            reclassify={vm.reclassify}
                             reconciling={vm.reconcile.reconciling}
                             rejecting={vm.reconcile.rejecting}
                             errorTag={vm.reconcile.errorTag}
                             onReconcile={(payableId) => {
                               if (ui.selectedTransactionId !== null) {
                                 vm.armFlash(payableId) // captura o título do match p/ a barra de confirmação
-                                vm.reconcile.reconcileOne(ui.selectedTransactionId, payableId)
+                                // M2: os 5 refs só sobem se o operador editou E escolheu algo — senão a
+                                // classificação do lançamento permanece (RN-M2-03).
+                                // `taxonomyToPayload` devolve null em caminho incompleto — vira
+                                // `undefined` e concilia sem mexer na classificação (RN-M2-03).
+                                const reclass = vm.reclassify.editing
+                                  ? (taxonomyToPayload(vm.reclassify.cascade.refs) ?? undefined)
+                                  : undefined
+                                vm.reconcile.reconcileOne(ui.selectedTransactionId, payableId, reclass)
                               }
                             }}
                             onReject={(payableId) => {

@@ -9,6 +9,7 @@
  * Não há coluna de situação: a linha que NÃO entra na remessa sai destacada em vermelho, e o detalhe da
  * pendência fica no `title` — ao alcance de quem vai corrigir, fora do caminho de quem só confere.
  */
+import { Fragment } from 'react'
 import type { ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
@@ -111,7 +112,8 @@ export type RemittancePreviewModalProps = Readonly<{
   downloadErrorMessage: string | null
   /** O objeto veio de `falhas/`: o envio ao banco NÃO completou. */
   downloadedFromFailures: boolean
-  onDownload: () => void
+  /** Recebe o `remittanceId` do arquivo clicado — o lote pode ter mais de um (core-api#929). */
+  onDownload: (remittanceId: string) => void
 }>
 
 export function RemittancePreviewModal(props: RemittancePreviewModalProps): ReactNode {
@@ -184,14 +186,21 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
             <h3 className={receiptTitle}>{t('financial.remittance.generate.doneTitle')}</h3>
             <p className={confirmText}>{t('financial.remittance.generate.doneBody')}</p>
             <div className={receiptGrid}>
-              <span className={summaryItem}>
-                <span className={summaryLabel}>{t('financial.remittance.generate.nsa')}</span>
-                <span className={summaryValueStrong}>{props.generated.nsa}</span>
-              </span>
-              <span className={summaryItem}>
-                <span className={summaryLabel}>{t('financial.remittance.generate.fileName')}</span>
-                <span className={summaryValue}>{props.generated.fileName}</span>
-              </span>
+              {/* UM bloco por arquivo do lote (core-api#929): boleto e transferência não cabem no mesmo
+                  lote, e uma seleção mista enfileira mais de um. Exibir só o primeiro descreveria
+                  METADE do que foi ao banco, com o operador confirmando sem saber. */}
+              {props.generated.files.map((f) => (
+                <Fragment key={f.remittanceId}>
+                  <span className={summaryItem}>
+                    <span className={summaryLabel}>{t('financial.remittance.generate.nsa')}</span>
+                    <span className={summaryValueStrong}>{f.nsa}</span>
+                  </span>
+                  <span className={summaryItem}>
+                    <span className={summaryLabel}>{t('financial.remittance.generate.fileName')}</span>
+                    <span className={summaryValue}>{f.fileName}</span>
+                  </span>
+                </Fragment>
+              ))}
               {/* A QUANTIDADE saiu daqui (decisão da P.O., 24/08): o operador acabou de lê-la na
                   conferência, com os títulos nominados, e repeti-la no comprovante não acrescenta —
                   ocupa a linha que os dados exclusivos do comprovante (NSA, arquivo, data) precisam.
@@ -203,10 +212,14 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
                 <span className={summaryLabel}>{t('financial.remittance.generate.paymentDate')}</span>
                 <span className={summaryValueStrong}>{props.generated.paymentDate}</span>
               </span>
-              <span className={summaryItem}>
-                <span className={summaryLabel}>{t('financial.remittance.generate.total')}</span>
-                <span className={summaryValueStrong}>{props.generated.total}</span>
-              </span>
+              {/* Total POR ARQUIVO, e não somado: o que o banco processa é cada arquivo, e é por
+                  arquivo que o operador vai conferir o extrato. Uma soma esconderia a repartição. */}
+              {props.generated.files.map((f) => (
+                <span className={summaryItem} key={`total-${f.remittanceId}`}>
+                  <span className={summaryLabel}>{t('financial.remittance.generate.total')}</span>
+                  <span className={summaryValueStrong}>{f.total}</span>
+                </span>
+              ))}
             </div>
 
             {/* Baixar o arquivo QUE FOI ao banco — para conferir layout. Nunca uma regeração: outro NSA e
@@ -216,16 +229,21 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
                 rota só fora de produção, lá o clique volta 404 e a mensagem abaixo explica — a tela NÃO
                 esconde o botão por conta própria. */}
             <div className={receiptActions}>
-              <button
-                type="button"
-                className={downloadBtn}
-                onClick={props.onDownload}
-                disabled={props.downloading}
-              >
-                {props.downloading
-                  ? t('financial.remittance.download.running')
-                  : t('financial.remittance.download.action')}
-              </button>
+              {props.generated.files.map((f) => (
+                <button
+                  key={`dl-${f.remittanceId}`}
+                  type="button"
+                  className={downloadBtn}
+                  onClick={() => {
+                    props.onDownload(f.remittanceId)
+                  }}
+                  disabled={props.downloading}
+                >
+                  {props.downloading
+                    ? t('financial.remittance.download.running')
+                    : `${t('financial.remittance.download.action')}${props.generated !== null && props.generated.files.length > 1 ? ` — NSA ${f.nsa}` : ''}`}
+                </button>
+              ))}
               <span className={summaryLabel}>{t('financial.remittance.download.hint')}</span>
             </div>
 

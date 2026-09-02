@@ -16,6 +16,7 @@ import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
 import {
+  routeHasEmitter,
   deriveRemittanceSelection,
   toPreviewView,
 } from '../../../../../src/modules/financial/client/contas-a-pagar-list/remittance-preview.view-model.ts'
@@ -198,8 +199,8 @@ describe('toPreviewView — desmarcar atualiza o totalizador', () => {
   const a = row('pa', 'Aprovado', { documentId: 'da', netCents: '10000', grossCents: '12000' })
   const b = row('pb', 'Aprovado', { documentId: 'db', netCents: '5000', grossCents: '6000' })
   const lines: RemittancePreview['lines'] = [
-    { payableId: 'pa', documentId: 'da', status: 'ready', route: 'pix', gaps: [], valueCents: '10000' },
-    { payableId: 'pb', documentId: 'db', status: 'ready', route: 'pix', gaps: [], valueCents: '5000' },
+    { payableId: 'pa', documentId: 'da', status: 'ready', route: 'transfer', gaps: [], valueCents: '10000' },
+    { payableId: 'pb', documentId: 'db', status: 'ready', route: 'transfer', gaps: [], valueCents: '5000' },
   ]
 
   it('tudo marcado → soma os dois', () => {
@@ -235,7 +236,14 @@ describe('toPreviewView — não-aprovado nem aparece', () => {
     const pago = row('p-pago', 'Pago', { documentId: 'd-pago' })
     const view = toPreviewView(
       preview([
-        { payableId: 'p-ok', documentId: 'd-ok', status: 'ready', route: 'pix', gaps: [], valueCents: '100' },
+        {
+          payableId: 'p-ok',
+          documentId: 'd-ok',
+          status: 'ready',
+          route: 'transfer',
+          gaps: [],
+          valueCents: '100',
+        },
       ]),
       [aprovado, aberto, pago],
       NONE,
@@ -477,7 +485,7 @@ describe('toPreviewView — data de pagamento no passado', () => {
     payableId: id,
     documentId: `d-${id}`,
     status: 'ready' as const,
-    route: 'pix' as const,
+    route: 'transfer' as const,
     gaps: [],
     valueCents: '10000',
   })
@@ -540,5 +548,65 @@ describe('toPreviewView — data de pagamento no passado', () => {
     )
     assert.equal(view.summary.paymentDateMixed, true)
     assert.equal(view.summary.paymentDateInPast, true)
+  })
+})
+
+// ── Rotas SEM emissor no CNAB (mitigação de tela) ──────────────────────────────
+// O pré-voo do core-api devolve `ready` para PIX e guia de tributo, mas o emissor recusa as duas e o
+// montador ABORTA o arquivo inteiro — um título PIX na seleção derruba a remessa dos outros. Enquanto o
+// emissor não suportar a rota, a régua é do front.
+describe('rota sem emissor: PIX e tributo não são remissíveis mesmo com o backend dizendo `ready`', () => {
+  const pixRow = row('p-pix', 'Aprovado', {
+    documentId: 'doc-pix',
+    supplier: 'Fornecedor PIX',
+    paymentMethod: 'PIX',
+    netCents: '3700',
+    grossCents: '3700',
+  })
+  const pixLine = {
+    payableId: 'p-pix',
+    documentId: 'doc-pix',
+    status: 'ready' as const,
+    route: 'pix' as const,
+    gaps: [],
+    valueCents: '3700',
+  }
+
+  it('PIX `ready` NÃO entra na remessa e diz o porquê (nenhum cadastro resolve)', () => {
+    const view = toPreviewView(preview([pixLine], { readyCount: 1 }), [pixRow], NONE, TODAY)
+    const line = view.lines.find((l) => l.payableId === 'p-pix')
+    assert.equal(line?.remittable, false)
+    assert.equal(line?.checked, false)
+    assert.equal(line?.pendencyTag, 'financial.remittance.preview.pendency.pixNoEmitter')
+  })
+
+  it('as rotas COM emissor seguem passando (a guarda não pode barrar transferência nem boleto)', () => {
+    const view = toPreviewView(preview([fornLine], { readyCount: 1 }), [fornecedor], NONE, TODAY)
+    const line = view.lines.find((l) => l.payableId === 'p-forn')
+    assert.equal(line?.remittable, true)
+    assert.equal(line?.pendencyTag, null)
+  })
+
+  it('routeHasEmitter: só PIX é barrado; tributo e rota desconhecida ficam com o backend', () => {
+    assert.equal(routeHasEmitter('pix'), false)
+    // ⚠️ `tax-guide` NÃO é barrada aqui, POR DECISÃO da P.O. (29/08): o emissor recusa igual, mas é a rota
+    // das retenções, e a #794 decidiu deixá-las passar ("destacar, não travar"). Este assert existe para
+    // que reintroduzir a barreira por engano quebre o teste, em vez de mudar o comportamento em silêncio.
+    assert.equal(routeHasEmitter('tax-guide'), true)
+    assert.equal(routeHasEmitter('transfer'), true)
+    assert.equal(routeHasEmitter('billet'), true)
+    assert.equal(routeHasEmitter(null), true)
+  })
+
+  it('um PIX na seleção não arrasta os remissíveis junto (era o arquivo inteiro que caía)', () => {
+    const view = toPreviewView(
+      preview([fornLine, pixLine], { readyCount: 2 }),
+      [fornecedor, pixRow],
+      NONE,
+      TODAY,
+    )
+    const byId = new Map(view.lines.map((l) => [l.payableId, l]))
+    assert.equal(byId.get('p-forn')?.checked, true)
+    assert.equal(byId.get('p-pix')?.checked, false)
   })
 })

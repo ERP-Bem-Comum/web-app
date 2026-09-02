@@ -76,7 +76,8 @@ const startWithAccount = async (result: { current: ReturnType<typeof useRemittan
   })
 }
 
-const RECEIPT = {
+// core-api#929: a geração devolve um LOTE — um arquivo por modalidade.
+const RECEIPT_FILE = {
   remittanceId: 'r1',
   fileName: 'CB000123.REM',
   objectKey: 'saida/CB000123.REM',
@@ -84,6 +85,8 @@ const RECEIPT = {
   totalCents: '140775',
   lineCount: 1,
 }
+
+const RECEIPT = { files: [RECEIPT_FILE] }
 
 /** Leva o binding até o estado "comprovante na tela" — é o único de onde se pode baixar. */
 const setupGenerated = async () => {
@@ -310,16 +313,7 @@ describe('useRemittancePreview', () => {
 
   it('com conta escolhida, gera e devolve o comprovante', async () => {
     mocked.mockResolvedValue(ok(PREVIEW))
-    mockedGenerate.mockResolvedValue(
-      ok({
-        remittanceId: 'r1',
-        fileName: 'CB000123.REM',
-        objectKey: 'saida/CB000123.REM',
-        nsa: 123,
-        totalCents: '140775',
-        lineCount: 1,
-      }) as never,
-    )
+    mockedGenerate.mockResolvedValue(ok({ files: [RECEIPT_FILE] }) as never)
     const { result } = setup()
     await startWithAccount(result)
 
@@ -328,7 +322,7 @@ describe('useRemittancePreview', () => {
     })
 
     await waitFor(() => {
-      expect(result.current.generated?.nsa).toBe(123)
+      expect(result.current.generated?.files[0]?.nsa).toBe(123)
     })
     // A MESMA conta com que se conferiu: gerar com outra faria o arquivo divergir do pré-voo lido.
     expect(mockedGenerate).toHaveBeenCalledWith({ cedenteAccountId: 'acc-1', payableIds: ['doc-1'] })
@@ -402,7 +396,7 @@ describe('useRemittancePreview', () => {
   it('sem comprovante na tela, baixar é no-op — não há remessa a que o arquivo pertença', () => {
     const { result } = setup()
     act(() => {
-      result.current.downloadFile()
+      result.current.downloadFile('r1')
     })
     expect(mockedDownload).not.toHaveBeenCalled()
   })
@@ -419,7 +413,7 @@ describe('useRemittancePreview', () => {
     Object.defineProperty(URL, 'revokeObjectURL', { value: vi.fn(), configurable: true })
 
     act(() => {
-      result.current.downloadFile()
+      result.current.downloadFile('r1')
     })
 
     await waitFor(() => {
@@ -442,7 +436,7 @@ describe('useRemittancePreview', () => {
     Object.defineProperty(URL, 'revokeObjectURL', { value: vi.fn(), configurable: true })
 
     act(() => {
-      result.current.downloadFile()
+      result.current.downloadFile('r1')
     })
 
     await waitFor(() => {
@@ -461,7 +455,7 @@ describe('useRemittancePreview', () => {
     const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
 
     act(() => {
-      result.current.downloadFile()
+      result.current.downloadFile('r1')
     })
 
     await waitFor(() => {
@@ -477,7 +471,7 @@ describe('useRemittancePreview', () => {
     mockedDownload.mockResolvedValue(err({ error: 'not-found', message: null }) as never)
 
     act(() => {
-      result.current.downloadFile()
+      result.current.downloadFile('r1')
     })
 
     await waitFor(() => {

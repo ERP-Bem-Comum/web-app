@@ -116,6 +116,44 @@ const BARCODE_PENDENCY: Record<PayoutGapReason, string> = {
   'check-digit-mismatch': 'financial.remittance.preview.pendency.missingBarcode',
 }
 
+/**
+ * ⚠️ MITIGAÇÃO DE TELA (temporária) — rotas SEM emissor no CNAB.
+ *
+ * O pré-voo do core-api devolve `ready` para PIX e guia de tributo quando o cadastro está completo, mas o
+ * emissor recusa as duas (`batchProfileFor` → `remittance-launch-form-unsupported`). Como o montador ABORTA
+ * o arquivo inteiro nesse caso, um único título PIX na seleção derruba a remessa dos outros — e o operador
+ * só descobre no clique de gerar, com erro genérico (o backend colapsa o slug).
+ *
+ * A resposta do pré-voo NÃO traz o "não planejado" que o planner calcula, então não há como avisar por dado
+ * do backend: a régua é aqui, pela ROTA que a própria resposta já informa.
+ *
+ * **Remover quando o emissor suportar a rota** — a régua verdadeira é do core-api, e manter duas é como
+ * este módulo já se machucou antes. Enquanto isso, é a diferença entre avisar e deixar a remessa quebrar.
+ */
+// ⚠️ ESCOPO: só `pix` — e `tax-guide` fica de fora POR DECISÃO, não por esquecimento.
+//
+// O emissor recusa `tax-guide` do mesmo jeito que o PIX, então uma retenção por guia numa seleção também
+// derruba o arquivo. Mas essa é a rota das RETENÇÕES, e a #794 decidiu que retenção apta segue remissível
+// ("destacar, não travar"). Levado à P.O. em 29/08 com o modo de falha explicado; decisão: **manter como
+// está**. Reportado no core-api#890 para entrar no escopo do emissor, não da tela.
+// ⚠️ [01/09] O core-api#837 (PR #925) JÁ entrou na `dev` e o backend agora nomeia o caso como
+// `no-issuer` — o que torna esta régua redundante EM TESE. Ela fica assim mesmo, e a razão é
+// sequenciamento, não esquecimento: enquanto a homologação não tiver o #925, remover isto faria o PIX
+// voltar a aparecer como APTO, o operador geraria, e o montador abortaria o arquivo inteiro — a
+// regressão que esta mitigação existe para evitar.
+//
+// GATILHO DE REMOÇÃO, concreto: o pré-voo da homologação devolver `no-issuer` para um título PIX.
+// Aí esta constante, `routeHasEmitter` e `NO_EMITTER_PENDENCY` saem juntos, e a régua fica só no
+// backend — que é onde ela deve estar.
+const ROUTES_WITHOUT_EMITTER: ReadonlySet<VanRoute> = new Set<VanRoute>(['pix'])
+
+/** A rota tem emissor no CNAB? `null` (rota desconhecida) não é barrada aqui — o backend é quem julga. */
+export const routeHasEmitter = (route: VanRoute | null): boolean =>
+  route === null || !ROUTES_WITHOUT_EMITTER.has(route)
+
+/** Pendência da rota sem emissor — nenhum cadastro resolve, então a frase não pede correção de dado. */
+const NO_EMITTER_PENDENCY = 'financial.remittance.preview.pendency.pixNoEmitter'
+
 const blockedPendencyTag = (route: VanRoute | null, gaps: readonly PayoutGap[]): string => {
   // Dígito divergente ganha do resto: é o único motivo em que o cadastro está COMPLETO, e confundi-lo
   // com falta de dado é exatamente o mal-entendido que o motivo foi criado para desfazer.
@@ -247,7 +285,13 @@ export const toPreviewView = (
           gaps: [],
         }
       }
-      if (line.status === 'ready') return { remittable: true, pendencyTag: null, gaps: [] }
+      if (line.status === 'ready') {
+        // Ver `ROUTES_WITHOUT_EMITTER`: o backend diz `ready`, o emissor recusa e o arquivo inteiro cai.
+        if (!routeHasEmitter(line.route)) {
+          return { remittable: false, pendencyTag: NO_EMITTER_PENDENCY, gaps: [] }
+        }
+        return { remittable: true, pendencyTag: null, gaps: [] }
+      }
       return {
         remittable: false,
         pendencyTag:
@@ -266,7 +310,12 @@ export const toPreviewView = (
                   // tela acusava falta de dado bancário num cadastro completo.
                   line.status === 'transmitted'
                   ? 'financial.remittance.preview.pendency.alreadyTransmitted'
-                  : blockedPendencyTag(line.route, line.gaps),
+                  : // core-api#837: a rota não tem emissor no CNAB — dito pelo BACKEND, não inferido
+                    // aqui. Frase própria porque `blocked` mandaria corrigir um cadastro que pode
+                    // estar completo. ⚠️ Só PIX e guia caem aqui; boleto e transferência TÊM emissor.
+                    line.status === 'no-issuer'
+                    ? 'financial.remittance.preview.pendency.noIssuer'
+                    : blockedPendencyTag(line.route, line.gaps),
         gaps: line.gaps.map((g) => ({ fieldTag: FIELD_TAG[g.field], reasonTag: REASON_TAG[g.reason] })),
       }
     })()
@@ -342,10 +391,23 @@ export const toPreviewView = (
  * Comprovante PRONTO para a view: a formatação do dinheiro fica aqui, não no componente (boundary §I —
  * `ui` não importa `data`, e `centsToBRL` mora lá).
  */
-export type GeneratedRemittanceView = Readonly<{
+/** UM arquivo do comprovante. `remittanceId` fica porque o download é POR ARQUIVO. */
+export type GeneratedRemittanceFileView = Readonly<{
+  remittanceId: string
   nsa: string
   fileName: string
   total: string
+}>
+
+export type GeneratedRemittanceView = Readonly<{
+  /**
+   * ⚠️ TODOS os arquivos do lote (core-api#929). Boleto e transferência não cabem no mesmo lote, então
+   * uma seleção mista gera mais de um — cada um com NSA próprio e download próprio.
+   *
+   * Listar todos não é capricho de completude: exibir só o primeiro faria o comprovante descrever
+   * METADE do que foi enfileirado no banco, e o operador confirmaria acreditando ter conferido.
+   */
+  files: readonly GeneratedRemittanceFileView[]
   /**
    * O dia em que o banco executa o pagamento (Segmento A). É o único dado do comprovante que o operador
    * NÃO reconfere em outro lugar depois — o total ele vê no resumo, os títulos ele acabou de marcar —, e
@@ -370,9 +432,12 @@ export type GeneratedRemittanceView = Readonly<{
 export type SentRemittance = Readonly<{ paymentDate: string }>
 
 export const toReceiptView = (g: GeneratedRemittance, sent: SentRemittance): GeneratedRemittanceView => ({
-  nsa: String(g.nsa),
-  fileName: g.fileName,
-  total: centsToBRL(g.totalCents),
+  files: g.files.map((f) => ({
+    remittanceId: f.remittanceId,
+    nsa: String(f.nsa),
+    fileName: f.fileName,
+    total: centsToBRL(f.totalCents),
+  })),
   paymentDate: sent.paymentDate,
 })
 

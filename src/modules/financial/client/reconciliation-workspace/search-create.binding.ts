@@ -27,7 +27,11 @@ import {
   type PeriodField,
   type ReconType,
   type StatementTransaction,
+  hasReclassifiableSelection,
+  taxonomyToPayload,
 } from './reconciliation-workspace.view-model.ts'
+import { useTaxonomyCascade, type TaxonomyCascadeBinding } from './taxonomy-cascade.binding.ts'
+import type { TaxonomyInput } from '#modules/financial/client/data/model/reconciliation.model.ts'
 
 /** Títulos por página no buscar-vários (≈ o que cabe na altura da lista, ~8 linhas de 2.75rem em 24rem). */
 export const SEARCH_PER_PAGE = 7
@@ -103,6 +107,16 @@ export type SearchCreateBinding = Readonly<{
   clear: () => void
   /** Ação do botão Conciliar: 1º clique com diferença → revela o tratamento; depois classifica → submete. */
   confirm: () => void
+  /**
+   * M2 (specs/110) — "Editar" a taxonomia. `canEdit` exige ao menos UM título NORMAL na seleção: imposto
+   * retido é ALVO da cascata do backend, nunca fonte (RN-M2-11 / M2-7 / M2-8).
+   */
+  reclassify: Readonly<{
+    canEdit: boolean
+    editing: boolean
+    cascade: TaxonomyCascadeBinding
+    toggle: () => void
+  }>
 }>
 
 export function useSearchCreate(
@@ -168,6 +182,11 @@ export function useSearchCreate(
   const pageRows = filtered.slice((pageClamped - 1) * SEARCH_PER_PAGE, pageClamped * SEARCH_PER_PAGE)
 
   const selected = payables.filter((p) => selectedIds.has(p.id))
+  // M2 (specs/110): o "Editar" habilita se a seleção tiver ao menos um título NORMAL. Seleção só de
+  // impostos NÃO habilita (M2-7); mista habilita (M2-8) — o backend cascateia do pai de cada um.
+  const cascade = useTaxonomyCascade()
+  const [reclassifying, setReclassifying] = useState(false)
+  const canReclassify = hasReclassifiableSelection(payables, selectedIds)
   const selectedSumCents = sumCentsOf(selected)
   const txValue = selectedTx === null ? 0 : parseCents(selectedTx.valueCents)
   const residual = residualCents(txValue, selectedSumCents)
@@ -188,6 +207,7 @@ export function useSearchCreate(
         costCenterRef?: string
         note?: string
       }
+      taxonomy?: TaxonomyInput
     }) => reconciliationRepository.createReconciliation(v),
     onSuccess: (res, v) => {
       if (res.ok) {
@@ -350,6 +370,18 @@ export function useSearchCreate(
       setCostCenterRef('')
       setObservation('')
     },
+    reclassify: {
+      canEdit: canReclassify,
+      editing: reclassifying && canReclassify,
+      cascade,
+      toggle: () => {
+        setReclassifying((prev) => {
+          // Fechar DESCARTA a edição (M2-1: abrir, mexer e cancelar não muda nada).
+          if (prev) cascade.reset()
+          return !prev
+        })
+      },
+    },
     confirm: () => {
       if (selectedTx === null || selectedIds.size === 0 || mut.isPending) return
       // 1º clique com diferença ainda não revelada → abre o tratamento (não submete).
@@ -372,6 +404,8 @@ export function useSearchCreate(
                 ...(note !== '' ? { note } : {}),
               }
             : undefined,
+        // M2: null (caminho incompleto) vira undefined — concilia sem mexer na classificação (RN-M2-03).
+        taxonomy: reclassifying ? (taxonomyToPayload(cascade.refs) ?? undefined) : undefined,
       })
     },
   }

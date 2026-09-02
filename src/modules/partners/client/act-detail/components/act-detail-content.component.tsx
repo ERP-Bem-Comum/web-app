@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
+import { BankSelect, isUnknownBank } from '#shared/ui/brand/bank-select.component.tsx'
+import { BANK_LABELS, BANK_UNKNOWN_HINT } from '#modules/partners/client/shared/bank-select-labels.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Badge, Checkbox, formatMask, unmask, type InputMask } from '#shared/ui/index.ts'
 import { ChevronDownIcon, FileTextIcon, HeartHandshakeIcon, WalletIcon } from '#shared/ui/icons/index.ts'
@@ -205,7 +207,30 @@ export function ActDetailContent(props: ActDetailContentProps): ReactNode {
 
             {c.state.hasFinancialTransfer ? (
               <>
-                {txt('bank', t('partners.acts.form.bank'), 'bankAccount.bank')}
+                {/* Banco: seletor pelo código FEBRABAN, e não `txt`, porque o campo deixou de ser texto
+                    livre. Fora do modo de edição o seletor fica desabilitado, mas continua mostrando
+                    "237 · Bradesco" — o código sozinho não diz nada a quem está conferindo. */}
+                <div className={field}>
+                  <label htmlFor="ad-bank" className={fieldLabel}>
+                    {t('partners.acts.form.bank')}
+                  </label>
+                  <BankSelect
+                    id="ad-bank"
+                    value={c.state.bank}
+                    labels={BANK_LABELS}
+                    invalid={c.errors['bankAccount.bank'] === true}
+                    disabled={!editing}
+                    ariaLabel={t('partners.acts.form.bank')}
+                    onChange={(code) => {
+                      c.setField('bank', code)
+                    }}
+                  />
+                  {invalidMsg('bankAccount.bank') !== null ? (
+                    <span className={fieldError}>{invalidMsg('bankAccount.bank')}</span>
+                  ) : isUnknownBank(c.state.bank) ? (
+                    <span className={fieldError}>{BANK_UNKNOWN_HINT}</span>
+                  ) : null}
+                </div>
                 {txt('agency', t('partners.acts.form.agency'), 'bankAccount.agency')}
                 {txt('accountNumber', t('partners.acts.form.accountNumber'), 'bankAccount.accountNumber')}
                 {txt('checkDigit', t('partners.acts.form.checkDigit'), 'bankAccount.checkDigit')}

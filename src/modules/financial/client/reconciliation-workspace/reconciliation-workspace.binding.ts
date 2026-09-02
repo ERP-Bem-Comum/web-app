@@ -22,6 +22,7 @@ import {
   initialWorkspaceUiState,
   isBatchableManualType,
   isPending,
+  isReclassifiableTitle,
   nextPendingWithMatch,
   engineTarget,
   normalizeDesc,
@@ -64,6 +65,11 @@ import {
   transactionReconciliationQueryOptions,
 } from './reconciliation-workspace.query.ts'
 import { reconciliationErrorTag } from '#modules/financial/client/data/helpers/reconciliation-error-tag.ts'
+import {
+  useDocumentCategorization,
+  type DocumentCategorizationBinding,
+} from '#modules/financial/client/contas-a-pagar-list/document-categorization.binding.ts'
+import { useTaxonomyCascade, type TaxonomyCascadeBinding } from './taxonomy-cascade.binding.ts'
 import type {
   AccountStatementPeriod as AccountStatementPeriodModel,
   CriterionResult,
@@ -119,6 +125,19 @@ export type WorkspaceBinding = Readonly<{
   guesses: ReadonlyMap<string, RowGuess>
   selectedTx: StatementTransaction | null
   suggestions: SuggestionState
+  /** Taxonomia do título do palpite de topo (Programa/Plano/Centro/Categoria/Subcategoria) — vem do DOCUMENTO. */
+  suggestionTaxonomy: DocumentCategorizationBinding
+  /**
+   * M2 (specs/110) — "Editar" a taxonomia do título casado, aplicada ao CONCILIAR. `canEdit` é falso para
+   * título de RETENÇÃO: o imposto é alvo da cascata do backend, nunca fonte (RN-M2-11).
+   */
+  reclassify: Readonly<{
+    canEdit: boolean
+    editing: boolean
+    cascade: TaxonomyCascadeBinding
+    start: () => void
+    cancel: () => void
+  }>
   payables: readonly PaidPayable[]
   extrato: Readonly<{
     hasStatement: boolean
@@ -609,6 +628,21 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     }
   })()
 
+  // Taxonomia do título sugerido (#382): Programa / Plano Orçamentário / Centro de Custo / Categoria /
+  // Subcategoria vêm do DOCUMENTO (carimbadas no Lançar Documento), não do título — então resolvemos pelo
+  // `documentId` do palpite de topo, reusando o MESMO caminho (e cache) do drawer de Contas a Pagar.
+  const topDocumentId = suggestions.tag === 'ready' ? (suggestions.top.payable?.documentId ?? null) : null
+  const suggestionTaxonomy = useDocumentCategorization(topDocumentId)
+
+  // M2 (specs/110) — editor da taxonomia do título casado. O "Editar" só existe p/ título LÍQUIDO; imposto
+  // retido recebe a classificação por cascata do pai, no backend (RN-M2-11).
+  const topPayable = suggestions.tag === 'ready' ? suggestions.top.payable : null
+  const reclassifyCascade = useTaxonomyCascade()
+  // O editor é ancorado NA TRANSAÇÃO em que foi aberto (id, não booleano): trocar de transação fecha o
+  // editor por DERIVAÇÃO — sem efeito nem setState em cascata. M2-1: abrir, mexer e sair não muda nada.
+  const [reclassifyFor, setReclassifyFor] = useState<string | null>(null)
+  const reclassifying = reclassifyFor !== null && reclassifyFor === ui.selectedTransactionId
+
   // #174: mapa transação→palpite de topo (só bandas reais; null = não-Pending/sem candidato é ignorado).
   // flatMap + checks de null narrowam band/score sem type-assertion (`as`).
   const guesses: ReadonlyMap<string, RowGuess> = new Map(
@@ -700,6 +734,21 @@ export function useReconciliationWorkspace(routeAccountRef: string): WorkspaceBi
     guesses,
     selectedTx,
     suggestions,
+    suggestionTaxonomy,
+    reclassify: {
+      canEdit: isReclassifiableTitle(topPayable),
+      editing: reclassifying,
+      cascade: reclassifyCascade,
+      start: () => {
+        // Abre limpo: a edição descartada de outra transação não vaza p/ esta.
+        reclassifyCascade.reset()
+        setReclassifyFor(ui.selectedTransactionId)
+      },
+      cancel: () => {
+        setReclassifyFor(null)
+        reclassifyCascade.reset()
+      },
+    },
     payables,
     extrato,
     periodBalance,

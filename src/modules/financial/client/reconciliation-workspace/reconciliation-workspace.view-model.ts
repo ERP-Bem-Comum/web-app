@@ -303,6 +303,25 @@ export {
 /** Normaliza a descrição (payeeName) p/ comparar transações "do mesmo tipo": case/espaço-insensível. */
 export const normalizeDesc = (s: string): string => s.trim().toLowerCase().replace(/\s+/g, ' ')
 
+/**
+ * Favorecido/descrição da transação como o EXTRATO mostra. O OFX/CSV nem sempre traz `payeeName` (muitos
+ * bancos só preenchem o memo) — nesse caso o nome que o operador enxerga na lista é o `memo`. PURA.
+ * Devolve string vazia quando não há nem um nem outro (a view decide o traço).
+ */
+export const statementPartyLabel = (tx: Pick<StatementTransaction, 'payeeName' | 'memo'>): string =>
+  tx.payeeName.trim() !== '' ? tx.payeeName : tx.memo.trim()
+
+/**
+ * Complemento da transação (o memo) quando ele ACRESCENTA informação ao rótulo do favorecido — vazio
+ * quando o memo é o próprio rótulo (fallback) ou repete o payeeName. PURA.
+ */
+export const statementMemoDetail = (tx: Pick<StatementTransaction, 'payeeName' | 'memo'>): string => {
+  const memo = tx.memo.trim()
+  if (memo === '') return ''
+  const label = statementPartyLabel(tx)
+  return normalizeDesc(memo) === normalizeDesc(label) ? '' : memo
+}
+
 // Tipos de lançamento manual que o LOTE (confirmBatch) suporta hoje — NÃO precisam de conta de destino/
 // produto (o template do batch do backend não os carrega). Resgate/Aplicação/Transferência ficam de fora.
 export const BATCHABLE_MANUAL_TYPES: readonly ManualEntryType[] = ['Payment', 'Receipt', 'FeePenaltyInterest']
@@ -1035,3 +1054,113 @@ export const groupAccountsForSwitch = (
     closed: filtered.filter((a) => a.status === 'Closed').map((a) => toChangeAccountItem(a, currentId)),
   }
 }
+
+// ── M2 · Reclassificar a taxonomia na conciliação (specs/110) ───────────────────
+// Núcleo PURO das regras RN-M2-08/09/11. A cascata de 5 níveis e o gating do "Editar" vivem aqui (§XI):
+// o binding só liga estado e queries, e a view só apresenta.
+
+/** Os 5 refs da taxonomia (ADR-0051). `''` = não escolhido — nunca `null`, p/ casar com o value dos selects. */
+export type TaxonomyRefs = Readonly<{
+  programRef: string
+  budgetPlanRef: string
+  costCenterRef: string
+  categoryRef: string
+  subcategoryRef: string
+}>
+
+export const EMPTY_TAXONOMY: TaxonomyRefs = {
+  programRef: '',
+  budgetPlanRef: '',
+  costCenterRef: '',
+  categoryRef: '',
+  subcategoryRef: '',
+}
+
+/** Níveis em ordem TOP-DOWN (§6 da spec) — a posição no array É a hierarquia. */
+export const TAXONOMY_LEVELS = [
+  'programRef',
+  'budgetPlanRef',
+  'costCenterRef',
+  'categoryRef',
+  'subcategoryRef',
+] as const
+export type TaxonomyLevel = (typeof TAXONOMY_LEVELS)[number]
+
+/**
+ * RN-M2-08 — trocar um nível RESETA os inferiores. PURA.
+ *
+ * Reseta só na TROCA REAL: reescolher o MESMO valor não torna nenhum nível inferior órfão, e limpar aí só
+ * destruiria trabalho já feito (foi exatamente esse no-op que apagou a categorização no Lançar Documento —
+ * ver specs/109). A invariante §IV continua: nenhum ref sobrevive à troca do seu ancestral.
+ */
+export const applyTaxonomyChange = (
+  refs: TaxonomyRefs,
+  level: TaxonomyLevel,
+  value: string,
+): TaxonomyRefs => {
+  if (refs[level] === value) return refs
+  const idx = TAXONOMY_LEVELS.indexOf(level)
+  const next = { ...refs, [level]: value }
+  for (const lower of TAXONOMY_LEVELS.slice(idx + 1)) next[lower] = ''
+  return next
+}
+
+/**
+ * RN-M2-09 — caminho coerente. **Ou NADA, ou os CINCO.**
+ *
+ * O meio-termo (uns preenchidos, outros não) é recusado porque um caminho parcial **não identifica nó
+ * algum** na árvore do plano e não é validável contra ela — gravá-lo seria o "caminho morto" que o M2-10
+ * manda recusar. É a mesma régua do core-api (PR #889): lá o BLOCO é opcional e os 5 refs dentro dele
+ * não são, então mandar parcial daqui viraria 400 no confirm.
+ *
+ * Editar só a subcategoria (M2-2) continua funcionando: a cascata tem os outros quatro em mãos e os
+ * reenvia inalterados.
+ */
+export const isTaxonomyComplete = (refs: TaxonomyRefs): boolean =>
+  TAXONOMY_LEVELS.every((l) => refs[l] !== '')
+
+/** Válido = o operador não classificou nada, OU classificou os cinco níveis. */
+export const isTaxonomyPathValid = (refs: TaxonomyRefs): boolean =>
+  !TAXONOMY_LEVELS.some((l) => refs[l] !== '') || isTaxonomyComplete(refs)
+
+/** Há algo a gravar? (tudo vazio = o operador não classificou nada — não envia refs). PURA. */
+export const hasTaxonomySelection = (refs: TaxonomyRefs): boolean =>
+  TAXONOMY_LEVELS.some((l) => refs[l] !== '')
+
+/**
+ * RN-M2-11 — o "Editar" só vale para o título LÍQUIDO (o "normal"/pai). Título de RETENÇÃO (ISS/IRRF/INSS/
+ * CSRF) é ALVO da cascata no backend, nunca fonte: editá-lo direto quebraria a invariante 2 da spec
+ * (coerência pai↔filhos). O discriminador no front é o `retentionType` (§2 da spec: título-imposto tem
+ * órgão; o líquido não) — o modelo do BFF não expõe `kind`. PURA.
+ */
+export const isReclassifiableTitle = (payable: Readonly<{ retentionType?: string | null }> | null): boolean =>
+  payable !== null && (payable.retentionType ?? null) === null
+
+/** M2-7/M2-8 — a seleção do Buscar/Criar vários habilita o "Editar" se contiver ao menos UM normal. PURA. */
+export const hasReclassifiableSelection = (
+  payables: readonly Readonly<{ id: string; retentionType?: string | null }>[],
+  selectedIds: ReadonlySet<string>,
+): boolean => payables.some((p) => selectedIds.has(p.id) && isReclassifiableTitle(p))
+
+/**
+ * Os 5 refs prontos p/ o payload — `null` quando o caminho não está completo (nada a enviar, ou parcial,
+ * que o backend recusaria). Quem chama envia `undefined` no lugar e concilia sem mexer na classificação.
+ */
+export const taxonomyToPayload = (
+  refs: TaxonomyRefs,
+): Readonly<{
+  programRef: string
+  budgetPlanRef: string
+  costCenterRef: string
+  categoryRef: string
+  subcategoryRef: string
+}> | null =>
+  isTaxonomyComplete(refs)
+    ? {
+        programRef: refs.programRef,
+        budgetPlanRef: refs.budgetPlanRef,
+        costCenterRef: refs.costCenterRef,
+        categoryRef: refs.categoryRef,
+        subcategoryRef: refs.subcategoryRef,
+      }
+    : null

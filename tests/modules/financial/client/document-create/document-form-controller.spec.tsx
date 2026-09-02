@@ -58,3 +58,90 @@ describe('useDocumentFormController — herança da categorização (#502/S3)', 
     expect(result.current.hydrateCategorization).toBe(first)
   })
 })
+
+describe('resets em cascata só disparam na TROCA REAL (categorização sumia antes de salvar)', () => {
+  const fillCascade = (r: { current: ReturnType<typeof useDocumentFormController> }): void => {
+    act(() => {
+      r.current.setSupplier('sup-1')
+    })
+    act(() => {
+      r.current.setProgramRef('prog-1')
+    })
+    act(() => {
+      r.current.setText('planoOrcamentario', 'plan-1')
+    })
+    act(() => {
+      r.current.setCostCenterRef('cc-1')
+    })
+    act(() => {
+      r.current.setCategoryRef('cat-1')
+    })
+    act(() => {
+      r.current.setSubcategoryRef('sub-1')
+    })
+  }
+
+  it('re-selecionar o MESMO plano preserva centro/categoria/subcategoria', () => {
+    const { result } = renderHook(() => useDocumentFormController())
+    fillCascade(result)
+    act(() => {
+      result.current.setText('planoOrcamentario', 'plan-1')
+    })
+    expect(result.current.fields.costCenterRef).toBe('cc-1')
+    expect(result.current.fields.categoryRef).toBe('cat-1')
+    expect(result.current.fields.subcategoryRef).toBe('sub-1')
+  })
+
+  it('re-selecionar o MESMO fornecedor preserva o Programa já escolhido', () => {
+    const { result } = renderHook(() => useDocumentFormController())
+    fillCascade(result)
+    act(() => {
+      result.current.setSupplier('sup-1')
+    })
+    expect(result.current.fields.programRef).toBe('prog-1')
+  })
+
+  it('re-selecionar o MESMO centro/categoria preserva os níveis de baixo', () => {
+    const { result } = renderHook(() => useDocumentFormController())
+    fillCascade(result)
+    act(() => {
+      result.current.setCostCenterRef('cc-1')
+    })
+    act(() => {
+      result.current.setCategoryRef('cat-1')
+    })
+    expect(result.current.fields.categoryRef).toBe('cat-1')
+    expect(result.current.fields.subcategoryRef).toBe('sub-1')
+  })
+
+  it('TROCAR de verdade continua zerando os de baixo (folha órfã segue impossível — §IV)', () => {
+    const { result } = renderHook(() => useDocumentFormController())
+    fillCascade(result)
+    act(() => {
+      result.current.setText('planoOrcamentario', 'plan-2')
+    })
+    expect(result.current.fields.costCenterRef).toBe('')
+    expect(result.current.fields.categoryRef).toBe('')
+    expect(result.current.fields.subcategoryRef).toBe('')
+  })
+
+  it('TROCAR de fornecedor continua zerando contrato e programa', () => {
+    const { result } = renderHook(() => useDocumentFormController())
+    fillCascade(result)
+    act(() => {
+      result.current.setSupplier('sup-2')
+    })
+    expect(result.current.fields.programRef).toBe('')
+    expect(result.current.fields.contractRef).toBe('')
+  })
+
+  it('TROCAR o centro continua zerando categoria e subcategoria', () => {
+    const { result } = renderHook(() => useDocumentFormController())
+    fillCascade(result)
+    act(() => {
+      result.current.setCostCenterRef('cc-2')
+    })
+    expect(result.current.fields.categoryRef).toBe('')
+    expect(result.current.fields.subcategoryRef).toBe('')
+  })
+})

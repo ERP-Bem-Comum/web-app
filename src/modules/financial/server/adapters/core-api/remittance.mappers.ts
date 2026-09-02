@@ -31,6 +31,9 @@ const LINE_STATUSES: ReadonlySet<string> = new Set<PreviewLineStatus>([
   // `blocked` — seguro para o dinheiro, mas ILEGÍVEL para quem opera: a linha aparecia vermelha e sem
   // motivo, e o operador ia procurar defeito num cadastro que está completo. O certo já foi enviado.
   'transmitted',
+  // core-api#837/PR #925. Mesma armadilha do `transmitted` logo acima, e é a segunda vez: sem esta
+  // entrada o status novo vira `blocked` por drift — seguro para o dinheiro, ilegível para quem opera.
+  'no-issuer',
 ])
 
 const VAN_ROUTES: ReadonlySet<string> = new Set<VanRoute>(['pix', 'transfer', 'billet', 'tax-guide'])

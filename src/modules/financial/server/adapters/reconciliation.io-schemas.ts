@@ -107,10 +107,25 @@ const DifferenceInputSchema = z.object({
   note: z.string().trim().min(1).max(500).optional(),
 })
 
+// M2 (specs/110) — os 5 refs da reclassificação. UUID na borda (§IX): o front só oferece nós existentes
+// do plano, mas a server function é um endpoint POST chamável direto — nada confia no client.
+// ⚠️ O BLOCO é opcional; os 5 refs DENTRO dele NÃO são — espelha o contrato do core-api (PR #889).
+// Caminho parcial não identifica nó algum na árvore do plano e não é validável contra ela; aceitá-lo
+// seria gravar o "caminho morto" que o M2-10 manda recusar. Editar só a subcategoria (M2-2) reenvia os
+// outros quatro inalterados — é o que a cascata da tela já tem em mãos.
+export const TaxonomyInputSchema = z.object({
+  programRef: z.uuid(),
+  budgetPlanRef: z.uuid(),
+  costCenterRef: z.uuid(),
+  categoryRef: z.uuid(),
+  subcategoryRef: z.uuid(),
+})
+
 export const CreateReconciliationInputSchema = z.object({
   transactionId: z.uuid(),
   payableIds: z.array(z.uuid()).min(1).max(100).readonly(),
   difference: DifferenceInputSchema.optional(),
+  taxonomy: TaxonomyInputSchema.optional(),
 })
 
 export const UndoReconciliationInputSchema = z.object({

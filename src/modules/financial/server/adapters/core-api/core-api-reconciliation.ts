@@ -7,7 +7,7 @@
 import { err, isErr, ok } from '#shared/primitives/result.ts'
 import { resultFetch, resultFetchText } from '#external/core-api/result-fetch.ts'
 import type { ReconciliationClient } from '#modules/financial/server/application/reconciliation.use-cases.ts'
-import type { CedenteAccount } from '#modules/financial/server/domain/reconciliation.io.ts'
+import type { CedenteAccount, PaidPayable } from '#modules/financial/server/domain/reconciliation.io.ts'
 import {
   accountStatementSummary,
   accountStatementPeriodToModel,
@@ -21,7 +21,7 @@ import {
   importToModel,
   manualEntryToModel,
   mapHttpError,
-  paidPayablesToModel,
+  paidPayablesPageToModel,
   payablesBatchToModel,
   periodClosedToModel,
   periodReopenedToModel,
@@ -51,6 +51,13 @@ import {
 // date-only (z.iso.date no core-api). Falha no statement → mantém os defaults honestos da conta (graceful).
 const STATEMENT_FROM = '2000-01-01'
 const STATEMENT_TO = '2999-12-31'
+
+// Teto do `pageSize` aceito pelo core-api (`listPayablesQuerySchema`). Pedir o máximo reduz as idas;
+// o laço cobre o resto.
+const PAID_PAYABLES_PAGE_SIZE = 100
+// Guarda de laço: 50 páginas = 5.000 títulos pagos. Não é limite de negócio — é o que impede um
+// `total` inconsistente de girar para sempre numa requisição de tela.
+const PAID_PAYABLES_MAX_PAGES = 50
 
 const enrichAccountWithStatement = async (
   baseUrl: string,
@@ -134,17 +141,38 @@ export const createCoreApiReconciliationClient = (
     return ok(undefined)
   },
   listPaidPayables: async (token) => {
-    const r = await resultFetch<unknown>(`${baseUrl}/payables?status=Paid`, { token })
-    if (isErr(r)) return err(mapHttpError(r.error))
-    const base = paidPayablesToModel(r.value)
-    if (isErr(base)) return base
+    // ⚠️ A rota é PAGINADA e o default do core-api é `pageSize: 20` (`schemas.ts:1185`). Buscá-la sem
+    // parâmetro trazia só os 20 primeiros títulos pagos — e a tela usa esta lista para RESOLVER o
+    // título casado da sugestão (`suggestions.top.payable`). Título fora da 1ª página virava
+    // `payable: null`, e a aba Sugestão perdia DUAS coisas de uma vez, sem erro nenhum: os 5 níveis
+    // da Categorização viravam "—" (o `documentId` sai do mesmo objeto) e o "Editar" da M2 sumia,
+    // porque `canEdit` é derivado do mesmo `payable`.
+    //
+    // Só aparecia com base grande: em base pequena o título casado cai dentro dos 20 e tudo funciona
+    // — foi assim que passou despercebido no local e apareceu na homologação.
+    const collected: PaidPayable[] = []
+    for (let page = 1; page <= PAID_PAYABLES_MAX_PAGES; page += 1) {
+      // Sequencial por natureza: só a resposta da página N diz se existe a N+1. Paralelizar exigiria
+      // adivinhar o total antes de perguntá-lo.
+      const r = await resultFetch<unknown>(
+        `${baseUrl}/payables?status=Paid&page=${String(page)}&pageSize=${String(PAID_PAYABLES_PAGE_SIZE)}`,
+        { token },
+      )
+      if (isErr(r)) return err(mapHttpError(r.error))
+      const parsed = paidPayablesPageToModel(r.value)
+      if (isErr(parsed)) return parsed
+      collected.push(...parsed.value.items)
+      // Página vazia também encerra: sem isso, um `total` inconsistente com os itens giraria até o teto.
+      if (parsed.value.items.length === 0 || collected.length >= parsed.value.total) break
+    }
+
     // INTERINO BFF composite p/ core-api#172/#265 — enquanto /payables?status=Paid NÃO devolve os campos
     // nativos (paidAt, supplierName, documentNumber), montamos os 2 mapas UMA vez (títulos + fornecedores)
     // e enriquecemos. REMOVER estes round-trips extras quando o backend expor os campos nativos.
     // JOIN: paid-payable `.id` ↔ payable-title `.payableId`; payable-title `.supplierRef` ↔ supplier `.id`.
     const maps =
       enrichmentFor === undefined ? emptyEnrichmentMaps() : await buildEnrichmentMaps(enrichmentFor(token))
-    return ok(enrichPaidPayables(maps, base.value))
+    return ok(enrichPaidPayables(maps, collected))
   },
   listReferences: async (token) => {
     // Referências da categorização (020 · #200): categorias + centros de custo (RBAC reference:read).
@@ -339,9 +367,25 @@ export const createCoreApiReconciliationClient = (
     return rejectToModel(r.value)
   },
   createReconciliation: async (i, token) => {
+    // PONTO DE LIGAÇÃO DA M2 (specs/110) — `taxonomy` (os 5 refs) só é anexado quando o operador
+    // usou o "Editar". A passada de BACKEND da M2 ESTÁ LIGADA desde o core-api#889 (31/08): o
+    // use-case `confirm-reconciliation` valida os 5 refs contra a árvore do plano (ADR-0051), grava
+    // no título LÍQUIDO e CASCATEIA aos títulos de retenção do mesmo documento (RN-M2-04). A trilha
+    // (quem, quando, de→para) é gravada NA MESMA TRANSAÇÃO, uma entry por título — pai e filhos —,
+    // e aparece na aba Histórico. Reclassificar para o MESMO valor não deixa rastro (invariante 6).
+    //
+    // O bloco é opcional; os 5 refs DENTRO dele não são — caminho parcial não identifica nó na
+    // árvore e a rota recusa. Duas recusas próprias chegam como erro de negócio, não de transporte:
+    // `taxonomy-path-invalid` (caminho inexistente ou inativo) e `reclassification-requires-parent-
+    // payable` (seleção sem título líquido — imposto é alvo da cascata, nunca fonte).
     const r = await resultFetch<unknown>(`${baseUrl}/reconciliations`, {
       method: 'POST',
-      body: { transactionId: i.transactionId, payableIds: i.payableIds, difference: i.difference },
+      body: {
+        transactionId: i.transactionId,
+        payableIds: i.payableIds,
+        difference: i.difference,
+        ...(i.taxonomy !== undefined ? { taxonomy: i.taxonomy } : {}),
+      },
       token,
     })
     if (isErr(r)) return err(mapHttpError(r.error))

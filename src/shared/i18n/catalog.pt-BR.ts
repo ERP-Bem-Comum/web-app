@@ -495,6 +495,19 @@ export const ptBR: Catalog = {
   'partners.suppliers.rating.BOM': 'Bom',
   'partners.suppliers.rating.OTIMO': 'Ótimo',
   'partners.suppliers.form.bank': 'Banco',
+  // Seletor de banco (código de compensação FEBRABAN). "Não reconhecido" é o cadastro ANTIGO, que
+  // guardava o banco como texto livre — a opção continua lá até alguém escolher o banco de verdade.
+  //
+  // Chaves SEM o tipo de parceiro no caminho, de propósito: as quatro telas (Fornecedor, Colaborador,
+  // Financiador, ACT) mostram exatamente a mesma frase, e o motivo do aviso é do arquivo CNAB, não do
+  // tipo de quem recebe. Quatro cópias seriam quatro lugares para a redação divergir. O RÓTULO do
+  // campo ("Banco") continua por tipo, porque acompanha a seção de cada formulário.
+  'partners.form.bankPlaceholder': 'Selecione o banco…',
+  'partners.form.bankFrequent': 'Mais usados',
+  'partners.form.bankAll': 'Todos os bancos',
+  'partners.form.bankUnknown': 'Não reconhecido:',
+  'partners.form.bankUnknownHint':
+    'Cadastro antigo: este banco foi digitado à mão e não corresponde a um código FEBRABAN. Selecione o banco na lista — sem o código, o pagamento por TED/transferência é recusado.',
   'partners.suppliers.form.agency': 'Agência - DV',
   'partners.suppliers.form.accountNumber': 'Número da Conta',
   'partners.suppliers.form.checkDigit': 'DV',
@@ -1580,6 +1593,9 @@ export const ptBR: Catalog = {
   'financial.recon.add.optional': 'opcional',
   'financial.recon.add.field.bank': 'Banco',
   'financial.recon.add.placeholder.bank': 'Selecione um banco…',
+  // Grupos do seletor de banco — a lista passou dos 12 curados para a tabela FEBRABAN completa.
+  'financial.recon.add.bankFrequent': 'Mais usados',
+  'financial.recon.add.bankAll': 'Todos os bancos',
   'financial.recon.add.field.type': 'Tipo',
   'financial.recon.add.type.corrente': 'Corrente',
   'financial.recon.add.type.poupanca': 'Poupança',
@@ -1681,6 +1697,15 @@ export const ptBR: Catalog = {
   'financial.recon.sugg.paidAt': 'Pagamento',
   'financial.recon.sugg.method': 'Forma',
   'financial.recon.sugg.supplierPending': 'Fornecedor',
+  'financial.recon.sugg.taxonomy': 'Categorização',
+  // M2 (specs/110) — reclassificar a taxonomia ao conciliar.
+  'financial.recon.reclass.edit': 'Editar',
+  'financial.recon.reclass.cancel': 'Cancelar edição',
+  'financial.recon.reclass.select': 'Selecione',
+  'financial.recon.reclass.invalidPath':
+    'Escolha os cinco níveis para reclassificar — classificação parcial não é aceita.',
+  'financial.recon.reclass.cascadeHint': 'Os impostos retidos deste documento recebem a mesma classificação.',
+  'financial.recon.reclass.onlyNormal': 'Só o título normal pode ser reclassificado.',
   'financial.recon.sugg.confirm': 'Conciliar',
   'financial.recon.sugg.reject': 'Rejeitar',
   'financial.recon.sugg.alternatives': 'Outras possibilidades',
@@ -2009,6 +2034,15 @@ export const ptBR: Catalog = {
   'financial.remittance.preview.pendency.missingBankData':
     'Dados bancários do favorecido incompletos — banco, agência e conta',
   'financial.remittance.preview.pendency.missingPixKey': 'Sem chave PIX no cadastro do favorecido',
+  // Rotas sem emissor no CNAB: nenhum cadastro resolve — a frase NÃO pede correção de dado, porque não há
+  // dado a corrigir. Sai quando o emissor do core-api passar a suportar a rota.
+  'financial.remittance.preview.pendency.pixNoEmitter':
+    'PIX ainda não sai na remessa — o emissor CNAB não tem esse trilho',
+  // core-api#837: o BACKEND passou a nomear a rota sem emissor. Frase genérica na ROTA de propósito —
+  // vale para PIX, guia de tributo e o que mais entrar —, e como a `pixNoEmitter`, NÃO pede correção
+  // de cadastro: não há dado a corrigir. Some quando o emissor da rota entrar (PIX = core-api#838).
+  'financial.remittance.preview.pendency.noIssuer':
+    'Esta forma de pagamento ainda não sai na remessa — o emissor CNAB não tem esse trilho',
   'financial.remittance.preview.pendency.missingBarcode':
     'Sem código de barras — o campo do documento está vazio',
   // ⚠️ O operador PREENCHEU. A linha digitável tem 47 dígitos e o arquivo grava o código de barras, de

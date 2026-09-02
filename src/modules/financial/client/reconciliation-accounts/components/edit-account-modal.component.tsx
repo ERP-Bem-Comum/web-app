@@ -11,7 +11,13 @@ import { WalletIcon } from '#shared/ui/icons/index.ts'
 import { formatMask } from '#shared/ui/index.ts'
 import { CONVENIO_MAX_DIGITS, AGENCY_TOTAL_DIGITS } from '../reconciliation-accounts.view-model.ts'
 import * as s from '../page/reconciliation-accounts.css.ts'
-import { BANKS, OTHER_BANK_CODE, type AccountType } from '../reconciliation-accounts.view-model.ts'
+import {
+  FREQUENT_BANK_OPTIONS,
+  BANK_OPTIONS,
+  OTHER_BANK_CODE,
+  OTHER_BANK_NAME,
+  type AccountType,
+} from '../reconciliation-accounts.view-model.ts'
 import type { EditAccountBinding } from '../edit-account.binding.ts'
 
 const t = createTranslator(ptBR)
@@ -68,11 +74,26 @@ export function EditAccountModal({ binding }: EditAccountModalProps) {
                 <option value="" disabled>
                   {t('financial.recon.add.placeholder.bank')}
                 </option>
-                {BANKS.map((b) => (
-                  <option key={b.code} value={b.code}>
-                    {b.code === OTHER_BANK_CODE ? b.name : `${b.code} · ${b.name}`}
-                  </option>
-                ))}
+                {/* Dois grupos: os 12 de sempre no topo (o operador não rola 471 linhas para achar
+                    o Bradesco) e a tabela FEBRABAN completa embaixo. O rótulo é o MESMO nos dois, então
+                    escolher por um ou por outro não muda o que o campo mostra depois. */}
+                <optgroup label={t('financial.recon.add.bankFrequent')}>
+                  {FREQUENT_BANK_OPTIONS.map((b) => (
+                    <option key={`freq-${b.code}`} value={b.code}>
+                      {`${b.code} · ${b.name}`}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label={t('financial.recon.add.bankAll')}>
+                  {BANK_OPTIONS.map((b) => (
+                    <option key={b.code} value={b.code}>
+                      {`${b.code} · ${b.name}`}
+                    </option>
+                  ))}
+                </optgroup>
+                {/* #206: "Outro" sem prefixo de código (não é um banco com código real) e FORA dos
+                    grupos — é a ausência de instituição, não mais uma da lista. */}
+                <option value={OTHER_BANK_CODE}>{OTHER_BANK_NAME}</option>
               </select>
             </div>
             {binding.needsBankName ? (

@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 
 import { createTranslator } from '#shared/i18n/index.ts'
+import { BankSelect, isUnknownBank } from '#shared/ui/brand/bank-select.component.tsx'
+import { BANK_LABELS, BANK_UNKNOWN_HINT } from '#modules/partners/client/shared/bank-select-labels.ts'
 import { ptBR } from '#shared/i18n/catalog.pt-BR.ts'
 import { Checkbox, formatMask, unmask } from '#shared/ui/index.ts'
 import {
@@ -372,16 +374,20 @@ export function ActForm(props: ActFormProps): ReactNode {
                       <label htmlFor="act-bank" className={fieldLabel}>
                         {t('partners.acts.form.bank')}
                       </label>
-                      <input
+                      <BankSelect
                         id="act-bank"
-                        className={`${input} ${isInvalid('bankAccount.bank') ? controlError : ''}`}
                         value={c.state.bank}
-                        onChange={(e) => {
-                          c.setField('bank', e.target.value)
+                        labels={BANK_LABELS}
+                        invalid={isInvalid('bankAccount.bank')}
+                        ariaLabel={t('partners.acts.form.bank')}
+                        onChange={(code) => {
+                          c.setField('bank', code)
                         }}
                       />
                       {invalidMsg('bankAccount.bank') !== null ? (
                         <span className={fieldError}>{invalidMsg('bankAccount.bank')}</span>
+                      ) : isUnknownBank(c.state.bank) ? (
+                        <span className={fieldError}>{BANK_UNKNOWN_HINT}</span>
                       ) : null}
                     </div>
 
