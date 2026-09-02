@@ -42,7 +42,18 @@ export type CollaboratorFormState = Readonly<{
   pixKey: string
 }>
 
-export type CollaboratorFormErrors = Readonly<Record<string, boolean>>
+/**
+ * Erros do formulário: caminho do campo → **slug** do erro (specs/114, #359).
+ *
+ * Era `Record<string, boolean>`, e o booleano era o defeito: o Zod entrega path E motivo, e guardar
+ * só "falhou" jogava o motivo fora dentro do próprio laço que o lia. A tela então exibia uma
+ * constante — "Verifique este campo." — para toda e qualquer violação.
+ *
+ * O valor é a `message` do issue, que para as regras nomeadas É o slug (`{ error: 'bank-required' }`).
+ * Regra ainda sem nome traz o texto padrão do Zod, em inglês; quem o converte na frase genérica é o
+ * `formErrorTag` da view — nunca este tipo.
+ */
+export type CollaboratorFormErrors = Readonly<Record<string, string>>
 
 const EMPTY: CollaboratorFormState = {
   name: '',
@@ -132,8 +143,8 @@ export function useCollaboratorFormController(
     }
     const parsed = CollaboratorFormSchema.safeParse(candidate)
     if (!parsed.success) {
-      const next: Record<string, boolean> = {}
-      for (const issue of parsed.error.issues) next[issue.path.join('.')] = true
+      const next: Record<string, string> = {}
+      for (const issue of parsed.error.issues) next[issue.path.join('.')] = issue.message
       setErrors(next)
       return
     }

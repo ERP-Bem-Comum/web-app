@@ -34,7 +34,11 @@ describe('useCollaboratorFormController', () => {
       result.current.submit()
     })
     expect(onSubmit).toHaveBeenCalledTimes(1)
-    const values = onSubmit.mock.calls[0]?.[0] as { cpf: string; occupationArea: string; employmentRelationship: string }
+    const values = onSubmit.mock.calls[0]?.[0] as {
+      cpf: string
+      occupationArea: string
+      employmentRelationship: string
+    }
     expect(values.cpf).toBe('12345678909')
     expect(values.occupationArea).toBe('PARC')
     expect(values.employmentRelationship).toBe('CLT')
@@ -51,7 +55,7 @@ describe('useCollaboratorFormController', () => {
       result.current.submit()
     })
     expect(onSubmit).not.toHaveBeenCalled()
-    expect(result.current.errors.employmentRelationship).toBe(true)
+    expect(result.current.errors.employmentRelationship).toBeDefined()
   })
 
   it('e-mail inválido bloqueia o submit', () => {
@@ -65,6 +69,6 @@ describe('useCollaboratorFormController', () => {
       result.current.submit()
     })
     expect(onSubmit).not.toHaveBeenCalled()
-    expect(result.current.errors.email).toBe(true)
+    expect(result.current.errors.email).toBeDefined()
   })
 })

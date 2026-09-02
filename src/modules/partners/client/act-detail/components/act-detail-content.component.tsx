@@ -29,6 +29,7 @@ import {
   controlError,
   fieldError,
 } from '#shared/ui/brand/brand-form.css.ts'
+import { formErrorTag } from '#modules/partners/client/shared/form-error-labels.ts'
 
 const t = createTranslator(ptBR)
 
@@ -77,8 +78,11 @@ function SelectControl({
 
 export function ActDetailContent(props: ActDetailContentProps): ReactNode {
   const { controller: c, editing } = props
-  const invalidMsg = (key: string): string | null =>
-    c.errors[key] === true ? t('partners.acts.form.invalid') : null
+  const invalidMsg = (key: string): string | null => {
+    // O slug do schema vira frase pelo mapa compartilhado; regra ainda não nomeada cai na genérica.
+    const tag = formErrorTag(c.errors[key], 'partners.acts.form.invalid')
+    return tag === null ? null : t(tag)
+  }
 
   // Só campos string do estado (exclui o boolean `hasFinancialTransfer` e o enum `pixKeyType`).
   type TextKey = {
@@ -99,7 +103,7 @@ export function ActDetailContent(props: ActDetailContentProps): ReactNode {
         <input
           id={`ad-${key}`}
           type={opts?.type ?? 'text'}
-          className={`${input} ${c.errors[errKey] === true ? controlError : ''}`}
+          className={`${input} ${c.errors[errKey] !== undefined ? controlError : ''}`}
           value={display}
           disabled={!editing}
           inputMode={opts?.mask !== undefined ? 'numeric' : undefined}
@@ -139,7 +143,7 @@ export function ActDetailContent(props: ActDetailContentProps): ReactNode {
                 value={c.state.occupationArea}
                 ariaLabel={t('partners.acts.form.occupationArea')}
                 disabled={!editing}
-                invalid={c.errors.occupationArea === true}
+                invalid={c.errors.occupationArea !== undefined}
                 onChange={(e) => {
                   c.setField('occupationArea', e.target.value)
                 }}
@@ -218,7 +222,7 @@ export function ActDetailContent(props: ActDetailContentProps): ReactNode {
                     id="ad-bank"
                     value={c.state.bank}
                     labels={BANK_LABELS}
-                    invalid={c.errors['bankAccount.bank'] === true}
+                    invalid={c.errors['bankAccount.bank'] !== undefined}
                     disabled={!editing}
                     ariaLabel={t('partners.acts.form.bank')}
                     onChange={(code) => {
@@ -243,7 +247,7 @@ export function ActDetailContent(props: ActDetailContentProps): ReactNode {
                     value={c.state.pixKeyType}
                     ariaLabel={t('partners.acts.form.pixType')}
                     disabled={!editing}
-                    invalid={c.errors['pixKey.keyType'] === true}
+                    invalid={c.errors['pixKey.keyType'] !== undefined}
                     onChange={(e) => {
                       if (isPixKeyType(e.target.value)) c.setField('pixKeyType', e.target.value)
                     }}

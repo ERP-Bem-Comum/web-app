@@ -7,6 +7,7 @@
 import * as z from 'zod'
 
 import { normalizeCnpj, isValidCnpjFormat } from '#shared/document/cnpj.ts'
+import { BankAccountFormSchema, PixKeyFormSchema } from './supplier.model.ts'
 
 export const OCCUPATION_AREAS = ['PARC', 'DDI', 'DCE', 'EPV'] as const
 export type OccupationArea = (typeof OCCUPATION_AREAS)[number]
@@ -93,17 +94,14 @@ export const CnpjFieldSchema = z
   .transform(normalizeCnpj)
   .refine(isValidCnpjFormat, { error: 'cnpj-invalid' })
 
-export const BankAccountFormSchema = z.object({
-  bank: z.string().trim().min(1).max(20),
-  agency: z.string().trim().min(1).max(20),
-  accountNumber: z.string().trim().min(1).max(30),
-  checkDigit: z.string().trim().max(5),
-})
-
-export const PixKeyFormSchema = z.object({
-  keyType: z.enum(PIX_KEY_TYPES),
-  key: z.string().trim().min(1).max(140),
-})
+// ⚠️ Os dois schemas eram uma CÓPIA LITERAL dos do Fornecedor, e a cópia deixou de ser inofensiva
+// quando cada regra ganhou mensagem própria (specs/114): duas cópias são dois lugares para editar a
+// mesma frase, e é assim que a divergência começa. O Colaborador e o Financiador já importam daqui
+// desde a #40 — o ACT era o único fora do reuso.
+//
+// Só os SCHEMAS vêm de lá. `PIX_KEY_TYPES` e os tipos seguem locais neste arquivo, como estavam:
+// unificá-los é limpeza de outra fatia, e misturá-la aqui aumentaria o raio desta sem necessidade.
+export { BankAccountFormSchema, PixKeyFormSchema }
 
 /** Formulário do Acordo. Regra de repasse/vigência é validada no controller (UI) + borda Zod (server). */
 export const ActFormSchema = z.object({

@@ -508,6 +508,29 @@ export const ptBR: Catalog = {
   'partners.form.bankUnknown': 'Não reconhecido:',
   'partners.form.bankUnknownHint':
     'Cadastro antigo: este banco foi digitado à mão e não corresponde a um código FEBRABAN. Selecione o banco na lista — sem o código, o pagamento por TED/transferência é recusado.',
+  // ── Erros de formulário POR REGRA (specs/114, #359) ──
+  //
+  // Uma frase por regra violada, compartilhada pelos quatro tipos de parceiro: a mesma agência longa
+  // demais não pode ser explicada de um jeito no Fornecedor e de outro no ACT. Antes disto tudo caía
+  // em "Verifique este campo.", que já produziu DUAS hipóteses de causa erradas ao popular a base.
+  //
+  // As frases dizem o LIMITE, não "formato inválido": foi a ausência do número que fez alguém supor
+  // que o campo recusava acento e dígito. Regra sem entrada aqui segue na frase genérica.
+  'partners.form.error.bankRequired': 'Selecione o banco.',
+  'partners.form.error.bankTooLong': 'O banco deve ter no máximo 20 caracteres.',
+  'partners.form.error.agencyRequired': 'Informe a agência.',
+  'partners.form.error.agencyTooLong': 'A agência deve ter no máximo 20 caracteres.',
+  'partners.form.error.accountNumberRequired': 'Informe o número da conta.',
+  'partners.form.error.accountNumberTooLong': 'A conta deve ter no máximo 30 caracteres.',
+  'partners.form.error.checkDigitTooLong': 'O dígito deve ter no máximo 5 caracteres.',
+  'partners.form.error.pixKeyTypeInvalid': 'Selecione um tipo de chave PIX válido.',
+  'partners.form.error.pixKeyRequired': 'Informe a chave PIX.',
+  'partners.form.error.pixKeyTooLong': 'A chave PIX deve ter no máximo 140 caracteres.',
+  'partners.form.error.cnpjInvalid': 'CNPJ inválido — confira os 14 caracteres.',
+  'partners.form.error.cpfInvalid': 'CPF inválido — confira os 11 dígitos.',
+  'partners.form.error.transferTargetRequired':
+    'Com o repasse ligado, informe a conta bancária ou a chave PIX.',
+  'partners.form.error.endDateNotAfterStart': 'O término deve ser posterior ao início.',
   'partners.suppliers.form.agency': 'Agência - DV',
   'partners.suppliers.form.accountNumber': 'Número da Conta',
   'partners.suppliers.form.checkDigit': 'DV',

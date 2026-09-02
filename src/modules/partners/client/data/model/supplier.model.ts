@@ -97,16 +97,34 @@ export const CnpjFieldSchema = z
   .transform(normalizeCnpj)
   .refine(isValidCnpjFormat, { error: 'cnpj-invalid' })
 
+// ⚠️ Cada regra carrega um erro NOMEADO (specs/114, #359), e o valor é um slug `kebab-case` EN — a
+// tradução mora no catálogo, nunca aqui: o model é consumido pelo client e pelo server, e um texto
+// PT gravado no schema seria string de UI fora do i18n (§XI).
+//
+// O slug sozinho não bastava: o controller descartava o motivo (`Record<string, boolean>`) e a view
+// exibia uma constante. A prova é o `cnpj-invalid` acima — nomeado desde sempre, e que nunca chegou
+// a uma tela. Nomear e transportar andam juntos; quem mexer numa metade sem a outra reconstrói o
+// código morto que a specs/114 removeu.
+//
+// Regra ainda SEM nome cai na frase genérica de hoje, por desenho — ver `form-error-labels.ts`.
 export const BankAccountFormSchema = z.object({
-  bank: z.string().trim().min(1).max(20),
-  agency: z.string().trim().min(1).max(20),
-  accountNumber: z.string().trim().min(1).max(30),
-  checkDigit: z.string().trim().max(5),
+  bank: z.string().trim().min(1, { error: 'bank-required' }).max(20, { error: 'bank-too-long' }),
+  agency: z.string().trim().min(1, { error: 'agency-required' }).max(20, { error: 'agency-too-long' }),
+  accountNumber: z
+    .string()
+    .trim()
+    .min(1, { error: 'account-number-required' })
+    .max(30, { error: 'account-number-too-long' }),
+  checkDigit: z.string().trim().max(5, { error: 'check-digit-too-long' }),
 })
 
 export const PixKeyFormSchema = z.object({
-  keyType: z.enum(PIX_KEY_TYPES),
-  key: z.string().trim().min(1).max(140),
+  keyType: z.enum(PIX_KEY_TYPES, { error: 'pix-key-type-invalid' }),
+  // ⚠️ O teto de 140 NÃO é o do arquivo: o CNAB reserva 99 posições para a chave (G101, 128-226), e
+  // uma chave entre 100 e 140 é aceita aqui e recusada na geração da remessa. É defeito real e é da
+  // #360 — apertar o limite dentro desta fatia mudaria comportamento de cadastro sob o disfarce de
+  // mensagem de erro. A frase abaixo diz o limite QUE EXISTE, não o que deveria existir.
+  key: z.string().trim().min(1, { error: 'pix-key-required' }).max(140, { error: 'pix-key-too-long' }),
 })
 
 export const SupplierFormSchema = z.object({

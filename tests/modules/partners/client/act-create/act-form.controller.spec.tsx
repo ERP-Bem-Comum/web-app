@@ -68,7 +68,8 @@ describe('useActFormController', () => {
       result.current.submit()
     })
     expect(onSubmit).not.toHaveBeenCalled()
-    expect(result.current.errors.hasFinancialTransfer).toBe(true)
+    // specs/114: o erro deixou de ser booleano e passou a carregar o SLUG — asserção mais forte.
+    expect(result.current.errors.hasFinancialTransfer).toBe('transfer-target-required')
   })
 
   it('repasse ligado com PIX passa e emite pixKey', () => {
@@ -99,7 +100,7 @@ describe('useActFormController', () => {
       result.current.submit()
     })
     expect(onSubmit).not.toHaveBeenCalled()
-    expect(result.current.errors.endDate).toBe(true)
+    expect(result.current.errors.endDate).toBe('end-date-not-after-start')
   })
 
   it('enum de área não selecionado bloqueia o submit', () => {
@@ -113,6 +114,7 @@ describe('useActFormController', () => {
       result.current.submit()
     })
     expect(onSubmit).not.toHaveBeenCalled()
-    expect(result.current.errors.occupationArea).toBe(true)
+    // Regra ainda sem nome próprio: o slug é a mensagem do Zod, e a tela cai na frase genérica.
+    expect(result.current.errors.occupationArea).toBeDefined()
   })
 })

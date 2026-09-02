@@ -50,6 +50,7 @@ import {
   type CollaboratorFormController,
 } from './collaborator-form.controller.ts'
 import { errorBanner } from './collaborator-form.css.ts'
+import { formErrorTag } from '#modules/partners/client/shared/form-error-labels.ts'
 
 const t = createTranslator(ptBR)
 
@@ -97,9 +98,12 @@ function SelectControl({
 
 export function CollaboratorForm(props: CollaboratorFormProps): ReactNode {
   const { controller: c } = props
-  const isInvalid = (key: string): boolean => c.errors[key] === true
-  const invalidMsg = (key: string): string | null =>
-    c.errors[key] === true ? t('partners.collaborators.form.invalid') : null
+  const isInvalid = (key: string): boolean => c.errors[key] !== undefined
+  const invalidMsg = (key: string): string | null => {
+    // O slug do schema vira frase pelo mapa compartilhado; regra ainda não nomeada cai na genérica.
+    const tag = formErrorTag(c.errors[key], 'partners.collaborators.form.invalid')
+    return tag === null ? null : t(tag)
+  }
 
   return (
     <form

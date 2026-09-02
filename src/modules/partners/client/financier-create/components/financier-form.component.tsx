@@ -37,6 +37,7 @@ import {
 import type { FinancierFormController } from './financier-form.controller.ts'
 import { PIX_KEY_TYPES, isPixKeyType } from './financier-form.controller.ts'
 import { errorBanner } from './financier-form.css.ts'
+import { formErrorTag } from '#modules/partners/client/shared/form-error-labels.ts'
 
 const t = createTranslator(ptBR)
 
@@ -86,9 +87,12 @@ function SelectControl({
 
 export function FinancierForm(props: FinancierFormProps): ReactNode {
   const { controller: c } = props
-  const isInvalid = (key: string): boolean => c.errors[key] === true
-  const invalidMsg = (key: string): string | null =>
-    c.errors[key] === true ? t('partners.financiers.form.invalid') : null
+  const isInvalid = (key: string): boolean => c.errors[key] !== undefined
+  const invalidMsg = (key: string): string | null => {
+    // O slug do schema vira frase pelo mapa compartilhado; regra ainda não nomeada cai na genérica.
+    const tag = formErrorTag(c.errors[key], 'partners.financiers.form.invalid')
+    return tag === null ? null : t(tag)
+  }
 
   return (
     <form

@@ -7,7 +7,11 @@
  */
 import { useCallback, useState } from 'react'
 
-import { ActFormSchema, type ActFormValues, type PixKeyType } from '#modules/partners/client/data/model/act.model.ts'
+import {
+  ActFormSchema,
+  type ActFormValues,
+  type PixKeyType,
+} from '#modules/partners/client/data/model/act.model.ts'
 
 // A view (client-ui) consome PIX_KEY_TYPES/isPixKeyType e a lista de áreas POR AQUI — o boundary §XI não
 // a deixa tocar `data/`.
@@ -38,7 +42,18 @@ export type ActFormState = Readonly<{
   pixKey: string
 }>
 
-export type ActFormErrors = Readonly<Record<string, boolean>>
+/**
+ * Erros do formulário: caminho do campo → **slug** do erro (specs/114, #359).
+ *
+ * Era `Record<string, boolean>`, e o booleano era o defeito: o Zod entrega path E motivo, e guardar
+ * só "falhou" jogava o motivo fora dentro do próprio laço que o lia. A tela então exibia uma
+ * constante — "Verifique este campo." — para toda e qualquer violação.
+ *
+ * O valor é a `message` do issue, que para as regras nomeadas É o slug (`{ error: 'bank-required' }`).
+ * Regra ainda sem nome traz o texto padrão do Zod, em inglês; quem o converte na frase genérica é o
+ * `formErrorTag` da view — nunca este tipo.
+ */
+export type ActFormErrors = Readonly<Record<string, string>>
 
 const EMPTY: ActFormState = {
   actNumber: '',
@@ -107,8 +122,9 @@ export function useActFormController(
   }, [])
 
   const submit = useCallback(() => {
-    const hasBank =
-      [state.bank, state.agency, state.accountNumber, state.checkDigit].some((v) => v.trim() !== '')
+    const hasBank = [state.bank, state.agency, state.accountNumber, state.checkDigit].some(
+      (v) => v.trim() !== '',
+    )
     const hasPix = state.pixKey.trim() !== ''
     const candidate = {
       actNumber: state.actNumber,
@@ -132,27 +148,31 @@ export function useActFormController(
               checkDigit: state.checkDigit,
             }
           : null,
-      pixKey:
-        state.hasFinancialTransfer && hasPix ? { keyType: state.pixKeyType, key: state.pixKey } : null,
+      pixKey: state.hasFinancialTransfer && hasPix ? { keyType: state.pixKeyType, key: state.pixKey } : null,
     }
 
     const parsed = ActFormSchema.safeParse(candidate)
-    const next: Record<string, boolean> = {}
+    const next: Record<string, string> = {}
     if (!parsed.success) {
-      for (const issue of parsed.error.issues) next[issue.path.join('.')] = true
+      for (const issue of parsed.error.issues) next[issue.path.join('.')] = issue.message
     }
 
     // Regra de repasse (UI bloqueia): true ⇒ conta|pix.
+    //
+    // ⚠️ Esta regra é do CONTROLLER, não do schema — e por isso o slug é escrito à mão. Ela entra em
+    // specs/114 porque é uma regra de banco/PIX: o que falta é exatamente um dos dois.
+    //
+    // A mensagem passa a dizer o que falta; o que ela NÃO conserta é ONDE o erro aparece — segue
+    // ancorado no checkbox, e não nos campos vazios. Esse é o defeito da #362, e mexer nele aqui
+    // seria trocar o alvo da fatia sem dizer.
     if (state.hasFinancialTransfer && candidate.bankAccount === null && candidate.pixKey === null) {
-      next.hasFinancialTransfer = true
+      next.hasFinancialTransfer = 'transfer-target-required'
     }
     // Vigência: endDate > startDate estrito (comparação string ISO, U2). Só checa quando ambos válidos.
-    if (
-      candidate.startDate !== '' &&
-      candidate.endDate !== '' &&
-      candidate.endDate <= candidate.startDate
-    ) {
-      next.endDate = true
+    if (candidate.startDate !== '' && candidate.endDate !== '' && candidate.endDate <= candidate.startDate) {
+      // Entrou de carona: a mudança de tipo obrigou a tocar esta linha, e deixá-la sem nome faria a
+      // vigência ser a única regra do ACT ainda muda. É uma frase no catálogo, risco zero.
+      next.endDate = 'end-date-not-after-start'
     }
 
     if (Object.keys(next).length > 0 || !parsed.success) {

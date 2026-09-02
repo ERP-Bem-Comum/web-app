@@ -42,6 +42,7 @@ import {
   btnGhost,
 } from '#shared/ui/brand/brand-form.css.ts'
 import { errorBanner } from './supplier-form.css.ts'
+import { formErrorTag } from '#modules/partners/client/shared/form-error-labels.ts'
 
 const t = createTranslator(ptBR)
 
@@ -97,9 +98,12 @@ function SelectControl({
 
 export function SupplierForm(props: SupplierFormProps): ReactNode {
   const { controller: c } = props
-  const isInvalid = (key: string): boolean => c.errors[key] === true
-  const invalidMsg = (key: string): string | null =>
-    c.errors[key] === true ? t('partners.suppliers.form.invalid') : null
+  const isInvalid = (key: string): boolean => c.errors[key] !== undefined
+  const invalidMsg = (key: string): string | null => {
+    // O slug do schema vira frase pelo mapa compartilhado; regra ainda não nomeada cai na genérica.
+    const tag = formErrorTag(c.errors[key], 'partners.suppliers.form.invalid')
+    return tag === null ? null : t(tag)
+  }
 
   return (
     <form

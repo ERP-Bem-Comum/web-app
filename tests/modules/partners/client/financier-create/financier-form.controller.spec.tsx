@@ -55,6 +55,6 @@ describe('useFinancierFormController', () => {
     })
 
     expect(onSubmit).not.toHaveBeenCalled()
-    expect(result.current.errors.address).toBe(true)
+    expect(result.current.errors.address).toBeDefined()
   })
 })
