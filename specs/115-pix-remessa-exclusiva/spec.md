@@ -92,6 +92,40 @@ operador enquanto a outra não chega.
 - Não mexe no `fileGroupFor` nem na partição — a exclusividade de **arquivo** já era do layout.
 - Não mexe em TED, transferência, boleto ou guia: nenhuma dessas cai por esta régua.
 
+## Validação em tela (03/09) — e o que ela descobriu
+
+A P.O. validou no local, contra o core-api com o #936. A régua passou: seleção PIX + TED derruba só o
+PIX, com aviso e contagem; desmarcar o TED devolve o PIX; a remessa só-PIX **gerou arquivo**
+(`PAG_435366.03092026201429_000010.REM`).
+
+Chegar até o arquivo custou dois achados, e nenhum deles é do front:
+
+**1. `payee-ispb-unknown` — pré-voo aprova o que o emissor recusa (core-api#948, CA3).**
+O favorecido estava cadastrado com banco `555`, que não é código FEBRABAN e não está na tabela ISPB
+embarcada. O pré-voo só confere que o código **tem três dígitos**, não que ele **existe** — deu `ready`.
+O emissor recusou em `remittance-file.ts:381`, _depois_ do `allocateNsa`: **o NSA 9 foi queimado** (última
+remessa gravada `nsa=8`, contador da conta em `next_nsa=10`, nenhum arquivo no meio).
+
+**2. `check-digit-mismatch` — a mensagem sabe a resposta e não a diz.**
+Com o banco corrigido para 237, o DV da conta não conferia. `verifyAccountCheckDigit` devolve
+`{status:'mismatch', expected:['5']}` e o `checkDigitGaps` **descarta o `expected`** — a tela diz "revise o
+dígito" quando poderia dizer _qual_ é. A medição da #734 achou 44 de 86 cadastros com o DV contaminado;
+não é caso isolado.
+
+### O arquivo gerado responde a "PIX precisa de dado bancário?"
+
+Sim, hoje precisa — e o próprio arquivo mostra por quê. Segmento A: câmara `009`, banco `237`, agência
+`12341`, conta `000000012345`, DV `5`. Segmento B: chave `64894238000190`, ISPB `60746948`.
+
+O pré-voo exige **as duas coisas** (`if (keyGap === null && parts.ok) return ready(route)`): só com a
+chave, a linha vem `blocked` e nem chega à geração — logo **não queima NSA**. O contraste é deliberado:
+boleto passa sem dado bancário nenhum, porque o Segmento J não tem campo de conta.
+
+⚠️ **Quem decide essa obrigatoriedade é a core-api#945, não a #923.** A #923 (zerar o ISPB) remove a
+recusa `payee-ispb-unknown`; a exigência do bloco bancário no pré-voo só cai com a #945 — aberta,
+travada esperando a resposta do banco. E o ISPB saiu `60746948` (real, da tabela), o que confirma que a
+decisão de zerar **ainda não está implementada**.
+
 ## Testes
 
 `pnpm verify` (1893) e `pnpm test:dom` (729) verdes. Em `remittance-preview-view-model.test.ts`:
