@@ -116,43 +116,101 @@ const BARCODE_PENDENCY: Record<PayoutGapReason, string> = {
   'check-digit-mismatch': 'financial.remittance.preview.pendency.missingBarcode',
 }
 
+// ── [03/09] SAIU: a mitigação de tela das rotas SEM emissor ────────────────────
+//
+// Havia aqui um `ROUTES_WITHOUT_EMITTER = {'pix'}` com `routeHasEmitter`/`NO_EMITTER_PENDENCY`: o
+// pré-voo dizia `ready` para PIX, o emissor recusava, e o montador abortava o ARQUIVO INTEIRO — um
+// título PIX na seleção derrubava a remessa dos outros. Enquanto a régua verdadeira não existia no
+// backend, ela morava aqui.
+//
+// As duas condições da remoção fecharam:
+//  · core-api#837 (PR #925) — o backend NOMEIA o caso: a linha volta com status `no-issuer`, e a tela
+//    passa a exibir a pendência por DADO do backend (ver `pendency.noIssuer`, abaixo), não por
+//    inferência de rota;
+//  · core-api#936 — o PIX GANHOU emissor (par A+B na forma `45`), na `dev` desde 01/09 (rc.2). O
+//    pressuposto que sustentava a mitigação deixou de ser verdade: manter o bloqueio esconderia do
+//    operador uma remessa que o backend já sabe gerar, e a frase ("não tem esse trilho") passaria a
+//    mentir.
+//
+// O gatilho que estava escrito aqui — "a homologação devolver `no-issuer` para um PIX" — nunca
+// dispararia: com o #936, o pré-voo do PIX responde `ready`, não `no-issuer`. Fica o registro para
+// que a próxima mitigação por rota nasça com um gatilho que o próprio sucesso não invalide.
+//
+// ⚠️ `tax-guide` NUNCA esteve nesta régua, e continua fora: é a rota das retenções, e a #794 decidiu
+// "destacar, não travar" (P.O., 29/08). Quem a julga é o backend, pelo `no-issuer`.
+
 /**
- * ⚠️ MITIGAÇÃO DE TELA (temporária) — rotas SEM emissor no CNAB.
+ * ⚠️ PIX É EXCLUSIVO — decisão da P.O. em 03/09/2026 (core-api#948, CA4).
  *
- * O pré-voo do core-api devolve `ready` para PIX e guia de tributo quando o cadastro está completo, mas o
- * emissor recusa as duas (`batchProfileFor` → `remittance-launch-form-unsupported`). Como o montador ABORTA
- * o arquivo inteiro nesse caso, um único título PIX na seleção derruba a remessa dos outros — e o operador
- * só descobre no clique de gerar, com erro genérico (o backend colapsa o slug).
+ * "Habilita só em remessa com todas as transações com o pagamento do tipo Pix. Se acontecer de
+ * selecionar Pix e TED junto, o Pix deve ficar desmarcado. Então o sistema deve alertar ao usuário."
  *
- * A resposta do pré-voo NÃO traz o "não planejado" que o planner calcula, então não há como avisar por dado
- * do backend: a régua é aqui, pela ROTA que a própria resposta já informa.
+ * O desempate é assimétrico DE PROPÓSITO: quem cai é o PIX, nunca o TED. A remessa das outras formas
+ * segue; o PIX vai em remessa própria.
  *
- * **Remover quando o emissor suportar a rota** — a régua verdadeira é do core-api, e manter duas é como
- * este módulo já se machucou antes. Enquanto isso, é a diferença entre avisar e deixar a remessa quebrar.
+ * ⚠️ Isto NÃO é a mesma coisa que a exclusividade de ARQUIVO, que já existe e é do layout: o
+ * `fileGroupFor` do core-api já põe o PIX em grupo próprio, então o arquivo nunca sairia misto. O que
+ * esta régua acrescenta é a exclusividade da REMESSA — um lote, uma modalidade, um comprovante, um
+ * retorno. Sem ela, uma seleção mista geraria DOIS arquivos no mesmo lote, cada um queimando o seu NSA.
+ *
+ * A régua do servidor é a de verdade (core-api#948, CA4: recusa 4xx antes do `allocateNsa`); esta aqui
+ * existe porque é na tela que o operador ainda tem como consertar — e porque a rota é alcançável sem
+ * passar por ela.
  */
-// ⚠️ ESCOPO: só `pix` — e `tax-guide` fica de fora POR DECISÃO, não por esquecimento.
-//
-// O emissor recusa `tax-guide` do mesmo jeito que o PIX, então uma retenção por guia numa seleção também
-// derruba o arquivo. Mas essa é a rota das RETENÇÕES, e a #794 decidiu que retenção apta segue remissível
-// ("destacar, não travar"). Levado à P.O. em 29/08 com o modo de falha explicado; decisão: **manter como
-// está**. Reportado no core-api#890 para entrar no escopo do emissor, não da tela.
-// ⚠️ [01/09] O core-api#837 (PR #925) JÁ entrou na `dev` e o backend agora nomeia o caso como
-// `no-issuer` — o que torna esta régua redundante EM TESE. Ela fica assim mesmo, e a razão é
-// sequenciamento, não esquecimento: enquanto a homologação não tiver o #925, remover isto faria o PIX
-// voltar a aparecer como APTO, o operador geraria, e o montador abortaria o arquivo inteiro — a
-// regressão que esta mitigação existe para evitar.
-//
-// GATILHO DE REMOÇÃO, concreto: o pré-voo da homologação devolver `no-issuer` para um título PIX.
-// Aí esta constante, `routeHasEmitter` e `NO_EMITTER_PENDENCY` saem juntos, e a régua fica só no
-// backend — que é onde ela deve estar.
-const ROUTES_WITHOUT_EMITTER: ReadonlySet<VanRoute> = new Set<VanRoute>(['pix'])
+const PIX_NOT_EXCLUSIVE_PENDENCY = 'financial.remittance.preview.pendency.pixNotExclusive'
 
-/** A rota tem emissor no CNAB? `null` (rota desconhecida) não é barrada aqui — o backend é quem julga. */
-export const routeHasEmitter = (route: VanRoute | null): boolean =>
-  route === null || !ROUTES_WITHOUT_EMITTER.has(route)
+/**
+ * A seleção MARCADA permite que o PIX entre? Só se nada além de PIX estiver marcado.
+ *
+ * Avalia o que está marcado AGORA, e não a seleção que veio do grid: desmarcando os títulos das outras
+ * formas, a seleção vira exclusiva e as linhas PIX voltam a ficar operáveis. Sem isso o operador não
+ * teria como chegar a uma remessa PIX a partir de uma seleção mista sem voltar ao grid e recomeçar.
+ *
+ * Não circula: a régua só DESMARCA PIX, e desmarcar PIX não muda o que ela pergunta (se há não-PIX
+ * marcado). Uma passada basta.
+ *
+ * Seleção vazia devolve `true` — nada marcado não impede nada, e o PIX que o operador marcar depois
+ * será julgado pela seleção que existir então.
+ *
+ * ⚠️ Rota `null` (desconhecida) conta como NÃO-PIX e portanto barra o PIX. É o lado seguro da dúvida:
+ * a régua exige que TODAS as transações sejam PIX, e uma rota que não sabemos qual é não prova isso.
+ */
+export const selectionAllowsPix = (checkedRoutes: readonly (VanRoute | null)[]): boolean =>
+  checkedRoutes.every((r) => r === 'pix')
 
-/** Pendência da rota sem emissor — nenhum cadastro resolve, então a frase não pede correção de dado. */
-const NO_EMITTER_PENDENCY = 'financial.remittance.preview.pendency.pixNoEmitter'
+/** Uma linha do pré-voo com a rota ao lado — a rota não vai para a view, mas a régua precisa dela. */
+export type RoutedPreviewLine = Readonly<{ view: PreviewLineView; route: VanRoute | null }>
+
+/**
+ * Aplica a exclusividade do PIX sobre as linhas JÁ julgadas uma a uma.
+ *
+ * Só o PIX cai, e só quando há não-PIX marcado. Uma linha PIX já impedida por outro motivo não é
+ * tocada: ela continua exibindo a SUA pendência, que é a que o operador precisa ler — trocá-la por
+ * "não é remessa exclusiva" esconderia o motivo verdadeiro atrás de um efeito colateral.
+ *
+ * Vive fora de `toPreviewView` para ser exercitada sozinha, com a seleção montada à mão: é a única
+ * régua da tela que depende das OUTRAS linhas, e provar isso por dentro do mapeamento inteiro custaria
+ * uma fixture por caso.
+ */
+export const applyPixExclusivity = (
+  baseLines: readonly RoutedPreviewLine[],
+): Readonly<{ lines: readonly PreviewLineView[]; droppedCount: number }> => {
+  const allowed = selectionAllowsPix(baseLines.filter((l) => l.view.checked).map((l) => l.route))
+  if (allowed) return { lines: baseLines.map((l) => l.view), droppedCount: 0 }
+
+  const dropped = new Set(
+    baseLines.filter((l) => l.route === 'pix' && l.view.remittable).map((l) => l.view.payableId),
+  )
+
+  return {
+    lines: baseLines.map((l) =>
+      dropped.has(l.view.payableId)
+        ? { ...l.view, remittable: false, checked: false, pendencyTag: PIX_NOT_EXCLUSIVE_PENDENCY }
+        : l.view,
+    ),
+    droppedCount: dropped.size,
+  }
+}
 
 const blockedPendencyTag = (route: VanRoute | null, gaps: readonly PayoutGap[]): string => {
   // Dígito divergente ganha do resto: é o único motivo em que o cadastro está COMPLETO, e confundi-lo
@@ -230,6 +288,13 @@ export type PreviewSummary = Readonly<{
    * ele passa despercebido, e o imposto marcado sai por TED ao fornecedor sem nenhuma pendência.
    */
   retentionCheckedCount: number
+  /**
+   * Títulos PIX que a régua de exclusividade desmarcou (ver `selectionAllowsPix`). `0` = sem alerta.
+   *
+   * Precisa de aviso no TOPO, e não só da pendência na linha: o título foi desmarcado por causa de
+   * OUTRA linha, e numa lista longa o operador veria o PIX sumir do total sem nada explicando por quê.
+   */
+  pixNotExclusiveCount: number
 }>
 
 export type PreviewView = Readonly<{
@@ -270,7 +335,10 @@ export const toPreviewView = (
   // nem está no páreo". Quem informa que ficaram títulos de fora é o aviso do topo, com a contagem.
   const rows = selectedRows.filter((r) => r.status === REMITTANCE_ELIGIBLE_STATUS)
 
-  const lines: readonly PreviewLineView[] = rows.map((r) => {
+  // PRIMEIRA PASSADA — o veredito de cada linha isolada: o do backend, mais a régua de emissor. A
+  // rota viaja junto porque a segunda passada precisa dela, e o `PreviewLineView` não a carrega (a
+  // view não decide nada com a rota; ela só exibe o rótulo que já vem pronto).
+  const baseLines = rows.map((r): Readonly<{ view: PreviewLineView; route: VanRoute | null }> => {
     const line = lineByPayable.get(r.id)
 
     const { remittable, pendencyTag, gaps } = ((): Readonly<{
@@ -285,11 +353,9 @@ export const toPreviewView = (
           gaps: [],
         }
       }
+      // `ready` é `ready`: quem sabe se a rota tem emissor é o backend, e ele responde `no-issuer`
+      // quando não tem (core-api#837). A tela não infere mais nada pela rota.
       if (line.status === 'ready') {
-        // Ver `ROUTES_WITHOUT_EMITTER`: o backend diz `ready`, o emissor recusa e o arquivo inteiro cai.
-        if (!routeHasEmitter(line.route)) {
-          return { remittable: false, pendencyTag: NO_EMITTER_PENDENCY, gaps: [] }
-        }
         return { remittable: true, pendencyTag: null, gaps: [] }
       }
       return {
@@ -321,23 +387,34 @@ export const toPreviewView = (
     })()
 
     return {
-      payableId: r.id,
-      documentId: r.documentId,
-      paymentMethodTag: r.paymentMethod === null ? null : `financial.paymentMethod.${r.paymentMethod}`,
-      documentNumber: r.documentNumber,
-      supplier: r.supplier,
-      due: r.due,
-      // Valor DO TÍTULO (o filho tem o seu), não o líquido do documento — era essa a troca que fazia a
-      // linha do imposto exibir o valor do fornecedor.
-      net: r.netCents === null || r.netCents === '' ? DASH : centsToBRL(r.netCents),
-      remittable,
-      // Impedido nunca vai marcado: já nasce fora, e o operador não precisa desmarcar o que não pode ir.
-      checked: remittable && !unchecked.has(r.id),
-      pendencyTag,
-      gaps,
-      isRetention: r.isRetentionChild,
+      view: {
+        payableId: r.id,
+        documentId: r.documentId,
+        paymentMethodTag: r.paymentMethod === null ? null : `financial.paymentMethod.${r.paymentMethod}`,
+        documentNumber: r.documentNumber,
+        supplier: r.supplier,
+        due: r.due,
+        // Valor DO TÍTULO (o filho tem o seu), não o líquido do documento — era essa a troca que fazia
+        // a linha do imposto exibir o valor do fornecedor.
+        net: r.netCents === null || r.netCents === '' ? DASH : centsToBRL(r.netCents),
+        remittable,
+        // Impedido nunca vai marcado: já nasce fora, e o operador não precisa desmarcar o que não pode ir.
+        checked: remittable && !unchecked.has(r.id),
+        pendencyTag,
+        gaps,
+        isRetention: r.isRetentionChild,
+      },
+      route: line?.route ?? null,
     }
   })
+
+  // SEGUNDA PASSADA — a régua que olha a SELEÇÃO INTEIRA, e não a linha (ver `applyPixExclusivity`).
+  //
+  // Ela ENTROU EM SERVIÇO junto com a saída da mitigação de emissor (acima), e essa ordem é a própria
+  // decisão da P.O.: enquanto todo PIX era barrado, as duas juntas diriam coisas diferentes sobre o
+  // mesmo título; e liberar o PIX sem ela deixaria a seleção mista gerar DOIS arquivos no mesmo lote,
+  // cada um queimando o seu NSA.
+  const { lines, droppedCount: pixNotExclusiveCount } = applyPixExclusivity(baseLines)
 
   // Impedidos primeiro: é o que trava o lote.
   const sorted = [...lines].sort((a, b) => Number(a.remittable) - Number(b.remittable))
@@ -381,6 +458,7 @@ export const toPreviewView = (
       remittanceTotal: centsToBRL(remittanceTotal),
       pendingCount: lines.filter((l) => !l.remittable).length,
       retentionCheckedCount: checkedLines.filter((l) => l.isRetention).length,
+      pixNotExclusiveCount,
     },
   }
 }

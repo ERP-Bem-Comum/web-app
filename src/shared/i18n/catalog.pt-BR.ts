@@ -2034,15 +2034,19 @@ export const ptBR: Catalog = {
   'financial.remittance.preview.pendency.missingBankData':
     'Dados bancários do favorecido incompletos — banco, agência e conta',
   'financial.remittance.preview.pendency.missingPixKey': 'Sem chave PIX no cadastro do favorecido',
-  // Rotas sem emissor no CNAB: nenhum cadastro resolve — a frase NÃO pede correção de dado, porque não há
-  // dado a corrigir. Sai quando o emissor do core-api passar a suportar a rota.
-  'financial.remittance.preview.pendency.pixNoEmitter':
-    'PIX ainda não sai na remessa — o emissor CNAB não tem esse trilho',
-  // core-api#837: o BACKEND passou a nomear a rota sem emissor. Frase genérica na ROTA de propósito —
-  // vale para PIX, guia de tributo e o que mais entrar —, e como a `pixNoEmitter`, NÃO pede correção
-  // de cadastro: não há dado a corrigir. Some quando o emissor da rota entrar (PIX = core-api#838).
+  // core-api#837: o BACKEND nomeia a rota sem emissor. Frase genérica na ROTA de propósito — vale para
+  // guia de tributo e o que mais entrar —, e NÃO pede correção de cadastro: não há dado a corrigir.
+  // ⚠️ [03/09] Saiu daqui a `pixNoEmitter`, que dizia o mesmo só para o PIX: era a mitigação de TELA,
+  // e o PIX ganhou emissor (core-api#936). Quem responde por rota sem emissor agora é esta, e só ela.
   'financial.remittance.preview.pendency.noIssuer':
     'Esta forma de pagamento ainda não sai na remessa — o emissor CNAB não tem esse trilho',
+  // PIX é EXCLUSIVO (decisão da P.O., 03/09/2026 — core-api#948 CA4). A frase NÃO pede correção de
+  // cadastro: não há dado errado. Ela nomeia a ação, que é da SELEÇÃO — e a ação tem duas saídas, por
+  // isso as duas aparecem: desmarcar as outras formas, ou mandar o PIX numa remessa própria.
+  'financial.remittance.preview.pendency.pixNotExclusive':
+    'PIX só sai em remessa exclusiva de PIX — desmarque os títulos das outras formas de pagamento',
+  'financial.remittance.preview.pixNotExclusiveNotice':
+    '{n} título(s) PIX foram desmarcados: o PIX só sai em remessa exclusiva de PIX. Para enviá-los, desmarque os títulos das outras formas de pagamento — ou gere o PIX numa remessa separada.',
   'financial.remittance.preview.pendency.missingBarcode':
     'Sem código de barras — o campo do documento está vazio',
   // ⚠️ O operador PREENCHEU. A linha digitável tem 47 dígitos e o arquivo grava o código de barras, de

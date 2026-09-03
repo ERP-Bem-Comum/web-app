@@ -170,6 +170,18 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
           <p className={emptyState}>{t('financial.remittance.preview.needAccount')}</p>
         ) : null}
 
+        {/* PIX desmarcado por não ser remessa exclusiva (core-api#948 CA4). O aviso vai no TOPO porque
+            o título caiu por causa de OUTRA linha: só a pendência na linha faria o PIX sumir do total
+            sem nada explicando por quê, numa lista que pode ser longa. */}
+        {view !== null && view.summary.pixNotExclusiveCount > 0 ? (
+          <p className={notice}>
+            {t('financial.remittance.preview.pixNotExclusiveNotice').replace(
+              '{n}',
+              String(view.summary.pixNotExclusiveCount),
+            )}
+          </p>
+        ) : null}
+
         {/* Retenções marcadas: o pré-voo não as acusa (herdam forma e favorecido da nota), então o
             aviso no topo é o que garante que o operador saiba ANTES de gerar. */}
         {view !== null && view.summary.retentionCheckedCount > 0 ? (
