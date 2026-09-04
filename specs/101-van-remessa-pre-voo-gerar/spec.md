@@ -194,3 +194,44 @@ Permissões no front são `string[]` (`auth.model.ts:30`) — **não há catálo
 Enquanto não houver `GET /financial/remittances`, o `nsa`/`fileName` da resposta de sucesso é o
 **único** registro que o operador tem de que a remessa saiu. Se ele fechar o modal, não recupera.
 Vale considerar guardar o retorno da geração no histórico do título (aba Histórico já existe).
+
+---
+
+## [03/09/2026] O comprovante passa a dizer DE ONDE saiu — conta e convênio
+
+**Pedido da P.O.**, depois da validação em homologação: o comprovante dizia _quanto_, _quando_ e _em que
+arquivo_, mas nunca **por qual conta**. Numa organização com várias contas-cedente, "qual conta pagou?" é
+a primeira pergunta de quem for conferir o extrato, e a tela não respondia.
+
+Entraram duas linhas no comprovante:
+
+- **Conta que pagou** — o rótulo COMPLETO (apelido · banco · agência · conta-DV).
+- **Convênio** — o contrato multipag sob o qual a remessa saiu.
+
+**Por que o convênio, e não só a conta.** A sequência do NSA pertence ao **convênio**, não à conta
+(core-api#943), e o mesmo número de convênio pode estar vinculado a **várias contas** — é assim que o
+cliente opera. Sem o convênio na tela, dois arquivos de contas diferentes com NSAs parecidos são
+indistinguíveis para quem confere.
+
+### Duas decisões de implementação
+
+**1. Congelado no clique, junto com a data.** `SentRemittance` já existia exatamente para isso. O seletor
+de conta **continua editável com o comprovante aberto** — relê-lo depois nomearia a conta escolhida
+_agora_, não a que pagou. Comprovante que aponta a conta errada é pior que comprovante sem conta. Há
+teste cravando que trocar a conta depois de gerar não reescreve o comprovante.
+
+**2. Uma função só formata o rótulo** (`accountLabel`), usada pelo seletor E pelo comprovante. Se cada um
+formatasse por conta própria, conferir "paguei por esta conta?" viraria comparar duas grafias do mesmo
+dado. Há teste que quebra se alguém duplicar a formatação.
+
+⚠️ **Chave i18n própria** (`generate.paidAccount`), e não a `generate.account` do seletor: lá é "Conta que
+paga", no presente, porque ainda é escolha; aqui é "pagou", no passado, porque é fato consumado.
+
+### A dívida do download ficou MAIOR do que esta spec previa
+
+A dívida registrada acima ("se ele fechar o modal, não recupera") vale também para o **arquivo**: o único
+botão de download vive dentro do comprovante, e o `remittanceId` sai da tela junto com ele. Confirmado em
+03/09, quando a P.O. pediu o arquivo gerado em homologação e não havia caminho na UI para buscá-lo — o
+objeto está no bucket, a tela é que não sabe mais pedi-lo.
+
+Enquanto não houver `GET /financial/remittances`, o download só existe nos segundos seguintes à geração.

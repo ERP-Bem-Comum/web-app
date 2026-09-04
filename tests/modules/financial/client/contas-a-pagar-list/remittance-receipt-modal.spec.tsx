@@ -30,6 +30,22 @@ const file = (
   ...over,
 })
 
+/** O comprovante inteiro. `account`/`convenio` respondem "de qual conta e sob qual contrato saiu". */
+const receipt = (
+  over: Partial<{
+    files: ReturnType<typeof file>[]
+    paymentDate: string
+    account: string
+    convenio: string
+  }> = {},
+) => ({
+  files: [file()],
+  paymentDate: '01/09/2026',
+  account: 'Espelho do golden · 237 · Ag. 3456 · C/C 1234-3',
+  convenio: '435366',
+  ...over,
+})
+
 const base = {
   open: true,
   running: false,
@@ -58,12 +74,24 @@ const base = {
 
 describe('comprovante da remessa — o modal de confirmação', () => {
   it('APARECE e descreve o que foi enfileirado: NSA, arquivo, data e total', () => {
-    render(<RemittancePreviewModal {...base} generated={{ files: [file()], paymentDate: '01/09/2026' }} />)
+    render(<RemittancePreviewModal {...base} generated={receipt()} />)
     expect(screen.getByText('Remessa gerada')).toBeTruthy()
     expect(screen.getByText('7')).toBeTruthy()
     expect(screen.getByText('PAG_435366.01092026204605_000007.REM')).toBeTruthy()
     expect(screen.getByText('01/09/2026')).toBeTruthy()
     expect(screen.getByText('R$ 3,00')).toBeTruthy()
+  })
+
+  it('diz DE QUAL CONTA e sob QUAL CONVÊNIO a remessa saiu', () => {
+    // A pergunta que o comprovante deixava sem resposta: numa organização com várias contas-cedente,
+    // "qual conta pagou?" é a primeira coisa de quem vai conferir o extrato. E o convênio é o contrato
+    // a que o NSA pertence — a sequência é dele, não da conta (core-api#943), e o mesmo convênio pode
+    // estar vinculado a várias contas, o que torna o NSA sozinho ambíguo na tela.
+    render(<RemittancePreviewModal {...base} generated={receipt()} />)
+    expect(screen.getByText('Conta que pagou')).toBeTruthy()
+    expect(screen.getByText('Espelho do golden · 237 · Ag. 3456 · C/C 1234-3')).toBeTruthy()
+    expect(screen.getByText('Convênio')).toBeTruthy()
+    expect(screen.getByText('435366')).toBeTruthy()
   })
 
   it('⚠️ seleção MISTA: lista os DOIS arquivos — comprovante pela metade é pior que erro', () => {
@@ -72,13 +100,12 @@ describe('comprovante da remessa — o modal de confirmação', () => {
     render(
       <RemittancePreviewModal
         {...base}
-        generated={{
+        generated={receipt({
           files: [
             file(),
             file({ remittanceId: 'r2', nsa: '8', fileName: 'PAG_...008.REM', total: 'R$ 1.500,00' }),
           ],
-          paymentDate: '01/09/2026',
-        }}
+        })}
       />,
     )
     expect(screen.getByText('7')).toBeTruthy()
@@ -95,10 +122,7 @@ describe('comprovante da remessa — o modal de confirmação', () => {
       <RemittancePreviewModal
         {...base}
         onDownload={onDownload}
-        generated={{
-          files: [file(), file({ remittanceId: 'r2', nsa: '8' })],
-          paymentDate: '01/09/2026',
-        }}
+        generated={receipt({ files: [file(), file({ remittanceId: 'r2', nsa: '8' })] })}
       />,
     )
     const botoes = screen.getAllByRole('button', { name: /Baixar arquivo/ })

@@ -25,6 +25,7 @@ import type {
   GeneratedRemittance,
 } from '#modules/financial/client/data/model/remittance.model.ts'
 import type { ReconciliationAccount } from '#modules/financial/client/data/model/reconciliation.model.ts'
+import { accountLabel } from './remittance-preview.view-model.ts'
 import type { SentRemittance } from './remittance-preview.view-model.ts'
 
 export type RemittancePreviewBinding = Readonly<{
@@ -331,9 +332,20 @@ export function useRemittancePreview(): RemittancePreviewBinding {
     generate: (payableIds, paymentDate) => {
       if (payableIds.length === 0 || cedenteAccountId === '') return
       setConfirming(false)
+      // A conta é lida AQUI, do id que disparou este envio — e não do seletor depois. O seletor
+      // continua editável com o comprovante aberto: relê-lo adiante nomearia a conta escolhida agora,
+      // não a que pagou.
+      const payer = accounts.find((a) => a.id === cedenteAccountId)
       // Congela ANTES de disparar: o `onSuccess` invalida as listas, e a partir dali a tela descreve o
       // estado novo. Depois do envio não há mais de onde reler para que dia a remessa foi.
-      setSent({ paymentDate })
+      setSent({
+        paymentDate,
+        // `payer` só é `undefined` se a conta sumir da lista entre a escolha e o clique (refetch com a
+        // conta encerrada). Cair para vazio deixa o comprovante sem a conta; inventar um rótulo seria
+        // pior, porque o comprovante afirma um fato.
+        account: payer === undefined ? '' : accountLabel(payer),
+        convenio: payer?.convenio ?? '',
+      })
       mutateGenerate(payableIds)
     },
     downloading: downloadMut.isPending,

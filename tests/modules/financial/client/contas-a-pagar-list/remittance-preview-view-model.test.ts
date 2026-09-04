@@ -16,6 +16,9 @@ import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
 import {
+  accountLabel,
+  toAccountOptions,
+  toReceiptView,
   selectionAllowsPix,
   applyPixExclusivity,
   deriveRemittanceSelection,
@@ -24,6 +27,7 @@ import {
 import type { RoutedPreviewLine } from '../../../../../src/modules/financial/client/contas-a-pagar-list/remittance-preview.view-model.ts'
 import type { GridRow } from '../../../../../src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts'
 import type { RemittancePreview } from '../../../../../src/modules/financial/client/data/model/remittance.model.ts'
+import type { ReconciliationAccount } from '../../../../../src/modules/financial/client/data/model/reconciliation.model.ts'
 
 const row = (id: string, status: GridRow['status'], over: Partial<GridRow> = {}): GridRow => ({
   id,
@@ -794,5 +798,95 @@ describe('toPreviewView — o PIX exclusivo, na composição inteira', () => {
     assert.equal(pix?.remittable, true)
     assert.equal(pix?.checked, true)
     assert.equal(view.summary.pixNotExclusiveCount, 0)
+  })
+})
+
+// ── O COMPROVANTE: de qual conta e sob qual convênio a remessa saiu ────────────
+//
+// O comprovante dizia quanto, quando e em que arquivo — nunca POR QUAL CONTA. Numa organização com
+// várias contas-cedente, "qual conta pagou?" é a primeira pergunta de quem vai conferir o extrato.
+// E o convênio é o CONTRATO a que o NSA pertence: a sequência é dele, não da conta (core-api#943), e
+// o mesmo convênio pode estar vinculado a várias contas — o que torna o NSA sozinho ambíguo na tela.
+
+const conta = (over: Partial<ReconciliationAccount> = {}): ReconciliationAccount => ({
+  id: 'acc-1',
+  bankCode: '237',
+  bankName: 'Bradesco',
+  branch: '3456',
+  accountNumber: '1234',
+  accountDv: '3',
+  alias: 'Espelho do golden',
+  type: 'Corrente',
+  typeLabel: null,
+  status: 'Active',
+  currentBalanceCents: '0',
+  lastUpdatedAt: '',
+  pendingCount: 0,
+  openingBalanceCents: null,
+  openingBalanceDate: null,
+  convenio: '435366',
+  document: '48123456000175',
+  ...over,
+})
+
+const gerada = {
+  files: [
+    {
+      remittanceId: 'r1',
+      nsa: 7,
+      fileName: 'PAG_435366..._000007.REM',
+      totalCents: '300',
+      objectKey: 'van/PAG_435366..._000007.REM',
+      lineCount: 6,
+    },
+  ],
+}
+
+describe('accountLabel — uma fonte só para o seletor e para o comprovante', () => {
+  it('apelido primeiro, banco/agência/conta em seguida', () => {
+    assert.equal(accountLabel(conta()), 'Espelho do golden · 237 · Ag. 3456 · C/C 1234-3')
+  })
+
+  it('sem apelido, cai no nome do banco', () => {
+    assert.equal(accountLabel(conta({ alias: '' })), 'Bradesco · 237 · Ag. 3456 · C/C 1234-3')
+  })
+
+  it('⚠️ o seletor usa a MESMA função — comprovante e escolha não podem divergir na grafia', () => {
+    // Se cada um formatasse por conta própria, conferir "paguei por esta conta?" viraria comparar duas
+    // grafias do mesmo dado. Este assert quebra se alguém duplicar a formatação.
+    const [opcao] = toAccountOptions([conta()])
+    assert.equal(opcao?.label, accountLabel(conta()))
+  })
+})
+
+describe('toReceiptView — o comprovante descreve o ENVIO, não a tela', () => {
+  it('carrega a conta e o convênio congelados no clique', () => {
+    const view = toReceiptView(gerada, {
+      paymentDate: '01/09/2026',
+      account: accountLabel(conta()),
+      convenio: '435366',
+    })
+    assert.equal(view.account, 'Espelho do golden · 237 · Ag. 3456 · C/C 1234-3')
+    assert.equal(view.convenio, '435366')
+    assert.equal(view.paymentDate, '01/09/2026')
+  })
+
+  it('⚠️ usa o que foi ENVIADO, e não relê a conta escolhida agora', () => {
+    // O seletor segue editável com o comprovante aberto. Se o operador trocar a conta depois de gerar,
+    // o comprovante tem de continuar nomeando a que PAGOU — um comprovante que aponta a conta errada é
+    // pior que um sem conta nenhuma.
+    const view = toReceiptView(gerada, {
+      paymentDate: '01/09/2026',
+      account: 'Conta que PAGOU · 237 · Ag. 3456 · C/C 1234-3',
+      convenio: '435366',
+    })
+    assert.equal(view.account, 'Conta que PAGOU · 237 · Ag. 3456 · C/C 1234-3')
+  })
+
+  it('convênio vazio vira traço, nunca string vazia', () => {
+    // Na prática não acontece — o binding só oferece contas com convênio, porque sem ele não há
+    // remessa. O traço existe para o dia em que essa garantia mudar de lugar.
+    const view = toReceiptView(gerada, { paymentDate: '01/09/2026', account: 'X', convenio: '' })
+    assert.equal(view.convenio, '—')
   })
 })
