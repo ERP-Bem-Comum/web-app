@@ -2122,6 +2122,14 @@ export const ptBR: Catalog = {
   'financial.remittance.generate.nsa': 'Nº da remessa (NSA)',
   'financial.remittance.generate.fileName': 'Arquivo',
   'financial.remittance.generate.total': 'Total enviado',
+  // DE ONDE saiu o dinheiro. ⚠️ Chave PRÓPRIA, e não a `generate.account` do seletor (L2100): lá o
+  // texto é "Conta que paga", no presente, porque ainda é escolha; aqui é "pagou", no passado, porque o
+  // comprovante descreve fato consumado. Mesmo dado, tempos verbais diferentes — reusar a chave
+  // obrigaria uma das duas telas a mentir sobre o tempo.
+  'financial.remittance.generate.paidAccount': 'Conta que pagou',
+  // O CONTRATO multipag. Fica ao lado do NSA de propósito: a sequência pertence ao convênio, não à
+  // conta (core-api#943), e um mesmo convênio pode estar vinculado a várias contas do cliente.
+  'financial.remittance.generate.convenio': 'Convênio',
   // O dia em que o banco executa. É o "quando sai o dinheiro?" — a única informação do comprovante que
   // o operador não reconfere em outro lugar depois de fechar o modal.
   'financial.remittance.generate.paymentDate': 'Pagamento em',

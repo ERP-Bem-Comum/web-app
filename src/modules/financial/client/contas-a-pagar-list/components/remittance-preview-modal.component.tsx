@@ -218,6 +218,20 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
                   ocupa a linha que os dados exclusivos do comprovante (NSA, arquivo, data) precisam.
                   Antes de sair ela ainda estava ERRADA: exibia o `lineCount` do core-api, que conta
                   registros do arquivo CNAB (6 para um único título). */}
+              {/* DE ONDE saiu o dinheiro. O comprovante dizia quanto, quando e em que arquivo — nunca
+                  por qual conta. Numa organização com várias contas-cedente, "qual conta pagou?" é a
+                  primeira pergunta de quem for conferir o extrato, e ela não tinha resposta na tela. */}
+              <span className={summaryItem}>
+                <span className={summaryLabel}>{t('financial.remittance.generate.paidAccount')}</span>
+                <span className={summaryValue}>{props.generated.account}</span>
+              </span>
+              {/* O CONTRATO a que o NSA pertence. A sequência é do convênio (core-api#943) e o mesmo
+                  convênio pode estar em várias contas — sem ele, dois arquivos de contas diferentes com
+                  NSAs parecidos são indistinguíveis aqui. */}
+              <span className={summaryItem}>
+                <span className={summaryLabel}>{t('financial.remittance.generate.convenio')}</span>
+                <span className={summaryValueStrong}>{props.generated.convenio}</span>
+              </span>
               {/* Quando o banco executa. Fecha a pergunta que o comprovante deixava em aberto: o operador
                   via quanto e quantos títulos, mas não em que dia o dinheiro sai. */}
               <span className={summaryItem}>

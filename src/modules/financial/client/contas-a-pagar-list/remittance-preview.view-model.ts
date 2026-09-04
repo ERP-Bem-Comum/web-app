@@ -498,16 +498,36 @@ export type GeneratedRemittanceView = Readonly<{
    * o que JÁ aconteceu; derivá-lo de estado que muda embaixo é o defeito, não o sintoma.
    */
   paymentDate: string
+  /** A conta que PAGOU, com o mesmo rótulo que o operador leu ao escolher. */
+  account: string
+  /** O convênio (multipag) daquela remessa — o contrato a que o NSA pertence. */
+  convenio: string
 }>
 
 /**
  * O que foi ENVIADO, capturado no clique — nunca relido do estado da tela depois.
  *
- * Só a data: a quantidade saiu do comprovante (a P.O. a lê na conferência anterior). O tipo permanece
- * porque o PROBLEMA que ele resolve não era da quantidade — é que o comprovante descreve um fato
- * passado enquanto a tela por baixo já mudou de estado.
+ * A quantidade saiu do comprovante (a P.O. a lê na conferência anterior). O tipo permanece porque o
+ * PROBLEMA que ele resolve não era da quantidade — é que o comprovante descreve um fato passado
+ * enquanto a tela por baixo já mudou de estado.
+ *
+ * ⚠️ `account` e `convenio` entram por ESSE mesmo motivo, e não por simetria: o seletor de conta segue
+ * editável com o comprovante na tela, então relê-los depois descreveria a conta que está escolhida
+ * AGORA, não a que pagou. Um comprovante que aponta a conta errada é pior que um comprovante sem conta.
  */
-export type SentRemittance = Readonly<{ paymentDate: string }>
+export type SentRemittance = Readonly<{
+  paymentDate: string
+  /** Rótulo COMPLETO da conta que pagou (ver `accountLabel`) — banco, agência e número. */
+  account: string
+  /**
+   * O convênio (multipag) sob o qual a remessa foi gerada.
+   *
+   * É o dado que faltava para o operador saber a QUAL contrato aquele NSA pertence: a sequência é do
+   * convênio, não da conta (core-api#943), e o mesmo número de convênio pode estar vinculado a várias
+   * contas. Sem ele, dois arquivos de contas diferentes com NSAs parecidos são indistinguíveis na tela.
+   */
+  convenio: string
+}>
 
 export const toReceiptView = (g: GeneratedRemittance, sent: SentRemittance): GeneratedRemittanceView => ({
   files: g.files.map((f) => ({
@@ -517,6 +537,10 @@ export const toReceiptView = (g: GeneratedRemittance, sent: SentRemittance): Gen
     total: centsToBRL(f.totalCents),
   })),
   paymentDate: sent.paymentDate,
+  account: sent.account,
+  // Conta sem convênio não gera remessa (o binding só oferece as elegíveis), então na prática nunca é
+  // vazio. O traço existe para não imprimir string vazia se algum dia essa garantia mudar de lugar.
+  convenio: sent.convenio === '' ? DASH : sent.convenio,
 })
 
 /** Conta-cedente como o seletor precisa: id + rótulo pronto. A view não formata dado de domínio. */
@@ -525,11 +549,14 @@ export type ReconciliationAccountOption = Readonly<{ id: string; label: string }
 /**
  * Rótulo da conta que PAGA. Apelido primeiro (é como o operador a chama), banco/agência/conta em seguida
  * para desempatar contas do mesmo apelido — errar a conta aqui é pagar pela conta errada.
+ *
+ * ⚠️ UMA função para o seletor E para o comprovante, de propósito. O comprovante afirma "foi por esta
+ * conta"; se ele formatasse por conta própria, a frase do comprovante poderia divergir da que o
+ * operador leu ao escolher — e conferir viraria comparar duas grafias do mesmo dado.
  */
+export const accountLabel = (a: ReconciliationAccount): string =>
+  `${a.alias !== '' ? a.alias : a.bankName} · ${a.bankCode} · Ag. ${a.branch} · C/C ${a.accountNumber}-${a.accountDv}`
+
 export const toAccountOptions = (
   accounts: readonly ReconciliationAccount[],
-): readonly ReconciliationAccountOption[] =>
-  accounts.map((a) => ({
-    id: a.id,
-    label: `${a.alias !== '' ? a.alias : a.bankName} · ${a.bankCode} · Ag. ${a.branch} · C/C ${a.accountNumber}-${a.accountDv}`,
-  }))
+): readonly ReconciliationAccountOption[] => accounts.map((a) => ({ id: a.id, label: accountLabel(a) }))
