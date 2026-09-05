@@ -79,6 +79,7 @@ const FIELD_TAG: Record<PayoutField, string> = {
   'payee-agency': 'financial.remittance.preview.field.agency',
   'payee-account-number': 'financial.remittance.preview.field.accountNumber',
   'payee-account-digit': 'financial.remittance.preview.field.accountDigit',
+  'payee-document': 'financial.remittance.preview.field.payeeDocument',
   'payment-detail': 'financial.remittance.preview.field.paymentDetail',
 }
 

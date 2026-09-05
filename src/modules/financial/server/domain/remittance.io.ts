@@ -15,14 +15,33 @@ export type VanRoute = 'pix' | 'transfer' | 'billet' | 'tax-guide'
 /**
  * Campo do cadastro que falta ou está impróprio. Vem em LISTA (não como frase) de propósito: é o que
  * permite a tela apontar o input em vez de interpretar prosa.
+ *
+ * ⚠️ TUPLA `as const` PRIMEIRO, união DERIVADA dela — e a inversão é o conserto de uma classe de
+ * defeito, não estilo. Enquanto a união era escrita à mão, o `PAYOUT_FIELDS` do mapper era um `Set`
+ * escrito à mão TAMBÉM, e o compilador não liga os dois: `new Set<PayoutField>([...])` aceita
+ * felizmente um subconjunto. Campo que o core-api emite e não está no `Set` é DESCARTADO em silêncio
+ * por `mapGaps`, e a linha chega à tela bloqueada e sem motivo.
+ *
+ * Já aconteceu duas vezes: com `check-digit-mismatch` (corrigido, e o comentário do mapper registra) e
+ * com `payee-document`, que o core-api emite para BOLETO desde a #891 e que esta lista não tinha.
+ * Derivando o `Set` desta mesma tupla, a terceira vez deixa de ser possível — não por disciplina, por
+ * construção.
+ *
+ * `payee-document` é a inscrição (CPF/CNPJ) do favorecido. Nasceu do Segmento J-52 do boleto (#891),
+ * que identifica sacado e cedente por inscrição, e vale também para o Pix: é o campo que o banco
+ * cruza com o titular da chave no DICT (core-api#948).
  */
-export type PayoutField =
-  | 'pix-key'
-  | 'payee-bank-code'
-  | 'payee-agency'
-  | 'payee-account-number'
-  | 'payee-account-digit'
-  | 'payment-detail'
+export const PAYOUT_FIELDS = [
+  'pix-key',
+  'payee-bank-code',
+  'payee-agency',
+  'payee-account-number',
+  'payee-account-digit',
+  'payee-document',
+  'payment-detail',
+] as const
+
+export type PayoutField = (typeof PAYOUT_FIELDS)[number]
 
 /**
  * O motivo viaja junto do campo porque a AÇÃO do operador difere: `missing` pede preenchimento;
@@ -30,7 +49,9 @@ export type PayoutField =
  * o cadastro está COMPLETO e bem formado, mas o dígito não corresponde à conta. Dizer "corrija o
  * formato" aí manda o operador consertar o que já está certo.
  */
-export type PayoutGapReason = 'missing' | 'unmappable' | 'malformed' | 'check-digit-mismatch'
+export const PAYOUT_GAP_REASONS = ['missing', 'unmappable', 'malformed', 'check-digit-mismatch'] as const
+
+export type PayoutGapReason = (typeof PAYOUT_GAP_REASONS)[number]
 
 export interface PayoutGap {
   field: PayoutField

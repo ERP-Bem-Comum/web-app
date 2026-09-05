@@ -2151,6 +2151,7 @@ export const ptBR: Catalog = {
   'financial.remittance.preview.field.agency': 'Agência do favorecido',
   'financial.remittance.preview.field.accountNumber': 'Conta do favorecido',
   'financial.remittance.preview.field.accountDigit': 'Dígito da conta',
+  'financial.remittance.preview.field.payeeDocument': 'CPF/CNPJ do favorecido',
   'financial.remittance.preview.field.paymentDetail': 'Linha digitável / complemento',
   'financial.remittance.preview.reason.missing': 'não preenchido',
   'financial.remittance.preview.reason.unmappable': 'não reconhecido no layout do banco',
