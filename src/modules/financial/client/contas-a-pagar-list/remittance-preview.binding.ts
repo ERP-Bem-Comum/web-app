@@ -98,8 +98,11 @@ export type RemittancePreviewBinding = Readonly<{
   /**
    * `paymentDate` entra como ARGUMENTO, e não é redundância: é o valor lido do pré-voo no instante em
    * que o operador confirma. Depois do envio esse valor já não existe na tela — ver `sent`.
+   *
+   * `paymentMethodTags` entra pelo mesmo motivo e no mesmo instante: são as formas dos títulos MARCADOS,
+   * e marcação é justamente o que o envio desfaz (os títulos viram `Transmitido` e saem da seleção).
    */
-  generate: (payableIds: readonly string[], paymentDate: string) => void
+  generate: (payableIds: readonly string[], paymentDate: string, paymentMethodTags: readonly string[]) => void
 
   // ── Download do arquivo (specs/103) ───────────────────────────────────────────
   //
@@ -329,7 +332,7 @@ export function useRemittancePreview(): RemittancePreviewBinding {
     generateErrorTag: genFailure === null ? null : financialErrorTag(genFailure.error),
     generateErrorMessage: genFailure?.message ?? null,
     sent,
-    generate: (payableIds, paymentDate) => {
+    generate: (payableIds, paymentDate, paymentMethodTags) => {
       if (payableIds.length === 0 || cedenteAccountId === '') return
       setConfirming(false)
       // A conta é lida AQUI, do id que disparou este envio — e não do seletor depois. O seletor
@@ -345,6 +348,7 @@ export function useRemittancePreview(): RemittancePreviewBinding {
         // pior, porque o comprovante afirma um fato.
         account: payer === undefined ? '' : accountLabel(payer),
         convenio: payer?.convenio ?? '',
+        paymentMethodTags,
       })
       mutateGenerate(payableIds)
     },

@@ -883,16 +883,177 @@ describe('accountLabel — uma fonte só para o seletor e para o comprovante', (
   })
 })
 
+describe('checkedPaymentMethodTags — que tipos de transação vão na remessa', () => {
+  // A pergunta que o comprovante não respondia: "que tipos de pagamento eu acabei de mandar?". O dado
+  // já existe na coluna "Forma" da conferência, mas ali é uma coluna de muitas linhas — no comprovante
+  // vira a resposta de quem vai conferir o extrato depois.
+
+  it('lista as formas DISTINTAS dos títulos marcados, sem repetir', () => {
+    const boleto = row('p-bol', 'Aprovado', { documentId: 'doc-b', paymentMethod: 'Boleto' })
+    const outroBoleto = row('p-bol2', 'Aprovado', { documentId: 'doc-b2', paymentMethod: 'Boleto' })
+    const ted = row('p-ted', 'Aprovado', { documentId: 'doc-t', paymentMethod: 'TED' })
+    const linha = (id: string, route: 'billet' | 'transfer') => ({
+      payableId: id,
+      documentId: `doc-${id}`,
+      status: 'ready' as const,
+      route,
+      gaps: [],
+      valueCents: '1000',
+    })
+
+    const view = toPreviewView(
+      preview([linha('p-bol', 'billet'), linha('p-bol2', 'billet'), linha('p-ted', 'transfer')]),
+      [boleto, outroBoleto, ted],
+      NONE,
+      TODAY,
+    )
+
+    assert.deepEqual(view.checkedPaymentMethodTags, [
+      'financial.paymentMethod.Boleto',
+      'financial.paymentMethod.TED',
+    ])
+  })
+
+  it('⚠️ só os MARCADOS entram — desmarcar um tipo o tira da lista', () => {
+    // Se contasse as linhas exibidas, o comprovante afirmaria ter mandado uma forma que o operador
+    // desmarcou justamente para não mandar.
+    const boleto = row('p-bol', 'Aprovado', { documentId: 'doc-b', paymentMethod: 'Boleto' })
+    const ted = row('p-ted', 'Aprovado', { documentId: 'doc-t', paymentMethod: 'TED' })
+    const linha = (id: string, route: 'billet' | 'transfer') => ({
+      payableId: id,
+      documentId: `doc-${id}`,
+      status: 'ready' as const,
+      route,
+      gaps: [],
+      valueCents: '1000',
+    })
+
+    const view = toPreviewView(
+      preview([linha('p-bol', 'billet'), linha('p-ted', 'transfer')]),
+      [boleto, ted],
+      new Set(['p-ted']),
+      TODAY,
+    )
+
+    assert.deepEqual(view.checkedPaymentMethodTags, ['financial.paymentMethod.Boleto'])
+  })
+
+  it('linha IMPEDIDA não entra: ela não vai ao arquivo', () => {
+    const boleto = row('p-bol', 'Aprovado', { documentId: 'doc-b', paymentMethod: 'Boleto' })
+    const ted = row('p-ted', 'Aprovado', { documentId: 'doc-t', paymentMethod: 'TED' })
+
+    const view = toPreviewView(
+      preview([
+        {
+          payableId: 'p-bol',
+          documentId: 'doc-b',
+          status: 'ready',
+          route: 'billet',
+          gaps: [],
+          valueCents: '1000',
+        },
+        {
+          payableId: 'p-ted',
+          documentId: 'doc-t',
+          status: 'blocked',
+          route: 'transfer',
+          gaps: [{ field: 'payee-agency', reason: 'missing' }],
+          valueCents: '1000',
+        },
+      ]),
+      [boleto, ted],
+      NONE,
+      TODAY,
+    )
+
+    assert.deepEqual(view.checkedPaymentMethodTags, ['financial.paymentMethod.Boleto'])
+  })
+
+  it('⚠️ forma AUSENTE vira entrada própria, não some da lista', () => {
+    // Descartá-la em silêncio é o padrão que este módulo já pagou duas vezes (`mapGaps` engolindo campo
+    // desconhecido): o comprovante diria "mandei PIX" numa remessa que levava também um título de forma
+    // desconhecida, e ninguém veria a diferença.
+    const semForma = row('p-x', 'Aprovado', { documentId: 'doc-x', paymentMethod: null })
+    const pix = row('p-pix', 'Aprovado', { documentId: 'doc-p', paymentMethod: 'PIX' })
+
+    const view = toPreviewView(
+      preview([
+        {
+          payableId: 'p-pix',
+          documentId: 'doc-p',
+          status: 'ready',
+          route: 'pix',
+          gaps: [],
+          valueCents: '1000',
+        },
+        {
+          payableId: 'p-x',
+          documentId: 'doc-x',
+          status: 'ready',
+          route: 'pix',
+          gaps: [],
+          valueCents: '1000',
+        },
+      ]),
+      [pix, semForma],
+      NONE,
+      TODAY,
+    )
+
+    assert.deepEqual(view.checkedPaymentMethodTags, [
+      'financial.paymentMethod.PIX',
+      'financial.remittance.generate.paymentMethodUnknown',
+    ])
+  })
+
+  it('seleção sem nada marcado devolve lista vazia (a view desenha o traço)', () => {
+    const ted = row('p-ted', 'Aprovado', { documentId: 'doc-t', paymentMethod: 'TED' })
+    const view = toPreviewView(
+      preview([
+        {
+          payableId: 'p-ted',
+          documentId: 'doc-t',
+          status: 'ready',
+          route: 'transfer',
+          gaps: [],
+          valueCents: '1000',
+        },
+      ]),
+      [ted],
+      new Set(['p-ted']),
+      TODAY,
+    )
+
+    assert.deepEqual(view.checkedPaymentMethodTags, [])
+  })
+})
+
 describe('toReceiptView — o comprovante descreve o ENVIO, não a tela', () => {
   it('carrega a conta e o convênio congelados no clique', () => {
     const view = toReceiptView(gerada, {
       paymentDate: '01/09/2026',
       account: accountLabel(conta()),
       convenio: '435366',
+      paymentMethodTags: ['financial.paymentMethod.TED'],
     })
     assert.equal(view.account, 'Espelho do golden · 237 · Ag. 3456 · C/C 1234-3')
     assert.equal(view.convenio, '435366')
     assert.equal(view.paymentDate, '01/09/2026')
+  })
+
+  it('carrega os TIPOS DE TRANSAÇÃO congelados no clique', () => {
+    // Congelados pela mesma razão que a conta: relê-los do pré-voo depois de gerar devolveria lista
+    // vazia — os títulos viram `Transmitido` e saem da seleção.
+    const view = toReceiptView(gerada, {
+      paymentDate: '01/09/2026',
+      account: 'X',
+      convenio: '435366',
+      paymentMethodTags: ['financial.paymentMethod.Boleto', 'financial.paymentMethod.TED'],
+    })
+    assert.deepEqual(view.paymentMethodTags, [
+      'financial.paymentMethod.Boleto',
+      'financial.paymentMethod.TED',
+    ])
   })
 
   it('⚠️ usa o que foi ENVIADO, e não relê a conta escolhida agora', () => {
@@ -903,6 +1064,7 @@ describe('toReceiptView — o comprovante descreve o ENVIO, não a tela', () => 
       paymentDate: '01/09/2026',
       account: 'Conta que PAGOU · 237 · Ag. 3456 · C/C 1234-3',
       convenio: '435366',
+      paymentMethodTags: ['financial.paymentMethod.TED'],
     })
     assert.equal(view.account, 'Conta que PAGOU · 237 · Ag. 3456 · C/C 1234-3')
   })
@@ -910,7 +1072,12 @@ describe('toReceiptView — o comprovante descreve o ENVIO, não a tela', () => 
   it('convênio vazio vira traço, nunca string vazia', () => {
     // Na prática não acontece — o binding só oferece contas com convênio, porque sem ele não há
     // remessa. O traço existe para o dia em que essa garantia mudar de lugar.
-    const view = toReceiptView(gerada, { paymentDate: '01/09/2026', account: 'X', convenio: '' })
+    const view = toReceiptView(gerada, {
+      paymentDate: '01/09/2026',
+      account: 'X',
+      convenio: '',
+      paymentMethodTags: [],
+    })
     assert.equal(view.convenio, '—')
   })
 })
