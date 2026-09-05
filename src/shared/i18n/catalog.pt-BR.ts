@@ -2030,6 +2030,15 @@ export const ptBR: Catalog = {
   // Genérico — só quando o trilho é desconhecido. Nomear um campo sem saber a forma de pagamento
   // mandaria o operador procurar no lugar errado.
   'financial.remittance.preview.pendency.missingData': 'Falta dado para o pagamento — verifique o cadastro',
+  // A inscrição do favorecido vale para TODA rota com emissor, então não entra na régua por forma
+  // abaixo — ela vem antes. São dois textos porque as AÇÕES são opostas.
+  'financial.remittance.preview.pendency.missingPayeeDocument':
+    'Falta o CPF/CNPJ do favorecido — complete o cadastro',
+  // ⚠️ O ÚNICO impedimento da tela que o operador NÃO resolve no cadastro. O CNPJ alfanumérico é
+  // válido desde 07/2026 (ADR-0044) e o layout do banco ainda declara o campo como numérico — mandar
+  // "verifique o cadastro" aqui manda conferir o que já está certo (core-api#863).
+  'financial.remittance.preview.pendency.payeeDocumentUnsupported':
+    'CPF/CNPJ do favorecido tem letras e o banco ainda não os aceita no arquivo — fale com o financeiro',
   // A regra por forma de pagamento: TED/Transferência → conta; Boleto/Guia → linha digitável; PIX → chave.
   'financial.remittance.preview.pendency.missingBankData':
     'Dados bancários do favorecido incompletos — banco, agência e conta',
@@ -2151,6 +2160,7 @@ export const ptBR: Catalog = {
   'financial.remittance.preview.field.agency': 'Agência do favorecido',
   'financial.remittance.preview.field.accountNumber': 'Conta do favorecido',
   'financial.remittance.preview.field.accountDigit': 'Dígito da conta',
+  'financial.remittance.preview.field.payeeDocument': 'CPF/CNPJ do favorecido',
   'financial.remittance.preview.field.paymentDetail': 'Linha digitável / complemento',
   'financial.remittance.preview.reason.missing': 'não preenchido',
   'financial.remittance.preview.reason.unmappable': 'não reconhecido no layout do banco',
