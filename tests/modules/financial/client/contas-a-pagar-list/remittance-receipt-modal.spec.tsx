@@ -30,19 +30,24 @@ const file = (
   ...over,
 })
 
-/** O comprovante inteiro. `account`/`convenio` respondem "de qual conta e sob qual contrato saiu". */
+/**
+ * O comprovante inteiro. `account`/`convenio` respondem "de qual conta e sob qual contrato saiu";
+ * `paymentMethodTags`, "que tipos de pagamento foram nela".
+ */
 const receipt = (
   over: Partial<{
     files: ReturnType<typeof file>[]
     paymentDate: string
     account: string
     convenio: string
+    paymentMethodTags: readonly string[]
   }> = {},
 ) => ({
   files: [file()],
   paymentDate: '01/09/2026',
   account: 'Espelho do golden · 237 · Ag. 3456 · C/C 1234-3',
   convenio: '435366',
+  paymentMethodTags: ['financial.paymentMethod.TED'],
   ...over,
 })
 
@@ -92,6 +97,31 @@ describe('comprovante da remessa — o modal de confirmação', () => {
     expect(screen.getByText('Espelho do golden · 237 · Ag. 3456 · C/C 1234-3')).toBeTruthy()
     expect(screen.getByText('Convênio')).toBeTruthy()
     expect(screen.getByText('435366')).toBeTruthy()
+  })
+
+  it('diz QUE TIPOS DE TRANSAÇÃO foram na remessa', () => {
+    // O operador lê a forma na coluna da conferência, linha a linha. No comprovante ela vira a resposta
+    // a "que tipos de pagamento eu acabei de mandar?" — a pergunta de quem for conferir o extrato.
+    render(
+      <RemittancePreviewModal
+        {...base}
+        generated={receipt({
+          paymentMethodTags: ['financial.paymentMethod.Boleto', 'financial.paymentMethod.TED'],
+        })}
+      />,
+    )
+    expect(screen.getByText('Tipo de transação')).toBeTruthy()
+    expect(screen.getByText('Boleto · TED')).toBeTruthy()
+  })
+
+  it('remessa de PIX mostra só PIX — é a única forma que vai sozinha (exclusividade, core-api#948)', () => {
+    render(
+      <RemittancePreviewModal
+        {...base}
+        generated={receipt({ paymentMethodTags: ['financial.paymentMethod.PIX'] })}
+      />,
+    )
+    expect(screen.getByText('PIX')).toBeTruthy()
   })
 
   it('⚠️ seleção MISTA: lista os DOIS arquivos — comprovante pela metade é pior que erro', () => {

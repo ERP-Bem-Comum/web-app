@@ -232,6 +232,19 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
                 <span className={summaryLabel}>{t('financial.remittance.generate.convenio')}</span>
                 <span className={summaryValueStrong}>{props.generated.convenio}</span>
               </span>
+              {/* O QUE foi pago — os tipos de transação da remessa, sem repetição. O operador os lê na
+                  coluna "Forma" durante a conferência, mas ali eles são uma coluna de muitas linhas; no
+                  comprovante viram a resposta a "que tipos de pagamento eu acabei de mandar?", que é o
+                  que ele precisa saber ao conferir o extrato depois. Vem CONGELADO do envio — reler o
+                  pré-voo aqui devolveria lista vazia (os títulos já saíram da seleção). */}
+              <span className={summaryItem}>
+                <span className={summaryLabel}>{t('financial.remittance.generate.paymentMethods')}</span>
+                <span className={summaryValue}>
+                  {props.generated.paymentMethodTags.length === 0
+                    ? DASH
+                    : props.generated.paymentMethodTags.map((tag) => t(tag)).join(' · ')}
+                </span>
+              </span>
               {/* Quando o banco executa. Fecha a pergunta que o comprovante deixava em aberto: o operador
                   via quanto e quantos títulos, mas não em que dia o dinheiro sai. */}
               <span className={summaryItem}>

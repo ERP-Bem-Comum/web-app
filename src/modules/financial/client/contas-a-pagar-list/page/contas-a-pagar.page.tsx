@@ -478,9 +478,12 @@ export function ContasAPagarPage(): ReactNode {
           // Vai só o que está MARCADO — dedup por documento, direto do ViewModel. A data de pagamento
           // viaja JUNTO porque é agora que ela existe: é o vencimento dos títulos que estão indo, e a
           // remessa é de um único dia (vencimentos misturados travam o envio).
+          // As FORMAS viajam junto pela mesma razão que a data: são leitura dos títulos marcados, e a
+          // marcação some no envio. Ver `checkedPaymentMethodTags`.
           remittance.generate(
             remittanceView?.checkedPayableIds ?? [],
             remittanceView?.summary.paymentDate ?? '—',
+            remittanceView?.checkedPaymentMethodTags ?? [],
           )
         }}
         downloading={remittance.downloading}

@@ -110,7 +110,7 @@ const setupGenerated = async () => {
   const { result } = setup()
   await startWithAccount(result)
   act(() => {
-    result.current.generate(['doc-1'], '10/09/2026')
+    result.current.generate(['doc-1'], '10/09/2026', ['financial.paymentMethod.TED'])
   })
   await waitFor(() => {
     expect(result.current.generated).not.toBeNull()
@@ -247,7 +247,7 @@ describe('useRemittancePreview', () => {
     expect(result.current.notApprovedCount).toBe(2)
 
     act(() => {
-      result.current.generate(['doc-1'], '10/09/2026')
+      result.current.generate(['doc-1'], '10/09/2026', ['financial.paymentMethod.TED'])
     })
     await waitFor(() => {
       expect(result.current.generated).not.toBeNull()
@@ -321,7 +321,7 @@ describe('useRemittancePreview', () => {
     })
 
     act(() => {
-      result.current.generate(['doc-1'], '10/09/2026')
+      result.current.generate(['doc-1'], '10/09/2026', ['financial.paymentMethod.TED'])
     })
     expect(mockedGenerate).not.toHaveBeenCalled()
   })
@@ -333,7 +333,7 @@ describe('useRemittancePreview', () => {
     await startWithAccount(result)
 
     act(() => {
-      result.current.generate(['doc-1'], '10/09/2026')
+      result.current.generate(['doc-1'], '10/09/2026', ['financial.paymentMethod.TED'])
     })
 
     await waitFor(() => {
@@ -357,7 +357,7 @@ describe('useRemittancePreview', () => {
     await startWithAccount(result)
 
     act(() => {
-      result.current.generate(['doc-1', 'doc-2'], '10/09/2026')
+      result.current.generate(['doc-1', 'doc-2'], '10/09/2026', ['financial.paymentMethod.TED'])
     })
 
     await waitFor(() => {
@@ -366,10 +366,13 @@ describe('useRemittancePreview', () => {
     // A CONTA e o CONVÊNIO congelam junto com a data, e pelo mesmo motivo: o seletor segue editável
     // com o comprovante na tela, então relê-los depois nomearia a conta escolhida AGORA, não a que
     // pagou. Comprovante que aponta a conta errada é pior que comprovante sem conta.
+    // Os TIPOS DE TRANSAÇÃO congelam pelo mesmo motivo e no mesmo instante: são leitura dos títulos
+    // MARCADOS, e a marcação é justamente o que o envio desfaz (os títulos viram `Transmitido`).
     expect(result.current.sent).toEqual({
       paymentDate: '10/09/2026',
       account: 'Conta acc-1 · 237 · Ag. 3456 · C/C 1234-3',
       convenio: '123456',
+      paymentMethodTags: ['financial.paymentMethod.TED'],
     })
   })
 
@@ -381,7 +384,7 @@ describe('useRemittancePreview', () => {
     await startWithAccount(result)
 
     act(() => {
-      result.current.generate(['doc-1'], '10/09/2026')
+      result.current.generate(['doc-1'], '10/09/2026', ['financial.paymentMethod.TED'])
     })
     await waitFor(() => {
       expect(result.current.generated).not.toBeNull()
@@ -417,7 +420,7 @@ describe('useRemittancePreview', () => {
     const { result } = setup()
     await startWithAccount(result)
     act(() => {
-      result.current.generate(['doc-1'], '10/09/2026')
+      result.current.generate(['doc-1'], '10/09/2026', ['financial.paymentMethod.TED'])
     })
 
     await waitFor(() => {

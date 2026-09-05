@@ -34,6 +34,9 @@ const REMITTANCE_ELIGIBLE_STATUS = 'Aprovado'
 
 const DASH = '—'
 
+/** Título marcado cuja forma de pagamento o grid não conhece. Ver `checkedPaymentMethodTags`. */
+const UNKNOWN_PAYMENT_METHOD_TAG = 'financial.remittance.generate.paymentMethodUnknown'
+
 export type RemittanceSelection = Readonly<{
   /** TÍTULOS elegíveis — é o que vai no corpo do pré-voo. */
   payableIds: readonly string[]
@@ -330,6 +333,26 @@ export type PreviewView = Readonly<{
   summary: PreviewSummary
   /** TÍTULOS que irão na geração — só os marcados. */
   checkedPayableIds: readonly string[]
+  /**
+   * As FORMAS DE PAGAMENTO distintas entre os títulos marcados, sem repetição, na ordem do grid. Tags
+   * i18n — a view traduz, como na coluna "Forma" da tabela, que é de onde este dado sai.
+   *
+   * Existe para o COMPROVANTE, e viaja daqui porque é aqui que a seleção ainda existe: depois de gerar,
+   * os títulos viram `Transmitido` e saem de `checked` (mesma razão de `paymentDate` — ver `SentRemittance`).
+   *
+   * ⚠️ É A FORMA DO CADASTRO, NÃO A FORMA DO ARQUIVO, e as duas podem divergir. O que o CNAB escreve é
+   * decidido na geração, pelo `batchProfileFor` do core-api: `transfer` vira crédito em conta (`01`) ou
+   * TED (`41`) conforme o banco do favorecido seja ou não o do cedente, e `billet` vira `30` ou `31`
+   * conforme o banco emissor lido do código de barras. Então um título cadastrado como TED para um
+   * favorecido do Bradesco sai do arquivo como crédito em conta, e o contrário também acontece.
+   *
+   * O front NÃO tem como fechar essa diferença: a linha do pré-voo traz a rota, mas não o banco do
+   * favorecido nem o código de barras, e o comprovante do core-api não devolve a forma por arquivo.
+   * Exibir o cadastro é decisão da P.O. (05/09/2026), tomada com essa divergência posta — o campo
+   * responde "que tipos de pagamento eu mandei", que é a pergunta do operador, não "que forma o CNAB
+   * escreveu", que é assunto do emissor.
+   */
+  checkedPaymentMethodTags: readonly string[]
 }>
 
 /**
@@ -472,9 +495,20 @@ export const toPreviewView = (
   const checkedPayableIds = checkedLines.map((l) => l.payableId)
   const remittanceTotal = sumCents(...checkedPayableIds.map((id) => lineByPayable.get(id)?.valueCents))
 
+  // Formas distintas entre os MARCADOS — só eles vão ao arquivo. `Set` preserva a ordem de inserção, que
+  // aqui é a ordem do grid: mesma seleção, mesmo texto, sempre.
+  //
+  // ⚠️ Forma ausente vira tag PRÓPRIA em vez de sumir da lista. Descartá-la seria o padrão que este
+  // módulo já pagou duas vezes (`mapGaps` engolindo campo desconhecido): o comprovante afirmaria "mandei
+  // PIX" numa remessa que levava também um título de forma desconhecida, e ninguém veria a diferença.
+  const checkedPaymentMethodTags = [
+    ...new Set(checkedLines.map((l) => l.paymentMethodTag ?? UNKNOWN_PAYMENT_METHOD_TAG)),
+  ]
+
   return {
     lines: sorted,
     checkedPayableIds,
+    checkedPaymentMethodTags,
     summary: {
       checkedCount: checkedLines.length,
       titleCount: lines.length,
@@ -530,6 +564,14 @@ export type GeneratedRemittanceView = Readonly<{
   account: string
   /** O convênio (multipag) daquela remessa — o contrato a que o NSA pertence. */
   convenio: string
+  /**
+   * As formas de pagamento que foram na remessa, sem repetição. Tags i18n — a view traduz.
+   *
+   * Do LOTE, não por arquivo: mapear título → arquivo exigiria a forma do CNAB, que só o emissor decide
+   * (ver `checkedPaymentMethodTags`). Na prática o lote tem um arquivo só — a exclusividade do PIX
+   * impede a única mistura que o `fileGroupFor` do core-api reparte.
+   */
+  paymentMethodTags: readonly string[]
 }>
 
 /**
@@ -555,6 +597,14 @@ export type SentRemittance = Readonly<{
    * contas. Sem ele, dois arquivos de contas diferentes com NSAs parecidos são indistinguíveis na tela.
    */
   convenio: string
+  /**
+   * Os tipos de transação que foram na remessa (tags i18n, traduzidas pela view).
+   *
+   * ⚠️ Congelado no envio, pela MESMA razão de `account` e `convenio`: relê-lo do pré-voo depois de gerar
+   * devolveria lista VAZIA — os títulos viram `Transmitido`, saem de `remittable` e deixam de estar
+   * `checked`. O comprovante descreve o que já aconteceu.
+   */
+  paymentMethodTags: readonly string[]
 }>
 
 export const toReceiptView = (g: GeneratedRemittance, sent: SentRemittance): GeneratedRemittanceView => ({
@@ -569,6 +619,7 @@ export const toReceiptView = (g: GeneratedRemittance, sent: SentRemittance): Gen
   // Conta sem convênio não gera remessa (o binding só oferece as elegíveis), então na prática nunca é
   // vazio. O traço existe para não imprimir string vazia se algum dia essa garantia mudar de lugar.
   convenio: sent.convenio === '' ? DASH : sent.convenio,
+  paymentMethodTags: sent.paymentMethodTags,
 })
 
 /** Conta-cedente como o seletor precisa: id + rótulo pronto. A view não formata dado de domínio. */

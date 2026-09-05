@@ -2142,6 +2142,17 @@ export const ptBR: Catalog = {
   // O dia em que o banco executa. É o "quando sai o dinheiro?" — a única informação do comprovante que
   // o operador não reconfere em outro lugar depois de fechar o modal.
   'financial.remittance.generate.paymentDate': 'Pagamento em',
+  // OS TIPOS DE TRANSAÇÃO da remessa, sem repetição ("PIX", ou "Boleto · TED · Transferência Bancária").
+  //
+  // ⚠️ É a forma DO CADASTRO, a mesma da coluna "Forma" da conferência — não a forma que o CNAB escreveu.
+  // O emissor do core-api decide a sua na geração (crédito em conta `01` × TED `41`, conforme o banco do
+  // favorecido; boleto `30` × `31`, conforme o emissor do código de barras), e o front não tem esses dois
+  // dados. O rótulo diz "tipo de transação", e não "forma de lançamento", justamente para não prometer o
+  // vocabulário do arquivo. Decisão da P.O. em 05/09/2026, com a divergência posta.
+  'financial.remittance.generate.paymentMethods': 'Tipo de transação',
+  // Título marcado sem forma no cadastro. Aparece na lista em vez de sumir dela: uma remessa com um
+  // título de forma desconhecida não pode ser descrita como se só tivesse os tipos que deram certo.
+  'financial.remittance.generate.paymentMethodUnknown': 'Forma não informada',
   // Download do arquivo (specs/103) — cópia de conferência, homologação apenas.
   'financial.remittance.download.action': 'Baixar arquivo',
   'financial.remittance.download.running': 'Baixando…',
