@@ -108,6 +108,8 @@ const REASON_TAG: Record<PayoutGapReason, string> = {
  */
 const CHECK_DIGIT_PENDENCY = 'financial.remittance.preview.pendency.checkDigit'
 const GENERIC_PENDENCY = 'financial.remittance.preview.pendency.missingData'
+const PAYEE_DOCUMENT_MISSING_PENDENCY = 'financial.remittance.preview.pendency.missingPayeeDocument'
+const PAYEE_DOCUMENT_UNSUPPORTED_PENDENCY = 'financial.remittance.preview.pendency.payeeDocumentUnsupported'
 
 const BARCODE_PENDENCY: Record<PayoutGapReason, string> = {
   missing: 'financial.remittance.preview.pendency.missingBarcode',
@@ -214,9 +216,34 @@ export const applyPixExclusivity = (
 }
 
 const blockedPendencyTag = (route: VanRoute | null, gaps: readonly PayoutGap[]): string => {
+  // ── A inscrição do favorecido vem ANTES da régua por rota, e sem ela o rótulo MENTE ────────────
+  //
+  // O `switch` abaixo escolhe o rótulo pela ROTA, não pelo campo: PIX diz "falta a chave", TED diz
+  // "falta dado bancário", boleto cai no código de barras. Uma lacuna de `payee-document` não é
+  // nenhuma das três — e sem estas duas linhas ela era exibida com o texto da rota, mandando o
+  // operador procurar a chave PIX de um título cuja chave está lá.
+  //
+  // ⚠️ O detalhe campo+motivo existe, mas vive no TOOLTIP (`pendencyHint`). Tooltip não é onde o
+  // operador lê o impedimento — é o rótulo visível que ele lê, e é ele que precisa estar certo. É a
+  // mesma lição do #252/#332: barrar só funciona se a pessoa ENXERGAR o motivo e souber onde mexer.
+  const payeeDocument = gaps.find((g) => g.field === 'payee-document')
+
+  // ⚠️ `unmappable` PRIMEIRO, antes até do dígito divergente, e é a única precedência deste arquivo
+  // que não é por gravidade: é por AÇÃO. Todo outro impedimento da tela se resolve no cadastro; este
+  // não se resolve em lugar nenhum que o operador alcance — é CNPJ alfanumérico (ADR-0044) num campo
+  // que o layout do banco declara `Num`, e a saída é escalar (core-api#863). Se ele ficar atrás de
+  // um `check-digit-mismatch`, o operador conserta o dígito e bate na parede sem aviso.
+  if (payeeDocument?.reason === 'unmappable') return PAYEE_DOCUMENT_UNSUPPORTED_PENDENCY
+
   // Dígito divergente ganha do resto: é o único motivo em que o cadastro está COMPLETO, e confundi-lo
   // com falta de dado é exatamente o mal-entendido que o motivo foi criado para desfazer.
   if (gaps.some((g) => g.reason === 'check-digit-mismatch')) return CHECK_DIGIT_PENDENCY
+
+  // Inscrição ausente é pendência de cadastro como as outras — o que muda é o CAMPO, e é ele que o
+  // rótulo da rota não nomeia. Inclui o documento só com pontuação (`'---'`), que o core-api passou a
+  // classificar como `missing` em vez de `unmappable`: o cadastro está incompleto, e a ação é
+  // completá-lo, não escalar.
+  if (payeeDocument !== undefined) return PAYEE_DOCUMENT_MISSING_PENDENCY
 
   switch (route) {
     case 'transfer':

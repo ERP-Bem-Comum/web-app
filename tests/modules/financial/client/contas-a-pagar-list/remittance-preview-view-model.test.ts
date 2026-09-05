@@ -371,6 +371,30 @@ describe('toPreviewView — a pendência nomeia o dado DAQUELA forma de pagament
     )
   })
 
+  // ── A inscrição do favorecido (core-api#863/#948) ──────────────────────────────────────────────
+  //
+  // ⚠️ O rótulo é escolhido pela ROTA, e a inscrição não pertence a rota nenhuma: ela é escrita por
+  // TODAS as rotas com emissor. Sem régua própria, uma lacuna de `payee-document` saía com o texto da
+  // rota — "falta a chave PIX" para um título cuja chave está lá.
+  //
+  // O detalhe campo+motivo existe, mas vive no TOOLTIP. Tooltip não é onde o operador lê o
+  // impedimento; é o rótulo visível que ele lê (#252/#332).
+  for (const route of ['pix', 'transfer', 'billet'] as const) {
+    it(`inscrição ausente na rota ${route} não é confundida com a pendência da rota`, () => {
+      const tag = blocked(route, 'payee-document')?.pendencyTag
+      assert.equal(tag, 'financial.remittance.preview.pendency.missingPayeeDocument')
+    })
+  }
+
+  // ⚠️ O ÚNICO impedimento da tela cuja ação NÃO é "vá ao cadastro". CNPJ alfanumérico é válido desde
+  // 07/2026 (ADR-0044) e o layout do banco declara o campo `Num` — não há o que o operador conserte.
+  it('inscrição alfanumérica manda ESCALAR, e não "verifique o cadastro"', () => {
+    const tag = blocked('pix', 'payee-document', 'unmappable')?.pendencyTag
+    assert.equal(tag, 'financial.remittance.preview.pendency.payeeDocumentUnsupported')
+    assert.notEqual(tag, 'financial.remittance.preview.pendency.missingPayeeDocument')
+    assert.notEqual(tag, 'financial.remittance.preview.pendency.missingPixKey')
+  })
+
   it('⚠️ dígito divergente NÃO é cadastro incompleto — o rótulo não pede "completar"', () => {
     const tag = blocked('transfer', 'payee-account-digit', 'check-digit-mismatch')?.pendencyTag
     assert.equal(tag, 'financial.remittance.preview.pendency.checkDigit')
