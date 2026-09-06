@@ -837,6 +837,7 @@ const conta = (over: Partial<ReconciliationAccount> = {}): ReconciliationAccount
   bankCode: '237',
   bankName: 'Bradesco',
   branch: '3456',
+  branchDv: '7',
   accountNumber: '1234',
   accountDv: '3',
   alias: 'Espelho do golden',

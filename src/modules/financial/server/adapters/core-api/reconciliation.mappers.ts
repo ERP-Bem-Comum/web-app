@@ -258,6 +258,11 @@ const toCedenteAccount = (a: CoreApiCedenteAccount): CedenteAccount => ({
   bankCode: a.bankCode,
   bankName: a.bankName ?? a.bankCode,
   branch: a.agency,
+  // core-api#856: o DV da agência voltou a existir no contrato, e é AQUI que ele se perdia antes de
+  // chegar à tela — exatamente o que aconteceu com o convênio na #722, duas linhas abaixo. `null` do
+  // backend vira `''`: "a conta não tem o dado", e é isso que mantém a cobrança do dígito de pé para
+  // quem realmente não o preencheu.
+  branchDv: a.agencyDigit ?? '',
   accountNumber: a.accountNumber,
   accountDv: a.accountDigit,
   alias: a.nickname ?? a.bankName ?? a.bankCode,

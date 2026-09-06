@@ -32,6 +32,13 @@ export type ReconciliationAccount = Readonly<{
   bankCode: string
   bankName: string
   branch: string
+  /**
+   * DV da agência (core-api#856) — irmão de `accountDv`. `''` quando a conta não tem o dado.
+   *
+   * ⚠️ SEPARADO de `branch`, e não dentro dele: a base ocupa as posições 053-057 do header CNAB e o DV
+   * a 058. Junto num campo só, o separador se perde e a agência sai deslocada, sem nada acusar.
+   */
+  branchDv: string
   accountNumber: string
   accountDv: string
   alias: string
@@ -101,6 +108,8 @@ export type CreateCedenteAccountInput = Readonly<{
   type: AccountType
   typeLabel?: string // #206: texto livre p/ Cartao/Outro
   agency: string
+  /** DV da agência (core-api#856) — UMA posição, sem separador. Omitido quando vazio. */
+  agencyDigit?: string
   accountNumber: string
   accountDigit: string
   document: string
@@ -118,6 +127,8 @@ export type EditCedenteAccountInput = Readonly<{
   type?: AccountType
   typeLabel?: string
   agency?: string
+  /** DV da agência (core-api#856). Reenviar o mesmo valor não é troca — o backend responde 200. */
+  agencyDigit?: string
   accountNumber?: string
   accountDigit?: string
   nickname?: string

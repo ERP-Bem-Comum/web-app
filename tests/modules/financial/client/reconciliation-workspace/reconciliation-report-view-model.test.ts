@@ -124,6 +124,7 @@ describe('formatAccountNumber', () => {
     bankCode: '001',
     bankName: 'Banco do Brasil',
     branch: '1234',
+    branchDv: '5',
     accountNumber: '56789',
     accountDv: '0',
     alias: 'Conta Corrente BB',

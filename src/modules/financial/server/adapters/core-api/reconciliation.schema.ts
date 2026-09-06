@@ -67,6 +67,18 @@ export const CoreApiCedenteAccountSchema = z.object({
   type: z.string().trim().nullable().catch(null),
   typeLabel: z.string().trim().nullable().catch(null), // #206: texto livre p/ cartao/outro
   agency: z.string().trim(),
+  /**
+   * DV da agência (core-api#856) — posição 058 do header CNAB, UMA posição só.
+   *
+   * `nullable` porque a conta cadastrada antes do campo existir volta com `null`, e isso não é erro: é
+   * o cadastro que realmente não tem o dado, e a tela precisa distinguir os dois casos para seguir
+   * cobrando o dígito de quem não o tem sem cobrá-lo de quem já o preencheu.
+   *
+   * ⚠️ Campo PRÓPRIO, nunca dentro de `agency`. O core-api escreve `digits(agency, 5)` nas posições
+   * 053-057: um `'1234-5'` perderia o separador e sairia `12345` onde o banco espera `01234` — cinco
+   * dígitos, cabendo no campo, sem nenhum gate acusando.
+   */
+  agencyDigit: z.string().trim().nullable().catch(null),
   accountNumber: z.string().trim(),
   accountDigit: z.string().trim(),
   convenio: z.string().trim().catch(''),

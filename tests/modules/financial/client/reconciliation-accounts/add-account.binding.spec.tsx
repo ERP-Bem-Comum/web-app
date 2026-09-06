@@ -112,4 +112,49 @@ describe('useAddAccount — agência com DV obrigatório', () => {
     expect(payload?.agency).not.toContain('-')
     expect(payload?.agency).not.toBe('14872')
   })
+
+  // ── O DV passa a VIAJAR, em campo próprio (#401 / core-api#856) ───────────────
+  //
+  // Antes ele era exigido na tela e descartado no submit, porque o backend não tinha onde guardá-lo.
+  // Tem desde a #856: coluna `agency_digit` e `agencyDigit` no contrato.
+
+  it('CA1: o POST leva `agency` e `agencyDigit` SEPARADOS', async () => {
+    mockedCreate.mockResolvedValue(ok(undefined) as never)
+    const { result } = setup()
+    fillExceptAgency(result)
+    act(() => {
+      result.current.setAgency('14872')
+    })
+    act(() => {
+      result.current.submit()
+    })
+
+    await waitFor(() => {
+      expect(mockedCreate).toHaveBeenCalled()
+    })
+    const [payload] = mockedCreate.mock.calls[0] ?? []
+    expect(payload?.agency).toBe('1487')
+    expect(payload?.agencyDigit).toBe('2')
+  })
+
+  it('CA5: o DV tem UMA posição — a 058 do header não comporta duas', async () => {
+    // O campo já corta em 5 dígitos na digitação, então o DV nunca cresce. Este caso prende essa
+    // garantia pelo lado que importa: o que sai no corpo, e não o que entra no input.
+    mockedCreate.mockResolvedValue(ok(undefined) as never)
+    const { result } = setup()
+    fillExceptAgency(result)
+    act(() => {
+      result.current.setAgency('1487299') // o operador cola um número longo
+    })
+    act(() => {
+      result.current.submit()
+    })
+
+    await waitFor(() => {
+      expect(mockedCreate).toHaveBeenCalled()
+    })
+    const [payload] = mockedCreate.mock.calls[0] ?? []
+    expect(payload?.agencyDigit).toHaveLength(1)
+    expect(payload?.agency).toHaveLength(4)
+  })
 })
