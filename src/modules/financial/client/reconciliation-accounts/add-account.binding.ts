@@ -127,7 +127,19 @@ export function useAddAccount(
         reset()
         onCreated()
       } else {
-        setErrorTag(reconciliationErrorTag(res.error))
+        // ⚠️ `conflict` NESTE formulário tem uma causa só: a chave natural (banco/agência/conta/dígito)
+        // já existe — `cedente-account-duplicate`. As outras recusas 409 do módulo são de outras rotas
+        // (`already-closed` ao encerrar; `bank-data-locked` e `convenio-already-set` ao editar), então
+        // nomear a causa aqui não é chute: é saber qual operação foi disparada.
+        //
+        // O genérico "Conflito ao processar a solicitação" deixava o operador sem nada a fazer — foi
+        // exatamente o que travou o cadastro em produção (06/09/2026), com a conta duplicada ENCERRADA
+        // segurando a chave e a tela sem dizer isso.
+        setErrorTag(
+          res.error === 'conflict'
+            ? 'financial.recon.add.error.duplicate'
+            : reconciliationErrorTag(res.error),
+        )
       }
     },
   })

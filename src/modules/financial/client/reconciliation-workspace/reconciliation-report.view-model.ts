@@ -15,6 +15,7 @@ import type {
 } from '#modules/financial/client/data/model/reconciliation.model.ts'
 import { centsToBRL } from '#modules/financial/client/data/money.ts'
 
+import { formatBranch } from '#modules/financial/client/reconciliation-accounts/reconciliation-accounts.view-model.ts'
 import { formatDateBR } from './reconciliation-workspace.view-model.ts'
 
 // Re-export p/ a view (ui) formatar dinheiro sem importar de client/data (boundary §I).
@@ -131,4 +132,4 @@ export type ReportViewState =
 export const formatAccountNumber = (account: ReconciliationAccount | null): string =>
   account === null
     ? ''
-    : `${account.bankName} · Ag. ${account.branch} · C/C ${account.accountNumber}-${account.accountDv}`
+    : `${account.bankName} · Ag. ${formatBranch(account.branch, account.branchDv)} · C/C ${account.accountNumber}-${account.accountDv}`

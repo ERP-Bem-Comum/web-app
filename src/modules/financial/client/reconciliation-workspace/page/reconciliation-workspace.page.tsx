@@ -18,6 +18,7 @@ import {
   sortPendingByPayment,
   type AssocTab,
 } from '../reconciliation-workspace.view-model.ts'
+import { formatBranch } from '#modules/financial/client/reconciliation-accounts/reconciliation-accounts.view-model.ts'
 import { ImportMenu } from '../components/import-menu.component.tsx'
 import { ImportsList } from '../components/imports-list.component.tsx'
 import { SuggestionPane } from '../components/suggestion-pane.component.tsx'
@@ -91,7 +92,7 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
                     <>
                       <span>{`${account.bankCode} ${account.bankName}`}</span>
                       <span className={s.accMetaDot}>{DOT}</span>
-                      <span>{`Ag ${account.branch}`}</span>
+                      <span>{`Ag ${formatBranch(account.branch, account.branchDv)}`}</span>
                       <span className={s.accMetaDot}>{DOT}</span>
                       <span>{`CC ${account.accountNumber}-${account.accountDv}`}</span>
                     </>
@@ -448,7 +449,7 @@ export function ReconciliationWorkspacePage({ accountRef }: ReconciliationWorksp
             fileAccountLabel={vm.import.mismatch?.fileAccountLabel ?? null}
             currentAccountLabel={
               account !== null
-                ? `${account.bankCode} ${account.bankName} · Ag ${account.branch} · CC ${account.accountNumber}-${account.accountDv}`
+                ? `${account.bankCode} ${account.bankName} · Ag ${formatBranch(account.branch, account.branchDv)} · CC ${account.accountNumber}-${account.accountDv}`
                 : ''
             }
             onConfirm={vm.import.confirmImport}
