@@ -141,6 +141,10 @@ export function ReconciliationAccountsPage() {
               onRequestDelete={(row) => {
                 vm.remove.request(row.id, row.alias)
               }}
+              // ⚠️ FALSO ATÉ O CORE-API CONSERTAR o `naturalKeySlot` ausente no `set:` do upsert
+              // (`cedente-account-store.drizzle.ts`) — hoje excluir sempre volta 503. A cadeia do front
+              // está pronta e testada; é só este literal que muda no dia. Ver `canDelete` no grid.
+              canDelete={false}
               reopeningId={vm.reopen.reopeningId}
             />
           </div>
