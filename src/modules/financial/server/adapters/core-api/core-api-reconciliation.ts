@@ -220,6 +220,9 @@ export const createCoreApiReconciliationClient = (
       type: typeMap[i.type],
       ...(i.typeLabel !== undefined ? { typeLabel: i.typeLabel } : {}), // #206
       agency: i.agency,
+      // core-api#856: campo PRÓPRIO, nunca concatenado em `agency` — a base vai nas posições 053-057 e
+      // o DV na 058. Só viaja quando existe: `''` afirmaria um dígito que o operador não deu.
+      ...(i.agencyDigit !== undefined ? { agencyDigit: i.agencyDigit } : {}),
       accountNumber: i.accountNumber,
       accountDigit: i.accountDigit,
       document: i.document,
@@ -242,6 +245,26 @@ export const createCoreApiReconciliationClient = (
     if (isErr(r)) return err(mapHttpError(r.error))
     return cedenteAccountToModel(r.value)
   },
+  reopenCedenteAccount: async (id, token) => {
+    // core-api#995 B1: Closed → Active. Sem body, como o `close`. Devolve a conta atualizada, e é dela
+    // que a tela relê o status — nunca de um otimismo local.
+    const r = await resultFetch<unknown>(`${baseUrl}/cedente-accounts/${id}/reopen`, {
+      method: 'POST',
+      token,
+    })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return cedenteAccountToModel(r.value)
+  },
+  deleteCedenteAccount: async (id, token) => {
+    // core-api#995 B3: Closed → Deleted (SOFT). O verbo é DELETE, mas a resposta traz a conta — o
+    // backend não apaga a linha, e é isso que mantém remessas e conciliações resolvendo o vínculo.
+    const r = await resultFetch<unknown>(`${baseUrl}/cedente-accounts/${id}`, {
+      method: 'DELETE',
+      token,
+    })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return cedenteAccountToModel(r.value)
+  },
   editCedenteAccount: async (i, token) => {
     // PATCH parcial: só as chaves presentes (todas opcionais). `type` mapeado p/ o enum minúsculo do backend.
     const typeMap = {
@@ -257,6 +280,10 @@ export const createCoreApiReconciliationClient = (
       ...(i.type !== undefined ? { type: typeMap[i.type] } : {}),
       ...(i.typeLabel !== undefined ? { typeLabel: i.typeLabel } : {}),
       ...(i.agency !== undefined ? { agency: i.agency } : {}),
+      // core-api#856. Ao contrário do convênio, este NÃO é preenchível-uma-vez: reenviar o mesmo valor
+      // não é troca, e o backend responde 200. Por isso ele acompanha `agency` em todo PATCH, como já
+      // fazem `accountNumber` e `accountDigit`.
+      ...(i.agencyDigit !== undefined ? { agencyDigit: i.agencyDigit } : {}),
       ...(i.accountNumber !== undefined ? { accountNumber: i.accountNumber } : {}),
       ...(i.accountDigit !== undefined ? { accountDigit: i.accountDigit } : {}),
       ...(i.nickname !== undefined ? { nickname: i.nickname } : {}),

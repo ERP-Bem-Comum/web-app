@@ -27,12 +27,17 @@ import type {
 
 import type { ReconciliationAccount } from '#modules/financial/client/data/model/reconciliation.model.ts'
 
+import { formatBranch } from '#modules/financial/client/reconciliation-accounts/reconciliation-accounts.view-model.ts'
+
 import type { GridRow } from './contas-a-pagar.view-model.ts'
 
 /** Status do título que torna o documento candidato à remessa. Fora dele, nem chega ao core-api. */
 const REMITTANCE_ELIGIBLE_STATUS = 'Aprovado'
 
 const DASH = '—'
+
+/** Título marcado cuja forma de pagamento o grid não conhece. Ver `checkedPaymentMethodTags`. */
+const UNKNOWN_PAYMENT_METHOD_TAG = 'financial.remittance.generate.paymentMethodUnknown'
 
 export type RemittanceSelection = Readonly<{
   /** TÍTULOS elegíveis — é o que vai no corpo do pré-voo. */
@@ -79,6 +84,7 @@ const FIELD_TAG: Record<PayoutField, string> = {
   'payee-agency': 'financial.remittance.preview.field.agency',
   'payee-account-number': 'financial.remittance.preview.field.accountNumber',
   'payee-account-digit': 'financial.remittance.preview.field.accountDigit',
+  'payee-document': 'financial.remittance.preview.field.payeeDocument',
   'payment-detail': 'financial.remittance.preview.field.paymentDetail',
 }
 
@@ -107,6 +113,8 @@ const REASON_TAG: Record<PayoutGapReason, string> = {
  */
 const CHECK_DIGIT_PENDENCY = 'financial.remittance.preview.pendency.checkDigit'
 const GENERIC_PENDENCY = 'financial.remittance.preview.pendency.missingData'
+const PAYEE_DOCUMENT_MISSING_PENDENCY = 'financial.remittance.preview.pendency.missingPayeeDocument'
+const PAYEE_DOCUMENT_UNSUPPORTED_PENDENCY = 'financial.remittance.preview.pendency.payeeDocumentUnsupported'
 
 const BARCODE_PENDENCY: Record<PayoutGapReason, string> = {
   missing: 'financial.remittance.preview.pendency.missingBarcode',
@@ -116,48 +124,131 @@ const BARCODE_PENDENCY: Record<PayoutGapReason, string> = {
   'check-digit-mismatch': 'financial.remittance.preview.pendency.missingBarcode',
 }
 
+// ── [03/09] SAIU: a mitigação de tela das rotas SEM emissor ────────────────────
+//
+// Havia aqui um `ROUTES_WITHOUT_EMITTER = {'pix'}` com `routeHasEmitter`/`NO_EMITTER_PENDENCY`: o
+// pré-voo dizia `ready` para PIX, o emissor recusava, e o montador abortava o ARQUIVO INTEIRO — um
+// título PIX na seleção derrubava a remessa dos outros. Enquanto a régua verdadeira não existia no
+// backend, ela morava aqui.
+//
+// As duas condições da remoção fecharam:
+//  · core-api#837 (PR #925) — o backend NOMEIA o caso: a linha volta com status `no-issuer`, e a tela
+//    passa a exibir a pendência por DADO do backend (ver `pendency.noIssuer`, abaixo), não por
+//    inferência de rota;
+//  · core-api#936 — o PIX GANHOU emissor (par A+B na forma `45`), na `dev` desde 01/09 (rc.2). O
+//    pressuposto que sustentava a mitigação deixou de ser verdade: manter o bloqueio esconderia do
+//    operador uma remessa que o backend já sabe gerar, e a frase ("não tem esse trilho") passaria a
+//    mentir.
+//
+// O gatilho que estava escrito aqui — "a homologação devolver `no-issuer` para um PIX" — nunca
+// dispararia: com o #936, o pré-voo do PIX responde `ready`, não `no-issuer`. Fica o registro para
+// que a próxima mitigação por rota nasça com um gatilho que o próprio sucesso não invalide.
+//
+// ⚠️ `tax-guide` NUNCA esteve nesta régua, e continua fora: é a rota das retenções, e a #794 decidiu
+// "destacar, não travar" (P.O., 29/08). Quem a julga é o backend, pelo `no-issuer`.
+
 /**
- * ⚠️ MITIGAÇÃO DE TELA (temporária) — rotas SEM emissor no CNAB.
+ * ⚠️ PIX É EXCLUSIVO — decisão da P.O. em 03/09/2026 (core-api#948, CA4).
  *
- * O pré-voo do core-api devolve `ready` para PIX e guia de tributo quando o cadastro está completo, mas o
- * emissor recusa as duas (`batchProfileFor` → `remittance-launch-form-unsupported`). Como o montador ABORTA
- * o arquivo inteiro nesse caso, um único título PIX na seleção derruba a remessa dos outros — e o operador
- * só descobre no clique de gerar, com erro genérico (o backend colapsa o slug).
+ * "Habilita só em remessa com todas as transações com o pagamento do tipo Pix. Se acontecer de
+ * selecionar Pix e TED junto, o Pix deve ficar desmarcado. Então o sistema deve alertar ao usuário."
  *
- * A resposta do pré-voo NÃO traz o "não planejado" que o planner calcula, então não há como avisar por dado
- * do backend: a régua é aqui, pela ROTA que a própria resposta já informa.
+ * O desempate é assimétrico DE PROPÓSITO: quem cai é o PIX, nunca o TED. A remessa das outras formas
+ * segue; o PIX vai em remessa própria.
  *
- * **Remover quando o emissor suportar a rota** — a régua verdadeira é do core-api, e manter duas é como
- * este módulo já se machucou antes. Enquanto isso, é a diferença entre avisar e deixar a remessa quebrar.
+ * ⚠️ Isto NÃO é a mesma coisa que a exclusividade de ARQUIVO, que já existe e é do layout: o
+ * `fileGroupFor` do core-api já põe o PIX em grupo próprio, então o arquivo nunca sairia misto. O que
+ * esta régua acrescenta é a exclusividade da REMESSA — um lote, uma modalidade, um comprovante, um
+ * retorno. Sem ela, uma seleção mista geraria DOIS arquivos no mesmo lote, cada um queimando o seu NSA.
+ *
+ * A régua do servidor é a de verdade (core-api#948, CA4: recusa 4xx antes do `allocateNsa`); esta aqui
+ * existe porque é na tela que o operador ainda tem como consertar — e porque a rota é alcançável sem
+ * passar por ela.
  */
-// ⚠️ ESCOPO: só `pix` — e `tax-guide` fica de fora POR DECISÃO, não por esquecimento.
-//
-// O emissor recusa `tax-guide` do mesmo jeito que o PIX, então uma retenção por guia numa seleção também
-// derruba o arquivo. Mas essa é a rota das RETENÇÕES, e a #794 decidiu que retenção apta segue remissível
-// ("destacar, não travar"). Levado à P.O. em 29/08 com o modo de falha explicado; decisão: **manter como
-// está**. Reportado no core-api#890 para entrar no escopo do emissor, não da tela.
-// ⚠️ [01/09] O core-api#837 (PR #925) JÁ entrou na `dev` e o backend agora nomeia o caso como
-// `no-issuer` — o que torna esta régua redundante EM TESE. Ela fica assim mesmo, e a razão é
-// sequenciamento, não esquecimento: enquanto a homologação não tiver o #925, remover isto faria o PIX
-// voltar a aparecer como APTO, o operador geraria, e o montador abortaria o arquivo inteiro — a
-// regressão que esta mitigação existe para evitar.
-//
-// GATILHO DE REMOÇÃO, concreto: o pré-voo da homologação devolver `no-issuer` para um título PIX.
-// Aí esta constante, `routeHasEmitter` e `NO_EMITTER_PENDENCY` saem juntos, e a régua fica só no
-// backend — que é onde ela deve estar.
-const ROUTES_WITHOUT_EMITTER: ReadonlySet<VanRoute> = new Set<VanRoute>(['pix'])
+const PIX_NOT_EXCLUSIVE_PENDENCY = 'financial.remittance.preview.pendency.pixNotExclusive'
 
-/** A rota tem emissor no CNAB? `null` (rota desconhecida) não é barrada aqui — o backend é quem julga. */
-export const routeHasEmitter = (route: VanRoute | null): boolean =>
-  route === null || !ROUTES_WITHOUT_EMITTER.has(route)
+/**
+ * A seleção MARCADA permite que o PIX entre? Só se nada além de PIX estiver marcado.
+ *
+ * Avalia o que está marcado AGORA, e não a seleção que veio do grid: desmarcando os títulos das outras
+ * formas, a seleção vira exclusiva e as linhas PIX voltam a ficar operáveis. Sem isso o operador não
+ * teria como chegar a uma remessa PIX a partir de uma seleção mista sem voltar ao grid e recomeçar.
+ *
+ * Não circula: a régua só DESMARCA PIX, e desmarcar PIX não muda o que ela pergunta (se há não-PIX
+ * marcado). Uma passada basta.
+ *
+ * Seleção vazia devolve `true` — nada marcado não impede nada, e o PIX que o operador marcar depois
+ * será julgado pela seleção que existir então.
+ *
+ * ⚠️ Rota `null` (desconhecida) conta como NÃO-PIX e portanto barra o PIX. É o lado seguro da dúvida:
+ * a régua exige que TODAS as transações sejam PIX, e uma rota que não sabemos qual é não prova isso.
+ */
+export const selectionAllowsPix = (checkedRoutes: readonly (VanRoute | null)[]): boolean =>
+  checkedRoutes.every((r) => r === 'pix')
 
-/** Pendência da rota sem emissor — nenhum cadastro resolve, então a frase não pede correção de dado. */
-const NO_EMITTER_PENDENCY = 'financial.remittance.preview.pendency.pixNoEmitter'
+/** Uma linha do pré-voo com a rota ao lado — a rota não vai para a view, mas a régua precisa dela. */
+export type RoutedPreviewLine = Readonly<{ view: PreviewLineView; route: VanRoute | null }>
+
+/**
+ * Aplica a exclusividade do PIX sobre as linhas JÁ julgadas uma a uma.
+ *
+ * Só o PIX cai, e só quando há não-PIX marcado. Uma linha PIX já impedida por outro motivo não é
+ * tocada: ela continua exibindo a SUA pendência, que é a que o operador precisa ler — trocá-la por
+ * "não é remessa exclusiva" esconderia o motivo verdadeiro atrás de um efeito colateral.
+ *
+ * Vive fora de `toPreviewView` para ser exercitada sozinha, com a seleção montada à mão: é a única
+ * régua da tela que depende das OUTRAS linhas, e provar isso por dentro do mapeamento inteiro custaria
+ * uma fixture por caso.
+ */
+export const applyPixExclusivity = (
+  baseLines: readonly RoutedPreviewLine[],
+): Readonly<{ lines: readonly PreviewLineView[]; droppedCount: number }> => {
+  const allowed = selectionAllowsPix(baseLines.filter((l) => l.view.checked).map((l) => l.route))
+  if (allowed) return { lines: baseLines.map((l) => l.view), droppedCount: 0 }
+
+  const dropped = new Set(
+    baseLines.filter((l) => l.route === 'pix' && l.view.remittable).map((l) => l.view.payableId),
+  )
+
+  return {
+    lines: baseLines.map((l) =>
+      dropped.has(l.view.payableId)
+        ? { ...l.view, remittable: false, checked: false, pendencyTag: PIX_NOT_EXCLUSIVE_PENDENCY }
+        : l.view,
+    ),
+    droppedCount: dropped.size,
+  }
+}
 
 const blockedPendencyTag = (route: VanRoute | null, gaps: readonly PayoutGap[]): string => {
+  // ── A inscrição do favorecido vem ANTES da régua por rota, e sem ela o rótulo MENTE ────────────
+  //
+  // O `switch` abaixo escolhe o rótulo pela ROTA, não pelo campo: PIX diz "falta a chave", TED diz
+  // "falta dado bancário", boleto cai no código de barras. Uma lacuna de `payee-document` não é
+  // nenhuma das três — e sem estas duas linhas ela era exibida com o texto da rota, mandando o
+  // operador procurar a chave PIX de um título cuja chave está lá.
+  //
+  // ⚠️ O detalhe campo+motivo existe, mas vive no TOOLTIP (`pendencyHint`). Tooltip não é onde o
+  // operador lê o impedimento — é o rótulo visível que ele lê, e é ele que precisa estar certo. É a
+  // mesma lição do #252/#332: barrar só funciona se a pessoa ENXERGAR o motivo e souber onde mexer.
+  const payeeDocument = gaps.find((g) => g.field === 'payee-document')
+
+  // ⚠️ `unmappable` PRIMEIRO, antes até do dígito divergente, e é a única precedência deste arquivo
+  // que não é por gravidade: é por AÇÃO. Todo outro impedimento da tela se resolve no cadastro; este
+  // não se resolve em lugar nenhum que o operador alcance — é CNPJ alfanumérico (ADR-0044) num campo
+  // que o layout do banco declara `Num`, e a saída é escalar (core-api#863). Se ele ficar atrás de
+  // um `check-digit-mismatch`, o operador conserta o dígito e bate na parede sem aviso.
+  if (payeeDocument?.reason === 'unmappable') return PAYEE_DOCUMENT_UNSUPPORTED_PENDENCY
+
   // Dígito divergente ganha do resto: é o único motivo em que o cadastro está COMPLETO, e confundi-lo
   // com falta de dado é exatamente o mal-entendido que o motivo foi criado para desfazer.
   if (gaps.some((g) => g.reason === 'check-digit-mismatch')) return CHECK_DIGIT_PENDENCY
+
+  // Inscrição ausente é pendência de cadastro como as outras — o que muda é o CAMPO, e é ele que o
+  // rótulo da rota não nomeia. Inclui o documento só com pontuação (`'---'`), que o core-api passou a
+  // classificar como `missing` em vez de `unmappable`: o cadastro está incompleto, e a ação é
+  // completá-lo, não escalar.
+  if (payeeDocument !== undefined) return PAYEE_DOCUMENT_MISSING_PENDENCY
 
   switch (route) {
     case 'transfer':
@@ -230,6 +321,13 @@ export type PreviewSummary = Readonly<{
    * ele passa despercebido, e o imposto marcado sai por TED ao fornecedor sem nenhuma pendência.
    */
   retentionCheckedCount: number
+  /**
+   * Títulos PIX que a régua de exclusividade desmarcou (ver `selectionAllowsPix`). `0` = sem alerta.
+   *
+   * Precisa de aviso no TOPO, e não só da pendência na linha: o título foi desmarcado por causa de
+   * OUTRA linha, e numa lista longa o operador veria o PIX sumir do total sem nada explicando por quê.
+   */
+  pixNotExclusiveCount: number
 }>
 
 export type PreviewView = Readonly<{
@@ -237,6 +335,26 @@ export type PreviewView = Readonly<{
   summary: PreviewSummary
   /** TÍTULOS que irão na geração — só os marcados. */
   checkedPayableIds: readonly string[]
+  /**
+   * As FORMAS DE PAGAMENTO distintas entre os títulos marcados, sem repetição, na ordem do grid. Tags
+   * i18n — a view traduz, como na coluna "Forma" da tabela, que é de onde este dado sai.
+   *
+   * Existe para o COMPROVANTE, e viaja daqui porque é aqui que a seleção ainda existe: depois de gerar,
+   * os títulos viram `Transmitido` e saem de `checked` (mesma razão de `paymentDate` — ver `SentRemittance`).
+   *
+   * ⚠️ É A FORMA DO CADASTRO, NÃO A FORMA DO ARQUIVO, e as duas podem divergir. O que o CNAB escreve é
+   * decidido na geração, pelo `batchProfileFor` do core-api: `transfer` vira crédito em conta (`01`) ou
+   * TED (`41`) conforme o banco do favorecido seja ou não o do cedente, e `billet` vira `30` ou `31`
+   * conforme o banco emissor lido do código de barras. Então um título cadastrado como TED para um
+   * favorecido do Bradesco sai do arquivo como crédito em conta, e o contrário também acontece.
+   *
+   * O front NÃO tem como fechar essa diferença: a linha do pré-voo traz a rota, mas não o banco do
+   * favorecido nem o código de barras, e o comprovante do core-api não devolve a forma por arquivo.
+   * Exibir o cadastro é decisão da P.O. (05/09/2026), tomada com essa divergência posta — o campo
+   * responde "que tipos de pagamento eu mandei", que é a pergunta do operador, não "que forma o CNAB
+   * escreveu", que é assunto do emissor.
+   */
+  checkedPaymentMethodTags: readonly string[]
 }>
 
 /**
@@ -270,7 +388,10 @@ export const toPreviewView = (
   // nem está no páreo". Quem informa que ficaram títulos de fora é o aviso do topo, com a contagem.
   const rows = selectedRows.filter((r) => r.status === REMITTANCE_ELIGIBLE_STATUS)
 
-  const lines: readonly PreviewLineView[] = rows.map((r) => {
+  // PRIMEIRA PASSADA — o veredito de cada linha isolada: o do backend, mais a régua de emissor. A
+  // rota viaja junto porque a segunda passada precisa dela, e o `PreviewLineView` não a carrega (a
+  // view não decide nada com a rota; ela só exibe o rótulo que já vem pronto).
+  const baseLines = rows.map((r): Readonly<{ view: PreviewLineView; route: VanRoute | null }> => {
     const line = lineByPayable.get(r.id)
 
     const { remittable, pendencyTag, gaps } = ((): Readonly<{
@@ -285,11 +406,9 @@ export const toPreviewView = (
           gaps: [],
         }
       }
+      // `ready` é `ready`: quem sabe se a rota tem emissor é o backend, e ele responde `no-issuer`
+      // quando não tem (core-api#837). A tela não infere mais nada pela rota.
       if (line.status === 'ready') {
-        // Ver `ROUTES_WITHOUT_EMITTER`: o backend diz `ready`, o emissor recusa e o arquivo inteiro cai.
-        if (!routeHasEmitter(line.route)) {
-          return { remittable: false, pendencyTag: NO_EMITTER_PENDENCY, gaps: [] }
-        }
         return { remittable: true, pendencyTag: null, gaps: [] }
       }
       return {
@@ -321,23 +440,34 @@ export const toPreviewView = (
     })()
 
     return {
-      payableId: r.id,
-      documentId: r.documentId,
-      paymentMethodTag: r.paymentMethod === null ? null : `financial.paymentMethod.${r.paymentMethod}`,
-      documentNumber: r.documentNumber,
-      supplier: r.supplier,
-      due: r.due,
-      // Valor DO TÍTULO (o filho tem o seu), não o líquido do documento — era essa a troca que fazia a
-      // linha do imposto exibir o valor do fornecedor.
-      net: r.netCents === null || r.netCents === '' ? DASH : centsToBRL(r.netCents),
-      remittable,
-      // Impedido nunca vai marcado: já nasce fora, e o operador não precisa desmarcar o que não pode ir.
-      checked: remittable && !unchecked.has(r.id),
-      pendencyTag,
-      gaps,
-      isRetention: r.isRetentionChild,
+      view: {
+        payableId: r.id,
+        documentId: r.documentId,
+        paymentMethodTag: r.paymentMethod === null ? null : `financial.paymentMethod.${r.paymentMethod}`,
+        documentNumber: r.documentNumber,
+        supplier: r.supplier,
+        due: r.due,
+        // Valor DO TÍTULO (o filho tem o seu), não o líquido do documento — era essa a troca que fazia
+        // a linha do imposto exibir o valor do fornecedor.
+        net: r.netCents === null || r.netCents === '' ? DASH : centsToBRL(r.netCents),
+        remittable,
+        // Impedido nunca vai marcado: já nasce fora, e o operador não precisa desmarcar o que não pode ir.
+        checked: remittable && !unchecked.has(r.id),
+        pendencyTag,
+        gaps,
+        isRetention: r.isRetentionChild,
+      },
+      route: line?.route ?? null,
     }
   })
+
+  // SEGUNDA PASSADA — a régua que olha a SELEÇÃO INTEIRA, e não a linha (ver `applyPixExclusivity`).
+  //
+  // Ela ENTROU EM SERVIÇO junto com a saída da mitigação de emissor (acima), e essa ordem é a própria
+  // decisão da P.O.: enquanto todo PIX era barrado, as duas juntas diriam coisas diferentes sobre o
+  // mesmo título; e liberar o PIX sem ela deixaria a seleção mista gerar DOIS arquivos no mesmo lote,
+  // cada um queimando o seu NSA.
+  const { lines, droppedCount: pixNotExclusiveCount } = applyPixExclusivity(baseLines)
 
   // Impedidos primeiro: é o que trava o lote.
   const sorted = [...lines].sort((a, b) => Number(a.remittable) - Number(b.remittable))
@@ -367,9 +497,20 @@ export const toPreviewView = (
   const checkedPayableIds = checkedLines.map((l) => l.payableId)
   const remittanceTotal = sumCents(...checkedPayableIds.map((id) => lineByPayable.get(id)?.valueCents))
 
+  // Formas distintas entre os MARCADOS — só eles vão ao arquivo. `Set` preserva a ordem de inserção, que
+  // aqui é a ordem do grid: mesma seleção, mesmo texto, sempre.
+  //
+  // ⚠️ Forma ausente vira tag PRÓPRIA em vez de sumir da lista. Descartá-la seria o padrão que este
+  // módulo já pagou duas vezes (`mapGaps` engolindo campo desconhecido): o comprovante afirmaria "mandei
+  // PIX" numa remessa que levava também um título de forma desconhecida, e ninguém veria a diferença.
+  const checkedPaymentMethodTags = [
+    ...new Set(checkedLines.map((l) => l.paymentMethodTag ?? UNKNOWN_PAYMENT_METHOD_TAG)),
+  ]
+
   return {
     lines: sorted,
     checkedPayableIds,
+    checkedPaymentMethodTags,
     summary: {
       checkedCount: checkedLines.length,
       titleCount: lines.length,
@@ -381,6 +522,7 @@ export const toPreviewView = (
       remittanceTotal: centsToBRL(remittanceTotal),
       pendingCount: lines.filter((l) => !l.remittable).length,
       retentionCheckedCount: checkedLines.filter((l) => l.isRetention).length,
+      pixNotExclusiveCount,
     },
   }
 }
@@ -420,16 +562,52 @@ export type GeneratedRemittanceView = Readonly<{
    * o que JÁ aconteceu; derivá-lo de estado que muda embaixo é o defeito, não o sintoma.
    */
   paymentDate: string
+  /** A conta que PAGOU, com o mesmo rótulo que o operador leu ao escolher. */
+  account: string
+  /** O convênio (multipag) daquela remessa — o contrato a que o NSA pertence. */
+  convenio: string
+  /**
+   * As formas de pagamento que foram na remessa, sem repetição. Tags i18n — a view traduz.
+   *
+   * Do LOTE, não por arquivo: mapear título → arquivo exigiria a forma do CNAB, que só o emissor decide
+   * (ver `checkedPaymentMethodTags`). Na prática o lote tem um arquivo só — a exclusividade do PIX
+   * impede a única mistura que o `fileGroupFor` do core-api reparte.
+   */
+  paymentMethodTags: readonly string[]
 }>
 
 /**
  * O que foi ENVIADO, capturado no clique — nunca relido do estado da tela depois.
  *
- * Só a data: a quantidade saiu do comprovante (a P.O. a lê na conferência anterior). O tipo permanece
- * porque o PROBLEMA que ele resolve não era da quantidade — é que o comprovante descreve um fato
- * passado enquanto a tela por baixo já mudou de estado.
+ * A quantidade saiu do comprovante (a P.O. a lê na conferência anterior). O tipo permanece porque o
+ * PROBLEMA que ele resolve não era da quantidade — é que o comprovante descreve um fato passado
+ * enquanto a tela por baixo já mudou de estado.
+ *
+ * ⚠️ `account` e `convenio` entram por ESSE mesmo motivo, e não por simetria: o seletor de conta segue
+ * editável com o comprovante na tela, então relê-los depois descreveria a conta que está escolhida
+ * AGORA, não a que pagou. Um comprovante que aponta a conta errada é pior que um comprovante sem conta.
  */
-export type SentRemittance = Readonly<{ paymentDate: string }>
+export type SentRemittance = Readonly<{
+  paymentDate: string
+  /** Rótulo COMPLETO da conta que pagou (ver `accountLabel`) — banco, agência e número. */
+  account: string
+  /**
+   * O convênio (multipag) sob o qual a remessa foi gerada.
+   *
+   * É o dado que faltava para o operador saber a QUAL contrato aquele NSA pertence: a sequência é do
+   * convênio, não da conta (core-api#943), e o mesmo número de convênio pode estar vinculado a várias
+   * contas. Sem ele, dois arquivos de contas diferentes com NSAs parecidos são indistinguíveis na tela.
+   */
+  convenio: string
+  /**
+   * Os tipos de transação que foram na remessa (tags i18n, traduzidas pela view).
+   *
+   * ⚠️ Congelado no envio, pela MESMA razão de `account` e `convenio`: relê-lo do pré-voo depois de gerar
+   * devolveria lista VAZIA — os títulos viram `Transmitido`, saem de `remittable` e deixam de estar
+   * `checked`. O comprovante descreve o que já aconteceu.
+   */
+  paymentMethodTags: readonly string[]
+}>
 
 export const toReceiptView = (g: GeneratedRemittance, sent: SentRemittance): GeneratedRemittanceView => ({
   files: g.files.map((f) => ({
@@ -439,6 +617,11 @@ export const toReceiptView = (g: GeneratedRemittance, sent: SentRemittance): Gen
     total: centsToBRL(f.totalCents),
   })),
   paymentDate: sent.paymentDate,
+  account: sent.account,
+  // Conta sem convênio não gera remessa (o binding só oferece as elegíveis), então na prática nunca é
+  // vazio. O traço existe para não imprimir string vazia se algum dia essa garantia mudar de lugar.
+  convenio: sent.convenio === '' ? DASH : sent.convenio,
+  paymentMethodTags: sent.paymentMethodTags,
 })
 
 /** Conta-cedente como o seletor precisa: id + rótulo pronto. A view não formata dado de domínio. */
@@ -447,11 +630,14 @@ export type ReconciliationAccountOption = Readonly<{ id: string; label: string }
 /**
  * Rótulo da conta que PAGA. Apelido primeiro (é como o operador a chama), banco/agência/conta em seguida
  * para desempatar contas do mesmo apelido — errar a conta aqui é pagar pela conta errada.
+ *
+ * ⚠️ UMA função para o seletor E para o comprovante, de propósito. O comprovante afirma "foi por esta
+ * conta"; se ele formatasse por conta própria, a frase do comprovante poderia divergir da que o
+ * operador leu ao escolher — e conferir viraria comparar duas grafias do mesmo dado.
  */
+export const accountLabel = (a: ReconciliationAccount): string =>
+  `${a.alias !== '' ? a.alias : a.bankName} · ${a.bankCode} · Ag. ${formatBranch(a.branch, a.branchDv)} · C/C ${a.accountNumber}-${a.accountDv}`
+
 export const toAccountOptions = (
   accounts: readonly ReconciliationAccount[],
-): readonly ReconciliationAccountOption[] =>
-  accounts.map((a) => ({
-    id: a.id,
-    label: `${a.alias !== '' ? a.alias : a.bankName} · ${a.bankCode} · Ag. ${a.branch} · C/C ${a.accountNumber}-${a.accountDv}`,
-  }))
+): readonly ReconciliationAccountOption[] => accounts.map((a) => ({ id: a.id, label: accountLabel(a) }))

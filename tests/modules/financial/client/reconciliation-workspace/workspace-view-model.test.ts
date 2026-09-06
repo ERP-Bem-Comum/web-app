@@ -319,6 +319,7 @@ describe('modal Alterar conta — groupAccountsForSwitch', () => {
     bankCode: '237',
     bankName: 'Bradesco',
     branch: '1462',
+    branchDv: '5',
     accountNumber: '0012345',
     accountDv: '7',
     alias: 'Bradesco · Movimento',

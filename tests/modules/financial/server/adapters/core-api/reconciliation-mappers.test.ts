@@ -267,6 +267,36 @@ describe('cedenteAccountsToModel / cedenteAccountToModel (#138)', () => {
       assert.equal(r2.value.typeLabel, null)
     }
   })
+
+  // ── O DV da agência ATRAVESSA o mapper (#401 / core-api#856) ──────────────────
+  //
+  // Era AQUI que ele se perdia: o core-api passou a devolver `agencyDigit` e o schema não o declarava,
+  // então o parse o descartava e a tela nunca soube que a conta tinha o dígito. Mesma classe de defeito
+  // do convênio (#722), no mesmo arquivo — e o efeito visível era a edição reabrir travada.
+
+  it('#856: `agencyDigit` do core-api chega à tela como `branchDv`', () => {
+    const r = cedenteAccountToModel({ ...raw, agencyDigit: '8' })
+    assert.ok(isOk(r))
+    if (isOk(r)) {
+      assert.equal(r.value.branchDv, '8')
+      // Separados, e assim têm de continuar: juntos, o header do CNAB sai deslocado.
+      assert.equal(r.value.branch, '1462')
+    }
+  })
+
+  it('conta ANTERIOR ao campo volta `null` e vira `` — ausência do dado, não erro', () => {
+    // É o que mantém a cobrança do dígito de pé para quem realmente não o preencheu (CA3).
+    const r = cedenteAccountToModel({ ...raw, agencyDigit: null })
+    assert.ok(isOk(r))
+    if (isOk(r)) assert.equal(r.value.branchDv, '')
+  })
+
+  it('campo AUSENTE na resposta não derruba o parse — `catch(null)` cobre o contrato velho', () => {
+    // `raw` não tem `agencyDigit`. Um backend anterior à #856 não pode fazer a lista inteira falhar.
+    const r = cedenteAccountsToModel([raw])
+    assert.ok(isOk(r))
+    if (isOk(r)) assert.equal(r.value[0]?.branchDv, '')
+  })
 })
 
 describe('accountStatementSummary (#139)', () => {

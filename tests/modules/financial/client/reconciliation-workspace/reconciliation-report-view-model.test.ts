@@ -124,6 +124,7 @@ describe('formatAccountNumber', () => {
     bankCode: '001',
     bankName: 'Banco do Brasil',
     branch: '1234',
+    branchDv: '5',
     accountNumber: '56789',
     accountDv: '0',
     alias: 'Conta Corrente BB',
@@ -140,7 +141,7 @@ describe('formatAccountNumber', () => {
   }
 
   it('deriva a identificação COM NÚMERO: banco · Ag · C/C (número-dígito)', () => {
-    assert.equal(formatAccountNumber(account), 'Banco do Brasil · Ag. 1234 · C/C 56789-0')
+    assert.equal(formatAccountNumber(account), 'Banco do Brasil · Ag. 1234-5 · C/C 56789-0')
   })
 
   it('sem conta resolvida (core-api#168 pendente) → string vazia (a view omite a linha)', () => {

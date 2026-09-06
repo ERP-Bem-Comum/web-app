@@ -50,8 +50,24 @@ const PREVIEW = {
   blockedTotalCents: '0',
 } as never
 
-/** Conta-cedente do jeito que o binding a lê: só `status`, `convenio` e `id` decidem alguma coisa aqui. */
-const account = (id: string, convenio: string, status = 'Active') => ({ id, convenio, status }) as never
+/**
+ * Conta-cedente do jeito que o binding a lê. `id`, `convenio` e `status` decidem elegibilidade; os
+ * campos de identificação entraram depois, quando o comprovante passou a nomear a conta que pagou —
+ * `accountLabel` os monta, e sem eles o rótulo congelado sairia com `undefined`.
+ */
+const account = (id: string, convenio: string, status = 'Active') =>
+  ({
+    id,
+    convenio,
+    status,
+    alias: `Conta ${id}`,
+    bankName: 'Bradesco',
+    bankCode: '237',
+    branch: '3456',
+    branchDv: '7',
+    accountNumber: '1234',
+    accountDv: '3',
+  }) as never
 
 const setup = () => {
   const client = new QueryClient({
@@ -95,7 +111,7 @@ const setupGenerated = async () => {
   const { result } = setup()
   await startWithAccount(result)
   act(() => {
-    result.current.generate(['doc-1'], '10/09/2026')
+    result.current.generate(['doc-1'], '10/09/2026', ['financial.paymentMethod.TED'])
   })
   await waitFor(() => {
     expect(result.current.generated).not.toBeNull()
@@ -232,7 +248,7 @@ describe('useRemittancePreview', () => {
     expect(result.current.notApprovedCount).toBe(2)
 
     act(() => {
-      result.current.generate(['doc-1'], '10/09/2026')
+      result.current.generate(['doc-1'], '10/09/2026', ['financial.paymentMethod.TED'])
     })
     await waitFor(() => {
       expect(result.current.generated).not.toBeNull()
@@ -306,7 +322,7 @@ describe('useRemittancePreview', () => {
     })
 
     act(() => {
-      result.current.generate(['doc-1'], '10/09/2026')
+      result.current.generate(['doc-1'], '10/09/2026', ['financial.paymentMethod.TED'])
     })
     expect(mockedGenerate).not.toHaveBeenCalled()
   })
@@ -318,7 +334,7 @@ describe('useRemittancePreview', () => {
     await startWithAccount(result)
 
     act(() => {
-      result.current.generate(['doc-1'], '10/09/2026')
+      result.current.generate(['doc-1'], '10/09/2026', ['financial.paymentMethod.TED'])
     })
 
     await waitFor(() => {
@@ -335,17 +351,53 @@ describe('useRemittancePreview', () => {
   it('congela a data de pagamento no clique — o comprovante não relê a tela', async () => {
     mocked.mockResolvedValue(ok(PREVIEW))
     mockedGenerate.mockResolvedValue(ok(RECEIPT) as never)
+    // DUAS contas: com uma só, o binding a escolheria sozinho (core-api#804) e o teste não provaria
+    // que o congelamento guarda a que o operador escolheu.
+    mockedAccounts.mockResolvedValue(ok([account('acc-1', '123456'), account('acc-2', '654321')]) as never)
     const { result } = setup()
     await startWithAccount(result)
 
     act(() => {
-      result.current.generate(['doc-1', 'doc-2'], '10/09/2026')
+      result.current.generate(['doc-1', 'doc-2'], '10/09/2026', ['financial.paymentMethod.TED'])
     })
 
     await waitFor(() => {
       expect(result.current.generated).not.toBeNull()
     })
-    expect(result.current.sent).toEqual({ paymentDate: '10/09/2026' })
+    // A CONTA e o CONVÊNIO congelam junto com a data, e pelo mesmo motivo: o seletor segue editável
+    // com o comprovante na tela, então relê-los depois nomearia a conta escolhida AGORA, não a que
+    // pagou. Comprovante que aponta a conta errada é pior que comprovante sem conta.
+    // Os TIPOS DE TRANSAÇÃO congelam pelo mesmo motivo e no mesmo instante: são leitura dos títulos
+    // MARCADOS, e a marcação é justamente o que o envio desfaz (os títulos viram `Transmitido`).
+    expect(result.current.sent).toEqual({
+      paymentDate: '10/09/2026',
+      account: 'Conta acc-1 · 237 · Ag. 3456-7 · C/C 1234-3',
+      convenio: '123456',
+      paymentMethodTags: ['financial.paymentMethod.TED'],
+    })
+  })
+
+  it('trocar a conta DEPOIS de gerar não reescreve o comprovante', async () => {
+    mocked.mockResolvedValue(ok(PREVIEW))
+    mockedGenerate.mockResolvedValue(ok(RECEIPT) as never)
+    mockedAccounts.mockResolvedValue(ok([account('acc-1', '123456'), account('acc-2', '654321')]) as never)
+    const { result } = setup()
+    await startWithAccount(result)
+
+    act(() => {
+      result.current.generate(['doc-1'], '10/09/2026', ['financial.paymentMethod.TED'])
+    })
+    await waitFor(() => {
+      expect(result.current.generated).not.toBeNull()
+    })
+
+    // O operador mexe no seletor com o comprovante aberto — acontece, e é o que o congelamento protege.
+    act(() => {
+      result.current.setCedenteAccountId('acc-2')
+    })
+
+    expect(result.current.sent?.account).toBe('Conta acc-1 · 237 · Ag. 3456-7 · C/C 1234-3')
+    expect(result.current.sent?.convenio).toBe('123456')
   })
 
   it('fechar esquece o que foi enviado — comprovante e o que ele descreve saem juntos', async () => {
@@ -369,7 +421,7 @@ describe('useRemittancePreview', () => {
     const { result } = setup()
     await startWithAccount(result)
     act(() => {
-      result.current.generate(['doc-1'], '10/09/2026')
+      result.current.generate(['doc-1'], '10/09/2026', ['financial.paymentMethod.TED'])
     })
 
     await waitFor(() => {

@@ -13,6 +13,11 @@ import {
   maskDateInput,
   dateInputToIso,
   formatUpdateDate,
+  agencyBase,
+  agencyDv,
+  agencyFromParts,
+  formatBranch,
+  toAccountRow,
 } from '../../../../../src/modules/financial/client/reconciliation-accounts/reconciliation-accounts.view-model.ts'
 import type { ReconciliationAccount } from '../../../../../src/modules/financial/client/data/model/reconciliation.model.ts'
 
@@ -22,6 +27,7 @@ const acc = (
   bankCode: '237',
   bankName: 'Bradesco',
   branch: '1462',
+  branchDv: '5',
   accountNumber: '0012345',
   accountDv: '7',
   alias: 'Conta Movimento',
@@ -198,5 +204,81 @@ describe('ReconciliationAccount expõe o CNPJ do cedente', () => {
   it('o document atravessa o model — sem ele não há como pré-preencher a conta nova', () => {
     const a = acc({ id: 'a1', document: '30275386000105' })
     assert.equal(a.document, '30275386000105')
+  })
+})
+
+// ── A agência PARTIDA em base + DV (#401 / core-api#856) ────────────────────────
+//
+// O header do CNAB trata os dois como campos distintos: a base zero-padded nas posições 053-057, o DV
+// sozinho na 058. Juntá-los num campo só é o defeito que estas funções existem para impedir —
+// `digits(agency, 5)` remove o separador antes do pad, e `'1462-8'` sai `14628` onde o banco espera
+// `01462`. Cinco dígitos, cabendo no campo, sem nenhum gate acusando.
+
+describe('agencyBase / agencyDv — a ida', () => {
+  it('parte os 5 dígitos em 4 + 1', () => {
+    assert.equal(agencyBase('14628'), '1462')
+    assert.equal(agencyDv('14628'), '8')
+  })
+
+  it('campo incompleto não inventa DV', () => {
+    assert.equal(agencyBase('1462'), '1462')
+    assert.equal(agencyDv('1462'), '')
+  })
+
+  it('⚠️ o DV nunca passa de UMA posição, venha o que vier', () => {
+    // A 058 tem uma só, e o core-api recusa mais que isso em vez de truncar.
+    assert.equal(agencyDv('1462899'), '8')
+    assert.equal(agencyDv('1462899').length, 1)
+  })
+})
+
+describe('agencyFromParts — a volta', () => {
+  it('remonta o campo da tela a partir do que o backend guarda separado', () => {
+    assert.equal(agencyFromParts('1462', '8'), '14628')
+  })
+
+  it('conta SEM DV volta com 4 dígitos e segue incompleta — ela de fato não tem o dado', () => {
+    assert.equal(agencyFromParts('1462', ''), '1462')
+  })
+
+  it('⚠️ agência LEGADA de 5 dígitos não consome a posição do DV', () => {
+    // Ler `branch + branchDv` cru cortaria em 5 e o dígito verdadeiro cairia fora. Cada parte vem da
+    // sua fonte justamente por isso.
+    assert.equal(agencyFromParts('14628', '9'), '14629')
+  })
+
+  it('texto do backend é normalizado — `branch` é string livre, não dígito garantido', () => {
+    assert.equal(agencyFromParts('1462-', '8'), '14628')
+  })
+})
+
+// ── A agência aparece COM o DV na tela (#401, follow-up) ────────────────────────
+//
+// O DV da conta sempre apareceu (`CC 1234-3`); o da agência, não (`Ag 3456`). O campo era exigido no
+// cadastro e sumia do grid — o operador gravava o dígito e não tinha onde conferi-lo. O texto era
+// montado em CINCO lugares, todos escrevendo `Ag ${branch}` cru; `formatBranch` é a fonte única.
+
+describe('formatBranch — a agência como se lê', () => {
+  it('junta base e DV com hífen', () => {
+    assert.equal(formatBranch('3456', '7'), '3456-7')
+  })
+
+  it('⚠️ conta SEM DV não ganha hífen pendurado', () => {
+    // `3456-` leria como dado corrompido, e o caso é legítimo: é a conta anterior à core-api#856.
+    assert.equal(formatBranch('3456', ''), '3456')
+  })
+
+  it('espaço em branco conta como ausência, não como DV', () => {
+    assert.equal(formatBranch('3456', ' '), '3456')
+  })
+
+  it('a linha do grid já sai formatada — a view não remonta nada', () => {
+    const row = toAccountRow(acc({ id: 'a1', branch: '3456', branchDv: '7' }))
+    assert.equal(row.branch, '3456-7')
+  })
+
+  it('conta antiga no grid mostra só a base', () => {
+    const row = toAccountRow(acc({ id: 'a1', branch: '3456', branchDv: '' }))
+    assert.equal(row.branch, '3456')
   })
 })

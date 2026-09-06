@@ -1565,8 +1565,43 @@ export const ptBR: Catalog = {
   'financial.recon.accounts.close.title': 'Encerrar conta bancária',
   'financial.recon.accounts.close.sub': 'A conta deixa de aparecer para novas conciliações.',
   'financial.recon.accounts.close.body': 'Tem certeza que deseja encerrar a conta',
+  // ⚠️ ESTE TEXTO JÁ ESTEVE ERRADO DUAS VEZES, e as duas versões anteriores ficam registradas porque a
+  // lição é a mesma:
+  //
+  //   v1 "Esta ação é irreversível: a conta não poderá ser reaberta."
+  //      Verdadeiro e INSUFICIENTE — calava a consequência que pegou a P.O. em produção (06/09/2026):
+  //      a chave bancária continua ocupada. "Se eu soubesse que barraria um novo cadastro eu não teria
+  //      feito." Barrar só funciona se a pessoa ENXERGAR o que aceita (#252/#332).
+  //
+  //   v2 acrescentou "NÃO poderá ser cadastrada de novo" — e nasceu com data de validade, porque a
+  //      core-api#995 (B1/B3) já estava desenhada. Durou horas.
+  //
+  // v3 (agora): encerrar É reversível — há Reabrir —, e a chave só é liberada pelo Excluir. O texto
+  // deixa de assustar e passa a dizer onde estão as duas saídas, que é o que o operador precisa saber
+  // ANTES de decidir. Se um dia Reabrir ou Excluir sumirem, é esta linha que mente primeiro.
   'financial.recon.accounts.close.warn':
-    'Esta ação é irreversível: a conta não poderá ser reaberta. O histórico e as conciliações já feitas são preservados.',
+    'A conta sai das listas de conciliação e de pagamento, e o banco, a agência e a conta continuam ocupados por ela — um cadastro novo com os mesmos dados será recusado. Isto NÃO é definitivo: a conta encerrada pode ser reaberta, ou excluída (o que libera a chave bancária). O histórico e as conciliações já feitas são preservados nos dois casos.',
+  // ── Reabrir (core-api#995 B1) ────────────────────────────────────────────────
+  // O desfazer que faltava. Sem modal: é o caminho de recuperação de quem errou, e desfazê-lo é só
+  // encerrar de novo — ver `reopen-account.binding.ts`.
+  'financial.recon.accounts.reopen.action': 'Reabrir conta',
+  'financial.recon.accounts.reopen.running': 'Reabrindo…',
+  // ── Excluir (core-api#995 B3) ────────────────────────────────────────────────
+  // ⚠️ Só a partir de conta ENCERRADA, então o texto não repete o que o encerramento já disse: aqui o
+  // recado é o que MUDA em relação a ficar encerrada — a linha some da listagem e a chave é liberada.
+  'financial.recon.accounts.delete.action': 'Excluir conta',
+  'financial.recon.accounts.delete.title': 'Excluir conta bancária',
+  'financial.recon.accounts.delete.sub': 'A conta sai da listagem e libera o cadastro daqueles dados.',
+  'financial.recon.accounts.delete.body': 'Tem certeza que deseja excluir a conta',
+  'financial.recon.accounts.delete.warn':
+    'A conta some da listagem e não há como trazê-la de volta pela tela. O banco, a agência e a conta ficam livres para um cadastro novo.',
+  // Dizer isto é parte do trabalho: sem a frase, "excluir" parece apagar conciliações e remessas — e o
+  // operador ou não clica, ou clica achando que apagou. As duas leituras erradas custam.
+  'financial.recon.accounts.delete.keepsHistory':
+    'O histórico é preservado: as remessas e conciliações já feitas continuam vinculadas a esta conta.',
+  'financial.recon.accounts.delete.cancel': 'Cancelar',
+  'financial.recon.accounts.delete.confirm': 'Excluir conta',
+  'financial.recon.accounts.delete.deleting': 'Excluindo…',
   'financial.recon.accounts.close.cancel': 'Cancelar',
   'financial.recon.accounts.close.confirm': 'Encerrar conta',
   'financial.recon.accounts.close.closing': 'Encerrando…',
@@ -1615,6 +1650,21 @@ export const ptBR: Catalog = {
   'financial.recon.add.hint.branch': 'Informe a agência com o dígito verificador.',
   'financial.recon.add.error.branchDigit':
     'Falta o dígito verificador da agência. Informe no formato 0000-0.',
+  // ⚠️ Texto PRÓPRIO em vez do `recon.error.conflict` genérico ("Conflito ao processar a solicitação"),
+  // que era o que a tela mostrava e não dizia nada a quem estava olhando.
+  //
+  // No POST de conta-cedente, `conflict` só tem uma causa: `cedente-account-duplicate` — a chave
+  // natural (banco/agência/conta/dígito) já existe. As outras recusas 409 do módulo pertencem a outras
+  // rotas (`already-closed` ao encerrar, `bank-data-locked` e `convenio-already-set` ao editar).
+  //
+  // E o texto diz mais que a mensagem do core-api ("Já existe uma conta-cedente com esta chave
+  // bancária"), de propósito: o caso que trava o operador é a conta ENCERRADA ocupando a chave, e essa
+  // metade é justamente a que ele não tem como adivinhar. Aconteceu em produção em 06/09/2026.
+  // ⚠️ Aponta as DUAS saídas, e essa metade é o que o texto anterior não tinha. Dizer só "já existe"
+  // deixa o operador na mesma parede em que a P.O. bateu em produção: ele vê que está barrado e não
+  // sabe o que fazer. Com Reabrir e Excluir (core-api#995 B1/B3), há caminho — e é ele que o texto dá.
+  'financial.recon.add.error.duplicate':
+    'Já existe uma conta com este banco, agência e conta — inclusive se ela estiver ENCERRADA, porque encerrar não libera a chave bancária. Procure-a no filtro "Encerradas": você pode REABRI-LA (volta com todo o histórico) ou EXCLUÍ-LA, o que libera estes dados para um cadastro novo.',
   'financial.recon.add.field.account': 'Conta-DV',
   'financial.recon.add.placeholder.account': '00000000-0',
   'financial.recon.add.field.document': 'CNPJ da organização',
@@ -2030,19 +2080,32 @@ export const ptBR: Catalog = {
   // Genérico — só quando o trilho é desconhecido. Nomear um campo sem saber a forma de pagamento
   // mandaria o operador procurar no lugar errado.
   'financial.remittance.preview.pendency.missingData': 'Falta dado para o pagamento — verifique o cadastro',
+  // A inscrição do favorecido vale para TODA rota com emissor, então não entra na régua por forma
+  // abaixo — ela vem antes. São dois textos porque as AÇÕES são opostas.
+  'financial.remittance.preview.pendency.missingPayeeDocument':
+    'Falta o CPF/CNPJ do favorecido — complete o cadastro',
+  // ⚠️ O ÚNICO impedimento da tela que o operador NÃO resolve no cadastro. O CNPJ alfanumérico é
+  // válido desde 07/2026 (ADR-0044) e o layout do banco ainda declara o campo como numérico — mandar
+  // "verifique o cadastro" aqui manda conferir o que já está certo (core-api#863).
+  'financial.remittance.preview.pendency.payeeDocumentUnsupported':
+    'CPF/CNPJ do favorecido tem letras e o banco ainda não os aceita no arquivo — fale com o financeiro',
   // A regra por forma de pagamento: TED/Transferência → conta; Boleto/Guia → linha digitável; PIX → chave.
   'financial.remittance.preview.pendency.missingBankData':
     'Dados bancários do favorecido incompletos — banco, agência e conta',
   'financial.remittance.preview.pendency.missingPixKey': 'Sem chave PIX no cadastro do favorecido',
-  // Rotas sem emissor no CNAB: nenhum cadastro resolve — a frase NÃO pede correção de dado, porque não há
-  // dado a corrigir. Sai quando o emissor do core-api passar a suportar a rota.
-  'financial.remittance.preview.pendency.pixNoEmitter':
-    'PIX ainda não sai na remessa — o emissor CNAB não tem esse trilho',
-  // core-api#837: o BACKEND passou a nomear a rota sem emissor. Frase genérica na ROTA de propósito —
-  // vale para PIX, guia de tributo e o que mais entrar —, e como a `pixNoEmitter`, NÃO pede correção
-  // de cadastro: não há dado a corrigir. Some quando o emissor da rota entrar (PIX = core-api#838).
+  // core-api#837: o BACKEND nomeia a rota sem emissor. Frase genérica na ROTA de propósito — vale para
+  // guia de tributo e o que mais entrar —, e NÃO pede correção de cadastro: não há dado a corrigir.
+  // ⚠️ [03/09] Saiu daqui a `pixNoEmitter`, que dizia o mesmo só para o PIX: era a mitigação de TELA,
+  // e o PIX ganhou emissor (core-api#936). Quem responde por rota sem emissor agora é esta, e só ela.
   'financial.remittance.preview.pendency.noIssuer':
     'Esta forma de pagamento ainda não sai na remessa — o emissor CNAB não tem esse trilho',
+  // PIX é EXCLUSIVO (decisão da P.O., 03/09/2026 — core-api#948 CA4). A frase NÃO pede correção de
+  // cadastro: não há dado errado. Ela nomeia a ação, que é da SELEÇÃO — e a ação tem duas saídas, por
+  // isso as duas aparecem: desmarcar as outras formas, ou mandar o PIX numa remessa própria.
+  'financial.remittance.preview.pendency.pixNotExclusive':
+    'PIX só sai em remessa exclusiva de PIX — desmarque os títulos das outras formas de pagamento',
+  'financial.remittance.preview.pixNotExclusiveNotice':
+    '{n} título(s) PIX foram desmarcados: o PIX só sai em remessa exclusiva de PIX. Para enviá-los, desmarque os títulos das outras formas de pagamento — ou gere o PIX numa remessa separada.',
   'financial.remittance.preview.pendency.missingBarcode':
     'Sem código de barras — o campo do documento está vazio',
   // ⚠️ O operador PREENCHEU. A linha digitável tem 47 dígitos e o arquivo grava o código de barras, de
@@ -2118,9 +2181,28 @@ export const ptBR: Catalog = {
   'financial.remittance.generate.nsa': 'Nº da remessa (NSA)',
   'financial.remittance.generate.fileName': 'Arquivo',
   'financial.remittance.generate.total': 'Total enviado',
+  // DE ONDE saiu o dinheiro. ⚠️ Chave PRÓPRIA, e não a `generate.account` do seletor (L2100): lá o
+  // texto é "Conta que paga", no presente, porque ainda é escolha; aqui é "pagou", no passado, porque o
+  // comprovante descreve fato consumado. Mesmo dado, tempos verbais diferentes — reusar a chave
+  // obrigaria uma das duas telas a mentir sobre o tempo.
+  'financial.remittance.generate.paidAccount': 'Conta que pagou',
+  // O CONTRATO multipag. Fica ao lado do NSA de propósito: a sequência pertence ao convênio, não à
+  // conta (core-api#943), e um mesmo convênio pode estar vinculado a várias contas do cliente.
+  'financial.remittance.generate.convenio': 'Convênio',
   // O dia em que o banco executa. É o "quando sai o dinheiro?" — a única informação do comprovante que
   // o operador não reconfere em outro lugar depois de fechar o modal.
   'financial.remittance.generate.paymentDate': 'Pagamento em',
+  // OS TIPOS DE TRANSAÇÃO da remessa, sem repetição ("PIX", ou "Boleto · TED · Transferência Bancária").
+  //
+  // ⚠️ É a forma DO CADASTRO, a mesma da coluna "Forma" da conferência — não a forma que o CNAB escreveu.
+  // O emissor do core-api decide a sua na geração (crédito em conta `01` × TED `41`, conforme o banco do
+  // favorecido; boleto `30` × `31`, conforme o emissor do código de barras), e o front não tem esses dois
+  // dados. O rótulo diz "tipo de transação", e não "forma de lançamento", justamente para não prometer o
+  // vocabulário do arquivo. Decisão da P.O. em 05/09/2026, com a divergência posta.
+  'financial.remittance.generate.paymentMethods': 'Tipo de transação',
+  // Título marcado sem forma no cadastro. Aparece na lista em vez de sumir dela: uma remessa com um
+  // título de forma desconhecida não pode ser descrita como se só tivesse os tipos que deram certo.
+  'financial.remittance.generate.paymentMethodUnknown': 'Forma não informada',
   // Download do arquivo (specs/103) — cópia de conferência, homologação apenas.
   'financial.remittance.download.action': 'Baixar arquivo',
   'financial.remittance.download.running': 'Baixando…',
@@ -2139,6 +2221,7 @@ export const ptBR: Catalog = {
   'financial.remittance.preview.field.agency': 'Agência do favorecido',
   'financial.remittance.preview.field.accountNumber': 'Conta do favorecido',
   'financial.remittance.preview.field.accountDigit': 'Dígito da conta',
+  'financial.remittance.preview.field.payeeDocument': 'CPF/CNPJ do favorecido',
   'financial.remittance.preview.field.paymentDetail': 'Linha digitável / complemento',
   'financial.remittance.preview.reason.missing': 'não preenchido',
   'financial.remittance.preview.reason.unmappable': 'não reconhecido no layout do banco',

@@ -22,6 +22,32 @@ export type AccountsGridProps = Readonly<{
   onToggle: (id: string) => void
   onRequestClose: (row: AccountRow) => void
   onRequestEdit: (row: AccountRow) => void
+  onRequestReopen: (row: AccountRow) => void
+  onRequestDelete: (row: AccountRow) => void
+  /**
+   * O "Excluir conta" está disponível? ⚠️ Hoje `false`, e o defeito NÃO é do front.
+   *
+   * A cadeia inteira existe e está correta — server fn, cliente do core-api, repositório, binding,
+   * modal e testes (`reopen-delete-account.binding.spec.tsx`). O que falta é do backend: o `save()` do
+   * `cedente-account-store.drizzle.ts` monta o upsert com `naturalKeySlot` na lista do INSERT mas NÃO
+   * na do `onDuplicateKeyUpdate`. Excluir uma conta existente cai sempre no caminho do UPDATE, o
+   * `status` vira `Deleted` com o slot ainda em `'LIVE'`, e isso viola o CHECK que a core-api#995
+   * criou: `(status <> 'Deleted') OR (natural_key_slot = id)`.
+   *
+   * Medido no local, com ROLLBACK: `UPDATE ... SET status='Deleted'` devolve `ERROR 3819 ...
+   * 'fin_cedente_accounts_status_deleted_chk' is violated`; a mesma UPDATE com `natural_key_slot = id`
+   * junto passa. Chega à tela como 503 → "Algo deu errado".
+   *
+   * ⚠️ Esconder foi decisão da P.O. (06/09/2026), na promoção para PRODUÇÃO: botão visível que nunca
+   * funciona ensina o operador a desconfiar da tela, e esse custo sobrevive ao conserto. As outras
+   * saídas do encerramento — Reabrir e o convênio editável — funcionam e foram.
+   *
+   * PARA REPOR: `naturalKeySlot: row.naturalKeySlot` no `set:` do upsert do core-api, e o literal na
+   * página vira `true`. Nada mais.
+   */
+  canDelete: boolean
+  /** Conta sendo reaberta agora — desabilita o próprio botão, sem travar a linha inteira. */
+  reopeningId: string | null
 }>
 
 function StatusPill({ row }: Readonly<{ row: AccountRow }>) {
@@ -48,10 +74,40 @@ function ExpandPanel({
   row,
   onRequestClose,
   onRequestEdit,
+  onRequestReopen,
+  onRequestDelete,
+  canDelete,
+  reopeningId,
 }: Readonly<{
   row: AccountRow
   onRequestClose: (row: AccountRow) => void
   onRequestEdit: (row: AccountRow) => void
+  onRequestReopen: (row: AccountRow) => void
+  onRequestDelete: (row: AccountRow) => void
+  /**
+   * O "Excluir conta" está disponível? ⚠️ Hoje `false`, e o defeito NÃO é do front.
+   *
+   * A cadeia inteira existe e está correta — server fn, cliente do core-api, repositório, binding,
+   * modal e testes (`reopen-delete-account.binding.spec.tsx`). O que falta é do backend: o `save()` do
+   * `cedente-account-store.drizzle.ts` monta o upsert com `naturalKeySlot` na lista do INSERT mas NÃO
+   * na do `onDuplicateKeyUpdate`. Excluir uma conta existente cai sempre no caminho do UPDATE, o
+   * `status` vira `Deleted` com o slot ainda em `'LIVE'`, e isso viola o CHECK que a core-api#995
+   * criou: `(status <> 'Deleted') OR (natural_key_slot = id)`.
+   *
+   * Medido no local, com ROLLBACK: `UPDATE ... SET status='Deleted'` devolve `ERROR 3819 ...
+   * 'fin_cedente_accounts_status_deleted_chk' is violated`; a mesma UPDATE com `natural_key_slot = id`
+   * junto passa. Chega à tela como 503 → "Algo deu errado".
+   *
+   * ⚠️ Esconder foi decisão da P.O. (06/09/2026), na promoção para PRODUÇÃO: botão visível que nunca
+   * funciona ensina o operador a desconfiar da tela, e esse custo sobrevive ao conserto. As outras
+   * saídas do encerramento — Reabrir e o convênio editável — funcionam e foram.
+   *
+   * PARA REPOR: `naturalKeySlot: row.naturalKeySlot` no `set:` do upsert do core-api, e o literal na
+   * página vira `true`. Nada mais.
+   */
+  canDelete: boolean
+  /** Conta sendo reaberta agora — desabilita o próprio botão, sem travar a linha inteira. */
+  reopeningId: string | null
 }>) {
   const tipo = row.typeLabel !== null ? `${t(row.typeTag)} · ${row.typeLabel}` : t(row.typeTag)
   return (
@@ -77,7 +133,9 @@ function ExpandPanel({
           {row.missingConvenio ? t('financial.recon.accounts.expand.semConvenio') : row.convenio}
         </span>
       </div>
-      {/* Editar: disponível em qualquer conta. Encerrar: só em conta ativa (Open→Closed). */}
+      {/* Editar: em qualquer conta. Encerrar: só na ativa. Reabrir e Excluir: só na ENCERRADA — são as
+          duas saídas que o encerramento passou a ter (core-api#995 B1/B3), e antes delas uma conta
+          encerrada por engano ficava presa: não reabria e não podia ser recadastrada. */}
       <div className={s.expandAction}>
         <button
           type="button"
@@ -98,7 +156,36 @@ function ExpandPanel({
           >
             {t('financial.recon.accounts.close.action')}
           </button>
-        ) : null}
+        ) : (
+          <>
+            {/* Reabrir age DIRETO, sem confirmação: é o caminho de recuperação de quem errou, e
+                desfazê-lo é só encerrar de novo. Confirmar aqui cobraria mais atenção para consertar o
+                engano do que para cometê-lo. */}
+            <button
+              type="button"
+              className={s.editAccountBtn}
+              disabled={reopeningId === row.id}
+              onClick={() => {
+                onRequestReopen(row)
+              }}
+            >
+              {reopeningId === row.id
+                ? t('financial.recon.accounts.reopen.running')
+                : t('financial.recon.accounts.reopen.action')}
+            </button>
+            {canDelete ? (
+              <button
+                type="button"
+                className={s.closeAccountBtn}
+                onClick={() => {
+                  onRequestDelete(row)
+                }}
+              >
+                {t('financial.recon.accounts.delete.action')}
+              </button>
+            ) : null}
+          </>
+        )}
       </div>
     </div>
   )
@@ -111,6 +198,10 @@ function Row({
   onToggle,
   onRequestClose,
   onRequestEdit,
+  onRequestReopen,
+  onRequestDelete,
+  canDelete,
+  reopeningId,
 }: Readonly<{
   row: AccountRow
   expanded: boolean
@@ -118,6 +209,32 @@ function Row({
   onToggle: (id: string) => void
   onRequestClose: (row: AccountRow) => void
   onRequestEdit: (row: AccountRow) => void
+  onRequestReopen: (row: AccountRow) => void
+  onRequestDelete: (row: AccountRow) => void
+  /**
+   * O "Excluir conta" está disponível? ⚠️ Hoje `false`, e o defeito NÃO é do front.
+   *
+   * A cadeia inteira existe e está correta — server fn, cliente do core-api, repositório, binding,
+   * modal e testes (`reopen-delete-account.binding.spec.tsx`). O que falta é do backend: o `save()` do
+   * `cedente-account-store.drizzle.ts` monta o upsert com `naturalKeySlot` na lista do INSERT mas NÃO
+   * na do `onDuplicateKeyUpdate`. Excluir uma conta existente cai sempre no caminho do UPDATE, o
+   * `status` vira `Deleted` com o slot ainda em `'LIVE'`, e isso viola o CHECK que a core-api#995
+   * criou: `(status <> 'Deleted') OR (natural_key_slot = id)`.
+   *
+   * Medido no local, com ROLLBACK: `UPDATE ... SET status='Deleted'` devolve `ERROR 3819 ...
+   * 'fin_cedente_accounts_status_deleted_chk' is violated`; a mesma UPDATE com `natural_key_slot = id`
+   * junto passa. Chega à tela como 503 → "Algo deu errado".
+   *
+   * ⚠️ Esconder foi decisão da P.O. (06/09/2026), na promoção para PRODUÇÃO: botão visível que nunca
+   * funciona ensina o operador a desconfiar da tela, e esse custo sobrevive ao conserto. As outras
+   * saídas do encerramento — Reabrir e o convênio editável — funcionam e foram.
+   *
+   * PARA REPOR: `naturalKeySlot: row.naturalKeySlot` no `set:` do upsert do core-api, e o literal na
+   * página vira `true`. Nada mais.
+   */
+  canDelete: boolean
+  /** Conta sendo reaberta agora — desabilita o próprio botão, sem travar a linha inteira. */
+  reopeningId: string | null
 }>) {
   const initials = (row.bankName || row.bankCode).slice(0, 2).toUpperCase()
   const meta = `${row.bankCode} ${row.bankName} · Ag ${row.branch} · CC ${row.accountNumber}-${row.accountDv}`
@@ -169,7 +286,15 @@ function Row({
         </button>
       </div>
       {expanded ? (
-        <ExpandPanel row={row} onRequestClose={onRequestClose} onRequestEdit={onRequestEdit} />
+        <ExpandPanel
+          row={row}
+          onRequestClose={onRequestClose}
+          onRequestEdit={onRequestEdit}
+          onRequestReopen={onRequestReopen}
+          onRequestDelete={onRequestDelete}
+          canDelete={canDelete}
+          reopeningId={reopeningId}
+        />
       ) : null}
     </>
   )
@@ -182,6 +307,10 @@ export function AccountsGrid({
   onToggle,
   onRequestClose,
   onRequestEdit,
+  onRequestReopen,
+  onRequestDelete,
+  canDelete,
+  reopeningId,
 }: AccountsGridProps) {
   return (
     <>
@@ -202,6 +331,10 @@ export function AccountsGrid({
             onToggle={onToggle}
             onRequestClose={onRequestClose}
             onRequestEdit={onRequestEdit}
+            onRequestReopen={onRequestReopen}
+            onRequestDelete={onRequestDelete}
+            canDelete={canDelete}
+            reopeningId={reopeningId}
           />
         ))}
       </div>

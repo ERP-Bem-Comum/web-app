@@ -41,6 +41,10 @@ export const DeleteStatementInputSchema = z.object({ statementId: z.uuid() })
 export const GetCedenteAccountInputSchema = z.object({ id: z.uuid() })
 // Encerrar conta-cedente (POST /cedente-accounts/:id/close) — só o id; sem body.
 export const CloseCedenteAccountInputSchema = z.object({ id: z.uuid() })
+// Reabrir (POST /:id/reopen) e excluir (DELETE /:id) — core-api#995 B1/B3. Mesma forma do encerrar: só
+// o id, sem body. O ator vem da sessão no servidor, nunca do client.
+export const ReopenCedenteAccountInputSchema = z.object({ id: z.uuid() })
+export const DeleteCedenteAccountInputSchema = z.object({ id: z.uuid() })
 // Editar conta-cedente (PATCH /cedente-accounts/:id) — campos editáveis opcionais (CNPJ/saldo são imutáveis).
 export const EditCedenteAccountInputSchema = z.object({
   id: z.uuid(),
@@ -49,15 +53,25 @@ export const EditCedenteAccountInputSchema = z.object({
   type: z.enum(['Corrente', 'Poupanca', 'Investimento', 'Cartao', 'Outro']).optional(),
   typeLabel: z.string().trim().min(1).max(120).optional(),
   agency: z.string().trim().min(1).max(10).optional(),
+  // core-api#856: UMA posição, e `max(1)` RECUSA em vez de truncar — a 058 do header tem uma só, e o
+  // backend responde `cedente-agency-digit-malformed` a mais que isso. Truncar aqui gravaria um DV
+  // diferente do que o operador viu na tela, e o arquivo sairia bem-formado com o dado errado.
+  agencyDigit: z.string().trim().max(1).optional(),
   accountNumber: z.string().trim().min(1).max(20).optional(),
   accountDigit: z.string().trim().max(2).optional(),
   nickname: z.string().trim().min(1).max(120).optional(),
   // #722: preenchível quando AUSENTE — a conta cadastrada sem convênio passa a gerar remessa. Trocar
-  // um já preenchido é recusado no core-api (`cedente-convenio-already-set`); o front não envia.
-  // `min(1)` espelha o contrato de lá: string vazia não é "limpar", é campo inválido.
+  // um já preenchido é recusado no core-api (`cedente-convenio-already-set`) enquanto a conta está
+  // ATIVA; em conta encerrada a edição foi liberada (core-api#995 B8.1).
+  //
+  // ⚠️ O `min(1)` SAIU, e a mudança é deliberada: desde a #995 B8.2 a string VAZIA é o sentinela de
+  // "numeração desativada" — é assim que se desfaz o conflito de NSA com a conta irmã, e o core-api
+  // passou a aceitá-la (`maxLength: 20`, sem mínimo). Com `min(1)` aqui, o "limpar" morreria na
+  // fronteira do BFF, antes de chegar lá, e a tela ficaria sem o caminho que a issue abriu.
+  //
   // 6, não 20: o campo do header CNAB tem 6 posições (033-038) e o banco trunca o excedente em
   // silêncio. Ver CONVENIO_MAX_DIGITS e core-api#804.
-  convenio: z.string().trim().min(1).max(6).optional(),
+  convenio: z.string().trim().max(6).optional(),
 })
 
 // #205: extrato por período. `from`/`to` date-only (YYYY-MM-DD); filter opcional.
@@ -74,6 +88,8 @@ export const CreateCedenteAccountInputSchema = z.object({
   type: z.enum(['Corrente', 'Poupanca', 'Investimento', 'Cartao', 'Outro']),
   typeLabel: z.string().trim().min(1).max(120).optional(), // #206: texto livre p/ Cartao/Outro
   agency: z.string().trim().min(1).max(10),
+  // core-api#856 — ver a nota no schema de edição: `max(1)` recusa, nunca trunca.
+  agencyDigit: z.string().trim().max(1).optional(),
   accountNumber: z.string().trim().min(1).max(20),
   accountDigit: z.string().trim().max(2),
   document: z.string().trim().min(1).max(18),

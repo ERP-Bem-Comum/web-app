@@ -170,6 +170,18 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
           <p className={emptyState}>{t('financial.remittance.preview.needAccount')}</p>
         ) : null}
 
+        {/* PIX desmarcado por não ser remessa exclusiva (core-api#948 CA4). O aviso vai no TOPO porque
+            o título caiu por causa de OUTRA linha: só a pendência na linha faria o PIX sumir do total
+            sem nada explicando por quê, numa lista que pode ser longa. */}
+        {view !== null && view.summary.pixNotExclusiveCount > 0 ? (
+          <p className={notice}>
+            {t('financial.remittance.preview.pixNotExclusiveNotice').replace(
+              '{n}',
+              String(view.summary.pixNotExclusiveCount),
+            )}
+          </p>
+        ) : null}
+
         {/* Retenções marcadas: o pré-voo não as acusa (herdam forma e favorecido da nota), então o
             aviso no topo é o que garante que o operador saiba ANTES de gerar. */}
         {view !== null && view.summary.retentionCheckedCount > 0 ? (
@@ -206,6 +218,33 @@ export function RemittancePreviewModal(props: RemittancePreviewModalProps): Reac
                   ocupa a linha que os dados exclusivos do comprovante (NSA, arquivo, data) precisam.
                   Antes de sair ela ainda estava ERRADA: exibia o `lineCount` do core-api, que conta
                   registros do arquivo CNAB (6 para um único título). */}
+              {/* DE ONDE saiu o dinheiro. O comprovante dizia quanto, quando e em que arquivo — nunca
+                  por qual conta. Numa organização com várias contas-cedente, "qual conta pagou?" é a
+                  primeira pergunta de quem for conferir o extrato, e ela não tinha resposta na tela. */}
+              <span className={summaryItem}>
+                <span className={summaryLabel}>{t('financial.remittance.generate.paidAccount')}</span>
+                <span className={summaryValue}>{props.generated.account}</span>
+              </span>
+              {/* O CONTRATO a que o NSA pertence. A sequência é do convênio (core-api#943) e o mesmo
+                  convênio pode estar em várias contas — sem ele, dois arquivos de contas diferentes com
+                  NSAs parecidos são indistinguíveis aqui. */}
+              <span className={summaryItem}>
+                <span className={summaryLabel}>{t('financial.remittance.generate.convenio')}</span>
+                <span className={summaryValueStrong}>{props.generated.convenio}</span>
+              </span>
+              {/* O QUE foi pago — os tipos de transação da remessa, sem repetição. O operador os lê na
+                  coluna "Forma" durante a conferência, mas ali eles são uma coluna de muitas linhas; no
+                  comprovante viram a resposta a "que tipos de pagamento eu acabei de mandar?", que é o
+                  que ele precisa saber ao conferir o extrato depois. Vem CONGELADO do envio — reler o
+                  pré-voo aqui devolveria lista vazia (os títulos já saíram da seleção). */}
+              <span className={summaryItem}>
+                <span className={summaryLabel}>{t('financial.remittance.generate.paymentMethods')}</span>
+                <span className={summaryValue}>
+                  {props.generated.paymentMethodTags.length === 0
+                    ? DASH
+                    : props.generated.paymentMethodTags.map((tag) => t(tag)).join(' · ')}
+                </span>
+              </span>
               {/* Quando o banco executa. Fecha a pergunta que o comprovante deixava em aberto: o operador
                   via quanto e quantos títulos, mas não em que dia o dinheiro sai. */}
               <span className={summaryItem}>

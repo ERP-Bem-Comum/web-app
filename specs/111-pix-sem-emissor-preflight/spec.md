@@ -1,6 +1,29 @@
 # 111 — PIX não entra na remessa enquanto o emissor não tiver o trilho
 
-**Tamanho:** S · **Status:** implementada (mitigação temporária) · **Data:** 2026-08-28
+> ## ⛔ REVERTIDA em 03/09/2026 — a mitigação saiu do código
+>
+> As duas condições de saída fecharam, e ambas na `dev` do core-api:
+>
+> - **core-api#837** (PR #925) — o backend passou a **nomear** o caso: a linha volta com status
+>   `no-issuer` e a tela exibe a pendência por dado dele, não por inferência de rota.
+> - **core-api#936** — o **PIX ganhou emissor** (par A+B na forma `45`), na `dev` desde 01/09 (`rc.2`).
+>   O pressuposto que sustentava a régua deixou de ser verdade: manter o bloqueio esconderia do
+>   operador uma remessa que o backend já sabe gerar, e a frase passaria a mentir.
+>
+> Saíram juntos `ROUTES_WITHOUT_EMITTER`, `routeHasEmitter`, `NO_EMITTER_PENDENCY` e a chave i18n
+> `pendency.pixNoEmitter`. Quem responde por rota sem emissor agora é o `pendency.noIssuer`, dirigido
+> pelo backend — e a tela não infere mais nada pela rota.
+>
+> ⚠️ **O gatilho escrito aqui estava errado**, e vale o registro: _"a homologação devolver `no-issuer`
+> para um PIX"_ nunca dispararia, porque com o emissor no lugar o pré-voo do PIX responde `ready`, não
+> `no-issuer`. O gatilho foi escrito olhando o modo de falha, não o modo de sucesso. A próxima
+> mitigação por rota precisa nascer com um gatilho que o próprio sucesso não invalide.
+>
+> **Sucessora:** [115 — PIX só sai em remessa exclusiva de PIX](../115-pix-remessa-exclusiva/spec.md),
+> que entrou na mesma mudança (decisão da P.O., core-api#948 CA4).
+
+**Tamanho:** S · **Status:** ~~implementada~~ **revertida** (mitigação temporária, cumpriu o prazo) ·
+**Data:** 2026-08-28 · **Removida:** 2026-09-03
 **Onde:** Contas a Pagar → pré-voo da remessa (VAN) · `remittance-preview.view-model.ts`
 
 ## Problema

@@ -8,15 +8,17 @@
  */
 import { ok, err, type Result } from '#shared/primitives/result.ts'
 import type { FinancialError } from '#modules/financial/server/domain/errors/financial.errors.ts'
-import type {
-  PayoutField,
-  PayoutGap,
-  PayoutGapReason,
-  PreviewLineStatus,
-  RemittancePreview,
-  RemittancePreviewLine,
-  VanRoute,
-  GeneratedRemittance,
+import {
+  PAYOUT_FIELDS as PAYOUT_FIELD_VALUES,
+  PAYOUT_GAP_REASONS as PAYOUT_GAP_REASON_VALUES,
+  type PayoutField,
+  type PayoutGap,
+  type PayoutGapReason,
+  type PreviewLineStatus,
+  type RemittancePreview,
+  type RemittancePreviewLine,
+  type VanRoute,
+  type GeneratedRemittance,
 } from '#modules/financial/server/domain/remittance.io.ts'
 
 import { CoreApiRemittancePreviewSchema, CoreApiGeneratedRemittanceSchema } from './remittance.schema.ts'
@@ -38,25 +40,20 @@ const LINE_STATUSES: ReadonlySet<string> = new Set<PreviewLineStatus>([
 
 const VAN_ROUTES: ReadonlySet<string> = new Set<VanRoute>(['pix', 'transfer', 'billet', 'tax-guide'])
 
-const PAYOUT_FIELDS: ReadonlySet<string> = new Set<PayoutField>([
-  'pix-key',
-  'payee-bank-code',
-  'payee-agency',
-  'payee-account-number',
-  'payee-account-digit',
-  'payment-detail',
-])
-
-// ⚠️ `check-digit-mismatch` faltava aqui, e a falta era invisível: a lacuna era DESCARTADA em silêncio
-// pelo `mapGaps`, e a linha chegava à tela bloqueada e sem motivo. O operador lia "sem dados bancários"
-// olhando para um cadastro completo — que é exatamente o mal-entendido que o core-api criou este motivo
-// para desfazer (`payout/types.ts:37-39`).
-const GAP_REASONS: ReadonlySet<string> = new Set<PayoutGapReason>([
-  'missing',
-  'unmappable',
-  'malformed',
-  'check-digit-mismatch',
-])
+// ⚠️ DERIVADOS da tupla do domínio, nunca reescritos aqui — e as duas linhas abaixo são o conserto de
+// uma classe inteira, não uma refatoração. Escritos à mão, estes dois `Set` já divergiram DUAS VEZES da
+// união que dizem espelhar: `check-digit-mismatch` faltava em `GAP_REASONS`, e `payee-document` faltava
+// em `PAYOUT_FIELDS` desde que o core-api passou a emiti-lo para boleto (#891).
+//
+// O modo de falha é o mesmo nas duas e é SILENCIOSO: `mapGaps` descarta a lacuna cujo campo ou motivo
+// não está no conjunto, e a linha chega à tela bloqueada e SEM MOTIVO. O operador lê "não sai" olhando
+// para um cadastro que, para ele, está completo — e não há erro em lugar nenhum para investigar.
+//
+// O compilador não pegava porque `new Set<PayoutField>([...])` aceita um SUBCONJUNTO sem reclamar: o
+// parâmetro de tipo restringe o que pode entrar, nunca exige o que falta. Derivar do `as const` inverte
+// isso — o conjunto passa a ser a união, e não uma cópia dela que alguém precisa lembrar de atualizar.
+const PAYOUT_FIELDS: ReadonlySet<string> = new Set<PayoutField>(PAYOUT_FIELD_VALUES)
+const GAP_REASONS: ReadonlySet<string> = new Set<PayoutGapReason>(PAYOUT_GAP_REASON_VALUES)
 
 // Drift → `blocked` (o default seguro: aparece na tela como "não sai", nunca como apto).
 const mapStatus = (raw: string): PreviewLineStatus =>

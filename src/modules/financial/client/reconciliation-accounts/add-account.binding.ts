@@ -20,6 +20,7 @@ import {
   AGENCY_TOTAL_DIGITS,
   agencyBase,
   agencyDigits,
+  agencyDv,
   maskDateInput,
   dateInputToIso,
 } from './reconciliation-accounts.view-model.ts'
@@ -36,8 +37,8 @@ export type AddAccountBinding = Readonly<{
    * como nos demais formulários que usam a máscara `agency` (fornecedor, financiador, colaborador).
    *
    * ⚠️ O DV é OBRIGATÓRIO (decisão da P.O., 25/08): conta cadastrada sem ele é um cadastro incompleto que
-   * só aparece na hora de pagar. Ver `agencyIncomplete` e a ressalva do submit sobre onde o DV (não) é
-   * guardado.
+   * só aparece na hora de pagar. No submit ele se separa da base e viaja em `agencyDigit` — campo
+   * próprio desde a core-api#856. Ver `agencyIncomplete` e a nota do submit.
    */
   agency: string
   /**
@@ -126,7 +127,19 @@ export function useAddAccount(
         reset()
         onCreated()
       } else {
-        setErrorTag(reconciliationErrorTag(res.error))
+        // ⚠️ `conflict` NESTE formulário tem uma causa só: a chave natural (banco/agência/conta/dígito)
+        // já existe — `cedente-account-duplicate`. As outras recusas 409 do módulo são de outras rotas
+        // (`already-closed` ao encerrar; `bank-data-locked` e `convenio-already-set` ao editar), então
+        // nomear a causa aqui não é chute: é saber qual operação foi disparada.
+        //
+        // O genérico "Conflito ao processar a solicitação" deixava o operador sem nada a fazer — foi
+        // exatamente o que travou o cadastro em produção (06/09/2026), com a conta duplicada ENCERRADA
+        // segurando a chave e a tela sem dizer isso.
+        setErrorTag(
+          res.error === 'conflict'
+            ? 'financial.recon.add.error.duplicate'
+            : reconciliationErrorTag(res.error),
+        )
       }
     },
   })
@@ -247,17 +260,19 @@ export function useAddAccount(
         bankName,
         type,
         ...(needsTypeLabel && typeLabel.trim() !== '' ? { typeLabel: typeLabel.trim() } : {}), // #206
-        // ⚠️ Vai só a BASE (4 dígitos) — o DV é exigido na tela mas NÃO É GUARDADO, e isto é intencional
-        // até o core-api ter onde. Hoje não há: `fin_cedente_accounts` tem `account_digit` e nenhum
-        // `agency_digit`, e `createCedenteAccountBodySchema` só conhece `agency`.
+        // A agência viaja PARTIDA em dois campos, e é assim que o header do CNAB a espera: a base nas
+        // posições 053-057, o DV sozinho na 058. O core-api ganhou onde guardar o dígito na #856
+        // (coluna `agency_digit` + `agencyDigit` no contrato), e é isso que este par de linhas usa.
         //
-        // Concatenar (`1487-2`) seria pior que perder: o CNAB trata o campo como POSICIONAL —
-        // `digits(c.agency, 5)` remove o hífen e escreveria `14872` nas posições 053-057, onde o banco
-        // espera `01487`, enquanto a 058 (DV) segue em branco porque `generate-remittance.ts` fixa
-        // `agencyDigit: ''`. Todo arquivo daquela conta sairia com o header errado, em silêncio.
-        //
-        // Ligar o envio é UMA LINHA quando o campo existir. Ver a issue do core-api referida na spec.
+        // ⚠️ NÃO junte os dois num campo só. `digits(c.agency, 5)` remove o separador antes do pad:
+        // `'1487-2'` viraria `14872` nas 053-057, onde o banco espera `01487`. Cinco dígitos, cabendo
+        // no campo, com a 058 vazia — arquivo bem-formado e conta errada, sem nada acusando. Hoje o
+        // core-api recusa esse formato (`cedente-agency-malformed`), então o efeito prático seria a
+        // conta parar de gerar remessa.
         agency: agencyBase(agency),
+        // Omitido quando vazio, pela régua do convênio: `''` afirmaria um dígito que ninguém deu. Na
+        // prática não acontece — `canSubmit` exige os 5 dígitos —, mas a régua não depende disso.
+        ...(agencyDv(agency) !== '' ? { agencyDigit: agencyDv(agency) } : {}),
         accountNumber,
         accountDigit,
         // #722: só viaja se preenchido. Vazio NÃO é enviado — a conta nasce sem convênio e pode

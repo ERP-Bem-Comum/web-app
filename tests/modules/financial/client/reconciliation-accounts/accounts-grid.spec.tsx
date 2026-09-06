@@ -50,6 +50,10 @@ describe('AccountsGrid', () => {
         onToggle={vi.fn()}
         onRequestClose={vi.fn()}
         onRequestEdit={vi.fn()}
+        onRequestReopen={vi.fn()}
+        onRequestDelete={vi.fn()}
+        canDelete={false}
+        reopeningId={null}
       />,
     )
     expect(screen.getByText(tr('financial.recon.accounts.col.conta'))).toBeTruthy()
@@ -65,6 +69,10 @@ describe('AccountsGrid', () => {
         onToggle={vi.fn()}
         onRequestClose={vi.fn()}
         onRequestEdit={vi.fn()}
+        onRequestReopen={vi.fn()}
+        onRequestDelete={vi.fn()}
+        canDelete={false}
+        reopeningId={null}
       />,
     )
     expect(screen.getByText('4 pendentes')).toBeTruthy()
@@ -83,6 +91,10 @@ describe('AccountsGrid', () => {
         onToggle={vi.fn()}
         onRequestClose={vi.fn()}
         onRequestEdit={vi.fn()}
+        onRequestReopen={vi.fn()}
+        onRequestDelete={vi.fn()}
+        canDelete={false}
+        reopeningId={null}
       />,
     )
     fireEvent.click(screen.getByText('Ativa'))
@@ -102,6 +114,10 @@ describe('AccountsGrid', () => {
         onToggle={onToggle}
         onRequestClose={vi.fn()}
         onRequestEdit={vi.fn()}
+        onRequestReopen={vi.fn()}
+        onRequestDelete={vi.fn()}
+        canDelete={false}
+        reopeningId={null}
       />,
     )
     expect(screen.getByText(tr('financial.recon.accounts.expand.saldoInicial'))).toBeTruthy()
@@ -126,6 +142,10 @@ describe('AccountsGrid', () => {
         onToggle={vi.fn()}
         onRequestClose={onRequestClose}
         onRequestEdit={vi.fn()}
+        onRequestReopen={vi.fn()}
+        onRequestDelete={vi.fn()}
+        canDelete={false}
+        reopeningId={null}
       />,
     )
     // Só a conta ativa oferece a ação (a encerrada, expandida, não mostra o botão).
@@ -152,6 +172,10 @@ describe('AccountsGrid', () => {
         onToggle={vi.fn()}
         onRequestClose={vi.fn()}
         onRequestEdit={onRequestEdit}
+        onRequestReopen={vi.fn()}
+        onRequestDelete={vi.fn()}
+        canDelete={false}
+        reopeningId={null}
       />,
     )
     // Editar aparece nas DUAS (ativa e encerrada) — diferente de Encerrar (só na ativa).
@@ -161,5 +185,57 @@ describe('AccountsGrid', () => {
     if (first === undefined) throw new Error('botão de editar não encontrado')
     fireEvent.click(first)
     expect(onRequestEdit).toHaveBeenCalledTimes(1)
+  })
+})
+
+// ── O "Excluir conta" está escondido enquanto o core-api não conserta ───────────
+//
+// Não é feature incompleta: a cadeia inteira existe e tem teste próprio
+// (`reopen-delete-account.binding.spec.tsx`). O que falta é o `naturalKeySlot` no `set:` do upsert do
+// core-api — sem ele, excluir sempre volta 503. Botão visível que nunca funciona ensina o operador a
+// desconfiar da tela, e esse custo sobrevive ao conserto (decisão da P.O. na promoção para produção).
+
+describe('conta encerrada: Reabrir aparece, Excluir depende de `canDelete`', () => {
+  const encerrada = row({ id: 'a1', status: 'closed' })
+
+  it('com `canDelete` falso, o Excluir NÃO é renderizado — mas o Reabrir sim', () => {
+    render(
+      <AccountsGrid
+        rows={[encerrada]}
+        expanded={new Set(['a1'])}
+        onOpen={vi.fn()}
+        onToggle={vi.fn()}
+        onRequestClose={vi.fn()}
+        onRequestEdit={vi.fn()}
+        onRequestReopen={vi.fn()}
+        onRequestDelete={vi.fn()}
+        canDelete={false}
+        reopeningId={null}
+      />,
+    )
+    expect(screen.queryByRole('button', { name: 'Excluir conta' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Reabrir conta' })).toBeTruthy()
+  })
+
+  it('⚠️ com `canDelete` verdadeiro ele volta, e o clique manda a linha certa', () => {
+    // É este caso que prova que esconder é uma CHAVE, e não código morto: no dia do conserto do
+    // core-api, o literal da página vira `true` e nada mais precisa mudar.
+    const onRequestDelete = vi.fn()
+    render(
+      <AccountsGrid
+        rows={[encerrada]}
+        expanded={new Set(['a1'])}
+        onOpen={vi.fn()}
+        onToggle={vi.fn()}
+        onRequestClose={vi.fn()}
+        onRequestEdit={vi.fn()}
+        onRequestReopen={vi.fn()}
+        onRequestDelete={onRequestDelete}
+        canDelete
+        reopeningId={null}
+      />,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Excluir conta' }))
+    expect(onRequestDelete).toHaveBeenCalledWith(encerrada)
   })
 })

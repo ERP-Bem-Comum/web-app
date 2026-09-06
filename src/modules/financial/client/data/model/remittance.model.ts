@@ -9,12 +9,21 @@ import type { FinancialError } from '#modules/financial/client/data/repository/f
 
 export type VanRoute = 'pix' | 'transfer' | 'billet' | 'tax-guide'
 
+/**
+ * ⚠️ CÓPIA DELIBERADA de `server/domain/remittance.io.ts` — o client não importa server/domain
+ * (boundary §I), então as duas listas têm de existir e não podem divergir. Quem trava o drift é
+ * `tests/architecture/payout-gap-vocabulary-in-sync.test.ts`, que lê os dois arquivos e compara.
+ *
+ * `payee-document` (inscrição CPF/CNPJ do favorecido) faltava aqui e no `PAYOUT_FIELDS` do mapper: o
+ * core-api o emite para boleto desde a #891, e `mapGaps` o descartava em silêncio.
+ */
 export type PayoutField =
   | 'pix-key'
   | 'payee-bank-code'
   | 'payee-agency'
   | 'payee-account-number'
   | 'payee-account-digit'
+  | 'payee-document'
   | 'payment-detail'
 
 /**

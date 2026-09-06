@@ -16,12 +16,18 @@ import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
 import {
-  routeHasEmitter,
+  accountLabel,
+  toAccountOptions,
+  toReceiptView,
+  selectionAllowsPix,
+  applyPixExclusivity,
   deriveRemittanceSelection,
   toPreviewView,
 } from '../../../../../src/modules/financial/client/contas-a-pagar-list/remittance-preview.view-model.ts'
+import type { RoutedPreviewLine } from '../../../../../src/modules/financial/client/contas-a-pagar-list/remittance-preview.view-model.ts'
 import type { GridRow } from '../../../../../src/modules/financial/client/contas-a-pagar-list/contas-a-pagar.view-model.ts'
 import type { RemittancePreview } from '../../../../../src/modules/financial/client/data/model/remittance.model.ts'
+import type { ReconciliationAccount } from '../../../../../src/modules/financial/client/data/model/reconciliation.model.ts'
 
 const row = (id: string, status: GridRow['status'], over: Partial<GridRow> = {}): GridRow => ({
   id,
@@ -365,6 +371,30 @@ describe('toPreviewView — a pendência nomeia o dado DAQUELA forma de pagament
     )
   })
 
+  // ── A inscrição do favorecido (core-api#863/#948) ──────────────────────────────────────────────
+  //
+  // ⚠️ O rótulo é escolhido pela ROTA, e a inscrição não pertence a rota nenhuma: ela é escrita por
+  // TODAS as rotas com emissor. Sem régua própria, uma lacuna de `payee-document` saía com o texto da
+  // rota — "falta a chave PIX" para um título cuja chave está lá.
+  //
+  // O detalhe campo+motivo existe, mas vive no TOOLTIP. Tooltip não é onde o operador lê o
+  // impedimento; é o rótulo visível que ele lê (#252/#332).
+  for (const route of ['pix', 'transfer', 'billet'] as const) {
+    it(`inscrição ausente na rota ${route} não é confundida com a pendência da rota`, () => {
+      const tag = blocked(route, 'payee-document')?.pendencyTag
+      assert.equal(tag, 'financial.remittance.preview.pendency.missingPayeeDocument')
+    })
+  }
+
+  // ⚠️ O ÚNICO impedimento da tela cuja ação NÃO é "vá ao cadastro". CNPJ alfanumérico é válido desde
+  // 07/2026 (ADR-0044) e o layout do banco declara o campo `Num` — não há o que o operador conserte.
+  it('inscrição alfanumérica manda ESCALAR, e não "verifique o cadastro"', () => {
+    const tag = blocked('pix', 'payee-document', 'unmappable')?.pendencyTag
+    assert.equal(tag, 'financial.remittance.preview.pendency.payeeDocumentUnsupported')
+    assert.notEqual(tag, 'financial.remittance.preview.pendency.missingPayeeDocument')
+    assert.notEqual(tag, 'financial.remittance.preview.pendency.missingPixKey')
+  })
+
   it('⚠️ dígito divergente NÃO é cadastro incompleto — o rótulo não pede "completar"', () => {
     const tag = blocked('transfer', 'payee-account-digit', 'check-digit-mismatch')?.pendencyTag
     assert.equal(tag, 'financial.remittance.preview.pendency.checkDigit')
@@ -551,11 +581,14 @@ describe('toPreviewView — data de pagamento no passado', () => {
   })
 })
 
-// ── Rotas SEM emissor no CNAB (mitigação de tela) ──────────────────────────────
-// O pré-voo do core-api devolve `ready` para PIX e guia de tributo, mas o emissor recusa as duas e o
-// montador ABORTA o arquivo inteiro — um título PIX na seleção derruba a remessa dos outros. Enquanto o
-// emissor não suportar a rota, a régua é do front.
-describe('rota sem emissor: PIX e tributo não são remissíveis mesmo com o backend dizendo `ready`', () => {
+// ── Rota sem emissor: quem julga é o BACKEND ───────────────────────────────────
+//
+// ⚠️ [03/09] Este bloco mudou de sinal. Havia aqui uma MITIGAÇÃO DE TELA que barrava todo PIX
+// (`ROUTES_WITHOUT_EMITTER`), porque o pré-voo dizia `ready`, o emissor recusava e o montador abortava
+// o arquivo inteiro. Ela saiu: o core-api#837 fez o backend NOMEAR o caso (`no-issuer`) e o
+// core-api#936 deu emissor ao PIX. Barrar PIX na tela agora esconderia uma remessa que o backend sabe
+// gerar. A régua ficou onde deve estar — no backend —, e a tela só exibe o que ele responde.
+describe('rota sem emissor: a tela não infere pela rota, obedece ao status do backend', () => {
   const pixRow = row('p-pix', 'Aprovado', {
     documentId: 'doc-pix',
     supplier: 'Fornecedor PIX',
@@ -572,33 +605,172 @@ describe('rota sem emissor: PIX e tributo não são remissíveis mesmo com o bac
     valueCents: '3700',
   }
 
-  it('PIX `ready` NÃO entra na remessa e diz o porquê (nenhum cadastro resolve)', () => {
+  it('PIX `ready` ENTRA na remessa — o emissor existe (core-api#936)', () => {
+    // O assert oposto (`remittable: false`) foi o comportamento até 02/09. Está invertido de PROPÓSITO:
+    // reintroduzir o bloqueio de tela por engano tem de quebrar o gate.
     const view = toPreviewView(preview([pixLine], { readyCount: 1 }), [pixRow], NONE, TODAY)
     const line = view.lines.find((l) => l.payableId === 'p-pix')
-    assert.equal(line?.remittable, false)
-    assert.equal(line?.checked, false)
-    assert.equal(line?.pendencyTag, 'financial.remittance.preview.pendency.pixNoEmitter')
+    assert.equal(line?.remittable, true)
+    assert.equal(line?.checked, true)
+    assert.equal(line?.pendencyTag, null)
   })
 
-  it('as rotas COM emissor seguem passando (a guarda não pode barrar transferência nem boleto)', () => {
+  it('a rota que o BACKEND marca `no-issuer` não entra, e a frase não pede correção de cadastro', () => {
+    const guia = row('p-guia', 'Aprovado', { documentId: 'doc-guia', paymentMethod: 'GuiaRecolhimento' })
+    const guiaLine = {
+      payableId: 'p-guia',
+      documentId: 'doc-guia',
+      status: 'no-issuer' as const,
+      route: 'tax-guide' as const,
+      gaps: [],
+      valueCents: '1000',
+    }
+    const view = toPreviewView(preview([guiaLine]), [guia], NONE, TODAY)
+    const line = view.lines.find((l) => l.payableId === 'p-guia')
+    assert.equal(line?.remittable, false)
+    assert.equal(line?.pendencyTag, 'financial.remittance.preview.pendency.noIssuer')
+  })
+
+  it('as rotas com emissor seguem passando (transferência e boleto nunca foram barradas)', () => {
     const view = toPreviewView(preview([fornLine], { readyCount: 1 }), [fornecedor], NONE, TODAY)
     const line = view.lines.find((l) => l.payableId === 'p-forn')
     assert.equal(line?.remittable, true)
     assert.equal(line?.pendencyTag, null)
   })
+})
 
-  it('routeHasEmitter: só PIX é barrado; tributo e rota desconhecida ficam com o backend', () => {
-    assert.equal(routeHasEmitter('pix'), false)
-    // ⚠️ `tax-guide` NÃO é barrada aqui, POR DECISÃO da P.O. (29/08): o emissor recusa igual, mas é a rota
-    // das retenções, e a #794 decidiu deixá-las passar ("destacar, não travar"). Este assert existe para
-    // que reintroduzir a barreira por engano quebre o teste, em vez de mudar o comportamento em silêncio.
-    assert.equal(routeHasEmitter('tax-guide'), true)
-    assert.equal(routeHasEmitter('transfer'), true)
-    assert.equal(routeHasEmitter('billet'), true)
-    assert.equal(routeHasEmitter(null), true)
+// ── PIX é EXCLUSIVO (core-api#948 CA4) ─────────────────────────────────────────
+//
+// Decisão da P.O. em 03/09/2026: "habilita só em remessa com todas as transações com o pagamento do
+// tipo Pix. Se acontecer de selecionar Pix e TED junto, o Pix deve ficar desmarcado."
+//
+// ⚠️ Estes testes exercitam as unidades (`selectionAllowsPix`/`applyPixExclusivity`) com linhas PIX
+// REMISSÍVEIS — que `ROUTES_WITHOUT_EMITTER` ainda não deixa existir em tela. É de propósito: o dia em
+// que o `'pix'` sair daquele conjunto, a régua entra em serviço JÁ PROVADA. Testar só por
+// `toPreviewView` hoje provaria a inércia, e a inércia some justamente quando a régua passa a valer.
+
+const PIX_NOT_EXCLUSIVE = 'financial.remittance.preview.pendency.pixNotExclusive'
+
+/** Linha do pré-voo já julgada, com a rota ao lado — o insumo da segunda passada. */
+const routed = (
+  payableId: string,
+  route: RoutedPreviewLine['route'],
+  over: Partial<RoutedPreviewLine['view']> = {},
+): RoutedPreviewLine => ({
+  route,
+  view: {
+    payableId,
+    documentId: `doc-${payableId}`,
+    paymentMethodTag: null,
+    documentNumber: `NF-${payableId}`,
+    supplier: 'Fornecedor X',
+    due: '10/07/2026',
+    net: 'R$ 10,00',
+    remittable: true,
+    checked: true,
+    pendencyTag: null,
+    gaps: [],
+    isRetention: false,
+    ...over,
+  },
+})
+
+describe('selectionAllowsPix', () => {
+  it('seleção só de PIX permite; seleção mista não', () => {
+    assert.equal(selectionAllowsPix(['pix', 'pix']), true)
+    assert.equal(selectionAllowsPix(['pix', 'transfer']), false)
+    assert.equal(selectionAllowsPix(['pix', 'billet']), false)
+    assert.equal(selectionAllowsPix(['pix', 'tax-guide']), false)
   })
 
-  it('um PIX na seleção não arrasta os remissíveis junto (era o arquivo inteiro que caía)', () => {
+  it('seleção VAZIA permite — nada marcado não impede nada', () => {
+    assert.equal(selectionAllowsPix([]), true)
+  })
+
+  it('rota DESCONHECIDA (`null`) barra o PIX — a régua exige que TODAS sejam PIX', () => {
+    // Lado seguro da dúvida: uma rota que não sabemos qual é não prova que a remessa é exclusiva.
+    assert.equal(selectionAllowsPix(['pix', null]), false)
+  })
+})
+
+describe('applyPixExclusivity — o PIX cai, o resto segue', () => {
+  it('seleção exclusiva de PIX: nada cai', () => {
+    const { lines, droppedCount } = applyPixExclusivity([routed('a', 'pix'), routed('b', 'pix')])
+    assert.equal(droppedCount, 0)
+    assert.equal(
+      lines.every((l) => l.remittable && l.checked && l.pendencyTag === null),
+      true,
+    )
+  })
+
+  it('PIX + TED: o PIX é desmarcado e diz por quê; o TED não é tocado', () => {
+    const { lines, droppedCount } = applyPixExclusivity([routed('p-pix', 'pix'), routed('p-ted', 'transfer')])
+    const byId = new Map(lines.map((l) => [l.payableId, l]))
+
+    assert.equal(droppedCount, 1)
+    assert.equal(byId.get('p-pix')?.remittable, false)
+    assert.equal(byId.get('p-pix')?.checked, false)
+    assert.equal(byId.get('p-pix')?.pendencyTag, PIX_NOT_EXCLUSIVE)
+
+    // A assimetria é a decisão: quem cai é o PIX, nunca o TED. A remessa das outras formas segue.
+    assert.equal(byId.get('p-ted')?.remittable, true)
+    assert.equal(byId.get('p-ted')?.checked, true)
+    assert.equal(byId.get('p-ted')?.pendencyTag, null)
+  })
+
+  it('desmarcar o não-PIX LIBERA o PIX — a régua lê o que está marcado AGORA', () => {
+    // Sem isto o operador não teria como chegar a uma remessa PIX a partir de uma seleção mista sem
+    // voltar ao grid e recomeçar.
+    const { lines, droppedCount } = applyPixExclusivity([
+      routed('p-pix', 'pix'),
+      routed('p-ted', 'transfer', { checked: false }),
+    ])
+    assert.equal(droppedCount, 0)
+    assert.equal(lines.find((l) => l.payableId === 'p-pix')?.remittable, true)
+  })
+
+  it('PIX já impedido por OUTRO motivo mantém a SUA pendência e não entra na contagem', () => {
+    // Trocar a pendência verdadeira por "não é remessa exclusiva" esconderia o motivo que o operador
+    // precisa ler atrás de um efeito colateral.
+    const { lines, droppedCount } = applyPixExclusivity([
+      routed('p-pix', 'pix', {
+        remittable: false,
+        checked: false,
+        pendencyTag: 'financial.remittance.preview.pendency.missingData',
+      }),
+      routed('p-ted', 'transfer'),
+    ])
+    const pix = lines.find((l) => l.payableId === 'p-pix')
+
+    assert.equal(droppedCount, 0)
+    assert.equal(pix?.pendencyTag, 'financial.remittance.preview.pendency.missingData')
+  })
+
+  it('boleto e guia na seleção também derrubam o PIX (não é uma régua só sobre TED)', () => {
+    assert.equal(applyPixExclusivity([routed('a', 'pix'), routed('b', 'billet')]).droppedCount, 1)
+    assert.equal(applyPixExclusivity([routed('a', 'pix'), routed('b', 'tax-guide')]).droppedCount, 1)
+  })
+})
+
+// A régua fim-a-fim, pelo caminho que a tela percorre de verdade: seleção do grid + pré-voo do BFF.
+describe('toPreviewView — o PIX exclusivo, na composição inteira', () => {
+  const pixRow = row('p-pix', 'Aprovado', {
+    documentId: 'doc-pix',
+    supplier: 'Fornecedor PIX',
+    paymentMethod: 'PIX',
+    netCents: '3700',
+    grossCents: '3700',
+  })
+  const pixLine = {
+    payableId: 'p-pix',
+    documentId: 'doc-pix',
+    status: 'ready' as const,
+    route: 'pix' as const,
+    gaps: [],
+    valueCents: '3700',
+  }
+
+  it('PIX + TED: o PIX é desmarcado, diz por quê, e o aviso do topo conta 1', () => {
     const view = toPreviewView(
       preview([fornLine, pixLine], { readyCount: 2 }),
       [fornecedor, pixRow],
@@ -606,7 +778,307 @@ describe('rota sem emissor: PIX e tributo não são remissíveis mesmo com o bac
       TODAY,
     )
     const byId = new Map(view.lines.map((l) => [l.payableId, l]))
-    assert.equal(byId.get('p-forn')?.checked, true)
+
+    assert.equal(byId.get('p-pix')?.remittable, false)
     assert.equal(byId.get('p-pix')?.checked, false)
+    assert.equal(byId.get('p-pix')?.pendencyTag, PIX_NOT_EXCLUSIVE)
+    assert.equal(view.summary.pixNotExclusiveCount, 1)
+
+    // O TED segue: é a assimetria da decisão, e é o que garante que a remessa das outras formas não
+    // pare por causa do PIX.
+    assert.equal(byId.get('p-forn')?.checked, true)
+    assert.equal(byId.get('p-forn')?.pendencyTag, null)
+  })
+
+  it('o PIX desmarcado SAI do totalizador da remessa (o total é dos marcados)', () => {
+    const view = toPreviewView(
+      preview([fornLine, pixLine], { readyCount: 2 }),
+      [fornecedor, pixRow],
+      NONE,
+      TODAY,
+    )
+    // Só o título do fornecedor (R$ 1.407,75) — os R$ 37,00 do PIX não entram no que vai no arquivo.
+    assert.equal(nbsp(view.summary.remittanceTotal), 'R$ 1.407,75')
+    assert.equal(view.summary.checkedCount, 1)
+  })
+
+  it('seleção só de PIX: passa inteira, sem aviso', () => {
+    const view = toPreviewView(preview([pixLine], { readyCount: 1 }), [pixRow], NONE, TODAY)
+    assert.equal(view.lines.find((l) => l.payableId === 'p-pix')?.checked, true)
+    assert.equal(view.summary.pixNotExclusiveCount, 0)
+  })
+
+  it('desmarcando o TED no grid, a seleção vira exclusiva e o PIX volta a ser operável', () => {
+    // O 4º argumento é o conjunto de DESMARCADOS pelo operador. É o caminho de volta que a decisão
+    // exige: sair de uma seleção mista para uma remessa PIX sem voltar ao grid e recomeçar.
+    const view = toPreviewView(
+      preview([fornLine, pixLine], { readyCount: 2 }),
+      [fornecedor, pixRow],
+      new Set(['p-forn']),
+      TODAY,
+    )
+    const pix = view.lines.find((l) => l.payableId === 'p-pix')
+
+    assert.equal(pix?.remittable, true)
+    assert.equal(pix?.checked, true)
+    assert.equal(view.summary.pixNotExclusiveCount, 0)
+  })
+})
+
+// ── O COMPROVANTE: de qual conta e sob qual convênio a remessa saiu ────────────
+//
+// O comprovante dizia quanto, quando e em que arquivo — nunca POR QUAL CONTA. Numa organização com
+// várias contas-cedente, "qual conta pagou?" é a primeira pergunta de quem vai conferir o extrato.
+// E o convênio é o CONTRATO a que o NSA pertence: a sequência é dele, não da conta (core-api#943), e
+// o mesmo convênio pode estar vinculado a várias contas — o que torna o NSA sozinho ambíguo na tela.
+
+const conta = (over: Partial<ReconciliationAccount> = {}): ReconciliationAccount => ({
+  id: 'acc-1',
+  bankCode: '237',
+  bankName: 'Bradesco',
+  branch: '3456',
+  branchDv: '7',
+  accountNumber: '1234',
+  accountDv: '3',
+  alias: 'Espelho do golden',
+  type: 'Corrente',
+  typeLabel: null,
+  status: 'Active',
+  currentBalanceCents: '0',
+  lastUpdatedAt: '',
+  pendingCount: 0,
+  openingBalanceCents: null,
+  openingBalanceDate: null,
+  convenio: '435366',
+  document: '48123456000175',
+  ...over,
+})
+
+const gerada = {
+  files: [
+    {
+      remittanceId: 'r1',
+      nsa: 7,
+      fileName: 'PAG_435366..._000007.REM',
+      totalCents: '300',
+      objectKey: 'van/PAG_435366..._000007.REM',
+      lineCount: 6,
+    },
+  ],
+}
+
+describe('accountLabel — uma fonte só para o seletor e para o comprovante', () => {
+  it('apelido primeiro, banco/agência/conta em seguida', () => {
+    assert.equal(accountLabel(conta()), 'Espelho do golden · 237 · Ag. 3456-7 · C/C 1234-3')
+  })
+
+  it('sem apelido, cai no nome do banco', () => {
+    assert.equal(accountLabel(conta({ alias: '' })), 'Bradesco · 237 · Ag. 3456-7 · C/C 1234-3')
+  })
+
+  it('⚠️ o seletor usa a MESMA função — comprovante e escolha não podem divergir na grafia', () => {
+    // Se cada um formatasse por conta própria, conferir "paguei por esta conta?" viraria comparar duas
+    // grafias do mesmo dado. Este assert quebra se alguém duplicar a formatação.
+    const [opcao] = toAccountOptions([conta()])
+    assert.equal(opcao?.label, accountLabel(conta()))
+  })
+})
+
+describe('checkedPaymentMethodTags — que tipos de transação vão na remessa', () => {
+  // A pergunta que o comprovante não respondia: "que tipos de pagamento eu acabei de mandar?". O dado
+  // já existe na coluna "Forma" da conferência, mas ali é uma coluna de muitas linhas — no comprovante
+  // vira a resposta de quem vai conferir o extrato depois.
+
+  it('lista as formas DISTINTAS dos títulos marcados, sem repetir', () => {
+    const boleto = row('p-bol', 'Aprovado', { documentId: 'doc-b', paymentMethod: 'Boleto' })
+    const outroBoleto = row('p-bol2', 'Aprovado', { documentId: 'doc-b2', paymentMethod: 'Boleto' })
+    const ted = row('p-ted', 'Aprovado', { documentId: 'doc-t', paymentMethod: 'TED' })
+    const linha = (id: string, route: 'billet' | 'transfer') => ({
+      payableId: id,
+      documentId: `doc-${id}`,
+      status: 'ready' as const,
+      route,
+      gaps: [],
+      valueCents: '1000',
+    })
+
+    const view = toPreviewView(
+      preview([linha('p-bol', 'billet'), linha('p-bol2', 'billet'), linha('p-ted', 'transfer')]),
+      [boleto, outroBoleto, ted],
+      NONE,
+      TODAY,
+    )
+
+    assert.deepEqual(view.checkedPaymentMethodTags, [
+      'financial.paymentMethod.Boleto',
+      'financial.paymentMethod.TED',
+    ])
+  })
+
+  it('⚠️ só os MARCADOS entram — desmarcar um tipo o tira da lista', () => {
+    // Se contasse as linhas exibidas, o comprovante afirmaria ter mandado uma forma que o operador
+    // desmarcou justamente para não mandar.
+    const boleto = row('p-bol', 'Aprovado', { documentId: 'doc-b', paymentMethod: 'Boleto' })
+    const ted = row('p-ted', 'Aprovado', { documentId: 'doc-t', paymentMethod: 'TED' })
+    const linha = (id: string, route: 'billet' | 'transfer') => ({
+      payableId: id,
+      documentId: `doc-${id}`,
+      status: 'ready' as const,
+      route,
+      gaps: [],
+      valueCents: '1000',
+    })
+
+    const view = toPreviewView(
+      preview([linha('p-bol', 'billet'), linha('p-ted', 'transfer')]),
+      [boleto, ted],
+      new Set(['p-ted']),
+      TODAY,
+    )
+
+    assert.deepEqual(view.checkedPaymentMethodTags, ['financial.paymentMethod.Boleto'])
+  })
+
+  it('linha IMPEDIDA não entra: ela não vai ao arquivo', () => {
+    const boleto = row('p-bol', 'Aprovado', { documentId: 'doc-b', paymentMethod: 'Boleto' })
+    const ted = row('p-ted', 'Aprovado', { documentId: 'doc-t', paymentMethod: 'TED' })
+
+    const view = toPreviewView(
+      preview([
+        {
+          payableId: 'p-bol',
+          documentId: 'doc-b',
+          status: 'ready',
+          route: 'billet',
+          gaps: [],
+          valueCents: '1000',
+        },
+        {
+          payableId: 'p-ted',
+          documentId: 'doc-t',
+          status: 'blocked',
+          route: 'transfer',
+          gaps: [{ field: 'payee-agency', reason: 'missing' }],
+          valueCents: '1000',
+        },
+      ]),
+      [boleto, ted],
+      NONE,
+      TODAY,
+    )
+
+    assert.deepEqual(view.checkedPaymentMethodTags, ['financial.paymentMethod.Boleto'])
+  })
+
+  it('⚠️ forma AUSENTE vira entrada própria, não some da lista', () => {
+    // Descartá-la em silêncio é o padrão que este módulo já pagou duas vezes (`mapGaps` engolindo campo
+    // desconhecido): o comprovante diria "mandei PIX" numa remessa que levava também um título de forma
+    // desconhecida, e ninguém veria a diferença.
+    const semForma = row('p-x', 'Aprovado', { documentId: 'doc-x', paymentMethod: null })
+    const pix = row('p-pix', 'Aprovado', { documentId: 'doc-p', paymentMethod: 'PIX' })
+
+    const view = toPreviewView(
+      preview([
+        {
+          payableId: 'p-pix',
+          documentId: 'doc-p',
+          status: 'ready',
+          route: 'pix',
+          gaps: [],
+          valueCents: '1000',
+        },
+        {
+          payableId: 'p-x',
+          documentId: 'doc-x',
+          status: 'ready',
+          route: 'pix',
+          gaps: [],
+          valueCents: '1000',
+        },
+      ]),
+      [pix, semForma],
+      NONE,
+      TODAY,
+    )
+
+    assert.deepEqual(view.checkedPaymentMethodTags, [
+      'financial.paymentMethod.PIX',
+      'financial.remittance.generate.paymentMethodUnknown',
+    ])
+  })
+
+  it('seleção sem nada marcado devolve lista vazia (a view desenha o traço)', () => {
+    const ted = row('p-ted', 'Aprovado', { documentId: 'doc-t', paymentMethod: 'TED' })
+    const view = toPreviewView(
+      preview([
+        {
+          payableId: 'p-ted',
+          documentId: 'doc-t',
+          status: 'ready',
+          route: 'transfer',
+          gaps: [],
+          valueCents: '1000',
+        },
+      ]),
+      [ted],
+      new Set(['p-ted']),
+      TODAY,
+    )
+
+    assert.deepEqual(view.checkedPaymentMethodTags, [])
+  })
+})
+
+describe('toReceiptView — o comprovante descreve o ENVIO, não a tela', () => {
+  it('carrega a conta e o convênio congelados no clique', () => {
+    const view = toReceiptView(gerada, {
+      paymentDate: '01/09/2026',
+      account: accountLabel(conta()),
+      convenio: '435366',
+      paymentMethodTags: ['financial.paymentMethod.TED'],
+    })
+    assert.equal(view.account, 'Espelho do golden · 237 · Ag. 3456-7 · C/C 1234-3')
+    assert.equal(view.convenio, '435366')
+    assert.equal(view.paymentDate, '01/09/2026')
+  })
+
+  it('carrega os TIPOS DE TRANSAÇÃO congelados no clique', () => {
+    // Congelados pela mesma razão que a conta: relê-los do pré-voo depois de gerar devolveria lista
+    // vazia — os títulos viram `Transmitido` e saem da seleção.
+    const view = toReceiptView(gerada, {
+      paymentDate: '01/09/2026',
+      account: 'X',
+      convenio: '435366',
+      paymentMethodTags: ['financial.paymentMethod.Boleto', 'financial.paymentMethod.TED'],
+    })
+    assert.deepEqual(view.paymentMethodTags, [
+      'financial.paymentMethod.Boleto',
+      'financial.paymentMethod.TED',
+    ])
+  })
+
+  it('⚠️ usa o que foi ENVIADO, e não relê a conta escolhida agora', () => {
+    // O seletor segue editável com o comprovante aberto. Se o operador trocar a conta depois de gerar,
+    // o comprovante tem de continuar nomeando a que PAGOU — um comprovante que aponta a conta errada é
+    // pior que um sem conta nenhuma.
+    const view = toReceiptView(gerada, {
+      paymentDate: '01/09/2026',
+      account: 'Conta que PAGOU · 237 · Ag. 3456 · C/C 1234-3',
+      convenio: '435366',
+      paymentMethodTags: ['financial.paymentMethod.TED'],
+    })
+    assert.equal(view.account, 'Conta que PAGOU · 237 · Ag. 3456 · C/C 1234-3')
+  })
+
+  it('convênio vazio vira traço, nunca string vazia', () => {
+    // Na prática não acontece — o binding só oferece contas com convênio, porque sem ele não há
+    // remessa. O traço existe para o dia em que essa garantia mudar de lugar.
+    const view = toReceiptView(gerada, {
+      paymentDate: '01/09/2026',
+      account: 'X',
+      convenio: '',
+      paymentMethodTags: [],
+    })
+    assert.equal(view.convenio, '—')
   })
 })

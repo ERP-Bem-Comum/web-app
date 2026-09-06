@@ -15,6 +15,7 @@ import type { SortKey, StatusFilter } from '../reconciliation-accounts.view-mode
 import { AccountsGrid } from '../components/accounts-grid.component.tsx'
 import { AddAccountModal } from '../components/add-account-modal.component.tsx'
 import { CloseAccountModal } from '../components/close-account-modal.component.tsx'
+import { DeleteAccountModal } from '../components/delete-account-modal.component.tsx'
 import { EditAccountModal } from '../components/edit-account-modal.component.tsx'
 import * as s from './reconciliation-accounts.css.ts'
 
@@ -103,6 +104,15 @@ export function ReconciliationAccountsPage() {
         </div>
       </div>
 
+      {/* Falha ao REABRIR. Vive fora do grid porque o reabrir age direto, sem modal — sem esta linha a
+          recusa do backend (conta já ativa, permissão, rede) sumiria e o botão pareceria não fazer
+          nada. Ver `reopen-account.binding.ts`. */}
+      {vm.reopen.errorTag !== null ? (
+        <div className={s.stateBox} role="alert">
+          <p className={s.stateBody}>{t(vm.reopen.errorTag)}</p>
+        </div>
+      ) : null}
+
       {/* grid / estados */}
       <div className={s.gridWrap}>
         {vm.state.tag === 'ready' ? (
@@ -125,6 +135,17 @@ export function ReconciliationAccountsPage() {
               onRequestEdit={(row) => {
                 vm.requestEdit(row.id)
               }}
+              onRequestReopen={(row) => {
+                vm.reopen.reopen(row.id)
+              }}
+              onRequestDelete={(row) => {
+                vm.remove.request(row.id, row.alias)
+              }}
+              // ⚠️ FALSO ATÉ O CORE-API CONSERTAR o `naturalKeySlot` ausente no `set:` do upsert
+              // (`cedente-account-store.drizzle.ts`) — hoje excluir sempre volta 503. A cadeia do front
+              // está pronta e testada; é só este literal que muda no dia. Ver `canDelete` no grid.
+              canDelete={false}
+              reopeningId={vm.reopen.reopeningId}
             />
           </div>
         ) : vm.state.tag === 'loading' ? (
@@ -194,6 +215,7 @@ export function ReconciliationAccountsPage() {
       />
 
       <CloseAccountModal binding={vm.close} />
+      <DeleteAccountModal binding={vm.remove} />
       <EditAccountModal binding={vm.edit} />
     </div>
   )

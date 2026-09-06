@@ -20,6 +20,8 @@ import {
   AGENCY_TOTAL_DIGITS,
   agencyBase,
   agencyDigits,
+  agencyDv,
+  agencyFromParts,
 } from './reconciliation-accounts.view-model.ts'
 
 export type EditAccountBinding = Readonly<{
@@ -48,9 +50,12 @@ export type EditAccountBinding = Readonly<{
   /** #722: convênio em edição. Vazio quando a conta ainda não tem. */
   convenio: string
   /**
-   * A conta JÁ tem convênio → o campo é somente-leitura. Trocar é recusado pelo core-api
+   * Campo somente-leitura: a conta ATIVA já tem convênio. Trocar é recusado pelo core-api
    * (`cedente-convenio-already-set`), porque o convênio viaja no nome de toda remessa transmitida —
    * então o front nem tenta, e mostra o motivo em vez de deixar o operador descobrir pelo erro.
+   *
+   * ⚠️ Conta ENCERRADA destrava (core-api#995 B8.1): ali não há remessa nova a nomear, e é por este
+   * campo que se desativa a numeração da linha morta (convênio VAZIO) para desfazer o conflito de NSA.
    */
   convenioLocked: boolean
   canSubmit: boolean
@@ -103,7 +108,18 @@ export function useEditAccount(
   const needsTypeLabel = type === 'Cartao' || type === 'Outro'
   // Travado pelo que veio do BACKEND, não pelo estado do input: o que decide é a conta já ter
   // convênio, e não o operador ter digitado algo nesta sessão.
-  const convenioLocked = (target?.convenio ?? '') !== ''
+  //
+  // ⚠️ A TRAVA VALE SÓ EM CONTA ATIVA (core-api#995 B8.1/B8.3), e a razão é a mesma que a criou. O #722
+  // travou a troca porque o convênio viaja no NOME de toda remessa transmitida: reescrevê-lo faria as
+  // remessas antigas apontarem para um contrato que a conta não declara mais.
+  //
+  // Em conta ENCERRADA não há remessa nova a nomear, e travar o campo ali não protege nada — só força
+  // `UPDATE` direto no banco de produção, que foi o que aconteceu em 06/09/2026. É por aqui que o
+  // operador desativa a numeração da linha morta (convênio VAZIO) e desfaz o conflito de NSA com a
+  // conta irmã, sem depender de ninguém.
+  //
+  // As duas pontas mudaram juntas: destravar só na tela produziria um Salvar que volta 409.
+  const convenioLocked = (target?.convenio ?? '') !== '' && target?.status !== 'Closed'
   // Mesma régua do cadastro (specs/107): agência só está completa com o DV.
   const agencyComplete = agency.length === AGENCY_TOTAL_DIGITS
   const agencyIncomplete = agency.length > 0 && !agencyComplete
@@ -166,9 +182,14 @@ export function useEditAccount(
       setCustomBankName(a.bankName)
       setType(a.type)
       setTypeLabel(a.typeLabel ?? '')
-      // Normaliza o que veio do backend: `branch` é texto e as contas antigas trazem só os 4 dígitos.
-      // Elas abrem incompletas de propósito — ver `agencyIncomplete`.
-      setAgency(agencyDigits(a.branch))
+      // O CAMINHO DE VOLTA (core-api#856): a base vem de `branch` e o DV de `branchDv`, cada um da sua
+      // fonte, e a tela os remonta como o operador os digitou.
+      //
+      // ⚠️ Sem esta linha lendo o DV, ligar só o ENVIO não consertaria nada: o dado seria gravado e a
+      // edição continuaria reabrindo em vermelho, com o Salvar travado — o sintoma sobreviveria ao fix.
+      // Conta gravada ANTES do campo existir volta com `branchDv: ''` e segue incompleta de propósito:
+      // ela de fato não tem o dado. Ver `agencyIncomplete`.
+      setAgency(agencyFromParts(a.branch, a.branchDv))
       setAccount(a.accountDv !== '' ? `${a.accountNumber}-${a.accountDv}` : a.accountNumber)
       setNickname(a.alias)
       setConvenio(a.convenio)
@@ -193,17 +214,29 @@ export function useEditAccount(
         ...(bankName !== undefined ? { bankName } : {}),
         type,
         ...(needsTypeLabel && typeLabel.trim() !== '' ? { typeLabel: typeLabel.trim() } : {}),
-        // ⚠️ Só a BASE (4 dígitos) — o DV é exigido na tela e NÃO é guardado, porque o core-api não tem
-        // onde (core-api#859). Concatenar corromperia o header do CNAB: ver a ressalva em
+        // A agência PARTIDA em dois campos, como o header do CNAB a espera — base nas 053-057, DV na
+        // 058. O core-api ganhou onde guardar o dígito na #856. ⚠️ Nunca concatenar: ver a nota em
         // `add-account.binding.ts` e specs/107.
         agency: agencyBase(agency),
+        // Reenviado a cada PATCH, junto de `agency`/`accountNumber`/`accountDigit`, e NÃO tratado como
+        // o convênio: aquele é preenchível-uma-vez e reenviá-lo pediria a troca que o backend recusa;
+        // este aceita o mesmo valor de volta com 200. Editar só o apelido não pode exigir redigitar o
+        // DV — era exatamente essa a armadilha da tela travada.
+        ...(agencyDv(agency) !== '' ? { agencyDigit: agencyDv(agency) } : {}),
         accountNumber,
         accountDigit,
         ...(nickname.trim() !== '' ? { nickname: nickname.trim() } : {}),
-        // #722: só viaja quando a conta AINDA não tinha convênio e o operador preencheu agora.
-        // Reenviar o valor existente seria pedir a troca que o core-api recusa — e um 409 aqui
+        // Conta ATIVA (#722): só viaja quando ela AINDA não tinha convênio e o operador preencheu
+        // agora. Reenviar o valor existente seria pedir a troca que o core-api recusa — e um 409 aqui
         // apareceria como falha de "salvar a conta", escondendo que nada estava errado.
-        ...(!convenioLocked && convenio.trim() !== '' ? { convenio: convenio.trim() } : {}),
+        //
+        // Conta ENCERRADA (core-api#995 B8.2): o campo é editável e o VAZIO é INTENÇÃO — é assim que se
+        // desativa a numeração da linha morta e se desfaz o conflito de NSA com a conta irmã. Sem esta
+        // condição, limpar o campo não sairia da tela: a régua antiga só enviava valor não-vazio, e o
+        // operador veria "salvo" sem nada ter mudado.
+        ...(!convenioLocked && (convenio.trim() !== '' || target.status === 'Closed')
+          ? { convenio: convenio.trim() }
+          : {}),
       })
     },
   }

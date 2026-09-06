@@ -85,8 +85,48 @@ const AGENCY_BASE_DIGITS = 4
  */
 export const agencyDigits = (value: string): string => value.replace(/\D/g, '').slice(0, AGENCY_TOTAL_DIGITS)
 
-/** Os 4 dígitos da agência, sem o DV — o que o core-api guarda hoje. Ver a ressalva no submit. */
+/** Os 4 dígitos da agência, sem o DV — posições 053-057 do header CNAB. */
 export const agencyBase = (rawDigits: string): string => rawDigits.slice(0, AGENCY_BASE_DIGITS)
+
+/**
+ * O DV da agência, sozinho — posição 058, UMA só. `''` quando o campo ainda não tem os 5 dígitos.
+ *
+ * Existe porque a base e o DV viajam em campos SEPARADOS ao core-api (`agency` e `agencyDigit`,
+ * core-api#856). Juntá-los num só corromperia o header: `digits(agency, 5)` remove o separador antes do
+ * pad, e `'1234-5'` sairia `12345` nas 053-057, onde o banco espera `01234`.
+ */
+export const agencyDv = (rawDigits: string): string =>
+  rawDigits.slice(AGENCY_BASE_DIGITS, AGENCY_TOTAL_DIGITS)
+
+/**
+ * O caminho de VOLTA: remonta o campo da tela a partir do que o backend guarda separado.
+ *
+ * Lê a base de `branch` e o DV de `branchDv`, cada um da sua fonte — e não `branch + branchDv` cru, de
+ * propósito: uma conta legada cujo `branch` tenha 5 dígitos consumiria a posição do DV e o dígito
+ * verdadeiro cairia fora do corte.
+ *
+ * Conta sem DV (`branchDv === ''`) devolve os 4 dígitos e segue incompleta — é o cadastro que realmente
+ * não tem o dado, e continuar cobrando dele é o comportamento certo.
+ */
+export const agencyFromParts = (branch: string, branchDv: string): string =>
+  `${agencyBase(agencyDigits(branch))}${agencyDigits(branchDv).slice(0, 1)}`
+
+/**
+ * A agência COMO SE LÊ — `3456-7`, com o hífen, para exibição.
+ *
+ * ⚠️ FONTE ÚNICA de propósito. O texto "banco · Ag … · C/C …" era montado em CINCO lugares (grid de
+ * contas, cabeçalho e seletor do workspace, relatório de conciliação e o seletor/comprovante da
+ * remessa), e os cinco escreviam `Ag ${branch}` cru. O DV da conta aparecia; o da agência, não — o
+ * campo era exigido no cadastro e sumia da tela, e o operador não tinha como conferir o que gravou.
+ *
+ * Conta sem DV (`branchDv === ''`) sai só com a base, sem hífen solto: `3456`, nunca `3456-`. Um hífen
+ * pendurado leria como dado corrompido, e o caso é legítimo — é a conta anterior à core-api#856.
+ *
+ * ⚠️ Isto é APRESENTAÇÃO, e só. O que vai ao arquivo continua partido em dois campos: `agency` nas
+ * posições 053-057 e o DV na 058 (ver `agencyDv` e specs/107). Nunca use esta string como valor.
+ */
+export const formatBranch = (branch: string, branchDv: string): string =>
+  branchDv.trim() === '' ? branch : `${branch}-${branchDv}`
 
 export const OTHER_BANK_CODE = 'OUTRO'
 export const OTHER_BANK_NAME = 'Outro'
@@ -115,6 +155,7 @@ export type AccountRow = Readonly<{
   bankCode: string
   bankName: string
   alias: string
+  /** Agência PRONTA para exibir, com o DV quando existe (`formatBranch`) — nunca as partes cruas. */
   branch: string
   accountNumber: string
   accountDv: string
@@ -195,7 +236,8 @@ export const toAccountRow = (a: ReconciliationAccount, today = ''): AccountRow =
     bankCode: a.bankCode,
     bankName: a.bankName,
     alias: a.alias,
-    branch: a.branch,
+    // Com o DV: o campo é exigido no cadastro e sumia da tela — o operador não tinha onde conferi-lo.
+    branch: formatBranch(a.branch, a.branchDv),
     accountNumber: a.accountNumber,
     accountDv: a.accountDv,
     balanceBRL: centsToBRL(a.currentBalanceCents),
