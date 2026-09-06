@@ -869,11 +869,11 @@ const gerada = {
 
 describe('accountLabel — uma fonte só para o seletor e para o comprovante', () => {
   it('apelido primeiro, banco/agência/conta em seguida', () => {
-    assert.equal(accountLabel(conta()), 'Espelho do golden · 237 · Ag. 3456 · C/C 1234-3')
+    assert.equal(accountLabel(conta()), 'Espelho do golden · 237 · Ag. 3456-7 · C/C 1234-3')
   })
 
   it('sem apelido, cai no nome do banco', () => {
-    assert.equal(accountLabel(conta({ alias: '' })), 'Bradesco · 237 · Ag. 3456 · C/C 1234-3')
+    assert.equal(accountLabel(conta({ alias: '' })), 'Bradesco · 237 · Ag. 3456-7 · C/C 1234-3')
   })
 
   it('⚠️ o seletor usa a MESMA função — comprovante e escolha não podem divergir na grafia', () => {
@@ -1037,7 +1037,7 @@ describe('toReceiptView — o comprovante descreve o ENVIO, não a tela', () => 
       convenio: '435366',
       paymentMethodTags: ['financial.paymentMethod.TED'],
     })
-    assert.equal(view.account, 'Espelho do golden · 237 · Ag. 3456 · C/C 1234-3')
+    assert.equal(view.account, 'Espelho do golden · 237 · Ag. 3456-7 · C/C 1234-3')
     assert.equal(view.convenio, '435366')
     assert.equal(view.paymentDate, '01/09/2026')
   })

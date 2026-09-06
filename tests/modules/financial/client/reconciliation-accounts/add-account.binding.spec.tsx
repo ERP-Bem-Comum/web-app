@@ -17,7 +17,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { renderHook, act, waitFor, cleanup } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
-import { ok } from '#shared/primitives/result.ts'
+import { ok, err } from '#shared/primitives/result.ts'
 import { reconciliationRepository } from '#modules/financial/client/data/repository/reconciliation.repository.instance.ts'
 import { useAddAccount } from '#modules/financial/client/reconciliation-accounts/add-account.binding.ts'
 
@@ -156,5 +156,48 @@ describe('useAddAccount — agência com DV obrigatório', () => {
     const [payload] = mockedCreate.mock.calls[0] ?? []
     expect(payload?.agencyDigit).toHaveLength(1)
     expect(payload?.agency).toHaveLength(4)
+  })
+})
+
+// ── O 409 do cadastro NOMEIA a causa (06/09/2026, produção) ─────────────────────
+//
+// A tela mostrava "Conflito ao processar a solicitação" e o operador não tinha o que fazer com isso.
+// A causa real era a conta ENCERRADA segurando a chave natural — e encerrar não a libera. A P.O.
+// encerrou uma conta em produção justamente para recadastrá-la, e bateu nesta parede.
+
+describe('conflito no cadastro — a mensagem diz o que conflitou', () => {
+  it('⚠️ `conflict` vira o texto da chave duplicada, não o genérico', async () => {
+    mockedCreate.mockResolvedValue(err('conflict') as never)
+    const { result } = setup()
+    fillExceptAgency(result)
+    act(() => {
+      result.current.setAgency('14872')
+    })
+    act(() => {
+      result.current.submit()
+    })
+
+    await waitFor(() => {
+      expect(result.current.errorTag).not.toBeNull()
+    })
+    expect(result.current.errorTag).toBe('financial.recon.add.error.duplicate')
+    expect(result.current.errorTag).not.toBe('financial.recon.error.conflict')
+  })
+
+  it('as demais falhas seguem no mapeamento comum — só o conflito ganhou nome próprio', async () => {
+    mockedCreate.mockResolvedValue(err('server') as never)
+    const { result } = setup()
+    fillExceptAgency(result)
+    act(() => {
+      result.current.setAgency('14872')
+    })
+    act(() => {
+      result.current.submit()
+    })
+
+    await waitFor(() => {
+      expect(result.current.errorTag).not.toBeNull()
+    })
+    expect(result.current.errorTag).not.toBe('financial.recon.add.error.duplicate')
   })
 })

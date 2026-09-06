@@ -64,6 +64,7 @@ const account = (id: string, convenio: string, status = 'Active') =>
     bankName: 'Bradesco',
     bankCode: '237',
     branch: '3456',
+    branchDv: '7',
     accountNumber: '1234',
     accountDv: '3',
   }) as never
@@ -370,7 +371,7 @@ describe('useRemittancePreview', () => {
     // MARCADOS, e a marcação é justamente o que o envio desfaz (os títulos viram `Transmitido`).
     expect(result.current.sent).toEqual({
       paymentDate: '10/09/2026',
-      account: 'Conta acc-1 · 237 · Ag. 3456 · C/C 1234-3',
+      account: 'Conta acc-1 · 237 · Ag. 3456-7 · C/C 1234-3',
       convenio: '123456',
       paymentMethodTags: ['financial.paymentMethod.TED'],
     })
@@ -395,7 +396,7 @@ describe('useRemittancePreview', () => {
       result.current.setCedenteAccountId('acc-2')
     })
 
-    expect(result.current.sent?.account).toBe('Conta acc-1 · 237 · Ag. 3456 · C/C 1234-3')
+    expect(result.current.sent?.account).toBe('Conta acc-1 · 237 · Ag. 3456-7 · C/C 1234-3')
     expect(result.current.sent?.convenio).toBe('123456')
   })
 

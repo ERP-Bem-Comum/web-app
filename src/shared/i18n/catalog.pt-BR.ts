@@ -1565,8 +1565,14 @@ export const ptBR: Catalog = {
   'financial.recon.accounts.close.title': 'Encerrar conta bancária',
   'financial.recon.accounts.close.sub': 'A conta deixa de aparecer para novas conciliações.',
   'financial.recon.accounts.close.body': 'Tem certeza que deseja encerrar a conta',
+  // ⚠️ A segunda frase é a que faltava, e é a que custou caro em produção (06/09/2026): o aviso dizia
+  // "irreversível" e "não poderá ser reaberta", mas NÃO dizia a consequência que o operador só
+  // descobre depois — a chave bancária continua ocupada, e a conta não pode ser cadastrada de novo.
+  // A P.O. encerrou uma conta em produção justamente para recadastrá-la: "se eu soubesse que barraria
+  // um novo cadastro eu não teria feito". Barrar só funciona se a pessoa ENXERGAR o que está aceitando
+  // (mesma lição do #252/#332).
   'financial.recon.accounts.close.warn':
-    'Esta ação é irreversível: a conta não poderá ser reaberta. O histórico e as conciliações já feitas são preservados.',
+    'Esta ação é irreversível: a conta não poderá ser reaberta, e também NÃO poderá ser cadastrada de novo — o banco, a agência e a conta continuam ocupados por ela. O histórico e as conciliações já feitas são preservados.',
   'financial.recon.accounts.close.cancel': 'Cancelar',
   'financial.recon.accounts.close.confirm': 'Encerrar conta',
   'financial.recon.accounts.close.closing': 'Encerrando…',
@@ -1615,6 +1621,18 @@ export const ptBR: Catalog = {
   'financial.recon.add.hint.branch': 'Informe a agência com o dígito verificador.',
   'financial.recon.add.error.branchDigit':
     'Falta o dígito verificador da agência. Informe no formato 0000-0.',
+  // ⚠️ Texto PRÓPRIO em vez do `recon.error.conflict` genérico ("Conflito ao processar a solicitação"),
+  // que era o que a tela mostrava e não dizia nada a quem estava olhando.
+  //
+  // No POST de conta-cedente, `conflict` só tem uma causa: `cedente-account-duplicate` — a chave
+  // natural (banco/agência/conta/dígito) já existe. As outras recusas 409 do módulo pertencem a outras
+  // rotas (`already-closed` ao encerrar, `bank-data-locked` e `convenio-already-set` ao editar).
+  //
+  // E o texto diz mais que a mensagem do core-api ("Já existe uma conta-cedente com esta chave
+  // bancária"), de propósito: o caso que trava o operador é a conta ENCERRADA ocupando a chave, e essa
+  // metade é justamente a que ele não tem como adivinhar. Aconteceu em produção em 06/09/2026.
+  'financial.recon.add.error.duplicate':
+    'Já existe uma conta com este banco, agência e conta — inclusive se ela estiver ENCERRADA. Encerrar não libera a chave bancária. Procure a conta na lista (filtro "Encerradas") antes de cadastrar outra.',
   'financial.recon.add.field.account': 'Conta-DV',
   'financial.recon.add.placeholder.account': '00000000-0',
   'financial.recon.add.field.document': 'CNPJ da organização',

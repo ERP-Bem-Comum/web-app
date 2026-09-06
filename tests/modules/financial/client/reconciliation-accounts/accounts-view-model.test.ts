@@ -16,6 +16,8 @@ import {
   agencyBase,
   agencyDv,
   agencyFromParts,
+  formatBranch,
+  toAccountRow,
 } from '../../../../../src/modules/financial/client/reconciliation-accounts/reconciliation-accounts.view-model.ts'
 import type { ReconciliationAccount } from '../../../../../src/modules/financial/client/data/model/reconciliation.model.ts'
 
@@ -247,5 +249,36 @@ describe('agencyFromParts — a volta', () => {
 
   it('texto do backend é normalizado — `branch` é string livre, não dígito garantido', () => {
     assert.equal(agencyFromParts('1462-', '8'), '14628')
+  })
+})
+
+// ── A agência aparece COM o DV na tela (#401, follow-up) ────────────────────────
+//
+// O DV da conta sempre apareceu (`CC 1234-3`); o da agência, não (`Ag 3456`). O campo era exigido no
+// cadastro e sumia do grid — o operador gravava o dígito e não tinha onde conferi-lo. O texto era
+// montado em CINCO lugares, todos escrevendo `Ag ${branch}` cru; `formatBranch` é a fonte única.
+
+describe('formatBranch — a agência como se lê', () => {
+  it('junta base e DV com hífen', () => {
+    assert.equal(formatBranch('3456', '7'), '3456-7')
+  })
+
+  it('⚠️ conta SEM DV não ganha hífen pendurado', () => {
+    // `3456-` leria como dado corrompido, e o caso é legítimo: é a conta anterior à core-api#856.
+    assert.equal(formatBranch('3456', ''), '3456')
+  })
+
+  it('espaço em branco conta como ausência, não como DV', () => {
+    assert.equal(formatBranch('3456', ' '), '3456')
+  })
+
+  it('a linha do grid já sai formatada — a view não remonta nada', () => {
+    const row = toAccountRow(acc({ id: 'a1', branch: '3456', branchDv: '7' }))
+    assert.equal(row.branch, '3456-7')
+  })
+
+  it('conta antiga no grid mostra só a base', () => {
+    const row = toAccountRow(acc({ id: 'a1', branch: '3456', branchDv: '' }))
+    assert.equal(row.branch, '3456')
   })
 })

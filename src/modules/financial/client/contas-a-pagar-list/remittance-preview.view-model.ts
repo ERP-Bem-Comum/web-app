@@ -27,6 +27,8 @@ import type {
 
 import type { ReconciliationAccount } from '#modules/financial/client/data/model/reconciliation.model.ts'
 
+import { formatBranch } from '#modules/financial/client/reconciliation-accounts/reconciliation-accounts.view-model.ts'
+
 import type { GridRow } from './contas-a-pagar.view-model.ts'
 
 /** Status do título que torna o documento candidato à remessa. Fora dele, nem chega ao core-api. */
@@ -634,7 +636,7 @@ export type ReconciliationAccountOption = Readonly<{ id: string; label: string }
  * operador leu ao escolher — e conferir viraria comparar duas grafias do mesmo dado.
  */
 export const accountLabel = (a: ReconciliationAccount): string =>
-  `${a.alias !== '' ? a.alias : a.bankName} · ${a.bankCode} · Ag. ${a.branch} · C/C ${a.accountNumber}-${a.accountDv}`
+  `${a.alias !== '' ? a.alias : a.bankName} · ${a.bankCode} · Ag. ${formatBranch(a.branch, a.branchDv)} · C/C ${a.accountNumber}-${a.accountDv}`
 
 export const toAccountOptions = (
   accounts: readonly ReconciliationAccount[],
