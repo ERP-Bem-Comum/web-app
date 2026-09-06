@@ -78,6 +78,36 @@ Ele já esteve errado duas vezes, e as duas ficam registradas no catálogo porqu
 3. Agora: encerrar **é** reversível, e a chave só é liberada pelo excluir. O texto diz **onde estão as
    duas saídas**, que é o que o operador precisa saber antes de decidir.
 
+## ⚠️ O Excluir foi ESCONDIDO na promoção para produção (06/09/2026)
+
+A cadeia do front está completa, correta e testada. O que impede o ciclo de fechar é do **core-api**:
+o `save()` do `cedente-account-store.drizzle.ts` monta o upsert com `naturalKeySlot` na lista do
+`INSERT` mas **não** na do `onDuplicateKeyUpdate`. Excluir uma conta que já existe cai sempre no
+caminho do `UPDATE`, então o `status` vira `Deleted` com o slot ainda em `'LIVE'`, violando o `CHECK`
+que a própria #995 criou:
+
+```sql
+(status <> 'Deleted') OR (natural_key_slot = id)
+```
+
+Medido no ambiente local, com `ROLLBACK`:
+
+```
+UPDATE ... SET status='Deleted'                      → ERROR 3819:
+    Check constraint 'fin_cedente_accounts_status_deleted_chk' is violated
+UPDATE ... SET status='Deleted', natural_key_slot=id → OK
+```
+
+**Decisão da P.O.:** esconder o botão em vez de entregá-lo quebrado. Botão visível que nunca funciona
+ensina o operador a desconfiar da tela, e esse custo sobrevive ao conserto. As outras saídas do
+encerramento — **Reabrir** e o **convênio editável** — funcionam e foram promovidas.
+
+**Como é feito:** o grid recebe `canDelete: boolean`; a página passa o literal `false`. Não é código
+morto — é uma chave, e há teste cobrindo os dois estados (`accounts-grid.spec.tsx`).
+
+**Para repor:** `naturalKeySlot: row.naturalKeySlot` no `set:` do upsert do core-api, e o literal da
+página vira `true`. Nada mais — nem a cadeia, nem os textos, nem os testes.
+
 ## Fora de escopo
 
 - **A conta excluída no seletor "Alterar conta".** O desenho da #995 (B5) previa que ela continuasse
@@ -91,5 +121,7 @@ Ele já esteve errado duas vezes, e as duas ficam registradas no catálogo porqu
 - `reopen-delete-account.binding.spec.tsx` (novo, 9) — a assimetria (reabrir sem confirmação × excluir
   com), o `reopeningId` marcando a linha, invalidação do grid, falha virando tag sem invalidar, o modal
   do excluir permanecendo aberto no erro, e `confirm` sem alvo como no-op.
+- `accounts-grid.spec.tsx` (+2) — o Excluir ausente com `canDelete` falso (e o Reabrir presente), e
+  de volta com `canDelete` verdadeiro, mandando a linha certa. É o que prova que esconder é uma chave.
 - `edit-account.binding.spec.tsx` (+5) — convênio travado na ativa e destravado na encerrada, o setter
   no-op quando travado, o **vazio viajando** na encerrada, e o vazio **não** viajando na ativa.
