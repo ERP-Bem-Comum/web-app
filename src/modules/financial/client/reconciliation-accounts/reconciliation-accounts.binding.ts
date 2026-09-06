@@ -19,6 +19,8 @@ import {
 } from './reconciliation-accounts.view-model.ts'
 import { useAddAccount, type AddAccountBinding } from './add-account.binding.ts'
 import { useCloseAccount, type CloseAccountBinding } from './close-account.binding.ts'
+import { useReopenAccount, type ReopenAccountBinding } from './reopen-account.binding.ts'
+import { useDeleteAccount, type DeleteAccountBinding } from './delete-account.binding.ts'
 import { useEditAccount, type EditAccountBinding } from './edit-account.binding.ts'
 
 export type ChipCounts = Readonly<{ todas: number; pendentes: number; emDia: number; encerradas: number }>
@@ -39,6 +41,10 @@ export type AccountsBinding = Readonly<{
   addOpen: boolean
   add: AddAccountBinding
   close: CloseAccountBinding
+  /** Reabrir a conta encerrada (core-api#995 B1) — age direto, sem modal. */
+  reopen: ReopenAccountBinding
+  /** Excluir a conta encerrada (core-api#995 B3) — com confirmação, porque não volta. */
+  remove: DeleteAccountBinding
   edit: EditAccountBinding
   /** Abre o modal de edição da conta (lookup por id na lista carregada). */
   requestEdit: (id: string) => void
@@ -67,6 +73,8 @@ export function useReconciliationAccounts(): AccountsBinding {
     setAddOpen(false)
   })
   const close = useCloseAccount()
+  const reopen = useReopenAccount()
+  const remove = useDeleteAccount()
   const edit = useEditAccount(bankNameByCode, () => undefined)
 
   const state: AccountsState = (() => {
@@ -102,6 +110,8 @@ export function useReconciliationAccounts(): AccountsBinding {
     addOpen,
     add,
     close,
+    reopen,
+    remove,
     edit,
     requestEdit: (id) => {
       const account = allAccounts.find((a) => a.id === id)

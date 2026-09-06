@@ -50,6 +50,9 @@ describe('AccountsGrid', () => {
         onToggle={vi.fn()}
         onRequestClose={vi.fn()}
         onRequestEdit={vi.fn()}
+        onRequestReopen={vi.fn()}
+        onRequestDelete={vi.fn()}
+        reopeningId={null}
       />,
     )
     expect(screen.getByText(tr('financial.recon.accounts.col.conta'))).toBeTruthy()
@@ -65,6 +68,9 @@ describe('AccountsGrid', () => {
         onToggle={vi.fn()}
         onRequestClose={vi.fn()}
         onRequestEdit={vi.fn()}
+        onRequestReopen={vi.fn()}
+        onRequestDelete={vi.fn()}
+        reopeningId={null}
       />,
     )
     expect(screen.getByText('4 pendentes')).toBeTruthy()
@@ -83,6 +89,9 @@ describe('AccountsGrid', () => {
         onToggle={vi.fn()}
         onRequestClose={vi.fn()}
         onRequestEdit={vi.fn()}
+        onRequestReopen={vi.fn()}
+        onRequestDelete={vi.fn()}
+        reopeningId={null}
       />,
     )
     fireEvent.click(screen.getByText('Ativa'))
@@ -102,6 +111,9 @@ describe('AccountsGrid', () => {
         onToggle={onToggle}
         onRequestClose={vi.fn()}
         onRequestEdit={vi.fn()}
+        onRequestReopen={vi.fn()}
+        onRequestDelete={vi.fn()}
+        reopeningId={null}
       />,
     )
     expect(screen.getByText(tr('financial.recon.accounts.expand.saldoInicial'))).toBeTruthy()
@@ -126,6 +138,9 @@ describe('AccountsGrid', () => {
         onToggle={vi.fn()}
         onRequestClose={onRequestClose}
         onRequestEdit={vi.fn()}
+        onRequestReopen={vi.fn()}
+        onRequestDelete={vi.fn()}
+        reopeningId={null}
       />,
     )
     // Só a conta ativa oferece a ação (a encerrada, expandida, não mostra o botão).
@@ -152,6 +167,9 @@ describe('AccountsGrid', () => {
         onToggle={vi.fn()}
         onRequestClose={vi.fn()}
         onRequestEdit={onRequestEdit}
+        onRequestReopen={vi.fn()}
+        onRequestDelete={vi.fn()}
+        reopeningId={null}
       />,
     )
     // Editar aparece nas DUAS (ativa e encerrada) — diferente de Encerrar (só na ativa).

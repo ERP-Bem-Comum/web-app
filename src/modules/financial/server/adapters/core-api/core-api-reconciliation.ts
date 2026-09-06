@@ -245,6 +245,26 @@ export const createCoreApiReconciliationClient = (
     if (isErr(r)) return err(mapHttpError(r.error))
     return cedenteAccountToModel(r.value)
   },
+  reopenCedenteAccount: async (id, token) => {
+    // core-api#995 B1: Closed → Active. Sem body, como o `close`. Devolve a conta atualizada, e é dela
+    // que a tela relê o status — nunca de um otimismo local.
+    const r = await resultFetch<unknown>(`${baseUrl}/cedente-accounts/${id}/reopen`, {
+      method: 'POST',
+      token,
+    })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return cedenteAccountToModel(r.value)
+  },
+  deleteCedenteAccount: async (id, token) => {
+    // core-api#995 B3: Closed → Deleted (SOFT). O verbo é DELETE, mas a resposta traz a conta — o
+    // backend não apaga a linha, e é isso que mantém remessas e conciliações resolvendo o vínculo.
+    const r = await resultFetch<unknown>(`${baseUrl}/cedente-accounts/${id}`, {
+      method: 'DELETE',
+      token,
+    })
+    if (isErr(r)) return err(mapHttpError(r.error))
+    return cedenteAccountToModel(r.value)
+  },
   editCedenteAccount: async (i, token) => {
     // PATCH parcial: só as chaves presentes (todas opcionais). `type` mapeado p/ o enum minúsculo do backend.
     const typeMap = {

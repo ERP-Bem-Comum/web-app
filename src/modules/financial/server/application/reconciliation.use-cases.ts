@@ -70,8 +70,14 @@ export type ReconciliationClient = Readonly<{
     i: CreateCedenteAccountInput,
     token: string,
   ) => Promise<Result<CedenteAccount, ReconciliationError>>
-  // Encerrar conta-cedente (POST /cedente-accounts/:id/close) — sem body; Open → Closed. Irreversível na UI.
+  // Encerrar conta-cedente (POST /cedente-accounts/:id/close) — sem body; Active → Closed.
   closeCedenteAccount: (id: string, token: string) => Promise<Result<CedenteAccount, ReconciliationError>>
+  // Reabrir (core-api#995 B1) — Closed → Active, preservando id, histórico e o contador de NSA. É o
+  // desfazer que faltava: encerrar deixou de ser terminal.
+  reopenCedenteAccount: (id: string, token: string) => Promise<Result<CedenteAccount, ReconciliationError>>
+  // Excluir (core-api#995 B3) — Closed → Deleted. SOFT delete: a linha sai da listagem e LIBERA a chave
+  // natural, mas o histórico continua resolvendo (remessas e conciliações apontam para o id).
+  deleteCedenteAccount: (id: string, token: string) => Promise<Result<CedenteAccount, ReconciliationError>>
   // Editar conta-cedente (PATCH /cedente-accounts/:id) — subconjunto editável; devolve a conta atualizada.
   editCedenteAccount: (
     i: EditCedenteAccountInput,
@@ -175,6 +181,16 @@ export const createCloseCedenteAccount =
   (deps: Deps) =>
   (id: string, token: string): Promise<Result<CedenteAccount, ReconciliationError>> =>
     deps.client.closeCedenteAccount(id, token)
+
+export const createReopenCedenteAccount =
+  (deps: Deps) =>
+  (id: string, token: string): Promise<Result<CedenteAccount, ReconciliationError>> =>
+    deps.client.reopenCedenteAccount(id, token)
+
+export const createDeleteCedenteAccount =
+  (deps: Deps) =>
+  (id: string, token: string): Promise<Result<CedenteAccount, ReconciliationError>> =>
+    deps.client.deleteCedenteAccount(id, token)
 
 export const createEditCedenteAccount =
   (deps: Deps) =>

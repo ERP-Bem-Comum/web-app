@@ -22,6 +22,10 @@ export type AccountsGridProps = Readonly<{
   onToggle: (id: string) => void
   onRequestClose: (row: AccountRow) => void
   onRequestEdit: (row: AccountRow) => void
+  onRequestReopen: (row: AccountRow) => void
+  onRequestDelete: (row: AccountRow) => void
+  /** Conta sendo reaberta agora — desabilita o próprio botão, sem travar a linha inteira. */
+  reopeningId: string | null
 }>
 
 function StatusPill({ row }: Readonly<{ row: AccountRow }>) {
@@ -48,10 +52,17 @@ function ExpandPanel({
   row,
   onRequestClose,
   onRequestEdit,
+  onRequestReopen,
+  onRequestDelete,
+  reopeningId,
 }: Readonly<{
   row: AccountRow
   onRequestClose: (row: AccountRow) => void
   onRequestEdit: (row: AccountRow) => void
+  onRequestReopen: (row: AccountRow) => void
+  onRequestDelete: (row: AccountRow) => void
+  /** Conta sendo reaberta agora — desabilita o próprio botão, sem travar a linha inteira. */
+  reopeningId: string | null
 }>) {
   const tipo = row.typeLabel !== null ? `${t(row.typeTag)} · ${row.typeLabel}` : t(row.typeTag)
   return (
@@ -77,7 +88,9 @@ function ExpandPanel({
           {row.missingConvenio ? t('financial.recon.accounts.expand.semConvenio') : row.convenio}
         </span>
       </div>
-      {/* Editar: disponível em qualquer conta. Encerrar: só em conta ativa (Open→Closed). */}
+      {/* Editar: em qualquer conta. Encerrar: só na ativa. Reabrir e Excluir: só na ENCERRADA — são as
+          duas saídas que o encerramento passou a ter (core-api#995 B1/B3), e antes delas uma conta
+          encerrada por engano ficava presa: não reabria e não podia ser recadastrada. */}
       <div className={s.expandAction}>
         <button
           type="button"
@@ -98,7 +111,34 @@ function ExpandPanel({
           >
             {t('financial.recon.accounts.close.action')}
           </button>
-        ) : null}
+        ) : (
+          <>
+            {/* Reabrir age DIRETO, sem confirmação: é o caminho de recuperação de quem errou, e
+                desfazê-lo é só encerrar de novo. Confirmar aqui cobraria mais atenção para consertar o
+                engano do que para cometê-lo. */}
+            <button
+              type="button"
+              className={s.editAccountBtn}
+              disabled={reopeningId === row.id}
+              onClick={() => {
+                onRequestReopen(row)
+              }}
+            >
+              {reopeningId === row.id
+                ? t('financial.recon.accounts.reopen.running')
+                : t('financial.recon.accounts.reopen.action')}
+            </button>
+            <button
+              type="button"
+              className={s.closeAccountBtn}
+              onClick={() => {
+                onRequestDelete(row)
+              }}
+            >
+              {t('financial.recon.accounts.delete.action')}
+            </button>
+          </>
+        )}
       </div>
     </div>
   )
@@ -111,6 +151,9 @@ function Row({
   onToggle,
   onRequestClose,
   onRequestEdit,
+  onRequestReopen,
+  onRequestDelete,
+  reopeningId,
 }: Readonly<{
   row: AccountRow
   expanded: boolean
@@ -118,6 +161,10 @@ function Row({
   onToggle: (id: string) => void
   onRequestClose: (row: AccountRow) => void
   onRequestEdit: (row: AccountRow) => void
+  onRequestReopen: (row: AccountRow) => void
+  onRequestDelete: (row: AccountRow) => void
+  /** Conta sendo reaberta agora — desabilita o próprio botão, sem travar a linha inteira. */
+  reopeningId: string | null
 }>) {
   const initials = (row.bankName || row.bankCode).slice(0, 2).toUpperCase()
   const meta = `${row.bankCode} ${row.bankName} · Ag ${row.branch} · CC ${row.accountNumber}-${row.accountDv}`
@@ -169,7 +216,14 @@ function Row({
         </button>
       </div>
       {expanded ? (
-        <ExpandPanel row={row} onRequestClose={onRequestClose} onRequestEdit={onRequestEdit} />
+        <ExpandPanel
+          row={row}
+          onRequestClose={onRequestClose}
+          onRequestEdit={onRequestEdit}
+          onRequestReopen={onRequestReopen}
+          onRequestDelete={onRequestDelete}
+          reopeningId={reopeningId}
+        />
       ) : null}
     </>
   )
@@ -182,6 +236,9 @@ export function AccountsGrid({
   onToggle,
   onRequestClose,
   onRequestEdit,
+  onRequestReopen,
+  onRequestDelete,
+  reopeningId,
 }: AccountsGridProps) {
   return (
     <>
@@ -202,6 +259,9 @@ export function AccountsGrid({
             onToggle={onToggle}
             onRequestClose={onRequestClose}
             onRequestEdit={onRequestEdit}
+            onRequestReopen={onRequestReopen}
+            onRequestDelete={onRequestDelete}
+            reopeningId={reopeningId}
           />
         ))}
       </div>

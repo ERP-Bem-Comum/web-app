@@ -1565,14 +1565,43 @@ export const ptBR: Catalog = {
   'financial.recon.accounts.close.title': 'Encerrar conta bancária',
   'financial.recon.accounts.close.sub': 'A conta deixa de aparecer para novas conciliações.',
   'financial.recon.accounts.close.body': 'Tem certeza que deseja encerrar a conta',
-  // ⚠️ A segunda frase é a que faltava, e é a que custou caro em produção (06/09/2026): o aviso dizia
-  // "irreversível" e "não poderá ser reaberta", mas NÃO dizia a consequência que o operador só
-  // descobre depois — a chave bancária continua ocupada, e a conta não pode ser cadastrada de novo.
-  // A P.O. encerrou uma conta em produção justamente para recadastrá-la: "se eu soubesse que barraria
-  // um novo cadastro eu não teria feito". Barrar só funciona se a pessoa ENXERGAR o que está aceitando
-  // (mesma lição do #252/#332).
+  // ⚠️ ESTE TEXTO JÁ ESTEVE ERRADO DUAS VEZES, e as duas versões anteriores ficam registradas porque a
+  // lição é a mesma:
+  //
+  //   v1 "Esta ação é irreversível: a conta não poderá ser reaberta."
+  //      Verdadeiro e INSUFICIENTE — calava a consequência que pegou a P.O. em produção (06/09/2026):
+  //      a chave bancária continua ocupada. "Se eu soubesse que barraria um novo cadastro eu não teria
+  //      feito." Barrar só funciona se a pessoa ENXERGAR o que aceita (#252/#332).
+  //
+  //   v2 acrescentou "NÃO poderá ser cadastrada de novo" — e nasceu com data de validade, porque a
+  //      core-api#995 (B1/B3) já estava desenhada. Durou horas.
+  //
+  // v3 (agora): encerrar É reversível — há Reabrir —, e a chave só é liberada pelo Excluir. O texto
+  // deixa de assustar e passa a dizer onde estão as duas saídas, que é o que o operador precisa saber
+  // ANTES de decidir. Se um dia Reabrir ou Excluir sumirem, é esta linha que mente primeiro.
   'financial.recon.accounts.close.warn':
-    'Esta ação é irreversível: a conta não poderá ser reaberta, e também NÃO poderá ser cadastrada de novo — o banco, a agência e a conta continuam ocupados por ela. O histórico e as conciliações já feitas são preservados.',
+    'A conta sai das listas de conciliação e de pagamento, e o banco, a agência e a conta continuam ocupados por ela — um cadastro novo com os mesmos dados será recusado. Isto NÃO é definitivo: a conta encerrada pode ser reaberta, ou excluída (o que libera a chave bancária). O histórico e as conciliações já feitas são preservados nos dois casos.',
+  // ── Reabrir (core-api#995 B1) ────────────────────────────────────────────────
+  // O desfazer que faltava. Sem modal: é o caminho de recuperação de quem errou, e desfazê-lo é só
+  // encerrar de novo — ver `reopen-account.binding.ts`.
+  'financial.recon.accounts.reopen.action': 'Reabrir conta',
+  'financial.recon.accounts.reopen.running': 'Reabrindo…',
+  // ── Excluir (core-api#995 B3) ────────────────────────────────────────────────
+  // ⚠️ Só a partir de conta ENCERRADA, então o texto não repete o que o encerramento já disse: aqui o
+  // recado é o que MUDA em relação a ficar encerrada — a linha some da listagem e a chave é liberada.
+  'financial.recon.accounts.delete.action': 'Excluir conta',
+  'financial.recon.accounts.delete.title': 'Excluir conta bancária',
+  'financial.recon.accounts.delete.sub': 'A conta sai da listagem e libera o cadastro daqueles dados.',
+  'financial.recon.accounts.delete.body': 'Tem certeza que deseja excluir a conta',
+  'financial.recon.accounts.delete.warn':
+    'A conta some da listagem e não há como trazê-la de volta pela tela. O banco, a agência e a conta ficam livres para um cadastro novo.',
+  // Dizer isto é parte do trabalho: sem a frase, "excluir" parece apagar conciliações e remessas — e o
+  // operador ou não clica, ou clica achando que apagou. As duas leituras erradas custam.
+  'financial.recon.accounts.delete.keepsHistory':
+    'O histórico é preservado: as remessas e conciliações já feitas continuam vinculadas a esta conta.',
+  'financial.recon.accounts.delete.cancel': 'Cancelar',
+  'financial.recon.accounts.delete.confirm': 'Excluir conta',
+  'financial.recon.accounts.delete.deleting': 'Excluindo…',
   'financial.recon.accounts.close.cancel': 'Cancelar',
   'financial.recon.accounts.close.confirm': 'Encerrar conta',
   'financial.recon.accounts.close.closing': 'Encerrando…',
@@ -1631,8 +1660,11 @@ export const ptBR: Catalog = {
   // E o texto diz mais que a mensagem do core-api ("Já existe uma conta-cedente com esta chave
   // bancária"), de propósito: o caso que trava o operador é a conta ENCERRADA ocupando a chave, e essa
   // metade é justamente a que ele não tem como adivinhar. Aconteceu em produção em 06/09/2026.
+  // ⚠️ Aponta as DUAS saídas, e essa metade é o que o texto anterior não tinha. Dizer só "já existe"
+  // deixa o operador na mesma parede em que a P.O. bateu em produção: ele vê que está barrado e não
+  // sabe o que fazer. Com Reabrir e Excluir (core-api#995 B1/B3), há caminho — e é ele que o texto dá.
   'financial.recon.add.error.duplicate':
-    'Já existe uma conta com este banco, agência e conta — inclusive se ela estiver ENCERRADA. Encerrar não libera a chave bancária. Procure a conta na lista (filtro "Encerradas") antes de cadastrar outra.',
+    'Já existe uma conta com este banco, agência e conta — inclusive se ela estiver ENCERRADA, porque encerrar não libera a chave bancária. Procure-a no filtro "Encerradas": você pode REABRI-LA (volta com todo o histórico) ou EXCLUÍ-LA, o que libera estes dados para um cadastro novo.',
   'financial.recon.add.field.account': 'Conta-DV',
   'financial.recon.add.placeholder.account': '00000000-0',
   'financial.recon.add.field.document': 'CNPJ da organização',
