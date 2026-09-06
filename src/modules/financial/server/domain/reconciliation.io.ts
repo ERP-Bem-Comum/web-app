@@ -202,6 +202,15 @@ export type CedenteAccount = Readonly<{
   bankCode: string
   bankName: string
   branch: string
+  /**
+   * DV da agência (core-api#856) — irmão de `accountDv`, e por isso o nome. `''` quando a conta não
+   * tem o dado (cadastro anterior ao campo), que é o que faz a edição seguir cobrando o dígito de quem
+   * de fato não o preencheu.
+   *
+   * ⚠️ Vive SEPARADO de `branch` e assim tem de continuar: concatenar corromperia o header do CNAB
+   * (posições 053-057 esperam a base zero-padded; o DV é a 058, sozinha).
+   */
+  branchDv: string
   accountNumber: string
   accountDv: string
   alias: string
@@ -232,6 +241,12 @@ export type CreateCedenteAccountInput = Readonly<{
   type: 'Corrente' | 'Poupanca' | 'Investimento' | 'Cartao' | 'Outro'
   typeLabel?: string // #206: texto livre p/ identificar conta Outro (ou complementar Cartao)
   agency: string
+  /**
+   * DV da agência (core-api#856) — UMA posição, sem separador. Opcional no contrato do backend; a tela
+   * o exige (specs/107). Omitido quando vazio, pela mesma régua do convênio: mandar `''` afirmaria um
+   * valor que o operador não deu.
+   */
+  agencyDigit?: string
   accountNumber: string
   accountDigit: string
   document: string
@@ -251,6 +266,8 @@ export type EditCedenteAccountInput = Readonly<{
   type?: 'Corrente' | 'Poupanca' | 'Investimento' | 'Cartao' | 'Outro'
   typeLabel?: string
   agency?: string
+  /** DV da agência (core-api#856). Reenviar o MESMO valor não é troca — ver a nota no submit da edição. */
+  agencyDigit?: string
   accountNumber?: string
   accountDigit?: string
   nickname?: string

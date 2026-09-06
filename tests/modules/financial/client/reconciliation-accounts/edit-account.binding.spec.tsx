@@ -28,6 +28,9 @@ const ACCOUNT: ReconciliationAccount = {
   bankCode: '237',
   bankName: 'Bradesco',
   branch: '1462',
+  // Conta gravada ANTES da core-api#856 — o backend devolve `agencyDigit: null` e o mapper o traduz
+  // para `''`. É o caso do CA3: ela abre incompleta de propósito, porque de fato não tem o dado.
+  branchDv: '',
   accountNumber: '0012345',
   accountDv: '7',
   alias: 'Conta Movimento',
@@ -263,5 +266,104 @@ describe('useEditAccount — convênio preenchível uma vez', () => {
     expect(arg?.agency).toBe('1462')
     expect(arg?.agency).not.toContain('-')
     expect(arg?.agency).not.toBe('14628')
+  })
+})
+
+// ── O DV volta do backend e para de ser redigitado (#401 / core-api#856) ────────
+//
+// O defeito: o submit mandava só a base e a leitura não restaurava o dígito, então toda conta reabria
+// incompleta — campo vermelho, Salvar travado — e alterar QUALQUER outro dado obrigava a redigitar um
+// DV que seria descartado de novo. Ligar só o envio não resolveria: o sintoma vive na LEITURA.
+
+/** Conta gravada JÁ com o DV — o que a core-api#856 passou a devolver. */
+const WITH_DV = { ...ACCOUNT, branchDv: '8' } as unknown as ReconciliationAccount
+
+describe('DV da agência — ida e volta (#401)', () => {
+  it('CA2: conta COM DV reabre completa, com o Salvar liberado e sem redigitação', () => {
+    const { result } = setup()
+    act(() => {
+      result.current.open(WITH_DV)
+    })
+    expect(result.current.agency).toBe('14628')
+    expect(result.current.agencyIncomplete).toBe(false)
+    expect(result.current.canSubmit).toBe(true)
+  })
+
+  it('CA3: conta SEM DV segue cobrando o dígito — o comportamento antigo vale para quem não tem o dado', () => {
+    const { result } = setup()
+    act(() => {
+      result.current.open(ACCOUNT) // branchDv: ''
+    })
+    expect(result.current.agency).toBe('1462')
+    expect(result.current.agencyIncomplete).toBe(true)
+    expect(result.current.canSubmit).toBe(false)
+  })
+
+  it('CA1/CA5: o PATCH manda base e DV SEPARADOS — nunca juntos, nunca truncados', async () => {
+    mockedEdit.mockResolvedValue(ok({ id: ID } as never))
+    const { result } = setup()
+    act(() => {
+      result.current.open(WITH_DV)
+    })
+    act(() => {
+      result.current.submit()
+    })
+
+    await waitFor(() => {
+      expect(mockedEdit).toHaveBeenCalled()
+    })
+    const arg = mockedEdit.mock.calls[0]?.[0]
+    expect(arg?.agency).toBe('1462')
+    expect(arg?.agencyDigit).toBe('8')
+    // A armadilha que este teste existe para prender: `'1462-8'` e `'14628'` cabem no campo, passam em
+    // todo gate, e saem nas posições 053-057 onde o banco espera `01462`.
+    expect(arg?.agency).not.toContain('-')
+    expect(arg?.agency).not.toBe('14628')
+    // UMA posição, nunca duas: a 058 tem uma só, e o core-api recusa mais que isso.
+    expect(arg?.agencyDigit).toHaveLength(1)
+  })
+
+  it('⚠️ CA4: editar SÓ o apelido reenvia o mesmo DV — reenviar valor idêntico não é troca', async () => {
+    // Diferente do convênio (#722), que é preenchível-uma-vez e cujo reenvio pediria a troca que o
+    // backend recusa. Se um dia o core-api passar a tratar o DV assim, é este caso que acusa.
+    mockedEdit.mockResolvedValue(ok({ id: ID } as never))
+    const { result } = setup()
+    act(() => {
+      result.current.open(WITH_DV)
+    })
+    act(() => {
+      result.current.setNickname('Conta Principal')
+    })
+    act(() => {
+      result.current.submit()
+    })
+
+    await waitFor(() => {
+      expect(mockedEdit).toHaveBeenCalled()
+    })
+    const arg = mockedEdit.mock.calls[0]?.[0]
+    expect(arg?.nickname).toBe('Conta Principal')
+    expect(arg?.agencyDigit).toBe('8')
+  })
+
+  it('conta SEM DV não manda `agencyDigit` vazio — ausência não é valor', async () => {
+    // O operador completa o dígito na tela antes de salvar (o `canSubmit` exige), então na prática a
+    // chave sempre viaja. A régua existe para o dia em que outro caminho chegar ao submit.
+    mockedEdit.mockResolvedValue(ok({ id: ID } as never))
+    const { result } = setup()
+    act(() => {
+      result.current.open(ACCOUNT)
+    })
+    act(() => {
+      result.current.setAgency('14620')
+    })
+    act(() => {
+      result.current.submit()
+    })
+
+    await waitFor(() => {
+      expect(mockedEdit).toHaveBeenCalled()
+    })
+    expect(mockedEdit.mock.calls[0]?.[0]?.agencyDigit).toBe('0')
   })
 })

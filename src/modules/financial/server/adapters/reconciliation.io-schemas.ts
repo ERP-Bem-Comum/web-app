@@ -49,6 +49,10 @@ export const EditCedenteAccountInputSchema = z.object({
   type: z.enum(['Corrente', 'Poupanca', 'Investimento', 'Cartao', 'Outro']).optional(),
   typeLabel: z.string().trim().min(1).max(120).optional(),
   agency: z.string().trim().min(1).max(10).optional(),
+  // core-api#856: UMA posição, e `max(1)` RECUSA em vez de truncar — a 058 do header tem uma só, e o
+  // backend responde `cedente-agency-digit-malformed` a mais que isso. Truncar aqui gravaria um DV
+  // diferente do que o operador viu na tela, e o arquivo sairia bem-formado com o dado errado.
+  agencyDigit: z.string().trim().max(1).optional(),
   accountNumber: z.string().trim().min(1).max(20).optional(),
   accountDigit: z.string().trim().max(2).optional(),
   nickname: z.string().trim().min(1).max(120).optional(),
@@ -74,6 +78,8 @@ export const CreateCedenteAccountInputSchema = z.object({
   type: z.enum(['Corrente', 'Poupanca', 'Investimento', 'Cartao', 'Outro']),
   typeLabel: z.string().trim().min(1).max(120).optional(), // #206: texto livre p/ Cartao/Outro
   agency: z.string().trim().min(1).max(10),
+  // core-api#856 — ver a nota no schema de edição: `max(1)` recusa, nunca trunca.
+  agencyDigit: z.string().trim().max(1).optional(),
   accountNumber: z.string().trim().min(1).max(20),
   accountDigit: z.string().trim().max(2),
   document: z.string().trim().min(1).max(18),

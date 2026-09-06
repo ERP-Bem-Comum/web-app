@@ -20,6 +20,8 @@ import {
   AGENCY_TOTAL_DIGITS,
   agencyBase,
   agencyDigits,
+  agencyDv,
+  agencyFromParts,
 } from './reconciliation-accounts.view-model.ts'
 
 export type EditAccountBinding = Readonly<{
@@ -166,9 +168,14 @@ export function useEditAccount(
       setCustomBankName(a.bankName)
       setType(a.type)
       setTypeLabel(a.typeLabel ?? '')
-      // Normaliza o que veio do backend: `branch` é texto e as contas antigas trazem só os 4 dígitos.
-      // Elas abrem incompletas de propósito — ver `agencyIncomplete`.
-      setAgency(agencyDigits(a.branch))
+      // O CAMINHO DE VOLTA (core-api#856): a base vem de `branch` e o DV de `branchDv`, cada um da sua
+      // fonte, e a tela os remonta como o operador os digitou.
+      //
+      // ⚠️ Sem esta linha lendo o DV, ligar só o ENVIO não consertaria nada: o dado seria gravado e a
+      // edição continuaria reabrindo em vermelho, com o Salvar travado — o sintoma sobreviveria ao fix.
+      // Conta gravada ANTES do campo existir volta com `branchDv: ''` e segue incompleta de propósito:
+      // ela de fato não tem o dado. Ver `agencyIncomplete`.
+      setAgency(agencyFromParts(a.branch, a.branchDv))
       setAccount(a.accountDv !== '' ? `${a.accountNumber}-${a.accountDv}` : a.accountNumber)
       setNickname(a.alias)
       setConvenio(a.convenio)
@@ -193,10 +200,15 @@ export function useEditAccount(
         ...(bankName !== undefined ? { bankName } : {}),
         type,
         ...(needsTypeLabel && typeLabel.trim() !== '' ? { typeLabel: typeLabel.trim() } : {}),
-        // ⚠️ Só a BASE (4 dígitos) — o DV é exigido na tela e NÃO é guardado, porque o core-api não tem
-        // onde (core-api#859). Concatenar corromperia o header do CNAB: ver a ressalva em
+        // A agência PARTIDA em dois campos, como o header do CNAB a espera — base nas 053-057, DV na
+        // 058. O core-api ganhou onde guardar o dígito na #856. ⚠️ Nunca concatenar: ver a nota em
         // `add-account.binding.ts` e specs/107.
         agency: agencyBase(agency),
+        // Reenviado a cada PATCH, junto de `agency`/`accountNumber`/`accountDigit`, e NÃO tratado como
+        // o convênio: aquele é preenchível-uma-vez e reenviá-lo pediria a troca que o backend recusa;
+        // este aceita o mesmo valor de volta com 200. Editar só o apelido não pode exigir redigitar o
+        // DV — era exatamente essa a armadilha da tela travada.
+        ...(agencyDv(agency) !== '' ? { agencyDigit: agencyDv(agency) } : {}),
         accountNumber,
         accountDigit,
         ...(nickname.trim() !== '' ? { nickname: nickname.trim() } : {}),
