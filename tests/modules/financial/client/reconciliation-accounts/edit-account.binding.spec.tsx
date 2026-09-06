@@ -367,3 +367,108 @@ describe('DV da agência — ida e volta (#401)', () => {
     expect(mockedEdit.mock.calls[0]?.[0]?.agencyDigit).toBe('0')
   })
 })
+
+// ── O convênio destrava na conta ENCERRADA (core-api#995 B8.1/B8.2/B8.3) ────────
+//
+// A trava do #722 existe porque o convênio viaja no NOME de toda remessa transmitida: reescrevê-lo
+// numa conta ATIVA faria as remessas antigas apontarem para um contrato que ela não declara mais.
+// Em conta encerrada não há remessa nova a nomear — e travar ali só força `UPDATE` direto no banco de
+// produção, que foi o que aconteceu em 06/09/2026.
+
+/** Conta ENCERRADA que já tem convênio — o caso que a #995 B8.1 abriu. */
+const CLOSED_WITH_CONVENIO = {
+  ...ACCOUNT,
+  status: 'Closed',
+  convenio: '564564',
+  branchDv: '1',
+} as unknown as ReconciliationAccount
+
+/** A mesma conta, porém ATIVA: aqui a trava do #722 continua valendo. */
+const ACTIVE_WITH_CONVENIO = {
+  ...ACCOUNT,
+  status: 'Active',
+  convenio: '564564',
+  branchDv: '1',
+} as unknown as ReconciliationAccount
+
+describe('convênio: travado na conta ativa, editável na encerrada', () => {
+  it('conta ATIVA com convênio segue travada — o invariante do #722 não afrouxa', () => {
+    const { result } = setup()
+    act(() => {
+      result.current.open(ACTIVE_WITH_CONVENIO)
+    })
+    expect(result.current.convenioLocked).toBe(true)
+  })
+
+  it('⚠️ conta ENCERRADA com convênio DESTRAVA', () => {
+    const { result } = setup()
+    act(() => {
+      result.current.open(CLOSED_WITH_CONVENIO)
+    })
+    expect(result.current.convenioLocked).toBe(false)
+  })
+
+  it('destravada, a digitação é aceita (na travada o setter é no-op)', () => {
+    const { result } = setup()
+    act(() => {
+      result.current.open(CLOSED_WITH_CONVENIO)
+    })
+    act(() => {
+      result.current.setConvenio('123456')
+    })
+    expect(result.current.convenio).toBe('123456')
+
+    const b = setup()
+    act(() => {
+      b.result.current.open(ACTIVE_WITH_CONVENIO)
+    })
+    act(() => {
+      b.result.current.setConvenio('123456')
+    })
+    expect(b.result.current.convenio).toBe('564564')
+  })
+
+  it('⚠️ B8.2: LIMPAR o convênio da conta encerrada VIAJA como string vazia', async () => {
+    // É assim que se desativa a numeração da linha morta e se desfaz o conflito de NSA com a conta
+    // irmã. A régua antiga só enviava valor não-vazio: limpar não sairia da tela, e o operador veria
+    // "salvo" sem nada ter mudado. O sentinela é o VAZIO, não `000000` — este último passa em
+    // `checkCedenteConvenio` e manteria a conta no seletor "Conta que paga".
+    mockedEdit.mockResolvedValue(ok({ id: ID } as never))
+    const { result } = setup()
+    act(() => {
+      result.current.open(CLOSED_WITH_CONVENIO)
+    })
+    act(() => {
+      result.current.setConvenio('')
+    })
+    act(() => {
+      result.current.submit()
+    })
+
+    await waitFor(() => {
+      expect(mockedEdit).toHaveBeenCalled()
+    })
+    const arg = mockedEdit.mock.calls[0]?.[0]
+    expect(arg).toHaveProperty('convenio')
+    expect(arg?.convenio).toBe('')
+  })
+
+  it('conta ATIVA sem convênio: vazio continua NÃO viajando — ausência não é valor', async () => {
+    mockedEdit.mockResolvedValue(ok({ id: ID } as never))
+    const { result } = setup()
+    act(() => {
+      result.current.open(ACCOUNT) // ativa, convenio ''
+    })
+    act(() => {
+      result.current.setAgency('14628')
+    })
+    act(() => {
+      result.current.submit()
+    })
+
+    await waitFor(() => {
+      expect(mockedEdit).toHaveBeenCalled()
+    })
+    expect(mockedEdit.mock.calls[0]?.[0]).not.toHaveProperty('convenio')
+  })
+})

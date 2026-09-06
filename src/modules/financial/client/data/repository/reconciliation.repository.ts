@@ -100,6 +100,10 @@ type CreateAccountFn = (opts: {
   data: CreateCedenteAccountInput
 }) => Promise<ReconFnResult<ReconciliationAccount>>
 type CloseAccountFn = (opts: { data: { id: string } }) => Promise<ReconFnResult<ReconciliationAccount>>
+// core-api#995 B1/B3 — mesma forma do encerrar: só o id, e a resposta traz a conta ATUALIZADA. É dela
+// que a tela relê o status; nada é presumido no client.
+type ReopenAccountFn = (opts: { data: { id: string } }) => Promise<ReconFnResult<ReconciliationAccount>>
+type DeleteAccountFn = (opts: { data: { id: string } }) => Promise<ReconFnResult<ReconciliationAccount>>
 type EditAccountFn = (opts: {
   data: EditCedenteAccountInput
 }) => Promise<ReconFnResult<ReconciliationAccount>>
@@ -156,6 +160,10 @@ export type ReconciliationRepository = Readonly<{
   createAccount: (i: CreateCedenteAccountInput) => Promise<Result<ReconciliationAccount, ReconciliationError>>
   // Encerrar conta (Open → Closed). Devolve a conta atualizada; a UI invalida e refaz o grid.
   closeAccount: (id: string) => Promise<Result<ReconciliationAccount, ReconciliationError>>
+  /** Reabrir (core-api#995 B1): `Closed` → `Active`, preservando histórico e o contador de NSA. */
+  reopenAccount: (id: string) => Promise<Result<ReconciliationAccount, ReconciliationError>>
+  /** Excluir (core-api#995 B3): SOFT — sai da listagem e libera a chave; o histórico segue resolvendo. */
+  deleteAccount: (id: string) => Promise<Result<ReconciliationAccount, ReconciliationError>>
   // Editar conta (PATCH parcial). Devolve a conta atualizada; a UI invalida e refaz o grid.
   editAccount: (i: EditCedenteAccountInput) => Promise<Result<ReconciliationAccount, ReconciliationError>>
 }>
@@ -188,6 +196,8 @@ export const createReconciliationRepository = (
     getAccountFn: GetAccountFn
     createAccountFn: CreateAccountFn
     closeAccountFn: CloseAccountFn
+    reopenAccountFn: ReopenAccountFn
+    deleteAccountFn: DeleteAccountFn
     editAccountFn: EditAccountFn
   }>,
 ): ReconciliationRepository => ({
@@ -286,6 +296,14 @@ export const createReconciliationRepository = (
   },
   closeAccount: async (id) => {
     const res = await deps.closeAccountFn({ data: { id } })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  reopenAccount: async (id) => {
+    const res = await deps.reopenAccountFn({ data: { id } })
+    return res.ok ? ok(res.data) : err(res.error)
+  },
+  deleteAccount: async (id) => {
+    const res = await deps.deleteAccountFn({ data: { id } })
     return res.ok ? ok(res.data) : err(res.error)
   },
   editAccount: async (i) => {

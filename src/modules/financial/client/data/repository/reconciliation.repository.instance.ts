@@ -27,6 +27,8 @@ import { listCedenteAccountsFn } from '#modules/financial/server/adapters/server
 import { getCedenteAccountFn } from '#modules/financial/server/adapters/server-fns/get-cedente-account.query.fn.ts'
 import { createCedenteAccountFn } from '#modules/financial/server/adapters/server-fns/create-cedente-account.service.fn.ts'
 import { closeCedenteAccountFn } from '#modules/financial/server/adapters/server-fns/close-cedente-account.service.fn.ts'
+import { reopenCedenteAccountFn } from '#modules/financial/server/adapters/server-fns/reopen-cedente-account.service.fn.ts'
+import { deleteCedenteAccountFn } from '#modules/financial/server/adapters/server-fns/delete-cedente-account.service.fn.ts'
 import { editCedenteAccountFn } from '#modules/financial/server/adapters/server-fns/edit-cedente-account.service.fn.ts'
 
 import { createReconciliationRepository } from './reconciliation.repository.ts'
@@ -56,5 +58,7 @@ export const reconciliationRepository = createReconciliationRepository({
   getAccountFn: (opts) => getCedenteAccountFn(opts),
   createAccountFn: (opts) => createCedenteAccountFn(opts),
   closeAccountFn: (opts) => closeCedenteAccountFn(opts),
+  reopenAccountFn: (opts) => reopenCedenteAccountFn(opts),
+  deleteAccountFn: (opts) => deleteCedenteAccountFn(opts),
   editAccountFn: (opts) => editCedenteAccountFn(opts),
 })
