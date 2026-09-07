@@ -277,24 +277,57 @@ export function useEditAccount(
       const accountNumber = dash > 0 ? acc.slice(0, dash) : acc
       const accountDigit = dash > 0 ? acc.slice(dash + 1, dash + 3) : ''
       const bankName = needsBankName ? customBankName.trim() : bankNameOf(bankCode)
+
+      // ── O PATCH É UM DIFF, e isto é o que mantém a edição possível ────────────
+      //
+      // ⚠️ Antes o submit mandava `bankCode`, `agency`, `accountNumber`, `accountDigit` e `type`
+      // SEMPRE, mudados ou não. O backend decide a trava FR-008 por PRESENÇA:
+      //
+      //     wantsBankDataChange = input.bankCode !== undefined || input.agency !== undefined || …
+      //     if (wantsBankDataChange && hasActivity) → 'cedente-account-bank-data-locked'
+      //
+      // Então QUALQUER edição — só o apelido, só o convênio, só o DV — virava "alteração de dado
+      // bancário" e era recusada em toda conta com remessa ou extrato. Medido no local em 06/09: a
+      // conta "Demonstrativa PG" (9 remessas) recusava até o preenchimento do DV da agência.
+      //
+      // E o mais caro: isso ANULAVA uma carve-out deliberada do backend. Lá, preencher um DV vazio
+      // NÃO é alterar dado bancário ("PREENCHER o que está vazio não é alterar dado bancário — TROCAR
+      // um dígito já definido é"). A permissão existia e o front não a alcançava, porque mandava
+      // `agency` junto.
+      //
+      // Mandar só o que mudou não é economia de bytes: é o que faz a régua do backend valer.
+      const agencyPatch = agencyBase(agency)
+      const agencyDigitPatch = agencyDv(agency)
+      const targetAgency = agencyBase(agencyDigits(target.branch))
+      const changed = {
+        bankCode: bankCode !== target.bankCode,
+        bankName: bankName !== undefined && bankName !== target.bankName,
+        type: type !== target.type,
+        typeLabel: typeLabel.trim() !== (target.typeLabel ?? ''),
+        agency: agencyPatch !== targetAgency,
+        agencyDigit: agencyDigitPatch !== target.branchDv,
+        accountNumber: accountNumber !== target.accountNumber,
+        accountDigit: accountDigit !== target.accountDv,
+        nickname: nickname.trim() !== target.alias,
+      }
+
       mut.mutate({
         id: target.id,
-        bankCode,
-        ...(bankName !== undefined ? { bankName } : {}),
-        type,
-        ...(needsTypeLabel && typeLabel.trim() !== '' ? { typeLabel: typeLabel.trim() } : {}),
+        ...(changed.bankCode ? { bankCode } : {}),
+        ...(changed.bankName && bankName !== undefined ? { bankName } : {}),
+        ...(changed.type ? { type } : {}),
+        ...(changed.typeLabel && needsTypeLabel && typeLabel.trim() !== ''
+          ? { typeLabel: typeLabel.trim() }
+          : {}),
         // A agência PARTIDA em dois campos, como o header do CNAB a espera — base nas 053-057, DV na
-        // 058. O core-api ganhou onde guardar o dígito na #856. ⚠️ Nunca concatenar: ver a nota em
-        // `add-account.binding.ts` e specs/107.
-        agency: agencyBase(agency),
-        // Reenviado a cada PATCH, junto de `agency`/`accountNumber`/`accountDigit`, e NÃO tratado como
-        // o convênio: aquele é preenchível-uma-vez e reenviá-lo pediria a troca que o backend recusa;
-        // este aceita o mesmo valor de volta com 200. Editar só o apelido não pode exigir redigitar o
-        // DV — era exatamente essa a armadilha da tela travada.
-        ...(agencyDv(agency) !== '' ? { agencyDigit: agencyDv(agency) } : {}),
-        accountNumber,
-        accountDigit,
-        ...(nickname.trim() !== '' ? { nickname: nickname.trim() } : {}),
+        // 058. ⚠️ Nunca concatenar: ver a nota em `add-account.binding.ts` e specs/107.
+        ...(changed.agency ? { agency: agencyPatch } : {}),
+        // Preencher um DV vazio é o caminho que a #856 abriu e que a trava do backend deixa passar de
+        // propósito. Só chega lá se `agency` NÃO viajar junto — ver o bloco acima.
+        ...(changed.agencyDigit && agencyDigitPatch !== '' ? { agencyDigit: agencyDigitPatch } : {}),
+        ...(changed.accountNumber ? { accountNumber } : {}),
+        ...(changed.accountDigit ? { accountDigit } : {}),
+        ...(changed.nickname && nickname.trim() !== '' ? { nickname: nickname.trim() } : {}),
         // Conta ATIVA (#722): só viaja quando ela AINDA não tinha convênio e o operador preencheu
         // agora. Reenviar o valor existente seria pedir a troca que o core-api recusa — e um 409 aqui
         // apareceria como falha de "salvar a conta", escondendo que nada estava errado.

@@ -102,9 +102,12 @@ describe('useEditAccount', () => {
     })
     const arg = mockedEdit.mock.calls[0]?.[0]
     expect(arg?.id).toBe(ID)
-    expect(arg?.accountNumber).toBe('0012345')
-    expect(arg?.accountDigit).toBe('7')
     expect(arg?.nickname).toBe('Conta Principal')
+    // ⚠️ O PATCH é um DIFF: conta e dígito NÃO mudaram, então não viajam. Mandá-los faria o backend
+    // ler "alteração de dado bancário" (FR-008, checagem por PRESENÇA) e recusar toda conta com
+    // histórico — inclusive esta edição, que só mexe no apelido e no DV da agência.
+    expect(arg).not.toHaveProperty('accountNumber')
+    expect(arg).not.toHaveProperty('accountDigit')
     expect(invalidate).toHaveBeenCalledWith({
       queryKey: ['financial', 'reconciliation', 'accounts'],
     })
@@ -246,7 +249,7 @@ describe('useEditAccount — convênio preenchível uma vez', () => {
     expect(result.current.agency).toBe('14628')
   })
 
-  it('⚠️ o PATCH envia só a BASE (4 dígitos) — o DV NÃO vai concatenado, senão corrompe o CNAB', async () => {
+  it('⚠️ o DV NÃO vai concatenado na agência, senão corrompe o CNAB', async () => {
     mockedEdit.mockResolvedValue(ok({ id: ID } as never))
     const { result } = setup()
     act(() => {
@@ -263,9 +266,13 @@ describe('useEditAccount — convênio preenchível uma vez', () => {
       expect(mockedEdit).toHaveBeenCalled()
     })
     const arg = mockedEdit.mock.calls[0]?.[0]
-    expect(arg?.agency).toBe('1462')
-    expect(arg?.agency).not.toContain('-')
-    expect(arg?.agency).not.toBe('14628')
+    // A BASE não mudou (a conta já era `1462`), então ela nem viaja — e é isso que permite o
+    // preenchimento do DV numa conta com histórico. O que viaja é só o dígito.
+    expect(arg).not.toHaveProperty('agency')
+    expect(arg?.agencyDigit).toBe('8')
+    // A armadilha que este caso existe para prender continua valendo: nunca `1462-8` nem `14628`.
+    expect(arg?.agencyDigit).not.toContain('-')
+    expect(arg?.agencyDigit).toHaveLength(1)
   })
 })
 
@@ -299,11 +306,14 @@ describe('DV da agência — ida e volta (#401)', () => {
     expect(result.current.canSubmit).toBe(false)
   })
 
-  it('CA1/CA5: o PATCH manda base e DV SEPARADOS — nunca juntos, nunca truncados', async () => {
+  it('CA1/CA5: TROCAR a agência manda base e DV SEPARADOS — nunca juntos, nunca truncados', async () => {
     mockedEdit.mockResolvedValue(ok({ id: ID } as never))
     const { result } = setup()
     act(() => {
-      result.current.open(WITH_DV)
+      result.current.open(WITH_DV) // 1462-8
+    })
+    act(() => {
+      result.current.setAgency('99997') // troca base E dígito
     })
     act(() => {
       result.current.submit()
@@ -313,19 +323,20 @@ describe('DV da agência — ida e volta (#401)', () => {
       expect(mockedEdit).toHaveBeenCalled()
     })
     const arg = mockedEdit.mock.calls[0]?.[0]
-    expect(arg?.agency).toBe('1462')
-    expect(arg?.agencyDigit).toBe('8')
-    // A armadilha que este teste existe para prender: `'1462-8'` e `'14628'` cabem no campo, passam em
-    // todo gate, e saem nas posições 053-057 onde o banco espera `01462`.
+    expect(arg?.agency).toBe('9999')
+    expect(arg?.agencyDigit).toBe('7')
+    // A armadilha que este teste existe para prender: `'9999-7'` e `'99997'` cabem no campo, passam em
+    // todo gate, e saem nas posições 053-057 onde o banco espera `09999`.
     expect(arg?.agency).not.toContain('-')
-    expect(arg?.agency).not.toBe('14628')
+    expect(arg?.agency).not.toBe('99997')
     // UMA posição, nunca duas: a 058 tem uma só, e o core-api recusa mais que isso.
     expect(arg?.agencyDigit).toHaveLength(1)
   })
 
-  it('⚠️ CA4: editar SÓ o apelido reenvia o mesmo DV — reenviar valor idêntico não é troca', async () => {
-    // Diferente do convênio (#722), que é preenchível-uma-vez e cujo reenvio pediria a troca que o
-    // backend recusa. Se um dia o core-api passar a tratar o DV assim, é este caso que acusa.
+  it('⚠️ CA4: editar SÓ o apelido não exige redigitar nada — e não reenvia dado bancário', async () => {
+    // A intenção do CA4 (#401) era: alterar outro campo não pode obrigar a redigitar o DV. Continua
+    // valendo, por um caminho melhor — em vez de REENVIAR o mesmo dígito, o PATCH simplesmente não o
+    // menciona. Reenviar era o que disparava a trava FR-008 em conta com histórico.
     mockedEdit.mockResolvedValue(ok({ id: ID } as never))
     const { result } = setup()
     act(() => {
@@ -343,7 +354,9 @@ describe('DV da agência — ida e volta (#401)', () => {
     })
     const arg = mockedEdit.mock.calls[0]?.[0]
     expect(arg?.nickname).toBe('Conta Principal')
-    expect(arg?.agencyDigit).toBe('8')
+    expect(arg).not.toHaveProperty('agencyDigit')
+    expect(arg).not.toHaveProperty('agency')
+    expect(arg).not.toHaveProperty('bankCode')
   })
 
   it('conta SEM DV não manda `agencyDigit` vazio — ausência não é valor', async () => {
@@ -571,5 +584,88 @@ describe('saldo de abertura: pré-preenchido, par coeso, e só viaja se mudou', 
 
     expect(result.current.errorTag).toBe('financial.recon.add.balancePair')
     expect(mockedEdit).not.toHaveBeenCalled()
+  })
+})
+
+// ── O PATCH é um DIFF (06/09/2026) ─────────────────────────────────────────────
+//
+// Medido em tela pela P.O.: a conta "Demonstrativa PG" (ATIVA, 9 remessas geradas, agência sem DV)
+// recusava o PREENCHIMENTO do dígito com "Algo deu errado".
+//
+// A causa não era o dígito. O submit mandava `bankCode`, `agency`, `accountNumber`, `accountDigit` e
+// `type` sempre, mudados ou não, e o backend decide a trava FR-008 por PRESENÇA — então toda edição
+// virava "alteração de dado bancário" e era recusada em qualquer conta com histórico.
+//
+// Pior: isso ANULAVA uma carve-out deliberada do core-api, que permite preencher um DV vazio
+// justamente porque "PREENCHER o que está vazio não é alterar dado bancário".
+
+describe('o PATCH manda só o que mudou — a régua do backend volta a valer', () => {
+  it('⚠️ preencher SÓ o DV manda só `agencyDigit` — sem `agency` junto, a trava FR-008 não dispara', async () => {
+    // É o caso exato que falhou em tela. Com `agency` no corpo, o backend lê alteração de dado
+    // bancário e recusa; sem ela, o preenchimento passa, como o core-api pretende.
+    mockedEdit.mockResolvedValue(ok({ id: ID } as never))
+    const { result } = setup()
+    act(() => {
+      result.current.open(ACCOUNT) // branch '1462', branchDv '' — como a "Demonstrativa PG"
+    })
+    act(() => {
+      result.current.setAgency('14628') // só completa o dígito
+    })
+    act(() => {
+      result.current.submit()
+    })
+
+    await waitFor(() => {
+      expect(mockedEdit).toHaveBeenCalled()
+    })
+    const arg = mockedEdit.mock.calls[0]?.[0]
+    expect(arg?.agencyDigit).toBe('8')
+    expect(arg).not.toHaveProperty('agency')
+    expect(arg).not.toHaveProperty('bankCode')
+    expect(arg).not.toHaveProperty('accountNumber')
+    expect(arg).not.toHaveProperty('accountDigit')
+    expect(arg).not.toHaveProperty('type')
+  })
+
+  it('trocar SÓ o apelido não leva nenhum campo bancário', async () => {
+    mockedEdit.mockResolvedValue(ok({ id: ID } as never))
+    const { result } = setup()
+    act(() => {
+      result.current.open(WITH_DV)
+    })
+    act(() => {
+      result.current.setNickname('Outro apelido')
+    })
+    act(() => {
+      result.current.submit()
+    })
+
+    await waitFor(() => {
+      expect(mockedEdit).toHaveBeenCalled()
+    })
+    const arg = mockedEdit.mock.calls[0]?.[0]
+    expect(Object.keys(arg ?? {}).sort()).toEqual(['id', 'nickname'])
+  })
+
+  it('o que MUDA continua viajando — a poda não pode virar campo perdido', async () => {
+    // A rede contra o risco oposto: podar demais faria a edição "salvar" sem gravar.
+    mockedEdit.mockResolvedValue(ok({ id: ID } as never))
+    const { result } = setup()
+    act(() => {
+      result.current.open(WITH_DV)
+    })
+    act(() => {
+      result.current.setAccount('0099999-1')
+    })
+    act(() => {
+      result.current.submit()
+    })
+
+    await waitFor(() => {
+      expect(mockedEdit).toHaveBeenCalled()
+    })
+    const arg = mockedEdit.mock.calls[0]?.[0]
+    expect(arg?.accountNumber).toBe('0099999')
+    expect(arg?.accountDigit).toBe('1')
   })
 })
