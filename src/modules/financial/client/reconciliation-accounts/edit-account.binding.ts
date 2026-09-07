@@ -9,6 +9,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { reconciliationRepository } from '#modules/financial/client/data/repository/reconciliation.repository.instance.ts'
 import { reconciliationErrorTag } from '#modules/financial/client/data/helpers/reconciliation-error-tag.ts'
+import { maskMoneyBRL, reaisToCents } from '#modules/financial/client/data/money.ts'
 import type {
   AccountType,
   EditCedenteAccountInput,
@@ -22,6 +23,9 @@ import {
   agencyDigits,
   agencyDv,
   agencyFromParts,
+  maskDateInput,
+  dateInputToIso,
+  isoToDateInput,
 } from './reconciliation-accounts.view-model.ts'
 
 export type EditAccountBinding = Readonly<{
@@ -58,6 +62,18 @@ export type EditAccountBinding = Readonly<{
    * campo que se desativa a numeração da linha morta (convênio VAZIO) para desfazer o conflito de NSA.
    */
   convenioLocked: boolean
+  /**
+   * Saldo de abertura, mascarado (`15.000,00`) — core-api#999. Deixou de ser imutável.
+   *
+   * ⚠️ Editar o par entra na trava do DADO BANCÁRIO (FR-008): conta com extrato importado recusa com
+   * `cedente-account-bank-data-locked`, porque o saldo de abertura é a premissa de todo saldo
+   * calculado depois. Por isso o submit só o envia quando o operador de fato mexeu.
+   */
+  openingBalance: string
+  /** Data do saldo, `DD/MM/AAAA` — convertida para ISO no submit. Par coeso com o saldo (FR-006). */
+  openingBalanceDate: string
+  setOpeningBalance: (v: string) => void
+  setOpeningBalanceDate: (v: string) => void
   canSubmit: boolean
   saving: boolean
   errorTag: string | null
@@ -88,6 +104,8 @@ export function useEditAccount(
   const [account, setAccount] = useState('')
   const [nickname, setNickname] = useState('')
   const [convenio, setConvenio] = useState('')
+  const [openingBalance, setOpeningBalance] = useState('')
+  const [openingBalanceDate, setOpeningBalanceDate] = useState('')
   const [errorTag, setErrorTag] = useState<string | null>(null)
 
   const mut = useMutation({
@@ -145,6 +163,8 @@ export function useEditAccount(
     nickname,
     convenio,
     convenioLocked,
+    openingBalance,
+    openingBalanceDate,
     canSubmit,
     saving: mut.isPending,
     errorTag,
@@ -172,6 +192,12 @@ export function useEditAccount(
     },
     // Só dígitos e teto de 6 (ver CONVENIO_MAX_DIGITS). Ignora a digitação quando travado — o input
     // já sai `readOnly`, isto é a segunda barreira, para o caso de a trava visual falhar.
+    setOpeningBalance: (v) => {
+      setOpeningBalance(maskMoneyBRL(v))
+    },
+    setOpeningBalanceDate: (v) => {
+      setOpeningBalanceDate(maskDateInput(v))
+    },
     setConvenio: (v) => {
       if (convenioLocked) return
       setConvenio(v.replace(/\D/g, '').slice(0, CONVENIO_MAX_DIGITS))
@@ -193,6 +219,11 @@ export function useEditAccount(
       setAccount(a.accountDv !== '' ? `${a.accountNumber}-${a.accountDv}` : a.accountNumber)
       setNickname(a.alias)
       setConvenio(a.convenio)
+      // Pré-preenche com o que está gravado, para o operador CORRIGIR em vez de redigitar do zero — e
+      // para o submit conseguir comparar e mandar só o que mudou (FR-008: mandar sem mudar já dispara
+      // a trava do dado bancário).
+      setOpeningBalance(maskMoneyBRL(a.openingBalanceCents ?? ''))
+      setOpeningBalanceDate(isoToDateInput(a.openingBalanceDate))
       setErrorTag(null)
     },
     cancel: () => {
@@ -202,6 +233,44 @@ export function useEditAccount(
     },
     submit: () => {
       if (target === null || !canSubmit || mut.isPending) return
+
+      // ── SALDO DE ABERTURA (core-api#999) ──────────────────────────────────────
+      //
+      // FR-006: saldo e data são um PAR. Um sem o outro volta `opening-balance-requires-date`, e
+      // validar cedo dá mensagem clara em vez de um 4xx genérico. Mesma régua do cadastro.
+      const balanceRaw = openingBalance.trim()
+      const dateRaw = openingBalanceDate.trim()
+      if ((balanceRaw !== '') !== (dateRaw !== '')) {
+        setErrorTag('financial.recon.add.balancePair')
+        return
+      }
+
+      let openingBalanceCents: string | undefined
+      let openingBalanceDateIso: string | undefined
+      if (balanceRaw !== '') {
+        const r = reaisToCents(balanceRaw)
+        if (!r.ok) {
+          setErrorTag('financial.recon.add.invalidBalance')
+          return
+        }
+        const iso = dateInputToIso(dateRaw)
+        if (iso === null) {
+          setErrorTag('financial.recon.add.invalidDate')
+          return
+        }
+        openingBalanceCents = r.value
+        openingBalanceDateIso = iso
+      }
+
+      // ⚠️ SÓ VIAJA SE MUDOU, e isto não é economia de bytes — é o que decide se o Salvar funciona.
+      // O backend trata o saldo como DADO BANCÁRIO (FR-008) e checa por PRESENÇA: mandar o mesmo
+      // valor de volta já dispara `cedente-account-bank-data-locked` em qualquer conta que tenha
+      // extrato importado. Comparar contra o que veio do backend é o que mantém a edição de apelido
+      // (e de qualquer outro campo) possível nessas contas.
+      const balanceChanged =
+        (openingBalanceCents ?? '') !== (target.openingBalanceCents ?? '') ||
+        (openingBalanceDateIso ?? '') !== (target.openingBalanceDate ?? '')
+
       // "0012345-7" → número "0012345" + DV "7"; sem '-' → DV vazio.
       const acc = account.trim()
       const dash = acc.lastIndexOf('-')
@@ -236,6 +305,10 @@ export function useEditAccount(
         // operador veria "salvo" sem nada ter mudado.
         ...(!convenioLocked && (convenio.trim() !== '' || target.status === 'Closed')
           ? { convenio: convenio.trim() }
+          : {}),
+        // O par inteiro, ou nada. Ver `balanceChanged` acima para o porquê do "só se mudou".
+        ...(balanceChanged && openingBalanceCents !== undefined && openingBalanceDateIso !== undefined
+          ? { openingBalanceCents, openingBalanceDate: openingBalanceDateIso }
           : {}),
       })
     },

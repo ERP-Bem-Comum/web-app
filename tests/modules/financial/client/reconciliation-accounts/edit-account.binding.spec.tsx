@@ -472,3 +472,104 @@ describe('convênio: travado na conta ativa, editável na encerrada', () => {
     expect(mockedEdit.mock.calls[0]?.[0]).not.toHaveProperty('convenio')
   })
 })
+
+// ── Saldo de abertura editável (core-api#999) ──────────────────────────────────
+//
+// Deixou de ser imutável, e a origem é operacional: a conta migrada do legado veio com o saldo
+// congelado, e não poder corrigi-lo foi o que levou o operador a criar contas NOVAS para gerar
+// remessa — a raiz das duplicatas da #995.
+
+/** Conta com saldo de abertura gravado — o caso que a #999 abriu. */
+const WITH_BALANCE = {
+  ...ACCOUNT,
+  branchDv: '1',
+  openingBalanceCents: '1500000',
+  openingBalanceDate: '2026-09-01',
+} as unknown as ReconciliationAccount
+
+describe('saldo de abertura: pré-preenchido, par coeso, e só viaja se mudou', () => {
+  it('abre com o que está GRAVADO — para corrigir, não para redigitar', () => {
+    const { result } = setup()
+    act(() => {
+      result.current.open(WITH_BALANCE)
+    })
+    expect(result.current.openingBalance).toBe('15.000,00')
+    expect(result.current.openingBalanceDate).toBe('01/09/2026')
+  })
+
+  it('⚠️ a data NÃO recua um dia — a semeadura fatia a string, nunca `new Date(iso)`', () => {
+    // `new Date('2026-09-01')` é UTC e, em Brasília, volta 31/08. A data andaria para trás toda vez
+    // que a edição abrisse, e o operador salvaria o retrocesso sem perceber.
+    const { result } = setup()
+    act(() => {
+      result.current.open(WITH_BALANCE)
+    })
+    expect(result.current.openingBalanceDate).toBe('01/09/2026')
+    expect(result.current.openingBalanceDate).not.toBe('31/08/2026')
+  })
+
+  it('⚠️ NÃO viaja quando nada mudou — mandar o mesmo valor já dispara a trava FR-008', async () => {
+    // O backend trata o saldo como dado bancário e checa por PRESENÇA: reenviar o valor idêntico
+    // recusa com `cedente-account-bank-data-locked` em qualquer conta com extrato importado. É este
+    // caso que mantém a edição de apelido possível nessas contas.
+    mockedEdit.mockResolvedValue(ok({ id: ID } as never))
+    const { result } = setup()
+    act(() => {
+      result.current.open(WITH_BALANCE)
+    })
+    act(() => {
+      result.current.setNickname('Só o apelido')
+    })
+    act(() => {
+      result.current.submit()
+    })
+
+    await waitFor(() => {
+      expect(mockedEdit).toHaveBeenCalled()
+    })
+    const arg = mockedEdit.mock.calls[0]?.[0]
+    expect(arg?.nickname).toBe('Só o apelido')
+    expect(arg).not.toHaveProperty('openingBalanceCents')
+    expect(arg).not.toHaveProperty('openingBalanceDate')
+  })
+
+  it('viaja com o PAR inteiro quando o saldo muda — centavos e ISO', async () => {
+    mockedEdit.mockResolvedValue(ok({ id: ID } as never))
+    const { result } = setup()
+    act(() => {
+      result.current.open(WITH_BALANCE)
+    })
+    act(() => {
+      result.current.setOpeningBalance('2000000')
+    })
+    act(() => {
+      result.current.submit()
+    })
+
+    await waitFor(() => {
+      expect(mockedEdit).toHaveBeenCalled()
+    })
+    const arg = mockedEdit.mock.calls[0]?.[0]
+    expect(arg?.openingBalanceCents).toBe('2000000')
+    expect(arg?.openingBalanceDate).toBe('2026-09-01')
+  })
+
+  it('⚠️ FR-006: saldo sem data é recusado NA TELA, não no 4xx', () => {
+    const { result } = setup()
+    act(() => {
+      result.current.open(ACCOUNT) // sem saldo
+    })
+    act(() => {
+      result.current.setAgency('14628')
+    })
+    act(() => {
+      result.current.setOpeningBalance('1000')
+    })
+    act(() => {
+      result.current.submit()
+    })
+
+    expect(result.current.errorTag).toBe('financial.recon.add.balancePair')
+    expect(mockedEdit).not.toHaveBeenCalled()
+  })
+})

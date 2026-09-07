@@ -1608,7 +1608,14 @@ export const ptBR: Catalog = {
   'financial.recon.accounts.edit.action': 'Editar',
   'financial.recon.edit.title': 'Editar conta bancária',
   'financial.recon.edit.sub': 'Ajuste os dados do cadastro da conta.',
-  'financial.recon.edit.immutableNote': 'CNPJ e saldo de abertura não podem ser alterados após o cadastro.',
+  // ⚠️ O saldo SAIU desta frase (core-api#999): ele deixou de ser imutável, e manter o texto antigo
+  // faria a tela contradizer os campos logo acima — o operador leria "não pode" ao lado de um campo
+  // editável. Sobrou o CNPJ, que segue imutável de verdade.
+  'financial.recon.edit.immutableNote': 'O CNPJ da organização não pode ser alterado após o cadastro.',
+  // A trava do FR-008 dita em voz alta, ANTES do clique. Sem ela, o operador só descobre pelo 409 —
+  // e a mensagem do backend ("a conta já tem histórico") chega sem dizer o que ele deveria ter feito.
+  'financial.recon.edit.hint.openingBalance':
+    'Corrija o saldo e a data se eles nasceram errados. ⚠️ Só é possível enquanto a conta não tiver extrato importado — o saldo de abertura é a base de todo saldo calculado depois.',
   // #722: o convênio é preenchível UMA vez. O texto diz o MOTIVO, não só que está travado — sem isso
   // a trava parece defeito da tela.
   'financial.recon.edit.hint.convenioLocked':
