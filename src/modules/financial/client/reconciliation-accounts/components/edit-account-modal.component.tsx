@@ -238,7 +238,52 @@ export function EditAccountModal({ binding }: EditAccountModalProps) {
             </div>
           </section>
 
-          {/* CNPJ e saldo de abertura são imutáveis (não editáveis após o cadastro). */}
+          {/* SALDO DE ABERTURA — editável desde a core-api#999. A origem disso é operacional: a conta
+              migrada do legado veio com o saldo congelado, e não poder corrigi-lo foi o que levou o
+              operador a criar contas NOVAS para gerar remessa — a raiz das duplicatas da #995.
+
+              Os campos vêm PRÉ-PREENCHIDOS com o que está gravado, para o operador corrigir em vez de
+              redigitar; e o submit só os envia quando de fato mudaram (ver `balanceChanged`), porque o
+              backend os trata como dado bancário e checa por PRESENÇA (FR-008). */}
+          <section className={s.formSection}>
+            <span className={s.sectionTitleRow}>
+              <span className={s.sectionTitle}>{t('financial.recon.add.section.balance')}</span>
+              <span className={s.optionalTag}>{t('financial.recon.add.optional')}</span>
+            </span>
+            <div className={s.formRow}>
+              <div className={s.formField}>
+                <label className={s.fieldLabel} htmlFor="edit-balance">
+                  {t('financial.recon.add.field.openingBalance')}
+                </label>
+                <input
+                  id="edit-balance"
+                  className={`${s.input} ${s.inputMono}`}
+                  placeholder={t('financial.recon.add.placeholder.openingBalance')}
+                  value={binding.openingBalance}
+                  onChange={(e) => {
+                    binding.setOpeningBalance(e.target.value)
+                  }}
+                />
+              </div>
+              <div className={s.formField}>
+                <label className={s.fieldLabel} htmlFor="edit-balance-date">
+                  {t('financial.recon.add.field.balanceDate')}
+                </label>
+                <input
+                  id="edit-balance-date"
+                  className={`${s.input} ${s.inputMono}`}
+                  placeholder={t('financial.recon.add.placeholder.balanceDate')}
+                  value={binding.openingBalanceDate}
+                  onChange={(e) => {
+                    binding.setOpeningBalanceDate(e.target.value)
+                  }}
+                />
+              </div>
+            </div>
+            <span className={s.fieldHint}>{t('financial.recon.edit.hint.openingBalance')}</span>
+          </section>
+
+          {/* Só o CNPJ segue imutável — o saldo deixou de ser (core-api#999). */}
           <p className={s.confirmText}>{t('financial.recon.edit.immutableNote')}</p>
           {binding.errorTag !== null ? <p className={s.errorText}>{t(binding.errorTag)}</p> : null}
         </div>
