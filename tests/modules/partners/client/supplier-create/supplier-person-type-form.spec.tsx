@@ -2,7 +2,7 @@
  * Chave "Pessoa Jurídica | Pessoa Física" no formulário de fornecedor (#1022) — vitest/jsdom.
  *  - começa em PJ (CNPJ + Razão Social + Nome Fantasia);
  *  - em PF, Razão Social e Nome Fantasia SOMEM (decisão da P.O.), o documento vira CPF e "Nome" vira
- *    "Nome completo"; voltar para PJ devolve o que foi digitado;
+ *    "Nome Completo"; voltar para PJ devolve o que foi digitado;
  *  - na edição sem permissão, a chave aparece bloqueada E diz o motivo.
  */
 import type { ReactNode } from 'react'
@@ -49,7 +49,7 @@ describe('SupplierForm — tipo de pessoa (#1022)', () => {
     expect(document.getElementById('sup-fant')).not.toBeNull()
   })
 
-  it('Pessoa Física: Razão Social e Nome Fantasia somem; CPF e "Nome completo"', () => {
+  it('Pessoa Física: Razão Social e Nome Fantasia somem; CPF e "Nome Completo"', () => {
     render(<Harness />)
     fireEvent.click(option('PF'))
     expect(option('PF').getAttribute('aria-pressed')).toBe('true')
