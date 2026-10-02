@@ -55,6 +55,8 @@ retroativa (`PaymentDateModal`). Depois disso **não existe volta**: um título 
 - **Uma chamada por título** (o backend desfaz por título). Falha parcial: os títulos que passaram ficam
   desfeitos, e a tela lista **quais falharam e por quê**, no padrão que o `bulk-status.binding.ts` já usa no
   Aprovar e no "Voltar para edição".
+- **Sem lembrete de refazer a baixa.** O modal não orienta a usar "Marcar como pago" depois: dar a nova baixa
+  é responsabilidade de quem desfez (decisão da P.O., 02/10).
 - **Seleção misturada:** só os títulos Pagos entram. Os conciliados aparecem no modal como "não entram: desfaça
   a conciliação primeiro". Os de outros status são ignorados.
 
@@ -76,7 +78,6 @@ retroativa (`PaymentDateModal`). Depois disso **não existe volta**: um título 
  │                                                  │
  │ Motivo *  [ Data da baixa digitada errada      ] │
  │                                                  │
- │ Depois, use "Marcar como pago" com a data certa. │
  │                       [Cancelar] [Desfazer baixa]│
  └──────────────────────────────────────────────────┘
 ```
