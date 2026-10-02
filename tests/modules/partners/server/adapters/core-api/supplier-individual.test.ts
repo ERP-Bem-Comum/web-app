@@ -83,16 +83,26 @@ const pfWrite: CreateSupplierInput = {
 }
 
 describe('toWriteBody — documento', () => {
-  it('envia `document` sem máscara e nunca o alias `cnpj`; PF com nomes null', () => {
+  it('envia `document` sem máscara; PF com nomes null', () => {
     const body = toWriteBody(pfWrite)
     assert.equal(body.document, VALID_CPF)
-    assert.equal('cnpj' in body, false)
     assert.equal(body.corporateName, null)
     assert.equal(body.fantasyName, null)
   })
 
   it('CNPJ mascarado vai normalizado (14)', () => {
     assert.equal(toWriteBody({ ...pfWrite, document: '11.222.333/0001-81' }).document, VALID_CNPJ)
+  })
+
+  // TEMPORÁRIO (#1022): o alias `cnpj` vai junto, IGUAL ao `document`. O core-api anterior à #1025 só lê
+  // `cnpj` — sem ele, salvar qualquer fornecedor falharia num ambiente com o backend atrasado. O core-api
+  // novo recusa o corpo se os dois divergirem, por isso o teste exige igualdade.
+  it('envia também o alias `cnpj`, idêntico ao `document` (compatível com o core-api anterior)', () => {
+    const pj = toWriteBody({ ...pfWrite, document: '11.222.333/0001-81' })
+    assert.equal(pj.cnpj, VALID_CNPJ)
+    assert.equal(pj.cnpj, pj.document)
+    const pf = toWriteBody(pfWrite)
+    assert.equal(pf.cnpj, pf.document)
   })
 })
 

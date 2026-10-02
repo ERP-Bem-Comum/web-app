@@ -73,3 +73,18 @@ documento (lista, detalhe, Contratos, Lançar Documento) passam a ler PF/PJ **pe
 
 - Contas a Pagar mascara o documento do favorecido só como CNPJ (`contas-a-pagar.view-model.ts:301`): um
   fornecedor PF aparece com o CPF sem máscara. Não quebra nada e fica anotado para depois.
+
+## Ajuste pós-merge (2026-10-02): o alias `cnpj` vai junto
+
+O front e o core-api deployam por **esteiras separadas**: a homologação do front sai da `develop` do
+web-app, e o backend de homologação sai de uma pipeline própria na AWS. Na primeira versão, o corpo de
+escrita mandava **só** `document`. Um core-api **anterior à #1025** só lê `cnpj` e recusaria esse corpo
+com 400, o que **quebraria o cadastro e a edição de qualquer fornecedor, inclusive PJ**, enquanto o
+backend estivesse atrasado.
+
+Agora o `toWriteBody` envia `document` **e** `cnpj` com o **mesmo valor**:
+
+- O core-api com a #1025 aceita os dois quando são iguais (`superRefine` do `createSupplierBodySchema`).
+- O core-api anterior lê o `cnpj` e segue funcionando para PJ. PF continua dependendo da #1025.
+
+É temporário: sai quando o core-api retirar o alias (combinado na core-api#1022).

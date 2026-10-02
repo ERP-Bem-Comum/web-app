@@ -149,21 +149,31 @@ const buildListQuery = (input: ListSuppliersInput): string => {
   return p.toString()
 }
 
-// Normaliza o documento (CPF 11 / CNPJ 14, sem máscara) no corpo de escrita e o envia como `document` —
-// nunca pelo alias deprecated `cnpj` (#1022). Na PF, razão social/nome fantasia vão `null`. Avaliação de
-// serviço (§1.6): serviceRating/ratingComment vão como null quando sem avaliação. Exportado p/ teste.
-export const toWriteBody = (input: CreateSupplierInput): Record<string, unknown> => ({
-  name: input.name,
-  email: input.email,
-  document: normalizeCnpj(input.document),
-  corporateName: input.corporateName,
-  fantasyName: input.fantasyName,
-  serviceCategory: input.serviceCategory,
-  bankAccount: input.bankAccount,
-  pixKey: input.pixKey,
-  serviceRating: input.serviceRating,
-  ratingComment: input.ratingComment,
-})
+// Normaliza o documento (CPF 11 / CNPJ 14, sem máscara) no corpo de escrita. Na PF, razão social/nome
+// fantasia vão `null`. Avaliação de serviço (§1.6): serviceRating/ratingComment vão como null quando sem
+// avaliação. Exportado p/ teste.
+//
+// ⚠️ TEMPORÁRIO (#1022): o documento vai em `document` E no alias deprecated `cnpj`, com o MESMO valor. O
+// core-api com a #1025 aceita os dois quando iguais; o core-api ANTERIOR só lê `cnpj` e recusaria (400) um
+// corpo sem ele — o que quebraria o cadastro de QUALQUER fornecedor num ambiente cujo backend ainda não
+// subiu (front e back deployam por esteiras separadas). Remover o `cnpj` daqui quando o core-api retirar o
+// alias (core-api#1022).
+export const toWriteBody = (input: CreateSupplierInput): Record<string, unknown> => {
+  const document = normalizeCnpj(input.document)
+  return {
+    name: input.name,
+    email: input.email,
+    document,
+    cnpj: document,
+    corporateName: input.corporateName,
+    fantasyName: input.fantasyName,
+    serviceCategory: input.serviceCategory,
+    bankAccount: input.bankAccount,
+    pixKey: input.pixKey,
+    serviceRating: input.serviceRating,
+    ratingComment: input.ratingComment,
+  }
+}
 
 export const createCoreApiSuppliersClient = (baseUrl: string): SupplierClient => {
   const auth = (token: string) => ({ Authorization: `Bearer ${token}` })
