@@ -487,7 +487,7 @@ export const ptBR: Catalog = {
   'partners.suppliers.form.email': 'E-mail',
   'partners.suppliers.form.cnpj': 'CNPJ',
   'partners.suppliers.form.cpf': 'CPF',
-  'partners.suppliers.form.fullName': 'Nome completo',
+  'partners.suppliers.form.fullName': 'Nome Completo',
   'partners.suppliers.form.personType': 'Tipo de fornecedor',
   'partners.suppliers.form.personTypeLocked':
     'Trocar o tipo troca o documento: exige a permissão de editar dados sensíveis do fornecedor.',
