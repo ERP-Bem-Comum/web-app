@@ -46,6 +46,18 @@ retroativa (`PaymentDateModal`). Depois disso **não existe volta**: um título 
 | 6   | Aba **Histórico**: rótulo do evento novo ("Baixa desfeita", com o motivo)                                                                          |
 | 7   | Sucesso invalida a lista e os contadores, como a baixa faz hoje                                                                                    |
 
+## Comportamento
+
+- **O modal abre ANTES de desfazer.** "Mudar Status → Desfazer baixa" abre o modal, que é a confirmação e onde
+  se informa o motivo. A baixa só é desfeita no botão "Desfazer baixa" do modal. Cancelar não muda nada.
+- **Individual ou em lote**, no mesmo molde do "Marcar como pago": 1 ou mais títulos Pagos selecionados.
+- **Um motivo para o lote todo**, como a data é uma só na baixa em lote.
+- **Uma chamada por título** (o backend desfaz por título). Falha parcial: os títulos que passaram ficam
+  desfeitos, e a tela lista **quais falharam e por quê**, no padrão que o `bulk-status.binding.ts` já usa no
+  Aprovar e no "Voltar para edição".
+- **Seleção misturada:** só os títulos Pagos entram. Os conciliados aparecem no modal como "não entram: desfaça
+  a conciliação primeiro". Os de outros status são ignorados.
+
 ## Desenho da tela
 
 ```
