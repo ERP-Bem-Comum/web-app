@@ -54,3 +54,16 @@ describe('buildContractsCsv', () => {
     assert.equal(cells[2], '""')
   })
 })
+
+// Spec 118: o prefixo do número vem da classificação — antes toda linha saía "CT", inclusive OS.
+describe('buildContractsCsv — prefixo pela classificação', () => {
+  it('Ordem de Serviço sai "OS"; Contrato sai "CT"', () => {
+    const csv = buildContractsCsv([
+      mk({ classification: 'Ordem de Serviço', contractCode: '0123/2024' } as Partial<ContractRow>),
+      mk({ classification: 'Contrato', contractCode: '0124/2024' } as Partial<ContractRow>),
+    ])
+    const [, os, ct] = csv.split('\n')
+    assert.ok(os?.startsWith('"OS 0123/2024"'), os)
+    assert.ok(ct?.startsWith('"CT 0124/2024"'), ct)
+  })
+})

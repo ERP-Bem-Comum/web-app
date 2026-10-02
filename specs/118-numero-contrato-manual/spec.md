@@ -1,6 +1,6 @@
 # 118 — Número do contrato informável na criação
 
-**Tamanho:** M · **Status:** spec (aguardando backend) · **Data:** 2026-10-01
+**Tamanho:** M · **Status:** front implementado, aguardando backend (core-api#1024) · **Data:** 2026-10-01 · **Plano:** [plan.md](./plan.md) · **ADR:** [0022](../../handbook/adr/0022-contract-number-user-informed.md)
 **Depende de:** `core-api#1024` (número aceito no `POST /contracts`, normalizado, gerador pula ocupados)
 **Origem:** pedido da P.O., porque o cliente tem contratos vigentes com numeração própria
 **Emenda:** `specs/019-contract-number-program` (FR-002, FR-006 e a entidade "intenção de criação")

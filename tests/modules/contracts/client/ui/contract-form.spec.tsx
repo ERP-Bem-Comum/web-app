@@ -13,6 +13,7 @@ afterEach(() => {
 })
 
 const baseState = (): ContractFormState => ({
+  contractNumber: '',
   title: '',
   objective: '',
   originalValueCents: 0,
@@ -75,7 +76,7 @@ const baseProps = (over: Record<string, unknown> = {}) => ({
   onPartnerSearchClose: vi.fn(),
   onCreateNewPartner: vi.fn(),
   documentUploaded: false,
-  currentYear: 2026,
+  contractNumberInvalid: false,
   programOptions: [],
   costCenterOptions: [],
   categoryOptions: [],
@@ -178,5 +179,52 @@ describe('ContractForm', () => {
     expect(sub.hasAttribute('disabled')).toBe(false)
     fireEvent.change(sub, { target: { value: 'sub-dia' } })
     expect(onSelectSubcategory).toHaveBeenCalledWith('sub-dia')
+  })
+})
+
+// ── Spec 118: número do contrato informável na criação ──
+describe('ContractForm — número do contrato (spec 118)', () => {
+  it('campo vazio: o topo diz "número a definir" (não inventa um número provisório)', () => {
+    render(<ContractForm {...baseProps()} />)
+    expect(screen.getByText(/CT\s+· número a definir/)).toBeTruthy()
+    expect(screen.queryByText(/0001\//)).toBeNull()
+    expect(screen.getByText('Deixe vazio para gerar automaticamente')).toBeTruthy()
+  })
+
+  it('preenchido: o topo mostra o número com o prefixo da classificação (CT e OS)', () => {
+    const { unmount } = render(
+      <ContractForm {...baseProps({ state: { ...baseState(), contractNumber: '0123/2024' } })} />,
+    )
+    expect(screen.getByText(/CT\s+0123\/2024/)).toBeTruthy()
+    unmount()
+    render(
+      <ContractForm
+        {...baseProps({
+          state: { ...baseState(), classification: 'ServiceOrder', contractNumber: '0123/2024' },
+        })}
+      />,
+    )
+    expect(screen.getByText(/OS\s+0123\/2024/)).toBeTruthy()
+  })
+
+  it('digitar aplica a máscara antes de atualizar o estado', () => {
+    const onUpdate = vi.fn()
+    render(<ContractForm {...baseProps({ onUpdate })} />)
+    fireEvent.change(screen.getByLabelText('Número do contrato'), { target: { value: '01232024' } })
+    expect(onUpdate).toHaveBeenCalledWith('contractNumber', '0123/2024')
+  })
+
+  it('formato inválido após tentar salvar: campo marcado e mensagem do formato', () => {
+    render(
+      <ContractForm
+        {...baseProps({
+          state: { ...baseState(), contractNumber: '12/2024' },
+          contractNumberInvalid: true,
+          validationAttempted: true,
+        })}
+      />,
+    )
+    expect(screen.getByText('Use o formato 0123/2024.')).toBeTruthy()
+    expect(screen.getByLabelText('Número do contrato').getAttribute('aria-invalid')).toBe('true')
   })
 })

@@ -139,7 +139,13 @@ export const ListContractsInputSchema = z.object({
   order: z.enum(['ASC', 'DESC']).default('DESC'),
 })
 
+// Formato do número de contrato — espelha o regex do domínio do core-api (`/^\d{3,4}\/\d{4}$/`). Validação
+// de BORDA (a usuária não espera o 422); o core-api segue como a fonte da verdade.
+export const CONTRACT_NUMBER_PATTERN = /^\d{3,4}\/\d{4}$/
+
 export const CreateContractInputSchema = z.object({
+  // Spec 118: opcional — ausente, o core-api gera o número.
+  sequentialNumber: z.string().trim().regex(CONTRACT_NUMBER_PATTERN).optional(),
   title: z.string().trim().min(1),
   objective: z.string().trim().min(1),
   originalValueCents: z.int().positive(),

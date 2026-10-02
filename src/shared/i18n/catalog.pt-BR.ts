@@ -73,6 +73,7 @@ export const ptBR: Catalog = {
   'auth.error.reference-label': 'Código de referência:',
   // Contracts — Errors
   'contracts.error.invalid-code': 'Código do contrato inválido.',
+  'contracts.error.number-duplicated': 'Já existe um contrato com este número.',
   'contracts.error.invalid-value': 'Valor inválido ou excede o teto permitido.',
   'contracts.error.invalid-period': 'Período de vigência inválido.',
   'contracts.error.missing-contractor': 'Contratante obrigatório não informado.',
@@ -235,6 +236,10 @@ export const ptBR: Catalog = {
   'contracts.create.partnerNotFound': 'Nenhum contratado encontrado',
   'contracts.create.newPartner': 'Cadastrar novo parceiro',
   'contracts.create.field.classification': 'Classificação',
+  'contracts.create.field.number': 'Número do contrato',
+  'contracts.create.field.numberHint': 'Deixe vazio para gerar automaticamente',
+  'contracts.create.field.numberInvalid': 'Use o formato 0123/2024.',
+  'contracts.create.numberPending': 'número a definir',
   'contracts.create.field.classification.ct': 'Contrato',
   'contracts.create.field.classification.os': 'Ordem de Serviço',
   'contracts.create.field.contractModel': 'Modelo',
