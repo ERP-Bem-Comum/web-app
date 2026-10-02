@@ -23,7 +23,7 @@ diferentes, e o sistema foi desenhado assim. Um fornecedor PF não é um colabor
 | :------------ | :-------------------------------------------- | :--------------------------------------------------- |
 | Documento     | **CPF**, máscara `000.000.000-00`, só dígitos | **CNPJ**, máscara `00.000.000/0000-00`, alfanumérico |
 | Validação     | dígito verificador do CPF                     | dígito verificador do CNPJ (como hoje)               |
-| Nome          | "Nome completo", obrigatório                  | "Nome", obrigatório (como hoje)                      |
+| Nome          | "Nome Completo", obrigatório                  | "Nome", obrigatório (como hoje)                      |
 | Razão Social  | **não existe** (campo oculto, não enviado)    | obrigatória                                          |
 | Nome Fantasia | **não existe** (campo oculto, não enviado)    | obrigatório                                          |
 
@@ -42,7 +42,7 @@ de parceiro**, que é o erro de hoje em Contratos e no Lançar Documento (lá, "
 | --- | -------------------------------------------------------------------------------------------------------------- |
 | 1   | **Chave segmentada "Pessoa Jurídica \| Pessoa Física"** no Novo e no Editar Fornecedor, antes do documento     |
 | 2   | Campo **CPF/CNPJ**: rótulo, máscara (`'cpf'` ou `'cnpj'`) e validação seguem a chave                           |
-| 3   | PF esconde Razão Social e Nome Fantasia, e "Nome" vira "Nome completo"                                         |
+| 3   | PF esconde Razão Social e Nome Fantasia, e "Nome" vira "Nome Completo"                                         |
 | 4   | Cadeia BFF: io-schema aceita 11 ou 14 caracteres; use-case valida CPF ou CNPJ; o campo viaja como `document`   |
 | 5   | Lista e detalhe: coluna "CPF/CNPJ" mascarada, com etiqueta **PF**/**PJ**; a busca aceita os dois; o CSV também |
 | 6   | **Contratos**: o contratado fornecedor PF aparece como "Fornecedor · Pessoa Física · CPF …"                    |
@@ -63,7 +63,7 @@ de parceiro**, que é o erro de hoje em Contratos e no Lançar Documento (lá, "
 ```
 
 Com **Pessoa Física** marcada, o documento vira "CPF", Razão Social e Nome Fantasia somem, e "Nome" vira
-"Nome completo".
+"Nome Completo".
 
 > **Decisão da P.O. (2026-10-02):** os campos **somem**, não ficam desativados. O PR do backend (#1025)
 > descrevia "campos desativados"; para o backend tanto faz, porque branco (`""`) conta como ausente.
