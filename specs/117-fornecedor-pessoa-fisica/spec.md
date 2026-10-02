@@ -1,6 +1,6 @@
 # 117 — Fornecedor pessoa física (CPF/CNPJ)
 
-**Tamanho:** M · **Status:** spec (aguardando backend) · **Data:** 2026-09-30
+**Tamanho:** M · **Status:** implementado (backend na `dev` do core-api desde 2026-10-01, PR #1025) · **Data:** 2026-09-30 · **Revisão:** 2026-10-02 · **Plano:** [plan.md](./plan.md)
 **Depende de:** `core-api#1022` (`SupplierDocument`, `personType`, PF sem Razão Social/Nome Fantasia)
 **Origem:** pedido da P.O., porque o cliente tem fornecedores pessoa física pagos por RPA
 
@@ -31,6 +31,11 @@ diferentes, e o sistema foi desenhado assim. Um fornecedor PF não é um colabor
 é CNPJ). O backend devolve essa leitura pronta em `personType`, e **o front nunca deduz PF/PJ pelo tipo
 de parceiro**, que é o erro de hoje em Contratos e no Lançar Documento (lá, "só colaborador é PF").
 
+> **Revisão 2026-10-02.** O agregador `GET /api/v1/partners`, que Contratos e o Lançar Documento usam,
+> devolve o `document` mas **não** o `personType`. Nessas duas telas o front lê PF/PJ pelo **tamanho do
+> documento** (11 dígitos = CPF). Continua dentro da regra: o tipo sai do documento, nunca do tipo de
+> parceiro. Na lista e no detalhe de Fornecedor, o `personType` vem pronto do backend.
+
 ## Escopo
 
 | #   | Entrega                                                                                                        |
@@ -59,6 +64,9 @@ de parceiro**, que é o erro de hoje em Contratos e no Lançar Documento (lá, "
 
 Com **Pessoa Física** marcada, o documento vira "CPF", Razão Social e Nome Fantasia somem, e "Nome" vira
 "Nome completo".
+
+> **Decisão da P.O. (2026-10-02):** os campos **somem**, não ficam desativados. O PR do backend (#1025)
+> descrevia "campos desativados"; para o backend tanto faz, porque branco (`""`) conta como ausente.
 
 **Por que chave segmentada.** É o padrão que o sistema já usa para escolher entre tipos (o tipo da conta
 no modal "Nova conta" da Conciliação, `add-account-modal.component.tsx:124`). As outras formas foram

@@ -57,8 +57,12 @@ export const isCnpj = (value: string): boolean => isCnpjLength(value)
 
 /** Documento do parceiro mascarado por conteúdo: CPF (colaborador, PF) ou CNPJ (PJ). */
 export const maskDocument = (value: string): string => maskCpfCnpj(value)
-/** PF (pessoa física) = colaborador; os demais tipos são PJ. Define badge ("PF/PJ") e rótulo do documento. */
-export const isPartnerPF = (kind: PartnerKind): boolean => kind === 'collaborator'
+/**
+ * PF (pessoa física) quando o DOCUMENTO é um CPF (11 dígitos) — nunca pelo tipo de parceiro: o Fornecedor
+ * também pode ser PF (#1022). O agregador `/partners` não devolve `personType`. Define badge ("PF/PJ") e
+ * rótulo do documento.
+ */
+export const isPartnerPF = (document: string): boolean => /^\d{11}$/.test(document.replace(/[.\-\s]/g, ''))
 
 // ── Hidratação do fornecedor: dados bancários + contrato "Em Andamento" (auto-preenchimento) ──────
 export type SupplierBankView = Readonly<{ line: string; pix: string | null }>

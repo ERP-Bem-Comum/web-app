@@ -18,6 +18,8 @@ export type PartnersError =
   | 'autocadastro-invalid' // #040 — token do link inválido/expirado/usado (404)
   | 'autocadastro-cpf-mismatch' // #040 — CPF não confere (400) — form preservado
   | 'invalid-service-category'
+  | 'invalid-supplier-document' // #1022 — não é CPF nem CNPJ válido (422)
+  | 'supplier-document-duplicate' // #1022 — CPF/CNPJ já cadastrado (409)
   | 'act-number-duplicate'
   | 'invalid-cnpj'
   | 'invalid-act-period'

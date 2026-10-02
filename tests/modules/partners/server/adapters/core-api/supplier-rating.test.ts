@@ -16,7 +16,7 @@ import {
 const baseWrite = {
   name: 'Fornecedor X',
   email: 'x@example.com',
-  cnpj: '11.222.333/0001-81',
+  document: '11.222.333/0001-81',
   corporateName: 'Fornecedor X LTDA',
   fantasyName: 'X',
   serviceCategory: 'Limpeza',
